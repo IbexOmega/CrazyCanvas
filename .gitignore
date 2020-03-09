@@ -1,6 +1,14 @@
+# Ignore DS_Store
+*.DS_Store
+
 # Ignore all Visual Studio project and solution files
 *.sln
 *.vcxproj*
+
+# Ignore all Xcode project and workspace solution files
+*.pbxproj
+*.xcworkspace*
+*.xcodeproj*
 
 # Ignore all files in the VS folder (Created by Visual Studio)
 .vs/

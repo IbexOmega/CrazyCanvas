@@ -7,16 +7,11 @@
 #include "Engine/EngineLoop.h"
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, int nCmdShow)
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 #else
-int main(int argc, const char* argv[])
+int main(int, const char*[])
 #endif 
 {
-	UNREFERENCED_PARAMETER(hInstance);
-	UNREFERENCED_PARAMETER(hPrevInstance);
-	UNREFERENCED_PARAMETER(lpCmd);
-	UNREFERENCED_PARAMETER(nCmdShow);
-
 	using namespace LambdaEngine;
 
 	if (!EngineLoop::PreInit())
