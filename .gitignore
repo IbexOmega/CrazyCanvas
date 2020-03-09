@@ -1,0 +1,9 @@
+# Ignore all Visual Studio project and solution files
+*.sln
+*.vcxproj*
+
+# Ignore all files in the VS folder (Created by Visual Studio)
+.vs/
+
+# Ignore all compiled files
+Build/
