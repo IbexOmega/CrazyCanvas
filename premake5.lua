@@ -153,8 +153,7 @@ workspace "LambdaEngine"
             }
             removefiles
             {
-                "%{prj.name}/Source/Platform/DX12/**",
-                "%{prj.name}/Include/Platform/Windows/**",
+                "%{prj.name}/Include/Platform/Win32/**",
             }
         filter {}
 
@@ -170,6 +169,12 @@ workspace "LambdaEngine"
 			"%{prj.name}/Include",
         }
         
+        -- Links
+        links 
+        {
+            "Cocoa.framework"
+        }
+
         -- Copy DLL into correct folder for windows builds
         filter { "system:windows", "platforms:x64_SharedLib" }
 			postbuildcommands
@@ -177,7 +182,6 @@ workspace "LambdaEngine"
 				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Sandbox/\"")
 			}
 		filter {}
-
     project "*"
 
     -- Sandbox Project

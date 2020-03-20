@@ -16,12 +16,12 @@ namespace LambdaEngine
 		static bool PreInit();
 #endif
 		static bool Init();
-		static bool Run();
+		static void Run();
 		static bool Release();
 		static bool PostRelease();
 
 	private:
-		static void Tick();
+		static bool Tick();
 
 		static bool s_IsRunning;
 	};

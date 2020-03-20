@@ -14,7 +14,7 @@ namespace LambdaEngine
 		static bool PreInit(HINSTANCE hInstance);
 		static bool PostRelease();
 
-		static void Tick();
+		static bool Tick();
 
 	private:
 		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

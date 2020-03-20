@@ -8,6 +8,11 @@ namespace LambdaEngine
 	public:
 		DECL_STATIC_CLASS(Application);
 
-		static void Tick() { }
+		static bool PreInit() 		{ return true; }
+		static bool PostRelease() 	{ return true; }
+		
+		static bool Tick() { return false; }
+        
+        static void Terminate() {}
 	};
 }

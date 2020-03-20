@@ -2,13 +2,20 @@
 
 #include "Engine/EngineLoop.h"
 
+#include <stdio.h>
+
 namespace LambdaEngine
 {
 	bool EngineLoop::s_IsRunning = false;
 
-	void EngineLoop::Tick()
+	bool EngineLoop::Tick()
 	{
-		PlatformApplication::Tick();
+		if (PlatformApplication::Tick() == false)
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
@@ -34,15 +41,13 @@ namespace LambdaEngine
 		return true;
 	}
 	
-	bool EngineLoop::Run()
+	void EngineLoop::Run()
 	{
 		s_IsRunning = true;
 		while (s_IsRunning)
 		{
-			Tick();
+			s_IsRunning = Tick();
 		}
-
-		return true;
 	}
 	
 	bool EngineLoop::Release()

@@ -26,7 +26,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		HWND hWnd = CreateWindowEx(0, WINDOW_CLASS, L"Learn to Program Windows", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
+		HWND hWnd = CreateWindowEx(0, WINDOW_CLASS, L"Lambda Game Engine", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
 		if (hWnd == NULL)
 		{
 			//TODO: Log this
@@ -49,14 +49,21 @@ namespace LambdaEngine
 		return false;
 	}
 	
-	void Win32Application::Tick()
+	bool Win32Application::Tick()
 	{
 		MSG msg = {};
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+
+			if (msg.message == WM_QUIT)
+			{
+				return false;
+			}
 		}
+
+		return true;
 	}
 
 	LRESULT Win32Application::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
