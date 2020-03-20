@@ -170,10 +170,12 @@ workspace "LambdaEngine"
         }
         
         -- Links
-        links 
-        {
-            "Cocoa.framework"
-        }
+        filter { "system:macosx" }
+			links 
+			{
+				"Cocoa.framework"
+			}
+		filter {}
 
         -- Copy DLL into correct folder for windows builds
         filter { "system:windows", "platforms:x64_SharedLib" }

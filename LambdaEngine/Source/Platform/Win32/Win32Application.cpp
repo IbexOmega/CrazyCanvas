@@ -46,7 +46,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		return false;
+		return true;
 	}
 	
 	bool Win32Application::Tick()
