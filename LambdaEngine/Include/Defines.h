@@ -28,3 +28,6 @@
 	DECL_REMOVE_MOVE(Typename); \
 	Typename() = delete; \
 	~Typename() = delete
+
+//Helper macros
+#define ZERO_MEMORY(memory, size) memset(memory, 0, size)
