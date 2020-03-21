@@ -6,7 +6,7 @@
 
 @interface MacWindowDelegate : NSObject<NSWindowDelegate>
 
-- (void) windowWillClose:(NSNotification *)notification;
+- (void) windowWillClose:(NSNotification* ) notification;
 
 @end
 

@@ -13,11 +13,11 @@ namespace LambdaEngine
 	{
 		DWORD	dwStyle	= WS_OVERLAPPEDWINDOW;
 		RECT	clientRect = { 0, 0, LONG(width), LONG(height) };
-		AdjustWindowRect(&clientRect, dwStyle, FALSE);
+		::AdjustWindowRect(&clientRect, dwStyle, FALSE);
 
 		INT nWidth	= clientRect.right - clientRect.left;
 		INT nHeight = clientRect.bottom - clientRect.top;
-		hWnd = CreateWindowEx(0, WINDOW_CLASS, L"Lambda Game Engine", dwStyle, CW_USEDEFAULT, CW_USEDEFAULT, nWidth, nHeight, NULL, NULL, Win32Application::GetInstanceHandle(), NULL);
+		hWnd = ::CreateWindowEx(0, WINDOW_CLASS, L"Lambda Game Engine", dwStyle, CW_USEDEFAULT, CW_USEDEFAULT, nWidth, nHeight, NULL, NULL, Win32Application::GetInstanceHandle(), NULL);
 		if (hWnd == NULL)
 		{
 			//TODO: Log this
@@ -29,12 +29,12 @@ namespace LambdaEngine
 
 	void Win32Window::Show()
 	{
-		ShowWindow(hWnd, SW_NORMAL);
+		::ShowWindow(hWnd, SW_NORMAL);
 	}
 
 	void Win32Window::Release()
 	{
-		DestroyWindow(hWnd);
+		::DestroyWindow(hWnd);
 	}
 }
 

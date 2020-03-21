@@ -31,3 +31,10 @@
 
 //Helper macros
 #define ZERO_MEMORY(memory, size) memset(memory, 0, size)
+
+//Inline
+#ifdef LAMBDA_VISUAL_STUDIO
+	#define FORCEINLINE __forceinline
+#else
+	#define FORCEINLINE __attribute__((always_inline))
+#endif

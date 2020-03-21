@@ -11,17 +11,16 @@ namespace LambdaEngine
 	bool Win32Application::PreInit(HINSTANCE hInstance)
 	{
 		ASSERT(hInstance != NULL);
-
 		s_hInstance = hInstance;
 
 		WNDCLASS wc = {};
 		ZERO_MEMORY(&wc, sizeof(WNDCLASS));
 		wc.hInstance		= s_hInstance;
 		wc.lpszClassName	= WINDOW_CLASS;
-		wc.hbrBackground	= (HBRUSH)GetStockObject(BLACK_BRUSH);
+		wc.hbrBackground	= (HBRUSH)::GetStockObject(BLACK_BRUSH);
 		wc.lpfnWndProc		= Win32Application::WindowProc;
 
-		ATOM classAtom = RegisterClass(&wc);
+		ATOM classAtom = ::RegisterClass(&wc);
 		if (classAtom == 0)
 		{
 			//TODO: Log this
@@ -41,7 +40,7 @@ namespace LambdaEngine
 	{
 		s_Window.Release();
 
-		if (!UnregisterClass(WINDOW_CLASS, s_hInstance))
+		if (!::UnregisterClass(WINDOW_CLASS, s_hInstance))
 		{
 			//TODO: Log this
 			return false;
@@ -53,10 +52,10 @@ namespace LambdaEngine
 	bool Win32Application::Tick()
 	{
 		MSG msg = {};
-		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		while (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			::TranslateMessage(&msg);
+			::DispatchMessage(&msg);
 
 			if (msg.message == WM_QUIT)
 			{
@@ -74,7 +73,7 @@ namespace LambdaEngine
 			Terminate();
 		}
 
-		return DefWindowProc(hWnd, uMsg, wParam, lParam);
+		return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 	}
 }
 

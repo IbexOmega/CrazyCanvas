@@ -3,6 +3,8 @@
 #include "Platform/PlatformTime.h"
 #include "Platform/PlatformMisc.h"
 
+#include <iostream>
+
 namespace LambdaEngine
 {
 	void EngineLoop::Run()
@@ -16,12 +18,12 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick()
 	{
-		if (PlatformApplication::Tick() == false)
-		{
-			return false;
-		}
-
-		return true;
+        if (PlatformApplication::Tick() == false)
+        {
+            return false;
+        }
+        
+        return true;
 	}
 
 #ifdef LAMBDA_PLATFORM_WINDOWS

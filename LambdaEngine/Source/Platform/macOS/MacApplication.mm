@@ -55,10 +55,12 @@ namespace LambdaEngine
             while (true)
             {
                 event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES];
-                if (event)
+                if (event == nil)
                 {
-                    [NSApp sendEvent:event];
+                    break;
                 }
+                
+                [NSApp sendEvent:event];
                 [NSApp updateWindows];
                 
                 if (s_IsTerminating)
