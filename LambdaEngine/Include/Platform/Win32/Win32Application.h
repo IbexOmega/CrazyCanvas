@@ -1,4 +1,5 @@
 #pragma once
+
 #ifdef LAMBDA_PLATFORM_WINDOWS
 #include "Platform/Common/Application.h"
 
