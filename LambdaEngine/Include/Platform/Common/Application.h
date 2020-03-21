@@ -3,7 +3,7 @@
 
 namespace LambdaEngine
 {
-	class LAMBDA_API Application
+	class Application
 	{
 	public:
 		DECL_STATIC_CLASS(Application);

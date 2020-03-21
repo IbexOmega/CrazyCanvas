@@ -22,7 +22,5 @@ namespace LambdaEngine
 
 	private:
 		static bool Tick();
-
-		static bool s_IsRunning;
 	};
 }

@@ -1,9 +1,9 @@
 #pragma once
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
-	#include "Win32/Win32Application.h"
+	#include "Win32/Win32Misc.h"
 #elif defined(LAMBDA_PLATFORM_MACOS)
-	#include "macOS/MacApplication.h"
+	//TODO: Implement macOS
 #else
 	#error No platform defined
 #endif

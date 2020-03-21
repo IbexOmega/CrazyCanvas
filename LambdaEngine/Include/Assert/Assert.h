@@ -1,11 +1,21 @@
 #pragma once
+#include "Defines.h"
+
+LAMBDA_API void Assert();
+
+#ifdef LAMBDA_PLATFORM_WINDOWS
+    #define DEBUGBREAK(...) __debugbreak()
+#elif defined(LAMBDA_PLATFORM_MACOS)
+    #define DEBUGBREAK(...) abort()
+#endif
 
 #ifdef LAMBDA_DEBUG
-    #ifdef LAMBDA_PLATFORM_WINDOWS
-        #define ASSERT(condition) if (!condition) { _debugbreak(); }
-    #elif defined(LAMBDA_PLATFORM_MACOS)
-        #define ASSERT(condition) if (!condition) { abort(); }
-    #endif
+    #define ASSERT(condition) \
+        if (!(condition)) \
+        { \
+            Assert(); \
+            DEBUGBREAK(); \
+        }
 #else
     #define ASSERT(condition)
 #endif

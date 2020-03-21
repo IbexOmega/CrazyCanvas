@@ -1,12 +1,18 @@
-#include "LambdaEngine.h"
-
 #include "Engine/EngineLoop.h"
 
-#include <stdio.h>
+#include "Platform/PlatformTime.h"
+#include "Platform/PlatformMisc.h"
 
 namespace LambdaEngine
 {
-	bool EngineLoop::s_IsRunning = false;
+	void EngineLoop::Run()
+	{
+		bool IsRunning = true;
+		while (IsRunning)
+		{
+			IsRunning = Tick();
+		}
+	}
 
 	bool EngineLoop::Tick()
 	{
@@ -33,21 +39,14 @@ namespace LambdaEngine
 			return false;
 		}
 		
+		PlatformTime::PreInit();
+
 		return true;
 	}
 	
 	bool EngineLoop::Init()
 	{
 		return true;
-	}
-	
-	void EngineLoop::Run()
-	{
-		s_IsRunning = true;
-		while (s_IsRunning)
-		{
-			s_IsRunning = Tick();
-		}
 	}
 	
 	bool EngineLoop::Release()

@@ -3,14 +3,15 @@
 
 #include "Platform/Win32/Win32Application.h"
 
-#define WINDOW_CLASS L"MainWindowClass"
-
 namespace LambdaEngine
 {
-	HINSTANCE Win32Application::s_hInstance = 0;
+	HINSTANCE	Win32Application::s_hInstance	= 0;
+	Win32Window	Win32Application::s_Window		= Win32Window();
 
 	bool Win32Application::PreInit(HINSTANCE hInstance)
 	{
+		ASSERT(hInstance != NULL);
+
 		s_hInstance = hInstance;
 
 		WNDCLASS wc = {};
@@ -26,20 +27,19 @@ namespace LambdaEngine
 			return false;
 		}
 
-		HWND hWnd = CreateWindowEx(0, WINDOW_CLASS, L"Lambda Game Engine", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
-		if (hWnd == NULL)
+		if (!s_Window.Init(800, 600))
 		{
-			//TODO: Log this
 			return false;
 		}
 
-		ShowWindow(hWnd, SW_NORMAL);
-
+		s_Window.Show();
 		return true;
 	}
 	
 	bool Win32Application::PostRelease()
 	{
+		s_Window.Release();
+
 		if (!UnregisterClass(WINDOW_CLASS, s_hInstance))
 		{
 			//TODO: Log this
@@ -70,7 +70,7 @@ namespace LambdaEngine
 	{
 		if (uMsg == WM_DESTROY)
 		{
-			PostQuitMessage(0);
+			Terminate();
 		}
 
 		return DefWindowProc(hWnd, uMsg, wParam, lParam);
