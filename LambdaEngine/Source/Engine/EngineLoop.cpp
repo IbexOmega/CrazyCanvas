@@ -18,7 +18,7 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick()
 	{
-        if (PlatformApplication::Tick() == false)
+        if (!PlatformApplication::Tick())
         {
             return false;
         }
