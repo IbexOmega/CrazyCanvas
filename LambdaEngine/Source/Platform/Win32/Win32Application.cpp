@@ -18,6 +18,7 @@ namespace LambdaEngine
 		ZERO_MEMORY(&wc, sizeof(WNDCLASS));
 		wc.hInstance		= s_hInstance;
 		wc.lpszClassName	= WINDOW_CLASS;
+		wc.hbrBackground	= (HBRUSH)GetStockObject(BLACK_BRUSH);
 		wc.lpfnWndProc		= Win32Application::WindowProc;
 
 		ATOM classAtom = RegisterClass(&wc);

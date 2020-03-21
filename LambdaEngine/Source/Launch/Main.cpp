@@ -1,9 +1,3 @@
-#ifdef LAMBDA_PLATFORM_WINDOWS
-	#include "Platform/Win32/Windows.h"
-#endif
-
-#include "LambdaEngine.h"
-
 #include "Engine/EngineLoop.h"
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
