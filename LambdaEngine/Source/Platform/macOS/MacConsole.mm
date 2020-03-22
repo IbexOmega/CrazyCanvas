@@ -39,20 +39,30 @@ namespace LambdaEngine
     
     void MacConsole::Print(const char* pFormat, ...)
     {
-        va_list args;
-        va_start(args, pFormat);
-        PrintV(pFormat, args);
-        va_end(args);
+        if (s_pTextView != nil)
+        {
+            va_list args;
+            va_start(args, pFormat);
+            
+            PrintV(pFormat, args);
+            
+            va_end(args);
+        }
     }
     
     void MacConsole::PrintLine(const char* pFormat, ...)
     {
-        va_list args;
-        va_start(args, pFormat);
-        PrintV(pFormat, args);
-        va_end(args);
+        if (s_pTextView != nil)
+        {
+            va_list args;
+            va_start(args, pFormat);
+            
+            PrintV(pFormat, args);
+            
+            va_end(args);
         
-        [s_pTextView setString:@"\n"];
+            [s_pTextView setString:@"\n"];
+        }
     }
     
     void MacConsole::PrintV(const char* pFormat, va_list args)
@@ -66,7 +76,10 @@ namespace LambdaEngine
     
     void MacConsole::Clear()
     {
-        [s_pTextView setString:@""];
+        if (s_pTextView != nil)
+        {
+            [s_pTextView setString:@""];
+        }
     }
     
     void MacConsole::SetColor(EConsoleColor color)

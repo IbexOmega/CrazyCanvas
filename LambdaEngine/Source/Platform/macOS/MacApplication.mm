@@ -5,9 +5,9 @@
 
 namespace LambdaEngine
 {
-    MacWindow           MacApplication::s_Window        = MacWindow();
-    MacAppController*   MacApplication::s_pAppDelegate   = nullptr;
-    bool                MacApplication::s_IsTerminating = false;
+    MacWindow           MacApplication::s_Window            = MacWindow();
+    MacAppController*   MacApplication::s_pAppDelegate      = nullptr;
+    bool                MacApplication::s_IsTerminating     = false;
     
     bool MacApplication::PreInit()
     {
