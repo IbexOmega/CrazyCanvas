@@ -143,6 +143,7 @@ workspace "LambdaEngine"
             removefiles
             {
                 "%{prj.name}/Include/Platform/macOS/**",
+                "%{prj.name}/Source/Platform/macOS/**",
             }
         -- Remove files not available for macos builds
         filter "system:macosx"
@@ -154,6 +155,7 @@ workspace "LambdaEngine"
             removefiles
             {
                 "%{prj.name}/Include/Platform/Win32/**",
+                "%{prj.name}/Source/Platform/Win32/**",
             }
         filter {}
 

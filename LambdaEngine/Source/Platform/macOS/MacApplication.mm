@@ -1,48 +1,41 @@
 #ifdef LAMBDA_PLATFORM_MACOS
-#include <Appkit/Appkit.h>
-
 #include "Platform/macOS/MacApplication.h"
 #include "Platform/macOS/MacAppController.h"
 #include "Platform/macOS/MacWindowDelegate.h"
 
 namespace LambdaEngine
 {
-    bool MacApplication::s_IsTerminating = false;
+    MacWindow           MacApplication::s_Window        = MacWindow();
+    MacAppController*   MacApplication::s_AppDelegate   = nullptr;
+    bool                MacApplication::s_IsTerminating = false;
     
     bool MacApplication::PreInit()
     {
-        @autoreleasepool
+        [NSApplication sharedApplication];
+        if (NSApp != nil)
         {
-            [NSApplication sharedApplication];
-            if (NSApp != nil)
-            {
-                MacAppController* appDelegate = [[MacAppController alloc] init];
-                [NSApp setDelegate:appDelegate];
-                [NSApp activateIgnoringOtherApps:YES];
-                [NSApp setPresentationOptions:NSApplicationPresentationDefault];
-                [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-            }
-            else
-            {
-                //TODO: Return error
-                return false;
-            }
-        
-            [NSApp finishLaunching];
-
-            //TODO: Cleanup delegate and window
-        
-            //TODO: Other setup here
-
-            NSUInteger  windowStyle = NSWindowStyleMaskTitled  | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
-            NSRect      windowRect  = NSMakeRect(0, 0, 800, 600);
-            NSWindow*   window      = [[NSWindow alloc] initWithContentRect:windowRect styleMask:windowStyle backing:NSBackingStoreBuffered defer:NO];
-            
-            MacWindowDelegate* windowDelegate = [[MacWindowDelegate alloc] init];
-            [window setDelegate:windowDelegate];
-            [window setTitle:@"Lambda Game Engine"];
-            [window makeKeyAndOrderFront:window];
+            s_AppDelegate = [[MacAppController alloc] init];
+            [NSApp setDelegate:s_AppDelegate];
+            [NSApp activateIgnoringOtherApps:YES];
+            [NSApp setPresentationOptions:NSApplicationPresentationDefault];
+            [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
         }
+        else
+        {
+            //TODO: Log error
+            return false;
+        }
+    
+        [NSApp finishLaunching];
+    
+        //TODO: Other setup here
+
+        if (!s_Window.Init(800, 600))
+        {
+            return false;
+        }
+        
+        s_Window.Show();
         
         return true;
     }
@@ -70,6 +63,14 @@ namespace LambdaEngine
             }
         }
         
+        return true;
+    }
+
+    bool MacApplication::PostRelease()
+    {
+        [s_AppDelegate release];
+        
+        s_Window.Release();
         return true;
     }
 
