@@ -22,7 +22,7 @@ namespace LambdaEngine
         
     private:
         static MacWindow            s_Window;
-        static MacAppController*    s_AppDelegate;
+        static MacAppController*    s_pAppDelegate;
         static bool                 s_IsTerminating;
     };
 

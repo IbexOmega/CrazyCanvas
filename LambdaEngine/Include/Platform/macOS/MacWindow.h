@@ -27,8 +27,8 @@ namespace LambdaEngine
         void Release();
 
     private:
-        NSWindow*           m_Window;
-        MacWindowDelegate*  m_Delegate;
+        NSWindow*           m_pWindow;
+        MacWindowDelegate*  m_pDelegate;
     };
 }
 

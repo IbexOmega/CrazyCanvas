@@ -2,6 +2,7 @@
 
 #include "Platform/PlatformTime.h"
 #include "Platform/PlatformMisc.h"
+#include "Platform/PlatformConsole.h"
 
 #include <iostream>
 
@@ -43,6 +44,15 @@ namespace LambdaEngine
 		
 		PlatformTime::PreInit();
 
+        PlatformConsole::Show();
+        PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
+        PlatformConsole::SetColor(EConsoleColor::COLOR_YELLOW);
+        PlatformConsole::Print("Bla bla %s %d", "TestString", 5);
+        PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
+        
+        //PlatformConsole::Clear();
+        //PlatformConsole::Close();
+        
 		return true;
 	}
 	

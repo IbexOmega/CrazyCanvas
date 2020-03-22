@@ -6,7 +6,7 @@
 namespace LambdaEngine
 {
     MacWindow           MacApplication::s_Window        = MacWindow();
-    MacAppController*   MacApplication::s_AppDelegate   = nullptr;
+    MacAppController*   MacApplication::s_pAppDelegate   = nullptr;
     bool                MacApplication::s_IsTerminating = false;
     
     bool MacApplication::PreInit()
@@ -14,8 +14,8 @@ namespace LambdaEngine
         [NSApplication sharedApplication];
         if (NSApp != nil)
         {
-            s_AppDelegate = [[MacAppController alloc] init];
-            [NSApp setDelegate:s_AppDelegate];
+            s_pAppDelegate = [[MacAppController alloc] init];
+            [NSApp setDelegate:s_pAppDelegate];
             [NSApp activateIgnoringOtherApps:YES];
             [NSApp setPresentationOptions:NSApplicationPresentationDefault];
             [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
@@ -68,7 +68,7 @@ namespace LambdaEngine
 
     bool MacApplication::PostRelease()
     {
-        [s_AppDelegate release];
+        [s_pAppDelegate release];
         
         s_Window.Release();
         return true;
