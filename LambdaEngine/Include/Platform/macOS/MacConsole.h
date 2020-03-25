@@ -7,13 +7,20 @@
 
 #include "MacConsoleWindow.h"
 
+#ifndef __OBJC__
+
+class NSString;
+class NSTextView;
+class NSDictionary;
+class NSScrollView;
+
+#endif
+
 namespace LambdaEngine
 {
     class MacConsole : public Console
     {
     public:
-        DECL_STATIC_CLASS(MacConsole);
-        
         static void Show();
         static void Close();
         
@@ -25,10 +32,24 @@ namespace LambdaEngine
         static void SetColor(EConsoleColor color);
     
     private:
-        static void PrintV(const char* pFormat, va_list args);
+        MacConsole()    = default;
+        ~MacConsole()   = default;
         
-        static MacConsoleWindow*    s_pConsoleWindow;
-        static NSTextView*          s_pTextView;
+        void Init();
+        void Release();
+        
+        void AppendTextAndScroll(NSString* pString);
+        void NewLine();
+
+        void PrintV(const char* pFormat, va_list args);
+        
+        MacConsoleWindow*   m_pWindow       = nullptr;
+        NSTextView*         m_pTextView     = nullptr;
+        NSScrollView*       m_pScrollView   = nullptr;
+        NSDictionary*       m_pCurrentColor = nullptr;
+        NSDictionary*       m_ppColors[4]   = { nullptr, nullptr, nullptr, nullptr };
+        
+        static MacConsole s_Console;
     };
 
     typedef MacConsole PlatformConsole;

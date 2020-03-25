@@ -14,8 +14,6 @@ namespace LambdaEngine
     class Console
     {
     public:
-        DECL_STATIC_CLASS(Console);
-        
         static void Show()  { }
         static void Close() { }
         

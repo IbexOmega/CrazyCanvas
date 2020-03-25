@@ -14,11 +14,11 @@ namespace LambdaEngine
 		while (IsRunning)
 		{
 			IsRunning = Tick();
-		}
-	}
+        }
+    }
 
-	bool EngineLoop::Tick()
-	{
+    bool EngineLoop::Tick()
+    {
         if (!PlatformApplication::Tick())
         {
             return false;
@@ -48,7 +48,13 @@ namespace LambdaEngine
         PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
         PlatformConsole::SetColor(EConsoleColor::COLOR_YELLOW);
         PlatformConsole::Print("Bla bla %s %d", "TestString", 5);
+        PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
+        PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
+        PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
+        PlatformConsole::SetColor(EConsoleColor::COLOR_GREEN);
+        PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
         PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
+        PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
         
         //PlatformConsole::Clear();
         //PlatformConsole::Close();

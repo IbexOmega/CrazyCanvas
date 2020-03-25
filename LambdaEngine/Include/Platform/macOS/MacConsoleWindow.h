@@ -14,7 +14,6 @@
 
 #else
 
-class NSTextView;
 class MacConsoleWindow;
 
 #endif
