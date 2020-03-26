@@ -3,9 +3,9 @@
 
 LAMBDA_API void Assert();
 
-#ifdef LAMBDA_PLATFORM_WINDOWS
+#ifdef LAMBDA_VISUAL_STUDIO
     #define DEBUGBREAK(...) __debugbreak()
-#elif defined(LAMBDA_PLATFORM_MACOS)
+#else
     #define DEBUGBREAK(...) abort()
 #endif
 
