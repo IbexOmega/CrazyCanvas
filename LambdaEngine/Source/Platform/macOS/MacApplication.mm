@@ -5,17 +5,56 @@
 
 namespace LambdaEngine
 {
-    MacWindow           MacApplication::s_Window            = MacWindow();
-    MacAppController*   MacApplication::s_pAppDelegate      = nullptr;
-    bool                MacApplication::s_IsTerminating     = false;
-    
+    MacApplication MacApplication::s_Application = MacApplication();
+
+    void MacApplication::AddMessageListner(IApplicationMessageHandler* pListener)
+    {
+        
+    }
+
+    Window* MacApplication::GetWindow()
+    {
+        return &m_Window;
+    }
+
+    const Window* MacApplication::GetWindow() const
+    {
+        return &m_Window;
+    }
+
+    bool MacApplication::Init()
+    {
+        m_pAppDelegate = [[MacAppController alloc] init];
+        [NSApp setDelegate:m_pAppDelegate];
+        
+        //TODO: Other setup here
+
+        if (!m_Window.Init(800, 600))
+        {
+            return false;
+        }
+        
+        m_Window.Show();
+        
+        return true;
+    }
+
+    void MacApplication::Release()
+    {
+        [m_pAppDelegate release];
+        m_Window.Release();
+    }
+
+    void MacApplication::Terminate()
+    {
+        s_Application.m_IsTerminating = true;
+    }
+
     bool MacApplication::PreInit()
     {
         [NSApplication sharedApplication];
         if (NSApp != nil)
         {
-            s_pAppDelegate = [[MacAppController alloc] init];
-            [NSApp setDelegate:s_pAppDelegate];
             [NSApp activateIgnoringOtherApps:YES];
             [NSApp setPresentationOptions:NSApplicationPresentationDefault];
             [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
@@ -26,16 +65,12 @@ namespace LambdaEngine
             return false;
         }
     
-        [NSApp finishLaunching];
-    
-        //TODO: Other setup here
-
-        if (!s_Window.Init(800, 600))
+        if (!s_Application.Init())
         {
             return false;
         }
         
-        s_Window.Show();
+        [NSApp finishLaunching];
         
         return true;
     }
@@ -56,7 +91,7 @@ namespace LambdaEngine
                 [NSApp sendEvent:event];
                 [NSApp updateWindows];
                 
-                if (s_IsTerminating)
+                if (s_Application.m_IsTerminating)
                 {
                     return false;
                 }
@@ -68,15 +103,8 @@ namespace LambdaEngine
 
     bool MacApplication::PostRelease()
     {
-        [s_pAppDelegate release];
-        
-        s_Window.Release();
+        s_Application.Release();
         return true;
-    }
-
-    void MacApplication::Terminate()
-    {
-        s_IsTerminating = true;
     }
 }
 

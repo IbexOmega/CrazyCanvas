@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef LAMBDA_PLATFORM_MACOS
-#include "LambdaEngine.h"
+#include "Platform/Common/Window.h"
 
 #include "MacWindowDelegate.h"
 
@@ -13,7 +13,7 @@
 
 namespace LambdaEngine
 {
-    class MacWindow
+    class MacWindow : public Window
     {
     public:
         MacWindow();
@@ -22,10 +22,16 @@ namespace LambdaEngine
         DECL_REMOVE_COPY(MacWindow);
         DECL_REMOVE_MOVE(MacWindow);
 
-        bool Init(uint32 width, uint32 height);
-        void Show();
-        void Release();
+        virtual bool Init(uint32 width, uint32 height) override;
+        virtual void Release() override;
 
+        virtual void Show() override;
+
+        FORCEINLINE virtual void* GetHandle() const override
+        {
+            return (void*)m_pWindow;
+        }
+        
     private:
         NSWindow*           m_pWindow;
         MacWindowDelegate*  m_pDelegate;

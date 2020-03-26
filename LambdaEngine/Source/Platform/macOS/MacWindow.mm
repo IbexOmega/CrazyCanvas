@@ -4,7 +4,8 @@
 namespace LambdaEngine
 {
     MacWindow::MacWindow()
-        : m_pWindow(nullptr),
+        : Window(),
+        m_pWindow(nullptr),
         m_pDelegate(nullptr)
     {
     }
