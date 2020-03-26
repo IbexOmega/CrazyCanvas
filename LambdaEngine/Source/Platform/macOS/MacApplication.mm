@@ -7,9 +7,8 @@ namespace LambdaEngine
 {
     MacApplication MacApplication::s_Application = MacApplication();
 
-    void MacApplication::AddMessageListner(IApplicationMessageHandler* pListener)
+    void MacApplication::AddMessageListner(IApplicationMessageHandler* pHandler)
     {
-        
     }
 
     Window* MacApplication::GetWindow()

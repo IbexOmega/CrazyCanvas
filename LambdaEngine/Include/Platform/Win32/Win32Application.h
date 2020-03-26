@@ -1,6 +1,8 @@
 #pragma once
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
+#include <vector>
+
 #include "Platform/Common/Application.h"
 
 #include "Win32Window.h"
@@ -10,7 +12,16 @@ namespace LambdaEngine
 	class LAMBDA_API Win32Application : public Application
 	{
 	public:
-		DECL_STATIC_CLASS(Win32Application); 
+		Win32Application();
+		~Win32Application() = default;
+
+		virtual void AddMessageHandler(IApplicationMessageHandler* pListener) override;
+        
+        virtual Window*         GetWindow()         override;
+        virtual const Window*   GetWindow() const   override;
+
+		bool Create();
+		void Destroy();
 
 		static bool PreInit(HINSTANCE hInstance);
 		static bool PostRelease();
@@ -25,14 +36,23 @@ namespace LambdaEngine
 
 		static FORCEINLINE HINSTANCE GetInstanceHandle()
 		{
-			return s_hInstance;
+			return s_Application.m_hInstance;
+		}
+
+		static FORCEINLINE Application* Get()
+		{
+			return &s_Application;
 		}
 
 	private:
 		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-		static Win32Window	s_Window;
-		static HINSTANCE	s_hInstance;
+		Win32Window m_Window;
+		HINSTANCE	m_hInstance = 0;
+		
+		std::vector<IApplicationMessageHandler*> m_MessageHandlers;
+
+		static Win32Application	s_Application;
 	};
 
 	typedef Win32Application PlatformApplication;
