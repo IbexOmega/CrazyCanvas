@@ -1,6 +1,8 @@
 #pragma once
 
 #ifdef LAMBDA_PLATFORM_MACOS
+#include <vector>
+
 #include "Platform/Common/Application.h"
 
 #include "MacWindow.h"
@@ -27,7 +29,6 @@ namespace LambdaEngine
     {
         NSEvent*        event           = nullptr;
         NSNotification* notification    = nullptr;
-        NSWindow*       window          = nullptr;
     };
 
     class MacApplication : public Application
@@ -45,6 +46,7 @@ namespace LambdaEngine
         virtual const Window*   GetWindow() const   override;
         
         bool Init();
+        void BufferEvent(NSEvent* event);
         void Release();
         
         static bool PreInit();
@@ -67,6 +69,9 @@ namespace LambdaEngine
         MacAppController* m_pAppDelegate    = nullptr;
         bool              m_IsTerminating   = false;
         
+        std::vector<MacMessage>                     m_BufferedMessages;
+        std::vector<IApplicationMessageHandler*>    m_MessageHandlers;
+
         static MacApplication s_Application;
     };
 

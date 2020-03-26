@@ -2,6 +2,7 @@
 #include "Platform/macOS/MacApplication.h"
 #include "Platform/macOS/MacAppController.h"
 #include "Platform/macOS/MacWindowDelegate.h"
+#include "Platform/macOS/MacInputDevice.h"
 
 #include <Appkit/Appkit.h>
 
@@ -11,14 +12,43 @@ namespace LambdaEngine
 
     void MacApplication::AddMessageHandler(IApplicationMessageHandler* pHandler)
     {
+        //Check first so that this handler is not already added
+		const uint32 count = uint32(m_MessageHandlers.size());
+		for (uint32 i = 0; i < count; i++)
+		{
+			if (pHandler == m_MessageHandlers[i])
+			{
+				return;
+			}
+		}
+
+		//Add new handler
+		m_MessageHandlers.emplace_back(pHandler);
     }
 
     void MacApplication::RemoveMessageHandler(IApplicationMessageHandler* pHandler)
     {
+        const uint32 count = uint32(m_MessageHandlers.size());
+		for (uint32 i = 0; i < count; i++)
+		{
+			if (pHandler == m_MessageHandlers[i])
+			{
+                //A handler must be unique since we check for it when adding a handler, therefore we can break here
+				m_MessageHandlers.erase(m_MessageHandlers.begin() + i);
+				break;
+			}
+		}
     }
 
     void MacApplication::ProcessBufferedMessages()
     {
+        for (MacMessage& message : m_BufferedMessages)
+        {
+            for (IApplicationMessageHandler* pHandler : m_MessageHandlers)
+            {
+                pHandler->HandleEvent(message.event);
+            }
+        }
     }
 
     Window* MacApplication::GetWindow()
@@ -61,7 +91,10 @@ namespace LambdaEngine
 
     InputDevice* MacApplication::CreateInputDevice()
     {
-        return nullptr;
+        MacInputDevice* pInputDevice = new MacInputDevice();
+        s_Application.AddMessageHandler(pInputDevice);
+
+        return pInputDevice;
     }
 
     bool MacApplication::PreInit()
@@ -91,7 +124,10 @@ namespace LambdaEngine
 
     bool MacApplication::Tick()
     {
-        return ProcessMessages();
+        bool shouldExit = ProcessMessages();
+        s_Application.ProcessBufferedMessages();
+
+        return shouldExit;
     }
 
     bool MacApplication::ProcessMessages()
@@ -107,6 +143,9 @@ namespace LambdaEngine
                     break;
                 }
                 
+                //Buffer event before sending it to the rest of the system
+                s_Application.BufferEvent(event);
+
                 [NSApp sendEvent:event];
                 [NSApp updateWindows];
                 
@@ -118,6 +157,14 @@ namespace LambdaEngine
         }
         
         return true;
+    }
+
+    void MacApplication::BufferEvent(NSEvent* event)
+    {
+        MacMessage message = { };
+        message.event = event;
+
+        m_BufferedMessages.push_back(message);
     }
 
     bool MacApplication::PostRelease()

@@ -12,7 +12,7 @@ namespace LambdaEngine
 		s_pInputDevice = PlatformApplication::CreateInputDevice();
 
         //TODO: Implement on macOS and check if nullptr
-        return true;//s_pInputDevice != nullptr;
+        return s_pInputDevice != nullptr;
 	}
 
 	void Input::Release()
