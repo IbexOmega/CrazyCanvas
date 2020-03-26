@@ -15,7 +15,8 @@ namespace LambdaEngine
 		Win32Application();
 		~Win32Application() = default;
 
-		virtual void AddMessageHandler(IApplicationMessageHandler* pListener) override;
+		virtual void AddMessageHandler(IApplicationMessageHandler* pHandler) 	override;
+		virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) override;
         
         virtual Window*         GetWindow()         override;
         virtual const Window*   GetWindow() const   override;
