@@ -5,6 +5,7 @@ namespace LambdaEngine
 {
     class Window;
     class IApplicationMessageHandler;
+	class IInputDevice;
 
 	class Application
 	{
@@ -24,9 +25,11 @@ namespace LambdaEngine
 		static bool PostRelease() 	{ return true; }
 		
 		static bool Tick() { return false; }
+
+		static IInputDevice* CreateInputDevice() { return nullptr; }
         
         static void Terminate() {}
-        
+
         static Application* Get() { return nullptr; }
 	};
 }

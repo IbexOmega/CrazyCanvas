@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "Platform/Win32/Win32Application.h"
+#include "Platform/Win32/Win32InputDevice.h"
 
 namespace LambdaEngine
 {
@@ -17,20 +18,21 @@ namespace LambdaEngine
 		return &m_Window;
 	}
 
-	const Window* Win32Application::Getwindow() const
+	const Window* Win32Application::GetWindow() const
 	{
 		return &m_Window;
 	}
 
-	void Win32Application::Create(HINSTANCE hInstance)
+	bool Win32Application::Create(HINSTANCE hInstance)
 	{
 		m_hInstance = hInstance;
-		if (!s_Window.Init(800, 600))
+		if (!m_Window.Init(800, 600))
 		{
 			return false;
 		}
 
-		s_Window.Show();
+		m_Window.Show();
+		return true;
 	}
 
 	void Win32Application::Destroy()
@@ -66,7 +68,7 @@ namespace LambdaEngine
 	
 	bool Win32Application::PostRelease()
 	{
-		if (!::UnregisterClass(WINDOW_CLASS, s_hInstance))
+		if (!::UnregisterClass(WINDOW_CLASS, GetInstanceHandle()))
 		{
 			//TODO: Log this
 			return false;
@@ -90,6 +92,13 @@ namespace LambdaEngine
 		}
 
 		return true;
+	}
+
+	IInputDevice* Win32Application::CreateInputDevice()
+	{
+		Win32InputDevice* pInputDevice = new Win32InputDevice();
+		s_Application.AddMessageHandler(pInputDevice);
+		return pInputDevice;
 	}
 
 	LRESULT Win32Application::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

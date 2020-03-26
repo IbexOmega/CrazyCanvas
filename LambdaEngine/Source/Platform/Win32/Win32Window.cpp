@@ -5,7 +5,7 @@
 namespace LambdaEngine
 {
 	Win32Window::Win32Window()
-		: hWnd(0)
+		: m_hWnd(0)
 	{
 	}
 
@@ -17,8 +17,8 @@ namespace LambdaEngine
 
 		INT nWidth	= clientRect.right - clientRect.left;
 		INT nHeight = clientRect.bottom - clientRect.top;
-		hWnd = ::CreateWindowEx(0, WINDOW_CLASS, L"Lambda Game Engine", dwStyle, CW_USEDEFAULT, CW_USEDEFAULT, nWidth, nHeight, NULL, NULL, Win32Application::GetInstanceHandle(), NULL);
-		if (hWnd == NULL)
+		m_hWnd = ::CreateWindowEx(0, WINDOW_CLASS, L"Lambda Game Engine", dwStyle, CW_USEDEFAULT, CW_USEDEFAULT, nWidth, nHeight, NULL, NULL, Win32Application::GetInstanceHandle(), NULL);
+		if (m_hWnd == NULL)
 		{
 			//TODO: Log this
 			return false;
@@ -29,12 +29,12 @@ namespace LambdaEngine
 
 	void Win32Window::Show()
 	{
-		::ShowWindow(hWnd, SW_NORMAL);
+		::ShowWindow(m_hWnd, SW_NORMAL);
 	}
 
 	void Win32Window::Release()
 	{
-		::DestroyWindow(hWnd);
+		::DestroyWindow(m_hWnd);
 	}
 }
 

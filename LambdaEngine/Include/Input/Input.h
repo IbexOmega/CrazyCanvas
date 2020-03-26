@@ -9,6 +9,9 @@ namespace LambdaEngine
 	public:
 		DECL_STATIC_CLASS(Input);
 
+		static bool Init();
+		static void Release();
+
 		static void Update();
 
 	private:

@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef LAMBDA_PLATFORM_WINDOWS
 #include "Platform/Common/IInputDevice.h"
 
 namespace LambdaEngine
@@ -20,3 +21,4 @@ namespace LambdaEngine
 		MouseState m_MouseState;
 	};
 }
+#endif

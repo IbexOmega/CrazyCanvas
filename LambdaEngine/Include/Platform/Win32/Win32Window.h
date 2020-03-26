@@ -3,13 +3,14 @@
 #ifdef LAMBDA_PLATFORM_WINDOWS
 #include "LambdaEngine.h"
 
+#include "Platform/Common/Window.h"
 #include "Windows.h"
 
 #define WINDOW_CLASS L"MainWindowClass"
 
 namespace LambdaEngine
 {
-	class LAMBDA_API Win32Window
+	class LAMBDA_API Win32Window : public Window
 	{
 	public:
 		Win32Window();
@@ -18,11 +19,15 @@ namespace LambdaEngine
 		DECL_REMOVE_COPY(Win32Window);
 		DECL_REMOVE_MOVE(Win32Window);
 
-		bool Init(uint32 width, uint32 height);
-		void Show();
-		void Release();
+		virtual bool Init(uint32 width, uint32 height) override;
+		virtual void Release() override;
 
-		HWND hWnd;
+		virtual void Show() override;
+
+		virtual void* GetHandle() const { return (void*)m_hWnd; }
+
+	private:
+		HWND m_hWnd;
 	};
 }
 
