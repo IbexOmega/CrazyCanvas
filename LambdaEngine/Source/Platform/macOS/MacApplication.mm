@@ -57,6 +57,11 @@ namespace LambdaEngine
         s_Application.m_IsTerminating = true;
     }
 
+    IInputDevice* MacApplication::CreateInputDevice()
+    {
+        return nullptr;
+    }
+
     bool MacApplication::PreInit()
     {
         [NSApplication sharedApplication];

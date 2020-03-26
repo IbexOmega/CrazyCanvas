@@ -26,6 +26,8 @@ namespace LambdaEngine
         
         static void Print(const char* pFormat, ...);
         static void PrintLine(const char* pFormat, ...);
+        static void VPrint(const char* pFormat, va_list args);
+        static void VPrintLine(const char* pFormat, va_list args);
         
         static void Clear();
 

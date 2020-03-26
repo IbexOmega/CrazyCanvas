@@ -26,32 +26,44 @@ namespace LambdaEngine
 
 	void Win32Console::Print(const char* pMessage, ...)
 	{
+		va_list args;
+		va_start(args, pMessage);
+
+		VPrint(pMessage, args);
+
+		va_end(args);
+	}
+
+	void Win32Console::PrintLine(const char* pMessage, ...)
+	{
+		va_list args;
+		va_start(args, pMessage);
+
+		VPrintLine(pMessage, args);
+
+		va_end(args);
+	}
+
+	void Win32Console::VPrint(const char* pMessage, va_list args)
+	{
 		constexpr uint32 BUFFER_SIZE = 1024;
 		static char buffer[BUFFER_SIZE];
 		ZERO_MEMORY(buffer, BUFFER_SIZE);
 
-		va_list args;
-		va_start(args, pMessage);
 		int numChars = vsprintf_s(buffer, BUFFER_SIZE, pMessage, args);
-		va_end(args);
-
 		if (numChars > 0)
 		{
 			WriteConsoleA(s_OutputHandle, buffer, numChars, 0, NULL);
 		}
 	}
 
-	void Win32Console::PrintLine(const char* pMessage, ...)
+	void Win32Console::VPrintLine(const char* pMessage, va_list args)
 	{
 		constexpr uint32 BUFFER_SIZE = 1024;
 		static char buffer[BUFFER_SIZE];
 		ZERO_MEMORY(buffer, BUFFER_SIZE);
 
-		va_list args;
-		va_start(args, pMessage);
 		int numChars = vsprintf_s(buffer, BUFFER_SIZE - 1, pMessage, args);
-		va_end(args);
-
 		if (numChars > 0)
 		{
 			buffer[numChars] = '\n';

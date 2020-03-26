@@ -13,7 +13,9 @@ namespace LambdaEngine
 		static void Close();
 
 		static void Print(const char*, ...);
-		static void PrintLine(const char*, ...);
+		static void PrintLine(const char* pFormat, ...);
+        static void VPrint(const char* pFormat, va_list args);
+        static void VPrintLine(const char* pFormat, va_list args);
 
 		static void Clear();
 
@@ -21,7 +23,6 @@ namespace LambdaEngine
 
 	private:
 		static HANDLE s_OutputHandle;
-
 	};
 
 	typedef Win32Console PlatformConsole;
