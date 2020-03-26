@@ -4,13 +4,30 @@
 #include "Platform/Common/Application.h"
 
 #include "MacWindow.h"
-#include "MacAppController.h"
+
+#ifdef __OBJC__
+
+@class NSEvent;
+@class NSWindow;
+@class NSNotification;
+@class MacAppController;
+
+#else
+
+class NSEvent;
+class NSWindow;
+class NSNotification;
+class MacAppController;
+
+#endif
 
 namespace LambdaEngine
 {
     struct MacMessage
     {
-        
+        NSEvent*        event           = nullptr;
+        NSNotification* notification    = nullptr;
+        NSWindow*       window          = nullptr;
     };
 
     class MacApplication : public Application

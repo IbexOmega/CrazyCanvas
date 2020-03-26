@@ -3,12 +3,16 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #include "Platform/Common/Window.h"
 
-#include "MacWindowDelegate.h"
-
 #ifdef __OBJC__
-    #include <Appkit/Appkit.h>
+
+@class NSWindow;
+@class MacWindowDelegate;
+
 #else
-    class NSWindow;
+
+class NSWindow;
+class MacWindowDelegate;
+
 #endif
 
 namespace LambdaEngine

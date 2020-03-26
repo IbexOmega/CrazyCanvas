@@ -3,6 +3,8 @@
 #include "Platform/macOS/MacAppController.h"
 #include "Platform/macOS/MacWindowDelegate.h"
 
+#include <Appkit/Appkit.h>
+
 namespace LambdaEngine
 {
     MacApplication MacApplication::s_Application = MacApplication();

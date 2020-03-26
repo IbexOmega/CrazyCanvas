@@ -1,5 +1,8 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #include "Platform/macOS/MacWindow.h"
+#include "Platform/macOS/MacWindowDelegate.h"
+
+#include <AppKit/AppKit.h>
 
 namespace LambdaEngine
 {
