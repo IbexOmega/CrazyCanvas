@@ -26,16 +26,20 @@ namespace LambdaEngine
 		virtual void AddMessageHandler(IApplicationMessageHandler* pHandler) 	override;
 		virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) override;
         
+		virtual void ProcessBufferedMessages() override;
+
         virtual Window*         GetWindow()         override;
         virtual const Window*   GetWindow() const   override;
 
 		bool Create();
+		void BufferMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 		void Destroy();
 
 		static bool PreInit(HINSTANCE hInstance);
 		static bool PostRelease();
 
 		static bool Tick();
+		static bool ProcessMessages();
 
 		static FORCEINLINE void Terminate()
 		{
@@ -59,8 +63,8 @@ namespace LambdaEngine
 		Win32Window m_Window;
 		HINSTANCE	m_hInstance = 0;
 		
-		std::vector<Win32Message> m_BufferedMessages;
-		std::vector<IApplicationMessageHandler*> m_MessageHandlers;
+		std::vector<Win32Message> 					m_BufferedMessages;
+		std::vector<IApplicationMessageHandler*> 	m_MessageHandlers;
 
 		static Win32Application	s_Application;
 	};

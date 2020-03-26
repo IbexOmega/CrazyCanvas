@@ -17,6 +17,8 @@ namespace LambdaEngine
         virtual void AddMessageHandler(IApplicationMessageHandler* pHandler)    override;
         virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) override;
         
+        virtual void ProcessBufferedMessages() override; 
+
         virtual Window*         GetWindow()         override;
         virtual const Window*   GetWindow() const   override;
         
@@ -27,6 +29,7 @@ namespace LambdaEngine
         static bool PostRelease();
         
         static bool Tick();
+        static bool ProcessMessages();
         
         static void Terminate();
         

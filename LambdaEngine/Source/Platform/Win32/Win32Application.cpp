@@ -101,7 +101,28 @@ namespace LambdaEngine
 	
 	bool Win32Application::Tick()
 	{
-		MSG msg = {};
+		bool result = ProcessMessages();
+
+		s_Application.ProcessBufferedMessages();
+
+		return result;
+	}
+
+	void Win32Application::ProcessBufferedMessages()
+	{
+		for (Win32Message& message : m_BufferedMessages)
+		{
+			std::vector<IApplicationMessageHandler*>& handlers = s_Application.m_MessageHandlers;
+			for (IApplicationMessageHandler* pHandler : handlers)
+			{
+				pHandler->MessageProc(hWnd, uMessage, wParam, lParam);
+			}
+		}
+	}
+
+	bool Win32Application::ProcessMessages()
+	{
+		MSG msg = { };
 		while (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			::TranslateMessage(&msg);
@@ -116,20 +137,20 @@ namespace LambdaEngine
 		return true;
 	}
 
-	LRESULT Win32Application::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+	LRESULT Win32Application::WindowProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
-		if (uMsg == WM_DESTROY)
+		if (uMessage == WM_DESTROY)
 		{
 			Terminate();
 		}
 
-		std::vector<IApplicationMessageHandler*>& handlers = s_Application.m_MessageHandlers;
-		for (IApplicationMessageHandler* pHandler : handlers)
-		{
-			pHandler->MessageProc(hWnd, uMsg, wParam, lParam);
-		}
+		s_Application.BufferMessage(hWnd, uMessage);
+		return ::DefWindowProc(hWnd, uMessage, wParam, lParam);
+	}
 
-		return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+	void Win32Application::BufferMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
+	{
+		m_BufferedMessages.emplace_back({ hWnd, uMessage, wParam, lParam });
 	}
 }
 

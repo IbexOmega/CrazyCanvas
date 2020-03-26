@@ -43,7 +43,7 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(IInputDevice);
 
-		virtual KeyboardState GetKeyboardState() = 0;
-		virtual MouseState GetMouseState() = 0;
+		virtual KeyboardState   GetKeyboardState()  = 0;
+		virtual MouseState      GetMouseState()     = 0;
 	};
 }

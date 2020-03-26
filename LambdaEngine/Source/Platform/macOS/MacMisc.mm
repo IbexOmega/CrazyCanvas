@@ -27,7 +27,9 @@ namespace LambdaEngine
         
         va_list args;
         va_start(args, pFormat);
+        
         NSLogv(format, args);
+        
         va_end(args);
     }
 }

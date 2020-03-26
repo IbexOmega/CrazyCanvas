@@ -9,8 +9,6 @@
 - (void) windowWillClose:(NSNotification* ) notification
 {
     using namespace LambdaEngine;
-    
-    PlatformMisc::OutputDebugString("Window Will Close");
     MacApplication::Terminate();
 }
 

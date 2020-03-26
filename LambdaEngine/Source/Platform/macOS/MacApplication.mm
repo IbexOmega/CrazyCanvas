@@ -7,7 +7,15 @@ namespace LambdaEngine
 {
     MacApplication MacApplication::s_Application = MacApplication();
 
-    void MacApplication::AddMessageListner(IApplicationMessageHandler* pHandler)
+    void MacApplication::AddMessageHandler(IApplicationMessageHandler* pHandler)
+    {
+    }
+
+    void MacApplication::RemoveMessageHandler(IApplicationMessageHandler* pHandler)
+    {
+    }
+
+    void MacApplication::ProcessBufferedMessages()
     {
     }
 
@@ -75,6 +83,11 @@ namespace LambdaEngine
     }
 
     bool MacApplication::Tick()
+    {
+        return ProcessMessages();
+    }
+
+    bool MacApplication::ProcessMessages()
     {
         @autoreleasepool
         {
