@@ -1,3 +1,4 @@
+#ifdef LAMBDA_PLATFORM_WINDOWS
 #include "Platform/Win32/Win32InputDevice.h"
 #include <windowsx.h>
 
@@ -79,7 +80,8 @@ namespace LambdaEngine
 			break;
 		}
 
-		PlatformConsole::PrintLine("Input!");
+		
 		return 0;
 	}
 }
+#endif

@@ -4,6 +4,8 @@
 #include "Platform/PlatformMisc.h"
 #include "Platform/PlatformConsole.h"
 
+#include "Input/Input.h"
+
 #include <iostream>
 
 namespace LambdaEngine
@@ -71,11 +73,18 @@ namespace LambdaEngine
 	
 	bool EngineLoop::Init()
 	{
+		if (!Input::Init())
+		{
+			return false;
+		}
+
 		return true;
 	}
 	
 	bool EngineLoop::Release()
 	{
+		Input::Release();
+
 		return true;
 	}
 	

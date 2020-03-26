@@ -20,7 +20,7 @@ namespace LambdaEngine
 	class LAMBDA_API Win32Application : public Application
 	{
 	public:
-		Win32Application();
+		Win32Application() = default;
 		~Win32Application() = default;
 
 		virtual void AddMessageHandler(IApplicationMessageHandler* pHandler) 	override;
@@ -31,8 +31,9 @@ namespace LambdaEngine
         virtual Window*         GetWindow()         override;
         virtual const Window*   GetWindow() const   override;
 
-		bool Create();
 		void BufferMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
+
+		bool Create(HINSTANCE hInstance);
 		void Destroy();
 
 		static bool PreInit(HINSTANCE hInstance);
@@ -40,6 +41,8 @@ namespace LambdaEngine
 
 		static bool Tick();
 		static bool ProcessMessages();
+
+		static IInputDevice* CreateInputDevice();
 
 		static FORCEINLINE void Terminate()
 		{
