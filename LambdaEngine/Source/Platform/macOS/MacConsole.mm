@@ -133,28 +133,38 @@ namespace LambdaEngine
     
     void MacConsole::Print(const char* pFormat, ...)
     {
-        if (s_Console.m_pTextView != nil)
-        {
-            va_list args;
-            va_start(args, pFormat);
-            
-            s_Console.PrintV(pFormat, args);
-            
-            va_end(args);
-        }
+        va_list args;
+        va_start(args, pFormat);
+        
+        VPrint(pFormat, args);
+        
+        va_end(args);
     }
     
     void MacConsole::PrintLine(const char* pFormat, ...)
     {
+        va_list args;
+        va_start(args, pFormat);
+            
+        VPrintLine(pFormat, args);
+            
+        va_end(args);
+    }
+
+    void MacConsole::VPrint(const char* pFormat, va_list args)
+    {
         if (s_Console.m_pTextView != nil)
         {
-            va_list args;
-            va_start(args, pFormat);
-            
+            s_Console.PrintV(pFormat, args);
+        }
+    }
+
+    void MacConsole::VPrintLine(const char* pFormat, va_list args)
+    {
+        if (s_Console.m_pTextView != nil)
+        {
             s_Console.PrintV(pFormat, args);
             s_Console.NewLine();
-            
-            va_end(args);
         }
     }
     

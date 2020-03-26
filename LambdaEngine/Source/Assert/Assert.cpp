@@ -1,8 +1,12 @@
 #include "Assert/Assert.h"
 
 #include "Platform/PlatformMisc.h"
+#include "Platform/PlatformConsole.h"
 
 void Assert()
 {
-	LambdaEngine::PlatformMisc::MessageBox("ERROR", "Assertion Failed");
+    using namespace LambdaEngine;
+    
+    PlatformConsole::PrintLine("ERROR: Assertion Failed");
+	PlatformMisc::MessageBox("ERROR", "Assertion Failed");
 }

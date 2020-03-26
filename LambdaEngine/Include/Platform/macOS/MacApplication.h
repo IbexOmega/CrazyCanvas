@@ -8,6 +8,8 @@
 
 namespace LambdaEngine
 {
+    class IInputDevice;
+
     class MacApplication : public Application
     {
     public:
@@ -32,6 +34,8 @@ namespace LambdaEngine
         static bool ProcessMessages();
         
         static void Terminate();
+        
+        static IInputDevice* CreateInputDevice();
         
         FORCEINLINE static Application* Get()
         {

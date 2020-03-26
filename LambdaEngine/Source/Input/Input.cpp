@@ -11,7 +11,8 @@ namespace LambdaEngine
 	{
 		s_pInputDevice = PlatformApplication::CreateInputDevice();
 
-		return s_pInputDevice != nullptr;
+        //TODO: Implement on macOS and check if nullptr
+        return true;//s_pInputDevice != nullptr;
 	}
 
 	void Input::Release()
@@ -21,8 +22,8 @@ namespace LambdaEngine
 
 	void Input::Update()
 	{
-		KeyboardState newKeyboardState = s_pInputDevice->GetKeyboardState();
-		MouseState newMouseState = s_pInputDevice->GetMouseState();
+		KeyboardState   newKeyboardState = s_pInputDevice->GetKeyboardState();
+		MouseState      newMouseState = s_pInputDevice->GetMouseState();
 	}
 
 	void Input::AddKeyboardHandler(IKeyboardHandler* pHandler)

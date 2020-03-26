@@ -1,17 +1,21 @@
 #include "Engine/EngineLoop.h"
 
+#include "Log/Log.h"
+
 #include "Platform/PlatformTime.h"
 #include "Platform/PlatformMisc.h"
 #include "Platform/PlatformConsole.h"
 
 #include "Input/Input.h"
 
-#include <iostream>
-
 namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
+        LOG_MESSAGE("Hello World %d", 5);
+        LOG_WARNING("Hello World %d", 5);
+        LOG_ERROR("Hello World %d", 5);
+        
 		bool IsRunning = true;
 		while (IsRunning)
 		{
@@ -46,30 +50,9 @@ namespace LambdaEngine
 		}
 		
 		PlatformTime::PreInit();
-
+        
         PlatformConsole::Show();
-        PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
-        PlatformConsole::SetColor(EConsoleColor::COLOR_YELLOW);
-        PlatformConsole::Print("Bla bla %s %d", "TestString", 5);
-        PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
-        PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
-        PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
-        PlatformConsole::SetColor(EConsoleColor::COLOR_GREEN);
-        PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
-        PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
-        PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
-        
-        PlatformConsole::Clear();
-        //PlatformConsole::Close();
-
-		PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
-		PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
-		PlatformConsole::SetColor(EConsoleColor::COLOR_GREEN);
-		PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
-		PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
-		PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
-        
-		return true;
+        return true;
 	}
 	
 	bool EngineLoop::Init()
@@ -96,6 +79,7 @@ namespace LambdaEngine
 			return false;
 		}
 
+        PlatformConsole::Close();
 		return true;
 	}
 }

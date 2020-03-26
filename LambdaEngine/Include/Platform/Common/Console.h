@@ -1,6 +1,8 @@
 #pragma once
 #include "LambdaEngine.h"
 
+#include <stdarg.h>
+
 namespace LambdaEngine
 {
     enum class EConsoleColor : uint8
@@ -25,6 +27,8 @@ namespace LambdaEngine
         
         static void Print(const char*, ...)     { }
         static void PrintLine(const char*, ...) { }
+        static void VPrint(const char*, va_list) { }
+        static void VPrintLine(const char*, va_list) { }
         
         static void Clear() { }
         
