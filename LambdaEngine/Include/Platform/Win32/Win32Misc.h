@@ -7,6 +7,10 @@
 	#undef MessageBox
 #endif
 
+#ifdef OutputDebugString
+	#undef OutputDebugString
+#endif
+
 namespace LambdaEngine
 {
 	class LAMBDA_API Win32Misc : public Misc
@@ -15,6 +19,7 @@ namespace LambdaEngine
 		DECL_STATIC_CLASS(Win32Misc);
 
 		static void MessageBox(const char* pCaption, const char* pText);
+		static void OutputDebugString(const char*, ...);
 	};
 
 	typedef Win32Misc PlatformMisc;

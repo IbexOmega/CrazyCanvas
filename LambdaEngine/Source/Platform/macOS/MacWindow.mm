@@ -3,13 +3,6 @@
 
 namespace LambdaEngine
 {
-    MacWindow::MacWindow()
-        : Window(),
-        m_pWindow(nullptr),
-        m_pDelegate(nullptr)
-    {
-    }
-
     bool MacWindow::Init(uint32 width, uint32 height)
     {
         NSUInteger  windowStyle = NSWindowStyleMaskTitled  | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;

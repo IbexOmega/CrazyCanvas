@@ -1,6 +1,9 @@
 #include "Engine/EngineLoop.h"
 
-extern LambdaEngine::Game* CreateGame();
+namespace LambdaEngine
+{
+    extern Game* CreateGame();
+}
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)

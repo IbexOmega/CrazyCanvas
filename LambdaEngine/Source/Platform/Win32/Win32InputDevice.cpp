@@ -55,11 +55,10 @@ namespace LambdaEngine
 			break;
 
 		case WM_MOUSEWHEEL:
-			OnMouseScrolled(GET_WHEEL_DELTA_WPARAM(wParam) / 120);
+			OnMouseScrolled(GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
 			break;
 		}
 
-		
 		return 0;
 	}
 }

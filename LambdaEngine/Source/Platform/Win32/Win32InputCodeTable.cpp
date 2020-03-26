@@ -4,8 +4,8 @@
 
 namespace LambdaEngine
 {
-	EKey Win32InputCodeTable::s_KeyCodeTable[EKey::KEY_COUNT];
-	EMouseButton Win32InputCodeTable::s_MouseButtonCodeTable[EMouseButton::MOUSE_BUTTON_COUNT];
+	EKey 			Win32InputCodeTable::s_KeyCodeTable[EKey::KEY_COUNT];
+	EMouseButton 	Win32InputCodeTable::s_MouseButtonCodeTable[EMouseButton::MOUSE_BUTTON_COUNT];
 
 	bool Win32InputCodeTable::Init()
 	{

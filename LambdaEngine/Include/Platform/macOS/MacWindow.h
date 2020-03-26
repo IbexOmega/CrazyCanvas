@@ -16,8 +16,8 @@ namespace LambdaEngine
     class MacWindow : public Window
     {
     public:
-        MacWindow();
-        ~MacWindow() = default;
+        MacWindow()     = default;
+        ~MacWindow()    = default;
 
         DECL_REMOVE_COPY(MacWindow);
         DECL_REMOVE_MOVE(MacWindow);
@@ -33,8 +33,8 @@ namespace LambdaEngine
         }
         
     private:
-        NSWindow*           m_pWindow;
-        MacWindowDelegate*  m_pDelegate;
+        NSWindow*           m_pWindow   = nullptr;
+        MacWindowDelegate*  m_pDelegate = nullptr;
     };
 }
 

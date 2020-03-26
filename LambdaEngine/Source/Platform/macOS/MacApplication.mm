@@ -57,7 +57,7 @@ namespace LambdaEngine
         s_Application.m_IsTerminating = true;
     }
 
-    IInputDevice* MacApplication::CreateInputDevice()
+    InputDevice* MacApplication::CreateInputDevice()
     {
         return nullptr;
     }

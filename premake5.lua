@@ -203,7 +203,8 @@ workspace "LambdaEngine"
 		--Includes
 		includedirs
 		{
-			"LambdaEngine/Include",
+            "LambdaEngine/Include",
+            "%{prj.name}/Include",
         }
         
         -- Files

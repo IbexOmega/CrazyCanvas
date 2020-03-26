@@ -25,10 +25,10 @@ namespace LambdaEngine
         static void Show()  { }
         static void Close() { }
         
-        static void Print(const char*, ...)     { }
-        static void PrintLine(const char*, ...) { }
-        static void VPrint(const char*, va_list) { }
-        static void VPrintLine(const char*, va_list) { }
+        static void Print(const char*, ...)             { }
+        static void PrintLine(const char*, ...)         { }
+        static void VPrint(const char*, va_list)        { }
+        static void VPrintLine(const char*, va_list)    { }
         
         static void Clear() { }
         

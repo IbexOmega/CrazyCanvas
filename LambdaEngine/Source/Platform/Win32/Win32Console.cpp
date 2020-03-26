@@ -1,5 +1,4 @@
 #ifdef LAMBDA_PLATFORM_WINDOWS
-
 #include <stdio.h>
 #include <stdarg.h>
 

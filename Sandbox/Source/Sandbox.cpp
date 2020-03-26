@@ -1,4 +1,4 @@
-#include "..\Include\Sandbox.h"
+#include "Sandbox.h"
 
 #include "Platform/PlatformConsole.h"
 #include "Input/Input.h"
@@ -28,8 +28,6 @@ void Sandbox::OnKeyUp(LambdaEngine::EKey key)
 void Sandbox::OnMouseMove(int32 x, int32 y)
 {
 	using namespace LambdaEngine;
-
-	//Console::PrintLine();
 }
 
 void Sandbox::OnButtonPressed(LambdaEngine::EMouseButton button)
@@ -55,13 +53,16 @@ void Sandbox::OnScroll(int32 delta)
 
 void Sandbox::Tick()
 {
-
 }
 
-LambdaEngine::Game* CreateGame()
+namespace LambdaEngine
 {
-	Sandbox* pSandbox = new Sandbox();
-	LambdaEngine::Input::AddKeyboardHandler(pSandbox);
-	LambdaEngine::Input::AddMouseHandler(pSandbox);
-	return pSandbox;
+    Game* CreateGame()
+    {
+        Sandbox* pSandbox = new Sandbox();
+        Input::AddKeyboardHandler(pSandbox);
+        Input::AddMouseHandler(pSandbox);
+        
+        return pSandbox;
+    }
 }
