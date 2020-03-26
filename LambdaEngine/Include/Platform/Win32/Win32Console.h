@@ -6,7 +6,7 @@
 
 namespace LambdaEngine
 {
-	class Win32Console : public Console
+	class LAMBDA_API Win32Console : public Console
 	{
 	public:
 		static void Show();
