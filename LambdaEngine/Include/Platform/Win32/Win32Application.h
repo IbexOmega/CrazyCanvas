@@ -42,7 +42,7 @@ namespace LambdaEngine
 		static bool Tick();
 		static bool ProcessMessages();
 
-		static IInputDevice* CreateInputDevice();
+		static InputDevice* CreateInputDevice();
 
 		static FORCEINLINE void Terminate()
 		{

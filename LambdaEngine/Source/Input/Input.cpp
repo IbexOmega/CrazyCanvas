@@ -3,7 +3,7 @@
 
 namespace LambdaEngine
 {
-	IInputDevice*   Input::s_pInputDevice = nullptr;
+	InputDevice*   Input::s_pInputDevice = nullptr;
 	KeyboardState   Input::s_KeyboardState;
 	MouseState      Input::s_MouseState;
 
@@ -23,5 +23,15 @@ namespace LambdaEngine
 	{
 		KeyboardState newKeyboardState = s_pInputDevice->GetKeyboardState();
 		MouseState newMouseState = s_pInputDevice->GetMouseState();
+	}
+
+	void Input::AddKeyboardHandler(IKeyboardHandler* pHandler)
+	{
+		s_pInputDevice->AddKeyboardHandler(pHandler);
+	}
+
+	void Input::AddMouseHandler(IMouseHandler* pHandler)
+	{
+		s_pInputDevice->AddMouseHandler(pHandler);
 	}
 }

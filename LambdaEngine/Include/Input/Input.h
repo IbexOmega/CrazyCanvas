@@ -1,9 +1,12 @@
 #pragma once
 
-#include "Platform/Common/IInputDevice.h"
+#include "Platform/Common/InputDevice.h"
 
 namespace LambdaEngine
 {
+	class IKeyboardHandler;
+	class IMouseHandler;
+
 	class LAMBDA_API Input
 	{
 	public:
@@ -14,8 +17,11 @@ namespace LambdaEngine
 
 		static void Update();
 
+		static void AddKeyboardHandler(IKeyboardHandler* pHandler);
+		static void AddMouseHandler(IMouseHandler* pHandler);
+
 	private:
-		static IInputDevice* s_pInputDevice;
+		static InputDevice* s_pInputDevice;
 
 		static KeyboardState s_KeyboardState;
 		static MouseState s_MouseState;

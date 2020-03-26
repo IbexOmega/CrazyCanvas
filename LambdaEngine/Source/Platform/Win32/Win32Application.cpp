@@ -3,6 +3,7 @@
 
 #include "Platform/Win32/Win32Application.h"
 #include "Platform/Win32/Win32InputDevice.h"
+#include "Platform/Win32/Win32InputCodeTable.h"
 
 namespace LambdaEngine
 {
@@ -82,12 +83,12 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!s_Application.Create(hInstance))
+		if (!Win32InputCodeTable::Init())
 		{
 			return false;
 		}
 
-		return true;
+		return s_Application.Create(hInstance);
 	}
 	
 	bool Win32Application::PostRelease()
@@ -117,9 +118,11 @@ namespace LambdaEngine
 			std::vector<IApplicationMessageHandler*>& handlers = s_Application.m_MessageHandlers;
 			for (IApplicationMessageHandler* pHandler : handlers)
 			{
-				pHandler->MessageProc(hWnd, uMessage, wParam, lParam);
+				pHandler->MessageProc(message.hWnd, message.uMessage, message.wParam, message.lParam);
 			}
 		}
+
+		m_BufferedMessages.clear();
 	}
 
 	bool Win32Application::ProcessMessages()
@@ -139,7 +142,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	IInputDevice* Win32Application::CreateInputDevice()
+	InputDevice* Win32Application::CreateInputDevice()
 	{
 		Win32InputDevice* pInputDevice = new Win32InputDevice();
 		s_Application.AddMessageHandler(pInputDevice);
@@ -147,20 +150,20 @@ namespace LambdaEngine
 		return pInputDevice;
 	}
 
-	LRESULT Win32Application::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+	LRESULT Win32Application::WindowProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
 		if (uMessage == WM_DESTROY)
 		{
 			Terminate();
 		}
 
-		s_Application.BufferMessage(hWnd, uMessage);
+		s_Application.BufferMessage(hWnd, uMessage, wParam, lParam);
 		return ::DefWindowProc(hWnd, uMessage, wParam, lParam);
 	}
 
 	void Win32Application::BufferMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
-		m_BufferedMessages.emplace_back({ hWnd, uMessage, wParam, lParam });
+		m_BufferedMessages.push_back({ hWnd, uMessage, wParam, lParam });
 	}
 }
 

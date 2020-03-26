@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstring>
+
 // Exporting
 #if defined(LAMBDA_PLATFORM_WINDOWS) && defined(LAMBDA_SHARED_LIB) 
 	#ifdef LAMBDA_EXPORT	
@@ -29,11 +31,13 @@
 	Typename() = delete; \
 	~Typename() = delete
 
-#define DECL_INTERFACE(Typename) \
+#define DECL_ABSTRACT_CLASS(Typename) \
 	DECL_REMOVE_COPY(Typename); \
 	DECL_REMOVE_MOVE(Typename); \
 	Typename() = default; \
 	virtual ~Typename() = default
+
+#define DECL_INTERFACE(Typename) DECL_ABSTRACT_CLASS(Typename)
 
 //Helper macros
 #define ZERO_MEMORY(memory, size) memset(memory, 0, size)

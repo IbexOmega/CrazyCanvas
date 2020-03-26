@@ -4,6 +4,8 @@
 
 #include "Platform/Common/Console.h"
 
+#include "Platform/Win32/Windows.h"
+
 namespace LambdaEngine
 {
 	class LAMBDA_API Win32Console : public Console

@@ -1,5 +1,7 @@
 #include "Engine/EngineLoop.h"
 
+extern LambdaEngine::Game* CreateGame();
+
 #ifdef LAMBDA_PLATFORM_WINDOWS
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)
 #else
@@ -22,7 +24,10 @@ int main(int, const char*[])
 		return -1;
 	}
 
-	EngineLoop::Run();
+	LambdaEngine::Game* pGame = CreateGame();
+	EngineLoop::Run(pGame);
+
+	SAFEDELETE(pGame);
 
 	if (!EngineLoop::Release())
 	{

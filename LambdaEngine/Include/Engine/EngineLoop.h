@@ -1,6 +1,8 @@
 #pragma once
 #include "LambdaEngine.h"
 
+#include "Game/Game.h"
+
 #include "Platform/PlatformApplication.h"
 
 namespace LambdaEngine
@@ -16,7 +18,7 @@ namespace LambdaEngine
 		static bool PreInit();
 #endif
 		static bool Init();
-		static void Run();
+		static void Run(Game* pGame);
 		static bool Release();
 		static bool PostRelease();
 

@@ -6,7 +6,7 @@ namespace LambdaEngine
 {
 	enum EKey : int16
 	{
-		KEY_UNKNOWN = -1,
+		KEY_UNKNOWN = 0,
 
 		/* Printable keys */
 		KEY_SPACE = 32,
@@ -138,6 +138,8 @@ namespace LambdaEngine
 
 	enum EMouseButton : int8
 	{
+		MOUSE_BUTTON_UNKNOWN = 0,
+
 		MOUSE_BUTTON_LEFT = 0,
 		MOUSE_BUTTON_MIDDLE = 1,
 		MOUSE_BUTTON_RIGHT = 2,

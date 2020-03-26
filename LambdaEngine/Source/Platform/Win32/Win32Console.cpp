@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "Platform/Win32/Windows.h"
 #include "Platform/Win32/Win32Console.h"
 
 namespace LambdaEngine

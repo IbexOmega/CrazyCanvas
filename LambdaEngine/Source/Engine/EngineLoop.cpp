@@ -10,12 +10,13 @@
 
 namespace LambdaEngine
 {
-	void EngineLoop::Run()
+	void EngineLoop::Run(Game* pGame)
 	{
 		bool IsRunning = true;
 		while (IsRunning)
 		{
 			IsRunning = Tick();
+			pGame->Tick();
         }
     }
 
