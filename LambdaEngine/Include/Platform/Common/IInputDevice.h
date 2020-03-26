@@ -1,19 +1,21 @@
 #pragma once
 
+#include "Input/InputCodes.h"
+
 #include "IApplicationMessageHandler.h"
 
 namespace LambdaEngine
 {
 	struct KeyboardState
 	{
-		bool KeyStates[256];
+		bool KeyStates[EKey::KEY_LAST];
 
-		bool IsKeyDown(uint32 key)
+		bool IsKeyDown(EKey key)
 		{
 			return KeyStates[key];
 		}
 
-		bool IsKeyUp(uint32 key)
+		bool IsKeyUp(EKey key)
 		{
 			return !KeyStates[key];
 		}
@@ -25,14 +27,14 @@ namespace LambdaEngine
 		int32 Y;
 		int32 Scroll;
 
-		bool ButtonStates[5];
+		bool ButtonStates[EMouseButton::MOUSE_BUTTON_COUNT];
 
-		bool IsButtonPressed(uint32 button)
+		bool IsButtonPressed(EMouseButton button)
 		{
 			return ButtonStates[button];
 		}
 
-		bool IsButtonReleased(uint32 button)
+		bool IsButtonReleased(EMouseButton button)
 		{
 			return !ButtonStates[button];
 		}
