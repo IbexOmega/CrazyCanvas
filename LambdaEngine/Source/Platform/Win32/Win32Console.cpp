@@ -15,6 +15,7 @@ namespace LambdaEngine
 		if (AllocConsole())
 		{
 			s_OutputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+			SetConsoleTitleA("Lambda Engine Debug Console");
 		}
 	}
 
