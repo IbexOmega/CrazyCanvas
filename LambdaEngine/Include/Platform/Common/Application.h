@@ -15,7 +15,7 @@ namespace LambdaEngine
         DECL_REMOVE_COPY(Application);
         DECL_REMOVE_MOVE(Application);
 
-        virtual void AddMessageListner(IApplicationMessageHandler* pListener) = 0;
+        virtual void AddMessageHandler(IApplicationMessageHandler* pListener) = 0;
         
         virtual Window*         GetWindow()         = 0;
         virtual const Window*   GetWindow() const   = 0;

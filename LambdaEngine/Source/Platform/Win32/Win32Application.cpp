@@ -5,17 +5,46 @@
 
 namespace LambdaEngine
 {
-	HINSTANCE	Win32Application::s_hInstance	= 0;
-	Win32Window	Win32Application::s_Window		= Win32Window();
+	Win32Application Win32Application::s_Application;
+
+	void Win32Application::AddMessageHandler(IApplicationMessageHandler* pHandler)
+	{
+		m_MessageHandlers.emplace_back(pHandler);
+	}
+
+	Window* Win32Application::GetWindow()
+	{
+		return &m_Window;
+	}
+
+	const Window* Win32Application::Getwindow() const
+	{
+		return &m_Window;
+	}
+
+	void Win32Application::Create(HINSTANCE hInstance)
+	{
+		m_hInstance = hInstance;
+		if (!s_Window.Init(800, 600))
+		{
+			return false;
+		}
+
+		s_Window.Show();
+	}
+
+	void Win32Application::Destroy()
+	{
+		s_Application.Destroy();
+	}
 
 	bool Win32Application::PreInit(HINSTANCE hInstance)
 	{
 		ASSERT(hInstance != NULL);
-		s_hInstance = hInstance;
 
 		WNDCLASS wc = {};
 		ZERO_MEMORY(&wc, sizeof(WNDCLASS));
-		wc.hInstance		= s_hInstance;
+		wc.hInstance		= hInstance;
 		wc.lpszClassName	= WINDOW_CLASS;
 		wc.hbrBackground	= (HBRUSH)::GetStockObject(BLACK_BRUSH);
 		wc.lpfnWndProc		= Win32Application::WindowProc;
@@ -27,19 +56,16 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!s_Window.Init(800, 600))
+		if (!s_Application.Create(hInstance))
 		{
 			return false;
 		}
 
-		s_Window.Show();
 		return true;
 	}
 	
 	bool Win32Application::PostRelease()
 	{
-		s_Window.Release();
-
 		if (!::UnregisterClass(WINDOW_CLASS, s_hInstance))
 		{
 			//TODO: Log this
@@ -71,6 +97,12 @@ namespace LambdaEngine
 		if (uMsg == WM_DESTROY)
 		{
 			Terminate();
+		}
+
+		std::vector<IApplicationMessageHandler*>& handlers = s_Application.m_MessageHandlers;
+		for (IApplicationMessageHandler* pHandler : handlers)
+		{
+			pHandler->MessageProc(hWnd, uMsg, wParam, lParam);
 		}
 
 		return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
