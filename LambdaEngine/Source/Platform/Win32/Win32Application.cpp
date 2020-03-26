@@ -11,7 +11,7 @@ namespace LambdaEngine
 	void Win32Application::AddMessageHandler(IApplicationMessageHandler* pHandler)
 	{
 		//Check first so that this handler is not already added
-		const uint32 count = uint32(m_MessageHandler.size());
+		const uint32 count = uint32(m_MessageHandlers.size());
 		for (uint32 i = 0; i < count; i++)
 		{
 			if (pHandler == m_MessageHandlers[i])
@@ -26,7 +26,7 @@ namespace LambdaEngine
 
 	void Win32Application::RemoveMessageHandler(IApplicationMessageHandler* pHandler)
 	{
-		const uint32 count = uint32(m_MessageHandler.size());
+		const uint32 count = uint32(m_MessageHandlers.size());
 		for (uint32 i = 0; i < count; i++)
 		{
 			if (pHandler == m_MessageHandlers[i])

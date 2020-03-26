@@ -16,7 +16,7 @@ namespace LambdaEngine
 
 	void Input::Release()
 	{
-		//SAFEDELETE(s_pInputDevice);
+		SAFEDELETE(s_pInputDevice);
 	}
 
 	void Input::Update()
