@@ -10,7 +10,31 @@ namespace LambdaEngine
 
 	void Win32Application::AddMessageHandler(IApplicationMessageHandler* pHandler)
 	{
+		//Check first so that this handler is not already added
+		const uint32 count = uint32(m_MessageHandler.size());
+		for (uint32 i = 0; i < count; i++)
+		{
+			if (pHandler == m_MessageHandlers[i])
+			{
+				return;
+			}
+		}
+
+		//Add new handler
 		m_MessageHandlers.emplace_back(pHandler);
+	}
+
+	void Win32Application::RemoveMessageHandler(IApplicationMessageHandler* pHandler)
+	{
+		const uint32 count = uint32(m_MessageHandler.size());
+		for (uint32 i = 0; i < count; i++)
+		{
+			if (pHandler == m_MessageHandlers[i])
+			{
+				m_MessageHandlers.erase(m_MessageHandlers.begin() + i);
+				break;
+			}
+		}
 	}
 
 	Window* Win32Application::GetWindow()

@@ -44,3 +44,6 @@
 #else
 	#define FORCEINLINE __attribute__((always_inline))
 #endif
+
+//Delete
+#define SAFEDELETE(object) if ((object)) { delete object; object = nullptr; }

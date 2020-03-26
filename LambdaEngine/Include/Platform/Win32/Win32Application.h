@@ -9,13 +9,22 @@
 
 namespace LambdaEngine
 {
+	struct Win32Message
+	{
+		HWND 	hWnd 		= 0;
+		UINT 	uMessage 	= 0;
+		WPARAM 	wParam 		= 0;
+		LPARAM 	lParam 		= 0;
+	};
+
 	class LAMBDA_API Win32Application : public Application
 	{
 	public:
 		Win32Application() = default;
 		~Win32Application() = default;
 
-		virtual void AddMessageHandler(IApplicationMessageHandler* pListener) override;
+		virtual void AddMessageHandler(IApplicationMessageHandler* pHandler) 	override;
+		virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) override;
         
         virtual Window*         GetWindow()         override;
         virtual const Window*   GetWindow() const   override;
@@ -52,6 +61,7 @@ namespace LambdaEngine
 		Win32Window m_Window;
 		HINSTANCE	m_hInstance = 0;
 		
+		std::vector<Win32Message> m_BufferedMessages;
 		std::vector<IApplicationMessageHandler*> m_MessageHandlers;
 
 		static Win32Application	s_Application;
