@@ -29,6 +29,12 @@
 	Typename() = delete; \
 	~Typename() = delete
 
+#define DECL_INTERFACE(Typename) \
+	DECL_REMOVE_COPY(Typename); \
+	DECL_REMOVE_MOVE(Typename); \
+	Typename() = default; \
+	virtual ~Typename() = default
+
 //Helper macros
 #define ZERO_MEMORY(memory, size) memset(memory, 0, size)
 
