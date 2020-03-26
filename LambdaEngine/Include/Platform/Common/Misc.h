@@ -5,6 +5,10 @@
 	#undef MessageBox
 #endif
 
+#ifdef OutputDebugString
+	#undef OutputDebugString
+#endif
+
 namespace LambdaEngine
 {
 	class Misc

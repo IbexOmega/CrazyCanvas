@@ -56,8 +56,15 @@ namespace LambdaEngine
         PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
         PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
         
-        //PlatformConsole::Clear();
+        PlatformConsole::Clear();
         //PlatformConsole::Close();
+
+		PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
+		PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
+		PlatformConsole::SetColor(EConsoleColor::COLOR_GREEN);
+		PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
+		PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
+		PlatformConsole::PrintLine("Bla bla %s %d", "TestString", 5);
         
 		return true;
 	}

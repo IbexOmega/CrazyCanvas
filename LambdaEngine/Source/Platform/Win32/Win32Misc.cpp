@@ -10,7 +10,7 @@ namespace LambdaEngine
 {
 	void Win32Misc::MessageBox(const char* pCaption, const char* pText)
 	{
-		::MessageBoxA(0, pText, pTitle, MB_ICONERROR | MB_OK);
+		::MessageBoxA(0, pText, pCaption, MB_ICONERROR | MB_OK);
 	}
 }
 
