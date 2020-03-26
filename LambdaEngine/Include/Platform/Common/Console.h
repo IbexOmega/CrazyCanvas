@@ -14,6 +14,12 @@ namespace LambdaEngine
     class Console
     {
     public:
+        Console()   = default;
+        ~Console()  = default;
+        
+        DECL_REMOVE_COPY(Console);
+        DECL_REMOVE_MOVE(Console);
+        
         static void Show()  { }
         static void Close() { }
         

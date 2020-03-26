@@ -8,11 +8,20 @@
 
 namespace LambdaEngine
 {
-    class LAMBDA_API MacApplication : public Application
+    class MacApplication : public Application
     {
     public:
-        DECL_STATIC_CLASS(MacApplication);
+        MacApplication()    = default;
+        ~MacApplication()   = default;
 
+        virtual void AddMessageListner(IApplicationMessageHandler* pListener) override;
+        
+        virtual Window*         GetWindow()         override;
+        virtual const Window*   GetWindow() const   override;
+        
+        bool Init();
+        void Release();
+        
         static bool PreInit();
         static bool PostRelease();
         
@@ -20,10 +29,17 @@ namespace LambdaEngine
         
         static void Terminate();
         
+        FORCEINLINE static Application* Get()
+        {
+            return &s_Application;
+        }
+        
     private:
-        static MacWindow            s_Window;
-        static MacAppController*    s_pAppDelegate;
-        static bool                 s_IsTerminating;
+        MacWindow         m_Window;
+        MacAppController* m_pAppDelegate    = nullptr;
+        bool              m_IsTerminating   = false;
+        
+        static MacApplication s_Application;
     };
 
     typedef MacApplication PlatformApplication;
