@@ -1,13 +1,6 @@
 #pragma once
 #include "Defines.h"
-
-#ifdef MessageBox
-	#undef MessageBox
-#endif
-
-#ifdef OutputDebugString
-	#undef OutputDebugString
-#endif
+#include "Types.h"
 
 namespace LambdaEngine
 {

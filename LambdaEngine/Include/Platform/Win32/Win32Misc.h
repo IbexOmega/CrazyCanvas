@@ -3,14 +3,6 @@
 #ifdef LAMBDA_PLATFORM_WINDOWS
 #include "Platform/Common/Misc.h"
 
-#ifdef MessageBox
-	#undef MessageBox
-#endif
-
-#ifdef OutputDebugString
-	#undef OutputDebugString
-#endif
-
 namespace LambdaEngine
 {
 	class LAMBDA_API Win32Misc : public Misc

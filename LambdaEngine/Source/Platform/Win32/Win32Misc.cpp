@@ -5,14 +5,6 @@
 #include "Platform/Win32/Win32Misc.h"
 #include "Platform/Win32/Windows.h"
 
-#ifdef MessageBox
-	#undef MessageBox
-#endif
-
-#ifdef OutputDebugString
-	#undef OutputDebugString
-#endif
-
 namespace LambdaEngine
 {
 	void Win32Misc::MessageBox(const char* pCaption, const char* pText)
@@ -23,7 +15,7 @@ namespace LambdaEngine
 	void Win32Misc::OutputDebugString(const char* pFormat, ...)
 	{
 		constexpr uint32 BUFFER_SIZE = 1024;
-		static const char buffer[BUFFER_SIZE];
+		static char buffer[BUFFER_SIZE];
 		
 		ZERO_MEMORY(buffer, BUFFER_SIZE);
 

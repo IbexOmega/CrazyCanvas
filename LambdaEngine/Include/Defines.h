@@ -40,7 +40,7 @@
 #define DECL_INTERFACE(Typename) DECL_ABSTRACT_CLASS(Typename)
 
 //Helper macros
-#define ZERO_MEMORY(memory, size) memset(memory, 0, size)
+#define ZERO_MEMORY(memory, size) memset((void*)memory, 0, size)
 
 //Inline
 #ifdef LAMBDA_VISUAL_STUDIO
