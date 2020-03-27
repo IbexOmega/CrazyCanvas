@@ -1,5 +1,6 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #include "Platform/macOS/MacConsole.h"
+#include "Platform/macOS/CocoaConsoleWindow.h"
 
 namespace LambdaEngine
 {
@@ -13,7 +14,7 @@ namespace LambdaEngine
         NSUInteger  styleMask   = NSWindowStyleMaskTitled  | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
         NSRect      contentRect = NSMakeRect(0, 0, width, height);
         
-        m_pWindow = [[MacConsoleWindow alloc] initWithContentRect:contentRect styleMask:styleMask backing:NSBackingStoreBuffered defer:NO];
+        m_pWindow = [[CocoaConsoleWindow alloc] initWithContentRect:contentRect styleMask:styleMask backing:NSBackingStoreBuffered defer:NO];
         ASSERT(m_pWindow != nil);
         
         NSRect contentFrame = [[m_pWindow contentView] frame];

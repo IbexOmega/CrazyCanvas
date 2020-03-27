@@ -4,7 +4,6 @@
 #ifdef __OBJC__
 
 #include <Appkit/Appkit.h>
-#include <Foundation/Foundation.h>
 
 @interface MacAppController : NSObject<NSApplicationDelegate>
 

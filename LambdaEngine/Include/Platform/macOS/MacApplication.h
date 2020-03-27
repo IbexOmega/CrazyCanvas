@@ -37,13 +37,13 @@ namespace LambdaEngine
         MacApplication()    = default;
         ~MacApplication()   = default;
 
-        virtual void AddMessageHandler(IApplicationMessageHandler* pHandler)    override;
-        virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) override;
+        virtual void AddMessageHandler(IApplicationMessageHandler* pHandler)    override final;
+        virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) override final;
         
-        virtual void ProcessBufferedMessages() override; 
+        virtual void ProcessBufferedMessages() override final;
 
-        virtual Window*         GetWindow()         override;
-        virtual const Window*   GetWindow() const   override;
+        virtual Window*         GetWindow()         override final;
+        virtual const Window*   GetWindow() const   override final;
         
         bool Init();
         void BufferEvent(NSEvent* event);

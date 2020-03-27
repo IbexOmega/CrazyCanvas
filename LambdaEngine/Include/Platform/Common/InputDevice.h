@@ -49,8 +49,8 @@ namespace LambdaEngine
 	public:
 		DECL_ABSTRACT_CLASS(InputDevice);
 
-		KeyboardState   GetKeyboardState()	{ return m_KeyboardState; }
-		MouseState      GetMouseState()		{ return m_MouseState; }
+		virtual KeyboardState   GetKeyboardState()	{ return m_KeyboardState; }
+		virtual MouseState      GetMouseState()		{ return m_MouseState; }
 
 		void OnKeyDown(EKey key);
 		void OnKeyUp(EKey key);

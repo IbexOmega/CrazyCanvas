@@ -5,13 +5,13 @@
 
 #ifdef __OBJC__
 
-@class NSWindow;
-@class MacWindowDelegate;
+@class CocoaWindow;
+@class CocoaWindowDelegate;
 
 #else
 
-class NSWindow;
-class MacWindowDelegate;
+class CocoaWindow;
+class CocoaWindowDelegate;
 
 #endif
 
@@ -26,19 +26,19 @@ namespace LambdaEngine
         DECL_REMOVE_COPY(MacWindow);
         DECL_REMOVE_MOVE(MacWindow);
 
-        virtual bool Init(uint32 width, uint32 height) override;
-        virtual void Release() override;
+        virtual bool Init(uint32 width, uint32 height)  override final;
+        virtual void Release()                          override final;
 
-        virtual void Show() override;
+        virtual void Show() override final;
 
-        FORCEINLINE virtual void* GetHandle() const override
+        FORCEINLINE virtual void* GetHandle() const override final
         {
             return (void*)m_pWindow;
         }
         
     private:
-        NSWindow*           m_pWindow   = nullptr;
-        MacWindowDelegate*  m_pDelegate = nullptr;
+        CocoaWindow*          m_pWindow   = nullptr;
+        CocoaWindowDelegate*  m_pDelegate = nullptr;
     };
 }
 

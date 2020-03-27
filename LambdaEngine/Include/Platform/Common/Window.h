@@ -12,8 +12,8 @@ namespace LambdaEngine
         DECL_REMOVE_COPY(Window);
         DECL_REMOVE_MOVE(Window);
         
-        virtual bool Init(uint32 width, uint32 height) = 0;
-        virtual void Release() = 0;
+        virtual bool Init(uint32 width, uint32 height)  = 0;
+        virtual void Release()                          = 0;
         
         virtual void Show() = 0;
         

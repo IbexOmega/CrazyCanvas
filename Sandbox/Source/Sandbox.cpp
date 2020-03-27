@@ -15,40 +15,42 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 {
 	using namespace LambdaEngine;
 
-	PlatformConsole::PrintLine("Key Pressed: %i", key);
+	PlatformConsole::PrintLine("Key Pressed: %d", key);
 }
 
 void Sandbox::OnKeyUp(LambdaEngine::EKey key)
 {
 	using namespace LambdaEngine;
 
-	PlatformConsole::PrintLine("Key Released: %i", key);
+	PlatformConsole::PrintLine("Key Released: %d", key);
 }
 
-void Sandbox::OnMouseMove(int32, int32)
+void Sandbox::OnMouseMove(int32 x, int32 y)
 {
 	using namespace LambdaEngine;
+    
+    PlatformConsole::PrintLine("Mouse Moved: x=%d, y=%d", x, y);
 }
 
 void Sandbox::OnButtonPressed(LambdaEngine::EMouseButton button)
 {
 	using namespace LambdaEngine;
 
-	PlatformConsole::PrintLine("Mouse Button Pressed: %i", button);
+	PlatformConsole::PrintLine("Mouse Button Pressed: %d", button);
 }
 
 void Sandbox::OnButtonReleased(LambdaEngine::EMouseButton button)
 {
 	using namespace LambdaEngine;
 
-	PlatformConsole::PrintLine("Mouse Button Released: %i", button);
+	PlatformConsole::PrintLine("Mouse Button Released: %d", button);
 }
 
 void Sandbox::OnScroll(int32 delta)
 {
 	using namespace LambdaEngine;
 
-	PlatformConsole::PrintLine("Mouse Scrolled: %i", delta);
+	PlatformConsole::PrintLine("Mouse Scrolled: %d", delta);
 }
 
 void Sandbox::Tick()

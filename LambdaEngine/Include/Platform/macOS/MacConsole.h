@@ -3,16 +3,21 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #include "Platform/Common/Console.h"
 
-#include <stdarg.h>
+#ifdef __OBJC__
 
-#include "MacConsoleWindow.h"
+@class NSString;
+@class NSTextView;
+@class NSDictionary;
+@class NSScrollView;
+@class CocoaConsoleWindow;
 
-#ifndef __OBJC__
+#else
 
 class NSString;
 class NSTextView;
 class NSDictionary;
 class NSScrollView;
+class CocoaConsoleWindow;
 
 #endif
 
@@ -45,7 +50,7 @@ namespace LambdaEngine
 
         void PrintV(const char* pFormat, va_list args);
         
-        MacConsoleWindow*   m_pWindow       = nullptr;
+        CocoaConsoleWindow* m_pWindow       = nullptr;
         NSTextView*         m_pTextView     = nullptr;
         NSScrollView*       m_pScrollView   = nullptr;
         NSDictionary*       m_pCurrentColor = nullptr;

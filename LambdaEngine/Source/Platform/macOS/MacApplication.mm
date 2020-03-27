@@ -1,8 +1,8 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #include "Platform/macOS/MacApplication.h"
 #include "Platform/macOS/MacAppController.h"
-#include "Platform/macOS/MacWindowDelegate.h"
 #include "Platform/macOS/MacInputDevice.h"
+#include "Platform/macOS/MacInputCodeTable.h"
 
 #include <Appkit/Appkit.h>
 
@@ -44,12 +44,15 @@ namespace LambdaEngine
     {
         for (MacMessage& message : m_BufferedMessages)
         {
-            for (IApplicationMessageHandler* pHandler : m_MessageHandlers)
+            if (message.event)
             {
-                pHandler->HandleEvent(message.event);
+                for (IApplicationMessageHandler* pHandler : m_MessageHandlers)
+                {
+                    pHandler->HandleEvent(message.event);
+                }
+                
+                [message.event release];
             }
-            
-            [message.event release];
         }
         
         m_BufferedMessages.clear();
@@ -116,6 +119,11 @@ namespace LambdaEngine
             return false;
         }
     
+        if (!MacInputCodeTable::Init())
+        {
+            return false;
+        }
+        
         if (!s_Application.Init())
         {
             return false;

@@ -3,10 +3,9 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #ifdef __OBJC__
 
-#include <Cocoa/Cocoa.h>
 #include <AppKit/AppKit.h>
 
-@interface MacConsoleWindow : NSWindow<NSWindowDelegate>
+@interface CocoaConsoleWindow : NSWindow<NSWindowDelegate>
 
 -(BOOL) windowShouldClose:(NSWindow* ) sender;
 
@@ -14,7 +13,7 @@
 
 #else
 
-class MacConsoleWindow;
+class CocoaConsoleWindow;
 
 #endif
 #endif

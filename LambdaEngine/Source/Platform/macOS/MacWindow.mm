@@ -1,8 +1,7 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #include "Platform/macOS/MacWindow.h"
-#include "Platform/macOS/MacWindowDelegate.h"
-
-#include <AppKit/AppKit.h>
+#include "Platform/macOS/CocoaWindow.h"
+#include "Platform/macOS/CocoaWindowDelegate.h"
 
 namespace LambdaEngine
 {
@@ -11,14 +10,14 @@ namespace LambdaEngine
         NSUInteger  windowStyle = NSWindowStyleMaskTitled  | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
         NSRect      windowRect  = NSMakeRect(0.0f, 0.0f, CGFloat(width), CGFloat(height));
         
-        m_pWindow = [[NSWindow alloc] initWithContentRect:windowRect styleMask:windowStyle backing:NSBackingStoreBuffered defer:NO];
+        m_pWindow = [[CocoaWindow alloc] initWithContentRect:windowRect styleMask:windowStyle backing:NSBackingStoreBuffered defer:NO];
         if (!m_pWindow)
         {
             //TODO: Log this
             return false;
         }
         
-        m_pDelegate = [[MacWindowDelegate alloc] init];
+        m_pDelegate = [[CocoaWindowDelegate alloc] init];
         if (!m_pDelegate)
         {
             //TODO: Log this

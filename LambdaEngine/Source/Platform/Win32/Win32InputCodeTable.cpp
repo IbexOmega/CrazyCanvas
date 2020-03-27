@@ -1,5 +1,4 @@
 #ifdef LAMBDA_PLATFORM_WINDOWS
-
 #include "Platform/Win32/Win32InputCodeTable.h"
 
 namespace LambdaEngine
@@ -10,7 +9,6 @@ namespace LambdaEngine
 	bool Win32InputCodeTable::Init()
 	{
 		ZERO_MEMORY(s_KeyCodeTable, EKey::KEY_COUNT * sizeof(int32));
-
 		s_KeyCodeTable[KEY_SPACE]			= KEY_SPACE; 
 		s_KeyCodeTable[KEY_APOSTROPHE]		= KEY_APOSTROPHE; 
 		s_KeyCodeTable[KEY_COMMA]			= KEY_COMMA; 
@@ -133,7 +131,6 @@ namespace LambdaEngine
 		s_KeyCodeTable[KEY_MENU]			= KEY_MENU; 
 
 		ZERO_MEMORY(s_MouseButtonCodeTable, EMouseButton::MOUSE_BUTTON_COUNT * sizeof(int32));
-
 		s_MouseButtonCodeTable[MOUSE_BUTTON_LEFT]		= MOUSE_BUTTON_LEFT;
 		s_MouseButtonCodeTable[MOUSE_BUTTON_MIDDLE]		= MOUSE_BUTTON_MIDDLE;
 		s_MouseButtonCodeTable[MOUSE_BUTTON_RIGHT]		= MOUSE_BUTTON_RIGHT;

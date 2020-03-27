@@ -1,7 +1,7 @@
 #ifdef LAMBDA_PLATFORM_MACOS
-#include "Platform/macOS/MacConsoleWindow.h"
+#include "Platform/macOS/CocoaConsoleWindow.h"
 
-@implementation MacConsoleWindow
+@implementation CocoaConsoleWindow
 
 -(BOOL) windowShouldClose:(NSWindow* ) sender
 {

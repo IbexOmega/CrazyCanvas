@@ -2,9 +2,9 @@
 #include "Platform/PlatformMisc.h"
 
 #include "Platform/macOS/MacApplication.h"
-#include "Platform/macOS/MacWindowDelegate.h"
+#include "Platform/macOS/CocoaWindowDelegate.h"
 
-@implementation MacWindowDelegate
+@implementation CocoaWindowDelegate
 
 - (void) windowWillClose:(NSNotification* ) notification
 {
