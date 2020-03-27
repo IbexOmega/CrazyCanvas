@@ -144,6 +144,9 @@ namespace LambdaEngine
 
     bool MacApplication::ProcessMessages()
     {
+        //Make sure this function is called on the main thread, calling from other threads result in undefined behaviour
+        ASSERT([NSThread isMainThread]);
+        
         @autoreleasepool
         {
             NSEvent* event = nil;
