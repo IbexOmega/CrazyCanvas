@@ -1,7 +1,7 @@
 #pragma once
 #include "Defines.h"
 
-LAMBDA_API void Assert();
+LAMBDA_API void Assert(const char* pLine, int line);
 
 #ifdef LAMBDA_VISUAL_STUDIO
     #define DEBUGBREAK(...) __debugbreak()
@@ -13,7 +13,7 @@ LAMBDA_API void Assert();
     #define ASSERT(condition) \
         if (!(condition)) \
         { \
-            Assert(); \
+            Assert(__FILE__, __LINE__); \
             DEBUGBREAK(); \
         }
 #else

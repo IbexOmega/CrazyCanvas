@@ -16,11 +16,12 @@ namespace LambdaEngine
         LOG_WARNING("Hello World %d", 5);
         LOG_ERROR("Hello World %d", 5);
         
-		bool IsRunning = true;
-		while (IsRunning)
-		{
-			IsRunning = Tick();
-			pGame->Tick();
+        
+        bool IsRunning = true;
+        while (IsRunning)
+        {
+            IsRunning = Tick();
+            pGame->Tick();
         }
     }
 

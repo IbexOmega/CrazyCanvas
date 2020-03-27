@@ -31,21 +31,13 @@ namespace LambdaEngine
 
 	void Input::AddKeyboardHandler(IKeyboardHandler* pHandler)
 	{
-        //TODO: Remove if
-        
-        if (s_pInputDevice)
-        {
-            s_pInputDevice->AddKeyboardHandler(pHandler);
-        }
+        ASSERT(s_pInputDevice != nullptr);
+        s_pInputDevice->AddKeyboardHandler(pHandler);
 	}
 
 	void Input::AddMouseHandler(IMouseHandler* pHandler)
 	{
-        //TODO: Remove if
-        
-        if (s_pInputDevice)
-        {
-            s_pInputDevice->AddMouseHandler(pHandler);
-        }
+        ASSERT(s_pInputDevice != nullptr);
+        s_pInputDevice->AddMouseHandler(pHandler);
 	}
 }
