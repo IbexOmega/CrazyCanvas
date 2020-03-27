@@ -5,7 +5,7 @@
 
 namespace LambdaEngine
 {
-    class LAMBDA_API MacMisc : public Misc
+    class MacMisc : public Misc
     {
     public:
         DECL_STATIC_CLASS(MacMisc);

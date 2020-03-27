@@ -25,7 +25,7 @@ void Sandbox::OnKeyUp(LambdaEngine::EKey key)
 	PlatformConsole::PrintLine("Key Released: %i", key);
 }
 
-void Sandbox::OnMouseMove(int32 x, int32 y)
+void Sandbox::OnMouseMove(int32, int32)
 {
 	using namespace LambdaEngine;
 }

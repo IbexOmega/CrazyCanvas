@@ -3,11 +3,21 @@
 
 #include "Platform/macOS/MacInputDevice.h"
 
+#include <AppKit/AppKit.h>
+
 namespace LambdaEngine
 {
     void MacInputDevice::HandleEvent(NSEvent* event)
     {
-        LOG_MESSAGE("Got an event");
+        NSEventType eventType = [event type];
+        switch(eventType)
+        {
+            case NSMouseMoved:
+            {
+                LOG_MESSAGE("Mouse moved");
+                break;
+            }
+        }
     }
 }
 

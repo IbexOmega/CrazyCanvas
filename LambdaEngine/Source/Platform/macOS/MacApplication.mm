@@ -48,7 +48,11 @@ namespace LambdaEngine
             {
                 pHandler->HandleEvent(message.event);
             }
+            
+            [message.event release];
         }
+        
+        m_BufferedMessages.clear();
     }
 
     Window* MacApplication::GetWindow()
@@ -162,7 +166,7 @@ namespace LambdaEngine
     void MacApplication::BufferEvent(NSEvent* event)
     {
         MacMessage message = { };
-        message.event = event;
+        message.event = [event retain];
 
         m_BufferedMessages.push_back(message);
     }
