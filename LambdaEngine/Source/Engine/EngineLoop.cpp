@@ -2,11 +2,11 @@
 
 #include "Log/Log.h"
 
-#include "Platform/PlatformTime.h"
-#include "Platform/PlatformMisc.h"
-#include "Platform/PlatformConsole.h"
+#include "Application/PlatformTime.h"
+#include "Application/PlatformMisc.h"
+#include "Application/PlatformConsole.h"
 
-#include "Input/Input.h"
+#include "Input/API/Input.h"
 
 #include "Platform/Vulkan/GraphicsDeviceVK.h"
 

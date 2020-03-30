@@ -1,6 +1,5 @@
 #pragma once
-
-#include <cstring>
+#include <string.h>
 
 // Exporting
 #if defined(LAMBDA_PLATFORM_WINDOWS) && defined(LAMBDA_SHARED_LIB) 
@@ -52,3 +51,6 @@
 
 //Delete
 #define SAFEDELETE(object) if ((object)) { delete object; object = nullptr; }
+
+//Bit helper
+#define BIT(bit) (1 << bit)
