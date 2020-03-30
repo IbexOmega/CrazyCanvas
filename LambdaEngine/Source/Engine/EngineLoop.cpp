@@ -8,6 +8,8 @@
 
 #include "Input/Input.h"
 
+#include "Platform/Vulkan/GraphicsDeviceVK.h"
+
 namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
@@ -16,6 +18,11 @@ namespace LambdaEngine
         LOG_WARNING("Hello World %d", 5);
         LOG_ERROR("Hello World %d", 5);
         
+		GraphicsDeviceDesc graphicsDeviceDesc = {};
+		graphicsDeviceDesc.Debug = true;
+
+		IGraphicsDevice* pGraphicsDevice = new GraphicsDeviceVK();
+		pGraphicsDevice->Init(graphicsDeviceDesc);
         
         bool IsRunning = true;
         while (IsRunning)

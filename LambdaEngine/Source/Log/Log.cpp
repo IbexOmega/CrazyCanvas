@@ -26,7 +26,7 @@ namespace LambdaEngine
         
         va_end(args);
 
-        if (severity == ELogSeverity::MESSAGE)
+        if (severity != ELogSeverity::MESSAGE)
         {
             PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
         }

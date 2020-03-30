@@ -1,11 +1,15 @@
 #pragma once
 #include "Rendering/Core/IGraphicsDevice.h"
+#include "Utilities/StringHash.h"
 #include "Vulkan.h"
 
 #include <vector>
 
 namespace LambdaEngine
 {
+	typedef ConstString ValidationLayer;
+	typedef ConstString Extension;
+
 	class GraphicsDeviceVK : public IGraphicsDevice
 	{
 	public:
@@ -33,7 +37,12 @@ namespace LambdaEngine
 		bool InitLogicalDevice();
 
 		//UTIL
-		bool ValidationLayersSupported();
+		bool SetEnabledValidationLayers();
+		bool SetEnabledInstanceExtensions();
+		void RegisterExtensionFunctions();
+
+		bool IsInstanceExtensionEnabled(const char* extensionName);
+		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
 		int32 RatePhysicalDevice(VkPhysicalDevice physicalDevice);
 
@@ -50,10 +59,14 @@ namespace LambdaEngine
 		VkPhysicalDevice PhysicalDevice;
 		VkDevice Device;
 
-	private:
-		std::vector<const char*> m_ValidationLayers;
+		PFN_vkSetDebugUtilsObjectNameEXT	vkSetDebugUtilsObjectNameEXT;
+		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
+		PFN_vkCreateDebugUtilsMessengerEXT	vkCreateDebugUtilsMessengerEXT;
 
-		std::vector<const char*> m_RequiredInstanceExtensions;
-		std::vector<const char*> m_OptionalInstanceExtensions;
+	private:
+		VkDebugUtilsMessengerEXT m_DebugMessenger;
+
+		std::vector<const char*> m_EnabledValidationLayers;
+		std::vector<const char*> m_EnabledInstanceExtensions;
 	};
 }
