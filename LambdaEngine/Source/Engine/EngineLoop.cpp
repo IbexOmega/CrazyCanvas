@@ -8,7 +8,7 @@
 
 #include "Input/API/Input.h"
 
-#include "Platform/Vulkan/GraphicsDeviceVK.h"
+#include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 
 namespace LambdaEngine
 {

@@ -1,29 +1,33 @@
 #pragma once
-#include <vector>
-
 #include "Rendering/Core/API/IGraphicsDevice.h"
+#include "Utilities/StringHash.h"
 #include "Vulkan.h"
+
+#include <vector>
 
 namespace LambdaEngine
 {
+	typedef ConstString ValidationLayer;
+	typedef ConstString Extension;
+
 	class GraphicsDeviceVK : public IGraphicsDevice
 	{
 	public:
-		GraphicsDeviceVK(); 
+		GraphicsDeviceVK();
 		~GraphicsDeviceVK();
 
 		virtual bool Init(const GraphicsDeviceDesc& desc) override;
 		virtual void Release() override;
 
 		//CREATE
-		virtual IRenderPass*		CreateRenderPass() override;
-		virtual IFence*				CreateFence() override;
-		virtual ICommandList*		CreateCommandList() override;
-		virtual IPipelineState*		CreatePipelineState() override;
-		virtual IBuffer*			CreateBuffer() override;
-		virtual ITexture*			CreateTexture() override;
-		virtual ITextureView*		CreateTextureView() override;
-		
+		virtual IRenderPass* CreateRenderPass() override;
+		virtual IFence* CreateFence() override;
+		virtual ICommandList* CreateCommandList() override;
+		virtual IPipelineState* CreatePipelineState() override;
+		virtual IBuffer* CreateBuffer() override;
+		virtual ITexture* CreateTexture() override;
+		virtual ITextureView* CreateTextureView() override;
+
 	private:
 		//INIT
 		bool InitInstance(const GraphicsDeviceDesc& desc);
@@ -33,7 +37,12 @@ namespace LambdaEngine
 		bool InitLogicalDevice();
 
 		//UTIL
-		bool ValidationLayersSupported();
+		bool SetEnabledValidationLayers();
+		bool SetEnabledInstanceExtensions();
+		void RegisterExtensionFunctions();
+
+		bool IsInstanceExtensionEnabled(const char* extensionName);
+		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
 		int32 RatePhysicalDevice(VkPhysicalDevice physicalDevice);
 
@@ -50,10 +59,14 @@ namespace LambdaEngine
 		VkPhysicalDevice PhysicalDevice;
 		VkDevice Device;
 
-	private:
-		std::vector<const char*> m_ValidationLayers;
+		PFN_vkSetDebugUtilsObjectNameEXT	vkSetDebugUtilsObjectNameEXT;
+		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
+		PFN_vkCreateDebugUtilsMessengerEXT	vkCreateDebugUtilsMessengerEXT;
 
-		std::vector<const char*> m_RequiredInstanceExtensions;
-		std::vector<const char*> m_OptionalInstanceExtensions;
+	private:
+		VkDebugUtilsMessengerEXT m_DebugMessenger;
+
+		std::vector<const char*> m_EnabledValidationLayers;
+		std::vector<const char*> m_EnabledInstanceExtensions;
 	};
 }
