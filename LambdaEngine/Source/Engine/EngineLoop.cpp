@@ -9,17 +9,26 @@
 #include "Input/API/Input.h"
 
 #include "Rendering/Core/Vulkan/BufferVK.h"
+#include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 
 namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
+		GraphicsDeviceDesc graphicsDeviceDesc = {};
+		graphicsDeviceDesc.Debug = true;
+
+		IGraphicsDevice* pGraphicsDevice = new GraphicsDeviceVK();
+		pGraphicsDevice->Init(graphicsDeviceDesc);
+        
         bool IsRunning = true;
         while (IsRunning)
         {
             IsRunning = Tick();
             pGame->Tick();
         }
+
+		delete pGraphicsDevice;
     }
 
     bool EngineLoop::Tick()

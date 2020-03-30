@@ -2,7 +2,7 @@
 #include "LambdaEngine.h"
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
-    #include "Platform/Win32/Windows.h"
+    #include "Application/Win32/Windows.h"
 #endif
 
 #ifdef __OBJC__

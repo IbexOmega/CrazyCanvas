@@ -27,7 +27,7 @@ namespace LambdaEngine
         ERROR   = 2
     };
 
-    class Log
+    class LAMBDA_API Log
     {
     public:
         static void Print(ELogSeverity severity, const char* pFormat, ...);

@@ -40,6 +40,7 @@
 
 //Helper macros
 #define ZERO_MEMORY(memory, size) memset((void*)memory, 0, size)
+#define ARR_SIZE(arr) sizeof(arr) / sizeof(arr[0])
 
 //Inline
 #ifdef LAMBDA_VISUAL_STUDIO
