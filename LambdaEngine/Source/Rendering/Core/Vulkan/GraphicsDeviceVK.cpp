@@ -97,6 +97,8 @@ namespace LambdaEngine
 		{
 			LOG_MESSAGE("--- GraphicsDeviceVK: Vulkan Device initialized!");
 		}
+
+		return true;
 	}
 
 	void GraphicsDeviceVK::Release()

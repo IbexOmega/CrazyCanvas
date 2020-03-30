@@ -1,5 +1,5 @@
 #pragma once
-#include "IDeviceChild.h"
+#include "Rendering/Core/API/IDeviceChild.h"
 
 namespace LambdaEngine
 {
