@@ -1,16 +1,8 @@
 #include "Sandbox.h"
 
-#include "Input/Input.h"
+#include "Input/API/Input.h"
 
 #include "Log/Log.h"
-
-Sandbox::Sandbox()
-{
-}
-
-Sandbox::~Sandbox()
-{
-}
 
 void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 {

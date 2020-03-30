@@ -1,8 +1,8 @@
 #ifdef LAMBDA_PLATFORM_WINDOWS
-#include "Application/Win32/Win32InputDevice.h"
-#include "Application/Win32/Win32InputCodeTable.h"
+#include "Input/Win32/Win32InputDevice.h"
+#include "Input/Win32/Win32InputCodeTable.h"
 
-#include <windowsx.h>
+#include <Windowsx.h>
 
 namespace LambdaEngine
 {

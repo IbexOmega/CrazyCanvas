@@ -1,5 +1,5 @@
 #pragma once
-#include "Application/API/InputDevice.h"
+#include "InputDevice.h"
 
 namespace LambdaEngine
 {

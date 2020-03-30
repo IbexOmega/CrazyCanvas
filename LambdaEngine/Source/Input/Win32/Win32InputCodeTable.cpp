@@ -1,10 +1,11 @@
 #ifdef LAMBDA_PLATFORM_WINDOWS
-#include "Application/Win32/Win32InputCodeTable.h"
 #include "Application/Win32/Windows.h"
+
+#include "Input/Win32/Win32InputCodeTable.h"
 
 namespace LambdaEngine
 {
-	EKey 			Win32InputCodeTable::s_KeyCodeTable[EKey::KEY_COUNT];
+	EKey Win32InputCodeTable::s_KeyCodeTable[EKey::KEY_COUNT];
 
 	bool Win32InputCodeTable::Init()
 	{

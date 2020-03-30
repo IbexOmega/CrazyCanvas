@@ -1,4 +1,4 @@
-#include "Input/Input.h"
+#include "Input/API/Input.h"
 
 #include "Application/PlatformApplication.h"
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef LAMBDA_PLATFORM_MACOS
-#include "Application/API/InputDevice.h"
+#include "Input/API/InputDevice.h"
 
 namespace LambdaEngine
 {

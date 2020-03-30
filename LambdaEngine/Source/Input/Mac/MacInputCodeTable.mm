@@ -1,5 +1,5 @@
 #ifdef LAMBDA_PLATFORM_MACOS
-#include "Application/Mac/MacInputCodeTable.h"
+#include "Input/Mac/MacInputCodeTable.h"
 
 #include <AppKit/AppKit.h>
 

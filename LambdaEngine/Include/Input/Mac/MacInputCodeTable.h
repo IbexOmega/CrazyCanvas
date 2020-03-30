@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef LAMBDA_PLATFORM_MACOS
-#include "Input/InputCodes.h"
+#include "Input/API/InputCodes.h"
 
 namespace LambdaEngine
 {

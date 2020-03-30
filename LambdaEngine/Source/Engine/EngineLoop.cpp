@@ -6,7 +6,7 @@
 #include "Application/PlatformMisc.h"
 #include "Application/PlatformConsole.h"
 
-#include "Input/Input.h"
+#include "Input/API/Input.h"
 
 namespace LambdaEngine
 {

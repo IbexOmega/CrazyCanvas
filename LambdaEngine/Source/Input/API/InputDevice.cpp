@@ -1,7 +1,6 @@
-#include "Input/IKeyboardHandler.h"
-#include "Input/IMouseHandler.h"
-
-#include "Application/API/InputDevice.h"
+#include "Input/API/IKeyboardHandler.h"
+#include "Input/API/IMouseHandler.h"
+#include "Input/API/InputDevice.h"
 
 namespace LambdaEngine
 {

@@ -1,5 +1,4 @@
 #pragma once
-
 #include "InputCodes.h"
 
 namespace LambdaEngine

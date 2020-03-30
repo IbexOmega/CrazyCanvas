@@ -1,9 +1,9 @@
 #pragma once
-
 #include <vector>
 
-#include "Input/InputCodes.h"
-#include "IApplicationMessageHandler.h"
+#include "InputCodes.h"
+
+#include "Application/API/IApplicationMessageHandler.h"
 
 namespace LambdaEngine
 {
