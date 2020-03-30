@@ -30,6 +30,8 @@ namespace LambdaEngine
             IsRunning = Tick();
             pGame->Tick();
         }
+
+		delete pGraphicsDevice;
     }
 
     bool EngineLoop::Tick()
