@@ -8,15 +8,12 @@
 
 #include "Input/API/Input.h"
 
+#include "Rendering/Core/Vulkan/BufferVK.h"
+
 namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
-        LOG_MESSAGE("Hello World %d", 5);
-        LOG_WARNING("Hello World %d", 5);
-        LOG_ERROR("Hello World %d", 5);
-        
-        
         bool IsRunning = true;
         while (IsRunning)
         {
