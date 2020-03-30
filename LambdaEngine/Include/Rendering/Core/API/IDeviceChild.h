@@ -3,7 +3,7 @@
 
 namespace LambdaEngine
 {
-    class LAMBDA_API IDeviceChild
+    class IDeviceChild
     {
     public:
         DECL_INTERFACE(IDeviceChild);

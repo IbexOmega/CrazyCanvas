@@ -11,6 +11,11 @@ namespace LambdaEngine
 	class ITexture;
 	class ITextureView;
 
+	enum class EGraphicsAPI
+	{
+		VULKAN = 0,
+	};
+
 	struct GraphicsDeviceDesc
 	{
 		bool Debug;
@@ -32,4 +37,6 @@ namespace LambdaEngine
 		virtual ITexture*			CreateTexture() = 0;
 		virtual ITextureView*		CreateTextureView() = 0;
 	};
+
+	LAMBDA_API IGraphicsDevice* CreateGraphicsDevice(const GraphicsDeviceDesc& desc, EGraphicsAPI api);
 }

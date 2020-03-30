@@ -8,8 +8,7 @@
 
 #include "Input/API/Input.h"
 
-#include "Rendering/Core/Vulkan/BufferVK.h"
-#include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
+#include "Rendering/Core/API/IGraphicsDevice.h"
 
 namespace LambdaEngine
 {
@@ -18,8 +17,7 @@ namespace LambdaEngine
 		GraphicsDeviceDesc graphicsDeviceDesc = {};
 		graphicsDeviceDesc.Debug = true;
 
-		IGraphicsDevice* pGraphicsDevice = new GraphicsDeviceVK();
-		pGraphicsDevice->Init(graphicsDeviceDesc);
+        IGraphicsDevice* pGraphicsDevice = CreateGraphicsDevice(graphicsDeviceDesc, EGraphicsAPI::VULKAN);
         
         bool IsRunning = true;
         while (IsRunning)
@@ -28,7 +26,7 @@ namespace LambdaEngine
             pGame->Tick();
         }
 
-		delete pGraphicsDevice;
+		pGraphicsDevice->Release();
     }
 
     bool EngineLoop::Tick()
