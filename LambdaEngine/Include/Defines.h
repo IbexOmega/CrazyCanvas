@@ -51,3 +51,6 @@
 
 //Delete
 #define SAFEDELETE(object) if ((object)) { delete object; object = nullptr; }
+
+//Bit helper
+#define BIT(bit) (1 << bit)
