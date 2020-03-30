@@ -18,6 +18,13 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 	PlatformConsole::PrintLine("Key Pressed: %d", key);
 }
 
+void Sandbox::OnKeyHeldDown(LambdaEngine::EKey key)
+{
+	using namespace LambdaEngine;
+
+	PlatformConsole::PrintLine("Key Held Down: %d", key);
+}
+
 void Sandbox::OnKeyUp(LambdaEngine::EKey key)
 {
 	using namespace LambdaEngine;

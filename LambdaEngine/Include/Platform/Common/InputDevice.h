@@ -53,6 +53,7 @@ namespace LambdaEngine
 		virtual MouseState      GetMouseState()		{ return m_MouseState; }
 
 		void OnKeyDown(EKey key);
+		void OnKeyHeldDown(EKey key);
 		void OnKeyUp(EKey key);
 
 		void OnMouseMove(int32 x, int32 y);

@@ -13,8 +13,14 @@ namespace LambdaEngine
 		switch (uMessage)
 		{
 		case WM_KEYDOWN:
-			OnKeyDown(Win32InputCodeTable::GetKey(int32(wParam)));
+		{
+			if (lParam & 0x40000000)
+				OnKeyHeldDown(Win32InputCodeTable::GetKey(int32(wParam)));
+			else
+				OnKeyDown(Win32InputCodeTable::GetKey(int32(wParam)));
+
 			break;
+		}
 
 		case WM_KEYUP:
 			OnKeyUp(Win32InputCodeTable::GetKey(int32(wParam)));
