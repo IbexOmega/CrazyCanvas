@@ -15,6 +15,14 @@ namespace LambdaEngine
 		}
 	}
 
+	void InputDevice::OnKeyHeldDown(EKey key)
+	{
+		for (IKeyboardHandler* pHandler : m_KeyboardHandlers)
+		{
+			pHandler->OnKeyHeldDown(key);
+		}
+	}
+
 	void InputDevice::OnKeyUp(EKey key)
 	{
 		m_KeyboardState.KeyStates[key] = false;
