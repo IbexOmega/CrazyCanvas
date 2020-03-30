@@ -144,6 +144,9 @@ workspace "LambdaEngine"
             {
                 "%{prj.name}/Include/Application/Mac/**",
                 "%{prj.name}/Source/Application/Mac/**",
+
+                "%{prj.name}/Include/Input/Mac/**",
+                "%{prj.name}/Source/Input/Mac/**",
             }
         -- Remove files not available for macos builds
         filter "system:macosx"
@@ -156,6 +159,9 @@ workspace "LambdaEngine"
             {
                 "%{prj.name}/Include/Application/Win32/**",
                 "%{prj.name}/Source/Application/Win32/**",
+
+                "%{prj.name}/Include/Input/Win32/**",
+                "%{prj.name}/Source/Input/Win32/**",
             }
         filter {}
 
