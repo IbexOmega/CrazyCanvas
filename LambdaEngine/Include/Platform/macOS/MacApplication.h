@@ -37,6 +37,12 @@ namespace LambdaEngine
         MacApplication()    = default;
         ~MacApplication()   = default;
 
+        bool Create();
+        bool CreateMenu();
+        void Destroy();
+        
+        void BufferEvent(NSEvent* event);
+
         virtual void AddMessageHandler(IApplicationMessageHandler* pHandler)    override final;
         virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) override final;
         
@@ -44,10 +50,6 @@ namespace LambdaEngine
 
         virtual Window*         GetWindow()         override final;
         virtual const Window*   GetWindow() const   override final;
-        
-        bool Init();
-        void BufferEvent(NSEvent* event);
-        void Release();
         
         static bool PreInit();
         static bool PostRelease();

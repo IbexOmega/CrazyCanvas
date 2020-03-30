@@ -68,12 +68,15 @@ namespace LambdaEngine
         return &m_Window;
     }
 
-    bool MacApplication::Init()
+    bool MacApplication::Create()
     {
         m_pAppDelegate = [[MacAppController alloc] init];
         [NSApp setDelegate:m_pAppDelegate];
         
-        //TODO: Other setup here
+        if (!CreateMenu())
+        {
+            return false;
+        }
 
         if (!m_Window.Init(800, 600))
         {
@@ -85,7 +88,39 @@ namespace LambdaEngine
         return true;
     }
 
-    void MacApplication::Release()
+    bool MacApplication::CreateMenu()
+    {
+        @autoreleasepool
+        {
+            NSMenu*     menuBar = [[NSMenu alloc] init];
+            NSMenuItem* appMenuItem = [menuBar addItemWithTitle:@"" action:nil keyEquivalent:@""];
+            NSMenu*     appMenu = [[NSMenu alloc] init];
+            [appMenuItem setSubmenu:appMenu];
+            
+            [appMenu addItemWithTitle:@"Lambda Engine" action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
+            [appMenu addItem: [NSMenuItem separatorItem]];
+            
+            //Lambda Engine menu item
+            NSMenu* serviceMenu = [[NSMenu alloc] init];
+            [[appMenu addItemWithTitle:@"Services" action:nil keyEquivalent:@""] setSubmenu:serviceMenu];
+            [appMenu addItem:[NSMenuItem separatorItem]];
+            [appMenu addItemWithTitle:@"Hide Lambda Engine" action:@selector(hide:) keyEquivalent:@"h"];
+            [[appMenu addItemWithTitle:@"Hide Other" action:@selector(hideOtherApplications:) keyEquivalent:@""] setKeyEquivalentModifierMask:NSEventModifierFlagOption | NSEventModifierFlagCommand];
+            [appMenu addItemWithTitle:@"Show All" action:@selector(unhideAllApplications:) keyEquivalent:@""];
+            [appMenu addItem:[NSMenuItem separatorItem]];
+            [appMenu addItemWithTitle:@"Quit Lambda Engine" action:@selector(terminate:) keyEquivalent:@"q"];
+            
+            //NSMenuItem* windowMenuItem = []
+            
+            
+            [NSApp setMainMenu:menuBar];
+            [NSApp setServicesMenu:serviceMenu];
+        }
+        
+        return true;
+    }
+
+    void MacApplication::Destroy()
     {
         [m_pAppDelegate release];
         m_Window.Release();
@@ -124,7 +159,7 @@ namespace LambdaEngine
             return false;
         }
         
-        if (!s_Application.Init())
+        if (!s_Application.Create())
         {
             return false;
         }
@@ -144,7 +179,7 @@ namespace LambdaEngine
 
     bool MacApplication::ProcessMessages()
     {
-        //Make sure this function is called on the main thread, calling from other threads result in undefined behaviour
+        //Make sure this function is called on the main thread, calling from other threads result in undefined
         ASSERT([NSThread isMainThread]);
         
         @autoreleasepool
@@ -184,7 +219,7 @@ namespace LambdaEngine
 
     bool MacApplication::PostRelease()
     {
-        s_Application.Release();
+        s_Application.Destroy();
         return true;
     }
 }
