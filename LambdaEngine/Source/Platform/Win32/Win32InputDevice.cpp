@@ -47,11 +47,11 @@ namespace LambdaEngine
 			break;
 
 		case WM_XBUTTONDOWN:
-			OnMouseButtonPressed(Win32InputCodeTable::GetMouseButton(2 + GET_XBUTTON_WPARAM(wParam)));
+			OnMouseButtonPressed(GET_XBUTTON_WPARAM(wParam) == 0x0001 ? EMouseButton::MOUSE_BUTTON_BACK : EMouseButton::MOUSE_BUTTON_FORWARD);
 			break;
 
 		case WM_XBUTTONUP:
-			OnMouseButtonReleased(Win32InputCodeTable::GetMouseButton(2 + GET_XBUTTON_WPARAM(wParam)));
+			OnMouseButtonReleased(GET_XBUTTON_WPARAM(wParam) == 0x0001 ? EMouseButton::MOUSE_BUTTON_BACK : EMouseButton::MOUSE_BUTTON_FORWARD);
 			break;
 
 		case WM_MOUSEWHEEL:
