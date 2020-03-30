@@ -2,9 +2,9 @@
 
 #include "Log/Log.h"
 
-#include "Platform/PlatformTime.h"
-#include "Platform/PlatformMisc.h"
-#include "Platform/PlatformConsole.h"
+#include "Application/PlatformTime.h"
+#include "Application/PlatformMisc.h"
+#include "Application/PlatformConsole.h"
 
 #include "Input/Input.h"
 

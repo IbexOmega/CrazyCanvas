@@ -1,6 +1,6 @@
 #include "Log/Log.h"
 
-#include "Platform/PlatformConsole.h"
+#include "Application/PlatformConsole.h"
 
 namespace LambdaEngine
 {

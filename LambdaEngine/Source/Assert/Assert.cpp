@@ -1,7 +1,7 @@
 #include "Assert/Assert.h"
 
-#include "Platform/PlatformMisc.h"
-#include "Platform/PlatformConsole.h"
+#include "Application/PlatformMisc.h"
+#include "Application/PlatformConsole.h"
 
 void Assert(const char* pFile, int line)
 {

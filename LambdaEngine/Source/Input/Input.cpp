@@ -1,5 +1,6 @@
 #include "Input/Input.h"
-#include "Platform/PlatformApplication.h"
+
+#include "Application/PlatformApplication.h"
 
 namespace LambdaEngine
 {

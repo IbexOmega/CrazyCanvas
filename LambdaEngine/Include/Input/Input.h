@@ -1,11 +1,10 @@
 #pragma once
-
-#include "Platform/Common/InputDevice.h"
+#include "Application/API/InputDevice.h"
 
 namespace LambdaEngine
 {
-	class IKeyboardHandler;
-	class IMouseHandler;
+    class IMouseHandler;
+    class IKeyboardHandler;
 
 	class LAMBDA_API Input
 	{
