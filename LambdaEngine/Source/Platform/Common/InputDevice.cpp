@@ -27,8 +27,8 @@ namespace LambdaEngine
 
 	void InputDevice::OnMouseMove(int32 x, int32 y)
 	{
-		m_MouseState.X = x;
-		m_MouseState.Y = y;
+		m_MouseState.x = x;
+		m_MouseState.y = y;
 
 		for (IMouseHandler* pHandler : m_MouseHandlers)
 		{
@@ -73,7 +73,6 @@ namespace LambdaEngine
 
 	void InputDevice::AddMouseHandler(IMouseHandler* pHandler)
 	{
-
 		m_MouseHandlers.emplace_back(pHandler);
 	}
 

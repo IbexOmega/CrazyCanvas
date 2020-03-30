@@ -20,7 +20,7 @@ namespace LambdaEngine
 	class LAMBDA_API Win32Application : public Application
 	{
 	public:
-		Win32Application() = default;
+		Win32Application()	= default;
 		~Win32Application() = default;
 
 		virtual void AddMessageHandler(IApplicationMessageHandler* pHandler) 	override;

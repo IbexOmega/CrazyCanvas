@@ -62,18 +62,19 @@ namespace LambdaEngine
 
 	void Win32Application::Destroy()
 	{
-		s_Application.Destroy();
+		m_Window.Release();
 	}
 
 	bool Win32Application::PreInit(HINSTANCE hInstance)
 	{
 		ASSERT(hInstance != NULL);
 
-		WNDCLASS wc = {};
+		WNDCLASS wc = { };
 		ZERO_MEMORY(&wc, sizeof(WNDCLASS));
 		wc.hInstance		= hInstance;
 		wc.lpszClassName	= WINDOW_CLASS;
 		wc.hbrBackground	= (HBRUSH)::GetStockObject(BLACK_BRUSH);
+		wc.hCursor			= LoadCursor(NULL, IDC_ARROW);
 		wc.lpfnWndProc		= Win32Application::WindowProc;
 
 		ATOM classAtom = ::RegisterClass(&wc);
@@ -93,6 +94,8 @@ namespace LambdaEngine
 	
 	bool Win32Application::PostRelease()
 	{
+		s_Application.Destroy();
+
 		if (!::UnregisterClass(WINDOW_CLASS, GetInstanceHandle()))
 		{
 			//TODO: Log this

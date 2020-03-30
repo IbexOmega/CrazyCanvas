@@ -8,14 +8,16 @@ namespace LambdaEngine
 {
 	LRESULT Win32InputDevice::MessageProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
+		UNREFERENCED_PARAMETER(hWnd);
+
 		switch (uMessage)
 		{
 		case WM_KEYDOWN:
-			OnKeyDown(Win32InputCodeTable::GetKey(wParam));
+			OnKeyDown(Win32InputCodeTable::GetKey(int32(wParam)));
 			break;
 
 		case WM_KEYUP:
-			OnKeyUp(Win32InputCodeTable::GetKey(wParam));
+			OnKeyUp(Win32InputCodeTable::GetKey(int32(wParam)));
 			break;
 
 		case WM_MOUSEMOVE:

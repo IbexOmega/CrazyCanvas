@@ -3,7 +3,7 @@
 
 namespace LambdaEngine
 {
-    class Window
+    class LAMBDA_API Window
     {
     public:
         Window()    = default;

@@ -7,8 +7,8 @@
 
 namespace LambdaEngine
 {
-	class IKeyboardHandler;
 	class IMouseHandler;
+	class IKeyboardHandler;
 
 	struct KeyboardState
 	{
@@ -27,8 +27,8 @@ namespace LambdaEngine
 
 	struct MouseState
 	{
-		int32 X;
-		int32 Y;
+		int32 x;
+		int32 y;
 		int32 Scroll;
 
 		bool ButtonStates[EMouseButton::MOUSE_BUTTON_COUNT];

@@ -4,10 +4,10 @@
 namespace LambdaEngine
 {
     class Window;
-    class IApplicationMessageHandler;
 	class InputDevice;
+    class IApplicationMessageHandler;
 
-	class Application
+	class LAMBDA_API Application
 	{
 	public:
         Application()   = default;
