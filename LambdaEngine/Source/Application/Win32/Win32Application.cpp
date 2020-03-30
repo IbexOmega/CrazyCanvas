@@ -2,8 +2,9 @@
 #include <stdlib.h>
 
 #include "Application/Win32/Win32Application.h"
-#include "Application/Win32/Win32InputDevice.h"
-#include "Application/Win32/Win32InputCodeTable.h"
+
+#include "Input/Win32/Win32InputDevice.h"
+#include "Input/Win32/Win32InputCodeTable.h"
 
 namespace LambdaEngine
 {

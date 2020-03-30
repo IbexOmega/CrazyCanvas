@@ -132,6 +132,6 @@ namespace LambdaEngine
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsDeviceVK::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 	{
-		return VKAPI_ATTR VkBool32 VKAPI_CALL();
+		return VK_FALSE;
 	}
 }
