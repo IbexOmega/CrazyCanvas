@@ -171,8 +171,36 @@ workspace "LambdaEngine"
 			"%{prj.name}/Include",
         }
         
-        -- Links
-        filter { "system:macosx" }
+		-- Win32
+		filter { "system:windows" }
+			links
+			{
+                "vulkan-1",
+			}
+			
+			libdirs
+			{
+				"C:/VulkanSDK/1.1.130.0/Lib",
+				"D:/VulkanSDK/1.1.130.0/Lib",
+			}
+			
+			sysincludedirs
+			{
+				"C:/VulkanSDK/1.1.130.0/Include",
+				"D:/VulkanSDK/1.1.130.0/Include",
+			}
+		-- Mac
+		filter { "system:macosx" }
+			libdirs
+			{
+				"/usr/local/lib",
+			}
+			
+			sysincludedirs
+			{
+				"/usr/local/include",
+			}
+			
 			links 
 			{
 				"Cocoa.framework"
