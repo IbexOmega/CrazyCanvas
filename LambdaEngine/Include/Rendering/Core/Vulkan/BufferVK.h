@@ -27,6 +27,8 @@ namespace LambdaEngine
         {
             return m_Desc;
         }
+
+		VkBuffer GetBuffer() { return m_Buffer; }
         
     private:
         VkBuffer        m_Buffer    = VK_NULL_HANDLE;

@@ -13,6 +13,7 @@ namespace LambdaEngine
         BUFFER_FLAG_CONSTANT_BUFFER         = BIT(4),
         BUFFER_FLAG_COPY_DST                = BIT(5),
         BUFFER_FLAG_COPY_SRC                = BIT(5),
+		BUFFER_FLAG_RAY_TRACING				= BIT(6),
     };
 
     struct BufferDesc
