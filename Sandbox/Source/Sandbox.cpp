@@ -10,6 +10,7 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
+#ifdef LAMBDA_PLAT_WINDOWS
 	ISocket* server = SocketFactory::CreateSocket(PROTOCOL_TCP);
 	server->Bind("127.0.0.1", 4444);
 	server->Listen();
@@ -28,6 +29,7 @@ Sandbox::Sandbox()
 	client->Receive(buffer, 256, bytesReceived);
 
 	LOG_MESSAGE(buffer);
+#endif
 }
 
 Sandbox::~Sandbox()

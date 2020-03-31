@@ -9,6 +9,7 @@
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/TextureVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
+#include "Rendering/Core/Vulkan/SwapChainVK.h"
 
 namespace LambdaEngine
 {
@@ -25,17 +26,20 @@ namespace LambdaEngine
 	constexpr Extension REQUIRED_INSTANCE_EXTENSIONS[]
 	{
 		Extension(VK_KHR_SURFACE_EXTENSION_NAME),
-		Extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
-	};
+		Extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME),
+#ifdef LAMBDA_PLATFORM_MACOS
+        Extension(VK_MVK_MACOS_SURFACE_EXTENSION_NAME),
+#endif
+    };
 
-	constexpr Extension OPTIONAL_INSTANCE_EXTENSIONS[]
-	{
-		Extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)
-	};
+    constexpr Extension OPTIONAL_INSTANCE_EXTENSIONS[]
+    {
+        Extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME),
+    };
 
-	constexpr Extension REQUIRED_DEVICE_EXTENSIONS[]
-	{
-		Extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
+    constexpr Extension REQUIRED_DEVICE_EXTENSIONS[]
+    {
+        Extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME),
 	};
 
 	constexpr Extension OPTIONAL_DEVICE_EXTENSIONS[]
@@ -46,7 +50,7 @@ namespace LambdaEngine
 		Extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME),
 		Extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME),
 		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME),
-		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME)
+		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
 	};
 
 	GraphicsDeviceVK::GraphicsDeviceVK() :
@@ -90,22 +94,22 @@ namespace LambdaEngine
 	{
 		if (!InitInstance(desc))
 		{
-			LOG_ERROR("--- GraphicsDeviceVK: Vulkan Instance could not be initialized!");
+			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Instance could not be initialized!");
 			return false;
 		}
 		else
 		{
-			LOG_MESSAGE("--- GraphicsDeviceVK: Vulkan Instance initialized!");
+			LOG_MESSAGE("[GraphicsDeviceVK]: Vulkan Instance initialized!");
 		}
 
 		if (!InitDevice(desc))
 		{
-			LOG_ERROR("--- GraphicsDeviceVK: Vulkan Device could not be initialized!");
+			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Device could not be initialized!");
 			return false;
 		}
 		else
 		{
-			LOG_MESSAGE("--- GraphicsDeviceVK: Vulkan Device initialized!");
+			LOG_MESSAGE("[GraphicsDeviceVK]: Vulkan Device initialized!");
 		}
 
 		return true;
@@ -195,7 +199,14 @@ namespace LambdaEngine
 
     ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)
     {
-        return nullptr;
+        SwapChainVK* pSwapChain = new SwapChainVK(this);
+        if (pSwapChain->Init(pWindow, desc))
+        {
+            pSwapChain->Release();
+            return nullptr;
+        }
+        
+        return pSwapChain;
     }
 
 	void GraphicsDeviceVK::ExecuteGraphics(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount)
@@ -236,50 +247,50 @@ namespace LambdaEngine
 		{
 			if (!SetEnabledValidationLayers())
 			{
-				LOG_ERROR("--- GraphicsDeviceVK: Validation Layers not supported");
+				LOG_ERROR("[GraphicsDeviceVK]: Validation Layers not supported");
 				return false;
 			}
 		}
 
 		if (!SetEnabledInstanceExtensions())
 		{
-			LOG_ERROR("--- GraphicsDeviceVK: Required Instance Extensions not supported");
+			LOG_ERROR("[GraphicsDeviceVK]: Required Instance Extensions not supported");
 			return false;
 		}
 
 		VkApplicationInfo appInfo = {};
-		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		appInfo.pNext = nullptr;
-		appInfo.pApplicationName = "Vulkan Application";
-		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.pEngineName = "No Engine";
-		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_0;
+		appInfo.sType               = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+		appInfo.pNext               = nullptr;
+		appInfo.pApplicationName    = "Lambda Engine";
+		appInfo.applicationVersion  = VK_MAKE_VERSION(1, 0, 0);
+		appInfo.pEngineName         = "Lambda Engine";
+		appInfo.engineVersion       = VK_MAKE_VERSION(1, 0, 0);
+		appInfo.apiVersion          = VK_API_VERSION_1_0;
 
 		VkInstanceCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-		createInfo.pApplicationInfo = &appInfo;
-		createInfo.enabledExtensionCount = (uint32_t)m_EnabledInstanceExtensions.size();
-		createInfo.ppEnabledExtensionNames = m_EnabledInstanceExtensions.data();
+		createInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+		createInfo.pApplicationInfo         = &appInfo;
+		createInfo.enabledExtensionCount    = (uint32_t)m_EnabledInstanceExtensions.size();
+		createInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
 
 		if (desc.Debug)
 		{
 			VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
 			PopulateDebugMessengerCreateInfo(debugCreateInfo);
 
-			createInfo.enabledLayerCount = (uint32_t)m_EnabledValidationLayers.size();
-			createInfo.ppEnabledLayerNames = m_EnabledValidationLayers.data();
-			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+			createInfo.enabledLayerCount    = (uint32_t)m_EnabledValidationLayers.size();
+			createInfo.ppEnabledLayerNames  = m_EnabledValidationLayers.data();
+			createInfo.pNext                = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 		}
 		else
 		{
-			createInfo.enabledLayerCount = 0;
-			createInfo.pNext = nullptr;
+			createInfo.enabledLayerCount    = 0;
+			createInfo.pNext                = nullptr;
 		}
 
 		if (vkCreateInstance(&createInfo, nullptr, &Instance) != VK_SUCCESS)
 		{
-			LOG_ERROR("--- GraphicsDeviceVK: Failed to create Vulkan Instance!");
+			LOG_ERROR("[GraphicsDeviceVK]: Failed to create Vulkan Instance!");
 			return false;
 		}
 
@@ -292,7 +303,7 @@ namespace LambdaEngine
 
 			if (vkCreateDebugUtilsMessengerEXT(Instance, &createInfo, nullptr, &m_DebugMessenger))
 			{
-				LOG_ERROR("--- GraphicsDeviceVK: Failed to set up Debug Messenger!");
+				LOG_ERROR("[GraphicsDeviceVK]: Failed to set up Debug Messenger!");
 				return false;
 			}
 		}
@@ -304,13 +315,13 @@ namespace LambdaEngine
 	{
 		if (!InitPhysicalDevice())
 		{
-			LOG_ERROR("--- GraphicsDeviceVK: Could not initialize Physical Device!");
+			LOG_ERROR("[GraphicsDeviceVK]: Could not initialize Physical Device!");
 			return false;
 		}
 
 		if (!InitLogicalDevice(desc))
 		{
-			LOG_ERROR("--- GraphicsDeviceVK: Could not initialize Logical Device!");
+			LOG_ERROR("[GraphicsDeviceVK]: Could not initialize Logical Device!");
 			return false;
 		}
 
@@ -324,7 +335,7 @@ namespace LambdaEngine
 
 		if (deviceCount == 0)
 		{
-			LOG_ERROR("--- GraphicsDeviceVK: Presentation is not supported by the selected physicaldevice");
+			LOG_ERROR("[GraphicsDeviceVK]: Presentation is not supported by the selected physicaldevice");
 			return false;
 		}
 
@@ -342,7 +353,7 @@ namespace LambdaEngine
 		// Check if the best candidate is suitable at all
 		if (physicalDeviceCandidates.rbegin()->first <= 0)
 		{
-			LOG_ERROR("--- GraphicsDeviceVK: Failed to find a suitable GPU!");
+			LOG_ERROR("[GraphicsDeviceVK]: Failed to find a suitable GPU!");
 			return false;
 		}
 
@@ -373,17 +384,17 @@ namespace LambdaEngine
 		for (uint32 queueFamily : uniqueQueueFamilies)
 		{
 			VkDeviceQueueCreateInfo queueCreateInfo = {};
-			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-			queueCreateInfo.queueFamilyIndex = queueFamily;
-			queueCreateInfo.queueCount = 1;
-			queueCreateInfo.pQueuePriorities = &queuePriority;
+			queueCreateInfo.sType               = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			queueCreateInfo.queueFamilyIndex    = queueFamily;
+			queueCreateInfo.queueCount          = 1;
+			queueCreateInfo.pQueuePriorities    = &queuePriority;
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
 		VkPhysicalDeviceFeatures deviceFeatures = {};
-		deviceFeatures.fillModeNonSolid = true;
-		deviceFeatures.vertexPipelineStoresAndAtomics = true;
-		deviceFeatures.fragmentStoresAndAtomics = true;
+		deviceFeatures.fillModeNonSolid                 = true;
+		deviceFeatures.vertexPipelineStoresAndAtomics   = true;
+		deviceFeatures.fragmentStoresAndAtomics         = true;
 
 		VkDeviceCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -393,13 +404,13 @@ namespace LambdaEngine
 
 		createInfo.pEnabledFeatures = &deviceFeatures;
 
-		createInfo.enabledExtensionCount = (uint32)m_EnabledDeviceExtensions.size();
-		createInfo.ppEnabledExtensionNames = m_EnabledDeviceExtensions.data();
+		createInfo.enabledExtensionCount    = (uint32)m_EnabledDeviceExtensions.size();
+		createInfo.ppEnabledExtensionNames  = m_EnabledDeviceExtensions.data();
 
 		if (desc.Debug)
 		{
-			createInfo.enabledLayerCount = (uint32)m_EnabledValidationLayers.size();
-			createInfo.ppEnabledLayerNames = m_EnabledValidationLayers.data();
+			createInfo.enabledLayerCount    = (uint32)m_EnabledValidationLayers.size();
+			createInfo.ppEnabledLayerNames  = m_EnabledValidationLayers.data();
 		}
 		else
 		{
@@ -408,7 +419,7 @@ namespace LambdaEngine
 
 		if (vkCreateDevice(PhysicalDevice, &createInfo, nullptr, &Device) != VK_SUCCESS)
 		{
-			LOG_ERROR("--- GraphicsDeviceVK: Failed to create logical device!");
+			LOG_ERROR("[GraphicsDeviceVK]: Failed to create logical device!");
 			return false;
 		}
 
@@ -467,7 +478,7 @@ namespace LambdaEngine
 		{
 			for (const ValidationLayer& requiredValidationLayer : requiredValidationLayers)
 			{
-				LOG_ERROR("--- GraphicsDeviceVK: Required Validation Layer %s not supported", requiredValidationLayer.Name);
+				LOG_ERROR("[GraphicsDeviceVK]: Required Validation Layer %s not supported", requiredValidationLayer.Name);
 			}
 
 			return false;
@@ -477,7 +488,7 @@ namespace LambdaEngine
 		{
 			for (const ValidationLayer& optionalValidationLayer : optionalValidationLayers)
 			{
-				LOG_WARNING("--- GraphicsDeviceVK: Optional Validation Layer %s not supported", optionalValidationLayer.Name);
+				LOG_WARNING("[GraphicsDeviceVK]: Optional Validation Layer %s not supported", optionalValidationLayer.Name);
 			}
 		}
 
@@ -525,7 +536,7 @@ namespace LambdaEngine
 		{
 			for (const Extension& requiredInstanceExtension : requiredInstanceExtensions)
 			{
-				LOG_ERROR("--- GraphicsDeviceVK: Required Instance Extension %s not supported", requiredInstanceExtension.Name);
+				LOG_ERROR("[GraphicsDeviceVK]: Required Instance Extension %s not supported", requiredInstanceExtension.Name);
 			}
 
 			return false;
@@ -535,7 +546,7 @@ namespace LambdaEngine
 		{
 			for (const Extension& optionalInstanceExtension : optionalInstanceExtensions)
 			{
-				LOG_WARNING("--- GraphicsDeviceVK: Optional Instance Extension %s not supported", optionalInstanceExtension.Name);
+				LOG_WARNING("[GraphicsDeviceVK]: Optional Instance Extension %s not supported", optionalInstanceExtension.Name);
 			}
 		}
 
@@ -559,22 +570,28 @@ namespace LambdaEngine
 		VkPhysicalDeviceFeatures deviceFeatures;
 		vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
 
-		bool requiredExtensionsSupported = false;
-		uint32_t numOfOptionalExtensionsSupported = 0;
+		bool        requiredExtensionsSupported = false;
+		uint32_t    numOfOptionalExtensionsSupported = 0;
 		CheckDeviceExtensionsSupport(physicalDevice, requiredExtensionsSupported, numOfOptionalExtensionsSupported);
 
 		if (!requiredExtensionsSupported)
-			return 0;
+        {
+            return 0;
+        }
 
 		QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
 
 		if (!indices.IsComplete())
-			return 0;
+        {
+            return 0;
+        }
 
 		int score = 1 + numOfOptionalExtensionsSupported;
 
 		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-			score += 1000;
+        {
+            score += 1000;
+        }
 
 		return score;
 	}
@@ -593,6 +610,8 @@ namespace LambdaEngine
 
 		for (const VkExtensionProperties& extension : availableDeviceExtensions)
 		{
+            //LOG_MESSAGE(extension.extensionName);
+            
 			uint32 availableDeviceExtensionHash = HashString<const char*>(extension.extensionName);
 
 			for (auto requiredDeviceExtension = requiredDeviceExtensions.begin(); requiredDeviceExtension != requiredDeviceExtensions.end(); requiredDeviceExtension++)
@@ -628,10 +647,10 @@ namespace LambdaEngine
 		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
-		indices.GraphicsFamily = GetQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT, queueFamilies);
-		indices.ComputeFamily = GetQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT, queueFamilies);
-		indices.TransferFamily = GetQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT, queueFamilies);
-		indices.PresentFamily = indices.GraphicsFamily; //Assume present support at this stage
+		indices.GraphicsFamily  = GetQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT, queueFamilies);
+		indices.ComputeFamily   = GetQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT, queueFamilies);
+		indices.TransferFamily  = GetQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT, queueFamilies);
+		indices.PresentFamily   = indices.GraphicsFamily; //Assume present support at this stage
 
 		return indices;
 	}
@@ -643,7 +662,9 @@ namespace LambdaEngine
 			for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++)
 			{
 				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
-					return i;
+                {
+                    return i;
+                }
 			}
 		}
 
@@ -652,14 +673,18 @@ namespace LambdaEngine
 			for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++)
 			{
 				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
-					return i;
+                {
+                    return i;
+                }
 			}
 		}
 
 		for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++)
 		{
 			if (queueFamilies[i].queueFlags & queueFlags)
-				return i;
+            {
+                return i;
+            }
 		}
 
 		return UINT32_MAX;
@@ -701,7 +726,7 @@ namespace LambdaEngine
 		{
 			for (const Extension& optionalDeviceExtension : optionalDeviceExtensions)
 			{
-				LOG_WARNING("--- GraphicsDeviceVK: Optional Device Extension %s not supported", optionalDeviceExtension.Name);
+				LOG_WARNING("[GraphicsDeviceVK]: Optional Device Extension %s not supported", optionalDeviceExtension.Name);
 			}
 		}
 	}
@@ -770,19 +795,19 @@ namespace LambdaEngine
 	{
 		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
 		{
-			LOG_MESSAGE("--- Validation Layer: %s", pCallbackData->pMessage);
+			LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
 		{
-			LOG_MESSAGE("--- Validation Layer: %s", pCallbackData->pMessage);
+			LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		{
-			LOG_WARNING("--- Validation Layer: %s", pCallbackData->pMessage);
+			LOG_WARNING("[Validation Layer]: %s", pCallbackData->pMessage);
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		{
-			LOG_ERROR("--- Validation Layer: %s", pCallbackData->pMessage);
+			LOG_ERROR("[Validation Layer]: %s", pCallbackData->pMessage);
 		}
 
 		return VK_FALSE;

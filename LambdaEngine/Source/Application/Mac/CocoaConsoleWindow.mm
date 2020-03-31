@@ -1,4 +1,5 @@
 #ifdef LAMBDA_PLATFORM_MACOS
+#ifdef __OBJC__
 #include "Application/Mac/CocoaConsoleWindow.h"
 
 @implementation CocoaConsoleWindow
@@ -11,4 +12,5 @@
 
 @end
 
+#endif
 #endif

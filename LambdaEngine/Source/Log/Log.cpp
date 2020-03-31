@@ -1,9 +1,12 @@
 #include "Log/Log.h"
 
 #include "Application/PlatformConsole.h"
+#include "Application/PlatformMisc.h"
 
 namespace LambdaEngine
 {
+    bool Log::s_DebuggerOutputEnabled = false;
+
     void Log::Print(ELogSeverity severity, const char* pFormat, ...)
     {
         va_list args;
@@ -28,6 +31,10 @@ namespace LambdaEngine
         }
         
         PlatformConsole::VPrintLine(pFormat, args);
+        if (s_DebuggerOutputEnabled)
+        {
+            PlatformMisc::OutputDebugString(pFormat);
+        }
 
 		if (severity != ELogSeverity::LOG_MESSAGE)
 		{
