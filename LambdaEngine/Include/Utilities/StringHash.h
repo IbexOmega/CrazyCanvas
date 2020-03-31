@@ -1,6 +1,7 @@
 #pragma once
-
 #include "LambdaEngine.h"
+
+#include <functional>
 
 namespace LambdaEngine
 {
