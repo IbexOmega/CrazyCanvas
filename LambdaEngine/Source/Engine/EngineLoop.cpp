@@ -31,7 +31,7 @@ namespace LambdaEngine
 		bufferDesc.pName			= "VertexBuffer";
 		bufferDesc.MemoryType		= EMemoryType::GPU_MEMORY;
 		bufferDesc.Flags			= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_DST;
-		bufferDesc.SizeInBytes	= 64;
+		bufferDesc.SizeInBytes		= 64;
 
 		IBuffer* pBuffer = pGraphicsDevice->CreateBuffer(bufferDesc);
 
