@@ -11,6 +11,8 @@ namespace LambdaEngine
         TEXTURE_FLAG_SHADER_RESOURCE    = BIT(2),
         TEXTURE_FLAG_UNORDERED_ACCESS   = BIT(3),
         TEXTURE_FLAG_DEPTH_STENCIL      = BIT(4),
+        TEXTURE_FLAG_COPY_SRC           = BIT(5),
+        TEXTURE_FLAG_COPY_DST           = BIT(6),
     };
 
     enum class ETextureType : uint8
@@ -32,6 +34,8 @@ namespace LambdaEngine
         uint32          Height      = 0;
         uint32          Depth       = 0;
         uint32          ArrayCount  = 0;
+        uint32          Miplevels   = 0;
+        uint32          Samples     = 0;
     };
 
     class ITexture : public IDeviceChild

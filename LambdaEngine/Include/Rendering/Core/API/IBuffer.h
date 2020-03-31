@@ -23,7 +23,7 @@ namespace LambdaEngine
         uint32      SizeInBytes = 0;
     };
 
-    class IBuffer : public virtual IDeviceChild
+    class IBuffer : public IDeviceChild
     {
     public:
         DECL_INTERFACE(IBuffer);

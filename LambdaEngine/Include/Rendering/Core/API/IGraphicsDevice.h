@@ -7,6 +7,7 @@ namespace LambdaEngine
 	struct ComputePipelineDesc;
 	struct RayTracePipelineDesc;
 	struct BufferDesc;
+	struct TextureDesc;
 
 	class IRenderPass;
 	class IFence;
@@ -41,8 +42,9 @@ namespace LambdaEngine
 		virtual IPipelineState*		CreateComputePipelineState(const ComputePipelineDesc& desc) = 0;
 		virtual IPipelineState*		CreateRayTracePipelineState(const RayTracePipelineDesc& desc) = 0;
 		virtual IBuffer*			CreateBuffer(const BufferDesc& desc) = 0;
-		virtual ITexture*			CreateTexture() = 0;
+		virtual ITexture*			CreateTexture(const TextureDesc& desc)	= 0;
 		virtual ITextureView*		CreateTextureView() = 0;
+		
 	};
 
 	LAMBDA_API IGraphicsDevice* CreateGraphicsDevice(const GraphicsDeviceDesc& desc, EGraphicsAPI api);

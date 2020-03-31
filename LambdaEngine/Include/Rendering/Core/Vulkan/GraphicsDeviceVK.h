@@ -36,15 +36,15 @@ namespace LambdaEngine
 		virtual void Release() override;
 
 		//CREATE
-		virtual IRenderPass* CreateRenderPass() override;
-		virtual IFence* CreateFence() override;
-		virtual ICommandList* CreateCommandList() override;
+		virtual IRenderPass*    CreateRenderPass() override;
+		virtual IFence*         CreateFence() override;
+		virtual ICommandList*   CreateCommandList() override;
 		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) override;
 		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineDesc& desc) override;
 		virtual IPipelineState* CreateRayTracePipelineState(const RayTracePipelineDesc& desc) override;
-		virtual IBuffer* CreateBuffer(const BufferDesc& desc) override;
-		virtual ITexture* CreateTexture() override;
-		virtual ITextureView* CreateTextureView() override;
+		virtual IBuffer*        CreateBuffer(const BufferDesc& desc) override;
+		virtual ITexture*		CreateTexture(const TextureDesc& desc)	override;
+		virtual ITextureView*   CreateTextureView() override;
 
 		//EXECUTE
 		void ExecuteGraphics(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages,
@@ -55,7 +55,7 @@ namespace LambdaEngine
 			uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount);
 
 		//UTIL
-		void SetVulkanObjectName(const char* pName, uint64_t objectHandle, VkObjectType type) const;
+		void SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type) const;
 
 	private:
 		//INIT
