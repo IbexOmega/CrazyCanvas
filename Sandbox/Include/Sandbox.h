@@ -8,8 +8,8 @@
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IMouseHandler
 {
 public:
-	Sandbox()   = default;
-	~Sandbox()  = default;
+	Sandbox();
+	~Sandbox();
 
 	// Inherited via Game
 	virtual void Tick() override;
