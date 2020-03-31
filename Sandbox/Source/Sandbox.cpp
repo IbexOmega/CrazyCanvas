@@ -30,7 +30,9 @@ Sandbox::Sandbox()
 	LOG_MESSAGE(buffer);*/
 
 
-	ISocket* socket1 = SocketFactory::CreateSocket(PROTOCOL_UDP);
+
+
+	/*ISocket* socket1 = SocketFactory::CreateSocket(PROTOCOL_UDP);
 	ISocket* socket2 = SocketFactory::CreateSocket(PROTOCOL_UDP);
 
 	socket2->Bind("127.0.0.1", 4444);
@@ -53,7 +55,7 @@ Sandbox::Sandbox()
 	socket1->ReceiveFrom(buffer, 256, bytesReceived, sender, port);
 	LOG_MESSAGE(buffer);
 	LOG_MESSAGE(sender.c_str());
-	LOG_MESSAGE("%d", port);
+	LOG_MESSAGE("%d", port);*/
 }
 
 Sandbox::~Sandbox()
