@@ -5,17 +5,17 @@
 namespace LambdaEngine
 {
 	constexpr uint64 PRIME_MULTIPLE = 16777619ull;
-	constexpr uint32 INITIAL_HASH = 2166136261u;
+	constexpr uint32 INITIAL_HASH	= 2166136261u;
 
-	template <size_t index>
+	template <size_t INDEX>
 	class Hash
 	{
 	public:
 		template <size_t strLen>
 		constexpr static uint32 Generate(const char(&str)[strLen])
 		{
-			using THash = Hash<index - 1u>;
-			return static_cast<uint32>(static_cast<uint64>(THash::Generate(str) ^ (uint32)(str[index - 1u]))* PRIME_MULTIPLE);
+			using THash = Hash<INDEX - 1u>;
+			return static_cast<uint32>(static_cast<uint64>(THash::Generate(str) ^ (uint32)(str[INDEX - 1u]))* PRIME_MULTIPLE);
 		}
 	};
 
@@ -23,9 +23,10 @@ namespace LambdaEngine
 	class Hash<0u>
 	{
 	public:
-		template <size_t strLen>
-		constexpr static uint32 Generate(const char(&str)[strLen])
+		template <size_t STRLEN>
+		constexpr static uint32 Generate(const char(&str)[STRLEN])
 		{
+			UNREFERENCED_VARIABLE(str);
 			return INITIAL_HASH;
 		}
 	};
@@ -55,13 +56,13 @@ namespace LambdaEngine
 		}
 	};
 
-	template <size_t strLen>
-	class HashHelper<char[strLen]>
+	template <size_t STRLEN>
+	class HashHelper<char[STRLEN]>
 	{
 	public:
-		static constexpr uint32 Generate(const char(&str)[strLen])
+		static constexpr uint32 Generate(const char(&str)[STRLEN])
 		{
-			return Hash<strLen - 1u>::Generate(str);
+			return Hash<STRLEN - 1u>::Generate(str);
 		}
 	};
 
@@ -88,6 +89,6 @@ namespace LambdaEngine
 		}
 
 		const char* Name;
-		uint32 Hash;
+		uint32		Hash;
 	};
 }

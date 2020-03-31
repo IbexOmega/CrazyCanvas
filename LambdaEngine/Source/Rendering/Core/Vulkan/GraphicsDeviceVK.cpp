@@ -4,8 +4,6 @@
 #include <set>
 #include <map>
 
-#define GET_INSTANCE_PROC_ADDR(instance, function_name) if ((function_name = reinterpret_cast<PFN_##function_name>(vkGetInstanceProcAddr(instance, #function_name))) == nullptr) { LOG_ERROR("--- Vulkan: Failed to load InstanceFunction '%s'", #function_name); }
-
 namespace LambdaEngine
 {
 	constexpr ValidationLayer REQUIRED_VALIDATION_LAYERS[]
