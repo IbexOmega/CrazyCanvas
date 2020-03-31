@@ -6,10 +6,10 @@
 #include <optional>
 #include <vector>
 
-class CommandBufferVK;
-
 namespace LambdaEngine
 {
+	class CommandBufferVK;
+	
 	typedef ConstString ValidationLayer;
 	typedef ConstString Extension;
 
@@ -27,7 +27,6 @@ namespace LambdaEngine
 				return GraphicsFamily.has_value() && ComputeFamily.has_value() && TransferFamily.has_value() && PresentFamily.has_value();
 			}
 		};
-
 
 	public:
 		GraphicsDeviceVK();

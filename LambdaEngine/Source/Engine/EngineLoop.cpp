@@ -35,8 +35,8 @@ namespace LambdaEngine
             pGame->Tick();
         }
 
-		pBuffer->Release();
-		pGraphicsDevice->Release();
+		SAFERELEASE(pBuffer);
+		SAFERELEASE(pGraphicsDevice);
     }
 
     bool EngineLoop::Tick()

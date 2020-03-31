@@ -49,8 +49,9 @@
 	#define FORCEINLINE __attribute__((always_inline))
 #endif
 
-//Delete
-#define SAFEDELETE(object) if ((object)) { delete object; object = nullptr; }
+//Delete and release
+#define SAFEDELETE(object)	if ((object)) { delete object; object = nullptr; }
+#define SAFERELEASE(object) if ((object)) { object->Release(); object = nullptr; }
 
 //Bit helper
 #define BIT(bit) (1 << bit)

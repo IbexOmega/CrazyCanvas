@@ -12,10 +12,10 @@ namespace LambdaEngine
 
 		static bool Init();
 
-		static EKey 		GetKey(int32 keyCode);
+		static EKey GetKey(int32 keyCode);
 
 	private:
-		static EKey 		s_KeyCodeTable[EKey::KEY_COUNT];
+		static EKey s_KeyCodeTable[EKey::KEY_COUNT];
 	};
 }
 #endif

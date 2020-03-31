@@ -12,6 +12,7 @@ namespace LambdaEngine
 			m_pDevice(pDevice),
 			m_StrongReferences(0)
 		{
+			AddRef();
 		}
 
 		virtual ~DeviceChildBase() = default;

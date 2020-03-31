@@ -2,6 +2,7 @@
 
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
+#include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
 {
@@ -76,7 +77,45 @@ namespace LambdaEngine
             m_Desc = desc;
         }
 
-        
+        //TODO: Allocate with DeviceAllocator
+        VkMemoryRequirements memoryRequirements = { };
+        vkGetBufferMemoryRequirements(m_pDevice->Device, m_Buffer, &memoryRequirements);  
+
+        VkMemoryPropertyFlags memoryProperties = 0;
+        if (m_Desc.MemoryType == EMemoryType::CPU_MEMORY)
+        {
+            memoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        }
+        else if (m_Desc.MemoryType == EMemoryType::GPU_MEMORY)
+        {
+            memoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        }
+
+        int32 memoryTypeIndex = FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, memoryProperties);
+
+        VkMemoryAllocateInfo allocateInfo = { };
+        allocateInfo.sType              = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocateInfo.pNext              = nullptr;
+        allocateInfo.memoryTypeIndex    = memoryTypeIndex;
+        allocateInfo.allocationSize     = memoryRequirements.size;
+
+        result = vkAllocateMemory(m_pDevice->Device, &allocateInfo, nullptr, &m_Memory);
+        if (result != VK_SUCCESS)
+        {
+            LOG_ERROR("BufferVK: Failed to allocate memory");
+            return false;
+        }
+        else
+        {
+            D_LOG_MESSAGE("BufferVK: Allocated %d bytes", memoryRequirements.size);
+        }
+
+        result = vkBindBufferMemory(m_pDevice->Device, m_Buffer, m_Memory, 0);
+        if (result != VK_SUCCESS)
+        {
+            LOG_ERROR("BufferVK: Failed to bind memory");
+            return false;
+        }
 
         return true;
     }
