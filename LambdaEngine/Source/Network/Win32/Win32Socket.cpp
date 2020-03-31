@@ -4,8 +4,13 @@
 
 namespace LambdaEngine
 {
-	Win32Socket::Win32Socket() : 
-		m_Socket(INVALID_SOCKET)
+	Win32Socket::Win32Socket() : Win32Socket(INVALID_SOCKET)
+	{
+
+	}
+
+	Win32Socket::Win32Socket(uint64 socket) :
+		m_Socket(socket)
 	{
 
 	}
@@ -18,7 +23,7 @@ namespace LambdaEngine
 
 		if (m_Socket == INVALID_SOCKET)
 		{
-			LOG_ERROR("Failed to create socket with protcol of %d", protocol);
+			LOG_ERROR_CRIT("Failed to create socket with protcol of %d", protocol);
 			PrintLastError();
 			return false;
 		}
@@ -26,7 +31,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool Win32Socket::Connect(const char* address, uint32 port)
+	bool Win32Socket::Connect(const char* address, uint16 port)
 	{
 		struct sockaddr_in socketAddress;
 		socketAddress.sin_family = AF_INET;
@@ -35,14 +40,14 @@ namespace LambdaEngine
 
 		if (connect(m_Socket, (struct sockaddr*)&socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
 		{
-			LOG_ERROR("Failed to connect to %s:%d", address, port);
+			LOG_ERROR_CRIT("Failed to connect to %s:%d", address, port);
 			PrintLastError();
 			return false;
 		}
 		return true;
 	}
 
-	bool Win32Socket::Bind(const char* address, uint32 port)
+	bool Win32Socket::Bind(const char* address, uint16 port)
 	{
 		struct sockaddr_in socketAddress;
 		socketAddress.sin_family = AF_INET;
@@ -51,11 +56,37 @@ namespace LambdaEngine
 
 		if (bind(m_Socket, (struct sockaddr*)&socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
 		{
-			LOG_ERROR("Failed to bind to %s:%d", address ? address : "ANY", port);
+			LOG_ERROR_CRIT("Failed to bind to %s:%d", address ? address : "ANY", port);
 			PrintLastError();
 			return false;
 		}
 		return true;
+	}
+
+	bool Win32Socket::Listen()
+	{
+		int32 result = listen(m_Socket, 64);
+		if (result == SOCKET_ERROR)
+		{
+			LOG_ERROR_CRIT("Failed to listen");
+			PrintLastError();
+			return false;
+		}
+		return true;
+	}
+
+	ISocket* Win32Socket::Accept()
+	{
+		struct sockaddr_in socketAddress;
+		int32 size = sizeof(struct sockaddr_in);
+		SOCKET socket = accept(m_Socket, (struct sockaddr*)&socketAddress, &size);
+		if (socket == INVALID_SOCKET)
+		{
+			LOG_ERROR_CRIT("Failed to accept Socket");
+			PrintLastError();
+			return nullptr;
+		}
+		return new Win32Socket(socket);
 	}
 
 	bool Win32Socket::Send(const char* buffer, uint32 bytesToSend, uint32& bytesSent)
@@ -63,7 +94,7 @@ namespace LambdaEngine
 		bytesSent = send(m_Socket, buffer, bytesToSend, 0);
 		if (bytesSent == SOCKET_ERROR)
 		{
-			LOG_ERROR("Failed to send data");
+			LOG_ERROR_CRIT("Failed to send data");
 			PrintLastError();
 			return false;
 		}
@@ -75,7 +106,7 @@ namespace LambdaEngine
 		bytesReceived = recv(m_Socket, buffer, size, 0);
 		if (bytesReceived == SOCKET_ERROR)
 		{
-			LOG_ERROR("Failed to receive data");
+			LOG_ERROR_CRIT("Failed to receive data");
 			PrintLastError();
 			return false;
 		}
@@ -194,6 +225,6 @@ namespace LambdaEngine
 		}
 
 		LOG_ERROR("ERROR CODE: %d", errorCode);
-		LOG_ERROR("ERROR MESSAGE: %s", message.c_str());
+		LOG_ERROR("ERROR MESSAGE: %s\n", message.c_str());
 	}
 }

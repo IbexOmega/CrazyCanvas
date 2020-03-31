@@ -8,23 +8,26 @@
 
 Sandbox::Sandbox()
 {
-	/*using namespace LambdaEngine;
+	using namespace LambdaEngine;
 
 	ISocket* server = SocketFactory::CreateSocket(PROTOCOL_TCP);
-	server->Bind("localhost", 4444);
+	server->Bind("127.0.0.1", 4444);
+	server->Listen();
 
 	ISocket* client = SocketFactory::CreateSocket(PROTOCOL_TCP);
-	client->Connect("localhost", 4444);
+	client->Connect("127.0.0.1", 4444);
+
+	ISocket* serverClient = server->Accept();
 
 	std::string data = "Hello Guy!";
 	uint32 bytesSent;
-	client->Send(data.c_str(), data.length(), bytesSent);
+	serverClient->Send(data.c_str(), data.length(), bytesSent);
 
 	char buffer[256];
 	uint32 bytesReceived;
-	server->Receive(buffer, 256, bytesReceived);
+	client->Receive(buffer, 256, bytesReceived);
 
-	PlatformConsole::PrintLine(buffer);*/
+	LOG_MESSAGE(buffer);
 }
 
 Sandbox::~Sandbox()
