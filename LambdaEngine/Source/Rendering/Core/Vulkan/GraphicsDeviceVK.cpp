@@ -27,8 +27,10 @@ namespace LambdaEngine
 	{
 		Extension(VK_KHR_SURFACE_EXTENSION_NAME),
 		Extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME),
-#ifdef LAMBDA_PLATFORM_MACOS
+#if defined(LAMBDA_PLATFORM_MACOS)
         Extension(VK_MVK_MACOS_SURFACE_EXTENSION_NAME),
+#elif defined(LAMBDA_PLATFORM_WINDOWS)
+		Extension(VK_KHR_WIN32_SURFACE_EXTENSION_NAME),
 #endif
     };
 
