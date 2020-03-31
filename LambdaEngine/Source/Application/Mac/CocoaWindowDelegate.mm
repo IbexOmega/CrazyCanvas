@@ -1,4 +1,5 @@
 #ifdef LAMBDA_PLATFORM_MACOS
+#ifdef __OBJC__
 #include "Application/PlatformMisc.h"
 
 #include "Application/Mac/MacApplication.h"
@@ -14,4 +15,5 @@
 
 @end
 
+#endif
 #endif

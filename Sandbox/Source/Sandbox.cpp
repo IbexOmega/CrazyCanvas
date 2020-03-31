@@ -10,7 +10,10 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
-	/*ISocketTCP* server = SocketFactory::CreateSocketTCP();
+#ifdef LAMBDA_PLATFORM_WINDOWS
+
+	//TCP TEST
+	ISocketTCP* server = SocketFactory::CreateSocketTCP();
 	server->Bind("127.0.0.1", 4444);
 	server->Listen();
 
@@ -27,20 +30,17 @@ Sandbox::Sandbox()
 	uint32 bytesReceived;
 	client->Receive(buffer, 256, bytesReceived);
 
-	LOG_MESSAGE(buffer);*/
+	LOG_MESSAGE(buffer);
 
 
-	´/*ISocketUDP* socket1 = SocketFactory::CreateSocketUDP();
+	//UDP TEST
+	ISocketUDP* socket1 = SocketFactory::CreateSocketUDP();
 	ISocketUDP* socket2 = SocketFactory::CreateSocketUDP();
 
 	socket2->Bind("127.0.0.1", 4444);
-
-	std::string data = "Hello Guy!";
-	uint32 bytesSent;
 	socket1->SendTo(data.c_str(), data.length(), bytesSent, "127.0.0.1", 4444);
 
-	char buffer[256];
-	uint32 bytesReceived;
+	buffer[256];
 	std::string sender;
 	uint16 port;
 	socket2->ReceiveFrom(buffer, 256, bytesReceived, sender, port);
@@ -53,7 +53,8 @@ Sandbox::Sandbox()
 	socket1->ReceiveFrom(buffer, 256, bytesReceived, sender, port);
 	LOG_MESSAGE(buffer);
 	LOG_MESSAGE(sender.c_str());
-	LOG_MESSAGE("%d", port);*/
+	LOG_MESSAGE("%d", port);
+#endif
 }
 
 Sandbox::~Sandbox()

@@ -11,6 +11,7 @@
 #include "Rendering/Core/API/IGraphicsDevice.h"
 #include "Rendering/Core/API/IBuffer.h"
 #include "Rendering/Core/API/ITexture.h"
+#include "Rendering/Core/API/ISwapChain.h"
 
 #include "Network/API/SocketFactory.h"
 
@@ -18,11 +19,7 @@ namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
-		LOG_MESSAGE("Oppsi");
-		LOG_INFO("Oppsi");
-		LOG_WARNING("Oppsi");
-		LOG_ERROR("Oppsi");
-        LOG_ERROR_CRIT("Oppsi");
+        Log::SetDebuggerOutputEnabled(true);
         
 		GraphicsDeviceDesc graphicsDeviceDesc = {};
 		graphicsDeviceDesc.Debug = true;
@@ -46,12 +43,24 @@ namespace LambdaEngine
 		textureDesc.Width		= 256;
 		textureDesc.Height		= 256;
 		textureDesc.Depth		= 1;
-		textureDesc.SampleCount		= 1;
+		textureDesc.SampleCount	= 1;
 		textureDesc.Miplevels	= 1;
 		textureDesc.ArrayCount	= 1;
 
 		ITexture* pTexture = pGraphicsDevice->CreateTexture(textureDesc);
 
+        SwapChainDesc swapChainDesc = { };
+        swapChainDesc.pName         = "Main Window";
+        swapChainDesc.BufferCount   = 3;
+        swapChainDesc.Format        = EFormat::B8G8R8A8_UNORM;
+        swapChainDesc.Width         = 0;
+        swapChainDesc.Height        = 0;
+        swapChainDesc.SampleCount   = 1;
+        
+        ISwapChain* pSwapChain = pGraphicsDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
+        
+        Log::SetDebuggerOutputEnabled(false);
+        
         bool IsRunning = true;
         while (IsRunning)
         {
@@ -59,6 +68,7 @@ namespace LambdaEngine
             pGame->Tick();
         }
 
+        SAFERELEASE(pSwapChain);
 		SAFERELEASE(pTexture);
 		SAFERELEASE(pBuffer);
 		SAFERELEASE(pGraphicsDevice);

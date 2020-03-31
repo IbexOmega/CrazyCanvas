@@ -6,11 +6,13 @@
 #ifdef __OBJC__
 
 @class CocoaWindow;
+@class CocoaContentView;
 @class CocoaWindowDelegate;
 
 #else
 
 class CocoaWindow;
+class CocoaContentView;
 class CocoaWindowDelegate;
 
 #endif
@@ -35,12 +37,13 @@ namespace LambdaEngine
 
         FORCEINLINE virtual const void* GetView() const override final
         {
-            return nullptr;
+            return m_pView;
         }
         
     private:
-        CocoaWindow*          m_pWindow   = nullptr;
-        CocoaWindowDelegate*  m_pDelegate = nullptr;
+        CocoaWindow*            m_pWindow   = nullptr;
+        CocoaContentView*       m_pView     = nullptr;
+        CocoaWindowDelegate*    m_pDelegate = nullptr;
     };
 }
 

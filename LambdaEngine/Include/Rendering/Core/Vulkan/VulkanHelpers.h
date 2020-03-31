@@ -49,11 +49,11 @@ namespace LambdaEngine
 	inline bool CreateShadeModule(VkDevice device, VkShaderModule shaderModule, const char* pSource, uint32 sourceSize)
 	{
 		VkShaderModuleCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		createInfo.pNext = nullptr;
-		createInfo.flags = 0;
+		createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		createInfo.pNext    = nullptr;
+		createInfo.flags    = 0;
 		createInfo.codeSize = sourceSize;
-		createInfo.pCode = reinterpret_cast<const uint32_t*>(pSource);
+		createInfo.pCode    = reinterpret_cast<const uint32_t*>(pSource);
 
 		VkResult result = vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule);
 		return result == VK_SUCCESS;
@@ -107,7 +107,9 @@ namespace LambdaEngine
 		VkShaderModule shaderModule = VK_NULL_HANDLE;
 
 		if (!CreateShadeModule(device, shaderModule, shaderDesc.pSource, shaderDesc.SourceSize))
-			return false;
+        {            
+            return false;
+        }
 
 		shaderStageInfo = {};
 
@@ -118,5 +120,7 @@ namespace LambdaEngine
 		shaderStageInfo.module = shaderModule;
 		shaderStageInfo.pName = shaderDesc.pEntryPoint;
 		shaderStageInfo.pSpecializationInfo = &specializationInfo;
+        
+        return true;
 	}
 }

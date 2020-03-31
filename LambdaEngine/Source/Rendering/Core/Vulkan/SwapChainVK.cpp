@@ -61,10 +61,10 @@ namespace LambdaEngine
             info.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
             info.pNext = nullptr;
             info.flags = 0;
-            //info.pView = Window.pNSView;
+            info.pView = pWindow->GetView();
             if (vkCreateMacOSSurfaceMVK(m_pDevice->Instance, &info, nullptr, &m_Surface))
             {
-                
+                m_Surface = VK_NULL_HANDLE;
             }
         }
 #elif defined(LAMBDA_PLATFORM_WINDOWS)
