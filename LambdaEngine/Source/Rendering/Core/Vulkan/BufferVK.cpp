@@ -1,10 +1,10 @@
 #include "Rendering/Core/Vulkan/BufferVK.h"
+#include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 
 namespace LambdaEngine
 {
     BufferVK::BufferVK(const GraphicsDeviceVK* pDevice)
-        : IBuffer(),
-        DeviceChildVK(pDevice),
+        : TDeviceChild(pDevice),
         m_Desc()
     {
     }
@@ -26,6 +26,7 @@ namespace LambdaEngine
 
     bool BufferVK::Create(const BufferDesc& desc)
     {
+
         return false;
     }
 

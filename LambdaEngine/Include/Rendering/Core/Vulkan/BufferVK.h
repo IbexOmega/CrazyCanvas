@@ -1,15 +1,17 @@
 #pragma once
 #include "Rendering/Core/API/IBuffer.h"
+#include "Rendering/Core/API/DeviceChildBase.h"
 
-#include "DeviceChildVK.h"
 #include "Vulkan.h"
 
 namespace LambdaEngine
 {
     class GraphicsDeviceVK;
 
-    class BufferVK : public IBuffer, public DeviceChildVK
+    class BufferVK : public DeviceChildBase<GraphicsDeviceVK, IBuffer>
     {
+        using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, IBuffer>;
+
     public:
         BufferVK(const GraphicsDeviceVK* pDevice);
         ~BufferVK();

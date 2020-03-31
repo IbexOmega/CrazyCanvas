@@ -12,8 +12,8 @@ namespace LambdaEngine
 	class Hash
 	{
 	public:
-		template <size_t strLen>
-		constexpr static uint32 Generate(const char(&str)[strLen])
+		template <size_t STRLEN>
+		constexpr static uint32 Generate(const char(&str)[STRLEN])
 		{
 			using THash = Hash<INDEX - 1u>;
 			return static_cast<uint32>(static_cast<uint64>(THash::Generate(str) ^ (uint32)(str[INDEX - 1u]))* PRIME_MULTIPLE);
