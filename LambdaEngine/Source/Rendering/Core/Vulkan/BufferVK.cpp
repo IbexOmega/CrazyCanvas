@@ -1,3 +1,5 @@
+#include "Log/Log.h"
+
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 
@@ -13,37 +15,90 @@ namespace LambdaEngine
     {
         if (m_Buffer != VK_NULL_HANDLE)
         {
-            //vkDestroyBuffer();
+            vkDestroyBuffer(m_pDevice->Device, m_Buffer, nullptr);
             m_Buffer = VK_NULL_HANDLE;
         }
         
         if (m_Memory != VK_NULL_HANDLE)
         {
-            //Free
+            vkFreeMemory(m_pDevice->Device, m_Memory, nullptr);
             m_Memory = VK_NULL_HANDLE;
         }
     }
 
     bool BufferVK::Create(const BufferDesc& desc)
     {
+        VkBufferCreateInfo info = {};
+        info.sType                  = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        info.pNext                  = nullptr;
+        info.flags                  = 0;
+        info.pQueueFamilyIndices    = nullptr;
+        info.queueFamilyIndexCount  = 0;
+        info.sharingMode            = VK_SHARING_MODE_EXCLUSIVE;
+        info.size                   = desc.SizeInBytes;
+        
+        if (desc.Flags & EBufferFlags::BUFFER_FLAG_VERTEX_BUFFER)
+        {
+            info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        }
+        if (desc.Flags & EBufferFlags::BUFFER_FLAG_INDEX_BUFFER)
+        {
+            info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        }
+        if (desc.Flags & EBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER)
+        {
+            info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        }
+        if (desc.Flags & EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER)
+        {
+            info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        }
+        if (desc.Flags & EBufferFlags::BUFFER_FLAG_COPY_DST)
+        {
+            info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        }
+        if (desc.Flags & EBufferFlags::BUFFER_FLAG_COPY_SRC)
+        {
+            info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        }
 
-        return false;
+        VkResult result = vkCreateBuffer(m_pDevice->Device, &info, nullptr, &m_Buffer);
+        if (result != VK_SUCCESS)
+        {
+            LOG_ERROR("BufferVK: Failed to create buffer");
+            return false;
+        }
+        else
+        {
+            D_LOG_MESSAGE("BufferVK: Created Buffer");
+
+            this->SetName(desc.pName);
+            m_Desc = desc;
+        }
+
+        
+
+        return true;
     }
 
     void* BufferVK::Map()
     {
         void* pHostMemory = nullptr;
-        //vkMapMemory(VkDevice device, m_Memory, 0, 0, 0, &pHostMemory);
+        if (vkMapMemory(m_pDevice->Device, m_Memory, 0, 0, 0, &pHostMemory) != VK_SUCCESS)
+        {
+            return nullptr;
+        }
+
         return pHostMemory;
     }
 
     void BufferVK::Unmap()
     {
-        //vkUnmapMemory(VkDevice device, m_Memory);
+        vkUnmapMemory(m_pDevice->Device, m_Memory);
     }
 
     void BufferVK::SetName(const char* pName)
     {
-        //TODO: Set name
+        m_pDevice->SetVulkanObjectName(pName, (uint64)m_Buffer, VK_OBJECT_TYPE_BUFFER);       
     }
 }

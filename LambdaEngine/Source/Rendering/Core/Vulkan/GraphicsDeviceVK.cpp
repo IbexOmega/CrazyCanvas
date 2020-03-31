@@ -1,8 +1,10 @@
-#include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
-#include "Log/Log.h"
-
 #include <set>
 #include <map>
+
+#include "Log/Log.h"
+
+#include "Rendering/Core/Vulkan/BufferVK.h"
+#include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 
 namespace LambdaEngine
 {
@@ -124,9 +126,15 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	IBuffer* GraphicsDeviceVK::CreateBuffer()
+	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc& desc)
 	{
-		return nullptr;
+		BufferVK* pBuffer = new BufferVK(this);
+		if (!pBuffer->Create(desc))
+		{
+			return nullptr;
+		}
+
+		return pBuffer;
 	}
 
 	ITexture* GraphicsDeviceVK::CreateTexture()
@@ -154,18 +162,18 @@ namespace LambdaEngine
 		LOG_ERROR("Call to unimplemented function GraphicsDeviceVK::ExecuteTransfer");
 	}
 
-	void GraphicsDeviceVK::SetVulkanObjectName(const char* pName, uint64_t objectHandle, VkObjectType type)
+	void GraphicsDeviceVK::SetVulkanObjectName(const char* pName, uint64_t objectHandle, VkObjectType type) const
 	{
 		if (pName)
 		{
 			if (vkSetDebugUtilsObjectNameEXT)
 			{
 				VkDebugUtilsObjectNameInfoEXT info = {};
-				info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-				info.pNext = nullptr;
-				info.objectType = type;
-				info.objectHandle = objectHandle;
-				info.pObjectName = pName;
+				info.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+				info.pNext			= nullptr;
+				info.objectType		= type;
+				info.objectHandle	= objectHandle;
+				info.pObjectName	= pName;
 				vkSetDebugUtilsObjectNameEXT(Device, &info);
 			}
 		}

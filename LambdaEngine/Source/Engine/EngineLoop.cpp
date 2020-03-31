@@ -9,6 +9,7 @@
 #include "Input/API/Input.h"
 
 #include "Rendering/Core/API/IGraphicsDevice.h"
+#include "Rendering/Core/API/IBuffer.h"
 
 namespace LambdaEngine
 {
@@ -19,6 +20,14 @@ namespace LambdaEngine
 
         IGraphicsDevice* pGraphicsDevice = CreateGraphicsDevice(graphicsDeviceDesc, EGraphicsAPI::VULKAN);
         
+		BufferDesc desc = { };
+		desc.pName			= "VertexBuffer";
+		desc.MemoryType		= EMemoryType::GPU_MEMORY;
+		desc.Flags			= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_DST;
+		desc.SizeInBytes	= 64;
+
+		IBuffer* pBuffer = pGraphicsDevice->CreateBuffer(desc);
+
         bool IsRunning = true;
         while (IsRunning)
         {
@@ -26,6 +35,7 @@ namespace LambdaEngine
             pGame->Tick();
         }
 
+		pBuffer->Release();
 		pGraphicsDevice->Release();
     }
 

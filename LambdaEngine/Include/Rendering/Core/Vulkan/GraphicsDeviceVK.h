@@ -41,7 +41,7 @@ namespace LambdaEngine
 		virtual IFence* CreateFence() override;
 		virtual ICommandList* CreateCommandList() override;
 		virtual IPipelineState* CreatePipelineState() override;
-		virtual IBuffer* CreateBuffer() override;
+		virtual IBuffer* CreateBuffer(const BufferDesc& desc) override;
 		virtual ITexture* CreateTexture() override;
 		virtual ITextureView* CreateTextureView() override;
 
@@ -54,7 +54,7 @@ namespace LambdaEngine
 			uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount);
 
 		//UTIL
-		void SetVulkanObjectName(const char* pName, uint64_t objectHandle, VkObjectType type);
+		void SetVulkanObjectName(const char* pName, uint64_t objectHandle, VkObjectType type) const;
 
 	private:
 		//INIT
