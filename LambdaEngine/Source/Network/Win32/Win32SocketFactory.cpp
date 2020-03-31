@@ -1,3 +1,4 @@
+#ifdef LAMBDA_PLATFORM_WINDOWS
 #include "Network/Win32/Win32SocketFactory.h"
 #include "Network/Win32/Win32Socket.h"
 #include "Log/Log.h"
@@ -33,3 +34,4 @@ namespace LambdaEngine
 		return socket;
 	}
 }
+#endif

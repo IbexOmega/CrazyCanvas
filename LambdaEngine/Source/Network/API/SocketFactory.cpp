@@ -2,7 +2,9 @@
 #include "Log/Log.h"
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
-#include "Network/Win32/Win32SocketFactory.h"
+    #include "Network/Win32/Win32SocketFactory.h"
+#else
+    #include "Network/API/ISocketFactory.h"
 #endif
 
 namespace LambdaEngine
@@ -20,13 +22,17 @@ namespace LambdaEngine
 #ifdef LAMBDA_PLATFORM_WINDOWS
 		m_pSocketFactory = new Win32SocketFactory();
 #endif
-
-		return m_pSocketFactory->Init();
+        if (m_pSocketFactory)
+        {
+            return m_pSocketFactory->Init();
+        }
+        
+        return false;
 	}
 
 	ISocket* SocketFactory::CreateSocket(EProtocol protocol)
 	{
-#ifdef _DEBUG
+#ifdef LAMBDA_DEBUG
 		if (!m_pSocketFactory)
 		{
 			LOG_ERROR("[SocketFactory] must been initialized before creating a socket!");

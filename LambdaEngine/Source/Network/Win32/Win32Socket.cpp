@@ -1,3 +1,4 @@
+#ifdef LAMBDA_PLATFORM_WINDOWS
 #include "Network/Win32/Win32Socket.h"
 #include "Log/Log.h"
 #include <winsock2.h>
@@ -228,3 +229,4 @@ namespace LambdaEngine
 		LOG_ERROR("ERROR MESSAGE: %s\n", message.c_str());
 	}
 }
+#endif
