@@ -3,6 +3,8 @@
 
 #include "Log/Log.h"
 
+#include "Rendering/Core/Vulkan/GraphicsPipelineStateVK.h"
+#include "Rendering/Core/Vulkan/ComputePipelineStateVK.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 
@@ -121,7 +123,29 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreatePipelineState()
+	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc)
+	{
+		GraphicsPipelineStateVK* pPipelineState = new GraphicsPipelineStateVK(this);
+		if (!pPipelineState->Init(desc))
+		{
+			return nullptr;
+		}
+
+		return pPipelineState;
+	}
+
+	IPipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineDesc& desc)
+	{
+		ComputePipelineStateVK* pPipelineState = new ComputePipelineStateVK(this);
+		if (!pPipelineState->Init(desc))
+		{
+			return nullptr;
+		}
+
+		return pPipelineState;
+	}
+
+	IPipelineState* GraphicsDeviceVK::CreateRayTracePipelineState(const RayTracePipelineDesc& desc)
 	{
 		return nullptr;
 	}

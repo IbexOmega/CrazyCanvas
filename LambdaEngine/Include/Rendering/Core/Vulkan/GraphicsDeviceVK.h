@@ -39,7 +39,9 @@ namespace LambdaEngine
 		virtual IRenderPass* CreateRenderPass() override;
 		virtual IFence* CreateFence() override;
 		virtual ICommandList* CreateCommandList() override;
-		virtual IPipelineState* CreatePipelineState() override;
+		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) override;
+		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineDesc& desc) override;
+		virtual IPipelineState* CreateRayTracePipelineState(const RayTracePipelineDesc& desc) override;
 		virtual IBuffer* CreateBuffer(const BufferDesc& desc) override;
 		virtual ITexture* CreateTexture() override;
 		virtual ITextureView* CreateTextureView() override;

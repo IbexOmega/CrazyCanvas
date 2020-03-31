@@ -3,6 +3,9 @@
 
 namespace LambdaEngine
 {
+	struct GraphicsPipelineDesc;
+	struct ComputePipelineDesc;
+	struct RayTracePipelineDesc;
 	struct BufferDesc;
 
 	class IRenderPass;
@@ -34,7 +37,9 @@ namespace LambdaEngine
 		virtual IRenderPass*		CreateRenderPass() = 0;
 		virtual IFence*				CreateFence() = 0;
 		virtual ICommandList*		CreateCommandList() = 0;
-		virtual IPipelineState*		CreatePipelineState() = 0;
+		virtual IPipelineState*		CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) = 0;
+		virtual IPipelineState*		CreateComputePipelineState(const ComputePipelineDesc& desc) = 0;
+		virtual IPipelineState*		CreateRayTracePipelineState(const RayTracePipelineDesc& desc) = 0;
 		virtual IBuffer*			CreateBuffer(const BufferDesc& desc) = 0;
 		virtual ITexture*			CreateTexture() = 0;
 		virtual ITextureView*		CreateTextureView() = 0;
