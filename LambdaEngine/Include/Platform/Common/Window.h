@@ -5,12 +5,8 @@ namespace LambdaEngine
 {
     class LAMBDA_API Window
     {
-    public:
-        Window()    = default;
-        ~Window()   = default;
-        
-        DECL_REMOVE_COPY(Window);
-        DECL_REMOVE_MOVE(Window);
+    public:       
+		DECL_ABSTRACT_CLASS(Window);
         
         virtual bool Init(uint32 width, uint32 height)  = 0;
         virtual void Release()                          = 0;

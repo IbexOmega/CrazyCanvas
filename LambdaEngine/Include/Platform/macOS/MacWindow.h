@@ -23,9 +23,6 @@ namespace LambdaEngine
         MacWindow()     = default;
         ~MacWindow()    = default;
 
-        DECL_REMOVE_COPY(MacWindow);
-        DECL_REMOVE_MOVE(MacWindow);
-
         virtual bool Init(uint32 width, uint32 height)  override final;
         virtual void Release()                          override final;
 

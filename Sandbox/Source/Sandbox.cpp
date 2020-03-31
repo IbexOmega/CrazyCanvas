@@ -3,8 +3,27 @@
 #include "Platform/PlatformConsole.h"
 #include "Input/Input.h"
 
+#include "Network/API/SocketFactory.h"
+
 Sandbox::Sandbox()
 {
+	using namespace LambdaEngine;
+
+	ISocket* server = SocketFactory::CreateSocket(PROTOCOL_TCP);
+	server->Bind("localhost", 4444);
+
+	ISocket* client = SocketFactory::CreateSocket(PROTOCOL_TCP);
+	client->Connect("localhost", 4444);
+
+	std::string data = "Hello Guy!";
+	uint32 bytesSent;
+	client->Send(data.c_str(), data.length(), bytesSent);
+
+	char buffer[256];
+	uint32 bytesReceived;
+	server->Receive(buffer, 256, bytesReceived);
+
+	PlatformConsole::PrintLine(buffer);
 }
 
 Sandbox::~Sandbox()
@@ -15,7 +34,7 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 {
 	using namespace LambdaEngine;
 
-	PlatformConsole::PrintLine("Key Pressed: %d", key);
+	PlatformConsole::PrintLine("Key Pressed: %d ", key);
 }
 
 void Sandbox::OnKeyHeldDown(LambdaEngine::EKey key)

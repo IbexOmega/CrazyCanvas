@@ -2,9 +2,9 @@
 #include "LambdaEngine.h"
 
 #define LOG(severity, ...)  LambdaEngine::Log::Print(severity, __VA_ARGS__)
-#define LOG_MESSAGE(...)    LOG(LambdaEngine::ELogSeverity::MESSAGE, __VA_ARGS__)
-#define LOG_WARNING(...)    LOG(LambdaEngine::ELogSeverity::WARNING, __VA_ARGS__)
-#define LOG_ERROR(...)      LOG(LambdaEngine::ELogSeverity::ERROR, __VA_ARGS__)
+#define LOG_MESSAGE(...)    LOG(LambdaEngine::ELogSeverity::LOG_MESSAGE, __VA_ARGS__)
+#define LOG_WARNING(...)    LOG(LambdaEngine::ELogSeverity::LOG_WARNING, __VA_ARGS__)
+#define LOG_ERROR(...)      LOG(LambdaEngine::ELogSeverity::LOG_ERROR, __VA_ARGS__)
 
 #ifdef LAMBDA_DEBUG
     #define D_LOG(severity, ...)    LOG(severity, __VA_ARGS__)
@@ -22,9 +22,9 @@ namespace LambdaEngine
 {
     enum class ELogSeverity
     {
-        MESSAGE = 0,
-        WARNING = 1,
-        ERROR   = 2
+		LOG_MESSAGE = 0,
+		LOG_WARNING = 1,
+        LOG_ERROR   = 2
     };
 
     class Log

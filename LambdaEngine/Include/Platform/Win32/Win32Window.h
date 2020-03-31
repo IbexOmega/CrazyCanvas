@@ -1,8 +1,6 @@
 #pragma once
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
-#include "LambdaEngine.h"
-
 #include "Platform/Common/Window.h"
 #include "Windows.h"
 
@@ -15,9 +13,6 @@ namespace LambdaEngine
 	public:
 		Win32Window();
 		~Win32Window() = default;
-
-		DECL_REMOVE_COPY(Win32Window);
-		DECL_REMOVE_MOVE(Win32Window);
 
 		virtual bool Init(uint32 width, uint32 height) override;
 		virtual void Release() override;

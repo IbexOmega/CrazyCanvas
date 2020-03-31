@@ -6,15 +6,15 @@ namespace LambdaEngine
 {
     void Log::Print(ELogSeverity severity, const char* pFormat, ...)
     {
-        if (severity == ELogSeverity::MESSAGE)
+        if (severity == ELogSeverity::LOG_MESSAGE)
         {
             PlatformConsole::SetColor(EConsoleColor::COLOR_GREEN);
         }
-        else if (severity == ELogSeverity::WARNING)
+        else if (severity == ELogSeverity::LOG_WARNING)
         {
             PlatformConsole::SetColor(EConsoleColor::COLOR_YELLOW);
         }
-        else if (severity == ELogSeverity::ERROR)
+        else if (severity == ELogSeverity::LOG_ERROR)
         {
             PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
         }
@@ -26,7 +26,7 @@ namespace LambdaEngine
         
         va_end(args);
 
-        if (severity == ELogSeverity::MESSAGE)
+        if (severity == ELogSeverity::LOG_MESSAGE)
         {
             PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
         }

@@ -8,6 +8,8 @@
 
 #include "Input/Input.h"
 
+#include "Network/API/SocketFactory.h"
+
 namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
@@ -59,6 +61,11 @@ namespace LambdaEngine
 	bool EngineLoop::Init()
 	{
 		if (!Input::Init())
+		{
+			return false;
+		}
+
+		if (!SocketFactory::Init())
 		{
 			return false;
 		}
