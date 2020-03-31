@@ -12,6 +12,13 @@ namespace LambdaEngine
 	{
 	}
 
+	TextureVK::TextureVK(const GraphicsDeviceVK* pDevice, VkImage image)
+		: TDeviceChild(pDevice),
+		m_Desc()
+	{
+
+	}
+
 	TextureVK::~TextureVK()
 	{
 		if (m_Image != VK_NULL_HANDLE)

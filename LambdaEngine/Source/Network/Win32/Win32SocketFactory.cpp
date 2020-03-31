@@ -1,6 +1,7 @@
 #ifdef LAMBDA_PLATFORM_WINDOWS
 #include "Network/Win32/Win32SocketFactory.h"
-#include "Network/Win32/Win32Socket.h"
+#include "Network/Win32/Win32SocketTCP.h"
+#include "Network/Win32/Win32SocketUDP.h"
 #include "Log/Log.h"
 #include <winsock2.h>
 
@@ -27,11 +28,14 @@ namespace LambdaEngine
 		WSACleanup();
 	}
 
-	ISocket* Win32SocketFactory::CreateSocket(EProtocol protocol)
+	ISocketTCP* Win32SocketFactory::CreateSocketTCP()
 	{
-		Win32Socket* socket = new Win32Socket();
-		socket->Init(protocol);
-		return socket;
+		return new Win32SocketTCP();
+	}
+
+	ISocketUDP* Win32SocketFactory::CreateSocketUDP()
+	{
+		return new Win32SocketUDP();
 	}
 }
 #endif

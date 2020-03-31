@@ -10,14 +10,14 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
-	/*ISocket* server = SocketFactory::CreateSocket(PROTOCOL_TCP);
+	/*ISocketTCP* server = SocketFactory::CreateSocketTCP();
 	server->Bind("127.0.0.1", 4444);
 	server->Listen();
 
-	ISocket* client = SocketFactory::CreateSocket(PROTOCOL_TCP);
+	ISocketTCP* client = SocketFactory::CreateSocketTCP();
 	client->Connect("127.0.0.1", 4444);
 
-	ISocket* serverClient = server->Accept();
+	ISocketTCP* serverClient = server->Accept();
 
 	std::string data = "Hello Guy!";
 	uint32 bytesSent;
@@ -30,10 +30,8 @@ Sandbox::Sandbox()
 	LOG_MESSAGE(buffer);*/
 
 
-
-
-	/*ISocket* socket1 = SocketFactory::CreateSocket(PROTOCOL_UDP);
-	ISocket* socket2 = SocketFactory::CreateSocket(PROTOCOL_UDP);
+	´/*ISocketUDP* socket1 = SocketFactory::CreateSocketUDP();
+	ISocketUDP* socket2 = SocketFactory::CreateSocketUDP();
 
 	socket2->Bind("127.0.0.1", 4444);
 

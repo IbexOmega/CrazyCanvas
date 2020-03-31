@@ -11,6 +11,16 @@ namespace LambdaEngine
 {
 	ISocketFactory* SocketFactory::m_pSocketFactory = nullptr;
 
+	ISocketTCP* SocketFactory::CreateSocketTCP()
+	{
+		return m_pSocketFactory->CreateSocketTCP();
+	}
+
+	ISocketUDP* SocketFactory::CreateSocketUDP()
+	{
+		return m_pSocketFactory->CreateSocketUDP();
+	}
+
 	bool SocketFactory::Init()
 	{
 		if (m_pSocketFactory)
@@ -22,24 +32,11 @@ namespace LambdaEngine
 #ifdef LAMBDA_PLATFORM_WINDOWS
 		m_pSocketFactory = new Win32SocketFactory();
 #endif
-        if (m_pSocketFactory)
-        {
-            return m_pSocketFactory->Init();
-        }
-        
-        return false;
-	}
-
-	ISocket* SocketFactory::CreateSocket(EProtocol protocol)
-	{
-#ifdef LAMBDA_DEBUG
-		if (!m_pSocketFactory)
+		if (m_pSocketFactory)
 		{
-			LOG_ERROR("[SocketFactory] must been initialized before creating a socket!");
-			return nullptr;
+			return m_pSocketFactory->Init();
 		}
-#endif
 
-		return m_pSocketFactory->CreateSocket(protocol);
+		return false;
 	}
 }
