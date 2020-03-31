@@ -4,6 +4,7 @@
 #include "Log/Log.h"
 
 #include "Rendering/Core/Vulkan/BufferVK.h"
+#include "Rendering/Core/Vulkan/TextureVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 
 namespace LambdaEngine
@@ -137,9 +138,15 @@ namespace LambdaEngine
 		return pBuffer;
 	}
 
-	ITexture* GraphicsDeviceVK::CreateTexture()
+	ITexture* GraphicsDeviceVK::CreateTexture(const TextureDesc& desc)
 	{
-		return nullptr;
+		TextureVK* pTexture = new TextureVK(this);
+		if (!pTexture->Create(desc))
+		{
+			return nullptr;
+		}
+
+		return pTexture;
 	}
 
 	ITextureView* GraphicsDeviceVK::CreateTextureView()
@@ -162,7 +169,7 @@ namespace LambdaEngine
 		LOG_ERROR("Call to unimplemented function GraphicsDeviceVK::ExecuteTransfer");
 	}
 
-	void GraphicsDeviceVK::SetVulkanObjectName(const char* pName, uint64_t objectHandle, VkObjectType type) const
+	void GraphicsDeviceVK::SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type) const
 	{
 		if (pName)
 		{

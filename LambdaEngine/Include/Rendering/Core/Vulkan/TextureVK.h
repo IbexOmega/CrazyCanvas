@@ -18,6 +18,8 @@ namespace LambdaEngine
 
 		bool Create(const TextureDesc& desc);
 
+		virtual void SetName(const char* pName) override;
+
 		FORCEINLINE virtual TextureDesc GetDesc() const override
 		{
 			return m_Desc;

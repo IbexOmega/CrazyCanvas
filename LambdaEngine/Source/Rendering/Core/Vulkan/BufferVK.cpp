@@ -40,27 +40,27 @@ namespace LambdaEngine
         
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_VERTEX_BUFFER)
         {
-            info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            info.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         }
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_INDEX_BUFFER)
         {
-            info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            info.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
         }
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER)
         {
-            info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            info.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         }
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER)
         {
-            info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         }
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_COPY_DST)
         {
-            info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            info.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         }
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_COPY_SRC)
         {
-            info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         }
 
         VkResult result = vkCreateBuffer(m_pDevice->Device, &info, nullptr, &m_Buffer);

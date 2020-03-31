@@ -3,14 +3,14 @@
 
 namespace LambdaEngine
 {
-    enum class EMemoryType
+    enum class EMemoryType : uint8
     {
         NONE        = 0,
         CPU_MEMORY  = 1,
         GPU_MEMORY  = 2,
     };
 
-    enum class EFormat
+    enum class EFormat : uint8
     {
         NONE            = 0,
         R8G8B8A8_UNORM  = 1,
