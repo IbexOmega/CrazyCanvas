@@ -16,7 +16,7 @@ namespace LambdaEngine
         BufferVK(const GraphicsDeviceVK* pDevice);
         ~BufferVK();
         
-        bool Create(const BufferDesc& desc);
+        bool Init(const BufferDesc& desc);
         
         virtual void*   Map()   override final;
         virtual void    Unmap() override final;

@@ -1,10 +1,18 @@
 #pragma once
 #include "LambdaEngine.h"
 
+#include <stdarg.h>
+
+#ifdef LAMBDA_VISUAL_STUDIO
+    #define FUNCTION_SIG __FUNCTION__
+#else
+    #define FUNCTION_SIG __PRETTY_FUNCTION__
+#endif
+
 #define LOG(severity, ...)  LambdaEngine::Log::Print(severity, __VA_ARGS__)
-#define LOG_MESSAGE(...)    LOG(LambdaEngine::ELogSeverity::MESSAGE, __VA_ARGS__)
-#define LOG_WARNING(...)    LOG(LambdaEngine::ELogSeverity::WARNING, __VA_ARGS__)
-#define LOG_ERROR(...)      LOG(LambdaEngine::ELogSeverity::ERROR, __VA_ARGS__)
+#define LOG_MESSAGE(...)    LOG(LambdaEngine::ELogSeverity::LOG_MESSAGE, __VA_ARGS__)
+#define LOG_WARNING(...)    LOG(LambdaEngine::ELogSeverity::LOG_WARNING, __VA_ARGS__)
+#define LOG_ERROR(...)      LambdaEngine::Log::PrintTraceError(FUNCTION_SIG, __VA_ARGS__)
 
 #ifdef LAMBDA_DEBUG
     #define D_LOG(severity, ...)    LOG(severity, __VA_ARGS__)
@@ -22,14 +30,17 @@ namespace LambdaEngine
 {
     enum class ELogSeverity
     {
-        MESSAGE = 0,
-        WARNING = 1,
-        ERROR   = 2
+        LOG_MESSAGE = 0,
+        LOG_WARNING = 1,
+        LOG_ERROR   = 2
     };
 
     class LAMBDA_API Log
     {
     public:
         static void Print(ELogSeverity severity, const char* pFormat, ...);
+        static void VPrint(ELogSeverity severity, const char* pFormat, va_list args);
+        
+        static void PrintTraceError(const char* pFunction, const char* pFormat, ...);
     };
 }

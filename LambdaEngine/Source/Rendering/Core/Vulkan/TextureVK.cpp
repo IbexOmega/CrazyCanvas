@@ -27,7 +27,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool TextureVK::Create(const TextureDesc& desc)
+	bool TextureVK::Init(const TextureDesc& desc)
 	{
 		VkImageCreateInfo info = {};
 		info.sType					= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -42,7 +42,7 @@ namespace LambdaEngine
 		info.mipLevels				= desc.Miplevels;
 		info.pQueueFamilyIndices	= nullptr;
 		info.queueFamilyIndexCount	= 0;
-		info.samples				= ConvertSamples(desc.Samples);
+		info.samples				= ConvertSamples(desc.SampleCount);
 		info.sharingMode			= VK_SHARING_MODE_EXCLUSIVE;
 		info.tiling					= VK_IMAGE_TILING_OPTIMAL;
 		
