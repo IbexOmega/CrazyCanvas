@@ -1,4 +1,5 @@
 #ifdef LAMBDA_PLATFORM_MACOS
+#ifdef __OBJC__
 #include "Application/Mac/CocoaWindow.h"
 
 @implementation CocoaWindow
@@ -25,4 +26,5 @@
 
 @end
 
+#endif
 #endif

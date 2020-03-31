@@ -47,5 +47,13 @@ namespace LambdaEngine
         static void VPrint(ELogSeverity severity, const char* pFormat, va_list args);
         
         static void PrintTraceError(const char* pFunction, const char* pFormat, ...);
+        
+        FORCEINLINE static void SetDebuggerOutputEnabled(bool enable)
+        {
+            s_DebuggerOutputEnabled = enable;
+        }
+        
+    private:
+        static bool s_DebuggerOutputEnabled;
     };
 }

@@ -9,6 +9,7 @@ namespace LambdaEngine
 	public:
 		virtual bool Init() override;
 		virtual void Release() override;
-		virtual ISocket* CreateSocket(EProtocol protocol) override;
+		virtual ISocketTCP* CreateSocketTCP() override;
+		virtual ISocketUDP* CreateSocketUDP() override;
 	};
 }

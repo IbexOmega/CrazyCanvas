@@ -12,6 +12,13 @@ namespace LambdaEngine
 	{
 	}
 
+	TextureVK::TextureVK(const GraphicsDeviceVK* pDevice, VkImage image)
+		: TDeviceChild(pDevice),
+		m_Desc()
+	{
+
+	}
+
 	TextureVK::~TextureVK()
 	{
 		if (m_Image != VK_NULL_HANDLE)
@@ -87,12 +94,12 @@ namespace LambdaEngine
 		VkResult result = vkCreateImage(m_pDevice->Device, &info, nullptr, &m_Image);
 		if (result != VK_SUCCESS)
 		{
-			LOG_ERROR("TextureVK: Failed to create texture");
+			LOG_ERROR("[TextureVK]: Failed to create texture");
 			return false;
 		}
 		else
 		{
-			D_LOG_MESSAGE("TextureVK: Created texture w=%d, h=%d, d=%d", desc.Width, desc.Height, desc.Depth);
+			D_LOG_MESSAGE("[TextureVK]: Created texture w=%d, h=%d, d=%d", desc.Width, desc.Height, desc.Depth);
 
 			m_Desc = desc;
 			SetName(m_Desc.pName);
@@ -123,18 +130,18 @@ namespace LambdaEngine
 		result = vkAllocateMemory(m_pDevice->Device, &allocateInfo, nullptr, &m_Memory);
 		if (result != VK_SUCCESS)
 		{
-			LOG_ERROR("TextureVK: Failed to allocate memory");
+			LOG_ERROR("[TextureVK]: Failed to allocate memory");
 			return false;
 		}
 		else
 		{
-			D_LOG_MESSAGE("TextureVK: Allocated %d bytes", memoryRequirements.size);
+			D_LOG_MESSAGE("[TextureVK]: Allocated %d bytes", memoryRequirements.size);
 		}
 
 		result = vkBindImageMemory(m_pDevice->Device, m_Image, m_Memory, 0);
 		if (result != VK_SUCCESS)
 		{
-			LOG_ERROR("TextureVK: Failed to bind memory");
+			LOG_ERROR("[TextureVK]: Failed to bind memory");
 			return false;
 		}
 

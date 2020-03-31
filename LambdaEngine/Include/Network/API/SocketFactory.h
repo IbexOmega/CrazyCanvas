@@ -1,12 +1,11 @@
 #pragma once
 
 #include "Defines.h"
-#include "EProtocol.h"
-#include "ISocket.h"
+#include "ISocketTCP.h"
+#include "ISocketUDP.h"
 
 namespace LambdaEngine
 {
-	class ISocket;
 	class ISocketFactory;
 
 	class LAMBDA_API SocketFactory
@@ -15,7 +14,8 @@ namespace LambdaEngine
 
 	public:
 		DECL_STATIC_CLASS(SocketFactory);
-		static ISocket* CreateSocket(EProtocol protocol);
+		static ISocketTCP* CreateSocketTCP();
+		static ISocketUDP* CreateSocketUDP();
 
 	private:
 		static bool Init();

@@ -14,6 +14,7 @@ namespace LambdaEngine
 
 	public:
 		TextureVK(const GraphicsDeviceVK* pDevice);
+		TextureVK(const GraphicsDeviceVK* pDevice, VkImage image);
 		~TextureVK();
 
 		bool Init(const TextureDesc& desc);

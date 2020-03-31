@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Defines.h"
-#include "EProtocol.h"
 
 namespace LambdaEngine
 {
-	class ISocket;
+	class ISocketTCP;
+	class ISocketUDP;
 
 	class LAMBDA_API ISocketFactory
 	{
@@ -14,6 +14,7 @@ namespace LambdaEngine
 
 		virtual bool Init() = 0;
 		virtual void Release() = 0;
-		virtual ISocket* CreateSocket(EProtocol protocol) = 0;
+		virtual ISocketTCP* CreateSocketTCP() = 0;
+		virtual ISocketUDP* CreateSocketUDP() = 0;
 	};
 }

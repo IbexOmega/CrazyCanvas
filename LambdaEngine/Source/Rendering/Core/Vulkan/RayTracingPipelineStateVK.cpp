@@ -1,5 +1,6 @@
 #include "Rendering/Core/Vulkan/RayTracingPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
+#include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 #include "Log/Log.h"
@@ -21,7 +22,7 @@ namespace LambdaEngine
 			m_Pipeline = VK_NULL_HANDLE;
 		}
 
-		SAFEDELETE(m_pSBT);
+		SAFERELEASE(m_pSBT);
 	}
 
 	bool RayTracingPipelineStateVK::Init(const RayTracingPipelineDesc& desc)
@@ -33,8 +34,10 @@ namespace LambdaEngine
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups;
 
 		if (!CreateShaderData(shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps, shaderGroups, desc))
-			return false;
-
+        {
+            return false;
+        }
+    
 		VkRayTracingPipelineCreateInfoKHR rayPipelineInfo = {};
 		rayPipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
 		rayPipelineInfo.stageCount = (uint32)shaderStagesInfos.size();

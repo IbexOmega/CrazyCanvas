@@ -70,12 +70,12 @@ namespace LambdaEngine
         VkResult result = vkCreateBuffer(m_pDevice->Device, &info, nullptr, &m_Buffer);
         if (result != VK_SUCCESS)
         {
-            LOG_ERROR("BufferVK: Failed to create buffer");
+            LOG_ERROR("[BufferVK]: Failed to create buffer");
             return false;
         }
         else
         {
-            D_LOG_MESSAGE("BufferVK: Created Buffer");
+            D_LOG_MESSAGE("[BufferVK]: Created Buffer");
 
             this->SetName(desc.pName);
             m_Desc = desc;
@@ -106,18 +106,18 @@ namespace LambdaEngine
         result = vkAllocateMemory(m_pDevice->Device, &allocateInfo, nullptr, &m_Memory);
         if (result != VK_SUCCESS)
         {
-            LOG_ERROR("BufferVK: Failed to allocate memory");
+            LOG_ERROR("[BufferVK]: Failed to allocate memory");
             return false;
         }
         else
         {
-            D_LOG_MESSAGE("BufferVK: Allocated %d bytes", memoryRequirements.size);
+            D_LOG_MESSAGE("[BufferVK]: Allocated %d bytes", memoryRequirements.size);
         }
 
         result = vkBindBufferMemory(m_pDevice->Device, m_Buffer, m_Memory, 0);
         if (result != VK_SUCCESS)
         {
-            LOG_ERROR("BufferVK: Failed to bind memory");
+            LOG_ERROR("[BufferVK]: Failed to bind memory");
             return false;
         }
 

@@ -147,6 +147,9 @@ workspace "LambdaEngine"
 
                 "%{prj.name}/Include/Input/Mac/**",
                 "%{prj.name}/Source/Input/Mac/**",
+
+                "%{prj.name}/Include/Network/Mac/**",
+                "%{prj.name}/Source/Network/Mac/**",
             }
         -- Remove files not available for macos builds
         filter "system:macosx"
@@ -162,6 +165,9 @@ workspace "LambdaEngine"
 
                 "%{prj.name}/Include/Input/Win32/**",
                 "%{prj.name}/Source/Input/Win32/**",
+
+                "%{prj.name}/Include/Network/Win32/**",
+                "%{prj.name}/Source/Network/Win32/**",
             }
         filter {}
 
@@ -213,7 +219,8 @@ workspace "LambdaEngine"
 			{
                 "vulkan.1",
 				"vulkan.1.2.131",
-				"Cocoa.framework",
+                "Cocoa.framework",
+                "MetalKit.framework",
 			}
 		filter {}
 

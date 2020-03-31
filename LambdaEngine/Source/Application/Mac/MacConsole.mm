@@ -8,8 +8,8 @@ namespace LambdaEngine
 
     void MacConsole::Init()
     {
-        const CGFloat width     = 640.0f;
-        const CGFloat height    = 480.0f;
+        const CGFloat width     = 1280.0f;
+        const CGFloat height    = 720.0f;
         
         NSUInteger  styleMask   = NSWindowStyleMaskTitled  | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
         NSRect      contentRect = NSMakeRect(0, 0, width, height);

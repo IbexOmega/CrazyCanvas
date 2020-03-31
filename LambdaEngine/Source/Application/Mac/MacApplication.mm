@@ -79,7 +79,7 @@ namespace LambdaEngine
             return false;
         }
 
-        if (!m_Window.Init(800, 600))
+        if (!m_Window.Init(1440, 900))
         {
             return false;
         }
