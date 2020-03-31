@@ -1,5 +1,11 @@
 #pragma once
  
+#if defined(LAMBDA_PLATFORM_MACOS)
+    #define VK_USE_PLATFORM_MACOS_MVK
+#elif defined(LAMBDA_PLATFORM_WINDOWS)
+    #define VK_USE_PLATFORM_WIN32_KHR
+#endif
+
 #include <vulkan-beta/vulkan_core.h>
 #include <vulkan-beta/vulkan_beta.h>
 

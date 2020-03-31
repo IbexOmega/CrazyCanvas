@@ -16,6 +16,8 @@ namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
+        LOG_ERROR("Oppsi");
+        
 		GraphicsDeviceDesc graphicsDeviceDesc = {};
 		graphicsDeviceDesc.Debug = true;
 
@@ -38,7 +40,7 @@ namespace LambdaEngine
 		textureDesc.Width		= 256;
 		textureDesc.Height		= 256;
 		textureDesc.Depth		= 1;
-		textureDesc.Samples		= 1;
+		textureDesc.SampleCount		= 1;
 		textureDesc.Miplevels	= 1;
 		textureDesc.ArrayCount	= 1;
 

@@ -16,7 +16,7 @@ namespace LambdaEngine
 		TextureVK(const GraphicsDeviceVK* pDevice);
 		~TextureVK();
 
-		bool Create(const TextureDesc& desc);
+		bool Init(const TextureDesc& desc);
 
 		virtual void SetName(const char* pName) override;
 

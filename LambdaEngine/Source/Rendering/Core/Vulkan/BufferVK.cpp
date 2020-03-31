@@ -27,7 +27,7 @@ namespace LambdaEngine
         }
     }
 
-    bool BufferVK::Create(const BufferDesc& desc)
+    bool BufferVK::Init(const BufferDesc& desc)
     {
         VkBufferCreateInfo info = {};
         info.sType                  = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

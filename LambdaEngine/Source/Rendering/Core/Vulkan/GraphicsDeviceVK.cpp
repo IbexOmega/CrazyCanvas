@@ -167,8 +167,9 @@ namespace LambdaEngine
 	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc& desc)
 	{
 		BufferVK* pBuffer = new BufferVK(this);
-		if (!pBuffer->Create(desc))
+		if (!pBuffer->Init(desc))
 		{
+            pBuffer->Release();
 			return nullptr;
 		}
 
@@ -178,8 +179,9 @@ namespace LambdaEngine
 	ITexture* GraphicsDeviceVK::CreateTexture(const TextureDesc& desc)
 	{
 		TextureVK* pTexture = new TextureVK(this);
-		if (!pTexture->Create(desc))
+		if (!pTexture->Init(desc))
 		{
+            pTexture->Release();
 			return nullptr;
 		}
 
@@ -190,6 +192,11 @@ namespace LambdaEngine
 	{
 		return nullptr;
 	}
+
+    ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)
+    {
+        return nullptr;
+    }
 
 	void GraphicsDeviceVK::ExecuteGraphics(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount)
 	{

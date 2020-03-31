@@ -12,21 +12,26 @@ namespace LambdaEngine
 	class LAMBDA_API Win32Window : public Window
 	{
 	public:
-		Win32Window();
-		~Win32Window() = default;
-
-		DECL_REMOVE_COPY(Win32Window);
-		DECL_REMOVE_MOVE(Win32Window);
+		Win32Window()	= default;
+		~Win32Window() 	= default;
 
 		virtual bool Init(uint32 width, uint32 height) override;
 		virtual void Release() override;
 
 		virtual void Show() override;
 
-		virtual void* GetHandle() const { return (void*)m_hWnd; }
+		FORCEINLINE virtual void* GetHandle() const override final
+		{ 
+			return (void*)m_hWnd; 
+		}
+
+		FORCEINLINE virtual const void* GetView() const override final
+        {
+            return nullptr;
+        }
 
 	private:
-		HWND m_hWnd;
+		HWND m_hWnd = 0;
 	};
 }
 

@@ -6,29 +6,40 @@ namespace LambdaEngine
 {
     void Log::Print(ELogSeverity severity, const char* pFormat, ...)
     {
-        if (severity == ELogSeverity::MESSAGE)
+        va_list args;
+        va_start(args, pFormat);
+        Log::VPrint(severity, pFormat, args);
+        va_end(args);
+    }
+
+    void Log::VPrint(ELogSeverity severity, const char* pFormat, va_list args)
+    {
+        if (severity == ELogSeverity::LOG_MESSAGE)
         {
             PlatformConsole::SetColor(EConsoleColor::COLOR_GREEN);
         }
-        else if (severity == ELogSeverity::WARNING)
+        else if (severity == ELogSeverity::LOG_WARNING)
         {
             PlatformConsole::SetColor(EConsoleColor::COLOR_YELLOW);
         }
-        else if (severity == ELogSeverity::ERROR)
+        else if (severity == ELogSeverity::LOG_ERROR)
         {
             PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
         }
         
+        PlatformConsole::VPrintLine(pFormat, args);
+        PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
+    }
+
+    void Log::PrintTraceError(const char* pFunction, const char* pFormat, ...)
+    {
+        PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
+        PlatformConsole::Print("Error in '%s': ", pFunction);
+        PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
+        
         va_list args;
         va_start(args, pFormat);
-        
-        PlatformConsole::VPrintLine(pFormat, args);
-        
+        Log::VPrint(ELogSeverity::LOG_ERROR, pFormat, args);
         va_end(args);
-
-        if (severity != ELogSeverity::MESSAGE)
-        {
-            PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
-        }
     }
 }

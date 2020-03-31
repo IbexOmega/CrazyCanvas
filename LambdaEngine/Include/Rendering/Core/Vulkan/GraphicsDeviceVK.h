@@ -36,15 +36,18 @@ namespace LambdaEngine
 		virtual void Release() override;
 
 		//CREATE
-		virtual IRenderPass*    CreateRenderPass() override;
-		virtual IFence*         CreateFence() override;
-		virtual ICommandList*   CreateCommandList() override;
-		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) override;
-		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineDesc& desc) override;
-		virtual IPipelineState* CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc) override;
-		virtual IBuffer*        CreateBuffer(const BufferDesc& desc) override;
-		virtual ITexture*		CreateTexture(const TextureDesc& desc)	override;
-		virtual ITextureView*   CreateTextureView() override;
+		virtual IRenderPass*	CreateRenderPass()						                            override;
+		virtual IFence*			CreateFence()							                            override;
+		virtual ICommandList*	CreateCommandList()						                            override;
+		virtual IPipelineState* CreatePipelineState()					                            override;
+		virtual IBuffer*		CreateBuffer(const BufferDesc& desc)	                            override;
+		virtual ITexture*		CreateTexture(const TextureDesc& desc)	                            override;
+		virtual ITextureView*	CreateTextureView()						                            override;
+        virtual ISwapChain*     CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)   override;
+		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) 		override;
+		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineDesc& desc) 		override;
+		virtual IPipelineState* CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc)   override;
+		
 
 		//EXECUTE
 		void ExecuteGraphics(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages,

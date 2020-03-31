@@ -4,15 +4,10 @@
 
 namespace LambdaEngine
 {
-	Win32Window::Win32Window()
-		: m_hWnd(0)
-	{
-	}
-
 	bool Win32Window::Init(uint32 width, uint32 height)
 	{
-		DWORD	dwStyle	= WS_OVERLAPPEDWINDOW;
-		RECT	clientRect = { 0, 0, LONG(width), LONG(height) };
+		DWORD	dwStyle		= WS_OVERLAPPEDWINDOW;
+		RECT	clientRect 	= { 0, 0, LONG(width), LONG(height) };
 		::AdjustWindowRect(&clientRect, dwStyle, FALSE);
 
 		INT nWidth	= clientRect.right - clientRect.left;
