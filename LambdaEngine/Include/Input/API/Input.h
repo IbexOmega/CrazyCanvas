@@ -1,6 +1,8 @@
 #pragma once
 #include "InputDevice.h"
 
+#include "Application/PlatformApplication.h"
+
 namespace LambdaEngine
 {
     class IMouseHandler;
@@ -18,6 +20,8 @@ namespace LambdaEngine
 
 		static void AddKeyboardHandler(IKeyboardHandler* pHandler);
 		static void AddMouseHandler(IMouseHandler* pHandler);
+
+		static void SetInputMode(EInputMode inputMode);
 
 	private:
 		static InputDevice* s_pInputDevice;

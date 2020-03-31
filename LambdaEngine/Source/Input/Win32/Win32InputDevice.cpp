@@ -6,6 +6,16 @@
 
 namespace LambdaEngine
 {
+	bool Win32InputDevice::Init()
+	{
+		return true;
+	}
+
+	void Win32InputDevice::Release()
+	{
+		delete this;
+	}
+
 	LRESULT Win32InputDevice::MessageProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
 		UNREFERENCED_PARAMETER(hWnd);

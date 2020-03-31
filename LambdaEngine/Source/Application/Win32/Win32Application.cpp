@@ -4,6 +4,7 @@
 #include "Application/Win32/Win32Application.h"
 
 #include "Input/Win32/Win32InputDevice.h"
+#include "Input/Win32/Win32RawInputDevice.h"
 #include "Input/Win32/Win32InputCodeTable.h"
 
 namespace LambdaEngine
@@ -109,7 +110,6 @@ namespace LambdaEngine
 	bool Win32Application::Tick()
 	{
 		bool result = ProcessMessages();
-
 		s_Application.ProcessBufferedMessages();
 
 		return result;
@@ -146,11 +146,26 @@ namespace LambdaEngine
 		return true;
 	}
 
-	InputDevice* Win32Application::CreateInputDevice()
+	InputDevice* Win32Application::CreateInputDevice(EInputMode inputType)
 	{
-		Win32InputDevice* pInputDevice = new Win32InputDevice();
-		s_Application.AddMessageHandler(pInputDevice);
-		
+		InputDevice* pInputDevice = nullptr;
+		if (inputType == EInputMode::INPUT_STANDARD)
+		{
+			pInputDevice = new Win32InputDevice();
+		}
+		else if (inputType == EInputMode::INPUT_RAW)
+		{
+			pInputDevice = new Win32RawInputDevice();
+		}
+
+		if (pInputDevice)
+		{
+			if (pInputDevice->Init())
+			{
+				s_Application.AddMessageHandler(pInputDevice);
+			}
+		}
+
 		return pInputDevice;
 	}
 

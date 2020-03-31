@@ -5,11 +5,11 @@
 
 namespace LambdaEngine
 {
-	class Win32InputDevice : public InputDevice
+	class Win32RawInputDevice : public InputDevice
 	{
 	public:
-		Win32InputDevice() 	= default;
-		~Win32InputDevice() = default;
+		Win32RawInputDevice()	= default;
+		~Win32RawInputDevice()	= default;
 
 		virtual bool Init()		override;
 		virtual void Release()	override;

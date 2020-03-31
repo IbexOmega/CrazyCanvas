@@ -7,14 +7,18 @@ namespace LambdaEngine
 	class InputDevice;
     class IApplicationMessageHandler;
 
-	class LAMBDA_API Application
+    //Different input devices that can be created
+    enum class EInputMode
+    {
+        INPUT_NONE      = 0, 
+        INPUT_RAW       = 1, //Raw input on supported platforms
+        INPUT_STANDARD  = 2, //Standard input from the applications event-loop
+    };
+
+	class Application
 	{
 	public:
-        Application()   = default;
-        ~Application()  = default;
-        
-        DECL_REMOVE_COPY(Application);
-        DECL_REMOVE_MOVE(Application);
+        DECL_ABSTRACT_CLASS(Application);
 
         virtual void AddMessageHandler(IApplicationMessageHandler* pHandler)    = 0;
         virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) = 0;
@@ -32,7 +36,7 @@ namespace LambdaEngine
         
         static void Terminate() { }
 
-		static InputDevice* CreateInputDevice() { return nullptr; }
+		static InputDevice* CreateInputDevice(EInputMode) { return nullptr; }
 
         static Application* Get() { return nullptr; }
 	};

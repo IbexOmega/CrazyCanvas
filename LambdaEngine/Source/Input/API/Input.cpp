@@ -1,7 +1,5 @@
 #include "Input/API/Input.h"
 
-#include "Application/PlatformApplication.h"
-
 namespace LambdaEngine
 {
 	InputDevice*    Input::s_pInputDevice = nullptr;
@@ -10,10 +8,8 @@ namespace LambdaEngine
 
 	bool Input::Init()
 	{
-		s_pInputDevice = PlatformApplication::CreateInputDevice();
-
-        //TODO: Implement on macOS and check if nullptr
-        return s_pInputDevice != nullptr;
+		s_pInputDevice = PlatformApplication::CreateInputDevice(EInputMode::INPUT_STANDARD);
+        return (s_pInputDevice != nullptr);
 	}
 
 	void Input::Release()
@@ -40,5 +36,11 @@ namespace LambdaEngine
 	{
         ASSERT(s_pInputDevice != nullptr);
         s_pInputDevice->AddMouseHandler(pHandler);
+	}
+	
+	void Input::SetInputMode(EInputMode inputMode)
+	{
+		SAFERELEASE(s_pInputDevice);
+		s_pInputDevice = PlatformApplication::CreateInputDevice(inputMode);
 	}
 }
