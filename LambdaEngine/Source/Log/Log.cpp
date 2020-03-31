@@ -14,7 +14,7 @@ namespace LambdaEngine
 
     void Log::VPrint(ELogSeverity severity, const char* pFormat, va_list args)
     {
-        if (severity == ELogSeverity::LOG_MESSAGE)
+        if (severity == ELogSeverity::LOG_INFO)
         {
             PlatformConsole::SetColor(EConsoleColor::COLOR_GREEN);
         }
@@ -28,13 +28,17 @@ namespace LambdaEngine
         }
         
         PlatformConsole::VPrintLine(pFormat, args);
-        PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
+
+		if (severity != ELogSeverity::LOG_MESSAGE)
+		{
+			PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
+		}
     }
 
     void Log::PrintTraceError(const char* pFunction, const char* pFormat, ...)
     {
         PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
-        PlatformConsole::Print("Error in '%s': ", pFunction);
+        PlatformConsole::Print("Critical Error in '%s': ", pFunction);
         PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
         
         va_list args;

@@ -5,7 +5,7 @@ namespace LambdaEngine
 {
 	struct GraphicsPipelineDesc;
 	struct ComputePipelineDesc;
-	struct RayTracePipelineDesc;
+	struct RayTracingPipelineDesc;
 	struct BufferDesc;
 	struct TextureDesc;
     struct SwapChainDesc;
@@ -47,7 +47,7 @@ namespace LambdaEngine
         virtual ISwapChain*         CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)   = 0;
 		virtual IPipelineState*		CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) 		= 0;
 		virtual IPipelineState*		CreateComputePipelineState(const ComputePipelineDesc& desc) 		= 0;
-		virtual IPipelineState*		CreateRayTracePipelineState(const RayTracePipelineDesc& desc) 		= 0;
+		virtual IPipelineState*		CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc)   = 0;
 	};
 
 	LAMBDA_API IGraphicsDevice* CreateGraphicsDevice(const GraphicsDeviceDesc& desc, EGraphicsAPI api);

@@ -45,7 +45,8 @@ namespace LambdaEngine
         virtual ISwapChain*     CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)   override;
 		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) 		override;
 		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineDesc& desc) 		override;
-		virtual IPipelineState* CreateRayTracePipelineState(const RayTracePipelineDesc& desc) 		override;
+		virtual IPipelineState* CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc)   override;
+		
 
 		//EXECUTE
 		void ExecuteGraphics(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages,
@@ -69,7 +70,6 @@ namespace LambdaEngine
 		//UTIL
 		bool SetEnabledValidationLayers();
 		bool SetEnabledInstanceExtensions();
-		void RegisterExtensionFunctions();
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
 		int32 RatePhysicalDevice(VkPhysicalDevice physicalDevice);
@@ -77,6 +77,11 @@ namespace LambdaEngine
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physicalDevice);
 		uint32 GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const std::vector<VkQueueFamilyProperties>& queueFamilies);
 		void SetEnabledDeviceExtensions();
+
+		bool IsInstanceExtensionEnabled(const char* pExtensionName);
+		bool IsDeviceExtensionEnabled(const char* pExtensionName);
+
+		void RegisterExtensionData();
 
 	private:
 		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
@@ -96,9 +101,22 @@ namespace LambdaEngine
 		VkQueue m_TransferQueue;
 		VkQueue m_PresentQueue;
 
+		//Extension Data
 		PFN_vkSetDebugUtilsObjectNameEXT	vkSetDebugUtilsObjectNameEXT;
 		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
 		PFN_vkCreateDebugUtilsMessengerEXT	vkCreateDebugUtilsMessengerEXT;
+
+		PFN_vkCreateAccelerationStructureKHR					vkCreateAccelerationStructureKHR;
+		PFN_vkDestroyAccelerationStructureKHR					vkDestroyAccelerationStructureKHR;
+		PFN_vkBindAccelerationStructureMemoryKHR				vkBindAccelerationStructureMemoryKHR;
+		PFN_vkGetAccelerationStructureDeviceAddressKHR			vkGetAccelerationStructureDeviceAddressKHR;
+		PFN_vkGetAccelerationStructureMemoryRequirementsKHR		vkGetAccelerationStructureMemoryRequirementsKHR;
+		PFN_vkCmdBuildAccelerationStructureKHR					vkCmdBuildAccelerationStructureKHR;
+		PFN_vkCreateRayTracingPipelinesKHR						vkCreateRayTracingPipelinesKHR;
+		PFN_vkGetRayTracingShaderGroupHandlesKHR				vkGetRayTracingShaderGroupHandlesKHR;
+		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR;
+
+		VkPhysicalDeviceRayTracingPropertiesNV					RayTracingProperties;
 
 	private:
 		VkDebugUtilsMessengerEXT m_DebugMessenger;

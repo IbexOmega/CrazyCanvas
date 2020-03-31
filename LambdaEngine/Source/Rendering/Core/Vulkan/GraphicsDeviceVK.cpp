@@ -5,6 +5,7 @@
 
 #include "Rendering/Core/Vulkan/GraphicsPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/ComputePipelineStateVK.h"
+#include "Rendering/Core/Vulkan/RayTracingPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/TextureVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
@@ -39,7 +40,13 @@ namespace LambdaEngine
 
 	constexpr Extension OPTIONAL_DEVICE_EXTENSIONS[]
 	{
-		Extension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME)
+		Extension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME),
+		Extension(VK_KHR_MAINTENANCE3_EXTENSION_NAME),
+		Extension(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME),
+		Extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME),
+		Extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME),
+		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME),
+		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME)
 	};
 
 	GraphicsDeviceVK::GraphicsDeviceVK() :
@@ -146,9 +153,15 @@ namespace LambdaEngine
 		return pPipelineState;
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateRayTracePipelineState(const RayTracePipelineDesc& desc)
+	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc)
 	{
-		return nullptr;
+		RayTracingPipelineStateVK* pPipelineState = new RayTracingPipelineStateVK(this);
+		if (!pPipelineState->Init(desc))
+		{
+			return nullptr;
+		}
+
+		return pPipelineState;
 	}
 
 	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc& desc)
@@ -270,7 +283,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		RegisterExtensionFunctions();
+		RegisterExtensionData();
 
 		if (desc.Debug)
 		{
@@ -529,13 +542,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void GraphicsDeviceVK::RegisterExtensionFunctions()
-	{
-		GET_INSTANCE_PROC_ADDR(Instance, vkCreateDebugUtilsMessengerEXT);
-		GET_INSTANCE_PROC_ADDR(Instance, vkDestroyDebugUtilsMessengerEXT);
-		GET_INSTANCE_PROC_ADDR(Instance, vkSetDebugUtilsObjectNameEXT);
-	}
-
 	void GraphicsDeviceVK::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 	{
 		createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -697,6 +703,66 @@ namespace LambdaEngine
 			{
 				LOG_WARNING("--- GraphicsDeviceVK: Optional Device Extension %s not supported", optionalDeviceExtension.Name);
 			}
+		}
+	}
+
+	bool GraphicsDeviceVK::IsInstanceExtensionEnabled(const char* pExtensionName)
+	{
+		uint32 extensionHash = HashString<const char*>(pExtensionName);
+
+		for (const char* pEnabledExtensionName : m_EnabledInstanceExtensions)
+		{
+			uint32 enabledExtensionHash = HashString<const char*>(pEnabledExtensionName);
+
+			if (extensionHash == enabledExtensionHash)
+				return true;
+		}
+
+		return false;
+	}
+
+	bool GraphicsDeviceVK::IsDeviceExtensionEnabled(const char* pExtensionName)
+	{
+		uint32 extensionHash = HashString<const char*>(pExtensionName);
+
+		for (const char* pEnabledExtensionName : m_EnabledDeviceExtensions)
+		{
+			uint32 enabledExtensionHash = HashString<const char*>(pEnabledExtensionName);
+
+			if (extensionHash == enabledExtensionHash)
+				return true;
+		}
+
+		return false;
+	}
+
+	void GraphicsDeviceVK::RegisterExtensionData()
+	{
+		//Required
+		{
+			GET_INSTANCE_PROC_ADDR(Instance, vkCreateDebugUtilsMessengerEXT);
+			GET_INSTANCE_PROC_ADDR(Instance, vkDestroyDebugUtilsMessengerEXT);
+			GET_INSTANCE_PROC_ADDR(Instance, vkSetDebugUtilsObjectNameEXT);
+		}
+
+		if (IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME))
+		{
+			GET_DEVICE_PROC_ADDR(Device, vkCreateAccelerationStructureKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkDestroyAccelerationStructureKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkBindAccelerationStructureMemoryKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkGetAccelerationStructureDeviceAddressKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkGetAccelerationStructureMemoryRequirementsKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdBuildAccelerationStructureKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCreateRayTracingPipelinesKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkGetRayTracingShaderGroupHandlesKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdTraceRaysKHR);
+
+			//Query Ray Tracing properties
+			RayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
+			VkPhysicalDeviceProperties2 deviceProps2 = {};
+			deviceProps2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+			deviceProps2.pNext = &RayTracingProperties;
+			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
 		}
 	}
 

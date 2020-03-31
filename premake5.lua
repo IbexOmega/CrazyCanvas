@@ -186,16 +186,16 @@ workspace "LambdaEngine"
 			
 			libdirs
 			{
-				"C:/VulkanSDK/1.1.130.0/Lib",
-				"D:/VulkanSDK/1.1.130.0/Lib",
-				"D:/Vulkan/1.1.130.0/Lib"
+				"C:/VulkanSDK/1.2.131.2/Lib",
+				"D:/VulkanSDK/1.2.131.2/Lib",
+				"D:/Vulkan/1.2.131.2/Lib",
 			}
 			
 			sysincludedirs
 			{
-				"C:/VulkanSDK/1.1.130.0/Include",
-				"D:/VulkanSDK/1.1.130.0/Include",
-				"D:/Vulkan/1.1.130.0/Include"
+				"C:/VulkanSDK/1.2.131.2/Include",
+				"D:/VulkanSDK/1.2.131.2/Include",
+				"D:/Vulkan/1.2.131.2/Include",
 			}
 		-- Mac
 		filter { "system:macosx" }

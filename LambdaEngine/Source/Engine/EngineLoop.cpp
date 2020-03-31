@@ -18,7 +18,11 @@ namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
-        LOG_ERROR("Oppsi");
+		LOG_MESSAGE("Oppsi");
+		LOG_INFO("Oppsi");
+		LOG_WARNING("Oppsi");
+		LOG_ERROR("Oppsi");
+        LOG_ERROR_CRIT("Oppsi");
         
 		GraphicsDeviceDesc graphicsDeviceDesc = {};
 		graphicsDeviceDesc.Debug = true;
