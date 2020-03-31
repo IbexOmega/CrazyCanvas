@@ -28,7 +28,9 @@ namespace LambdaEngine
 		}
 
 		SetName(desc.pName);
-		return false;
+
+		D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: TopLevelAccelerationStructure initialized!", m_Desc.pName);
+		return true;
 	}
 
 	void TopLevelAccelerationStructureVK::UpdateData(IBuffer* pBuffer)
@@ -116,7 +118,7 @@ namespace LambdaEngine
 
 		if (m_pDevice->vkCreateAccelerationStructureKHR(m_pDevice->Device, &accelerationStructureCreateInfo, nullptr, &m_AccelerationStructure) != VK_SUCCESS)
 		{
-			LOG_ERROR("[TopLevelAccelerationStructure]: vkCreateAccelerationStructureKHR failed for %s", m_Desc.pName);
+			LOG_ERROR("[TopLevelAccelerationStructureVK]: vkCreateAccelerationStructureKHR failed for %s", m_Desc.pName);
 			return false;
 		}
 
@@ -129,7 +131,7 @@ namespace LambdaEngine
 
 		if (vkAllocateMemory(m_pDevice->Device, &memoryAllocateInfo, nullptr, &m_AccelerationStructureMemory) != VK_SUCCESS)
 		{
-			LOG_ERROR("[TopLevelAccelerationStructure]: vkAllocateMemory failed for %s", m_Desc.pName);
+			LOG_ERROR("[TopLevelAccelerationStructureVK]: vkAllocateMemory failed for %s", m_Desc.pName);
 			return false;
 		}
 
@@ -140,7 +142,7 @@ namespace LambdaEngine
 
 		if (m_pDevice->vkBindAccelerationStructureMemoryKHR(m_pDevice->Device, 1, &accelerationStructureMemoryInfo) != VK_SUCCESS)
 		{
-			LOG_ERROR("[TopLevelAccelerationStructure]: vkBindAccelerationStructureMemoryKHR failed for %s", m_Desc.pName);
+			LOG_ERROR("[TopLevelAccelerationStructureVK]: vkBindAccelerationStructureMemoryKHR failed for %s", m_Desc.pName);
 			return false;
 		}
 
@@ -180,7 +182,7 @@ namespace LambdaEngine
 
 			m_ScratchBufferAddressUnion.deviceAddress = vkGetBufferDeviceAddress(m_pDevice->Device, &bufferDeviceAddressInfo);
 
-			D_LOG_MESSAGE("Reallocated Scratch Buffer for TLAS %s, new size %u bytes!", m_Desc.pName, memoryRequirements.size);
+			D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: Reallocated Scratch Buffer for TLAS %s, new size %u bytes!", m_Desc.pName, memoryRequirements.size);
 		}
 	}
 
