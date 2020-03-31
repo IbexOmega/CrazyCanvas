@@ -5,7 +5,7 @@ namespace LambdaEngine
 {
 	struct GraphicsPipelineDesc;
 	struct ComputePipelineDesc;
-	struct RayTracePipelineDesc;
+	struct RayTracingPipelineDesc;
 	struct BufferDesc;
 	struct TextureDesc;
 
@@ -40,7 +40,7 @@ namespace LambdaEngine
 		virtual ICommandList*		CreateCommandList() = 0;
 		virtual IPipelineState*		CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) = 0;
 		virtual IPipelineState*		CreateComputePipelineState(const ComputePipelineDesc& desc) = 0;
-		virtual IPipelineState*		CreateRayTracePipelineState(const RayTracePipelineDesc& desc) = 0;
+		virtual IPipelineState*		CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc) = 0;
 		virtual IBuffer*			CreateBuffer(const BufferDesc& desc) = 0;
 		virtual ITexture*			CreateTexture(const TextureDesc& desc)	= 0;
 		virtual ITextureView*		CreateTextureView() = 0;

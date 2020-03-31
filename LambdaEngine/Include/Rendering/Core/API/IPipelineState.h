@@ -32,9 +32,13 @@ namespace LambdaEngine
 		ShaderDesc Shader			= {};
 	};
 
-	struct RayTracePipelineDesc
+	struct RayTracingPipelineDesc
 	{
 		const char* pName			= "";
+		uint32 MaxRecursionDepth	= 1;	
+		ShaderDesc RaygenShader		= {};
+		std::vector<ShaderDesc> MissShaders;
+		std::vector<ShaderDesc> ClosestHitShaders;
 	};
 
 	class IPipelineState : public IDeviceChild

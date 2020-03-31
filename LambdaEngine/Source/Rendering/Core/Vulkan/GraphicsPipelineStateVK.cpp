@@ -150,9 +150,11 @@ namespace LambdaEngine
 
 		if (vkCreateGraphicsPipelines(m_pDevice->Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
 		{
-			LOG_ERROR("vkCreateGraphicsPipelines failed for %s", desc.pName);
+			LOG_ERROR("--- GraphicsPipelineStateVK: vkCreateGraphicsPipelines failed for %s", desc.pName);
 			return false;
 		}
+
+		SetName(desc.pName);
 
 		return true;
 	}
