@@ -2,18 +2,20 @@
 #include "Network/Win32/Win32Socket.h"
 #include "Log/Log.h"
 #include <winsock2.h>
+#include <Ws2tcpip.h>
 
 namespace LambdaEngine
 {
-	Win32Socket::Win32Socket() : Win32Socket(INVALID_SOCKET)
+	Win32Socket::Win32Socket() : Win32Socket(INVALID_SOCKET, "", 0)
 	{
 
 	}
 
-	Win32Socket::Win32Socket(uint64 socket) :
-		m_Socket(socket)
+	Win32Socket::Win32Socket(uint64 socket, const char* address, uint16 port)
 	{
-
+		m_Socket = socket;
+		m_Address = address;
+		m_Port = port;
 	}
 
 	bool Win32Socket::Init(EProtocol protocol)
@@ -28,16 +30,18 @@ namespace LambdaEngine
 			PrintLastError();
 			return false;
 		}
-
 		return true;
 	}
 
-	bool Win32Socket::Connect(const char* address, uint16 port)
+	bool Win32Socket::Connect(const std::string& address, uint16 port)
 	{
 		struct sockaddr_in socketAddress;
 		socketAddress.sin_family = AF_INET;
-		socketAddress.sin_addr.s_addr = inet_addr(address);
+		inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
 		socketAddress.sin_port = htons(port);
+
+		m_Port = port;
+		m_Address = address;
 
 		if (connect(m_Socket, (struct sockaddr*)&socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
 		{
@@ -48,16 +52,22 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool Win32Socket::Bind(const char* address, uint16 port)
+	bool Win32Socket::Bind(const std::string& address, uint16 port)
 	{
 		struct sockaddr_in socketAddress;
 		socketAddress.sin_family = AF_INET;
-		socketAddress.sin_addr.s_addr = address ? inet_addr(address) : INADDR_ANY;
+		if(!address.empty())
+			inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
+		else
+			socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 		socketAddress.sin_port = htons(port);
+
+		m_Port = port;
+		m_Address = address;
 
 		if (bind(m_Socket, (struct sockaddr*)&socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
 		{
-			LOG_ERROR_CRIT("Failed to bind to %s:%d", address ? address : "ANY", port);
+			LOG_ERROR_CRIT("Failed to bind to %s:%d", !address.empty() ? address.c_str() : "ANY", port);
 			PrintLastError();
 			return false;
 		}
@@ -81,13 +91,18 @@ namespace LambdaEngine
 		struct sockaddr_in socketAddress;
 		int32 size = sizeof(struct sockaddr_in);
 		SOCKET socket = accept(m_Socket, (struct sockaddr*)&socketAddress, &size);
+
 		if (socket == INVALID_SOCKET)
 		{
 			LOG_ERROR_CRIT("Failed to accept Socket");
 			PrintLastError();
 			return nullptr;
 		}
-		return new Win32Socket(socket);
+
+		char* address = inet_ntoa(socketAddress.sin_addr);
+		uint16 port = ntohs(socketAddress.sin_port);
+
+		return new Win32Socket(socket, address, port);
 	}
 
 	bool Win32Socket::Send(const char* buffer, uint32 bytesToSend, uint32& bytesSent)
@@ -114,9 +129,55 @@ namespace LambdaEngine
 		return true;
 	}
 
+	bool Win32Socket::SendTo(const char* buffer, uint32 bytesToSend, uint32& bytesSent, const std::string& address, uint16 port)
+	{
+		struct sockaddr_in socketAddress;
+		socketAddress.sin_family = AF_INET;
+		inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
+		socketAddress.sin_port = htons(port);
+
+		bytesSent = sendto(m_Socket, buffer, bytesToSend, 0, (struct sockaddr*)&socketAddress, sizeof(struct sockaddr_in));
+		if (bytesSent == SOCKET_ERROR)
+		{
+			LOG_ERROR_CRIT("Failed to send data to %s:%d", address, port);
+			PrintLastError();
+			return false;
+		}
+		return true;
+	}
+
+	bool Win32Socket::ReceiveFrom(char* buffer, uint32 size, uint32& bytesReceived, std::string& address, uint16& port)
+	{
+		struct sockaddr_in socketAddress;
+		int32 socketAddressSize = sizeof(struct sockaddr_in);
+
+		bytesReceived = recvfrom(m_Socket, buffer, size, 0, (struct sockaddr*)&socketAddress, &socketAddressSize);
+		if (bytesReceived == SOCKET_ERROR)
+		{
+			LOG_ERROR_CRIT("Failed to receive data from");
+			PrintLastError();
+			return false;
+		}
+
+		address = inet_ntoa(socketAddress.sin_addr);
+		port = ntohs(socketAddress.sin_port);
+
+		return true;
+	}
+
 	void Win32Socket::Close()
 	{
 		closesocket(m_Socket);
+	}
+
+	const std::string& Win32Socket::GetAddress()
+	{
+		return m_Address;
+	}
+
+	uint16 Win32Socket::GetPort()
+	{
+		return m_Port;
 	}
 
 	void Win32Socket::PrintLastError() const
