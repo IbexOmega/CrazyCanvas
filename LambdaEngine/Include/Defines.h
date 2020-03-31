@@ -1,6 +1,5 @@
 #pragma once
-
-#include <cstring>
+#include <string.h>
 
 // Exporting
 #if defined(LAMBDA_PLATFORM_WINDOWS) && defined(LAMBDA_SHARED_LIB) 
@@ -41,6 +40,7 @@
 
 //Helper macros
 #define ZERO_MEMORY(memory, size) memset((void*)memory, 0, size)
+#define ARR_SIZE(arr) sizeof(arr) / sizeof(arr[0])
 
 //Inline
 #ifdef LAMBDA_VISUAL_STUDIO
@@ -49,5 +49,9 @@
 	#define FORCEINLINE __attribute__((always_inline))
 #endif
 
-//Delete
-#define SAFEDELETE(object) if ((object)) { delete object; object = nullptr; }
+//Delete and release
+#define SAFEDELETE(object)	if ((object)) { delete object; object = nullptr; }
+#define SAFERELEASE(object) if ((object)) { object->Release(); object = nullptr; }
+
+//Bit helper
+#define BIT(bit) (1 << bit)

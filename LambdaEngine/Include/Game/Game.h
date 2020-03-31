@@ -1,12 +1,12 @@
 #pragma once
+#include "LambdaEngine.h"
 
 namespace LambdaEngine
 {
 	class Game 
 	{
 	public:
-		Game()          = default;
-		virtual ~Game() = default;
+		DECL_ABSTRACT_CLASS(Game);
 
 		virtual void Tick() = 0;
 	};

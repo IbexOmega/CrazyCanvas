@@ -142,8 +142,11 @@ workspace "LambdaEngine"
 		filter "system:windows"
             removefiles
             {
-                "%{prj.name}/Include/Platform/macOS/**",
-                "%{prj.name}/Source/Platform/macOS/**",
+                "%{prj.name}/Include/Application/Mac/**",
+                "%{prj.name}/Source/Application/Mac/**",
+
+                "%{prj.name}/Include/Input/Mac/**",
+                "%{prj.name}/Source/Input/Mac/**",
             }
         -- Remove files not available for macos builds
         filter "system:macosx"
@@ -154,8 +157,11 @@ workspace "LambdaEngine"
             }
             removefiles
             {
-                "%{prj.name}/Include/Platform/Win32/**",
-                "%{prj.name}/Source/Platform/Win32/**",
+                "%{prj.name}/Include/Application/Win32/**",
+                "%{prj.name}/Source/Application/Win32/**",
+
+                "%{prj.name}/Include/Input/Win32/**",
+                "%{prj.name}/Source/Input/Win32/**",
             }
         filter {}
 
@@ -171,11 +177,41 @@ workspace "LambdaEngine"
 			"%{prj.name}/Include",
         }
         
-        -- Links
-        filter { "system:macosx" }
+		-- Win32
+		filter { "system:windows" }
+			links
+			{
+                "vulkan-1",
+			}
+			
+			libdirs
+			{
+				"C:/VulkanSDK/1.1.130.0/Lib",
+				"D:/VulkanSDK/1.1.130.0/Lib",
+			}
+			
+			sysincludedirs
+			{
+				"C:/VulkanSDK/1.1.130.0/Include",
+				"D:/VulkanSDK/1.1.130.0/Include",
+			}
+		-- Mac
+		filter { "system:macosx" }
+			libdirs
+			{
+				"/usr/local/lib",
+			}
+			
+			sysincludedirs
+			{
+				"/usr/local/include",
+			}
+			
 			links 
 			{
-				"Cocoa.framework"
+                "vulkan.1",
+				"vulkan.1.1.121",
+				"Cocoa.framework",
 			}
 		filter {}
 
