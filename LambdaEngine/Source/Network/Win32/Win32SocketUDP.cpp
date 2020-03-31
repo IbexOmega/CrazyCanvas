@@ -21,7 +21,10 @@ namespace LambdaEngine
 	{
 		struct sockaddr_in socketAddress;
 		socketAddress.sin_family = AF_INET;
-		inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
+		if (!address.empty())
+			inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
+		else
+			socketAddress.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 		socketAddress.sin_port = htons(port);
 
 		bytesSent = sendto(m_Socket, buffer, bytesToSend, 0, (struct sockaddr*)&socketAddress, sizeof(struct sockaddr_in));
@@ -51,6 +54,23 @@ namespace LambdaEngine
 		port = ntohs(socketAddress.sin_port);
 
 		return true;
+	}
+
+	bool Win32SocketUDP::EnableBroadcast()
+	{
+		char broadcast = '1';
+		if (setsockopt(m_Socket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) == SOCKET_ERROR)
+		{
+			LOG_ERROR_CRIT("Failed to enable Broadcast");
+			PrintLastError();
+			return false;
+		}
+		return true;
+	}
+
+	bool Win32SocketUDP::Broadcast(const char* buffer, uint32 bytesToSend, uint32& bytesSent, uint16 port)
+	{
+		return SendTo(buffer, bytesToSend, bytesSent, "", port);
 	}
 }
 #endif

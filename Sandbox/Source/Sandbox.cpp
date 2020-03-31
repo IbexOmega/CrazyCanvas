@@ -31,6 +31,9 @@ Sandbox::Sandbox()
 	client->Receive(buffer, 256, bytesReceived);
 
 	LOG_MESSAGE(buffer);
+	serverClient->Close();
+	client->Close();
+	server->Close();
 
 
 	//UDP TEST
@@ -54,6 +57,29 @@ Sandbox::Sandbox()
 	LOG_MESSAGE(buffer);
 	LOG_MESSAGE(sender.c_str());
 	LOG_MESSAGE("%d", port);
+	socket1->Close();
+	socket2->Close();
+
+
+	//UDP Broadcast TEST
+	LOG_MESSAGE("Broadcast");
+	socket1 = SocketFactory::CreateSocketUDP();
+	socket2 = SocketFactory::CreateSocketUDP();
+
+	socket1->EnableBroadcast();
+	socket2->EnableBroadcast();
+
+	socket1->Bind("", 4444);
+
+	data = "Ny data Guy!";
+
+	socket2->Broadcast(data.c_str(), data.length(), bytesSent, 4444);
+
+	socket1->ReceiveFrom(buffer, 256, bytesReceived, sender, port);
+	LOG_MESSAGE(buffer);
+	LOG_MESSAGE(sender.c_str());
+	LOG_MESSAGE("%d", port);
+
 #endif
 }
 
