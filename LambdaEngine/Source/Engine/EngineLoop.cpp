@@ -11,6 +11,7 @@
 #include "Rendering/Core/API/IGraphicsDevice.h"
 #include "Rendering/Core/API/IBuffer.h"
 #include "Rendering/Core/API/ITexture.h"
+#include "Rendering/Core/API/ITopLevelAccelerationStructure.h"
 
 #include "Network/API/SocketFactory.h"
 
@@ -52,6 +53,11 @@ namespace LambdaEngine
 
 		ITexture* pTexture = pGraphicsDevice->CreateTexture(textureDesc);
 
+		/*TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
+		topLevelAccelerationStructureDesc.pName = "Test TLAS";
+
+		ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);*/
+
         bool IsRunning = true;
         while (IsRunning)
         {
@@ -61,6 +67,7 @@ namespace LambdaEngine
 
 		SAFERELEASE(pTexture);
 		SAFERELEASE(pBuffer);
+		/*SAFERELEASE(pTLAS);*/
 		SAFERELEASE(pGraphicsDevice);
     }
 

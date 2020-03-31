@@ -9,37 +9,43 @@
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/TextureVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
+#include "Rendering/Core/Vulkan/TopLevelAccelerationStructureVK.h"
 
 namespace LambdaEngine
 {
 	constexpr ValidationLayer REQUIRED_VALIDATION_LAYERS[]
 	{
+		ValidationLayer("REQ_V_L_BASE"),
 		ValidationLayer("VK_LAYER_KHRONOS_validation")
 	};
 
 	constexpr ValidationLayer OPTIONAL_VALIDATION_LAYERS[]
 	{
-		ValidationLayer("VK_VALIDATION_LAYER_OPTIONAL_TEST")
+		ValidationLayer("OPT_V_L_BASE")
 	};
 
 	constexpr Extension REQUIRED_INSTANCE_EXTENSIONS[]
 	{
+		Extension("REQ_I_E_BASE"),
 		Extension(VK_KHR_SURFACE_EXTENSION_NAME),
 		Extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
 	};
 
 	constexpr Extension OPTIONAL_INSTANCE_EXTENSIONS[]
 	{
+		Extension("OPT_I_E_BASE"),
 		Extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)
 	};
 
 	constexpr Extension REQUIRED_DEVICE_EXTENSIONS[]
 	{
+		Extension("REQ_D_E_BASE"),
 		Extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
 	};
 
 	constexpr Extension OPTIONAL_DEVICE_EXTENSIONS[]
 	{
+		Extension("OPT_D_E_BASE"),
 		Extension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME),
 		Extension(VK_KHR_MAINTENANCE3_EXTENSION_NAME),
 		Extension(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME),
@@ -116,22 +122,22 @@ namespace LambdaEngine
 		delete this;
 	}
 
-	IRenderPass* GraphicsDeviceVK::CreateRenderPass()
+	IRenderPass* GraphicsDeviceVK::CreateRenderPass() const
 	{
 		return nullptr;
 	}
 
-	IFence* GraphicsDeviceVK::CreateFence()
+	IFence* GraphicsDeviceVK::CreateFence() const
 	{
 		return nullptr;
 	}
 
-	ICommandList* GraphicsDeviceVK::CreateCommandList()
+	ICommandList* GraphicsDeviceVK::CreateCommandList() const
 	{
 		return nullptr;
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc)
+	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) const
 	{
 		GraphicsPipelineStateVK* pPipelineState = new GraphicsPipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
@@ -142,7 +148,7 @@ namespace LambdaEngine
 		return pPipelineState;
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineDesc& desc)
+	IPipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineDesc& desc) const
 	{
 		ComputePipelineStateVK* pPipelineState = new ComputePipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
@@ -153,7 +159,7 @@ namespace LambdaEngine
 		return pPipelineState;
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc)
+	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc) const
 	{
 		RayTracingPipelineStateVK* pPipelineState = new RayTracingPipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
@@ -164,7 +170,18 @@ namespace LambdaEngine
 		return pPipelineState;
 	}
 
-	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc& desc)
+	ITopLevelAccelerationStructure* GraphicsDeviceVK::CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc) const
+	{
+		TopLevelAccelerationStructureVK* pTLAS = new TopLevelAccelerationStructureVK(this);
+		if (!pTLAS->Init(desc))
+		{
+			return nullptr;
+		}
+
+		return pTLAS;
+	}
+
+	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc& desc) const
 	{
 		BufferVK* pBuffer = new BufferVK(this);
 		if (!pBuffer->Init(desc))
@@ -176,7 +193,7 @@ namespace LambdaEngine
 		return pBuffer;
 	}
 
-	ITexture* GraphicsDeviceVK::CreateTexture(const TextureDesc& desc)
+	ITexture* GraphicsDeviceVK::CreateTexture(const TextureDesc& desc) const
 	{
 		TextureVK* pTexture = new TextureVK(this);
 		if (!pTexture->Init(desc))
@@ -188,12 +205,12 @@ namespace LambdaEngine
 		return pTexture;
 	}
 
-	ITextureView* GraphicsDeviceVK::CreateTextureView()
+	ITextureView* GraphicsDeviceVK::CreateTextureView() const
 	{
 		return nullptr;
 	}
 
-    ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)
+    ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc) const
     {
         return nullptr;
     }
@@ -283,7 +300,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		RegisterExtensionData();
+		RegisterInstanceExtensionData();
 
 		if (desc.Debug)
 		{
@@ -313,6 +330,8 @@ namespace LambdaEngine
 			LOG_ERROR("--- GraphicsDeviceVK: Could not initialize Logical Device!");
 			return false;
 		}
+
+		RegisterDeviceExtensionData();
 
 		return true;
 	}
@@ -435,8 +454,8 @@ namespace LambdaEngine
 		availableValidationLayers.resize(layerCount);
 		vkEnumerateInstanceLayerProperties(&layerCount, availableValidationLayers.data());
 
-		std::vector<ValidationLayer> requiredValidationLayers(REQUIRED_VALIDATION_LAYERS, REQUIRED_VALIDATION_LAYERS + sizeof(REQUIRED_VALIDATION_LAYERS) / sizeof(ValidationLayer));
-		std::vector<ValidationLayer> optionalValidationLayers(OPTIONAL_VALIDATION_LAYERS, OPTIONAL_VALIDATION_LAYERS + sizeof(OPTIONAL_VALIDATION_LAYERS) / sizeof(ValidationLayer));
+		std::vector<ValidationLayer> requiredValidationLayers(REQUIRED_VALIDATION_LAYERS + 1, REQUIRED_VALIDATION_LAYERS + sizeof(REQUIRED_VALIDATION_LAYERS) / sizeof(ValidationLayer));
+		std::vector<ValidationLayer> optionalValidationLayers(OPTIONAL_VALIDATION_LAYERS + 1, OPTIONAL_VALIDATION_LAYERS + sizeof(OPTIONAL_VALIDATION_LAYERS) / sizeof(ValidationLayer));
 
 		for (const VkLayerProperties& availableValidationLayerProperties : availableValidationLayers)
 		{
@@ -493,8 +512,8 @@ namespace LambdaEngine
 		availableInstanceExtensions.resize(extensionCount);
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableInstanceExtensions.data());
 
-		std::vector<Extension> requiredInstanceExtensions(REQUIRED_INSTANCE_EXTENSIONS, REQUIRED_INSTANCE_EXTENSIONS + sizeof(REQUIRED_INSTANCE_EXTENSIONS) / sizeof(Extension));
-		std::vector<Extension> optionalInstanceExtensions(OPTIONAL_INSTANCE_EXTENSIONS, OPTIONAL_INSTANCE_EXTENSIONS + sizeof(OPTIONAL_INSTANCE_EXTENSIONS) / sizeof(Extension));
+		std::vector<Extension> requiredInstanceExtensions(REQUIRED_INSTANCE_EXTENSIONS + 1, REQUIRED_INSTANCE_EXTENSIONS + sizeof(REQUIRED_INSTANCE_EXTENSIONS) / sizeof(Extension));
+		std::vector<Extension> optionalInstanceExtensions(OPTIONAL_INSTANCE_EXTENSIONS + 1, OPTIONAL_INSTANCE_EXTENSIONS + sizeof(OPTIONAL_INSTANCE_EXTENSIONS) / sizeof(Extension));
 
 		for (const VkExtensionProperties& extension : availableInstanceExtensions)
 		{
@@ -588,8 +607,8 @@ namespace LambdaEngine
 		availableDeviceExtensions.resize(extensionCount);
 		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableDeviceExtensions.data());
 
-		std::vector<Extension> requiredDeviceExtensions(REQUIRED_DEVICE_EXTENSIONS, REQUIRED_DEVICE_EXTENSIONS + sizeof(REQUIRED_DEVICE_EXTENSIONS) / sizeof(Extension));
-		std::vector<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
+		std::vector<Extension> requiredDeviceExtensions(REQUIRED_DEVICE_EXTENSIONS + 1, REQUIRED_DEVICE_EXTENSIONS + sizeof(REQUIRED_DEVICE_EXTENSIONS) / sizeof(Extension));
+		std::vector<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS + 1, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
 
 		for (const VkExtensionProperties& extension : availableDeviceExtensions)
 		{
@@ -668,7 +687,7 @@ namespace LambdaEngine
 	void GraphicsDeviceVK::SetEnabledDeviceExtensions()
 	{
 		//We know all requried device extensions are supported
-		for (uint32 i = 0; i < ARR_SIZE(REQUIRED_DEVICE_EXTENSIONS); i++)
+		for (uint32 i = 1; i < ARR_SIZE(REQUIRED_DEVICE_EXTENSIONS); i++)
 		{
 			m_EnabledDeviceExtensions.push_back(REQUIRED_DEVICE_EXTENSIONS[i].Name);
 		}
@@ -680,7 +699,7 @@ namespace LambdaEngine
 		availableDeviceExtensions.resize(extensionCount);
 		vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &extensionCount, availableDeviceExtensions.data());
 
-		std::vector<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
+		std::vector<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS + 1, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
 
 		for (const VkExtensionProperties& extension : availableDeviceExtensions)
 		{
@@ -736,7 +755,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void GraphicsDeviceVK::RegisterExtensionData()
+	void GraphicsDeviceVK::RegisterInstanceExtensionData()
 	{
 		//Required
 		{
@@ -744,7 +763,10 @@ namespace LambdaEngine
 			GET_INSTANCE_PROC_ADDR(Instance, vkDestroyDebugUtilsMessengerEXT);
 			GET_INSTANCE_PROC_ADDR(Instance, vkSetDebugUtilsObjectNameEXT);
 		}
+	}
 
+	void GraphicsDeviceVK::RegisterDeviceExtensionData()
+	{
 		if (IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME))
 		{
 			GET_DEVICE_PROC_ADDR(Device, vkCreateAccelerationStructureKHR);
@@ -758,10 +780,13 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkCmdTraceRaysKHR);
 
 			//Query Ray Tracing properties
-			RayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
+			RayTracingProperties = {};
+			RayTracingProperties.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
+			
 			VkPhysicalDeviceProperties2 deviceProps2 = {};
-			deviceProps2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-			deviceProps2.pNext = &RayTracingProperties;
+			deviceProps2.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+			deviceProps2.pNext			= &RayTracingProperties;
+
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
 		}
 	}

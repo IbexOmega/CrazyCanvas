@@ -45,7 +45,7 @@ namespace LambdaEngine
 
 		if (vkCreateComputePipelines(m_pDevice->Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
 		{
-			LOG_ERROR("--- ComputePipelineStateVK: vkCreateComputePipelines failed for %s", desc.pName);
+			LOG_ERROR("[ComputePipelineStateVK]: vkCreateComputePipelines failed for %s", desc.pName);
 			return false;
 		}
 

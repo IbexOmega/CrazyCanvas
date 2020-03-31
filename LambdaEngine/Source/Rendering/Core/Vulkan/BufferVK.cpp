@@ -62,6 +62,10 @@ namespace LambdaEngine
         {
             info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         }
+		if (desc.Flags & EBufferFlags::BUFFER_FLAG_RAY_TRACING)
+		{
+			info.usage |= VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR;
+		}
 
         VkResult result = vkCreateBuffer(m_pDevice->Device, &info, nullptr, &m_Buffer);
         if (result != VK_SUCCESS)
