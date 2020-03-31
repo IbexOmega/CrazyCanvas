@@ -212,7 +212,7 @@ workspace "LambdaEngine"
 			links 
 			{
                 "vulkan.1",
-				"vulkan.1.1.121",
+				"vulkan.1.2.131",
 				"Cocoa.framework",
 			}
 		filter {}

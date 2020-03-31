@@ -104,7 +104,8 @@ namespace LambdaEngine
 
 		if (!SocketFactory::Init())
 		{
-			return false;
+            //TODO: Implement on Mac so that we can return false again
+			//return false;
 		}
 
 		return true;
