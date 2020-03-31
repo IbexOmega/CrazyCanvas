@@ -7,7 +7,7 @@
 
 Sandbox::Sandbox()
 {
-	using namespace LambdaEngine;
+	/*using namespace LambdaEngine;
 
 	ISocket* server = SocketFactory::CreateSocket(PROTOCOL_TCP);
 	server->Bind("localhost", 4444);
@@ -23,7 +23,7 @@ Sandbox::Sandbox()
 	uint32 bytesReceived;
 	server->Receive(buffer, 256, bytesReceived);
 
-	PlatformConsole::PrintLine(buffer);
+	PlatformConsole::PrintLine(buffer);*/
 }
 
 Sandbox::~Sandbox()
