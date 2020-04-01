@@ -14,14 +14,12 @@
 #include "Rendering/Core/API/ISwapChain.h"
 #include "Rendering/Core/API/ITopLevelAccelerationStructure.h"
 
-#include "Network/API/SocketFactory.h"
+#include "Network/API/PlatformSocketFactory.h"
 
 namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
-        Log::SetDebuggerOutputEnabled(true);
-        
 		GraphicsDeviceDesc graphicsDeviceDesc = {};
 		graphicsDeviceDesc.Debug = true;
 
@@ -61,8 +59,6 @@ namespace LambdaEngine
         swapChainDesc.SampleCount   = 1;
         
         ISwapChain* pSwapChain = pGraphicsDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
-        
-        Log::SetDebuggerOutputEnabled(false);
         
 		//TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
 		//topLevelAccelerationStructureDesc.pName = "Test TLAS";
@@ -110,6 +106,8 @@ namespace LambdaEngine
 		
 		PlatformTime::PreInit();
         
+        Log::SetDebuggerOutputEnabled(true);
+        
         PlatformConsole::Show();
         return true;
 	}
@@ -121,7 +119,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!SocketFactory::Init())
+		if (!PlatformSocketFactory::Init())
 		{
             //TODO: Implement on Mac so that we can return false again
 			//return false;

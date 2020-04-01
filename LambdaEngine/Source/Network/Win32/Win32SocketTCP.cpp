@@ -36,7 +36,7 @@ namespace LambdaEngine
 
 		if (connect(m_Socket, (struct sockaddr*)&socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
 		{
-			LOG_ERROR_CRIT("Failed to connect to %s:%d", address, port);
+			LOG_ERROR_CRIT("Failed to connect to %s:%d", address.c_str(), port);
 			PrintLastError();
 			return false;
 		}

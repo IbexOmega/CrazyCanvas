@@ -4,9 +4,9 @@
 
 namespace LambdaEngine
 {
-	class LAMBDA_API Win32SocketFactory : public SocketFactory
+	class LAMBDA_API MacSocketFactory : public SocketFactory
 	{
-		friend class EngineLoop;
+        friend class EngineLoop;
         
 	public:
 		static ISocketTCP* CreateSocketTCP();
@@ -17,5 +17,5 @@ namespace LambdaEngine
         static void Release();
 	};
 
-    typedef Win32SocketFactory PlatformSocketFactory;
+    typedef MacSocketFactory PlatformSocketFactory;
 }
