@@ -38,6 +38,8 @@ namespace LambdaEngine
         info.sharingMode            = VK_SHARING_MODE_EXCLUSIVE;
         info.size                   = desc.SizeInBytes;
         
+		info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_VERTEX_BUFFER)
         {
             info.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
@@ -66,7 +68,7 @@ namespace LambdaEngine
 		{
 			info.usage |= VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR;
 		}
-
+		
         VkResult result = vkCreateBuffer(m_pDevice->Device, &info, nullptr, &m_Buffer);
         if (result != VK_SUCCESS)
         {
@@ -97,9 +99,13 @@ namespace LambdaEngine
 
         int32 memoryTypeIndex = FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, memoryProperties);
 
+		VkMemoryAllocateFlagsInfo allocateFlagsInfo = {};
+		allocateFlagsInfo.sType			= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+		allocateFlagsInfo.flags			= VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
         VkMemoryAllocateInfo allocateInfo = { };
         allocateInfo.sType              = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocateInfo.pNext              = nullptr;
+        allocateInfo.pNext              = &allocateFlagsInfo;
         allocateInfo.memoryTypeIndex    = memoryTypeIndex;
         allocateInfo.allocationSize     = memoryRequirements.size;
 

@@ -9,12 +9,21 @@ namespace LambdaEngine
 {
 	TopLevelAccelerationStructureVK::TopLevelAccelerationStructureVK(const GraphicsDeviceVK* pDevice) :
 		TDeviceChild(pDevice),
-		m_Desc({})
+		m_pScratchBuffer(nullptr),
+		m_AccelerationStructure(VK_NULL_HANDLE),
+		m_AccelerationStructureMemory(VK_NULL_HANDLE)
 	{
 	}
 
 	TopLevelAccelerationStructureVK::~TopLevelAccelerationStructureVK()
 	{
+		SAFEDELETE(m_pScratchBuffer);
+
+		if (m_AccelerationStructure != VK_NULL_HANDLE)
+		{
+			vkFreeMemory(m_pDevice->Device, m_AccelerationStructureMemory, nullptr);
+			m_pDevice->vkDestroyAccelerationStructureKHR(m_pDevice->Device, m_AccelerationStructure, nullptr);
+		}
 	}
 
 	bool TopLevelAccelerationStructureVK::Init(const TopLevelAccelerationStructureDesc& desc)
@@ -22,6 +31,11 @@ namespace LambdaEngine
 		m_Desc = desc;
 
 		if (!InitAccelerationStructure())
+		{
+			return false;
+		}
+
+		if (!InitScratchBuffer())
 		{
 			return false;
 		}
@@ -67,6 +81,7 @@ namespace LambdaEngine
 		if (sizeChanged)
 		{
 			//Recreate Structure
+			LOG_ERROR("[TopLevelAccelerationStructureVK]: TLAS Should be recreated, but not implemented...");
 
 			accelerationStructureBuildInfo.update					= VK_FALSE;
 			accelerationStructureBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
@@ -152,6 +167,20 @@ namespace LambdaEngine
 
 	bool TopLevelAccelerationStructureVK::InitScratchBuffer()
 	{
+		VkMemoryRequirements memoryRequirements = GetMemoryRequirements();
+
+		BufferDesc scratchBufferDesc = {};
+		scratchBufferDesc.pName			= "TLAS Scratch Buffer";
+		scratchBufferDesc.MemoryType	= EMemoryType::GPU_MEMORY;
+		scratchBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_RAY_TRACING;
+		scratchBufferDesc.SizeInBytes	= memoryRequirements.size;
+
+		m_pScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(scratchBufferDesc));
+
+		m_ScratchBufferAddressUnion.deviceAddress = m_pScratchBuffer->GetDeviceAdress();
+
+		D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: Allocated Scratch Buffer for TLAS \"%s\", with size %u bytes!", m_Desc.pName, memoryRequirements.size);
+
 		return true;
 	}
 
