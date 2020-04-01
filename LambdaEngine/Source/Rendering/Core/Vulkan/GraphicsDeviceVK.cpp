@@ -148,6 +148,7 @@ namespace LambdaEngine
 		GraphicsPipelineStateVK* pPipelineState = new GraphicsPipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
 		{
+			pPipelineState->Release();
 			return nullptr;
 		}
 
@@ -159,6 +160,7 @@ namespace LambdaEngine
 		ComputePipelineStateVK* pPipelineState = new ComputePipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
 		{
+			pPipelineState->Release();
 			return nullptr;
 		}
 
@@ -170,6 +172,7 @@ namespace LambdaEngine
 		RayTracingPipelineStateVK* pPipelineState = new RayTracingPipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
 		{
+			pPipelineState->Release();
 			return nullptr;
 		}
 
@@ -181,6 +184,7 @@ namespace LambdaEngine
 		TopLevelAccelerationStructureVK* pTLAS = new TopLevelAccelerationStructureVK(this);
 		if (!pTLAS->Init(desc))
 		{
+			pTLAS->Release();
 			return nullptr;
 		}
 
@@ -413,18 +417,30 @@ namespace LambdaEngine
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
+		VkPhysicalDeviceVulkan12Features deviceFeatures12 = {};
+		deviceFeatures12.sType							= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		deviceFeatures12.bufferDeviceAddress			= true;
+
+		VkPhysicalDeviceVulkan11Features deviceFeatures11 = {};
+		deviceFeatures11.sType							= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+		deviceFeatures11.pNext							= &deviceFeatures12;
+
 		VkPhysicalDeviceFeatures deviceFeatures = {};
-		deviceFeatures.fillModeNonSolid                 = true;
-		deviceFeatures.vertexPipelineStoresAndAtomics   = true;
-		deviceFeatures.fragmentStoresAndAtomics         = true;
+		deviceFeatures.fillModeNonSolid					= true;
+		deviceFeatures.vertexPipelineStoresAndAtomics	= true;
+		deviceFeatures.fragmentStoresAndAtomics			= true;
+
+		VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+		deviceFeatures2.sType							= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		deviceFeatures2.pNext							= &deviceFeatures11;
+		deviceFeatures2.features						= deviceFeatures;
 
 		VkDeviceCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+		createInfo.pNext = &deviceFeatures2;
 
 		createInfo.queueCreateInfoCount = (uint32)queueCreateInfos.size();
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
-		createInfo.pEnabledFeatures = &deviceFeatures;
 
 		createInfo.enabledExtensionCount    = (uint32)m_EnabledDeviceExtensions.size();
 		createInfo.ppEnabledExtensionNames  = m_EnabledDeviceExtensions.data();
