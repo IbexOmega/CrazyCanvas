@@ -4,20 +4,18 @@
 
 #include "Input/API/Input.h"
 
-#include "Network/API/SocketFactory.h"
+#include "Network/API/PlatformSocketFactory.h"
 
 Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
-
-#ifdef LAMBDA_PLATFORM_WINDOWS
-
+    
 	//TCP TEST
-	ISocketTCP* server = SocketFactory::CreateSocketTCP();
+	ISocketTCP* server = PlatformSocketFactory::CreateSocketTCP();
 	server->Bind("127.0.0.1", 4444);
 	server->Listen();
 
-	ISocketTCP* client = SocketFactory::CreateSocketTCP();
+	ISocketTCP* client = PlatformSocketFactory::CreateSocketTCP();
 	client->Connect("127.0.0.1", 4444);
 
 	ISocketTCP* serverClient = server->Accept();
@@ -37,8 +35,8 @@ Sandbox::Sandbox()
 
 
 	//UDP TEST
-	ISocketUDP* socket1 = SocketFactory::CreateSocketUDP();
-	ISocketUDP* socket2 = SocketFactory::CreateSocketUDP();
+	ISocketUDP* socket1 = PlatformSocketFactory::CreateSocketUDP();
+	ISocketUDP* socket2 = PlatformSocketFactory::CreateSocketUDP();
 
 	socket2->Bind("127.0.0.1", 4444);
 	socket1->SendTo(data.c_str(), data.length(), bytesSent, "127.0.0.1", 4444);
@@ -63,8 +61,8 @@ Sandbox::Sandbox()
 
 	//UDP Broadcast TEST
 	LOG_MESSAGE("Broadcast");
-	socket1 = SocketFactory::CreateSocketUDP();
-	socket2 = SocketFactory::CreateSocketUDP();
+	socket1 = PlatformSocketFactory::CreateSocketUDP();
+	socket2 = PlatformSocketFactory::CreateSocketUDP();
 
 	socket1->EnableBroadcast();
 	socket2->EnableBroadcast();
@@ -79,8 +77,6 @@ Sandbox::Sandbox()
 	LOG_MESSAGE(buffer);
 	LOG_MESSAGE(sender.c_str());
 	LOG_MESSAGE("%d", port);
-
-#endif
 }
 
 Sandbox::~Sandbox()

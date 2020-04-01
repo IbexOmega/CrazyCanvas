@@ -18,7 +18,7 @@ namespace LambdaEngine
 		friend class Win32SocketFactory;
 
 	public:
-		bool Win32Socket::Bind(const std::string& address, uint16 port) override
+		bool Bind(const std::string& address, uint16 port) override
 		{
 			struct sockaddr_in socketAddress;
 			socketAddress.sin_family = AF_INET;
@@ -37,18 +37,23 @@ namespace LambdaEngine
 			return true;
 		}
 
-		void Win32Socket::Close() override
+		void Close() override
 		{
 			closesocket(m_Socket);
 		}
 
 	protected:
-		Win32Socket::Win32Socket()
+		Win32Socket()
 		{
 			m_Socket = INVALID_SOCKET;
 		}
 
-		void Win32Socket::PrintLastError() const
+		~Win32Socket()
+		{
+			Close();
+		}
+
+		void PrintLastError() const
 		{
 			std::string message;
 			int32 errorCode = WSAGetLastError();
@@ -65,11 +70,11 @@ namespace LambdaEngine
 			case WSAEBADF: message = "File handle is not valid. The file handle supplied is not valid."; break;
 			case WSAEACCES: message = "Permission denied. An attempt was made to access a socket in a way forbidden by its access permissions.An example is using a broadcast address for sendto without broadcast permission being set using setsockopt(SO_BROADCAST). Another possible reason for the WSAEACCES error is that when the bind function is called(on Windows NT 4.0 with SP4 and later), another application, service, or kernel mode driver is bound to the same address with exclusive access.Such exclusive access is a new feature of Windows NT 4.0 with SP4 and later, and is implemented by using the SO_EXCLUSIVEADDRUSE option."; break;
 			case WSAEFAULT: message = "Bad address. The system detected an invalid pointer address in attempting to use a pointer argument of a call.This error occurs if an application passes an invalid pointer value, or if the length of the buffer is too small.For instance, if the length of an argument, which is a sockaddr structure, is smaller than the sizeof(sockaddr)."; break;
-			case WSAEINVAL: message = "Invalid argument. Some invalid argument was supplied(for example, specifying an invalid level to the setsockopt function).In some instances, it also refers to the current state of the socket—for instance, calling accept on a socket that is not listening."; break;
+			case WSAEINVAL: message = "Invalid argument. Some invalid argument was supplied(for example, specifying an invalid level to the setsockopt function).In some instances, it also refers to the current state of the socketï¿½for instance, calling accept on a socket that is not listening."; break;
 			case WSAEMFILE: message = "Too many open files. Too many open sockets.Each implementation may have a maximum number of socket handles available, either globally, per process, or per thread."; break;
 			case WSAEWOULDBLOCK: message = "Resource temporarily unavailable. This error is returned from operations on nonblocking sockets that cannot be completed immediately, for example recv when no data is queued to be read from the socket.It is a nonfatal error, and the operation should be retried later.It is normal for WSAEWOULDBLOCK to be reported as the result from calling connect on a nonblocking SOCK_STREAM socket, since some time must elapse for the connection to be established."; break;
-			case WSAEINPROGRESS: message = "Operation now in progress. A blocking operation is currently executing.Windows Sockets only allows a single blocking operation—per - task or thread—to be outstanding, and if any other function call is made(whether or not it references that or any other socket) the function fails with the WSAEINPROGRESS error."; break;
-			case WSAEALREADY: message = "Operation already in progress. An operation was attempted on a nonblocking socket with an operation already in progress—that is, calling connect a second time on a nonblocking socket that is already connecting, or canceling an asynchronous request(WSAAsyncGetXbyY) that has already been canceled or completed."; break;
+			case WSAEINPROGRESS: message = "Operation now in progress. A blocking operation is currently executing.Windows Sockets only allows a single blocking operationï¿½per - task or threadï¿½to be outstanding, and if any other function call is made(whether or not it references that or any other socket) the function fails with the WSAEINPROGRESS error."; break;
+			case WSAEALREADY: message = "Operation already in progress. An operation was attempted on a nonblocking socket with an operation already in progressï¿½that is, calling connect a second time on a nonblocking socket that is already connecting, or canceling an asynchronous request(WSAAsyncGetXbyY) that has already been canceled or completed."; break;
 			case WSAENOTSOCK: message = "Socket operation on nonsocket. An operation was attempted on something that is not a socket.Either the socket handle parameter did not reference a valid socket, or for select, a member of an fd_set was not valid."; break;
 			case WSAEDESTADDRREQ: message = "Destination address required. A required address was omitted from an operation on a socket.For example, this error is returned if sendto is called with the remote address of ADDR_ANY."; break;
 			case WSAEMSGSIZE: message = "Message too long. A message sent on a datagram socket was larger than the internal message buffer or some other network limit, or the buffer used to receive a datagram was smaller than the datagram itself."; break;
@@ -80,7 +85,7 @@ namespace LambdaEngine
 			case WSAEOPNOTSUPP: message = "Operation not supported. The attempted operation is not supported for the type of object referenced.Usually this occurs when a socket descriptor to a socket that cannot support this operation is trying to accept a connection on a datagram socket."; break;
 			case WSAEPFNOSUPPORT: message = "Protocol family not supported. The protocol family has not been configured into the system or no implementation for it exists.This message has a slightly different meaning from WSAEAFNOSUPPORT.However, it is interchangeable in most cases, and all Windows Sockets functions that return one of these messages also specify WSAEAFNOSUPPORT."; break;
 			case WSAEAFNOSUPPORT: message = "Address family not supported by protocol family. An address incompatible with the requested protocol was used.All sockets are created with an associated address family(that is, AF_INET for Internet Protocols) and a generic protocol type(that is, SOCK_STREAM).This error is returned if an incorrect protocol is explicitly requested in the socket call, or if an address of the wrong family is used for a socket, for example, in sendto."; break;
-			case WSAEADDRINUSE: message = "Address already in use. Typically, only one usage of each socket address(protocol / IP address / port) is permitted.This error occurs if an application attempts to bind a socket to an IP address / port that has already been used for an existing socket, or a socket that was not closed properly, or one that is still in the process of closing.For server applications that need to bind multiple sockets to the same port number, consider using setsockopt(SO_REUSEADDR).Client applications usually need not call bind at all—connect chooses an unused port automatically.When bind is called with a wildcard address(involving ADDR_ANY), a WSAEADDRINUSE error could be delayed until the specific address is committed.This could happen with a call to another function later, including connect, listen, WSAConnect, or WSAJoinLeaf."; break;
+			case WSAEADDRINUSE: message = "Address already in use. Typically, only one usage of each socket address(protocol / IP address / port) is permitted.This error occurs if an application attempts to bind a socket to an IP address / port that has already been used for an existing socket, or a socket that was not closed properly, or one that is still in the process of closing.For server applications that need to bind multiple sockets to the same port number, consider using setsockopt(SO_REUSEADDR).Client applications usually need not call bind at allï¿½connect chooses an unused port automatically.When bind is called with a wildcard address(involving ADDR_ANY), a WSAEADDRINUSE error could be delayed until the specific address is committed.This could happen with a call to another function later, including connect, listen, WSAConnect, or WSAJoinLeaf."; break;
 			case WSAEADDRNOTAVAIL: message = "Cannot assign requested address. The requested address is not valid in its context.This normally results from an attempt to bind to an address that is not valid for the local computer.This can also result from connect, sendto, WSAConnect, WSAJoinLeaf, or WSASendTo when the remote address or port is not valid for a remote computer(for example, address or port 0)."; break;
 			case WSAENETDOWN: message = "Network is down. A socket operation encountered a dead network.This could indicate a serious failure of the network system(that is, the protocol stack that the Windows Sockets DLL runs over), the network interface, or the local network itself."; break;
 			case WSAENETUNREACH: message = "Network is unreachable. A socket operation was attempted to an unreachable network.This usually means the local software knows no route to reach the remote host."; break;
@@ -89,11 +94,11 @@ namespace LambdaEngine
 			case WSAECONNRESET: message = "Connection reset by peer. An existing connection was forcibly closed by the remote host.This normally results if the peer application on the remote host is suddenly stopped, the host is rebooted, the host or remote network interface is disabled, or the remote host uses a hard close(see setsockopt for more information on the SO_LINGER option on the remote socket).This error may also result if a connection was broken due to keep - alive activity detecting a failure while one or more operations are in progress.Operations that were in progress fail with WSAENETRESET.Subsequent operations fail with WSAECONNRESET."; break;
 			case WSAENOBUFS: message = "No buffer space available. An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full."; break;
 			case WSAEISCONN: message = "Socket is already connected. A connect request was made on an already - connected socket.Some implementations also return this error if sendto is called on a connected SOCK_DGRAM socket(for SOCK_STREAM sockets, the to parameter in sendto is ignored) although other implementations treat this as a legal occurrence."; break;
-			case WSAENOTCONN: message = "Socket is not connected. A request to send or receive data was disallowed because the socket is not connected and (when sending on a datagram socket using sendto) no address was supplied.Any other type of operation might also return this error—for example, setsockopt setting SO_KEEPALIVE if the connection has been reset."; break;
+			case WSAENOTCONN: message = "Socket is not connected. A request to send or receive data was disallowed because the socket is not connected and (when sending on a datagram socket using sendto) no address was supplied.Any other type of operation might also return this errorï¿½for example, setsockopt setting SO_KEEPALIVE if the connection has been reset."; break;
 			case WSAESHUTDOWN: message = "Cannot send after socket shutdown. A request to send or receive data was disallowed because the socket had already been shut down in that direction with a previous shutdown call.By calling shutdown a partial close of a socket is requested, which is a signal that sending or receiving, or both have been discontinued."; break;
 			case WSAETOOMANYREFS: message = "Too many references. Too many references to some kernel object."; break;
 			case WSAETIMEDOUT: message = "Connection timed out. A connection attempt failed because the connected party did not properly respond after a period of time, or the established connection failed because the connected host has failed to respond."; break;
-			case WSAECONNREFUSED: message = "Connection refused. No connection could be made because the target computer actively refused it.This usually results from trying to connect to a service that is inactive on the foreign host—that is, one with no server application running."; break;
+			case WSAECONNREFUSED: message = "Connection refused. No connection could be made because the target computer actively refused it.This usually results from trying to connect to a service that is inactive on the foreign hostï¿½that is, one with no server application running."; break;
 			case WSAELOOP: message = "Cannot translate name. Cannot translate a name."; break;
 			case WSAENAMETOOLONG: message = "Name too long. A name component or a name was too long."; break;
 			case WSAEHOSTDOWN: message = "Host is down.A socket operation failed because the destination host is down. A socket operation encountered a dead host.Networking activity on the local host has not been initiated.These conditions are more likely to be indicated by the error WSAETIMEDOUT."; break;
@@ -122,7 +127,7 @@ namespace LambdaEngine
 			case WSAHOST_NOT_FOUND: message = "Host not found. No such host is known.The name is not an official host name or alias, or it cannot be found in the database(s) being queried.This error may also be returned for protocol and service queries, and means that the specified name could not be found in the relevant database."; break;
 			case WSATRY_AGAIN: message = "Nonauthoritative host not found. This is usually a temporary error during host name resolution and means that the local server did not receive a response from an authoritative server.A retry at some time later may be successful."; break;
 			case WSANO_RECOVERY: message = "This is a nonrecoverable error. This indicates that some sort of nonrecoverable error occurred during a database lookup.This may be because the database files(for example, BSD - compatible HOSTS, SERVICES, or PROTOCOLS files) could not be found, or a DNS request was returned by the server with a severe error."; break;
-			case WSANO_DATA: message = "Valid name, no data record of requested type. The requested name is valid and was found in the database, but it does not have the correct associated data being resolved for.The usual example for this is a host name - to - address translation attempt(using gethostbyname or WSAAsyncGetHostByName) which uses the DNS(Domain Name Server).An MX record is returned but no A record—indicating the host itself exists, but is not directly reachable."; break;
+			case WSANO_DATA: message = "Valid name, no data record of requested type. The requested name is valid and was found in the database, but it does not have the correct associated data being resolved for.The usual example for this is a host name - to - address translation attempt(using gethostbyname or WSAAsyncGetHostByName) which uses the DNS(Domain Name Server).An MX record is returned but no A recordï¿½indicating the host itself exists, but is not directly reachable."; break;
 			case WSA_QOS_RECEIVERS: message = "QoS receivers. At least one QoS reserve has arrived."; break;
 			case WSA_QOS_SENDERS: message = "QoS senders. At least one QoS send path has arrived."; break;
 			case WSA_QOS_NO_SENDERS: message = "No QoS senders. There are no QoS senders."; break;

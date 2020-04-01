@@ -40,6 +40,8 @@ namespace LambdaEngine
         
     private:
         bool InitSwapChain(uint32 width, uint32 height);
+        
+        void AquireNextImage();
         void ReleaseResources();
         
     private:

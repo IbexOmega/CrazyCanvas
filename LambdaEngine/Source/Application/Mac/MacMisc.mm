@@ -23,14 +23,16 @@ namespace LambdaEngine
 
     void MacMisc::OutputDebugString(const char* pFormat, ...)
     {
-        NSString* format = [NSString stringWithUTF8String:pFormat];
-        
         va_list args;
         va_start(args, pFormat);
-        
-        NSLogv(format, args);
-        
+        OutputDebugStringV(pFormat, args);
         va_end(args);
+    }
+
+    void MacMisc::OutputDebugStringV(const char* pFormat, va_list args)
+    {
+        NSString* format = [NSString stringWithUTF8String:pFormat];
+        NSLogv(format, args);
     }
 }
 
