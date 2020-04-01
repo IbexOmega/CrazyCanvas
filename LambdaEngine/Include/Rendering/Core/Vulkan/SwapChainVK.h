@@ -39,12 +39,18 @@ namespace LambdaEngine
         }
         
     private:
+        bool InitSwapChain(uint32 width, uint32 height);
         void ReleaseResources();
         
+    private:
         const Window*  m_pWindow   = nullptr;
         
-        VkSurfaceKHR   m_Surface   = VK_NULL_HANDLE;
-        VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
+        VkSurfaceKHR    m_Surface           = VK_NULL_HANDLE;
+        VkSwapchainKHR  m_SwapChain         = VK_NULL_HANDLE;
+        uint32          m_SemaphoreIndex    = 0;
+
+        VkPresentModeKHR    m_PresentationMode;
+        VkSurfaceFormatKHR  m_VkFormat;
         
         std::vector<TextureVK*>     m_Buffers;
         std::vector<VkSemaphore>    m_ImageSemaphores;

@@ -39,7 +39,6 @@ namespace LambdaEngine
         info.size                   = desc.SizeInBytes;
         
 		info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_VERTEX_BUFFER)
         {
             info.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
@@ -72,7 +71,7 @@ namespace LambdaEngine
         VkResult result = vkCreateBuffer(m_pDevice->Device, &info, nullptr, &m_Buffer);
         if (result != VK_SUCCESS)
         {
-            LOG_ERROR("[BufferVK]: Failed to create buffer");
+            LOG_VULKAN_ERROR("[BufferVK]: Failed to create buffer", result);
             return false;
         }
         else
@@ -112,7 +111,7 @@ namespace LambdaEngine
         result = vkAllocateMemory(m_pDevice->Device, &allocateInfo, nullptr, &m_Memory);
         if (result != VK_SUCCESS)
         {
-            LOG_ERROR("[BufferVK]: Failed to allocate memory");
+            LOG_VULKAN_ERROR("[BufferVK]: Failed to allocate memory", result);
             return false;
         }
         else
@@ -123,8 +122,18 @@ namespace LambdaEngine
         result = vkBindBufferMemory(m_pDevice->Device, m_Buffer, m_Memory, 0);
         if (result != VK_SUCCESS)
         {
-            LOG_ERROR("[BufferVK]: Failed to bind memory");
+            LOG_VULKAN_ERROR("[BufferVK]: Failed to bind memory.", result);
             return false;
+        }
+
+        VkBufferDeviceAddressInfo deviceAdressInfo = { };
+        deviceAdressInfo.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        deviceAdressInfo.pNext  = nullptr;
+        deviceAdressInfo.buffer = m_Buffer;
+
+        if (m_pDevice->vkGetBufferDeviceAddress)
+        {
+            m_DeviceAddress = m_pDevice->vkGetBufferDeviceAddress(m_pDevice->Device, &deviceAdressInfo);
         }
 
         return true;
@@ -153,11 +162,6 @@ namespace LambdaEngine
     
     uint64 BufferVK::GetDeviceAdress() const
     {
-        VkBufferDeviceAddressInfo deviceAdressInfo = { };
-        deviceAdressInfo.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-        deviceAdressInfo.pNext  = nullptr;
-        deviceAdressInfo.buffer = m_Buffer;
-
-        return uint64(vkGetBufferDeviceAddress(m_pDevice->Device, &deviceAdressInfo));
+        return uint64(m_DeviceAddress);
     }
 }

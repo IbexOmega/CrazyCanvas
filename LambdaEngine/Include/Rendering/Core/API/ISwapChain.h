@@ -9,12 +9,13 @@ namespace LambdaEngine
     
     struct SwapChainDesc
     {
-        const char* pName       = "";
-        EFormat     Format      = EFormat::NONE;
-        uint32      Width       = 0;
-        uint32      Height      = 0;
-        uint32      BufferCount = 0;
-        uint32      SampleCount = 0;
+        const char* pName           = "";
+        EFormat     Format          = EFormat::NONE;
+        uint32      Width           = 0;
+        uint32      Height          = 0;
+        uint32      BufferCount     = 0;
+        uint32      SampleCount     = 0;
+        bool        VerticalSync    = true;
     };
 
     class ISwapChain : public IDeviceChild

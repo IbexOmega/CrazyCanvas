@@ -13,6 +13,7 @@
 #include "Rendering/Core/API/ITexture.h"
 #include "Rendering/Core/API/ISwapChain.h"
 #include "Rendering/Core/API/ITopLevelAccelerationStructure.h"
+#include "Rendering/Core/API/IBottomLevelAccelerationStructure.h"
 
 #include "Network/API/PlatformSocketFactory.h"
 
@@ -60,10 +61,7 @@ namespace LambdaEngine
         
         ISwapChain* pSwapChain = pGraphicsDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
         
-		//TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
-		//topLevelAccelerationStructureDesc.pName = "Test TLAS";
-
-		//ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
+		//TestRayTracing(pGraphicsDevice);
 
         bool IsRunning = true;
         while (IsRunning)
@@ -75,7 +73,7 @@ namespace LambdaEngine
         SAFERELEASE(pSwapChain);
 		SAFERELEASE(pTexture);
 		SAFERELEASE(pBuffer);
-		//SAFERELEASE(pTLAS);
+		
 		SAFERELEASE(pGraphicsDevice);
     }
 
@@ -87,6 +85,30 @@ namespace LambdaEngine
         }
         
         return true;
+	}
+
+	void EngineLoop::TestRayTracing(IGraphicsDevice* pGraphicsDevice)
+	{
+		LOG_MESSAGE("\n-------Ray Trace Testing Start-------");
+
+		TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
+		topLevelAccelerationStructureDesc.pName = "Test TLAS";
+		topLevelAccelerationStructureDesc.InitialMaxInstanceCount = 10;
+
+		ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
+
+		BottomLevelAccelerationStructureDesc bottomLevelAccelerationStructureDesc = {};
+		bottomLevelAccelerationStructureDesc.pName = "Test BLAS";
+		bottomLevelAccelerationStructureDesc.MaxTriCount = 12;
+		bottomLevelAccelerationStructureDesc.MaxVertCount = 8;
+		bottomLevelAccelerationStructureDesc.Updateable = false;
+
+		IBottomLevelAccelerationStructure* pBLAS = pGraphicsDevice->CreateBottomLevelAccelerationStructure(bottomLevelAccelerationStructureDesc);
+
+		SAFERELEASE(pBLAS);
+		SAFERELEASE(pTLAS);
+
+		LOG_MESSAGE("-------Ray Trace Testing End-------\n");
 	}
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
@@ -108,8 +130,10 @@ namespace LambdaEngine
         
         Log::SetDebuggerOutputEnabled(true);
         
+#ifndef LAMBDA_PRODUCTION
         PlatformConsole::Show();
-        return true;
+#endif
+		return true;
 	}
 	
 	bool EngineLoop::Init()
@@ -142,7 +166,9 @@ namespace LambdaEngine
 			return false;
 		}
 
+#ifndef LAMBDA_PRODUCTION
         PlatformConsole::Close();
+#endif
 		return true;
 	}
 }

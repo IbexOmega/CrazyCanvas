@@ -36,8 +36,9 @@ namespace LambdaEngine
         }
          
     private:
-        VkBuffer        m_Buffer    = VK_NULL_HANDLE;
-        VkDeviceMemory  m_Memory    = VK_NULL_HANDLE;
+        VkBuffer        m_Buffer            = VK_NULL_HANDLE;
+        VkDeviceMemory  m_Memory            = VK_NULL_HANDLE;
+        VkDeviceAddress m_DeviceAddress     = 0;
         BufferDesc      m_Desc;
     };
 }

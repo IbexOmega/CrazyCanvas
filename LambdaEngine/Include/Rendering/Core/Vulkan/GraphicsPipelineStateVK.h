@@ -29,8 +29,6 @@ namespace LambdaEngine
 			const GraphicsPipelineDesc& desc);
 
 	private:
-		const GraphicsDeviceVK* m_pDevice;
-
 		VkPipeline m_Pipeline;
 
 		VkPipelineInputAssemblyStateCreateInfo	m_InputAssembly;

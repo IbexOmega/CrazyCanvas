@@ -8,7 +8,8 @@ namespace LambdaEngine
 
 	struct TopLevelAccelerationStructureDesc
 	{
-		const char* pName			= "";
+		const char* pName				= "";
+		uint32 InitialMaxInstanceCount	= 8;
 	};
 
 	class ITopLevelAccelerationStructure : public IDeviceChild
@@ -16,6 +17,8 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(ITopLevelAccelerationStructure);
 
-		virtual void UpdateData(IBuffer* pBuffer) = 0;
+		virtual void UpdateInstanceData(IBuffer* pInstanceBuffer) = 0;
+
+		virtual uint64 GetScratchMemorySizeRequirement() = 0;
 	};
 }

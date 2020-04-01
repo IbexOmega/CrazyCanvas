@@ -36,17 +36,18 @@ namespace LambdaEngine
 		virtual void Release()								override;
 
 		//CREATE
-		virtual IRenderPass*					CreateRenderPass()																	const override;
-		virtual IFence*							CreateFence()																		const override;
-		virtual ICommandList*					CreateCommandList()																	const override;
-		virtual IBuffer*						CreateBuffer(const BufferDesc& desc)												const override;
-		virtual ITexture*						CreateTexture(const TextureDesc& desc)												const override;
-		virtual ITextureView*					CreateTextureView()																	const override;
-        virtual ISwapChain*						CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)					const override;
-		virtual IPipelineState*					CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) 						const override;
-		virtual IPipelineState*					CreateComputePipelineState(const ComputePipelineDesc& desc) 						const override;
-		virtual IPipelineState*					CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc)					const override;
-		virtual ITopLevelAccelerationStructure* CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)	const override;
+		virtual IRenderPass*						CreateRenderPass()																			const override;
+		virtual IFence*								CreateFence()																				const override;
+		virtual ICommandList*						CreateCommandList()																			const override;
+		virtual IBuffer*							CreateBuffer(const BufferDesc& desc)														const override;
+		virtual ITexture*							CreateTexture(const TextureDesc& desc)														const override;
+		virtual ITextureView*						CreateTextureView()																			const override;
+        virtual ISwapChain*							CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)							const override;
+		virtual IPipelineState*						CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) 								const override;
+		virtual IPipelineState*						CreateComputePipelineState(const ComputePipelineDesc& desc) 								const override;
+		virtual IPipelineState*						CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc)							const override;
+		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const override;
+		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const override;
 		
 
 		//EXECUTE
@@ -90,7 +91,6 @@ namespace LambdaEngine
 		void RegisterInstanceExtensionData();
 		void RegisterDeviceExtensionData();
 
-	private:
 		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
 			VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -103,21 +103,23 @@ namespace LambdaEngine
 		VkDevice			Device;
 
 		//Extension Data
-		PFN_vkSetDebugUtilsObjectNameEXT	vkSetDebugUtilsObjectNameEXT;
-		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
-		PFN_vkCreateDebugUtilsMessengerEXT	vkCreateDebugUtilsMessengerEXT;
+		VkPhysicalDeviceRayTracingPropertiesKHR	RayTracingProperties;
 
-		PFN_vkCreateAccelerationStructureKHR					vkCreateAccelerationStructureKHR;
-		PFN_vkDestroyAccelerationStructureKHR					vkDestroyAccelerationStructureKHR;
-		PFN_vkBindAccelerationStructureMemoryKHR				vkBindAccelerationStructureMemoryKHR;
-		PFN_vkGetAccelerationStructureDeviceAddressKHR			vkGetAccelerationStructureDeviceAddressKHR;
-		PFN_vkGetAccelerationStructureMemoryRequirementsKHR		vkGetAccelerationStructureMemoryRequirementsKHR;
-		PFN_vkCmdBuildAccelerationStructureKHR					vkCmdBuildAccelerationStructureKHR;
-		PFN_vkCreateRayTracingPipelinesKHR						vkCreateRayTracingPipelinesKHR;
-		PFN_vkGetRayTracingShaderGroupHandlesKHR				vkGetRayTracingShaderGroupHandlesKHR;
-		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR;
+		PFN_vkSetDebugUtilsObjectNameEXT	vkSetDebugUtilsObjectNameEXT	= nullptr;
+		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
+		PFN_vkCreateDebugUtilsMessengerEXT	vkCreateDebugUtilsMessengerEXT	= nullptr;
 
-		VkPhysicalDeviceRayTracingPropertiesKHR					RayTracingProperties;
+		PFN_vkCreateAccelerationStructureKHR					vkCreateAccelerationStructureKHR				= nullptr;
+		PFN_vkDestroyAccelerationStructureKHR					vkDestroyAccelerationStructureKHR				= nullptr;
+		PFN_vkBindAccelerationStructureMemoryKHR				vkBindAccelerationStructureMemoryKHR			= nullptr;
+		PFN_vkGetAccelerationStructureDeviceAddressKHR			vkGetAccelerationStructureDeviceAddressKHR		= nullptr;
+		PFN_vkGetAccelerationStructureMemoryRequirementsKHR		vkGetAccelerationStructureMemoryRequirementsKHR = nullptr;
+		PFN_vkCmdBuildAccelerationStructureKHR					vkCmdBuildAccelerationStructureKHR				= nullptr;
+		PFN_vkCreateRayTracingPipelinesKHR						vkCreateRayTracingPipelinesKHR					= nullptr;
+		PFN_vkGetRayTracingShaderGroupHandlesKHR				vkGetRayTracingShaderGroupHandlesKHR			= nullptr;
+		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR								= nullptr;
+
+		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
 
 	private:
 		VkQueue m_GraphicsQueue;
