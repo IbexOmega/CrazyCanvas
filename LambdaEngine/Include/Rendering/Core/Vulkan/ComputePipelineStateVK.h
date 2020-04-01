@@ -23,8 +23,6 @@ namespace LambdaEngine
 		virtual EPipelineStateType GetType() override { return EPipelineStateType::COMPUTE; }
 
 	private:
-		const GraphicsDeviceVK* m_pDevice;
-
 		VkPipeline m_Pipeline;
 	};
 }

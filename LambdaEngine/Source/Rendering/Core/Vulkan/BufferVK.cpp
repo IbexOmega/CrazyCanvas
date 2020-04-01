@@ -39,7 +39,6 @@ namespace LambdaEngine
         info.size                   = desc.SizeInBytes;
         
 		info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_VERTEX_BUFFER)
         {
             info.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
@@ -127,6 +126,16 @@ namespace LambdaEngine
             return false;
         }
 
+        VkBufferDeviceAddressInfo deviceAdressInfo = { };
+        deviceAdressInfo.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        deviceAdressInfo.pNext  = nullptr;
+        deviceAdressInfo.buffer = m_Buffer;
+
+        if (m_pDevice->vkGetBufferDeviceAddress)
+        {
+            m_DeviceAddress = m_pDevice->vkGetBufferDeviceAddress(m_pDevice->Device, &deviceAdressInfo);
+        }
+
         return true;
     }
 
@@ -153,16 +162,6 @@ namespace LambdaEngine
     
     uint64 BufferVK::GetDeviceAdress() const
     {
-        VkBufferDeviceAddressInfo deviceAdressInfo = { };
-        deviceAdressInfo.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-        deviceAdressInfo.pNext  = nullptr;
-        deviceAdressInfo.buffer = m_Buffer;
-
-        if (m_pDevice->vkGetBufferDeviceAddress == nullptr)
-        {
-            return uint64(0);
-        }
-
-        return uint64(m_pDevice->vkGetBufferDeviceAddress(m_pDevice->Device, &deviceAdressInfo));
+        return uint64(m_DeviceAddress);
     }
 }

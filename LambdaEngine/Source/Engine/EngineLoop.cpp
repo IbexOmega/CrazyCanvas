@@ -110,8 +110,10 @@ namespace LambdaEngine
 		
 		PlatformTime::PreInit();
         
+#ifndef LAMBDA_PRODUCTION
         PlatformConsole::Show();
-        return true;
+#endif
+		return true;
 	}
 	
 	bool EngineLoop::Init()
@@ -144,7 +146,9 @@ namespace LambdaEngine
 			return false;
 		}
 
+#ifndef LAMBDA_PRODUCTION
         PlatformConsole::Close();
+#endif
 		return true;
 	}
 }
