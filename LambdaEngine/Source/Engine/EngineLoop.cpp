@@ -35,7 +35,7 @@ namespace LambdaEngine
 
 		IBuffer* pBuffer = pGraphicsDevice->CreateBuffer(bufferDesc);
 
-		uint64 address = pBuffer->GetDeviceAdress();
+        uint64 address = 0;//pBuffer->GetDeviceAdress();
 
 		TextureDesc textureDesc = { };
 		textureDesc.pName		= "Texture";
@@ -64,10 +64,10 @@ namespace LambdaEngine
         
         Log::SetDebuggerOutputEnabled(false);
         
-		TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
-		topLevelAccelerationStructureDesc.pName = "Test TLAS";
+		//TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
+		//topLevelAccelerationStructureDesc.pName = "Test TLAS";
 
-		ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
+		//ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
 
         bool IsRunning = true;
         while (IsRunning)
@@ -79,7 +79,7 @@ namespace LambdaEngine
         SAFERELEASE(pSwapChain);
 		SAFERELEASE(pTexture);
 		SAFERELEASE(pBuffer);
-		SAFERELEASE(pTLAS);
+		//SAFERELEASE(pTLAS);
 		SAFERELEASE(pGraphicsDevice);
     }
 
