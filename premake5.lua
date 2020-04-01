@@ -228,7 +228,9 @@ workspace "LambdaEngine"
         filter { "system:windows", "platforms:x64_SharedLib" }
 			postbuildcommands
 			{
-				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Sandbox/\"")
+                ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+                ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Client/\""),
+                ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		filter {}
     project "*"
@@ -240,6 +242,92 @@ workspace "LambdaEngine"
 		cppdialect "C++17"
 		systemversion "latest"
         location "Sandbox"
+        
+        -- Targets
+		targetdir ("Build/bin/" .. outputdir .. "/%{prj.name}")
+		objdir ("Build/bin-int/" .. outputdir .. "/%{prj.name}")
+		
+		--Includes
+		includedirs
+		{
+            "LambdaEngine/Include",
+            "%{prj.name}/Include",
+        }
+        
+        -- Files
+		files 
+		{
+            "LambdaEngine/Source/Launch/**",
+			"%{prj.name}/**.hpp",
+			"%{prj.name}/**.h",
+			"%{prj.name}/**.inl",
+			"%{prj.name}/**.cpp",
+			"%{prj.name}/**.c",
+			"%{prj.name}/**.hlsl",
+		}
+		-- We do not want to compile HLSL files
+		excludes 
+		{	
+			"**.hlsl",
+		}
+		-- Linking
+		links 
+		{ 
+			"LambdaEngine",
+		}
+
+    project "*"
+
+    -- Client Project
+    project "Client"
+        kind "WindowedApp"
+        language "C++"
+		cppdialect "C++17"
+		systemversion "latest"
+        location "Client"
+        
+        -- Targets
+		targetdir ("Build/bin/" .. outputdir .. "/%{prj.name}")
+		objdir ("Build/bin-int/" .. outputdir .. "/%{prj.name}")
+		
+		--Includes
+		includedirs
+		{
+            "LambdaEngine/Include",
+            "%{prj.name}/Include",
+        }
+        
+        -- Files
+		files 
+		{
+            "LambdaEngine/Source/Launch/**",
+			"%{prj.name}/**.hpp",
+			"%{prj.name}/**.h",
+			"%{prj.name}/**.inl",
+			"%{prj.name}/**.cpp",
+			"%{prj.name}/**.c",
+			"%{prj.name}/**.hlsl",
+		}
+		-- We do not want to compile HLSL files
+		excludes 
+		{	
+			"**.hlsl",
+		}
+		-- Linking
+		links 
+		{ 
+			"LambdaEngine",
+		}
+
+    project "*"
+
+    -- Server Project
+    project "Server"
+        kind "WindowedApp"
+        language "C++"
+		cppdialect "C++17"
+		systemversion "latest"
+        location "Server"
         
         -- Targets
 		targetdir ("Build/bin/" .. outputdir .. "/%{prj.name}")
