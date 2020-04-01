@@ -70,7 +70,7 @@ namespace LambdaEngine
         VkResult result = vkCreateBuffer(m_pDevice->Device, &info, nullptr, &m_Buffer);
         if (result != VK_SUCCESS)
         {
-            LOG_ERROR("[BufferVK]: Failed to create buffer");
+            LOG_VULKAN_ERROR("[BufferVK]: Failed to create buffer", result);
             return false;
         }
         else
@@ -106,7 +106,7 @@ namespace LambdaEngine
         result = vkAllocateMemory(m_pDevice->Device, &allocateInfo, nullptr, &m_Memory);
         if (result != VK_SUCCESS)
         {
-            LOG_ERROR("[BufferVK]: Failed to allocate memory");
+            LOG_VULKAN_ERROR("[BufferVK]: Failed to allocate memory", result);
             return false;
         }
         else
@@ -117,7 +117,7 @@ namespace LambdaEngine
         result = vkBindBufferMemory(m_pDevice->Device, m_Buffer, m_Memory, 0);
         if (result != VK_SUCCESS)
         {
-            LOG_ERROR("[BufferVK]: Failed to bind memory");
+            LOG_VULKAN_ERROR("[BufferVK]: Failed to bind memory.", result);
             return false;
         }
 
@@ -152,6 +152,11 @@ namespace LambdaEngine
         deviceAdressInfo.pNext  = nullptr;
         deviceAdressInfo.buffer = m_Buffer;
 
-        return uint64(vkGetBufferDeviceAddress(m_pDevice->Device, &deviceAdressInfo));
+        if (m_pDevice->vkGetBufferDeviceAddress == nullptr)
+        {
+            return uint64(0);
+        }
+
+        return uint64(m_pDevice->vkGetBufferDeviceAddress(m_pDevice->Device, &deviceAdressInfo));
     }
 }

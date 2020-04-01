@@ -12,6 +12,8 @@
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
 #include "Rendering/Core/Vulkan/TopLevelAccelerationStructureVK.h"
 
+#include "Rendering/Core/Vulkan/VulkanHelpers.h"
+
 namespace LambdaEngine
 {
 	constexpr ValidationLayer REQUIRED_VALIDATION_LAYERS[]
@@ -308,9 +310,10 @@ namespace LambdaEngine
 			createInfo.pNext                = nullptr;
 		}
 
-		if (vkCreateInstance(&createInfo, nullptr, &Instance) != VK_SUCCESS)
+		VkResult result = vkCreateInstance(&createInfo, nullptr, &Instance);
+		if (result != VK_SUCCESS)
 		{
-			LOG_ERROR("[GraphicsDeviceVK]: Failed to create Vulkan Instance!");
+			LOG_VULKAN_ERROR("[GraphicsDeviceVK]: Failed to create Vulkan Instance!", result);
 			return false;
 		}
 
@@ -817,6 +820,9 @@ namespace LambdaEngine
 
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
 		}
+
+		//TOOO: Check for extension
+		GET_DEVICE_PROC_ADDR(Device, vkGetBufferDeviceAddress);
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsDeviceVK::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
