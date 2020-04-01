@@ -11,7 +11,7 @@ Sandbox::Sandbox()
 	using namespace LambdaEngine;
     
 	//TCP TEST
-	ISocketTCP* server = PlatformSocketFactory::CreateSocketTCP();
+	/*ISocketTCP* server = PlatformSocketFactory::CreateSocketTCP();
 	server->Bind("127.0.0.1", 4444);
 	server->Listen();
 
@@ -76,7 +76,7 @@ Sandbox::Sandbox()
 	socket1->ReceiveFrom(buffer, 256, bytesReceived, sender, port);
 	LOG_MESSAGE(buffer);
 	LOG_MESSAGE(sender.c_str());
-	LOG_MESSAGE("%d", port);
+	LOG_MESSAGE("%d", port);*/
 }
 
 Sandbox::~Sandbox()

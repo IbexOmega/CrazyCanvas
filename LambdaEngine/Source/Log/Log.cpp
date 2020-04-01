@@ -29,8 +29,12 @@ namespace LambdaEngine
         {
             PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
         }
+
+        va_list argsCopy;
+        va_copy(argsCopy, args);
+        PlatformConsole::VPrintLine(pFormat, argsCopy);
+        va_end(argsCopy);
         
-        PlatformConsole::VPrintLine(pFormat, args);
         if (s_DebuggerOutputEnabled)
         {
             PlatformMisc::OutputDebugStringV(pFormat, args);

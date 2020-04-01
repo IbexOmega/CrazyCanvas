@@ -2,6 +2,8 @@
 #include "Application/Mac/MacConsole.h"
 #include "Application/Mac/CocoaConsoleWindow.h"
 
+#include "Application/PlatformMisc.h"
+
 namespace LambdaEngine
 {
     MacConsole MacConsole::s_Console = MacConsole();

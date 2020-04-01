@@ -89,4 +89,10 @@ namespace LambdaEngine
 		uint32 TopX		= 0;
 		uint32 TopY		= 0;
 	};
+	
+	struct GraphicsObject
+	{
+		GUID_Lambda Mesh;
+		GUID_Lambda Material;
+	};
 }
