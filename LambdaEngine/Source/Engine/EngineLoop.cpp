@@ -17,6 +17,8 @@
 
 #include "Network/API/PlatformSocketFactory.h"
 
+#include "Resources/ResourceHandler.h"
+
 #include "Rendering/RenderSystem.h"
 
 namespace LambdaEngine
@@ -58,8 +60,8 @@ namespace LambdaEngine
         swapChainDesc.SampleCount   = 1;
         
         ISwapChain* pSwapChain = pDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
-        
-		//TestRayTracing(pGraphicsDevice);
+
+		TestResourceHandler(pDevice);
 
         bool IsRunning = true;
         while (IsRunning)
@@ -81,6 +83,15 @@ namespace LambdaEngine
         }
         
         return true;
+	}
+
+	void EngineLoop::TestResourceHandler(IGraphicsDevice* pGraphicsDevice)
+	{
+		ResourceHandler* pResourceHandler = new ResourceHandler(pGraphicsDevice);
+		GUID_Lambda failedMeshGUID = pResourceHandler->LoadMeshFromFile("THIS/SHOULD/FAIL.obj");
+		GUID_Lambda bunnyMeshGUID = pResourceHandler->LoadMeshFromFile("../Assets/Meshes/bunny.obj");
+
+		SAFEDELETE(pResourceHandler);
 	}
 
 	void EngineLoop::TestRayTracing(IGraphicsDevice* pGraphicsDevice)

@@ -40,14 +40,14 @@ namespace LambdaEngine
 	{
 		~Mesh()
 		{
-			SAFEDELETE(pVertices);
-			SAFEDELETE(pIndices);
+			SAFEDELETEARR(pVertices);
+			SAFEDELETEARR(pIndices);
 		}
 
 		Vertex* pVertices		= nullptr;
-		uint32 NumVertices		= 0;
+		uint32  NumVertices		= 0;
 		uint32* pIndices		= nullptr;
-		uint32 NumIndices		= 0;
+		uint32  NumIndices		= 0;
 	};
 }
 
