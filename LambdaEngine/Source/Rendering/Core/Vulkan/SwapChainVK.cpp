@@ -154,7 +154,6 @@ namespace LambdaEngine
         std::vector<VkSurfaceFormatKHR> formats(formatCount);
         vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, formats.data());
 
-
         //Find the swapchain format we want
         VkFormat lookingFor = ConvertFormat(desc.Format);
         m_VkFormat = { VK_FORMAT_UNDEFINED, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
@@ -224,7 +223,7 @@ namespace LambdaEngine
         D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain PresentationMode '%s'", VkPresentatModeToString(m_PresentationMode));
 
         VkSurfaceCapabilitiesKHR capabilities = { };
-        VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_pDevice->PhysicalDevice, m_Surface, &capabilities);
+        result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_pDevice->PhysicalDevice, m_Surface, &capabilities);
         if (result != VK_SUCCESS)
         {
             LOG_VULKAN_ERROR("[SwapChainVK]: Failed to get surface capabilities", result);
@@ -237,7 +236,7 @@ namespace LambdaEngine
             return false;
         }
 
-        D_LOG_ERROR("[SwapChainVK]: Number of buffers in SwapChain '%u'", desc.BufferCount);
+        D_LOG_MESSAGE("[SwapChainVK]: Number of buffers in SwapChain '%u'", desc.BufferCount);
         
         m_Desc      = desc;
         m_pWindow   = pWindow;
@@ -263,15 +262,15 @@ namespace LambdaEngine
         {
             newExtent = capabilities.currentExtent;
         }
-        else
-        {
-            newExtent.width     = std::max(capabilities.minImageExtent.width,   std::min(capabilities.maxImageExtent.width,     width));
-            newExtent.height    = std::max(capabilities.minImageExtent.height,  std::min(capabilities.maxImageExtent.height,    height));
-        }
-        newExtent.width     = std::max(newExtent.width, 1u);
-        newExtent.height    = std::max(newExtent.height, 1u);
-        m_Desc.Width    = newExtent.width;
-        m_Desc.Height   = newExtent.height;
+        //else
+        //{
+        //    newExtent.width     = std::max(capabilities.minImageExtent.width,   std::min(capabilities.maxImageExtent.width,     width));
+        //    newExtent.height    = std::max(capabilities.minImageExtent.height,  std::min(capabilities.maxImageExtent.height,    height));
+        //}
+        //newExtent.width     = std::max(newExtent.width, 1u);
+        //newExtent.height    = std::max(newExtent.height, 1u);
+        //m_Desc.Width    = newExtent.width;
+        //m_Desc.Height   = newExtent.height;
 
         D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain size w: %u h: %u", newExtent.width, newExtent.height);
 
