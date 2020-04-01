@@ -17,6 +17,8 @@
 
 #include "Network/API/PlatformSocketFactory.h"
 
+#include "Threading/Thread.h"
+
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
 
@@ -26,7 +28,7 @@ namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
-		BufferDesc bufferDesc = { };
+		/*BufferDesc bufferDesc = { };
 		bufferDesc.pName			= "VertexBuffer";
 		bufferDesc.MemoryType		= EMemoryType::GPU_MEMORY;
 		bufferDesc.Flags			= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_DST;
@@ -63,7 +65,7 @@ namespace LambdaEngine
         
         ISwapChain* pSwapChain = pDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
 
-		//TestResourceHandler(pDevice);
+		TestResourceHandler(pDevice);*/
 
         bool IsRunning = true;
         while (IsRunning)
@@ -72,18 +74,20 @@ namespace LambdaEngine
             pGame->Tick();
         }
 
-        SAFERELEASE(pSwapChain);
+        /*SAFERELEASE(pSwapChain);
 		SAFERELEASE(pTexture);
-		SAFERELEASE(pBuffer);
+		SAFERELEASE(pBuffer);*/
     }
 
     bool EngineLoop::Tick()
     {
+		Thread::Join();
+
         if (!PlatformApplication::Tick())
         {
             return false;
         }
-        
+
         return true;
 	}
 
@@ -169,10 +173,10 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!RenderSystem::Init())
+		/*if (!RenderSystem::Init())
 		{
 			return false;
-		}
+		}*/
 
 		return true;
 	}
