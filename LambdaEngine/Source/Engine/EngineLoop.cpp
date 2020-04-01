@@ -17,7 +17,8 @@
 
 #include "Network/API/PlatformSocketFactory.h"
 
-#include "Resources/ResourceHandler.h"
+#include "Resources/ResourceLoader.h"
+#include "Resources/ResourceManager.h"
 
 #include "Rendering/RenderSystem.h"
 
@@ -32,6 +33,7 @@ namespace LambdaEngine
 		bufferDesc.SizeInBytes		= 64;
 
 		IGraphicsDevice* pDevice = RenderSystem::GetDevice();
+		ResourceLoader::SetGraphicsDevice(pDevice);
 
 		IBuffer* pBuffer = pDevice->CreateBuffer(bufferDesc);
         uint64 bufferAddress = pBuffer->GetDeviceAdress();
@@ -61,7 +63,7 @@ namespace LambdaEngine
         
         ISwapChain* pSwapChain = pDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
 
-		TestResourceHandler(pDevice);
+		//TestResourceHandler(pDevice);
 
         bool IsRunning = true;
         while (IsRunning)
@@ -87,11 +89,23 @@ namespace LambdaEngine
 
 	void EngineLoop::TestResourceHandler(IGraphicsDevice* pGraphicsDevice)
 	{
-		ResourceHandler* pResourceHandler = new ResourceHandler(pGraphicsDevice);
+		LOG_MESSAGE("\n-------Resource Handler Testing Start-------");
+
+		ResourceManager* pResourceHandler = new ResourceManager(pGraphicsDevice);
+
+		std::vector<GraphicsObject> sponzaGraphicsObjects;
+		pResourceHandler->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sponzaGraphicsObjects);
+
 		GUID_Lambda failedMeshGUID = pResourceHandler->LoadMeshFromFile("THIS/SHOULD/FAIL.obj");
 		GUID_Lambda bunnyMeshGUID = pResourceHandler->LoadMeshFromFile("../Assets/Meshes/bunny.obj");
 
+		Mesh* pBunnyMesh = ResourceLoader::LoadMeshFromFile("../Assets/Meshes/bunny.obj");
+
+
+		SAFEDELETE(pBunnyMesh);
 		SAFEDELETE(pResourceHandler);
+
+		LOG_MESSAGE("-------Resource Handler Testing End-------\n");
 	}
 
 	void EngineLoop::TestRayTracing(IGraphicsDevice* pGraphicsDevice)
