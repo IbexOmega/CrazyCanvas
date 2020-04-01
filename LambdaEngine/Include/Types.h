@@ -16,3 +16,6 @@ typedef unsigned long long	uint64;
 //Floating point
 typedef float	float32;
 typedef double	float64;
+
+//Other
+typedef unsigned int		GUID_Lambda;
