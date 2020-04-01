@@ -36,7 +36,7 @@ namespace LambdaEngine
 
 		IBuffer* pBuffer = pGraphicsDevice->CreateBuffer(bufferDesc);
 
-		uint64 address = pBuffer->GetDeviceAdress();
+        uint64 address = 0;//pBuffer->GetDeviceAdress();
 
 		TextureDesc textureDesc = { };
 		textureDesc.pName		= "Texture";
@@ -69,7 +69,7 @@ namespace LambdaEngine
 		topLevelAccelerationStructureDesc.pName						= "Test TLAS";
 		topLevelAccelerationStructureDesc.InitialMaxInstanceCount	= 10;
 
-		ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
+		//ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
 
 		BottomLevelAccelerationStructureDesc bottomLevelAccelerationStructureDesc = {};
 		bottomLevelAccelerationStructureDesc.pName					= "Test BLAS";
@@ -122,8 +122,10 @@ namespace LambdaEngine
 		
 		PlatformTime::PreInit();
         
+#ifndef LAMBDA_PRODUCTION
         PlatformConsole::Show();
-        return true;
+#endif
+		return true;
 	}
 	
 	bool EngineLoop::Init()
@@ -156,7 +158,9 @@ namespace LambdaEngine
 			return false;
 		}
 
+#ifndef LAMBDA_PRODUCTION
         PlatformConsole::Close();
+#endif
 		return true;
 	}
 }

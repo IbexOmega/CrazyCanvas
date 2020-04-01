@@ -6,6 +6,16 @@
 
 namespace LambdaEngine
 {
+    bool MacInputDevice::Init()
+    {
+        return true;
+    }
+
+    void MacInputDevice::Release()
+    {
+        delete this;
+    }
+
     void MacInputDevice::HandleEvent(NSEvent* event)
     {
         NSEventType eventType = [event type];

@@ -91,7 +91,6 @@ namespace LambdaEngine
 		void RegisterInstanceExtensionData();
 		void RegisterDeviceExtensionData();
 
-	private:
 		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
 			VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -104,21 +103,23 @@ namespace LambdaEngine
 		VkDevice			Device;
 
 		//Extension Data
-		PFN_vkSetDebugUtilsObjectNameEXT	vkSetDebugUtilsObjectNameEXT;
-		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
-		PFN_vkCreateDebugUtilsMessengerEXT	vkCreateDebugUtilsMessengerEXT;
+		VkPhysicalDeviceRayTracingPropertiesKHR	RayTracingProperties;
 
-		PFN_vkCreateAccelerationStructureKHR					vkCreateAccelerationStructureKHR;
-		PFN_vkDestroyAccelerationStructureKHR					vkDestroyAccelerationStructureKHR;
-		PFN_vkBindAccelerationStructureMemoryKHR				vkBindAccelerationStructureMemoryKHR;
-		PFN_vkGetAccelerationStructureDeviceAddressKHR			vkGetAccelerationStructureDeviceAddressKHR;
-		PFN_vkGetAccelerationStructureMemoryRequirementsKHR		vkGetAccelerationStructureMemoryRequirementsKHR;
-		PFN_vkCmdBuildAccelerationStructureKHR					vkCmdBuildAccelerationStructureKHR;
-		PFN_vkCreateRayTracingPipelinesKHR						vkCreateRayTracingPipelinesKHR;
-		PFN_vkGetRayTracingShaderGroupHandlesKHR				vkGetRayTracingShaderGroupHandlesKHR;
-		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR;
+		PFN_vkSetDebugUtilsObjectNameEXT	vkSetDebugUtilsObjectNameEXT	= nullptr;
+		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
+		PFN_vkCreateDebugUtilsMessengerEXT	vkCreateDebugUtilsMessengerEXT	= nullptr;
 
-		VkPhysicalDeviceRayTracingPropertiesKHR					RayTracingProperties;
+		PFN_vkCreateAccelerationStructureKHR					vkCreateAccelerationStructureKHR				= nullptr;
+		PFN_vkDestroyAccelerationStructureKHR					vkDestroyAccelerationStructureKHR				= nullptr;
+		PFN_vkBindAccelerationStructureMemoryKHR				vkBindAccelerationStructureMemoryKHR			= nullptr;
+		PFN_vkGetAccelerationStructureDeviceAddressKHR			vkGetAccelerationStructureDeviceAddressKHR		= nullptr;
+		PFN_vkGetAccelerationStructureMemoryRequirementsKHR		vkGetAccelerationStructureMemoryRequirementsKHR = nullptr;
+		PFN_vkCmdBuildAccelerationStructureKHR					vkCmdBuildAccelerationStructureKHR				= nullptr;
+		PFN_vkCreateRayTracingPipelinesKHR						vkCreateRayTracingPipelinesKHR					= nullptr;
+		PFN_vkGetRayTracingShaderGroupHandlesKHR				vkGetRayTracingShaderGroupHandlesKHR			= nullptr;
+		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR								= nullptr;
+
+		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
 
 	private:
 		VkQueue m_GraphicsQueue;

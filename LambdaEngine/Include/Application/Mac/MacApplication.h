@@ -59,7 +59,7 @@ namespace LambdaEngine
         
         static void Terminate();
         
-        static InputDevice* CreateInputDevice();
+        static InputDevice* CreateInputDevice(EInputMode inputMode);
         
         FORCEINLINE static Application* Get()
         {

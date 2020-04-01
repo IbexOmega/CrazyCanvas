@@ -132,7 +132,7 @@ namespace LambdaEngine
         s_Application.m_IsTerminating = true;
     }
 
-    InputDevice* MacApplication::CreateInputDevice()
+    InputDevice* MacApplication::CreateInputDevice(EInputMode inputMode)
     {
         MacInputDevice* pInputDevice = new MacInputDevice();
         s_Application.AddMessageHandler(pInputDevice);

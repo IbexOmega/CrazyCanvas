@@ -31,8 +31,6 @@ namespace LambdaEngine
 			const RayTracingPipelineDesc& desc);
 
 	private:
-		const GraphicsDeviceVK* m_pDevice;
-
 		VkPipeline m_Pipeline;
 		BufferVK* m_pSBT;
 
