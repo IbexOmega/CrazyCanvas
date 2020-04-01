@@ -182,6 +182,12 @@ workspace "LambdaEngine"
 		{
 			"%{prj.name}/Include",
         }
+		
+		sysincludedirs
+		{
+			"Dependencies/glm",
+			"Dependencies/tinyobjloader",
+		}
         
 		-- Win32
 		filter { "system:windows" }
@@ -253,6 +259,12 @@ workspace "LambdaEngine"
             "LambdaEngine/Include",
             "%{prj.name}/Include",
         }
+		
+		sysincludedirs
+		{
+			"Dependencies/glm",
+			"Dependencies/tinyobjloader",
+		}
         
         -- Files
 		files 

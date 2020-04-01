@@ -51,6 +51,7 @@
 
 //Delete and release
 #define SAFEDELETE(object)	if ((object)) { delete object; object = nullptr; }
+#define SAFEDELETEARR(array)	if ((array)) { delete[] array; array = nullptr; }
 #define SAFERELEASE(object) if ((object)) { object->Release(); object = nullptr; }
 
 //Bit helper

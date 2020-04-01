@@ -19,51 +19,51 @@
 
 #include "Threading/Thread.h"
 
+#include "Resources/ResourceHandler.h"
+
+#include "Rendering/RenderSystem.h"
+
 namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
-		//GraphicsDeviceDesc graphicsDeviceDesc = {};
-		//graphicsDeviceDesc.Debug = true;
+		BufferDesc bufferDesc = { };
+		bufferDesc.pName			= "VertexBuffer";
+		bufferDesc.MemoryType		= EMemoryType::GPU_MEMORY;
+		bufferDesc.Flags			= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_DST;
+		bufferDesc.SizeInBytes		= 64;
 
-  //      IGraphicsDevice* pGraphicsDevice = CreateGraphicsDevice(graphicsDeviceDesc, EGraphicsAPI::VULKAN);
-  //      
-		//BufferDesc bufferDesc = { };
-		//bufferDesc.pName			= "VertexBuffer";
-		//bufferDesc.MemoryType		= EMemoryType::GPU_MEMORY;
-		//bufferDesc.Flags			= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_DST;
-		//bufferDesc.SizeInBytes		= 64;
+		IGraphicsDevice* pDevice = RenderSystem::GetDevice();
 
-		//IBuffer* pBuffer = pGraphicsDevice->CreateBuffer(bufferDesc);
+		IBuffer* pBuffer = pDevice->CreateBuffer(bufferDesc);
+        uint64 bufferAddress = pBuffer->GetDeviceAdress();
 
-  //      uint64 address = 0;//pBuffer->GetDeviceAdress();
+		TextureDesc textureDesc = { };
+		textureDesc.pName		= "Texture";
+		textureDesc.Type		= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType	= EMemoryType::GPU_MEMORY;
+		textureDesc.Format		= EFormat::R8G8B8A8_UNORM;
+		textureDesc.Flags		= TEXTURE_FLAG_COPY_DST | TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width		= 256;
+		textureDesc.Height		= 256;
+		textureDesc.Depth		= 1;
+		textureDesc.SampleCount	= 1;
+		textureDesc.Miplevels	= 1;
+		textureDesc.ArrayCount	= 1;
 
-		//TextureDesc textureDesc = { };
-		//textureDesc.pName		= "Texture";
-		//textureDesc.Type		= ETextureType::TEXTURE_2D;
-		//textureDesc.MemoryType	= EMemoryType::GPU_MEMORY;
-		//textureDesc.Format		= EFormat::R8G8B8A8_UNORM;
-		//textureDesc.Flags		= TEXTURE_FLAG_COPY_DST | TEXTURE_FLAG_SHADER_RESOURCE;
-		//textureDesc.Width		= 256;
-		//textureDesc.Height		= 256;
-		//textureDesc.Depth		= 1;
-		//textureDesc.SampleCount	= 1;
-		//textureDesc.Miplevels	= 1;
-		//textureDesc.ArrayCount	= 1;
+		ITexture* pTexture = pDevice->CreateTexture(textureDesc);
 
-		//ITexture* pTexture = pGraphicsDevice->CreateTexture(textureDesc);
+        SwapChainDesc swapChainDesc = { };
+        swapChainDesc.pName         = "Main Window";
+        swapChainDesc.BufferCount   = 3;
+        swapChainDesc.Format        = EFormat::B8G8R8A8_UNORM;
+        swapChainDesc.Width         = 0;
+        swapChainDesc.Height        = 0;
+        swapChainDesc.SampleCount   = 1;
+        
+        ISwapChain* pSwapChain = pDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
 
-  //      SwapChainDesc swapChainDesc = { };
-  //      swapChainDesc.pName         = "Main Window";
-  //      swapChainDesc.BufferCount   = 3;
-  //      swapChainDesc.Format        = EFormat::B8G8R8A8_UNORM;
-  //      swapChainDesc.Width         = 0;
-  //      swapChainDesc.Height        = 0;
-  //      swapChainDesc.SampleCount   = 1;
-  //      
-  //      ISwapChain* pSwapChain = pGraphicsDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
-  //      
-		////TestRayTracing(pGraphicsDevice);
+		TestResourceHandler(pDevice);
 
         bool IsRunning = true;
         while (IsRunning)
@@ -72,11 +72,9 @@ namespace LambdaEngine
             pGame->Tick();
         }
 
-  //      SAFERELEASE(pSwapChain);
-		//SAFERELEASE(pTexture);
-		//SAFERELEASE(pBuffer);
-		//
-		//SAFERELEASE(pGraphicsDevice);
+        SAFERELEASE(pSwapChain);
+		SAFERELEASE(pTexture);
+		SAFERELEASE(pBuffer);
     }
 
     bool EngineLoop::Tick()
@@ -89,6 +87,15 @@ namespace LambdaEngine
         }
 
         return true;
+	}
+
+	void EngineLoop::TestResourceHandler(IGraphicsDevice* pGraphicsDevice)
+	{
+		ResourceHandler* pResourceHandler = new ResourceHandler(pGraphicsDevice);
+		GUID_Lambda failedMeshGUID = pResourceHandler->LoadMeshFromFile("THIS/SHOULD/FAIL.obj");
+		GUID_Lambda bunnyMeshGUID = pResourceHandler->LoadMeshFromFile("../Assets/Meshes/bunny.obj");
+
+		SAFEDELETE(pResourceHandler);
 	}
 
 	void EngineLoop::TestRayTracing(IGraphicsDevice* pGraphicsDevice)
@@ -149,8 +156,12 @@ namespace LambdaEngine
 
 		if (!PlatformSocketFactory::Init())
 		{
-            //TODO: Implement on Mac so that we can return false again
-			//return false;
+			return false;
+		}
+
+		if (!RenderSystem::Init())
+		{
+			return false;
 		}
 
 		return true;
@@ -159,6 +170,11 @@ namespace LambdaEngine
 	bool EngineLoop::Release()
 	{
 		Input::Release();
+
+		if (!RenderSystem::Release())
+		{
+			return false;
+		}
 
 		return true;
 	}

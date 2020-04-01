@@ -1,6 +1,7 @@
 #include "Log/Log.h"
 
 #include <string>
+#include <algorithm>
 
 #include "Application/API/Window.h"
 
@@ -9,6 +10,7 @@
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/TextureVK.h"
 
 namespace LambdaEngine
 {
@@ -262,15 +264,15 @@ namespace LambdaEngine
         {
             newExtent = capabilities.currentExtent;
         }
-        //else
-        //{
-        //    newExtent.width     = std::max(capabilities.minImageExtent.width,   std::min(capabilities.maxImageExtent.width,     width));
-        //    newExtent.height    = std::max(capabilities.minImageExtent.height,  std::min(capabilities.maxImageExtent.height,    height));
-        //}
-        //newExtent.width     = std::max(newExtent.width, 1u);
-        //newExtent.height    = std::max(newExtent.height, 1u);
-        //m_Desc.Width    = newExtent.width;
-        //m_Desc.Height   = newExtent.height;
+        else
+        {
+            newExtent.width     = std::max(capabilities.minImageExtent.width,   std::min(capabilities.maxImageExtent.width,     width));
+            newExtent.height    = std::max(capabilities.minImageExtent.height,  std::min(capabilities.maxImageExtent.height,    height));
+        }
+        newExtent.width     = std::max(newExtent.width, 1u);
+        newExtent.height    = std::max(newExtent.height, 1u);
+        m_Desc.Width    = newExtent.width;
+        m_Desc.Height   = newExtent.height;
 
         D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain size w: %u h: %u", newExtent.width, newExtent.height);
 
@@ -314,23 +316,73 @@ namespace LambdaEngine
             m_SwapChain = VK_NULL_HANDLE;
             return false;
         }
+        else
+        {
+            D_LOG_MESSAGE("[SwapChainVK]: Created SwapChain");
+            m_SemaphoreIndex = 0;
+        }
 
-        D_LOG_MESSAGE("[SwapChainVK]: Created SwapChain");
+        //Get SwapChain images
+        uint32 imageCount = 0;
+        vkGetSwapchainImagesKHR(m_pDevice->Device, m_SwapChain, &imageCount, nullptr);
+        m_Desc.BufferCount = imageCount;
 
-        m_SemaphoreIndex = 0;
+        std::vector<VkImage> textures(imageCount);
+        result = vkGetSwapchainImagesKHR(m_pDevice->Device, m_SwapChain, &imageCount, textures.data());
+        if (result != VK_SUCCESS)
+        {
+            LOG_VULKAN_ERROR("[SwapChainVK]: Failed to retrive SwapChain-Images", result);
+            return false;
+        }
+
+        const char* names[] =
+        {
+            "BackBuffer[0]",
+            "BackBuffer[1]",
+            "BackBuffer[2]",
+            "BackBuffer[3]",
+            "BackBuffer[4]",
+        };
+        
+        for (uint32 i = 0; i < imageCount; i++)
+        {
+            TextureDesc desc = {};
+            desc.pName          = names[i];
+            desc.Type           = ETextureType::TEXTURE_2D;
+            desc.Flags          = TEXTURE_FLAG_RENDER_TARGET;
+            desc.MemoryType     = EMemoryType::GPU_MEMORY;
+            desc.Format         = m_Desc.Format;
+            desc.Width          = m_Desc.Width;
+            desc.Height         = m_Desc.Height;
+            desc.Depth          = 1;
+            desc.ArrayCount     = 1;
+            desc.Miplevels      = 1;
+            desc.SampleCount    = 1;
+
+            TextureVK* pTexture = new TextureVK(m_pDevice);
+            pTexture->InitWithImage(textures[i], desc);
+            m_Buffers.emplace_back(pTexture);
+        }
 
         return true;
+    }
+
+    void SwapChainVK::AquireNextImage()
+    {
     }
 
     void SwapChainVK::Present()
     {
     }
 
-
     bool SwapChainVK::ResizeBuffers(uint32 width, uint32 height)
     {
-        ReleaseResources();
+        if (width == m_Desc.Width && height == m_Desc.Height)
+        {
+            return false;
+        }
 
+        ReleaseResources();
         return InitSwapChain(width, height);
     }
 

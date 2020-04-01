@@ -58,4 +58,10 @@ namespace LambdaEngine
 		EShaderLang Lang = EShaderLang::NONE;
 		std::vector<ShaderConstant> Constants;
 	};
+
+	struct GraphicsObject
+	{
+		GUID_Lambda Mesh;
+		GUID_Lambda Material;
+	};
 }

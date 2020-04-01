@@ -25,8 +25,7 @@ namespace LambdaEngine
     {
         va_list args;
         va_start(args, pFormat);
-        NSString* format = [NSString stringWithUTF8String:pFormat];
-        NSLogv(format, args);
+        OutputDebugStringV(pFormat, args);
         va_end(args);
     }
 
