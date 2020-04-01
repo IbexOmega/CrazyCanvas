@@ -19,20 +19,22 @@ namespace LambdaEngine
 
 		bool Init(const TopLevelAccelerationStructureDesc& desc);
 
-		virtual void UpdateData(IBuffer* pBuffer) override;
+		virtual void UpdateInstanceData(IBuffer* pInstanceBuffer) override;
+
+		virtual uint64 GetScratchMemorySizeRequirement() override;
 
 		virtual void SetName(const char* pName) override;
 
 	private:
 		//INIT
-		bool InitAccelerationStructure();
+		bool InitAccelerationStructure(const TopLevelAccelerationStructureDesc& desc);
 		bool InitScratchBuffer();
 
 		//UPDATE
 		void UpdateScratchBuffer();
 
 		//UTIL
-		VkMemoryRequirements GetMemoryRequirements();
+		VkMemoryRequirements GetMemoryRequirements(VkAccelerationStructureMemoryRequirementsTypeKHR type);
 
 	private:
 		TopLevelAccelerationStructureDesc m_Desc;

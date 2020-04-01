@@ -11,6 +11,7 @@
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
 #include "Rendering/Core/Vulkan/TopLevelAccelerationStructureVK.h"
+#include "Rendering/Core/Vulkan/BottomLevelAccelerationStructureVK.h"
 
 namespace LambdaEngine
 {
@@ -189,6 +190,18 @@ namespace LambdaEngine
 		}
 
 		return pTLAS;
+	}
+
+	IBottomLevelAccelerationStructure* GraphicsDeviceVK::CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc) const
+	{
+		BottomLevelAccelerationStructureVK* pBLAS = new BottomLevelAccelerationStructureVK(this);
+		if (!pBLAS->Init(desc))
+		{
+			pBLAS->Release();
+			return nullptr;
+		}
+
+		return pBLAS;
 	}
 
 	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc& desc) const

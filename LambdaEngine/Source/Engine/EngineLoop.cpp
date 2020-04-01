@@ -13,6 +13,7 @@
 #include "Rendering/Core/API/ITexture.h"
 #include "Rendering/Core/API/ISwapChain.h"
 #include "Rendering/Core/API/ITopLevelAccelerationStructure.h"
+#include "Rendering/Core/API/IBottomLevelAccelerationStructure.h"
 
 #include "Network/API/SocketFactory.h"
 
@@ -65,9 +66,19 @@ namespace LambdaEngine
         Log::SetDebuggerOutputEnabled(false);
         
 		TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
-		topLevelAccelerationStructureDesc.pName = "Test TLAS";
+		topLevelAccelerationStructureDesc.pName						= "Test TLAS";
+		topLevelAccelerationStructureDesc.InitialMaxInstanceCount	= 10;
 
 		ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
+
+		BottomLevelAccelerationStructureDesc bottomLevelAccelerationStructureDesc = {};
+		bottomLevelAccelerationStructureDesc.pName					= "Test BLAS";
+		bottomLevelAccelerationStructureDesc.MaxTriCount			= 12;
+		bottomLevelAccelerationStructureDesc.MaxVertCount			= 8;
+		bottomLevelAccelerationStructureDesc.AllowTransform			= false;
+		bottomLevelAccelerationStructureDesc.Updateable				= false;
+
+		IBottomLevelAccelerationStructure* pBLAS = pGraphicsDevice->CreateBottomLevelAccelerationStructure(bottomLevelAccelerationStructureDesc);
 
         bool IsRunning = true;
         while (IsRunning)
@@ -79,6 +90,7 @@ namespace LambdaEngine
         SAFERELEASE(pSwapChain);
 		SAFERELEASE(pTexture);
 		SAFERELEASE(pBuffer);
+		SAFERELEASE(pBLAS);
 		SAFERELEASE(pTLAS);
 		SAFERELEASE(pGraphicsDevice);
     }

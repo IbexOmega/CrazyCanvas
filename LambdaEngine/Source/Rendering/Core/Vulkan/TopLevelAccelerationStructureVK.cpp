@@ -30,7 +30,7 @@ namespace LambdaEngine
 	{
 		m_Desc = desc;
 
-		if (!InitAccelerationStructure())
+		if (!InitAccelerationStructure(desc))
 		{
 			return false;
 		}
@@ -42,15 +42,15 @@ namespace LambdaEngine
 
 		SetName(desc.pName);
 
-		D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: TopLevelAccelerationStructure initialized!", m_Desc.pName);
+		D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: TopLevelAccelerationStructure \"%s\" initialized successfully", m_Desc.pName);
 		return true;
 	}
 
-	void TopLevelAccelerationStructureVK::UpdateData(IBuffer* pBuffer)
+	void TopLevelAccelerationStructureVK::UpdateInstanceData(IBuffer* pInstanceBuffer)
 	{
 		bool sizeChanged = false;
 
-		BufferVK* pVulkanBuffer = reinterpret_cast<BufferVK*>(pBuffer);
+		BufferVK* pVulkanBuffer = reinterpret_cast<BufferVK*>(pInstanceBuffer);
 
 		VkDeviceOrHostAddressConstKHR instancesDataAddressUnion = {};
 		instancesDataAddressUnion.deviceAddress						= pVulkanBuffer->GetDeviceAdress();
@@ -75,7 +75,7 @@ namespace LambdaEngine
 		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
-		accelerationStructureBuildInfo.geometryCount				= pBuffer->GetDesc().SizeInBytes / sizeof(VkAccelerationStructureInstanceKHR);
+		accelerationStructureBuildInfo.geometryCount				= pInstanceBuffer->GetDesc().SizeInBytes / sizeof(VkAccelerationStructureInstanceKHR);
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
 
 		if (sizeChanged)
@@ -97,7 +97,7 @@ namespace LambdaEngine
 		accelerationStructureBuildInfo.scratchData					= m_ScratchBufferAddressUnion;
 
 		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
-		accelerationStructureOffsetInfo.primitiveCount				= pBuffer->GetDesc().SizeInBytes / sizeof(VkAccelerationStructureInstanceKHR);
+		accelerationStructureOffsetInfo.primitiveCount				= pInstanceBuffer->GetDesc().SizeInBytes / sizeof(VkAccelerationStructureInstanceKHR);
 		accelerationStructureOffsetInfo.primitiveOffset				= 0;
 
 		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
@@ -106,16 +106,22 @@ namespace LambdaEngine
 		m_pDevice->vkCmdBuildAccelerationStructureKHR(temp, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
+	uint64 TopLevelAccelerationStructureVK::GetScratchMemorySizeRequirement()
+	{
+		return GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR).size;
+	}
+
 	void TopLevelAccelerationStructureVK::SetName(const char* pName)
 	{
 		m_pDevice->SetVulkanObjectName(pName, (uint64)m_AccelerationStructure, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR);
 	}
 
-	bool TopLevelAccelerationStructureVK::InitAccelerationStructure()
+	bool TopLevelAccelerationStructureVK::InitAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)
 	{
 		VkAccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
 		geometryTypeInfo.sType											= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
 		geometryTypeInfo.geometryType									= VK_GEOMETRY_TYPE_INSTANCES_KHR;
+		geometryTypeInfo.maxPrimitiveCount								= desc.InitialMaxInstanceCount;
 
 		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
 		accelerationStructureCreateInfo.sType							= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -128,11 +134,11 @@ namespace LambdaEngine
 
 		if (m_pDevice->vkCreateAccelerationStructureKHR(m_pDevice->Device, &accelerationStructureCreateInfo, nullptr, &m_AccelerationStructure) != VK_SUCCESS)
 		{
-			LOG_ERROR("[TopLevelAccelerationStructureVK]: vkCreateAccelerationStructureKHR failed for %s", m_Desc.pName);
+			LOG_ERROR("[TopLevelAccelerationStructureVK]: vkCreateAccelerationStructureKHR failed for \"%s\"", m_Desc.pName);
 			return false;
 		}
 
-		VkMemoryRequirements memoryRequirements							= GetMemoryRequirements();
+		VkMemoryRequirements memoryRequirements							= GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR);
 
 		VkMemoryAllocateInfo memoryAllocateInfo = {};
 		memoryAllocateInfo.sType										= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -141,7 +147,7 @@ namespace LambdaEngine
 
 		if (vkAllocateMemory(m_pDevice->Device, &memoryAllocateInfo, nullptr, &m_AccelerationStructureMemory) != VK_SUCCESS)
 		{
-			LOG_ERROR("[TopLevelAccelerationStructureVK]: vkAllocateMemory failed for %s", m_Desc.pName);
+			LOG_ERROR("[TopLevelAccelerationStructureVK]: vkAllocateMemory failed for \"%s\"", m_Desc.pName);
 			return false;
 		}
 
@@ -152,7 +158,7 @@ namespace LambdaEngine
 
 		if (m_pDevice->vkBindAccelerationStructureMemoryKHR(m_pDevice->Device, 1, &accelerationStructureMemoryInfo) != VK_SUCCESS)
 		{
-			LOG_ERROR("[TopLevelAccelerationStructureVK]: vkBindAccelerationStructureMemoryKHR failed for %s", m_Desc.pName);
+			LOG_ERROR("[TopLevelAccelerationStructureVK]: vkBindAccelerationStructureMemoryKHR failed for \"%s\"", m_Desc.pName);
 			return false;
 		}
 
@@ -162,12 +168,13 @@ namespace LambdaEngine
 
 		m_AccelerationStructureDeviceAddress = m_pDevice->vkGetAccelerationStructureDeviceAddressKHR(m_pDevice->Device, &accelerationStructureDeviceAddressInfo);
 
+		D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: Acceleration Structure \"%s\" initialized with size of %u bytes", m_Desc.pName, memoryRequirements.size);
 		return true;
 	}
 
 	bool TopLevelAccelerationStructureVK::InitScratchBuffer()
 	{
-		VkMemoryRequirements memoryRequirements = GetMemoryRequirements();
+		VkMemoryRequirements memoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR);
 
 		BufferDesc scratchBufferDesc = {};
 		scratchBufferDesc.pName			= "TLAS Scratch Buffer";
@@ -186,7 +193,8 @@ namespace LambdaEngine
 
 	void TopLevelAccelerationStructureVK::UpdateScratchBuffer()
 	{
-		VkMemoryRequirements memoryRequirements = GetMemoryRequirements();
+		//Should this be VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_KHR ?
+		VkMemoryRequirements memoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR);
 
 		if (m_pScratchBuffer->GetDesc().SizeInBytes < memoryRequirements.size)
 		{
@@ -201,19 +209,20 @@ namespace LambdaEngine
 			m_pScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(scratchBufferDesc));
 			m_ScratchBufferAddressUnion.deviceAddress = m_pScratchBuffer->GetDeviceAdress();
 
-			D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: Reallocated Scratch Buffer for TLAS %s, new size %u bytes!", m_Desc.pName, memoryRequirements.size);
+			D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: Reallocated Scratch Buffer for TLAS \"%s\", new size %u bytes!", m_Desc.pName, memoryRequirements.size);
 		}
 	}
 
-	VkMemoryRequirements TopLevelAccelerationStructureVK::GetMemoryRequirements()
+	VkMemoryRequirements TopLevelAccelerationStructureVK::GetMemoryRequirements(VkAccelerationStructureMemoryRequirementsTypeKHR type)
 	{
 		VkAccelerationStructureMemoryRequirementsInfoKHR memoryRequirementsInfo = {};
 		memoryRequirementsInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
-		memoryRequirementsInfo.type						= VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV;
+		memoryRequirementsInfo.type						= type;
 		memoryRequirementsInfo.accelerationStructure	= m_AccelerationStructure;
 
 		VkMemoryRequirements2 memoryRequirements2 = {};
 		memoryRequirements2.sType						= VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+
 		m_pDevice->vkGetAccelerationStructureMemoryRequirementsKHR(m_pDevice->Device, &memoryRequirementsInfo, &memoryRequirements2);
 
 		return memoryRequirements2.memoryRequirements;
