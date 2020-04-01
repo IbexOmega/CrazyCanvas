@@ -32,11 +32,7 @@ namespace LambdaEngine
     void MacMisc::OutputDebugStringV(const char* pFormat, va_list args)
     {
         NSString* format = [NSString stringWithUTF8String:pFormat];
-        NSString* string = [[NSString alloc] initWithFormat:format arguments:args];
-
         NSLogv(format, args);
-
-        [string release];
     }
 }
 
