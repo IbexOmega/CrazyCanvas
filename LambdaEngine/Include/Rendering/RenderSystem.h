@@ -3,6 +3,7 @@
 
 namespace LambdaEngine
 {
+	class IQueue;
 	class IGraphicsDevice;
 
 	class RenderSystem
@@ -22,5 +23,6 @@ namespace LambdaEngine
 
 	private:
 		static IGraphicsDevice* s_pGraphicsDevice;
+		static IQueue*			s_pGraphicsQueue;
 	};
 }

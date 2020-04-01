@@ -37,8 +37,6 @@ namespace LambdaEngine
 
 		//CREATE
 		virtual IRenderPass*						CreateRenderPass()																			const override;
-		virtual IFence*								CreateFence()																				const override;
-		virtual ICommandList*						CreateCommandList()																			const override;
 		virtual IBuffer*							CreateBuffer(const BufferDesc& desc)														const override;
 		virtual ITexture*							CreateTexture(const TextureDesc& desc)														const override;
 		virtual ITextureView*						CreateTextureView()																			const override;
@@ -48,8 +46,11 @@ namespace LambdaEngine
 		virtual IPipelineState*						CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc)							const override;
 		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const override;
 		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const override;
+		virtual ICommandList*						CreateCommandList(ICommandAllocator* pAllocator, ECommandListType commandListType)			const override;
+		virtual ICommandAllocator*					CreateCommandAllocator(EQueueType queueType)												const override;
+		virtual IQueue*								CreateQueue(EQueueType queueType)															const override;
+		virtual IFence*								CreateFence(uint64 initalValue)																const override;
 		
-
 		//EXECUTE
 		void ExecuteGraphics(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages,
 			uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount);

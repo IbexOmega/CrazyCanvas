@@ -4,7 +4,8 @@
 
 namespace LambdaEngine
 {
-	IGraphicsDevice* RenderSystem::s_pGraphicsDevice = nullptr;
+	IGraphicsDevice*	RenderSystem::s_pGraphicsDevice = nullptr;
+	IQueue*				RenderSystem::s_pGraphicsQueue = nullptr;
 
 	bool RenderSystem::Init()
 	{
@@ -16,7 +17,13 @@ namespace LambdaEngine
 #endif
 
 		s_pGraphicsDevice = CreateGraphicsDevice(deviceDesc, EGraphicsAPI::VULKAN);
-		return (s_pGraphicsDevice != nullptr);
+		if (!s_pGraphicsDevice)
+		{
+			return false;
+		}
+
+		s_pGraphicsQueue = s_pGraphicsDevice->CreateQueue(EQueueType::QUEUE_GRAPHICS);
+		return (s_pGraphicsQueue != nullptr);
 	}
 
 	bool RenderSystem::Release()

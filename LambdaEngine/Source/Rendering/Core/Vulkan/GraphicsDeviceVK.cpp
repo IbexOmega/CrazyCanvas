@@ -12,6 +12,7 @@
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
 #include "Rendering/Core/Vulkan/TopLevelAccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/BottomLevelAccelerationStructureVK.h"
+#include "Rendering/Core/Vulkan/QueueVK.h"
 
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
@@ -136,16 +137,6 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	IFence* GraphicsDeviceVK::CreateFence() const
-	{
-		return nullptr;
-	}
-
-	ICommandList* GraphicsDeviceVK::CreateCommandList() const
-	{
-		return nullptr;
-	}
-
 	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) const
 	{
 		GraphicsPipelineStateVK* pPipelineState = new GraphicsPipelineStateVK(this);
@@ -204,6 +195,51 @@ namespace LambdaEngine
 		}
 
 		return pBLAS;
+	}
+
+	ICommandList* GraphicsDeviceVK::CreateCommandList(ICommandAllocator* pAllocator, ECommandListType commandListType) const
+	{
+		return nullptr;
+	}
+
+	ICommandAllocator* GraphicsDeviceVK::CreateCommandAllocator(EQueueType queueType) const
+	{
+		return nullptr;
+	}
+
+	IQueue* GraphicsDeviceVK::CreateQueue(EQueueType queueType) const
+	{
+		int32 queueFamilyIndex = 0;
+		if (queueType == EQueueType::QUEUE_GRAPHICS)
+		{
+			queueFamilyIndex = m_DeviceQueueFamilyIndices.GraphicsFamily;
+		}
+		else if (queueType == EQueueType::QUEUE_COMPUTE)
+		{
+			queueFamilyIndex = m_DeviceQueueFamilyIndices.ComputeFamily;
+		}
+		else if (queueType == EQueueType::QUEUE_COPY)
+		{
+			queueFamilyIndex = m_DeviceQueueFamilyIndices.TransferFamily;
+		}
+		else
+		{
+			return nullptr;
+		}
+
+		QueueVK* pQueue = new QueueVK(this);
+		if (!pQueue->Init(queueFamilyIndex, 0))
+		{
+			pQueue->Release();
+			return nullptr;
+		}
+
+		return pQueue;
+	}
+
+	IFence* GraphicsDeviceVK::CreateFence(uint64 initalValue) const
+	{
+		return nullptr;
 	}
 
 	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc& desc) const
@@ -476,17 +512,6 @@ namespace LambdaEngine
 			LOG_ERROR("[GraphicsDeviceVK]: Failed to create logical device!");
 			return false;
 		}
-
-		//Retrive queues
-		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.GraphicsFamily, 0, &m_GraphicsQueue);
-		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.PresentFamily, 0, &m_PresentQueue);
-		SetVulkanObjectName("GraphicsQueue", (uint64_t)m_GraphicsQueue, VK_OBJECT_TYPE_QUEUE);
-
-		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.ComputeFamily, 0, &m_ComputeQueue);
-		SetVulkanObjectName("ComputeQueue", (uint64_t)m_ComputeQueue, VK_OBJECT_TYPE_QUEUE);
-
-		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.TransferFamily, 0, &m_TransferQueue);
-		SetVulkanObjectName("TransferQueue", (uint64_t)m_TransferQueue, VK_OBJECT_TYPE_QUEUE);
 
 		return true;
 	}
