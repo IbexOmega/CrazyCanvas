@@ -7,6 +7,8 @@
 
 namespace LambdaEngine
 {
+	class IGraphicsDevice;
+
 	class LAMBDA_API EngineLoop
 	{
 	public:
@@ -24,5 +26,7 @@ namespace LambdaEngine
 
 	private:
 		static bool Tick();
+
+		static void TestRayTracing(IGraphicsDevice* pGraphicsDevice);
 	};
 }

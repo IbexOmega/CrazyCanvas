@@ -65,20 +65,7 @@ namespace LambdaEngine
         
         Log::SetDebuggerOutputEnabled(false);
         
-		TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
-		topLevelAccelerationStructureDesc.pName						= "Test TLAS";
-		topLevelAccelerationStructureDesc.InitialMaxInstanceCount	= 10;
-
-		//ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
-
-		BottomLevelAccelerationStructureDesc bottomLevelAccelerationStructureDesc = {};
-		bottomLevelAccelerationStructureDesc.pName					= "Test BLAS";
-		bottomLevelAccelerationStructureDesc.MaxTriCount			= 12;
-		bottomLevelAccelerationStructureDesc.MaxVertCount			= 8;
-		bottomLevelAccelerationStructureDesc.AllowTransform			= false;
-		bottomLevelAccelerationStructureDesc.Updateable				= false;
-
-		IBottomLevelAccelerationStructure* pBLAS = pGraphicsDevice->CreateBottomLevelAccelerationStructure(bottomLevelAccelerationStructureDesc);
+		//TestRayTracing(pGraphicsDevice);
 
         bool IsRunning = true;
         while (IsRunning)
@@ -90,8 +77,7 @@ namespace LambdaEngine
         SAFERELEASE(pSwapChain);
 		SAFERELEASE(pTexture);
 		SAFERELEASE(pBuffer);
-		SAFERELEASE(pBLAS);
-		SAFERELEASE(pTLAS);
+		
 		SAFERELEASE(pGraphicsDevice);
     }
 
@@ -103,6 +89,30 @@ namespace LambdaEngine
         }
         
         return true;
+	}
+
+	void EngineLoop::TestRayTracing(IGraphicsDevice* pGraphicsDevice)
+	{
+		LOG_MESSAGE("\n-------Ray Trace Testing Start-------");
+
+		TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
+		topLevelAccelerationStructureDesc.pName = "Test TLAS";
+		topLevelAccelerationStructureDesc.InitialMaxInstanceCount = 10;
+
+		ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
+
+		BottomLevelAccelerationStructureDesc bottomLevelAccelerationStructureDesc = {};
+		bottomLevelAccelerationStructureDesc.pName = "Test BLAS";
+		bottomLevelAccelerationStructureDesc.MaxTriCount = 12;
+		bottomLevelAccelerationStructureDesc.MaxVertCount = 8;
+		bottomLevelAccelerationStructureDesc.Updateable = false;
+
+		IBottomLevelAccelerationStructure* pBLAS = pGraphicsDevice->CreateBottomLevelAccelerationStructure(bottomLevelAccelerationStructureDesc);
+
+		SAFERELEASE(pBLAS);
+		SAFERELEASE(pTLAS);
+
+		LOG_MESSAGE("-------Ray Trace Testing End-------\n");
 	}
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
