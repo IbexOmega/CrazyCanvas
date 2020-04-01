@@ -12,11 +12,11 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(SocketFactory);
 
-		static ISocketTCP* CreateSocketTCP() {};
-		static ISocketUDP* CreateSocketUDP() {};
+		static ISocketTCP* CreateSocketTCP() { return nullptr; };
+		static ISocketUDP* CreateSocketUDP() { return nullptr; };
 
 	private:
-		static bool Init() {};
+		static bool Init() { return false; };
 		static void Release() {};
 	};
 }
