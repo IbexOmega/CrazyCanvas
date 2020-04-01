@@ -21,6 +21,9 @@ namespace LambdaEngine
 		m_Stop(false)
 	{
 		m_ServerSide = socket != nullptr;
+
+		if(m_ServerSide)
+			m_pThread = Thread::Create(std::bind(&ClientTCP::Run, this, "", 0), std::bind(&ClientTCP::OnStoped, this));
 	}
 
 	bool ClientTCP::Connect(const std::string& address, uint16 port)
@@ -40,6 +43,13 @@ namespace LambdaEngine
 		m_Stop = true;
 	}
 
+	void ClientTCP::SendPacket(const std::string& data)
+	{
+		////TEMP
+		uint32 bytesSent;
+		m_pSocket->Send(data.c_str(), data.length(), bytesSent);
+	}
+
 	bool ClientTCP::IsServerSide() const
 	{
 		return m_ServerSide;
@@ -47,25 +57,34 @@ namespace LambdaEngine
 
 	void ClientTCP::Run(std::string address, uint16 port)
 	{
-		m_pSocket = CreateClientSocket(address, port);
-		if (!m_pSocket)
+		if (!IsServerSide())
 		{
-			LOG_ERROR_CRIT("Failed to connect to Server!");
-			m_pHandler->OnClientFailedConnecting(this);
-			return;
+			m_pSocket = CreateClientSocket(address, port);
+			if (!m_pSocket)
+			{
+				LOG_ERROR_CRIT("Failed to connect to Server!");
+				m_pHandler->OnClientFailedConnecting(this);
+				return;
+			}
 		}
 
 		m_pHandler->OnClientConnected(this);
 
+		char buffer[256];
+		uint32 bytesReceived;
 		while (!m_Stop)
 		{
-			
+			if (m_pSocket->Receive(buffer, 256, bytesReceived))
+			{
+				std::string message(buffer, bytesReceived);
+				LOG_MESSAGE(message.c_str());
+			}
+			else
+			{
+				Disconnect();
+			}
 		}
-
 		m_pSocket->Close();
-
-		m_pSocket = nullptr;
-		m_pHandler->OnClientDisconnected(this);
 	}
 
 	void ClientTCP::OnStoped()
@@ -73,6 +92,7 @@ namespace LambdaEngine
 		m_pThread = nullptr;
 		delete m_pSocket;
 		m_pSocket = nullptr;
+		m_pHandler->OnClientDisconnected(this);
 	}
 
 	ISocketTCP* ClientTCP::CreateClientSocket(const std::string& address, uint16 port)
