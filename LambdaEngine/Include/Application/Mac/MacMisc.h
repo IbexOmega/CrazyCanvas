@@ -11,6 +11,7 @@ namespace LambdaEngine
         DECL_STATIC_CLASS(MacMisc);
 
         static void MessageBox(const char* pCaption, const char* pText);
+
         static void OutputDebugString(const char* pFormat, ...);
         static void OutputDebugStringV(const char* pFormat, va_list args);
     };

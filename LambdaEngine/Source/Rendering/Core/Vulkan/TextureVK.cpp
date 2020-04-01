@@ -12,25 +12,18 @@ namespace LambdaEngine
 	{
 	}
 
-	TextureVK::TextureVK(const GraphicsDeviceVK* pDevice, VkImage image)
-		: TDeviceChild(pDevice),
-		m_Desc()
-	{
-
-	}
-
 	TextureVK::~TextureVK()
 	{
-		if (m_Image != VK_NULL_HANDLE)
-		{
-			vkDestroyImage(m_pDevice->Device, m_Image, nullptr);
-			m_Image = VK_NULL_HANDLE;
-		}
-
 		if (m_Memory != VK_NULL_HANDLE)
 		{
 			vkFreeMemory(m_pDevice->Device, m_Memory, nullptr);
 			m_Memory = VK_NULL_HANDLE;
+
+			if (m_Image != VK_NULL_HANDLE)
+			{
+				vkDestroyImage(m_pDevice->Device, m_Image, nullptr);
+				m_Image = VK_NULL_HANDLE;
+			}
 		}
 	}
 
@@ -146,6 +139,14 @@ namespace LambdaEngine
 		}
 
 		return true;
+	}
+
+	void TextureVK::InitWithImage(VkImage image, const TextureDesc& desc)
+	{
+		m_Image = image;
+		m_Desc	= desc;
+
+		SetName(m_Desc.pName);
 	}
 	
 	void TextureVK::SetName(const char* pName)

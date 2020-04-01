@@ -1,5 +1,4 @@
 #ifdef LAMBDA_PLATFORM_WINDOWS
-#include <stdarg.h>
 #include <stdio.h>
 
 #include "Application/Win32/Win32Misc.h"
@@ -14,17 +13,22 @@ namespace LambdaEngine
 
 	void Win32Misc::OutputDebugString(const char* pFormat, ...)
 	{
-		constexpr uint32 BUFFER_SIZE = 1024;
-		static char buffer[BUFFER_SIZE];
-		
-		ZERO_MEMORY(buffer, BUFFER_SIZE);
-
 		va_list args;
 		va_start(args, pFormat);
-		vsprintf_s(buffer, BUFFER_SIZE - 1, pFormat, args);
+		OutputDebugStringV(pFormat, args);
 		va_end(args);
+	}
 
+	void Win32Misc::OutputDebugStringV(const char* pFormat, va_list args)
+	{
+		constexpr uint32 BUFFER_SIZE = 1024;
+		static char buffer[BUFFER_SIZE];
+
+		ZERO_MEMORY(buffer, BUFFER_SIZE);
+
+		vsprintf_s(buffer, BUFFER_SIZE - 1, pFormat, args);
 		OutputDebugStringA(buffer);
+		OutputDebugStringA("\n");
 	}
 }
 

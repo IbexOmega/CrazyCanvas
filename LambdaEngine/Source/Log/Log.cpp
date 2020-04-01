@@ -33,7 +33,7 @@ namespace LambdaEngine
         PlatformConsole::VPrintLine(pFormat, args);
         if (s_DebuggerOutputEnabled)
         {
-            PlatformMisc::OutputDebugString(pFormat, args);
+            PlatformMisc::OutputDebugStringV(pFormat, args);
         }
 
 		if (severity != ELogSeverity::LOG_MESSAGE)

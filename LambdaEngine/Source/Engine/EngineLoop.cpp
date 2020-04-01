@@ -17,24 +17,22 @@
 
 #include "Network/API/PlatformSocketFactory.h"
 
+#include "Rendering/RenderSystem.h"
+
 namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
-		GraphicsDeviceDesc graphicsDeviceDesc = {};
-		graphicsDeviceDesc.Debug = true;
-
-        IGraphicsDevice* pGraphicsDevice = CreateGraphicsDevice(graphicsDeviceDesc, EGraphicsAPI::VULKAN);
-        
 		BufferDesc bufferDesc = { };
 		bufferDesc.pName			= "VertexBuffer";
 		bufferDesc.MemoryType		= EMemoryType::GPU_MEMORY;
 		bufferDesc.Flags			= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_DST;
 		bufferDesc.SizeInBytes		= 64;
 
-		IBuffer* pBuffer = pGraphicsDevice->CreateBuffer(bufferDesc);
+		IGraphicsDevice* pDevice = RenderSystem::GetDevice();
 
-        uint64 address = 0;//pBuffer->GetDeviceAdress();
+		IBuffer* pBuffer = pDevice->CreateBuffer(bufferDesc);
+        uint64 bufferAddress = pBuffer->GetDeviceAdress();
 
 		TextureDesc textureDesc = { };
 		textureDesc.pName		= "Texture";
@@ -49,7 +47,7 @@ namespace LambdaEngine
 		textureDesc.Miplevels	= 1;
 		textureDesc.ArrayCount	= 1;
 
-		ITexture* pTexture = pGraphicsDevice->CreateTexture(textureDesc);
+		ITexture* pTexture = pDevice->CreateTexture(textureDesc);
 
         SwapChainDesc swapChainDesc = { };
         swapChainDesc.pName         = "Main Window";
@@ -59,7 +57,7 @@ namespace LambdaEngine
         swapChainDesc.Height        = 0;
         swapChainDesc.SampleCount   = 1;
         
-        ISwapChain* pSwapChain = pGraphicsDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
+        ISwapChain* pSwapChain = pDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
         
 		//TestRayTracing(pGraphicsDevice);
 
@@ -73,8 +71,6 @@ namespace LambdaEngine
         SAFERELEASE(pSwapChain);
 		SAFERELEASE(pTexture);
 		SAFERELEASE(pBuffer);
-		
-		SAFERELEASE(pGraphicsDevice);
     }
 
     bool EngineLoop::Tick()
@@ -145,8 +141,12 @@ namespace LambdaEngine
 
 		if (!PlatformSocketFactory::Init())
 		{
-            //TODO: Implement on Mac so that we can return false again
-			//return false;
+			return false;
+		}
+
+		if (!RenderSystem::Init())
+		{
+			return false;
 		}
 
 		return true;
@@ -155,6 +155,11 @@ namespace LambdaEngine
 	bool EngineLoop::Release()
 	{
 		Input::Release();
+
+		if (!RenderSystem::Release())
+		{
+			return false;
+		}
 
 		return true;
 	}
