@@ -32,6 +32,8 @@ namespace LambdaEngine
         virtual void*   Map()   = 0;
         virtual void    Unmap() = 0;
 
-        virtual BufferDesc GetDesc() const = 0;
+        virtual uint64      GetHandle()         const = 0;
+        virtual uint64      GetDeviceAdress()   const = 0;
+        virtual BufferDesc  GetDesc()           const = 0;
     };
 }

@@ -13,27 +13,27 @@ namespace LambdaEngine
 	typedef ConstString ValidationLayer;
 	typedef ConstString Extension;
 
+	struct QueueFamilyIndices
+	{
+		int32 GraphicsFamily	= -1;
+		int32 ComputeFamily		= -1;
+		int32 TransferFamily	= -1;
+		int32 PresentFamily		= -1;
+
+		bool IsComplete()
+		{
+			return (GraphicsFamily >= 0) && (ComputeFamily >= 0) && (TransferFamily >= 0) && (PresentFamily >= 0);
+		}
+	};
+
 	class GraphicsDeviceVK : public IGraphicsDevice
 	{
-		struct QueueFamilyIndices
-		{
-			std::optional<uint32_t> GraphicsFamily;
-			std::optional<uint32_t> ComputeFamily;
-			std::optional<uint32_t> TransferFamily;
-			std::optional<uint32_t> PresentFamily;
-
-			bool IsComplete()
-			{
-				return GraphicsFamily.has_value() && ComputeFamily.has_value() && TransferFamily.has_value() && PresentFamily.has_value();
-			}
-		};
-
 	public:
 		GraphicsDeviceVK();
 		~GraphicsDeviceVK();
 
-		virtual bool Init(const GraphicsDeviceDesc& desc) override;
-		virtual void Release() override;
+		virtual bool Init(const GraphicsDeviceDesc& desc)	override;
+		virtual void Release()								override;
 
 		//CREATE
 		virtual IRenderPass*					CreateRenderPass()																	const override;
@@ -59,6 +59,11 @@ namespace LambdaEngine
 
 		//UTIL
 		void SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type) const;
+
+		FORCEINLINE QueueFamilyIndices GetQueueFamilyIndices() const
+		{
+			return m_DeviceQueueFamilyIndices;
+		}
 
 	private:
 		//INIT
@@ -93,15 +98,9 @@ namespace LambdaEngine
 			void* pUserData);
 
 	public:
-		VkInstance Instance;
-
-		VkPhysicalDevice PhysicalDevice;
-		VkDevice Device;
-
-		VkQueue m_GraphicsQueue;
-		VkQueue m_ComputeQueue;
-		VkQueue m_TransferQueue;
-		VkQueue m_PresentQueue;
+		VkInstance			Instance;
+		VkPhysicalDevice	PhysicalDevice;
+		VkDevice			Device;
 
 		//Extension Data
 		PFN_vkSetDebugUtilsObjectNameEXT	vkSetDebugUtilsObjectNameEXT;
@@ -121,10 +120,15 @@ namespace LambdaEngine
 		VkPhysicalDeviceRayTracingPropertiesKHR					RayTracingProperties;
 
 	private:
+		VkQueue m_GraphicsQueue;
+		VkQueue m_ComputeQueue;
+		VkQueue m_TransferQueue;
+		VkQueue m_PresentQueue;
+
 		VkDebugUtilsMessengerEXT m_DebugMessenger;
 
-		QueueFamilyIndices m_DeviceQueueFamilyIndices;
-		VkPhysicalDeviceLimits m_DeviceLimits;
+		QueueFamilyIndices		m_DeviceQueueFamilyIndices;
+		VkPhysicalDeviceLimits	m_DeviceLimits;
 
 		std::vector<const char*> m_EnabledValidationLayers;
 		std::vector<const char*> m_EnabledInstanceExtensions;

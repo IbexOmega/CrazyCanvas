@@ -277,6 +277,7 @@ namespace LambdaEngine
 			return false;
 		}
 
+		//USE API VERSION 1.2 for now, maybe change to 1.0 later
 		VkApplicationInfo appInfo = {};
 		appInfo.sType               = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pNext               = nullptr;
@@ -284,7 +285,7 @@ namespace LambdaEngine
 		appInfo.applicationVersion  = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.pEngineName         = "Lambda Engine";
 		appInfo.engineVersion       = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion          = VK_API_VERSION_1_0;
+		appInfo.apiVersion          = VK_API_VERSION_1_2;
 
 		VkInstanceCreateInfo createInfo = {};
 		createInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -393,20 +394,20 @@ namespace LambdaEngine
 	bool GraphicsDeviceVK::InitLogicalDevice(const GraphicsDeviceDesc& desc)
 	{
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32> uniqueQueueFamilies =
+		std::set<int32> uniqueQueueFamilies =
 		{
-			m_DeviceQueueFamilyIndices.GraphicsFamily.value(),
-			m_DeviceQueueFamilyIndices.ComputeFamily.value(),
-			m_DeviceQueueFamilyIndices.TransferFamily.value(),
-			m_DeviceQueueFamilyIndices.PresentFamily.value()
+			m_DeviceQueueFamilyIndices.GraphicsFamily,
+			m_DeviceQueueFamilyIndices.ComputeFamily,
+			m_DeviceQueueFamilyIndices.TransferFamily,
+			m_DeviceQueueFamilyIndices.PresentFamily
 		};
 
 		float queuePriority = 1.0f;
-		for (uint32 queueFamily : uniqueQueueFamilies)
+		for (int32 queueFamily : uniqueQueueFamilies)
 		{
 			VkDeviceQueueCreateInfo queueCreateInfo = {};
 			queueCreateInfo.sType               = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-			queueCreateInfo.queueFamilyIndex    = queueFamily;
+			queueCreateInfo.queueFamilyIndex    = uint32(queueFamily);
 			queueCreateInfo.queueCount          = 1;
 			queueCreateInfo.pQueuePriorities    = &queuePriority;
 			queueCreateInfos.push_back(queueCreateInfo);
@@ -445,14 +446,14 @@ namespace LambdaEngine
 		}
 
 		//Retrive queues
-		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.GraphicsFamily.value(), 0, &m_GraphicsQueue);
-		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.PresentFamily.value(), 0, &m_PresentQueue);
+		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.GraphicsFamily, 0, &m_GraphicsQueue);
+		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.PresentFamily, 0, &m_PresentQueue);
 		SetVulkanObjectName("GraphicsQueue", (uint64_t)m_GraphicsQueue, VK_OBJECT_TYPE_QUEUE);
 
-		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.ComputeFamily.value(), 0, &m_ComputeQueue);
+		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.ComputeFamily, 0, &m_ComputeQueue);
 		SetVulkanObjectName("ComputeQueue", (uint64_t)m_ComputeQueue, VK_OBJECT_TYPE_QUEUE);
 
-		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.TransferFamily.value(), 0, &m_TransferQueue);
+		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.TransferFamily, 0, &m_TransferQueue);
 		SetVulkanObjectName("TransferQueue", (uint64_t)m_TransferQueue, VK_OBJECT_TYPE_QUEUE);
 
 		return true;
@@ -658,9 +659,9 @@ namespace LambdaEngine
 		numOfOptionalExtensionsSupported = ARR_SIZE(OPTIONAL_DEVICE_EXTENSIONS) - (uint32)optionalDeviceExtensions.size();
 	}
 
-	GraphicsDeviceVK::QueueFamilyIndices GraphicsDeviceVK::FindQueueFamilies(VkPhysicalDevice physicalDevice)
+	QueueFamilyIndices GraphicsDeviceVK::FindQueueFamilies(VkPhysicalDevice physicalDevice)
 	{
-		QueueFamilyIndices indices;
+		QueueFamilyIndices indices = {};
 
 		uint32_t queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);

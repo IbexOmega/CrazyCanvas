@@ -1,10 +1,9 @@
+#include "Log/Log.h"
+
 #include "Rendering/Core/Vulkan/TopLevelAccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
-
-
-#include "Log/Log.h"
 
 namespace LambdaEngine
 {
@@ -39,12 +38,8 @@ namespace LambdaEngine
 
 		BufferVK* pVulkanBuffer = reinterpret_cast<BufferVK*>(pBuffer);
 
-		VkBufferDeviceAddressInfo bufferDeviceAddressInfo = {};
-		bufferDeviceAddressInfo.sType								= VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-		bufferDeviceAddressInfo.buffer								= pVulkanBuffer->GetBuffer();
-
 		VkDeviceOrHostAddressConstKHR instancesDataAddressUnion = {};
-		instancesDataAddressUnion.deviceAddress						= vkGetBufferDeviceAddress(m_pDevice->Device, &bufferDeviceAddressInfo);
+		instancesDataAddressUnion.deviceAddress						= pVulkanBuffer->GetDeviceAdress();
 
 		VkAccelerationStructureGeometryInstancesDataKHR instancesDataDesc = {};
 		instancesDataDesc.sType										= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
@@ -175,12 +170,7 @@ namespace LambdaEngine
 			scratchBufferDesc.SizeInBytes	= memoryRequirements.size;
 
 			m_pScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(scratchBufferDesc));
-
-			VkBufferDeviceAddressInfo bufferDeviceAddressInfo = {};
-			bufferDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-			bufferDeviceAddressInfo.buffer = m_pScratchBuffer->GetBuffer();
-
-			m_ScratchBufferAddressUnion.deviceAddress = vkGetBufferDeviceAddress(m_pDevice->Device, &bufferDeviceAddressInfo);
+			m_ScratchBufferAddressUnion.deviceAddress = m_pScratchBuffer->GetDeviceAdress();
 
 			D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: Reallocated Scratch Buffer for TLAS %s, new size %u bytes!", m_Desc.pName, memoryRequirements.size);
 		}

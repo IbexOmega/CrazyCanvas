@@ -23,13 +23,18 @@ namespace LambdaEngine
         
         virtual void SetName(const char* pName) override final;
         
+        virtual uint64 GetDeviceAdress() const override final;
+
         FORCEINLINE virtual BufferDesc GetDesc() const override final
         {
             return m_Desc;
         }
 
-		VkBuffer GetBuffer() { return m_Buffer; }
-        
+        FORCEINLINE virtual uint64 GetHandle() const
+        {
+            return (uint64)m_Buffer;
+        }
+         
     private:
         VkBuffer        m_Buffer    = VK_NULL_HANDLE;
         VkDeviceMemory  m_Memory    = VK_NULL_HANDLE;

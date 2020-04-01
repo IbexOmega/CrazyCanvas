@@ -83,7 +83,7 @@ namespace LambdaEngine
 
         //TODO: Allocate with DeviceAllocator
         VkMemoryRequirements memoryRequirements = { };
-        vkGetBufferMemoryRequirements(m_pDevice->Device, m_Buffer, &memoryRequirements);  
+        vkGetBufferMemoryRequirements(m_pDevice->Device, m_Buffer, &memoryRequirements);
 
         VkMemoryPropertyFlags memoryProperties = 0;
         if (m_Desc.MemoryType == EMemoryType::CPU_MEMORY)
@@ -142,6 +142,16 @@ namespace LambdaEngine
 
     void BufferVK::SetName(const char* pName)
     {
-        m_pDevice->SetVulkanObjectName(pName, (uint64)m_Buffer, VK_OBJECT_TYPE_BUFFER);       
+        m_pDevice->SetVulkanObjectName(pName, (uint64)m_Buffer, VK_OBJECT_TYPE_BUFFER);
+    }
+    
+    uint64 BufferVK::GetDeviceAdress() const
+    {
+        VkBufferDeviceAddressInfo deviceAdressInfo = { };
+        deviceAdressInfo.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        deviceAdressInfo.pNext  = nullptr;
+        deviceAdressInfo.buffer = m_Buffer;
+
+        return uint64(vkGetBufferDeviceAddress(m_pDevice->Device, &deviceAdressInfo));
     }
 }
