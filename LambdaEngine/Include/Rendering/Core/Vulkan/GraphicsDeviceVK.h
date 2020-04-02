@@ -62,7 +62,6 @@ namespace LambdaEngine
 	private:
 		//INIT
 		bool InitInstance(const GraphicsDeviceDesc& desc);
-
 		bool InitDevice(const GraphicsDeviceDesc& desc);
 		bool InitPhysicalDevice();
 		bool InitLogicalDevice(const GraphicsDeviceDesc& desc);
