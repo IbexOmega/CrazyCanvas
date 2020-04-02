@@ -52,8 +52,6 @@ namespace LambdaEngine
 
 	void EngineLoop::Run(Game* pGame)
 	{
-		TestResourceHandler(RenderSystem::GetDevice());
-		
         bool IsRunning = true;
         while (IsRunning)
         {
