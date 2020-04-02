@@ -237,6 +237,7 @@ workspace "LambdaEngine"
 				"D:/VulkanSDK/1.2.131.2/Lib",
 				"D:/Vulkan/1.2.131.2/Lib",
 				"C:/FMOD Studio API Windows/api/core/lib/x64",
+				"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64"
 			}
 			
 			sysincludedirs
@@ -245,6 +246,7 @@ workspace "LambdaEngine"
 				"D:/VulkanSDK/1.2.131.2/Include",
 				"D:/Vulkan/1.2.131.2/Include",
 				"C:/FMOD Studio API Windows/api/core/inc",
+				"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc"
 			}
 		-- Mac
 		filter { "system:macosx" }
@@ -277,7 +279,10 @@ workspace "LambdaEngine"
 				
 				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
                 ("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-                ("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
+				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+                ("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
+                ("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		filter {}
     project "*"
