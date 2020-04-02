@@ -249,7 +249,7 @@ namespace LambdaEngine
 	IFence* GraphicsDeviceVK::CreateFence(uint64 initalValue) const
 	{
 		FenceVK* pFence = new FenceVK(this);
-		if (pFence->Init(initalValue))
+		if (!pFence->Init(initalValue))
 		{
 			pFence->Release();
 			return nullptr;

@@ -34,12 +34,11 @@ namespace LambdaEngine
     class MacApplication : public Application
     {
     public:
-        MacApplication()    = default;
-        ~MacApplication()   = default;
+        MacApplication() = default;
+        ~MacApplication();
 
-        bool Create();
-        bool CreateMenu();
-        void Destroy();
+        bool Init();
+        bool InitMenu();
         
         void BufferEvent(NSEvent* event);
 
@@ -59,22 +58,23 @@ namespace LambdaEngine
         
         static void Terminate();
         
+        static Window*      CreateWindow(const char* pTitle, uint32 width, uint32 height);
         static InputDevice* CreateInputDevice(EInputMode inputMode);
         
-        FORCEINLINE static Application* Get()
+        FORCEINLINE static MacApplication* Get()
         {
-            return &s_pApplication;
+            return s_pApplication;
         }
         
     private:
-        MacWindow         m_Window;
+        MacWindow*        m_pWindow         = nullptr;
         MacAppController* m_pAppDelegate    = nullptr;
         bool              m_IsTerminating   = false;
         
         std::vector<MacMessage>                     m_BufferedMessages;
         std::vector<IApplicationMessageHandler*>    m_MessageHandlers;
 
-        static MacApplication s_pApplication;
+        static MacApplication* s_pApplication;
     };
 
     typedef MacApplication PlatformApplication;

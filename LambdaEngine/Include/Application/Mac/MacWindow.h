@@ -23,10 +23,9 @@ namespace LambdaEngine
     {
     public:
         MacWindow()     = default;
-        ~MacWindow()    = default;
+        ~MacWindow();
 
-        virtual bool Init(uint32 width, uint32 height)  override final;
-        virtual void Release()                          override final;
+        virtual bool Init(const char* pTitle, uint32 width, uint32 height)  override final;
 
         virtual void Show() override final;
 
