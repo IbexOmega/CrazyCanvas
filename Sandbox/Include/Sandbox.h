@@ -8,6 +8,7 @@
 namespace LambdaEngine
 {
 	class ResourceManager;
+	class AudioListener;
 }
 
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IMouseHandler
@@ -36,4 +37,5 @@ private:
 	LambdaEngine::ResourceManager* m_pResourceManager;
 
 	GUID_Lambda m_TestSound;
+	LambdaEngine::AudioListener* m_pAudioListener;
 };
