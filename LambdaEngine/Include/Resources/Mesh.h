@@ -3,6 +3,8 @@
 
 #include "Math/Math.h"
 
+#include "Rendering/Core/API/IBuffer.h"
+
 #ifdef LAMBDA_VISUAL_STUDIO
 	#pragma (disable : 4324) //Disable alignment warning
 #endif
@@ -44,14 +46,14 @@ namespace LambdaEngine
 	{
 		~Mesh()
 		{
-			SAFEDELETEARR(pVertices);
-			SAFEDELETEARR(pIndices);
+			SAFEDELETE(pVertexBuffer);
+			SAFEDELETE(pIndexBuffer);
 		}
 
-		Vertex* pVertices		= nullptr;
-		uint32  NumVertices		= 0;
-		uint32* pIndices		= nullptr;
-		uint32  NumIndices		= 0;
+		IBuffer* pVertexBuffer	= nullptr;
+		IBuffer* pIndexBuffer	= nullptr;
+		uint32  VertexCount		= 0;
+		uint32  IndexCount		= 0;
 	};
 }
 

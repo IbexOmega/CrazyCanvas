@@ -17,21 +17,15 @@
 
 #include "Threading/Thread.h"
 
-#include "Resources/ResourceHandler.h"
+#include "Resources/ResourceLoader.h"
+#include "Resources/ResourceManager.h"
+
+#include "Audio/AudioSystem.h"
 
 #include "Rendering/RenderSystem.h"
 
 namespace LambdaEngine
 {
-	static void TestResourceHandler(IGraphicsDevice* pGraphicsDevice)
-	{
-		ResourceHandler* pResourceHandler = new ResourceHandler(pGraphicsDevice);
-		GUID_Lambda failedMeshGUID = pResourceHandler->LoadMeshFromFile("THIS/SHOULD/FAIL.obj");
-		GUID_Lambda bunnyMeshGUID = pResourceHandler->LoadMeshFromFile("../Assets/Meshes/bunny.obj");
-
-		SAFEDELETE(pResourceHandler);
-	}
-
 	static void TestRayTracing(IGraphicsDevice* pGraphicsDevice)
 	{
 		LOG_MESSAGE("\n-------Ray Trace Testing Start-------");
@@ -58,8 +52,6 @@ namespace LambdaEngine
 
 	void EngineLoop::Run(Game* pGame)
 	{
-		TestResourceHandler(RenderSystem::GetDevice());
-		
         bool IsRunning = true;
         while (IsRunning)
         {
@@ -122,6 +114,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!AudioSystem::Init())
+		{
+			return false;
+		}
+
 		return true;
 	}
 	
@@ -130,6 +127,11 @@ namespace LambdaEngine
 		Input::Release();
 
 		if (!RenderSystem::Release())
+		{
+			return false;
+		}
+
+		if (!AudioSystem::Release())
 		{
 			return false;
 		}

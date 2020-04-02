@@ -8,6 +8,7 @@
 namespace LambdaEngine
 {
 	class IGraphicsDevice;
+	class AudioDevice;
 
 	class LAMBDA_API EngineLoop
 	{
