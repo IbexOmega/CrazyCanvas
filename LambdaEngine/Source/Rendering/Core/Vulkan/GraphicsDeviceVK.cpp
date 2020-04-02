@@ -249,7 +249,7 @@ namespace LambdaEngine
 	IFence* GraphicsDeviceVK::CreateFence(uint64 initalValue) const
 	{
 		FenceVK* pFence = new FenceVK(this);
-		if (pFence->Init(initalValue))
+		if (!pFence->Init(initalValue))
 		{
 			pFence->Release();
 			return nullptr;
@@ -343,28 +343,28 @@ namespace LambdaEngine
 		appInfo.engineVersion       = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.apiVersion          = VK_API_VERSION_1_2;
 
-		VkInstanceCreateInfo createInfo = {};
-		createInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-		createInfo.pApplicationInfo         = &appInfo;
-		createInfo.enabledExtensionCount    = (uint32_t)m_EnabledInstanceExtensions.size();
-		createInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
+		VkInstanceCreateInfo instanceCreateInfo = {};
+		instanceCreateInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+		instanceCreateInfo.pApplicationInfo         = &appInfo;
+		instanceCreateInfo.enabledExtensionCount    = (uint32_t)m_EnabledInstanceExtensions.size();
+		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
 
 		if (desc.Debug)
 		{
 			VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
 			PopulateDebugMessengerCreateInfo(debugCreateInfo);
 
-			createInfo.enabledLayerCount    = (uint32_t)m_EnabledValidationLayers.size();
-			createInfo.ppEnabledLayerNames  = m_EnabledValidationLayers.data();
-			createInfo.pNext                = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+			instanceCreateInfo.enabledLayerCount    = (uint32_t)m_EnabledValidationLayers.size();
+			instanceCreateInfo.ppEnabledLayerNames  = m_EnabledValidationLayers.data();
+			instanceCreateInfo.pNext                = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 		}
 		else
 		{
-			createInfo.enabledLayerCount    = 0;
-			createInfo.pNext                = nullptr;
+			instanceCreateInfo.enabledLayerCount    = 0;
+			instanceCreateInfo.pNext                = nullptr;
 		}
 
-		VkResult result = vkCreateInstance(&createInfo, nullptr, &Instance);
+		VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &Instance);
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR("[GraphicsDeviceVK]: Failed to create Vulkan Instance!", result);
@@ -404,7 +404,6 @@ namespace LambdaEngine
 		}
 
 		RegisterDeviceExtensionData();
-
 		return true;
 	}
 
@@ -422,7 +421,6 @@ namespace LambdaEngine
 		vkEnumeratePhysicalDevices(Instance, &deviceCount, physicalDevices.data());
 
 		std::multimap<int32, VkPhysicalDevice> physicalDeviceCandidates;
-
 		for (VkPhysicalDevice physicalDevice : physicalDevices)
 		{
 			int32 score = RatePhysicalDevice(physicalDevice);
@@ -521,11 +519,10 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::SetEnabledValidationLayers()
 	{
-		std::vector<VkLayerProperties> availableValidationLayers;
-
 		uint32_t layerCount = 0;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-		availableValidationLayers.resize(layerCount);
+
+		std::vector<VkLayerProperties> availableValidationLayers(layerCount);
 		vkEnumerateInstanceLayerProperties(&layerCount, availableValidationLayers.data());
 
 		std::vector<ValidationLayer> requiredValidationLayers(REQUIRED_VALIDATION_LAYERS + 1, REQUIRED_VALIDATION_LAYERS + sizeof(REQUIRED_VALIDATION_LAYERS) / sizeof(ValidationLayer));
@@ -579,11 +576,10 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::SetEnabledInstanceExtensions()
 	{
-		std::vector<VkExtensionProperties> availableInstanceExtensions;
-
 		uint32_t extensionCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-		availableInstanceExtensions.resize(extensionCount);
+
+		std::vector<VkExtensionProperties> availableInstanceExtensions(extensionCount);
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableInstanceExtensions.data());
 
 		std::vector<Extension> requiredInstanceExtensions(REQUIRED_INSTANCE_EXTENSIONS + 1, REQUIRED_INSTANCE_EXTENSIONS + sizeof(REQUIRED_INSTANCE_EXTENSIONS) / sizeof(Extension));
@@ -592,7 +588,6 @@ namespace LambdaEngine
 		for (const VkExtensionProperties& extension : availableInstanceExtensions)
 		{
 			uint32 availableInstanceExtensionHash = HashString<const char*>(extension.extensionName);
-
 			for (auto requiredInstanceExtension = requiredInstanceExtensions.begin(); requiredInstanceExtension != requiredInstanceExtensions.end(); requiredInstanceExtension++)
 			{
 				if (requiredInstanceExtension->Hash == availableInstanceExtensionHash)
@@ -637,11 +632,11 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 	{
-		createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		createInfo.pfnUserCallback = DebugCallback;
-		createInfo.pUserData = nullptr;
+		createInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+		createInfo.messageSeverity	= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		createInfo.messageType		= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		createInfo.pfnUserCallback	= DebugCallback;
+		createInfo.pUserData		= nullptr;
 	}
 
 	int32 GraphicsDeviceVK::RatePhysicalDevice(VkPhysicalDevice physicalDevice)
@@ -652,8 +647,8 @@ namespace LambdaEngine
 		VkPhysicalDeviceFeatures deviceFeatures;
 		vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
 
-		bool        requiredExtensionsSupported = false;
-		uint32_t    numOfOptionalExtensionsSupported = 0;
+		bool        requiredExtensionsSupported			= false;
+		uint32_t    numOfOptionalExtensionsSupported	= 0;
 		CheckDeviceExtensionsSupport(physicalDevice, requiredExtensionsSupported, numOfOptionalExtensionsSupported);
 
 		if (!requiredExtensionsSupported)
@@ -680,11 +675,10 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32_t& numOfOptionalExtensionsSupported)
 	{
-		std::vector<VkExtensionProperties> availableDeviceExtensions;
-
 		uint32_t extensionCount = 0;
 		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
-		availableDeviceExtensions.resize(extensionCount);
+
+		std::vector<VkExtensionProperties> availableDeviceExtensions(extensionCount);
 		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableDeviceExtensions.data());
 
 		std::vector<Extension> requiredDeviceExtensions(REQUIRED_DEVICE_EXTENSIONS + 1, REQUIRED_DEVICE_EXTENSIONS + sizeof(REQUIRED_DEVICE_EXTENSIONS) / sizeof(Extension));
@@ -692,10 +686,7 @@ namespace LambdaEngine
 
 		for (const VkExtensionProperties& extension : availableDeviceExtensions)
 		{
-            //LOG_MESSAGE(extension.extensionName);
-            
 			uint32 availableDeviceExtensionHash = HashString<const char*>(extension.extensionName);
-
 			for (auto requiredDeviceExtension = requiredDeviceExtensions.begin(); requiredDeviceExtension != requiredDeviceExtensions.end(); requiredDeviceExtension++)
 			{
 				if (requiredDeviceExtension->Hash == availableDeviceExtensionHash)
@@ -715,8 +706,8 @@ namespace LambdaEngine
 			}
 		}
 
-		requiredExtensionsSupported = requiredDeviceExtensions.empty();
-		numOfOptionalExtensionsSupported = ARR_SIZE(OPTIONAL_DEVICE_EXTENSIONS) - (uint32)optionalDeviceExtensions.size();
+		requiredExtensionsSupported			= requiredDeviceExtensions.empty();
+		numOfOptionalExtensionsSupported	= ARR_SIZE(OPTIONAL_DEVICE_EXTENSIONS) - (uint32)optionalDeviceExtensions.size();
 	}
 
 	QueueFamilyIndices GraphicsDeviceVK::FindQueueFamilies(VkPhysicalDevice physicalDevice)
@@ -780,19 +771,16 @@ namespace LambdaEngine
 			m_EnabledDeviceExtensions.push_back(REQUIRED_DEVICE_EXTENSIONS[i].Name);
 		}
 
-		std::vector<VkExtensionProperties> availableDeviceExtensions;
-
 		uint32_t extensionCount = 0;
 		vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &extensionCount, nullptr);
-		availableDeviceExtensions.resize(extensionCount);
+
+		std::vector<VkExtensionProperties> availableDeviceExtensions(extensionCount);
 		vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &extensionCount, availableDeviceExtensions.data());
 
 		std::vector<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS + 1, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
-
 		for (const VkExtensionProperties& extension : availableDeviceExtensions)
 		{
 			uint32 availableDeviceExtensionHash = HashString<const char*>(extension.extensionName);
-
 			for (auto optionalDeviceExtension = optionalDeviceExtensions.begin(); optionalDeviceExtension != optionalDeviceExtensions.end(); optionalDeviceExtension++)
 			{
 				if (optionalDeviceExtension->Hash == availableDeviceExtensionHash)
@@ -816,13 +804,13 @@ namespace LambdaEngine
 	bool GraphicsDeviceVK::IsInstanceExtensionEnabled(const char* pExtensionName)
 	{
 		uint32 extensionHash = HashString<const char*>(pExtensionName);
-
 		for (const char* pEnabledExtensionName : m_EnabledInstanceExtensions)
 		{
 			uint32 enabledExtensionHash = HashString<const char*>(pEnabledExtensionName);
-
 			if (extensionHash == enabledExtensionHash)
+			{
 				return true;
+			}
 		}
 
 		return false;
@@ -831,13 +819,13 @@ namespace LambdaEngine
 	bool GraphicsDeviceVK::IsDeviceExtensionEnabled(const char* pExtensionName)
 	{
 		uint32 extensionHash = HashString<const char*>(pExtensionName);
-
 		for (const char* pEnabledExtensionName : m_EnabledDeviceExtensions)
 		{
 			uint32 enabledExtensionHash = HashString<const char*>(pEnabledExtensionName);
-
 			if (extensionHash == enabledExtensionHash)
+			{
 				return true;
+			}
 		}
 
 		return false;
@@ -872,8 +860,8 @@ namespace LambdaEngine
 			RayTracingProperties.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
 			
 			VkPhysicalDeviceProperties2 deviceProps2 = {};
-			deviceProps2.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-			deviceProps2.pNext			= &RayTracingProperties;
+			deviceProps2.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+			deviceProps2.pNext	= &RayTracingProperties;
 
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
 		}
@@ -884,6 +872,10 @@ namespace LambdaEngine
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsDeviceVK::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 	{
+		UNREFERENCED_VARIABLE(messageType);
+		UNREFERENCED_VARIABLE(pCallbackData);
+		UNREFERENCED_VARIABLE(pUserData);
+
 		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
 		{
 			LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);

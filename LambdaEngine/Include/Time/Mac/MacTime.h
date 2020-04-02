@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef LAMBDA_PLATFORM_MACOS
-#include "Application/API/Time.h"
+#include "Time/API/Time.h"
 
 #include <mach/mach_time.h>
 

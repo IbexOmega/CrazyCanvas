@@ -6,6 +6,11 @@
 
 namespace LambdaEngine
 {
+	Win32Window::~Win32Window()
+	{
+		::DestroyWindow(m_hWnd);
+	}
+
 	bool Win32Window::Init(const char* pTitle, uint32 width, uint32 height)
 	{
 		DWORD	dwStyle		= WS_OVERLAPPEDWINDOW;
@@ -34,11 +39,6 @@ namespace LambdaEngine
 	void Win32Window::Show()
 	{
 		::ShowWindow(m_hWnd, SW_NORMAL);
-	}
-
-	void Win32Window::Release()
-	{
-		::DestroyWindow(m_hWnd);
 	}
 }
 

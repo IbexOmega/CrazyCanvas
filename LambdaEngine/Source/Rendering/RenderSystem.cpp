@@ -8,7 +8,7 @@
 #include "Rendering/Core/API/ISwapChain.h"
 #include "Rendering/Core/API/ICommandAllocator.h"
 
-#include "Application/PlatformApplication.h"
+#include "Application/API/PlatformApplication.h"
 
 namespace LambdaEngine
 {
@@ -85,7 +85,8 @@ namespace LambdaEngine
 		ISwapChain* pSwapChain = s_pGraphicsDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
 
 		IFence* pFence = s_pGraphicsDevice->CreateFence(0);
-
+        pFence->Signal(1);
+            
 		ICommandAllocator* pCommandAllocator = s_pGraphicsDevice->CreateCommandAllocator(EQueueType::QUEUE_GRAPHICS);
 
 		SAFERELEASE(pCommandAllocator);

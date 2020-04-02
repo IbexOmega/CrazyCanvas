@@ -9,10 +9,9 @@ namespace LambdaEngine
 	{
 	public:
 		Win32RawInputDevice()	= default;
-		~Win32RawInputDevice()	= default;
+		~Win32RawInputDevice();
 
-		virtual bool Init()		override;
-		virtual void Release()	override;
+		bool Init();
 
 		virtual LRESULT MessageProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) override;
 	};

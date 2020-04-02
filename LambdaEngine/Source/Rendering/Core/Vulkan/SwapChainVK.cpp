@@ -4,8 +4,7 @@
 #include <algorithm>
 
 #include "Application/API/Window.h"
-
-#include "Application/PlatformApplication.h"
+#include "Application/API/PlatformApplication.h"
 
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"

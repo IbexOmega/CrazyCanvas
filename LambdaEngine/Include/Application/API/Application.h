@@ -28,6 +28,7 @@ namespace LambdaEngine
         virtual Window*         GetWindow()         = 0;
         virtual const Window*   GetWindow() const   = 0;
         
+    public:
 		static bool PreInit() 		{ return true; }
 		static bool PostRelease() 	{ return true; }
 		

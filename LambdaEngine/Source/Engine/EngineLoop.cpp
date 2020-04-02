@@ -2,9 +2,10 @@
 
 #include "Log/Log.h"
 
-#include "Application/PlatformTime.h"
-#include "Application/PlatformMisc.h"
-#include "Application/PlatformConsole.h"
+#include "Time/API/PlatformTime.h"
+
+#include "Application/API/PlatformMisc.h"
+#include "Application/API/PlatformConsole.h"
 
 #include "Input/API/Input.h"
 
@@ -25,29 +26,7 @@
 
 namespace LambdaEngine
 {
-	void EngineLoop::Run(Game* pGame)
-	{		
-        bool IsRunning = true;
-        while (IsRunning)
-        {
-            IsRunning = Tick();
-            pGame->Tick();
-        }
-    }
-
-    bool EngineLoop::Tick()
-    {
-		Thread::Join();
-
-        if (!PlatformApplication::Tick())
-        {
-            return false;
-        }
-
-        return true;
-	}
-
-	void EngineLoop::TestRayTracing(IGraphicsDevice* pGraphicsDevice)
+	static void TestRayTracing(IGraphicsDevice* pGraphicsDevice)
 	{
 		LOG_MESSAGE("\n-------Ray Trace Testing Start-------");
 
@@ -69,6 +48,30 @@ namespace LambdaEngine
 		SAFERELEASE(pTLAS);
 
 		LOG_MESSAGE("-------Ray Trace Testing End-------\n");
+	}
+
+	void EngineLoop::Run(Game* pGame)
+	{
+		TestResourceHandler(RenderSystem::GetDevice());
+		
+        bool IsRunning = true;
+        while (IsRunning)
+        {
+            IsRunning = Tick();
+            pGame->Tick();
+        }
+    }
+
+    bool EngineLoop::Tick()
+    {
+		Thread::Join();
+
+        if (!PlatformApplication::Tick())
+        {
+            return false;
+        }
+
+        return true;
 	}
 
 #ifdef LAMBDA_PLATFORM_WINDOWS

@@ -8,7 +8,14 @@
 
 namespace LambdaEngine
 {
-    bool MacWindow::Init(uint32 width, uint32 height)
+    MacWindow::~MacWindow()
+    {
+        [m_pWindow release];
+        [m_pView release];
+        [m_pDelegate release];
+    }
+
+    bool MacWindow::Init(const char* pTitle, uint32 width, uint32 height)
     {
         NSUInteger  windowStyle = NSWindowStyleMaskTitled  | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
         NSRect      windowRect  = NSMakeRect(0.0f, 0.0f, CGFloat(width), CGFloat(height));
@@ -35,7 +42,8 @@ namespace LambdaEngine
             return false;
         }
         
-        [m_pWindow setTitle:@"Lambda Game Engine"];
+        NSString* title = [NSString stringWithUTF8String:pTitle];
+        [m_pWindow setTitle:title];
         [m_pWindow setDelegate:m_pDelegate];
         [m_pWindow setContentView:m_pView];
         
@@ -45,13 +53,6 @@ namespace LambdaEngine
     void MacWindow::Show()
     {
         [m_pWindow makeKeyAndOrderFront:m_pWindow];
-    }
-
-    void MacWindow::Release()
-    {
-        [m_pWindow release];
-        [m_pView release];
-        [m_pDelegate release];
     }
 }
 

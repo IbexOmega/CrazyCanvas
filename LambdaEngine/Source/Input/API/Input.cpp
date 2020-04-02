@@ -40,7 +40,7 @@ namespace LambdaEngine
 	
 	void Input::SetInputMode(EInputMode inputMode)
 	{
-		SAFERELEASE(s_pInputDevice);
+		SAFEDELETE(s_pInputDevice);
 		s_pInputDevice = PlatformApplication::CreateInputDevice(inputMode);
 	}
 }

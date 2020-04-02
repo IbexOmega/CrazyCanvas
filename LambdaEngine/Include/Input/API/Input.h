@@ -1,7 +1,7 @@
 #pragma once
 #include "InputDevice.h"
 
-#include "Application/PlatformApplication.h"
+#include "Application/API/PlatformApplication.h"
 
 namespace LambdaEngine
 {
@@ -26,7 +26,7 @@ namespace LambdaEngine
 	private:
 		static InputDevice* s_pInputDevice;
 
-		static KeyboardState s_KeyboardState;
-		static MouseState s_MouseState;
+		static KeyboardState	s_KeyboardState;
+		static MouseState		s_MouseState;
 	};
 }
