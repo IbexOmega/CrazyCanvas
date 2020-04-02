@@ -15,3 +15,7 @@
 
 # Ignore all compiled files
 Build/
+
+# Ignore all dependency build files
+Dependencies/bin/
+Dependencies/bin-int/

@@ -107,7 +107,7 @@ workspace "LambdaEngine"
 			language "C++"
 			cppdialect "C++17"
 			systemversion "latest"
-			location "Dependencies/tinyobjloader"
+			location "Dependencies/projectfiles/tinyobjloader"
 			
 			filter "configurations:Debug"
 				symbols "on"
@@ -116,8 +116,8 @@ workspace "LambdaEngine"
 			filter{}
 			
 			-- Targets
-			targetdir ("Dependencies/tinyobjloader/bin/")
-			objdir ("Dependencies/tinyobjloader/bin-int/")
+			targetdir ("Dependencies/bin/tinyobjloader/" .. outputdir)
+			objdir ("Dependencies/bin-int/tinyobjloader/" .. outputdir)
 					
 			-- Files
 			files 
