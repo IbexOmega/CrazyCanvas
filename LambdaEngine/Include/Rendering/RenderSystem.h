@@ -6,7 +6,7 @@ namespace LambdaEngine
 	class ICommandQueue;
 	class IGraphicsDevice;
 
-	class RenderSystem
+	class LAMBDA_API RenderSystem
 	{
 	public:
 		DECL_STATIC_CLASS(RenderSystem);

@@ -6,7 +6,13 @@
 
 #include "Network/API/PlatformSocketFactory.h"
 
-Sandbox::Sandbox()
+#include "Resources/ResourceManager.h"
+
+#include "Rendering/RenderSystem.h"
+#include "Audio/AudioSystem.h"
+
+Sandbox::Sandbox() : 
+	m_pResourceManager(nullptr)
 {
 	using namespace LambdaEngine;
     
@@ -77,15 +83,87 @@ Sandbox::Sandbox()
 	LOG_MESSAGE(buffer);
 	LOG_MESSAGE(sender.c_str());
 	LOG_MESSAGE("%d", port);*/
+
+	m_pResourceManager = new LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
+	m_TestSound = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/smb_gameover.wav", ESoundFlags::LOOPING);
 }
 
 Sandbox::~Sandbox()
 {
+	SAFEDELETE(m_pResourceManager);
+}
+
+void Sandbox::TestResourceManager()
+{
+	LOG_MESSAGE("\n-------Resource Handler Testing Start-------");
+
+	
+
+	////Audio Test
+	//{
+	//	GUID_Lambda failedSoundGUID = pResourceHandler->LoadSoundFromFile("THIS/SHOULD/FAIL.obj");
+	//	GUID_Lambda successSoundGUID = pResourceHandler->LoadSoundFromFile("../Assets/Sounds/smb_gameover.wav");
+
+	//	Sound* pSound = pResourceHandler->GetSound(successSoundGUID);
+	//	pSound->Play();
+	//}
+
+	////Scene Test
+	//{
+	//	std::vector<GraphicsObject> sponzaGraphicsObjects;
+	//	pResourceHandler->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sponzaGraphicsObjects);
+	//}
+
+	////Mesh Test
+	//{
+	//	GUID_Lambda failedMeshGUID = pResourceHandler->LoadMeshFromFile("THIS/SHOULD/FAIL.obj");
+	//	GUID_Lambda sucessMeshGUID = pResourceHandler->LoadMeshFromFile("../Assets/Meshes/bunny.obj");
+
+	//	Mesh* pBunnyMesh = ResourceLoader::LoadMeshFromFile(pGraphicsDevice, "../Assets/Meshes/bunny.obj");
+
+	//	SAFEDELETE(pBunnyMesh);
+	//	SAFEDELETE(pResourceHandler);
+	//}
+
+	LOG_MESSAGE("-------Resource Handler Testing End-------\n");
 }
 
 void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 {
 	LOG_MESSAGE("Key Pressed: %d", key);
+
+	using namespace LambdaEngine;
+
+	Sound* pTestSound = m_pResourceManager->GetSound(m_TestSound);
+
+	if (key == EKey::KEY_KP_5)
+	{
+		pTestSound->Toggle();
+	}
+	else if (key == EKey::KEY_KP_8)
+	{
+		pTestSound->SetVolume(pTestSound->GetVolume() + 0.05f);
+	}
+	else if (key == EKey::KEY_KP_2)
+	{
+		pTestSound->SetVolume(pTestSound->GetVolume() - 0.05f);
+	}
+	else if (key == EKey::KEY_KP_9)
+	{
+		pTestSound->SetPitch(pTestSound->GetPitch() + 0.05f);
+	}
+	else if (key == EKey::KEY_KP_7)
+	{
+		pTestSound->SetPitch(pTestSound->GetPitch() - 0.05f);
+	}
+	else if (key == EKey::KEY_KP_3)
+	{
+		pTestSound->SetPanning(pTestSound->GetPanning() + 0.05f);
+	}
+	else if (key == EKey::KEY_KP_1)
+	{
+		pTestSound->SetPanning(pTestSound->GetPanning() - 0.05f);
+	}
 }
 
 void Sandbox::OnKeyHeldDown(LambdaEngine::EKey key)

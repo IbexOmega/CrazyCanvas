@@ -19,14 +19,14 @@
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
 
+#include "Audio/AudioSystem.h"
+
 #include "Rendering/RenderSystem.h"
 
 namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
-	{
-		TestResourceHandler(RenderSystem::GetDevice());
-		
+	{		
         bool IsRunning = true;
         while (IsRunning)
         {
@@ -45,27 +45,6 @@ namespace LambdaEngine
         }
 
         return true;
-	}
-
-	void EngineLoop::TestResourceHandler(IGraphicsDevice* pGraphicsDevice)
-	{
-		LOG_MESSAGE("\n-------Resource Handler Testing Start-------");
-
-		ResourceManager* pResourceHandler = new ResourceManager(pGraphicsDevice);
-
-		std::vector<GraphicsObject> sponzaGraphicsObjects;
-		pResourceHandler->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sponzaGraphicsObjects);
-
-		GUID_Lambda failedMeshGUID = pResourceHandler->LoadMeshFromFile("THIS/SHOULD/FAIL.obj");
-		GUID_Lambda bunnyMeshGUID = pResourceHandler->LoadMeshFromFile("../Assets/Meshes/bunny.obj");
-
-		Mesh* pBunnyMesh = ResourceLoader::LoadMeshFromFile("../Assets/Meshes/bunny.obj");
-
-
-		SAFEDELETE(pBunnyMesh);
-		SAFEDELETE(pResourceHandler);
-
-		LOG_MESSAGE("-------Resource Handler Testing End-------\n");
 	}
 
 	void EngineLoop::TestRayTracing(IGraphicsDevice* pGraphicsDevice)
@@ -134,6 +113,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!AudioSystem::Init())
+		{
+			return false;
+		}
+
 		return true;
 	}
 	
@@ -142,6 +126,11 @@ namespace LambdaEngine
 		Input::Release();
 
 		if (!RenderSystem::Release())
+		{
+			return false;
+		}
+
+		if (!AudioSystem::Release())
 		{
 			return false;
 		}

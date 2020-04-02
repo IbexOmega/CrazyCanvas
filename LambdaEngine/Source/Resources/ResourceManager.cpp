@@ -10,8 +10,9 @@ namespace LambdaEngine
 {
 	GUID_Lambda ResourceManager::s_NextFreeGUID = ResourceManager::SMALLEST_UNRESERVED_GUID;
 
-	ResourceManager::ResourceManager(IGraphicsDevice* pGraphicsDevice) :
-		m_pGraphicsDevice(pGraphicsDevice)
+	ResourceManager::ResourceManager(IGraphicsDevice* pGraphicsDevice, AudioDevice* pAudioDevice) :
+		m_pGraphicsDevice(pGraphicsDevice),
+		m_pAudioDevice(pAudioDevice)
 	{
 		InitDefaultResources();
 	}
@@ -21,6 +22,7 @@ namespace LambdaEngine
 		SAFEDELETE_ALL(m_Meshes);
 		SAFEDELETE_ALL(m_Materials);
 		SAFEDELETE_ALL(m_Textures);
+		SAFEDELETE_ALL(m_Sounds);
 	}
 
 	bool ResourceManager::LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GraphicsObject>& result)
@@ -29,7 +31,7 @@ namespace LambdaEngine
 		std::vector<Material*> materials;
 		std::vector<ITexture*> textures;
 
-		if (!ResourceLoader::LoadSceneFromFile(pDir, pFilename, result, meshes, materials, textures))
+		if (!ResourceLoader::LoadSceneFromFile(m_pGraphicsDevice, pDir, pFilename, result, meshes, materials, textures))
 		{
 			return false;
 		}
@@ -73,7 +75,7 @@ namespace LambdaEngine
 			ppMappedMesh = &m_Meshes[guid]; //Creates new entry if not existing
 		}
 
-		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(pFilepath);
+		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(m_pGraphicsDevice, pFilepath);
 
 		return guid;
 	}
@@ -89,7 +91,7 @@ namespace LambdaEngine
 			ppMappedMesh = &m_Meshes[guid]; //Creates new entry if not existing
 		}
 
-		(*ppMappedMesh) = ResourceLoader::LoadMeshFromMemory(pVertices, numVertices, pIndices, numIndices);
+		(*ppMappedMesh) = ResourceLoader::LoadMeshFromMemory(m_pGraphicsDevice, pVertices, numVertices, pIndices, numIndices);
 
 		return guid;
 	}
@@ -131,6 +133,22 @@ namespace LambdaEngine
 	{
 		LOG_WARNING("[ResourceDevice]: Call to unimplemented function LoadTextureFromMemory");
 		return GUID_NONE;
+	}
+
+	GUID_Lambda ResourceManager::LoadSoundFromFile(const char* pFilepath, ESoundFlags flags)
+	{
+		GUID_Lambda guid = GUID_NONE;
+		Sound** ppMappedSound = nullptr;
+
+		//Spinlock
+		{
+			guid = s_NextFreeGUID++;
+			ppMappedSound = &m_Sounds[guid]; //Creates new entry if not existing
+		}
+
+		(*ppMappedSound) = ResourceLoader::LoadSoundFromFile(m_pAudioDevice, pFilepath, flags);
+
+		return guid;
 	}
 
 	GUID_Lambda ResourceManager::RegisterLoadedMesh(Mesh* pResource)

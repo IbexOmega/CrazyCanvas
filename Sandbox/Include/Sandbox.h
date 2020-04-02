@@ -5,11 +5,18 @@
 #include "Input/API/IKeyboardHandler.h"
 #include "Input/API/IMouseHandler.h"
 
+namespace LambdaEngine
+{
+	class ResourceManager;
+}
+
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IMouseHandler
 {
 public:
 	Sandbox();
 	~Sandbox();
+
+	void TestResourceManager();
 
 	// Inherited via Game
 	virtual void Tick() override;
@@ -24,4 +31,9 @@ public:
 	virtual void OnButtonPressed(LambdaEngine::EMouseButton button)     override;
 	virtual void OnButtonReleased(LambdaEngine::EMouseButton button)    override;
 	virtual void OnScroll(int32 delta)                                  override;
+
+private:
+	LambdaEngine::ResourceManager* m_pResourceManager;
+
+	GUID_Lambda m_TestSound;
 };
