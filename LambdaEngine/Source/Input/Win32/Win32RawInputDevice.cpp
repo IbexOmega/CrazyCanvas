@@ -5,6 +5,34 @@
 
 namespace LambdaEngine
 {
+	Win32RawInputDevice::~Win32RawInputDevice()
+	{
+		RAWINPUTDEVICE devices[2];
+		ZERO_MEMORY(devices, sizeof(RAWINPUTDEVICE) * 2);
+
+		//Keyboard
+		devices[0].dwFlags = RIDEV_REMOVE;
+		devices[0].hwndTarget = 0;
+		devices[0].usUsage = 0x06;
+		devices[0].usUsagePage = 0x01;
+
+		//Mouse
+		devices[1].dwFlags = RIDEV_REMOVE;
+		devices[1].hwndTarget = 0;
+		devices[1].usUsage = 0x02;
+		devices[1].usUsagePage = 0x01;
+
+		BOOL bResult = RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE));
+		if (bResult == FALSE)
+		{
+			LOG_ERROR("[Win32RawInputDevice]: Failed to unregister raw input devices");
+		}
+		else
+		{
+			D_LOG_MESSAGE("[Win32RawInputDevice]: Unregistered keyboard and mouse devices");
+		}
+	}
+
 	bool Win32RawInputDevice::Init()
 	{
 		RAWINPUTDEVICE devices[2];
@@ -33,36 +61,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void Win32RawInputDevice::Release()
-	{
-		RAWINPUTDEVICE devices[2];
-		ZERO_MEMORY(devices, sizeof(RAWINPUTDEVICE) * 2);
-
-		//Keyboard
-		devices[0].dwFlags		= RIDEV_REMOVE;
-		devices[0].hwndTarget	= 0;
-		devices[0].usUsage		= 0x06;
-		devices[0].usUsagePage	= 0x01;
-
-		//Mouse
-		devices[1].dwFlags		= RIDEV_REMOVE;
-		devices[1].hwndTarget	= 0;
-		devices[1].usUsage		= 0x02;
-		devices[1].usUsagePage	= 0x01;
-
-		BOOL bResult = RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE));
-		if (bResult == FALSE)
-		{
-			LOG_ERROR("[Win32RawInputDevice]: Failed to unregister raw input devices");
-		}
-		else
-		{
-			D_LOG_MESSAGE("[Win32RawInputDevice]: Unregistered keyboard and mouse devices");
-		}
-
-		delete this;
-	}
-
 	LRESULT Win32RawInputDevice::MessageProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
 		switch (uMessage)
@@ -71,6 +69,7 @@ namespace LambdaEngine
 			{
 				UINT uSize = 0;
 				GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &uSize, sizeof(RAWINPUTHEADER));
+				
 				LPBYTE lpBytes = new BYTE[uSize];
 				if (lpBytes == NULL)
 				{
@@ -81,7 +80,7 @@ namespace LambdaEngine
 				{
 					LOG_ERROR("GetRawInputData does not return correct size");
 
-					SAFEDELETE(lpBytes);
+					SAFEDELETEARR(lpBytes);
 					return 0;
 				}
 
@@ -119,7 +118,7 @@ namespace LambdaEngine
 					//}
 				}
 
-				SAFEDELETE(lpBytes);
+				SAFEDELETEARR(lpBytes);
 				return 0;
 			}
 		}

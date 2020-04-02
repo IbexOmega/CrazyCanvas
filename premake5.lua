@@ -99,6 +99,35 @@ workspace "LambdaEngine"
         }
     filter {}
 
+	-- Dependencies
+	group "Dependencies"
+		-- tinyobjloader Project
+		project "tinyobjloader"
+			kind "StaticLib"
+			language "C++"
+			cppdialect "C++17"
+			systemversion "latest"
+			location "Dependencies/projectfiles/tinyobjloader"
+			
+			filter "configurations:Debug"
+				symbols "on"
+				runtime "Debug"
+				optimize "Full"
+			filter{}
+			
+			-- Targets
+			targetdir ("Dependencies/bin/tinyobjloader/" .. outputdir)
+			objdir ("Dependencies/bin-int/tinyobjloader/" .. outputdir)
+					
+			-- Files
+			files 
+			{
+				"Dependencies/tinyobjloader/tiny_obj_loader.h",
+				"Dependencies/tinyobjloader/tiny_obj_loader.cc",
+			}
+		project "*"
+	group "*"
+
     -- Engine Project
     project "LambdaEngine"
         language "C++"
@@ -189,11 +218,17 @@ workspace "LambdaEngine"
 			"Dependencies/tinyobjloader",
 		}
         
+		links 
+		{ 
+			"tinyobjloader",
+		}
+		
 		-- Win32
 		filter { "system:windows" }
 			links
 			{
                 "vulkan-1",
+				"fmodL_vc.lib",
 			}
 			
 			libdirs
@@ -201,6 +236,7 @@ workspace "LambdaEngine"
 				"C:/VulkanSDK/1.2.131.2/Lib",
 				"D:/VulkanSDK/1.2.131.2/Lib",
 				"D:/Vulkan/1.2.131.2/Lib",
+				"C:/FMOD Studio API Windows/api/core/lib/x64",
 			}
 			
 			sysincludedirs
@@ -208,6 +244,7 @@ workspace "LambdaEngine"
 				"C:/VulkanSDK/1.2.131.2/Include",
 				"D:/VulkanSDK/1.2.131.2/Include",
 				"D:/Vulkan/1.2.131.2/Include",
+				"C:/FMOD Studio API Windows/api/core/inc",
 			}
 		-- Mac
 		filter { "system:macosx" }
@@ -236,7 +273,11 @@ workspace "LambdaEngine"
 			{
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Client/\""),
-                ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\"")
+                ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\""),
+				
+				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+                ("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
+                ("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		filter {}
     project "*"
@@ -373,5 +414,4 @@ workspace "LambdaEngine"
 		{ 
 			"LambdaEngine",
 		}
-
     project "*"

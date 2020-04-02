@@ -6,16 +6,6 @@
 
 namespace LambdaEngine
 {
-	bool Win32InputDevice::Init()
-	{
-		return true;
-	}
-
-	void Win32InputDevice::Release()
-	{
-		delete this;
-	}
-
 	LRESULT Win32InputDevice::MessageProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
 		UNREFERENCED_PARAMETER(hWnd);
@@ -25,9 +15,13 @@ namespace LambdaEngine
 		case WM_KEYDOWN:
 		{
 			if (lParam & 0x40000000)
+			{
 				OnKeyHeldDown(Win32InputCodeTable::GetKey(int32(wParam)));
+			}
 			else
+			{
 				OnKeyDown(Win32InputCodeTable::GetKey(int32(wParam)));
+			}
 
 			break;
 		}

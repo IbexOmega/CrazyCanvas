@@ -28,6 +28,7 @@ namespace LambdaEngine
         virtual Window*         GetWindow()         = 0;
         virtual const Window*   GetWindow() const   = 0;
         
+    public:
 		static bool PreInit() 		{ return true; }
 		static bool PostRelease() 	{ return true; }
 		
@@ -36,7 +37,8 @@ namespace LambdaEngine
         
         static void Terminate() { }
 
-		static InputDevice* CreateInputDevice(EInputMode) { return nullptr; }
+        static Window*      CreateWindow(const char*, uint32, uint32)   { return nullptr; }
+		static InputDevice* CreateInputDevice(EInputMode)               { return nullptr; }
 
         static Application* Get() { return nullptr; }
 	};

@@ -3,9 +3,10 @@
 
 namespace LambdaEngine
 {
+	class ICommandQueue;
 	class IGraphicsDevice;
 
-	class RenderSystem
+	class LAMBDA_API RenderSystem
 	{
 	public:
 		DECL_STATIC_CLASS(RenderSystem);
@@ -22,5 +23,8 @@ namespace LambdaEngine
 
 	private:
 		static IGraphicsDevice* s_pGraphicsDevice;
+		static ICommandQueue*			s_pGraphicsQueue;
+		static ICommandQueue*			s_pComputeQueue;
+		static ICommandQueue*			s_pCopyQueue;
 	};
 }

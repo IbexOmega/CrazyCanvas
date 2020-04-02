@@ -10,9 +10,6 @@ namespace LambdaEngine
     public:
         MacInputDevice()    = default;
         ~MacInputDevice()   = default;
-
-        virtual bool Init()     override;
-        virtual void Release()  override;
         
         virtual void HandleEvent(NSEvent* event) override;
     };

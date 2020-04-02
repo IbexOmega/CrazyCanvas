@@ -1,26 +1,29 @@
 #pragma once
-#include "LambdaEngine.h"
+#include "GraphicsTypes.h"
 
 namespace LambdaEngine
 {
-	struct GraphicsPipelineDesc;
-	struct ComputePipelineDesc;
-	struct RayTracingPipelineDesc;
 	struct BufferDesc;
 	struct TextureDesc;
     struct SwapChainDesc;
+	struct ComputePipelineDesc;
+	struct GraphicsPipelineDesc;
+	struct RayTracingPipelineDesc;
 	struct TopLevelAccelerationStructureDesc;
 	struct BottomLevelAccelerationStructureDesc;
 
     class Window;
-	class IRenderPass;
 	class IFence;
-	class ICommandList;
-	class IPipelineState;
+	class ICommandQueue;
+	class IFence;
 	class IBuffer;
 	class ITexture;
     class ISwapChain;
+	class IRenderPass;
 	class ITextureView;
+	class ICommandList;
+	class IPipelineState;
+	class ICommandAllocator;
 	class ITopLevelAccelerationStructure;
 	class IBottomLevelAccelerationStructure;
 
@@ -43,8 +46,6 @@ namespace LambdaEngine
 		virtual void Release() 								= 0;
 
 		virtual IRenderPass*						CreateRenderPass()																			const = 0;
-		virtual IFence*								CreateFence()																				const = 0;
-		virtual ICommandList*						CreateCommandList()																			const = 0;
 		virtual IBuffer*							CreateBuffer(const BufferDesc& desc)														const = 0;
 		virtual ITexture*							CreateTexture(const TextureDesc& desc)														const = 0;
 		virtual ITextureView*						CreateTextureView()																			const = 0;
@@ -54,6 +55,10 @@ namespace LambdaEngine
 		virtual IPipelineState*						CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc)							const = 0;
 		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const = 0;
 		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const = 0;
+		virtual ICommandList*						CreateCommandList(ICommandAllocator* pAllocator, ECommandListType commandListType)			const = 0;
+		virtual ICommandAllocator*					CreateCommandAllocator(ECommandQueueType queueType)												const = 0;
+		virtual ICommandQueue*								CreateCommandQueue(ECommandQueueType queueType)															const = 0;
+		virtual IFence*								CreateFence(uint64 initalValue)																const = 0;
 	};
 
 	LAMBDA_API IGraphicsDevice* CreateGraphicsDevice(const GraphicsDeviceDesc& desc, EGraphicsAPI api);

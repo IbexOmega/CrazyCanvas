@@ -4,17 +4,6 @@
 
 namespace LambdaEngine
 {
-    enum ETextureFlags : uint32 
-    {
-        TEXTURE_FLAG_NONE               = 0,
-        TEXTURE_FLAG_RENDER_TARGET      = BIT(1),
-        TEXTURE_FLAG_SHADER_RESOURCE    = BIT(2),
-        TEXTURE_FLAG_UNORDERED_ACCESS   = BIT(3),
-        TEXTURE_FLAG_DEPTH_STENCIL      = BIT(4),
-        TEXTURE_FLAG_COPY_SRC           = BIT(5),
-        TEXTURE_FLAG_COPY_DST           = BIT(6),
-    };
-
     enum class ETextureType : uint8
     {
         TEXTURE_NONE    = 0,
@@ -43,6 +32,7 @@ namespace LambdaEngine
     public:
         DECL_INTERFACE(ITexture);
 
-        virtual TextureDesc GetDesc() const = 0;
+        virtual TextureDesc GetDesc() const     = 0;
+        virtual uint64      GetHandle() const   = 0;
     };
 }

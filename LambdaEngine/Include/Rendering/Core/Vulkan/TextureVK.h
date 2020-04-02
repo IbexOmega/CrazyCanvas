@@ -26,6 +26,16 @@ namespace LambdaEngine
 			return m_Desc;
 		}
 
+		FORCEINLINE virtual uint64 GetHandle() const override
+		{
+			return (uint64)m_Image;
+		}
+
+		FORCEINLINE VkImage GetImage() const
+		{
+			return m_Image;
+		}
+
 	private:
 		VkImage			m_Image		= VK_NULL_HANDLE;
 		VkDeviceMemory	m_Memory	= VK_NULL_HANDLE;

@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Defines.h"
 #include "Types.h"
 #include "SpinLock.h"
@@ -8,6 +7,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <atomic>
+#include <functional>
 
 namespace LambdaEngine
 {

@@ -81,27 +81,86 @@ namespace LambdaEngine
 
 		return VK_SHADER_STAGE_ALL;
 	}
+
+    inline VkPipelineStageFlags ConvertPipelineStage(EPipelineStage pipelineStage)
+    {
+        switch (pipelineStage)
+        {
+        case PIPELINE_STAGE_TOP:                          return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        case PIPELINE_STAGE_BOTTOM:                       return VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        case PIPELINE_STAGE_DRAW_INDIRECT:                return VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        case PIPELINE_STAGE_VERTEX_INPUT:                 return VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+        case PIPELINE_STAGE_VERTEX_SHADER:                return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        case PIPELINE_STAGE_HULL_SHADER:                  return VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+        case PIPELINE_STAGE_DOMAIN_SHADER:                return VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+        case PIPELINE_STAGE_GEOMETRY_SHADER:              return VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+        case PIPELINE_STAGE_PIXEL_SHADER:                 return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        case PIPELINE_STAGE_EARLY_FRAGMENT_TESTS:         return VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        case PIPELINE_STAGE_LATE_FRAGMENT_TESTS:          return VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        case PIPELINE_STAGE_RENDER_TARGET_OUTPUT:         return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        case PIPELINE_STAGE_COMPUTE_SHADER:               return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        case PIPELINE_STAGE_COPY:                         return VK_PIPELINE_STAGE_TRANSFER_BIT;
+        case PIPELINE_STAGE_HOST:                         return VK_PIPELINE_STAGE_HOST_BIT;
+        case PIPELINE_STAGE_STREAM_OUTPUT:                return VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT;
+        case PIPELINE_STAGE_CONDITIONAL_RENDERING:        return VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
+        case PIPELINE_STAGE_RAY_TRACING_SHADER:           return VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+        case PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD: return VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+        case PIPELINE_STAGE_SHADING_RATE_TEXTURE:         return VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV;
+        case PIPELINE_STAGE_TASK_SHADER:                  return VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
+        case PIPELINE_STAGE_MESH_SHADER:                  return VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV;
+        case PIPELINE_STAGE_UNKNOWN:
+        default: return VkPipelineStageFlags(0);
+        }
+
+        return VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+    }
+
+
+    inline VkImageLayout ConvertTextureState(ETextureState textureState)
+    {
+        switch (textureState)
+        {
+            case TEXTURE_STATE_GENERAL:                             return VK_IMAGE_LAYOUT_GENERAL;
+            case TEXTURE_STATE_COLOR_ATTACHMENT:                    return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            case TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT:            return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            case TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY:             return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+            case TEXTURE_STATE_SHADER_READ_ONLY:                    return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            case TEXTURE_STATE_COPY_SRC:                            return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            case TEXTURE_STATE_COPY_DST:                            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            case TEXTURE_STATE_PREINITIALIZED:                      return VK_IMAGE_LAYOUT_PREINITIALIZED;
+            case TEXTURE_STATE_DEPTH_READ_ONLY_STENCIL_ATTACHMENT:  return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
+            case TEXTURE_STATE_DEPTH_ATTACHMENT_STENCIL_READ_ONLY:  return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
+            case TEXTURE_STATE_DEPTH_ATTACHMENT:                    return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            case TEXTURE_STATE_DEPTH_READ_ONLY:                     return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+            case TEXTURE_STATE_STENCIL_ATTACHMENT:                  return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+            case TEXTURE_STATE_STENCIL_READ_ONLY:                   return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+            case TEXTURE_STATE_PRESENT:                             return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            case TEXTURE_STATE_SHADING_RATE:                        return VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV;
+            case TEXTURE_STATE_DONT_CARE:
+            case TEXTURE_STATE_UNKNOWN:
+            default: return VK_IMAGE_LAYOUT_UNDEFINED;
+        }
+
+        return VK_IMAGE_LAYOUT_UNDEFINED;
+    }
 	
-	inline void CreateSpecializationInfo(
-		VkSpecializationInfo& specializationInfo,
-		std::vector<VkSpecializationMapEntry>& specializationEntries,
-		const ShaderDesc& shaderDesc)
+	inline void CreateSpecializationInfo(VkSpecializationInfo& specializationInfo, std::vector<VkSpecializationMapEntry>& specializationEntries, const ShaderDesc& shaderDesc)
 	{
 		specializationInfo = {};
 
 		for (uint32 i = 0; i < shaderDesc.Constants.size(); i++)
 		{
 			VkSpecializationMapEntry specializationEntry = {};
-			specializationEntry.constantID = i;
-			specializationEntry.offset = i * sizeof(ShaderConstant);
-			specializationEntry.size = sizeof(ShaderConstant);
+			specializationEntry.constantID  = i;
+			specializationEntry.offset      = i * sizeof(ShaderConstant);
+			specializationEntry.size        = sizeof(ShaderConstant);
 			specializationEntries.push_back(specializationEntry);
 		}
 
-		specializationInfo.mapEntryCount = (uint32)specializationEntries.size();
-		specializationInfo.pMapEntries = specializationEntries.data();
-		specializationInfo.dataSize = shaderDesc.Constants.size() * sizeof(ShaderConstant);
-		specializationInfo.pData = shaderDesc.Constants.data();
+		specializationInfo.mapEntryCount    = (uint32)specializationEntries.size();
+		specializationInfo.pMapEntries      = specializationEntries.data();
+		specializationInfo.dataSize         = shaderDesc.Constants.size() * sizeof(ShaderConstant);
+		specializationInfo.pData            = shaderDesc.Constants.data();
 	}
 
 	inline bool CreateShaderStageInfo(VkDevice device, VkPipelineShaderStageCreateInfo& shaderStageInfo, const ShaderDesc& shaderDesc, const VkSpecializationInfo& specializationInfo)
@@ -115,12 +174,12 @@ namespace LambdaEngine
 
 		shaderStageInfo = {};
 
-		shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		shaderStageInfo.pNext = nullptr;
-		shaderStageInfo.flags = 0;
-		shaderStageInfo.stage = ConvertShaderType(shaderDesc.Type);
-		shaderStageInfo.module = shaderModule;
-		shaderStageInfo.pName = shaderDesc.pEntryPoint;
+		shaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderStageInfo.pNext   = nullptr;
+		shaderStageInfo.flags   = 0;
+		shaderStageInfo.stage   = ConvertShaderType(shaderDesc.Type);
+		shaderStageInfo.module  = shaderModule;
+		shaderStageInfo.pName   = shaderDesc.pEntryPoint;
 		shaderStageInfo.pSpecializationInfo = &specializationInfo;
         
         return true;

@@ -3,11 +3,12 @@
 
 #include "Game/Game.h"
 
-#include "Application/PlatformApplication.h"
+#include "Application/API/PlatformApplication.h"
 
 namespace LambdaEngine
 {
 	class IGraphicsDevice;
+	class AudioDevice;
 
 	class LAMBDA_API EngineLoop
 	{
@@ -26,8 +27,5 @@ namespace LambdaEngine
 
 	private:
 		static bool Tick();
-
-		static void TestResourceHandler(IGraphicsDevice* pGraphicsDevice);
-		static void TestRayTracing(IGraphicsDevice* pGraphicsDevice);
 	};
 }

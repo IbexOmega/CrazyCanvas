@@ -54,5 +54,6 @@
 #define SAFEDELETEARR(array)	if ((array)) { delete[] array; array = nullptr; }
 #define SAFERELEASE(object) if ((object)) { object->Release(); object = nullptr; }
 
-//Bit helper
-#define BIT(bit) (1 << bit)
+//Bit-Mask helpers
+#define BIT(bit)	(1 << bit)
+#define FLAG(bit)	BIT(bit)

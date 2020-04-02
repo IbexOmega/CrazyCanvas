@@ -34,6 +34,11 @@ namespace LambdaEngine
         {
             return (uint64)m_Buffer;
         }
+
+        FORCEINLINE VkBuffer GetBuffer() const
+        {
+            return m_Buffer;
+        }
          
     private:
         VkBuffer        m_Buffer            = VK_NULL_HANDLE;

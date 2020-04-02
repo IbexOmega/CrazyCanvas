@@ -9,7 +9,13 @@
 
 namespace LambdaEngine
 {
-    MacApplication MacApplication::s_Application = MacApplication();
+    MacApplication* MacApplication::s_pApplication = nullptr;
+
+    MacApplication::~MacApplication()
+    {
+        [m_pAppDelegate release];
+        SAFEDELETE(m_pWindow);
+    }
 
     void MacApplication::AddMessageHandler(IApplicationMessageHandler* pHandler)
     {
@@ -61,35 +67,36 @@ namespace LambdaEngine
 
     Window* MacApplication::GetWindow()
     {
-        return &m_Window;
+        return m_pWindow;
     }
 
     const Window* MacApplication::GetWindow() const
     {
-        return &m_Window;
+        return m_pWindow;
     }
 
-    bool MacApplication::Create()
+    bool MacApplication::Init()
     {
         m_pAppDelegate = [[MacAppController alloc] init];
         [NSApp setDelegate:m_pAppDelegate];
         
-        if (!CreateMenu())
-        {
-            return false;
-        }
-
-        if (!m_Window.Init(1440, 900))
+        if (!InitMenu())
         {
             return false;
         }
         
-        m_Window.Show();
+        m_pWindow = (MacWindow*)MacApplication::CreateWindow("Lambda Game Engine", 1440, 900);
+        if (!m_pWindow)
+        {
+            return false;
+        }
+        
+        m_pWindow->Show();
         
         return true;
     }
 
-    bool MacApplication::CreateMenu()
+    bool MacApplication::InitMenu()
     {
         @autoreleasepool
         {
@@ -121,21 +128,26 @@ namespace LambdaEngine
         return true;
     }
 
-    void MacApplication::Destroy()
-    {
-        [m_pAppDelegate release];
-        m_Window.Release();
-    }
-
     void MacApplication::Terminate()
     {
-        s_Application.m_IsTerminating = true;
+        s_pApplication->m_IsTerminating = true;
+    }
+
+    Window* MacApplication::CreateWindow(const char* pTitle, uint32 width, uint32 height)
+    {
+        MacWindow* pWindow = new MacWindow();
+        if (!pWindow->Init(pTitle, width, height))
+        {
+            SAFEDELETE(pWindow);
+        }
+        
+        return pWindow;
     }
 
     InputDevice* MacApplication::CreateInputDevice(EInputMode inputMode)
     {
         MacInputDevice* pInputDevice = new MacInputDevice();
-        s_Application.AddMessageHandler(pInputDevice);
+        s_pApplication->AddMessageHandler(pInputDevice);
 
         return pInputDevice;
     }
@@ -160,7 +172,8 @@ namespace LambdaEngine
             return false;
         }
         
-        if (!s_Application.Create())
+        s_pApplication = new MacApplication();
+        if (!s_pApplication->Init())
         {
             return false;
         }
@@ -173,7 +186,7 @@ namespace LambdaEngine
     bool MacApplication::Tick()
     {
         bool shouldExit = ProcessMessages();
-        s_Application.ProcessBufferedMessages();
+        s_pApplication->ProcessBufferedMessages();
 
         return shouldExit;
     }
@@ -195,12 +208,12 @@ namespace LambdaEngine
                 }
                 
                 //Buffer event before sending it to the rest of the system
-                s_Application.BufferEvent(event);
+                s_pApplication->BufferEvent(event);
 
                 [NSApp sendEvent:event];
                 [NSApp updateWindows];
                 
-                if (s_Application.m_IsTerminating)
+                if (s_pApplication->m_IsTerminating)
                 {
                     return false;
                 }
@@ -220,7 +233,7 @@ namespace LambdaEngine
 
     bool MacApplication::PostRelease()
     {
-        s_Application.Destroy();
+        SAFEDELETE(s_pApplication);
         return true;
     }
 }

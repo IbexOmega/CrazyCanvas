@@ -9,11 +9,17 @@
 		#ifdef MessageBox
 			#undef MessageBox
 		#endif
+		
 		#ifdef OutputDebugString
 			#undef OutputDebugString
 		#endif
+
 		#ifdef ERROR
 			#undef ERROR
 		#endif
+
+		#ifdef CreateWindow
+			#undef CreateWindow
+		#endif	
 	#endif
 #endif

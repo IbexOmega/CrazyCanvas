@@ -2,16 +2,14 @@
 
 #include "Log/Log.h"
 
-#include "Application/PlatformTime.h"
-#include "Application/PlatformMisc.h"
-#include "Application/PlatformConsole.h"
+#include "Time/API/PlatformTime.h"
+
+#include "Application/API/PlatformMisc.h"
+#include "Application/API/PlatformConsole.h"
 
 #include "Input/API/Input.h"
 
 #include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/IBuffer.h"
-#include "Rendering/Core/API/ITexture.h"
-#include "Rendering/Core/API/ISwapChain.h"
 #include "Rendering/Core/API/ITopLevelAccelerationStructure.h"
 #include "Rendering/Core/API/IBottomLevelAccelerationStructure.h"
 
@@ -19,86 +17,16 @@
 
 #include "Threading/Thread.h"
 
-#include "Resources/ResourceHandler.h"
+#include "Resources/ResourceLoader.h"
+#include "Resources/ResourceManager.h"
+
+#include "Audio/AudioSystem.h"
 
 #include "Rendering/RenderSystem.h"
 
 namespace LambdaEngine
 {
-	void EngineLoop::Run(Game* pGame)
-	{
-		/*BufferDesc bufferDesc = { };
-		bufferDesc.pName			= "VertexBuffer";
-		bufferDesc.MemoryType		= EMemoryType::GPU_MEMORY;
-		bufferDesc.Flags			= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_DST;
-		bufferDesc.SizeInBytes		= 64;
-
-		IGraphicsDevice* pDevice = RenderSystem::GetDevice();
-
-		IBuffer* pBuffer = pDevice->CreateBuffer(bufferDesc);
-        uint64 bufferAddress = pBuffer->GetDeviceAdress();
-
-		TextureDesc textureDesc = { };
-		textureDesc.pName		= "Texture";
-		textureDesc.Type		= ETextureType::TEXTURE_2D;
-		textureDesc.MemoryType	= EMemoryType::GPU_MEMORY;
-		textureDesc.Format		= EFormat::R8G8B8A8_UNORM;
-		textureDesc.Flags		= TEXTURE_FLAG_COPY_DST | TEXTURE_FLAG_SHADER_RESOURCE;
-		textureDesc.Width		= 256;
-		textureDesc.Height		= 256;
-		textureDesc.Depth		= 1;
-		textureDesc.SampleCount	= 1;
-		textureDesc.Miplevels	= 1;
-		textureDesc.ArrayCount	= 1;
-
-		ITexture* pTexture = pDevice->CreateTexture(textureDesc);
-
-        SwapChainDesc swapChainDesc = { };
-        swapChainDesc.pName         = "Main Window";
-        swapChainDesc.BufferCount   = 3;
-        swapChainDesc.Format        = EFormat::B8G8R8A8_UNORM;
-        swapChainDesc.Width         = 0;
-        swapChainDesc.Height        = 0;
-        swapChainDesc.SampleCount   = 1;
-        
-        ISwapChain* pSwapChain = pDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
-
-		TestResourceHandler(pDevice);*/
-
-        bool IsRunning = true;
-        while (IsRunning)
-        {
-            IsRunning = Tick();
-            pGame->Tick();
-        }
-
-        /*SAFERELEASE(pSwapChain);
-		SAFERELEASE(pTexture);
-		SAFERELEASE(pBuffer);*/
-    }
-
-    bool EngineLoop::Tick()
-    {
-		Thread::Join();
-
-        if (!PlatformApplication::Tick())
-        {
-            return false;
-        }
-
-        return true;
-	}
-
-	void EngineLoop::TestResourceHandler(IGraphicsDevice* pGraphicsDevice)
-	{
-		ResourceHandler* pResourceHandler = new ResourceHandler(pGraphicsDevice);
-		GUID_Lambda failedMeshGUID = pResourceHandler->LoadMeshFromFile("THIS/SHOULD/FAIL.obj");
-		GUID_Lambda bunnyMeshGUID = pResourceHandler->LoadMeshFromFile("../Assets/Meshes/bunny.obj");
-
-		SAFEDELETE(pResourceHandler);
-	}
-
-	void EngineLoop::TestRayTracing(IGraphicsDevice* pGraphicsDevice)
+	static void TestRayTracing(IGraphicsDevice* pGraphicsDevice)
 	{
 		LOG_MESSAGE("\n-------Ray Trace Testing Start-------");
 
@@ -120,6 +48,28 @@ namespace LambdaEngine
 		SAFERELEASE(pTLAS);
 
 		LOG_MESSAGE("-------Ray Trace Testing End-------\n");
+	}
+
+	void EngineLoop::Run(Game* pGame)
+	{
+        bool IsRunning = true;
+        while (IsRunning)
+        {
+            IsRunning = Tick();
+            pGame->Tick();
+        }
+    }
+
+    bool EngineLoop::Tick()
+    {
+		Thread::Join();
+
+        if (!PlatformApplication::Tick())
+        {
+            return false;
+        }
+
+        return true;
 	}
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
@@ -159,10 +109,15 @@ namespace LambdaEngine
 			return false;
 		}
 
-		/*if (!RenderSystem::Init())
+		if (!RenderSystem::Init())
 		{
 			return false;
-		}*/
+		}
+
+		if (!AudioSystem::Init())
+		{
+			return false;
+		}
 
 		return true;
 	}
@@ -172,6 +127,11 @@ namespace LambdaEngine
 		Input::Release();
 
 		if (!RenderSystem::Release())
+		{
+			return false;
+		}
+
+		if (!AudioSystem::Release())
 		{
 			return false;
 		}
