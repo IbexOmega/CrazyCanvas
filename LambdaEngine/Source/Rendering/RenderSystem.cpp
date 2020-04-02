@@ -88,6 +88,7 @@ namespace LambdaEngine
 
 		ICommandAllocator* pCommandAllocator = s_pGraphicsDevice->CreateCommandAllocator(EQueueType::QUEUE_GRAPHICS);
 
+		SAFERELEASE(pCommandAllocator);
 		SAFERELEASE(pFence);
 		SAFERELEASE(pSwapChain);
 		SAFERELEASE(pTexture);

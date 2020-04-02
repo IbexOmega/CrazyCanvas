@@ -3,7 +3,6 @@
 #include "Log/Log.h"
 
 #include <tiny_obj_loader.h>
-#include <tiny_obj_loader.cc>
 
 #include <utility>
 
