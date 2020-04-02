@@ -17,6 +17,7 @@ public:
 	virtual void OnClientConnected(LambdaEngine::ClientTCP* client) override;
 	virtual void OnClientDisconnected(LambdaEngine::ClientTCP* client) override;
 	virtual void OnClientFailedConnecting(LambdaEngine::ClientTCP* client) override;
+	virtual void OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet) override;
 
 	// Inherited via Game
 	virtual void Tick() override;

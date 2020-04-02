@@ -9,9 +9,11 @@
 
 #include <sys/socket.h>
 #include <sys/errno.h>
+#include <sys/ioctl.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
 
 #define INVALID_SOCKET  -1
 #define SOCKET_ERROR    -1
@@ -43,6 +45,17 @@ namespace LambdaEngine
 			}
 			return true;
 		}
+
+		virtual bool SetNonBlocking(bool nonBlocking) override
+		{
+			if (ioctl(m_Socket, FIONBIO, &((u_long)nonBlocking) != NO_ERROR)
+			{
+				LOG_ERROR_CRIT("Failed to change blocking mode to [%sBlocking] ", nonBlocking ? "Non " : "");
+				//PrintLastError();
+				return false;
+			}
+			return true;
+		};
 
 		void Close() override
 		{
