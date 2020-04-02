@@ -1,7 +1,11 @@
 #pragma once
-
 #include "LambdaEngine.h"
+
 #include "Math/Math.h"
+
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma (disable : 4324) //Disable alignment warning
+#endif
 
 namespace LambdaEngine
 {

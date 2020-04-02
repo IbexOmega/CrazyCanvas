@@ -38,6 +38,7 @@ namespace LambdaEngine
 			return s_pApplication->m_hInstance;
 		}
 
+	public:
 		static bool PreInit(HINSTANCE hInstance);
 		static bool PostRelease();
 
@@ -61,6 +62,7 @@ namespace LambdaEngine
 	private:
 		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+	public:
 		Win32Window*	m_pWindow	= nullptr;
 		HINSTANCE		m_hInstance = 0;
 		

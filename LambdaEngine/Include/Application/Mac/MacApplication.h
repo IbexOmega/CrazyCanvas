@@ -50,6 +50,7 @@ namespace LambdaEngine
         virtual Window*         GetWindow()         override final;
         virtual const Window*   GetWindow() const   override final;
         
+    public:
         static bool PreInit();
         static bool PostRelease();
         

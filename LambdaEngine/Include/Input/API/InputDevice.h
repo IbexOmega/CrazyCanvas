@@ -49,9 +49,6 @@ namespace LambdaEngine
 	public:
 		DECL_ABSTRACT_CLASS(InputDevice);
 
-		virtual bool Init()		= 0;
-		virtual void Release()	= 0;
-
 		virtual KeyboardState   GetKeyboardState()	{ return m_KeyboardState; }
 		virtual MouseState      GetMouseState()		{ return m_MouseState; }
 

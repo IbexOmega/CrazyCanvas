@@ -8,7 +8,7 @@
 #include "Rendering/Core/API/ISwapChain.h"
 #include "Rendering/Core/API/ICommandAllocator.h"
 
-#include "Application/PlatformApplication.h"
+#include "Application/API/PlatformApplication.h"
 
 namespace LambdaEngine
 {

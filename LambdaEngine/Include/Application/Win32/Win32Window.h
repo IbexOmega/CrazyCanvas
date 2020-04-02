@@ -13,10 +13,9 @@ namespace LambdaEngine
 	{
 	public:
 		Win32Window()	= default;
-		~Win32Window() 	= default;
+		~Win32Window();
 
 		virtual bool Init(const char* pTitle, uint32 width, uint32 height) override;
-		virtual void Release() override;
 
 		virtual void Show() override;
 

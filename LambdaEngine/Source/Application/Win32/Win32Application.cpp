@@ -151,17 +151,15 @@ namespace LambdaEngine
 		}
 		else if (inputType == EInputMode::INPUT_RAW)
 		{
-			pInputDevice = new Win32RawInputDevice();
-		}
-
-		if (pInputDevice)
-		{
-			if (pInputDevice->Init())
+			Win32RawInputDevice* pRawInputDevice = new Win32RawInputDevice();
+			if (!pRawInputDevice->Init())
 			{
-				s_pApplication->AddMessageHandler(pInputDevice);
+				SAFEDELETE(pRawInputDevice);
+				return nullptr;
 			}
 		}
 
+		s_pApplication->AddMessageHandler(pInputDevice);
 		return pInputDevice;
 	}
 

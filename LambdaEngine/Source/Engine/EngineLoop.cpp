@@ -2,9 +2,10 @@
 
 #include "Log/Log.h"
 
-#include "Application/PlatformTime.h"
-#include "Application/PlatformMisc.h"
-#include "Application/PlatformConsole.h"
+#include "Time/API/PlatformTime.h"
+
+#include "Application/API/PlatformMisc.h"
+#include "Application/API/PlatformConsole.h"
 
 #include "Input/API/Input.h"
 
@@ -22,6 +23,39 @@
 
 namespace LambdaEngine
 {
+	static void TestResourceHandler(IGraphicsDevice* pGraphicsDevice)
+	{
+		ResourceHandler* pResourceHandler = new ResourceHandler(pGraphicsDevice);
+		GUID_Lambda failedMeshGUID = pResourceHandler->LoadMeshFromFile("THIS/SHOULD/FAIL.obj");
+		GUID_Lambda bunnyMeshGUID = pResourceHandler->LoadMeshFromFile("../Assets/Meshes/bunny.obj");
+
+		SAFEDELETE(pResourceHandler);
+	}
+
+	static void TestRayTracing(IGraphicsDevice* pGraphicsDevice)
+	{
+		LOG_MESSAGE("\n-------Ray Trace Testing Start-------");
+
+		TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
+		topLevelAccelerationStructureDesc.pName = "Test TLAS";
+		topLevelAccelerationStructureDesc.InitialMaxInstanceCount = 10;
+
+		ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
+
+		BottomLevelAccelerationStructureDesc bottomLevelAccelerationStructureDesc = {};
+		bottomLevelAccelerationStructureDesc.pName = "Test BLAS";
+		bottomLevelAccelerationStructureDesc.MaxTriCount = 12;
+		bottomLevelAccelerationStructureDesc.MaxVertCount = 8;
+		bottomLevelAccelerationStructureDesc.Updateable = false;
+
+		IBottomLevelAccelerationStructure* pBLAS = pGraphicsDevice->CreateBottomLevelAccelerationStructure(bottomLevelAccelerationStructureDesc);
+
+		SAFERELEASE(pBLAS);
+		SAFERELEASE(pTLAS);
+
+		LOG_MESSAGE("-------Ray Trace Testing End-------\n");
+	}
+
 	void EngineLoop::Run(Game* pGame)
 	{
 		TestResourceHandler(RenderSystem::GetDevice());
@@ -44,39 +78,6 @@ namespace LambdaEngine
         }
 
         return true;
-	}
-
-	void EngineLoop::TestResourceHandler(IGraphicsDevice* pGraphicsDevice)
-	{
-		ResourceHandler* pResourceHandler = new ResourceHandler(pGraphicsDevice);
-		GUID_Lambda failedMeshGUID = pResourceHandler->LoadMeshFromFile("THIS/SHOULD/FAIL.obj");
-		GUID_Lambda bunnyMeshGUID = pResourceHandler->LoadMeshFromFile("../Assets/Meshes/bunny.obj");
-
-		SAFEDELETE(pResourceHandler);
-	}
-
-	void EngineLoop::TestRayTracing(IGraphicsDevice* pGraphicsDevice)
-	{
-		LOG_MESSAGE("\n-------Ray Trace Testing Start-------");
-
-		TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
-		topLevelAccelerationStructureDesc.pName = "Test TLAS";
-		topLevelAccelerationStructureDesc.InitialMaxInstanceCount = 10;
-
-		ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
-
-		BottomLevelAccelerationStructureDesc bottomLevelAccelerationStructureDesc = {};
-		bottomLevelAccelerationStructureDesc.pName = "Test BLAS";
-		bottomLevelAccelerationStructureDesc.MaxTriCount = 12;
-		bottomLevelAccelerationStructureDesc.MaxVertCount = 8;
-		bottomLevelAccelerationStructureDesc.Updateable = false;
-
-		IBottomLevelAccelerationStructure* pBLAS = pGraphicsDevice->CreateBottomLevelAccelerationStructure(bottomLevelAccelerationStructureDesc);
-
-		SAFERELEASE(pBLAS);
-		SAFERELEASE(pTLAS);
-
-		LOG_MESSAGE("-------Ray Trace Testing End-------\n");
 	}
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
