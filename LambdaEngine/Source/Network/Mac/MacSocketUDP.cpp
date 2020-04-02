@@ -21,7 +21,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool MacSocketUDP::SendTo(const char* buffer, uint32 bytesToSend, uint32& bytesSent, const std::string& address, uint16 port)
+	bool MacSocketUDP::SendTo(const char* buffer, uint32 bytesToSend, int32& bytesSent, const std::string& address, uint16 port)
 	{
 		struct sockaddr_in socketAddress;
 		socketAddress.sin_family = AF_INET;
@@ -41,7 +41,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool MacSocketUDP::ReceiveFrom(char* buffer, uint32 size, uint32& bytesReceived, std::string& address, uint16& port)
+	bool MacSocketUDP::ReceiveFrom(char* buffer, uint32 size, int32& bytesReceived, std::string& address, uint16& port)
 	{
 		struct sockaddr_in socketAddress;
 		socklen_t socketAddressSize = sizeof(struct sockaddr_in);
@@ -73,7 +73,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool MacSocketUDP::Broadcast(const char* buffer, uint32 bytesToSend, uint32& bytesSent, uint16 port)
+	bool MacSocketUDP::Broadcast(const char* buffer, uint32 bytesToSend, int32& bytesSent, uint16 port)
 	{
 		return SendTo(buffer, bytesToSend, bytesSent, "", port);
 	}

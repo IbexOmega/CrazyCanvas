@@ -5,6 +5,7 @@
 #include "Input/API/Input.h"
 
 #include "Network/API/PlatformSocketFactory.h"
+#include "Network/API/NetworkPacket.h"
 
 Client::Client()
 {
@@ -12,6 +13,7 @@ Client::Client()
     
 	m_pClient = new ClientTCP(this);
 	m_pClient->Connect("127.0.0.1", 4444);
+
 }
 
 Client::~Client()
@@ -31,6 +33,11 @@ void Client::OnClientDisconnected(LambdaEngine::ClientTCP* client)
 void Client::OnClientFailedConnecting(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientFailedConnecting");
+}
+
+void Client::OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)
+{
+
 }
 
 
@@ -53,6 +60,11 @@ void Client::OnKeyUp(LambdaEngine::EKey key)
 
 void Client::Tick()
 {
+	using namespace LambdaEngine;
+	NetworkPacket* packet = new NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
+	packet->WriteString("Hej kompis vad heter du?");
+
+	m_pClient->SendPacket(packet);
 }
 
 namespace LambdaEngine

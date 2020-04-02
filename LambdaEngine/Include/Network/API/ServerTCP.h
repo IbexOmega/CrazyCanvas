@@ -29,6 +29,7 @@ namespace LambdaEngine
 		virtual void OnClientConnected(ClientTCP* client) override;
 		virtual void OnClientDisconnected(ClientTCP* client) override;
 		virtual void OnClientFailedConnecting(ClientTCP* client) override;
+		virtual void OnClientPacketReceived(ClientTCP* client, NetworkPacket* packet) override;
 
 	private:
 		void Run(std::string address, uint16 port);

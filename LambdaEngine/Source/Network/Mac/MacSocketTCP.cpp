@@ -76,7 +76,7 @@ namespace LambdaEngine
 		return new MacSocketTCP(socket, address, port);
     }
 
-    bool MacSocketTCP::Send(const char* buffer, uint32 bytesToSend, uint32& bytesSent)
+    bool MacSocketTCP::Send(const char* buffer, uint32 bytesToSend, int32& bytesSent)
     {
         bytesSent = send(m_Socket, buffer, bytesToSend, 0);
 		if (bytesSent == SOCKET_ERROR)
@@ -88,11 +88,15 @@ namespace LambdaEngine
 		return true;
     }
 
-    bool MacSocketTCP::Receive(char* buffer, uint32 size, uint32& bytesReceived)
+    bool MacSocketTCP::Receive(char* buffer, uint32 size, int32& bytesReceived)
     {
 		bytesReceived = recv(m_Socket, buffer, size, 0);
 		if (bytesReceived == SOCKET_ERROR)
 		{
+			bytesReceived = 0;
+			if (WSAGetLastError() == WSAEWOULDBLOCK && IsNonBlocking())
+				return true;
+
 			LOG_ERROR_CRIT("Failed to receive data");
 			//PrintLastError();
 			return false;

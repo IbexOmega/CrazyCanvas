@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Win32Socket.h"
+#include "Win32SocketBase.h"
 #include "../API/ISocketTCP.h"
 
 namespace LambdaEngine
 {
-	class LAMBDA_API Win32SocketTCP : public Win32Socket<ISocketTCP>
+	class LAMBDA_API Win32SocketTCP : public Win32SocketBase<ISocketTCP>
 	{	
 		friend class Win32SocketFactory;
 
@@ -13,8 +13,8 @@ namespace LambdaEngine
 		virtual bool Connect(const std::string& address, uint16 port) override;
 		virtual bool Listen() override;
 		virtual ISocketTCP* Accept() override;
-		virtual bool Send(const char* buffer, uint32 bytesToSend, uint32& bytesSent) override;
-		virtual bool Receive(char* buffer, uint32 size, uint32& bytesReceived) override;
+		virtual bool Send(const char* buffer, uint32 bytesToSend, int32& bytesSent) override;
+		virtual bool Receive(char* buffer, uint32 size, int32& bytesReceived) override;
 
 		virtual const std::string& GetAddress() override;
 		virtual uint16 GetPort() override;
