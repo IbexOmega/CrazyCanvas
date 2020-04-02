@@ -20,6 +20,7 @@ namespace LambdaEngine
 		
 		bool Connect(const std::string& address, uint16 port);
 		void Disconnect();
+		void SendPacket(const std::string& data);
 		bool IsServerSide() const;
 
 	private:
