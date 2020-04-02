@@ -1,22 +1,22 @@
 #include "Log/Log.h"
 
-#include "Rendering/Core/Vulkan/QueueVK.h"
+#include "Rendering/Core/Vulkan/CommandQueueVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
 {
-	QueueVK::QueueVK(const GraphicsDeviceVK* pDevice)
+	CommandQueueVK::CommandQueueVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice)
 	{
 	}
 
-	QueueVK::~QueueVK()
+	CommandQueueVK::~CommandQueueVK()
 	{
 		m_Queue = VK_NULL_HANDLE;
 	}
 
-	bool QueueVK::Init(uint32 queueFamilyIndex, uint32 index)
+	bool CommandQueueVK::Init(uint32 queueFamilyIndex, uint32 index)
 	{
 		uint32 queuePropertyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(m_pDevice->PhysicalDevice, &queuePropertyCount, nullptr);
@@ -35,7 +35,7 @@ namespace LambdaEngine
 		return true;
 	}
 	
-	bool QueueVK::ExecuteCommandList(const ICommandList* const* ppCommandList, uint32 numCommandLists, const IFence* pFence)
+	bool CommandQueueVK::ExecuteCommandList(const ICommandList* const* ppCommandList, uint32 numCommandLists, const IFence* pFence)
 	{
 		constexpr uint32 MAX_COMMANDBUFFERS = 8;
 		VkCommandBuffer commandBuffers[MAX_COMMANDBUFFERS];
@@ -43,7 +43,7 @@ namespace LambdaEngine
 #ifndef LAMBDA_PRODUCTION
 		if (numCommandLists >= MAX_COMMANDBUFFERS)
 		{
-			LOG_ERROR("[QueueVK]: NumCommandLists(=%u) must be less that %u", numCommandLists, MAX_COMMANDBUFFERS);
+			LOG_ERROR("[CommandQueueVK]: NumCommandLists(=%u) must be less that %u", numCommandLists, MAX_COMMANDBUFFERS);
 			return false;
 		}
 #endif
@@ -81,19 +81,19 @@ namespace LambdaEngine
 		VkResult result = vkQueueSubmit(m_Queue, 1, &submitInfo, VK_NULL_HANDLE);
 		if (result != VK_SUCCESS)
 		{	
-			LOG_VULKAN_ERROR("[QueueVK]: Executing commandlists failed", result);
+			LOG_VULKAN_ERROR("[CommandQueueVK]: Executing commandlists failed", result);
 			return false;
 		}
 
 		return true;
 	}
 	
-	void QueueVK::Wait()
+	void CommandQueueVK::Wait()
 	{
 		vkQueueWaitIdle(m_Queue);
 	}
 	
-	void QueueVK::SetName(const char* pName)
+	void CommandQueueVK::SetName(const char* pName)
 	{
 		m_pDevice->SetVulkanObjectName(pName, (uint64)m_Queue, VK_OBJECT_TYPE_QUEUE);
 	}

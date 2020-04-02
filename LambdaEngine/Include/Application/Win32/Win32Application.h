@@ -20,8 +20,10 @@ namespace LambdaEngine
 	class LAMBDA_API Win32Application : public Application
 	{
 	public:
-		Win32Application()	= default;
+		Win32Application(HINSTANCE hInstance);
 		~Win32Application() = default;
+
+		void BufferMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 
 		virtual void AddMessageHandler(IApplicationMessageHandler* pHandler) 	override;
 		virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) override;
@@ -31,10 +33,10 @@ namespace LambdaEngine
         virtual Window*         GetWindow()         override;
         virtual const Window*   GetWindow() const   override;
 
-		void BufferMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
-
-		bool Create(HINSTANCE hInstance);
-		void Destroy();
+		FORCEINLINE HINSTANCE GetInstanceHandle()
+		{
+			return s_pApplication->m_hInstance;
+		}
 
 		static bool PreInit(HINSTANCE hInstance);
 		static bool PostRelease();
@@ -42,6 +44,7 @@ namespace LambdaEngine
 		static bool Tick();
 		static bool ProcessMessages();
 
+		static Window*		CreateWindow(const char* pTitle, uint32 width, uint32 height);
 		static InputDevice* CreateInputDevice(EInputMode inputType);
 
 		static FORCEINLINE void Terminate()
@@ -50,26 +53,21 @@ namespace LambdaEngine
 			PostQuitMessage(0);
 		}
 
-		static FORCEINLINE HINSTANCE GetInstanceHandle()
+		static FORCEINLINE Win32Application* Get()
 		{
-			return s_Application.m_hInstance;
-		}
-
-		static FORCEINLINE Application* Get()
-		{
-			return &s_Application;
+			return s_pApplication;
 		}
 
 	private:
 		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-		Win32Window m_Window;
-		HINSTANCE	m_hInstance = 0;
+		Win32Window*	m_pWindow	= nullptr;
+		HINSTANCE		m_hInstance = 0;
 		
 		std::vector<Win32Message> 					m_BufferedMessages;
 		std::vector<IApplicationMessageHandler*> 	m_MessageHandlers;
 
-		static Win32Application	s_Application;
+		static Win32Application* s_pApplication;
 	};
 
 	typedef Win32Application PlatformApplication;

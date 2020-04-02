@@ -3,18 +3,18 @@
 
 namespace LambdaEngine
 {
-	struct GraphicsPipelineDesc;
-	struct ComputePipelineDesc;
-	struct RayTracingPipelineDesc;
 	struct BufferDesc;
 	struct TextureDesc;
     struct SwapChainDesc;
+	struct ComputePipelineDesc;
+	struct GraphicsPipelineDesc;
+	struct RayTracingPipelineDesc;
 	struct TopLevelAccelerationStructureDesc;
 	struct BottomLevelAccelerationStructureDesc;
 
     class Window;
 	class IFence;
-	class IQueue;
+	class ICommandQueue;
 	class IFence;
 	class IBuffer;
 	class ITexture;
@@ -57,7 +57,7 @@ namespace LambdaEngine
 		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const = 0;
 		virtual ICommandList*						CreateCommandList(ICommandAllocator* pAllocator, ECommandListType commandListType)			const = 0;
 		virtual ICommandAllocator*					CreateCommandAllocator(EQueueType queueType)												const = 0;
-		virtual IQueue*								CreateQueue(EQueueType queueType)															const = 0;
+		virtual ICommandQueue*								CreateCommandQueue(EQueueType queueType)															const = 0;
 		virtual IFence*								CreateFence(uint64 initalValue)																const = 0;
 	};
 

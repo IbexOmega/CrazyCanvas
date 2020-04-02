@@ -48,17 +48,9 @@ namespace LambdaEngine
 		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const override;
 		virtual ICommandList*						CreateCommandList(ICommandAllocator* pAllocator, ECommandListType commandListType)			const override;
 		virtual ICommandAllocator*					CreateCommandAllocator(EQueueType queueType)												const override;
-		virtual IQueue*								CreateQueue(EQueueType queueType)															const override;
+		virtual ICommandQueue*								CreateCommandQueue(EQueueType queueType)															const override;
 		virtual IFence*								CreateFence(uint64 initalValue)																const override;
 		
-		//EXECUTE
-		void ExecuteGraphics(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages,
-			uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount);
-		void ExecuteCompute(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages,
-			uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount);
-		void ExecuteTransfer(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages,
-			uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount);
-
 		//UTIL
 		void SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type) const;
 

@@ -6,10 +6,10 @@ namespace LambdaEngine
 	class IFence;
 	class ICommandList;
 
-	class IQueue : public IDeviceChild
+	class ICommandQueue : public IDeviceChild
 	{
 	public:
-		DECL_INTERFACE(IQueue);
+		DECL_INTERFACE(ICommandQueue);
 
 		virtual bool ExecuteCommandList(const ICommandList* const* ppCommandList, uint32 numCommandLists, const IFence* pFence) = 0;
 		virtual void Wait() = 0;

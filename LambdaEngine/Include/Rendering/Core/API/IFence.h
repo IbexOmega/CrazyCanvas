@@ -8,8 +8,8 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(IFence);
 
-		virtual void Wait()	const	= 0;
-		virtual void Signal()		= 0;
+		virtual void Wait(uint64 signalValue, uint64 timeOut) const	= 0;
+		virtual void Signal(uint64 signalValue)						= 0;
 
 		virtual uint64 GetValue() const = 0;
 	};

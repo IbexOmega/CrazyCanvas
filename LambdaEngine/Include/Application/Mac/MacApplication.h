@@ -63,7 +63,7 @@ namespace LambdaEngine
         
         FORCEINLINE static Application* Get()
         {
-            return &s_Application;
+            return &s_pApplication;
         }
         
     private:
@@ -74,7 +74,7 @@ namespace LambdaEngine
         std::vector<MacMessage>                     m_BufferedMessages;
         std::vector<IApplicationMessageHandler*>    m_MessageHandlers;
 
-        static MacApplication s_Application;
+        static MacApplication s_pApplication;
     };
 
     typedef MacApplication PlatformApplication;

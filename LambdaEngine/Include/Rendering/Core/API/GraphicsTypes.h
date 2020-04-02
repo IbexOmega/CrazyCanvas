@@ -38,6 +38,7 @@ namespace LambdaEngine
 
 	enum class EQueueType : uint8
 	{
+		QUEUE_UNKNOWN	= 0,
 		QUEUE_COMPUTE	= 1,
 		QUEUE_GRAPHICS	= 2,
 		QUEUE_COPY		= 3,

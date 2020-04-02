@@ -82,7 +82,7 @@ namespace LambdaEngine
             info.pNext      = nullptr;
             info.flags      = 0;
             info.hwnd       = (HWND)pWindow->GetHandle();
-            info.hinstance  = PlatformApplication::GetInstanceHandle();
+            info.hinstance  = PlatformApplication::Get()->GetInstanceHandle();
             if (vkCreateWin32SurfaceKHR(m_pDevice->Instance, &info, nullptr, &m_Surface) != VK_SUCCESS)
             {
                 m_Surface = VK_NULL_HANDLE;

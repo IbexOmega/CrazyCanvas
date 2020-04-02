@@ -16,18 +16,16 @@ namespace LambdaEngine
 		FenceVK(const GraphicsDeviceVK* pDevice);
 		~FenceVK();
 
-		bool Init();
+		bool Init(uint64 signalValue);
 
-		virtual void Wait() const	override;
-		virtual void Signal()		override;
+		virtual void Wait(uint64 signalValue, uint64 timeOut) const	override;
+		virtual void Signal(uint64 signalValue)		override;
 
-		FORCEINLINE virtual uint64 GetValue() const override
-		{
-			return m_FenceValue;
-		}
+		virtual uint64 GetValue() const override;
+
+		virtual void SetName(const char* pName) override;
 		
 	private:
-		VkSemaphore m_Semaphore		= VK_NULL_HANDLE;
-		uint64		m_FenceValue	= 0;
+		VkSemaphore m_Semaphore = VK_NULL_HANDLE;
 	};
 }
