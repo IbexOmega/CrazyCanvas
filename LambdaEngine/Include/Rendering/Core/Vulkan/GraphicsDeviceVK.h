@@ -1,10 +1,13 @@
 #pragma once
-#include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Utilities/StringHash.h"
-#include "Vulkan.h"
-
-#include <optional>
 #include <vector>
+#include <optional>
+
+#include "Utilities/StringHash.h"
+
+#include "Rendering/Core/API/ICommandQueue.h"
+#include "Rendering/Core/API/IGraphicsDevice.h"
+
+#include "Vulkan.h"
 
 namespace LambdaEngine
 {
@@ -47,12 +50,15 @@ namespace LambdaEngine
 		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const override;
 		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const override;
 		virtual ICommandList*						CreateCommandList(ICommandAllocator* pAllocator, ECommandListType commandListType)			const override;
-		virtual ICommandAllocator*					CreateCommandAllocator(EQueueType queueType)												const override;
-		virtual ICommandQueue*								CreateCommandQueue(EQueueType queueType)															const override;
+		virtual ICommandAllocator*					CreateCommandAllocator(ECommandQueueType queueType)											const override;
+		virtual ICommandQueue*						CreateCommandQueue(ECommandQueueType queueType)												const override;
 		virtual IFence*								CreateFence(uint64 initalValue)																const override;
 		
 		//UTIL
-		void SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type) const;
+		void SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type)	const;
+		
+		uint32				GetQueueFamilyIndexFromQueueType(ECommandQueueType type)	const;
+		VkFormatProperties	GetFormatProperties(VkFormat format)						const;
 
 		FORCEINLINE QueueFamilyIndices GetQueueFamilyIndices() const
 		{
@@ -71,11 +77,12 @@ namespace LambdaEngine
 		bool SetEnabledInstanceExtensions();
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
-		int32 RatePhysicalDevice(VkPhysicalDevice physicalDevice);
-		void CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32_t& numOfOptionalExtensionsSupported);
-		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physicalDevice);
-		uint32 GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const std::vector<VkQueueFamilyProperties>& queueFamilies);
-		void SetEnabledDeviceExtensions();
+		int32				RatePhysicalDevice(VkPhysicalDevice physicalDevice);
+		void				CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32_t& numOfOptionalExtensionsSupported);
+		QueueFamilyIndices	FindQueueFamilies(VkPhysicalDevice physicalDevice);
+		
+		uint32	GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const std::vector<VkQueueFamilyProperties>& queueFamilies);
+		void	SetEnabledDeviceExtensions();
 
 		bool IsInstanceExtensionEnabled(const char* pExtensionName);
 		bool IsDeviceExtensionEnabled(const char* pExtensionName);
@@ -83,16 +90,13 @@ namespace LambdaEngine
 		void RegisterInstanceExtensionData();
 		void RegisterDeviceExtensionData();
 
-		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
-			VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-			VkDebugUtilsMessageTypeFlagsEXT messageType,
-			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-			void* pUserData);
+		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
+			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
 	public:
-		VkInstance			Instance;
-		VkPhysicalDevice	PhysicalDevice;
-		VkDevice			Device;
+		VkInstance			Instance		= VK_NULL_HANDLE;
+		VkPhysicalDevice	PhysicalDevice	= VK_NULL_HANDLE;
+		VkDevice			Device			= VK_NULL_HANDLE;
 
 		//Extension Data
 		VkPhysicalDeviceRayTracingPropertiesKHR	RayTracingProperties;
@@ -114,12 +118,7 @@ namespace LambdaEngine
 		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
 
 	private:
-		VkQueue m_GraphicsQueue;
-		VkQueue m_ComputeQueue;
-		VkQueue m_TransferQueue;
-		VkQueue m_PresentQueue;
-
-		VkDebugUtilsMessengerEXT m_DebugMessenger;
+		VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 
 		QueueFamilyIndices		m_DeviceQueueFamilyIndices;
 		VkPhysicalDeviceLimits	m_DeviceLimits;

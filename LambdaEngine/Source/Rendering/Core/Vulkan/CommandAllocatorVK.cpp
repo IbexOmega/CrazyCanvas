@@ -20,26 +20,13 @@ namespace LambdaEngine
 		}
 	}
 	
-	bool CommandAllocatorVK::Init(EQueueType queueType)
+	bool CommandAllocatorVK::Init(ECommandQueueType queueType)
 	{
 		VkCommandPoolCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		createInfo.pNext = nullptr;
-		createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-		QueueFamilyIndices queueFamilyIndices = m_pDevice->GetQueueFamilyIndices();
-		if (queueType == EQueueType::QUEUE_GRAPHICS)
-		{
-			createInfo.queueFamilyIndex = queueFamilyIndices.GraphicsFamily;
-		}
-		else if (queueType == EQueueType::QUEUE_COMPUTE)
-		{
-			createInfo.queueFamilyIndex = queueFamilyIndices.ComputeFamily;
-		}
-		else if (queueType == EQueueType::QUEUE_COPY)
-		{
-			createInfo.queueFamilyIndex = queueFamilyIndices.TransferFamily;
-		}
+		createInfo.sType			= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		createInfo.pNext			= nullptr;
+		createInfo.flags			= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		createInfo.queueFamilyIndex = m_pDevice->GetQueueFamilyIndexFromQueueType(queueType);
 
 		VkResult result = vkCreateCommandPool(m_pDevice->Device, &createInfo, nullptr, &m_CommandPool);
 		if (result != VK_SUCCESS)
@@ -49,6 +36,27 @@ namespace LambdaEngine
 		}
 
 		return true;
+	}
+
+	VkCommandBuffer CommandAllocatorVK::AllocateCommandBuffer(VkCommandBufferLevel level)
+	{
+		VkCommandBufferAllocateInfo allocateInfo = { };
+		allocateInfo.sType				= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocateInfo.pNext				= nullptr;
+		allocateInfo.level				= level;
+		allocateInfo.commandPool		= m_CommandPool;
+		allocateInfo.commandBufferCount = 1;
+
+		VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+
+		VkResult result = vkAllocateCommandBuffers(m_pDevice->Device, &allocateInfo, &commandBuffer);
+		if (result != VK_SUCCESS)
+		{
+			LOG_VULKAN_ERROR("[CommandAllocatorVK]: Failed to allocate commandbuffer", result);
+			commandBuffer = VK_NULL_HANDLE;
+		}
+
+		return commandBuffer;
 	}
 	
 	bool CommandAllocatorVK::Reset()

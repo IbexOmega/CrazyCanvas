@@ -12,6 +12,6 @@ namespace LambdaEngine
 		virtual bool Reset()	= 0;
 
 		virtual uint64		GetHandle() const	= 0;
-		virtual EQueueType	GetType()	const	= 0;
+		virtual ECommandQueueType	GetType()	const	= 0;
 	};
 }

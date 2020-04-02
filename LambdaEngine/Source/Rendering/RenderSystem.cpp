@@ -32,19 +32,19 @@ namespace LambdaEngine
 			return false;
 		}
 
-		s_pGraphicsQueue = s_pGraphicsDevice->CreateCommandQueue(EQueueType::QUEUE_GRAPHICS);
+		s_pGraphicsQueue = s_pGraphicsDevice->CreateCommandQueue(ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
 		if (!s_pGraphicsQueue)
 		{
 			return false;
 		}
 
-		s_pComputeQueue	= s_pGraphicsDevice->CreateCommandQueue(EQueueType::QUEUE_COMPUTE);
+		s_pComputeQueue	= s_pGraphicsDevice->CreateCommandQueue(ECommandQueueType::COMMAND_QUEUE_COMPUTE);
 		if (!s_pComputeQueue)
 		{
 			return false;
 		}
 
-		s_pCopyQueue = s_pGraphicsDevice->CreateCommandQueue(EQueueType::QUEUE_COPY);
+		s_pCopyQueue = s_pGraphicsDevice->CreateCommandQueue(ECommandQueueType::COMMAND_QUEUE_COPY);
 		if (!s_pCopyQueue)
 		{
 			return false;
@@ -87,7 +87,7 @@ namespace LambdaEngine
 		IFence* pFence = s_pGraphicsDevice->CreateFence(0);
         pFence->Signal(1);
             
-		ICommandAllocator* pCommandAllocator = s_pGraphicsDevice->CreateCommandAllocator(EQueueType::QUEUE_GRAPHICS);
+		ICommandAllocator* pCommandAllocator = s_pGraphicsDevice->CreateCommandAllocator(ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
 
 		SAFERELEASE(pCommandAllocator);
 		SAFERELEASE(pFence);

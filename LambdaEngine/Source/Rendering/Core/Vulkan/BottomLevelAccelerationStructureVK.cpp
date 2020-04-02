@@ -81,7 +81,13 @@ namespace LambdaEngine
 			VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
 			accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 			accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-			accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+			
+			if (m_Desc.Updateable)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			}
+			
 			accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 			accelerationStructureBuildInfo.geometryCount				= 1;
 			accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;

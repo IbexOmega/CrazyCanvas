@@ -16,10 +16,11 @@ namespace LambdaEngine
 		CommandAllocatorVK(const GraphicsDeviceVK* pDevice);
 		~CommandAllocatorVK();
 
-		bool Init(EQueueType queueType);
+		bool Init(ECommandQueueType queueType);
 
-		virtual bool Reset() override;
-		
+		VkCommandBuffer AllocateCommandBuffer(VkCommandBufferLevel level);
+
+		virtual bool Reset()					override;
 		virtual void SetName(const char* pName)	override;
 
 		FORCEINLINE virtual uint64 GetHandle() const override
@@ -27,13 +28,13 @@ namespace LambdaEngine
 			return (uint64)m_CommandPool;
 		}
 
-		FORCEINLINE virtual EQueueType GetType() const override
+		FORCEINLINE virtual ECommandQueueType GetType() const override
 		{
 			return m_Type;
 		}
 
 	private:
 		VkCommandPool	m_CommandPool	= VK_NULL_HANDLE;
-		EQueueType		m_Type			= EQueueType::QUEUE_UNKNOWN;
+		ECommandQueueType		m_Type			= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
 	};
 }

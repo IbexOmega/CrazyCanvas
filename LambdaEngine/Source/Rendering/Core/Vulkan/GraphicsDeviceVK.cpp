@@ -75,11 +75,7 @@ namespace LambdaEngine
 		vkDestroyDebugUtilsMessengerEXT(nullptr),
 		vkCreateDebugUtilsMessengerEXT(nullptr),
 		m_DebugMessenger(VK_NULL_HANDLE),
-		m_GraphicsQueue(VK_NULL_HANDLE),
-		m_ComputeQueue(VK_NULL_HANDLE),
-		m_TransferQueue(VK_NULL_HANDLE),
-		m_PresentQueue(VK_NULL_HANDLE),
-		m_DeviceLimits({})
+		m_DeviceLimits()
 	{
 	}
 
@@ -204,7 +200,7 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	ICommandAllocator* GraphicsDeviceVK::CreateCommandAllocator(EQueueType queueType) const
+	ICommandAllocator* GraphicsDeviceVK::CreateCommandAllocator(ECommandQueueType queueType) const
 	{
 		CommandAllocatorVK* pCommandAllocator = new CommandAllocatorVK(this);
 		if (!pCommandAllocator->Init(queueType))
@@ -216,18 +212,18 @@ namespace LambdaEngine
 		return pCommandAllocator;
 	}
 
-	ICommandQueue* GraphicsDeviceVK::CreateCommandQueue(EQueueType queueType) const
+	ICommandQueue* GraphicsDeviceVK::CreateCommandQueue(ECommandQueueType queueType) const
 	{
 		int32 queueFamilyIndex = 0;
-		if (queueType == EQueueType::QUEUE_GRAPHICS)
+		if (queueType == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
 		{
 			queueFamilyIndex = m_DeviceQueueFamilyIndices.GraphicsFamily;
 		}
-		else if (queueType == EQueueType::QUEUE_COMPUTE)
+		else if (queueType == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
 		{
 			queueFamilyIndex = m_DeviceQueueFamilyIndices.ComputeFamily;
 		}
-		else if (queueType == EQueueType::QUEUE_COPY)
+		else if (queueType == ECommandQueueType::COMMAND_QUEUE_COPY)
 		{
 			queueFamilyIndex = m_DeviceQueueFamilyIndices.TransferFamily;
 		}
@@ -314,6 +310,38 @@ namespace LambdaEngine
 				vkSetDebugUtilsObjectNameEXT(Device, &info);
 			}
 		}
+	}
+
+	uint32 GraphicsDeviceVK::GetQueueFamilyIndexFromQueueType(ECommandQueueType type) const
+	{
+		if (type == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+		{
+			return m_DeviceQueueFamilyIndices.GraphicsFamily;
+		}
+		else if (type == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+		{
+			return m_DeviceQueueFamilyIndices.ComputeFamily;
+		}
+		else if (type == ECommandQueueType::COMMAND_QUEUE_COPY)
+		{
+			return m_DeviceQueueFamilyIndices.TransferFamily;
+		}
+		else if (type == ECommandQueueType::COMMAND_QUEUE_IGNORE)
+		{
+			return VK_QUEUE_FAMILY_IGNORED;
+		}
+		else
+		{
+			return 0xffffffff;
+		}
+	}
+
+	VkFormatProperties GraphicsDeviceVK::GetFormatProperties(VkFormat format) const
+	{
+		VkFormatProperties properties = {};
+		vkGetPhysicalDeviceFormatProperties(PhysicalDevice, format, &properties);
+
+		return properties;
 	}
 
 	bool GraphicsDeviceVK::InitInstance(const GraphicsDeviceDesc& desc)
