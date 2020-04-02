@@ -99,6 +99,35 @@ workspace "LambdaEngine"
         }
     filter {}
 
+	-- Dependencies
+	group "Dependencies"
+		-- tinyobjloader Project
+		project "tinyobjloader"
+			kind "StaticLib"
+			language "C++"
+			cppdialect "C++17"
+			systemversion "latest"
+			location "Dependencies/tinyobjloader"
+			
+			filter "configurations:Debug"
+				symbols "on"
+				runtime "Debug"
+				optimize "Full"
+			filter{}
+			
+			-- Targets
+			targetdir ("Dependencies/tinyobjloader/bin/")
+			objdir ("Dependencies/tinyobjloader/bin-int/")
+					
+			-- Files
+			files 
+			{
+				"Dependencies/tinyobjloader/tiny_obj_loader.h",
+				"Dependencies/tinyobjloader/tiny_obj_loader.cc",
+			}
+		project "*"
+	group "*"
+
     -- Engine Project
     project "LambdaEngine"
         language "C++"
@@ -189,6 +218,11 @@ workspace "LambdaEngine"
 			"Dependencies/tinyobjloader",
 		}
         
+		links 
+		{ 
+			"tinyobjloader",
+		}
+		
 		-- Win32
 		filter { "system:windows" }
 			links
@@ -373,5 +407,4 @@ workspace "LambdaEngine"
 		{ 
 			"LambdaEngine",
 		}
-
     project "*"

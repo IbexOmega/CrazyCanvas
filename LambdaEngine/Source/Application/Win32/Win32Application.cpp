@@ -9,7 +9,12 @@
 
 namespace LambdaEngine
 {
-	Win32Application Win32Application::s_Application;
+	Win32Application* Win32Application::s_pApplication = nullptr;
+
+	Win32Application::Win32Application(HINSTANCE hInstance)
+		: m_hInstance(hInstance)
+	{
+	}
 
 	void Win32Application::AddMessageHandler(IApplicationMessageHandler* pHandler)
 	{
@@ -42,34 +47,19 @@ namespace LambdaEngine
 
 	Window* Win32Application::GetWindow()
 	{
-		return &m_Window;
+		return m_pWindow;
 	}
 
 	const Window* Win32Application::GetWindow() const
 	{
-		return &m_Window;
-	}
-
-	bool Win32Application::Create(HINSTANCE hInstance)
-	{
-		m_hInstance = hInstance;
-		if (!m_Window.Init(800, 600))
-		{
-			return false;
-		}
-
-		m_Window.Show();
-		return true;
-	}
-
-	void Win32Application::Destroy()
-	{
-		m_Window.Release();
+		return m_pWindow;
 	}
 
 	bool Win32Application::PreInit(HINSTANCE hInstance)
 	{
 		ASSERT(hInstance != NULL);
+
+		s_pApplication = new Win32Application(hInstance);
 
 		WNDCLASS wc = { };
 		ZERO_MEMORY(&wc, sizeof(WNDCLASS));
@@ -91,14 +81,14 @@ namespace LambdaEngine
 			return false;
 		}
 
-		return s_Application.Create(hInstance);
+		s_pApplication->m_pWindow = (Win32Window*)Win32Application::CreateWindow("Lambda Game Engine", 1440, 900);
+		s_pApplication->m_pWindow->Show();
+		return true;
 	}
 	
 	bool Win32Application::PostRelease()
 	{
-		s_Application.Destroy();
-
-		if (!::UnregisterClass(WINDOW_CLASS, GetInstanceHandle()))
+		if (!::UnregisterClass(WINDOW_CLASS, s_pApplication->GetInstanceHandle()))
 		{
 			//TODO: Log this
 			return false;
@@ -110,7 +100,7 @@ namespace LambdaEngine
 	bool Win32Application::Tick()
 	{
 		bool result = ProcessMessages();
-		s_Application.ProcessBufferedMessages();
+		s_pApplication->ProcessBufferedMessages();
 
 		return result;
 	}
@@ -119,8 +109,7 @@ namespace LambdaEngine
 	{
 		for (Win32Message& message : m_BufferedMessages)
 		{
-			std::vector<IApplicationMessageHandler*>& handlers = s_Application.m_MessageHandlers;
-			for (IApplicationMessageHandler* pHandler : handlers)
+			for (IApplicationMessageHandler* pHandler : s_pApplication->m_MessageHandlers)
 			{
 				pHandler->MessageProc(message.hWnd, message.uMessage, message.wParam, message.lParam);
 			}
@@ -146,6 +135,13 @@ namespace LambdaEngine
 		return true;
 	}
 
+	Window* Win32Application::CreateWindow(const char* pTitle, uint32 width, uint32 height)
+	{
+		Win32Window* pWindow = new Win32Window();
+		pWindow->Init(pTitle, width, height);
+		return pWindow;
+	}
+
 	InputDevice* Win32Application::CreateInputDevice(EInputMode inputType)
 	{
 		InputDevice* pInputDevice = nullptr;
@@ -162,7 +158,7 @@ namespace LambdaEngine
 		{
 			if (pInputDevice->Init())
 			{
-				s_Application.AddMessageHandler(pInputDevice);
+				s_pApplication->AddMessageHandler(pInputDevice);
 			}
 		}
 
@@ -176,7 +172,7 @@ namespace LambdaEngine
 			Terminate();
 		}
 
-		s_Application.BufferMessage(hWnd, uMessage, wParam, lParam);
+		s_pApplication->BufferMessage(hWnd, uMessage, wParam, lParam);
 		return ::DefWindowProc(hWnd, uMessage, wParam, lParam);
 	}
 

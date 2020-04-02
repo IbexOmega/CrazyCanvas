@@ -1,8 +1,9 @@
 #pragma once
-
 #include "Defines.h"
+
 #include <vector>
 #include <thread>
+#include <functional>
 
 namespace LambdaEngine
 {

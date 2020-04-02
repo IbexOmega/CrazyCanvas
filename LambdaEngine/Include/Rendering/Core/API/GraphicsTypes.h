@@ -36,10 +36,24 @@ namespace LambdaEngine
 		MISS_SHADER			= (1 << 11),
 	};
 
+	enum class EQueueType : uint8
+	{
+		QUEUE_UNKNOWN	= 0,
+		QUEUE_COMPUTE	= 1,
+		QUEUE_GRAPHICS	= 2,
+		QUEUE_COPY		= 3,
+	};
+
+	enum class ECommandListType : uint8
+	{
+		COMMANDLIST_PRIMARY		= 1,
+		COMMANDLIST_SECONDARY	= 2
+	};
+
 	enum class EShaderLang : uint32
 	{
-		NONE				= 0,
-		SPIRV				= (1 << 0),
+		NONE	= 0,
+		SPIRV	= (1 << 0),
 	}; 
 
 	union ShaderConstant
@@ -59,6 +73,24 @@ namespace LambdaEngine
 		std::vector<ShaderConstant> Constants;
 	};
 
+	struct Viewport
+	{
+		float MinDepth	= 0.0f;
+		float MaxDepth	= 0.0f;
+		float Width		= 0.0f;
+		float Height	= 0.0f;
+		float TopX		= 0.0f;
+		float TopY		= 0.0f;
+	};
+
+	struct ScissorRect
+	{
+		uint32 Width	= 0;
+		uint32 Height	= 0;
+		uint32 TopX		= 0;
+		uint32 TopY		= 0;
+	};
+	
 	struct GraphicsObject
 	{
 		GUID_Lambda Mesh;

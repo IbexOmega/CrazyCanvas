@@ -12,6 +12,9 @@
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
 #include "Rendering/Core/Vulkan/TopLevelAccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/BottomLevelAccelerationStructureVK.h"
+#include "Rendering/Core/Vulkan/CommandQueueVK.h"
+#include "Rendering/Core/Vulkan/FenceVK.h"
+#include "Rendering/Core/Vulkan/CommandAllocatorVK.h"
 
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
@@ -136,16 +139,6 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	IFence* GraphicsDeviceVK::CreateFence() const
-	{
-		return nullptr;
-	}
-
-	ICommandList* GraphicsDeviceVK::CreateCommandList() const
-	{
-		return nullptr;
-	}
-
 	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) const
 	{
 		GraphicsPipelineStateVK* pPipelineState = new GraphicsPipelineStateVK(this);
@@ -206,6 +199,65 @@ namespace LambdaEngine
 		return pBLAS;
 	}
 
+	ICommandList* GraphicsDeviceVK::CreateCommandList(ICommandAllocator* pAllocator, ECommandListType commandListType) const
+	{
+		return nullptr;
+	}
+
+	ICommandAllocator* GraphicsDeviceVK::CreateCommandAllocator(EQueueType queueType) const
+	{
+		CommandAllocatorVK* pCommandAllocator = new CommandAllocatorVK(this);
+		if (!pCommandAllocator->Init(queueType))
+		{
+			pCommandAllocator->Release();
+			return nullptr;
+		}
+
+		return pCommandAllocator;
+	}
+
+	ICommandQueue* GraphicsDeviceVK::CreateCommandQueue(EQueueType queueType) const
+	{
+		int32 queueFamilyIndex = 0;
+		if (queueType == EQueueType::QUEUE_GRAPHICS)
+		{
+			queueFamilyIndex = m_DeviceQueueFamilyIndices.GraphicsFamily;
+		}
+		else if (queueType == EQueueType::QUEUE_COMPUTE)
+		{
+			queueFamilyIndex = m_DeviceQueueFamilyIndices.ComputeFamily;
+		}
+		else if (queueType == EQueueType::QUEUE_COPY)
+		{
+			queueFamilyIndex = m_DeviceQueueFamilyIndices.TransferFamily;
+		}
+		else
+		{
+			return nullptr;
+		}
+
+		CommandQueueVK* pQueue = new CommandQueueVK(this);
+		if (!pQueue->Init(queueFamilyIndex, 0))
+		{
+			pQueue->Release();
+			return nullptr;
+		}
+
+		return pQueue;
+	}
+
+	IFence* GraphicsDeviceVK::CreateFence(uint64 initalValue) const
+	{
+		FenceVK* pFence = new FenceVK(this);
+		if (pFence->Init(initalValue))
+		{
+			pFence->Release();
+			return nullptr;
+		}
+
+		return pFence;
+	}
+
 	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc& desc) const
 	{
 		BufferVK* pBuffer = new BufferVK(this);
@@ -246,21 +298,6 @@ namespace LambdaEngine
         
         return pSwapChain;
     }
-
-	void GraphicsDeviceVK::ExecuteGraphics(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount)
-	{
-		LOG_ERROR("Call to unimplemented function GraphicsDeviceVK::ExecuteGraphics");
-	}
-
-	void GraphicsDeviceVK::ExecuteCompute(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount)
-	{
-		LOG_ERROR("Call to unimplemented function GraphicsDeviceVK::ExecuteCompute");
-	}
-
-	void GraphicsDeviceVK::ExecuteTransfer(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount)
-	{
-		LOG_ERROR("Call to unimplemented function GraphicsDeviceVK::ExecuteTransfer");
-	}
 
 	void GraphicsDeviceVK::SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type) const
 	{
@@ -341,9 +378,10 @@ namespace LambdaEngine
 			VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
 			PopulateDebugMessengerCreateInfo(createInfo);
 
-			if (vkCreateDebugUtilsMessengerEXT(Instance, &createInfo, nullptr, &m_DebugMessenger))
+			result = vkCreateDebugUtilsMessengerEXT(Instance, &createInfo, nullptr, &m_DebugMessenger);
+			if (result != VK_SUCCESS)
 			{
-				LOG_ERROR("[GraphicsDeviceVK]: Failed to set up Debug Messenger!");
+				LOG_VULKAN_ERROR("[GraphicsDeviceVK]: Failed to set up Debug Messenger!", result);
 				return false;
 			}
 		}
@@ -374,7 +412,6 @@ namespace LambdaEngine
 	{
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(Instance, &deviceCount, nullptr);
-
 		if (deviceCount == 0)
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Presentation is not supported by the selected physicaldevice");
@@ -434,12 +471,14 @@ namespace LambdaEngine
 		}
 
 		VkPhysicalDeviceVulkan12Features deviceFeatures12 = {};
-		deviceFeatures12.sType							= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-		deviceFeatures12.bufferDeviceAddress			= true;
+		deviceFeatures12.sType					= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		deviceFeatures12.pNext					= nullptr;
+		deviceFeatures12.bufferDeviceAddress	= true;
+		deviceFeatures12.timelineSemaphore		= true;
 
 		VkPhysicalDeviceVulkan11Features deviceFeatures11 = {};
-		deviceFeatures11.sType							= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-		deviceFeatures11.pNext							= &deviceFeatures12;
+		deviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+		deviceFeatures11.pNext	= &deviceFeatures12;
 
 		VkPhysicalDeviceFeatures deviceFeatures = {};
 		deviceFeatures.fillModeNonSolid					= true;
@@ -447,17 +486,16 @@ namespace LambdaEngine
 		deviceFeatures.fragmentStoresAndAtomics			= true;
 
 		VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-		deviceFeatures2.sType							= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-		deviceFeatures2.pNext							= &deviceFeatures11;
-		deviceFeatures2.features						= deviceFeatures;
+		deviceFeatures2.sType	 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		deviceFeatures2.pNext	 = &deviceFeatures11;
+		deviceFeatures2.features = deviceFeatures;
 
 		VkDeviceCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-		createInfo.pNext = &deviceFeatures2;
-
-		createInfo.queueCreateInfoCount = (uint32)queueCreateInfos.size();
-		createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
+		createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+		createInfo.pNext					= &deviceFeatures2;
+		createInfo.flags					= 0;
+		createInfo.queueCreateInfoCount		= (uint32)queueCreateInfos.size();
+		createInfo.pQueueCreateInfos		= queueCreateInfos.data();
 		createInfo.enabledExtensionCount    = (uint32)m_EnabledDeviceExtensions.size();
 		createInfo.ppEnabledExtensionNames  = m_EnabledDeviceExtensions.data();
 
@@ -471,22 +509,12 @@ namespace LambdaEngine
 			createInfo.enabledLayerCount = 0;
 		}
 
-		if (vkCreateDevice(PhysicalDevice, &createInfo, nullptr, &Device) != VK_SUCCESS)
+		VkResult result = vkCreateDevice(PhysicalDevice, &createInfo, nullptr, &Device);
+		if (result != VK_SUCCESS)
 		{
-			LOG_ERROR("[GraphicsDeviceVK]: Failed to create logical device!");
+			LOG_VULKAN_ERROR("[GraphicsDeviceVK]: Failed to create logical device!", result);
 			return false;
 		}
-
-		//Retrive queues
-		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.GraphicsFamily, 0, &m_GraphicsQueue);
-		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.PresentFamily, 0, &m_PresentQueue);
-		SetVulkanObjectName("GraphicsQueue", (uint64_t)m_GraphicsQueue, VK_OBJECT_TYPE_QUEUE);
-
-		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.ComputeFamily, 0, &m_ComputeQueue);
-		SetVulkanObjectName("ComputeQueue", (uint64_t)m_ComputeQueue, VK_OBJECT_TYPE_QUEUE);
-
-		vkGetDeviceQueue(Device, m_DeviceQueueFamilyIndices.TransferFamily, 0, &m_TransferQueue);
-		SetVulkanObjectName("TransferQueue", (uint64_t)m_TransferQueue, VK_OBJECT_TYPE_QUEUE);
 
 		return true;
 	}

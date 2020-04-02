@@ -9,9 +9,6 @@
 #include "Input/API/Input.h"
 
 #include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/IBuffer.h"
-#include "Rendering/Core/API/ITexture.h"
-#include "Rendering/Core/API/ISwapChain.h"
 #include "Rendering/Core/API/ITopLevelAccelerationStructure.h"
 #include "Rendering/Core/API/IBottomLevelAccelerationStructure.h"
 
@@ -28,55 +25,14 @@ namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
-		/*BufferDesc bufferDesc = { };
-		bufferDesc.pName			= "VertexBuffer";
-		bufferDesc.MemoryType		= EMemoryType::GPU_MEMORY;
-		bufferDesc.Flags			= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_DST;
-		bufferDesc.SizeInBytes		= 64;
-
-		IGraphicsDevice* pDevice = RenderSystem::GetDevice();
-		ResourceLoader::SetGraphicsDevice(pDevice);
-
-		IBuffer* pBuffer = pDevice->CreateBuffer(bufferDesc);
-        uint64 bufferAddress = pBuffer->GetDeviceAdress();
-
-		TextureDesc textureDesc = { };
-		textureDesc.pName		= "Texture";
-		textureDesc.Type		= ETextureType::TEXTURE_2D;
-		textureDesc.MemoryType	= EMemoryType::GPU_MEMORY;
-		textureDesc.Format		= EFormat::R8G8B8A8_UNORM;
-		textureDesc.Flags		= TEXTURE_FLAG_COPY_DST | TEXTURE_FLAG_SHADER_RESOURCE;
-		textureDesc.Width		= 256;
-		textureDesc.Height		= 256;
-		textureDesc.Depth		= 1;
-		textureDesc.SampleCount	= 1;
-		textureDesc.Miplevels	= 1;
-		textureDesc.ArrayCount	= 1;
-
-		ITexture* pTexture = pDevice->CreateTexture(textureDesc);
-
-        SwapChainDesc swapChainDesc = { };
-        swapChainDesc.pName         = "Main Window";
-        swapChainDesc.BufferCount   = 3;
-        swapChainDesc.Format        = EFormat::B8G8R8A8_UNORM;
-        swapChainDesc.Width         = 0;
-        swapChainDesc.Height        = 0;
-        swapChainDesc.SampleCount   = 1;
-        
-        ISwapChain* pSwapChain = pDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
-
-		TestResourceHandler(pDevice);*/
-
+		TestResourceHandler(RenderSystem::GetDevice());
+		
         bool IsRunning = true;
         while (IsRunning)
         {
             IsRunning = Tick();
             pGame->Tick();
         }
-
-        /*SAFERELEASE(pSwapChain);
-		SAFERELEASE(pTexture);
-		SAFERELEASE(pBuffer);*/
     }
 
     bool EngineLoop::Tick()
@@ -173,10 +129,10 @@ namespace LambdaEngine
 			return false;
 		}
 
-		/*if (!RenderSystem::Init())
+		if (!RenderSystem::Init())
 		{
 			return false;
-		}*/
+		}
 
 		return true;
 	}
