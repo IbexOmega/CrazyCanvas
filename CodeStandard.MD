@@ -1,7 +1,7 @@
 ## Code Standard
 
 #### Contents
-* If-Statements
+* [If Statements](#if-statements)
 * Loops
 * Templates
 * Classes
@@ -14,7 +14,7 @@
 * Naming Conventions
 * Platform Specific Code
 
-### If-Statements
+### If Statements
 * If statements should be written using the following form:
 
 ```
