@@ -2,6 +2,7 @@
 #include "Log/Log.h"
 
 #include "Application/Mac/MacWindow.h"
+#include "Application/Mac/MacApplication.h"
 #include "Application/Mac/CocoaWindow.h"
 #include "Application/Mac/CocoaWindowDelegate.h"
 #include "Application/Mac/CocoaContentView.h"
@@ -53,6 +54,14 @@ namespace LambdaEngine
     void MacWindow::Show()
     {
         [m_pWindow makeKeyAndOrderFront:m_pWindow];
+    }
+
+    void MacWindow::SetTitle(const char* pTitle)
+    {
+        NSString* title = [NSString stringWithUTF8String:pTitle];
+        [m_pWindow setTitle:title];
+        
+        MacApplication::ProcessMessages();
     }
 }
 

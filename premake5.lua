@@ -4,7 +4,7 @@ workspace "LambdaEngine"
     warnings "extra"    
 
     -- Set output dir
-    outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
+    outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}-%{cfg.platform}"
 
     -- Platform
 	platforms
@@ -255,33 +255,48 @@ workspace "LambdaEngine"
 			libdirs
 			{
 				"/usr/local/lib",
+				"../FMODProgrammersAPI/api/core/lib",
 			}
 			
 			sysincludedirs
 			{
 				"/usr/local/include",
+				"../FMODProgrammersAPI/api/core/inc",
 			}
 			
 			links 
 			{
                 "vulkan.1",
 				"vulkan.1.2.131",
+				"fmodL",
                 "Cocoa.framework",
                 "MetalKit.framework",
 			}
 		filter {}
 
+		-- Copy .dylib into correct folder on mac builds 
+		-- filter { "system:macosx"}
+		--	postbuildcommands
+		--	{
+		--		("{COPY} \"../FMODProgrammersAPI/api/core/lib/libfmodL.dylib\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+		--		("{COPY} \"../FMODProgrammersAPI/api/core/lib/libfmodL.dylib\" \"../Build/bin/" .. outputdir .. "/Client/\""),
+		--		("{COPY} \"../FMODProgrammersAPI/api/core/lib/libfmodL.dylib\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+		--	}
+
         -- Copy DLL into correct folder for windows builds
+		filter { "system:windows"}
+			postbuildcommands
+			{
+				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+			}
         filter { "system:windows", "platforms:x64_SharedLib" }
 			postbuildcommands
 			{
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Client/\""),
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\""),
-				
-				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
 			}
 		filter {}
     project "*"

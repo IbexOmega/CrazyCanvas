@@ -121,8 +121,8 @@ namespace LambdaEngine
 		nr++;
 		std::string str;
 		packet->ReadString(str);
-		//LOG_MESSAGE(str.c_str());
-		//LOG_MESSAGE("%d", nr);
+		LOG_MESSAGE(str.c_str());
+		LOG_MESSAGE("%d", nr);
 	}
 
 	ISocketTCP* ServerTCP::CreateServerSocket(const std::string& address, uint16 port)

@@ -44,12 +44,13 @@ namespace LambdaEngine
 				LOG_ERROR_CRIT("Failed to change blocking mode to [%sBlocking] ", nonBlocking ? "Non " : "");
 				PrintLastError();
 				return false;
-			}	
+			}
+			
 			m_NonBlocking = nonBlocking;
 			return true;
 		};
 
-		virtual bool IsNonBlocking() override
+		virtual bool IsNonBlocking() const override
 		{
 			return m_NonBlocking;
 		};
@@ -70,7 +71,7 @@ namespace LambdaEngine
 			return true;
 		}
 
-		virtual bool IsClosed() override
+		virtual bool IsClosed() const override
 		{
 			return m_Closed;
 		};
@@ -81,7 +82,6 @@ namespace LambdaEngine
 			m_NonBlocking(false),
 			m_Closed(false)
 		{
-			
 		}
 
 		~Win32SocketBase()
