@@ -24,7 +24,6 @@ namespace LambdaEngine
         m_Address(address),
         m_Port(port)
     {
-        
     }
 
     bool MacSocketTCP::Connect(const std::string& address, uint16 port)
@@ -42,6 +41,7 @@ namespace LambdaEngine
 			//PrintLastError();
 			return false;
 		}
+        
 		return true;
     }
 
@@ -94,8 +94,10 @@ namespace LambdaEngine
 		if (bytesReceived == SOCKET_ERROR)
 		{
 			bytesReceived = 0;
-			if (WSAGetLastError() == WSAEWOULDBLOCK && IsNonBlocking())
-				return true;
+			//if (WSAGetLastError() == WSAEWOULDBLOCK && IsNonBlocking())
+            {
+                return true;
+            }
 
 			LOG_ERROR_CRIT("Failed to receive data");
 			//PrintLastError();

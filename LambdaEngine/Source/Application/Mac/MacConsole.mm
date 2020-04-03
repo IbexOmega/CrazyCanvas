@@ -2,7 +2,7 @@
 #include "Application/Mac/MacConsole.h"
 #include "Application/Mac/CocoaConsoleWindow.h"
 
-#include "Application/PlatformMisc.h"
+#include "Application/API/PlatformMisc.h"
 
 namespace LambdaEngine
 {

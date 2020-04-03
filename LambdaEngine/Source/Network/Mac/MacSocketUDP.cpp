@@ -10,7 +10,8 @@
 
 namespace LambdaEngine
 {
-	MacSocketUDP::MacSocketUDP() : MacSocketBase<ISocketUDP>()
+	MacSocketUDP::MacSocketUDP()
+        : MacSocketBase<ISocketUDP>()
 	{
 		m_Socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -65,7 +66,6 @@ namespace LambdaEngine
 		static const int broadcast = 1;
 		if (setsockopt(m_Socket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) == SOCKET_ERROR)
 		{
-                            int result = errno;
 			LOG_ERROR_CRIT("Failed to enable Broadcast");
 			//PrintLastError();
 			return false;

@@ -20,7 +20,7 @@ namespace LambdaEngine
 
 		if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, filepath.c_str(), pDir, true, false))
 		{
-			LOG_WARNING("[ResourceDevice]: Failed to load scene '%s'. Warning: %s Error: %s", filepath, warn.c_str(), err.c_str());
+            LOG_WARNING("[ResourceDevice]: Failed to load scene '%s'. Warning: %s Error: %s", filepath.c_str(), warn.c_str(), err.c_str());
 			return false;
 		}
 

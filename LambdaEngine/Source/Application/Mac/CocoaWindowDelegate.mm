@@ -1,6 +1,6 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #ifdef __OBJC__
-#include "Application/PlatformMisc.h"
+#include "Application/API/PlatformMisc.h"
 
 #include "Application/Mac/MacApplication.h"
 #include "Application/Mac/CocoaWindowDelegate.h"

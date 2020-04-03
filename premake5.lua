@@ -255,21 +255,33 @@ workspace "LambdaEngine"
 			libdirs
 			{
 				"/usr/local/lib",
+				"../FMODProgrammersAPI/api/core/lib",
 			}
 			
 			sysincludedirs
 			{
 				"/usr/local/include",
+				"../FMODProgrammersAPI/api/core/inc",
 			}
 			
 			links 
 			{
                 "vulkan.1",
 				"vulkan.1.2.131",
+				"fmodL",
                 "Cocoa.framework",
                 "MetalKit.framework",
 			}
 		filter {}
+
+		-- Copy .dylib into correct folder on mac builds 
+		-- filter { "system:macosx"}
+		--	postbuildcommands
+		--	{
+		--		("{COPY} \"../FMODProgrammersAPI/api/core/lib/libfmodL.dylib\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+		--		("{COPY} \"../FMODProgrammersAPI/api/core/lib/libfmodL.dylib\" \"../Build/bin/" .. outputdir .. "/Client/\""),
+		--		("{COPY} \"../FMODProgrammersAPI/api/core/lib/libfmodL.dylib\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+		--	}
 
         -- Copy DLL into correct folder for windows builds
 		filter { "system:windows"}

@@ -14,7 +14,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-
 #define INVALID_SOCKET  -1
 #define SOCKET_ERROR    -1
 
@@ -30,13 +29,16 @@ namespace LambdaEngine
 			socketAddress.sin_family = AF_INET;
 
 			if (!address.empty())
-				inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
+            {
+                inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
+            }
 			else
-				socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+            {
+                socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+            }
 
 			socketAddress.sin_port = htons(port);
 
-            
             if (bind(m_Socket, (struct sockaddr*)&socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
             {
 				LOG_ERROR_CRIT("Failed to bind to %s:%d", !address.empty() ? address.c_str() : "ANY", port);
@@ -48,19 +50,46 @@ namespace LambdaEngine
 
 		virtual bool SetNonBlocking(bool nonBlocking) override
 		{
-			if (ioctl(m_Socket, FIONBIO, &((u_long)nonBlocking) != NO_ERROR)
+            u_long tempNonBlocking = (u_long)nonBlocking;
+			if (ioctl(m_Socket, FIONBIO, &tempNonBlocking) == SOCKET_ERROR)
 			{
 				LOG_ERROR_CRIT("Failed to change blocking mode to [%sBlocking] ", nonBlocking ? "Non " : "");
 				//PrintLastError();
 				return false;
 			}
-			return true;
+            
+            m_NonBlocking = nonBlocking;
+            return true;
 		};
 
-		void Close() override
+        virtual bool IsNonBlocking() const override
+        {
+            return m_NonBlocking;
+        }
+                
+		virtual bool Close() override
 		{
-			close(m_Socket);
+            if (m_Closed)
+            {
+                return true;
+            }
+
+            m_Closed = true;
+
+            if (close(m_Socket) == SOCKET_ERROR)
+            {
+                LOG_ERROR_CRIT("Failed to close socket");
+                //PrintLastError();
+                return false;
+            }
+                
+            return true;
 		}
+                
+        virtual bool IsClosed() const override
+        {
+            return m_Closed;
+        }
 
 	protected:
         MacSocketBase(int32 socket = INVALID_SOCKET)
@@ -74,7 +103,9 @@ namespace LambdaEngine
         }
 
 	protected:
-		int32 m_Socket;
+		int32   m_Socket      = INVALID_SOCKET;
+        bool    m_NonBlocking = false;
+        bool    m_Closed      = false;
 	};
 }
 
