@@ -2,17 +2,17 @@
 
 #### Contents
 * [If Statements](#if-statements)
-* Loops
-* Templates
-* Classes
-* Interfaces
-* Structs
-* Listeners vs Callbacks
-* Encapsulation
-* Virtual 
-* Documentation
-* Naming Conventions
-* Platform Specific Code
+* [Loops](#loops)
+* [Templates](#templates)
+* [Classes](#classes)
+* [Interfaces](#interfaces)
+* [Structs](#structs)
+* [Listeners vs Callbacks](#listeners-vs-callbacks)
+* [Encapsulation](#encapsulation)
+* [Virtual](#virtual)
+* [Documentation](#documentation)
+* [Naming Conventions](#naming-conventions)
+* [Platform Specific Code](#platform-specific-code)
 
 ### If Statements
 * If statements should be written using the following form:
@@ -158,7 +158,7 @@ enum EMyFlags
 };
 ```
 
-### Struct
+### Structs
 * Structs should primarily be used for data only
 
 ### Listeners vs Callbacks
