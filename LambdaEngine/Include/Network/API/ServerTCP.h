@@ -6,6 +6,7 @@
 #include <vector>
 #include <atomic>
 #include "IClientTCPHandler.h"
+#include "Threading/SpinLock.h"
 
 namespace LambdaEngine
 {
@@ -39,6 +40,21 @@ namespace LambdaEngine
 
 		bool IsRunning() const;
 
+		/*
+		* return - The currently used inet address.
+		*/
+		const std::string& GetAddress();
+
+		/*
+		* return - The currently used port.
+		*/
+		uint16 GetPort();
+
+		/*
+		* return - The number of connected clients
+		*/
+		uint8 GetNrOfClients() const;
+
 	protected:
 		virtual void OnClientConnected(ClientTCP* client) override;
 		virtual void OnClientDisconnected(ClientTCP* client) override;
@@ -58,5 +74,6 @@ namespace LambdaEngine
 		std::vector<ClientTCP*> m_Clients;
 		std::atomic_bool m_Stop;
 		IServerTCPHandler* m_pHandler;
+		SpinLock m_Lock;
 	};
 }

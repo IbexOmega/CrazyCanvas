@@ -16,13 +16,10 @@ Server::Server()
 {
 	using namespace LambdaEngine;
     
-    PlatformApplication::Get()->GetWindow()->SetTitle("Server");
-    PlatformConsole::SetTitle("Server Console");
-
-	std::string address = PlatformSocketFactory::GetLocalAddress();
-
 	m_pServer = new ServerTCP(this);
-	m_pServer->Start(address, 4444);
+	m_pServer->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
+
+	UpdateTitle();
 }
 
 Server::~Server()
@@ -37,12 +34,15 @@ bool Server::OnClientAccepted(LambdaEngine::ClientTCP* client)
 
 void Server::OnClientConnected(LambdaEngine::ClientTCP* client)
 {
+	using namespace LambdaEngine;
 	LOG_MESSAGE("OnClientConnected");
+	UpdateTitle();
 }
 
 void Server::OnClientDisconnected(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientDisconnected");
+	UpdateTitle();
 }
 
 void Server::OnKeyDown(LambdaEngine::EKey key)
@@ -59,6 +59,16 @@ void Server::OnKeyHeldDown(LambdaEngine::EKey key)
 void Server::OnKeyUp(LambdaEngine::EKey key)
 {
 	LOG_MESSAGE("Key Released: %d", key);
+}
+
+void Server::UpdateTitle()
+{
+	using namespace LambdaEngine;
+
+	std::string title = "Server - " + std::to_string(m_pServer->GetNrOfClients());
+
+	PlatformApplication::Get()->GetWindow()->SetTitle(title.c_str());
+	PlatformConsole::SetTitle(title.c_str());
 }
 
 void Server::Tick(LambdaEngine::Timestamp dt)

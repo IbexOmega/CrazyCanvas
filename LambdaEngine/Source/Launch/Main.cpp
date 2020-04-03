@@ -30,12 +30,12 @@ int main(int, const char*[])
 	LambdaEngine::Game* pGame = CreateGame();
 	EngineLoop::Run(pGame);
 
-	SAFEDELETE(pGame);
-
 	if (!EngineLoop::Release())
 	{
 		return -1;
 	}
+	
+	SAFEDELETE(pGame);
 
 	if (!EngineLoop::PostRelease())
 	{

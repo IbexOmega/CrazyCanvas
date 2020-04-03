@@ -107,6 +107,8 @@ namespace LambdaEngine
 	
 	bool EngineLoop::Init()
 	{
+		Thread::Init();
+
 		if (!Input::Init())
 		{
 			return false;
@@ -145,6 +147,8 @@ namespace LambdaEngine
 		{
 			return false;
 		}
+
+		Thread::Release();
 
 		return true;
 	}

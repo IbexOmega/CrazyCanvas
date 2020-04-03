@@ -27,5 +27,8 @@ public:
 	virtual void OnKeyUp(LambdaEngine::EKey key)        override;
 
 private:
+	void UpdateTitle();
+
+private:
 	LambdaEngine::ServerTCP* m_pServer;
 };

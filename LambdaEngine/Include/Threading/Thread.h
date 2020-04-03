@@ -3,6 +3,7 @@
 #include "Types.h"
 #include "SpinLock.h"
 #include <vector>
+#include <set>
 #include <thread>
 #include <condition_variable>
 #include <mutex>
@@ -31,7 +32,9 @@ namespace LambdaEngine
 		static Thread* Create(const std::function<void()>& func, const std::function<void()>& funcOnFinished);
 
 	private:
+		static void Init();
 		static void Join();
+		static void Release();
 
 	private:
 		std::thread m_Thread;
@@ -42,7 +45,8 @@ namespace LambdaEngine
 		std::atomic_bool m_ShouldYeild;
 
 	private:
-		static SpinLock s_Lock;
-		static std::vector<Thread*> s_ThreadsToJoin;
+		static SpinLock* s_Lock;
+		static std::vector<Thread*>* s_ThreadsToJoin;
+		static std::set<Thread*>* s_Threads;
 	};
 }

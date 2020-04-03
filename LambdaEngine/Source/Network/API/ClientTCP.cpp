@@ -20,6 +20,7 @@ namespace LambdaEngine
 		m_pHandler(handler),
 		m_pSocket(socket),
 		m_Stop(false),
+		m_pThread(nullptr),
 		m_pThreadSend(nullptr)
 	{
 		m_ServerSide = socket != nullptr;
@@ -32,7 +33,7 @@ namespace LambdaEngine
 	{
 		if (m_pSocket)
 		{
-			LOG_ERROR_CRIT("Tried to connect an already connected Client!");
+			LOG_ERROR("[ClientTCP]: Tried to connect an already connected Client!");
 			return false;
 		}
 
@@ -74,11 +75,12 @@ namespace LambdaEngine
 			m_pSocket = CreateClientSocket(address, port);
 			if (!m_pSocket)
 			{
-				LOG_ERROR_CRIT("Failed to connect to Server!");
+				LOG_ERROR("[ClientTCP]: Failed to connect to Server!");
 				m_pHandler->OnClientFailedConnecting(this);
 				return;
 			}
 		}
+		LOG_INFO("[ClientTCP]: Connected!");
 
 		m_pThreadSend = Thread::Create(std::bind(&ClientTCP::RunSend, this), std::bind(&ClientTCP::OnStoppedSend, this));
 		m_pHandler->OnClientConnected(this);
@@ -129,6 +131,7 @@ namespace LambdaEngine
 		m_pThread = nullptr;
 		delete m_pSocket;
 		m_pSocket = nullptr;
+		LOG_WARNING("[ClientTCP]: Disconnected!");
 		m_pHandler->OnClientDisconnected(this);
 	}
 

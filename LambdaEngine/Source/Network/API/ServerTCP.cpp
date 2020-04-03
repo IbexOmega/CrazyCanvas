@@ -53,6 +53,22 @@ namespace LambdaEngine
 		return m_pThread != nullptr;
 	}
 
+	const std::string& ServerTCP::GetAddress()
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		if (m_pServerSocket)
+			return m_pServerSocket->GetAddress();
+		return "";
+	}
+
+	uint16 ServerTCP::GetPort()
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		if (m_pServerSocket)
+			return m_pServerSocket->GetPort();
+		return 0;
+	}
+
 	void ServerTCP::Run(std::string address, uint16 port)
 	{
 		m_pServerSocket = CreateServerSocket(address, port);
@@ -82,6 +98,10 @@ namespace LambdaEngine
 					delete client;
 				}				
 			}
+			else
+			{
+				Stop(); //..............
+			}
 		}
 
 		for (ClientTCP* client : m_Clients)
@@ -95,15 +115,21 @@ namespace LambdaEngine
 
 	void ServerTCP::OnStopped()
 	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
 		m_pThread = nullptr;
 		delete m_pServerSocket;
 		m_pServerSocket = nullptr;
 		LOG_WARNING("[ServerTCP]: Stopped");
 	}
 
+	uint8 ServerTCP::GetNrOfClients() const
+	{
+		return m_Clients.size();
+	}
+
 	void ServerTCP::OnClientConnected(ClientTCP* client)
 	{
-		LOG_INFO("[ServerTCP]: Client Connected");
+		//LOG_INFO("[ServerTCP]: Client Connected");
 	}
 
 	void ServerTCP::OnClientDisconnected(ClientTCP* client)
@@ -111,7 +137,7 @@ namespace LambdaEngine
 		m_Clients.erase(std::remove(m_Clients.begin(), m_Clients.end(), client), m_Clients.end()); //Lock?
 		m_pHandler->OnClientDisconnected(client);
 		delete client;
-		LOG_WARNING("[ServerTCP]: Client Disconnected");
+		//LOG_WARNING("[ServerTCP]: Client Disconnected");
 	}
 
 	void ServerTCP::OnClientFailedConnecting(ClientTCP* client)

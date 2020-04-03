@@ -3,18 +3,22 @@
 
 namespace LambdaEngine
 {
-	std::vector<Thread*> Thread::s_ThreadsToJoin;
-	SpinLock Thread::s_Lock;
+	std::vector<Thread*>* Thread::s_ThreadsToJoin;
+	std::set<Thread*>* Thread::s_Threads;
+	SpinLock* Thread::s_Lock;
 
 	Thread::Thread(const std::function<void()>& func, const std::function<void()>& funcOnFinished) :
 		m_Func(func),
 		m_FuncOnFinished(funcOnFinished)
 	{
+		std::scoped_lock<SpinLock> lock(*s_Lock);
+		s_Threads->insert(this);
 		m_Thread = std::move(std::thread(&Thread::Run, this));
 	}
 
 	Thread::~Thread()
 	{
+
 	}
 
 	void Thread::Wait()
@@ -46,22 +50,36 @@ namespace LambdaEngine
 	void Thread::Run()
 	{
 		m_Func();
-		std::scoped_lock<SpinLock> lock(s_Lock);
-		s_ThreadsToJoin.push_back(this);
+		std::scoped_lock<SpinLock> lock(*s_Lock);
+		s_ThreadsToJoin->push_back(this);
+	}
+
+	void Thread::Init()
+	{
+		s_Lock = new SpinLock();
+		s_Threads = new std::set<Thread*>();
+		s_ThreadsToJoin = new std::vector<Thread*>();
 	}
 
 	void Thread::Join()
 	{
-		if (!s_ThreadsToJoin.empty())
+		if (!s_ThreadsToJoin->empty())
 		{
-			std::scoped_lock<SpinLock> lock(s_Lock);
-			for (Thread* thread : s_ThreadsToJoin)
+			std::scoped_lock<SpinLock> lock(*s_Lock);
+			for (Thread* thread : *s_ThreadsToJoin)
 			{
 				thread->m_Thread.join();
 				thread->m_FuncOnFinished();
+				s_Threads->erase(thread);
 				delete thread;
 			}
-			s_ThreadsToJoin = std::vector<Thread*>();
+			s_ThreadsToJoin->clear();
 		}
+	}
+
+	void Thread::Release()
+	{
+		while (!s_Threads->empty())
+			Thread::Join();
 	}
 }
