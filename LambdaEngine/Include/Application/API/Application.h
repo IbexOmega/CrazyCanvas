@@ -23,6 +23,9 @@ namespace LambdaEngine
         virtual void AddMessageHandler(IApplicationMessageHandler* pHandler)    = 0;
         virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) = 0;
         
+        /*
+        * Application buffers all OS-events, and gets processed in a batch with this function
+        */
         virtual void ProcessBufferedMessages() = 0; 
 
         virtual Window*         GetWindow()         = 0;
@@ -32,9 +35,23 @@ namespace LambdaEngine
 		static bool PreInit() 		{ return true; }
 		static bool PostRelease() 	{ return true; }
 		
+        /*
+        * Application ticks one frame, processes OS- events and then processes the buffered events
+        * 
+        * return - Returns false if the OS- sent a quit message. Happens when terminate is called. 
+        */
 		static bool Tick()              { return false; }
+
+        /*
+        * Processes all event from the OS and bufferes them up
+        * 
+        * return - Returns false if the OS- sent a quit message
+        */
         static bool ProcessMessages()   { return false; }
         
+        /*
+        * Sends a quit message to the application
+        */
         static void Terminate() { }
 
         static Window*      CreateWindow(const char*, uint32, uint32)   { return nullptr; }
