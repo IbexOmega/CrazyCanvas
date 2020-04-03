@@ -6,11 +6,18 @@
 #include "SoundHelper.h"
 
 struct FMOD_SOUND;
+struct FMOD_CHANNEL;
 
 namespace LambdaEngine
 {
 	class AudioDevice;
-	class SoundInstance;
+
+	struct SoundEffect3DDesc
+	{
+		const char* pName	= "";
+		const void* pData	= nullptr;
+		uint32 DataSize		= 0;
+	};
 
 	class LAMBDA_API SoundEffect3D
 	{
@@ -21,13 +28,25 @@ namespace LambdaEngine
 		SoundEffect3D(const AudioDevice* pAudioDevice);
 		~SoundEffect3D();
 
-		bool Init(const SoundDesc& desc);
+		bool Init(const SoundEffect3DDesc& desc);
 
-		void PlayAt(const glm::vec3& position, const glm::vec3& velocity = glm::vec3(0.0f), float volume = 1.0f, float pitch = 1.0f);
+
+		/**
+			Call and forget, plays a single sound instance with the given properties
+		*/
+		void PlayOnceAt(const glm::vec3& position, const glm::vec3& velocity = glm::vec3(0.0f), float volume = 1.0f, float pitch = 1.0f);
+
+		FMOD_SOUND* GetHandle()		{ return m_pHandle; }
+		uint32 GetLengthMS()		{ return m_LengthMS; }
 
 	private:
-		const AudioDevice* m_pAudioDevice;
+		//Engine
+		const AudioDevice*	m_pAudioDevice;
 
+		//FMOD
 		FMOD_SOUND*			m_pHandle;
+
+		//Local
+		uint32 m_LengthMS;
 	};
 }

@@ -34,7 +34,7 @@ namespace LambdaEngine
 		GUID_Lambda LoadTextureFromFile(const char* pFilepath);
 		GUID_Lambda LoadTextureFromMemory(const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips);
 
-		GUID_Lambda LoadSoundFromFile(const char* pFilepath, ESoundFlags flags);
+		GUID_Lambda LoadSoundFromFile(const char* pFilepath);
 
 		Mesh*			GetMesh(GUID_Lambda guid)		{ return m_Meshes[guid]; }
 		Material*		GetMaterial(GUID_Lambda guid)	{ return m_Materials[guid]; }

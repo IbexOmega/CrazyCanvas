@@ -9,6 +9,8 @@ namespace LambdaEngine
 {
 	class ResourceManager;
 	class AudioListener;
+	class SoundEffect3D;
+	class SoundInstance3D;
 }
 
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IMouseHandler
@@ -20,7 +22,7 @@ public:
 	void TestResourceManager();
 
 	// Inherited via Game
-	virtual void Tick() override;
+	virtual void Tick(LambdaEngine::Timestamp dt) override;
 
 	// Inherited via IKeyboardHandler
 	virtual void OnKeyDown(LambdaEngine::EKey key)      override;
@@ -36,6 +38,17 @@ public:
 private:
 	LambdaEngine::ResourceManager* m_pResourceManager;
 
-	GUID_Lambda m_TestSound;
+	GUID_Lambda m_ToneSoundEffectGUID;
+	LambdaEngine::SoundEffect3D* m_pToneSoundEffect;
+	LambdaEngine::SoundInstance3D* m_pToneSoundInstance;
+
+	GUID_Lambda m_GunSoundEffectGUID;
+	LambdaEngine::SoundEffect3D* m_pGunSoundEffect;
+
+	bool m_SpawnPlayAts;
+	float m_GunshotTimer;
+	float m_GunshotDelay;
+	float m_Timer;
+
 	LambdaEngine::AudioListener* m_pAudioListener;
 };

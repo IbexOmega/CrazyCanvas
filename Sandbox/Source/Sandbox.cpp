@@ -9,8 +9,11 @@
 #include "Resources/ResourceManager.h"
 
 #include "Rendering/RenderSystem.h"
+
 #include "Audio/AudioSystem.h"
 #include "Audio/AudioListener.h"
+#include "Audio/SoundEffect3D.h"
+#include "Audio/SoundInstance3D.h"
 
 Sandbox::Sandbox() : 
 	m_pResourceManager(nullptr)
@@ -19,7 +22,25 @@ Sandbox::Sandbox() :
 
 	m_pResourceManager = new LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
 
-	m_TestSound = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/smb_gameover.wav", ESoundFlags::NONE);
+	m_ToneSoundEffectGUID = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/tone440.wav");
+	m_GunSoundEffectGUID = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/9_mm_gunshot-mike-koenig-123.wav");
+
+	m_pToneSoundEffect = m_pResourceManager->GetSound(m_ToneSoundEffectGUID);
+	m_pGunSoundEffect = m_pResourceManager->GetSound(m_GunSoundEffectGUID);
+
+	SoundInstance3DDesc soundInstanceDesc = {};
+	soundInstanceDesc.pSoundEffect		= m_pToneSoundEffect;
+	soundInstanceDesc.Flags				= ESoundFlags::LOOPING;
+
+	m_pToneSoundInstance = AudioSystem::GetDevice()->CreateSoundInstance();
+	m_pToneSoundInstance->Init(soundInstanceDesc);
+	m_pToneSoundInstance->SetVolume(0.5f);
+
+	m_SpawnPlayAts = false;
+	m_GunshotTimer = 0.0f;
+	m_GunshotDelay = 1.0f;
+	m_Timer = 0.0f;
+
 	m_pAudioListener = AudioSystem::GetDevice()->CreateAudioListener();
 }
 
@@ -70,29 +91,23 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 
 	using namespace LambdaEngine;
 
-	SoundEffect3D* pTestSound = m_pResourceManager->GetSound(m_TestSound);
-
 	static glm::vec3 pTestAudioPosition = glm::vec3(0.0f);
 
-	if (key == EKey::KEY_KP_5)
+	if (key == EKey::KEY_KP_1)
 	{
-		pTestSound->PlayAt(pTestAudioPosition);
-	}
-	else if (key == EKey::KEY_KP_8)
-	{
-		pTestAudioPosition.z += 0.05f;
+		m_pToneSoundInstance->Toggle();
 	}
 	else if (key == EKey::KEY_KP_2)
 	{
-		pTestAudioPosition.z -= 0.05f;
+		m_SpawnPlayAts = !m_SpawnPlayAts;
 	}
-	else if (key == EKey::KEY_KP_4)
+	else if (key == EKey::KEY_KP_ADD)
 	{
-		pTestAudioPosition.x -= 0.05f;
+		m_GunshotDelay += 0.05f;
 	}
-	else if (key == EKey::KEY_KP_6)
+	else if (key == EKey::KEY_KP_SUBTRACT)
 	{
-		pTestAudioPosition.x += 0.05f;
+		m_GunshotDelay = glm::max(m_GunshotDelay - 0.05f, 0.125f);
 	}
 }
 
@@ -108,7 +123,7 @@ void Sandbox::OnKeyUp(LambdaEngine::EKey key)
 
 void Sandbox::OnMouseMove(int32 x, int32 y)
 {
-	LOG_MESSAGE("Mouse Moved: x=%d, y=%d", x, y);
+	//LOG_MESSAGE("Mouse Moved: x=%d, y=%d", x, y);
 }
 
 void Sandbox::OnButtonPressed(LambdaEngine::EMouseButton button)
@@ -126,27 +141,27 @@ void Sandbox::OnScroll(int32 delta)
 	LOG_MESSAGE("Mouse Scrolled: %d", delta);
 }
 
-void Sandbox::Tick()
+void Sandbox::Tick(LambdaEngine::Timestamp dt)
 {
 	using namespace LambdaEngine;
 
-	/*if (Inpu)
+	m_Timer += dt.AsSeconds();
+
+	if (m_SpawnPlayAts)
 	{
-		pTestSound->PlayAt(pTestAudioPosition);
+		m_GunshotTimer += dt.AsSeconds();
+
+		if (m_GunshotTimer > m_GunshotDelay)
+		{
+			glm::vec3 gunPosition(glm::cos(m_Timer), 0.0f, glm::sin(m_Timer));
+			m_pGunSoundEffect->PlayOnceAt(gunPosition, glm::vec3(0.0f), 0.5f);
+			m_GunshotTimer = 0.0f;
+		}	
 	}
-	else if (key == EKey::KEY_KP_8)
-	{
-		pTestAudioPosition.z += 0.05f;
-	}
-	
-	if (key == EKey::KEY_KP_2)
-	{
-		pTestAudioPosition.z -= 0.05f;
-	}
-	else if (key == EKey::KEY_KP_4)
-	{
-		pTestAudioPosition.x -= 0.05f;
-	}*/
+
+	glm::vec3 tonePosition(glm::cos(m_Timer), 0.0f, glm::sin(m_Timer));
+	m_pToneSoundInstance->SetPosition(tonePosition);
+	//LOG_MESSAGE("Mario Position: %s", glm::to_string(marioPosition).c_str());
 }
 
 namespace LambdaEngine

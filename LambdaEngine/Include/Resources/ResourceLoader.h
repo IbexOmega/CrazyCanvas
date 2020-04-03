@@ -21,7 +21,7 @@ namespace LambdaEngine
 		static ITexture* LoadTextureFromFile(IGraphicsDevice* pGraphicsDevice, const char* pFilepath);
 		static ITexture* LoadTextureFromMemory(IGraphicsDevice* pGraphicsDevice, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips);
 
-		static SoundEffect3D* LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath, ESoundFlags flags);
+		static SoundEffect3D* LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath);
 
 	private:
 		static bool ReadDataFromFile(const char* pFilepath, byte** ppData, uint32* pDataSize);

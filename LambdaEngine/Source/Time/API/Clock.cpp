@@ -4,6 +4,7 @@ namespace LambdaEngine
 {
 	Clock::Clock()
 	{
+		Tick();
 	}
 
 	Clock::Clock(Clock&& other) noexcept

@@ -1,5 +1,6 @@
 #include "Audio/SoundEffect3D.h"
 #include "Audio/AudioDevice.h"
+#include "Audio/SoundHelper.h"
 #include "Audio/Audio.h"
 
 #include "Log/Log.h"
@@ -21,33 +22,36 @@ namespace LambdaEngine
 		}
 	}
 
-	bool SoundEffect3D::Init(const SoundDesc& desc)
+	bool SoundEffect3D::Init(const SoundEffect3DDesc& desc)
 	{
-		FMOD_MODE soundMode = FMOD_3D | FMOD_CREATESAMPLE | FMOD_OPENMEMORY;
+		FMOD_MODE mode = FMOD_3D | FMOD_CREATESAMPLE | FMOD_OPENMEMORY;
 
 		FMOD_CREATESOUNDEXINFO soundCreateInfo = {};
 		soundCreateInfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
 		soundCreateInfo.length = desc.DataSize;
 
-		if (FMOD_System_CreateSound(m_pAudioDevice->pSystem, reinterpret_cast<const char*>(desc.pData), soundMode, &soundCreateInfo, &m_pHandle) != FMOD_OK)
+		if (FMOD_System_CreateSound(m_pAudioDevice->pSystem, reinterpret_cast<const char*>(desc.pData), mode, &soundCreateInfo, &m_pHandle) != FMOD_OK)
 		{
 			LOG_ERROR("[Sound]: Sound \"%s\" could not be initialized", desc.pName);
 			return false;
 		}
 
+		FMOD_Sound_GetLength(m_pHandle, &m_LengthMS, FMOD_TIMEUNIT_MS);
 		return true;
 	}
 
-	void SoundEffect3D::PlayAt(const glm::vec3& position, const glm::vec3& velocity, float volume, float pitch)
+	void SoundEffect3D::PlayOnceAt(const glm::vec3& position, const glm::vec3& velocity, float volume, float pitch)
 	{
 		FMOD_CHANNEL* pChannel = nullptr;
 		FMOD_VECTOR fmodPosition = { position.x, position.y, position.z };
 		FMOD_VECTOR fmodVelocity = { velocity.x, velocity.y, velocity.z };
 
 		FMOD_System_PlaySound(m_pAudioDevice->pSystem, m_pHandle, nullptr, true, &pChannel);
+
 		FMOD_Channel_Set3DAttributes(pChannel, &fmodPosition, &fmodVelocity);
 		FMOD_Channel_SetVolume(pChannel, volume);
 		FMOD_Channel_SetPitch(pChannel, pitch);
+
 		FMOD_Channel_SetPaused(pChannel, 0);
 	}
 }

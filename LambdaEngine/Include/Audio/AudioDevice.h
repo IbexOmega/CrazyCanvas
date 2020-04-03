@@ -8,6 +8,7 @@ namespace LambdaEngine
 {
 	class AudioListener;
 	class SoundEffect3D;
+	class SoundInstance3D;
 
 	struct AudioDeviceDesc
 	{
@@ -28,8 +29,9 @@ namespace LambdaEngine
 
 		void Tick();
 
-		AudioListener* CreateAudioListener();
-		SoundEffect3D* CreateSound();
+		AudioListener*		CreateAudioListener();
+		SoundEffect3D*		CreateSound();
+		SoundInstance3D*	CreateSoundInstance();
 
 	public:
 		FMOD_SYSTEM* pSystem;

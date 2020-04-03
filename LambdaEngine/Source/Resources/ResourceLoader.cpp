@@ -319,7 +319,7 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	SoundEffect3D* ResourceLoader::LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath, ESoundFlags flags)
+	SoundEffect3D* ResourceLoader::LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath)
 	{
 		SoundEffect3D* pSound = pAudioDevice->CreateSound();
 
@@ -331,11 +331,10 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
-		SoundDesc soundDesc		= {};
+		SoundEffect3DDesc soundDesc		= {};
 		soundDesc.pName			= pFilepath;
 		soundDesc.pData			= pSoundData;
 		soundDesc.DataSize		= soundDataSize;
-		soundDesc.Flags			= flags;
 
 		if (!pSound->Init(soundDesc))
 		{

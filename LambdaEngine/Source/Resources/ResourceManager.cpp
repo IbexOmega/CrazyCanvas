@@ -135,7 +135,7 @@ namespace LambdaEngine
 		return GUID_NONE;
 	}
 
-	GUID_Lambda ResourceManager::LoadSoundFromFile(const char* pFilepath, ESoundFlags flags)
+	GUID_Lambda ResourceManager::LoadSoundFromFile(const char* pFilepath)
 	{
 		GUID_Lambda guid = GUID_NONE;
 		SoundEffect3D** ppMappedSound = nullptr;
@@ -146,7 +146,7 @@ namespace LambdaEngine
 			ppMappedSound = &m_Sounds[guid]; //Creates new entry if not existing
 		}
 
-		(*ppMappedSound) = ResourceLoader::LoadSoundFromFile(m_pAudioDevice, pFilepath, flags);
+		(*ppMappedSound) = ResourceLoader::LoadSoundFromFile(m_pAudioDevice, pFilepath);
 
 		return guid;
 	}

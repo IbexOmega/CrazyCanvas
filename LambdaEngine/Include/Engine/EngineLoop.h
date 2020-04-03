@@ -5,6 +5,8 @@
 
 #include "Application/API/PlatformApplication.h"
 
+#include "Time/API/Timestamp.h"
+
 namespace LambdaEngine
 {
 	class IGraphicsDevice;
@@ -26,6 +28,6 @@ namespace LambdaEngine
 		static bool PostRelease();
 
 	private:
-		static bool Tick();
+		static bool Tick(Timestamp dt);
 	};
 }

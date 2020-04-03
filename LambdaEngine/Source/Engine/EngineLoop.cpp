@@ -3,6 +3,7 @@
 #include "Log/Log.h"
 
 #include "Time/API/PlatformTime.h"
+#include "Time/API/Clock.h"
 
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformConsole.h"
@@ -52,15 +53,20 @@ namespace LambdaEngine
 
 	void EngineLoop::Run(Game* pGame)
 	{
+		Clock clock;
+		clock.Reset();
+
         bool IsRunning = true;
         while (IsRunning)
         {
-            IsRunning = Tick();
-            pGame->Tick();
+			clock.Tick();
+			Timestamp dt = clock.GetDeltaTime();
+            IsRunning = Tick(dt);
+            pGame->Tick(dt);
         }
     }
 
-    bool EngineLoop::Tick()
+    bool EngineLoop::Tick(Timestamp dt)
     {
 		Thread::Join();
 
@@ -68,6 +74,8 @@ namespace LambdaEngine
         {
             return false;
         }
+
+		AudioSystem::Tick();
 
         return true;
 	}

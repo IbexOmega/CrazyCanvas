@@ -3,6 +3,7 @@
 
 #include "Audio/AudioListener.h"
 #include "Audio/SoundEffect3D.h"
+#include "Audio/SoundInstance3D.h"
 
 #include "Log/Log.h"
 
@@ -111,5 +112,11 @@ namespace LambdaEngine
 	SoundEffect3D* AudioDevice::CreateSound()
 	{
 		return new SoundEffect3D(this);
-	}	
+	}
+
+	SoundInstance3D* AudioDevice::CreateSoundInstance()
+	{
+		return new SoundInstance3D(this);
+	}
+
 };

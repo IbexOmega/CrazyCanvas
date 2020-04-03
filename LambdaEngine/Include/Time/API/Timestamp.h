@@ -21,22 +21,22 @@ namespace LambdaEngine
 		{
 		}
 
-		FORCEINLINE uint64 AsSeconds() const
+		FORCEINLINE float AsSeconds() const
 		{
-			constexpr uint64 SECONDS = 1000 * 1000 * 1000;
-			return uint64(m_NanoSeconds) / SECONDS;
+			constexpr float SECONDS = 1000.0f * 1000.0f * 1000.0f;
+			return float(m_NanoSeconds) / SECONDS;
 		}
 
-		FORCEINLINE uint64 AsMilliSeconds() const
+		FORCEINLINE float AsMilliSeconds() const
 		{
-			constexpr uint64 MILLISECONDS = 1000 * 1000;
-			return uint64(m_NanoSeconds) / MILLISECONDS;
+			constexpr float MILLISECONDS = 1000.0f * 1000.0f;
+			return float(m_NanoSeconds) / MILLISECONDS;
 		}
 
-		FORCEINLINE uint64 AsMicroSeconds() const
+		FORCEINLINE float AsMicroSeconds() const
 		{
-			constexpr uint64 MICROSECONDS = 1000;
-			return uint64(m_NanoSeconds) / MICROSECONDS;
+			constexpr float MICROSECONDS = 1000.0f;
+			return float(m_NanoSeconds) / MICROSECONDS;
 		}
 
 		FORCEINLINE uint64 AsNanoSeconds() const
@@ -84,21 +84,21 @@ namespace LambdaEngine
 			return *this;
 		}
 
-		FORCEINLINE static Timestamp Seconds(uint64 s)
+		FORCEINLINE static Timestamp Seconds(float s)
 		{
-			constexpr uint64 SECOND = 1000 * 1000 * 1000;
+			constexpr float SECOND = 1000.0f * 1000.0f * 1000.0f;
 			return Timestamp(uint64(s * SECOND));
 		}
 
-		FORCEINLINE static Timestamp MilliSeconds(uint64 ms)
+		FORCEINLINE static Timestamp MilliSeconds(float ms)
 		{
-			constexpr uint64 MILLISECOND = 1000 * 1000;
+			constexpr float MILLISECOND = 1000.0f * 1000.0f;
 			return Timestamp(uint64(ms * MILLISECOND));
 		}
 
-		FORCEINLINE static Timestamp MicroSeconds(uint64 us)
+		FORCEINLINE static Timestamp MicroSeconds(float us)
 		{
-			constexpr uint64 MICROSECOND = 1000;
+			constexpr float MICROSECOND = 1000.0f;
 			return Timestamp(uint64(us * MICROSECOND));
 		}
 
