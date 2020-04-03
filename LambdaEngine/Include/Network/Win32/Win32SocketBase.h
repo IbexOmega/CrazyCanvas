@@ -13,7 +13,7 @@
 namespace LambdaEngine
 {
 	template <typename IBase>
-	class Win32Socket : public IBase
+	class Win32SocketBase : public IBase
 	{	
 		friend class Win32SocketFactory;
 
@@ -37,18 +37,54 @@ namespace LambdaEngine
 			return true;
 		}
 
-		void Close() override
+		virtual bool SetNonBlocking(bool nonBlocking) override
 		{
-			closesocket(m_Socket);
+			if (ioctlsocket(m_Socket, FIONBIO, &((u_long)nonBlocking)) != NO_ERROR)
+			{
+				LOG_ERROR_CRIT("Failed to change blocking mode to [%sBlocking] ", nonBlocking ? "Non " : "");
+				PrintLastError();
+				return false;
+			}	
+			m_NonBlocking = nonBlocking;
+			return true;
+		};
+
+		virtual bool IsNonBlocking() override
+		{
+			return m_NonBlocking;
+		};
+
+		bool Close() override
+		{
+			if (m_Closed)
+				return true;
+
+			m_Closed = true;
+
+			if (closesocket(m_Socket) == SOCKET_ERROR)
+			{
+				LOG_ERROR_CRIT("Failed to close socket");
+				PrintLastError();
+				return false;
+			}
+			return true;
 		}
+
+		virtual bool IsClosed() override
+		{
+			return m_Closed;
+		};
 
 	protected:
-		Win32Socket()
+		Win32SocketBase() : 
+			m_Socket(INVALID_SOCKET),
+			m_NonBlocking(false),
+			m_Closed(false)
 		{
-			m_Socket = INVALID_SOCKET;
+			
 		}
 
-		~Win32Socket()
+		~Win32SocketBase()
 		{
 			Close();
 		}
@@ -165,6 +201,8 @@ namespace LambdaEngine
 
 	protected:
 		SOCKET m_Socket;
+		bool m_NonBlocking;
+		bool m_Closed;
 	};
 }
 

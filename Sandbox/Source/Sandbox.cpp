@@ -10,87 +10,23 @@
 
 #include "Rendering/RenderSystem.h"
 #include "Audio/AudioSystem.h"
+#include "Audio/AudioListener.h"
 
 Sandbox::Sandbox() : 
 	m_pResourceManager(nullptr)
 {
 	using namespace LambdaEngine;
-    
-	//TCP TEST
-	/*ISocketTCP* server = PlatformSocketFactory::CreateSocketTCP();
-	server->Bind("127.0.0.1", 4444);
-	server->Listen();
-
-	ISocketTCP* client = PlatformSocketFactory::CreateSocketTCP();
-	client->Connect("127.0.0.1", 4444);
-
-	ISocketTCP* serverClient = server->Accept();
-
-	std::string data = "Hello Guy!";
-	uint32 bytesSent;
-	serverClient->Send(data.c_str(), data.length(), bytesSent);
-
-	char buffer[256];
-	uint32 bytesReceived;
-	client->Receive(buffer, 256, bytesReceived);
-
-	LOG_MESSAGE(buffer);
-	serverClient->Close();
-	client->Close();
-	server->Close();
-
-
-	//UDP TEST
-	ISocketUDP* socket1 = PlatformSocketFactory::CreateSocketUDP();
-	ISocketUDP* socket2 = PlatformSocketFactory::CreateSocketUDP();
-
-	socket2->Bind("127.0.0.1", 4444);
-	socket1->SendTo(data.c_str(), data.length(), bytesSent, "127.0.0.1", 4444);
-
-	buffer[256];
-	std::string sender;
-	uint16 port;
-	socket2->ReceiveFrom(buffer, 256, bytesReceived, sender, port);
-	LOG_MESSAGE(buffer);
-	LOG_MESSAGE(sender.c_str());
-	LOG_MESSAGE("%d", port);
-
-	data = "Vafan Guy!";
-	socket2->SendTo(data.c_str(), data.length(), bytesSent, sender, port);
-	socket1->ReceiveFrom(buffer, 256, bytesReceived, sender, port);
-	LOG_MESSAGE(buffer);
-	LOG_MESSAGE(sender.c_str());
-	LOG_MESSAGE("%d", port);
-	socket1->Close();
-	socket2->Close();
-
-
-	//UDP Broadcast TEST
-	LOG_MESSAGE("Broadcast");
-	socket1 = PlatformSocketFactory::CreateSocketUDP();
-	socket2 = PlatformSocketFactory::CreateSocketUDP();
-
-	socket1->EnableBroadcast();
-	socket2->EnableBroadcast();
-
-	socket1->Bind("", 4444);
-
-	data = "Ny data Guy!";
-
-	socket2->Broadcast(data.c_str(), data.length(), bytesSent, 4444);
-
-	socket1->ReceiveFrom(buffer, 256, bytesReceived, sender, port);
-	LOG_MESSAGE(buffer);
-	LOG_MESSAGE(sender.c_str());
-	LOG_MESSAGE("%d", port);*/
 
 	m_pResourceManager = new LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
-	m_TestSound = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/smb_gameover.wav", ESoundFlags::LOOPING);
+
+	m_TestSound = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/smb_gameover.wav", ESoundFlags::NONE);
+	m_pAudioListener = AudioSystem::GetDevice()->CreateAudioListener();
 }
 
 Sandbox::~Sandbox()
 {
 	SAFEDELETE(m_pResourceManager);
+	SAFEDELETE(m_pAudioListener);
 }
 
 void Sandbox::TestResourceManager()
@@ -134,35 +70,29 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 
 	using namespace LambdaEngine;
 
-	Sound* pTestSound = m_pResourceManager->GetSound(m_TestSound);
+	SoundEffect3D* pTestSound = m_pResourceManager->GetSound(m_TestSound);
+
+	static glm::vec3 pTestAudioPosition = glm::vec3(0.0f);
 
 	if (key == EKey::KEY_KP_5)
 	{
-		pTestSound->Toggle();
+		pTestSound->PlayAt(pTestAudioPosition);
 	}
 	else if (key == EKey::KEY_KP_8)
 	{
-		pTestSound->SetVolume(pTestSound->GetVolume() + 0.05f);
+		pTestAudioPosition.z += 0.05f;
 	}
 	else if (key == EKey::KEY_KP_2)
 	{
-		pTestSound->SetVolume(pTestSound->GetVolume() - 0.05f);
+		pTestAudioPosition.z -= 0.05f;
 	}
-	else if (key == EKey::KEY_KP_9)
+	else if (key == EKey::KEY_KP_4)
 	{
-		pTestSound->SetPitch(pTestSound->GetPitch() + 0.05f);
+		pTestAudioPosition.x -= 0.05f;
 	}
-	else if (key == EKey::KEY_KP_7)
+	else if (key == EKey::KEY_KP_6)
 	{
-		pTestSound->SetPitch(pTestSound->GetPitch() - 0.05f);
-	}
-	else if (key == EKey::KEY_KP_3)
-	{
-		pTestSound->SetPanning(pTestSound->GetPanning() + 0.05f);
-	}
-	else if (key == EKey::KEY_KP_1)
-	{
-		pTestSound->SetPanning(pTestSound->GetPanning() - 0.05f);
+		pTestAudioPosition.x += 0.05f;
 	}
 }
 
@@ -198,6 +128,25 @@ void Sandbox::OnScroll(int32 delta)
 
 void Sandbox::Tick()
 {
+	using namespace LambdaEngine;
+
+	/*if (Inpu)
+	{
+		pTestSound->PlayAt(pTestAudioPosition);
+	}
+	else if (key == EKey::KEY_KP_8)
+	{
+		pTestAudioPosition.z += 0.05f;
+	}
+	
+	if (key == EKey::KEY_KP_2)
+	{
+		pTestAudioPosition.z -= 0.05f;
+	}
+	else if (key == EKey::KEY_KP_4)
+	{
+		pTestAudioPosition.x -= 0.05f;
+	}*/
 }
 
 namespace LambdaEngine

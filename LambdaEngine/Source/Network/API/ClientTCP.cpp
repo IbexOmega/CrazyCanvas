@@ -3,6 +3,7 @@
 #include "Network/API/ServerTCP.h"
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/IClientTCPHandler.h"
+#include "Network/API/NetworkPacket.h"
 
 #include "Threading/Thread.h"
 
@@ -18,12 +19,13 @@ namespace LambdaEngine
 	ClientTCP::ClientTCP(IClientTCPHandler* handler, ISocketTCP* socket) :
 		m_pHandler(handler),
 		m_pSocket(socket),
-		m_Stop(false)
+		m_Stop(false),
+		m_pThreadSend(nullptr)
 	{
 		m_ServerSide = socket != nullptr;
 
 		if(m_ServerSide)
-			m_pThread = Thread::Create(std::bind(&ClientTCP::Run, this, "", 0), std::bind(&ClientTCP::OnStoped, this));
+			m_pThread = Thread::Create(std::bind(&ClientTCP::Run, this, "", 0), std::bind(&ClientTCP::OnStopped, this));
 	}
 
 	bool ClientTCP::Connect(const std::string& address, uint16 port)
@@ -34,20 +36,30 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_pThread = Thread::Create(std::bind(&ClientTCP::Run, this, address, port), std::bind(&ClientTCP::OnStoped, this));
+		m_pThread = Thread::Create(std::bind(&ClientTCP::Run, this, address, port), std::bind(&ClientTCP::OnStopped, this));
 		return true;
 	}
 
 	void ClientTCP::Disconnect()
 	{
-		m_Stop = true;
+		if (!m_Stop)
+		{
+			m_Stop = true;
+			m_pSocket->Close();
+			if (m_pThreadSend)
+				m_pThreadSend->Notify();
+		}
 	}
 
-	void ClientTCP::SendPacket(const std::string& data)
+	void ClientTCP::SendPacket(NetworkPacket* packet)
 	{
-		////TEMP
-		uint32 bytesSent;
-		m_pSocket->Send(data.c_str(), data.length(), bytesSent);
+		if (!m_Stop)
+		{
+			std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
+			m_PacketsToSend.push(packet);
+			if (m_pThreadSend)
+				m_pThreadSend->Notify();
+		}
 	}
 
 	bool ClientTCP::IsServerSide() const
@@ -68,31 +80,104 @@ namespace LambdaEngine
 			}
 		}
 
+		m_pThreadSend = Thread::Create(std::bind(&ClientTCP::RunSend, this), std::bind(&ClientTCP::OnStoppedSend, this));
 		m_pHandler->OnClientConnected(this);
 
-		char buffer[256];
-		uint32 bytesReceived;
+		NetworkPacket packet(EPacketType::PACKET_TYPE_UNDEFINED);
+		char* buffer = packet.GetBuffer();
+		uint16 sizeOffset = sizeof(int16);
 		while (!m_Stop)
 		{
-			if (m_pSocket->Receive(buffer, 256, bytesReceived))
+			packet.ResetHead();
+			if (Receive(buffer, sizeOffset))
 			{
-				std::string message(buffer, bytesReceived);
-				LOG_MESSAGE(message.c_str());
+				packet.UnPack();
+				if (Receive(buffer + sizeOffset, packet.GetSize() - sizeOffset))
+					m_pHandler->OnClientPacketReceived(this, &packet);
+				else
+					Disconnect();
 			}
 			else
 			{
 				Disconnect();
 			}
 		}
-		m_pSocket->Close();
 	}
 
-	void ClientTCP::OnStoped()
+	bool ClientTCP::Receive(char* buffer, int bytesToRead)
+	{
+		uint32 bytesReceivedTotal = 0;
+		int32 bytesReceived = 0;
+		while (bytesReceivedTotal != bytesToRead)
+		{
+			if (m_pSocket->Receive(buffer, bytesToRead - bytesReceivedTotal, bytesReceived))
+			{
+				bytesReceivedTotal += bytesReceived;
+				if (bytesReceivedTotal == 0)
+					return false;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	void ClientTCP::OnStopped()
 	{
 		m_pThread = nullptr;
 		delete m_pSocket;
 		m_pSocket = nullptr;
 		m_pHandler->OnClientDisconnected(this);
+	}
+
+	void ClientTCP::RunSend()
+	{
+		while (!m_pThreadSend){}
+
+		while (!m_Stop)
+		{
+			if (m_PacketsToSend.empty())
+				m_pThreadSend->Wait();
+
+			std::queue<NetworkPacket*> packets;
+			{
+				std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
+				packets = m_PacketsToSend;
+				std::queue<NetworkPacket*>().swap(m_PacketsToSend);
+			}
+
+			while (!packets.empty())
+			{
+				NetworkPacket* packet = packets.front();
+				packets.pop();
+
+				packet->Pack();
+				if (!Send(packet->GetBuffer(), packet->GetSize()))
+				{
+					Disconnect();
+					break;
+				}	
+			}
+		}
+	}
+
+	bool ClientTCP::Send(char* buffer, int bytesToSend)
+	{
+		uint32 bytesSentTotal = 0;
+		int32 bytesSent = 0;
+		while (bytesSent != bytesToSend)
+		{
+			if (!m_pSocket->Send(buffer + bytesSentTotal, bytesToSend - bytesSentTotal, bytesSent))
+				return false;
+			bytesSentTotal += bytesSent;
+		}
+	}
+
+	void ClientTCP::OnStoppedSend()
+	{
+		m_pThreadSend = nullptr;
 	}
 
 	ISocketTCP* ClientTCP::CreateClientSocket(const std::string& address, uint16 port)

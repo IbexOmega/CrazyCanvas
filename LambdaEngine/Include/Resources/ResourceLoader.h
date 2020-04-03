@@ -6,7 +6,7 @@
 #include "Rendering/Core/API/ITexture.h"
 #include "Mesh.h"
 #include "Material.h"
-#include "Audio/Sound.h"
+#include "Audio/SoundEffect3D.h"
 
 namespace LambdaEngine
 {
@@ -21,7 +21,7 @@ namespace LambdaEngine
 		static ITexture* LoadTextureFromFile(IGraphicsDevice* pGraphicsDevice, const char* pFilepath);
 		static ITexture* LoadTextureFromMemory(IGraphicsDevice* pGraphicsDevice, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips);
 
-		static Sound* LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath, ESoundFlags flags);
+		static SoundEffect3D* LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath, ESoundFlags flags);
 
 	private:
 		static bool ReadDataFromFile(const char* pFilepath, byte** ppData, uint32* pDataSize);

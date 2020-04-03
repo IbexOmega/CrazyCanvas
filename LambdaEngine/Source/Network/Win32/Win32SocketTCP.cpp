@@ -17,7 +17,7 @@ namespace LambdaEngine
 		}
 	}
 
-	Win32SocketTCP::Win32SocketTCP(uint64 socket, const char* address, uint16 port) : Win32Socket()
+	Win32SocketTCP::Win32SocketTCP(uint64 socket, const char* address, uint16 port) : Win32SocketBase()
 	{
 		m_Socket = socket;
 		m_Address = address;
@@ -74,7 +74,7 @@ namespace LambdaEngine
 		return new Win32SocketTCP(socket, address, port);
 	}
 
-	bool Win32SocketTCP::Send(const char* buffer, uint32 bytesToSend, uint32& bytesSent)
+	bool Win32SocketTCP::Send(const char* buffer, uint32 bytesToSend, int32& bytesSent)
 	{
 		bytesSent = send(m_Socket, buffer, bytesToSend, 0);
 		if (bytesSent == SOCKET_ERROR)
@@ -86,11 +86,18 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool Win32SocketTCP::Receive(char* buffer, uint32 size, uint32& bytesReceived)
+	bool Win32SocketTCP::Receive(char* buffer, uint32 size, int32& bytesReceived)
 	{
 		bytesReceived = recv(m_Socket, buffer, size, 0);
 		if (bytesReceived == SOCKET_ERROR)
 		{
+			bytesReceived = 0;
+			int32 error = WSAGetLastError();
+			if (IsClosed())
+				return true;
+			else if (error == WSAEWOULDBLOCK && IsNonBlocking())
+				return true;
+
 			LOG_ERROR_CRIT("Failed to receive data");
 			PrintLastError();
 			return false;

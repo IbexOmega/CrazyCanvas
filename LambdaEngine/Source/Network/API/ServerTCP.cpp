@@ -2,6 +2,7 @@
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/IServerTCPHandler.h"
 #include "Network/API/ClientTCP.h"
+#include "Network/API/NetworkPacket.h"
 
 #include "Threading/Thread.h"
 
@@ -112,6 +113,16 @@ namespace LambdaEngine
 	void ServerTCP::OnClientFailedConnecting(ClientTCP* client)
 	{
 
+	}
+
+	int nr = 0;
+	void ServerTCP::OnClientPacketReceived(ClientTCP* client, NetworkPacket* packet)
+	{
+		nr++;
+		std::string str;
+		packet->ReadString(str);
+		//LOG_MESSAGE(str.c_str());
+		//LOG_MESSAGE("%d", nr);
 	}
 
 	ISocketTCP* ServerTCP::CreateServerSocket(const std::string& address, uint16 port)

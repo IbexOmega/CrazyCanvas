@@ -319,9 +319,9 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	Sound* ResourceLoader::LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath, ESoundFlags flags)
+	SoundEffect3D* ResourceLoader::LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath, ESoundFlags flags)
 	{
-		Sound* pSound = pAudioDevice->CreateSound();
+		SoundEffect3D* pSound = pAudioDevice->CreateSound();
 
 		byte* pSoundData = nullptr;
 		uint32 soundDataSize = 0;

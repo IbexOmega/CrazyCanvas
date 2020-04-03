@@ -6,7 +6,7 @@
 
 namespace LambdaEngine
 {
-	Win32SocketUDP::Win32SocketUDP() : Win32Socket()
+	Win32SocketUDP::Win32SocketUDP() : Win32SocketBase()
 	{
 		m_Socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -17,7 +17,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool Win32SocketUDP::SendTo(const char* buffer, uint32 bytesToSend, uint32& bytesSent, const std::string& address, uint16 port)
+	bool Win32SocketUDP::SendTo(const char* buffer, uint32 bytesToSend, int32& bytesSent, const std::string& address, uint16 port)
 	{
 		struct sockaddr_in socketAddress;
 		socketAddress.sin_family = AF_INET;
@@ -37,7 +37,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool Win32SocketUDP::ReceiveFrom(char* buffer, uint32 size, uint32& bytesReceived, std::string& address, uint16& port)
+	bool Win32SocketUDP::ReceiveFrom(char* buffer, uint32 size, int32& bytesReceived, std::string& address, uint16& port)
 	{
 		struct sockaddr_in socketAddress;
 		int32 socketAddressSize = sizeof(struct sockaddr_in);
@@ -68,7 +68,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool Win32SocketUDP::Broadcast(const char* buffer, uint32 bytesToSend, uint32& bytesSent, uint16 port)
+	bool Win32SocketUDP::Broadcast(const char* buffer, uint32 bytesToSend, int32& bytesSent, uint16 port)
 	{
 		return SendTo(buffer, bytesToSend, bytesSent, "", port);
 	}

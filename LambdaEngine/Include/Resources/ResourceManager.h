@@ -39,7 +39,7 @@ namespace LambdaEngine
 		Mesh*			GetMesh(GUID_Lambda guid)		{ return m_Meshes[guid]; }
 		Material*		GetMaterial(GUID_Lambda guid)	{ return m_Materials[guid]; }
 		ITexture*		GetTexture(GUID_Lambda guid)	{ return m_Textures[guid]; }
-		Sound*			GetSound(GUID_Lambda guid)		{ return m_Sounds[guid]; }
+		SoundEffect3D*	GetSound(GUID_Lambda guid)		{ return m_Sounds[guid]; }
 
 	private:
 		GUID_Lambda RegisterLoadedMesh(Mesh* pMesh);
@@ -55,7 +55,7 @@ namespace LambdaEngine
 		std::unordered_map<GUID_Lambda, Mesh*>	   m_Meshes;
 		std::unordered_map<GUID_Lambda, Material*> m_Materials;
 		std::unordered_map<GUID_Lambda, ITexture*> m_Textures;
-		std::unordered_map<GUID_Lambda, Sound*> m_Sounds;
+		std::unordered_map<GUID_Lambda, SoundEffect3D*> m_Sounds;
 
 	private:
 		static GUID_Lambda s_NextFreeGUID;
