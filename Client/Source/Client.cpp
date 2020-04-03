@@ -20,25 +20,7 @@ Client::Client()
     PlatformConsole::SetTitle("Client Console");
     
     m_pClient = new ClientTCP(this);
-	m_pClient->Connect("192.168.0.100", 4444);
-    
-//    ISocketTCP* pSocket = PlatformSocketFactory::CreateSocketTCP();
-//    if (pSocket->Connect("127.0.0.1", 4444))
-//    {
-//        LOG_MESSAGE("CONNECTED");
-//        char buffer[512];
-//        int bytesRead = 0;
-//        if (pSocket->Receive(buffer, 512, bytesRead))
-//        {
-//            LOG_MESSAGE("Receive");
-//        }
-//        else
-//            LOG_MESSAGE("Receive Failed");
-//    }
-//    else
-//    {
-//        LOG_MESSAGE("Failed to connect");
-//    }
+	m_pClient->Connect("127.0.0.1", 4444);
 }
 
 Client::~Client()
@@ -66,7 +48,13 @@ void Client::OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngin
 
 void Client::OnKeyDown(LambdaEngine::EKey key)
 {
-	m_pClient->Disconnect();
+	using namespace LambdaEngine;
+	NetworkPacket* packet = new NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
+	packet->WriteString("Hej kompis vad heter du?");
+
+	m_pClient->SendPacket(packet);
+
+	//m_pClient->Disconnect();
 	LOG_MESSAGE("Key Pressed: %d", key);
 }
 
@@ -82,11 +70,7 @@ void Client::OnKeyUp(LambdaEngine::EKey key)
 
 void Client::Tick()
 {
-	using namespace LambdaEngine;
-	NetworkPacket* packet = new NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
-	packet->WriteString("Hej kompis vad heter du?");
-
-	m_pClient->SendPacket(packet);
+	
 }
 
 namespace LambdaEngine
