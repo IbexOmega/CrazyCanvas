@@ -17,6 +17,8 @@ namespace LambdaEngine
 
 		virtual bool Init(const char* pTitle, uint32 width, uint32 height) override;
 
+		virtual void SetTitle(const char* pTitle) override;
+
 		virtual void Show() override;
 
 		FORCEINLINE virtual void* GetHandle() const override final

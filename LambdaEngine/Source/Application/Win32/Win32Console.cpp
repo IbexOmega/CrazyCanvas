@@ -86,6 +86,11 @@ namespace LambdaEngine
 		SetConsoleCursorPosition(s_OutputHandle, cursorPos);
 	}
 
+	void Win32Console::SetTitle(const char* pTitle)
+	{
+		::SetConsoleTitleA(pTitle);
+	}
+
 	void Win32Console::SetColor(EConsoleColor color)
 	{
 		WORD wColor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
