@@ -33,7 +33,9 @@ namespace LambdaEngine
 
 	private:
 		void Run(std::string address, uint16 port);
-		void OnStoped();
+		void OnStopped();
+
+	private:
 		static ISocketTCP* CreateServerSocket(const std::string& address, uint16 port);
 
 	private:

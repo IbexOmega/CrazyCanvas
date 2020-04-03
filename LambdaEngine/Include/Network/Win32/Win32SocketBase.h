@@ -22,20 +22,55 @@ namespace LambdaEngine
 		{
 			struct sockaddr_in socketAddress;
 			socketAddress.sin_family = AF_INET;
-			if (!address.empty())
-				inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
-			else
-				socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 			socketAddress.sin_port = htons(port);
 
-			if (bind(m_Socket, (struct sockaddr*)&socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
+			if (address.empty() || address == ADDRESS_ANY)
+				socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+			else if (address == ADDRESS_LOOPBACK)
+				socketAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+			else if (address == ADDRESS_BROADCAST)
+				socketAddress.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+			else
+				inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
+
+			if (bind(m_Socket, (struct sockaddr*) & socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
 			{
-				LOG_ERROR_CRIT("Failed to bind to %s:%d", !address.empty() ? address.c_str() : "ANY", port);
+				LOG_ERROR_CRIT("Failed to bind to %s:%d", address.c_str(), port);
 				PrintLastError();
 				return false;
 			}
+
+			ReadSocketData();
+
 			return true;
-		}
+		};
+
+		bool Connect(const std::string& address, uint16 port) override
+		{
+			struct sockaddr_in socketAddress;
+			socketAddress.sin_family = AF_INET;
+			socketAddress.sin_port = htons(port);
+
+			if (address.empty() || address == ADDRESS_ANY)
+				socketAddress.sin_addr.s_addr = INADDR_ANY;
+			else if (address == ADDRESS_LOOPBACK)
+				socketAddress.sin_addr.s_addr = INADDR_LOOPBACK;
+			else if (address == ADDRESS_BROADCAST)
+				socketAddress.sin_addr.s_addr = INADDR_BROADCAST;
+			else
+				inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
+
+			if (connect(m_Socket, reinterpret_cast<sockaddr*>(&socketAddress), sizeof(socketAddress)) == SOCKET_ERROR)
+			{
+				LOG_ERROR_CRIT("Failed to connect to %s:%d", address.c_str(), port);
+				PrintLastError();
+				return false;
+			}
+
+			ReadSocketData();
+
+			return true;
+		};
 
 		virtual bool SetNonBlocking(bool nonBlocking) override
 		{
@@ -69,24 +104,53 @@ namespace LambdaEngine
 				return false;
 			}
 			return true;
-		}
+		};
 
 		virtual bool IsClosed() const override
 		{
 			return m_Closed;
 		};
 
-	protected:
-		Win32SocketBase() : 
-			m_Socket(INVALID_SOCKET),
-			m_NonBlocking(false),
-			m_Closed(false)
+		const std::string& GetAddress() const override
 		{
-		}
+			return m_Address;
+		};
+		 
+		uint16 GetPort() const override
+		{
+			return m_Port;
+		};
+
+	protected:
+		Win32SocketBase() : Win32SocketBase(INVALID_SOCKET, "", 0)
+		{
+		};
+
+		Win32SocketBase(uint64 socket, const char* address, uint16 port) :
+			m_Socket(socket),
+			m_NonBlocking(false),
+			m_Closed(false),
+			m_Address(address),
+			m_Port(port)
+		{
+		};
 
 		~Win32SocketBase()
 		{
 			Close();
+		};
+
+		void ReadSocketData()
+		{
+			sockaddr_in socketAddress;
+			socklen_t socketAddressSize = sizeof(socketAddress);
+			if (getsockname(m_Socket, reinterpret_cast<sockaddr*>(&socketAddress), &socketAddressSize) == SOCKET_ERROR)
+			{
+				LOG_ERROR_CRIT("Faild to ReadSocketData");
+				return;
+			}
+			m_Address = inet_ntoa(socketAddress.sin_addr);
+			m_Port = ntohs(socketAddress.sin_port);
 		}
 
 		void PrintLastError() const
@@ -197,12 +261,16 @@ namespace LambdaEngine
 
 			LOG_ERROR("ERROR CODE: %d", errorCode);
 			LOG_ERROR("ERROR MESSAGE: %s\n", message.c_str());
-		}
+		};
 
 	protected:
 		SOCKET m_Socket;
+
+	private:
 		bool m_NonBlocking;
 		bool m_Closed;
+		std::string m_Address;
+		uint16 m_Port;
 	};
 }
 

@@ -30,13 +30,13 @@ namespace LambdaEngine
 	{
 		if (IsRunning())
 		{
-			LOG_ERROR_CRIT("Tried to start an already running Server!");
+			LOG_ERROR("[ServerTCP]: Tried to start an already running Server!");
 			return false;
 		}
 
 		m_Stop = false;
 
-		m_pThread = Thread::Create(std::bind(&ServerTCP::Run, this, address, port), std::bind(&ServerTCP::OnStoped, this));
+		m_pThread = Thread::Create(std::bind(&ServerTCP::Run, this, address, port), std::bind(&ServerTCP::OnStopped, this));
 		return true;
 	}
 
@@ -58,9 +58,11 @@ namespace LambdaEngine
 		m_pServerSocket = CreateServerSocket(address, port);
 		if (!m_pServerSocket)
 		{
-			LOG_ERROR_CRIT("Failed to start Server!");
+			LOG_ERROR("[ServerTCP]: Failed to start!");
 			return;
 		}
+
+		LOG_INFO("[ServerTCP]: Started %s:%d", address.c_str(), port);
 
 		while (!m_Stop)
 		{
@@ -91,16 +93,17 @@ namespace LambdaEngine
 		m_pServerSocket->Close();
 	}
 
-	void ServerTCP::OnStoped()
+	void ServerTCP::OnStopped()
 	{
 		m_pThread = nullptr;
 		delete m_pServerSocket;
 		m_pServerSocket = nullptr;
+		LOG_WARNING("[ServerTCP]: Stopped");
 	}
 
 	void ServerTCP::OnClientConnected(ClientTCP* client)
 	{
-
+		LOG_INFO("[ServerTCP]: Client Connected");
 	}
 
 	void ServerTCP::OnClientDisconnected(ClientTCP* client)
@@ -108,6 +111,7 @@ namespace LambdaEngine
 		m_Clients.erase(std::remove(m_Clients.begin(), m_Clients.end(), client), m_Clients.end()); //Lock?
 		m_pHandler->OnClientDisconnected(client);
 		delete client;
+		LOG_WARNING("[ServerTCP]: Client Disconnected");
 	}
 
 	void ServerTCP::OnClientFailedConnecting(ClientTCP* client)
@@ -121,8 +125,8 @@ namespace LambdaEngine
 		nr++;
 		std::string str;
 		packet->ReadString(str);
-		LOG_MESSAGE(str.c_str());
-		LOG_MESSAGE("%d", nr);
+		//LOG_MESSAGE(str.c_str());
+		//LOG_MESSAGE("%d", nr);
 	}
 
 	ISocketTCP* ServerTCP::CreateServerSocket(const std::string& address, uint16 port)

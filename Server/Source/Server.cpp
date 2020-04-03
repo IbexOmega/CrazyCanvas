@@ -19,8 +19,10 @@ Server::Server()
     PlatformApplication::Get()->GetWindow()->SetTitle("Server");
     PlatformConsole::SetTitle("Server Console");
 
+	std::string address = PlatformSocketFactory::GetLocalAddress();
+
 	m_pServer = new ServerTCP(this);
-	m_pServer->Start("127.0.0.1", 4444);
+	m_pServer->Start(address, 4444);
 }
 
 Server::~Server()

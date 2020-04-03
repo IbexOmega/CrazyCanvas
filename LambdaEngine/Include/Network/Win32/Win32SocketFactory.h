@@ -11,6 +11,7 @@ namespace LambdaEngine
 	public:
 		static ISocketTCP* CreateSocketTCP();
 		static ISocketUDP* CreateSocketUDP();
+		static const std::string& GetLocalAddress();
 
     private:
         static bool Init();

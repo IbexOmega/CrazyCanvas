@@ -134,6 +134,8 @@ namespace LambdaEngine
 	{
 		Input::Release();
 
+		PlatformSocketFactory::Release();
+
 		if (!RenderSystem::Release())
 		{
 			return false;

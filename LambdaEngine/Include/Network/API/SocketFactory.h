@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Defines.h"
+#include <string>
 
 namespace LambdaEngine
 {
@@ -12,8 +13,10 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(SocketFactory);
 
+	public:
 		static ISocketTCP* CreateSocketTCP() { return nullptr; };
 		static ISocketUDP* CreateSocketUDP() { return nullptr; };
+		static const std::string& GetLocalAddress() { return ""; };
 
 	private:
 		static bool Init() { return false; };

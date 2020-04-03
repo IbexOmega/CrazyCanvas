@@ -20,7 +20,7 @@ Client::Client()
     PlatformConsole::SetTitle("Client Console");
     
     m_pClient = new ClientTCP(this);
-	m_pClient->Connect("127.0.0.1", 4444);
+	m_pClient->Connect("192.168.0.104", 4444);
 }
 
 Client::~Client()

@@ -18,14 +18,14 @@ namespace LambdaEngine
 			LOG_ERROR("Failed to initialize Winsock2, Error Code : %d", WSAGetLastError());
 			return false;
 		}
-
-		LOG_MESSAGE("Winsock2 Initialised");
+		LOG_INFO("[Winsock2]: Initialised");
 		return true;
 	}
 
 	void Win32SocketFactory::Release()
 	{
 		WSACleanup();
+		LOG_INFO("[Winsock2]: Released");
 	}
 
 	ISocketTCP* Win32SocketFactory::CreateSocketTCP()
@@ -37,5 +37,18 @@ namespace LambdaEngine
 	{
 		return new Win32SocketUDP();
 	}
+
+    const std::string& Win32SocketFactory::GetLocalAddress()
+    {
+        ISocketUDP* socketUDP = CreateSocketUDP();
+		if (socketUDP)
+		{
+			if (socketUDP->Connect(ADDRESS_LOOPBACK, 9))
+			{
+				return socketUDP->GetAddress();
+			}
+		}
+		return ADDRESS_LOOPBACK;
+    }
 }
 #endif

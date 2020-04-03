@@ -6,7 +6,7 @@
 
 namespace LambdaEngine
 {
-	Win32SocketTCP::Win32SocketTCP() : Win32SocketTCP(INVALID_SOCKET, "", 0)
+	Win32SocketTCP::Win32SocketTCP() : Win32SocketBase()
 	{
 		m_Socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -17,30 +17,8 @@ namespace LambdaEngine
 		}
 	}
 
-	Win32SocketTCP::Win32SocketTCP(uint64 socket, const char* address, uint16 port) : Win32SocketBase()
+	Win32SocketTCP::Win32SocketTCP(uint64 socket, const char* address, uint16 port) : Win32SocketBase(socket, address, port)
 	{
-		m_Socket = socket;
-		m_Address = address;
-		m_Port = port;
-	}
-
-	bool Win32SocketTCP::Connect(const std::string& address, uint16 port)
-	{
-		struct sockaddr_in socketAddress;
-		socketAddress.sin_family = AF_INET;
-		inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
-		socketAddress.sin_port = htons(port);
-
-		m_Port = port;
-		m_Address = address;
-
-		if (connect(m_Socket, (struct sockaddr*)&socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
-		{
-			LOG_ERROR_CRIT("Failed to connect to %s:%d", address.c_str(), port);
-			PrintLastError();
-			return false;
-		}
-		return true;
 	}
 
 	bool Win32SocketTCP::Listen()
@@ -103,16 +81,6 @@ namespace LambdaEngine
 			return false;
 		}
 		return true;
-	}
-
-	const std::string& Win32SocketTCP::GetAddress()
-	{
-		return m_Address;
-	}
-
-	uint16 Win32SocketTCP::GetPort()
-	{
-		return m_Port;
 	}
 }
 #endif
