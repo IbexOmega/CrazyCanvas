@@ -137,12 +137,6 @@ namespace LambdaEngine
 			FMOD_Channel_Set3DAttributes(m_pChannel, &fmodPosition, nullptr);
 			FMOD_Channel_SetVolume(m_pChannel, m_Volume);
 			FMOD_Channel_SetPitch(m_pChannel, m_Pitch);
-
-			if (m_Mode & FMOD_LOOP_NORMAL)
-			{
-				//Quickfix for loop end popping
-				FMOD_Channel_SetLoopPoints(m_pChannel, 0, FMOD_TIMEUNIT_MS, m_pSoundEffect->GetLengthMS() - 50, FMOD_TIMEUNIT_MS);
-			}
 		}
 	}
 }

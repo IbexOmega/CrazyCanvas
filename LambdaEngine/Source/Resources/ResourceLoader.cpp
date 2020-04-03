@@ -332,8 +332,7 @@ namespace LambdaEngine
 		}
 
 		SoundEffect3DDesc soundDesc		= {};
-		soundDesc.pName			= pFilepath;
-		soundDesc.pData			= pSoundData;
+		soundDesc.pFilepath		= pFilepath;
 		soundDesc.DataSize		= soundDataSize;
 
 		if (!pSound->Init(soundDesc))

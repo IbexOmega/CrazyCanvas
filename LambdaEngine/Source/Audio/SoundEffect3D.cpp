@@ -24,15 +24,14 @@ namespace LambdaEngine
 
 	bool SoundEffect3D::Init(const SoundEffect3DDesc& desc)
 	{
-		FMOD_MODE mode = FMOD_3D | FMOD_CREATESAMPLE | FMOD_OPENMEMORY;
+		FMOD_MODE mode = FMOD_3D | FMOD_CREATESAMPLE;
 
 		FMOD_CREATESOUNDEXINFO soundCreateInfo = {};
 		soundCreateInfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
-		soundCreateInfo.length = desc.DataSize;
 
-		if (FMOD_System_CreateSound(m_pAudioDevice->pSystem, reinterpret_cast<const char*>(desc.pData), mode, &soundCreateInfo, &m_pHandle) != FMOD_OK)
+		if (FMOD_System_CreateSound(m_pAudioDevice->pSystem, desc.pFilepath, mode, &soundCreateInfo, &m_pHandle) != FMOD_OK)
 		{
-			LOG_ERROR("[Sound]: Sound \"%s\" could not be initialized", desc.pName);
+			LOG_ERROR("[Sound]: Sound \"%s\" could not be initialized", desc.pFilepath);
 			return false;
 		}
 
