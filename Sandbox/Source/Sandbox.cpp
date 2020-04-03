@@ -30,7 +30,7 @@ Sandbox::Sandbox() :
 
 	SoundInstance3DDesc soundInstanceDesc = {};
 	soundInstanceDesc.pSoundEffect		= m_pToneSoundEffect;
-	soundInstanceDesc.Flags				= ESoundFlags::LOOPING;
+	soundInstanceDesc.Flags				= ESoundModeFlags::SOUND_MODE_LOOPING;
 
 	m_pToneSoundInstance = AudioSystem::GetDevice()->CreateSoundInstance();
 	m_pToneSoundInstance->Init(soundInstanceDesc);
@@ -40,6 +40,8 @@ Sandbox::Sandbox() :
 	m_GunshotTimer = 0.0f;
 	m_GunshotDelay = 1.0f;
 	m_Timer = 0.0f;
+
+	AudioSystem::GetDevice()->LoadMusic("../Assets/Sounds/halo_theme.ogg");
 
 	m_pAudioListener = AudioSystem::GetDevice()->CreateAudioListener();
 }
@@ -108,6 +110,10 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 	else if (key == EKey::KEY_KP_SUBTRACT)
 	{
 		m_GunshotDelay = glm::max(m_GunshotDelay - 0.05f, 0.125f);
+	}
+	else if (key == EKey::KEY_KP_5)
+	{
+		AudioSystem::GetDevice()->ToggleMusic();
 	}
 }
 

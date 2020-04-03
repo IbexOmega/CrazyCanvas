@@ -17,7 +17,7 @@ namespace LambdaEngine
 	struct SoundInstance3DDesc
 	{
 		SoundEffect3D* pSoundEffect			= nullptr;
-		ESoundFlags Flags					= ESoundFlags::NONE;
+		ESoundModeFlags Flags				= ESoundModeFlags::SOUND_MODE_NONE;
 	};
 
 	class LAMBDA_API SoundInstance3D

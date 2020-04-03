@@ -59,7 +59,7 @@ void Server::OnKeyUp(LambdaEngine::EKey key)
 	LOG_MESSAGE("Key Released: %d", key);
 }
 
-void Server::Tick()
+void Server::Tick(LambdaEngine::Timestamp dt)
 {
 }
 

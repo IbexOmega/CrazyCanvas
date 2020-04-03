@@ -68,7 +68,7 @@ void Client::OnKeyUp(LambdaEngine::EKey key)
 	LOG_MESSAGE("Key Released: %d", key);
 }
 
-void Client::Tick()
+void Client::Tick(LambdaEngine::Timestamp dt)
 {
 	
 }

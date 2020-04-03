@@ -6,6 +6,7 @@
 #include "Audio/SoundInstance3D.h"
 
 #include "Log/Log.h"
+#include "Threading/Thread.h"
 
 namespace LambdaEngine
 {
@@ -30,13 +31,22 @@ namespace LambdaEngine
 	AudioDevice::AudioDevice() :
 		pSystem(nullptr),
 		m_MaxNumAudioListeners(0),
-		m_NumAudioListeners(0)
+		m_NumAudioListeners(0),
+		m_pMusicHandle(nullptr),
+		m_pMusicChannel(nullptr)
 	{
 		
 	}
 
 	AudioDevice::~AudioDevice()
 	{
+		if (m_pMusicHandle != nullptr)
+		{
+			FMOD_Channel_Stop(m_pMusicChannel);
+			FMOD_Sound_Release(m_pMusicHandle);
+			m_pMusicHandle = nullptr;
+		}
+		
 		if (pSystem != nullptr)
 		{
 			if (FMOD_System_Release(pSystem) != FMOD_OK)
@@ -48,7 +58,6 @@ namespace LambdaEngine
 				D_LOG_MESSAGE("[AudioDevice]: FMOD System released successfully");
 			}
 		}
-		
 	}
 
 	bool AudioDevice::Init(const AudioDeviceDesc& desc)
@@ -90,6 +99,71 @@ namespace LambdaEngine
 	void AudioDevice::Tick()
 	{
 		FMOD_System_Update(pSystem);
+	}
+
+	bool AudioDevice::LoadMusic(const char* pFilepath)
+	{
+		if (m_pMusicHandle != nullptr)
+		{
+			FMOD_Sound_Release(m_pMusicHandle);
+			m_pMusicHandle = nullptr;
+		}
+		
+		FMOD_MODE mode = FMOD_2D | FMOD_LOOP_NORMAL | FMOD_CREATESTREAM;
+
+		FMOD_CREATESOUNDEXINFO soundCreateInfo = {};
+		soundCreateInfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
+		
+		if (FMOD_System_CreateSound(pSystem, pFilepath, mode, &soundCreateInfo, &m_pMusicHandle) != FMOD_OK)
+		{
+			LOG_WARNING("[AudioDevice]: Music \"%s\" could not be initialized", pFilepath);
+			return false;
+		}
+
+		if (FMOD_System_PlaySound(pSystem, m_pMusicHandle, nullptr, true, &m_pMusicChannel) != FMOD_OK)
+		{
+			LOG_WARNING("[AudioDevice]: Music \"%s\" could not be played", pFilepath);
+			return false;
+		}
+
+		D_LOG_MESSAGE("[AudioDevice]: Loaded Music \"%s\"", pFilepath);
+		
+		return true;
+	}
+
+	void AudioDevice::PlayMusic()
+	{
+		FMOD_BOOL isPlaying = 0;
+		FMOD_Channel_IsPlaying(m_pMusicChannel, &isPlaying);
+
+		if (isPlaying)
+		{
+			FMOD_Channel_SetPaused(m_pMusicChannel, 0);
+		}
+	}
+
+	void AudioDevice::PauseMusic()
+	{
+		FMOD_BOOL isPlaying = 0;
+		FMOD_Channel_IsPlaying(m_pMusicChannel, &isPlaying);
+
+		if (isPlaying)
+		{
+			FMOD_Channel_SetPaused(m_pMusicChannel, 1);
+		}
+	}
+
+	void AudioDevice::ToggleMusic()
+	{
+		FMOD_BOOL isPlaying = 0;
+		FMOD_Channel_IsPlaying(m_pMusicChannel, &isPlaying);
+
+		if (isPlaying)
+		{
+			FMOD_BOOL isPaused = 0;
+			FMOD_Channel_GetPaused(m_pMusicChannel, &isPaused);
+			FMOD_Channel_SetPaused(m_pMusicChannel, (isPaused ^ 0x1));
+		}
 	}
 
 	AudioListener* AudioDevice::CreateAudioListener()

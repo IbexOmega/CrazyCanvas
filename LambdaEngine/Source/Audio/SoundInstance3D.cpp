@@ -37,7 +37,7 @@ namespace LambdaEngine
 		
 		m_Mode = FMOD_3D;
 
-		if (desc.Flags & ESoundFlags::LOOPING)
+		if (desc.Flags & ESoundModeFlags::SOUND_MODE_LOOPING)
 		{
 			m_Mode |= FMOD_LOOP_NORMAL;
 		}
@@ -120,9 +120,9 @@ namespace LambdaEngine
 
 	bool SoundInstance3D::IsPlaying()
 	{
-		FMOD_BOOL playing = 0;
-		FMOD_Channel_IsPlaying(m_pChannel, &playing);
-		return playing;
+		FMOD_BOOL isPlaying = 0;
+		FMOD_Channel_IsPlaying(m_pChannel, &isPlaying);
+		return isPlaying;
 	}
 
 	void SoundInstance3D::RecreateHandleIfNeeded()

@@ -46,6 +46,6 @@ namespace LambdaEngine
 		FMOD_SOUND*			m_pHandle;
 
 		//Local
-		uint32 m_LengthMS;
+		uint32				m_LengthMS;
 	};
 }

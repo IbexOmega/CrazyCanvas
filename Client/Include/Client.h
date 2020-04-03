@@ -20,7 +20,7 @@ public:
 	virtual void OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet) override;
 
 	// Inherited via Game
-	virtual void Tick() override;
+	virtual void Tick(LambdaEngine::Timestamp dt) override;
 
 	// Inherited via IKeyboardHandler
 	virtual void OnKeyDown(LambdaEngine::EKey key)      override;
