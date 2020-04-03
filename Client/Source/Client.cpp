@@ -12,7 +12,7 @@ Client::Client()
 	using namespace LambdaEngine;
     
 	m_pClient = new ClientTCP(this);
-	m_pClient->Connect("192.168.0.104", 4444);
+	m_pClient->Connect("192.168.0.100", 4444);
 }
 
 Client::~Client()
