@@ -21,9 +21,30 @@ namespace LambdaEngine
 	public:
 		ClientTCP(IClientTCPHandler* handler);
 		
+		/*
+		* Connects the client to a given ip-address and port. To connect to a special address use
+		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
+		*
+		* address - The inet address to bind the socket to.
+		* port    - The port to communicate through.
+		*
+		* return  - False if an error occured, otherwise true.
+		*/
 		bool Connect(const std::string& address, uint16 port);
+
+		/*
+		* Disconnects the client
+		*/
 		void Disconnect();
+
+		/*
+		* Sends a packet
+		*/
 		void SendPacket(NetworkPacket* packet);
+
+		/*
+		* return - true if this instance is on the server side, otherwise false.
+		*/
 		bool IsServerSide() const;
 
 	private:

@@ -21,8 +21,22 @@ namespace LambdaEngine
 		ServerTCP(IServerTCPHandler* handler);
 		~ServerTCP();
 
+		/*
+		* Starts the server on the given ip-address and port. To bind a special address use
+		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
+		*
+		* address - The inet address to bind the socket to.
+		* port    - The port to communicate through.
+		*
+		* return  - False if an error occured, otherwise true.
+		*/
 		bool Start(const std::string& address, uint16 port);
+
+		/*
+		* Tells the server to stop
+		*/
 		void Stop();
+
 		bool IsRunning() const;
 
 	protected:

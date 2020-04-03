@@ -9,8 +9,25 @@ namespace LambdaEngine
 		friend class EngineLoop;
         
 	public:
+		/*
+		* Creates a SocketTCP.
+		*
+		* return - a SocketTCP.
+		*/
 		static ISocketTCP* CreateSocketTCP();
+
+		/*
+		* Creates a SocketUDP.
+		*
+		* return - a SocketUDP.
+		*/
 		static ISocketUDP* CreateSocketUDP();
+
+		/*
+		* Finds the local network address. Usally 192.168.0.X
+		*
+		* return - The inet address
+		*/
 		static const std::string& GetLocalAddress();
 
     private:

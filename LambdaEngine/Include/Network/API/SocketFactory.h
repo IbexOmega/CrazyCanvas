@@ -11,11 +11,28 @@ namespace LambdaEngine
 	class LAMBDA_API SocketFactory
 	{
 	public:
-		DECL_INTERFACE(SocketFactory);
+		DECL_ABSTRACT_CLASS(SocketFactory);
 
 	public:
+		/*
+		* Creates a SocketTCP.
+		*
+		* return - a SocketTCP.
+		*/
 		static ISocketTCP* CreateSocketTCP() { return nullptr; };
+
+		/*
+		* Creates a SocketUDP.
+		*
+		* return - a SocketUDP.
+		*/
 		static ISocketUDP* CreateSocketUDP() { return nullptr; };
+
+		/*
+		* Finds the local network address. Usally 192.168.0.X
+		*
+		* return - The inet address
+		*/
 		static const std::string& GetLocalAddress() { return ""; };
 
 	private:

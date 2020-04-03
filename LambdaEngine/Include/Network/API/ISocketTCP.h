@@ -29,6 +29,7 @@ namespace LambdaEngine
 		* buffer	  - The buffer to send.
 		* bytesToSend - The number of bytes to send.
 		* bytesSent	  - Will return the number of bytes actually sent.
+		*
 		* return	  - False if an error occured, otherwise true.
 		*/
 		virtual bool Send(const char* buffer, uint32 bytesToSend, int32& bytesSent) = 0;
@@ -39,6 +40,7 @@ namespace LambdaEngine
 		* buffer	  - The buffer to read into.
 		* bytesToRead - The number of bytes to read.
 		* bytesRead	  - Will return the number of bytes actually read.
+		*
 		* return	  - False if an error occured, otherwise true. 
 		*/
 		virtual bool Receive(char* buffer, uint32 bytesToRead, int32& bytesRead) = 0;
