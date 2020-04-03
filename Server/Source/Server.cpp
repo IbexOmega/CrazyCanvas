@@ -12,7 +12,7 @@ Server::Server()
 	using namespace LambdaEngine;
     
 	m_pServer = new ServerTCP(this);
-	m_pServer->Start("127.0.0.1", 4444);
+	m_pServer->Start("192.168.0.104", 4444);
 }
 
 Server::~Server()

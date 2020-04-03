@@ -12,8 +12,7 @@ Client::Client()
 	using namespace LambdaEngine;
     
 	m_pClient = new ClientTCP(this);
-	m_pClient->Connect("127.0.0.1", 4444);
-
+	m_pClient->Connect("192.168.0.104", 4444);
 }
 
 Client::~Client()
@@ -44,7 +43,13 @@ void Client::OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngin
 
 void Client::OnKeyDown(LambdaEngine::EKey key)
 {
-	m_pClient->Disconnect();
+	using namespace LambdaEngine;
+	NetworkPacket* packet = new NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
+	packet->WriteString("Hej kompis vad heter du?");
+
+	m_pClient->SendPacket(packet);
+
+	//m_pClient->Disconnect();
 	LOG_MESSAGE("Key Pressed: %d", key);
 }
 
@@ -60,11 +65,7 @@ void Client::OnKeyUp(LambdaEngine::EKey key)
 
 void Client::Tick()
 {
-	using namespace LambdaEngine;
-	NetworkPacket* packet = new NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
-	packet->WriteString("Hej kompis vad heter du?");
-
-	m_pClient->SendPacket(packet);
+	
 }
 
 namespace LambdaEngine
