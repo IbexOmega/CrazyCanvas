@@ -1,6 +1,9 @@
 #include "Audio/AudioDevice.h"
 #include "Audio/Audio.h"
 
+#include "Audio/AudioListener.h"
+#include "Audio/SoundEffect3D.h"
+
 #include "Log/Log.h"
 
 namespace LambdaEngine
@@ -23,8 +26,10 @@ namespace LambdaEngine
 		return FMOD_OK;
 	}
 
-	AudioDevice::AudioDevice() : 
-		pSystem(nullptr)
+	AudioDevice::AudioDevice() :
+		pSystem(nullptr),
+		m_MaxNumAudioListeners(0),
+		m_NumAudioListeners(0)
 	{
 		
 	}
@@ -47,6 +52,8 @@ namespace LambdaEngine
 
 	bool AudioDevice::Init(const AudioDeviceDesc& desc)
 	{
+		m_MaxNumAudioListeners = desc.MaxNumAudioListeners;
+
 		if (desc.Debug)
 		{
 			FMOD_DEBUG_FLAGS debugLevel		= FMOD_DEBUG_LEVEL_LOG;
@@ -84,10 +91,25 @@ namespace LambdaEngine
 		FMOD_System_Update(pSystem);
 	}
 
-	Sound* AudioDevice::CreateSound()
+	AudioListener* AudioDevice::CreateAudioListener()
 	{
-		return new Sound(this);
+		if (m_NumAudioListeners >= m_MaxNumAudioListeners)
+		{
+			LOG_WARNING("[AudioDevice]: AudioListener could not be created, max amount reached!");
+			return nullptr;
+		}
+
+		AudioListener* pAudioListener = new AudioListener(this);
+
+		AudioListenerDesc audioListenerDesc = {};
+		audioListenerDesc.ListenerIndex = m_NumAudioListeners++;
+		pAudioListener->Init(audioListenerDesc);
+
+		return pAudioListener;
 	}
 
-	
+	SoundEffect3D* AudioDevice::CreateSound()
+	{
+		return new SoundEffect3D(this);
+	}	
 };

@@ -4,6 +4,11 @@
 
 #include "Input/API/Input.h"
 
+#include "Application/API/PlatformMisc.h"
+#include "Application/API/PlatformApplication.h"
+#include "Application/API/PlatformConsole.h"
+#include "Application/API/Window.h"
+
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/NetworkPacket.h"
 
@@ -11,8 +16,11 @@ Client::Client()
 {
 	using namespace LambdaEngine;
     
-	m_pClient = new ClientTCP(this);
-	m_pClient->Connect("192.168.0.100", 4444);
+    PlatformApplication::Get()->GetWindow()->SetTitle("Client");
+    PlatformConsole::SetTitle("Client Console");
+    
+    m_pClient = new ClientTCP(this);
+	m_pClient->Connect("127.0.0.1", 4444);
 }
 
 Client::~Client()
@@ -36,10 +44,7 @@ void Client::OnClientFailedConnecting(LambdaEngine::ClientTCP* client)
 
 void Client::OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)
 {
-
 }
-
-
 
 void Client::OnKeyDown(LambdaEngine::EKey key)
 {

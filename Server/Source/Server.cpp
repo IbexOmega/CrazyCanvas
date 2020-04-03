@@ -4,6 +4,11 @@
 
 #include "Input/API/Input.h"
 
+#include "Application/API/PlatformMisc.h"
+#include "Application/API/PlatformApplication.h"
+#include "Application/API/PlatformConsole.h"
+#include "Application/API/Window.h"
+
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/ClientTCP.h"
 
@@ -11,8 +16,11 @@ Server::Server()
 {
 	using namespace LambdaEngine;
     
+    PlatformApplication::Get()->GetWindow()->SetTitle("Server");
+    PlatformConsole::SetTitle("Server Console");
+
 	m_pServer = new ServerTCP(this);
-	m_pServer->Start("192.168.0.104", 4444);
+	m_pServer->Start("127.0.0.1", 4444);
 }
 
 Server::~Server()
@@ -34,8 +42,6 @@ void Server::OnClientDisconnected(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientDisconnected");
 }
-
-
 
 void Server::OnKeyDown(LambdaEngine::EKey key)
 {

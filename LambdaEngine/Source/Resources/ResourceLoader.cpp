@@ -20,7 +20,7 @@ namespace LambdaEngine
 
 		if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, filepath.c_str(), pDir, true, false))
 		{
-			LOG_WARNING("[ResourceDevice]: Failed to load scene '%s'. Warning: %s Error: %s", filepath, warn.c_str(), err.c_str());
+            LOG_WARNING("[ResourceDevice]: Failed to load scene '%s'. Warning: %s Error: %s", filepath.c_str(), warn.c_str(), err.c_str());
 			return false;
 		}
 
@@ -319,9 +319,9 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	Sound* ResourceLoader::LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath, ESoundFlags flags)
+	SoundEffect3D* ResourceLoader::LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath, ESoundFlags flags)
 	{
-		Sound* pSound = pAudioDevice->CreateSound();
+		SoundEffect3D* pSound = pAudioDevice->CreateSound();
 
 		byte* pSoundData = nullptr;
 		uint32 soundDataSize = 0;

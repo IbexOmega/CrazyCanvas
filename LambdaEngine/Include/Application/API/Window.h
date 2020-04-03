@@ -12,6 +12,8 @@ namespace LambdaEngine
         
         virtual void Show() = 0;
         
+        virtual void SetTitle(const char* pTitle) = 0;
+        
         virtual void*       GetHandle() const = 0;
         virtual const void* GetView()   const = 0;
     };

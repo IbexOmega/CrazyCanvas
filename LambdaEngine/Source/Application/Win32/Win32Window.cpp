@@ -40,6 +40,11 @@ namespace LambdaEngine
 	{
 		::ShowWindow(m_hWnd, SW_NORMAL);
 	}
+
+	void Win32Window::SetTitle(const char* pTitle)
+	{
+		::SetWindowTextA(m_hWnd, pTitle);
+	}
 }
 
 #endif

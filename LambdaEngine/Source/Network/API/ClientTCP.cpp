@@ -173,6 +173,8 @@ namespace LambdaEngine
 				return false;
 			bytesSentTotal += bytesSent;
 		}
+        
+        return true;
 	}
 
 	void ClientTCP::OnStoppedSend()

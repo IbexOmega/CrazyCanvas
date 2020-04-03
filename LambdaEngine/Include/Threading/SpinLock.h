@@ -1,5 +1,6 @@
 #pragma once
 #include <atomic>
+#include <mutex>
 
 class SpinLock
 {
@@ -17,11 +18,6 @@ public:
 	inline bool try_lock() noexcept
 	{
 		return !m_Flag.test_and_set(std::memory_order_acquire);
-	}
-
-	inline bool IsLocked() noexcept
-	{
-		return m_Flag._My_flag;
 	}
 
 private:

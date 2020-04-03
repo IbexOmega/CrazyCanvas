@@ -79,14 +79,14 @@ namespace LambdaEngine
 #endif
 	{
 #ifdef LAMBDA_PLATFORM_WINDOWS
-		if (!PlatformApplication::PreInit(hInstance))
+        if (!PlatformApplication::PreInit(hInstance))
 #else
-		if (!PlatformApplication::PreInit())
+        if (!PlatformApplication::PreInit())
 #endif
-		{
-			return false;
-		}
-		
+        {
+            return false;
+        }
+
 		PlatformTime::PreInit();
         
         Log::SetDebuggerOutputEnabled(true);

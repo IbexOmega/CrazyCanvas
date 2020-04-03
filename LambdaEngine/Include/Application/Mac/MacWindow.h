@@ -22,13 +22,15 @@ namespace LambdaEngine
     class MacWindow : public Window
     {
     public:
-        MacWindow()     = default;
+        MacWindow() = default;
         ~MacWindow();
 
         virtual bool Init(const char* pTitle, uint32 width, uint32 height)  override final;
-
+        
         virtual void Show() override final;
 
+        virtual void SetTitle(const char* pTitle) override final;
+        
         FORCEINLINE virtual void* GetHandle() const override final
         {
             return (void*)m_pWindow;

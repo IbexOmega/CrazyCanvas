@@ -138,7 +138,7 @@ namespace LambdaEngine
 	GUID_Lambda ResourceManager::LoadSoundFromFile(const char* pFilepath, ESoundFlags flags)
 	{
 		GUID_Lambda guid = GUID_NONE;
-		Sound** ppMappedSound = nullptr;
+		SoundEffect3D** ppMappedSound = nullptr;
 
 		//Spinlock
 		{

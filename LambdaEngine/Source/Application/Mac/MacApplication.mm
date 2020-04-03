@@ -1,4 +1,5 @@
 #ifdef LAMBDA_PLATFORM_MACOS
+#include "Application/Mac/MacConsole.h"
 #include "Application/Mac/MacApplication.h"
 #include "Application/Mac/MacAppController.h"
 
@@ -144,7 +145,7 @@ namespace LambdaEngine
         return pWindow;
     }
 
-    InputDevice* MacApplication::CreateInputDevice(EInputMode inputMode)
+    InputDevice* MacApplication::CreateInputDevice(EInputMode)
     {
         MacInputDevice* pInputDevice = new MacInputDevice();
         s_pApplication->AddMessageHandler(pInputDevice);
@@ -155,28 +156,26 @@ namespace LambdaEngine
     bool MacApplication::PreInit()
     {
         [NSApplication sharedApplication];
-        if (NSApp != nil)
-        {
-            [NSApp activateIgnoringOtherApps:YES];
-            [NSApp setPresentationOptions:NSApplicationPresentationDefault];
-            [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-        }
-        else
-        {
-            //TODO: Log error
-            return false;
-        }
-    
-        if (!MacInputCodeTable::Init())
-        {
-            return false;
-        }
         
+        ASSERT(NSApp != nil);
+        
+        [NSApp activateIgnoringOtherApps:YES];
+        [NSApp setPresentationOptions:NSApplicationPresentationDefault];
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+
         s_pApplication = new MacApplication();
         if (!s_pApplication->Init())
         {
             return false;
         }
+        
+        if (!MacInputCodeTable::Init())
+        {
+            return false;
+        }
+        
+        //Process events in the queue
+        ProcessMessages();
         
         [NSApp finishLaunching];
         

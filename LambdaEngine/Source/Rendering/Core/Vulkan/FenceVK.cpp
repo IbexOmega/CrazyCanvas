@@ -64,7 +64,7 @@ namespace LambdaEngine
 		signalInfo.value		= signalValue;
 		signalInfo.semaphore	= m_Semaphore;
 
-		VkResult result = vkSignalSemaphore(m_pDevice->Device, &signalInfo);
+        VkResult result = VK_SUCCESS;//vkSignalSemaphore(m_pDevice->Device, &signalInfo);
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR("[FenceVK]: Failed to signal semaphore", result);
