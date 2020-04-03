@@ -41,8 +41,9 @@ namespace LambdaEngine
 
             if (bind(m_Socket, (struct sockaddr*)&socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
             {
+                int32 error = errno;
 				LOG_ERROR_CRIT("Failed to bind to %s:%d", !address.empty() ? address.c_str() : "ANY", port);
-				PrintLastError();
+				PrintLastError(error);
 				return false;
 			}
 			return true;
@@ -53,8 +54,9 @@ namespace LambdaEngine
             u_long tempNonBlocking = (u_long)nonBlocking;
 			if (ioctl(m_Socket, FIONBIO, &tempNonBlocking) == SOCKET_ERROR)
 			{
+                int32 error = errno;
 				LOG_ERROR_CRIT("Failed to change blocking mode to [%sBlocking] ", nonBlocking ? "Non " : "");
-				PrintLastError();
+				PrintLastError(error);
 				return false;
 			}
             
@@ -78,8 +80,9 @@ namespace LambdaEngine
 
             if (close(m_Socket) == SOCKET_ERROR)
             {
+                int32 error = errno;
                 LOG_ERROR_CRIT("Failed to close socket");
-                PrintLastError();
+                PrintLastError(error);
                 return false;
             }
                 
@@ -93,7 +96,8 @@ namespace LambdaEngine
 
 	protected:
         MacSocketBase(int32 socket = INVALID_SOCKET)
-            : m_Socket(socket)
+            : m_Socket(socket),
+            m_NonBlocking(false)
 		{
 		}
         
@@ -102,10 +106,10 @@ namespace LambdaEngine
             Close();
         }
         
-        static void PrintLastError()
+        static void PrintLastError(int32 errorCode)
         {
             const char* pMessage = "";
-            switch (errno)
+            switch (errorCode)
             {
                 case E2BIG:           pMessage = "Argument list too long (POSIX.1-2001)."; break;
                 case EACCES:          pMessage = "Permission denied (POSIX.1-2001)."; break;
@@ -198,8 +202,8 @@ namespace LambdaEngine
                 default:              pMessage = "Unknown error"; break;
             }
             
-            LOG_ERROR_CRIT("ERROR CODE: %d", errno);
-            LOG_ERROR_CRIT("ERROR MESSAGE: %s", pMessage);
+            LOG_ERROR("ERROR CODE: %d", errorCode);
+            LOG_ERROR("ERROR MESSAGE: %s", pMessage);
         }
 
 	protected:

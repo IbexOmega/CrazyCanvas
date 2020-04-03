@@ -4,6 +4,11 @@
 
 #include "Input/API/Input.h"
 
+#include "Application/API/PlatformMisc.h"
+#include "Application/API/PlatformApplication.h"
+#include "Application/API/PlatformConsole.h"
+#include "Application/API/Window.h"
+
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/ClientTCP.h"
 
@@ -11,6 +16,32 @@ Server::Server()
 {
 	using namespace LambdaEngine;
     
+    PlatformApplication::Get()->GetWindow()->SetTitle("Server");
+    PlatformConsole::SetTitle("Server Console");
+    
+//    ISocketTCP* server = PlatformSocketFactory::CreateSocketTCP();
+//    if(server->Bind("127.0.0.1", 4444))
+//    {
+//        LOG_MESSAGE("BIND");
+//    }
+//    if(server->Listen())
+//    {
+//        LOG_MESSAGE("LISTEN");
+//    }
+//    ISocketTCP* socket = server->Accept();
+//    if(socket)
+//    {
+//        LOG_MESSAGE("ACCEPT");
+//        char buffer[512];
+//        int bytesRead = 0;
+//        while(true)
+//        {
+//            if(socket->Receive(buffer, 512, bytesRead))
+//            {
+//                LOG_MESSAGE("RECEIVED %d BYTES", bytesRead);
+//            }
+//        }
+//    }
 	m_pServer = new ServerTCP(this);
 	m_pServer->Start("127.0.0.1", 4444);
 }

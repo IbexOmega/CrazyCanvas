@@ -14,8 +14,9 @@ namespace LambdaEngine
         m_Socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (m_Socket == INVALID_SOCKET)
         {
+            int32 error = errno;
             LOG_ERROR_CRIT("Failed to create TCP socket");
-            //PrintLastError();
+            PrintLastError(error);
         }
     }
 
@@ -37,8 +38,9 @@ namespace LambdaEngine
 
 		if (connect(m_Socket, (struct sockaddr*)&socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
 		{
+            int32 error = errno;
             LOG_ERROR_CRIT("Failed to connect to %s:%d", address.c_str(), port);
-			//PrintLastError();
+			PrintLastError(error);
 			return false;
 		}
         
@@ -50,8 +52,9 @@ namespace LambdaEngine
         int32 result = listen(m_Socket, 64);
 		if (result == SOCKET_ERROR)
 		{
+            int32 error = errno;
 			LOG_ERROR_CRIT("Failed to listen");
-			//PrintLastError();
+			PrintLastError(error);
 			return false;
 		}
 		return true;
@@ -65,8 +68,9 @@ namespace LambdaEngine
 
 		if (socket == INVALID_SOCKET)
 		{
+            int32 error = errno;
 			LOG_ERROR_CRIT("Failed to accept Socket");
-			//PrintLastError();
+			PrintLastError(error);
 			return nullptr;
 		}
 
@@ -81,8 +85,9 @@ namespace LambdaEngine
         bytesSent = send(m_Socket, buffer, bytesToSend, 0);
 		if (bytesSent == SOCKET_ERROR)
 		{
+            int32 error = errno;
 			LOG_ERROR_CRIT("Failed to send data");
-			//PrintLastError();
+			PrintLastError(error);
 			return false;
 		}
 		return true;
@@ -93,16 +98,23 @@ namespace LambdaEngine
 		bytesReceived = recv(m_Socket, buffer, size, 0);
 		if (bytesReceived == SOCKET_ERROR)
 		{
+            int32 error = errno;
+            
 			bytesReceived = 0;
-			if (errno == EWOULDBLOCK && IsNonBlocking())
+			if (error == EWOULDBLOCK && IsNonBlocking())
             {
                 return true;
             }
 
 			LOG_ERROR_CRIT("Failed to receive data");
-			//PrintLastError();
+			PrintLastError(error);
 			return false;
 		}
+        else if (bytesReceived == 0)
+        {
+            return false;
+        }
+        
 		return true;
 	}
 

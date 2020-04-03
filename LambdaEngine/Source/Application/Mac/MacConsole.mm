@@ -1,8 +1,7 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #include "Application/Mac/MacConsole.h"
 #include "Application/Mac/CocoaConsoleWindow.h"
-
-#include "Application/API/PlatformMisc.h"
+#include "Application/Mac/MacApplication.h"
 
 namespace LambdaEngine
 {
@@ -45,7 +44,6 @@ namespace LambdaEngine
         [m_pWindow setInitialFirstResponder:m_pTextView];
         [m_pWindow setOpaque:YES];
         
-        
         [m_pWindow makeKeyAndOrderFront:m_pWindow];
         
         //Colors
@@ -73,6 +71,11 @@ namespace LambdaEngine
         [colors release];
         [attributes release];
         
+        //TODO: Insert a proper fix
+        if ([NSThread isMainThread])
+        {
+            MacApplication::ProcessMessages();
+        }
     }
 
     void MacConsole::Release()
@@ -93,7 +96,17 @@ namespace LambdaEngine
         NSString* format = [NSString stringWithUTF8String:pFormat];
         NSString* string = [[NSString alloc] initWithFormat:format arguments:args];
         
-        AppendTextAndScroll(string);
+        //TODO: Insert a proper fix
+        if ([NSThread isMainThread])
+        {
+            AppendTextAndScroll(string);
+            MacApplication::ProcessMessages();
+        }
+        else
+        {
+            NSLog(string);
+        }
+        
         [string release];
     }
 
@@ -114,7 +127,11 @@ namespace LambdaEngine
 
     void MacConsole::NewLine()
     {
-        AppendTextAndScroll(@"\n");
+        //TODO: Insert a proper fix
+        if ([NSThread isMainThread])
+        {
+            AppendTextAndScroll(@"\n");
+        }
     }
 
     void MacConsole::Show()
@@ -179,6 +196,12 @@ namespace LambdaEngine
         }
     }
     
+    void MacConsole::SetTitle(const char* pTitle)
+    {
+        NSString* title = [NSString stringWithUTF8String:pTitle];
+        [s_Console.m_pWindow setTitle:title];
+    }
+
     void MacConsole::SetColor(EConsoleColor color)
     {
         if (s_Console.m_pTextView)

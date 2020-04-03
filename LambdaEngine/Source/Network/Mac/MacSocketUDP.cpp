@@ -17,8 +17,9 @@ namespace LambdaEngine
 
 		if (m_Socket == INVALID_SOCKET)
 		{
+            int32 error = errno;
 			LOG_ERROR_CRIT("Failed to create UDP socket");
-			//PrintLastError();
+			PrintLastError(error);
 		}
 	}
 
@@ -35,8 +36,9 @@ namespace LambdaEngine
 		bytesSent = sendto(m_Socket, buffer, bytesToSend, 0, (struct sockaddr*)&socketAddress, sizeof(struct sockaddr_in));
 		if (bytesSent == SOCKET_ERROR)
 		{
+            int32 error = errno;
             LOG_ERROR_CRIT("Failed to send data to %s:%d", address.c_str(), port);
-			//PrintLastError();
+			PrintLastError(error);
 			return false;
 		}
 		return true;
@@ -50,8 +52,9 @@ namespace LambdaEngine
 		bytesReceived = recvfrom(m_Socket, buffer, size, 0, (struct sockaddr*)&socketAddress, &socketAddressSize);
 		if (bytesReceived == SOCKET_ERROR)
 		{
+            int32 error = errno;
 			LOG_ERROR_CRIT("Failed to receive data from");
-			//PrintLastError();
+			PrintLastError(error);
 			return false;
 		}
 
@@ -66,10 +69,12 @@ namespace LambdaEngine
 		static const int broadcast = 1;
 		if (setsockopt(m_Socket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) == SOCKET_ERROR)
 		{
+            int32 error = errno;
 			LOG_ERROR_CRIT("Failed to enable Broadcast");
-			//PrintLastError();
+			PrintLastError(error);
 			return false;
 		}
+        
 		return true;
 	}
 

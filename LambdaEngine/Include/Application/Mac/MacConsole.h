@@ -36,6 +36,7 @@ namespace LambdaEngine
         
         static void Clear();
 
+        static void SetTitle(const char* pTitle);
         static void SetColor(EConsoleColor color);
     
     private:
