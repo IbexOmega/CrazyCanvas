@@ -94,7 +94,7 @@ namespace LambdaEngine
 		if (bytesReceived == SOCKET_ERROR)
 		{
 			bytesReceived = 0;
-			//if (WSAGetLastError() == WSAEWOULDBLOCK && IsNonBlocking())
+			if (errno == EWOULDBLOCK && IsNonBlocking())
             {
                 return true;
             }
