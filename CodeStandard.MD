@@ -55,7 +55,7 @@ class TMyClass
 {
 };
 ```
-
+* Note that the classname is using capital letter 'T' as prefix
 
 ### Classes
 * A single class per header should be used, unless the types are strongly connected like an enum or descriptor.
@@ -117,20 +117,20 @@ class LAMBDA_API MyClass
 
 ### Naming Conventions
 * Pointers should use the letter 'p' as prefix 
-'''
+```
 int*   pPointer  = nullptr;
 int**  ppPointer = nullptr;
-'''
+```
 
 * Private/Protected members should use the letter 'm_' as prefix 
-'''
+```
 int    m_MyInteger = 0;
 int*   m_pPointer  = nullptr;
 int**  m_ppPointer = nullptr;
-'''
+```
 
 * Static variables should use the letter 's_' as prefix 
-'''
+```
 static int    s_Integer = 0;
 static int*   s_pPointer  = nullptr;
 static int**  s_ppPointer = nullptr;
@@ -139,14 +139,14 @@ void Func()
 {
   static int s_LocalVariable = 0;
 }
-'''
+```
 
 * Globals **(Should be avoided if possible)** should use the letter 'g_' as prefix
-'''
+```
 int    g_MyInteger = 0;
 int*   g_pPointer  = nullptr;
 int**  g_ppPointer = nullptr;
-'''
+```
 
 * Functions use pascalcase. Parameters and local variables use camelcase
 ```
@@ -155,7 +155,12 @@ void FunctionsLookLikeThis(int thisIsAParameter, int* pPointerParameter)
   int thisIsALocalVariable = thisIsAParamter;
 }
 ```
-
+* Compile-time constants are written with capital letters
+```
+#define       DEFINE_CONSTANT                     0
+const     int GLOBAL_COMPILE_TIME_CONSTANT_C    = 0;
+constexpr int GLOBAL_COMPILE_TIME_CONSTANT_CPP  = 0;
+```
 ### Interfaces
 * Interfaces do not contain any state (i.e no variables) and does not provide any functiondefinition. All functions should be pure virtual.
 
@@ -193,7 +198,21 @@ enum EMyFlags
 ```
 
 ### Struct
-* 
+* Structs should primarily be used for data only
+
+### Listeners vs Callbacks
+* Listeners (i.e. Interfaces) are preferred to be used for callback functionality. However, function pointers can be used if it makes more sense. For example if you don't want an object with v-table. 
+* A Listener shoudld end its name with either Handler or Listener.
+```
+class IKeyboardHandler
+{
+};
+
+class IKeyboardListener
+{
+};
+```
+
 ### Platform Specific Code
 
 
