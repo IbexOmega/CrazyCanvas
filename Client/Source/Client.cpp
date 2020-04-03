@@ -19,6 +19,9 @@ Client::Client()
     PlatformApplication::Get()->GetWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
     
+	ISocketUDP* s;
+	s->
+
     m_pClient = new ClientTCP(this);
 	m_pClient->Connect("192.168.0.104", 4444);
 }

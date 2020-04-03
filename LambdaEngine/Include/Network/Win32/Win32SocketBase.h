@@ -18,6 +18,15 @@ namespace LambdaEngine
 		friend class Win32SocketFactory;
 
 	public:
+
+		/*
+		* Binds the socket to a given ip-address and port. To bind a special address use
+		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
+		*
+		* address - The inet address to bind the socket to.
+		* port    - The port to communicate through.
+		* return  - False if an error occured, otherwise true.
+		*/
 		bool Bind(const std::string& address, uint16 port) override
 		{
 			struct sockaddr_in socketAddress;
@@ -45,6 +54,14 @@ namespace LambdaEngine
 			return true;
 		};
 
+		/*
+		* Connects the socket to a given ip-address and port. To bind a special address use
+		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
+		*
+		* address - The inet address to bind the socket to.
+		* port    - The port to communicate through.
+		* return  - False if an error occured, otherwise true.
+		*/
 		bool Connect(const std::string& address, uint16 port) override
 		{
 			struct sockaddr_in socketAddress;
@@ -72,6 +89,11 @@ namespace LambdaEngine
 			return true;
 		};
 
+		/*
+		* Sets the socket in non blocking or blocking mode.
+		*
+		* return - False if an error occured, otherwise true.
+		*/
 		virtual bool SetNonBlocking(bool nonBlocking) override
 		{
 			if (ioctlsocket(m_Socket, FIONBIO, &((u_long)nonBlocking)) != NO_ERROR)
@@ -90,6 +112,11 @@ namespace LambdaEngine
 			return m_NonBlocking;
 		};
 
+		/*
+		* Closes the socket
+		*
+		* return - False if an error occured, otherwise true.
+		*/
 		bool Close() override
 		{
 			if (m_Closed)
@@ -111,11 +138,17 @@ namespace LambdaEngine
 			return m_Closed;
 		};
 
+		/*
+		* return - The currently used inet address.
+		*/
 		const std::string& GetAddress() const override
 		{
 			return m_Address;
 		};
 		 
+		/*
+		* return - The currently used port.
+		*/
 		uint16 GetPort() const override
 		{
 			return m_Port;
