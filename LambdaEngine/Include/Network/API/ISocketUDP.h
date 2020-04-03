@@ -49,6 +49,7 @@ namespace LambdaEngine
 		* bytesToSend - The number of bytes to send.
 		* bytesSent	  - Will return the number of bytes actually sent.
 		* port		  - The port.
+		*
 		* return	  - False if an error occured, otherwise true.
 		*/
 		virtual bool Broadcast(const char* buffer, uint32 bytesToSend, int32& bytesSent, uint16 port) = 0;
