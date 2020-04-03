@@ -43,7 +43,7 @@ Server::Server()
 //        }
 //    }
 	m_pServer = new ServerTCP(this);
-	m_pServer->Start("127.0.0.1", 4444);
+	m_pServer->Start("192.168.0.100", 4444);
 }
 
 Server::~Server()
