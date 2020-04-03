@@ -28,17 +28,18 @@ namespace LambdaEngine
 		Thread(const std::function<void()>& func, const std::function<void()>& funcOnFinished);
 
 		void Run();
+
 		static void Join();
 
 	private:
-		std::thread* m_pThread;
+		std::thread m_Thread;
 		std::function<void()> m_Func;
 		std::function<void()> m_FuncOnFinished;
 		std::condition_variable m_Condition;
 		std::mutex m_Mutex;
 		std::atomic_bool m_ShouldYeild;
 
-		static SpinLock m_Lock;
-		static std::vector<Thread*> m_ThreadsToJoin;
+		static SpinLock s_Lock;
+		static std::vector<Thread*> s_ThreadsToJoin;
 	};
 }
