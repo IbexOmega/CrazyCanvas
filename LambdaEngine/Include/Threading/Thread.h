@@ -21,14 +21,16 @@ namespace LambdaEngine
 		void Wait();
 		void Notify();
 
-		static void Sleep(int32 milliseconds);
-		static Thread* Create(const std::function<void()>& func, const std::function<void()>& funcOnFinished);
-
 	private:
 		Thread(const std::function<void()>& func, const std::function<void()>& funcOnFinished);
 
 		void Run();
 
+	public:
+		static void Sleep(int32 milliseconds);
+		static Thread* Create(const std::function<void()>& func, const std::function<void()>& funcOnFinished);
+
+	private:
 		static void Join();
 
 	private:
@@ -39,6 +41,7 @@ namespace LambdaEngine
 		std::mutex m_Mutex;
 		std::atomic_bool m_ShouldYeild;
 
+	private:
 		static SpinLock s_Lock;
 		static std::vector<Thread*> s_ThreadsToJoin;
 	};

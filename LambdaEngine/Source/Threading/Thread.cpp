@@ -46,11 +46,8 @@ namespace LambdaEngine
 	void Thread::Run()
 	{
 		m_Func();
-		
-		{
-			std::scoped_lock<SpinLock> lock(s_Lock);
-			s_ThreadsToJoin.push_back(this); 
-		}
+		std::scoped_lock<SpinLock> lock(s_Lock);
+		s_ThreadsToJoin.push_back(this);
 	}
 
 	void Thread::Join()
@@ -62,8 +59,9 @@ namespace LambdaEngine
 			{
 				thread->m_Thread.join();
 				thread->m_FuncOnFinished();
+				delete thread;
 			}
-			s_ThreadsToJoin.clear();
+			s_ThreadsToJoin = std::vector<Thread*>();
 		}
 	}
 }
