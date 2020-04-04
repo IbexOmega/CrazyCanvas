@@ -19,7 +19,7 @@ namespace LambdaEngine
 		friend class ClientTCP;
 
 	public:
-		ServerTCP(IServerTCPHandler* handler);
+		ServerTCP(uint16 maxClients, IServerTCPHandler* handler);
 		~ServerTCP();
 
 		/*
@@ -65,6 +65,11 @@ namespace LambdaEngine
 		void Run(std::string address, uint16 port);
 		void OnStopped();
 
+		void HandleNewClient(ClientTCP* client);
+		void AddClient(ClientTCP* client);
+		void RemoveClient(ClientTCP* client);
+		void ClearClients();
+
 	private:
 		static ISocketTCP* CreateServerSocket(const std::string& address, uint16 port);
 
@@ -75,5 +80,6 @@ namespace LambdaEngine
 		std::atomic_bool m_Stop;
 		IServerTCPHandler* m_pHandler;
 		SpinLock m_Lock;
+		uint16 m_MaxClients;
 	};
 }

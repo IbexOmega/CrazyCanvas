@@ -44,6 +44,13 @@ void Client::OnClientFailedConnecting(LambdaEngine::ClientTCP* client)
 
 void Client::OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)
 {
+	using namespace LambdaEngine;
+
+	PACKET_TYPE packetType = packet->ReadPacketType();
+	if (packetType == PACKET_TYPE_SERVER_FULL)
+	{
+		LOG_WARNING("Server Full");
+	}
 }
 
 void Client::OnKeyDown(LambdaEngine::EKey key)

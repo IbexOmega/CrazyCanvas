@@ -20,7 +20,7 @@ namespace LambdaEngine
 
 	public:
 		ClientTCP(IClientTCPHandler* handler);
-		
+		~ClientTCP();
 		/*
 		* Connects the client to a given ip-address and port. To connect to a special address use
 		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
@@ -43,9 +43,19 @@ namespace LambdaEngine
 		void SendPacket(NetworkPacket* packet);
 
 		/*
+		* Sends a packet Immediately using the current thread
+		*/
+		bool SendPacketImmediately(NetworkPacket* packet);
+
+		/*
 		* return - true if this instance is on the server side, otherwise false.
 		*/
 		bool IsServerSide() const;
+
+		/*
+		* Release all the resouces used by the client and will be deleted when each thread has terminated.
+		*/
+		void Release();
 
 	private:
 		ClientTCP(IClientTCPHandler* handler, ISocketTCP* socket);
@@ -53,10 +63,15 @@ namespace LambdaEngine
 		void Run(std::string address, uint16 port);
 		void OnStopped();
 		bool Receive(char* buffer, int bytesToRead);
+		bool ReceivePacket(NetworkPacket* packet);
 
-		void RunSend();
+		void RunTransmit();
 		void OnStoppedSend();
-		bool Send(char* buffer, int bytesToSend);
+		bool Transmit(char* buffer, int bytesToSend);
+		void TransmitPackets(std::queue<NetworkPacket*>* packets);
+
+		static void DeletePackets(std::queue<NetworkPacket*>* packets);
+		static void DeletePacket(NetworkPacket* packet);
 
 		static ISocketTCP* CreateClientSocket(const std::string& address, uint16 port);
 
@@ -67,6 +82,7 @@ namespace LambdaEngine
 		Thread* m_pThreadSend;
 		bool m_ServerSide;
 		std::atomic_bool m_Stop;
+		std::atomic_bool m_Release;
 		std::queue<NetworkPacket*> m_PacketsToSend;
 		SpinLock m_LockPacketsToSend;
 	};

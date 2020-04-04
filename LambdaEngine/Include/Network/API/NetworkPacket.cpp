@@ -2,9 +2,10 @@
 
 namespace LambdaEngine
 {
-	NetworkPacket::NetworkPacket(EPacketType packetType) :
-		m_Size(sizeof(int16)),
-		m_Head(sizeof(int32))
+	NetworkPacket::NetworkPacket(PACKET_TYPE packetType, bool autoDelete) :
+		m_Size(sizeof(m_Size)),
+		m_Head(m_Size + sizeof(packetType)),
+		m_AutoDelete(autoDelete)
 	{
 		WriteInt16(packetType);
 	}
@@ -50,7 +51,7 @@ namespace LambdaEngine
 		WriteBuffer(value.c_str(), value.length());
 	}
 
-	void NetworkPacket::WriteBuffer(const char* buffer, int16 size)
+	void NetworkPacket::WriteBuffer(const char* buffer, PACKET_SIZE size)
 	{
 		memcpy(m_Buffer + m_Size, buffer, size);
 		m_Size += size;
@@ -99,7 +100,7 @@ namespace LambdaEngine
 		ReadBuffer(value.data(), length);
 	}
 
-	void NetworkPacket::ReadBuffer(char* buffer, int16 bytesToRead)
+	void NetworkPacket::ReadBuffer(char* buffer, PACKET_SIZE bytesToRead)
 	{
 		memcpy(buffer, m_Buffer + m_Head, bytesToRead);
 		m_Head += bytesToRead;
@@ -107,10 +108,10 @@ namespace LambdaEngine
 
 	void NetworkPacket::ResetHead()
 	{
-		m_Head = sizeof(int32);
+		m_Head = sizeof(PACKET_SIZE) + sizeof(PACKET_TYPE);
 	}
 
-	int16 NetworkPacket::GetSize() const
+	PACKET_SIZE NetworkPacket::GetSize() const
 	{
 		return m_Size;
 	}
@@ -128,5 +129,17 @@ namespace LambdaEngine
 	void NetworkPacket::UnPack()
 	{
 		memcpy(&m_Size, m_Buffer, sizeof(m_Size));
+	}
+
+	PACKET_TYPE NetworkPacket::ReadPacketType() const
+	{
+		PACKET_TYPE value;
+		memcpy((char*)&value, m_Buffer + sizeof(value), sizeof(value));
+		return value;
+	}
+
+	bool NetworkPacket::ShouldAutoDelete() const
+	{
+		return m_AutoDelete;
 	}
 }

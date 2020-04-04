@@ -16,7 +16,7 @@ Server::Server()
 {
 	using namespace LambdaEngine;
     
-	m_pServer = new ServerTCP(this);
+	m_pServer = new ServerTCP(1, this);
 	m_pServer->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
 
 	UpdateTitle();
