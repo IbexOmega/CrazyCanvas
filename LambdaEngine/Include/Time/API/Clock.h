@@ -33,14 +33,9 @@ namespace LambdaEngine
 			return m_TotalTime;
 		}
 
-	public:
-		FORCEINLINE static Timestamp CurrentTime()
-		{
-			return Timestamp(PlatformTime::Nanoseconds());
-		}
-
 	private:
-		Timestamp m_LastTime	= Timestamp(0);
+		uint64 m_LastTime = 0;
+
 		Timestamp m_TotalTime	= Timestamp(0);
 		Timestamp m_DeltaTime	= Timestamp(0);
 	};

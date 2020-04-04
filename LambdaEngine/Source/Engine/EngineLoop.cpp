@@ -69,6 +69,7 @@ namespace LambdaEngine
     bool EngineLoop::Tick(Timestamp dt)
     {
 		Thread::Join();
+		PlatformSocketFactory::Tick(dt);
 
         if (!PlatformApplication::Tick())
         {

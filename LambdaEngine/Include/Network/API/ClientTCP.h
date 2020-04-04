@@ -3,9 +3,11 @@
 #include "Defines.h"
 #include "Types.h"
 #include "Threading/SpinLock.h"
+#include "Time/API/Timestamp.h"
 #include <string>
 #include <atomic>
 #include <queue>
+#include <set>
 
 namespace LambdaEngine
 {
@@ -17,6 +19,7 @@ namespace LambdaEngine
 	class LAMBDA_API ClientTCP
 	{
 		friend class ServerTCP;
+		friend class SocketFactory;
 
 	public:
 		ClientTCP(IClientTCPHandler* handler);
@@ -57,22 +60,35 @@ namespace LambdaEngine
 		*/
 		void Release();
 
+		/*
+		* return - true if the client is connected.
+		*/
+		bool IsConnected() const;
+
 	private:
 		ClientTCP(IClientTCPHandler* handler, ISocketTCP* socket);
+
+		void Update(Timestamp dt);
+		void ResetReceiveTimer();
+		void ResetTransmitTimer();
 
 		void Run(std::string address, uint16 port);
 		void OnStopped();
 		bool Receive(char* buffer, int bytesToRead);
 		bool ReceivePacket(NetworkPacket* packet);
+		void HandlePacket(NetworkPacket* packet);
 
 		void RunTransmit();
 		void OnStoppedSend();
 		bool Transmit(char* buffer, int bytesToSend);
 		void TransmitPackets(std::queue<NetworkPacket*>* packets);
 
+	private:
 		static void DeletePackets(std::queue<NetworkPacket*>* packets);
 		static void DeletePacket(NetworkPacket* packet);
-
+		static void Init();
+		static void Tick(Timestamp timestamp);
+		static void ReleaseStatic();
 		static ISocketTCP* CreateClientSocket(const std::string& address, uint16 port);
 
 	private:
@@ -85,5 +101,14 @@ namespace LambdaEngine
 		std::atomic_bool m_Release;
 		std::queue<NetworkPacket*> m_PacketsToSend;
 		SpinLock m_LockPacketsToSend;
+		int64 m_TimerReceived;
+		int64 m_TimerTransmit;
+		uint32 m_NrOfPingTransmitted;
+		uint32 m_NrOfPingReceived;
+
+	private:
+		static NetworkPacket s_PacketPing;
+		static std::set<ClientTCP*>* s_Clients;
+		static SpinLock* s_LockClients;
 	};
 }

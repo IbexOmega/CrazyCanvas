@@ -53,10 +53,16 @@ namespace LambdaEngine
 
 	void Clock::Tick()
 	{
-		uint64		nanoseconds	= PlatformTime::Nanoseconds();
-		Timestamp	now			= Timestamp(nanoseconds);
+		uint64 now		= PlatformTime::GetPerformanceCounter();
+		uint64 delta	= now - m_LastTime;
 
-		m_DeltaTime = now - m_LastTime;
+		constexpr uint64 NANOSECONDS = 1000 * 1000 * 1000;
+		uint64 frequency	= PlatformTime::GetPerformanceFrequency();
+		uint64 nanoseconds	= (delta * NANOSECONDS) / frequency;
+
+		ASSERT(m_LastTime < now);
+
+		m_DeltaTime = Timestamp(nanoseconds);
 		m_LastTime	= now;
 		m_TotalTime += m_DeltaTime;
 	}

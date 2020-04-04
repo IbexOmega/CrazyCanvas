@@ -17,12 +17,17 @@ namespace LambdaEngine
 			::QueryPerformanceFrequency(&s_Frequency);
 		}
 
-		static FORCEINLINE uint64 Nanoseconds()
+		static FORCEINLINE uint64 GetPerformanceCounter()
 		{
 			LARGE_INTEGER counter = {};
 			::QueryPerformanceCounter(&counter);
 
-			return (counter.QuadPart * 1000000000UL) / s_Frequency.QuadPart;
+			return uint64(counter.QuadPart);
+		}
+
+		static FORCEINLINE uint64 GetPerformanceFrequency()
+		{
+			return uint64(s_Frequency.QuadPart);
 		}
 
 	private:

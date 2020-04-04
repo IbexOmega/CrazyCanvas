@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Time/API/Timestamp.h"
 #include "Defines.h"
 #include <string>
 
@@ -10,6 +11,8 @@ namespace LambdaEngine
 
 	class LAMBDA_API SocketFactory
 	{
+		friend class EngineLoop;
+
 	public:
 		DECL_ABSTRACT_CLASS(SocketFactory);
 
@@ -35,8 +38,9 @@ namespace LambdaEngine
 		*/
 		static const std::string& GetLocalAddress() { return ""; };
 
-	private:
-		static bool Init() { return false; };
-		static void Release() {};
+	protected:
+		static bool Init();
+		static void Tick(Timestamp dt);
+		static void Release();
 	};
 }

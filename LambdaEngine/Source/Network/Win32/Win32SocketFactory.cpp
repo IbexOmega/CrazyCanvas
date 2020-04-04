@@ -19,13 +19,14 @@ namespace LambdaEngine
 			return false;
 		}
 		LOG_INFO("[Winsock2]: Initialised");
-		return true;
+		return SocketFactory::Init();
 	}
 
 	void Win32SocketFactory::Release()
 	{
 		WSACleanup();
 		LOG_INFO("[Winsock2]: Released");
+		SocketFactory::Release();
 	}
 
 	ISocketTCP* Win32SocketFactory::CreateSocketTCP()

@@ -176,9 +176,16 @@ namespace LambdaEngine
 
 	void ServerTCP::OnClientPacketReceived(ClientTCP* client, NetworkPacket* packet)
 	{
-		std::string str;
-		packet->ReadString(str);
-		LOG_MESSAGE(str.c_str());
+		if (packet->ReadPacketType() == PACKET_TYPE_USER_DATA)
+		{
+			std::string str;
+			packet->ReadString(str);
+			LOG_MESSAGE(str.c_str());
+		}
+		else if (packet->ReadPacketType() == PACKET_TYPE_PING)
+		{
+			LOG_MESSAGE("Pong()");
+		}
 	}
 
 	ISocketTCP* ServerTCP::CreateServerSocket(const std::string& address, uint16 port)

@@ -7,12 +7,12 @@ namespace LambdaEngine
 {
 	bool MacSocketFactory::Init()
 	{
-		return true;
+		return SocketFactory::Init();
 	}
 
 	void MacSocketFactory::Release()
 	{
-		
+		SocketFactory::Release();
 	}
 
 	ISocketTCP* MacSocketFactory::CreateSocketTCP()

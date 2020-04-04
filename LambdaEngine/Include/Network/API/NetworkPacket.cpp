@@ -7,10 +7,15 @@ namespace LambdaEngine
 		m_Head(m_Size + sizeof(packetType)),
 		m_AutoDelete(autoDelete)
 	{
-		WriteInt16(packetType);
+		WriteBuffer((char*)&packetType, sizeof(packetType));
 	}
 
 	void NetworkPacket::WriteInt8(int8 value)
+	{
+		WriteBuffer((char*)&value, sizeof(value));
+	}
+
+	void NetworkPacket::WriteUInt8(uint8 value)
 	{
 		WriteBuffer((char*)&value, sizeof(value));
 	}
@@ -20,12 +25,27 @@ namespace LambdaEngine
 		WriteBuffer((char*)&value, sizeof(value));
 	}
 
+	void NetworkPacket::WriteUInt16(uint16 value)
+	{
+		WriteBuffer((char*)&value, sizeof(value));
+	}
+
 	void NetworkPacket::WriteInt32(int32 value)
 	{
 		WriteBuffer((char*)&value, sizeof(value));
 	}
 
+	void NetworkPacket::WriteUInt32(uint32 value)
+	{
+		WriteBuffer((char*)&value, sizeof(value));
+	}
+
 	void NetworkPacket::WriteInt64(int64 value)
+	{
+		WriteBuffer((char*)&value, sizeof(value));
+	}
+
+	void NetworkPacket::WriteUInt64(uint64 value)
 	{
 		WriteBuffer((char*)&value, sizeof(value));
 	}
@@ -62,7 +82,17 @@ namespace LambdaEngine
 		ReadBuffer(&value, sizeof(value));
 	}
 
+	void NetworkPacket::ReadUInt8(uint8& value)
+	{
+		ReadBuffer((char*)&value, sizeof(value));
+	}
+
 	void NetworkPacket::ReadInt16(int16& value)
+	{
+		ReadBuffer((char*)&value, sizeof(value));
+	}
+
+	void NetworkPacket::ReadUInt16(uint16& value)
 	{
 		ReadBuffer((char*)&value, sizeof(value));
 	}
@@ -72,7 +102,17 @@ namespace LambdaEngine
 		ReadBuffer((char*)&value, sizeof(value));
 	}
 
+	void NetworkPacket::ReadUInt32(uint32& value)
+	{
+		ReadBuffer((char*)&value, sizeof(value));
+	}
+
 	void NetworkPacket::ReadInt64(int64& value)
+	{
+		ReadBuffer((char*)&value, sizeof(value));
+	}
+
+	void NetworkPacket::ReadUInt64(uint64& value)
 	{
 		ReadBuffer((char*)&value, sizeof(value));
 	}
@@ -106,9 +146,10 @@ namespace LambdaEngine
 		m_Head += bytesToRead;
 	}
 
-	void NetworkPacket::ResetHead()
+	void NetworkPacket::Reset()
 	{
 		m_Head = sizeof(PACKET_SIZE) + sizeof(PACKET_TYPE);
+		m_Size = m_Head;
 	}
 
 	PACKET_SIZE NetworkPacket::GetSize() const
@@ -134,7 +175,7 @@ namespace LambdaEngine
 	PACKET_TYPE NetworkPacket::ReadPacketType() const
 	{
 		PACKET_TYPE value;
-		memcpy((char*)&value, m_Buffer + sizeof(value), sizeof(value));
+		memcpy((char*)&value, m_Buffer + sizeof(PACKET_SIZE), sizeof(value));
 		return value;
 	}
 

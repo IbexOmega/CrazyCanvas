@@ -5,12 +5,17 @@
 #include "Network/API/IClientTCPHandler.h"
 #include "Network/API/NetworkPacket.h"
 
+#include "Time/API/Clock.h"
 #include "Threading/Thread.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
+	NetworkPacket ClientTCP::s_PacketPing(PACKET_TYPE_PING, false);//		= nullptr;
+	std::set<ClientTCP*>* ClientTCP::s_Clients	= nullptr;
+	SpinLock* ClientTCP::s_LockClients			= nullptr;
+
 	ClientTCP::ClientTCP(IClientTCPHandler* handler) : ClientTCP(handler, nullptr)
 	{
 
@@ -22,8 +27,17 @@ namespace LambdaEngine
 		m_Stop(false),
 		m_Release(false),
 		m_pThread(nullptr),
-		m_pThreadSend(nullptr)
+		m_pThreadSend(nullptr),
+		m_TimerReceived(0),
+		m_TimerTransmit(0),
+		m_NrOfPingReceived(0),
+		m_NrOfPingTransmitted(0)
 	{
+		{
+			std::scoped_lock<SpinLock> lock(*s_LockClients);
+			s_Clients->insert(this);
+		}
+
 		m_ServerSide = socket != nullptr;
 
 		if(m_ServerSide)
@@ -35,6 +49,9 @@ namespace LambdaEngine
 		if(!m_Release)
 			LOG_ERROR("[ClientTCP]: Do not use delete on a ClientTCP. Use the Release() function!");
 		LOG_MESSAGE("~ClientTCP()");
+
+		std::scoped_lock<SpinLock> lock(*s_LockClients);
+		s_Clients->erase(this);
 	}
 
 	bool ClientTCP::Connect(const std::string& address, uint16 port)
@@ -75,6 +92,46 @@ namespace LambdaEngine
 		}
 	}
 
+	bool ClientTCP::IsConnected() const
+	{
+		return !m_Stop && m_pThread && m_pThreadSend;
+	}
+
+	void ClientTCP::Update(Timestamp dt)
+	{
+		if (IsConnected())
+		{
+			uint64 delta = dt.AsNanoSeconds();
+			m_TimerReceived -= delta;
+			m_TimerTransmit -= delta;
+
+			if (m_TimerReceived <= 0)
+			{
+				LOG_WARNING("[ClientTCP]: The time since last packet received is more than 5 Seconds!");
+				Disconnect();
+			}
+			else if (m_TimerTransmit <= 0)
+			{
+				m_NrOfPingTransmitted++;
+				s_PacketPing.Reset();
+				s_PacketPing.WriteUInt32(m_NrOfPingTransmitted);
+				SendPacket(&s_PacketPing);
+				ResetTransmitTimer();
+				LOG_MESSAGE("[ClientTCP]: Ping(T%d | R%d)", m_NrOfPingTransmitted, m_NrOfPingReceived);
+			}
+		}
+	}
+
+	void ClientTCP::ResetReceiveTimer()
+	{
+		m_TimerReceived = 5000000000;
+	}
+
+	void ClientTCP::ResetTransmitTimer()
+	{
+		m_TimerTransmit = 1000000000;
+	}
+
 	void ClientTCP::Run(std::string address, uint16 port)
 	{
 		if (!IsServerSide())
@@ -89,6 +146,8 @@ namespace LambdaEngine
 		}
 		LOG_INFO("[ClientTCP]: Connected!");
 		m_pSocket->DisableNaglesAlgorithm();
+		ResetReceiveTimer();
+		ResetTransmitTimer();
 		m_pThreadSend = Thread::Create(std::bind(&ClientTCP::RunTransmit, this), std::bind(&ClientTCP::OnStoppedSend, this));
 		m_pHandler->OnClientConnected(this);
 
@@ -97,7 +156,8 @@ namespace LambdaEngine
 		{
 			if (ReceivePacket(&packet))
 			{
-				m_pHandler->OnClientPacketReceived(this, &packet);
+				ResetReceiveTimer();
+				HandlePacket(&packet);
 			}
 			else
 			{
@@ -128,7 +188,7 @@ namespace LambdaEngine
 
 	bool ClientTCP::ReceivePacket(NetworkPacket* packet)
 	{
-		packet->ResetHead();
+		packet->Reset();
 		char* buffer = packet->GetBuffer();
 		if (Receive(buffer, sizeof(PACKET_SIZE)))
 		{
@@ -139,6 +199,19 @@ namespace LambdaEngine
 			}
 		}
 		return false;
+	}
+
+	void ClientTCP::HandlePacket(NetworkPacket* packet)
+	{
+		PACKET_TYPE type = packet->ReadPacketType();
+		if (type == PACKET_TYPE_PING)
+		{
+			packet->ReadUInt32(m_NrOfPingReceived);
+		}
+		else if (type == PACKET_TYPE_USER_DATA)
+		{
+			m_pHandler->OnClientPacketReceived(this, packet);
+		}
 	}
 
 	void ClientTCP::OnStopped()
@@ -185,7 +258,7 @@ namespace LambdaEngine
 				return false;
 			bytesSentTotal += bytesSent;
 		}
-        
+		ResetTransmitTimer();
         return true;
 	}
 
@@ -245,6 +318,30 @@ namespace LambdaEngine
 		m_pThreadSend = nullptr;
 		if (m_Release)
 			Release();
+	}
+
+	void ClientTCP::Init()
+	{
+		s_PacketPing = NetworkPacket(PACKET_TYPE_PING, false);
+		//s_PacketPing = new NetworkPacket(PACKET_TYPE_PING, false);
+		s_Clients = new std::set<ClientTCP*>();
+		s_LockClients = new SpinLock();
+	}
+
+	void ClientTCP::Tick(Timestamp dt)
+	{
+		std::scoped_lock<SpinLock> lock(*s_LockClients);
+		for (ClientTCP* client : *s_Clients)
+		{
+			client->Update(dt);
+		}
+	}
+
+	void ClientTCP::ReleaseStatic()
+	{
+		//delete s_PacketPing;
+		delete s_Clients;
+		delete s_LockClients;
 	}
 
 	ISocketTCP* ClientTCP::CreateClientSocket(const std::string& address, uint16 port)
