@@ -1,4 +1,4 @@
-#include "NetworkPacket.h"
+#include "Network/API/NetworkPacket.h"
 
 namespace LambdaEngine
 {
