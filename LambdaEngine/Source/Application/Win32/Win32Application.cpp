@@ -142,7 +142,7 @@ namespace LambdaEngine
 		return pWindow;
 	}
 
-	InputDevice* Win32Application::CreateInputDevice(EInputMode inputType)
+	IInputDevice* Win32Application::CreateInputDevice(EInputMode inputType)
 	{
 		InputDevice* pInputDevice = nullptr;
 		if (inputType == EInputMode::INPUT_STANDARD)
