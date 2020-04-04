@@ -59,8 +59,8 @@ namespace LambdaEngine
         
         static void Terminate();
         
-        static Window*      CreateWindow(const char* pTitle, uint32 width, uint32 height);
-        static InputDevice* CreateInputDevice(EInputMode inputMode);
+        static Window*          CreateWindow(const char* pTitle, uint32 width, uint32 height);
+        static IInputDevice*    CreateInputDevice(EInputMode inputMode);
         
         FORCEINLINE static MacApplication* Get()
         {

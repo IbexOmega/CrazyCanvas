@@ -24,7 +24,7 @@ namespace LambdaEngine
 		static void SetInputMode(EInputMode inputMode);
 
 	private:
-		static InputDevice* s_pInputDevice;
+		static IInputDevice* s_pInputDevice;
 
 		static KeyboardState	s_KeyboardState;
 		static MouseState		s_MouseState;

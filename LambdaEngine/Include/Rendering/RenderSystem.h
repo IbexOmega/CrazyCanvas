@@ -23,8 +23,8 @@ namespace LambdaEngine
 
 	private:
 		static IGraphicsDevice* s_pGraphicsDevice;
-		static ICommandQueue*			s_pGraphicsQueue;
-		static ICommandQueue*			s_pComputeQueue;
-		static ICommandQueue*			s_pCopyQueue;
+		static ICommandQueue*	s_pGraphicsQueue;
+		static ICommandQueue*	s_pComputeQueue;
+		static ICommandQueue*	s_pCopyQueue;
 	};
 }

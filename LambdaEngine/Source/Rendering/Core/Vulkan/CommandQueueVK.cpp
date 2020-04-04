@@ -35,7 +35,7 @@ namespace LambdaEngine
 		return true;
 	}
 	
-	bool CommandQueueVK::ExecuteCommandList(const ICommandList* const* ppCommandList, uint32 numCommandLists, const IFence* pFence)
+	bool CommandQueueVK::ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, const IFence* pWaitFence)
 	{
 		constexpr uint32 MAX_COMMANDBUFFERS = 8;
 		VkCommandBuffer commandBuffers[MAX_COMMANDBUFFERS];
@@ -54,7 +54,7 @@ namespace LambdaEngine
 		submitInfo.commandBufferCount = numCommandLists;
 
 		VkTimelineSemaphoreSubmitInfo fenceSubmitInfo = {};
-		if (pFence)
+		if (pWaitFence)
 		{
 			fenceSubmitInfo.sType						= VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
 			fenceSubmitInfo.pNext						= nullptr;

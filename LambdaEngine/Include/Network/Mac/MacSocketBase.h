@@ -23,30 +23,60 @@ namespace LambdaEngine
 	class MacSocketBase : public IBase
 	{	
 	public:
-		bool Bind(const std::string& address, uint16 port) override
-		{
-			struct sockaddr_in socketAddress;
-			socketAddress.sin_family = AF_INET;
+        bool Connect(const std::string& address, uint16 port) override
+        {
+            struct sockaddr_in socketAddress;
+            socketAddress.sin_family = AF_INET;
+            socketAddress.sin_port = htons(port);
 
-			if (!address.empty())
-            {
+            if (address.empty() || address == ADDRESS_ANY)
+                socketAddress.sin_addr.s_addr = INADDR_ANY;
+            else if (address == ADDRESS_LOOPBACK)
+                socketAddress.sin_addr.s_addr = INADDR_LOOPBACK;
+            else if (address == ADDRESS_BROADCAST)
+                socketAddress.sin_addr.s_addr = INADDR_BROADCAST;
+            else
                 inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
-            }
-			else
-            {
-                socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-            }
 
-			socketAddress.sin_port = htons(port);
-
-            if (bind(m_Socket, (struct sockaddr*)&socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
+            if (connect(m_Socket, reinterpret_cast<sockaddr*>(&socketAddress), sizeof(socketAddress)) == SOCKET_ERROR)
             {
                 int32 error = errno;
-				LOG_ERROR_CRIT("Failed to bind to %s:%d", !address.empty() ? address.c_str() : "ANY", port);
-				PrintLastError(error);
-				return false;
-			}
-			return true;
+                LOG_ERROR_CRIT("Failed to connect to %s:%d", address.c_str(), port);
+                PrintLastError(error);
+                return false;
+            }
+
+            ReadSocketData();
+
+            return true;
+        }
+        
+		bool Bind(const std::string& address, uint16 port) override
+		{
+            struct sockaddr_in socketAddress;
+            socketAddress.sin_family = AF_INET;
+            socketAddress.sin_port = htons(port);
+
+            if (address.empty() || address == ADDRESS_ANY)
+                socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+            else if (address == ADDRESS_LOOPBACK)
+                socketAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+            else if (address == ADDRESS_BROADCAST)
+                socketAddress.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+            else
+                inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
+
+            if (bind(m_Socket, (struct sockaddr*) & socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
+            {
+                int32 error = errno;
+                LOG_ERROR_CRIT("Failed to bind to %s:%d", !address.empty() ? address.c_str() : "ANY", port);
+                PrintLastError(error);
+                return false;
+            }
+
+            ReadSocketData();
+
+            return true;
 		}
 
 		virtual bool SetNonBlocking(bool nonBlocking) override
@@ -94,6 +124,16 @@ namespace LambdaEngine
             return m_Closed;
         }
 
+        virtual const std::string& GetAddress() const override
+        {
+            return m_Address;
+        };
+         
+        virtual uint16 GetPort() const override
+        {
+            return m_Port;
+        };
+        
 	protected:
         MacSocketBase(int32 socket = INVALID_SOCKET)
             : m_Socket(socket),
@@ -104,6 +144,19 @@ namespace LambdaEngine
        ~MacSocketBase()
         {
             Close();
+        }
+        
+        void ReadSocketData()
+        {
+            sockaddr_in socketAddress;
+            socklen_t socketAddressSize = sizeof(socketAddress);
+            if (getsockname(m_Socket, reinterpret_cast<sockaddr*>(&socketAddress), &socketAddressSize) == SOCKET_ERROR)
+            {
+                LOG_ERROR_CRIT("Faild to ReadSocketData");
+                return;
+            }
+            m_Address = inet_ntoa(socketAddress.sin_addr);
+            m_Port = ntohs(socketAddress.sin_port);
         }
         
         static void PrintLastError(int32 errorCode)
@@ -207,6 +260,8 @@ namespace LambdaEngine
         }
 
 	protected:
+        std::string m_Address;
+        uint16  m_Port        = 0;
 		int32   m_Socket      = INVALID_SOCKET;
         bool    m_NonBlocking = false;
         bool    m_Closed      = false;

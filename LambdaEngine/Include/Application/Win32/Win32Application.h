@@ -45,8 +45,8 @@ namespace LambdaEngine
 		static bool Tick();
 		static bool ProcessMessages();
 
-		static Window*		CreateWindow(const char* pTitle, uint32 width, uint32 height);
-		static InputDevice* CreateInputDevice(EInputMode inputType);
+		static Window*			CreateWindow(const char* pTitle, uint32 width, uint32 height);
+		static IInputDevice* 	CreateInputDevice(EInputMode inputType);
 
 		static FORCEINLINE void Terminate()
 		{

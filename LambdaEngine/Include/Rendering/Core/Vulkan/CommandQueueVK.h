@@ -18,7 +18,7 @@ namespace LambdaEngine
 
 		bool Init(uint32 queueFamilyIndex, uint32 index);
 
-		virtual bool ExecuteCommandList(const ICommandList* const* ppCommandList, uint32 numCommandLists, const IFence* pFence) override;
+		virtual bool ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, const IFence* pWaitFence) override;
 		virtual void Wait() override;
 
 		virtual void SetName(const char* pName) override;
