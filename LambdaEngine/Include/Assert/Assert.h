@@ -6,6 +6,7 @@ LAMBDA_API void Assert(const char* pLine, int line);
 #ifdef LAMBDA_VISUAL_STUDIO
     #define DEBUGBREAK(...) __debugbreak()
 #else
+    #include <stdlib.h>
     #define DEBUGBREAK(...) abort()
 #endif
 

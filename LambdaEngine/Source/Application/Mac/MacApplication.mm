@@ -119,10 +119,25 @@ namespace LambdaEngine
             [appMenu addItem:[NSMenuItem separatorItem]];
             [appMenu addItemWithTitle:@"Quit Lambda Engine" action:@selector(terminate:) keyEquivalent:@"q"];
             
-            //NSMenuItem* windowMenuItem = []
+            //Window menu
+            NSMenuItem* windowMenuItem  = [menuBar addItemWithTitle:@"" action:nil keyEquivalent:@""];
+            NSMenu*     windowMenu      = [[NSMenu alloc] initWithTitle:@"Window"];
+            [windowMenuItem setSubmenu:windowMenu];
             
+            [windowMenu addItemWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
+            [windowMenu addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
+            [windowMenu addItem:[NSMenuItem separatorItem]];
+            
+            [windowMenu addItemWithTitle:@"Bring All to Front" action:@selector(arrangeInFront:) keyEquivalent:@""];
+            [windowMenu addItem:[NSMenuItem separatorItem]];
+            
+            [[windowMenu addItemWithTitle:@"Enter Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"] setKeyEquivalentModifierMask:NSEventModifierFlagControl | NSEventModifierFlagCommand];
+            
+            SEL setAppleMenuSelector = NSSelectorFromString(@"setAppleMenu:");
+            [NSApp performSelector:setAppleMenuSelector withObject:appMenu];
             
             [NSApp setMainMenu:menuBar];
+            [NSApp setWindowsMenu:windowMenu];
             [NSApp setServicesMenu:serviceMenu];
         }
         

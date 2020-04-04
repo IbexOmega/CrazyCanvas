@@ -16,12 +16,19 @@ namespace LambdaEngine
         {
             mach_timebase_info_data_t info = {};
             mach_timebase_info(&info);
-            s_Frequency = uint64(info.numer) / uint64(info.denom);
+            
+            constexpr uint64 NANOSECONDS = 1000 * 1000 * 1000;
+            s_Frequency = ((NANOSECONDS* uint64(info.numer)) / uint64(info.denom));
+        }
+        
+        static FORCEINLINE uint64 GetPerformanceCounter()
+        {
+            return mach_absolute_time();
         }
 
-        static FORCEINLINE uint64 Nanoseconds()
+        static FORCEINLINE uint64 GetPerformanceFrequency()
         {
-            return mach_absolute_time() * s_Frequency;
+            return s_Frequency;
         }
 
     private:

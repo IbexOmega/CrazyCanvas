@@ -54,12 +54,12 @@ namespace LambdaEngine
 	void EngineLoop::Run(Game* pGame)
 	{
 		Clock clock;
-		clock.Reset();
-
+        
         bool IsRunning = true;
         while (IsRunning)
         {
 			clock.Tick();
+            
 			Timestamp dt = clock.GetDeltaTime();
             IsRunning = Tick(dt);
             pGame->Tick(dt);
