@@ -14,6 +14,7 @@ public:
 	Server();
 	~Server();
 
+	virtual LambdaEngine::IClientTCPHandler* CreateClientHandler() override;
 	virtual bool OnClientAccepted(LambdaEngine::ClientTCP* client) override;
 	virtual void OnClientConnected(LambdaEngine::ClientTCP* client) override;
 	virtual void OnClientDisconnected(LambdaEngine::ClientTCP* client) override;

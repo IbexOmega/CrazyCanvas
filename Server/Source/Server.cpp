@@ -12,6 +12,8 @@
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/ClientTCP.h"
 
+#include "ClientTCPHandler.h"
+
 Server::Server()
 {
 	using namespace LambdaEngine;
@@ -25,6 +27,11 @@ Server::Server()
 Server::~Server()
 {
 	delete m_pServer;
+}
+
+LambdaEngine::IClientTCPHandler* Server::CreateClientHandler()
+{
+	return new ClientTCPHandler();
 }
 
 bool Server::OnClientAccepted(LambdaEngine::ClientTCP* client)
@@ -74,6 +81,7 @@ void Server::UpdateTitle()
 
 void Server::Tick(LambdaEngine::Timestamp dt)
 {
+
 }
 
 namespace LambdaEngine

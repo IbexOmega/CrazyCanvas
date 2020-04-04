@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Defines.h"
+#include "IClientTCPHandler.h"
 
 namespace LambdaEngine
 {
@@ -10,6 +11,13 @@ namespace LambdaEngine
 	{
 	public:
 		DECL_INTERFACE(IServerTCPHandler);
+
+		/*
+		* Called to create a client handler for a ClientTCP object
+		*
+		* return  - a new handler
+		*/
+		virtual IClientTCPHandler* CreateClientHandler() = 0;
 
 		/*
 		* Called when a client is accepted by the server. 

@@ -16,13 +16,13 @@ namespace LambdaEngine
 	std::set<ClientTCP*>* ClientTCP::s_Clients	= nullptr;
 	SpinLock* ClientTCP::s_LockClients			= nullptr;
 
-	ClientTCP::ClientTCP(IClientTCPHandler* handler) : ClientTCP(handler, nullptr)
+	ClientTCP::ClientTCP(IClientTCPHandler* handler) : ClientTCP({ handler }, nullptr)
 	{
 
 	}
 
-	ClientTCP::ClientTCP(IClientTCPHandler* handler, ISocketTCP* socket) :
-		m_pHandler(handler),
+	ClientTCP::ClientTCP(const std::set<IClientTCPHandler*>& handlers, ISocketTCP* socket) :
+		m_Handlers(handlers),
 		m_pSocket(socket),
 		m_Stop(false),
 		m_Release(false),
@@ -164,7 +164,8 @@ namespace LambdaEngine
 			if (!m_pSocket)
 			{
 				LOG_ERROR("[ClientTCP]: Failed to connect to Server!");
-				m_pHandler->OnClientFailedConnecting(this);
+				for(IClientTCPHandler* handler : m_Handlers)
+					handler->OnClientFailedConnecting(this);
 				return;
 			}
 		}
@@ -173,7 +174,9 @@ namespace LambdaEngine
 		ResetReceiveTimer();
 		ResetTransmitTimer();
 		m_pThreadSend = Thread::Create(std::bind(&ClientTCP::RunTransmit, this), std::bind(&ClientTCP::OnStoppedSend, this));
-		m_pHandler->OnClientConnected(this);
+
+		for (IClientTCPHandler* handler : m_Handlers)
+			handler->OnClientConnected(this);
 
 		NetworkPacket packet(EPacketType::PACKET_TYPE_UNDEFINED);
 		while (!m_Stop)
@@ -234,10 +237,9 @@ namespace LambdaEngine
 		{
 			packet->ReadUInt32(m_NrOfPingReceived);
 		}
-		else if (type == PACKET_TYPE_USER_DATA)
-		{
-			m_pHandler->OnClientPacketReceived(this, packet);
-		}
+
+		for (IClientTCPHandler* handler : m_Handlers)
+			handler->OnClientPacketReceived(this, packet);
 	}
 
 	void ClientTCP::OnStopped()
@@ -246,7 +248,9 @@ namespace LambdaEngine
 		delete m_pSocket;
 		m_pSocket = nullptr;
 		LOG_WARNING("[ClientTCP]: Disconnected!");
-		m_pHandler->OnClientDisconnected(this);
+
+		for (IClientTCPHandler* handler : m_Handlers)
+			handler->OnClientDisconnected(this);
 
 		if (m_Release)
 			Release();

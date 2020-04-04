@@ -71,7 +71,7 @@ namespace LambdaEngine
 		int32 GetPacketsReceived() const;
 
 	private:
-		ClientTCP(IClientTCPHandler* handler, ISocketTCP* socket);
+		ClientTCP(const std::set<IClientTCPHandler*>& handlers, ISocketTCP* socket);
 
 		void Update(Timestamp dt);
 		void ResetReceiveTimer();
@@ -98,7 +98,7 @@ namespace LambdaEngine
 
 	private:
 		ISocketTCP* m_pSocket;
-		IClientTCPHandler* m_pHandler;
+		std::set<IClientTCPHandler*> m_Handlers;
 		Thread* m_pThread;
 		Thread* m_pThreadSend;
 		bool m_ServerSide;
