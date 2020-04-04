@@ -13,11 +13,11 @@ If you want to contribute, start by reading the [coding-style-document](CodeStan
 ### How to build
 
 * Clone repository
-* May need to update submodules. Perform following commands inside the folder for the repository
+* May need to update submodules. Perform the following commands inside the folder for the repository
 ```
 git submodule update
 ```
-* Then use the included build scripts to build for desired
+* Then use the included build scripts to build for desired IDE
 ```
 Premake vs2017.bat
 Premake vs2019.bat
