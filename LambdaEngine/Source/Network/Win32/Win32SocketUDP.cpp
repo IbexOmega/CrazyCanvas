@@ -58,7 +58,7 @@ namespace LambdaEngine
 
 	bool Win32SocketUDP::EnableBroadcast()
 	{
-		char broadcast = '1';
+		static const char broadcast = 1;
 		if (setsockopt(m_Socket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) == SOCKET_ERROR)
 		{
 			LOG_ERROR_CRIT("Failed to enable Broadcast");

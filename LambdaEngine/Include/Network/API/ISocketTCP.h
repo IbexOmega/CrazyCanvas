@@ -44,5 +44,12 @@ namespace LambdaEngine
 		* return	  - False if an error occured, otherwise true. 
 		*/
 		virtual bool Receive(char* buffer, uint32 bytesToRead, int32& bytesRead) = 0;
+
+		/*
+		* Disables Nagle's Algorithm, commonly known as TCP_NODELAY
+		*
+		* return	  - False if an error occured, otherwise true.
+		*/
+		virtual bool DisableNaglesAlgorithm() = 0;
 	};
 }

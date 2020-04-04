@@ -46,6 +46,13 @@ namespace LambdaEngine
 		*/
 		virtual bool Receive(char* buffer, uint32 bytesToRead, int32& bytesRead) override;
 
+		/*
+		* Disables Nagle's Algorithm, commonly known as TCP_NODELAY
+		*
+		* return	  - False if an error occured, otherwise true.
+		*/
+		virtual bool DisableNaglesAlgorithm() override;
+
 	private:
 		Win32SocketTCP();
 		Win32SocketTCP(uint64 m_Socket, const char* address, uint16 port);

@@ -82,5 +82,17 @@ namespace LambdaEngine
 		}
 		return true;
 	}
+
+	bool Win32SocketTCP::DisableNaglesAlgorithm()
+	{
+		static const char broadcast = 1;
+		if (setsockopt(m_Socket, IPPROTO_TCP, TCP_NODELAY, &broadcast, sizeof(broadcast)) == SOCKET_ERROR)
+		{
+			LOG_ERROR_CRIT("Failed to disable Nagle's Algorithm (TCP_NODELAY)");
+			PrintLastError();
+			return false;
+		}
+		return true;
+	}
 }
 #endif

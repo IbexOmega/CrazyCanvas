@@ -88,7 +88,7 @@ namespace LambdaEngine
 			}
 		}
 		LOG_INFO("[ClientTCP]: Connected!");
-
+		m_pSocket->DisableNaglesAlgorithm();
 		m_pThreadSend = Thread::Create(std::bind(&ClientTCP::RunTransmit, this), std::bind(&ClientTCP::OnStoppedSend, this));
 		m_pHandler->OnClientConnected(this);
 
