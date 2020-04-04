@@ -7,10 +7,10 @@ namespace LambdaEngine
 {
 	class ClientTCP;
 
-	class LAMBDA_API IServerTCPHandler
+	class LAMBDA_API IServerUDPHandler
 	{
 	public:
-		DECL_INTERFACE(IServerTCPHandler);
+		DECL_INTERFACE(IServerUDPHandler);
 
 		/*
 		* Called to create a client handler for a ClientTCP object
@@ -20,8 +20,8 @@ namespace LambdaEngine
 		virtual IClientTCPHandler* CreateClientHandler() = 0;
 
 		/*
-		* Called when a client is accepted by the server. 
-		* 
+		* Called when a client is accepted by the server.
+		*
 		* client  - The accepted client
 		*
 		* return  - true to keep the client, otherwise false.

@@ -86,11 +86,12 @@ namespace LambdaEngine
 			ISocketTCP* socket = m_pServerSocket->Accept();
 			if(socket)
 			{
-				HandleNewClient(new ClientTCP(this, socket));
+				IClientTCPHandler* handler = m_pHandler->CreateClientHandler();
+				HandleNewClient(new ClientTCP({this, handler }, socket));
 			}
 			else
 			{
-				Stop(); //..............
+				Stop();
 			}
 		}
 
@@ -158,7 +159,7 @@ namespace LambdaEngine
 
 	void ServerTCP::OnClientConnected(ClientTCP* client)
 	{
-		//LOG_INFO("[ServerTCP]: Client Connected");
+		
 	}
 
 	void ServerTCP::OnClientDisconnected(ClientTCP* client)
@@ -166,7 +167,6 @@ namespace LambdaEngine
 		RemoveClient(client);
 		m_pHandler->OnClientDisconnected(client);
 		client->Release();
-		//LOG_WARNING("[ServerTCP]: Client Disconnected");
 	}
 
 	void ServerTCP::OnClientFailedConnecting(ClientTCP* client)
@@ -176,16 +176,7 @@ namespace LambdaEngine
 
 	void ServerTCP::OnClientPacketReceived(ClientTCP* client, NetworkPacket* packet)
 	{
-		if (packet->ReadPacketType() == PACKET_TYPE_USER_DATA)
-		{
-			std::string str;
-			packet->ReadString(str);
-			LOG_MESSAGE(str.c_str());
-		}
-		else if (packet->ReadPacketType() == PACKET_TYPE_PING)
-		{
-			LOG_MESSAGE("Pong()");
-		}
+		
 	}
 
 	ISocketTCP* ServerTCP::CreateServerSocket(const std::string& address, uint16 port)

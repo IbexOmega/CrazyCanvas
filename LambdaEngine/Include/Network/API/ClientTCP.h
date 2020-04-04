@@ -65,8 +65,13 @@ namespace LambdaEngine
 		*/
 		bool IsConnected() const;
 
+		int32 GetBytesSent() const;
+		int32 GetBytesReceived() const;
+		int32 GetPacketsSent() const;
+		int32 GetPacketsReceived() const;
+
 	private:
-		ClientTCP(IClientTCPHandler* handler, ISocketTCP* socket);
+		ClientTCP(const std::set<IClientTCPHandler*>& handlers, ISocketTCP* socket);
 
 		void Update(Timestamp dt);
 		void ResetReceiveTimer();
@@ -93,7 +98,7 @@ namespace LambdaEngine
 
 	private:
 		ISocketTCP* m_pSocket;
-		IClientTCPHandler* m_pHandler;
+		std::set<IClientTCPHandler*> m_Handlers;
 		Thread* m_pThread;
 		Thread* m_pThreadSend;
 		bool m_ServerSide;
@@ -101,10 +106,15 @@ namespace LambdaEngine
 		std::atomic_bool m_Release;
 		std::queue<NetworkPacket*> m_PacketsToSend;
 		SpinLock m_LockPacketsToSend;
+
 		int64 m_TimerReceived;
 		int64 m_TimerTransmit;
 		uint32 m_NrOfPingTransmitted;
 		uint32 m_NrOfPingReceived;
+		uint32 m_NrOfPacketsTransmitted;
+		uint32 m_NrOfPacketsReceived;
+		uint32 m_NrOfBytesTransmitted;
+		uint32 m_NrOfBytesReceived;
 
 	private:
 		static NetworkPacket s_PacketPing;
