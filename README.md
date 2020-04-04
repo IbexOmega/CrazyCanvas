@@ -7,7 +7,7 @@ Tested on:
 * Windows 10
 * macOS 10.15
 
-### Conntribute
+### How to contribute
 If you want to contribute, start by reading the [coding-style-document](CodeStandard.MD)
 
 ### How to build
