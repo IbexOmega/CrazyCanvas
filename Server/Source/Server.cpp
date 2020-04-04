@@ -24,6 +24,7 @@ Server::Server()
 
 Server::~Server()
 {
+	delete m_pServer;
 }
 
 bool Server::OnClientAccepted(LambdaEngine::ClientTCP* client)

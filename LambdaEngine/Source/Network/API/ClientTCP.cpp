@@ -12,7 +12,7 @@
 
 namespace LambdaEngine
 {
-	NetworkPacket ClientTCP::s_PacketPing(PACKET_TYPE_PING, false);//		= nullptr;
+	NetworkPacket ClientTCP::s_PacketPing(PACKET_TYPE_PING, false);
 	std::set<ClientTCP*>* ClientTCP::s_Clients	= nullptr;
 	SpinLock* ClientTCP::s_LockClients			= nullptr;
 
@@ -31,7 +31,11 @@ namespace LambdaEngine
 		m_TimerReceived(0),
 		m_TimerTransmit(0),
 		m_NrOfPingReceived(0),
-		m_NrOfPingTransmitted(0)
+		m_NrOfPingTransmitted(0),
+		m_NrOfPacketsTransmitted(0),
+		m_NrOfPacketsReceived(0),
+		m_NrOfBytesTransmitted(0),
+		m_NrOfBytesReceived(0)
 	{
 		{
 			std::scoped_lock<SpinLock> lock(*s_LockClients);
@@ -97,6 +101,26 @@ namespace LambdaEngine
 		return !m_Stop && m_pThread && m_pThreadSend;
 	}
 
+	int32 ClientTCP::GetBytesSent() const
+	{
+		return m_NrOfBytesTransmitted;
+	}
+
+	int32 ClientTCP::GetBytesReceived() const
+	{
+		return m_NrOfBytesReceived;
+	}
+
+	int32 ClientTCP::GetPacketsSent() const
+	{
+		return m_NrOfPacketsTransmitted;
+	}
+
+	int32 ClientTCP::GetPacketsReceived() const
+	{
+		return m_NrOfPacketsReceived;
+	}
+
 	void ClientTCP::Update(Timestamp dt)
 	{
 		if (IsConnected())
@@ -156,6 +180,7 @@ namespace LambdaEngine
 		{
 			if (ReceivePacket(&packet))
 			{
+				m_NrOfPacketsReceived++;
 				ResetReceiveTimer();
 				HandlePacket(&packet);
 			}
@@ -183,6 +208,7 @@ namespace LambdaEngine
 				return false;
 			}
 		}
+		m_NrOfBytesReceived += bytesReceivedTotal;
 		return true;
 	}
 
@@ -259,6 +285,8 @@ namespace LambdaEngine
 			bytesSentTotal += bytesSent;
 		}
 		ResetTransmitTimer();
+		m_NrOfPacketsTransmitted++;
+		m_NrOfBytesTransmitted += bytesSentTotal;
         return true;
 	}
 
@@ -323,23 +351,24 @@ namespace LambdaEngine
 	void ClientTCP::Init()
 	{
 		s_PacketPing = NetworkPacket(PACKET_TYPE_PING, false);
-		//s_PacketPing = new NetworkPacket(PACKET_TYPE_PING, false);
 		s_Clients = new std::set<ClientTCP*>();
 		s_LockClients = new SpinLock();
 	}
 
 	void ClientTCP::Tick(Timestamp dt)
 	{
-		std::scoped_lock<SpinLock> lock(*s_LockClients);
-		for (ClientTCP* client : *s_Clients)
+		if (s_LockClients && !s_Clients->empty())
 		{
-			client->Update(dt);
-		}
+			std::scoped_lock<SpinLock> lock(*s_LockClients);
+			for (ClientTCP* client : *s_Clients)
+			{
+				client->Update(dt);
+			}
+		}	
 	}
 
 	void ClientTCP::ReleaseStatic()
 	{
-		//delete s_PacketPing;
 		delete s_Clients;
 		delete s_LockClients;
 	}
