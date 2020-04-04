@@ -19,19 +19,50 @@ namespace LambdaEngine
 		/*
 		* Initializes modules that are needed in EngineLoop::Init()
 		*
-		* return - Returns tru if initialization is successfull
+		* return - Returns true if successfull
 		*/
 #ifdef LAMBDA_PLATFORM_WINDOWS
 		static bool PreInit(HINSTANCE hInstance);
 #else
 		static bool PreInit();
 #endif
+
+		/*
+		* Initializes all engine modules
+		*
+		* return - Returns true if successfull
+		*/
 		static bool Init();
+
+		/*
+		* Runs the engine loop, makes sure that ell engine modules get a tick call once per frame
+		* 
+		* pGame - GameInstance
+		*/
 		static void Run(Game* pGame);
+
+		/*
+		* Releases all engine modules
+		*
+		* return - Returns true if successfull
+		*/
 		static bool Release();
+
+		/*
+		* Releases all modules that are still needed in release
+		*
+		* return - Returns true if successful
+		*/
 		static bool PostRelease();
 
 	private:
+		/*
+		* Engine tick, advances the whole engine one frame. Should only be called from run
+		*
+		* dt - The time between this frame and the last frame
+		*
+		* return - Returns true if the engine should perform next tick
+		*/
 		static bool Tick(Timestamp dt);
 	};
 }

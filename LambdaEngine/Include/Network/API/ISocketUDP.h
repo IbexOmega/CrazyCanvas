@@ -4,7 +4,7 @@
 
 namespace LambdaEngine
 {
-	class LAMBDA_API ISocketUDP : public ISocket
+	class ISocketUDP : public ISocket
 	{
 	public:
 		DECL_INTERFACE(ISocketUDP);

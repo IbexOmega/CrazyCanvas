@@ -8,9 +8,26 @@ namespace LambdaEngine
     public:
         DECL_INTERFACE(IDeviceChild);
 
-        virtual uint64 Release()    = 0;
-        virtual uint64 AddRef()     = 0;
+        /*
+        * Decrements the referencecounter for the object
+        * 
+        * return - Returns the new referencecount for the object
+        */
+        virtual uint64 Release() = 0;
+
+        /*
+        * Increases the referencecounter for the object
+        * 
+        * return - Returns the new referencecount for the object
+        */
+        virtual uint64 AddRef() = 0;
         
+        /*
+        * Sets the internal name of the resource used for debugging applications, such as renderdoc
+        * or nsight
+        * 
+        * pName - A nullterminated string for the resource. The string is copied and can therefore be temporary.
+        */
         virtual void SetName(const char* pName) = 0;
     };
 }

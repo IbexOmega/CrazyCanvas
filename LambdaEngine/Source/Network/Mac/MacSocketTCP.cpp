@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 
 #include <netinet/in.h>
+#include <netinet/tcp.h>
+
 #include <arpa/inet.h>
 
 namespace LambdaEngine
@@ -25,26 +27,6 @@ namespace LambdaEngine
         m_Address(address),
         m_Port(port)
     {
-    }
-
-    bool MacSocketTCP::Connect(const std::string& address, uint16 port)
-    {
-        struct sockaddr_in socketAddress;
-		socketAddress.sin_family = AF_INET;
-        inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
-        socketAddress.sin_port = htons(port);
-		m_Port = port;
-		m_Address = address;
-
-		if (connect(m_Socket, (struct sockaddr*)&socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
-		{
-            int32 error = errno;
-            LOG_ERROR_CRIT("Failed to connect to %s:%d", address.c_str(), port);
-			PrintLastError(error);
-			return false;
-		}
-        
-		return true;
     }
 
     bool MacSocketTCP::Listen()
@@ -118,14 +100,18 @@ namespace LambdaEngine
 		return true;
 	}
 
-	const std::string& MacSocketTCP::GetAddress()
+    bool MacSocketTCP::DisableNaglesAlgorithm()
 	{
-		return m_Address;
-	}
-
-	uint16 MacSocketTCP::GetPort()
-	{
-		return m_Port;
+		static const int broadcast = 1;
+		if (setsockopt(m_Socket, IPPROTO_TCP, TCP_NODELAY, &broadcast, sizeof(broadcast)) == SOCKET_ERROR)
+		{
+            int32 error = errno;
+            
+			LOG_ERROR_CRIT("Failed to disable Nagle's Algorithm (TCP_NODELAY)");
+			PrintLastError(error);
+			return false;
+		}
+		return true;
 	}
 }
 #endif

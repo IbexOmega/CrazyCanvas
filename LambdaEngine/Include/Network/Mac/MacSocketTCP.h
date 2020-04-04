@@ -14,14 +14,12 @@ namespace LambdaEngine
     public:
         ~MacSocketTCP() = default;
 
-        virtual bool Connect(const std::string& address, uint16 port) override;
 		virtual bool Listen() override;
 		virtual ISocketTCP* Accept() override;
 		virtual bool Send(const char* buffer, uint32 bytesToSend, int32& bytesSent) override;
 		virtual bool Receive(char* buffer, uint32 size, int32& bytesReceived) override;
-
-		virtual const std::string& GetAddress() override;
-		virtual uint16 GetPort() override;
+        
+        virtual bool DisableNaglesAlgorithm() override;
 
     private:
         MacSocketTCP();

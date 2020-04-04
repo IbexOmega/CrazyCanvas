@@ -43,11 +43,31 @@ namespace LambdaEngine
     class LAMBDA_API Log
     {
     public:
+        /*
+        * Prints a message to the log
+        * 
+        * severity  - The message severity, determines how important the message is
+        * pFormat   - Formatted string to print to the log
+        * args      - Arguments for the formatted string
+        */
         static void Print(ELogSeverity severity, const char* pFormat, ...);
         static void VPrint(ELogSeverity severity, const char* pFormat, va_list args);
         
+        /*
+        * Prints an error message with the function-signature where the error occured
+        * 
+        * pFunction - The function- signature as a string
+        * pFormat   - Formatted string to print to the log
+        * args      - The arguments to the formatted string
+        */
         static void PrintTraceError(const char* pFunction, const char* pFormat, ...);
+        static void VPrintTraceError(const char* pFunction, const char* pFormat, va_list args);
         
+        /*
+        * Enables the log to print to the debugger using PlatformMisc::OutputDebugString
+        * 
+        * enable - True if the debugger logging should be enabled
+        */
         FORCEINLINE static void SetDebuggerOutputEnabled(bool enable)
         {
             s_DebuggerOutputEnabled = enable;

@@ -4,7 +4,7 @@
 
 namespace LambdaEngine
 {
-	class LAMBDA_API ISocketTCP : public ISocket
+	class ISocketTCP : public ISocket
 	{
 	public:
 		DECL_INTERFACE(ISocketTCP);

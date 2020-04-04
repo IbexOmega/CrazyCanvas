@@ -145,7 +145,7 @@ namespace LambdaEngine
         return pWindow;
     }
 
-    InputDevice* MacApplication::CreateInputDevice(EInputMode)
+    IInputDevice* MacApplication::CreateInputDevice(EInputMode)
     {
         MacInputDevice* pInputDevice = new MacInputDevice();
         s_pApplication->AddMessageHandler(pInputDevice);

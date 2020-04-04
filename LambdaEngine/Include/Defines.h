@@ -46,7 +46,7 @@
 #ifdef LAMBDA_VISUAL_STUDIO
 	#define FORCEINLINE __forceinline
 #else
-	#define FORCEINLINE __attribute__((always_inline))
+	#define FORCEINLINE __attribute__((always_inline)) inline
 #endif
 
 //Delete and release

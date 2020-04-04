@@ -30,6 +30,9 @@ namespace LambdaEngine
         static void VPrint(const char*, va_list)        { }
         static void VPrintLine(const char*, va_list)    { }
         
+        /*
+        * Clears the console screen
+        */
         static void Clear() { }
         
         static void SetTitle(const char* pTitle)    { }

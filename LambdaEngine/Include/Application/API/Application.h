@@ -4,7 +4,7 @@
 namespace LambdaEngine
 {
     class Window;
-	class InputDevice;
+	class IInputDevice;
     class IApplicationMessageHandler;
 
     //Different input devices that can be created
@@ -54,8 +54,8 @@ namespace LambdaEngine
         */
         static void Terminate() { }
 
-        static Window*      CreateWindow(const char*, uint32, uint32)   { return nullptr; }
-		static InputDevice* CreateInputDevice(EInputMode)               { return nullptr; }
+        static Window*          CreateWindow(const char*, uint32, uint32)   { return nullptr; }
+		static IInputDevice*    CreateInputDevice(EInputMode)               { return nullptr; }
 
         static Application* Get() { return nullptr; }
 	};
