@@ -13,14 +13,10 @@ namespace LambdaEngine
         COLOR_WHITE   = 3
     };
 
-    class Console
+    class LAMBDA_API Console
     {
     public:
-        Console()   = default;
-        ~Console()  = default;
-        
-        DECL_REMOVE_COPY(Console);
-        DECL_REMOVE_MOVE(Console);
+        DECL_ABSTRACT_CLASS(Console);
         
         static void Show()  { }
         static void Close() { }

@@ -45,40 +45,48 @@ namespace LambdaEngine
 
 	void FenceVK::Wait(uint64 signalValue, uint64 timeOut) const
 	{
-		VkSemaphoreWaitInfo waitInfo = {};
-		waitInfo.sType			= VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
-		waitInfo.pNext			= nullptr;
-		waitInfo.flags			= 0;
-		waitInfo.semaphoreCount = 1;
-		waitInfo.pSemaphores	= &m_Semaphore;
-		waitInfo.pValues		= &signalValue;
+		if (m_pDevice->vkWaitSemaphores)
+		{
+			VkSemaphoreWaitInfo waitInfo = {};
+			waitInfo.sType			= VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+			waitInfo.pNext			= nullptr;
+			waitInfo.flags			= 0;
+			waitInfo.semaphoreCount = 1;
+			waitInfo.pSemaphores	= &m_Semaphore;
+			waitInfo.pValues		= &signalValue;
 
-		vkWaitSemaphores(m_pDevice->Device, &waitInfo, timeOut);
+			m_pDevice->vkWaitSemaphores(m_pDevice->Device, &waitInfo, timeOut);
+		}
 	}
 
 	void FenceVK::Signal(uint64 signalValue)
 	{
-		VkSemaphoreSignalInfo signalInfo = { };
-		signalInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
-		signalInfo.pNext		= nullptr;
-		signalInfo.value		= signalValue;
-		signalInfo.semaphore	= m_Semaphore;
-
-        VkResult result = VK_SUCCESS;//vkSignalSemaphore(m_pDevice->Device, &signalInfo);
-		if (result != VK_SUCCESS)
+		if (m_pDevice->vkSignalSemaphore)
 		{
-			LOG_VULKAN_ERROR("[FenceVK]: Failed to signal semaphore", result);
+			VkSemaphoreSignalInfo signalInfo = { };
+			signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
+			signalInfo.pNext = nullptr;
+			signalInfo.value = signalValue;
+			signalInfo.semaphore = m_Semaphore;
+
+			VkResult result = m_pDevice->vkSignalSemaphore(m_pDevice->Device, &signalInfo);
+			if (result != VK_SUCCESS)
+			{
+				LOG_VULKAN_ERROR("[FenceVK]: Failed to signal semaphore", result);
+			}
 		}
 	}
 
 	uint64 FenceVK::GetValue() const
 	{
-		uint64 value;
-		VkResult result = vkGetSemaphoreCounterValue(m_pDevice->Device, m_Semaphore, &value);
-		if (result != VK_SUCCESS)
+		uint64 value = 0xffffffffffffffff;
+		if (m_pDevice->vkGetSemaphoreCounterValue)
 		{
-			LOG_VULKAN_ERROR("[FenceVK]: Failed to retrive fence-value", result);
-			return 0xffffffffffffffff;
+			VkResult result = m_pDevice->vkGetSemaphoreCounterValue(m_pDevice->Device, m_Semaphore, &value);
+			if (result != VK_SUCCESS)
+			{
+				LOG_VULKAN_ERROR("[FenceVK]: Failed to retrive fence-value", result);
+			}
 		}
 
 		return value;

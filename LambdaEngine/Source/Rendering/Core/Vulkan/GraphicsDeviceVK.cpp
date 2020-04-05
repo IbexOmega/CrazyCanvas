@@ -898,6 +898,10 @@ namespace LambdaEngine
 
 		//TOOO: Check for extension
 		GET_DEVICE_PROC_ADDR(Device, vkGetBufferDeviceAddress);
+
+		GET_DEVICE_PROC_ADDR(Device, vkWaitSemaphores);
+		GET_DEVICE_PROC_ADDR(Device, vkSignalSemaphore);
+		GET_DEVICE_PROC_ADDR(Device, vkGetSemaphoreCounterValue);
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsDeviceVK::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
