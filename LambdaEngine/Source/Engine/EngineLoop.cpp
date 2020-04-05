@@ -137,8 +137,6 @@ namespace LambdaEngine
 	{
 		Input::Release();
 
-		PlatformSocketFactory::Release();
-
 		if (!RenderSystem::Release())
 		{
 			return false;
@@ -149,8 +147,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		Thread::Release();
-
 		return true;
 	}
 	
@@ -160,6 +156,9 @@ namespace LambdaEngine
 		{
 			return false;
 		}
+
+		Thread::Release();
+		PlatformSocketFactory::Release();
 
 #ifndef LAMBDA_PRODUCTION
         PlatformConsole::Close();

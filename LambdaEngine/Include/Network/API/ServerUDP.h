@@ -7,10 +7,10 @@
 #include <atomic>
 #include "IClientTCPHandler.h"
 #include "Threading/SpinLock.h"
+#include "IServerUDPHandler.h"
 
 namespace LambdaEngine
 {
-	class IServerUDPHandler;
 	class ISocketUDP;
 	class Thread;
 
@@ -57,20 +57,12 @@ namespace LambdaEngine
 		void Run(std::string address, uint16 port);
 		void OnStopped();
 
-		void HandleReceivedPacket(NetworkPacket* packet, const std::string& address, uint16 port);
-
-		void HandleNewClient(ClientTCP* client);
-		void AddClient(ClientTCP* client);
-		void RemoveClient(ClientTCP* client);
-		void ClearClients();
-
 	private:
 		static ISocketUDP* CreateServerSocket(const std::string& address, uint16 port);
 
 	private:
 		ISocketUDP* m_pServerSocket;
 		Thread* m_pThread;
-		//std::vector<ClientTCP*> m_Clients;
 		std::atomic_bool m_Stop;
 		IServerUDPHandler* m_pHandler;
 		SpinLock m_Lock;

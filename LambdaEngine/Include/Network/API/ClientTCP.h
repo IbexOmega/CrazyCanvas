@@ -23,6 +23,7 @@ namespace LambdaEngine
 
 	public:
 		ClientTCP(IClientTCPHandler* handler);
+
 		~ClientTCP();
 		/*
 		* Connects the client to a given ip-address and port. To connect to a special address use

@@ -1,7 +1,7 @@
 #include "Network/API/ServerTCP.h"
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/IServerTCPHandler.h"
-#include "Network/API/ClientTCP.h"
+#include "Network/API/ClientTCP2.h"
 #include "Network/API/NetworkPacket.h"
 
 #include "Threading/Thread.h"
@@ -87,7 +87,7 @@ namespace LambdaEngine
 			if(socket)
 			{
 				IClientTCPHandler* handler = m_pHandler->CreateClientHandler();
-				HandleNewClient(new ClientTCP({this, handler }, socket));
+				HandleNewClient(new ClientTCP2(handler, socket));
 			}
 			else
 			{
@@ -95,7 +95,7 @@ namespace LambdaEngine
 			}
 		}
 
-		for (ClientTCP* client : m_Clients)
+		for (ClientTCP2* client : m_Clients)
 		{
 			client->Disconnect();
 		}
@@ -114,7 +114,7 @@ namespace LambdaEngine
 		LOG_WARNING("[ServerTCP]: Stopped");
 	}
 
-	void ServerTCP::HandleNewClient(ClientTCP* client)
+	void ServerTCP::HandleNewClient(ClientTCP2* client)
 	{
 		if (m_Clients.size() < m_MaxClients)
 		{
@@ -134,13 +134,13 @@ namespace LambdaEngine
 		client->Release();
 	}
 
-	void ServerTCP::AddClient(ClientTCP* client)
+	void ServerTCP::AddClient(ClientTCP2* client)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		m_Clients.push_back(client);
 	}
 
-	void ServerTCP::RemoveClient(ClientTCP* client)
+	void ServerTCP::RemoveClient(ClientTCP2* client)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		m_Clients.erase(std::remove(m_Clients.begin(), m_Clients.end(), client), m_Clients.end());
@@ -157,24 +157,24 @@ namespace LambdaEngine
 		return m_Clients.size();
 	}
 
-	void ServerTCP::OnClientConnected(ClientTCP* client)
+	void ServerTCP::OnClientConnected(ClientTCP2* client)
 	{
 		
 	}
 
-	void ServerTCP::OnClientDisconnected(ClientTCP* client)
+	void ServerTCP::OnClientDisconnected(ClientTCP2* client)
 	{
 		RemoveClient(client);
 		m_pHandler->OnClientDisconnected(client);
 		client->Release();
 	}
 
-	void ServerTCP::OnClientFailedConnecting(ClientTCP* client)
+	void ServerTCP::OnClientFailedConnecting(ClientTCP2* client)
 	{
 
 	}
 
-	void ServerTCP::OnClientPacketReceived(ClientTCP* client, NetworkPacket* packet)
+	void ServerTCP::OnClientPacketReceived(ClientTCP2* client, NetworkPacket* packet)
 	{
 		
 	}

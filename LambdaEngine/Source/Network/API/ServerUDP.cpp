@@ -1,12 +1,16 @@
-#include "ServerUDP.h"
+#include "Network/API/ServerUDP.h"
 #include "Log/Log.h"
 #include "Threading/Thread.h"
-#include "PlatformSocketFactory.h"
-#include "NetworkPacket.h"
+#include "Network/API/PlatformSocketFactory.h"
+#include "Network/API/NetworkPacket.h"
 
 namespace LambdaEngine
 {
-	ServerUDP::ServerUDP(IServerUDPHandler* handler)
+	ServerUDP::ServerUDP(IServerUDPHandler* handler) : 
+		m_pServerSocket(nullptr),
+		m_pThread(nullptr),
+		m_Stop(false),
+		m_pHandler(handler)
 	{
 	}
 
@@ -79,22 +83,27 @@ namespace LambdaEngine
 		{
 			if (m_pServerSocket->ReceiveFrom(packet.GetBuffer(), MAXIMUM_PACKET_SIZE, bytesReceived, address, port))
 			{
-				if (bytesReceived > 0)
+				packet.Reset();
+				packet.UnPack();
+				if (bytesReceived != packet.GetSize())
 				{
-					HandleReceivedPacket(&packet, address, port);
+					m_pHandler->OnPacketReceivedUDP(&packet, address, port);
 				}
+			}
+			else
+			{
+				Stop();
 			}
 		}
 	}
 
 	void ServerUDP::OnStopped()
 	{
-	}
-
-	void ServerUDP::HandleReceivedPacket(NetworkPacket* packet, const std::string& address, uint16 port)
-	{
-		packet->UnPack();
-		// HASH address with port ?
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		m_pThread = nullptr;
+		delete m_pServerSocket;
+		m_pServerSocket = nullptr;
+		LOG_WARNING("[ServerTCP]: Stopped");
 	}
 
 	ISocketUDP* ServerUDP::CreateServerSocket(const std::string& address, uint16 port)
