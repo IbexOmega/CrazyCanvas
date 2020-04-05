@@ -296,6 +296,6 @@ typedef Win32Application PlatformApplication;
 #endif
 ```
 ### FORCEINLINE macro
-* The FORCEINLINE- macro should be used on all one-line functions (for example setters and getters). The only time this does not apply is when the class or function is exported with the LAMBDA_API macro. When you are certain that the function will stay the same between versions, that is when the code in the .exe and .dll will be the same no matter what, it is ok to still use FORCEINLIN. However, it is better practise to make sure that a function is exported, e.i. define the function in the compilation unit (.cpp). 
+* The FORCEINLINE- macro should be used on all one-line functions (for example setters and getters). The only time this does not apply is when the class or function is exported with the LAMBDA_API macro. When you are certain that the function will stay the same between versions, that is when the code in the .exe and .dll will be the same no matter what, it is ok to still use FORCEINLINE. However, it is better practise to make sure that a function is exported, e.i. define the function in the compilation unit (.cpp). 
 
 
