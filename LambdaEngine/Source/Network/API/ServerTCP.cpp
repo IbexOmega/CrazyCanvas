@@ -87,7 +87,7 @@ namespace LambdaEngine
 			if(socket)
 			{
 				IClientTCPHandler* handler = m_pHandler->CreateClientHandler();
-				HandleNewClient(new ClientTCP({this, handler }, socket));
+				HandleNewClient(DBG_NEW ClientTCP({this, handler }, socket));
 			}
 			else
 			{

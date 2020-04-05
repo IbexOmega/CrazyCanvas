@@ -11,7 +11,7 @@ namespace LambdaEngine
     {
         va_list args;
         va_start(args, pFormat);
-        Log::VPrint(severity, pFormat, args);
+        VPrint(severity, pFormat, args);
         va_end(args);
     }
 
@@ -48,13 +48,18 @@ namespace LambdaEngine
 
     void Log::PrintTraceError(const char* pFunction, const char* pFormat, ...)
     {
-        PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
-        PlatformConsole::Print("Critical Error in '%s': ", pFunction);
-        PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
-        
         va_list args;
         va_start(args, pFormat);
-        Log::VPrint(ELogSeverity::LOG_ERROR, pFormat, args);
+        VPrintTraceError(pFunction, pFormat, args);
         va_end(args);
+    }
+
+    void Log::VPrintTraceError(const char* pFunction, const char* pFormat, va_list args)
+    {
+        PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
+        PlatformConsole::Print("CRITICAL ERROR IN '%s': ", pFunction);
+        PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
+
+        VPrint(ELogSeverity::LOG_ERROR, pFormat, args);
     }
 }

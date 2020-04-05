@@ -44,7 +44,7 @@ namespace LambdaEngine
 
 	Thread* Thread::Create(const std::function<void()>& func, const std::function<void()>& funcOnFinished)
 	{
-		return new Thread(func, funcOnFinished);
+		return DBG_NEW Thread(func, funcOnFinished);
 	}
 
 	void Thread::Run()
@@ -56,9 +56,9 @@ namespace LambdaEngine
 
 	void Thread::Init()
 	{
-		s_Lock = new SpinLock();
-		s_Threads = new std::set<Thread*>();
-		s_ThreadsToJoin = new std::vector<Thread*>();
+		s_Lock = DBG_NEW SpinLock();
+		s_Threads = DBG_NEW std::set<Thread*>();
+		s_ThreadsToJoin = DBG_NEW std::vector<Thread*>();
 	}
 
 	void Thread::Join()

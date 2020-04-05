@@ -1,4 +1,6 @@
 #ifdef LAMBDA_PLATFORM_MACOS
+#include "Log/Log.h"
+
 #include "Application/Mac/MacConsole.h"
 #include "Application/Mac/CocoaConsoleWindow.h"
 #include "Application/Mac/MacApplication.h"
@@ -16,7 +18,11 @@ namespace LambdaEngine
         NSRect      contentRect = NSMakeRect(0, 0, width, height);
         
         m_pWindow = [[CocoaConsoleWindow alloc] initWithContentRect:contentRect styleMask:styleMask backing:NSBackingStoreBuffered defer:NO];
-        ASSERT(m_pWindow != nil);
+        if (m_pWindow == nil)
+        {
+            LOG_ERROR("[MacConsole]: Failed to create NSWindow");
+            return;
+        }
         
         NSRect contentFrame = [[m_pWindow contentView] frame];
         m_pScrollView = [[NSScrollView alloc] initWithFrame:contentFrame];

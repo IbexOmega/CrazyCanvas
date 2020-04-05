@@ -3,7 +3,6 @@
 #include "Application/Mac/CocoaContentView.h"
 
 @implementation CocoaContentView
-
 @end
 
 #endif

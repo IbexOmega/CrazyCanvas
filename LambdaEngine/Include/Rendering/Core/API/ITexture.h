@@ -32,7 +32,12 @@ namespace LambdaEngine
     public:
         DECL_INTERFACE(ITexture);
 
-        virtual TextureDesc GetDesc() const     = 0;
-        virtual uint64      GetHandle() const   = 0;
+        /*
+        * Returns the API-specific handle to the underlaying texture-resource
+        *
+        * return - Returns a valid handle on success otherwise zero
+        */
+        virtual uint64      GetHandle() const = 0;
+        virtual TextureDesc GetDesc()   const = 0;
     };
 }

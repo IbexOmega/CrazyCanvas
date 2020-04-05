@@ -1,23 +1,25 @@
 #pragma once
+#include "LambdaEngine.h"
+
 #include <atomic>
 #include <mutex>
 
 namespace LambdaEngine
 {
-	class LAMBDA_API SpinLock
+	class SpinLock
 	{
 	public:
-		inline void lock() noexcept
+		FORCEINLINE void lock() noexcept
 		{
 			while (m_Flag.test_and_set(std::memory_order_acquire));
 		}
 
-		inline void unlock() noexcept
+		FORCEINLINE void unlock() noexcept
 		{
 			m_Flag.clear(std::memory_order_release);
 		}
 
-		inline bool try_lock() noexcept
+		FORCEINLINE bool try_lock() noexcept
 		{
 			return !m_Flag.test_and_set(std::memory_order_acquire);
 		}

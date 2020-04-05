@@ -34,19 +34,19 @@ namespace LambdaEngine
         * 
         * return - Returns a pointer for CPU memory on success otherwise nullpre
         */
-        virtual void*   Map()   = 0;
+        virtual void* Map()   = 0;
 
         /*
         * Unmaps the GPU memory from CPU memory. The pointer returned from IBuffer::Map becomes invalid
         */
-        virtual void    Unmap() = 0;
+        virtual void Unmap() = 0;
 
         /*
         * Returns the API-specific handle to the underlaying buffer-resource
         * 
         * return - Returns a valid handle on success otherwise zero
         */
-        virtual uint64      GetHandle()         const = 0;
+        virtual uint64 GetHandle() const = 0;
 
         /*
         * Returns this resource's address on the device

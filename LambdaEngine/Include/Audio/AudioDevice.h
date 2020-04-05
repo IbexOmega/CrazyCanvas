@@ -1,10 +1,9 @@
 #pragma once
-
 #include "LambdaEngine.h"
 
-class FMOD_SYSTEM;
-class FMOD_SOUND;
-class FMOD_CHANNEL;
+struct FMOD_SYSTEM;
+struct FMOD_SOUND;
+struct FMOD_CHANNEL;
 
 namespace LambdaEngine
 {

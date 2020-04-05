@@ -9,6 +9,9 @@
 
 namespace LambdaEngine
 {
+	/*
+	* Struct used to buffer events from the OS
+	*/
 	struct Win32Message
 	{
 		HWND 	hWnd 		= 0;
@@ -21,7 +24,7 @@ namespace LambdaEngine
 	{
 	public:
 		Win32Application(HINSTANCE hInstance);
-		~Win32Application() = default;
+		~Win32Application();
 
 		void BufferMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 
@@ -33,10 +36,7 @@ namespace LambdaEngine
         virtual Window*         GetWindow()         override;
         virtual const Window*   GetWindow() const   override;
 
-		FORCEINLINE HINSTANCE GetInstanceHandle()
-		{
-			return s_pApplication->m_hInstance;
-		}
+		HINSTANCE GetInstanceHandle();
 
 	public:
 		static bool PreInit(HINSTANCE hInstance);
@@ -48,11 +48,7 @@ namespace LambdaEngine
 		static Window*			CreateWindow(const char* pTitle, uint32 width, uint32 height);
 		static IInputDevice* 	CreateInputDevice(EInputMode inputType);
 
-		static FORCEINLINE void Terminate()
-		{
-			//TODO: Maybe take in the exitcode
-			PostQuitMessage(0);
-		}
+		static void Terminate();
 
 		static FORCEINLINE Win32Application* Get()
 		{
@@ -62,13 +58,14 @@ namespace LambdaEngine
 	private:
 		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-	public:
+	private:
 		Win32Window*	m_pWindow	= nullptr;
 		HINSTANCE		m_hInstance = 0;
 		
 		std::vector<Win32Message> 					m_BufferedMessages;
 		std::vector<IApplicationMessageHandler*> 	m_MessageHandlers;
 
+	private:
 		static Win32Application* s_pApplication;
 	};
 

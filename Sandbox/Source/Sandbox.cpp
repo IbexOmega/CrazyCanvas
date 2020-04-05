@@ -1,5 +1,7 @@
 #include "Sandbox.h"
 
+#include "Memory/Memory.h"
+
 #include "Log/Log.h"
 
 #include "Input/API/Input.h"
@@ -20,7 +22,7 @@ Sandbox::Sandbox() :
 {
 	using namespace LambdaEngine;
 
-	m_pResourceManager = new LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
+	m_pResourceManager = DBG_NEW LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
 
 	m_ToneSoundEffectGUID = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/noise.wav");
 	m_GunSoundEffectGUID = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/9_mm_gunshot-mike-koenig-123.wav");
@@ -174,7 +176,7 @@ namespace LambdaEngine
 {
     Game* CreateGame()
     {
-        Sandbox* pSandbox = new Sandbox();
+        Sandbox* pSandbox = DBG_NEW Sandbox();
         Input::AddKeyboardHandler(pSandbox);
         Input::AddMouseHandler(pSandbox);
         

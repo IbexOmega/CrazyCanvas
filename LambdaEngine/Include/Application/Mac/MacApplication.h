@@ -25,6 +25,9 @@ class MacAppController;
 
 namespace LambdaEngine
 {
+    /*
+    * Struct used to buffer events from the OS
+    */
     struct MacMessage
     {
         NSEvent*        event           = nullptr;
@@ -75,6 +78,7 @@ namespace LambdaEngine
         std::vector<MacMessage>                     m_BufferedMessages;
         std::vector<IApplicationMessageHandler*>    m_MessageHandlers;
 
+    private:
         static MacApplication* s_pApplication;
     };
 

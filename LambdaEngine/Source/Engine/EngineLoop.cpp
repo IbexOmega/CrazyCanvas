@@ -87,6 +87,11 @@ namespace LambdaEngine
 	bool EngineLoop::PreInit()
 #endif
 	{
+#ifndef LAMBDA_PRODUCTION
+        PlatformConsole::Show();
+        Log::SetDebuggerOutputEnabled(true);
+#endif
+
 #ifdef LAMBDA_PLATFORM_WINDOWS
         if (!PlatformApplication::PreInit(hInstance))
 #else
@@ -97,12 +102,7 @@ namespace LambdaEngine
         }
 
 		PlatformTime::PreInit();
-        
-        Log::SetDebuggerOutputEnabled(true);
-        
-#ifndef LAMBDA_PRODUCTION
-        PlatformConsole::Show();
-#endif
+              
 		return true;
 	}
 	
@@ -144,11 +144,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!AudioSystem::Release())
-		{
-			return false;
-		}
-
 		Thread::Release();
 
 		return true;
@@ -156,6 +151,11 @@ namespace LambdaEngine
 	
 	bool EngineLoop::PostRelease()
 	{
+		if (!AudioSystem::Release())
+		{
+			return false;
+		}
+
 		if (!PlatformApplication::PostRelease())
 		{
 			return false;

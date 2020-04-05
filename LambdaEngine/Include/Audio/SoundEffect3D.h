@@ -1,5 +1,4 @@
 #pragma once
-
 #include "LambdaEngine.h"
 #include "Math/Math.h"
 
@@ -43,8 +42,8 @@ namespace LambdaEngine
 		*/
 		void PlayOnceAt(const glm::vec3& position, const glm::vec3& velocity = glm::vec3(0.0f), float volume = 1.0f, float pitch = 1.0f);
 
-		FMOD_SOUND* GetHandle()		{ return m_pHandle; }
-		uint32 GetLengthMS()		{ return m_LengthMS; }
+		FMOD_SOUND* GetHandle();
+		uint32 GetLengthMS();
 
 	private:
 		//Engine

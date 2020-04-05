@@ -100,10 +100,10 @@ namespace LambdaEngine
 
 	bool RenderSystem::Release()
 	{
-		SAFERELEASE(s_pGraphicsDevice);
 		SAFERELEASE(s_pGraphicsQueue);
 		SAFERELEASE(s_pComputeQueue);
 		SAFERELEASE(s_pCopyQueue);
+		SAFERELEASE(s_pGraphicsDevice);
 		return true;
 	}
 	

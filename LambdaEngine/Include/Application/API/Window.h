@@ -21,7 +21,7 @@ namespace LambdaEngine
         *           Win32:  HWND
         *           Mac:    NSWindow*
         */
-        virtual void*       GetHandle() const = 0;
+        virtual void* GetHandle() const = 0;
 
         /*
         * Return a handle to the client area of the window. May be nullptr on some platforms
@@ -30,6 +30,6 @@ namespace LambdaEngine
         *           Win32:  nullptr
         *           Mac:    NSView*
         */
-        virtual const void* GetView()   const = 0;
+        virtual const void* GetView() const = 0;
     };
 }

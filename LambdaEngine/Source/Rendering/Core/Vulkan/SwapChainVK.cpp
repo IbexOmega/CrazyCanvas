@@ -55,6 +55,13 @@ namespace LambdaEngine
             vkDestroySwapchainKHR(m_pDevice->Device, m_SwapChain, nullptr);
             m_SwapChain = VK_NULL_HANDLE;
         }
+
+        const uint32 bufferCount = uint32(m_Buffers.size());
+        for (uint32 i = 0; i < bufferCount; i++)
+        {
+            SAFERELEASE(m_Buffers[i]);
+        }
+        m_Buffers.clear();
     }
 
     bool SwapChainVK::Init(const Window* pWindow, const SwapChainDesc& desc)
@@ -358,7 +365,7 @@ namespace LambdaEngine
             desc.Miplevels      = 1;
             desc.SampleCount    = 1;
 
-            TextureVK* pTexture = new TextureVK(m_pDevice);
+            TextureVK* pTexture = DBG_NEW TextureVK(m_pDevice);
             pTexture->InitWithImage(textures[i], desc);
             m_Buffers.emplace_back(pTexture);
         }
@@ -386,6 +393,11 @@ namespace LambdaEngine
     }
 
     ITexture* SwapChainVK::GetBuffer(uint32 bufferIndex)
+    {
+        return nullptr;
+    }
+
+    const ITexture* SwapChainVK::GetBuffer(uint32 bufferIndex) const
     {
         return nullptr;
     }

@@ -31,12 +31,12 @@ namespace LambdaEngine
 
 	ISocketTCP* Win32SocketFactory::CreateSocketTCP()
 	{
-		return new Win32SocketTCP();
+		return DBG_NEW Win32SocketTCP();
 	}
 
 	ISocketUDP* Win32SocketFactory::CreateSocketUDP()
 	{
-		return new Win32SocketUDP();
+		return DBG_NEW Win32SocketUDP();
 	}
 
     const std::string& Win32SocketFactory::GetLocalAddress()

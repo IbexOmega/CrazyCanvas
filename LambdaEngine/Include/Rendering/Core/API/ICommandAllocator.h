@@ -14,7 +14,7 @@ namespace LambdaEngine
 		*
 		* return - Returns true on success
 		*/
-		virtual bool Reset()	= 0;
+		virtual bool Reset() = 0;
 
         /*
         * Returns the API-specific handle to the underlaying CommandAllocator-resource

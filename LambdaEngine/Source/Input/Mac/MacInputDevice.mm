@@ -33,8 +33,8 @@ namespace LambdaEngine
             case NSEventTypeRightMouseUp:
             case NSEventTypeOtherMouseUp:
             {
-                const NSInteger macButton   = [event buttonNumber];
-                const EMouseButton    button      = MacInputCodeTable::GetMouseButton(int32(macButton));
+                const NSInteger         macButton   = [event buttonNumber];
+                const EMouseButton      button      = MacInputCodeTable::GetMouseButton(int32(macButton));
                 
                 if (button != EMouseButton::MOUSE_BUTTON_UNKNOWN)
                 {

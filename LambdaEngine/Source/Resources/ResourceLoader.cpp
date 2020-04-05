@@ -33,7 +33,7 @@ namespace LambdaEngine
 		{
 			tinyobj::material_t& material = materials[m];
 
-			Material* pMaterial = new Material();
+			Material* pMaterial = DBG_NEW Material();
 
 
 			if (material.diffuse_texname.length() > 0)
@@ -298,7 +298,7 @@ namespace LambdaEngine
 
 		IBuffer* pIndexBuffer = pGraphicsDevice->CreateBuffer(indexBufferDesc);
 
-		Mesh* pMesh = new Mesh();
+		Mesh* pMesh = DBG_NEW Mesh();
 		pMesh->pVertexBuffer	= pVertexBuffer;
 		pMesh->VertexCount		= numVertices;
 		pMesh->pIndexBuffer		= pIndexBuffer;
@@ -362,7 +362,7 @@ namespace LambdaEngine
 		(*pDataSize) = ftell(pFile);
 		rewind(pFile);
 
-		(*ppData) = new byte[(*pDataSize)];
+		(*ppData) = DBG_NEW byte[(*pDataSize)];
 
 		fread(*ppData, 1, (*pDataSize), pFile);
 

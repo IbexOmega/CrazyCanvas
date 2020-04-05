@@ -12,7 +12,7 @@ namespace LambdaEngine
 	class Win32Window : public Window
 	{
 	public:
-		Win32Window()	= default;
+		Win32Window() = default;
 		~Win32Window();
 
 		virtual bool Init(const char* pTitle, uint32 width, uint32 height) override;

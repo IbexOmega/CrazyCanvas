@@ -137,7 +137,7 @@ namespace LambdaEngine
 
 	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) const
 	{
-		GraphicsPipelineStateVK* pPipelineState = new GraphicsPipelineStateVK(this);
+		GraphicsPipelineStateVK* pPipelineState = DBG_NEW GraphicsPipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
 		{
 			pPipelineState->Release();
@@ -149,7 +149,7 @@ namespace LambdaEngine
 
 	IPipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineDesc& desc) const
 	{
-		ComputePipelineStateVK* pPipelineState = new ComputePipelineStateVK(this);
+		ComputePipelineStateVK* pPipelineState = DBG_NEW ComputePipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
 		{
 			pPipelineState->Release();
@@ -161,7 +161,7 @@ namespace LambdaEngine
 
 	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc) const
 	{
-		RayTracingPipelineStateVK* pPipelineState = new RayTracingPipelineStateVK(this);
+		RayTracingPipelineStateVK* pPipelineState = DBG_NEW RayTracingPipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
 		{
 			pPipelineState->Release();
@@ -173,7 +173,7 @@ namespace LambdaEngine
 
 	ITopLevelAccelerationStructure* GraphicsDeviceVK::CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc) const
 	{
-		TopLevelAccelerationStructureVK* pTLAS = new TopLevelAccelerationStructureVK(this);
+		TopLevelAccelerationStructureVK* pTLAS = DBG_NEW TopLevelAccelerationStructureVK(this);
 		if (!pTLAS->Init(desc))
 		{
 			pTLAS->Release();
@@ -185,7 +185,7 @@ namespace LambdaEngine
 
 	IBottomLevelAccelerationStructure* GraphicsDeviceVK::CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc) const
 	{
-		BottomLevelAccelerationStructureVK* pBLAS = new BottomLevelAccelerationStructureVK(this);
+		BottomLevelAccelerationStructureVK* pBLAS = DBG_NEW BottomLevelAccelerationStructureVK(this);
 		if (!pBLAS->Init(desc))
 		{
 			pBLAS->Release();
@@ -202,7 +202,7 @@ namespace LambdaEngine
 
 	ICommandAllocator* GraphicsDeviceVK::CreateCommandAllocator(ECommandQueueType queueType) const
 	{
-		CommandAllocatorVK* pCommandAllocator = new CommandAllocatorVK(this);
+		CommandAllocatorVK* pCommandAllocator = DBG_NEW CommandAllocatorVK(this);
 		if (!pCommandAllocator->Init(queueType))
 		{
 			pCommandAllocator->Release();
@@ -232,7 +232,7 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
-		CommandQueueVK* pQueue = new CommandQueueVK(this);
+		CommandQueueVK* pQueue = DBG_NEW CommandQueueVK(this);
 		if (!pQueue->Init(queueFamilyIndex, 0))
 		{
 			pQueue->Release();
@@ -244,7 +244,7 @@ namespace LambdaEngine
 
 	IFence* GraphicsDeviceVK::CreateFence(uint64 initalValue) const
 	{
-		FenceVK* pFence = new FenceVK(this);
+		FenceVK* pFence = DBG_NEW FenceVK(this);
 		if (!pFence->Init(initalValue))
 		{
 			pFence->Release();
@@ -256,7 +256,7 @@ namespace LambdaEngine
 
 	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc& desc) const
 	{
-		BufferVK* pBuffer = new BufferVK(this);
+		BufferVK* pBuffer = DBG_NEW BufferVK(this);
 		if (!pBuffer->Init(desc))
 		{
             pBuffer->Release();
@@ -268,7 +268,7 @@ namespace LambdaEngine
 
 	ITexture* GraphicsDeviceVK::CreateTexture(const TextureDesc& desc) const
 	{
-		TextureVK* pTexture = new TextureVK(this);
+		TextureVK* pTexture = DBG_NEW TextureVK(this);
 		if (!pTexture->Init(desc))
 		{
             pTexture->Release();
@@ -285,7 +285,7 @@ namespace LambdaEngine
 
     ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc) const
     {
-        SwapChainVK* pSwapChain = new SwapChainVK(this);
+        SwapChainVK* pSwapChain = DBG_NEW SwapChainVK(this);
         if (pSwapChain->Init(pWindow, desc))
         {
             pSwapChain->Release();
