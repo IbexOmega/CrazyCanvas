@@ -51,10 +51,15 @@ namespace LambdaEngine
 		{
 			SAFEDELETE(pVertexBuffer);
 			SAFEDELETE(pIndexBuffer);
+
+			SAFEDELETEARR(pVertexArray);
+			SAFEDELETEARR(pIndexArray);
 		}
 
 		IBuffer* pVertexBuffer	= nullptr;
 		IBuffer* pIndexBuffer	= nullptr;
+		Vertex* pVertexArray	= nullptr;
+		uint32* pIndexArray		= nullptr;
 		uint32  VertexCount		= 0;
 		uint32  IndexCount		= 0;
 	};

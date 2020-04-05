@@ -45,9 +45,10 @@ namespace LambdaEngine
 		{
 			GUID_Lambda guid = RegisterLoadedMesh(meshes[i]);
 
-			for (GraphicsObject graphicsObject : result)
+			for (GraphicsObject& graphicsObject : result)
 			{
-				if (graphicsObject.Mesh == i) graphicsObject.Mesh = guid;
+				if (graphicsObject.Mesh == i) 
+					graphicsObject.Mesh = guid;
 			}
 		}
 
@@ -55,9 +56,10 @@ namespace LambdaEngine
 		{
 			GUID_Lambda guid = RegisterLoadedMaterial(materials[i]);
 
-			for (GraphicsObject graphicsObject : result)
+			for (GraphicsObject& graphicsObject : result)
 			{
-				if (graphicsObject.Material == i) graphicsObject.Material = guid;
+				if (graphicsObject.Material == i) 
+					graphicsObject.Material = guid;
 			}
 		}
 

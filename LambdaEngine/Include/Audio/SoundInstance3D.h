@@ -16,6 +16,7 @@ namespace LambdaEngine
 
 	struct SoundInstance3DDesc
 	{
+		const char* pName					= "SoundInstance3D";
 		SoundEffect3D* pSoundEffect			= nullptr;
 		ESoundModeFlags Flags				= ESoundModeFlags::SOUND_MODE_NONE;
 	};
@@ -58,6 +59,7 @@ namespace LambdaEngine
 
 		/*
 		* Set the world position of the sound instance
+		*	position - The world space position, should be given in meters
 		*/
 		void SetPosition(const glm::vec3& position);
 
@@ -71,9 +73,9 @@ namespace LambdaEngine
 		*/
 		void SetPitch(float pitch);
 
-		const glm::vec3& GetPosition()	{ return m_Position; }
-		float GetVolume()				{ return m_Volume; }
-		float GetPitch()				{ return m_Pitch; }
+		const glm::vec3& GetPosition();
+		float GetVolume();
+		float GetPitch();
 
 	private:
 		bool IsPlaying();
@@ -89,6 +91,7 @@ namespace LambdaEngine
 		FMOD_MODE			m_Mode;
 
 		//Local
+		const char*			m_pName;
 		glm::vec3			m_Position;
 		float				m_Volume;
 		float				m_Pitch;

@@ -20,7 +20,8 @@ namespace LambdaEngine
 		DECL_INTERFACE(IBottomLevelAccelerationStructure);
 
 		/*
-		* Updates the contained geometric data withing the Acceleration Structure, the vertex position data is assumed to be in 3 * F32 style, and the indices are assumed to be of type U32
+		* Updates the contained geometric data withing the Acceleration Structure, the vertex position data is assumed to be in 3 * F32 style, and the indices are assumed to be of type U32.
+		* This can only be called once if the BottomLevelAS is initialized with "Updateable" = false
 		*	pVertexBuffer - A graphics device buffer containing vertices
 		*	firstVertexIndex - An index to the first vertex in pVertexBuffer belonging to this BottomLevelAS
 		*	pIndexBuffer - A graphics device buffer containing indices

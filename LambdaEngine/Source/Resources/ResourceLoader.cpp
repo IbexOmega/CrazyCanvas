@@ -298,10 +298,18 @@ namespace LambdaEngine
 
 		IBuffer* pIndexBuffer = pGraphicsDevice->CreateBuffer(indexBufferDesc);
 
+		Vertex* pVertexArray = DBG_NEW Vertex[numVertices];
+		memcpy(pVertexArray, pVertices, sizeof(Vertex) * numVertices);
+
+		uint32* pIndexArray = DBG_NEW uint32[numIndices];
+		memcpy(pIndexArray, pIndices, sizeof(uint32) * numIndices);
+
 		Mesh* pMesh = new Mesh();
 		pMesh->pVertexBuffer	= pVertexBuffer;
-		pMesh->VertexCount		= numVertices;
 		pMesh->pIndexBuffer		= pIndexBuffer;
+		pMesh->pVertexArray		= pVertexArray;
+		pMesh->pIndexArray = pIndexArray;
+		pMesh->VertexCount		= numVertices;
 		pMesh->IndexCount		= numIndices;
 
 		return pMesh;

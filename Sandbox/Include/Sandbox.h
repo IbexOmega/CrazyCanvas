@@ -11,6 +11,8 @@ namespace LambdaEngine
 	class AudioListener;
 	class SoundEffect3D;
 	class SoundInstance3D;
+	class AudioGeometry;
+	class ReverbSphere;
 }
 
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IMouseHandler
@@ -51,4 +53,7 @@ private:
 	float m_Timer;
 
 	LambdaEngine::AudioListener* m_pAudioListener;
+
+	LambdaEngine::ReverbSphere* m_pReverbSphere;
+	LambdaEngine::AudioGeometry* m_pAudioGeometry;
 };

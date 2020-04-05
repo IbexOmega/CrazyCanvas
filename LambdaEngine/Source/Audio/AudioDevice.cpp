@@ -4,6 +4,8 @@
 #include "Audio/AudioListener.h"
 #include "Audio/SoundEffect3D.h"
 #include "Audio/SoundInstance3D.h"
+#include "Audio/AudioGeometry.h"
+#include "Audio/ReverbSphere.h"
 
 #include "Log/Log.h"
 #include "Threading/Thread.h"
@@ -51,17 +53,20 @@ namespace LambdaEngine
 		{
 			if (FMOD_System_Release(pSystem) != FMOD_OK)
 			{
-				LOG_ERROR("[AudioDevice]: FMOD System could not be released");
+				LOG_ERROR("[AudioDevice]: FMOD System could not be released for %s", m_pName);
 			}
 			else
 			{
-				D_LOG_MESSAGE("[AudioDevice]: FMOD System released successfully");
+				D_LOG_MESSAGE("[AudioDevice]: FMOD System released successfully for %s", m_pName);
 			}
+
+			pSystem = nullptr;
 		}
 	}
 
 	bool AudioDevice::Init(const AudioDeviceDesc& desc)
 	{
+		m_pName = desc.pName;
 		m_MaxNumAudioListeners = desc.MaxNumAudioListeners;
 
 		if (desc.Debug)
@@ -78,7 +83,7 @@ namespace LambdaEngine
 
 		if (FMOD_System_Create(&pSystem) != FMOD_OK)
 		{
-			LOG_ERROR("[AudioDevice]: FMOD System could not be created");
+			LOG_ERROR("[AudioDevice]: FMOD System could not be created for %s", m_pName);
 			return false;
 		}
 
@@ -87,11 +92,17 @@ namespace LambdaEngine
 
 		if (FMOD_System_Init(pSystem, numChannels, initFlags, nullptr) != FMOD_OK)
 		{
-			LOG_ERROR("[AudioDevice]: FMOD System could not be created");
+			LOG_ERROR("[AudioDevice]: FMOD System could not be initialized for %s", m_pName);
 			return false;
 		}
 
-		D_LOG_MESSAGE("[AudioDevice]: Successfully initialized!");
+		if (FMOD_System_SetGeometrySettings(pSystem, desc.MaxWorldSize) != FMOD_OK)
+		{
+			LOG_ERROR("[AudioDevice]: FMOD Geometry Settings could not be set for %s", m_pName);
+			return false;
+		}
+
+		D_LOG_MESSAGE("[AudioDevice]: Successfully initialized %s!", m_pName);
 
 		return true;
 	}
@@ -116,17 +127,17 @@ namespace LambdaEngine
 		
 		if (FMOD_System_CreateSound(pSystem, pFilepath, mode, &soundCreateInfo, &m_pMusicHandle) != FMOD_OK)
 		{
-			LOG_WARNING("[AudioDevice]: Music \"%s\" could not be initialized", pFilepath);
+			LOG_WARNING("[AudioDevice]: Music \"%s\" could not be initialized in %s", pFilepath, m_pName);
 			return false;
 		}
 
 		if (FMOD_System_PlaySound(pSystem, m_pMusicHandle, nullptr, true, &m_pMusicChannel) != FMOD_OK)
 		{
-			LOG_WARNING("[AudioDevice]: Music \"%s\" could not be played", pFilepath);
+			LOG_WARNING("[AudioDevice]: Music \"%s\" could not be played in %s", pFilepath, m_pName);
 			return false;
 		}
 
-		D_LOG_MESSAGE("[AudioDevice]: Loaded Music \"%s\"", pFilepath);
+		D_LOG_MESSAGE("[AudioDevice]: Loaded Music \"%s\" in %s", pFilepath, m_pName);
 		
 		return true;
 	}
@@ -170,7 +181,7 @@ namespace LambdaEngine
 	{
 		if (m_NumAudioListeners >= m_MaxNumAudioListeners)
 		{
-			LOG_WARNING("[AudioDevice]: AudioListener could not be created, max amount reached!");
+			LOG_WARNING("[AudioDevice]: AudioListener could not be created, max amount reached for %s!", m_pName);
 			return nullptr;
 		}
 
@@ -185,12 +196,21 @@ namespace LambdaEngine
 
 	SoundEffect3D* AudioDevice::CreateSound()
 	{
-		return new SoundEffect3D(this);
+		return DBG_NEW SoundEffect3D(this);
 	}
 
 	SoundInstance3D* AudioDevice::CreateSoundInstance()
 	{
-		return new SoundInstance3D(this);
+		return DBG_NEW SoundInstance3D(this);
 	}
 
+	AudioGeometry* AudioDevice::CreateAudioGeometry()
+	{
+		return DBG_NEW AudioGeometry(this);
+	}
+
+	ReverbSphere* AudioDevice::CreateReverbSphere()
+	{
+		return DBG_NEW ReverbSphere(this);
+	}
 };

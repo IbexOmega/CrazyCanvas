@@ -11,7 +11,10 @@ namespace LambdaEngine
 		s_pAudioDevice = new AudioDevice();
 
 		AudioDeviceDesc audioDeviceDesc = {};
-		audioDeviceDesc.Debug = true;
+		audioDeviceDesc.pName					= "Main AudioDevice";
+		audioDeviceDesc.Debug					= true;
+		audioDeviceDesc.MaxNumAudioListeners	= 1;
+		audioDeviceDesc.MaxWorldSize			= 200;
 
 		if (!s_pAudioDevice->Init(audioDeviceDesc))
 		{

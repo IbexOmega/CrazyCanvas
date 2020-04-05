@@ -1,7 +1,8 @@
 #include "Audio/AudioListener.h"
 #include "Audio/AudioDevice.h"
-
 #include "Audio/Audio.h"
+
+#include "Log/Log.h"
 
 namespace LambdaEngine
 {
@@ -16,7 +17,10 @@ namespace LambdaEngine
 
 	bool AudioListener::Init(const AudioListenerDesc& desc)
 	{
+		m_pName = desc.pName;
 		m_ListenerIndex = desc.ListenerIndex;
+
+		D_LOG_MESSAGE("[AudioListener]: AudioListener %s successfully initialized!", m_pName);
 
 		return true;
 	}

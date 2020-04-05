@@ -9,7 +9,8 @@ namespace LambdaEngine
 
 	struct AudioListenerDesc
 	{
-		uint32 ListenerIndex = 0;
+		const char* pName		= "AudioListener";
+		uint32 ListenerIndex	= 0;
 	};
 
 	class LAMBDA_API AudioListener
@@ -37,8 +38,11 @@ namespace LambdaEngine
 		void Update(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up = glm::vec3(0.0f, 1.0f, 0.0f));
 
 	private:
-		const AudioDevice* m_pAudioDevice;
+		//Engine
+		const AudioDevice*	m_pAudioDevice;
 
-		uint32 m_ListenerIndex;
+		//Locals
+		const char*			m_pName;
+		uint32				m_ListenerIndex;
 	};
 }

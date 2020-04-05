@@ -11,11 +11,15 @@ namespace LambdaEngine
 	class AudioListener;
 	class SoundEffect3D;
 	class SoundInstance3D;
+	class AudioGeometry;
+	class ReverbSphere;
 
 	struct AudioDeviceDesc
 	{
+		const char* pName			= "AudioDevice";
 		bool Debug					= true;
 		uint32 MaxNumAudioListeners	= 1;
+		float MaxWorldSize			= 100.0f;
 	};
 
 	class LAMBDA_API AudioDevice
@@ -64,11 +68,15 @@ namespace LambdaEngine
 		AudioListener*		CreateAudioListener();
 		SoundEffect3D*		CreateSound();
 		SoundInstance3D*	CreateSoundInstance();
+		AudioGeometry*		CreateAudioGeometry();
+		ReverbSphere*		CreateReverbSphere();
 
 	public:
 		FMOD_SYSTEM* pSystem;
 
 	private:
+		const char*		m_pName;
+
 		uint32			m_MaxNumAudioListeners;
 		uint32			m_NumAudioListeners;
 

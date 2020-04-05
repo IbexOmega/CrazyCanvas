@@ -27,9 +27,11 @@ namespace LambdaEngine
 
 	bool SoundInstance3D::Init(const SoundInstance3DDesc& desc)
 	{
+		m_pName = desc.pName;
+
 		if (desc.pSoundEffect == nullptr)
 		{
-			LOG_WARNING("[SoundInstance3D]: Init failed, pSoundEffect can't be nullptr");
+			LOG_WARNING("[SoundInstance3D]: Init failed for %s, pSoundEffect can't be nullptr", m_pName);
 			return false;
 		}
 
@@ -87,7 +89,7 @@ namespace LambdaEngine
 
 			if (FMOD_Channel_Set3DAttributes(m_pChannel, &fmodPosition, nullptr) != FMOD_OK)
 			{
-				D_LOG_WARNING("[SoundInstance3D]: 3D Attributes could not be set!");
+				D_LOG_WARNING("[SoundInstance3D]: 3D Attributes could not be set for %s", m_pName);
 			}
 		}
 	}
@@ -100,7 +102,7 @@ namespace LambdaEngine
 		{
 			if (FMOD_Channel_SetVolume(m_pChannel, volume) != FMOD_OK)
 			{
-				D_LOG_WARNING("[SoundInstance3D]: Volume could not be set!");
+				D_LOG_WARNING("[SoundInstance3D]: Volume could not be set for %s", m_pName);
 			}
 		}
 	}
@@ -113,9 +115,24 @@ namespace LambdaEngine
 		{
 			if (FMOD_Channel_SetPitch(m_pChannel, pitch) != FMOD_OK)
 			{
-				D_LOG_WARNING("[SoundInstance3D]: Pitch could not be set!");
+				D_LOG_WARNING("[SoundInstance3D]: Pitch could not be set for %s", m_pName);
 			}
 		}
+	}
+
+	const glm::vec3& SoundInstance3D::GetPosition()
+	{
+		return m_Position;
+	}
+
+	float SoundInstance3D::GetVolume()
+	{
+		return m_Volume;
+	}
+
+	float SoundInstance3D::GetPitch()
+	{
+		return m_Pitch;
 	}
 
 	bool SoundInstance3D::IsPlaying()
