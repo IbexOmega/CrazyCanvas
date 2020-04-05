@@ -53,4 +53,14 @@ namespace LambdaEngine
 
 		FMOD_Channel_SetPaused(pChannel, 0);
 	}
+
+	FMOD_SOUND* SoundEffect3D::GetHandle() 
+	{ 
+		return m_pHandle; 
+	}
+
+	uint32 SoundEffect3D::GetLengthMS() 
+	{ 
+		return m_LengthMS; 
+	}
 }

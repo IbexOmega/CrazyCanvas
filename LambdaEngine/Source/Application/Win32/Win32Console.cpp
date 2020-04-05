@@ -1,15 +1,23 @@
 #ifdef LAMBDA_PLATFORM_WINDOWS
 #include <stdio.h>
 #include <stdarg.h>
+#include <mutex>
+
+#include "Threading/SpinLock.h"
 
 #include "Application/Win32/Win32Console.h"
 
 namespace LambdaEngine
 {
+	//Locks the console outputhandle
+	SpinLock g_ConsoleLock;
+
 	HANDLE Win32Console::s_OutputHandle = 0;
 
 	void Win32Console::Show()
 	{
+		std::scoped_lock<SpinLock> lock(g_ConsoleLock);
+
 		if (AllocConsole())
 		{
 			s_OutputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -19,6 +27,8 @@ namespace LambdaEngine
 
 	void Win32Console::Close()
 	{
+		std::scoped_lock<SpinLock> lock(g_ConsoleLock);
+
 		if (s_OutputHandle)
 		{
 			FreeConsole();
@@ -28,32 +38,28 @@ namespace LambdaEngine
 
 	void Win32Console::Print(const char* pMessage, ...)
 	{
-		if (s_OutputHandle)
-		{
-			va_list args;
-			va_start(args, pMessage);
+		va_list args;
+		va_start(args, pMessage);
 
-			VPrint(pMessage, args);
+		VPrint(pMessage, args);
 
-			va_end(args);
-		}
+		va_end(args);
 	}
 
 	void Win32Console::PrintLine(const char* pMessage, ...)
 	{
-		if (s_OutputHandle)
-		{
-			va_list args;
-			va_start(args, pMessage);
+		va_list args;
+		va_start(args, pMessage);
 
-			VPrintLine(pMessage, args);
+		VPrintLine(pMessage, args);
 
-			va_end(args);
-		}
+		va_end(args);
 	}
 
 	void Win32Console::VPrint(const char* pMessage, va_list args)
 	{
+		std::scoped_lock<SpinLock> lock(g_ConsoleLock);
+
 		if (s_OutputHandle)
 		{
 			constexpr uint32 BUFFER_SIZE = 1024;
@@ -70,6 +76,8 @@ namespace LambdaEngine
 
 	void Win32Console::VPrintLine(const char* pMessage, va_list args)
 	{
+		std::scoped_lock<SpinLock> lock(g_ConsoleLock);
+
 		if (s_OutputHandle)
 		{
 			constexpr uint32 BUFFER_SIZE = 1024;
@@ -87,6 +95,8 @@ namespace LambdaEngine
 
 	void Win32Console::Clear()
 	{
+		std::scoped_lock<SpinLock> lock(g_ConsoleLock);
+
 		if (s_OutputHandle)
 		{
 			CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -107,6 +117,8 @@ namespace LambdaEngine
 
 	void Win32Console::SetTitle(const char* pTitle)
 	{
+		std::scoped_lock<SpinLock> lock(g_ConsoleLock);
+
 		if (s_OutputHandle)
 		{
 			::SetConsoleTitleA(pTitle);
@@ -115,6 +127,8 @@ namespace LambdaEngine
 
 	void Win32Console::SetColor(EConsoleColor color)
 	{
+		std::scoped_lock<SpinLock> lock(g_ConsoleLock);
+
 		if (s_OutputHandle)
 		{
 			WORD wColor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;

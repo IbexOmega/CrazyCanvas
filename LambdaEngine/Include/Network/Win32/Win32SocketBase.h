@@ -28,7 +28,7 @@ namespace LambdaEngine
 		*
 		* return  - False if an error occured, otherwise true.
 		*/
-		bool Bind(const std::string& address, uint16 port) override
+		virtual bool Bind(const std::string& address, uint16 port) override
 		{
 			struct sockaddr_in socketAddress;
 			socketAddress.sin_family = AF_INET;
@@ -64,7 +64,7 @@ namespace LambdaEngine
 		*
 		* return  - False if an error occured, otherwise true.
 		*/
-		bool Connect(const std::string& address, uint16 port) override
+		virtual bool Connect(const std::string& address, uint16 port) override
 		{
 			struct sockaddr_in socketAddress;
 			socketAddress.sin_family = AF_INET;
@@ -119,7 +119,7 @@ namespace LambdaEngine
 		*
 		* return - False if an error occured, otherwise true.
 		*/
-		bool Close() override
+		virtual bool Close() override
 		{
 			if (m_Closed)
 				return true;
@@ -143,7 +143,7 @@ namespace LambdaEngine
 		/*
 		* return - The currently used inet address.
 		*/
-		const std::string& GetAddress() const override
+		virtual const std::string& GetAddress() const override
 		{
 			return m_Address;
 		};
@@ -151,7 +151,7 @@ namespace LambdaEngine
 		/*
 		* return - The currently used port.
 		*/
-		uint16 GetPort() const override
+		virtual uint16 GetPort() const override
 		{
 			return m_Port;
 		};

@@ -1,4 +1,6 @@
 #ifdef LAMBDA_PLATFORM_MACOS
+#include "Memory/Memory.h"
+
 #include "Application/Mac/MacConsole.h"
 #include "Application/Mac/MacApplication.h"
 #include "Application/Mac/MacAppController.h"
@@ -83,6 +85,7 @@ namespace LambdaEngine
         
         if (!InitMenu())
         {
+            LOG_ERROR("[MacApplication]: Failed to initialize the application menu");
             return false;
         }
         
@@ -119,10 +122,25 @@ namespace LambdaEngine
             [appMenu addItem:[NSMenuItem separatorItem]];
             [appMenu addItemWithTitle:@"Quit Lambda Engine" action:@selector(terminate:) keyEquivalent:@"q"];
             
-            //NSMenuItem* windowMenuItem = []
+            //Window menu
+            NSMenuItem* windowMenuItem  = [menuBar addItemWithTitle:@"" action:nil keyEquivalent:@""];
+            NSMenu*     windowMenu      = [[NSMenu alloc] initWithTitle:@"Window"];
+            [windowMenuItem setSubmenu:windowMenu];
             
+            [windowMenu addItemWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
+            [windowMenu addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
+            [windowMenu addItem:[NSMenuItem separatorItem]];
+            
+            [windowMenu addItemWithTitle:@"Bring All to Front" action:@selector(arrangeInFront:) keyEquivalent:@""];
+            [windowMenu addItem:[NSMenuItem separatorItem]];
+            
+            [[windowMenu addItemWithTitle:@"Enter Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"] setKeyEquivalentModifierMask:NSEventModifierFlagControl | NSEventModifierFlagCommand];
+            
+            SEL setAppleMenuSelector = NSSelectorFromString(@"setAppleMenu:");
+            [NSApp performSelector:setAppleMenuSelector withObject:appMenu];
             
             [NSApp setMainMenu:menuBar];
+            [NSApp setWindowsMenu:windowMenu];
             [NSApp setServicesMenu:serviceMenu];
         }
         
@@ -136,7 +154,7 @@ namespace LambdaEngine
 
     Window* MacApplication::CreateWindow(const char* pTitle, uint32 width, uint32 height)
     {
-        MacWindow* pWindow = new MacWindow();
+        MacWindow* pWindow = DBG_NEW MacWindow();
         if (!pWindow->Init(pTitle, width, height))
         {
             SAFEDELETE(pWindow);
@@ -147,7 +165,7 @@ namespace LambdaEngine
 
     IInputDevice* MacApplication::CreateInputDevice(EInputMode)
     {
-        MacInputDevice* pInputDevice = new MacInputDevice();
+        MacInputDevice* pInputDevice = DBG_NEW MacInputDevice();
         s_pApplication->AddMessageHandler(pInputDevice);
 
         return pInputDevice;
@@ -163,7 +181,7 @@ namespace LambdaEngine
         [NSApp setPresentationOptions:NSApplicationPresentationDefault];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
-        s_pApplication = new MacApplication();
+        s_pApplication = DBG_NEW MacApplication();
         if (!s_pApplication->Init())
         {
             return false;
@@ -178,7 +196,6 @@ namespace LambdaEngine
         ProcessMessages();
         
         [NSApp finishLaunching];
-        
         return true;
     }
 

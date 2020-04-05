@@ -1,5 +1,7 @@
 #include "Server.h"
 
+#include "Memory/Memory.h"
+
 #include "Log/Log.h"
 
 #include "Input/API/Input.h"
@@ -18,7 +20,7 @@ Server::Server()
 {
 	using namespace LambdaEngine;
     
-	m_pServerTCP = new ServerTCP(2, this);
+	m_pServerTCP = DBG_NEW ServerTCP(2, this);
 	m_pServerTCP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
 
 	/*m_pServerUDP = new ServerUDP(this);
@@ -40,7 +42,7 @@ void Server::OnPacketReceivedUDP(LambdaEngine::NetworkPacket* packet, const std:
 
 LambdaEngine::IClientTCPHandler* Server::CreateClientHandler()
 {
-	return new ClientTCPHandler();
+	return DBG_NEW ClientTCPHandler();
 }
 
 bool Server::OnClientAccepted(LambdaEngine::ClientTCP2* client)
@@ -98,7 +100,7 @@ namespace LambdaEngine
 {
     Game* CreateGame()
     {
-		Server* pSandbox = new Server();
+		Server* pSandbox = DBG_NEW Server();
         Input::AddKeyboardHandler(pSandbox);
         
         return pSandbox;

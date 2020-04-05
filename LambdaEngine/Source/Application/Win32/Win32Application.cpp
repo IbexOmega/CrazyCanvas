@@ -16,6 +16,12 @@ namespace LambdaEngine
 	{
 	}
 
+	Win32Application::~Win32Application()
+	{
+		SAFEDELETE(m_pWindow);
+		m_hInstance = 0;
+	}
+
 	void Win32Application::AddMessageHandler(IApplicationMessageHandler* pHandler)
 	{
 		//Check first so that this handler is not already added
@@ -59,7 +65,7 @@ namespace LambdaEngine
 	{
 		ASSERT(hInstance != NULL);
 
-		s_pApplication = new Win32Application(hInstance);
+		s_pApplication = DBG_NEW Win32Application(hInstance);
 
 		WNDCLASS wc = { };
 		ZERO_MEMORY(&wc, sizeof(WNDCLASS));
@@ -94,6 +100,7 @@ namespace LambdaEngine
 			return false;
 		}
 
+		SAFEDELETE(s_pApplication);
 		return true;
 	}
 	
@@ -118,6 +125,11 @@ namespace LambdaEngine
 		m_BufferedMessages.clear();
 	}
 
+	HINSTANCE Win32Application::GetInstanceHandle()
+	{
+		return s_pApplication->m_hInstance;
+	}
+
 	bool Win32Application::ProcessMessages()
 	{
 		MSG msg = { };
@@ -137,8 +149,12 @@ namespace LambdaEngine
 
 	Window* Win32Application::CreateWindow(const char* pTitle, uint32 width, uint32 height)
 	{
-		Win32Window* pWindow = new Win32Window();
-		pWindow->Init(pTitle, width, height);
+		Win32Window* pWindow = DBG_NEW Win32Window();
+		if (!pWindow->Init(pTitle, width, height))
+		{
+			SAFEDELETE(pWindow);
+		}
+
 		return pWindow;
 	}
 
@@ -147,11 +163,11 @@ namespace LambdaEngine
 		InputDevice* pInputDevice = nullptr;
 		if (inputType == EInputMode::INPUT_STANDARD)
 		{
-			pInputDevice = new Win32InputDevice();
+			pInputDevice = DBG_NEW Win32InputDevice();
 		}
 		else if (inputType == EInputMode::INPUT_RAW)
 		{
-			Win32RawInputDevice* pRawInputDevice = new Win32RawInputDevice();
+			Win32RawInputDevice* pRawInputDevice = DBG_NEW Win32RawInputDevice();
 			if (!pRawInputDevice->Init())
 			{
 				SAFEDELETE(pRawInputDevice);
@@ -161,6 +177,12 @@ namespace LambdaEngine
 
 		s_pApplication->AddMessageHandler(pInputDevice);
 		return pInputDevice;
+	}
+
+	void Win32Application::Terminate()
+	{
+		//TODO: Maybe take in the exitcode
+		PostQuitMessage(0);
 	}
 
 	LRESULT Win32Application::WindowProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)

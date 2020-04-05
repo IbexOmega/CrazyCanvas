@@ -4,6 +4,7 @@
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
+#include "Resources/Mesh.h"
 
 namespace LambdaEngine
 {
@@ -39,7 +40,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void BottomLevelAccelerationStructureVK::UpdateGeometryData(IBuffer* pVertexBuffer, uint32 firstVertexIndex, uint32 vertexSize, IBuffer* pIndexBuffer, uint32 indexBufferByteOffset, uint32 triCount, void* pTransform, IBuffer* pScratchBuffer)
+	void BottomLevelAccelerationStructureVK::UpdateGeometryData(IBuffer* pVertexBuffer, uint32 firstVertexIndex, IBuffer* pIndexBuffer, uint32 indexBufferByteOffset, uint32 triCount, void* pTransform, IBuffer* pScratchBuffer)
 	{
 		if (!m_AccelerationStructureBuilt)
 		{
@@ -59,7 +60,7 @@ namespace LambdaEngine
 			geometryDataDesc.sType										= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
 			geometryDataDesc.vertexFormat								= VK_FORMAT_R32G32B32_SFLOAT;
 			geometryDataDesc.vertexData									= vertexDataAddressUnion;
-			geometryDataDesc.vertexStride								= vertexSize;
+			geometryDataDesc.vertexStride								= sizeof(Vertex);
 			geometryDataDesc.indexType									= VK_INDEX_TYPE_UINT32;
 			geometryDataDesc.indexData									= indexDataAddressUnion;
 			geometryDataDesc.transformData								= transformDataAddressUnion;
@@ -104,7 +105,7 @@ namespace LambdaEngine
 
 			VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
 
-			VkCommandBuffer temp;
+			VkCommandBuffer temp = VK_NULL_HANDLE;
 			m_pDevice->vkCmdBuildAccelerationStructureKHR(temp, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 		}
 		else

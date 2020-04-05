@@ -8,7 +8,7 @@ namespace LambdaEngine
 
 	bool AudioSystem::Init()
 	{
-		s_pAudioDevice = new AudioDevice();
+		s_pAudioDevice = DBG_NEW AudioDevice();
 
 		AudioDeviceDesc audioDeviceDesc = {};
 		audioDeviceDesc.Debug = true;

@@ -43,7 +43,13 @@ namespace LambdaEngine
 		DECL_INTERFACE(IGraphicsDevice);
 
 		virtual bool Init(const GraphicsDeviceDesc& desc) 	= 0;
-		virtual void Release() 								= 0;
+
+		/*
+		* Releases the graphicsdevice. Unlike all other graphics interfaces, the graphicsdevice
+		* is not referencecounted. This means that a call to release will delete the graphicsdevice. This 
+		* should not be done while there still are objects alive that were created by the device.
+		*/
+		virtual void Release() = 0;
 
 		virtual IRenderPass*						CreateRenderPass()																			const = 0;
 		virtual IBuffer*							CreateBuffer(const BufferDesc& desc)														const = 0;
@@ -56,8 +62,8 @@ namespace LambdaEngine
 		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const = 0;
 		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const = 0;
 		virtual ICommandList*						CreateCommandList(ICommandAllocator* pAllocator, ECommandListType commandListType)			const = 0;
-		virtual ICommandAllocator*					CreateCommandAllocator(ECommandQueueType queueType)												const = 0;
-		virtual ICommandQueue*						CreateCommandQueue(ECommandQueueType queueType)															const = 0;
+		virtual ICommandAllocator*					CreateCommandAllocator(ECommandQueueType queueType)											const = 0;
+		virtual ICommandQueue*						CreateCommandQueue(ECommandQueueType queueType)												const = 0;
 		virtual IFence*								CreateFence(uint64 initalValue)																const = 0;
 	};
 

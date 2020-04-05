@@ -115,7 +115,13 @@ namespace LambdaEngine
 		PFN_vkGetRayTracingShaderGroupHandlesKHR				vkGetRayTracingShaderGroupHandlesKHR			= nullptr;
 		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR								= nullptr;
 
+		//BufferAddresses
 		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
+
+		//Timeline-Semaphores
+		PFN_vkWaitSemaphores vkWaitSemaphores						= nullptr;
+		PFN_vkSignalSemaphore vkSignalSemaphore						= nullptr;
+		PFN_vkGetSemaphoreCounterValue vkGetSemaphoreCounterValue	= nullptr;
 
 	private:
 		VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;

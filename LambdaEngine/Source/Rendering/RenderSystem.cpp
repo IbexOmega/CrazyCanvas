@@ -59,6 +59,8 @@ namespace LambdaEngine
 		IBuffer* pBuffer		= s_pGraphicsDevice->CreateBuffer(bufferDesc);
 		uint64 bufferAddress	= pBuffer->GetDeviceAdress();
 
+		UNREFERENCED_VARIABLE(bufferAddress);
+
 		TextureDesc textureDesc = { };
 		textureDesc.pName		= "Texture";
 		textureDesc.Type		= ETextureType::TEXTURE_2D;
@@ -100,10 +102,10 @@ namespace LambdaEngine
 
 	bool RenderSystem::Release()
 	{
-		SAFERELEASE(s_pGraphicsDevice);
 		SAFERELEASE(s_pGraphicsQueue);
 		SAFERELEASE(s_pComputeQueue);
 		SAFERELEASE(s_pCopyQueue);
+		SAFERELEASE(s_pGraphicsDevice);
 		return true;
 	}
 	

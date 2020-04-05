@@ -174,7 +174,7 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
-		AudioListener* pAudioListener = new AudioListener(this);
+		AudioListener* pAudioListener = DBG_NEW AudioListener(this);
 
 		AudioListenerDesc audioListenerDesc = {};
 		audioListenerDesc.ListenerIndex = m_NumAudioListeners++;
@@ -185,12 +185,12 @@ namespace LambdaEngine
 
 	SoundEffect3D* AudioDevice::CreateSound()
 	{
-		return new SoundEffect3D(this);
+		return DBG_NEW SoundEffect3D(this);
 	}
 
 	SoundInstance3D* AudioDevice::CreateSoundInstance()
 	{
-		return new SoundInstance3D(this);
+		return DBG_NEW SoundInstance3D(this);
 	}
 
 };

@@ -1,5 +1,7 @@
 #include "Client.h"
 
+#include "Memory/Memory.h"
+
 #include "Log/Log.h"
 
 #include "Input/API/Input.h"
@@ -65,7 +67,7 @@ void Client::OnClientPacketReceived(LambdaEngine::ClientTCP2* client, LambdaEngi
 void Client::OnKeyDown(LambdaEngine::EKey key)
 {
 	using namespace LambdaEngine;
-	NetworkPacket* packet = new NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
+	NetworkPacket* packet = DBG_NEW NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
 	packet->WriteString("Hej kompis vad heter du?");
 	m_pClientTCP->SendPacket(packet);
 
@@ -96,7 +98,7 @@ namespace LambdaEngine
 {
     Game* CreateGame()
     {
-		Client* pSandbox = new Client();
+		Client* pSandbox = DBG_NEW Client();
         Input::AddKeyboardHandler(pSandbox);
         
         return pSandbox;

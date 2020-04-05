@@ -10,8 +10,20 @@ namespace LambdaEngine
 	public:
 		DECL_STATIC_CLASS(Win32InputCodeTable);
 
+		/*
+		* Initializes KeyCode- table
+		*
+		* return - Returns true if successful
+		*/
 		static bool Init();
 
+		/*
+		* Returns a LambdaEngine- EKey from a Win32- virtualkey
+		*
+		* keyCode - A windows virtualkey to be converted. See https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+		*
+		* return - Returns a keycode of type EKey
+		*/
 		static EKey GetKey(int32 keyCode);
 
 	private:

@@ -63,6 +63,9 @@ namespace LambdaEngine
 
 	LRESULT Win32RawInputDevice::MessageProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
+		UNREFERENCED_VARIABLE(hWnd);
+		UNREFERENCED_VARIABLE(wParam);
+
 		switch (uMessage)
 		{
 			case WM_INPUT:
@@ -70,7 +73,7 @@ namespace LambdaEngine
 				UINT uSize = 0;
 				GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &uSize, sizeof(RAWINPUTHEADER));
 				
-				LPBYTE lpBytes = new BYTE[uSize];
+				LPBYTE lpBytes = DBG_NEW BYTE[uSize];
 				if (lpBytes == NULL)
 				{
 					return 0;
@@ -78,7 +81,7 @@ namespace LambdaEngine
 
 				if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpBytes, &uSize, sizeof(RAWINPUTHEADER)) != uSize)
 				{
-					LOG_ERROR("GetRawInputData does not return correct size");
+					LOG_ERROR("[Win32RawInputDevice]: GetRawInputData does not return correct size");
 
 					SAFEDELETEARR(lpBytes);
 					return 0;

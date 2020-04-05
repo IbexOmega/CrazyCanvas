@@ -27,39 +27,15 @@
 
 namespace LambdaEngine
 {
-	static void TestRayTracing(IGraphicsDevice* pGraphicsDevice)
-	{
-		LOG_MESSAGE("\n-------Ray Trace Testing Start-------");
-
-		TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
-		topLevelAccelerationStructureDesc.pName = "Test TLAS";
-		topLevelAccelerationStructureDesc.InitialMaxInstanceCount = 10;
-
-		ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
-
-		BottomLevelAccelerationStructureDesc bottomLevelAccelerationStructureDesc = {};
-		bottomLevelAccelerationStructureDesc.pName = "Test BLAS";
-		bottomLevelAccelerationStructureDesc.MaxTriCount = 12;
-		bottomLevelAccelerationStructureDesc.MaxVertCount = 8;
-		bottomLevelAccelerationStructureDesc.Updateable = false;
-
-		IBottomLevelAccelerationStructure* pBLAS = pGraphicsDevice->CreateBottomLevelAccelerationStructure(bottomLevelAccelerationStructureDesc);
-
-		SAFERELEASE(pBLAS);
-		SAFERELEASE(pTLAS);
-
-		LOG_MESSAGE("-------Ray Trace Testing End-------\n");
-	}
-
 	void EngineLoop::Run(Game* pGame)
 	{
 		Clock clock;
-		clock.Reset();
-
+        
         bool IsRunning = true;
         while (IsRunning)
         {
 			clock.Tick();
+            
 			Timestamp dt = clock.GetDeltaTime();
             IsRunning = Tick(dt);
             pGame->Tick(dt);
@@ -87,6 +63,11 @@ namespace LambdaEngine
 	bool EngineLoop::PreInit()
 #endif
 	{
+#ifndef LAMBDA_PRODUCTION
+        PlatformConsole::Show();
+        Log::SetDebuggerOutputEnabled(true);
+#endif
+
 #ifdef LAMBDA_PLATFORM_WINDOWS
         if (!PlatformApplication::PreInit(hInstance))
 #else
@@ -97,12 +78,7 @@ namespace LambdaEngine
         }
 
 		PlatformTime::PreInit();
-        
-        Log::SetDebuggerOutputEnabled(true);
-        
-#ifndef LAMBDA_PRODUCTION
-        PlatformConsole::Show();
-#endif
+              
 		return true;
 	}
 	
@@ -152,6 +128,11 @@ namespace LambdaEngine
 	
 	bool EngineLoop::PostRelease()
 	{
+		if (!AudioSystem::Release())
+		{
+			return false;
+		}
+
 		if (!PlatformApplication::PostRelease())
 		{
 			return false;

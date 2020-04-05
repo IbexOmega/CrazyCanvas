@@ -113,12 +113,8 @@ namespace LambdaEngine
 		//renderPassInfo.pClearValues			= pClearVales;
 		//renderPassInfo.clearValueCount		= clearValueCount;
 
-		VkSubpassContents subpassContent;
-		if (flags & ERenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_INLINE)
-		{
-			subpassContent = VK_SUBPASS_CONTENTS_INLINE;
-		}
-		else if (flags & ERenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_EXECUTE_SECONDARY)
+		VkSubpassContents subpassContent = VK_SUBPASS_CONTENTS_INLINE;
+		if (flags & ERenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_EXECUTE_SECONDARY)
 		{
 			subpassContent = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
 		}

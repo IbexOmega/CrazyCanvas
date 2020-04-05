@@ -119,7 +119,7 @@ namespace LambdaEngine
 			shaderGroupCreateInfo.generalShader = VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.intersectionShader = VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.anyHitShader = VK_SHADER_UNUSED_NV;
-			shaderGroupCreateInfo.closestHitShader = shaderStagesInfos.size() - 1;
+			shaderGroupCreateInfo.closestHitShader = uint32(shaderStagesInfos.size() - 1);
 			shaderGroups.push_back(shaderGroupCreateInfo);
 		}
 
@@ -142,7 +142,7 @@ namespace LambdaEngine
 			VkRayTracingShaderGroupCreateInfoKHR shaderGroupCreateInfo = {};
 			shaderGroupCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
 			shaderGroupCreateInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-			shaderGroupCreateInfo.generalShader = shaderStagesInfos.size() - 1;
+			shaderGroupCreateInfo.generalShader = uint32(shaderStagesInfos.size() - 1);
 			shaderGroupCreateInfo.intersectionShader = VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.anyHitShader = VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.closestHitShader = VK_SHADER_UNUSED_NV;

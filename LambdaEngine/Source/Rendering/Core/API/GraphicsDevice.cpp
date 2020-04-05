@@ -9,7 +9,7 @@ namespace LambdaEngine
         IGraphicsDevice* pDevice = nullptr;
         if (api == EGraphicsAPI::VULKAN)
         {
-            pDevice = new GraphicsDeviceVK();
+            pDevice = DBG_NEW GraphicsDeviceVK();
         }
 
         if (pDevice)

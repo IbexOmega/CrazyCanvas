@@ -24,16 +24,65 @@ namespace LambdaEngine
 		ResourceManager(IGraphicsDevice* pGraphicsDevice, AudioDevice* pAudioDevice);
 		~ResourceManager();
 
+		/*
+		* Load a Scene from file, (experimental, only tested with Sponza Scene)
+		*	pGraphicsDevice - A Graphics Device
+		*	pDir - Path to the directory that holds the .obj file
+		*	pFilename - The name of the .obj file
+		*	loadedGraphicsObjects - A vector where all loaded GraphicsObject(s) will be stored
+		* return - true if the scene was loaded, false otherwise
+		*/
 		bool LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GraphicsObject>& result);
 
+		/*
+		* Load a mesh from file
+		*	pFilepath - Path to the .obj file
+		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
+		*/
 		GUID_Lambda LoadMeshFromFile(const char* pFilepath);
+
+		/*
+		* Load a mesh from memory
+		*	pVertices - An array of vertices
+		*	numVertices - The vertexcount
+		*	pIndices - An array of indices
+		*	numIndices - The Indexcount
+		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
+		*/
 		GUID_Lambda LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices);
 
-		GUID_Lambda LoadMaterialFromMemory(GUID_Lambda albedoMap, GUID_Lambda normalMap, GUID_Lambda ambienOcclusionMap, GUID_Lambda metallicMap, GUID_Lambda roughnessMap, const MaterialProperties& properties);
+		/*
+		* Load a material from memory
+		*	albedoMap, normalMap, ambientOcclusionMap, metallicMap, roughnessMap - The GUID of a valid ITexture loaded with this ResourceManager, or GUID_NONE to use default maps
+		*	properties - Material Properties which are to be used for this material
+		* return - a valid GUID if the materials was loaded, otherwise returns GUID_NONE
+		*/
+		GUID_Lambda LoadMaterialFromMemory(GUID_Lambda albedoMap, GUID_Lambda normalMap, GUID_Lambda ambientOcclusionMap, GUID_Lambda metallicMap, GUID_Lambda roughnessMap, const MaterialProperties& properties);
 
+		/*
+		* Load a texture from file
+		*	pFilepath - Path to the texture file
+		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
+		*/
 		GUID_Lambda LoadTextureFromFile(const char* pFilepath);
+
+		/*
+		* Load a texture from memory
+		*	pData - The pixeldata
+		*	width - The pixel width of the texture
+		*	height - The pixel height of the texture
+		*	format - The format of the pixeldata
+		*	usageFlags - Usage flags
+		*	generateMips - If mipmaps should be generated on load
+		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
+		*/
 		GUID_Lambda LoadTextureFromMemory(const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips);
 
+		/*
+		* Load sound from file
+		*	pFilepath - Path to the audio file
+		* return - a valid GUID if the sound was loaded, otherwise returns GUID_NONE
+		*/
 		GUID_Lambda LoadSoundFromFile(const char* pFilepath);
 
 		Mesh*			GetMesh(GUID_Lambda guid)		{ return m_Meshes[guid]; }

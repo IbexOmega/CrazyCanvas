@@ -3,7 +3,7 @@
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformConsole.h"
 
-void Assert(const char* pFile, int line)
+void HandleAssert(const char* pFile, int line)
 {
     using namespace LambdaEngine;
     

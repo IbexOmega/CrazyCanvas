@@ -10,8 +10,9 @@
 *.xcworkspace*
 *.xcodeproj*
 
-# Ignore all files in the VS folder (Created by Visual Studio)
+# Ignore all files in the .vs- and .vscode- folders (Created by Visual Studio)
 .vs/
+.vscode/
 
 # Ignore all compiled files
 Build/

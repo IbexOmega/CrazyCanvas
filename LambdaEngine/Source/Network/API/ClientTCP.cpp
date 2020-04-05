@@ -208,7 +208,7 @@ namespace LambdaEngine
 	{
 		uint32 bytesReceivedTotal = 0;
 		int32 bytesReceived = 0;
-		while (bytesReceivedTotal != bytesToRead)
+		while (bytesReceivedTotal != uint32(bytesToRead))
 		{
 			if (m_pSocket->Receive(buffer, bytesToRead - bytesReceivedTotal, bytesReceived))
 			{
@@ -371,8 +371,8 @@ namespace LambdaEngine
 	void ClientTCP::Init()
 	{
 		s_PacketPing = NetworkPacket(PACKET_TYPE_PING, false);
-		s_Clients = new std::set<ClientTCP*>();
-		s_LockClients = new SpinLock();
+		s_Clients = DBG_NEW std::set<ClientTCP*>();
+		s_LockClients = DBG_NEW SpinLock();
 	}
 
 	void ClientTCP::Tick(Timestamp dt)

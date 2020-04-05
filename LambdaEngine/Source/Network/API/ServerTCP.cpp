@@ -87,7 +87,7 @@ namespace LambdaEngine
 			if(socket)
 			{
 				IClientTCPHandler* handler = m_pHandler->CreateClientHandler();
-				HandleNewClient(new ClientTCP2(handler, socket));
+				HandleNewClient(DBG_NEW ClientTCP2(handler, socket));
 			}
 			else
 			{
@@ -154,12 +154,12 @@ namespace LambdaEngine
 
 	uint8 ServerTCP::GetNrOfClients() const
 	{
-		return m_Clients.size();
+		return uint8(m_Clients.size());
 	}
 
 	void ServerTCP::OnClientConnected(ClientTCP2* client)
 	{
-		
+		UNREFERENCED_VARIABLE(client);
 	}
 
 	void ServerTCP::OnClientDisconnected(ClientTCP2* client)
@@ -171,12 +171,13 @@ namespace LambdaEngine
 
 	void ServerTCP::OnClientFailedConnecting(ClientTCP2* client)
 	{
-
+		UNREFERENCED_VARIABLE(client);
 	}
 
 	void ServerTCP::OnClientPacketReceived(ClientTCP2* client, NetworkPacket* packet)
 	{
-		
+		UNREFERENCED_VARIABLE(client);
+		UNREFERENCED_VARIABLE(packet);
 	}
 
 	ISocketTCP* ServerTCP::CreateServerSocket(const std::string& address, uint16 port)

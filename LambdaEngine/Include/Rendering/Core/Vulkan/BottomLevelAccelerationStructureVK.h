@@ -19,7 +19,7 @@ namespace LambdaEngine
 
 		bool Init(const BottomLevelAccelerationStructureDesc& desc);
 
-		virtual void UpdateGeometryData(IBuffer* pVertexBuffer, uint32 firstVertexIndex, uint32 vertexSize, IBuffer* pIndexBuffer, uint32 indexBufferByteOffset, uint32 triCount, void* pTransform, IBuffer* pScratchBuffer) override;
+		virtual void UpdateGeometryData(IBuffer* pVertexBuffer, uint32 firstVertexIndex, IBuffer* pIndexBuffer, uint32 indexBufferByteOffset, uint32 triCount, void* pTransform, IBuffer* pScratchBuffer) override;
 
 		virtual uint64 GetScratchMemorySizeRequirement() override;
 

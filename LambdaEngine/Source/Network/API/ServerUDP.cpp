@@ -12,6 +12,7 @@ namespace LambdaEngine
 		m_Stop(false),
 		m_pHandler(handler)
 	{
+		UNREFERENCED_VARIABLE(handler);
 	}
 
 	ServerUDP::~ServerUDP()
@@ -50,6 +51,7 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		if (m_pServerSocket)
 			return m_pServerSocket->GetAddress();
+		//Should return copy or reference (May cause crash in release)
 		return "";
 	}
 
@@ -103,8 +105,18 @@ namespace LambdaEngine
 		m_pThread = nullptr;
 		delete m_pServerSocket;
 		m_pServerSocket = nullptr;
-		LOG_WARNING("[ServerTCP]: Stopped");
+		LOG_WARNING("[ServerUDP]: Stopped");
 	}
+
+	/*void ServerUDP::HandleReceivedPacket(NetworkPacket* packet, const std::string& address, uint16 port)
+	{
+		UNREFERENCED_VARIABLE(packet);
+		UNREFERENCED_VARIABLE(address);
+		UNREFERENCED_VARIABLE(port);
+
+		packet->UnPack();
+		// HASH address with port ?
+	}*/
 
 	ISocketUDP* ServerUDP::CreateServerSocket(const std::string& address, uint16 port)
 	{
