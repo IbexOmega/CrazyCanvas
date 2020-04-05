@@ -58,6 +58,7 @@ Sandbox::Sandbox() :
 	reverbSphereDesc.Position = glm::vec3(0.0f, 0.0f, 5.0f);
 	reverbSphereDesc.MinDistance = 20.0f;
 	reverbSphereDesc.MaxDistance = 40.0f;
+	reverbSphereDesc.ReverbSetting = EReverbSetting::SEWERPIPE;
 
 	m_pReverbSphere->Init(reverbSphereDesc);
 

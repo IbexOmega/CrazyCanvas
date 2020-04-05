@@ -9,12 +9,40 @@ namespace LambdaEngine
 {
 	class AudioDevice;
 
+	enum class EReverbSetting : uint32
+	{
+		GENERIC				= 0,
+		PADDEDCELL			= 1,
+		ROOM				= 2,
+		BATHROOM			= 3,
+		LIVINGROOM			= 4,
+		STONEROOM			= 5,
+		AUDITORIUM			= 6,
+		CONCERTHALL			= 7,
+		CAVE				= 8,
+		ARENA				= 9,
+		HANGAR				= 10,
+		CARPETTEDHALLWAY	= 11,
+		HALLWAY				= 12,
+		STONECORRIDOR		= 13,
+		ALLEY				= 14,
+		FOREST				= 15,
+		CITY				= 16,
+		MOUNTAINS			= 17,
+		QUARRY				= 18,
+		PLAIN				= 19,
+		PARKINGLOT			= 20,
+		SEWERPIPE			= 21,
+		UNDERWATER			= 22
+	};
+
 	struct ReverbSphereDesc
 	{
-		const char* pName		= "Reverb Sphere";
-		glm::vec3 Position		= glm::vec3(0.0f);
-		float MinDistance		= 1.0f;
-		float MaxDistance		= 100.0f;
+		const char* pName				= "Reverb Sphere";
+		glm::vec3 Position				= glm::vec3(0.0f);
+		float MinDistance				= 5.0f;
+		float MaxDistance				= 10.0f;
+		EReverbSetting ReverbSetting	= EReverbSetting::GENERIC;
 	};
 
 	class LAMBDA_API ReverbSphere
@@ -37,6 +65,19 @@ namespace LambdaEngine
 		* Set whether the geometry should be processed by the audio engine
 		*/
 		void SetActive(bool active);
+
+		/*
+		* Set the 3D attributes of this ReverbSphere
+		*	position - The world position
+		*	minDistance - The distance from the centerpoint within which the reverb will have full effect
+		*	maxDistance - The distance from the centerpoint within which the reverb will have no effect
+		*/
+		void Set3DAttributes(const glm::vec3 position, float minDistance, float maxDistance);
+
+		/*
+		* Set the reverb environment setting
+		*/
+		void SetReverbSetting(EReverbSetting reverbSetting);
 
 	private:
 		//Engine
