@@ -1,5 +1,7 @@
 #include "Server.h"
 
+#include "Memory/Memory.h"
+
 #include "Log/Log.h"
 
 #include "Input/API/Input.h"
@@ -10,7 +12,7 @@
 #include "Application/API/Window.h"
 
 #include "Network/API/PlatformSocketFactory.h"
-#include "Network/API/ClientTCP.h"
+#include "Network/API/ClientTCP2.h"
 
 #include "ClientTCPHandler.h"
 
@@ -18,36 +20,45 @@ Server::Server()
 {
 	using namespace LambdaEngine;
     
-	m_pServer = new ServerTCP(2, this);
-	m_pServer->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
+	m_pServerTCP = DBG_NEW ServerTCP(2, this);
+	m_pServerTCP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
+
+	/*m_pServerUDP = new ServerUDP(this);
+	m_pServerUDP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);*/
 
 	UpdateTitle();
 }
 
 Server::~Server()
 {
-	delete m_pServer;
+	delete m_pServerTCP;
+	//delete m_pServerUDP;
+}
+
+void Server::OnPacketReceivedUDP(LambdaEngine::NetworkPacket* packet, const std::string& address, uint16 port)
+{
+	LOG_MESSAGE("UDP Packet Received from: %s:%d", address.c_str(), port);
 }
 
 LambdaEngine::IClientTCPHandler* Server::CreateClientHandler()
 {
-	return new ClientTCPHandler();
+	return DBG_NEW ClientTCPHandler();
 }
 
-bool Server::OnClientAccepted(LambdaEngine::ClientTCP* client)
+bool Server::OnClientAccepted(LambdaEngine::ClientTCP2* client)
 {
 	LOG_MESSAGE("OnClientAccepted");
 	return true;
 }
 
-void Server::OnClientConnected(LambdaEngine::ClientTCP* client)
+void Server::OnClientConnected(LambdaEngine::ClientTCP2* client)
 {
 	using namespace LambdaEngine;
 	LOG_MESSAGE("OnClientConnected");
 	UpdateTitle();
 }
 
-void Server::OnClientDisconnected(LambdaEngine::ClientTCP* client)
+void Server::OnClientDisconnected(LambdaEngine::ClientTCP2* client)
 {
 	LOG_MESSAGE("OnClientDisconnected");
 	UpdateTitle();
@@ -55,7 +66,8 @@ void Server::OnClientDisconnected(LambdaEngine::ClientTCP* client)
 
 void Server::OnKeyDown(LambdaEngine::EKey key)
 {
-	m_pServer->Stop();
+	m_pServerTCP->Stop();
+	//m_pServerUDP->Stop();
 	LOG_MESSAGE("Key Pressed: %d", key);
 }
 
@@ -73,7 +85,7 @@ void Server::UpdateTitle()
 {
 	using namespace LambdaEngine;
 
-	std::string title = "Server - " + std::to_string(m_pServer->GetNrOfClients());
+	std::string title = "Server - " + std::to_string(m_pServerTCP->GetNrOfClients());
 
 	PlatformApplication::Get()->GetWindow()->SetTitle(title.c_str());
 	PlatformConsole::SetTitle(title.c_str());
@@ -88,7 +100,7 @@ namespace LambdaEngine
 {
     Game* CreateGame()
     {
-		Server* pSandbox = new Server();
+		Server* pSandbox = DBG_NEW Server();
         Input::AddKeyboardHandler(pSandbox);
         
         return pSandbox;

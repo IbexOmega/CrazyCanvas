@@ -75,7 +75,8 @@ namespace LambdaEngine
 		if (!m_Stop)
 		{
 			m_Stop = true;
-			m_pSocket->Close();
+			if(m_pSocket)
+				m_pSocket->Close();
 			if (m_pThreadSend)
 				m_pThreadSend->Notify();
 		}
@@ -88,6 +89,11 @@ namespace LambdaEngine
 
 	void ClientTCP::Release()
 	{
+		{
+			std::scoped_lock<SpinLock> lock(*s_LockClients);
+			m_Handlers.clear();
+		}
+
 		m_Release = true;
 		Disconnect();
 		if (m_pThreadSend == nullptr && m_pThread == nullptr)
@@ -164,8 +170,9 @@ namespace LambdaEngine
 			if (!m_pSocket)
 			{
 				LOG_ERROR("[ClientTCP]: Failed to connect to Server!");
-				for(IClientTCPHandler* handler : m_Handlers)
-					handler->OnClientFailedConnecting(this);
+				std::scoped_lock<SpinLock> lock(*s_LockClients);
+				/*for (IClientTCPHandler* handler : m_Handlers)
+					handler->OnClientFailedConnecting(this);*/
 				return;
 			}
 		}
@@ -175,10 +182,13 @@ namespace LambdaEngine
 		ResetTransmitTimer();
 		m_pThreadSend = Thread::Create(std::bind(&ClientTCP::RunTransmit, this), std::bind(&ClientTCP::OnStoppedSend, this));
 
-		for (IClientTCPHandler* handler : m_Handlers)
-			handler->OnClientConnected(this);
+		{
+			std::scoped_lock<SpinLock> lock(*s_LockClients);
+			/*for (IClientTCPHandler* handler : m_Handlers)
+				handler->OnClientConnected(this);*/
+		}
 
-		NetworkPacket packet(EPacketType::PACKET_TYPE_UNDEFINED);
+		NetworkPacket packet(EPacketType::PACKET_TYPE_UNDEFINED, false);
 		while (!m_Stop)
 		{
 			if (ReceivePacket(&packet))
@@ -198,7 +208,7 @@ namespace LambdaEngine
 	{
 		uint32 bytesReceivedTotal = 0;
 		int32 bytesReceived = 0;
-		while (bytesReceivedTotal != bytesToRead)
+		while (bytesReceivedTotal != uint32(bytesToRead))
 		{
 			if (m_pSocket->Receive(buffer, bytesToRead - bytesReceivedTotal, bytesReceived))
 			{
@@ -238,19 +248,25 @@ namespace LambdaEngine
 			packet->ReadUInt32(m_NrOfPingReceived);
 		}
 
-		for (IClientTCPHandler* handler : m_Handlers)
-			handler->OnClientPacketReceived(this, packet);
+		{
+			std::scoped_lock<SpinLock> lock(*s_LockClients);
+			/*for (IClientTCPHandler* handler : m_Handlers)
+				handler->OnClientPacketReceived(this, packet);*/
+		}
 	}
 
 	void ClientTCP::OnStopped()
 	{
+		{
+			std::scoped_lock<SpinLock> lock(*s_LockClients);
+			/*for (IClientTCPHandler* handler : m_Handlers)
+				handler->OnClientDisconnected(this);*/
+		}
+
 		m_pThread = nullptr;
 		delete m_pSocket;
 		m_pSocket = nullptr;
 		LOG_WARNING("[ClientTCP]: Disconnected!");
-
-		for (IClientTCPHandler* handler : m_Handlers)
-			handler->OnClientDisconnected(this);
 
 		if (m_Release)
 			Release();
@@ -355,8 +371,8 @@ namespace LambdaEngine
 	void ClientTCP::Init()
 	{
 		s_PacketPing = NetworkPacket(PACKET_TYPE_PING, false);
-		s_Clients = new std::set<ClientTCP*>();
-		s_LockClients = new SpinLock();
+		s_Clients = DBG_NEW std::set<ClientTCP*>();
+		s_LockClients = DBG_NEW SpinLock();
 	}
 
 	void ClientTCP::Tick(Timestamp dt)

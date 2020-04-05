@@ -49,7 +49,7 @@ namespace LambdaEngine
 		char* address = inet_ntoa(socketAddress.sin_addr);
 		uint16 port = ntohs(socketAddress.sin_port);
 
-		return new Win32SocketTCP(socket, address, port);
+		return DBG_NEW Win32SocketTCP(socket, address, port);
 	}
 
 	bool Win32SocketTCP::Send(const char* buffer, uint32 bytesToSend, int32& bytesSent)

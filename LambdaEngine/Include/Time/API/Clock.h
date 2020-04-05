@@ -15,6 +15,10 @@ namespace LambdaEngine
 		Clock& operator=(Clock&& other)			noexcept;
 		Clock& operator=(const Clock& other)	noexcept;
 
+		/*
+		* Measures the deltatime between this and the latest call to Clock::Tick. It also updates the totalTime that the clock
+		* has been active. This is the time between the last call to Clock::Reset and this call to Clock::Tick
+		*/
 		void Tick();
 
 		FORCEINLINE void Reset()

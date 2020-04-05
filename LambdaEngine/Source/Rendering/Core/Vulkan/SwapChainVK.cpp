@@ -55,6 +55,20 @@ namespace LambdaEngine
             vkDestroySwapchainKHR(m_pDevice->Device, m_SwapChain, nullptr);
             m_SwapChain = VK_NULL_HANDLE;
         }
+
+        const uint32 bufferCount = uint32(m_Buffers.size());
+        for (uint32 i = 0; i < bufferCount; i++)
+        {
+            uint64 refCount = m_Buffers[i]->Release();
+            m_Buffers[i] = nullptr;
+            
+            if (refCount > 0)
+            {
+                LOG_ERROR("[SwapChainVK]: All external references to all buffers must be released before calling Release or ResizeBuffers");
+                DEBUGBREAK();
+            }
+        }
+        m_Buffers.clear();
     }
 
     bool SwapChainVK::Init(const Window* pWindow, const SwapChainDesc& desc)
@@ -358,7 +372,7 @@ namespace LambdaEngine
             desc.Miplevels      = 1;
             desc.SampleCount    = 1;
 
-            TextureVK* pTexture = new TextureVK(m_pDevice);
+            TextureVK* pTexture = DBG_NEW TextureVK(m_pDevice);
             pTexture->InitWithImage(textures[i], desc);
             m_Buffers.emplace_back(pTexture);
         }
@@ -387,7 +401,20 @@ namespace LambdaEngine
 
     ITexture* SwapChainVK::GetBuffer(uint32 bufferIndex)
     {
-        return nullptr;
+        ASSERT(bufferIndex < uint32(m_Buffers.size()));
+
+        TextureVK* pBuffer = m_Buffers[bufferIndex];
+        pBuffer->AddRef();
+        return pBuffer;
+    }
+
+    const ITexture* SwapChainVK::GetBuffer(uint32 bufferIndex) const
+    {
+        ASSERT(bufferIndex < uint32(m_Buffers.size()));
+
+        TextureVK* pBuffer = m_Buffers[bufferIndex];
+        pBuffer->AddRef();
+        return pBuffer;
     }
 
     void SwapChainVK::SetName(const char* pName)

@@ -127,12 +127,21 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::LoadTextureFromFile(const char* pFilepath)
 	{
+		UNREFERENCED_VARIABLE(pFilepath);
+
 		LOG_WARNING("[ResourceDevice]: Call to unimplemented function LoadTextureFromFile");
 		return GUID_NONE;
 	}
 
 	GUID_Lambda ResourceManager::LoadTextureFromMemory(const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips)
 	{
+		UNREFERENCED_VARIABLE(pData);
+		UNREFERENCED_VARIABLE(width);
+		UNREFERENCED_VARIABLE(height);
+		UNREFERENCED_VARIABLE(usageFlags);
+		UNREFERENCED_VARIABLE(format);
+		UNREFERENCED_VARIABLE(generateMips);
+
 		LOG_WARNING("[ResourceDevice]: Call to unimplemented function LoadTextureFromMemory");
 		return GUID_NONE;
 	}

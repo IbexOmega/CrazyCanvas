@@ -24,22 +24,21 @@ namespace LambdaEngine
         m_pWindow = [[CocoaWindow alloc] initWithContentRect:windowRect styleMask:windowStyle backing:NSBackingStoreBuffered defer:NO];
         if (!m_pWindow)
         {
-            LOG_ERROR("[MacWindow] Failed to create NSWindow");
+            LOG_ERROR("[MacWindow]: Failed to create NSWindow");
             return false;
         }
         
         m_pDelegate = [[CocoaWindowDelegate alloc] init];
         if (!m_pDelegate)
         {
-            LOG_ERROR("[MacWindow] Failed to create CocoaWindowDelegate");
+            LOG_ERROR("[MacWindow]: Failed to create CocoaWindowDelegate");
             return false;
         }
         
-
         m_pView = [[CocoaContentView alloc] init];
         if (!m_pView)
         {
-            LOG_ERROR("[MacWindow] Failed to create CocoaContentView");
+            LOG_ERROR("[MacWindow]: Failed to create CocoaContentView");
             return false;
         }
         

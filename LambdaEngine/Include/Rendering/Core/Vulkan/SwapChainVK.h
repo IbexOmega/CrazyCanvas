@@ -26,7 +26,8 @@ namespace LambdaEngine
         
         virtual void SetName(const char* pName) override final;
     
-        virtual ITexture* GetBuffer(uint32 bufferIndex) override final;
+        virtual ITexture*       GetBuffer(uint32 bufferIndex)       override final;
+        virtual const ITexture* GetBuffer(uint32 bufferIndex) const override final;
         
         FORCEINLINE virtual const Window* GetWindow() const override final
         {

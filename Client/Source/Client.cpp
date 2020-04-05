@@ -1,5 +1,7 @@
 #include "Client.h"
 
+#include "Memory/Memory.h"
+
 #include "Log/Log.h"
 
 #include "Input/API/Input.h"
@@ -19,30 +21,39 @@ Client::Client()
     PlatformApplication::Get()->GetWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
-    m_pClient = new ClientTCP(this);
-	m_pClient->Connect("192.168.0.104", 4444);
+	m_pClientTCP = new ClientTCP2(this);
+	m_pClientTCP->Connect("192.168.0.104", 4444);
+
+	//m_pClientUDP = new ClientUDP("192.168.0.104", 4444, this);
 }
 
 Client::~Client()
 {
+	m_pClientTCP->Release();
+	//m_pClientUDP->Release();
 }
 
-void Client::OnClientConnected(LambdaEngine::ClientTCP* client)
+void Client::OnClientPacketReceivedUDP(LambdaEngine::ClientUDP* client, LambdaEngine::NetworkPacket* packet)
+{
+	LOG_MESSAGE("UDP Packet Received");
+}
+
+void Client::OnClientConnected(LambdaEngine::ClientTCP2* client)
 {
 	LOG_MESSAGE("OnClientConnected");
 }
 
-void Client::OnClientDisconnected(LambdaEngine::ClientTCP* client)
+void Client::OnClientDisconnected(LambdaEngine::ClientTCP2* client)
 {
 	LOG_MESSAGE("OnClientDisconnected");
 }
 
-void Client::OnClientFailedConnecting(LambdaEngine::ClientTCP* client)
+void Client::OnClientFailedConnecting(LambdaEngine::ClientTCP2* client)
 {
 	LOG_MESSAGE("OnClientFailedConnecting");
 }
 
-void Client::OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)
+void Client::OnClientPacketReceived(LambdaEngine::ClientTCP2* client, LambdaEngine::NetworkPacket* packet)
 {
 	using namespace LambdaEngine;
 
@@ -56,10 +67,13 @@ void Client::OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngin
 void Client::OnKeyDown(LambdaEngine::EKey key)
 {
 	using namespace LambdaEngine;
-	NetworkPacket* packet = new NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
+	NetworkPacket* packet = DBG_NEW NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
 	packet->WriteString("Hej kompis vad heter du?");
+	m_pClientTCP->SendPacket(packet);
 
-	m_pClient->SendPacket(packet);
+	/*NetworkPacket* packet2 = new NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
+	packet2->WriteString("Hej kompis vad heter du?");
+	m_pClientUDP->SendPacket(packet2);*/
 
 	//m_pClient->Disconnect();
 	LOG_MESSAGE("Key Pressed: %d", key);
@@ -84,7 +98,7 @@ namespace LambdaEngine
 {
     Game* CreateGame()
     {
-		Client* pSandbox = new Client();
+		Client* pSandbox = DBG_NEW Client();
         Input::AddKeyboardHandler(pSandbox);
         
         return pSandbox;

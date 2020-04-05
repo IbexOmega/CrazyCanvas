@@ -67,8 +67,8 @@ namespace LambdaEngine
 
 	void NetworkPacket::WriteString(const std::string& value)
 	{
-		WriteInt16(value.length());
-		WriteBuffer(value.c_str(), value.length());
+		WriteInt16(int16(value.length()));
+		WriteBuffer(value.c_str(), uint16(value.length()));
 	}
 
 	void NetworkPacket::WriteBuffer(const char* buffer, PACKET_SIZE size)

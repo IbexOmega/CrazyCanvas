@@ -111,8 +111,6 @@ namespace LambdaEngine
         case PIPELINE_STAGE_UNKNOWN:
         default: return VkPipelineStageFlags(0);
         }
-
-        return VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
     }
 
 
@@ -140,8 +138,6 @@ namespace LambdaEngine
             case TEXTURE_STATE_UNKNOWN:
             default: return VK_IMAGE_LAYOUT_UNDEFINED;
         }
-
-        return VK_IMAGE_LAYOUT_UNDEFINED;
     }
 	
 	inline void CreateSpecializationInfo(VkSpecializationInfo& specializationInfo, std::vector<VkSpecializationMapEntry>& specializationEntries, const ShaderDesc& shaderDesc)

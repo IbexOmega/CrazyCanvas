@@ -13,29 +13,25 @@ namespace LambdaEngine
         COLOR_WHITE   = 3
     };
 
-    class Console
+    class LAMBDA_API Console
     {
     public:
-        Console()   = default;
-        ~Console()  = default;
-        
-        DECL_REMOVE_COPY(Console);
-        DECL_REMOVE_MOVE(Console);
+        DECL_ABSTRACT_CLASS(Console);
         
         static void Show()  { }
         static void Close() { }
         
-        static void Print(const char*, ...)             { }
-        static void PrintLine(const char*, ...)         { }
-        static void VPrint(const char*, va_list)        { }
-        static void VPrintLine(const char*, va_list)    { }
+        static void Print(const char*, ...)          { }
+        static void PrintLine(const char*, ...)      { }
+        static void VPrint(const char*, va_list)     { }
+        static void VPrintLine(const char*, va_list) { }
         
         /*
         * Clears the console screen
         */
         static void Clear() { }
         
-        static void SetTitle(const char* pTitle)    { }
-        static void SetColor(EConsoleColor)         { }
+        static void SetTitle(const char*)   { }
+        static void SetColor(EConsoleColor) { }
     };
 }

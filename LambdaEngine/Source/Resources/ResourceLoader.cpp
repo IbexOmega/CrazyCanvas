@@ -33,7 +33,7 @@ namespace LambdaEngine
 		{
 			tinyobj::material_t& material = materials[m];
 
-			Material* pMaterial = new Material();
+			Material* pMaterial = DBG_NEW Material();
 
 
 			if (material.diffuse_texname.length() > 0)
@@ -178,7 +178,7 @@ namespace LambdaEngine
 				v2.CalculateTangent(v0, v1);
 			}
 
-			Mesh* pMesh = LoadMeshFromMemory(pGraphicsDevice, vertices.data(), vertices.size(), indices.data(), indices.size());
+			Mesh* pMesh = LoadMeshFromMemory(pGraphicsDevice, vertices.data(), uint32(vertices.size()), indices.data(), uint32(indices.size()));
 			loadedMeshes[s] = pMesh;
 
 			D_LOG_MESSAGE("[ResourceDevice]: Loaded Mesh \"%s\" \t for scene : \"%s\"", shape.name.c_str(), pFilename);
@@ -273,7 +273,7 @@ namespace LambdaEngine
 			v2.CalculateTangent(v0, v1);
 		}
 
-		Mesh* pMesh = LoadMeshFromMemory(pGraphicsDevice, vertices.data(), vertices.size(), indices.data(), indices.size());
+		Mesh* pMesh = LoadMeshFromMemory(pGraphicsDevice, vertices.data(), uint32(vertices.size()), indices.data(), uint32(indices.size()));
 
 		D_LOG_MESSAGE("[ResourceDevice]: Loaded Mesh \"%s\"", pFilepath);
 
@@ -282,6 +282,9 @@ namespace LambdaEngine
 
 	Mesh* ResourceLoader::LoadMeshFromMemory(IGraphicsDevice* pGraphicsDevice, const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
 	{
+		UNREFERENCED_VARIABLE(pIndices);
+		UNREFERENCED_VARIABLE(pVertices);
+
 		BufferDesc vertexBufferDesc = {};
 		vertexBufferDesc.pName			= "Vertex Buffer (ResourceLoader)";
 		vertexBufferDesc.MemoryType		= EMemoryType::GPU_MEMORY;
@@ -304,7 +307,7 @@ namespace LambdaEngine
 		uint32* pIndexArray = DBG_NEW uint32[numIndices];
 		memcpy(pIndexArray, pIndices, sizeof(uint32) * numIndices);
 
-		Mesh* pMesh = new Mesh();
+		Mesh* pMesh = DBG_NEW Mesh();
 		pMesh->pVertexBuffer	= pVertexBuffer;
 		pMesh->pIndexBuffer		= pIndexBuffer;
 		pMesh->pVertexArray		= pVertexArray;
@@ -317,12 +320,23 @@ namespace LambdaEngine
 
 	ITexture* ResourceLoader::LoadTextureFromFile(IGraphicsDevice* pGraphicsDevice, const char* pFilepath)
 	{
+		UNREFERENCED_VARIABLE(pGraphicsDevice);
+		UNREFERENCED_VARIABLE(pFilepath);
+
 		LOG_WARNING("[ResourceLoader]: Call to unimplemented function LoadTextureFromFile");
 		return nullptr;
 	}
 
 	ITexture* ResourceLoader::LoadTextureFromMemory(IGraphicsDevice* pGraphicsDevice, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips)
 	{
+		UNREFERENCED_VARIABLE(pGraphicsDevice);
+		UNREFERENCED_VARIABLE(pData);
+		UNREFERENCED_VARIABLE(width);
+		UNREFERENCED_VARIABLE(height);
+		UNREFERENCED_VARIABLE(format);
+		UNREFERENCED_VARIABLE(usageFlags);
+		UNREFERENCED_VARIABLE(generateMips);
+
 		LOG_WARNING("[ResourceLoader]: Call to unimplemented function LoadTextureFromMemory");
 		return nullptr;
 	}
@@ -370,7 +384,7 @@ namespace LambdaEngine
 		(*pDataSize) = ftell(pFile);
 		rewind(pFile);
 
-		(*ppData) = new byte[(*pDataSize)];
+		(*ppData) = DBG_NEW byte[(*pDataSize)];
 
 		fread(*ppData, 1, (*pDataSize), pFile);
 

@@ -185,7 +185,7 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
-		AudioListener* pAudioListener = new AudioListener(this);
+		AudioListener* pAudioListener = DBG_NEW AudioListener(this);
 
 		AudioListenerDesc audioListenerDesc = {};
 		audioListenerDesc.ListenerIndex = m_NumAudioListeners++;
