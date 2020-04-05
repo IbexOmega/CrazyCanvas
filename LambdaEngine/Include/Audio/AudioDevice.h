@@ -27,13 +27,38 @@ namespace LambdaEngine
 		AudioDevice();
 		~AudioDevice();
 
+		/*
+		* Initialize this AudioDevice
+		*	desc - A description of initialization parameters
+		* return - true if the initialization was successfull, otherwise returns false
+		*/
 		bool Init(const AudioDeviceDesc& desc);
 
+		/*
+		* Tick the audio device
+		*/
 		void Tick();
 
+		/*
+		* Load Music for streaming, only one music file can be loaded at any given time per AudioDevice
+		*	pFilepath - A filepath to the audiofile
+		* return - true if the initialization was successfull, otherwise returns false
+		*/
 		bool LoadMusic(const char* pFilepath);
+
+		/*
+		* Play the currently loaded music
+		*/
 		void PlayMusic();
+
+		/*
+		* Pause the currently loaded music
+		*/
 		void PauseMusic();
+
+		/*
+		* Toggle the played/paused state of the currently loaded music
+		*/
 		void ToggleMusic();
 		
 		AudioListener*		CreateAudioListener();

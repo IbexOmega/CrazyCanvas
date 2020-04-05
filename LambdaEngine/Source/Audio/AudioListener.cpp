@@ -14,9 +14,11 @@ namespace LambdaEngine
 	{
 	}
 
-	void AudioListener::Init(const AudioListenerDesc& desc)
+	bool AudioListener::Init(const AudioListenerDesc& desc)
 	{
 		m_ListenerIndex = desc.ListenerIndex;
+
+		return true;
 	}
 
 	void AudioListener::Update(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up)

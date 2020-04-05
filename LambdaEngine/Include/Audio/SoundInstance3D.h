@@ -29,15 +29,46 @@ namespace LambdaEngine
 		SoundInstance3D(const AudioDevice* pAudioDevice);
 		~SoundInstance3D();
 
+		/*
+		* Initialize this SoundInstance3D
+		*	desc - A description of initialization parameters
+		* return - true if the initialization was successfull, otherwise returns false
+		*/
 		bool Init(const SoundInstance3DDesc& desc);
 
+		/*
+		* Play the sound instance
+		*/
 		void Play();
+
+		/*
+		* Pause the sound instance
+		*/
 		void Pause();
+
+		/*
+		* Stop the sound instance, releases some internal resources, a consecutive call to Play will restart the sound instance
+		*/
 		void Stop();
+
+		/*
+		* Toggle the played/paused state of the sound instance
+		*/
 		void Toggle();
 
+		/*
+		* Set the world position of the sound instance
+		*/
 		void SetPosition(const glm::vec3& position);
+
+		/*
+		* Set the volume of the sound instance in the range [-Inf, Inf]
+		*/
 		void SetVolume(float volume);
+
+		/*
+		* Set the pitch of the sound instance in the range [-Inf, Inf]
+		*/
 		void SetPitch(float pitch);
 
 		const glm::vec3& GetPosition()	{ return m_Position; }
