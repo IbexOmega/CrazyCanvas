@@ -96,7 +96,7 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadMaterialFromMemory(GUID_Lambda albedoMap, GUID_Lambda normalMap, GUID_Lambda ambienOcclusionMap, GUID_Lambda metallicMap, GUID_Lambda roughnessMap, const MaterialProperties& properties)
+	GUID_Lambda ResourceManager::LoadMaterialFromMemory(GUID_Lambda albedoMap, GUID_Lambda normalMap, GUID_Lambda ambientOcclusionMap, GUID_Lambda metallicMap, GUID_Lambda roughnessMap, const MaterialProperties& properties)
 	{
 		GUID_Lambda guid = GUID_NONE;
 		Material* pMappedMaterial = nullptr;
@@ -109,7 +109,7 @@ namespace LambdaEngine
 
 		ITexture* pAlbedoMap				= albedoMap				!= GUID_NONE ? m_Textures[albedoMap]			: m_Textures[DEFAULT_COLOR_MAP];
 		ITexture* pNormalMap				= normalMap				!= GUID_NONE ? m_Textures[normalMap]			: m_Textures[DEFAULT_NORMAL_MAP];
-		ITexture* pAmbientOcclusionMap		= ambienOcclusionMap	!= GUID_NONE ? m_Textures[ambienOcclusionMap]	: m_Textures[DEFAULT_COLOR_MAP];
+		ITexture* pAmbientOcclusionMap		= ambientOcclusionMap	!= GUID_NONE ? m_Textures[ambientOcclusionMap]	: m_Textures[DEFAULT_COLOR_MAP];
 		ITexture* pMetallicMap				= metallicMap			!= GUID_NONE ? m_Textures[metallicMap]			: m_Textures[DEFAULT_COLOR_MAP];
 		ITexture* pRoughnessMap				= roughnessMap			!= GUID_NONE ? m_Textures[roughnessMap]			: m_Textures[DEFAULT_COLOR_MAP];
 		

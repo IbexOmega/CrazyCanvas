@@ -23,6 +23,9 @@ namespace LambdaEngine
 			return Position == other.Position && Normal == other.Normal && Tangent == other.Tangent && TexCoord == other.TexCoord;
 		}
 
+		/*
+		* Calculate the tangent of this vertex given the other vertices, v1 and v2, in the triangle containing this vertex		
+		*/
 		void CalculateTangent(const Vertex& v1, const Vertex& v2)
 		{
 			glm::vec3 edge1 = v1.Position - this->Position;
