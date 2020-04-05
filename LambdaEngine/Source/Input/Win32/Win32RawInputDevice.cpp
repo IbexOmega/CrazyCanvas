@@ -63,6 +63,9 @@ namespace LambdaEngine
 
 	LRESULT Win32RawInputDevice::MessageProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
+		UNREFERENCED_VARIABLE(hWnd);
+		UNREFERENCED_VARIABLE(wParam);
+
 		switch (uMessage)
 		{
 			case WM_INPUT:

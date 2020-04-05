@@ -59,6 +59,8 @@ namespace LambdaEngine
 		IBuffer* pBuffer		= s_pGraphicsDevice->CreateBuffer(bufferDesc);
 		uint64 bufferAddress	= pBuffer->GetDeviceAdress();
 
+		UNREFERENCED_VARIABLE(bufferAddress);
+
 		TextureDesc textureDesc = { };
 		textureDesc.pName		= "Texture";
 		textureDesc.Type		= ETextureType::TEXTURE_2D;

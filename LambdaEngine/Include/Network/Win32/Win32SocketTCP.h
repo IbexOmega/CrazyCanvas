@@ -5,7 +5,7 @@
 
 namespace LambdaEngine
 {
-	class LAMBDA_API Win32SocketTCP : public Win32SocketBase<ISocketTCP>
+	class Win32SocketTCP : public Win32SocketBase<ISocketTCP>
 	{	
 		friend class Win32SocketFactory;
 

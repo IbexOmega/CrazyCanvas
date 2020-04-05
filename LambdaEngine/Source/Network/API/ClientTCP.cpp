@@ -198,7 +198,7 @@ namespace LambdaEngine
 	{
 		uint32 bytesReceivedTotal = 0;
 		int32 bytesReceived = 0;
-		while (bytesReceivedTotal != bytesToRead)
+		while (bytesReceivedTotal != uint32(bytesToRead))
 		{
 			if (m_pSocket->Receive(buffer, bytesToRead - bytesReceivedTotal, bytesReceived))
 			{

@@ -37,6 +37,8 @@ namespace LambdaEngine
 	
 	bool CommandQueueVK::ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, const IFence* pWaitFence)
 	{
+		UNREFERENCED_VARIABLE(ppCommandLists);
+
 		constexpr uint32 MAX_COMMANDBUFFERS = 8;
 		VkCommandBuffer commandBuffers[MAX_COMMANDBUFFERS];
 
@@ -50,8 +52,8 @@ namespace LambdaEngine
 
 		VkSubmitInfo submitInfo = { };
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		//submitInfo.pCommandBuffers = ;
-		submitInfo.commandBufferCount = numCommandLists;
+		submitInfo.pCommandBuffers		= commandBuffers;
+		submitInfo.commandBufferCount	= numCommandLists;
 
 		VkTimelineSemaphoreSubmitInfo fenceSubmitInfo = {};
 		if (pWaitFence)

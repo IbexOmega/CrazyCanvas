@@ -30,7 +30,7 @@ namespace LambdaEngine
 		bytesSent = sendto(m_Socket, buffer, bytesToSend, 0, (struct sockaddr*)&socketAddress, sizeof(struct sockaddr_in));
 		if (bytesSent == SOCKET_ERROR)
 		{
-			LOG_ERROR_CRIT("Failed to send data to %s:%d", address, port);
+			LOG_ERROR_CRIT("Failed to send data to %s:%d", address.c_str(), port);
 			PrintLastError();
 			return false;
 		}

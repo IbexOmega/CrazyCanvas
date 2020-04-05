@@ -27,30 +27,6 @@
 
 namespace LambdaEngine
 {
-	static void TestRayTracing(IGraphicsDevice* pGraphicsDevice)
-	{
-		LOG_MESSAGE("\n-------Ray Trace Testing Start-------");
-
-		TopLevelAccelerationStructureDesc topLevelAccelerationStructureDesc = {};
-		topLevelAccelerationStructureDesc.pName = "Test TLAS";
-		topLevelAccelerationStructureDesc.InitialMaxInstanceCount = 10;
-
-		ITopLevelAccelerationStructure* pTLAS = pGraphicsDevice->CreateTopLevelAccelerationStructure(topLevelAccelerationStructureDesc);
-
-		BottomLevelAccelerationStructureDesc bottomLevelAccelerationStructureDesc = {};
-		bottomLevelAccelerationStructureDesc.pName = "Test BLAS";
-		bottomLevelAccelerationStructureDesc.MaxTriCount = 12;
-		bottomLevelAccelerationStructureDesc.MaxVertCount = 8;
-		bottomLevelAccelerationStructureDesc.Updateable = false;
-
-		IBottomLevelAccelerationStructure* pBLAS = pGraphicsDevice->CreateBottomLevelAccelerationStructure(bottomLevelAccelerationStructureDesc);
-
-		SAFERELEASE(pBLAS);
-		SAFERELEASE(pTLAS);
-
-		LOG_MESSAGE("-------Ray Trace Testing End-------\n");
-	}
-
 	void EngineLoop::Run(Game* pGame)
 	{
 		Clock clock;

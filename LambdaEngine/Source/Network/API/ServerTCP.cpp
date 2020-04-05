@@ -154,12 +154,12 @@ namespace LambdaEngine
 
 	uint8 ServerTCP::GetNrOfClients() const
 	{
-		return m_Clients.size();
+		return uint8(m_Clients.size());
 	}
 
 	void ServerTCP::OnClientConnected(ClientTCP* client)
 	{
-		
+		UNREFERENCED_VARIABLE(client);
 	}
 
 	void ServerTCP::OnClientDisconnected(ClientTCP* client)
@@ -171,12 +171,13 @@ namespace LambdaEngine
 
 	void ServerTCP::OnClientFailedConnecting(ClientTCP* client)
 	{
-
+		UNREFERENCED_VARIABLE(client);
 	}
 
 	void ServerTCP::OnClientPacketReceived(ClientTCP* client, NetworkPacket* packet)
 	{
-		
+		UNREFERENCED_VARIABLE(client);
+		UNREFERENCED_VARIABLE(packet);
 	}
 
 	ISocketTCP* ServerTCP::CreateServerSocket(const std::string& address, uint16 port)

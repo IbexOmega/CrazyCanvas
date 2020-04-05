@@ -15,7 +15,7 @@ namespace LambdaEngine
         INPUT_STANDARD  = 2, //Standard input from the applications event-loop
     };
 
-	class Application
+	class LAMBDA_API Application
 	{
 	public:
         DECL_ABSTRACT_CLASS(Application);

@@ -75,7 +75,7 @@ namespace LambdaEngine
 		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
-		accelerationStructureBuildInfo.geometryCount				= pInstanceBuffer->GetDesc().SizeInBytes / sizeof(VkAccelerationStructureInstanceKHR);
+		accelerationStructureBuildInfo.geometryCount				= uint32(pInstanceBuffer->GetDesc().SizeInBytes / sizeof(VkAccelerationStructureInstanceKHR));
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
 
 		if (sizeChanged)
@@ -97,12 +97,12 @@ namespace LambdaEngine
 		accelerationStructureBuildInfo.scratchData					= m_ScratchBufferAddressUnion;
 
 		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
-		accelerationStructureOffsetInfo.primitiveCount				= pInstanceBuffer->GetDesc().SizeInBytes / sizeof(VkAccelerationStructureInstanceKHR);
+		accelerationStructureOffsetInfo.primitiveCount				= uint32(pInstanceBuffer->GetDesc().SizeInBytes / sizeof(VkAccelerationStructureInstanceKHR));
 		accelerationStructureOffsetInfo.primitiveOffset				= 0;
 
 		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
 
-		VkCommandBuffer temp;
+		VkCommandBuffer temp = VK_NULL_HANDLE;
 		m_pDevice->vkCmdBuildAccelerationStructureKHR(temp, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
@@ -180,7 +180,7 @@ namespace LambdaEngine
 		scratchBufferDesc.pName			= "TLAS Scratch Buffer";
 		scratchBufferDesc.MemoryType	= EMemoryType::GPU_MEMORY;
 		scratchBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_RAY_TRACING;
-		scratchBufferDesc.SizeInBytes	= memoryRequirements.size;
+		scratchBufferDesc.SizeInBytes	= uint32(memoryRequirements.size);
 
 		m_pScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(scratchBufferDesc));
 

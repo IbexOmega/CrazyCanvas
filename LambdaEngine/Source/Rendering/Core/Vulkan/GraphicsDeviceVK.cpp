@@ -197,6 +197,8 @@ namespace LambdaEngine
 
 	ICommandList* GraphicsDeviceVK::CreateCommandList(ICommandAllocator* pAllocator, ECommandListType commandListType) const
 	{
+		UNREFERENCED_VARIABLE(pAllocator);
+		UNREFERENCED_VARIABLE(commandListType);
 		return nullptr;
 	}
 

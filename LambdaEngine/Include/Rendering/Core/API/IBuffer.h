@@ -21,7 +21,7 @@ namespace LambdaEngine
         const char* pName       = "";
         EMemoryType MemoryType  = EMemoryType::NONE;
         uint32      Flags       = EBufferFlags::BUFFER_FLAG_NONE;
-        uint32      SizeInBytes = 0;
+        uint64      SizeInBytes = 0;
     };
 
     class IBuffer : public IDeviceChild

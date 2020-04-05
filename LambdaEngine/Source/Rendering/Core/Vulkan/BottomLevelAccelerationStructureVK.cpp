@@ -105,7 +105,7 @@ namespace LambdaEngine
 
 			VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
 
-			VkCommandBuffer temp;
+			VkCommandBuffer temp = VK_NULL_HANDLE;
 			m_pDevice->vkCmdBuildAccelerationStructureKHR(temp, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 		}
 		else

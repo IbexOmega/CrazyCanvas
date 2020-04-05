@@ -59,7 +59,14 @@ namespace LambdaEngine
         const uint32 bufferCount = uint32(m_Buffers.size());
         for (uint32 i = 0; i < bufferCount; i++)
         {
-            SAFERELEASE(m_Buffers[i]);
+            uint64 refCount = m_Buffers[i]->Release();
+            m_Buffers[i] = nullptr;
+            
+            if (refCount > 0)
+            {
+                LOG_ERROR("[SwapChainVK]: All external references to all buffers must be released before calling Release or ResizeBuffers");
+                DEBUGBREAK();
+            }
         }
         m_Buffers.clear();
     }
@@ -394,12 +401,20 @@ namespace LambdaEngine
 
     ITexture* SwapChainVK::GetBuffer(uint32 bufferIndex)
     {
-        return nullptr;
+        ASSERT(bufferIndex < uint32(m_Buffers.size()));
+
+        TextureVK* pBuffer = m_Buffers[bufferIndex];
+        pBuffer->AddRef();
+        return pBuffer;
     }
 
     const ITexture* SwapChainVK::GetBuffer(uint32 bufferIndex) const
     {
-        return nullptr;
+        ASSERT(bufferIndex < uint32(m_Buffers.size()));
+
+        TextureVK* pBuffer = m_Buffers[bufferIndex];
+        pBuffer->AddRef();
+        return pBuffer;
     }
 
     void SwapChainVK::SetName(const char* pName)
