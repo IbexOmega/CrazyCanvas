@@ -1,18 +1,19 @@
 ## Code Standard
 
 #### Contents
-* [If Statements](#if-statements)
-* [Loops](#loops)
-* [Templates](#templates)
-* [Classes](#classes)
-* [Interfaces](#interfaces)
-* [Structs](#structs)
-* [Listeners vs Callbacks](#listeners-vs-callbacks)
-* [Encapsulation](#encapsulation)
-* [Virtual](#virtual)
-* [Documentation](#documentation)
-* [Naming Conventions](#naming-conventions)
-* [Platform Specific Code](#platform-specific-code)
+* [**If Statements**](#if-statements)
+* [**Loops**](#loops)
+* [**Templates**](#templates)
+* [**Classes**](#classes)
+* [**Interfaces**](#interfaces)
+* [**Structs**](#structs)
+* [**Listeners vs Callbacks**](#listeners-vs-callbacks)
+* [**Encapsulation**](#encapsulation)
+* [**Virtual**](#virtual)
+* [**Documentation**](#documentation)
+* [**Naming Conventions**](#naming-conventions)
+* [**Platform Specific Code**](#platform-specific-code)
+* [**FORCEINLINE macro**](#forceinline-macro)
 
 ### If Statements
 * If statements should be written using the following form:
@@ -294,8 +295,7 @@ typedef Win32Application PlatformApplication;
   #error No platform defined
 #endif
 ```
-
-
-
+### FORCEINLINE macro
+* The FORCEINLINE- macro should be used on all one-line functions (for example setters and getters). The only time this does not apply is when the class or function is exported with the LAMBDA_API macro. When you are certain that the function will stay the same between versions, that is when the code in the .exe and .dll will be the same no matter what, it is ok to still use FORCEINLIN. However, it is better practise to make sure that a function is exported, e.i. define the function in the compilation unit (.cpp). 
 
 
