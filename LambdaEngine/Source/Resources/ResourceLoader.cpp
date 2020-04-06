@@ -9,7 +9,7 @@
 
 namespace LambdaEngine
 {
-	bool ResourceLoader::LoadSceneFromFile(IGraphicsDevice* pGraphicsDevice, const char* pDir, const char* pFilename, std::vector<GraphicsObject>& loadedGraphicsObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures)
+	bool ResourceLoader::LoadSceneFromFile(IGraphicsDevice* pGraphicsDevice, const char* pDir, const char* pFilename, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures)
 	{
 		std::string filepath = std::string(pDir) + std::string(pFilename);
 
@@ -185,11 +185,11 @@ namespace LambdaEngine
 
 			uint32 m = shape.mesh.material_ids[0];
 
-			GraphicsObject graphicsObject	= {};
-			graphicsObject.Mesh			= s;
-			graphicsObject.Material		= m;
+			GameObject gameObject	= {};
+			gameObject.Mesh			= s;
+			gameObject.Material		= m;
 
-			loadedGraphicsObjects.push_back(graphicsObject);
+			loadedGameObjects.push_back(gameObject);
 		}
 
 		D_LOG_MESSAGE("[ResourceDevice]: Loaded Scene \"%s\"", pFilename);

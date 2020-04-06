@@ -29,10 +29,10 @@ namespace LambdaEngine
 		*	pGraphicsDevice - A Graphics Device
 		*	pDir - Path to the directory that holds the .obj file
 		*	pFilename - The name of the .obj file
-		*	loadedGraphicsObjects - A vector where all loaded GraphicsObject(s) will be stored
+		*	result - A vector where all loaded GameObject(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		bool LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GraphicsObject>& result);
+		bool LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& result);
 
 		/*
 		* Load a mesh from file
@@ -85,10 +85,17 @@ namespace LambdaEngine
 		*/
 		GUID_Lambda LoadSoundFromFile(const char* pFilepath);
 
-		Mesh*			GetMesh(GUID_Lambda guid)		{ return m_Meshes[guid]; }
-		Material*		GetMaterial(GUID_Lambda guid)	{ return m_Materials[guid]; }
-		ITexture*		GetTexture(GUID_Lambda guid)	{ return m_Textures[guid]; }
-		SoundEffect3D*	GetSound(GUID_Lambda guid)		{ return m_Sounds[guid]; }
+		Mesh*					GetMesh(GUID_Lambda guid)			{ return m_Meshes[guid]; }
+		const Mesh*				GetMesh(GUID_Lambda guid) const		{ return m_Meshes.find(guid)->second; }
+
+		Material*				GetMaterial(GUID_Lambda guid)		{ return m_Materials[guid]; }
+		const Material*			GetMaterial(GUID_Lambda guid) const	{ return m_Materials.find(guid)->second; }
+
+		ITexture*				GetTexture(GUID_Lambda guid)		{ return m_Textures[guid]; }
+		const ITexture*			GetTexture(GUID_Lambda guid) const	{ return m_Textures.find(guid)->second; }
+
+		SoundEffect3D*			GetSound(GUID_Lambda guid)			{ return m_Sounds[guid]; }
+		const SoundEffect3D*	GetSound(GUID_Lambda guid) const	{ return m_Sounds.find(guid)->second; }
 
 	private:
 		GUID_Lambda RegisterLoadedMesh(Mesh* pMesh);

@@ -224,10 +224,4 @@ namespace LambdaEngine
 		int32 x		    = 0;
 		int32 y		    = 0;
 	};
-	
-	struct GraphicsObject
-	{
-		GUID_Lambda Mesh;
-		GUID_Lambda Material;
-	};
 }

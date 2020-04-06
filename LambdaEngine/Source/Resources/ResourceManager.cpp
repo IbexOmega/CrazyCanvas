@@ -25,7 +25,7 @@ namespace LambdaEngine
 		SAFEDELETE_ALL(m_Sounds);
 	}
 
-	bool ResourceManager::LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GraphicsObject>& result)
+	bool ResourceManager::LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& result)
 	{
 		std::vector<Mesh*> meshes;
 		std::vector<Material*> materials;
@@ -45,10 +45,10 @@ namespace LambdaEngine
 		{
 			GUID_Lambda guid = RegisterLoadedMesh(meshes[i]);
 
-			for (GraphicsObject& graphicsObject : result)
+			for (GameObject& gameObject : result)
 			{
-				if (graphicsObject.Mesh == i) 
-					graphicsObject.Mesh = guid;
+				if (gameObject.Mesh == i)
+					gameObject.Mesh = guid;
 			}
 		}
 
@@ -56,7 +56,7 @@ namespace LambdaEngine
 		{
 			GUID_Lambda guid = RegisterLoadedMaterial(materials[i]);
 
-			for (GraphicsObject& graphicsObject : result)
+			for (GameObject& graphicsObject : result)
 			{
 				if (graphicsObject.Material == i) 
 					graphicsObject.Material = guid;

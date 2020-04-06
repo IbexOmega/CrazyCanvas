@@ -7,6 +7,7 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "Audio/SoundEffect3D.h"
+#include "Game/Scene.h"
 
 namespace LambdaEngine
 {
@@ -18,13 +19,13 @@ namespace LambdaEngine
 		*	pGraphicsDevice - A Graphics Device
 		*	pDir - Path to the directory that holds the .obj file
 		*	pFilename - The name of the .obj file
-		*	loadedGraphicsObjects - A vector where all loaded GraphicsObject(s) will be stored, th GUIDs of each GraphicsObject is an index to the loadedMeshes and loadedMaterials vectors
+		*	loadedGameObjects - A vector where all loaded GameObject(s) will be stored, th GUIDs of each GameObject is an index to the loadedMeshes and loadedMaterials vectors
 		*	loadedMeshes - A vector where all loaded Mesh(es) will be stored
 		*	loadedMaterials - A vector where all loaded Material(s) will be stored
 		*	loadedTextures - A vector where all loaded Texture(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(IGraphicsDevice* pGraphicsDevice, const char* pDir, const char* pFilename, std::vector<GraphicsObject>& loadedGraphicsObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures);
+		static bool LoadSceneFromFile(IGraphicsDevice* pGraphicsDevice, const char* pDir, const char* pFilename, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures);
 
 		/*
 		* Load a mesh from file
