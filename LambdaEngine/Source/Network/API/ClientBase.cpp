@@ -123,6 +123,7 @@ namespace LambdaEngine
 			m_ReceiverStarted = false;
 			m_TransmitterEnded = false;
 			m_OtherThreadTerminated = false;
+			m_Release = false;
 
 			m_pThreadTransmitter = Thread::Create(
 				std::bind(&ClientBase::ThreadTransmitter, this),
@@ -155,6 +156,11 @@ namespace LambdaEngine
 		return m_TransmitterStarted && m_ReceiverStarted;
 	}
 
+	bool ClientBase::ShouldTerminate() const
+	{
+		return !m_Run;
+	}
+
 	void ClientBase::SetAddressAndPort(const std::string& address, uint16 port)
 	{
 		m_Address = address;
@@ -183,7 +189,7 @@ namespace LambdaEngine
 		m_TransmitterStarted = true;
 		while (!m_ReceiverStarted) {}
 
-		while (m_Run)
+		while (!ShouldTerminate())
 		{
 			std::queue<NetworkPacket*>* packets = &m_Packets[m_TransmitterQueueIndex];
 			if (packets->empty())
@@ -205,7 +211,7 @@ namespace LambdaEngine
 		while (!m_TransmitterStarted) {};
 
 		NetworkPacket packet(EPacketType::PACKET_TYPE_UNDEFINED, false);
-		while (m_Run)
+		while (!ShouldTerminate())
 		{
 			UpdateReceiver(&packet);
 		}
@@ -219,15 +225,12 @@ namespace LambdaEngine
 	*/
 	void ClientBase::ThreadTransmitterDeleted()
 	{
-		std::scoped_lock<SpinLock> lock(m_LockPackets);
-		if (m_OtherThreadTerminated)
-		{
-			OnThreadsTerminated();
-		}
-		m_OtherThreadTerminated = true;
+		OnThreadTerminated();
 
 		m_pThreadTransmitter = nullptr;
-		Release();
+
+		if (m_Release)
+			Release();
 	}
 
 	/*
@@ -235,15 +238,12 @@ namespace LambdaEngine
 	*/
 	void ClientBase::ThreadReceiverDeleted()
 	{
-		std::scoped_lock<SpinLock> lock(m_LockPackets);
-		if (m_OtherThreadTerminated)
-		{
-			OnThreadsTerminated();
-		}
-		m_OtherThreadTerminated = true;
+		OnThreadTerminated();
 
 		m_pThreadReceiver = nullptr;
-		Release();
+
+		if(m_Release)
+			Release();
 	}
 
 	void ClientBase::SwapPacketQueues()
@@ -254,7 +254,7 @@ namespace LambdaEngine
 
 	bool ClientBase::IsReadyToTransmitPackets() const
 	{
-		return m_Run && m_ReadyForStart;
+		return !ShouldTerminate() && m_ReadyForStart;
 	}
 
 	bool ClientBase::TransmitPackets(std::queue<NetworkPacket*>* packets)
@@ -272,6 +272,19 @@ namespace LambdaEngine
 			}
 		}
 		return true;
+	}
+
+	void ClientBase::OnThreadTerminated()
+	{
+		std::scoped_lock<SpinLock> lock(m_LockPackets);
+		if (m_OtherThreadTerminated)
+		{
+			OnThreadsTerminated();
+			m_TransmitterStarted = false;
+			m_ReceiverStarted = false;
+			LOG_WARNING("Client Threads Terminated");
+		}
+		m_OtherThreadTerminated = true;
 	}
 
 	void ClientBase::DeletePackets(std::queue<NetworkPacket*>* packets)

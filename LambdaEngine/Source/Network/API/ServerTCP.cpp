@@ -14,8 +14,6 @@ namespace LambdaEngine
 {
 	ServerTCP::ServerTCP(uint16 maxClients, IServerTCPHandler* handler) :
 		m_pServerSocket(nullptr),
-		m_pThread(nullptr),
-		m_Stop(false),
 		m_MaxClients(maxClients),
 		m_pHandler(handler)
 	{
@@ -24,95 +22,77 @@ namespace LambdaEngine
 
 	ServerTCP::~ServerTCP()
 	{
-
+		LOG_WARNING("~ServerTCP()");
 	}
 
-	bool ServerTCP::Start(const std::string& address, uint16 port)
+	uint8 ServerTCP::GetNrOfClients() const
 	{
-		if (IsRunning())
-		{
-			LOG_ERROR("[ServerTCP]: Tried to start an already running Server!");
-			return false;
-		}
-
-		m_Stop = false;
-
-		m_pThread = Thread::Create(std::bind(&ServerTCP::Run, this, address, port), std::bind(&ServerTCP::OnStopped, this));
-		return true;
+		return uint8(m_Clients.size());
 	}
 
-	void ServerTCP::Stop()
-	{
-		if (IsRunning())
-		{
-			m_Stop = true;
-		}
-	}
+	/*******************************************
+	*				PROTECTED				   *
+	********************************************/
 
-	bool ServerTCP::IsRunning() const
+	void ServerTCP::OnThreadStarted()
 	{
-		return m_pThread != nullptr;
-	}
-
-	const std::string& ServerTCP::GetAddress()
-	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
-		if (m_pServerSocket)
-			return m_pServerSocket->GetAddress();
-		return "";
-	}
-
-	uint16 ServerTCP::GetPort()
-	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
-		if (m_pServerSocket)
-			return m_pServerSocket->GetPort();
-		return 0;
-	}
-
-	void ServerTCP::Run(std::string address, uint16 port)
-	{
-		m_pServerSocket = CreateServerSocket(address, port);
+		m_pServerSocket = CreateServerSocket(GetAddress(), GetPort());
 		if (!m_pServerSocket)
 		{
 			LOG_ERROR("[ServerTCP]: Failed to start!");
 			return;
 		}
 
-		LOG_INFO("[ServerTCP]: Started %s:%d", address.c_str(), port);
+		LOG_INFO("[ServerTCP]: Started %s:%d", GetAddress().c_str(), GetPort());
+	}
 
-		while (!m_Stop)
+	void ServerTCP::OnThreadUpdate()
+	{
+		ISocketTCP* socket = m_pServerSocket->Accept();
+		if (socket)
 		{
-			ISocketTCP* socket = m_pServerSocket->Accept();
-			if(socket)
-			{
-				IClientTCPHandler* handler = m_pHandler->CreateClientHandler();
-				HandleNewClient(DBG_NEW ClientTCP(handler, socket));
-			}
-			else
-			{
-				Stop();
-			}
+			IClientTCPHandler* handler = m_pHandler->CreateClientHandler();
+			HandleNewClient(DBG_NEW ClientTCP(handler, this, socket));
 		}
+		else
+		{
+			Stop();
+		}
+	}
 
+	/*
+	* Called by the Server Thread it has terminated
+	*/
+	void ServerTCP::OnThreadTerminated()
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
 		for (ClientTCP* client : m_Clients)
 		{
-			client->Disconnect();
+			client->Release();
 		}
+		m_Clients.clear();
+	}
 
-		ClearClients();
-
+	void ServerTCP::OnStopRequested()
+	{
 		m_pServerSocket->Close();
 	}
 
-	void ServerTCP::OnStopped()
+	void ServerTCP::OnReleaseRequested()
 	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
-		m_pThread = nullptr;
-		delete m_pServerSocket;
-		m_pServerSocket = nullptr;
-		LOG_WARNING("[ServerTCP]: Stopped");
+
 	}
+
+	void ServerTCP::OnClientDisconnected(ClientTCP* client)
+	{
+		RemoveClient(client);
+		m_pHandler->OnClientDisconnected(client);
+		client->Release();
+	}
+
+	/*******************************************
+	*					PRIVATE				   *
+	********************************************/
 
 	void ServerTCP::HandleNewClient(ClientTCP* client)
 	{
@@ -144,40 +124,6 @@ namespace LambdaEngine
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		m_Clients.erase(std::remove(m_Clients.begin(), m_Clients.end(), client), m_Clients.end());
-	}
-
-	void ServerTCP::ClearClients()
-	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
-		m_Clients.clear();
-	}
-
-	uint8 ServerTCP::GetNrOfClients() const
-	{
-		return uint8(m_Clients.size());
-	}
-
-	void ServerTCP::OnClientConnected(ClientTCP* client)
-	{
-		UNREFERENCED_VARIABLE(client);
-	}
-
-	void ServerTCP::OnClientDisconnected(ClientTCP* client)
-	{
-		RemoveClient(client);
-		m_pHandler->OnClientDisconnected(client);
-		client->Release();
-	}
-
-	void ServerTCP::OnClientFailedConnecting(ClientTCP* client)
-	{
-		UNREFERENCED_VARIABLE(client);
-	}
-
-	void ServerTCP::OnClientPacketReceived(ClientTCP* client, NetworkPacket* packet)
-	{
-		UNREFERENCED_VARIABLE(client);
-		UNREFERENCED_VARIABLE(packet);
 	}
 
 	ISocketTCP* ServerTCP::CreateServerSocket(const std::string& address, uint16 port)

@@ -81,6 +81,7 @@ namespace LambdaEngine
 		void TerminateThreads();
 		bool ThreadsHaveTerminated() const;
 		bool ThreadsAreRunning() const;
+		bool ShouldTerminate() const;
 		void SetAddressAndPort(const std::string& address, uint16 port);
 		void RegisterBytesReceived(int32 bytes);
 		void RegisterPacketsReceived(int32 packets);
@@ -93,6 +94,7 @@ namespace LambdaEngine
 		bool IsReadyToTransmitPackets() const;
 		void SwapPacketQueues();
 		bool TransmitPackets(std::queue<NetworkPacket*>* packets);
+		void OnThreadTerminated();
 
 	private:
 		static void DeletePackets(std::queue<NetworkPacket*>* packets);

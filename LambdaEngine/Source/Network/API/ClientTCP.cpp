@@ -1,5 +1,7 @@
 #include "Network/API/ClientTCP.h"
 #include "Network/API/PlatformSocketFactory.h"
+#include "Network/API/IRemoteClientTCPHandler.h"
+
 #include "Log/Log.h"
 
 namespace LambdaEngine
@@ -8,14 +10,15 @@ namespace LambdaEngine
 	std::set<ClientTCP*>* ClientTCP::s_Clients = nullptr;
 	SpinLock* ClientTCP::s_LockClients = nullptr;
 
-	ClientTCP::ClientTCP(IClientTCPHandler* handler) : ClientTCP(handler, nullptr)
+	ClientTCP::ClientTCP(IClientTCPHandler* handler) : ClientTCP(handler, nullptr, nullptr)
 	{
 		
 	}
 
-	ClientTCP::ClientTCP(IClientTCPHandler* handler, ISocketTCP* socket) : 
+	ClientTCP::ClientTCP(IClientTCPHandler* clientHandler, IRemoteClientTCPHandler* remoteClientHandler, ISocketTCP* socket) :
+		m_pClientHandler(clientHandler),
+		m_pRemoteClientHandler(remoteClientHandler),
 		m_pSocket(socket),
-		m_pHandler(handler),
 		m_ServerSide(m_pSocket != nullptr), 
 		m_TimerReceived(0),
 		m_TimerTransmit(0),
@@ -35,7 +38,7 @@ namespace LambdaEngine
 	{
 		std::scoped_lock<SpinLock> lock(*s_LockClients);
 		s_Clients->erase(this);
-		LOG_WARNING("~ClientTCP2()");
+		LOG_WARNING("~ClientTCP()");
 	}
 
 	bool ClientTCP::Connect(const std::string& address, uint16 port)
@@ -64,6 +67,16 @@ namespace LambdaEngine
 		}
 	}
 
+	bool ClientTCP::IsConnected() const
+	{
+		return ThreadsAreRunning() && !ShouldTerminate();
+	}
+
+	bool ClientTCP::IsReadyToConnect() const
+	{
+		return ThreadsHaveTerminated();
+	}
+
 	bool ClientTCP::IsServerSide() const
 	{
 		return m_ServerSide;
@@ -83,9 +96,9 @@ namespace LambdaEngine
 			m_pSocket = CreateSocket(GetAddress(), GetPort());
 			if (!m_pSocket)
 			{
-				if (m_pHandler)
+				if (m_pClientHandler)
 				{
-					m_pHandler->OnClientFailedConnecting(this);
+					m_pClientHandler->OnClientFailedConnecting(this);
 				}
 				
 				TerminateThreads();
@@ -97,7 +110,7 @@ namespace LambdaEngine
 		ResetReceiveTimer();
 		ResetTransmitTimer();
 
-		m_pHandler->OnClientConnected(this);
+		m_pClientHandler->OnClientConnected(this);
 	}
 
 	/*
@@ -135,10 +148,16 @@ namespace LambdaEngine
 		delete m_pSocket;
 		m_pSocket = nullptr;
 
-		if (m_pHandler)
+		if (m_pClientHandler)
 		{
-			m_pHandler->OnClientDisconnected(this);
-			m_pHandler = nullptr;
+			m_pClientHandler->OnClientDisconnected(this);
+			m_pClientHandler = nullptr;
+		}
+
+		if (m_pRemoteClientHandler)
+		{
+			m_pRemoteClientHandler->OnClientDisconnected(this);
+			m_pRemoteClientHandler = nullptr;
 		}
 	}
 
@@ -146,7 +165,8 @@ namespace LambdaEngine
 	{
 		Disconnect();
 		std::scoped_lock<SpinLock> lock(m_LockStart);
-		m_pHandler = nullptr;
+		m_pClientHandler = nullptr;
+		m_pRemoteClientHandler = nullptr;
 	}
 
 	bool ClientTCP::TransmitPacket(NetworkPacket* packet)
@@ -216,10 +236,7 @@ namespace LambdaEngine
 			packet->ReadUInt32(m_NrOfPingReceived);
 		}
 
-		{
-			//for (IClientTCPHandler* handler : m_Handlers)
-				m_pHandler->OnClientPacketReceived(this, packet);
-		}
+		m_pClientHandler->OnClientPacketReceived(this, packet);
 	}
 
 	void ClientTCP::ResetReceiveTimer()
@@ -234,7 +251,7 @@ namespace LambdaEngine
 
 	void ClientTCP::Tick(Timestamp dt)
 	{
-		if (ThreadsAreRunning())
+		if (IsConnected())
 		{
 			uint64 delta = dt.AsNanoSeconds();
 			m_TimerReceived -= delta;
