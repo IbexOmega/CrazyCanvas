@@ -28,7 +28,7 @@ namespace LambdaEngine
 		*
 		* return - The inet address
 		*/
-		static const std::string& GetLocalAddress();
+		static std::string GetLocalAddress();
 
     private:
         static bool Init();

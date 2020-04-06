@@ -69,6 +69,8 @@ namespace LambdaEngine
 		if (!m_Release)
 		{
 			m_Release = true;
+
+
 			OnReleaseRequested();
 			TerminateThreads();
 		}

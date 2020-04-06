@@ -33,6 +33,9 @@ Server::~Server()
 {
 	m_pServerTCP->Release();
 	//delete m_pServerUDP;
+
+	for (LambdaEngine::IClientTCPHandler* handler : m_ClientHandlers)
+		delete handler;
 }
 
 void Server::OnPacketReceivedUDP(LambdaEngine::NetworkPacket* packet, const std::string& address, uint16 port)
@@ -42,7 +45,9 @@ void Server::OnPacketReceivedUDP(LambdaEngine::NetworkPacket* packet, const std:
 
 LambdaEngine::IClientTCPHandler* Server::CreateClientHandler()
 {
-	return DBG_NEW ClientTCPHandler();
+	ClientTCPHandler* handler = DBG_NEW ClientTCPHandler();
+	m_ClientHandlers.insert(handler);
+	return handler;
 }
 
 bool Server::OnClientAccepted(LambdaEngine::ClientTCP* client)

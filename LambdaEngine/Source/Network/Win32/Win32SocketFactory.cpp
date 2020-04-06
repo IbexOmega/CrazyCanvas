@@ -39,17 +39,9 @@ namespace LambdaEngine
 		return DBG_NEW Win32SocketUDP();
 	}
 
-    const std::string& Win32SocketFactory::GetLocalAddress()
-    {
-        ISocketUDP* socketUDP = CreateSocketUDP();
-		if (socketUDP)
-		{
-			if (socketUDP->Connect(ADDRESS_LOOPBACK, 9))
-			{
-				return socketUDP->GetAddress();
-			}
-		}
-		return ADDRESS_LOOPBACK;
-    }
+	std::string Win32SocketFactory::GetLocalAddress()
+	{
+		return SocketFactory::GetLocalAddress();
+	}
 }
 #endif

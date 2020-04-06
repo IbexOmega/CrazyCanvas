@@ -119,9 +119,12 @@ namespace LambdaEngine
 	*/
 	void ServerBase::ThreadServerDeleted()
 	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
-		OnThreadTerminated();
-		m_pThread = nullptr;
+		{
+			std::scoped_lock<SpinLock> lock(m_Lock);
+			OnThreadTerminated();
+			m_pThread = nullptr;
+		}
 		Release();
+		LOG_WARNING("Server Thread Terminated");
 	}
 }

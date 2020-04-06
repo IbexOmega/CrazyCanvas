@@ -81,5 +81,9 @@ namespace LambdaEngine
 	{
 		while (!s_Threads->empty())
 			Thread::Join();
+
+		delete s_Lock;
+		delete s_Threads;
+		delete s_ThreadsToJoin;
 	}
 }
