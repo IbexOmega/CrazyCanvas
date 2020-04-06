@@ -36,7 +36,7 @@ namespace LambdaEngine
 		*
 		* return - The inet address
 		*/
-		static const std::string& GetLocalAddress() { return ""; };
+		static std::string GetLocalAddress();
 
 	protected:
 		static bool Init();

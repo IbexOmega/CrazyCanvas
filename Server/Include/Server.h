@@ -10,6 +10,13 @@
 #include "Network/API/IServerTCPHandler.h"
 #include "Network/API/IServerUDPHandler.h"
 
+#include <set>
+
+namespace LambdaEngine
+{
+	class IClientTCPHandler;
+}
+
 class Server : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IServerTCPHandler, public LambdaEngine::IServerUDPHandler
 {
 public:
@@ -36,4 +43,5 @@ private:
 private:
 	LambdaEngine::ServerTCP* m_pServerTCP;
 	LambdaEngine::ServerUDP* m_pServerUDP;
+	std::set<LambdaEngine::IClientTCPHandler*> m_ClientHandlers;
 };

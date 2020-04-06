@@ -19,7 +19,19 @@ namespace LambdaEngine
 
 		bool Init(const RenderPassDesc& desc);
 
+		FORCEINLINE VkRenderPass GetRenderPass()
+		{
+			return m_RenderPass;
+		}
+
+		// Inherited via DeviceChildBase
 		virtual void SetName(const char* pName) override final;
+
+		// Inherited via IRenderPass
+		FORCEINLINE virtual uint64 GetHandle() const override
+		{
+			return (uint64)m_RenderPass;
+		}
 
 	private:
 		void CreateAttachmentDescriptions(const RenderPassDesc& desc, VkAttachmentDescription* pResultAttachments);
@@ -28,5 +40,7 @@ namespace LambdaEngine
 
 	private:
 		VkRenderPass m_RenderPass;
+
+		
 	};
 }
