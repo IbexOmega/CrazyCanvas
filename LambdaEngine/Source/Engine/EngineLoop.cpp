@@ -128,11 +128,6 @@ namespace LambdaEngine
 	
 	bool EngineLoop::PostRelease()
 	{
-		if (!AudioSystem::Release())
-		{
-			return false;
-		}
-
 		if (!PlatformApplication::PostRelease())
 		{
 			return false;
