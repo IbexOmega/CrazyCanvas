@@ -48,6 +48,27 @@ namespace LambdaEngine
         }
     }
 
+	inline VkAttachmentLoadOp ConvertLoadOp(ELoadOp loadOp)
+	{
+		switch (loadOp)
+		{
+		case ELoadOp::CLEAR:		return VK_ATTACHMENT_LOAD_OP_CLEAR;
+		case ELoadOp::LOAD:			return VK_ATTACHMENT_LOAD_OP_LOAD;
+		case ELoadOp::DONT_CARE:	return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		default:					return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		}
+	}
+
+	inline VkAttachmentStoreOp ConvertStoreOp(EStoreOp storeOp)
+	{
+		switch (storeOp)
+		{
+		case EStoreOp::STORE:		return VK_ATTACHMENT_STORE_OP_STORE;
+		case EStoreOp::DONT_CARE:	return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		default:					return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		}
+	}
+
 	inline bool CreateShadeModule(VkDevice device, VkShaderModule shaderModule, const char* pSource, uint32 sourceSize)
 	{
 		VkShaderModuleCreateInfo createInfo = {};
@@ -82,7 +103,7 @@ namespace LambdaEngine
 		return VK_SHADER_STAGE_ALL;
 	}
 
-    inline VkPipelineStageFlags ConvertPipelineStage(EPipelineStage pipelineStage)
+    inline VkPipelineStageFlags ConvertPipelineStage(FPipelineStageFlags pipelineStage)
     {
         switch (pipelineStage)
         {
@@ -112,6 +133,42 @@ namespace LambdaEngine
         default: return VkPipelineStageFlags(0);
         }
     }
+
+	inline VkAccessFlags ConvertAccessFlags(FAccessFlags accessFlags)
+	{
+		VkAccessFlags vkAccessFlags = 0;
+
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_INDIRECT_COMMAND_READ)					? VK_ACCESS_INDIRECT_COMMAND_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_INDEX_READ)								? VK_ACCESS_INDEX_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_VERTEX_ATTRIBUTE_READ)					? VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_UNIFORM_READ)							? VK_ACCESS_UNIFORM_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_INPUT_ATTACHMENT_READ)					? VK_ACCESS_INPUT_ATTACHMENT_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_SHADER_READ)							? VK_ACCESS_SHADER_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_SHADER_WRITE)							? VK_ACCESS_SHADER_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COLOR_ATTACHMENT_READ)					? VK_ACCESS_COLOR_ATTACHMENT_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COLOR_ATTACHMENT_WRITE)					? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_DEPTH_STENCIL_ATTACHMENT_READ)			? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_DEPTH_STENCIL_ATTACHMENT_WRITE)			? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFER_READ)							? VK_ACCESS_TRANSFER_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFER_WRITE)							? VK_ACCESS_TRANSFER_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_HOST_READ)								? VK_ACCESS_HOST_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_HOST_WRITE)								? VK_ACCESS_HOST_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_MEMORY_READ)							? VK_ACCESS_MEMORY_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_MEMORY_WRITE)							? VK_ACCESS_MEMORY_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFORM_FEEDBACK_WRITE)				? VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFORM_FEEDBACK_COUNTER_READ)		? VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFORM_FEEDBACK_COUNTER_WRITE)		? VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_CONDITIONAL_RENDERING_READ)				? VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COLOR_ATTACHMENT_READ_NONCOHERENT)		? VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_ACCELERATION_STRUCTURE_READ)			? VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_ACCELERATION_STRUCTURE_WRITE)			? VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_SHADING_RATE_IMAGE_READ)				? VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_FRAGMENT_DENSITY_MAP_READ)				? VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COMMAND_PREPROCESS_READ)				? VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COMMAND_PREPROCESS_WRITE)				? VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV : 0;
+
+		return vkAccessFlags;
+	}
 
 
     inline VkImageLayout ConvertTextureState(ETextureState textureState)

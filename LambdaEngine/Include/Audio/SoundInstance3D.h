@@ -18,7 +18,7 @@ namespace LambdaEngine
 	{
 		const char* pName					= "SoundInstance3D";
 		SoundEffect3D* pSoundEffect			= nullptr;
-		ESoundModeFlags Flags				= ESoundModeFlags::SOUND_MODE_NONE;
+		FSoundModeFlags Flags				= FSoundModeFlags::SOUND_MODE_NONE;
 	};
 
 	class LAMBDA_API SoundInstance3D

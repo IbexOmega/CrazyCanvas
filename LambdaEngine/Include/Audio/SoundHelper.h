@@ -6,9 +6,9 @@ namespace LambdaEngine
 {
 	class SoundEffect3D;
 
-	enum ESoundModeFlags : uint32
+	enum FSoundModeFlags : uint32
 	{
-		SOUND_MODE_NONE		= BIT(0),
-		SOUND_MODE_LOOPING	= BIT(1),
+		SOUND_MODE_NONE		= FLAG(0),
+		SOUND_MODE_LOOPING	= FLAG(1),
 	};
 }

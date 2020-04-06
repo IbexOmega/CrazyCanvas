@@ -18,7 +18,7 @@ namespace LambdaEngine
         EMemoryType     MemoryType      = EMemoryType::NONE;
         EFormat         Format          = EFormat::NONE;
         ETextureType    Type            = ETextureType::TEXTURE_NONE;
-        uint32          Flags           = ETextureFlags::TEXTURE_FLAG_NONE;
+        uint32          Flags           = FTextureFlags::TEXTURE_FLAG_NONE;
         uint32          Width           = 0;
         uint32          Height          = 0;
         uint32          Depth           = 0;
