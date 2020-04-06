@@ -23,7 +23,7 @@ namespace LambdaEngine
 	class ISampler : public IDeviceChild
 	{
 	public:
-		DECL_INTERFACE(ISampler);
+		DECL_DEVICE_INTERFACE(ISampler);
 
 		/*
 	   * Returns the API-specific handle to the underlaying resource

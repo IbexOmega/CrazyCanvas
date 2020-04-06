@@ -54,7 +54,7 @@ namespace LambdaEngine
 	class IRenderPass : public IDeviceChild
 	{
 	public:
-		DECL_INTERFACE(IRenderPass);
+		DECL_DEVICE_INTERFACE(IRenderPass);
 
 		/*
 	   * Returns the API-specific handle to the underlaying resource

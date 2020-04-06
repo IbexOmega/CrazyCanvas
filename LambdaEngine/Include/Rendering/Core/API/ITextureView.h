@@ -40,7 +40,7 @@ namespace LambdaEngine
     class ITextureView : public IDeviceChild
     {
     public:
-        DECL_INTERFACE(ITextureView);
+        DECL_DEVICE_INTERFACE(ITextureView);
         
         virtual ITexture*       GetTexture()      = 0;
         virtual uint64          GetHandle() const = 0;

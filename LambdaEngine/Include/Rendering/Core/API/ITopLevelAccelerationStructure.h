@@ -15,7 +15,7 @@ namespace LambdaEngine
 	class ITopLevelAccelerationStructure : public IDeviceChild
 	{
 	public:
-		DECL_INTERFACE(ITopLevelAccelerationStructure);
+		DECL_DEVICE_INTERFACE(ITopLevelAccelerationStructure);
 
 		/*
 		* Update the instance data of this TopLevelAS

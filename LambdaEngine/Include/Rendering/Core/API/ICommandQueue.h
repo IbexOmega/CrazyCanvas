@@ -9,7 +9,7 @@ namespace LambdaEngine
 	class ICommandQueue : public IDeviceChild
 	{
 	public:
-		DECL_INTERFACE(ICommandQueue);
+		DECL_DEVICE_INTERFACE(ICommandQueue);
 
 		/*
 		* Dispatches a commandlist to the device for execution

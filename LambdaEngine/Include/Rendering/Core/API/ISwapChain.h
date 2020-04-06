@@ -21,7 +21,7 @@ namespace LambdaEngine
     class ISwapChain : public IDeviceChild
     {
     public:
-        DECL_INTERFACE(ISwapChain);
+        DECL_DEVICE_INTERFACE(ISwapChain);
         
         /*
         * Resizes the texturebuffers of the swapchain. This function should be externally syncronized.
