@@ -221,7 +221,7 @@ int    MyInteger = 0;
 int*   pPointer  = nullptr;
 int**  ppPointer = nullptr;
 ```
-* Another exception is mathematical components such as x, y, z etc. should not be capitalized
+* Another exception is mathematical components such as x, y, z etc. These should **NOT** be capitalized.
 ```
 float x = 0.0f;
 float y = 0.0f;
