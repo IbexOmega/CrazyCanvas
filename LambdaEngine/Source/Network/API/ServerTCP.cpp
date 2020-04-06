@@ -1,7 +1,7 @@
 #include "Network/API/ServerTCP.h"
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/IServerTCPHandler.h"
-#include "Network/API/ClientTCP2.h"
+#include "Network/API/ClientTCP.h"
 #include "Network/API/NetworkPacket.h"
 
 #include "Threading/Thread.h"
@@ -87,7 +87,7 @@ namespace LambdaEngine
 			if(socket)
 			{
 				IClientTCPHandler* handler = m_pHandler->CreateClientHandler();
-				HandleNewClient(DBG_NEW ClientTCP2(handler, socket));
+				HandleNewClient(DBG_NEW ClientTCP(handler, socket));
 			}
 			else
 			{
@@ -95,7 +95,7 @@ namespace LambdaEngine
 			}
 		}
 
-		for (ClientTCP2* client : m_Clients)
+		for (ClientTCP* client : m_Clients)
 		{
 			client->Disconnect();
 		}
@@ -114,7 +114,7 @@ namespace LambdaEngine
 		LOG_WARNING("[ServerTCP]: Stopped");
 	}
 
-	void ServerTCP::HandleNewClient(ClientTCP2* client)
+	void ServerTCP::HandleNewClient(ClientTCP* client)
 	{
 		if (m_Clients.size() < m_MaxClients)
 		{
@@ -134,13 +134,13 @@ namespace LambdaEngine
 		client->Release();
 	}
 
-	void ServerTCP::AddClient(ClientTCP2* client)
+	void ServerTCP::AddClient(ClientTCP* client)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		m_Clients.push_back(client);
 	}
 
-	void ServerTCP::RemoveClient(ClientTCP2* client)
+	void ServerTCP::RemoveClient(ClientTCP* client)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		m_Clients.erase(std::remove(m_Clients.begin(), m_Clients.end(), client), m_Clients.end());
@@ -157,24 +157,24 @@ namespace LambdaEngine
 		return uint8(m_Clients.size());
 	}
 
-	void ServerTCP::OnClientConnected(ClientTCP2* client)
+	void ServerTCP::OnClientConnected(ClientTCP* client)
 	{
 		UNREFERENCED_VARIABLE(client);
 	}
 
-	void ServerTCP::OnClientDisconnected(ClientTCP2* client)
+	void ServerTCP::OnClientDisconnected(ClientTCP* client)
 	{
 		RemoveClient(client);
 		m_pHandler->OnClientDisconnected(client);
 		client->Release();
 	}
 
-	void ServerTCP::OnClientFailedConnecting(ClientTCP2* client)
+	void ServerTCP::OnClientFailedConnecting(ClientTCP* client)
 	{
 		UNREFERENCED_VARIABLE(client);
 	}
 
-	void ServerTCP::OnClientPacketReceived(ClientTCP2* client, NetworkPacket* packet)
+	void ServerTCP::OnClientPacketReceived(ClientTCP* client, NetworkPacket* packet)
 	{
 		UNREFERENCED_VARIABLE(client);
 		UNREFERENCED_VARIABLE(packet);

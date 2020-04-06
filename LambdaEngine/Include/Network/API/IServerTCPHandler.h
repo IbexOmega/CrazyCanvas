@@ -5,7 +5,7 @@
 
 namespace LambdaEngine
 {
-	class ClientTCP2;
+	class ClientTCP;
 
 	class LAMBDA_API IServerTCPHandler
 	{
@@ -26,20 +26,20 @@ namespace LambdaEngine
 		*
 		* return  - true to keep the client, otherwise false.
 		*/
-		virtual bool OnClientAccepted(ClientTCP2* client) = 0;
+		virtual bool OnClientAccepted(ClientTCP* client) = 0;
 
 		/*
 		* Called after OnClientAccepted if keept.
 		*
 		* client  - The client
 		*/
-		virtual void OnClientConnected(ClientTCP2* client) = 0;
+		virtual void OnClientConnected(ClientTCP* client) = 0;
 
 		/*
 		* Called when a client for some reason is disconnected.
 		*
 		* client  - The client
 		*/
-		virtual void OnClientDisconnected(ClientTCP2* client) = 0;
+		virtual void OnClientDisconnected(ClientTCP* client) = 0;
 	};
 }

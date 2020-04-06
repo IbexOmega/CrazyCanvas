@@ -4,7 +4,7 @@
 
 namespace LambdaEngine
 {
-	class ClientTCP2;
+	class ClientTCP;
 	class NetworkPacket;
 
 	class LAMBDA_API IClientTCPHandler
@@ -17,21 +17,21 @@ namespace LambdaEngine
 		*
 		* client  - The client
 		*/
-		virtual void OnClientConnected(ClientTCP2* client) = 0;
+		virtual void OnClientConnected(ClientTCP* client) = 0;
 
 		/*
 		* Called when a client for some reason is disconnected.
 		*
 		* client  - The client
 		*/
-		virtual void OnClientDisconnected(ClientTCP2* client) = 0;
+		virtual void OnClientDisconnected(ClientTCP* client) = 0;
 
 		/*
 		* Called when a client fails to connect
 		*
 		* client  - The client
 		*/
-		virtual void OnClientFailedConnecting(ClientTCP2* client) = 0;
+		virtual void OnClientFailedConnecting(ClientTCP* client) = 0;
 
 		/*
 		* Called when a client receives a packet
@@ -39,6 +39,6 @@ namespace LambdaEngine
 		* client  - The client
 		* packet  - The packet received
 		*/
-		virtual void OnClientPacketReceived(ClientTCP2* client, NetworkPacket* packet) = 0;
+		virtual void OnClientPacketReceived(ClientTCP* client, NetworkPacket* packet) = 0;
 	};
 }

@@ -1,21 +1,21 @@
 #include "Network/API/SocketFactory.h"
-#include "Network/API/ClientTCP2.h"
+#include "Network/API/ClientTCP.h"
 
 namespace LambdaEngine
 {
 	bool SocketFactory::Init()
 	{
-		ClientTCP2::InitStatic();
+		ClientTCP::InitStatic();
 		return true;
 	}
 
 	void SocketFactory::Tick(Timestamp dt)
 	{
-		ClientTCP2::TickStatic(dt);
+		ClientTCP::TickStatic(dt);
 	}
 
 	void SocketFactory::Release()
 	{
-		ClientTCP2::ReleaseStatic();
+		ClientTCP::ReleaseStatic();
 	}
 }

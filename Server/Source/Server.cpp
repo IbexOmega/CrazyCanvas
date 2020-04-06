@@ -12,7 +12,7 @@
 #include "Application/API/Window.h"
 
 #include "Network/API/PlatformSocketFactory.h"
-#include "Network/API/ClientTCP2.h"
+#include "Network/API/ClientTCP.h"
 
 #include "ClientTCPHandler.h"
 
@@ -45,20 +45,20 @@ LambdaEngine::IClientTCPHandler* Server::CreateClientHandler()
 	return DBG_NEW ClientTCPHandler();
 }
 
-bool Server::OnClientAccepted(LambdaEngine::ClientTCP2* client)
+bool Server::OnClientAccepted(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientAccepted");
 	return true;
 }
 
-void Server::OnClientConnected(LambdaEngine::ClientTCP2* client)
+void Server::OnClientConnected(LambdaEngine::ClientTCP* client)
 {
 	using namespace LambdaEngine;
 	LOG_MESSAGE("OnClientConnected");
 	UpdateTitle();
 }
 
-void Server::OnClientDisconnected(LambdaEngine::ClientTCP2* client)
+void Server::OnClientDisconnected(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientDisconnected");
 	UpdateTitle();

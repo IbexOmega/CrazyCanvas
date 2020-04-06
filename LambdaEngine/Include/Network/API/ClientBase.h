@@ -49,9 +49,24 @@ namespace LambdaEngine
 		*/
 		uint16 GetPort() const;
 
+		/*
+		* return - The total number of bytes sent
+		*/
 		int32 GetBytesSent() const;
+
+		/*
+		* return - The total number of bytes received
+		*/
 		int32 GetBytesReceived() const;
+
+		/*
+		* return - The total number of packets sent
+		*/
 		int32 GetPacketsSent() const;
+
+		/*
+		* return - The total number of packets received
+		*/
 		int32 GetPacketsReceived() const;
 
 	protected:

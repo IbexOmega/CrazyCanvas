@@ -1,4 +1,6 @@
 #ifdef LAMBDA_PLATFORM_MACOS
+#include "Log/Log.h"
+
 #include "Memory/Memory.h"
 
 #include "Application/Mac/MacConsole.h"
@@ -214,24 +216,27 @@ namespace LambdaEngine
         
         @autoreleasepool
         {
-            NSEvent* event = nil;
-            while (true)
-            {
-                event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES];
-                if (event == nil)
+            if (s_pApplication)
+            {                
+                NSEvent* event = nil;
+                while (true)
                 {
-                    break;
-                }
-                
-                //Buffer event before sending it to the rest of the system
-                s_pApplication->BufferEvent(event);
+                    event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES];
+                    if (event == nil)
+                    {
+                        break;
+                    }
+                    
+                    //Buffer event before sending it to the rest of the system
+                    s_pApplication->BufferEvent(event);
 
-                [NSApp sendEvent:event];
-                [NSApp updateWindows];
-                
-                if (s_pApplication->m_IsTerminating)
-                {
-                    return false;
+                    [NSApp sendEvent:event];
+                    [NSApp updateWindows];
+                    
+                    if (s_pApplication->m_IsTerminating)
+                    {
+                        return false;
+                    }
                 }
             }
         }

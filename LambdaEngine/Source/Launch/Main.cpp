@@ -34,13 +34,13 @@ int main(int, const char*[])
 	LambdaEngine::Game* pGame = CreateGame();
 	EngineLoop::Run(pGame);
 
-	if (!EngineLoop::Release())
-	{
-		return -1;
-	}
-	
-	SAFEDELETE(pGame);
+    SAFEDELETE(pGame);
 
+    if (!EngineLoop::Release())
+    {
+        return -1;
+    }
+    
 	if (!EngineLoop::PostRelease())
 	{
 		return -1;

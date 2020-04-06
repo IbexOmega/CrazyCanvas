@@ -21,7 +21,7 @@ Client::Client()
     PlatformApplication::Get()->GetWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
-	m_pClientTCP = new ClientTCP2(this);
+	m_pClientTCP = new ClientTCP(this);
 	m_pClientTCP->Connect("192.168.0.104", 4444);
 
 	//m_pClientUDP = new ClientUDP("192.168.0.104", 4444, this);
@@ -38,22 +38,22 @@ void Client::OnClientPacketReceivedUDP(LambdaEngine::ClientUDP* client, LambdaEn
 	LOG_MESSAGE("UDP Packet Received");
 }
 
-void Client::OnClientConnected(LambdaEngine::ClientTCP2* client)
+void Client::OnClientConnected(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientConnected");
 }
 
-void Client::OnClientDisconnected(LambdaEngine::ClientTCP2* client)
+void Client::OnClientDisconnected(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientDisconnected");
 }
 
-void Client::OnClientFailedConnecting(LambdaEngine::ClientTCP2* client)
+void Client::OnClientFailedConnecting(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientFailedConnecting");
 }
 
-void Client::OnClientPacketReceived(LambdaEngine::ClientTCP2* client, LambdaEngine::NetworkPacket* packet)
+void Client::OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)
 {
 	using namespace LambdaEngine;
 
