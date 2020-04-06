@@ -9,7 +9,7 @@
 
 namespace LambdaEngine
 {
-	bool ResourceLoader::LoadSceneFromFile(IGraphicsDevice* pGraphicsDevice, const char* pDir, const char* pFilename, std::vector<GraphicsObject>& loadedGraphicsObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures)
+	bool ResourceLoader::LoadSceneFromFile(IGraphicsDevice* pGraphicsDevice, const char* pDir, const char* pFilename, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures)
 	{
 		std::string filepath = std::string(pDir) + std::string(pFilename);
 
@@ -34,7 +34,6 @@ namespace LambdaEngine
 			tinyobj::material_t& material = materials[m];
 
 			Material* pMaterial = DBG_NEW Material();
-
 
 			if (material.diffuse_texname.length() > 0)
 			{
@@ -115,7 +114,6 @@ namespace LambdaEngine
 			loadedMaterials[m] = pMaterial;
 		}
 
-		glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(0.005f));
 		for (uint32 s = 0; s < shapes.size(); s++)
 		{
 			tinyobj::shape_t& shape = shapes[s];
@@ -185,11 +183,11 @@ namespace LambdaEngine
 
 			uint32 m = shape.mesh.material_ids[0];
 
-			GraphicsObject graphicsObject	= {};
-			graphicsObject.Mesh			= s;
-			graphicsObject.Material		= m;
+			GameObject gameObject	= {};
+			gameObject.Mesh			= s;
+			gameObject.Material		= m;
 
-			loadedGraphicsObjects.push_back(graphicsObject);
+			loadedGameObjects.push_back(gameObject);
 		}
 
 		D_LOG_MESSAGE("[ResourceDevice]: Loaded Scene \"%s\"", pFilename);
@@ -287,7 +285,7 @@ namespace LambdaEngine
 
 		BufferDesc vertexBufferDesc = {};
 		vertexBufferDesc.pName			= "Vertex Buffer (ResourceLoader)";
-		vertexBufferDesc.MemoryType		= EMemoryType::GPU_MEMORY;
+		vertexBufferDesc.MemoryType		= EMemoryType::MEMORY_GPU;
 		vertexBufferDesc.SizeInBytes	= sizeof(Vertex) * numVertices;
 		vertexBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;// | EBufferFlags::BUFFER_FLAG_COPY_DST | EBufferFlags::BUFFER_FLAG_COPY_SRC; Maybe need these later?
 
@@ -295,7 +293,7 @@ namespace LambdaEngine
 
 		BufferDesc indexBufferDesc = {};
 		indexBufferDesc.pName			= "Index Buffer (ResourceLoader)";
-		indexBufferDesc.MemoryType		= EMemoryType::GPU_MEMORY;
+		indexBufferDesc.MemoryType		= EMemoryType::MEMORY_GPU;
 		indexBufferDesc.SizeInBytes		= sizeof(uint32) * numIndices;
 		indexBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_INDEX_BUFFER;// | EBufferFlags::BUFFER_FLAG_COPY_DST | EBufferFlags::BUFFER_FLAG_COPY_SRC; Maybe need these later?
 

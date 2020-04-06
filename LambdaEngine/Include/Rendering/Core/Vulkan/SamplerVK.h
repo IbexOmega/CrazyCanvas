@@ -31,9 +31,14 @@ namespace LambdaEngine
 		{
 			return (uint64)m_Sampler;
 		}
+        
+        FORCEINLINE virtual SamplerDesc GetDesc() const override
+        {
+            return m_Desc;
+        }
 
 	private:
-		VkSampler m_Sampler;
-
+		VkSampler   m_Sampler;
+        SamplerDesc m_Desc;
 	};
 }

@@ -43,7 +43,7 @@ namespace LambdaEngine
 	class IGraphicsDevice
 	{
 	public:
-		DECL_INTERFACE(IGraphicsDevice);
+		DECL_DEVICE_INTERFACE(IGraphicsDevice);
 
 		virtual bool Init(const GraphicsDeviceDesc& desc) 	= 0;
 

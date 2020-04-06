@@ -12,7 +12,7 @@ namespace LambdaEngine
 	class IFence : public IDeviceChild
 	{
 	public:
-		DECL_INTERFACE(IFence);
+		DECL_DEVICE_INTERFACE(IFence);
 
 		/*
 		* Wait for a certain value to be reached by the GPU

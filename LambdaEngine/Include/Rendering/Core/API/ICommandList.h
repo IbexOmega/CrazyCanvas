@@ -73,7 +73,7 @@ namespace LambdaEngine
 	class ICommandList : public IDeviceChild
 	{
 	public:
-		DECL_INTERFACE(ICommandList);
+		DECL_DEVICE_INTERFACE(ICommandList);
 
 		virtual void Begin(const SecondaryCommandListBeginDesc* pBeginDesc) = 0;
 		

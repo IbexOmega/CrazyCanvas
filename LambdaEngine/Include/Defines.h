@@ -36,6 +36,16 @@
 	Typename() = default; \
 	virtual ~Typename() = default
 
+/*
+* Difference between this and the other DECL_INTERFACE is that this does not have a virtual destructor.
+* This is desired since we want Release to be used.
+*/
+#define DECL_DEVICE_INTERFACE(Typename) \
+	DECL_REMOVE_COPY(Typename);			\
+	DECL_REMOVE_MOVE(Typename);			\
+	Typename() = default; \
+	~Typename() = default
+
 #define DECL_INTERFACE(Typename) DECL_ABSTRACT_CLASS(Typename)
 
 //Helper macros
@@ -50,9 +60,9 @@
 #endif
 
 //Delete and release
-#define SAFEDELETE(object)	if ((object)) { delete object; object = nullptr; }
-#define SAFEDELETEARR(array)	if ((array)) { delete[] array; array = nullptr; }
-#define SAFERELEASE(object) if ((object)) { object->Release(); object = nullptr; }
+#define SAFEDELETE(object)		if ((object))	{ delete object; object = nullptr; }
+#define SAFEDELETEARR(array)	if ((array))	{ delete[] array; array = nullptr; }
+#define SAFERELEASE(object)		if ((object))	{ object->Release(); object = nullptr; }
 
 //Bit-Mask helpers
 #define BIT(bit)	(1 << bit)

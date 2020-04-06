@@ -63,7 +63,7 @@ namespace LambdaEngine
 		BufferDesc sbtBufferDesc = {};
 		sbtBufferDesc.pName			= "Shader Binding Table";
 		sbtBufferDesc.Flags			= BUFFER_FLAG_RAY_TRACING;
-		sbtBufferDesc.MemoryType	= EMemoryType::CPU_MEMORY;
+		sbtBufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
 		sbtBufferDesc.SizeInBytes = sbtSize;
 
 		m_pSBT = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(sbtBufferDesc));

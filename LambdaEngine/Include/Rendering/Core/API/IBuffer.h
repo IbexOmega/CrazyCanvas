@@ -27,7 +27,7 @@ namespace LambdaEngine
     class IBuffer : public IDeviceChild
     {
     public:
-        DECL_INTERFACE(IBuffer);
+        DECL_DEVICE_INTERFACE(IBuffer);
 
         /*
         * Maps GPU memory to CPU memory

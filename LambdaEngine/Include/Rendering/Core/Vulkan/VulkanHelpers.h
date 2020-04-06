@@ -27,8 +27,8 @@ namespace LambdaEngine
     {
         switch (format)
         {
-        case EFormat::R8G8B8A8_UNORM:   return VK_FORMAT_R8G8B8A8_UNORM;
-        case EFormat::B8G8R8A8_UNORM:   return VK_FORMAT_B8G8R8A8_UNORM;
+        case EFormat::FORMAT_R8G8B8A8_UNORM:   return VK_FORMAT_R8G8B8A8_UNORM;
+        case EFormat::FORMAT_B8G8R8A8_UNORM:   return VK_FORMAT_B8G8R8A8_UNORM;
         default:                        return VK_FORMAT_UNDEFINED;
         }
     }
@@ -140,29 +140,29 @@ namespace LambdaEngine
     {
         switch (pipelineStage)
         {
-        case PIPELINE_STAGE_TOP:                          return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        case PIPELINE_STAGE_BOTTOM:                       return VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        case PIPELINE_STAGE_DRAW_INDIRECT:                return VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
-        case PIPELINE_STAGE_VERTEX_INPUT:                 return VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
-        case PIPELINE_STAGE_VERTEX_SHADER:                return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-        case PIPELINE_STAGE_HULL_SHADER:                  return VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
-        case PIPELINE_STAGE_DOMAIN_SHADER:                return VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
-        case PIPELINE_STAGE_GEOMETRY_SHADER:              return VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
-        case PIPELINE_STAGE_PIXEL_SHADER:                 return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        case PIPELINE_STAGE_EARLY_FRAGMENT_TESTS:         return VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        case PIPELINE_STAGE_LATE_FRAGMENT_TESTS:          return VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        case PIPELINE_STAGE_RENDER_TARGET_OUTPUT:         return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        case PIPELINE_STAGE_COMPUTE_SHADER:               return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-        case PIPELINE_STAGE_COPY:                         return VK_PIPELINE_STAGE_TRANSFER_BIT;
-        case PIPELINE_STAGE_HOST:                         return VK_PIPELINE_STAGE_HOST_BIT;
-        case PIPELINE_STAGE_STREAM_OUTPUT:                return VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT;
-        case PIPELINE_STAGE_CONDITIONAL_RENDERING:        return VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
-        case PIPELINE_STAGE_RAY_TRACING_SHADER:           return VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
-        case PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD: return VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
-        case PIPELINE_STAGE_SHADING_RATE_TEXTURE:         return VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV;
-        case PIPELINE_STAGE_TASK_SHADER:                  return VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
-        case PIPELINE_STAGE_MESH_SHADER:                  return VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV;
-        case PIPELINE_STAGE_UNKNOWN:
+        case PIPELINE_STAGE_FLAG_TOP:                          return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        case PIPELINE_STAGE_FLAG_BOTTOM:                       return VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        case PIPELINE_STAGE_FLAG_DRAW_INDIRECT:                return VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        case PIPELINE_STAGE_FLAG_VERTEX_INPUT:                 return VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+        case PIPELINE_STAGE_FLAG_VERTEX_SHADER:                return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        case PIPELINE_STAGE_FLAG_HULL_SHADER:                  return VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+        case PIPELINE_STAGE_FLAG_DOMAIN_SHADER:                return VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+        case PIPELINE_STAGE_FLAG_GEOMETRY_SHADER:              return VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+        case PIPELINE_STAGE_FLAG_PIXEL_SHADER:                 return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        case PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS:         return VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        case PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS:          return VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        case PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT:         return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        case PIPELINE_STAGE_FLAG_COMPUTE_SHADER:               return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        case PIPELINE_STAGE_FLAG_COPY:                         return VK_PIPELINE_STAGE_TRANSFER_BIT;
+        case PIPELINE_STAGE_FLAG_HOST:                         return VK_PIPELINE_STAGE_HOST_BIT;
+        case PIPELINE_STAGE_FLAG_STREAM_OUTPUT:                return VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT;
+        case PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING:        return VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
+        case PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER:           return VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+        case PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD: return VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+        case PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE:         return VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV;
+        case PIPELINE_STAGE_FLAG_TASK_SHADER:                  return VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
+        case PIPELINE_STAGE_FLAG_MESH_SHADER:                  return VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV;
+        case PIPELINE_STAGE_FLAG_UNKNOWN:
         default: return VkPipelineStageFlagBits(0);
         }
     }
@@ -170,49 +170,49 @@ namespace LambdaEngine
     inline uint32 ConvertPipelineStageMask(uint32 pipelineStageMask)
     {
         uint32 result = 0;
-        if (pipelineStageMask & PIPELINE_STAGE_TOP)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_TOP)
             result |= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_BOTTOM)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_BOTTOM)
             result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_DRAW_INDIRECT)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_DRAW_INDIRECT)
             result |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_VERTEX_INPUT)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_VERTEX_INPUT)
             result |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_VERTEX_SHADER)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_VERTEX_SHADER)
             result |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_HULL_SHADER)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_HULL_SHADER)
             result |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_DOMAIN_SHADER)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_DOMAIN_SHADER)
             result |= VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_GEOMETRY_SHADER)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_GEOMETRY_SHADER)
             result |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_PIXEL_SHADER)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_PIXEL_SHADER)
             result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_EARLY_FRAGMENT_TESTS)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS)
             result |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_LATE_FRAGMENT_TESTS)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS)
             result |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_RENDER_TARGET_OUTPUT)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT)
             result |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_COMPUTE_SHADER)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_COMPUTE_SHADER)
             result |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_COPY)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_COPY)
             result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_HOST)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_HOST)
             result |= VK_PIPELINE_STAGE_HOST_BIT;
-        if (pipelineStageMask & PIPELINE_STAGE_STREAM_OUTPUT)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_STREAM_OUTPUT)
             result |= VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT;
-        if (pipelineStageMask & PIPELINE_STAGE_CONDITIONAL_RENDERING)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING)
             result |= VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
-        if (pipelineStageMask & PIPELINE_STAGE_RAY_TRACING_SHADER)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER)
             result |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
-        if (pipelineStageMask & PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD)
             result |= VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
-        if (pipelineStageMask & PIPELINE_STAGE_SHADING_RATE_TEXTURE)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE)
             result |= VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV;
-        if (pipelineStageMask & PIPELINE_STAGE_TASK_SHADER)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_TASK_SHADER)
             result |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
-        if (pipelineStageMask & PIPELINE_STAGE_MESH_SHADER)
+        if (pipelineStageMask & PIPELINE_STAGE_FLAG_MESH_SHADER)
             result |= VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV;
         
         return result;
@@ -253,29 +253,28 @@ namespace LambdaEngine
 		return vkAccessFlags;
 	}
 
-
     inline VkImageLayout ConvertTextureState(ETextureState textureState)
     {
         switch (textureState)
         {
-            case TEXTURE_STATE_GENERAL:                             return VK_IMAGE_LAYOUT_GENERAL;
-            case TEXTURE_STATE_COLOR_ATTACHMENT:                    return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            case TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT:            return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            case TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY:             return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-            case TEXTURE_STATE_SHADER_READ_ONLY:                    return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            case TEXTURE_STATE_COPY_SRC:                            return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            case TEXTURE_STATE_COPY_DST:                            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            case TEXTURE_STATE_PREINITIALIZED:                      return VK_IMAGE_LAYOUT_PREINITIALIZED;
-            case TEXTURE_STATE_DEPTH_READ_ONLY_STENCIL_ATTACHMENT:  return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
-            case TEXTURE_STATE_DEPTH_ATTACHMENT_STENCIL_READ_ONLY:  return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
-            case TEXTURE_STATE_DEPTH_ATTACHMENT:                    return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-            case TEXTURE_STATE_DEPTH_READ_ONLY:                     return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
-            case TEXTURE_STATE_STENCIL_ATTACHMENT:                  return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-            case TEXTURE_STATE_STENCIL_READ_ONLY:                   return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
-            case TEXTURE_STATE_PRESENT:                             return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            case TEXTURE_STATE_SHADING_RATE:                        return VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV;
-            case TEXTURE_STATE_DONT_CARE:
-            case TEXTURE_STATE_UNKNOWN:
+            case ETextureState::TEXTURE_STATE_GENERAL:                             return VK_IMAGE_LAYOUT_GENERAL;
+            case ETextureState::TEXTURE_STATE_COLOR_ATTACHMENT:                    return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT:            return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY:             return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_SHADER_READ_ONLY:                    return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_COPY_SRC:                            return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_COPY_DST:                            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_PREINITIALIZED:                      return VK_IMAGE_LAYOUT_PREINITIALIZED;
+            case ETextureState::TEXTURE_STATE_DEPTH_READ_ONLY_STENCIL_ATTACHMENT:  return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_DEPTH_ATTACHMENT_STENCIL_READ_ONLY:  return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_DEPTH_ATTACHMENT:                    return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_DEPTH_READ_ONLY:                     return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_STENCIL_ATTACHMENT:                  return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_STENCIL_READ_ONLY:                   return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_PRESENT:                             return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            case ETextureState::TEXTURE_STATE_SHADING_RATE:                        return VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV;
+            case ETextureState::TEXTURE_STATE_DONT_CARE:
+            case ETextureState::TEXTURE_STATE_UNKNOWN:
             default: return VK_IMAGE_LAYOUT_UNDEFINED;
         }
     }

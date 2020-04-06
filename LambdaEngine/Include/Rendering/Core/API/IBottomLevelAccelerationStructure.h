@@ -17,7 +17,7 @@ namespace LambdaEngine
 	class IBottomLevelAccelerationStructure : public IDeviceChild
 	{
 	public:
-		DECL_INTERFACE(IBottomLevelAccelerationStructure);
+		DECL_DEVICE_INTERFACE(IBottomLevelAccelerationStructure);
 
 		/*
 		* Updates the contained geometric data withing the Acceleration Structure, the vertex position data is assumed to be in 3 * F32 style, and the indices are assumed to be of type U32.

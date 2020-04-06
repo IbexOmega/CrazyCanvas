@@ -67,6 +67,7 @@ namespace LambdaEngine
 		Extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME),
 		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME),
 		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
+		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
 	};
 
 	GraphicsDeviceVK::GraphicsDeviceVK() :
@@ -200,7 +201,7 @@ namespace LambdaEngine
 	ICommandList* GraphicsDeviceVK::CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc) const
 	{
         CommandListVK* pCommandListVK = DBG_NEW CommandListVK(this);
-        if (pCommandListVK->Init(pAllocator, desc))
+        if (!pCommandListVK->Init(pAllocator, desc))
         {
             pCommandListVK->Release();
             return nullptr;
@@ -342,7 +343,7 @@ namespace LambdaEngine
 		{
 			return m_DeviceQueueFamilyIndices.TransferFamily;
 		}
-		else if (type == ECommandQueueType::COMMAND_QUEUE_IGNORE)
+		else if (type == ECommandQueueType::COMMAND_QUEUE_NONE)
 		{
 			return VK_QUEUE_FAMILY_IGNORED;
 		}

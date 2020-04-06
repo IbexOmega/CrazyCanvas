@@ -44,7 +44,7 @@ namespace LambdaEngine
 	class IPipelineState : public IDeviceChild
 	{
 	public:
-		DECL_INTERFACE(IPipelineState);
+		DECL_DEVICE_INTERFACE(IPipelineState);
 
 		virtual EPipelineStateType GetType() const = 0;
 	};
