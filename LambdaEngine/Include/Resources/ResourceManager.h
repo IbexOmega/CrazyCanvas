@@ -11,11 +11,18 @@ namespace LambdaEngine
 
 	class LAMBDA_API ResourceManager
 	{
-		static constexpr GUID_Lambda DEFAULT_COLOR_MAP			= 0;
+		//Meshes
+		
+		//Meshes
+		static constexpr GUID_Lambda DEFAULT_MATERIAL			= 0;
+
+		//Textures
+		static constexpr GUID_Lambda DEFAULT_COLOR_MAP			= DEFAULT_MATERIAL		+ 1;
 		static constexpr GUID_Lambda DEFAULT_NORMAL_MAP			= DEFAULT_COLOR_MAP		+ 1;
+
 		static constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID	= DEFAULT_NORMAL_MAP	+ 1;
 
-		static constexpr GUID_Lambda GUID_NONE = std::numeric_limits<GUID_Lambda>::max();
+		static constexpr GUID_Lambda GUID_NONE = UINT32_MAX;
 
 	public:
 		DECL_REMOVE_COPY(ResourceManager);
@@ -85,17 +92,17 @@ namespace LambdaEngine
 		*/
 		GUID_Lambda LoadSoundFromFile(const char* pFilepath);
 
-		Mesh*					GetMesh(GUID_Lambda guid)			{ return m_Meshes[guid]; }
-		const Mesh*				GetMesh(GUID_Lambda guid) const		{ return m_Meshes.find(guid)->second; }
+		Mesh*					GetMesh(GUID_Lambda guid);
+		const Mesh*				GetMesh(GUID_Lambda guid) const;
 
-		Material*				GetMaterial(GUID_Lambda guid)		{ return m_Materials[guid]; }
-		const Material*			GetMaterial(GUID_Lambda guid) const	{ return m_Materials.find(guid)->second; }
+		Material*				GetMaterial(GUID_Lambda guid);
+		const Material*			GetMaterial(GUID_Lambda guid) const;
 
-		ITexture*				GetTexture(GUID_Lambda guid)		{ return m_Textures[guid]; }
-		const ITexture*			GetTexture(GUID_Lambda guid) const	{ return m_Textures.find(guid)->second; }
+		ITexture*				GetTexture(GUID_Lambda guid);
+		const ITexture*			GetTexture(GUID_Lambda guid) const;
 
-		SoundEffect3D*			GetSound(GUID_Lambda guid)			{ return m_Sounds[guid]; }
-		const SoundEffect3D*	GetSound(GUID_Lambda guid) const	{ return m_Sounds.find(guid)->second; }
+		SoundEffect3D*			GetSound(GUID_Lambda guid);
+		const SoundEffect3D*	GetSound(GUID_Lambda guid) const;
 
 	private:
 		GUID_Lambda RegisterLoadedMesh(Mesh* pMesh);

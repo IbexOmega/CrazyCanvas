@@ -27,14 +27,17 @@ namespace LambdaEngine
 
 	bool ResourceManager::LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& result)
 	{
+		std::vector<GameObject> sceneLocalGameObjects;
 		std::vector<Mesh*> meshes;
 		std::vector<Material*> materials;
 		std::vector<ITexture*> textures;
 
-		if (!ResourceLoader::LoadSceneFromFile(m_pGraphicsDevice, pDir, pFilename, result, meshes, materials, textures))
+		if (!ResourceLoader::LoadSceneFromFile(m_pGraphicsDevice, pDir, pFilename, sceneLocalGameObjects, meshes, materials, textures))
 		{
 			return false;
 		}
+
+		result = std::vector<GameObject>(sceneLocalGameObjects.begin(), sceneLocalGameObjects.end());
 
 		for (uint32 i = 0; i < textures.size(); i++)
 		{
@@ -45,10 +48,12 @@ namespace LambdaEngine
 		{
 			GUID_Lambda guid = RegisterLoadedMesh(meshes[i]);
 
-			for (GameObject& gameObject : result)
+			for (uint32 g = 0; g < sceneLocalGameObjects.size(); g++)
 			{
-				if (gameObject.Mesh == i)
-					gameObject.Mesh = guid;
+				if (sceneLocalGameObjects[g].Mesh == i)
+				{
+					result[g].Mesh = guid;
+				}
 			}
 		}
 
@@ -56,10 +61,26 @@ namespace LambdaEngine
 		{
 			GUID_Lambda guid = RegisterLoadedMaterial(materials[i]);
 
-			for (GameObject& graphicsObject : result)
+			for (uint32 g = 0; g < sceneLocalGameObjects.size(); g++)
 			{
-				if (graphicsObject.Material == i) 
-					graphicsObject.Material = guid;
+				if (sceneLocalGameObjects[g].Material == i)
+				{
+					result[g].Material = guid;
+				}
+			}
+		}
+
+		for (uint32 g = 0; g < sceneLocalGameObjects.size(); g++)
+		{
+			if (sceneLocalGameObjects[g].Mesh >= meshes.size())
+			{
+				LOG_ERROR("[ResourceManager]: GameObject %u in Scene %s has no Mesh", g, pFilename);
+			}
+
+			if (sceneLocalGameObjects[g].Material >= materials.size())
+			{
+				result[g].Material = DEFAULT_MATERIAL;
+				LOG_WARNING("[ResourceManager]: GameObject %u in Scene %s has no Material, default Material assigned", g, pFilename);
 			}
 		}
 
@@ -162,6 +183,94 @@ namespace LambdaEngine
 		return guid;
 	}
 
+	Mesh* ResourceManager::GetMesh(GUID_Lambda guid)
+	{
+		auto& it = m_Meshes.find(guid);
+
+		if (it != m_Meshes.end())
+			return it->second;
+
+		D_LOG_WARNING("[ResourceManager]: GetMesh called with invalid GUID %u", guid);
+		return nullptr;
+	}
+
+	const Mesh* ResourceManager::GetMesh(GUID_Lambda guid) const
+	{
+		auto& it = m_Meshes.find(guid);
+
+		if (it != m_Meshes.end())
+			return it->second;
+
+		D_LOG_WARNING("[ResourceManager]: GetMesh called with invalid GUID %u", guid);
+		return nullptr;
+	}
+
+	Material* ResourceManager::GetMaterial(GUID_Lambda guid)
+	{
+		auto& it = m_Materials.find(guid);
+
+		if (it != m_Materials.end())
+			return it->second;
+
+		D_LOG_WARNING("[ResourceManager]: GetMaterial called with invalid GUID %u", guid);
+		return nullptr;
+	}
+
+	const Material* ResourceManager::GetMaterial(GUID_Lambda guid) const
+	{
+		auto& it = m_Materials.find(guid);
+
+		if (it != m_Materials.end())
+			return it->second;
+
+		D_LOG_WARNING("[ResourceManager]: GetMaterial called with invalid GUID %u", guid);
+		return nullptr;
+	}
+
+	ITexture* ResourceManager::GetTexture(GUID_Lambda guid)
+	{
+		auto& it = m_Textures.find(guid);
+
+		if (it != m_Textures.end())
+			return it->second;
+
+		D_LOG_WARNING("[ResourceManager]: GetTexture called with invalid GUID %u", guid);
+		return nullptr;
+	}
+
+	const ITexture* ResourceManager::GetTexture(GUID_Lambda guid) const
+	{
+		auto& it = m_Textures.find(guid);
+
+		if (it != m_Textures.end())
+			return it->second;
+
+		D_LOG_WARNING("[ResourceManager]: GetTexture called with invalid GUID %u", guid);
+		return nullptr;
+	}
+
+	SoundEffect3D* ResourceManager::GetSound(GUID_Lambda guid)
+	{
+		auto& it = m_Sounds.find(guid);
+
+		if (it != m_Sounds.end())
+			return it->second;
+
+		D_LOG_WARNING("[ResourceManager]: GetSound called with invalid GUID %u", guid);
+		return nullptr;
+	}
+
+	const SoundEffect3D* ResourceManager::GetSound(GUID_Lambda guid) const
+	{
+		auto& it = m_Sounds.find(guid);
+
+		if (it != m_Sounds.end())
+			return it->second;
+
+		D_LOG_WARNING("[ResourceManager]: GetSound called with invalid GUID %u", guid);
+		return nullptr;
+	}
+
 	GUID_Lambda ResourceManager::RegisterLoadedMesh(Mesh* pResource)
 	{
 		GUID_Lambda guid = GUID_NONE;
@@ -215,5 +324,18 @@ namespace LambdaEngine
 		m_Meshes[GUID_NONE]		= nullptr;
 		m_Materials[GUID_NONE]	= nullptr;
 		m_Textures[GUID_NONE]	= nullptr;
+
+		m_Textures[DEFAULT_COLOR_MAP] = nullptr; //Implement
+		m_Textures[DEFAULT_NORMAL_MAP] = nullptr; //Implement
+
+		Material* pDefaultMaterial = new Material();
+		pDefaultMaterial->pAlbedoMap				= m_Textures[DEFAULT_COLOR_MAP];
+		pDefaultMaterial->pNormalMap				= m_Textures[DEFAULT_NORMAL_MAP];
+		pDefaultMaterial->pAmbientOcclusionMap		= m_Textures[DEFAULT_COLOR_MAP];
+		pDefaultMaterial->pMetallicMap				= m_Textures[DEFAULT_COLOR_MAP];
+		pDefaultMaterial->pRoughnessMap				= m_Textures[DEFAULT_COLOR_MAP];
+
+		m_Materials[DEFAULT_MATERIAL] = pDefaultMaterial;
+
 	}
 }

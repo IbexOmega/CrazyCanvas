@@ -35,7 +35,6 @@ namespace LambdaEngine
 
 			Material* pMaterial = DBG_NEW Material();
 
-
 			if (material.diffuse_texname.length() > 0)
 			{
 				std::string texturePath = pDir + material.diffuse_texname;
@@ -115,7 +114,6 @@ namespace LambdaEngine
 			loadedMaterials[m] = pMaterial;
 		}
 
-		glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(0.005f));
 		for (uint32 s = 0; s < shapes.size(); s++)
 		{
 			tinyobj::shape_t& shape = shapes[s];

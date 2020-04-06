@@ -15,6 +15,7 @@ namespace LambdaEngine
 	class AudioDevice;
 	class ResourceManager;
 	class IBuffer;
+	class ITexture;
 
 	struct GameObject
 	{

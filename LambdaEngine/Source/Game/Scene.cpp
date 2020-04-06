@@ -7,6 +7,7 @@
 #include "Resources/Mesh.h"
 #include "Resources/Material.h"
 #include "Rendering/Core/API/IBuffer.h"
+#include "Rendering/Core/API/ITexture.h"
 
 #include "Log/Log.h"
 
@@ -15,12 +16,22 @@ namespace LambdaEngine
 	Scene::Scene(const IGraphicsDevice* pGraphicsDevice, const AudioDevice* pAudioDevice, const ResourceManager* pResourceManager) :
 		m_pGraphicsDevice(pGraphicsDevice),
 		m_pAudioDevice(pAudioDevice),
-		m_pResourceManager(pResourceManager)
+		m_pResourceManager(pResourceManager),
+		m_pSceneMaterialProperties(nullptr),
+		m_pSceneVertexBuffer(nullptr),
+		m_pSceneIndexBuffer(nullptr),
+		m_pSceneInstanceBuffer(nullptr),
+		m_pSceneMeshIndexBuffer(nullptr)
 	{
 	}
 
 	Scene::~Scene()
 	{
+		SAFEDELETE(m_pSceneMaterialProperties);
+		SAFEDELETE(m_pSceneVertexBuffer);
+		SAFEDELETE(m_pSceneIndexBuffer);
+		SAFEDELETE(m_pSceneInstanceBuffer);
+		SAFEDELETE(m_pSceneMeshIndexBuffer);
 	}
 
 	uint32 Scene::AddStaticGameObject(const GameObject& gameObject, glm::mat4& transform)
@@ -55,15 +66,24 @@ namespace LambdaEngine
 
 		MappedMesh& mappedMesh = m_MappedMeshes[meshIndex];
 		uint32 meshLocalMaterialIndex = 0;
-		
-		if (mappedMesh.GUIDToMappedMaterials.count(gameObject.Material) == 0)
+		uint32 globalMaterialIndex = 0;
+
+		if (m_GUIDToMaterials.count(gameObject.Material) == 0)
 		{
 			m_Materials.push_back(m_pResourceManager->GetMaterial(gameObject.Material));
-			uint32 globalMaterialIndex = m_Materials.size() - 1;
+			globalMaterialIndex = m_Materials.size() - 1;
 
+			m_GUIDToMaterials[gameObject.Material] = globalMaterialIndex;
+		}
+		else
+		{
+			globalMaterialIndex = m_GUIDToMaterials[gameObject.Material];
+		}
+
+		if (mappedMesh.GUIDToMappedMaterials.count(gameObject.Material) == 0)
+		{
 			MappedMaterial newMappedMaterial = {};
 			newMappedMaterial.MaterialIndex = globalMaterialIndex;
-
 			
 			newMappedMaterial.InstanceIndices.push_back(instanceIndex);
 
@@ -77,6 +97,8 @@ namespace LambdaEngine
 	uint32 Scene::AddDynamicGameObject(const GameObject& gameObject, glm::mat4& transform)
 	{
 		LOG_WARNING("[Scene]: Call to unimplemented function AddDynamicGameObject!");
+
+		return 0;
 	}
 
 	bool Scene::Finalize(const SceneDesc& desc)
@@ -88,7 +110,7 @@ namespace LambdaEngine
 		uint32 numSceneIndices = 0;
 
 		m_SortedInstances.clear();
-		m_SortedInstances.reserve(m_Instances.size());
+		m_SortedInstances.resize(m_Instances.size());
 
 		std::vector<IndirectMeshArgument>	meshIndexBuffer;
 
@@ -100,8 +122,8 @@ namespace LambdaEngine
 			uint32 newNumSceneVertices = numSceneVertices + pMesh->VertexCount;
 			uint32 newNumSceneIndices = numSceneIndices + pMesh->IndexCount;
 
-			sceneVertices.reserve(newNumSceneVertices);
-			sceneIndices.reserve(newNumSceneIndices);
+			sceneVertices.resize(newNumSceneVertices);
+			sceneIndices.resize(newNumSceneIndices);
 
 			memcpy(&sceneVertices[numSceneVertices], pMesh->pVertexArray, pMesh->VertexCount * sizeof(Vertex));
 			memcpy(&sceneIndices[numSceneIndices], pMesh->pIndexArray, pMesh->IndexCount * sizeof(uint32));
@@ -112,7 +134,7 @@ namespace LambdaEngine
 
 				uint32 instanceCount = mappedMaterial.InstanceIndices.size();
 				
-				for (uint32 instanceIndex = 0; instanceIndex < instanceCount; instanceIndex)
+				for (uint32 instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
 				{
 					m_SortedInstances.push_back(m_Instances[mappedMaterial.InstanceIndices[instanceIndex]]);
 				}
@@ -138,11 +160,11 @@ namespace LambdaEngine
 		std::vector<ITexture*> sceneAmbientOcclusionMaps;
 		std::vector<ITexture*> sceneMetallicMaps;
 		std::vector<ITexture*> sceneRoughnessMaps;
-		sceneAlbedoMaps.reserve(m_Materials.size());
-		sceneNormalMaps.reserve(m_Materials.size());
-		sceneAmbientOcclusionMaps.reserve(m_Materials.size());
-		sceneMetallicMaps.reserve(m_Materials.size());
-		sceneRoughnessMaps.reserve(m_Materials.size());
+		sceneAlbedoMaps.resize(m_Materials.size());
+		sceneNormalMaps.resize(m_Materials.size());
+		sceneAmbientOcclusionMaps.resize(m_Materials.size());
+		sceneMetallicMaps.resize(m_Materials.size());
+		sceneRoughnessMaps.resize(m_Materials.size());
 
 		std::vector<MaterialProperties> sceneMaterialProperties;
 		sceneMaterialProperties.reserve(m_Materials.size());
@@ -160,10 +182,10 @@ namespace LambdaEngine
 
 		{
 			BufferDesc sceneMaterialPropertiesBufferDesc = {};
-			sceneMaterialPropertiesBufferDesc.pName = "Scene Material Properties";
-			sceneMaterialPropertiesBufferDesc.MemoryType = EMemoryType::CPU_MEMORY;
-			sceneMaterialPropertiesBufferDesc.Flags = EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-			sceneMaterialPropertiesBufferDesc.SizeInBytes = sceneMaterialProperties.size() * sizeof(MaterialProperties);
+			sceneMaterialPropertiesBufferDesc.pName			= "Scene Material Properties";
+			sceneMaterialPropertiesBufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
+			sceneMaterialPropertiesBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+			sceneMaterialPropertiesBufferDesc.SizeInBytes	= sceneMaterialProperties.size() * sizeof(MaterialProperties);
 
 			m_pSceneMaterialProperties = m_pGraphicsDevice->CreateBuffer(sceneMaterialPropertiesBufferDesc);
 
@@ -175,7 +197,7 @@ namespace LambdaEngine
 		{
 			BufferDesc sceneVertexBufferDesc = {};
 			sceneVertexBufferDesc.pName						= "Scene Vertex Buffer";
-			sceneVertexBufferDesc.MemoryType				= EMemoryType::CPU_MEMORY;
+			sceneVertexBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
 			sceneVertexBufferDesc.Flags						= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 			sceneVertexBufferDesc.SizeInBytes				= sceneVertices.size() * sizeof(Vertex);
 
@@ -189,7 +211,7 @@ namespace LambdaEngine
 		{
 			BufferDesc sceneIndexBufferDesc = {};
 			sceneIndexBufferDesc.pName						= "Scene Index Buffer";
-			sceneIndexBufferDesc.MemoryType					= EMemoryType::CPU_MEMORY;
+			sceneIndexBufferDesc.MemoryType					= EMemoryType::MEMORY_CPU_VISIBLE;
 			sceneIndexBufferDesc.Flags						= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 			sceneIndexBufferDesc.SizeInBytes				= sceneIndices.size() * sizeof(uint32);
 
@@ -203,7 +225,7 @@ namespace LambdaEngine
 		{
 			BufferDesc sceneInstanceBufferDesc = {};
 			sceneInstanceBufferDesc.pName					= "Scene Instance Buffer";
-			sceneInstanceBufferDesc.MemoryType				= EMemoryType::CPU_MEMORY;
+			sceneInstanceBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
 			sceneInstanceBufferDesc.Flags					= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 			sceneInstanceBufferDesc.SizeInBytes				= m_SortedInstances.size() * sizeof(Instance);
 
@@ -218,7 +240,7 @@ namespace LambdaEngine
 		{
 			BufferDesc sceneMeshIndexBufferDesc = {};
 			sceneMeshIndexBufferDesc.pName					= "Scene Mesh Index Buffer";
-			sceneMeshIndexBufferDesc.MemoryType				= EMemoryType::CPU_MEMORY;
+			sceneMeshIndexBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
 			sceneMeshIndexBufferDesc.Flags					= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 			sceneMeshIndexBufferDesc.SizeInBytes			= meshIndexBuffer.size() * sizeof(IndirectMeshArgument);
 
