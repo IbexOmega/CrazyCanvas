@@ -24,24 +24,24 @@ namespace LambdaEngine
 	bool SamplerVK::Init(const SamplerDesc& desc)
 	{
 		VkSamplerCreateInfo samplerCreateInfo = {};
-		samplerCreateInfo.sType								= VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerCreateInfo.pNext								= nullptr;
-		samplerCreateInfo.flags								= NULL;
-		samplerCreateInfo.minFilter							= ConvertFilter(desc.MinFilter);
-		samplerCreateInfo.magFilter							= ConvertFilter(desc.MagFilter);
-		samplerCreateInfo.mipmapMode						= ConvertMipmapMode(desc.MipmapMode);
-		samplerCreateInfo.addressModeU						= ConvertAddressMode(desc.AddressModeU);
-		samplerCreateInfo.addressModeV						= ConvertAddressMode(desc.AddressModeV);
-		samplerCreateInfo.addressModeW						= ConvertAddressMode(desc.AddressModeW);
-		samplerCreateInfo.mipLodBias						= desc.MipLODBias;
-		samplerCreateInfo.anisotropyEnable					= desc.AnisotropyEnabled ? VK_TRUE : VK_FALSE;
-		samplerCreateInfo.maxAnisotropy						= desc.MaxAnisotropy;
-		samplerCreateInfo.compareEnable						= VK_FALSE;
-		samplerCreateInfo.compareOp							= VK_COMPARE_OP_ALWAYS;
-		samplerCreateInfo.minLod							= desc.MinLOD;
-		samplerCreateInfo.maxLod							= desc.MaxLOD;
-		samplerCreateInfo.borderColor						= VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
-		samplerCreateInfo.unnormalizedCoordinates			= VK_FALSE;
+		samplerCreateInfo.sType					    = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerCreateInfo.pNext					    = nullptr;
+		samplerCreateInfo.flags					    = 0;
+		samplerCreateInfo.minFilter				    = ConvertFilter(desc.MinFilter);
+		samplerCreateInfo.magFilter				    = ConvertFilter(desc.MagFilter);
+		samplerCreateInfo.mipmapMode			    = ConvertMipmapMode(desc.MipmapMode);
+		samplerCreateInfo.addressModeU			    = ConvertAddressMode(desc.AddressModeU);
+		samplerCreateInfo.addressModeV			    = ConvertAddressMode(desc.AddressModeV);
+		samplerCreateInfo.addressModeW			    = ConvertAddressMode(desc.AddressModeW);
+		samplerCreateInfo.mipLodBias			    = desc.MipLODBias;
+		samplerCreateInfo.anisotropyEnable		    = desc.AnisotropyEnabled ? VK_TRUE : VK_FALSE;
+		samplerCreateInfo.maxAnisotropy			    = desc.MaxAnisotropy;
+		samplerCreateInfo.compareEnable			    = VK_FALSE;
+		samplerCreateInfo.compareOp				    = VK_COMPARE_OP_ALWAYS;
+		samplerCreateInfo.minLod				    = desc.MinLOD;
+		samplerCreateInfo.maxLod				    = desc.MaxLOD;
+		samplerCreateInfo.borderColor			    = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+		samplerCreateInfo.unnormalizedCoordinates   = VK_FALSE;
 
 		VkResult result = vkCreateSampler(m_pDevice->Device, &samplerCreateInfo, nullptr, &m_Sampler);
 		if (result != VK_SUCCESS)
@@ -51,7 +51,7 @@ namespace LambdaEngine
 		}
 
 		SetName(desc.pName);
-
+        m_Desc = desc;
 		return true;
 	}
 
