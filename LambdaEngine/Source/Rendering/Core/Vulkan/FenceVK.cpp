@@ -67,10 +67,10 @@ namespace LambdaEngine
 		if (m_pDevice->vkSignalSemaphore)
 		{
 			VkSemaphoreSignalInfo signalInfo = { };
-			signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
-			signalInfo.pNext = nullptr;
-			signalInfo.value = signalValue;
-			signalInfo.semaphore = m_Semaphore;
+			signalInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
+			signalInfo.pNext		= nullptr;
+			signalInfo.value		= signalValue;
+			signalInfo.semaphore	= m_Semaphore;
 
 			VkResult result = m_pDevice->vkSignalSemaphore(m_pDevice->Device, &signalInfo);
 			if (result != VK_SUCCESS)

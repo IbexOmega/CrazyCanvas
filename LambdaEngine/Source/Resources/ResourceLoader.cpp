@@ -287,7 +287,7 @@ namespace LambdaEngine
 
 		BufferDesc vertexBufferDesc = {};
 		vertexBufferDesc.pName			= "Vertex Buffer (ResourceLoader)";
-		vertexBufferDesc.MemoryType		= EMemoryType::GPU_MEMORY;
+		vertexBufferDesc.MemoryType		= EMemoryType::MEMORY_GPU;
 		vertexBufferDesc.SizeInBytes	= sizeof(Vertex) * numVertices;
 		vertexBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;// | EBufferFlags::BUFFER_FLAG_COPY_DST | EBufferFlags::BUFFER_FLAG_COPY_SRC; Maybe need these later?
 
@@ -295,7 +295,7 @@ namespace LambdaEngine
 
 		BufferDesc indexBufferDesc = {};
 		indexBufferDesc.pName			= "Index Buffer (ResourceLoader)";
-		indexBufferDesc.MemoryType		= EMemoryType::GPU_MEMORY;
+		indexBufferDesc.MemoryType		= EMemoryType::MEMORY_GPU;
 		indexBufferDesc.SizeInBytes		= sizeof(uint32) * numIndices;
 		indexBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_INDEX_BUFFER;// | EBufferFlags::BUFFER_FLAG_COPY_DST | EBufferFlags::BUFFER_FLAG_COPY_SRC; Maybe need these later?
 

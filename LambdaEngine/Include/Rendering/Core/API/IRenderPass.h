@@ -34,8 +34,8 @@ namespace LambdaEngine
 	{
 		uint32 SrcSubpass					= 0xFFFFFFFF;
 		uint32 DstSubpass					= 0xFFFFFFFF;
-		FPipelineStageFlags SrcStageMask	= FPipelineStageFlags::PIPELINE_STAGE_UNKNOWN;
-		FPipelineStageFlags DstStageMask	= FPipelineStageFlags::PIPELINE_STAGE_UNKNOWN;
+		FPipelineStageFlags SrcStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+		FPipelineStageFlags DstStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 		FAccessFlags SrcAccessMask			= FAccessFlags::ACCESS_FLAG_UNKNOWN;
 		FAccessFlags DstAccessMask			= FAccessFlags::ACCESS_FLAG_UNKNOWN;
 	};

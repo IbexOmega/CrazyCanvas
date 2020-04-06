@@ -106,7 +106,7 @@ namespace LambdaEngine
 
 				inputAttachment = {};
 
-				if (attachmentState != TEXTURE_STATE_UNKNOWN)
+				if (attachmentState != ETextureState::TEXTURE_STATE_UNKNOWN)
 				{
 					inputAttachment.attachment		= a;
 					inputAttachment.layout			= ConvertTextureState(attachmentState);
@@ -130,7 +130,7 @@ namespace LambdaEngine
 
 					colorAttachment = {};
 
-					if (colorAttachmentState != TEXTURE_STATE_UNKNOWN)
+					if (colorAttachmentState != ETextureState::TEXTURE_STATE_UNKNOWN)
 					{
 						colorAttachment.attachment		= a;
 						colorAttachment.layout			= ConvertTextureState(colorAttachmentState);
@@ -148,7 +148,7 @@ namespace LambdaEngine
 
 					resolveAttachment = {};
 
-					if (resolveAttachmentState != TEXTURE_STATE_UNKNOWN)
+					if (resolveAttachmentState != ETextureState::TEXTURE_STATE_UNKNOWN)
 					{
 						resolveAttachment.attachment	= a;
 						resolveAttachment.layout		= ConvertTextureState(resolveAttachmentState);

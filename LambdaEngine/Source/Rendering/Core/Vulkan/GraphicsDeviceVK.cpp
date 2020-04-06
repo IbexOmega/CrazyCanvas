@@ -200,7 +200,7 @@ namespace LambdaEngine
 	ICommandList* GraphicsDeviceVK::CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc) const
 	{
         CommandListVK* pCommandListVK = DBG_NEW CommandListVK(this);
-        if (pCommandListVK->Init(pAllocator, desc))
+        if (!pCommandListVK->Init(pAllocator, desc))
         {
             pCommandListVK->Release();
             return nullptr;
@@ -342,7 +342,7 @@ namespace LambdaEngine
 		{
 			return m_DeviceQueueFamilyIndices.TransferFamily;
 		}
-		else if (type == ECommandQueueType::COMMAND_QUEUE_IGNORE)
+		else if (type == ECommandQueueType::COMMAND_QUEUE_NONE)
 		{
 			return VK_QUEUE_FAMILY_IGNORED;
 		}
