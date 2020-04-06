@@ -2,6 +2,7 @@
 
 #include "ClientBase.h"
 #include "ISocketTCP.h"
+#include "IClientTCP.h"
 #include "IClientTCPHandler.h"
 
 #define TCP_PING_INTERVAL_NANO_SEC	1000000000
@@ -11,7 +12,7 @@ namespace LambdaEngine
 {
 	class IRemoteClientTCPHandler;
 
-	class LAMBDA_API ClientTCP : public ClientBase
+	class LAMBDA_API ClientTCP : public ClientBase<IClientTCP>
 	{
 		friend class SocketFactory;
 		friend class ServerTCP;
@@ -46,11 +47,6 @@ namespace LambdaEngine
 		*/
 		bool IsReadyToConnect() const;
 
-		/*
-		* return - true if this instance is on the server side, otherwise false.
-		*/
-		bool IsServerSide() const;
-
 	protected:
 		virtual void OnTransmitterStarted() override;
 		virtual void OnReceiverStarted() override;
@@ -80,7 +76,6 @@ namespace LambdaEngine
 		SpinLock m_LockStart;
 		IClientTCPHandler* m_pClientHandler;
 		IRemoteClientTCPHandler* m_pRemoteClientHandler;
-		bool m_ServerSide;
 		int64 m_TimerReceived;
 		int64 m_TimerTransmit;
 		uint32 m_NrOfPingTransmitted;

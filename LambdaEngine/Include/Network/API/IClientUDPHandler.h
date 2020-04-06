@@ -4,7 +4,7 @@
 
 namespace LambdaEngine
 {
-	class ClientUDP;
+	class IClientUDP;
 	class NetworkPacket;
 
 	class LAMBDA_API IClientUDPHandler
@@ -18,20 +18,20 @@ namespace LambdaEngine
 		* client  - The client
 		* packet  - The packet received
 		*/
-		virtual void OnClientPacketReceivedUDP(ClientUDP* client, NetworkPacket* packet) = 0;
+		virtual void OnClientPacketReceivedUDP(IClientUDP* client, NetworkPacket* packet) = 0;
 
 		/*
 		* Called when a client receives an error
 		*
 		* client  - The client
 		*/
-		virtual void OnClientErrorUDP(ClientUDP* client) = 0;
+		virtual void OnClientErrorUDP(IClientUDP* client) = 0;
 
 		/*
 		* Called when a client stops from either Release or an error.
 		*
 		* client  - The client
 		*/
-		virtual void OnClientStoppedUDP(ClientUDP* client) = 0;
+		virtual void OnClientStoppedUDP(IClientUDP* client) = 0;
 	};
 }

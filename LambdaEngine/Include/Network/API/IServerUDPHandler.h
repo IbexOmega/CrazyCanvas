@@ -1,21 +1,22 @@
 #pragma once
-
 #include "Defines.h"
-#include "NetworkPacket.h"
 
 namespace LambdaEngine
 {
+	class IClientUDP;
+	class NetworkPacket;
+	class IClientUDPHandler;
+
 	class LAMBDA_API IServerUDPHandler
 	{
 	public:
 		DECL_INTERFACE(IServerUDPHandler);
 
 		/*
-		* Called when the server receives a new packet
+		* Called to create a client handler for a ClientUDP object
 		*
-		* address - The senders inet address
-		* port	  - The senders port
+		* return  - a new handler
 		*/
-		virtual void OnPacketReceivedUDP(NetworkPacket* packet, const std::string& address, uint16 port) = 0;
+		virtual IClientUDPHandler* CreateClientHandlerUDP() = 0;
 	};
 }

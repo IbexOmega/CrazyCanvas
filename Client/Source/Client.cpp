@@ -14,6 +14,8 @@
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/NetworkPacket.h"
 
+#include "Network/API/ClientUDP.h"
+
 Client::Client()
 {
 	using namespace LambdaEngine;
@@ -33,37 +35,37 @@ Client::~Client()
 	m_pClientUDP->Release();
 }
 
-void Client::OnClientPacketReceivedUDP(LambdaEngine::ClientUDP* client, LambdaEngine::NetworkPacket* packet)
+void Client::OnClientPacketReceivedUDP(LambdaEngine::IClientUDP* client, LambdaEngine::NetworkPacket* packet)
 {
 	LOG_MESSAGE("UDP Packet Received");
 }
 
-void Client::OnClientErrorUDP(LambdaEngine::ClientUDP* client)
+void Client::OnClientErrorUDP(LambdaEngine::IClientUDP* client)
 {
 	LOG_MESSAGE("OnClientErrorUDP");
 }
 
-void Client::OnClientStoppedUDP(LambdaEngine::ClientUDP* client)
+void Client::OnClientStoppedUDP(LambdaEngine::IClientUDP* client)
 {
 	LOG_MESSAGE("OnClientStoppedUDP");
 }
 
-void Client::OnClientConnected(LambdaEngine::ClientTCP* client)
+void Client::OnClientConnectedTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientConnected");
 }
 
-void Client::OnClientDisconnected(LambdaEngine::ClientTCP* client)
+void Client::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientDisconnected");
 }
 
-void Client::OnClientFailedConnecting(LambdaEngine::ClientTCP* client)
+void Client::OnClientFailedConnectingTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientFailedConnecting");
 }
 
-void Client::OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)
+void Client::OnClientPacketReceivedTCP(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)
 {
 	using namespace LambdaEngine;
 

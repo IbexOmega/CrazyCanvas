@@ -2,6 +2,7 @@
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/NetworkPacket.h"
 #include "Network/API/IServerUDPHandler.h"
+#include "Network/API/RemoteClientUDP.h"
 
 #include "Log/Log.h"
 #include "Threading/Thread.h"
@@ -49,7 +50,16 @@ namespace LambdaEngine
 				packet.UnPack();
 				if (bytesReceived == packet.GetSize())
 				{
-					m_pHandler->OnPacketReceivedUDP(&packet, address, port);
+					//LOCK
+					uint64 hash = Hash(address, port);
+					RemoteClientUDP* client = m_Clients[hash];
+					if (!client)
+					{
+						IClientUDPHandler* handler = m_pHandler->CreateClientHandlerUDP();
+						client = new RemoteClientUDP(address, port, hash, this, handler);
+						m_Clients[hash] = client;
+					}
+					client->OnPacketReceived(&packet);
 				}
 			}
 			else
@@ -61,6 +71,12 @@ namespace LambdaEngine
 
 	void ServerUDP::OnThreadTerminated()
 	{
+		//LOCK
+		for (auto client : m_Clients)
+		{
+			client.second->Release();
+		}
+		m_Clients.clear();
 		delete m_pServerSocket;
 	}
 
@@ -91,5 +107,11 @@ namespace LambdaEngine
 		}
 
 		return serverSocket;
+	}
+
+	uint64 ServerUDP::Hash(const std::string& address, uint64 port)
+	{
+		std::hash<std::string> hasher;	
+		return port ^ hasher(address) + 0x9e3779b9 + (port << 6) + (port >> 2);;
 	}
 }

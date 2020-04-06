@@ -14,22 +14,22 @@ ClientTCPHandler::~ClientTCPHandler()
 {
 }
 
-void ClientTCPHandler::OnClientConnected(LambdaEngine::ClientTCP* client)
+void ClientTCPHandler::OnClientConnectedTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientConnected");
 }
 
-void ClientTCPHandler::OnClientDisconnected(LambdaEngine::ClientTCP* client)
+void ClientTCPHandler::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientDisconnected");
 }
 
-void ClientTCPHandler::OnClientFailedConnecting(LambdaEngine::ClientTCP* client)
+void ClientTCPHandler::OnClientFailedConnectingTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientFailedConnecting");
 }
 
-void ClientTCPHandler::OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)
+void ClientTCPHandler::OnClientPacketReceivedTCP(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)
 {
 	if (packet->ReadPacketType() == LambdaEngine::PACKET_TYPE_USER_DATA)
 	{

@@ -15,6 +15,7 @@
 namespace LambdaEngine
 {
 	class IClientTCPHandler;
+	class IClientUDP;
 }
 
 class Server : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IServerTCPHandler, public LambdaEngine::IServerUDPHandler
@@ -23,11 +24,11 @@ public:
 	Server();
 	~Server();
 
-	virtual void OnPacketReceivedUDP(LambdaEngine::NetworkPacket* packet, const std::string& address, uint16 port) override;
-	virtual LambdaEngine::IClientTCPHandler* CreateClientHandler() override;
-	virtual bool OnClientAccepted(LambdaEngine::ClientTCP* client) override;
-	virtual void OnClientConnected(LambdaEngine::ClientTCP* client) override;
-	virtual void OnClientDisconnected(LambdaEngine::ClientTCP* client) override;
+	virtual LambdaEngine::IClientUDPHandler* CreateClientHandlerUDP() override;
+	virtual LambdaEngine::IClientTCPHandler* CreateClientHandlerTCP() override;
+	virtual bool OnClientAcceptedTCP(LambdaEngine::ClientTCP* client) override;
+	virtual void OnClientConnectedTCP(LambdaEngine::ClientTCP* client) override;
+	virtual void OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client) override;
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp dt) override;
@@ -43,5 +44,6 @@ private:
 private:
 	LambdaEngine::ServerTCP* m_pServerTCP;
 	LambdaEngine::ServerUDP* m_pServerUDP;
-	std::set<LambdaEngine::IClientTCPHandler*> m_ClientHandlers;
+	std::set<LambdaEngine::IClientTCPHandler*> m_ClientTCPHandlers;
+	std::set<LambdaEngine::IClientUDPHandler*> m_ClientUDPHandlers;
 };
