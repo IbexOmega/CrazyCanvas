@@ -3,6 +3,8 @@
 
 namespace LambdaEngine
 {
+    class IGraphicsDevice;
+    
     class IDeviceChild
     {
     public:
@@ -29,5 +31,12 @@ namespace LambdaEngine
         * pName - A nullterminated string for the resource. The string is copied and can therefore be temporary.
         */
         virtual void SetName(const char* pName) = 0;
+        
+        /*
+         * Returns the device that created this object
+         *
+         * return - A pointer to the device that created this object
+         */
+        virtual const IGraphicsDevice*  GetDevice() const = 0;
     };
 }

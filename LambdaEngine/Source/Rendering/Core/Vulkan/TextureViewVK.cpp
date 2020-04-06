@@ -1,0 +1,106 @@
+#include "Log/Log.h"
+
+#include "Rendering/Core/Vulkan/TextureViewVK.h"
+#include "Rendering/Core/Vulkan/TextureVK.h"
+#include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
+
+#include "VulkanHelpers.h"
+
+namespace LambdaEngine
+{
+    TextureViewVK::TextureViewVK(const GraphicsDeviceVK* pDevice)
+        : TDeviceChild(pDevice),
+        m_Desc()
+    {
+    }
+
+    TextureViewVK::~TextureViewVK()
+    {
+        if (m_ImageView != VK_NULL_HANDLE)
+        {
+            vkDestroyImageView(m_pDevice->Device, m_ImageView, nullptr);
+            m_ImageView = VK_NULL_HANDLE;
+        }
+        
+        SAFERELEASE(m_pTexture);
+    }
+
+    bool TextureViewVK::Init(const TextureViewDesc& desc)
+    {
+        TextureVK*  pTextureVk  = reinterpret_cast<TextureVK*>(desc.pTexture);
+        TextureDesc textureDesc = pTextureVk->GetDesc();
+        
+        ASSERT(desc.Format == textureDesc.Format);
+        
+        VkImageViewCreateInfo createInfo = {};
+        createInfo.sType                            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.pNext                            = nullptr;
+        createInfo.flags                            = 0;
+        createInfo.format                           = ConvertFormat(desc.Format);
+        createInfo.image                            = pTextureVk->GetImage();
+        createInfo.components.r                     = VK_COMPONENT_SWIZZLE_R;
+        createInfo.components.g                     = VK_COMPONENT_SWIZZLE_G;
+        createInfo.components.b                     = VK_COMPONENT_SWIZZLE_B;
+        createInfo.components.a                     = VK_COMPONENT_SWIZZLE_A;
+        createInfo.subresourceRange.baseArrayLayer  = desc.ArrayIndex;
+        createInfo.subresourceRange.layerCount      = desc.ArrayCount;
+        createInfo.subresourceRange.baseMipLevel    = desc.Miplevel;
+        createInfo.subresourceRange.levelCount      = desc.MiplevelCount;
+        
+        if (desc.Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET   ||
+            desc.Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE ||
+            desc.Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS)
+        {
+            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        }
+        else if (desc.Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL)
+        {
+            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        }
+        
+        if (desc.Type == ETextureViewType::TEXTURE_VIEW_1D)
+        {
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_1D;
+        }
+        else if (desc.Type == ETextureViewType::TEXTURE_VIEW_2D)
+        {
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        }
+        else if (desc.Type == ETextureViewType::TEXTURE_VIEW_3D)
+        {
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
+        }
+        else if (desc.Type == ETextureViewType::TEXTURE_VIEW_CUBE)
+        {
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+        }
+        
+        VkResult result = vkCreateImageView(m_pDevice->Device, &createInfo, nullptr, &m_ImageView);
+        if (result != VK_SUCCESS)
+        {
+            LOG_VULKAN_ERROR("[TextureViewVK]: Failed to create view", result);
+            return false;
+        }
+        
+        SetName(desc.pName);
+        m_Desc = desc;
+        
+        //Increase refcount of texture
+        pTextureVk->AddRef();
+        m_pTexture = pTextureVk;
+        return true;
+    }
+
+    void TextureViewVK::SetName(const char* pName)
+    {
+        m_pDevice->SetVulkanObjectName(pName, (uint64)m_ImageView, VK_OBJECT_TYPE_IMAGE_VIEW);
+    }
+
+    ITexture* TextureViewVK::GetTexture()
+    {
+        TextureVK* pTextureVk = reinterpret_cast<TextureVK*>(m_pTexture);
+        pTextureVk->Release();
+        
+        return pTextureVk;
+    }
+}

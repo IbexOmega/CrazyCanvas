@@ -41,6 +41,7 @@ namespace LambdaEngine
 	private:
 		VkImage			m_Image		= VK_NULL_HANDLE;
 		VkDeviceMemory	m_Memory	= VK_NULL_HANDLE;
-		TextureDesc		m_Desc;
+        
+		TextureDesc m_Desc;
 	};
 }

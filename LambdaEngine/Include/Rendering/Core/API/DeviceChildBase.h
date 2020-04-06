@@ -1,6 +1,10 @@
 #pragma once
 #include "IDeviceChild.h"
 
+#include "Threading/SpinLock.h"
+
+#include <mutex>
+
 namespace LambdaEngine
 {
 	template <typename TGraphicsDevice, typename IBase>
@@ -19,7 +23,8 @@ namespace LambdaEngine
 
 		virtual uint64 Release() override
 		{
-			//TODO: This needs to be synced with a mutex of some kind
+            std::scoped_lock<SpinLock> lock(m_Lock);
+            
 			uint64 strongReferences = --m_StrongReferences;
 			if (strongReferences < 1)
 			{
@@ -31,14 +36,22 @@ namespace LambdaEngine
 
 		virtual uint64 AddRef() override
 		{
-			//TODO: This needs to be syncted with a mutex of some kind
+            std::scoped_lock<SpinLock> lock(m_Lock);
 			return ++m_StrongReferences;
 		}
+        
+        FORCEINLINE virtual const IGraphicsDevice* GetDevice() const override
+        {
+            //Cast the device to the correct type, this way we do not actually need to include any implementation.
+            //Not the prettiest solution but it works
+            return reinterpret_cast<const IGraphicsDevice*>(m_pDevice);
+        }
 
 	protected:
 		const TGraphicsDevice* const m_pDevice;
 
 	private:
-		uint64 m_StrongReferences;
+        SpinLock    m_Lock;
+		uint64      m_StrongReferences;
 	};
 }
