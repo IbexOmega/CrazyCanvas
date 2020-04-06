@@ -31,5 +31,5 @@ namespace LambdaEngine
 	   * return - Returns a valid handle on success otherwise zero
 	   */
 		virtual uint64      GetHandle() const = 0;
-	}
+	};
 }
