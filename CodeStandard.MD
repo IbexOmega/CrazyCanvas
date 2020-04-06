@@ -141,7 +141,8 @@ public:
 
 ### Enums
 * Since enums are constants, they should be written in capital letters
-* Enums should use the capital letter 'E' as prefix.
+* Enums should use the capital letter 'F' as prefix if they are used as flags.
+* Enums should use the capital letter 'E' as prefix if they are **not** used as flags.
 * Enum class should be preferred, unless they mostly will be used as integers, like flags
 ```
 enum class EMyEnum : uint16
@@ -152,10 +153,16 @@ enum class EMyEnum : uint16
 
 * Enums **not** using the class keyword should prefix all enumerators with the name of the enum 
 ```
-enum EMyFlags
+enum FMyFlags
 {
   MY_FLAG_FLAG = (1 << 0),
   MY_FLAG_FLAG = (1 << 1),
+};
+
+enum EMyEnum
+{
+  MY_ENUM_0 = 0,
+  MY_ENUM_1 = 1,
 };
 ```
 
