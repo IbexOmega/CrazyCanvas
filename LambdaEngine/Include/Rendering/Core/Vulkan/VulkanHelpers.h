@@ -103,7 +103,7 @@ namespace LambdaEngine
 		return VK_SHADER_STAGE_ALL;
 	}
 
-    inline VkPipelineStageFlags ConvertPipelineStage(FPipelineStageFlags pipelineStage)
+    inline VkPipelineStageFlagBits ConvertPipelineStage(FPipelineStageFlags pipelineStage)
     {
         switch (pipelineStage)
         {
@@ -130,10 +130,60 @@ namespace LambdaEngine
         case PIPELINE_STAGE_TASK_SHADER:                  return VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
         case PIPELINE_STAGE_MESH_SHADER:                  return VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV;
         case PIPELINE_STAGE_UNKNOWN:
-        default: return VkPipelineStageFlags(0);
+        default: return VkPipelineStageFlagBits(0);
         }
     }
 
+    inline uint32 ConvertPipelineStageMask(uint32 pipelineStageMask)
+    {
+        uint32 result = 0;
+        if (pipelineStageMask & PIPELINE_STAGE_TOP)
+            result |= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_BOTTOM)
+            result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_DRAW_INDIRECT)
+            result |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_VERTEX_INPUT)
+            result |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_VERTEX_SHADER)
+            result |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_HULL_SHADER)
+            result |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_DOMAIN_SHADER)
+            result |= VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_GEOMETRY_SHADER)
+            result |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_PIXEL_SHADER)
+            result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_EARLY_FRAGMENT_TESTS)
+            result |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_LATE_FRAGMENT_TESTS)
+            result |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_RENDER_TARGET_OUTPUT)
+            result |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_COMPUTE_SHADER)
+            result |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_COPY)
+            result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_HOST)
+            result |= VK_PIPELINE_STAGE_HOST_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_STREAM_OUTPUT)
+            result |= VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT;
+        if (pipelineStageMask & PIPELINE_STAGE_CONDITIONAL_RENDERING)
+            result |= VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
+        if (pipelineStageMask & PIPELINE_STAGE_RAY_TRACING_SHADER)
+            result |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+        if (pipelineStageMask & PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD)
+            result |= VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+        if (pipelineStageMask & PIPELINE_STAGE_SHADING_RATE_TEXTURE)
+            result |= VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV;
+        if (pipelineStageMask & PIPELINE_STAGE_TASK_SHADER)
+            result |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
+        if (pipelineStageMask & PIPELINE_STAGE_MESH_SHADER)
+            result |= VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV;
+        
+        return result;
+    }
 	inline VkAccessFlags ConvertAccessFlags(FAccessFlags accessFlags)
 	{
 		VkAccessFlags vkAccessFlags = 0;
@@ -570,7 +620,7 @@ namespace LambdaEngine
         case VK_ERROR_FRAGMENTATION:							    return "A descriptor pool creation has failed due to fragmentation.";
         case VK_ERROR_NOT_PERMITTED_EXT:							return "VK_ERROR_NOT_PERMITTED_EXT";
         case VK_ERROR_INVALID_DEVICE_ADDRESS_EXT:					return "A buffer creation failed because the requested address is not available.";
-        case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:			return "An operation on a swapchain created with VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT failed as it did not have exlusive full-screen access. This may occur due to implementation-dependent reasons, outside of the application’s control.";
+        case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:			return "An operation on a swapchain created with VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT failed as it did not have exlusive full-screen access. This may occur due to implementation-dependent reasons, outside of the applicationï¿½s control.";
         case VK_ERROR_INCOMPATIBLE_VERSION_KHR:                     return "VK_ERROR_INCOMPATIBLE_VERSION_KHR";
         case VK_THREAD_IDLE_KHR:                                    return "A deferred operation is not complete but there is currently no work for this thread to do at the time of this call.";
         case VK_THREAD_DONE_KHR:                                    return "A deferred operation is not complete but there is no work remaining to assign to additional threads.";

@@ -49,10 +49,10 @@ namespace LambdaEngine
 		virtual IPipelineState*						CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc)							const override;
 		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const override;
 		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const override;
-		virtual ICommandList*						CreateCommandList(ICommandAllocator* pAllocator, ECommandListType commandListType)			const override;
+		virtual ICommandList*						CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc)			    const override;
 		virtual ICommandAllocator*					CreateCommandAllocator(ECommandQueueType queueType)											const override;
 		virtual ICommandQueue*						CreateCommandQueue(ECommandQueueType queueType)												const override;
-		virtual IFence*								CreateFence(uint64 initalValue)																const override;
+		virtual IFence*								CreateFence(const FenceDesc& desc)															const override;
 		
 		//UTIL
 		void SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type)	const;

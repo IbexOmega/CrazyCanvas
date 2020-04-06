@@ -15,6 +15,7 @@
 #include "Rendering/Core/Vulkan/CommandQueueVK.h"
 #include "Rendering/Core/Vulkan/FenceVK.h"
 #include "Rendering/Core/Vulkan/CommandAllocatorVK.h"
+#include "Rendering/Core/Vulkan/CommandListVK.h"
 
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
@@ -195,11 +196,16 @@ namespace LambdaEngine
 		return pBLAS;
 	}
 
-	ICommandList* GraphicsDeviceVK::CreateCommandList(ICommandAllocator* pAllocator, ECommandListType commandListType) const
+	ICommandList* GraphicsDeviceVK::CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc) const
 	{
-		UNREFERENCED_VARIABLE(pAllocator);
-		UNREFERENCED_VARIABLE(commandListType);
-		return nullptr;
+        CommandListVK* pCommandListVK = DBG_NEW CommandListVK(this);
+        if (pCommandListVK->Init(pAllocator, desc))
+        {
+            pCommandListVK->Release();
+            return nullptr;
+        }
+        
+		return pCommandListVK;
 	}
 
 	ICommandAllocator* GraphicsDeviceVK::CreateCommandAllocator(ECommandQueueType queueType) const
@@ -244,10 +250,10 @@ namespace LambdaEngine
 		return pQueue;
 	}
 
-	IFence* GraphicsDeviceVK::CreateFence(uint64 initalValue) const
+	IFence* GraphicsDeviceVK::CreateFence(const FenceDesc& desc) const
 	{
 		FenceVK* pFence = DBG_NEW FenceVK(this);
-		if (!pFence->Init(initalValue))
+		if (!pFence->Init(desc))
 		{
 			pFence->Release();
 			return nullptr;

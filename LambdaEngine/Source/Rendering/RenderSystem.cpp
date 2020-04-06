@@ -7,6 +7,7 @@
 #include "Rendering/Core/API/IFence.h"
 #include "Rendering/Core/API/ISwapChain.h"
 #include "Rendering/Core/API/ICommandAllocator.h"
+#include "Rendering/Core/API/ICommandList.h"
 
 #include "Application/API/PlatformApplication.h"
 
@@ -77,7 +78,7 @@ namespace LambdaEngine
 		ITexture* pTexture = s_pGraphicsDevice->CreateTexture(textureDesc);
 
 		SwapChainDesc swapChainDesc = { };
-		swapChainDesc.pName			= "Main Window";
+		swapChainDesc.pName			= "Main Window SwapChain";
 		swapChainDesc.BufferCount	= 3;
 		swapChainDesc.Format		= EFormat::B8G8R8A8_UNORM;
 		swapChainDesc.Width			= 0;
@@ -86,11 +87,24 @@ namespace LambdaEngine
 
 		ISwapChain* pSwapChain = s_pGraphicsDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
 
-		IFence* pFence = s_pGraphicsDevice->CreateFence(0);
+        FenceDesc fenceDesc = { };
+        fenceDesc.pName         = "Main Fence";
+        fenceDesc.InitalValue   = 0;
+		IFence* pFence = s_pGraphicsDevice->CreateFence(fenceDesc);
         pFence->Signal(1);
             
-		ICommandAllocator* pCommandAllocator = s_pGraphicsDevice->CreateCommandAllocator(ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
-
+		ICommandAllocator* pCommandAllocator    = s_pGraphicsDevice->CreateCommandAllocator(ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+        pCommandAllocator->SetName("Graphics Command Allocator");
+        
+        CommandListDesc commandListDesc = { };
+        commandListDesc.pName           = "Primary CommandList";
+        commandListDesc.Flags           = FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+        commandListDesc.CommandListType = ECommandListType::COMMANDLIST_PRIMARY;
+        
+        ICommandList* pCommandList = s_pGraphicsDevice->CreateCommandList(pCommandAllocator, commandListDesc);
+        
+        
+        SAFERELEASE(pCommandList);
 		SAFERELEASE(pCommandAllocator);
 		SAFERELEASE(pFence);
 		SAFERELEASE(pSwapChain);
