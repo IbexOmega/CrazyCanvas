@@ -48,6 +48,27 @@ namespace LambdaEngine
         }
     }
 
+	inline VkAttachmentLoadOp ConvertLoadOp(ELoadOp loadOp)
+	{
+		switch (loadOp)
+		{
+		case ELoadOp::CLEAR:		return VK_ATTACHMENT_LOAD_OP_CLEAR;
+		case ELoadOp::LOAD:			return VK_ATTACHMENT_LOAD_OP_LOAD;
+		case ELoadOp::DONT_CARE:	return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		default:					return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		}
+	}
+
+	inline VkAttachmentStoreOp ConvertStoreOp(EStoreOp storeOp)
+	{
+		switch (storeOp)
+		{
+		case EStoreOp::STORE:		return VK_ATTACHMENT_STORE_OP_STORE;
+		case EStoreOp::DONT_CARE:	return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		default:					return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		}
+	}
+
 	inline bool CreateShadeModule(VkDevice device, VkShaderModule shaderModule, const char* pSource, uint32 sourceSize)
 	{
 		VkShaderModuleCreateInfo createInfo = {};
@@ -82,7 +103,7 @@ namespace LambdaEngine
 		return VK_SHADER_STAGE_ALL;
 	}
 
-    inline VkPipelineStageFlagBits ConvertPipelineStage(EPipelineStage pipelineStage)
+    inline VkPipelineStageFlagBits ConvertPipelineStage(FPipelineStageFlags pipelineStage)
     {
         switch (pipelineStage)
         {
@@ -163,6 +184,41 @@ namespace LambdaEngine
         
         return result;
     }
+	inline VkAccessFlags ConvertAccessFlags(FAccessFlags accessFlags)
+	{
+		VkAccessFlags vkAccessFlags = 0;
+
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_INDIRECT_COMMAND_READ)					? VK_ACCESS_INDIRECT_COMMAND_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_INDEX_READ)								? VK_ACCESS_INDEX_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_VERTEX_ATTRIBUTE_READ)					? VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_UNIFORM_READ)							? VK_ACCESS_UNIFORM_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_INPUT_ATTACHMENT_READ)					? VK_ACCESS_INPUT_ATTACHMENT_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_SHADER_READ)							? VK_ACCESS_SHADER_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_SHADER_WRITE)							? VK_ACCESS_SHADER_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COLOR_ATTACHMENT_READ)					? VK_ACCESS_COLOR_ATTACHMENT_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COLOR_ATTACHMENT_WRITE)					? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_DEPTH_STENCIL_ATTACHMENT_READ)			? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_DEPTH_STENCIL_ATTACHMENT_WRITE)			? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFER_READ)							? VK_ACCESS_TRANSFER_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFER_WRITE)							? VK_ACCESS_TRANSFER_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_HOST_READ)								? VK_ACCESS_HOST_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_HOST_WRITE)								? VK_ACCESS_HOST_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_MEMORY_READ)							? VK_ACCESS_MEMORY_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_MEMORY_WRITE)							? VK_ACCESS_MEMORY_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFORM_FEEDBACK_WRITE)				? VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFORM_FEEDBACK_COUNTER_READ)		? VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFORM_FEEDBACK_COUNTER_WRITE)		? VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_CONDITIONAL_RENDERING_READ)				? VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COLOR_ATTACHMENT_READ_NONCOHERENT)		? VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_ACCELERATION_STRUCTURE_READ)			? VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_ACCELERATION_STRUCTURE_WRITE)			? VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_SHADING_RATE_IMAGE_READ)				? VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_FRAGMENT_DENSITY_MAP_READ)				? VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COMMAND_PREPROCESS_READ)				? VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV : 0;
+		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COMMAND_PREPROCESS_WRITE)				? VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV : 0;
+
+		return vkAccessFlags;
+	}
 
 
     inline VkImageLayout ConvertTextureState(ETextureState textureState)
@@ -564,7 +620,7 @@ namespace LambdaEngine
         case VK_ERROR_FRAGMENTATION:							    return "A descriptor pool creation has failed due to fragmentation.";
         case VK_ERROR_NOT_PERMITTED_EXT:							return "VK_ERROR_NOT_PERMITTED_EXT";
         case VK_ERROR_INVALID_DEVICE_ADDRESS_EXT:					return "A buffer creation failed because the requested address is not available.";
-        case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:			return "An operation on a swapchain created with VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT failed as it did not have exlusive full-screen access. This may occur due to implementation-dependent reasons, outside of the application’s control.";
+        case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:			return "An operation on a swapchain created with VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT failed as it did not have exlusive full-screen access. This may occur due to implementation-dependent reasons, outside of the applicationï¿½s control.";
         case VK_ERROR_INCOMPATIBLE_VERSION_KHR:                     return "VK_ERROR_INCOMPATIBLE_VERSION_KHR";
         case VK_THREAD_IDLE_KHR:                                    return "A deferred operation is not complete but there is currently no work for this thread to do at the time of this call.";
         case VK_THREAD_DONE_KHR:                                    return "A deferred operation is not complete but there is no work remaining to assign to additional threads.";

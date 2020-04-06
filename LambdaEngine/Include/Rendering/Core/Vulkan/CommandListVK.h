@@ -47,7 +47,7 @@ namespace LambdaEngine
 		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)	override;
 		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)      override;
 
-		virtual void PipelineTextureBarriers(EPipelineStage srcStage, EPipelineStage dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount) override;
+		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount) override;
 
 		virtual void GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter) override;
 

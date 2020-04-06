@@ -187,7 +187,7 @@ namespace LambdaEngine
 		vkCmdCopyBufferToImage(m_CommandList, pVkSrc->GetBuffer(), pVkDst->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 	}
 
-	void CommandListVK::PipelineTextureBarriers(EPipelineStage srcStage, EPipelineStage dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount)
+	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount)
 	{
 		ASSERT(textureBarrierCount < MAX_IMAGE_BARRIERS);
 
@@ -215,7 +215,7 @@ namespace LambdaEngine
 			m_ImageBarriers[i].srcAccessMask					= 0;
 			m_ImageBarriers[i].dstAccessMask					= 0;
 
-			if (barrier.TextureFlags == ETextureFlags::TEXTURE_FLAG_DEPTH_STENCIL)
+			if (barrier.TextureFlags == FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL)
 			{
 				m_ImageBarriers[i].subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 			}
@@ -259,7 +259,7 @@ namespace LambdaEngine
 		textureBarrier.ArrayIndex		= 0;
 		textureBarrier.ArrayCount		= desc.ArrayCount;
 
-		PipelineTextureBarriers(EPipelineStage::PIPELINE_STAGE_TOP, EPipelineStage::PIPELINE_STAGE_COPY, &textureBarrier, 1);
+		PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_TOP, FPipelineStageFlags::PIPELINE_STAGE_COPY, &textureBarrier, 1);
 
 		VkImage		imageVk				= pVkTexture->GetImage();
 		VkExtent2D	destinationExtent	= {};
@@ -273,7 +273,7 @@ namespace LambdaEngine
 			textureBarrier.ArrayCount		= 1;
 			textureBarrier.StateBefore		= ETextureState::TEXTURE_STATE_COPY_DST;
 			textureBarrier.StateAfter		= ETextureState::TEXTURE_STATE_COPY_SRC;
-			PipelineTextureBarriers(EPipelineStage::PIPELINE_STAGE_COPY, EPipelineStage::PIPELINE_STAGE_COPY, &textureBarrier, 1);
+			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_COPY, FPipelineStageFlags::PIPELINE_STAGE_COPY, &textureBarrier, 1);
 
 			VkImageBlit blit = {};
 			blit.srcOffsets[0]					= { 0, 0, 0 };
@@ -295,14 +295,14 @@ namespace LambdaEngine
 		}
 
 		textureBarrier.Miplevel = miplevelCount - 1;
-		PipelineTextureBarriers(EPipelineStage::PIPELINE_STAGE_TOP, EPipelineStage::PIPELINE_STAGE_COPY, &textureBarrier, 1);
+		PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_TOP, FPipelineStageFlags::PIPELINE_STAGE_COPY, &textureBarrier, 1);
 
 		textureBarrier.Miplevel			= 0;
 		textureBarrier.MiplevelCount	= desc.Miplevels;
 		textureBarrier.ArrayCount		= desc.ArrayCount;
 		textureBarrier.StateBefore		= ETextureState::TEXTURE_STATE_COPY_SRC;
 		textureBarrier.StateAfter		= stateAfter;
-		PipelineTextureBarriers(EPipelineStage::PIPELINE_STAGE_COPY, EPipelineStage::PIPELINE_STAGE_BOTTOM, &textureBarrier, 1);
+		PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_COPY, FPipelineStageFlags::PIPELINE_STAGE_BOTTOM, &textureBarrier, 1);
 	}
 
 	void CommandListVK::SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)

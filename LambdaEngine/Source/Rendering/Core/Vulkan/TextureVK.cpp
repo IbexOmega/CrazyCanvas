@@ -46,27 +46,27 @@ namespace LambdaEngine
 		info.sharingMode			= VK_SHARING_MODE_EXCLUSIVE;
 		info.tiling					= VK_IMAGE_TILING_OPTIMAL;
 		
-		if (desc.Flags & ETextureFlags::TEXTURE_FLAG_RENDER_TARGET)
+		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_RENDER_TARGET)
 		{
 			info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 		}
-		if (desc.Flags & ETextureFlags::TEXTURE_FLAG_SHADER_RESOURCE)
+		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE)
 		{
 			info.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 		}
-		if (desc.Flags & ETextureFlags::TEXTURE_FLAG_DEPTH_STENCIL)
+		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL)
 		{
 			info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 		}
-		if (desc.Flags & ETextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS)
+		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS)
 		{
 			info.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
 		}
-		if (desc.Flags & ETextureFlags::TEXTURE_FLAG_COPY_DST)
+		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_COPY_DST)
 		{
 			info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		}
-		if (desc.Flags & ETextureFlags::TEXTURE_FLAG_COPY_SRC)
+		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_COPY_SRC)
 		{
 			info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 		}

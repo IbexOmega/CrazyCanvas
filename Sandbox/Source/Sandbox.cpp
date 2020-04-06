@@ -36,7 +36,7 @@ Sandbox::Sandbox() :
 
 	SoundInstance3DDesc soundInstanceDesc = {};
 	soundInstanceDesc.pSoundEffect		= m_pToneSoundEffect;
-	soundInstanceDesc.Flags				= ESoundModeFlags::SOUND_MODE_LOOPING;
+	soundInstanceDesc.Flags				= FSoundModeFlags::SOUND_MODE_LOOPING;
 
 	m_pToneSoundInstance = AudioSystem::GetDevice()->CreateSoundInstance();
 	m_pToneSoundInstance->Init(soundInstanceDesc);

@@ -56,7 +56,7 @@ namespace LambdaEngine
 		ETextureState		StateAfter		= ETextureState::TEXTURE_STATE_UNKNOWN;
 		ECommandQueueType	QueueBefore		= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
 		ECommandQueueType	QueueAfter		= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
-		uint32				TextureFlags	= ETextureFlags::TEXTURE_FLAG_NONE;
+		uint32				TextureFlags	= FTextureFlags::TEXTURE_FLAG_NONE;
 		uint32				Miplevel		= 0;
 		uint32				MiplevelCount	= 0;
 		uint32				ArrayIndex		= 0;
@@ -89,7 +89,7 @@ namespace LambdaEngine
 		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes) = 0;
 		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc) = 0;
 
-		virtual void PipelineTextureBarriers(EPipelineStage srcStage, EPipelineStage dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount) = 0;
+		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount) = 0;
 
 		virtual void GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter) = 0;
 
