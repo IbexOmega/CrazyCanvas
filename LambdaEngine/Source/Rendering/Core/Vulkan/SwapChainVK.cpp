@@ -14,7 +14,7 @@
 namespace LambdaEngine
 {
     SwapChainVK::SwapChainVK(const GraphicsDeviceVK* pDevice)
-        :   TDeviceChild(pDevice),
+        : TDeviceChild(pDevice),
         m_Buffers(),
         m_Desc()
     {

@@ -63,14 +63,38 @@ namespace LambdaEngine
 		NONE		= 0,
 		LOAD		= 1,
 		CLEAR		= 2,
-		DONT_CARE	= 3
+		DONT_CARE	= 3,
 	};
 
 	enum class EStoreOp : uint8
 	{
 		NONE		= 0,
 		STORE		= 1,
-		DONT_CARE	= 2
+		DONT_CARE	= 2,
+	};
+
+	enum class EFilter : uint8
+	{
+		NONE		= 0,
+		NEAREST		= 1,
+		LINEAR		= 2,
+	};
+
+	enum class EMipmapMode : uint8
+	{
+		NONE		= 0,
+		NEAREST		= 1,
+		LINEAR		= 2,
+	};
+
+	enum class EAddressMode : uint8
+	{
+		NONE					= 0,
+		REPEAT					= 1,
+		MIRRORED_REPEAT			= 2,
+		CLAMP_TO_EDGE			= 3,
+		CLAMP_TO_BORDER			= 4,
+		MIRRORED_CLAMP_TO_EDGE	= 5,
 	};
 
 	enum FTextureFlags : uint32

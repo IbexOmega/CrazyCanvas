@@ -14,6 +14,8 @@ namespace LambdaEngine
 
 	TextureVK::~TextureVK()
 	{
+        LOG_MESSAGE("[TextureVK]: Destroying Texture");
+        
 		if (m_Memory != VK_NULL_HANDLE)
 		{
 			vkFreeMemory(m_pDevice->Device, m_Memory, nullptr);
@@ -45,7 +47,7 @@ namespace LambdaEngine
 		info.samples				= ConvertSamples(desc.SampleCount);
 		info.sharingMode			= VK_SHARING_MODE_EXCLUSIVE;
 		info.tiling					= VK_IMAGE_TILING_OPTIMAL;
-		
+        
 		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_RENDER_TARGET)
 		{
 			info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;

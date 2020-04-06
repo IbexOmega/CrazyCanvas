@@ -1,3 +1,5 @@
+#include "Log/Log.h"
+
 #include "Rendering/RenderSystem.h"
 
 #include "Rendering/Core/API/ICommandQueue.h"
@@ -8,6 +10,7 @@
 #include "Rendering/Core/API/ISwapChain.h"
 #include "Rendering/Core/API/ICommandAllocator.h"
 #include "Rendering/Core/API/ICommandList.h"
+#include "Rendering/Core/API/ITextureView.h"
 
 #include "Application/API/PlatformApplication.h"
 
@@ -87,9 +90,36 @@ namespace LambdaEngine
 
 		ISwapChain* pSwapChain = s_pGraphicsDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
 
+        const char* names[] =
+        {
+            "BackBuffer View [0]",
+            "BackBuffer View [1]",
+            "BackBuffer View [2]",
+        };
+        
+        TextureViewDesc textureViewDesc = { };
+        textureViewDesc.Flags           = FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+        textureViewDesc.Type            = ETextureViewType::TEXTURE_VIEW_2D;
+        textureViewDesc.Miplevel        = 0;
+        textureViewDesc.MiplevelCount   = 1;
+        textureViewDesc.ArrayIndex      = 0;
+        textureViewDesc.ArrayCount      = 1;
+        textureViewDesc.Format          = swapChainDesc.Format;
+        
+        ITextureView* pTextureViews[3];
+        for (uint32 i = 0; i < 3; i++)
+        {
+            textureViewDesc.pName       = names[i];
+            textureViewDesc.pTexture    = pSwapChain->GetBuffer(i);
+    
+            pTextureViews[i] = s_pGraphicsDevice->CreateTextureView(textureViewDesc);
+            textureViewDesc.pTexture->Release();
+        }
+        
         FenceDesc fenceDesc = { };
         fenceDesc.pName         = "Main Fence";
         fenceDesc.InitalValue   = 0;
+        
 		IFence* pFence = s_pGraphicsDevice->CreateFence(fenceDesc);
         pFence->Signal(1);
             
@@ -103,6 +133,10 @@ namespace LambdaEngine
         
         ICommandList* pCommandList = s_pGraphicsDevice->CreateCommandList(pCommandAllocator, commandListDesc);
         
+        for (uint32 i = 0; i < 3; i++)
+        {
+            SAFERELEASE(pTextureViews[i]);
+        }
         
         SAFERELEASE(pCommandList);
 		SAFERELEASE(pCommandAllocator);

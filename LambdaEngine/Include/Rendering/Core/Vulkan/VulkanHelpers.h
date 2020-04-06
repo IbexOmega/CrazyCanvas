@@ -69,6 +69,39 @@ namespace LambdaEngine
 		}
 	}
 
+	inline VkFilter ConvertFilter(EFilter filter)
+	{
+		switch (filter)
+		{
+		case EFilter::NEAREST:		return VK_FILTER_NEAREST;
+		case EFilter::LINEAR:		return VK_FILTER_LINEAR;
+		default:					return VK_FILTER_LINEAR;
+		}
+	}
+
+	inline VkSamplerMipmapMode ConvertMipmapMode(EMipmapMode mipmapMode)
+	{
+		switch (mipmapMode)
+		{
+		case EMipmapMode::NEAREST:		return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+		case EMipmapMode::LINEAR:		return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		default:						return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		}
+	}
+
+	inline VkSamplerAddressMode ConvertAddressMode(EAddressMode addressMode)
+	{
+		switch (addressMode)
+		{
+		case EAddressMode::REPEAT:					return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		case EAddressMode::MIRRORED_REPEAT:			return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+		case EAddressMode::CLAMP_TO_EDGE:			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		case EAddressMode::CLAMP_TO_BORDER:			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		case EAddressMode::MIRRORED_CLAMP_TO_EDGE:	return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+		default:									return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		}
+	}
+
 	inline bool CreateShadeModule(VkDevice device, VkShaderModule shaderModule, const char* pSource, uint32 sourceSize)
 	{
 		VkShaderModuleCreateInfo createInfo = {};

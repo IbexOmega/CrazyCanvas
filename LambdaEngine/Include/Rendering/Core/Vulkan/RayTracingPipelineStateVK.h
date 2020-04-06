@@ -33,10 +33,10 @@ namespace LambdaEngine
             return EPipelineStateType::RAY_TRACING;
         }
 
-		VkDeviceSize FORCEINLINE GetBindingOffsetRaygenGroup()	const { return m_BindingOffsetRaygenShaderGroup; }
-		VkDeviceSize FORCEINLINE GetBindingOffsetHitGroup()		const { return m_BindingOffsetHitShaderGroup; }
-		VkDeviceSize FORCEINLINE GetBindingOffsetMissGroup()	const { return m_BindingOffsetMissShaderGroup; }
-		VkDeviceSize FORCEINLINE GetBindingStride()				const { return m_BindingStride; }
+		FORCEINLINE VkDeviceSize GetBindingOffsetRaygenGroup()	const { return m_BindingOffsetRaygenShaderGroup; }
+		FORCEINLINE VkDeviceSize GetBindingOffsetHitGroup()		const { return m_BindingOffsetHitShaderGroup; }
+		FORCEINLINE VkDeviceSize GetBindingOffsetMissGroup()	const { return m_BindingOffsetMissShaderGroup; }
+		FORCEINLINE VkDeviceSize GetBindingStride()				const { return m_BindingStride; }
 
 	private:
 		bool CreateShaderData(std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,

@@ -16,6 +16,7 @@
 #include "Rendering/Core/Vulkan/FenceVK.h"
 #include "Rendering/Core/Vulkan/CommandAllocatorVK.h"
 #include "Rendering/Core/Vulkan/CommandListVK.h"
+#include "Rendering/Core/Vulkan/TextureViewVK.h"
 
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
@@ -286,15 +287,22 @@ namespace LambdaEngine
 		return pTexture;
 	}
 
-	ITextureView* GraphicsDeviceVK::CreateTextureView() const
+	ITextureView* GraphicsDeviceVK::CreateTextureView(const TextureViewDesc& desc) const
 	{
-		return nullptr;
+        TextureViewVK* pTextureView = DBG_NEW TextureViewVK(this);
+        if (!pTextureView->Init(desc))
+        {
+            pTextureView->Release();
+            return nullptr;
+        }
+        
+		return pTextureView;
 	}
 
     ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc) const
     {
         SwapChainVK* pSwapChain = DBG_NEW SwapChainVK(this);
-        if (pSwapChain->Init(pWindow, desc))
+        if (!pSwapChain->Init(pWindow, desc))
         {
             pSwapChain->Release();
             return nullptr;
