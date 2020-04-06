@@ -1,30 +1,23 @@
 #pragma once
 
-#include "Defines.h"
-#include "Types.h"
-#include "Threading/SpinLock.h"
-#include "Time/API/Timestamp.h"
-#include <string>
-#include <atomic>
-#include <queue>
-#include <set>
+#include "ClientBase.h"
+#include "ISocketTCP.h"
+#include "IClientTCPHandler.h"
+
+#define TCP_PING_INTERVAL_NANO_SEC	1000000000
+#define TCP_THRESHOLD_NANO_SEC		5000000000
 
 namespace LambdaEngine
 {
-	class ISocketTCP;
-	class IClientTCPHandler;
-	class Thread;
-	class NetworkPacket;
-
-	class LAMBDA_API ClientTCP
+	class LAMBDA_API ClientTCP : public ClientBase
 	{
-		friend class ServerTCP;
 		friend class SocketFactory;
+		friend class ServerTCP;
 
 	public:
 		ClientTCP(IClientTCPHandler* handler);
-
 		~ClientTCP();
+
 		/*
 		* Connects the client to a given ip-address and port. To connect to a special address use
 		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
@@ -42,80 +35,43 @@ namespace LambdaEngine
 		void Disconnect();
 
 		/*
-		* Sends a packet
-		*/
-		void SendPacket(NetworkPacket* packet);
-
-		/*
-		* Sends a packet Immediately using the current thread
-		*/
-		bool SendPacketImmediately(NetworkPacket* packet);
-
-		/*
 		* return - true if this instance is on the server side, otherwise false.
 		*/
 		bool IsServerSide() const;
 
-		/*
-		* Release all the resouces used by the client and will be deleted when each thread has terminated.
-		*/
-		void Release();
-
-		/*
-		* return - true if the client is connected.
-		*/
-		bool IsConnected() const;
-
-		int32 GetBytesSent() const;
-		int32 GetBytesReceived() const;
-		int32 GetPacketsSent() const;
-		int32 GetPacketsReceived() const;
+	protected:
+		virtual void OnTransmitterStarted() override;
+		virtual void OnReceiverStarted() override;
+		virtual void UpdateReceiver(NetworkPacket* packet) override;
+		virtual void OnThreadsTerminated() override;
+		virtual void OnReleaseRequested() override;
+		virtual bool TransmitPacket(NetworkPacket* packet) override;
 
 	private:
-		ClientTCP(const std::set<IClientTCPHandler*>& handlers, ISocketTCP* socket);
+		ClientTCP(IClientTCPHandler* handler, ISocketTCP* socket);
 
-		void Update(Timestamp dt);
-		void ResetReceiveTimer();
-		void ResetTransmitTimer();
-
-		void Run(std::string address, uint16 port);
-		void OnStopped();
 		bool Receive(char* buffer, int bytesToRead);
 		bool ReceivePacket(NetworkPacket* packet);
 		void HandlePacket(NetworkPacket* packet);
-
-		void RunTransmit();
-		void OnStoppedSend();
-		bool Transmit(char* buffer, int bytesToSend);
-		void TransmitPackets(std::queue<NetworkPacket*>* packets);
+		void ResetReceiveTimer();
+		void ResetTransmitTimer();
+		void Tick(Timestamp timestamp);
 
 	private:
-		static void DeletePackets(std::queue<NetworkPacket*>* packets);
-		static void DeletePacket(NetworkPacket* packet);
-		static void Init();
-		static void Tick(Timestamp timestamp);
+		static ISocketTCP* CreateSocket(const std::string& address, uint16 port);
+		static void InitStatic();
+		static void TickStatic(Timestamp timestamp);
 		static void ReleaseStatic();
-		static ISocketTCP* CreateClientSocket(const std::string& address, uint16 port);
 
 	private:
 		ISocketTCP* m_pSocket;
-		std::set<IClientTCPHandler*> m_Handlers;
-		Thread* m_pThread;
-		Thread* m_pThreadSend;
+		SpinLock m_LockStart;
+		IClientTCPHandler* m_pHandler;
 		bool m_ServerSide;
-		std::atomic_bool m_Stop;
-		std::atomic_bool m_Release;
-		std::queue<NetworkPacket*> m_PacketsToSend;
-		SpinLock m_LockPacketsToSend;
-
 		int64 m_TimerReceived;
 		int64 m_TimerTransmit;
 		uint32 m_NrOfPingTransmitted;
 		uint32 m_NrOfPingReceived;
-		uint32 m_NrOfPacketsTransmitted;
-		uint32 m_NrOfPacketsReceived;
-		uint32 m_NrOfBytesTransmitted;
-		uint32 m_NrOfBytesReceived;
 
 	private:
 		static NetworkPacket s_PacketPing;

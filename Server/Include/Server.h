@@ -18,9 +18,9 @@ public:
 
 	virtual void OnPacketReceivedUDP(LambdaEngine::NetworkPacket* packet, const std::string& address, uint16 port) override;
 	virtual LambdaEngine::IClientTCPHandler* CreateClientHandler() override;
-	virtual bool OnClientAccepted(LambdaEngine::ClientTCP2* client) override;
-	virtual void OnClientConnected(LambdaEngine::ClientTCP2* client) override;
-	virtual void OnClientDisconnected(LambdaEngine::ClientTCP2* client) override;
+	virtual bool OnClientAccepted(LambdaEngine::ClientTCP* client) override;
+	virtual void OnClientConnected(LambdaEngine::ClientTCP* client) override;
+	virtual void OnClientDisconnected(LambdaEngine::ClientTCP* client) override;
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp dt) override;
