@@ -58,7 +58,8 @@ namespace LambdaEngine
 			waitInfo.pSemaphores	= &m_Semaphore;
 			waitInfo.pValues		= &signalValue;
 
-			m_pDevice->vkWaitSemaphores(m_pDevice->Device, &waitInfo, timeOut);
+			VkResult result = m_pDevice->vkWaitSemaphores(m_pDevice->Device, &waitInfo, timeOut);
+			LOG_MESSAGE("[FenceVK::Wait]: Return %s", VkResultToString(result));
 		}
 	}
 

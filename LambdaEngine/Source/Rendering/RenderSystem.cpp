@@ -133,10 +133,16 @@ namespace LambdaEngine
 		pCommandList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_DONT_CARE, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 		pCommandList->End();
 
-		uint64 value = pFence->GetValue();
+		uint64 waitValue	= pFence->GetValue();
+		uint64 signalValue	= waitValue + 1;
 
-		s_pGraphicsQueue->ExecuteCommandLists(&pCommandList, 1, PIPELINE_STAGE_FLAG_BOTTOM, pFence, value, pFence, value + 1);
-		pFence->Wait(value + 1, UINT64_MAX_);
+		s_pGraphicsQueue->ExecuteCommandLists(&pCommandList, 1, PIPELINE_STAGE_FLAG_BOTTOM, pFence, waitValue, pFence, signalValue);
+
+		waitValue = pFence->GetValue();
+		pFence->Wait(signalValue, UINT64_MAX);
+		waitValue = pFence->GetValue();
+
+		pCommandAllocator->Reset();
 
         for (uint32 i = 0; i < 3; i++)
         {

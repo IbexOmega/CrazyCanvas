@@ -61,34 +61,33 @@ namespace LambdaEngine
 		submitInfo.pCommandBuffers		= m_CommandBuffers;
 		submitInfo.commandBufferCount	= numCommandLists;
 
+		const FenceVK* pWaitFenceVk		= reinterpret_cast<const FenceVK*>(pWaitFence);
+		const FenceVK* pSignalFenceVk	= reinterpret_cast<const FenceVK*>(pSignalFence);
+
+		VkSemaphore	signalSemaphores[]	= { pSignalFenceVk->GetSemaphore() };
+		uint64		signalValues[]		= { signalValue };
+		VkSemaphore	waitSemaphores[]	= { pWaitFenceVk->GetSemaphore() };
+		uint64		waitValues[]		= { waitValue };
+		
+		VkPipelineStageFlags			waitStagesVk[]	= { ConvertPipelineStageMask(waitStage) };
+		VkTimelineSemaphoreSubmitInfo	fenceSubmitInfo = {};
+		
 		//TODO: Add ability to query this functionallty from the device
-		VkTimelineSemaphoreSubmitInfo fenceSubmitInfo = {};
 		if (pWaitFence && m_pDevice->vkGetSemaphoreCounterValue)
 		{
-			const FenceVK* pWaitFenceVk		= reinterpret_cast<const FenceVK*>(pWaitFence);
-			const FenceVK* pSignalFenceVk	= reinterpret_cast<const FenceVK*>(pSignalFence);
-
 			fenceSubmitInfo.sType						= VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
-			fenceSubmitInfo.pNext						= nullptr;
-			
-			uint64 signalValues[] = { signalValue };
+			fenceSubmitInfo.pNext						= nullptr;	
 			fenceSubmitInfo.signalSemaphoreValueCount	= 1;
 			fenceSubmitInfo.pSignalSemaphoreValues		= signalValues;
-
-			uint64 waitValues[] = { waitValue };
 			fenceSubmitInfo.waitSemaphoreValueCount		= 1;
 			fenceSubmitInfo.pWaitSemaphoreValues		= waitValues;
 
-			VkSemaphore	signalSemaphores[] = { pSignalFenceVk->GetSemaphore() };
+			submitInfo.pNext				= (const void*)&fenceSubmitInfo;
 			submitInfo.signalSemaphoreCount = 1;
 			submitInfo.pSignalSemaphores	= signalSemaphores;
-
-			VkSemaphore				waitSemaphores[]	= { pWaitFenceVk->GetSemaphore() };
-			VkPipelineStageFlags	waitStagesVk[]		= { ConvertPipelineStageMask(waitStage) };
 			submitInfo.waitSemaphoreCount	= 1;
 			submitInfo.pWaitSemaphores		= waitSemaphores;
 			submitInfo.pWaitDstStageMask	= waitStagesVk;
-			submitInfo.pNext				= (const void*)&fenceSubmitInfo;
 		}
 		else
 		{
