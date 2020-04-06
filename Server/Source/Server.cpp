@@ -13,8 +13,10 @@
 
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/ClientTCP.h"
+#include "Network/API/IClientUDP.h"
 
 #include "ClientTCPHandler.h"
+#include "ClientUDPHandler.h"
 
 Server::Server()
 {
@@ -34,36 +36,41 @@ Server::~Server()
 	m_pServerTCP->Release();
 	m_pServerUDP->Release();
 
-	for (LambdaEngine::IClientTCPHandler* handler : m_ClientHandlers)
+	for (LambdaEngine::IClientTCPHandler* handler : m_ClientTCPHandlers)
+		delete handler;
+
+	for (LambdaEngine::IClientUDPHandler* handler : m_ClientUDPHandlers)
 		delete handler;
 }
 
-void Server::OnPacketReceivedUDP(LambdaEngine::NetworkPacket* packet, const std::string& address, uint16 port)
+LambdaEngine::IClientUDPHandler* Server::CreateClientHandlerUDP()
 {
-	LOG_MESSAGE("UDP Packet Received from: %s:%d", address.c_str(), port);
-}
-
-LambdaEngine::IClientTCPHandler* Server::CreateClientHandler()
-{
-	ClientTCPHandler* handler = DBG_NEW ClientTCPHandler();
-	m_ClientHandlers.insert(handler);
+	ClientUDPHandler* handler = DBG_NEW ClientUDPHandler();
+	m_ClientUDPHandlers.insert(handler);
 	return handler;
 }
 
-bool Server::OnClientAccepted(LambdaEngine::ClientTCP* client)
+LambdaEngine::IClientTCPHandler* Server::CreateClientHandlerTCP()
+{
+	ClientTCPHandler* handler = DBG_NEW ClientTCPHandler();
+	m_ClientTCPHandlers.insert(handler);
+	return handler;
+}
+
+bool Server::OnClientAcceptedTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientAccepted");
 	return true;
 }
 
-void Server::OnClientConnected(LambdaEngine::ClientTCP* client)
+void Server::OnClientConnectedTCP(LambdaEngine::ClientTCP* client)
 {
 	using namespace LambdaEngine;
 	LOG_MESSAGE("OnClientConnected");
 	UpdateTitle();
 }
 
-void Server::OnClientDisconnected(LambdaEngine::ClientTCP* client)
+void Server::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientDisconnected");
 	UpdateTitle();

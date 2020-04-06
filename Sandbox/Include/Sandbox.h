@@ -13,6 +13,8 @@ namespace LambdaEngine
 	class SoundInstance3D;
 	class AudioGeometry;
 	class ReverbSphere;
+
+	class Scene;
 }
 
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IMouseHandler
@@ -21,7 +23,7 @@ public:
 	Sandbox();
 	~Sandbox();
 
-	void TestResourceManager();
+	void InitTestAudio();
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp dt) override;
@@ -38,22 +40,24 @@ public:
 	virtual void OnScroll(int32 delta)                                  override;
 
 private:
-	LambdaEngine::ResourceManager* m_pResourceManager;
+	LambdaEngine::ResourceManager*		m_pResourceManager;
 
-	GUID_Lambda m_ToneSoundEffectGUID;
-	LambdaEngine::SoundEffect3D* m_pToneSoundEffect;
-	LambdaEngine::SoundInstance3D* m_pToneSoundInstance;
+	GUID_Lambda							m_ToneSoundEffectGUID;
+	LambdaEngine::SoundEffect3D*		m_pToneSoundEffect;
+	LambdaEngine::SoundInstance3D*		m_pToneSoundInstance;
 
-	GUID_Lambda m_GunSoundEffectGUID;
-	LambdaEngine::SoundEffect3D* m_pGunSoundEffect;
+	GUID_Lambda							m_GunSoundEffectGUID;
+	LambdaEngine::SoundEffect3D*		m_pGunSoundEffect;
 
-	bool m_SpawnPlayAts;
-	float m_GunshotTimer;
-	float m_GunshotDelay;
-	float m_Timer;
+	bool								m_SpawnPlayAts;
+	float								m_GunshotTimer;
+	float								m_GunshotDelay;
+	float								m_Timer;
 
-	LambdaEngine::AudioListener* m_pAudioListener;
+	LambdaEngine::AudioListener*		m_pAudioListener;
 
-	LambdaEngine::ReverbSphere* m_pReverbSphere;
-	LambdaEngine::AudioGeometry* m_pAudioGeometry;
+	LambdaEngine::ReverbSphere*			m_pReverbSphere;
+	LambdaEngine::AudioGeometry*		m_pAudioGeometry;
+
+	LambdaEngine::Scene*				m_pScene;
 };

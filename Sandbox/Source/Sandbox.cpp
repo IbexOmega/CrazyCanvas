@@ -19,14 +19,50 @@
 #include "Audio/AudioGeometry.h"
 #include "Audio/ReverbSphere.h"
 
+#include "Game/Scene.h"
+
 Sandbox::Sandbox() : 
 	m_pResourceManager(nullptr),
+	m_pToneSoundEffect(nullptr),
+	m_pToneSoundInstance(nullptr),
+	m_pGunSoundEffect(nullptr),
+	m_pAudioListener(nullptr),
 	m_pReverbSphere(nullptr),
-	m_pAudioGeometry(nullptr)
+	m_pAudioGeometry(nullptr),
+	m_pScene(nullptr)
 {
 	using namespace LambdaEngine;
 
 	m_pResourceManager = DBG_NEW LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
+
+	std::vector<GameObject> sponzaGraphicsObjects;
+	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sponzaGraphicsObjects);
+
+	m_pScene = new Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice(), m_pResourceManager);
+
+	for (GameObject& graphicsObject : sponzaGraphicsObjects)
+	{
+		m_pScene->AddStaticGameObject(graphicsObject, glm::scale(glm::mat4(1.0f), glm::vec3(0.001f)));
+	}
+
+	SceneDesc sceneDesc = {};
+	m_pScene->Finalize(sceneDesc);
+
+	//InitTestAudio();
+}
+
+Sandbox::~Sandbox()
+{
+	SAFEDELETE(m_pResourceManager);
+	SAFEDELETE(m_pAudioListener);
+	SAFEDELETE(m_pAudioGeometry);
+
+	SAFEDELETE(m_pScene);
+}
+
+void Sandbox::InitTestAudio()
+{
+	using namespace LambdaEngine;
 
 	m_ToneSoundEffectGUID = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/noise.wav");
 	m_GunSoundEffectGUID = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/GUN_FIRE-GoodSoundForYou.wav");
@@ -35,8 +71,8 @@ Sandbox::Sandbox() :
 	m_pGunSoundEffect = m_pResourceManager->GetSound(m_GunSoundEffectGUID);
 
 	SoundInstance3DDesc soundInstanceDesc = {};
-	soundInstanceDesc.pSoundEffect		= m_pToneSoundEffect;
-	soundInstanceDesc.Flags				= FSoundModeFlags::SOUND_MODE_LOOPING;
+	soundInstanceDesc.pSoundEffect = m_pToneSoundEffect;
+	soundInstanceDesc.Flags = FSoundModeFlags::SOUND_MODE_LOOPING;
 
 	m_pToneSoundInstance = AudioSystem::GetDevice()->CreateSoundInstance();
 	m_pToneSoundInstance->Init(soundInstanceDesc);
@@ -107,48 +143,6 @@ Sandbox::Sandbox() :
 	audioGeometryDesc.pAudioMeshParameters = sponzaAudioMeshParameters.data();
 
 	m_pAudioGeometry->Init(audioGeometryDesc);*/
-}
-
-Sandbox::~Sandbox()
-{
-	SAFEDELETE(m_pResourceManager);
-	SAFEDELETE(m_pAudioListener);
-	SAFEDELETE(m_pAudioGeometry);
-}
-
-void Sandbox::TestResourceManager()
-{
-	LOG_MESSAGE("\n-------Resource Handler Testing Start-------");
-
-	
-
-	////Audio Test
-	//{
-	//	GUID_Lambda failedSoundGUID = pResourceHandler->LoadSoundFromFile("THIS/SHOULD/FAIL.obj");
-	//	GUID_Lambda successSoundGUID = pResourceHandler->LoadSoundFromFile("../Assets/Sounds/smb_gameover.wav");
-
-	//	Sound* pSound = pResourceHandler->GetSound(successSoundGUID);
-	//	pSound->Play();
-	//}
-
-	////Scene Test
-	//{
-	//	std::vector<GraphicsObject> sponzaGraphicsObjects;
-	//	pResourceHandler->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sponzaGraphicsObjects);
-	//}
-
-	////Mesh Test
-	//{
-	//	GUID_Lambda failedMeshGUID = pResourceHandler->LoadMeshFromFile("THIS/SHOULD/FAIL.obj");
-	//	GUID_Lambda sucessMeshGUID = pResourceHandler->LoadMeshFromFile("../Assets/Meshes/bunny.obj");
-
-	//	Mesh* pBunnyMesh = ResourceLoader::LoadMeshFromFile(pGraphicsDevice, "../Assets/Meshes/bunny.obj");
-
-	//	SAFEDELETE(pBunnyMesh);
-	//	SAFEDELETE(pResourceHandler);
-	//}
-
-	LOG_MESSAGE("-------Resource Handler Testing End-------\n");
 }
 
 void Sandbox::OnKeyDown(LambdaEngine::EKey key)
@@ -240,21 +234,27 @@ void Sandbox::Tick(LambdaEngine::Timestamp dt)
 
 	m_Timer += dt.AsSeconds();
 
-	if (m_SpawnPlayAts)
+	if (m_pGunSoundEffect != nullptr)
 	{
-		m_GunshotTimer += dt.AsSeconds();
-
-		if (m_GunshotTimer > m_GunshotDelay)
+		if (m_SpawnPlayAts)
 		{
-			glm::vec3 gunPosition(glm::cos(m_Timer), 0.0f, glm::sin(m_Timer));
-			m_pGunSoundEffect->PlayOnceAt(gunPosition, glm::vec3(0.0f), 0.5f);
-			m_GunshotTimer = 0.0f;
-		}	
+			m_GunshotTimer += dt.AsSeconds();
+
+			if (m_GunshotTimer > m_GunshotDelay)
+			{
+
+				glm::vec3 gunPosition(glm::cos(m_Timer), 0.0f, glm::sin(m_Timer));
+				m_pGunSoundEffect->PlayOnceAt(gunPosition, glm::vec3(0.0f), 0.5f);
+				m_GunshotTimer = 0.0f;
+			}
+		}
 	}
 
-	glm::vec3 tonePosition(glm::cos(m_Timer), 0.0f, glm::sin(m_Timer));
-	m_pToneSoundInstance->SetPosition(tonePosition);
-	//LOG_MESSAGE("Mario Position: %s", glm::to_string(marioPosition).c_str());
+	if (m_pToneSoundInstance != nullptr)
+	{
+		glm::vec3 tonePosition(glm::cos(m_Timer), 0.0f, glm::sin(m_Timer));
+		m_pToneSoundInstance->SetPosition(tonePosition);
+	}
 }
 
 namespace LambdaEngine

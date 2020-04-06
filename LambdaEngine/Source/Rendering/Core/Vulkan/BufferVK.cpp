@@ -155,7 +155,7 @@ namespace LambdaEngine
     void* BufferVK::Map()
     {
         void* pHostMemory = nullptr;
-        if (vkMapMemory(m_pDevice->Device, m_Memory, 0, 0, 0, &pHostMemory) != VK_SUCCESS)
+        if (vkMapMemory(m_pDevice->Device, m_Memory, 0, VK_WHOLE_SIZE, 0, &pHostMemory) != VK_SUCCESS)
         {
             return nullptr;
         }

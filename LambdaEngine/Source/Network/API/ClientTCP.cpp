@@ -1,6 +1,7 @@
 #include "Network/API/ClientTCP.h"
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/IRemoteClientTCPHandler.h"
+#include "Network/API/NetworkPacket.h"
 
 #include "Log/Log.h"
 
@@ -16,10 +17,10 @@ namespace LambdaEngine
 	}
 
 	ClientTCP::ClientTCP(IClientTCPHandler* clientHandler, IRemoteClientTCPHandler* remoteClientHandler, ISocketTCP* socket) :
+		ClientBase(socket != nullptr),
 		m_pClientHandler(clientHandler),
 		m_pRemoteClientHandler(remoteClientHandler),
 		m_pSocket(socket),
-		m_ServerSide(m_pSocket != nullptr), 
 		m_TimerReceived(0),
 		m_TimerTransmit(0),
 		m_NrOfPingTransmitted(0),
@@ -77,11 +78,6 @@ namespace LambdaEngine
 		return ThreadsHaveTerminated();
 	}
 
-	bool ClientTCP::IsServerSide() const
-	{
-		return m_ServerSide;
-	}
-
 	/*******************************************
 	*				PROTECTED				   *
 	********************************************/
@@ -98,7 +94,7 @@ namespace LambdaEngine
 			{
 				if (m_pClientHandler)
 				{
-					m_pClientHandler->OnClientFailedConnecting(this);
+					m_pClientHandler->OnClientFailedConnectingTCP(this);
 				}
 				
 				TerminateThreads();
@@ -110,7 +106,7 @@ namespace LambdaEngine
 		ResetReceiveTimer();
 		ResetTransmitTimer();
 
-		m_pClientHandler->OnClientConnected(this);
+		m_pClientHandler->OnClientConnectedTCP(this);
 	}
 
 	/*
@@ -150,7 +146,7 @@ namespace LambdaEngine
 
 		if (m_pClientHandler)
 		{
-			m_pClientHandler->OnClientDisconnected(this);
+			m_pClientHandler->OnClientDisconnectedTCP(this);
 			m_pClientHandler = nullptr;
 		}
 
@@ -239,7 +235,7 @@ namespace LambdaEngine
 			packet->ReadUInt32(m_NrOfPingReceived);
 		}
 
-		m_pClientHandler->OnClientPacketReceived(this, packet);
+		m_pClientHandler->OnClientPacketReceivedTCP(this, packet);
 	}
 
 	void ClientTCP::ResetReceiveTimer()
