@@ -35,10 +35,24 @@ namespace LambdaEngine
 		GraphicsDeviceVK();
 		~GraphicsDeviceVK();
 
+		bool IsInstanceExtensionEnabled(const char* pExtensionName) const;
+		bool IsDeviceExtensionEnabled(const char* pExtensionName)	const;
+
+		void SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type)	const;
+		
+		uint32						GetQueueFamilyIndexFromQueueType(ECommandQueueType type)	const;
+		VkFormatProperties			GetFormatProperties(VkFormat format)						const;
+		VkPhysicalDeviceProperties	GetPhysicalDeviceProperties()								const;
+
+		FORCEINLINE QueueFamilyIndices GetQueueFamilyIndices() const
+		{
+			return m_DeviceQueueFamilyIndices;
+		}
+
+		//IGraphicsDevice Interface
 		virtual bool Init(const GraphicsDeviceDesc& desc)	override;
 		virtual void Release()								override;
 
-		//CREATE
 		virtual IRenderPass*						CreateRenderPass()																			const override;
 		virtual IBuffer*							CreateBuffer(const BufferDesc& desc)														const override;
 		virtual ITexture*							CreateTexture(const TextureDesc& desc)														const override;
@@ -54,17 +68,6 @@ namespace LambdaEngine
 		virtual ICommandQueue*						CreateCommandQueue(ECommandQueueType queueType)												const override;
 		virtual IFence*								CreateFence(const FenceDesc& desc)															const override;
 		
-		//UTIL
-		void SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type)	const;
-		
-		uint32				GetQueueFamilyIndexFromQueueType(ECommandQueueType type)	const;
-		VkFormatProperties	GetFormatProperties(VkFormat format)						const;
-
-		FORCEINLINE QueueFamilyIndices GetQueueFamilyIndices() const
-		{
-			return m_DeviceQueueFamilyIndices;
-		}
-
 	private:
 		//INIT
 		bool InitInstance(const GraphicsDeviceDesc& desc);
@@ -83,9 +86,6 @@ namespace LambdaEngine
 		
 		uint32	GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const std::vector<VkQueueFamilyProperties>& queueFamilies);
 		void	SetEnabledDeviceExtensions();
-
-		bool IsInstanceExtensionEnabled(const char* pExtensionName);
-		bool IsDeviceExtensionEnabled(const char* pExtensionName);
 
 		void RegisterInstanceExtensionData();
 		void RegisterDeviceExtensionData();
