@@ -4,7 +4,7 @@
 #include "Rendering/Core/Vulkan/TextureVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 
-#include "VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
 {
