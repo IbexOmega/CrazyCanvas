@@ -43,7 +43,6 @@ namespace LambdaEngine
             return (uint64)m_Buffer;
         }
 
-         
     private:
         VkBuffer        m_Buffer                = VK_NULL_HANDLE;
         VkDeviceMemory  m_Memory                = VK_NULL_HANDLE;
