@@ -39,7 +39,7 @@ namespace LambdaEngine
 		
 		m_Mode = FMOD_3D;
 
-		if (desc.Flags & ESoundModeFlags::SOUND_MODE_LOOPING)
+		if (desc.Flags & FSoundModeFlags::SOUND_MODE_LOOPING)
 		{
 			m_Mode |= FMOD_LOOP_NORMAL;
 		}
