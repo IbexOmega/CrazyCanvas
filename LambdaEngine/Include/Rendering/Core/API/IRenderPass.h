@@ -55,5 +55,12 @@ namespace LambdaEngine
 	{
 	public:
 		DECL_INTERFACE(IRenderPass);
+
+		/*
+	   * Returns the API-specific handle to the underlaying resource
+	   *
+	   * return - Returns a valid handle on success otherwise zero
+	   */
+		virtual uint64      GetHandle() const = 0;
 	};
 }
