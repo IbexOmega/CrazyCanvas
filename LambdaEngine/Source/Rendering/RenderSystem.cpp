@@ -139,7 +139,7 @@ namespace LambdaEngine
 		s_pGraphicsQueue->ExecuteCommandLists(&pCommandList, 1, PIPELINE_STAGE_FLAG_BOTTOM, pFence, waitValue, pFence, signalValue);
 
 		waitValue = pFence->GetValue();
-		pFence->Wait(signalValue, UINT64_MAX);
+		pFence->Wait(signalValue, UINT64_MAX_);
 		waitValue = pFence->GetValue();
 
 		pCommandAllocator->Reset();

@@ -29,7 +29,7 @@ namespace LambdaEngine
 		/*
 		* Waits for the queue to finish all work that has been submited to it
 		*/
-		virtual void WaitForCompletion() = 0;
+		virtual void Flush() = 0;
 
         /*
         * Returns the API-specific handle to the underlaying CommandQueue

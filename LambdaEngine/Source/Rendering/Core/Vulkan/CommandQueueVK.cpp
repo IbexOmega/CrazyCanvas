@@ -40,8 +40,6 @@ namespace LambdaEngine
 	
 	bool CommandQueueVK::ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, const IFence* pSignalFence, uint64 signalValue)
 	{
-		UNREFERENCED_VARIABLE(ppCommandLists);
-
 		for (uint32 i = 0; i < numCommandLists; i++)
 		{
 			const CommandListVK* pCommandListVk = reinterpret_cast<const CommandListVK*>(ppCommandLists[i]);
@@ -108,7 +106,7 @@ namespace LambdaEngine
 		return true;
 	}
 	
-	void CommandQueueVK::WaitForCompletion()
+	void CommandQueueVK::Flush()
 	{
 		vkQueueWaitIdle(m_Queue);
 	}
