@@ -163,10 +163,13 @@ namespace LambdaEngine
 
 	void ClientTCP::OnReleaseRequested()
 	{
-		Disconnect();
-		std::scoped_lock<SpinLock> lock(m_LockStart);
-		m_pClientHandler = nullptr;
-		m_pRemoteClientHandler = nullptr;
+		if (m_pSocket)
+		{
+			Disconnect();
+			std::scoped_lock<SpinLock> lock(m_LockStart);
+			m_pClientHandler = nullptr;
+			m_pRemoteClientHandler = nullptr;
+		}
 	}
 
 	bool ClientTCP::TransmitPacket(NetworkPacket* packet)
