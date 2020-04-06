@@ -141,16 +141,16 @@ namespace LambdaEngine
 		float MaxDepth	= 0.0f;
 		float Width		= 0.0f;
 		float Height	= 0.0f;
-		float TopX		= 0.0f;
-		float TopY		= 0.0f;
+		float x		    = 0.0f;
+		float y		    = 0.0f;
 	};
 
 	struct ScissorRect
 	{
 		uint32 Width	= 0;
 		uint32 Height	= 0;
-		uint32 TopX		= 0;
-		uint32 TopY		= 0;
+		int32 x		    = 0;
+		int32 y		    = 0;
 	};
 	
 	struct GraphicsObject

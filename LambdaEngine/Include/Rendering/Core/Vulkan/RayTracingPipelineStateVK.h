@@ -19,9 +19,19 @@ namespace LambdaEngine
 
 		bool Init(const RayTracingPipelineDesc& desc);
 
+        FORCEINLINE VkPipeline GetPipeline() const
+        {
+            return m_Pipeline;
+        }
+        
+        //IDeviceChild interface
 		virtual void SetName(const char* pName) override;
 
-		virtual EPipelineStateType GetType() override { return EPipelineStateType::RAY_TRACING; }
+        //IPipelineState interface
+		FORCEINLINE virtual EPipelineStateType GetType() const override
+        {
+            return EPipelineStateType::RAY_TRACING;
+        }
 
 	private:
 		bool CreateShaderData(std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,

@@ -15,13 +15,13 @@ namespace LambdaEngine
 	class ICommandAllocator;
 	class IBottomLevelAccelerationStructure;
 
-	enum ECommandListFlags : uint32
+	enum FCommandListFlags : uint32
 	{
 		COMMAND_LIST_FLAG_NONE				= 0,
 		COMMAND_LIST_FLAG_ONE_TIME_SUBMIT	= FLAG(0),
 	};
 
-	enum ERenderPassBeginFlags : uint32
+	enum FRenderPassBeginFlags : uint32
 	{
 		RENDER_PASS_BEGIN_FLAG_NONE					= 0,
 		RENDER_PASS_BEGIN_FLAG_INLINE				= FLAG(0),
@@ -65,8 +65,9 @@ namespace LambdaEngine
 
 	struct CommandListDesc
 	{
+        const char*         pName           = "";
 		ECommandListType	CommandListType = ECommandListType::COMMANDLIST_UNKNOWN;
-		uint32				Flags			= ECommandListFlags::COMMAND_LIST_FLAG_NONE;
+		uint32				Flags			= FCommandListFlags::COMMAND_LIST_FLAG_NONE;
 	};
 
 	class ICommandList : public IDeviceChild
@@ -92,18 +93,18 @@ namespace LambdaEngine
 
 		virtual void GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter) = 0;
 
-		virtual void SetViewports(const Viewport* pViewports)			= 0;
-		virtual void SetScissorRects(const ScissorRect* pScissorRects)	= 0;
+		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)           = 0;
+		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)    = 0;
 		
 		virtual void SetConstantGraphics()	= 0;
 		virtual void SetConstantCompute()	= 0;
 
-		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer) = 0;
-		virtual void BindVertexBuffers(const IBuffer* const* ppVertexBuffers, const uint32* pOffsets, uint32 vertexBufferCount) = 0;
+		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset) = 0;
+		virtual void BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) = 0;
 
 		virtual void BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout) = 0;
 
-		virtual void BindGraphicsPipeline(const IPipelineState* pPipeline)	= 0;
+		virtual void BindGraphicsPipeline(const IPipelineState* pPipeline)	    = 0;
 		virtual void BindComputePipeline(const IPipelineState* pPipeline)		= 0;
 		virtual void BindRayTracingPipeline(const IPipelineState* pPipeline)	= 0;
 

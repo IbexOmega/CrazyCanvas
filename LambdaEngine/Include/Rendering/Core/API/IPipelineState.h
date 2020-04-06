@@ -9,10 +9,10 @@ namespace LambdaEngine
 {
 	enum class EPipelineStateType : uint8
 	{
-		NONE = 0,
-		GRAPHICS = 1,
-		COMPUTE = 2,
-		RAY_TRACING = 3
+		NONE            = 0,
+		GRAPHICS        = 1,
+		COMPUTE         = 2,
+		RAY_TRACING     = 3
 	};
 
 	struct GraphicsPipelineDesc
@@ -46,6 +46,6 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(IPipelineState);
 
-		virtual EPipelineStateType GetType() = 0;
+		virtual EPipelineStateType GetType() const = 0;
 	};
 }

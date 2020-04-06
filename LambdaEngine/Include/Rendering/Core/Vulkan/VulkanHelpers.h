@@ -82,7 +82,7 @@ namespace LambdaEngine
 		return VK_SHADER_STAGE_ALL;
 	}
 
-    inline VkPipelineStageFlags ConvertPipelineStage(EPipelineStage pipelineStage)
+    inline VkPipelineStageFlagBits ConvertPipelineStage(EPipelineStage pipelineStage)
     {
         switch (pipelineStage)
         {
@@ -109,8 +109,59 @@ namespace LambdaEngine
         case PIPELINE_STAGE_TASK_SHADER:                  return VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
         case PIPELINE_STAGE_MESH_SHADER:                  return VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV;
         case PIPELINE_STAGE_UNKNOWN:
-        default: return VkPipelineStageFlags(0);
+        default: return VkPipelineStageFlagBits(0);
         }
+    }
+
+    inline uint32 ConvertPipelineStageMask(uint32 pipelineStageMask)
+    {
+        uint32 result = 0;
+        if (pipelineStageMask & PIPELINE_STAGE_TOP)
+            result |= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_BOTTOM)
+            result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_DRAW_INDIRECT)
+            result |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_VERTEX_INPUT)
+            result |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_VERTEX_SHADER)
+            result |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_HULL_SHADER)
+            result |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_DOMAIN_SHADER)
+            result |= VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_GEOMETRY_SHADER)
+            result |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_PIXEL_SHADER)
+            result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_EARLY_FRAGMENT_TESTS)
+            result |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_LATE_FRAGMENT_TESTS)
+            result |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_RENDER_TARGET_OUTPUT)
+            result |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_COMPUTE_SHADER)
+            result |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_COPY)
+            result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_HOST)
+            result |= VK_PIPELINE_STAGE_HOST_BIT;
+        if (pipelineStageMask & PIPELINE_STAGE_STREAM_OUTPUT)
+            result |= VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT;
+        if (pipelineStageMask & PIPELINE_STAGE_CONDITIONAL_RENDERING)
+            result |= VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
+        if (pipelineStageMask & PIPELINE_STAGE_RAY_TRACING_SHADER)
+            result |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+        if (pipelineStageMask & PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD)
+            result |= VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+        if (pipelineStageMask & PIPELINE_STAGE_SHADING_RATE_TEXTURE)
+            result |= VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV;
+        if (pipelineStageMask & PIPELINE_STAGE_TASK_SHADER)
+            result |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
+        if (pipelineStageMask & PIPELINE_STAGE_MESH_SHADER)
+            result |= VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV;
+        
+        return result;
     }
 
 

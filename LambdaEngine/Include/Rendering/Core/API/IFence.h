@@ -3,6 +3,12 @@
 
 namespace LambdaEngine
 {
+    struct FenceDesc
+    {
+        const char* pName       = "";
+        uint64      InitalValue = 0;
+    };
+
 	class IFence : public IDeviceChild
 	{
 	public:
@@ -29,6 +35,7 @@ namespace LambdaEngine
 		*
 		* return - Returns a valid value if successful otherwise returns zero.
 		*/
-		virtual uint64 GetValue() const = 0;
+		virtual uint64      GetValue()  const = 0;
+        virtual FenceDesc   GetDesc()   const = 0;
 	};
 }

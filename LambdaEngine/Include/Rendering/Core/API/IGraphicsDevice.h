@@ -3,25 +3,27 @@
 
 namespace LambdaEngine
 {
-	struct BufferDesc;
-	struct TextureDesc;
+    struct FenceDesc;
+    struct BufferDesc;
+    struct TextureDesc;
     struct SwapChainDesc;
-	struct ComputePipelineDesc;
-	struct GraphicsPipelineDesc;
-	struct RayTracingPipelineDesc;
-	struct TopLevelAccelerationStructureDesc;
-	struct BottomLevelAccelerationStructureDesc;
+    struct CommandListDesc;
+    struct ComputePipelineDesc;
+    struct GraphicsPipelineDesc;
+    struct RayTracingPipelineDesc;
+    struct TopLevelAccelerationStructureDesc;
+    struct BottomLevelAccelerationStructureDesc;
 
     class Window;
 	class IFence;
-	class ICommandQueue;
-	class IFence;
-	class IBuffer;
-	class ITexture;
+    class IFence;
+    class IBuffer;
+    class ITexture;
     class ISwapChain;
-	class IRenderPass;
-	class ITextureView;
-	class ICommandList;
+    class IRenderPass;
+    class ITextureView;
+    class ICommandList;
+    class ICommandQueue;
 	class IPipelineState;
 	class ICommandAllocator;
 	class ITopLevelAccelerationStructure;
@@ -61,10 +63,10 @@ namespace LambdaEngine
 		virtual IPipelineState*						CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc)							const = 0;
 		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const = 0;
 		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const = 0;
-		virtual ICommandList*						CreateCommandList(ICommandAllocator* pAllocator, ECommandListType commandListType)			const = 0;
+		virtual ICommandList*						CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc)			    const = 0;
 		virtual ICommandAllocator*					CreateCommandAllocator(ECommandQueueType queueType)											const = 0;
 		virtual ICommandQueue*						CreateCommandQueue(ECommandQueueType queueType)												const = 0;
-		virtual IFence*								CreateFence(uint64 initalValue)																const = 0;
+		virtual IFence*								CreateFence(const FenceDesc& desc)															const = 0;
 	};
 
 	LAMBDA_API IGraphicsDevice* CreateGraphicsDevice(const GraphicsDeviceDesc& desc, EGraphicsAPI api);

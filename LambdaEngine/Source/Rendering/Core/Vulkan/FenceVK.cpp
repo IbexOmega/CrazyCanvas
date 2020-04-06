@@ -7,7 +7,8 @@
 namespace LambdaEngine
 {
 	FenceVK::FenceVK(const GraphicsDeviceVK* pDevice)
-		: TDeviceChild(pDevice)
+		: TDeviceChild(pDevice),
+        m_Desc()
 	{
 	}
 	
@@ -20,13 +21,13 @@ namespace LambdaEngine
 		}
 	}
 	
-	bool FenceVK::Init(uint64 initalValue)
+	bool FenceVK::Init(const FenceDesc& desc)
 	{
 		VkSemaphoreTypeCreateInfo typeInfo = { };
 		typeInfo.sType			= VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
 		typeInfo.pNext			= nullptr;
 		typeInfo.semaphoreType	= VK_SEMAPHORE_TYPE_TIMELINE;
-		typeInfo.initialValue	= initalValue;
+        typeInfo.initialValue	= desc.InitalValue;
 
 		VkSemaphoreCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -39,7 +40,9 @@ namespace LambdaEngine
 			LOG_VULKAN_ERROR("[FenceVK]: Failed to create semaphore", result);
 			return false;
 		}
-
+        
+        SetName(desc.pName);
+        m_Desc = desc;
 		return true;
 	}
 
