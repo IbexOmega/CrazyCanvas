@@ -30,7 +30,7 @@ namespace LambdaEngine
     class ITexture : public IDeviceChild
     {
     public:
-        DECL_INTERFACE(ITexture);
+        DECL_DEVICE_INTERFACE(ITexture);
 
         /*
         * Returns the API-specific handle to the underlaying texture-resource

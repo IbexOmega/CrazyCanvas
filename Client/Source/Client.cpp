@@ -24,18 +24,28 @@ Client::Client()
 	m_pClientTCP = new ClientTCP(this);
 	m_pClientTCP->Connect("192.168.0.104", 4444);
 
-	//m_pClientUDP = new ClientUDP("192.168.0.104", 4444, this);
+	m_pClientUDP = new ClientUDP("192.168.0.104", 4444, this);
 }
 
 Client::~Client()
 {
 	m_pClientTCP->Release();
-	//m_pClientUDP->Release();
+	m_pClientUDP->Release();
 }
 
 void Client::OnClientPacketReceivedUDP(LambdaEngine::ClientUDP* client, LambdaEngine::NetworkPacket* packet)
 {
 	LOG_MESSAGE("UDP Packet Received");
+}
+
+void Client::OnClientErrorUDP(LambdaEngine::ClientUDP* client)
+{
+	LOG_MESSAGE("OnClientErrorUDP");
+}
+
+void Client::OnClientStoppedUDP(LambdaEngine::ClientUDP* client)
+{
+	LOG_MESSAGE("OnClientStoppedUDP");
 }
 
 void Client::OnClientConnected(LambdaEngine::ClientTCP* client)
@@ -71,9 +81,9 @@ void Client::OnKeyDown(LambdaEngine::EKey key)
 	packet->WriteString("Hej kompis vad heter du?");
 	m_pClientTCP->SendPacket(packet);
 
-	/*NetworkPacket* packet2 = new NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
+	NetworkPacket* packet2 = new NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
 	packet2->WriteString("Hej kompis vad heter du?");
-	m_pClientUDP->SendPacket(packet2);*/
+	m_pClientUDP->SendPacket(packet2);
 
 	//m_pClient->Disconnect();
 	LOG_MESSAGE("Key Pressed: %d", key);

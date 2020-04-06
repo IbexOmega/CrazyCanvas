@@ -8,6 +8,7 @@ namespace LambdaEngine
     struct TextureDesc;
     struct SwapChainDesc;
     struct CommandListDesc;
+    struct TextureViewDesc;
     struct ComputePipelineDesc;
     struct GraphicsPipelineDesc;
     struct RayTracingPipelineDesc;
@@ -42,7 +43,7 @@ namespace LambdaEngine
 	class IGraphicsDevice
 	{
 	public:
-		DECL_INTERFACE(IGraphicsDevice);
+		DECL_DEVICE_INTERFACE(IGraphicsDevice);
 
 		virtual bool Init(const GraphicsDeviceDesc& desc) 	= 0;
 
@@ -56,7 +57,7 @@ namespace LambdaEngine
 		virtual IRenderPass*						CreateRenderPass()																			const = 0;
 		virtual IBuffer*							CreateBuffer(const BufferDesc& desc)														const = 0;
 		virtual ITexture*							CreateTexture(const TextureDesc& desc)														const = 0;
-		virtual ITextureView*						CreateTextureView()																			const = 0;
+		virtual ITextureView*						CreateTextureView(const TextureViewDesc& desc)												const = 0;
         virtual ISwapChain*							CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)							const = 0;
 		virtual IPipelineState*						CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) 								const = 0;
 		virtual IPipelineState*						CreateComputePipelineState(const ComputePipelineDesc& desc) 								const = 0;

@@ -58,7 +58,12 @@ namespace LambdaEngine
 			waitInfo.pSemaphores	= &m_Semaphore;
 			waitInfo.pValues		= &signalValue;
 
-			m_pDevice->vkWaitSemaphores(m_pDevice->Device, &waitInfo, timeOut);
+			VkResult result = m_pDevice->vkWaitSemaphores(m_pDevice->Device, &waitInfo, timeOut);
+			LOG_MESSAGE("[FenceVK::Wait]: Return %s", VkResultToString(result));
+		}
+		else
+		{
+			LOG_ERROR("[FenceVK::Wait]: UNSUPPORTED FUNCTION");
 		}
 	}
 
@@ -67,16 +72,20 @@ namespace LambdaEngine
 		if (m_pDevice->vkSignalSemaphore)
 		{
 			VkSemaphoreSignalInfo signalInfo = { };
-			signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
-			signalInfo.pNext = nullptr;
-			signalInfo.value = signalValue;
-			signalInfo.semaphore = m_Semaphore;
+			signalInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
+			signalInfo.pNext		= nullptr;
+			signalInfo.value		= signalValue;
+			signalInfo.semaphore	= m_Semaphore;
 
 			VkResult result = m_pDevice->vkSignalSemaphore(m_pDevice->Device, &signalInfo);
 			if (result != VK_SUCCESS)
 			{
 				LOG_VULKAN_ERROR("[FenceVK]: Failed to signal semaphore", result);
 			}
+		}
+		else
+		{
+			LOG_ERROR("[FenceVK::Signal]: UNSUPPORTED FUNCTION");
 		}
 	}
 
@@ -90,6 +99,10 @@ namespace LambdaEngine
 			{
 				LOG_VULKAN_ERROR("[FenceVK]: Failed to retrive fence-value", result);
 			}
+		}
+		else
+		{
+			LOG_ERROR("[FenceVK::GetValue]: UNSUPPORTED FUNCTION");
 		}
 
 		return value;

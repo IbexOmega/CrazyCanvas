@@ -178,7 +178,7 @@ namespace LambdaEngine
 
 		BufferDesc scratchBufferDesc = {};
 		scratchBufferDesc.pName			= "TLAS Scratch Buffer";
-		scratchBufferDesc.MemoryType	= EMemoryType::GPU_MEMORY;
+		scratchBufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
 		scratchBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_RAY_TRACING;
 		scratchBufferDesc.SizeInBytes	= uint32(memoryRequirements.size);
 
@@ -202,7 +202,7 @@ namespace LambdaEngine
 
 			BufferDesc scratchBufferDesc = {};
 			scratchBufferDesc.pName			= "TLAS Scratch Buffer";
-			scratchBufferDesc.MemoryType	= EMemoryType::GPU_MEMORY;
+			scratchBufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
 			scratchBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_RAY_TRACING;
 			scratchBufferDesc.SizeInBytes	= memoryRequirements.size;
 

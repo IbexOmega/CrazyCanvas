@@ -14,7 +14,7 @@
 namespace LambdaEngine
 {
     SwapChainVK::SwapChainVK(const GraphicsDeviceVK* pDevice)
-        :   TDeviceChild(pDevice),
+        : TDeviceChild(pDevice),
         m_Buffers(),
         m_Desc()
     {
@@ -363,7 +363,7 @@ namespace LambdaEngine
             desc.pName          = names[i];
             desc.Type           = ETextureType::TEXTURE_2D;
             desc.Flags          = TEXTURE_FLAG_RENDER_TARGET;
-            desc.MemoryType     = EMemoryType::GPU_MEMORY;
+            desc.MemoryType     = EMemoryType::MEMORY_GPU;
             desc.Format         = m_Desc.Format;
             desc.Width          = m_Desc.Width;
             desc.Height         = m_Desc.Height;

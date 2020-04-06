@@ -16,6 +16,7 @@
 #include "Rendering/Core/Vulkan/FenceVK.h"
 #include "Rendering/Core/Vulkan/CommandAllocatorVK.h"
 #include "Rendering/Core/Vulkan/CommandListVK.h"
+#include "Rendering/Core/Vulkan/TextureViewVK.h"
 
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
@@ -66,6 +67,7 @@ namespace LambdaEngine
 		Extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME),
 		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME),
 		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
+		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
 	};
 
 	GraphicsDeviceVK::GraphicsDeviceVK() :
@@ -199,7 +201,7 @@ namespace LambdaEngine
 	ICommandList* GraphicsDeviceVK::CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc) const
 	{
         CommandListVK* pCommandListVK = DBG_NEW CommandListVK(this);
-        if (pCommandListVK->Init(pAllocator, desc))
+        if (!pCommandListVK->Init(pAllocator, desc))
         {
             pCommandListVK->Release();
             return nullptr;
@@ -286,15 +288,22 @@ namespace LambdaEngine
 		return pTexture;
 	}
 
-	ITextureView* GraphicsDeviceVK::CreateTextureView() const
+	ITextureView* GraphicsDeviceVK::CreateTextureView(const TextureViewDesc& desc) const
 	{
-		return nullptr;
+        TextureViewVK* pTextureView = DBG_NEW TextureViewVK(this);
+        if (!pTextureView->Init(desc))
+        {
+            pTextureView->Release();
+            return nullptr;
+        }
+        
+		return pTextureView;
 	}
 
     ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc) const
     {
         SwapChainVK* pSwapChain = DBG_NEW SwapChainVK(this);
-        if (pSwapChain->Init(pWindow, desc))
+        if (!pSwapChain->Init(pWindow, desc))
         {
             pSwapChain->Release();
             return nullptr;
@@ -334,7 +343,7 @@ namespace LambdaEngine
 		{
 			return m_DeviceQueueFamilyIndices.TransferFamily;
 		}
-		else if (type == ECommandQueueType::COMMAND_QUEUE_IGNORE)
+		else if (type == ECommandQueueType::COMMAND_QUEUE_NONE)
 		{
 			return VK_QUEUE_FAMILY_IGNORED;
 		}

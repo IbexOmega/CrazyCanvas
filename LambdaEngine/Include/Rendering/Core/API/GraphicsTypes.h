@@ -7,16 +7,16 @@ namespace LambdaEngine
 {
     enum class EMemoryType : uint8
     {
-        NONE        = 0,
-        CPU_MEMORY  = 1,
-        GPU_MEMORY  = 2,
+        NONE				= 0,
+        MEMORY_CPU_VISIBLE  = 1,
+        MEMORY_GPU			= 2,
     };
 
     enum class EFormat : uint8
     {
-        NONE            = 0,
-        R8G8B8A8_UNORM  = 1,
-        B8G8R8A8_UNORM  = 2,
+        NONE					= 0,
+        FORMAT_R8G8B8A8_UNORM	= 1,
+        FORMAT_B8G8R8A8_UNORM	= 2,
     };
 
 	enum class EShaderType : uint32
@@ -39,7 +39,7 @@ namespace LambdaEngine
 	enum class ECommandQueueType : uint8
 	{
 		COMMAND_QUEUE_UNKNOWN	= 0,
-		COMMAND_QUEUE_IGNORE	= 1,
+		COMMAND_QUEUE_NONE		= 1,
 		COMMAND_QUEUE_COMPUTE	= 2,
 		COMMAND_QUEUE_GRAPHICS	= 3,
 		COMMAND_QUEUE_COPY		= 4,
@@ -110,29 +110,29 @@ namespace LambdaEngine
 
 	enum FPipelineStageFlags : uint32
 	{
-		PIPELINE_STAGE_UNKNOWN						= 0,
-		PIPELINE_STAGE_TOP							= FLAG(1),
-		PIPELINE_STAGE_BOTTOM						= FLAG(2),
-		PIPELINE_STAGE_DRAW_INDIRECT				= FLAG(3),
-		PIPELINE_STAGE_VERTEX_INPUT					= FLAG(4),
-		PIPELINE_STAGE_VERTEX_SHADER				= FLAG(5),
-		PIPELINE_STAGE_HULL_SHADER					= FLAG(6),
-		PIPELINE_STAGE_DOMAIN_SHADER				= FLAG(7),
-		PIPELINE_STAGE_GEOMETRY_SHADER				= FLAG(8),
-		PIPELINE_STAGE_PIXEL_SHADER					= FLAG(9),
-		PIPELINE_STAGE_EARLY_FRAGMENT_TESTS			= FLAG(10),
-		PIPELINE_STAGE_LATE_FRAGMENT_TESTS			= FLAG(11),
-		PIPELINE_STAGE_RENDER_TARGET_OUTPUT			= FLAG(12),
-		PIPELINE_STAGE_COMPUTE_SHADER				= FLAG(13),
-		PIPELINE_STAGE_COPY							= FLAG(14),
-		PIPELINE_STAGE_HOST							= FLAG(15),
-		PIPELINE_STAGE_STREAM_OUTPUT				= FLAG(16),
-		PIPELINE_STAGE_CONDITIONAL_RENDERING		= FLAG(17),
-		PIPELINE_STAGE_RAY_TRACING_SHADER			= FLAG(18),
-		PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD = FLAG(19),
-		PIPELINE_STAGE_SHADING_RATE_TEXTURE			= FLAG(20),
-		PIPELINE_STAGE_TASK_SHADER					= FLAG(21),
-		PIPELINE_STAGE_MESH_SHADER					= FLAG(22),
+		PIPELINE_STAGE_FLAG_UNKNOWN							= 0,
+		PIPELINE_STAGE_FLAG_TOP								= FLAG(1),
+		PIPELINE_STAGE_FLAG_BOTTOM							= FLAG(2),
+		PIPELINE_STAGE_FLAG_DRAW_INDIRECT					= FLAG(3),
+		PIPELINE_STAGE_FLAG_VERTEX_INPUT					= FLAG(4),
+		PIPELINE_STAGE_FLAG_VERTEX_SHADER					= FLAG(5),
+		PIPELINE_STAGE_FLAG_HULL_SHADER						= FLAG(6),
+		PIPELINE_STAGE_FLAG_DOMAIN_SHADER					= FLAG(7),
+		PIPELINE_STAGE_FLAG_GEOMETRY_SHADER					= FLAG(8),
+		PIPELINE_STAGE_FLAG_PIXEL_SHADER					= FLAG(9),
+		PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS			= FLAG(10),
+		PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS				= FLAG(11),
+		PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT			= FLAG(12),
+		PIPELINE_STAGE_FLAG_COMPUTE_SHADER					= FLAG(13),
+		PIPELINE_STAGE_FLAG_COPY							= FLAG(14),
+		PIPELINE_STAGE_FLAG_HOST							= FLAG(15),
+		PIPELINE_STAGE_FLAG_STREAM_OUTPUT					= FLAG(16),
+		PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING			= FLAG(17),
+		PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER				= FLAG(18),
+		PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD	= FLAG(19),
+		PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE			= FLAG(20),
+		PIPELINE_STAGE_FLAG_TASK_SHADER						= FLAG(21),
+		PIPELINE_STAGE_FLAG_MESH_SHADER						= FLAG(22),
 	};
 
 	enum FAccessFlags : uint32
@@ -168,7 +168,7 @@ namespace LambdaEngine
 		ACCESS_FLAG_COMMAND_PREPROCESS_WRITE			= FLAG(28),
 	};
 
-	enum ETextureState : uint32
+	enum class ETextureState : uint32
 	{
 		TEXTURE_STATE_UNKNOWN								= 0,
 		TEXTURE_STATE_DONT_CARE								= 1,
@@ -192,18 +192,19 @@ namespace LambdaEngine
 
 	union ShaderConstant
 	{
-		byte Data[4];
-		float Float;
-		int32 Integer;
+		byte	Data[4];
+		float	Float;
+		int32	Integer;
 	};
 
 	struct ShaderDesc
 	{
-		const char* pSource = nullptr;
-		uint32 SourceSize = 0;
+		const char* pSource		= nullptr;
+		uint32		SourceSize	= 0;
 		const char* pEntryPoint = "main";
-		EShaderType Type = EShaderType::NONE;
-		EShaderLang Lang = EShaderLang::NONE;
+		EShaderType Type		= EShaderType::NONE;
+		EShaderLang Lang		= EShaderLang::NONE;
+		
 		std::vector<ShaderConstant> Constants;
 	};
 

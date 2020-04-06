@@ -7,7 +7,7 @@ namespace LambdaEngine
 	class ICommandAllocator : public IDeviceChild
 	{
 	public:
-		DECL_INTERFACE(ICommandAllocator);
+		DECL_DEVICE_INTERFACE(ICommandAllocator);
 
 		/*
 		* Resets the memory used for all CommadLists using this CommandAllocator

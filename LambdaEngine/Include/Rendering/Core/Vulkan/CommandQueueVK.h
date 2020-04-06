@@ -4,6 +4,8 @@
 
 #include "Vulkan.h"
 
+#define MAX_COMMANDBUFFERS 32
+
 namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
@@ -18,8 +20,8 @@ namespace LambdaEngine
 
 		bool Init(uint32 queueFamilyIndex, uint32 index);
 
-		virtual bool ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, const IFence* pWaitFence) override;
-		virtual void Wait() override;
+		virtual bool ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, const IFence* pSignalFence, uint64 signalValue) override;
+		virtual void Flush() override;
 
 		virtual void SetName(const char* pName) override;
 
@@ -29,6 +31,7 @@ namespace LambdaEngine
 		}
 
 	private:
-		VkQueue m_Queue = VK_NULL_HANDLE;
+		VkQueue			m_Queue = VK_NULL_HANDLE;
+		VkCommandBuffer m_CommandBuffers[MAX_COMMANDBUFFERS];
 	};
 }

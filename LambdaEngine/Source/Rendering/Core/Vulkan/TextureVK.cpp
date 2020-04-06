@@ -14,6 +14,8 @@ namespace LambdaEngine
 
 	TextureVK::~TextureVK()
 	{
+        LOG_MESSAGE("[TextureVK]: Destroying Texture");
+        
 		if (m_Memory != VK_NULL_HANDLE)
 		{
 			vkFreeMemory(m_pDevice->Device, m_Memory, nullptr);
@@ -45,7 +47,7 @@ namespace LambdaEngine
 		info.samples				= ConvertSamples(desc.SampleCount);
 		info.sharingMode			= VK_SHARING_MODE_EXCLUSIVE;
 		info.tiling					= VK_IMAGE_TILING_OPTIMAL;
-		
+        
 		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_RENDER_TARGET)
 		{
 			info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -103,11 +105,11 @@ namespace LambdaEngine
 		vkGetImageMemoryRequirements(m_pDevice->Device, m_Image, &memoryRequirements);
 
 		VkMemoryPropertyFlags memoryProperties = 0;
-		if (m_Desc.MemoryType == EMemoryType::CPU_MEMORY)
+		if (m_Desc.MemoryType == EMemoryType::MEMORY_CPU_VISIBLE)
 		{
 			memoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 		}
-		else if (m_Desc.MemoryType == EMemoryType::GPU_MEMORY)
+		else if (m_Desc.MemoryType == EMemoryType::MEMORY_GPU)
 		{
 			memoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 		}

@@ -238,7 +238,22 @@ namespace LambdaEngine
 		TextureDesc		desc			= pVkTexture->GetDesc();
 		const uint32	miplevelCount	= desc.Miplevels;
 		
-		//TODO: Fix for devices that do not support linear filtering
+		if (miplevelCount < 2)
+		{
+			LOG_WARNING("[CommandListVK::GenerateMiplevels]: pTexture only has 1 miplevel allocated, no other mips will be generated");
+			return;
+		}
+
+		constexpr uint32 REQUIRED_FLAGS = (TEXTURE_FLAG_COPY_SRC | TEXTURE_FLAG_COPY_DST);
+		if ((desc.Flags & REQUIRED_FLAGS) != REQUIRED_FLAGS)
+		{
+			LOG_ERROR("[CommandListVK::GenerateMiplevels]: pTexture were not created with TEXTURE_FLAG_COPY_SRC and TEXTURE_FLAG_COPY_DST flags");
+			DEBUGBREAK();
+			return;
+		}
+
+		//TODO: Fix for devices that do NOT support linear filtering
+		
 		VkFormat			formatVk			= ConvertFormat(desc.Format);
 		VkFormatProperties	formatProperties	= m_pDevice->GetFormatProperties(formatVk);
 		if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
@@ -252,14 +267,14 @@ namespace LambdaEngine
 		textureBarrier.TextureFlags		= desc.Flags;
 		textureBarrier.StateBefore		= stateBefore;
 		textureBarrier.StateAfter		= ETextureState::TEXTURE_STATE_COPY_DST;
-		textureBarrier.QueueAfter		= ECommandQueueType::COMMAND_QUEUE_IGNORE;
-		textureBarrier.QueueBefore		= ECommandQueueType::COMMAND_QUEUE_IGNORE;
+		textureBarrier.QueueAfter		= ECommandQueueType::COMMAND_QUEUE_NONE;
+		textureBarrier.QueueBefore		= ECommandQueueType::COMMAND_QUEUE_NONE;
 		textureBarrier.Miplevel			= 0;
 		textureBarrier.MiplevelCount	= desc.Miplevels;
 		textureBarrier.ArrayIndex		= 0;
 		textureBarrier.ArrayCount		= desc.ArrayCount;
 
-		PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_TOP, FPipelineStageFlags::PIPELINE_STAGE_COPY, &textureBarrier, 1);
+		PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 
 		VkImage		imageVk				= pVkTexture->GetImage();
 		VkExtent2D	destinationExtent	= {};
@@ -273,7 +288,7 @@ namespace LambdaEngine
 			textureBarrier.ArrayCount		= 1;
 			textureBarrier.StateBefore		= ETextureState::TEXTURE_STATE_COPY_DST;
 			textureBarrier.StateAfter		= ETextureState::TEXTURE_STATE_COPY_SRC;
-			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_COPY, FPipelineStageFlags::PIPELINE_STAGE_COPY, &textureBarrier, 1);
+			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 
 			VkImageBlit blit = {};
 			blit.srcOffsets[0]					= { 0, 0, 0 };
@@ -295,14 +310,17 @@ namespace LambdaEngine
 		}
 
 		textureBarrier.Miplevel = miplevelCount - 1;
-		PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_TOP, FPipelineStageFlags::PIPELINE_STAGE_COPY, &textureBarrier, 1);
+		PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 
-		textureBarrier.Miplevel			= 0;
-		textureBarrier.MiplevelCount	= desc.Miplevels;
-		textureBarrier.ArrayCount		= desc.ArrayCount;
-		textureBarrier.StateBefore		= ETextureState::TEXTURE_STATE_COPY_SRC;
-		textureBarrier.StateAfter		= stateAfter;
-		PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_COPY, FPipelineStageFlags::PIPELINE_STAGE_BOTTOM, &textureBarrier, 1);
+		if (stateAfter != ETextureState::TEXTURE_STATE_COPY_SRC)
+		{
+			textureBarrier.Miplevel			= 0;
+			textureBarrier.MiplevelCount	= desc.Miplevels;
+			textureBarrier.ArrayCount		= desc.ArrayCount;
+			textureBarrier.StateBefore		= ETextureState::TEXTURE_STATE_COPY_SRC;
+			textureBarrier.StateAfter		= stateAfter;
+			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &textureBarrier, 1);
+		}
 	}
 
 	void CommandListVK::SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)

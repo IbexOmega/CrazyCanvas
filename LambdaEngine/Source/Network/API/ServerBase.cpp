@@ -93,6 +93,11 @@ namespace LambdaEngine
 		m_Run = false;
 	}
 
+	bool ServerBase::ShouldTerminate() const
+	{
+		return !m_Run;
+	}
+
 	bool ServerBase::ThreadHaveTerminated() const
 	{
 		return m_pThread == nullptr;
@@ -108,7 +113,7 @@ namespace LambdaEngine
 
 		OnThreadStarted();
 
-		while (m_Run)
+		while (!ShouldTerminate())
 		{
 			OnThreadUpdate();
 		}
@@ -124,7 +129,11 @@ namespace LambdaEngine
 			OnThreadTerminated();
 			m_pThread = nullptr;
 		}
-		Release();
+
+		if (m_Release)
+		{
+			Release();
+		}
 		LOG_WARNING("Server Thread Terminated");
 	}
 }
