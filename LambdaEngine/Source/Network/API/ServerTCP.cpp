@@ -71,6 +71,7 @@ namespace LambdaEngine
 			client->Release();
 		}
 		m_Clients.clear();
+		delete m_pServerSocket;
 	}
 
 	void ServerTCP::OnStopRequested()
