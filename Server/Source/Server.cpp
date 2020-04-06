@@ -31,7 +31,7 @@ Server::Server()
 
 Server::~Server()
 {
-	delete m_pServerTCP;
+	m_pServerTCP->Release();
 	//delete m_pServerUDP;
 }
 

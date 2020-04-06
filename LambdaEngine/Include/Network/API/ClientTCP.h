@@ -9,6 +9,8 @@
 
 namespace LambdaEngine
 {
+	class IRemoteClientTCPHandler;
+
 	class LAMBDA_API ClientTCP : public ClientBase
 	{
 		friend class SocketFactory;
@@ -35,6 +37,16 @@ namespace LambdaEngine
 		void Disconnect();
 
 		/*
+		* return - true if there is a valid connection, otherwise false
+		*/
+		bool IsConnected() const;
+
+		/*
+		* return - true if there is a valid connection, otherwise false
+		*/
+		bool IsReadyToConnect() const;
+
+		/*
 		* return - true if this instance is on the server side, otherwise false.
 		*/
 		bool IsServerSide() const;
@@ -48,7 +60,7 @@ namespace LambdaEngine
 		virtual bool TransmitPacket(NetworkPacket* packet) override;
 
 	private:
-		ClientTCP(IClientTCPHandler* handler, ISocketTCP* socket);
+		ClientTCP(IClientTCPHandler* clientHandler, IRemoteClientTCPHandler* remoteClientHandler, ISocketTCP* socket);
 
 		bool Receive(char* buffer, int bytesToRead);
 		bool ReceivePacket(NetworkPacket* packet);
@@ -66,7 +78,8 @@ namespace LambdaEngine
 	private:
 		ISocketTCP* m_pSocket;
 		SpinLock m_LockStart;
-		IClientTCPHandler* m_pHandler;
+		IClientTCPHandler* m_pClientHandler;
+		IRemoteClientTCPHandler* m_pRemoteClientHandler;
 		bool m_ServerSide;
 		int64 m_TimerReceived;
 		int64 m_TimerTransmit;
