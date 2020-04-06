@@ -58,6 +58,7 @@ namespace LambdaEngine
 
 		bool StartThread();
 		void TerminateThread();
+		bool ShouldTerminate() const;
 		bool ThreadHaveTerminated() const;
 
 	private:

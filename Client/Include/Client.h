@@ -17,6 +17,9 @@ public:
 	~Client();
 
 	virtual void OnClientPacketReceivedUDP(LambdaEngine::ClientUDP* client, LambdaEngine::NetworkPacket* packet) override;
+	virtual void OnClientErrorUDP(LambdaEngine::ClientUDP* client) override;
+	virtual void OnClientStoppedUDP(LambdaEngine::ClientUDP* client) override;
+
 	virtual void OnClientConnected(LambdaEngine::ClientTCP* client) override;
 	virtual void OnClientDisconnected(LambdaEngine::ClientTCP* client) override;
 	virtual void OnClientFailedConnecting(LambdaEngine::ClientTCP* client) override;

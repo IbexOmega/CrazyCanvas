@@ -23,8 +23,8 @@ Server::Server()
 	m_pServerTCP = DBG_NEW ServerTCP(2, this);
 	m_pServerTCP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
 
-	/*m_pServerUDP = new ServerUDP(this);
-	m_pServerUDP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);*/
+	m_pServerUDP = new ServerUDP(this);
+	m_pServerUDP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
 
 	UpdateTitle();
 }
@@ -32,7 +32,7 @@ Server::Server()
 Server::~Server()
 {
 	m_pServerTCP->Release();
-	//delete m_pServerUDP;
+	m_pServerUDP->Release();
 
 	for (LambdaEngine::IClientTCPHandler* handler : m_ClientHandlers)
 		delete handler;
@@ -71,8 +71,13 @@ void Server::OnClientDisconnected(LambdaEngine::ClientTCP* client)
 
 void Server::OnKeyDown(LambdaEngine::EKey key)
 {
-	m_pServerTCP->Stop();
-	//m_pServerUDP->Stop();
+	using namespace LambdaEngine;
+
+	m_pServerTCP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
+	m_pServerUDP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
+
+	/*m_pServerTCP->Stop();
+	m_pServerUDP->Stop();*/
 	LOG_MESSAGE("Key Pressed: %d", key);
 }
 
