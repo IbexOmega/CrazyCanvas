@@ -118,8 +118,7 @@ namespace LambdaEngine
         fenceDesc.InitalValue   = 0;
         
 		IFence* pFence = s_pGraphicsDevice->CreateFence(fenceDesc);
-        pFence->Signal(1);
-            
+
 		ICommandAllocator* pCommandAllocator    = s_pGraphicsDevice->CreateCommandAllocator(ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
         pCommandAllocator->SetName("Graphics Command Allocator");
         
@@ -136,9 +135,11 @@ namespace LambdaEngine
 		uint64 waitValue	= pFence->GetValue();
 		uint64 signalValue	= waitValue + 1;
 
-		s_pGraphicsQueue->ExecuteCommandLists(&pCommandList, 1, PIPELINE_STAGE_FLAG_BOTTOM, pFence, waitValue, pFence, signalValue);
+		s_pGraphicsQueue->ExecuteCommandLists(&pCommandList, 1, PIPELINE_STAGE_FLAG_TOP, pFence, waitValue, pFence, signalValue);
 
 		waitValue = pFence->GetValue();
+
+		//Maybe does not work due to beta driver?
 		pFence->Wait(signalValue, UINT64_MAX_);
 		waitValue = pFence->GetValue();
 
