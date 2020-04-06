@@ -40,10 +40,12 @@ namespace LambdaEngine
 		if (!m_pServerSocket)
 		{
 			LOG_ERROR("[ServerTCP]: Failed to start!");
-			return;
+			Stop();
 		}
-
-		LOG_INFO("[ServerTCP]: Started %s:%d", GetAddress().c_str(), GetPort());
+		else
+		{
+			LOG_INFO("[ServerTCP]: Started %s:%d", GetAddress().c_str(), GetPort());
+		}
 	}
 
 	void ServerTCP::OnThreadUpdate()
@@ -76,7 +78,10 @@ namespace LambdaEngine
 
 	void ServerTCP::OnStopRequested()
 	{
-		m_pServerSocket->Close();
+		if (m_pServerSocket)
+		{
+			m_pServerSocket->Close();
+		}
 	}
 
 	void ServerTCP::OnReleaseRequested()

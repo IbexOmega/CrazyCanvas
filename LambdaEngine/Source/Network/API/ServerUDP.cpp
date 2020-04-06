@@ -1,93 +1,53 @@
 #include "Network/API/ServerUDP.h"
-#include "Log/Log.h"
-#include "Threading/Thread.h"
 #include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/NetworkPacket.h"
+#include "Network/API/IServerUDPHandler.h"
+
+#include "Log/Log.h"
+#include "Threading/Thread.h"
 
 namespace LambdaEngine
 {
-	ServerUDP::ServerUDP(IServerUDPHandler* handler) : 
+	ServerUDP::ServerUDP(IServerUDPHandler* handler) :
 		m_pServerSocket(nullptr),
-		m_pThread(nullptr),
-		m_Stop(false),
 		m_pHandler(handler)
 	{
-		UNREFERENCED_VARIABLE(handler);
+
 	}
 
 	ServerUDP::~ServerUDP()
 	{
+		LOG_WARNING("~ServerUDP()");
 	}
 
-	bool ServerUDP::Start(const std::string& address, uint16 port)
+	void ServerUDP::OnThreadStarted()
 	{
-		if (IsRunning())
-		{
-			LOG_ERROR("[ServerUDP]: Tried to start an already running Server!");
-			return false;
-		}
-
-		m_Stop = false;
-
-		m_pThread = Thread::Create(std::bind(&ServerUDP::Run, this, address, port), std::bind(&ServerUDP::OnStopped, this));
-		return true;
-	}
-
-	void ServerUDP::Stop()
-	{
-		if (IsRunning())
-		{
-			m_Stop = true;
-		}
-	}
-
-	bool ServerUDP::IsRunning() const
-	{
-		return m_pThread != nullptr;
-	}
-
-	const std::string& ServerUDP::GetAddress()
-	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
-		if (m_pServerSocket)
-			return m_pServerSocket->GetAddress();
-		//Should return copy or reference (May cause crash in release)
-		return "";
-	}
-
-	uint16 ServerUDP::GetPort()
-	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
-		if (m_pServerSocket)
-			return m_pServerSocket->GetPort();
-		return 0;
-	}
-
-	uint8 ServerUDP::GetNrOfClients() const
-	{
-		return uint8();
-	}
-
-	void ServerUDP::Run(std::string address, uint16 port)
-	{
-		m_pServerSocket = CreateServerSocket(address, port);
+		m_pServerSocket = CreateServerSocket(GetAddress(), GetPort());
 		if (!m_pServerSocket)
 		{
 			LOG_ERROR("[ServerUDP]: Failed to start!");
-			return;
+			Stop();
 		}
+		else
+		{
+			LOG_INFO("[ServerUDP]: Started %s:%d", GetAddress().c_str(), GetPort());
+		}
+	}
 
-		LOG_INFO("[ServerUDP]: Started %s:%d", address.c_str(), port);
-
+	void ServerUDP::OnThreadUpdate()
+	{
 		NetworkPacket packet(PACKET_TYPE_UNDEFINED);
 		int32 bytesReceived = 0;
-		while (!m_Stop)
+		std::string address;
+		uint16 port;
+
+		while (!ShouldTerminate())
 		{
 			if (m_pServerSocket->ReceiveFrom(packet.GetBuffer(), MAXIMUM_PACKET_SIZE, bytesReceived, address, port))
 			{
 				packet.Reset();
 				packet.UnPack();
-				if (bytesReceived != packet.GetSize())
+				if (bytesReceived == packet.GetSize())
 				{
 					m_pHandler->OnPacketReceivedUDP(&packet, address, port);
 				}
@@ -99,24 +59,23 @@ namespace LambdaEngine
 		}
 	}
 
-	void ServerUDP::OnStopped()
+	void ServerUDP::OnThreadTerminated()
 	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
-		m_pThread = nullptr;
 		delete m_pServerSocket;
-		m_pServerSocket = nullptr;
-		LOG_WARNING("[ServerUDP]: Stopped");
 	}
 
-	/*void ServerUDP::HandleReceivedPacket(NetworkPacket* packet, const std::string& address, uint16 port)
+	void ServerUDP::OnStopRequested()
 	{
-		UNREFERENCED_VARIABLE(packet);
-		UNREFERENCED_VARIABLE(address);
-		UNREFERENCED_VARIABLE(port);
+		if (m_pServerSocket)
+		{
+			m_pServerSocket->Close();
+		}
+	}
 
-		packet->UnPack();
-		// HASH address with port ?
-	}*/
+	void ServerUDP::OnReleaseRequested()
+	{
+
+	}
 
 	ISocketUDP* ServerUDP::CreateServerSocket(const std::string& address, uint16 port)
 	{
