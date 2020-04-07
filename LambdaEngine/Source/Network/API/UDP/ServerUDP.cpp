@@ -80,10 +80,6 @@ namespace LambdaEngine
 		}
 		else
 		{
-			if (GetAddress() == ADDRESS_BROADCAST)
-			{
-				m_pServerSocket->EnableBroadcast();
-			}
 			LOG_INFO("[ServerUDP]: Started %s:%d", GetAddress().c_str(), GetPort());
 		}
 	}

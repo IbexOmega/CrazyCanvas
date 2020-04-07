@@ -15,7 +15,7 @@ namespace LambdaEngine
 		m_PacketResponse(PACKET_TYPE_NETWORK_DISCOVERY, false)
 	{
 		m_pServer = PlatformNetworkUtils::CreateServerUDP(this);
-		m_pServer->Start(PlatformNetworkUtils::GetLocalAddress(), 4450);
+		m_pServer->Start(ADDRESS_ANY, 4450);
 	}
 
 	NetworkDiscoveryHost::~NetworkDiscoveryHost()
