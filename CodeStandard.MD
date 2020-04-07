@@ -210,16 +210,24 @@ int**  ppPointer = nullptr;
 
 * Private/Protected members should use the letter 'm_' as prefix 
 ```
-int    m_MyInteger = 0;
-int*   m_pPointer  = nullptr;
-int**  m_ppPointer = nullptr;
+class MyClass
+{
+private:
+  int    m_MyInteger = 0;
+  int*   m_pPointer  = nullptr;
+  int**  m_ppPointer = nullptr;
+ };
 ```
 
 * Public members should **NOT** use the 'm_' as prefix, instead they start with a capital letter, unless they are pointers
 ```
-int    MyInteger = 0;
-int*   pPointer  = nullptr;
-int**  ppPointer = nullptr;
+class MyClass
+{
+public:
+  int    MyInteger = 0;
+  int*   pPointer  = nullptr;
+  int**  ppPointer = nullptr;
+};  
 ```
 * Another exception is mathematical components such as x, y, z etc. These should **NOT** be capitalized.
 ```
