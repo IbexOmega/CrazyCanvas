@@ -23,10 +23,10 @@ namespace LambdaEngine
             return m_Semaphore;
         }
         
-        //IDeviceChild interface
+        // IDeviceChild interface
         virtual void SetName(const char* pName) override final;
         
-        //IFence interface
+        // IFence interface
         virtual void Wait(uint64 signalValue, uint64 timeOut) const override final;
         virtual void Signal(uint64 signalValue)                     override final;
 

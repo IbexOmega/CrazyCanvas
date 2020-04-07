@@ -20,8 +20,11 @@ namespace LambdaEngine
 
 		VkCommandBuffer AllocateCommandBuffer(VkCommandBufferLevel level);
 
-		virtual bool Reset()					override final;
+		// IDeviceChild Interface
 		virtual void SetName(const char* pName)	override final;
+		
+		// ICommandAllocator Interface
+		virtual bool Reset()					override final;
 
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{

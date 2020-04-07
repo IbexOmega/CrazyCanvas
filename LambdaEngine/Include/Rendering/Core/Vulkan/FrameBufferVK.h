@@ -25,10 +25,10 @@ namespace LambdaEngine
             return m_FrameBuffer;
         }
 
-        //IDeviceChild interface
+        // IDeviceChild interface
         virtual void SetName(const char* pName) override final;
 
-        //IFrameBuffer interface
+        // IFrameBuffer interface
         virtual ITextureView* GetRenderTarget(uint32 index) override final;
         virtual ITextureView* GetDepthStencil()             override final;
         
