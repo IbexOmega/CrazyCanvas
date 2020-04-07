@@ -75,8 +75,8 @@ namespace LambdaEngine
 
 		bool Finalize(const SceneDesc& desc);
 
-		uint32 AddStaticGameObject(const GameObject& gameObject, glm::mat4& transform = glm::mat4(1.0f));
-		uint32 AddDynamicGameObject(const GameObject& gameObject, glm::mat4& transform = glm::mat4(1.0f));
+		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
+		uint32 AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 
 	private:
 		const IGraphicsDevice*					m_pGraphicsDevice;

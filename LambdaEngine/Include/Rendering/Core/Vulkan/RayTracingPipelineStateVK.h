@@ -19,7 +19,12 @@ namespace LambdaEngine
 
 		bool Init(const RayTracingPipelineDesc& desc);
 
-        FORCEINLINE VkPipeline GetPipeline() const
+		FORCEINLINE VkDeviceSize GetBindingOffsetRaygenGroup()	const { return m_BindingOffsetRaygenShaderGroup; }
+		FORCEINLINE VkDeviceSize GetBindingOffsetHitGroup()		const { return m_BindingOffsetHitShaderGroup; }
+		FORCEINLINE VkDeviceSize GetBindingOffsetMissGroup()	const { return m_BindingOffsetMissShaderGroup; }
+		FORCEINLINE VkDeviceSize GetBindingStride()				const { return m_BindingStride; }
+
+		FORCEINLINE VkPipeline GetPipeline() const
         {
             return m_Pipeline;
         }
@@ -33,11 +38,6 @@ namespace LambdaEngine
             return EPipelineStateType::RAY_TRACING;
         }
 
-		FORCEINLINE VkDeviceSize GetBindingOffsetRaygenGroup()	const { return m_BindingOffsetRaygenShaderGroup; }
-		FORCEINLINE VkDeviceSize GetBindingOffsetHitGroup()		const { return m_BindingOffsetHitShaderGroup; }
-		FORCEINLINE VkDeviceSize GetBindingOffsetMissGroup()	const { return m_BindingOffsetMissShaderGroup; }
-		FORCEINLINE VkDeviceSize GetBindingStride()				const { return m_BindingStride; }
-
 	private:
 		bool CreateShaderData(std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,
 			std::vector<VkSpecializationInfo>& shaderStagesSpecializationInfos,
@@ -46,8 +46,8 @@ namespace LambdaEngine
 			const RayTracingPipelineDesc& desc);
 
 	private:
-		VkPipeline m_Pipeline;
-		BufferVK* m_pSBT;
+		VkPipeline	m_Pipeline;
+		BufferVK*	m_pSBT;
 
 		VkDeviceSize m_BindingOffsetRaygenShaderGroup;
 		VkDeviceSize m_BindingOffsetHitShaderGroup;

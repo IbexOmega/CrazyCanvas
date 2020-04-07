@@ -8,13 +8,13 @@ namespace LambdaEngine
 	class IClientUDPHandler;
 	class ServerUDP;
 
-	class LAMBDA_API RemoteClientUDP : public IClientUDP
+	class LAMBDA_API ClientUDPRemote : public IClientUDP
 	{
 		friend class ServerUDP;
 
 	public:
-		RemoteClientUDP(const std::string& address, uint16 port, uint64 hash, ServerUDP* server, IClientUDPHandler* handler);
-		~RemoteClientUDP();
+		ClientUDPRemote(const std::string& address, uint16 port, uint64 hash, ServerUDP* server, IClientUDPHandler* handler);
+		~ClientUDPRemote();
 
 		/*
 		* Sends a packet
@@ -72,7 +72,9 @@ namespace LambdaEngine
 		uint64 GetHash() const;
 
 	private:
+		void ReleaseInternal();
 		void OnPacketReceived(NetworkPacket* packet);
+		virtual bool Start(const std::string& address, uint16 port) override final;
 
 	private:
 		std::string m_Address;
@@ -80,5 +82,10 @@ namespace LambdaEngine
 		uint64 m_Hash;
 		IClientUDPHandler* m_pHandler;
 		ServerUDP* m_pServer;
+
+		uint32 m_NrOfPacketsTransmitted;
+		uint32 m_NrOfPacketsReceived;
+		uint32 m_NrOfBytesTransmitted;
+		uint32 m_NrOfBytesReceived;
 	};
 }

@@ -1,5 +1,5 @@
-#include "Network/API/ClientUDP.h"
-#include "Network/API/PlatformSocketFactory.h"
+#include "Network/API/UDP/ClientUDP.h"
+#include "Network/API/PlatformNetworkUtils.h"
 #include "Network/API/NetworkPacket.h"
 
 #include "Threading/Thread.h"
@@ -8,13 +8,12 @@
 
 namespace LambdaEngine
 {
-	ClientUDP::ClientUDP(const std::string& address, uint16 port, IClientUDPHandler* handler) : 
+	ClientUDP::ClientUDP(IClientUDPHandler* clientHandler) :
 		ClientBase(false),
 		m_pSocket(nullptr),
-		m_pClientHandler(handler)
+		m_pClientHandler(clientHandler)
 	{
-		SetAddressAndPort(address, port);
-		StartThreads();
+		
 	}
 
 	ClientUDP::~ClientUDP()
@@ -22,9 +21,24 @@ namespace LambdaEngine
 		LOG_WARNING("~ClientUDP()");
 	}
 
+	bool ClientUDP::Start(const std::string& address, uint16 port)
+	{
+		std::scoped_lock<SpinLock> lock(m_LockStart);
+		if (ThreadsHaveTerminated())
+		{
+			SetAddressAndPort(address, port);
+
+			if (StartThreads())
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	void ClientUDP::OnTransmitterStarted()
 	{
-		m_pSocket = PlatformSocketFactory::CreateSocketUDP();
+		m_pSocket = PlatformNetworkUtils::CreateSocketUDP();
 		if (!m_pSocket)
 		{
 			if (m_pClientHandler)
@@ -33,6 +47,11 @@ namespace LambdaEngine
 			}
 
 			TerminateThreads();
+		}
+
+		if (GetAddress() == ADDRESS_BROADCAST)
+		{
+			m_pSocket->EnableBroadcast();
 		}
 
 		NetworkPacket packet(PACKET_TYPE_UNDEFINED, false);
@@ -52,14 +71,19 @@ namespace LambdaEngine
 
 		while (!ShouldTerminate())
 		{
-			if (m_pSocket->ReceiveFrom(packet->GetBuffer(), MAXIMUM_PACKET_SIZE, bytesReceived, address, port))
+			if (m_pSocket->ReceiveFrom(m_ReceiveBuffer, MAXIMUM_DATAGRAM_SIZE, bytesReceived, address, port))
 			{
+				memcpy(packet->GetBuffer(), m_ReceiveBuffer, sizeof(PACKET_SIZE));
 				packet->Reset();
 				packet->UnPack();
 				if (bytesReceived == packet->GetSize())
 				{
+					memcpy(packet->GetBuffer(), m_ReceiveBuffer, bytesReceived);
 					m_pClientHandler->OnClientPacketReceivedUDP(this, packet);
-					LOG_MESSAGE("%s:%d", address.c_str(), port);
+				}
+				else
+				{
+					LOG_ERROR("Error received a packet with the wrong size %i | %i", bytesReceived, packet->GetSize());
 				}
 				RegisterPacketsReceived(1);
 			}
@@ -72,7 +96,6 @@ namespace LambdaEngine
 
 	void ClientUDP::OnThreadsTerminated()
 	{
-		LOG_MESSAGE("OnThreadsTerminated()");
 		std::scoped_lock<SpinLock> lock(m_LockStart);
 		delete m_pSocket;
 		m_pSocket = nullptr;

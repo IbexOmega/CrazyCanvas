@@ -93,7 +93,13 @@ namespace LambdaEngine
 
     void TextureViewVK::SetName(const char* pName)
     {
-        m_pDevice->SetVulkanObjectName(pName, (uint64)m_ImageView, VK_OBJECT_TYPE_IMAGE_VIEW);
+        if (pName)
+        {
+            TDeviceChild::SetName(pName);
+            m_pDevice->SetVulkanObjectName(pName, (uint64)m_ImageView, VK_OBJECT_TYPE_IMAGE_VIEW);
+
+            m_Desc.pName = m_DebugName;
+        }
     }
 
     ITexture* TextureViewVK::GetTexture()

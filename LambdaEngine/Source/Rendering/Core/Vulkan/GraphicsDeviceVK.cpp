@@ -3,21 +3,23 @@
 
 #include "Log/Log.h"
 
+#include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
+#include "Rendering/Core/Vulkan/FenceVK.h"
+#include "Rendering/Core/Vulkan/FenceLegacyVK.h"
+#include "Rendering/Core/Vulkan/CommandAllocatorVK.h"
+#include "Rendering/Core/Vulkan/CommandListVK.h"
+#include "Rendering/Core/Vulkan/CommandQueueVK.h"
 #include "Rendering/Core/Vulkan/GraphicsPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/ComputePipelineStateVK.h"
 #include "Rendering/Core/Vulkan/RayTracingPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/TextureVK.h"
-#include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
 #include "Rendering/Core/Vulkan/TopLevelAccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/BottomLevelAccelerationStructureVK.h"
-#include "Rendering/Core/Vulkan/CommandQueueVK.h"
-#include "Rendering/Core/Vulkan/FenceVK.h"
-#include "Rendering/Core/Vulkan/CommandAllocatorVK.h"
-#include "Rendering/Core/Vulkan/CommandListVK.h"
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
-#include "Rendering/Core/Vulkan/FenceLegacyVK.h"
+#include "Rendering/Core/Vulkan/FrameBufferVK.h"
+#include "Rendering/Core/Vulkan/RenderPassVK.h"
 
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
@@ -134,9 +136,32 @@ namespace LambdaEngine
 		delete this;
 	}
 
-	IRenderPass* GraphicsDeviceVK::CreateRenderPass() const
+	IFrameBuffer* GraphicsDeviceVK::CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc) const
 	{
-		return nullptr;
+		FrameBufferVK* pFrameBuffer = DBG_NEW FrameBufferVK(this);
+		if (pFrameBuffer->Init(pRenderPass, desc))
+		{
+			pFrameBuffer->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pFrameBuffer;
+		}
+	}
+
+	IRenderPass* GraphicsDeviceVK::CreateRenderPass(const RenderPassDesc& desc) const
+	{
+		RenderPassVK* pRenderPass = DBG_NEW RenderPassVK(this);
+		if (pRenderPass->Init(desc))
+		{
+			pRenderPass->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pRenderPass;
+		}
 	}
 
 	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) const

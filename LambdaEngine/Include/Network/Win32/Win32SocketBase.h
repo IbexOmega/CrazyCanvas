@@ -35,11 +35,11 @@ namespace LambdaEngine
 			socketAddress.sin_port = htons(port);
 
 			if (address.empty() || address == ADDRESS_ANY)
-				socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+				socketAddress.sin_addr.s_addr = INADDR_ANY;
 			else if (address == ADDRESS_LOOPBACK)
-				socketAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+				socketAddress.sin_addr.s_addr = INADDR_LOOPBACK;
 			else if (address == ADDRESS_BROADCAST)
-				socketAddress.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+				socketAddress.sin_addr.s_addr = INADDR_BROADCAST;
 			else
 				inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
 
@@ -184,7 +184,8 @@ namespace LambdaEngine
 				LOG_ERROR_CRIT("Faild to ReadSocketData");
 				return;
 			}
-			m_Address = inet_ntoa(socketAddress.sin_addr);
+			m_Address.resize(16);
+			inet_ntop(socketAddress.sin_family, &socketAddress.sin_addr, m_Address.data(), m_Address.length());
 			m_Port = ntohs(socketAddress.sin_port);
 		}
 

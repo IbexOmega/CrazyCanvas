@@ -11,36 +11,40 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/Window.h"
 
-#include "Network/API/PlatformSocketFactory.h"
-#include "Network/API/ClientTCP.h"
-#include "Network/API/IClientUDP.h"
+#include "Network/API/PlatformNetworkUtils.h"
 
 #include "ClientTCPHandler.h"
 #include "ClientUDPHandler.h"
 
-Server::Server()
+Server::Server() :
+	m_NetworkDiscovery(this, "Drift It 3D", LambdaEngine::PlatformNetworkUtils::GetLocalAddress(), 4444)
 {
 	using namespace LambdaEngine;
     
-	m_pServerTCP = DBG_NEW ServerTCP(2, this);
-	m_pServerTCP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
+	/*m_pServerTCP = DBG_NEW ServerTCP(2, this);
+	m_pServerTCP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
 
 	m_pServerUDP = new ServerUDP(this);
-	m_pServerUDP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
+	m_pServerUDP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);*/
 
 	UpdateTitle();
 }
 
 Server::~Server()
 {
-	m_pServerTCP->Release();
+	/*m_pServerTCP->Release();
 	m_pServerUDP->Release();
 
 	for (LambdaEngine::IClientTCPHandler* handler : m_ClientTCPHandlers)
 		delete handler;
 
 	for (LambdaEngine::IClientUDPHandler* handler : m_ClientUDPHandlers)
-		delete handler;
+		delete handler;*/
+}
+
+void Server::OnSearcherRequest(LambdaEngine::NetworkPacket* packet)
+{
+
 }
 
 LambdaEngine::IClientUDPHandler* Server::CreateClientHandlerUDP()
@@ -80,32 +84,31 @@ void Server::OnKeyDown(LambdaEngine::EKey key)
 {
 	using namespace LambdaEngine;
 
-	m_pServerTCP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
-	m_pServerUDP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
+	/*m_pServerTCP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
+	m_pServerUDP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);*/
 
 	/*m_pServerTCP->Stop();
 	m_pServerUDP->Stop();*/
-	LOG_MESSAGE("Key Pressed: %d", key);
 }
 
 void Server::OnKeyHeldDown(LambdaEngine::EKey key)
 {
-	LOG_MESSAGE("Key Held Down: %d", key);
+	
 }
 
 void Server::OnKeyUp(LambdaEngine::EKey key)
 {
-	LOG_MESSAGE("Key Released: %d", key);
+	
 }
 
 void Server::UpdateTitle()
 {
 	using namespace LambdaEngine;
 
-	std::string title = "Server - " + std::to_string(m_pServerTCP->GetNrOfClients());
+	/*std::string title = "Server - " + std::to_string(m_pServerTCP->GetNrOfClients());
 
 	PlatformApplication::Get()->GetWindow()->SetTitle(title.c_str());
-	PlatformConsole::SetTitle(title.c_str());
+	PlatformConsole::SetTitle(title.c_str());*/
 }
 
 void Server::Tick(LambdaEngine::Timestamp dt)

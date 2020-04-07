@@ -5,6 +5,10 @@
 
 #include <mutex>
 
+#include <string.h>
+
+#define MAX_DEVICE_CHILD_NAME_LENGTH 256
+
 namespace LambdaEngine
 {
 	template <typename TGraphicsDevice, typename IBase>
@@ -40,6 +44,11 @@ namespace LambdaEngine
 			return ++m_StrongReferences;
 		}
         
+		virtual void SetName(const char* pName) override
+		{
+			strncpy(m_DebugName, pName, sizeof(m_DebugName));
+		}
+
         FORCEINLINE virtual const IGraphicsDevice* GetDevice() const override
         {
             //Cast the device to the correct type, this way we do not actually need to include any implementation.
@@ -49,6 +58,7 @@ namespace LambdaEngine
 
 	protected:
 		const TGraphicsDevice* const m_pDevice;
+		char m_DebugName[MAX_DEVICE_CHILD_NAME_LENGTH];
 
 	private:
         SpinLock    m_Lock;

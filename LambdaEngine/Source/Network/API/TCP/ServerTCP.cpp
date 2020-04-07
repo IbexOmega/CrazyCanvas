@@ -1,7 +1,8 @@
-#include "Network/API/ServerTCP.h"
-#include "Network/API/PlatformSocketFactory.h"
-#include "Network/API/IServerTCPHandler.h"
-#include "Network/API/ClientTCP.h"
+#include "Network/API/TCP/ServerTCP.h"
+#include "Network/API/TCP/IServerTCPHandler.h"
+#include "Network/API/TCP/ClientTCP.h"
+
+#include "Network/API/PlatformNetworkUtils.h"
 #include "Network/API/NetworkPacket.h"
 
 #include "Threading/Thread.h"
@@ -12,7 +13,7 @@
 
 namespace LambdaEngine
 {
-	ServerTCP::ServerTCP(uint16 maxClients, IServerTCPHandler* handler) :
+	ServerTCP::ServerTCP(IServerTCPHandler* handler, uint16 maxClients) :
 		m_pServerSocket(nullptr),
 		m_MaxClients(maxClients),
 		m_pHandler(handler)
@@ -134,7 +135,7 @@ namespace LambdaEngine
 
 	ISocketTCP* ServerTCP::CreateServerSocket(const std::string& address, uint16 port)
 	{
-		ISocketTCP* serverSocket = PlatformSocketFactory::CreateSocketTCP();
+		ISocketTCP* serverSocket = PlatformNetworkUtils::CreateSocketTCP();
 		if (!serverSocket)
 			return nullptr;
 

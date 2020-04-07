@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Network/API/IClientTCPHandler.h"
+#include "Network/API/TCP/IClientTCPHandler.h"
 
 class ClientTCPHandler : public LambdaEngine::IClientTCPHandler
 {

@@ -1,5 +1,5 @@
 #pragma once
-#include "IClient.h"
+#include "../IClient.h"
 
 namespace LambdaEngine
 {

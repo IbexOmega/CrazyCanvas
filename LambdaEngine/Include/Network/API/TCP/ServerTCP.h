@@ -1,20 +1,18 @@
 #pragma once
 
-#include "ServerBase.h"
+#include "../ServerBase.h"
 #include "IRemoteClientTCPHandler.h"
+#include "IServerTCPHandler.h"
+#include "ClientTCP.h"
 
 namespace LambdaEngine
 {
-	class ISocketTCP;
-	class ClientTCP;
-	class IServerTCPHandler;
-
 	class LAMBDA_API ServerTCP : public ServerBase, protected IRemoteClientTCPHandler
 	{
+		friend class NetworkUtils;
 		friend class ClientTCP;
 
 	public:
-		ServerTCP(uint16 maxClients, IServerTCPHandler* handler);
 		~ServerTCP();
 
 		/*
@@ -32,6 +30,8 @@ namespace LambdaEngine
 		virtual void OnClientDisconnected(ClientTCP* client) override;
 
 	private:
+		ServerTCP(IServerTCPHandler* handler, uint16 maxClients);
+
 		void HandleNewClient(ClientTCP* client);
 		void AddClient(ClientTCP* client);
 		void RemoveClient(ClientTCP* client);

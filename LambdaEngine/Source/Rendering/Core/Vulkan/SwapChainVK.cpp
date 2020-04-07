@@ -419,6 +419,12 @@ namespace LambdaEngine
 
     void SwapChainVK::SetName(const char* pName)
     {
-        m_pDevice->SetVulkanObjectName(pName, (uint64)m_SwapChain, VK_OBJECT_TYPE_SWAPCHAIN_KHR);
+        if (pName)
+        {
+            TDeviceChild::SetName(pName);
+            m_pDevice->SetVulkanObjectName(pName, (uint64)m_SwapChain, VK_OBJECT_TYPE_SWAPCHAIN_KHR);
+
+            m_Desc.pName = m_DebugName;
+        }
     }
 }

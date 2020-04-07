@@ -1,7 +1,8 @@
 #ifdef LAMBDA_PLATFORM_WINDOWS
-#include "Network/Win32/Win32SocketFactory.h"
+#include "Network/Win32/Win32NetworkUtils.h"
 #include "Network/Win32/Win32SocketTCP.h"
 #include "Network/Win32/Win32SocketUDP.h"
+
 #include "Log/Log.h"
 #include <winsock2.h>
 
@@ -9,7 +10,7 @@
 
 namespace LambdaEngine
 {
-	bool Win32SocketFactory::Init()
+	bool Win32NetworkUtils::Init()
 	{
 		WSADATA wsa;
 
@@ -19,29 +20,29 @@ namespace LambdaEngine
 			return false;
 		}
 		LOG_INFO("[Winsock2]: Initialised");
-		return SocketFactory::Init();
+		return NetworkUtils::Init();
 	}
 
-	void Win32SocketFactory::Release()
+	void Win32NetworkUtils::Release()
 	{
 		WSACleanup();
 		LOG_INFO("[Winsock2]: Released");
-		SocketFactory::Release();
+		NetworkUtils::Release();
 	}
 
-	ISocketTCP* Win32SocketFactory::CreateSocketTCP()
+	ISocketTCP* Win32NetworkUtils::CreateSocketTCP()
 	{
 		return DBG_NEW Win32SocketTCP();
 	}
 
-	ISocketUDP* Win32SocketFactory::CreateSocketUDP()
+	ISocketUDP* Win32NetworkUtils::CreateSocketUDP()
 	{
 		return DBG_NEW Win32SocketUDP();
 	}
 
-	std::string Win32SocketFactory::GetLocalAddress()
+	std::string Win32NetworkUtils::GetLocalAddress()
 	{
-		return SocketFactory::GetLocalAddress();
+		return NetworkUtils::GetLocalAddress();
 	}
 }
 #endif

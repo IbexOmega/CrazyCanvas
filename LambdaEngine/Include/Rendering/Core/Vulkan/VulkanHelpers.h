@@ -217,9 +217,9 @@ namespace LambdaEngine
         
         return result;
     }
-	inline VkAccessFlags ConvertAccessFlags(FAccessFlags accessFlags)
+	inline uint32 ConvertAccessFlags(uint32 accessFlags)
 	{
-		VkAccessFlags vkAccessFlags = 0;
+        uint32 vkAccessFlags = 0;
 
 		vkAccessFlags |= (accessFlags & ACCESS_FLAG_INDIRECT_COMMAND_READ)					? VK_ACCESS_INDIRECT_COMMAND_READ_BIT : 0;
 		vkAccessFlags |= (accessFlags & ACCESS_FLAG_INDEX_READ)								? VK_ACCESS_INDEX_READ_BIT : 0;
@@ -258,7 +258,7 @@ namespace LambdaEngine
         switch (textureState)
         {
             case ETextureState::TEXTURE_STATE_GENERAL:                             return VK_IMAGE_LAYOUT_GENERAL;
-            case ETextureState::TEXTURE_STATE_COLOR_ATTACHMENT:                    return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_RENDER_TARGET:                    return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             case ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT:            return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             case ETextureState::TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY:             return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
             case ETextureState::TEXTURE_STATE_SHADER_READ_ONLY:                    return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

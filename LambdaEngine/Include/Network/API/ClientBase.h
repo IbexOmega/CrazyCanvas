@@ -84,7 +84,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		void Release() override final
+		void Release() override
 		{
 			if (!m_Release)
 			{

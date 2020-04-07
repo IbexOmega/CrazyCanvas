@@ -1,12 +1,12 @@
 #pragma once
 #include "Win32SocketBase.h"
-#include "../API/ISocketUDP.h"
+#include "../API/UDP/ISocketUDP.h"
 
 namespace LambdaEngine
 {
 	class Win32SocketUDP : public Win32SocketBase<ISocketUDP>
 	{	
-		friend class Win32SocketFactory;
+		friend class Win32NetworkUtils;
 
 	public:
 		/*

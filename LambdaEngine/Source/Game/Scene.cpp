@@ -36,7 +36,7 @@ namespace LambdaEngine
 		SAFERELEASE(m_pSceneMeshIndexBuffer);
 	}
 
-	uint32 Scene::AddStaticGameObject(const GameObject& gameObject, glm::mat4& transform)
+	uint32 Scene::AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform)
 	{
 		LOG_WARNING("[Scene]: Call to unimplemented function AddStaticGameObject!");
 		return 0;
@@ -303,8 +303,6 @@ namespace LambdaEngine
 		m_pName = desc.pName;
 
 		D_LOG_MESSAGE("[Scene]: Successfully finalized \"%s\"! ", m_pName);
-
-		
 
 		return true;
 	}

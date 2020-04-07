@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Network/API/SocketFactory.h"
+#include "Network/API/NetworkUtils.h"
 
 namespace LambdaEngine
 {
-	class LAMBDA_API MacSocketFactory : public SocketFactory
+	class LAMBDA_API MacNetworkUtils : public NetworkUtils
 	{
         friend class EngineLoop;
         
@@ -35,5 +35,5 @@ namespace LambdaEngine
         static void Release();
 	};
 
-    typedef MacSocketFactory PlatformSocketFactory;
+    typedef MacNetworkUtils PlatformNetworkUtils;
 }

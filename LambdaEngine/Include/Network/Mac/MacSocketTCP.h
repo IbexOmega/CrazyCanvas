@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef LAMBDA_PLATFORM_MACOS
-#include "Network/API/ISocketTCP.h"
+#include "Network/API/TCP/ISocketTCP.h"
 
 #include "MacSocketBase.h"
 
@@ -9,7 +9,7 @@ namespace LambdaEngine
 {
     class MacSocketTCP : public MacSocketBase<ISocketTCP>
     {
-        friend class MacSocketFactory;
+        friend class MacNetworkUtils;
         
     public:
         ~MacSocketTCP() = default;

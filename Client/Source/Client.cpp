@@ -11,33 +11,45 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/Window.h"
 
-#include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/NetworkPacket.h"
 
-#include "Network/API/ClientUDP.h"
 
-Client::Client()
+Client::Client() : 
+	m_NetworkDiscovery(this, "Drift It 3D")
 {
 	using namespace LambdaEngine;
     
     PlatformApplication::Get()->GetWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
-	m_pClientTCP = new ClientTCP(this);
+	/*m_pClientTCP = PlatformNetworkUtils::CreateClientTCP(this);
 	m_pClientTCP->Connect("192.168.0.104", 4444);
 
-	m_pClientUDP = new ClientUDP("192.168.0.104", 4444, this);
+	m_pClientUDP = PlatformNetworkUtils::CreateClientUDP(this);
+	m_pClientUDP->Start("192.168.0.104", 4444);*/
 }
 
 Client::~Client()
 {
-	m_pClientTCP->Release();
-	m_pClientUDP->Release();
+	/*m_pClientTCP->Release();
+	m_pClientUDP->Release();*/
+}
+
+void Client::OnHostFound(const std::string& address, uint16 port, LambdaEngine::NetworkPacket* packet)
+{
+	LOG_WARNING("Host Found %s:%d", address.c_str(), port);
 }
 
 void Client::OnClientPacketReceivedUDP(LambdaEngine::IClientUDP* client, LambdaEngine::NetworkPacket* packet)
 {
-	LOG_MESSAGE("UDP Packet Received");
+	using namespace LambdaEngine;
+
+	if (packet->ReadPacketType() == PACKET_TYPE_USER_DATA)
+	{
+		std::string str;
+		packet->ReadString(str);
+		LOG_MESSAGE(str.c_str());
+	}
 }
 
 void Client::OnClientErrorUDP(LambdaEngine::IClientUDP* client)
@@ -79,26 +91,25 @@ void Client::OnClientPacketReceivedTCP(LambdaEngine::ClientTCP* client, LambdaEn
 void Client::OnKeyDown(LambdaEngine::EKey key)
 {
 	using namespace LambdaEngine;
-	NetworkPacket* packet = DBG_NEW NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
+	/*NetworkPacket* packet = DBG_NEW NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
 	packet->WriteString("Hej kompis vad heter du?");
 	m_pClientTCP->SendPacket(packet);
 
-	NetworkPacket* packet2 = new NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
+	NetworkPacket* packet2 = DBG_NEW NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
 	packet2->WriteString("Hej kompis vad heter du?");
-	m_pClientUDP->SendPacket(packet2);
+	m_pClientUDP->SendPacket(packet2);*/
 
 	//m_pClient->Disconnect();
-	LOG_MESSAGE("Key Pressed: %d", key);
 }
 
 void Client::OnKeyHeldDown(LambdaEngine::EKey key)
 {
-	LOG_MESSAGE("Key Held Down: %d", key);
+	
 }
 
 void Client::OnKeyUp(LambdaEngine::EKey key)
 {
-	LOG_MESSAGE("Key Released: %d", key);
+	
 }
 
 void Client::Tick(LambdaEngine::Timestamp dt)
