@@ -81,6 +81,10 @@ namespace LambdaEngine
 		}
 		else
 		{
+			if (GetAddress() == ADDRESS_BROADCAST)
+			{
+				m_pServerSocket->EnableBroadcast();
+			}
 			LOG_INFO("[ServerUDP]: Started %s:%d", GetAddress().c_str(), GetPort());
 		}
 	}
@@ -105,12 +109,16 @@ namespace LambdaEngine
 				if (bytesReceived == packet->GetSize())
 				{
 					uint64 hash = Hash(address, port);
-					std::scoped_lock<SpinLock> lock(m_Lock);
-					ClientUDPRemote* client = m_Clients[hash];
+					ClientUDPRemote* client = nullptr;
+					{
+						std::scoped_lock<SpinLock> lock(m_Lock);
+						client = m_Clients[hash];
+					}
 					if (!client)
 					{
 						IClientUDPHandler* handler = m_pHandler->CreateClientHandlerUDP();
 						client = DBG_NEW ClientUDPRemote(address, port, hash, this, handler);
+						std::scoped_lock<SpinLock> lock(m_Lock);
 						m_Clients[hash] = client;
 					}
 					client->OnPacketReceived(packet);
@@ -132,6 +140,7 @@ namespace LambdaEngine
 		}
 		m_Clients.clear();
 		delete m_pServerSocket;
+		m_pServerSocket = nullptr;
 	}
 
 	ISocketUDP* ServerUDP::CreateServerSocket(const std::string& address, uint16 port)

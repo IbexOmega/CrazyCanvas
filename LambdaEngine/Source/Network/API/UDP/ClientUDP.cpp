@@ -49,6 +49,11 @@ namespace LambdaEngine
 			TerminateThreads();
 		}
 
+		if (GetAddress() == ADDRESS_BROADCAST)
+		{
+			m_pSocket->EnableBroadcast();
+		}
+
 		NetworkPacket packet(PACKET_TYPE_UNDEFINED, false);
 		SendPacketImmediately(&packet);
 	}

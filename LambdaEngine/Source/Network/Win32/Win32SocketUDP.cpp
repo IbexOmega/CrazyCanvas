@@ -21,11 +21,16 @@ namespace LambdaEngine
 	{
 		struct sockaddr_in socketAddress;
 		socketAddress.sin_family = AF_INET;
-		if (!address.empty())
-			inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
-		else
-			socketAddress.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 		socketAddress.sin_port = htons(port);
+
+		if (address.empty() || address == ADDRESS_ANY)
+			socketAddress.sin_addr.s_addr = INADDR_ANY;
+		else if (address == ADDRESS_LOOPBACK)
+			socketAddress.sin_addr.s_addr = INADDR_LOOPBACK;
+		else if (address == ADDRESS_BROADCAST)
+			socketAddress.sin_addr.s_addr = INADDR_BROADCAST;
+		else
+			inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
 
 		bytesSent = sendto(m_Socket, buffer, bytesToSend, 0, (struct sockaddr*)&socketAddress, sizeof(struct sockaddr_in));
 		if (bytesSent == SOCKET_ERROR)

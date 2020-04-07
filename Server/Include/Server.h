@@ -8,6 +8,8 @@
 #include "Network/API/TCP/ServerTCP.h"
 #include "Network/API/UDP/ServerUDP.h"
 
+#include "Network/API/Discovery/NetworkDiscoveryHost.h"
+
 #include <set>
 
 namespace LambdaEngine
@@ -16,14 +18,22 @@ namespace LambdaEngine
 	class IClientUDP;
 }
 
-class Server : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IServerTCPHandler, public LambdaEngine::IServerUDPHandler
+class Server : 
+	public LambdaEngine::Game,
+	public LambdaEngine::IKeyboardHandler,
+	public LambdaEngine::IServerTCPHandler,
+	public LambdaEngine::IServerUDPHandler,
+	public LambdaEngine::INetworkDiscoveryHostHandler
 {
 public:
 	Server();
 	~Server();
 
+	virtual void OnSearcherRequest(LambdaEngine::NetworkPacket* packet) override;
+
 	virtual LambdaEngine::IClientUDPHandler* CreateClientHandlerUDP() override;
 	virtual LambdaEngine::IClientTCPHandler* CreateClientHandlerTCP() override;
+
 	virtual bool OnClientAcceptedTCP(LambdaEngine::ClientTCP* client) override;
 	virtual void OnClientConnectedTCP(LambdaEngine::ClientTCP* client) override;
 	virtual void OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client) override;
@@ -44,4 +54,6 @@ private:
 	LambdaEngine::ServerUDP* m_pServerUDP;
 	std::set<LambdaEngine::IClientTCPHandler*> m_ClientTCPHandlers;
 	std::set<LambdaEngine::IClientUDPHandler*> m_ClientUDPHandlers;
+
+	LambdaEngine::NetworkDiscoveryHost m_NetworkDiscovery;
 };

@@ -16,29 +16,35 @@
 #include "ClientTCPHandler.h"
 #include "ClientUDPHandler.h"
 
-Server::Server()
+Server::Server() :
+	m_NetworkDiscovery(this, "Drift It 3D", LambdaEngine::PlatformNetworkUtils::GetLocalAddress(), 4444)
 {
 	using namespace LambdaEngine;
     
 	/*m_pServerTCP = DBG_NEW ServerTCP(2, this);
-	m_pServerTCP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);*/
+	m_pServerTCP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
 
 	m_pServerUDP = new ServerUDP(this);
-	m_pServerUDP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
+	m_pServerUDP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);*/
 
 	UpdateTitle();
 }
 
 Server::~Server()
 {
-	//m_pServerTCP->Release();
+	/*m_pServerTCP->Release();
 	m_pServerUDP->Release();
 
 	for (LambdaEngine::IClientTCPHandler* handler : m_ClientTCPHandlers)
 		delete handler;
 
 	for (LambdaEngine::IClientUDPHandler* handler : m_ClientUDPHandlers)
-		delete handler;
+		delete handler;*/
+}
+
+void Server::OnSearcherRequest(LambdaEngine::NetworkPacket* packet)
+{
+
 }
 
 LambdaEngine::IClientUDPHandler* Server::CreateClientHandlerUDP()

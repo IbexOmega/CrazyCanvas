@@ -3,10 +3,12 @@
 #include "TCP/ISocketTCP.h"
 #include "TCP/IClientTCP.h"
 #include "TCP/IClientTCPHandler.h"
+#include "TCP/ServerTCP.h"
 
 #include "UDP/ISocketUDP.h"
 #include "UDP/IClientUDP.h"
 #include "UDP/IClientUDPHandler.h"
+#include "UDP/ServerUDP.h"
 
 #include "Time/API/Timestamp.h"
 #include "Defines.h"
@@ -49,6 +51,20 @@ namespace LambdaEngine
 		* return - a IClientUDP.
 		*/
 		static IClientUDP* CreateClientUDP(IClientUDPHandler* handler);
+
+		/*
+		* Creates a ServerTCP.
+		*
+		* return - a ServerTCP.
+		*/
+		static ServerTCP* CreateServerTCP(IServerTCPHandler* handler, uint16 maxClients);
+
+		/*
+		* Creates a ServerUDP.
+		*
+		* return - a ServerUDP.
+		*/
+		static ServerUDP* CreateServerUDP(IServerUDPHandler* handler);
 
 		/*
 		* Finds the local network address. Usally 192.168.0.X

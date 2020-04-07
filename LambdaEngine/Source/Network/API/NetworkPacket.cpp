@@ -146,6 +146,90 @@ namespace LambdaEngine
 		m_Head += bytesToRead;
 	}
 
+	int8 NetworkPacket::ReadInt8()
+	{
+		int8 value = 0;
+		ReadInt8(value);
+		return value;
+	}
+
+	uint8 NetworkPacket::ReadUInt8()
+	{
+		uint8 value = 0;
+		ReadUInt8(value);
+		return value;
+	}
+
+	int16 NetworkPacket::ReadInt16()
+	{
+		int16 value = 0;
+		ReadInt16(value);
+		return value;
+	}
+
+	uint16 NetworkPacket::ReadUInt16()
+	{
+		uint16 value = 0;
+		ReadUInt16(value);
+		return value;
+	}
+
+	int32 NetworkPacket::ReadInt32()
+	{
+		int32 value = 0;
+		ReadInt32(value);
+		return value;
+	}
+
+	uint32 NetworkPacket::ReadUInt32()
+	{
+		uint32 value = 0;
+		ReadUInt32(value);
+		return value;
+	}
+
+	int64 NetworkPacket::ReadInt64()
+	{
+		int64 value = 0;
+		ReadInt64(value);
+		return value;
+	}
+
+	uint64 NetworkPacket::ReadUInt64()
+	{
+		uint64 value = 0;
+		ReadUInt64(value);
+		return value;
+	}
+
+	float32 NetworkPacket::ReadFloat32()
+	{
+		float32 value = 0.0f;
+		ReadFloat32(value);
+		return value;
+	}
+
+	float64 NetworkPacket::ReadFloat64()
+	{
+		float64 value = 0.0f;
+		ReadFloat64(value);
+		return value;
+	}
+
+	bool NetworkPacket::ReadBool()
+	{
+		bool value = false;
+		ReadBool(value);
+		return value;
+	}
+
+	std::string NetworkPacket::ReadString()
+	{
+		std::string value;
+		ReadString(value);
+		return value;
+	}
+
 	void NetworkPacket::Reset()
 	{
 		m_Head = sizeof(PACKET_SIZE) + sizeof(PACKET_TYPE);

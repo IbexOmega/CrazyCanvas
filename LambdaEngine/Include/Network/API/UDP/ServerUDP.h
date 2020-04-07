@@ -13,9 +13,9 @@ namespace LambdaEngine
 	class LAMBDA_API ServerUDP : protected ClientBase<IClient>
 	{
 		friend class ClientUDPRemote;
+		friend class NetworkUtils;
 
 	public:
-		ServerUDP(IServerUDPHandler* handler);
 		~ServerUDP();
 
 		/*
@@ -48,6 +48,8 @@ namespace LambdaEngine
 		virtual bool TransmitPacket(NetworkPacket* packet) override;
 
 	private:
+		ServerUDP(IServerUDPHandler* handler);
+
 		void OnClientReleased(ClientUDPRemote* client);
 
 	private:

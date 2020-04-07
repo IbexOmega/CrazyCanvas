@@ -13,7 +13,7 @@
 
 namespace LambdaEngine
 {
-	ServerTCP::ServerTCP(uint16 maxClients, IServerTCPHandler* handler) :
+	ServerTCP::ServerTCP(IServerTCPHandler* handler, uint16 maxClients) :
 		m_pServerSocket(nullptr),
 		m_MaxClients(maxClients),
 		m_pHandler(handler)

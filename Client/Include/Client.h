@@ -7,11 +7,20 @@
 
 #include "Network/API/PlatformNetworkUtils.h"
 
-class Client : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IClientTCPHandler, public LambdaEngine::IClientUDPHandler
+#include "Network/API/Discovery/NetworkDiscoverySearcher.h"
+
+class Client :
+	public LambdaEngine::Game,
+	public LambdaEngine::IKeyboardHandler,
+	public LambdaEngine::IClientTCPHandler,
+	public LambdaEngine::IClientUDPHandler,
+	public LambdaEngine::INetworkDiscoverySearcherHandler
 {
 public:
 	Client();
 	~Client();
+
+	virtual void OnHostFound(const std::string& address, uint16 port, LambdaEngine::NetworkPacket* packet) override;
 
 	virtual void OnClientPacketReceivedUDP(LambdaEngine::IClientUDP* client, LambdaEngine::NetworkPacket* packet) override;
 	virtual void OnClientErrorUDP(LambdaEngine::IClientUDP* client) override;
@@ -33,4 +42,6 @@ public:
 private:
 	LambdaEngine::IClientTCP* m_pClientTCP;
 	LambdaEngine::IClientUDP* m_pClientUDP;
+
+	LambdaEngine::NetworkDiscoverySearcher m_NetworkDiscovery;
 };

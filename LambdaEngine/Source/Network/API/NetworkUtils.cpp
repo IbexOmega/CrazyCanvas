@@ -5,6 +5,8 @@
 #include "Network/API/UDP/ClientUDP.h"
 #include "Network/API/UDP/ISocketUDP.h"
 
+#include "Network/API/Discovery/NetworkDiscoverySearcher.h"
+
 #include "Network/API/PlatformNetworkUtils.h"
 
 namespace LambdaEngine
@@ -12,12 +14,14 @@ namespace LambdaEngine
 	bool NetworkUtils::Init()
 	{
 		ClientTCP::InitStatic();
+		NetworkDiscoverySearcher::InitStatic();
 		return true;
 	}
 
 	void NetworkUtils::Tick(Timestamp dt)
 	{
 		ClientTCP::TickStatic(dt);
+		NetworkDiscoverySearcher::TickStatic(dt);
 	}
 
 	void NetworkUtils::Release()
@@ -33,6 +37,16 @@ namespace LambdaEngine
 	IClientUDP* NetworkUtils::CreateClientUDP(IClientUDPHandler* handler)
 	{
 		return DBG_NEW ClientUDP(handler);
+	}
+
+	ServerTCP* NetworkUtils::CreateServerTCP(IServerTCPHandler* handler, uint16 maxClients)
+	{
+		return DBG_NEW ServerTCP(handler, maxClients);
+	}
+
+	ServerUDP* NetworkUtils::CreateServerUDP(IServerUDPHandler* handler)
+	{
+		return DBG_NEW ServerUDP(handler);
 	}
 
 	std::string NetworkUtils::GetLocalAddress()

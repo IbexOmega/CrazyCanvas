@@ -9,10 +9,10 @@ namespace LambdaEngine
 {
 	class LAMBDA_API ServerTCP : public ServerBase, protected IRemoteClientTCPHandler
 	{
+		friend class NetworkUtils;
 		friend class ClientTCP;
 
 	public:
-		ServerTCP(uint16 maxClients, IServerTCPHandler* handler);
 		~ServerTCP();
 
 		/*
@@ -30,6 +30,8 @@ namespace LambdaEngine
 		virtual void OnClientDisconnected(ClientTCP* client) override;
 
 	private:
+		ServerTCP(IServerTCPHandler* handler, uint16 maxClients);
+
 		void HandleNewClient(ClientTCP* client);
 		void AddClient(ClientTCP* client);
 		void RemoveClient(ClientTCP* client);

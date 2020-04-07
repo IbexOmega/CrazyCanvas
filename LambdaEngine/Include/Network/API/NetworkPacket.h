@@ -13,10 +13,11 @@ namespace LambdaEngine
 {
 	enum EPacketType : PACKET_TYPE
 	{
-		PACKET_TYPE_UNDEFINED	= 0,
-		PACKET_TYPE_PING		= 1,
-		PACKET_TYPE_SERVER_FULL = 2,
-		PACKET_TYPE_USER_DATA	= 3,
+		PACKET_TYPE_UNDEFINED			= 0,
+		PACKET_TYPE_PING				= 1,
+		PACKET_TYPE_SERVER_FULL			= 2,
+		PACKET_TYPE_NETWORK_DISCOVERY	= 3,
+		PACKET_TYPE_USER_DATA			= 4,
 	};
 
 	class LAMBDA_API NetworkPacket
@@ -51,6 +52,19 @@ namespace LambdaEngine
 		void ReadBool(bool& value);
 		void ReadString(std::string& value);
 		void ReadBuffer(char* buffer, PACKET_SIZE bytesToRead);
+
+		int8		ReadInt8();
+		uint8		ReadUInt8();
+		int16		ReadInt16();
+		uint16		ReadUInt16();
+		int32		ReadInt32();
+		uint32		ReadUInt32();
+		int64		ReadInt64();
+		uint64		ReadUInt64();
+		float32		ReadFloat32();
+		float64		ReadFloat64();
+		bool		ReadBool();
+		std::string ReadString();
 
 		void Reset();
 		PACKET_SIZE GetSize() const;
