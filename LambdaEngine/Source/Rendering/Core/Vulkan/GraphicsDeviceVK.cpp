@@ -394,9 +394,10 @@ namespace LambdaEngine
 		instanceCreateInfo.enabledExtensionCount    = (uint32_t)m_EnabledInstanceExtensions.size();
 		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
 
+		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
+
 		if (desc.Debug)
 		{
-			VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
 			PopulateDebugMessengerCreateInfo(debugCreateInfo);
 
 			instanceCreateInfo.enabledLayerCount    = (uint32_t)m_EnabledValidationLayers.size();

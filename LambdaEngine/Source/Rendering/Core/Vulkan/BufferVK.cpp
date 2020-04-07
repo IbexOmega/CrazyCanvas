@@ -116,7 +116,7 @@ namespace LambdaEngine
         }
         else
         {
-            D_LOG_MESSAGE("[BufferVK]: Allocated %d bytes", memoryRequirements.size);
+            D_LOG_MESSAGE("[BufferVK]: Allocated %d bytes to buffer \"%s\"", memoryRequirements.size, desc.pName);
         }
 
         result = vkBindBufferMemory(m_pDevice->Device, m_Buffer, m_Memory, 0);

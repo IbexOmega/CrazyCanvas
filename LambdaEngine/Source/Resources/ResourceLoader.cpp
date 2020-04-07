@@ -280,25 +280,6 @@ namespace LambdaEngine
 
 	Mesh* ResourceLoader::LoadMeshFromMemory(IGraphicsDevice* pGraphicsDevice, const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
 	{
-		UNREFERENCED_VARIABLE(pIndices);
-		UNREFERENCED_VARIABLE(pVertices);
-
-		BufferDesc vertexBufferDesc = {};
-		vertexBufferDesc.pName			= "Vertex Buffer (ResourceLoader)";
-		vertexBufferDesc.MemoryType		= EMemoryType::MEMORY_GPU;
-		vertexBufferDesc.SizeInBytes	= sizeof(Vertex) * numVertices;
-		vertexBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;// | EBufferFlags::BUFFER_FLAG_COPY_DST | EBufferFlags::BUFFER_FLAG_COPY_SRC; Maybe need these later?
-
-		IBuffer* pVertexBuffer = pGraphicsDevice->CreateBuffer(vertexBufferDesc);
-
-		BufferDesc indexBufferDesc = {};
-		indexBufferDesc.pName			= "Index Buffer (ResourceLoader)";
-		indexBufferDesc.MemoryType		= EMemoryType::MEMORY_GPU;
-		indexBufferDesc.SizeInBytes		= sizeof(uint32) * numIndices;
-		indexBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_INDEX_BUFFER;// | EBufferFlags::BUFFER_FLAG_COPY_DST | EBufferFlags::BUFFER_FLAG_COPY_SRC; Maybe need these later?
-
-		IBuffer* pIndexBuffer = pGraphicsDevice->CreateBuffer(indexBufferDesc);
-
 		Vertex* pVertexArray = DBG_NEW Vertex[numVertices];
 		memcpy(pVertexArray, pVertices, sizeof(Vertex) * numVertices);
 
@@ -306,10 +287,8 @@ namespace LambdaEngine
 		memcpy(pIndexArray, pIndices, sizeof(uint32) * numIndices);
 
 		Mesh* pMesh = DBG_NEW Mesh();
-		pMesh->pVertexBuffer	= pVertexBuffer;
-		pMesh->pIndexBuffer		= pIndexBuffer;
 		pMesh->pVertexArray		= pVertexArray;
-		pMesh->pIndexArray = pIndexArray;
+		pMesh->pIndexArray		= pIndexArray;
 		pMesh->VertexCount		= numVertices;
 		pMesh->IndexCount		= numIndices;
 
