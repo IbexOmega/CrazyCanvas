@@ -39,5 +39,6 @@ namespace LambdaEngine
 		ISocketUDP* m_pSocket;
 		SpinLock m_LockStart;
 		IClientUDPHandler* m_pClientHandler;
+		char m_ReceiveBuffer[MAXIMUM_DATAGRAM_SIZE];
 	};
 }

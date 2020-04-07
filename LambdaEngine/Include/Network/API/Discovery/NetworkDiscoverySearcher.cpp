@@ -32,6 +32,7 @@ namespace LambdaEngine
 
 	void NetworkDiscoverySearcher::BroadcastPacket()
 	{
+		m_Packet.Reset();
 		m_Packet.WriteString(m_UID);
 		m_pClient->SendPacket(&m_Packet);
 	}

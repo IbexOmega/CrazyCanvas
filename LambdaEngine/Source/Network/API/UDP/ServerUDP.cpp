@@ -32,7 +32,6 @@ namespace LambdaEngine
 		char* buffer = packet->GetBuffer();
 		int32 bytesToSend = packet->GetSize();
 		int32 bytesSent = 0;
-
 		if (!m_pServerSocket->SendTo(buffer, bytesToSend, bytesSent, packet->GetAddress(), packet->GetPort()))
 		{
 			return false;
@@ -102,12 +101,14 @@ namespace LambdaEngine
 
 		while (!ShouldTerminate())
 		{
-			if (m_pServerSocket->ReceiveFrom(packet->GetBuffer(), MAXIMUM_PACKET_SIZE, bytesReceived, address, port))
+			if (m_pServerSocket->ReceiveFrom(m_ReceiveBuffer, MAXIMUM_DATAGRAM_SIZE, bytesReceived, address, port))
 			{
+				memcpy(packet->GetBuffer(), m_ReceiveBuffer, sizeof(PACKET_SIZE));
 				packet->Reset();
 				packet->UnPack();
 				if (bytesReceived == packet->GetSize())
 				{
+					memcpy(packet->GetBuffer(), m_ReceiveBuffer, bytesReceived);
 					uint64 hash = Hash(address, port);
 					ClientUDPRemote* client = nullptr;
 					{
@@ -123,6 +124,11 @@ namespace LambdaEngine
 					}
 					client->OnPacketReceived(packet);
 				}
+				else
+				{
+					LOG_ERROR("Error received a packet with the wrong size %i | %i", bytesReceived, packet->GetSize());
+				}
+				RegisterPacketsReceived(1);
 			}
 			else
 			{

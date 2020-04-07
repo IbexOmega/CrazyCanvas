@@ -1,4 +1,5 @@
 #include "Network/API/NetworkPacket.h"
+#include "Log/Log.h"
 
 namespace LambdaEngine
 {
@@ -248,6 +249,12 @@ namespace LambdaEngine
 
 	void NetworkPacket::Pack()
 	{
+		if (m_Size > MAXIMUM_PACKET_SIZE)
+		{
+			LOG_ERROR_CRIT("Network Packet Size larger than the maximum allowed!");
+			DEBUGBREAK();
+			return;
+		}
 		memcpy(m_Buffer, (char*)&m_Size, sizeof(m_Size));
 	}
 

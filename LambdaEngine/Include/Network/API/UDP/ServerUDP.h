@@ -61,5 +61,6 @@ namespace LambdaEngine
 		ISocketUDP* m_pServerSocket;
 		IServerUDPHandler* m_pHandler;
 		std::unordered_map<uint64, ClientUDPRemote*> m_Clients;
+		char m_ReceiveBuffer[MAXIMUM_DATAGRAM_SIZE];
 	};
 }

@@ -5,6 +5,7 @@
 #include <string>
 #include <atomic>
 
+#define MAXIMUM_DATAGRAM_SIZE 65536
 #define MAXIMUM_PACKET_SIZE 1024
 #define PACKET_SIZE uint16
 #define PACKET_TYPE uint16

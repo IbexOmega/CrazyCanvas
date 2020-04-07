@@ -71,13 +71,19 @@ namespace LambdaEngine
 
 		while (!ShouldTerminate())
 		{
-			if (m_pSocket->ReceiveFrom(packet->GetBuffer(), MAXIMUM_PACKET_SIZE, bytesReceived, address, port))
+			if (m_pSocket->ReceiveFrom(m_ReceiveBuffer, MAXIMUM_DATAGRAM_SIZE, bytesReceived, address, port))
 			{
+				memcpy(packet->GetBuffer(), m_ReceiveBuffer, sizeof(PACKET_SIZE));
 				packet->Reset();
 				packet->UnPack();
 				if (bytesReceived == packet->GetSize())
 				{
+					memcpy(packet->GetBuffer(), m_ReceiveBuffer, bytesReceived);
 					m_pClientHandler->OnClientPacketReceivedUDP(this, packet);
+				}
+				else
+				{
+					LOG_ERROR("Error received a packet with the wrong size %i | %i", bytesReceived, packet->GetSize());
 				}
 				RegisterPacketsReceived(1);
 			}
