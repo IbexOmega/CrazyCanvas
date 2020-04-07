@@ -1,7 +1,8 @@
-#include "Network/API/ServerTCP.h"
+#include "Network/API/TCP/ServerTCP.h"
+#include "Network/API/TCP/IServerTCPHandler.h"
+#include "Network/API/TCP/ClientTCP.h"
+
 #include "Network/API/PlatformNetworkUtils.h"
-#include "Network/API/IServerTCPHandler.h"
-#include "Network/API/ClientTCP.h"
 #include "Network/API/NetworkPacket.h"
 
 #include "Threading/Thread.h"

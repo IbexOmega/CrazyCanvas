@@ -1,6 +1,6 @@
-#include "Network/API/ClientTCP.h"
+#include "Network/API/TCP/ClientTCP.h"
+#include "Network/API/TCP/IRemoteClientTCPHandler.h"
 #include "Network/API/PlatformNetworkUtils.h"
-#include "Network/API/IRemoteClientTCPHandler.h"
 #include "Network/API/NetworkPacket.h"
 
 #include "Log/Log.h"
