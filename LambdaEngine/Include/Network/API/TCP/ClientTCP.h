@@ -58,7 +58,6 @@ namespace LambdaEngine
 		virtual bool TransmitPacket(NetworkPacket* packet) override;
 
 	private:
-
 		bool Receive(char* buffer, int bytesToRead);
 		bool ReceivePacket(NetworkPacket* packet);
 		void HandlePacket(NetworkPacket* packet);

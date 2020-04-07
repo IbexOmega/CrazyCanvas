@@ -17,17 +17,6 @@ namespace LambdaEngine
 		~ClientUDPRemote();
 
 		/*
-		* Start the client and set the given ip-address and port. To send to a special address use
-		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
-		*
-		* address - The inet address to bind the socket to.
-		* port    - The port to communicate through.
-		*
-		* return  - False if an error occured, otherwise true.
-		*/
-		virtual bool Start(const std::string& address, uint16 port) override final;
-
-		/*
 		* Sends a packet
 		*/
 		virtual bool SendPacket(NetworkPacket* packet) override final;
@@ -83,7 +72,9 @@ namespace LambdaEngine
 		uint64 GetHash() const;
 
 	private:
+		void ReleaseInternal();
 		void OnPacketReceived(NetworkPacket* packet);
+		virtual bool Start(const std::string& address, uint16 port) override final;
 
 	private:
 		std::string m_Address;
@@ -91,5 +82,10 @@ namespace LambdaEngine
 		uint64 m_Hash;
 		IClientUDPHandler* m_pHandler;
 		ServerUDP* m_pServer;
+
+		uint32 m_NrOfPacketsTransmitted;
+		uint32 m_NrOfPacketsReceived;
+		uint32 m_NrOfBytesTransmitted;
+		uint32 m_NrOfBytesReceived;
 	};
 }

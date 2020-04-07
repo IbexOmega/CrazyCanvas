@@ -73,7 +73,6 @@ namespace LambdaEngine
 				if (bytesReceived == packet->GetSize())
 				{
 					m_pClientHandler->OnClientPacketReceivedUDP(this, packet);
-					LOG_MESSAGE("%s:%d", address.c_str(), port);
 				}
 				RegisterPacketsReceived(1);
 			}
@@ -86,7 +85,6 @@ namespace LambdaEngine
 
 	void ClientUDP::OnThreadsTerminated()
 	{
-		LOG_MESSAGE("OnThreadsTerminated()");
 		std::scoped_lock<SpinLock> lock(m_LockStart);
 		delete m_pSocket;
 		m_pSocket = nullptr;

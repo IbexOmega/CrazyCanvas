@@ -9,14 +9,18 @@ namespace LambdaEngine
 		m_Port(port),
 		m_Hash(hash),
 		m_pServer(server),
-		m_pHandler(handler)
+		m_pHandler(handler),
+		m_NrOfBytesTransmitted(0),
+		m_NrOfBytesReceived(0),
+		m_NrOfPacketsTransmitted(0),
+		m_NrOfPacketsReceived(0)
 	{
 
 	}
 
 	ClientUDPRemote::~ClientUDPRemote()
 	{
-
+		LOG_WARNING("~ClientUDPRemote()");
 	}
 
 	bool ClientUDPRemote::Start(const std::string& address, uint16 port)
@@ -26,16 +30,20 @@ namespace LambdaEngine
 
 	bool ClientUDPRemote::SendPacket(NetworkPacket* packet)
 	{
-		return false;
+		packet->SetDestination(GetAddress(), GetPort());
+		return m_pServer->SendPacket(packet);
 	}
 
 	bool ClientUDPRemote::SendPacketImmediately(NetworkPacket* packet)
 	{
-		return false;
+		packet->SetDestination(GetAddress(), GetPort());
+		return m_pServer->SendPacketImmediately(packet);
 	}
 
 	void ClientUDPRemote::Release()
 	{
+		m_pServer->OnClientReleased(this);
+		ReleaseInternal();
 	}
 
 	bool ClientUDPRemote::IsServerSide() const
@@ -55,27 +63,32 @@ namespace LambdaEngine
 
 	int32 ClientUDPRemote::GetBytesSent() const
 	{
-		return int32();
+		return m_NrOfBytesTransmitted;
 	}
 
 	int32 ClientUDPRemote::GetBytesReceived() const
 	{
-		return int32();
+		return m_NrOfBytesReceived;
 	}
 
 	int32 ClientUDPRemote::GetPacketsSent() const
 	{
-		return int32();
+		return m_NrOfPacketsTransmitted;
 	}
 
 	int32 ClientUDPRemote::GetPacketsReceived() const
 	{
-		return int32();
+		return m_NrOfPacketsReceived;
 	}
 
 	uint64 ClientUDPRemote::GetHash() const
 	{
 		return m_Hash;
+	}
+
+	void ClientUDPRemote::ReleaseInternal()
+	{
+		delete this;
 	}
 
 	void ClientUDPRemote::OnPacketReceived(NetworkPacket* packet)

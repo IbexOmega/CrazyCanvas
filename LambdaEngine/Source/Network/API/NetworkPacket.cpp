@@ -183,4 +183,19 @@ namespace LambdaEngine
 	{
 		return m_AutoDelete;
 	}
+	const std::string& NetworkPacket::GetAddress() const
+	{
+		return m_Address;
+	}
+
+	uint16 NetworkPacket::GetPort() const
+	{
+		return m_Port;
+	}
+
+	void NetworkPacket::SetDestination(const std::string& address, uint16 port)
+	{
+		m_Address = address;
+		m_Port = port;
+	}
 }

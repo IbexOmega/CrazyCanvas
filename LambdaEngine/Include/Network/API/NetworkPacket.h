@@ -59,11 +59,16 @@ namespace LambdaEngine
 		void UnPack();
 		PACKET_TYPE ReadPacketType() const;
 		bool ShouldAutoDelete() const;
+		const std::string& GetAddress() const;
+		uint16 GetPort() const;
+		void SetDestination(const std::string& address, uint16 port);
 
 	private:
-		char m_Buffer[MAXIMUM_PACKET_SIZE];
 		PACKET_SIZE m_Size;
 		PACKET_SIZE m_Head;
 		bool m_AutoDelete;
+		std::string m_Address;
+		uint16 m_Port;
+		char m_Buffer[MAXIMUM_PACKET_SIZE];
 	};
 }

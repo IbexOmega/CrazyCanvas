@@ -11,10 +11,10 @@
 namespace LambdaEngine
 {
 	ServerUDP::ServerUDP(IServerUDPHandler* handler) :
+		ClientBase(true),
 		m_pServerSocket(nullptr),
 		m_pHandler(handler)
 	{
-
 	}
 
 	ServerUDP::~ServerUDP()
@@ -22,7 +22,56 @@ namespace LambdaEngine
 		LOG_WARNING("~ServerUDP()");
 	}
 
-	void ServerUDP::OnThreadStarted()
+	void ServerUDP::OnReleaseRequested()
+	{
+		Stop();
+	}
+
+	bool ServerUDP::TransmitPacket(NetworkPacket* packet)
+	{
+		char* buffer = packet->GetBuffer();
+		int32 bytesToSend = packet->GetSize();
+		int32 bytesSent = 0;
+
+		if (!m_pServerSocket->SendTo(buffer, bytesToSend, bytesSent, packet->GetAddress(), packet->GetPort()))
+		{
+			return false;
+		}
+		return bytesToSend == bytesSent;
+	}
+
+	void ServerUDP::OnClientReleased(ClientUDPRemote* client)
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		m_Clients.erase(client->GetHash());
+	}
+
+	void ServerUDP::Stop()
+	{
+		if (m_pServerSocket)
+		{
+			m_pServerSocket->Close();
+		}
+		TerminateThreads();
+	}
+
+	void ServerUDP::Release()
+	{
+		ClientBase::Release();
+	}
+
+	bool ServerUDP::Start(const std::string& address, uint16 port)
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		if (ThreadsHaveTerminated())
+		{
+			SetAddressAndPort(address, port);
+			return StartThreads();
+		}
+		return false;
+	}
+
+	void ServerUDP::OnTransmitterStarted()
 	{
 		m_pServerSocket = CreateServerSocket(GetAddress(), GetPort());
 		if (!m_pServerSocket)
@@ -36,31 +85,35 @@ namespace LambdaEngine
 		}
 	}
 
-	void ServerUDP::OnThreadUpdate()
+	void ServerUDP::OnReceiverStarted()
 	{
-		NetworkPacket packet(PACKET_TYPE_UNDEFINED);
+
+	}
+
+	void ServerUDP::UpdateReceiver(NetworkPacket* packet)
+	{
 		int32 bytesReceived = 0;
 		std::string address;
 		uint16 port;
 
 		while (!ShouldTerminate())
 		{
-			if (m_pServerSocket->ReceiveFrom(packet.GetBuffer(), MAXIMUM_PACKET_SIZE, bytesReceived, address, port))
+			if (m_pServerSocket->ReceiveFrom(packet->GetBuffer(), MAXIMUM_PACKET_SIZE, bytesReceived, address, port))
 			{
-				packet.Reset();
-				packet.UnPack();
-				if (bytesReceived == packet.GetSize())
+				packet->Reset();
+				packet->UnPack();
+				if (bytesReceived == packet->GetSize())
 				{
-					//LOCK
 					uint64 hash = Hash(address, port);
+					std::scoped_lock<SpinLock> lock(m_Lock);
 					ClientUDPRemote* client = m_Clients[hash];
 					if (!client)
 					{
 						IClientUDPHandler* handler = m_pHandler->CreateClientHandlerUDP();
-						client = new ClientUDPRemote(address, port, hash, this, handler);
+						client = DBG_NEW ClientUDPRemote(address, port, hash, this, handler);
 						m_Clients[hash] = client;
 					}
-					client->OnPacketReceived(&packet);
+					client->OnPacketReceived(packet);
 				}
 			}
 			else
@@ -70,28 +123,15 @@ namespace LambdaEngine
 		}
 	}
 
-	void ServerUDP::OnThreadTerminated()
+	void ServerUDP::OnThreadsTerminated()
 	{
-		//LOCK
+		std::scoped_lock<SpinLock> lock(m_Lock);
 		for (auto client : m_Clients)
 		{
-			client.second->Release();
+			client.second->ReleaseInternal();
 		}
 		m_Clients.clear();
 		delete m_pServerSocket;
-	}
-
-	void ServerUDP::OnStopRequested()
-	{
-		if (m_pServerSocket)
-		{
-			m_pServerSocket->Close();
-		}
-	}
-
-	void ServerUDP::OnReleaseRequested()
-	{
-
 	}
 
 	ISocketUDP* ServerUDP::CreateServerSocket(const std::string& address, uint16 port)

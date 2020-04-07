@@ -7,7 +7,7 @@
 
 ClientUDPHandler::ClientUDPHandler()
 {
-
+	
 }
 
 ClientUDPHandler::~ClientUDPHandler()
@@ -16,11 +16,17 @@ ClientUDPHandler::~ClientUDPHandler()
 
 void ClientUDPHandler::OnClientPacketReceivedUDP(LambdaEngine::IClientUDP* client, LambdaEngine::NetworkPacket* packet)
 {
-	if (packet->ReadPacketType() == LambdaEngine::PACKET_TYPE_USER_DATA)
+	using namespace LambdaEngine;
+
+	if (packet->ReadPacketType() == PACKET_TYPE_USER_DATA)
 	{
 		std::string str;
 		packet->ReadString(str);
 		LOG_MESSAGE(str.c_str());
+
+		NetworkPacket* reponse = DBG_NEW NetworkPacket(PACKET_TYPE_USER_DATA);
+		reponse->WriteString("Nej jag klar!");
+		client->SendPacket(reponse);
 	}
 }
 
