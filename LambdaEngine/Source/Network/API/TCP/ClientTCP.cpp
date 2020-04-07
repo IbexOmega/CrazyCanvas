@@ -294,8 +294,8 @@ namespace LambdaEngine
 	void ClientTCP::InitStatic()
 	{
 		s_PacketPing = NetworkPacket(PACKET_TYPE_PING, false);
-		s_Clients = new std::set<ClientTCP*>();
-		s_LockClients = new SpinLock();
+		s_Clients = DBG_NEW std::set<ClientTCP*>();
+		s_LockClients = DBG_NEW SpinLock();
 	}
 
 	///Improve with double buffering to skip lock

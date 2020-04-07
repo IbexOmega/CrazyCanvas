@@ -24,7 +24,7 @@ Server::Server() :
 	/*m_pServerTCP = DBG_NEW ServerTCP(2, this);
 	m_pServerTCP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
 
-	m_pServerUDP = new ServerUDP(this);
+	m_pServerUDP = DBG_NEW ServerUDP(this);
 	m_pServerUDP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);*/
 
 	UpdateTitle();

@@ -328,7 +328,7 @@ namespace LambdaEngine
 		m_Textures[DEFAULT_COLOR_MAP] = nullptr; //Implement
 		m_Textures[DEFAULT_NORMAL_MAP] = nullptr; //Implement
 
-		Material* pDefaultMaterial = new Material();
+		Material* pDefaultMaterial = DBG_NEW Material();
 		pDefaultMaterial->pAlbedoMap				= m_Textures[DEFAULT_COLOR_MAP];
 		pDefaultMaterial->pNormalMap				= m_Textures[DEFAULT_NORMAL_MAP];
 		pDefaultMaterial->pAmbientOcclusionMap		= m_Textures[DEFAULT_COLOR_MAP];

@@ -38,7 +38,7 @@ Sandbox::Sandbox() :
 	std::vector<GameObject>	sceneGameObjects;
 	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
 
-	m_pScene = new Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice(), m_pResourceManager);
+	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice(), m_pResourceManager);
 
 	for (GameObject& graphicsObject : sceneGameObjects)
 	{

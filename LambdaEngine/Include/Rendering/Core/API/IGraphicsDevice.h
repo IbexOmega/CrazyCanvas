@@ -64,8 +64,8 @@ namespace LambdaEngine
 		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const = 0;
 		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const = 0;
 		
-		virtual ICommandQueue*		CreateCommandQueue(ECommandQueueType queueType)								  const = 0;
-		virtual ICommandAllocator*	CreateCommandAllocator(ECommandQueueType queueType)							  const = 0;
+		virtual ICommandQueue*		CreateCommandQueue(const char* pName, ECommandQueueType queueType)			  const = 0;
+		virtual ICommandAllocator*	CreateCommandAllocator(const char* pName, ECommandQueueType queueType)		  const = 0;
 		virtual ICommandList*		CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc) const = 0;
 		virtual IFence*				CreateFence(const FenceDesc& desc)											  const = 0;
 

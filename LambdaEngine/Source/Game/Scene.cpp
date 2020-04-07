@@ -29,11 +29,11 @@ namespace LambdaEngine
 
 	Scene::~Scene()
 	{
-		SAFEDELETE(m_pSceneMaterialProperties);
-		SAFEDELETE(m_pSceneVertexBuffer);
-		SAFEDELETE(m_pSceneIndexBuffer);
-		SAFEDELETE(m_pSceneInstanceBuffer);
-		SAFEDELETE(m_pSceneMeshIndexBuffer);
+		SAFERELEASE(m_pSceneMaterialProperties);
+		SAFERELEASE(m_pSceneVertexBuffer);
+		SAFERELEASE(m_pSceneIndexBuffer);
+		SAFERELEASE(m_pSceneInstanceBuffer);
+		SAFERELEASE(m_pSceneMeshIndexBuffer);
 	}
 
 	uint32 Scene::AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform)

@@ -16,7 +16,7 @@ namespace LambdaEngine
 		CommandAllocatorVK(const GraphicsDeviceVK* pDevice);
 		~CommandAllocatorVK();
 
-		bool Init(ECommandQueueType queueType);
+		bool Init(const char* pName, ECommandQueueType queueType);
 
 		VkCommandBuffer AllocateCommandBuffer(VkCommandBufferLevel level);
 

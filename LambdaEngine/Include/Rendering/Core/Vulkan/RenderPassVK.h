@@ -13,6 +13,14 @@ namespace LambdaEngine
 	{
 		using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, IRenderPass>;
 
+		struct SubpassData
+		{
+			VkSubpassDescription	Subpass;
+			VkAttachmentReference	InputAttachments[MAX_ATTACHMENTS];
+			VkAttachmentReference	ColorAttachments[MAX_ATTACHMENTS];
+			VkAttachmentReference	ResolveAttachments[MAX_ATTACHMENTS];
+		};
+
 	public:
 		RenderPassVK(const GraphicsDeviceVK* pDevice);
 		~RenderPassVK();
@@ -40,7 +48,7 @@ namespace LambdaEngine
 
 	private:
 		void CreateAttachmentDescriptions(const RenderPassDesc& desc, VkAttachmentDescription* pResultAttachments);
-		void CreateSubpassDescriptions(const RenderPassDesc& desc, VkSubpassDescription* pResultSubpasses);
+		void CreateSubpassDescriptions(const RenderPassDesc& desc, SubpassData* pResultSubpasses);
 		void CreateSubpassDependencies(const RenderPassDesc& desc, VkSubpassDependency* pResultSubpassDependencies);
 
 	private:

@@ -18,7 +18,7 @@ namespace LambdaEngine
 		CommandQueueVK(const GraphicsDeviceVK* pDevice);
 		~CommandQueueVK();
 
-		bool Init(uint32 queueFamilyIndex, uint32 index);
+		bool Init(const char* pName, uint32 queueFamilyIndex, uint32 index);
 
 		virtual bool ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, const IFence* pSignalFence, uint64 signalValue) override final;
 		virtual void Flush() override final;

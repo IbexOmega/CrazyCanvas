@@ -19,7 +19,7 @@ namespace LambdaEngine
 		m_Queue = VK_NULL_HANDLE;
 	}
 
-	bool CommandQueueVK::Init(uint32 queueFamilyIndex, uint32 index)
+	bool CommandQueueVK::Init(const char* pName, uint32 queueFamilyIndex, uint32 index)
 	{
 		uint32 queuePropertyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(m_pDevice->PhysicalDevice, &queuePropertyCount, nullptr);
@@ -35,6 +35,11 @@ namespace LambdaEngine
 		}
 
 		vkGetDeviceQueue(m_pDevice->Device, queueFamilyIndex, index, &m_Queue);
+		if (pName)
+		{
+			SetName(pName);
+		}
+
 		return true;
 	}
 	
@@ -99,7 +104,7 @@ namespace LambdaEngine
 		VkResult result = vkQueueSubmit(m_Queue, 1, &submitInfo, VK_NULL_HANDLE);
 		if (result != VK_SUCCESS)
 		{	
-			LOG_VULKAN_ERROR("[CommandQueueVK]: Executing commandlists failed", result);
+			LOG_VULKAN_ERROR(result, "[CommandQueueVK]: Executing commandlists failed");
 			return false;
 		}
 

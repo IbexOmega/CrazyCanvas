@@ -107,7 +107,7 @@ namespace LambdaEngine
 		VkResult result = vkBeginCommandBuffer(m_CommandList, &beginInfo);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR("[CommandListVK]: Begin CommandBuffer Failed", result);
+			LOG_VULKAN_ERROR(result, "[CommandListVK]: Begin CommandBuffer Failed");
 		}
 	}
 
@@ -116,7 +116,7 @@ namespace LambdaEngine
 		VkResult result = vkEndCommandBuffer(m_CommandList); 
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR("[CommandListVK]: End CommandBuffer Failed", result);
+			LOG_VULKAN_ERROR(result, "[CommandListVK]: End CommandBuffer Failed");
 		}
 	}
 

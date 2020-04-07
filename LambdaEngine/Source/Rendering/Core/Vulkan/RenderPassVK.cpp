@@ -23,14 +23,19 @@ namespace LambdaEngine
 
 	bool RenderPassVK::Init(const RenderPassDesc& desc)
 	{
-		VkSubpassDescription	subpasses[MAX_SUBPASSES];
+		SubpassData				subpasses[MAX_SUBPASSES];
 		VkSubpassDependency		subpassDependencies[MAX_SUBPASS_DEPENDENCIES];
 		VkAttachmentDescription attachments[MAX_ATTACHMENTS];
-		VkAttachmentReference	attachmentRefs[MAX_ATTACHMENTS];
 
 		CreateAttachmentDescriptions(desc, attachments);
 		CreateSubpassDescriptions(desc, subpasses);
 		CreateSubpassDependencies(desc, subpassDependencies);
+
+		VkSubpassDescription subpassDescriptions[MAX_SUBPASSES];
+		for (uint32 i = 0; i < desc.SubpassCount; i++)
+		{
+			subpassDescriptions[i] = subpasses[i].Subpass;
+		}
 
 		VkRenderPassCreateInfo renderPassCreateInfo = {};
 		renderPassCreateInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -39,7 +44,7 @@ namespace LambdaEngine
 		renderPassCreateInfo.attachmentCount	= desc.AttachmentCount;
 		renderPassCreateInfo.pAttachments		= attachments;
 		renderPassCreateInfo.subpassCount		= desc.SubpassCount;
-		renderPassCreateInfo.pSubpasses			= subpasses;
+		renderPassCreateInfo.pSubpasses			= subpassDescriptions;
 		renderPassCreateInfo.dependencyCount	= desc.SubpassDependencyCount;
 		renderPassCreateInfo.pDependencies		= subpassDependencies;
 
@@ -107,58 +112,53 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderPassVK::CreateSubpassDescriptions(const RenderPassDesc& desc, VkSubpassDescription* pResultSubpasses)
+	void RenderPassVK::CreateSubpassDescriptions(const RenderPassDesc& desc, SubpassData* pResultSubpasses)
 	{
 		ASSERT(desc.SubpassCount <= MAX_SUBPASSES);
 
 		for (uint32 i = 0; i < desc.SubpassCount; i++)
 		{
+			VkSubpassDescription&			vkSubpass	= pResultSubpasses[i].Subpass;
 			const RenderPassSubpassDesc&	subpass		= desc.pSubpasses[i];
-			VkSubpassDescription&			vkSubpass	= pResultSubpasses[i];
 
 			ASSERT(subpass.InputAttachmentCount <= MAX_ATTACHMENTS);
-			ASSERT(subpass.RenderTargetCount <= MAX_ATTACHMENTS);
+			ASSERT(subpass.RenderTargetCount	<= MAX_ATTACHMENTS);
 			
 			vkSubpass = {};
-			vkSubpass.flags					= NULL;
+			vkSubpass.flags					= 0;
 			vkSubpass.pipelineBindPoint		= VK_PIPELINE_BIND_POINT_GRAPHICS;
-			vkSubpass.inputAttachmentCount	= subpass.InputAttachmentCount;
+			vkSubpass.inputAttachmentCount	= subpass.InputAttachmentCount;	
 			
-
-			for (uint32 a = 0; a < subpass.InputAttachmentCount; a++)
+			//Input attachments
+			for (uint32 attachment = 0; attachment < subpass.InputAttachmentCount; attachment++)
 			{
-				ETextureState attachmentState			= subpass.pInputAttachmentStates[a];
-				/*VkAttachmentReference& inputAttachment	= inputAttachments[a];
+				ETextureState			inputAttachmentState	= subpass.pInputAttachmentStates[attachment];
+				VkAttachmentReference&	inputAttachment			= pResultSubpasses[i].InputAttachments[attachment];
 
 				inputAttachment = {};
-
-				if (attachmentState != ETextureState::TEXTURE_STATE_UNKNOWN)
+				if (inputAttachmentState != ETextureState::TEXTURE_STATE_UNKNOWN && inputAttachmentState != ETextureState::TEXTURE_STATE_DONT_CARE)
 				{
-					inputAttachment.attachment	= a;
-					inputAttachment.layout		= ConvertTextureState(attachmentState);
+					inputAttachment.attachment	= attachment;
+					inputAttachment.layout		= ConvertTextureState(inputAttachmentState);
 				}
 				else
 				{
 					inputAttachment.attachment	= VK_ATTACHMENT_UNUSED;
-				}*/
+				}
 			}
 
-			VkAttachmentReference colorAttachments[MAX_ATTACHMENTS];
-			VkAttachmentReference resolveAttachments[MAX_ATTACHMENTS];
 
-			for (uint32 a = 0; a < subpass.RenderTargetCount; a++)
+			for (uint32 attachment = 0; attachment < subpass.RenderTargetCount; attachment++)
 			{
 				//Color Attachment
 				{
-					ETextureState colorAttachmentState		= subpass.pRenderTargetStates[a];
-					VkAttachmentReference& colorAttachment	= colorAttachments[a];
+					ETextureState			colorAttachmentState	= subpass.pRenderTargetStates[attachment];
+					VkAttachmentReference&	colorAttachment			= pResultSubpasses[i].ColorAttachments[attachment];
 
 					colorAttachment = {};
-
-					if (colorAttachmentState != ETextureState::TEXTURE_STATE_UNKNOWN || 
-						colorAttachmentState != ETextureState::TEXTURE_STATE_DONT_CARE)
+					if (colorAttachmentState != ETextureState::TEXTURE_STATE_UNKNOWN && colorAttachmentState != ETextureState::TEXTURE_STATE_DONT_CARE)
 					{
-						colorAttachment.attachment		= a;
+						colorAttachment.attachment		= attachment;
 						colorAttachment.layout			= ConvertTextureState(colorAttachmentState);
 					}
 					else
@@ -170,14 +170,13 @@ namespace LambdaEngine
 				//Resolve Attachment
 				if (subpass.pResolveAttachmentStates)
 				{
-					ETextureState resolveAttachmentState	 = subpass.pResolveAttachmentStates[a];
-					VkAttachmentReference& resolveAttachment = resolveAttachments[a];
+					ETextureState			resolveAttachmentState	= subpass.pResolveAttachmentStates[attachment];
+					VkAttachmentReference&	resolveAttachment		= pResultSubpasses[i].ResolveAttachments[attachment];
 
 					resolveAttachment = {};
-					if (resolveAttachmentState != ETextureState::TEXTURE_STATE_UNKNOWN ||
-						resolveAttachmentState != ETextureState::TEXTURE_STATE_DONT_CARE)
+					if (resolveAttachmentState != ETextureState::TEXTURE_STATE_UNKNOWN && resolveAttachmentState != ETextureState::TEXTURE_STATE_DONT_CARE)
 					{
-						resolveAttachment.attachment = a;
+						resolveAttachment.attachment = attachment;
 						resolveAttachment.layout	 = ConvertTextureState(resolveAttachmentState);
 					}
 					else
@@ -188,10 +187,10 @@ namespace LambdaEngine
 			}
 
 			vkSubpass.inputAttachmentCount		= subpass.InputAttachmentCount;
-			//vkSubpass.pInputAttachments			= inputAttachments;
+			vkSubpass.pInputAttachments			= pResultSubpasses[i].InputAttachments;
 			vkSubpass.colorAttachmentCount		= subpass.RenderTargetCount;
-			vkSubpass.pColorAttachments			= colorAttachments;
-			vkSubpass.pResolveAttachments		= resolveAttachments;
+			vkSubpass.pColorAttachments			= pResultSubpasses[i].ColorAttachments;
+			vkSubpass.pResolveAttachments		= pResultSubpasses[i].ResolveAttachments;
 			vkSubpass.preserveAttachmentCount	= 0;
 			vkSubpass.pResolveAttachments		= nullptr;
 		}
@@ -203,9 +202,10 @@ namespace LambdaEngine
 
 		for (uint32 i = 0; i < desc.SubpassDependencyCount; i++)
 		{
-			const RenderPassSubpassDependencyDesc& subpassDependency = desc.pSubpassDependencies[i];
-			VkSubpassDependency& vkSubpassDependency = pResultSubpassDependencies[i];
+			VkSubpassDependency&					vkSubpassDependency = pResultSubpassDependencies[i];
+			const RenderPassSubpassDependencyDesc&	subpassDependency	= desc.pSubpassDependencies[i];
 
+			vkSubpassDependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 			vkSubpassDependency.srcSubpass		= subpassDependency.SrcSubpass != EXTERNAL_SUBPASS ? subpassDependency.SrcSubpass : VK_SUBPASS_EXTERNAL;
 			vkSubpassDependency.dstSubpass		= subpassDependency.DstSubpass != EXTERNAL_SUBPASS ? subpassDependency.DstSubpass : VK_SUBPASS_EXTERNAL;
 			vkSubpassDependency.srcStageMask	= ConvertPipelineStage(subpassDependency.SrcStageMask);

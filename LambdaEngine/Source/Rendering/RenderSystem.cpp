@@ -38,19 +38,19 @@ namespace LambdaEngine
 			return false;
 		}
 
-		s_pGraphicsQueue = s_pGraphicsDevice->CreateCommandQueue(ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+		s_pGraphicsQueue = s_pGraphicsDevice->CreateCommandQueue("Graphics Queue", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
 		if (!s_pGraphicsQueue)
 		{
 			return false;
 		}
 
-		s_pComputeQueue	= s_pGraphicsDevice->CreateCommandQueue(ECommandQueueType::COMMAND_QUEUE_COMPUTE);
+		s_pComputeQueue	= s_pGraphicsDevice->CreateCommandQueue("Compute Queue", ECommandQueueType::COMMAND_QUEUE_COMPUTE);
 		if (!s_pComputeQueue)
 		{
 			return false;
 		}
 
-		s_pCopyQueue = s_pGraphicsDevice->CreateCommandQueue(ECommandQueueType::COMMAND_QUEUE_COPY);
+		s_pCopyQueue = s_pGraphicsDevice->CreateCommandQueue("Copy Queue", ECommandQueueType::COMMAND_QUEUE_COPY);
 		if (!s_pCopyQueue)
 		{
 			return false;
@@ -127,7 +127,7 @@ namespace LambdaEngine
 		renderPassDesc.SubpassDependencyCount	= 1;
 		renderPassDesc.pSubpassDependencies		= &subpassDependencyDesc;
 
-		//IRenderPass* pRenderPass = s_pGraphicsDevice->CreateRenderPass(renderPassDesc);
+		IRenderPass* pRenderPass = s_pGraphicsDevice->CreateRenderPass(renderPassDesc);
 
         const char* textureViewNames[] =
         {
@@ -182,8 +182,7 @@ namespace LambdaEngine
         
 		IFence* pFence = s_pGraphicsDevice->CreateFence(fenceDesc);
 
-		ICommandAllocator* pCommandAllocator = s_pGraphicsDevice->CreateCommandAllocator(ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
-        pCommandAllocator->SetName("Graphics Command Allocator");
+		ICommandAllocator* pCommandAllocator = s_pGraphicsDevice->CreateCommandAllocator("Graphics Command Allocator", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
         
         CommandListDesc commandListDesc = { };
         commandListDesc.pName           = "Primary CommandList";
