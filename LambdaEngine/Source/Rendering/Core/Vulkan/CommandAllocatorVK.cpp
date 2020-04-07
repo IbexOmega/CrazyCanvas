@@ -73,6 +73,10 @@ namespace LambdaEngine
 
 	void CommandAllocatorVK::SetName(const char* pName)
 	{
-		m_pDevice->SetVulkanObjectName(pName, (uint64)m_CommandPool, VK_OBJECT_TYPE_COMMAND_POOL);
+		if (pName)
+		{
+			TDeviceChild::SetName(pName);
+			m_pDevice->SetVulkanObjectName(pName, (uint64)m_CommandPool, VK_OBJECT_TYPE_COMMAND_POOL);
+		}
 	}
 }

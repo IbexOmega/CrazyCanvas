@@ -35,6 +35,8 @@ namespace LambdaEngine
 		GraphicsDeviceVK();
 		~GraphicsDeviceVK();
 
+		bool Init(const GraphicsDeviceDesc& desc);
+
 		bool IsInstanceExtensionEnabled(const char* pExtensionName) const;
 		bool IsDeviceExtensionEnabled(const char* pExtensionName)	const;
 
@@ -50,24 +52,28 @@ namespace LambdaEngine
 		}
 
 		//IGraphicsDevice Interface
-		virtual bool Init(const GraphicsDeviceDesc& desc)	override;
-		virtual void Release()								override;
+		virtual IFrameBuffer*	CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc)	const override final;
+		virtual IRenderPass*	CreateRenderPass(const RenderPassDesc& desc)								const override final;
+		virtual ITextureView*	CreateTextureView(const TextureViewDesc& desc)								const override final;
 
-		virtual IRenderPass*						CreateRenderPass()																			const override;
-		virtual IBuffer*							CreateBuffer(const BufferDesc& desc)														const override;
-		virtual ITexture*							CreateTexture(const TextureDesc& desc)														const override;
-		virtual ITextureView*						CreateTextureView(const TextureViewDesc& desc)											    const override;
-        virtual ISwapChain*							CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)							const override;
-		virtual IPipelineState*						CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) 								const override;
-		virtual IPipelineState*						CreateComputePipelineState(const ComputePipelineDesc& desc) 								const override;
-		virtual IPipelineState*						CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc)							const override;
-		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const override;
-		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const override;
-		virtual ICommandList*						CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc)			    const override;
-		virtual ICommandAllocator*					CreateCommandAllocator(ECommandQueueType queueType)											const override;
-		virtual ICommandQueue*						CreateCommandQueue(ECommandQueueType queueType)												const override;
-		virtual IFence*								CreateFence(const FenceDesc& desc)															const override;
+		virtual IBuffer*	CreateBuffer(const BufferDesc& desc)								const override final;
+		virtual ITexture*	CreateTexture(const TextureDesc& desc)								const override final;
+		virtual ISwapChain* CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)	const override final;
+
+		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) 	  const override final;
+		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineDesc& desc) 	  const override final;
+		virtual IPipelineState* CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc) const override final;
+
+		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const override final;
+		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const override final;
+
+		virtual ICommandQueue*		CreateCommandQueue(ECommandQueueType queueType)									const override final;
+		virtual ICommandAllocator*	CreateCommandAllocator(ECommandQueueType queueType)								const override final;
+		virtual ICommandList*		CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc)	const override final;
+		virtual IFence*				CreateFence(const FenceDesc& desc)												const override final;
 		
+		virtual void Release() override final;
+
 	private:
 		//INIT
 		bool InitInstance(const GraphicsDeviceDesc& desc);

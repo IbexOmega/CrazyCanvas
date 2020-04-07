@@ -25,17 +25,17 @@ namespace LambdaEngine
         }
         
         //IDeviceChild interface
-        virtual void SetName(const char* pName) override;
+        virtual void SetName(const char* pName) override final;
         
         //ITextureView interface
-        virtual ITexture* GetTexture() override;
+        virtual ITexture* GetTexture() override final;
         
-        FORCEINLINE virtual uint64 GetHandle() const override
+        FORCEINLINE virtual uint64 GetHandle() const override final
         {
             return (uint64)m_ImageView;
         }
         
-        FORCEINLINE virtual TextureViewDesc GetDesc() const override
+        FORCEINLINE virtual TextureViewDesc GetDesc() const override final
         {
             return m_Desc;
         }

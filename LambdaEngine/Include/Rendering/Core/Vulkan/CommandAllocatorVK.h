@@ -20,15 +20,15 @@ namespace LambdaEngine
 
 		VkCommandBuffer AllocateCommandBuffer(VkCommandBufferLevel level);
 
-		virtual bool Reset()					override;
-		virtual void SetName(const char* pName)	override;
+		virtual bool Reset()					override final;
+		virtual void SetName(const char* pName)	override final;
 
-		FORCEINLINE virtual uint64 GetHandle() const override
+		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
 			return (uint64)m_CommandPool;
 		}
 
-		FORCEINLINE virtual ECommandQueueType GetType() const override
+		FORCEINLINE virtual ECommandQueueType GetType() const override final
 		{
 			return m_Type;
 		}

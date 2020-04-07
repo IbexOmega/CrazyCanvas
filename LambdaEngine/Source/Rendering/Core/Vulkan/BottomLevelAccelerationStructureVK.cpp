@@ -128,7 +128,13 @@ namespace LambdaEngine
 
 	void BottomLevelAccelerationStructureVK::SetName(const char* pName)
 	{
-		m_pDevice->SetVulkanObjectName(pName, (uint64)m_AccelerationStructure, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR);
+		if (pName)
+		{
+			TDeviceChild::SetName(pName);
+			m_pDevice->SetVulkanObjectName(pName, (uint64)m_AccelerationStructure, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR);
+
+			m_Desc.pName = m_DebugName;
+		}
 	}
 
 	bool BottomLevelAccelerationStructureVK::InitAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)

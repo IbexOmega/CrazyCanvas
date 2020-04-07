@@ -170,7 +170,13 @@ namespace LambdaEngine
 
     void BufferVK::SetName(const char* pName)
     {
-        m_pDevice->SetVulkanObjectName(pName, (uint64)m_Buffer, VK_OBJECT_TYPE_BUFFER);
+        if (pName)
+        {
+            TDeviceChild::SetName(pName);
+            m_pDevice->SetVulkanObjectName(pName, (uint64)m_Buffer, VK_OBJECT_TYPE_BUFFER);
+
+            m_Desc.pName = m_DebugName;
+        }
     }
     
     uint64 BufferVK::GetDeviceAdress() const

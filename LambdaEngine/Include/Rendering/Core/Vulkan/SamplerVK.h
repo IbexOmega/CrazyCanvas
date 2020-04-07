@@ -27,12 +27,12 @@ namespace LambdaEngine
 		virtual void SetName(const char* pName) override final;
 
 		// Inherited via ISampler
-		FORCEINLINE virtual uint64 GetHandle() const override
+		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
 			return (uint64)m_Sampler;
 		}
         
-        FORCEINLINE virtual SamplerDesc GetDesc() const override
+        FORCEINLINE virtual SamplerDesc GetDesc() const override final
         {
             return m_Desc;
         }

@@ -17,7 +17,7 @@ namespace LambdaEngine
 	bool FenceLegacyVK::Init(const FenceDesc& desc)
 	{
 		LOG_ERROR("[FenceLegacyVK]: FUNCTION NOT IMPLEMENTED");
-		return false;
+		return true;
 	}
 	
 	void FenceLegacyVK::SetName(const char* pName)

@@ -11,6 +11,8 @@
 #include "Rendering/Core/API/ICommandAllocator.h"
 #include "Rendering/Core/API/ICommandList.h"
 #include "Rendering/Core/API/ITextureView.h"
+#include "Rendering/Core/API/IRenderPass.h"
+#include "Rendering/Core/API/IFrameBuffer.h"
 
 #include "Application/API/PlatformApplication.h"
 
@@ -30,7 +32,7 @@ namespace LambdaEngine
 		deviceDesc.Debug = false;
 #endif
 
-		s_pGraphicsDevice = CreateGraphicsDevice(deviceDesc, EGraphicsAPI::VULKAN);
+		s_pGraphicsDevice = CreateGraphicsDevice(EGraphicsAPI::VULKAN, deviceDesc);
 		if (!s_pGraphicsDevice)
 		{
 			return false;
@@ -77,6 +79,11 @@ namespace LambdaEngine
 
 		ITexture* pTexture = s_pGraphicsDevice->CreateTexture(textureDesc);
 
+		RenderPassDesc renderPassDesc = {};
+		renderPassDesc.pName = "Main RenderPass";
+
+		IRenderPass* pRenderPass = s_pGraphicsDevice->CreateRenderPass(renderPassDesc);
+
 		SwapChainDesc swapChainDesc = { };
 		swapChainDesc.pName			= "Main Window SwapChain";
 		swapChainDesc.BufferCount	= 3;
@@ -86,8 +93,9 @@ namespace LambdaEngine
 		swapChainDesc.SampleCount	= 1;
 
 		ISwapChain* pSwapChain = s_pGraphicsDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
+		swapChainDesc = pSwapChain->GetDesc();
 
-        const char* names[] =
+        const char* textureViewNames[] =
         {
             "BackBuffer View [0]",
             "BackBuffer View [1]",
@@ -103,14 +111,35 @@ namespace LambdaEngine
         textureViewDesc.ArrayCount      = 1;
         textureViewDesc.Format          = swapChainDesc.Format;
         
-        ITextureView* pTextureViews[3];
+		const char* frameBufferNames[] =
+		{
+			"BackBuffer FrameBuffer [0]",
+			"BackBuffer FrameBuffer [1]",
+			"BackBuffer FrameBuffer [2]",
+		};
+
+		FrameBufferDesc frameBufferDesc = { };
+		frameBufferDesc.pDepthStencil		= nullptr;
+		frameBufferDesc.Width				= swapChainDesc.Width;
+		frameBufferDesc.Height				= swapChainDesc.Height;
+		frameBufferDesc.RenderTargetCount	= 1;
+
+        ITextureView* ppTextureViews[3];
+		IFrameBuffer* ppFrameBuffers[3];
         for (uint32 i = 0; i < 3; i++)
         {
-            textureViewDesc.pName       = names[i];
+			//TextureView
+            textureViewDesc.pName       = textureViewNames[i];
             textureViewDesc.pTexture    = pSwapChain->GetBuffer(i);
     
-            pTextureViews[i] = s_pGraphicsDevice->CreateTextureView(textureViewDesc);
-            textureViewDesc.pTexture->Release();
+            ITextureView* pTextureView = s_pGraphicsDevice->CreateTextureView(textureViewDesc);
+			ppTextureViews[i] = pTextureView;
+			textureViewDesc.pTexture->Release();
+
+			//FrameBuffer
+			frameBufferDesc.pName			= frameBufferNames[i];
+			frameBufferDesc.ppRenderTargets = &pTextureView;
+			//ppFrameBuffers[i] = s_pGraphicsDevice->CreateFrameBuffer(pRenderPass, frameBufferDesc);
         }
         
         FenceDesc fenceDesc = { };
@@ -142,7 +171,7 @@ namespace LambdaEngine
 
         for (uint32 i = 0; i < 3; i++)
         {
-            SAFERELEASE(pTextureViews[i]);
+            SAFERELEASE(ppTextureViews[i]);
         }
         
         SAFERELEASE(pCommandList);

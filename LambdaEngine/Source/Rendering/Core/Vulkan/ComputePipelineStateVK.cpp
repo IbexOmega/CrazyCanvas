@@ -56,6 +56,10 @@ namespace LambdaEngine
 
 	void ComputePipelineStateVK::SetName(const char* pName)
 	{
-		m_pDevice->SetVulkanObjectName(pName, (uint64)m_Pipeline, VK_OBJECT_TYPE_PIPELINE);
+		if (pName)
+		{
+			TDeviceChild::SetName(pName);
+			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Pipeline, VK_OBJECT_TYPE_PIPELINE);
+		}
 	}
 }

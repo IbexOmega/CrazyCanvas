@@ -57,7 +57,13 @@ namespace LambdaEngine
 
 	void RenderPassVK::SetName(const char* pName)
 	{
-		m_pDevice->SetVulkanObjectName(pName, (uint64)m_RenderPass, VK_OBJECT_TYPE_RENDER_PASS);
+		if (pName)
+		{
+			TDeviceChild::SetName(pName);
+			m_pDevice->SetVulkanObjectName(pName, (uint64)m_RenderPass, VK_OBJECT_TYPE_RENDER_PASS);
+
+			m_Desc.pName = m_DebugName;
+		}
 	}
 
 	void RenderPassVK::CreateAttachmentDescriptions(const RenderPassDesc& desc, VkAttachmentDescription* pResultAttachments)
