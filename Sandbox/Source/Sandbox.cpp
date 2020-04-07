@@ -45,7 +45,8 @@ Sandbox::Sandbox() :
 		m_pScene->AddStaticGameObject(graphicsObject, glm::scale(glm::mat4(1.0f), glm::vec3(0.001f)));
 	}
 
-	
+	SceneDesc sceneDesc = {};
+	m_pScene->Finalize(sceneDesc);
 
 	//InitTestAudio();
 }
@@ -254,9 +255,6 @@ void Sandbox::Tick(LambdaEngine::Timestamp dt)
 		glm::vec3 tonePosition(glm::cos(m_Timer), 0.0f, glm::sin(m_Timer));
 		m_pToneSoundInstance->SetPosition(tonePosition);
 	}
-
-	SceneDesc sceneDesc = {};
-	m_pScene->Finalize(sceneDesc);
 }
 
 namespace LambdaEngine
