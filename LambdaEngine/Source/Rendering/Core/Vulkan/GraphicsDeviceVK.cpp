@@ -453,7 +453,7 @@ namespace LambdaEngine
 
 			instanceCreateInfo.enabledLayerCount    = (uint32_t)m_EnabledValidationLayers.size();
 			instanceCreateInfo.ppEnabledLayerNames  = m_EnabledValidationLayers.data();
-			instanceCreateInfo.pNext                = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+			instanceCreateInfo.pNext                = &debugCreateInfo;
 		}
 		else
 		{

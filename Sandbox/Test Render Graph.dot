@@ -1,0 +1,120 @@
+digraph G {
+	rankdir = LR;
+	rs0 [shape=box,label="Geometry Render Stage"];
+	rs1 [shape=box,label="Ray Tracing Render Stage"];
+	rs2 [shape=box,label="Spatial Blur Render Stage"];
+	rs3 [shape=box,label="Shading Render Stage"];
+	ia19 [label="Input
+GBUFFER_DEPTH"];
+	ia18 [label="Input
+GBUFFER_VELOCITY"];
+	ia17 [label="Input
+GBUFFER_NORMAL_ROUGHNESS_METALLIC"];
+	ia16 [label="Input
+GBUFFER_ALBEDO_AO"];
+	ia15 [label="Input
+RADIANCE_IMAGE"];
+	subgraph cluster0 {
+		node [style=filled,color=white];
+		style = filled;
+		color = lightgrey;
+		label = "External Inputs";
+		eia0 [label="External Input
+PER_FRAME_BUFFER"];
+		eia7 [label="External Input
+SCENE_NORMAL_MAPS"];
+		eia4 [label="External Input
+SCENE_INSTANCE_BUFFER"];
+		eia6 [label="External Input
+SCENE_ALBEDO_MAPS"];
+		eia5 [label="External Input
+SCENE_MESH_INDEX_BUFFER"];
+		eia3 [label="External Input
+SCENE_INDEX_BUFFER"];
+		eia2 [label="External Input
+SCENE_VERTEX_BUFFER"];
+		eia1 [label="External Input
+SCENE_MAT_PARAM_BUFFER"];
+		eia8 [label="External Input
+SCENE_AO_MAPS"];
+		eia9 [label="External Input
+SCENE_ROUGHNESS_MAPS"];
+		eia10 [label="External Input
+SCENE_METALLIC_MAPS"];
+		eia20 [label="External Input
+LIGHTS_BUFFER"];
+		eia21 [label="External Input
+SCENE_TLAS"];
+		eia22 [label="External Input
+BRDF_LUT"];
+		eia23 [label="External Input
+BLUE_NOISE_LUT"];
+}
+	oa24 [label="Output
+RADIANCE_IMAGE"];
+	oa14 [label="Output
+GBUFFER_DEPTH"];
+	oa13 [label="Output
+GBUFFER_VELOCITY"];
+	oa12 [label="Output
+GBUFFER_NORMAL_ROUGHNESS_METALLIC"];
+	oa11 [label="Output
+GBUFFER_ALBEDO_AO"];
+	oa26 [label="Output
+BACK_BUFFER_TEXTURE"];
+	oa25 [label="Output
+FILTERED_RADIANCE_IMAGE"];
+	ia19 -> rs1;
+	ia19 -> rs3;
+	ia18 -> rs1;
+	ia18 -> rs3;
+	ia17 -> rs1;
+	ia17 -> rs3;
+	ia16 -> rs1;
+	ia16 -> rs3;
+	ia15 -> rs1;
+	ia15 -> rs2;
+	ia15 -> rs3;
+	eia0 -> rs0 [color=red];
+	eia0 -> rs1 [color=red];
+	eia0 -> rs3 [color=red];
+	eia7 -> rs0 [color=red];
+	eia7 -> rs1 [color=red];
+	eia4 -> rs0 [color=red];
+	eia4 -> rs1 [color=red];
+	eia6 -> rs0 [color=red];
+	eia6 -> rs1 [color=red];
+	eia5 -> rs0 [color=red];
+	eia5 -> rs1 [color=red];
+	eia3 -> rs0 [color=red];
+	eia3 -> rs1 [color=red];
+	eia2 -> rs0 [color=red];
+	eia2 -> rs1 [color=red];
+	eia1 -> rs0 [color=red];
+	eia1 -> rs1 [color=red];
+	eia8 -> rs0 [color=red];
+	eia8 -> rs1 [color=red];
+	eia9 -> rs0 [color=red];
+	eia9 -> rs1 [color=red];
+	eia10 -> rs0 [color=red];
+	eia10 -> rs1 [color=red];
+	eia20 -> rs1 [color=red];
+	eia20 -> rs3 [color=red];
+	eia21 -> rs1 [color=red];
+	eia22 -> rs1 [color=red];
+	eia22 -> rs3 [color=red];
+	eia23 -> rs1 [color=red];
+	eia23 -> rs3 [color=red];
+	rs1 -> oa24;
+	oa24 -> ia15;
+	rs0 -> oa14;
+	oa14 -> ia19;
+	rs0 -> oa13;
+	oa13 -> ia18;
+	rs0 -> oa12;
+	oa12 -> ia17;
+	rs0 -> oa11;
+	oa11 -> ia16;
+	rs3 -> oa26;
+	rs2 -> oa25;
+}
