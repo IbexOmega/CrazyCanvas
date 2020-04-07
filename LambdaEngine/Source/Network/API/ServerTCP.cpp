@@ -53,7 +53,7 @@ namespace LambdaEngine
 		ISocketTCP* socket = m_pServerSocket->Accept();
 		if (socket)
 		{
-			IClientTCPHandler* handler = m_pHandler->CreateClientHandler();
+			IClientTCPHandler* handler = m_pHandler->CreateClientHandlerTCP();
 			HandleNewClient(DBG_NEW ClientTCP(handler, this, socket));
 		}
 		else
@@ -92,7 +92,7 @@ namespace LambdaEngine
 	void ServerTCP::OnClientDisconnected(ClientTCP* client)
 	{
 		RemoveClient(client);
-		m_pHandler->OnClientDisconnected(client);
+		m_pHandler->OnClientDisconnectedTCP(client);
 		client->Release();
 	}
 
@@ -104,10 +104,10 @@ namespace LambdaEngine
 	{
 		if (m_Clients.size() < m_MaxClients)
 		{
-			if (m_pHandler->OnClientAccepted(client))
+			if (m_pHandler->OnClientAcceptedTCP(client))
 			{
 				AddClient(client);
-				m_pHandler->OnClientConnected(client);
+				m_pHandler->OnClientConnectedTCP(client);
 				return;
 			}
 		}

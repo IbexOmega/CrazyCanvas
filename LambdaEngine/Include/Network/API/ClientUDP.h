@@ -2,11 +2,12 @@
 
 #include "ClientBase.h"
 #include "ISocketUDP.h"
+#include "IClientUDP.h"
 #include "IClientUDPHandler.h"
 
 namespace LambdaEngine
 {
-	class LAMBDA_API ClientUDP : public ClientBase
+	class LAMBDA_API ClientUDP : public ClientBase<IClientUDP>
 	{
 	public:
 		ClientUDP(const std::string& address, uint16 port, IClientUDPHandler* handler);

@@ -17,6 +17,7 @@
 #include "Rendering/Core/Vulkan/CommandAllocatorVK.h"
 #include "Rendering/Core/Vulkan/CommandListVK.h"
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
+#include "Rendering/Core/Vulkan/FenceLegacyVK.h"
 
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
@@ -146,8 +147,10 @@ namespace LambdaEngine
 			pPipelineState->Release();
 			return nullptr;
 		}
-
-		return pPipelineState;
+		else
+		{
+			return pPipelineState;
+		}
 	}
 
 	IPipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineDesc& desc) const
@@ -158,8 +161,10 @@ namespace LambdaEngine
 			pPipelineState->Release();
 			return nullptr;
 		}
-
-		return pPipelineState;
+		else
+		{
+			return pPipelineState;
+		}
 	}
 
 	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc) const
@@ -170,8 +175,10 @@ namespace LambdaEngine
 			pPipelineState->Release();
 			return nullptr;
 		}
-
-		return pPipelineState;
+		else
+		{
+			return pPipelineState;
+		}
 	}
 
 	ITopLevelAccelerationStructure* GraphicsDeviceVK::CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc) const
@@ -182,8 +189,10 @@ namespace LambdaEngine
 			pTLAS->Release();
 			return nullptr;
 		}
-
-		return pTLAS;
+		else
+		{
+			return pTLAS;
+		}
 	}
 
 	IBottomLevelAccelerationStructure* GraphicsDeviceVK::CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc) const
@@ -194,8 +203,10 @@ namespace LambdaEngine
 			pBLAS->Release();
 			return nullptr;
 		}
-
-		return pBLAS;
+		else
+		{
+			return pBLAS;
+		}
 	}
 
 	ICommandList* GraphicsDeviceVK::CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc) const
@@ -206,8 +217,10 @@ namespace LambdaEngine
             pCommandListVK->Release();
             return nullptr;
         }
-        
-		return pCommandListVK;
+		else
+		{
+			return pCommandListVK;
+		}
 	}
 
 	ICommandAllocator* GraphicsDeviceVK::CreateCommandAllocator(ECommandQueueType queueType) const
@@ -218,8 +231,10 @@ namespace LambdaEngine
 			pCommandAllocator->Release();
 			return nullptr;
 		}
-
-		return pCommandAllocator;
+		else
+		{
+			return pCommandAllocator;
+		}
 	}
 
 	ICommandQueue* GraphicsDeviceVK::CreateCommandQueue(ECommandQueueType queueType) const
@@ -248,20 +263,40 @@ namespace LambdaEngine
 			pQueue->Release();
 			return nullptr;
 		}
-
-		return pQueue;
+		else
+		{
+			return pQueue;
+		}
 	}
 
 	IFence* GraphicsDeviceVK::CreateFence(const FenceDesc& desc) const
 	{
-		FenceVK* pFence = DBG_NEW FenceVK(this);
-		if (!pFence->Init(desc))
+		if (IsDeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
 		{
-			pFence->Release();
-			return nullptr;
+			FenceVK* pFenceVk = DBG_NEW FenceVK(this);
+			if (!pFenceVk->Init(desc))
+			{
+				pFenceVk->Release();
+				return nullptr;
+			}
+			else
+			{
+				return pFenceVk;
+			}
 		}
-
-		return pFence;
+		else
+		{
+			FenceLegacyVK* pFenceLegacyVk = DBG_NEW FenceLegacyVK(this);
+			if (!pFenceLegacyVk->Init(desc))
+			{
+				pFenceLegacyVk->Release();
+				return nullptr;
+			}
+			else
+			{
+				return pFenceLegacyVk;
+			}
+		}
 	}
 
 	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc& desc) const
@@ -272,8 +307,10 @@ namespace LambdaEngine
             pBuffer->Release();
 			return nullptr;
 		}
-
-		return pBuffer;
+		else
+		{
+			return pBuffer;
+		}
 	}
 
 	ITexture* GraphicsDeviceVK::CreateTexture(const TextureDesc& desc) const
@@ -284,8 +321,10 @@ namespace LambdaEngine
             pTexture->Release();
 			return nullptr;
 		}
-
-		return pTexture;
+		else
+		{
+			return pTexture;
+		}
 	}
 
 	ITextureView* GraphicsDeviceVK::CreateTextureView(const TextureViewDesc& desc) const
@@ -296,8 +335,10 @@ namespace LambdaEngine
             pTextureView->Release();
             return nullptr;
         }
-        
-		return pTextureView;
+		else
+		{
+			return pTextureView;
+		}
 	}
 
     ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc) const
@@ -308,8 +349,10 @@ namespace LambdaEngine
             pSwapChain->Release();
             return nullptr;
         }
-        
-        return pSwapChain;
+		else
+		{
+			return pSwapChain;
+		}
     }
 
 	void GraphicsDeviceVK::SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type) const
@@ -359,6 +402,14 @@ namespace LambdaEngine
 		vkGetPhysicalDeviceFormatProperties(PhysicalDevice, format, &properties);
 
 		return properties;
+	}
+
+	VkPhysicalDeviceProperties GraphicsDeviceVK::GetPhysicalDeviceProperties() const
+	{
+		VkPhysicalDeviceProperties physicalDeviceProperties = {};
+		vkGetPhysicalDeviceProperties(PhysicalDevice, &physicalDeviceProperties);
+		
+		return physicalDeviceProperties;
 	}
 
 	bool GraphicsDeviceVK::InitInstance(const GraphicsDeviceDesc& desc)
@@ -485,8 +536,7 @@ namespace LambdaEngine
 		m_DeviceQueueFamilyIndices = FindQueueFamilies(PhysicalDevice);
 
 		// Save device's limits
-		VkPhysicalDeviceProperties deviceProperties;
-		vkGetPhysicalDeviceProperties(PhysicalDevice, &deviceProperties);
+		VkPhysicalDeviceProperties deviceProperties = GetPhysicalDeviceProperties();
 		m_DeviceLimits = deviceProperties.limits;
 
 		return true;
@@ -847,7 +897,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool GraphicsDeviceVK::IsInstanceExtensionEnabled(const char* pExtensionName)
+	bool GraphicsDeviceVK::IsInstanceExtensionEnabled(const char* pExtensionName) const
 	{
 		uint32 extensionHash = HashString<const char*>(pExtensionName);
 		for (const char* pEnabledExtensionName : m_EnabledInstanceExtensions)
@@ -862,7 +912,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	bool GraphicsDeviceVK::IsDeviceExtensionEnabled(const char* pExtensionName)
+	bool GraphicsDeviceVK::IsDeviceExtensionEnabled(const char* pExtensionName) const
 	{
 		uint32 extensionHash = HashString<const char*>(pExtensionName);
 		for (const char* pEnabledExtensionName : m_EnabledDeviceExtensions)
@@ -889,6 +939,7 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::RegisterDeviceExtensionData()
 	{
+		//RayTracing
 		if (IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME))
 		{
 			GET_DEVICE_PROC_ADDR(Device, vkCreateAccelerationStructureKHR);
@@ -912,12 +963,17 @@ namespace LambdaEngine
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
 		}
 
+		//Timeline semaphores
+		if (IsDeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
+		{
+			GET_DEVICE_PROC_ADDR(Device, vkWaitSemaphores);
+			GET_DEVICE_PROC_ADDR(Device, vkSignalSemaphore);
+			GET_DEVICE_PROC_ADDR(Device, vkGetSemaphoreCounterValue);
+		}
+
 		//TOOO: Check for extension
 		GET_DEVICE_PROC_ADDR(Device, vkGetBufferDeviceAddress);
 
-		GET_DEVICE_PROC_ADDR(Device, vkWaitSemaphores);
-		GET_DEVICE_PROC_ADDR(Device, vkSignalSemaphore);
-		GET_DEVICE_PROC_ADDR(Device, vkGetSemaphoreCounterValue);
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsDeviceVK::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)

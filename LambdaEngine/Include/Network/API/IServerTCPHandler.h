@@ -17,7 +17,7 @@ namespace LambdaEngine
 		*
 		* return  - a new handler
 		*/
-		virtual IClientTCPHandler* CreateClientHandler() = 0;
+		virtual IClientTCPHandler* CreateClientHandlerTCP() = 0;
 
 		/*
 		* Called when a client is accepted by the server. 
@@ -26,20 +26,20 @@ namespace LambdaEngine
 		*
 		* return  - true to keep the client, otherwise false.
 		*/
-		virtual bool OnClientAccepted(ClientTCP* client) = 0;
+		virtual bool OnClientAcceptedTCP(ClientTCP* client) = 0;
 
 		/*
 		* Called after OnClientAccepted if keept.
 		*
 		* client  - The client
 		*/
-		virtual void OnClientConnected(ClientTCP* client) = 0;
+		virtual void OnClientConnectedTCP(ClientTCP* client) = 0;
 
 		/*
 		* Called when a client for some reason is disconnected.
 		*
 		* client  - The client
 		*/
-		virtual void OnClientDisconnected(ClientTCP* client) = 0;
+		virtual void OnClientDisconnectedTCP(ClientTCP* client) = 0;
 	};
 }

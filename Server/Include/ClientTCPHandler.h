@@ -8,8 +8,8 @@ public:
 	ClientTCPHandler();
 	~ClientTCPHandler();
 
-	virtual void OnClientConnected(LambdaEngine::ClientTCP* client) override;
-	virtual void OnClientDisconnected(LambdaEngine::ClientTCP* client) override;
-	virtual void OnClientFailedConnecting(LambdaEngine::ClientTCP* client) override;
-	virtual void OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet) override;
+	virtual void OnClientConnectedTCP(LambdaEngine::ClientTCP* client) override;
+	virtual void OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client) override;
+	virtual void OnClientFailedConnectingTCP(LambdaEngine::ClientTCP* client) override;
+	virtual void OnClientPacketReceivedTCP(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet) override;
 };

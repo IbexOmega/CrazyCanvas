@@ -1,5 +1,6 @@
 #include "Network/API/ClientUDP.h"
 #include "Network/API/PlatformSocketFactory.h"
+#include "Network/API/NetworkPacket.h"
 
 #include "Threading/Thread.h"
 
@@ -8,6 +9,7 @@
 namespace LambdaEngine
 {
 	ClientUDP::ClientUDP(const std::string& address, uint16 port, IClientUDPHandler* handler) : 
+		ClientBase(false),
 		m_pSocket(nullptr),
 		m_pClientHandler(handler)
 	{
@@ -57,6 +59,7 @@ namespace LambdaEngine
 				if (bytesReceived == packet->GetSize())
 				{
 					m_pClientHandler->OnClientPacketReceivedUDP(this, packet);
+					LOG_MESSAGE("%s:%d", address.c_str(), port);
 				}
 				RegisterPacketsReceived(1);
 			}

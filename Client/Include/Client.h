@@ -6,7 +6,7 @@
 #include "Input/API/IMouseHandler.h"
 
 #include "Network/API/ClientTCP.h"
-#include "Network/API/ClientUDP.h"
+#include "Network/API/IClientUDP.h"
 #include "Network/API/IClientTCPHandler.h"
 #include "Network/API/IClientUDPHandler.h"
 
@@ -16,14 +16,14 @@ public:
 	Client();
 	~Client();
 
-	virtual void OnClientPacketReceivedUDP(LambdaEngine::ClientUDP* client, LambdaEngine::NetworkPacket* packet) override;
-	virtual void OnClientErrorUDP(LambdaEngine::ClientUDP* client) override;
-	virtual void OnClientStoppedUDP(LambdaEngine::ClientUDP* client) override;
+	virtual void OnClientPacketReceivedUDP(LambdaEngine::IClientUDP* client, LambdaEngine::NetworkPacket* packet) override;
+	virtual void OnClientErrorUDP(LambdaEngine::IClientUDP* client) override;
+	virtual void OnClientStoppedUDP(LambdaEngine::IClientUDP* client) override;
 
-	virtual void OnClientConnected(LambdaEngine::ClientTCP* client) override;
-	virtual void OnClientDisconnected(LambdaEngine::ClientTCP* client) override;
-	virtual void OnClientFailedConnecting(LambdaEngine::ClientTCP* client) override;
-	virtual void OnClientPacketReceived(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet) override;
+	virtual void OnClientConnectedTCP(LambdaEngine::ClientTCP* client) override;
+	virtual void OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client) override;
+	virtual void OnClientFailedConnectingTCP(LambdaEngine::ClientTCP* client) override;
+	virtual void OnClientPacketReceivedTCP(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet) override;
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp dt) override;
@@ -35,5 +35,5 @@ public:
 
 private:
 	LambdaEngine::ClientTCP* m_pClientTCP;
-	LambdaEngine::ClientUDP* m_pClientUDP;
+	LambdaEngine::IClientUDP* m_pClientUDP;
 };

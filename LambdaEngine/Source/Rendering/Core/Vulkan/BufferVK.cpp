@@ -1,5 +1,7 @@
 #include "Log/Log.h"
 
+#include <algorithm>
+
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
@@ -38,34 +40,45 @@ namespace LambdaEngine
         info.sharingMode            = VK_SHARING_MODE_EXCLUSIVE;
         info.size                   = desc.SizeInBytes;
         
+        VkPhysicalDeviceProperties  deviceProperties    = m_pDevice->GetPhysicalDeviceProperties();
+        VkPhysicalDeviceLimits&     deviceLimits        = deviceProperties.limits;
+        m_AlignementRequirement = 1LLU;
+
 		info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_VERTEX_BUFFER)
         {
             info.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
         }
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_INDEX_BUFFER)
         {
             info.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
         }
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER)
         {
             info.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            m_AlignementRequirement = std::max(m_AlignementRequirement, deviceLimits.minUniformBufferOffsetAlignment);
         }
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER)
         {
             info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            m_AlignementRequirement = std::max(m_AlignementRequirement, deviceLimits.minStorageBufferOffsetAlignment);
         }
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_COPY_DST)
         {
             info.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
         }
         if (desc.Flags & EBufferFlags::BUFFER_FLAG_COPY_SRC)
         {
             info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
         }
 		if (desc.Flags & EBufferFlags::BUFFER_FLAG_RAY_TRACING)
 		{
 			info.usage |= VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR;
+            m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
 		}
 		
         VkResult result = vkCreateBuffer(m_pDevice->Device, &info, nullptr, &m_Buffer);
@@ -164,4 +177,9 @@ namespace LambdaEngine
     {
         return uint64(m_DeviceAddress);
     }
+	
+    uint64 BufferVK::GetAlignmentRequirement() const
+	{
+		return m_AlignementRequirement;
+	}
 }

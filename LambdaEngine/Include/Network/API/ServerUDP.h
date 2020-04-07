@@ -1,11 +1,13 @@
 #pragma once
 
 #include "ServerBase.h"
+#include <unordered_map>
 
 namespace LambdaEngine
 {
 	class ISocketUDP;
 	class IServerUDPHandler;
+	class RemoteClientUDP;
 
 	class LAMBDA_API ServerUDP : public ServerBase
 	{
@@ -22,9 +24,11 @@ namespace LambdaEngine
 
 	private:
 		static ISocketUDP* CreateServerSocket(const std::string& address, uint16 port);
+		static uint64 Hash(const std::string& address, uint64 port);
 
 	private:
 		ISocketUDP* m_pServerSocket;
 		IServerUDPHandler* m_pHandler;
+		std::unordered_map<uint64, RemoteClientUDP*> m_Clients;
 	};
 }
