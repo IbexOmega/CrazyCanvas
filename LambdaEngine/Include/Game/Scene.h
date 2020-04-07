@@ -3,6 +3,8 @@
 #include "LambdaEngine.h"
 #include "Math/Math.h"
 
+#include "Resources/Mesh.h"
+
 #include <vector>
 #include <map>
 
@@ -25,13 +27,14 @@ namespace LambdaEngine
 
 	struct IndirectMeshArgument
 	{
-		uint32 VertexCount		= 0;
-		uint32 InstanceCount	= 0;
-		uint32 FirstIndex		= 0;
-		uint32 FirstInstance	= 0;
+		uint32 VertexCount			= 0;
+		uint32 InstanceCount		= 0;
+		uint32 FirstIndex			= 0;
+		uint32 FirstInstance		= 0;
 		
-		uint32 BaseVertexIndex	= 0;
-		uint32 MaterialIndex	= 0;
+		uint32 BaseVertexIndex		= 0;
+		uint32 MaterialIndex		= 0;
+		uint32 BaseInstanceIndex	= 0;
 	};
 
 	struct SceneDesc
@@ -62,7 +65,7 @@ namespace LambdaEngine
 			std::map<GUID_Lambda, uint32> GUIDToMappedMaterials; //Mapping from GUID to Indices for MappedMesh::MappedMaterials
 			std::vector<MappedMaterial>	MappedMaterials;
 		};
-
+		
 	public:
 		DECL_REMOVE_COPY(Scene);
 		DECL_REMOVE_MOVE(Scene);
@@ -91,16 +94,21 @@ namespace LambdaEngine
 		IBuffer*								m_pSceneMaterialProperties;		//Indexed with result from IndirectMeshArgument::MaterialIndex, contains Scene Material Properties
 		IBuffer*								m_pSceneVertexBuffer;			//Indexed with result from Scene::m_pBaseVertexIndexBuffer + Scene::m_pSceneIndexBuffer and contains Scene Vertices
 		IBuffer*								m_pSceneIndexBuffer;			//Indexed with result from Scene::m_pMeshIndexBuffer + primitiveID * 3 + triangleCornerID and contains indices to Scene::m_pSceneVertexBuffer
-		IBuffer*								m_pSceneInstanceBuffer;			//Indexed with drawID + instanceID and contains per instance Transforms
+		IBuffer*								m_pSceneInstanceBuffer;			/*Indexed with InstanceID and contains per instance data, we can figure out the InstanceID during shading by using
+																					IndirectMeshArgument::BaseInstanceIndex, IndirectMeshArgument::VertexCount and primitiveID <-- Relative to drawID*/
 
-		IBuffer*								m_pSceneMeshIndexBuffer;				/*Indexed with drawID when Shading and contains IndirectMeshArgument structs, primarily:
-																					IndirectMeshArgument::FirstIndex will be used as BaseIndex to m_pSceneIndexBuffer, 
-																					IndirectMeshArgument::BaseVertexIndex will be used as BaseIndex to m_pSceneVertexBuffer,
-																					IndirectMeshArgument::MaterialIndex will be used as MaterialIndex to MaterialBuffers*/
+		IBuffer*								m_pSceneMeshIndexBuffer;		/*Indexed with drawID when Shading and contains IndirectMeshArgument structs, primarily:
+																					IndirectMeshArgument::FirstIndex		will be used as BaseIndex to m_pSceneIndexBuffer, 
+																					IndirectMeshArgument::BaseVertexIndex	will be used as BaseIndex to m_pSceneVertexBuffer,
+																					IndirectMeshArgument::MaterialIndex		will be used as MaterialIndex to MaterialBuffers,
+																					IndirectMeshArgument::BaseInstanceIndex will be used as BaseIndex to m_pSceneInstanceBuffer*/
+
 
 		std::map<GUID_Lambda, uint32>			m_GUIDToMappedMeshes;
 		std::vector<MappedMesh>					m_MappedMeshes;
 		std::vector<const Mesh*>				m_Meshes;
+		std::vector<Vertex>						m_SceneVertexArray;
+		std::vector<uint32>						m_SceneIndexArray;
 
 		std::map<GUID_Lambda, uint32>			m_GUIDToMaterials;
 		std::vector<const Material*>			m_Materials;

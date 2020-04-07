@@ -136,12 +136,7 @@ namespace LambdaEngine
 		uint64 signalValue	= waitValue + 1;
 
 		s_pGraphicsQueue->ExecuteCommandLists(&pCommandList, 1, PIPELINE_STAGE_FLAG_TOP, pFence, waitValue, pFence, signalValue);
-
-		waitValue = pFence->GetValue();
-
-		//Maybe does not work due to beta driver?
 		pFence->Wait(signalValue, UINT64_MAX_);
-		waitValue = pFence->GetValue();
 
 		pCommandAllocator->Reset();
 

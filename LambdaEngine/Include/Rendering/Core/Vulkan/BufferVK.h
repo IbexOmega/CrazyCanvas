@@ -18,12 +18,20 @@ namespace LambdaEngine
         
         bool Init(const BufferDesc& desc);
         
+        FORCEINLINE VkBuffer GetBuffer() const
+        {
+            return m_Buffer;
+        }
+
+        //IDeviceChild interface
+        virtual void SetName(const char* pName) override final;
+
+        //IBuffer interface
         virtual void*   Map()   override final;
         virtual void    Unmap() override final;
         
-        virtual void SetName(const char* pName) override final;
-        
-        virtual uint64 GetDeviceAdress() const override final;
+        virtual uint64 GetDeviceAdress()            const override final;
+        virtual uint64 GetAlignmentRequirement()    const override final;
 
         FORCEINLINE virtual BufferDesc GetDesc() const override final
         {
@@ -35,15 +43,11 @@ namespace LambdaEngine
             return (uint64)m_Buffer;
         }
 
-        FORCEINLINE VkBuffer GetBuffer() const
-        {
-            return m_Buffer;
-        }
-         
     private:
-        VkBuffer        m_Buffer            = VK_NULL_HANDLE;
-        VkDeviceMemory  m_Memory            = VK_NULL_HANDLE;
-        VkDeviceAddress m_DeviceAddress     = 0;
+        VkBuffer        m_Buffer                = VK_NULL_HANDLE;
+        VkDeviceMemory  m_Memory                = VK_NULL_HANDLE;
+        VkDeviceAddress m_DeviceAddress         = 0;
+        VkDeviceAddress m_AlignementRequirement = 0;
         BufferDesc      m_Desc;
     };
 }

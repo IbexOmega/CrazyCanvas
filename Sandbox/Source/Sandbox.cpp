@@ -35,12 +35,12 @@ Sandbox::Sandbox() :
 
 	m_pResourceManager = DBG_NEW LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
 
-	std::vector<GameObject> sponzaGraphicsObjects;
-	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sponzaGraphicsObjects);
+	std::vector<GameObject>	sceneGameObjects;
+	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
 
 	m_pScene = new Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice(), m_pResourceManager);
 
-	for (GameObject& graphicsObject : sponzaGraphicsObjects)
+	for (GameObject& graphicsObject : sceneGameObjects)
 	{
 		m_pScene->AddStaticGameObject(graphicsObject, glm::scale(glm::mat4(1.0f), glm::vec3(0.001f)));
 	}

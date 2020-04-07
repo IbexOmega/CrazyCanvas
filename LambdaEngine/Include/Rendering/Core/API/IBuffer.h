@@ -55,6 +55,13 @@ namespace LambdaEngine
         *           does not support deviceaddresses.
         */
         virtual uint64      GetDeviceAdress()   const = 0;
-        virtual BufferDesc  GetDesc()           const = 0;
+
+        /*
+        * Returns the alignement needed for the buffer when using a buffer offset
+        * 
+        * return - Returns the needed alignement on success otherwise zero
+        */
+        virtual uint64      GetAlignmentRequirement()   const = 0;
+        virtual BufferDesc  GetDesc()                   const = 0;
     };
 }

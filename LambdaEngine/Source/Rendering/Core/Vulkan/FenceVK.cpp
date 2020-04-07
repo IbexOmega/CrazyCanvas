@@ -48,64 +48,46 @@ namespace LambdaEngine
 
 	void FenceVK::Wait(uint64 signalValue, uint64 timeOut) const
 	{
-		if (m_pDevice->vkWaitSemaphores)
-		{
-			VkSemaphoreWaitInfo waitInfo = {};
-			waitInfo.sType			= VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
-			waitInfo.pNext			= nullptr;
-			waitInfo.flags			= 0;
-			waitInfo.semaphoreCount = 1;
-			waitInfo.pSemaphores	= &m_Semaphore;
-			waitInfo.pValues		= &signalValue;
+		VkSemaphoreWaitInfo waitInfo = {};
+		waitInfo.sType			= VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+		waitInfo.pNext			= nullptr;
+		waitInfo.flags			= 0;
+		waitInfo.semaphoreCount = 1;
+		waitInfo.pSemaphores	= &m_Semaphore;
+		waitInfo.pValues		= &signalValue;
 
-			VkResult result = m_pDevice->vkWaitSemaphores(m_pDevice->Device, &waitInfo, timeOut);
-			LOG_MESSAGE("[FenceVK::Wait]: Return %s", VkResultToString(result));
-		}
-		else
-		{
-			LOG_ERROR("[FenceVK::Wait]: UNSUPPORTED FUNCTION");
-		}
+		VkResult result = m_pDevice->vkWaitSemaphores(m_pDevice->Device, &waitInfo, timeOut);
+		LOG_MESSAGE("[FenceVK::Wait]: Return %s", VkResultToString(result));
 	}
 
 	void FenceVK::Signal(uint64 signalValue)
 	{
-		if (m_pDevice->vkSignalSemaphore)
-		{
-			VkSemaphoreSignalInfo signalInfo = { };
-			signalInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
-			signalInfo.pNext		= nullptr;
-			signalInfo.value		= signalValue;
-			signalInfo.semaphore	= m_Semaphore;
+		VkSemaphoreSignalInfo signalInfo = { };
+		signalInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
+		signalInfo.pNext		= nullptr;
+		signalInfo.value		= signalValue;
+		signalInfo.semaphore	= m_Semaphore;
 
-			VkResult result = m_pDevice->vkSignalSemaphore(m_pDevice->Device, &signalInfo);
-			if (result != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR("[FenceVK]: Failed to signal semaphore", result);
-			}
-		}
-		else
+		VkResult result = m_pDevice->vkSignalSemaphore(m_pDevice->Device, &signalInfo);
+		if (result != VK_SUCCESS)
 		{
-			LOG_ERROR("[FenceVK::Signal]: UNSUPPORTED FUNCTION");
+			LOG_VULKAN_ERROR("[FenceVK]: Failed to signal semaphore", result);
 		}
-	}
+}
 
 	uint64 FenceVK::GetValue() const
 	{
-		uint64 value = 0xffffffffffffffff;
-		if (m_pDevice->vkGetSemaphoreCounterValue)
+		uint64	 value	= 0;
+		VkResult result = m_pDevice->vkGetSemaphoreCounterValue(m_pDevice->Device, m_Semaphore, &value);
+		if (result != VK_SUCCESS)
 		{
-			VkResult result = m_pDevice->vkGetSemaphoreCounterValue(m_pDevice->Device, m_Semaphore, &value);
-			if (result != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR("[FenceVK]: Failed to retrive fence-value", result);
-			}
+			LOG_VULKAN_ERROR("[FenceVK]: Failed to retrive fence-value", result);
+			return 0xffffffffffffffff;
 		}
 		else
 		{
-			LOG_ERROR("[FenceVK::GetValue]: UNSUPPORTED FUNCTION");
+			return value;
 		}
-
-		return value;
 	}
 	
 	void FenceVK::SetName(const char* pName)
