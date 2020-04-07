@@ -1,8 +1,9 @@
-#include "Network/API/ServerUDP.h"
-#include "Network/API/PlatformSocketFactory.h"
+#include "Network/API/UDP/ServerUDP.h"
+#include "Network/API/UDP/IServerUDPHandler.h"
+#include "Network/API/UDP/ClientUDPRemote.h"
+
+#include "Network/API/PlatformNetworkUtils.h"
 #include "Network/API/NetworkPacket.h"
-#include "Network/API/IServerUDPHandler.h"
-#include "Network/API/RemoteClientUDP.h"
 
 #include "Log/Log.h"
 #include "Threading/Thread.h"
@@ -52,11 +53,11 @@ namespace LambdaEngine
 				{
 					//LOCK
 					uint64 hash = Hash(address, port);
-					RemoteClientUDP* client = m_Clients[hash];
+					ClientUDPRemote* client = m_Clients[hash];
 					if (!client)
 					{
 						IClientUDPHandler* handler = m_pHandler->CreateClientHandlerUDP();
-						client = new RemoteClientUDP(address, port, hash, this, handler);
+						client = new ClientUDPRemote(address, port, hash, this, handler);
 						m_Clients[hash] = client;
 					}
 					client->OnPacketReceived(&packet);
@@ -95,7 +96,7 @@ namespace LambdaEngine
 
 	ISocketUDP* ServerUDP::CreateServerSocket(const std::string& address, uint16 port)
 	{
-		ISocketUDP* serverSocket = PlatformSocketFactory::CreateSocketUDP();
+		ISocketUDP* serverSocket = PlatformNetworkUtils::CreateSocketUDP();
 		if (!serverSocket)
 			return nullptr;
 

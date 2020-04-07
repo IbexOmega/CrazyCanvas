@@ -5,10 +5,8 @@
 #include "Input/API/IKeyboardHandler.h"
 #include "Input/API/IMouseHandler.h"
 
-#include "Network/API/ServerTCP.h"
-#include "Network/API/ServerUDP.h"
-#include "Network/API/IServerTCPHandler.h"
-#include "Network/API/IServerUDPHandler.h"
+#include "Network/API/TCP/ServerTCP.h"
+#include "Network/API/UDP/ServerUDP.h"
 
 #include <set>
 

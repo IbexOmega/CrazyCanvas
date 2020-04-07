@@ -50,7 +50,8 @@ namespace LambdaEngine
 			return false;
 		}
 
-		address = inet_ntoa(socketAddress.sin_addr);
+		address.resize(16);
+		inet_ntop(socketAddress.sin_family, &socketAddress.sin_addr, address.data(), address.length());
 		port = ntohs(socketAddress.sin_port);
 
 		return true;

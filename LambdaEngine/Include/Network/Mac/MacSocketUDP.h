@@ -2,14 +2,14 @@
 
 //#ifdef LAMBDA_PLATFORM_MACOS
 
-#include "Network/API/ISocketUDP.h"
+#include "Network/API/UDP/ISocketUDP.h"
 #include "MacSocketBase.h"
 
 namespace LambdaEngine
 {
     class MacSocketUDP : public MacSocketBase<ISocketUDP>
     {
-        friend class MacSocketFactory;
+        friend class MacNetworkUtils;
         
     public:
 		virtual bool SendTo(const char* buffer, uint32 bytesToSend, int32& bytesSent, const std::string& address, uint16 port) override;

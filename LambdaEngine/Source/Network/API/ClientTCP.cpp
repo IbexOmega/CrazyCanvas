@@ -1,5 +1,5 @@
 #include "Network/API/ClientTCP.h"
-#include "Network/API/PlatformSocketFactory.h"
+#include "Network/API/PlatformNetworkUtils.h"
 #include "Network/API/IRemoteClientTCPHandler.h"
 #include "Network/API/NetworkPacket.h"
 
@@ -11,7 +11,7 @@ namespace LambdaEngine
 	std::set<ClientTCP*>* ClientTCP::s_Clients = nullptr;
 	SpinLock* ClientTCP::s_LockClients = nullptr;
 
-	ClientTCP::ClientTCP(IClientTCPHandler* handler) : ClientTCP(handler, nullptr, nullptr)
+	ClientTCP::ClientTCP(IClientTCPHandler* clientHandler) : ClientTCP(clientHandler, nullptr, nullptr)
 	{
 		
 	}
@@ -275,7 +275,7 @@ namespace LambdaEngine
 
 	ISocketTCP* ClientTCP::CreateSocket(const std::string& address, uint16 port)
 	{
-		ISocketTCP* socket = PlatformSocketFactory::CreateSocketTCP();
+		ISocketTCP* socket = PlatformNetworkUtils::CreateSocketTCP();
 		if (!socket)
 		{
 			return nullptr;

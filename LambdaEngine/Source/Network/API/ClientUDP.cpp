@@ -1,5 +1,5 @@
-#include "Network/API/ClientUDP.h"
-#include "Network/API/PlatformSocketFactory.h"
+#include "Network/API/UDP/ClientUDP.h"
+#include "Network/API/PlatformNetworkUtils.h"
 #include "Network/API/NetworkPacket.h"
 
 #include "Threading/Thread.h"
@@ -8,13 +8,12 @@
 
 namespace LambdaEngine
 {
-	ClientUDP::ClientUDP(const std::string& address, uint16 port, IClientUDPHandler* handler) : 
+	ClientUDP::ClientUDP(IClientUDPHandler* clientHandler) :
 		ClientBase(false),
 		m_pSocket(nullptr),
-		m_pClientHandler(handler)
+		m_pClientHandler(clientHandler)
 	{
-		SetAddressAndPort(address, port);
-		StartThreads();
+		
 	}
 
 	ClientUDP::~ClientUDP()
@@ -22,9 +21,24 @@ namespace LambdaEngine
 		LOG_WARNING("~ClientUDP()");
 	}
 
+	bool ClientUDP::Start(const std::string& address, uint16 port)
+	{
+		std::scoped_lock<SpinLock> lock(m_LockStart);
+		if (ThreadsHaveTerminated())
+		{
+			SetAddressAndPort(address, port);
+
+			if (StartThreads())
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	void ClientUDP::OnTransmitterStarted()
 	{
-		m_pSocket = PlatformSocketFactory::CreateSocketUDP();
+		m_pSocket = PlatformNetworkUtils::CreateSocketUDP();
 		if (!m_pSocket)
 		{
 			if (m_pClientHandler)

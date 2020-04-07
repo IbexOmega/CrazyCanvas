@@ -46,7 +46,8 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
-		char* address = inet_ntoa(socketAddress.sin_addr);
+		char address[16];
+		inet_ntop(socketAddress.sin_family, &socketAddress.sin_addr, address, 16);
 		uint16 port = ntohs(socketAddress.sin_port);
 
 		return DBG_NEW Win32SocketTCP(socket, address, port);

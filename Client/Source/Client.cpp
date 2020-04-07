@@ -11,10 +11,8 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/Window.h"
 
-#include "Network/API/PlatformSocketFactory.h"
 #include "Network/API/NetworkPacket.h"
 
-#include "Network/API/ClientUDP.h"
 
 Client::Client()
 {
@@ -23,10 +21,11 @@ Client::Client()
     PlatformApplication::Get()->GetWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
-	m_pClientTCP = new ClientTCP(this);
+	m_pClientTCP = PlatformNetworkUtils::CreateClientTCP(this);
 	m_pClientTCP->Connect("192.168.0.104", 4444);
 
-	m_pClientUDP = new ClientUDP("192.168.0.104", 4444, this);
+	m_pClientUDP = PlatformNetworkUtils::CreateClientUDP(this);
+	m_pClientUDP->Start("192.168.0.104", 4444);
 }
 
 Client::~Client()

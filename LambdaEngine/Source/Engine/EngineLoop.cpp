@@ -14,7 +14,7 @@
 #include "Rendering/Core/API/ITopLevelAccelerationStructure.h"
 #include "Rendering/Core/API/IBottomLevelAccelerationStructure.h"
 
-#include "Network/API/PlatformSocketFactory.h"
+#include "Network/API/PlatformNetworkUtils.h"
 
 #include "Threading/Thread.h"
 
@@ -45,7 +45,7 @@ namespace LambdaEngine
     bool EngineLoop::Tick(Timestamp dt)
     {
 		Thread::Join();
-		PlatformSocketFactory::Tick(dt);
+		PlatformNetworkUtils::Tick(dt);
 
         if (!PlatformApplication::Tick())
         {
@@ -91,7 +91,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!PlatformSocketFactory::Init())
+		if (!PlatformNetworkUtils::Init())
 		{
 			return false;
 		}
@@ -134,7 +134,7 @@ namespace LambdaEngine
 		}
 
 		Thread::Release();
-		PlatformSocketFactory::Release();
+		PlatformNetworkUtils::Release();
 
 #ifndef LAMBDA_PRODUCTION
         PlatformConsole::Close();

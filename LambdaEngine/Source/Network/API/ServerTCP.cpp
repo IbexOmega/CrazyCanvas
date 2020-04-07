@@ -1,5 +1,5 @@
 #include "Network/API/ServerTCP.h"
-#include "Network/API/PlatformSocketFactory.h"
+#include "Network/API/PlatformNetworkUtils.h"
 #include "Network/API/IServerTCPHandler.h"
 #include "Network/API/ClientTCP.h"
 #include "Network/API/NetworkPacket.h"
@@ -134,7 +134,7 @@ namespace LambdaEngine
 
 	ISocketTCP* ServerTCP::CreateServerSocket(const std::string& address, uint16 port)
 	{
-		ISocketTCP* serverSocket = PlatformSocketFactory::CreateSocketTCP();
+		ISocketTCP* serverSocket = PlatformNetworkUtils::CreateSocketTCP();
 		if (!serverSocket)
 			return nullptr;
 

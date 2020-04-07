@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 #include <atomic>
-#include "IClientTCPHandler.h"
+
 #include "Threading/SpinLock.h"
 
 namespace LambdaEngine

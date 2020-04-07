@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ClientBase.h"
+#include "../ClientBase.h"
 #include "ISocketTCP.h"
 #include "IClientTCP.h"
 #include "IClientTCPHandler.h"
@@ -14,11 +14,10 @@ namespace LambdaEngine
 
 	class LAMBDA_API ClientTCP : public ClientBase<IClientTCP>
 	{
-		friend class SocketFactory;
+		friend class NetworkUtils;
 		friend class ServerTCP;
 
 	public:
-		ClientTCP(IClientTCPHandler* handler);
 		~ClientTCP();
 
 		/*
@@ -48,6 +47,9 @@ namespace LambdaEngine
 		bool IsReadyToConnect() const;
 
 	protected:
+		ClientTCP(IClientTCPHandler* clientHandler);
+		ClientTCP(IClientTCPHandler* clientHandler, IRemoteClientTCPHandler* remoteClientHandler, ISocketTCP* socket);
+
 		virtual void OnTransmitterStarted() override;
 		virtual void OnReceiverStarted() override;
 		virtual void UpdateReceiver(NetworkPacket* packet) override;
@@ -56,7 +58,6 @@ namespace LambdaEngine
 		virtual bool TransmitPacket(NetworkPacket* packet) override;
 
 	private:
-		ClientTCP(IClientTCPHandler* clientHandler, IRemoteClientTCPHandler* remoteClientHandler, ISocketTCP* socket);
 
 		bool Receive(char* buffer, int bytesToRead);
 		bool ReceivePacket(NetworkPacket* packet);

@@ -5,10 +5,7 @@
 #include "Input/API/IKeyboardHandler.h"
 #include "Input/API/IMouseHandler.h"
 
-#include "Network/API/ClientTCP.h"
-#include "Network/API/IClientUDP.h"
-#include "Network/API/IClientTCPHandler.h"
-#include "Network/API/IClientUDPHandler.h"
+#include "Network/API/PlatformNetworkUtils.h"
 
 class Client : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IClientTCPHandler, public LambdaEngine::IClientUDPHandler
 {
@@ -34,6 +31,6 @@ public:
 	virtual void OnKeyUp(LambdaEngine::EKey key)        override;
 
 private:
-	LambdaEngine::ClientTCP* m_pClientTCP;
+	LambdaEngine::IClientTCP* m_pClientTCP;
 	LambdaEngine::IClientUDP* m_pClientUDP;
 };

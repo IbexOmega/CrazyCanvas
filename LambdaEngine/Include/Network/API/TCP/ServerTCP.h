@@ -1,14 +1,12 @@
 #pragma once
 
-#include "ServerBase.h"
+#include "../ServerBase.h"
 #include "IRemoteClientTCPHandler.h"
+#include "IServerTCPHandler.h"
+#include "ClientTCP.h"
 
 namespace LambdaEngine
 {
-	class ISocketTCP;
-	class ClientTCP;
-	class IServerTCPHandler;
-
 	class LAMBDA_API ServerTCP : public ServerBase, protected IRemoteClientTCPHandler
 	{
 		friend class ClientTCP;

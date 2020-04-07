@@ -1,13 +1,13 @@
 #pragma once
 
 #include "Win32SocketBase.h"
-#include "../API/ISocketTCP.h"
+#include "../API/TCP/ISocketTCP.h"
 
 namespace LambdaEngine
 {
 	class Win32SocketTCP : public Win32SocketBase<ISocketTCP>
 	{	
-		friend class Win32SocketFactory;
+		friend class Win32NetworkUtils;
 
 	public:
 		/*

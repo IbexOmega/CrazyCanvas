@@ -11,9 +11,7 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/Window.h"
 
-#include "Network/API/PlatformSocketFactory.h"
-#include "Network/API/ClientTCP.h"
-#include "Network/API/IClientUDP.h"
+#include "Network/API/PlatformNetworkUtils.h"
 
 #include "ClientTCPHandler.h"
 #include "ClientUDPHandler.h"
@@ -23,10 +21,10 @@ Server::Server()
 	using namespace LambdaEngine;
     
 	m_pServerTCP = DBG_NEW ServerTCP(2, this);
-	m_pServerTCP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
+	m_pServerTCP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
 
 	m_pServerUDP = new ServerUDP(this);
-	m_pServerUDP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
+	m_pServerUDP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
 
 	UpdateTitle();
 }
@@ -80,8 +78,8 @@ void Server::OnKeyDown(LambdaEngine::EKey key)
 {
 	using namespace LambdaEngine;
 
-	m_pServerTCP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
-	m_pServerUDP->Start(PlatformSocketFactory::GetLocalAddress(), 4444);
+	m_pServerTCP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
+	m_pServerUDP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
 
 	/*m_pServerTCP->Stop();
 	m_pServerUDP->Stop();*/

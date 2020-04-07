@@ -6,7 +6,7 @@
 
 #include "Input/API/Input.h"
 
-#include "Network/API/PlatformSocketFactory.h"
+#include "Network/API/PlatformNetworkUtils.h"
 
 #include "Resources/ResourceManager.h"
 

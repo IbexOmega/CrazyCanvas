@@ -1,13 +1,13 @@
 #pragma once
 
-#include "ServerBase.h"
+#include "../ServerBase.h"
+#include "IServerUDPHandler.h"
 #include <unordered_map>
 
 namespace LambdaEngine
 {
 	class ISocketUDP;
-	class IServerUDPHandler;
-	class RemoteClientUDP;
+	class ClientUDPRemote;
 
 	class LAMBDA_API ServerUDP : public ServerBase
 	{
@@ -29,6 +29,6 @@ namespace LambdaEngine
 	private:
 		ISocketUDP* m_pServerSocket;
 		IServerUDPHandler* m_pHandler;
-		std::unordered_map<uint64, RemoteClientUDP*> m_Clients;
+		std::unordered_map<uint64, ClientUDPRemote*> m_Clients;
 	};
 }

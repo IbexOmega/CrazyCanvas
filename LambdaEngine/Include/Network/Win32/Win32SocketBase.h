@@ -184,7 +184,8 @@ namespace LambdaEngine
 				LOG_ERROR_CRIT("Faild to ReadSocketData");
 				return;
 			}
-			m_Address = inet_ntoa(socketAddress.sin_addr);
+			m_Address.resize(16);
+			inet_ntop(socketAddress.sin_family, &socketAddress.sin_addr, m_Address.data(), m_Address.length());
 			m_Port = ntohs(socketAddress.sin_port);
 		}
 

@@ -1,7 +1,7 @@
 #include "ClientTCPHandler.h"
 
 #include "Network/API/NetworkPacket.h"
-#include "Network/API/ClientTCP.h"
+#include "Network/API/TCP/ClientTCP.h"
 
 #include "Log/Log.h"
 

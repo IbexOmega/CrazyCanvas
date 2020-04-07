@@ -8,13 +8,24 @@ namespace LambdaEngine
 	class IClientUDPHandler;
 	class ServerUDP;
 
-	class LAMBDA_API RemoteClientUDP : public IClientUDP
+	class LAMBDA_API ClientUDPRemote : public IClientUDP
 	{
 		friend class ServerUDP;
 
 	public:
-		RemoteClientUDP(const std::string& address, uint16 port, uint64 hash, ServerUDP* server, IClientUDPHandler* handler);
-		~RemoteClientUDP();
+		ClientUDPRemote(const std::string& address, uint16 port, uint64 hash, ServerUDP* server, IClientUDPHandler* handler);
+		~ClientUDPRemote();
+
+		/*
+		* Start the client and set the given ip-address and port. To send to a special address use
+		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
+		*
+		* address - The inet address to bind the socket to.
+		* port    - The port to communicate through.
+		*
+		* return  - False if an error occured, otherwise true.
+		*/
+		virtual bool Start(const std::string& address, uint16 port) override final;
 
 		/*
 		* Sends a packet
