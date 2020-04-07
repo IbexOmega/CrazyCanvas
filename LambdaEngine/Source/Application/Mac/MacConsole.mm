@@ -126,7 +126,8 @@ namespace LambdaEngine
         [storage setFont:[NSFont fontWithName:@"Courier" size:12.0f]];
         [storage endEditing];
         
-        [m_pTextView scrollRangeToVisible:NSMakeRange([[m_pTextView string] length], 0)];
+        NSString* string = [m_pTextView string];
+        [m_pTextView scrollRangeToVisible:NSMakeRange([string length], 0)];
         
         [attributedString release];
     }

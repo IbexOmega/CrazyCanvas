@@ -185,7 +185,7 @@ namespace LambdaEngine
 
 	Mesh* ResourceManager::GetMesh(GUID_Lambda guid)
 	{
-		auto& it = m_Meshes.find(guid);
+		auto it = m_Meshes.find(guid);
 
 		if (it != m_Meshes.end())
 			return it->second;
@@ -196,7 +196,7 @@ namespace LambdaEngine
 
 	const Mesh* ResourceManager::GetMesh(GUID_Lambda guid) const
 	{
-		auto& it = m_Meshes.find(guid);
+		auto it = m_Meshes.find(guid);
 
 		if (it != m_Meshes.end())
 			return it->second;
@@ -207,7 +207,7 @@ namespace LambdaEngine
 
 	Material* ResourceManager::GetMaterial(GUID_Lambda guid)
 	{
-		auto& it = m_Materials.find(guid);
+		auto it = m_Materials.find(guid);
 
 		if (it != m_Materials.end())
 			return it->second;
@@ -218,7 +218,7 @@ namespace LambdaEngine
 
 	const Material* ResourceManager::GetMaterial(GUID_Lambda guid) const
 	{
-		auto& it = m_Materials.find(guid);
+		auto it = m_Materials.find(guid);
 
 		if (it != m_Materials.end())
 			return it->second;
@@ -229,7 +229,7 @@ namespace LambdaEngine
 
 	ITexture* ResourceManager::GetTexture(GUID_Lambda guid)
 	{
-		auto& it = m_Textures.find(guid);
+		auto it = m_Textures.find(guid);
 
 		if (it != m_Textures.end())
 			return it->second;
@@ -240,7 +240,7 @@ namespace LambdaEngine
 
 	const ITexture* ResourceManager::GetTexture(GUID_Lambda guid) const
 	{
-		auto& it = m_Textures.find(guid);
+		auto it = m_Textures.find(guid);
 
 		if (it != m_Textures.end())
 			return it->second;
@@ -251,7 +251,7 @@ namespace LambdaEngine
 
 	SoundEffect3D* ResourceManager::GetSound(GUID_Lambda guid)
 	{
-		auto& it = m_Sounds.find(guid);
+		auto it = m_Sounds.find(guid);
 
 		if (it != m_Sounds.end())
 			return it->second;
@@ -262,7 +262,7 @@ namespace LambdaEngine
 
 	const SoundEffect3D* ResourceManager::GetSound(GUID_Lambda guid) const
 	{
-		auto& it = m_Sounds.find(guid);
+		auto it = m_Sounds.find(guid);
 
 		if (it != m_Sounds.end())
 			return it->second;
