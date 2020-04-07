@@ -79,11 +79,6 @@ namespace LambdaEngine
 
 		ITexture* pTexture = s_pGraphicsDevice->CreateTexture(textureDesc);
 
-		RenderPassDesc renderPassDesc = {};
-		renderPassDesc.pName = "Main RenderPass";
-
-		IRenderPass* pRenderPass = s_pGraphicsDevice->CreateRenderPass(renderPassDesc);
-
 		SwapChainDesc swapChainDesc = { };
 		swapChainDesc.pName			= "Main Window SwapChain";
 		swapChainDesc.BufferCount	= 3;
@@ -94,6 +89,45 @@ namespace LambdaEngine
 
 		ISwapChain* pSwapChain = s_pGraphicsDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
 		swapChainDesc = pSwapChain->GetDesc();
+
+		RenderPassAttachmentDesc attachmentDesc = { };
+		attachmentDesc.Format			= swapChainDesc.Format;
+		attachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_DONT_CARE;
+		attachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_PRESENT;
+		attachmentDesc.LoadOp			= ELoadOp::DONT_CARE;
+		attachmentDesc.StoreOp			= EStoreOp::STORE;
+		attachmentDesc.SampleCount		= 1;
+		attachmentDesc.StencilLoadOp	= ELoadOp::DONT_CARE;
+		attachmentDesc.StencilStoreOp	= EStoreOp::DONT_CARE;
+
+		RenderPassSubpassDesc subpassDesc = { };
+		subpassDesc.DepthStencilAttachmentState = ETextureState::TEXTURE_STATE_DONT_CARE;
+		subpassDesc.InputAttachmentCount		= 0;
+		subpassDesc.pInputAttachmentStates		= nullptr;
+		subpassDesc.pResolveAttachmentStates	= nullptr;
+
+		ETextureState renderTargetStates[] = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
+		subpassDesc.pRenderTargetStates = renderTargetStates;
+		subpassDesc.RenderTargetCount	= 1;
+
+		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
+		subpassDependencyDesc.DstSubpass	= 0;
+		subpassDependencyDesc.DstAccessMask	= FAccessFlags::ACCESS_FLAG_MEMORY_READ | FAccessFlags::ACCESS_FLAG_MEMORY_WRITE;
+		subpassDependencyDesc.DstStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+		subpassDependencyDesc.SrcSubpass	= EXTERNAL_SUBPASS;
+		subpassDependencyDesc.SrcStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+		subpassDependencyDesc.SrcAccessMask = 0;
+
+		RenderPassDesc renderPassDesc = {};
+		renderPassDesc.pName					= "Main RenderPass";
+		renderPassDesc.AttachmentCount			= 1;
+		renderPassDesc.pAttachments				= &attachmentDesc;
+		renderPassDesc.SubpassCount				= 1;
+		renderPassDesc.pSubpasses				= &subpassDesc;
+		renderPassDesc.SubpassDependencyCount	= 1;
+		renderPassDesc.pSubpassDependencies		= &subpassDependencyDesc;
+
+		//IRenderPass* pRenderPass = s_pGraphicsDevice->CreateRenderPass(renderPassDesc);
 
         const char* textureViewNames[] =
         {
@@ -148,7 +182,7 @@ namespace LambdaEngine
         
 		IFence* pFence = s_pGraphicsDevice->CreateFence(fenceDesc);
 
-		ICommandAllocator* pCommandAllocator    = s_pGraphicsDevice->CreateCommandAllocator(ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+		ICommandAllocator* pCommandAllocator = s_pGraphicsDevice->CreateCommandAllocator(ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
         pCommandAllocator->SetName("Graphics Command Allocator");
         
         CommandListDesc commandListDesc = { };
