@@ -10,14 +10,14 @@ namespace LambdaEngine
 {
 	struct RenderPassAttachmentDesc
 	{
-		EFormat Format						= EFormat::NONE;
-		uint32 SampleCount					= 0;
-		ELoadOp LoadOp						= ELoadOp::NONE;
-		EStoreOp StoreOp					= EStoreOp::NONE;
-		ELoadOp StencilLoadOp				= ELoadOp::NONE;
-		EStoreOp StencilStoreOp				= EStoreOp::NONE;
-		ETextureState InitialState			= ETextureState::TEXTURE_STATE_UNKNOWN;
-		ETextureState FinalState			= ETextureState::TEXTURE_STATE_UNKNOWN;
+		EFormat Format				= EFormat::NONE;
+		uint32 SampleCount			= 0;
+		ELoadOp LoadOp				= ELoadOp::NONE;
+		EStoreOp StoreOp			= EStoreOp::NONE;
+		ELoadOp StencilLoadOp		= ELoadOp::NONE;
+		EStoreOp StencilStoreOp		= EStoreOp::NONE;
+		ETextureState InitialState	= ETextureState::TEXTURE_STATE_UNKNOWN;
+		ETextureState FinalState	= ETextureState::TEXTURE_STATE_UNKNOWN;
 	};
 
 	struct RenderPassSubpassDesc
@@ -57,10 +57,11 @@ namespace LambdaEngine
 		DECL_DEVICE_INTERFACE(IRenderPass);
 
 		/*
-	   * Returns the API-specific handle to the underlaying resource
-	   *
-	   * return - Returns a valid handle on success otherwise zero
-	   */
-		virtual uint64      GetHandle() const = 0;
+		* Returns the API-specific handle to the underlaying resource
+		*
+		* return - Returns a valid handle on success otherwise zero
+		*/
+		virtual uint64			GetHandle()	const = 0;
+		virtual RenderPassDesc	GetDesc()	const = 0;
 	};
 }

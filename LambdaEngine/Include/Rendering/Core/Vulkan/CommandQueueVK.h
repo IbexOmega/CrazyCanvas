@@ -20,12 +20,12 @@ namespace LambdaEngine
 
 		bool Init(uint32 queueFamilyIndex, uint32 index);
 
-		virtual bool ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, const IFence* pSignalFence, uint64 signalValue) override;
-		virtual void Flush() override;
+		virtual bool ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, const IFence* pSignalFence, uint64 signalValue) override final;
+		virtual void Flush() override final;
 
-		virtual void SetName(const char* pName) override;
+		virtual void SetName(const char* pName) override final;
 
-		FORCEINLINE virtual uint64 GetHandle() const override
+		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
 			return (uint64)m_Queue;
 		}

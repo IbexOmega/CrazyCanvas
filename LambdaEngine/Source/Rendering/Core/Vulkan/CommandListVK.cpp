@@ -60,7 +60,13 @@ namespace LambdaEngine
 
     void CommandListVK::SetName(const char* pName)
     {
-        m_pDevice->SetVulkanObjectName(pName, (uint64)m_CommandList, VK_OBJECT_TYPE_COMMAND_BUFFER);
+		if (pName)
+		{
+			TDeviceChild::SetName(pName);
+			m_pDevice->SetVulkanObjectName(pName, (uint64)m_CommandList, VK_OBJECT_TYPE_COMMAND_BUFFER);
+
+			m_Desc.pName = m_DebugName;
+		}
     }
 
 	void CommandListVK::Reset()

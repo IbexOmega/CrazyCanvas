@@ -57,6 +57,12 @@ namespace LambdaEngine
 
 	void SamplerVK::SetName(const char* pName)
 	{
-		m_pDevice->SetVulkanObjectName(pName, (uint64)m_Sampler, VK_OBJECT_TYPE_SAMPLER);
+		if (pName)
+		{
+			TDeviceChild::SetName(pName);
+			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Sampler, VK_OBJECT_TYPE_SAMPLER);
+
+			m_Desc.pName = m_DebugName;
+		}
 	}
 }

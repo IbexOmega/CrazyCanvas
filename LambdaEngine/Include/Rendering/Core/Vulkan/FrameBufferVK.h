@@ -18,7 +18,7 @@ namespace LambdaEngine
         FrameBufferVK(const GraphicsDeviceVK* pDevice);
         ~FrameBufferVK();
 
-        bool Init(const FrameBufferDesc& desc);
+        bool Init(const IRenderPass* pRenderPass, const FrameBufferDesc& desc);
 
         FORCEINLINE VkFramebuffer GetFrameBuffer() const
         {
@@ -40,6 +40,7 @@ namespace LambdaEngine
     private:
         VkFramebuffer   m_FrameBuffer   = VK_NULL_HANDLE;
         TextureViewVK*  m_pDepthStencil = nullptr;
+
         TextureViewVK*  m_ppRenderTargets[MAX_RENDERTARGETS];
         FrameBufferDesc m_Desc;
     };

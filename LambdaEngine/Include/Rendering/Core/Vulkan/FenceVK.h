@@ -24,15 +24,15 @@ namespace LambdaEngine
         }
         
         //IDeviceChild interface
-        virtual void SetName(const char* pName) override;
+        virtual void SetName(const char* pName) override final;
         
         //IFence interface
-        virtual void Wait(uint64 signalValue, uint64 timeOut) const     override;
-        virtual void Signal(uint64 signalValue)                         override;
+        virtual void Wait(uint64 signalValue, uint64 timeOut) const override final;
+        virtual void Signal(uint64 signalValue)                     override final;
 
-        virtual uint64 GetValue() const override;
+        virtual uint64 GetValue() const override final;
         
-        FORCEINLINE virtual FenceDesc GetDesc() const override
+        FORCEINLINE virtual FenceDesc GetDesc() const override final
         {
             return m_Desc;
         }

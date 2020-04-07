@@ -19,11 +19,13 @@ namespace LambdaEngine
 
 		bool Init(const TopLevelAccelerationStructureDesc& desc);
 
-		virtual void UpdateInstanceData(IBuffer* pInstanceBuffer) override;
+		// IDeviceChild interface
+		virtual void SetName(const char* pName) override final;
+		
+		// ITopLevelAccelerationStructure interface
+		virtual void UpdateInstanceData(IBuffer* pInstanceBuffer) override final;
 
-		virtual uint64 GetScratchMemorySizeRequirement() override;
-
-		virtual void SetName(const char* pName) override;
+		virtual uint64 GetScratchMemorySizeRequirement() override final;
 
 	private:
 		//INIT

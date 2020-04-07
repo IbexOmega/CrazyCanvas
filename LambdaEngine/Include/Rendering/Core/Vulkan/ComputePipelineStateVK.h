@@ -18,16 +18,16 @@ namespace LambdaEngine
 
 		bool Init(const ComputePipelineDesc& desc);
 
-        FORCEINLINE VkPipeline GetPipeline() const
+        FORCEINLINE VkPipeline GetPipeline() const 
         {
             return m_Pipeline;
         }
         
         //IDeviceChild interface
-		virtual void SetName(const char* pName) override;
+		virtual void SetName(const char* pName) override final;
 
         //IPipelineState interface
-		FORCEINLINE virtual EPipelineStateType GetType() const override
+		FORCEINLINE virtual EPipelineStateType GetType() const override final
         {
             return EPipelineStateType::COMPUTE;
         }

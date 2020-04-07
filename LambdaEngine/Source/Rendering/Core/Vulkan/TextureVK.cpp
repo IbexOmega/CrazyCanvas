@@ -153,6 +153,12 @@ namespace LambdaEngine
 	
 	void TextureVK::SetName(const char* pName)
 	{
-		m_pDevice->SetVulkanObjectName(pName, (uint64)m_Image, VK_OBJECT_TYPE_IMAGE);
+		if (pName)
+		{
+			TDeviceChild::SetName(pName);
+			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Image, VK_OBJECT_TYPE_IMAGE);
+
+			m_Desc.pName = m_DebugName;
+		}
 	}
 }

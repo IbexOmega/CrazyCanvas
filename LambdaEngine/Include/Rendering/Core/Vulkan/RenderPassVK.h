@@ -19,18 +19,23 @@ namespace LambdaEngine
 
 		bool Init(const RenderPassDesc& desc);
 
-		FORCEINLINE VkRenderPass GetRenderPass()
+		FORCEINLINE VkRenderPass GetRenderPass() const
 		{
 			return m_RenderPass;
 		}
 
-		// Inherited via DeviceChildBase
+		// Inherited via IDeviceChild
 		virtual void SetName(const char* pName) override final;
 
 		// Inherited via IRenderPass
-		FORCEINLINE virtual uint64 GetHandle() const override
+		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
 			return (uint64)m_RenderPass;
+		}
+
+		FORCEINLINE virtual RenderPassDesc GetDesc() const override final
+		{
+			return m_Desc;
 		}
 
 	private:
@@ -39,8 +44,7 @@ namespace LambdaEngine
 		void CreateSubpassDependencies(const RenderPassDesc& desc, VkSubpassDependency* pResultSubpassDependencies);
 
 	private:
-		VkRenderPass m_RenderPass;
-
-		
+		VkRenderPass	m_RenderPass;
+		RenderPassDesc	m_Desc;
 	};
 }

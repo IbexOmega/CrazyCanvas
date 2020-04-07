@@ -2,18 +2,22 @@
 
 namespace LambdaEngine
 {
+    class IRenderPass;
     class ITextureView;
 
     struct FrameBufferDesc
     {
-        const char*             pName               = "";
-        const ITextureView**    ppRenderTargets     = nullptr;
-        uint32                  RenderTargetCount   = 0;
-        const ITextureView*     pDepthStencil       = nullptr;
-        uint32                  Width               = 0;
-        uint32                  Height              = 0;
+        const char*       pName               = "";
+        ITextureView**    ppRenderTargets     = nullptr;
+        uint32            RenderTargetCount   = 0;
+        ITextureView*     pDepthStencil       = nullptr;
+        uint32            Width               = 0;
+        uint32            Height              = 0;
     };
 
+    /*
+    * Framebuffers keeps an internal reference to all textureviews used to create it
+    */
     class IFrameBuffer : public IDeviceChild
     {
     public:
