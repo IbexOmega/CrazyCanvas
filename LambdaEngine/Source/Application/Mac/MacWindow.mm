@@ -52,15 +52,23 @@ namespace LambdaEngine
 
     void MacWindow::Show()
     {
-        [m_pWindow makeKeyAndOrderFront:m_pWindow];
+        if ([NSThread isMainThread])
+        {
+            [m_pWindow makeKeyAndOrderFront:m_pWindow];
+        }
     }
 
     void MacWindow::SetTitle(const char* pTitle)
     {
-        NSString* title = [NSString stringWithUTF8String:pTitle];
-        [m_pWindow setTitle:title];
-        
-        MacApplication::ProcessMessages();
+        if ([NSThread isMainThread])
+        {
+            NSString* title = [NSString stringWithUTF8String:pTitle];
+            [m_pWindow setTitle:title];
+        }
+        else
+        {
+            NSLog(@"New title: %s", pTitle);
+        }
     }
 }
 

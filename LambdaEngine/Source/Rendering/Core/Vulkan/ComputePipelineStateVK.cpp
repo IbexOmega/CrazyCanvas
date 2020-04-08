@@ -21,7 +21,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ComputePipelineStateVK::Init(const ComputePipelineDesc& desc)
+	bool ComputePipelineStateVK::Init(const ComputePipelineStateDesc& desc)
 	{
 		const ShaderDesc& shaderDesc = desc.Shader;
 

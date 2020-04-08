@@ -11,9 +11,9 @@ namespace LambdaEngine
     struct CommandListDesc;
     struct TextureViewDesc;
 	struct FrameBufferDesc;
-    struct ComputePipelineDesc;
-    struct GraphicsPipelineDesc;
-    struct RayTracingPipelineDesc;
+    struct ComputePipelineStateDesc;
+    struct GraphicsPipelineStateDesc;
+    struct RayTracingPipelineStateDesc;
     struct TopLevelAccelerationStructureDesc;
     struct BottomLevelAccelerationStructureDesc;
 
@@ -57,9 +57,9 @@ namespace LambdaEngine
 		virtual ITexture*	CreateTexture(const TextureDesc& desc)								const = 0;
         virtual ISwapChain*	CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)	const = 0;
 
-		virtual IPipelineState*	CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) 	  const = 0;
-		virtual IPipelineState*	CreateComputePipelineState(const ComputePipelineDesc& desc) 	  const = 0;
-		virtual IPipelineState*	CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc) const = 0;
+		virtual IPipelineState*	CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) 	  const = 0;
+		virtual IPipelineState*	CreateComputePipelineState(const ComputePipelineStateDesc& desc) 	  const = 0;
+		virtual IPipelineState*	CreateRayTracingPipelineState(const RayTracingPipelineStateDesc& desc) const = 0;
 		
 		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const = 0;
 		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const = 0;

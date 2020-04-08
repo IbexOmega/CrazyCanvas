@@ -1,7 +1,6 @@
 #pragma once
-
 #include "Rendering/Core/API/IRenderPass.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -9,9 +8,9 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
-	class RenderPassVK : public DeviceChildBase<GraphicsDeviceVK, IRenderPass>
+	class RenderPassVK : public TDeviceChildBase<GraphicsDeviceVK, IRenderPass>
 	{
-		using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, IRenderPass>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IRenderPass>;
 
 		struct SubpassData
 		{

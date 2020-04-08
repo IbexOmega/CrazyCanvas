@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/Core/API/IPipelineState.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -8,15 +8,15 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
-	class GraphicsPipelineStateVK : public DeviceChildBase<GraphicsDeviceVK, IPipelineState>
+	class GraphicsPipelineStateVK : public TDeviceChildBase<GraphicsDeviceVK, IPipelineState>
 	{
-		using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, IPipelineState>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IPipelineState>;
 
 	public:
 		GraphicsPipelineStateVK(const GraphicsDeviceVK* pDevice);
 		~GraphicsPipelineStateVK();
 
-		bool Init(const GraphicsPipelineDesc& desc);
+		bool Init(const GraphicsPipelineStateDesc& desc);
 
         FORCEINLINE VkPipeline GetPipeline() const
         {
@@ -36,7 +36,7 @@ namespace LambdaEngine
 		bool CreateShaderData(std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,
 			std::vector<VkSpecializationInfo>& shaderStagesSpecializationInfos,
 			std::vector<std::vector<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps,
-			const GraphicsPipelineDesc& desc);
+			const GraphicsPipelineStateDesc& desc);
 
 	private:
 		VkPipeline m_Pipeline;

@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/Core/API/IFence.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -8,9 +8,9 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
-	class FenceVK : public DeviceChildBase<GraphicsDeviceVK, IFence>
+	class FenceVK : public TDeviceChildBase<GraphicsDeviceVK, IFence>
 	{
-		using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, IFence>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IFence>;
 
 	public:
 		FenceVK(const GraphicsDeviceVK* pDevice);

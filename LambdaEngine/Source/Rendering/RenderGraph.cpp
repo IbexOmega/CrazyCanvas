@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <map>
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 	RenderGraph::RenderGraph()

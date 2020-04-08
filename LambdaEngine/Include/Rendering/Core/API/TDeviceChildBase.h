@@ -12,10 +12,10 @@
 namespace LambdaEngine
 {
 	template <typename TGraphicsDevice, typename IBase>
-	class DeviceChildBase : public IBase
+	class TDeviceChildBase : public IBase
 	{
 	public:
-		DeviceChildBase(const TGraphicsDevice* pDevice)
+		TDeviceChildBase(const TGraphicsDevice* pDevice)
 			: IBase(),
 			m_pDevice(pDevice),
 			m_StrongReferences(0)
@@ -23,7 +23,7 @@ namespace LambdaEngine
 			AddRef();
 		}
 
-		virtual ~DeviceChildBase() = default;
+		virtual ~TDeviceChildBase() = default;
 
 		virtual uint64 Release() override
 		{

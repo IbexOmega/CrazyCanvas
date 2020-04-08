@@ -205,8 +205,15 @@ namespace LambdaEngine
     
     void MacConsole::SetTitle(const char* pTitle)
     {
-        NSString* title = [NSString stringWithUTF8String:pTitle];
-        [s_Console.m_pWindow setTitle:title];
+        if ([NSThread isMainThread])
+        {
+            NSString* title = [NSString stringWithUTF8String:pTitle];
+            [s_Console.m_pWindow setTitle:title];
+        }
+        else
+        {
+            NSLog(@"New Console Title: %s", pTitle);
+        }
     }
 
     void MacConsole::SetColor(EConsoleColor color)
