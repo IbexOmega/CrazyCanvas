@@ -17,16 +17,19 @@ ClientTCPHandler::~ClientTCPHandler()
 void ClientTCPHandler::OnClientConnectedTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientConnectedTCP()");
+	UNREFERENCED_VARIABLE(client);
 }
 
 void ClientTCPHandler::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientDisconnectedTCP()");
+	UNREFERENCED_VARIABLE(client);
 }
 
 void ClientTCPHandler::OnClientFailedConnectingTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientFailedConnectingTCP()");
+	UNREFERENCED_VARIABLE(client);
 }
 
 void ClientTCPHandler::OnClientPacketReceivedTCP(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)

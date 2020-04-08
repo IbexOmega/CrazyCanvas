@@ -25,6 +25,8 @@ namespace LambdaEngine
 
 	bool ClientUDPRemote::Start(const std::string& address, uint16 port)
 	{
+		UNREFERENCED_VARIABLE(address);
+		UNREFERENCED_VARIABLE(port);
 		return false;
 	}
 

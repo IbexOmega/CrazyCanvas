@@ -71,7 +71,7 @@ Server::~Server()
 
 void Server::OnSearcherRequest(LambdaEngine::NetworkPacket* packet)
 {
-
+	UNREFERENCED_VARIABLE(packet);
 }
 
 LambdaEngine::IClientUDPHandler* Server::CreateClientHandlerUDP()
@@ -91,33 +91,35 @@ LambdaEngine::IClientTCPHandler* Server::CreateClientHandlerTCP()
 bool Server::OnClientAcceptedTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientAcceptedTCP()");
+	UNREFERENCED_VARIABLE(client);
 	return true;
 }
 
 void Server::OnClientConnectedTCP(LambdaEngine::ClientTCP* client)
 {
-	using namespace LambdaEngine;
+	UNREFERENCED_VARIABLE(client);
 	UpdateTitle();
 }
 
 void Server::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
 {
+	UNREFERENCED_VARIABLE(client);
 	UpdateTitle();
 }
 
 void Server::OnKeyDown(LambdaEngine::EKey key)
 {
-	
+	UNREFERENCED_VARIABLE(key);
 }
 
 void Server::OnKeyHeldDown(LambdaEngine::EKey key)
 {
-	
+	UNREFERENCED_VARIABLE(key);
 }
 
 void Server::OnKeyUp(LambdaEngine::EKey key)
 {
-	
+	UNREFERENCED_VARIABLE(key);
 }
 
 void Server::UpdateTitle()
@@ -135,7 +137,7 @@ void Server::UpdateTitle()
 
 void Server::Tick(LambdaEngine::Timestamp dt)
 {
-
+	UNREFERENCED_VARIABLE(dt);
 }
 
 namespace LambdaEngine

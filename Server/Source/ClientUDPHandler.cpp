@@ -33,9 +33,11 @@ void ClientUDPHandler::OnClientPacketReceivedUDP(LambdaEngine::IClientUDP* clien
 void ClientUDPHandler::OnClientErrorUDP(LambdaEngine::IClientUDP* client)
 {
 	LOG_MESSAGE("OnClientErrorUDP()");
+	UNREFERENCED_VARIABLE(client);
 }
 
 void ClientUDPHandler::OnClientStoppedUDP(LambdaEngine::IClientUDP* client)
 {
 	LOG_MESSAGE("OnClientStoppedUDP()");
+	UNREFERENCED_VARIABLE(client);
 }
