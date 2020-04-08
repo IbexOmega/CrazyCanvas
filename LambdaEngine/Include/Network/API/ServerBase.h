@@ -1,10 +1,11 @@
 #pragma once
-
 #include "Defines.h"
 #include "Types.h"
-#include <string>
-#include <vector>
+
 #include <atomic>
+
+#include "Containers/String.h"
+#include "Containers/TArray.h"
 
 #include "Threading/SpinLock.h"
 

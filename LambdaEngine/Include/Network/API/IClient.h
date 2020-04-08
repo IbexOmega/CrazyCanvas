@@ -1,7 +1,8 @@
 #pragma once
 #include "Defines.h"
 #include "Types.h"
-#include <string>
+
+#include "Containers/String.h"
 
 namespace LambdaEngine
 {

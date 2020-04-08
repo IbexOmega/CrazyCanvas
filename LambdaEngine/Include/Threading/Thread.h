@@ -2,13 +2,14 @@
 #include "Defines.h"
 #include "Types.h"
 #include "SpinLock.h"
-#include <vector>
 #include <set>
 #include <thread>
 #include <condition_variable>
 #include <mutex>
 #include <atomic>
 #include <functional>
+
+#include "Containers/TArray.h"
 
 namespace LambdaEngine
 {

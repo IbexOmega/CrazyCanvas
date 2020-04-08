@@ -1,7 +1,8 @@
 #include "Log/Log.h"
 
-#include <string>
 #include <algorithm>
+
+#include "Containers/String.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/PlatformApplication.h"

@@ -3,7 +3,7 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
-#include <vector>
+#include "Containers/TArray.h"
 
 namespace LambdaEngine
 {

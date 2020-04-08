@@ -1,5 +1,5 @@
 #pragma once
-#include <vector>
+#include "Containers/TArray.h"
 
 #include "Rendering/Core/API/ISwapChain.h"
 #include "Rendering/Core/API/DeviceChildBase.h"

@@ -1,7 +1,7 @@
 #pragma once
-#include <vector>
-
 #include "IInputDevice.h"
+
+#include "Containers/TArray.h"
 
 namespace LambdaEngine
 {

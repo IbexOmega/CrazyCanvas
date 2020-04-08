@@ -1,4 +1,5 @@
 #pragma once
+#include "Defines.h"
 
 #include "TCP/ISocketTCP.h"
 #include "TCP/IClientTCP.h"
@@ -11,8 +12,8 @@
 #include "UDP/ServerUDP.h"
 
 #include "Time/API/Timestamp.h"
-#include "Defines.h"
-#include <string>
+
+#include "Containers/String.h"
 
 namespace LambdaEngine
 {
