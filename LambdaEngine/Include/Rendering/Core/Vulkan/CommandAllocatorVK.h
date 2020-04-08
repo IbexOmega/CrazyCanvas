@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/Core/API/ICommandAllocator.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -8,9 +8,9 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
-	class CommandAllocatorVK : public DeviceChildBase<GraphicsDeviceVK, ICommandAllocator>
+	class CommandAllocatorVK : public TDeviceChildBase<GraphicsDeviceVK, ICommandAllocator>
 	{
-		using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, ICommandAllocator>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, ICommandAllocator>;
 
 	public:
 		CommandAllocatorVK(const GraphicsDeviceVK* pDevice);

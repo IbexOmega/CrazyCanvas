@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/Core/API/IFence.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -11,9 +11,9 @@ namespace LambdaEngine
     /*
     * Fences used for systems that does not support Timeline Semaphores
     */
-	class FenceLegacyVK : public DeviceChildBase<GraphicsDeviceVK, IFence>
+	class FenceLegacyVK : public TDeviceChildBase<GraphicsDeviceVK, IFence>
 	{
-		using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, IFence>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IFence>;
 
 	public:
         FenceLegacyVK(const GraphicsDeviceVK* pDevice);

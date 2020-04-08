@@ -1,5 +1,6 @@
+#pragma once
 #include "Rendering/Core/API/IFrameBuffer.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -10,9 +11,9 @@ namespace LambdaEngine
     class TextureViewVK;
     class GraphicsDeviceVK;
 
-    class FrameBufferVK : public DeviceChildBase<GraphicsDeviceVK, IFrameBuffer>
+    class FrameBufferVK : public TDeviceChildBase<GraphicsDeviceVK, IFrameBuffer>
     {
-        using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, IFrameBuffer>;
+        using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IFrameBuffer>;
     
     public:
         FrameBufferVK(const GraphicsDeviceVK* pDevice);

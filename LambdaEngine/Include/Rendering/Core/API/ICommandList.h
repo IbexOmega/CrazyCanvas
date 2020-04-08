@@ -2,6 +2,10 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
+#define MAX_IMAGE_BARRIERS  8
+#define MAX_VIEWS           32
+#define MAX_VERTEX_BUFFERS  32
+
 namespace LambdaEngine
 {
 	class IBuffer;
@@ -119,7 +123,12 @@ namespace LambdaEngine
 		virtual CommandListDesc	GetDesc()	const = 0;
 		virtual uint64			GetHandle()	const = 0;
 
-		//Should increase refcount -> Means that caller is responsible for calling Release
+		/*
+		* Returns a pointer to the allocator used to allocate this commandlist. Caller should call Release on 
+		* the returned pointer
+		*
+		* return - Returns a valid pointer if successful otherwise nullptr
+		*/
 		virtual ICommandAllocator*	GetAllocator()	const = 0;
 	};
 }

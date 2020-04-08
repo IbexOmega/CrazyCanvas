@@ -65,9 +65,9 @@ namespace LambdaEngine
 
 		union Pipeline
 		{
-			GraphicsPipelineDesc	GraphicsDesc;
-			ComputePipelineDesc		ComputeDesc;
-			RayTracingPipelineDesc	RayTracingDesc;
+			GraphicsPipelineStateDesc	GraphicsDesc;
+			ComputePipelineStateDesc		ComputeDesc;
+			RayTracingPipelineStateDesc	RayTracingDesc;
 		};
 	};
 

@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/Core/API/ITextureView.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -9,9 +9,9 @@ namespace LambdaEngine
     class TextureVK;
     class GraphicsDeviceVK;
 
-    class TextureViewVK : public DeviceChildBase<GraphicsDeviceVK, ITextureView>
+    class TextureViewVK : public TDeviceChildBase<GraphicsDeviceVK, ITextureView>
     {
-        using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, ITextureView>;
+        using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, ITextureView>;
         
     public:
         TextureViewVK(const GraphicsDeviceVK* pDevice);
