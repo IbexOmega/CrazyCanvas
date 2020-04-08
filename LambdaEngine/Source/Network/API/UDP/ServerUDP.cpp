@@ -70,7 +70,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void ServerUDP::OnTransmitterStarted()
+	void ServerUDP::OnThreadsStarted()
 	{
 		m_pServerSocket = CreateServerSocket(GetAddress(), GetPort());
 		if (!m_pServerSocket)
@@ -84,7 +84,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void ServerUDP::OnReceiverStarted()
+	void ServerUDP::OnThreadsStartedPost()
 	{
 
 	}

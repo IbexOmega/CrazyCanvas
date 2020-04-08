@@ -15,12 +15,17 @@ namespace LambdaEngine
 		/*
 		* Sends a packet
 		*/
-		virtual bool SendPacket(NetworkPacket* packet) = 0;
+		virtual bool SendPacket(NetworkPacket* packet, bool flush = false) = 0;
 
 		/*
 		* Sends a packet Immediately using the current thread
 		*/
 		virtual bool SendPacketImmediately(NetworkPacket* packet) = 0;
+
+		/*
+		* Flushes the buffered packets
+		*/
+		virtual void Flush() = 0;
 
 		/*
 		* Release all the resouces used by the client and will be deleted when each thread has terminated.

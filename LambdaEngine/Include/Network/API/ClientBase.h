@@ -32,8 +32,8 @@ namespace LambdaEngine
 			m_pThreadReceiver(nullptr),
 			m_Run(false),
 			m_ReadyForStart(false),
-			m_TransmitterStarted(false),
-			m_ReceiverStarted(false),
+			m_ThreadsStarted(false),
+			m_ThreadsStartedPre(false),
 			m_TransmitterEnded(false),
 			m_Release(false),
 			m_OtherThreadTerminated(false),
@@ -41,28 +41,35 @@ namespace LambdaEngine
 			m_TransmitterQueueIndex(0),
 			m_ServerSide(serverSide)
 		{
-
+			m_pPackets[0] = new std::queue<NetworkPacket*>();
+			m_pPackets[1] = new std::queue<NetworkPacket*>();
 		}
 
 		virtual ~ClientBase()
 		{
+			delete m_pPackets[0];
+			delete m_pPackets[1];
+
 			if (!m_Release)
 				LOG_ERROR("[ClientBase]: Do not use delete on a Client. Use the Release() function!");
 		}
 
-		bool SendPacket(NetworkPacket* packet) override final
+		virtual bool SendPacket(NetworkPacket* packet, bool flush = false) override final
 		{
 			std::scoped_lock<SpinLock> lock(m_LockPackets);
 			if (IsReadyToTransmitPackets())
 			{
-				m_Packets[m_TransmitterQueueIndex].push(packet);
-				m_pThreadTransmitter->Notify();
+				m_pPackets[m_TransmitterQueueIndex]->push(packet);
+				if (flush)
+				{
+					m_pThreadTransmitter->Notify();
+				}
 				return true;
 			}
 			return false;
 		}
 
-		bool SendPacketImmediately(NetworkPacket* packet) override final
+		virtual bool SendPacketImmediately(NetworkPacket* packet) override final
 		{
 			std::scoped_lock<SpinLock> lock(m_LockPackets);
 			if (IsReadyToTransmitPackets())
@@ -84,7 +91,16 @@ namespace LambdaEngine
 			return false;
 		}
 
-		void Release() override
+		virtual void Flush() override
+		{
+			std::scoped_lock<SpinLock> lock(m_LockPackets);
+			if (m_pThreadTransmitter)
+			{
+				m_pThreadTransmitter->Notify();
+			}
+		}
+
+		virtual void Release() override
 		{
 			if (!m_Release)
 			{
@@ -99,57 +115,57 @@ namespace LambdaEngine
 			}
 		}
 
-		bool IsServerSide() const override final
+		virtual bool IsServerSide() const override final
 		{
 			return m_ServerSide;
 		}
 
-		const std::string& GetAddress() const override final
+		virtual const std::string& GetAddress() const override final
 		{
 			return m_Address;
 		}
 
-		uint16 GetPort() const override final
+		virtual uint16 GetPort() const override final
 		{
 			return m_Port;
 		}
 
-		int32 GetBytesSent() const override final
+		virtual int32 GetBytesSent() const override final
 		{
 			return m_NrOfBytesTransmitted;
 		}
 
-		int32 GetBytesReceived() const override final
+		virtual int32 GetBytesReceived() const override final
 		{
 			return m_NrOfBytesReceived;
 		}
 		
-		int32 GetPacketsSent() const override final
+		virtual int32 GetPacketsSent() const override final
 		{
 			return m_NrOfPacketsTransmitted;
 		}
 
-		int32 GetPacketsReceived() const override final
+		virtual int32 GetPacketsReceived() const override final
 		{
 			return m_NrOfPacketsReceived;
 		}
 
 	protected:
-		virtual void OnTransmitterStarted() = 0;
-		virtual void OnReceiverStarted() = 0;
+		virtual void OnThreadsStarted() = 0;
+		virtual void OnThreadsStartedPost() = 0;
 		virtual void UpdateReceiver(NetworkPacket* packet) = 0;
 		virtual void OnThreadsTerminated() = 0;
 		virtual void OnReleaseRequested() = 0;
 		virtual bool TransmitPacket(NetworkPacket* packet) = 0;
 
-		bool StartThreads()
+		virtual bool StartThreads()
 		{
 			if (ThreadsHaveTerminated())
 			{
 				m_Run = true;
 				m_ReadyForStart = false;
-				m_TransmitterStarted = false;
-				m_ReceiverStarted = false;
+				m_ThreadsStartedPre = false;
+				m_ThreadsStarted = false;
 				m_TransmitterEnded = false;
 				m_OtherThreadTerminated = false;
 				m_Release = false;
@@ -170,54 +186,55 @@ namespace LambdaEngine
 			return false;
 		}
 
-		void TerminateThreads()
+		virtual void TerminateThreads()
 		{
 			m_Run = false;
 		}
 
-		bool ThreadsHaveTerminated() const
+		virtual bool ThreadsHaveTerminated() const
 		{
 			return m_pThreadReceiver == nullptr && m_pThreadTransmitter == nullptr;
 		}
 
-		bool ThreadsAreRunning() const
+		virtual bool ThreadsAreRunning() const
 		{
-			return m_TransmitterStarted && m_ReceiverStarted;
+			return m_ThreadsStartedPre;
 		}
 
-		bool ShouldTerminate() const
+		virtual bool ShouldTerminate() const
 		{
 			return !m_Run;
 		}
 
-		void SetAddressAndPort(const std::string& address, uint16 port)
+		virtual void SetAddressAndPort(const std::string& address, uint16 port)
 		{
 			m_Address = address;
 			m_Port = port;
 		}
 
-		void RegisterBytesReceived(int32 bytes)
+		virtual void RegisterBytesReceived(int32 bytes)
 		{
 			m_NrOfBytesReceived += bytes;
 		}
 
-		void RegisterPacketsReceived(int32 packets)
+		virtual void RegisterPacketsReceived(int32 packets)
 		{
 			m_NrOfPacketsReceived += packets;
 		}
 
 	private:
-		void ThreadTransmitter()
+		virtual void ThreadTransmitter()
 		{
 			while (!m_ReadyForStart) {}
 
-			OnTransmitterStarted();
-			m_TransmitterStarted = true;
-			while (!m_ReceiverStarted) {}
+			OnThreadsStarted();
+			m_ThreadsStartedPre = true;
+			OnThreadsStartedPost();
+			m_ThreadsStarted = true;
 
 			while (!ShouldTerminate())
 			{
-				std::queue<NetworkPacket*>* packets = &m_Packets[m_TransmitterQueueIndex];
+				std::queue<NetworkPacket*>* packets = m_pPackets[m_TransmitterQueueIndex];
 				if (packets->empty())
 					m_pThreadTransmitter->Wait();
 
@@ -228,13 +245,9 @@ namespace LambdaEngine
 			m_TransmitterEnded = true;
 		}
 
-		void ThreadReceiver()
+		virtual void ThreadReceiver()
 		{
-			while (!m_ReadyForStart) {}
-
-			OnReceiverStarted();
-			m_ReceiverStarted = true;
-			while (!m_TransmitterStarted) {};
+			while (!m_ThreadsStarted) {}
 
 			NetworkPacket packet(EPacketType::PACKET_TYPE_UNDEFINED, false);
 			while (!ShouldTerminate())
@@ -249,7 +262,7 @@ namespace LambdaEngine
 		/*
 		* Called right before delete m_pThreadTransmitter
 		*/
-		void ThreadTransmitterDeleted()
+		virtual void ThreadTransmitterDeleted()
 		{
 			OnThreadTerminated();
 
@@ -262,7 +275,7 @@ namespace LambdaEngine
 		/*
 		* Called right before delete m_pThreadReceiver
 		*/
-		void ThreadReceiverDeleted()
+		virtual void ThreadReceiverDeleted()
 		{
 			OnThreadTerminated();
 
@@ -272,18 +285,13 @@ namespace LambdaEngine
 				Release();
 		}
 
-		void SwapPacketQueues()
+		virtual void SwapPacketQueues()
 		{
 			std::scoped_lock<SpinLock> lock(m_LockPackets);
-			m_TransmitterQueueIndex %= 2;
+			m_TransmitterQueueIndex = m_TransmitterQueueIndex % 2;
 		}
 
-		bool IsReadyToTransmitPackets() const
-		{
-			return !ShouldTerminate() && m_ReadyForStart;
-		}
-
-		bool TransmitPackets(std::queue<NetworkPacket*>* packets)
+		virtual bool TransmitPackets(std::queue<NetworkPacket*>* packets)
 		{
 			while (!packets->empty())
 			{
@@ -300,17 +308,21 @@ namespace LambdaEngine
 			return true;
 		}
 
-		void OnThreadTerminated()
+		virtual void OnThreadTerminated()
 		{
 			std::scoped_lock<SpinLock> lock(m_LockPackets);
 			if (m_OtherThreadTerminated)
 			{
 				OnThreadsTerminated();
-				m_TransmitterStarted = false;
-				m_ReceiverStarted = false;
+				m_ThreadsStarted = false;
 				LOG_WARNING("Client Threads Terminated");
 			}
 			m_OtherThreadTerminated = true;
+		}
+
+		virtual bool IsReadyToTransmitPackets() const
+		{
+			return !ShouldTerminate() && m_ThreadsStartedPre;
 		}
 
 	private:
@@ -338,14 +350,14 @@ namespace LambdaEngine
 
 		std::atomic_bool m_Run;
 		std::atomic_bool m_ReadyForStart;
-		std::atomic_bool m_TransmitterStarted;
-		std::atomic_bool m_ReceiverStarted;
+		std::atomic_bool m_ThreadsStartedPre;
+		std::atomic_bool m_ThreadsStarted;
 		std::atomic_bool m_TransmitterEnded;
 		std::atomic_bool m_OtherThreadTerminated;
 		std::atomic_bool m_Release;
 
-		std::queue<NetworkPacket*> m_Packets[2];
-		int8 m_TransmitterQueueIndex;
+		std::queue<NetworkPacket*>* m_pPackets[2];
+		std::atomic_int m_TransmitterQueueIndex;
 
 		std::string m_Address;
 		uint16 m_Port;

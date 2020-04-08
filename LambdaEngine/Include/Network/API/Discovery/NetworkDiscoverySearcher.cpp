@@ -34,7 +34,7 @@ namespace LambdaEngine
 	{
 		m_Packet.Reset();
 		m_Packet.WriteString(m_UID);
-		m_pClient->SendPacket(&m_Packet);
+		m_pClient->SendPacket(&m_Packet, true);
 	}
 
 	void NetworkDiscoverySearcher::OnClientPacketReceivedUDP(IClientUDP* client, NetworkPacket* packet)

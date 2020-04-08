@@ -28,16 +28,21 @@ namespace LambdaEngine
 		return false;
 	}
 
-	bool ClientUDPRemote::SendPacket(NetworkPacket* packet)
+	bool ClientUDPRemote::SendPacket(NetworkPacket* packet, bool flush)
 	{
 		packet->SetDestination(GetAddress(), GetPort());
-		return m_pServer->SendPacket(packet);
+		return m_pServer->SendPacket(packet, flush);
 	}
 
 	bool ClientUDPRemote::SendPacketImmediately(NetworkPacket* packet)
 	{
 		packet->SetDestination(GetAddress(), GetPort());
 		return m_pServer->SendPacketImmediately(packet);
+	}
+
+	void ClientUDPRemote::Flush()
+	{
+		m_pServer->Flush();
 	}
 
 	void ClientUDPRemote::Release()
