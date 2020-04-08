@@ -3,7 +3,9 @@
 
 #include "Vulkan.h"
 
-#define LOG_VULKAN_ERROR(message, result) LOG_ERROR("%s CODE: %s, ERROR: %s", message, VkResultToString(result), GetVkErrorString(result))
+#define LOG_VULKAN_ERROR(result, ...) \
+    LOG_ERROR(__VA_ARGS__); \
+    LOG_ERROR("%s CODE: %s", VkResultToString(result), GetVkErrorString(result)) \
 
 namespace LambdaEngine
 {

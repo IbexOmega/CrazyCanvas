@@ -51,7 +51,7 @@ namespace LambdaEngine
 			return m_DeviceQueueFamilyIndices;
 		}
 
-		//IGraphicsDevice Interface
+		// IGraphicsDevice Interface
 		virtual IFrameBuffer*	CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc)	const override final;
 		virtual IRenderPass*	CreateRenderPass(const RenderPassDesc& desc)								const override final;
 		virtual ITextureView*	CreateTextureView(const TextureViewDesc& desc)								const override final;
@@ -67,8 +67,8 @@ namespace LambdaEngine
 		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const override final;
 		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const override final;
 
-		virtual ICommandQueue*		CreateCommandQueue(ECommandQueueType queueType)									const override final;
-		virtual ICommandAllocator*	CreateCommandAllocator(ECommandQueueType queueType)								const override final;
+		virtual ICommandQueue*		CreateCommandQueue(const char* pName, ECommandQueueType queueType)				const override final;
+		virtual ICommandAllocator*	CreateCommandAllocator(const char* pName, ECommandQueueType queueType)			const override final;
 		virtual ICommandList*		CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc)	const override final;
 		virtual IFence*				CreateFence(const FenceDesc& desc)												const override final;
 		

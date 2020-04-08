@@ -248,10 +248,10 @@ namespace LambdaEngine
 		}
 	}
 
-	ICommandAllocator* GraphicsDeviceVK::CreateCommandAllocator(ECommandQueueType queueType) const
+	ICommandAllocator* GraphicsDeviceVK::CreateCommandAllocator(const char* pName, ECommandQueueType queueType) const
 	{
 		CommandAllocatorVK* pCommandAllocator = DBG_NEW CommandAllocatorVK(this);
-		if (!pCommandAllocator->Init(queueType))
+		if (!pCommandAllocator->Init(pName, queueType))
 		{
 			pCommandAllocator->Release();
 			return nullptr;
@@ -262,7 +262,7 @@ namespace LambdaEngine
 		}
 	}
 
-	ICommandQueue* GraphicsDeviceVK::CreateCommandQueue(ECommandQueueType queueType) const
+	ICommandQueue* GraphicsDeviceVK::CreateCommandQueue(const char* pName, ECommandQueueType queueType) const
 	{
 		int32 queueFamilyIndex = 0;
 		if (queueType == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
@@ -283,7 +283,7 @@ namespace LambdaEngine
 		}
 
 		CommandQueueVK* pQueue = DBG_NEW CommandQueueVK(this);
-		if (!pQueue->Init(queueFamilyIndex, 0))
+		if (!pQueue->Init(pName, queueFamilyIndex, 0))
 		{
 			pQueue->Release();
 			return nullptr;
@@ -489,7 +489,7 @@ namespace LambdaEngine
 		VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &Instance);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR("[GraphicsDeviceVK]: Failed to create Vulkan Instance!", result);
+			LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to create Vulkan Instance!");
 			return false;
 		}
 
@@ -503,7 +503,7 @@ namespace LambdaEngine
 			result = vkCreateDebugUtilsMessengerEXT(Instance, &createInfo, nullptr, &m_DebugMessenger);
 			if (result != VK_SUCCESS)
 			{
-				LOG_VULKAN_ERROR("[GraphicsDeviceVK]: Failed to set up Debug Messenger!", result);
+				LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to set up Debug Messenger!");
 				return false;
 			}
 		}
@@ -631,7 +631,7 @@ namespace LambdaEngine
 		VkResult result = vkCreateDevice(PhysicalDevice, &createInfo, nullptr, &Device);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR("[GraphicsDeviceVK]: Failed to create logical device!", result);
+			LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to create logical device!");
 			return false;
 		}
 

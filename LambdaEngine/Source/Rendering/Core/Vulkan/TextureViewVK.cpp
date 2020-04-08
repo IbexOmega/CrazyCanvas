@@ -78,7 +78,7 @@ namespace LambdaEngine
         VkResult result = vkCreateImageView(m_pDevice->Device, &createInfo, nullptr, &m_ImageView);
         if (result != VK_SUCCESS)
         {
-            LOG_VULKAN_ERROR("[TextureViewVK]: Failed to create view", result);
+            LOG_VULKAN_ERROR(result, "[TextureViewVK]: Failed to create view");
             return false;
         }
         

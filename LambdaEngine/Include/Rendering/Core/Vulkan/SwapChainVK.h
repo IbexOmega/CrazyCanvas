@@ -21,10 +21,10 @@ namespace LambdaEngine
         
         bool Init(const Window* pWindow, const SwapChainDesc& desc);
         
-        //IDeviceChild interface
+        // IDeviceChild interface
         virtual void SetName(const char* pName) override final;
         
-        //ISwapChain interface
+        // ISwapChain interface
         virtual bool ResizeBuffers(uint32 width, uint32 height) override final;
         virtual void Present()                                  override final;
         
