@@ -4,7 +4,7 @@
 
 namespace LambdaEngine
 {
-	class Clock
+	class LAMBDA_API Clock
 	{
 	public:
 		Clock();

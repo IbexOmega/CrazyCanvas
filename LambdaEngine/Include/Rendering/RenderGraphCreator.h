@@ -32,6 +32,28 @@ namespace LambdaEngine
 		DEPTH_STENCIL	= 3,
 	};
 
+	enum class EPipelineStageType
+	{
+		NONE			= 0,
+		RENDER			= 1,
+		SYNCHRONIZATION = 2,
+	};
+
+	enum class EAttachmentSynchronizationType
+	{
+		NONE					= 0,
+		TRANSITION_FOR_WRITE	= 1,
+		TRANSITION_FOR_READ		= 2,
+		OWNERSHIP_CHANGE		= 3,
+	};
+
+	enum class EAttachmentState
+	{
+		NONE	= 0,
+		READ	= 1,
+		WRITE	= 2
+	};
+
 	struct RenderStageInputAttachment
 	{
 		const char* pName					= "Input Render Stage Attachment";
@@ -63,12 +85,12 @@ namespace LambdaEngine
 
 		EPipelineStateType							PipelineType					= EPipelineStateType::NONE;
 
-		union Pipeline
+		union
 		{
-			GraphicsPipelineDesc	GraphicsDesc;
-			ComputePipelineDesc		ComputeDesc;
-			RayTracingPipelineDesc	RayTracingDesc;
-		};
+			GraphicsPipelineDesc*		pGraphicsDesc;
+			ComputePipelineDesc*		pComputeDesc;
+			RayTracingPipelineDesc*		pRayTracingDesc;
+		} Pipeline;
 	};
 
 	struct RenderGraphDesc
@@ -79,7 +101,43 @@ namespace LambdaEngine
 		uint32 RenderStageCount				= 0;
 	};
 
-	class LAMBDA_API RenderGraph
+	struct AttachmentSynchronization
+	{
+		EAttachmentSynchronizationType Type = EAttachmentSynchronizationType::NONE;
+		EPipelineStateType FromQueueOwner	= EPipelineStateType::NONE;
+		EPipelineStateType ToQueueOwner		= EPipelineStateType::NONE;
+
+		union
+		{
+			struct
+			{
+				RenderStageOutputAttachment		FromAttachment;
+				RenderStageInputAttachment		ToAttachment;
+			} OutputToInput;
+
+			struct
+			{
+				RenderStageInputAttachment		FromAttachment;
+				RenderStageOutputAttachment		ToAttachment;
+			} InputToOutput;
+		};
+		
+	};
+
+	struct SynchronizationStage
+	{
+		std::vector<AttachmentSynchronization> Synchronizations;
+	};
+
+	struct PipelineStage
+	{
+		EPipelineStageType Type		= EPipelineStageType::NONE;
+		uint32 StageIndex			= 0;
+	};
+
+	constexpr char* RENDER_GRAPH_BACK_BUFFER = "BACK_BUFFER_TEXTURE";
+
+	class LAMBDA_API RenderGraphCreator
 	{
 		struct InternalRenderStageInputAttachment;
 		struct InternalRenderStageExternalInputAttachment;
@@ -124,56 +182,57 @@ namespace LambdaEngine
 		};
 
 	public:
-		DECL_REMOVE_COPY(RenderGraph);
-		DECL_REMOVE_MOVE(RenderGraph);
+		DECL_STATIC_CLASS(RenderGraphCreator);
 
-		RenderGraph();
-		~RenderGraph();
-
-		bool Init(const RenderGraphDesc& desc);
+		static bool Create(const RenderGraphDesc& desc);
 
 	private:
 		/*
 		* Parses everything to internal structures, creates bidirectional connections, separates temporal inputs from non-temporal inputs
 		*/
-		bool ParseInitialStages(const RenderGraphDesc& desc);
+		static bool ParseInitialStages(const RenderGraphDesc& desc);
 		/*
 		* Connects output resources to input resources, thereby marking resource transitions, also discovers input resources that miss output resources
 		*/
-		bool ConnectOutputsToInputs();
+		static bool ConnectOutputsToInputs();
 		/*
 		* For each renderpass, go through its ascendants and add 1 to their weights
 		*/
-		bool WeightRenderStages();
-		void RecursivelyWeightAncestors(InternalRenderStage* pRenderStage);
+		static bool WeightRenderStages();
+		static void RecursivelyWeightAncestors(InternalRenderStage* pRenderStage);
 		/*
-		* Sort render stages
+		* Sorts Render Stages and Creates Synchronization Stages
 		*/
-		bool SortRenderStages();
+		static bool SortPipelineStages();
+		/*
+		* Removes unnecessary synchronizations
+		*/
+		static bool PruneUnnecessarySynchronizations();
 
-		bool IsInputTemporal(const RenderStage& renderStage, const RenderStageInputAttachment* pInputAttachment);
-		bool CompatibleAttachmentNames(const RenderStageInputAttachment* pInputAttachment, const RenderStageOutputAttachment* pOutputAttachment);
-		bool CompatibleAttachmentTypes(const RenderStageInputAttachment* pInputAttachment, const RenderStageOutputAttachment* pOutputAttachment);
-		bool AreRenderStagesRelated(const InternalRenderStage* pRenderStageAncestor, const InternalRenderStage* pRenderStageDescendant);
+		static bool IsInputTemporal(const RenderStage& renderStage, const RenderStageInputAttachment* pInputAttachment);
+		static bool AttachmentsEqual(const RenderStageInputAttachment* pInputAttachment, const RenderStageOutputAttachment* pOutputAttachment);
+		static bool AreRenderStagesRelated(const InternalRenderStage* pRenderStageAncestor, const InternalRenderStage* pRenderStageDescendant);
+		static bool IsAttachmentReserved(const char* pAttachmentName);
 
-		bool WriteGraphViz(bool declareExternalInputs, bool linkExternalInputs);
-		void WriteGraphVizRenderStageOrderDeclarations(FILE* pFile);
-		void WriteGraphVizRenderStageOrderDefinitions(FILE* pFile);
-		void WriteGraphVizCompleteDeclarations(FILE* pFile, bool declareExternalInputs);
-		void WriteGraphVizCompleteDefinitions(FILE* pFile, bool externalInputsDeclared, bool linkExternalInputs);
+		static bool WriteGraphViz(const char* pName, bool declareExternalInputs, bool linkExternalInputs);
+		static void WriteGraphVizPipelineStages(FILE* pFile);
+		static void WriteGraphVizCompleteDeclarations(FILE* pFile, bool declareExternalInputs);
+		static void WriteGraphVizCompleteDefinitions(FILE* pFile, bool externalInputsDeclared, bool linkExternalInputs);
 
-		void SanitizeString(char* pString, uint32 numCharacters);
+		static void SanitizeString(char* pString, uint32 numCharacters);
+		static void ConcatPipelineStateToString(char* pStringBuffer, EPipelineStateType pipelineState);
 
 	private:
-		const char* m_pName;
+		static std::unordered_map<const char*, InternalRenderStage>							s_ParsedRenderStages;
+		static std::unordered_map<const char*, InternalRenderStageInputAttachment>			s_ParsedInputAttachments;
+		static std::unordered_map<const char*, InternalRenderStageInputAttachment>			s_ParsedTemporalInputAttachments;
+		static std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>	s_ParsedExternalInputAttachments;
+		static std::unordered_map<const char*, InternalRenderStageOutputAttachment>			s_ParsedOutputAttachments;
 
-		std::unordered_map<const char*, InternalRenderStage>						m_ParsedRenderStages;
-		std::unordered_map<const char*, InternalRenderStageInputAttachment>			m_ParsedInputAttachments;
-		std::unordered_map<const char*, InternalRenderStageInputAttachment>			m_ParsedTemporalInputAttachments;
-		std::unordered_map<const char*, InternalRenderStageExternalInputAttachment> m_ParsedExternalInputAttachments;
-		std::unordered_map<const char*, InternalRenderStageOutputAttachment>		m_ParsedOutputAttachments;
+		static std::vector<const InternalRenderStage*>										s_SortedInternalRenderStages;
 
-		std::vector<const InternalRenderStage*>										m_SortedInternalRenderStages;
-		std::vector<const RenderStage*>												m_SortedRenderStages;
+		static std::vector<RenderStage>														s_SortedRenderStages;
+		static std::vector<SynchronizationStage>											s_SortedSynchronizationStages;
+		static std::vector<PipelineStage>													s_SortedPipelineStages;
 	};
 }
