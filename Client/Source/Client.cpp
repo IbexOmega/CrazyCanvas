@@ -13,26 +13,52 @@
 
 #include "Network/API/NetworkPacket.h"
 
+enum ENetworkTest
+{
+	NETWORK_TEST_TCP,
+	NETWORK_TEST_UDP,
+	NETWORK_TEST_DISCOVERY
+};
 
-Client::Client() : 
-	m_NetworkDiscovery(this, "Drift It 3D")
+ENetworkTest g_Test = NETWORK_TEST_UDP;
+
+Client::Client()
 {
 	using namespace LambdaEngine;
     
     PlatformApplication::Get()->GetWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
-	/*m_pClientTCP = PlatformNetworkUtils::CreateClientTCP(this);
-	m_pClientTCP->Connect("192.168.0.104", 4444);
-
-	m_pClientUDP = PlatformNetworkUtils::CreateClientUDP(this);
-	m_pClientUDP->Start("192.168.0.104", 4444);*/
+	if (g_Test == NETWORK_TEST_TCP)
+	{
+		m_pClientTCP = PlatformNetworkUtils::CreateClientTCP(this);
+		m_pClientTCP->Connect("192.168.0.104", 4444);
+	}
+	else if (g_Test == NETWORK_TEST_UDP)
+	{
+		m_pClientUDP = PlatformNetworkUtils::CreateClientUDP(this);
+		m_pClientUDP->Start("192.168.0.104", 4444);
+	}
+	else if (g_Test == NETWORK_TEST_DISCOVERY)
+	{
+		m_pNetworkDiscovery = new NetworkDiscoverySearcher(this, "Drift It 3D");
+	}
 }
 
 Client::~Client()
 {
-	/*m_pClientTCP->Release();
-	m_pClientUDP->Release();*/
+	if (g_Test == NETWORK_TEST_TCP)
+	{
+		m_pClientTCP->Release();
+	}
+	else if (g_Test == NETWORK_TEST_UDP)
+	{
+		m_pClientUDP->Release();
+	}
+	else if (g_Test == NETWORK_TEST_DISCOVERY)
+	{
+		delete m_pNetworkDiscovery;
+	}
 }
 
 void Client::OnHostFound(const std::string& address, uint16 port, LambdaEngine::NetworkPacket* packet)
@@ -54,27 +80,27 @@ void Client::OnClientPacketReceivedUDP(LambdaEngine::IClientUDP* client, LambdaE
 
 void Client::OnClientErrorUDP(LambdaEngine::IClientUDP* client)
 {
-	LOG_MESSAGE("OnClientErrorUDP");
+	LOG_MESSAGE("OnClientErrorUDP()");
 }
 
 void Client::OnClientStoppedUDP(LambdaEngine::IClientUDP* client)
 {
-	LOG_MESSAGE("OnClientStoppedUDP");
+	LOG_MESSAGE("OnClientStoppedUDP()");
 }
 
 void Client::OnClientConnectedTCP(LambdaEngine::ClientTCP* client)
 {
-	LOG_MESSAGE("OnClientConnected");
+	LOG_MESSAGE("OnClientConnectedTCP()");
 }
 
 void Client::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
 {
-	LOG_MESSAGE("OnClientDisconnected");
+	LOG_MESSAGE("OnClientDisconnectedTCP()");
 }
 
 void Client::OnClientFailedConnectingTCP(LambdaEngine::ClientTCP* client)
 {
-	LOG_MESSAGE("OnClientFailedConnecting");
+	LOG_MESSAGE("OnClientFailedConnectingTCP()");
 }
 
 void Client::OnClientPacketReceivedTCP(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)
@@ -86,20 +112,30 @@ void Client::OnClientPacketReceivedTCP(LambdaEngine::ClientTCP* client, LambdaEn
 	{
 		LOG_WARNING("Server Full");
 	}
+	else if (packetType == PACKET_TYPE_USER_DATA)
+	{
+		std::string str;
+		packet->ReadString(str);
+		LOG_MESSAGE(str.c_str());
+	}
 }
 
 void Client::OnKeyDown(LambdaEngine::EKey key)
 {
 	using namespace LambdaEngine;
-	/*NetworkPacket* packet = DBG_NEW NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
-	packet->WriteString("Hej kompis vad heter du?");
-	m_pClientTCP->SendPacket(packet);
 
-	NetworkPacket* packet2 = DBG_NEW NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
-	packet2->WriteString("Hej kompis vad heter du?");
-	m_pClientUDP->SendPacket(packet2);*/
-
-	//m_pClient->Disconnect();
+	if (g_Test == NETWORK_TEST_TCP)
+	{
+		NetworkPacket* packet = DBG_NEW NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
+		packet->WriteString("Test Messsage TCP");
+		m_pClientTCP->SendPacket(packet, true);
+	}
+	else if (g_Test == NETWORK_TEST_UDP)
+	{
+		NetworkPacket* packet = DBG_NEW NetworkPacket(EPacketType::PACKET_TYPE_USER_DATA);
+		packet->WriteString("Test Messsage UDP");
+		m_pClientUDP->SendPacket(packet, true);
+	}
 }
 
 void Client::OnKeyHeldDown(LambdaEngine::EKey key)

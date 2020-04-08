@@ -103,6 +103,12 @@ namespace LambdaEngine
 		return m_pThread == nullptr;
 	}
 
+	void ServerBase::SetAddressAndPort(const std::string& address, uint16 port)
+	{
+		m_Address = address;
+		m_Port = port;
+	}
+
 	/*******************************************
 	*					PRIVATE				   *
 	********************************************/

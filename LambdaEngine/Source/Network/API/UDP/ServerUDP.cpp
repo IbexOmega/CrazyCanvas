@@ -80,6 +80,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			SetAddressAndPort(m_pServerSocket->GetAddress(), m_pServerSocket->GetPort());
 			LOG_INFO("[ServerUDP]: Started %s:%d", GetAddress().c_str(), GetPort());
 		}
 	}

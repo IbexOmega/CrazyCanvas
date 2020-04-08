@@ -16,17 +16,17 @@ ClientTCPHandler::~ClientTCPHandler()
 
 void ClientTCPHandler::OnClientConnectedTCP(LambdaEngine::ClientTCP* client)
 {
-	LOG_MESSAGE("OnClientConnected");
+	LOG_MESSAGE("OnClientConnectedTCP()");
 }
 
 void ClientTCPHandler::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
 {
-	LOG_MESSAGE("OnClientDisconnected");
+	LOG_MESSAGE("OnClientDisconnectedTCP()");
 }
 
 void ClientTCPHandler::OnClientFailedConnectingTCP(LambdaEngine::ClientTCP* client)
 {
-	LOG_MESSAGE("OnClientFailedConnecting");
+	LOG_MESSAGE("OnClientFailedConnectingTCP()");
 }
 
 void ClientTCPHandler::OnClientPacketReceivedTCP(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)
@@ -36,5 +36,9 @@ void ClientTCPHandler::OnClientPacketReceivedTCP(LambdaEngine::ClientTCP* client
 		std::string str;
 		packet->ReadString(str);
 		LOG_MESSAGE(str.c_str());
+
+		LambdaEngine::NetworkPacket* packetResponse = DBG_NEW LambdaEngine::NetworkPacket(LambdaEngine::PACKET_TYPE_USER_DATA);
+		packetResponse->WriteString("Server Response TCP");
+		client->SendPacket(packetResponse, true);
 	}
 }

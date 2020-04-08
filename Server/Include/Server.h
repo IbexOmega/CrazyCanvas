@@ -55,5 +55,5 @@ private:
 	std::set<LambdaEngine::IClientTCPHandler*> m_ClientTCPHandlers;
 	std::set<LambdaEngine::IClientUDPHandler*> m_ClientUDPHandlers;
 
-	LambdaEngine::NetworkDiscoveryHost m_NetworkDiscovery;
+	LambdaEngine::NetworkDiscoveryHost* m_pNetworkDiscovery;
 };

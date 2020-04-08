@@ -61,6 +61,7 @@ namespace LambdaEngine
 		void TerminateThread();
 		bool ShouldTerminate() const;
 		bool ThreadHaveTerminated() const;
+		void SetAddressAndPort(const std::string& address, uint16 port);
 
 	private:
 		void ThreadServer();

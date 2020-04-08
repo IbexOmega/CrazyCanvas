@@ -16,30 +16,57 @@
 #include "ClientTCPHandler.h"
 #include "ClientUDPHandler.h"
 
-Server::Server() :
-	m_NetworkDiscovery(this, "Drift It 3D", LambdaEngine::PlatformNetworkUtils::GetLocalAddress(), 4444)
+enum ENetworkTest
+{
+	NETWORK_TEST_TCP,
+	NETWORK_TEST_UDP,
+	NETWORK_TEST_DISCOVERY
+};
+
+ENetworkTest g_Test = NETWORK_TEST_UDP;
+
+Server::Server()
 {
 	using namespace LambdaEngine;
-    
-	/*m_pServerTCP = DBG_NEW ServerTCP(2, this);
-	m_pServerTCP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
 
-	m_pServerUDP = DBG_NEW ServerUDP(this);
-	m_pServerUDP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);*/
+	if (g_Test == NETWORK_TEST_TCP)
+	{
+		m_pServerTCP = PlatformNetworkUtils::CreateServerTCP(this, 2);
+		m_pServerTCP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
+	}
+	else if (g_Test == NETWORK_TEST_UDP)
+	{
+		m_pServerUDP = PlatformNetworkUtils::CreateServerUDP(this);
+		m_pServerUDP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
+	}
+	else if (g_Test == NETWORK_TEST_DISCOVERY)
+	{
+		m_pNetworkDiscovery = new NetworkDiscoveryHost(this, "Drift It 3D", LambdaEngine::PlatformNetworkUtils::GetLocalAddress(), 4444);
+	}
 
 	UpdateTitle();
 }
 
 Server::~Server()
 {
-	/*m_pServerTCP->Release();
-	m_pServerUDP->Release();
+	if (g_Test == NETWORK_TEST_TCP)
+	{
+		m_pServerTCP->Release();
+	}
+	else if (g_Test == NETWORK_TEST_UDP)
+	{
+		m_pServerUDP->Release();
+	}
+	else if (g_Test == NETWORK_TEST_DISCOVERY)
+	{
+		delete m_pNetworkDiscovery;
+	}
 
 	for (LambdaEngine::IClientTCPHandler* handler : m_ClientTCPHandlers)
 		delete handler;
 
 	for (LambdaEngine::IClientUDPHandler* handler : m_ClientUDPHandlers)
-		delete handler;*/
+		delete handler;
 }
 
 void Server::OnSearcherRequest(LambdaEngine::NetworkPacket* packet)
@@ -82,13 +109,7 @@ void Server::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
 
 void Server::OnKeyDown(LambdaEngine::EKey key)
 {
-	using namespace LambdaEngine;
-
-	/*m_pServerTCP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
-	m_pServerUDP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);*/
-
-	/*m_pServerTCP->Stop();
-	m_pServerUDP->Stop();*/
+	
 }
 
 void Server::OnKeyHeldDown(LambdaEngine::EKey key)
@@ -105,10 +126,13 @@ void Server::UpdateTitle()
 {
 	using namespace LambdaEngine;
 
-	/*std::string title = "Server - " + std::to_string(m_pServerTCP->GetNrOfClients());
+	if (g_Test == NETWORK_TEST_TCP)
+	{
+		std::string title = "Server - " + std::to_string(m_pServerTCP->GetNrOfClients());
 
-	PlatformApplication::Get()->GetWindow()->SetTitle(title.c_str());
-	PlatformConsole::SetTitle(title.c_str());*/
+		PlatformApplication::Get()->GetWindow()->SetTitle(title.c_str());
+		PlatformConsole::SetTitle(title.c_str());
+	}
 }
 
 void Server::Tick(LambdaEngine::Timestamp dt)
