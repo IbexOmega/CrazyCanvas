@@ -31,9 +31,9 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!FindRootAndLeafNodes())
+		if (!SeparateNodes())
 		{
-			LOG_ERROR("[RenderGraph]: Could not find root and leaf nodes for \"%s\"", m_pName);
+			LOG_ERROR("[RenderGraph]: Could not separate nodes for \"%s\"", m_pName);
 			return false;
 		}
 
@@ -49,7 +49,7 @@ namespace LambdaEngine
 			}
 		}
 		
-		return false;
+		return true;
 	}
 
 	bool RenderGraph::ParseInitialStages(const RenderGraphDesc& desc)
@@ -199,16 +199,30 @@ namespace LambdaEngine
 						}
 					}
 
+					renderStageInputAttachment.pConnectedAttachment = &renderStageOutputAttachment;
 					renderStageOutputAttachment.pConnectedAttachment = &renderStageInputAttachment;
 					break;
 				}
 			}
 		}
 
-		return true;
+		bool result = true;
+		
+		for (auto& inputAttachmentPair : m_ParsedInputAttachments)
+		{
+			InternalRenderStageInputAttachment& renderStageInputAttachment = inputAttachmentPair.second;
+
+			if (renderStageInputAttachment.pConnectedAttachment == nullptr)
+			{
+				result = false;
+				LOG_ERROR("[RenderGraph]: Input Attachment \"%s\" for \"%s\" has not connected output!", renderStageInputAttachment.pAttachment->pName, m_pName);
+			}
+		}
+
+		return result;
 	}
 
-	bool RenderGraph::FindRootAndLeafNodes()
+	bool RenderGraph::SeparateNodes()
 	{
 		//Find Begin and End Render Stages
 		for (auto renderStageIt = m_ParsedRenderStages.begin(); renderStageIt != m_ParsedRenderStages.end(); renderStageIt++)
@@ -224,6 +238,8 @@ namespace LambdaEngine
 				m_EndRenderStages.insert(&renderStageIt->second);
 				continue;
 			}
+
+			m_MiddleRenderStages.insert(&renderStageIt->second);
 		}
 
 		return true;

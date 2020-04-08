@@ -102,6 +102,8 @@ namespace LambdaEngine
 			const RenderStageInputAttachment*			pAttachment = nullptr;
 			std::vector<InternalRenderStage*>			RenderStages;
 			uint32										GlobalIndex = 0;
+
+			const InternalRenderStageOutputAttachment*	pConnectedAttachment = nullptr;
 		};
 
 		struct InternalRenderStageExternalInputAttachment
@@ -132,7 +134,7 @@ namespace LambdaEngine
 	private:
 		bool ParseInitialStages(const RenderGraphDesc& desc);
 		bool ConnectOutputsToInputs();
-		bool FindRootAndLeafNodes();
+		bool SeparateNodes();
 
 		bool IsInputTemporal(const RenderStage& renderStage, const RenderStageInputAttachment* pInputAttachment);
 		bool CompatibleAttachmentNames(const RenderStageInputAttachment* pInputAttachment, const RenderStageOutputAttachment* pOutputAttachment);
@@ -152,6 +154,7 @@ namespace LambdaEngine
 		std::unordered_map<const char*, InternalRenderStageOutputAttachment>		m_ParsedOutputAttachments;
 
 		std::set<InternalRenderStage*>												m_BeginRenderStages;
+		std::set<InternalRenderStage*>												m_MiddleRenderStages;
 		std::set<InternalRenderStage*>												m_EndRenderStages;
 	};
 }

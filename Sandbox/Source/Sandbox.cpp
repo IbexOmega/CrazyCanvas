@@ -193,7 +193,7 @@ Sandbox::Sandbox() :
 	renderGraphDesc.pRenderStages		= renderStages.data();
 	renderGraphDesc.RenderStageCount	= renderStages.size();
 
-	//renderGraph.Init(renderGraphDesc);
+	renderGraph.Init(renderGraphDesc);
 
 	//InitTestAudio();
 }
