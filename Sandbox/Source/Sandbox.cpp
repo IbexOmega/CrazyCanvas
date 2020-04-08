@@ -161,7 +161,7 @@ Sandbox::Sandbox() :
 	std::vector<RenderStageOutputAttachment>		shadingRenderStageOutputAttachment;
 
 	{
-		shadingRenderStageInputAttachment.push_back({ "RADIANCE_IMAGE",						EInputAttachmentType::TEXTURE });
+		shadingRenderStageInputAttachment.push_back({ "FILTERED_RADIANCE_IMAGE",						EInputAttachmentType::TEXTURE });
 		shadingRenderStageInputAttachment.push_back({ "GBUFFER_ALBEDO_AO",					EInputAttachmentType::TEXTURE });
 		shadingRenderStageInputAttachment.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",	EInputAttachmentType::TEXTURE });
 		shadingRenderStageInputAttachment.push_back({ "GBUFFER_VELOCITY",					EInputAttachmentType::TEXTURE });

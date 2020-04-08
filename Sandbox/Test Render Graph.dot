@@ -1,120 +1,72 @@
 digraph G {
 	rankdir = LR;
-	rs0 [shape=box,label="Geometry Render Stage"];
-	rs1 [shape=box,label="Ray Tracing Render Stage"];
-	rs2 [shape=box,label="Spatial Blur Render Stage"];
-	rs3 [shape=box,label="Shading Render Stage"];
-	ia19 [label="Input
-GBUFFER_DEPTH"];
-	ia18 [label="Input
-GBUFFER_VELOCITY"];
-	ia17 [label="Input
-GBUFFER_NORMAL_ROUGHNESS_METALLIC"];
-	ia16 [label="Input
-GBUFFER_ALBEDO_AO"];
-	ia15 [label="Input
-RADIANCE_IMAGE"];
+	splines=polyline
 	subgraph cluster0 {
 		node [style=filled,color=white];
 		style = filled;
 		color = lightgrey;
+		label = "Temporal Inputs";
+		tia15 [shape=box,label="Temporal Input\nRADIANCE_IMAGE"];
+	}
+	subgraph cluster1 {
+		node [style=filled,color=white];
+		style = filled;
+		color = lightgrey;
 		label = "External Inputs";
-		eia0 [label="External Input
-PER_FRAME_BUFFER"];
-		eia7 [label="External Input
-SCENE_NORMAL_MAPS"];
-		eia4 [label="External Input
-SCENE_INSTANCE_BUFFER"];
-		eia6 [label="External Input
-SCENE_ALBEDO_MAPS"];
-		eia5 [label="External Input
-SCENE_MESH_INDEX_BUFFER"];
-		eia3 [label="External Input
-SCENE_INDEX_BUFFER"];
-		eia2 [label="External Input
-SCENE_VERTEX_BUFFER"];
-		eia1 [label="External Input
-SCENE_MAT_PARAM_BUFFER"];
-		eia8 [label="External Input
-SCENE_AO_MAPS"];
-		eia9 [label="External Input
-SCENE_ROUGHNESS_MAPS"];
-		eia10 [label="External Input
-SCENE_METALLIC_MAPS"];
-		eia20 [label="External Input
-LIGHTS_BUFFER"];
-		eia21 [label="External Input
-SCENE_TLAS"];
-		eia22 [label="External Input
-BRDF_LUT"];
-		eia23 [label="External Input
-BLUE_NOISE_LUT"];
-}
-	oa24 [label="Output
-RADIANCE_IMAGE"];
-	oa14 [label="Output
-GBUFFER_DEPTH"];
-	oa13 [label="Output
-GBUFFER_VELOCITY"];
-	oa12 [label="Output
-GBUFFER_NORMAL_ROUGHNESS_METALLIC"];
-	oa11 [label="Output
-GBUFFER_ALBEDO_AO"];
-	oa26 [label="Output
-BACK_BUFFER_TEXTURE"];
-	oa25 [label="Output
-FILTERED_RADIANCE_IMAGE"];
-	ia19 -> rs1;
-	ia19 -> rs3;
-	ia18 -> rs1;
-	ia18 -> rs3;
-	ia17 -> rs1;
-	ia17 -> rs3;
-	ia16 -> rs1;
-	ia16 -> rs3;
-	ia15 -> rs1;
-	ia15 -> rs2;
-	ia15 -> rs3;
-	eia0 -> rs0 [color=red];
-	eia0 -> rs1 [color=red];
-	eia0 -> rs3 [color=red];
-	eia7 -> rs0 [color=red];
-	eia7 -> rs1 [color=red];
-	eia4 -> rs0 [color=red];
-	eia4 -> rs1 [color=red];
-	eia6 -> rs0 [color=red];
-	eia6 -> rs1 [color=red];
-	eia5 -> rs0 [color=red];
-	eia5 -> rs1 [color=red];
-	eia3 -> rs0 [color=red];
-	eia3 -> rs1 [color=red];
-	eia2 -> rs0 [color=red];
-	eia2 -> rs1 [color=red];
-	eia1 -> rs0 [color=red];
-	eia1 -> rs1 [color=red];
-	eia8 -> rs0 [color=red];
-	eia8 -> rs1 [color=red];
-	eia9 -> rs0 [color=red];
-	eia9 -> rs1 [color=red];
-	eia10 -> rs0 [color=red];
-	eia10 -> rs1 [color=red];
-	eia20 -> rs1 [color=red];
-	eia20 -> rs3 [color=red];
-	eia21 -> rs1 [color=red];
-	eia22 -> rs1 [color=red];
-	eia22 -> rs3 [color=red];
-	eia23 -> rs1 [color=red];
-	eia23 -> rs3 [color=red];
-	rs1 -> oa24;
-	oa24 -> ia15;
-	rs0 -> oa14;
-	oa14 -> ia19;
-	rs0 -> oa13;
-	oa13 -> ia18;
-	rs0 -> oa12;
-	oa12 -> ia17;
-	rs0 -> oa11;
-	oa11 -> ia16;
-	rs3 -> oa26;
-	rs2 -> oa25;
+		eia0 [shape=box,label="External Input\nPER_FRAME_BUFFER"];
+		eia7 [shape=box,label="External Input\nSCENE_NORMAL_MAPS"];
+		eia4 [shape=box,label="External Input\nSCENE_INSTANCE_BUFFER"];
+		eia6 [shape=box,label="External Input\nSCENE_ALBEDO_MAPS"];
+		eia5 [shape=box,label="External Input\nSCENE_MESH_INDEX_BUFFER"];
+		eia3 [shape=box,label="External Input\nSCENE_INDEX_BUFFER"];
+		eia2 [shape=box,label="External Input\nSCENE_VERTEX_BUFFER"];
+		eia1 [shape=box,label="External Input\nSCENE_MAT_PARAM_BUFFER"];
+		eia8 [shape=box,label="External Input\nSCENE_AO_MAPS"];
+		eia9 [shape=box,label="External Input\nSCENE_ROUGHNESS_MAPS"];
+		eia10 [shape=box,label="External Input\nSCENE_METALLIC_MAPS"];
+		eia20 [shape=box,label="External Input\nLIGHTS_BUFFER"];
+		eia21 [shape=box,label="External Input\nSCENE_TLAS"];
+		eia22 [shape=box,label="External Input\nBRDF_LUT"];
+		eia23 [shape=box,label="External Input\nBLUE_NOISE_LUT"];
+	}
+	subgraph cluster2 {
+		style = filled;
+		color = gray90;
+		label = "Main Pipeline";
+		rs0 [shape=octagon,style=bold,label="Geometry Render Stage"];
+		rs3 [shape=octagon,style=bold,label="Shading Render Stage"];
+		rs2 [shape=octagon,style=bold,label="Spatial Blur Render Stage"];
+		rs1 [shape=octagon,style=bold,label="Ray Tracing Render Stage"];
+		ia25 [shape=box,label="Input\nRADIANCE_IMAGE"];
+		ia19 [shape=box,label="Input\nGBUFFER_DEPTH"];
+		ia18 [shape=box,label="Input\nGBUFFER_VELOCITY"];
+		ia17 [shape=box,label="Input\nGBUFFER_NORMAL_ROUGHNESS_METALLIC"];
+		ia16 [shape=box,label="Input\nGBUFFER_ALBEDO_AO"];
+		ia27 [shape=box,label="Input\nFILTERED_RADIANCE_IMAGE"];
+		oa24 [shape=box,label="Output\nRADIANCE_IMAGE"];
+		oa14 [shape=box,label="Output\nGBUFFER_DEPTH"];
+		oa13 [shape=box,label="Output\nGBUFFER_VELOCITY"];
+		oa12 [shape=box,label="Output\nGBUFFER_NORMAL_ROUGHNESS_METALLIC"];
+		oa11 [shape=box,label="Output\nGBUFFER_ALBEDO_AO"];
+		oa28 [shape=box,label="Output\nBACK_BUFFER_TEXTURE"];
+		oa26 [shape=box,label="Output\nFILTERED_RADIANCE_IMAGE"];
+	}
+	{ia27, ia16, ia17, ia18, ia19} -> rs3[color=green3];
+	{ia25} -> rs2[color=green3];
+	{ia16, ia17, ia18, ia19} -> rs1[color=green3];
+	{tia15} -> rs1[color=blue];
+	eia0 -> eia7 -> eia4 -> eia6 -> eia5 -> eia3 -> eia2 -> eia1 -> eia8 -> eia9 -> eia10 -> eia20 -> eia21 -> eia22 -> eia23[style=invis];
+	rs1 -> oa24[color=purple];
+	oa24 -> ia25[style=bold,color=red];
+	rs0 -> oa14[color=purple];
+	oa14 -> ia19[style=bold,color=red];
+	rs0 -> oa13[color=purple];
+	oa13 -> ia18[style=bold,color=red];
+	rs0 -> oa12[color=purple];
+	oa12 -> ia17[style=bold,color=red];
+	rs0 -> oa11[color=purple];
+	oa11 -> ia16[style=bold,color=red];
+	rs3 -> oa28[color=purple];
+	rs2 -> oa26[color=purple];
+	oa26 -> ia27[style=bold,color=red];
 }

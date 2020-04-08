@@ -80,33 +80,39 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderGraph
 	{
+		struct InternalRenderStageInputAttachment;
+		struct InternalRenderStageExternalInputAttachment;
+		struct InternalRenderStageOutputAttachment;
+
 		struct InternalRenderStage
 		{
-			RenderStage Stage;
-			uint32		GlobalIndex;
+			const RenderStage* pRenderStage								= nullptr;
+			std::vector<InternalRenderStageInputAttachment*>			InputAttachments;
+			std::vector<InternalRenderStageInputAttachment*>			TemporalInputAttachments;
+			std::vector<InternalRenderStageExternalInputAttachment*>	ExternalInputAttachments;
+			std::vector<InternalRenderStageOutputAttachment*>			OutputAttachments;
+			uint32														GlobalIndex = 0;
 		};
 
 		struct InternalRenderStageInputAttachment
 		{
-			RenderStageInputAttachment					Attachment;
-			std::vector<InternalRenderStage>			RenderStages;
-			uint32										GlobalIndex;
-
-			bool										Temporal = false;
+			const RenderStageInputAttachment*			pAttachment = nullptr;
+			std::vector<InternalRenderStage*>			RenderStages;
+			uint32										GlobalIndex = 0;
 		};
 
 		struct InternalRenderStageExternalInputAttachment
 		{
-			RenderStageExternalInputAttachment			Attachment;
-			std::vector<InternalRenderStage>			RenderStages;
-			uint32										GlobalIndex;
+			const RenderStageExternalInputAttachment*	pAttachment = nullptr;
+			std::vector<InternalRenderStage*>			RenderStages;
+			uint32										GlobalIndex = 0;
 		};
 
 		struct InternalRenderStageOutputAttachment
 		{
-			RenderStageOutputAttachment					Attachment;
-			std::vector<InternalRenderStage>			RenderStages;
-			uint32										GlobalIndex;
+			const RenderStageOutputAttachment*			pAttachment = nullptr;
+			std::vector<InternalRenderStage*>			RenderStages;
+			uint32										GlobalIndex = 0;
 
 			const InternalRenderStageInputAttachment*	pConnectedAttachment = nullptr;
 		};
@@ -121,21 +127,26 @@ namespace LambdaEngine
 		bool Init(const RenderGraphDesc& desc);
 
 	private:
-		bool IsInputTemporal(const RenderStage& renderStage, const RenderStageInputAttachment& inputAttachment);
-		bool CompatibleAttachmentNames(const RenderStageInputAttachment& inputAttachment, const RenderStageOutputAttachment& outputAttachment);
-		bool CompatibleAttachmentTypes(const RenderStageInputAttachment& inputAttachment, const RenderStageOutputAttachment& outputAttachment);
+		bool IsInputTemporal(const RenderStage& renderStage, const RenderStageInputAttachment* pInputAttachment);
+		bool CompatibleAttachmentNames(const RenderStageInputAttachment* pInputAttachment, const RenderStageOutputAttachment* pOutputAttachment);
+		bool CompatibleAttachmentTypes(const RenderStageInputAttachment* pInputAttachment, const RenderStageOutputAttachment* pOutputAttachment);
 
 		void WriteGraphVizDeclarations(
 			FILE* pFile,
-			const RenderGraphDesc& desc,
+			bool declareExternalInputs,
+			const std::unordered_map<const char*, InternalRenderStage>&	internalRenderStages,
 			const std::unordered_map<const char*, InternalRenderStageInputAttachment>& internalInputAttachments,
+			const std::unordered_map<const char*, InternalRenderStageInputAttachment>& temporalInternalInputAttachments,
 			const std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>& internalExternalInputAttachments,
 			const std::unordered_map<const char*, InternalRenderStageOutputAttachment>& internalOutputAttachments);
 
 		void WriteGraphVizDefinitions(
 			FILE* pFile,
-			const RenderGraphDesc& desc,
+			bool externalInputsDeclared,
+			bool linkExternalInputs,
+			const std::unordered_map<const char*, InternalRenderStage>& internalRenderStages,
 			const std::unordered_map<const char*, InternalRenderStageInputAttachment>& internalInputAttachments,
+			const std::unordered_map<const char*, InternalRenderStageInputAttachment>& temporalInternalInputAttachments,
 			const std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>& internalExternalInputAttachments,
 			const std::unordered_map<const char*, InternalRenderStageOutputAttachment>& internalOutputAttachments);
 	};

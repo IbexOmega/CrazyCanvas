@@ -42,7 +42,7 @@ namespace LambdaEngine
 		return 0;
 	}
 
-	uint32 Scene::AddDynamicGameObject(const GameObject& gameObject, glm::mat4& transform)
+	uint32 Scene::AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform)
 	{
 		Instance instance = {};
 		instance.Transform = transform;
