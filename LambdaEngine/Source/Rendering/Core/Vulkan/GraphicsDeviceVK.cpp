@@ -164,7 +164,7 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) const
+	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) const
 	{
 		GraphicsPipelineStateVK* pPipelineState = DBG_NEW GraphicsPipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
@@ -178,7 +178,7 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineDesc& desc) const
+	IPipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineStateDesc& desc) const
 	{
 		ComputePipelineStateVK* pPipelineState = DBG_NEW ComputePipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
@@ -192,7 +192,7 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc) const
+	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineStateDesc& desc) const
 	{
 		RayTracingPipelineStateVK* pPipelineState = DBG_NEW RayTracingPipelineStateVK(this);
 		if (!pPipelineState->Init(desc))

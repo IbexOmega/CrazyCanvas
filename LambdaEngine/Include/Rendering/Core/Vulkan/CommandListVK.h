@@ -1,12 +1,8 @@
 #pragma once
 #include "Rendering/Core/API/ICommandList.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
-
-#define MAX_IMAGE_BARRIERS  8
-#define MAX_VIEWS           32
-#define MAX_VERTEX_BUFFERS  32
 
 namespace LambdaEngine
 {
@@ -14,9 +10,9 @@ namespace LambdaEngine
 	class CommandAllocatorVK;
     class RayTracingPipelineStateVK;
 
-	class CommandListVK : public DeviceChildBase<GraphicsDeviceVK, ICommandList>
+	class CommandListVK : public TDeviceChildBase<GraphicsDeviceVK, ICommandList>
 	{
-		using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, ICommandList>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, ICommandList>;
 
 	public:
 		CommandListVK(const GraphicsDeviceVK* pDevice);

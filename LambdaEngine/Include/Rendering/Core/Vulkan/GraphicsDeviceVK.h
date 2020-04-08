@@ -1,6 +1,4 @@
 #pragma once
-#include <optional>
-
 #include "Containers/TArray.h"
 
 #include "Utilities/StringHash.h"
@@ -61,9 +59,9 @@ namespace LambdaEngine
 		virtual ITexture*	CreateTexture(const TextureDesc& desc)								const override final;
 		virtual ISwapChain* CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)	const override final;
 
-		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) 	  const override final;
-		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineDesc& desc) 	  const override final;
-		virtual IPipelineState* CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc) const override final;
+		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) 	  const override final;
+		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineStateDesc& desc) 	  const override final;
+		virtual IPipelineState* CreateRayTracingPipelineState(const RayTracingPipelineStateDesc& desc) const override final;
 
 		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const override final;
 		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const override final;

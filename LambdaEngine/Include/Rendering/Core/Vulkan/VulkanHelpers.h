@@ -117,26 +117,47 @@ namespace LambdaEngine
 		return result == VK_SUCCESS;
 	}
 
-	inline VkShaderStageFlagBits ConvertShaderType(EShaderType shaderType)
+	inline VkShaderStageFlagBits ConvertShaderStageFlag(FShaderStageFlags shaderType)
 	{
 		switch (shaderType)
 		{
-		case EShaderType::MESH_SHADER:			return VK_SHADER_STAGE_MESH_BIT_NV;
-		case EShaderType::VERTEX_SHADER:		return VK_SHADER_STAGE_VERTEX_BIT;
-		case EShaderType::GEOMETRY_SHADER:		return VK_SHADER_STAGE_GEOMETRY_BIT;
-		case EShaderType::HULL_SHADER:			return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-		case EShaderType::DOMAIN_SHADER:		return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-		case EShaderType::PIXEL_SHADER:			return VK_SHADER_STAGE_FRAGMENT_BIT;
-		case EShaderType::COMPUTE_SHADER:		return VK_SHADER_STAGE_COMPUTE_BIT;
-		case EShaderType::RAYGEN_SHADER:		return VK_SHADER_STAGE_RAYGEN_BIT_NV;
-		case EShaderType::INTERSECT_SHADER:		return VK_SHADER_STAGE_INTERSECTION_BIT_NV;
-		case EShaderType::ANY_HIT_SHADER:		return VK_SHADER_STAGE_ANY_HIT_BIT_NV;
-		case EShaderType::CLOSEST_HIT_SHADER:	return VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-		case EShaderType::MISS_SHADER:			return VK_SHADER_STAGE_MISS_BIT_NV;
+		case SHADER_STAGE_FLAG_MESH_SHADER:			return VK_SHADER_STAGE_MESH_BIT_NV;
+        case SHADER_STAGE_FLAG_TASK_SHADER:			return VK_SHADER_STAGE_TASK_BIT_NV;
+		case SHADER_STAGE_FLAG_VERTEX_SHADER:		return VK_SHADER_STAGE_VERTEX_BIT;
+		case SHADER_STAGE_FLAG_GEOMETRY_SHADER:		return VK_SHADER_STAGE_GEOMETRY_BIT;
+		case SHADER_STAGE_FLAG_HULL_SHADER:			return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+		case SHADER_STAGE_FLAG_DOMAIN_SHADER:		return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+		case SHADER_STAGE_FLAG_PIXEL_SHADER:		return VK_SHADER_STAGE_FRAGMENT_BIT;
+		case SHADER_STAGE_FLAG_COMPUTE_SHADER:		return VK_SHADER_STAGE_COMPUTE_BIT;
+		case SHADER_STAGE_FLAG_RAYGEN_SHADER:		return VK_SHADER_STAGE_RAYGEN_BIT_NV;
+		case SHADER_STAGE_FLAG_INTERSECT_SHADER:	return VK_SHADER_STAGE_INTERSECTION_BIT_NV;
+		case SHADER_STAGE_FLAG_ANY_HIT_SHADER:		return VK_SHADER_STAGE_ANY_HIT_BIT_NV;
+		case SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER:	return VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+		case SHADER_STAGE_FLAG_MISS_SHADER:			return VK_SHADER_STAGE_MISS_BIT_NV;
+        default:                                    return VK_SHADER_STAGE_ALL;
 		}
-
-		return VK_SHADER_STAGE_ALL;
 	}
+
+    inline uint32 ConvertShaderStageMask(uint32 shaderTypeMask)
+    {
+        uint32 vkShaderTypeMask = 0;
+
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_MESH_SHADER)        ? VK_SHADER_STAGE_MESH_BIT_NV                   : 0;
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_TASK_SHADER)        ? VK_SHADER_STAGE_TASK_BIT_NV                   : 0;
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_VERTEX_SHADER)      ? VK_SHADER_STAGE_VERTEX_BIT                    : 0;
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_GEOMETRY_SHADER)    ? VK_SHADER_STAGE_GEOMETRY_BIT                  : 0;
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_HULL_SHADER)        ? VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT      : 0;
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_DOMAIN_SHADER)      ? VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT   : 0;
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_PIXEL_SHADER)       ? VK_SHADER_STAGE_FRAGMENT_BIT                  : 0;
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_COMPUTE_SHADER)     ? VK_SHADER_STAGE_COMPUTE_BIT                   : 0;
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_RAYGEN_SHADER)      ? VK_SHADER_STAGE_RAYGEN_BIT_NV                 : 0;
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_INTERSECT_SHADER)   ? VK_SHADER_STAGE_INTERSECTION_BIT_NV           : 0;
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_ANY_HIT_SHADER)     ? VK_SHADER_STAGE_ANY_HIT_BIT_NV                : 0;
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER) ? VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV            : 0;
+        vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_MISS_SHADER)        ? VK_SHADER_STAGE_MISS_BIT_NV                   : 0;
+
+        return vkShaderTypeMask;
+    }
 
     inline VkPipelineStageFlagBits ConvertPipelineStage(FPipelineStageFlags pipelineStage)
     {
@@ -314,7 +335,7 @@ namespace LambdaEngine
 		shaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStageInfo.pNext   = nullptr;
 		shaderStageInfo.flags   = 0;
-		shaderStageInfo.stage   = ConvertShaderType(shaderDesc.Type);
+		shaderStageInfo.stage   = ConvertShaderStageFlag(shaderDesc.Type);
 		shaderStageInfo.module  = shaderModule;
 		shaderStageInfo.pName   = shaderDesc.pEntryPoint;
 		shaderStageInfo.pSpecializationInfo = &specializationInfo;

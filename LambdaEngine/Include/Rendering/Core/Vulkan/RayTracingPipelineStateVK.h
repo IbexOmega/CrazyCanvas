@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/Core/API/IPipelineState.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -9,15 +9,15 @@ namespace LambdaEngine
 	class GraphicsDeviceVK;
 	class BufferVK;
 
-	class RayTracingPipelineStateVK : public DeviceChildBase<GraphicsDeviceVK, IPipelineState>
+	class RayTracingPipelineStateVK : public TDeviceChildBase<GraphicsDeviceVK, IPipelineState>
 	{
-		using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, IPipelineState>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IPipelineState>;
 
 	public:
 		RayTracingPipelineStateVK(const GraphicsDeviceVK* pDevice);
 		~RayTracingPipelineStateVK();
 
-		bool Init(const RayTracingPipelineDesc& desc);
+		bool Init(const RayTracingPipelineStateDesc& desc);
 
 		FORCEINLINE VkDeviceSize GetBindingOffsetRaygenGroup()	const { return m_BindingOffsetRaygenShaderGroup; }
 		FORCEINLINE VkDeviceSize GetBindingOffsetHitGroup()		const { return m_BindingOffsetHitShaderGroup; }
@@ -43,7 +43,7 @@ namespace LambdaEngine
 			std::vector<VkSpecializationInfo>& shaderStagesSpecializationInfos,
 			std::vector<std::vector<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps,
 			std::vector<VkRayTracingShaderGroupCreateInfoKHR>& shaderGroups,
-			const RayTracingPipelineDesc& desc);
+			const RayTracingPipelineStateDesc& desc);
 
 	private:
 		VkPipeline	m_Pipeline;
