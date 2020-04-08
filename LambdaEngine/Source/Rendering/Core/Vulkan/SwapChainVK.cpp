@@ -61,13 +61,14 @@ namespace LambdaEngine
         for (uint32 i = 0; i < bufferCount; i++)
         {
             uint64 refCount = m_Buffers[i]->Release();
-            m_Buffers[i] = nullptr;
-            
+#ifndef LAMBDA_PRODUCTION
             if (refCount > 0)
             {
                 LOG_ERROR("[SwapChainVK]: All external references to all buffers must be released before calling Release or ResizeBuffers");
                 DEBUGBREAK();
             }
+#endif
+            m_Buffers[i] = nullptr;
         }
         m_Buffers.clear();
     }

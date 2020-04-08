@@ -5,18 +5,28 @@
 
 #include "Vulkan.h"
 
+#define MAX_TOTAL_IMMUTABLE_SAMPLERS (MAX_DESCRIPTOR_SET_LAYOUTS * MAX_DESCRIPTOR_BINDINGS * MAX_IMMUTABLE_SAMPLERS)
+
 namespace LambdaEngine
 {
+	class SamplerVK;
 	class GraphicsDeviceVK;
 
 	class PipelineLayoutVK : public TDeviceChildBase<GraphicsDeviceVK, IPipelineLayout>
 	{
 		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IPipelineLayout>;
 
+		struct ImmutableSamplersData
+		{
+			VkSampler ImmutableSamplers[MAX_IMMUTABLE_SAMPLERS];
+		};
+
 		struct DescriptorSetLayoutData
 		{
 			VkDescriptorSetLayoutCreateInfo CreateInfo = { };
-
+			VkDescriptorSetLayoutBinding	DescriptorBindings[MAX_DESCRIPTOR_BINDINGS];
+			ImmutableSamplersData			ImmutableSamplers[MAX_DESCRIPTOR_BINDINGS];
+			uint32 DescriptorCount = 0;
 		};
 
 	public:
@@ -26,21 +36,23 @@ namespace LambdaEngine
 		bool Init(const PipelineLayoutDesc& desc);
 
 		void CreatePushConstantRanges(const ConstantRangeDesc* pConstantRanges, uint32 constantRangeCount, VkPushConstantRange* pResultConstantRanges);
-		void CreateDescriptorSetLayouta(const DescriptorSetLayoutDesc* pDescriptorSetLayouts, uint32 descriptorSetLayoutCount, VkDescriptorSetLayoutCreateInfo* pResultDescriptorSetLayouts);
+		void CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* pDescriptorSetLayouts, uint32 descriptorSetLayoutCount, DescriptorSetLayoutData* pResultDescriptorSetLayouts);
 
 		FORCEINLINE VkPipelineLayout GetPipelineLayout() const
 		{
 			return m_PipelineLayout;
 		}
 
-		FORCEINLINE VkDescriptorSetLayout GetDescriptorSetLayout() const
+		FORCEINLINE VkDescriptorSetLayout GetDescriptorSetLayout(uint32 descriptorSetIndex) const
 		{
-			return m_DescriptorSetLayout;
+			ASSERT(descriptorSetIndex < MAX_DESCRIPTOR_SET_LAYOUTS);
+			return m_DescriptorSetLayouts[descriptorSetIndex];
 		}
 
-		FORCEINLINE DescriptorCountDesc GetDescriptorCount() const
+		FORCEINLINE DescriptorCountDesc GetDescriptorCount(uint32 descriptorSetIndex) const
 		{
-			return m_DescriptorCount;
+			ASSERT(descriptorSetIndex < MAX_DESCRIPTOR_SET_LAYOUTS);
+			return m_DescriptorCount[descriptorSetIndex];
 		}
 
 		// IDeviceChild InterFace
@@ -54,7 +66,12 @@ namespace LambdaEngine
 
 	private:
 		VkPipelineLayout		m_PipelineLayout		= VK_NULL_HANDLE;
-		VkDescriptorSetLayout	m_DescriptorSetLayout	= VK_NULL_HANDLE;
-		DescriptorCountDesc		m_DescriptorCount;
+
+		uint32	m_DescriptorSetCount = 0;
+		VkDescriptorSetLayout	m_DescriptorSetLayouts[MAX_DESCRIPTOR_SET_LAYOUTS];
+		DescriptorCountDesc		m_DescriptorCount[MAX_DESCRIPTOR_SET_LAYOUTS];
+		
+		uint32		m_ImmutableSamplerCount = 0;
+		SamplerVK*	m_ppImmutableSamplers[MAX_TOTAL_IMMUTABLE_SAMPLERS];
 	};
 }

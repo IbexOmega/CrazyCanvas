@@ -9,8 +9,10 @@ namespace LambdaEngine
     struct SwapChainDesc;
 	struct RenderPassDesc;
     struct CommandListDesc;
-    struct TextureViewDesc;
 	struct FrameBufferDesc;
+    struct TextureViewDesc;
+	struct PipelineLayoutDesc;
+	struct DescriptorHeapDesc;
     struct ComputePipelineStateDesc;
     struct GraphicsPipelineStateDesc;
     struct RayTracingPipelineStateDesc;
@@ -29,6 +31,8 @@ namespace LambdaEngine
 	class IFrameBuffer;
     class ICommandQueue;
 	class IPipelineState;
+	class IDescriptorHeap;
+	class IPipelineLayout;
 	class ICommandAllocator;
 	class ITopLevelAccelerationStructure;
 	class IBottomLevelAccelerationStructure;
@@ -48,6 +52,9 @@ namespace LambdaEngine
 	{
 	public:
 		DECL_DEVICE_INTERFACE(IGraphicsDevice);
+
+		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc& desc) const = 0;
+		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc& desc) const = 0;
 
 		virtual IFrameBuffer* CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc)	const = 0;
 		virtual IRenderPass*  CreateRenderPass(const RenderPassDesc& desc)								const = 0;

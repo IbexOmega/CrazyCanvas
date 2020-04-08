@@ -19,6 +19,12 @@ namespace LambdaEngine
 
     FrameBufferVK::~FrameBufferVK()
     {
+        if (m_FrameBuffer != VK_NULL_HANDLE)
+        {
+            vkDestroyFramebuffer(m_pDevice->Device, m_FrameBuffer, nullptr);
+            m_FrameBuffer = VK_NULL_HANDLE;
+        }
+
         for (uint32 i = 0; i < m_Desc.RenderTargetCount; i++)
         {
             SAFERELEASE(m_ppRenderTargets[i]);
@@ -59,7 +65,7 @@ namespace LambdaEngine
         createInfo.flags            = 0; //TODO: Support imageless framebuffers
         createInfo.width            = desc.Width;
         createInfo.height           = desc.Height;
-        createInfo.layers           = 0;
+        createInfo.layers           = 1;
         createInfo.attachmentCount  = attachmentCount;
         createInfo.pAttachments     = attachments;
         
@@ -72,8 +78,14 @@ namespace LambdaEngine
             LOG_VULKAN_ERROR(result, "[FrameBufferVK]: Failed to create framebuffer");
             return false;
         }
+        else
+        {
+            m_Desc = desc;
+            SetName(m_Desc.pName);
 
-        return true;
+            D_LOG_MESSAGE("[FrameBufferVK]: Created framebuffer");
+            return true;
+        }
     }
 
     void FrameBufferVK::SetName(const char* pName)

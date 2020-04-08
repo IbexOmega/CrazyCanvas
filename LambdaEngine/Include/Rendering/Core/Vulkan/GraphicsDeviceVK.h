@@ -51,6 +51,9 @@ namespace LambdaEngine
 		}
 
 		// IGraphicsDevice Interface
+		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc& desc) const override final;
+		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc& desc) const override final;
+
 		virtual IFrameBuffer*	CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc)	const override final;
 		virtual IRenderPass*	CreateRenderPass(const RenderPassDesc& desc)								const override final;
 		virtual ITextureView*	CreateTextureView(const TextureViewDesc& desc)								const override final;
