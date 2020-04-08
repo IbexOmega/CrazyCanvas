@@ -92,9 +92,10 @@ namespace LambdaEngine
 			std::vector<InternalRenderStageInputAttachment*>			TemporalInputAttachments;
 			std::vector<InternalRenderStageExternalInputAttachment*>	ExternalInputAttachments;
 			std::vector<InternalRenderStageOutputAttachment*>			OutputAttachments;
-			std::set<InternalRenderStage*>								PreviousRenderStages;
-			std::set<InternalRenderStage*>								NextRenderStages;
+			std::set<InternalRenderStage*>								ParentRenderStages;
+			std::set<InternalRenderStage*>								ChildRenderStages;
 			uint32														GlobalIndex = 0;
+			uint32														Weight = 0;
 		};
 
 		struct InternalRenderStageInputAttachment
@@ -132,17 +133,36 @@ namespace LambdaEngine
 		bool Init(const RenderGraphDesc& desc);
 
 	private:
+		/*
+		* Parses everything to internal structures, creates bidirectional connections, separates temporal inputs from non-temporal inputs
+		*/
 		bool ParseInitialStages(const RenderGraphDesc& desc);
+		/*
+		* Connects output resources to input resources, thereby marking resource transitions, also discovers input resources that miss output resources
+		*/
 		bool ConnectOutputsToInputs();
-		bool SeparateNodes();
+		/*
+		* For each renderpass, go through its ascendants and add 1 to their weights
+		*/
+		bool WeightRenderStages();
+		void RecursivelyWeightAncestors(InternalRenderStage* pRenderStage);
+		/*
+		* Sort render stages
+		*/
+		bool SortRenderStages();
 
 		bool IsInputTemporal(const RenderStage& renderStage, const RenderStageInputAttachment* pInputAttachment);
 		bool CompatibleAttachmentNames(const RenderStageInputAttachment* pInputAttachment, const RenderStageOutputAttachment* pOutputAttachment);
 		bool CompatibleAttachmentTypes(const RenderStageInputAttachment* pInputAttachment, const RenderStageOutputAttachment* pOutputAttachment);
+		bool AreRenderStagesRelated(const InternalRenderStage* pRenderStageAncestor, const InternalRenderStage* pRenderStageDescendant);
 
 		bool WriteGraphViz(bool declareExternalInputs, bool linkExternalInputs);
-		void WriteGraphVizDeclarations(FILE* pFile, bool declareExternalInputs);
-		void WriteGraphVizDefinitions(FILE* pFile, bool externalInputsDeclared, bool linkExternalInputs);
+		void WriteGraphVizRenderStageOrderDeclarations(FILE* pFile);
+		void WriteGraphVizRenderStageOrderDefinitions(FILE* pFile);
+		void WriteGraphVizCompleteDeclarations(FILE* pFile, bool declareExternalInputs);
+		void WriteGraphVizCompleteDefinitions(FILE* pFile, bool externalInputsDeclared, bool linkExternalInputs);
+
+		void SanitizeString(char* pString, uint32 numCharacters);
 
 	private:
 		const char* m_pName;
@@ -153,8 +173,7 @@ namespace LambdaEngine
 		std::unordered_map<const char*, InternalRenderStageExternalInputAttachment> m_ParsedExternalInputAttachments;
 		std::unordered_map<const char*, InternalRenderStageOutputAttachment>		m_ParsedOutputAttachments;
 
-		std::set<InternalRenderStage*>												m_BeginRenderStages;
-		std::set<InternalRenderStage*>												m_MiddleRenderStages;
-		std::set<InternalRenderStage*>												m_EndRenderStages;
+		std::vector<const InternalRenderStage*>										m_SortedInternalRenderStages;
+		std::vector<const RenderStage*>												m_SortedRenderStages;
 	};
 }
