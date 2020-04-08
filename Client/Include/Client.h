@@ -43,5 +43,5 @@ private:
 	LambdaEngine::IClientTCP* m_pClientTCP;
 	LambdaEngine::IClientUDP* m_pClientUDP;
 
-	LambdaEngine::NetworkDiscoverySearcher m_NetworkDiscovery;
+	LambdaEngine::NetworkDiscoverySearcher* m_pNetworkDiscovery;
 };

@@ -70,7 +70,7 @@ namespace LambdaEngine
 
 	bool ClientTCP::IsConnected() const
 	{
-		return ThreadsAreRunning() && !ShouldTerminate();
+		return !ShouldTerminate() && ThreadsAreRunning();
 	}
 
 	bool ClientTCP::IsReadyToConnect() const
@@ -82,10 +82,7 @@ namespace LambdaEngine
 	*				PROTECTED				   *
 	********************************************/
 
-	/*
-	* Called by the Transmitter Thread when it starts
-	*/
-	void ClientTCP::OnTransmitterStarted()
+	void ClientTCP::OnThreadsStarted()
 	{
 		if (!IsServerSide())
 		{
@@ -96,25 +93,21 @@ namespace LambdaEngine
 				{
 					m_pClientHandler->OnClientFailedConnectingTCP(this);
 				}
-				
+
 				TerminateThreads();
 				return;
 			}
 		}
 
 		m_pSocket->DisableNaglesAlgorithm();
+	}
+
+	void ClientTCP::OnThreadsStartedPost()
+	{
 		ResetReceiveTimer();
 		ResetTransmitTimer();
 
 		m_pClientHandler->OnClientConnectedTCP(this);
-	}
-
-	/*
-	* Called by the Receiver Thread when it starts
-	*/
-	void ClientTCP::OnReceiverStarted()
-	{
-		
 	}
 
 	/*
@@ -266,7 +259,7 @@ namespace LambdaEngine
 				m_NrOfPingTransmitted++;
 				s_PacketPing.Reset();
 				s_PacketPing.WriteUInt32(m_NrOfPingTransmitted);
-				SendPacket(&s_PacketPing);
+				SendPacket(&s_PacketPing, true);
 				ResetTransmitTimer();
 				LOG_MESSAGE("[ClientTCP]: Ping(T%d | R%d)", m_NrOfPingTransmitted, m_NrOfPingReceived);
 			}

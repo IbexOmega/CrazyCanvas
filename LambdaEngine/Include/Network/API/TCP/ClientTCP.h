@@ -50,8 +50,8 @@ namespace LambdaEngine
 		ClientTCP(IClientTCPHandler* clientHandler);
 		ClientTCP(IClientTCPHandler* clientHandler, IRemoteClientTCPHandler* remoteClientHandler, ISocketTCP* socket);
 
-		virtual void OnTransmitterStarted() override;
-		virtual void OnReceiverStarted() override;
+		virtual void OnThreadsStarted() override;
+		virtual void OnThreadsStartedPost() override;
 		virtual void UpdateReceiver(NetworkPacket* packet) override;
 		virtual void OnThreadsTerminated() override;
 		virtual void OnReleaseRequested() override;
