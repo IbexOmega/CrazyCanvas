@@ -3,6 +3,7 @@
 #include "Log/Log.h"
 
 #include <cstdio>
+#include <map>
 
 namespace LambdaEngine
 {
@@ -16,27 +17,58 @@ namespace LambdaEngine
 
 	bool RenderGraph::Init(const RenderGraphDesc& desc)
 	{
-		std::unordered_map<const char*, InternalRenderStage>						internalRenderStages;
-		std::unordered_map<const char*, InternalRenderStageInputAttachment>			internalInputAttachments;
-		std::unordered_map<const char*, InternalRenderStageInputAttachment>			internalTemporalInputAttachments;
-		std::unordered_map<const char*, InternalRenderStageExternalInputAttachment> internalExternalInputAttachments;
-		std::unordered_map<const char*, InternalRenderStageOutputAttachment>		internalOutputAttachments;
+		m_pName = desc.pName;
 
+		if (!ParseInitialStages(desc))
+		{
+			LOG_ERROR("[RenderGraph]: Could not parse Render Stages for \"%s\"", m_pName);
+			return false;
+		}
+
+		if (!ConnectOutputsToInputs())
+		{
+			LOG_ERROR("[RenderGraph]: Could not connect Output Resources to Input Resources for \"%s\"", m_pName);
+			return false;
+		}
+
+		if (!FindRootAndLeafNodes())
+		{
+			LOG_ERROR("[RenderGraph]: Could not find root and leaf nodes for \"%s\"", m_pName);
+			return false;
+		}
+
+
+		if (desc.CreateDebugGraph)
+		{
+			constexpr bool DECLARE_EXTERNAL_INPUTS = true;
+			constexpr bool LINK_EXTERNAL_INPUTS = false;
+
+			if (!WriteGraphViz(DECLARE_EXTERNAL_INPUTS, LINK_EXTERNAL_INPUTS))
+			{
+				LOG_WARNING("[RenderGraph]: Could not create GraphViz for \"%s\"", m_pName);
+			}
+		}
+		
+		return false;
+	}
+
+	bool RenderGraph::ParseInitialStages(const RenderGraphDesc& desc)
+	{
 		uint32 globalAttachmentIndex = 0;
 
 		for (uint32 renderStageIndex = 0; renderStageIndex < desc.RenderStageCount; renderStageIndex++)
 		{
 			const RenderStage& renderStage = desc.pRenderStages[renderStageIndex];
 
-			auto renderStageIt = internalRenderStages.find(renderStage.pName);
+			auto renderStageIt = m_ParsedRenderStages.find(renderStage.pName);
 
-			if (renderStageIt != internalRenderStages.end())
+			if (renderStageIt != m_ParsedRenderStages.end())
 			{
 				LOG_ERROR("[RenderGraph]: Multiple Render Stages with same name is not allowed, name: \"%s\"", renderStage.pName);
 				return false;
 			}
 
-			InternalRenderStage& internalRenderStage = internalRenderStages[renderStage.pName];
+			InternalRenderStage& internalRenderStage = m_ParsedRenderStages[renderStage.pName];
 			internalRenderStage.pRenderStage = &renderStage;
 			internalRenderStage.GlobalIndex = renderStageIndex;
 
@@ -44,15 +76,15 @@ namespace LambdaEngine
 			for (uint32 inputAttachmentIndex = 0; inputAttachmentIndex < renderStage.InputAttachmentCount; inputAttachmentIndex++)
 			{
 				const RenderStageInputAttachment& renderStageInputAttachment = renderStage.pInputAttachments[inputAttachmentIndex];
-				auto inputIt = internalInputAttachments.find(renderStageInputAttachment.pName);
-				auto temporalInputIt = internalTemporalInputAttachments.find(renderStageInputAttachment.pName);
+				auto inputIt = m_ParsedInputAttachments.find(renderStageInputAttachment.pName);
+				auto temporalInputIt = m_ParsedTemporalInputAttachments.find(renderStageInputAttachment.pName);
 
 				bool isTemporal = IsInputTemporal(renderStage, &renderStageInputAttachment);
 
 				if (isTemporal)
 				{
 					//Temporal
-					if (temporalInputIt != internalTemporalInputAttachments.end() &&
+					if (temporalInputIt != m_ParsedTemporalInputAttachments.end() &&
 						temporalInputIt->second.pAttachment->Type == renderStageInputAttachment.Type)
 					{
 						temporalInputIt->second.RenderStages.push_back(&internalRenderStage);
@@ -60,7 +92,7 @@ namespace LambdaEngine
 					}
 					else
 					{
-						InternalRenderStageInputAttachment& internalTemporalInputAttachment = internalTemporalInputAttachments[renderStageInputAttachment.pName];
+						InternalRenderStageInputAttachment& internalTemporalInputAttachment = m_ParsedTemporalInputAttachments[renderStageInputAttachment.pName];
 						internalTemporalInputAttachment.pAttachment = &renderStageInputAttachment;
 						internalTemporalInputAttachment.RenderStages.push_back(&internalRenderStage);
 						internalTemporalInputAttachment.GlobalIndex = globalAttachmentIndex;
@@ -72,7 +104,7 @@ namespace LambdaEngine
 				else
 				{
 					//Non-Temporal
-					if (inputIt != internalInputAttachments.end() &&
+					if (inputIt != m_ParsedInputAttachments.end() &&
 						inputIt->second.pAttachment->Type == renderStageInputAttachment.Type)
 					{
 						inputIt->second.RenderStages.push_back(&internalRenderStage);
@@ -80,7 +112,7 @@ namespace LambdaEngine
 					}
 					else
 					{
-						InternalRenderStageInputAttachment& internalInputAttachment = internalInputAttachments[renderStageInputAttachment.pName];
+						InternalRenderStageInputAttachment& internalInputAttachment = m_ParsedInputAttachments[renderStageInputAttachment.pName];
 						internalInputAttachment.pAttachment = &renderStageInputAttachment;
 						internalInputAttachment.RenderStages.push_back(&internalRenderStage);
 						internalInputAttachment.GlobalIndex = globalAttachmentIndex;
@@ -95,10 +127,10 @@ namespace LambdaEngine
 			for (uint32 externalInputAttachmentIndex = 0; externalInputAttachmentIndex < renderStage.ExtenalInputAttachmentCount; externalInputAttachmentIndex++)
 			{
 				const RenderStageExternalInputAttachment& renderStageExternalInputAttachment = renderStage.pExternalInputAttachments[externalInputAttachmentIndex];
-				auto externalInputIt = internalExternalInputAttachments.find(renderStageExternalInputAttachment.pName);
+				auto externalInputIt = m_ParsedExternalInputAttachments.find(renderStageExternalInputAttachment.pName);
 
-				if (externalInputIt != internalExternalInputAttachments.end() && 
-					externalInputIt->second.pAttachment->Type == renderStageExternalInputAttachment.Type && 
+				if (externalInputIt != m_ParsedExternalInputAttachments.end() &&
+					externalInputIt->second.pAttachment->Type == renderStageExternalInputAttachment.Type &&
 					externalInputIt->second.pAttachment->DescriptorCount == renderStageExternalInputAttachment.DescriptorCount)
 				{
 					externalInputIt->second.RenderStages.push_back(&internalRenderStage);
@@ -106,7 +138,7 @@ namespace LambdaEngine
 				}
 				else
 				{
-					InternalRenderStageExternalInputAttachment& internalExternalInputAttachment = internalExternalInputAttachments[renderStageExternalInputAttachment.pName];
+					InternalRenderStageExternalInputAttachment& internalExternalInputAttachment = m_ParsedExternalInputAttachments[renderStageExternalInputAttachment.pName];
 					internalExternalInputAttachment.pAttachment = &renderStageExternalInputAttachment;
 					internalExternalInputAttachment.RenderStages.push_back(&internalRenderStage);
 					internalExternalInputAttachment.GlobalIndex = globalAttachmentIndex;
@@ -120,9 +152,9 @@ namespace LambdaEngine
 			for (uint32 outputAttachmentIndex = 0; outputAttachmentIndex < renderStage.OutputAttachmentCount; outputAttachmentIndex++)
 			{
 				const RenderStageOutputAttachment& renderStageOutputAttachment = renderStage.pOutputAttachments[outputAttachmentIndex];
-				auto outputIt = internalOutputAttachments.find(renderStageOutputAttachment.pName);
+				auto outputIt = m_ParsedOutputAttachments.find(renderStageOutputAttachment.pName);
 
-				if (outputIt != internalOutputAttachments.end() &&
+				if (outputIt != m_ParsedOutputAttachments.end() &&
 					outputIt->second.pAttachment->Type == renderStageOutputAttachment.Type)
 				{
 					outputIt->second.RenderStages.push_back(&internalRenderStage);
@@ -130,7 +162,7 @@ namespace LambdaEngine
 				}
 				else
 				{
-					InternalRenderStageOutputAttachment& internalOutputAttachment = internalOutputAttachments[renderStageOutputAttachment.pName];
+					InternalRenderStageOutputAttachment& internalOutputAttachment = m_ParsedOutputAttachments[renderStageOutputAttachment.pName];
 					internalOutputAttachment.pAttachment = &renderStageOutputAttachment;
 					internalOutputAttachment.RenderStages.push_back(&internalRenderStage);
 					internalOutputAttachment.GlobalIndex = globalAttachmentIndex;
@@ -141,66 +173,60 @@ namespace LambdaEngine
 			}
 		}
 
+		return true;
+	}
+
+	bool RenderGraph::ConnectOutputsToInputs()
+	{
 		//Connect Output Attachments to Input Attachments
-		for (auto& outputAttachmentPair : internalOutputAttachments)
+		for (auto& outputAttachmentPair : m_ParsedOutputAttachments)
 		{
 			InternalRenderStageOutputAttachment& renderStageOutputAttachment = outputAttachmentPair.second;
 
-			for (auto& inputAttachmentPair : internalInputAttachments)
+			for (auto& inputAttachmentPair : m_ParsedInputAttachments)
 			{
 				InternalRenderStageInputAttachment& renderStageInputAttachment = inputAttachmentPair.second;
 
-				if (CompatibleAttachmentNames(renderStageInputAttachment.pAttachment, renderStageOutputAttachment.pAttachment))
+				if (CompatibleAttachmentNames(renderStageInputAttachment.pAttachment, renderStageOutputAttachment.pAttachment) && CompatibleAttachmentTypes(renderStageInputAttachment.pAttachment, renderStageOutputAttachment.pAttachment))
 				{
-					if (CompatibleAttachmentTypes(renderStageInputAttachment.pAttachment, renderStageOutputAttachment.pAttachment))
+					//Connect Render Stages
+					for (InternalRenderStage* pPreviousRenderStages : renderStageOutputAttachment.RenderStages)
 					{
-						renderStageOutputAttachment.pConnectedAttachment = &renderStageInputAttachment;
-						break;
+						for (InternalRenderStage* pNextRenderStages : renderStageInputAttachment.RenderStages)
+						{
+							pPreviousRenderStages->NextRenderStages.insert(pNextRenderStages);
+							pNextRenderStages->PreviousRenderStages.insert(pPreviousRenderStages);
+						}
 					}
+
+					renderStageOutputAttachment.pConnectedAttachment = &renderStageInputAttachment;
+					break;
 				}
 			}
 		}
 
-		if (desc.CreateDebugGraph)
+		return true;
+	}
+
+	bool RenderGraph::FindRootAndLeafNodes()
+	{
+		//Find Begin and End Render Stages
+		for (auto renderStageIt = m_ParsedRenderStages.begin(); renderStageIt != m_ParsedRenderStages.end(); renderStageIt++)
 		{
-			char filepathBuffer[1024];
-			strcpy(filepathBuffer, desc.pName);
-			strcat(filepathBuffer, ".dot");
-
-			FILE* pGraphVizFile = fopen(filepathBuffer, "w");
-
-			if (pGraphVizFile == nullptr)
+			if (renderStageIt->second.PreviousRenderStages.size() == 0)
 			{
-				LOG_WARNING("[ResourceDevice]: Failed to load file \"%s\"", filepathBuffer);
-				return false;
+				m_BeginRenderStages.insert(&renderStageIt->second);
+				continue;
 			}
 
-			fputs("digraph G {\n", pGraphVizFile);
-			fputs("\trankdir = LR;\n", pGraphVizFile);
-			fputs("\tsplines=polyline\n", pGraphVizFile);
-
-			bool declareExternalInputs = true;
-			bool linkExternalInputs = false;
-
-			WriteGraphVizDeclarations(pGraphVizFile, declareExternalInputs, internalRenderStages, internalInputAttachments, internalTemporalInputAttachments, internalExternalInputAttachments, internalOutputAttachments);
-			WriteGraphVizDefinitions(pGraphVizFile, declareExternalInputs, linkExternalInputs, internalRenderStages, internalInputAttachments, internalTemporalInputAttachments, internalExternalInputAttachments, internalOutputAttachments);
-
-			fputs("}", pGraphVizFile);
-
-			fclose(pGraphVizFile);
-
-			char outputCommand[1024];
-			strcpy(outputCommand, "D:\\\\Graphviz\\\\bin\\\\dot \"");
-			strcat(outputCommand, desc.pName);
-			strcat(outputCommand, ".dot\" -O\"");
-			strcat(outputCommand, desc.pName);
-			strcat(outputCommand, ".pdf\" -T");
-			strcat(outputCommand, "pdf");
-
-			system(outputCommand);
+			if (renderStageIt->second.NextRenderStages.size() == 0)
+			{
+				m_EndRenderStages.insert(&renderStageIt->second);
+				continue;
+			}
 		}
-		
-		return false;
+
+		return true;
 	}
 
 	bool RenderGraph::IsInputTemporal(const RenderStage& renderStage, const RenderStageInputAttachment* pInputAttachment)
@@ -233,14 +259,45 @@ namespace LambdaEngine
 		return connected;
 	}
 
-	void RenderGraph::WriteGraphVizDeclarations(
-		FILE* pFile,
-		bool declareExternalInputs,
-		const std::unordered_map<const char*, InternalRenderStage>& internalRenderStages,
-		const std::unordered_map<const char*, InternalRenderStageInputAttachment>& internalInputAttachments,
-		const std::unordered_map<const char*, InternalRenderStageInputAttachment>& temporalInternalInputAttachments,
-		const std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>& internalExternalInputAttachments,
-		const std::unordered_map<const char*, InternalRenderStageOutputAttachment>& internalOutputAttachments)
+	bool RenderGraph::WriteGraphViz(bool declareExternalInputs, bool linkExternalInputs)
+	{
+		char filepathBuffer[1024];
+		strcpy(filepathBuffer, m_pName);
+		strcat(filepathBuffer, ".dot");
+
+		FILE* pGraphVizFile = fopen(filepathBuffer, "w");
+
+		if (pGraphVizFile == nullptr)
+		{
+			LOG_WARNING("[ResourceDevice]: Failed to load file \"%s\"", filepathBuffer);
+			return false;
+		}
+
+		fputs("digraph G {\n", pGraphVizFile);
+		fputs("\trankdir = LR;\n", pGraphVizFile);
+		fputs("\tsplines=polyline\n", pGraphVizFile);
+
+		WriteGraphVizDeclarations(pGraphVizFile, declareExternalInputs);
+		WriteGraphVizDefinitions(pGraphVizFile, declareExternalInputs, linkExternalInputs);
+
+		fputs("}", pGraphVizFile);
+
+		fclose(pGraphVizFile);
+
+		char outputCommand[1024];
+		strcpy(outputCommand, "D:\\\\Graphviz\\\\bin\\\\dot \"");
+		strcat(outputCommand, m_pName);
+		strcat(outputCommand, ".dot\" -O\"");
+		strcat(outputCommand, m_pName);
+		strcat(outputCommand, ".pdf\" -T");
+		strcat(outputCommand, "pdf");
+
+		system(outputCommand);
+
+		return true;
+	}
+
+	void RenderGraph::WriteGraphVizDeclarations(FILE* pFile, bool declareExternalInputs)
 	{
 		char fileOutputBuffer[256];
 		char renderStageBuffer[32];
@@ -262,7 +319,7 @@ namespace LambdaEngine
 		fputs("\t\tcolor = lightgrey;\n", pFile);
 		fputs("\t\tlabel = \"Temporal Inputs\";\n", pFile);
 
-		for (auto& attachmentPair : temporalInternalInputAttachments)
+		for (auto& attachmentPair : m_ParsedTemporalInputAttachments)
 		{
 			const InternalRenderStageInputAttachment& renderStageTemporalInputAttachment = attachmentPair.second;
 
@@ -287,7 +344,7 @@ namespace LambdaEngine
 			fputs("\t\tcolor = lightgrey;\n", pFile);
 			fputs("\t\tlabel = \"External Inputs\";\n", pFile);
 
-			for (auto& attachmentPair : internalExternalInputAttachments)
+			for (auto& attachmentPair : m_ParsedExternalInputAttachments)
 			{
 				const InternalRenderStageExternalInputAttachment& renderStageExternalInputAttachment = attachmentPair.second;
 
@@ -310,7 +367,7 @@ namespace LambdaEngine
 		fputs("\t\tlabel = \"Main Pipeline\";\n", pFile);
 
 		//Render Stages
-		for (auto& renderStagePair : internalRenderStages)
+		for (auto& renderStagePair : m_ParsedRenderStages)
 		{
 			const InternalRenderStage& renderStage = renderStagePair.second;
 
@@ -325,7 +382,7 @@ namespace LambdaEngine
 		}
 
 		//Input Attachments
-		for (auto& attachmentPair : internalInputAttachments)
+		for (auto& attachmentPair : m_ParsedInputAttachments)
 		{
 			const InternalRenderStageInputAttachment& renderStageInputAttachment = attachmentPair.second;
 
@@ -340,7 +397,7 @@ namespace LambdaEngine
 		}
 
 		//Output Attachments
-		for (auto& attachmentPair : internalOutputAttachments)
+		for (auto& attachmentPair : m_ParsedOutputAttachments)
 		{
 			const InternalRenderStageOutputAttachment& renderStageOutputAttachment = attachmentPair.second;
 
@@ -357,15 +414,7 @@ namespace LambdaEngine
 		fputs("\t}\n", pFile);
 	}
 
-	void RenderGraph::WriteGraphVizDefinitions(
-		FILE* pFile,
-		bool externalInputsDeclared,
-		bool linkExternalInputs,
-		const std::unordered_map<const char*, InternalRenderStage>& internalRenderStages,
-		const std::unordered_map<const char*, InternalRenderStageInputAttachment>& internalInputAttachments,
-		const std::unordered_map<const char*, InternalRenderStageInputAttachment>& temporalInternalInputAttachments,
-		const std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>& internalExternalInputAttachments,
-		const std::unordered_map<const char*, InternalRenderStageOutputAttachment>& internalOutputAttachments)
+	void RenderGraph::WriteGraphVizDefinitions(FILE* pFile, bool externalInputsDeclared, bool linkExternalInputs)
 	{
 		char fileOutputBuffer[256];
 		char renderStageBuffer[32];
@@ -381,7 +430,7 @@ namespace LambdaEngine
 
 		uint32 invisibleNodeCounter = 0;
 
-		for (auto& renderStagePair : internalRenderStages)
+		for (auto& renderStagePair : m_ParsedRenderStages)
 		{
 			const InternalRenderStage& renderStage = renderStagePair.second;
 
@@ -461,7 +510,7 @@ namespace LambdaEngine
 		{
 			strcpy(fileOutputBuffer, "\t");
 
-			for (auto attachmentPairIt = internalExternalInputAttachments.begin(); attachmentPairIt != internalExternalInputAttachments.end();)
+			for (auto attachmentPairIt = m_ParsedExternalInputAttachments.begin(); attachmentPairIt != m_ParsedExternalInputAttachments.end();)
 			{
 				const InternalRenderStageExternalInputAttachment& renderStageExternalInputAttachment = attachmentPairIt->second;
 
@@ -471,7 +520,7 @@ namespace LambdaEngine
 
 				attachmentPairIt++;
 
-				if (attachmentPairIt != internalExternalInputAttachments.end())
+				if (attachmentPairIt != m_ParsedExternalInputAttachments.end())
 					strcat(fileOutputBuffer, " -> ");
 			}
 
@@ -480,7 +529,7 @@ namespace LambdaEngine
 		}
 
 		//Output Attachments
-		for (auto& attachmentPair : internalOutputAttachments)
+		for (auto& attachmentPair : m_ParsedOutputAttachments)
 		{
 			const InternalRenderStageOutputAttachment& renderStageOutputAttachment = attachmentPair.second;
 

@@ -5,6 +5,7 @@
 #include "Rendering/Core/API/IPipelineState.h"
 
 #include <unordered_map>
+#include <set>
 
 namespace LambdaEngine
 {
@@ -91,6 +92,8 @@ namespace LambdaEngine
 			std::vector<InternalRenderStageInputAttachment*>			TemporalInputAttachments;
 			std::vector<InternalRenderStageExternalInputAttachment*>	ExternalInputAttachments;
 			std::vector<InternalRenderStageOutputAttachment*>			OutputAttachments;
+			std::set<InternalRenderStage*>								PreviousRenderStages;
+			std::set<InternalRenderStage*>								NextRenderStages;
 			uint32														GlobalIndex = 0;
 		};
 
@@ -127,27 +130,28 @@ namespace LambdaEngine
 		bool Init(const RenderGraphDesc& desc);
 
 	private:
+		bool ParseInitialStages(const RenderGraphDesc& desc);
+		bool ConnectOutputsToInputs();
+		bool FindRootAndLeafNodes();
+
 		bool IsInputTemporal(const RenderStage& renderStage, const RenderStageInputAttachment* pInputAttachment);
 		bool CompatibleAttachmentNames(const RenderStageInputAttachment* pInputAttachment, const RenderStageOutputAttachment* pOutputAttachment);
 		bool CompatibleAttachmentTypes(const RenderStageInputAttachment* pInputAttachment, const RenderStageOutputAttachment* pOutputAttachment);
 
-		void WriteGraphVizDeclarations(
-			FILE* pFile,
-			bool declareExternalInputs,
-			const std::unordered_map<const char*, InternalRenderStage>&	internalRenderStages,
-			const std::unordered_map<const char*, InternalRenderStageInputAttachment>& internalInputAttachments,
-			const std::unordered_map<const char*, InternalRenderStageInputAttachment>& temporalInternalInputAttachments,
-			const std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>& internalExternalInputAttachments,
-			const std::unordered_map<const char*, InternalRenderStageOutputAttachment>& internalOutputAttachments);
+		bool WriteGraphViz(bool declareExternalInputs, bool linkExternalInputs);
+		void WriteGraphVizDeclarations(FILE* pFile, bool declareExternalInputs);
+		void WriteGraphVizDefinitions(FILE* pFile, bool externalInputsDeclared, bool linkExternalInputs);
 
-		void WriteGraphVizDefinitions(
-			FILE* pFile,
-			bool externalInputsDeclared,
-			bool linkExternalInputs,
-			const std::unordered_map<const char*, InternalRenderStage>& internalRenderStages,
-			const std::unordered_map<const char*, InternalRenderStageInputAttachment>& internalInputAttachments,
-			const std::unordered_map<const char*, InternalRenderStageInputAttachment>& temporalInternalInputAttachments,
-			const std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>& internalExternalInputAttachments,
-			const std::unordered_map<const char*, InternalRenderStageOutputAttachment>& internalOutputAttachments);
+	private:
+		const char* m_pName;
+
+		std::unordered_map<const char*, InternalRenderStage>						m_ParsedRenderStages;
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>			m_ParsedInputAttachments;
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>			m_ParsedTemporalInputAttachments;
+		std::unordered_map<const char*, InternalRenderStageExternalInputAttachment> m_ParsedExternalInputAttachments;
+		std::unordered_map<const char*, InternalRenderStageOutputAttachment>		m_ParsedOutputAttachments;
+
+		std::set<InternalRenderStage*>												m_BeginRenderStages;
+		std::set<InternalRenderStage*>												m_EndRenderStages;
 	};
 }
