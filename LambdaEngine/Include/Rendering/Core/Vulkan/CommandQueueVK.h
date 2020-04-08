@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -10,9 +10,9 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
-	class CommandQueueVK : public DeviceChildBase<GraphicsDeviceVK, ICommandQueue>
+	class CommandQueueVK : public TDeviceChildBase<GraphicsDeviceVK, ICommandQueue>
 	{
-		using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, ICommandQueue>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, ICommandQueue>;
 
 	public:
 		CommandQueueVK(const GraphicsDeviceVK* pDevice);

@@ -1,9 +1,9 @@
 #pragma once
-
 #include "Defines.h"
 #include "Types.h"
-#include <string>
-#include <set>
+
+#include "Containers/String.h"
+#include "Containers/TSet.h"
 
 #include "INetworkDiscoverySearcherHandler.h"
 #include "Network/API/UDP/IClientUDPHandler.h"

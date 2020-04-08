@@ -1,8 +1,8 @@
 #pragma once
-#include <vector>
+#include "Containers/TArray.h"
 
 #include "Rendering/Core/API/ISwapChain.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -11,9 +11,9 @@ namespace LambdaEngine
     class TextureVK;
     class GraphicsDeviceVK;
 
-    class SwapChainVK : public DeviceChildBase<GraphicsDeviceVK, ISwapChain>
+    class SwapChainVK : public TDeviceChildBase<GraphicsDeviceVK, ISwapChain>
     {
-        using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, ISwapChain>;
+        using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, ISwapChain>;
         
     public:
         SwapChainVK(const GraphicsDeviceVK* pDevice);

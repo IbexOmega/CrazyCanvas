@@ -36,7 +36,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void ClientUDP::OnTransmitterStarted()
+	bool ClientUDP::OnThreadsStarted()
 	{
 		m_pSocket = PlatformNetworkUtils::CreateSocketUDP();
 		if (!m_pSocket)
@@ -45,22 +45,25 @@ namespace LambdaEngine
 			{
 				m_pClientHandler->OnClientErrorUDP(this);
 			}
-
-			TerminateThreads();
+			return false;
 		}
 
 		if (GetAddress() == ADDRESS_BROADCAST)
 		{
-			m_pSocket->EnableBroadcast();
+			return m_pSocket->EnableBroadcast();
 		}
-
-		NetworkPacket packet(PACKET_TYPE_UNDEFINED, false);
-		SendPacketImmediately(&packet);
+		return true;
 	}
 
-	void ClientUDP::OnReceiverStarted()
+	bool ClientUDP::OnThreadsStartedPost()
 	{
-
+		NetworkPacket packet(PACKET_TYPE_UNDEFINED, false);
+		if (!SendPacketImmediately(&packet))
+		{
+			LOG_ERROR("[ClientUDP]: Failed to send init packet!");
+			return false;
+		}
+		return true;
 	}
 
 	void ClientUDP::UpdateReceiver(NetworkPacket* packet)

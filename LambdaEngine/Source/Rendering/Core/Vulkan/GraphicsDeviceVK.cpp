@@ -20,7 +20,8 @@
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
 #include "Rendering/Core/Vulkan/FrameBufferVK.h"
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
-
+#include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
+#include "Rendering/Core/Vulkan/DescriptorHeapVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
@@ -136,10 +137,38 @@ namespace LambdaEngine
 		delete this;
 	}
 
+	IPipelineLayout* GraphicsDeviceVK::CreatePipelineLayout(const PipelineLayoutDesc& desc) const
+	{
+		PipelineLayoutVK* pPipelineLayout = DBG_NEW PipelineLayoutVK(this);
+		if (!pPipelineLayout->Init(desc))
+		{
+			pPipelineLayout->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pPipelineLayout;
+		}
+	}
+
+	IDescriptorHeap* GraphicsDeviceVK::CreateDescriptorHeap(const DescriptorHeapDesc& desc) const
+	{
+		DescriptorHeapVK* pDescriptorHeap = DBG_NEW DescriptorHeapVK(this);
+		if (pDescriptorHeap->Init(desc))
+		{
+			pDescriptorHeap->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pDescriptorHeap;
+		}
+	}
+
 	IFrameBuffer* GraphicsDeviceVK::CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc) const
 	{
 		FrameBufferVK* pFrameBuffer = DBG_NEW FrameBufferVK(this);
-		if (pFrameBuffer->Init(pRenderPass, desc))
+		if (!pFrameBuffer->Init(pRenderPass, desc))
 		{
 			pFrameBuffer->Release();
 			return nullptr;
@@ -153,7 +182,7 @@ namespace LambdaEngine
 	IRenderPass* GraphicsDeviceVK::CreateRenderPass(const RenderPassDesc& desc) const
 	{
 		RenderPassVK* pRenderPass = DBG_NEW RenderPassVK(this);
-		if (pRenderPass->Init(desc))
+		if (!pRenderPass->Init(desc))
 		{
 			pRenderPass->Release();
 			return nullptr;
@@ -164,7 +193,7 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineDesc& desc) const
+	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) const
 	{
 		GraphicsPipelineStateVK* pPipelineState = DBG_NEW GraphicsPipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
@@ -178,7 +207,7 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineDesc& desc) const
+	IPipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineStateDesc& desc) const
 	{
 		ComputePipelineStateVK* pPipelineState = DBG_NEW ComputePipelineStateVK(this);
 		if (!pPipelineState->Init(desc))
@@ -192,7 +221,7 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineDesc& desc) const
+	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineStateDesc& desc) const
 	{
 		RayTracingPipelineStateVK* pPipelineState = DBG_NEW RayTracingPipelineStateVK(this);
 		if (!pPipelineState->Init(desc))

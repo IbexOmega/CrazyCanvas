@@ -29,7 +29,7 @@ namespace LambdaEngine
 		SAFERELEASE(m_pSBT);
 	}
 
-	bool RayTracingPipelineStateVK::Init(const RayTracingPipelineDesc& desc)
+	bool RayTracingPipelineStateVK::Init(const RayTracingPipelineStateDesc& desc)
 	{
 		// Define shader stage create infos
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStagesInfos;
@@ -100,7 +100,7 @@ namespace LambdaEngine
 		std::vector<VkSpecializationInfo>& shaderStagesSpecializationInfos, 
 		std::vector<std::vector<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps, 
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR>& shaderGroups,
-		const RayTracingPipelineDesc& desc)
+		const RayTracingPipelineStateDesc& desc)
 	{
 		//Raygen Shader
 		{

@@ -2,7 +2,7 @@
 #include "Defines.h"
 #include "Types.h"
 
-#include <string>
+#include "Containers/String.h"
 
 #define ADDRESS_LOOPBACK	"ADDRESS_LOOPBACK"
 #define ADDRESS_ANY			"ADDRESS_ANY"

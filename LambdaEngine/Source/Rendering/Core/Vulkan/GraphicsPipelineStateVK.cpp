@@ -80,7 +80,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool GraphicsPipelineStateVK::Init(const GraphicsPipelineDesc& desc)
+	bool GraphicsPipelineStateVK::Init(const GraphicsPipelineStateDesc& desc)
 	{
 		 // Define shader stage create infos
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStagesInfos;
@@ -172,7 +172,7 @@ namespace LambdaEngine
 		std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesInfos, 
 		std::vector<VkSpecializationInfo>& shaderStagesSpecializationInfos, 
 		std::vector<std::vector<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps, 
-		const GraphicsPipelineDesc& desc)
+		const GraphicsPipelineStateDesc& desc)
 	{
 		if (desc.MeshShader.pSource != nullptr)
 		{

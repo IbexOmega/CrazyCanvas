@@ -12,7 +12,9 @@
 #include "Rendering/Core/API/ICommandList.h"
 #include "Rendering/Core/API/ITextureView.h"
 #include "Rendering/Core/API/IRenderPass.h"
+#include "Rendering/Core/API/IPipelineLayout.h"
 #include "Rendering/Core/API/IFrameBuffer.h"
+#include "Rendering/Core/API/IDescriptorHeap.h"
 
 #include "Application/API/PlatformApplication.h"
 
@@ -118,7 +120,7 @@ namespace LambdaEngine
 		subpassDependencyDesc.SrcStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 		subpassDependencyDesc.SrcAccessMask = 0;
 
-		RenderPassDesc renderPassDesc = {};
+		RenderPassDesc renderPassDesc = { };
 		renderPassDesc.pName					= "Main RenderPass";
 		renderPassDesc.AttachmentCount			= 1;
 		renderPassDesc.pAttachments				= &attachmentDesc;
@@ -128,6 +130,44 @@ namespace LambdaEngine
 		renderPassDesc.pSubpassDependencies		= &subpassDependencyDesc;
 
 		IRenderPass* pRenderPass = s_pGraphicsDevice->CreateRenderPass(renderPassDesc);
+
+		DescriptorHeapDesc descriptorHeapDesc = { };
+		descriptorHeapDesc.pName = "DescriptorHeap";
+		descriptorHeapDesc.DescriptorCount.DescriptorSetCount						= 256;
+		descriptorHeapDesc.DescriptorCount.AccelerationStructureDescriptorCount		= 256;
+		descriptorHeapDesc.DescriptorCount.ConstantBufferDescriptorCount			= 256;
+		descriptorHeapDesc.DescriptorCount.SamplerDescriptorCount					= 256;
+		descriptorHeapDesc.DescriptorCount.TextureCombinedSamplerDescriptorCount	= 256;
+		descriptorHeapDesc.DescriptorCount.TextureDescriptorCount					= 256;
+		descriptorHeapDesc.DescriptorCount.UnorderedAccessBufferDescriptorCount		= 256;
+		descriptorHeapDesc.DescriptorCount.UnorderedAccessTextureDescriptorCount	= 256;
+
+		IDescriptorHeap* pDescriptorHeap = s_pGraphicsDevice->CreateDescriptorHeap(descriptorHeapDesc);
+
+		DescriptorBindingDesc binding = { };
+		binding.DescriptorType		= EDescriptorType::DESCRIPTOR_CONSTANT_BUFFER;
+		binding.Binding				= 0;
+		binding.DescriptorCount		= 1;
+		binding.ppImmutableSamplers = nullptr;
+		binding.ShaderStageMask		= FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER;
+
+		DescriptorSetLayoutDesc descriptorSetLayout = { };
+		descriptorSetLayout.DescriptorBindingCount	= 1;
+		descriptorSetLayout.pDescriptorBindings		= &binding;
+
+		ConstantRangeDesc constantRange = { };
+		constantRange.ShaderStageFlags	= FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER;
+		constantRange.OffsetInBytes		= 0;
+		constantRange.SizeInBytes		= 64;
+
+		PipelineLayoutDesc pipelineLayoutDesc = { };
+		pipelineLayoutDesc.pName					= "PipelineLayout";
+		pipelineLayoutDesc.pDescriptorSetLayouts	= &descriptorSetLayout;
+		pipelineLayoutDesc.DescriptorSetLayoutCount = 1;
+		pipelineLayoutDesc.pConstantRanges			= &constantRange;
+		pipelineLayoutDesc.ConstantRangeCount		= 1;
+
+		IPipelineLayout* pPipelineLayout = s_pGraphicsDevice->CreatePipelineLayout(pipelineLayoutDesc);
 
         const char* textureViewNames[] =
         {
@@ -173,7 +213,7 @@ namespace LambdaEngine
 			//FrameBuffer
 			frameBufferDesc.pName			= frameBufferNames[i];
 			frameBufferDesc.ppRenderTargets = &pTextureView;
-			//ppFrameBuffers[i] = s_pGraphicsDevice->CreateFrameBuffer(pRenderPass, frameBufferDesc);
+			ppFrameBuffers[i] = s_pGraphicsDevice->CreateFrameBuffer(pRenderPass, frameBufferDesc);
         }
         
         FenceDesc fenceDesc = { };
@@ -204,9 +244,13 @@ namespace LambdaEngine
 
         for (uint32 i = 0; i < 3; i++)
         {
+			SAFERELEASE(ppFrameBuffers[i]);
             SAFERELEASE(ppTextureViews[i]);
         }
         
+		SAFERELEASE(pDescriptorHeap);
+		SAFERELEASE(pRenderPass);
+		SAFERELEASE(pPipelineLayout);
         SAFERELEASE(pCommandList);
 		SAFERELEASE(pCommandAllocator);
 		SAFERELEASE(pFence);

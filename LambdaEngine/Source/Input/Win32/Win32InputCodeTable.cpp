@@ -9,7 +9,8 @@ namespace LambdaEngine
 
 	bool Win32InputCodeTable::Init()
 	{
-		ZERO_MEMORY(s_KeyCodeTable, EKey::KEY_COUNT * sizeof(int32));
+		ZERO_MEMORY(s_KeyCodeTable, sizeof(s_KeyCodeTable));
+
 		s_KeyCodeTable[VK_SPACE]			= KEY_SPACE;
 		//s_KeyCodeTable[0xDE]				= KEY_APOSTROPHE;
 		s_KeyCodeTable[VK_OEM_COMMA]		= KEY_COMMA;

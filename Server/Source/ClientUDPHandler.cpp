@@ -24,18 +24,20 @@ void ClientUDPHandler::OnClientPacketReceivedUDP(LambdaEngine::IClientUDP* clien
 		packet->ReadString(str);
 		LOG_MESSAGE(str.c_str());
 
-		NetworkPacket* reponse = DBG_NEW NetworkPacket(PACKET_TYPE_USER_DATA);
-		reponse->WriteString("Nej jag klar!");
-		client->SendPacket(reponse);
+		LambdaEngine::NetworkPacket* packetResponse = DBG_NEW LambdaEngine::NetworkPacket(LambdaEngine::PACKET_TYPE_USER_DATA);
+		packetResponse->WriteString("Server Response UDP");
+		client->SendPacket(packetResponse, true);
 	}
 }
 
 void ClientUDPHandler::OnClientErrorUDP(LambdaEngine::IClientUDP* client)
 {
-	LOG_MESSAGE("OnClientErrorUDP");
+	LOG_MESSAGE("OnClientErrorUDP()");
+	UNREFERENCED_VARIABLE(client);
 }
 
 void ClientUDPHandler::OnClientStoppedUDP(LambdaEngine::IClientUDP* client)
 {
-	LOG_MESSAGE("OnClientStoppedUDP");
+	LOG_MESSAGE("OnClientStoppedUDP()");
+	UNREFERENCED_VARIABLE(client);
 }

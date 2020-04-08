@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/Core/API/ISampler.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -8,9 +8,9 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
-	class SamplerVK : public DeviceChildBase<GraphicsDeviceVK, ISampler>
+	class SamplerVK : public TDeviceChildBase<GraphicsDeviceVK, ISampler>
 	{
-		using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, ISampler>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, ISampler>;
 
 	public:
 		SamplerVK(const GraphicsDeviceVK* pDevice);

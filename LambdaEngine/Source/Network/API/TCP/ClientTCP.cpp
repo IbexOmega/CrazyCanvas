@@ -70,7 +70,7 @@ namespace LambdaEngine
 
 	bool ClientTCP::IsConnected() const
 	{
-		return ThreadsAreRunning() && !ShouldTerminate();
+		return !ShouldTerminate() && ThreadsAreRunning();
 	}
 
 	bool ClientTCP::IsReadyToConnect() const
@@ -82,11 +82,9 @@ namespace LambdaEngine
 	*				PROTECTED				   *
 	********************************************/
 
-	/*
-	* Called by the Transmitter Thread when it starts
-	*/
-	void ClientTCP::OnTransmitterStarted()
+	bool ClientTCP::OnThreadsStarted()
 	{
+		std::scoped_lock<SpinLock> lock(m_LockStart);
 		if (!IsServerSide())
 		{
 			m_pSocket = CreateSocket(GetAddress(), GetPort());
@@ -96,25 +94,21 @@ namespace LambdaEngine
 				{
 					m_pClientHandler->OnClientFailedConnectingTCP(this);
 				}
-				
-				TerminateThreads();
-				return;
+				return false;
 			}
 		}
+		return m_pSocket->DisableNaglesAlgorithm();
+	}
 
-		m_pSocket->DisableNaglesAlgorithm();
+	bool ClientTCP::OnThreadsStartedPost()
+	{
 		ResetReceiveTimer();
 		ResetTransmitTimer();
 
-		m_pClientHandler->OnClientConnectedTCP(this);
-	}
+		if(m_pClientHandler)
+			m_pClientHandler->OnClientConnectedTCP(this);
 
-	/*
-	* Called by the Receiver Thread when it starts
-	*/
-	void ClientTCP::OnReceiverStarted()
-	{
-		
+		return true;
 	}
 
 	/*
@@ -193,7 +187,7 @@ namespace LambdaEngine
 
 	bool ClientTCP::Receive(char* buffer, int bytesToRead)
 	{
-		uint32 bytesReceivedTotal = 0;
+		int32 bytesReceivedTotal = 0;
 		int32 bytesReceived = 0;
 		while (bytesReceivedTotal != bytesToRead)
 		{
@@ -266,7 +260,7 @@ namespace LambdaEngine
 				m_NrOfPingTransmitted++;
 				s_PacketPing.Reset();
 				s_PacketPing.WriteUInt32(m_NrOfPingTransmitted);
-				SendPacket(&s_PacketPing);
+				SendPacket(&s_PacketPing, true);
 				ResetTransmitTimer();
 				LOG_MESSAGE("[ClientTCP]: Ping(T%d | R%d)", m_NrOfPingTransmitted, m_NrOfPingReceived);
 			}

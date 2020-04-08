@@ -5,7 +5,8 @@
 
 #include "Resources/Mesh.h"
 
-#include <vector>
+#include "Containers/TArray.h"
+
 #include <map>
 
 namespace LambdaEngine

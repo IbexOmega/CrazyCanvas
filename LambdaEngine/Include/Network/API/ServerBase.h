@@ -1,10 +1,11 @@
 #pragma once
-
 #include "Defines.h"
 #include "Types.h"
-#include <string>
-#include <vector>
+
 #include <atomic>
+
+#include "Containers/String.h"
+#include "Containers/TArray.h"
 
 #include "Threading/SpinLock.h"
 
@@ -60,6 +61,7 @@ namespace LambdaEngine
 		void TerminateThread();
 		bool ShouldTerminate() const;
 		bool ThreadHaveTerminated() const;
+		void SetAddressAndPort(const std::string& address, uint16 port);
 
 	private:
 		void ThreadServer();

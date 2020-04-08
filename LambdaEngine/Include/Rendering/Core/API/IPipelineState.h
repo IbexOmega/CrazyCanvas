@@ -3,7 +3,7 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
-#include <vector>
+#include "Containers/TArray.h"
 
 namespace LambdaEngine
 {
@@ -15,32 +15,32 @@ namespace LambdaEngine
 		RAY_TRACING     = 3
 	};
 
-	struct GraphicsPipelineDesc
+	struct GraphicsPipelineStateDesc
 	{
-		const char* pName						= "";
-		ShaderDesc MeshShader					= {};
-		ShaderDesc VertexShader					= {};
-		ShaderDesc GeometryShader				= {};
-		ShaderDesc HullShader					= {};
-		ShaderDesc DomainShader					= {};
-		ShaderDesc PixelShader					= {};
+		const char* pName			= "";
+		ShaderDesc	MeshShader		= { };
+		ShaderDesc	VertexShader	= { };
+		ShaderDesc	GeometryShader	= { };
+		ShaderDesc	HullShader		= { };
+		ShaderDesc	DomainShader	= { };
+		ShaderDesc	PixelShader		= { };
 	};
 
-	struct ComputePipelineDesc
+	struct ComputePipelineStateDesc
 	{
-		const char* pName						= "";
-		ShaderDesc Shader						= {};
+		const char* pName	= "";
+		ShaderDesc	Shader	= { };
 	};
 
-	struct RayTracingPipelineDesc
+	struct RayTracingPipelineStateDesc
 	{
-		const char* pName						= "";
-		uint32 MaxRecursionDepth				= 1;	
-		ShaderDesc RaygenShader					= {};
-		const ShaderDesc* pMissShaders			= nullptr;
-		uint32 MissShaderCount					= 0;
-		const ShaderDesc* pClosestHitShaders	= nullptr;
-		uint32 ClosestHitShaderCount			= 0;
+		const char*			pName					= "";
+		uint32				MaxRecursionDepth		= 1;	
+		ShaderDesc			RaygenShader			= {};
+		const ShaderDesc*	pMissShaders			= nullptr;
+		uint32				MissShaderCount			= 0;
+		const ShaderDesc*	pClosestHitShaders		= nullptr;
+		uint32				ClosestHitShaderCount	= 0;
 	};
 
 	class IPipelineState : public IDeviceChild

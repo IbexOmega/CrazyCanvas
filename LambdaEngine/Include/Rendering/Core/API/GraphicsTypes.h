@@ -1,10 +1,12 @@
 #pragma once
 #include "LambdaEngine.h"
 
-#include <vector>
+#include "Containers/TArray.h"
 
 namespace LambdaEngine
 {
+	class ISampler;
+
     enum class EMemoryType : uint8
     {
         NONE				= 0,
@@ -18,23 +20,6 @@ namespace LambdaEngine
         FORMAT_R8G8B8A8_UNORM	= 1,
         FORMAT_B8G8R8A8_UNORM	= 2,
     };
-
-	enum class EShaderType : uint32
-	{
-		NONE				= 0,
-		MESH_SHADER			= BIT(0),
-		VERTEX_SHADER		= BIT(1),
-		GEOMETRY_SHADER		= BIT(2),
-		HULL_SHADER			= BIT(3),
-		DOMAIN_SHADER		= BIT(4),
-		PIXEL_SHADER		= BIT(5),
-		COMPUTE_SHADER		= BIT(6),
-		RAYGEN_SHADER		= BIT(7),
-		INTERSECT_SHADER	= BIT(8),
-		ANY_HIT_SHADER		= BIT(9),
-		CLOSEST_HIT_SHADER	= BIT(10),
-		MISS_SHADER			= BIT(11),
-	};
 
 	enum class ECommandQueueType : uint8
 	{
@@ -97,7 +82,58 @@ namespace LambdaEngine
 		MIRRORED_CLAMP_TO_EDGE	= 5,
 	};
 
-	enum FTextureFlags : uint32
+	enum class ETextureState : uint32
+	{
+		TEXTURE_STATE_UNKNOWN								= 0,
+		TEXTURE_STATE_DONT_CARE								= 1,
+		TEXTURE_STATE_GENERAL								= 2,
+		TEXTURE_STATE_RENDER_TARGET							= 3,
+		TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT				= 4,
+		TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY				= 5,
+		TEXTURE_STATE_SHADER_READ_ONLY						= 6,
+		TEXTURE_STATE_COPY_SRC								= 7,
+		TEXTURE_STATE_COPY_DST								= 8,
+		TEXTURE_STATE_PREINITIALIZED						= 9,
+		TEXTURE_STATE_DEPTH_READ_ONLY_STENCIL_ATTACHMENT	= 10,
+		TEXTURE_STATE_DEPTH_ATTACHMENT_STENCIL_READ_ONLY	= 11,
+		TEXTURE_STATE_DEPTH_ATTACHMENT						= 12,
+		TEXTURE_STATE_DEPTH_READ_ONLY						= 13,
+		TEXTURE_STATE_STENCIL_ATTACHMENT					= 14,
+		TEXTURE_STATE_STENCIL_READ_ONLY						= 15,
+		TEXTURE_STATE_PRESENT								= 16,
+		TEXTURE_STATE_SHADING_RATE							= 17,
+	};
+
+	enum class EDescriptorType : uint32
+	{
+		DESCRIPTOR_UNKNOWN							= 0,
+		DESCRIPTOR_SHADER_RESOURCE					= 1,
+		DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER	= 3,
+		DESCRIPTOR_UNORDERED_ACCESS_TEXTURE			= 2,
+		DESCRIPTOR_CONSTANT_BUFFER					= 4,
+		DESCRIPTOR_UNORDERED_ACCESS_BUFFER			= 5,
+		DESCRIPTOR_ACCELERATION_STRUCTURE			= 6
+	};
+
+	enum FShaderStageFlags : uint16
+	{
+		SHADER_STAGE_FLAG_NONE					= 0,
+		SHADER_STAGE_FLAG_MESH_SHADER			= FLAG(0),
+		SHADER_STAGE_FLAG_TASK_SHADER			= FLAG(1),
+		SHADER_STAGE_FLAG_VERTEX_SHADER			= FLAG(2),
+		SHADER_STAGE_FLAG_GEOMETRY_SHADER		= FLAG(3),
+		SHADER_STAGE_FLAG_HULL_SHADER			= FLAG(4),
+		SHADER_STAGE_FLAG_DOMAIN_SHADER			= FLAG(5),
+		SHADER_STAGE_FLAG_PIXEL_SHADER			= FLAG(6),
+		SHADER_STAGE_FLAG_COMPUTE_SHADER		= FLAG(7),
+		SHADER_STAGE_FLAG_RAYGEN_SHADER			= FLAG(8),
+		SHADER_STAGE_FLAG_INTERSECT_SHADER		= FLAG(9),
+		SHADER_STAGE_FLAG_ANY_HIT_SHADER		= FLAG(10),
+		SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER	= FLAG(11),
+		SHADER_STAGE_FLAG_MISS_SHADER			= FLAG(12),
+	};
+
+	enum FTextureFlags : uint16
 	{
 		TEXTURE_FLAG_NONE				= 0,
 		TEXTURE_FLAG_RENDER_TARGET		= FLAG(1),
@@ -168,28 +204,6 @@ namespace LambdaEngine
 		ACCESS_FLAG_COMMAND_PREPROCESS_WRITE			= FLAG(28),
 	};
 
-	enum class ETextureState : uint32
-	{
-		TEXTURE_STATE_UNKNOWN								= 0,
-		TEXTURE_STATE_DONT_CARE								= 1,
-		TEXTURE_STATE_GENERAL								= 2,
-		TEXTURE_STATE_RENDER_TARGET						= 3,
-		TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT				= 4,
-		TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY				= 5,
-		TEXTURE_STATE_SHADER_READ_ONLY						= 6,
-		TEXTURE_STATE_COPY_SRC								= 7,
-		TEXTURE_STATE_COPY_DST								= 8,
-		TEXTURE_STATE_PREINITIALIZED						= 9,
-		TEXTURE_STATE_DEPTH_READ_ONLY_STENCIL_ATTACHMENT	= 10,
-		TEXTURE_STATE_DEPTH_ATTACHMENT_STENCIL_READ_ONLY	= 11,
-		TEXTURE_STATE_DEPTH_ATTACHMENT						= 12,
-		TEXTURE_STATE_DEPTH_READ_ONLY						= 13,
-		TEXTURE_STATE_STENCIL_ATTACHMENT					= 14,
-		TEXTURE_STATE_STENCIL_READ_ONLY						= 15,
-		TEXTURE_STATE_PRESENT								= 16,
-		TEXTURE_STATE_SHADING_RATE							= 17,
-	};
-
 	union ShaderConstant
 	{
 		byte	Data[4];
@@ -199,13 +213,25 @@ namespace LambdaEngine
 
 	struct ShaderDesc
 	{
-		const char* pSource		= nullptr;
-		uint32		SourceSize	= 0;
 		const char* pEntryPoint = "main";
-		EShaderType Type		= EShaderType::NONE;
+		const char* pSource		= nullptr;
+		uint32	SourceSize		= 0;
+		FShaderStageFlags Type	= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 		EShaderLang Lang		= EShaderLang::NONE;
 		
 		std::vector<ShaderConstant> Constants;
+	};
+
+	struct DescriptorCountDesc
+	{
+		uint32 DescriptorSetCount						= 0;
+		uint32 SamplerDescriptorCount					= 0;
+		uint32 TextureDescriptorCount					= 0;
+		uint32 TextureCombinedSamplerDescriptorCount	= 0;
+		uint32 ConstantBufferDescriptorCount			= 0;
+		uint32 UnorderedAccessBufferDescriptorCount		= 0;
+		uint32 UnorderedAccessTextureDescriptorCount	= 0;
+		uint32 AccelerationStructureDescriptorCount		= 0;
 	};
 
 	struct Viewport

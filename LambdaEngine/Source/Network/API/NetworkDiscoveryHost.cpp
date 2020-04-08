@@ -1,4 +1,4 @@
-#include "NetworkDiscoveryHost.h"
+#include "Network/API/Discovery/NetworkDiscoveryHost.h"
 
 #include "Network/API/UDP/IClientUDP.h"
 #include "Network/API/ISocket.h"
@@ -47,11 +47,11 @@ namespace LambdaEngine
 
 	void NetworkDiscoveryHost::OnClientErrorUDP(IClientUDP* client)
 	{
-
+		UNREFERENCED_VARIABLE(client);
 	}
 
 	void NetworkDiscoveryHost::OnClientStoppedUDP(IClientUDP* client)
 	{
-
+		UNREFERENCED_VARIABLE(client);
 	}
 }

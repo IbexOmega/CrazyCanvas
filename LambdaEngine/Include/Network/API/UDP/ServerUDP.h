@@ -1,9 +1,9 @@
 #pragma once
-
 #include "../ClientBase.h"
 #include "../IClient.h"
 #include "IServerUDPHandler.h"
-#include <unordered_map>
+
+#include "Containers/THashTable.h"
 
 namespace LambdaEngine
 {
@@ -40,8 +40,8 @@ namespace LambdaEngine
 		virtual void Release() override;
 
 	protected:
-		virtual void OnTransmitterStarted() override;
-		virtual void OnReceiverStarted() override;
+		virtual bool OnThreadsStarted() override;
+		virtual bool OnThreadsStartedPost() override;
 		virtual void UpdateReceiver(NetworkPacket* packet) override;
 		virtual void OnThreadsTerminated() override;
 		virtual void OnReleaseRequested() override;

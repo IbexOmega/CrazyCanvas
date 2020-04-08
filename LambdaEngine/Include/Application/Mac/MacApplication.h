@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef LAMBDA_PLATFORM_MACOS
-#include <vector>
+#include "Containers/TArray.h"
 
 #include "Application/API/Application.h"
 

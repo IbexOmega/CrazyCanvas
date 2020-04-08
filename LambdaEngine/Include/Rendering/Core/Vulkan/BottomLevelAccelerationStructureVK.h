@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/Core/API/IBottomLevelAccelerationStructure.h"
-#include "Rendering/Core/API/DeviceChildBase.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -9,9 +9,9 @@ namespace LambdaEngine
 	class GraphicsDeviceVK;
 	class BufferVK;
 
-	class BottomLevelAccelerationStructureVK : public DeviceChildBase<GraphicsDeviceVK, IBottomLevelAccelerationStructure>
+	class BottomLevelAccelerationStructureVK : public TDeviceChildBase<GraphicsDeviceVK, IBottomLevelAccelerationStructure>
 	{
-		using TDeviceChild = DeviceChildBase<GraphicsDeviceVK, IBottomLevelAccelerationStructure>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IBottomLevelAccelerationStructure>;
 
 	public:
 		BottomLevelAccelerationStructureVK(const GraphicsDeviceVK* pDevice);
