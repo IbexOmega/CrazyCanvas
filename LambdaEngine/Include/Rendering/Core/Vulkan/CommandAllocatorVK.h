@@ -16,12 +16,15 @@ namespace LambdaEngine
 		CommandAllocatorVK(const GraphicsDeviceVK* pDevice);
 		~CommandAllocatorVK();
 
-		bool Init(ECommandQueueType queueType);
+		bool Init(const char* pName, ECommandQueueType queueType);
 
 		VkCommandBuffer AllocateCommandBuffer(VkCommandBufferLevel level);
 
-		virtual bool Reset()					override final;
+		// IDeviceChild Interface
 		virtual void SetName(const char* pName)	override final;
+		
+		// ICommandAllocator Interface
+		virtual bool Reset()					override final;
 
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{

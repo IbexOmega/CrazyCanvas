@@ -23,10 +23,10 @@ namespace LambdaEngine
             return m_Pipeline;
         }
         
-        //IDeviceChild interface
+        // IDeviceChild interface
 		virtual void SetName(const char* pName) override final;
 
-        //IPipelineState interface
+        // IPipelineState interface
 		FORCEINLINE virtual EPipelineStateType GetType() const override final
         {
             return EPipelineStateType::COMPUTE;

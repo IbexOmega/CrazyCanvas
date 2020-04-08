@@ -24,10 +24,10 @@ namespace LambdaEngine
             return m_Image;
         }
 
-        //IDeviceChild interface
+        // IDeviceChild interface
         virtual void SetName(const char* pName) override final;
 
-        //ITexture interface
+        //´ITexture interface
         FORCEINLINE virtual TextureDesc GetDesc() const override final
         {
             return m_Desc;

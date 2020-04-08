@@ -84,15 +84,15 @@ namespace LambdaEngine
         VkResult result = vkCreateBuffer(m_pDevice->Device, &info, nullptr, &m_Buffer);
         if (result != VK_SUCCESS)
         {
-            LOG_VULKAN_ERROR("[BufferVK]: Failed to create buffer", result);
+            LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to create buffer");
             return false;
         }
         else
         {
             D_LOG_MESSAGE("[BufferVK]: Created Buffer");
 
-            this->SetName(desc.pName);
             m_Desc = desc;
+            SetName(desc.pName);
         }
 
         //TODO: Allocate with DeviceAllocator
@@ -124,18 +124,25 @@ namespace LambdaEngine
         result = vkAllocateMemory(m_pDevice->Device, &allocateInfo, nullptr, &m_Memory);
         if (result != VK_SUCCESS)
         {
-            LOG_VULKAN_ERROR("[BufferVK]: Failed to allocate memory", result);
+            LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to allocate memory");
             return false;
         }
         else
         {
-            D_LOG_MESSAGE("[BufferVK]: Allocated %d bytes to buffer \"%s\"", memoryRequirements.size, desc.pName);
+            if (desc.pName)
+            {
+                D_LOG_MESSAGE("[BufferVK]: Allocated %d bytes to buffer \"%s\"", memoryRequirements.size, desc.pName);
+            }
+            else
+            {
+                D_LOG_MESSAGE("[BufferVK]: Allocated %d bytes to buffer", memoryRequirements.size);
+            }
         }
 
         result = vkBindBufferMemory(m_pDevice->Device, m_Buffer, m_Memory, 0);
         if (result != VK_SUCCESS)
         {
-            LOG_VULKAN_ERROR("[BufferVK]: Failed to bind memory.", result);
+            LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to bind memory.");
             return false;
         }
 

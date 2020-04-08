@@ -46,7 +46,7 @@ namespace LambdaEngine
 		VkResult result = vkCreateSampler(m_pDevice->Device, &samplerCreateInfo, nullptr, &m_Sampler);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR("[SamplerVK]: vkCreateSampler failed", result);
+			LOG_VULKAN_ERROR(result, "[SamplerVK]: vkCreateSampler failed");
 			return false;
 		}
 

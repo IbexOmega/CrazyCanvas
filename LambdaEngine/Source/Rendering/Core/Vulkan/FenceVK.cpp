@@ -37,7 +37,7 @@ namespace LambdaEngine
 		VkResult result = vkCreateSemaphore(m_pDevice->Device, &info, nullptr, &m_Semaphore);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR("[FenceVK]: Failed to create semaphore", result);
+			LOG_VULKAN_ERROR(result, "[FenceVK]: Failed to create semaphore");
 			return false;
 		}
         
@@ -71,7 +71,7 @@ namespace LambdaEngine
 		VkResult result = m_pDevice->vkSignalSemaphore(m_pDevice->Device, &signalInfo);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR("[FenceVK]: Failed to signal semaphore", result);
+			LOG_VULKAN_ERROR(result, "[FenceVK]: Failed to signal semaphore");
 		}
 }
 
@@ -81,7 +81,7 @@ namespace LambdaEngine
 		VkResult result = m_pDevice->vkGetSemaphoreCounterValue(m_pDevice->Device, m_Semaphore, &value);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR("[FenceVK]: Failed to retrive fence-value", result);
+			LOG_VULKAN_ERROR(result, "[FenceVK]: Failed to retrive fence-value");
 			return 0xffffffffffffffff;
 		}
 		else

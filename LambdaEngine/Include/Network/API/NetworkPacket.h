@@ -1,9 +1,9 @@
 #pragma once
-
 #include "Defines.h"
 #include "Types.h"
-#include <string>
 #include <atomic>
+
+#include "Containers/String.h"
 
 #define MAXIMUM_DATAGRAM_SIZE 65536
 #define MAXIMUM_PACKET_SIZE 1024

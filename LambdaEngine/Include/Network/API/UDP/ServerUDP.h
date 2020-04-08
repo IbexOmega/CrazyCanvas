@@ -1,9 +1,9 @@
 #pragma once
-
 #include "../ClientBase.h"
 #include "../IClient.h"
 #include "IServerUDPHandler.h"
-#include <unordered_map>
+
+#include "Containers/THashTable.h"
 
 namespace LambdaEngine
 {

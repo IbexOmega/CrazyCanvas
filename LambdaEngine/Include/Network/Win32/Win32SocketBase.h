@@ -1,14 +1,13 @@
 #pragma once
-
 #include "../API/ISocket.h"
 #include "Types.h"
 #include "Log/Log.h"
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
+#include "Containers/String.h"
+
 #include <winsock2.h>
 #include <Ws2tcpip.h>
-
-#include <string>
 
 namespace LambdaEngine
 {

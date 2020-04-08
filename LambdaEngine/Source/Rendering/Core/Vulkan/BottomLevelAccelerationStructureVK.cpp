@@ -27,13 +27,12 @@ namespace LambdaEngine
 
 	bool BottomLevelAccelerationStructureVK::Init(const BottomLevelAccelerationStructureDesc& desc)
 	{
-		m_Desc = desc;
-
 		if (!InitAccelerationStructure(desc))
 		{
 			return false;
 		}
 
+		m_Desc = desc;
 		SetName(desc.pName);
 
 		D_LOG_MESSAGE("[BottomLevelAccelerationStructureVK]: BottomLevelAccelerationStructure \"%s\" initialized!", m_Desc.pName);

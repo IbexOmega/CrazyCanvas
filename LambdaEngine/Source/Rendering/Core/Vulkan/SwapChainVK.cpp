@@ -1,7 +1,8 @@
 #include "Log/Log.h"
 
-#include <string>
 #include <algorithm>
+
+#include "Containers/String.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/PlatformApplication.h"
@@ -137,14 +138,14 @@ namespace LambdaEngine
             VkResult result = vkCreateSemaphore(m_pDevice->Device, &semaphoreInfo, nullptr, &m_ImageSemaphores[i]);
             if (result != VK_SUCCESS)
             {
-                LOG_VULKAN_ERROR("[SwapChainVK]: Failed to create Semaphore", result);
+                LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to create Semaphore");
                 return false;
             }
 
             result = vkCreateSemaphore(m_pDevice->Device, &semaphoreInfo, nullptr, &m_RenderSemaphores[i]);
             if (result != VK_SUCCESS)
             {
-                LOG_VULKAN_ERROR("[SwapChainVK]: Failed to create Semaphore", result);
+                LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to create Semaphore");
                 return false;
             }
 
@@ -162,7 +163,7 @@ namespace LambdaEngine
         VkResult result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, nullptr);
         if (result != VK_SUCCESS)
         {
-            LOG_VULKAN_ERROR("[SwapChainVK]: Failed to get surface capabilities", result);
+            LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface capabilities");
             return false;
         }
 
@@ -201,7 +202,7 @@ namespace LambdaEngine
         result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_pDevice->PhysicalDevice, m_Surface, &presentModeCount, nullptr);
         if (result != VK_SUCCESS)
         {
-            LOG_VULKAN_ERROR("[SwapChainVK]: Failed to get surface presentation modes", result);
+            LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface presentation modes");
             return false;
         }
 
@@ -241,7 +242,7 @@ namespace LambdaEngine
         result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_pDevice->PhysicalDevice, m_Surface, &capabilities);
         if (result != VK_SUCCESS)
         {
-            LOG_VULKAN_ERROR("[SwapChainVK]: Failed to get surface capabilities", result);
+            LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface capabilities");
             return false;
         }
 
@@ -265,7 +266,7 @@ namespace LambdaEngine
         VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_pDevice->PhysicalDevice, m_Surface, &capabilities);
         if (result != VK_SUCCESS)
         {
-            LOG_VULKAN_ERROR("[SwapChainVK]: Failed to get surface capabilities", result);
+            LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface capabilities");
             return false;
         }
 
@@ -324,7 +325,7 @@ namespace LambdaEngine
         result = vkCreateSwapchainKHR(m_pDevice->Device, &info, nullptr, &m_SwapChain);
         if (result != VK_SUCCESS)
         {
-            LOG_VULKAN_ERROR("[SwapChainVK]: Failed to create SwapChain", result);
+            LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to create SwapChain");
             
             m_SwapChain = VK_NULL_HANDLE;
             return false;
@@ -344,7 +345,7 @@ namespace LambdaEngine
         result = vkGetSwapchainImagesKHR(m_pDevice->Device, m_SwapChain, &imageCount, textures.data());
         if (result != VK_SUCCESS)
         {
-            LOG_VULKAN_ERROR("[SwapChainVK]: Failed to retrive SwapChain-Images", result);
+            LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to retrive SwapChain-Images");
             return false;
         }
 

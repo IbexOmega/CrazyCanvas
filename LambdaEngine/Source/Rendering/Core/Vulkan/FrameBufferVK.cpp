@@ -69,7 +69,7 @@ namespace LambdaEngine
         VkResult result = vkCreateFramebuffer(m_pDevice->Device, &createInfo, nullptr, &m_FrameBuffer);
         if (result != VK_SUCCESS)
         {
-            LOG_VULKAN_ERROR("[FrameBufferVK]: Failed to create framebuffer", result);
+            LOG_VULKAN_ERROR(result, "[FrameBufferVK]: Failed to create framebuffer");
             return false;
         }
 

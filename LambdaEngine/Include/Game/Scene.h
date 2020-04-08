@@ -5,7 +5,8 @@
 
 #include "Resources/Mesh.h"
 
-#include <vector>
+#include "Containers/TArray.h"
+
 #include <map>
 
 namespace LambdaEngine
@@ -47,7 +48,7 @@ namespace LambdaEngine
 		struct Instance
 		{
 			glm::mat3x4 Transform;
-			uint32_t CustomIndex : 24;
+			uint32_t MeshMaterialIndex : 24;
 			uint32_t Mask : 8;
 			uint32_t SBTRecordOffset : 24;
 			uint32_t Flags : 8;

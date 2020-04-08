@@ -5,6 +5,7 @@
 #include <utility>
 
 #define SAFEDELETE_ALL(map) for (auto it = map.begin(); it != map.end(); it++) { SAFEDELETE(it->second); } map.clear();
+#define SAFERELEASE_ALL(map) for (auto it = map.begin(); it != map.end(); it++) { SAFERELEASE(it->second); } map.clear();
 
 namespace LambdaEngine
 {
@@ -21,7 +22,7 @@ namespace LambdaEngine
 	{
 		SAFEDELETE_ALL(m_Meshes);
 		SAFEDELETE_ALL(m_Materials);
-		SAFEDELETE_ALL(m_Textures);
+		SAFERELEASE_ALL(m_Textures);
 		SAFEDELETE_ALL(m_Sounds);
 	}
 
@@ -328,7 +329,7 @@ namespace LambdaEngine
 		m_Textures[DEFAULT_COLOR_MAP] = nullptr; //Implement
 		m_Textures[DEFAULT_NORMAL_MAP] = nullptr; //Implement
 
-		Material* pDefaultMaterial = new Material();
+		Material* pDefaultMaterial = DBG_NEW Material();
 		pDefaultMaterial->pAlbedoMap				= m_Textures[DEFAULT_COLOR_MAP];
 		pDefaultMaterial->pNormalMap				= m_Textures[DEFAULT_NORMAL_MAP];
 		pDefaultMaterial->pAmbientOcclusionMap		= m_Textures[DEFAULT_COLOR_MAP];
