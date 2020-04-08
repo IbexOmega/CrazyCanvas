@@ -38,13 +38,19 @@ namespace LambdaEngine
 
 	uint32 Scene::AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform)
 	{
+		LOG_WARNING("[Scene]: Call to unimplemented function AddStaticGameObject!");
+		return 0;
+	}
+
+	uint32 Scene::AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform)
+	{
 		Instance instance = {};
-		instance.Transform						= transform;
-		instance.CustomIndex					= 0;
-		instance.Mask							= 0;
-		instance.SBTRecordOffset				= 0;
-		instance.Flags							= 0;
-		instance.AccelerationStructureHandle	= 0;
+		instance.Transform = transform;
+		instance.MeshMaterialIndex = 0;
+		instance.Mask = 0;
+		instance.SBTRecordOffset = 0;
+		instance.Flags = 0;
+		instance.AccelerationStructureHandle = 0;
 
 		m_Instances.push_back(instance);
 
@@ -96,7 +102,7 @@ namespace LambdaEngine
 		{
 			MappedMaterial newMappedMaterial = {};
 			newMappedMaterial.MaterialIndex = globalMaterialIndex;
-			
+
 			newMappedMaterial.InstanceIndices.push_back(instanceIndex);
 
 			mappedMesh.MappedMaterials.push_back(newMappedMaterial);
@@ -104,13 +110,6 @@ namespace LambdaEngine
 		}
 
 		return instanceIndex;
-	}
-
-	uint32 Scene::AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform)
-	{
-		LOG_WARNING("[Scene]: Call to unimplemented function AddDynamicGameObject!");
-
-		return 0;
 	}
 
 	bool Scene::Finalize(const SceneDesc& desc)
@@ -143,6 +142,14 @@ namespace LambdaEngine
 
 				uint32 instanceCount = mappedMaterial.InstanceIndices.size();
 
+				for (uint32 instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
+				{
+					Instance instance = m_Instances[mappedMaterial.InstanceIndices[instanceIndex]];
+					instance.MeshMaterialIndex = meshIndexBuffer.size() - 1;
+
+					m_SortedInstances.push_back(instance);
+				}
+
 				IndirectMeshArgument indirectMeshArgument = {};
 				indirectMeshArgument.VertexCount		= pMesh->IndexCount;
 				indirectMeshArgument.InstanceCount		= instanceCount;
@@ -153,11 +160,6 @@ namespace LambdaEngine
 				indirectMeshArgument.BaseInstanceIndex	= m_SortedInstances.size();
 
 				meshIndexBuffer.push_back(indirectMeshArgument);
-
-				for (uint32 instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
-				{
-					m_SortedInstances.push_back(m_Instances[mappedMaterial.InstanceIndices[instanceIndex]]);
-				}
 			}
 
 			currentNumSceneVertices = newNumSceneVertices;
@@ -200,10 +202,10 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneMaterialProperties);
 
 				BufferDesc sceneMaterialPropertiesBufferDesc = {};
-				sceneMaterialPropertiesBufferDesc.pName = "Scene Material Properties";
-				sceneMaterialPropertiesBufferDesc.MemoryType = EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneMaterialPropertiesBufferDesc.Flags = EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-				sceneMaterialPropertiesBufferDesc.SizeInBytes = sceneMaterialPropertiesSize;
+				sceneMaterialPropertiesBufferDesc.pName			= "Scene Material Properties";
+				sceneMaterialPropertiesBufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
+				sceneMaterialPropertiesBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				sceneMaterialPropertiesBufferDesc.SizeInBytes	= sceneMaterialPropertiesSize;
 
 				m_pSceneMaterialProperties = m_pGraphicsDevice->CreateBuffer(sceneMaterialPropertiesBufferDesc);
 			}
@@ -221,10 +223,10 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneVertexBuffer);
 
 				BufferDesc sceneVertexBufferDesc = {};
-				sceneVertexBufferDesc.pName = "Scene Vertex Buffer";
-				sceneVertexBufferDesc.MemoryType = EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneVertexBufferDesc.Flags = EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-				sceneVertexBufferDesc.SizeInBytes = sceneVertexBufferSize;
+				sceneVertexBufferDesc.pName						= "Scene Vertex Buffer";
+				sceneVertexBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
+				sceneVertexBufferDesc.Flags						= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				sceneVertexBufferDesc.SizeInBytes				= sceneVertexBufferSize;
 
 				m_pSceneVertexBuffer = m_pGraphicsDevice->CreateBuffer(sceneVertexBufferDesc);
 			}
@@ -242,10 +244,10 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneIndexBuffer);
 
 				BufferDesc sceneIndexBufferDesc = {};
-				sceneIndexBufferDesc.pName = "Scene Index Buffer";
-				sceneIndexBufferDesc.MemoryType = EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneIndexBufferDesc.Flags = EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-				sceneIndexBufferDesc.SizeInBytes = sceneIndexBufferSize;
+				sceneIndexBufferDesc.pName						= "Scene Index Buffer";
+				sceneIndexBufferDesc.MemoryType					= EMemoryType::MEMORY_CPU_VISIBLE;
+				sceneIndexBufferDesc.Flags						= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				sceneIndexBufferDesc.SizeInBytes				= sceneIndexBufferSize;
 
 				m_pSceneIndexBuffer = m_pGraphicsDevice->CreateBuffer(sceneIndexBufferDesc);
 			}
@@ -263,10 +265,10 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneInstanceBuffer);
 
 				BufferDesc sceneInstanceBufferDesc = {};
-				sceneInstanceBufferDesc.pName = "Scene Instance Buffer";
-				sceneInstanceBufferDesc.MemoryType = EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneInstanceBufferDesc.Flags = EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-				sceneInstanceBufferDesc.SizeInBytes = sceneIndexBufferSize;
+				sceneInstanceBufferDesc.pName					= "Scene Instance Buffer";
+				sceneInstanceBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
+				sceneInstanceBufferDesc.Flags					= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				sceneInstanceBufferDesc.SizeInBytes				= sceneIndexBufferSize;
 
 				m_pSceneInstanceBuffer = m_pGraphicsDevice->CreateBuffer(sceneInstanceBufferDesc);
 			}
@@ -285,10 +287,10 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneMeshIndexBuffer);
 
 				BufferDesc sceneMeshIndexBufferDesc = {};
-				sceneMeshIndexBufferDesc.pName = "Scene Mesh Index Buffer";
-				sceneMeshIndexBufferDesc.MemoryType = EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneMeshIndexBufferDesc.Flags = EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-				sceneMeshIndexBufferDesc.SizeInBytes = sceneMeshIndexBufferSize;
+				sceneMeshIndexBufferDesc.pName					= "Scene Mesh Index Buffer";
+				sceneMeshIndexBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
+				sceneMeshIndexBufferDesc.Flags					= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				sceneMeshIndexBufferDesc.SizeInBytes			= sceneMeshIndexBufferSize;
 
 				m_pSceneMeshIndexBuffer = m_pGraphicsDevice->CreateBuffer(sceneMeshIndexBufferDesc);
 			}

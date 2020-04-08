@@ -11,6 +11,7 @@
 #include "Resources/ResourceManager.h"
 
 #include "Rendering/RenderSystem.h"
+#include "Rendering/RenderGraph.h"
 
 #include "Audio/AudioSystem.h"
 #include "Audio/AudioListener.h"
@@ -35,18 +36,164 @@ Sandbox::Sandbox() :
 
 	m_pResourceManager = DBG_NEW LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
 
-	std::vector<GameObject>	sceneGameObjects;
+	/*std::vector<GameObject>	sceneGameObjects;
 	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
 
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice(), m_pResourceManager);
 
 	for (GameObject& graphicsObject : sceneGameObjects)
 	{
-		m_pScene->AddStaticGameObject(graphicsObject, glm::scale(glm::mat4(1.0f), glm::vec3(0.001f)));
+		m_pScene->AddDynamicGameObject(graphicsObject, glm::scale(glm::mat4(1.0f), glm::vec3(0.001f)));
 	}
 
 	SceneDesc sceneDesc = {};
-	m_pScene->Finalize(sceneDesc);
+	m_pScene->Finalize(sceneDesc);*/
+
+	constexpr uint32 MAX_UNIQUE_MATERIALS = 16;
+
+	RenderGraph renderGraph;
+
+	std::vector<RenderStage> renderStages;
+
+	std::vector<RenderStageInputAttachment>			geometryRenderStageInputAttachment;
+	std::vector<RenderStageExternalInputAttachment> geometryRenderStageExternalInputAttachment;
+	std::vector<RenderStageOutputAttachment>		geometryRenderStageOutputAttachment;
+
+	{
+		geometryRenderStageExternalInputAttachment.push_back({ "PER_FRAME_BUFFER",				EExternalInputAttachmentType::UNIFORM });
+
+		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_MAT_PARAM_BUFFER",		EExternalInputAttachmentType::BUFFER });
+		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_VERTEX_BUFFER",			EExternalInputAttachmentType::BUFFER });
+		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_INDEX_BUFFER",			EExternalInputAttachmentType::BUFFER });
+		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_INSTANCE_BUFFER",			EExternalInputAttachmentType::BUFFER });
+		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_MESH_INDEX_BUFFER",		EExternalInputAttachmentType::BUFFER });
+
+		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_ALBEDO_MAPS",				EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
+		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_NORMAL_MAPS",				EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
+		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_AO_MAPS",					EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
+		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_ROUGHNESS_MAPS",			EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
+		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_METALLIC_MAPS",			EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
+
+		geometryRenderStageOutputAttachment.push_back({ "GBUFFER_ALBEDO_AO",					EOutputAttachmentType::TEXTURE });
+		geometryRenderStageOutputAttachment.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",	EOutputAttachmentType::TEXTURE });
+		geometryRenderStageOutputAttachment.push_back({ "GBUFFER_VELOCITY",						EOutputAttachmentType::TEXTURE });
+		geometryRenderStageOutputAttachment.push_back({ "GBUFFER_DEPTH",						EOutputAttachmentType::DEPTH_STENCIL });
+
+		RenderStage renderStage = {};
+		renderStage.pName						= "Geometry Render Stage";
+		renderStage.pInputAttachments			= geometryRenderStageInputAttachment.data();
+		renderStage.InputAttachmentCount		= geometryRenderStageInputAttachment.size();
+		renderStage.pExternalInputAttachments	= geometryRenderStageExternalInputAttachment.data();
+		renderStage.ExtenalInputAttachmentCount = geometryRenderStageExternalInputAttachment.size();
+		renderStage.pOutputAttachments			= geometryRenderStageOutputAttachment.data();
+		renderStage.OutputAttachmentCount		= geometryRenderStageOutputAttachment.size();
+
+		renderStages.push_back(renderStage);
+	}
+
+	std::vector<RenderStageInputAttachment>			rayTraceRenderStageInputAttachment;
+	std::vector<RenderStageExternalInputAttachment> rayTraceRenderStageExternalInputAttachment;
+	std::vector<RenderStageOutputAttachment>		rayTraceRenderStageOutputAttachment;
+
+	{
+		rayTraceRenderStageInputAttachment.push_back({ "RADIANCE_IMAGE",					EInputAttachmentType::TEXTURE });
+		rayTraceRenderStageInputAttachment.push_back({ "GBUFFER_ALBEDO_AO",					EInputAttachmentType::TEXTURE });
+		rayTraceRenderStageInputAttachment.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",	EInputAttachmentType::TEXTURE });
+		rayTraceRenderStageInputAttachment.push_back({ "GBUFFER_VELOCITY",					EInputAttachmentType::TEXTURE });
+		rayTraceRenderStageInputAttachment.push_back({ "GBUFFER_DEPTH",						EInputAttachmentType::TEXTURE });
+
+		rayTraceRenderStageExternalInputAttachment.push_back({ "PER_FRAME_BUFFER",			EExternalInputAttachmentType::UNIFORM });
+		rayTraceRenderStageExternalInputAttachment.push_back({ "LIGHTS_BUFFER",				EExternalInputAttachmentType::UNIFORM });
+		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_TLAS",				EExternalInputAttachmentType::UNIFORM });
+
+		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_MAT_PARAM_BUFFER",	EExternalInputAttachmentType::BUFFER });
+		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_VERTEX_BUFFER",		EExternalInputAttachmentType::BUFFER });
+		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_INDEX_BUFFER",		EExternalInputAttachmentType::BUFFER });
+		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_INSTANCE_BUFFER",		EExternalInputAttachmentType::BUFFER });
+		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_MESH_INDEX_BUFFER",	EExternalInputAttachmentType::BUFFER });
+
+		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_ALBEDO_MAPS",			EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_NORMAL_MAPS",			EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_AO_MAPS",				EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_ROUGHNESS_MAPS",		EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_METALLIC_MAPS",		EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
+
+		rayTraceRenderStageExternalInputAttachment.push_back({ "BRDF_LUT",					EExternalInputAttachmentType::TEXTURE });
+		rayTraceRenderStageExternalInputAttachment.push_back({ "BLUE_NOISE_LUT",			EExternalInputAttachmentType::TEXTURE });
+
+		rayTraceRenderStageOutputAttachment.push_back({ "RADIANCE_IMAGE",					EOutputAttachmentType::TEXTURE });
+
+		RenderStage renderStage = {};
+		renderStage.pName						= "Ray Tracing Render Stage";
+		renderStage.pInputAttachments			= rayTraceRenderStageInputAttachment.data();
+		renderStage.InputAttachmentCount		= rayTraceRenderStageInputAttachment.size();
+		renderStage.pExternalInputAttachments	= rayTraceRenderStageExternalInputAttachment.data();
+		renderStage.ExtenalInputAttachmentCount = rayTraceRenderStageExternalInputAttachment.size();
+		renderStage.pOutputAttachments			= rayTraceRenderStageOutputAttachment.data();
+		renderStage.OutputAttachmentCount		= rayTraceRenderStageOutputAttachment.size();
+
+		renderStages.push_back(renderStage);
+	}
+
+	std::vector<RenderStageInputAttachment>			spatialBlurRenderStageInputAttachment;
+	std::vector<RenderStageExternalInputAttachment> spatialBlurRenderStageExternalInputAttachment;
+	std::vector<RenderStageOutputAttachment>		spatialBlurRenderStageOutputAttachment;
+
+	{
+		spatialBlurRenderStageInputAttachment.push_back({ "RADIANCE_IMAGE",					EInputAttachmentType::TEXTURE });
+
+		spatialBlurRenderStageOutputAttachment.push_back({ "FILTERED_RADIANCE_IMAGE",					EOutputAttachmentType::TEXTURE });
+
+		RenderStage renderStage = {};
+		renderStage.pName						= "Spatial Blur Render Stage";
+		renderStage.pInputAttachments			= spatialBlurRenderStageInputAttachment.data();
+		renderStage.InputAttachmentCount		= spatialBlurRenderStageInputAttachment.size();
+		renderStage.pExternalInputAttachments	= spatialBlurRenderStageExternalInputAttachment.data();
+		renderStage.ExtenalInputAttachmentCount = spatialBlurRenderStageExternalInputAttachment.size();
+		renderStage.pOutputAttachments			= spatialBlurRenderStageOutputAttachment.data();
+		renderStage.OutputAttachmentCount		= spatialBlurRenderStageOutputAttachment.size();
+
+		renderStages.push_back(renderStage);
+	}
+
+	std::vector<RenderStageInputAttachment>			shadingRenderStageInputAttachment;
+	std::vector<RenderStageExternalInputAttachment> shadingRenderStageExternalInputAttachment;
+	std::vector<RenderStageOutputAttachment>		shadingRenderStageOutputAttachment;
+
+	{
+		shadingRenderStageInputAttachment.push_back({ "FILTERED_RADIANCE_IMAGE",						EInputAttachmentType::TEXTURE });
+		shadingRenderStageInputAttachment.push_back({ "GBUFFER_ALBEDO_AO",					EInputAttachmentType::TEXTURE });
+		shadingRenderStageInputAttachment.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",	EInputAttachmentType::TEXTURE });
+		shadingRenderStageInputAttachment.push_back({ "GBUFFER_VELOCITY",					EInputAttachmentType::TEXTURE });
+		shadingRenderStageInputAttachment.push_back({ "GBUFFER_DEPTH",						EInputAttachmentType::TEXTURE });
+
+		shadingRenderStageExternalInputAttachment.push_back({ "PER_FRAME_BUFFER",			EExternalInputAttachmentType::UNIFORM });
+		shadingRenderStageExternalInputAttachment.push_back({ "LIGHTS_BUFFER",				EExternalInputAttachmentType::UNIFORM });
+
+		shadingRenderStageExternalInputAttachment.push_back({ "BRDF_LUT",					EExternalInputAttachmentType::TEXTURE });
+		shadingRenderStageExternalInputAttachment.push_back({ "BLUE_NOISE_LUT",				EExternalInputAttachmentType::TEXTURE });
+
+		shadingRenderStageOutputAttachment.push_back({ "BACK_BUFFER_TEXTURE",				EOutputAttachmentType::TEXTURE });
+
+		RenderStage renderStage = {};
+		renderStage.pName						= "Shading Render Stage";
+		renderStage.pInputAttachments			= shadingRenderStageInputAttachment.data();
+		renderStage.InputAttachmentCount		= shadingRenderStageInputAttachment.size();
+		renderStage.pExternalInputAttachments	= shadingRenderStageExternalInputAttachment.data();
+		renderStage.ExtenalInputAttachmentCount = shadingRenderStageExternalInputAttachment.size();
+		renderStage.pOutputAttachments			= shadingRenderStageOutputAttachment.data();
+		renderStage.OutputAttachmentCount		= shadingRenderStageOutputAttachment.size();
+
+		renderStages.push_back(renderStage);
+	}
+
+	RenderGraphDesc renderGraphDesc = {};
+	renderGraphDesc.pName				= "Test Render Graph";
+	renderGraphDesc.CreateDebugGraph	= true;
+	renderGraphDesc.pRenderStages		= renderStages.data();
+	renderGraphDesc.RenderStageCount	= renderStages.size();
+
+	renderGraph.Init(renderGraphDesc);
 
 	//InitTestAudio();
 }

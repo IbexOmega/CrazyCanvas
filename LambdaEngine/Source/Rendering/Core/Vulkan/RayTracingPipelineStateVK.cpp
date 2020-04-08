@@ -79,7 +79,7 @@ namespace LambdaEngine
 		m_BindingStride						= shaderGroupHandleSize;
 		m_BindingOffsetRaygenShaderGroup	= 0;
 		m_BindingOffsetHitShaderGroup		= m_BindingOffsetRaygenShaderGroup + m_BindingStride;
-		m_BindingOffsetMissShaderGroup		= m_BindingOffsetHitShaderGroup + m_BindingStride * desc.ClosestHitShaders.size();
+		m_BindingOffsetMissShaderGroup		= m_BindingOffsetHitShaderGroup + m_BindingStride * desc.ClosestHitShaderCount;
 
 		SetName(desc.pName);
 
@@ -130,8 +130,10 @@ namespace LambdaEngine
 		}
 
 		//Closest-Hit Shaders
-		for (const ShaderDesc& shaderDesc : desc.ClosestHitShaders)
+		for (uint32 i = 0; i < desc.ClosestHitShaderCount; i++)
 		{
+			const ShaderDesc& shaderDesc = desc.pClosestHitShaders[i];
+
 			VkPipelineShaderStageCreateInfo shaderCreateInfo;
 			VkSpecializationInfo shaderSpecializationInfo;
 			std::vector<VkSpecializationMapEntry> shaderSpecializationMaps;
@@ -156,8 +158,10 @@ namespace LambdaEngine
 		}
 
 		//Miss Shaders
-		for (const ShaderDesc& shaderDesc : desc.MissShaders)
+		for (uint32 i = 0; i < desc.MissShaderCount; i++)
 		{
+			const ShaderDesc& shaderDesc = desc.pMissShaders[i];
+
 			VkPipelineShaderStageCreateInfo shaderCreateInfo;
 			VkSpecializationInfo shaderSpecializationInfo;
 			std::vector<VkSpecializationMapEntry> shaderSpecializationMaps;
