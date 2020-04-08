@@ -47,11 +47,11 @@ namespace LambdaEngine
 
 	void NetworkDiscoveryHost::OnClientErrorUDP(IClientUDP* client)
 	{
-
+		UNREFERENCED_VARIABLE(client);
 	}
 
 	void NetworkDiscoveryHost::OnClientStoppedUDP(IClientUDP* client)
 	{
-
+		UNREFERENCED_VARIABLE(client);
 	}
 }

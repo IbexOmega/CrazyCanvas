@@ -64,6 +64,7 @@ Client::~Client()
 void Client::OnHostFound(const std::string& address, uint16 port, LambdaEngine::NetworkPacket* packet)
 {
 	LOG_WARNING("Host Found %s:%d", address.c_str(), port);
+	UNREFERENCED_VARIABLE(packet);
 }
 
 void Client::OnClientPacketReceivedUDP(LambdaEngine::IClientUDP* client, LambdaEngine::NetworkPacket* packet)
@@ -76,31 +77,37 @@ void Client::OnClientPacketReceivedUDP(LambdaEngine::IClientUDP* client, LambdaE
 		packet->ReadString(str);
 		LOG_MESSAGE(str.c_str());
 	}
+	UNREFERENCED_VARIABLE(client);
 }
 
 void Client::OnClientErrorUDP(LambdaEngine::IClientUDP* client)
 {
 	LOG_MESSAGE("OnClientErrorUDP()");
+	UNREFERENCED_VARIABLE(client);
 }
 
 void Client::OnClientStoppedUDP(LambdaEngine::IClientUDP* client)
 {
 	LOG_MESSAGE("OnClientStoppedUDP()");
+	UNREFERENCED_VARIABLE(client);
 }
 
 void Client::OnClientConnectedTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientConnectedTCP()");
+	UNREFERENCED_VARIABLE(client);
 }
 
 void Client::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientDisconnectedTCP()");
+	UNREFERENCED_VARIABLE(client);
 }
 
 void Client::OnClientFailedConnectingTCP(LambdaEngine::ClientTCP* client)
 {
 	LOG_MESSAGE("OnClientFailedConnectingTCP()");
+	UNREFERENCED_VARIABLE(client);
 }
 
 void Client::OnClientPacketReceivedTCP(LambdaEngine::ClientTCP* client, LambdaEngine::NetworkPacket* packet)
@@ -118,6 +125,7 @@ void Client::OnClientPacketReceivedTCP(LambdaEngine::ClientTCP* client, LambdaEn
 		packet->ReadString(str);
 		LOG_MESSAGE(str.c_str());
 	}
+	UNREFERENCED_VARIABLE(client);
 }
 
 void Client::OnKeyDown(LambdaEngine::EKey key)
@@ -136,21 +144,22 @@ void Client::OnKeyDown(LambdaEngine::EKey key)
 		packet->WriteString("Test Messsage UDP");
 		m_pClientUDP->SendPacket(packet, true);
 	}
+	UNREFERENCED_VARIABLE(key);
 }
 
 void Client::OnKeyHeldDown(LambdaEngine::EKey key)
 {
-	
+	UNREFERENCED_VARIABLE(key);
 }
 
 void Client::OnKeyUp(LambdaEngine::EKey key)
 {
-	
+	UNREFERENCED_VARIABLE(key);
 }
 
 void Client::Tick(LambdaEngine::Timestamp dt)
 {
-	
+	UNREFERENCED_VARIABLE(dt);
 }
 
 namespace LambdaEngine

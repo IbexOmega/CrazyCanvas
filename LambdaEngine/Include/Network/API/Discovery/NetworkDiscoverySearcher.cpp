@@ -46,16 +46,17 @@ namespace LambdaEngine
 			uint16 port = packet->ReadUInt16();
 			m_pHandler->OnHostFound(address, port, packet);
 		}
+		UNREFERENCED_VARIABLE(client);
 	}
 
 	void NetworkDiscoverySearcher::OnClientErrorUDP(IClientUDP* client)
 	{
-
+		UNREFERENCED_VARIABLE(client);
 	}
 
 	void NetworkDiscoverySearcher::OnClientStoppedUDP(IClientUDP* client)
 	{
-
+		UNREFERENCED_VARIABLE(client);
 	}
 
 	void NetworkDiscoverySearcher::InitStatic()

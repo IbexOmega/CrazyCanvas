@@ -187,7 +187,7 @@ namespace LambdaEngine
 
 	bool ClientTCP::Receive(char* buffer, int bytesToRead)
 	{
-		uint32 bytesReceivedTotal = 0;
+		int32 bytesReceivedTotal = 0;
 		int32 bytesReceived = 0;
 		while (bytesReceivedTotal != bytesToRead)
 		{
