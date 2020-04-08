@@ -70,24 +70,24 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void ServerUDP::OnThreadsStarted()
+	bool ServerUDP::OnThreadsStarted()
 	{
 		m_pServerSocket = CreateServerSocket(GetAddress(), GetPort());
 		if (!m_pServerSocket)
 		{
 			LOG_ERROR("[ServerUDP]: Failed to start!");
 			Stop();
+			return false;
 		}
-		else
-		{
-			SetAddressAndPort(m_pServerSocket->GetAddress(), m_pServerSocket->GetPort());
-			LOG_INFO("[ServerUDP]: Started %s:%d", GetAddress().c_str(), GetPort());
-		}
+
+		SetAddressAndPort(m_pServerSocket->GetAddress(), m_pServerSocket->GetPort());
+		LOG_INFO("[ServerUDP]: Started %s:%d", GetAddress().c_str(), GetPort());
+		return true;
 	}
 
-	void ServerUDP::OnThreadsStartedPost()
+	bool ServerUDP::OnThreadsStartedPost()
 	{
-
+		return true;
 	}
 
 	void ServerUDP::UpdateReceiver(NetworkPacket* packet)

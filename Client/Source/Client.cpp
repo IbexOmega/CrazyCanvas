@@ -20,7 +20,7 @@ enum ENetworkTest
 	NETWORK_TEST_DISCOVERY
 };
 
-ENetworkTest g_Test = NETWORK_TEST_UDP;
+ENetworkTest g_Test = NETWORK_TEST_TCP;
 
 Client::Client()
 {

@@ -23,7 +23,7 @@ enum ENetworkTest
 	NETWORK_TEST_DISCOVERY
 };
 
-ENetworkTest g_Test = NETWORK_TEST_UDP;
+ENetworkTest g_Test = NETWORK_TEST_TCP;
 
 Server::Server()
 {
@@ -90,20 +90,18 @@ LambdaEngine::IClientTCPHandler* Server::CreateClientHandlerTCP()
 
 bool Server::OnClientAcceptedTCP(LambdaEngine::ClientTCP* client)
 {
-	LOG_MESSAGE("OnClientAccepted");
+	LOG_MESSAGE("OnClientAcceptedTCP()");
 	return true;
 }
 
 void Server::OnClientConnectedTCP(LambdaEngine::ClientTCP* client)
 {
 	using namespace LambdaEngine;
-	LOG_MESSAGE("OnClientConnected");
 	UpdateTitle();
 }
 
 void Server::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
 {
-	LOG_MESSAGE("OnClientDisconnected");
 	UpdateTitle();
 }
 

@@ -40,8 +40,8 @@ namespace LambdaEngine
 		virtual void Release() override;
 
 	protected:
-		virtual void OnThreadsStarted() override;
-		virtual void OnThreadsStartedPost() override;
+		virtual bool OnThreadsStarted() override;
+		virtual bool OnThreadsStartedPost() override;
 		virtual void UpdateReceiver(NetworkPacket* packet) override;
 		virtual void OnThreadsTerminated() override;
 		virtual void OnReleaseRequested() override;

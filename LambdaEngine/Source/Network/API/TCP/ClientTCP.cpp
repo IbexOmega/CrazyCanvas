@@ -82,8 +82,9 @@ namespace LambdaEngine
 	*				PROTECTED				   *
 	********************************************/
 
-	void ClientTCP::OnThreadsStarted()
+	bool ClientTCP::OnThreadsStarted()
 	{
+		std::scoped_lock<SpinLock> lock(m_LockStart);
 		if (!IsServerSide())
 		{
 			m_pSocket = CreateSocket(GetAddress(), GetPort());
@@ -93,21 +94,21 @@ namespace LambdaEngine
 				{
 					m_pClientHandler->OnClientFailedConnectingTCP(this);
 				}
-
-				TerminateThreads();
-				return;
+				return false;
 			}
 		}
-
-		m_pSocket->DisableNaglesAlgorithm();
+		return m_pSocket->DisableNaglesAlgorithm();
 	}
 
-	void ClientTCP::OnThreadsStartedPost()
+	bool ClientTCP::OnThreadsStartedPost()
 	{
 		ResetReceiveTimer();
 		ResetTransmitTimer();
 
-		m_pClientHandler->OnClientConnectedTCP(this);
+		if(m_pClientHandler)
+			m_pClientHandler->OnClientConnectedTCP(this);
+
+		return true;
 	}
 
 	/*

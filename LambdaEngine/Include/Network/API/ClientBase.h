@@ -154,8 +154,8 @@ namespace LambdaEngine
 		}
 
 	protected:
-		virtual void OnThreadsStarted() = 0;
-		virtual void OnThreadsStartedPost() = 0;
+		virtual bool OnThreadsStarted() = 0;
+		virtual bool OnThreadsStartedPost() = 0;
 		virtual void UpdateReceiver(NetworkPacket* packet) = 0;
 		virtual void OnThreadsTerminated() = 0;
 		virtual void OnReleaseRequested() = 0;
@@ -230,9 +230,16 @@ namespace LambdaEngine
 		{
 			while (!m_ReadyForStart) {}
 
-			OnThreadsStarted();
-			m_ThreadsStartedPre = true;
-			OnThreadsStartedPost();
+			if (!OnThreadsStarted())
+			{
+				TerminateThreads();
+			}
+			else
+			{
+				m_ThreadsStartedPre = true;
+				if (!OnThreadsStartedPost())
+					TerminateThreads();
+			}
 			m_ThreadsStarted = true;
 
 			while (!ShouldTerminate())
@@ -250,7 +257,7 @@ namespace LambdaEngine
 
 		virtual void ThreadReceiver()
 		{
-			while (!m_ThreadsStarted) {}
+			while (!m_ThreadsStarted && !ShouldTerminate()) {}
 
 			NetworkPacket packet(EPacketType::PACKET_TYPE_UNDEFINED, false);
 			while (!ShouldTerminate())
