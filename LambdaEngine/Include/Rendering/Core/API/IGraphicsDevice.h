@@ -57,12 +57,14 @@ namespace LambdaEngine
 		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc& desc) const = 0;
 
 		virtual IFrameBuffer* CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc)	const = 0;
-		virtual IRenderPass*  CreateRenderPass(const RenderPassDesc& desc)								const = 0;
-		virtual ITextureView* CreateTextureView(const TextureViewDesc& desc)							const = 0;
+
+		virtual IRenderPass*  CreateRenderPass(const RenderPassDesc& desc)	 const = 0;
+		virtual ITextureView* CreateTextureView(const TextureViewDesc& desc) const = 0;
 		
-		virtual IBuffer*	CreateBuffer(const BufferDesc& desc)								const = 0;
-		virtual ITexture*	CreateTexture(const TextureDesc& desc)								const = 0;
-        virtual ISwapChain*	CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)	const = 0;
+		virtual IBuffer*	CreateBuffer(const BufferDesc& desc)	const = 0;
+		virtual ITexture*	CreateTexture(const TextureDesc& desc)	const = 0;
+
+        virtual ISwapChain*	CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc& desc)	const = 0;
 
 		virtual IPipelineState*	CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) 	  const = 0;
 		virtual IPipelineState*	CreateComputePipelineState(const ComputePipelineStateDesc& desc) 	  const = 0;
