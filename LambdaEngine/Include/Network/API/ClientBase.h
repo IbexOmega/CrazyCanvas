@@ -165,25 +165,7 @@ namespace LambdaEngine
 		{
 			if (ThreadsHaveTerminated())
 			{
-				m_Run = true;
-				m_ReadyForStart = false;
-				m_ThreadsStartedPre = false;
-				m_ThreadsStarted = false;
-				m_TransmitterEnded = false;
-				m_OtherThreadTerminated = false;
-				m_Release = false;
-
-				m_pThreadTransmitter = Thread::Create(
-					std::bind(&ClientBase::ThreadTransmitter, this),
-					std::bind(&ClientBase::ThreadTransmitterDeleted, this)
-				);
-
-				m_pThreadReceiver = Thread::Create(
-					std::bind(&ClientBase::ThreadReceiver, this),
-					std::bind(&ClientBase::ThreadReceiverDeleted, this)
-				);
-				m_ReadyForStart = true;
-				return true;
+				
 			}
 
 			return false;

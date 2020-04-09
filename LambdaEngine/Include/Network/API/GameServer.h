@@ -1,44 +1,33 @@
 #pragma once
-#include "Containers/String.h"
 
-#include "Defines.h"
-#include "Types.h"
+#include "GameServerBase.h"
 
-#include "TCP/IServerTCPHandler.h"
-#include "UDP/IServerUDPHandler.h"
-
-#include "Network/API/Discovery/NetworkDiscoveryHost.h"
+#include <queue>
 
 namespace LambdaEngine
 {
-	class ServerTCP;
-	class ServerUDP;
+	class NetworkPacket;
 
-	class LAMBDA_API GameServer : 
-		protected IServerTCPHandler,
-		protected IServerUDPHandler,
-		protected INetworkDiscoveryHostHandler
+	class LAMBDA_API GameServer : public GameServerBase
 	{
 	public:
-		GameServer(const std::string& name, uint8 maxClients);
+		GameServer();
 		~GameServer();
 
-		bool Start();
+		bool AddPacket(NetworkPacket* packet);
 
 	protected:
-		virtual IClientTCPHandler* CreateClientHandlerTCP() override;
-		virtual bool OnClientAcceptedTCP(ClientTCP* client) override;
-		virtual void OnClientConnectedTCP(ClientTCP* client) override;
-		virtual void OnClientDisconnectedTCP(ClientTCP* client) override;
-
-		virtual IClientUDPHandler* CreateClientHandlerUDP() override;
-
-		virtual void OnSearcherRequest(NetworkPacket* packet) override;
+		virtual void RunTranmitter() override;
+		virtual void RunReceiver() override;
+		virtual void OnThreadsTurminated() override;
 
 	private:
-		ServerTCP* m_pServerTCP;
-		ServerUDP* m_pServerUDP;
-		NetworkDiscoveryHost m_pServerNDH;
-		std::string m_AddressBound;
+		std::queue<NetworkPacket*>* SwapAndGetPacketBuffer();
+
+	private:
+		std::queue<NetworkPacket*>* m_PacketBuffers[2];
+		std::atomic_int m_PacketBufferIndex;
+
+		SpinLock m_LockPacketBuffers;
 	};
 }

@@ -3,65 +3,52 @@
 
 namespace LambdaEngine
 {
-	GameServer::GameServer(const std::string& name, uint8 maxClients) : 
-		m_pServerTCP(nullptr),
-		m_pServerUDP(nullptr),
-		m_pServerNDH(this, name)
+	GameServer::GameServer() : 
+		m_PacketBufferIndex(0)
 	{
-		m_pServerTCP = PlatformNetworkUtils::CreateServerTCP(this, maxClients);
-		m_pServerUDP = PlatformNetworkUtils::CreateServerUDP(this);
+		m_PacketBuffers[0] = new std::queue<NetworkPacket*>();
+		m_PacketBuffers[1] = new std::queue<NetworkPacket*>();
 	}
 
 	GameServer::~GameServer()
 	{
-		m_pServerTCP->Release();
-		m_pServerUDP->Release();
+		delete m_PacketBuffers[0];
+		delete m_PacketBuffers[1];
 	}
 
-	bool GameServer::Start()
+	bool GameServer::AddPacket(NetworkPacket* packet)
 	{
-		m_AddressBound = PlatformNetworkUtils::GetLocalAddress();
-		uint16 port = 4444; //NOT A GOOD WAY
-
-		if (!m_pServerTCP->Start(m_AddressBound, port))
-			return false;
-
-		if (!m_pServerUDP->Start(m_AddressBound, port))
-			return false;
-
-		if (!m_pServerNDH.Start(m_AddressBound, port))
-			return false;
-
+		std::scoped_lock<SpinLock> lock(m_LockPacketBuffers);
+		m_PacketBuffers[m_PacketBufferIndex]->push(packet);
 		return true;
 	}
 
-	IClientTCPHandler* GameServer::CreateClientHandlerTCP()
+	void GameServer::RunTranmitter()
 	{
-		return nullptr;
+		while (!ShouldTerminate())
+		{
+
+		}
 	}
 
-	bool GameServer::OnClientAcceptedTCP(ClientTCP* client)
+	void GameServer::RunReceiver()
 	{
-		return false;
+		while (!ShouldTerminate())
+		{
+
+		}
 	}
 
-	void GameServer::OnClientConnectedTCP(ClientTCP* client)
+	void GameServer::OnThreadsTurminated()
 	{
 
 	}
 
-	void GameServer::OnClientDisconnectedTCP(ClientTCP* client)
+	std::queue<NetworkPacket*>* GameServer::SwapAndGetPacketBuffer()
 	{
-
-	}
-
-	IClientUDPHandler* GameServer::CreateClientHandlerUDP()
-	{
-		return nullptr;
-	}
-
-	void GameServer::OnSearcherRequest(NetworkPacket* packet)
-	{
-
+		std::scoped_lock<SpinLock> lock(m_LockPacketBuffers);
+		std::queue<NetworkPacket*>* buffer = m_PacketBuffers[m_PacketBufferIndex];
+		m_PacketBufferIndex = m_PacketBufferIndex % 2;
+		return buffer;
 	}
 }
