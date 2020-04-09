@@ -8,55 +8,61 @@
 
 namespace LambdaEngine
 {
-	std::unordered_map<const char*, RenderGraphCreator::InternalRenderStage>							RenderGraphCreator::s_ParsedRenderStages;
-	std::unordered_map<const char*, RenderGraphCreator::InternalRenderStageInputAttachment>				RenderGraphCreator::s_ParsedInputAttachments;
-	std::unordered_map<const char*, RenderGraphCreator::InternalRenderStageInputAttachment>				RenderGraphCreator::s_ParsedTemporalInputAttachments;
-	std::unordered_map<const char*, RenderGraphCreator::InternalRenderStageExternalInputAttachment>		RenderGraphCreator::s_ParsedExternalInputAttachments;
-	std::unordered_map<const char*, RenderGraphCreator::InternalRenderStageOutputAttachment>			RenderGraphCreator::s_ParsedOutputAttachments;
-
-	std::vector<const RenderGraphCreator::InternalRenderStage*>											RenderGraphCreator::s_SortedInternalRenderStages;
-
-	std::vector<RenderStage>																			RenderGraphCreator::s_SortedRenderStages;
-	std::vector<SynchronizationStage>																	RenderGraphCreator::s_SortedSynchronizationStages;
-	std::vector<PipelineStage>																			RenderGraphCreator::s_SortedPipelineStages;
-
 	bool RenderGraphCreator::Create(const RenderGraphDesc& desc)
 	{
-		s_ParsedRenderStages.clear();
-		s_ParsedInputAttachments.clear();
-		s_ParsedTemporalInputAttachments.clear();
-		s_ParsedExternalInputAttachments.clear();
-		s_ParsedOutputAttachments.clear();
-		s_SortedInternalRenderStages.clear();
-		s_SortedRenderStages.clear();
-		s_SortedSynchronizationStages.clear();
-		s_SortedPipelineStages.clear();
+		std::unordered_map<const char*, InternalRenderStage>						parsedRenderStages;
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>			parsedInputAttachments;
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>			parsedTemporalInputAttachments;
+		std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>	parsedExternalInputAttachments;
+		std::unordered_map<const char*, InternalRenderStageOutputAttachment>		parsedOutputAttachments;
 
-		if (!ParseInitialStages(desc))
+		std::vector<const InternalRenderStage*>										sortedInternalRenderStages;
+
+		std::vector<RenderStage>													sortedRenderStages;
+		std::vector<SynchronizationStage>											sortedSynchronizationStages;
+		std::vector<PipelineStage>													sortedPipelineStages;
+		
+		if (!ParseInitialStages(
+			desc,
+			parsedRenderStages,
+			parsedInputAttachments,
+			parsedTemporalInputAttachments,
+			parsedExternalInputAttachments,
+			parsedOutputAttachments))
 		{
 			LOG_ERROR("[RenderGraph]: Could not parse Render Stages for \"%s\"", desc.pName);
 			return false;
 		}
 
-		if (!ConnectOutputsToInputs())
+		if (!ConnectOutputsToInputs(
+			parsedInputAttachments,
+			parsedOutputAttachments))
 		{
 			LOG_ERROR("[RenderGraph]: Could not connect Output Resources to Input Resources for \"%s\"", desc.pName);
 			return false;
 		}
 
-		if (!WeightRenderStages())
+		if (!WeightRenderStages(
+			parsedRenderStages))
 		{
 			LOG_ERROR("[RenderGraph]: Could not weights render stages for \"%s\"", desc.pName);
 			return false;
 		}
 
-		if (!SortPipelineStages())
+		if (!SortPipelineStages(
+			parsedRenderStages,
+			sortedInternalRenderStages,
+			sortedRenderStages,
+			sortedSynchronizationStages,
+			sortedPipelineStages))
 		{
 			LOG_ERROR("[RenderGraph]: Could not sort render stages for \"%s\"", desc.pName);
 			return false;
 		}
 
-		if (!PruneUnnecessarySynchronizations())
+		if (!PruneUnnecessarySynchronizations(
+			sortedSynchronizationStages,
+			sortedPipelineStages))
 		{
 			LOG_ERROR("[RenderGraph]: Could not prunt unnecessary synchronization for \"%s\"", desc.pName);
 			return false;
@@ -67,7 +73,19 @@ namespace LambdaEngine
 			constexpr bool DECLARE_EXTERNAL_INPUTS = true;
 			constexpr bool LINK_EXTERNAL_INPUTS = false;
 
-			if (!WriteGraphViz(desc.pName, DECLARE_EXTERNAL_INPUTS, LINK_EXTERNAL_INPUTS))
+			if (!WriteGraphViz(
+				desc.pName, 
+				DECLARE_EXTERNAL_INPUTS, 
+				LINK_EXTERNAL_INPUTS,
+				parsedRenderStages,
+				parsedInputAttachments,
+				parsedTemporalInputAttachments,
+				parsedExternalInputAttachments,
+				parsedOutputAttachments,
+				sortedInternalRenderStages,
+				sortedRenderStages,
+				sortedSynchronizationStages,
+				sortedPipelineStages))
 			{
 				LOG_WARNING("[RenderGraph]: Could not create GraphViz for \"%s\"", desc.pName);
 			}
@@ -76,7 +94,13 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraphCreator::ParseInitialStages(const RenderGraphDesc& desc)
+	bool RenderGraphCreator::ParseInitialStages(
+		const RenderGraphDesc& desc,
+		std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments)
 	{
 		uint32 globalAttachmentIndex = 0;
 
@@ -84,15 +108,15 @@ namespace LambdaEngine
 		{
 			const RenderStage& renderStage = desc.pRenderStages[renderStageIndex];
 
-			auto renderStageIt = s_ParsedRenderStages.find(renderStage.pName);
+			auto renderStageIt = parsedRenderStages.find(renderStage.pName);
 
-			if (renderStageIt != s_ParsedRenderStages.end())
+			if (renderStageIt != parsedRenderStages.end())
 			{
 				LOG_ERROR("[RenderGraph]: Multiple Render Stages with same name is not allowed, name: \"%s\"", renderStage.pName);
 				return false;
 			}
 
-			InternalRenderStage& internalRenderStage = s_ParsedRenderStages[renderStage.pName];
+			InternalRenderStage& internalRenderStage = parsedRenderStages[renderStage.pName];
 			internalRenderStage.pRenderStage = &renderStage;
 			internalRenderStage.GlobalIndex = renderStageIndex;
 
@@ -100,15 +124,15 @@ namespace LambdaEngine
 			for (uint32 inputAttachmentIndex = 0; inputAttachmentIndex < renderStage.InputAttachmentCount; inputAttachmentIndex++)
 			{
 				const RenderStageInputAttachment& renderStageInputAttachment = renderStage.pInputAttachments[inputAttachmentIndex];
-				auto inputIt = s_ParsedInputAttachments.find(renderStageInputAttachment.pName);
-				auto temporalInputIt = s_ParsedTemporalInputAttachments.find(renderStageInputAttachment.pName);
+				auto inputIt = parsedInputAttachments.find(renderStageInputAttachment.pName);
+				auto temporalInputIt = parsedTemporalInputAttachments.find(renderStageInputAttachment.pName);
 
 				bool isTemporal = IsInputTemporal(renderStage, &renderStageInputAttachment);
 
 				if (isTemporal)
 				{
 					//Temporal
-					if (temporalInputIt != s_ParsedTemporalInputAttachments.end() &&
+					if (temporalInputIt != parsedTemporalInputAttachments.end() &&
 						temporalInputIt->second.pAttachment->Type == renderStageInputAttachment.Type)
 					{
 						temporalInputIt->second.RenderStages.push_back(&internalRenderStage);
@@ -116,7 +140,7 @@ namespace LambdaEngine
 					}
 					else
 					{
-						InternalRenderStageInputAttachment& internalTemporalInputAttachment = s_ParsedTemporalInputAttachments[renderStageInputAttachment.pName];
+						InternalRenderStageInputAttachment& internalTemporalInputAttachment = parsedTemporalInputAttachments[renderStageInputAttachment.pName];
 						internalTemporalInputAttachment.pAttachment = &renderStageInputAttachment;
 						internalTemporalInputAttachment.RenderStages.push_back(&internalRenderStage);
 						internalTemporalInputAttachment.GlobalIndex = globalAttachmentIndex;
@@ -128,7 +152,7 @@ namespace LambdaEngine
 				else
 				{
 					//Non-Temporal
-					if (inputIt != s_ParsedInputAttachments.end() &&
+					if (inputIt != parsedInputAttachments.end() &&
 						inputIt->second.pAttachment->Type == renderStageInputAttachment.Type)
 					{
 						inputIt->second.RenderStages.push_back(&internalRenderStage);
@@ -136,7 +160,7 @@ namespace LambdaEngine
 					}
 					else
 					{
-						InternalRenderStageInputAttachment& internalInputAttachment = s_ParsedInputAttachments[renderStageInputAttachment.pName];
+						InternalRenderStageInputAttachment& internalInputAttachment = parsedInputAttachments[renderStageInputAttachment.pName];
 						internalInputAttachment.pAttachment = &renderStageInputAttachment;
 						internalInputAttachment.RenderStages.push_back(&internalRenderStage);
 						internalInputAttachment.GlobalIndex = globalAttachmentIndex;
@@ -151,9 +175,9 @@ namespace LambdaEngine
 			for (uint32 externalInputAttachmentIndex = 0; externalInputAttachmentIndex < renderStage.ExtenalInputAttachmentCount; externalInputAttachmentIndex++)
 			{
 				const RenderStageExternalInputAttachment& renderStageExternalInputAttachment = renderStage.pExternalInputAttachments[externalInputAttachmentIndex];
-				auto externalInputIt = s_ParsedExternalInputAttachments.find(renderStageExternalInputAttachment.pName);
+				auto externalInputIt = parsedExternalInputAttachments.find(renderStageExternalInputAttachment.pName);
 
-				if (externalInputIt != s_ParsedExternalInputAttachments.end() &&
+				if (externalInputIt != parsedExternalInputAttachments.end() &&
 					externalInputIt->second.pAttachment->Type == renderStageExternalInputAttachment.Type &&
 					externalInputIt->second.pAttachment->DescriptorCount == renderStageExternalInputAttachment.DescriptorCount)
 				{
@@ -162,7 +186,7 @@ namespace LambdaEngine
 				}
 				else
 				{
-					InternalRenderStageExternalInputAttachment& internalExternalInputAttachment = s_ParsedExternalInputAttachments[renderStageExternalInputAttachment.pName];
+					InternalRenderStageExternalInputAttachment& internalExternalInputAttachment = parsedExternalInputAttachments[renderStageExternalInputAttachment.pName];
 					internalExternalInputAttachment.pAttachment = &renderStageExternalInputAttachment;
 					internalExternalInputAttachment.RenderStages.push_back(&internalRenderStage);
 					internalExternalInputAttachment.GlobalIndex = globalAttachmentIndex;
@@ -176,9 +200,9 @@ namespace LambdaEngine
 			for (uint32 outputAttachmentIndex = 0; outputAttachmentIndex < renderStage.OutputAttachmentCount; outputAttachmentIndex++)
 			{
 				const RenderStageOutputAttachment& renderStageOutputAttachment = renderStage.pOutputAttachments[outputAttachmentIndex];
-				auto outputIt = s_ParsedOutputAttachments.find(renderStageOutputAttachment.pName);
+				auto outputIt = parsedOutputAttachments.find(renderStageOutputAttachment.pName);
 
-				if (outputIt != s_ParsedOutputAttachments.end() &&
+				if (outputIt != parsedOutputAttachments.end() &&
 					outputIt->second.pAttachment->Type == renderStageOutputAttachment.Type)
 				{
 					outputIt->second.RenderStages.push_back(&internalRenderStage);
@@ -186,7 +210,7 @@ namespace LambdaEngine
 				}
 				else
 				{
-					InternalRenderStageOutputAttachment& internalOutputAttachment = s_ParsedOutputAttachments[renderStageOutputAttachment.pName];
+					InternalRenderStageOutputAttachment& internalOutputAttachment = parsedOutputAttachments[renderStageOutputAttachment.pName];
 					internalOutputAttachment.pAttachment = &renderStageOutputAttachment;
 					internalOutputAttachment.RenderStages.push_back(&internalRenderStage);
 					internalOutputAttachment.GlobalIndex = globalAttachmentIndex;
@@ -200,14 +224,16 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraphCreator::ConnectOutputsToInputs()
+	bool RenderGraphCreator::ConnectOutputsToInputs(
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>& parsedInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageOutputAttachment>& parsedOutputAttachments)
 	{
 		//Connect Output Attachments to Input Attachments
-		for (auto& outputAttachmentPair : s_ParsedOutputAttachments)
+		for (auto& outputAttachmentPair : parsedOutputAttachments)
 		{
 			InternalRenderStageOutputAttachment& renderStageOutputAttachment = outputAttachmentPair.second;
 
-			for (auto& inputAttachmentPair : s_ParsedInputAttachments)
+			for (auto& inputAttachmentPair : parsedInputAttachments)
 			{
 				InternalRenderStageInputAttachment& renderStageInputAttachment = inputAttachmentPair.second;
 
@@ -238,7 +264,7 @@ namespace LambdaEngine
 
 		bool result = true;
 		
-		for (auto& inputAttachmentPair : s_ParsedInputAttachments)
+		for (auto& inputAttachmentPair : parsedInputAttachments)
 		{
 			InternalRenderStageInputAttachment& renderStageInputAttachment = inputAttachmentPair.second;
 
@@ -252,9 +278,9 @@ namespace LambdaEngine
 		return result;
 	}
 
-	bool RenderGraphCreator::WeightRenderStages()
+	bool RenderGraphCreator::WeightRenderStages(std::unordered_map<const char*, InternalRenderStage>& parsedRenderStages)
 	{
-		for (auto renderStageIt = s_ParsedRenderStages.begin(); renderStageIt != s_ParsedRenderStages.end(); renderStageIt++)
+		for (auto renderStageIt = parsedRenderStages.begin(); renderStageIt != parsedRenderStages.end(); renderStageIt++)
 		{
 			RecursivelyWeightAncestors(&renderStageIt->second);
 		}
@@ -271,11 +297,16 @@ namespace LambdaEngine
 		}
 	}
 
-	bool RenderGraphCreator::SortPipelineStages()
+	bool RenderGraphCreator::SortPipelineStages(
+		std::unordered_map<const char*, InternalRenderStage>&	parsedRenderStages,
+		std::vector<const InternalRenderStage*>&				sortedInternalRenderStages,
+		std::vector<RenderStage>&								sortedRenderStages,
+		std::vector<SynchronizationStage>&						sortedSynchronizationStages,
+		std::vector<PipelineStage>&								sortedPipelineStages)
 	{
 		std::multimap<uint32, const InternalRenderStage*> weightedRenderStageMap;
 
-		for (auto renderStageIt = s_ParsedRenderStages.begin(); renderStageIt != s_ParsedRenderStages.end(); renderStageIt++)
+		for (auto renderStageIt = parsedRenderStages.begin(); renderStageIt != parsedRenderStages.end(); renderStageIt++)
 		{
 			weightedRenderStageMap.insert(std::make_pair(renderStageIt->second.Weight, &renderStageIt->second));
 		}
@@ -284,7 +315,7 @@ namespace LambdaEngine
 
 		for (auto sortedRenderStageIt = weightedRenderStageMap.begin(); sortedRenderStageIt != weightedRenderStageMap.end(); sortedRenderStageIt++)
 		{
-			s_SortedInternalRenderStages.push_back(sortedRenderStageIt->second);
+			sortedInternalRenderStages.push_back(sortedRenderStageIt->second);
 
 			const RenderStage* pSourceRenderStage = sortedRenderStageIt->second->pRenderStage;
 
@@ -306,12 +337,12 @@ namespace LambdaEngine
 			case EPipelineStateType::RAY_TRACING:	renderStage.Pipeline.pRayTracingDesc = pSourceRenderStage->Pipeline.pRayTracingDesc; break;
 			}		
 
-			s_SortedRenderStages.push_back(renderStage);
+			sortedRenderStages.push_back(renderStage);
 
 			PipelineStage pipelineStage = {};
 			pipelineStage.Type = EPipelineStageType::RENDER;
-			pipelineStage.StageIndex = s_SortedRenderStages.size() - 1;
-			s_SortedPipelineStages.push_back(pipelineStage);
+			pipelineStage.StageIndex = sortedRenderStages.size() - 1;
+			sortedPipelineStages.push_back(pipelineStage);
 
 			SynchronizationStage synchronizationStage = {};
 
@@ -362,42 +393,44 @@ namespace LambdaEngine
 			//Push Synchronization Stage to Graph
 			if (synchronizationStage.Synchronizations.size() > 0)
 			{
-				s_SortedSynchronizationStages.push_back(synchronizationStage);
+				sortedSynchronizationStages.push_back(synchronizationStage);
 
 				PipelineStage pipelineStage = {};
 				pipelineStage.Type = EPipelineStageType::SYNCHRONIZATION;
-				pipelineStage.StageIndex = s_SortedSynchronizationStages.size() - 1;
-				s_SortedPipelineStages.push_back(pipelineStage);
+				pipelineStage.StageIndex = sortedSynchronizationStages.size() - 1;
+				sortedPipelineStages.push_back(pipelineStage);
 			}
 		}
 
-		std::reverse(s_SortedRenderStages.begin(), s_SortedRenderStages.end());
-		std::reverse(s_SortedSynchronizationStages.begin(), s_SortedSynchronizationStages.end());
+		std::reverse(sortedRenderStages.begin(), sortedRenderStages.end());
+		std::reverse(sortedSynchronizationStages.begin(), sortedSynchronizationStages.end());
 
-		std::reverse(s_SortedInternalRenderStages.begin(), s_SortedInternalRenderStages.end());
-		std::reverse(s_SortedPipelineStages.begin(), s_SortedPipelineStages.end());
+		std::reverse(sortedInternalRenderStages.begin(), sortedInternalRenderStages.end());
+		std::reverse(sortedPipelineStages.begin(), sortedPipelineStages.end());
 
-		for (auto sortedPipelineStagesIt = s_SortedPipelineStages.begin(); sortedPipelineStagesIt != s_SortedPipelineStages.end(); sortedPipelineStagesIt++)
+		for (auto sortedPipelineStagesIt = sortedPipelineStages.begin(); sortedPipelineStagesIt != sortedPipelineStages.end(); sortedPipelineStagesIt++)
 		{
 			if (sortedPipelineStagesIt->Type == EPipelineStageType::RENDER)
 			{
-				sortedPipelineStagesIt->StageIndex = s_SortedRenderStages.size() - sortedPipelineStagesIt->StageIndex - 1;
+				sortedPipelineStagesIt->StageIndex = sortedRenderStages.size() - sortedPipelineStagesIt->StageIndex - 1;
 			}
 			else if (sortedPipelineStagesIt->Type == EPipelineStageType::SYNCHRONIZATION)
 			{
-				sortedPipelineStagesIt->StageIndex = s_SortedSynchronizationStages.size() - sortedPipelineStagesIt->StageIndex - 1;
+				sortedPipelineStagesIt->StageIndex = sortedSynchronizationStages.size() - sortedPipelineStagesIt->StageIndex - 1;
 			}
 		}
 
 		return true;
 	}
 
-	bool RenderGraphCreator::PruneUnnecessarySynchronizations()
+	bool RenderGraphCreator::PruneUnnecessarySynchronizations(
+		std::vector<SynchronizationStage>&	sortedSynchronizationStages,
+		std::vector<PipelineStage>&			sortedPipelineStages)
 	{
 		std::unordered_map<const char*, AttachmentSynchronization*> firstEncounterOfAttachmentSynchronizations;
 		std::unordered_map<const char*, std::pair<EAttachmentState, EPipelineStateType>> transitionedResourceStates;
 
-		for (auto synchronizationStageIt = s_SortedSynchronizationStages.begin(); synchronizationStageIt != s_SortedSynchronizationStages.end();)
+		for (auto synchronizationStageIt = sortedSynchronizationStages.begin(); synchronizationStageIt != sortedSynchronizationStages.end();)
 		{
 			for (auto attachmentSynchronizationIt = synchronizationStageIt->Synchronizations.begin(); attachmentSynchronizationIt != synchronizationStageIt->Synchronizations.end(); )
 			{
@@ -461,15 +494,15 @@ namespace LambdaEngine
 			{
 				//Remove Pipeline Stage
 				bool stageRemoved = false;
-				for (auto pipelineStageIt = s_SortedPipelineStages.begin(); pipelineStageIt != s_SortedPipelineStages.end();)
+				for (auto pipelineStageIt = sortedPipelineStages.begin(); pipelineStageIt != sortedPipelineStages.end();)
 				{
 					if (pipelineStageIt->Type == EPipelineStageType::SYNCHRONIZATION)
 					{
 						if (!stageRemoved)
 						{
-							if (pipelineStageIt->StageIndex == (synchronizationStageIt - s_SortedSynchronizationStages.begin()))
+							if (pipelineStageIt->StageIndex == (synchronizationStageIt - sortedSynchronizationStages.begin()))
 							{
-								pipelineStageIt = s_SortedPipelineStages.erase(pipelineStageIt);
+								pipelineStageIt = sortedPipelineStages.erase(pipelineStageIt);
 								stageRemoved = true;
 								continue;
 							}
@@ -484,7 +517,7 @@ namespace LambdaEngine
 					
 				}
 
-				synchronizationStageIt = s_SortedSynchronizationStages.erase(synchronizationStageIt);
+				synchronizationStageIt = sortedSynchronizationStages.erase(synchronizationStageIt);
 			}
 		}
 
@@ -535,7 +568,19 @@ namespace LambdaEngine
 		return strcmp(pAttachmentName, RENDER_GRAPH_BACK_BUFFER) == 0;
 	}
 
-	bool RenderGraphCreator::WriteGraphViz(const char* pName, bool declareExternalInputs, bool linkExternalInputs)
+	bool RenderGraphCreator::WriteGraphViz(
+		const char* pName, 
+		bool declareExternalInputs, 
+		bool linkExternalInputs,
+		std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
+		std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
+		std::vector<RenderStage>&														sortedRenderStages,
+		std::vector<SynchronizationStage>&												sortedSynchronizationStages,
+		std::vector<PipelineStage>&														sortedPipelineStages)
 	{
 		char renderGraphNameBuffer[256];
 		char filepathBuffer[256];
@@ -562,7 +607,17 @@ namespace LambdaEngine
 			fputs("\trankdir = LR;\n", pGraphVizFile);
 			fputs("\tsplines=polyline\n", pGraphVizFile);
 
-			WriteGraphVizPipelineStages(pGraphVizFile);
+			WriteGraphVizPipelineStages(
+				pGraphVizFile,
+				parsedRenderStages,
+				parsedInputAttachments,
+				parsedTemporalInputAttachments,
+				parsedExternalInputAttachments,
+				parsedOutputAttachments,
+				sortedInternalRenderStages,
+				sortedRenderStages,
+				sortedSynchronizationStages,
+				sortedPipelineStages);
 
 			fputs("}", pGraphVizFile);
 
@@ -602,8 +657,32 @@ namespace LambdaEngine
 			fputs("\trankdir = LR;\n", pGraphVizFile);
 			fputs("\tsplines=polyline\n", pGraphVizFile);
 
-			WriteGraphVizCompleteDeclarations(pGraphVizFile, declareExternalInputs);
-			WriteGraphVizCompleteDefinitions(pGraphVizFile, declareExternalInputs, linkExternalInputs);
+			WriteGraphVizCompleteDeclarations(
+				pGraphVizFile, 
+				declareExternalInputs,
+				parsedRenderStages,
+				parsedInputAttachments,
+				parsedTemporalInputAttachments,
+				parsedExternalInputAttachments,
+				parsedOutputAttachments,
+				sortedInternalRenderStages,
+				sortedRenderStages,
+				sortedSynchronizationStages,
+				sortedPipelineStages);
+			
+			WriteGraphVizCompleteDefinitions(
+				pGraphVizFile, 
+				declareExternalInputs, 
+				linkExternalInputs,
+				parsedRenderStages,
+				parsedInputAttachments,
+				parsedTemporalInputAttachments,
+				parsedExternalInputAttachments,
+				parsedOutputAttachments,
+				sortedInternalRenderStages,
+				sortedRenderStages,
+				sortedSynchronizationStages,
+				sortedPipelineStages);
 
 			fputs("}", pGraphVizFile);
 
@@ -623,7 +702,17 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void RenderGraphCreator::WriteGraphVizPipelineStages(FILE* pFile)
+	void RenderGraphCreator::WriteGraphVizPipelineStages(
+		FILE* pFile,
+		std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
+		std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
+		std::vector<RenderStage>&														sortedRenderStages,
+		std::vector<SynchronizationStage>&												sortedSynchronizationStages,
+		std::vector<PipelineStage>&														sortedPipelineStages)
 	{
 		char fileOutputBuffer[256];
 		std::vector<std::string> edgesBuffer;
@@ -647,11 +736,11 @@ namespace LambdaEngine
 			uint32 synchronizationStageIndex = 0;
 			uint32 attachmentSynchronizationIndex = 0;
 
-			for (const PipelineStage& pipelineStage : s_SortedPipelineStages)
+			for (const PipelineStage& pipelineStage : sortedPipelineStages)
 			{
 				if (pipelineStage.Type == EPipelineStageType::RENDER)
 				{
-					const RenderStage& renderStage = s_SortedRenderStages[pipelineStage.StageIndex];
+					const RenderStage& renderStage = sortedRenderStages[pipelineStage.StageIndex];
 
 					sprintf(pipelineStageIndexBuffer, "%u", pipelineStageExecutionIndex++);
 					sprintf(renderStageIndexBuffer, "%u", renderStageIndex++);
@@ -700,7 +789,7 @@ namespace LambdaEngine
 				}
 				else if (pipelineStage.Type == EPipelineStageType::SYNCHRONIZATION)
 				{
-					const SynchronizationStage& synchronizationStage = s_SortedSynchronizationStages[pipelineStage.StageIndex];
+					const SynchronizationStage& synchronizationStage = sortedSynchronizationStages[pipelineStage.StageIndex];
 
 					sprintf(pipelineStageIndexBuffer, "%u", pipelineStageExecutionIndex++);
 					sprintf(synchronizationStageIndexBuffer, "%u", synchronizationStageIndex++);
@@ -794,13 +883,13 @@ namespace LambdaEngine
 
 			uint32 internalRenderStageIndex = 0;
 
-			for (const InternalRenderStage* pParentInternalRenderStage : s_SortedInternalRenderStages)
+			for (const InternalRenderStage* pParentInternalRenderStage : sortedInternalRenderStages)
 			{
 				sprintf(parentRenderStageNameBuffer + 2, "%u", internalRenderStageIndex++);
 
 				for (const InternalRenderStage* pChildInternalRenderStage : pParentInternalRenderStage->ChildRenderStages)
 				{
-					uint32 childIndex = std::distance(s_SortedInternalRenderStages.begin(), std::find(s_SortedInternalRenderStages.begin(), s_SortedInternalRenderStages.end(), pChildInternalRenderStage));
+					uint32 childIndex = std::distance(sortedInternalRenderStages.begin(), std::find(sortedInternalRenderStages.begin(), sortedInternalRenderStages.end(), pChildInternalRenderStage));
 
 					sprintf(childRenderStageNameBuffer + 2, "%u", childIndex);
 
@@ -824,7 +913,18 @@ namespace LambdaEngine
 
 	}
 
-	void RenderGraphCreator::WriteGraphVizCompleteDeclarations(FILE* pFile, bool declareExternalInputs)
+	void RenderGraphCreator::WriteGraphVizCompleteDeclarations(
+		FILE* pFile, 
+		bool declareExternalInputs,
+		std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
+		std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
+		std::vector<RenderStage>&														sortedRenderStages,
+		std::vector<SynchronizationStage>&												sortedSynchronizationStages,
+		std::vector<PipelineStage>&														sortedPipelineStages)
 	{
 		char fileOutputBuffer[256];
 		char renderStageBuffer[32];
@@ -846,7 +946,7 @@ namespace LambdaEngine
 		fputs("\t\tcolor = lightgrey;\n", pFile);
 		fputs("\t\tlabel = \"Temporal Inputs\";\n", pFile);
 
-		for (auto& attachmentPair : s_ParsedTemporalInputAttachments)
+		for (auto& attachmentPair : parsedTemporalInputAttachments)
 		{
 			const InternalRenderStageInputAttachment& renderStageTemporalInputAttachment = attachmentPair.second;
 
@@ -871,7 +971,7 @@ namespace LambdaEngine
 			fputs("\t\tcolor = lightgrey;\n", pFile);
 			fputs("\t\tlabel = \"External Inputs\";\n", pFile);
 
-			for (auto& attachmentPair : s_ParsedExternalInputAttachments)
+			for (auto& attachmentPair : parsedExternalInputAttachments)
 			{
 				const InternalRenderStageExternalInputAttachment& renderStageExternalInputAttachment = attachmentPair.second;
 
@@ -894,7 +994,7 @@ namespace LambdaEngine
 		fputs("\t\tlabel = \"Main Pipeline\";\n", pFile);
 
 		//Render Stages
-		for (auto& renderStagePair : s_ParsedRenderStages)
+		for (auto& renderStagePair : parsedRenderStages)
 		{
 			const InternalRenderStage& renderStage = renderStagePair.second;
 
@@ -909,7 +1009,7 @@ namespace LambdaEngine
 		}
 
 		//Input Attachments
-		for (auto& attachmentPair : s_ParsedInputAttachments)
+		for (auto& attachmentPair : parsedInputAttachments)
 		{
 			const InternalRenderStageInputAttachment& renderStageInputAttachment = attachmentPair.second;
 
@@ -924,7 +1024,7 @@ namespace LambdaEngine
 		}
 
 		//Output Attachments
-		for (auto& attachmentPair : s_ParsedOutputAttachments)
+		for (auto& attachmentPair : parsedOutputAttachments)
 		{
 			const InternalRenderStageOutputAttachment& renderStageOutputAttachment = attachmentPair.second;
 
@@ -941,7 +1041,19 @@ namespace LambdaEngine
 		fputs("\t}\n", pFile);
 	}
 
-	void RenderGraphCreator::WriteGraphVizCompleteDefinitions(FILE* pFile, bool externalInputsDeclared, bool linkExternalInputs)
+	void RenderGraphCreator::WriteGraphVizCompleteDefinitions(
+		FILE* pFile, 
+		bool externalInputsDeclared, 
+		bool linkExternalInputs,
+		std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
+		std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
+		std::vector<RenderStage>&														sortedRenderStages,
+		std::vector<SynchronizationStage>&												sortedSynchronizationStages,
+		std::vector<PipelineStage>&														sortedPipelineStages)
 	{
 		char fileOutputBuffer[256];
 		char renderStageBuffer[32];
@@ -957,7 +1069,7 @@ namespace LambdaEngine
 
 		uint32 invisibleNodeCounter = 0;
 
-		for (auto& renderStagePair : s_ParsedRenderStages)
+		for (auto& renderStagePair : parsedRenderStages)
 		{
 			const InternalRenderStage& renderStage = renderStagePair.second;
 
@@ -1037,7 +1149,7 @@ namespace LambdaEngine
 		{
 			strcpy(fileOutputBuffer, "\t");
 
-			for (auto attachmentPairIt = s_ParsedExternalInputAttachments.begin(); attachmentPairIt != s_ParsedExternalInputAttachments.end();)
+			for (auto attachmentPairIt = parsedExternalInputAttachments.begin(); attachmentPairIt != parsedExternalInputAttachments.end();)
 			{
 				const InternalRenderStageExternalInputAttachment& renderStageExternalInputAttachment = attachmentPairIt->second;
 
@@ -1047,7 +1159,7 @@ namespace LambdaEngine
 
 				attachmentPairIt++;
 
-				if (attachmentPairIt != s_ParsedExternalInputAttachments.end())
+				if (attachmentPairIt != parsedExternalInputAttachments.end())
 					strcat(fileOutputBuffer, " -> ");
 			}
 
@@ -1056,7 +1168,7 @@ namespace LambdaEngine
 		}
 
 		//Output Attachments
-		for (auto& attachmentPair : s_ParsedOutputAttachments)
+		for (auto& attachmentPair : parsedOutputAttachments)
 		{
 			const InternalRenderStageOutputAttachment& renderStageOutputAttachment = attachmentPair.second;
 

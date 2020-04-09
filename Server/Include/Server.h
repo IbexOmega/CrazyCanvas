@@ -10,6 +10,8 @@
 
 #include "Network/API/Discovery/NetworkDiscoveryHost.h"
 
+#include "Network/API/GameServer.h"
+
 #include <set>
 
 namespace LambdaEngine
@@ -57,4 +59,5 @@ private:
 	std::set<LambdaEngine::IClientUDPHandler*> m_ClientUDPHandlers;
 
 	LambdaEngine::NetworkDiscoveryHost* m_pNetworkDiscovery;
+	LambdaEngine::GameServer* m_pGameServer;
 };

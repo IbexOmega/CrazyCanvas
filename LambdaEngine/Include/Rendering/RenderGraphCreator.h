@@ -89,7 +89,7 @@ namespace LambdaEngine
 		{
 			GraphicsPipelineStateDesc*		pGraphicsDesc;
 			ComputePipelineStateDesc*		pComputeDesc;
-            RayTracingPipelineStateDesc*	pRayTracingDesc;
+			RayTracingPipelineStateDesc*	pRayTracingDesc;
 		} Pipeline;
 	};
 
@@ -190,49 +190,96 @@ namespace LambdaEngine
 		/*
 		* Parses everything to internal structures, creates bidirectional connections, separates temporal inputs from non-temporal inputs
 		*/
-		static bool ParseInitialStages(const RenderGraphDesc& desc);
+		static bool ParseInitialStages(
+		const RenderGraphDesc& desc,
+		std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+		std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments);
 		/*
 		* Connects output resources to input resources, thereby marking resource transitions, also discovers input resources that miss output resources
 		*/
-		static bool ConnectOutputsToInputs();
+		static bool ConnectOutputsToInputs(
+			std::unordered_map<const char*, InternalRenderStageInputAttachment>&	parsedInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageOutputAttachment>&	parsedOutputAttachments);
 		/*
 		* For each renderpass, go through its ascendants and add 1 to their weights
 		*/
-		static bool WeightRenderStages();
+		static bool WeightRenderStages(std::unordered_map<const char*, InternalRenderStage>& parsedRenderStages);
 		static void RecursivelyWeightAncestors(InternalRenderStage* pRenderStage);
 		/*
 		* Sorts Render Stages and Creates Synchronization Stages
 		*/
-		static bool SortPipelineStages();
+		static bool SortPipelineStages(
+			std::unordered_map<const char*, InternalRenderStage>&	parsedRenderStages,
+			std::vector<const InternalRenderStage*>&				sortedInternalRenderStages,
+			std::vector<RenderStage>&								sortedRenderStages,
+			std::vector<SynchronizationStage>&						sortedSynchronizationStages,
+			std::vector<PipelineStage>&								sortedPipelineStages);
 		/*
 		* Removes unnecessary synchronizations
 		*/
-		static bool PruneUnnecessarySynchronizations();
+		static bool PruneUnnecessarySynchronizations(
+			std::vector<SynchronizationStage>&		sortedSynchronizationStages,
+			std::vector<PipelineStage>&				sortedPipelineStages);
 
 		static bool IsInputTemporal(const RenderStage& renderStage, const RenderStageInputAttachment* pInputAttachment);
 		static bool AttachmentsEqual(const RenderStageInputAttachment* pInputAttachment, const RenderStageOutputAttachment* pOutputAttachment);
 		static bool AreRenderStagesRelated(const InternalRenderStage* pRenderStageAncestor, const InternalRenderStage* pRenderStageDescendant);
 		static bool IsAttachmentReserved(const char* pAttachmentName);
 
-		static bool WriteGraphViz(const char* pName, bool declareExternalInputs, bool linkExternalInputs);
-		static void WriteGraphVizPipelineStages(FILE* pFile);
-		static void WriteGraphVizCompleteDeclarations(FILE* pFile, bool declareExternalInputs);
-		static void WriteGraphVizCompleteDefinitions(FILE* pFile, bool externalInputsDeclared, bool linkExternalInputs);
+		static bool WriteGraphViz(
+			const char* pName, 
+			bool declareExternalInputs, 
+			bool linkExternalInputs,
+			std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
+			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
+			std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
+			std::vector<RenderStage>&														sortedRenderStages,
+			std::vector<SynchronizationStage>&												sortedSynchronizationStages,
+			std::vector<PipelineStage>&														sortedPipelineStages);
+		static void WriteGraphVizPipelineStages(
+			FILE* pFile,
+			std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
+			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
+			std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
+			std::vector<RenderStage>&														sortedRenderStages,
+			std::vector<SynchronizationStage>&												sortedSynchronizationStages,
+			std::vector<PipelineStage>&														sortedPipelineStages);
+		static void WriteGraphVizCompleteDeclarations(
+			FILE* pFile, 
+			bool declareExternalInputs,
+			std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
+			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
+			std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
+			std::vector<RenderStage>&														sortedRenderStages,
+			std::vector<SynchronizationStage>&												sortedSynchronizationStages,
+			std::vector<PipelineStage>&														sortedPipelineStages);
+		static void WriteGraphVizCompleteDefinitions(
+			FILE* pFile, 
+			bool externalInputsDeclared, 
+			bool linkExternalInputs,
+			std::unordered_map<const char*, InternalRenderStage>& parsedRenderStages,
+			std::unordered_map<const char*, InternalRenderStageInputAttachment>& parsedInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageInputAttachment>& parsedTemporalInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>& parsedExternalInputAttachments,
+			std::unordered_map<const char*, InternalRenderStageOutputAttachment>& parsedOutputAttachments,
+			std::vector<const InternalRenderStage*>& sortedInternalRenderStages,
+			std::vector<RenderStage>& sortedRenderStages,
+			std::vector<SynchronizationStage>& sortedSynchronizationStages,
+			std::vector<PipelineStage>& sortedPipelineStages);
 
 		static void SanitizeString(char* pString, uint32 numCharacters);
 		static void ConcatPipelineStateToString(char* pStringBuffer, EPipelineStateType pipelineState);
-
-	private:
-		static std::unordered_map<const char*, InternalRenderStage>							s_ParsedRenderStages;
-		static std::unordered_map<const char*, InternalRenderStageInputAttachment>			s_ParsedInputAttachments;
-		static std::unordered_map<const char*, InternalRenderStageInputAttachment>			s_ParsedTemporalInputAttachments;
-		static std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>	s_ParsedExternalInputAttachments;
-		static std::unordered_map<const char*, InternalRenderStageOutputAttachment>			s_ParsedOutputAttachments;
-
-		static std::vector<const InternalRenderStage*>										s_SortedInternalRenderStages;
-
-		static std::vector<RenderStage>														s_SortedRenderStages;
-		static std::vector<SynchronizationStage>											s_SortedSynchronizationStages;
-		static std::vector<PipelineStage>													s_SortedPipelineStages;
 	};
 }
