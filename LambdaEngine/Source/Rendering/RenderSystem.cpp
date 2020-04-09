@@ -89,7 +89,7 @@ namespace LambdaEngine
 		swapChainDesc.Height		= 0;
 		swapChainDesc.SampleCount	= 1;
 
-		ISwapChain* pSwapChain = s_pGraphicsDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), swapChainDesc);
+		ISwapChain* pSwapChain = s_pGraphicsDevice->CreateSwapChain(PlatformApplication::Get()->GetWindow(), s_pGraphicsQueue, swapChainDesc);
 		swapChainDesc = pSwapChain->GetDesc();
 
 		RenderPassAttachmentDesc attachmentDesc = { };
@@ -238,6 +238,8 @@ namespace LambdaEngine
 		uint64 signalValue	= waitValue + 1;
 
 		s_pGraphicsQueue->ExecuteCommandLists(&pCommandList, 1, PIPELINE_STAGE_FLAG_TOP, pFence, waitValue, pFence, signalValue);
+		pSwapChain->Present();
+
 		pFence->Wait(signalValue, UINT64_MAX_);
 
 		pCommandAllocator->Reset();

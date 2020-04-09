@@ -395,10 +395,10 @@ namespace LambdaEngine
 		}
 	}
 
-    ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc) const
+    ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc& desc) const
     {
         SwapChainVK* pSwapChain = DBG_NEW SwapChainVK(this);
-        if (!pSwapChain->Init(pWindow, desc))
+        if (!pSwapChain->Init(pWindow, pCommandQueue, desc))
         {
             pSwapChain->Release();
             return nullptr;

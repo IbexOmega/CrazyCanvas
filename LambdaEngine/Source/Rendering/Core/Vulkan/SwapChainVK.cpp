@@ -11,6 +11,7 @@
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/TextureVK.h"
+#include "Rendering/Core/Vulkan/CommandQueueVK.h"
 
 namespace LambdaEngine
 {
@@ -73,7 +74,7 @@ namespace LambdaEngine
         m_Buffers.clear();
     }
 
-    bool SwapChainVK::Init(const Window* pWindow, const SwapChainDesc& desc)
+    bool SwapChainVK::Init(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc& desc)
     {
         //Create platform specific surface
 #if defined(LAMBDA_PLATFORM_MACOS)
@@ -258,6 +259,9 @@ namespace LambdaEngine
         m_Desc      = desc;
         m_pWindow   = pWindow;
 
+        m_pCommandQueue = reinterpret_cast<CommandQueueVK*>(pCommandQueue);
+        m_pCommandQueue->AddRef();
+
         return InitSwapChain(desc.Width, desc.Height);
     }
 
@@ -379,15 +383,80 @@ namespace LambdaEngine
             m_Buffers.emplace_back(pTexture);
         }
 
-        return true;
+        result = AquireNextImage();
+        if (result != VK_SUCCESS)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
     }
 
-    void SwapChainVK::AquireNextImage()
+    VkResult SwapChainVK::AquireNextImage()
     {
+        VkSemaphore semaphore = m_ImageSemaphores[m_SemaphoreIndex];
+        VkResult result = vkAcquireNextImageKHR(m_pDevice->Device, m_SwapChain, UINT64_MAX_, semaphore, VK_NULL_HANDLE, &m_BackBufferIndex);
+        if (result == VK_SUCCESS)
+        {
+            m_pCommandQueue->AddWaitSemaphore(semaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+        }
+        else
+        {
+            LOG_VULKAN_ERROR(result, "[SwapChainVK]: vkAcquireNextImageKHR failed");
+        }
+
+        return result;
     }
 
     void SwapChainVK::Present()
     {
+        VkSemaphore waitSemaphores[] = { m_RenderSemaphores[m_SemaphoreIndex] };
+        
+        // Perform empty submit on queue for signaling the semaphore
+        VkSubmitInfo submitInfo = { };
+        submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.pNext                = nullptr;
+        submitInfo.commandBufferCount   = 0;
+        submitInfo.pCommandBuffers      = nullptr;
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores    = waitSemaphores;
+        submitInfo.waitSemaphoreCount   = 0;
+        submitInfo.pWaitSemaphores      = nullptr;
+        submitInfo.pWaitDstStageMask    = nullptr;
+
+        VkResult result = vkQueueSubmit(m_pCommandQueue->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+        if (result != VK_SUCCESS)
+        {
+            LOG_VULKAN_ERROR(result, "[SwapChainVK]: Submit failed");
+            //return false;
+        }
+
+        VkPresentInfoKHR presentInfo = {};
+        presentInfo.sType               = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.pNext               = nullptr;
+        presentInfo.swapchainCount      = 1;
+        presentInfo.pSwapchains         = &m_SwapChain;
+        presentInfo.waitSemaphoreCount  = 1;
+        presentInfo.pWaitSemaphores     = waitSemaphores;
+        presentInfo.pResults            = nullptr;
+        presentInfo.pImageIndices       = &m_BackBufferIndex;
+
+        result = vkQueuePresentKHR(m_pCommandQueue->GetQueue(), &presentInfo);
+        if (result == VK_SUCCESS)
+        {
+            m_SemaphoreIndex = (m_SemaphoreIndex + 1) % m_Desc.BufferCount;
+            result = AquireNextImage();
+        }
+
+        if (result != VK_SUCCESS)
+        {
+            LOG_VULKAN_ERROR(result, "[SwapChainVK]: Present failed");
+            //return false;
+        }
+
+        //return true;
     }
 
     bool SwapChainVK::ResizeBuffers(uint32 width, uint32 height)
@@ -417,6 +486,12 @@ namespace LambdaEngine
         TextureVK* pBuffer = m_Buffers[bufferIndex];
         pBuffer->AddRef();
         return pBuffer;
+    }
+
+    ICommandQueue* SwapChainVK::GetCommandQueue()
+    {
+        m_pCommandQueue->AddRef();
+        return m_pCommandQueue;
     }
 
     void SwapChainVK::SetName(const char* pName)

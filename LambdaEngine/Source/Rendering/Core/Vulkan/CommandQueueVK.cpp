@@ -10,7 +10,7 @@ namespace LambdaEngine
 {
 	CommandQueueVK::CommandQueueVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice),
-		m_CommandBuffers()
+		m_SubmitCommandBuffers()
 	{
 	}
 
@@ -42,13 +42,19 @@ namespace LambdaEngine
 
 		return true;
 	}
+
+	void CommandQueueVK::AddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlagBits waitStage)
+	{
+		m_WaitSemaphores.push_back(semaphore);
+		m_WaitStages.push_back(waitStage);
+	}
 	
 	bool CommandQueueVK::ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, const IFence* pSignalFence, uint64 signalValue)
 	{
 		for (uint32 i = 0; i < numCommandLists; i++)
 		{
 			const CommandListVK* pCommandListVk = reinterpret_cast<const CommandListVK*>(ppCommandLists[i]);
-			m_CommandBuffers[i] = pCommandListVk->GetCommandBuffer();
+			m_SubmitCommandBuffers[i] = pCommandListVk->GetCommandBuffer();
 		}
 
 #ifndef LAMBDA_PRODUCTION
@@ -61,45 +67,56 @@ namespace LambdaEngine
 
 		VkSubmitInfo submitInfo = { };
 		submitInfo.sType				= VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.pCommandBuffers		= m_CommandBuffers;
+		submitInfo.pCommandBuffers		= m_SubmitCommandBuffers;
 		submitInfo.commandBufferCount	= numCommandLists;
 
 		const FenceVK* pWaitFenceVk		= reinterpret_cast<const FenceVK*>(pWaitFence);
 		const FenceVK* pSignalFenceVk	= reinterpret_cast<const FenceVK*>(pSignalFence);
 
-		VkSemaphore	signalSemaphores[]	= { pSignalFenceVk->GetSemaphore() };
-		uint64		signalValues[]		= { signalValue };
-		VkSemaphore	waitSemaphores[]	= { pWaitFenceVk->GetSemaphore() };
-		uint64		waitValues[]		= { waitValue };
+		//Add Timeline Semaphores
+		uint64 signalValues[]	= { signalValue };
+		uint32 SignalValueCount = 0;
 		
-		VkPipelineStageFlags			waitStagesVk[]	= { ConvertPipelineStageMask(waitStage) };
-		VkTimelineSemaphoreSubmitInfo	fenceSubmitInfo = {};
+		uint64 waitValues[]	= { waitValue };
+		uint32 waitValueCount = 0;
+
+		if (pWaitFenceVk)
+		{
+			m_WaitSemaphores.insert(m_WaitSemaphores.begin(), pWaitFenceVk->GetSemaphore());
+			m_WaitStages.insert(m_WaitStages.begin(), ConvertPipelineStage(waitStage));
+
+			waitValueCount = 1;
+		}
+
+		if (pSignalFenceVk)
+		{
+			m_SignalSemaphores.insert(m_SignalSemaphores.begin(), pSignalFenceVk->GetSemaphore());
+			SignalValueCount = 1;
+		}
 		
 		//TODO: Add ability to query this functionallty from the device
-		if (pWaitFence && m_pDevice->vkGetSemaphoreCounterValue)
+		VkTimelineSemaphoreSubmitInfo fenceSubmitInfo = {};
+		if (m_pDevice->vkGetSemaphoreCounterValue)
 		{
 			fenceSubmitInfo.sType						= VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
 			fenceSubmitInfo.pNext						= nullptr;	
-			fenceSubmitInfo.signalSemaphoreValueCount	= 1;
+			fenceSubmitInfo.signalSemaphoreValueCount	= SignalValueCount;
 			fenceSubmitInfo.pSignalSemaphoreValues		= signalValues;
-			fenceSubmitInfo.waitSemaphoreValueCount		= 1;
+			fenceSubmitInfo.waitSemaphoreValueCount		= waitValueCount;
 			fenceSubmitInfo.pWaitSemaphoreValues		= waitValues;
 
-			submitInfo.pNext				= (const void*)&fenceSubmitInfo;
-			submitInfo.signalSemaphoreCount = 1;
-			submitInfo.pSignalSemaphores	= signalSemaphores;
-			submitInfo.waitSemaphoreCount	= 1;
-			submitInfo.pWaitSemaphores		= waitSemaphores;
-			submitInfo.pWaitDstStageMask	= waitStagesVk;
+			submitInfo.pNext = (const void*)&fenceSubmitInfo;
 		}
 		else
 		{
-			submitInfo.pNext				= nullptr;
-			submitInfo.signalSemaphoreCount = 0;
-			submitInfo.pSignalSemaphores	= nullptr;
-			submitInfo.waitSemaphoreCount	= 0;
-			submitInfo.pWaitSemaphores		= nullptr;
+			submitInfo.pNext = nullptr;
 		}
+
+		submitInfo.signalSemaphoreCount	= uint32(m_SignalSemaphores.size());
+		submitInfo.pSignalSemaphores	= m_SignalSemaphores.data();
+		submitInfo.waitSemaphoreCount	= uint32(m_WaitSemaphores.size());
+		submitInfo.pWaitSemaphores		= m_WaitSemaphores.data();
+		submitInfo.pWaitDstStageMask	= m_WaitStages.data();
 
 		VkResult result = vkQueueSubmit(m_Queue, 1, &submitInfo, VK_NULL_HANDLE);
 		if (result != VK_SUCCESS)
@@ -107,8 +124,14 @@ namespace LambdaEngine
 			LOG_VULKAN_ERROR(result, "[CommandQueueVK]: Executing commandlists failed");
 			return false;
 		}
+		else
+		{
+			m_WaitSemaphores.clear();
+			m_WaitStages.clear();
 
-		return true;
+			m_SignalSemaphores.clear();
+			return true;
+		}
 	}
 	
 	void CommandQueueVK::Flush()

@@ -6,6 +6,7 @@ namespace LambdaEngine
 {
     class Window;
     class ITexture;
+    class ICommandQueue;
     
     struct SwapChainDesc
     {
@@ -49,7 +50,8 @@ namespace LambdaEngine
         virtual const Window*   GetWindow() const = 0;
 
         /*
-        * Returns the buffer specified as parameter
+        * Returns the buffer specified as parameter. Caller is responsible for calling release on the
+        * resulting pointer. All references to must be released before calling Release or ResizeBuffers.
         *
         * bufferIndex   - The index of the desired buffer. Must be between 0 and (BufferCount - 1).
         *
@@ -57,6 +59,21 @@ namespace LambdaEngine
         */
         virtual ITexture*       GetBuffer(uint32 bufferIndex)       = 0;
         virtual const ITexture* GetBuffer(uint32 bufferIndex) const = 0;
-        virtual SwapChainDesc   GetDesc()   const                   = 0;
+
+        /*
+        * Returns the CommandQueue that were used to create this swapchain. Caller is responsible for 
+        * calling Release.
+        *
+        * return - On success a valid pointer is returned, otherwise nullptr
+        */
+        virtual ICommandQueue* GetCommandQueue() = 0;
+
+        /*
+        * Returns the index of the current backbuffer. A number between 0 and (BufferCount-1).
+        *
+        * return - Returns the backbuffer index
+        */
+        virtual uint64          GetCurrentBackBufferIndex() const = 0;
+        virtual SwapChainDesc   GetDesc()                   const = 0;
     };
 }
