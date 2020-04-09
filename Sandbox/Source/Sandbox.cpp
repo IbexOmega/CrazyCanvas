@@ -219,7 +219,7 @@ Sandbox::Sandbox() :
 
 	RenderGraphDesc renderGraphDesc = {};
 	renderGraphDesc.pName				= "Test Render Graph";
-	renderGraphDesc.CreateDebugGraph	= true;
+	renderGraphDesc.CreateDebugGraph	= false;
 	renderGraphDesc.pRenderStages		= renderStages.data();
 	renderGraphDesc.RenderStageCount	= renderStages.size();
 
