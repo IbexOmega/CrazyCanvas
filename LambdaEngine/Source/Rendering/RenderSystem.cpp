@@ -237,10 +237,10 @@ namespace LambdaEngine
 		uint64 waitValue	= pFence->GetValue();
 		uint64 signalValue	= waitValue + 1;
 
-		s_pGraphicsQueue->ExecuteCommandLists(&pCommandList, 1, PIPELINE_STAGE_FLAG_TOP, pFence, waitValue, pFence, signalValue);
-		pSwapChain->Present();
+		//s_pGraphicsQueue->ExecuteCommandLists(&pCommandList, 1, PIPELINE_STAGE_FLAG_TOP, pFence, waitValue, pFence, signalValue);
+		//pSwapChain->Present();
 
-		pFence->Wait(signalValue, UINT64_MAX_);
+		//pFence->Wait(signalValue, UINT64_MAX_);
 
 		pCommandAllocator->Reset();
 

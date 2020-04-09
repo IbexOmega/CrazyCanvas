@@ -10,6 +10,7 @@ namespace LambdaEngine
 	public:
 		DECL_ABSTRACT_CLASS(Game);
 		
-		virtual void Tick(Timestamp dt) = 0;
+		virtual void Tick(Timestamp delta)      = 0;
+        virtual void FixedTick(Timestamp delta) = 0;
 	};
 }

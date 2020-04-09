@@ -412,17 +412,19 @@ void Sandbox::OnScroll(int32 delta)
 	LOG_MESSAGE("Mouse Scrolled: %d", delta);
 }
 
-void Sandbox::Tick(LambdaEngine::Timestamp dt)
+void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-	m_Timer += dt.AsSeconds();
+    LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
+    
+	m_Timer += delta.AsSeconds();
 
 	if (m_pGunSoundEffect != nullptr)
 	{
 		if (m_SpawnPlayAts)
 		{
-			m_GunshotTimer += dt.AsSeconds();
+			m_GunshotTimer += delta.AsSeconds();
 
 			if (m_GunshotTimer > m_GunshotDelay)
 			{
@@ -439,6 +441,11 @@ void Sandbox::Tick(LambdaEngine::Timestamp dt)
 		glm::vec3 tonePosition(glm::cos(m_Timer), 0.0f, glm::sin(m_Timer));
 		m_pToneSoundInstance->SetPosition(tonePosition);
 	}
+}
+
+void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
+{
+    LOG_MESSAGE("Fixed delta: %.6f ms", delta.AsMilliSeconds());
 }
 
 namespace LambdaEngine

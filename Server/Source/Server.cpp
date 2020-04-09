@@ -135,9 +135,14 @@ void Server::UpdateTitle()
 	}
 }
 
-void Server::Tick(LambdaEngine::Timestamp dt)
+void Server::Tick(LambdaEngine::Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(dt);
+}
+
+void Server::FixedTick(LambdaEngine::Timestamp delta)
+{
+    UNREFERENCED_VARIABLE(delta);
 }
 
 namespace LambdaEngine

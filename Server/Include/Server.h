@@ -39,7 +39,8 @@ public:
 	virtual void OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client) override;
 
 	// Inherited via Game
-	virtual void Tick(LambdaEngine::Timestamp dt) override;
+	virtual void Tick(LambdaEngine::Timestamp delta)        override;
+    virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
 	// Inherited via IKeyboardHandler
 	virtual void OnKeyDown(LambdaEngine::EKey key)      override;

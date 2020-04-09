@@ -87,9 +87,9 @@ namespace LambdaEngine
 
 		union
 		{
-			GraphicsPipelineDesc*		pGraphicsDesc;
-			ComputePipelineDesc*		pComputeDesc;
-			RayTracingPipelineDesc*		pRayTracingDesc;
+			GraphicsPipelineStateDesc*		pGraphicsDesc;
+			ComputePipelineStateDesc*		pComputeDesc;
+            RayTracingPipelineStateDesc*	pRayTracingDesc;
 		} Pipeline;
 	};
 

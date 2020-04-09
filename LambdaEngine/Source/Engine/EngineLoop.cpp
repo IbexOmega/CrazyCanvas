@@ -29,16 +29,32 @@ namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
-		Clock clock;
+        const Timestamp timestep = Timestamp::Seconds(1.0 / 60.0);
         
-        bool IsRunning = true;
-        while (IsRunning)
+        Clock clock;
+        Clock fixedClock;
+        Timestamp accumulator;
+        
+        bool isRunning = true;
+        while (isRunning)
         {
 			clock.Tick();
             
-			Timestamp dt = clock.GetDeltaTime();
-            IsRunning = Tick(dt);
-            pGame->Tick(dt);
+			Timestamp delta = clock.GetDeltaTime();
+            isRunning = Tick(delta);
+            
+            // Fixed update
+            accumulator += delta;
+            while (accumulator >= timestep)
+            {
+                fixedClock.Tick();
+                pGame->FixedTick(fixedClock.GetDeltaTime());
+                
+                accumulator -= timestep;
+            }
+            
+            // Variable update
+            pGame->Tick(delta);
         }
     }
 

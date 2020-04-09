@@ -157,9 +157,14 @@ void Client::OnKeyUp(LambdaEngine::EKey key)
 	UNREFERENCED_VARIABLE(key);
 }
 
-void Client::Tick(LambdaEngine::Timestamp dt)
+void Client::Tick(LambdaEngine::Timestamp delta)
 {
-	UNREFERENCED_VARIABLE(dt);
+	UNREFERENCED_VARIABLE(delta);
+}
+
+void Client::FixedTick(LambdaEngine::Timestamp delta)
+{
+    UNREFERENCED_VARIABLE(delta);
 }
 
 namespace LambdaEngine
