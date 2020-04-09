@@ -5,3 +5,6 @@
 #ifdef LAMBDA_VISUAL_STUDIO
 	#pragma warning(disable : 4251)
 #endif
+
+template <typename T>
+using TArray = std::vector<T>;

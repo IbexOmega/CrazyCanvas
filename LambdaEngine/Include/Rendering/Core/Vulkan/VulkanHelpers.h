@@ -117,6 +117,21 @@ namespace LambdaEngine
 		return result == VK_SUCCESS;
 	}
 
+    inline VkDescriptorType ConvertDescriptorType(EDescriptorType descriptorType)
+    {
+        switch (descriptorType)
+        {
+        case EDescriptorType::DESCRIPTOR_SHADER_RESOURCE:			        return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        case EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER:	return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        case EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE:			return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        case EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER:			return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        case EDescriptorType::DESCRIPTOR_CONSTANT_BUFFER:			        return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        case EDescriptorType::DESCRIPTOR_ACCELERATION_STRUCTURE:			return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        case EDescriptorType::DESCRIPTOR_UNKNOWN:
+        default:                                                            return VkDescriptorType(0);
+        }
+    }
+
 	inline VkShaderStageFlagBits ConvertShaderStageFlag(FShaderStageFlags shaderType)
 	{
 		switch (shaderType)

@@ -9,6 +9,7 @@
 namespace LambdaEngine
 {
     class TextureVK;
+    class CommandQueueVK;
     class GraphicsDeviceVK;
 
     class SwapChainVK : public TDeviceChildBase<GraphicsDeviceVK, ISwapChain>
@@ -19,23 +20,31 @@ namespace LambdaEngine
         SwapChainVK(const GraphicsDeviceVK* pDevice);
         ~SwapChainVK();
         
-        bool Init(const Window* pWindow, const SwapChainDesc& desc);
+        bool Init(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc& desc);
         
         // IDeviceChild interface
         virtual void SetName(const char* pName) override final;
         
         // ISwapChain interface
         virtual bool ResizeBuffers(uint32 width, uint32 height) override final;
-        virtual void Present()                                  override final;
+        
+        virtual void Present() override final;
         
         virtual ITexture*       GetBuffer(uint32 bufferIndex)       override final;
         virtual const ITexture* GetBuffer(uint32 bufferIndex) const override final;
         
+        virtual ICommandQueue* GetCommandQueue() override final;
+
         FORCEINLINE virtual const Window* GetWindow() const override final
         {
             return m_pWindow;
         }
         
+        FORCEINLINE virtual uint64 GetCurrentBackBufferIndex() const override final
+        {
+            return uint64(m_BackBufferIndex);
+        }
+
         FORCEINLINE virtual SwapChainDesc GetDesc() const override final
         {
             return m_Desc;
@@ -44,15 +53,18 @@ namespace LambdaEngine
     private:
         bool InitSwapChain(uint32 width, uint32 height);
         
-        void AquireNextImage();
-        void ReleaseResources();
+        VkResult    AquireNextImage();
+        void        ReleaseResources();
         
     private:
-        const Window*  m_pWindow   = nullptr;
-        
+        const Window*   m_pWindow       = nullptr;
+        CommandQueueVK* m_pCommandQueue = nullptr;
+
         VkSurfaceKHR    m_Surface           = VK_NULL_HANDLE;
         VkSwapchainKHR  m_SwapChain         = VK_NULL_HANDLE;
-        uint32          m_SemaphoreIndex    = 0;
+        
+        uint32  m_BackBufferIndex = 0;
+        uint32  m_SemaphoreIndex  = 0;
 
         VkPresentModeKHR    m_PresentationMode;
         VkSurfaceFormatKHR  m_VkFormat;

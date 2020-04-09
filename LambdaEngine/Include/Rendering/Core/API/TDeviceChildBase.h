@@ -58,6 +58,7 @@ namespace LambdaEngine
 
 	protected:
 		const TGraphicsDevice* const m_pDevice;
+		
 		char m_DebugName[MAX_DEVICE_CHILD_NAME_LENGTH];
 
 	private:

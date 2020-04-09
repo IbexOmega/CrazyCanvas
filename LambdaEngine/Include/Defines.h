@@ -1,7 +1,7 @@
 #pragma once
-#include <string.h>
+#include "Containers/String.h"
 
-// Exporting
+// Exporting dynamic libraries
 #if defined(LAMBDA_PLATFORM_WINDOWS) && defined(LAMBDA_SHARED_LIB) 
 	#ifdef LAMBDA_EXPORT	
 		#define LAMBDA_API _declspec(dllexport)
@@ -12,10 +12,10 @@
 	#define LAMBDA_API
 #endif
 
-//Unused params
+// Unused params
 #define UNREFERENCED_VARIABLE(variable) variable
 
-//Declaration helpers
+// Declaration helpers
 #define DECL_REMOVE_COPY(Typename) \
 	Typename(const Typename&) = delete; \
 	Typename& operator=(const Typename&) = delete \
@@ -48,22 +48,22 @@
 
 #define DECL_INTERFACE(Typename) DECL_ABSTRACT_CLASS(Typename)
 
-//Helper macros
+// Helper Macros
 #define ZERO_MEMORY(memory, size) memset((void*)memory, 0, size)
 #define ARR_SIZE(arr) sizeof(arr) / sizeof(arr[0])
 
-//Inline
+// Forceinline
 #ifdef LAMBDA_VISUAL_STUDIO
 	#define FORCEINLINE __forceinline
 #else
 	#define FORCEINLINE __attribute__((always_inline)) inline
 #endif
 
-//Delete and release
-#define SAFEDELETE(object)		if ((object))	{ delete object; object = nullptr; }
-#define SAFEDELETEARR(array)	if ((array))	{ delete[] array; array = nullptr; }
-#define SAFERELEASE(object)		if ((object))	{ object->Release(); object = nullptr; }
+// Delete and Release
+#define SAFEDELETE(object)		if ((object))	{ delete (object); (object) = nullptr; }
+#define SAFEDELETEARR(array)	if ((array))	{ delete[] (array); (array) = nullptr; }
+#define SAFERELEASE(object)		if ((object))	{ (object)->Release(); (object) = nullptr; }
 
-//Bit-Mask helpers
+// Bit-Mask helpers
 #define BIT(bit)	(1 << bit)
 #define FLAG(bit)	BIT(bit)

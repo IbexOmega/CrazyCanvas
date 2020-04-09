@@ -1,4 +1,6 @@
 #pragma once
+#include "Containers/TArray.h"
+
 #include "Rendering/Core/API/ICommandQueue.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
@@ -20,6 +22,13 @@ namespace LambdaEngine
 
 		bool Init(const char* pName, uint32 queueFamilyIndex, uint32 index);
 
+		void AddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlagBits waitStage);
+
+		FORCEINLINE VkQueue GetQueue() const
+		{
+			return m_Queue;
+		}
+
 		// IDeviceChild interface
 		virtual void SetName(const char* pName) override final;
 		
@@ -33,7 +42,11 @@ namespace LambdaEngine
 		}
 
 	private:
-		VkQueue			m_Queue = VK_NULL_HANDLE;
-		VkCommandBuffer m_CommandBuffers[MAX_COMMANDBUFFERS];
+		VkQueue	m_Queue = VK_NULL_HANDLE;
+		VkCommandBuffer m_SubmitCommandBuffers[MAX_COMMANDBUFFERS];
+
+		TArray<VkSemaphore> m_SignalSemaphores;
+		TArray<VkSemaphore> m_WaitSemaphores;
+		TArray<VkPipelineStageFlags> m_WaitStages;
 	};
 }

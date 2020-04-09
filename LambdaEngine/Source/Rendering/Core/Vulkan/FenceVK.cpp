@@ -57,7 +57,10 @@ namespace LambdaEngine
 		waitInfo.pValues		= &signalValue;
 
 		VkResult result = m_pDevice->vkWaitSemaphores(m_pDevice->Device, &waitInfo, timeOut);
-		LOG_MESSAGE("[FenceVK::Wait]: Return %s", VkResultToString(result));
+		if (result != VK_SUCCESS)
+		{
+			LOG_VULKAN_ERROR(result, "[FenceVK]: Failed to wait for semaphore");
+		}
 	}
 
 	void FenceVK::Signal(uint64 signalValue)

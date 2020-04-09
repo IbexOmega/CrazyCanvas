@@ -5,6 +5,8 @@
 
 namespace LambdaEngine
 {
+	class ISampler;
+
     enum class EMemoryType : uint8
     {
         NONE				= 0,
@@ -100,6 +102,17 @@ namespace LambdaEngine
 		TEXTURE_STATE_STENCIL_READ_ONLY						= 15,
 		TEXTURE_STATE_PRESENT								= 16,
 		TEXTURE_STATE_SHADING_RATE							= 17,
+	};
+
+	enum class EDescriptorType : uint32
+	{
+		DESCRIPTOR_UNKNOWN							= 0,
+		DESCRIPTOR_SHADER_RESOURCE					= 1,
+		DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER	= 3,
+		DESCRIPTOR_UNORDERED_ACCESS_TEXTURE			= 2,
+		DESCRIPTOR_CONSTANT_BUFFER					= 4,
+		DESCRIPTOR_UNORDERED_ACCESS_BUFFER			= 5,
+		DESCRIPTOR_ACCELERATION_STRUCTURE			= 6
 	};
 
 	enum FShaderStageFlags : uint16
@@ -202,27 +215,23 @@ namespace LambdaEngine
 	{
 		const char* pEntryPoint = "main";
 		const char* pSource		= nullptr;
-		uint32		SourceSize	= 0;
+		uint32	SourceSize		= 0;
 		FShaderStageFlags Type	= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 		EShaderLang Lang		= EShaderLang::NONE;
 		
 		std::vector<ShaderConstant> Constants;
 	};
 
-	struct DescriptorSetLayoutDesc
-	{
-		uint32	SamplerDescriptorCount					= 0;
-		uint32	TextureDescriptorCount					= 0;
-		uint32	ConstantBufferDescriptorCount			= 0;
-		uint32	UnorderedAccessBufferDescriptorCount	= 0;
-		uint32	UnorderedAccessTextureDescriptorCount	= 0;
-		uint32	AccelerationStructureDescriptorCount	= 0;
-	};
-
 	struct DescriptorCountDesc
 	{
-		uint32						DescriptorSetCount	= 0;
-		DescriptorSetLayoutDesc		DescriptorCount		= { };
+		uint32 DescriptorSetCount						= 0;
+		uint32 SamplerDescriptorCount					= 0;
+		uint32 TextureDescriptorCount					= 0;
+		uint32 TextureCombinedSamplerDescriptorCount	= 0;
+		uint32 ConstantBufferDescriptorCount			= 0;
+		uint32 UnorderedAccessBufferDescriptorCount		= 0;
+		uint32 UnorderedAccessTextureDescriptorCount	= 0;
+		uint32 AccelerationStructureDescriptorCount		= 0;
 	};
 
 	struct Viewport

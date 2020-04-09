@@ -2,6 +2,7 @@
 
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
+#include "Rendering/Core/Vulkan/SamplerVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
@@ -10,6 +11,7 @@ namespace LambdaEngine
 		: TDeviceChild(pDevice),
 		m_DescriptorCount()
 	{
+		memset(m_DescriptorSetLayouts, 0, sizeof(m_DescriptorSetLayouts));
 	}
 
 	PipelineLayoutVK::~PipelineLayoutVK()
@@ -20,23 +22,34 @@ namespace LambdaEngine
 			m_PipelineLayout = VK_NULL_HANDLE;
 		}
 
-		if (m_DescriptorSetLayout != VK_NULL_HANDLE)
+		for (uint32 i = 0; i < m_DescriptorSetCount; i++)
 		{
-			vkDestroyDescriptorSetLayout(m_pDevice->Device, m_DescriptorSetLayout, nullptr);
-			m_DescriptorSetLayout = VK_NULL_HANDLE;
+			if (m_DescriptorSetLayouts[i] != VK_NULL_HANDLE)
+			{
+				vkDestroyDescriptorSetLayout(m_pDevice->Device, m_DescriptorSetLayouts[i], nullptr);
+				m_DescriptorSetLayouts[i] = VK_NULL_HANDLE;
+			}
+		}
+
+		for (uint32 i = 0; i < m_ImmutableSamplerCount; i++)
+		{
+			SAFERELEASE(m_ppImmutableSamplers[i]);
 		}
 	}
 
 	bool PipelineLayoutVK::Init(const PipelineLayoutDesc& desc)
 	{
-		VkPushConstantRange constantRanges[MAX_CONSTANT_RANGES];
-
+		VkPushConstantRange		constantRanges[MAX_CONSTANT_RANGES];
+		DescriptorSetLayoutData	descriptorSetLayouts[MAX_DESCRIPTOR_SET_LAYOUTS];
+		
+		CreatePushConstantRanges(desc.pConstantRanges, desc.ConstantRangeCount, constantRanges);
+		CreateDescriptorSetLayout(desc.pDescriptorSetLayouts, desc.DescriptorSetLayoutCount, descriptorSetLayouts);
 
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = { };
 		pipelineLayoutCreateInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutCreateInfo.pNext					= nullptr;
 		pipelineLayoutCreateInfo.flags					= 0;
-		//pipelineLayoutCreateInfo.pSetLayouts			= ;
+		pipelineLayoutCreateInfo.pSetLayouts			= m_DescriptorSetLayouts;
 		pipelineLayoutCreateInfo.setLayoutCount			= desc.DescriptorSetLayoutCount;
 		pipelineLayoutCreateInfo.pPushConstantRanges	= constantRanges;
 		pipelineLayoutCreateInfo.pushConstantRangeCount = desc.ConstantRangeCount;
@@ -85,18 +98,65 @@ namespace LambdaEngine
 		}
 	}
 
-	void PipelineLayoutVK::CreateDescriptorSetLayouta(const DescriptorSetLayoutDesc* pDescriptorSetLayouts, uint32 descriptorSetLayoutCount, VkDescriptorSetLayoutCreateInfo* pResultDescriptorSetLayouts)
+	void PipelineLayoutVK::CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* pDescriptorSetLayouts, uint32 descriptorSetLayoutCount, DescriptorSetLayoutData* pResultDescriptorSetLayouts)
 	{
-		for (uint32 i = 0; i < descriptorSetLayoutCount; i++)
-		{
-			VkDescriptorSetLayoutCreateInfo&	descriptorSetLayoutVk	= pResultDescriptorSetLayouts[i];
-			const DescriptorSetLayoutDesc&		descriptorSetLayout		= pDescriptorSetLayouts[i];
+		m_DescriptorSetCount	= 0;
+		m_ImmutableSamplerCount = 0;
 
-			descriptorSetLayoutVk.sType			= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			descriptorSetLayoutVk.pNext			= nullptr;
-			descriptorSetLayoutVk.flags			= 0;
-			descriptorSetLayoutVk.pBindings		= 0;
-			//descriptorSetLayoutVk.bindingCount	= ;
+		//DescriptorSetLayouts
+		for (uint32 descriptorSetIndex = 0; descriptorSetIndex < descriptorSetLayoutCount; descriptorSetIndex++)
+		{
+			DescriptorSetLayoutData&		descriptorSet		= pResultDescriptorSetLayouts[descriptorSetIndex];
+			const DescriptorSetLayoutDesc&	descriptorSetLayout	= pDescriptorSetLayouts[descriptorSetIndex];
+
+			//Bindings for each descriptorsetlayout
+			descriptorSet.DescriptorCount = descriptorSetLayout.DescriptorBindingCount;
+			for (uint32 bindingIndex = 0; bindingIndex < descriptorSet.DescriptorCount; bindingIndex++)
+			{
+				VkDescriptorSetLayoutBinding&	bindingVk	= descriptorSet.DescriptorBindings[bindingIndex];
+				const DescriptorBindingDesc&	binding		= descriptorSetLayout.pDescriptorBindings[bindingIndex];
+
+				// Immutable Samplers for each binding
+				ImmutableSamplersData& immutableSampler = descriptorSet.ImmutableSamplers[bindingIndex];
+				if (binding.ppImmutableSamplers)
+				{
+					for (uint32 samplerIndex = 0; samplerIndex < binding.DescriptorCount; descriptorSetIndex++)
+					{
+						SamplerVK* pSamplerVk = reinterpret_cast<SamplerVK*>(binding.ppImmutableSamplers[samplerIndex]);
+						pSamplerVk->AddRef();
+
+						//Store samplers to make sure that they are not released before we destroy the pipelinelayout
+						m_ppImmutableSamplers[m_ImmutableSamplerCount] = pSamplerVk;
+						m_ImmutableSamplerCount++;
+
+						immutableSampler.ImmutableSamplers[samplerIndex] = pSamplerVk->GetSampler();
+					}
+				}
+
+				bindingVk.descriptorType		= ConvertDescriptorType(binding.DescriptorType);
+				bindingVk.binding				= binding.Binding;
+				bindingVk.descriptorCount		= binding.DescriptorCount;
+				bindingVk.pImmutableSamplers	= immutableSampler.ImmutableSamplers;
+				bindingVk.stageFlags			= ConvertShaderStageMask(binding.ShaderStageMask);
+			}
+
+			descriptorSet.CreateInfo.sType			= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+			descriptorSet.CreateInfo.pNext			= nullptr;
+			descriptorSet.CreateInfo.flags			= 0;
+			descriptorSet.CreateInfo.bindingCount	= descriptorSet.DescriptorCount;
+			descriptorSet.CreateInfo.pBindings		= descriptorSet.DescriptorBindings;
+
+			VkResult result = vkCreateDescriptorSetLayout(m_pDevice->Device, &descriptorSet.CreateInfo, nullptr, &m_DescriptorSetLayouts[m_DescriptorSetCount]);
+			if (result != VK_SUCCESS)
+			{
+				LOG_VULKAN_ERROR(result, "[PipelineLayoutVK]: Failed to create DescriptorSetLayout[%d]", m_DescriptorSetCount);
+				return;
+			}
+			else
+			{
+				D_LOG_MESSAGE("[PipelineLayoutVK]: Created DescriptorSetLayout[%d]", m_DescriptorSetCount);
+				m_DescriptorSetCount++;
+			}
 		}
 	}
 

@@ -11,7 +11,7 @@
 #include "Resources/ResourceManager.h"
 
 #include "Rendering/RenderSystem.h"
-#include "Rendering/RenderGraph.h"
+#include "Rendering/RenderGraphCreator.h"
 
 #include "Audio/AudioSystem.h"
 #include "Audio/AudioListener.h"
@@ -21,6 +21,8 @@
 #include "Audio/ReverbSphere.h"
 
 #include "Game/Scene.h"
+
+#include "Time/API/Clock.h"
 
 Sandbox::Sandbox() : 
 	m_pResourceManager(nullptr),
@@ -50,8 +52,6 @@ Sandbox::Sandbox() :
 	m_pScene->Finalize(sceneDesc);*/
 
 	constexpr uint32 MAX_UNIQUE_MATERIALS = 16;
-
-	RenderGraph renderGraph;
 
 	std::vector<RenderStage> renderStages;
 
@@ -88,6 +88,8 @@ Sandbox::Sandbox() :
 		renderStage.pOutputAttachments			= geometryRenderStageOutputAttachment.data();
 		renderStage.OutputAttachmentCount		= geometryRenderStageOutputAttachment.size();
 
+		renderStage.PipelineType = EPipelineStateType::GRAPHICS;
+
 		renderStages.push_back(renderStage);
 	}
 
@@ -97,7 +99,6 @@ Sandbox::Sandbox() :
 
 	{
 		rayTraceRenderStageInputAttachment.push_back({ "RADIANCE_IMAGE",					EInputAttachmentType::TEXTURE });
-		rayTraceRenderStageInputAttachment.push_back({ "GBUFFER_ALBEDO_AO",					EInputAttachmentType::TEXTURE });
 		rayTraceRenderStageInputAttachment.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",	EInputAttachmentType::TEXTURE });
 		rayTraceRenderStageInputAttachment.push_back({ "GBUFFER_VELOCITY",					EInputAttachmentType::TEXTURE });
 		rayTraceRenderStageInputAttachment.push_back({ "GBUFFER_DEPTH",						EInputAttachmentType::TEXTURE });
@@ -132,6 +133,8 @@ Sandbox::Sandbox() :
 		renderStage.pOutputAttachments			= rayTraceRenderStageOutputAttachment.data();
 		renderStage.OutputAttachmentCount		= rayTraceRenderStageOutputAttachment.size();
 
+		renderStage.PipelineType = EPipelineStateType::RAY_TRACING;
+
 		renderStages.push_back(renderStage);
 	}
 
@@ -153,6 +156,31 @@ Sandbox::Sandbox() :
 		renderStage.pOutputAttachments			= spatialBlurRenderStageOutputAttachment.data();
 		renderStage.OutputAttachmentCount		= spatialBlurRenderStageOutputAttachment.size();
 
+		renderStage.PipelineType = EPipelineStateType::COMPUTE;
+
+		renderStages.push_back(renderStage);
+	}
+
+	std::vector<RenderStageInputAttachment>			particleUpdateRenderStageInputAttachment;
+	std::vector<RenderStageExternalInputAttachment> particleUpdateRenderStageExternalInputAttachment;
+	std::vector<RenderStageOutputAttachment>		particleUpdateRenderStageOutputAttachment;
+
+	{
+		particleUpdateRenderStageInputAttachment.push_back({ "PARTICLE_BUFFER",					EInputAttachmentType::BUFFER });
+
+		particleUpdateRenderStageOutputAttachment.push_back({ "PARTICLE_BUFFER",					EOutputAttachmentType::BUFFER });
+
+		RenderStage renderStage = {};
+		renderStage.pName						= "Particle Update Render Stage";
+		renderStage.pInputAttachments			= particleUpdateRenderStageInputAttachment.data();
+		renderStage.InputAttachmentCount		= particleUpdateRenderStageInputAttachment.size();
+		renderStage.pExternalInputAttachments	= particleUpdateRenderStageExternalInputAttachment.data();
+		renderStage.ExtenalInputAttachmentCount = particleUpdateRenderStageExternalInputAttachment.size();
+		renderStage.pOutputAttachments			= particleUpdateRenderStageOutputAttachment.data();
+		renderStage.OutputAttachmentCount		= particleUpdateRenderStageOutputAttachment.size();
+
+		renderStage.PipelineType = EPipelineStateType::COMPUTE;
+
 		renderStages.push_back(renderStage);
 	}
 
@@ -161,19 +189,19 @@ Sandbox::Sandbox() :
 	std::vector<RenderStageOutputAttachment>		shadingRenderStageOutputAttachment;
 
 	{
-		shadingRenderStageInputAttachment.push_back({ "FILTERED_RADIANCE_IMAGE",						EInputAttachmentType::TEXTURE });
-		shadingRenderStageInputAttachment.push_back({ "GBUFFER_ALBEDO_AO",					EInputAttachmentType::TEXTURE });
-		shadingRenderStageInputAttachment.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",	EInputAttachmentType::TEXTURE });
-		shadingRenderStageInputAttachment.push_back({ "GBUFFER_VELOCITY",					EInputAttachmentType::TEXTURE });
-		shadingRenderStageInputAttachment.push_back({ "GBUFFER_DEPTH",						EInputAttachmentType::TEXTURE });
+		shadingRenderStageInputAttachment.push_back({ "FILTERED_RADIANCE_IMAGE",				EInputAttachmentType::TEXTURE });
+		shadingRenderStageInputAttachment.push_back({ "GBUFFER_ALBEDO_AO",						EInputAttachmentType::TEXTURE });
+		shadingRenderStageInputAttachment.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",		EInputAttachmentType::TEXTURE });
+		shadingRenderStageInputAttachment.push_back({ "GBUFFER_VELOCITY",						EInputAttachmentType::TEXTURE });
+		shadingRenderStageInputAttachment.push_back({ "GBUFFER_DEPTH",							EInputAttachmentType::TEXTURE });
 
-		shadingRenderStageExternalInputAttachment.push_back({ "PER_FRAME_BUFFER",			EExternalInputAttachmentType::UNIFORM });
-		shadingRenderStageExternalInputAttachment.push_back({ "LIGHTS_BUFFER",				EExternalInputAttachmentType::UNIFORM });
+		shadingRenderStageExternalInputAttachment.push_back({ "PER_FRAME_BUFFER",				EExternalInputAttachmentType::UNIFORM });
+		shadingRenderStageExternalInputAttachment.push_back({ "LIGHTS_BUFFER",					EExternalInputAttachmentType::UNIFORM });
 
-		shadingRenderStageExternalInputAttachment.push_back({ "BRDF_LUT",					EExternalInputAttachmentType::TEXTURE });
-		shadingRenderStageExternalInputAttachment.push_back({ "BLUE_NOISE_LUT",				EExternalInputAttachmentType::TEXTURE });
+		shadingRenderStageExternalInputAttachment.push_back({ "BRDF_LUT",						EExternalInputAttachmentType::TEXTURE });
+		shadingRenderStageExternalInputAttachment.push_back({ "BLUE_NOISE_LUT",					EExternalInputAttachmentType::TEXTURE });
 
-		shadingRenderStageOutputAttachment.push_back({ "BACK_BUFFER_TEXTURE",				EOutputAttachmentType::TEXTURE });
+		shadingRenderStageOutputAttachment.push_back({ RENDER_GRAPH_BACK_BUFFER,				EOutputAttachmentType::TEXTURE });
 
 		RenderStage renderStage = {};
 		renderStage.pName						= "Shading Render Stage";
@@ -184,16 +212,25 @@ Sandbox::Sandbox() :
 		renderStage.pOutputAttachments			= shadingRenderStageOutputAttachment.data();
 		renderStage.OutputAttachmentCount		= shadingRenderStageOutputAttachment.size();
 
+		renderStage.PipelineType = EPipelineStateType::GRAPHICS;
+
 		renderStages.push_back(renderStage);
 	}
 
 	RenderGraphDesc renderGraphDesc = {};
 	renderGraphDesc.pName				= "Test Render Graph";
-	renderGraphDesc.CreateDebugGraph	= true;
+	renderGraphDesc.CreateDebugGraph	= false;
 	renderGraphDesc.pRenderStages		= renderStages.data();
 	renderGraphDesc.RenderStageCount	= renderStages.size();
 
-	renderGraph.Init(renderGraphDesc);
+	LambdaEngine::Clock clock;
+	clock.Reset();
+	clock.Tick();
+
+	RenderGraphCreator::Create(renderGraphDesc);
+
+	clock.Tick();
+	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
 
 	//InitTestAudio();
 }

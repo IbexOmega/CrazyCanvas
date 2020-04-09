@@ -51,13 +51,18 @@ namespace LambdaEngine
 		}
 
 		// IGraphicsDevice Interface
-		virtual IFrameBuffer*	CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc)	const override final;
-		virtual IRenderPass*	CreateRenderPass(const RenderPassDesc& desc)								const override final;
-		virtual ITextureView*	CreateTextureView(const TextureViewDesc& desc)								const override final;
+		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc& desc) const override final;
+		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc& desc) const override final;
 
-		virtual IBuffer*	CreateBuffer(const BufferDesc& desc)								const override final;
-		virtual ITexture*	CreateTexture(const TextureDesc& desc)								const override final;
-		virtual ISwapChain* CreateSwapChain(const Window* pWindow, const SwapChainDesc& desc)	const override final;
+		virtual IFrameBuffer*	CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc)	const override final;
+
+		virtual IRenderPass*	CreateRenderPass(const RenderPassDesc& desc)	const override final;
+		virtual ITextureView*	CreateTextureView(const TextureViewDesc& desc)	const override final;
+
+		virtual IBuffer*	CreateBuffer(const BufferDesc& desc)	const override final;
+		virtual ITexture*	CreateTexture(const TextureDesc& desc)	const override final;
+
+		virtual ISwapChain* CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc& desc)	const override final;
 
 		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) 	  const override final;
 		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineStateDesc& desc) 	  const override final;
