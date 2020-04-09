@@ -6,12 +6,11 @@
 
 namespace LambdaEngine
 {
-	NetworkDiscoveryHost::NetworkDiscoveryHost(INetworkDiscoveryHostHandler* pHandler, const std::string& uid, const std::string& address, uint16 port) : 
+	NetworkDiscoveryHost::NetworkDiscoveryHost(INetworkDiscoveryHostHandler* pHandler, const std::string& uid) : 
 		m_pHandler(pHandler),
 		m_pServer(nullptr),
 		m_UID(uid),
-		m_Address(address),
-		m_Port(port),
+		m_Port(0),
 		m_PacketResponse(PACKET_TYPE_NETWORK_DISCOVERY, false)
 	{
 		m_pServer = PlatformNetworkUtils::CreateServerUDP(this);
@@ -21,6 +20,18 @@ namespace LambdaEngine
 	NetworkDiscoveryHost::~NetworkDiscoveryHost()
 	{
 		m_pServer->Release();
+	}
+
+	bool NetworkDiscoveryHost::Start(const std::string& addressToDistribute, uint16 portToDistibute)
+	{
+		m_Address = addressToDistribute;
+		m_Port = portToDistibute;
+		return m_pServer->Start(ADDRESS_ANY, 4450);
+	}
+
+	void NetworkDiscoveryHost::Stop()
+	{
+		m_pServer->Stop();
 	}
 
 	IClientUDPHandler* NetworkDiscoveryHost::CreateClientHandlerUDP()

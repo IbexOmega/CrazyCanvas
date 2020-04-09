@@ -41,7 +41,8 @@ Server::Server()
 	}
 	else if (g_Test == NETWORK_TEST_DISCOVERY)
 	{
-		m_pNetworkDiscovery = new NetworkDiscoveryHost(this, "Drift It 3D", LambdaEngine::PlatformNetworkUtils::GetLocalAddress(), 4444);
+		m_pNetworkDiscovery = new NetworkDiscoveryHost(this, "Drift It 3D");
+		m_pNetworkDiscovery->Start(LambdaEngine::PlatformNetworkUtils::GetLocalAddress(), 4444);
 	}
 
 	UpdateTitle();
