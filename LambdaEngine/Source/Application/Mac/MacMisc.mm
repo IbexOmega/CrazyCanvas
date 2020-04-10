@@ -3,6 +3,7 @@
 #include <stdarg.h>
 
 #include "Application/Mac/MacMisc.h"
+#include "Application/Mac/MacScopedPool.h"
 
 #include <Foundation/Foundation.h>
 
@@ -31,6 +32,8 @@ namespace LambdaEngine
 
     void MacMisc::OutputDebugStringV(const char* pFormat, va_list args)
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         NSString* format = [NSString stringWithUTF8String:pFormat];
         NSLogv(format, args);
     }
