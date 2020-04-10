@@ -116,15 +116,16 @@ namespace LambdaEngine
 
     void MacMainThread::MakeCall(dispatch_block_t block)
     {
-        if (![NSThread isMainThread])
-        {
-            s_pMainThread->ScheduleBlock(block);
-            s_pMainThread->WakeUp();
-        }
-        else
+        if ([NSThread isMainThread])
         {
             //If already on mainthread, execute block here
             block();
+        }
+        else
+        {
+            //Otherwise schedule it on the mainthread
+            s_pMainThread->ScheduleBlock(block);
+            s_pMainThread->WakeUp();
         }
     }
 }
