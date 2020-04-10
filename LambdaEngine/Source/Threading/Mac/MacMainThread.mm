@@ -43,17 +43,14 @@ namespace LambdaEngine
         void ScheduleBlock(dispatch_block_t block)
         {
             std::scoped_lock<SpinLock> lock(m_BlockLock);
+
+            // Add block and signal source to perform next runloop iteration
             m_Blocks.push_back(Block_copy(block));
-            
-            NSLog(@"ScheduleBlock");
-            
             CFRunLoopSourceSignal(m_Source);
         }
         
         void Execute()
         {
-            NSLog(@"Execute");
-            
             // Copy blocks
             TArray<dispatch_block_t> blocksCopy;
             {
@@ -71,7 +68,6 @@ namespace LambdaEngine
         
         void WakeUp()
         {
-            NSLog(@"WakeUp");
             CFRunLoopWakeUp(m_RunLoop);
         }
         
