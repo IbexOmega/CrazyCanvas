@@ -28,6 +28,7 @@ namespace LambdaEngine
 		while (!ShouldTerminate())
 		{
 
+			TransmitPackets(SwapAndGetPacketBuffer());
 		}
 	}
 
@@ -50,5 +51,11 @@ namespace LambdaEngine
 		std::queue<NetworkPacket*>* buffer = m_PacketBuffers[m_PacketBufferIndex];
 		m_PacketBufferIndex = m_PacketBufferIndex % 2;
 		return buffer;
+	}
+
+	bool GameServer::TransmitPackets(std::queue<NetworkPacket*>* packets)
+	{
+		
+		return false;
 	}
 }

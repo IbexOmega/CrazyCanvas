@@ -23,11 +23,14 @@ namespace LambdaEngine
 
 	private:
 		std::queue<NetworkPacket*>* SwapAndGetPacketBuffer();
+		bool TransmitPackets(std::queue<NetworkPacket*>* packets);
 
 	private:
 		std::queue<NetworkPacket*>* m_PacketBuffers[2];
 		std::atomic_int m_PacketBufferIndex;
 
 		SpinLock m_LockPacketBuffers;
+
+		//char m_SendBuffer[MAXIMUM_DATAGRAM_SIZE];
 	};
 }
