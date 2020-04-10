@@ -156,7 +156,7 @@ void Server::UpdateTitle()
 
 void Server::Tick(LambdaEngine::Timestamp delta)
 {
-	UNREFERENCED_VARIABLE(dt);
+	UNREFERENCED_VARIABLE(delta);
 }
 
 void Server::FixedTick(LambdaEngine::Timestamp delta)
