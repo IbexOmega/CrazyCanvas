@@ -8,7 +8,8 @@
 #include "Audio/ReverbSphere.h"
 
 #include "Log/Log.h"
-#include "Threading/Thread.h"
+
+#include "Threading/API/Thread.h"
 
 namespace LambdaEngine
 {

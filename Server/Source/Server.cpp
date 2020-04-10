@@ -20,10 +20,11 @@ enum ENetworkTest
 {
 	NETWORK_TEST_TCP,
 	NETWORK_TEST_UDP,
-	NETWORK_TEST_DISCOVERY
+	NETWORK_TEST_DISCOVERY,
+	NETWORK_TEST_GAME
 };
 
-ENetworkTest g_Test = NETWORK_TEST_TCP;
+ENetworkTest g_Test = NETWORK_TEST_GAME;
 
 Server::Server()
 {
@@ -41,7 +42,13 @@ Server::Server()
 	}
 	else if (g_Test == NETWORK_TEST_DISCOVERY)
 	{
-		m_pNetworkDiscovery = new NetworkDiscoveryHost(this, "Drift It 3D", LambdaEngine::PlatformNetworkUtils::GetLocalAddress(), 4444);
+		m_pNetworkDiscovery = DBG_NEW NetworkDiscoveryHost(this, "Drift It 3D");
+		m_pNetworkDiscovery->Start(LambdaEngine::PlatformNetworkUtils::GetLocalAddress(), 4444);
+	}
+	else if (g_Test == NETWORK_TEST_GAME)
+	{
+		m_pGameServer = DBG_NEW GameServer();
+		m_pGameServer->Start(4444);
 	}
 
 	UpdateTitle();
@@ -60,6 +67,10 @@ Server::~Server()
 	else if (g_Test == NETWORK_TEST_DISCOVERY)
 	{
 		delete m_pNetworkDiscovery;
+	}
+	else if (g_Test == NETWORK_TEST_GAME)
+	{
+		m_pGameServer->Release();
 	}
 
 	for (LambdaEngine::IClientTCPHandler* handler : m_ClientTCPHandlers)
@@ -109,6 +120,14 @@ void Server::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
 
 void Server::OnKeyDown(LambdaEngine::EKey key)
 {
+	if (g_Test == NETWORK_TEST_GAME)
+	{
+		if (m_pGameServer->IsRunning())
+			m_pGameServer->Stop();
+		else
+			m_pGameServer->Start(4444);
+	}
+
 	UNREFERENCED_VARIABLE(key);
 }
 
@@ -135,9 +154,14 @@ void Server::UpdateTitle()
 	}
 }
 
-void Server::Tick(LambdaEngine::Timestamp dt)
+void Server::Tick(LambdaEngine::Timestamp delta)
 {
-	UNREFERENCED_VARIABLE(dt);
+	UNREFERENCED_VARIABLE(delta);
+}
+
+void Server::FixedTick(LambdaEngine::Timestamp delta)
+{
+    UNREFERENCED_VARIABLE(delta);
 }
 
 namespace LambdaEngine

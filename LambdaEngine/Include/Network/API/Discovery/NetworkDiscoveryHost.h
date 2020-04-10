@@ -15,9 +15,12 @@ namespace LambdaEngine
 	class LAMBDA_API NetworkDiscoveryHost : protected IServerUDPHandler, protected IClientUDPHandler
 	{
 	public:
-		NetworkDiscoveryHost(INetworkDiscoveryHostHandler* pHandler, const std::string& uid, const std::string& address, uint16 port);
+		NetworkDiscoveryHost(INetworkDiscoveryHostHandler* pHandler, const std::string& uid);
 		~NetworkDiscoveryHost();
 		
+		bool Start(const std::string& addressToDistribute, uint16 portToDistibute);
+		void Stop();
+
 	protected:
 		virtual IClientUDPHandler* CreateClientHandlerUDP() override;
 

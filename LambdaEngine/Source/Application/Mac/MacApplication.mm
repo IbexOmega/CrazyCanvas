@@ -5,10 +5,13 @@
 
 #include "Application/Mac/MacConsole.h"
 #include "Application/Mac/MacApplication.h"
-#include "Application/Mac/MacAppController.h"
+#include "Application/Mac/CocoaAppController.h"
+#include "Application/Mac/MacScopedPool.h"
 
 #include "Input/Mac/MacInputDevice.h"
 #include "Input/Mac/MacInputCodeTable.h"
+
+#include "Threading/Mac/MacMainThread.h"
 
 #include <Appkit/Appkit.h>
 
@@ -18,6 +21,8 @@ namespace LambdaEngine
 
     MacApplication::~MacApplication()
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         [m_pAppDelegate release];
         SAFEDELETE(m_pWindow);
     }
@@ -54,6 +59,8 @@ namespace LambdaEngine
 
     void MacApplication::ProcessBufferedMessages()
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         for (MacMessage& message : m_BufferedMessages)
         {
             if (message.event)
@@ -82,7 +89,9 @@ namespace LambdaEngine
 
     bool MacApplication::Init()
     {
-        m_pAppDelegate = [[MacAppController alloc] init];
+        SCOPED_AUTORELEASE_POOL();
+        
+        m_pAppDelegate = [[CocoaAppController alloc] init];
         [NSApp setDelegate:m_pAppDelegate];
         
         if (!InitMenu())
@@ -104,48 +113,47 @@ namespace LambdaEngine
 
     bool MacApplication::InitMenu()
     {
-        @autoreleasepool
-        {
-            NSMenu*     menuBar = [[NSMenu alloc] init];
-            NSMenuItem* appMenuItem = [menuBar addItemWithTitle:@"" action:nil keyEquivalent:@""];
-            NSMenu*     appMenu = [[NSMenu alloc] init];
-            [appMenuItem setSubmenu:appMenu];
-            
-            [appMenu addItemWithTitle:@"Lambda Engine" action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
-            [appMenu addItem: [NSMenuItem separatorItem]];
-            
-            //Lambda Engine menu item
-            NSMenu* serviceMenu = [[NSMenu alloc] init];
-            [[appMenu addItemWithTitle:@"Services" action:nil keyEquivalent:@""] setSubmenu:serviceMenu];
-            [appMenu addItem:[NSMenuItem separatorItem]];
-            [appMenu addItemWithTitle:@"Hide Lambda Engine" action:@selector(hide:) keyEquivalent:@"h"];
-            [[appMenu addItemWithTitle:@"Hide Other" action:@selector(hideOtherApplications:) keyEquivalent:@""] setKeyEquivalentModifierMask:NSEventModifierFlagOption | NSEventModifierFlagCommand];
-            [appMenu addItemWithTitle:@"Show All" action:@selector(unhideAllApplications:) keyEquivalent:@""];
-            [appMenu addItem:[NSMenuItem separatorItem]];
-            [appMenu addItemWithTitle:@"Quit Lambda Engine" action:@selector(terminate:) keyEquivalent:@"q"];
-            
-            //Window menu
-            NSMenuItem* windowMenuItem  = [menuBar addItemWithTitle:@"" action:nil keyEquivalent:@""];
-            NSMenu*     windowMenu      = [[NSMenu alloc] initWithTitle:@"Window"];
-            [windowMenuItem setSubmenu:windowMenu];
-            
-            [windowMenu addItemWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
-            [windowMenu addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
-            [windowMenu addItem:[NSMenuItem separatorItem]];
-            
-            [windowMenu addItemWithTitle:@"Bring All to Front" action:@selector(arrangeInFront:) keyEquivalent:@""];
-            [windowMenu addItem:[NSMenuItem separatorItem]];
-            
-            [[windowMenu addItemWithTitle:@"Enter Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"] setKeyEquivalentModifierMask:NSEventModifierFlagControl | NSEventModifierFlagCommand];
-            
-            SEL setAppleMenuSelector = NSSelectorFromString(@"setAppleMenu:");
-            [NSApp performSelector:setAppleMenuSelector withObject:appMenu];
-            
-            [NSApp setMainMenu:menuBar];
-            [NSApp setWindowsMenu:windowMenu];
-            [NSApp setServicesMenu:serviceMenu];
-        }
+        SCOPED_AUTORELEASE_POOL();
         
+        NSMenu*     menuBar = [[NSMenu alloc] init];
+        NSMenuItem* appMenuItem = [menuBar addItemWithTitle:@"" action:nil keyEquivalent:@""];
+        NSMenu*     appMenu = [[NSMenu alloc] init];
+        [appMenuItem setSubmenu:appMenu];
+        
+        [appMenu addItemWithTitle:@"Lambda Engine" action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
+        [appMenu addItem: [NSMenuItem separatorItem]];
+        
+        //Lambda Engine menu item
+        NSMenu* serviceMenu = [[NSMenu alloc] init];
+        [[appMenu addItemWithTitle:@"Services" action:nil keyEquivalent:@""] setSubmenu:serviceMenu];
+        [appMenu addItem:[NSMenuItem separatorItem]];
+        [appMenu addItemWithTitle:@"Hide Lambda Engine" action:@selector(hide:) keyEquivalent:@"h"];
+        [[appMenu addItemWithTitle:@"Hide Other" action:@selector(hideOtherApplications:) keyEquivalent:@""] setKeyEquivalentModifierMask:NSEventModifierFlagOption | NSEventModifierFlagCommand];
+        [appMenu addItemWithTitle:@"Show All" action:@selector(unhideAllApplications:) keyEquivalent:@""];
+        [appMenu addItem:[NSMenuItem separatorItem]];
+        [appMenu addItemWithTitle:@"Quit Lambda Engine" action:@selector(terminate:) keyEquivalent:@"q"];
+        
+        //Window menu
+        NSMenuItem* windowMenuItem  = [menuBar addItemWithTitle:@"" action:nil keyEquivalent:@""];
+        NSMenu*     windowMenu      = [[NSMenu alloc] initWithTitle:@"Window"];
+        [windowMenuItem setSubmenu:windowMenu];
+        
+        [windowMenu addItemWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
+        [windowMenu addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
+        [windowMenu addItem:[NSMenuItem separatorItem]];
+        
+        [windowMenu addItemWithTitle:@"Bring All to Front" action:@selector(arrangeInFront:) keyEquivalent:@""];
+        [windowMenu addItem:[NSMenuItem separatorItem]];
+        
+        [[windowMenu addItemWithTitle:@"Enter Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"] setKeyEquivalentModifierMask:NSEventModifierFlagControl | NSEventModifierFlagCommand];
+        
+        SEL setAppleMenuSelector = NSSelectorFromString(@"setAppleMenu:");
+        [NSApp performSelector:setAppleMenuSelector withObject:appMenu];
+        
+        [NSApp setMainMenu:menuBar];
+        [NSApp setWindowsMenu:windowMenu];
+        [NSApp setServicesMenu:serviceMenu];
+    
         return true;
     }
 
@@ -175,6 +183,8 @@ namespace LambdaEngine
 
     bool MacApplication::PreInit()
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         [NSApplication sharedApplication];
         
         ASSERT(NSApp != nil);
@@ -183,6 +193,8 @@ namespace LambdaEngine
         [NSApp setPresentationOptions:NSApplicationPresentationDefault];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
+        MacMainThread::PreInit();
+        
         s_pApplication = DBG_NEW MacApplication();
         if (!s_pApplication->Init())
         {
@@ -211,32 +223,31 @@ namespace LambdaEngine
 
     bool MacApplication::ProcessMessages()
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         //Make sure this function is called on the main thread, calling from other threads result in undefined
         ASSERT([NSThread isMainThread]);
         
-        @autoreleasepool
+        if (s_pApplication)
         {
-            if (s_pApplication)
-            {                
-                NSEvent* event = nil;
-                while (true)
+            NSEvent* event = nil;
+            while (true)
+            {
+                event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES];
+                if (event == nil)
                 {
-                    event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES];
-                    if (event == nil)
-                    {
-                        break;
-                    }
-                    
-                    //Buffer event before sending it to the rest of the system
-                    s_pApplication->BufferEvent(event);
+                    break;
+                }
+                
+                //Buffer event before sending it to the rest of the system
+                s_pApplication->BufferEvent(event);
 
-                    [NSApp sendEvent:event];
-                    [NSApp updateWindows];
-                    
-                    if (s_pApplication->m_IsTerminating)
-                    {
-                        return false;
-                    }
+                [NSApp sendEvent:event];
+                [NSApp updateWindows];
+                
+                if (s_pApplication->m_IsTerminating)
+                {
+                    return false;
                 }
             }
         }
@@ -246,6 +257,8 @@ namespace LambdaEngine
 
     void MacApplication::BufferEvent(NSEvent* event)
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         MacMessage message = { };
         message.event = [event retain];
 
@@ -255,6 +268,8 @@ namespace LambdaEngine
     bool MacApplication::PostRelease()
     {
         SAFEDELETE(s_pApplication);
+        
+        MacMainThread::PostRelease();
         return true;
     }
 }

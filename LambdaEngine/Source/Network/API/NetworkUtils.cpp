@@ -9,12 +9,15 @@
 
 #include "Network/API/PlatformNetworkUtils.h"
 
+#include "Network/API/GameServerBase.h"
+
 namespace LambdaEngine
 {
 	bool NetworkUtils::Init()
 	{
 		ClientTCP::InitStatic();
 		NetworkDiscoverySearcher::InitStatic();
+		GameServerBase::InitStatic();
 		return true;
 	}
 
@@ -22,11 +25,13 @@ namespace LambdaEngine
 	{
 		ClientTCP::TickStatic(dt);
 		NetworkDiscoverySearcher::TickStatic(dt);
+		GameServerBase::TickStatic(dt);
 	}
 
 	void NetworkUtils::Release()
 	{
 		ClientTCP::ReleaseStatic();
+		GameServerBase::ReleaseStatic();
 	}
 
 	IClientTCP* NetworkUtils::CreateClientTCP(IClientTCPHandler* handler)

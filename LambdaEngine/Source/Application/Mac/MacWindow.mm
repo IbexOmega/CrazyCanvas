@@ -6,11 +6,14 @@
 #include "Application/Mac/CocoaWindow.h"
 #include "Application/Mac/CocoaWindowDelegate.h"
 #include "Application/Mac/CocoaContentView.h"
+#include "Application/Mac/MacScopedPool.h"
 
 namespace LambdaEngine
 {
     MacWindow::~MacWindow()
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         [m_pWindow release];
         [m_pView release];
         [m_pDelegate release];
@@ -18,6 +21,8 @@ namespace LambdaEngine
 
     bool MacWindow::Init(const char* pTitle, uint32 width, uint32 height)
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         NSUInteger  windowStyle = NSWindowStyleMaskTitled  | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
         NSRect      windowRect  = NSMakeRect(0.0f, 0.0f, CGFloat(width), CGFloat(height));
         
@@ -60,6 +65,8 @@ namespace LambdaEngine
 
     void MacWindow::SetTitle(const char* pTitle)
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         if ([NSThread isMainThread])
         {
             NSString* title = [NSString stringWithUTF8String:pTitle];

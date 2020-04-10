@@ -7,7 +7,7 @@
 #include "Containers/String.h"
 #include "Containers/TArray.h"
 
-#include "Threading/SpinLock.h"
+#include "Threading/API/SpinLock.h"
 
 namespace LambdaEngine
 {

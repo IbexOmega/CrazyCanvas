@@ -1,7 +1,7 @@
 #pragma once
 #include "IDeviceChild.h"
 
-#include "Threading/SpinLock.h"
+#include "Threading/API/SpinLock.h"
 
 #include <mutex>
 

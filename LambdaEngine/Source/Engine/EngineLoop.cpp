@@ -16,7 +16,7 @@
 
 #include "Network/API/PlatformNetworkUtils.h"
 
-#include "Threading/Thread.h"
+#include "Threading/API/Thread.h"
 
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
@@ -29,23 +29,37 @@ namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
-		Clock clock;
+        const Timestamp timestep    = Timestamp::Seconds(1.0 / 60.0);
+        Timestamp accumulator       = Timestamp(0);
         
-        bool IsRunning = true;
-        while (IsRunning)
+        Clock clock;
+        Clock fixedClock;
+        
+        bool isRunning = true;
+        while (isRunning)
         {
 			clock.Tick();
             
-			Timestamp dt = clock.GetDeltaTime();
-            IsRunning = Tick(dt);
-            pGame->Tick(dt);
+            // Update
+			Timestamp delta = clock.GetDeltaTime();
+            isRunning = Tick(delta);
+            
+            // Fixed update
+            accumulator += delta;
+            while (accumulator >= timestep)
+            {
+                fixedClock.Tick();
+                FixedTick(fixedClock.GetDeltaTime());
+                
+                accumulator -= timestep;
+            }
         }
     }
 
-    bool EngineLoop::Tick(Timestamp dt)
+    bool EngineLoop::Tick(Timestamp delta)
     {
 		Thread::Join();
-		PlatformNetworkUtils::Tick(dt);
+		PlatformNetworkUtils::Tick(delta);
 
         if (!PlatformApplication::Tick())
         {
@@ -54,8 +68,15 @@ namespace LambdaEngine
 
 		AudioSystem::Tick();
 
+        Game::Get()->Tick(delta);
+        
         return true;
 	}
+
+    void EngineLoop::FixedTick(Timestamp delta)
+    {
+        Game::Get()->FixedTick(delta);
+    }
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
 	bool EngineLoop::PreInit(HINSTANCE hInstance)
