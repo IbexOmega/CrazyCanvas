@@ -4,6 +4,7 @@
 #include "Application/Mac/MacConsole.h"
 #include "Application/Mac/CocoaConsoleWindow.h"
 #include "Application/Mac/MacApplication.h"
+#include "Application/Mac/MacScopedPool.h"
 
 namespace LambdaEngine
 {
@@ -11,6 +12,8 @@ namespace LambdaEngine
 
     void MacConsole::Init()
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         const CGFloat width     = 1280.0f;
         const CGFloat height    = 720.0f;
         
@@ -42,6 +45,7 @@ namespace LambdaEngine
         NSTextContainer* container = [m_pTextView textContainer];
         [container setContainerSize:NSMakeSize( width, FLT_MAX )];
         [container setWidthTracksTextView:YES];
+        //[container setMaximumNumberOfLines:12];
         
         [m_pScrollView setDocumentView:m_pTextView];
         
@@ -86,6 +90,8 @@ namespace LambdaEngine
 
     void MacConsole::Release()
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         [m_pWindow close];
         [m_pTextView release];
         [m_pScrollView release];
@@ -99,6 +105,8 @@ namespace LambdaEngine
 
     void MacConsole::PrintV(const char* pFormat, va_list args)
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         NSString* format = [NSString stringWithUTF8String:pFormat];
         NSString* string = [[NSString alloc] initWithFormat:format arguments:args];
         
@@ -118,6 +126,8 @@ namespace LambdaEngine
 
     void MacConsole::AppendTextAndScroll(NSString* pString)
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         NSAttributedString* attributedString = [[NSAttributedString alloc] initWithString:pString attributes:m_pCurrentColor];
         
         NSTextStorage* storage = [m_pTextView textStorage];
@@ -205,6 +215,8 @@ namespace LambdaEngine
     
     void MacConsole::SetTitle(const char* pTitle)
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         if ([NSThread isMainThread])
         {
             NSString* title = [NSString stringWithUTF8String:pTitle];

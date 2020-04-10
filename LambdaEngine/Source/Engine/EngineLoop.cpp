@@ -29,11 +29,11 @@ namespace LambdaEngine
 {
 	void EngineLoop::Run(Game* pGame)
 	{
-        const Timestamp timestep = Timestamp::Seconds(1.0 / 60.0);
+        const Timestamp timestep    = Timestamp::Seconds(1.0 / 60.0);
+        Timestamp accumulator       = Timestamp(0);
         
         Clock clock;
         Clock fixedClock;
-        Timestamp accumulator;
         
         bool isRunning = true;
         while (isRunning)

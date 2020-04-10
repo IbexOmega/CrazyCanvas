@@ -1,9 +1,9 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #include "Application/API/PlatformMisc.h"
 
-#include "Application/Mac/MacAppController.h"
+#include "Application/Mac/CocoaAppController.h"
 
-@implementation MacAppController
+@implementation CocoaAppController
 
 -(BOOL) applicationShouldTerminateAfterLastWindowClosed:(NSApplication* ) sender
 {

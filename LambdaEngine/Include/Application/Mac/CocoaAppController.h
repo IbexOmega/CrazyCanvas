@@ -5,7 +5,7 @@
 
 #include <Appkit/Appkit.h>
 
-@interface MacAppController : NSObject<NSApplicationDelegate>
+@interface CocoaAppController : NSObject<NSApplicationDelegate>
 
 -(BOOL) applicationShouldTerminateAfterLastWindowClosed:(NSApplication*) sender;
 
@@ -13,7 +13,7 @@
 
 #else
 
-class MacAppController;
+class CocoaAppController;
 
 #endif
 #endif

@@ -2,12 +2,16 @@
 #include "Input/Mac/MacInputDevice.h"
 #include "Input/Mac/MacInputCodeTable.h"
 
+#include "Application/Mac/MacScopedPool.h"
+
 #include <AppKit/AppKit.h>
 
 namespace LambdaEngine
 {
     void MacInputDevice::HandleEvent(NSEvent* event)
     {
+        SCOPED_AUTORELEASE_POOL();
+        
         NSEventType eventType = [event type];
         switch(eventType)
         {
