@@ -1,6 +1,7 @@
 #include "GameServerBase.h"
 
-#include "Threading/Thread.h"
+#include "Threading/API/Thread.h"
+
 #include "PlatformNetworkUtils.h"
 
 namespace LambdaEngine

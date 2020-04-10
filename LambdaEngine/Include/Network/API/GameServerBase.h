@@ -1,7 +1,7 @@
 #pragma once
 #include "Containers/String.h"
 
-#include "Threading/SpinLock.h"
+#include "Threading/API/SpinLock.h"
 
 #include "Time/API/Timestamp.h"
 

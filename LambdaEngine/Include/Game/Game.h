@@ -9,7 +9,7 @@ namespace LambdaEngine
 	{
 	public:
         Game();
-        ~Game();
+        virtual ~Game();
         
         DECL_REMOVE_COPY(Game);
         DECL_REMOVE_MOVE(Game);

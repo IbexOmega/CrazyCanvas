@@ -16,7 +16,7 @@
 
 #include "Network/API/PlatformNetworkUtils.h"
 
-#include "Threading/Thread.h"
+#include "Threading/API/Thread.h"
 
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"

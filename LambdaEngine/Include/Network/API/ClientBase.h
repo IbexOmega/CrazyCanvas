@@ -5,8 +5,8 @@
 
 #include "Network/API/NetworkPacket.h"
 
-#include "Threading/SpinLock.h"
-#include "Threading/Thread.h"
+#include "Threading/API/SpinLock.h"
+#include "Threading/API/Thread.h"
 
 #include "Time/API/Timestamp.h"
 
@@ -15,10 +15,8 @@
 #include "Containers/String.h"
 #include "Containers/TSet.h"
 
-
 #include <atomic>
 #include <queue>
-#include <set>
 
 namespace LambdaEngine
 {

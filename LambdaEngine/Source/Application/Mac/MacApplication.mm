@@ -11,6 +11,8 @@
 #include "Input/Mac/MacInputDevice.h"
 #include "Input/Mac/MacInputCodeTable.h"
 
+#include "Threading/Mac/MacMainThread.h"
+
 #include <Appkit/Appkit.h>
 
 namespace LambdaEngine
@@ -191,6 +193,8 @@ namespace LambdaEngine
         [NSApp setPresentationOptions:NSApplicationPresentationDefault];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
+        MacMainThread::PreInit();
+        
         s_pApplication = DBG_NEW MacApplication();
         if (!s_pApplication->Init())
         {
@@ -264,6 +268,8 @@ namespace LambdaEngine
     bool MacApplication::PostRelease()
     {
         SAFEDELETE(s_pApplication);
+        
+        MacMainThread::PostRelease();
         return true;
     }
 }
