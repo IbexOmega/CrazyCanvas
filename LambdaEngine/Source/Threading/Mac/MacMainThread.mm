@@ -22,6 +22,7 @@ namespace LambdaEngine
         {
             CFRunLoopSourceContext sourceContext = { };
             sourceContext.info      = (void*)this;
+            sourceContext.version   = 0;
             sourceContext.perform   = MacRunLoopSource::Perform;
             sourceContext.schedule  = MacRunLoopSource::Schedule;
             sourceContext.cancel    = MacRunLoopSource::Cancel;
@@ -43,10 +44,16 @@ namespace LambdaEngine
         {
             std::scoped_lock<SpinLock> lock(m_BlockLock);
             m_Blocks.push_back(Block_copy(block));
+            
+            NSLog(@"ScheduleBlock");
+            
+            CFRunLoopSourceSignal(m_Source);
         }
         
         void Execute()
         {
+            NSLog(@"Execute");
+            
             // Copy blocks
             TArray<dispatch_block_t> blocksCopy;
             {
@@ -64,6 +71,7 @@ namespace LambdaEngine
         
         void WakeUp()
         {
+            NSLog(@"WakeUp");
             CFRunLoopWakeUp(m_RunLoop);
         }
         
@@ -80,12 +88,12 @@ namespace LambdaEngine
         
         static void Perform(void* pInfo)
         {
+            NSLog(@"Perform");
+
             MacRunLoopSource* pRunLoopSource = reinterpret_cast<MacRunLoopSource*>(pInfo);
             if (pRunLoopSource)
             {
                 pRunLoopSource->Execute();
-                
-                NSLog(@"Perform");
             }
         }
         
@@ -106,7 +114,7 @@ namespace LambdaEngine
     void MacMainThread::PreInit()
     {
         CFRunLoopRef mainLoop = CFRunLoopGetMain();
-        s_pMainThread = DBG_NEW MacRunLoopSource(mainLoop, kCFRunLoopCommonModes);
+        s_pMainThread = DBG_NEW MacRunLoopSource(mainLoop, kCFRunLoopDefaultMode);
     }
 
     void MacMainThread::PostRelease()
