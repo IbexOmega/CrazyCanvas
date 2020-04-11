@@ -10,7 +10,7 @@
 
 #include "Time/API/Timestamp.h"
 
-#include "Threading/SpinLock.h"
+#include "Threading/API/SpinLock.h"
 
 namespace LambdaEngine
 {

@@ -33,29 +33,29 @@ compound=true;
 		as9 [shape=box,label="FILTERED_RADIANCE_IMAGE\n--TRANSITION FOR WRITE--\nGRAPHICS -> COMPUTE"];
 	}
 	rs2 [shape = box, label = "Pipeline Stage 5\nRender Stage 2\nSpatial Blur Render Stage"];
+	rs3 [shape = box, label = "Pipeline Stage 6\nRender Stage 3\nParticle Update Render Stage"];
 	subgraph cluster3{
 		node [style=filled,color=white];
 		style = filled;
 		color = lightgrey;
-		label = "Pipeline Stage 6\nSynchronization Stage 3";
+		label = "Pipeline Stage 7\nSynchronization Stage 3";
 		as10 [shape=box,label="FILTERED_RADIANCE_IMAGE\n--TRANSITION FOR READ--\nCOMPUTE -> GRAPHICS"];
 		as11 [shape=box,label="GBUFFER_ALBEDO_AO\n--TRANSITION FOR READ--\nGRAPHICS -> GRAPHICS"];
 		as12 [shape=box,label="GBUFFER_NORMAL_ROUGHNESS_METALLIC\n--OWNERSHIP CHANGE--\nCOMPUTE -> GRAPHICS"];
 		as13 [shape=box,label="GBUFFER_VELOCITY\n--OWNERSHIP CHANGE--\nCOMPUTE -> GRAPHICS"];
 		as14 [shape=box,label="GBUFFER_DEPTH\n--OWNERSHIP CHANGE--\nCOMPUTE -> GRAPHICS"];
 	}
-	rs3 [shape = box, label = "Pipeline Stage 7\nRender Stage 3\nShading Render Stage"];
-	rs4 [shape = box, label = "Pipeline Stage 8\nRender Stage 4\nParticle Update Render Stage"];
+	rs4 [shape = box, label = "Pipeline Stage 8\nRender Stage 4\nShading Render Stage"];
 	as3 -> rs0[ltail=cluster0];
 	rs0 -> as7[lhead=cluster1];
 	as7 -> rs1[ltail=cluster1];
 	rs1 -> as9[lhead=cluster2];
 	as9 -> rs2[ltail=cluster2];
-	rs2 -> as14[lhead=cluster3];
-	as14 -> rs3[ltail=cluster3];
-	rs3 -> rs4
+	rs2 -> rs3
+	rs3 -> as14[lhead=cluster3];
+	as14 -> rs4[ltail=cluster3];
+	rs0 -> rs4[style=dashed];
 	rs0 -> rs1[style=dashed];
-	rs0 -> rs3[style=dashed];
 	rs1 -> rs2[style=dashed];
-	rs2 -> rs3[style=dashed];
+	rs2 -> rs4[style=dashed];
 }

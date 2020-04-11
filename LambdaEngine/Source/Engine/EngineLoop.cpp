@@ -16,7 +16,7 @@
 
 #include "Network/API/PlatformNetworkUtils.h"
 
-#include "Threading/Thread.h"
+#include "Threading/API/Thread.h"
 
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
@@ -40,6 +40,7 @@ namespace LambdaEngine
         {
 			clock.Tick();
             
+            // Update
 			Timestamp delta = clock.GetDeltaTime();
             isRunning = Tick(delta);
             
@@ -48,20 +49,17 @@ namespace LambdaEngine
             while (accumulator >= timestep)
             {
                 fixedClock.Tick();
-                pGame->FixedTick(fixedClock.GetDeltaTime());
+                FixedTick(fixedClock.GetDeltaTime());
                 
                 accumulator -= timestep;
             }
-            
-            // Variable update
-            pGame->Tick(delta);
         }
     }
 
-    bool EngineLoop::Tick(Timestamp dt)
+    bool EngineLoop::Tick(Timestamp delta)
     {
 		Thread::Join();
-		PlatformNetworkUtils::Tick(dt);
+		PlatformNetworkUtils::Tick(delta);
 
         if (!PlatformApplication::Tick())
         {
@@ -70,8 +68,15 @@ namespace LambdaEngine
 
 		AudioSystem::Tick();
 
+        Game::Get()->Tick(delta);
+        
         return true;
 	}
+
+    void EngineLoop::FixedTick(Timestamp delta)
+    {
+        Game::Get()->FixedTick(delta);
+    }
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
 	bool EngineLoop::PreInit(HINSTANCE hInstance)

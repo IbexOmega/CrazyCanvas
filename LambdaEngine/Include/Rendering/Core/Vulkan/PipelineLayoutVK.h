@@ -35,8 +35,6 @@ namespace LambdaEngine
 
 		bool Init(const PipelineLayoutDesc& desc);
 
-		void CreatePushConstantRanges(const ConstantRangeDesc* pConstantRanges, uint32 constantRangeCount, VkPushConstantRange* pResultConstantRanges);
-		void CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* pDescriptorSetLayouts, uint32 descriptorSetLayoutCount, DescriptorSetLayoutData* pResultDescriptorSetLayouts);
 
 		FORCEINLINE VkPipelineLayout GetPipelineLayout() const
 		{
@@ -63,6 +61,10 @@ namespace LambdaEngine
 		{
 			return (uint64)m_PipelineLayout;
 		}
+
+	private:
+		void CreatePushConstantRanges(const ConstantRangeDesc* pConstantRanges, uint32 constantRangeCount, VkPushConstantRange* pResultConstantRanges);
+		void CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* pDescriptorSetLayouts, uint32 descriptorSetLayoutCount, DescriptorSetLayoutData* pResultDescriptorSetLayouts);
 
 	private:
 		VkPipelineLayout		m_PipelineLayout		= VK_NULL_HANDLE;

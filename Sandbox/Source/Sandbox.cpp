@@ -11,7 +11,7 @@
 #include "Resources/ResourceManager.h"
 
 #include "Rendering/RenderSystem.h"
-#include "Rendering/RenderGraphCreator.h"
+#include "Rendering/RenderGraphDescriptionParser.h"
 
 #include "Audio/AudioSystem.h"
 #include "Audio/AudioListener.h"
@@ -53,164 +53,134 @@ Sandbox::Sandbox() :
 
 	constexpr uint32 MAX_UNIQUE_MATERIALS = 16;
 
-	std::vector<RenderStage> renderStages;
+	std::vector<RenderStageDesc> renderStages;
 
-	std::vector<RenderStageInputAttachment>			geometryRenderStageInputAttachment;
-	std::vector<RenderStageExternalInputAttachment> geometryRenderStageExternalInputAttachment;
-	std::vector<RenderStageOutputAttachment>		geometryRenderStageOutputAttachment;
+	std::vector<RenderStageAttachment>			geometryRenderStageAttachments;
 
 	{
-		geometryRenderStageExternalInputAttachment.push_back({ "PER_FRAME_BUFFER",				EExternalInputAttachmentType::UNIFORM });
+		geometryRenderStageAttachments.push_back({ "PER_FRAME_BUFFER",			EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
 
-		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_MAT_PARAM_BUFFER",		EExternalInputAttachmentType::BUFFER });
-		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_VERTEX_BUFFER",			EExternalInputAttachmentType::BUFFER });
-		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_INDEX_BUFFER",			EExternalInputAttachmentType::BUFFER });
-		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_INSTANCE_BUFFER",			EExternalInputAttachmentType::BUFFER });
-		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_MESH_INDEX_BUFFER",		EExternalInputAttachmentType::BUFFER });
+		geometryRenderStageAttachments.push_back({ "SCENE_MAT_PARAM_BUFFER",	EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		geometryRenderStageAttachments.push_back({ "SCENE_VERTEX_BUFFER",		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		geometryRenderStageAttachments.push_back({ "SCENE_INDEX_BUFFER",		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		geometryRenderStageAttachments.push_back({ "SCENE_INSTANCE_BUFFER",		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		geometryRenderStageAttachments.push_back({ "SCENE_MESH_INDEX_BUFFER",	EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
 
-		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_ALBEDO_MAPS",				EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
-		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_NORMAL_MAPS",				EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
-		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_AO_MAPS",					EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
-		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_ROUGHNESS_MAPS",			EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
-		geometryRenderStageExternalInputAttachment.push_back({ "SCENE_METALLIC_MAPS",			EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
+		geometryRenderStageAttachments.push_back({ "SCENE_ALBEDO_MAPS",			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		geometryRenderStageAttachments.push_back({ "SCENE_NORMAL_MAPS",			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		geometryRenderStageAttachments.push_back({ "SCENE_AO_MAPS",				EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		geometryRenderStageAttachments.push_back({ "SCENE_ROUGHNESS_MAPS",		EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		geometryRenderStageAttachments.push_back({ "SCENE_METALLIC_MAPS",		EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
 
-		geometryRenderStageOutputAttachment.push_back({ "GBUFFER_ALBEDO_AO",					EOutputAttachmentType::TEXTURE });
-		geometryRenderStageOutputAttachment.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",	EOutputAttachmentType::TEXTURE });
-		geometryRenderStageOutputAttachment.push_back({ "GBUFFER_VELOCITY",						EOutputAttachmentType::TEXTURE });
-		geometryRenderStageOutputAttachment.push_back({ "GBUFFER_DEPTH",						EOutputAttachmentType::DEPTH_STENCIL });
+		geometryRenderStageAttachments.push_back({ "GBUFFER_ALBEDO_AO",					EAttachmentType::OUTPUT_COLOR,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1 });
+		geometryRenderStageAttachments.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",	EAttachmentType::OUTPUT_COLOR,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1 });
+		geometryRenderStageAttachments.push_back({ "GBUFFER_VELOCITY",					EAttachmentType::OUTPUT_COLOR,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1 });
+		geometryRenderStageAttachments.push_back({ "GBUFFER_DEPTH",						EAttachmentType::OUTPUT_DEPTH_STENCIL,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1 });
 
-		RenderStage renderStage = {};
+		RenderStageDesc renderStage = {};
 		renderStage.pName						= "Geometry Render Stage";
-		renderStage.pInputAttachments			= geometryRenderStageInputAttachment.data();
-		renderStage.InputAttachmentCount		= geometryRenderStageInputAttachment.size();
-		renderStage.pExternalInputAttachments	= geometryRenderStageExternalInputAttachment.data();
-		renderStage.ExtenalInputAttachmentCount = geometryRenderStageExternalInputAttachment.size();
-		renderStage.pOutputAttachments			= geometryRenderStageOutputAttachment.data();
-		renderStage.OutputAttachmentCount		= geometryRenderStageOutputAttachment.size();
+		renderStage.pAttachments				= geometryRenderStageAttachments.data();
+		renderStage.AttachmentCount				= geometryRenderStageAttachments.size();
 
 		renderStage.PipelineType = EPipelineStateType::GRAPHICS;
 
 		renderStages.push_back(renderStage);
 	}
 
-	std::vector<RenderStageInputAttachment>			rayTraceRenderStageInputAttachment;
-	std::vector<RenderStageExternalInputAttachment> rayTraceRenderStageExternalInputAttachment;
-	std::vector<RenderStageOutputAttachment>		rayTraceRenderStageOutputAttachment;
+	std::vector<RenderStageAttachment>			rayTraceRenderStageAttachments;
 
 	{
-		rayTraceRenderStageInputAttachment.push_back({ "RADIANCE_IMAGE",					EInputAttachmentType::TEXTURE });
-		rayTraceRenderStageInputAttachment.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",	EInputAttachmentType::TEXTURE });
-		rayTraceRenderStageInputAttachment.push_back({ "GBUFFER_VELOCITY",					EInputAttachmentType::TEXTURE });
-		rayTraceRenderStageInputAttachment.push_back({ "GBUFFER_DEPTH",						EInputAttachmentType::TEXTURE });
+		rayTraceRenderStageAttachments.push_back({ "RADIANCE_IMAGE",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			1 });
+		rayTraceRenderStageAttachments.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",	EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			1 });
+		rayTraceRenderStageAttachments.push_back({ "GBUFFER_VELOCITY",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			1 });
+		rayTraceRenderStageAttachments.push_back({ "GBUFFER_DEPTH",						EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			1 });
 
-		rayTraceRenderStageExternalInputAttachment.push_back({ "PER_FRAME_BUFFER",			EExternalInputAttachmentType::UNIFORM });
-		rayTraceRenderStageExternalInputAttachment.push_back({ "LIGHTS_BUFFER",				EExternalInputAttachmentType::UNIFORM });
-		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_TLAS",				EExternalInputAttachmentType::UNIFORM });
+		rayTraceRenderStageAttachments.push_back({ "PER_FRAME_BUFFER",					EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
+		rayTraceRenderStageAttachments.push_back({ "LIGHTS_BUFFER",						EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
+		rayTraceRenderStageAttachments.push_back({ "SCENE_TLAS",						EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE,				FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
 
-		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_MAT_PARAM_BUFFER",	EExternalInputAttachmentType::BUFFER });
-		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_VERTEX_BUFFER",		EExternalInputAttachmentType::BUFFER });
-		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_INDEX_BUFFER",		EExternalInputAttachmentType::BUFFER });
-		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_INSTANCE_BUFFER",		EExternalInputAttachmentType::BUFFER });
-		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_MESH_INDEX_BUFFER",	EExternalInputAttachmentType::BUFFER });
+		rayTraceRenderStageAttachments.push_back({ "SCENE_MAT_PARAM_BUFFER",			EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
+		rayTraceRenderStageAttachments.push_back({ "SCENE_VERTEX_BUFFER",				EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
+		rayTraceRenderStageAttachments.push_back({ "SCENE_INDEX_BUFFER",				EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
+		rayTraceRenderStageAttachments.push_back({ "SCENE_INSTANCE_BUFFER",				EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
+		rayTraceRenderStageAttachments.push_back({ "SCENE_MESH_INDEX_BUFFER",			EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
 
-		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_ALBEDO_MAPS",			EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
-		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_NORMAL_MAPS",			EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
-		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_AO_MAPS",				EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
-		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_ROUGHNESS_MAPS",		EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
-		rayTraceRenderStageExternalInputAttachment.push_back({ "SCENE_METALLIC_MAPS",		EExternalInputAttachmentType::TEXTURE, MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageAttachments.push_back({ "SCENE_ALBEDO_MAPS",					EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageAttachments.push_back({ "SCENE_NORMAL_MAPS",					EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageAttachments.push_back({ "SCENE_AO_MAPS",						EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageAttachments.push_back({ "SCENE_ROUGHNESS_MAPS",				EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageAttachments.push_back({ "SCENE_METALLIC_MAPS",				EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
 
-		rayTraceRenderStageExternalInputAttachment.push_back({ "BRDF_LUT",					EExternalInputAttachmentType::TEXTURE });
-		rayTraceRenderStageExternalInputAttachment.push_back({ "BLUE_NOISE_LUT",			EExternalInputAttachmentType::TEXTURE });
+		rayTraceRenderStageAttachments.push_back({ "BRDF_LUT",							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
+		rayTraceRenderStageAttachments.push_back({ "BLUE_NOISE_LUT",					EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
 
-		rayTraceRenderStageOutputAttachment.push_back({ "RADIANCE_IMAGE",					EOutputAttachmentType::TEXTURE });
+		rayTraceRenderStageAttachments.push_back({ "RADIANCE_IMAGE",					EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE,					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			1 });
 
-		RenderStage renderStage = {};
+		RenderStageDesc renderStage = {};
 		renderStage.pName						= "Ray Tracing Render Stage";
-		renderStage.pInputAttachments			= rayTraceRenderStageInputAttachment.data();
-		renderStage.InputAttachmentCount		= rayTraceRenderStageInputAttachment.size();
-		renderStage.pExternalInputAttachments	= rayTraceRenderStageExternalInputAttachment.data();
-		renderStage.ExtenalInputAttachmentCount = rayTraceRenderStageExternalInputAttachment.size();
-		renderStage.pOutputAttachments			= rayTraceRenderStageOutputAttachment.data();
-		renderStage.OutputAttachmentCount		= rayTraceRenderStageOutputAttachment.size();
+		renderStage.pAttachments				= rayTraceRenderStageAttachments.data();
+		renderStage.AttachmentCount				= rayTraceRenderStageAttachments.size();
 
 		renderStage.PipelineType = EPipelineStateType::RAY_TRACING;
 
 		renderStages.push_back(renderStage);
 	}
 
-	std::vector<RenderStageInputAttachment>			spatialBlurRenderStageInputAttachment;
-	std::vector<RenderStageExternalInputAttachment> spatialBlurRenderStageExternalInputAttachment;
-	std::vector<RenderStageOutputAttachment>		spatialBlurRenderStageOutputAttachment;
+	std::vector<RenderStageAttachment>			spatialBlurRenderStageAttachments;
 
 	{
-		spatialBlurRenderStageInputAttachment.push_back({ "RADIANCE_IMAGE",					EInputAttachmentType::TEXTURE });
+		spatialBlurRenderStageAttachments.push_back({ "RADIANCE_IMAGE",								EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE,					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,			1 });
 
-		spatialBlurRenderStageOutputAttachment.push_back({ "FILTERED_RADIANCE_IMAGE",					EOutputAttachmentType::TEXTURE });
+		spatialBlurRenderStageAttachments.push_back({ "FILTERED_RADIANCE_IMAGE",					EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE,					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,			1 });
 
-		RenderStage renderStage = {};
+		RenderStageDesc renderStage = {};
 		renderStage.pName						= "Spatial Blur Render Stage";
-		renderStage.pInputAttachments			= spatialBlurRenderStageInputAttachment.data();
-		renderStage.InputAttachmentCount		= spatialBlurRenderStageInputAttachment.size();
-		renderStage.pExternalInputAttachments	= spatialBlurRenderStageExternalInputAttachment.data();
-		renderStage.ExtenalInputAttachmentCount = spatialBlurRenderStageExternalInputAttachment.size();
-		renderStage.pOutputAttachments			= spatialBlurRenderStageOutputAttachment.data();
-		renderStage.OutputAttachmentCount		= spatialBlurRenderStageOutputAttachment.size();
+		renderStage.pAttachments				= spatialBlurRenderStageAttachments.data();
+		renderStage.AttachmentCount				= spatialBlurRenderStageAttachments.size();
 
 		renderStage.PipelineType = EPipelineStateType::COMPUTE;
 
 		renderStages.push_back(renderStage);
 	}
 
-	std::vector<RenderStageInputAttachment>			particleUpdateRenderStageInputAttachment;
-	std::vector<RenderStageExternalInputAttachment> particleUpdateRenderStageExternalInputAttachment;
-	std::vector<RenderStageOutputAttachment>		particleUpdateRenderStageOutputAttachment;
+	std::vector<RenderStageAttachment>			particleUpdateRenderStageAttachments;
 
 	{
-		particleUpdateRenderStageInputAttachment.push_back({ "PARTICLE_BUFFER",					EInputAttachmentType::BUFFER });
+		particleUpdateRenderStageAttachments.push_back({ "PARTICLE_BUFFER",					EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER,								FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,			1 });
 
-		particleUpdateRenderStageOutputAttachment.push_back({ "PARTICLE_BUFFER",					EOutputAttachmentType::BUFFER });
+		particleUpdateRenderStageAttachments.push_back({ "PARTICLE_BUFFER",					EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER,							FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,			1 });
 
-		RenderStage renderStage = {};
+		RenderStageDesc renderStage = {};
 		renderStage.pName						= "Particle Update Render Stage";
-		renderStage.pInputAttachments			= particleUpdateRenderStageInputAttachment.data();
-		renderStage.InputAttachmentCount		= particleUpdateRenderStageInputAttachment.size();
-		renderStage.pExternalInputAttachments	= particleUpdateRenderStageExternalInputAttachment.data();
-		renderStage.ExtenalInputAttachmentCount = particleUpdateRenderStageExternalInputAttachment.size();
-		renderStage.pOutputAttachments			= particleUpdateRenderStageOutputAttachment.data();
-		renderStage.OutputAttachmentCount		= particleUpdateRenderStageOutputAttachment.size();
+		renderStage.pAttachments				= particleUpdateRenderStageAttachments.data();
+		renderStage.AttachmentCount				= particleUpdateRenderStageAttachments.size();
 
 		renderStage.PipelineType = EPipelineStateType::COMPUTE;
 
 		renderStages.push_back(renderStage);
 	}
 
-	std::vector<RenderStageInputAttachment>			shadingRenderStageInputAttachment;
-	std::vector<RenderStageExternalInputAttachment> shadingRenderStageExternalInputAttachment;
-	std::vector<RenderStageOutputAttachment>		shadingRenderStageOutputAttachment;
+	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
 
 	{
-		shadingRenderStageInputAttachment.push_back({ "FILTERED_RADIANCE_IMAGE",				EInputAttachmentType::TEXTURE });
-		shadingRenderStageInputAttachment.push_back({ "GBUFFER_ALBEDO_AO",						EInputAttachmentType::TEXTURE });
-		shadingRenderStageInputAttachment.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",		EInputAttachmentType::TEXTURE });
-		shadingRenderStageInputAttachment.push_back({ "GBUFFER_VELOCITY",						EInputAttachmentType::TEXTURE });
-		shadingRenderStageInputAttachment.push_back({ "GBUFFER_DEPTH",							EInputAttachmentType::TEXTURE });
+		shadingRenderStageAttachments.push_back({ "FILTERED_RADIANCE_IMAGE",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
+		shadingRenderStageAttachments.push_back({ "GBUFFER_ALBEDO_AO",							EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
+		shadingRenderStageAttachments.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",			EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
+		shadingRenderStageAttachments.push_back({ "GBUFFER_VELOCITY",							EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
+		shadingRenderStageAttachments.push_back({ "GBUFFER_DEPTH",								EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
 
-		shadingRenderStageExternalInputAttachment.push_back({ "PER_FRAME_BUFFER",				EExternalInputAttachmentType::UNIFORM });
-		shadingRenderStageExternalInputAttachment.push_back({ "LIGHTS_BUFFER",					EExternalInputAttachmentType::UNIFORM });
+		shadingRenderStageAttachments.push_back({ "PER_FRAME_BUFFER",							EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
+		shadingRenderStageAttachments.push_back({ "LIGHTS_BUFFER",								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
 
-		shadingRenderStageExternalInputAttachment.push_back({ "BRDF_LUT",						EExternalInputAttachmentType::TEXTURE });
-		shadingRenderStageExternalInputAttachment.push_back({ "BLUE_NOISE_LUT",					EExternalInputAttachmentType::TEXTURE });
+		shadingRenderStageAttachments.push_back({ "BRDF_LUT",									EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
+		shadingRenderStageAttachments.push_back({ "BLUE_NOISE_LUT",								EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
 
-		shadingRenderStageOutputAttachment.push_back({ RENDER_GRAPH_BACK_BUFFER,				EOutputAttachmentType::TEXTURE });
+		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER,						EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
 
-		RenderStage renderStage = {};
+		RenderStageDesc renderStage = {};
 		renderStage.pName						= "Shading Render Stage";
-		renderStage.pInputAttachments			= shadingRenderStageInputAttachment.data();
-		renderStage.InputAttachmentCount		= shadingRenderStageInputAttachment.size();
-		renderStage.pExternalInputAttachments	= shadingRenderStageExternalInputAttachment.data();
-		renderStage.ExtenalInputAttachmentCount = shadingRenderStageExternalInputAttachment.size();
-		renderStage.pOutputAttachments			= shadingRenderStageOutputAttachment.data();
-		renderStage.OutputAttachmentCount		= shadingRenderStageOutputAttachment.size();
+		renderStage.pAttachments				= shadingRenderStageAttachments.data();
+		renderStage.AttachmentCount				= shadingRenderStageAttachments.size();
 
 		renderStage.PipelineType = EPipelineStateType::GRAPHICS;
 
@@ -219,7 +189,7 @@ Sandbox::Sandbox() :
 
 	RenderGraphDesc renderGraphDesc = {};
 	renderGraphDesc.pName				= "Test Render Graph";
-	renderGraphDesc.CreateDebugGraph	= false;
+	renderGraphDesc.CreateDebugGraph	= true;
 	renderGraphDesc.pRenderStages		= renderStages.data();
 	renderGraphDesc.RenderStageCount	= renderStages.size();
 
@@ -227,10 +197,14 @@ Sandbox::Sandbox() :
 	clock.Reset();
 	clock.Tick();
 
-	RenderGraphCreator::Create(renderGraphDesc);
+	RenderGraph* pRenderGraph = new RenderGraph(RenderSystem::GetDevice());
+
+	//pRenderGraph->Init(renderGraphDesc);
 
 	clock.Tick();
 	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
+
+	SAFEDELETE(pRenderGraph);
 
 	//InitTestAudio();
 }

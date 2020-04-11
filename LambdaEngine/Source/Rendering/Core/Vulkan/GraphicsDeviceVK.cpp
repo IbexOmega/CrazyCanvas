@@ -154,7 +154,7 @@ namespace LambdaEngine
 	IDescriptorHeap* GraphicsDeviceVK::CreateDescriptorHeap(const DescriptorHeapDesc& desc) const
 	{
 		DescriptorHeapVK* pDescriptorHeap = DBG_NEW DescriptorHeapVK(this);
-		if (pDescriptorHeap->Init(desc))
+		if (!pDescriptorHeap->Init(desc))
 		{
 			pDescriptorHeap->Release();
 			return nullptr;

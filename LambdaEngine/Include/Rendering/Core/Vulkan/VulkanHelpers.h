@@ -121,7 +121,7 @@ namespace LambdaEngine
     {
         switch (descriptorType)
         {
-        case EDescriptorType::DESCRIPTOR_SHADER_RESOURCE:			        return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        case EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_TEXTURE:			        return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         case EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER:	return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         case EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE:			return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         case EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER:			return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
