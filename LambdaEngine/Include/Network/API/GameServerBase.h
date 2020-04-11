@@ -21,6 +21,7 @@ namespace LambdaEngine
 	class LAMBDA_API GameServerBase
 	{
 		friend class NetworkUtils;
+		friend class RemoteGameClient;
 
 	public:
 		GameServerBase();
@@ -41,6 +42,7 @@ namespace LambdaEngine
 		void TerminateThreads();
 		bool ThreadsAreRunning() const;
 		bool ShouldTerminate() const;
+		bool Transmit(const std::string& address, uint16 port, char* buffer, int32 length);
 
 	private:
 		void StartThreads();
@@ -57,9 +59,10 @@ namespace LambdaEngine
 		static void TickStatic(Timestamp dt);
 		static void ReleaseStatic();
 
-	private:
+	protected:
 		ISocketUDP* m_pSocket;
 
+	private:
 		Thread* m_pThreadTransmitter;
 		Thread* m_pThreadReceiver;
 

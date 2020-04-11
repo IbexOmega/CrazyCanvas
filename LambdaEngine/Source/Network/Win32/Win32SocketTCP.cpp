@@ -17,7 +17,7 @@ namespace LambdaEngine
 		}
 	}
 
-	Win32SocketTCP::Win32SocketTCP(uint64 socket, const char* address, uint16 port) : Win32SocketBase(socket, address, port)
+	Win32SocketTCP::Win32SocketTCP(uint64 socket, const char* pAddress, uint16 port) : Win32SocketBase(socket, pAddress, port)
 	{
 	}
 
@@ -53,9 +53,9 @@ namespace LambdaEngine
 		return DBG_NEW Win32SocketTCP(socket, address, port);
 	}
 
-	bool Win32SocketTCP::Send(const char* buffer, uint32 bytesToSend, int32& bytesSent)
+	bool Win32SocketTCP::Send(const char* pBuffer, uint32 bytesToSend, int32& bytesSent)
 	{
-		bytesSent = send(m_Socket, buffer, bytesToSend, 0);
+		bytesSent = send(m_Socket, pBuffer, bytesToSend, 0);
 		if (bytesSent == SOCKET_ERROR)
 		{
 			LOG_ERROR_CRIT("Failed to send data");
@@ -65,9 +65,9 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool Win32SocketTCP::Receive(char* buffer, uint32 size, int32& bytesReceived)
+	bool Win32SocketTCP::Receive(char* pBuffer, uint32 size, int32& bytesReceived)
 	{
-		bytesReceived = recv(m_Socket, buffer, size, 0);
+		bytesReceived = recv(m_Socket, pBuffer, size, 0);
 		if (bytesReceived == SOCKET_ERROR)
 		{
 			bytesReceived = 0;
@@ -84,12 +84,12 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool Win32SocketTCP::DisableNaglesAlgorithm()
+	bool Win32SocketTCP::EnableNaglesAlgorithm(bool enable)
 	{
-		static const char broadcast = 1;
+		static const char broadcast = enable ? 1 : 0;
 		if (setsockopt(m_Socket, IPPROTO_TCP, TCP_NODELAY, &broadcast, sizeof(broadcast)) == SOCKET_ERROR)
 		{
-			LOG_ERROR_CRIT("Failed to disable Nagle's Algorithm (TCP_NODELAY)");
+			LOG_ERROR_CRIT("Failed to set socket option Nagle's Algorithm (TCP_NODELAY), [Enable=%b]", enable);
 			PrintLastError();
 			return false;
 		}

@@ -93,18 +93,20 @@ namespace LambdaEngine
 		/*
 		* Sets the socket in non blocking or blocking mode.
 		*
+		* enable - True to use blocking calls, false for non blocking calls.
+		*
 		* return - False if an error occured, otherwise true.
 		*/
-		virtual bool SetNonBlocking(bool nonBlocking) override
+		virtual bool EnableBlocking(bool enable) override
 		{
-			if (ioctlsocket(m_Socket, FIONBIO, &((u_long)nonBlocking)) != NO_ERROR)
+			if (ioctlsocket(m_Socket, FIONBIO, &((u_long)enable)) != NO_ERROR)
 			{
-				LOG_ERROR_CRIT("Failed to change blocking mode to [%sBlocking] ", nonBlocking ? "Non " : "");
+				LOG_ERROR_CRIT("Failed to change blocking mode to [%sBlocking] ", enable ? "Non " : "");
 				PrintLastError();
 				return false;
 			}
 			
-			m_NonBlocking = nonBlocking;
+			m_NonBlocking = enable;
 			return true;
 		};
 
@@ -160,11 +162,11 @@ namespace LambdaEngine
 		{
 		};
 
-		Win32SocketBase(uint64 socket, const char* address, uint16 port) :
+		Win32SocketBase(uint64 socket, const char* pAddress, uint16 port) :
 			m_Socket(socket),
 			m_NonBlocking(false),
 			m_Closed(false),
-			m_Address(address),
+			m_Address(pAddress),
 			m_Port(port)
 		{
 		};

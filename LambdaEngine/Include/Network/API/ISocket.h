@@ -40,9 +40,11 @@ namespace LambdaEngine
 		/*
 		* Sets the socket in non blocking or blocking mode.
 		*
+		* enable - True to use blocking calls, false for non blocking calls.
+		*
 		* return - False if an error occured, otherwise true.
 		*/
-		virtual bool SetNonBlocking(bool nonBlocking) = 0;
+		virtual bool EnableBlocking(bool enable) = 0;
 		virtual bool IsNonBlocking() const = 0;
 
 		/*

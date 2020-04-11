@@ -22,9 +22,9 @@ namespace LambdaEngine
         }
     }
 
-    MacSocketTCP::MacSocketTCP(int32 socket, const char* address, uint16 port)
+    MacSocketTCP::MacSocketTCP(int32 socket, const char* pAddress, uint16 port)
         : MacSocketBase<ISocketTCP>(socket),
-        m_Address(address),
+        m_Address(pAddress),
         m_Port(port)
     {
     }
@@ -62,9 +62,9 @@ namespace LambdaEngine
 		return new MacSocketTCP(socket, address, port);
     }
 
-    bool MacSocketTCP::Send(const char* buffer, uint32 bytesToSend, int32& bytesSent)
+    bool MacSocketTCP::Send(const char* pBuffer, uint32 bytesToSend, int32& bytesSent)
     {
-        bytesSent = send(m_Socket, buffer, bytesToSend, 0);
+        bytesSent = send(m_Socket, pBuffer, bytesToSend, 0);
 		if (bytesSent == SOCKET_ERROR)
 		{
             int32 error = errno;
@@ -75,9 +75,9 @@ namespace LambdaEngine
 		return true;
     }
 
-    bool MacSocketTCP::Receive(char* buffer, uint32 size, int32& bytesReceived)
+    bool MacSocketTCP::Receive(char* pBuffer, uint32 size, int32& bytesReceived)
     {
-		bytesReceived = recv(m_Socket, buffer, size, 0);
+		bytesReceived = recv(m_Socket, pBuffer, size, 0);
 		if (bytesReceived == SOCKET_ERROR)
 		{
             int32 error = errno;
@@ -100,14 +100,14 @@ namespace LambdaEngine
 		return true;
 	}
 
-    bool MacSocketTCP::DisableNaglesAlgorithm()
+    bool MacSocketTCP::EnableNaglesAlgorithm(bool enable)
 	{
-		static const int broadcast = 1;
+		static const int broadcast = enable ? 1 : 0;
 		if (setsockopt(m_Socket, IPPROTO_TCP, TCP_NODELAY, &broadcast, sizeof(broadcast)) == SOCKET_ERROR)
 		{
             int32 error = errno;
             
-			LOG_ERROR_CRIT("Failed to disable Nagle's Algorithm (TCP_NODELAY)");
+			LOG_ERROR_CRIT("Failed to set socket option Nagle's Algorithm (TCP_NODELAY), [Enable=%b]", enable);
 			PrintLastError(error);
 			return false;
 		}

@@ -2,11 +2,13 @@
 
 #include "GameServerBase.h"
 
-#include <queue>
+#include <unordered_map>
+
+#include "NetworkPacket.h"
 
 namespace LambdaEngine
 {
-	class NetworkPacket;
+	class RemoteGameClient;
 
 	class LAMBDA_API GameServer : public GameServerBase
 	{
@@ -14,23 +16,24 @@ namespace LambdaEngine
 		GameServer();
 		~GameServer();
 
-		bool AddPacket(NetworkPacket* packet);
-
 	protected:
 		virtual void RunTranmitter() override;
 		virtual void RunReceiver() override;
 		virtual void OnThreadsTurminated() override;
 
 	private:
-		std::queue<NetworkPacket*>* SwapAndGetPacketBuffer();
-		bool TransmitPackets(std::queue<NetworkPacket*>* packets);
+		RemoteGameClient* GetOrCreateClient(const std::string& address, uint64 port);
+
 
 	private:
-		std::queue<NetworkPacket*>* m_PacketBuffers[2];
-		std::atomic_int m_PacketBufferIndex;
+		char m_SendBuffer[MAXIMUM_PACKET_SIZE];
+		char m_ReceiveBuffer[MAXIMUM_DATAGRAM_SIZE];
 
-		SpinLock m_LockPacketBuffers;
+		SpinLock m_LockClients;
 
-		//char m_SendBuffer[MAXIMUM_DATAGRAM_SIZE];
+		std::unordered_map<int64, RemoteGameClient*> m_Clients;
+
+	private:
+		static uint64 Hash(const std::string& address, uint64 port);
 	};
 }

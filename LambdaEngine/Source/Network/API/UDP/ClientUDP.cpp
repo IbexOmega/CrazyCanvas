@@ -50,7 +50,7 @@ namespace LambdaEngine
 
 		if (GetAddress() == ADDRESS_BROADCAST)
 		{
-			return m_pSocket->EnableBroadcast();
+			return m_pSocket->EnableBroadcast(true);
 		}
 		return true;
 	}

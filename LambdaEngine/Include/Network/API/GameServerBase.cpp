@@ -105,7 +105,7 @@ namespace LambdaEngine
 		if (!m_pSocket->Bind(m_Address, m_Port))
 			return false;
 
-		if (!m_pSocket->EnableBroadcast())
+		if (!m_pSocket->EnableBroadcast(true))
 			return false;
 
 		m_Port = m_pSocket->GetPort();
@@ -204,6 +204,16 @@ namespace LambdaEngine
 	bool GameServerBase::ShouldTerminate() const
 	{
 		return !m_Run;
+	}
+
+	bool GameServerBase::Transmit(const std::string& address, uint16 port, char* buffer, int32 length)
+	{
+		int32 bytesSent = 0;
+		if (!m_pSocket->SendTo(buffer, length, bytesSent, address, port))
+		{
+			return false;
+		}
+		return length == bytesSent;
 	}
 
 	void GameServerBase::InitStatic()

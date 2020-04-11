@@ -97,7 +97,7 @@ namespace LambdaEngine
 				return false;
 			}
 		}
-		return m_pSocket->DisableNaglesAlgorithm();
+		return m_pSocket->EnableNaglesAlgorithm(false);
 	}
 
 	bool ClientTCP::OnThreadsStartedPost()
