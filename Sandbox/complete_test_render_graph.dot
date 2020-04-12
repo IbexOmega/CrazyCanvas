@@ -35,10 +35,10 @@ digraph G {
 		color = gray90;
 		label = "Main Pipeline";
 		rs0 [shape=octagon,style=bold,label="Geometry Render Stage"];
-		rs4 [shape=octagon,style=bold,label="Shading Render Stage"];
 		rs3 [shape=octagon,style=bold,label="Particle Update Render Stage"];
 		rs2 [shape=octagon,style=bold,label="Spatial Blur Render Stage"];
 		rs1 [shape=octagon,style=bold,label="Ray Tracing Render Stage"];
+		rs4 [shape=octagon,style=bold,label="Shading Render Stage"];
 		ia29 [shape=box,label="Input\nGBUFFER_ALBEDO_AO"];
 		ia24 [shape=box,label="Input\nRADIANCE_IMAGE"];
 		ia18 [shape=box,label="Input\nGBUFFER_DEPTH"];
@@ -55,13 +55,13 @@ digraph G {
 		oa30 [shape=box,label="Output\nBACK_BUFFER_TEXTURE"];
 	}
 	{eia0, eia1, eia2, eia3, eia4, eia5, eia6, eia7, eia8, eia9, eia10} -> rs0[style=dashed];
-	{ia28, ia29, ia16, ia17, ia18} -> rs4[color=green3];
-	{eia0, eia19, eia21, eia22} -> rs4[style=dashed];
 	{tia26} -> rs3[color=blue];
 	{ia24} -> rs2[color=green3];
 	{ia16, ia17, ia18} -> rs1[color=green3];
 	{tia15} -> rs1[color=blue];
 	{eia0, eia19, eia20, eia1, eia2, eia3, eia4, eia5, eia6, eia7, eia8, eia9, eia10, eia21, eia22} -> rs1[style=dashed];
+	{ia28, ia29, ia16, ia17, ia18} -> rs4[color=green3];
+	{eia0, eia19, eia21, eia22} -> rs4[style=dashed];
 	rs1 -> oa23[color=purple];
 	oa23 -> ia24[style=bold,color=red];
 	rs0 -> oa14[color=purple];

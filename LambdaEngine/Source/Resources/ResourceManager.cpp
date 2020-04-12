@@ -168,6 +168,22 @@ namespace LambdaEngine
 		return GUID_NONE;
 	}
 
+	GUID_Lambda ResourceManager::LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, ShaderConstant* pConstants, uint32 shaderConstantCount, const char* pEntryPoint)
+	{
+		GUID_Lambda guid = GUID_NONE;
+		IShader** ppMappedShader = nullptr;
+
+		//Spinlock
+		{
+			guid = s_NextFreeGUID++;
+			ppMappedShader = &m_Shaders[guid]; //Creates new entry if not existing
+		}
+
+		(*ppMappedShader) = ResourceLoader::LoadShaderFromFile(m_pGraphicsDevice, pFilepath, stage, lang, pConstants, shaderConstantCount, pEntryPoint);
+
+		return guid;
+	}
+
 	GUID_Lambda ResourceManager::LoadSoundFromFile(const char* pFilepath)
 	{
 		GUID_Lambda guid = GUID_NONE;
@@ -247,6 +263,28 @@ namespace LambdaEngine
 			return it->second;
 
 		D_LOG_WARNING("[ResourceManager]: GetTexture called with invalid GUID %u", guid);
+		return nullptr;
+	}
+
+	IShader* ResourceManager::GetShader(GUID_Lambda guid)
+	{
+		auto it = m_Shaders.find(guid);
+
+		if (it != m_Shaders.end())
+			return it->second;
+
+		D_LOG_WARNING("[ResourceManager]: GetShader called with invalid GUID %u", guid);
+		return nullptr;
+	}
+
+	const IShader* ResourceManager::GetShader(GUID_Lambda guid) const
+	{
+		auto it = m_Shaders.find(guid);
+
+		if (it != m_Shaders.end())
+			return it->second;
+
+		D_LOG_WARNING("[ResourceManager]: GetShader called with invalid GUID %u", guid);
 		return nullptr;
 	}
 

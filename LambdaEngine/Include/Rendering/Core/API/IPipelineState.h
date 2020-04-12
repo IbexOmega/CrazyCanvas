@@ -7,6 +7,10 @@
 
 namespace LambdaEngine
 {
+	class IShader;
+	class IRenderPass;
+	class IPipelineLayout;
+
 	enum class EPipelineStateType : uint8
 	{
 		NONE            = 0,
@@ -17,30 +21,38 @@ namespace LambdaEngine
 
 	struct GraphicsPipelineStateDesc
 	{
-		const char* pName			= "";
-		ShaderDesc	MeshShader		= { };
-		ShaderDesc	VertexShader	= { };
-		ShaderDesc	GeometryShader	= { };
-		ShaderDesc	HullShader		= { };
-		ShaderDesc	DomainShader	= { };
-		ShaderDesc	PixelShader		= { };
+		const char* pName						= "";
+		const IRenderPass* pRenderPass			= nullptr;
+		const IPipelineLayout* pPipelineLayout	= nullptr;
+
+		//New Style
+		const IShader* pMeshShader				= nullptr;
+
+		//Old Style
+		const IShader* pVertexShader			= nullptr;
+		const IShader* pGeometryShader			= nullptr;
+		const IShader* pHullShader				= nullptr;
+		const IShader* pDomainShader			= nullptr;
+
+		//Required
+		const IShader* pPixelShader				= nullptr;
 	};
 
 	struct ComputePipelineStateDesc
 	{
-		const char* pName	= "";
-		ShaderDesc	Shader	= { };
+		const char* pName		= "";
+		const IShader*	pShader	= nullptr;
 	};
 
 	struct RayTracingPipelineStateDesc
 	{
-		const char*			pName					= "";
-		uint32				MaxRecursionDepth		= 1;	
-		ShaderDesc			RaygenShader			= {};
-		const ShaderDesc*	pMissShaders			= nullptr;
-		uint32				MissShaderCount			= 0;
-		const ShaderDesc*	pClosestHitShaders		= nullptr;
-		uint32				ClosestHitShaderCount	= 0;
+		const char*				pName					= "";
+		uint32					MaxRecursionDepth		= 1;	
+		const IShader*			pRaygenShader			= nullptr;
+		const IShader* const*	ppMissShaders			= nullptr;
+		uint32					MissShaderCount			= 0;
+		const IShader* const*	ppClosestHitShaders		= nullptr;
+		uint32					ClosestHitShaderCount	= 0;
 	};
 
 	class IPipelineState : public IDeviceChild

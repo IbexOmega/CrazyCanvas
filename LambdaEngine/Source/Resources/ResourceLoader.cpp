@@ -319,29 +319,46 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
+	IShader* ResourceLoader::LoadShaderFromFile(IGraphicsDevice* pGraphicsDevice, const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, ShaderConstant* pConstants, uint32 shaderConstantCount, const char* pEntryPoint)
+	{
+		byte* pShaderSource = nullptr;
+		uint32 shaderSourceSize = 0;
+
+		if (!ReadDataFromFile(pFilepath, &pShaderSource, &shaderSourceSize))
+		{
+			LOG_WARNING("[ResourceDevice]: Failed to open shader file \"%s\"", pFilepath);
+			return nullptr;
+		}
+
+		ShaderDesc shaderDesc = {};
+		shaderDesc.pName				= pFilepath;
+		shaderDesc.pSource				= reinterpret_cast<char*>(pShaderSource);
+		shaderDesc.SourceSize			= shaderSourceSize;
+		shaderDesc.pEntryPoint			= pEntryPoint;
+		shaderDesc.Stage				= stage;
+		shaderDesc.Lang					= lang;
+		shaderDesc.pConstants			= pConstants;
+		shaderDesc.ShaderConstantCount	= shaderConstantCount;
+
+		IShader* pShader = pGraphicsDevice->CreateShader(shaderDesc);
+
+		SAFEDELETEARR(pShaderSource);
+
+		return pShader;
+	}
+
 	SoundEffect3D* ResourceLoader::LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath)
 	{
 		SoundEffect3D* pSound = pAudioDevice->CreateSound();
 
-		byte* pSoundData = nullptr;
-		uint32 soundDataSize = 0;
-
-		if (!ReadDataFromFile(pFilepath, &pSoundData, &soundDataSize))
-		{
-			return nullptr;
-		}
-
 		SoundEffect3DDesc soundDesc		= {};
 		soundDesc.pFilepath		= pFilepath;
-		soundDesc.DataSize		= soundDataSize;
 
 		if (!pSound->Init(soundDesc))
 		{
 			LOG_WARNING("[ResourceDevice]: Failed to initialize sound \"%s\"", pFilepath);
 			return nullptr;
 		}
-
-		SAFEDELETEARR(pSoundData);
 
 		D_LOG_MESSAGE("[ResourceDevice]: Loaded Sound \"%s\"", pFilepath);
 
@@ -350,7 +367,7 @@ namespace LambdaEngine
 
 	bool ResourceLoader::ReadDataFromFile(const char* pFilepath, byte** ppData, uint32* pDataSize)
 	{
-		FILE* pFile = fopen(pFilepath, "r");
+		FILE* pFile = fopen(pFilepath, "rb");
 
 		if (pFile == nullptr)
 		{

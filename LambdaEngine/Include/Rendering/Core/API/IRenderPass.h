@@ -44,13 +44,13 @@ namespace LambdaEngine
 
 	struct RenderPassDesc
 	{
-		const char* pName											= "";
-		const RenderPassAttachmentDesc* pAttachments				= nullptr;
-		uint32 AttachmentCount										= 0;
-		const RenderPassSubpassDesc* pSubpasses						= nullptr;
-		uint32 SubpassCount											= 0;
-		const RenderPassSubpassDependencyDesc* pSubpassDependencies	= nullptr;
-		uint32 SubpassDependencyCount								= 0;
+		const char*								pName					= "";
+		const RenderPassAttachmentDesc*			pAttachments			= nullptr;
+		uint32									AttachmentCount			= 0;
+		const RenderPassSubpassDesc*			pSubpasses				= nullptr;
+		uint32									SubpassCount			= 0;
+		const RenderPassSubpassDependencyDesc*	pSubpassDependencies	= nullptr;
+		uint32									SubpassDependencyCount	= 0;
 	};
 
 	class IRenderPass : public IDeviceChild

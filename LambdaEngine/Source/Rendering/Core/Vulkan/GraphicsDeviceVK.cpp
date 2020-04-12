@@ -23,6 +23,7 @@
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/DescriptorHeapVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/ShaderVK.h"
 
 namespace LambdaEngine
 {
@@ -392,6 +393,21 @@ namespace LambdaEngine
 		else
 		{
 			return pTextureView;
+		}
+	}
+
+	IShader* GraphicsDeviceVK::CreateShader(const ShaderDesc& desc) const
+	{
+		ShaderVK* pShader = DBG_NEW ShaderVK(this);
+
+		if (!pShader->Init(desc))
+		{
+			pShader->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pShader;
 		}
 	}
 

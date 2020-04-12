@@ -5,6 +5,7 @@
 #include "Rendering/Core/API/IDescriptorHeap.h"
 #include "Rendering/Core/API/IPipelineLayout.h"
 #include "Rendering/Core/API/IDescriptorSet.h"
+#include "Rendering/Core/API/IRenderPass.h"
 
 #include "Log/Log.h"
 
@@ -34,17 +35,17 @@ namespace LambdaEngine
 			return false;
 		}
 
-		//if (!CreateDescriptorHeap())
-		//{
-		//	LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Descriptor Heap", desc.pName);
-		//	return false;
-		//}
+		if (!CreateDescriptorHeap())
+		{
+			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Descriptor Heap", desc.pName);
+			return false;
+		}
 
-		//if (!CreateRenderStages(renderStageDescriptions))
-		//{
-		//	LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", desc.pName);
-		//	return false;
-		//}
+		if (!CreateRenderStages(renderStageDescriptions))
+		{
+			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", desc.pName);
+			return false;
+		}
 
 		return true;
 	}
@@ -86,22 +87,21 @@ namespace LambdaEngine
 
 			RenderStage* pRenderStage = &m_pRenderStages[i];
 
-			switch (pRenderStageDesc->PipelineType)
-			{
-			case EPipelineStateType::GRAPHICS:		pRenderStage->pPipelineState = m_pGraphicsDevice->CreateGraphicsPipelineState(*pRenderStageDesc->Pipeline.pGraphicsDesc);		break;
-			case EPipelineStateType::COMPUTE:		pRenderStage->pPipelineState = m_pGraphicsDevice->CreateComputePipelineState(*pRenderStageDesc->Pipeline.pComputeDesc);			break;
-			case EPipelineStateType::RAY_TRACING:	pRenderStage->pPipelineState = m_pGraphicsDevice->CreateRayTracingPipelineState(*pRenderStageDesc->Pipeline.pRayTracingDesc);	break;
-			}
-
 			std::vector<DescriptorBindingDesc> descriptorSetDescriptions;
 			descriptorSetDescriptions.reserve(pRenderStageDesc->AttachmentCount);
-
 			uint32 descriptorBindingIndex = 0;
 
+			std::vector<RenderPassAttachmentDesc> renderPassAttachmentDescriptions;
+			renderPassAttachmentDescriptions.reserve(pRenderStageDesc->AttachmentCount);
+			std::vector<ETextureState> renderPassRenderTargetStates;
+			renderPassRenderTargetStates.reserve(pRenderStageDesc->AttachmentCount);
+
+			//Create Descriptors and RenderPass Attachments from RenderStage Attachments
 			for (uint32 a = 0; a < pRenderStageDesc->AttachmentCount; a++)
 			{
 				const RenderStageAttachment* pAttachment = &pRenderStageDesc->pAttachments[a];
 				
+				//Descriptors
 				if (AttachmentsNeedsDescriptor(pAttachment->Type))
 				{
 					DescriptorBindingDesc descriptorBinding = {};
@@ -115,19 +115,97 @@ namespace LambdaEngine
 
 					descriptorBindingIndex++;
 				}
+				//RenderPass Attachments
+				else
+				{
+					if (pAttachment->Type == EAttachmentType::OUTPUT_COLOR)
+					{
+						RenderPassAttachmentDesc renderPassAttachmentDesc = {};
+						renderPassAttachmentDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+						renderPassAttachmentDesc.SampleCount	= 1;
+						renderPassAttachmentDesc.LoadOp			= ELoadOp::CLEAR;
+						renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE;
+						renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::DONT_CARE;
+						renderPassAttachmentDesc.StencilStoreOp	= EStoreOp::DONT_CARE;
+						renderPassAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_UNKNOWN;
+						renderPassAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+
+						renderPassAttachmentDescriptions.push_back(renderPassAttachmentDesc);
+
+						renderPassRenderTargetStates.push_back(ETextureState::TEXTURE_STATE_RENDER_TARGET);
+					}
+					else if (pAttachment->Type == EAttachmentType::OUTPUT_DEPTH_STENCIL)
+					{
+						RenderPassAttachmentDesc renderPassAttachmentDesc = {};
+						renderPassAttachmentDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
+						renderPassAttachmentDesc.SampleCount	= 1;
+						renderPassAttachmentDesc.LoadOp			= ELoadOp::CLEAR;
+						renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE;
+						renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::CLEAR;
+						renderPassAttachmentDesc.StencilStoreOp = EStoreOp::STORE;
+						renderPassAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_UNKNOWN;
+						renderPassAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+
+						renderPassAttachmentDescriptions.push_back(renderPassAttachmentDesc);
+					}
+				}
 			}
 
+			//Create Pipeline Layout
 			DescriptorSetLayoutDesc descriptorSetLayout = {};
 			descriptorSetLayout.pDescriptorBindings		= descriptorSetDescriptions.data();
 			descriptorSetLayout.DescriptorBindingCount	= descriptorSetDescriptions.size();
 
-			PipelineLayoutDesc pipelineLayoutDesc		= {};
+			PipelineLayoutDesc pipelineLayoutDesc = {};
 			pipelineLayoutDesc.pDescriptorSetLayouts	= &descriptorSetLayout;
 			pipelineLayoutDesc.DescriptorSetLayoutCount = 1;
 
 			pRenderStage->pPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(pipelineLayoutDesc);
+			
+
+			//Create Pipeline State
+			if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
+			{
+				pRenderStageDesc->Pipeline.pGraphicsDesc->pPipelineLayout = pRenderStage->pPipelineLayout;
+
+				//Create RenderPass
+				{
+					RenderPassSubpassDesc renderPassSubpassDesc = {};
+					renderPassSubpassDesc.pInputAttachmentStates		= nullptr;
+					renderPassSubpassDesc.InputAttachmentCount			= 0;
+					renderPassSubpassDesc.pResolveAttachmentStates		= nullptr;
+					renderPassSubpassDesc.pRenderTargetStates			= renderPassRenderTargetStates.data();
+					renderPassSubpassDesc.RenderTargetCount				= renderPassRenderTargetStates.size();
+					renderPassSubpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY;
+
+					RenderPassDesc renderPassDesc = {};
+					renderPassDesc.pName					= "";
+					renderPassDesc.pAttachments				= renderPassAttachmentDescriptions.data();
+					renderPassDesc.AttachmentCount			= renderPassAttachmentDescriptions.size();
+					renderPassDesc.pSubpasses				= &renderPassSubpassDesc;
+					renderPassDesc.SubpassCount				= 1;
+					renderPassDesc.pSubpassDependencies		= nullptr;
+					renderPassDesc.SubpassDependencyCount	= 0;
+
+					IRenderPass* pRenderPass = m_pGraphicsDevice->CreateRenderPass(renderPassDesc);
+					pRenderStageDesc->Pipeline.pGraphicsDesc->pRenderPass = pRenderPass;
+				}
+
+				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateGraphicsPipelineState(*pRenderStageDesc->Pipeline.pGraphicsDesc);
+			}
+			else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
+			{
+				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateComputePipelineState(*pRenderStageDesc->Pipeline.pComputeDesc);
+			}
+			else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
+			{
+				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateRayTracingPipelineState(*pRenderStageDesc->Pipeline.pRayTracingDesc);
+			}
+
+				int agfsg = 0;
+			
 		}
 
-		return false;
+		return true;
 	}
 }

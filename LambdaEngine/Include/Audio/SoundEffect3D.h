@@ -14,7 +14,6 @@ namespace LambdaEngine
 	struct SoundEffect3DDesc
 	{
 		const char* pFilepath	= "";
-		uint32 DataSize			= 0;
 	};
 
 	class LAMBDA_API SoundEffect3D

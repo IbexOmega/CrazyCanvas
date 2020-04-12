@@ -27,8 +27,6 @@ namespace LambdaEngine
 
 	bool RenderSystem::Init()
 	{
-        return true;
-        
 		GraphicsDeviceDesc deviceDesc = { };
 #ifndef LAMBDA_PRODUCTION
 		deviceDesc.Debug = true;

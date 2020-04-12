@@ -29,8 +29,9 @@ namespace LambdaEngine
     {
         switch (format)
         {
-        case EFormat::FORMAT_R8G8B8A8_UNORM:   return VK_FORMAT_R8G8B8A8_UNORM;
-        case EFormat::FORMAT_B8G8R8A8_UNORM:   return VK_FORMAT_B8G8R8A8_UNORM;
+        case EFormat::FORMAT_R8G8B8A8_UNORM:		return VK_FORMAT_R8G8B8A8_UNORM;
+        case EFormat::FORMAT_B8G8R8A8_UNORM:		return VK_FORMAT_B8G8R8A8_UNORM;
+		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return VK_FORMAT_D24_UNORM_S8_UINT;
         default:                        return VK_FORMAT_UNDEFINED;
         }
     }
@@ -102,19 +103,6 @@ namespace LambdaEngine
 		case EAddressMode::MIRRORED_CLAMP_TO_EDGE:	return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
 		default:									return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		}
-	}
-
-	inline bool CreateShadeModule(VkDevice device, VkShaderModule shaderModule, const char* pSource, uint32 sourceSize)
-	{
-		VkShaderModuleCreateInfo createInfo = {};
-		createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		createInfo.pNext    = nullptr;
-		createInfo.flags    = 0;
-		createInfo.codeSize = sourceSize;
-		createInfo.pCode    = reinterpret_cast<const uint32_t*>(pSource);
-
-		VkResult result = vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule);
-		return result == VK_SUCCESS;
 	}
 
     inline VkDescriptorType ConvertDescriptorType(EDescriptorType descriptorType)
@@ -295,68 +283,27 @@ namespace LambdaEngine
     {
         switch (textureState)
         {
-            case ETextureState::TEXTURE_STATE_GENERAL:                             return VK_IMAGE_LAYOUT_GENERAL;
-            case ETextureState::TEXTURE_STATE_RENDER_TARGET:                    return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            case ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT:            return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            case ETextureState::TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY:             return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-            case ETextureState::TEXTURE_STATE_SHADER_READ_ONLY:                    return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            case ETextureState::TEXTURE_STATE_COPY_SRC:                            return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            case ETextureState::TEXTURE_STATE_COPY_DST:                            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            case ETextureState::TEXTURE_STATE_PREINITIALIZED:                      return VK_IMAGE_LAYOUT_PREINITIALIZED;
-            case ETextureState::TEXTURE_STATE_DEPTH_READ_ONLY_STENCIL_ATTACHMENT:  return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
-            case ETextureState::TEXTURE_STATE_DEPTH_ATTACHMENT_STENCIL_READ_ONLY:  return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
-            case ETextureState::TEXTURE_STATE_DEPTH_ATTACHMENT:                    return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-            case ETextureState::TEXTURE_STATE_DEPTH_READ_ONLY:                     return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
-            case ETextureState::TEXTURE_STATE_STENCIL_ATTACHMENT:                  return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-            case ETextureState::TEXTURE_STATE_STENCIL_READ_ONLY:                   return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
-            case ETextureState::TEXTURE_STATE_PRESENT:                             return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            case ETextureState::TEXTURE_STATE_SHADING_RATE:                        return VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV;
+            case ETextureState::TEXTURE_STATE_GENERAL:								return VK_IMAGE_LAYOUT_GENERAL;
+            case ETextureState::TEXTURE_STATE_RENDER_TARGET:						return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT:				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY:				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_SHADER_READ_ONLY:						return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_COPY_SRC:								return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_COPY_DST:								return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_PREINITIALIZED:						return VK_IMAGE_LAYOUT_PREINITIALIZED;
+            case ETextureState::TEXTURE_STATE_DEPTH_READ_ONLY_STENCIL_ATTACHMENT:	return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_DEPTH_ATTACHMENT_STENCIL_READ_ONLY:	return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_DEPTH_ATTACHMENT:						return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_DEPTH_READ_ONLY:						return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_STENCIL_ATTACHMENT:					return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_STENCIL_READ_ONLY:					return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+            case ETextureState::TEXTURE_STATE_PRESENT:								return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            case ETextureState::TEXTURE_STATE_SHADING_RATE:							return VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV;
             case ETextureState::TEXTURE_STATE_DONT_CARE:
             case ETextureState::TEXTURE_STATE_UNKNOWN:
             default: return VK_IMAGE_LAYOUT_UNDEFINED;
         }
     }
-	
-	inline void CreateSpecializationInfo(VkSpecializationInfo& specializationInfo, std::vector<VkSpecializationMapEntry>& specializationEntries, const ShaderDesc& shaderDesc)
-	{
-		specializationInfo = {};
-
-		for (uint32 i = 0; i < shaderDesc.Constants.size(); i++)
-		{
-			VkSpecializationMapEntry specializationEntry = {};
-			specializationEntry.constantID  = i;
-			specializationEntry.offset      = i * sizeof(ShaderConstant);
-			specializationEntry.size        = sizeof(ShaderConstant);
-			specializationEntries.push_back(specializationEntry);
-		}
-
-		specializationInfo.mapEntryCount    = (uint32)specializationEntries.size();
-		specializationInfo.pMapEntries      = specializationEntries.data();
-		specializationInfo.dataSize         = shaderDesc.Constants.size() * sizeof(ShaderConstant);
-		specializationInfo.pData            = shaderDesc.Constants.data();
-	}
-
-	inline bool CreateShaderStageInfo(VkDevice device, VkPipelineShaderStageCreateInfo& shaderStageInfo, const ShaderDesc& shaderDesc, const VkSpecializationInfo& specializationInfo)
-	{
-		VkShaderModule shaderModule = VK_NULL_HANDLE;
-
-		if (!CreateShadeModule(device, shaderModule, shaderDesc.pSource, shaderDesc.SourceSize))
-        {            
-            return false;
-        }
-
-		shaderStageInfo = {};
-
-		shaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		shaderStageInfo.pNext   = nullptr;
-		shaderStageInfo.flags   = 0;
-		shaderStageInfo.stage   = ConvertShaderStageFlag(shaderDesc.Type);
-		shaderStageInfo.module  = shaderModule;
-		shaderStageInfo.pName   = shaderDesc.pEntryPoint;
-		shaderStageInfo.pSpecializationInfo = &specializationInfo;
-        
-        return true;
-	}
 
 	inline const char* VkFormatToString(VkFormat format)
 	{

@@ -59,6 +59,8 @@ namespace LambdaEngine
 		virtual IRenderPass*	CreateRenderPass(const RenderPassDesc& desc)	const override final;
 		virtual ITextureView*	CreateTextureView(const TextureViewDesc& desc)	const override final;
 
+		virtual IShader*	CreateShader(const ShaderDesc& desc)	const override final;
+
 		virtual IBuffer*	CreateBuffer(const BufferDesc& desc)	const override final;
 		virtual ITexture*	CreateTexture(const TextureDesc& desc)	const override final;
 
