@@ -199,7 +199,7 @@ Sandbox::Sandbox() :
 
 	RenderGraph* pRenderGraph = new RenderGraph(RenderSystem::GetDevice());
 
-	//pRenderGraph->Init(renderGraphDesc);
+	pRenderGraph->Init(renderGraphDesc);
 
 	clock.Tick();
 	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
@@ -419,7 +419,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
 {
-    LOG_MESSAGE("Fixed delta: %.6f ms", delta.AsMilliSeconds());
+    //LOG_MESSAGE("Fixed delta: %.6f ms", delta.AsMilliSeconds());
 }
 
 namespace LambdaEngine

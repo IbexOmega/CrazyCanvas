@@ -34,17 +34,17 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateDescriptorHeap())
-		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Descriptor Heap", desc.pName);
-			return false;
-		}
+		//if (!CreateDescriptorHeap())
+		//{
+		//	LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Descriptor Heap", desc.pName);
+		//	return false;
+		//}
 
-		if (!CreateRenderStages(renderStageDescriptions))
-		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", desc.pName);
-			return false;
-		}
+		//if (!CreateRenderStages(renderStageDescriptions))
+		//{
+		//	LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", desc.pName);
+		//	return false;
+		//}
 
 		return true;
 	}
