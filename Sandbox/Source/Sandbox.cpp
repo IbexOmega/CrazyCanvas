@@ -24,7 +24,8 @@
 
 #include "Time/API/Clock.h"
 
-Sandbox::Sandbox() : 
+Sandbox::Sandbox()
+    : Game(),
 	m_pResourceManager(nullptr),
 	m_pToneSoundEffect(nullptr),
 	m_pToneSoundInstance(nullptr),
@@ -439,7 +440,7 @@ void Sandbox::OnButtonReleased(LambdaEngine::EMouseButton button)
 
 void Sandbox::OnScroll(int32 delta)
 {
-	LOG_MESSAGE("Mouse Scrolled: %d", delta);
+	//LOG_MESSAGE("Mouse Scrolled: %d", delta);
 }
 
 void Sandbox::Tick(LambdaEngine::Timestamp delta)

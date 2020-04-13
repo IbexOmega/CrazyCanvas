@@ -24,8 +24,6 @@ namespace LambdaEngine
             sourceContext.info      = (void*)this;
             sourceContext.version   = 0;
             sourceContext.perform   = MacRunLoopSource::Perform;
-            sourceContext.schedule  = MacRunLoopSource::Schedule;
-            sourceContext.cancel    = MacRunLoopSource::Cancel;
             
             m_Source = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sourceContext);
             
@@ -72,20 +70,8 @@ namespace LambdaEngine
         }
         
     private:
-        static void Schedule(void* pInfo, CFRunLoopRef runLoop, CFStringRef mode)
-        {
-            NSLog(@"Schedule");
-        }
-        
-        static void Cancel(void* pInfo, CFRunLoopRef runLoop, CFStringRef mode)
-        {
-            NSLog(@"Cancel");
-        }
-        
         static void Perform(void* pInfo)
         {
-            NSLog(@"Perform");
-
             MacRunLoopSource* pRunLoopSource = reinterpret_cast<MacRunLoopSource*>(pInfo);
             if (pRunLoopSource)
             {

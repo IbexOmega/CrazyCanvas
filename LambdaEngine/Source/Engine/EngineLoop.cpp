@@ -27,21 +27,23 @@
 
 namespace LambdaEngine
 {
+    static Clock g_Clock;
+
 	void EngineLoop::Run(Game* pGame)
 	{
         const Timestamp timestep    = Timestamp::Seconds(1.0 / 60.0);
         Timestamp accumulator       = Timestamp(0);
         
-        Clock clock;
+        g_Clock.Reset();
         Clock fixedClock;
         
         bool isRunning = true;
         while (isRunning)
         {
-			clock.Tick();
+			g_Clock.Tick();
             
             // Update
-			Timestamp delta = clock.GetDeltaTime();
+			Timestamp delta = g_Clock.GetDeltaTime();
             isRunning = Tick(delta);
             
             // Fixed update
@@ -161,5 +163,10 @@ namespace LambdaEngine
         PlatformConsole::Close();
 #endif
 		return true;
-	}
+    }
+
+    Timestamp EngineLoop::GetTimeSinceStart()
+    {
+        return g_Clock.GetTotalTime();
+    }
 }

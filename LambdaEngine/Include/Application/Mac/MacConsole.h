@@ -5,18 +5,10 @@
 
 #ifdef __OBJC__
 
-@class NSString;
-@class NSTextView;
-@class NSDictionary;
-@class NSScrollView;
 @class CocoaConsoleWindow;
 
 #else
 
-class NSString;
-class NSTextView;
-class NSDictionary;
-class NSScrollView;
 class CocoaConsoleWindow;
 
 #endif
@@ -38,28 +30,9 @@ namespace LambdaEngine
 
         static void SetTitle(const char* pTitle);
         static void SetColor(EConsoleColor color);
-    
-    private:
-        MacConsole()    = default;
-        ~MacConsole()   = default;
-        
-        void Init();
-        void Release();
-        
-        void AppendTextAndScroll(NSString* pString);
-        void NewLine();
-
-        void PrintV(const char* pFormat, va_list args);
         
     private:
-        CocoaConsoleWindow* m_pWindow       = nullptr;
-        NSTextView*         m_pTextView     = nullptr;
-        NSScrollView*       m_pScrollView   = nullptr;
-        NSDictionary*       m_pCurrentColor = nullptr;
-        NSDictionary*       m_ppColors[4]   = { nullptr, nullptr, nullptr, nullptr };
-        
-    private:
-        static MacConsole s_Console;
+        static CocoaConsoleWindow* s_pConsoleWindow;
     };
 
     typedef MacConsole PlatformConsole;

@@ -79,7 +79,7 @@ namespace LambdaEngine
             return true;
 		}
 
-		virtual bool SetNonBlocking(bool nonBlocking) override
+		virtual bool SetNonBlocking(bool nonBlocking)
 		{
             u_long tempNonBlocking = (u_long)nonBlocking;
 			if (ioctl(m_Socket, FIONBIO, &tempNonBlocking) == SOCKET_ERROR)

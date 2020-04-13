@@ -1,5 +1,6 @@
 #pragma once
 #include "LambdaEngine.h"
+#include "Timestamp.h"
 
 namespace LambdaEngine
 {
@@ -20,5 +21,7 @@ namespace LambdaEngine
 		*/
 		static uint64	GetPerformanceCounter()		{ return 0; }
 		static uint64	GetPerformanceFrequency()	{ return 1; }
+        
+        static Timestamp Now() { }
 	};
 }
