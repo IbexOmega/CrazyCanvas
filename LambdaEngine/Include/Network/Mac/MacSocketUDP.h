@@ -1,6 +1,6 @@
-#pragma oncde
+#pragma once
 
-//#ifdef LAMBDA_PLATFORM_MACOS
+#ifdef LAMBDA_PLATFORM_MACOS
 
 #include "Network/API/UDP/ISocketUDP.h"
 #include "MacSocketBase.h"
@@ -63,4 +63,4 @@ namespace LambdaEngine
 		MacSocketUDP();
     };
 }
-//#endif
+#endif

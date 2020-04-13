@@ -71,9 +71,9 @@ namespace LambdaEngine
         }
         
     private:
-        MacWindow* m_pWindow = nullptr;
-        CocoaAppController* m_pAppDelegate = nullptr;
-        bool m_IsTerminating = false;
+        MacWindow*          m_pWindow       = nullptr;
+        CocoaAppController* m_pAppDelegate  = nullptr;
+        bool                m_IsTerminating = false;
         
         std::vector<MacMessage>                     m_BufferedMessages;
         std::vector<IApplicationMessageHandler*>    m_MessageHandlers;

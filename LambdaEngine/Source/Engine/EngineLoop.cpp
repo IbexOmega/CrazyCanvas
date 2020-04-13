@@ -60,7 +60,7 @@ namespace LambdaEngine
 
     bool EngineLoop::Tick(Timestamp delta)
     {
-		Thread::Join();
+		//Thread::Join();
 		PlatformNetworkUtils::Tick(delta);
 
         if (!PlatformApplication::Tick())
@@ -70,6 +70,7 @@ namespace LambdaEngine
 
 		AudioSystem::Tick();
 
+        //Tick game
         Game::Get()->Tick(delta);
         
         return true;
@@ -77,6 +78,7 @@ namespace LambdaEngine
 
     void EngineLoop::FixedTick(Timestamp delta)
     {
+        //Tick game
         Game::Get()->FixedTick(delta);
     }
 

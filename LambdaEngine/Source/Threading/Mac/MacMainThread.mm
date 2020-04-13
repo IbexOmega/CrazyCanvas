@@ -18,46 +18,62 @@ namespace LambdaEngine
     {
     public:
         MacRunLoopSource(CFRunLoopRef runLoop, CFStringRef runLoopMode)
-            : m_RunLoop(runLoop)
+            : m_RunLoop(runLoop),
+            m_RunLoopMode(runLoopMode),
+            m_BlockLock(),
+            m_Blocks()
         {
             CFRunLoopSourceContext sourceContext = { };
-            sourceContext.info      = (void*)this;
-            sourceContext.version   = 0;
-            sourceContext.perform   = MacRunLoopSource::Perform;
+            sourceContext.info              = (void*)this;
+            sourceContext.version           = 0;
+            sourceContext.equal             = CFEqual;
+            //sourceContext.hash              = CFHash;
+            //sourceContext.retain            = CFRetain; //TODO: Investigate crash?
+            sourceContext.release           = CFRelease;
+            sourceContext.copyDescription   = CFCopyDescription;
+            sourceContext.perform           = MacRunLoopSource::Perform;
+            sourceContext.schedule          = MacRunLoopSource::Schedule;
+            sourceContext.cancel            = MacRunLoopSource::Cancel;
             
             m_Source = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sourceContext);
             
             ASSERT(m_Source != nullptr);
             
-            CFRunLoopAddSource(m_RunLoop, m_Source, runLoopMode);
+            CFRunLoopAddSource(m_RunLoop, m_Source, m_RunLoopMode);
         }
         
         ~MacRunLoopSource()
         {
-            CFRunLoopRemoveSource(m_RunLoop, m_Source, kCFRunLoopCommonModes);
+            CFRunLoopRemoveSource(m_RunLoop, m_Source, m_RunLoopMode);
             CFRelease(m_Source);
         }
         
         void ScheduleBlock(dispatch_block_t block)
         {
-            std::scoped_lock<SpinLock> lock(m_BlockLock);
+            dispatch_block_t copyBlock = Block_copy(block);
 
             // Add block and signal source to perform next runloop iteration
-            m_Blocks.push_back(Block_copy(block));
+            {
+                std::scoped_lock<SpinLock> lock(m_BlockLock);
+                m_Blocks.push_back(copyBlock);
+            }
+            
             CFRunLoopSourceSignal(m_Source);
         }
         
         void Execute()
         {
             // Copy blocks
-            TArray<dispatch_block_t> blocksCopy;
+            TArray<dispatch_block_t> copiedBlocks;
             {
                 std::scoped_lock<SpinLock> lock(m_BlockLock);
-                blocksCopy.swap(m_Blocks);
+                
+                copiedBlocks = TArray<dispatch_block_t>(m_Blocks);
+                m_Blocks.clear();
             }
             
             // Execute all blocks
-            for (dispatch_block_t block : blocksCopy)
+            for (dispatch_block_t block : copiedBlocks)
             {
                 block();
                 Block_release(block);
@@ -79,9 +95,20 @@ namespace LambdaEngine
             }
         }
         
+        static void Cancel(void* pInfo, CFRunLoopRef runLoop, CFStringRef mode)
+        {
+            NSLog(@"Cancel");
+        }
+        
+        static void Schedule(void* pInfo, CFRunLoopRef runLoop, CFStringRef mode)
+        {
+            NSLog(@"Schedule");
+        }
+        
     private:
-        CFRunLoopRef        m_RunLoop   = nullptr;
-        CFRunLoopSourceRef  m_Source    = nullptr;
+        CFRunLoopRef        m_RunLoop       = nullptr;
+        CFRunLoopSourceRef  m_Source        = nullptr;
+        CFStringRef         m_RunLoopMode   = nullptr;
         
         SpinLock m_BlockLock;
         TArray<dispatch_block_t> m_Blocks;
@@ -108,12 +135,12 @@ namespace LambdaEngine
     {
         if ([NSThread isMainThread])
         {
-            //If already on mainthread, execute block here
+            // If already on mainthread, execute block here
             block();
         }
         else
         {
-            //Otherwise schedule it on the mainthread
+            // Otherwise schedule block on main thread
             s_pMainThread->ScheduleBlock(block);
             s_pMainThread->WakeUp();
         }

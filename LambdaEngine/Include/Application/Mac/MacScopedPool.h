@@ -5,7 +5,7 @@
 
 #include <Foundation/Foundation.h>
 
-#define SCOPED_AUTORELEASE_POOL(...) LambdaEngine::MacScopedPool()
+#define SCOPED_AUTORELEASE_POOL(...) /*LambdaEngine::MacScopedPool()*/
 
 namespace LambdaEngine
 {
