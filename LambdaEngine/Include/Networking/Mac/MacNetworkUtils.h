@@ -1,12 +1,12 @@
 #pragma once
-
-#include "Network/API/NetworkUtils.h"
+#include "Networking/API/NetworkUtils.h"
 
 namespace LambdaEngine
 {
 	class LAMBDA_API MacNetworkUtils : public NetworkUtils
 	{
         friend class EngineLoop;
+        friend class IPAddress;
         
 	public:
 		/*

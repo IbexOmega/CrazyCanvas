@@ -28,7 +28,7 @@ namespace LambdaEngine
             sourceContext.version           = 0;
             sourceContext.equal             = CFEqual;
             //sourceContext.hash              = CFHash;
-            //sourceContext.retain            = CFRetain; //TODO: Investigate crash?
+            //sourceContext.retain            = CFRetain; //TODO: Investigate crash
             sourceContext.release           = CFRelease;
             sourceContext.copyDescription   = CFCopyDescription;
             sourceContext.perform           = MacRunLoopSource::Perform;
@@ -45,7 +45,7 @@ namespace LambdaEngine
         ~MacRunLoopSource()
         {
             CFRunLoopRemoveSource(m_RunLoop, m_Source, m_RunLoopMode);
-            CFRelease(m_Source);
+            //CFRelease(m_Source); //TODO: Investigate crash
         }
         
         void ScheduleBlock(dispatch_block_t block)

@@ -1,8 +1,9 @@
 #pragma once
 
+#ifdef LAMBDA_PLATFORM_MACOS
 #include "Networking/API/IPAddress.h"
 
-#include <WinSock2.h>
+#include <netinet/in.h>
 
 namespace LambdaEngine
 {
@@ -13,12 +14,13 @@ namespace LambdaEngine
 	public:
 		virtual ~MacIPAddress();
 
-		IN_ADDR* GetMacAddr();
+		struct in_addr* GetMacAddr();
 
 	private:
 		MacIPAddress(const std::string& address, uint64 hash);
 
 	private:
-		IN_ADDR m_Addr;
+		struct in_addr m_Addr;
 	};
 }
+#endif

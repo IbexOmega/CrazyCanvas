@@ -60,7 +60,7 @@ namespace LambdaEngine
 
     bool EngineLoop::Tick(Timestamp delta)
     {
-		//Thread::Join();
+		Thread::Join();
 		PlatformNetworkUtils::Tick(delta);
 
         if (!PlatformApplication::Tick())

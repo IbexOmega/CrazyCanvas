@@ -1,8 +1,8 @@
 #pragma once
 
 #ifdef LAMBDA_PLATFORM_MACOS
+#include "Networking/API/ISocketUDP.h"
 
-#include "Network/API/UDP/ISocketUDP.h"
 #include "MacSocketBase.h"
 
 namespace LambdaEngine
@@ -23,7 +23,7 @@ namespace LambdaEngine
 		*
 		* return	  - False if an error occured, otherwise true.
 		*/
-		virtual bool SendTo(const char* pBuffer, uint32 bytesToSend, int32& bytesSent, const std::string& address, uint16 port) override;
+		virtual bool SendTo(const char* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& pIPEndPoint) override;
 
 		/*
 		* Receives a buffer of data.
@@ -36,7 +36,7 @@ namespace LambdaEngine
 		*
 		* return	  - False if an error occured, otherwise true.
 		*/
-		virtual bool ReceiveFrom(char* pBuffer, uint32 size, int32& bytesReceived, std::string& address, uint16& port) override;
+		virtual bool ReceiveFrom(char* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint) override;
 
 		/*
 		* Enables the broadcast functionality
@@ -45,19 +45,7 @@ namespace LambdaEngine
 		*
 		* return	- False if an error occured, otherwise true.
 		*/
-		virtual bool EnableBroadcast(bool enable);
-
-		/*
-		* Sends a buffer of data to the broadcast address
-		*
-		* buffer	  - The buffer to send.
-		* bytesToSend - The number of bytes to send.
-		* bytesSent	  - Will return the number of bytes actually sent.
-		* port		  - The port.
-		*
-		* return	  - False if an error occured, otherwise true.
-		*/
-		virtual bool Broadcast(const char* pBuffer, uint32 bytesToSend, int32& bytesSent, uint16 port) override;
+		virtual bool EnableBroadcast(bool enable) override;
 
 	private:
 		MacSocketUDP();

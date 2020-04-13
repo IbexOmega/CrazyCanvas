@@ -4,6 +4,10 @@
 #include "Types.h"
 #include "Log/Log.h"
 
+#include "Networking/API/IPEndPoint.h"
+
+#include "Networking/Mac/MacIPAddress.h"
+
 #include <string>
 #include <unistd.h>
 
@@ -23,25 +27,15 @@ namespace LambdaEngine
 	class MacSocketBase : public IBase
 	{	
 	public:
-        bool Connect(const std::string& address, uint16 port) override
+        bool Connect(const IPEndPoint& pIPEndPoint) override
         {
             struct sockaddr_in socketAddress;
-            socketAddress.sin_family = AF_INET;
-            socketAddress.sin_port = htons(port);
-
-            if (address.empty() || address == ADDRESS_ANY)
-                socketAddress.sin_addr.s_addr = INADDR_ANY;
-            else if (address == ADDRESS_LOOPBACK)
-                socketAddress.sin_addr.s_addr = INADDR_LOOPBACK;
-            else if (address == ADDRESS_BROADCAST)
-                socketAddress.sin_addr.s_addr = INADDR_BROADCAST;
-            else
-                inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
-
+            IPEndPointToSocketAddress(&pIPEndPoint, &socketAddress);
+            
             if (connect(m_Socket, reinterpret_cast<sockaddr*>(&socketAddress), sizeof(socketAddress)) == SOCKET_ERROR)
             {
                 int32 error = errno;
-                LOG_ERROR_CRIT("Failed to connect to %s:%d", address.c_str(), port);
+                LOG_ERROR_CRIT("Failed to connect to %s", pIPEndPoint.ToString().c_str());
                 PrintLastError(error);
                 return false;
             }
@@ -51,25 +45,15 @@ namespace LambdaEngine
             return true;
         }
         
-		bool Bind(const std::string& address, uint16 port) override
+		bool Bind(const IPEndPoint& pIPEndPoint) override
 		{
             struct sockaddr_in socketAddress;
-            socketAddress.sin_family = AF_INET;
-            socketAddress.sin_port = htons(port);
-
-            if (address.empty() || address == ADDRESS_ANY)
-                socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-            else if (address == ADDRESS_LOOPBACK)
-                socketAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-            else if (address == ADDRESS_BROADCAST)
-                socketAddress.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-            else
-                inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
-
+            IPEndPointToSocketAddress(&pIPEndPoint, &socketAddress);
+            
             if (bind(m_Socket, (struct sockaddr*) & socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
             {
                 int32 error = errno;
-                LOG_ERROR_CRIT("Failed to bind to %s:%d", !address.empty() ? address.c_str() : "ANY", port);
+                LOG_ERROR_CRIT("Failed to bind to %s", pIPEndPoint.ToString().c_str());
                 PrintLastError(error);
                 return false;
             }
@@ -78,21 +62,21 @@ namespace LambdaEngine
 
             return true;
 		}
-
-		virtual bool SetNonBlocking(bool nonBlocking)
-		{
-            u_long tempNonBlocking = (u_long)nonBlocking;
-			if (ioctl(m_Socket, FIONBIO, &tempNonBlocking) == SOCKET_ERROR)
-			{
+      
+        virtual bool EnableBlocking(bool enable) override
+        {
+            u_long tempNonBlocking = (u_long)enable;
+            if (ioctl(m_Socket, FIONBIO, &tempNonBlocking) != SOCKET_ERROR)
+            {
                 int32 error = errno;
-				LOG_ERROR_CRIT("Failed to change blocking mode to [%sBlocking] ", nonBlocking ? "Non " : "");
-				PrintLastError(error);
-				return false;
-			}
+                LOG_ERROR_CRIT("Failed to change blocking mode to [%sBlocking] ", enable ? "Non " : "");
+                PrintLastError(error);
+                return false;
+            }
             
-            m_NonBlocking = nonBlocking;
+            m_NonBlocking = enable;
             return true;
-		};
+        };
 
         virtual bool IsNonBlocking() const override
         {
@@ -123,21 +107,20 @@ namespace LambdaEngine
         {
             return m_Closed;
         }
-
-        virtual const std::string& GetAddress() const override
+        
+        /*
+        * return - The IPEndPoint currently Bound or Connected to
+        */
+        virtual const IPEndPoint& GetEndPoint() const override
         {
-            return m_Address;
-        };
-         
-        virtual uint16 GetPort() const override
-        {
-            return m_Port;
-        };
+            return m_pIPEndPoint;
+        }
         
 	protected:
         MacSocketBase(int32 socket = INVALID_SOCKET)
             : m_Socket(socket),
-            m_NonBlocking(false)
+            m_NonBlocking(false),
+            m_pIPEndPoint(IPAddress::ANY, 0)
 		{
 		}
         
@@ -155,8 +138,19 @@ namespace LambdaEngine
                 LOG_ERROR_CRIT("Faild to ReadSocketData");
                 return;
             }
-            m_Address = inet_ntoa(socketAddress.sin_addr);
-            m_Port = ntohs(socketAddress.sin_port);
+            
+            inet_ntop(socketAddress.sin_family, &socketAddress.sin_addr, m_pReceiveAddressBuffer, s_ReceiveAddressBufferSize);
+            uint16 port = ntohs(socketAddress.sin_port);
+
+            m_pIPEndPoint.SetEndPoint(IPAddress::Get(m_pReceiveAddressBuffer), port);
+        }
+        
+    protected:
+        static void IPEndPointToSocketAddress(const IPEndPoint* pIPEndPoint, struct sockaddr_in* socketAddress)
+        {
+            socketAddress->sin_family = AF_INET;
+            socketAddress->sin_port = htons(pIPEndPoint->GetPort());
+            socketAddress->sin_addr = *((MacIPAddress*)pIPEndPoint->GetAddress())->GetMacAddr();
         }
         
         static void PrintLastError(int32 errorCode)
@@ -260,11 +254,14 @@ namespace LambdaEngine
         }
 
 	protected:
-        std::string m_Address;
-        uint16  m_Port        = 0;
 		int32   m_Socket      = INVALID_SOCKET;
+        static constexpr uint8 s_ReceiveAddressBufferSize = 32;
+        char m_pReceiveAddressBuffer[s_ReceiveAddressBufferSize];
+        
+    private:
         bool    m_NonBlocking = false;
         bool    m_Closed      = false;
+        IPEndPoint m_pIPEndPoint;
 	};
 }
 

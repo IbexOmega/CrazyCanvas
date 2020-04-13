@@ -1,5 +1,5 @@
 #ifdef LAMBDA_PLATFORM_MACOS
-#include "Network/Mac/MacSocketUDP.h"
+#include "Networking/Mac/MacSocketUDP.h"
 
 #include "Log/Log.h"
 
@@ -23,33 +23,23 @@ namespace LambdaEngine
 		}
 	}
 
-	bool MacSocketUDP::SendTo(const char* pBuffer, uint32 bytesToSend, int32& bytesSent, const std::string& address, uint16 port)
+	bool MacSocketUDP::SendTo(const char* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& pIPEndPoint)
 	{
-		struct sockaddr_in socketAddress;
-		socketAddress.sin_family = AF_INET;
-		socketAddress.sin_port = htons(port);
-
-		if (address.empty() || address == ADDRESS_ANY)
-			socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-		else if (address == ADDRESS_LOOPBACK)
-			socketAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-		else if (address == ADDRESS_BROADCAST)
-			socketAddress.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-		else
-			inet_pton(AF_INET, address.c_str(), &socketAddress.sin_addr.s_addr);
+        struct sockaddr_in socketAddress;
+        IPEndPointToSocketAddress(&pIPEndPoint, &socketAddress);
 
 		bytesSent = sendto(m_Socket, pBuffer, bytesToSend, 0, (struct sockaddr*)&socketAddress, sizeof(struct sockaddr_in));
 		if (bytesSent == SOCKET_ERROR)
 		{
             int32 error = errno;
-            LOG_ERROR_CRIT("Failed to send data to %s:%d", address.c_str(), port);
+            LOG_ERROR_CRIT("Failed to send data to %s", pIPEndPoint.ToString().c_str());
 			PrintLastError(error);
 			return false;
 		}
 		return true;
 	}
 
-	bool MacSocketUDP::ReceiveFrom(char* pBuffer, uint32 size, int32& bytesReceived, std::string& address, uint16& port)
+	bool MacSocketUDP::ReceiveFrom(char* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint)
 	{
 		struct sockaddr_in socketAddress;
 		socklen_t socketAddressSize = sizeof(struct sockaddr_in);
@@ -63,8 +53,10 @@ namespace LambdaEngine
 			return false;
 		}
 
-		address = inet_ntoa(socketAddress.sin_addr);
-		port = ntohs(socketAddress.sin_port);
+        inet_ntop(socketAddress.sin_family, &socketAddress.sin_addr, m_pReceiveAddressBuffer, s_ReceiveAddressBufferSize);
+        uint16 port = ntohs(socketAddress.sin_port);
+
+        pIPEndPoint.SetEndPoint(IPAddress::Get(m_pReceiveAddressBuffer), port);
 
 		return true;
 	}
@@ -81,11 +73,6 @@ namespace LambdaEngine
 		}
         
 		return true;
-	}
-
-	bool MacSocketUDP::Broadcast(const char* pBuffer, uint32 bytesToSend, int32& bytesSent, uint16 port)
-	{
-		return SendTo(pBuffer, bytesToSend, bytesSent, "", port);
 	}
 }
 #endif
