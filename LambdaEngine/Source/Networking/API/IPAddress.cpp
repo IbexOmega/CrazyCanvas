@@ -14,6 +14,7 @@ namespace LambdaEngine
 	const char* const IPAddress::ADDRESS_BROADCAST	= "BROADCAST";
 	const char* const IPAddress::ADDRESS_LOOPBACK	= "LOOPBACK";
 
+	IPAddress* const IPAddress::NONE		= Get("");
 	IPAddress* const IPAddress::ANY			= Get(ADDRESS_ANY);
 	IPAddress* const IPAddress::BROADCAST	= Get(ADDRESS_BROADCAST);
 	IPAddress* const IPAddress::LOOPBACK	= Get(ADDRESS_LOOPBACK);

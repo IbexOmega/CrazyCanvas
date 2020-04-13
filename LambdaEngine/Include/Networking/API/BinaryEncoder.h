@@ -29,6 +29,5 @@ namespace LambdaEngine
 
 	private:
 		NetworkPacket* m_pNetworkPacket;
-		uint16 m_Size;
 	};
 }

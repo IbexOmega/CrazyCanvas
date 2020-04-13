@@ -42,6 +42,7 @@ namespace LambdaEngine
 		uint64 m_Hash;
 
 	public:
+		static IPAddress* const NONE;
 		static IPAddress* const ANY;
 		static IPAddress* const BROADCAST;
 		static IPAddress* const LOOPBACK;

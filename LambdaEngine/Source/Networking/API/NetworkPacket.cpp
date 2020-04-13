@@ -54,4 +54,9 @@ namespace LambdaEngine
 	{
 		return GetBufferSize() + GetHeaderSize();
 	}
+
+	void NetworkPacket::AppendBytes(uint16 bytes)
+	{
+		m_SizeOfBuffer += bytes;
+	}
 }

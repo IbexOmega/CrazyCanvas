@@ -5,21 +5,21 @@
 #include "Input/API/IKeyboardHandler.h"
 #include "Input/API/IMouseHandler.h"
 
-#include <set>
+#include "Networking/API/IDispatcherHandler.h"
+#include "Networking/API/PacketDispatcher.h"
 
-namespace LambdaEngine
-{
-	class IClientTCPHandler;
-	class IClientUDP;
-}
+#include <set>
 
 class Server : 
 	public LambdaEngine::Game,
-	public LambdaEngine::IKeyboardHandler
+	public LambdaEngine::IKeyboardHandler,
+	public LambdaEngine::IDispatcherHandler
 {
 public:
 	Server();
 	~Server();
+
+	virtual void OnPacketReceived(LambdaEngine::NetworkPacket* packet) override;
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
@@ -34,5 +34,6 @@ private:
 	void UpdateTitle();
 
 private:
-	
+	LambdaEngine::PacketDispatcher m_Dispatcher;
+	LambdaEngine::ISocketUDP* m_pSocketUDP;
 };

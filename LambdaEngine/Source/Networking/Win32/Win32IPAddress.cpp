@@ -21,7 +21,7 @@ namespace LambdaEngine
 		{
 			m_Addr.s_addr = INADDR_LOOPBACK;
 		}
-		else if (!inet_pton(AF_INET, address.c_str(), &m_Addr))
+		else if (inet_pton(AF_INET, address.c_str(), &m_Addr) != 1)
 		{
 			LOG_ERROR("[Win32IPAddress]: Faild to convert [%s] to a valid IP-Address", address.c_str());
 		}

@@ -11,19 +11,36 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/Window.h"
 
-#include "Networking/API/ISocket.h"
+#include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IPEndPoint.h"
+#include "Networking/API/IPAddress.h"
+#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/ISocketUDP.h"
+#include "Networking/API/BinaryEncoder.h"
+#include "Networking/API/BinaryDecoder.h"
 
-Server::Server()
+Server::Server() :
+	m_Dispatcher(512, this)
 {
 	using namespace LambdaEngine;
+
+	m_pSocketUDP = PlatformNetworkUtils::CreateSocketUDP();
+	m_pSocketUDP->Bind(IPEndPoint(IPAddress::ANY, 4444));
 
 	UpdateTitle();
 }
 
 Server::~Server()
 {
-	
+	delete m_pSocketUDP;
+}
+
+void Server::OnPacketReceived(LambdaEngine::NetworkPacket* packet)
+{
+	using namespace LambdaEngine;
+
+	BinaryDecoder decoder(packet);
+	LOG_MESSAGE(decoder.ReadString().c_str());
 }
 
 void Server::OnKeyDown(LambdaEngine::EKey key)
@@ -55,7 +72,11 @@ void Server::Tick(LambdaEngine::Timestamp delta)
 
 void Server::FixedTick(LambdaEngine::Timestamp delta)
 {
+	using namespace LambdaEngine;
     UNREFERENCED_VARIABLE(delta);
+
+	m_Dispatcher.Receive(m_pSocketUDP);
+	m_Dispatcher.Dispatch(m_pSocketUDP, IPEndPoint(IPAddress::Get("192.168.0.104"), 4444));
 }
 
 namespace LambdaEngine

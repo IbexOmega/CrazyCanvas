@@ -18,6 +18,8 @@ namespace LambdaEngine
 
 	class LAMBDA_API NetworkPacket
 	{
+		friend class PacketDispatcher;
+
 	public:
 		~NetworkPacket();
 
@@ -32,6 +34,8 @@ namespace LambdaEngine
 		uint8 GetHeaderSize() const;
 
 		uint16 GetTotalSize() const;
+
+		void AppendBytes(uint16 bytes);
 
 	private:
 		NetworkPacket();
