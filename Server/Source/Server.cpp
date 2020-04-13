@@ -11,123 +11,40 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/Window.h"
 
-#include "Network/API/PlatformNetworkUtils.h"
+#include "Networking/API/PlatformNetworkUtils.h"
+#include "Networking/API/IPEndPoint.h"
+#include "Networking/API/IPAddress.h"
+#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/ISocketUDP.h"
+#include "Networking/API/BinaryEncoder.h"
+#include "Networking/API/BinaryDecoder.h"
 
-#include "ClientTCPHandler.h"
-#include "ClientUDPHandler.h"
-
-enum ENetworkTest
-{
-	NETWORK_TEST_TCP,
-	NETWORK_TEST_UDP,
-	NETWORK_TEST_DISCOVERY,
-	NETWORK_TEST_GAME
-};
-
-ENetworkTest g_Test = NETWORK_TEST_GAME;
-
-Server::Server()
+Server::Server() :
+	m_Dispatcher(512, this)
 {
 	using namespace LambdaEngine;
 
-	if (g_Test == NETWORK_TEST_TCP)
-	{
-		m_pServerTCP = PlatformNetworkUtils::CreateServerTCP(this, 2);
-		m_pServerTCP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
-	}
-	else if (g_Test == NETWORK_TEST_UDP)
-	{
-		m_pServerUDP = PlatformNetworkUtils::CreateServerUDP(this);
-		m_pServerUDP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
-	}
-	else if (g_Test == NETWORK_TEST_DISCOVERY)
-	{
-		m_pNetworkDiscovery = DBG_NEW NetworkDiscoveryHost(this, "Drift It 3D");
-		m_pNetworkDiscovery->Start(LambdaEngine::PlatformNetworkUtils::GetLocalAddress(), 4444);
-	}
-	else if (g_Test == NETWORK_TEST_GAME)
-	{
-		m_pGameServer = DBG_NEW GameServer();
-		m_pGameServer->Start(4444);
-	}
+	m_pSocketUDP = PlatformNetworkUtils::CreateSocketUDP();
+	m_pSocketUDP->Bind(IPEndPoint(IPAddress::ANY, 4444));
 
 	UpdateTitle();
 }
 
 Server::~Server()
 {
-	if (g_Test == NETWORK_TEST_TCP)
-	{
-		m_pServerTCP->Release();
-	}
-	else if (g_Test == NETWORK_TEST_UDP)
-	{
-		m_pServerUDP->Release();
-	}
-	else if (g_Test == NETWORK_TEST_DISCOVERY)
-	{
-		delete m_pNetworkDiscovery;
-	}
-	else if (g_Test == NETWORK_TEST_GAME)
-	{
-		m_pGameServer->Release();
-	}
-
-	for (LambdaEngine::IClientTCPHandler* handler : m_ClientTCPHandlers)
-		delete handler;
-
-	for (LambdaEngine::IClientUDPHandler* handler : m_ClientUDPHandlers)
-		delete handler;
+	delete m_pSocketUDP;
 }
 
-void Server::OnSearcherRequest(LambdaEngine::NetworkPacket* packet)
+void Server::OnPacketReceived(LambdaEngine::NetworkPacket* packet)
 {
-	UNREFERENCED_VARIABLE(packet);
-}
+	using namespace LambdaEngine;
 
-LambdaEngine::IClientUDPHandler* Server::CreateClientHandlerUDP()
-{
-	ClientUDPHandler* handler = DBG_NEW ClientUDPHandler();
-	m_ClientUDPHandlers.insert(handler);
-	return handler;
-}
-
-LambdaEngine::IClientTCPHandler* Server::CreateClientHandlerTCP()
-{
-	ClientTCPHandler* handler = DBG_NEW ClientTCPHandler();
-	m_ClientTCPHandlers.insert(handler);
-	return handler;
-}
-
-bool Server::OnClientAcceptedTCP(LambdaEngine::ClientTCP* client)
-{
-	LOG_MESSAGE("OnClientAcceptedTCP()");
-	UNREFERENCED_VARIABLE(client);
-	return true;
-}
-
-void Server::OnClientConnectedTCP(LambdaEngine::ClientTCP* client)
-{
-	UNREFERENCED_VARIABLE(client);
-	UpdateTitle();
-}
-
-void Server::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
-{
-	UNREFERENCED_VARIABLE(client);
-	UpdateTitle();
+	BinaryDecoder decoder(packet);
+	LOG_MESSAGE(decoder.ReadString().c_str());
 }
 
 void Server::OnKeyDown(LambdaEngine::EKey key)
 {
-	if (g_Test == NETWORK_TEST_GAME)
-	{
-		if (m_pGameServer->IsRunning())
-			m_pGameServer->Stop();
-		else
-			m_pGameServer->Start(4444);
-	}
-
 	UNREFERENCED_VARIABLE(key);
 }
 
@@ -144,14 +61,8 @@ void Server::OnKeyUp(LambdaEngine::EKey key)
 void Server::UpdateTitle()
 {
 	using namespace LambdaEngine;
-
-	if (g_Test == NETWORK_TEST_TCP)
-	{
-		std::string title = "Server - " + std::to_string(m_pServerTCP->GetNrOfClients());
-
-		PlatformApplication::Get()->GetWindow()->SetTitle(title.c_str());
-		PlatformConsole::SetTitle(title.c_str());
-	}
+	PlatformApplication::Get()->GetWindow()->SetTitle("Server");
+	PlatformConsole::SetTitle("Server Console");
 }
 
 void Server::Tick(LambdaEngine::Timestamp delta)
@@ -161,7 +72,11 @@ void Server::Tick(LambdaEngine::Timestamp delta)
 
 void Server::FixedTick(LambdaEngine::Timestamp delta)
 {
+	using namespace LambdaEngine;
     UNREFERENCED_VARIABLE(delta);
+
+	m_Dispatcher.Receive(m_pSocketUDP);
+	m_Dispatcher.Dispatch(m_pSocketUDP, IPEndPoint(IPAddress::Get("192.168.0.104"), 4444));
 }
 
 namespace LambdaEngine

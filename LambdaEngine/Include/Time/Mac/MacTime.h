@@ -32,7 +32,7 @@ namespace LambdaEngine
         }
 
     private:
-        inline static uint64 s_Frequency = 0;
+        inline static uint64 s_Frequency = 1;
     };
 
     typedef MacTime PlatformTime;

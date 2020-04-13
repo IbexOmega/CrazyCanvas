@@ -55,6 +55,8 @@ namespace LambdaEngine
 		*/
 		static bool PostRelease();
 
+        static Timestamp GetTimeSinceStart();
+        
 	private:
 		/*
 		* Engine tick, advances the whole engine one frame. Should only be called from run

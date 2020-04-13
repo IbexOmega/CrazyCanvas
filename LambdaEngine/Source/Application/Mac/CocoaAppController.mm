@@ -1,4 +1,4 @@
-#ifdef LAMBDA_PLATFORM_MACOS
+#if defined(LAMBDA_PLATFORM_MACOS) && defined(__OBJC__)
 #include "Application/API/PlatformMisc.h"
 
 #include "Application/Mac/CocoaAppController.h"

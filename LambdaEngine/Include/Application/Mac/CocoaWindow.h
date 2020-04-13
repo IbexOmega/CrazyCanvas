@@ -1,7 +1,6 @@
 #pragma once
 
-#ifdef LAMBDA_PLATFORM_MACOS
-#ifdef __OBJC__
+#if defined(LAMBDA_PLATFORM_MACOS) && defined(__OBJC__)
 
 #include <AppKit/AppKit.h>
 
@@ -18,5 +17,4 @@
 
 class CocoaWindow;
 
-#endif
 #endif

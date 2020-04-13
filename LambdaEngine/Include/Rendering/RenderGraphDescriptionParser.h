@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <set>
 
+#define RENDER_GRAPH_BACK_BUFFER "BACK_BUFFER_TEXTURE"
+
 namespace LambdaEngine
 {
 	class LAMBDA_API RenderGraphDescriptionParser

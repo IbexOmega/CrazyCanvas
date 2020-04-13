@@ -1,5 +1,6 @@
 #pragma once
 #include "LambdaEngine.h"
+#include "Timestamp.h"
 
 namespace LambdaEngine
 {

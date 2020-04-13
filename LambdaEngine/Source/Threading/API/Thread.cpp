@@ -13,7 +13,7 @@ namespace LambdaEngine
 	{
 		std::scoped_lock<SpinLock> lock(*s_Lock);
 		s_Threads->insert(this);
-		m_Thread = std::move(std::thread(&Thread::Run, this));
+		m_Thread = std::thread(&Thread::Run, this);
 	}
 
 	Thread::~Thread()

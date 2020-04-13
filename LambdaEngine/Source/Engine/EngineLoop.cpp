@@ -14,7 +14,7 @@
 #include "Rendering/Core/API/ITopLevelAccelerationStructure.h"
 #include "Rendering/Core/API/IBottomLevelAccelerationStructure.h"
 
-#include "Network/API/PlatformNetworkUtils.h"
+#include "Networking/API/PlatformNetworkUtils.h"
 
 #include "Threading/API/Thread.h"
 
@@ -27,21 +27,23 @@
 
 namespace LambdaEngine
 {
+    static Clock g_Clock;
+
 	void EngineLoop::Run(Game* pGame)
 	{
         const Timestamp timestep    = Timestamp::Seconds(1.0 / 60.0);
         Timestamp accumulator       = Timestamp(0);
         
-        Clock clock;
+        g_Clock.Reset();
         Clock fixedClock;
         
         bool isRunning = true;
         while (isRunning)
         {
-			clock.Tick();
+			g_Clock.Tick();
             
             // Update
-			Timestamp delta = clock.GetDeltaTime();
+			Timestamp delta = g_Clock.GetDeltaTime();
             isRunning = Tick(delta);
             
             // Fixed update
@@ -68,6 +70,7 @@ namespace LambdaEngine
 
 		AudioSystem::Tick();
 
+        //Tick game
         Game::Get()->Tick(delta);
         
         return true;
@@ -75,6 +78,7 @@ namespace LambdaEngine
 
     void EngineLoop::FixedTick(Timestamp delta)
     {
+        //Tick game
         Game::Get()->FixedTick(delta);
     }
 
@@ -161,5 +165,10 @@ namespace LambdaEngine
         PlatformConsole::Close();
 #endif
 		return true;
-	}
+    }
+
+    Timestamp EngineLoop::GetTimeSinceStart()
+    {
+        return g_Clock.GetTotalTime();
+    }
 }

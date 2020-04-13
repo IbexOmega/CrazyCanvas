@@ -5,40 +5,21 @@
 #include "Input/API/IKeyboardHandler.h"
 #include "Input/API/IMouseHandler.h"
 
-#include "Network/API/TCP/ServerTCP.h"
-#include "Network/API/UDP/ServerUDP.h"
-
-#include "Network/API/Discovery/NetworkDiscoveryHost.h"
-
-#include "Network/API/GameServer.h"
+#include "Networking/API/IDispatcherHandler.h"
+#include "Networking/API/PacketDispatcher.h"
 
 #include <set>
-
-namespace LambdaEngine
-{
-	class IClientTCPHandler;
-	class IClientUDP;
-}
 
 class Server : 
 	public LambdaEngine::Game,
 	public LambdaEngine::IKeyboardHandler,
-	public LambdaEngine::IServerTCPHandler,
-	public LambdaEngine::IServerUDPHandler,
-	public LambdaEngine::INetworkDiscoveryHostHandler
+	public LambdaEngine::IDispatcherHandler
 {
 public:
 	Server();
 	~Server();
 
-	virtual void OnSearcherRequest(LambdaEngine::NetworkPacket* packet) override;
-
-	virtual LambdaEngine::IClientUDPHandler* CreateClientHandlerUDP() override;
-	virtual LambdaEngine::IClientTCPHandler* CreateClientHandlerTCP() override;
-
-	virtual bool OnClientAcceptedTCP(LambdaEngine::ClientTCP* client) override;
-	virtual void OnClientConnectedTCP(LambdaEngine::ClientTCP* client) override;
-	virtual void OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client) override;
+	virtual void OnPacketReceived(LambdaEngine::NetworkPacket* packet) override;
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
@@ -53,11 +34,6 @@ private:
 	void UpdateTitle();
 
 private:
-	LambdaEngine::ServerTCP* m_pServerTCP;
-	LambdaEngine::ServerUDP* m_pServerUDP;
-	std::set<LambdaEngine::IClientTCPHandler*> m_ClientTCPHandlers;
-	std::set<LambdaEngine::IClientUDPHandler*> m_ClientUDPHandlers;
-
-	LambdaEngine::NetworkDiscoveryHost* m_pNetworkDiscovery;
-	LambdaEngine::GameServer* m_pGameServer;
+	LambdaEngine::PacketDispatcher m_Dispatcher;
+	LambdaEngine::ISocketUDP* m_pSocketUDP;
 };

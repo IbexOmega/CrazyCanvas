@@ -8,6 +8,8 @@
 #include "Application/Mac/CocoaContentView.h"
 #include "Application/Mac/MacScopedPool.h"
 
+#include "Threading/Mac/MacMainThread.h"
+
 namespace LambdaEngine
 {
     MacWindow::~MacWindow()
@@ -57,25 +59,22 @@ namespace LambdaEngine
 
     void MacWindow::Show()
     {
-        if ([NSThread isMainThread])
+        MacMainThread::MakeCall(^
         {
             [m_pWindow makeKeyAndOrderFront:m_pWindow];
-        }
+        });
     }
 
     void MacWindow::SetTitle(const char* pTitle)
     {
         SCOPED_AUTORELEASE_POOL();
         
-        if ([NSThread isMainThread])
+        NSString* title = [NSString stringWithUTF8String:pTitle];
+        
+        MacMainThread::MakeCall(^
         {
-            NSString* title = [NSString stringWithUTF8String:pTitle];
             [m_pWindow setTitle:title];
-        }
-        else
-        {
-            NSLog(@"New title: %s", pTitle);
-        }
+        });
     }
 }
 

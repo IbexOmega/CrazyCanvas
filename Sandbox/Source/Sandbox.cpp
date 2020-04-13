@@ -6,8 +6,6 @@
 
 #include "Input/API/Input.h"
 
-#include "Network/API/PlatformNetworkUtils.h"
-
 #include "Resources/ResourceManager.h"
 
 #include "Rendering/RenderSystem.h"
@@ -24,7 +22,10 @@
 
 #include "Time/API/Clock.h"
 
-Sandbox::Sandbox() : 
+#include "Threading/API/Thread.h"
+
+Sandbox::Sandbox()
+    : Game(),
 	m_pResourceManager(nullptr),
 	m_pToneSoundEffect(nullptr),
 	m_pToneSoundInstance(nullptr),
@@ -37,7 +38,7 @@ Sandbox::Sandbox() :
 	using namespace LambdaEngine;
 
 	m_pResourceManager = DBG_NEW LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
-
+    
 	/*std::vector<GameObject>	sceneGameObjects;
 	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
 
@@ -459,14 +460,14 @@ void Sandbox::OnButtonReleased(LambdaEngine::EMouseButton button)
 
 void Sandbox::OnScroll(int32 delta)
 {
-	LOG_MESSAGE("Mouse Scrolled: %d", delta);
+	//LOG_MESSAGE("Mouse Scrolled: %d", delta);
 }
 
 void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-    //LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
+    LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
     
 	m_Timer += delta.AsSeconds();
 

@@ -31,7 +31,7 @@ namespace LambdaEngine
 		}
 
 	private:
-		inline static LARGE_INTEGER s_Frequency = { 0 };
+		inline static LARGE_INTEGER s_Frequency = { 1 };
 	};
 
 	typedef Win32Time PlatformTime;
