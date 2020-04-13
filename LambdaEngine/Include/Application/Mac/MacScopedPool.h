@@ -5,7 +5,7 @@
 
 #include <Foundation/Foundation.h>
 
-#define SCOPED_AUTORELEASE_POOL(...) /*LambdaEngine::MacScopedPool()*/
+#define SCOPED_AUTORELEASE_POOL(...) const LambdaEngine::MacScopedPool STRING_CONCAT(pool_, __LINE__)
 
 namespace LambdaEngine
 {

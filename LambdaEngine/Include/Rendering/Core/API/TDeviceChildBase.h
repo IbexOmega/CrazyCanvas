@@ -27,9 +27,12 @@ namespace LambdaEngine
 
 		virtual uint64 Release() override
 		{
-            std::scoped_lock<SpinLock> lock(m_Lock);
+            uint64 strongReferences;
+            {
+                std::scoped_lock<SpinLock> lock(m_Lock);
+                strongReferences = --m_StrongReferences;
+            }
             
-			uint64 strongReferences = --m_StrongReferences;
 			if (strongReferences < 1)
 			{
 				delete this;

@@ -67,3 +67,6 @@
 // Bit-Mask helpers
 #define BIT(bit)	(1 << bit)
 #define FLAG(bit)	BIT(bit)
+
+// String preprocessor
+#define STRING_CONCAT(x, y) x##y

@@ -81,7 +81,7 @@ namespace LambdaEngine
                 
                 [string release];
                 
-                MacApplication::ProcessMessages();
+                //MacApplication::ProcessMessages();
             });
         }
     }
@@ -102,7 +102,7 @@ namespace LambdaEngine
                 [finalString release];
                 [string release];
                 
-                MacApplication::ProcessMessages();
+                //MacApplication::ProcessMessages();
             });
         }
     }

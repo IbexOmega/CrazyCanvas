@@ -59,8 +59,6 @@ namespace LambdaEngine
 
     void MacApplication::ProcessBufferedMessages()
     {
-        SCOPED_AUTORELEASE_POOL();
-        
         for (MacMessage& message : m_BufferedMessages)
         {
             if (message.event)
@@ -218,6 +216,8 @@ namespace LambdaEngine
 
     bool MacApplication::Tick()
     {
+        MacMainThread::Tick();
+        
         bool shouldExit = ProcessMessages();
         s_pApplication->ProcessBufferedMessages();
 
@@ -243,7 +243,7 @@ namespace LambdaEngine
                 }
                 
                 //Buffer event before sending it to the rest of the system
-                //s_pApplication->BufferEvent(event);
+                s_pApplication->BufferEvent(event);
 
                 [NSApp sendEvent:event];
                 [NSApp updateWindows];
