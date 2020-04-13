@@ -91,7 +91,8 @@
     [storage setFont:[NSFont fontWithName:@"Courier" size:12.0f]];
     [storage endEditing];
     
-    [textView scrollRangeToVisible:NSMakeRange([textString length], 0)];
+    NSUInteger stringLength = [textString length];
+    [textView scrollRangeToVisible:NSMakeRange(stringLength, 0)];
     
     [attributedString release];
 }
