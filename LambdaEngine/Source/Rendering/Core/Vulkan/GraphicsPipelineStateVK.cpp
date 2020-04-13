@@ -11,7 +11,8 @@ namespace LambdaEngine
 {
 	GraphicsPipelineStateVK::GraphicsPipelineStateVK(const GraphicsDeviceVK* pDevice) : 
 		TDeviceChild(pDevice),
-		m_Pipeline(VK_NULL_HANDLE)
+		m_Pipeline(VK_NULL_HANDLE),
+		m_pColorBlendAttachmentStates(nullptr)
 	{
 		//Default InputAssembly
 		m_InputAssembly.sType                   = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -81,6 +82,8 @@ namespace LambdaEngine
 			vkDestroyPipeline(m_pDevice->Device, m_Pipeline, nullptr);
 			m_Pipeline = VK_NULL_HANDLE;
 		}
+
+		SAFEDELETEARR(m_pColorBlendAttachmentStates);
 	}
 
 	bool GraphicsPipelineStateVK::Init(const GraphicsPipelineStateDesc& desc)
@@ -124,12 +127,21 @@ namespace LambdaEngine
 		dynamicState.pDynamicStates     = dynamicStates;
 		dynamicState.dynamicStateCount  = 2;
 
-		VkPipelineColorBlendAttachmentState blendAttachment = {};
-		blendAttachment.blendEnable		= VK_FALSE;
-		blendAttachment.colorWriteMask	= VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		m_pColorBlendAttachmentStates = DBG_NEW VkPipelineColorBlendAttachmentState[desc.BlendAttachmentStateCount];
 
-		m_BlendState.pAttachments       = &blendAttachment;
-		m_BlendState.attachmentCount    = 1;
+		for (uint32 i = 0; i < desc.BlendAttachmentStateCount; i++)
+		{
+			const BlendAttachmentState* pBlendAttachmentState = desc.pBlendAttachmentStates;
+
+			VkPipelineColorBlendAttachmentState blendAttachment = {};
+			blendAttachment.blendEnable			= pBlendAttachmentState->BlendEnabled ? VK_TRUE : VK_FALSE;
+			blendAttachment.colorWriteMask		= ConvertColorComponentMask(pBlendAttachmentState->ColorComponentsMask);
+
+			m_pColorBlendAttachmentStates[i] = blendAttachment;
+		}
+
+		m_BlendState.pAttachments			= m_pColorBlendAttachmentStates;
+		m_BlendState.attachmentCount		= desc.BlendAttachmentStateCount;
 
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType                  = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;

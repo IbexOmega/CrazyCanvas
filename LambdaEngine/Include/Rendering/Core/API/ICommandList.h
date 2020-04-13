@@ -70,7 +70,7 @@ namespace LambdaEngine
 	struct CommandListDesc
 	{
         const char*         pName           = "";
-		ECommandListType	CommandListType = ECommandListType::COMMANDLIST_UNKNOWN;
+		ECommandListType	CommandListType = ECommandListType::COMMAND_LIST_UNKNOWN;
 		uint32				Flags			= FCommandListFlags::COMMAND_LIST_FLAG_NONE;
 	};
 

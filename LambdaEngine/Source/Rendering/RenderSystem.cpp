@@ -227,7 +227,7 @@ namespace LambdaEngine
         CommandListDesc commandListDesc = { };
         commandListDesc.pName           = "Primary CommandList";
         commandListDesc.Flags           = FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-        commandListDesc.CommandListType = ECommandListType::COMMANDLIST_PRIMARY;
+        commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
         
         ICommandList* pCommandList = s_pGraphicsDevice->CreateCommandList(pCommandAllocator, commandListDesc);
 		pCommandList->Begin(nullptr);

@@ -34,7 +34,7 @@ namespace LambdaEngine
 			return m_Desc;
 		}
 
-		FORCEINLINE virtual uint64 GetHandle() const
+		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
 			return (uint64)m_Module;
 		}

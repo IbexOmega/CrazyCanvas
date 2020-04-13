@@ -10,8 +10,6 @@
 
 namespace LambdaEngine
 {
-	constexpr char* RENDER_GRAPH_BACK_BUFFER = "BACK_BUFFER_TEXTURE";
-
 	class LAMBDA_API RenderGraphDescriptionParser
 	{
 		struct InternalRenderStageInputAttachment;
@@ -65,13 +63,15 @@ namespace LambdaEngine
 		*	sortedRenderStageDescriptions - (Output) Sorted Render Stage Descriptions in order of execution
 		*	sortedSynchronizationStageDescriptions - (Output) Sorted Resource Synchronization Stage Descriptions in order of execution
 		*	sortedPipelineStageDescriptions - (Output) Sorted Pipeline Stage Descriptions in order of execution, each PipelineStage is either a RenderStage or a SynchronizationStage
+		*	resourceDescriptions - (Output) All resources that are used internally by this Render Graph
 		* return - true if the parsing succeeded, otherwise false
 		*/
 		static bool Parse(
 			const RenderGraphDesc& desc,
 			std::vector<RenderStageDesc>& sortedRenderStageDescriptions,
 			std::vector<SynchronizationStageDesc>& sortedSynchronizationStageDescriptions,
-			std::vector<PipelineStageDesc>& sortedPipelineStageDescriptions);
+			std::vector<PipelineStageDesc>& sortedPipelineStageDescriptions,
+			std::vector<RenderStageResourceDesc>& resourceDescriptions);
 
 	private:
 		/*
@@ -81,7 +81,8 @@ namespace LambdaEngine
 			const RenderGraphDesc& desc,
 			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesInputAttachments,
 			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesExternalInputAttachments,
-			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesOutputAttachments);
+			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesOutputAttachments,
+			std::vector<RenderStageResourceDesc>&											resourceDescriptions);
 		/*
 		* Parses everything to internal structures, creates bidirectional connections, separates temporal inputs from non-temporal inputs
 		*/
@@ -125,7 +126,6 @@ namespace LambdaEngine
 		static bool IsInputTemporal(const std::vector<const RenderStageAttachment*>& renderStageOutputAttachments, const RenderStageAttachment* pInputAttachment);
 		static bool AttachmentsEqual(const RenderStageAttachment* pInputAttachment, const RenderStageAttachment* pOutputAttachment);
 		static bool AreRenderStagesRelated(const InternalRenderStage* pRenderStageAncestor, const InternalRenderStage* pRenderStageDescendant);
-		static bool IsAttachmentReserved(const char* pAttachmentName);
 
 		static bool WriteGraphViz(
 			const char* pName, 

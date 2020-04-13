@@ -37,7 +37,7 @@ namespace LambdaEngine
 		pVkCommandAllocator->AddRef();
 
 		VkCommandBufferLevel level;
-		if (desc.CommandListType == ECommandListType::COMMANDLIST_PRIMARY)
+		if (desc.CommandListType == ECommandListType::COMMAND_LIST_PRIMARY)
 		{
 			level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		}
@@ -450,7 +450,7 @@ namespace LambdaEngine
 		const CommandListVK*	pVkSecondary	= reinterpret_cast<const CommandListVK*>(pSecondary);
 		CommandListDesc			desc			= pVkSecondary->GetDesc();
 
-		ASSERT(desc.CommandListType == ECommandListType::COMMANDLIST_SECONDARY);
+		ASSERT(desc.CommandListType == ECommandListType::COMMAND_LIST_SECONDARY);
 
 		vkCmdExecuteCommands(m_CommandList, 1, &pVkSecondary->m_CommandList);
 	}

@@ -305,6 +305,18 @@ namespace LambdaEngine
         }
     }
 
+	inline uint32 ConvertColorComponentMask(uint32 mask)
+	{
+		uint32 vkColorComponentBits = 0;
+
+		vkColorComponentBits |= (vkColorComponentBits & COLOR_COMPONENT_FLAG_R) ? VK_COLOR_COMPONENT_R_BIT : 0;
+		vkColorComponentBits |= (vkColorComponentBits & COLOR_COMPONENT_FLAG_G) ? VK_COLOR_COMPONENT_G_BIT : 0;
+		vkColorComponentBits |= (vkColorComponentBits & COLOR_COMPONENT_FLAG_B) ? VK_COLOR_COMPONENT_B_BIT : 0;
+		vkColorComponentBits |= (vkColorComponentBits & COLOR_COMPONENT_FLAG_A) ? VK_COLOR_COMPONENT_A_BIT : 0;
+
+		return vkColorComponentBits;
+	}
+
 	inline const char* VkFormatToString(VkFormat format)
 	{
         switch (format)

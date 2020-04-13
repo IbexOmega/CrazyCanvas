@@ -6,6 +6,8 @@
 
 namespace LambdaEngine
 {
+	constexpr char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT = "BACK_BUFFER_TEXTURE";
+
 	enum class EPipelineStageType : uint8
 	{
 		NONE			= 0,
@@ -58,6 +60,21 @@ namespace LambdaEngine
 		OUTPUT_DEPTH_STENCIL								= 14,
 	};
 
+	enum class ESimpleResourceType : uint8
+	{
+		NONE					= 0,
+		TEXTURE					= 1,
+		BUFFER					= 2,
+		ACCELERATION_STRUCTURE	= 3,
+	};
+
+	enum class ERenderStageResourceType : uint8
+	{
+		NONE			= 0,
+		ATTACHMENT		= 1,
+		PUSH_CONSTANTS	= 2,
+	};
+
 	struct RenderStageAttachment
 	{
 		const char* pName				= "";
@@ -66,11 +83,29 @@ namespace LambdaEngine
 		uint32 DescriptorCount			= 1;
 	};
 
+	struct RenderStagePushConstants
+	{
+		const char* pName				= "";
+		uint32 DataSize					= 0;
+	};
+
+	struct RenderStageResourceDesc
+	{
+		ERenderStageResourceType Type	= ERenderStageResourceType::NONE;
+
+		union
+		{
+			const RenderStageAttachment* pAttachmentDesc;
+			const RenderStagePushConstants* pPushConstantsDesc;
+		};
+	};
+
 	struct RenderStageDesc
 	{
 		const char* pName							= "Render Stage";
 		const RenderStageAttachment* pAttachments	= nullptr;
 		uint32 AttachmentCount						= 0;
+		RenderStagePushConstants PushConstants		= {};
 
 		EPipelineStateType PipelineType				= EPipelineStateType::NONE;
 
@@ -84,25 +119,11 @@ namespace LambdaEngine
 
 	struct AttachmentSynchronizationDesc
 	{
-		EAttachmentSynchronizationType Type = EAttachmentSynchronizationType::NONE;
-		EPipelineStateType FromQueueOwner	= EPipelineStateType::NONE;
-		EPipelineStateType ToQueueOwner		= EPipelineStateType::NONE;
-
-		union
-		{
-			struct
-			{
-				RenderStageAttachment		FromAttachment;
-				RenderStageAttachment		ToAttachment;
-			} OutputToInput;
-
-			struct
-			{
-				RenderStageAttachment		FromAttachment;
-				RenderStageAttachment		ToAttachment;
-			} InputToOutput;
-		};
-
+		EAttachmentSynchronizationType	Type			= EAttachmentSynchronizationType::NONE;
+		EPipelineStateType				FromQueueOwner	= EPipelineStateType::NONE;
+		EPipelineStateType				ToQueueOwner	= EPipelineStateType::NONE;
+		RenderStageAttachment			FromAttachment;
+		RenderStageAttachment			ToAttachment;
 	};
 
 	struct SynchronizationStageDesc
@@ -189,5 +210,62 @@ namespace LambdaEngine
 
 		default:																	return false;
 		}
+	}
+
+	ESimpleResourceType FORCEINLINE GetSimpleType(EAttachmentType attachmentType)
+	{
+		switch (attachmentType)
+		{
+		case EAttachmentType::INPUT_SHADER_RESOURCE_TEXTURE:						return ESimpleResourceType::TEXTURE;
+		case EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:				return ESimpleResourceType::TEXTURE;
+		case EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE:						return ESimpleResourceType::TEXTURE;
+		case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:						return ESimpleResourceType::BUFFER;
+
+		case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:				return ESimpleResourceType::TEXTURE;
+		case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:		return ESimpleResourceType::TEXTURE;
+		case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE:				return ESimpleResourceType::TEXTURE;
+		case EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER:						return ESimpleResourceType::BUFFER;
+		case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:				return ESimpleResourceType::BUFFER;
+		case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:				return ESimpleResourceType::ACCELERATION_STRUCTURE;
+
+		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return ESimpleResourceType::TEXTURE;
+		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return ESimpleResourceType::BUFFER;
+		case EAttachmentType::OUTPUT_COLOR:											return ESimpleResourceType::TEXTURE;
+		case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return ESimpleResourceType::TEXTURE;
+
+		default:																	return ESimpleResourceType::NONE;
+		}
+	}
+
+	ETextureState FORCEINLINE ConvertAttachmentTypeToTextureState(EAttachmentType attachmentType)
+	{
+		switch (attachmentType)
+		{
+		case EAttachmentType::INPUT_SHADER_RESOURCE_TEXTURE:						return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+		case EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:				return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+		case EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE:						return ETextureState::TEXTURE_STATE_GENERAL;
+		case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:						return ETextureState::TEXTURE_STATE_UNKNOWN;
+
+		case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:				return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+		case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:		return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+		case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE:				return ETextureState::TEXTURE_STATE_GENERAL;
+		case EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER:						return ETextureState::TEXTURE_STATE_UNKNOWN;
+		case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:				return ETextureState::TEXTURE_STATE_UNKNOWN;
+		case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:				return ETextureState::TEXTURE_STATE_UNKNOWN;
+
+		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return ETextureState::TEXTURE_STATE_GENERAL;
+		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return ETextureState::TEXTURE_STATE_UNKNOWN;
+		case EAttachmentType::OUTPUT_COLOR:											return ETextureState::TEXTURE_STATE_RENDER_TARGET;
+		case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+
+		default:																	return ETextureState::TEXTURE_STATE_UNKNOWN;
+		}
+	}
+
+	bool FORCEINLINE IsAttachmentReserved(const char* pAttachmentName)
+	{
+		if (strcmp(pAttachmentName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0) return true;
+
+		return false;
 	}
 }
