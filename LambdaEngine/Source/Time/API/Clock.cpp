@@ -1,4 +1,5 @@
 #include "Time/API/Clock.h"
+#include "Time/API/PlatformTime.h"
 
 namespace LambdaEngine
 {

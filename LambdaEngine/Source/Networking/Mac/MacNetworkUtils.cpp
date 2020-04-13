@@ -1,8 +1,8 @@
 #ifdef LAMBDA_PLATFORM_MACOS
-#include "MacNetworkUtils.h"
-#include "MacSocketTCP.h"
-#include "MacSocketUDP.h"
-#include "MacIPAddress.h"
+#include "Networking/Mac/MacNetworkUtils.h"
+#include "Networking/Mac/MacSocketTCP.h"
+#include "Networking/Mac/MacSocketUDP.h"
+#include "Networking/Mac/MacIPAddress.h"
 
 namespace LambdaEngine
 {
@@ -18,15 +18,15 @@ namespace LambdaEngine
 
 	ISocketTCP* MacNetworkUtils::CreateSocketTCP()
 	{
-		return nullptr;//new MacSocketTCP();
+		return new MacSocketTCP();
 	}
 
 	ISocketUDP* MacNetworkUtils::CreateSocketUDP()
 	{
-        return nullptr;//new MacSocketUDP();
+        return new MacSocketUDP();
 	}
 
-	IPAddress* Win32NetworkUtils::CreateIPAddress(const std::string& address, uint64 hash)
+	IPAddress* MacNetworkUtils::CreateIPAddress(const std::string& address, uint64 hash)
 	{
 		return DBG_NEW MacIPAddress(address, hash);
 	}

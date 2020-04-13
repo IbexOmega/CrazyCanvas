@@ -22,6 +22,8 @@
 
 #include "Time/API/Clock.h"
 
+#include "Threading/API/Thread.h"
+
 Sandbox::Sandbox()
     : Game(),
 	m_pResourceManager(nullptr),
@@ -36,7 +38,7 @@ Sandbox::Sandbox()
 	using namespace LambdaEngine;
 
 	m_pResourceManager = DBG_NEW LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
-
+    
 	/*std::vector<GameObject>	sceneGameObjects;
 	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
 
@@ -445,7 +447,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-    //LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
+    LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
     
 	m_Timer += delta.AsSeconds();
 

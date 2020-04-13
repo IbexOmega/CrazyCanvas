@@ -243,7 +243,7 @@ namespace LambdaEngine
                 }
                 
                 //Buffer event before sending it to the rest of the system
-                s_pApplication->BufferEvent(event);
+                //s_pApplication->BufferEvent(event);
 
                 [NSApp sendEvent:event];
                 [NSApp updateWindows];

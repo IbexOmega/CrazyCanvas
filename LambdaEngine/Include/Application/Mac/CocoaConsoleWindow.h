@@ -23,6 +23,8 @@
 
 - (void) setColor:(LambdaEngine::EConsoleColor) color;
 
+- (NSUInteger) getLineCount;
+
 - (BOOL) windowShouldClose:(NSWindow*) sender;
 
 + (NSString*) convertStringWithArgs:(const char*) format args:(va_list) args;

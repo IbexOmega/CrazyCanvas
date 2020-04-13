@@ -1,8 +1,9 @@
-#include "Networking\Mac\MacIPAddress.h"
-
-#include <Ws2tcpip.h>
-
+#ifdef LAMBDA_PLATFORM_MACOS
 #include "Log/Log.h"
+
+#include "Networking/Mac/MacIPAddress.h"
+
+#include <arpa/inet.h>
 
 namespace LambdaEngine
 {
@@ -32,8 +33,9 @@ namespace LambdaEngine
 
 	}
 
-	IN_ADDR* MacIPAddress::GetMacAddr()
+	struct in_addr* MacIPAddress::GetMacAddr()
 	{
 		return &m_Addr;
 	}
 }
+#endif

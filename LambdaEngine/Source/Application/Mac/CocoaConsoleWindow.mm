@@ -33,6 +33,8 @@
         [container setContainerSize:NSMakeSize( width, FLT_MAX )];
         [container setWidthTracksTextView:YES];
         
+        [scrollView setDocumentView:textView];
+        
         [self setTitle:@"Lambda Engine Debug Console"];
         [self setContentView:scrollView];
         [self setInitialFirstResponder:textView];
@@ -55,7 +57,7 @@
     [super dealloc];
 }
 
-- (void) appendStringAndScroll:(NSString *)string
+- (void) appendStringAndScroll:(NSString*) string
 {
     SCOPED_AUTORELEASE_POOL();
     
@@ -64,18 +66,42 @@
     NSTextStorage* storage = [textView textStorage];
     [storage beginEditing];
     [storage appendAttributedString:attributedString];
+    
+    //Remove lines
+    NSUInteger  lineCount   = [self getLineCount];
+    NSString*   textString  = [textView string];
+    if (lineCount >= 196)
+    {
+        NSUInteger index;
+        NSUInteger numberOfLines    = 0;
+        NSUInteger stringLength     = [textString length];
+        for (index = 0; index < stringLength; numberOfLines++)
+        {
+            index = NSMaxRange([textString lineRangeForRange:NSMakeRange(index, 0)]);
+            if (numberOfLines >= 1)
+            {
+                break;
+            }
+        }
+        
+        NSRange range = NSMakeRange(0, index);
+        [storage deleteCharactersInRange:range];
+    }
+    
     [storage setFont:[NSFont fontWithName:@"Courier" size:12.0f]];
     [storage endEditing];
     
-    NSString* textString = [textView string];
-    [textView scrollRangeToVisible:NSMakeRange([textString length], 0)];
+    NSUInteger stringLength = [textString length];
+    [textView scrollRangeToVisible:NSMakeRange(stringLength, 0)];
     
     [attributedString release];
 }
 
 - (void) clearWindow
 {
+    SCOPED_AUTORELEASE_POOL();
     
+    [textView setString:@""];
 }
 
 - (void) setColor:(LambdaEngine::EConsoleColor) color
@@ -95,9 +121,6 @@
     [attributes addObject:NSBackgroundColorAttributeName];
 
     //Add foreground color
-    [colors addObject:[NSColor colorWithSRGBRed:0.1f green:0.1f blue:0.1f alpha:0.1f]];
-
-    //Add background color
     if (color == EConsoleColor::COLOR_WHITE)
     {
         [colors addObject:[NSColor colorWithSRGBRed:1.0f green:1.0f blue:1.0f alpha:1.0f]];
@@ -115,10 +138,27 @@
         [colors addObject:[NSColor colorWithSRGBRed:1.0f green:1.0f blue:0.0f alpha:1.0f]];
     }
     
+    //Add background color
+    [colors addObject:[NSColor colorWithSRGBRed:0.1f green:0.1f blue:0.1f alpha:0.1f]];
+    
     consoleColor = [[NSDictionary alloc] initWithObjects:colors forKeys:attributes];
 
     [colors release];
     [attributes release];
+}
+
+- (NSUInteger) getLineCount
+{
+    NSString* string = [textView string];
+    
+    NSUInteger numberOfLines    = 0;
+    NSUInteger stringLength     = [string length];
+    for (NSUInteger index = 0; index < stringLength; numberOfLines++)
+    {
+        index = NSMaxRange([string lineRangeForRange:NSMakeRange(index, 0)]);
+    }
+    
+    return numberOfLines;
 }
 
 - (BOOL) windowShouldClose:(NSWindow* ) sender

@@ -1,4 +1,5 @@
-#include "Networking\Win32\Win32IPAddress.h"
+#ifdef LAMBDA_PLATFORM_WINDOWS
+#include "Networking/Win32/Win32IPAddress.h"
 
 #include <Ws2tcpip.h>
 
@@ -37,3 +38,4 @@ namespace LambdaEngine
 		return &m_Addr;
 	}
 }
+#endif

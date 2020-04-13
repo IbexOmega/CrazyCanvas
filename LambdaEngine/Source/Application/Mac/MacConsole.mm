@@ -39,6 +39,8 @@ namespace LambdaEngine
             {
                 SCOPED_AUTORELEASE_POOL();
                 
+                MacApplication::ProcessMessages();
+                
                 [s_pConsoleWindow release];
                 s_pConsoleWindow = nil;
             });
@@ -69,14 +71,17 @@ namespace LambdaEngine
     {
         if (s_pConsoleWindow)
         {
+            NSString* string = [CocoaConsoleWindow convertStringWithArgs:pFormat args:args];
+            
             MacMainThread::MakeCall(^
             {
                 SCOPED_AUTORELEASE_POOL();
                 
-                NSString* string = [CocoaConsoleWindow convertStringWithArgs:pFormat args:args];
                 [s_pConsoleWindow appendStringAndScroll:string];
                 
                 [string release];
+                
+                MacApplication::ProcessMessages();
             });
         }
     }
@@ -85,17 +90,19 @@ namespace LambdaEngine
     {
         if (s_pConsoleWindow)
         {
+            NSString* string        = [CocoaConsoleWindow convertStringWithArgs:pFormat args:args];
+            NSString* finalString   = [string stringByAppendingString:@"\n"];
+            
             MacMainThread::MakeCall(^
             {
                 SCOPED_AUTORELEASE_POOL();
-                
-                NSString* string        = [CocoaConsoleWindow convertStringWithArgs:pFormat args:args];
-                NSString* finalString   = [string stringByAppendingString:@"\n"];
                 
                 [s_pConsoleWindow appendStringAndScroll:finalString];
                 
                 [finalString release];
                 [string release];
+                
+                MacApplication::ProcessMessages();
             });
         }
     }
