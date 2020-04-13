@@ -14,7 +14,7 @@
 #include "Rendering/Core/API/ITopLevelAccelerationStructure.h"
 #include "Rendering/Core/API/IBottomLevelAccelerationStructure.h"
 
-#include "Network/API/PlatformNetworkUtils.h"
+#include "Networking/API/PlatformNetworkUtils.h"
 
 #include "Threading/API/Thread.h"
 
