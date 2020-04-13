@@ -11,123 +11,23 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/Window.h"
 
-#include "Network/API/PlatformNetworkUtils.h"
-
-#include "ClientTCPHandler.h"
-#include "ClientUDPHandler.h"
-
-enum ENetworkTest
-{
-	NETWORK_TEST_TCP,
-	NETWORK_TEST_UDP,
-	NETWORK_TEST_DISCOVERY,
-	NETWORK_TEST_GAME
-};
-
-ENetworkTest g_Test = NETWORK_TEST_GAME;
+#include "Networking/API/ISocket.h"
+#include "Networking/API/IPEndPoint.h"
 
 Server::Server()
 {
 	using namespace LambdaEngine;
-
-	if (g_Test == NETWORK_TEST_TCP)
-	{
-		m_pServerTCP = PlatformNetworkUtils::CreateServerTCP(this, 2);
-		m_pServerTCP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
-	}
-	else if (g_Test == NETWORK_TEST_UDP)
-	{
-		m_pServerUDP = PlatformNetworkUtils::CreateServerUDP(this);
-		m_pServerUDP->Start(PlatformNetworkUtils::GetLocalAddress(), 4444);
-	}
-	else if (g_Test == NETWORK_TEST_DISCOVERY)
-	{
-		m_pNetworkDiscovery = DBG_NEW NetworkDiscoveryHost(this, "Drift It 3D");
-		m_pNetworkDiscovery->Start(LambdaEngine::PlatformNetworkUtils::GetLocalAddress(), 4444);
-	}
-	else if (g_Test == NETWORK_TEST_GAME)
-	{
-		m_pGameServer = DBG_NEW GameServer();
-		m_pGameServer->Start(4444);
-	}
 
 	UpdateTitle();
 }
 
 Server::~Server()
 {
-	if (g_Test == NETWORK_TEST_TCP)
-	{
-		m_pServerTCP->Release();
-	}
-	else if (g_Test == NETWORK_TEST_UDP)
-	{
-		m_pServerUDP->Release();
-	}
-	else if (g_Test == NETWORK_TEST_DISCOVERY)
-	{
-		delete m_pNetworkDiscovery;
-	}
-	else if (g_Test == NETWORK_TEST_GAME)
-	{
-		m_pGameServer->Release();
-	}
-
-	for (LambdaEngine::IClientTCPHandler* handler : m_ClientTCPHandlers)
-		delete handler;
-
-	for (LambdaEngine::IClientUDPHandler* handler : m_ClientUDPHandlers)
-		delete handler;
-}
-
-void Server::OnSearcherRequest(LambdaEngine::NetworkPacket* packet)
-{
-	UNREFERENCED_VARIABLE(packet);
-}
-
-LambdaEngine::IClientUDPHandler* Server::CreateClientHandlerUDP()
-{
-	ClientUDPHandler* handler = DBG_NEW ClientUDPHandler();
-	m_ClientUDPHandlers.insert(handler);
-	return handler;
-}
-
-LambdaEngine::IClientTCPHandler* Server::CreateClientHandlerTCP()
-{
-	ClientTCPHandler* handler = DBG_NEW ClientTCPHandler();
-	m_ClientTCPHandlers.insert(handler);
-	return handler;
-}
-
-bool Server::OnClientAcceptedTCP(LambdaEngine::ClientTCP* client)
-{
-	LOG_MESSAGE("OnClientAcceptedTCP()");
-	UNREFERENCED_VARIABLE(client);
-	return true;
-}
-
-void Server::OnClientConnectedTCP(LambdaEngine::ClientTCP* client)
-{
-	UNREFERENCED_VARIABLE(client);
-	UpdateTitle();
-}
-
-void Server::OnClientDisconnectedTCP(LambdaEngine::ClientTCP* client)
-{
-	UNREFERENCED_VARIABLE(client);
-	UpdateTitle();
+	
 }
 
 void Server::OnKeyDown(LambdaEngine::EKey key)
 {
-	if (g_Test == NETWORK_TEST_GAME)
-	{
-		if (m_pGameServer->IsRunning())
-			m_pGameServer->Stop();
-		else
-			m_pGameServer->Start(4444);
-	}
-
 	UNREFERENCED_VARIABLE(key);
 }
 
@@ -144,14 +44,8 @@ void Server::OnKeyUp(LambdaEngine::EKey key)
 void Server::UpdateTitle()
 {
 	using namespace LambdaEngine;
-
-	if (g_Test == NETWORK_TEST_TCP)
-	{
-		std::string title = "Server - " + std::to_string(m_pServerTCP->GetNrOfClients());
-
-		PlatformApplication::Get()->GetWindow()->SetTitle(title.c_str());
-		PlatformConsole::SetTitle(title.c_str());
-	}
+	PlatformApplication::Get()->GetWindow()->SetTitle("Server");
+	PlatformConsole::SetTitle("Server Console");
 }
 
 void Server::Tick(LambdaEngine::Timestamp delta)

@@ -5,7 +5,7 @@
 
 namespace LambdaEngine
 {
-	class Game 
+	class LAMBDA_API Game 
 	{
 	public:
         Game();

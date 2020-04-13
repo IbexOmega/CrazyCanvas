@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <mutex>
 
-#include "Threading/SpinLock.h"
+#include "Threading/API/SpinLock.h"
 
 #include "Application/Win32/Win32Console.h"
 
