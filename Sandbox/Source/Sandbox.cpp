@@ -24,17 +24,6 @@
 
 #include "Threading/API/Thread.h"
 
-static void ThreadFunction()
-{
-    int i = 0;
-    while (true)
-    {
-        i++;
-        LOG_INFO("This is a message from another thread %d", i);
-        std::this_thread::sleep_for(std::chrono::milliseconds(16));
-    }
-}
-
 Sandbox::Sandbox()
     : Game(),
 	m_pResourceManager(nullptr),
@@ -49,9 +38,6 @@ Sandbox::Sandbox()
 	using namespace LambdaEngine;
 
 	m_pResourceManager = DBG_NEW LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
-    
-    std::thread thread(ThreadFunction);
-    thread.detach();
     
 	/*std::vector<GameObject>	sceneGameObjects;
 	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
