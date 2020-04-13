@@ -19,12 +19,12 @@ digraph G {
 		eia9 [shape=box,label="External Input\nSCENE_ROUGHNESS_MAPS"];
 		eia4 [shape=box,label="External Input\nSCENE_INSTANCE_BUFFER"];
 		eia6 [shape=box,label="External Input\nSCENE_ALBEDO_MAPS"];
+		eia10 [shape=box,label="External Input\nSCENE_METALLIC_MAPS"];
 		eia5 [shape=box,label="External Input\nSCENE_MESH_INDEX_BUFFER"];
 		eia3 [shape=box,label="External Input\nSCENE_INDEX_BUFFER"];
 		eia2 [shape=box,label="External Input\nSCENE_VERTEX_BUFFER"];
 		eia8 [shape=box,label="External Input\nSCENE_AO_MAPS"];
 		eia1 [shape=box,label="External Input\nSCENE_MAT_PARAM_BUFFER"];
-		eia10 [shape=box,label="External Input\nSCENE_METALLIC_MAPS"];
 		eia19 [shape=box,label="External Input\nLIGHTS_BUFFER"];
 		eia20 [shape=box,label="External Input\nSCENE_TLAS"];
 		eia21 [shape=box,label="External Input\nBRDF_LUT"];
@@ -35,10 +35,10 @@ digraph G {
 		color = gray90;
 		label = "Main Pipeline";
 		rs0 [shape=octagon,style=bold,label="Geometry Render Stage"];
-		rs4 [shape=octagon,style=bold,label="Shading Render Stage"];
 		rs3 [shape=octagon,style=bold,label="Particle Update Render Stage"];
 		rs2 [shape=octagon,style=bold,label="Spatial Blur Render Stage"];
 		rs1 [shape=octagon,style=bold,label="Ray Tracing Render Stage"];
+		rs4 [shape=octagon,style=bold,label="Shading Render Stage"];
 		ia29 [shape=box,label="Input\nGBUFFER_ALBEDO_AO"];
 		ia24 [shape=box,label="Input\nRADIANCE_IMAGE"];
 		ia18 [shape=box,label="Input\nGBUFFER_DEPTH"];
@@ -54,12 +54,14 @@ digraph G {
 		oa25 [shape=box,label="Output\nFILTERED_RADIANCE_IMAGE"];
 		oa30 [shape=box,label="Output\nBACK_BUFFER_TEXTURE"];
 	}
-	{ia28, ia29, ia16, ia17, ia18} -> rs4[color=green3];
+	{eia0, eia1, eia2, eia3, eia4, eia5, eia6, eia7, eia8, eia9, eia10} -> rs0[style=dashed];
 	{tia26} -> rs3[color=blue];
 	{ia24} -> rs2[color=green3];
 	{ia16, ia17, ia18} -> rs1[color=green3];
 	{tia15} -> rs1[color=blue];
-	eia0 -> eia7 -> eia9 -> eia4 -> eia6 -> eia5 -> eia3 -> eia2 -> eia8 -> eia1 -> eia10 -> eia19 -> eia20 -> eia21 -> eia22[style=invis];
+	{eia0, eia19, eia20, eia1, eia2, eia3, eia4, eia5, eia6, eia7, eia8, eia9, eia10, eia21, eia22} -> rs1[style=dashed];
+	{ia28, ia29, ia16, ia17, ia18} -> rs4[color=green3];
+	{eia0, eia19, eia21, eia22} -> rs4[style=dashed];
 	rs1 -> oa23[color=purple];
 	oa23 -> ia24[style=bold,color=red];
 	rs0 -> oa14[color=purple];

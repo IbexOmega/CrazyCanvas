@@ -45,7 +45,7 @@ namespace LambdaEngine
 		*
 		* return	- False if an error occured, otherwise true.
 		*/
-		virtual bool EnableBroadcast(bool enable) override;
+		virtual bool EnableBroadcast(bool enable);
 
 		/*
 		* Sends a buffer of data to the broadcast address

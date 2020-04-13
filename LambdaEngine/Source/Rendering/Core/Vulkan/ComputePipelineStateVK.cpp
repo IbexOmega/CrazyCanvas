@@ -1,6 +1,7 @@
 #include "Rendering/Core/Vulkan/ComputePipelineStateVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/ShaderVK.h"
 
 #include "Log/Log.h"
 
@@ -23,16 +24,14 @@ namespace LambdaEngine
 
 	bool ComputePipelineStateVK::Init(const ComputePipelineStateDesc& desc)
 	{
-		const ShaderDesc& shaderDesc = desc.Shader;
+		const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(desc.pShader);
 
 		VkPipelineShaderStageCreateInfo shaderCreateInfo;
 		VkSpecializationInfo shaderSpecializationInfo;
-		std::vector<VkSpecializationMapEntry> shaderSpecializationMaps;
+		std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
-		CreateSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMaps, shaderDesc);
-
-		if (!CreateShaderStageInfo(m_pDevice->Device, shaderCreateInfo, shaderDesc, shaderSpecializationInfo))
-			return false;
+		pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
+		pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
 
 		VkComputePipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;

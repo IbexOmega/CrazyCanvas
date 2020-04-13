@@ -4,10 +4,11 @@
 #include "Audio/AudioDevice.h"
 
 #include "Rendering/Core/API/ITexture.h"
-#include "Mesh.h"
-#include "Material.h"
+#include "Rendering/Core/API/IShader.h"
 #include "Audio/SoundEffect3D.h"
 #include "Game/Scene.h"
+#include "Material.h"
+#include "Mesh.h"
 
 namespace LambdaEngine
 {
@@ -69,7 +70,20 @@ namespace LambdaEngine
 
 		/*
 		* Load sound from file
-		*	pGraphicsDevice - An audio device
+		*	pGraphicsDevice - A Graphics Device
+		*	pFilepath - Path to the shader file
+		*	stage - Which stage the shader belongs to
+		*	lang - The language of the shader file
+		*	pConstants - Optional shader constants, can be nullptr
+		*	shaderConstantCount - The number of entries in pConstants
+		*	pEntryPoint - The name of the shader entrypoint
+		* return - an IShader* if the shader was loaded, otherwise nullptr will be returned
+		*/
+		static IShader* LoadShaderFromFile(IGraphicsDevice* pGraphicsDevice, const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, ShaderConstant* pConstants = nullptr, uint32 shaderConstantCount = 0, const char* pEntryPoint = "main");
+
+		/*
+		* Load sound from file
+		*	pAudioDevice - An audio device
 		*	pFilepath - Path to the audio file
 		* return - an SoundEffect3D* if the sound was loaded, otherwise nullptr will be returned
 		*/

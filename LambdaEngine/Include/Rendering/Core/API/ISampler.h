@@ -26,10 +26,10 @@ namespace LambdaEngine
 		DECL_DEVICE_INTERFACE(ISampler);
 
 		/*
-	   * Returns the API-specific handle to the underlaying resource
-	   *
-	   * return - Returns a valid handle on success otherwise zero
-	   */
+		* Returns the API-specific handle to the underlying resource
+		*
+		* return - Returns a valid handle on success otherwise zero
+		*/
 		virtual uint64      GetHandle() const = 0;
         virtual SamplerDesc GetDesc()   const = 0;
 	};

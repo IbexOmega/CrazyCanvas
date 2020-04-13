@@ -1,7 +1,6 @@
 #pragma once
 
-#ifdef LAMBDA_PLATFORM_MACOS
-#ifdef __OBJC__
+#if defined(LAMBDA_PLATFORM_MACOS) && defined(__OBJC__)
 
 #include <Appkit/Appkit.h>
 
@@ -15,7 +14,6 @@
 
 class CocoaWindowDelegate;
 
-#endif
 #endif
 
 

@@ -22,7 +22,8 @@
 
 #include "Time/API/Clock.h"
 
-Sandbox::Sandbox() : 
+Sandbox::Sandbox()
+    : Game(),
 	m_pResourceManager(nullptr),
 	m_pToneSoundEffect(nullptr),
 	m_pToneSoundInstance(nullptr),
@@ -49,10 +50,27 @@ Sandbox::Sandbox() :
 	SceneDesc sceneDesc = {};
 	m_pScene->Finalize(sceneDesc);*/
 
+	GUID_Lambda blurShaderGUID					= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/blur.spv",					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
+
+	GUID_Lambda geometryVertexShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/geometryVertex.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
+	GUID_Lambda geometryPixelShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/geometryPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
+
+	GUID_Lambda lightVertexShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/lightVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
+	GUID_Lambda lightPixelShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/lightPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
+
+	GUID_Lambda raygenRadianceShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/raygenRadiance.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::SPIRV);
+	GUID_Lambda closestHitRadianceShaderGUID	= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/closestHitRadiance.spv",	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::SPIRV);
+	GUID_Lambda missRadianceShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/missRadiance.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::SPIRV);
+	GUID_Lambda closestHitShadowShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/closestHitShadow.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::SPIRV);
+	GUID_Lambda missShadowShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/missShadow.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::SPIRV);
+
+	GUID_Lambda particleUpdateShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/particleUpdate.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
+
 	constexpr uint32 MAX_UNIQUE_MATERIALS = 16;
 
 	std::vector<RenderStageDesc> renderStages;
 
+	GraphicsPipelineStateDesc geometryPassPipelineDesc = {};
 	std::vector<RenderStageAttachment>			geometryRenderStageAttachments;
 
 	{
@@ -80,11 +98,19 @@ Sandbox::Sandbox() :
 		renderStage.pAttachments				= geometryRenderStageAttachments.data();
 		renderStage.AttachmentCount				= geometryRenderStageAttachments.size();
 
-		renderStage.PipelineType = EPipelineStateType::GRAPHICS;
+		geometryPassPipelineDesc.pName				= "Geometry Pass Pipeline State";
+		geometryPassPipelineDesc.pVertexShader		= m_pResourceManager->GetShader(geometryVertexShaderGUID);
+		geometryPassPipelineDesc.pPixelShader		= m_pResourceManager->GetShader(geometryPixelShaderGUID);
+
+		renderStage.PipelineType					= EPipelineStateType::GRAPHICS;
+		renderStage.Pipeline.pGraphicsDesc			= &geometryPassPipelineDesc;
 
 		renderStages.push_back(renderStage);
 	}
 
+	RayTracingPipelineStateDesc					rayTracePipelineDesc = {};
+	std::vector<IShader*>						rayTraceClosestHitShader;
+	std::vector<IShader*>						rayTraceMissShader;
 	std::vector<RenderStageAttachment>			rayTraceRenderStageAttachments;
 
 	{
@@ -119,11 +145,27 @@ Sandbox::Sandbox() :
 		renderStage.pAttachments				= rayTraceRenderStageAttachments.data();
 		renderStage.AttachmentCount				= rayTraceRenderStageAttachments.size();
 
-		renderStage.PipelineType = EPipelineStateType::RAY_TRACING;
+
+		rayTraceClosestHitShader.push_back(m_pResourceManager->GetShader(closestHitRadianceShaderGUID));
+		rayTraceClosestHitShader.push_back(m_pResourceManager->GetShader(closestHitShadowShaderGUID));
+
+		rayTraceMissShader.push_back(m_pResourceManager->GetShader(missRadianceShaderGUID));
+		rayTraceMissShader.push_back(m_pResourceManager->GetShader(missShadowShaderGUID));
+
+		rayTracePipelineDesc.pName					= "Ray Tracing Pipeline State";
+		rayTracePipelineDesc.pRaygenShader			= m_pResourceManager->GetShader(raygenRadianceShaderGUID); 
+		rayTracePipelineDesc.ppClosestHitShaders	= rayTraceClosestHitShader.data();
+		rayTracePipelineDesc.ClosestHitShaderCount	= rayTraceClosestHitShader.size();
+		rayTracePipelineDesc.ppMissShaders			= rayTraceMissShader.data();
+		rayTracePipelineDesc.MissShaderCount		= rayTraceMissShader.size();
+
+		renderStage.PipelineType					= EPipelineStateType::RAY_TRACING;
+		renderStage.Pipeline.pRayTracingDesc		= &rayTracePipelineDesc;
 
 		renderStages.push_back(renderStage);
 	}
 
+	ComputePipelineStateDesc					spatialBlurPipelineDesc = {};
 	std::vector<RenderStageAttachment>			spatialBlurRenderStageAttachments;
 
 	{
@@ -136,11 +178,16 @@ Sandbox::Sandbox() :
 		renderStage.pAttachments				= spatialBlurRenderStageAttachments.data();
 		renderStage.AttachmentCount				= spatialBlurRenderStageAttachments.size();
 
-		renderStage.PipelineType = EPipelineStateType::COMPUTE;
+		spatialBlurPipelineDesc.pName			= "Spatial Blur Pipeline State";
+		spatialBlurPipelineDesc.pShader			= m_pResourceManager->GetShader(blurShaderGUID);
+
+		renderStage.PipelineType				= EPipelineStateType::COMPUTE;
+		renderStage.Pipeline.pComputeDesc		= &spatialBlurPipelineDesc;
 
 		renderStages.push_back(renderStage);
 	}
 
+	ComputePipelineStateDesc					particleUpdatePipelineDesc = {};
 	std::vector<RenderStageAttachment>			particleUpdateRenderStageAttachments;
 
 	{
@@ -153,11 +200,16 @@ Sandbox::Sandbox() :
 		renderStage.pAttachments				= particleUpdateRenderStageAttachments.data();
 		renderStage.AttachmentCount				= particleUpdateRenderStageAttachments.size();
 
-		renderStage.PipelineType = EPipelineStateType::COMPUTE;
+		particleUpdatePipelineDesc.pName	= "Particle Update Pipeline State";
+		particleUpdatePipelineDesc.pShader	= m_pResourceManager->GetShader(particleUpdateShaderGUID);
+
+		renderStage.PipelineType			= EPipelineStateType::COMPUTE;
+		renderStage.Pipeline.pComputeDesc	= &particleUpdatePipelineDesc;
 
 		renderStages.push_back(renderStage);
 	}
 
+	GraphicsPipelineStateDesc					shadingPipelineDesc = {};
 	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
 
 	{
@@ -180,7 +232,12 @@ Sandbox::Sandbox() :
 		renderStage.pAttachments				= shadingRenderStageAttachments.data();
 		renderStage.AttachmentCount				= shadingRenderStageAttachments.size();
 
-		renderStage.PipelineType = EPipelineStateType::GRAPHICS;
+		shadingPipelineDesc.pName				= "Shading Pass Pipeline State";
+		shadingPipelineDesc.pVertexShader		= m_pResourceManager->GetShader(lightVertexShaderGUID);
+		shadingPipelineDesc.pPixelShader		= m_pResourceManager->GetShader(lightPixelShaderGUID);
+
+		renderStage.PipelineType				= EPipelineStateType::GRAPHICS;
+		renderStage.Pipeline.pGraphicsDesc		= &shadingPipelineDesc;
 
 		renderStages.push_back(renderStage);
 	}
@@ -195,7 +252,7 @@ Sandbox::Sandbox() :
 	clock.Reset();
 	clock.Tick();
 
-	RenderGraph* pRenderGraph = new RenderGraph(RenderSystem::GetDevice());
+	RenderGraph* pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
 
 	//pRenderGraph->Init(renderGraphDesc);
 
@@ -381,7 +438,7 @@ void Sandbox::OnButtonReleased(LambdaEngine::EMouseButton button)
 
 void Sandbox::OnScroll(int32 delta)
 {
-	LOG_MESSAGE("Mouse Scrolled: %d", delta);
+	//LOG_MESSAGE("Mouse Scrolled: %d", delta);
 }
 
 void Sandbox::Tick(LambdaEngine::Timestamp delta)
@@ -417,7 +474,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
 {
-    LOG_MESSAGE("Fixed delta: %.6f ms", delta.AsMilliSeconds());
+    //LOG_MESSAGE("Fixed delta: %.6f ms", delta.AsMilliSeconds());
 }
 
 namespace LambdaEngine

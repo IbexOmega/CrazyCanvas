@@ -88,7 +88,7 @@ namespace LambdaEngine
 		if (desc.CreateDebugGraph)
 		{
 			constexpr bool DECLARE_EXTERNAL_INPUTS = true;
-			constexpr bool LINK_EXTERNAL_INPUTS = false;
+			constexpr bool LINK_EXTERNAL_INPUTS = true;
 
 			if (!WriteGraphViz(
 				desc.pName, 
@@ -399,6 +399,20 @@ namespace LambdaEngine
 
 			SynchronizationStageDesc synchronizationStage = {};
 
+			//Create External Input Synchronizations
+			{
+				for (const InternalRenderStageExternalInputAttachment* pExternalInputAttachment : sortedRenderStageIt->second->ExternalInputAttachments)
+				{
+					AttachmentSynchronizationDesc attachmentSynchronization = {};
+					attachmentSynchronization.Type							= EAttachmentSynchronizationType::OWNERSHIP_CHANGE;
+					attachmentSynchronization.ToQueueOwner					= sortedRenderStageIt->second->pRenderStage->PipelineType;
+					attachmentSynchronization.OutputToInput.FromAttachment	= *pExternalInputAttachment->pAttachment;
+					attachmentSynchronization.OutputToInput.ToAttachment	= *pExternalInputAttachment->pAttachment;
+
+					synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
+				}
+			}
+
 			//Create Output to Input Synchronizations
 			{
 				for (const InternalRenderStageInputAttachment* pInputAttachment : sortedRenderStageIt->second->InputAttachments)
@@ -483,13 +497,14 @@ namespace LambdaEngine
 		std::unordered_map<const char*, AttachmentSynchronizationDesc*> firstEncounterOfAttachmentSynchronizations;
 		std::unordered_map<const char*, std::pair<EAttachmentState, EPipelineStateType>> transitionedResourceStates;
 
-		for (auto synchronizationStageIt = sortedSynchronizationStages.begin(); synchronizationStageIt != sortedSynchronizationStages.end();)
+		for (auto synchronizationStageIt = sortedSynchronizationStages.begin(); synchronizationStageIt != sortedSynchronizationStages.end(); synchronizationStageIt++)
 		{
 			for (auto attachmentSynchronizationIt = synchronizationStageIt->Synchronizations.begin(); attachmentSynchronizationIt != synchronizationStageIt->Synchronizations.end(); )
 			{
 				const char* pAttachmentName = attachmentSynchronizationIt->OutputToInput.FromAttachment.pName;
 				auto firstEncounterOfAttachmentSynchronizationIt = firstEncounterOfAttachmentSynchronizations.find(pAttachmentName);
 
+				//Store first encounter in graph of each attachment synchronization, their from queue is not known until we have traversed the entire graph to the end
 				if (firstEncounterOfAttachmentSynchronizationIt == firstEncounterOfAttachmentSynchronizations.end())
 				{
 					firstEncounterOfAttachmentSynchronizations[pAttachmentName] = &(*attachmentSynchronizationIt);
@@ -524,9 +539,9 @@ namespace LambdaEngine
 				switch (attachmentSynchronizationIt->Type)
 				{
 				case EAttachmentSynchronizationType::NONE:
-				case EAttachmentSynchronizationType::OWNERSHIP_CHANGE:
 					resultState = transitionedResourceStateIt != transitionedResourceStates.end() ? transitionedResourceStateIt->second.first : EAttachmentState::NONE;
 					break;
+				case EAttachmentSynchronizationType::OWNERSHIP_CHANGE:		//Assume READ state if OWNERSHIP_CHANGE, Todo: rethink this, maybe consequtive writes should be possible
 				case EAttachmentSynchronizationType::TRANSITION_FOR_READ:
 					resultState = EAttachmentState::READ;
 					break;
@@ -538,7 +553,33 @@ namespace LambdaEngine
 				transitionedResourceStates[pAttachmentName] = std::make_pair(resultState, attachmentSynchronizationIt->ToQueueOwner);
 				attachmentSynchronizationIt++;
 			}
+		}
 
+		//Update first encounters
+		for (auto firstEncounterSynchronizationIt = firstEncounterOfAttachmentSynchronizations.begin(); firstEncounterSynchronizationIt != firstEncounterOfAttachmentSynchronizations.end(); firstEncounterSynchronizationIt++)
+		{
+			firstEncounterSynchronizationIt->second->FromQueueOwner = transitionedResourceStates[firstEncounterSynchronizationIt->first].second;
+		}
+
+		//Pruning of OWNERSHIP_CHANGE from x -> x and empty synchronization stages
+		for (auto synchronizationStageIt = sortedSynchronizationStages.begin(); synchronizationStageIt != sortedSynchronizationStages.end();)
+		{
+			//Remove unnecessary OWNERSHIP_CHANGEs
+			for (auto attachmentSynchronizationIt = synchronizationStageIt->Synchronizations.begin(); attachmentSynchronizationIt != synchronizationStageIt->Synchronizations.end(); )
+			{
+				if (attachmentSynchronizationIt->Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE)
+				{
+					if (attachmentSynchronizationIt->FromQueueOwner == attachmentSynchronizationIt->ToQueueOwner)
+					{
+						attachmentSynchronizationIt = synchronizationStageIt->Synchronizations.erase(attachmentSynchronizationIt);
+						continue;
+					}
+				}
+
+				attachmentSynchronizationIt++;
+			}
+
+			//Remove Synchronization stage if empty
 			if (!synchronizationStageIt->Synchronizations.empty())
 			{
 				synchronizationStageIt++;
@@ -565,18 +606,13 @@ namespace LambdaEngine
 							pipelineStageIt->StageIndex--;
 						}
 					}
-					
+
 					pipelineStageIt++;
-					
+
 				}
 
 				synchronizationStageIt = sortedSynchronizationStages.erase(synchronizationStageIt);
 			}
-		}
-
-		for (auto firstEncounterSynchronizationIt = firstEncounterOfAttachmentSynchronizations.begin(); firstEncounterSynchronizationIt != firstEncounterOfAttachmentSynchronizations.end(); firstEncounterSynchronizationIt++)
-		{
-			firstEncounterSynchronizationIt->second->FromQueueOwner = transitionedResourceStates[firstEncounterSynchronizationIt->first].second;
 		}
 
 		return true;
@@ -1104,9 +1140,9 @@ namespace LambdaEngine
 		std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
 		std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
 		std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
-		std::vector<RenderStageDesc>&														sortedRenderStages,
-		std::vector<SynchronizationStageDesc>&												sortedSynchronizationStages,
-		std::vector<PipelineStageDesc>&														sortedPipelineStages)
+		std::vector<RenderStageDesc>&													sortedRenderStages,
+		std::vector<SynchronizationStageDesc>&											sortedSynchronizationStages,
+		std::vector<PipelineStageDesc>&													sortedPipelineStages)
 	{
 		char fileOutputBuffer[256];
 		char renderStageBuffer[32];

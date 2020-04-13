@@ -4,6 +4,7 @@
 namespace LambdaEngine
 {
     struct FenceDesc;
+	struct ShaderDesc;
     struct BufferDesc;
     struct TextureDesc;
     struct SwapChainDesc;
@@ -22,6 +23,7 @@ namespace LambdaEngine
     class Window;
 	class IFence;
     class IFence;
+	class IShader;
     class IBuffer;
     class ITexture;
     class ISwapChain;
@@ -61,6 +63,8 @@ namespace LambdaEngine
 		virtual IRenderPass*  CreateRenderPass(const RenderPassDesc& desc)	 const = 0;
 		virtual ITextureView* CreateTextureView(const TextureViewDesc& desc) const = 0;
 		
+		virtual IShader*	CreateShader(const ShaderDesc& desc)	const = 0;
+
 		virtual IBuffer*	CreateBuffer(const BufferDesc& desc)	const = 0;
 		virtual ITexture*	CreateTexture(const TextureDesc& desc)	const = 0;
 

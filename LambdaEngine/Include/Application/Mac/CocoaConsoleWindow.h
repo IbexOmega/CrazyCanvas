@@ -1,13 +1,31 @@
 #pragma once
 
-#ifdef LAMBDA_PLATFORM_MACOS
-#ifdef __OBJC__
+#if defined(LAMBDA_PLATFORM_MACOS) && defined(__OBJC__)
+#include "Application/API/Console.h"
+
+#include <stdarg.h>
 
 #include <AppKit/AppKit.h>
 
 @interface CocoaConsoleWindow : NSWindow<NSWindowDelegate>
+{
+    NSTextView*     textView;
+    NSScrollView*   scrollView;
+    NSDictionary*   consoleColor;
+}
 
--(BOOL) windowShouldClose:(NSWindow* ) sender;
+- (id)   init:(CGFloat) width height:(CGFloat) height;
+- (void) dealloc;
+
+- (void) appendStringAndScroll:(NSString*) string;
+
+- (void) clearWindow;
+
+- (void) setColor:(LambdaEngine::EConsoleColor) color;
+
+- (BOOL) windowShouldClose:(NSWindow*) sender;
+
++ (NSString*) convertStringWithArgs:(const char*) format args:(va_list) args;
 
 @end
 
@@ -15,5 +33,4 @@
 
 class CocoaConsoleWindow;
 
-#endif
 #endif

@@ -87,9 +87,9 @@ namespace LambdaEngine
 		*/
 		static bool ParseInitialStages(
 			const RenderGraphDesc& desc,
-			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>& renderStagesInputAttachments,
-			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>& renderStagesExternalInputAttachments,
-			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&			renderStagesOutputAttachments,
+			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesInputAttachments,
+			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesExternalInputAttachments,
+			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesOutputAttachments,
 			std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
 			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
 			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
@@ -112,9 +112,9 @@ namespace LambdaEngine
 		static bool SortPipelineStages(
 			std::unordered_map<const char*, InternalRenderStage>&	parsedRenderStages,
 			std::vector<const InternalRenderStage*>&				sortedInternalRenderStages,
-			std::vector<RenderStageDesc>&								sortedRenderStages,
-			std::vector<SynchronizationStageDesc>&						sortedSynchronizationStages,
-			std::vector<PipelineStageDesc>&								sortedPipelineStages);
+			std::vector<RenderStageDesc>&							sortedRenderStages,
+			std::vector<SynchronizationStageDesc>&					sortedSynchronizationStages,
+			std::vector<PipelineStageDesc>&							sortedPipelineStages);
 		/*
 		* Removes unnecessary synchronizations
 		*/

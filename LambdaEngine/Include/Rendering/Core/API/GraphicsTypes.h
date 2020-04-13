@@ -16,9 +16,10 @@ namespace LambdaEngine
 
     enum class EFormat : uint8
     {
-        NONE					= 0,
-        FORMAT_R8G8B8A8_UNORM	= 1,
-        FORMAT_B8G8R8A8_UNORM	= 2,
+        NONE						= 0,
+        FORMAT_R8G8B8A8_UNORM		= 1,
+        FORMAT_B8G8R8A8_UNORM		= 2,
+		FORMAT_D24_UNORM_S8_UINT	= 3
     };
 
 	enum class ECommandQueueType : uint8
@@ -115,7 +116,7 @@ namespace LambdaEngine
 		DESCRIPTOR_ACCELERATION_STRUCTURE			= 6
 	};
 
-	enum FShaderStageFlags : uint16
+	enum FShaderStageFlags : uint32
 	{
 		SHADER_STAGE_FLAG_NONE					= 0,
 		SHADER_STAGE_FLAG_MESH_SHADER			= FLAG(0),
@@ -202,24 +203,6 @@ namespace LambdaEngine
 		ACCESS_FLAG_FRAGMENT_DENSITY_MAP_READ			= FLAG(26),
 		ACCESS_FLAG_COMMAND_PREPROCESS_READ				= FLAG(27),
 		ACCESS_FLAG_COMMAND_PREPROCESS_WRITE			= FLAG(28),
-	};
-
-	union ShaderConstant
-	{
-		byte	Data[4];
-		float	Float;
-		int32	Integer;
-	};
-
-	struct ShaderDesc
-	{
-		const char* pEntryPoint = "main";
-		const char* pSource		= nullptr;
-		uint32	SourceSize		= 0;
-		FShaderStageFlags Type	= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-		EShaderLang Lang		= EShaderLang::NONE;
-		
-		std::vector<ShaderConstant> Constants;
 	};
 
 	struct DescriptorCountDesc

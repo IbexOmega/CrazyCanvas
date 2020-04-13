@@ -115,44 +115,47 @@ namespace LambdaEngine
     {
         SCOPED_AUTORELEASE_POOL();
         
-        NSMenu*     menuBar = [[NSMenu alloc] init];
-        NSMenuItem* appMenuItem = [menuBar addItemWithTitle:@"" action:nil keyEquivalent:@""];
-        NSMenu*     appMenu = [[NSMenu alloc] init];
-        [appMenuItem setSubmenu:appMenu];
-        
-        [appMenu addItemWithTitle:@"Lambda Engine" action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
-        [appMenu addItem: [NSMenuItem separatorItem]];
-        
-        //Lambda Engine menu item
-        NSMenu* serviceMenu = [[NSMenu alloc] init];
-        [[appMenu addItemWithTitle:@"Services" action:nil keyEquivalent:@""] setSubmenu:serviceMenu];
-        [appMenu addItem:[NSMenuItem separatorItem]];
-        [appMenu addItemWithTitle:@"Hide Lambda Engine" action:@selector(hide:) keyEquivalent:@"h"];
-        [[appMenu addItemWithTitle:@"Hide Other" action:@selector(hideOtherApplications:) keyEquivalent:@""] setKeyEquivalentModifierMask:NSEventModifierFlagOption | NSEventModifierFlagCommand];
-        [appMenu addItemWithTitle:@"Show All" action:@selector(unhideAllApplications:) keyEquivalent:@""];
-        [appMenu addItem:[NSMenuItem separatorItem]];
-        [appMenu addItemWithTitle:@"Quit Lambda Engine" action:@selector(terminate:) keyEquivalent:@"q"];
-        
-        //Window menu
-        NSMenuItem* windowMenuItem  = [menuBar addItemWithTitle:@"" action:nil keyEquivalent:@""];
-        NSMenu*     windowMenu      = [[NSMenu alloc] initWithTitle:@"Window"];
-        [windowMenuItem setSubmenu:windowMenu];
-        
-        [windowMenu addItemWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
-        [windowMenu addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
-        [windowMenu addItem:[NSMenuItem separatorItem]];
-        
-        [windowMenu addItemWithTitle:@"Bring All to Front" action:@selector(arrangeInFront:) keyEquivalent:@""];
-        [windowMenu addItem:[NSMenuItem separatorItem]];
-        
-        [[windowMenu addItemWithTitle:@"Enter Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"] setKeyEquivalentModifierMask:NSEventModifierFlagControl | NSEventModifierFlagCommand];
-        
-        SEL setAppleMenuSelector = NSSelectorFromString(@"setAppleMenu:");
-        [NSApp performSelector:setAppleMenuSelector withObject:appMenu];
-        
-        [NSApp setMainMenu:menuBar];
-        [NSApp setWindowsMenu:windowMenu];
-        [NSApp setServicesMenu:serviceMenu];
+        MacMainThread::MakeCall(^
+        {
+            NSMenu*     menuBar = [[NSMenu alloc] init];
+            NSMenuItem* appMenuItem = [menuBar addItemWithTitle:@"" action:nil keyEquivalent:@""];
+            NSMenu*     appMenu = [[NSMenu alloc] init];
+            [appMenuItem setSubmenu:appMenu];
+            
+            [appMenu addItemWithTitle:@"Lambda Engine" action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
+            [appMenu addItem: [NSMenuItem separatorItem]];
+            
+            //Lambda Engine menu item
+            NSMenu* serviceMenu = [[NSMenu alloc] init];
+            [[appMenu addItemWithTitle:@"Services" action:nil keyEquivalent:@""] setSubmenu:serviceMenu];
+            [appMenu addItem:[NSMenuItem separatorItem]];
+            [appMenu addItemWithTitle:@"Hide Lambda Engine" action:@selector(hide:) keyEquivalent:@"h"];
+            [[appMenu addItemWithTitle:@"Hide Other" action:@selector(hideOtherApplications:) keyEquivalent:@""] setKeyEquivalentModifierMask:NSEventModifierFlagOption | NSEventModifierFlagCommand];
+            [appMenu addItemWithTitle:@"Show All" action:@selector(unhideAllApplications:) keyEquivalent:@""];
+            [appMenu addItem:[NSMenuItem separatorItem]];
+            [appMenu addItemWithTitle:@"Quit Lambda Engine" action:@selector(terminate:) keyEquivalent:@"q"];
+            
+            //Window menu
+            NSMenuItem* windowMenuItem  = [menuBar addItemWithTitle:@"" action:nil keyEquivalent:@""];
+            NSMenu*     windowMenu      = [[NSMenu alloc] initWithTitle:@"Window"];
+            [windowMenuItem setSubmenu:windowMenu];
+            
+            [windowMenu addItemWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
+            [windowMenu addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
+            [windowMenu addItem:[NSMenuItem separatorItem]];
+            
+            [windowMenu addItemWithTitle:@"Bring All to Front" action:@selector(arrangeInFront:) keyEquivalent:@""];
+            [windowMenu addItem:[NSMenuItem separatorItem]];
+            
+            [[windowMenu addItemWithTitle:@"Enter Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"] setKeyEquivalentModifierMask:NSEventModifierFlagControl | NSEventModifierFlagCommand];
+            
+            SEL setAppleMenuSelector = NSSelectorFromString(@"setAppleMenu:");
+            [NSApp performSelector:setAppleMenuSelector withObject:appMenu];
+            
+            [NSApp setMainMenu:menuBar];
+            [NSApp setWindowsMenu:windowMenu];
+            [NSApp setServicesMenu:serviceMenu];
+        });
     
         return true;
     }

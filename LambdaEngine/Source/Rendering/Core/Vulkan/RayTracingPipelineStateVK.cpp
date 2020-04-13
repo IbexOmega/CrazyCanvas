@@ -1,7 +1,8 @@
 #include "Rendering/Core/Vulkan/RayTracingPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
-#include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/BufferVK.h"
+#include "Rendering/Core/Vulkan/ShaderVK.h"
 
 #include "Log/Log.h"
 
@@ -104,20 +105,18 @@ namespace LambdaEngine
 	{
 		//Raygen Shader
 		{
-			const ShaderDesc& shaderDesc = desc.RaygenShader;
+			const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(desc.pRaygenShader);
 
 			VkPipelineShaderStageCreateInfo shaderCreateInfo;
 			VkSpecializationInfo shaderSpecializationInfo;
-			std::vector<VkSpecializationMapEntry> shaderSpecializationMaps;
+			std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
-			CreateSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMaps, shaderDesc);
-
-			if (!CreateShaderStageInfo(m_pDevice->Device, shaderCreateInfo, shaderDesc, shaderSpecializationInfo))
-				return false;
+			pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
+			pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
 
 			shaderStagesInfos.push_back(shaderCreateInfo);
 			shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
-			shaderStagesSpecializationMaps.push_back(shaderSpecializationMaps);
+			shaderStagesSpecializationMaps.push_back(shaderSpecializationMapEntries);
 
 			VkRayTracingShaderGroupCreateInfoKHR shaderGroupCreateInfo = {};
 			shaderGroupCreateInfo.sType					= VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
@@ -132,20 +131,18 @@ namespace LambdaEngine
 		//Closest-Hit Shaders
 		for (uint32 i = 0; i < desc.ClosestHitShaderCount; i++)
 		{
-			const ShaderDesc& shaderDesc = desc.pClosestHitShaders[i];
+			const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(desc.ppClosestHitShaders[i]);
 
 			VkPipelineShaderStageCreateInfo shaderCreateInfo;
 			VkSpecializationInfo shaderSpecializationInfo;
-			std::vector<VkSpecializationMapEntry> shaderSpecializationMaps;
+			std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
-			CreateSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMaps, shaderDesc);
-
-			if (!CreateShaderStageInfo(m_pDevice->Device, shaderCreateInfo, shaderDesc, shaderSpecializationInfo))
-				return false;
+			pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
+			pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
 
 			shaderStagesInfos.push_back(shaderCreateInfo);
 			shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
-			shaderStagesSpecializationMaps.push_back(shaderSpecializationMaps);
+			shaderStagesSpecializationMaps.push_back(shaderSpecializationMapEntries);
 
 			VkRayTracingShaderGroupCreateInfoKHR shaderGroupCreateInfo = {};
 			shaderGroupCreateInfo.sType					= VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
@@ -160,20 +157,18 @@ namespace LambdaEngine
 		//Miss Shaders
 		for (uint32 i = 0; i < desc.MissShaderCount; i++)
 		{
-			const ShaderDesc& shaderDesc = desc.pMissShaders[i];
+			const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(desc.ppMissShaders[i]);
 
 			VkPipelineShaderStageCreateInfo shaderCreateInfo;
 			VkSpecializationInfo shaderSpecializationInfo;
-			std::vector<VkSpecializationMapEntry> shaderSpecializationMaps;
+			std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
-			CreateSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMaps, shaderDesc);
-
-			if (!CreateShaderStageInfo(m_pDevice->Device, shaderCreateInfo, shaderDesc, shaderSpecializationInfo))
-				return false;
+			pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
+			pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
 
 			shaderStagesInfos.push_back(shaderCreateInfo);
 			shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
-			shaderStagesSpecializationMaps.push_back(shaderSpecializationMaps);
+			shaderStagesSpecializationMaps.push_back(shaderSpecializationMapEntries);
 
 			VkRayTracingShaderGroupCreateInfoKHR shaderGroupCreateInfo = {};
 			shaderGroupCreateInfo.sType					= VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;

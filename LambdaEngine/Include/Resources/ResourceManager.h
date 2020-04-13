@@ -86,6 +86,18 @@ namespace LambdaEngine
 
 		/*
 		* Load sound from file
+		*	pFilepath - Path to the shader file
+		*	stage - Which stage the shader belongs to
+		*	lang - The language of the shader file
+		*	pConstants - Optional shader constants, can be nullptr
+		*	shaderConstantCount - The number of entries in pConstants
+		*	pEntryPoint - The name of the shader entrypoint
+		* return - a valid GUID if the shader was loaded, otherwise returns GUID_NONE
+		*/
+		GUID_Lambda LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, ShaderConstant* pConstants = nullptr, uint32 shaderConstantCount = 0, const char* pEntryPoint = "main");
+
+		/*
+		* Load sound from file
 		*	pFilepath - Path to the audio file
 		* return - a valid GUID if the sound was loaded, otherwise returns GUID_NONE
 		*/
@@ -99,6 +111,9 @@ namespace LambdaEngine
 
 		ITexture*				GetTexture(GUID_Lambda guid);
 		const ITexture*			GetTexture(GUID_Lambda guid) const;
+
+		IShader*				GetShader(GUID_Lambda guid);
+		const IShader*			GetShader(GUID_Lambda guid) const;
 
 		SoundEffect3D*			GetSound(GUID_Lambda guid);
 		const SoundEffect3D*	GetSound(GUID_Lambda guid) const;
@@ -117,6 +132,7 @@ namespace LambdaEngine
 		std::unordered_map<GUID_Lambda, Mesh*>	   m_Meshes;
 		std::unordered_map<GUID_Lambda, Material*> m_Materials;
 		std::unordered_map<GUID_Lambda, ITexture*> m_Textures;
+		std::unordered_map<GUID_Lambda, IShader*> m_Shaders;
 		std::unordered_map<GUID_Lambda, SoundEffect3D*> m_Sounds;
 
 	private:

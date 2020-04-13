@@ -136,7 +136,7 @@ namespace LambdaEngine
 				bindingVk.descriptorType		= ConvertDescriptorType(binding.DescriptorType);
 				bindingVk.binding				= binding.Binding;
 				bindingVk.descriptorCount		= binding.DescriptorCount;
-				bindingVk.pImmutableSamplers	= immutableSampler.ImmutableSamplers;
+				bindingVk.pImmutableSamplers	= binding.ppImmutableSamplers != nullptr ? immutableSampler.ImmutableSamplers : nullptr;
 				bindingVk.stageFlags			= ConvertShaderStageMask(binding.ShaderStageMask);
 			}
 
