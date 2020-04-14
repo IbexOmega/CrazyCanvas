@@ -2,113 +2,136 @@
 
 #include "Rendering/Core/Vulkan/TopLevelAccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
-#include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
+#include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
 {
 	TopLevelAccelerationStructureVK::TopLevelAccelerationStructureVK(const GraphicsDeviceVK* pDevice) :
 		TDeviceChild(pDevice),
-		m_pScratchBuffer(nullptr),
-		m_AccelerationStructure(VK_NULL_HANDLE),
-		m_AccelerationStructureMemory(VK_NULL_HANDLE)
+		m_Desc()
 	{
 	}
 
 	TopLevelAccelerationStructureVK::~TopLevelAccelerationStructureVK()
 	{
-		SAFEDELETE(m_pScratchBuffer);
-
 		if (m_AccelerationStructure != VK_NULL_HANDLE)
 		{
 			vkFreeMemory(m_pDevice->Device, m_AccelerationStructureMemory, nullptr);
+			m_AccelerationStructureMemory = VK_NULL_HANDLE;
+
 			m_pDevice->vkDestroyAccelerationStructureKHR(m_pDevice->Device, m_AccelerationStructure, nullptr);
+			m_AccelerationStructure = VK_NULL_HANDLE;
+
+			m_AccelerationStructureDeviceAddress = 0;
 		}
 	}
 
 	bool TopLevelAccelerationStructureVK::Init(const TopLevelAccelerationStructureDesc& desc)
 	{
-		m_Desc = desc;
+		VkAccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
+		geometryTypeInfo.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
+		geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_INSTANCES_KHR;
+		geometryTypeInfo.maxPrimitiveCount	= desc.InstanceCount;
 
-		if (!InitAccelerationStructure(desc))
+		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
+		accelerationStructureCreateInfo.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+		accelerationStructureCreateInfo.type				= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		accelerationStructureCreateInfo.compactedSize		= 0;
+		accelerationStructureCreateInfo.pNext				= nullptr;
+		accelerationStructureCreateInfo.maxGeometryCount	= 1;
+		accelerationStructureCreateInfo.pGeometryInfos		= &geometryTypeInfo;
+		accelerationStructureCreateInfo.deviceAddress		= VK_NULL_HANDLE;
+		accelerationStructureCreateInfo.flags				= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		if (desc.Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 		{
-			return false;
+			accelerationStructureCreateInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 		}
 
-		if (!InitScratchBuffer())
+		VkResult result = m_pDevice->vkCreateAccelerationStructureKHR(m_pDevice->Device, &accelerationStructureCreateInfo, nullptr, &m_AccelerationStructure);
+		if (result != VK_SUCCESS)
 		{
+			if (desc.pName)
+			{
+				LOG_VULKAN_ERROR(result, "[TopLevelAccelerationStructureVK]: vkCreateAccelerationStructureKHR failed for \"%s\"", desc.pName);
+			}
+			else
+			{
+				LOG_VULKAN_ERROR(result, "[TopLevelAccelerationStructureVK]: vkCreateAccelerationStructureKHR failed");
+			}
+
 			return false;
-		}
-
-		SetName(desc.pName);
-
-		D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: TopLevelAccelerationStructure \"%s\" initialized successfully", m_Desc.pName);
-		return true;
-	}
-
-	void TopLevelAccelerationStructureVK::UpdateInstanceData(IBuffer* pInstanceBuffer)
-	{
-		bool sizeChanged = false;
-
-		BufferVK* pVulkanBuffer = reinterpret_cast<BufferVK*>(pInstanceBuffer);
-
-		VkDeviceOrHostAddressConstKHR instancesDataAddressUnion = {};
-		instancesDataAddressUnion.deviceAddress						= pVulkanBuffer->GetDeviceAdress();
-
-		VkAccelerationStructureGeometryInstancesDataKHR instancesDataDesc = {};
-		instancesDataDesc.sType										= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-		instancesDataDesc.arrayOfPointers							= VK_FALSE;
-		instancesDataDesc.data										= instancesDataAddressUnion;
-
-		VkAccelerationStructureGeometryDataKHR geometryDataUnion = {};
-		geometryDataUnion.instances									= instancesDataDesc;
-
-		VkAccelerationStructureGeometryKHR geometryData = {};
-		geometryData.sType											= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		geometryData.geometryType									= VK_GEOMETRY_TYPE_INSTANCES_KHR;
-		geometryData.geometry										= geometryDataUnion;
-
-		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
-
-		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
-		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
-		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
-		accelerationStructureBuildInfo.geometryCount				= uint32(pInstanceBuffer->GetDesc().SizeInBytes / sizeof(VkAccelerationStructureInstanceKHR));
-		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
-
-		if (sizeChanged)
-		{
-			//Recreate Structure
-			LOG_ERROR("[TopLevelAccelerationStructureVK]: TLAS Should be recreated, but not implemented...");
-
-			accelerationStructureBuildInfo.update					= VK_FALSE;
-			accelerationStructureBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
-			accelerationStructureBuildInfo.dstAccelerationStructure = m_AccelerationStructure;
 		}
 		else
 		{
-			accelerationStructureBuildInfo.update					= VK_TRUE;
-			accelerationStructureBuildInfo.srcAccelerationStructure = m_AccelerationStructure;
-			accelerationStructureBuildInfo.dstAccelerationStructure = m_AccelerationStructure;
+			m_Desc = desc;
+			SetName(desc.pName);
 		}
 
-		accelerationStructureBuildInfo.scratchData					= m_ScratchBufferAddressUnion;
+		VkMemoryRequirements memoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR);
+		VkMemoryAllocateInfo memoryAllocateInfo = {};
+		memoryAllocateInfo.sType			= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		memoryAllocateInfo.allocationSize	= memoryRequirements.size;
+		memoryAllocateInfo.memoryTypeIndex	= FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
-		accelerationStructureOffsetInfo.primitiveCount				= uint32(pInstanceBuffer->GetDesc().SizeInBytes / sizeof(VkAccelerationStructureInstanceKHR));
-		accelerationStructureOffsetInfo.primitiveOffset				= 0;
+		result = vkAllocateMemory(m_pDevice->Device, &memoryAllocateInfo, nullptr, &m_AccelerationStructureMemory);
+		if (result != VK_SUCCESS)
+		{
+			if (m_Desc.pName)
+			{
+				LOG_VULKAN_ERROR(result, "[TopLevelAccelerationStructureVK]: vkAllocateMemory failed for \"%s\"", m_Desc.pName);
+			}
+			else
+			{
+				LOG_VULKAN_ERROR(result, "[TopLevelAccelerationStructureVK]: vkAllocateMemory failed");
+			}
 
-		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
+			return false;
+		}
 
-		VkCommandBuffer temp = VK_NULL_HANDLE;
-		m_pDevice->vkCmdBuildAccelerationStructureKHR(temp, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
-	}
+		VkBindAccelerationStructureMemoryInfoKHR accelerationStructureMemoryInfo = {};
+		accelerationStructureMemoryInfo.sType					= VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_KHR;
+		accelerationStructureMemoryInfo.pNext					= nullptr;
+		accelerationStructureMemoryInfo.memoryOffset			= 0;
+		accelerationStructureMemoryInfo.deviceIndexCount		= 0;
+		accelerationStructureMemoryInfo.pDeviceIndices			= nullptr;
+		accelerationStructureMemoryInfo.accelerationStructure	= m_AccelerationStructure;
+		accelerationStructureMemoryInfo.memory					= m_AccelerationStructureMemory;
 
-	uint64 TopLevelAccelerationStructureVK::GetScratchMemorySizeRequirement()
-	{
-		return GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR).size;
+		result = m_pDevice->vkBindAccelerationStructureMemoryKHR(m_pDevice->Device, 1, &accelerationStructureMemoryInfo);
+		if (result != VK_SUCCESS)
+		{
+			if (m_Desc.pName)
+			{
+				LOG_VULKAN_ERROR(result, "[TopLevelAccelerationStructureVK]: vkBindAccelerationStructureMemoryKHR failed for \"%s\"", m_Desc.pName);
+			}
+			else
+			{
+				LOG_VULKAN_ERROR(result, "[TopLevelAccelerationStructureVK]: vkBindAccelerationStructureMemoryKHR");
+			}
+
+			return false;
+		}
+
+		VkAccelerationStructureDeviceAddressInfoKHR accelerationStructureDeviceAddressInfo = {};
+		accelerationStructureDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+		accelerationStructureDeviceAddressInfo.accelerationStructure = m_AccelerationStructure;
+
+		m_AccelerationStructureDeviceAddress = m_pDevice->vkGetAccelerationStructureDeviceAddressKHR(m_pDevice->Device, &accelerationStructureDeviceAddressInfo);
+
+		if (m_Desc.pName)
+		{
+			D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: Acceleration Structure \"%s\" created with size of %u bytes", m_Desc.pName, memoryRequirements.size);
+		}
+		else
+		{
+			D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: Acceleration Structure created with size of %u bytes", memoryRequirements.size);
+		}
+
+		VkMemoryRequirements scratchMemoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR);
+		m_ScratchMemorySize = scratchMemoryRequirements.size;
+
+		return true;
 	}
 
 	void TopLevelAccelerationStructureVK::SetName(const char* pName)
@@ -121,104 +144,7 @@ namespace LambdaEngine
 			m_Desc.pName = m_DebugName;
 		}
 	}
-
-	bool TopLevelAccelerationStructureVK::InitAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)
-	{
-		VkAccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
-		geometryTypeInfo.sType											= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
-		geometryTypeInfo.geometryType									= VK_GEOMETRY_TYPE_INSTANCES_KHR;
-		geometryTypeInfo.maxPrimitiveCount								= desc.InitialMaxInstanceCount;
-
-		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
-		accelerationStructureCreateInfo.sType							= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-		accelerationStructureCreateInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-		accelerationStructureCreateInfo.compactedSize					= 0; //Compaction currently not supported'
-		accelerationStructureCreateInfo.flags							= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
-		accelerationStructureCreateInfo.maxGeometryCount				= 1;
-		accelerationStructureCreateInfo.pGeometryInfos					= &geometryTypeInfo;
-		accelerationStructureCreateInfo.deviceAddress					= VK_NULL_HANDLE;
-
-		if (m_pDevice->vkCreateAccelerationStructureKHR(m_pDevice->Device, &accelerationStructureCreateInfo, nullptr, &m_AccelerationStructure) != VK_SUCCESS)
-		{
-			LOG_ERROR("[TopLevelAccelerationStructureVK]: vkCreateAccelerationStructureKHR failed for \"%s\"", m_Desc.pName);
-			return false;
-		}
-
-		VkMemoryRequirements memoryRequirements							= GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR);
-
-		VkMemoryAllocateInfo memoryAllocateInfo = {};
-		memoryAllocateInfo.sType										= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		memoryAllocateInfo.allocationSize								= memoryRequirements.size;
-		memoryAllocateInfo.memoryTypeIndex								= FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-		if (vkAllocateMemory(m_pDevice->Device, &memoryAllocateInfo, nullptr, &m_AccelerationStructureMemory) != VK_SUCCESS)
-		{
-			LOG_ERROR("[TopLevelAccelerationStructureVK]: vkAllocateMemory failed for \"%s\"", m_Desc.pName);
-			return false;
-		}
-
-		VkBindAccelerationStructureMemoryInfoKHR accelerationStructureMemoryInfo = {};
-		accelerationStructureMemoryInfo.sType							= VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_KHR;
-		accelerationStructureMemoryInfo.accelerationStructure			= m_AccelerationStructure;
-		accelerationStructureMemoryInfo.memory							= m_AccelerationStructureMemory;
-
-		if (m_pDevice->vkBindAccelerationStructureMemoryKHR(m_pDevice->Device, 1, &accelerationStructureMemoryInfo) != VK_SUCCESS)
-		{
-			LOG_ERROR("[TopLevelAccelerationStructureVK]: vkBindAccelerationStructureMemoryKHR failed for \"%s\"", m_Desc.pName);
-			return false;
-		}
-
-		VkAccelerationStructureDeviceAddressInfoKHR accelerationStructureDeviceAddressInfo = {};
-		accelerationStructureDeviceAddressInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-		accelerationStructureDeviceAddressInfo.accelerationStructure	= m_AccelerationStructure;
-
-		m_AccelerationStructureDeviceAddress = m_pDevice->vkGetAccelerationStructureDeviceAddressKHR(m_pDevice->Device, &accelerationStructureDeviceAddressInfo);
-
-		D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: Acceleration Structure \"%s\" initialized with size of %u bytes", m_Desc.pName, memoryRequirements.size);
-		return true;
-	}
-
-	bool TopLevelAccelerationStructureVK::InitScratchBuffer()
-	{
-		VkMemoryRequirements memoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR);
-
-		BufferDesc scratchBufferDesc = {};
-		scratchBufferDesc.pName			= "TLAS Scratch Buffer";
-		scratchBufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-		scratchBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_RAY_TRACING;
-		scratchBufferDesc.SizeInBytes	= uint32(memoryRequirements.size);
-
-		m_pScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(scratchBufferDesc));
-
-		m_ScratchBufferAddressUnion.deviceAddress = m_pScratchBuffer->GetDeviceAdress();
-
-		D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: Allocated Scratch Buffer for TLAS \"%s\", with size %u bytes!", m_Desc.pName, memoryRequirements.size);
-
-		return true;
-	}
-
-	void TopLevelAccelerationStructureVK::UpdateScratchBuffer()
-	{
-		//Should this be VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_KHR ?
-		VkMemoryRequirements memoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR);
-
-		if (m_pScratchBuffer->GetDesc().SizeInBytes < memoryRequirements.size)
-		{
-			SAFEDELETE(m_pScratchBuffer);
-
-			BufferDesc scratchBufferDesc = {};
-			scratchBufferDesc.pName			= "TLAS Scratch Buffer";
-			scratchBufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-			scratchBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_RAY_TRACING;
-			scratchBufferDesc.SizeInBytes	= memoryRequirements.size;
-
-			m_pScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(scratchBufferDesc));
-			m_ScratchBufferAddressUnion.deviceAddress = m_pScratchBuffer->GetDeviceAdress();
-
-			D_LOG_MESSAGE("[TopLevelAccelerationStructureVK]: Reallocated Scratch Buffer for TLAS \"%s\", new size %u bytes!", m_Desc.pName, memoryRequirements.size);
-		}
-	}
-
+	
 	VkMemoryRequirements TopLevelAccelerationStructureVK::GetMemoryRequirements(VkAccelerationStructureMemoryRequirementsTypeKHR type)
 	{
 		VkAccelerationStructureMemoryRequirementsInfoKHR memoryRequirementsInfo = {};
@@ -227,7 +153,7 @@ namespace LambdaEngine
 		memoryRequirementsInfo.accelerationStructure	= m_AccelerationStructure;
 
 		VkMemoryRequirements2 memoryRequirements2 = {};
-		memoryRequirements2.sType						= VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+		memoryRequirements2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
 
 		m_pDevice->vkGetAccelerationStructureMemoryRequirementsKHR(m_pDevice->Device, &memoryRequirementsInfo, &memoryRequirements2);
 

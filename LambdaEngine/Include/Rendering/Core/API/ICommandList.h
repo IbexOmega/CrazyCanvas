@@ -18,6 +18,7 @@ namespace LambdaEngine
 	class IDescriptorSet;
 	class IPipelineLayout;
 	class ICommandAllocator;
+	class ITopLevelAccelerationStructure;
 	class IBottomLevelAccelerationStructure;
 
 	enum FCommandListFlags : uint32
@@ -80,7 +81,7 @@ namespace LambdaEngine
 	{
 		uint64 SrcOffset		= 0;
 		uint64 SrcRowPitch		= 0;
-		uint64 SrcHeight		= 0;
+		uint32 SrcHeight		= 0;
 		uint32 Width			= 0; 
 		uint32 Height			= 0; 
 		uint32 Depth			= 0; 
@@ -117,6 +118,16 @@ namespace LambdaEngine
 		uint32				SizeInBytes				= 0;
 	};
 
+	struct BuildTopLevelAccelerationStructureDesc
+	{
+		ITopLevelAccelerationStructure* pAccelerationStructure	= nullptr;
+		uint32							Flags					= 0;
+		IBuffer*						pScratchBuffer			= nullptr; 
+		const IBuffer*					pInstanceBuffer			= nullptr;
+		uint32							InstanceCount			= 0;
+		bool							Update					= false;
+	};
+
 	struct CommandListDesc
 	{
         const char*         pName           = "";
@@ -137,7 +148,7 @@ namespace LambdaEngine
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) = 0;
 		virtual void EndRenderPass() = 0;
 
-		virtual void BuildTopLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)		= 0;
+		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc) = 0;
 		virtual void BuildBottomLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)	= 0;
 
 		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes) = 0;

@@ -29,7 +29,7 @@ namespace LambdaEngine
 {
     static Clock g_Clock;
 
-	void EngineLoop::Run(Game* pGame)
+	void EngineLoop::Run()
 	{
         const Timestamp timestep    = Timestamp::Seconds(1.0 / 60.0);
         Timestamp accumulator       = Timestamp(0);

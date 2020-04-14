@@ -14,6 +14,7 @@
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/DescriptorSetVK.h"
+#include "Rendering/Core/Vulkan/TopLevelAccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 #ifndef LAMBDA_DISABLE_VULKAN_CHECKS
@@ -187,8 +188,70 @@ namespace LambdaEngine
 		vkCmdEndRenderPass(m_CommandList);
 	}
 
-	void CommandListVK::BuildTopLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)
+	void CommandListVK::BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)
 	{
+		ASSERT(pBuildDesc != nullptr);
+
+		ASSERT(pBuildDesc->pInstanceBuffer	!= nullptr);
+		ASSERT(pBuildDesc->pScratchBuffer	!= nullptr);
+		const BufferVK* pInstanceBufferVk	= reinterpret_cast<const BufferVK*>(pBuildDesc->pInstanceBuffer);
+		BufferVK*		pScratchBufferVk	= reinterpret_cast<BufferVK*>(pBuildDesc->pScratchBuffer);
+
+		VkDeviceOrHostAddressConstKHR instancesDataAddressUnion = {};
+		instancesDataAddressUnion.deviceAddress = pInstanceBufferVk->GetDeviceAdress();
+
+		VkAccelerationStructureGeometryInstancesDataKHR instancesDataDesc = {};
+		instancesDataDesc.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+		instancesDataDesc.arrayOfPointers	= VK_FALSE;
+		instancesDataDesc.data				= instancesDataAddressUnion;
+
+		VkAccelerationStructureGeometryDataKHR geometryDataUnion = {};
+		geometryDataUnion.instances = instancesDataDesc;
+
+		VkAccelerationStructureGeometryKHR geometryData = {};
+		geometryData.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryData.geometryType	= VK_GEOMETRY_TYPE_INSTANCES_KHR;
+		geometryData.geometry		= geometryDataUnion;
+
+		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
+
+		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
+		accelerationStructureBuildInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		accelerationStructureBuildInfo.type						= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		accelerationStructureBuildInfo.geometryArrayOfPointers	= VK_FALSE;
+		accelerationStructureBuildInfo.geometryCount			= pBuildDesc->InstanceCount;
+		accelerationStructureBuildInfo.ppGeometries				= &pGeometryData;
+		accelerationStructureBuildInfo.flags					= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+		{
+			accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+		}
+
+		ASSERT(pBuildDesc->pAccelerationStructure != nullptr);
+
+		TopLevelAccelerationStructureVK* pAccelerationStructureVk	= reinterpret_cast<TopLevelAccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
+		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAdress();
+		if (pBuildDesc->Update)
+		{
+			accelerationStructureBuildInfo.update					= VK_TRUE;
+			accelerationStructureBuildInfo.srcAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+			accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+		}
+		else
+		{
+			accelerationStructureBuildInfo.update					= VK_FALSE;
+			accelerationStructureBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+			accelerationStructureBuildInfo.dstAccelerationStructure = pAccelerationStructureVk->GetAccelerationStructure();
+		}
+
+		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
+		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->InstanceCount;
+		accelerationStructureOffsetInfo.primitiveOffset = 0;
+
+		ASSERT(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
+
+		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
+		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CommandList, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
 	void CommandListVK::BuildBottomLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)
@@ -222,7 +285,7 @@ namespace LambdaEngine
 		VkBufferImageCopy copyRegion = {};
 		copyRegion.bufferImageHeight				= desc.SrcHeight;
 		copyRegion.bufferOffset						= desc.SrcOffset;
-		copyRegion.bufferRowLength					= desc.SrcRowPitch;
+		copyRegion.bufferRowLength					= uint32(desc.SrcRowPitch);
 		copyRegion.imageSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT; //TODO: Other aspects
 		copyRegion.imageSubresource.baseArrayLayer	= desc.ArrayIndex;
 		copyRegion.imageSubresource.layerCount		= desc.ArrayCount;

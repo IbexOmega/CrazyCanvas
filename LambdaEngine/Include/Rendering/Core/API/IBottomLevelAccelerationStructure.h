@@ -1,6 +1,6 @@
 #pragma once
-
 #include "IDeviceChild.h"
+#include "GraphicsTypes.h"
 
 namespace LambdaEngine
 {
@@ -8,10 +8,10 @@ namespace LambdaEngine
 
 	struct BottomLevelAccelerationStructureDesc
 	{
-		const char* pName		= "";
-		uint32 MaxTriCount		= 0;
-		uint32 MaxVertCount		= 0;
-		bool Updateable			= false;
+		const char* pName			= "";
+		uint32		MaxTriCount		= 0;
+		uint32		MaxVertCount	= 0;
+		bool		Updateable		= false;
 	};
 
 	class IBottomLevelAccelerationStructure : public IDeviceChild

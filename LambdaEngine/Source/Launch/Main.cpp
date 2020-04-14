@@ -31,8 +31,8 @@ int main(int, const char*[])
 		return -1;
 	}
 
-	LambdaEngine::Game* pGame = CreateGame();
-	EngineLoop::Run(pGame);
+	Game* pGame = CreateGame();	
+	EngineLoop::Run();
 
     SAFEDELETE(pGame);
 

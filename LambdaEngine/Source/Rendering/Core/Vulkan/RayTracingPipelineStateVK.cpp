@@ -66,7 +66,7 @@ namespace LambdaEngine
 		}
 
 		uint32 shaderGroupHandleSize = m_pDevice->RayTracingProperties.shaderGroupHandleSize;
-		uint32 sbtSize = shaderGroupHandleSize * shaderGroups.size();;
+		uint32 sbtSize = shaderGroupHandleSize * uint32(shaderGroups.size());
 
 		BufferDesc sbtBufferDesc = {};
 		sbtBufferDesc.pName			= "Shader Binding Table";

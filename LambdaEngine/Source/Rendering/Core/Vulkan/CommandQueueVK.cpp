@@ -48,6 +48,11 @@ namespace LambdaEngine
 		m_WaitSemaphores.push_back(semaphore);
 		m_WaitStages.push_back(waitStage);
 	}
+
+	void CommandQueueVK::AddSignalSemaphore(VkSemaphore semaphore)
+	{
+		m_SignalSemaphores.push_back(semaphore);
+	}
 	
 	bool CommandQueueVK::ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, const IFence* pSignalFence, uint64 signalValue)
 	{
@@ -64,6 +69,27 @@ namespace LambdaEngine
 			return false;
 		}
 #endif
+		// Perform empty submit on queue for wait on the semaphore
+		if (!m_WaitSemaphores.empty())
+		{
+			VkSubmitInfo submitInfo = { };
+			submitInfo.sType				= VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			submitInfo.pNext				= nullptr;
+			submitInfo.commandBufferCount	= 0;
+			submitInfo.pCommandBuffers		= nullptr;
+			submitInfo.signalSemaphoreCount = 0;
+			submitInfo.pSignalSemaphores	= nullptr;
+			submitInfo.waitSemaphoreCount	= uint32(m_WaitSemaphores.size());
+			submitInfo.pWaitSemaphores		= m_WaitSemaphores.data();
+			submitInfo.pWaitDstStageMask	= m_WaitStages.data();
+
+			VkResult result = vkQueueSubmit(m_Queue, 1, &submitInfo, VK_NULL_HANDLE);
+			if (result != VK_SUCCESS)
+			{
+				LOG_VULKAN_ERROR(result, "[CommandQueueVK]: Submit failed");
+				return false;
+			}
+		}
 
 		VkSubmitInfo submitInfo = { };
 		submitInfo.sType				= VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -77,13 +103,15 @@ namespace LambdaEngine
 		uint64 signalValues[]	= { signalValue };
 		uint32 SignalValueCount = 0;
 		
-		uint64 waitValues[]	= { waitValue };
-		uint32 waitValueCount = 0;
+		VkSemaphore				waitSemaphoreVk = VK_NULL_HANDLE;
+		VkPipelineStageFlags	waitStageVk = 0;
+		uint64 waitValues[]		= { waitValue };
+		uint32 waitValueCount	= 0;
 
 		if (pWaitFenceVk)
 		{
-			m_WaitSemaphores.insert(m_WaitSemaphores.begin(), pWaitFenceVk->GetSemaphore());
-			m_WaitStages.insert(m_WaitStages.begin(), ConvertPipelineStage(waitStage));
+			waitSemaphoreVk = pWaitFenceVk->GetSemaphore();
+			waitStageVk		= ConvertPipelineStage(waitStage);
 
 			waitValueCount = 1;
 		}
@@ -114,9 +142,9 @@ namespace LambdaEngine
 
 		submitInfo.signalSemaphoreCount	= uint32(m_SignalSemaphores.size());
 		submitInfo.pSignalSemaphores	= m_SignalSemaphores.data();
-		submitInfo.waitSemaphoreCount	= uint32(m_WaitSemaphores.size());
-		submitInfo.pWaitSemaphores		= m_WaitSemaphores.data();
-		submitInfo.pWaitDstStageMask	= m_WaitStages.data();
+		submitInfo.waitSemaphoreCount	= waitValueCount;
+		submitInfo.pWaitSemaphores		= &waitSemaphoreVk;
+		submitInfo.pWaitDstStageMask	= &waitStageVk;
 
 		VkResult result = vkQueueSubmit(m_Queue, 1, &submitInfo, VK_NULL_HANDLE);
 		if (result != VK_SUCCESS)

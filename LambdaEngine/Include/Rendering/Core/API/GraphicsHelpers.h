@@ -1,12 +1,10 @@
 #pragma once
-
 #include "GraphicsTypes.h"
-
 #include "IPipelineState.h"
 
 namespace LambdaEngine
 {
-	ECommandQueueType FORCEINLINE ConvertPipelineStateTypeToQueue(EPipelineStateType pipelineStateType)
+	FORCEINLINE ECommandQueueType ConvertPipelineStateTypeToQueue(EPipelineStateType pipelineStateType)
 	{
 		switch (pipelineStateType)
 		{

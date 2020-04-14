@@ -31,13 +31,13 @@ namespace LambdaEngine
 		//ICommandList interface
 		virtual void Begin(const SecondaryCommandListBeginDesc* pBeginDesc)	override final;
 
-		virtual void Reset()	override final;
-		virtual void End()		override final;
+		virtual void Reset() override final;
+		virtual void End()	 override final;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) override final;
 		virtual void EndRenderPass() override final;
 
-		virtual void BuildTopLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)		override final;
+		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc) override final;
 		virtual void BuildBottomLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)	override final;
 
 		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)	override final;

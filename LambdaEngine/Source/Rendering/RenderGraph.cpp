@@ -180,7 +180,7 @@ namespace LambdaEngine
 
 			RenderStage* pRenderStage = &m_pRenderStages[i];
 
-			pRenderStage->WaitValue			= i > 0 ? i - 1 : UINT64_MAX_;
+			pRenderStage->WaitValue			= i > 0 ? i - 1 : UINT64_MAX;
 			pRenderStage->SignalValue		= i;
 
 			std::vector<DescriptorBindingDesc> descriptorSetDescriptions;
@@ -358,7 +358,7 @@ namespace LambdaEngine
 				{
 					ResourceBinding resourceBinding = {};
 					resourceBinding.pRenderStage	= pRenderStage;
-					resourceBinding.Binding			= UINT32_MAX_;
+					resourceBinding.Binding			= UINT32_MAX;
 
 					it->second.ResourceBindings.push_back(resourceBinding);
 				}
