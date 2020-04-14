@@ -4,19 +4,26 @@
 
 #include "Input/API/IKeyboardHandler.h"
 #include "Input/API/IMouseHandler.h"
-#include "Networking/API/IDispatcherHandler.h"
+
 #include "Networking/API/PacketDispatcher.h"
+#include "Networking/API/IPacketListener.h"
 
 class Client :
 	public LambdaEngine::Game,
 	public LambdaEngine::IKeyboardHandler,
-	public LambdaEngine::IDispatcherHandler
+	public LambdaEngine::IPacketListener
 {
 public:
 	Client();
 	~Client();
 
-	virtual void OnPacketReceived(LambdaEngine::NetworkPacket* packet) override;
+	virtual void OnPacketDelivered(LambdaEngine::NetworkPacket* packet) override;
+	virtual void OnPacketResent(LambdaEngine::NetworkPacket* packet) override;
+
+	virtual void OnPacketReceived(LambdaEngine::NetworkPacket* packet, const LambdaEngine::IPEndPoint& sender);
+
+	void Run();
+	void Terminated();
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
@@ -30,4 +37,7 @@ public:
 private:
 	LambdaEngine::PacketDispatcher m_Dispatcher;
 	LambdaEngine::ISocketUDP* m_pSocketUDP;
+
+	char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
+	char m_pReceiveBuffer[UINT16_MAX_];
 };
