@@ -177,8 +177,11 @@ workspace "LambdaEngine"
                 "%{prj.name}/Include/Input/Mac/**",
                 "%{prj.name}/Source/Input/Mac/**",
 
-                "%{prj.name}/Include/Network/Mac/**",
-                "%{prj.name}/Source/Network/Mac/**",
+                "%{prj.name}/Include/Networking/Mac/**",
+                "%{prj.name}/Source/Networking/Mac/**",
+				
+				"%{prj.name}/Include/Threading/Mac/**",
+                "%{prj.name}/Source/Threading/Mac/**",
             }
         -- Remove files not available for macos builds
         filter "system:macosx"
@@ -195,8 +198,8 @@ workspace "LambdaEngine"
                 "%{prj.name}/Include/Input/Win32/**",
                 "%{prj.name}/Source/Input/Win32/**",
 
-                "%{prj.name}/Include/Network/Win32/**",
-                "%{prj.name}/Source/Network/Win32/**",
+                "%{prj.name}/Include/Networking/Win32/**",
+                "%{prj.name}/Source/Networking/Win32/**",
             }
         filter {}
 
