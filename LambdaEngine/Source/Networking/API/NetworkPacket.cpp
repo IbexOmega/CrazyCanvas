@@ -40,14 +40,14 @@ namespace LambdaEngine
 		return m_SizeOfBuffer;
 	}
 
-	NetworkPacketHeader& NetworkPacket::GetHeader()
+	NetworkPacket::Header& NetworkPacket::GetHeader()
 	{
 		return m_Header;
 	}
 
 	uint8 NetworkPacket::GetHeaderSize() const
 	{
-		return sizeof(NetworkPacketHeader);
+		return sizeof(NetworkPacket::Header);
 	}
 
 	uint16 NetworkPacket::GetTotalSize() const
