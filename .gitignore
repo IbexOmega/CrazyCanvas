@@ -5,6 +5,9 @@
 *.sln
 *.vcxproj*
 
+#Ignore visual studio hint files
+*.hint
+
 # Ignore all Xcode project and workspace solution files
 *.pbxproj
 *.xcworkspace*

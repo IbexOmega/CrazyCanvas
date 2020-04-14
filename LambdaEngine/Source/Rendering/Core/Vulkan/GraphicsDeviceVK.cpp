@@ -429,7 +429,6 @@ namespace LambdaEngine
 	IShader* GraphicsDeviceVK::CreateShader(const ShaderDesc& desc) const
 	{
 		ShaderVK* pShader = DBG_NEW ShaderVK(this);
-
 		if (!pShader->Init(desc))
 		{
 			pShader->Release();

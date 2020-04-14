@@ -34,7 +34,7 @@ namespace LambdaEngine
 		virtual void Reset()	override final;
 		virtual void End()		override final;
 
-		virtual void BeginRenderPass(const IRenderPass* pRenderPass, const IFrameBuffer* pFrameBuffer, uint32 width, uint32 height, uint32 flags) override final;
+		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) override final;
 		virtual void EndRenderPass() override final;
 
 		virtual void BuildTopLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)		override final;
@@ -43,7 +43,8 @@ namespace LambdaEngine
 		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)	override final;
 		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)      override final;
 
-		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount) override final;
+		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount)	override final;
+		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrier* pBufferBarriers, uint32 bufferBarrierCount)		override final;
 
 		virtual void GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter) override final;
 
@@ -85,16 +86,17 @@ namespace LambdaEngine
 		}
 
 	private:
+		VkCommandBuffer						m_CommandList					= VK_NULL_HANDLE;
 		CommandAllocatorVK*                 m_pAllocator	                = nullptr;
         const RayTracingPipelineStateVK*    m_pCurrentRayTracingPipeline    = nullptr;
         
-		VkCommandBuffer	m_CommandList = VK_NULL_HANDLE;
-
         VkImageMemoryBarrier    m_ImageBarriers[MAX_IMAGE_BARRIERS];
-        VkViewport              m_Viewports[MAX_VIEWS];
-        VkRect2D                m_ScissorRects[MAX_VIEWS];
+		VkBufferMemoryBarrier   m_BufferBarriers[MAX_BUFFER_BARRIERS];
+        VkViewport              m_Viewports[MAX_VIEWPORTS];
+        VkRect2D                m_ScissorRects[MAX_VIEWPORTS];
         VkBuffer                m_VertexBuffers[MAX_VERTEX_BUFFERS];
         VkDeviceSize            m_VertexBufferOffsets[MAX_VERTEX_BUFFERS];
+		VkClearValue			m_ClearValues[MAX_RENDERTARGETS+1];
         
         CommandListDesc m_Desc;
 	};

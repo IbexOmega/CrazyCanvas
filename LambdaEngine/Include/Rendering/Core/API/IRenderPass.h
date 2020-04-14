@@ -38,8 +38,8 @@ namespace LambdaEngine
 		uint32				DstSubpass		= EXTERNAL_SUBPASS;
 		FPipelineStageFlags SrcStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 		FPipelineStageFlags DstStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-		uint32				SrcAccessMask	= FAccessFlags::ACCESS_FLAG_UNKNOWN;
-		uint32				DstAccessMask	= FAccessFlags::ACCESS_FLAG_UNKNOWN;
+		uint32				SrcAccessMask	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+		uint32				DstAccessMask	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
 	};
 
 	struct RenderPassDesc

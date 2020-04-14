@@ -115,7 +115,7 @@ namespace LambdaEngine
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
 		subpassDependencyDesc.DstSubpass	= 0;
-		subpassDependencyDesc.DstAccessMask	= FAccessFlags::ACCESS_FLAG_MEMORY_READ | FAccessFlags::ACCESS_FLAG_MEMORY_WRITE;
+		subpassDependencyDesc.DstAccessMask	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 		subpassDependencyDesc.DstStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 		subpassDependencyDesc.SrcSubpass	= EXTERNAL_SUBPASS;
 		subpassDependencyDesc.SrcStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;

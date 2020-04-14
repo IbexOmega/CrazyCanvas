@@ -1,10 +1,10 @@
-#include "Resources/ResourceLoader.h"
-#include "Log/Log.h"
-
 #include "Containers/THashTable.h"
 
+#include "Log/Log.h"
+
+#include "Resources/ResourceLoader.h"
+
 #include <tiny_obj_loader.h>
-#include <tiny_obj_loader.cc>
 
 #include <cstdio>
 
@@ -17,7 +17,8 @@ namespace LambdaEngine
 		tinyobj::attrib_t attributes;
 		std::vector<tinyobj::shape_t> shapes;
 		std::vector<tinyobj::material_t> materials;
-		std::string warn, err;
+		std::string warn;
+		std::string err;
 
 		if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, filepath.c_str(), pDir, true, false))
 		{
