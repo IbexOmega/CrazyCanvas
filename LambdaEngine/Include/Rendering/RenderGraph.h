@@ -11,6 +11,7 @@
 
 namespace LambdaEngine
 {
+	struct PipelineTextureBarrier;
 	struct TextureViewDesc;
 	struct TextureDesc;
 	struct SamplerDesc;
@@ -142,33 +143,30 @@ namespace LambdaEngine
 
 			std::vector<ResourceBinding>	ResourceBindings;
 
-			union
+			struct 
 			{
-				struct 
-				{
-					void*			pData;
-					uint32			DataSize;
-				} PushConstants;
+				void*			pData;
+				uint32			DataSize;
+			} PushConstants;
 
-				struct
-				{
-					std::vector<PipelineTextureBarrier*> Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
-					std::vector<ITexture*>		Textures;
-					std::vector<ITextureView*>	TextureViews;
-					std::vector<ISampler*>		Samplers;
-				} Texture;
+			struct
+			{
+				std::vector<PipelineTextureBarrier*> Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
+				std::vector<ITexture*>		Textures;
+				std::vector<ITextureView*>	TextureViews;
+				std::vector<ISampler*>		Samplers;
+			} Texture;
 
-				struct
-				{
-					//std::vector<PipelineBufferBarrier*> Barriers;
-					IBuffer* pBuffer;
-				} Buffer;
+			struct
+			{
+				//std::vector<PipelineBufferBarrier*> Barriers;
+				IBuffer* pBuffer;
+			} Buffer;
 
-				struct
-				{
-					ITopLevelAccelerationStructure* pTLAS;
-				} AccelerationStructure;
-			};
+			struct
+			{
+				ITopLevelAccelerationStructure* pTLAS;
+			} AccelerationStructure;
 		};
 
 		struct RenderStage

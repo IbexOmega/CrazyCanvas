@@ -864,7 +864,18 @@ namespace LambdaEngine
 		uint32 height = 0;
 		uint32 flags = FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_NONE;
 
-		pGraphicsCommandList->BeginRenderPass(pRenderStage->pRenderPass, pFrameBuffer, width, height, flags);
+		BeginRenderPassDesc beginRenderPassDesc = {};
+		beginRenderPassDesc.pRenderPass		= pRenderStage->pRenderPass;
+		beginRenderPassDesc.pFrameBuffer	= pFrameBuffer;
+		beginRenderPassDesc.Width			= width;
+		beginRenderPassDesc.Height			= height;
+		beginRenderPassDesc.Flags			= flags;
+		beginRenderPassDesc.pClearColors	= nullptr;
+		beginRenderPassDesc.ClearColorCount = 0;
+		beginRenderPassDesc.Offset.x		= 0;
+		beginRenderPassDesc.Offset.y		= 0;
+
+		pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
 
 		pGraphicsCommandList->BindGraphicsPipeline(pRenderStage->pPipelineState);
 		pGraphicsCommandList->BindDescriptorSet(pRenderStage->pDescriptorSet, pRenderStage->pPipelineLayout);
