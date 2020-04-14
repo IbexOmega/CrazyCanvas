@@ -34,6 +34,7 @@ namespace LambdaEngine
     class ICommandList;
 	class IFrameBuffer;
     class ICommandQueue;
+	class IDescriptorSet;
 	class IPipelineState;
 	class IDescriptorHeap;
 	class IPipelineLayout;
@@ -57,8 +58,10 @@ namespace LambdaEngine
 	public:
 		DECL_DEVICE_INTERFACE(IGraphicsDevice);
 
-		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc& desc) const = 0;
-		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc& desc) const = 0;
+		virtual IPipelineLayout*	CreatePipelineLayout(const PipelineLayoutDesc& desc) const = 0;
+		virtual IDescriptorHeap*	CreateDescriptorHeap(const DescriptorHeapDesc& desc) const = 0;
+
+		virtual IDescriptorSet*	CreateDescriptorSet(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const = 0;
 
 		virtual IFrameBuffer* CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc)	const = 0;
 

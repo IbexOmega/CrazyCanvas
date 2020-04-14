@@ -18,13 +18,13 @@ namespace LambdaEngine
 
 		bool Init(const ShaderDesc& desc);
 
-        FORCEINLINE VkShaderModule GetModule()
+        void FillSpecializationInfo(VkSpecializationInfo& specializationInfo, std::vector<VkSpecializationMapEntry>& specializationEntries) const;
+        void FillShaderStageInfo(VkPipelineShaderStageCreateInfo& shaderStageInfo, const VkSpecializationInfo& specializationInfo) const;
+
+        FORCEINLINE VkShaderModule GetShaderModule() const
         {
             return m_Module;
         }
-
-        void FillSpecializationInfo(VkSpecializationInfo& specializationInfo, std::vector<VkSpecializationMapEntry>& specializationEntries) const;
-        void FillShaderStageInfo(VkPipelineShaderStageCreateInfo& shaderStageInfo, const VkSpecializationInfo& specializationInfo) const;
 
         // IDeviceChild interface
         virtual void SetName(const char* pName) override final;

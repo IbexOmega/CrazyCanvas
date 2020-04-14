@@ -23,6 +23,7 @@
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/DescriptorHeapVK.h"
+#include "Rendering/Core/Vulkan/DescriptorSetVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 
@@ -164,6 +165,20 @@ namespace LambdaEngine
 		else
 		{
 			return pDescriptorHeap;
+		}
+	}
+
+	IDescriptorSet* GraphicsDeviceVK::CreateDescriptorSet(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const
+	{
+		DescriptorSetVK* pDescriptorSet = DBG_NEW DescriptorSetVK(this);
+		if (!pDescriptorSet->Init(pName, pPipelineLayout, descriptorLayoutIndex, pDescriptorHeap))
+		{
+			pDescriptorSet->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pDescriptorSet;
 		}
 	}
 

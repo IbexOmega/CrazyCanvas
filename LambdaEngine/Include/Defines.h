@@ -49,8 +49,8 @@
 #define DECL_INTERFACE(Typename) DECL_ABSTRACT_CLASS(Typename)
 
 // Helper Macros
-#define ZERO_MEMORY(memory, size) memset((void*)memory, 0, size)
-#define ARR_SIZE(arr) sizeof(arr) / sizeof(arr[0])
+#define ZERO_MEMORY(memory, size)	memset((void*)memory, 0, size)
+#define ARR_SIZE(arr)				sizeof(arr) / sizeof(arr[0])
 
 // Forceinline
 #ifdef LAMBDA_VISUAL_STUDIO
@@ -60,9 +60,14 @@
 #endif
 
 // Delete and Release
-#define SAFEDELETE(object)		if ((object))	{ delete (object); (object) = nullptr; }
-#define SAFEDELETEARR(array)	if ((array))	{ delete[] (array); (array) = nullptr; }
-#define SAFERELEASE(object)		if ((object))	{ (object)->Release(); (object) = nullptr; }
+#define DELETE_OBJECT(object)	delete (object); (object) = nullptr
+#define SAFEDELETE(object)		if ((object))	{ DELETE_OBJECT(object); }
+
+#define DELETE_ARRAY(array)		delete[] (array); (array) = nullptr
+#define SAFEDELETE_ARRAY(array)	if ((array))	{ DELETE_ARRAY(array); }
+
+#define RELEASE(object)			(object)->Release(); (object) = nullptr
+#define SAFERELEASE(object)		if ((object))	{ RELEASE(object); }
 
 // Bit-Mask helpers
 #define BIT(bit)	(1 << bit)

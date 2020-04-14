@@ -410,7 +410,7 @@ namespace LambdaEngine
         return result;
     }
 
-    void SwapChainVK::Present()
+    bool SwapChainVK::Present()
     {
         VkSemaphore waitSemaphores[] = { m_RenderSemaphores[m_SemaphoreIndex] };
         
@@ -430,7 +430,7 @@ namespace LambdaEngine
         if (result != VK_SUCCESS)
         {
             LOG_VULKAN_ERROR(result, "[SwapChainVK]: Submit failed");
-            //return false;
+            return false;
         }
 
         VkPresentInfoKHR presentInfo = {};
@@ -453,10 +453,10 @@ namespace LambdaEngine
         if (result != VK_SUCCESS)
         {
             LOG_VULKAN_ERROR(result, "[SwapChainVK]: Present failed");
-            //return false;
+            return false;
         }
 
-        //return true;
+        return true;
     }
 
     bool SwapChainVK::ResizeBuffers(uint32 width, uint32 height)

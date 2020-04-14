@@ -7,18 +7,19 @@
 
 namespace LambdaEngine
 {
-#pragma pack(push, 1)
-	struct NetworkPacketHeader
-	{
-		uint16 Size = 0;
-		uint16 Type = 0;
-		uint32 UID = 0;
-	};
-#pragma pack(pop)
-
 	class LAMBDA_API NetworkPacket
 	{
 		friend class PacketDispatcher;
+
+	public:
+#pragma pack(push, 1)
+		struct Header
+		{
+			uint16 Size = 0;
+			uint16 Type = 0;
+			uint32 UID = 0;
+		};
+#pragma pack(pop)
 
 	public:
 		~NetworkPacket();
@@ -30,7 +31,7 @@ namespace LambdaEngine
 		const char* GetBufferReadOnly() const;
 		uint16 GetBufferSize() const;
 
-		NetworkPacketHeader& GetHeader();
+		Header& GetHeader();
 		uint8 GetHeaderSize() const;
 
 		uint16 GetTotalSize() const;
@@ -43,6 +44,6 @@ namespace LambdaEngine
 	private:
 		uint16 m_SizeOfBuffer;
 		char m_pBuffer[MAXIMUM_PACKET_SIZE];
-		NetworkPacketHeader m_Header;
+		Header m_Header;
 	};
 }
