@@ -33,13 +33,13 @@ namespace LambdaEngine
 	{
 		const char* pName						= "Render Graph";
 		bool CreateDebugGraph					= false;
-		const RenderStageDesc* pRenderStages	= nullptr;
+		RenderStageDesc* pRenderStages			= nullptr;
 		uint32 RenderStageCount					= 0;
 	};
 
 	struct ResourceUpdateDesc
 	{
-		const char* pName					= "No Resource Name";
+		const char* pResourceName	= "No Resource Name";
 
 		union
 		{
@@ -51,9 +51,9 @@ namespace LambdaEngine
 
 			struct
 			{
-				TextureDesc*		pTextureDesc;
-				TextureViewDesc*	pTextureViewDesc;
-				SamplerDesc*		pSamplerDesc;
+				TextureDesc**		ppTextureDesc;
+				TextureViewDesc**	ppTextureViewDesc;
+				SamplerDesc**		ppSamplerDesc;
 			} InternalTextureUpdate;
 
 			struct
@@ -63,9 +63,9 @@ namespace LambdaEngine
 
 			struct
 			{
-				ITexture*			pTexture;
-				ITextureView*		pTextureView;
-				ISampler*			pSampler;
+				ITexture**			ppTexture;
+				ITextureView**		ppTextureView;
+				ISampler**			ppSampler;
 			} ExternalTextureUpdate;
 
 			struct
@@ -77,6 +77,34 @@ namespace LambdaEngine
 			{
 				ITopLevelAccelerationStructure* pTLAS;
 			} ExternalAccelerationStructure;
+		};
+	};
+
+	struct RenderStageParameterUpdateDesc
+	{
+		const char* pRenderStageName	= "No Render Stage Name";
+
+		union
+		{
+			struct
+			{
+				uint32 Width;
+				uint32 Height;
+			} GraphicsUpdate;
+
+			struct
+			{
+				uint32 WorkGroupCountX;
+				uint32 WorkGroupCountY;
+				uint32 WorkGroupCountZ;
+			} ComputeUpdate;
+
+			struct
+			{
+				uint32 RaygenOffset;
+				uint32 RayTraceWidth;
+				uint32 RayTraceHeight;
+			} RayTracingUpdate;
 		};
 	};
 
@@ -98,13 +126,21 @@ namespace LambdaEngine
 		struct ResourceBinding
 		{
 			IDescriptorSet*	pDescriptorSet	= nullptr;
+			EDescriptorType DescriptorType	= EDescriptorType::DESCRIPTOR_UNKNOWN;
 			uint32			Binding			= 0;
+
+			union
+			{
+				ETextureState TextureState;
+			};
 		};
 
 		struct Resource
 		{
-			EResourceType Type	= EResourceType::UNKNOWN;
-			std::vector<ResourceBinding>		 ResourceBindings;
+			EResourceType	Type				= EResourceType::UNKNOWN;
+			uint32			SubResourceCount	= 0;
+
+			std::vector<ResourceBinding>	ResourceBindings;
 
 			union
 			{
@@ -116,16 +152,16 @@ namespace LambdaEngine
 
 				struct
 				{
-					std::vector<PipelineTextureBarrier*> Barriers;
-					ITexture*		pTexture;
-					ITextureView*	pTextureView;
-					ISampler*		pSampler;
+					std::vector<PipelineTextureBarrier*> Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
+					std::vector<ITexture*>		Textures;
+					std::vector<ITextureView*>	TextureViews;
+					std::vector<ISampler*>		Samplers;
 				} Texture;
 
 				struct
 				{
 					//std::vector<PipelineBufferBarrier*> Barriers;
-					IBuffer*		pBuffer;
+					IBuffer* pBuffer;
 				} Buffer;
 
 				struct
@@ -137,29 +173,31 @@ namespace LambdaEngine
 
 		struct RenderStage
 		{
-			uint64				WaitValue				= 0;
-			uint64				SignalValue				= 0;
+			uint64					WaitValue				= 0;
+			uint64					SignalValue				= 0;
 
-			EDrawType			DrawType				= EDrawType::NONE;
+			ERenderStageDrawType	DrawType				= ERenderStageDrawType::NONE;
+			Resource*				pDrawResource			= nullptr;
 
-			IPipelineLayout*	pPipelineLayout			= nullptr;
-			IPipelineState*		pPipelineState			= nullptr;
-			IDescriptorSet*		pDescriptorSet			= nullptr;
+			IPipelineLayout*		pPipelineLayout			= nullptr;
+			IPipelineState*			pPipelineState			= nullptr;
+			IDescriptorSet*			pDescriptorSet			= nullptr;
+			IRenderPass*			pRenderPass				= nullptr;
 
-			Resource*			pPushConstantsResource	= nullptr;
-			std::set<Resource*> pRenderPassResources;
+			Resource*				pPushConstantsResource	= nullptr;
+			std::set<Resource*>		pRenderPassResources;
 		};
 
 		struct TextureSynchronization
 		{
 			FShaderStageFlags		SrcShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 			FShaderStageFlags		DstShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			PipelineTextureBarrier	Barrier;
+			std::vector<PipelineTextureBarrier> Barriers;
 		};
 
 		struct SynchronizationStage
 		{
-			std::unordered_map<const char*, TextureSynchronization>		TextureSynchronizations;
+			std::unordered_map<const char*, TextureSynchronization> TextureSynchronizations;
 
 			//std::unordered_map<const char*, PipelineBufferBarrier>	BufferBarriers;
 		};
@@ -182,7 +220,7 @@ namespace LambdaEngine
 		RenderGraph(const IGraphicsDevice* pGraphicsDevice);
 		~RenderGraph();
 
-		bool Init(const RenderGraphDesc& desc);
+		bool Init(RenderGraphDesc& desc);
 
 		/*
 		* Updates a resource in the Render Graph, can be called at any time
@@ -190,10 +228,13 @@ namespace LambdaEngine
 		*/
 		void UpdateResource(const ResourceUpdateDesc& desc);
 
+		void UpdateRenderStageParameters(const RenderStageParameterUpdateDesc& desc);
+
 		/*
 		* Updates the RenderGraph, applying the updates made to resources with UpdateResource by writing them to the appropriate Descriptor Sets, the RenderGraph will wait for device idle if it needs to
 		*/
 		void Update();
+
 
 		/*
 		* 
@@ -230,6 +271,7 @@ namespace LambdaEngine
 
 		PipelineStage*										m_pPipelineStages;
 		uint32												m_PipelineStageCount;
+		std::unordered_map<const char*, uint32>				m_RenderStageMap;
 		RenderStage*										m_pRenderStages;
 		SynchronizationStage*								m_pSynchronizationStages;
 

@@ -117,6 +117,7 @@ namespace LambdaEngine
 
 		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)							= 0;
 		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)	= 0;
+		virtual void DrawIndexedIndirect(IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)									= 0;
 
 		virtual void ExecuteSecondary(const ICommandList* pSecondary) = 0;
 

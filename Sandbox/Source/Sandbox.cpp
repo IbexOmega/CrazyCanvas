@@ -111,7 +111,7 @@ Sandbox::Sandbox()
 
 		renderStage.PipelineType					= EPipelineStateType::GRAPHICS;
 
-		renderStage.GraphicsPipeline.DrawType		= EDrawType::SCENE_INDIRECT;
+		renderStage.GraphicsPipeline.DrawType		= ERenderStageDrawType::SCENE_INDIRECT;
 		renderStage.GraphicsPipeline.pGraphicsDesc	= &geometryPassPipelineDesc;
 
 		renderStages.push_back(renderStage);
@@ -262,7 +262,7 @@ Sandbox::Sandbox()
 		shadingPipelineDesc.pPixelShader		= m_pResourceManager->GetShader(lightPixelShaderGUID);
 
 		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
-		renderStage.GraphicsPipeline.DrawType			= EDrawType::FULLSCREEN_QUAD;
+		renderStage.GraphicsPipeline.DrawType			= ERenderStageDrawType::NONE;
 		renderStage.GraphicsPipeline.pGraphicsDesc		= &shadingPipelineDesc;
 
 		renderStages.push_back(renderStage);

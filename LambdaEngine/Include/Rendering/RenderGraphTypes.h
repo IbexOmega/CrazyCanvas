@@ -91,11 +91,10 @@ namespace LambdaEngine
 		PUSH_CONSTANTS	= 2,
 	};
 
-	enum class EGraphicsRenderStageDrawType : uint8
+	enum class ERenderStageDrawType : uint8
 	{
 		NONE				= 0,
-		FULLSCREEN_QUAD		= 1,
-		SCENE_INDIRECT		= 2,
+		SCENE_INDIRECT			= 1,
 	};
 
 	struct RenderStageAttachment
@@ -103,7 +102,7 @@ namespace LambdaEngine
 		const char* pName				= "";
 		EAttachmentType Type			= EAttachmentType::NONE;
 		FShaderStageFlags ShaderStage	= SHADER_STAGE_FLAG_NONE;
-		uint32 DescriptorCount			= 1;
+		uint32 SubResourceCount			= 1;
 	};
 
 	struct RenderStagePushConstants
@@ -126,7 +125,7 @@ namespace LambdaEngine
 	struct RenderStageDesc
 	{
 		const char* pName							= "Render Stage";
-		const RenderStageAttachment* pAttachments	= nullptr;
+		RenderStageAttachment* pAttachments			= nullptr;
 		uint32 AttachmentCount						= 0;
 		RenderStagePushConstants PushConstants		= {};
 
@@ -137,7 +136,8 @@ namespace LambdaEngine
 			struct
 			{
 				GraphicsPipelineStateDesc*		pGraphicsDesc;
-				EGraphicsRenderStageDrawType	DrawType;
+				ERenderStageDrawType			DrawType;
+				const char*						pDrawResourceName;
 			} GraphicsPipeline;
 
 			struct

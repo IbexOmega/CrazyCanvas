@@ -26,16 +26,16 @@ namespace LambdaEngine
 		GUID_Lambda Material;
 	};
 
-	struct IndirectMeshArgument
+	struct IndexedIndirectMeshArgument
 	{
-		uint32 VertexCount			= 0;
-		uint32 InstanceCount		= 0;
-		uint32 FirstIndex			= 0;
-		uint32 FirstInstance		= 0;
+		uint32	IndexCount			= 0;
+		uint32	InstanceCount		= 0;
+		uint32	FirstIndex			= 0;
+		int32	VertexOffset		= 0;
+		uint32	FirstInstance		= 0;
 		
-		uint32 BaseVertexIndex		= 0;
-		uint32 MaterialIndex		= 0;
-		uint32 BaseInstanceIndex	= 0;
+		uint32	MaterialIndex		= 0;
+		uint32	BaseInstanceIndex	= 0;
 	};
 
 	struct SceneDesc

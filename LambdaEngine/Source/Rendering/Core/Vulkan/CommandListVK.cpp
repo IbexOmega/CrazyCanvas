@@ -453,6 +453,11 @@ namespace LambdaEngine
         vkCmdDrawIndexed(m_CommandList, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
+	void CommandListVK::DrawIndexedIndirect(IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)
+	{
+		vkCmdDrawIndexedIndirect(m_CommandList, reinterpret_cast<BufferVK*>(pDrawBuffer)->GetBuffer(), offset, drawCount, stride);
+	}
+
 	void CommandListVK::ExecuteSecondary(const ICommandList* pSecondary)
 	{
 		const CommandListVK*	pVkSecondary	= reinterpret_cast<const CommandListVK*>(pSecondary);
