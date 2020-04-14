@@ -18,15 +18,15 @@ namespace LambdaEngine
 
 		bool Init(const SamplerDesc& desc);
 
-		FORCEINLINE VkSampler GetSampler()
+		FORCEINLINE VkSampler GetSampler() const
 		{
 			return m_Sampler;
 		}
 
-		// Inherited via DeviceChildBase
+		// IDeviceChild Interface
 		virtual void SetName(const char* pName) override final;
 
-		// Inherited via ISampler
+		// ISampler Interface
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
 			return (uint64)m_Sampler;

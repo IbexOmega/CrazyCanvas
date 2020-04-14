@@ -342,7 +342,7 @@ namespace LambdaEngine
 
 		IShader* pShader = pGraphicsDevice->CreateShader(shaderDesc);
 
-		SAFEDELETEARR(pShaderSource);
+		SAFEDELETE_ARRAY(pShaderSource);
 
 		return pShader;
 	}

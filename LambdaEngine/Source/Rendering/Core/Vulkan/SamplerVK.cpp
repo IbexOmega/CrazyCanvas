@@ -49,10 +49,13 @@ namespace LambdaEngine
 			LOG_VULKAN_ERROR(result, "[SamplerVK]: vkCreateSampler failed");
 			return false;
 		}
-
-		SetName(desc.pName);
-        m_Desc = desc;
-		return true;
+		else
+		{
+			m_Desc = desc;
+			SetName(desc.pName);
+			
+			return true;
+		}
 	}
 
 	void SamplerVK::SetName(const char* pName)

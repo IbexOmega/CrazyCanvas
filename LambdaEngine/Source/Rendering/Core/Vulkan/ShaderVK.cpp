@@ -25,8 +25,6 @@ namespace LambdaEngine
 
 	bool ShaderVK::Init(const ShaderDesc& desc)
 	{
-		VkResult result;
-
 		VkShaderModuleCreateInfo createInfo = {};
 		createInfo.sType		= VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		createInfo.pNext		= nullptr;
@@ -34,18 +32,19 @@ namespace LambdaEngine
 		createInfo.codeSize		= desc.SourceSize;
 		createInfo.pCode		= reinterpret_cast<const uint32_t*>(desc.pSource);
 
-		result = vkCreateShaderModule(m_pDevice->Device, &createInfo, nullptr, &m_Module);
-
+		VkResult result = vkCreateShaderModule(m_pDevice->Device, &createInfo, nullptr, &m_Module);
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[ShaderVK]: Failed to create shader module");
 			return false;
 		}
+		else
+		{
+			m_Desc = desc;
+			SetName(m_Desc.pName);
 
-		m_Desc = desc;
-		SetName(m_Desc.pName);
-
-		return true;
+			return true;
+		}
 	}
 
 	void ShaderVK::FillSpecializationInfo(VkSpecializationInfo& specializationInfo, std::vector<VkSpecializationMapEntry>& specializationEntries) const

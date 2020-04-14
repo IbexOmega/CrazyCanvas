@@ -24,7 +24,7 @@ namespace LambdaEngine
 
 	RenderGraph::~RenderGraph()
 	{
-		SAFEDELETEARR(m_pRenderStages);
+		SAFEDELETE_ARRAY(m_pRenderStages);
 	}
 
 	bool RenderGraph::Init(const RenderGraphDesc& desc)

@@ -44,6 +44,8 @@ namespace LambdaEngine
 		}
 		else
 		{
+			m_Type = queueType;
+
 			if (pName)
 			{
 				LOG_MESSAGE("[CommandAllocatorVK]: Created commandpool \"%s\"", pName);
@@ -77,6 +79,11 @@ namespace LambdaEngine
 		}
 
 		return commandBuffer;
+	}
+
+	void CommandAllocatorVK::FreeCommandBuffer(VkCommandBuffer commandBuffer)
+	{
+		vkFreeCommandBuffers(m_pDevice->Device, m_CommandPool, 1, &commandBuffer);
 	}
 	
 	bool CommandAllocatorVK::Reset()

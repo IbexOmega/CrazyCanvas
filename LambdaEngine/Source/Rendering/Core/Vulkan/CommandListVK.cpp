@@ -27,15 +27,17 @@ namespace LambdaEngine
 
 	CommandListVK::~CommandListVK()
 	{
-		SAFERELEASE(m_pAllocator);
+		if (m_pAllocator)
+		{
+			m_pAllocator->FreeCommandBuffer(m_CommandList);
+			RELEASE(m_pAllocator);
+		}
+
 		m_CommandList = VK_NULL_HANDLE;
 	}
 
 	bool CommandListVK::Init(ICommandAllocator* pAllocator, const CommandListDesc& desc)
 	{
-		CommandAllocatorVK* pVkCommandAllocator = (CommandAllocatorVK*)pAllocator;
-		pVkCommandAllocator->AddRef();
-
 		VkCommandBufferLevel level;
 		if (desc.CommandListType == ECommandListType::COMMAND_LIST_PRIMARY)
 		{
@@ -46,16 +48,22 @@ namespace LambdaEngine
 			level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
 		}
 
+		CommandAllocatorVK*	pVkCommandAllocator = (CommandAllocatorVK*)pAllocator;
 		m_CommandList = pVkCommandAllocator->AllocateCommandBuffer(level);
 		if (m_CommandList == VK_NULL_HANDLE)
 		{
 			return false;
 		}
-
-        SetName(desc.pName);
-		m_Desc			= desc;
-		m_pAllocator	= pVkCommandAllocator;
-		return true;
+		else
+		{
+			m_Desc = desc;
+			SetName(desc.pName);
+			
+			pVkCommandAllocator->AddRef();
+			m_pAllocator = pVkCommandAllocator;
+			
+			return true;
+		}
 	}
 
     void CommandListVK::SetName(const char* pName)

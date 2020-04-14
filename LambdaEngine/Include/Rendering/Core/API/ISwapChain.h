@@ -40,7 +40,7 @@ namespace LambdaEngine
         /*
         * Swaps the backbuffers so that the current buffer gets displayed to the specified window
         */
-        virtual void Present() = 0;
+        virtual bool Present() = 0;
 
         /*
         * Returns a pointer to the window that the swapchain will present to during a call to present.

@@ -83,7 +83,7 @@ namespace LambdaEngine
 			m_Pipeline = VK_NULL_HANDLE;
 		}
 
-		SAFEDELETEARR(m_pColorBlendAttachmentStates);
+		SAFEDELETE_ARRAY(m_pColorBlendAttachmentStates);
 	}
 
 	bool GraphicsPipelineStateVK::Init(const GraphicsPipelineStateDesc& desc)

@@ -17,13 +17,17 @@ namespace LambdaEngine
 	public:
 		TDeviceChildBase(const TGraphicsDevice* pDevice)
 			: IBase(),
-			m_pDevice(pDevice),
-			m_StrongReferences(0)
+			m_pDevice(pDevice)
 		{
+			ZERO_MEMORY(m_DebugName, sizeof(m_DebugName));
+
 			AddRef();
 		}
 
-		virtual ~TDeviceChildBase() = default;
+		virtual ~TDeviceChildBase()
+		{
+			m_StrongReferences	= 0;
+		}
 
 		virtual uint64 Release() override
 		{
@@ -60,12 +64,11 @@ namespace LambdaEngine
         }
 
 	protected:
-		const TGraphicsDevice* const m_pDevice;
-		
-		char m_DebugName[MAX_DEVICE_CHILD_NAME_LENGTH];
+		const TGraphicsDevice* const	m_pDevice = nullptr;
+		char							m_DebugName[MAX_DEVICE_CHILD_NAME_LENGTH];
 
 	private:
         SpinLock    m_Lock;
-		uint64      m_StrongReferences;
+		uint64      m_StrongReferences = 0;
 	};
 }

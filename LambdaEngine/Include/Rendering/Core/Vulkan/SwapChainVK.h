@@ -28,7 +28,7 @@ namespace LambdaEngine
         // ISwapChain interface
         virtual bool ResizeBuffers(uint32 width, uint32 height) override final;
         
-        virtual void Present() override final;
+        virtual bool Present() override final;
         
         virtual ITexture*       GetBuffer(uint32 bufferIndex)       override final;
         virtual const ITexture* GetBuffer(uint32 bufferIndex) const override final;
