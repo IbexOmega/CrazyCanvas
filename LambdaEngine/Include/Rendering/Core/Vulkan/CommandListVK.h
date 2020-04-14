@@ -20,17 +20,17 @@ namespace LambdaEngine
 
 		bool Init(ICommandAllocator* pAllocator, const CommandListDesc& desc);
 
-        FORCEINLINE VkCommandBuffer GetCommandBuffer() const
-        {
-            return m_CommandList;
-        }
-        
-        //IDeviceChild interface
-        virtual void SetName(const char* pName) override;
-        
-        //ICommandList interface
+		FORCEINLINE VkCommandBuffer GetCommandBuffer() const
+		{
+			return m_CommandList;
+		}
+
+		//IDeviceChild interface
+		virtual void SetName(const char* pName) override;
+
+		//ICommandList interface
 		virtual void Begin(const SecondaryCommandListBeginDesc* pBeginDesc)	override final;
-		
+
 		virtual void Reset()	override final;
 		virtual void End()		override final;
 
@@ -51,20 +51,21 @@ namespace LambdaEngine
 		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)           override final;
 		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)    override final;
 
-		virtual void SetConstantGraphics()	override final;
-		virtual void SetConstantCompute()	override final;
+		virtual void SetConstantRange(const IPipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) override final;
 
 		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset) override;
 		virtual void BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) override final;
 
-		virtual void BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout) override final;
+		virtual void BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout) override final;
+		virtual void BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout) override final;
+		virtual void BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout) override final;
 
 		virtual void BindGraphicsPipeline(const IPipelineState* pPipeline)		override final;
 		virtual void BindComputePipeline(const IPipelineState* pPipeline)		override final;
 		virtual void BindRayTracingPipeline(const IPipelineState* pPipeline)	override final;
 
 		virtual void TraceRays(uint32 width, uint32 height, uint32 raygenOffset) override final;
-        
+
 		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ) override final;
 
 		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)                          override final;
@@ -84,6 +85,8 @@ namespace LambdaEngine
 		{
 			return (uint64)m_CommandList;
 		}
+	private:
+		void BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, VkPipelineBindPoint bindPoint);
 
 	private:
 		VkCommandBuffer						m_CommandList					= VK_NULL_HANDLE;

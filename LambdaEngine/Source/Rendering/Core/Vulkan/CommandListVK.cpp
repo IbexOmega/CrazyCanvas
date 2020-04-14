@@ -12,7 +12,17 @@
 #include "Rendering/Core/Vulkan/RayTracingPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/FrameBufferVK.h"
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
+#include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
+#include "Rendering/Core/Vulkan/DescriptorSetVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+
+#ifndef LAMBDA_DISABLE_VULKAN_CHECKS
+	#define CHECK_GRAPHICS(pAllocator)	ASSERT((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+	#define CHECK_COMPUTE(pAllocator)	ASSERT((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_COMPUTE);
+#else
+	#define CHECK_GRAPHICS(pAllocator)
+	#define CHECK_COMPUTE(pAllocator)
+#endif
 
 namespace LambdaEngine
 {
@@ -428,12 +438,12 @@ namespace LambdaEngine
         vkCmdSetScissor(m_CommandList, firstScissor, scissorCount, m_ScissorRects);
 	}
 
-	void CommandListVK::SetConstantGraphics()
+	void CommandListVK::SetConstantRange(const IPipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset)
 	{
-	}
+		const PipelineLayoutVK* pVkPipelineLayout = reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
+		uint32 shaderStageMaskVk = ConvertShaderStageMask(shaderStageMask);
 
-	void CommandListVK::SetConstantCompute()
-	{
+		vkCmdPushConstants(m_CommandList, pVkPipelineLayout->GetPipelineLayout(), shaderStageMaskVk, offset, size, pConstants);
 	}
 
 	void CommandListVK::BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset)
@@ -455,13 +465,28 @@ namespace LambdaEngine
         vkCmdBindVertexBuffers(m_CommandList, firstBuffer, vertexBufferCount, m_VertexBuffers, m_VertexBufferOffsets);
 	}
 
-	void CommandListVK::BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)
+	void CommandListVK::BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)
 	{
+		CHECK_GRAPHICS(m_pAllocator);
+		BindDescriptorSet(pDescriptorSet, pPipelineLayout, VK_PIPELINE_BIND_POINT_GRAPHICS);
+	}
+
+	void CommandListVK::BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)
+	{
+		CHECK_COMPUTE(m_pAllocator);
+		BindDescriptorSet(pDescriptorSet, pPipelineLayout, VK_PIPELINE_BIND_POINT_COMPUTE);
+	}
+
+	void CommandListVK::BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)
+	{
+		CHECK_COMPUTE(m_pAllocator);
+		BindDescriptorSet(pDescriptorSet, pPipelineLayout, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 	}
 
 	void CommandListVK::BindGraphicsPipeline(const IPipelineState* pPipeline)
 	{
-        ASSERT(pPipeline->GetType() == EPipelineStateType::GRAPHICS);
+		CHECK_GRAPHICS(m_pAllocator);
+        ASSERT(pPipeline->GetType()		== EPipelineStateType::GRAPHICS);
         
         const GraphicsPipelineStateVK* pPipelineVk = reinterpret_cast<const GraphicsPipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineVk->GetPipeline());
@@ -469,7 +494,8 @@ namespace LambdaEngine
 
 	void CommandListVK::BindComputePipeline(const IPipelineState* pPipeline)
 	{
-        ASSERT(pPipeline->GetType() == EPipelineStateType::COMPUTE);
+		CHECK_COMPUTE(m_pAllocator);
+        ASSERT(pPipeline->GetType()		== EPipelineStateType::COMPUTE);
         
         const ComputePipelineStateVK* pPipelineVk = reinterpret_cast<const ComputePipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineVk->GetPipeline());
@@ -477,7 +503,8 @@ namespace LambdaEngine
 
 	void CommandListVK::BindRayTracingPipeline(const IPipelineState* pPipeline)
 	{
-        ASSERT(pPipeline->GetType() == EPipelineStateType::RAY_TRACING);
+		CHECK_COMPUTE(m_pAllocator);
+        ASSERT(pPipeline->GetType()		== EPipelineStateType::RAY_TRACING);
         
         const RayTracingPipelineStateVK* pPipelineVk = reinterpret_cast<const RayTracingPipelineStateVK*>(pPipeline);
         m_pCurrentRayTracingPipeline = pPipelineVk;
@@ -487,6 +514,8 @@ namespace LambdaEngine
 
 	void CommandListVK::TraceRays(uint32 width, uint32 height, uint32 depth)
 	{
+		CHECK_COMPUTE(m_pAllocator);
+
 #ifndef LAMBDA_PRODUCTION
         if (m_pDevice->vkCmdTraceRaysKHR)
         {
@@ -499,16 +528,19 @@ namespace LambdaEngine
 
 	void CommandListVK::Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ)
 	{
+		CHECK_COMPUTE(m_pAllocator);
         vkCmdDispatch(m_CommandList, workGroupCountX, workGroupCountY, workGroupCountZ);
 	}
 
 	void CommandListVK::DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)
 	{
+		CHECK_GRAPHICS(m_pAllocator);
         vkCmdDraw(m_CommandList, vertexCount, instanceCount, firstVertex, firstInstance);
 	}
 
 	void CommandListVK::DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)
 	{
+		CHECK_GRAPHICS(m_pAllocator);
         vkCmdDrawIndexed(m_CommandList, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
@@ -519,10 +551,13 @@ namespace LambdaEngine
 
 	void CommandListVK::ExecuteSecondary(const ICommandList* pSecondary)
 	{
-		const CommandListVK*	pVkSecondary	= reinterpret_cast<const CommandListVK*>(pSecondary);
-		CommandListDesc			desc			= pVkSecondary->GetDesc();
+		ASSERT(m_Desc.CommandListType == ECommandListType::COMMAND_LIST_PRIMARY);
+		const CommandListVK* pVkSecondary = reinterpret_cast<const CommandListVK*>(pSecondary);
 
+#ifndef LAMBDA_DISABLE_ASSERTS 
+		CommandListDesc	desc = pVkSecondary->GetDesc();
 		ASSERT(desc.CommandListType == ECommandListType::COMMAND_LIST_SECONDARY);
+#endif
 
 		vkCmdExecuteCommands(m_CommandList, 1, &pVkSecondary->m_CommandList);
 	}
@@ -531,5 +566,14 @@ namespace LambdaEngine
 	{
 		m_pAllocator->AddRef();
 		return m_pAllocator;
+	}
+	
+	FORCEINLINE void CommandListVK::BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, VkPipelineBindPoint bindPoint)
+	{
+		const PipelineLayoutVK* pVkPipelineLayout	= reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
+		const DescriptorSetVK* pVkDescriptorSet		= reinterpret_cast<const DescriptorSetVK*>(pDescriptorSet);
+
+		VkDescriptorSet descriptorSet = pVkDescriptorSet->GetDescriptorSet();
+		vkCmdBindDescriptorSets(m_CommandList, bindPoint, pVkPipelineLayout->GetPipelineLayout(), 0, 1, &descriptorSet, 0, nullptr);
 	}
 }
