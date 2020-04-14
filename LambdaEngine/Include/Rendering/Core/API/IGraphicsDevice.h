@@ -7,6 +7,7 @@ namespace LambdaEngine
 	struct ShaderDesc;
     struct BufferDesc;
     struct TextureDesc;
+	struct SamplerDesc;
     struct SwapChainDesc;
 	struct RenderPassDesc;
     struct CommandListDesc;
@@ -25,6 +26,7 @@ namespace LambdaEngine
     class IFence;
 	class IShader;
     class IBuffer;
+	class ISampler;
     class ITexture;
     class ISwapChain;
     class IRenderPass;
@@ -70,6 +72,7 @@ namespace LambdaEngine
 
 		virtual IBuffer*	CreateBuffer(const BufferDesc& desc)	const = 0;
 		virtual ITexture*	CreateTexture(const TextureDesc& desc)	const = 0;
+		virtual ISampler*	CreateSampler(const SamplerDesc& desc)	const = 0;
 
         virtual ISwapChain*	CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc& desc)	const = 0;
 

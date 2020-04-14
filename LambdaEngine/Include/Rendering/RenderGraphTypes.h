@@ -8,6 +8,20 @@ namespace LambdaEngine
 {
 	constexpr char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT = "BACK_BUFFER_TEXTURE";
 
+	constexpr char* FULLSCREEN_QUAD_VERTEX_BUFFER		= "FULLSCREEN_QUAD_VERTEX_BUFFER";
+
+	constexpr char* SCENE_MAT_PARAM_BUFFER				= "SCENE_MAT_PARAM_BUFFER";
+	constexpr char* SCENE_VERTEX_BUFFER					= "SCENE_VERTEX_BUFFER";
+	constexpr char* SCENE_INDEX_BUFFER					= "SCENE_INDEX_BUFFER";
+	constexpr char* SCENE_INSTANCE_BUFFER				= "SCENE_INSTANCE_BUFFER";
+	constexpr char* SCENE_MESH_INDEX_BUFFER				= "SCENE_MESH_INDEX_BUFFER";
+
+	constexpr char* SCENE_ALBEDO_MAPS					= "SCENE_ALBEDO_MAPS";
+	constexpr char* SCENE_NORMAL_MAPS					= "SCENE_NORMAL_MAPS";
+	constexpr char* SCENE_AO_MAPS						= "SCENE_AO_MAPS";
+	constexpr char* SCENE_ROUGHNESS_MAPS				= "SCENE_ROUGHNESS_MAPS";
+	constexpr char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";
+
 	enum class EPipelineStageType : uint8
 	{
 		NONE			= 0,
@@ -62,10 +76,12 @@ namespace LambdaEngine
 
 	enum class ESimpleResourceType : uint8
 	{
-		NONE					= 0,
-		TEXTURE					= 1,
-		BUFFER					= 2,
-		ACCELERATION_STRUCTURE	= 3,
+		NONE						= 0,
+		TEXTURE						= 1,
+		BUFFER						= 2,
+		ACCELERATION_STRUCTURE		= 3,
+		COLOR_ATTACHMENT			= 4,
+		DEPTH_STENCIL_ATTACHMENT	= 5,
 	};
 
 	enum class ERenderStageResourceType : uint8
@@ -75,12 +91,18 @@ namespace LambdaEngine
 		PUSH_CONSTANTS	= 2,
 	};
 
+	enum class ERenderStageDrawType : uint8
+	{
+		NONE				= 0,
+		SCENE_INDIRECT			= 1,
+	};
+
 	struct RenderStageAttachment
 	{
 		const char* pName				= "";
 		EAttachmentType Type			= EAttachmentType::NONE;
-		FShaderStageFlags StageMask		= SHADER_STAGE_FLAG_NONE;
-		uint32 DescriptorCount			= 1;
+		FShaderStageFlags ShaderStage	= SHADER_STAGE_FLAG_NONE;
+		uint32 SubResourceCount			= 1;
 	};
 
 	struct RenderStagePushConstants
@@ -103,7 +125,7 @@ namespace LambdaEngine
 	struct RenderStageDesc
 	{
 		const char* pName							= "Render Stage";
-		const RenderStageAttachment* pAttachments	= nullptr;
+		RenderStageAttachment* pAttachments			= nullptr;
 		uint32 AttachmentCount						= 0;
 		RenderStagePushConstants PushConstants		= {};
 
@@ -111,10 +133,23 @@ namespace LambdaEngine
 
 		union
 		{
-			GraphicsPipelineStateDesc*		pGraphicsDesc;
-			ComputePipelineStateDesc*		pComputeDesc;
-			RayTracingPipelineStateDesc*	pRayTracingDesc;
-		} Pipeline;
+			struct
+			{
+				GraphicsPipelineStateDesc*		pGraphicsDesc;
+				ERenderStageDrawType			DrawType;
+				const char*						pDrawResourceName;
+			} GraphicsPipeline;
+
+			struct
+			{
+				ComputePipelineStateDesc*		pComputeDesc;
+			} ComputePipeline;
+
+			struct
+			{
+				RayTracingPipelineStateDesc*	pRayTracingDesc;
+			} RayTracingPipeline;
+		};
 	};
 
 	struct AttachmentSynchronizationDesc
@@ -230,8 +265,8 @@ namespace LambdaEngine
 
 		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return ESimpleResourceType::TEXTURE;
 		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return ESimpleResourceType::BUFFER;
-		case EAttachmentType::OUTPUT_COLOR:											return ESimpleResourceType::TEXTURE;
-		case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return ESimpleResourceType::TEXTURE;
+		case EAttachmentType::OUTPUT_COLOR:											return ESimpleResourceType::COLOR_ATTACHMENT;
+		case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return ESimpleResourceType::DEPTH_STENCIL_ATTACHMENT;
 
 		default:																	return ESimpleResourceType::NONE;
 		}

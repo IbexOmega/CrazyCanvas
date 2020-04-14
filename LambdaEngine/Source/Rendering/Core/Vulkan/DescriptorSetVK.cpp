@@ -56,21 +56,22 @@ namespace LambdaEngine
 		}
 	}
 
-	void DescriptorSetVK::WriteTextureDescriptors(const ITextureView* const* ppTextures, const ISampler* const* ppSamplers, const ETextureState* pTextureStates, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	void DescriptorSetVK::WriteTextureDescriptors(const ITextureView* const* ppTextures, const ISampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
 	{
-		ASSERT(pTextureStates	!= nullptr);
 		ASSERT(ppTextures		!= nullptr);
 
 		const TextureViewVK* const* ppVkTextureViews	= reinterpret_cast<const TextureViewVK* const*>(ppTextures);
 		const SamplerVK* const*		ppVkSamplers		= reinterpret_cast<const SamplerVK* const*>(ppSamplers);
 
 		VkDescriptorType descriptorTypeVk = ConvertDescriptorType(descriptorType);
+		
+		VkImageLayout imageLayout = ConvertTextureState(textureState);
 
 		TArray<VkDescriptorImageInfo> imageInfos(descriptorCount);
 		for (uint32_t i = 0; i < descriptorCount; i++)
 		{
 			VkDescriptorImageInfo& imageInfo = imageInfos[i];
-			imageInfo.imageLayout = ConvertTextureState(pTextureStates[i]);
+			imageInfo.imageLayout = imageLayout;
 
 			ASSERT(ppVkTextureViews[i] != nullptr);
 			imageInfo.imageView	= ppVkTextureViews[i]->GetImageView();

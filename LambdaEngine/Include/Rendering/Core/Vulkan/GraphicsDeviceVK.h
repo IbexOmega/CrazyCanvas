@@ -65,6 +65,7 @@ namespace LambdaEngine
 
 		virtual IBuffer*	CreateBuffer(const BufferDesc& desc)	const override final;
 		virtual ITexture*	CreateTexture(const TextureDesc& desc)	const override final;
+		virtual ISampler*	CreateSampler(const SamplerDesc& desc)	const override final;
 
 		virtual ISwapChain* CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc& desc)	const override final;
 
