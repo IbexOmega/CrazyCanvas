@@ -254,6 +254,12 @@ namespace LambdaEngine
 
 	ITopLevelAccelerationStructure* GraphicsDeviceVK::CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc) const
 	{
+        //TODO: Query this in some other way
+        if (this->vkCreateAccelerationStructureKHR == nullptr)
+        {
+            return nullptr;
+        }
+        
 		TopLevelAccelerationStructureVK* pTLAS = DBG_NEW TopLevelAccelerationStructureVK(this);
 		if (!pTLAS->Init(desc))
 		{

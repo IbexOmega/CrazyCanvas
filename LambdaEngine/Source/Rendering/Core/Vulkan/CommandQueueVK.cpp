@@ -108,7 +108,7 @@ namespace LambdaEngine
 		uint64 waitValues[]		= { waitValue };
 		uint32 waitValueCount	= 0;
 
-		if (pWaitFenceVk)
+		if (pWaitFenceVk && m_pDevice->vkWaitSemaphores)
 		{
 			waitSemaphoreVk = pWaitFenceVk->GetSemaphore();
 			waitStageVk		= ConvertPipelineStage(waitStage);
@@ -116,7 +116,7 @@ namespace LambdaEngine
 			waitValueCount = 1;
 		}
 
-		if (pSignalFenceVk)
+		if (pSignalFenceVk && m_pDevice->vkWaitSemaphores)
 		{
 			m_SignalSemaphores.insert(m_SignalSemaphores.begin(), pSignalFenceVk->GetSemaphore());
 			SignalValueCount = 1;
