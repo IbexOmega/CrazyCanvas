@@ -6,29 +6,33 @@
 
 namespace LambdaEngine
 {
-	LRESULT Win32InputDevice::MessageProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
+	LRESULT Win32InputDevice::MessageProc(HWND, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
-		UNREFERENCED_PARAMETER(hWnd);
+		constexpr uint16 SCAN_CODE_MASK = 0x01ff;
 
 		switch (uMessage)
 		{
 		case WM_KEYDOWN:
 		{
+			uint16 scancode = HIWORD(lParam) & SCAN_CODE_MASK;
 			if (lParam & 0x40000000)
 			{
-				OnKeyHeldDown(Win32InputCodeTable::GetKey(int32(wParam)));
+				OnKeyHeldDown(Win32InputCodeTable::GetKeyFromScanCode(scancode));
 			}
 			else
 			{
-				OnKeyDown(Win32InputCodeTable::GetKey(int32(wParam)));
+				OnKeyDown(Win32InputCodeTable::GetKeyFromScanCode(scancode));
 			}
 
 			break;
 		}
 
 		case WM_KEYUP:
-			OnKeyUp(Win32InputCodeTable::GetKey(int32(wParam)));
+		{
+			uint16 scancode = HIWORD(lParam) & SCAN_CODE_MASK;
+			OnKeyUp(Win32InputCodeTable::GetKeyFromScanCode(scancode));
 			break;
+		}
 
 		case WM_MOUSEMOVE:
 			OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));

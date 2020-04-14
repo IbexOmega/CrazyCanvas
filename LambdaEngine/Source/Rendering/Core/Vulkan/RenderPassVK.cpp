@@ -210,8 +210,8 @@ namespace LambdaEngine
 			vkSubpassDependency.dstSubpass		= subpassDependency.DstSubpass != EXTERNAL_SUBPASS ? subpassDependency.DstSubpass : VK_SUBPASS_EXTERNAL;
 			vkSubpassDependency.srcStageMask	= ConvertPipelineStage(subpassDependency.SrcStageMask);
 			vkSubpassDependency.dstStageMask	= ConvertPipelineStage(subpassDependency.DstStageMask);
-			vkSubpassDependency.srcAccessMask	= ConvertAccessFlags(subpassDependency.SrcAccessMask);
-			vkSubpassDependency.dstAccessMask	= ConvertAccessFlags(subpassDependency.DstAccessMask);
+			vkSubpassDependency.srcAccessMask	= ConvertMemoryAccessFlags(subpassDependency.SrcAccessMask);
+			vkSubpassDependency.dstAccessMask	= ConvertMemoryAccessFlags(subpassDependency.DstAccessMask);
 		}
 	}
 }

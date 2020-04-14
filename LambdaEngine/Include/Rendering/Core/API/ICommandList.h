@@ -1,9 +1,11 @@
 #pragma once
 #include "IDeviceChild.h"
+#include "IFrameBuffer.h"
 #include "GraphicsTypes.h"
 
-#define MAX_IMAGE_BARRIERS  8
-#define MAX_VIEWS           32
+#define MAX_IMAGE_BARRIERS  16
+#define MAX_BUFFER_BARRIERS	16
+#define MAX_VIEWPORTS       8
 #define MAX_VERTEX_BUFFERS  32
 
 namespace LambdaEngine
@@ -11,7 +13,6 @@ namespace LambdaEngine
 	class IBuffer;
 	class ITexture;
 	class IRenderPass;
-	class IFrameBuffer;
 	class ITextureView;
 	class IPipelineState;
 	class IDescriptorSet;
@@ -39,6 +40,42 @@ namespace LambdaEngine
 		const IFrameBuffer* pFrameBuffer	= nullptr;
 	};
 
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma warning(push)
+	#pragma warning(disable : 4201) //Disable Warning - nonstandard extension used: nameless struct/union
+#endif
+	struct ClearColorDesc
+	{
+		union 
+		{
+			float Color[4];
+			struct
+			{
+				float	Depth;
+				uint32	Stencil;
+			};
+		};
+	};
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma warning(pop)
+#endif
+
+	struct BeginRenderPassDesc
+	{
+		const IRenderPass*		pRenderPass		= nullptr;
+		const IFrameBuffer*		pFrameBuffer	= nullptr;
+		uint32					Width			= 0;
+		uint32					Height			= 0;
+		uint32					Flags			= 0;
+		const ClearColorDesc*	pClearColors	= nullptr;
+		uint32					ClearColorCount = 0;
+		struct
+		{
+			int32 x = 0;
+			int32 y = 0;
+		} Offset;
+	};
+
 	struct CopyTextureFromBufferDesc
 	{
 		uint64 SrcOffset		= 0;
@@ -55,16 +92,29 @@ namespace LambdaEngine
 	
 	struct PipelineTextureBarrier
 	{
-		ITexture*			pTexture		= nullptr;
-		ETextureState		StateBefore		= ETextureState::TEXTURE_STATE_UNKNOWN;
-		ETextureState		StateAfter		= ETextureState::TEXTURE_STATE_UNKNOWN;
-		ECommandQueueType	QueueBefore		= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
-		ECommandQueueType	QueueAfter		= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
-		uint32				TextureFlags	= FTextureFlags::TEXTURE_FLAG_NONE;
-		uint32				Miplevel		= 0;
-		uint32				MiplevelCount	= 0;
-		uint32				ArrayIndex		= 0;
-		uint32				ArrayCount		= 0;
+		ITexture*			pTexture				= nullptr;
+		ETextureState		StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
+		ETextureState		StateAfter				= ETextureState::TEXTURE_STATE_UNKNOWN;
+		ECommandQueueType	QueueBefore				= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+		ECommandQueueType	QueueAfter				= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+		uint32				SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+		uint32				DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+		uint32				TextureFlags			= FTextureFlags::TEXTURE_FLAG_NONE;
+		uint32				Miplevel				= 0;
+		uint32				MiplevelCount			= 0;
+		uint32				ArrayIndex				= 0;
+		uint32				ArrayCount				= 0;
+	};
+
+	struct PipelineBufferBarrier
+	{
+		IBuffer*			pBuffer					= nullptr;
+		ECommandQueueType	QueueBefore				= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+		ECommandQueueType	QueueAfter				= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+		uint32				SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+		uint32				DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+		uint32				Offset					= 0;
+		uint32				SizeInBytes				= 0;
 	};
 
 	struct CommandListDesc
@@ -84,7 +134,7 @@ namespace LambdaEngine
 		virtual void Reset() = 0;
 		virtual void End()	 = 0;
 
-		virtual void BeginRenderPass(const IRenderPass* pRenderPass, const IFrameBuffer* pFrameBuffer, uint32 width, uint32 height, uint32 flags) = 0;
+		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) = 0;
 		virtual void EndRenderPass() = 0;
 
 		virtual void BuildTopLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)		= 0;
@@ -93,7 +143,8 @@ namespace LambdaEngine
 		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes) = 0;
 		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc) = 0;
 
-		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount) = 0;
+		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount)	= 0;
+		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrier* pBufferBarriers, uint32 bufferBarrierCount)		= 0;
 
 		virtual void GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter) = 0;
 

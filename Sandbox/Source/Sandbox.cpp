@@ -386,34 +386,39 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 
 	using namespace LambdaEngine;
 
+	if (key == EKey::KEY_A)
+	{
+		LOG_MESSAGE("A Key Pressed");
+	}
+
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
 
-	if (key == EKey::KEY_KP_1)
+	if (key == EKey::KEY_KEYPAD_1)
 	{
 		m_pToneSoundInstance->Toggle();
 	}
-	else if (key == EKey::KEY_KP_2)
+	else if (key == EKey::KEY_KEYPAD_2)
 	{
 		m_SpawnPlayAts = !m_SpawnPlayAts;
 	}
-	else if (key == EKey::KEY_KP_3)
+	else if (key == EKey::KEY_KEYPAD_3)
 	{
 		m_pGunSoundEffect->PlayOnceAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f), 1.0f);
 	}
-	else if (key == EKey::KEY_KP_ADD)
+	else if (key == EKey::KEY_KEYPAD_ADD)
 	{
 		m_GunshotDelay += 0.05f;
 	}
-	else if (key == EKey::KEY_KP_SUBTRACT)
+	else if (key == EKey::KEY_KEYPAD_SUBTRACT)
 	{
 		m_GunshotDelay = glm::max(m_GunshotDelay - 0.05f, 0.125f);
 	}
-	else if (key == EKey::KEY_KP_5)
+	else if (key == EKey::KEY_KEYPAD_5)
 	{
 		AudioSystem::GetDevice()->ToggleMusic();
 	}
-	else if (key == EKey::KEY_KP_7)
+	else if (key == EKey::KEY_KEYPAD_7)
 	{
 		if (m_pAudioGeometry != nullptr)
 		{
@@ -422,7 +427,7 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 			m_pAudioGeometry->SetActive(geometryAudioActive);
 		}
 	}
-	else if (key == EKey::KEY_KP_8)
+	else if (key == EKey::KEY_KEYPAD_8)
 	{
 		if (m_pReverbSphere != nullptr)
 		{
@@ -467,7 +472,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-    LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
+    //LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
     
 	m_Timer += delta.AsSeconds();
 

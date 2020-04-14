@@ -10,6 +10,8 @@
 #include "Rendering/Core/Vulkan/ComputePipelineStateVK.h"
 #include "Rendering/Core/Vulkan/GraphicsPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/RayTracingPipelineStateVK.h"
+#include "Rendering/Core/Vulkan/FrameBufferVK.h"
+#include "Rendering/Core/Vulkan/RenderPassVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
@@ -94,22 +96,28 @@ namespace LambdaEngine
 		}
 		
 		VkCommandBufferInheritanceInfo inheritanceInfo = { };
-		if (!pBeginDesc)
+		if (pBeginDesc)
 		{
-			beginInfo.pInheritanceInfo	= nullptr;
-		}
-		else
-		{
+			const RenderPassVK*		pVkRenderPass	= reinterpret_cast<const RenderPassVK*>(pBeginDesc->pRenderPass);
+			const FrameBufferVK*	pVkFrameBuffer	= reinterpret_cast<const FrameBufferVK*>(pBeginDesc->pFrameBuffer);
+
+			ASSERT(pVkRenderPass != nullptr);
+			ASSERT(pVkFrameBuffer != nullptr);
+
 			inheritanceInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 			inheritanceInfo.pNext					= nullptr;
-			//inheritanceInfo.framebuffer			= ;
-			//inheritanceInfo.renderPass			= ;
-			//inheritanceInfo.subpass				= ;
+			inheritanceInfo.framebuffer				= pVkFrameBuffer->GetFrameBuffer();
+			inheritanceInfo.renderPass				= pVkRenderPass->GetRenderPass();
+			inheritanceInfo.subpass					= pBeginDesc->SubPass;
 			inheritanceInfo.occlusionQueryEnable	= VK_FALSE;
 			inheritanceInfo.pipelineStatistics		= 0;
 			inheritanceInfo.queryFlags				= 0;
 			
 			beginInfo.pInheritanceInfo = &inheritanceInfo;
+		}
+		else
+		{
+			beginInfo.pInheritanceInfo	= nullptr;
 		}
 
 		VkResult result = vkBeginCommandBuffer(m_CommandList, &beginInfo);
@@ -128,20 +136,35 @@ namespace LambdaEngine
 		}
 	}
 
-	void CommandListVK::BeginRenderPass(const IRenderPass* pRenderPass, const IFrameBuffer* pFrameBuffer, uint32 width, uint32 height, uint32 flags)
+	void CommandListVK::BeginRenderPass(const BeginRenderPassDesc* pBeginDesc)
 	{
+		ASSERT(pBeginDesc != nullptr);
+
+		const RenderPassVK*		pVkRenderPass	= reinterpret_cast<const RenderPassVK*>(pBeginDesc->pRenderPass);
+		const FrameBufferVK*	pVkFrameBuffer	= reinterpret_cast<const FrameBufferVK*>(pBeginDesc->pFrameBuffer);
+
+		ASSERT(pVkRenderPass != nullptr);
+		ASSERT(pVkFrameBuffer != nullptr);
+
+		for (uint32 i = 0; i < pBeginDesc->ClearColorCount; i++)
+		{
+			//TODO: Make a more safe version?
+			const ClearColorDesc* colorDesc = &(pBeginDesc->pClearColors[i]);
+			memcpy(m_ClearValues[i].color.float32, colorDesc, sizeof(ClearColorDesc));
+		}
+
 		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.pNext = nullptr;
-		//renderPassInfo.renderPass			= pRenderPass->getRenderPass();
-		//renderPassInfo.framebuffer		= pFrameBuffer->getFrameBuffer();
-		renderPassInfo.renderArea.offset	= { 0, 0 };
-		renderPassInfo.renderArea.extent	= { width, height };
-		//renderPassInfo.pClearValues			= pClearVales;
-		//renderPassInfo.clearValueCount		= clearValueCount;
+		renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.pNext				= nullptr;
+		renderPassInfo.renderPass			= pVkRenderPass->GetRenderPass();
+		renderPassInfo.framebuffer			= pVkFrameBuffer->GetFrameBuffer();
+		renderPassInfo.renderArea.offset	= { pBeginDesc->Offset.x, pBeginDesc->Offset.y };
+		renderPassInfo.renderArea.extent	= { pBeginDesc->Width, pBeginDesc->Height };
+		renderPassInfo.pClearValues			= m_ClearValues;
+		renderPassInfo.clearValueCount		= pBeginDesc->ClearColorCount;
 
 		VkSubpassContents subpassContent = VK_SUBPASS_CONTENTS_INLINE;
-		if (flags & FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_EXECUTE_SECONDARY)
+		if (pBeginDesc->Flags & FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_EXECUTE_SECONDARY)
 		{
 			subpassContent = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
 		}
@@ -184,7 +207,7 @@ namespace LambdaEngine
 		ASSERT(pDst != nullptr);
 
 		const BufferVK* pVkSrc	= reinterpret_cast<const BufferVK*>(pSrc);
-		TextureVK* pVkDst		= reinterpret_cast<TextureVK*>(pDst);
+		TextureVK*		pVkDst	= reinterpret_cast<TextureVK*>(pDst);
 
 		VkBufferImageCopy copyRegion = {};
 		copyRegion.bufferImageHeight				= desc.SrcHeight;
@@ -203,7 +226,8 @@ namespace LambdaEngine
 
 	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount)
 	{
-		ASSERT(textureBarrierCount < MAX_IMAGE_BARRIERS);
+		ASSERT(pTextureBarriers		!= nullptr);
+		ASSERT(textureBarrierCount	< MAX_IMAGE_BARRIERS);
 
 		TextureVK*		pVkTexture	= nullptr;
 		VkImageLayout	oldLayout	= VK_IMAGE_LAYOUT_UNDEFINED;
@@ -217,6 +241,7 @@ namespace LambdaEngine
 			newLayout	= ConvertTextureState(barrier.StateAfter);
 
 			m_ImageBarriers[i].sType							= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			m_ImageBarriers[i].pNext							= nullptr;
 			m_ImageBarriers[i].image							= pVkTexture->GetImage();
 			m_ImageBarriers[i].srcQueueFamilyIndex				= m_pDevice->GetQueueFamilyIndexFromQueueType(barrier.QueueBefore);
 			m_ImageBarriers[i].dstQueueFamilyIndex				= m_pDevice->GetQueueFamilyIndexFromQueueType(barrier.QueueAfter);
@@ -226,8 +251,8 @@ namespace LambdaEngine
 			m_ImageBarriers[i].subresourceRange.levelCount		= barrier.MiplevelCount;
 			m_ImageBarriers[i].subresourceRange.baseArrayLayer	= barrier.ArrayIndex;
 			m_ImageBarriers[i].subresourceRange.layerCount		= barrier.ArrayCount;
-			m_ImageBarriers[i].srcAccessMask					= 0;
-			m_ImageBarriers[i].dstAccessMask					= 0;
+			m_ImageBarriers[i].srcAccessMask					= ConvertMemoryAccessFlags(barrier.SrcMemoryAccessFlags);
+			m_ImageBarriers[i].dstAccessMask					= ConvertMemoryAccessFlags(barrier.DstMemoryAccessFlags);
 
 			if (barrier.TextureFlags == FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL)
 			{
@@ -242,6 +267,33 @@ namespace LambdaEngine
 		VkPipelineStageFlags sourceStage		= ConvertPipelineStageMask(srcStage);
 		VkPipelineStageFlags destinationStage	= ConvertPipelineStageMask(dstStage);
 		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, textureBarrierCount, m_ImageBarriers);
+	}
+
+	void CommandListVK::PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrier* pBufferBarriers, uint32 bufferBarrierCount)
+	{
+		ASSERT(pBufferBarriers		!= nullptr);
+		ASSERT(bufferBarrierCount	< MAX_BUFFER_BARRIERS);
+
+		BufferVK* pVkBuffer = nullptr;
+		for (uint32 i = 0; i < bufferBarrierCount; i++)
+		{
+			const PipelineBufferBarrier& barrier = pBufferBarriers[i];
+			pVkBuffer = reinterpret_cast<BufferVK*>(barrier.pBuffer);
+
+			m_BufferBarriers[i].sType				= VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+			m_BufferBarriers[i].pNext				= nullptr;
+			m_BufferBarriers[i].buffer				= pVkBuffer->GetBuffer();
+			m_BufferBarriers[i].srcQueueFamilyIndex = m_pDevice->GetQueueFamilyIndexFromQueueType(barrier.QueueBefore);
+			m_BufferBarriers[i].dstQueueFamilyIndex = m_pDevice->GetQueueFamilyIndexFromQueueType(barrier.QueueAfter);
+			m_BufferBarriers[i].srcAccessMask		= ConvertMemoryAccessFlags(barrier.SrcMemoryAccessFlags);
+			m_BufferBarriers[i].dstAccessMask		= ConvertMemoryAccessFlags(barrier.DstMemoryAccessFlags);
+			m_BufferBarriers[i].offset				= barrier.Offset;
+			m_BufferBarriers[i].size				= barrier.SizeInBytes;
+		}
+
+		VkPipelineStageFlags sourceStage		= ConvertPipelineStageMask(srcStage);
+		VkPipelineStageFlags destinationStage	= ConvertPipelineStageMask(dstStage);
+		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, bufferBarrierCount, m_ImageBarriers);
 	}
 
 	void CommandListVK::GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter)
@@ -277,18 +329,23 @@ namespace LambdaEngine
 		}
 
 		PipelineTextureBarrier textureBarrier = { };
-		textureBarrier.pTexture			= pTexture;
-		textureBarrier.TextureFlags		= desc.Flags;
-		textureBarrier.StateBefore		= stateBefore;
-		textureBarrier.StateAfter		= ETextureState::TEXTURE_STATE_COPY_DST;
-		textureBarrier.QueueAfter		= ECommandQueueType::COMMAND_QUEUE_NONE;
-		textureBarrier.QueueBefore		= ECommandQueueType::COMMAND_QUEUE_NONE;
-		textureBarrier.Miplevel			= 0;
-		textureBarrier.MiplevelCount	= desc.Miplevels;
-		textureBarrier.ArrayIndex		= 0;
-		textureBarrier.ArrayCount		= desc.ArrayCount;
+		textureBarrier.pTexture				= pTexture;
+		textureBarrier.TextureFlags			= desc.Flags;
+		textureBarrier.QueueAfter			= ECommandQueueType::COMMAND_QUEUE_NONE;
+		textureBarrier.QueueBefore			= ECommandQueueType::COMMAND_QUEUE_NONE;
 
-		PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
+		if (stateBefore != ETextureState::TEXTURE_STATE_COPY_DST)
+		{
+			textureBarrier.Miplevel				= 0;
+			textureBarrier.ArrayIndex			= 0;
+			textureBarrier.MiplevelCount		= desc.Miplevels;
+			textureBarrier.ArrayCount			= desc.ArrayCount;
+			textureBarrier.SrcMemoryAccessFlags = 0;
+			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			textureBarrier.StateBefore			= stateBefore;
+			textureBarrier.StateAfter			= ETextureState::TEXTURE_STATE_COPY_DST;
+			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
+		}
 
 		VkImage		imageVk				= pVkTexture->GetImage();
 		VkExtent2D	destinationExtent	= {};
@@ -297,11 +354,13 @@ namespace LambdaEngine
 		{
 			destinationExtent = { std::max(sourceExtent.width / 2U, 1u), std::max(sourceExtent.height / 2U, 1U) };
 
-			textureBarrier.Miplevel			= i - 1;
-			textureBarrier.MiplevelCount	= 1;
-			textureBarrier.ArrayCount		= 1;
-			textureBarrier.StateBefore		= ETextureState::TEXTURE_STATE_COPY_DST;
-			textureBarrier.StateAfter		= ETextureState::TEXTURE_STATE_COPY_SRC;
+			textureBarrier.Miplevel				= i - 1;
+			textureBarrier.MiplevelCount		= 1;
+			textureBarrier.ArrayCount			= 1;
+			textureBarrier.StateBefore			= ETextureState::TEXTURE_STATE_COPY_DST;
+			textureBarrier.StateAfter			= ETextureState::TEXTURE_STATE_COPY_SRC;
+			textureBarrier.SrcMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
 			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 
 			VkImageBlit blit = {};

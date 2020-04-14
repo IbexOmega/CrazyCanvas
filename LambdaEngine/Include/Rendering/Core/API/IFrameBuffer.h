@@ -1,4 +1,7 @@
+#pragma once
 #include "IDeviceChild.h"
+
+#define MAX_RENDERTARGETS 8
 
 namespace LambdaEngine
 {
