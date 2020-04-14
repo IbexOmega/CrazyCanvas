@@ -151,13 +151,14 @@ namespace LambdaEngine
 		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)           = 0;
 		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)    = 0;
 		
-		virtual void SetConstantGraphics()	= 0;
-		virtual void SetConstantCompute()	= 0;
+		virtual void SetConstantRange(const IPipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) = 0;
 
 		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset) = 0;
 		virtual void BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) = 0;
 
-		virtual void BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout) = 0;
+		virtual void BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)	= 0;
+		virtual void BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)		= 0;
+		virtual void BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)	= 0;
 
 		virtual void BindGraphicsPipeline(const IPipelineState* pPipeline)	    = 0;
 		virtual void BindComputePipeline(const IPipelineState* pPipeline)		= 0;

@@ -13,7 +13,11 @@ LAMBDA_API void HandleAssert(const char* pLine, int line);
     #define DEBUGBREAK(...) abort()
 #endif
 
-#ifdef LAMBDA_DEBUG
+#ifndef LAMBDA_DEBUG
+    #define LAMBDA_DISABLE_ASSERTS
+#endif
+
+#ifndef LAMBDA_DISABLE_ASSERTS 
     #define ASSERT(condition) \
         if (!(condition)) \
         { \
