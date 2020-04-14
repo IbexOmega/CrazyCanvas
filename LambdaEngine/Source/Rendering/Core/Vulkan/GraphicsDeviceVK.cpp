@@ -5,6 +5,7 @@
 
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/FenceVK.h"
+#include "Rendering/Core/Vulkan/SamplerVK.h"
 #include "Rendering/Core/Vulkan/FenceLegacyVK.h"
 #include "Rendering/Core/Vulkan/CommandAllocatorVK.h"
 #include "Rendering/Core/Vulkan/CommandListVK.h"
@@ -379,6 +380,20 @@ namespace LambdaEngine
 		else
 		{
 			return pTexture;
+		}
+	}
+
+	ISampler* GraphicsDeviceVK::CreateSampler(const SamplerDesc& desc) const
+	{
+		SamplerVK* pSampler = DBG_NEW SamplerVK(this);
+		if (!pSampler->Init(desc))
+		{
+			pSampler->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pSampler;
 		}
 	}
 
