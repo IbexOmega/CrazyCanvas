@@ -15,6 +15,7 @@
 #include "Rendering/Core/API/IPipelineLayout.h"
 #include "Rendering/Core/API/IFrameBuffer.h"
 #include "Rendering/Core/API/IDescriptorHeap.h"
+#include "Rendering/Core/API/IDescriptorSet.h"
 
 #include "Application/API/PlatformApplication.h"
 
@@ -169,6 +170,8 @@ namespace LambdaEngine
 
 		IPipelineLayout* pPipelineLayout = s_pGraphicsDevice->CreatePipelineLayout(pipelineLayoutDesc);
 
+		IDescriptorSet* pDescriptorSet = s_pGraphicsDevice->CreateDescriptorSet("", pPipelineLayout, 0, pDescriptorHeap);
+
         const char* textureViewNames[] =
         {
             "BackBuffer View [0]",
@@ -227,7 +230,7 @@ namespace LambdaEngine
         CommandListDesc commandListDesc = { };
         commandListDesc.pName           = "Primary CommandList";
         commandListDesc.Flags           = FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-        commandListDesc.CommandListType = ECommandListType::COMMANDLIST_PRIMARY;
+        commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
         
         ICommandList* pCommandList = s_pGraphicsDevice->CreateCommandList(pCommandAllocator, commandListDesc);
 		pCommandList->Begin(nullptr);
@@ -250,6 +253,7 @@ namespace LambdaEngine
             SAFERELEASE(ppTextureViews[i]);
         }
         
+		SAFERELEASE(pDescriptorSet);
 		SAFERELEASE(pDescriptorHeap);
 		SAFERELEASE(pRenderPass);
 		SAFERELEASE(pPipelineLayout);

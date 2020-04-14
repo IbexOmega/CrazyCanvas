@@ -46,5 +46,7 @@ namespace LambdaEngine
 		VkPipelineMultisampleStateCreateInfo	m_MultisamplingState;
 		VkPipelineColorBlendStateCreateInfo		m_BlendState;
 		VkPipelineDepthStencilStateCreateInfo	m_DepthStencilState;
+
+		VkPipelineColorBlendAttachmentState*	m_pColorBlendAttachmentStates;
 	};
 }

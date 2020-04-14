@@ -49,8 +49,8 @@ namespace LambdaEngine
 	{
 		~Mesh()
 		{
-			SAFEDELETEARR(pVertexArray);
-			SAFEDELETEARR(pIndexArray);
+			SAFEDELETE_ARRAY(pVertexArray);
+			SAFEDELETE_ARRAY(pIndexArray);
 		}
 
 		Vertex* pVertexArray	= nullptr;

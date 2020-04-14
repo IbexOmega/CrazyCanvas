@@ -2,6 +2,7 @@
 
 #include "Rendering/Core/Vulkan/DescriptorHeapVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
+#include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
@@ -82,6 +83,40 @@ namespace LambdaEngine
 			}
 
 			return true;
+		}
+	}
+
+	VkDescriptorSet DescriptorHeapVK::AllocateDescriptorSet(const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex)
+	{
+		const PipelineLayoutVK* pPipelineLayoutVk = reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
+		VkDescriptorSetLayout descriptorSetLayout = pPipelineLayoutVk->GetDescriptorSetLayout(descriptorLayoutIndex);
+
+		VkDescriptorSetAllocateInfo allocate = {};
+		allocate.sType				= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocate.pNext				= nullptr;
+		allocate.pSetLayouts		= &descriptorSetLayout;
+		allocate.descriptorSetCount = 1;
+		allocate.descriptorPool		= m_DescriptorHeap;
+
+		VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+		VkResult result = vkAllocateDescriptorSets(m_pDevice->Device, &allocate, &descriptorSet);
+		if (result != VK_SUCCESS)
+		{
+			LOG_VULKAN_ERROR(result, "[DescriptorHeapVK]: Failed to allocate descriptorset");
+			return VK_NULL_HANDLE;
+		}
+		else
+		{
+			return descriptorSet;
+		}
+	}
+
+	void DescriptorHeapVK::FreeDescriptorSet(VkDescriptorSet descriptorSet)
+	{
+		VkResult result = vkFreeDescriptorSets(m_pDevice->Device, m_DescriptorHeap, 1, &descriptorSet);
+		if (result != VK_SUCCESS)
+		{
+			LOG_VULKAN_ERROR(result, "[DescriptorHeapVK]: Failed to allocate descriptorset");
 		}
 	}
 

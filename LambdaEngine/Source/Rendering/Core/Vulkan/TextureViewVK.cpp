@@ -81,14 +81,16 @@ namespace LambdaEngine
             LOG_VULKAN_ERROR(result, "[TextureViewVK]: Failed to create view");
             return false;
         }
+        else
+        {
+            m_Desc = desc;
+            SetName(desc.pName);
         
-        SetName(desc.pName);
-        m_Desc = desc;
-        
-        //Increase refcount of texture
-        pTextureVk->AddRef();
-        m_pTexture = pTextureVk;
-        return true;
+            pTextureVk->AddRef();
+            m_pTexture = pTextureVk;
+
+            return true;
+        }
     }
 
     void TextureViewVK::SetName(const char* pName)
@@ -105,7 +107,7 @@ namespace LambdaEngine
     ITexture* TextureViewVK::GetTexture()
     {
         TextureVK* pTextureVk = reinterpret_cast<TextureVK*>(m_pTexture);
-        pTextureVk->Release();
+        pTextureVk->AddRef();
         
         return pTextureVk;
     }

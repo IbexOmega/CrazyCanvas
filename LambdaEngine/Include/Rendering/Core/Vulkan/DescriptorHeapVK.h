@@ -18,6 +18,9 @@ namespace LambdaEngine
 
 		bool Init(const DescriptorHeapDesc& desc);
 
+		VkDescriptorSet AllocateDescriptorSet(const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex);
+		void			FreeDescriptorSet(VkDescriptorSet descriptorSet);
+
 		// IDeviceChild interface
 		virtual void SetName(const char* pName) override final;
 

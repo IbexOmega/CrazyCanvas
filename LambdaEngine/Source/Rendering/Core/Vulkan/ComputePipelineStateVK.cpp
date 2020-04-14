@@ -1,5 +1,6 @@
 #include "Rendering/Core/Vulkan/ComputePipelineStateVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
+#include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 
@@ -34,13 +35,13 @@ namespace LambdaEngine
 		pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
 
 		VkComputePipelineCreateInfo pipelineInfo = {};
-		pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-		pipelineInfo.pNext = nullptr;
-		pipelineInfo.flags = 0;
-		pipelineInfo.layout = VK_NULL_HANDLE;
-		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-		pipelineInfo.basePipelineIndex = -1;
-		pipelineInfo.stage = shaderCreateInfo;
+		pipelineInfo.sType					= VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+		pipelineInfo.pNext					= nullptr;
+		pipelineInfo.flags					= 0;
+		pipelineInfo.layout					= reinterpret_cast<const PipelineLayoutVK*>(desc.pPipelineLayout)->GetPipelineLayout();;
+		pipelineInfo.basePipelineHandle		= VK_NULL_HANDLE;
+		pipelineInfo.basePipelineIndex		= -1;
+		pipelineInfo.stage					= shaderCreateInfo;
 
 		if (vkCreateComputePipelines(m_pDevice->Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
 		{

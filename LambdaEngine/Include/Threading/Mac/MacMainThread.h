@@ -5,6 +5,12 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 
+#ifdef __OBJC__
+#include <Foundation/Foundation.h>
+#else
+class NSString;
+#endif
+
 namespace LambdaEngine
 {
     class MacRunLoopSource;
@@ -16,6 +22,8 @@ namespace LambdaEngine
         
         static void PreInit();
         static void PostRelease();
+        
+        static void Tick();
         
         static void MakeCall(dispatch_block_t block);
         

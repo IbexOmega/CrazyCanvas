@@ -12,7 +12,8 @@ namespace LambdaEngine
 		const RenderGraphDesc& desc,
 		std::vector<RenderStageDesc>& sortedRenderStageDescriptions,
 		std::vector<SynchronizationStageDesc>& sortedSynchronizationStageDescriptions,
-		std::vector<PipelineStageDesc>& sortedPipelineStageDescriptions)
+		std::vector<PipelineStageDesc>& sortedPipelineStageDescriptions,
+		std::vector<RenderStageResourceDesc>& resourceDescriptions)
 	{
 		std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>		renderStagesInputAttachments;
 		std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>		renderStagesExternalInputAttachments;
@@ -30,7 +31,8 @@ namespace LambdaEngine
 			desc,
 			renderStagesInputAttachments,
 			renderStagesExternalInputAttachments,
-			renderStagesOutputAttachments))
+			renderStagesOutputAttachments,
+			resourceDescriptions))
 		{
 			LOG_ERROR("[RenderGraphDescriptionParser]: Could not sort Render Stages Input Attachment for \"%s\"", desc.pName);
 			return false;
@@ -115,8 +117,12 @@ namespace LambdaEngine
 		const RenderGraphDesc& desc, 
 		std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&			renderStagesInputAttachments, 
 		std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&			renderStagesExternalInputAttachments, 
-		std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&			renderStagesOutputAttachments)
+		std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&			renderStagesOutputAttachments,
+		std::vector<RenderStageResourceDesc>&												resourceDescriptions)
 	{
+		std::unordered_map<const char*, const RenderStageAttachment*> renderStageAttachmentMap;
+		std::unordered_map<const char*, const RenderStagePushConstants*> renderStagePushConstantsMap;
+
 		for (uint32 renderStageIndex = 0; renderStageIndex < desc.RenderStageCount; renderStageIndex++)
 		{
 			const RenderStageDesc* pRenderStageDesc = &desc.pRenderStages[renderStageIndex];
@@ -125,9 +131,15 @@ namespace LambdaEngine
 			std::vector<const RenderStageAttachment*>& renderStageExternalInputAttachments	= renderStagesExternalInputAttachments[pRenderStageDesc->pName];
 			std::vector<const RenderStageAttachment*>& renderStageOutputAttachments			= renderStagesOutputAttachments[pRenderStageDesc->pName];
 
+			if (pRenderStageDesc->PushConstants.DataSize > 0)
+				renderStagePushConstantsMap[pRenderStageDesc->PushConstants.pName] = &pRenderStageDesc->PushConstants;
+			
+
 			for (uint32 a = 0; a < pRenderStageDesc->AttachmentCount; a++)
 			{
 				const RenderStageAttachment* pAttachment = &pRenderStageDesc->pAttachments[a];
+
+				renderStageAttachmentMap[pAttachment->pName] = pAttachment;
 
 				EAttachmentAccessType accessType = GetAttachmentAccessType(pAttachment->Type);
 
@@ -143,6 +155,26 @@ namespace LambdaEngine
 					}
 				}
 			}
+		}
+
+		resourceDescriptions.reserve(renderStageAttachmentMap.size() + renderStagePushConstantsMap.size());
+
+		for (auto it = renderStageAttachmentMap.begin(); it != renderStageAttachmentMap.end(); it++)
+		{
+			RenderStageResourceDesc resourceDescription = {};
+			resourceDescription.Type			= ERenderStageResourceType::ATTACHMENT;
+			resourceDescription.pAttachmentDesc = it->second;
+
+			resourceDescriptions.push_back(resourceDescription);
+		}
+
+		for (auto it = renderStagePushConstantsMap.begin(); it != renderStagePushConstantsMap.end(); it++)
+		{
+			RenderStageResourceDesc resourceDescription = {};
+			resourceDescription.Type				= ERenderStageResourceType::PUSH_CONSTANTS;
+			resourceDescription.pPushConstantsDesc	= it->second;
+
+			resourceDescriptions.push_back(resourceDescription);
 		}
 
 		return true;
@@ -380,7 +412,8 @@ namespace LambdaEngine
 			renderStage.pName							= pSourceRenderStage->pName;
 			renderStage.pAttachments					= pSourceRenderStage->pAttachments;
 			renderStage.AttachmentCount					= pSourceRenderStage->AttachmentCount;
-			
+			renderStage.PushConstants					= pSourceRenderStage->PushConstants;
+
 			renderStage.PipelineType					= pSourceRenderStage->PipelineType;
 			
 			switch (renderStage.PipelineType)
@@ -404,10 +437,10 @@ namespace LambdaEngine
 				for (const InternalRenderStageExternalInputAttachment* pExternalInputAttachment : sortedRenderStageIt->second->ExternalInputAttachments)
 				{
 					AttachmentSynchronizationDesc attachmentSynchronization = {};
-					attachmentSynchronization.Type							= EAttachmentSynchronizationType::OWNERSHIP_CHANGE;
-					attachmentSynchronization.ToQueueOwner					= sortedRenderStageIt->second->pRenderStage->PipelineType;
-					attachmentSynchronization.OutputToInput.FromAttachment	= *pExternalInputAttachment->pAttachment;
-					attachmentSynchronization.OutputToInput.ToAttachment	= *pExternalInputAttachment->pAttachment;
+					attachmentSynchronization.Type				= EAttachmentSynchronizationType::OWNERSHIP_CHANGE;
+					attachmentSynchronization.ToQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
+					attachmentSynchronization.FromAttachment	= *pExternalInputAttachment->pAttachment;
+					attachmentSynchronization.ToAttachment		= *pExternalInputAttachment->pAttachment;
 
 					synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
 				}
@@ -418,10 +451,10 @@ namespace LambdaEngine
 				for (const InternalRenderStageInputAttachment* pInputAttachment : sortedRenderStageIt->second->InputAttachments)
 				{
 					AttachmentSynchronizationDesc attachmentSynchronization = {};
-					attachmentSynchronization.Type							= EAttachmentSynchronizationType::TRANSITION_FOR_READ;
-					attachmentSynchronization.ToQueueOwner					= sortedRenderStageIt->second->pRenderStage->PipelineType;
-					attachmentSynchronization.OutputToInput.FromAttachment	= *pInputAttachment->pConnectedAttachment->pAttachment;
-					attachmentSynchronization.OutputToInput.ToAttachment	= *pInputAttachment->pAttachment;
+					attachmentSynchronization.Type				= EAttachmentSynchronizationType::TRANSITION_FOR_READ;
+					attachmentSynchronization.ToQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
+					attachmentSynchronization.FromAttachment	= *pInputAttachment->pConnectedAttachment->pAttachment;
+					attachmentSynchronization.ToAttachment		= *pInputAttachment->pAttachment;
 
 					synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
 
@@ -445,11 +478,11 @@ namespace LambdaEngine
 						if (finalStateOfAttachmentIt != finalStateOfAttachments.end())
 						{
 							AttachmentSynchronizationDesc attachmentSynchronization = {};
-							attachmentSynchronization.Type							= EAttachmentSynchronizationType::TRANSITION_FOR_WRITE;
-							attachmentSynchronization.FromQueueOwner				= finalStateOfAttachmentIt->second.second;
-							attachmentSynchronization.ToQueueOwner					= sortedRenderStageIt->second->pRenderStage->PipelineType;
-							attachmentSynchronization.InputToOutput.FromAttachment	= *finalStateOfAttachmentIt->second.first;
-							attachmentSynchronization.InputToOutput.ToAttachment	= *pOutputAttachment->pAttachment;
+							attachmentSynchronization.Type				= EAttachmentSynchronizationType::TRANSITION_FOR_WRITE;
+							attachmentSynchronization.FromQueueOwner	= finalStateOfAttachmentIt->second.second;
+							attachmentSynchronization.ToQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
+							attachmentSynchronization.FromAttachment	= *finalStateOfAttachmentIt->second.first;
+							attachmentSynchronization.ToAttachment		= *pOutputAttachment->pAttachment;
 
 							synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
 						}
@@ -501,7 +534,7 @@ namespace LambdaEngine
 		{
 			for (auto attachmentSynchronizationIt = synchronizationStageIt->Synchronizations.begin(); attachmentSynchronizationIt != synchronizationStageIt->Synchronizations.end(); )
 			{
-				const char* pAttachmentName = attachmentSynchronizationIt->OutputToInput.FromAttachment.pName;
+				const char* pAttachmentName = attachmentSynchronizationIt->FromAttachment.pName;
 				auto firstEncounterOfAttachmentSynchronizationIt = firstEncounterOfAttachmentSynchronizations.find(pAttachmentName);
 
 				//Store first encounter in graph of each attachment synchronization, their from queue is not known until we have traversed the entire graph to the end
@@ -650,11 +683,6 @@ namespace LambdaEngine
 		}
 
 		return false;
-	}
-
-	bool RenderGraphDescriptionParser::IsAttachmentReserved(const char* pAttachmentName)
-	{
-		return strcmp(pAttachmentName, RENDER_GRAPH_BACK_BUFFER) == 0;
 	}
 
 	bool RenderGraphDescriptionParser::WriteGraphViz(
@@ -909,17 +937,17 @@ namespace LambdaEngine
 
 						if (synchronization.Type == EAttachmentSynchronizationType::TRANSITION_FOR_READ)
 						{
-							strcat(fileOutputBuffer, synchronization.OutputToInput.FromAttachment.pName);
+							strcat(fileOutputBuffer, synchronization.FromAttachment.pName);
 							strcat(fileOutputBuffer, "\\n--TRANSITION FOR READ--\\n");
 						}
 						else if (synchronization.Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE)
 						{
-							strcat(fileOutputBuffer, synchronization.OutputToInput.FromAttachment.pName);
+							strcat(fileOutputBuffer, synchronization.FromAttachment.pName);
 							strcat(fileOutputBuffer, "\\n--OWNERSHIP CHANGE--\\n");
 						}
 						else if (synchronization.Type == EAttachmentSynchronizationType::TRANSITION_FOR_WRITE)
 						{
-							strcat(fileOutputBuffer, synchronization.InputToOutput.FromAttachment.pName);
+							strcat(fileOutputBuffer, synchronization.FromAttachment.pName);
 							strcat(fileOutputBuffer, "\\n--TRANSITION FOR WRITE--\\n");
 						}
 

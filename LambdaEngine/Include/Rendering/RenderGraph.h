@@ -2,6 +2,8 @@
 
 #include "LambdaEngine.h"
 
+#include "Rendering/Core/API/ICommandList.h"
+#include "Rendering/Core/API/GraphicsTypes.h"
 #include "RenderGraphTypes.h"
 
 #include <unordered_map>
@@ -12,11 +14,13 @@ namespace LambdaEngine
 	struct SamplerDesc;
 	struct BufferDesc;
 
+	class ICommandAllocator;
 	class IGraphicsDevice;
 	class IPipelineLayout;
 	class IPipelineState;
 	class IDescriptorSet;
 	class IDescriptorHeap;
+	class ICommandList;
 	class ITexture;
 	class ISampler;
 	class IBuffer;
@@ -37,6 +41,12 @@ namespace LambdaEngine
 		{
 			struct
 			{
+				void* pData;
+				uint32 DataSize;
+			} PushConstantUpdate;
+
+			struct
+			{
 				TextureDesc* pTextureDesc;
 				SamplerDesc* pSamplerDesc;
 				void* pTextureData;
@@ -51,7 +61,7 @@ namespace LambdaEngine
 			struct
 			{
 				ITexture* pTexture;
-				ISampler* pSamplerDesc;
+				ISampler* pSampler;
 			} ExternalTextureUpdate;
 
 			struct
@@ -63,19 +73,48 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderGraph
 	{
+		struct RenderStage
+		{
+			uint64				WaitValue			= 0;
+			uint64				SignalValue			= 0;
+
+			IPipelineLayout*	pPipelineLayout		= nullptr;
+			IPipelineState*		pPipelineState		= nullptr;
+			IDescriptorSet*		pDescriptorSet		= nullptr;
+		};
+
+		struct SynchronizationStage
+		{
+			std::unordered_map<const char*, PipelineTextureBarrier>		TextureBarriers;
+
+			//std::unordered_map<const char*, PipelineBufferBarrier>	BufferBarriers;
+		};
+
+		struct PipelineStage
+		{
+			EPipelineStageType Type = EPipelineStageType::NONE;
+			uint32 StageIndex = 0;
+
+			ICommandAllocator* pGraphicsCommandAllocators[MAX_FRAMES_IN_FLIGHT];
+			ICommandAllocator* pComputeCommandAllocators[MAX_FRAMES_IN_FLIGHT];
+			ICommandList* pGraphicsCommandLists[MAX_FRAMES_IN_FLIGHT];
+			ICommandList* pComputeCommandLists[MAX_FRAMES_IN_FLIGHT];
+		};
+
 		enum class EResourceType
 		{
-			UNKNOWN				= 0,
-			INTERNAL_TEXTURE	= 1,
-			INTERNAL_BUFFER		= 2,
-			EXTERNAL_TEXTURE	= 3,
-			EXTERNAL_BUFFER		= 4,
-			EXTERNAL_UNIFORM	= 5,
+			UNKNOWN								= 0,
+			PUSH_CONSTANTS						= 1,
+			INTERNAL_TEXTURE					= 2,
+			INTERNAL_BUFFER						= 3,
+			EXTERNAL_TEXTURE					= 4,
+			EXTERNAL_BUFFER						= 5,
+			EXTERNAL_ACCELERATION_STRUCTURE		= 6,
 		};
 
 		struct ResourceBinding
 		{
-			IDescriptorSet* pDescriptorSet	= nullptr;
+			RenderStage*	pRenderStage	= nullptr;
 			uint32			Binding			= 0;
 		};
 
@@ -88,22 +127,15 @@ namespace LambdaEngine
 			{
 				struct
 				{
-					ITexture* pTexture		= nullptr;
-					ISampler* pSamplerDesc	= nullptr;
+					ITexture* pTexture;
+					ISampler* pSampler;
 				} Texture;
 
 				struct
 				{
-					IBuffer* pBuffer		= nullptr;
+					IBuffer* pBuffer;
 				} Buffer;
 			};
-		};
-
-		struct RenderStage
-		{
-			IPipelineLayout*	pPipelineLayout		= nullptr;
-			IPipelineState*		pPipelineState		= nullptr;
-			IDescriptorSet*		pDescriptorSet		= nullptr;
 		};
 
 	public:
@@ -119,16 +151,22 @@ namespace LambdaEngine
 
 	private:
 		bool CreateDescriptorHeap();
+		bool CreateResources(const std::vector<RenderStageResourceDesc>& resourceDescriptions);
 		bool CreateRenderStages(const std::vector<RenderStageDesc>& renderStageDescriptions);
+		bool CreateSynchronizationStages(const std::vector<SynchronizationStageDesc>& synchronizationStageDescriptions);
+		bool CreatePipelineStages(const std::vector<PipelineStageDesc>& pipelineStageDescriptions);
+
+		uint32 CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc);
 
 	private:
 		const IGraphicsDevice*								m_pGraphicsDevice;
 
 		IDescriptorHeap*									m_pDescriptorHeap;
 
+		PipelineStage*										m_pPipelineStages;
 		RenderStage*										m_pRenderStages;
-		uint32												m_RenderStageCount;
+		SynchronizationStage*								m_pSynchronizationStages;
 
-		std::unordered_map<const char*, Resource*>			m_Resources;
+		std::unordered_map<const char*, Resource>			m_ResourceMap;
 	};
 }

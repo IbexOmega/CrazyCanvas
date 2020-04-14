@@ -19,6 +19,7 @@ namespace LambdaEngine
 		bool Init(const char* pName, ECommandQueueType queueType);
 
 		VkCommandBuffer AllocateCommandBuffer(VkCommandBufferLevel level);
+		void			FreeCommandBuffer(VkCommandBuffer commandBuffer);
 
 		// IDeviceChild Interface
 		virtual void SetName(const char* pName)	override final;
@@ -37,7 +38,7 @@ namespace LambdaEngine
 		}
 
 	private:
-		VkCommandPool	m_CommandPool	= VK_NULL_HANDLE;
-		ECommandQueueType		m_Type			= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+		VkCommandPool		m_CommandPool	= VK_NULL_HANDLE;
+		ECommandQueueType	m_Type			= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
 	};
 }

@@ -16,37 +16,47 @@ namespace LambdaEngine
 		NONE            = 0,
 		GRAPHICS        = 1,
 		COMPUTE         = 2,
-		RAY_TRACING     = 3
+		RAY_TRACING     = 3,
+	};
+
+	struct BlendAttachmentState
+	{
+		bool BlendEnabled				= false;
+		uint32 ColorComponentsMask		= FColorComponentFlags::COLOR_COMPONENT_FLAG_NONE;
 	};
 
 	struct GraphicsPipelineStateDesc
 	{
-		const char* pName						= "";
-		const IRenderPass* pRenderPass			= nullptr;
-		const IPipelineLayout* pPipelineLayout	= nullptr;
+		const char* pName									= "";
+		const IRenderPass* pRenderPass						= nullptr;
+		const IPipelineLayout* pPipelineLayout				= nullptr;
+		const BlendAttachmentState* pBlendAttachmentStates	= nullptr;
+		uint32 BlendAttachmentStateCount						= 0;
 
 		//New Style
-		const IShader* pMeshShader				= nullptr;
+		const IShader* pMeshShader							= nullptr;
 
 		//Old Style
-		const IShader* pVertexShader			= nullptr;
-		const IShader* pGeometryShader			= nullptr;
-		const IShader* pHullShader				= nullptr;
-		const IShader* pDomainShader			= nullptr;
+		const IShader* pVertexShader						= nullptr;
+		const IShader* pGeometryShader						= nullptr;
+		const IShader* pHullShader							= nullptr;
+		const IShader* pDomainShader						= nullptr;
 
 		//Required
-		const IShader* pPixelShader				= nullptr;
+		const IShader* pPixelShader							= nullptr;
 	};
 
 	struct ComputePipelineStateDesc
 	{
-		const char* pName		= "";
-		const IShader*	pShader	= nullptr;
+		const char*				pName				= "";
+		const IShader*			pShader				= nullptr;
+		const IPipelineLayout*	pPipelineLayout		= nullptr;
 	};
 
 	struct RayTracingPipelineStateDesc
 	{
 		const char*				pName					= "";
+		const IPipelineLayout*	pPipelineLayout			= nullptr;
 		uint32					MaxRecursionDepth		= 1;	
 		const IShader*			pRaygenShader			= nullptr;
 		const IShader* const*	ppMissShaders			= nullptr;

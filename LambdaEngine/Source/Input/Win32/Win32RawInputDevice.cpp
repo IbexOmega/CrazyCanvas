@@ -83,7 +83,7 @@ namespace LambdaEngine
 				{
 					LOG_ERROR("[Win32RawInputDevice]: GetRawInputData does not return correct size");
 
-					SAFEDELETEARR(lpBytes);
+					SAFEDELETE_ARRAY(lpBytes);
 					return 0;
 				}
 
@@ -121,7 +121,7 @@ namespace LambdaEngine
 					//}
 				}
 
-				SAFEDELETEARR(lpBytes);
+				SAFEDELETE_ARRAY(lpBytes);
 				return 0;
 			}
 		}

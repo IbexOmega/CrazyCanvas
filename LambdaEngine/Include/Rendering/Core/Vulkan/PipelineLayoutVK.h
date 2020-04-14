@@ -35,7 +35,6 @@ namespace LambdaEngine
 
 		bool Init(const PipelineLayoutDesc& desc);
 
-
 		FORCEINLINE VkPipelineLayout GetPipelineLayout() const
 		{
 			return m_PipelineLayout;

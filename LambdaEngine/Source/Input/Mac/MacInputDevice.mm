@@ -10,8 +10,6 @@ namespace LambdaEngine
 {
     void MacInputDevice::HandleEvent(NSEvent* event)
     {
-        SCOPED_AUTORELEASE_POOL();
-        
         NSEventType eventType = [event type];
         switch(eventType)
         {

@@ -95,10 +95,15 @@ Sandbox::Sandbox()
 		geometryRenderStageAttachments.push_back({ "GBUFFER_VELOCITY",					EAttachmentType::OUTPUT_COLOR,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1 });
 		geometryRenderStageAttachments.push_back({ "GBUFFER_DEPTH",						EAttachmentType::OUTPUT_DEPTH_STENCIL,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1 });
 
+		RenderStagePushConstants pushConstants = {};
+		pushConstants.pName			= "Geometry Pass Push Constants";
+		pushConstants.DataSize		= sizeof(int32) * 2;
+
 		RenderStageDesc renderStage = {};
 		renderStage.pName						= "Geometry Render Stage";
 		renderStage.pAttachments				= geometryRenderStageAttachments.data();
 		renderStage.AttachmentCount				= geometryRenderStageAttachments.size();
+		renderStage.PushConstants				= pushConstants;
 
 		geometryPassPipelineDesc.pName				= "Geometry Pass Pipeline State";
 		geometryPassPipelineDesc.pVertexShader		= m_pResourceManager->GetShader(geometryVertexShaderGUID);
@@ -142,11 +147,15 @@ Sandbox::Sandbox()
 
 		rayTraceRenderStageAttachments.push_back({ "RADIANCE_IMAGE",					EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE,					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			1 });
 
+		RenderStagePushConstants pushConstants = {};
+		pushConstants.pName			= "Ray Tracing Push Constants";
+		pushConstants.DataSize		= sizeof(float) * 5;
+
 		RenderStageDesc renderStage = {};
 		renderStage.pName						= "Ray Tracing Render Stage";
 		renderStage.pAttachments				= rayTraceRenderStageAttachments.data();
 		renderStage.AttachmentCount				= rayTraceRenderStageAttachments.size();
-
+		renderStage.PushConstants				= pushConstants;
 
 		rayTraceClosestHitShader.push_back(m_pResourceManager->GetShader(closestHitRadianceShaderGUID));
 		rayTraceClosestHitShader.push_back(m_pResourceManager->GetShader(closestHitShadowShaderGUID));
@@ -175,10 +184,15 @@ Sandbox::Sandbox()
 
 		spatialBlurRenderStageAttachments.push_back({ "FILTERED_RADIANCE_IMAGE",					EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE,					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,			1 });
 
+		RenderStagePushConstants pushConstants = {};
+		pushConstants.pName			= "Spatial Blur Push Constants";
+		pushConstants.DataSize		= sizeof(float) * 6;
+
 		RenderStageDesc renderStage = {};
 		renderStage.pName						= "Spatial Blur Render Stage";
 		renderStage.pAttachments				= spatialBlurRenderStageAttachments.data();
 		renderStage.AttachmentCount				= spatialBlurRenderStageAttachments.size();
+		renderStage.PushConstants				= pushConstants;
 
 		spatialBlurPipelineDesc.pName			= "Spatial Blur Pipeline State";
 		spatialBlurPipelineDesc.pShader			= m_pResourceManager->GetShader(blurShaderGUID);
@@ -190,6 +204,7 @@ Sandbox::Sandbox()
 	}
 
 	ComputePipelineStateDesc					particleUpdatePipelineDesc = {};
+	
 	std::vector<RenderStageAttachment>			particleUpdateRenderStageAttachments;
 
 	{
@@ -197,10 +212,15 @@ Sandbox::Sandbox()
 
 		particleUpdateRenderStageAttachments.push_back({ "PARTICLE_BUFFER",					EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER,							FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,			1 });
 
+		RenderStagePushConstants pushConstants = {};
+		pushConstants.pName			= "Particle Update Push Constants";
+		pushConstants.DataSize		= sizeof(float) + sizeof(int32);
+
 		RenderStageDesc renderStage = {};
 		renderStage.pName						= "Particle Update Render Stage";
 		renderStage.pAttachments				= particleUpdateRenderStageAttachments.data();
 		renderStage.AttachmentCount				= particleUpdateRenderStageAttachments.size();
+		renderStage.PushConstants				= pushConstants;
 
 		particleUpdatePipelineDesc.pName	= "Particle Update Pipeline State";
 		particleUpdatePipelineDesc.pShader	= m_pResourceManager->GetShader(particleUpdateShaderGUID);
@@ -227,7 +247,7 @@ Sandbox::Sandbox()
 		shadingRenderStageAttachments.push_back({ "BRDF_LUT",									EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
 		shadingRenderStageAttachments.push_back({ "BLUE_NOISE_LUT",								EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
 
-		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER,						EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
+		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
 
 		RenderStageDesc renderStage = {};
 		renderStage.pName						= "Shading Render Stage";

@@ -17,35 +17,28 @@ namespace LambdaEngine
     class MacRunLoopSource
     {
     public:
-        MacRunLoopSource(CFRunLoopRef runLoop, CFStringRef runLoopMode)
+        MacRunLoopSource(CFRunLoopRef runLoop, NSString* runLoopMode)
             : m_RunLoop(runLoop),
             m_RunLoopMode(runLoopMode),
             m_BlockLock(),
             m_Blocks()
         {
             CFRunLoopSourceContext sourceContext = { };
-            sourceContext.info              = (void*)this;
-            sourceContext.version           = 0;
-            sourceContext.equal             = CFEqual;
-            //sourceContext.hash              = CFHash;
-            //sourceContext.retain            = CFRetain; //TODO: Investigate crash
-            sourceContext.release           = CFRelease;
-            sourceContext.copyDescription   = CFCopyDescription;
-            sourceContext.perform           = MacRunLoopSource::Perform;
-            sourceContext.schedule          = MacRunLoopSource::Schedule;
-            sourceContext.cancel            = MacRunLoopSource::Cancel;
+            sourceContext.info    = (void*)this;
+            sourceContext.version = 0;
+            sourceContext.perform = MacRunLoopSource::Perform;
             
             m_Source = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sourceContext);
             
             ASSERT(m_Source != nullptr);
             
-            CFRunLoopAddSource(m_RunLoop, m_Source, m_RunLoopMode);
+            CFStringRef cfRunLoopMode = (CFStringRef)m_RunLoopMode;
+            CFRunLoopAddSource(m_RunLoop, m_Source, cfRunLoopMode);
+            CFRelease(m_Source);
         }
         
         ~MacRunLoopSource()
         {
-            CFRunLoopRemoveSource(m_RunLoop, m_Source, m_RunLoopMode);
-            //CFRelease(m_Source); //TODO: Investigate crash
         }
         
         void ScheduleBlock(dispatch_block_t block)
@@ -80,6 +73,11 @@ namespace LambdaEngine
             }
         }
         
+        void RunInMode(CFRunLoopMode runMode)
+        {
+            CFRunLoopRunInMode(runMode, 0, true);
+        }
+        
         void WakeUp()
         {
             CFRunLoopWakeUp(m_RunLoop);
@@ -95,20 +93,10 @@ namespace LambdaEngine
             }
         }
         
-        static void Cancel(void* pInfo, CFRunLoopRef runLoop, CFStringRef mode)
-        {
-            NSLog(@"Cancel");
-        }
-        
-        static void Schedule(void* pInfo, CFRunLoopRef runLoop, CFStringRef mode)
-        {
-            NSLog(@"Schedule");
-        }
-        
     private:
         CFRunLoopRef        m_RunLoop       = nullptr;
         CFRunLoopSourceRef  m_Source        = nullptr;
-        CFStringRef         m_RunLoopMode   = nullptr;
+        NSString*           m_RunLoopMode   = nullptr;
         
         SpinLock m_BlockLock;
         TArray<dispatch_block_t> m_Blocks;
@@ -123,7 +111,7 @@ namespace LambdaEngine
     void MacMainThread::PreInit()
     {
         CFRunLoopRef mainLoop = CFRunLoopGetMain();
-        s_pMainThread = DBG_NEW MacRunLoopSource(mainLoop, kCFRunLoopDefaultMode);
+        s_pMainThread = DBG_NEW MacRunLoopSource(mainLoop, NSDefaultRunLoopMode);
     }
 
     void MacMainThread::PostRelease()
@@ -131,19 +119,31 @@ namespace LambdaEngine
         SAFEDELETE(s_pMainThread);
     }
 
+    void MacMainThread::Tick()
+    {
+        ASSERT(s_pMainThread != nullptr);
+        s_pMainThread->RunInMode((CFRunLoopMode)NSDefaultRunLoopMode);
+    }
+
     void MacMainThread::MakeCall(dispatch_block_t block)
     {
+        dispatch_block_t copiedBlock = Block_copy(block);
+        
         if ([NSThread isMainThread])
         {
             // If already on mainthread, execute block here
-            block();
+            copiedBlock();
         }
         else
         {
+            ASSERT(s_pMainThread != nullptr);
+
             // Otherwise schedule block on main thread
-            s_pMainThread->ScheduleBlock(block);
+            s_pMainThread->ScheduleBlock(copiedBlock);
             s_pMainThread->WakeUp();
         }
+        
+        Block_release(copiedBlock);
     }
 }
 

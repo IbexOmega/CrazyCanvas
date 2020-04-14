@@ -1,5 +1,6 @@
 #include "Rendering/Core/Vulkan/RayTracingPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
+#include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
@@ -42,17 +43,23 @@ namespace LambdaEngine
         {
             return false;
         }
-    
-		VkRayTracingPipelineCreateInfoKHR rayPipelineInfo = {};
-		rayPipelineInfo.sType				= VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-		rayPipelineInfo.stageCount			= (uint32)shaderStagesInfos.size();
-		rayPipelineInfo.pStages				= shaderStagesInfos.data();
-		rayPipelineInfo.groupCount			= (uint32)shaderGroups.size();
-		rayPipelineInfo.pGroups				= shaderGroups.data();
-		rayPipelineInfo.maxRecursionDepth	= desc.MaxRecursionDepth;
-		rayPipelineInfo.layout				= VK_NULL_HANDLE;
 
-		if (m_pDevice->vkCreateRayTracingPipelinesKHR(m_pDevice->Device, VK_NULL_HANDLE, 1, &rayPipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
+		VkPipelineLibraryCreateInfoKHR rayTracingPipelineLibrariesInfo = {};
+		rayTracingPipelineLibrariesInfo.sType			= VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+		rayTracingPipelineLibrariesInfo.libraryCount	= 0;
+		rayTracingPipelineLibrariesInfo.pLibraries		= nullptr;
+
+		VkRayTracingPipelineCreateInfoKHR rayTracingPipelineInfo = {};
+		rayTracingPipelineInfo.sType				= VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+		rayTracingPipelineInfo.stageCount			= (uint32)shaderStagesInfos.size();
+		rayTracingPipelineInfo.pStages				= shaderStagesInfos.data();
+		rayTracingPipelineInfo.groupCount			= (uint32)shaderGroups.size();
+		rayTracingPipelineInfo.pGroups				= shaderGroups.data();
+		rayTracingPipelineInfo.maxRecursionDepth	= desc.MaxRecursionDepth;
+		rayTracingPipelineInfo.layout				= reinterpret_cast<const PipelineLayoutVK*>(desc.pPipelineLayout)->GetPipelineLayout();
+		rayTracingPipelineInfo.libraries			= rayTracingPipelineLibrariesInfo;
+
+		if (m_pDevice->vkCreateRayTracingPipelinesKHR(m_pDevice->Device, VK_NULL_HANDLE, 1, &rayTracingPipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
 		{
 			LOG_ERROR("[RayTracingPipelineStateVK]: vkCreateRayTracingPipelinesKHR failed for \"%s\"", desc.pName);
 			return false;

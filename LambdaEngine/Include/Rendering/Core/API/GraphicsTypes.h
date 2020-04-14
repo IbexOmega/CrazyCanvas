@@ -7,6 +7,8 @@ namespace LambdaEngine
 {
 	class ISampler;
 
+	constexpr uint32 MAX_FRAMES_IN_FLIGHT = 3;
+
     enum class EMemoryType : uint8
     {
         NONE				= 0,
@@ -33,9 +35,9 @@ namespace LambdaEngine
 
 	enum class ECommandListType : uint8
 	{
-		COMMANDLIST_UNKNOWN		= 0,
-		COMMANDLIST_PRIMARY		= 1,
-		COMMANDLIST_SECONDARY	= 2
+		COMMAND_LIST_UNKNOWN		= 0,
+		COMMAND_LIST_PRIMARY		= 1,
+		COMMAND_LIST_SECONDARY		= 2
 	};
 
 	enum class EShaderLang : uint32
@@ -113,7 +115,8 @@ namespace LambdaEngine
 		DESCRIPTOR_UNORDERED_ACCESS_TEXTURE			= 2,
 		DESCRIPTOR_CONSTANT_BUFFER					= 4,
 		DESCRIPTOR_UNORDERED_ACCESS_BUFFER			= 5,
-		DESCRIPTOR_ACCELERATION_STRUCTURE			= 6
+		DESCRIPTOR_ACCELERATION_STRUCTURE			= 6,
+		DESCRIPTOR_SAMPLER							= 7,
 	};
 
 	enum FShaderStageFlags : uint32
@@ -203,6 +206,15 @@ namespace LambdaEngine
 		ACCESS_FLAG_FRAGMENT_DENSITY_MAP_READ			= FLAG(26),
 		ACCESS_FLAG_COMMAND_PREPROCESS_READ				= FLAG(27),
 		ACCESS_FLAG_COMMAND_PREPROCESS_WRITE			= FLAG(28),
+	};
+
+	enum FColorComponentFlags : uint8
+	{
+		COLOR_COMPONENT_FLAG_NONE						= 0,
+		COLOR_COMPONENT_FLAG_R							= FLAG(1),
+		COLOR_COMPONENT_FLAG_G							= FLAG(2),
+		COLOR_COMPONENT_FLAG_B							= FLAG(3),
+		COLOR_COMPONENT_FLAG_A							= FLAG(4),
 	};
 
 	struct DescriptorCountDesc
