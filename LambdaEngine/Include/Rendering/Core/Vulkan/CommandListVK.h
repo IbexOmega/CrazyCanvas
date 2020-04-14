@@ -70,7 +70,7 @@ namespace LambdaEngine
 
 		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)                          override final;
 		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)  override final;
-		virtual void DrawIndexedIndirect(IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)											override final;
+		virtual void DrawIndexedIndirect(const IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)							override final;
 
 		virtual void ExecuteSecondary(const ICommandList* pSecondary) override final;
 

@@ -878,7 +878,7 @@ namespace LambdaEngine
 		pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
 
 		pGraphicsCommandList->BindGraphicsPipeline(pRenderStage->pPipelineState);
-		pGraphicsCommandList->BindDescriptorSet(pRenderStage->pDescriptorSet, pRenderStage->pPipelineLayout);
+		pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->pDescriptorSet, pRenderStage->pPipelineLayout);
 
 		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 		{
@@ -900,7 +900,7 @@ namespace LambdaEngine
 		pComputeCommandList->Begin(nullptr);
 
 		pComputeCommandList->BindComputePipeline(pRenderStage->pPipelineState);
-		pComputeCommandList->BindDescriptorSet(pRenderStage->pDescriptorSet, pRenderStage->pPipelineLayout);
+		pComputeCommandList->BindDescriptorSetCompute(pRenderStage->pDescriptorSet, pRenderStage->pPipelineLayout);
 
 		uint32 workGroupCountX = 1;
 		uint32 workGroupCountY = 1;
@@ -919,7 +919,7 @@ namespace LambdaEngine
 		pComputeCommandList->Begin(nullptr);
 
 		pComputeCommandList->BindComputePipeline(pRenderStage->pPipelineState);
-		pComputeCommandList->BindDescriptorSet(pRenderStage->pDescriptorSet, pRenderStage->pPipelineLayout);
+		pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->pDescriptorSet, pRenderStage->pPipelineLayout);
 
 		uint32 raygenOffset = 1;
 		uint32 width = 1;
