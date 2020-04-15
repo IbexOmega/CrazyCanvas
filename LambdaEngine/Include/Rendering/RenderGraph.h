@@ -18,7 +18,7 @@ namespace LambdaEngine
 	struct SamplerDesc;
 	struct BufferDesc;
 
-	class ITopLevelAccelerationStructure;
+	class IAccelerationStructure;
 	class ICommandAllocator;
 	class IGraphicsDevice;
 	class IPipelineLayout;
@@ -77,7 +77,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				ITopLevelAccelerationStructure* pTLAS;
+				IAccelerationStructure* pTLAS;
 			} ExternalAccelerationStructure;
 		};
 	};
@@ -163,7 +163,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				ITopLevelAccelerationStructure* pTLAS;
+				IAccelerationStructure* pTLAS;
 			} AccelerationStructure;
 		};
 

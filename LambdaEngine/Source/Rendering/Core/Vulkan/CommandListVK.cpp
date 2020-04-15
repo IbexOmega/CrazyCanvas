@@ -14,6 +14,7 @@
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/DescriptorSetVK.h"
+#include "Rendering/Core/Vulkan/AccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 #ifndef LAMBDA_DISABLE_VULKAN_CHECKS
@@ -187,12 +188,158 @@ namespace LambdaEngine
 		vkCmdEndRenderPass(m_CommandList);
 	}
 
-	void CommandListVK::BuildTopLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)
+	void CommandListVK::BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)
 	{
+		ASSERT(pBuildDesc != nullptr);
+
+		ASSERT(pBuildDesc->pInstanceBuffer	!= nullptr);
+		ASSERT(pBuildDesc->pScratchBuffer	!= nullptr);
+		const BufferVK* pInstanceBufferVk	= reinterpret_cast<const BufferVK*>(pBuildDesc->pInstanceBuffer);
+		BufferVK*		pScratchBufferVk	= reinterpret_cast<BufferVK*>(pBuildDesc->pScratchBuffer);
+
+		VkDeviceOrHostAddressConstKHR instancesDataAddressUnion = {};
+		instancesDataAddressUnion.deviceAddress = pInstanceBufferVk->GetDeviceAdress();
+
+		VkAccelerationStructureGeometryInstancesDataKHR instancesDataDesc = {};
+		instancesDataDesc.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+		instancesDataDesc.arrayOfPointers	= VK_FALSE;
+		instancesDataDesc.data				= instancesDataAddressUnion;
+
+		VkAccelerationStructureGeometryDataKHR geometryDataUnion = {};
+		geometryDataUnion.instances = instancesDataDesc;
+
+		VkAccelerationStructureGeometryKHR geometryData = {};
+		geometryData.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryData.geometryType	= VK_GEOMETRY_TYPE_INSTANCES_KHR;
+		geometryData.geometry		= geometryDataUnion;
+
+		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
+
+		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
+		accelerationStructureBuildInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		accelerationStructureBuildInfo.type						= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		accelerationStructureBuildInfo.geometryArrayOfPointers	= VK_FALSE;
+		accelerationStructureBuildInfo.geometryCount			= pBuildDesc->InstanceCount;
+		accelerationStructureBuildInfo.ppGeometries				= &pGeometryData;
+		accelerationStructureBuildInfo.flags					= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+		{
+			accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+		}
+
+		ASSERT(pBuildDesc->pAccelerationStructure != nullptr);
+
+		AccelerationStructureVK* pAccelerationStructureVk	= reinterpret_cast<AccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
+		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAdress();
+
+#ifndef LAMBDA_DISABLE_ASSERT
+		BufferDesc scratchBufferDesc = pScratchBufferVk->GetDesc();
+		ASSERT(scratchBufferDesc.SizeInBytes >= pAccelerationStructureVk->GetScratchMemorySizeRequirement());
+#endif
+
+		if (pBuildDesc->Update)
+		{
+			accelerationStructureBuildInfo.update					= VK_TRUE;
+			accelerationStructureBuildInfo.srcAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+			accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+		}
+		else
+		{
+			accelerationStructureBuildInfo.update					= VK_FALSE;
+			accelerationStructureBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+			accelerationStructureBuildInfo.dstAccelerationStructure = pAccelerationStructureVk->GetAccelerationStructure();
+		}
+
+		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
+		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->InstanceCount;
+		accelerationStructureOffsetInfo.primitiveOffset = 0;
+
+		ASSERT(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
+
+		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
+		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CommandList, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
-	void CommandListVK::BuildBottomLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)
+	void CommandListVK::BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)
 	{
+		ASSERT(pBuildDesc != nullptr);
+
+		ASSERT(pBuildDesc->pScratchBuffer	!= nullptr);
+		ASSERT(pBuildDesc->pVertexBuffer	!= nullptr);
+		ASSERT(pBuildDesc->pIndexBuffer		!= nullptr);
+
+		BufferVK*		pScratchBufferVk	= reinterpret_cast<BufferVK*>(pBuildDesc->pScratchBuffer);
+		const BufferVK* pVertexBufferVk		= reinterpret_cast<const BufferVK*>(pBuildDesc->pVertexBuffer);
+		const BufferVK* pIndexBufferVk		= reinterpret_cast<const BufferVK*>(pBuildDesc->pIndexBuffer);
+
+		VkDeviceOrHostAddressConstKHR vertexDataAddressUnion = {};
+		vertexDataAddressUnion.deviceAddress = pVertexBufferVk->GetDeviceAdress();
+
+		VkDeviceOrHostAddressConstKHR indexDataAddressUnion = {};
+		indexDataAddressUnion.deviceAddress = pIndexBufferVk->GetDeviceAdress();
+
+		ASSERT(pBuildDesc->pTransform != nullptr);
+
+		VkDeviceOrHostAddressConstKHR transformDataAddressUnion = {};
+		transformDataAddressUnion.hostAddress = pBuildDesc->pTransform;
+
+		VkAccelerationStructureGeometryTrianglesDataKHR geometryDataDesc = {};
+		geometryDataDesc.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+		geometryDataDesc.pNext			= nullptr;
+		geometryDataDesc.vertexFormat	= VK_FORMAT_R32G32B32_SFLOAT;
+		geometryDataDesc.vertexData		= vertexDataAddressUnion;
+		geometryDataDesc.vertexStride	= pBuildDesc->VertexStride;
+		geometryDataDesc.indexType		= VK_INDEX_TYPE_UINT32;
+		geometryDataDesc.indexData		= indexDataAddressUnion;
+		geometryDataDesc.transformData	= transformDataAddressUnion;
+
+		VkAccelerationStructureGeometryDataKHR geometryDataUnion = {};
+		geometryDataUnion.triangles = geometryDataDesc;
+
+		VkAccelerationStructureGeometryKHR geometryData = {};
+		geometryData.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryData.pNext			= nullptr;
+		geometryData.geometryType	= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+		geometryData.geometry		= geometryDataUnion;
+		geometryData.flags			= VK_GEOMETRY_OPAQUE_BIT_KHR; //Cant be opaque if we want to utilize any-hit shaders
+
+		VkDeviceOrHostAddressKHR scratchBufferAddressUnion = {};
+		scratchBufferAddressUnion.deviceAddress = pScratchBufferVk->GetDeviceAdress();
+
+		AccelerationStructureVK* pAccelerationStructureVk = reinterpret_cast<AccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
+#ifndef LAMBDA_DISABLE_ASSERT
+		BufferDesc scratchBufferDesc = pScratchBufferVk->GetDesc();
+		ASSERT(scratchBufferDesc.SizeInBytes >= pAccelerationStructureVk->GetScratchMemorySizeRequirement());
+#endif
+
+		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
+		accelerationStructureBuildInfo.sType	= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		accelerationStructureBuildInfo.type		= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		accelerationStructureBuildInfo.flags	= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+		{
+			accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+		}
+
+		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
+		accelerationStructureBuildInfo.geometryArrayOfPointers	= VK_FALSE;
+		accelerationStructureBuildInfo.geometryCount			= 1;
+		accelerationStructureBuildInfo.ppGeometries				= &pGeometryData;
+		accelerationStructureBuildInfo.update					= VK_FALSE;
+		accelerationStructureBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+		accelerationStructureBuildInfo.dstAccelerationStructure = pAccelerationStructureVk->GetAccelerationStructure();
+		accelerationStructureBuildInfo.scratchData				= scratchBufferAddressUnion;
+
+		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
+		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->TriangleCount;
+		accelerationStructureOffsetInfo.primitiveOffset = pBuildDesc->IndexBufferByteOffset;
+		accelerationStructureOffsetInfo.firstVertex		= pBuildDesc->FirstVertexIndex;
+		accelerationStructureOffsetInfo.transformOffset = 0;
+
+		ASSERT(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
+
+		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
+		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CommandList, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
 	void CommandListVK::CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)
@@ -222,7 +369,7 @@ namespace LambdaEngine
 		VkBufferImageCopy copyRegion = {};
 		copyRegion.bufferImageHeight				= desc.SrcHeight;
 		copyRegion.bufferOffset						= desc.SrcOffset;
-		copyRegion.bufferRowLength					= desc.SrcRowPitch;
+		copyRegion.bufferRowLength					= uint32(desc.SrcRowPitch);
 		copyRegion.imageSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT; //TODO: Other aspects
 		copyRegion.imageSubresource.baseArrayLayer	= desc.ArrayIndex;
 		copyRegion.imageSubresource.layerCount		= desc.ArrayCount;
@@ -544,9 +691,10 @@ namespace LambdaEngine
         vkCmdDrawIndexed(m_CommandList, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
-	void CommandListVK::DrawIndexedIndirect(IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)
+	void CommandListVK::DrawIndexedIndirect(const IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)
 	{
-		vkCmdDrawIndexedIndirect(m_CommandList, reinterpret_cast<BufferVK*>(pDrawBuffer)->GetBuffer(), offset, drawCount, stride);
+		const BufferVK* pDrawBufferVk = reinterpret_cast<const BufferVK*>(pDrawBuffer);
+		vkCmdDrawIndexedIndirect(m_CommandList, pDrawBufferVk->GetBuffer(), offset, drawCount, stride);
 	}
 
 	void CommandListVK::ExecuteSecondary(const ICommandList* pSecondary)

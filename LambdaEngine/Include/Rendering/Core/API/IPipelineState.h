@@ -31,9 +31,10 @@ namespace LambdaEngine
 		const IRenderPass* pRenderPass						= nullptr;
 		const IPipelineLayout* pPipelineLayout				= nullptr;
 		const BlendAttachmentState* pBlendAttachmentStates	= nullptr;
-		uint32 BlendAttachmentStateCount						= 0;
+		uint32 BlendAttachmentStateCount					= 0;
 
 		//New Style
+		const IShader* pTaskShader							= nullptr;
 		const IShader* pMeshShader							= nullptr;
 
 		//Old Style

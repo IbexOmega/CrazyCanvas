@@ -16,6 +16,7 @@
 #include "Rendering/Core/API/IFrameBuffer.h"
 #include "Rendering/Core/API/IDescriptorHeap.h"
 #include "Rendering/Core/API/IDescriptorSet.h"
+#include "Rendering/Core/API/IAccelerationStructure.h"
 
 #include "Application/API/PlatformApplication.h"
 
@@ -219,6 +220,21 @@ namespace LambdaEngine
 			ppFrameBuffers[i] = s_pGraphicsDevice->CreateFrameBuffer(pRenderPass, frameBufferDesc);
         }
         
+		AccelerationStructureDesc tlasDesc = {};
+		tlasDesc.pName			= "TLAS";
+		tlasDesc.Flags			= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+		tlasDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP;
+		tlasDesc.InstanceCount	= 6;
+		IAccelerationStructure* pTLAS = s_pGraphicsDevice->CreateAccelerationStructure(tlasDesc);
+
+		AccelerationStructureDesc blasDesc = {};
+		blasDesc.pName				= "BLAS";
+		blasDesc.Flags				= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+		blasDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_BOTTOM;
+		blasDesc.MaxTriangleCount	= 3;
+		blasDesc.MaxVertexCount		= 3;
+		IAccelerationStructure* pBLAS = s_pGraphicsDevice->CreateAccelerationStructure(blasDesc);
+
         FenceDesc fenceDesc = { };
         fenceDesc.pName         = "Main Fence";
         fenceDesc.InitalValue   = 0;
@@ -232,18 +248,39 @@ namespace LambdaEngine
         commandListDesc.Flags           = FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
         commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
         
-        ICommandList* pCommandList = s_pGraphicsDevice->CreateCommandList(pCommandAllocator, commandListDesc);
-		pCommandList->Begin(nullptr);
-		pCommandList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_DONT_CARE, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
-		pCommandList->End();
+        ICommandList* pGraphicsCommandList = s_pGraphicsDevice->CreateCommandList(pCommandAllocator, commandListDesc);
+		pGraphicsCommandList->Begin(nullptr);
+		
+		uint32 backBufferIndex = pSwapChain->GetCurrentBackBufferIndex();
+		ITexture* pBackBuffer = pSwapChain->GetBuffer(backBufferIndex);
+
+		PipelineTextureBarrier barrier = {};
+		barrier.pTexture				= pBackBuffer;
+		barrier.TextureFlags			= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET;
+		barrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
+		barrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
+		barrier.Miplevel				= 0;
+		barrier.MiplevelCount			= 1;
+		barrier.ArrayIndex				= 0;
+		barrier.ArrayCount				= 1;
+		barrier.SrcMemoryAccessFlags	= 0;
+		barrier.DstMemoryAccessFlags	= 0;
+		barrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
+		barrier.StateAfter				= ETextureState::TEXTURE_STATE_PRESENT;
+		pGraphicsCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &barrier, 1);
+
+		pBackBuffer->Release();
+
+		pGraphicsCommandList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_DONT_CARE, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+		pGraphicsCommandList->End();
 
 		uint64 waitValue	= pFence->GetValue();
 		uint64 signalValue	= waitValue + 1;
 
-		//s_pGraphicsQueue->ExecuteCommandLists(&pCommandList, 1, PIPELINE_STAGE_FLAG_TOP, pFence, waitValue, pFence, signalValue);
-		//pSwapChain->Present();
+		s_pGraphicsQueue->ExecuteCommandLists(&pGraphicsCommandList, 1, PIPELINE_STAGE_FLAG_TOP, pFence, waitValue, pFence, signalValue);
+		pSwapChain->Present();
 
-		//pFence->Wait(signalValue, UINT64_MAX_);
+		pFence->Wait(signalValue, UINT64_MAX);
 
 		pCommandAllocator->Reset();
 
@@ -257,7 +294,7 @@ namespace LambdaEngine
 		SAFERELEASE(pDescriptorHeap);
 		SAFERELEASE(pRenderPass);
 		SAFERELEASE(pPipelineLayout);
-        SAFERELEASE(pCommandList);
+        SAFERELEASE(pGraphicsCommandList);
 		SAFERELEASE(pCommandAllocator);
 		SAFERELEASE(pFence);
 		SAFERELEASE(pSwapChain);

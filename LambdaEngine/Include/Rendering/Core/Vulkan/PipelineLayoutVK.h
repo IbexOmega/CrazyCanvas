@@ -68,9 +68,9 @@ namespace LambdaEngine
 	private:
 		VkPipelineLayout		m_PipelineLayout		= VK_NULL_HANDLE;
 
-		uint32	m_DescriptorSetCount = 0;
 		VkDescriptorSetLayout	m_DescriptorSetLayouts[MAX_DESCRIPTOR_SET_LAYOUTS];
 		DescriptorCountDesc		m_DescriptorCount[MAX_DESCRIPTOR_SET_LAYOUTS];
+		uint32					m_DescriptorSetCount = 0;
 		
 		uint32		m_ImmutableSamplerCount = 0;
 		SamplerVK*	m_ppImmutableSamplers[MAX_TOTAL_IMMUTABLE_SAMPLERS];

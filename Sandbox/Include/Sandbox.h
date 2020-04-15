@@ -9,15 +9,15 @@
 
 namespace LambdaEngine
 {
+	struct GameObject;
+
 	class ResourceManager;
 	class AudioListener;
 	class SoundEffect3D;
 	class SoundInstance3D;
 	class AudioGeometry;
 	class ReverbSphere;
-
 	class Scene;
-	class GameObject;
 }
 
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IMouseHandler

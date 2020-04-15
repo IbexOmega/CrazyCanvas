@@ -138,7 +138,7 @@ namespace LambdaEngine
 		s_KeyCodeTable[0x146]	= EKey::KEY_PAUSE;
 
 		/* Set scancode table */
-		for (uint32 i = 0; i < NUM_KEY_CODES; i++)
+		for (uint16 i = 0; i < NUM_KEY_CODES; i++)
 		{
 			if (s_KeyCodeTable[i] > 0)
 			{
@@ -167,8 +167,9 @@ namespace LambdaEngine
 	
 	uint16 Win32InputCodeTable::GetVirtualKeyFromKey(EKey key)
 	{
-		uint16 scancode = s_ScanCodeTable[key];
-		return MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX);
+		uint16	scancode	= s_ScanCodeTable[key];
+		UINT	virtualKey	= MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX);
+		return uint16(virtualKey);
 	}
 }
 

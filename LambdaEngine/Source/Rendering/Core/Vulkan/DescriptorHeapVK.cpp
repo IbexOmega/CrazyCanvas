@@ -72,7 +72,10 @@ namespace LambdaEngine
 		}
 		else
 		{
-			m_Desc = desc;
+			m_Desc			= desc;
+			m_HeapStatus	= desc.DescriptorCount;
+			SetName(desc.pName);
+
 			if (desc.pName)
 			{
 				D_LOG_MESSAGE("[DescriptorHeapVK]: Created DescriptorHeap \"%s\"", desc.pName);
@@ -88,8 +91,8 @@ namespace LambdaEngine
 
 	VkDescriptorSet DescriptorHeapVK::AllocateDescriptorSet(const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex)
 	{
-		const PipelineLayoutVK* pPipelineLayoutVk = reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
-		VkDescriptorSetLayout descriptorSetLayout = pPipelineLayoutVk->GetDescriptorSetLayout(descriptorLayoutIndex);
+		const PipelineLayoutVK* pPipelineLayoutVk	= reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
+		VkDescriptorSetLayout	descriptorSetLayout = pPipelineLayoutVk->GetDescriptorSetLayout(descriptorLayoutIndex);
 
 		VkDescriptorSetAllocateInfo allocate = {};
 		allocate.sType				= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -107,6 +110,10 @@ namespace LambdaEngine
 		}
 		else
 		{
+			DescriptorCountDesc count = pPipelineLayoutVk->GetDescriptorCount(descriptorLayoutIndex);
+			m_HeapStatus.DescriptorSetCount--;
+
+
 			return descriptorSet;
 		}
 	}

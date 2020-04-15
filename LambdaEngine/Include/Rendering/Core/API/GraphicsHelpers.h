@@ -1,12 +1,10 @@
 #pragma once
-
 #include "GraphicsTypes.h"
-
 #include "IPipelineState.h"
 
 namespace LambdaEngine
 {
-	ECommandQueueType FORCEINLINE ConvertPipelineStateTypeToQueue(EPipelineStateType pipelineStateType)
+	FORCEINLINE ECommandQueueType ConvertPipelineStateTypeToQueue(EPipelineStateType pipelineStateType)
 	{
 		switch (pipelineStateType)
 		{
@@ -17,7 +15,7 @@ namespace LambdaEngine
 		}
 	}
 
-	FPipelineStageFlags FORCEINLINE ConvertShaderStageToPipelineStage(FShaderStageFlags shaderStage)
+	FORCEINLINE FPipelineStageFlags ConvertShaderStageToPipelineStage(FShaderStageFlags shaderStage)
 	{
 		switch (shaderStage)
 		{
@@ -36,5 +34,18 @@ namespace LambdaEngine
 			case FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER:			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 			default:														return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 		}
+	}
+
+	FORCEINLINE bool CheckValidDescriptorCount(const DescriptorCountDesc& count)
+	{
+		return
+			(count.DescriptorSetCount						> 0) &&
+			(count.AccelerationStructureDescriptorCount		> 0) &&
+			(count.ConstantBufferDescriptorCount			> 0) &&
+			(count.SamplerDescriptorCount					> 0) &&
+			(count.TextureCombinedSamplerDescriptorCount	> 0) &&
+			(count.TextureDescriptorCount					> 0) &&
+			(count.UnorderedAccessBufferDescriptorCount		> 0) &&
+			(count.UnorderedAccessTextureDescriptorCount	> 0);
 	}
 }

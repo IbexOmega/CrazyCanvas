@@ -210,11 +210,17 @@ namespace LambdaEngine
 
 	enum FColorComponentFlags : uint8
 	{
-		COLOR_COMPONENT_FLAG_NONE						= 0,
-		COLOR_COMPONENT_FLAG_R							= FLAG(1),
-		COLOR_COMPONENT_FLAG_G							= FLAG(2),
-		COLOR_COMPONENT_FLAG_B							= FLAG(3),
-		COLOR_COMPONENT_FLAG_A							= FLAG(4),
+		COLOR_COMPONENT_FLAG_NONE	= 0,
+		COLOR_COMPONENT_FLAG_R		= FLAG(1),
+		COLOR_COMPONENT_FLAG_G		= FLAG(2),
+		COLOR_COMPONENT_FLAG_B		= FLAG(3),
+		COLOR_COMPONENT_FLAG_A		= FLAG(4),
+	};
+
+	enum FAccelerationStructureFlags : uint16
+	{
+		ACCELERATION_STRUCTURE_FLAG_NONE			= 0,
+		ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE	= FLAG(1),
 	};
 
 	struct DescriptorCountDesc

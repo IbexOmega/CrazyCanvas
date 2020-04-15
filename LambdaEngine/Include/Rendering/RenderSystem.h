@@ -21,6 +21,21 @@ namespace LambdaEngine
 			return s_pGraphicsDevice;
 		}
 
+		FORCEINLINE static ICommandQueue* GetGraphicsQueue()
+		{
+			return s_pGraphicsQueue;
+		}
+
+		FORCEINLINE static ICommandQueue* GetComputeQueue()
+		{
+			return s_pComputeQueue;
+		}
+
+		FORCEINLINE static ICommandQueue* GetCopyQueue()
+		{
+			return s_pCopyQueue;
+		}
+
 	private:
 		static IGraphicsDevice* s_pGraphicsDevice;
 		static ICommandQueue*	s_pGraphicsQueue;

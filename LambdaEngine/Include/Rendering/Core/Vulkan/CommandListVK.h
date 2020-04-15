@@ -31,14 +31,14 @@ namespace LambdaEngine
 		//ICommandList interface
 		virtual void Begin(const SecondaryCommandListBeginDesc* pBeginDesc)	override final;
 
-		virtual void Reset()	override final;
-		virtual void End()		override final;
+		virtual void Reset() override final;
+		virtual void End()	 override final;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) override final;
 		virtual void EndRenderPass() override final;
 
-		virtual void BuildTopLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)		override final;
-		virtual void BuildBottomLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)	override final;
+		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)		override final;
+		virtual void BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)	override final;
 
 		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)	override final;
 		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)      override final;
@@ -70,7 +70,7 @@ namespace LambdaEngine
 
 		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)                          override final;
 		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)  override final;
-		virtual void DrawIndexedIndirect(IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)											override final;
+		virtual void DrawIndexedIndirect(const IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)							override final;
 
 		virtual void ExecuteSecondary(const ICommandList* pSecondary) override final;
 
