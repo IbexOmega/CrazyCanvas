@@ -536,7 +536,6 @@ namespace LambdaEngine
 			//Create Descriptor Set
 			{
 				IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
-
 				pRenderStage->pDescriptorSet = pDescriptorSet;
 			}
 
