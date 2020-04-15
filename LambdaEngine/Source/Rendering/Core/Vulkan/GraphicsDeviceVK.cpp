@@ -363,6 +363,32 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst) const
 	{
+		DescriptorSetVK*		pDstVk			= reinterpret_cast<DescriptorSetVK*>(pDst);
+		const DescriptorSetVK*	pSrcVk			= reinterpret_cast<const DescriptorSetVK*>(pSrc);
+		uint32					bindingCount	= pSrcVk->GetDescriptorBindingDescCount();
+
+		VkCopyDescriptorSet copyDescriptorSet = {};
+		copyDescriptorSet.sType				= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+		copyDescriptorSet.pNext				= nullptr;
+		copyDescriptorSet.dstSet			= pDstVk->GetDescriptorSet();
+		copyDescriptorSet.srcSet			= pSrcVk->GetDescriptorSet();
+		copyDescriptorSet.srcArrayElement	= 0;
+		copyDescriptorSet.dstArrayElement	= 0;
+
+		std::vector<VkCopyDescriptorSet> descriptorSetCopies;
+		descriptorSetCopies.reserve(bindingCount);
+		for (uint32 i = 0; i < bindingCount; i++)
+		{
+			DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
+
+			copyDescriptorSet.descriptorCount	= binding.DescriptorCount;
+			copyDescriptorSet.srcBinding		= binding.Binding;
+			copyDescriptorSet.dstBinding		= copyDescriptorSet.srcBinding;
+			
+			descriptorSetCopies.push_back(copyDescriptorSet);
+		}
+
+		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
 	}
 
 	void GraphicsDeviceVK::CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount) const
@@ -385,6 +411,8 @@ namespace LambdaEngine
 			copyDescriptorSet.descriptorCount	= pCopyBindings[i].DescriptorCount;
 			copyDescriptorSet.dstBinding		= pCopyBindings[i].DstBinding;
 			copyDescriptorSet.srcBinding		= pCopyBindings[i].SrcBinding;
+
+			descriptorSetCopies.push_back(copyDescriptorSet);
 		}
 		
 		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());

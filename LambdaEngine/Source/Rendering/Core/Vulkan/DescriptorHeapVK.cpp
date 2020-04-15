@@ -94,6 +94,23 @@ namespace LambdaEngine
 		const PipelineLayoutVK* pPipelineLayoutVk	= reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
 		VkDescriptorSetLayout	descriptorSetLayout = pPipelineLayoutVk->GetDescriptorSetLayout(descriptorLayoutIndex);
 
+		DescriptorCountDesc count		= pPipelineLayoutVk->GetDescriptorCount(descriptorLayoutIndex);
+		DescriptorCountDesc newStatus	= m_HeapStatus;
+		newStatus.DescriptorSetCount--;
+		newStatus.ConstantBufferDescriptorCount			-= count.ConstantBufferDescriptorCount;
+		newStatus.AccelerationStructureDescriptorCount	-= count.AccelerationStructureDescriptorCount;
+		newStatus.SamplerDescriptorCount				-= count.SamplerDescriptorCount;
+		newStatus.TextureCombinedSamplerDescriptorCount -= count.TextureCombinedSamplerDescriptorCount;
+		newStatus.TextureDescriptorCount				-= count.TextureDescriptorCount;
+		newStatus.UnorderedAccessBufferDescriptorCount	-= count.UnorderedAccessBufferDescriptorCount;
+		newStatus.UnorderedAccessTextureDescriptorCount	-= count.UnorderedAccessTextureDescriptorCount;
+
+		if (!CheckValidDescriptorCount(newStatus))
+		{
+			LOG_ERROR("[DescriptorHeapVK]: Not enough descriptors in DescriptorHeap for allocation");
+			return VK_NULL_HANDLE;
+		}
+
 		VkDescriptorSetAllocateInfo allocate = {};
 		allocate.sType				= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocate.pNext				= nullptr;
@@ -110,10 +127,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			DescriptorCountDesc count = pPipelineLayoutVk->GetDescriptorCount(descriptorLayoutIndex);
-			m_HeapStatus.DescriptorSetCount--;
-
-
+			m_HeapStatus = newStatus;
 			return descriptorSet;
 		}
 	}
