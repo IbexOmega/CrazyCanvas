@@ -67,7 +67,7 @@ void Client::Run()
     NetworkPacket* packets[32];
     IPEndPoint sender(IPAddress::NONE, 0);
 
-    while (m_pSocketUDP->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX_, bytesReceived, sender))
+    while (m_pSocketUDP->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX, bytesReceived, sender))
     {
         if (m_Dispatcher.DecodePackets(m_pReceiveBuffer, bytesReceived, packets, packetsReceived))
         {

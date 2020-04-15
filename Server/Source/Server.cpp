@@ -33,7 +33,7 @@ Server::Server() :
 	UpdateTitle();
 
 	char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
-	char m_pReceiveBuffer[UINT16_MAX_];
+	char m_pReceiveBuffer[UINT16_MAX];
 }
 
 Server::~Server()
@@ -66,7 +66,7 @@ void Server::Run()
 	NetworkPacket* packets[32];
 	IPEndPoint sender(IPAddress::NONE, 0);
 
-	while (m_pSocketUDP->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX_, bytesReceived, sender))
+	while (m_pSocketUDP->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX, bytesReceived, sender))
 	{
 		if (m_Dispatcher.DecodePackets(m_pReceiveBuffer, bytesReceived, packets, packetsReceived))
 		{

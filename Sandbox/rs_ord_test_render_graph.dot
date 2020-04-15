@@ -82,8 +82,8 @@ compound=true;
 	rs2 -> rs3
 	rs3 -> as42[lhead=cluster3];
 	as42 -> rs4[ltail=cluster3];
-	rs0 -> rs1[style=dashed];
 	rs0 -> rs4[style=dashed];
+	rs0 -> rs1[style=dashed];
 	rs1 -> rs2[style=dashed];
 	rs2 -> rs4[style=dashed];
 }
