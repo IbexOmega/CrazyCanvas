@@ -9,6 +9,7 @@
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
 #include "Rendering/Core/Vulkan/SamplerVK.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
+#include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
@@ -40,6 +41,12 @@ namespace LambdaEngine
 		else
 		{
 			SetName(pName);
+
+			const PipelineLayoutVK*		pPipelineLayoutVk	= reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
+			DescriptorSetBindingsDesc	bindings			= pPipelineLayoutVk->GetDescriptorBindings(descriptorLayoutIndex);
+			
+			m_BindingCount = bindings.BindingCount;
+			memcpy(m_Bindings, bindings.Bindings, sizeof(DescriptorSetBindingsDesc) * m_BindingCount);
 
 			pVkDescriptorHeap->AddRef();
 			m_pDescriptorHeap = pVkDescriptorHeap;
