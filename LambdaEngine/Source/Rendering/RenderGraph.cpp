@@ -13,6 +13,9 @@
 #include "Rendering/Core/API/ITexture.h"
 #include "Rendering/Core/API/ISampler.h"
 #include "Rendering/Core/API/ITextureView.h"
+#include "Rendering/Core/API/ICommandQueue.h"
+#include "Rendering/Core/API/IFence.h"
+#include "Rendering/RenderSystem.h"
 
 #include "Game/Scene.h"
 
@@ -23,7 +26,8 @@ namespace LambdaEngine
 	RenderGraph::RenderGraph(const IGraphicsDevice* pGraphicsDevice) :
 		m_pGraphicsDevice(pGraphicsDevice),
 		m_pRenderStages(nullptr),
-		m_ExecutionStageCount(0)
+		m_ExecutionStageCount(0),
+		m_SignalValue(1)
 	{
 	}
 
@@ -42,6 +46,12 @@ namespace LambdaEngine
 		if (!RenderGraphDescriptionParser::Parse(desc, renderStageDescriptions, synchronizationStageDescriptions, pipelineStageDescriptions, resourceDescriptions))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" could not be parsed", desc.pName);
+			return false;
+		}
+
+		if (!CreateFence())
+		{
+			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Fence", desc.pName);
 			return false;
 		}
 
@@ -130,6 +140,18 @@ namespace LambdaEngine
 		if (m_DirtyDescriptorSetTextures.size() > 0 || m_DirtyDescriptorSetBuffers.size() > 0 || m_DirtyDescriptorSetAccelerationStructures.size() > 0)
 		{
 			//Copy old descriptor set and replace old with copy, then write into the new copy
+			for (uint32 r = 0; r < m_RenderStageCount; r++)
+			{
+				RenderStage* pRenderStage		= &m_pRenderStages[r];
+				IDescriptorSet* pDescriptorSet	= m_pGraphicsDevice->CreateDescriptorSet("Render Stage Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+				m_pGraphicsDevice->CopyDescriptorSet(pRenderStage->pDescriptorSet, pDescriptorSet);
+				SAFERELEASE(pRenderStage->pDescriptorSet);
+				pRenderStage->pDescriptorSet = pDescriptorSet;
+			}
+		}
+		else
+		{
+			return;
 		}
 
 		if (m_DirtyDescriptorSetTextures.size() > 0)
@@ -209,7 +231,7 @@ namespace LambdaEngine
 
 					switch (pRenderStage->pPipelineState->GetType())
 					{
-					case EPipelineStateType::GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineStage->pGraphicsCommandAllocators[frameIndex],	pPipelineStage->pGraphicsCommandLists[frameIndex],	&m_ppExecutionStages[currentExecutionStage]);	break;
+					case EPipelineStateType::GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineStage->pGraphicsCommandAllocators[frameIndex],	pPipelineStage->pGraphicsCommandLists[frameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
 					case EPipelineStateType::COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineStage->pComputeCommandAllocators[frameIndex],	pPipelineStage->pComputeCommandLists[frameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
 					case EPipelineStateType::RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineStage->pComputeCommandAllocators[frameIndex],	pPipelineStage->pComputeCommandLists[frameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
 					}
@@ -237,7 +259,6 @@ namespace LambdaEngine
 		//Wait Threads
 
 
-		uint32 signalValue = 0;
 		for (uint32 e = 0; e < m_ExecutionStageCount; e++)
 		{
 			ICommandList* pCommandList = m_ppExecutionStages[e];
@@ -248,10 +269,35 @@ namespace LambdaEngine
 				//Signal signalValue
 
 				//Execute command list
+				if (pCommandList->GetType() == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+				{
+					RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				}
+				else if (pCommandList->GetType() == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+				{
+					RenderSystem::GetComputeQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				}
 
-				signalValue++;
+				m_SignalValue++;
 			}
 		}
+	}
+
+	bool RenderGraph::CreateFence()
+	{
+		FenceDesc fenceDesc = {};
+		fenceDesc.pName			= "Render Stage Fence";
+		fenceDesc.InitalValue	= 0;
+
+		m_pFence = m_pGraphicsDevice->CreateFence(fenceDesc);
+
+		if (m_pFence == nullptr)
+		{
+			LOG_ERROR("[RenderGraph]: Could not create RenderGraph fence");
+			return false;
+		}
+
+		return true;
 	}
 
 	bool RenderGraph::CreateDescriptorHeap()
@@ -363,9 +409,11 @@ namespace LambdaEngine
 
 	bool RenderGraph::CreateRenderStages(const std::vector<RenderStageDesc>& renderStageDescriptions)
 	{
-		m_pRenderStages = DBG_NEW RenderStage[renderStageDescriptions.size()];
+		m_RenderStageCount = renderStageDescriptions.size();
+		m_RenderStageMap.reserve(m_RenderStageCount);
+		m_pRenderStages = DBG_NEW RenderStage[m_RenderStageCount];
 
-		for (uint32 i = 0; i < renderStageDescriptions.size(); i++)
+		for (uint32 i = 0; i < m_RenderStageCount; i++)
 		{
 			const RenderStageDesc* pRenderStageDesc = &renderStageDescriptions[i];
 

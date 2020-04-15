@@ -30,6 +30,7 @@ namespace LambdaEngine
 	class ITexture;
 	class ISampler;
 	class IBuffer;
+	class IFence;
 
 	struct RenderGraphDesc
 	{
@@ -242,6 +243,7 @@ namespace LambdaEngine
 		void Render(uint32 frameIndex);
 
 	private:
+		bool CreateFence();
 		bool CreateDescriptorHeap();
 		bool CreateResources(const std::vector<RenderStageResourceDesc>& resourceDescriptions);
 		bool CreateRenderStages(const std::vector<RenderStageDesc>& renderStageDescriptions);
@@ -274,13 +276,21 @@ namespace LambdaEngine
 
 		IDescriptorHeap*									m_pDescriptorHeap;
 
+		IFence*												m_pFence;
+		uint64												m_SignalValue;
+
 		ICommandList**										m_ppExecutionStages;
 		uint32												m_ExecutionStageCount;
+
 		PipelineStage*										m_pPipelineStages;
 		uint32												m_PipelineStageCount;
+
 		std::unordered_map<const char*, uint32>				m_RenderStageMap;
 		RenderStage*										m_pRenderStages;
+		uint32												m_RenderStageCount;
+
 		SynchronizationStage*								m_pSynchronizationStages;
+		uint32												m_SynchronizationStageCount;
 
 		std::unordered_map<const char*, Resource>			m_ResourceMap;
 		std::set<Resource*>									m_DirtyDescriptorSetTextures;

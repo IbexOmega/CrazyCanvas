@@ -70,6 +70,7 @@ namespace LambdaEngine
 		else
 		{
 			m_Desc = desc;
+			m_Type = pAllocator->GetType();
 			SetName(desc.pName);
 			
 			pVkCommandAllocator->AddRef();

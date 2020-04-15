@@ -85,6 +85,14 @@ namespace LambdaEngine
 		{
 			return (uint64)m_CommandList;
 		}
+
+		
+		FORCEINLINE virtual ECommandQueueType GetType()	const override final
+		{
+			return m_Type;
+		}
+	
+
 	private:
 		void BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, VkPipelineBindPoint bindPoint);
 
@@ -101,6 +109,7 @@ namespace LambdaEngine
         VkDeviceSize            m_VertexBufferOffsets[MAX_VERTEX_BUFFERS];
 		VkClearValue			m_ClearValues[MAX_RENDERTARGETS+1];
         
-        CommandListDesc m_Desc;
+        CommandListDesc			m_Desc;
+		ECommandQueueType		m_Type;
 	};
 }

@@ -198,8 +198,9 @@ namespace LambdaEngine
 
 		virtual void ExecuteSecondary(const ICommandList* pSecondary) = 0;
 
-		virtual CommandListDesc	GetDesc()	const = 0;
-		virtual uint64			GetHandle()	const = 0;
+		virtual CommandListDesc		GetDesc()	const = 0;
+		virtual uint64				GetHandle()	const = 0;
+		virtual ECommandQueueType	GetType()	const = 0;
 
 		/*
 		* Returns a pointer to the allocator used to allocate this commandlist. Caller should call Release on 
