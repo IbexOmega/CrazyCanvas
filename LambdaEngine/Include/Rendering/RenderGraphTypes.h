@@ -297,6 +297,31 @@ namespace LambdaEngine
 		}
 	}
 
+	FMemoryAccessFlags FORCEINLINE ConvertAttachmentTypeToMemoryAccessFlags(EAttachmentType attachmentType)
+	{
+		switch (attachmentType)
+		{
+		case EAttachmentType::INPUT_SHADER_RESOURCE_TEXTURE:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_SHADER_READ;
+		case EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_SHADER_READ;
+		case EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+		case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+
+		case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_SHADER_READ;
+		case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:		return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_SHADER_READ;
+		case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+		case EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_CONSTANT_BUFFER_READ;
+		case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+		case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_ACCELERATION_STRUCTURE_READ;
+
+		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		case EAttachmentType::OUTPUT_COLOR:											return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_COLOR_ATTACHMENT_WRITE;
+		case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_DEPTH_STENCIL_ATTACHMENT_WRITE;
+
+		default:																	return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+		}
+	}
+
 	bool FORCEINLINE IsAttachmentReserved(const char* pAttachmentName)
 	{
 		if (strcmp(pAttachmentName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0) return true;

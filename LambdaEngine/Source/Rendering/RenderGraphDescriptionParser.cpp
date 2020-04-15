@@ -150,11 +150,6 @@ namespace LambdaEngine
 						}
 						case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:
 						{
-							if (pAttachment->SubResourceCount != 1)
-							{
-								LOG_WARNING("[RenderGraphDescriptionParser]: Attachment \"%s\" of type INPUT_UNORDERED_ACCESS_BUFFER must have a SubResourceCount of 1, currently %u!", pAttachment->pName, pAttachment->SubResourceCount);
-								pAttachment->SubResourceCount = 0;
-							}
 							break;
 						}
 						case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:
@@ -180,11 +175,6 @@ namespace LambdaEngine
 						}
 						case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:
 						{
-							if (pAttachment->SubResourceCount != 1)
-							{
-								LOG_WARNING("[RenderGraphDescriptionParser]: Attachment \"%s\" of type EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER must have a SubResourceCount of 1, currently %u!", pAttachment->pName, pAttachment->SubResourceCount);
-								pAttachment->SubResourceCount = 0;
-							}
 							break;
 						}
 						case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:
@@ -202,11 +192,6 @@ namespace LambdaEngine
 						}
 						case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:
 						{
-							if (pAttachment->SubResourceCount != 1)
-							{
-								LOG_WARNING("[RenderGraphDescriptionParser]: Attachment \"%s\" of type OUTPUT_UNORDERED_ACCESS_BUFFER must have a SubResourceCount of 1, currently %u!", pAttachment->pName, pAttachment->SubResourceCount);
-								pAttachment->SubResourceCount = 0;
-							}
 							break;
 						}
 						case EAttachmentType::OUTPUT_COLOR:

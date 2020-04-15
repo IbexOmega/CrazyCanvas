@@ -280,7 +280,7 @@ Sandbox::Sandbox()
 
 	RenderGraph* pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
 
-	//pRenderGraph->Init(renderGraphDesc);
+	pRenderGraph->Init(renderGraphDesc);
 
 	clock.Tick();
 	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());

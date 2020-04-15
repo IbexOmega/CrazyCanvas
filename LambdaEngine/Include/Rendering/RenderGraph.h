@@ -12,6 +12,7 @@
 namespace LambdaEngine
 {
 	struct PipelineTextureBarrier;
+	struct PipelineBufferBarrier;
 	struct TextureViewDesc;
 	struct TextureDesc;
 	struct SamplerDesc;
@@ -59,7 +60,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				BufferDesc*			pBufferDesc;
+				BufferDesc**		ppBufferDesc;
 			} InternalBufferUpdate;
 
 			struct
@@ -71,7 +72,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				IBuffer*			pBuffer;
+				IBuffer**			ppBuffer;
 			} ExternalBufferUpdate;
 
 			struct
@@ -81,7 +82,7 @@ namespace LambdaEngine
 		};
 	};
 
-	struct RenderStageParameterUpdateDesc
+	struct RenderStageParameters
 	{
 		const char* pRenderStageName	= "No Render Stage Name";
 
@@ -91,21 +92,21 @@ namespace LambdaEngine
 			{
 				uint32 Width;
 				uint32 Height;
-			} GraphicsUpdate;
+			} Graphics;
 
 			struct
 			{
 				uint32 WorkGroupCountX;
 				uint32 WorkGroupCountY;
 				uint32 WorkGroupCountZ;
-			} ComputeUpdate;
+			} Compute;
 
 			struct
 			{
 				uint32 RaygenOffset;
 				uint32 RayTraceWidth;
 				uint32 RayTraceHeight;
-			} RayTracingUpdate;
+			} RayTracing;
 		};
 	};
 
@@ -117,11 +118,9 @@ namespace LambdaEngine
 			PUSH_CONSTANTS						= 1,
 			INTERNAL_TEXTURE					= 2,
 			INTERNAL_BUFFER						= 3,
-			INTERNAL_COLOR_ATTACHMENT			= 4,
-			INTERNAL_DEPTH_STENCIL_ATTACHMENT	= 5,
-			EXTERNAL_TEXTURE					= 6,
-			EXTERNAL_BUFFER						= 7,
-			EXTERNAL_ACCELERATION_STRUCTURE		= 8,
+			EXTERNAL_TEXTURE					= 4,
+			EXTERNAL_BUFFER						= 5,
+			EXTERNAL_ACCELERATION_STRUCTURE		= 6,
 		};
 
 		struct ResourceBinding
@@ -130,10 +129,7 @@ namespace LambdaEngine
 			EDescriptorType DescriptorType	= EDescriptorType::DESCRIPTOR_UNKNOWN;
 			uint32			Binding			= 0;
 
-			union
-			{
-				ETextureState TextureState;
-			};
+			ETextureState TextureState		= ETextureState::TEXTURE_STATE_UNKNOWN;
 		};
 
 		struct Resource
@@ -159,8 +155,10 @@ namespace LambdaEngine
 
 			struct
 			{
-				//std::vector<PipelineBufferBarrier*> Barriers;
-				IBuffer* pBuffer;
+				std::vector<PipelineBufferBarrier*> Barriers;
+				std::vector<IBuffer*>		Buffers;
+				std::vector<uint32>			Offsets;
+				std::vector<uint32>			SizesInBytes;
 			} Buffer;
 
 			struct
@@ -171,12 +169,10 @@ namespace LambdaEngine
 
 		struct RenderStage
 		{
-			uint64					WaitValue				= 0;
-			uint64					SignalValue				= 0;
-
 			ERenderStageDrawType	DrawType				= ERenderStageDrawType::NONE;
 			Resource*				pDrawResource			= nullptr;
 
+			RenderStageParameters	Parameters				= {};
 			IPipelineLayout*		pPipelineLayout			= nullptr;
 			IPipelineState*			pPipelineState			= nullptr;
 			IDescriptorSet*			pDescriptorSet			= nullptr;
@@ -193,17 +189,23 @@ namespace LambdaEngine
 			std::vector<PipelineTextureBarrier> Barriers;
 		};
 
+		struct BufferSynchronization
+		{
+			FShaderStageFlags		SrcShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			FShaderStageFlags		DstShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			std::vector<PipelineBufferBarrier> Barriers;
+		};
+
 		struct SynchronizationStage
 		{
 			std::unordered_map<const char*, TextureSynchronization> TextureSynchronizations;
-
-			//std::unordered_map<const char*, PipelineBufferBarrier>	BufferBarriers;
+			std::unordered_map<const char*, BufferSynchronization> BufferSynchronizations;
 		};
 
 		struct PipelineStage
 		{
-			EPipelineStageType Type		= EPipelineStageType::NONE;
-			uint32 StageIndex			= 0;
+			EPipelineStageType	Type			= EPipelineStageType::NONE;
+			uint32				StageIndex		= 0;
 
 			ICommandAllocator* pGraphicsCommandAllocators[MAX_FRAMES_IN_FLIGHT];
 			ICommandAllocator* pComputeCommandAllocators[MAX_FRAMES_IN_FLIGHT];
@@ -226,7 +228,7 @@ namespace LambdaEngine
 		*/
 		void UpdateResource(const ResourceUpdateDesc& desc);
 
-		void UpdateRenderStageParameters(const RenderStageParameterUpdateDesc& desc);
+		void UpdateRenderStageParameters(const RenderStageParameters& desc);
 
 		/*
 		* Updates the RenderGraph, applying the updates made to resources with UpdateResource by writing them to the appropriate Descriptor Sets, the RenderGraph will wait for device idle if it needs to
@@ -237,7 +239,7 @@ namespace LambdaEngine
 		/*
 		* 
 		*/
-		void Render();
+		void Render(uint32 frameIndex);
 
 	private:
 		bool CreateDescriptorHeap();
@@ -249,16 +251,21 @@ namespace LambdaEngine
 		void UpdateResourcePushConstants(const char* pResourceName, Resource* pResource, const ResourceUpdateDesc& desc);
 		void UpdateResourceInternalTexture(const char* pResourceName, Resource* pResource, const ResourceUpdateDesc& desc);
 		void UpdateResourceInternalBuffer(const char* pResourceName, Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceInternalColorAttachment(const char* pResourceName, Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceInternalDepthStencilAttachment(const char* pResourceName, Resource* pResource, const ResourceUpdateDesc& desc);
 		void UpdateResourceExternalTexture(const char* pResourceName, Resource* pResource, const ResourceUpdateDesc& desc);
 		void UpdateResourceExternalBuffer(const char* pResourceName, Resource* pResource, const ResourceUpdateDesc& desc);
 		void UpdateResourceExternalAccelerationStructure(const char* pResourceName, Resource* pResource, const ResourceUpdateDesc& desc);
 
-		void ExecuteSynchronizationStage(SynchronizationStage* pSynchronizationStage, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList);
-		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList);
-		void ExecuteComputeRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList);
-		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList);
+		void ExecuteSynchronizationStage(
+			SynchronizationStage* pSynchronizationStage, 
+			ICommandAllocator* pGraphicsCommandAllocator, 
+			ICommandList* pGraphicsCommandList, 
+			ICommandAllocator* pComputeCommandAllocator, 
+			ICommandList* pComputeCommandList, 
+			ICommandList** ppFirstExecutionStage, 
+			ICommandList** ppSecondExecutionStage);
+		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList, ICommandList** ppExecutionStage);
+		void ExecuteComputeRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage);
+		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage);
 
 		uint32 CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc);
 
@@ -267,6 +274,8 @@ namespace LambdaEngine
 
 		IDescriptorHeap*									m_pDescriptorHeap;
 
+		ICommandList**										m_ppExecutionStages;
+		uint32												m_ExecutionStageCount;
 		PipelineStage*										m_pPipelineStages;
 		uint32												m_PipelineStageCount;
 		std::unordered_map<const char*, uint32>				m_RenderStageMap;
