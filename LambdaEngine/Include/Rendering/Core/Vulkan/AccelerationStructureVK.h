@@ -1,5 +1,5 @@
 #pragma once
-#include "Rendering/Core/API/ITopLevelAccelerationStructure.h"
+#include "Rendering/Core/API/IAccelerationStructure.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
@@ -9,15 +9,15 @@ namespace LambdaEngine
 	class GraphicsDeviceVK;
 	class BufferVK;
 
-	class TopLevelAccelerationStructureVK : public TDeviceChildBase<GraphicsDeviceVK, ITopLevelAccelerationStructure>
+	class AccelerationStructureVK : public TDeviceChildBase<GraphicsDeviceVK, IAccelerationStructure>
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, ITopLevelAccelerationStructure>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IAccelerationStructure>;
 
 	public:
-		TopLevelAccelerationStructureVK(const GraphicsDeviceVK* pDevice);
-		~TopLevelAccelerationStructureVK();
+		AccelerationStructureVK(const GraphicsDeviceVK* pDevice);
+		~AccelerationStructureVK();
 
-		bool Init(const TopLevelAccelerationStructureDesc& desc);
+		bool Init(const AccelerationStructureDesc& desc);
 
 		FORCEINLINE VkAccelerationStructureKHR GetAccelerationStructure() const
 		{
@@ -26,8 +26,8 @@ namespace LambdaEngine
 
 		// IDeviceChild interface
 		virtual void SetName(const char* pName) override final;
-		
-		// ITopLevelAccelerationStructure interface
+
+		// IAccelerationStructure interface
 		FORCEINLINE virtual uint64 GetScratchMemorySizeRequirement() const override final
 		{
 			return m_ScratchMemorySize;
@@ -48,7 +48,7 @@ namespace LambdaEngine
 			return uint64(m_AccelerationStructure);
 		}
 
-		FORCEINLINE virtual TopLevelAccelerationStructureDesc GetDesc() const override final
+		FORCEINLINE virtual AccelerationStructureDesc GetDesc() const override final
 		{
 			return m_Desc;
 		}
@@ -63,6 +63,6 @@ namespace LambdaEngine
 		VkDeviceSize				m_ScratchMemorySize						= 0;
 		VkDeviceSize				m_ScratchMemoryAlignment				= 0;
 
-		TopLevelAccelerationStructureDesc m_Desc;
+		AccelerationStructureDesc m_Desc;
 	};
 }

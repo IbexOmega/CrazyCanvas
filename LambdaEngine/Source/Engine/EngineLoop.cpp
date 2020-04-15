@@ -11,8 +11,6 @@
 #include "Input/API/Input.h"
 
 #include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/ITopLevelAccelerationStructure.h"
-#include "Rendering/Core/API/IBottomLevelAccelerationStructure.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 

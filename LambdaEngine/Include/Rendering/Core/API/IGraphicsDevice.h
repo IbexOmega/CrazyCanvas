@@ -17,9 +17,8 @@ namespace LambdaEngine
 	struct DescriptorHeapDesc;
     struct ComputePipelineStateDesc;
     struct GraphicsPipelineStateDesc;
+	struct AccelerationStructureDesc;
     struct RayTracingPipelineStateDesc;
-    struct TopLevelAccelerationStructureDesc;
-    struct BottomLevelAccelerationStructureDesc;
 
     class Window;
 	class IFence;
@@ -39,8 +38,7 @@ namespace LambdaEngine
 	class IDescriptorHeap;
 	class IPipelineLayout;
 	class ICommandAllocator;
-	class ITopLevelAccelerationStructure;
-	class IBottomLevelAccelerationStructure;
+	class IAccelerationStructure;
 
 	enum class EGraphicsAPI
 	{
@@ -80,8 +78,7 @@ namespace LambdaEngine
 		virtual IPipelineState*	CreateComputePipelineState(const ComputePipelineStateDesc& desc) 	  const = 0;
 		virtual IPipelineState*	CreateRayTracingPipelineState(const RayTracingPipelineStateDesc& desc) const = 0;
 		
-		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const = 0;
-		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const = 0;
+		virtual IAccelerationStructure*	CreateAccelerationStructure(const AccelerationStructureDesc& desc) const = 0;
 		
 		virtual ICommandQueue*		CreateCommandQueue(const char* pName, ECommandQueueType queueType)			  const = 0;
 		virtual ICommandAllocator*	CreateCommandAllocator(const char* pName, ECommandQueueType queueType)		  const = 0;

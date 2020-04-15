@@ -16,8 +16,7 @@
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/TextureVK.h"
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
-#include "Rendering/Core/Vulkan/TopLevelAccelerationStructureVK.h"
-#include "Rendering/Core/Vulkan/BottomLevelAccelerationStructureVK.h"
+#include "Rendering/Core/Vulkan/AccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
 #include "Rendering/Core/Vulkan/FrameBufferVK.h"
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
@@ -252,37 +251,23 @@ namespace LambdaEngine
 		}
 	}
 
-	ITopLevelAccelerationStructure* GraphicsDeviceVK::CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc) const
+	IAccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc& desc) const
 	{
-        //TODO: Query this in some other way
-        if (this->vkCreateAccelerationStructureKHR == nullptr)
-        {
-            return nullptr;
-        }
-        
-		TopLevelAccelerationStructureVK* pTLAS = DBG_NEW TopLevelAccelerationStructureVK(this);
-		if (!pTLAS->Init(desc))
+		//TODO: Query this in some other way
+		if (this->vkCreateAccelerationStructureKHR == nullptr)
 		{
-			pTLAS->Release();
 			return nullptr;
 		}
-		else
-		{
-			return pTLAS;
-		}
-	}
 
-	IBottomLevelAccelerationStructure* GraphicsDeviceVK::CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc) const
-	{
-		BottomLevelAccelerationStructureVK* pBLAS = DBG_NEW BottomLevelAccelerationStructureVK(this);
-		if (!pBLAS->Init(desc))
+		AccelerationStructureVK* pAccelerationStructure = DBG_NEW AccelerationStructureVK(this);
+		if (!pAccelerationStructure->Init(desc))
 		{
-			pBLAS->Release();
+			pAccelerationStructure->Release();
 			return nullptr;
 		}
 		else
 		{
-			return pBLAS;
+			return pAccelerationStructure;
 		}
 	}
 

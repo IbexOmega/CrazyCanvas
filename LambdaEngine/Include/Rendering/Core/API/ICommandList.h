@@ -18,8 +18,7 @@ namespace LambdaEngine
 	class IDescriptorSet;
 	class IPipelineLayout;
 	class ICommandAllocator;
-	class ITopLevelAccelerationStructure;
-	class IBottomLevelAccelerationStructure;
+	class IAccelerationStructure;
 
 	enum FCommandListFlags : uint32
 	{
@@ -120,12 +119,27 @@ namespace LambdaEngine
 
 	struct BuildTopLevelAccelerationStructureDesc
 	{
-		ITopLevelAccelerationStructure* pAccelerationStructure	= nullptr;
-		uint32							Flags					= 0;
-		IBuffer*						pScratchBuffer			= nullptr; 
-		const IBuffer*					pInstanceBuffer			= nullptr;
-		uint32							InstanceCount			= 0;
-		bool							Update					= false;
+		IAccelerationStructure* pAccelerationStructure	= nullptr;
+		uint32					Flags					= 0;
+		IBuffer*				pScratchBuffer			= nullptr; 
+		const IBuffer*			pInstanceBuffer			= nullptr;
+		uint32					InstanceCount			= 0;
+		bool					Update					= false;
+	};
+
+	struct BuildBottomLevelAccelerationStructureDesc
+	{
+		IAccelerationStructure*	pAccelerationStructure	= nullptr;
+		uint32					Flags					= 0;
+		IBuffer*				pScratchBuffer			= nullptr;
+		const IBuffer*			pVertexBuffer			= nullptr; 
+		uint32					FirstVertexIndex		= 0; 
+		uint32					VertexStride			= 0;
+		const IBuffer*			pIndexBuffer			= nullptr;
+		uint32					IndexBufferByteOffset	= 0; 
+		uint32					TriangleCount			= 0;
+		const void*				pTransform				= nullptr;
+		bool					Update					= false;
 	};
 
 	struct CommandListDesc
@@ -148,11 +162,11 @@ namespace LambdaEngine
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) = 0;
 		virtual void EndRenderPass() = 0;
 
-		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc) = 0;
-		virtual void BuildBottomLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)	= 0;
+		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)		= 0;
+		virtual void BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)	= 0;
 
 		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes) = 0;
-		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc) = 0;
+		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)		= 0;
 
 		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount)	= 0;
 		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrier* pBufferBarriers, uint32 bufferBarrierCount)		= 0;
