@@ -49,8 +49,6 @@ namespace LambdaEngine
 
 	void ShaderVK::FillSpecializationInfo(VkSpecializationInfo& specializationInfo, std::vector<VkSpecializationMapEntry>& specializationEntries) const
 	{
-		specializationInfo = {};
-
 		for (uint32 i = 0; i < m_Desc.ShaderConstantCount; i++)
 		{
 			VkSpecializationMapEntry specializationEntry = {};
@@ -66,24 +64,25 @@ namespace LambdaEngine
 		specializationInfo.pData			= m_Desc.pConstants;
 	}
 
-	void ShaderVK::FillShaderStageInfo(VkPipelineShaderStageCreateInfo& shaderStageInfo, const VkSpecializationInfo& specializationInfo) const
+	void ShaderVK::FillShaderStageInfo(VkPipelineShaderStageCreateInfo& shaderStageInfo, const VkSpecializationInfo* pSpecializationInfo) const
 	{
-		shaderStageInfo = {};
-
 		shaderStageInfo.sType				= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStageInfo.pNext				= nullptr;
 		shaderStageInfo.flags				= 0;
 		shaderStageInfo.stage				= ConvertShaderStageFlag(m_Desc.Stage);
 		shaderStageInfo.module				= m_Module;
 		shaderStageInfo.pName				= m_Desc.pEntryPoint;
-		shaderStageInfo.pSpecializationInfo = specializationInfo.dataSize > 0 ? &specializationInfo : nullptr;
+		shaderStageInfo.pSpecializationInfo = pSpecializationInfo;
 	}
 
 	void ShaderVK::SetName(const char* pName)
 	{
-		TDeviceChild::SetName(pName);
-		m_pDevice->SetVulkanObjectName(pName, (uint64)m_Module, VK_OBJECT_TYPE_SHADER_MODULE);
+		if (pName)
+		{
+			TDeviceChild::SetName(pName);
+			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Module, VK_OBJECT_TYPE_SHADER_MODULE);
 
-		m_Desc.pName = m_DebugName;
+			m_Desc.pName = m_DebugName;
+		}
 	}
 }

@@ -15,7 +15,8 @@
 namespace LambdaEngine
 {
 	DescriptorSetVK::DescriptorSetVK(const GraphicsDeviceVK* pDevice)
-		: TDeviceChild(pDevice)
+		: TDeviceChild(pDevice),
+		m_Bindings()
 	{
 	}
 
