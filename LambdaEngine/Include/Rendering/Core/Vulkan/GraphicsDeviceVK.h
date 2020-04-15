@@ -79,17 +79,18 @@ namespace LambdaEngine
 		virtual ICommandAllocator*	CreateCommandAllocator(const char* pName, ECommandQueueType queueType)			const override final;
 		virtual ICommandList*		CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc)	const override final;
 		virtual IFence*				CreateFence(const FenceDesc& desc)												const override final;
-		
+
+		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst)																			const override final;
+		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const override final;
+
 		virtual void Release() override final;
 
 	private:
-		//INIT
 		bool InitInstance(const GraphicsDeviceDesc& desc);
 		bool InitDevice(const GraphicsDeviceDesc& desc);
 		bool InitPhysicalDevice();
 		bool InitLogicalDevice(const GraphicsDeviceDesc& desc);
 
-		//UTIL
 		bool SetEnabledValidationLayers();
 		bool SetEnabledInstanceExtensions();
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
