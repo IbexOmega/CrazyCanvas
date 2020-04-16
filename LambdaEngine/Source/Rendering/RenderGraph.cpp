@@ -73,7 +73,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateSynchronizationStages(synchronizationStageDescriptions))
+		/*if (!CreateSynchronizationStages(synchronizationStageDescriptions))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Synchronization Stages", desc.pName);
 			return false;
@@ -83,7 +83,7 @@ namespace LambdaEngine
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Pipeline Stages", desc.pName);
 			return false;
-		}
+		}*/
 
 		return true;
 	}
@@ -335,7 +335,7 @@ namespace LambdaEngine
 			{
 				const RenderStageAttachment* pAttachment = pResourceDesc->pAttachmentDesc;
 
-				if (!IsAttachmentReserved(pAttachment->pName))
+				//if (!IsAttachmentReserved(pAttachment->pName))
 				{
 					Resource* pResource = &m_ResourceMap[pAttachment->pName];
 
@@ -429,7 +429,7 @@ namespace LambdaEngine
 			constantRangeDesc.ShaderStageFlags		= CreateShaderStageMask(pRenderStageDesc);
 			constantRangeDesc.SizeInBytes			= pRenderStageDesc->PushConstants.DataSize;
 
-			std::vector<RenderPassAttachmentDesc>	renderPassAttachmentDescriptions;
+			std::vector<RenderPassAttachmentDesc>			renderPassAttachmentDescriptions;
 			std::vector<ETextureState>				renderPassRenderTargetStates;
 			std::vector<BlendAttachmentState>		renderPassBlendAttachmentStates;
 			std::vector<Resource*>					renderPassResources;
@@ -445,7 +445,7 @@ namespace LambdaEngine
 			{
 				const RenderStageAttachment* pAttachment = &pRenderStageDesc->pAttachments[a];
 
-				if (!IsAttachmentReserved(pAttachment->pName))
+				//if (!IsAttachmentReserved(pAttachment->pName))
 				{
 					auto it = m_ResourceMap.find(pAttachment->pName);
 
@@ -557,7 +557,15 @@ namespace LambdaEngine
 					renderPassSubpassDesc.pResolveAttachmentStates		= nullptr;
 					renderPassSubpassDesc.pRenderTargetStates			= renderPassRenderTargetStates.data();
 					renderPassSubpassDesc.RenderTargetCount				= renderPassRenderTargetStates.size();
-					renderPassSubpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY;
+					renderPassSubpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_UNKNOWN;
+
+					RenderPassSubpassDependencyDesc renderPassSubpassDependencyDesc = {};
+					renderPassSubpassDependencyDesc.SrcSubpass		= EXTERNAL_SUBPASS;
+					renderPassSubpassDependencyDesc.DstSubpass		= 0;
+					renderPassSubpassDependencyDesc.SrcAccessMask	= 0;
+					renderPassSubpassDependencyDesc.DstAccessMask	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_COLOR_ATTACHMENT_WRITE;
+					renderPassSubpassDependencyDesc.SrcStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+					renderPassSubpassDependencyDesc.DstStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
 					RenderPassDesc renderPassDesc = {};
 					renderPassDesc.pName					= "";
@@ -565,8 +573,8 @@ namespace LambdaEngine
 					renderPassDesc.AttachmentCount			= renderPassAttachmentDescriptions.size();
 					renderPassDesc.pSubpasses				= &renderPassSubpassDesc;
 					renderPassDesc.SubpassCount				= 1;
-					renderPassDesc.pSubpassDependencies		= nullptr;
-					renderPassDesc.SubpassDependencyCount	= 0;
+					renderPassDesc.pSubpassDependencies		= &renderPassSubpassDependencyDesc;
+					renderPassDesc.SubpassDependencyCount	= 1;
 
 					IRenderPass* pRenderPass		= m_pGraphicsDevice->CreateRenderPass(renderPassDesc);
 					pipelineDesc.pRenderPass		= pRenderPass;

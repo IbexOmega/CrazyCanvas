@@ -197,7 +197,7 @@ namespace LambdaEngine
 
 	IRenderPass* GraphicsDeviceVK::CreateRenderPass(const RenderPassDesc& desc) const
 	{
-		RenderPassVK* pRenderPass = DBG_NEW RenderPassVK(this);
+ 		RenderPassVK* pRenderPass = DBG_NEW RenderPassVK(this);
 		if (!pRenderPass->Init(desc))
 		{
 			pRenderPass->Release();
