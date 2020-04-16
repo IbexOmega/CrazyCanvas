@@ -1,5 +1,6 @@
 #pragma once
 #include "Rendering/Core/API/ICommandList.h"
+#include "Rendering/Core/API/IRenderPass.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
@@ -107,7 +108,7 @@ namespace LambdaEngine
         VkRect2D                m_ScissorRects[MAX_VIEWPORTS];
         VkBuffer                m_VertexBuffers[MAX_VERTEX_BUFFERS];
         VkDeviceSize            m_VertexBufferOffsets[MAX_VERTEX_BUFFERS];
-		VkClearValue			m_ClearValues[MAX_RENDERTARGETS+1];
+		VkClearValue			m_ClearValues[MAX_COLOR_ATTACHMENTS+1];
         
         CommandListDesc			m_Desc;
 		ECommandQueueType		m_Type;

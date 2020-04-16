@@ -12,11 +12,11 @@ namespace LambdaEngine
 	struct GameObject;
 
 	class ResourceManager;
-	class AudioListener;
-	class SoundEffect3D;
-	class SoundInstance3D;
-	class AudioGeometry;
-	class ReverbSphere;
+	class IAudioListener;
+	class ISoundEffect3D;
+	class ISoundInstance3D;
+	class IAudioGeometry;
+	class IReverbSphere;
 	class Scene;
 }
 
@@ -47,21 +47,21 @@ private:
 	LambdaEngine::ResourceManager*			m_pResourceManager;
 
 	GUID_Lambda								m_ToneSoundEffectGUID;
-	LambdaEngine::SoundEffect3D*			m_pToneSoundEffect;
-	LambdaEngine::SoundInstance3D*			m_pToneSoundInstance;
+	LambdaEngine::ISoundEffect3D*			m_pToneSoundEffect;
+	LambdaEngine::ISoundInstance3D*			m_pToneSoundInstance;
 
 	GUID_Lambda								m_GunSoundEffectGUID;
-	LambdaEngine::SoundEffect3D*			m_pGunSoundEffect;
+	LambdaEngine::ISoundEffect3D*			m_pGunSoundEffect;
 
 	bool									m_SpawnPlayAts;
 	float									m_GunshotTimer;
 	float									m_GunshotDelay;
 	float									m_Timer;
 
-	LambdaEngine::AudioListener*			m_pAudioListener;
+	LambdaEngine::IAudioListener*			m_pAudioListener;
 
-	LambdaEngine::ReverbSphere*				m_pReverbSphere;
-	LambdaEngine::AudioGeometry*			m_pAudioGeometry;
+	LambdaEngine::IReverbSphere*			m_pReverbSphere;
+	LambdaEngine::IAudioGeometry*			m_pAudioGeometry;
 
 	LambdaEngine::Scene*					m_pScene;
 };

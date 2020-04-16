@@ -1,31 +1,30 @@
-#include "Audio/AudioListener.h"
-#include "Audio/AudioDevice.h"
-#include "Audio/Audio.h"
+#include "Audio/FMOD/AudioListenerFMOD.h"
+#include "Audio/FMOD/AudioDeviceFMOD.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	AudioListener::AudioListener(const AudioDevice* pAudioDevice) : 
-		m_pAudioDevice(pAudioDevice)
+	AudioListenerFMOD::AudioListenerFMOD(const IAudioDevice* pAudioDevice) :
+		m_pAudioDevice(reinterpret_cast<const AudioDeviceFMOD*>(pAudioDevice))
 	{
 	}
 
-	AudioListener::~AudioListener()
+	AudioListenerFMOD::~AudioListenerFMOD()
 	{
 	}
 
-	bool AudioListener::Init(const AudioListenerDesc& desc)
+	bool AudioListenerFMOD::Init(const AudioListenerDesc& desc)
 	{
 		m_pName = desc.pName;
 		m_ListenerIndex = desc.ListenerIndex;
 
-		D_LOG_MESSAGE("[AudioListener]: AudioListener %s successfully initialized!", m_pName);
+		D_LOG_MESSAGE("[AudioListenerFMOD]: AudioListenerFMOD %s successfully initialized!", m_pName);
 
 		return true;
 	}
 
-	void AudioListener::Update(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up)
+	void AudioListenerFMOD::Update(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up)
 	{
 		FMOD_VECTOR fmodPosition	= { position.x,		position.y,		position.z };
 		FMOD_VECTOR fmodVelocity	= { 0.0f,			0.0f,			0.0f };

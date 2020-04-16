@@ -15,7 +15,7 @@ namespace LambdaEngine
 	struct Material;
 
 	class IGraphicsDevice;
-	class AudioDevice;
+	class AudioDeviceFMOD;
 	class ResourceManager;
 	class IBuffer;
 	class ITexture;
@@ -71,7 +71,7 @@ namespace LambdaEngine
 		DECL_REMOVE_COPY(Scene);
 		DECL_REMOVE_MOVE(Scene);
 
-		Scene(const IGraphicsDevice* pGraphicsDevice, const AudioDevice* pAudioDevice, const ResourceManager* pResourceManager);
+		Scene(const IGraphicsDevice* pGraphicsDevice, const AudioDeviceFMOD* pAudioDevice, const ResourceManager* pResourceManager);
 		~Scene();
 
 		bool Finalize(const SceneDesc& desc);
@@ -81,7 +81,7 @@ namespace LambdaEngine
 
 	private:
 		const IGraphicsDevice*					m_pGraphicsDevice;
-		const AudioDevice*						m_pAudioDevice;
+		const AudioDeviceFMOD*						m_pAudioDevice;
 		const ResourceManager*					m_pResourceManager;
 
 		const char*								m_pName;

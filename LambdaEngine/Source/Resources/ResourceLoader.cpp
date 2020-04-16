@@ -348,9 +348,9 @@ namespace LambdaEngine
 		return pShader;
 	}
 
-	SoundEffect3D* ResourceLoader::LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath)
+	ISoundEffect3D* ResourceLoader::LoadSoundEffectFromFile(IAudioDevice* pAudioDevice, const char* pFilepath)
 	{
-		SoundEffect3D* pSound = pAudioDevice->CreateSound();
+		ISoundEffect3D* pSound = pAudioDevice->CreateSoundEffect();
 
 		SoundEffect3DDesc soundDesc		= {};
 		soundDesc.pFilepath		= pFilepath;

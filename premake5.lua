@@ -219,6 +219,7 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/glm",
 			"Dependencies/tinyobjloader",
+			"Dependencies/portaudio/include",
 		}
         
 		links 
@@ -242,6 +243,7 @@ workspace "LambdaEngine"
 				"C:/FMOD Studio API Windows/api/core/lib/x64",
 				"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64",
 				"D:/FMOD Studio API Windows/api/core/lib/x64",
+				"Dependencies/portaudio/lib",
 			}
 			
 			sysincludedirs
@@ -301,6 +303,20 @@ workspace "LambdaEngine"
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Client/\""),
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\""),
 			}
+		filter { "system:windows", "configurations:Debug"}
+			postbuildcommands
+			{
+				("{COPY} \"../Dependencies/portaudio/lib/portaudio_x64_d.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} \"../Dependencies/portaudio/lib/portaudio_x64_d.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} \"../Dependencies/portaudio/lib/portaudio_x64_d.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+			}
+		filter { "system:windows", "configurations:Release"}
+			postbuildcommands
+			{
+				("{COPY} \"../Dependencies/portaudio/lib/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} \"../Dependencies/portaudio/lib/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} \"../Dependencies/portaudio/lib/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+			}
 		filter {}
     project "*"
 
@@ -326,7 +342,6 @@ workspace "LambdaEngine"
 		sysincludedirs
 		{
 			"Dependencies/glm",
-			"Dependencies/tinyobjloader",
 		}
         
         -- Files

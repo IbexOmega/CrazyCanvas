@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Audio/AudioDevice.h"
+#include "Audio/API/IAudioDevice.h"
 
 #include "Rendering/Core/API/ITexture.h"
 #include "Rendering/Core/API/IShader.h"
-#include "Audio/SoundEffect3D.h"
+#include "Audio/API/ISoundEffect3D.h"
 #include "Game/Scene.h"
 #include "Material.h"
 #include "Mesh.h"
@@ -85,9 +85,9 @@ namespace LambdaEngine
 		* Load sound from file
 		*	pAudioDevice - An audio device
 		*	pFilepath - Path to the audio file
-		* return - an SoundEffect3D* if the sound was loaded, otherwise nullptr will be returned
+		* return - an ISoundEffect3D* if the sound was loaded, otherwise nullptr will be returned
 		*/
-		static SoundEffect3D* LoadSoundFromFile(AudioDevice* pAudioDevice, const char* pFilepath);
+		static ISoundEffect3D* LoadSoundEffectFromFile(IAudioDevice* pAudioDevice, const char* pFilepath);
 
 	private:
 		static bool ReadDataFromFile(const char* pFilepath, byte** ppData, uint32* pDataSize);

@@ -32,7 +32,7 @@ namespace LambdaEngine
 		std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 		pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-		pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+		pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 		VkComputePipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType					= VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;

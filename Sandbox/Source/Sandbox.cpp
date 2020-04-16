@@ -12,11 +12,11 @@
 #include "Rendering/RenderGraphDescriptionParser.h"
 
 #include "Audio/AudioSystem.h"
-#include "Audio/AudioListener.h"
-#include "Audio/SoundEffect3D.h"
-#include "Audio/SoundInstance3D.h"
-#include "Audio/AudioGeometry.h"
-#include "Audio/ReverbSphere.h"
+#include "Audio/API/IAudioListener.h"
+#include "Audio/API/ISoundEffect3D.h"
+#include "Audio/API/ISoundInstance3D.h"
+#include "Audio/API/IAudioGeometry.h"
+#include "Audio/API/IReverbSphere.h"
 
 #include "Game/Scene.h"
 
@@ -328,7 +328,7 @@ Sandbox::Sandbox()
 
 	SAFEDELETE(pRenderGraph);
 
-	//InitTestAudio();
+	InitTestAudio();
 }
 
 Sandbox::~Sandbox()
@@ -344,11 +344,11 @@ void Sandbox::InitTestAudio()
 {
 	using namespace LambdaEngine;
 
-	m_ToneSoundEffectGUID = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/noise.wav");
-	m_GunSoundEffectGUID = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/GUN_FIRE-GoodSoundForYou.wav");
+	m_ToneSoundEffectGUID = m_pResourceManager->LoadSoundEffectFromFile("../Assets/Sounds/noise.wav");
+	m_GunSoundEffectGUID = m_pResourceManager->LoadSoundEffectFromFile("../Assets/Sounds/GUN_FIRE-GoodSoundForYou.wav");
 
-	m_pToneSoundEffect = m_pResourceManager->GetSound(m_ToneSoundEffectGUID);
-	m_pGunSoundEffect = m_pResourceManager->GetSound(m_GunSoundEffectGUID);
+	m_pToneSoundEffect = m_pResourceManager->GetSoundEffect(m_ToneSoundEffectGUID);
+	m_pGunSoundEffect = m_pResourceManager->GetSoundEffect(m_GunSoundEffectGUID);
 
 	SoundInstance3DDesc soundInstanceDesc = {};
 	soundInstanceDesc.pSoundEffect = m_pToneSoundEffect;

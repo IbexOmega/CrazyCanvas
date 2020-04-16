@@ -36,7 +36,7 @@ namespace LambdaEngine
     bool FrameBufferVK::Init(const IRenderPass* pRenderPass, const FrameBufferDesc& desc)
     {
         uint32      attachmentCount = 0;
-        VkImageView attachments[MAX_RENDERTARGETS + 1];
+        VkImageView attachments[8 + 1];
         for (uint32 i = 0; i < desc.RenderTargetCount; i++)
         {
             TextureViewVK* pTextureViewVk = reinterpret_cast<TextureViewVK*>(desc.ppRenderTargets[i]);
