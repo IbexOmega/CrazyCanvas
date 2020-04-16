@@ -2,7 +2,7 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
-#define MAX_ATTACHMENTS				8
+#define MAX_COLOR_ATTACHMENTS		8
 #define MAX_SUBPASSES				16
 #define MAX_SUBPASS_DEPENDENCIES	16
 

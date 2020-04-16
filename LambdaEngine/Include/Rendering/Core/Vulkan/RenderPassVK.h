@@ -15,9 +15,9 @@ namespace LambdaEngine
 		struct SubpassData
 		{
 			VkSubpassDescription	Subpass;
-			VkAttachmentReference	InputAttachments[MAX_ATTACHMENTS];
-			VkAttachmentReference	ColorAttachments[MAX_ATTACHMENTS];
-			VkAttachmentReference	ResolveAttachments[MAX_ATTACHMENTS];
+			VkAttachmentReference	InputAttachments[MAX_COLOR_ATTACHMENTS];
+			VkAttachmentReference	ColorAttachments[MAX_COLOR_ATTACHMENTS];
+			VkAttachmentReference	ResolveAttachments[MAX_COLOR_ATTACHMENTS];
 		};
 
 	public:

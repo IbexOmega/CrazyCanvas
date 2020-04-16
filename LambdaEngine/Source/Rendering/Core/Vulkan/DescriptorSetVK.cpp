@@ -15,7 +15,8 @@
 namespace LambdaEngine
 {
 	DescriptorSetVK::DescriptorSetVK(const GraphicsDeviceVK* pDevice)
-		: TDeviceChild(pDevice)
+		: TDeviceChild(pDevice),
+		m_Bindings()
 	{
 	}
 
@@ -46,7 +47,7 @@ namespace LambdaEngine
 			DescriptorSetBindingsDesc	bindings			= pPipelineLayoutVk->GetDescriptorBindings(descriptorLayoutIndex);
 			
 			m_BindingCount = bindings.BindingCount;
-			memcpy(m_Bindings, bindings.Bindings, sizeof(DescriptorSetBindingsDesc) * m_BindingCount);
+			memcpy(m_Bindings, bindings.Bindings, sizeof(DescriptorBindingDesc) * m_BindingCount);
 
 			pVkDescriptorHeap->AddRef();
 			m_pDescriptorHeap = pVkDescriptorHeap;

@@ -134,9 +134,9 @@ namespace LambdaEngine
 		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
 
 		//Timeline-Semaphores
-		PFN_vkWaitSemaphores vkWaitSemaphores						= nullptr;
-		PFN_vkSignalSemaphore vkSignalSemaphore						= nullptr;
-		PFN_vkGetSemaphoreCounterValue vkGetSemaphoreCounterValue	= nullptr;
+		PFN_vkWaitSemaphores			vkWaitSemaphores			= nullptr;
+		PFN_vkSignalSemaphore			vkSignalSemaphore			= nullptr;
+		PFN_vkGetSemaphoreCounterValue	vkGetSemaphoreCounterValue	= nullptr;
 
 	private:
 		VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
