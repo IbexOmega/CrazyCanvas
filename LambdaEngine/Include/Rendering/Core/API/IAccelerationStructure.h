@@ -4,19 +4,27 @@
 
 namespace LambdaEngine
 {
-	class IBuffer;
-
-	struct TopLevelAccelerationStructureDesc
+	enum class EAccelerationStructureType
 	{
-		const char* pName					= "";
-		uint32		InstanceCount	= 8;
-		uint32		Flags					= 0;
+		ACCELERATION_STRUCTURE_NONE		= 0,
+		ACCELERATION_STRUCTURE_TOP		= 1,
+		ACCELERATION_STRUCTURE_BOTTOM	= 2,
 	};
 
-	class ITopLevelAccelerationStructure : public IDeviceChild
+	struct AccelerationStructureDesc
+	{
+		const char*					pName				= "";
+		EAccelerationStructureType	Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_NONE;
+		uint32						Flags				= 0;
+		uint32						InstanceCount		= 8;
+		uint32						MaxTriangleCount	= 0;
+		uint32						MaxVertexCount		= 0;
+	};
+
+	class IAccelerationStructure : public IDeviceChild
 	{
 	public:
-		DECL_DEVICE_INTERFACE(ITopLevelAccelerationStructure);
+		DECL_DEVICE_INTERFACE(IAccelerationStructure);
 
 		/*
 		* Getter for the minimum memory size requirement of a scratch buffer that will be used to build/refit this TopLevelAS
@@ -46,7 +54,7 @@ namespace LambdaEngine
 		* return - Returns a valid handle on success otherwise zero
 		*/
 		virtual uint64 GetHandle() const = 0;
-
-		virtual TopLevelAccelerationStructureDesc GetDesc() const = 0;
+		
+		virtual AccelerationStructureDesc GetDesc() const = 0;
 	};
 }

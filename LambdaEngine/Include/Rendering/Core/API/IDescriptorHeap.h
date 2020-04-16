@@ -1,6 +1,6 @@
 #pragma once
 #include "IDeviceChild.h"
-#include "GraphicsTypes.h"
+#include "GraphicsHelpers.h"
 
 namespace LambdaEngine
 {

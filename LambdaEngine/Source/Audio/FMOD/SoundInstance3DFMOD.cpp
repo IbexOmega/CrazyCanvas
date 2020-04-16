@@ -1,17 +1,13 @@
-#include "Audio/SoundInstance3D.h"
-#include "Audio/SoundEffect3D.h"
-#include "Audio/AudioDevice.h"
-#include "Audio/SoundHelper.h"
-#include "Audio/Audio.h"
+#include "Audio/FMOD/SoundInstance3DFMOD.h"
+#include "Audio/FMOD/SoundEffect3DFMOD.h"
+#include "Audio/FMOD/AudioDeviceFMOD.h"
 
 #include "Log/Log.h"
 
-#include <functional>
-
 namespace LambdaEngine
 {
-	SoundInstance3D::SoundInstance3D(const AudioDevice* pAudioDevice) :
-		m_pAudioDevice(pAudioDevice),
+	SoundInstance3DFMOD::SoundInstance3DFMOD(const IAudioDevice* pAudioDevice) :
+		m_pAudioDevice(reinterpret_cast<const AudioDeviceFMOD*>(pAudioDevice)),
 		m_pSoundEffect(nullptr),
 		m_pChannel(nullptr),
 		m_Mode(FMOD_DEFAULT),
@@ -21,21 +17,21 @@ namespace LambdaEngine
 	{
 	}
 
-	SoundInstance3D::~SoundInstance3D()
+	SoundInstance3DFMOD::~SoundInstance3DFMOD()
 	{
 	}
 
-	bool SoundInstance3D::Init(const SoundInstance3DDesc& desc)
+	bool SoundInstance3DFMOD::Init(const SoundInstance3DDesc& desc)
 	{
 		m_pName = desc.pName;
 
 		if (desc.pSoundEffect == nullptr)
 		{
-			LOG_WARNING("[SoundInstance3D]: Init failed for %s, pSoundEffect can't be nullptr", m_pName);
+			LOG_WARNING("[SoundInstance3DFMOD]: Init failed for %s, pSoundEffect can't be nullptr", m_pName);
 			return false;
 		}
 
-		m_pSoundEffect	= desc.pSoundEffect;
+		m_pSoundEffect	= reinterpret_cast<SoundEffect3DFMOD*>(desc.pSoundEffect);
 		
 		m_Mode = FMOD_3D;
 
@@ -47,14 +43,14 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void SoundInstance3D::Play()
+	void SoundInstance3DFMOD::Play()
 	{
 		RecreateHandleIfNeeded();
 		
 		FMOD_Channel_SetPaused(m_pChannel, 0);
 	}
 
-	void SoundInstance3D::Pause()
+	void SoundInstance3DFMOD::Pause()
 	{
 		if (IsPlaying())
 		{
@@ -62,7 +58,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void SoundInstance3D::Stop()
+	void SoundInstance3DFMOD::Stop()
 	{
 		if (IsPlaying())
 		{
@@ -70,7 +66,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void SoundInstance3D::Toggle()
+	void SoundInstance3DFMOD::Toggle()
 	{
 		RecreateHandleIfNeeded();
 
@@ -79,7 +75,7 @@ namespace LambdaEngine
 		FMOD_Channel_SetPaused(m_pChannel, (paused ^ 0x1));
 	}
 
-	void SoundInstance3D::SetPosition(const glm::vec3& position)
+	void SoundInstance3DFMOD::SetPosition(const glm::vec3& position)
 	{
 		m_Position = position;
 
@@ -89,12 +85,12 @@ namespace LambdaEngine
 
 			if (FMOD_Channel_Set3DAttributes(m_pChannel, &fmodPosition, nullptr) != FMOD_OK)
 			{
-				D_LOG_WARNING("[SoundInstance3D]: 3D Attributes could not be set for %s", m_pName);
+				D_LOG_WARNING("[SoundInstance3DFMOD]: 3D Attributes could not be set for %s", m_pName);
 			}
 		}
 	}
 
-	void SoundInstance3D::SetVolume(float volume)
+	void SoundInstance3DFMOD::SetVolume(float volume)
 	{
 		m_Volume = volume;
 
@@ -102,12 +98,12 @@ namespace LambdaEngine
 		{
 			if (FMOD_Channel_SetVolume(m_pChannel, volume) != FMOD_OK)
 			{
-				D_LOG_WARNING("[SoundInstance3D]: Volume could not be set for %s", m_pName);
+				D_LOG_WARNING("[SoundInstance3DFMOD]: Volume could not be set for %s", m_pName);
 			}
 		}
 	}
 
-	void SoundInstance3D::SetPitch(float pitch)
+	void SoundInstance3DFMOD::SetPitch(float pitch)
 	{
 		m_Pitch = pitch;
 
@@ -115,34 +111,34 @@ namespace LambdaEngine
 		{
 			if (FMOD_Channel_SetPitch(m_pChannel, pitch) != FMOD_OK)
 			{
-				D_LOG_WARNING("[SoundInstance3D]: Pitch could not be set for %s", m_pName);
+				D_LOG_WARNING("[SoundInstance3DFMOD]: Pitch could not be set for %s", m_pName);
 			}
 		}
 	}
 
-	const glm::vec3& SoundInstance3D::GetPosition()
+	const glm::vec3& SoundInstance3DFMOD::GetPosition()
 	{
 		return m_Position;
 	}
 
-	float SoundInstance3D::GetVolume()
+	float SoundInstance3DFMOD::GetVolume()
 	{
 		return m_Volume;
 	}
 
-	float SoundInstance3D::GetPitch()
+	float SoundInstance3DFMOD::GetPitch()
 	{
 		return m_Pitch;
 	}
 
-	bool SoundInstance3D::IsPlaying()
+	bool SoundInstance3DFMOD::IsPlaying()
 	{
 		FMOD_BOOL isPlaying = 0;
 		FMOD_Channel_IsPlaying(m_pChannel, &isPlaying);
 		return isPlaying;
 	}
 
-	void SoundInstance3D::RecreateHandleIfNeeded()
+	void SoundInstance3DFMOD::RecreateHandleIfNeeded()
 	{
 		if (!IsPlaying())
 		{

@@ -1,5 +1,6 @@
 #pragma once
 #include "Rendering/Core/API/ICommandList.h"
+#include "Rendering/Core/API/IRenderPass.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
@@ -37,8 +38,8 @@ namespace LambdaEngine
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) override final;
 		virtual void EndRenderPass() override final;
 
-		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc) override final;
-		virtual void BuildBottomLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)	override final;
+		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)		override final;
+		virtual void BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)	override final;
 
 		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)	override final;
 		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)      override final;
@@ -85,6 +86,14 @@ namespace LambdaEngine
 		{
 			return (uint64)m_CommandList;
 		}
+
+		
+		FORCEINLINE virtual ECommandQueueType GetType()	const override final
+		{
+			return m_Type;
+		}
+	
+
 	private:
 		void BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, VkPipelineBindPoint bindPoint);
 
@@ -99,8 +108,9 @@ namespace LambdaEngine
         VkRect2D                m_ScissorRects[MAX_VIEWPORTS];
         VkBuffer                m_VertexBuffers[MAX_VERTEX_BUFFERS];
         VkDeviceSize            m_VertexBufferOffsets[MAX_VERTEX_BUFFERS];
-		VkClearValue			m_ClearValues[MAX_RENDERTARGETS+1];
+		VkClearValue			m_ClearValues[MAX_COLOR_ATTACHMENTS+1];
         
-        CommandListDesc m_Desc;
+        CommandListDesc			m_Desc;
+		ECommandQueueType		m_Type;
 	};
 }

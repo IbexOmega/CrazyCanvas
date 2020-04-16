@@ -73,24 +73,24 @@ namespace LambdaEngine
 		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineStateDesc& desc) 	  const override final;
 		virtual IPipelineState* CreateRayTracingPipelineState(const RayTracingPipelineStateDesc& desc) const override final;
 
-		virtual ITopLevelAccelerationStructure*		CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc)			const override final;
-		virtual IBottomLevelAccelerationStructure*	CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc)	const override final;
+		virtual IAccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc& desc) const override final;
 
 		virtual ICommandQueue*		CreateCommandQueue(const char* pName, ECommandQueueType queueType)				const override final;
 		virtual ICommandAllocator*	CreateCommandAllocator(const char* pName, ECommandQueueType queueType)			const override final;
 		virtual ICommandList*		CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc)	const override final;
 		virtual IFence*				CreateFence(const FenceDesc& desc)												const override final;
-		
+
+		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst)																			const override final;
+		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const override final;
+
 		virtual void Release() override final;
 
 	private:
-		//INIT
 		bool InitInstance(const GraphicsDeviceDesc& desc);
 		bool InitDevice(const GraphicsDeviceDesc& desc);
 		bool InitPhysicalDevice();
 		bool InitLogicalDevice(const GraphicsDeviceDesc& desc);
 
-		//UTIL
 		bool SetEnabledValidationLayers();
 		bool SetEnabledInstanceExtensions();
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
@@ -134,9 +134,9 @@ namespace LambdaEngine
 		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
 
 		//Timeline-Semaphores
-		PFN_vkWaitSemaphores vkWaitSemaphores						= nullptr;
-		PFN_vkSignalSemaphore vkSignalSemaphore						= nullptr;
-		PFN_vkGetSemaphoreCounterValue vkGetSemaphoreCounterValue	= nullptr;
+		PFN_vkWaitSemaphores			vkWaitSemaphores			= nullptr;
+		PFN_vkSignalSemaphore			vkSignalSemaphore			= nullptr;
+		PFN_vkGetSemaphoreCounterValue	vkGetSemaphoreCounterValue	= nullptr;
 
 	private:
 		VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;

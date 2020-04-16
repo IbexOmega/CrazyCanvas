@@ -36,6 +36,10 @@
 	Typename() = default; \
 	virtual ~Typename() = default
 
+#define DECL_UNIQUE_CLASS(Typename) \
+	DECL_REMOVE_COPY(Typename); \
+	DECL_REMOVE_MOVE(Typename); \
+
 /*
 * Difference between this and the other DECL_INTERFACE is that this does not have a virtual destructor.
 * This is desired since we want Release to be used.

@@ -1,19 +1,17 @@
-#include "Audio/SoundEffect3D.h"
-#include "Audio/AudioDevice.h"
-#include "Audio/SoundHelper.h"
-#include "Audio/Audio.h"
+#include "Audio/FMOD/SoundEffect3DFMOD.h"
+#include "Audio/FMOD/AudioDeviceFMOD.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	SoundEffect3D::SoundEffect3D(const AudioDevice* pAudioDevice) :
-		m_pAudioDevice(pAudioDevice),
+	SoundEffect3DFMOD::SoundEffect3DFMOD(const IAudioDevice* pAudioDevice) :
+		m_pAudioDevice(reinterpret_cast<const AudioDeviceFMOD*>(pAudioDevice)),
 		m_pHandle(nullptr)
 	{
 	}
 
-	SoundEffect3D::~SoundEffect3D()
+	SoundEffect3DFMOD::~SoundEffect3DFMOD()
 	{
 		if (m_pHandle != nullptr)
 		{
@@ -22,7 +20,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool SoundEffect3D::Init(const SoundEffect3DDesc& desc)
+	bool SoundEffect3DFMOD::Init(const SoundEffect3DDesc& desc)
 	{
 		m_pName = desc.pFilepath;
 
@@ -41,7 +39,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void SoundEffect3D::PlayOnceAt(const glm::vec3& position, const glm::vec3& velocity, float volume, float pitch)
+	void SoundEffect3DFMOD::PlayOnceAt(const glm::vec3& position, const glm::vec3& velocity, float volume, float pitch)
 	{
 		FMOD_CHANNEL* pChannel = nullptr;
 		FMOD_VECTOR fmodPosition = { position.x, position.y, position.z };
@@ -56,12 +54,12 @@ namespace LambdaEngine
 		FMOD_Channel_SetPaused(pChannel, 0);
 	}
 
-	FMOD_SOUND* SoundEffect3D::GetHandle() 
+	FMOD_SOUND* SoundEffect3DFMOD::GetHandle() 
 	{ 
 		return m_pHandle; 
 	}
 
-	uint32 SoundEffect3D::GetLengthMS() 
+	uint32 SoundEffect3DFMOD::GetLengthMS() 
 	{ 
 		return m_LengthMS; 
 	}

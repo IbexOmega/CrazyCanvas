@@ -6,7 +6,7 @@
 namespace LambdaEngine
 {
 	class IGraphicsDevice;
-	class AudioDevice;
+	class IAudioDevice;
 
 	class LAMBDA_API ResourceManager
 	{
@@ -27,7 +27,7 @@ namespace LambdaEngine
 		DECL_REMOVE_COPY(ResourceManager);
 		DECL_REMOVE_MOVE(ResourceManager);
 
-		ResourceManager(IGraphicsDevice* pGraphicsDevice, AudioDevice* pAudioDevice);
+		ResourceManager(IGraphicsDevice* pGraphicsDevice, IAudioDevice* pAudioDevice);
 		~ResourceManager();
 
 		/*
@@ -101,7 +101,7 @@ namespace LambdaEngine
 		*	pFilepath - Path to the audio file
 		* return - a valid GUID if the sound was loaded, otherwise returns GUID_NONE
 		*/
-		GUID_Lambda LoadSoundFromFile(const char* pFilepath);
+		GUID_Lambda LoadSoundEffectFromFile(const char* pFilepath);
 
 		Mesh*					GetMesh(GUID_Lambda guid);
 		const Mesh*				GetMesh(GUID_Lambda guid) const;
@@ -115,8 +115,8 @@ namespace LambdaEngine
 		IShader*				GetShader(GUID_Lambda guid);
 		const IShader*			GetShader(GUID_Lambda guid) const;
 
-		SoundEffect3D*			GetSound(GUID_Lambda guid);
-		const SoundEffect3D*	GetSound(GUID_Lambda guid) const;
+		ISoundEffect3D*			GetSoundEffect(GUID_Lambda guid);
+		const ISoundEffect3D*	GetSoundEffect(GUID_Lambda guid) const;
 
 	private:
 		GUID_Lambda RegisterLoadedMesh(Mesh* pMesh);
@@ -127,13 +127,13 @@ namespace LambdaEngine
 
 	private:
 		IGraphicsDevice* m_pGraphicsDevice;
-		AudioDevice* m_pAudioDevice;
+		IAudioDevice* m_pAudioDevice;
 
 		std::unordered_map<GUID_Lambda, Mesh*>	   m_Meshes;
 		std::unordered_map<GUID_Lambda, Material*> m_Materials;
 		std::unordered_map<GUID_Lambda, ITexture*> m_Textures;
 		std::unordered_map<GUID_Lambda, IShader*> m_Shaders;
-		std::unordered_map<GUID_Lambda, SoundEffect3D*> m_Sounds;
+		std::unordered_map<GUID_Lambda, ISoundEffect3D*> m_SoundEffects;
 
 	private:
 		static GUID_Lambda s_NextFreeGUID;

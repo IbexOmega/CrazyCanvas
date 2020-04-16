@@ -1,6 +1,5 @@
-#include "Audio/AudioGeometry.h"
-#include "Audio/AudioDevice.h"
-#include "Audio/Audio.h"
+#include "Audio/FMOD/AudioGeometryFMOD.h"
+#include "Audio/FMOD/AudioDeviceFMOD.h"
 
 #include "Resources/Mesh.h"
 #include "Log/Log.h"
@@ -13,26 +12,26 @@ namespace LambdaEngine
 		uint32 MeshIndex;
 	};
 
-	AudioGeometry::AudioGeometry(const AudioDevice* pAudioDevice) :
-		m_pAudioDevice(pAudioDevice),
+	AudioGeometryFMOD::AudioGeometryFMOD(const IAudioDevice* pAudioDevice) :
+		m_pAudioDevice(reinterpret_cast<const AudioDeviceFMOD*>(pAudioDevice)),
 		m_pGeometry(nullptr)
 	{
 	}
 
-	AudioGeometry::~AudioGeometry()
+	AudioGeometryFMOD::~AudioGeometryFMOD()
 	{
 		if (m_pGeometry != nullptr)
 		{
 			if (FMOD_Geometry_Release(m_pGeometry) != FMOD_OK)
 			{
-				LOG_WARNING("[AudioGeometry]: FMOD Geometry could not be released for %s", m_pName);
+				LOG_WARNING("[AudioGeometryFMOD]: FMOD Geometry could not be released for %s", m_pName);
 			}
 
 			m_pGeometry = nullptr;
 		}
 	}
 
-	bool AudioGeometry::Init(const AudioGeometryDesc& desc)
+	bool AudioGeometryFMOD::Init(const AudioGeometryDesc& desc)
 	{
 		m_pName = desc.pName;
 
@@ -62,7 +61,7 @@ namespace LambdaEngine
 
 		if (FMOD_System_CreateGeometry(m_pAudioDevice->pSystem, numVertices * 3, numVertices, &m_pGeometry) != FMOD_OK)
 		{
-			LOG_WARNING("[AudioGeometry]: Geometry %s could not be created!", m_pName);
+			LOG_WARNING("[AudioGeometryFMOD]: Geometry %s could not be created!", m_pName);
 			return false;
 		}
 
@@ -74,30 +73,30 @@ namespace LambdaEngine
 
 			if (FMOD_Geometry_AddPolygon(m_pGeometry, audioMeshParameters.DirectOcclusion, audioMeshParameters.ReverbOcclusion, audioMeshParameters.DoubleSided ? 1 : 0, 3, pTriangle, nullptr) != FMOD_OK)
 			{
-				LOG_WARNING("[AudioGeometry]: Polygon number %u could not be added to %s!", t, m_pName);
+				LOG_WARNING("[AudioGeometryFMOD]: Polygon number %u could not be added to %s!", t, m_pName);
 				return false;
 			}
 		}
 
 		float test = glm::sqrt(polygons[0].Triangle[0].x * polygons[0].Triangle[0].x + polygons[0].Triangle[0].y * polygons[0].Triangle[0].y + polygons[0].Triangle[0].z * polygons[0].Triangle[0].z);
-		D_LOG_MESSAGE("[AudioGeometry]: Successfully initialized %s!", m_pName);
+		D_LOG_MESSAGE("[AudioGeometryFMOD]: Successfully initialized %s!", m_pName);
 
 		return true;
 	}
 
-	void AudioGeometry::SetActive(bool active)
+	void AudioGeometryFMOD::SetActive(bool active)
 	{
 		FMOD_Geometry_SetActive(m_pGeometry, active ? 1 : 0);
 	}
 
-	void AudioGeometry::SetPosition(const glm::vec3& position)
+	void AudioGeometryFMOD::SetPosition(const glm::vec3& position)
 	{
 		FMOD_VECTOR fmodPosition = { position.x, position.y, position.z };
 
 		FMOD_Geometry_SetPosition(m_pGeometry, &fmodPosition);
 	}
 
-	void AudioGeometry::SetRotation(const glm::vec3& forward, const glm::vec3& up)
+	void AudioGeometryFMOD::SetRotation(const glm::vec3& forward, const glm::vec3& up)
 	{
 		FMOD_VECTOR fmodForward = { forward.x, forward.y, forward.z };
 		FMOD_VECTOR fmodUp = { up.x, up.y, up.z };
@@ -105,29 +104,29 @@ namespace LambdaEngine
 		FMOD_Geometry_SetRotation(m_pGeometry, &fmodForward, &fmodUp);
 	}
 
-	void AudioGeometry::SetScale(const glm::vec3& scale)
+	void AudioGeometryFMOD::SetScale(const glm::vec3& scale)
 	{
 		FMOD_VECTOR fmodScale = { scale.x, scale.y, scale.z };
 
 		FMOD_Geometry_SetScale(m_pGeometry, &fmodScale);
 	}
 
-	const glm::vec3& AudioGeometry::GetPosition()
+	const glm::vec3& AudioGeometryFMOD::GetPosition()
 	{
 		return m_Position;
 	}
 
-	const glm::vec3& AudioGeometry::GetForward()
+	const glm::vec3& AudioGeometryFMOD::GetForward()
 	{
 		return m_Forward;
 	}
 
-	const glm::vec3& AudioGeometry::GetUp()
+	const glm::vec3& AudioGeometryFMOD::GetUp()
 	{
 		return m_Up;
 	}
 
-	const glm::vec3& AudioGeometry::GetScale()
+	const glm::vec3& AudioGeometryFMOD::GetScale()
 	{
 		return m_Scale;
 	}

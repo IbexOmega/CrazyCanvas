@@ -16,7 +16,7 @@
 #include "Rendering/Core/API/IFrameBuffer.h"
 #include "Rendering/Core/API/IDescriptorHeap.h"
 #include "Rendering/Core/API/IDescriptorSet.h"
-#include "Rendering/Core/API/ITopLevelAccelerationStructure.h"
+#include "Rendering/Core/API/IAccelerationStructure.h"
 
 #include "Application/API/PlatformApplication.h"
 
@@ -220,10 +220,20 @@ namespace LambdaEngine
 			ppFrameBuffers[i] = s_pGraphicsDevice->CreateFrameBuffer(pRenderPass, frameBufferDesc);
         }
         
-		TopLevelAccelerationStructureDesc tlasDesc = {};
+		AccelerationStructureDesc tlasDesc = {};
 		tlasDesc.pName			= "TLAS";
+		tlasDesc.Flags			= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+		tlasDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP;
 		tlasDesc.InstanceCount	= 6;
-		ITopLevelAccelerationStructure* pTLAS = s_pGraphicsDevice->CreateTopLevelAccelerationStructure(tlasDesc);
+		IAccelerationStructure* pTLAS = s_pGraphicsDevice->CreateAccelerationStructure(tlasDesc);
+
+		AccelerationStructureDesc blasDesc = {};
+		blasDesc.pName				= "BLAS";
+		blasDesc.Flags				= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+		blasDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_BOTTOM;
+		blasDesc.MaxTriangleCount	= 3;
+		blasDesc.MaxVertexCount		= 3;
+		IAccelerationStructure* pBLAS = s_pGraphicsDevice->CreateAccelerationStructure(blasDesc);
 
         FenceDesc fenceDesc = { };
         fenceDesc.pName         = "Main Fence";

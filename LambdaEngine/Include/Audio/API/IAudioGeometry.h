@@ -4,15 +4,11 @@
 
 #include "Math/Math.h"
 
-struct FMOD_GEOMETRY;
-struct FMOD_VECTOR;
 
 namespace LambdaEngine
 {
-	struct Mesh;
-
-	class AudioDevice;
-
+	class Mesh;
+	
 	struct AudioMeshParameters
 	{
 		float DirectOcclusion	= 0;
@@ -22,70 +18,52 @@ namespace LambdaEngine
 
 	struct AudioGeometryDesc
 	{
-		const char* pName										= "AudioGeometry";
+		const char* pName										= "AudioGeometryFMOD";
 		const Mesh* const * ppMeshes							= nullptr;
 		const glm::mat4* pTransforms							= nullptr;
 		const AudioMeshParameters*	pAudioMeshParameters		= nullptr;
 		uint32 NumMeshes										= 0;
 	};
-
-	class LAMBDA_API AudioGeometry
+	
+	class IAudioGeometry
 	{
 	public:
-		DECL_REMOVE_COPY(AudioGeometry);
-		DECL_REMOVE_MOVE(AudioGeometry);
-
-		AudioGeometry(const AudioDevice* pAudioDevice);
-		~AudioGeometry();
+		DECL_INTERFACE(IAudioGeometry);
 
 		/*
-		* Initialize this AudioGeometry
+		* Initialize this AudioGeometryFMOD
 		*	desc - A description of initialization parameters
 		* return - true if the initialization was successfull, otherwise returns false
 		*/
-		bool Init(const AudioGeometryDesc& desc);
+		virtual bool Init(const AudioGeometryDesc& desc) = 0;
 
 		/*
 		* Set whether the geometry should be processed by the audio engine
 		*/
-		void SetActive(bool active);
+		virtual void SetActive(bool active) = 0;
 
 		/*
 		* Set the world position of the geometry
 		*	position - The world space position, should be given in meters
 		*/
-		void SetPosition(const glm::vec3& position);
+		virtual void SetPosition(const glm::vec3& position) = 0;
 
 		/*
 		* Set the world rotation of the geometry
 		*	forward - The forward facing vector, assumed to be normalized
 		*	up - The upwards pointing vector, assumed to be normalized
 		*/
-		void SetRotation(const glm::vec3& forward, const glm::vec3& up);
+		virtual void SetRotation(const glm::vec3& forward, const glm::vec3& up) = 0;
 
 		/*
 		* Set the world scale of the geometry
 		*	scale - The world space scale
 		*/
-		void SetScale(const glm::vec3& scale);
+		virtual void SetScale(const glm::vec3& scale) = 0;
 
-		const glm::vec3& GetPosition();
-		const glm::vec3& GetForward();
-		const glm::vec3& GetUp();
-		const glm::vec3& GetScale();
-
-	private:
-		//Engine
-		const AudioDevice*	m_pAudioDevice;
-
-		//FMOD
-		FMOD_GEOMETRY*		m_pGeometry;
-
-		//Locals
-		const char*			m_pName;
-		glm::vec3			m_Position;
-		glm::vec3			m_Forward;
-		glm::vec3			m_Up;
-		glm::vec3			m_Scale;
+		virtual const glm::vec3& GetPosition() = 0;
+		virtual const glm::vec3& GetForward() = 0;
+		virtual const glm::vec3& GetUp() = 0;
+		virtual const glm::vec3& GetScale() = 0;
 	};
 }

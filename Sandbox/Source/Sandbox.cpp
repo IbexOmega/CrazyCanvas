@@ -12,11 +12,11 @@
 #include "Rendering/RenderGraphDescriptionParser.h"
 
 #include "Audio/AudioSystem.h"
-#include "Audio/AudioListener.h"
-#include "Audio/SoundEffect3D.h"
-#include "Audio/SoundInstance3D.h"
-#include "Audio/AudioGeometry.h"
-#include "Audio/ReverbSphere.h"
+#include "Audio/API/IAudioListener.h"
+#include "Audio/API/ISoundEffect3D.h"
+#include "Audio/API/ISoundInstance3D.h"
+#include "Audio/API/IAudioGeometry.h"
+#include "Audio/API/IReverbSphere.h"
 
 #include "Game/Scene.h"
 
@@ -72,7 +72,7 @@ Sandbox::Sandbox()
 
 	std::vector<RenderStageDesc> renderStages;
 
-	GraphicsPipelineStateDesc geometryPassPipelineDesc = {};
+	/*GraphicsPipelineStateDesc geometryPassPipelineDesc = {};
 	std::vector<RenderStageAttachment>			geometryRenderStageAttachments;
 
 	{
@@ -266,6 +266,47 @@ Sandbox::Sandbox()
 		renderStage.GraphicsPipeline.pGraphicsDesc		= &shadingPipelineDesc;
 
 		renderStages.push_back(renderStage);
+	}*/
+
+	GraphicsPipelineStateDesc					testGeometryPipelineStateDesc = {};
+	std::vector<RenderStageAttachment>			testGeometryRenderStageAttachments;
+
+	{
+		testGeometryRenderStageAttachments.push_back({ SCENE_MAT_PARAM_BUFFER,		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		testGeometryRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,			EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		testGeometryRenderStageAttachments.push_back({ SCENE_INDEX_BUFFER,			EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		testGeometryRenderStageAttachments.push_back({ SCENE_INSTANCE_BUFFER,		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		testGeometryRenderStageAttachments.push_back({ SCENE_MESH_INDEX_BUFFER,		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+
+		testGeometryRenderStageAttachments.push_back({ SCENE_ALBEDO_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		testGeometryRenderStageAttachments.push_back({ SCENE_NORMAL_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		testGeometryRenderStageAttachments.push_back({ SCENE_AO_MAPS,				EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		testGeometryRenderStageAttachments.push_back({ SCENE_ROUGHNESS_MAPS,		EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		testGeometryRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+
+		testGeometryRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
+
+		RenderStagePushConstants pushConstants = {};
+		pushConstants.pName			= "Test Geometry Pass Push Constants";
+		pushConstants.DataSize		= sizeof(int32) * 2;
+
+		RenderStageDesc renderStage = {};
+		renderStage.pName						= "Test Geometry Render Stage";
+		renderStage.pAttachments				= testGeometryRenderStageAttachments.data();
+		renderStage.AttachmentCount				= testGeometryRenderStageAttachments.size();
+		//renderStage.PushConstants				= pushConstants;
+
+		testGeometryPipelineStateDesc.pName				= "Test Geometry Pass Pipeline State";
+		testGeometryPipelineStateDesc.pVertexShader		= m_pResourceManager->GetShader(geometryVertexShaderGUID);
+		testGeometryPipelineStateDesc.pPixelShader		= m_pResourceManager->GetShader(geometryPixelShaderGUID);
+
+		renderStage.PipelineType					= EPipelineStateType::GRAPHICS;
+
+		renderStage.GraphicsPipeline.DrawType			= ERenderStageDrawType::SCENE_INDIRECT;
+		renderStage.GraphicsPipeline.pDrawResourceName	= SCENE_MESH_INDEX_BUFFER;
+		renderStage.GraphicsPipeline.pGraphicsDesc		= &testGeometryPipelineStateDesc;
+
+		renderStages.push_back(renderStage);
 	}
 
 	RenderGraphDesc renderGraphDesc = {};
@@ -280,14 +321,14 @@ Sandbox::Sandbox()
 
 	RenderGraph* pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
 
-	//pRenderGraph->Init(renderGraphDesc);
+	pRenderGraph->Init(renderGraphDesc);
 
 	clock.Tick();
 	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
 
 	SAFEDELETE(pRenderGraph);
 
-	//InitTestAudio();
+	InitTestAudio();
 }
 
 Sandbox::~Sandbox()
@@ -303,11 +344,11 @@ void Sandbox::InitTestAudio()
 {
 	using namespace LambdaEngine;
 
-	m_ToneSoundEffectGUID = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/noise.wav");
-	m_GunSoundEffectGUID = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/GUN_FIRE-GoodSoundForYou.wav");
+	m_ToneSoundEffectGUID = m_pResourceManager->LoadSoundEffectFromFile("../Assets/Sounds/noise.wav");
+	m_GunSoundEffectGUID = m_pResourceManager->LoadSoundEffectFromFile("../Assets/Sounds/GUN_FIRE-GoodSoundForYou.wav");
 
-	m_pToneSoundEffect = m_pResourceManager->GetSound(m_ToneSoundEffectGUID);
-	m_pGunSoundEffect = m_pResourceManager->GetSound(m_GunSoundEffectGUID);
+	m_pToneSoundEffect = m_pResourceManager->GetSoundEffect(m_ToneSoundEffectGUID);
+	m_pGunSoundEffect = m_pResourceManager->GetSoundEffect(m_GunSoundEffectGUID);
 
 	SoundInstance3DDesc soundInstanceDesc = {};
 	soundInstanceDesc.pSoundEffect = m_pToneSoundEffect;

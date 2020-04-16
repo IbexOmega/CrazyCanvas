@@ -19,7 +19,7 @@ namespace LambdaEngine
 		bool Init(const ShaderDesc& desc);
 
         void FillSpecializationInfo(VkSpecializationInfo& specializationInfo, std::vector<VkSpecializationMapEntry>& specializationEntries) const;
-        void FillShaderStageInfo(VkPipelineShaderStageCreateInfo& shaderStageInfo, const VkSpecializationInfo& specializationInfo) const;
+        void FillShaderStageInfo(VkPipelineShaderStageCreateInfo& shaderStageInfo, const VkSpecializationInfo* pSpecializationInfo)			const;
 
         FORCEINLINE VkShaderModule GetShaderModule() const
         {

@@ -11,7 +11,7 @@ namespace LambdaEngine
 {
 	GUID_Lambda ResourceManager::s_NextFreeGUID = ResourceManager::SMALLEST_UNRESERVED_GUID;
 
-	ResourceManager::ResourceManager(IGraphicsDevice* pGraphicsDevice, AudioDevice* pAudioDevice) :
+	ResourceManager::ResourceManager(IGraphicsDevice* pGraphicsDevice, IAudioDevice* pAudioDevice) :
 		m_pGraphicsDevice(pGraphicsDevice),
 		m_pAudioDevice(pAudioDevice)
 	{
@@ -23,7 +23,7 @@ namespace LambdaEngine
 		SAFEDELETE_ALL(m_Meshes);
 		SAFEDELETE_ALL(m_Materials);
 		SAFERELEASE_ALL(m_Textures);
-		SAFEDELETE_ALL(m_Sounds);
+		SAFEDELETE_ALL(m_SoundEffects);
 	}
 
 	bool ResourceManager::LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& result)
@@ -184,18 +184,18 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadSoundFromFile(const char* pFilepath)
+	GUID_Lambda ResourceManager::LoadSoundEffectFromFile(const char* pFilepath)
 	{
 		GUID_Lambda guid = GUID_NONE;
-		SoundEffect3D** ppMappedSound = nullptr;
+		ISoundEffect3D** ppMappedSoundEffect = nullptr;
 
 		//Spinlock
 		{
 			guid = s_NextFreeGUID++;
-			ppMappedSound = &m_Sounds[guid]; //Creates new entry if not existing
+			ppMappedSoundEffect = &m_SoundEffects[guid]; //Creates new entry if not existing
 		}
 
-		(*ppMappedSound) = ResourceLoader::LoadSoundFromFile(m_pAudioDevice, pFilepath);
+		(*ppMappedSoundEffect) = ResourceLoader::LoadSoundEffectFromFile(m_pAudioDevice, pFilepath);
 
 		return guid;
 	}
@@ -288,25 +288,25 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	SoundEffect3D* ResourceManager::GetSound(GUID_Lambda guid)
+	ISoundEffect3D* ResourceManager::GetSoundEffect(GUID_Lambda guid)
 	{
-		auto it = m_Sounds.find(guid);
+		auto it = m_SoundEffects.find(guid);
 
-		if (it != m_Sounds.end())
+		if (it != m_SoundEffects.end())
 			return it->second;
 
-		D_LOG_WARNING("[ResourceManager]: GetSound called with invalid GUID %u", guid);
+		D_LOG_WARNING("[ResourceManager]: GetSoundEffect called with invalid GUID %u", guid);
 		return nullptr;
 	}
 
-	const SoundEffect3D* ResourceManager::GetSound(GUID_Lambda guid) const
+	const ISoundEffect3D* ResourceManager::GetSoundEffect(GUID_Lambda guid) const
 	{
-		auto it = m_Sounds.find(guid);
+		auto it = m_SoundEffects.find(guid);
 
-		if (it != m_Sounds.end())
+		if (it != m_SoundEffects.end())
 			return it->second;
 
-		D_LOG_WARNING("[ResourceManager]: GetSound called with invalid GUID %u", guid);
+		D_LOG_WARNING("[ResourceManager]: GetSoundEffect called with invalid GUID %u", guid);
 		return nullptr;
 	}
 

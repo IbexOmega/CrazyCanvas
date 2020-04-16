@@ -1,7 +1,7 @@
 #include "Game/Scene.h"
 
 #include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Audio/AudioDevice.h"
+#include "Audio/API/IAudioDevice.h"
 #include "Resources/ResourceManager.h"
 
 #include "Resources/Mesh.h"
@@ -15,7 +15,7 @@
 
 namespace LambdaEngine
 {
-	Scene::Scene(const IGraphicsDevice* pGraphicsDevice, const AudioDevice* pAudioDevice, const ResourceManager* pResourceManager) :
+	Scene::Scene(const IGraphicsDevice* pGraphicsDevice, const AudioDeviceFMOD* pAudioDevice, const ResourceManager* pResourceManager) :
 		m_pGraphicsDevice(pGraphicsDevice),
 		m_pAudioDevice(pAudioDevice),
 		m_pResourceManager(pResourceManager),

@@ -3,12 +3,8 @@
 #include "LambdaEngine.h"
 #include "Math/Math.h"
 
-struct FMOD_REVERB3D;
-
 namespace LambdaEngine
 {
-	class AudioDevice;
-
 	enum class EReverbSetting : uint32
 	{
 		GENERIC				= 0,
@@ -44,49 +40,35 @@ namespace LambdaEngine
 		float MaxDistance				= 10.0f;
 		EReverbSetting ReverbSetting	= EReverbSetting::GENERIC;
 	};
-
-	class LAMBDA_API ReverbSphere
+	
+	class IReverbSphere
 	{
 	public:
-		DECL_REMOVE_COPY(ReverbSphere);
-		DECL_REMOVE_MOVE(ReverbSphere);
-
-		ReverbSphere(const AudioDevice* pAudioDevice);
-		~ReverbSphere();
+		DECL_INTERFACE(IReverbSphere);
 
 		/*
-		* Initialize this ReverbSphere
+		* Initialize this ReverbSphereFMOD
 		*	desc - A description of initialization parameters
 		* return - true if the initialization was successfull, otherwise returns false
 		*/
-		bool Init(const ReverbSphereDesc& desc);
+		virtual bool Init(const ReverbSphereDesc& desc) = 0;
 
 		/*
 		* Set whether the geometry should be processed by the audio engine
 		*/
-		void SetActive(bool active);
+		virtual void SetActive(bool active) = 0;
 
 		/*
-		* Set the 3D attributes of this ReverbSphere
+		* Set the 3D attributes of this ReverbSphereFMOD
 		*	position - The world position
 		*	minDistance - The distance from the centerpoint within which the reverb will have full effect
 		*	maxDistance - The distance from the centerpoint within which the reverb will have no effect
 		*/
-		void Set3DAttributes(const glm::vec3 position, float minDistance, float maxDistance);
+		virtual void Set3DAttributes(const glm::vec3 position, float minDistance, float maxDistance) = 0;
 
 		/*
 		* Set the reverb environment setting
 		*/
-		void SetReverbSetting(EReverbSetting reverbSetting);
-
-	private:
-		//Engine
-		const AudioDevice*	m_pAudioDevice;
-
-		//FMOD
-		FMOD_REVERB3D*		m_pReverb;
-
-		//Locals
-		const char*			m_pName;
+		virtual void SetReverbSetting(EReverbSetting reverbSetting) = 0;
 	};
 }

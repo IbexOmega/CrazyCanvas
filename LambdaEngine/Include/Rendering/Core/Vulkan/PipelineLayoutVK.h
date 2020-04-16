@@ -12,6 +12,12 @@ namespace LambdaEngine
 	class SamplerVK;
 	class GraphicsDeviceVK;
 
+	struct DescriptorSetBindingsDesc
+	{
+		DescriptorBindingDesc	Bindings[MAX_DESCRIPTOR_BINDINGS];
+		uint32					BindingCount = 0;
+	};
+
 	class PipelineLayoutVK : public TDeviceChildBase<GraphicsDeviceVK, IPipelineLayout>
 	{
 		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IPipelineLayout>;
@@ -23,10 +29,10 @@ namespace LambdaEngine
 
 		struct DescriptorSetLayoutData
 		{
-			VkDescriptorSetLayoutCreateInfo CreateInfo = { };
+			VkDescriptorSetLayoutCreateInfo CreateInfo				= { };
+			uint32							DescriptorBindingCount	= 0;
 			VkDescriptorSetLayoutBinding	DescriptorBindings[MAX_DESCRIPTOR_BINDINGS];
 			ImmutableSamplersData			ImmutableSamplers[MAX_DESCRIPTOR_BINDINGS];
-			uint32 DescriptorCount = 0;
 		};
 
 	public:
@@ -49,7 +55,13 @@ namespace LambdaEngine
 		FORCEINLINE DescriptorCountDesc GetDescriptorCount(uint32 descriptorSetIndex) const
 		{
 			ASSERT(descriptorSetIndex < MAX_DESCRIPTOR_SET_LAYOUTS);
-			return m_DescriptorCount[descriptorSetIndex];
+			return m_DescriptorCounts[descriptorSetIndex];
+		}
+
+		FORCEINLINE DescriptorSetBindingsDesc GetDescriptorBindings(uint32 descriptorSetIndex) const
+		{
+			ASSERT(descriptorSetIndex < MAX_DESCRIPTOR_SET_LAYOUTS);
+			return m_DescriptorSetBindings[descriptorSetIndex];
 		}
 
 		// IDeviceChild InterFace
@@ -66,11 +78,12 @@ namespace LambdaEngine
 		void CreateDescriptorSetLayout(const DescriptorSetLayoutDesc* pDescriptorSetLayouts, uint32 descriptorSetLayoutCount, DescriptorSetLayoutData* pResultDescriptorSetLayouts);
 
 	private:
-		VkPipelineLayout		m_PipelineLayout		= VK_NULL_HANDLE;
+		VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
 
-		uint32	m_DescriptorSetCount = 0;
 		VkDescriptorSetLayout	m_DescriptorSetLayouts[MAX_DESCRIPTOR_SET_LAYOUTS];
-		DescriptorCountDesc		m_DescriptorCount[MAX_DESCRIPTOR_SET_LAYOUTS];
+		DescriptorCountDesc		m_DescriptorCounts[MAX_DESCRIPTOR_SET_LAYOUTS];
+		DescriptorSetBindingsDesc	m_DescriptorSetBindings[MAX_DESCRIPTOR_SET_LAYOUTS];
+		uint32					m_DescriptorSetCount = 0;
 		
 		uint32		m_ImmutableSamplerCount = 0;
 		SamplerVK*	m_ppImmutableSamplers[MAX_TOTAL_IMMUTABLE_SAMPLERS];

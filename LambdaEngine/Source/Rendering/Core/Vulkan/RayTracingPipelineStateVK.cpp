@@ -119,7 +119,7 @@ namespace LambdaEngine
 			std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 			pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-			pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+			pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 			shaderStagesInfos.push_back(shaderCreateInfo);
 			shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
@@ -145,7 +145,7 @@ namespace LambdaEngine
 			std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 			pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-			pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+			pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 			shaderStagesInfos.push_back(shaderCreateInfo);
 			shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
@@ -171,7 +171,7 @@ namespace LambdaEngine
 			std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 			pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-			pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+			pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 			shaderStagesInfos.push_back(shaderCreateInfo);
 			shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);

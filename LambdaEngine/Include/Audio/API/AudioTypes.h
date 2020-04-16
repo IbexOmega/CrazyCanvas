@@ -4,7 +4,7 @@
 
 namespace LambdaEngine
 {
-	class SoundEffect3D;
+	class SoundEffect3DFMOD;
 
 	enum FSoundModeFlags : uint32
 	{

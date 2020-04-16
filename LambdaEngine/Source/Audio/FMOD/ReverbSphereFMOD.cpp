@@ -1,37 +1,36 @@
-#include "Audio/ReverbSphere.h"
-#include "Audio/AudioDevice.h"
-#include "Audio/Audio.h"
+#include "Audio/FMOD/ReverbSphereFMOD.h"
+#include "Audio/FMOD/AudioDeviceFMOD.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	ReverbSphere::ReverbSphere(const AudioDevice* pAudioDevice) : 
-		m_pAudioDevice(pAudioDevice),
+	ReverbSphereFMOD::ReverbSphereFMOD(const IAudioDevice* pAudioDevice) :
+		m_pAudioDevice(reinterpret_cast<const AudioDeviceFMOD*>(pAudioDevice)),
 		m_pReverb(nullptr)
 	{
 	}
 
-	ReverbSphere::~ReverbSphere()
+	ReverbSphereFMOD::~ReverbSphereFMOD()
 	{
 		if (m_pReverb != nullptr)
 		{
 			if (FMOD_Reverb3D_Release(m_pReverb) != FMOD_OK)
 			{
-				LOG_WARNING("[ReverbSphere]: FMOD Reverb could not be released for %s", m_pName);
+				LOG_WARNING("[ReverbSphereFMOD]: FMOD Reverb could not be released for %s", m_pName);
 			}
 
 			m_pReverb = nullptr;
 		}
 	}
 
-	bool ReverbSphere::Init(const ReverbSphereDesc& desc)
+	bool ReverbSphereFMOD::Init(const ReverbSphereDesc& desc)
 	{
 		m_pName = desc.pName;
 
 		if (FMOD_System_CreateReverb3D(m_pAudioDevice->pSystem, &m_pReverb) != FMOD_OK)
 		{
-			LOG_WARNING("[ReverbSphere]: Reverb %s could not be created!", m_pName);
+			LOG_WARNING("[ReverbSphereFMOD]: Reverb %s could not be created!", m_pName);
 			return false;
 		}
 
@@ -39,24 +38,24 @@ namespace LambdaEngine
 
 		Set3DAttributes(desc.Position, desc.MinDistance, desc.MaxDistance);
 
-		D_LOG_MESSAGE("[ReverbSphere]: Successfully initialized %s!", m_pName);
+		D_LOG_MESSAGE("[ReverbSphereFMOD]: Successfully initialized %s!", m_pName);
 
 		return true;
 	}
 
-	void ReverbSphere::SetActive(bool active)
+	void ReverbSphereFMOD::SetActive(bool active)
 	{
 		FMOD_Reverb3D_SetActive(m_pReverb, active ? 1 : 0);
 	}
 
-	void ReverbSphere::Set3DAttributes(const glm::vec3 position, float minDistance, float maxDistance)
+	void ReverbSphereFMOD::Set3DAttributes(const glm::vec3 position, float minDistance, float maxDistance)
 	{
 		FMOD_VECTOR fmodPosition = { position.x, position.y, position.z };
 
 		FMOD_Reverb3D_Set3DAttributes(m_pReverb, &fmodPosition, minDistance, maxDistance);
 	}
 
-	void ReverbSphere::SetReverbSetting(EReverbSetting reverbSetting)
+	void ReverbSphereFMOD::SetReverbSetting(EReverbSetting reverbSetting)
 	{
 		FMOD_REVERB_PROPERTIES reverbProperties = FMOD_PRESET_OFF;
 
