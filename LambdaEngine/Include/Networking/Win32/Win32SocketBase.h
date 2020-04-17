@@ -29,22 +29,22 @@ namespace LambdaEngine
 		* Binds the socket to a given ip-address and port. To bind a special address use
 		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
 		*
-		* pIPEndPoint - The IPEndPoint to bind the socket to
+		* ipEndPoint - The IPEndPoint to bind the socket to
 		*
-		* return  - False if an error occured, otherwise true.
+		* return	 - False if an error occured, otherwise true.
 		*/
-		virtual bool Bind(const IPEndPoint& pIPEndPoint) override
+		virtual bool Bind(const IPEndPoint& ipEndPoint) override
 		{
 			struct sockaddr_in socketAddress;
-			IPEndPointToSocketAddress(&pIPEndPoint, &socketAddress);
+			IPEndPointToSocketAddress(&ipEndPoint, &socketAddress);
 
 			if (bind(m_Socket, (struct sockaddr*) &socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
 			{
-				LOG_ERROR_CRIT("Failed to bind to %s", pIPEndPoint.ToString().c_str());
+				LOG_ERROR_CRIT("Failed to bind to %s", ipEndPoint.ToString().c_str());
 				PrintLastError();
 				return false;
 			}
-			m_pIPEndPoint = pIPEndPoint;
+			m_IPEndPoint = ipEndPoint;
 
 			ReadSocketData();
 
@@ -55,22 +55,22 @@ namespace LambdaEngine
 		* Connects the socket to a given ip-address and port. To connect to a special address use
 		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
 		*
-		* pIPEndPoint - The IPEndPoint to connect the socket to
+		* ipEndPoint - The IPEndPoint to connect the socket to
 		*
-		* return  - False if an error occured, otherwise true.
+		* return	 - False if an error occured, otherwise true.
 		*/
-		virtual bool Connect(const IPEndPoint& pIPEndPoint) override
+		virtual bool Connect(const IPEndPoint& ipEndPoint) override
 		{
 			struct sockaddr_in socketAddress;
-			IPEndPointToSocketAddress(&pIPEndPoint, &socketAddress);
+			IPEndPointToSocketAddress(&ipEndPoint, &socketAddress);
 
 			if (connect(m_Socket, reinterpret_cast<sockaddr*>(&socketAddress), sizeof(socketAddress)) == SOCKET_ERROR)
 			{
-				LOG_ERROR_CRIT("Failed to connect to %s", pIPEndPoint.ToString().c_str());
+				LOG_ERROR_CRIT("Failed to connect to %s", ipEndPoint.ToString().c_str());
 				PrintLastError();
 				return false;
 			}
-			m_pIPEndPoint = pIPEndPoint;
+			m_IPEndPoint = ipEndPoint;
 
 			ReadSocketData();
 
@@ -133,20 +133,20 @@ namespace LambdaEngine
 		*/
 		virtual const IPEndPoint& GetEndPoint() const override
 		{
-			return m_pIPEndPoint;
+			return m_IPEndPoint;
 		}
 
 	protected:
-		Win32SocketBase() : Win32SocketBase(INVALID_SOCKET, IPEndPoint(IPAddress::ANY, 0))
+		Win32SocketBase() : Win32SocketBase(INVALID_SOCKET, IPEndPoint())
 		{
 
 		};
 
-		Win32SocketBase(uint64 socket, const IPEndPoint& pIPEndPoint) :
+		Win32SocketBase(uint64 socket, const IPEndPoint& ipEndPoint) :
 			m_Socket(socket),
 			m_NonBlocking(false),
 			m_Closed(false),
-			m_pIPEndPoint(pIPEndPoint)
+			m_IPEndPoint(ipEndPoint)
 		{
 
 		};
@@ -169,7 +169,7 @@ namespace LambdaEngine
 			inet_ntop(socketAddress.sin_family, &socketAddress.sin_addr, m_pReceiveAddressBuffer, s_ReceiveAddressBufferSize);
 			uint16 port = ntohs(socketAddress.sin_port);
 
-			m_pIPEndPoint.SetEndPoint(IPAddress::Get(m_pReceiveAddressBuffer), port);
+			m_IPEndPoint.SetEndPoint(IPAddress::Get(m_pReceiveAddressBuffer), port);
 		}
 
 	protected:
@@ -297,8 +297,8 @@ namespace LambdaEngine
 
 	private:
 		bool m_NonBlocking;
-		bool m_Closed;
-		IPEndPoint m_pIPEndPoint;
+		std::atomic_bool m_Closed;
+		IPEndPoint m_IPEndPoint;
 	};
 }
 

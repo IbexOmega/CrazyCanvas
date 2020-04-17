@@ -4,7 +4,12 @@
 
 namespace LambdaEngine
 {
-	IPEndPoint::IPEndPoint(IPAddress* pAddress, uint16 port) : 
+	IPEndPoint::IPEndPoint() : IPEndPoint(IPAddress::NONE, 0)
+	{
+
+	}
+
+	IPEndPoint::IPEndPoint(IPAddress* pAddress, uint16 port) :
 		m_pAddress(pAddress),
 		m_Port(port),
 		m_Hash(0)
@@ -73,21 +78,14 @@ namespace LambdaEngine
 		return m_Hash;
 	}
 
+	bool IPEndPoint::operator==(const IPEndPoint& other) const
+	{
+		return other.GetAddress()->GetHash() == GetAddress()->GetHash() && other.GetPort() == GetPort();
+	}
+
 	void IPEndPoint::UpdateHash()
 	{
 		uint64 port64 = m_Port;
 		m_Hash = port64 ^ m_pAddress->GetHash() + 0x9e3779b9 + (port64 << 6) + (port64 >> 2);
 	}
-}
-
-namespace std
-{
-	template<>
-	struct hash<LambdaEngine::IPEndPoint>
-	{
-		size_t operator()(LambdaEngine::IPEndPoint const& ipEndPoint) const
-		{
-			return ipEndPoint.GetHash();
-		}
-	};
 }

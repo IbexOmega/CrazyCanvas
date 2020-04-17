@@ -9,6 +9,7 @@ namespace LambdaEngine
 	class LAMBDA_API IPEndPoint
 	{
 	public:
+		IPEndPoint();
 		IPEndPoint(IPAddress* pAddress, uint16 port);
 		~IPEndPoint();
 
@@ -26,6 +27,8 @@ namespace LambdaEngine
 
 		uint64 GetHash() const;
 
+		bool operator==(const IPEndPoint& other) const;
+
 	private:
 		void UpdateHash();
 
@@ -33,5 +36,13 @@ namespace LambdaEngine
 		IPAddress* m_pAddress;
 		uint16 m_Port;
 		uint64 m_Hash;
+	};
+
+	struct IPEndPointHasher
+	{
+		size_t operator()(const IPEndPoint& key) const
+		{
+			return key.GetHash();
+		}
 	};
 }

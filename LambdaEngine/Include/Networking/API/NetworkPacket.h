@@ -9,7 +9,7 @@ namespace LambdaEngine
 {
 	class LAMBDA_API NetworkPacket
 	{
-		friend class PacketDispatcher;
+		friend class PacketManager;
 
 	public:
 #pragma pack(push, 1)
