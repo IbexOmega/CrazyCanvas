@@ -40,6 +40,9 @@ namespace LambdaEngine
 		bytesReceived = recvfrom(m_Socket, pBuffer, size, 0, (struct sockaddr*)&socketAddress, &socketAddressSize);
 		if (bytesReceived == SOCKET_ERROR)
 		{
+			if (IsClosed() && !IsNonBlocking())
+				return false;
+
 			LOG_ERROR_CRIT("Failed to receive datagram packet");
 			PrintLastError();
 			return false;

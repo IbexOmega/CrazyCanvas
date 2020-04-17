@@ -5,7 +5,7 @@
 #include "Input/API/IKeyboardHandler.h"
 #include "Input/API/IMouseHandler.h"
 
-#include "Networking/API/PacketDispatcher.h"
+#include "Networking/API/ServerUDP.h"
 
 #include <set>
 
@@ -18,9 +18,6 @@ public:
 	~Server();
 
 	virtual void OnPacketReceived(LambdaEngine::NetworkPacket* packet, const LambdaEngine::IPEndPoint& sender);
-
-	void Run();
-	void Terminated();
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
@@ -35,9 +32,5 @@ private:
 	void UpdateTitle();
 
 private:
-	LambdaEngine::PacketDispatcher m_Dispatcher;
-	LambdaEngine::ISocketUDP* m_pSocketUDP;
-
-	char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
-	char m_pReceiveBuffer[UINT16_MAX_];
+	LambdaEngine::ServerUDP* m_pServer;
 };

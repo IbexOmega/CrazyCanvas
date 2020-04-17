@@ -4,18 +4,18 @@
 #include "Networking/API/IPAddress.h"
 #include "Networking/API/ISocketUDP.h"
 #include "Networking/API/IPacketListener.h"
-#include "Networking/API/PacketDispatcher.h"
+#include "Networking/API/PacketManager.h"
 
 namespace LambdaEngine
 {
-	PacketDispatcher::PacketDispatcher(uint16 packets) :
+	PacketManager::PacketManager(uint16 packets) :
 		m_QueueIndex(0),
 		m_PacketsCounter(0),
 		m_MessageCounter(0),
 		m_ReceivedSequenceBits(0),
 		m_LastReceivedSequenceNr(0)
 	{
-		m_pPackets = new NetworkPacket[packets];
+		m_pPackets = DBG_NEW NetworkPacket[packets];
 
 		for (int i = 0; i < packets; i++)
 		{
@@ -23,23 +23,23 @@ namespace LambdaEngine
 		}
 	}
 
-	PacketDispatcher::~PacketDispatcher()
+	PacketManager::~PacketManager()
 	{
 		delete[] m_pPackets;
 	}
 
-	void PacketDispatcher::EnqueuePacket(NetworkPacket* packet)
+	void PacketManager::EnqueuePacket(NetworkPacket* packet)
 	{
 		EnqueuePacket(packet, nullptr);
 	}
 
-	void PacketDispatcher::EnqueuePacket(NetworkPacket* packet, IPacketListener* listener)
+	void PacketManager::EnqueuePacket(NetworkPacket* packet, IPacketListener* listener)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
 		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ packet, listener, GetNextMessageUID() });
 	}
 
-	NetworkPacket* PacketDispatcher::GetFreePacket()
+	NetworkPacket* PacketManager::GetFreePacket()
 	{
 		std::scoped_lock<SpinLock> lock(m_LockPacketsFree);
 		if(!m_PacketsFree.empty())
@@ -48,10 +48,11 @@ namespace LambdaEngine
 			m_PacketsFree.erase(packet);
 			return packet;
 		}
+		LOG_ERROR("[PacketManager]: No free packets exist. Please increase the nr of packets");
 		return nullptr;
 	}
 
-	bool PacketDispatcher::EncodePackets(char* buffer, int32& bytesWritten)
+	bool PacketManager::EncodePackets(char* buffer, int32& bytesWritten)
 	{
 		int index = m_QueueIndex;
 		m_QueueIndex = m_QueueIndex % 2;
@@ -119,93 +120,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	/*bool PacketDispatcher::EncodePackets(ISocketUDP* socket, const IPEndPoint& destination)
-	{
-		int index = m_QueueIndex;
-		m_QueueIndex = m_QueueIndex % 2;
-		std::queue<MessageInfo>& packets = m_PacketsToSend[index];
-
-		Header header;
-		header.Size = sizeof(Header);
-
-		NetworkPacket* packet = nullptr;
-		uint16 packetBufferSize = 0;
-		uint16 packetHeaderSize = 0;
-
-		Bundle bundle;
-
-		while (!packets.empty())
-		{
-			MessageInfo& messageInfo = packets.front();
-			packet = messageInfo.Packet;
-			packetBufferSize = packet->GetBufferSize();
-			packetHeaderSize = packet->GetHeaderSize();
-
-			if (packet->GetTotalSize() + header.Size < MAXIMUM_PACKET_SIZE)
-			{
-				packets.pop();
-				packet->GetHeader().Size = packet->GetTotalSize();
-				memcpy(m_pSendBuffer + header.Size, &packet->GetHeader(), packetHeaderSize);
-				header.Size += packetHeaderSize;
-				memcpy(m_pSendBuffer + header.Size, packet->GetBufferReadOnly(), packetBufferSize);
-				header.Size += packetBufferSize;
-
-				if (messageInfo.Listener)
-				{
-					messageInfo.LastSent = EngineLoop::GetTimeSinceStart();
-					bundle.Infos[header.Packets] = messageInfo;
-				}
-				else
-				{
-					bundle.Infos[header.Packets] = MessageInfo();
-				}
-
-				header.Packets++;
-
-				if (header.Packets == 32 || packets.empty())
-				{
-					if (!Send(socket, destination, header, bundle))
-						return false;
-				}
-			}
-			else
-			{
-				if (!Send(socket, destination, header, bundle))
-					return false;
-			}
-		}
-
-		return true;
-	}*/
-
-	/*bool PacketDispatcher::Send(ISocketUDP* socket, const IPEndPoint& destination, Header& header, Bundle& bundle)
-	{
-		header.Sequence = GetNextPacketSequenceNr();
-		header.Ack = m_LastReceivedSequenceNr;
-		header.AckBits = m_ReceivedSequenceBits;
-		memcpy(m_pSendBuffer, &header, sizeof(Header));
-
-		bundle.Count = header.Packets;
-
-		{
-			std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
-			m_PacketsWaitingForAck.insert({ header.Sequence, bundle });
-		}
-
-		int32 bytesSent = 0;
-
-		if (!socket->SendTo(m_pSendBuffer, header.Size, bytesSent, destination))
-		{
-			Clear();
-			return false;
-		}
-
-		header.Packets = 0;
-		header.Size = sizeof(Header);
-		return true;
-	}*/
-
-	void PacketDispatcher::WriteHeaderAndStoreBundle(char* buffer, int32& bytesWritten, Header& header, Bundle& bundle)
+	void PacketManager::WriteHeaderAndStoreBundle(char* buffer, int32& bytesWritten, Header& header, Bundle& bundle)
 	{
 		header.Sequence = GetNextPacketSequenceNr();
 		header.Ack = m_LastReceivedSequenceNr;
@@ -220,7 +135,7 @@ namespace LambdaEngine
 		m_PacketsWaitingForAck.insert({ header.Sequence, bundle });
 	}
 
-	bool PacketDispatcher::DecodePackets(const char* buffer, int32 bytesReceived, NetworkPacket** packetsRead, int32& nrOfPackets)
+	bool PacketManager::DecodePackets(const char* buffer, int32 bytesReceived, NetworkPacket** packetsRead, int32& nrOfPackets)
 	{
 		Header header;
 		uint16 offset = sizeof(Header);
@@ -229,7 +144,7 @@ namespace LambdaEngine
 
 		if (header.Size != bytesReceived)
 		{
-			LOG_WARNING("[PacketDispatcher]: Received a packet with size missmatch [Exp %d : Rec %d]", header.Size, bytesReceived);
+			LOG_WARNING("[PacketManager]: Received a packet with size missmatch [Exp %d : Rec %d]", header.Size, bytesReceived);
 			return false;
 		}
 
@@ -251,7 +166,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void PacketDispatcher::Free(NetworkPacket** packets, int32 nrOfPackets)
+	void PacketManager::Free(NetworkPacket** packets, int32 nrOfPackets)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockPacketsFree);
 		for (int i = 0; i < nrOfPackets; i++)
@@ -264,51 +179,7 @@ namespace LambdaEngine
 		}
 	}
 
-	/*bool PacketDispatcher::Receive(ISocketUDP* socket, const char* buffer, NetworkPacket* packetsRead[32])
-	{
-		int32 bytesReceived = 0;
-		IPEndPoint sender(IPAddress::NONE, 0);
-		Header header;
-		NetworkPacket* packet = GetFreePacket();
-		NetworkPacket::Header& messageHeader = packet->GetHeader();
-		uint8 messageHeaderSize = packet->GetHeaderSize();
-		uint16 offset = 0;
-
-		while (true)
-		{
-			offset = sizeof(Header);
-			if (socket->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX_, bytesReceived, sender))
-			{
-				memcpy(&header, m_pReceiveBuffer, offset);
-				if (header.Size == bytesReceived)
-				{
-					ProcessSequence(header.Sequence);
-					ProcessAcks(header.Ack, header.AckBits);
-
-					for (int i = 0; i < header.Packets; i++)
-					{
-						memcpy(&messageHeader, m_pReceiveBuffer + offset, messageHeaderSize);
-						memcpy(packet->GetBuffer(), m_pReceiveBuffer + offset + messageHeaderSize, messageHeader.Size - messageHeaderSize);
-						offset += messageHeader.Size;
-
-						m_pHandler->OnPacketReceived(packet, sender);
-					}
-				}
-				else
-				{
-					LOG_WARNING("[PacketDispatcher]: Received a packet with size missmatch [Exp %d : Rec %d]", header.Size, bytesReceived);
-				}
-			}
-			else
-			{
-				break;
-			}
-		}
-
-		return false;
-	}*/
-
-	void PacketDispatcher::ProcessSequence(uint32 sequence)
+	void PacketManager::ProcessSequence(uint32 sequence)
 	{
 		if (sequence > m_LastReceivedSequenceNr)
 		{
@@ -329,7 +200,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void PacketDispatcher::ProcessAcks(uint32 ack, uint32 ackBits)
+	void PacketManager::ProcessAcks(uint32 ack, uint32 ackBits)
 	{
 		uint32 top = std::min(32, (int)ack);
 		for (uint8 i = 1; i <= top; i++)
@@ -343,7 +214,7 @@ namespace LambdaEngine
 		ProcessAck(ack);
 	}
 
-	void PacketDispatcher::ProcessAck(uint32 ack)
+	void PacketManager::ProcessAck(uint32 ack)
 	{
 		Bundle bundle;
 		MessageInfo* messageInfo = nullptr;
@@ -360,7 +231,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool PacketDispatcher::GetAndRemoveBundle(uint32 sequence, Bundle& bundle)
+	bool PacketManager::GetAndRemoveBundle(uint32 sequence, Bundle& bundle)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
 		auto iterator = m_PacketsWaitingForAck.find(sequence);
@@ -373,17 +244,17 @@ namespace LambdaEngine
 		return false;
 	}
 
-	uint32 PacketDispatcher::GetNextPacketSequenceNr()
+	uint32 PacketManager::GetNextPacketSequenceNr()
 	{
 		return ++m_PacketsCounter;
 	}
 
-	uint32 PacketDispatcher::GetNextMessageUID()
+	uint32 PacketManager::GetNextMessageUID()
 	{
 		return ++m_MessageCounter;
 	}
 
-	void PacketDispatcher::Clear()
+	void PacketManager::Clear()
 	{
 		std::scoped_lock<SpinLock> lock1(m_LockPacketsFree);
 		m_PacketsFree.clear();

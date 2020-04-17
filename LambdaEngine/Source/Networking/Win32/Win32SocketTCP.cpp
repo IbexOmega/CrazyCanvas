@@ -71,6 +71,9 @@ namespace LambdaEngine
 		bytesReceived = recv(m_Socket, pBuffer, size, 0);
 		if (bytesReceived == SOCKET_ERROR)
 		{
+			if (IsClosed() && !IsNonBlocking())
+				return false;
+
 			bytesReceived = 0;
 			int32 error = WSAGetLastError();
 			if (IsClosed())

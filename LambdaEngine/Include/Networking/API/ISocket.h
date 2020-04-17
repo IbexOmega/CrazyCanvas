@@ -17,21 +17,21 @@ namespace LambdaEngine
 		* Binds the socket to a given ip-address and port. To bind a special address use
 		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
 		*
-		* pIPEndPoint - The IPEndPoint to bind the socket to
+		* ipEndPoint - The IPEndPoint to bind the socket to
 		*
-		* return  - False if an error occured, otherwise true.
+		* return	 - False if an error occured, otherwise true.
 		*/
-		virtual bool Bind(const IPEndPoint& pIPEndPoint) = 0;
+		virtual bool Bind(const IPEndPoint& ipEndPoint) = 0;
 
 		/*
 		* Connects the socket to a given ip-address and port. To connect to a special address use
 		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
 		*
-		* pIPEndPoint - The IPEndPoint to connect the socket to
+		* ipEndPoint - The IPEndPoint to connect the socket to
 		*
-		* return  - False if an error occured, otherwise true.
+		* return	 - False if an error occured, otherwise true.
 		*/
-		virtual bool Connect(const IPEndPoint& pIPEndPoint) = 0;
+		virtual bool Connect(const IPEndPoint& ipEndPoint) = 0;
 
 		/*
 		* Sets the socket in non blocking or blocking mode.

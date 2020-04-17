@@ -20,7 +20,7 @@ namespace LambdaEngine
 	class ISocketUDP;
 	class IDispatcherHandler;
 
-	class LAMBDA_API PacketDispatcher
+	class LAMBDA_API PacketManager
 	{
 		struct MessageInfo
 		{
@@ -48,8 +48,8 @@ namespace LambdaEngine
 
 
 	public:
-		PacketDispatcher(uint16 packets);
-		~PacketDispatcher();
+		PacketManager(uint16 packets);
+		~PacketManager();
 
 		void EnqueuePacket(NetworkPacket* packet);
 		void EnqueuePacket(NetworkPacket* packet, IPacketListener* listener);
