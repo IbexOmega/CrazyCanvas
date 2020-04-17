@@ -586,6 +586,8 @@ namespace LambdaEngine
 		appInfo.engineVersion       = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.apiVersion          = VK_API_VERSION_1_2;
 
+		LOG_MESSAGE("[GraphicsDeviceVK]: Requsted API Version: %u.%u.%u (%u)", appInfo.apiVersion >> 22, (appInfo.apiVersion << 10) >> 22, (appInfo.apiVersion << 20) >> 20, appInfo.apiVersion);
+
 		VkInstanceCreateInfo instanceCreateInfo = {};
 		instanceCreateInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		instanceCreateInfo.pApplicationInfo         = &appInfo;
@@ -685,6 +687,9 @@ namespace LambdaEngine
 		// Save device's limits
 		VkPhysicalDeviceProperties deviceProperties = GetPhysicalDeviceProperties();
 		m_DeviceLimits = deviceProperties.limits;
+
+		LOG_MESSAGE("[GraphicsDeviceVK]: Chosen device: %s", deviceProperties.deviceName);
+		LOG_MESSAGE("[GraphicsDeviceVK]: API Version: %u.%u.%u (%u)", deviceProperties.apiVersion >> 22, (deviceProperties.apiVersion << 10) >> 22, (deviceProperties.apiVersion << 20) >> 20, deviceProperties.apiVersion);
 
 		return true;
 	}
