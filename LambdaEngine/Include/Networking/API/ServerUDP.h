@@ -10,6 +10,7 @@ namespace LambdaEngine
 {
 	class ISocketUDP;
 	class ClientUDPRemote;
+	class IServerUDPHandler;
 
 	class LAMBDA_API ServerUDP : public NetWorker, public IServer
 	{
@@ -26,7 +27,7 @@ namespace LambdaEngine
 		virtual bool IsAcceptingConnections() override;
 
 	protected:
-		ServerUDP(uint16 packetPerClient);
+		ServerUDP(IServerUDPHandler* pHandler, uint16 packetPerClient);
 
 		virtual bool OnThreadsStarted() override;
 		virtual void RunTranmitter() override;
@@ -38,15 +39,16 @@ namespace LambdaEngine
 	private:
 		void Transmit(const IPEndPoint& ipEndPoint, const char* data, int32 bytesToWrite);
 
+	public:
+		static ServerUDP* Create(IServerUDPHandler* pHandler, uint16 packets);
+
 	private:
 		ISocketUDP* m_pSocket;
 		IPEndPoint m_IPEndPoint;
 		SpinLock m_Lock;
 		uint16 m_PacketsPerClient;
 		std::atomic_bool m_Accepting;
+		IServerUDPHandler* m_pHandler;
 		std::unordered_map<IPEndPoint, ClientUDPRemote*, IPEndPointHasher> m_Clients;
-
-	public:
-		static ServerUDP* Create(uint16 packets);
 	};
 }

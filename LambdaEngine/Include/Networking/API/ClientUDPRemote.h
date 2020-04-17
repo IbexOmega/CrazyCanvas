@@ -1,14 +1,15 @@
 #pragma once
 
 #include "Networking/API/NetWorker.h"
-#include "Networking/API/IClient.h"
+#include "Networking/API/IClientUDP.h"
 #include "Networking/API/PacketManager.h"
 
 namespace LambdaEngine
 {
 	class ServerUDP;
+	class IClientUDPHandler;
 
-	class LAMBDA_API ClientUDPRemote : public IClient
+	class LAMBDA_API ClientUDPRemote : public IClientUDP
 	{
 		friend class ServerUDP;
 		
@@ -24,7 +25,7 @@ namespace LambdaEngine
 		virtual NetworkPacket* GetFreePacket() override;
 
 	protected:
-		ClientUDPRemote(uint16 packets, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
+		ClientUDPRemote(uint16 packets, const IPEndPoint& ipEndPoint, IClientUDPHandler* pHandler, ServerUDP* pServer);
 
 	private:
 		PacketManager* GetPacketManager();
@@ -36,5 +37,7 @@ namespace LambdaEngine
 		IPEndPoint m_IPEndPoint;
 		PacketManager m_PacketManager;
 		SpinLock m_Lock;
+		NetworkPacket* m_pPackets[32];
+		IClientUDPHandler* m_pHandler;
 	};
 }

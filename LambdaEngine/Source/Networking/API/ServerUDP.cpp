@@ -2,6 +2,7 @@
 #include "Networking/API/ServerUDP.h"
 #include "Networking/API/ISocketUDP.h"
 #include "Networking/API/ClientUDPRemote.h"
+#include "Networking/API/IServerUDPHandler.h"
 
 #include "Log/Log.h"
 
@@ -9,10 +10,11 @@
 
 namespace LambdaEngine
 {
-	ServerUDP::ServerUDP(uint16 packetPerClient) : 
+	ServerUDP::ServerUDP(IServerUDPHandler* pHandler, uint16 packetPerClient) :
+		m_pHandler(pHandler),
+		m_PacketsPerClient(packetPerClient),
 		m_pSocket(nullptr),
-		m_Accepting(true),
-		m_PacketsPerClient(packetPerClient)
+		m_Accepting(true)
 	{
 
 	}
@@ -83,8 +85,7 @@ namespace LambdaEngine
 	{
 		int32 bytesReceived = 0;
 		int32 packetsReceived = 0;
-		NetworkPacket* packets[32];
-		IPEndPoint sender(IPAddress::NONE, 0);
+		IPEndPoint sender;
 
 		while (!ShouldTerminate())
 		{
@@ -102,27 +103,12 @@ namespace LambdaEngine
 			}
 			else
 			{
-				pClient = DBG_NEW ClientUDPRemote(m_PacketsPerClient, sender, this);
+				IClientUDPHandler* pHandler = m_pHandler->CreateClientUDPHandler();
+				pClient = DBG_NEW ClientUDPRemote(m_PacketsPerClient, sender, pHandler, this);
 				m_Clients.insert({ sender, pClient });
 			}
 
-			//pClient->
-
-			//m_Accepting
-
-			/*if (m_PacketManager.DecodePackets(m_pReceiveBuffer, bytesReceived, packets, packetsReceived))
-			{
-				for (int i = 0; i < packetsReceived; i++)
-				{
-					
-					NetworkPacket* response = GetFreePacket();
-					BinaryEncoder encoder(response);
-					encoder.WriteString("I got your message");
-					SendUnreliable(response);
-					//OnPacketReceived(packets[i], sender);
-				}
-				m_PacketManager.Free(packets, packetsReceived);
-			}*/
+			pClient->OnDataReceived(m_pReceiveBuffer, bytesReceived);
 		}
 	}
 
@@ -174,8 +160,8 @@ namespace LambdaEngine
 		}
 	}
 
-	ServerUDP* ServerUDP::Create(uint16 packetsPerClient)
+	ServerUDP* ServerUDP::Create(IServerUDPHandler* pHandler, uint16 packetsPerClient)
 	{
-		return DBG_NEW ServerUDP(packetsPerClient);
+		return DBG_NEW ServerUDP(pHandler, packetsPerClient);
 	}
 }

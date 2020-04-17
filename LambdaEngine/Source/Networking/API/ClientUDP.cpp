@@ -89,7 +89,7 @@ namespace LambdaEngine
 		int32 bytesReceived = 0;
 		int32 packetsReceived = 0;
 		NetworkPacket* packets[32];
-		IPEndPoint sender(IPAddress::NONE, 0);
+		IPEndPoint sender;
 
 		while (!ShouldTerminate())
 		{

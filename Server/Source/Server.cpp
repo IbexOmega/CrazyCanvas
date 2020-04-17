@@ -18,11 +18,13 @@
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
 
+#include "ClientUDPHandler.h"
+
 Server::Server()
 {
 	using namespace LambdaEngine;
 
-	m_pServer = ServerUDP::Create(512);
+	m_pServer = ServerUDP::Create(this, 512);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
 
 	UpdateTitle();
@@ -33,17 +35,14 @@ Server::~Server()
 	m_pServer->Release();
 }
 
-void Server::OnPacketReceived(LambdaEngine::NetworkPacket* packet, const LambdaEngine::IPEndPoint& sender)
+void Server::OnClientConnected(LambdaEngine::IClientUDP* pClient)
 {
-	using namespace LambdaEngine;
 
-	BinaryDecoder decoder(packet);
-	LOG_MESSAGE(decoder.ReadString().c_str());
+}
 
-	/*NetworkPacket* response = m_pServer->GetFreePacket();
-	BinaryEncoder encoder(response);
-	encoder.WriteString("I got your message");
-	m_pServer->SendUnreliable(response);*/
+LambdaEngine::IClientUDPHandler* Server::CreateClientUDPHandler()
+{
+	return DBG_NEW ClientUDPHandler();
 }
 
 void Server::OnKeyDown(LambdaEngine::EKey key)

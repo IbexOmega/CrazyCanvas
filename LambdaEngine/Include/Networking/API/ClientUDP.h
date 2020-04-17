@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Networking/API/NetWorker.h"
-#include "Networking/API/IClient.h"
+#include "Networking/API/IClientUDP.h"
 #include "Networking/API/PacketManager.h"
 
 namespace LambdaEngine
 {
 	class ISocketUDP;
 
-	class LAMBDA_API ClientUDP : public NetWorker, public IClient
+	class LAMBDA_API ClientUDP : public NetWorker, public IClientUDP
 	{
 	public:
 		~ClientUDP();

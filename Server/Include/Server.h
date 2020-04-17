@@ -6,18 +6,24 @@
 #include "Input/API/IMouseHandler.h"
 
 #include "Networking/API/ServerUDP.h"
+#include "Networking/API/IServerUDPHandler.h"
+#include "Networking/API/IClientUDP.h"
+
+#include "Networking/API/IClientUDPHandler.h"
 
 #include <set>
 
 class Server : 
 	public LambdaEngine::Game,
-	public LambdaEngine::IKeyboardHandler
+	public LambdaEngine::IKeyboardHandler,
+	public LambdaEngine::IServerUDPHandler
 {
 public:
 	Server();
 	~Server();
 
-	virtual void OnPacketReceived(LambdaEngine::NetworkPacket* packet, const LambdaEngine::IPEndPoint& sender);
+	virtual void OnClientConnected(LambdaEngine::IClientUDP* pClient) override;
+	virtual LambdaEngine::IClientUDPHandler* CreateClientUDPHandler() override;
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;

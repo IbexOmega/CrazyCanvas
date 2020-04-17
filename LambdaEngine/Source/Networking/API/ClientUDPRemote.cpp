@@ -3,15 +3,17 @@
 #include "Networking/API/ISocketUDP.h"
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/ServerUDP.h"
+#include "Networking/API/IClientUDPHandler.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	ClientUDPRemote::ClientUDPRemote(uint16 packets, const IPEndPoint& ipEndPoint, ServerUDP* pServer) :
+	ClientUDPRemote::ClientUDPRemote(uint16 packets, const IPEndPoint& ipEndPoint, IClientUDPHandler* pHandler, ServerUDP* pServer) :
 		m_pServer(pServer),
 		m_IPEndPoint(ipEndPoint),
-		m_PacketManager(packets)
+		m_PacketManager(packets),
+		m_pHandler(pHandler)
 	{
 
 	}
@@ -23,7 +25,15 @@ namespace LambdaEngine
 
 	void ClientUDPRemote::OnDataReceived(const char* data, int32 size)
 	{
-
+		int32 packetsReceived;
+		if (m_PacketManager.DecodePackets(data, size, m_pPackets, packetsReceived))
+		{
+			for (int i = 0; i < packetsReceived; i++)
+			{
+				m_pHandler->OnPacketUDPReceived(this, m_pPackets[i]);
+			}
+			m_PacketManager.Free(m_pPackets, packetsReceived);
+		}
 	}
 
 	void ClientUDPRemote::SendPackets(char* data)
