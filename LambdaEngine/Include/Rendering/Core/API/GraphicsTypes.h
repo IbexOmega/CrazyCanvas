@@ -7,8 +7,6 @@ namespace LambdaEngine
 {
 	class ISampler;
 
-	constexpr uint32 MAX_FRAMES_IN_FLIGHT = 3;
-
     enum class EMemoryType : uint8
     {
         NONE				= 0,

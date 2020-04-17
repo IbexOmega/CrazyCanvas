@@ -24,6 +24,7 @@
 #include "Rendering/Core/Vulkan/DescriptorHeapVK.h"
 #include "Rendering/Core/Vulkan/DescriptorSetVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/FrameBufferCacheVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 
 namespace LambdaEngine
@@ -90,6 +91,8 @@ namespace LambdaEngine
 
 	GraphicsDeviceVK::~GraphicsDeviceVK()
 	{
+		SAFEDELETE(m_pFrameBufferCache);
+		
 		if (Device != VK_NULL_HANDLE)
 		{
 			vkDestroyDevice(Device, nullptr);
@@ -131,7 +134,31 @@ namespace LambdaEngine
 			LOG_MESSAGE("[GraphicsDeviceVK]: Vulkan Device initialized!");
 		}
 
+		m_pFrameBufferCache = DBG_NEW FrameBufferCacheVK(this);
+
 		return true;
+	}
+
+	VkFramebuffer GraphicsDeviceVK::GetFrameBuffer(
+		const IRenderPass* pRenderPass,
+		const ITextureView* const* ppRenderTargets,
+		uint32 renderTargetCount,
+		const ITextureView* pDepthStencil,
+		uint32 width,
+		uint32 height) const
+	{
+		FrameBufferCacheKey key = {};
+
+		for (uint32 i = 0; i < renderTargetCount; i++)
+		{
+			key.ColorAttachmentsViews[i] = reinterpret_cast<const TextureViewVK*>(ppRenderTargets[i])->GetImageView();
+		}
+
+		key.ColorAttachMentViewCount	= renderTargetCount;
+		key.DepthStencilView			= pDepthStencil != nullptr ? reinterpret_cast<const TextureViewVK*>(pDepthStencil)->GetImageView() : nullptr;
+		key.RenderPass					= reinterpret_cast<const RenderPassVK*>(pRenderPass)->GetRenderPass();
+		
+		return m_pFrameBufferCache->GetFrameBuffer(key, width, height);
 	}
 
 	void GraphicsDeviceVK::Release()

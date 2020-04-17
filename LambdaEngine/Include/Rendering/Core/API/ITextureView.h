@@ -33,7 +33,7 @@ namespace LambdaEngine
         ETextureViewType    Type            = ETextureViewType::TEXTURE_VIEW_NONE;
         uint32              MiplevelCount   = 0;
         uint32              ArrayCount      = 0;
-        uint32              Miplevel       = 0;
+        uint32              Miplevel		= 0;
         uint32              ArrayIndex      = 0;
     };
 

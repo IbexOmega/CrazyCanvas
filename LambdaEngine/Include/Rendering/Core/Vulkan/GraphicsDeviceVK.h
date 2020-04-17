@@ -11,6 +11,7 @@
 namespace LambdaEngine
 {
 	class CommandBufferVK;
+	class FrameBufferCacheVK;
 	
 	typedef ConstString ValidationLayer;
 	typedef ConstString Extension;
@@ -36,6 +37,14 @@ namespace LambdaEngine
 
 		bool Init(const GraphicsDeviceDesc& desc);
 
+		VkFramebuffer GetFrameBuffer(
+			const IRenderPass* pRenderPass,
+			const ITextureView* const* ppRenderTargets,
+			uint32 renderTargetCount,
+			const ITextureView* pDepthStencil,
+			uint32 width,
+			uint32 height) const;
+		
 		bool IsInstanceExtensionEnabled(const char* pExtensionName) const;
 		bool IsDeviceExtensionEnabled(const char* pExtensionName)	const;
 
@@ -139,13 +148,15 @@ namespace LambdaEngine
 		PFN_vkGetSemaphoreCounterValue	vkGetSemaphoreCounterValue	= nullptr;
 
 	private:
-		VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
+		VkDebugUtilsMessengerEXT	m_DebugMessenger				= VK_NULL_HANDLE;
+		
+		FrameBufferCacheVK*			m_pFrameBufferCache				= nullptr;
 
-		QueueFamilyIndices		m_DeviceQueueFamilyIndices;
-		VkPhysicalDeviceLimits	m_DeviceLimits;
-
-		std::vector<const char*> m_EnabledValidationLayers;
-		std::vector<const char*> m_EnabledInstanceExtensions;
-		std::vector<const char*> m_EnabledDeviceExtensions;
+		QueueFamilyIndices			m_DeviceQueueFamilyIndices;
+		VkPhysicalDeviceLimits		m_DeviceLimits;
+		
+		std::vector<const char*>	m_EnabledValidationLayers;
+		std::vector<const char*>	m_EnabledInstanceExtensions;
+		std::vector<const char*>	m_EnabledDeviceExtensions;
 	};
 }

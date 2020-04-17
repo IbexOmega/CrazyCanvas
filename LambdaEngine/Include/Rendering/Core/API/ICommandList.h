@@ -62,13 +62,15 @@ namespace LambdaEngine
 
 	struct BeginRenderPassDesc
 	{
-		const IRenderPass*		pRenderPass		= nullptr;
-		const IFrameBuffer*		pFrameBuffer	= nullptr;
-		uint32					Width			= 0;
-		uint32					Height			= 0;
-		uint32					Flags			= 0;
-		const ClearColorDesc*	pClearColors	= nullptr;
-		uint32					ClearColorCount = 0;
+		const IRenderPass*			pRenderPass			= nullptr;
+		const ITextureView* const *	ppRenderTargets		= nullptr;
+		uint32						RenderTargetCount	= 0;
+		const ITextureView*			pDepthStencil		= nullptr;
+		uint32						Width				= 0;
+		uint32						Height				= 0;
+		uint32						Flags				= 0;
+		const ClearColorDesc*		pClearColors		= nullptr;
+		uint32						ClearColorCount		= 0;
 		struct
 		{
 			int32 x = 0;

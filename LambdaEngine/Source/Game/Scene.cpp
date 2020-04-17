@@ -15,7 +15,7 @@
 
 namespace LambdaEngine
 {
-	Scene::Scene(const IGraphicsDevice* pGraphicsDevice, const AudioDeviceFMOD* pAudioDevice, const ResourceManager* pResourceManager) :
+	Scene::Scene(const IGraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice, const ResourceManager* pResourceManager) :
 		m_pGraphicsDevice(pGraphicsDevice),
 		m_pAudioDevice(pAudioDevice),
 		m_pResourceManager(pResourceManager),

@@ -11,6 +11,8 @@ namespace LambdaEngine
 {
 	struct GameObject;
 
+	class RenderGraph;
+	class Renderer;
 	class ResourceManager;
 	class IAudioListener;
 	class ISoundEffect3D;
@@ -64,4 +66,6 @@ private:
 	LambdaEngine::IAudioGeometry*			m_pAudioGeometry;
 
 	LambdaEngine::Scene*					m_pScene;
+	LambdaEngine::RenderGraph*				m_pRenderGraph;
+	LambdaEngine::Renderer*					m_pRenderer;
 };

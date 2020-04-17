@@ -15,11 +15,11 @@ namespace LambdaEngine
 	struct Material;
 
 	class IGraphicsDevice;
-	class AudioDeviceFMOD;
+	class IAudioDevice;
 	class ResourceManager;
 	class IBuffer;
 	class ITexture;
-
+	
 	struct GameObject
 	{
 		GUID_Lambda Mesh;
@@ -71,7 +71,7 @@ namespace LambdaEngine
 		DECL_REMOVE_COPY(Scene);
 		DECL_REMOVE_MOVE(Scene);
 
-		Scene(const IGraphicsDevice* pGraphicsDevice, const AudioDeviceFMOD* pAudioDevice, const ResourceManager* pResourceManager);
+		Scene(const IGraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice, const ResourceManager* pResourceManager);
 		~Scene();
 
 		bool Finalize(const SceneDesc& desc);
@@ -79,9 +79,23 @@ namespace LambdaEngine
 		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 		uint32 AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 
+		
+		FORCEINLINE std::vector<ITexture*>&		GetAlbedoMaps()				{ return m_SceneAlbedoMaps; }			
+		FORCEINLINE std::vector<ITexture*>&		GetNormalMaps()				{ return m_SceneNormalMaps; }			
+		FORCEINLINE std::vector<ITexture*>&		GetAmbientOcclusionMaps()	{ return m_SceneAmbientOcclusionMaps; }
+		FORCEINLINE std::vector<ITexture*>&		GetMetallicMaps()			{ return m_SceneMetallicMaps; }		
+		FORCEINLINE std::vector<ITexture*>&		GetRoughnessMaps()			{ return m_SceneRoughnessMaps; }		
+		FORCEINLINE IBuffer*					GetMaterialProperties()		{ return m_pSceneMaterialProperties; }	
+		FORCEINLINE IBuffer*					GetVertexBuffer()			{ return m_pSceneVertexBuffer; }		
+		FORCEINLINE IBuffer*					GetIndexBuffer()			{ return m_pSceneIndexBuffer; }		
+		FORCEINLINE IBuffer*					GetInstanceBufer()			{ return m_pSceneInstanceBuffer; }
+		FORCEINLINE IBuffer*					GetMeshIndexBuffer()		{ return m_pSceneMeshIndexBuffer; }	
+																			
+		
+
 	private:
 		const IGraphicsDevice*					m_pGraphicsDevice;
-		const AudioDeviceFMOD*						m_pAudioDevice;
+		const IAudioDevice*						m_pAudioDevice;
 		const ResourceManager*					m_pResourceManager;
 
 		const char*								m_pName;

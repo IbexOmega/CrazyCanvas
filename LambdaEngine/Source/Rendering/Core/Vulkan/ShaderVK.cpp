@@ -72,7 +72,7 @@ namespace LambdaEngine
 		shaderStageInfo.stage				= ConvertShaderStageFlag(m_Desc.Stage);
 		shaderStageInfo.module				= m_Module;
 		shaderStageInfo.pName				= m_Desc.pEntryPoint;
-		shaderStageInfo.pSpecializationInfo = pSpecializationInfo;
+		shaderStageInfo.pSpecializationInfo = pSpecializationInfo->pData != nullptr ? pSpecializationInfo : nullptr;
 	}
 
 	void ShaderVK::SetName(const char* pName)
