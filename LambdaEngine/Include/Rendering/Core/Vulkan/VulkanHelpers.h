@@ -563,7 +563,7 @@ namespace LambdaEngine
         case VK_EVENT_SET:											return "VK_EVENT_SET";
         case VK_EVENT_RESET:										return "VK_EVENT_RESET";
         case VK_INCOMPLETE:											return "VK_INCOMPLETE";
-        case VK_PIPELINE_COMPILE_REQUIRED_EXT:                      return "VK_PIPELINE_COMPILE_REQUIRED_EXT";
+        case VK_ERROR_PIPELINE_COMPILE_REQUIRED_EXT:				return "VK_PIPELINE_COMPILE_REQUIRED_EXT";
         case VK_ERROR_OUT_OF_HOST_MEMORY:							return "VK_ERROR_OUT_OF_HOST_MEMORY";
         case VK_ERROR_OUT_OF_DEVICE_MEMORY:							return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
         case VK_ERROR_INITIALIZATION_FAILED:						return "VK_ERROR_INITIALIZATION_FAILED";
@@ -624,7 +624,7 @@ namespace LambdaEngine
         case VK_EVENT_SET:											return "An event is signaled";
         case VK_EVENT_RESET:										return "An event is unsignaled";
         case VK_INCOMPLETE:											return "A return array was too small for the result";
-        case VK_PIPELINE_COMPILE_REQUIRED_EXT:                      return "A requested pipeline creation would have required compilation, but the application requested compilation to not be performed.";
+        case VK_ERROR_PIPELINE_COMPILE_REQUIRED_EXT:				return "A requested pipeline creation would have required compilation, but the application requested compilation to not be performed.";
         case VK_ERROR_OUT_OF_HOST_MEMORY:							return "A host memory allocation has failed.";
         case VK_ERROR_OUT_OF_DEVICE_MEMORY:							return "A device memory allocation has failed.";
         case VK_ERROR_INITIALIZATION_FAILED:						return "Initialization of an object could not be completed for implementation-specific reasons.";

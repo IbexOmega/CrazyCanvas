@@ -15,7 +15,7 @@ namespace LambdaEngine
 		audioDeviceDesc.MaxNumAudioListeners	= 1;
 		audioDeviceDesc.MaxWorldSize			= 200;
 
-		s_pAudioDevice = CreateAudioDevice(EAudioAPI::FMOD, audioDeviceDesc);
+		s_pAudioDevice = CreateAudioDevice(EAudioAPI::LAMBDA, audioDeviceDesc);
 
 		return true;
 	}

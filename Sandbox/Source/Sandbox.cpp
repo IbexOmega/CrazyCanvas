@@ -321,14 +321,14 @@ Sandbox::Sandbox()
 
 	RenderGraph* pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
 
-	pRenderGraph->Init(renderGraphDesc);
+	//pRenderGraph->Init(renderGraphDesc);
 
 	clock.Tick();
 	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
 
 	SAFEDELETE(pRenderGraph);
 
-	InitTestAudio();
+	//InitTestAudio();
 }
 
 Sandbox::~Sandbox()
@@ -358,7 +358,7 @@ void Sandbox::InitTestAudio()
 	m_pToneSoundInstance->Init(soundInstanceDesc);
 	m_pToneSoundInstance->SetVolume(0.5f);
 
-	m_SpawnPlayAts = false;
+	/*m_SpawnPlayAts = false;
 	m_GunshotTimer = 0.0f;
 	m_GunshotDelay = 1.0f;
 	m_Timer = 0.0f;
@@ -394,7 +394,7 @@ void Sandbox::InitTestAudio()
 	audioGeometryDesc.pTransforms = &transform;
 	audioGeometryDesc.pAudioMeshParameters = &audioMeshParameters;
 
-	m_pAudioGeometry->Init(audioGeometryDesc);
+	m_pAudioGeometry->Init(audioGeometryDesc);*/
 
 	/*std::vector<GraphicsObject> sponzaGraphicsObjects;
 	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sponzaGraphicsObjects);

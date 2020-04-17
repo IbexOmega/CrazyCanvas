@@ -25,7 +25,9 @@ namespace LambdaEngine
     SwapChainVK::~SwapChainVK()
     {
         ReleaseResources();
-        
+
+		SAFERELEASE(m_pCommandQueue);
+    	
         //Destroy semaphores
         for (uint32 i = 0; i < m_Desc.BufferCount; i++)
         {
