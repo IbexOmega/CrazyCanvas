@@ -163,7 +163,7 @@ namespace LambdaEngine
 				{
 					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
 
-					pResourceBinding->pDescriptorSet->WriteTextureDescriptors(
+					pResourceBinding->pRenderStage->pDescriptorSet->WriteTextureDescriptors(
 						pResource->Texture.TextureViews.data(), 
 						pResource->Texture.Samplers.data(), 
 						pResourceBinding->TextureState, 
@@ -184,7 +184,7 @@ namespace LambdaEngine
 				{
 					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
 
-					pResourceBinding->pDescriptorSet->WriteBufferDescriptors(
+					pResourceBinding->pRenderStage->pDescriptorSet->WriteBufferDescriptors(
 						pResource->Buffer.Buffers.data(),
 						pResource->Buffer.Offsets.data(),
 						pResource->Buffer.SizesInBytes.data(),
@@ -214,11 +214,16 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::Render(uint32 frameIndex)
+	void RenderGraph::Render(uint64 frameIndex, uint32 backBufferIndex)
 	{
 		ZERO_MEMORY(m_ppExecutionStages, m_ExecutionStageCount * sizeof(ICommandList*));
 
 		uint32 currentExecutionStage = 0;
+
+		uint64 resourceIndex = frameIndex % 3;
+
+		if (m_SignalValue > 3)
+			m_pFence->Wait(m_SignalValue - 3, UINT64_MAX);
 
 		for (uint32 p = 0; p < m_PipelineStageCount; p++)
 		{
@@ -232,9 +237,9 @@ namespace LambdaEngine
 
 					switch (pRenderStage->pPipelineState->GetType())
 					{
-					case EPipelineStateType::GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineStage->ppGraphicsCommandAllocators[frameIndex],	pPipelineStage->ppGraphicsCommandLists[frameIndex],		&m_ppExecutionStages[currentExecutionStage], frameIndex);	break;
-					case EPipelineStateType::COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineStage->ppComputeCommandAllocators[frameIndex],		pPipelineStage->ppComputeCommandLists[frameIndex],		&m_ppExecutionStages[currentExecutionStage], frameIndex);	break;
-					case EPipelineStateType::RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineStage->ppComputeCommandAllocators[frameIndex],		pPipelineStage->ppComputeCommandLists[frameIndex],		&m_ppExecutionStages[currentExecutionStage], frameIndex);	break;
+					case EPipelineStateType::GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineStage->ppGraphicsCommandAllocators[resourceIndex],		pPipelineStage->ppGraphicsCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
 					}
 
 					currentExecutionStage++;
@@ -245,13 +250,13 @@ namespace LambdaEngine
 
 					ExecuteSynchronizationStage(
 						pSynchronizationStage,
-						pPipelineStage->ppGraphicsCommandAllocators[frameIndex],
-						pPipelineStage->ppGraphicsCommandLists[frameIndex],
-						pPipelineStage->ppComputeCommandAllocators[frameIndex],
-						pPipelineStage->ppComputeCommandLists[frameIndex],
+						pPipelineStage->ppGraphicsCommandAllocators[resourceIndex],
+						pPipelineStage->ppGraphicsCommandLists[resourceIndex],
+						pPipelineStage->ppComputeCommandAllocators[resourceIndex],
+						pPipelineStage->ppComputeCommandLists[resourceIndex],
 						&m_ppExecutionStages[currentExecutionStage],
 						&m_ppExecutionStages[currentExecutionStage + 1],
-						frameIndex);
+						backBufferIndex);
 
 					currentExecutionStage += 2;
 				}
@@ -481,7 +486,7 @@ namespace LambdaEngine
 						descriptorBinding.DescriptorCount		= pAttachment->SubResourceCount;
 						descriptorBinding.DescriptorType		= descriptorType;
 						descriptorBinding.ppImmutableSamplers	= nullptr;
-						descriptorBinding.ShaderStageMask		= pAttachment->ShaderStage;
+						descriptorBinding.ShaderStageMask		= pAttachment->ShaderStages;
 
 						descriptorSetDescriptions.push_back(descriptorBinding);
 
@@ -502,7 +507,7 @@ namespace LambdaEngine
 							renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::DONT_CARE;
 							renderPassAttachmentDesc.StencilStoreOp	= EStoreOp::DONT_CARE;
 							renderPassAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_DONT_CARE;
-							renderPassAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+							renderPassAttachmentDesc.FinalState		= strcmp(pAttachment->pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0 ? ETextureState::TEXTURE_STATE_PRESENT : ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 							renderPassAttachmentDescriptions.push_back(renderPassAttachmentDesc);
 
@@ -601,15 +606,35 @@ namespace LambdaEngine
 				{
 					pRenderStage->DrawType = pRenderStageDesc->GraphicsPipeline.DrawType;
 
-					auto drawResourceIt = m_ResourceMap.find(pRenderStageDesc->GraphicsPipeline.pDrawResourceName);
+					auto vertexBufferIt = m_ResourceMap.find(pRenderStageDesc->GraphicsPipeline.pVertexBufferName);
 
-					if (drawResourceIt == m_ResourceMap.end())
+					if (vertexBufferIt == m_ResourceMap.end())
 					{
-						LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as draw resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->GraphicsPipeline.pDrawResourceName);
+						LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as vertex buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->GraphicsPipeline.pVertexBufferName);
 						return false;
 					}
 
-					pRenderStage->pDrawResource = &drawResourceIt->second;
+					pRenderStage->pVertexBufferResource = &vertexBufferIt->second;
+
+					auto indexBufferIt = m_ResourceMap.find(pRenderStageDesc->GraphicsPipeline.pIndexBufferName);
+
+					if (indexBufferIt == m_ResourceMap.end())
+					{
+						LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as index buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->GraphicsPipeline.pIndexBufferName);
+						return false;
+					}
+
+					pRenderStage->pIndexBufferResource = &indexBufferIt->second;
+
+					auto meshIndexBufferIt = m_ResourceMap.find(pRenderStageDesc->GraphicsPipeline.pMeshIndexBufferName);
+
+					if (meshIndexBufferIt == m_ResourceMap.end())
+					{
+						LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as mesh index buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->GraphicsPipeline.pMeshIndexBufferName);
+						return false;
+					}
+
+					pRenderStage->pMeshIndexBufferResource = &meshIndexBufferIt->second;
 				}
 
 				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateGraphicsPipelineState(pipelineDesc);
@@ -638,7 +663,7 @@ namespace LambdaEngine
 				Resource* pResource = std::get<0>(resourceTuple);
 
 				ResourceBinding resourceBinding = {};
-				resourceBinding.pDescriptorSet	= pRenderStage->pDescriptorSet;
+				resourceBinding.pRenderStage	= pRenderStage;
 				resourceBinding.DescriptorType	= std::get<2>(resourceTuple);
 				resourceBinding.Binding			= r;
 				resourceBinding.TextureState	= std::get<1>(resourceTuple);
@@ -720,8 +745,8 @@ namespace LambdaEngine
 					textureBarrier.DstMemoryAccessFlags = ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.ToAttachment.Type);
 
 					TextureSynchronization textureSynchronization = {};
-					textureSynchronization.SrcShaderStage		= attachmentSynchronizationDesc.FromAttachment.ShaderStage;
-					textureSynchronization.DstShaderStage		= attachmentSynchronizationDesc.ToAttachment.ShaderStage;
+					textureSynchronization.SrcShaderStage		= GetLastShaderStageInMask(attachmentSynchronizationDesc.FromAttachment.ShaderStages);
+					textureSynchronization.DstShaderStage		= GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
 
 					textureSynchronization.Barriers.reserve(pResource->SubResourceCount);
 
@@ -742,8 +767,8 @@ namespace LambdaEngine
 					bufferBarrier.DstMemoryAccessFlags	= ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.ToAttachment.Type);
 
 					BufferSynchronization bufferSynchronization = {};
-					bufferSynchronization.SrcShaderStage = attachmentSynchronizationDesc.FromAttachment.ShaderStage;
-					bufferSynchronization.DstShaderStage = attachmentSynchronizationDesc.ToAttachment.ShaderStage;
+					bufferSynchronization.SrcShaderStage = GetLastShaderStageInMask(attachmentSynchronizationDesc.FromAttachment.ShaderStages);
+					bufferSynchronization.DstShaderStage = GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
 
 					bufferSynchronization.Barriers.reserve(pResource->SubResourceCount);
 
@@ -988,7 +1013,7 @@ namespace LambdaEngine
 		ICommandList* pComputeCommandList,
 		ICommandList** ppFirstExecutionStage,
 		ICommandList** ppSecondExecutionStage, 
-		uint32 frameIndex)
+		uint32 backBufferIndex)
 	{
 		pGraphicsCommandAllocator->Reset();
 		pGraphicsCommandList->Reset();
@@ -1056,7 +1081,7 @@ namespace LambdaEngine
 		pComputeCommandList->End();
 	}
 
-	void RenderGraph::ExecuteGraphicsRenderStage(RenderStage* pRenderStage, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList, ICommandList** ppExecutionStage, uint32 frameIndex)
+	void RenderGraph::ExecuteGraphicsRenderStage(RenderStage* pRenderStage, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex)
 	{
 		RenderStageParameters* pParameters = &pRenderStage->Parameters;
 
@@ -1075,7 +1100,7 @@ namespace LambdaEngine
 		uint32 clearColorCount = 0;
 		for (auto it = pRenderStage->RenderTargetResources.begin(); it != pRenderStage->RenderTargetResources.end(); it++)
 		{
-			ppTextureViews[textureViewCount++] = (*it)->Texture.TextureViews[frameIndex];
+			ppTextureViews[textureViewCount++] = (*it)->Texture.TextureViews[backBufferIndex];
 
 			clearColorDescriptions[clearColorCount].Color[0]	= 0.0f;
 			clearColorDescriptions[clearColorCount].Color[1]	= 0.0f;
@@ -1087,7 +1112,7 @@ namespace LambdaEngine
 
 		if (pRenderStage->pDepthStencilAttachment != nullptr)
 		{
-			pDeptchStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.TextureViews[frameIndex];
+			pDeptchStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.TextureViews[backBufferIndex];
 
 			clearColorDescriptions[clearColorCount].Depth		= 0.0f;
 			clearColorDescriptions[clearColorCount].Stencil		= 0.0f;
@@ -1111,25 +1136,46 @@ namespace LambdaEngine
 
 		pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
 
+		Viewport viewport = {};
+		viewport.MinDepth	= 0.0f;
+		viewport.MaxDepth	= 1.0f;
+		viewport.Width		= pParameters->Graphics.Width;
+		viewport.Height		= pParameters->Graphics.Height;
+		viewport.x			= 0.0f;
+		viewport.y			= 0.0f;
+
+		pGraphicsCommandList->SetViewports(&viewport, 0, 1);
+
+		ScissorRect scissorRect = {};
+		scissorRect.Width	= pParameters->Graphics.Width;
+		scissorRect.Height	= pParameters->Graphics.Height;
+		scissorRect.x		= 0;
+		scissorRect.y		= 0;
+
+		pGraphicsCommandList->SetScissorRects(&scissorRect, 0, 1);
+
 		pGraphicsCommandList->BindGraphicsPipeline(pRenderStage->pPipelineState);
 		pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->pDescriptorSet, pRenderStage->pPipelineLayout);
 
-
 		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 		{
-			IBuffer* pDrawBuffer	= pRenderStage->pDrawResource->Buffer.Buffers[0];
+			uint64 offset = 0;
+			pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], offset);
+
+			IBuffer* pDrawBuffer	= pRenderStage->pMeshIndexBufferResource->Buffer.Buffers[0];
 			uint32 drawCount		= pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument);
 			uint32 stride			= sizeof(IndexedIndirectMeshArgument);
 
 			pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, 0, drawCount, stride);
 		}
 
+		pGraphicsCommandList->EndRenderPass();
 		pGraphicsCommandList->End();
 
 		(*ppExecutionStage) = pGraphicsCommandList;
 	}
 
-	void RenderGraph::ExecuteComputeRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 frameIndex)
+	void RenderGraph::ExecuteComputeRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex)
 	{
 		RenderStageParameters* pParameters = &pRenderStage->Parameters;
 
@@ -1148,7 +1194,7 @@ namespace LambdaEngine
 		(*ppExecutionStage) = pComputeCommandList;
 	}
 
-	void RenderGraph::ExecuteRayTracingRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 frameIndex)
+	void RenderGraph::ExecuteRayTracingRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex)
 	{
 		RenderStageParameters* pParameters = &pRenderStage->Parameters;
 

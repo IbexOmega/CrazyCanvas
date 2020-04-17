@@ -126,9 +126,11 @@ namespace LambdaEngine
 			EXTERNAL_ACCELERATION_STRUCTURE		= 6,
 		};
 
+		struct RenderStage;
+
 		struct ResourceBinding
 		{
-			IDescriptorSet*	pDescriptorSet	= nullptr;
+			RenderStage*	pRenderStage	= nullptr;
 			EDescriptorType DescriptorType	= EDescriptorType::DESCRIPTOR_UNKNOWN;
 			uint32			Binding			= 0;
 
@@ -172,18 +174,20 @@ namespace LambdaEngine
 
 		struct RenderStage
 		{
-			ERenderStageDrawType	DrawType				= ERenderStageDrawType::NONE;
-			Resource*				pDrawResource			= nullptr;
+			ERenderStageDrawType	DrawType					= ERenderStageDrawType::NONE;
+			Resource*				pVertexBufferResource		= nullptr;
+			Resource*				pIndexBufferResource		= nullptr;
+			Resource*				pMeshIndexBufferResource	= nullptr;
 
-			RenderStageParameters	Parameters				= {};
-			IPipelineLayout*		pPipelineLayout			= nullptr;
-			IPipelineState*			pPipelineState			= nullptr;
-			IDescriptorSet*			pDescriptorSet			= nullptr;
-			IRenderPass*			pRenderPass				= nullptr;
+			RenderStageParameters	Parameters					= {};
+			IPipelineLayout*		pPipelineLayout				= nullptr;
+			IPipelineState*			pPipelineState				= nullptr;
+			IDescriptorSet*			pDescriptorSet				= nullptr;
+			IRenderPass*			pRenderPass					= nullptr;
 
-			Resource*				pPushConstantsResource	= nullptr;
+			Resource*				pPushConstantsResource		= nullptr;
 			std::set<Resource*>		RenderTargetResources;
-			Resource*				pDepthStencilAttachment	= nullptr;
+			Resource*				pDepthStencilAttachment		= nullptr;
 		};
 
 		struct TextureSynchronization
@@ -243,7 +247,7 @@ namespace LambdaEngine
 		/*
 		* 
 		*/
-		void Render(uint32 frameIndex);
+		void Render(uint64 frameIndex, uint32 backBufferIndex);
 
 	private:
 		bool CreateFence();
@@ -268,10 +272,10 @@ namespace LambdaEngine
 			ICommandList* pComputeCommandList, 
 			ICommandList** ppFirstExecutionStage, 
 			ICommandList** ppSecondExecutionStage, 
-			uint32 frameIndex);
-		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList, ICommandList** ppExecutionStage, uint32 frameIndex);
-		void ExecuteComputeRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 frameIndex);
-		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 frameIndex);
+			uint32 backBufferIndex);
+		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
+		void ExecuteComputeRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
+		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
 
 		uint32 CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc);
 

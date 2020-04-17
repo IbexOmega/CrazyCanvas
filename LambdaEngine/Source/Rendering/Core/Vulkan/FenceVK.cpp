@@ -46,7 +46,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void FenceVK::Wait(uint64 signalValue, uint64 timeOut) const
+	void FenceVK::Wait(uint64 waitValue, uint64 timeOut) const
 	{
 		VkSemaphoreWaitInfo waitInfo = {};
 		waitInfo.sType			= VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
@@ -54,7 +54,7 @@ namespace LambdaEngine
 		waitInfo.flags			= 0;
 		waitInfo.semaphoreCount = 1;
 		waitInfo.pSemaphores	= &m_Semaphore;
-		waitInfo.pValues		= &signalValue;
+		waitInfo.pValues		= &waitValue;
 
 		VkResult result = m_pDevice->vkWaitSemaphores(m_pDevice->Device, &waitInfo, timeOut);
 		if (result != VK_SUCCESS)

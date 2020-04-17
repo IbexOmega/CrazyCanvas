@@ -26,7 +26,11 @@ namespace LambdaEngine
     {
         ReleaseResources();
 
-		SAFERELEASE(m_pCommandQueue);
+		if (m_pCommandQueue)
+		{
+			m_pCommandQueue->FlushBarriers();
+			RELEASE(m_pCommandQueue);
+		}
     	
         //Destroy semaphores
         for (uint32 i = 0; i < m_Desc.BufferCount; i++)

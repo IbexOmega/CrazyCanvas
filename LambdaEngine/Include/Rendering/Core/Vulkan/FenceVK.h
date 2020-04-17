@@ -27,8 +27,8 @@ namespace LambdaEngine
         virtual void SetName(const char* pName) override final;
         
         // IFence interface
-        virtual void Wait(uint64 signalValue, uint64 timeOut) const override final;
-        virtual void Signal(uint64 signalValue)                     override final;
+        virtual void Wait(uint64 waitValue, uint64 timeOut)	const override final;
+        virtual void Signal(uint64 signalValue)                   override final;
 
         virtual uint64 GetValue() const override final;
         

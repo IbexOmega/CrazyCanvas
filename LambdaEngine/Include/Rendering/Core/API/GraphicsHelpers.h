@@ -36,6 +36,56 @@ namespace LambdaEngine
 		}
 	}
 
+	FORCEINLINE FShaderStageFlags GetFirstShaderStageInMask(uint32 shaderStageMask)
+	{
+		FShaderStageFlags firstStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER)		firstStage = SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER)			firstStage = SHADER_STAGE_FLAG_MESH_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER)			firstStage = SHADER_STAGE_FLAG_TASK_SHADER;
+
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER)		firstStage = SHADER_STAGE_FLAG_DOMAIN_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER)			firstStage = SHADER_STAGE_FLAG_HULL_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER)		firstStage = SHADER_STAGE_FLAG_GEOMETRY_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER)		firstStage = SHADER_STAGE_FLAG_VERTEX_SHADER;
+
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER)		firstStage = SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER)			firstStage = SHADER_STAGE_FLAG_MISS_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER)	firstStage = SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_ANY_HIT_SHADER)		firstStage = SHADER_STAGE_FLAG_ANY_HIT_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_INTERSECT_SHADER)	firstStage = SHADER_STAGE_FLAG_INTERSECT_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER)		firstStage = SHADER_STAGE_FLAG_RAYGEN_SHADER;
+
+		return firstStage;
+	}
+
+	FORCEINLINE FShaderStageFlags GetLastShaderStageInMask(uint32 shaderStageMask)
+	{
+		FShaderStageFlags lastStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER)			lastStage = SHADER_STAGE_FLAG_TASK_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER)			lastStage = SHADER_STAGE_FLAG_MESH_SHADER;
+
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER)		lastStage = SHADER_STAGE_FLAG_VERTEX_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER)		lastStage = SHADER_STAGE_FLAG_GEOMETRY_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER)			lastStage = SHADER_STAGE_FLAG_HULL_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER)		lastStage = SHADER_STAGE_FLAG_DOMAIN_SHADER;
+
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER)		lastStage = SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER)		lastStage = SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER)		lastStage = SHADER_STAGE_FLAG_RAYGEN_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_INTERSECT_SHADER)	lastStage = SHADER_STAGE_FLAG_INTERSECT_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_ANY_HIT_SHADER)		lastStage = SHADER_STAGE_FLAG_ANY_HIT_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER)	lastStage = SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;
+		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER)			lastStage = SHADER_STAGE_FLAG_MISS_SHADER;
+
+		return lastStage;
+	}
+
 	FORCEINLINE bool CheckValidDescriptorCount(const DescriptorCountDesc& count)
 	{
 		return

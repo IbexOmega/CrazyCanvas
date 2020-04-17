@@ -37,6 +37,8 @@ namespace LambdaEngine
 		ISwapChain*				m_pSwapChain;
 		RenderGraph*			m_pRenderGraph;
 
+		uint32					m_FrameIndex = 0;
+
 		ITexture**				m_ppBackBuffers;
 		ITextureView**			m_ppBackBufferViews;
 	};

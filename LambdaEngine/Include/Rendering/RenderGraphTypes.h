@@ -10,6 +10,8 @@ namespace LambdaEngine
 
 	constexpr char* FULLSCREEN_QUAD_VERTEX_BUFFER		= "FULLSCREEN_QUAD_VERTEX_BUFFER";
 
+	constexpr char* PER_FRAME_BUFFER					= "PER_FRAME_BUFFER";
+
 	constexpr char* SCENE_MAT_PARAM_BUFFER				= "SCENE_MAT_PARAM_BUFFER";
 	constexpr char* SCENE_VERTEX_BUFFER					= "SCENE_VERTEX_BUFFER";
 	constexpr char* SCENE_INDEX_BUFFER					= "SCENE_INDEX_BUFFER";
@@ -101,7 +103,7 @@ namespace LambdaEngine
 	{
 		const char* pName				= "";
 		EAttachmentType Type			= EAttachmentType::NONE;
-		FShaderStageFlags ShaderStage	= SHADER_STAGE_FLAG_NONE;
+		uint32 ShaderStages				= SHADER_STAGE_FLAG_NONE;
 		uint32 SubResourceCount			= 1;
 	};
 
@@ -137,7 +139,9 @@ namespace LambdaEngine
 			{
 				GraphicsPipelineStateDesc*		pGraphicsDesc;
 				ERenderStageDrawType			DrawType;
-				const char*						pDrawResourceName;
+				const char*						pVertexBufferName;
+				const char*						pIndexBufferName;
+				const char*						pMeshIndexBufferName;
 			} GraphicsPipeline;
 
 			struct

@@ -14,6 +14,7 @@ digraph G {
 		label = "External Inputs";
 		eia2 [shape=box,label="External Input\nSCENE_INDEX_BUFFER"];
 		eia0 [shape=box,label="External Input\nSCENE_MAT_PARAM_BUFFER"];
+		eia5 [shape=box,label="External Input\nPER_FRAME_BUFFER"];
 		eia1 [shape=box,label="External Input\nSCENE_VERTEX_BUFFER"];
 		eia3 [shape=box,label="External Input\nSCENE_INSTANCE_BUFFER"];
 		eia4 [shape=box,label="External Input\nSCENE_MESH_INDEX_BUFFER"];
@@ -23,8 +24,8 @@ digraph G {
 		color = gray90;
 		label = "Main Pipeline";
 		rs0 [shape=octagon,style=bold,label="Test Geometry Render Stage"];
-		oa5 [shape=box,label="Output\nBACK_BUFFER_TEXTURE"];
+		oa6 [shape=box,label="Output\nBACK_BUFFER_TEXTURE"];
 	}
-	{eia0, eia1, eia2, eia3, eia4} -> rs0[style=dashed];
-	rs0 -> oa5[color=purple];
+	{eia0, eia1, eia2, eia3, eia4, eia5} -> rs0[style=dashed];
+	rs0 -> oa6[color=purple];
 }

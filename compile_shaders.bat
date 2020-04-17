@@ -5,6 +5,9 @@
 "tools/glslc.exe" -O -fshader-stage=vertex 		Assets/Shaders/geometryVertex.glsl -o 			Assets/Shaders/geometryVertex.spv
 "tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/geometryPixel.glsl -o 			Assets/Shaders/geometryPixel.spv
 
+"tools/glslc.exe" -O -fshader-stage=vertex 		Assets/Shaders/geometryTestVertex.glsl -o 		Assets/Shaders/geometryTestVertex.spv
+"tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/geometryTestPixel.glsl -o 		Assets/Shaders/geometryTestPixel.spv
+
 :: Light Pass
 "tools/glslc.exe" -O -fshader-stage=vertex 		Assets/Shaders/lightVertex.glsl -o 				Assets/Shaders/lightVertex.spv
 "tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/lightPixel.glsl -o 				Assets/Shaders/lightPixel.spv

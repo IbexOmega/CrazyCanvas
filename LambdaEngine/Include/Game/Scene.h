@@ -36,6 +36,7 @@ namespace LambdaEngine
 		
 		uint32	MaterialIndex		= 0;
 		uint32	BaseInstanceIndex	= 0;
+		byte	Padding[4];
 	};
 
 	struct SceneDesc
@@ -45,6 +46,19 @@ namespace LambdaEngine
 
 	class LAMBDA_API Scene
 	{
+		struct PerFrameBuffer
+		{
+			glm::mat4 Projection;
+			glm::mat4 View;
+			glm::mat4 LastProjection;
+			glm::mat4 LastView;
+			glm::mat4 InvView;
+			glm::mat4 InvProjection;
+			glm::vec4 Position;
+			glm::vec4 Right;
+			glm::vec4 Up;
+		};
+
 		struct Instance
 		{
 			glm::mat3x4 Transform;
@@ -79,7 +93,7 @@ namespace LambdaEngine
 		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 		uint32 AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 
-		
+		FORCEINLINE IBuffer*					GetPerFrameBuffer()			{ return m_pPerFrameBuffer;}
 		FORCEINLINE std::vector<ITexture*>&		GetAlbedoMaps()				{ return m_SceneAlbedoMaps; }			
 		FORCEINLINE std::vector<ITexture*>&		GetNormalMaps()				{ return m_SceneNormalMaps; }			
 		FORCEINLINE std::vector<ITexture*>&		GetAmbientOcclusionMaps()	{ return m_SceneAmbientOcclusionMaps; }
@@ -99,6 +113,8 @@ namespace LambdaEngine
 		const ResourceManager*					m_pResourceManager;
 
 		const char*								m_pName;
+
+		IBuffer*								m_pPerFrameBuffer;
 
 		std::vector<ITexture*>					m_SceneAlbedoMaps;				//Indexed with result from IndirectMeshArgument::MaterialIndex, contains TextureMaps
 		std::vector<ITexture*>					m_SceneNormalMaps;				//Indexed with result from IndirectMeshArgument::MaterialIndex, contains TextureMaps

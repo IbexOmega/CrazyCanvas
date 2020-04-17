@@ -757,6 +757,7 @@ namespace LambdaEngine
 		deviceFeatures.fillModeNonSolid					= true;
 		deviceFeatures.vertexPipelineStoresAndAtomics	= true;
 		deviceFeatures.fragmentStoresAndAtomics			= true;
+		deviceFeatures.multiDrawIndirect				= true;
 
 		VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
 		deviceFeatures2.sType	 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;

@@ -25,7 +25,7 @@ namespace LambdaEngine
 		LOG_ERROR("[FenceLegacyVK]: FUNCTION NOT IMPLEMENTED");
 	}
 	
-	void FenceLegacyVK::Wait(uint64 signalValue, uint64 timeOut) const
+	void FenceLegacyVK::Wait(uint64 waitValue, uint64 timeOut) const
 	{
 		LOG_ERROR("[FenceLegacyVK]: FUNCTION NOT IMPLEMENTED");
 	}

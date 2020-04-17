@@ -45,7 +45,7 @@ namespace LambdaEngine
 	uint32 Scene::AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform)
 	{
 		Instance instance = {};
-		instance.Transform = transform;
+		instance.Transform = glm::transpose(transform);
 		instance.MeshMaterialIndex = 0;
 		instance.Mask = 0;
 		instance.SBTRecordOffset = 0;
@@ -126,7 +126,8 @@ namespace LambdaEngine
 
 		m_SortedInstances.reserve(m_Instances.size());
 
-		std::vector<IndexedIndirectMeshArgument> meshIndexBuffer(100);
+		std::vector<IndexedIndirectMeshArgument> meshIndexBuffer;
+		meshIndexBuffer.reserve(200);
 
 		for (uint32 meshIndex = 0; meshIndex < m_Meshes.size(); meshIndex++)
 		{
@@ -225,7 +226,7 @@ namespace LambdaEngine
 				BufferDesc sceneVertexBufferDesc = {};
 				sceneVertexBufferDesc.pName						= "Scene Vertex Buffer";
 				sceneVertexBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneVertexBufferDesc.Flags						= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				sceneVertexBufferDesc.Flags						= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | EBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
 				sceneVertexBufferDesc.SizeInBytes				= sceneVertexBufferSize;
 
 				m_pSceneVertexBuffer = m_pGraphicsDevice->CreateBuffer(sceneVertexBufferDesc);
@@ -246,7 +247,7 @@ namespace LambdaEngine
 				BufferDesc sceneIndexBufferDesc = {};
 				sceneIndexBufferDesc.pName						= "Scene Index Buffer";
 				sceneIndexBufferDesc.MemoryType					= EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneIndexBufferDesc.Flags						= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				sceneIndexBufferDesc.Flags						= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | EBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
 				sceneIndexBufferDesc.SizeInBytes				= sceneIndexBufferSize;
 
 				m_pSceneIndexBuffer = m_pGraphicsDevice->CreateBuffer(sceneIndexBufferDesc);
@@ -289,7 +290,7 @@ namespace LambdaEngine
 				BufferDesc sceneMeshIndexBufferDesc = {};
 				sceneMeshIndexBufferDesc.pName					= "Scene Mesh Index Buffer";
 				sceneMeshIndexBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneMeshIndexBufferDesc.Flags					= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				sceneMeshIndexBufferDesc.Flags					= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | EBufferFlags::BUFFER_FLAG_INDIRECT_BUFFER;
 				sceneMeshIndexBufferDesc.SizeInBytes			= sceneMeshIndexBufferSize;
 
 				m_pSceneMeshIndexBuffer = m_pGraphicsDevice->CreateBuffer(sceneMeshIndexBufferDesc);
@@ -298,6 +299,29 @@ namespace LambdaEngine
 			void* pMapped = m_pSceneMeshIndexBuffer->Map();
 			memcpy(pMapped, meshIndexBuffer.data(), sceneMeshIndexBufferSize);
 			m_pSceneMeshIndexBuffer->Unmap();
+		}
+
+		{
+			glm::vec3 position(0.0f, 1.0f, 0.0f);
+			glm::vec3 direction(1.0f, 0.0f, 0.0f);
+			glm::vec3 up(0.0f, 1.0f, 0.0f);
+
+			PerFrameBuffer perFrameBuffer = {};
+			perFrameBuffer.View = glm::lookAt(position, position + direction, up);;
+			perFrameBuffer.Projection = glm::perspective(glm::radians(90.0f), 1440.0f / 900.0f, 0.0001f, 50.0f);
+			perFrameBuffer.Position = glm::vec4(position, 1.0f);
+
+			BufferDesc sceneMeshIndexBufferDesc = {};
+			sceneMeshIndexBufferDesc.pName					= "Scene Per Frame Buffer";
+			sceneMeshIndexBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
+			sceneMeshIndexBufferDesc.Flags					= EBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
+			sceneMeshIndexBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
+
+			m_pPerFrameBuffer = m_pGraphicsDevice->CreateBuffer(sceneMeshIndexBufferDesc);
+
+			void* pMapped = m_pPerFrameBuffer->Map();
+			memcpy(pMapped, &perFrameBuffer, sizeof(PerFrameBuffer));
+			m_pPerFrameBuffer->Unmap();
 		}
 
 		m_pName = desc.pName;

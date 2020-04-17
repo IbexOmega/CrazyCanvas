@@ -511,9 +511,11 @@ namespace LambdaEngine
 			{
 				case EPipelineStateType::GRAPHICS:
 				{
-					renderStage.GraphicsPipeline.pGraphicsDesc		= pSourceRenderStage->GraphicsPipeline.pGraphicsDesc;
-					renderStage.GraphicsPipeline.DrawType			= pSourceRenderStage->GraphicsPipeline.DrawType;
-					renderStage.GraphicsPipeline.pDrawResourceName	= pSourceRenderStage->GraphicsPipeline.pDrawResourceName;
+					renderStage.GraphicsPipeline.pGraphicsDesc			= pSourceRenderStage->GraphicsPipeline.pGraphicsDesc;
+					renderStage.GraphicsPipeline.DrawType				= pSourceRenderStage->GraphicsPipeline.DrawType;
+					renderStage.GraphicsPipeline.pVertexBufferName		= pSourceRenderStage->GraphicsPipeline.pVertexBufferName;
+					renderStage.GraphicsPipeline.pIndexBufferName		= pSourceRenderStage->GraphicsPipeline.pIndexBufferName;
+					renderStage.GraphicsPipeline.pMeshIndexBufferName	= pSourceRenderStage->GraphicsPipeline.pMeshIndexBufferName;
 					break;
 				}
 				case EPipelineStateType::COMPUTE:

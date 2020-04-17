@@ -87,6 +87,10 @@ namespace LambdaEngine
 	
 	void Renderer::Render()
 	{
-		m_pRenderGraph->Render(m_pSwapChain->GetCurrentBackBufferIndex());
+		m_pRenderGraph->Render(m_FrameIndex, m_pSwapChain->GetCurrentBackBufferIndex());
+		
+		m_pSwapChain->Present();
+
+		m_FrameIndex++;
 	}
 }
