@@ -44,7 +44,7 @@ namespace LambdaEngine
 
 	protected:
 		char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
-		char m_pReceiveBuffer[UINT16_MAX_];
+		char m_pReceiveBuffer[UINT16_MAX];
 
 	private:
 		Thread* m_pThreadTransmitter;

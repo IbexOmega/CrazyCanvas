@@ -88,7 +88,7 @@ namespace LambdaEngine
 
 		while (!ShouldTerminate())
 		{
-			if (!m_pSocket->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX_, bytesReceived, sender))
+			if (!m_pSocket->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX, bytesReceived, sender))
 			{
 				TerminateThreads();
 				break;
