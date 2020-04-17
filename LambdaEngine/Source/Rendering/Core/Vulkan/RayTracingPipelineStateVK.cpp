@@ -66,7 +66,7 @@ namespace LambdaEngine
 		}
 
 		uint32 shaderGroupHandleSize = m_pDevice->RayTracingProperties.shaderGroupHandleSize;
-		uint32 sbtSize = shaderGroupHandleSize * shaderGroups.size();;
+		uint32 sbtSize = shaderGroupHandleSize * uint32(shaderGroups.size());
 
 		BufferDesc sbtBufferDesc = {};
 		sbtBufferDesc.pName			= "Shader Binding Table";
@@ -119,7 +119,7 @@ namespace LambdaEngine
 			std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 			pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-			pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+			pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 			shaderStagesInfos.push_back(shaderCreateInfo);
 			shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
@@ -145,7 +145,7 @@ namespace LambdaEngine
 			std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 			pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-			pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+			pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 			shaderStagesInfos.push_back(shaderCreateInfo);
 			shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
@@ -171,7 +171,7 @@ namespace LambdaEngine
 			std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 			pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-			pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+			pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 			shaderStagesInfos.push_back(shaderCreateInfo);
 			shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);

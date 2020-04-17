@@ -219,6 +219,7 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/glm",
 			"Dependencies/tinyobjloader",
+			"Dependencies/portaudio/include",
 		}
         
 		links 
@@ -236,22 +237,33 @@ workspace "LambdaEngine"
 			
 			libdirs
 			{
-				"C:/VulkanSDK/1.2.131.2/Lib",
-				"D:/VulkanSDK/1.2.131.2/Lib",
-				"D:/Vulkan/1.2.131.2/Lib",
+				"C:/VulkanSDK/1.2.135.0/Lib",
+				"D:/VulkanSDK/1.2.135.0/Lib",
+				"D:/Vulkan/1.2.135.0/Lib",
 				"C:/FMOD Studio API Windows/api/core/lib/x64",
 				"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64",
 				"D:/FMOD Studio API Windows/api/core/lib/x64",
+				"Dependencies/portaudio/lib",
 			}
 			
 			sysincludedirs
 			{
-				"C:/VulkanSDK/1.2.131.2/Include",
-				"D:/VulkanSDK/1.2.131.2/Include",
-				"D:/Vulkan/1.2.131.2/Include",
+				"C:/VulkanSDK/1.2.135.0/Include",
+				"D:/VulkanSDK/1.2.135.0/Include",
+				"D:/Vulkan/1.2.135.0/Include",
 				"C:/FMOD Studio API Windows/api/core/inc",
 				"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
 				"D:/FMOD Studio API Windows/api/core/inc",
+			}
+		filter { "system:windows", "configurations:Debug" }
+			links
+			{
+				"portaudio_x64_d.lib",
+			}
+		filter { "system:windows", "configurations:Release" }
+			links
+			{
+				"portaudio_x64.lib",
 			}
 		-- Mac
 		filter { "system:macosx" }
@@ -301,6 +313,20 @@ workspace "LambdaEngine"
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Client/\""),
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\""),
 			}
+		filter { "system:windows", "configurations:Debug"}
+			postbuildcommands
+			{
+				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+			}
+		filter { "system:windows", "configurations:Release"}
+			postbuildcommands
+			{
+				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+			}
 		filter {}
     project "*"
 
@@ -326,7 +352,6 @@ workspace "LambdaEngine"
 		sysincludedirs
 		{
 			"Dependencies/glm",
-			"Dependencies/tinyobjloader",
 		}
         
         -- Files

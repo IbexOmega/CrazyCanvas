@@ -9,7 +9,7 @@ namespace LambdaEngine
 {
 	PipelineLayoutVK::PipelineLayoutVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice),
-		m_DescriptorCount()
+		m_DescriptorCounts()
 	{
 		memset(m_DescriptorSetLayouts, 0, sizeof(m_DescriptorSetLayouts));
 	}
@@ -106,15 +106,21 @@ namespace LambdaEngine
 		//DescriptorSetLayouts
 		for (uint32 descriptorSetIndex = 0; descriptorSetIndex < descriptorSetLayoutCount; descriptorSetIndex++)
 		{
-			DescriptorSetLayoutData&		descriptorSet		= pResultDescriptorSetLayouts[descriptorSetIndex];
-			const DescriptorSetLayoutDesc&	descriptorSetLayout	= pDescriptorSetLayouts[descriptorSetIndex];
+			DescriptorSetLayoutData&		descriptorSet			= pResultDescriptorSetLayouts[descriptorSetIndex];
+			DescriptorCountDesc&			descriptorCount			= m_DescriptorCounts[descriptorSetIndex];
+			DescriptorSetBindingsDesc&			descriptorSetBindings	= m_DescriptorSetBindings[descriptorSetIndex];
+			const DescriptorSetLayoutDesc&	descriptorSetLayout		= pDescriptorSetLayouts[descriptorSetIndex];
 
-			//Bindings for each descriptorsetlayout
-			descriptorSet.DescriptorCount = descriptorSetLayout.DescriptorBindingCount;
-			for (uint32 bindingIndex = 0; bindingIndex < descriptorSet.DescriptorCount; bindingIndex++)
-			{
+			// Bindings for each descriptorsetlayout
+			descriptorSet.DescriptorBindingCount	= descriptorSetLayout.DescriptorBindingCount;
+			descriptorSetBindings.BindingCount		= descriptorSetLayout.DescriptorBindingCount;
+			for (uint32 bindingIndex = 0; bindingIndex < descriptorSet.DescriptorBindingCount; bindingIndex++)
+			{			
 				VkDescriptorSetLayoutBinding&	bindingVk	= descriptorSet.DescriptorBindings[bindingIndex];
 				const DescriptorBindingDesc&	binding		= descriptorSetLayout.pDescriptorBindings[bindingIndex];
+
+				// Copy the binding into the member
+				memcpy(&descriptorSetBindings.Bindings[bindingIndex], &binding, sizeof(DescriptorBindingDesc));
 
 				// Immutable Samplers for each binding
 				ImmutableSamplersData& immutableSampler = descriptorSet.ImmutableSamplers[bindingIndex];
@@ -125,12 +131,41 @@ namespace LambdaEngine
 						SamplerVK* pSamplerVk = reinterpret_cast<SamplerVK*>(binding.ppImmutableSamplers[samplerIndex]);
 						pSamplerVk->AddRef();
 
-						//Store samplers to make sure that they are not released before we destroy the pipelinelayout
+						// Store samplers to make sure that they are NOT released before we destroy the pipelinelayout
 						m_ppImmutableSamplers[m_ImmutableSamplerCount] = pSamplerVk;
 						m_ImmutableSamplerCount++;
 
 						immutableSampler.ImmutableSamplers[samplerIndex] = pSamplerVk->GetSampler();
 					}
+				}
+
+				if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_ACCELERATION_STRUCTURE)
+				{
+					descriptorCount.AccelerationStructureDescriptorCount++;
+				}
+				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_CONSTANT_BUFFER)
+				{
+					descriptorCount.ConstantBufferDescriptorCount++;
+				}
+				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_SAMPLER)
+				{
+					descriptorCount.SamplerDescriptorCount++;
+				}
+				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER)
+				{
+					descriptorCount.TextureCombinedSamplerDescriptorCount++;
+				}
+				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_TEXTURE)
+				{
+					descriptorCount.TextureDescriptorCount++;
+				}
+				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER)
+				{
+					descriptorCount.UnorderedAccessBufferDescriptorCount++;
+				}
+				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE)
+				{
+					descriptorCount.UnorderedAccessTextureDescriptorCount++;
 				}
 
 				bindingVk.descriptorType		= ConvertDescriptorType(binding.DescriptorType);
@@ -143,7 +178,7 @@ namespace LambdaEngine
 			descriptorSet.CreateInfo.sType			= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 			descriptorSet.CreateInfo.pNext			= nullptr;
 			descriptorSet.CreateInfo.flags			= 0;
-			descriptorSet.CreateInfo.bindingCount	= descriptorSet.DescriptorCount;
+			descriptorSet.CreateInfo.bindingCount	= descriptorSet.DescriptorBindingCount;
 			descriptorSet.CreateInfo.pBindings		= descriptorSet.DescriptorBindings;
 
 			VkResult result = vkCreateDescriptorSetLayout(m_pDevice->Device, &descriptorSet.CreateInfo, nullptr, &m_DescriptorSetLayouts[m_DescriptorSetCount]);
@@ -155,7 +190,9 @@ namespace LambdaEngine
 			else
 			{
 				D_LOG_MESSAGE("[PipelineLayoutVK]: Created DescriptorSetLayout[%d]", m_DescriptorSetCount);
+				
 				m_DescriptorSetCount++;
+
 			}
 		}
 	}

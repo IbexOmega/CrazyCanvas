@@ -36,10 +36,8 @@ namespace LambdaEngine
 
 		/*
 		* Runs the engine loop, makes sure that ell engine modules get a tick call once per frame
-		* 
-		* pGame - Instance of Game
 		*/
-		static void Run(Game* pGame);
+		static void Run();
 
 		/*
 		* Releases all engine modules

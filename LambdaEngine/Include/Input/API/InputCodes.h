@@ -3,138 +3,147 @@
 
 namespace LambdaEngine
 {
-	//From GLFW
-	enum EKey : int16
-	{
-		KEY_UNKNOWN         = 0,
-		KEY_SPACE 		    = 32,
-		KEY_APOSTROPHE 	    = 39,  	/* ' */
-		KEY_COMMA 		    = 44,  	/* , */
-		KEY_MINUS 		    = 45,  	/* - */
-		KEY_PERIOD 		    = 46,  	/* . */
-		KEY_SLASH 		    = 47,  	/* / */
-		KEY_0               = 48,
-		KEY_1               = 49,
-		KEY_2               = 50,
-		KEY_3               = 51,
-		KEY_4               = 52,
-		KEY_5               = 53,
-		KEY_6               = 54,
-		KEY_7               = 55,
-		KEY_8               = 56,
-		KEY_9               = 57,
-		KEY_SEMICOLON 	    = 59,  	/* ; */
-		KEY_EQUAL 		    = 61,  	/* = */
-		KEY_A               = 65,
-		KEY_B               = 66,
-		KEY_C               = 67,
-		KEY_D               = 68,
-		KEY_E               = 69,
-		KEY_F               = 70,
-		KEY_G               = 71,
-		KEY_H               = 72,
-		KEY_I               = 73,
-		KEY_J               = 74,
-		KEY_K               = 75,
-		KEY_L               = 76,
-		KEY_M               = 77,
-		KEY_N               = 78,
-		KEY_O               = 79,
-		KEY_P               = 80,
-		KEY_Q               = 81,
-		KEY_R               = 82,
-		KEY_S               = 83,
-		KEY_T               = 84,
-		KEY_U               = 85,
-		KEY_V               = 86,
-		KEY_W               = 87,
-		KEY_X               = 88,
-		KEY_Y               = 89,
-		KEY_Z               = 90,
-		KEY_LEFT_BRACKET 	= 91,  /* [ */
-		KEY_BACKSLASH 		= 92,  /* \ */
-		KEY_RIGHT_BRACKET 	= 93,  /* ] */
-		KEY_GRAVE_ACCENT 	= 96,  /* ` */
-		KEY_WORLD_1 		= 161, /* non-US #1 */
-		KEY_WORLD_2 		= 162, /* non-US #2 */
+	enum EKey : uint8
+	{	
+		KEY_UNKNOWN = 0,
 
+		/* Numbers */
+		KEY_0 = 7,
+		KEY_1 = 8,
+		KEY_2 = 9,
+		KEY_3 = 10,
+		KEY_4 = 11,
+		KEY_5 = 12,
+		KEY_6 = 13,
+		KEY_7 = 14,
+		KEY_8 = 15,
+		KEY_9 = 16,
+		
+		/* Letters */
+		KEY_A = 19,
+		KEY_B = 20,
+		KEY_C = 21,
+		KEY_D = 22,
+		KEY_E = 23,
+		KEY_F = 24,
+		KEY_G = 25,
+		KEY_H = 26,
+		KEY_I = 27,
+		KEY_J = 28,
+		KEY_K = 29,
+		KEY_L = 30,
+		KEY_M = 31,
+		KEY_N = 32,
+		KEY_O = 33,
+		KEY_P = 34,
+		KEY_Q = 35,
+		KEY_R = 36,
+		KEY_S = 37,
+		KEY_T = 38,
+		KEY_U = 39,
+		KEY_V = 40,
+		KEY_W = 41,
+		KEY_X = 42,
+		KEY_Y = 43,
+		KEY_Z = 44,
+		
 		/* Function keys */
-		KEY_ESCAPE          = 256,
-		KEY_ENTER           = 257,
-		KEY_TAB             = 258,
-		KEY_BACKSPACE       = 259,
-		KEY_INSERT          = 260,
-		KEY_DELETE          = 261,
-		KEY_RIGHT           = 262,
-		KEY_LEFT            = 263,
-		KEY_DOWN            = 264,
-		KEY_UP              = 265,
-		KEY_PAGE_UP         = 266,
-		KEY_PAGE_DOWN       = 267,
-		KEY_HOME            = 268,
-		KEY_END             = 269,
-		KEY_CAPS_LOCK       = 280,
-		KEY_SCROLL_LOCK     = 281,
-		KEY_NUM_LOCK        = 282,
-		KEY_PRINT_SCREEN    = 283,
-		KEY_PAUSE           = 284,
-		KEY_F1              = 290,
-		KEY_F2              = 291,
-		KEY_F3              = 292,
-		KEY_F4              = 293,
-		KEY_F5              = 294,
-		KEY_F6              = 295,
-		KEY_F7              = 296,
-		KEY_F8              = 297,
-		KEY_F9              = 298,
-		KEY_F10             = 299,
-		KEY_F11             = 300,
-		KEY_F12             = 301,
-		KEY_F13             = 302,
-		KEY_F14             = 303,
-		KEY_F15             = 304,
-		KEY_F16             = 305,
-		KEY_F17             = 306,
-		KEY_F18             = 307,
-		KEY_F19             = 308,
-		KEY_F20             = 309,
-		KEY_F21             = 310,
-		KEY_F22             = 311,
-		KEY_F23             = 312,
-		KEY_F24             = 313,
-		KEY_F25             = 314,
-		KEY_KP_0            = 320,
-		KEY_KP_1            = 321,
-		KEY_KP_2            = 322,
-		KEY_KP_3            = 323,
-		KEY_KP_4            = 324,
-		KEY_KP_5            = 325,
-		KEY_KP_6            = 326,
-		KEY_KP_7            = 327,
-		KEY_KP_8            = 328,
-		KEY_KP_9            = 329,
-		KEY_KP_DECIMAL      = 330,
-		KEY_KP_DIVIDE       = 331,
-		KEY_KP_MULTIPLY     = 332,
-		KEY_KP_SUBTRACT     = 333,
-		KEY_KP_ADD          = 334,
-		KEY_KP_ENTER        = 335,
-		KEY_KP_EQUAL        = 336,
-		KEY_LEFT_SHIFT      = 340,
-		KEY_LEFT_CONTROL    = 341,
-		KEY_LEFT_ALT        = 342,
-		KEY_LEFT_SUPER      = 343,
-		KEY_RIGHT_SHIFT     = 344,
-		KEY_RIGHT_CONTROL   = 345,
-		KEY_RIGHT_ALT       = 346,
-		KEY_RIGHT_SUPER     = 347,
-		KEY_MENU            = 348,
+		KEY_F1	= 70,
+		KEY_F2	= 71,
+		KEY_F3	= 72,
+		KEY_F4	= 73,
+		KEY_F5	= 74,
+		KEY_F6	= 75,
+		KEY_F7	= 76,
+		KEY_F8	= 77,
+		KEY_F9	= 78,
+		KEY_F10	= 79,
+		KEY_F11	= 80,
+		KEY_F12	= 81,
+		KEY_F13	= 82,
+		KEY_F14	= 83,
+		KEY_F15	= 84,
+		KEY_F16	= 85,
+		KEY_F17	= 86,
+		KEY_F18	= 87,
+		KEY_F19	= 88,
+		KEY_F20	= 89,
+		KEY_F21	= 90,
+		KEY_F22	= 91,
+		KEY_F23	= 92,
+		KEY_F24	= 93,
+		KEY_F25	= 94,
+
+		/* Keypad */
+		KEY_KEYPAD_0        = 95,
+		KEY_KEYPAD_1        = 96,
+		KEY_KEYPAD_2        = 97,
+		KEY_KEYPAD_3        = 98,
+		KEY_KEYPAD_4        = 99,
+		KEY_KEYPAD_5        = 100,
+		KEY_KEYPAD_6        = 101,
+		KEY_KEYPAD_7        = 102,
+		KEY_KEYPAD_8        = 103,
+		KEY_KEYPAD_9        = 104,
+		KEY_KEYPAD_DECIMAL  = 105,
+		KEY_KEYPAD_DIVIDE   = 106,
+		KEY_KEYPAD_MULTIPLY = 107,
+		KEY_KEYPAD_SUBTRACT = 108,
+		KEY_KEYPAD_ADD      = 109,
+		KEY_KEYPAD_ENTER    = 110,
+		KEY_KEYPAD_EQUAL    = 111,
+
+		/* Ctrl, Shift, Alt, etc.*/
+		KEY_LEFT_SHIFT	  = 112,
+		KEY_LEFT_CONTROL  = 113,
+		KEY_LEFT_ALT	  = 114,
+		KEY_LEFT_SUPER	  = 115,
+		KEY_RIGHT_SHIFT	  = 116,
+		KEY_RIGHT_CONTROL = 117,
+		KEY_RIGHT_ALT	  = 118,
+		KEY_RIGHT_SUPER	  = 119,
+		KEY_MENU		  = 120,
+
+		/* Other */
+		KEY_SPACE		  = 1,
+		KEY_APOSTROPHE	  = 2,  	/* ' */
+		KEY_COMMA		  = 3,  	/* , */
+		KEY_MINUS		  = 4,  	/* - */
+		KEY_PERIOD		  = 5,  	/* . */
+		KEY_SLASH		  = 6,  	/* / */
+		KEY_SEMICOLON	  = 17,  	/* ; */
+		KEY_EQUAL		  = 18,  	/* = */
+		KEY_LEFT_BRACKET  = 45,		/* [ */
+		KEY_BACKSLASH	  = 46,		/* \ */
+		KEY_RIGHT_BRACKET = 47,		/* ] */
+		KEY_GRAVE_ACCENT  = 48,		/* ` */
+		KEY_WORLD_1		  = 49,		/* non-US #1 */
+		KEY_WORLD_2		  = 50,		/* non-US #2 */
+		KEY_ESCAPE		  = 51,
+		KEY_ENTER		  = 52,
+		KEY_TAB			  = 53,
+		KEY_BACKSPACE	  = 54,
+		KEY_INSERT		  = 55,
+		KEY_DELETE		  = 56,
+		KEY_RIGHT		  = 57,
+		KEY_LEFT		  = 58,
+		KEY_DOWN		  = 59,
+		KEY_UP			  = 60,
+		KEY_PAGE_UP		  = 61,
+		KEY_PAGE_DOWN	  = 62,
+		KEY_HOME		  = 63,
+		KEY_END			  = 64,
+		KEY_CAPS_LOCK	  = 65,
+		KEY_SCROLL_LOCK	  = 66,
+		KEY_NUM_LOCK	  = 67,
+		KEY_PRINT_SCREEN  = 68,
+		KEY_PAUSE		  = 69,
 
 		KEY_LAST    = KEY_MENU,
 		KEY_COUNT   = KEY_LAST + 1
 	};
 
-	enum EMouseButton : int8
+	enum EMouseButton : uint8
 	{
 		MOUSE_BUTTON_UNKNOWN    = 0,
 

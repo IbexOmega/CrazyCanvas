@@ -8,8 +8,6 @@
 #include <unordered_map>
 #include <set>
 
-#define RENDER_GRAPH_BACK_BUFFER "BACK_BUFFER_TEXTURE"
-
 namespace LambdaEngine
 {
 	class LAMBDA_API RenderGraphDescriptionParser
@@ -69,13 +67,18 @@ namespace LambdaEngine
 		* return - true if the parsing succeeded, otherwise false
 		*/
 		static bool Parse(
-			const RenderGraphDesc& desc,
+			RenderGraphDesc& desc,
 			std::vector<RenderStageDesc>& sortedRenderStageDescriptions,
 			std::vector<SynchronizationStageDesc>& sortedSynchronizationStageDescriptions,
 			std::vector<PipelineStageDesc>& sortedPipelineStageDescriptions,
 			std::vector<RenderStageResourceDesc>& resourceDescriptions);
 
 	private:
+		/*
+		* Checks that all attachments are valid in their local space, repairs non-valid attachments if possible
+		*/
+		static bool RepairAttachments(RenderGraphDesc& desc);
+
 		/*
 		* Goes through each Render Stage and sorts its attachments into three groups, either Input, External Input or Output
 		*/

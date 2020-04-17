@@ -18,7 +18,7 @@ namespace LambdaEngine
 
 	struct DescriptorBindingDesc
 	{
-		EDescriptorType DescriptorType				= EDescriptorType::DESCRIPTOR_UNKNOWN;
+		EDescriptorType DescriptorType		= EDescriptorType::DESCRIPTOR_UNKNOWN;
 		uint32			DescriptorCount		= 0;
 		uint32			Binding				= 0;
 		uint32			ShaderStageMask		= 0;
@@ -27,8 +27,8 @@ namespace LambdaEngine
 
 	struct DescriptorSetLayoutDesc
 	{
-		const DescriptorBindingDesc* pDescriptorBindings = nullptr;
-		uint32 DescriptorBindingCount = 0;
+		const DescriptorBindingDesc*	pDescriptorBindings		= nullptr;
+		uint32							DescriptorBindingCount	= 0;
 	};
 
 	struct PipelineLayoutDesc

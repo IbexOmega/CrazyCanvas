@@ -4,23 +4,18 @@
 
 namespace LambdaEngine
 {
-	AudioDevice*	AudioSystem::s_pAudioDevice = nullptr;
+	IAudioDevice*	AudioSystem::s_pAudioDevice = nullptr;
 
 	bool AudioSystem::Init()
 	{
-		s_pAudioDevice = DBG_NEW AudioDevice();
 
 		AudioDeviceDesc audioDeviceDesc = {};
-		audioDeviceDesc.pName					= "Main AudioDevice";
+		audioDeviceDesc.pName					= "Main AudioDeviceFMOD";
 		audioDeviceDesc.Debug					= true;
 		audioDeviceDesc.MaxNumAudioListeners	= 1;
 		audioDeviceDesc.MaxWorldSize			= 200;
 
-		if (!s_pAudioDevice->Init(audioDeviceDesc))
-		{
-			LOG_ERROR("[AudioSystem]: Could not initialize AudioDevice");
-			return false;
-		}
+		s_pAudioDevice = CreateAudioDevice(EAudioAPI::LAMBDA, audioDeviceDesc);
 
 		return true;
 	}

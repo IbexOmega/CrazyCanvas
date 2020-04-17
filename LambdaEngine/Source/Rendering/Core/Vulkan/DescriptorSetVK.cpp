@@ -9,12 +9,14 @@
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
 #include "Rendering/Core/Vulkan/SamplerVK.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
+#include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
 {
 	DescriptorSetVK::DescriptorSetVK(const GraphicsDeviceVK* pDevice)
-		: TDeviceChild(pDevice)
+		: TDeviceChild(pDevice),
+		m_Bindings()
 	{
 	}
 
@@ -41,6 +43,12 @@ namespace LambdaEngine
 		{
 			SetName(pName);
 
+			const PipelineLayoutVK*		pPipelineLayoutVk	= reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
+			DescriptorSetBindingsDesc	bindings			= pPipelineLayoutVk->GetDescriptorBindings(descriptorLayoutIndex);
+			
+			m_BindingCount = bindings.BindingCount;
+			memcpy(m_Bindings, bindings.Bindings, sizeof(DescriptorBindingDesc) * m_BindingCount);
+
 			pVkDescriptorHeap->AddRef();
 			m_pDescriptorHeap = pVkDescriptorHeap;
 			return true;
@@ -56,21 +64,22 @@ namespace LambdaEngine
 		}
 	}
 
-	void DescriptorSetVK::WriteTextureDescriptors(const ITextureView* const* ppTextures, const ISampler* const* ppSamplers, const ETextureState* pTextureStates, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	void DescriptorSetVK::WriteTextureDescriptors(const ITextureView* const* ppTextures, const ISampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
 	{
-		ASSERT(pTextureStates	!= nullptr);
 		ASSERT(ppTextures		!= nullptr);
 
 		const TextureViewVK* const* ppVkTextureViews	= reinterpret_cast<const TextureViewVK* const*>(ppTextures);
 		const SamplerVK* const*		ppVkSamplers		= reinterpret_cast<const SamplerVK* const*>(ppSamplers);
 
 		VkDescriptorType descriptorTypeVk = ConvertDescriptorType(descriptorType);
+		
+		VkImageLayout imageLayout = ConvertTextureState(textureState);
 
 		TArray<VkDescriptorImageInfo> imageInfos(descriptorCount);
 		for (uint32_t i = 0; i < descriptorCount; i++)
 		{
 			VkDescriptorImageInfo& imageInfo = imageInfos[i];
-			imageInfo.imageLayout = ConvertTextureState(pTextureStates[i]);
+			imageInfo.imageLayout = imageLayout;
 
 			ASSERT(ppVkTextureViews[i] != nullptr);
 			imageInfo.imageView	= ppVkTextureViews[i]->GetImageView();

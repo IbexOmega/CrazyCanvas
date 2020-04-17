@@ -1,7 +1,5 @@
 #pragma once
-#include "LambdaEngine.h"
-
-#include <functional>
+#include "HashUtilities.h"
 
 namespace LambdaEngine
 {
@@ -71,13 +69,6 @@ namespace LambdaEngine
 	constexpr uint32 HashString(const Type& str)
 	{
 		return HashHelper<Type>::Generate(str);
-	}
-
-	template<typename T>
-	inline void HashCombine(size_t& hash, const T& value)
-	{
-		std::hash<T> hasher;
-		hash ^= hasher(value) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
 	}
 
 	struct ConstString

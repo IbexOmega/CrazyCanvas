@@ -5,6 +5,7 @@
 
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/FenceVK.h"
+#include "Rendering/Core/Vulkan/SamplerVK.h"
 #include "Rendering/Core/Vulkan/FenceLegacyVK.h"
 #include "Rendering/Core/Vulkan/CommandAllocatorVK.h"
 #include "Rendering/Core/Vulkan/CommandListVK.h"
@@ -15,8 +16,7 @@
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/TextureVK.h"
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
-#include "Rendering/Core/Vulkan/TopLevelAccelerationStructureVK.h"
-#include "Rendering/Core/Vulkan/BottomLevelAccelerationStructureVK.h"
+#include "Rendering/Core/Vulkan/AccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
 #include "Rendering/Core/Vulkan/FrameBufferVK.h"
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
@@ -197,7 +197,7 @@ namespace LambdaEngine
 
 	IRenderPass* GraphicsDeviceVK::CreateRenderPass(const RenderPassDesc& desc) const
 	{
-		RenderPassVK* pRenderPass = DBG_NEW RenderPassVK(this);
+ 		RenderPassVK* pRenderPass = DBG_NEW RenderPassVK(this);
 		if (!pRenderPass->Init(desc))
 		{
 			pRenderPass->Release();
@@ -251,31 +251,23 @@ namespace LambdaEngine
 		}
 	}
 
-	ITopLevelAccelerationStructure* GraphicsDeviceVK::CreateTopLevelAccelerationStructure(const TopLevelAccelerationStructureDesc& desc) const
+	IAccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc& desc) const
 	{
-		TopLevelAccelerationStructureVK* pTLAS = DBG_NEW TopLevelAccelerationStructureVK(this);
-		if (!pTLAS->Init(desc))
+		//TODO: Query this in some other way
+		if (this->vkCreateAccelerationStructureKHR == nullptr)
 		{
-			pTLAS->Release();
 			return nullptr;
 		}
-		else
-		{
-			return pTLAS;
-		}
-	}
 
-	IBottomLevelAccelerationStructure* GraphicsDeviceVK::CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureDesc& desc) const
-	{
-		BottomLevelAccelerationStructureVK* pBLAS = DBG_NEW BottomLevelAccelerationStructureVK(this);
-		if (!pBLAS->Init(desc))
+		AccelerationStructureVK* pAccelerationStructure = DBG_NEW AccelerationStructureVK(this);
+		if (!pAccelerationStructure->Init(desc))
 		{
-			pBLAS->Release();
+			pAccelerationStructure->Release();
 			return nullptr;
 		}
 		else
 		{
-			return pBLAS;
+			return pAccelerationStructure;
 		}
 	}
 
@@ -369,6 +361,63 @@ namespace LambdaEngine
 		}
 	}
 
+	void GraphicsDeviceVK::CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst) const
+	{
+		DescriptorSetVK*		pDstVk			= reinterpret_cast<DescriptorSetVK*>(pDst);
+		const DescriptorSetVK*	pSrcVk			= reinterpret_cast<const DescriptorSetVK*>(pSrc);
+		uint32					bindingCount	= pSrcVk->GetDescriptorBindingDescCount();
+
+		VkCopyDescriptorSet copyDescriptorSet = {};
+		copyDescriptorSet.sType				= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+		copyDescriptorSet.pNext				= nullptr;
+		copyDescriptorSet.dstSet			= pDstVk->GetDescriptorSet();
+		copyDescriptorSet.srcSet			= pSrcVk->GetDescriptorSet();
+		copyDescriptorSet.srcArrayElement	= 0;
+		copyDescriptorSet.dstArrayElement	= 0;
+
+		std::vector<VkCopyDescriptorSet> descriptorSetCopies;
+		descriptorSetCopies.reserve(bindingCount);
+		for (uint32 i = 0; i < bindingCount; i++)
+		{
+			DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
+
+			copyDescriptorSet.descriptorCount	= binding.DescriptorCount;
+			copyDescriptorSet.srcBinding		= binding.Binding;
+			copyDescriptorSet.dstBinding		= copyDescriptorSet.srcBinding;
+			
+			descriptorSetCopies.push_back(copyDescriptorSet);
+		}
+
+		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
+	}
+
+	void GraphicsDeviceVK::CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount) const
+	{
+		DescriptorSetVK*		pDstVk = reinterpret_cast<DescriptorSetVK*>(pDst);
+		const DescriptorSetVK*	pSrcVk = reinterpret_cast<const DescriptorSetVK*>(pSrc);
+
+		VkCopyDescriptorSet copyDescriptorSet = {};
+		copyDescriptorSet.sType				= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+		copyDescriptorSet.pNext				= nullptr;
+		copyDescriptorSet.dstSet			= pDstVk->GetDescriptorSet();
+		copyDescriptorSet.srcSet			= pSrcVk->GetDescriptorSet();
+		copyDescriptorSet.srcArrayElement	= 0;
+		copyDescriptorSet.dstArrayElement	= 0;
+
+		std::vector<VkCopyDescriptorSet> descriptorSetCopies;
+		descriptorSetCopies.reserve(copyBindingCount);
+		for (uint32 i = 0; i < copyBindingCount; i++)
+		{
+			copyDescriptorSet.descriptorCount	= pCopyBindings[i].DescriptorCount;
+			copyDescriptorSet.dstBinding		= pCopyBindings[i].DstBinding;
+			copyDescriptorSet.srcBinding		= pCopyBindings[i].SrcBinding;
+
+			descriptorSetCopies.push_back(copyDescriptorSet);
+		}
+		
+		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
+	}
+
 	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc& desc) const
 	{
 		BufferVK* pBuffer = DBG_NEW BufferVK(this);
@@ -397,6 +446,20 @@ namespace LambdaEngine
 		}
 	}
 
+	ISampler* GraphicsDeviceVK::CreateSampler(const SamplerDesc& desc) const
+	{
+		SamplerVK* pSampler = DBG_NEW SamplerVK(this);
+		if (!pSampler->Init(desc))
+		{
+			pSampler->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pSampler;
+		}
+	}
+
 	ITextureView* GraphicsDeviceVK::CreateTextureView(const TextureViewDesc& desc) const
 	{
         TextureViewVK* pTextureView = DBG_NEW TextureViewVK(this);
@@ -414,7 +477,6 @@ namespace LambdaEngine
 	IShader* GraphicsDeviceVK::CreateShader(const ShaderDesc& desc) const
 	{
 		ShaderVK* pShader = DBG_NEW ShaderVK(this);
-
 		if (!pShader->Init(desc))
 		{
 			pShader->Release();

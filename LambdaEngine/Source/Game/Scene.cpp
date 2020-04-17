@@ -1,7 +1,7 @@
 #include "Game/Scene.h"
 
 #include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Audio/AudioDevice.h"
+#include "Audio/API/IAudioDevice.h"
 #include "Resources/ResourceManager.h"
 
 #include "Resources/Mesh.h"
@@ -15,7 +15,7 @@
 
 namespace LambdaEngine
 {
-	Scene::Scene(const IGraphicsDevice* pGraphicsDevice, const AudioDevice* pAudioDevice, const ResourceManager* pResourceManager) :
+	Scene::Scene(const IGraphicsDevice* pGraphicsDevice, const AudioDeviceFMOD* pAudioDevice, const ResourceManager* pResourceManager) :
 		m_pGraphicsDevice(pGraphicsDevice),
 		m_pAudioDevice(pAudioDevice),
 		m_pResourceManager(pResourceManager),
@@ -126,7 +126,7 @@ namespace LambdaEngine
 
 		m_SortedInstances.reserve(m_Instances.size());
 
-		std::vector<IndirectMeshArgument> meshIndexBuffer(100);
+		std::vector<IndexedIndirectMeshArgument> meshIndexBuffer(100);
 
 		for (uint32 meshIndex = 0; meshIndex < m_Meshes.size(); meshIndex++)
 		{
@@ -150,12 +150,12 @@ namespace LambdaEngine
 					m_SortedInstances.push_back(instance);
 				}
 
-				IndirectMeshArgument indirectMeshArgument = {};
-				indirectMeshArgument.VertexCount		= pMesh->IndexCount;
+				IndexedIndirectMeshArgument indirectMeshArgument = {};
+				indirectMeshArgument.IndexCount			= pMesh->IndexCount;
 				indirectMeshArgument.InstanceCount		= instanceCount;
 				indirectMeshArgument.FirstIndex			= currentNumSceneIndices;
+				indirectMeshArgument.VertexOffset		= currentNumSceneVertices;
 				indirectMeshArgument.FirstInstance		= 0;
-				indirectMeshArgument.BaseVertexIndex	= currentNumSceneVertices;
 				indirectMeshArgument.MaterialIndex		= mappedMaterial.MaterialIndex;
 				indirectMeshArgument.BaseInstanceIndex	= m_SortedInstances.size();
 
@@ -280,7 +280,7 @@ namespace LambdaEngine
 
 		
 		{
-			uint32 sceneMeshIndexBufferSize = meshIndexBuffer.size() * sizeof(IndirectMeshArgument);
+			uint32 sceneMeshIndexBufferSize = meshIndexBuffer.size() * sizeof(IndexedIndirectMeshArgument);
 
 			if (m_pSceneMeshIndexBuffer == nullptr || sceneMeshIndexBufferSize > m_pSceneMeshIndexBuffer->GetDesc().SizeInBytes)
 			{

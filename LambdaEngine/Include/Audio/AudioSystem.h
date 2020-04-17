@@ -1,11 +1,9 @@
 #pragma once
-
-#include "AudioDevice.h"
+#include "LambdaEngine.h"
+#include "Audio/API/IAudioDevice.h"
 
 namespace LambdaEngine
 {
-	class AudioDevice;
-
 	class LAMBDA_API AudioSystem
 	{
 	public:
@@ -16,12 +14,12 @@ namespace LambdaEngine
 
 		static void Tick();
 
-		FORCEINLINE static AudioDevice* GetDevice()
+		FORCEINLINE static IAudioDevice* GetDevice()
 		{
 			return s_pAudioDevice;
 		}
 
 	private:
-		static AudioDevice* s_pAudioDevice;
+		static IAudioDevice* s_pAudioDevice;
 	};
 }

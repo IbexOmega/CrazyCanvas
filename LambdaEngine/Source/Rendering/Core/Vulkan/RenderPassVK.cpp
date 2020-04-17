@@ -25,7 +25,7 @@ namespace LambdaEngine
 	{
 		SubpassData				subpasses[MAX_SUBPASSES];
 		VkSubpassDependency		subpassDependencies[MAX_SUBPASS_DEPENDENCIES];
-		VkAttachmentDescription attachments[MAX_ATTACHMENTS];
+		VkAttachmentDescription attachments[MAX_COLOR_ATTACHMENTS];
 
 		CreateAttachmentDescriptions(desc, attachments);
 		CreateSubpassDescriptions(desc, subpasses);
@@ -92,7 +92,7 @@ namespace LambdaEngine
 
 	void RenderPassVK::CreateAttachmentDescriptions(const RenderPassDesc& desc, VkAttachmentDescription* pResultAttachments)
 	{
-		ASSERT(desc.AttachmentCount <= MAX_ATTACHMENTS);
+		ASSERT(desc.AttachmentCount <= MAX_COLOR_ATTACHMENTS);
 
 		for (uint32 i = 0; i < desc.AttachmentCount; i++)
 		{
@@ -121,8 +121,8 @@ namespace LambdaEngine
 			VkSubpassDescription&			vkSubpass	= pResultSubpasses[i].Subpass;
 			const RenderPassSubpassDesc&	subpass		= desc.pSubpasses[i];
 
-			ASSERT(subpass.InputAttachmentCount <= MAX_ATTACHMENTS);
-			ASSERT(subpass.RenderTargetCount	<= MAX_ATTACHMENTS);
+			ASSERT(subpass.InputAttachmentCount <= MAX_COLOR_ATTACHMENTS);
+			ASSERT(subpass.RenderTargetCount	<= MAX_COLOR_ATTACHMENTS);
 			
 			vkSubpass = {};
 			vkSubpass.flags					= 0;
@@ -210,8 +210,8 @@ namespace LambdaEngine
 			vkSubpassDependency.dstSubpass		= subpassDependency.DstSubpass != EXTERNAL_SUBPASS ? subpassDependency.DstSubpass : VK_SUBPASS_EXTERNAL;
 			vkSubpassDependency.srcStageMask	= ConvertPipelineStage(subpassDependency.SrcStageMask);
 			vkSubpassDependency.dstStageMask	= ConvertPipelineStage(subpassDependency.DstStageMask);
-			vkSubpassDependency.srcAccessMask	= ConvertAccessFlags(subpassDependency.SrcAccessMask);
-			vkSubpassDependency.dstAccessMask	= ConvertAccessFlags(subpassDependency.DstAccessMask);
+			vkSubpassDependency.srcAccessMask	= ConvertMemoryAccessFlags(subpassDependency.SrcAccessMask);
+			vkSubpassDependency.dstAccessMask	= ConvertMemoryAccessFlags(subpassDependency.DstAccessMask);
 		}
 	}
 }

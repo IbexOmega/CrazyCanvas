@@ -54,10 +54,10 @@ namespace LambdaEngine
         * return -  Returns a valid 64-bit address on success, otherwise zero. Returns zero on systems that 
         *           does not support deviceaddresses.
         */
-        virtual uint64      GetDeviceAdress()   const = 0;
+        virtual uint64  GetDeviceAdress()   const = 0;
 
         /*
-        * Returns the alignement needed for the buffer when using a buffer offset
+        * Returns the alignment needed for the buffer when using a buffer offset
         * 
         * return - Returns the needed alignement on success otherwise zero
         */

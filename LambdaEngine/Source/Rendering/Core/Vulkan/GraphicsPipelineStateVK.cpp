@@ -1,11 +1,11 @@
+#include "Log/Log.h"
+
 #include "Rendering/Core/Vulkan/GraphicsPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
-
-#include "Log/Log.h"
 
 namespace LambdaEngine
 {
@@ -94,7 +94,9 @@ namespace LambdaEngine
 		std::vector<std::vector<VkSpecializationMapEntry>> shaderStagesSpecializationMaps;
 
 		if (!CreateShaderData(shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps, desc))
+		{
 			return false;
+		}
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 		vertexInputInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -200,7 +202,24 @@ namespace LambdaEngine
 				std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 				pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-				pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+				pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
+
+				shaderStagesInfos.push_back(shaderCreateInfo);
+				shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
+				shaderStagesSpecializationMaps.push_back(shaderSpecializationMapEntries);
+			}
+
+			//Task shader
+			if (desc.pTaskShader)
+			{
+				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(desc.pTaskShader);
+
+				VkPipelineShaderStageCreateInfo shaderCreateInfo;
+				VkSpecializationInfo shaderSpecializationInfo;
+				std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
+
+				pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
+				pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 				shaderStagesInfos.push_back(shaderCreateInfo);
 				shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
@@ -219,7 +238,7 @@ namespace LambdaEngine
 				std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 				pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-				pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+				pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 				shaderStagesInfos.push_back(shaderCreateInfo);
 				shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
@@ -227,7 +246,15 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[GraphicsPipelineStateVK]: Vertex Shader and Mesh Shader can not both be nullptr for %s", desc.pName);
+				if (desc.pName)
+				{
+					LOG_ERROR("[GraphicsPipelineStateVK]: Vertex Shader and Mesh Shader can not both be nullptr for %s", desc.pName);
+				}
+				else
+				{
+					LOG_ERROR("[GraphicsPipelineStateVK]: Vertex Shader and Mesh Shader can not both be nullptr");
+				}
+
 				return false;
 			}
 
@@ -241,7 +268,7 @@ namespace LambdaEngine
 				std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 				pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-				pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+				pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 				shaderStagesInfos.push_back(shaderCreateInfo);
 				shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
@@ -258,7 +285,7 @@ namespace LambdaEngine
 				std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 				pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-				pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+				pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 				shaderStagesInfos.push_back(shaderCreateInfo);
 				shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
@@ -275,7 +302,7 @@ namespace LambdaEngine
 				std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 				pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-				pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+				pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 				shaderStagesInfos.push_back(shaderCreateInfo);
 				shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
@@ -293,16 +320,11 @@ namespace LambdaEngine
 			std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
 
 			pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-			pShader->FillShaderStageInfo(shaderCreateInfo, shaderSpecializationInfo);
+			pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
 
 			shaderStagesInfos.push_back(shaderCreateInfo);
 			shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
 			shaderStagesSpecializationMaps.push_back(shaderSpecializationMapEntries);
-		}
-		else
-		{
-			LOG_ERROR("[GraphicsPipelineStateVK]: Pixel Shader can not be nullptr for %s", desc.pName);
-			return false;
 		}
 
 		return true;

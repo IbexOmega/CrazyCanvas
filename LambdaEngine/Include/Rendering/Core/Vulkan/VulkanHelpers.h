@@ -244,38 +244,38 @@ namespace LambdaEngine
         
         return result;
     }
-	inline uint32 ConvertAccessFlags(uint32 accessFlags)
+	inline uint32 ConvertMemoryAccessFlags(uint32 accessFlags)
 	{
         uint32 vkAccessFlags = 0;
 
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_INDIRECT_COMMAND_READ)					? VK_ACCESS_INDIRECT_COMMAND_READ_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_INDEX_READ)								? VK_ACCESS_INDEX_READ_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_VERTEX_ATTRIBUTE_READ)					? VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_UNIFORM_READ)							? VK_ACCESS_UNIFORM_READ_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_INPUT_ATTACHMENT_READ)					? VK_ACCESS_INPUT_ATTACHMENT_READ_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_SHADER_READ)							? VK_ACCESS_SHADER_READ_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_SHADER_WRITE)							? VK_ACCESS_SHADER_WRITE_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COLOR_ATTACHMENT_READ)					? VK_ACCESS_COLOR_ATTACHMENT_READ_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COLOR_ATTACHMENT_WRITE)					? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_DEPTH_STENCIL_ATTACHMENT_READ)			? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_DEPTH_STENCIL_ATTACHMENT_WRITE)			? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFER_READ)							? VK_ACCESS_TRANSFER_READ_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFER_WRITE)							? VK_ACCESS_TRANSFER_WRITE_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_HOST_READ)								? VK_ACCESS_HOST_READ_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_HOST_WRITE)								? VK_ACCESS_HOST_WRITE_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_MEMORY_READ)							? VK_ACCESS_MEMORY_READ_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_MEMORY_WRITE)							? VK_ACCESS_MEMORY_WRITE_BIT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFORM_FEEDBACK_WRITE)				? VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFORM_FEEDBACK_COUNTER_READ)		? VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_TRANSFORM_FEEDBACK_COUNTER_WRITE)		? VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_CONDITIONAL_RENDERING_READ)				? VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COLOR_ATTACHMENT_READ_NONCOHERENT)		? VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_ACCELERATION_STRUCTURE_READ)			? VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_ACCELERATION_STRUCTURE_WRITE)			? VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_SHADING_RATE_IMAGE_READ)				? VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_FRAGMENT_DENSITY_MAP_READ)				? VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COMMAND_PREPROCESS_READ)				? VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV : 0;
-		vkAccessFlags |= (accessFlags & ACCESS_FLAG_COMMAND_PREPROCESS_WRITE)				? VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_INDIRECT_COMMAND_READ)					? VK_ACCESS_INDIRECT_COMMAND_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_INDEX_READ)								? VK_ACCESS_INDEX_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_VERTEX_ATTRIBUTE_READ)					? VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_CONSTANT_BUFFER_READ)							? VK_ACCESS_UNIFORM_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_INPUT_ATTACHMENT_READ)					? VK_ACCESS_INPUT_ATTACHMENT_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_SHADER_READ)							    ? VK_ACCESS_SHADER_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_SHADER_WRITE)							? VK_ACCESS_SHADER_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_COLOR_ATTACHMENT_READ)					? VK_ACCESS_COLOR_ATTACHMENT_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_COLOR_ATTACHMENT_WRITE)					? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_DEPTH_STENCIL_ATTACHMENT_READ)			? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_DEPTH_STENCIL_ATTACHMENT_WRITE)			? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_TRANSFER_READ)							? VK_ACCESS_TRANSFER_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_TRANSFER_WRITE)							? VK_ACCESS_TRANSFER_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_HOST_READ)								? VK_ACCESS_HOST_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_HOST_WRITE)								? VK_ACCESS_HOST_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_MEMORY_READ)							    ? VK_ACCESS_MEMORY_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_MEMORY_WRITE)							? VK_ACCESS_MEMORY_WRITE_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_TRANSFORM_FEEDBACK_WRITE)				? VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_TRANSFORM_FEEDBACK_COUNTER_READ)		    ? VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_TRANSFORM_FEEDBACK_COUNTER_WRITE)		? VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_CONDITIONAL_RENDERING_READ)				? VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_COLOR_ATTACHMENT_READ_NONCOHERENT)		? VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_ACCELERATION_STRUCTURE_READ)			    ? VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_ACCELERATION_STRUCTURE_WRITE)			? VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_SHADING_RATE_IMAGE_READ)				    ? VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_FRAGMENT_DENSITY_MAP_READ)				? VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_COMMAND_PREPROCESS_READ)				    ? VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_COMMAND_PREPROCESS_WRITE)				? VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV : 0;
 
 		return vkAccessFlags;
 	}
@@ -563,7 +563,7 @@ namespace LambdaEngine
         case VK_EVENT_SET:											return "VK_EVENT_SET";
         case VK_EVENT_RESET:										return "VK_EVENT_RESET";
         case VK_INCOMPLETE:											return "VK_INCOMPLETE";
-        case VK_PIPELINE_COMPILE_REQUIRED_EXT:                      return "VK_PIPELINE_COMPILE_REQUIRED_EXT";
+        case VK_ERROR_PIPELINE_COMPILE_REQUIRED_EXT:				return "VK_PIPELINE_COMPILE_REQUIRED_EXT";
         case VK_ERROR_OUT_OF_HOST_MEMORY:							return "VK_ERROR_OUT_OF_HOST_MEMORY";
         case VK_ERROR_OUT_OF_DEVICE_MEMORY:							return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
         case VK_ERROR_INITIALIZATION_FAILED:						return "VK_ERROR_INITIALIZATION_FAILED";
@@ -624,7 +624,7 @@ namespace LambdaEngine
         case VK_EVENT_SET:											return "An event is signaled";
         case VK_EVENT_RESET:										return "An event is unsignaled";
         case VK_INCOMPLETE:											return "A return array was too small for the result";
-        case VK_PIPELINE_COMPILE_REQUIRED_EXT:                      return "A requested pipeline creation would have required compilation, but the application requested compilation to not be performed.";
+        case VK_ERROR_PIPELINE_COMPILE_REQUIRED_EXT:				return "A requested pipeline creation would have required compilation, but the application requested compilation to not be performed.";
         case VK_ERROR_OUT_OF_HOST_MEMORY:							return "A host memory allocation has failed.";
         case VK_ERROR_OUT_OF_DEVICE_MEMORY:							return "A device memory allocation has failed.";
         case VK_ERROR_INITIALIZATION_FAILED:						return "Initialization of an object could not be completed for implementation-specific reasons.";

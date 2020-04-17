@@ -12,11 +12,11 @@
 #include "Rendering/RenderGraphDescriptionParser.h"
 
 #include "Audio/AudioSystem.h"
-#include "Audio/AudioListener.h"
-#include "Audio/SoundEffect3D.h"
-#include "Audio/SoundInstance3D.h"
-#include "Audio/AudioGeometry.h"
-#include "Audio/ReverbSphere.h"
+#include "Audio/API/IAudioListener.h"
+#include "Audio/API/ISoundEffect3D.h"
+#include "Audio/API/ISoundInstance3D.h"
+#include "Audio/API/IAudioGeometry.h"
+#include "Audio/API/IReverbSphere.h"
 
 #include "Game/Scene.h"
 
@@ -72,23 +72,23 @@ Sandbox::Sandbox()
 
 	std::vector<RenderStageDesc> renderStages;
 
-	GraphicsPipelineStateDesc geometryPassPipelineDesc = {};
+	/*GraphicsPipelineStateDesc geometryPassPipelineDesc = {};
 	std::vector<RenderStageAttachment>			geometryRenderStageAttachments;
 
 	{
 		geometryRenderStageAttachments.push_back({ "PER_FRAME_BUFFER",			EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
 
-		geometryRenderStageAttachments.push_back({ "SCENE_MAT_PARAM_BUFFER",	EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
-		geometryRenderStageAttachments.push_back({ "SCENE_VERTEX_BUFFER",		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
-		geometryRenderStageAttachments.push_back({ "SCENE_INDEX_BUFFER",		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
-		geometryRenderStageAttachments.push_back({ "SCENE_INSTANCE_BUFFER",		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
-		geometryRenderStageAttachments.push_back({ "SCENE_MESH_INDEX_BUFFER",	EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		geometryRenderStageAttachments.push_back({ SCENE_MAT_PARAM_BUFFER,		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		geometryRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,			EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		geometryRenderStageAttachments.push_back({ SCENE_INDEX_BUFFER,			EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		geometryRenderStageAttachments.push_back({ SCENE_INSTANCE_BUFFER,		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		geometryRenderStageAttachments.push_back({ SCENE_MESH_INDEX_BUFFER,		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
 
-		geometryRenderStageAttachments.push_back({ "SCENE_ALBEDO_MAPS",			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
-		geometryRenderStageAttachments.push_back({ "SCENE_NORMAL_MAPS",			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
-		geometryRenderStageAttachments.push_back({ "SCENE_AO_MAPS",				EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
-		geometryRenderStageAttachments.push_back({ "SCENE_ROUGHNESS_MAPS",		EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
-		geometryRenderStageAttachments.push_back({ "SCENE_METALLIC_MAPS",		EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		geometryRenderStageAttachments.push_back({ SCENE_ALBEDO_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		geometryRenderStageAttachments.push_back({ SCENE_NORMAL_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		geometryRenderStageAttachments.push_back({ SCENE_AO_MAPS,				EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		geometryRenderStageAttachments.push_back({ SCENE_ROUGHNESS_MAPS,		EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		geometryRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
 
 		geometryRenderStageAttachments.push_back({ "GBUFFER_ALBEDO_AO",					EAttachmentType::OUTPUT_COLOR,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1 });
 		geometryRenderStageAttachments.push_back({ "GBUFFER_NORMAL_ROUGHNESS_METALLIC",	EAttachmentType::OUTPUT_COLOR,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1 });
@@ -110,7 +110,9 @@ Sandbox::Sandbox()
 		geometryPassPipelineDesc.pPixelShader		= m_pResourceManager->GetShader(geometryPixelShaderGUID);
 
 		renderStage.PipelineType					= EPipelineStateType::GRAPHICS;
-		renderStage.Pipeline.pGraphicsDesc			= &geometryPassPipelineDesc;
+
+		renderStage.GraphicsPipeline.DrawType		= ERenderStageDrawType::SCENE_INDIRECT;
+		renderStage.GraphicsPipeline.pGraphicsDesc	= &geometryPassPipelineDesc;
 
 		renderStages.push_back(renderStage);
 	}
@@ -130,17 +132,17 @@ Sandbox::Sandbox()
 		rayTraceRenderStageAttachments.push_back({ "LIGHTS_BUFFER",						EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
 		rayTraceRenderStageAttachments.push_back({ "SCENE_TLAS",						EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE,				FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
 
-		rayTraceRenderStageAttachments.push_back({ "SCENE_MAT_PARAM_BUFFER",			EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
-		rayTraceRenderStageAttachments.push_back({ "SCENE_VERTEX_BUFFER",				EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
-		rayTraceRenderStageAttachments.push_back({ "SCENE_INDEX_BUFFER",				EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
-		rayTraceRenderStageAttachments.push_back({ "SCENE_INSTANCE_BUFFER",				EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
-		rayTraceRenderStageAttachments.push_back({ "SCENE_MESH_INDEX_BUFFER",			EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
+		rayTraceRenderStageAttachments.push_back({ SCENE_MAT_PARAM_BUFFER,				EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
+		rayTraceRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,					EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
+		rayTraceRenderStageAttachments.push_back({ SCENE_INDEX_BUFFER,					EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
+		rayTraceRenderStageAttachments.push_back({ SCENE_INSTANCE_BUFFER,				EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
+		rayTraceRenderStageAttachments.push_back({ SCENE_MESH_INDEX_BUFFER,				EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
 
-		rayTraceRenderStageAttachments.push_back({ "SCENE_ALBEDO_MAPS",					EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
-		rayTraceRenderStageAttachments.push_back({ "SCENE_NORMAL_MAPS",					EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
-		rayTraceRenderStageAttachments.push_back({ "SCENE_AO_MAPS",						EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
-		rayTraceRenderStageAttachments.push_back({ "SCENE_ROUGHNESS_MAPS",				EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
-		rayTraceRenderStageAttachments.push_back({ "SCENE_METALLIC_MAPS",				EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageAttachments.push_back({ SCENE_ALBEDO_MAPS,					EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageAttachments.push_back({ SCENE_NORMAL_MAPS,					EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageAttachments.push_back({ SCENE_AO_MAPS,						EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageAttachments.push_back({ SCENE_ROUGHNESS_MAPS,				EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
+		rayTraceRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,					EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS });
 
 		rayTraceRenderStageAttachments.push_back({ "BRDF_LUT",							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
 		rayTraceRenderStageAttachments.push_back({ "BLUE_NOISE_LUT",					EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
@@ -170,8 +172,8 @@ Sandbox::Sandbox()
 		rayTracePipelineDesc.ppMissShaders			= rayTraceMissShader.data();
 		rayTracePipelineDesc.MissShaderCount		= rayTraceMissShader.size();
 
-		renderStage.PipelineType					= EPipelineStateType::RAY_TRACING;
-		renderStage.Pipeline.pRayTracingDesc		= &rayTracePipelineDesc;
+		renderStage.PipelineType							= EPipelineStateType::RAY_TRACING;
+		renderStage.RayTracingPipeline.pRayTracingDesc		= &rayTracePipelineDesc;
 
 		renderStages.push_back(renderStage);
 	}
@@ -197,8 +199,8 @@ Sandbox::Sandbox()
 		spatialBlurPipelineDesc.pName			= "Spatial Blur Pipeline State";
 		spatialBlurPipelineDesc.pShader			= m_pResourceManager->GetShader(blurShaderGUID);
 
-		renderStage.PipelineType				= EPipelineStateType::COMPUTE;
-		renderStage.Pipeline.pComputeDesc		= &spatialBlurPipelineDesc;
+		renderStage.PipelineType						= EPipelineStateType::COMPUTE;
+		renderStage.ComputePipeline.pComputeDesc		= &spatialBlurPipelineDesc;
 
 		renderStages.push_back(renderStage);
 	}
@@ -225,8 +227,8 @@ Sandbox::Sandbox()
 		particleUpdatePipelineDesc.pName	= "Particle Update Pipeline State";
 		particleUpdatePipelineDesc.pShader	= m_pResourceManager->GetShader(particleUpdateShaderGUID);
 
-		renderStage.PipelineType			= EPipelineStateType::COMPUTE;
-		renderStage.Pipeline.pComputeDesc	= &particleUpdatePipelineDesc;
+		renderStage.PipelineType					= EPipelineStateType::COMPUTE;
+		renderStage.ComputePipeline.pComputeDesc	= &particleUpdatePipelineDesc;
 
 		renderStages.push_back(renderStage);
 	}
@@ -241,6 +243,7 @@ Sandbox::Sandbox()
 		shadingRenderStageAttachments.push_back({ "GBUFFER_VELOCITY",							EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
 		shadingRenderStageAttachments.push_back({ "GBUFFER_DEPTH",								EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
 
+		shadingRenderStageAttachments.push_back({ FULLSCREEN_QUAD_VERTEX_BUFFER,				EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			1 });
 		shadingRenderStageAttachments.push_back({ "PER_FRAME_BUFFER",							EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
 		shadingRenderStageAttachments.push_back({ "LIGHTS_BUFFER",								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
 
@@ -258,8 +261,50 @@ Sandbox::Sandbox()
 		shadingPipelineDesc.pVertexShader		= m_pResourceManager->GetShader(lightVertexShaderGUID);
 		shadingPipelineDesc.pPixelShader		= m_pResourceManager->GetShader(lightPixelShaderGUID);
 
-		renderStage.PipelineType				= EPipelineStateType::GRAPHICS;
-		renderStage.Pipeline.pGraphicsDesc		= &shadingPipelineDesc;
+		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
+		renderStage.GraphicsPipeline.DrawType			= ERenderStageDrawType::NONE;
+		renderStage.GraphicsPipeline.pGraphicsDesc		= &shadingPipelineDesc;
+
+		renderStages.push_back(renderStage);
+	}*/
+
+	GraphicsPipelineStateDesc					testGeometryPipelineStateDesc = {};
+	std::vector<RenderStageAttachment>			testGeometryRenderStageAttachments;
+
+	{
+		testGeometryRenderStageAttachments.push_back({ SCENE_MAT_PARAM_BUFFER,		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		testGeometryRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,			EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		testGeometryRenderStageAttachments.push_back({ SCENE_INDEX_BUFFER,			EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		testGeometryRenderStageAttachments.push_back({ SCENE_INSTANCE_BUFFER,		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+		testGeometryRenderStageAttachments.push_back({ SCENE_MESH_INDEX_BUFFER,		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
+
+		testGeometryRenderStageAttachments.push_back({ SCENE_ALBEDO_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		testGeometryRenderStageAttachments.push_back({ SCENE_NORMAL_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		testGeometryRenderStageAttachments.push_back({ SCENE_AO_MAPS,				EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		testGeometryRenderStageAttachments.push_back({ SCENE_ROUGHNESS_MAPS,		EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		testGeometryRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+
+		testGeometryRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
+
+		RenderStagePushConstants pushConstants = {};
+		pushConstants.pName			= "Test Geometry Pass Push Constants";
+		pushConstants.DataSize		= sizeof(int32) * 2;
+
+		RenderStageDesc renderStage = {};
+		renderStage.pName						= "Test Geometry Render Stage";
+		renderStage.pAttachments				= testGeometryRenderStageAttachments.data();
+		renderStage.AttachmentCount				= testGeometryRenderStageAttachments.size();
+		//renderStage.PushConstants				= pushConstants;
+
+		testGeometryPipelineStateDesc.pName				= "Test Geometry Pass Pipeline State";
+		testGeometryPipelineStateDesc.pVertexShader		= m_pResourceManager->GetShader(geometryVertexShaderGUID);
+		testGeometryPipelineStateDesc.pPixelShader		= m_pResourceManager->GetShader(geometryPixelShaderGUID);
+
+		renderStage.PipelineType					= EPipelineStateType::GRAPHICS;
+
+		renderStage.GraphicsPipeline.DrawType			= ERenderStageDrawType::SCENE_INDIRECT;
+		renderStage.GraphicsPipeline.pDrawResourceName	= SCENE_MESH_INDEX_BUFFER;
+		renderStage.GraphicsPipeline.pGraphicsDesc		= &testGeometryPipelineStateDesc;
 
 		renderStages.push_back(renderStage);
 	}
@@ -299,11 +344,11 @@ void Sandbox::InitTestAudio()
 {
 	using namespace LambdaEngine;
 
-	m_ToneSoundEffectGUID = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/noise.wav");
-	m_GunSoundEffectGUID = m_pResourceManager->LoadSoundFromFile("../Assets/Sounds/GUN_FIRE-GoodSoundForYou.wav");
+	m_ToneSoundEffectGUID = m_pResourceManager->LoadSoundEffectFromFile("../Assets/Sounds/noise.wav");
+	m_GunSoundEffectGUID = m_pResourceManager->LoadSoundEffectFromFile("../Assets/Sounds/GUN_FIRE-GoodSoundForYou.wav");
 
-	m_pToneSoundEffect = m_pResourceManager->GetSound(m_ToneSoundEffectGUID);
-	m_pGunSoundEffect = m_pResourceManager->GetSound(m_GunSoundEffectGUID);
+	m_pToneSoundEffect = m_pResourceManager->GetSoundEffect(m_ToneSoundEffectGUID);
+	m_pGunSoundEffect = m_pResourceManager->GetSoundEffect(m_GunSoundEffectGUID);
 
 	SoundInstance3DDesc soundInstanceDesc = {};
 	soundInstanceDesc.pSoundEffect = m_pToneSoundEffect;
@@ -313,7 +358,7 @@ void Sandbox::InitTestAudio()
 	m_pToneSoundInstance->Init(soundInstanceDesc);
 	m_pToneSoundInstance->SetVolume(0.5f);
 
-	m_SpawnPlayAts = false;
+	/*m_SpawnPlayAts = false;
 	m_GunshotTimer = 0.0f;
 	m_GunshotDelay = 1.0f;
 	m_Timer = 0.0f;
@@ -349,7 +394,7 @@ void Sandbox::InitTestAudio()
 	audioGeometryDesc.pTransforms = &transform;
 	audioGeometryDesc.pAudioMeshParameters = &audioMeshParameters;
 
-	m_pAudioGeometry->Init(audioGeometryDesc);
+	m_pAudioGeometry->Init(audioGeometryDesc);*/
 
 	/*std::vector<GraphicsObject> sponzaGraphicsObjects;
 	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sponzaGraphicsObjects);
@@ -386,34 +431,39 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 
 	using namespace LambdaEngine;
 
+	if (key == EKey::KEY_A)
+	{
+		LOG_MESSAGE("A Key Pressed");
+	}
+
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
 
-	if (key == EKey::KEY_KP_1)
+	if (key == EKey::KEY_KEYPAD_1)
 	{
 		m_pToneSoundInstance->Toggle();
 	}
-	else if (key == EKey::KEY_KP_2)
+	else if (key == EKey::KEY_KEYPAD_2)
 	{
 		m_SpawnPlayAts = !m_SpawnPlayAts;
 	}
-	else if (key == EKey::KEY_KP_3)
+	else if (key == EKey::KEY_KEYPAD_3)
 	{
 		m_pGunSoundEffect->PlayOnceAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f), 1.0f);
 	}
-	else if (key == EKey::KEY_KP_ADD)
+	else if (key == EKey::KEY_KEYPAD_ADD)
 	{
 		m_GunshotDelay += 0.05f;
 	}
-	else if (key == EKey::KEY_KP_SUBTRACT)
+	else if (key == EKey::KEY_KEYPAD_SUBTRACT)
 	{
 		m_GunshotDelay = glm::max(m_GunshotDelay - 0.05f, 0.125f);
 	}
-	else if (key == EKey::KEY_KP_5)
+	else if (key == EKey::KEY_KEYPAD_5)
 	{
 		AudioSystem::GetDevice()->ToggleMusic();
 	}
-	else if (key == EKey::KEY_KP_7)
+	else if (key == EKey::KEY_KEYPAD_7)
 	{
 		if (m_pAudioGeometry != nullptr)
 		{
@@ -422,7 +472,7 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 			m_pAudioGeometry->SetActive(geometryAudioActive);
 		}
 	}
-	else if (key == EKey::KEY_KP_8)
+	else if (key == EKey::KEY_KEYPAD_8)
 	{
 		if (m_pReverbSphere != nullptr)
 		{
@@ -467,7 +517,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-    LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
+    //LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
     
 	m_Timer += delta.AsSeconds();
 

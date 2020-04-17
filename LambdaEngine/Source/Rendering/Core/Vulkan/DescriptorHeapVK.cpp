@@ -72,7 +72,10 @@ namespace LambdaEngine
 		}
 		else
 		{
-			m_Desc = desc;
+			m_Desc			= desc;
+			m_HeapStatus	= desc.DescriptorCount;
+			SetName(desc.pName);
+
 			if (desc.pName)
 			{
 				D_LOG_MESSAGE("[DescriptorHeapVK]: Created DescriptorHeap \"%s\"", desc.pName);
@@ -88,8 +91,25 @@ namespace LambdaEngine
 
 	VkDescriptorSet DescriptorHeapVK::AllocateDescriptorSet(const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex)
 	{
-		const PipelineLayoutVK* pPipelineLayoutVk = reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
-		VkDescriptorSetLayout descriptorSetLayout = pPipelineLayoutVk->GetDescriptorSetLayout(descriptorLayoutIndex);
+		const PipelineLayoutVK* pPipelineLayoutVk	= reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
+		VkDescriptorSetLayout	descriptorSetLayout = pPipelineLayoutVk->GetDescriptorSetLayout(descriptorLayoutIndex);
+
+		DescriptorCountDesc count		= pPipelineLayoutVk->GetDescriptorCount(descriptorLayoutIndex);
+		DescriptorCountDesc newStatus	= m_HeapStatus;
+		newStatus.DescriptorSetCount--;
+		newStatus.ConstantBufferDescriptorCount			-= count.ConstantBufferDescriptorCount;
+		newStatus.AccelerationStructureDescriptorCount	-= count.AccelerationStructureDescriptorCount;
+		newStatus.SamplerDescriptorCount				-= count.SamplerDescriptorCount;
+		newStatus.TextureCombinedSamplerDescriptorCount -= count.TextureCombinedSamplerDescriptorCount;
+		newStatus.TextureDescriptorCount				-= count.TextureDescriptorCount;
+		newStatus.UnorderedAccessBufferDescriptorCount	-= count.UnorderedAccessBufferDescriptorCount;
+		newStatus.UnorderedAccessTextureDescriptorCount	-= count.UnorderedAccessTextureDescriptorCount;
+
+		if (!CheckValidDescriptorCount(newStatus))
+		{
+			LOG_ERROR("[DescriptorHeapVK]: Not enough descriptors in DescriptorHeap for allocation");
+			return VK_NULL_HANDLE;
+		}
 
 		VkDescriptorSetAllocateInfo allocate = {};
 		allocate.sType				= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -107,6 +127,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			m_HeapStatus = newStatus;
 			return descriptorSet;
 		}
 	}

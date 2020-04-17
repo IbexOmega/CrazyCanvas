@@ -4,8 +4,6 @@
 
 #include "Vulkan.h"
 
-#define MAX_RENDERTARGETS 8
-
 namespace LambdaEngine
 {
     class TextureViewVK;
@@ -42,7 +40,7 @@ namespace LambdaEngine
         VkFramebuffer   m_FrameBuffer   = VK_NULL_HANDLE;
         TextureViewVK*  m_pDepthStencil = nullptr;
 
-        TextureViewVK*  m_ppRenderTargets[MAX_RENDERTARGETS];
+        TextureViewVK*  m_ppRenderTargets[8];
         FrameBufferDesc m_Desc;
     };
 }

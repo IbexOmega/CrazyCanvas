@@ -25,7 +25,9 @@ namespace LambdaEngine
     SwapChainVK::~SwapChainVK()
     {
         ReleaseResources();
-        
+
+		SAFERELEASE(m_pCommandQueue);
+    	
         //Destroy semaphores
         for (uint32 i = 0; i < m_Desc.BufferCount; i++)
         {
@@ -397,7 +399,7 @@ namespace LambdaEngine
     VkResult SwapChainVK::AquireNextImage()
     {
         VkSemaphore semaphore = m_ImageSemaphores[m_SemaphoreIndex];
-        VkResult result = vkAcquireNextImageKHR(m_pDevice->Device, m_SwapChain, UINT64_MAX_, semaphore, VK_NULL_HANDLE, &m_BackBufferIndex);
+        VkResult result = vkAcquireNextImageKHR(m_pDevice->Device, m_SwapChain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_BackBufferIndex);
         if (result == VK_SUCCESS)
         {
             m_pCommandQueue->AddWaitSemaphore(semaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);

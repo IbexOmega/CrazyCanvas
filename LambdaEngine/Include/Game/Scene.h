@@ -15,7 +15,7 @@ namespace LambdaEngine
 	struct Material;
 
 	class IGraphicsDevice;
-	class AudioDevice;
+	class AudioDeviceFMOD;
 	class ResourceManager;
 	class IBuffer;
 	class ITexture;
@@ -26,16 +26,16 @@ namespace LambdaEngine
 		GUID_Lambda Material;
 	};
 
-	struct IndirectMeshArgument
+	struct IndexedIndirectMeshArgument
 	{
-		uint32 VertexCount			= 0;
-		uint32 InstanceCount		= 0;
-		uint32 FirstIndex			= 0;
-		uint32 FirstInstance		= 0;
+		uint32	IndexCount			= 0;
+		uint32	InstanceCount		= 0;
+		uint32	FirstIndex			= 0;
+		int32	VertexOffset		= 0;
+		uint32	FirstInstance		= 0;
 		
-		uint32 BaseVertexIndex		= 0;
-		uint32 MaterialIndex		= 0;
-		uint32 BaseInstanceIndex	= 0;
+		uint32	MaterialIndex		= 0;
+		uint32	BaseInstanceIndex	= 0;
 	};
 
 	struct SceneDesc
@@ -71,7 +71,7 @@ namespace LambdaEngine
 		DECL_REMOVE_COPY(Scene);
 		DECL_REMOVE_MOVE(Scene);
 
-		Scene(const IGraphicsDevice* pGraphicsDevice, const AudioDevice* pAudioDevice, const ResourceManager* pResourceManager);
+		Scene(const IGraphicsDevice* pGraphicsDevice, const AudioDeviceFMOD* pAudioDevice, const ResourceManager* pResourceManager);
 		~Scene();
 
 		bool Finalize(const SceneDesc& desc);
@@ -81,7 +81,7 @@ namespace LambdaEngine
 
 	private:
 		const IGraphicsDevice*					m_pGraphicsDevice;
-		const AudioDevice*						m_pAudioDevice;
+		const AudioDeviceFMOD*						m_pAudioDevice;
 		const ResourceManager*					m_pResourceManager;
 
 		const char*								m_pName;

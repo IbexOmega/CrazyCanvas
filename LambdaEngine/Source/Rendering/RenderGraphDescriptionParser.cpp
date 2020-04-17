@@ -9,7 +9,7 @@
 namespace LambdaEngine
 {
 	bool RenderGraphDescriptionParser::Parse(
-		const RenderGraphDesc& desc,
+		RenderGraphDesc& desc,
 		std::vector<RenderStageDesc>& sortedRenderStageDescriptions,
 		std::vector<SynchronizationStageDesc>& sortedSynchronizationStageDescriptions,
 		std::vector<PipelineStageDesc>& sortedPipelineStageDescriptions,
@@ -27,6 +27,12 @@ namespace LambdaEngine
 
 		std::vector<const InternalRenderStage*>										sortedInternalRenderStages;
 		
+		if (!RepairAttachments(desc))
+		{
+			LOG_ERROR("[RenderGraphDescriptionParser]: Some Attachment(s) were incorrect beyond repair for \"%s\"", desc.pName);
+			return false;
+		}
+
 		if (!SortRenderStagesAttachments(
 			desc,
 			renderStagesInputAttachments,
@@ -113,7 +119,112 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraphDescriptionParser::SortRenderStagesAttachments(
+		bool RenderGraphDescriptionParser::RepairAttachments(RenderGraphDesc& desc)
+		{
+			for (uint32 rs = 0; rs < desc.RenderStageCount; rs++)
+			{
+				RenderStageDesc* pRenderStageDesc = &desc.pRenderStages[rs];
+
+				for (uint32 a = 0; a < pRenderStageDesc->AttachmentCount; a++)
+				{
+					RenderStageAttachment* pAttachment = &pRenderStageDesc->pAttachments[a];
+
+					switch (pAttachment->Type)
+					{
+						case EAttachmentType::INPUT_SHADER_RESOURCE_TEXTURE:
+						{
+							break;
+						}
+						case EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:
+						{
+							break;
+						}
+						case EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE:
+						{
+							if (pAttachment->SubResourceCount != 1)
+							{
+								LOG_WARNING("[RenderGraphDescriptionParser]: Attachment \"%s\" of type INPUT_UNORDERED_ACCESS_TEXTURE must have a SubResourceCount of 1, currently %u!", pAttachment->pName, pAttachment->SubResourceCount);
+								pAttachment->SubResourceCount = 0;
+							}
+							break;
+						}
+						case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:
+						{
+							break;
+						}
+						case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:
+						{
+							break;
+						}
+						case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:
+						{
+							break;
+						}
+						case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE:
+						{
+							if (pAttachment->SubResourceCount != 1)
+							{
+								LOG_WARNING("[RenderGraphDescriptionParser]: Attachment \"%s\" of type EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE must have a SubResourceCount of 1, currently %u!", pAttachment->pName, pAttachment->SubResourceCount);
+								pAttachment->SubResourceCount = 0;
+							}
+							break;
+						}
+						case EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER:
+						{
+							break;
+						}
+						case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:
+						{
+							break;
+						}
+						case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:
+						{
+							if (pAttachment->SubResourceCount != 1)
+							{
+								LOG_WARNING("[RenderGraphDescriptionParser]: Attachment \"%s\" of type EXTERNAL_INPUT_ACCELERATION_STRUCTURE must have a SubResourceCount of 1, currently %u!", pAttachment->pName, pAttachment->SubResourceCount);
+								pAttachment->SubResourceCount = 0;
+							}
+							break;
+						}
+						case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:
+						{
+							break;
+						}
+						case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:
+						{
+							break;
+						}
+						case EAttachmentType::OUTPUT_COLOR:
+						{
+							if (pAttachment->SubResourceCount != 1)
+							{
+								LOG_WARNING("[RenderGraphDescriptionParser]: Attachment \"%s\" of type OUTPUT_COLOR must have a SubResourceCount of 1, currently %u!", pAttachment->pName, pAttachment->SubResourceCount);
+								pAttachment->SubResourceCount = 0;
+							}
+							break;
+						}
+						case EAttachmentType::OUTPUT_DEPTH_STENCIL:
+						{
+							if (pAttachment->SubResourceCount != 1)
+							{
+								LOG_WARNING("[RenderGraphDescriptionParser]: Attachment \"%s\" of type OUTPUT_DEPTH_STENCIL must have a SubResourceCount of 1, currently %u!", pAttachment->pName, pAttachment->SubResourceCount);
+								pAttachment->SubResourceCount = 0;
+							}
+							break;
+						}
+						default:
+						{
+							LOG_ERROR("[RenderGraphDescriptionParser]: Attachment \"%s\" has unknown type", pAttachment->pName);
+							return false;
+						}
+					}
+				}
+			}
+
+			return true;
+		}
+
+		bool RenderGraphDescriptionParser::SortRenderStagesAttachments(
 		const RenderGraphDesc& desc, 
 		std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&			renderStagesInputAttachments, 
 		std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&			renderStagesExternalInputAttachments, 
@@ -418,9 +529,9 @@ namespace LambdaEngine
 			
 			switch (renderStage.PipelineType)
 			{
-			case EPipelineStateType::GRAPHICS:		renderStage.Pipeline.pGraphicsDesc = pSourceRenderStage->Pipeline.pGraphicsDesc; break;
-			case EPipelineStateType::COMPUTE:		renderStage.Pipeline.pComputeDesc = pSourceRenderStage->Pipeline.pComputeDesc; break;
-			case EPipelineStateType::RAY_TRACING:	renderStage.Pipeline.pRayTracingDesc = pSourceRenderStage->Pipeline.pRayTracingDesc; break;
+			case EPipelineStateType::GRAPHICS:		renderStage.GraphicsPipeline.pGraphicsDesc = pSourceRenderStage->GraphicsPipeline.pGraphicsDesc; break;
+			case EPipelineStateType::COMPUTE:		renderStage.ComputePipeline.pComputeDesc = pSourceRenderStage->ComputePipeline.pComputeDesc; break;
+			case EPipelineStateType::RAY_TRACING:	renderStage.RayTracingPipeline.pRayTracingDesc = pSourceRenderStage->RayTracingPipeline.pRayTracingDesc; break;
 			}		
 
 			sortedRenderStages.push_back(renderStage);

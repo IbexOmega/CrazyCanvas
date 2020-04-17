@@ -10,7 +10,20 @@
 #include "Rendering/Core/Vulkan/ComputePipelineStateVK.h"
 #include "Rendering/Core/Vulkan/GraphicsPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/RayTracingPipelineStateVK.h"
+#include "Rendering/Core/Vulkan/FrameBufferVK.h"
+#include "Rendering/Core/Vulkan/RenderPassVK.h"
+#include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
+#include "Rendering/Core/Vulkan/DescriptorSetVK.h"
+#include "Rendering/Core/Vulkan/AccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+
+#ifndef LAMBDA_DISABLE_VULKAN_CHECKS
+	#define CHECK_GRAPHICS(pAllocator)	ASSERT((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+	#define CHECK_COMPUTE(pAllocator)	ASSERT((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_COMPUTE);
+#else
+	#define CHECK_GRAPHICS(pAllocator)
+	#define CHECK_COMPUTE(pAllocator)
+#endif
 
 namespace LambdaEngine
 {
@@ -57,6 +70,7 @@ namespace LambdaEngine
 		else
 		{
 			m_Desc = desc;
+			m_Type = pAllocator->GetType();
 			SetName(desc.pName);
 			
 			pVkCommandAllocator->AddRef();
@@ -94,22 +108,28 @@ namespace LambdaEngine
 		}
 		
 		VkCommandBufferInheritanceInfo inheritanceInfo = { };
-		if (!pBeginDesc)
+		if (pBeginDesc)
 		{
-			beginInfo.pInheritanceInfo	= nullptr;
-		}
-		else
-		{
+			const RenderPassVK*		pVkRenderPass	= reinterpret_cast<const RenderPassVK*>(pBeginDesc->pRenderPass);
+			const FrameBufferVK*	pVkFrameBuffer	= reinterpret_cast<const FrameBufferVK*>(pBeginDesc->pFrameBuffer);
+
+			ASSERT(pVkRenderPass != nullptr);
+			ASSERT(pVkFrameBuffer != nullptr);
+
 			inheritanceInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 			inheritanceInfo.pNext					= nullptr;
-			//inheritanceInfo.framebuffer			= ;
-			//inheritanceInfo.renderPass			= ;
-			//inheritanceInfo.subpass				= ;
+			inheritanceInfo.framebuffer				= pVkFrameBuffer->GetFrameBuffer();
+			inheritanceInfo.renderPass				= pVkRenderPass->GetRenderPass();
+			inheritanceInfo.subpass					= pBeginDesc->SubPass;
 			inheritanceInfo.occlusionQueryEnable	= VK_FALSE;
 			inheritanceInfo.pipelineStatistics		= 0;
 			inheritanceInfo.queryFlags				= 0;
 			
 			beginInfo.pInheritanceInfo = &inheritanceInfo;
+		}
+		else
+		{
+			beginInfo.pInheritanceInfo	= nullptr;
 		}
 
 		VkResult result = vkBeginCommandBuffer(m_CommandList, &beginInfo);
@@ -128,20 +148,35 @@ namespace LambdaEngine
 		}
 	}
 
-	void CommandListVK::BeginRenderPass(const IRenderPass* pRenderPass, const IFrameBuffer* pFrameBuffer, uint32 width, uint32 height, uint32 flags)
+	void CommandListVK::BeginRenderPass(const BeginRenderPassDesc* pBeginDesc)
 	{
+		ASSERT(pBeginDesc != nullptr);
+
+		const RenderPassVK*		pVkRenderPass	= reinterpret_cast<const RenderPassVK*>(pBeginDesc->pRenderPass);
+		const FrameBufferVK*	pVkFrameBuffer	= reinterpret_cast<const FrameBufferVK*>(pBeginDesc->pFrameBuffer);
+
+		ASSERT(pVkRenderPass != nullptr);
+		ASSERT(pVkFrameBuffer != nullptr);
+
+		for (uint32 i = 0; i < pBeginDesc->ClearColorCount; i++)
+		{
+			//TODO: Make a more safe version?
+			const ClearColorDesc* colorDesc = &(pBeginDesc->pClearColors[i]);
+			memcpy(m_ClearValues[i].color.float32, colorDesc, sizeof(ClearColorDesc));
+		}
+
 		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.pNext = nullptr;
-		//renderPassInfo.renderPass			= pRenderPass->getRenderPass();
-		//renderPassInfo.framebuffer		= pFrameBuffer->getFrameBuffer();
-		renderPassInfo.renderArea.offset	= { 0, 0 };
-		renderPassInfo.renderArea.extent	= { width, height };
-		//renderPassInfo.pClearValues			= pClearVales;
-		//renderPassInfo.clearValueCount		= clearValueCount;
+		renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.pNext				= nullptr;
+		renderPassInfo.renderPass			= pVkRenderPass->GetRenderPass();
+		renderPassInfo.framebuffer			= pVkFrameBuffer->GetFrameBuffer();
+		renderPassInfo.renderArea.offset	= { pBeginDesc->Offset.x, pBeginDesc->Offset.y };
+		renderPassInfo.renderArea.extent	= { pBeginDesc->Width, pBeginDesc->Height };
+		renderPassInfo.pClearValues			= m_ClearValues;
+		renderPassInfo.clearValueCount		= pBeginDesc->ClearColorCount;
 
 		VkSubpassContents subpassContent = VK_SUBPASS_CONTENTS_INLINE;
-		if (flags & FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_EXECUTE_SECONDARY)
+		if (pBeginDesc->Flags & FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_EXECUTE_SECONDARY)
 		{
 			subpassContent = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
 		}
@@ -154,12 +189,158 @@ namespace LambdaEngine
 		vkCmdEndRenderPass(m_CommandList);
 	}
 
-	void CommandListVK::BuildTopLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)
+	void CommandListVK::BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)
 	{
+		ASSERT(pBuildDesc != nullptr);
+
+		ASSERT(pBuildDesc->pInstanceBuffer	!= nullptr);
+		ASSERT(pBuildDesc->pScratchBuffer	!= nullptr);
+		const BufferVK* pInstanceBufferVk	= reinterpret_cast<const BufferVK*>(pBuildDesc->pInstanceBuffer);
+		BufferVK*		pScratchBufferVk	= reinterpret_cast<BufferVK*>(pBuildDesc->pScratchBuffer);
+
+		VkDeviceOrHostAddressConstKHR instancesDataAddressUnion = {};
+		instancesDataAddressUnion.deviceAddress = pInstanceBufferVk->GetDeviceAdress();
+
+		VkAccelerationStructureGeometryInstancesDataKHR instancesDataDesc = {};
+		instancesDataDesc.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+		instancesDataDesc.arrayOfPointers	= VK_FALSE;
+		instancesDataDesc.data				= instancesDataAddressUnion;
+
+		VkAccelerationStructureGeometryDataKHR geometryDataUnion = {};
+		geometryDataUnion.instances = instancesDataDesc;
+
+		VkAccelerationStructureGeometryKHR geometryData = {};
+		geometryData.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryData.geometryType	= VK_GEOMETRY_TYPE_INSTANCES_KHR;
+		geometryData.geometry		= geometryDataUnion;
+
+		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
+
+		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
+		accelerationStructureBuildInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		accelerationStructureBuildInfo.type						= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		accelerationStructureBuildInfo.geometryArrayOfPointers	= VK_FALSE;
+		accelerationStructureBuildInfo.geometryCount			= pBuildDesc->InstanceCount;
+		accelerationStructureBuildInfo.ppGeometries				= &pGeometryData;
+		accelerationStructureBuildInfo.flags					= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+		{
+			accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+		}
+
+		ASSERT(pBuildDesc->pAccelerationStructure != nullptr);
+
+		AccelerationStructureVK* pAccelerationStructureVk	= reinterpret_cast<AccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
+		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAdress();
+
+#ifndef LAMBDA_DISABLE_ASSERT
+		BufferDesc scratchBufferDesc = pScratchBufferVk->GetDesc();
+		ASSERT(scratchBufferDesc.SizeInBytes >= pAccelerationStructureVk->GetScratchMemorySizeRequirement());
+#endif
+
+		if (pBuildDesc->Update)
+		{
+			accelerationStructureBuildInfo.update					= VK_TRUE;
+			accelerationStructureBuildInfo.srcAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+			accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+		}
+		else
+		{
+			accelerationStructureBuildInfo.update					= VK_FALSE;
+			accelerationStructureBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+			accelerationStructureBuildInfo.dstAccelerationStructure = pAccelerationStructureVk->GetAccelerationStructure();
+		}
+
+		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
+		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->InstanceCount;
+		accelerationStructureOffsetInfo.primitiveOffset = 0;
+
+		ASSERT(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
+
+		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
+		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CommandList, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
-	void CommandListVK::BuildBottomLevelAccelerationStructure(IBottomLevelAccelerationStructure* pAccelerationStructure)
+	void CommandListVK::BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)
 	{
+		ASSERT(pBuildDesc != nullptr);
+
+		ASSERT(pBuildDesc->pScratchBuffer	!= nullptr);
+		ASSERT(pBuildDesc->pVertexBuffer	!= nullptr);
+		ASSERT(pBuildDesc->pIndexBuffer		!= nullptr);
+
+		BufferVK*		pScratchBufferVk	= reinterpret_cast<BufferVK*>(pBuildDesc->pScratchBuffer);
+		const BufferVK* pVertexBufferVk		= reinterpret_cast<const BufferVK*>(pBuildDesc->pVertexBuffer);
+		const BufferVK* pIndexBufferVk		= reinterpret_cast<const BufferVK*>(pBuildDesc->pIndexBuffer);
+
+		VkDeviceOrHostAddressConstKHR vertexDataAddressUnion = {};
+		vertexDataAddressUnion.deviceAddress = pVertexBufferVk->GetDeviceAdress();
+
+		VkDeviceOrHostAddressConstKHR indexDataAddressUnion = {};
+		indexDataAddressUnion.deviceAddress = pIndexBufferVk->GetDeviceAdress();
+
+		ASSERT(pBuildDesc->pTransform != nullptr);
+
+		VkDeviceOrHostAddressConstKHR transformDataAddressUnion = {};
+		transformDataAddressUnion.hostAddress = pBuildDesc->pTransform;
+
+		VkAccelerationStructureGeometryTrianglesDataKHR geometryDataDesc = {};
+		geometryDataDesc.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+		geometryDataDesc.pNext			= nullptr;
+		geometryDataDesc.vertexFormat	= VK_FORMAT_R32G32B32_SFLOAT;
+		geometryDataDesc.vertexData		= vertexDataAddressUnion;
+		geometryDataDesc.vertexStride	= pBuildDesc->VertexStride;
+		geometryDataDesc.indexType		= VK_INDEX_TYPE_UINT32;
+		geometryDataDesc.indexData		= indexDataAddressUnion;
+		geometryDataDesc.transformData	= transformDataAddressUnion;
+
+		VkAccelerationStructureGeometryDataKHR geometryDataUnion = {};
+		geometryDataUnion.triangles = geometryDataDesc;
+
+		VkAccelerationStructureGeometryKHR geometryData = {};
+		geometryData.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryData.pNext			= nullptr;
+		geometryData.geometryType	= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+		geometryData.geometry		= geometryDataUnion;
+		geometryData.flags			= VK_GEOMETRY_OPAQUE_BIT_KHR; //Cant be opaque if we want to utilize any-hit shaders
+
+		VkDeviceOrHostAddressKHR scratchBufferAddressUnion = {};
+		scratchBufferAddressUnion.deviceAddress = pScratchBufferVk->GetDeviceAdress();
+
+		AccelerationStructureVK* pAccelerationStructureVk = reinterpret_cast<AccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
+#ifndef LAMBDA_DISABLE_ASSERT
+		BufferDesc scratchBufferDesc = pScratchBufferVk->GetDesc();
+		ASSERT(scratchBufferDesc.SizeInBytes >= pAccelerationStructureVk->GetScratchMemorySizeRequirement());
+#endif
+
+		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
+		accelerationStructureBuildInfo.sType	= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		accelerationStructureBuildInfo.type		= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		accelerationStructureBuildInfo.flags	= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+		{
+			accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+		}
+
+		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
+		accelerationStructureBuildInfo.geometryArrayOfPointers	= VK_FALSE;
+		accelerationStructureBuildInfo.geometryCount			= 1;
+		accelerationStructureBuildInfo.ppGeometries				= &pGeometryData;
+		accelerationStructureBuildInfo.update					= VK_FALSE;
+		accelerationStructureBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+		accelerationStructureBuildInfo.dstAccelerationStructure = pAccelerationStructureVk->GetAccelerationStructure();
+		accelerationStructureBuildInfo.scratchData				= scratchBufferAddressUnion;
+
+		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
+		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->TriangleCount;
+		accelerationStructureOffsetInfo.primitiveOffset = pBuildDesc->IndexBufferByteOffset;
+		accelerationStructureOffsetInfo.firstVertex		= pBuildDesc->FirstVertexIndex;
+		accelerationStructureOffsetInfo.transformOffset = 0;
+
+		ASSERT(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
+
+		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
+		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CommandList, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
 	void CommandListVK::CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)
@@ -184,12 +365,12 @@ namespace LambdaEngine
 		ASSERT(pDst != nullptr);
 
 		const BufferVK* pVkSrc	= reinterpret_cast<const BufferVK*>(pSrc);
-		TextureVK* pVkDst		= reinterpret_cast<TextureVK*>(pDst);
+		TextureVK*		pVkDst	= reinterpret_cast<TextureVK*>(pDst);
 
 		VkBufferImageCopy copyRegion = {};
 		copyRegion.bufferImageHeight				= desc.SrcHeight;
 		copyRegion.bufferOffset						= desc.SrcOffset;
-		copyRegion.bufferRowLength					= desc.SrcRowPitch;
+		copyRegion.bufferRowLength					= uint32(desc.SrcRowPitch);
 		copyRegion.imageSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT; //TODO: Other aspects
 		copyRegion.imageSubresource.baseArrayLayer	= desc.ArrayIndex;
 		copyRegion.imageSubresource.layerCount		= desc.ArrayCount;
@@ -203,7 +384,8 @@ namespace LambdaEngine
 
 	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount)
 	{
-		ASSERT(textureBarrierCount < MAX_IMAGE_BARRIERS);
+		ASSERT(pTextureBarriers		!= nullptr);
+		ASSERT(textureBarrierCount	< MAX_IMAGE_BARRIERS);
 
 		TextureVK*		pVkTexture	= nullptr;
 		VkImageLayout	oldLayout	= VK_IMAGE_LAYOUT_UNDEFINED;
@@ -217,6 +399,7 @@ namespace LambdaEngine
 			newLayout	= ConvertTextureState(barrier.StateAfter);
 
 			m_ImageBarriers[i].sType							= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			m_ImageBarriers[i].pNext							= nullptr;
 			m_ImageBarriers[i].image							= pVkTexture->GetImage();
 			m_ImageBarriers[i].srcQueueFamilyIndex				= m_pDevice->GetQueueFamilyIndexFromQueueType(barrier.QueueBefore);
 			m_ImageBarriers[i].dstQueueFamilyIndex				= m_pDevice->GetQueueFamilyIndexFromQueueType(barrier.QueueAfter);
@@ -226,8 +409,8 @@ namespace LambdaEngine
 			m_ImageBarriers[i].subresourceRange.levelCount		= barrier.MiplevelCount;
 			m_ImageBarriers[i].subresourceRange.baseArrayLayer	= barrier.ArrayIndex;
 			m_ImageBarriers[i].subresourceRange.layerCount		= barrier.ArrayCount;
-			m_ImageBarriers[i].srcAccessMask					= 0;
-			m_ImageBarriers[i].dstAccessMask					= 0;
+			m_ImageBarriers[i].srcAccessMask					= ConvertMemoryAccessFlags(barrier.SrcMemoryAccessFlags);
+			m_ImageBarriers[i].dstAccessMask					= ConvertMemoryAccessFlags(barrier.DstMemoryAccessFlags);
 
 			if (barrier.TextureFlags == FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL)
 			{
@@ -242,6 +425,33 @@ namespace LambdaEngine
 		VkPipelineStageFlags sourceStage		= ConvertPipelineStageMask(srcStage);
 		VkPipelineStageFlags destinationStage	= ConvertPipelineStageMask(dstStage);
 		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, textureBarrierCount, m_ImageBarriers);
+	}
+
+	void CommandListVK::PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrier* pBufferBarriers, uint32 bufferBarrierCount)
+	{
+		ASSERT(pBufferBarriers		!= nullptr);
+		ASSERT(bufferBarrierCount	< MAX_BUFFER_BARRIERS);
+
+		BufferVK* pVkBuffer = nullptr;
+		for (uint32 i = 0; i < bufferBarrierCount; i++)
+		{
+			const PipelineBufferBarrier& barrier = pBufferBarriers[i];
+			pVkBuffer = reinterpret_cast<BufferVK*>(barrier.pBuffer);
+
+			m_BufferBarriers[i].sType				= VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+			m_BufferBarriers[i].pNext				= nullptr;
+			m_BufferBarriers[i].buffer				= pVkBuffer->GetBuffer();
+			m_BufferBarriers[i].srcQueueFamilyIndex = m_pDevice->GetQueueFamilyIndexFromQueueType(barrier.QueueBefore);
+			m_BufferBarriers[i].dstQueueFamilyIndex = m_pDevice->GetQueueFamilyIndexFromQueueType(barrier.QueueAfter);
+			m_BufferBarriers[i].srcAccessMask		= ConvertMemoryAccessFlags(barrier.SrcMemoryAccessFlags);
+			m_BufferBarriers[i].dstAccessMask		= ConvertMemoryAccessFlags(barrier.DstMemoryAccessFlags);
+			m_BufferBarriers[i].offset				= barrier.Offset;
+			m_BufferBarriers[i].size				= barrier.SizeInBytes;
+		}
+
+		VkPipelineStageFlags sourceStage		= ConvertPipelineStageMask(srcStage);
+		VkPipelineStageFlags destinationStage	= ConvertPipelineStageMask(dstStage);
+		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, bufferBarrierCount, m_ImageBarriers);
 	}
 
 	void CommandListVK::GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter)
@@ -277,18 +487,23 @@ namespace LambdaEngine
 		}
 
 		PipelineTextureBarrier textureBarrier = { };
-		textureBarrier.pTexture			= pTexture;
-		textureBarrier.TextureFlags		= desc.Flags;
-		textureBarrier.StateBefore		= stateBefore;
-		textureBarrier.StateAfter		= ETextureState::TEXTURE_STATE_COPY_DST;
-		textureBarrier.QueueAfter		= ECommandQueueType::COMMAND_QUEUE_NONE;
-		textureBarrier.QueueBefore		= ECommandQueueType::COMMAND_QUEUE_NONE;
-		textureBarrier.Miplevel			= 0;
-		textureBarrier.MiplevelCount	= desc.Miplevels;
-		textureBarrier.ArrayIndex		= 0;
-		textureBarrier.ArrayCount		= desc.ArrayCount;
+		textureBarrier.pTexture				= pTexture;
+		textureBarrier.TextureFlags			= desc.Flags;
+		textureBarrier.QueueAfter			= ECommandQueueType::COMMAND_QUEUE_NONE;
+		textureBarrier.QueueBefore			= ECommandQueueType::COMMAND_QUEUE_NONE;
 
-		PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
+		if (stateBefore != ETextureState::TEXTURE_STATE_COPY_DST)
+		{
+			textureBarrier.Miplevel				= 0;
+			textureBarrier.ArrayIndex			= 0;
+			textureBarrier.MiplevelCount		= desc.Miplevels;
+			textureBarrier.ArrayCount			= desc.ArrayCount;
+			textureBarrier.SrcMemoryAccessFlags = 0;
+			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			textureBarrier.StateBefore			= stateBefore;
+			textureBarrier.StateAfter			= ETextureState::TEXTURE_STATE_COPY_DST;
+			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
+		}
 
 		VkImage		imageVk				= pVkTexture->GetImage();
 		VkExtent2D	destinationExtent	= {};
@@ -297,11 +512,13 @@ namespace LambdaEngine
 		{
 			destinationExtent = { std::max(sourceExtent.width / 2U, 1u), std::max(sourceExtent.height / 2U, 1U) };
 
-			textureBarrier.Miplevel			= i - 1;
-			textureBarrier.MiplevelCount	= 1;
-			textureBarrier.ArrayCount		= 1;
-			textureBarrier.StateBefore		= ETextureState::TEXTURE_STATE_COPY_DST;
-			textureBarrier.StateAfter		= ETextureState::TEXTURE_STATE_COPY_SRC;
+			textureBarrier.Miplevel				= i - 1;
+			textureBarrier.MiplevelCount		= 1;
+			textureBarrier.ArrayCount			= 1;
+			textureBarrier.StateBefore			= ETextureState::TEXTURE_STATE_COPY_DST;
+			textureBarrier.StateAfter			= ETextureState::TEXTURE_STATE_COPY_SRC;
+			textureBarrier.SrcMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
 			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 
 			VkImageBlit blit = {};
@@ -369,12 +586,12 @@ namespace LambdaEngine
         vkCmdSetScissor(m_CommandList, firstScissor, scissorCount, m_ScissorRects);
 	}
 
-	void CommandListVK::SetConstantGraphics()
+	void CommandListVK::SetConstantRange(const IPipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset)
 	{
-	}
+		const PipelineLayoutVK* pVkPipelineLayout = reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
+		uint32 shaderStageMaskVk = ConvertShaderStageMask(shaderStageMask);
 
-	void CommandListVK::SetConstantCompute()
-	{
+		vkCmdPushConstants(m_CommandList, pVkPipelineLayout->GetPipelineLayout(), shaderStageMaskVk, offset, size, pConstants);
 	}
 
 	void CommandListVK::BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset)
@@ -396,13 +613,28 @@ namespace LambdaEngine
         vkCmdBindVertexBuffers(m_CommandList, firstBuffer, vertexBufferCount, m_VertexBuffers, m_VertexBufferOffsets);
 	}
 
-	void CommandListVK::BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)
+	void CommandListVK::BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)
 	{
+		CHECK_GRAPHICS(m_pAllocator);
+		BindDescriptorSet(pDescriptorSet, pPipelineLayout, VK_PIPELINE_BIND_POINT_GRAPHICS);
+	}
+
+	void CommandListVK::BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)
+	{
+		CHECK_COMPUTE(m_pAllocator);
+		BindDescriptorSet(pDescriptorSet, pPipelineLayout, VK_PIPELINE_BIND_POINT_COMPUTE);
+	}
+
+	void CommandListVK::BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)
+	{
+		CHECK_COMPUTE(m_pAllocator);
+		BindDescriptorSet(pDescriptorSet, pPipelineLayout, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 	}
 
 	void CommandListVK::BindGraphicsPipeline(const IPipelineState* pPipeline)
 	{
-        ASSERT(pPipeline->GetType() == EPipelineStateType::GRAPHICS);
+		CHECK_GRAPHICS(m_pAllocator);
+        ASSERT(pPipeline->GetType()		== EPipelineStateType::GRAPHICS);
         
         const GraphicsPipelineStateVK* pPipelineVk = reinterpret_cast<const GraphicsPipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineVk->GetPipeline());
@@ -410,7 +642,8 @@ namespace LambdaEngine
 
 	void CommandListVK::BindComputePipeline(const IPipelineState* pPipeline)
 	{
-        ASSERT(pPipeline->GetType() == EPipelineStateType::COMPUTE);
+		CHECK_COMPUTE(m_pAllocator);
+        ASSERT(pPipeline->GetType()		== EPipelineStateType::COMPUTE);
         
         const ComputePipelineStateVK* pPipelineVk = reinterpret_cast<const ComputePipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineVk->GetPipeline());
@@ -418,7 +651,8 @@ namespace LambdaEngine
 
 	void CommandListVK::BindRayTracingPipeline(const IPipelineState* pPipeline)
 	{
-        ASSERT(pPipeline->GetType() == EPipelineStateType::RAY_TRACING);
+		CHECK_COMPUTE(m_pAllocator);
+        ASSERT(pPipeline->GetType()		== EPipelineStateType::RAY_TRACING);
         
         const RayTracingPipelineStateVK* pPipelineVk = reinterpret_cast<const RayTracingPipelineStateVK*>(pPipeline);
         m_pCurrentRayTracingPipeline = pPipelineVk;
@@ -428,6 +662,8 @@ namespace LambdaEngine
 
 	void CommandListVK::TraceRays(uint32 width, uint32 height, uint32 depth)
 	{
+		CHECK_COMPUTE(m_pAllocator);
+
 #ifndef LAMBDA_PRODUCTION
         if (m_pDevice->vkCmdTraceRaysKHR)
         {
@@ -440,25 +676,37 @@ namespace LambdaEngine
 
 	void CommandListVK::Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ)
 	{
+		CHECK_COMPUTE(m_pAllocator);
         vkCmdDispatch(m_CommandList, workGroupCountX, workGroupCountY, workGroupCountZ);
 	}
 
 	void CommandListVK::DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)
 	{
+		CHECK_GRAPHICS(m_pAllocator);
         vkCmdDraw(m_CommandList, vertexCount, instanceCount, firstVertex, firstInstance);
 	}
 
 	void CommandListVK::DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)
 	{
+		CHECK_GRAPHICS(m_pAllocator);
         vkCmdDrawIndexed(m_CommandList, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+	}
+
+	void CommandListVK::DrawIndexedIndirect(const IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)
+	{
+		const BufferVK* pDrawBufferVk = reinterpret_cast<const BufferVK*>(pDrawBuffer);
+		vkCmdDrawIndexedIndirect(m_CommandList, pDrawBufferVk->GetBuffer(), offset, drawCount, stride);
 	}
 
 	void CommandListVK::ExecuteSecondary(const ICommandList* pSecondary)
 	{
-		const CommandListVK*	pVkSecondary	= reinterpret_cast<const CommandListVK*>(pSecondary);
-		CommandListDesc			desc			= pVkSecondary->GetDesc();
+		ASSERT(m_Desc.CommandListType == ECommandListType::COMMAND_LIST_PRIMARY);
+		const CommandListVK* pVkSecondary = reinterpret_cast<const CommandListVK*>(pSecondary);
 
+#ifndef LAMBDA_DISABLE_ASSERTS 
+		CommandListDesc	desc = pVkSecondary->GetDesc();
 		ASSERT(desc.CommandListType == ECommandListType::COMMAND_LIST_SECONDARY);
+#endif
 
 		vkCmdExecuteCommands(m_CommandList, 1, &pVkSecondary->m_CommandList);
 	}
@@ -467,5 +715,14 @@ namespace LambdaEngine
 	{
 		m_pAllocator->AddRef();
 		return m_pAllocator;
+	}
+	
+	FORCEINLINE void CommandListVK::BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, VkPipelineBindPoint bindPoint)
+	{
+		const PipelineLayoutVK* pVkPipelineLayout	= reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
+		const DescriptorSetVK* pVkDescriptorSet		= reinterpret_cast<const DescriptorSetVK*>(pDescriptorSet);
+
+		VkDescriptorSet descriptorSet = pVkDescriptorSet->GetDescriptorSet();
+		vkCmdBindDescriptorSets(m_CommandList, bindPoint, pVkPipelineLayout->GetPipelineLayout(), 0, 1, &descriptorSet, 0, nullptr);
 	}
 }

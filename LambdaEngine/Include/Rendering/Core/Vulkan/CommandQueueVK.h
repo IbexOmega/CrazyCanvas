@@ -23,6 +23,7 @@ namespace LambdaEngine
 		bool Init(const char* pName, uint32 queueFamilyIndex, uint32 index);
 
 		void AddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlagBits waitStage);
+		void AddSignalSemaphore(VkSemaphore semaphore);
 
 		FORCEINLINE VkQueue GetQueue() const
 		{

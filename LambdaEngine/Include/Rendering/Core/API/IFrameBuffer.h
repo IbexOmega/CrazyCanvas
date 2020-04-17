@@ -1,3 +1,4 @@
+#pragma once
 #include "IDeviceChild.h"
 
 namespace LambdaEngine
