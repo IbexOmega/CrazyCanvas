@@ -214,6 +214,7 @@ namespace LambdaEngine
 	void PacketManager::GenerateSalt()
 	{
 		m_Salt = Random::UInt64();
+		m_SaltRemote = 0;
 	}
 
 	uint64 PacketManager::GetSalt() const

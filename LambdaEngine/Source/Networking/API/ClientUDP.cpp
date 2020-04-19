@@ -205,6 +205,7 @@ namespace LambdaEngine
 		}
 		else if (packetType == NetworkPacket::TYPE_ACCEPTED)
 		{
+			LOG_INFO("[ClientUDP]: Connected");
 			m_State = STATE_CONNECTED;
 			m_pHandler->OnConnectedUDP(this);
 		}
