@@ -4,3 +4,6 @@
 [submodule "Dependencies/tinyobjloader"]
 	path = Dependencies/tinyobjloader
 	url = https://github.com/tinyobjloader/tinyobjloader.git
+[submodule "Dependencies/WavLib"]
+	path = Dependencies/WavLib
+	url = https://github.com/Mumsfilibaba/WavLib
