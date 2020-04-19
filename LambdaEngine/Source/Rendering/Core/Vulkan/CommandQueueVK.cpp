@@ -53,23 +53,9 @@ namespace LambdaEngine
 	{
 		m_SignalSemaphores.push_back(semaphore);
 	}
-	
-	bool CommandQueueVK::ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, const IFence* pSignalFence, uint64 signalValue)
-	{
-		for (uint32 i = 0; i < numCommandLists; i++)
-		{
-			const CommandListVK* pCommandListVk = reinterpret_cast<const CommandListVK*>(ppCommandLists[i]);
-			m_SubmitCommandBuffers[i] = pCommandListVk->GetCommandBuffer();
-		}
 
-#ifndef LAMBDA_PRODUCTION
-		if (numCommandLists >= MAX_COMMANDBUFFERS)
-		{
-			LOG_ERROR("[CommandQueueVK]: NumCommandLists(=%u) must be less that %u", numCommandLists, MAX_COMMANDBUFFERS);
-			return false;
-		}
-#endif
-		// Perform empty submit on queue for wait on the semaphore
+	void CommandQueueVK::FlushBarriers()
+	{
 		if (!m_WaitSemaphores.empty())
 		{
 			VkSubmitInfo submitInfo = { };
@@ -87,9 +73,34 @@ namespace LambdaEngine
 			if (result != VK_SUCCESS)
 			{
 				LOG_VULKAN_ERROR(result, "[CommandQueueVK]: Submit failed");
-				return false;
+			}
+			else
+			{
+				m_WaitSemaphores.clear();
+				m_WaitStages.clear();
+
+				m_SignalSemaphores.clear();
 			}
 		}
+	}
+	
+	bool CommandQueueVK::ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, const IFence* pSignalFence, uint64 signalValue)
+	{
+		for (uint32 i = 0; i < numCommandLists; i++)
+		{
+			const CommandListVK* pCommandListVk = reinterpret_cast<const CommandListVK*>(ppCommandLists[i]);
+			m_SubmitCommandBuffers[i] = pCommandListVk->GetCommandBuffer();
+		}
+
+#ifndef LAMBDA_PRODUCTION
+		if (numCommandLists >= MAX_COMMANDBUFFERS)
+		{
+			LOG_ERROR("[CommandQueueVK]: NumCommandLists(=%u) must be less that %u", numCommandLists, MAX_COMMANDBUFFERS);
+			return false;
+		}
+#endif
+		// Perform empty submit on queue for wait on the semaphore
+		FlushBarriers();
 
 		VkSubmitInfo submitInfo = { };
 		submitInfo.sType				= VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -154,16 +165,14 @@ namespace LambdaEngine
 		}
 		else
 		{
-			m_WaitSemaphores.clear();
-			m_WaitStages.clear();
-
-			m_SignalSemaphores.clear();
 			return true;
 		}
 	}
 	
 	void CommandQueueVK::Flush()
 	{
+		FlushBarriers();
+
 		vkQueueWaitIdle(m_Queue);
 	}
 	

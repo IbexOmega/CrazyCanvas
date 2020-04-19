@@ -80,6 +80,11 @@ namespace LambdaEngine
 			info.usage |= VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR;
             m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
 		}
+		if (desc.Flags & EBufferFlags::BUFFER_FLAG_INDIRECT_BUFFER)
+		{
+			info.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+			m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
+		}
 		
         VkResult result = vkCreateBuffer(m_pDevice->Device, &info, nullptr, &m_Buffer);
         if (result != VK_SUCCESS)

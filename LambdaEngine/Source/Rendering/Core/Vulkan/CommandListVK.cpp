@@ -153,10 +153,10 @@ namespace LambdaEngine
 		ASSERT(pBeginDesc != nullptr);
 
 		const RenderPassVK*		pVkRenderPass	= reinterpret_cast<const RenderPassVK*>(pBeginDesc->pRenderPass);
-		const FrameBufferVK*	pVkFrameBuffer	= reinterpret_cast<const FrameBufferVK*>(pBeginDesc->pFrameBuffer);
+		VkFramebuffer			vkFramebuffer	= m_pDevice->GetFrameBuffer(pBeginDesc->pRenderPass, pBeginDesc->ppRenderTargets, pBeginDesc->RenderTargetCount, pBeginDesc->pDepthStencil, pBeginDesc->Width, pBeginDesc->Height);
 
 		ASSERT(pVkRenderPass != nullptr);
-		ASSERT(pVkFrameBuffer != nullptr);
+		ASSERT(vkFramebuffer != VK_NULL_HANDLE);
 
 		for (uint32 i = 0; i < pBeginDesc->ClearColorCount; i++)
 		{
@@ -169,7 +169,7 @@ namespace LambdaEngine
 		renderPassInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.pNext				= nullptr;
 		renderPassInfo.renderPass			= pVkRenderPass->GetRenderPass();
-		renderPassInfo.framebuffer			= pVkFrameBuffer->GetFrameBuffer();
+		renderPassInfo.framebuffer			= vkFramebuffer;
 		renderPassInfo.renderArea.offset	= { pBeginDesc->Offset.x, pBeginDesc->Offset.y };
 		renderPassInfo.renderArea.extent	= { pBeginDesc->Width, pBeginDesc->Height };
 		renderPassInfo.pClearValues			= m_ClearValues;

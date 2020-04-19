@@ -12,24 +12,20 @@ digraph G {
 		style = filled;
 		color = lightgrey;
 		label = "External Inputs";
-		eia6 [shape=box,label="External Input\nSCENE_NORMAL_MAPS"];
-		eia3 [shape=box,label="External Input\nSCENE_INSTANCE_BUFFER"];
-		eia5 [shape=box,label="External Input\nSCENE_ALBEDO_MAPS"];
-		eia4 [shape=box,label="External Input\nSCENE_MESH_INDEX_BUFFER"];
 		eia2 [shape=box,label="External Input\nSCENE_INDEX_BUFFER"];
-		eia1 [shape=box,label="External Input\nSCENE_VERTEX_BUFFER"];
 		eia0 [shape=box,label="External Input\nSCENE_MAT_PARAM_BUFFER"];
-		eia7 [shape=box,label="External Input\nSCENE_AO_MAPS"];
-		eia8 [shape=box,label="External Input\nSCENE_ROUGHNESS_MAPS"];
-		eia9 [shape=box,label="External Input\nSCENE_METALLIC_MAPS"];
+		eia5 [shape=box,label="External Input\nPER_FRAME_BUFFER"];
+		eia1 [shape=box,label="External Input\nSCENE_VERTEX_BUFFER"];
+		eia3 [shape=box,label="External Input\nSCENE_INSTANCE_BUFFER"];
+		eia4 [shape=box,label="External Input\nSCENE_MESH_INDEX_BUFFER"];
 	}
 	subgraph cluster2 {
 		style = filled;
 		color = gray90;
 		label = "Main Pipeline";
 		rs0 [shape=octagon,style=bold,label="Test Geometry Render Stage"];
-		oa10 [shape=box,label="Output\nBACK_BUFFER_TEXTURE"];
+		oa6 [shape=box,label="Output\nBACK_BUFFER_TEXTURE"];
 	}
-	{eia0, eia1, eia2, eia3, eia4, eia5, eia6, eia7, eia8, eia9} -> rs0[style=dashed];
-	rs0 -> oa10[color=purple];
+	{eia0, eia1, eia2, eia3, eia4, eia5} -> rs0[style=dashed];
+	rs0 -> oa6[color=purple];
 }

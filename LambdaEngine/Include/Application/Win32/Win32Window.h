@@ -21,6 +21,9 @@ namespace LambdaEngine
 
 		virtual void Show() override;
 
+		virtual uint16		GetWidth()	const override final;
+		virtual uint16		GetHeight() const override final;
+		
 		FORCEINLINE virtual void* GetHandle() const override final
 		{ 
 			return (void*)m_hWnd; 

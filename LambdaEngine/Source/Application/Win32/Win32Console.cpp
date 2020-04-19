@@ -80,7 +80,7 @@ namespace LambdaEngine
 
 		if (s_OutputHandle)
 		{
-			constexpr uint32 BUFFER_SIZE = 1024;
+			constexpr uint32 BUFFER_SIZE = 2048;
 			static char buffer[BUFFER_SIZE];
 			ZERO_MEMORY(buffer, BUFFER_SIZE);
 

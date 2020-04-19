@@ -25,6 +25,8 @@ namespace LambdaEngine
 		void AddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlagBits waitStage);
 		void AddSignalSemaphore(VkSemaphore semaphore);
 
+		void FlushBarriers();
+
 		FORCEINLINE VkQueue GetQueue() const
 		{
 			return m_Queue;

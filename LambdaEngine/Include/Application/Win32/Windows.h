@@ -20,6 +20,10 @@
 
 		#ifdef CreateWindow
 			#undef CreateWindow
-		#endif	
+		#endif
+
+		#ifdef UpdateResource
+			#undef UpdateResource
+		#endif
 	#endif
 #endif

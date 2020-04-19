@@ -17,11 +17,11 @@ namespace LambdaEngine
 		/*
 		* Wait for a certain value to be reached by the GPU
 		* 
-		* signalValue 	- 	Value to wait for
+		* waitValue 	- 	Value to wait for
 		* timeOut 		- 	Number of nanoseconds to wait for. However, since different implementations
 		* 					have different accuracy in their timers, the timeout can take significant longer time.
 		*/
-		virtual void Wait(uint64 signalValue, uint64 timeOut) const	= 0;
+		virtual void Wait(uint64 waitValue, uint64 timeOut) const	= 0;
 
 		/*
 		* Signals the fence from the host with a non-blocking operation

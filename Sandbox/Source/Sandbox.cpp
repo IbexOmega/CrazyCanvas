@@ -9,6 +9,7 @@
 #include "Resources/ResourceManager.h"
 
 #include "Rendering/RenderSystem.h"
+#include "Rendering/Renderer.h"
 #include "Rendering/RenderGraphDescriptionParser.h"
 
 #include "Audio/AudioSystem.h"
@@ -39,7 +40,7 @@ Sandbox::Sandbox()
 
 	m_pResourceManager = DBG_NEW LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
     
-	/*std::vector<GameObject>	sceneGameObjects;
+	std::vector<GameObject>	sceneGameObjects;
 	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
 
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice(), m_pResourceManager);
@@ -50,12 +51,12 @@ Sandbox::Sandbox()
 	}
 
 	SceneDesc sceneDesc = {};
-	m_pScene->Finalize(sceneDesc);*/
+	m_pScene->Finalize(sceneDesc);
 
 	GUID_Lambda blurShaderGUID					= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/blur.spv",					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
 
-	GUID_Lambda geometryVertexShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/geometryVertex.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
-	GUID_Lambda geometryPixelShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/geometryPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
+	GUID_Lambda geometryVertexShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/geometryTestVertex.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
+	GUID_Lambda geometryPixelShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/geometryTestPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
 
 	GUID_Lambda lightVertexShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/lightVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
 	GUID_Lambda lightPixelShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/lightPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
@@ -268,30 +269,34 @@ Sandbox::Sandbox()
 		renderStages.push_back(renderStage);
 	}*/
 
+	const char*									pTestGeometryRenderStageName = "Test Geometry Render Stage";
 	GraphicsPipelineStateDesc					testGeometryPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			testGeometryRenderStageAttachments;
 
 	{
+
 		testGeometryRenderStageAttachments.push_back({ SCENE_MAT_PARAM_BUFFER,		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
 		testGeometryRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,			EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
 		testGeometryRenderStageAttachments.push_back({ SCENE_INDEX_BUFFER,			EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
 		testGeometryRenderStageAttachments.push_back({ SCENE_INSTANCE_BUFFER,		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
 		testGeometryRenderStageAttachments.push_back({ SCENE_MESH_INDEX_BUFFER,		EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
 
-		testGeometryRenderStageAttachments.push_back({ SCENE_ALBEDO_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		testGeometryRenderStageAttachments.push_back({ PER_FRAME_BUFFER,			EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, 1});
+
+		/*testGeometryRenderStageAttachments.push_back({ SCENE_ALBEDO_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
 		testGeometryRenderStageAttachments.push_back({ SCENE_NORMAL_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
 		testGeometryRenderStageAttachments.push_back({ SCENE_AO_MAPS,				EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
 		testGeometryRenderStageAttachments.push_back({ SCENE_ROUGHNESS_MAPS,		EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
-		testGeometryRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,			EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});
+		testGeometryRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,		EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, MAX_UNIQUE_MATERIALS});*/
 
-		testGeometryRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			1 });
+		testGeometryRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			3 });
 
 		RenderStagePushConstants pushConstants = {};
 		pushConstants.pName			= "Test Geometry Pass Push Constants";
 		pushConstants.DataSize		= sizeof(int32) * 2;
 
 		RenderStageDesc renderStage = {};
-		renderStage.pName						= "Test Geometry Render Stage";
+		renderStage.pName						= pTestGeometryRenderStageName;
 		renderStage.pAttachments				= testGeometryRenderStageAttachments.data();
 		renderStage.AttachmentCount				= testGeometryRenderStageAttachments.size();
 		//renderStage.PushConstants				= pushConstants;
@@ -302,9 +307,11 @@ Sandbox::Sandbox()
 
 		renderStage.PipelineType					= EPipelineStateType::GRAPHICS;
 
-		renderStage.GraphicsPipeline.DrawType			= ERenderStageDrawType::SCENE_INDIRECT;
-		renderStage.GraphicsPipeline.pDrawResourceName	= SCENE_MESH_INDEX_BUFFER;
-		renderStage.GraphicsPipeline.pGraphicsDesc		= &testGeometryPipelineStateDesc;
+		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::SCENE_INDIRECT;
+		renderStage.GraphicsPipeline.pVertexBufferName		= SCENE_VERTEX_BUFFER;
+		renderStage.GraphicsPipeline.pIndexBufferName		= SCENE_INDEX_BUFFER;
+		renderStage.GraphicsPipeline.pMeshIndexBufferName	= SCENE_MESH_INDEX_BUFFER;
+		renderStage.GraphicsPipeline.pGraphicsDesc			= &testGeometryPipelineStateDesc;
 
 		renderStages.push_back(renderStage);
 	}
@@ -319,15 +326,88 @@ Sandbox::Sandbox()
 	clock.Reset();
 	clock.Tick();
 
-	RenderGraph* pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
+	RenderGraph* m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
 
-	//pRenderGraph->Init(renderGraphDesc);
+	m_pRenderGraph->Init(renderGraphDesc);
 
 	clock.Tick();
 	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
 
-	SAFEDELETE(pRenderGraph);
+	uint32 renderWidth	= PlatformApplication::Get()->GetWindow()->GetWidth();
+	uint32 renderHeight = PlatformApplication::Get()->GetWindow()->GetHeight();
+	
+	RenderStageParameters testGeometryRenderStageParameters = {};
+	testGeometryRenderStageParameters.pRenderStageName	= pTestGeometryRenderStageName;
+	testGeometryRenderStageParameters.Graphics.Width	= renderWidth;
+	testGeometryRenderStageParameters.Graphics.Height	= renderHeight;
+	
+	m_pRenderGraph->UpdateRenderStageParameters(testGeometryRenderStageParameters);
 
+	{
+		IBuffer* pBuffer = m_pScene->GetPerFrameBuffer();
+		ResourceUpdateDesc resourceUpdateDesc				= {};
+		resourceUpdateDesc.pResourceName					= PER_FRAME_BUFFER;
+		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	}
+
+	{
+		IBuffer* pBuffer = m_pScene->GetMaterialProperties();
+		ResourceUpdateDesc resourceUpdateDesc				= {};
+		resourceUpdateDesc.pResourceName					= SCENE_MAT_PARAM_BUFFER;
+		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	}
+
+	{
+		IBuffer* pBuffer = m_pScene->GetVertexBuffer();
+		ResourceUpdateDesc resourceUpdateDesc				= {};
+		resourceUpdateDesc.pResourceName					= SCENE_VERTEX_BUFFER;
+		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	}
+
+	{
+		IBuffer* pBuffer = m_pScene->GetIndexBuffer();
+		ResourceUpdateDesc resourceUpdateDesc				= {};
+		resourceUpdateDesc.pResourceName					= SCENE_INDEX_BUFFER;
+		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	}
+
+	{
+		IBuffer* pBuffer = m_pScene->GetInstanceBufer();
+		ResourceUpdateDesc resourceUpdateDesc				= {};
+		resourceUpdateDesc.pResourceName					= SCENE_INSTANCE_BUFFER;
+		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	}
+
+	{
+		IBuffer* pBuffer = m_pScene->GetMeshIndexBuffer();
+		ResourceUpdateDesc resourceUpdateDesc				= {};
+		resourceUpdateDesc.pResourceName					= SCENE_MESH_INDEX_BUFFER;
+		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	}
+
+	m_pRenderGraph->Update();
+
+	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
+
+	RendererDesc rendererDesc = {};
+	rendererDesc.pName			= "Renderer";
+	rendererDesc.pRenderGraph	= m_pRenderGraph;
+	rendererDesc.pWindow		= PlatformApplication::Get()->GetWindow();
+	
+	m_pRenderer->Init(rendererDesc);
+	
 	//InitTestAudio();
 }
 
@@ -542,6 +622,8 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 		glm::vec3 tonePosition(glm::cos(m_Timer), 0.0f, glm::sin(m_Timer));
 		m_pToneSoundInstance->SetPosition(tonePosition);
 	}
+
+	m_pRenderer->Render();
 }
 
 void Sandbox::FixedTick(LambdaEngine::Timestamp delta)

@@ -84,39 +84,39 @@ namespace LambdaEngine
 		*/
 		static bool SortRenderStagesAttachments(
 			const RenderGraphDesc& desc,
-			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesInputAttachments,
-			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesExternalInputAttachments,
-			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesOutputAttachments,
+			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesInputAttachments,
+			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesExternalInputAttachments,
+			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesOutputAttachments,
 			std::vector<RenderStageResourceDesc>&											resourceDescriptions);
 		/*
 		* Parses everything to internal structures, creates bidirectional connections, separates temporal inputs from non-temporal inputs
 		*/
 		static bool ParseInitialStages(
 			const RenderGraphDesc& desc,
-			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesInputAttachments,
-			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesExternalInputAttachments,
-			std::unordered_map<const char*, std::vector<const RenderStageAttachment*>>&		renderStagesOutputAttachments,
-			std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
-			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments);
+			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesInputAttachments,
+			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesExternalInputAttachments,
+			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesOutputAttachments,
+			std::unordered_map<std::string, InternalRenderStage>&							parsedRenderStages,
+			std::unordered_map<std::string, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageOutputAttachment>&			parsedOutputAttachments);
 		/*
 		* Connects output resources to input resources, thereby marking resource transitions, also discovers input resources that miss output resources
 		*/
 		static bool ConnectOutputsToInputs(
-			std::unordered_map<const char*, InternalRenderStageInputAttachment>&	parsedInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageOutputAttachment>&	parsedOutputAttachments);
+			std::unordered_map<std::string, InternalRenderStageInputAttachment>&	parsedInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageOutputAttachment>&	parsedOutputAttachments);
 		/*
 		* For each renderpass, go through its ascendants and add 1 to their weights
 		*/
-		static bool WeightRenderStages(std::unordered_map<const char*, InternalRenderStage>& parsedRenderStages);
+		static bool WeightRenderStages(std::unordered_map<std::string, InternalRenderStage>& parsedRenderStages);
 		static void RecursivelyWeightAncestors(InternalRenderStage* pRenderStage);
 		/*
 		* Sorts Render Stages and Creates Synchronization Stages
 		*/
 		static bool SortPipelineStages(
-			std::unordered_map<const char*, InternalRenderStage>&	parsedRenderStages,
+			std::unordered_map<std::string, InternalRenderStage>&	parsedRenderStages,
 			std::vector<const InternalRenderStage*>&				sortedInternalRenderStages,
 			std::vector<RenderStageDesc>&							sortedRenderStages,
 			std::vector<SynchronizationStageDesc>&					sortedSynchronizationStages,
@@ -136,22 +136,22 @@ namespace LambdaEngine
 			const char* pName, 
 			bool declareExternalInputs, 
 			bool linkExternalInputs,
-			std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
-			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
+			std::unordered_map<std::string, InternalRenderStage>&							parsedRenderStages,
+			std::unordered_map<std::string, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
 			std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
 			std::vector<RenderStageDesc>&														sortedRenderStages,
 			std::vector<SynchronizationStageDesc>&												sortedSynchronizationStages,
 			std::vector<PipelineStageDesc>&														sortedPipelineStages);
 		static void WriteGraphVizPipelineStages(
 			FILE* pFile,
-			std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
-			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
+			std::unordered_map<std::string, InternalRenderStage>&							parsedRenderStages,
+			std::unordered_map<std::string, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
 			std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
 			std::vector<RenderStageDesc>&														sortedRenderStages,
 			std::vector<SynchronizationStageDesc>&												sortedSynchronizationStages,
@@ -159,11 +159,11 @@ namespace LambdaEngine
 		static void WriteGraphVizCompleteDeclarations(
 			FILE* pFile, 
 			bool declareExternalInputs,
-			std::unordered_map<const char*, InternalRenderStage>&							parsedRenderStages,
-			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
+			std::unordered_map<std::string, InternalRenderStage>&							parsedRenderStages,
+			std::unordered_map<std::string, InternalRenderStageInputAttachment>&			parsedInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageInputAttachment>&			parsedTemporalInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
 			std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
 			std::vector<RenderStageDesc>&														sortedRenderStages,
 			std::vector<SynchronizationStageDesc>&												sortedSynchronizationStages,
@@ -172,11 +172,11 @@ namespace LambdaEngine
 			FILE* pFile, 
 			bool externalInputsDeclared, 
 			bool linkExternalInputs,
-			std::unordered_map<const char*, InternalRenderStage>& parsedRenderStages,
-			std::unordered_map<const char*, InternalRenderStageInputAttachment>& parsedInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageInputAttachment>& parsedTemporalInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageExternalInputAttachment>& parsedExternalInputAttachments,
-			std::unordered_map<const char*, InternalRenderStageOutputAttachment>& parsedOutputAttachments,
+			std::unordered_map<std::string, InternalRenderStage>& parsedRenderStages,
+			std::unordered_map<std::string, InternalRenderStageInputAttachment>& parsedInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageInputAttachment>& parsedTemporalInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageExternalInputAttachment>& parsedExternalInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageOutputAttachment>& parsedOutputAttachments,
 			std::vector<const InternalRenderStage*>& sortedInternalRenderStages,
 			std::vector<RenderStageDesc>& sortedRenderStages,
 			std::vector<SynchronizationStageDesc>& sortedSynchronizationStages,
