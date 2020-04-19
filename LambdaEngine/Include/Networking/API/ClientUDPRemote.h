@@ -16,13 +16,13 @@ namespace LambdaEngine
 	public:
 		~ClientUDPRemote();
 
-		virtual bool Connect(const IPEndPoint& ipEndPoint) override;
 		virtual void Disconnect() override;
+		virtual void Release() override;
 		virtual bool IsConnected() override;
 		virtual bool SendUnreliable(NetworkPacket* packet) override;
 		virtual bool SendReliable(NetworkPacket* packet, IPacketListener* listener) override;
 		virtual const IPEndPoint& GetEndPoint() const override;
-		virtual NetworkPacket* GetFreePacket() override;
+		virtual NetworkPacket* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
 
 	protected:
@@ -31,8 +31,8 @@ namespace LambdaEngine
 	private:
 		PacketManager* GetPacketManager();
 		void OnDataReceived(const char* data, int32 size);
-		void SendPackets(char* data);
-		void HandleReceivedPacket(NetworkPacket* pPacket);
+		void SendPackets();
+		bool HandleReceivedPacket(NetworkPacket* pPacket);
 
 	private:
 		ServerUDP* m_pServer;
@@ -42,5 +42,8 @@ namespace LambdaEngine
 		NetworkPacket* m_pPackets[32];
 		IClientUDPHandler* m_pHandler;
 		EClientState m_State;
+		std::atomic_bool m_Release;
+		bool m_DisconnectedByRemote;
+		char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
 	};
 }

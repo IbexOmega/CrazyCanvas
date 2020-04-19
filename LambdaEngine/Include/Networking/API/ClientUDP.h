@@ -18,14 +18,16 @@ namespace LambdaEngine
 	public:
 		~ClientUDP();
 
-		virtual bool Connect(const IPEndPoint& ipEndPoint) override;
 		virtual void Disconnect() override;
+		virtual void Release() override;
 		virtual bool IsConnected() override;
 		virtual bool SendUnreliable(NetworkPacket* packet) override;
 		virtual bool SendReliable(NetworkPacket* packet, IPacketListener* listener) override;
 		virtual const IPEndPoint& GetEndPoint() const override;
-		virtual NetworkPacket* GetFreePacket() override;
+		virtual NetworkPacket* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
+
+		bool Connect(const IPEndPoint& ipEndPoint);
 
 	protected:
 		ClientUDP(IClientUDPHandler* pHandler, uint16 packets);
@@ -36,13 +38,15 @@ namespace LambdaEngine
 		virtual bool OnThreadsStarted() override;
 		virtual void RunTranmitter() override;
 		virtual void RunReceiver() override;
-		virtual void OnThreadsTurminated() override;
+		virtual void OnThreadsTerminated() override;
 		virtual void OnTerminationRequested() override;
 		virtual void OnReleaseRequested() override;
 
 	private:
 		void SendConnectRequest();
+		void SendDisconnectRequest();
 		void HandleReceivedPacket(NetworkPacket* pPacket);
+		void TransmitPackets();
 
 	private:
 		ISocketUDP* m_pSocket;
@@ -51,6 +55,7 @@ namespace LambdaEngine
 		SpinLock m_Lock;
 		IClientUDPHandler* m_pHandler;
 		EClientState m_State;
+		char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
 
 	public:
 		static ClientUDP* Create(IClientUDPHandler* pHandler, uint16 packets);

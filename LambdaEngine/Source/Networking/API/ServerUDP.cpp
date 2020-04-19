@@ -10,13 +10,18 @@
 
 namespace LambdaEngine
 {
-	ServerUDP::ServerUDP(IServerUDPHandler* pHandler, uint16 packetPerClient) :
+	std::set<ServerUDP*> ServerUDP::s_Servers;
+	SpinLock ServerUDP::s_Lock;
+
+	ServerUDP::ServerUDP(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPerClient) :
 		m_pHandler(pHandler),
+		m_MaxClients(maxClients),
 		m_PacketsPerClient(packetPerClient),
 		m_pSocket(nullptr),
 		m_Accepting(true)
 	{
-
+		std::scoped_lock<SpinLock> lock(s_Lock);
+		s_Servers.insert(this);
 	}
 
 	ServerUDP::~ServerUDP()
@@ -26,6 +31,9 @@ namespace LambdaEngine
 			delete pair.second;
 		}
 		m_Clients.clear();
+
+		std::scoped_lock<SpinLock> lock(s_Lock);
+		s_Servers.erase(this);
 
 		LOG_INFO("[ServerUDP]: Released");
 	}
@@ -51,6 +59,11 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		if (m_pSocket)
 			m_pSocket->Close();
+	}
+
+	void ServerUDP::Release()
+	{
+		NetWorker::TerminateAndRelease();
 	}
 
 	bool ServerUDP::IsRunning()
@@ -90,7 +103,6 @@ namespace LambdaEngine
 	void ServerUDP::RunReceiver()
 	{
 		int32 bytesReceived = 0;
-		int32 packetsReceived = 0;
 		IPEndPoint sender;
 
 		while (!ShouldTerminate())
@@ -102,38 +114,54 @@ namespace LambdaEngine
 			}
 
 			ClientUDPRemote* pClient = nullptr;
-			auto pIterator = m_Clients.find(sender);
-			if (pIterator != m_Clients.end())
 			{
-				pClient = pIterator->second;
+				std::scoped_lock<SpinLock> lock(m_LockClients);
+				auto pIterator = m_Clients.find(sender);
+				if (pIterator != m_Clients.end())
+				{
+					pClient = pIterator->second;
+				}
+				else
+				{
+					pClient = DBG_NEW ClientUDPRemote(m_PacketsPerClient, sender, this);
+					if (!IsAcceptingConnections())
+					{
+						SendServerNotAccepting(pClient);
+						pClient->Release();
+						continue;
+					}
+					else if(m_Clients.size() >= m_MaxClients)
+					{
+						SendServerFull(pClient);
+						pClient->Release();
+						continue;
+					}
+					else
+					{
+						m_Clients.insert({ sender, pClient });
+					}
+				}
 			}
-			else
-			{
-				pClient = DBG_NEW ClientUDPRemote(m_PacketsPerClient, sender, this);
-				m_Clients.insert({ sender, pClient });
-			}
-
 			pClient->OnDataReceived(m_pReceiveBuffer, bytesReceived);
 		}
 	}
 
 	void ServerUDP::RunTranmitter()
 	{
-		int32 bytesWritten = 0;
-		int32 bytesSent = 0;
-		bool done = false;
-
 		while (!ShouldTerminate())
 		{
-			for (auto& tuple : m_Clients)
-			{
-				tuple.second->SendPackets(m_pSendBuffer);
-			}
 			YieldTransmitter();
+			{
+				std::scoped_lock<SpinLock> lock(m_LockClients);
+				for (auto& tuple : m_Clients)
+				{
+					tuple.second->SendPackets();
+				}
+			}
 		}
 	}
 	
-	void ServerUDP::OnThreadsTurminated()
+	void ServerUDP::OnThreadsTerminated()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		m_pSocket->Close();
@@ -170,8 +198,47 @@ namespace LambdaEngine
 		return m_pHandler->CreateClientUDPHandler();
 	}
 
-	ServerUDP* ServerUDP::Create(IServerUDPHandler* pHandler, uint16 packetsPerClient)
+	void ServerUDP::OnClientDisconnected(ClientUDPRemote* client, bool sendDisconnectPacket)
 	{
-		return DBG_NEW ServerUDP(pHandler, packetsPerClient);
+		if(sendDisconnectPacket)
+			SendDisconnect(client);
+
+		std::scoped_lock<SpinLock> lock(m_LockClients);
+		m_Clients.erase(client->GetEndPoint());
+	}
+
+	void ServerUDP::SendDisconnect(ClientUDPRemote* client)
+	{
+		client->SendUnreliable(client->GetFreePacket(NetworkPacket::TYPE_DISCONNECT));
+		client->SendPackets();
+	}
+
+	void ServerUDP::SendServerFull(ClientUDPRemote* client)
+	{
+		client->SendUnreliable(client->GetFreePacket(NetworkPacket::TYPE_SERVER_FULL));
+		client->SendPackets();
+	}
+
+	void ServerUDP::SendServerNotAccepting(ClientUDPRemote* client)
+	{
+		client->SendUnreliable(client->GetFreePacket(NetworkPacket::TYPE_SERVER_NOT_ACCEPTING));
+		client->SendPackets();
+	}
+
+	ServerUDP* ServerUDP::Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetsPerClient)
+	{
+		return DBG_NEW ServerUDP(pHandler, maxClients, packetsPerClient);
+	}
+
+	void ServerUDP::FixedTickStatic(Timestamp timestamp)
+	{
+		if (!s_Servers.empty())
+		{
+			std::scoped_lock<SpinLock> lock(s_Lock);
+			for (ServerUDP* server : s_Servers)
+			{
+				server->Flush();
+			}
+		}
 	}
 }

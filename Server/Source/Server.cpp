@@ -26,7 +26,7 @@ Server::Server()
 {
 	using namespace LambdaEngine;
 
-	m_pServer = ServerUDP::Create(this, 512);
+	m_pServer = ServerUDP::Create(this, 10, 512);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
 
 	UpdateTitle();
@@ -84,8 +84,6 @@ void Server::FixedTick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
     UNREFERENCED_VARIABLE(delta);
-
-	m_pServer->Flush();
 }
 
 namespace LambdaEngine

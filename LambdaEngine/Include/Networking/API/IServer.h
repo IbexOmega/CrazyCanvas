@@ -13,6 +13,7 @@ namespace LambdaEngine
 
         virtual bool Start(const IPEndPoint& ipEndPoint) = 0;
         virtual void Stop() = 0;
+        virtual void Release() = 0;
         virtual bool IsRunning() = 0;
         virtual const IPEndPoint& GetEndPoint() const = 0;
         virtual void SetAcceptingConnections(bool accepting) = 0;

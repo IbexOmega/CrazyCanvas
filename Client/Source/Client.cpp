@@ -40,38 +40,45 @@ Client::~Client()
 
 void Client::OnConnectingUDP(LambdaEngine::IClientUDP* pClient)
 {
+    UNREFERENCED_PARAMETER(pClient);
     LOG_MESSAGE("OnConnectingUDP()");
 }
 
 void Client::OnConnectedUDP(LambdaEngine::IClientUDP* pClient)
 {
+    UNREFERENCED_PARAMETER(pClient);
     LOG_MESSAGE("OnConnectedUDP()");
 }
 
 void Client::OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient)
 {
+    UNREFERENCED_PARAMETER(pClient);
     LOG_MESSAGE("OnDisconnectingUDP()");
 }
 
 void Client::OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient)
 {
+    UNREFERENCED_PARAMETER(pClient);
     LOG_MESSAGE("OnDisconnectedUDP()");
 }
 
 void Client::OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket)
 {
+    UNREFERENCED_PARAMETER(pClient);
+    UNREFERENCED_PARAMETER(pPacket);
     LOG_MESSAGE("OnPacketReceivedUDP()");
 }
 
-void Client::OnPacketDelivered(LambdaEngine::NetworkPacket* packet)
+void Client::OnPacketDelivered(LambdaEngine::NetworkPacket* pPacket)
 {
-    using namespace LambdaEngine;
-    LOG_INFO("Packet delivered!");
+    UNREFERENCED_PARAMETER(pPacket);
+    LOG_INFO("OnPacketDelivered()");
 }
 
-void Client::OnPacketResent(LambdaEngine::NetworkPacket* packet)
+void Client::OnPacketResent(LambdaEngine::NetworkPacket* pPacket)
 {
-
+    UNREFERENCED_PARAMETER(pPacket);
+    LOG_INFO("OnPacketResent()");
 }
 
 void Client::OnKeyDown(LambdaEngine::EKey key)
@@ -88,7 +95,8 @@ void Client::OnKeyDown(LambdaEngine::EKey key)
     }
     else
     {
-        NetworkPacket* packet = m_pClient->GetFreePacket();
+        uint16 packetType = 0;
+        NetworkPacket* packet = m_pClient->GetFreePacket(packetType);
         BinaryEncoder encoder(packet);
         encoder.WriteString("Test Message");
         m_pClient->SendReliable(packet, this);

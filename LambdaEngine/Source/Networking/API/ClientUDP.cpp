@@ -60,6 +60,11 @@ namespace LambdaEngine
 			m_pSocket->Close();
 	}
 
+	void ClientUDP::Release()
+	{
+		NetWorker::TerminateAndRelease();
+	}
+
 	bool ClientUDP::IsConnected()
 	{
 		return m_State == STATE_CONNECTED;
@@ -87,9 +92,9 @@ namespace LambdaEngine
 		return m_IPEndPoint;
 	}
 
-	NetworkPacket* ClientUDP::GetFreePacket()
+	NetworkPacket* ClientUDP::GetFreePacket(uint16 packetType)
 	{
-		return m_PacketManager.GetFreePacket();
+		return m_PacketManager.GetFreePacket()->SetType(packetType);
 	}
 
 	EClientState ClientUDP::GetState() const
@@ -139,54 +144,49 @@ namespace LambdaEngine
 
 	void ClientUDP::RunTranmitter()
 	{
-		int32 bytesWritten = 0;
-		int32 bytesSent = 0;
-		bool done = false;
-
 		while (!ShouldTerminate())
 		{
-			while (!done)
-			{
-				done = m_PacketManager.EncodePackets(m_pSendBuffer, bytesWritten);
-				if (bytesWritten > 0)
-				{
-					if (!m_pSocket->SendTo(m_pSendBuffer, bytesWritten, bytesSent, m_IPEndPoint))
-					{
-						TerminateThreads();
-					}
-				}
-			}
-			done = false;
+			TransmitPackets();
 			YieldTransmitter();
 		}
 	}
 
-	void ClientUDP::OnThreadsTurminated()
+	void ClientUDP::OnThreadsTerminated()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		m_pSocket->Close();
 		delete m_pSocket;
 		m_pSocket = nullptr;
 		LOG_INFO("[ClientUDP]: Disconnected");
-		m_pHandler->OnDisconnectedUDP(this);
+		m_State = STATE_DISCONNECTED;
+		if(m_pHandler)
+			m_pHandler->OnDisconnectedUDP(this);
 	}
 
 	void ClientUDP::OnTerminationRequested()
 	{
 		LOG_WARNING("[ClientUDP]: Disconnecting...");
+		m_State = STATE_DISCONNECTING;
 		m_pHandler->OnDisconnectingUDP(this);
+		SendDisconnectRequest();
 	}
 
 	void ClientUDP::OnReleaseRequested()
 	{
 		Disconnect();
+		m_pHandler = nullptr;
 	}
 
 	void ClientUDP::SendConnectRequest()
 	{
-		NetworkPacket* pPacket = GetFreePacket();
-		pPacket->SetType(NetworkPacket::TYPE_CONNNECT);
-		m_PacketManager.EnqueuePacket(pPacket, this);
+		m_PacketManager.EnqueuePacket(GetFreePacket(NetworkPacket::TYPE_CONNNECT), this);
+		TransmitPackets();
+	}
+
+	void ClientUDP::SendDisconnectRequest()
+	{
+		m_PacketManager.EnqueuePacket(GetFreePacket(NetworkPacket::TYPE_DISCONNECT), this);
+		TransmitPackets();
 	}
 
 	void ClientUDP::HandleReceivedPacket(NetworkPacket* pPacket)
@@ -197,8 +197,7 @@ namespace LambdaEngine
 		{
 			uint64 answer = PacketManager::DoChallenge(m_PacketManager.GetSalt(), pPacket->GetRemoteSalt());
 
-			NetworkPacket* pResponse = GetFreePacket();
-			pResponse->SetType(NetworkPacket::TYPE_CHALLENGE);
+			NetworkPacket* pResponse = GetFreePacket(NetworkPacket::TYPE_CHALLENGE);
 			BinaryEncoder encoder(pResponse);
 			encoder.WriteUInt64(answer);
 			m_PacketManager.EnqueuePacket(pResponse, this);
@@ -215,6 +214,27 @@ namespace LambdaEngine
 		else
 		{
 			m_pHandler->OnPacketReceivedUDP(this, pPacket);
+		}
+	}
+
+	void ClientUDP::TransmitPackets()
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+
+		int32 bytesWritten = 0;
+		int32 bytesSent = 0;
+		bool done = false;
+
+		while (!done)
+		{
+			done = m_PacketManager.EncodePackets(m_pSendBuffer, bytesWritten);
+			if (bytesWritten > 0)
+			{
+				if (!m_pSocket->SendTo(m_pSendBuffer, bytesWritten, bytesSent, m_IPEndPoint))
+				{
+					TerminateThreads();
+				}
+			}
 		}
 	}
 

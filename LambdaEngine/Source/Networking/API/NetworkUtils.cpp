@@ -3,6 +3,8 @@
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IPAddress.h"
 #include "Networking/API/IPEndPoint.h"
+#include "Networking/API/ServerUDP.h"
+
 
 namespace LambdaEngine
 {
@@ -15,6 +17,11 @@ namespace LambdaEngine
 	void NetworkUtils::Tick(Timestamp dt)
 	{
 		UNREFERENCED_VARIABLE(dt);
+	}
+
+	void NetworkUtils::FixedTick(Timestamp dt)
+	{
+		ServerUDP::FixedTickStatic(dt);
 	}
 
 	void NetworkUtils::Release()

@@ -78,6 +78,7 @@ namespace LambdaEngine
     {
         //Tick game
         Game::Get()->FixedTick(delta);
+		NetworkUtils::FixedTick(delta);
     }
 
 #ifdef LAMBDA_PLATFORM_WINDOWS

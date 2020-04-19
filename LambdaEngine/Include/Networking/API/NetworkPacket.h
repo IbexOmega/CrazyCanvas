@@ -23,20 +23,21 @@ namespace LambdaEngine
 
 		enum Type : uint16
 		{
-			TYPE_UNDEFINED			= UINT16_MAX - 0,
-			TYPE_PING				= UINT16_MAX - 1,
-			TYPE_SERVER_FULL		= UINT16_MAX - 2,
-			TYPE_CONNNECT			= UINT16_MAX - 3,
-			TYPE_DISCONNECT			= UINT16_MAX - 4,
-			TYPE_CHALLENGE			= UINT16_MAX - 5,
-			TYPE_ACCEPTED			= UINT16_MAX - 6,
-			TYPE_NETWORK_DISCOVERY	= UINT16_MAX - 7,
+			TYPE_UNDEFINED				= UINT16_MAX - 0,
+			TYPE_PING					= UINT16_MAX - 1,
+			TYPE_SERVER_FULL			= UINT16_MAX - 2,
+			TYPE_SERVER_NOT_ACCEPTING	= UINT16_MAX - 3,
+			TYPE_CONNNECT				= UINT16_MAX - 4,
+			TYPE_DISCONNECT				= UINT16_MAX - 5,
+			TYPE_CHALLENGE				= UINT16_MAX - 6,
+			TYPE_ACCEPTED				= UINT16_MAX - 7,
+			TYPE_NETWORK_DISCOVERY		= UINT16_MAX - 8,
 		};
 
 	public:
 		~NetworkPacket();
 
-		void SetType(uint16 type);
+		NetworkPacket* SetType(uint16 type);
 		uint16 GetType() const;
 
 		char* GetBuffer();
@@ -48,7 +49,7 @@ namespace LambdaEngine
 
 		uint16 GetTotalSize() const;
 
-		void AppendBytes(uint16 bytes);
+		NetworkPacket* AppendBytes(uint16 bytes);
 
 		uint64 GetRemoteSalt() const;
 
