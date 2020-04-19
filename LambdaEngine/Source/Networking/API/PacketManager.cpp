@@ -17,7 +17,8 @@ namespace LambdaEngine
 		m_ReceivedSequenceBits(0),
 		m_LastReceivedSequenceNr(0),
 		m_Salt(0),
-		m_SaltRemote(0)
+		m_SaltRemote(0),
+		m_Ping(0)
 	{
 		m_pPackets = DBG_NEW NetworkPacket[packets];
 
@@ -40,7 +41,8 @@ namespace LambdaEngine
 	void PacketManager::EnqueuePacket(NetworkPacket* packet, IPacketListener* listener)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
-		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ packet, listener, GetNextMessageUID() });
+		packet->GetHeader().UID = GetNextMessageUID();
+		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ packet, listener});
 	}
 
 	NetworkPacket* PacketManager::GetFreePacket()
@@ -90,10 +92,11 @@ namespace LambdaEngine
 				memcpy(buffer + header.Size, packet->GetBufferReadOnly(), packetBufferSize);
 				header.Size += packetBufferSize;
 
+				messageInfo.LastSent = EngineLoop::GetTimeSinceStart();
+				
 				//Is this a reliable message ?
 				if (messageInfo.Listener)
 				{
-					messageInfo.LastSent = EngineLoop::GetTimeSinceStart();
 					bundle.Infos[header.Packets] = messageInfo;
 				}
 				else
@@ -132,7 +135,8 @@ namespace LambdaEngine
 		header.AckBits	= m_ReceivedSequenceBits;
 		memcpy(buffer, &header, sizeof(Header));
 
-		bundle.Count = header.Packets;
+		bundle.Count			= header.Packets;
+		bundle.SentTimeStamp	= EngineLoop::GetTimeSinceStart();
 
 		bytesWritten = header.Size;
 
@@ -165,7 +169,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[PacketManager]: Received a packet with a new salt [Prev %lu : New %lu]", m_SaltRemote, header.Salt);
+				LOG_ERROR("[PacketManager]: Received a packet with a new salt [Prev %lu : New %lu]", m_SaltRemote.load(), header.Salt);
 				return false;
 			}
 		}
@@ -202,6 +206,11 @@ namespace LambdaEngine
 		}
 	}
 
+	const Timestamp& PacketManager::GetPing() const
+	{
+		return m_Ping;
+	}
+
 	void PacketManager::GenerateSalt()
 	{
 		m_Salt = Random::UInt64();
@@ -235,22 +244,27 @@ namespace LambdaEngine
 
 	void PacketManager::ProcessAcks(uint32 ack, uint32 ackBits)
 	{
-		uint32 top = std::min(32, (int)ack);
+		Timestamp rtt = INT32_MAX;
+		uint32 top = std::min(32, (int32)ack);
 		for (uint8 i = 1; i <= top; i++)
 		{
 			if (ackBits & 1)
 			{
-				ProcessAck(ack - i);
+				ProcessAck(ack - i, rtt);
 			}
 			ackBits >>= 1;
 		}
-		ProcessAck(ack);
+		ProcessAck(ack, rtt);
+
+		if(rtt != INT32_MAX)
+			m_Ping = rtt;
 	}
 
-	void PacketManager::ProcessAck(uint32 ack)
+	void PacketManager::ProcessAck(uint32 ack, Timestamp& rtt)
 	{
 		Bundle bundle;
 		MessageInfo* messageInfo = nullptr;
+		Timestamp ping;
 		if (GetAndRemoveBundle(ack, bundle))
 		{
 			for (uint8 i = 0; i < bundle.Count; i++)
@@ -260,6 +274,11 @@ namespace LambdaEngine
 				{
 					messageInfo->Listener->OnPacketDelivered(messageInfo->Packet);
 				}
+			}
+			ping = EngineLoop::GetTimeSinceStart() - bundle.SentTimeStamp;
+			if (ping < rtt)
+			{
+				rtt = ping;
 			}
 		}
 	}
