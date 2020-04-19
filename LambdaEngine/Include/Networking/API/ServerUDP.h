@@ -29,6 +29,8 @@ namespace LambdaEngine
 		virtual void SetAcceptingConnections(bool accepting) override;
 		virtual bool IsAcceptingConnections() override;
 
+		void SetSimulatePacketLoss(float lossPercentage);
+
 	protected:
 		ServerUDP(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPerClient);
 
@@ -60,6 +62,7 @@ namespace LambdaEngine
 		SpinLock m_LockClients;
 		uint16 m_PacketsPerClient;
 		uint8 m_MaxClients;
+		float m_PacketLoss;
 		std::atomic_bool m_Accepting;
 		IServerUDPHandler* m_pHandler;
 		std::unordered_map<IPEndPoint, ClientUDPRemote*, IPEndPointHasher> m_Clients;

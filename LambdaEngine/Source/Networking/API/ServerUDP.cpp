@@ -4,6 +4,8 @@
 #include "Networking/API/ClientUDPRemote.h"
 #include "Networking/API/IServerUDPHandler.h"
 
+#include "Math/Random.h"
+
 #include "Log/Log.h"
 
 #include "Networking/API/BinaryEncoder.h"
@@ -18,7 +20,8 @@ namespace LambdaEngine
 		m_MaxClients(maxClients),
 		m_PacketsPerClient(packetPerClient),
 		m_pSocket(nullptr),
-		m_Accepting(true)
+		m_Accepting(true),
+		m_PacketLoss(0.0f)
 	{
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Servers.insert(this);
@@ -86,6 +89,11 @@ namespace LambdaEngine
 		return m_Accepting;
 	}
 
+	void ServerUDP::SetSimulatePacketLoss(float lossPercentage)
+	{
+		m_PacketLoss = lossPercentage;
+	}
+
 	bool ServerUDP::OnThreadsStarted()
 	{
 		m_pSocket = PlatformNetworkUtils::CreateSocketUDP();
@@ -112,6 +120,11 @@ namespace LambdaEngine
 				TerminateThreads();
 				break;
 			}
+
+			if (m_PacketLoss > 0)
+				if (Random::Float32() <= m_PacketLoss)
+					continue;
+
 
 			ClientUDPRemote* pClient = nullptr;
 			{
