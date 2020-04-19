@@ -3,12 +3,17 @@
 #include "Networking/API/NetWorker.h"
 #include "Networking/API/IClientUDP.h"
 #include "Networking/API/PacketManager.h"
+#include "Networking/API/IPacketListener.h"
 
 namespace LambdaEngine
 {
+	class IClientUDPHandler;
 	class ISocketUDP;
 
-	class LAMBDA_API ClientUDP : public NetWorker, public IClientUDP
+	class LAMBDA_API ClientUDP :
+		public NetWorker,
+		public IClientUDP,
+		protected IPacketListener
 	{
 	public:
 		~ClientUDP();
@@ -20,9 +25,13 @@ namespace LambdaEngine
 		virtual bool SendReliable(NetworkPacket* packet, IPacketListener* listener) override;
 		virtual const IPEndPoint& GetEndPoint() const override;
 		virtual NetworkPacket* GetFreePacket() override;
+		virtual EClientState GetState() const override;
 
 	protected:
-		ClientUDP(uint16 packets);
+		ClientUDP(IClientUDPHandler* pHandler, uint16 packets);
+
+		virtual void OnPacketDelivered(NetworkPacket* packet) override;
+		virtual void OnPacketResent(NetworkPacket* packet) override;
 
 		virtual bool OnThreadsStarted() override;
 		virtual void RunTranmitter() override;
@@ -32,12 +41,18 @@ namespace LambdaEngine
 		virtual void OnReleaseRequested() override;
 
 	private:
+		void SendConnectRequest();
+		void HandleReceivedPacket(NetworkPacket* pPacket);
+
+	private:
 		ISocketUDP* m_pSocket;
 		IPEndPoint m_IPEndPoint;
 		PacketManager m_PacketManager;
 		SpinLock m_Lock;
+		IClientUDPHandler* m_pHandler;
+		EClientState m_State;
 
 	public:
-		static ClientUDP* Create(uint16 packets);
+		static ClientUDP* Create(IClientUDPHandler* pHandler, uint16 packets);
 	};
 }

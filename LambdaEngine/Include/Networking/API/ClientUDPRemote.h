@@ -23,14 +23,16 @@ namespace LambdaEngine
 		virtual bool SendReliable(NetworkPacket* packet, IPacketListener* listener) override;
 		virtual const IPEndPoint& GetEndPoint() const override;
 		virtual NetworkPacket* GetFreePacket() override;
+		virtual EClientState GetState() const override;
 
 	protected:
-		ClientUDPRemote(uint16 packets, const IPEndPoint& ipEndPoint, IClientUDPHandler* pHandler, ServerUDP* pServer);
+		ClientUDPRemote(uint16 packets, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
 
 	private:
 		PacketManager* GetPacketManager();
 		void OnDataReceived(const char* data, int32 size);
 		void SendPackets(char* data);
+		void HandleReceivedPacket(NetworkPacket* pPacket);
 
 	private:
 		ServerUDP* m_pServer;
@@ -39,5 +41,6 @@ namespace LambdaEngine
 		SpinLock m_Lock;
 		NetworkPacket* m_pPackets[32];
 		IClientUDPHandler* m_pHandler;
+		EClientState m_State;
 	};
 }

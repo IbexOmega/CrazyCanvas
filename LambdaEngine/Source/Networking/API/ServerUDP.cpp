@@ -21,7 +21,13 @@ namespace LambdaEngine
 
 	ServerUDP::~ServerUDP()
 	{
+		for (auto& pair : m_Clients)
+		{
+			delete pair.second;
+		}
+		m_Clients.clear();
 
+		LOG_INFO("[ServerUDP]: Released");
 	}
 
 	bool ServerUDP::Start(const IPEndPoint& ipEndPoint)
@@ -103,8 +109,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				IClientUDPHandler* pHandler = m_pHandler->CreateClientUDPHandler();
-				pClient = DBG_NEW ClientUDPRemote(m_PacketsPerClient, sender, pHandler, this);
+				pClient = DBG_NEW ClientUDPRemote(m_PacketsPerClient, sender, this);
 				m_Clients.insert({ sender, pClient });
 			}
 
@@ -158,6 +163,11 @@ namespace LambdaEngine
 		{
 			TerminateThreads();
 		}
+	}
+
+	IClientUDPHandler* ServerUDP::CreateClientUDPHandler()
+	{
+		return m_pHandler->CreateClientUDPHandler();
 	}
 
 	ServerUDP* ServerUDP::Create(IServerUDPHandler* pHandler, uint16 packetsPerClient)

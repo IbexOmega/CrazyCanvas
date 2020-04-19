@@ -11,6 +11,7 @@ namespace LambdaEngine
 	class ISocketUDP;
 	class ClientUDPRemote;
 	class IServerUDPHandler;
+	class IClientUDPHandler;
 
 	class LAMBDA_API ServerUDP : public NetWorker, public IServer
 	{
@@ -38,6 +39,7 @@ namespace LambdaEngine
 
 	private:
 		void Transmit(const IPEndPoint& ipEndPoint, const char* data, int32 bytesToWrite);
+		IClientUDPHandler* CreateClientUDPHandler();
 
 	public:
 		static ServerUDP* Create(IServerUDPHandler* pHandler, uint16 packets);

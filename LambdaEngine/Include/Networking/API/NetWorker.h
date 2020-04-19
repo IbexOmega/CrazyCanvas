@@ -58,5 +58,8 @@ namespace LambdaEngine
 		std::atomic_bool m_ReceiverStopped;
 		std::atomic_bool m_ThreadsTerminated;
 		std::atomic_bool m_Release;
+
+	private:
+		static SpinLock s_LockStatic;
 	};
 }

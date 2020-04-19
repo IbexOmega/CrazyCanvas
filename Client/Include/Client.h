@@ -7,22 +7,27 @@
 
 #include "Networking/API/PacketManager.h"
 #include "Networking/API/IPacketListener.h"
-
 #include "Networking/API/ClientUDP.h"
+#include "Networking/API/IClientUDPHandler.h"
 
 class Client :
 	public LambdaEngine::Game,
 	public LambdaEngine::IKeyboardHandler,
-	public LambdaEngine::IPacketListener
+	public LambdaEngine::IPacketListener,
+	public LambdaEngine::IClientUDPHandler
 {
 public:
 	Client();
 	~Client();
 
+	virtual void OnConnectingUDP(LambdaEngine::IClientUDP* pClient) override;
+	virtual void OnConnectedUDP(LambdaEngine::IClientUDP* pClient) override;
+	virtual void OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient) override;
+	virtual void OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient) override;
+	virtual void OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket) override;
+
 	virtual void OnPacketDelivered(LambdaEngine::NetworkPacket* packet) override;
 	virtual void OnPacketResent(LambdaEngine::NetworkPacket* packet) override;
-
-	virtual void OnPacketReceived(LambdaEngine::NetworkPacket* packet, const LambdaEngine::IPEndPoint& sender);
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;

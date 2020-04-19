@@ -16,5 +16,9 @@ public:
 	ClientUDPHandler();
 	~ClientUDPHandler();
 
-	virtual void OnPacketUDPReceived(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket) override;
+	virtual void OnConnectingUDP(LambdaEngine::IClientUDP* pClient) override;
+	virtual void OnConnectedUDP(LambdaEngine::IClientUDP* pClient) override;
+	virtual void OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient) override;
+	virtual void OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient) override;
+	virtual void OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket) override;
 };

@@ -21,6 +21,18 @@ namespace LambdaEngine
 		};
 #pragma pack(pop)
 
+		enum Type : uint16
+		{
+			TYPE_UNDEFINED			= UINT16_MAX - 0,
+			TYPE_PING				= UINT16_MAX - 1,
+			TYPE_SERVER_FULL		= UINT16_MAX - 2,
+			TYPE_CONNNECT			= UINT16_MAX - 3,
+			TYPE_DISCONNECT			= UINT16_MAX - 4,
+			TYPE_CHALLENGE			= UINT16_MAX - 5,
+			TYPE_ACCEPTED			= UINT16_MAX - 6,
+			TYPE_NETWORK_DISCOVERY	= UINT16_MAX - 7,
+		};
+
 	public:
 		~NetworkPacket();
 
@@ -38,12 +50,15 @@ namespace LambdaEngine
 
 		void AppendBytes(uint16 bytes);
 
+		uint64 GetRemoteSalt() const;
+
 	private:
 		NetworkPacket();
 
 	private:
+		Header m_Header;
+		uint64 m_Salt;
 		uint16 m_SizeOfBuffer;
 		char m_pBuffer[MAXIMUM_PACKET_SIZE];
-		Header m_Header;
 	};
 }

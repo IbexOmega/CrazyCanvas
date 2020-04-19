@@ -20,6 +20,8 @@
 
 #include "ClientUDPHandler.h"
 
+#include "Math/Random.h"
+
 Server::Server()
 {
 	using namespace LambdaEngine;

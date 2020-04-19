@@ -6,6 +6,8 @@
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/PacketManager.h"
 
+#include "Math/Random.h"
+
 namespace LambdaEngine
 {
 	PacketManager::PacketManager(uint16 packets) :
@@ -13,7 +15,9 @@ namespace LambdaEngine
 		m_PacketsCounter(0),
 		m_MessageCounter(0),
 		m_ReceivedSequenceBits(0),
-		m_LastReceivedSequenceNr(0)
+		m_LastReceivedSequenceNr(0),
+		m_Salt(0),
+		m_SaltRemote(0)
 	{
 		m_pPackets = DBG_NEW NetworkPacket[packets];
 
@@ -123,8 +127,9 @@ namespace LambdaEngine
 	void PacketManager::WriteHeaderAndStoreBundle(char* buffer, int32& bytesWritten, Header& header, Bundle& bundle)
 	{
 		header.Sequence = GetNextPacketSequenceNr();
-		header.Ack = m_LastReceivedSequenceNr;
-		header.AckBits = m_ReceivedSequenceBits;
+		header.Salt		= GetSalt();
+		header.Ack		= m_LastReceivedSequenceNr;
+		header.AckBits	= m_ReceivedSequenceBits;
 		memcpy(buffer, &header, sizeof(Header));
 
 		bundle.Count = header.Packets;
@@ -144,8 +149,25 @@ namespace LambdaEngine
 
 		if (header.Size != bytesReceived)
 		{
-			LOG_WARNING("[PacketManager]: Received a packet with size missmatch [Exp %d : Rec %d]", header.Size, bytesReceived);
+			LOG_ERROR("[PacketManager]: Received a packet with size missmatch [Exp %d : Rec %d]", header.Size, bytesReceived);
 			return false;
+		}
+		else if (header.Salt == 0)
+		{
+			LOG_ERROR("[PacketManager]: Received a packet without a salt");
+			return false;
+		}
+		else if (m_SaltRemote != header.Salt)
+		{
+			if (m_SaltRemote == 0)
+			{
+				m_SaltRemote = header.Salt;
+			}
+			else
+			{
+				LOG_ERROR("[PacketManager]: Received a packet with a new salt [Prev %lu : New %lu]", m_SaltRemote, header.Salt);
+				return false;
+			}
 		}
 
 		ProcessSequence(header.Sequence);
@@ -160,6 +182,7 @@ namespace LambdaEngine
 			memcpy(&messageHeader, buffer + offset, messageHeaderSize);
 			memcpy(message->GetBuffer(), buffer + offset + messageHeaderSize, messageHeader.Size - messageHeaderSize);
 			offset += messageHeader.Size;
+			message->m_Salt = header.Salt;
 			packetsRead[i] = message;
 		}
 		nrOfPackets = header.Packets;
@@ -177,6 +200,16 @@ namespace LambdaEngine
 				m_PacketsFree.insert(packet);
 			}
 		}
+	}
+
+	void PacketManager::GenerateSalt()
+	{
+		m_Salt = Random::UInt64();
+	}
+
+	uint64 PacketManager::GetSalt() const
+	{
+		return m_Salt;
 	}
 
 	void PacketManager::ProcessSequence(uint32 sequence)
@@ -265,5 +298,10 @@ namespace LambdaEngine
 
 		std::scoped_lock<SpinLock> lock3(m_LockPacketsWaitingForAck);
 		m_PacketsWaitingForAck.clear();
+	}
+
+	uint64 PacketManager::DoChallenge(uint64 clientSalt, uint64 serverSalt)
+	{
+		return clientSalt & serverSalt;
 	}
 }

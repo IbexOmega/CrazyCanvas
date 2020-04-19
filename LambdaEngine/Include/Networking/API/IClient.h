@@ -9,8 +9,17 @@ namespace LambdaEngine
 	class NetworkPacket;
 	class IPacketListener;
 
+	enum EClientState
+	{
+		STATE_DISCONNECTED,
+		STATE_CONNECTING,
+		STATE_CONNECTED
+	};
+
 	class LAMBDA_API IClient
 	{
+	public:
+
 	public:
 		DECL_INTERFACE(IClient);
 
@@ -21,5 +30,6 @@ namespace LambdaEngine
 		virtual bool SendReliable(NetworkPacket* packet, IPacketListener* listener) = 0;
 		virtual const IPEndPoint& GetEndPoint() const = 0;
 		virtual NetworkPacket* GetFreePacket() = 0;
+		virtual EClientState GetState() const = 0;
 	};
 }

@@ -38,11 +38,12 @@ namespace LambdaEngine
 #pragma pack(push, 1)
 		struct Header
 		{
-			uint16 Size = 0;
+			uint16 Size		= 0;
+			uint64 Salt		= 0;
 			uint32 Sequence = 0;
-			uint32 Ack = 0;
-			uint32 AckBits = 0;
-			uint8 Packets = 0;
+			uint32 Ack		= 0;
+			uint32 AckBits	= 0;
+			uint8  Packets	= 0;
 		};
 #pragma pack(pop)
 
@@ -59,6 +60,9 @@ namespace LambdaEngine
 		bool DecodePackets(const char* buffer, int32 bytesReceived, NetworkPacket** packetsRead, int32& nrOfPackets);
 
 		void Free(NetworkPacket** packets, int32 nrOfPackets);
+
+		void GenerateSalt();
+		uint64 GetSalt() const;
 
 	private:
 		void WriteHeaderAndStoreBundle(char* buffer, int32& bytesWritten, Header& header, Bundle& bundle);
@@ -88,5 +92,11 @@ namespace LambdaEngine
 		uint32 m_MessageCounter;
 		std::atomic_uint32_t m_LastReceivedSequenceNr;
 		std::atomic_uint32_t m_ReceivedSequenceBits;
+
+		uint64 m_Salt;
+		uint64 m_SaltRemote;
+
+	public:
+		static uint64 DoChallenge(uint64 clientSalt, uint64 serverSalt);
 	};
 }

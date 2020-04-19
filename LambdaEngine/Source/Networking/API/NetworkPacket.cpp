@@ -59,4 +59,9 @@ namespace LambdaEngine
 	{
 		m_SizeOfBuffer += bytes;
 	}
+
+	uint64 NetworkPacket::GetRemoteSalt() const
+	{
+		return m_Salt;
+	}
 }

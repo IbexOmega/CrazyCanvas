@@ -25,7 +25,7 @@ Client::Client() :
     PlatformApplication::Get()->GetWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
-    m_pClient = ClientUDP::Create(512);
+    m_pClient = ClientUDP::Create(this, 512);
 
     if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
     {
@@ -38,6 +38,31 @@ Client::~Client()
     m_pClient->Release();
 }
 
+void Client::OnConnectingUDP(LambdaEngine::IClientUDP* pClient)
+{
+    LOG_MESSAGE("OnConnectingUDP()");
+}
+
+void Client::OnConnectedUDP(LambdaEngine::IClientUDP* pClient)
+{
+    LOG_MESSAGE("OnConnectedUDP()");
+}
+
+void Client::OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient)
+{
+    LOG_MESSAGE("OnDisconnectingUDP()");
+}
+
+void Client::OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient)
+{
+    LOG_MESSAGE("OnDisconnectedUDP()");
+}
+
+void Client::OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket)
+{
+    LOG_MESSAGE("OnPacketReceivedUDP()");
+}
+
 void Client::OnPacketDelivered(LambdaEngine::NetworkPacket* packet)
 {
     using namespace LambdaEngine;
@@ -47,14 +72,6 @@ void Client::OnPacketDelivered(LambdaEngine::NetworkPacket* packet)
 void Client::OnPacketResent(LambdaEngine::NetworkPacket* packet)
 {
 
-}
-
-void Client::OnPacketReceived(LambdaEngine::NetworkPacket* packet, const LambdaEngine::IPEndPoint& sender)
-{
-    using namespace LambdaEngine;
-
-    BinaryDecoder decoder(packet);
-    LOG_MESSAGE(decoder.ReadString().c_str());
 }
 
 void Client::OnKeyDown(LambdaEngine::EKey key)

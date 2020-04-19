@@ -6,6 +6,8 @@
 
 namespace LambdaEngine
 {
+	SpinLock NetWorker::s_LockStatic;
+
 	NetWorker::NetWorker() : 
 		m_pThreadReceiver(nullptr),
 		m_pThreadTransmitter(nullptr),
@@ -25,8 +27,6 @@ namespace LambdaEngine
 	{
 		if (!m_Release)
 			LOG_ERROR("[NetWorker]: Do not use delete on a NetWorker object. Use the Release() function!");
-		else
-			LOG_INFO("[NetWorker]: Released");
 	}
 
 	void NetWorker::Flush()
@@ -38,7 +38,7 @@ namespace LambdaEngine
 
 	void NetWorker::Release()
 	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
+		std::scoped_lock<SpinLock> lock(s_LockStatic);
 		if (!m_Release)
 		{
 			m_Release = true;
@@ -47,7 +47,9 @@ namespace LambdaEngine
 		}
 
 		if (m_ThreadsTerminated)
+		{
 			delete this;
+		}
 	}
 
 	void NetWorker::TerminateThreads()

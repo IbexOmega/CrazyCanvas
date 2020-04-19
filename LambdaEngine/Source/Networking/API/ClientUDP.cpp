@@ -2,21 +2,36 @@
 #include "Networking/API/IPAddress.h"
 #include "Networking/API/ISocketUDP.h"
 #include "Networking/API/PlatformNetworkUtils.h"
+#include "Networking/API/IClientUDPHandler.h"
+#include "Networking/API/BinaryEncoder.h"
+#include "Networking/API/BinaryDecoder.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	ClientUDP::ClientUDP(uint16 packets) :
+	ClientUDP::ClientUDP(IClientUDPHandler* pHandler, uint16 packets) :
 		m_pSocket(nullptr),
-		m_PacketManager(packets)
+		m_PacketManager(packets),
+		m_pHandler(pHandler), 
+		m_State(STATE_DISCONNECTED)
+	{
+
+	}
+
+	void ClientUDP::OnPacketDelivered(NetworkPacket* packet)
+	{
+		
+	}
+
+	void ClientUDP::OnPacketResent(NetworkPacket* packet)
 	{
 
 	}
 
 	ClientUDP::~ClientUDP()
 	{
-
+		LOG_INFO("[ClientUDP]: Released");
 	}
 
 	bool ClientUDP::Connect(const IPEndPoint& ipEndPoint)
@@ -25,8 +40,11 @@ namespace LambdaEngine
 		{
 			if (StartThreads())
 			{
-				m_IPEndPoint = ipEndPoint;
 				LOG_WARNING("[ClientUDP]: Connecting...");
+				m_IPEndPoint = ipEndPoint;
+				m_State = STATE_CONNECTING;
+				m_PacketManager.GenerateSalt();
+				m_pHandler->OnConnectingUDP(this);
 				return true;
 			}
 		}
@@ -44,7 +62,7 @@ namespace LambdaEngine
 
 	bool ClientUDP::IsConnected()
 	{
-		return ThreadsAreRunning() && !ShouldTerminate();
+		return m_State == STATE_CONNECTED;
 	}
 
 	bool ClientUDP::SendUnreliable(NetworkPacket* packet)
@@ -55,8 +73,11 @@ namespace LambdaEngine
 	bool ClientUDP::SendReliable(NetworkPacket* packet, IPacketListener* listener)
 	{
 		if (!IsConnected())
+		{
+			LOG_WARNING("[ClientUDP]: Can not send packet before a connection has been established");
 			return false;
-
+		}
+			
 		m_PacketManager.EnqueuePacket(packet, listener);
 		return true;
 	}
@@ -71,6 +92,11 @@ namespace LambdaEngine
 		return m_PacketManager.GetFreePacket();
 	}
 
+	EClientState ClientUDP::GetState() const
+	{
+		return m_State;
+	}
+
 	bool ClientUDP::OnThreadsStarted()
 	{
 		m_pSocket = PlatformNetworkUtils::CreateSocketUDP();
@@ -78,6 +104,7 @@ namespace LambdaEngine
 		{
 			if (m_pSocket->Bind(IPEndPoint(IPAddress::ANY, 0)))
 			{
+				SendConnectRequest();
 				return true;
 			}
 		}
@@ -103,7 +130,7 @@ namespace LambdaEngine
 			{
 				for (int i = 0; i < packetsReceived; i++)
 				{
-					//OnPacketReceived(packets[i], sender);
+					HandleReceivedPacket(packets[i]);
 				}
 				m_PacketManager.Free(packets, packetsReceived);
 			}
@@ -141,11 +168,13 @@ namespace LambdaEngine
 		delete m_pSocket;
 		m_pSocket = nullptr;
 		LOG_INFO("[ClientUDP]: Disconnected");
+		m_pHandler->OnDisconnectedUDP(this);
 	}
 
 	void ClientUDP::OnTerminationRequested()
 	{
 		LOG_WARNING("[ClientUDP]: Disconnecting...");
+		m_pHandler->OnDisconnectingUDP(this);
 	}
 
 	void ClientUDP::OnReleaseRequested()
@@ -153,8 +182,44 @@ namespace LambdaEngine
 		Disconnect();
 	}
 
-	ClientUDP* ClientUDP::Create(uint16 packets)
+	void ClientUDP::SendConnectRequest()
 	{
-		return DBG_NEW ClientUDP(packets);
+		NetworkPacket* pPacket = GetFreePacket();
+		pPacket->SetType(NetworkPacket::TYPE_CONNNECT);
+		m_PacketManager.EnqueuePacket(pPacket, this);
+	}
+
+	void ClientUDP::HandleReceivedPacket(NetworkPacket* pPacket)
+	{
+		uint16 packetType = pPacket->GetType();
+
+		if (packetType == NetworkPacket::TYPE_CHALLENGE)
+		{
+			uint64 answer = PacketManager::DoChallenge(m_PacketManager.GetSalt(), pPacket->GetRemoteSalt());
+
+			NetworkPacket* pResponse = GetFreePacket();
+			pResponse->SetType(NetworkPacket::TYPE_CHALLENGE);
+			BinaryEncoder encoder(pResponse);
+			encoder.WriteUInt64(answer);
+			m_PacketManager.EnqueuePacket(pResponse, this);
+		}
+		else if (packetType == NetworkPacket::TYPE_ACCEPTED)
+		{
+			m_State = STATE_CONNECTED;
+			m_pHandler->OnConnectedUDP(this);
+		}
+		else if (packetType == NetworkPacket::TYPE_DISCONNECT)
+		{
+			Disconnect();
+		}
+		else
+		{
+			m_pHandler->OnPacketReceivedUDP(this, pPacket);
+		}
+	}
+
+	ClientUDP* ClientUDP::Create(IClientUDPHandler* pHandler, uint16 packets)
+	{
+		return DBG_NEW ClientUDP(pHandler, packets);
 	}
 }
