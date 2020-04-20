@@ -613,7 +613,7 @@ namespace LambdaEngine
 		appInfo.engineVersion       = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.apiVersion          = VK_API_VERSION_1_2;
 
-		LOG_MESSAGE("[GraphicsDeviceVK]: Requsted API Version: %u.%u.%u (%u)", appInfo.apiVersion >> 22, (appInfo.apiVersion << 10) >> 22, (appInfo.apiVersion << 20) >> 20, appInfo.apiVersion);
+		LOG_MESSAGE("[GraphicsDeviceVK]: Requsted API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(appInfo.apiVersion), VK_VERSION_MINOR(appInfo.apiVersion), VK_VERSION_PATCH(appInfo.apiVersion), appInfo.apiVersion);
 
 		VkInstanceCreateInfo instanceCreateInfo = {};
 		instanceCreateInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -723,7 +723,7 @@ namespace LambdaEngine
 		m_DeviceLimits = deviceProperties.limits;
 
 		LOG_MESSAGE("[GraphicsDeviceVK]: Chosen device: %s", deviceProperties.deviceName);
-		LOG_MESSAGE("[GraphicsDeviceVK]: API Version: %u.%u.%u (%u)", deviceProperties.apiVersion >> 22, (deviceProperties.apiVersion << 10) >> 22, (deviceProperties.apiVersion << 20) >> 20, deviceProperties.apiVersion);
+		LOG_MESSAGE("[GraphicsDeviceVK]: API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(deviceProperties.apiVersion), VK_VERSION_MINOR(deviceProperties.apiVersion), VK_VERSION_PATCH(deviceProperties.apiVersion), deviceProperties.apiVersion);
 
 		return true;
 	}
