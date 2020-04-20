@@ -101,6 +101,8 @@ workspace "LambdaEngine"
 
 	-- Dependencies
 	group "Dependencies"
+		include "Dependencies/WavLib"
+	
 		-- tinyobjloader Project
 		project "tinyobjloader"
 			kind "StaticLib"
@@ -125,8 +127,7 @@ workspace "LambdaEngine"
 				"Dependencies/tinyobjloader/tiny_obj_loader.h",
 				"Dependencies/tinyobjloader/tiny_obj_loader.cc",
 			}
-		project "*"
-	group "*"
+	group ""
 
     -- Engine Project
     project "LambdaEngine"
@@ -219,12 +220,14 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/glm",
 			"Dependencies/tinyobjloader",
+			"Dependencies/WavLib",
 			"Dependencies/portaudio/include",
 		}
         
 		links 
 		{ 
 			"tinyobjloader",
+			"WavLib",
 		}
 		
 		-- Win32
