@@ -7,12 +7,12 @@ namespace LambdaEngine
 	{
 		bool KeyStates[EKey::KEY_LAST];
 
-		bool IsKeyDown(EKey key)
+		bool IsKeyDown(EKey key) const
 		{
 			return KeyStates[key];
 		}
 
-		bool IsKeyUp(EKey key)
+		bool IsKeyUp(EKey key) const
 		{
 			return !KeyStates[key];
 		}
@@ -26,12 +26,12 @@ namespace LambdaEngine
 
 		bool ButtonStates[EMouseButton::MOUSE_BUTTON_COUNT];
 
-		bool IsButtonPressed(EMouseButton button)
+		bool IsButtonPressed(EMouseButton button) const
 		{
 			return ButtonStates[button];
 		}
 
-		bool IsButtonReleased(EMouseButton button)
+		bool IsButtonReleased(EMouseButton button) const
 		{
 			return !ButtonStates[button];
 		}

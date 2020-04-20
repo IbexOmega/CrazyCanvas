@@ -37,6 +37,6 @@ namespace LambdaEngine
          *
          * return - A pointer to the device that created this object
          */
-        virtual const IGraphicsDevice*  GetDevice() const = 0;
+        virtual const IGraphicsDevice* GetDevice() const = 0;
     };
 }

@@ -86,7 +86,7 @@ namespace LambdaEngine
 			TDeviceChild::SetName(pName);
 			m_pDevice->SetVulkanObjectName(pName, (uint64)m_RenderPass, VK_OBJECT_TYPE_RENDER_PASS);
 
-			m_Desc.pName = m_DebugName;
+			m_Desc.pName = m_pDebugName;
 		}
 	}
 
@@ -124,7 +124,6 @@ namespace LambdaEngine
 			ASSERT(subpass.InputAttachmentCount <= MAX_COLOR_ATTACHMENTS);
 			ASSERT(subpass.RenderTargetCount	<= MAX_COLOR_ATTACHMENTS);
 			
-			vkSubpass = {};
 			vkSubpass.flags					= 0;
 			vkSubpass.pipelineBindPoint		= VK_PIPELINE_BIND_POINT_GRAPHICS;
 			vkSubpass.inputAttachmentCount	= subpass.InputAttachmentCount;	
@@ -146,7 +145,6 @@ namespace LambdaEngine
 					inputAttachment.attachment	= VK_ATTACHMENT_UNUSED;
 				}
 			}
-
 
 			for (uint32 attachment = 0; attachment < subpass.RenderTargetCount; attachment++)
 			{
@@ -184,6 +182,15 @@ namespace LambdaEngine
 						resolveAttachment.attachment = VK_ATTACHMENT_UNUSED;
 					}
 				}
+			}
+
+			//DepthStencil
+			if (subpass.DepthStencilAttachmentState != ETextureState::TEXTURE_STATE_UNKNOWN || subpass.DepthStencilAttachmentState != ETextureState::TEXTURE_STATE_DONT_CARE)
+			{
+				pResultSubpasses[i].DepthStencil.attachment = subpass.RenderTargetCount;
+				pResultSubpasses[i].DepthStencil.layout		= ConvertTextureState(subpass.DepthStencilAttachmentState);
+
+				vkSubpass.pDepthStencilAttachment	= &pResultSubpasses[i].DepthStencil;
 			}
 
 			vkSubpass.inputAttachmentCount		= subpass.InputAttachmentCount;

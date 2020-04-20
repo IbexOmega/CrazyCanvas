@@ -27,7 +27,7 @@ namespace LambdaEngine
 		m_RasterizerState.pNext                     = nullptr;
 		m_RasterizerState.polygonMode               = VK_POLYGON_MODE_FILL;
 		m_RasterizerState.lineWidth                 = 1.0f;
-		m_RasterizerState.cullMode                  = VK_CULL_MODE_NONE;
+		m_RasterizerState.cullMode                  = VK_CULL_MODE_BACK_BIT;
 		m_RasterizerState.frontFace                 = VK_FRONT_FACE_CLOCKWISE;
 		m_RasterizerState.depthBiasEnable           = VK_FALSE;
 		m_RasterizerState.depthClampEnable          = VK_FALSE;
@@ -60,11 +60,11 @@ namespace LambdaEngine
 		m_BlendState.blendConstants[2]  = 0.0f;
 		m_BlendState.blendConstants[3]  = 0.0f;
 
-		//DepthstencilState
+		//DepthstencilStated
 		m_DepthStencilState.sType                   = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		m_DepthStencilState.flags                   = 0;
 		m_DepthStencilState.pNext                   = nullptr;
-		m_DepthStencilState.depthTestEnable         = VK_FALSE;
+		m_DepthStencilState.depthTestEnable         = VK_TRUE;
 		m_DepthStencilState.depthWriteEnable        = VK_TRUE;
 		m_DepthStencilState.depthCompareOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
 		m_DepthStencilState.depthBoundsTestEnable   = VK_FALSE;

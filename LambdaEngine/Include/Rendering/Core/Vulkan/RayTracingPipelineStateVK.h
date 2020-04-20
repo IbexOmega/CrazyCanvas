@@ -22,6 +22,9 @@ namespace LambdaEngine
 		FORCEINLINE VkDeviceSize GetBindingOffsetRaygenGroup()	const { return m_BindingOffsetRaygenShaderGroup; }
 		FORCEINLINE VkDeviceSize GetBindingOffsetHitGroup()		const { return m_BindingOffsetHitShaderGroup; }
 		FORCEINLINE VkDeviceSize GetBindingOffsetMissGroup()	const { return m_BindingOffsetMissShaderGroup; }
+        FORCEINLINE VkDeviceSize GetBindingSizeRaygenGroup()    const { return m_BindingSizeRaygenShaderGroup; }
+        FORCEINLINE VkDeviceSize GetBindingSizeHitGroup()       const { return m_BindingSizeHitShaderGroup; }
+        FORCEINLINE VkDeviceSize GetBindingSizeMissGroup()      const { return m_BindingSizeMissShaderGroup; }
 		FORCEINLINE VkDeviceSize GetBindingStride()				const { return m_BindingStride; }
 
 		FORCEINLINE VkPipeline GetPipeline() const
@@ -29,11 +32,16 @@ namespace LambdaEngine
             return m_Pipeline;
         }
         
+        FORCEINLINE BufferVK* GetShaderBindingTable() const
+        {
+            return m_pSBT;
+        }
+        
         //IDeviceChild interface
-		virtual void SetName(const char* pName) override;
+		virtual void SetName(const char* pName) override final;
 
         //IPipelineState interface
-		FORCEINLINE virtual EPipelineStateType GetType() const override
+		FORCEINLINE virtual EPipelineStateType GetType() const override final
         {
             return EPipelineStateType::RAY_TRACING;
         }
@@ -46,12 +54,15 @@ namespace LambdaEngine
 			const RayTracingPipelineStateDesc& desc);
 
 	private:
-		VkPipeline	m_Pipeline;
-		BufferVK*	m_pSBT;
+		VkPipeline	m_Pipeline  = VK_NULL_HANDLE;
+        BufferVK*	m_pSBT      = nullptr;
 
-		VkDeviceSize m_BindingOffsetRaygenShaderGroup;
-		VkDeviceSize m_BindingOffsetHitShaderGroup;
-		VkDeviceSize m_BindingOffsetMissShaderGroup;
-		VkDeviceSize m_BindingStride;
+		VkDeviceSize m_BindingOffsetRaygenShaderGroup   = 0;
+		VkDeviceSize m_BindingOffsetHitShaderGroup      = 0;
+		VkDeviceSize m_BindingOffsetMissShaderGroup     = 0;
+        VkDeviceSize m_BindingSizeRaygenShaderGroup     = 0;
+        VkDeviceSize m_BindingSizeHitShaderGroup        = 0;
+        VkDeviceSize m_BindingSizeMissShaderGroup       = 0;
+		VkDeviceSize m_BindingStride                    = 0;
 	};
 }

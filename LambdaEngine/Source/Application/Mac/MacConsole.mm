@@ -27,7 +27,7 @@ namespace LambdaEngine
                 [s_pConsoleWindow setColor:EConsoleColor::COLOR_YELLOW];
                 
                 MacApplication::ProcessMessages();
-            });
+            }, true);
         }
     }
     
@@ -43,7 +43,7 @@ namespace LambdaEngine
                 
                 [s_pConsoleWindow release];
                 s_pConsoleWindow = nil;
-            });
+            }, true);
         }
     }
     
@@ -82,7 +82,7 @@ namespace LambdaEngine
                 [string release];
                 
                 //MacApplication::ProcessMessages();
-            });
+            }, false);
         }
     }
 
@@ -103,7 +103,7 @@ namespace LambdaEngine
                 [string release];
                 
                 //MacApplication::ProcessMessages();
-            });
+            }, false);
         }
     }
     
@@ -114,7 +114,7 @@ namespace LambdaEngine
             MacMainThread::MakeCall(^
             {
                 [s_pConsoleWindow clearWindow];
-            });
+            }, false);
         }
     }
     
@@ -128,7 +128,7 @@ namespace LambdaEngine
                 
                 NSString* title = [NSString stringWithUTF8String:pTitle];
                 [s_pConsoleWindow setTitle:title];
-            });
+            }, true);
         }
     }
 
@@ -139,7 +139,7 @@ namespace LambdaEngine
             MacMainThread::MakeCall(^
             {
                 [s_pConsoleWindow setColor:color];
-            });
+            }, false);
         }
     }
 }

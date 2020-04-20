@@ -101,6 +101,8 @@ workspace "LambdaEngine"
 
 	-- Dependencies
 	group "Dependencies"
+		include "Dependencies/WavLib"
+	
 		-- tinyobjloader Project
 		project "tinyobjloader"
 			kind "StaticLib"
@@ -125,8 +127,7 @@ workspace "LambdaEngine"
 				"Dependencies/tinyobjloader/tiny_obj_loader.h",
 				"Dependencies/tinyobjloader/tiny_obj_loader.cc",
 			}
-		project "*"
-	group "*"
+	group ""
 
     -- Engine Project
     project "LambdaEngine"
@@ -199,7 +200,10 @@ workspace "LambdaEngine"
                 "%{prj.name}/Source/Input/Win32/**",
 
                 "%{prj.name}/Include/Networking/Win32/**",
-                "%{prj.name}/Source/Networking/Win32/**",
+				"%{prj.name}/Source/Networking/Win32/**",
+				
+				"%{prj.name}/Include/Threading/Win32/**",
+                "%{prj.name}/Source/Threading/Win32/**",
             }
         filter {}
 
@@ -219,12 +223,15 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/glm",
 			"Dependencies/tinyobjloader",
+			"Dependencies/WavLib",
+			"Dependencies/stb",
 			"Dependencies/portaudio/include",
 		}
         
 		links 
 		{ 
 			"tinyobjloader",
+			"WavLib",
 		}
 		
 		-- Win32
@@ -260,7 +267,7 @@ workspace "LambdaEngine"
 			{
 				"portaudio_x64_d.lib",
 			}
-		filter { "system:windows", "configurations:Release" }
+		filter { "system:windows", "configurations:Release or Production" }
 			links
 			{
 				"portaudio_x64.lib",
@@ -282,7 +289,8 @@ workspace "LambdaEngine"
 			links 
 			{
                 "vulkan.1",
-				"vulkan.1.2.131",
+				"vulkan.1.2.135",
+				"portaudio",
 				"fmodL",
                 "Cocoa.framework",
                 "MetalKit.framework",
@@ -298,7 +306,8 @@ workspace "LambdaEngine"
 		--		("{COPY} \"../FMODProgrammersAPI/api/core/lib/libfmodL.dylib\" \"../Build/bin/" .. outputdir .. "/Server/\""),
 		--	}
 
-        -- Copy DLL into correct folder for windows builds
+		-- Copy DLL into correct folder for windows builds
+		-- FMOD
 		filter { "system:windows"}
 			postbuildcommands
 			{
@@ -306,6 +315,7 @@ workspace "LambdaEngine"
 				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
 			}
+		-- LambdaEngine
         filter { "system:windows", "platforms:x64_SharedLib" }
 			postbuildcommands
 			{
@@ -313,6 +323,7 @@ workspace "LambdaEngine"
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Client/\""),
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\""),
 			}
+		-- Portaudio
 		filter { "system:windows", "configurations:Debug"}
 			postbuildcommands
 			{
@@ -320,7 +331,7 @@ workspace "LambdaEngine"
 				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
 			}
-		filter { "system:windows", "configurations:Release"}
+		filter { "system:windows", "configurations:Release or Production"}
 			postbuildcommands
 			{
 				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),

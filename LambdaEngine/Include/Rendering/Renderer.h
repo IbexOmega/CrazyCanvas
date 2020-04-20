@@ -16,6 +16,7 @@ namespace LambdaEngine
 		const char*		pName			= "";
 		Window*			pWindow			= nullptr;
 		RenderGraph*	pRenderGraph	= nullptr;
+		uint32			BackBufferCount = 3;
 	};
 	
 	class LAMBDA_API Renderer
@@ -34,12 +35,13 @@ namespace LambdaEngine
 	private:
 		const char*				m_pName;
 		const IGraphicsDevice*	m_pGraphicsDevice;
-		ISwapChain*				m_pSwapChain;
-		RenderGraph*			m_pRenderGraph;
+
+		ISwapChain*				m_pSwapChain		= nullptr;
+		RenderGraph*			m_pRenderGraph		= nullptr;
+		ITexture**				m_ppBackBuffers		= nullptr;
+		ITextureView**			m_ppBackBufferViews = nullptr;
 
 		uint32					m_FrameIndex = 0;
 
-		ITexture**				m_ppBackBuffers;
-		ITextureView**			m_ppBackBufferViews;
 	};
 }

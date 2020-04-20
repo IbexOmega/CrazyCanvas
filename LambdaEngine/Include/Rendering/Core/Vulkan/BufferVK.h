@@ -48,6 +48,7 @@ namespace LambdaEngine
         VkDeviceMemory  m_Memory                = VK_NULL_HANDLE;
         VkDeviceAddress m_DeviceAddress         = 0;
         VkDeviceAddress m_AlignementRequirement = 0;
+        bool            m_IsMapped              = false;
         BufferDesc      m_Desc;
     };
 }

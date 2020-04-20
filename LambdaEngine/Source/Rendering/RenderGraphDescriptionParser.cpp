@@ -532,10 +532,10 @@ namespace LambdaEngine
 
 			sortedRenderStages.push_back(renderStage);
 
-			PipelineStageDesc pipelineStage = {};
-			pipelineStage.Type = EPipelineStageType::RENDER;
-			pipelineStage.StageIndex = sortedRenderStages.size() - 1;
-			sortedPipelineStages.push_back(pipelineStage);
+			PipelineStageDesc renderPipelineStage = {};
+			renderPipelineStage.Type = EPipelineStageType::RENDER;
+			renderPipelineStage.StageIndex = uint32(sortedRenderStages.size() - 1);
+			sortedPipelineStages.push_back(renderPipelineStage);
 
 			SynchronizationStageDesc synchronizationStage = {};
 
@@ -602,10 +602,10 @@ namespace LambdaEngine
 			{
 				sortedSynchronizationStages.push_back(synchronizationStage);
 
-				PipelineStageDesc pipelineStage = {};
-				pipelineStage.Type = EPipelineStageType::SYNCHRONIZATION;
-				pipelineStage.StageIndex = sortedSynchronizationStages.size() - 1;
-				sortedPipelineStages.push_back(pipelineStage);
+				PipelineStageDesc synchronizationPipelineStage = {};
+				synchronizationPipelineStage.Type = EPipelineStageType::SYNCHRONIZATION;
+				synchronizationPipelineStage.StageIndex = uint32(sortedSynchronizationStages.size() - 1);
+				sortedPipelineStages.push_back(synchronizationPipelineStage);
 			}
 		}
 
@@ -619,11 +619,11 @@ namespace LambdaEngine
 		{
 			if (sortedPipelineStagesIt->Type == EPipelineStageType::RENDER)
 			{
-				sortedPipelineStagesIt->StageIndex = sortedRenderStages.size() - sortedPipelineStagesIt->StageIndex - 1;
+				sortedPipelineStagesIt->StageIndex = uint32(sortedRenderStages.size() - sortedPipelineStagesIt->StageIndex - 1);
 			}
 			else if (sortedPipelineStagesIt->Type == EPipelineStageType::SYNCHRONIZATION)
 			{
-				sortedPipelineStagesIt->StageIndex = sortedSynchronizationStages.size() - sortedPipelineStagesIt->StageIndex - 1;
+				sortedPipelineStagesIt->StageIndex = uint32(sortedSynchronizationStages.size() - sortedPipelineStagesIt->StageIndex - 1);
 			}
 		}
 
@@ -812,7 +812,7 @@ namespace LambdaEngine
 		{
 			strcpy(renderGraphNameBuffer, pName);
 
-			SanitizeString(renderGraphNameBuffer, strlen(renderGraphNameBuffer));
+			SanitizeString(renderGraphNameBuffer, (uint32)strlen(renderGraphNameBuffer));
 
 			strcpy(filepathBuffer, "rs_ord_");
 			strcat(filepathBuffer, renderGraphNameBuffer);
@@ -861,13 +861,13 @@ namespace LambdaEngine
 		{
 			strcpy(renderGraphNameBuffer, pName);
 
-			SanitizeString(renderGraphNameBuffer, strlen(renderGraphNameBuffer));
+			SanitizeString(renderGraphNameBuffer, (uint32)strlen(renderGraphNameBuffer));
 
 			strcpy(filepathBuffer, "complete_");
 			strcat(filepathBuffer, renderGraphNameBuffer);
 			strcat(filepathBuffer, ".dot");
 
-			SanitizeString(filepathBuffer, strlen(filepathBuffer));
+			SanitizeString(filepathBuffer, (uint32)strlen(filepathBuffer));
 
 			FILE* pGraphVizFile = fopen(filepathBuffer, "w");
 
@@ -934,10 +934,16 @@ namespace LambdaEngine
 		std::unordered_map<std::string, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
 		std::unordered_map<std::string, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
 		std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
-		std::vector<RenderStageDesc>&														sortedRenderStages,
-		std::vector<SynchronizationStageDesc>&												sortedSynchronizationStages,
-		std::vector<PipelineStageDesc>&														sortedPipelineStages)
+		std::vector<RenderStageDesc>&													sortedRenderStages,
+		std::vector<SynchronizationStageDesc>&											sortedSynchronizationStages,
+		std::vector<PipelineStageDesc>&													sortedPipelineStages)
 	{
+		UNREFERENCED_VARIABLE(parsedRenderStages);
+		UNREFERENCED_VARIABLE(parsedInputAttachments);
+		UNREFERENCED_VARIABLE(parsedTemporalInputAttachments);
+		UNREFERENCED_VARIABLE(parsedExternalInputAttachments);
+		UNREFERENCED_VARIABLE(parsedOutputAttachments);
+
 		char fileOutputBuffer[256];
 		std::vector<std::string> edgesBuffer;
 		
@@ -1113,7 +1119,7 @@ namespace LambdaEngine
 
 				for (const InternalRenderStage* pChildInternalRenderStage : pParentInternalRenderStage->ChildRenderStages)
 				{
-					uint32 childIndex = std::distance(sortedInternalRenderStages.begin(), std::find(sortedInternalRenderStages.begin(), sortedInternalRenderStages.end(), pChildInternalRenderStage));
+					uint32 childIndex = (uint32)std::distance(sortedInternalRenderStages.begin(), std::find(sortedInternalRenderStages.begin(), sortedInternalRenderStages.end(), pChildInternalRenderStage));
 
 					sprintf(childRenderStageNameBuffer + 2, "%u", childIndex);
 
@@ -1146,10 +1152,15 @@ namespace LambdaEngine
 		std::unordered_map<std::string, InternalRenderStageExternalInputAttachment>&	parsedExternalInputAttachments,
 		std::unordered_map<std::string, InternalRenderStageOutputAttachment>&			parsedOutputAttachments,
 		std::vector<const InternalRenderStage*>&										sortedInternalRenderStages,
-		std::vector<RenderStageDesc>&														sortedRenderStages,
-		std::vector<SynchronizationStageDesc>&												sortedSynchronizationStages,
-		std::vector<PipelineStageDesc>&														sortedPipelineStages)
+		std::vector<RenderStageDesc>&													sortedRenderStages,
+		std::vector<SynchronizationStageDesc>&											sortedSynchronizationStages,
+		std::vector<PipelineStageDesc>&													sortedPipelineStages)
 	{
+		UNREFERENCED_VARIABLE(sortedInternalRenderStages);
+		UNREFERENCED_VARIABLE(sortedRenderStages);
+		UNREFERENCED_VARIABLE(sortedSynchronizationStages);
+		UNREFERENCED_VARIABLE(sortedPipelineStages);
+
 		char fileOutputBuffer[256];
 		char renderStageBuffer[32];
 		char renderStageInputAttachmentBuffer[32];
@@ -1279,6 +1290,13 @@ namespace LambdaEngine
 		std::vector<SynchronizationStageDesc>&											sortedSynchronizationStages,
 		std::vector<PipelineStageDesc>&													sortedPipelineStages)
 	{
+		UNREFERENCED_VARIABLE(parsedInputAttachments);
+		UNREFERENCED_VARIABLE(parsedTemporalInputAttachments);
+		UNREFERENCED_VARIABLE(sortedInternalRenderStages);
+		UNREFERENCED_VARIABLE(sortedRenderStages);
+		UNREFERENCED_VARIABLE(sortedSynchronizationStages);
+		UNREFERENCED_VARIABLE(sortedPipelineStages);
+
 		char fileOutputBuffer[256];
 		char renderStageBuffer[32];
 		char renderStageInputAttachmentBuffer[32];
@@ -1290,8 +1308,6 @@ namespace LambdaEngine
 		strcpy(renderStageTemporalInputAttachmentBuffer, "tia");
 		strcpy(renderStageExternalInputAttachmentBuffer, "eia");
 		strcpy(renderStageOutputAttachmentBuffer, "oa");
-
-		uint32 invisibleNodeCounter = 0;
 
 		for (auto& renderStagePair : parsedRenderStages)
 		{

@@ -8,10 +8,11 @@ namespace LambdaEngine
 	{
 		switch (pipelineStateType)
 		{
-		case EPipelineStateType::NONE:			return ECommandQueueType::COMMAND_QUEUE_NONE;
 		case EPipelineStateType::GRAPHICS:		return ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
 		case EPipelineStateType::COMPUTE:		return ECommandQueueType::COMMAND_QUEUE_COMPUTE;
 		case EPipelineStateType::RAY_TRACING:	return ECommandQueueType::COMMAND_QUEUE_COMPUTE;
+		case EPipelineStateType::NONE:			
+		default:								return ECommandQueueType::COMMAND_QUEUE_NONE;
 		}
 	}
 
@@ -97,5 +98,16 @@ namespace LambdaEngine
 			(count.TextureDescriptorCount					> 0) &&
 			(count.UnorderedAccessBufferDescriptorCount		> 0) &&
 			(count.UnorderedAccessTextureDescriptorCount	> 0);
+	}
+
+	FORCEINLINE uint32 TextureFormatStride(EFormat format)
+	{
+		switch (format)
+		{		
+        case EFormat::FORMAT_D24_UNORM_S8_UINT:
+        case EFormat::FORMAT_R8G8B8A8_UNORM:
+        case EFormat::FORMAT_B8G8R8A8_UNORM:        return 4;
+        default:                                    return 0;
+        }
 	}
 }

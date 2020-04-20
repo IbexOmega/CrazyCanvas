@@ -1,12 +1,12 @@
-#include "Audio/Lambda/SoundEffect3DLambda.h"
-#include "Audio/WaveFormat.h"
-
 #include "Log/Log.h"
+
+#include "Audio/Lambda/SoundEffect3DLambda.h"
 
 namespace LambdaEngine
 {
 	SoundEffect3DLambda::SoundEffect3DLambda(const IAudioDevice* pAudioDevice)
 	{
+		UNREFERENCED_VARIABLE(pAudioDevice);
 	}
 
 	SoundEffect3DLambda::~SoundEffect3DLambda()
@@ -16,7 +16,7 @@ namespace LambdaEngine
 
 	bool SoundEffect3DLambda::Init(const SoundEffect3DDesc& desc)
 	{
-		LoadWaveSoundBuffer(desc.pFilepath, &m_pWaveForm, &m_Header);
+		LoadWavFile(desc.pFilepath, &m_pWaveForm, &m_Header);
 		
 		/*constexpr float AMPLITUDE = 0.5f;
 		constexpr float FREQUENCY = 1000;
@@ -31,8 +31,11 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void SoundEffect3DLambda::PlayOnceAt(const glm::vec3& position, const glm::vec3& velocity, float volume,
-		float pitch)
+	void SoundEffect3DLambda::PlayOnceAt(const glm::vec3& position, const glm::vec3& velocity, float volume, float pitch)
 	{
+		UNREFERENCED_VARIABLE(position);
+		UNREFERENCED_VARIABLE(velocity);
+		UNREFERENCED_VARIABLE(volume);
+		UNREFERENCED_VARIABLE(pitch);
 	}
 }

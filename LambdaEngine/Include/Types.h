@@ -89,3 +89,5 @@ typedef unsigned int GUID_Lambda;
 #ifndef FLT64_MIN
 	#define FLT64_MIN 2.2250738585072014e-308
 #endif
+
+constexpr uint32 MAX_UNIQUE_MATERIALS = 32;

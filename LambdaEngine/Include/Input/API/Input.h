@@ -16,12 +16,15 @@ namespace LambdaEngine
 		static bool Init();
 		static void Release();
 
-		static void Update();
+		static void Tick();
 
 		static void AddKeyboardHandler(IKeyboardHandler* pHandler);
 		static void AddMouseHandler(IMouseHandler* pHandler);
 
 		static void SetInputMode(EInputMode inputMode);
+
+		FORCEINLINE static const KeyboardState& GetKeyboardState()	{ return s_KeyboardState; }
+		FORCEINLINE static const MouseState& GetMouseState()		{ return s_MouseState; }
 
 	private:
 		static IInputDevice* s_pInputDevice;

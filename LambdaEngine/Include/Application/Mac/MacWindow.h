@@ -31,6 +31,10 @@ namespace LambdaEngine
 
         virtual void SetTitle(const char* pTitle) override final;
         
+        virtual uint16 GetWidth()  const override final;
+        
+        virtual uint16 GetHeight() const override final;
+        
         FORCEINLINE virtual void* GetHandle() const override final
         {
             return (void*)m_pWindow;

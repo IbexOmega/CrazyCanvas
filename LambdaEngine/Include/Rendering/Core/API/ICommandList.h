@@ -1,6 +1,5 @@
 #pragma once
 #include "IDeviceChild.h"
-#include "IFrameBuffer.h"
 #include "GraphicsTypes.h"
 
 #define MAX_IMAGE_BARRIERS  16
@@ -35,9 +34,13 @@ namespace LambdaEngine
 
 	struct SecondaryCommandListBeginDesc
 	{
-		const IRenderPass*	pRenderPass		= nullptr;
-		uint32				SubPass			= 0;
-		const IFrameBuffer* pFrameBuffer	= nullptr;
+		const IRenderPass*	        pRenderPass		    = nullptr;
+		uint32				        SubPass			    = 0;
+		const ITextureView* const * ppRenderTargets	    = nullptr;
+        uint32                      RenderTargetCount   = 0;
+        const ITextureView*         pDepthStencilView   = nullptr;
+        uint32                      Width               = 0;
+        uint32                      Height              = 0;
 	};
 
 #ifdef LAMBDA_VISUAL_STUDIO
@@ -92,7 +95,7 @@ namespace LambdaEngine
 		uint32 ArrayCount		= 0;
 	};
 	
-	struct PipelineTextureBarrier
+	struct PipelineTextureBarrierDesc
 	{
 		ITexture*			pTexture				= nullptr;
 		ETextureState		StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
@@ -108,15 +111,15 @@ namespace LambdaEngine
 		uint32				ArrayCount				= 0;
 	};
 
-	struct PipelineBufferBarrier
+	struct PipelineBufferBarrierDesc
 	{
 		IBuffer*			pBuffer					= nullptr;
 		ECommandQueueType	QueueBefore				= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
 		ECommandQueueType	QueueAfter				= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
 		uint32				SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
 		uint32				DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
-		uint32				Offset					= 0;
-		uint32				SizeInBytes				= 0;
+		uint64				Offset					= 0;
+		uint64				SizeInBytes				= 0;
 	};
 
 	struct BuildTopLevelAccelerationStructureDesc
@@ -156,10 +159,10 @@ namespace LambdaEngine
 	public:
 		DECL_DEVICE_INTERFACE(ICommandList);
 
-		virtual void Begin(const SecondaryCommandListBeginDesc* pBeginDesc) = 0;
+		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc) = 0;
 		
 		virtual void Reset() = 0;
-		virtual void End()	 = 0;
+		virtual bool End()	 = 0;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) = 0;
 		virtual void EndRenderPass() = 0;
@@ -170,8 +173,8 @@ namespace LambdaEngine
 		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes) = 0;
 		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)		= 0;
 
-		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount)	= 0;
-		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrier* pBufferBarriers, uint32 bufferBarrierCount)		= 0;
+		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)	= 0;
+		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)		= 0;
 
 		virtual void GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter) = 0;
 

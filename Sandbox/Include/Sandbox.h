@@ -20,6 +20,8 @@ namespace LambdaEngine
 	class IAudioGeometry;
 	class IReverbSphere;
 	class Scene;
+	class Camera;
+	class ISampler;
 }
 
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IMouseHandler
@@ -46,26 +48,30 @@ public:
 	virtual void OnScroll(int32 delta)                                  override;
 
 private:
-	LambdaEngine::ResourceManager*			m_pResourceManager;
+	LambdaEngine::ResourceManager*			m_pResourceManager		= nullptr;
 
 	GUID_Lambda								m_ToneSoundEffectGUID;
-	LambdaEngine::ISoundEffect3D*			m_pToneSoundEffect;
-	LambdaEngine::ISoundInstance3D*			m_pToneSoundInstance;
+	LambdaEngine::ISoundEffect3D*			m_pToneSoundEffect		= nullptr;
+	LambdaEngine::ISoundInstance3D*			m_pToneSoundInstance	= nullptr;
 
 	GUID_Lambda								m_GunSoundEffectGUID;
-	LambdaEngine::ISoundEffect3D*			m_pGunSoundEffect;
+	LambdaEngine::ISoundEffect3D*			m_pGunSoundEffect		= nullptr;
+
+	LambdaEngine::IAudioListener*			m_pAudioListener		= nullptr;
+
+	LambdaEngine::IReverbSphere*			m_pReverbSphere			= nullptr;
+	LambdaEngine::IAudioGeometry*			m_pAudioGeometry		= nullptr;
+
+	LambdaEngine::Scene*					m_pScene				= nullptr;
+	LambdaEngine::Camera*					m_pCamera				= nullptr;
+	LambdaEngine::ISampler*					m_pLinearSampler		= nullptr;
+
+	LambdaEngine::RenderGraph*				m_pRenderGraph			= nullptr;
+	LambdaEngine::Renderer*					m_pRenderer				= nullptr;
 
 	bool									m_SpawnPlayAts;
 	float									m_GunshotTimer;
 	float									m_GunshotDelay;
 	float									m_Timer;
 
-	LambdaEngine::IAudioListener*			m_pAudioListener;
-
-	LambdaEngine::IReverbSphere*			m_pReverbSphere;
-	LambdaEngine::IAudioGeometry*			m_pAudioGeometry;
-
-	LambdaEngine::Scene*					m_pScene;
-	LambdaEngine::RenderGraph*				m_pRenderGraph;
-	LambdaEngine::Renderer*					m_pRenderer;
 };

@@ -15,9 +15,12 @@ namespace LambdaEngine
 	class LAMBDA_API ResourceLoader
 	{
 	public:
+
+		static bool Init();
+		static bool Release();
+
 		/*
 		* Load a Scene from file, (experimental, only tested with Sponza Scene)
-		*	pGraphicsDevice - A Graphics Device
 		*	pDir - Path to the directory that holds the .obj file
 		*	pFilename - The name of the .obj file
 		*	loadedGameObjects - A vector where all loaded GameObject(s) will be stored, th GUIDs of each GameObject is an index to the loadedMeshes and loadedMaterials vectors
@@ -26,38 +29,37 @@ namespace LambdaEngine
 		*	loadedTextures - A vector where all loaded Texture(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(IGraphicsDevice* pGraphicsDevice, const char* pDir, const char* pFilename, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures);
+		static bool LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures);
 
 		/*
 		* Load a mesh from file
-		*	pGraphicsDevice - A Graphics Device
 		*	pFilepath - Path to the .obj file
 		* return - a Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
-		static Mesh* LoadMeshFromFile(IGraphicsDevice* pGraphicsDevice, const char* pFilepath);
+		static Mesh* LoadMeshFromFile(const char* pFilepath);
 
 		/*
 		* Load a mesh from memory
-		*	pGraphicsDevice - A Graphics Device
 		*	pVertices - An array of vertices
 		*	numVertices - The vertexcount
 		*	pIndices - An array of indices
 		*	numIndices - The Indexcount
 		* return - a Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
-		static Mesh* LoadMeshFromMemory(IGraphicsDevice* pGraphicsDevice, const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices);
+		static Mesh* LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices);
 
 		/*
 		* Load a texture from file
-		*	pGraphicsDevice - A Graphics Device
 		*	pFilepath - Path to the texture file
+		*	format - The format of the pixeldata
+		*	generateMips - If mipmaps should be generated on load
 		* return - an ITexture* if the texture was loaded, otherwise nullptr will be returned
 		*/
-		static ITexture* LoadTextureFromFile(IGraphicsDevice* pGraphicsDevice, const char* pFilepath);
+		static ITexture* LoadTextureFromFile(const char* pFilepath, EFormat format, bool generateMips);
 
 		/*
 		* Load a texture from memory
-		*	pGraphicsDevice - A Graphics Device
+		*	pName - Name of the texture
 		*	pData - The pixeldata
 		*	width - The pixel width of the texture
 		*	height - The pixel height of the texture
@@ -66,11 +68,10 @@ namespace LambdaEngine
 		*	generateMips - If mipmaps should be generated on load
 		* return - an ITexture* if the texture was loaded, otherwise nullptr will be returned
 		*/
-		static ITexture* LoadTextureFromMemory(IGraphicsDevice* pGraphicsDevice, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips);
+		static ITexture* LoadTextureFromMemory(const char* pName, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips);
 
 		/*
 		* Load sound from file
-		*	pGraphicsDevice - A Graphics Device
 		*	pFilepath - Path to the shader file
 		*	stage - Which stage the shader belongs to
 		*	lang - The language of the shader file
@@ -79,17 +80,22 @@ namespace LambdaEngine
 		*	pEntryPoint - The name of the shader entrypoint
 		* return - an IShader* if the shader was loaded, otherwise nullptr will be returned
 		*/
-		static IShader* LoadShaderFromFile(IGraphicsDevice* pGraphicsDevice, const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, ShaderConstant* pConstants = nullptr, uint32 shaderConstantCount = 0, const char* pEntryPoint = "main");
+		static IShader* LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, ShaderConstant* pConstants = nullptr, uint32 shaderConstantCount = 0, const char* pEntryPoint = "main");
 
 		/*
 		* Load sound from file
-		*	pAudioDevice - An audio device
 		*	pFilepath - Path to the audio file
 		* return - an ISoundEffect3D* if the sound was loaded, otherwise nullptr will be returned
 		*/
-		static ISoundEffect3D* LoadSoundEffectFromFile(IAudioDevice* pAudioDevice, const char* pFilepath);
+		static ISoundEffect3D* LoadSoundEffectFromFile(const char* pFilepath);
 
 	private:
 		static bool ReadDataFromFile(const char* pFilepath, byte** ppData, uint32* pDataSize);
+
+	private:
+		static ICommandAllocator*		s_pCopyCommandAllocator;
+		static ICommandList*			s_pCopyCommandList;
+		static IFence*					s_pCopyFence;
+		static uint64					s_SignalValue;
 	};
 }

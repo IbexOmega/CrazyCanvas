@@ -19,13 +19,22 @@ namespace LambdaEngine
 			: IBase(),
 			m_pDevice(pDevice)
 		{
-			ZERO_MEMORY(m_DebugName, sizeof(m_DebugName));
+            constexpr uint32 sizeInBytes = sizeof(char) * MAX_DEVICE_CHILD_NAME_LENGTH;
+            m_pDebugName = (char*)malloc(sizeInBytes);
+            
+			ZERO_MEMORY(m_pDebugName, sizeInBytes);
 
 			AddRef();
 		}
 
 		virtual ~TDeviceChildBase()
 		{
+            if (m_pDebugName)
+            {
+                free((void*)m_pDebugName);
+                m_pDebugName = nullptr;
+            }
+            
 			m_StrongReferences	= 0;
 		}
 
@@ -53,7 +62,7 @@ namespace LambdaEngine
         
 		virtual void SetName(const char* pName) override
 		{
-			strncpy(m_DebugName, pName, sizeof(m_DebugName));
+			strncpy(m_pDebugName, pName, MAX_DEVICE_CHILD_NAME_LENGTH);
 		}
 
         FORCEINLINE virtual const IGraphicsDevice* GetDevice() const override
@@ -64,8 +73,8 @@ namespace LambdaEngine
         }
 
 	protected:
-		const TGraphicsDevice* const	m_pDevice = nullptr;
-		char							m_DebugName[MAX_DEVICE_CHILD_NAME_LENGTH];
+		const TGraphicsDevice* const	m_pDevice       = nullptr;
+		char*							m_pDebugName    = nullptr;
 
 	private:
         SpinLock    m_Lock;

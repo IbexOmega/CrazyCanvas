@@ -29,7 +29,7 @@ namespace LambdaEngine
 		}
 	};
 
-	class GraphicsDeviceVK : public IGraphicsDevice
+	class GraphicsDeviceVK final : public IGraphicsDevice
 	{
 	public:
 		GraphicsDeviceVK();
@@ -37,13 +37,7 @@ namespace LambdaEngine
 
 		bool Init(const GraphicsDeviceDesc& desc);
 
-		VkFramebuffer GetFrameBuffer(
-			const IRenderPass* pRenderPass,
-			const ITextureView* const* ppRenderTargets,
-			uint32 renderTargetCount,
-			const ITextureView* pDepthStencil,
-			uint32 width,
-			uint32 height) const;
+		VkFramebuffer GetFrameBuffer(const IRenderPass* pRenderPass, const ITextureView* const* ppRenderTargets, uint32 renderTargetCount, const ITextureView* pDepthStencil, uint32 width, uint32 height) const;
 		
 		bool IsInstanceExtensionEnabled(const char* pExtensionName) const;
 		bool IsDeviceExtensionEnabled(const char* pExtensionName)	const;
@@ -64,8 +58,6 @@ namespace LambdaEngine
 		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc& desc) const override final;
 
 		virtual IDescriptorSet* CreateDescriptorSet(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const override final;
-
-		virtual IFrameBuffer*	CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc)	const override final;
 
 		virtual IRenderPass*	CreateRenderPass(const RenderPassDesc& desc)	const override final;
 		virtual ITextureView*	CreateTextureView(const TextureViewDesc& desc)	const override final;
@@ -148,13 +140,17 @@ namespace LambdaEngine
 		PFN_vkGetSemaphoreCounterValue	vkGetSemaphoreCounterValue	= nullptr;
 
 	private:
-		VkDebugUtilsMessengerEXT	m_DebugMessenger				= VK_NULL_HANDLE;
-		
-		FrameBufferCacheVK*			m_pFrameBufferCache				= nullptr;
+		VkDebugUtilsMessengerEXT	m_DebugMessenger	= VK_NULL_HANDLE;
+		FrameBufferCacheVK*			m_pFrameBufferCache	= nullptr;
 
-		QueueFamilyIndices			m_DeviceQueueFamilyIndices;
-		VkPhysicalDeviceLimits		m_DeviceLimits;
-		
+        QueueFamilyIndices     m_DeviceQueueFamilyIndices;
+        VkPhysicalDeviceLimits m_DeviceLimits;
+       
+        std::vector<VkQueueFamilyProperties> m_QueueFamilyProperties;
+        mutable uint32 m_NextGraphicsQueue  = 0;
+        mutable uint32 m_NextComputeQueue   = 0;
+        mutable uint32 m_NextTransferQueue  = 0;
+        
 		std::vector<const char*>	m_EnabledValidationLayers;
 		std::vector<const char*>	m_EnabledInstanceExtensions;
 		std::vector<const char*>	m_EnabledDeviceExtensions;

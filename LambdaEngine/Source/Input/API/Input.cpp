@@ -17,7 +17,7 @@ namespace LambdaEngine
 		SAFEDELETE(s_pInputDevice);
 	}
 
-	void Input::Update()
+	void Input::Tick()
 	{
 		KeyboardState   newKeyboardState = s_pInputDevice->GetKeyboardState();
 		MouseState      newMouseState = s_pInputDevice->GetMouseState();

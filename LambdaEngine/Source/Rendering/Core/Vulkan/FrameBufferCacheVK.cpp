@@ -70,11 +70,11 @@ namespace LambdaEngine
 		}
 
 		VkImageView attachments[MAX_COLOR_ATTACHMENTS + 1];
-		memcpy(attachments, key.ColorAttachmentsViews, key.ColorAttachMentViewCount * sizeof(VkImageView));
-		attachments[key.ColorAttachMentViewCount] = key.DepthStencilView;
+		memcpy(attachments, key.ColorAttachmentsViews, key.ColorAttachmentViewCount * sizeof(VkImageView));
+		attachments[key.ColorAttachmentViewCount] = key.DepthStencilView;
 
 		uint32 attachmentCount = key.DepthStencilView == VK_NULL_HANDLE ? 0 : 1;
-		attachmentCount += key.ColorAttachMentViewCount;
+		attachmentCount += key.ColorAttachmentViewCount;
 
 		//Create a new framebuffer
 		VkFramebufferCreateInfo createInfo = { };

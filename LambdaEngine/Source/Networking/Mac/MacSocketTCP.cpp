@@ -59,7 +59,7 @@ namespace LambdaEngine
 		char* address = inet_ntoa(socketAddress.sin_addr);
 		uint16 port = ntohs(socketAddress.sin_port);
 
-        return nullptr;//MacSocketTCP(socket, address, port);
+        return DBG_NEW MacSocketTCP(socket, address, port);
     }
 
     bool MacSocketTCP::Send(const char* pBuffer, uint32 bytesToSend, int32& bytesSent)

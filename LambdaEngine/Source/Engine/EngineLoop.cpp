@@ -11,6 +11,7 @@
 #include "Input/API/Input.h"
 
 #include "Rendering/Core/API/IGraphicsDevice.h"
+#include "Rendering/Core/API/ICommandQueue.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 
@@ -58,6 +59,8 @@ namespace LambdaEngine
 
     bool EngineLoop::Tick(Timestamp delta)
     {
+		Input::Tick();
+
 		Thread::Join();
 		PlatformNetworkUtils::Tick(delta);
 
@@ -130,12 +133,22 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!ResourceLoader::Init())
+		{
+			return false;
+		}
+
 		return true;
 	}
 	
 	bool EngineLoop::Release()
 	{
 		Input::Release();
+
+		if (!ResourceLoader::Release())
+		{
+			return false;
+		}
 
 		if (!RenderSystem::Release())
 		{

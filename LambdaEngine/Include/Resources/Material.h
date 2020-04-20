@@ -28,10 +28,16 @@ namespace LambdaEngine
 	{
 		MaterialProperties Properties;
 
-		ITexture* pAlbedoMap			= nullptr;
-		ITexture* pNormalMap			= nullptr;
-		ITexture* pAmbientOcclusionMap	= nullptr;
-		ITexture* pMetallicMap			= nullptr;
-		ITexture* pRoughnessMap			= nullptr;
+		ITexture* pAlbedoMap					= nullptr;
+		ITexture* pNormalMap					= nullptr;
+		ITexture* pAmbientOcclusionMap			= nullptr;
+		ITexture* pMetallicMap					= nullptr;
+		ITexture* pRoughnessMap					= nullptr;
+
+		ITextureView* pAlbedoMapView			= nullptr;
+		ITextureView* pNormalMapView			= nullptr;
+		ITextureView* pAmbientOcclusionMapView	= nullptr;
+		ITextureView* pMetallicMapView			= nullptr;
+		ITextureView* pRoughnessMapView			= nullptr;
 	};
 }

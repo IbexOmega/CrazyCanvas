@@ -32,7 +32,8 @@ namespace LambdaEngine
         */
         virtual const void* GetView() const = 0;
 
-		virtual uint16		GetWidth() const = 0;
-		virtual uint16		GetHeight() const = 0;
+		virtual uint16 GetWidth()  const = 0;
+        
+		virtual uint16 GetHeight() const = 0;
     };
 }

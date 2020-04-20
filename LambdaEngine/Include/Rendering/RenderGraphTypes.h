@@ -6,23 +6,23 @@
 
 namespace LambdaEngine
 {
-	constexpr char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT = "BACK_BUFFER_TEXTURE";
+	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT   = "BACK_BUFFER_TEXTURE";
 
-	constexpr char* FULLSCREEN_QUAD_VERTEX_BUFFER		= "FULLSCREEN_QUAD_VERTEX_BUFFER";
+	constexpr const char* FULLSCREEN_QUAD_VERTEX_BUFFER		    = "FULLSCREEN_QUAD_VERTEX_BUFFER";
 
-	constexpr char* PER_FRAME_BUFFER					= "PER_FRAME_BUFFER";
+	constexpr const char* PER_FRAME_BUFFER					    = "PER_FRAME_BUFFER";
 
-	constexpr char* SCENE_MAT_PARAM_BUFFER				= "SCENE_MAT_PARAM_BUFFER";
-	constexpr char* SCENE_VERTEX_BUFFER					= "SCENE_VERTEX_BUFFER";
-	constexpr char* SCENE_INDEX_BUFFER					= "SCENE_INDEX_BUFFER";
-	constexpr char* SCENE_INSTANCE_BUFFER				= "SCENE_INSTANCE_BUFFER";
-	constexpr char* SCENE_MESH_INDEX_BUFFER				= "SCENE_MESH_INDEX_BUFFER";
+	constexpr const char* SCENE_MAT_PARAM_BUFFER				= "SCENE_MAT_PARAM_BUFFER";
+	constexpr const char* SCENE_VERTEX_BUFFER					= "SCENE_VERTEX_BUFFER";
+	constexpr const char* SCENE_INDEX_BUFFER					= "SCENE_INDEX_BUFFER";
+	constexpr const char* SCENE_INSTANCE_BUFFER				    = "SCENE_INSTANCE_BUFFER";
+	constexpr const char* SCENE_MESH_INDEX_BUFFER				= "SCENE_MESH_INDEX_BUFFER";
 
-	constexpr char* SCENE_ALBEDO_MAPS					= "SCENE_ALBEDO_MAPS";
-	constexpr char* SCENE_NORMAL_MAPS					= "SCENE_NORMAL_MAPS";
-	constexpr char* SCENE_AO_MAPS						= "SCENE_AO_MAPS";
-	constexpr char* SCENE_ROUGHNESS_MAPS				= "SCENE_ROUGHNESS_MAPS";
-	constexpr char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";
+	constexpr const char* SCENE_ALBEDO_MAPS					    = "SCENE_ALBEDO_MAPS";
+	constexpr const char* SCENE_NORMAL_MAPS					    = "SCENE_NORMAL_MAPS";
+	constexpr const char* SCENE_AO_MAPS						    = "SCENE_AO_MAPS";
+	constexpr const char* SCENE_ROUGHNESS_MAPS				    = "SCENE_ROUGHNESS_MAPS";
+	constexpr const char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";
 
 	enum class EPipelineStageType : uint8
 	{

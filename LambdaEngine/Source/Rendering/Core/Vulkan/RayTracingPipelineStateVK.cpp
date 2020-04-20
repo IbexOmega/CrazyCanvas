@@ -1,22 +1,17 @@
+#include "Log/Log.h"
+
 #include "Rendering/Core/Vulkan/RayTracingPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
-
-#include "Log/Log.h"
+#include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
 {
-	RayTracingPipelineStateVK::RayTracingPipelineStateVK(const GraphicsDeviceVK* pDevice) :
-		TDeviceChild(pDevice),
-		m_Pipeline(VK_NULL_HANDLE),
-		m_pSBT(nullptr),
-		m_BindingStride(0),
-		m_BindingOffsetRaygenShaderGroup(0),
-		m_BindingOffsetHitShaderGroup(0),
-		m_BindingOffsetMissShaderGroup(0)
+	RayTracingPipelineStateVK::RayTracingPipelineStateVK(const GraphicsDeviceVK* pDevice)
+        : TDeviceChild(pDevice)
 	{
 	}
 
@@ -59,9 +54,18 @@ namespace LambdaEngine
 		rayTracingPipelineInfo.layout				= reinterpret_cast<const PipelineLayoutVK*>(desc.pPipelineLayout)->GetPipelineLayout();
 		rayTracingPipelineInfo.libraries			= rayTracingPipelineLibrariesInfo;
 
-		if (m_pDevice->vkCreateRayTracingPipelinesKHR(m_pDevice->Device, VK_NULL_HANDLE, 1, &rayTracingPipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
+        VkResult result = m_pDevice->vkCreateRayTracingPipelinesKHR(m_pDevice->Device, VK_NULL_HANDLE, 1, &rayTracingPipelineInfo, nullptr, &m_Pipeline);
+		if (result != VK_SUCCESS)
 		{
-			LOG_ERROR("[RayTracingPipelineStateVK]: vkCreateRayTracingPipelinesKHR failed for \"%s\"", desc.pName);
+            if (desc.pName)
+            {
+                LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkCreateRayTracingPipelinesKHR failed for \"%s\"", desc.pName);
+            }
+            else
+            {
+                LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkCreateRayTracingPipelinesKHR failed");
+            }
+            
 			return false;
 		}
 
@@ -72,22 +76,39 @@ namespace LambdaEngine
 		sbtBufferDesc.pName			= "Shader Binding Table";
 		sbtBufferDesc.Flags			= BUFFER_FLAG_RAY_TRACING;
 		sbtBufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
-		sbtBufferDesc.SizeInBytes = sbtSize;
+		sbtBufferDesc.SizeInBytes   = sbtSize;
 
 		m_pSBT = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(sbtBufferDesc));
 
 		void* pMapped = m_pSBT->Map();
-		if (m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, shaderGroups.size(), sbtSize, pMapped) != VK_SUCCESS)
+        
+        result = m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, (uint32)shaderGroups.size(), sbtSize, pMapped);
+		if (result!= VK_SUCCESS)
 		{
-			LOG_ERROR("[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed for \"%s\"", desc.pName);
+            if (desc.pName)
+            {
+                LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed for \"%s\"", desc.pName);
+            }
+            else
+            {
+                LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed");
+            }
+            
 			return false;
 		}
+        
 		m_pSBT->Unmap();
 
 		m_BindingStride						= shaderGroupHandleSize;
-		m_BindingOffsetRaygenShaderGroup	= 0;
-		m_BindingOffsetHitShaderGroup		= m_BindingOffsetRaygenShaderGroup + m_BindingStride;
-		m_BindingOffsetMissShaderGroup		= m_BindingOffsetHitShaderGroup + m_BindingStride * desc.ClosestHitShaderCount;
+		
+        m_BindingOffsetRaygenShaderGroup	= 0;
+        m_BindingSizeRaygenShaderGroup      = m_BindingStride;
+        
+		m_BindingOffsetHitShaderGroup		= m_BindingOffsetRaygenShaderGroup + m_BindingSizeRaygenShaderGroup;
+        m_BindingSizeHitShaderGroup         = m_BindingStride * desc.ClosestHitShaderCount;
+        
+		m_BindingOffsetMissShaderGroup		= m_BindingOffsetHitShaderGroup + m_BindingSizeHitShaderGroup;
+        m_BindingSizeMissShaderGroup        = m_BindingStride * desc.MissShaderCount;
 
 		SetName(desc.pName);
 
