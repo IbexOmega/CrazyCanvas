@@ -4,8 +4,8 @@
 #include "Math/Math.h"
 
 #include "Resources/Mesh.h"
-
 #include "Containers/TArray.h"
+#include "Camera.h"
 
 #include <map>
 
@@ -19,6 +19,7 @@ namespace LambdaEngine
 	class ResourceManager;
 	class IBuffer;
 	class ITexture;
+	class ITextureView;
 	
 	struct GameObject
 	{
@@ -35,8 +36,8 @@ namespace LambdaEngine
 		uint32	FirstInstance		= 0;
 		
 		uint32	MaterialIndex		= 0;
-		uint32	BaseInstanceIndex	= 0;
-		byte	Padding[4];
+		uint32	Padding0			= 0;
+		uint32	Padding1			= 0;
 	};
 
 	struct SceneDesc
@@ -48,25 +49,17 @@ namespace LambdaEngine
 	{
 		struct PerFrameBuffer
 		{
-			glm::mat4 Projection;
-			glm::mat4 View;
-			glm::mat4 LastProjection;
-			glm::mat4 LastView;
-			glm::mat4 InvView;
-			glm::mat4 InvProjection;
-			glm::vec4 Position;
-			glm::vec4 Right;
-			glm::vec4 Up;
+			CameraData Camera;
 		};
 
 		struct Instance
 		{
-			glm::mat3x4 Transform;
-			uint32_t MeshMaterialIndex : 24;
-			uint32_t Mask : 8;
-			uint32_t SBTRecordOffset : 24;
-			uint32_t Flags : 8;
-			uint64_t AccelerationStructureHandle;
+			glm::mat4 Transform;
+			uint32 MeshMaterialIndex : 24;
+			uint32 Mask : 8;
+			uint32 SBTRecordOffset : 24;
+			uint32 Flags : 8;
+			uint64 AccelerationStructureHandle;
 		};
 
 		struct MappedMaterial
@@ -90,20 +83,31 @@ namespace LambdaEngine
 
 		bool Finalize(const SceneDesc& desc);
 
+		void UpdateCamera(const Camera* pCamera);
+
 		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 		uint32 AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 
-		FORCEINLINE IBuffer*					GetPerFrameBuffer()			{ return m_pPerFrameBuffer;}
-		FORCEINLINE std::vector<ITexture*>&		GetAlbedoMaps()				{ return m_SceneAlbedoMaps; }			
-		FORCEINLINE std::vector<ITexture*>&		GetNormalMaps()				{ return m_SceneNormalMaps; }			
-		FORCEINLINE std::vector<ITexture*>&		GetAmbientOcclusionMaps()	{ return m_SceneAmbientOcclusionMaps; }
-		FORCEINLINE std::vector<ITexture*>&		GetMetallicMaps()			{ return m_SceneMetallicMaps; }		
-		FORCEINLINE std::vector<ITexture*>&		GetRoughnessMaps()			{ return m_SceneRoughnessMaps; }		
-		FORCEINLINE IBuffer*					GetMaterialProperties()		{ return m_pSceneMaterialProperties; }	
-		FORCEINLINE IBuffer*					GetVertexBuffer()			{ return m_pSceneVertexBuffer; }		
-		FORCEINLINE IBuffer*					GetIndexBuffer()			{ return m_pSceneIndexBuffer; }		
-		FORCEINLINE IBuffer*					GetInstanceBufer()			{ return m_pSceneInstanceBuffer; }
-		FORCEINLINE IBuffer*					GetMeshIndexBuffer()		{ return m_pSceneMeshIndexBuffer; }	
+
+		//Todo: Make these const
+		FORCEINLINE IBuffer*				GetPerFrameBuffer()				{ return m_pPerFrameBuffer;}
+		FORCEINLINE ITexture**				GetAlbedoMaps()					{ return m_SceneAlbedoMaps.data(); }			
+		FORCEINLINE ITexture**				GetNormalMaps()					{ return m_SceneNormalMaps.data(); }
+		FORCEINLINE ITexture**				GetAmbientOcclusionMaps()		{ return m_SceneAmbientOcclusionMaps.data(); }
+		FORCEINLINE ITexture**				GetMetallicMaps()				{ return m_SceneMetallicMaps.data(); }
+		FORCEINLINE ITexture**				GetRoughnessMaps()				{ return m_SceneRoughnessMaps.data(); }
+
+		FORCEINLINE ITextureView**			GetAlbedoMapViews()				{ return m_SceneAlbedoMapViews.data(); }
+		FORCEINLINE ITextureView**			GetNormalMapViews()				{ return m_SceneNormalMapViews.data(); }
+		FORCEINLINE ITextureView**			GetAmbientOcclusionMapViews()	{ return m_SceneAmbientOcclusionMapViews.data(); }
+		FORCEINLINE ITextureView**			GetMetallicMapViews()			{ return m_SceneMetallicMapViews.data(); }
+		FORCEINLINE ITextureView**			GetRoughnessMapViews()			{ return m_SceneRoughnessMapViews.data(); }
+
+		FORCEINLINE IBuffer*				GetMaterialProperties()			{ return m_pSceneMaterialProperties; }	
+		FORCEINLINE IBuffer*				GetVertexBuffer()				{ return m_pSceneVertexBuffer; }		
+		FORCEINLINE IBuffer*				GetIndexBuffer()				{ return m_pSceneIndexBuffer; }		
+		FORCEINLINE IBuffer*				GetInstanceBufer()				{ return m_pSceneInstanceBuffer; }
+		FORCEINLINE IBuffer*				GetMeshIndexBuffer()			{ return m_pSceneMeshIndexBuffer; }	
 																			
 		
 
@@ -114,21 +118,27 @@ namespace LambdaEngine
 
 		const char*								m_pName;
 
-		IBuffer*								m_pPerFrameBuffer;
+		IBuffer*								m_pPerFrameBuffer				= nullptr;
 
-		std::vector<ITexture*>					m_SceneAlbedoMaps;				//Indexed with result from IndirectMeshArgument::MaterialIndex, contains TextureMaps
-		std::vector<ITexture*>					m_SceneNormalMaps;				//Indexed with result from IndirectMeshArgument::MaterialIndex, contains TextureMaps
-		std::vector<ITexture*>					m_SceneAmbientOcclusionMaps;	//Indexed with result from IndirectMeshArgument::MaterialIndex, contains TextureMaps
-		std::vector<ITexture*>					m_SceneMetallicMaps;			//Indexed with result from IndirectMeshArgument::MaterialIndex, contains TextureMaps
-		std::vector<ITexture*>					m_SceneRoughnessMaps;			//Indexed with result from IndirectMeshArgument::MaterialIndex, contains TextureMaps
+		std::vector<ITexture*>					m_SceneAlbedoMaps;				
+		std::vector<ITexture*>					m_SceneNormalMaps;				
+		std::vector<ITexture*>					m_SceneAmbientOcclusionMaps;	
+		std::vector<ITexture*>					m_SceneMetallicMaps;			
+		std::vector<ITexture*>					m_SceneRoughnessMaps;			
+
+		std::vector<ITextureView*>				m_SceneAlbedoMapViews;
+		std::vector<ITextureView*>				m_SceneNormalMapViews;
+		std::vector<ITextureView*>				m_SceneAmbientOcclusionMapViews;
+		std::vector<ITextureView*>				m_SceneMetallicMapViews;
+		std::vector<ITextureView*>				m_SceneRoughnessMapViews;
 		
-		IBuffer*								m_pSceneMaterialProperties;		//Indexed with result from IndirectMeshArgument::MaterialIndex, contains Scene Material Properties
-		IBuffer*								m_pSceneVertexBuffer;			//Indexed with result from Scene::m_pBaseVertexIndexBuffer + Scene::m_pSceneIndexBuffer and contains Scene Vertices
-		IBuffer*								m_pSceneIndexBuffer;			//Indexed with result from Scene::m_pMeshIndexBuffer + primitiveID * 3 + triangleCornerID and contains indices to Scene::m_pSceneVertexBuffer
-		IBuffer*								m_pSceneInstanceBuffer;			/*Indexed with InstanceID and contains per instance data, we can figure out the InstanceID during shading by using
+		IBuffer*								m_pSceneMaterialProperties		= nullptr;		//Indexed with result from IndirectMeshArgument::MaterialIndex, contains Scene Material Properties
+		IBuffer*								m_pSceneVertexBuffer			= nullptr;			//Indexed with result from Scene::m_pBaseVertexIndexBuffer + Scene::m_pSceneIndexBuffer and contains Scene Vertices
+		IBuffer*								m_pSceneIndexBuffer				= nullptr;			//Indexed with result from Scene::m_pMeshIndexBuffer + primitiveID * 3 + triangleCornerID and contains indices to Scene::m_pSceneVertexBuffer
+		IBuffer*								m_pSceneInstanceBuffer			= nullptr;			/*Indexed with InstanceID and contains per instance data, we can figure out the InstanceID during shading by using
 																					IndirectMeshArgument::BaseInstanceIndex, IndirectMeshArgument::VertexCount and primitiveID <-- Relative to drawID*/
 
-		IBuffer*								m_pSceneMeshIndexBuffer;		/*Indexed with drawID when Shading and contains IndirectMeshArgument structs, primarily:
+		IBuffer*								m_pSceneMeshIndexBuffer			= nullptr;		/*Indexed with drawID when Shading and contains IndirectMeshArgument structs, primarily:
 																					IndirectMeshArgument::FirstIndex		will be used as BaseIndex to m_pSceneIndexBuffer, 
 																					IndirectMeshArgument::BaseVertexIndex	will be used as BaseIndex to m_pSceneVertexBuffer,
 																					IndirectMeshArgument::MaterialIndex		will be used as MaterialIndex to MaterialBuffers,

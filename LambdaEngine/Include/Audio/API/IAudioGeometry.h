@@ -7,7 +7,7 @@
 
 namespace LambdaEngine
 {
-	class Mesh;
+	struct Mesh;
 	
 	struct AudioMeshParameters
 	{

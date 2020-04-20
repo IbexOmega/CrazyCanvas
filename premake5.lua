@@ -219,6 +219,7 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/glm",
 			"Dependencies/tinyobjloader",
+			"Dependencies/stb",
 			"Dependencies/portaudio/include",
 		}
         

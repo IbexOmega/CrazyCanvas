@@ -32,7 +32,8 @@ namespace LambdaEngine
 	constexpr ValidationLayer REQUIRED_VALIDATION_LAYERS[]
 	{
 		ValidationLayer("REQ_V_L_BASE"),
-		ValidationLayer("VK_LAYER_KHRONOS_validation")
+		ValidationLayer("VK_LAYER_KHRONOS_validation"),
+		//ValidationLayer("VK_LAYER_RENDERDOC_Capture")
 	};
 
 	constexpr ValidationLayer OPTIONAL_VALIDATION_LAYERS[]
@@ -154,7 +155,7 @@ namespace LambdaEngine
 			key.ColorAttachmentsViews[i] = reinterpret_cast<const TextureViewVK*>(ppRenderTargets[i])->GetImageView();
 		}
 
-		key.ColorAttachMentViewCount	= renderTargetCount;
+		key.ColorAttachmentViewCount	= renderTargetCount;
 		key.DepthStencilView			= pDepthStencil != nullptr ? reinterpret_cast<const TextureViewVK*>(pDepthStencil)->GetImageView() : nullptr;
 		key.RenderPass					= reinterpret_cast<const RenderPassVK*>(pRenderPass)->GetRenderPass();
 		
@@ -1164,19 +1165,19 @@ namespace LambdaEngine
 
 		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
 		{
-			LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);
+			LOG_MESSAGE("[Validation Layer]: %s\n", pCallbackData->pMessage);
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
 		{
-			LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);
+			LOG_MESSAGE("[Validation Layer]: %s\n", pCallbackData->pMessage);
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		{
-			LOG_WARNING("[Validation Layer]: %s", pCallbackData->pMessage);
+			LOG_WARNING("[Validation Layer]: %s\n", pCallbackData->pMessage);
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		{
-			LOG_ERROR("[Validation Layer]: %s", pCallbackData->pMessage);
+			LOG_ERROR("[Validation Layer]: %s\n", pCallbackData->pMessage);
 		}
 
 		return VK_FALSE;

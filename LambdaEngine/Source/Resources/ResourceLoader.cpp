@@ -1,16 +1,61 @@
 #include "Containers/THashTable.h"
+#include "Resources/ResourceLoader.h"
+#include "Rendering/Core/API/ICommandAllocator.h"
+#include "Rendering/Core/API/ICommandList.h"
+#include "Rendering/Core/API/ICommandQueue.h"
+#include "Rendering/RenderSystem.h"
+#include "Rendering/Core/API/IFence.h"
+#include "Audio/AudioSystem.h"
+#include "Resources/STB.h"
+#include "Rendering/Core/API/GraphicsHelpers.h"
 
 #include "Log/Log.h"
 
-#include "Resources/ResourceLoader.h"
-
 #include <tiny_obj_loader.h>
-
 #include <cstdio>
 
 namespace LambdaEngine
 {
-	bool ResourceLoader::LoadSceneFromFile(IGraphicsDevice* pGraphicsDevice, const char* pDir, const char* pFilename, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures)
+	ICommandAllocator*		ResourceLoader::s_pCopyCommandAllocator		= nullptr;
+	ICommandList*			ResourceLoader::s_pCopyCommandList			= nullptr;
+	IFence*					ResourceLoader::s_pCopyFence				= nullptr;
+	uint64					ResourceLoader::s_SignalValue				= 1;
+
+	bool ResourceLoader::Init()
+	{
+		s_pCopyCommandAllocator = RenderSystem::GetDevice()->CreateCommandAllocator("Resource Loader Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+
+		if (s_pCopyCommandAllocator == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Could not create Copy Command Allocator");
+			return false;
+		}
+
+		CommandListDesc commandListDesc = {};
+		commandListDesc.pName			= "Resource Loader Copy Command List";
+		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
+		commandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+
+		s_pCopyCommandList = RenderSystem::GetDevice()->CreateCommandList(s_pCopyCommandAllocator, commandListDesc);
+
+		FenceDesc fenceDesc = {};
+		fenceDesc.pName			= "Resource Loader Copy Fence";
+		fenceDesc.InitalValue	= 0;
+		s_pCopyFence = RenderSystem::GetDevice()->CreateFence(fenceDesc);
+
+		return true;
+	}
+
+	bool ResourceLoader::Release()
+	{
+		SAFERELEASE(s_pCopyCommandAllocator);
+		SAFERELEASE(s_pCopyCommandList);
+		SAFERELEASE(s_pCopyFence);
+
+		return true;
+	}
+
+	bool ResourceLoader::LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures)
 	{
 		std::string filepath = std::string(pDir) + std::string(pFilename);
 
@@ -44,7 +89,7 @@ namespace LambdaEngine
 
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureFromFile(pGraphicsDevice, texturePath.c_str());
+					ITexture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pAlbedoMap			= pTexture;
 
@@ -63,7 +108,7 @@ namespace LambdaEngine
 
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureFromFile(pGraphicsDevice, texturePath.c_str());
+					ITexture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pNormalMap			= pTexture;
 
@@ -82,7 +127,7 @@ namespace LambdaEngine
 
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureFromFile(pGraphicsDevice, texturePath.c_str());
+					ITexture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pMetallicMap			= pTexture;
 
@@ -101,7 +146,7 @@ namespace LambdaEngine
 
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureFromFile(pGraphicsDevice, texturePath.c_str());
+					ITexture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pRoughnessMap		= pTexture;
 
@@ -178,7 +223,7 @@ namespace LambdaEngine
 				v2.CalculateTangent(v0, v1);
 			}
 
-			Mesh* pMesh = LoadMeshFromMemory(pGraphicsDevice, vertices.data(), uint32(vertices.size()), indices.data(), uint32(indices.size()));
+			Mesh* pMesh = LoadMeshFromMemory(vertices.data(), uint32(vertices.size()), indices.data(), uint32(indices.size()));
 			loadedMeshes[s] = pMesh;
 
 			D_LOG_MESSAGE("[ResourceDevice]: Loaded Mesh \"%s\" \t for scene : \"%s\"", shape.name.c_str(), pFilename);
@@ -197,7 +242,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	Mesh* ResourceLoader::LoadMeshFromFile(IGraphicsDevice* pGraphicsDevice, const char* pFilepath)
+	Mesh* ResourceLoader::LoadMeshFromFile(const char* pFilepath)
 	{
 		//Start New Thread
 
@@ -273,14 +318,14 @@ namespace LambdaEngine
 			v2.CalculateTangent(v0, v1);
 		}
 
-		Mesh* pMesh = LoadMeshFromMemory(pGraphicsDevice, vertices.data(), uint32(vertices.size()), indices.data(), uint32(indices.size()));
+		Mesh* pMesh = LoadMeshFromMemory(vertices.data(), uint32(vertices.size()), indices.data(), uint32(indices.size()));
 
 		D_LOG_MESSAGE("[ResourceDevice]: Loaded Mesh \"%s\"", pFilepath);
 
 		return pMesh;
 	}
 
-	Mesh* ResourceLoader::LoadMeshFromMemory(IGraphicsDevice* pGraphicsDevice, const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
+	Mesh* ResourceLoader::LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
 	{
 		Vertex* pVertexArray = DBG_NEW Vertex[numVertices];
 		memcpy(pVertexArray, pVertices, sizeof(Vertex) * numVertices);
@@ -297,30 +342,173 @@ namespace LambdaEngine
 		return pMesh;
 	}
 
-	ITexture* ResourceLoader::LoadTextureFromFile(IGraphicsDevice* pGraphicsDevice, const char* pFilepath)
+	ITexture* ResourceLoader::LoadTextureFromFile(const char* pFilepath, EFormat format, bool generateMips)
 	{
-		UNREFERENCED_VARIABLE(pGraphicsDevice);
-		UNREFERENCED_VARIABLE(pFilepath);
+		int texWidth = 0;
+		int texHeight = 0;
+		int bpp = 0;
 
-		LOG_WARNING("[ResourceLoader]: Call to unimplemented function LoadTextureFromFile");
-		return nullptr;
+		void* pPixels = nullptr;
+
+		if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
+		{
+			pPixels = (void*)stbi_load(pFilepath, &texWidth, &texHeight, &bpp, STBI_rgb_alpha);
+		}
+		/*else if (format == EFormat::FORMAT_R32G32B32A32_FLOAT)
+		{
+			pPixels = (void*)stbi_loadf(filename.c_str(), &texWidth, &texHeight, &bpp, STBI_rgb_alpha);
+		}*/
+		else
+		{
+			LOG_ERROR("[ResourceLoader]: Texture format not supported for \"%s\"", pFilepath);
+			return nullptr;
+		}
+
+		if (pPixels == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to laod texture file: \"%s\"", pFilepath);
+			return nullptr;
+		}
+
+		D_LOG_MESSAGE("[ResourceDevice]: Loaded Texture \"%s\"", pFilepath);
+
+		ITexture* pTexture = LoadTextureFromMemory(pFilepath, pPixels, texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
+		stbi_image_free(pPixels);
+
+		return pTexture;
 	}
 
-	ITexture* ResourceLoader::LoadTextureFromMemory(IGraphicsDevice* pGraphicsDevice, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips)
+	ITexture* ResourceLoader::LoadTextureFromMemory(const char* pName, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips)
 	{
-		UNREFERENCED_VARIABLE(pGraphicsDevice);
-		UNREFERENCED_VARIABLE(pData);
-		UNREFERENCED_VARIABLE(width);
-		UNREFERENCED_VARIABLE(height);
-		UNREFERENCED_VARIABLE(format);
-		UNREFERENCED_VARIABLE(usageFlags);
-		UNREFERENCED_VARIABLE(generateMips);
+		uint32_t miplevels = 1u;
 
-		LOG_WARNING("[ResourceLoader]: Call to unimplemented function LoadTextureFromMemory");
-		return nullptr;
+		if (generateMips)
+		{
+			miplevels = uint32(glm::floor(glm::log2((float)glm::max(width, height)))) + 1u;
+		}
+
+		TextureDesc textureDesc = {};
+		textureDesc.pName		= pName;
+		textureDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+		textureDesc.Format		= format;
+		textureDesc.Type		= ETextureType::TEXTURE_2D;
+		textureDesc.Flags		= FTextureFlags::TEXTURE_FLAG_COPY_SRC | FTextureFlags::TEXTURE_FLAG_COPY_DST | usageFlags;
+		textureDesc.Width		= width;
+		textureDesc.Height		= height;
+		textureDesc.Depth		= 1;
+		textureDesc.ArrayCount	= 1;
+		textureDesc.Miplevels	= miplevels;
+		textureDesc.SampleCount = 1;
+
+		ITexture* pTexture = RenderSystem::GetDevice()->CreateTexture(textureDesc);
+
+		if (pTexture == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to create texture for \"%s\"", pName);
+			return nullptr;
+		}
+
+		uint32 pixelDataSize = width * height * TextureFormatStride(format);
+
+		BufferDesc bufferDesc	= {};
+		bufferDesc.pName		= "Texture Copy Buffer";
+		bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
+		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+		bufferDesc.SizeInBytes	= pixelDataSize;
+
+		IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(bufferDesc);
+
+		if (pTextureData == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to create copy buffer for \"%s\"", pName);
+			return nullptr;
+		}
+
+		void* pTextureDataDst = pTextureData->Map();
+		memcpy(pTextureDataDst, pData, pixelDataSize);
+		pTextureData->Unmap();
+
+		const uint64 waitValue = s_SignalValue - 1;
+		s_pCopyFence->Wait(waitValue, UINT64_MAX);
+
+		s_pCopyCommandAllocator->Reset();
+		s_pCopyCommandList->Reset();
+
+		s_pCopyCommandList->Begin(nullptr);
+
+		CopyTextureFromBufferDesc copyDesc = {};
+		copyDesc.SrcOffset		= 0;
+		copyDesc.SrcRowPitch	= 0;
+		copyDesc.SrcHeight		= 0;
+		copyDesc.Width			= width;
+		copyDesc.Height			= height;
+		copyDesc.Depth			= 1;
+		copyDesc.Miplevel		= 0;
+		copyDesc.MiplevelCount  = miplevels;
+		copyDesc.ArrayIndex		= 0;
+		copyDesc.ArrayCount		= 1;
+
+		PipelineTextureBarrier transitionToCopyDstBarrier = {};
+		transitionToCopyDstBarrier.pTexture					= pTexture;
+		transitionToCopyDstBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
+		transitionToCopyDstBarrier.StateAfter				= ETextureState::TEXTURE_STATE_COPY_DST;
+		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
+		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
+		transitionToCopyDstBarrier.SrcMemoryAccessFlags		= 0;
+		transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		transitionToCopyDstBarrier.TextureFlags				= textureDesc.Flags;
+		transitionToCopyDstBarrier.Miplevel					= 0;
+		transitionToCopyDstBarrier.MiplevelCount			= textureDesc.Miplevels;
+		transitionToCopyDstBarrier.ArrayIndex				= 0;
+		transitionToCopyDstBarrier.ArrayCount				= textureDesc.ArrayCount;
+
+		s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
+
+		s_pCopyCommandList->CopyTextureFromBuffer(pTextureData, pTexture, copyDesc);
+		if (generateMips)
+		{
+			s_pCopyCommandList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_COPY_DST, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+		}
+		else
+		{
+			PipelineTextureBarrier transitionToShaderReadBarrier = {};
+			transitionToShaderReadBarrier.pTexture					= pTexture;
+			transitionToShaderReadBarrier.StateBefore				= ETextureState::TEXTURE_STATE_COPY_DST;
+			transitionToShaderReadBarrier.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+			transitionToShaderReadBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
+			transitionToShaderReadBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
+			transitionToShaderReadBarrier.SrcMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			transitionToShaderReadBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			transitionToShaderReadBarrier.TextureFlags				= textureDesc.Flags;
+			transitionToShaderReadBarrier.Miplevel					= 0;
+			transitionToShaderReadBarrier.MiplevelCount				= textureDesc.Miplevels;
+			transitionToShaderReadBarrier.ArrayIndex				= 0;
+			transitionToShaderReadBarrier.ArrayCount				= textureDesc.ArrayCount;
+
+			s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &transitionToShaderReadBarrier, 1);
+		}
+
+		s_pCopyCommandList->End();
+
+		if (!RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&s_pCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, nullptr, 0, s_pCopyFence, s_SignalValue))
+		{
+			LOG_ERROR("[ResourceLoader]: Texture could not be created as command list could not be executed for \"%s\"", pName);
+			SAFERELEASE(pTextureData);
+			return nullptr;
+		}
+		else
+		{
+			s_SignalValue++;
+		}
+
+		//Todo: Remove this wait after garbage collection works
+		RenderSystem::GetGraphicsQueue()->Flush();
+		SAFERELEASE(pTextureData);
+
+		return pTexture;
 	}
 
-	IShader* ResourceLoader::LoadShaderFromFile(IGraphicsDevice* pGraphicsDevice, const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, ShaderConstant* pConstants, uint32 shaderConstantCount, const char* pEntryPoint)
+	IShader* ResourceLoader::LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, ShaderConstant* pConstants, uint32 shaderConstantCount, const char* pEntryPoint)
 	{
 		byte* pShaderSource = nullptr;
 		uint32 shaderSourceSize = 0;
@@ -341,16 +529,16 @@ namespace LambdaEngine
 		shaderDesc.pConstants			= pConstants;
 		shaderDesc.ShaderConstantCount	= shaderConstantCount;
 
-		IShader* pShader = pGraphicsDevice->CreateShader(shaderDesc);
+		IShader* pShader = RenderSystem::GetDevice()->CreateShader(shaderDesc);
 
 		SAFEDELETE_ARRAY(pShaderSource);
 
 		return pShader;
 	}
 
-	ISoundEffect3D* ResourceLoader::LoadSoundEffectFromFile(IAudioDevice* pAudioDevice, const char* pFilepath)
+	ISoundEffect3D* ResourceLoader::LoadSoundEffectFromFile(const char* pFilepath)
 	{
-		ISoundEffect3D* pSound = pAudioDevice->CreateSoundEffect();
+		ISoundEffect3D* pSound = AudioSystem::GetDevice()->CreateSoundEffect();
 
 		SoundEffect3DDesc soundDesc		= {};
 		soundDesc.pFilepath		= pFilepath;

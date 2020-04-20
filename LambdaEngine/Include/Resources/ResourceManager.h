@@ -8,21 +8,21 @@ namespace LambdaEngine
 	class IGraphicsDevice;
 	class IAudioDevice;
 
+	//Meshes
+
+	//Meshes
+	constexpr GUID_Lambda DEFAULT_MATERIAL = 0;
+
+	//Textures
+	constexpr GUID_Lambda DEFAULT_COLOR_MAP = DEFAULT_MATERIAL + 1;
+	constexpr GUID_Lambda DEFAULT_NORMAL_MAP = DEFAULT_COLOR_MAP + 1;
+
+	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID = DEFAULT_NORMAL_MAP + 1;
+
+	constexpr GUID_Lambda GUID_NONE = UINT32_MAX;
+
 	class LAMBDA_API ResourceManager
 	{
-		//Meshes
-		
-		//Meshes
-		static constexpr GUID_Lambda DEFAULT_MATERIAL			= 0;
-
-		//Textures
-		static constexpr GUID_Lambda DEFAULT_COLOR_MAP			= DEFAULT_MATERIAL		+ 1;
-		static constexpr GUID_Lambda DEFAULT_NORMAL_MAP			= DEFAULT_COLOR_MAP		+ 1;
-
-		static constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID	= DEFAULT_NORMAL_MAP	+ 1;
-
-		static constexpr GUID_Lambda GUID_NONE = UINT32_MAX;
-
 	public:
 		DECL_REMOVE_COPY(ResourceManager);
 		DECL_REMOVE_MOVE(ResourceManager);
@@ -68,12 +68,15 @@ namespace LambdaEngine
 		/*
 		* Load a texture from file
 		*	pFilepath - Path to the texture file
+		*	format - The format of the pixeldata
+		*	generateMips - If mipmaps should be generated on load
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
-		GUID_Lambda LoadTextureFromFile(const char* pFilepath);
+		GUID_Lambda LoadTextureFromFile(const char* pFilepath, EFormat format, bool generateMips);
 
 		/*
 		* Load a texture from memory
+		*	pName - Name of the texture
 		*	pData - The pixeldata
 		*	width - The pixel width of the texture
 		*	height - The pixel height of the texture
@@ -82,7 +85,7 @@ namespace LambdaEngine
 		*	generateMips - If mipmaps should be generated on load
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
-		GUID_Lambda LoadTextureFromMemory(const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips);
+		GUID_Lambda LoadTextureFromMemory(const char* pName, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips);
 
 		/*
 		* Load sound from file
@@ -111,6 +114,9 @@ namespace LambdaEngine
 
 		ITexture*				GetTexture(GUID_Lambda guid);
 		const ITexture*			GetTexture(GUID_Lambda guid) const;
+		
+		ITextureView*			GetTextureView(GUID_Lambda guid);
+		const ITextureView*		GetTextureView(GUID_Lambda guid) const;
 
 		IShader*				GetShader(GUID_Lambda guid);
 		const IShader*			GetShader(GUID_Lambda guid) const;
@@ -132,6 +138,7 @@ namespace LambdaEngine
 		std::unordered_map<GUID_Lambda, Mesh*>	   m_Meshes;
 		std::unordered_map<GUID_Lambda, Material*> m_Materials;
 		std::unordered_map<GUID_Lambda, ITexture*> m_Textures;
+		std::unordered_map<GUID_Lambda, ITextureView*> m_TextureViews;
 		std::unordered_map<GUID_Lambda, IShader*> m_Shaders;
 		std::unordered_map<GUID_Lambda, ISoundEffect3D*> m_SoundEffects;
 

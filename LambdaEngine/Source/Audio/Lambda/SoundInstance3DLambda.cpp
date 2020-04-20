@@ -7,6 +7,7 @@ namespace LambdaEngine
 {
 	SoundInstance3DLambda::SoundInstance3DLambda(const IAudioDevice* pAudioDevice)
 	{
+		UNREFERENCED_VARIABLE(pAudioDevice);
 	}
 
 	SoundInstance3DLambda::~SoundInstance3DLambda()
@@ -61,6 +62,8 @@ namespace LambdaEngine
 			LOG_ERROR("[SoundInstance3DLambda]: Could not start PortAudio stream, error: \"%s\"", Pa_GetErrorText(result));
 			return false;
 		}
+
+		return true;
 	}
 
 	void SoundInstance3DLambda::Play()
@@ -81,19 +84,23 @@ namespace LambdaEngine
 
 	void SoundInstance3DLambda::SetPosition(const glm::vec3& position)
 	{
+		UNREFERENCED_VARIABLE(position);
 	}
 
 	void SoundInstance3DLambda::SetVolume(float volume)
 	{
+		UNREFERENCED_VARIABLE(volume);
 	}
 
 	void SoundInstance3DLambda::SetPitch(float pitch)
 	{
+		UNREFERENCED_VARIABLE(pitch);
 	}
 
 	const glm::vec3& SoundInstance3DLambda::GetPosition()
 	{
-		return glm::vec3();
+		static glm::vec3 temp;
+		return temp;
 	}
 
 	float SoundInstance3DLambda::GetVolume()
@@ -129,6 +136,10 @@ namespace LambdaEngine
 		PaStreamCallbackFlags statusFlags,
 		void* pUserData)
 	{
+		UNREFERENCED_VARIABLE(pInputBuffer);
+		UNREFERENCED_VARIABLE(pTimeInfo);
+		UNREFERENCED_VARIABLE(statusFlags);
+
 		if (pUserData != nullptr)
 		{
 			reinterpret_cast<SoundInstance3DLambda*>(pUserData)->LocalAudioCallback(

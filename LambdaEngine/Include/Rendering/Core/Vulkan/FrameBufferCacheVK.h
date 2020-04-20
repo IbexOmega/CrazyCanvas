@@ -14,7 +14,7 @@ namespace LambdaEngine
 	struct FrameBufferCacheKey
 	{
 		VkImageView		ColorAttachmentsViews[MAX_COLOR_ATTACHMENTS];
-		uint32			ColorAttachMentViewCount	= 0;
+		uint32			ColorAttachmentViewCount	= 0;
 		VkImageView		DepthStencilView			= VK_NULL_HANDLE;
 		VkRenderPass	RenderPass					= VK_NULL_HANDLE;
 		mutable size_t	Hash						= 0;
@@ -24,7 +24,7 @@ namespace LambdaEngine
 			if (Hash == 0)
 			{
 				Hash = std::hash<uint64>()(uint64(RenderPass));
-				for (uint32 i = 0; i < ColorAttachMentViewCount; i++)
+				for (uint32 i = 0; i < ColorAttachmentViewCount; i++)
 				{
 					HashCombine<uint64>(Hash, uint64(ColorAttachmentsViews[i]));
 				}
@@ -37,7 +37,7 @@ namespace LambdaEngine
 
 		bool Contains(VkImageView imageView) const
 		{
-			for (uint32 i = 0; i < ColorAttachMentViewCount; i++)
+			for (uint32 i = 0; i < ColorAttachmentViewCount; i++)
 			{
 				if (ColorAttachmentsViews[i] == imageView)
 				{
@@ -55,12 +55,12 @@ namespace LambdaEngine
 
 		bool operator==(const FrameBufferCacheKey& other) const
 		{
-			if (ColorAttachMentViewCount != other.ColorAttachMentViewCount)
+			if (ColorAttachmentViewCount != other.ColorAttachmentViewCount)
 			{
 				return false;
 			}
 
-			for (uint32 i = 0; i < ColorAttachMentViewCount; i++)
+			for (uint32 i = 0; i < ColorAttachmentViewCount; i++)
 			{
 				if (ColorAttachmentsViews[i] != other.ColorAttachmentsViews[i])
 				{

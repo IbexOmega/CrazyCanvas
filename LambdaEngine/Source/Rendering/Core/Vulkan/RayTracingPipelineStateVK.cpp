@@ -77,7 +77,7 @@ namespace LambdaEngine
 		m_pSBT = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(sbtBufferDesc));
 
 		void* pMapped = m_pSBT->Map();
-		if (m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, shaderGroups.size(), sbtSize, pMapped) != VK_SUCCESS)
+		if (m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, (uint32)shaderGroups.size(), sbtSize, pMapped) != VK_SUCCESS)
 		{
 			LOG_ERROR("[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed for \"%s\"", desc.pName);
 			return false;

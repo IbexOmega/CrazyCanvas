@@ -7,6 +7,7 @@ namespace LambdaEngine
 {
 	SoundEffect3DLambda::SoundEffect3DLambda(const IAudioDevice* pAudioDevice)
 	{
+		UNREFERENCED_VARIABLE(pAudioDevice);
 	}
 
 	SoundEffect3DLambda::~SoundEffect3DLambda()
@@ -34,5 +35,9 @@ namespace LambdaEngine
 	void SoundEffect3DLambda::PlayOnceAt(const glm::vec3& position, const glm::vec3& velocity, float volume,
 		float pitch)
 	{
+		UNREFERENCED_VARIABLE(position);
+		UNREFERENCED_VARIABLE(velocity);
+		UNREFERENCED_VARIABLE(volume);
+		UNREFERENCED_VARIABLE(pitch);
 	}
 }

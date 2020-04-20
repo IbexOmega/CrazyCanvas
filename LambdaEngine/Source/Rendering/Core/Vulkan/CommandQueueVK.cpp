@@ -165,6 +165,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			m_SignalSemaphores.clear();
 			return true;
 		}
 	}

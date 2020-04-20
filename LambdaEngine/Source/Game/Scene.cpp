@@ -8,6 +8,8 @@
 #include "Resources/Material.h"
 #include "Rendering/Core/API/IBuffer.h"
 #include "Rendering/Core/API/ITexture.h"
+#include "Rendering/Core/API/ICommandQueue.h"
+#include "Rendering/RenderSystem.h"
 
 #include "Log/Log.h"
 
@@ -18,17 +20,13 @@ namespace LambdaEngine
 	Scene::Scene(const IGraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice, const ResourceManager* pResourceManager) :
 		m_pGraphicsDevice(pGraphicsDevice),
 		m_pAudioDevice(pAudioDevice),
-		m_pResourceManager(pResourceManager),
-		m_pSceneMaterialProperties(nullptr),
-		m_pSceneVertexBuffer(nullptr),
-		m_pSceneIndexBuffer(nullptr),
-		m_pSceneInstanceBuffer(nullptr),
-		m_pSceneMeshIndexBuffer(nullptr)
+		m_pResourceManager(pResourceManager)
 	{
 	}
 
 	Scene::~Scene()
 	{
+		SAFERELEASE(m_pPerFrameBuffer);
 		SAFERELEASE(m_pSceneMaterialProperties);
 		SAFERELEASE(m_pSceneVertexBuffer);
 		SAFERELEASE(m_pSceneIndexBuffer);
@@ -36,8 +34,21 @@ namespace LambdaEngine
 		SAFERELEASE(m_pSceneMeshIndexBuffer);
 	}
 
+	void Scene::UpdateCamera(const Camera* pCamera)
+	{
+		PerFrameBuffer perFrameBuffer = {};
+		perFrameBuffer.Camera = pCamera->GetData();
+
+		void* pMapped = m_pPerFrameBuffer->Map();
+		memcpy(pMapped, &perFrameBuffer, sizeof(PerFrameBuffer));
+		m_pPerFrameBuffer->Unmap();
+	}
+
 	uint32 Scene::AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform)
 	{
+		UNREFERENCED_VARIABLE(gameObject);
+		UNREFERENCED_VARIABLE(transform);
+
 		LOG_WARNING("[Scene]: Call to unimplemented function AddStaticGameObject!");
 		return 0;
 	}
@@ -45,7 +56,7 @@ namespace LambdaEngine
 	uint32 Scene::AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform)
 	{
 		Instance instance = {};
-		instance.Transform = glm::transpose(transform);
+		instance.Transform = transform;
 		instance.MeshMaterialIndex = 0;
 		instance.Mask = 0;
 		instance.SBTRecordOffset = 0;
@@ -54,23 +65,23 @@ namespace LambdaEngine
 
 		m_Instances.push_back(instance);
 
-		uint32 instanceIndex = m_Instances.size() - 1;
+		uint32 instanceIndex = uint32(m_Instances.size() - 1);
 		uint32 meshIndex = 0;
 
 		if (m_GUIDToMappedMeshes.count(gameObject.Mesh) == 0)
 		{
 			const Mesh* pMesh = m_pResourceManager->GetMesh(gameObject.Mesh);
 
-			uint32 currentNumSceneVertices = m_SceneVertexArray.size();
+			uint32 currentNumSceneVertices = (uint32)m_SceneVertexArray.size();
 			m_SceneVertexArray.resize(currentNumSceneVertices + pMesh->VertexCount);
 			memcpy(&m_SceneVertexArray[currentNumSceneVertices], pMesh->pVertexArray, pMesh->VertexCount * sizeof(Vertex));
 
-			uint32 currentNumSceneIndices = m_SceneIndexArray.size();
+			uint32 currentNumSceneIndices = (uint32)m_SceneIndexArray.size();
 			m_SceneIndexArray.resize(currentNumSceneIndices + pMesh->IndexCount);
 			memcpy(&m_SceneIndexArray[currentNumSceneIndices], pMesh->pIndexArray, pMesh->IndexCount * sizeof(uint32));
 
 			m_Meshes.push_back(pMesh);
-			meshIndex = m_Meshes.size() - 1;
+			meshIndex = uint32(m_Meshes.size() - 1);
 
 			MappedMesh newMappedMesh = {};
 			m_MappedMeshes.push_back(newMappedMesh);
@@ -83,13 +94,12 @@ namespace LambdaEngine
 		}
 
 		MappedMesh& mappedMesh = m_MappedMeshes[meshIndex];
-		uint32 meshLocalMaterialIndex = 0;
 		uint32 globalMaterialIndex = 0;
 
 		if (m_GUIDToMaterials.count(gameObject.Material) == 0)
 		{
 			m_Materials.push_back(m_pResourceManager->GetMaterial(gameObject.Material));
-			globalMaterialIndex = m_Materials.size() - 1;
+			globalMaterialIndex = uint32(m_Materials.size() - 1);
 
 			m_GUIDToMaterials[gameObject.Material] = globalMaterialIndex;
 		}
@@ -106,7 +116,11 @@ namespace LambdaEngine
 			newMappedMaterial.InstanceIndices.push_back(instanceIndex);
 
 			mappedMesh.MappedMaterials.push_back(newMappedMaterial);
-			mappedMesh.GUIDToMappedMaterials[gameObject.Material] = mappedMesh.MappedMaterials.size() - 1;
+			mappedMesh.GUIDToMappedMaterials[gameObject.Material] = GUID_Lambda(mappedMesh.MappedMaterials.size() - 1);
+		}
+		else
+		{
+			mappedMesh.MappedMaterials[mappedMesh.GUIDToMappedMaterials[gameObject.Material]].InstanceIndices.push_back(instanceIndex);
 		}
 
 		return instanceIndex;
@@ -141,12 +155,13 @@ namespace LambdaEngine
 			{
 				MappedMaterial& mappedMaterial = mappedMesh.MappedMaterials[materialIndex];
 
-				uint32 instanceCount = mappedMaterial.InstanceIndices.size();
+				uint32 instanceCount = (uint32)mappedMaterial.InstanceIndices.size();
+				uint32 baseInstanceIndex = (uint32)m_SortedInstances.size();
 
 				for (uint32 instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
 				{
 					Instance instance = m_Instances[mappedMaterial.InstanceIndices[instanceIndex]];
-					instance.MeshMaterialIndex = meshIndexBuffer.size() - 1;
+					instance.MeshMaterialIndex = uint32(meshIndexBuffer.size() - 1);
 
 					m_SortedInstances.push_back(instance);
 				}
@@ -156,9 +171,10 @@ namespace LambdaEngine
 				indirectMeshArgument.InstanceCount		= instanceCount;
 				indirectMeshArgument.FirstIndex			= currentNumSceneIndices;
 				indirectMeshArgument.VertexOffset		= currentNumSceneVertices;
-				indirectMeshArgument.FirstInstance		= 0;
+				indirectMeshArgument.FirstInstance		= baseInstanceIndex;
 				indirectMeshArgument.MaterialIndex		= mappedMaterial.MaterialIndex;
-				indirectMeshArgument.BaseInstanceIndex	= m_SortedInstances.size();
+				indirectMeshArgument.Padding0			= 0;
+				indirectMeshArgument.Padding1			= 0;
 
 				meshIndexBuffer.push_back(indirectMeshArgument);
 			}
@@ -167,36 +183,66 @@ namespace LambdaEngine
 			currentNumSceneIndices = newNumSceneIndices;
 		}
 
-		std::vector<ITexture*> sceneAlbedoMaps;
-		std::vector<ITexture*> sceneNormalMaps;
-		std::vector<ITexture*> sceneAmbientOcclusionMaps;
-		std::vector<ITexture*> sceneMetallicMaps;
-		std::vector<ITexture*> sceneRoughnessMaps;
-		sceneAlbedoMaps.reserve(m_Materials.size());
-		sceneNormalMaps.reserve(m_Materials.size());
-		sceneAmbientOcclusionMaps.reserve(m_Materials.size());
-		sceneMetallicMaps.reserve(m_Materials.size());
-		sceneRoughnessMaps.reserve(m_Materials.size());
+		m_SceneAlbedoMaps.resize(MAX_UNIQUE_MATERIALS);
+		m_SceneNormalMaps.resize(MAX_UNIQUE_MATERIALS);
+		m_SceneAmbientOcclusionMaps.resize(MAX_UNIQUE_MATERIALS);
+		m_SceneMetallicMaps.resize(MAX_UNIQUE_MATERIALS);
+		m_SceneRoughnessMaps.resize(MAX_UNIQUE_MATERIALS);
+
+		m_SceneAlbedoMapViews.resize(MAX_UNIQUE_MATERIALS);
+		m_SceneNormalMapViews.resize(MAX_UNIQUE_MATERIALS);
+		m_SceneAmbientOcclusionMapViews.resize(MAX_UNIQUE_MATERIALS);
+		m_SceneMetallicMapViews.resize(MAX_UNIQUE_MATERIALS);
+		m_SceneRoughnessMapViews.resize(MAX_UNIQUE_MATERIALS);
 
 		std::vector<MaterialProperties> sceneMaterialProperties;
-		sceneMaterialProperties.reserve(m_Materials.size());
+		sceneMaterialProperties.resize(MAX_UNIQUE_MATERIALS);
 
-		for (const Material* pMaterial : m_Materials)
+		for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
 		{
-			sceneAlbedoMaps.push_back(pMaterial->pAlbedoMap);
-			sceneNormalMaps.push_back(pMaterial->pNormalMap);
-			sceneAmbientOcclusionMaps.push_back(pMaterial->pAmbientOcclusionMap);
-			sceneMetallicMaps.push_back(pMaterial->pMetallicMap);
-			sceneRoughnessMaps.push_back(pMaterial->pRoughnessMap);
+			if (i < m_Materials.size())
+			{
+				const Material* pMaterial = m_Materials[i];
+
+				m_SceneAlbedoMaps[i]				= pMaterial->pAlbedoMap;
+				m_SceneNormalMaps[i]				= pMaterial->pNormalMap;
+				m_SceneAmbientOcclusionMaps[i]		= pMaterial->pAmbientOcclusionMap;
+				m_SceneMetallicMaps[i]				= pMaterial->pMetallicMap;
+				m_SceneRoughnessMaps[i]				= pMaterial->pRoughnessMap;
+
+				m_SceneAlbedoMapViews[i]			= pMaterial->pAlbedoMapView;
+				m_SceneNormalMapViews[i]			= pMaterial->pNormalMapView;
+				m_SceneAmbientOcclusionMapViews[i]	= pMaterial->pAmbientOcclusionMapView;
+				m_SceneMetallicMapViews[i]			= pMaterial->pMetallicMapView;
+				m_SceneRoughnessMapViews[i]			= pMaterial->pRoughnessMapView;
 			
-			sceneMaterialProperties.push_back(pMaterial->Properties);
+				sceneMaterialProperties[i]			= pMaterial->Properties;
+			}
+			else
+			{
+				const Material* pMaterial = m_pResourceManager->GetMaterial(DEFAULT_MATERIAL);
+
+				m_SceneAlbedoMaps[i]				= pMaterial->pAlbedoMap;
+				m_SceneNormalMaps[i]				= pMaterial->pNormalMap;
+				m_SceneAmbientOcclusionMaps[i]		= pMaterial->pAmbientOcclusionMap;
+				m_SceneMetallicMaps[i]				= pMaterial->pMetallicMap;
+				m_SceneRoughnessMaps[i]				= pMaterial->pRoughnessMap;
+
+				m_SceneAlbedoMapViews[i]			= pMaterial->pAlbedoMapView;
+				m_SceneNormalMapViews[i]			= pMaterial->pNormalMapView;
+				m_SceneAmbientOcclusionMapViews[i]	= pMaterial->pAmbientOcclusionMapView;
+				m_SceneMetallicMapViews[i]			= pMaterial->pMetallicMapView;
+				m_SceneRoughnessMapViews[i]			= pMaterial->pRoughnessMapView;
+			
+				sceneMaterialProperties[i]			= pMaterial->Properties;
+			}
 		}
 
 		clock.Tick();
 		LOG_INFO("Scene Build took %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
 
 		{
-			uint32 sceneMaterialPropertiesSize = sceneMaterialProperties.size() * sizeof(MaterialProperties);
+			uint32 sceneMaterialPropertiesSize = uint32(sceneMaterialProperties.size() * sizeof(MaterialProperties));
 
 			if (m_pSceneMaterialProperties == nullptr || sceneMaterialPropertiesSize > m_pSceneMaterialProperties->GetDesc().SizeInBytes)
 			{
@@ -205,7 +251,7 @@ namespace LambdaEngine
 				BufferDesc sceneMaterialPropertiesBufferDesc = {};
 				sceneMaterialPropertiesBufferDesc.pName			= "Scene Material Properties";
 				sceneMaterialPropertiesBufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneMaterialPropertiesBufferDesc.Flags			= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				sceneMaterialPropertiesBufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 				sceneMaterialPropertiesBufferDesc.SizeInBytes	= sceneMaterialPropertiesSize;
 
 				m_pSceneMaterialProperties = m_pGraphicsDevice->CreateBuffer(sceneMaterialPropertiesBufferDesc);
@@ -217,7 +263,7 @@ namespace LambdaEngine
 		}
 
 		{
-			uint32 sceneVertexBufferSize = m_SceneVertexArray.size() * sizeof(Vertex);
+			uint32 sceneVertexBufferSize = uint32(m_SceneVertexArray.size() * sizeof(Vertex));
 
 			if (m_pSceneVertexBuffer == nullptr || sceneVertexBufferSize > m_pSceneVertexBuffer->GetDesc().SizeInBytes)
 			{
@@ -226,7 +272,7 @@ namespace LambdaEngine
 				BufferDesc sceneVertexBufferDesc = {};
 				sceneVertexBufferDesc.pName						= "Scene Vertex Buffer";
 				sceneVertexBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneVertexBufferDesc.Flags						= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | EBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
+				sceneVertexBufferDesc.Flags						= FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
 				sceneVertexBufferDesc.SizeInBytes				= sceneVertexBufferSize;
 
 				m_pSceneVertexBuffer = m_pGraphicsDevice->CreateBuffer(sceneVertexBufferDesc);
@@ -238,7 +284,7 @@ namespace LambdaEngine
 		}
 		
 		{
-			uint32 sceneIndexBufferSize = m_SceneIndexArray.size() * sizeof(uint32);
+			uint32 sceneIndexBufferSize = uint32(m_SceneIndexArray.size() * sizeof(uint32));
 
 			if (m_pSceneIndexBuffer == nullptr || sceneIndexBufferSize > m_pSceneIndexBuffer->GetDesc().SizeInBytes)
 			{
@@ -247,7 +293,7 @@ namespace LambdaEngine
 				BufferDesc sceneIndexBufferDesc = {};
 				sceneIndexBufferDesc.pName						= "Scene Index Buffer";
 				sceneIndexBufferDesc.MemoryType					= EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneIndexBufferDesc.Flags						= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | EBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
+				sceneIndexBufferDesc.Flags						= FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
 				sceneIndexBufferDesc.SizeInBytes				= sceneIndexBufferSize;
 
 				m_pSceneIndexBuffer = m_pGraphicsDevice->CreateBuffer(sceneIndexBufferDesc);
@@ -259,7 +305,7 @@ namespace LambdaEngine
 		}
 
 		{
-			uint32 sceneIndexBufferSize = m_SortedInstances.size() * sizeof(Instance);
+			uint32 sceneIndexBufferSize = uint32(m_SortedInstances.size() * sizeof(Instance));
 
 			if (m_pSceneInstanceBuffer == nullptr || sceneIndexBufferSize > m_pSceneInstanceBuffer->GetDesc().SizeInBytes)
 			{
@@ -268,7 +314,7 @@ namespace LambdaEngine
 				BufferDesc sceneInstanceBufferDesc = {};
 				sceneInstanceBufferDesc.pName					= "Scene Instance Buffer";
 				sceneInstanceBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneInstanceBufferDesc.Flags					= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				sceneInstanceBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 				sceneInstanceBufferDesc.SizeInBytes				= sceneIndexBufferSize;
 
 				m_pSceneInstanceBuffer = m_pGraphicsDevice->CreateBuffer(sceneInstanceBufferDesc);
@@ -281,7 +327,7 @@ namespace LambdaEngine
 
 		
 		{
-			uint32 sceneMeshIndexBufferSize = meshIndexBuffer.size() * sizeof(IndexedIndirectMeshArgument);
+			uint32 sceneMeshIndexBufferSize = uint32(meshIndexBuffer.size() * sizeof(IndexedIndirectMeshArgument));
 
 			if (m_pSceneMeshIndexBuffer == nullptr || sceneMeshIndexBufferSize > m_pSceneMeshIndexBuffer->GetDesc().SizeInBytes)
 			{
@@ -290,7 +336,7 @@ namespace LambdaEngine
 				BufferDesc sceneMeshIndexBufferDesc = {};
 				sceneMeshIndexBufferDesc.pName					= "Scene Mesh Index Buffer";
 				sceneMeshIndexBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
-				sceneMeshIndexBufferDesc.Flags					= EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | EBufferFlags::BUFFER_FLAG_INDIRECT_BUFFER;
+				sceneMeshIndexBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDIRECT_BUFFER;
 				sceneMeshIndexBufferDesc.SizeInBytes			= sceneMeshIndexBufferSize;
 
 				m_pSceneMeshIndexBuffer = m_pGraphicsDevice->CreateBuffer(sceneMeshIndexBufferDesc);
@@ -301,27 +347,15 @@ namespace LambdaEngine
 			m_pSceneMeshIndexBuffer->Unmap();
 		}
 
+
 		{
-			glm::vec3 position(0.0f, 1.0f, 0.0f);
-			glm::vec3 direction(1.0f, 0.0f, 0.0f);
-			glm::vec3 up(0.0f, 1.0f, 0.0f);
-
-			PerFrameBuffer perFrameBuffer = {};
-			perFrameBuffer.View = glm::lookAt(position, position + direction, up);;
-			perFrameBuffer.Projection = glm::perspective(glm::radians(90.0f), 1440.0f / 900.0f, 0.0001f, 50.0f);
-			perFrameBuffer.Position = glm::vec4(position, 1.0f);
-
 			BufferDesc sceneMeshIndexBufferDesc = {};
 			sceneMeshIndexBufferDesc.pName					= "Scene Per Frame Buffer";
 			sceneMeshIndexBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
-			sceneMeshIndexBufferDesc.Flags					= EBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
+			sceneMeshIndexBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
 			sceneMeshIndexBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
 
 			m_pPerFrameBuffer = m_pGraphicsDevice->CreateBuffer(sceneMeshIndexBufferDesc);
-
-			void* pMapped = m_pPerFrameBuffer->Map();
-			memcpy(pMapped, &perFrameBuffer, sizeof(PerFrameBuffer));
-			m_pPerFrameBuffer->Unmap();
 		}
 
 		m_pName = desc.pName;
