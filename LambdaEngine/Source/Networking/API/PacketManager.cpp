@@ -256,7 +256,7 @@ namespace LambdaEngine
 
 		m_Salt = Random::UInt64();
 		m_SaltRemote = 0;
-		m_Ping = UINT64_MAX;
+		m_Ping = Timestamp::MilliSeconds(10.0f);
 	}
 
 	void PacketManager::ProcessSequence(uint32 sequence)
@@ -299,14 +299,7 @@ namespace LambdaEngine
 		static const double scalar2 = 1.0 - scalar1;
 		if (rtt != UINT64_MAX)
 		{
-			if (m_Ping == UINT64_MAX)
-			{
-				m_Ping = rtt;
-			}
-			else
-			{
-				m_Ping = (rtt.AsNanoSeconds() * scalar1) + (m_Ping.AsNanoSeconds() * scalar2);
-			}
+			m_Ping = (rtt.AsNanoSeconds() * scalar1) + (m_Ping.AsNanoSeconds() * scalar2);
 		}
 	}
 
