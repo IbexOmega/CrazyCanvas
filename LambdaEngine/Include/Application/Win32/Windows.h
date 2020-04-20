@@ -25,5 +25,9 @@
 		#ifdef UpdateResource
 			#undef UpdateResource
 		#endif
+
+		#ifdef UNREFERENCED_PARAMETER
+			#undef UNREFERENCED_PARAMETER
+		#endif
 	#endif
 #endif

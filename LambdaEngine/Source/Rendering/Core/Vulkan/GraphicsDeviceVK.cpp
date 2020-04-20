@@ -78,10 +78,11 @@ namespace LambdaEngine
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
 	};
 
-	GraphicsDeviceVK::GraphicsDeviceVK() :
+	GraphicsDeviceVK::GraphicsDeviceVK()
+        : IGraphicsDevice(),
 		Instance(VK_NULL_HANDLE),
-		Device(VK_NULL_HANDLE),
-		PhysicalDevice(VK_NULL_HANDLE),
+        PhysicalDevice(VK_NULL_HANDLE),
+        Device(VK_NULL_HANDLE),
 		vkSetDebugUtilsObjectNameEXT(nullptr),
 		vkDestroyDebugUtilsMessengerEXT(nullptr),
 		vkCreateDebugUtilsMessengerEXT(nullptr),

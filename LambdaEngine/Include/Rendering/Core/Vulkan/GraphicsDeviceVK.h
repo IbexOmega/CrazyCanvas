@@ -29,7 +29,7 @@ namespace LambdaEngine
 		}
 	};
 
-	class GraphicsDeviceVK : public IGraphicsDevice
+	class GraphicsDeviceVK final : public IGraphicsDevice
 	{
 	public:
 		GraphicsDeviceVK();

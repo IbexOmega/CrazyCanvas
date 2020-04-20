@@ -55,7 +55,7 @@ namespace LambdaEngine
 				FMOD_VECTOR fmodV1 = { v1Pos.x, v1Pos.y, v1Pos.z };
 				FMOD_VECTOR fmodV2 = { v2Pos.x, v2Pos.y, v2Pos.z };
 
-				polygons.push_back({ fmodV0, fmodV1, fmodV2, m });
+                polygons.push_back({ {fmodV0, fmodV1, fmodV2}, m });
 			}
 		}
 
@@ -78,7 +78,6 @@ namespace LambdaEngine
 			}
 		}
 
-		float test = glm::sqrt(polygons[0].Triangle[0].x * polygons[0].Triangle[0].x + polygons[0].Triangle[0].y * polygons[0].Triangle[0].y + polygons[0].Triangle[0].z * polygons[0].Triangle[0].z);
 		D_LOG_MESSAGE("[AudioGeometryFMOD]: Successfully initialized %s!", m_pName);
 
 		return true;

@@ -13,10 +13,10 @@ namespace LambdaEngine
 		TDeviceChild(pDevice),
 		m_Pipeline(VK_NULL_HANDLE),
 		m_pSBT(nullptr),
-		m_BindingStride(0),
-		m_BindingOffsetRaygenShaderGroup(0),
-		m_BindingOffsetHitShaderGroup(0),
-		m_BindingOffsetMissShaderGroup(0)
+        m_BindingOffsetRaygenShaderGroup(0),
+        m_BindingOffsetHitShaderGroup(0),
+        m_BindingOffsetMissShaderGroup(0),
+        m_BindingStride(0)
 	{
 	}
 
