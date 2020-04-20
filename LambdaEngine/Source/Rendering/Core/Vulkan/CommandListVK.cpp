@@ -664,14 +664,36 @@ namespace LambdaEngine
 	{
 		CHECK_COMPUTE(m_pAllocator);
 
-#ifndef LAMBDA_PRODUCTION
         if (m_pDevice->vkCmdTraceRaysKHR)
         {
-            //m_pDevice->vkCmdTraceRaysKHR(m_CommandList, , , , , width, height, depth);
+            BufferVK* pShaderBindingTableVk = m_pCurrentRayTracingPipeline->GetShaderBindingTable();
+            
+            VkStridedBufferRegionKHR rayGen = {};
+            rayGen.buffer   = pShaderBindingTableVk->GetBuffer();
+            rayGen.offset   = m_pCurrentRayTracingPipeline->GetBindingOffsetRaygenGroup();
+            rayGen.stride   = m_pCurrentRayTracingPipeline->GetBindingStride();
+            rayGen.size     = m_pCurrentRayTracingPipeline->GetBindingSizeRaygenGroup();
+
+            VkStridedBufferRegionKHR miss = {};
+            miss.buffer   = pShaderBindingTableVk->GetBuffer();
+            miss.offset   = m_pCurrentRayTracingPipeline->GetBindingOffsetMissGroup();
+            miss.stride   = rayGen.stride;
+            miss.size     = m_pCurrentRayTracingPipeline->GetBindingSizeMissGroup();
+            
+            VkStridedBufferRegionKHR hit = {};
+            hit.buffer   = pShaderBindingTableVk->GetBuffer();
+            hit.offset   = m_pCurrentRayTracingPipeline->GetBindingOffsetHitGroup();
+            hit.stride   = rayGen.stride;
+            hit.size     = m_pCurrentRayTracingPipeline->GetBindingSizeHitGroup();
+            
+            VkStridedBufferRegionKHR callable = {};
+            callable.buffer   = VK_NULL_HANDLE;
+            callable.offset   = 0;
+            callable.stride   = 0;
+            callable.size     = 0;
+            
+            m_pDevice->vkCmdTraceRaysKHR(m_CommandList, &rayGen, &miss, &hit, &callable, width, height, depth);
         }
-#else
-        //m_pDevice->vkCmdTraceRaysKHR
-#endif
 	}
 
 	void CommandListVK::Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ)

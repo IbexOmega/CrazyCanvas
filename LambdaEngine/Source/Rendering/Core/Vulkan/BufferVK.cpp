@@ -16,6 +16,11 @@ namespace LambdaEngine
 
     BufferVK::~BufferVK()
     {
+        if (m_IsMapped)
+        {
+            Unmap();
+        }
+        
         if (m_Buffer != VK_NULL_HANDLE)
         {
             vkDestroyBuffer(m_pDevice->Device, m_Buffer, nullptr);
@@ -173,13 +178,19 @@ namespace LambdaEngine
 			LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer %s", m_DebugName);
             return nullptr;
         }
-
-        return pHostMemory;
+        else
+        {
+            m_IsMapped = true;
+            return pHostMemory;
+        }
     }
 
     void BufferVK::Unmap()
     {
+        ASSERT(m_IsMapped);
+        
         vkUnmapMemory(m_pDevice->Device, m_Memory);
+        m_IsMapped = false;
     }
 
     void BufferVK::SetName(const char* pName)
