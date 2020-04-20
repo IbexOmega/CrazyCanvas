@@ -80,14 +80,13 @@ namespace LambdaEngine
 
 	GraphicsDeviceVK::GraphicsDeviceVK()
         : IGraphicsDevice(),
-		Instance(VK_NULL_HANDLE),
-        PhysicalDevice(VK_NULL_HANDLE),
-        Device(VK_NULL_HANDLE),
-		vkSetDebugUtilsObjectNameEXT(nullptr),
-		vkDestroyDebugUtilsMessengerEXT(nullptr),
-		vkCreateDebugUtilsMessengerEXT(nullptr),
-		m_DebugMessenger(VK_NULL_HANDLE),
-		m_DeviceLimits()
+        RayTracingProperties(),
+        m_DeviceQueueFamilyIndices(),
+        m_DeviceLimits(),
+        m_QueueFamilyProperties(),
+        m_EnabledValidationLayers(),
+        m_EnabledInstanceExtensions(),
+        m_EnabledDeviceExtensions()
 	{
 	}
 
@@ -330,26 +329,33 @@ namespace LambdaEngine
 
 	ICommandQueue* GraphicsDeviceVK::CreateCommandQueue(const char* pName, ECommandQueueType queueType) const
 	{
-		int32 queueFamilyIndex = 0;
+        uint32  index               = 0;
+		int32   queueFamilyIndex    = 0;
 		if (queueType == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
 		{
-			queueFamilyIndex = m_DeviceQueueFamilyIndices.GraphicsFamily;
+			queueFamilyIndex    = m_DeviceQueueFamilyIndices.GraphicsFamily;
+            index               = m_NextGraphicsQueue++;
 		}
 		else if (queueType == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
 		{
-			queueFamilyIndex = m_DeviceQueueFamilyIndices.ComputeFamily;
+			queueFamilyIndex    = m_DeviceQueueFamilyIndices.ComputeFamily;
+            index               = m_NextComputeQueue++;
 		}
 		else if (queueType == ECommandQueueType::COMMAND_QUEUE_COPY)
 		{
-			queueFamilyIndex = m_DeviceQueueFamilyIndices.TransferFamily;
+			queueFamilyIndex    = m_DeviceQueueFamilyIndices.TransferFamily;
+            index               = m_NextTransferQueue++;
 		}
 		else
 		{
 			return nullptr;
 		}
+        
+        ASSERT(queueFamilyIndex < m_QueueFamilyProperties.size());
+        ASSERT(index            < m_QueueFamilyProperties[queueFamilyIndex].queueCount);
 
 		CommandQueueVK* pQueue = DBG_NEW CommandQueueVK(this);
-		if (!pQueue->Init(pName, queueFamilyIndex, 0))
+		if (!pQueue->Init(pName, queueFamilyIndex, index))
 		{
 			pQueue->Release();
 			return nullptr;
@@ -713,6 +719,13 @@ namespace LambdaEngine
 		SetEnabledDeviceExtensions();
 		m_DeviceQueueFamilyIndices = FindQueueFamilies(PhysicalDevice);
 
+        //Store the properties of each queuefamily
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, nullptr);
+
+        m_QueueFamilyProperties.resize(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, m_QueueFamilyProperties.data());
+        
 		// Save device's limits
 		VkPhysicalDeviceProperties deviceProperties = GetPhysicalDeviceProperties();
 		m_DeviceLimits = deviceProperties.limits;

@@ -4,6 +4,8 @@
 #include "Rendering/Core/API/ICommandQueue.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
+#include "Threading/API/SpinLock.h"
+
 #include "Vulkan.h"
 
 #define MAX_COMMANDBUFFERS 32
@@ -43,13 +45,18 @@ namespace LambdaEngine
 		{
 			return (uint64)m_Queue;
 		}
+        
+    private:
+        VkResult InternalFlushBarriers();
 
 	private:
-		VkQueue	m_Queue = VK_NULL_HANDLE;
+		VkQueue	        m_Queue = VK_NULL_HANDLE;
 		VkCommandBuffer m_SubmitCommandBuffers[MAX_COMMANDBUFFERS];
 
-		TArray<VkSemaphore> m_SignalSemaphores;
-		TArray<VkSemaphore> m_WaitSemaphores;
-		TArray<VkPipelineStageFlags> m_WaitStages;
+		TArray<VkSemaphore>             m_SignalSemaphores;
+		TArray<VkSemaphore>             m_WaitSemaphores;
+		TArray<VkPipelineStageFlags>    m_WaitStages;
+        
+        SpinLock m_SpinLock;
 	};
 }

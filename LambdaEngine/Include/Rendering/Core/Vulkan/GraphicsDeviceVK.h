@@ -148,13 +148,17 @@ namespace LambdaEngine
 		PFN_vkGetSemaphoreCounterValue	vkGetSemaphoreCounterValue	= nullptr;
 
 	private:
-		VkDebugUtilsMessengerEXT	m_DebugMessenger				= VK_NULL_HANDLE;
-		
-		FrameBufferCacheVK*			m_pFrameBufferCache				= nullptr;
+		VkDebugUtilsMessengerEXT	m_DebugMessenger	= VK_NULL_HANDLE;
+		FrameBufferCacheVK*			m_pFrameBufferCache	= nullptr;
 
-		QueueFamilyIndices			m_DeviceQueueFamilyIndices;
-		VkPhysicalDeviceLimits		m_DeviceLimits;
-		
+        QueueFamilyIndices     m_DeviceQueueFamilyIndices;
+        VkPhysicalDeviceLimits m_DeviceLimits;
+       
+        std::vector<VkQueueFamilyProperties> m_QueueFamilyProperties;
+        mutable uint32 m_NextGraphicsQueue  = 0;
+        mutable uint32 m_NextComputeQueue   = 0;
+        mutable uint32 m_NextTransferQueue  = 0;
+        
 		std::vector<const char*>	m_EnabledValidationLayers;
 		std::vector<const char*>	m_EnabledInstanceExtensions;
 		std::vector<const char*>	m_EnabledDeviceExtensions;
