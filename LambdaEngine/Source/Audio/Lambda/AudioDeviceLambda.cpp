@@ -25,6 +25,8 @@ namespace LambdaEngine
 
 	bool AudioDeviceLambda::Init(const AudioDeviceDesc& desc)
 	{
+		UNREFERENCED_VARIABLE(desc);
+
 		PaError result;
 
 		result = Pa_Initialize();
@@ -43,6 +45,7 @@ namespace LambdaEngine
 
 	bool AudioDeviceLambda::LoadMusic(const char* pFilepath)
 	{
+		UNREFERENCED_VARIABLE(pFilepath);
 		return false;
 	}
 

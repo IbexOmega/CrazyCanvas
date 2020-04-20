@@ -45,14 +45,14 @@ namespace LambdaEngine
 	{
 		RECT rect = {};
 		GetClientRect(m_hWnd, &rect);
-		return rect.right - rect.left;
+		return uint16(rect.right - rect.left);
 	}
 
 	uint16 Win32Window::GetHeight() const
 	{
 		RECT rect = {};
 		GetClientRect(m_hWnd, &rect);
-		return rect.bottom - rect.top;
+		return uint16(rect.bottom - rect.top);
 	}
 
 	void Win32Window::SetTitle(const char* pTitle)

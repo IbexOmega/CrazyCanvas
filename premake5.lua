@@ -224,6 +224,7 @@ workspace "LambdaEngine"
 			"Dependencies/glm",
 			"Dependencies/tinyobjloader",
 			"Dependencies/WavLib",
+			"Dependencies/stb",
 			"Dependencies/portaudio/include",
 		}
         

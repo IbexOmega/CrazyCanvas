@@ -1,24 +1,34 @@
 #include "Rendering/Renderer.h"
 #include "Rendering/Core/API/IGraphicsDevice.h"
 #include "Rendering/Core/API/ISwapChain.h"
+#include "Rendering/Core/API/ITexture.h"
+#include "Rendering/Core/API/ITextureView.h"
 #include "Rendering/RenderSystem.h"
 #include "Rendering/RenderGraph.h"
 
 #include "Log/Log.h"
-#include "Rendering/Core/API/ITextureView.h"
 
 namespace LambdaEngine
 {
 	Renderer::Renderer(const IGraphicsDevice* pGraphicsDevice) :
-		m_pGraphicsDevice(pGraphicsDevice),
-		m_pSwapChain(nullptr),
-		m_pRenderGraph(nullptr),
-		m_ppBackBufferViews(nullptr)
+		m_pGraphicsDevice(pGraphicsDevice)
 	{
 	}
 
 	Renderer::~Renderer()
 	{
+		if (m_pSwapChain != nullptr)
+		{
+			for (uint32 i = 0; i < m_pSwapChain->GetDesc().BufferCount; i++)
+			{
+				SAFERELEASE(m_ppBackBuffers[i]);
+				SAFERELEASE(m_ppBackBufferViews[i]);
+			}
+
+			SAFEDELETE_ARRAY(m_ppBackBuffers);
+			SAFEDELETE_ARRAY(m_ppBackBufferViews);
+		}
+
 		SAFERELEASE(m_pSwapChain);
 	}
 
@@ -32,7 +42,7 @@ namespace LambdaEngine
 		swapChainDesc.Format		= EFormat::FORMAT_B8G8R8A8_UNORM;
 		swapChainDesc.Width			= 0;
 		swapChainDesc.Height		= 0;
-		swapChainDesc.BufferCount	= 3;
+		swapChainDesc.BufferCount	= desc.BackBufferCount;
 		swapChainDesc.SampleCount	= 1;
 		swapChainDesc.VerticalSync	= false;
 		
@@ -45,8 +55,8 @@ namespace LambdaEngine
 		}
 
 		uint32 backBufferCount	= m_pSwapChain->GetDesc().BufferCount;
-		m_ppBackBuffers			= new ITexture*[backBufferCount];
-		m_ppBackBufferViews		= new ITextureView*[backBufferCount];
+		m_ppBackBuffers			= DBG_NEW ITexture*[backBufferCount];
+		m_ppBackBufferViews		= DBG_NEW ITextureView*[backBufferCount];
 
 		for (uint32 v = 0; v < backBufferCount; v++)
 		{

@@ -106,7 +106,7 @@ namespace LambdaEngine
 		vkUpdateDescriptorSets(m_pDevice->Device, 1, &descriptorImageWrite, 0, nullptr);
 	}
 
-	void DescriptorSetVK::WriteBufferDescriptors(const IBuffer* const* ppBuffers, const uint32* pOffsets, const uint32* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	void DescriptorSetVK::WriteBufferDescriptors(const IBuffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
 	{
 		ASSERT(ppBuffers	!= nullptr);
 		ASSERT(pOffsets		!= nullptr);

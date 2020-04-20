@@ -41,7 +41,7 @@ namespace LambdaEngine
 
 		// IDesciptorSet Interface
 		virtual void WriteTextureDescriptors(const ITextureView* const* ppTextures, const ISampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType type) override final;
-		virtual void WriteBufferDescriptors(const IBuffer* const* ppBuffers, const uint32* pOffsets, const uint32* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType type)	override final;
+		virtual void WriteBufferDescriptors(const IBuffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType type)	override final;
 		virtual void WriteAccelerationStructureDescriptors(uint32 firstBinding, uint32 descriptorCount) override final;
 
 		virtual IDescriptorHeap* GetHeap() override final;

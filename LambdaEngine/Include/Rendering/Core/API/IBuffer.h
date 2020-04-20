@@ -4,7 +4,7 @@
 
 namespace LambdaEngine
 {
-    enum EBufferFlags
+    enum FBufferFlags
     {
         BUFFER_FLAG_NONE                    = 0,
         BUFFER_FLAG_VERTEX_BUFFER           = FLAG(1),
@@ -21,7 +21,7 @@ namespace LambdaEngine
     {
         const char* pName       = "";
         EMemoryType MemoryType  = EMemoryType::NONE;
-        uint32      Flags       = EBufferFlags::BUFFER_FLAG_NONE;
+        uint32      Flags       = FBufferFlags::BUFFER_FLAG_NONE;
         uint64      SizeInBytes = 0;
     };
 

@@ -115,8 +115,8 @@ namespace LambdaEngine
 		ECommandQueueType	QueueAfter				= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
 		uint32				SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
 		uint32				DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
-		uint32				Offset					= 0;
-		uint32				SizeInBytes				= 0;
+		uint64				Offset					= 0;
+		uint64				SizeInBytes				= 0;
 	};
 
 	struct BuildTopLevelAccelerationStructureDesc

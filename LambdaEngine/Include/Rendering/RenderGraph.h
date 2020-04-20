@@ -162,8 +162,8 @@ namespace LambdaEngine
 			{
 				std::vector<PipelineBufferBarrier*> Barriers;
 				std::vector<IBuffer*>		Buffers;
-				std::vector<uint32>			Offsets;
-				std::vector<uint32>			SizesInBytes;
+				std::vector<uint64>			Offsets;
+				std::vector<uint64>			SizesInBytes;
 			} Buffer;
 
 			struct
@@ -282,25 +282,25 @@ namespace LambdaEngine
 	private:
 		const IGraphicsDevice*								m_pGraphicsDevice;
 
-		IDescriptorHeap*									m_pDescriptorHeap;
+		IDescriptorHeap*									m_pDescriptorHeap				= nullptr;
 
-		uint32												m_BackBufferCount;
+		uint32												m_BackBufferCount				= 0;
 		
-		IFence*												m_pFence;
-		uint64												m_SignalValue;
+		IFence*												m_pFence						= nullptr;
+		uint64												m_SignalValue					= 1;
 
-		ICommandList**										m_ppExecutionStages;
-		uint32												m_ExecutionStageCount;
+		ICommandList**										m_ppExecutionStages				= nullptr;
+		uint32												m_ExecutionStageCount			= 0;
 
-		PipelineStage*										m_pPipelineStages;
-		uint32												m_PipelineStageCount;
+		PipelineStage*										m_pPipelineStages				= nullptr;
+		uint32												m_PipelineStageCount			= 0;
 
 		std::unordered_map<std::string, uint32>				m_RenderStageMap;
-		RenderStage*										m_pRenderStages;
-		uint32												m_RenderStageCount;
+		RenderStage*										m_pRenderStages					= nullptr;
+		uint32												m_RenderStageCount				= 0;
 
-		SynchronizationStage*								m_pSynchronizationStages;
-		uint32												m_SynchronizationStageCount;
+		SynchronizationStage*								m_pSynchronizationStages		= nullptr;
+		uint32												m_SynchronizationStageCount		= 0;
 
 		std::unordered_map<std::string, Resource>			m_ResourceMap;
 		std::set<Resource*>									m_DirtyDescriptorSetTextures;

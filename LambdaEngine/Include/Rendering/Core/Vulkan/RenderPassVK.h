@@ -18,6 +18,7 @@ namespace LambdaEngine
 			VkAttachmentReference	InputAttachments[MAX_COLOR_ATTACHMENTS];
 			VkAttachmentReference	ColorAttachments[MAX_COLOR_ATTACHMENTS];
 			VkAttachmentReference	ResolveAttachments[MAX_COLOR_ATTACHMENTS];
+			VkAttachmentReference	DepthStencil;
 		};
 
 	public:

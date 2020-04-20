@@ -45,42 +45,42 @@ namespace LambdaEngine
         m_AlignementRequirement = 1LLU;
 
 		info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        if (desc.Flags & EBufferFlags::BUFFER_FLAG_VERTEX_BUFFER)
+        if (desc.Flags & FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER)
         {
             info.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
             m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
         }
-        if (desc.Flags & EBufferFlags::BUFFER_FLAG_INDEX_BUFFER)
+        if (desc.Flags & FBufferFlags::BUFFER_FLAG_INDEX_BUFFER)
         {
             info.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
             m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
         }
-        if (desc.Flags & EBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER)
+        if (desc.Flags & FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER)
         {
             info.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             m_AlignementRequirement = std::max(m_AlignementRequirement, deviceLimits.minUniformBufferOffsetAlignment);
         }
-        if (desc.Flags & EBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER)
+        if (desc.Flags & FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER)
         {
             info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             m_AlignementRequirement = std::max(m_AlignementRequirement, deviceLimits.minStorageBufferOffsetAlignment);
         }
-        if (desc.Flags & EBufferFlags::BUFFER_FLAG_COPY_DST)
+        if (desc.Flags & FBufferFlags::BUFFER_FLAG_COPY_DST)
         {
             info.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
             m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
         }
-        if (desc.Flags & EBufferFlags::BUFFER_FLAG_COPY_SRC)
+        if (desc.Flags & FBufferFlags::BUFFER_FLAG_COPY_SRC)
         {
             info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
         }
-		if (desc.Flags & EBufferFlags::BUFFER_FLAG_RAY_TRACING)
+		if (desc.Flags & FBufferFlags::BUFFER_FLAG_RAY_TRACING)
 		{
 			info.usage |= VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR;
             m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
 		}
-		if (desc.Flags & EBufferFlags::BUFFER_FLAG_INDIRECT_BUFFER)
+		if (desc.Flags & FBufferFlags::BUFFER_FLAG_INDIRECT_BUFFER)
 		{
 			info.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 			m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
@@ -167,8 +167,10 @@ namespace LambdaEngine
     void* BufferVK::Map()
     {
         void* pHostMemory = nullptr;
-        if (vkMapMemory(m_pDevice->Device, m_Memory, 0, VK_WHOLE_SIZE, 0, &pHostMemory) != VK_SUCCESS)
+		VkResult result = vkMapMemory(m_pDevice->Device, m_Memory, 0, VK_WHOLE_SIZE, 0, &pHostMemory);
+        if (result != VK_SUCCESS)
         {
+			LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer %s", m_DebugName);
             return nullptr;
         }
 
