@@ -18,7 +18,6 @@
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
 #include "Rendering/Core/Vulkan/AccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
-#include "Rendering/Core/Vulkan/FrameBufferVK.h"
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/DescriptorHeapVK.h"
@@ -140,24 +139,31 @@ namespace LambdaEngine
 		return true;
 	}
 
-	VkFramebuffer GraphicsDeviceVK::GetFrameBuffer(
-		const IRenderPass* pRenderPass,
-		const ITextureView* const* ppRenderTargets,
-		uint32 renderTargetCount,
-		const ITextureView* pDepthStencil,
-		uint32 width,
-		uint32 height) const
+	VkFramebuffer GraphicsDeviceVK::GetFrameBuffer(const IRenderPass* pRenderPass, const ITextureView* const* ppRenderTargets, uint32 renderTargetCount, const ITextureView* pDepthStencil, uint32 width, uint32 height) const
 	{
-		FrameBufferCacheKey key = {};
-
+		FrameBufferCacheKey key = { };
 		for (uint32 i = 0; i < renderTargetCount; i++)
 		{
-			key.ColorAttachmentsViews[i] = reinterpret_cast<const TextureViewVK*>(ppRenderTargets[i])->GetImageView();
+            const TextureViewVK* pRenderTargetVk = reinterpret_cast<const TextureViewVK*>(ppRenderTargets[i]);
+			key.ColorAttachmentsViews[i] = pRenderTargetVk->GetImageView();
 		}
 
 		key.ColorAttachmentViewCount	= renderTargetCount;
-		key.DepthStencilView			= pDepthStencil != nullptr ? reinterpret_cast<const TextureViewVK*>(pDepthStencil)->GetImageView() : nullptr;
-		key.RenderPass					= reinterpret_cast<const RenderPassVK*>(pRenderPass)->GetRenderPass();
+        
+        if (pDepthStencil)
+        {
+            const TextureViewVK* pDepthStencilVk = reinterpret_cast<const TextureViewVK*>(pDepthStencil);
+            key.DepthStencilView = pDepthStencilVk->GetImageView();
+        }
+        else
+        {
+            key.DepthStencilView = VK_NULL_HANDLE;
+        }
+        
+        ASSERT(pRenderPass != nullptr);
+        
+        const RenderPassVK* pRenderPassVk = reinterpret_cast<const RenderPassVK*>(pRenderPass);
+        key.RenderPass = pRenderPassVk->GetRenderPass();
 		
 		return m_pFrameBufferCache->GetFrameBuffer(key, width, height);
 	}
@@ -206,20 +212,6 @@ namespace LambdaEngine
 		else
 		{
 			return pDescriptorSet;
-		}
-	}
-
-	IFrameBuffer* GraphicsDeviceVK::CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc) const
-	{
-		FrameBufferVK* pFrameBuffer = DBG_NEW FrameBufferVK(this);
-		if (!pFrameBuffer->Init(pRenderPass, desc))
-		{
-			pFrameBuffer->Release();
-			return nullptr;
-		}
-		else
-		{
-			return pFrameBuffer;
 		}
 	}
 

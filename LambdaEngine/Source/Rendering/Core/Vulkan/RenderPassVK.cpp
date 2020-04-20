@@ -86,7 +86,7 @@ namespace LambdaEngine
 			TDeviceChild::SetName(pName);
 			m_pDevice->SetVulkanObjectName(pName, (uint64)m_RenderPass, VK_OBJECT_TYPE_RENDER_PASS);
 
-			m_Desc.pName = m_DebugName;
+			m_Desc.pName = m_pDebugName;
 		}
 	}
 

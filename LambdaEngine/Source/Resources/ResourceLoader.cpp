@@ -448,7 +448,7 @@ namespace LambdaEngine
 		copyDesc.ArrayIndex		= 0;
 		copyDesc.ArrayCount		= 1;
 
-		PipelineTextureBarrier transitionToCopyDstBarrier = {};
+		PipelineTextureBarrierDesc transitionToCopyDstBarrier = {};
 		transitionToCopyDstBarrier.pTexture					= pTexture;
 		transitionToCopyDstBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
 		transitionToCopyDstBarrier.StateAfter				= ETextureState::TEXTURE_STATE_COPY_DST;
@@ -471,7 +471,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			PipelineTextureBarrier transitionToShaderReadBarrier = {};
+			PipelineTextureBarrierDesc transitionToShaderReadBarrier = {};
 			transitionToShaderReadBarrier.pTexture					= pTexture;
 			transitionToShaderReadBarrier.StateBefore				= ETextureState::TEXTURE_STATE_COPY_DST;
 			transitionToShaderReadBarrier.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;

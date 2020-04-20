@@ -13,7 +13,6 @@
 #include "Rendering/Core/API/ITextureView.h"
 #include "Rendering/Core/API/IRenderPass.h"
 #include "Rendering/Core/API/IPipelineLayout.h"
-#include "Rendering/Core/API/IFrameBuffer.h"
 #include "Rendering/Core/API/IDescriptorHeap.h"
 #include "Rendering/Core/API/IDescriptorSet.h"
 #include "Rendering/Core/API/IAccelerationStructure.h"

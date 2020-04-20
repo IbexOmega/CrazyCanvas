@@ -11,7 +11,6 @@ namespace LambdaEngine
     struct SwapChainDesc;
 	struct RenderPassDesc;
     struct CommandListDesc;
-	struct FrameBufferDesc;
     struct TextureViewDesc;
 	struct PipelineLayoutDesc;
 	struct DescriptorHeapDesc;
@@ -31,7 +30,6 @@ namespace LambdaEngine
     class IRenderPass;
     class ITextureView;
     class ICommandList;
-	class IFrameBuffer;
     class ICommandQueue;
 	class IDescriptorSet;
 	class IPipelineState;
@@ -67,8 +65,6 @@ namespace LambdaEngine
 		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc& desc) const = 0;
 
 		virtual IDescriptorSet*	CreateDescriptorSet(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const = 0;
-
-		virtual IFrameBuffer* CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc)	const = 0;
 
 		virtual IRenderPass*  CreateRenderPass(const RenderPassDesc& desc)	 const = 0;
 		virtual ITextureView* CreateTextureView(const TextureViewDesc& desc) const = 0;

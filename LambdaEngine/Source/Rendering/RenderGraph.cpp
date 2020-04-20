@@ -803,7 +803,7 @@ namespace LambdaEngine
 
 				if (barrierType == ESimpleResourceType::TEXTURE)
 				{
-					PipelineTextureBarrier textureBarrier = {};
+					PipelineTextureBarrierDesc textureBarrier = {};
 					textureBarrier.QueueBefore			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.FromQueueOwner);
 					textureBarrier.QueueAfter			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.ToQueueOwner);
 					textureBarrier.StateBefore			= ConvertAttachmentTypeToTextureState(attachmentSynchronizationDesc.FromAttachment.Type);
@@ -827,7 +827,7 @@ namespace LambdaEngine
 				}
 				else if (barrierType == ESimpleResourceType::BUFFER)
 				{
-					PipelineBufferBarrier bufferBarrier = {};
+					PipelineBufferBarrierDesc bufferBarrier = {};
 					bufferBarrier.QueueBefore			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.FromQueueOwner);
 					bufferBarrier.QueueAfter			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.ToQueueOwner);
 					bufferBarrier.SrcMemoryAccessFlags	= ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.FromAttachment.Type);
@@ -937,7 +937,7 @@ namespace LambdaEngine
 
 				for (uint32 b = sr; b < pResource->Texture.Barriers.size(); b += pResource->SubResourceCount)
 				{
-					PipelineTextureBarrier* pTextureBarrier = pResource->Texture.Barriers[b];
+					PipelineTextureBarrierDesc* pTextureBarrier = pResource->Texture.Barriers[b];
 
 					pTextureBarrier->pTexture		= pTexture;
 					pTextureBarrier->Miplevel		= 0;
@@ -981,7 +981,7 @@ namespace LambdaEngine
 
 			for (uint32 b = sr; b < pResource->Buffer.Barriers.size(); b += pResource->SubResourceCount)
 			{
-				PipelineBufferBarrier* pBufferBarrier = pResource->Buffer.Barriers[b];
+				PipelineBufferBarrierDesc* pBufferBarrier = pResource->Buffer.Barriers[b];
 
 				pBufferBarrier->pBuffer		= pBuffer;
 				pBufferBarrier->SizeInBytes = bufferDesc.SizeInBytes;
@@ -1011,7 +1011,7 @@ namespace LambdaEngine
 
 				for (uint32 b = sr; b < pResource->Texture.Barriers.size(); b += pResource->SubResourceCount)
 				{
-					PipelineTextureBarrier* pTextureBarrier = pResource->Texture.Barriers[b];
+					PipelineTextureBarrierDesc* pTextureBarrier = pResource->Texture.Barriers[b];
 
 					pTextureBarrier->pTexture		= pTexture;
 					pTextureBarrier->Miplevel		= 0;
@@ -1050,7 +1050,7 @@ namespace LambdaEngine
 
 			for (uint32 b = sr; b < pResource->Buffer.Barriers.size(); b += pResource->SubResourceCount)
 			{
-				PipelineBufferBarrier* pBufferBarrier = pResource->Buffer.Barriers[b];
+				PipelineBufferBarrierDesc* pBufferBarrier = pResource->Buffer.Barriers[b];
 
 				pBufferBarrier->pBuffer		= pBuffer;
 				pBufferBarrier->SizeInBytes = pBuffer->GetDesc().SizeInBytes;
@@ -1098,7 +1098,7 @@ namespace LambdaEngine
 
 			for (uint32 b = 0; b < pTextureSynchronization->Barriers.size(); b++)
 			{
-				const PipelineTextureBarrier* pBarrier = &pTextureSynchronization->Barriers[b];
+				const PipelineTextureBarrierDesc* pBarrier = &pTextureSynchronization->Barriers[b];
 
 				if (pBarrier->QueueBefore == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
 				{

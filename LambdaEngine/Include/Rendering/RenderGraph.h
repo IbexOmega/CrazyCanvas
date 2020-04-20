@@ -12,8 +12,8 @@
 
 namespace LambdaEngine
 {
-	struct PipelineTextureBarrier;
-	struct PipelineBufferBarrier;
+	struct PipelineTextureBarrierDesc;
+	struct PipelineBufferBarrierDesc;
 	struct TextureViewDesc;
 	struct TextureDesc;
 	struct SamplerDesc;
@@ -152,7 +152,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				std::vector<PipelineTextureBarrier*> Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
+				std::vector<PipelineTextureBarrierDesc*> Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
 				std::vector<ITexture*>		Textures;
 				std::vector<ITextureView*>	TextureViews;
 				std::vector<ISampler*>		Samplers;
@@ -160,7 +160,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				std::vector<PipelineBufferBarrier*> Barriers;
+				std::vector<PipelineBufferBarrierDesc*> Barriers;
 				std::vector<IBuffer*>		Buffers;
 				std::vector<uint64>			Offsets;
 				std::vector<uint64>			SizesInBytes;
@@ -194,14 +194,14 @@ namespace LambdaEngine
 		{
 			FShaderStageFlags		SrcShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 			FShaderStageFlags		DstShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			std::vector<PipelineTextureBarrier> Barriers;
+			std::vector<PipelineTextureBarrierDesc> Barriers;
 		};
 
 		struct BufferSynchronization
 		{
 			FShaderStageFlags		SrcShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 			FShaderStageFlags		DstShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			std::vector<PipelineBufferBarrier> Barriers;
+			std::vector<PipelineBufferBarrierDesc> Barriers;
 		};
 
 		struct SynchronizationStage

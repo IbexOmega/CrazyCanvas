@@ -10,7 +10,6 @@
 #include "Rendering/Core/Vulkan/ComputePipelineStateVK.h"
 #include "Rendering/Core/Vulkan/GraphicsPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/RayTracingPipelineStateVK.h"
-#include "Rendering/Core/Vulkan/FrameBufferVK.h"
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/DescriptorSetVK.h"
@@ -87,7 +86,7 @@ namespace LambdaEngine
 			TDeviceChild::SetName(pName);
 			m_pDevice->SetVulkanObjectName(pName, (uint64)m_CommandList, VK_OBJECT_TYPE_COMMAND_BUFFER);
 
-			m_Desc.pName = m_DebugName;
+			m_Desc.pName = m_pDebugName;
 		}
     }
 
@@ -96,7 +95,7 @@ namespace LambdaEngine
 		vkResetCommandBuffer(m_CommandList, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 	}
 
-	void CommandListVK::Begin(const SecondaryCommandListBeginDesc* pBeginDesc)
+	bool CommandListVK::Begin(const SecondaryCommandListBeginDesc* pBeginDesc)
 	{
 		VkCommandBufferBeginInfo beginInfo = {};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -110,16 +109,14 @@ namespace LambdaEngine
 		VkCommandBufferInheritanceInfo inheritanceInfo = { };
 		if (pBeginDesc)
 		{
-			const RenderPassVK*		pVkRenderPass	= reinterpret_cast<const RenderPassVK*>(pBeginDesc->pRenderPass);
-			const FrameBufferVK*	pVkFrameBuffer	= reinterpret_cast<const FrameBufferVK*>(pBeginDesc->pFrameBuffer);
+			const RenderPassVK*	pRenderPassVk = reinterpret_cast<const RenderPassVK*>(pBeginDesc->pRenderPass);
 
-			ASSERT(pVkRenderPass != nullptr);
-			ASSERT(pVkFrameBuffer != nullptr);
-
+			ASSERT(pRenderPassVk != nullptr);
+            
 			inheritanceInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 			inheritanceInfo.pNext					= nullptr;
-			inheritanceInfo.framebuffer				= pVkFrameBuffer->GetFrameBuffer();
-			inheritanceInfo.renderPass				= pVkRenderPass->GetRenderPass();
+			inheritanceInfo.framebuffer				= m_pDevice->GetFrameBuffer(pRenderPassVk, pBeginDesc->ppRenderTargets, pBeginDesc->RenderTargetCount, pBeginDesc->pDepthStencilView, pBeginDesc->Width, pBeginDesc->Height);
+			inheritanceInfo.renderPass				= pRenderPassVk->GetRenderPass();
 			inheritanceInfo.subpass					= pBeginDesc->SubPass;
 			inheritanceInfo.occlusionQueryEnable	= VK_FALSE;
 			inheritanceInfo.pipelineStatistics		= 0;
@@ -136,16 +133,26 @@ namespace LambdaEngine
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[CommandListVK]: Begin CommandBuffer Failed");
+            return false;
 		}
+        else
+        {
+            return true;
+        }
 	}
 
-	void CommandListVK::End()
+	bool CommandListVK::End()
 	{
 		VkResult result = vkEndCommandBuffer(m_CommandList); 
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[CommandListVK]: End CommandBuffer Failed");
+            return false;
 		}
+        else
+        {
+            return true;
+        }
 	}
 
 	void CommandListVK::BeginRenderPass(const BeginRenderPassDesc* pBeginDesc)
@@ -382,7 +389,7 @@ namespace LambdaEngine
 		vkCmdCopyBufferToImage(m_CommandList, pVkSrc->GetBuffer(), pVkDst->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 	}
 
-	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount)
+	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)
 	{
 		ASSERT(pTextureBarriers		!= nullptr);
 		ASSERT(textureBarrierCount	< MAX_IMAGE_BARRIERS);
@@ -392,7 +399,7 @@ namespace LambdaEngine
 		VkImageLayout	newLayout	= VK_IMAGE_LAYOUT_UNDEFINED;
 		for (uint32 i = 0; i < textureBarrierCount; i++)
 		{
-			const PipelineTextureBarrier& barrier = pTextureBarriers[i];
+			const PipelineTextureBarrierDesc& barrier = pTextureBarriers[i];
 
 			pVkTexture	= reinterpret_cast<TextureVK*>(barrier.pTexture);
 			oldLayout	= ConvertTextureState(barrier.StateBefore);
@@ -427,7 +434,7 @@ namespace LambdaEngine
 		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, textureBarrierCount, m_ImageBarriers);
 	}
 
-	void CommandListVK::PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrier* pBufferBarriers, uint32 bufferBarrierCount)
+	void CommandListVK::PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)
 	{
 		ASSERT(pBufferBarriers		!= nullptr);
 		ASSERT(bufferBarrierCount	< MAX_BUFFER_BARRIERS);
@@ -435,7 +442,7 @@ namespace LambdaEngine
 		BufferVK* pVkBuffer = nullptr;
 		for (uint32 i = 0; i < bufferBarrierCount; i++)
 		{
-			const PipelineBufferBarrier& barrier = pBufferBarriers[i];
+			const PipelineBufferBarrierDesc& barrier = pBufferBarriers[i];
 			pVkBuffer = reinterpret_cast<BufferVK*>(barrier.pBuffer);
 
 			m_BufferBarriers[i].sType				= VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -486,7 +493,7 @@ namespace LambdaEngine
 			return;
 		}
 
-		PipelineTextureBarrier textureBarrier = { };
+		PipelineTextureBarrierDesc textureBarrier = { };
 		textureBarrier.pTexture				= pTexture;
 		textureBarrier.TextureFlags			= desc.Flags;
 		textureBarrier.QueueAfter			= ECommandQueueType::COMMAND_QUEUE_NONE;

@@ -37,13 +37,7 @@ namespace LambdaEngine
 
 		bool Init(const GraphicsDeviceDesc& desc);
 
-		VkFramebuffer GetFrameBuffer(
-			const IRenderPass* pRenderPass,
-			const ITextureView* const* ppRenderTargets,
-			uint32 renderTargetCount,
-			const ITextureView* pDepthStencil,
-			uint32 width,
-			uint32 height) const;
+		VkFramebuffer GetFrameBuffer(const IRenderPass* pRenderPass, const ITextureView* const* ppRenderTargets, uint32 renderTargetCount, const ITextureView* pDepthStencil, uint32 width, uint32 height) const;
 		
 		bool IsInstanceExtensionEnabled(const char* pExtensionName) const;
 		bool IsDeviceExtensionEnabled(const char* pExtensionName)	const;
@@ -64,8 +58,6 @@ namespace LambdaEngine
 		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc& desc) const override final;
 
 		virtual IDescriptorSet* CreateDescriptorSet(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const override final;
-
-		virtual IFrameBuffer*	CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc)	const override final;
 
 		virtual IRenderPass*	CreateRenderPass(const RenderPassDesc& desc)	const override final;
 		virtual ITextureView*	CreateTextureView(const TextureViewDesc& desc)	const override final;

@@ -175,7 +175,15 @@ namespace LambdaEngine
 		VkResult result = vkMapMemory(m_pDevice->Device, m_Memory, 0, VK_WHOLE_SIZE, 0, &pHostMemory);
         if (result != VK_SUCCESS)
         {
-			LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer %s", m_DebugName);
+            if (m_pDebugName)
+            {
+                LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer %s", m_pDebugName);
+            }
+            else
+            {
+                LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer");
+            }
+            
             return nullptr;
         }
         else
@@ -200,7 +208,7 @@ namespace LambdaEngine
             TDeviceChild::SetName(pName);
             m_pDevice->SetVulkanObjectName(pName, (uint64)m_Buffer, VK_OBJECT_TYPE_BUFFER);
 
-            m_Desc.pName = m_DebugName;
+            m_Desc.pName = m_pDebugName;
         }
     }
     
