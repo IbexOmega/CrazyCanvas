@@ -23,7 +23,7 @@ namespace LambdaEngine
 		SAFEDELETE_ALL(m_Meshes);
 		SAFEDELETE_ALL(m_Materials);
 		SAFERELEASE_ALL(m_Textures);
-		SAFEDELETE_ALL(m_Shaders);
+		SAFERELEASE_ALL(m_Shaders);
 		SAFEDELETE_ALL(m_SoundEffects);
 	}
 

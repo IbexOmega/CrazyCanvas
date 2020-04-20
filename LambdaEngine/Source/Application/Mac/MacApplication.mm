@@ -153,7 +153,7 @@ namespace LambdaEngine
             [NSApp setMainMenu:menuBar];
             [NSApp setWindowsMenu:windowMenu];
             [NSApp setServicesMenu:serviceMenu];
-        });
+        }, true);
     
         return true;
     }
