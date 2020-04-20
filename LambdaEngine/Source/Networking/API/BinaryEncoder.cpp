@@ -7,7 +7,7 @@ namespace LambdaEngine
 	BinaryEncoder::BinaryEncoder(NetworkPacket* packet) : 
 		m_pNetworkPacket(packet)
 	{
-
+		
 	}
 
 	BinaryEncoder::~BinaryEncoder()

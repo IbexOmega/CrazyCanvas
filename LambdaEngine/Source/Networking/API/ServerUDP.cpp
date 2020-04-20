@@ -15,13 +15,14 @@ namespace LambdaEngine
 	std::set<ServerUDP*> ServerUDP::s_Servers;
 	SpinLock ServerUDP::s_Lock;
 
-	ServerUDP::ServerUDP(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPerClient) :
+	ServerUDP::ServerUDP(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPerClient, uint8 maximumTries) :
 		m_pHandler(pHandler),
 		m_MaxClients(maxClients),
 		m_PacketsPerClient(packetPerClient),
 		m_pSocket(nullptr),
 		m_Accepting(true),
-		m_PacketLoss(0.0f)
+		m_PacketLoss(0.0f),
+		m_MaxTries(maximumTries)
 	{
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Servers.insert(this);
@@ -136,7 +137,7 @@ namespace LambdaEngine
 				}
 				else
 				{
-					pClient = DBG_NEW ClientUDPRemote(m_PacketsPerClient, sender, this);
+					pClient = DBG_NEW ClientUDPRemote(m_PacketsPerClient, m_MaxTries, sender, this);
 					if (!IsAcceptingConnections())
 					{
 						SendServerNotAccepting(pClient);
@@ -238,9 +239,9 @@ namespace LambdaEngine
 		client->SendPackets();
 	}
 
-	ServerUDP* ServerUDP::Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetsPerClient)
+	ServerUDP* ServerUDP::Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetsPerClient, uint8 maximumTries)
 	{
-		return DBG_NEW ServerUDP(pHandler, maxClients, packetsPerClient);
+		return DBG_NEW ServerUDP(pHandler, maxClients, packetsPerClient, maximumTries);
 	}
 
 	void ServerUDP::FixedTickStatic(Timestamp timestamp)

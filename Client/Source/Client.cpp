@@ -25,7 +25,7 @@ Client::Client() :
     PlatformApplication::Get()->GetWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
-    m_pClient = ClientUDP::Create(this, 512);
+    m_pClient = ClientUDP::Create(this, 512, 10);
 
     if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
     {
@@ -75,10 +75,16 @@ void Client::OnPacketDelivered(LambdaEngine::NetworkPacket* pPacket)
     LOG_INFO("OnPacketDelivered()");
 }
 
-void Client::OnPacketResent(LambdaEngine::NetworkPacket* pPacket)
+void Client::OnPacketResent(LambdaEngine::NetworkPacket* pPacket, uint8 tries)
 {
     UNREFERENCED_PARAMETER(pPacket);
-    LOG_INFO("OnPacketResent()");
+    LOG_INFO("OnPacketResent(%d)", tries);
+}
+
+void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8 tries)
+{
+    UNREFERENCED_PARAMETER(pPacket);
+    LOG_INFO("OnPacketMaxTriesReached(%d)", tries);
 }
 
 void Client::OnKeyDown(LambdaEngine::EKey key)

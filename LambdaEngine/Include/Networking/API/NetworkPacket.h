@@ -53,6 +53,8 @@ namespace LambdaEngine
 
 		uint64 GetRemoteSalt() const;
 
+		std::string ToString() const;
+
 	private:
 		NetworkPacket();
 

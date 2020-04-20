@@ -66,4 +66,24 @@ namespace LambdaEngine
 	{
 		return m_Salt;
 	}
+
+	std::string NetworkPacket::ToString() const
+	{
+		std::string type;
+		switch (m_Header.Type)
+		{
+		case TYPE_UNDEFINED:			type = "TYPE_UNDEFINED";  break;
+		case TYPE_PING:					type = "TYPE_PING";  break;
+		case TYPE_SERVER_FULL:			type = "TYPE_SERVER_FULL";  break;
+		case TYPE_SERVER_NOT_ACCEPTING: type = "TYPE_SERVER_NOT_ACCEPTING";  break;
+		case TYPE_CONNNECT:				type = "TYPE_CONNNECT";  break;
+		case TYPE_DISCONNECT:			type = "TYPE_DISCONNECT";  break;
+		case TYPE_CHALLENGE:			type = "TYPE_CHALLENGE";  break;
+		case TYPE_ACCEPTED:				type = "TYPE_ACCEPTED";  break;
+		case TYPE_NETWORK_DISCOVERY:	type = "TYPE_NETWORK_DISCOVERY";  break;
+		default:
+			break;
+		}
+		return "[Type=" + type + "], [Size=" + std::to_string(GetBufferSize()) + "]";
+	}
 }
