@@ -26,7 +26,7 @@ namespace LambdaEngine
 		virtual EClientState GetState() const override;
 
 	protected:
-		ClientUDPRemote(uint16 packets, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
+		ClientUDPRemote(uint16 packets, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
 
 	private:
 		PacketManager* GetPacketManager();

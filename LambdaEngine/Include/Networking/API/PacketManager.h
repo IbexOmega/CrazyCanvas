@@ -24,16 +24,21 @@ namespace LambdaEngine
 	{
 		struct MessageInfo
 		{
-			NetworkPacket* Packet = nullptr;
-			IPacketListener* Listener = nullptr;
-			Timestamp LastSent;
+			NetworkPacket*	Packet		= nullptr;
+			IPacketListener* Listener	= nullptr;
+			Timestamp LastSent			= 0;
+			uint8 Tries					= 0;
+
+			uint32 GetUID() const
+			{
+				return Packet->GetHeader().UID;
+			}
 		};
 
 		struct Bundle
 		{
-			MessageInfo Infos[32];
-			uint8 Count = 0;
-			Timestamp SentTimeStamp;
+			std::set<uint32> MessageUIDs;
+			Timestamp Timestamp = 0;
 		};
 
 #pragma pack(push, 1)
@@ -50,7 +55,7 @@ namespace LambdaEngine
 
 
 	public:
-		PacketManager(uint16 packets);
+		PacketManager(uint16 packets, uint8 maximumTries);
 		~PacketManager();
 
 		void EnqueuePacket(NetworkPacket* packet);
@@ -59,31 +64,39 @@ namespace LambdaEngine
 
 		bool EncodePackets(char* buffer, int32& bytesWritten);
 		bool DecodePackets(const char* buffer, int32 bytesReceived, NetworkPacket** packetsRead, int32& nrOfPackets);
+		void SwapPacketQueues();
+		void Tick();
 
 		void Free(NetworkPacket** packets, int32 nrOfPackets);
 
 		const Timestamp& GetPing() const;
 
-		void GenerateSalt();
 		uint64 GetSalt() const;
 
+		void Reset();
+
 	private:
-		void WriteHeaderAndStoreBundle(char* buffer, int32& bytesWritten, Header& header, Bundle& bundle);
+		void WriteHeaderAndStoreBundle(char* buffer, int32& bytesWritten, Header& header, Bundle& bundle, std::vector<MessageInfo>& reliableMessages);
 
 		void ProcessSequence(uint32 sequence);
 		void ProcessAcks(uint32 ack, uint32 ackBits);
 		void ProcessAck(uint32 ack, Timestamp& rtt);
 
-		bool GetAndRemoveBundle(uint32 sequence, Bundle& bundle);
+		bool GetMessagesAndRemoveBundle(uint32 sequence, std::vector<MessageInfo>& messages, Timestamp& sentTimestamp);
 		uint32 GetNextPacketSequenceNr();
 		uint32 GetNextMessageUID();
-		void Clear();
+
+		void DeleteEmptyBundles();
+		void FindMessagesToResend(std::vector<MessageInfo>& messages);
+		void ReSendMessages(const std::vector<MessageInfo>& messages);
 
 	private:
+		uint16 m_NrOfPackets;
 		NetworkPacket* m_pPackets;
 		std::set<NetworkPacket*> m_PacketsFree;
 		std::queue<MessageInfo> m_PacketsToSend[2];
 		std::unordered_map<uint32, Bundle> m_PacketsWaitingForAck;
+		std::unordered_map<uint32, MessageInfo> m_MessagesWaitingForAck;
 
 		SpinLock m_LockPacketsFree;
 		SpinLock m_LockPacketsToSend;
@@ -100,6 +113,8 @@ namespace LambdaEngine
 
 		std::atomic_uint64_t m_Salt;
 		std::atomic_uint64_t m_SaltRemote;
+
+		uint8 m_MaximumTries;
 
 	public:
 		static uint64 DoChallenge(uint64 clientSalt, uint64 serverSalt);

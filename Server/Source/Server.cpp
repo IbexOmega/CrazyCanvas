@@ -26,7 +26,7 @@ Server::Server()
 {
 	using namespace LambdaEngine;
 
-	m_pServer = ServerUDP::Create(this, 10, 512);
+	m_pServer = ServerUDP::Create(this, 10, 512, 10);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
 
 	UpdateTitle();
