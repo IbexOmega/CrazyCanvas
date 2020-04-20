@@ -31,6 +31,7 @@ void ClientUDPHandler::OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient)
 void ClientUDPHandler::OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient)
 {
 	LOG_MESSAGE("OnDisconnectedUDP()");
+	pClient->Release();
 	delete this;
 }
 

@@ -17,8 +17,7 @@ namespace LambdaEngine
 		m_Initiated(false),
 		m_ThreadsTerminated(false),
 		m_Release(false),
-		m_pReceiveBuffer(),
-		m_pSendBuffer()
+		m_pReceiveBuffer()
 	{
 
 	}
@@ -36,7 +35,7 @@ namespace LambdaEngine
 			m_pThreadTransmitter->Notify();
 	}
 
-	void NetWorker::Release()
+	void NetWorker::TerminateAndRelease()
 	{
 		std::scoped_lock<SpinLock> lock(s_LockStatic);
 		if (!m_Release)
@@ -56,8 +55,9 @@ namespace LambdaEngine
 	{
 		if (m_Run)
 		{
-			m_Run = false;
 			OnTerminationRequested();
+			m_Run = false;
+			Flush();
 		}
 	}
 
@@ -149,10 +149,10 @@ namespace LambdaEngine
 
 	void NetWorker::ThreadsDeleted()
 	{
-		OnThreadsTurminated();
+		OnThreadsTerminated();
 		m_ThreadsTerminated = true;
 
 		if (m_Release)
-			Release();
+			TerminateAndRelease();
 	}
 }

@@ -5,7 +5,7 @@
 
 namespace LambdaEngine
 {
-	std::default_random_engine Random::s_Generator(std::chrono::system_clock::now().time_since_epoch().count());
+	std::default_random_engine Random::s_Generator((uint32)std::chrono::system_clock::now().time_since_epoch().count());
 
 	int32 Random::Int32(int32 min, int32 max)
 	{

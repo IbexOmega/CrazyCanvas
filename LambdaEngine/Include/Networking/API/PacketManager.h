@@ -33,6 +33,7 @@ namespace LambdaEngine
 		{
 			MessageInfo Infos[32];
 			uint8 Count = 0;
+			Timestamp SentTimeStamp;
 		};
 
 #pragma pack(push, 1)
@@ -61,6 +62,8 @@ namespace LambdaEngine
 
 		void Free(NetworkPacket** packets, int32 nrOfPackets);
 
+		const Timestamp& GetPing() const;
+
 		void GenerateSalt();
 		uint64 GetSalt() const;
 
@@ -69,7 +72,7 @@ namespace LambdaEngine
 
 		void ProcessSequence(uint32 sequence);
 		void ProcessAcks(uint32 ack, uint32 ackBits);
-		void ProcessAck(uint32 ack);
+		void ProcessAck(uint32 ack, Timestamp& rtt);
 
 		bool GetAndRemoveBundle(uint32 sequence, Bundle& bundle);
 		uint32 GetNextPacketSequenceNr();
@@ -93,8 +96,10 @@ namespace LambdaEngine
 		std::atomic_uint32_t m_LastReceivedSequenceNr;
 		std::atomic_uint32_t m_ReceivedSequenceBits;
 
-		uint64 m_Salt;
-		uint64 m_SaltRemote;
+		Timestamp m_Ping;
+
+		std::atomic_uint64_t m_Salt;
+		std::atomic_uint64_t m_SaltRemote;
 
 	public:
 		static uint64 DoChallenge(uint64 clientSalt, uint64 serverSalt);

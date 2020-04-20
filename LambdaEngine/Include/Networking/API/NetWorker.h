@@ -19,13 +19,12 @@ namespace LambdaEngine
 		virtual ~NetWorker();
 
 		void Flush();
-		void Release();
 
 	protected:
 		virtual bool OnThreadsStarted() = 0;
 		virtual void RunTranmitter() = 0;
 		virtual void RunReceiver() = 0;
-		virtual void OnThreadsTurminated() = 0;
+		virtual void OnThreadsTerminated() = 0;
 		virtual void OnTerminationRequested() = 0;
 		virtual void OnReleaseRequested() = 0;
 
@@ -34,6 +33,7 @@ namespace LambdaEngine
 		bool ThreadsAreRunning() const;
 		bool ShouldTerminate() const;
 		void YieldTransmitter();
+		void TerminateAndRelease();
 
 	private:
 		void ThreadTransmitter();
@@ -43,7 +43,6 @@ namespace LambdaEngine
 		void ThreadsDeleted();
 
 	protected:
-		char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
 		char m_pReceiveBuffer[UINT16_MAX];
 
 	private:

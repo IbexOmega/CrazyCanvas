@@ -15,9 +15,10 @@ namespace LambdaEngine
 
 	}
 
-	void NetworkPacket::SetType(uint16 type)
+	NetworkPacket* NetworkPacket::SetType(uint16 type)
 	{
 		m_Header.Type = type;
+		return this;
 	}
 
 	uint16 NetworkPacket::GetType() const
@@ -55,9 +56,10 @@ namespace LambdaEngine
 		return GetBufferSize() + GetHeaderSize();
 	}
 
-	void NetworkPacket::AppendBytes(uint16 bytes)
+	NetworkPacket* NetworkPacket::AppendBytes(uint16 bytes)
 	{
 		m_SizeOfBuffer += bytes;
+		return this;
 	}
 
 	uint64 NetworkPacket::GetRemoteSalt() const

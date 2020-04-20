@@ -47,6 +47,7 @@ namespace LambdaEngine
 
 		static bool Init();
 		static void Tick(Timestamp dt);
+		static void FixedTick(Timestamp dt);
 		static void Release();
 	};
 }
