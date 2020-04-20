@@ -45,6 +45,7 @@ namespace LambdaEngine
 		CreatePushConstantRanges(desc.pConstantRanges, desc.ConstantRangeCount, constantRanges);
 		CreateDescriptorSetLayout(desc.pDescriptorSetLayouts, desc.DescriptorSetLayoutCount, descriptorSetLayouts);
         
+#ifndef LAMBDA_PRODUCTION
         //Check limits
         VkPhysicalDeviceLimits limits   = m_pDevice->GetDeviceLimits();
         DescriptorCountDesc totalCount  = {};
@@ -69,6 +70,7 @@ namespace LambdaEngine
 
         const uint32 totalTextureDescriptorCount = totalCount.TextureCombinedSamplerDescriptorCount + totalCount.TextureDescriptorCount;
         ASSERT(totalTextureDescriptorCount < limits.maxPerStageDescriptorSampledImages);
+#endif
         
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = { };
 		pipelineLayoutCreateInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
