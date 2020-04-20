@@ -75,6 +75,7 @@ namespace LambdaEngine
 		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME),
 		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
+        Extension("VK_KHR_shader_draw_parameters"),
 	};
 
 	GraphicsDeviceVK::GraphicsDeviceVK()

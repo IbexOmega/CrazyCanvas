@@ -474,6 +474,8 @@ namespace LambdaEngine
 
 		(*ppMappedTexture) = pResource;
 
+        ASSERT(pResource != nullptr);
+        
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.pName			= "Resource Manager Texture View";
 		textureViewDesc.pTexture		= pResource;

@@ -47,6 +47,11 @@ namespace LambdaEngine
 		uint32						GetQueueFamilyIndexFromQueueType(ECommandQueueType type)	const;
 		VkFormatProperties			GetFormatProperties(VkFormat format)						const;
 		VkPhysicalDeviceProperties	GetPhysicalDeviceProperties()								const;
+        
+        FORCEINLINE VkPhysicalDeviceLimits GetDeviceLimits() const
+        {
+            return m_DeviceLimits;
+        }
 
 		FORCEINLINE QueueFamilyIndices GetQueueFamilyIndices() const
 		{

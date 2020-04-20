@@ -1,10 +1,10 @@
 #pragma once
 #include "IDeviceChild.h"
+#include "GraphicsDeviceBase.h"
 
 #include "Threading/API/SpinLock.h"
 
 #include <mutex>
-
 #include <string.h>
 
 #define MAX_DEVICE_CHILD_NAME_LENGTH 256
@@ -15,29 +15,32 @@ namespace LambdaEngine
 	class TDeviceChildBase : public IBase
 	{
 	public:
-		TDeviceChildBase(const TGraphicsDevice* pDevice)
-			: IBase(),
-			m_pDevice(pDevice)
-		{
+        DECL_UNIQUE_CLASS(TDeviceChildBase);
+
+        TDeviceChildBase(const TGraphicsDevice* pDevice)
+            : IBase(),
+            m_pDevice(pDevice)
+        {
             constexpr uint32 sizeInBytes = sizeof(char) * MAX_DEVICE_CHILD_NAME_LENGTH;
             m_pDebugName = (char*)malloc(sizeInBytes);
             
-			ZERO_MEMORY(m_pDebugName, sizeInBytes);
+            ZERO_MEMORY(m_pDebugName, sizeInBytes);
 
-			AddRef();
-		}
+            AddRef();
+        }
 
-		virtual ~TDeviceChildBase()
-		{
+        virtual ~TDeviceChildBase()
+        {
             if (m_pDebugName)
             {
                 free((void*)m_pDebugName);
                 m_pDebugName = nullptr;
             }
             
-			m_StrongReferences	= 0;
-		}
+            m_StrongReferences = 0;
+        }
 
+        
 		virtual uint64 Release() override
 		{
             uint64 strongReferences;
