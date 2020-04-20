@@ -46,7 +46,7 @@ namespace LambdaEngine
             
             // Fixed update
             accumulator += delta;
-            while (accumulator >= timestep)
+            //while (accumulator >= timestep)
             {
                 fixedClock.Tick();
                 FixedTick(fixedClock.GetDeltaTime());

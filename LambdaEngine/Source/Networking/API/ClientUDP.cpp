@@ -42,9 +42,6 @@ namespace LambdaEngine
 			{
 				LOG_WARNING("[ClientUDP]: Connecting...");
 				m_IPEndPoint = ipEndPoint;
-				m_State = STATE_CONNECTING;
-				m_PacketManager.GenerateSalt();
-				m_pHandler->OnConnectingUDP(this);
 				return true;
 			}
 		}
@@ -109,6 +106,9 @@ namespace LambdaEngine
 		{
 			if (m_pSocket->Bind(IPEndPoint(IPAddress::ANY, 0)))
 			{
+				m_State = STATE_CONNECTING;
+				m_pHandler->OnConnectingUDP(this);
+				m_PacketManager.GenerateSalt();
 				SendConnectRequest();
 				return true;
 			}
@@ -191,6 +191,7 @@ namespace LambdaEngine
 
 	void ClientUDP::HandleReceivedPacket(NetworkPacket* pPacket)
 	{
+		LOG_MESSAGE("PING %fms", m_PacketManager.GetPing().AsMilliSeconds());
 		uint16 packetType = pPacket->GetType();
 
 		if (packetType == NetworkPacket::TYPE_CHALLENGE)
@@ -204,6 +205,7 @@ namespace LambdaEngine
 		}
 		else if (packetType == NetworkPacket::TYPE_ACCEPTED)
 		{
+			LOG_INFO("[ClientUDP]: Connected");
 			m_State = STATE_CONNECTED;
 			m_pHandler->OnConnectedUDP(this);
 		}

@@ -67,6 +67,7 @@ namespace LambdaEngine
 
 	bool ClientUDPRemote::HandleReceivedPacket(NetworkPacket* pPacket)
 	{
+		LOG_MESSAGE("PING %fms", m_PacketManager.GetPing().AsMilliSeconds());
 		uint16 packetType = pPacket->GetType();
 
 		if (packetType == NetworkPacket::TYPE_CONNNECT)

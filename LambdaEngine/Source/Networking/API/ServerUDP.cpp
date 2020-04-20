@@ -121,7 +121,7 @@ namespace LambdaEngine
 				break;
 			}
 
-			if (m_PacketLoss > 0)
+			if (m_PacketLoss > 0.0f)
 				if (Random::Float32() <= m_PacketLoss)
 					continue;
 
