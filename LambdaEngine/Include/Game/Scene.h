@@ -20,6 +20,8 @@ namespace LambdaEngine
 	class IBuffer;
 	class ITexture;
 	class ITextureView;
+	class ICommandAllocator;
+	class ICommandList;
 	
 	struct GameObject
 	{
@@ -81,13 +83,15 @@ namespace LambdaEngine
 		Scene(const IGraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice, const ResourceManager* pResourceManager);
 		~Scene();
 
-		bool Finalize(const SceneDesc& desc);
+		bool Init(const SceneDesc& desc);
+		bool Finalize();
 
 		void UpdateCamera(const Camera* pCamera);
 
 		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 		uint32 AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 
+		uint32 GetIndirectArgumentOffset(uint32 materialIndex) { return m_MaterialIndexToIndirectArgOffsetMap[materialIndex]; }
 
 		//Todo: Make these const
 		FORCEINLINE IBuffer*				GetPerFrameBuffer()				{ return m_pPerFrameBuffer;}
@@ -117,6 +121,17 @@ namespace LambdaEngine
 		const ResourceManager*					m_pResourceManager;
 
 		const char*								m_pName;
+
+		ICommandAllocator*						m_pCopyCommandAllocator					= nullptr;
+		ICommandList*							m_pCopyCommandList						= nullptr;
+
+		std::unordered_map<uint32, uint32>		m_MaterialIndexToIndirectArgOffsetMap;
+
+		IBuffer*								m_pSceneMaterialPropertiesCopyBuffer	= nullptr;
+		IBuffer*								m_pSceneVertexCopyBuffer				= nullptr;
+		IBuffer*								m_pSceneIndexCopyBuffer					= nullptr;
+		IBuffer*								m_pSceneInstanceCopyBuffer				= nullptr;
+		IBuffer*								m_pSceneMeshIndexCopyBuffer				= nullptr;
 
 		IBuffer*								m_pPerFrameBuffer				= nullptr;
 

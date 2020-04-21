@@ -77,7 +77,18 @@ namespace LambdaEngine
 			{
 				RenderStage* pRenderStage = &m_pRenderStages[pPipelineStage->StageIndex];
 
-				SAFERELEASE(pRenderStage->pDescriptorSet);
+				for (uint32 b = 0; b < m_BackBufferCount; b++)
+				{
+					SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
+
+					for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
+					{
+						SAFERELEASE(pRenderStage->ppTextureDescriptorSets[b * pRenderStage->TextureSubDescriptorSetCount + s]);
+					}
+				}
+				
+				SAFEDELETE_ARRAY(pRenderStage->ppTextureDescriptorSets);
+				SAFEDELETE_ARRAY(pRenderStage->ppBufferDescriptorSets);
 				SAFERELEASE(pRenderStage->pPipelineLayout);
 				SAFERELEASE(pRenderStage->pRenderPass);
 				SAFERELEASE(pRenderStage->pPipelineState);
@@ -102,8 +113,9 @@ namespace LambdaEngine
 		std::vector<PipelineStageDesc>							pipelineStageDescriptions;
 		std::vector<RenderStageResourceDesc>					resourceDescriptions;
 
-		m_BackBufferCount = desc.BackBufferCount;
-		
+		m_BackBufferCount				= desc.BackBufferCount;
+		m_MaxTexturesPerDescriptorSet	= desc.MaxTexturesPerDescriptorSet;
+
 		if (!RenderGraphDescriptionParser::Parse(desc, renderStageDescriptions, synchronizationStageDescriptions, pipelineStageDescriptions, resourceDescriptions))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" could not be parsed", desc.pName);
@@ -197,81 +209,183 @@ namespace LambdaEngine
 
 	void RenderGraph::Update()
 	{
-		if (m_DirtyDescriptorSetTextures.size() > 0 || m_DirtyDescriptorSetBuffers.size() > 0 || m_DirtyDescriptorSetAccelerationStructures.size() > 0)
+		if (m_DirtyDescriptorSetInternalTextures.size() > 0 ||
+			m_DirtyDescriptorSetExternalTextures.size() > 0)
+		{
+			//Copy old descriptor set and replace old with copy, then write into the new copy
+			for (uint32 r = 0; r < m_RenderStageCount; r++)
+			{
+				RenderStage* pRenderStage = &m_pRenderStages[r];
+
+				if (pRenderStage->ppTextureDescriptorSets != nullptr)
+				{
+					for (uint32 b = 0; b < m_BackBufferCount; b++)
+					{
+						for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
+						{
+							uint32 descriptorSetIndex = b * pRenderStage->TextureSubDescriptorSetCount + s;
+							IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+							m_pGraphicsDevice->CopyDescriptorSet(pRenderStage->ppTextureDescriptorSets[descriptorSetIndex], pDescriptorSet);
+							SAFERELEASE(pRenderStage->ppTextureDescriptorSets[descriptorSetIndex]);
+							pRenderStage->ppTextureDescriptorSets[descriptorSetIndex] = pDescriptorSet;
+						}
+					}
+				}
+			}
+
+			//Internal Textures
+			if (m_DirtyDescriptorSetInternalTextures.size() > 0)
+			{
+				for (Resource* pResource : m_DirtyDescriptorSetInternalTextures)
+				{
+					for (uint32 rb = 0; rb < pResource->ResourceBindings.size(); rb++)
+					{
+						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
+						RenderStage* pRenderStage = pResourceBinding->pRenderStage;
+
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						{
+							for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
+							{
+								pRenderStage->ppTextureDescriptorSets[b]->WriteTextureDescriptors(
+									&pResource->Texture.TextureViews[b],
+									&pResource->Texture.Samplers[b],
+									pResourceBinding->TextureState,
+									pResourceBinding->Binding,
+									1,
+									pResourceBinding->DescriptorType);
+							}
+						}
+					}
+				}
+
+				m_DirtyDescriptorSetInternalTextures.clear();
+			}
+
+			//External Textures
+			if (m_DirtyDescriptorSetExternalTextures.size() > 0)
+			{
+				for (Resource* pResource : m_DirtyDescriptorSetExternalTextures)
+				{
+					for (uint32 rb = 0; rb < pResource->ResourceBindings.size(); rb++)
+					{
+						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
+						RenderStage* pRenderStage = pResourceBinding->pRenderStage;
+						uint32 actualSubResourceCount = pResource->SubResourceCount / pRenderStage->TextureSubDescriptorSetCount;
+
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						{
+							for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
+							{
+								uint32 index = b * pRenderStage->TextureSubDescriptorSetCount + s;
+		
+								pRenderStage->ppTextureDescriptorSets[index]->WriteTextureDescriptors(
+									&pResource->Texture.TextureViews[s * actualSubResourceCount],
+									&pResource->Texture.Samplers[s * actualSubResourceCount],
+									pResourceBinding->TextureState,
+									pResourceBinding->Binding,
+									actualSubResourceCount,
+									pResourceBinding->DescriptorType);
+							}
+						}
+					}
+				}
+
+				m_DirtyDescriptorSetExternalTextures.clear();
+			}
+		}
+
+		if (m_DirtyDescriptorSetInternalBuffers.size()			> 0 || 
+			m_DirtyDescriptorSetExternalBuffers.size()			> 0 || 
+			m_DirtyDescriptorSetAccelerationStructures.size()	> 0)
 		{
 			//Copy old descriptor set and replace old with copy, then write into the new copy
 			for (uint32 r = 0; r < m_RenderStageCount; r++)
 			{
 				RenderStage* pRenderStage		= &m_pRenderStages[r];
-				IDescriptorSet* pDescriptorSet	= m_pGraphicsDevice->CreateDescriptorSet("Render Stage Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
-				m_pGraphicsDevice->CopyDescriptorSet(pRenderStage->pDescriptorSet, pDescriptorSet);
-				SAFERELEASE(pRenderStage->pDescriptorSet);
-				pRenderStage->pDescriptorSet = pDescriptorSet;
-			}
-		}
-		else
-		{
-			return;
-		}
 
-		if (m_DirtyDescriptorSetTextures.size() > 0)
-		{
-			for (Resource* pResource : m_DirtyDescriptorSetTextures)
-			{
-				for (uint32 rb = 0; rb < pResource->ResourceBindings.size(); rb++)
+				if (pRenderStage->ppBufferDescriptorSets != nullptr)
 				{
-					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
-
-					pResourceBinding->pRenderStage->pDescriptorSet->WriteTextureDescriptors(
-						pResource->Texture.TextureViews.data(), 
-						pResource->Texture.Samplers.data(), 
-						pResourceBinding->TextureState, 
-						pResourceBinding->Binding, 
-						pResource->SubResourceCount,
-						pResourceBinding->DescriptorType);
+					for (uint32 b = 0; b < m_BackBufferCount; b++)
+					{
+						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Buffer Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
+						m_pGraphicsDevice->CopyDescriptorSet(pRenderStage->ppBufferDescriptorSets[b], pDescriptorSet);
+						SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
+						pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
+					}
 				}
 			}
 
-			m_DirtyDescriptorSetTextures.clear();
-		}
-
-		if (m_DirtyDescriptorSetBuffers.size() > 0)
-		{
-			for (Resource* pResource : m_DirtyDescriptorSetBuffers)
+			//Internal Buffers
+			if (m_DirtyDescriptorSetInternalBuffers.size() > 0)
 			{
-				for (uint32 rb = 0; rb < pResource->ResourceBindings.size(); rb++)
+				for (Resource* pResource : m_DirtyDescriptorSetInternalBuffers)
 				{
-					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
+					for (uint32 rb = 0; rb < pResource->ResourceBindings.size(); rb++)
+					{
+						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
 
-					pResourceBinding->pRenderStage->pDescriptorSet->WriteBufferDescriptors(
-						pResource->Buffer.Buffers.data(),
-						pResource->Buffer.Offsets.data(),
-						pResource->Buffer.SizesInBytes.data(),
-						pResourceBinding->Binding,
-						pResource->SubResourceCount,
-						pResourceBinding->DescriptorType);
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						{
+							pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
+								&pResource->Buffer.Buffers[b],
+								&pResource->Buffer.Offsets[b],
+								&pResource->Buffer.SizesInBytes[b],
+								pResourceBinding->Binding,
+								1,
+								pResourceBinding->DescriptorType);
+						}
+					}
 				}
+
+				m_DirtyDescriptorSetInternalBuffers.clear();
 			}
 
-			m_DirtyDescriptorSetBuffers.clear();
-		}
 
-		if (m_DirtyDescriptorSetAccelerationStructures.size() > 0)
-		{
-			for (Resource* pResource : m_DirtyDescriptorSetAccelerationStructures)
+
+			//External Buffers
+			if (m_DirtyDescriptorSetExternalBuffers.size() > 0)
 			{
-				for (uint32 rb = 0; rb < pResource->ResourceBindings.size(); rb++)
+				for (Resource* pResource : m_DirtyDescriptorSetExternalBuffers)
 				{
-					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
+					for (uint32 rb = 0; rb < pResource->ResourceBindings.size(); rb++)
+					{
+						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
 
-					UNREFERENCED_VARIABLE(pResourceBinding);
-
-					//pResourceBinding->pDescriptorSet->WriteAccelerationStructureDescriptors()
-					LOG_WARNING("[RenderGraph]: There are acceleration structures that need to be written to descriptor set, but not implemented");
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						{
+							pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
+								pResource->Buffer.Buffers.data(),
+								pResource->Buffer.Offsets.data(),
+								pResource->Buffer.SizesInBytes.data(),
+								pResourceBinding->Binding,
+								pResource->SubResourceCount,
+								pResourceBinding->DescriptorType);
+						}
+					}
 				}
+
+				m_DirtyDescriptorSetExternalBuffers.clear();
 			}
 
-			m_DirtyDescriptorSetAccelerationStructures.clear();
+			//Acceleration Structures
+			if (m_DirtyDescriptorSetAccelerationStructures.size() > 0)
+			{
+				for (Resource* pResource : m_DirtyDescriptorSetAccelerationStructures)
+				{
+					for (uint32 rb = 0; rb < pResource->ResourceBindings.size(); rb++)
+					{
+						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
+
+						UNREFERENCED_VARIABLE(pResourceBinding);
+
+						//pResourceBinding->pDescriptorSet->WriteAccelerationStructureDescriptors()
+						LOG_WARNING("[RenderGraph]: There are acceleration structures that need to be written to descriptor set, but not implemented");
+					}
+				}
+
+				m_DirtyDescriptorSetAccelerationStructures.clear();
+			}
 		}
 	}
 
@@ -397,81 +511,75 @@ namespace LambdaEngine
 			if (pResourceDesc->Type == ERenderStageResourceType::ATTACHMENT)
 			{
 				const RenderStageAttachment* pAttachment = pResourceDesc->pAttachmentDesc;
+				Resource* pResource = &m_ResourceMap[pAttachment->pName];
 
-				//if (!IsAttachmentReserved(pAttachment->pName))
-				{
-					Resource* pResource = &m_ResourceMap[pAttachment->pName];
+				EAttachmentAccessType accessType	= GetAttachmentAccessType(pAttachment->Type);
+				ESimpleResourceType simpleType		= GetSimpleType(pAttachment->Type);
 
-					EAttachmentAccessType accessType	= GetAttachmentAccessType(pAttachment->Type);
-					ESimpleResourceType simpleType		= GetSimpleType(pAttachment->Type);
-
-					pResource->SubResourceCount = pAttachment->SubResourceCount;
+				pResource->SubResourceCount = pAttachment->SubResourceCount;
 					
-					if (accessType != EAttachmentAccessType::EXTERNAL_INPUT)
+				if (accessType != EAttachmentAccessType::EXTERNAL_INPUT)
+				{
+					//Internal
+					if (simpleType == ESimpleResourceType::TEXTURE)
 					{
-						//Internal
-						if (simpleType == ESimpleResourceType::TEXTURE)
-						{
-							pResource->Type	= EResourceType::INTERNAL_TEXTURE;
-							pResource->Texture.Textures.resize(pResource->SubResourceCount);
-							pResource->Texture.TextureViews.resize(pResource->SubResourceCount);
-							pResource->Texture.Samplers.resize(pResource->SubResourceCount);
-						}
-						else if (simpleType == ESimpleResourceType::BUFFER)
-						{
-							pResource->Type	= EResourceType::INTERNAL_BUFFER;
-							pResource->Buffer.Buffers.resize(pResource->SubResourceCount);
-							pResource->Buffer.Offsets.resize(pResource->SubResourceCount);
-							pResource->Buffer.SizesInBytes.resize(pResource->SubResourceCount);
-						}
-						else if (simpleType == ESimpleResourceType::COLOR_ATTACHMENT)
-						{
-							//Todo: External or internal color attachment
-							pResource->Type	= EResourceType::EXTERNAL_TEXTURE;
-							pResource->Texture.Textures.resize(pResource->SubResourceCount);
-							pResource->Texture.TextureViews.resize(pResource->SubResourceCount);
-							pResource->Texture.Samplers.resize(pResource->SubResourceCount);
-						}
-						else if (simpleType == ESimpleResourceType::DEPTH_STENCIL_ATTACHMENT)
-						{
-							//Todo: External or internal depth stencil attachment
-							pResource->Type	= EResourceType::INTERNAL_TEXTURE;
-							pResource->Texture.Textures.resize(pResource->SubResourceCount);
-							pResource->Texture.TextureViews.resize(pResource->SubResourceCount);
-							pResource->Texture.Samplers.resize(pResource->SubResourceCount);
-						}
-						else
-						{
-							LOG_ERROR("[RenderGraph]: Unsupported resource type for internal resource \"%s\"", pAttachment->pName);
-							return false;
-						}
+						pResource->Type	= EResourceType::INTERNAL_TEXTURE;
+						pResource->Texture.Textures.resize(pResource->SubResourceCount);
+						pResource->Texture.TextureViews.resize(pResource->SubResourceCount);
+						pResource->Texture.Samplers.resize(pResource->SubResourceCount);
+					}
+					else if (simpleType == ESimpleResourceType::BUFFER)
+					{
+						pResource->Type	= EResourceType::INTERNAL_BUFFER;
+						pResource->Buffer.Buffers.resize(pResource->SubResourceCount);
+						pResource->Buffer.Offsets.resize(pResource->SubResourceCount);
+						pResource->Buffer.SizesInBytes.resize(pResource->SubResourceCount);
+					}
+					else if (simpleType == ESimpleResourceType::COLOR_ATTACHMENT)
+					{
+						pResource->Type	= strcmp(pAttachment->pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0 ? EResourceType::EXTERNAL_TEXTURE : EResourceType::INTERNAL_TEXTURE;
+						pResource->Texture.Textures.resize(pResource->SubResourceCount);
+						pResource->Texture.TextureViews.resize(pResource->SubResourceCount);
+						pResource->Texture.Samplers.resize(pResource->SubResourceCount);
+					}
+					else if (simpleType == ESimpleResourceType::DEPTH_STENCIL_ATTACHMENT)
+					{
+						pResource->Type	= EResourceType::INTERNAL_TEXTURE;
+						pResource->Texture.Textures.resize(pResource->SubResourceCount);
+						pResource->Texture.TextureViews.resize(pResource->SubResourceCount);
+						pResource->Texture.Samplers.resize(pResource->SubResourceCount);
 					}
 					else
 					{
-						//External
-						if (simpleType == ESimpleResourceType::TEXTURE)
-						{
-							pResource->Type	= EResourceType::EXTERNAL_TEXTURE;
-							pResource->Texture.Textures.resize(pResource->SubResourceCount);
-							pResource->Texture.TextureViews.resize(pResource->SubResourceCount);
-							pResource->Texture.Samplers.resize(pResource->SubResourceCount);
-						}
-						else if (simpleType == ESimpleResourceType::BUFFER)
-						{
-							pResource->Type	= EResourceType::EXTERNAL_BUFFER;
-							pResource->Buffer.Buffers.resize(pResource->SubResourceCount);
-							pResource->Buffer.Offsets.resize(pResource->SubResourceCount);
-							pResource->Buffer.SizesInBytes.resize(pResource->SubResourceCount);
-						}
-						else if (simpleType == ESimpleResourceType::ACCELERATION_STRUCTURE)
-						{ 
-							pResource->Type	= EResourceType::EXTERNAL_ACCELERATION_STRUCTURE;
-						}
-						else
-						{
-							LOG_ERROR("[RenderGraph]: Unsupported resource type for external resource \"%s\"", pAttachment->pName);
-							return false;
-						}
+						LOG_ERROR("[RenderGraph]: Unsupported resource type for internal resource \"%s\"", pAttachment->pName);
+						return false;
+					}
+				}
+				else
+				{
+					//External
+					if (simpleType == ESimpleResourceType::TEXTURE)
+					{
+						pResource->Type	= EResourceType::EXTERNAL_TEXTURE;
+						pResource->Texture.Textures.resize(pResource->SubResourceCount);
+						pResource->Texture.TextureViews.resize(pResource->SubResourceCount);
+						pResource->Texture.Samplers.resize(pResource->SubResourceCount);
+					}
+					else if (simpleType == ESimpleResourceType::BUFFER)
+					{
+						pResource->Type	= EResourceType::EXTERNAL_BUFFER;
+						pResource->Buffer.Buffers.resize(pResource->SubResourceCount);
+						pResource->Buffer.Offsets.resize(pResource->SubResourceCount);
+						pResource->Buffer.SizesInBytes.resize(pResource->SubResourceCount);
+					}
+					else if (simpleType == ESimpleResourceType::ACCELERATION_STRUCTURE)
+					{ 
+						pResource->Type	= EResourceType::EXTERNAL_ACCELERATION_STRUCTURE;
+					}
+					else
+					{
+						LOG_ERROR("[RenderGraph]: Unsupported resource type for external resource \"%s\"", pAttachment->pName);
+						return false;
 					}
 				}
 			}
@@ -503,9 +611,57 @@ namespace LambdaEngine
 			RenderStage* pRenderStage = &m_pRenderStages[i];
 			m_RenderStageMap[pRenderStageDesc->pName] = i;
 
-			std::vector<DescriptorBindingDesc> descriptorSetDescriptions;
-			descriptorSetDescriptions.reserve(pRenderStageDesc->AttachmentCount);
-			uint32 descriptorBindingIndex = 0;
+			//Calculate the total number of textures we want to bind
+			uint32 textureSlots = 0;
+			uint32 totalNumberOfTextures = 0;
+			uint32 textureSubresourceCount = 0;
+			bool textureSubResourceCountSame = true;
+			for (uint32 a = 0; a < pRenderStageDesc->AttachmentCount; a++)
+			{
+				const RenderStageAttachment* pAttachment = &pRenderStageDesc->pAttachments[a];
+
+				ESimpleResourceType	simpleType		= GetSimpleType(pAttachment->Type);
+				EAttachmentAccessType accessType	= GetAttachmentAccessType(pAttachment->Type);
+
+				if (AttachmentsNeedsDescriptor(pAttachment->Type) && simpleType == ESimpleResourceType::TEXTURE)
+				{
+					textureSlots++;
+
+					if (accessType == EAttachmentAccessType::EXTERNAL_INPUT)
+					{
+						if (textureSubresourceCount > 0 && pAttachment->SubResourceCount != textureSubresourceCount)
+							textureSubResourceCountSame = false;
+
+						textureSubresourceCount = pAttachment->SubResourceCount;
+						totalNumberOfTextures += textureSubresourceCount;
+					}
+					else
+					{
+						totalNumberOfTextures++;
+					}
+				}
+			}
+
+			if (textureSlots > m_MaxTexturesPerDescriptorSet)
+			{
+				LOG_ERROR("[RenderGraph]: Number of required texture slots %u for render stage %s is more than MaxTexturesPerDescriptorSet %u", textureSlots, pRenderStageDesc->pName, m_MaxTexturesPerDescriptorSet);
+				return false;
+			}
+			else if (totalNumberOfTextures > m_MaxTexturesPerDescriptorSet && !textureSubResourceCountSame)
+			{
+				LOG_ERROR("[RenderGraph]: Total number of required texture slots %u for render stage %s is more than MaxTexturesPerDescriptorSet %u. This only works if all texture bindings have either 1 or the same subresource count", textureSlots, pRenderStageDesc->pName, m_MaxTexturesPerDescriptorSet);
+				return false;
+			}
+
+			pRenderStage->TextureSubDescriptorSetCount = glm::max((uint32)glm::ceil((float)totalNumberOfTextures / m_MaxTexturesPerDescriptorSet), 1u);
+
+			std::vector<DescriptorBindingDesc> textureDescriptorSetDescriptions;
+			textureDescriptorSetDescriptions.reserve(pRenderStageDesc->AttachmentCount);
+			uint32 textureDescriptorBindingIndex = 0;
+
+			std::vector<DescriptorBindingDesc> bufferDescriptorSetDescriptions;
+			bufferDescriptorSetDescriptions.reserve(pRenderStageDesc->AttachmentCount);
+			uint32 bufferDescriptorBindingIndex = 0;
 
 			ConstantRangeDesc constantRangeDesc = {};
 			constantRangeDesc.OffsetInBytes			= 0;
@@ -518,12 +674,14 @@ namespace LambdaEngine
 			std::vector<BlendAttachmentState>		renderPassBlendAttachmentStates;
 			std::vector<Resource*>					renderTargets;
 			Resource*								pDepthStencilResource = nullptr;
-			std::vector<std::tuple<Resource*, ETextureState, EDescriptorType>>	descriptorSetResources;
+			std::vector<std::tuple<Resource*, ETextureState, EDescriptorType>>	textureDescriptorSetResources;
+			std::vector<std::tuple<Resource*, ETextureState, EDescriptorType>>	bufferDescriptorSetResources;
 			renderPassAttachmentDescriptions.reserve(pRenderStageDesc->AttachmentCount);
 			renderPassRenderTargetStates.reserve(pRenderStageDesc->AttachmentCount);
 			renderPassBlendAttachmentStates.reserve(pRenderStageDesc->AttachmentCount);
 			renderTargets.reserve(pRenderStageDesc->AttachmentCount);
-			descriptorSetResources.reserve(pRenderStageDesc->AttachmentCount);
+			textureDescriptorSetResources.reserve(pRenderStageDesc->AttachmentCount);
+			bufferDescriptorSetResources.reserve(pRenderStageDesc->AttachmentCount);
 
 			//Create Descriptors and RenderPass Attachments from RenderStage Attachments
 			for (uint32 a = 0; a < pRenderStageDesc->AttachmentCount; a++)
@@ -543,35 +701,49 @@ namespace LambdaEngine
 					//Descriptors
 					if (AttachmentsNeedsDescriptor(pAttachment->Type))
 					{
-						EDescriptorType descriptorType = GetAttachmentDescriptorType(pAttachment->Type);
+						ESimpleResourceType	simpleType		= GetSimpleType(pAttachment->Type);
+						EDescriptorType descriptorType		= GetAttachmentDescriptorType(pAttachment->Type);
+						EAttachmentAccessType accessType	= GetAttachmentAccessType(pAttachment->Type);
 
 						DescriptorBindingDesc descriptorBinding = {};
-						descriptorBinding.Binding				= descriptorBindingIndex;
-						descriptorBinding.DescriptorCount		= pAttachment->SubResourceCount;
 						descriptorBinding.DescriptorType		= descriptorType;
 						descriptorBinding.ppImmutableSamplers	= nullptr;
 						descriptorBinding.ShaderStageMask		= pAttachment->ShaderStages;
 
-						descriptorSetDescriptions.push_back(descriptorBinding);
+						if (simpleType == ESimpleResourceType::TEXTURE)
+						{
+							descriptorBinding.DescriptorCount	= accessType == EAttachmentAccessType::EXTERNAL_INPUT ? (pAttachment->SubResourceCount / pRenderStage->TextureSubDescriptorSetCount) : 1;
+							descriptorBinding.Binding			= textureDescriptorBindingIndex++;
 
-						descriptorBindingIndex++;
+							textureDescriptorSetDescriptions.push_back(descriptorBinding);
+							textureDescriptorSetResources.push_back(std::make_tuple(&it->second, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
+						}
+						else
+						{
+							descriptorBinding.DescriptorCount	= accessType == EAttachmentAccessType::EXTERNAL_INPUT ? pAttachment->SubResourceCount : 1;
+							descriptorBinding.Binding			= bufferDescriptorBindingIndex++;
 
-						descriptorSetResources.push_back(std::make_tuple(&it->second, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
+							bufferDescriptorSetDescriptions.push_back(descriptorBinding);
+							bufferDescriptorSetResources.push_back(std::make_tuple(&it->second, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
+						}
+							
 					}
 					//RenderPass Attachments
 					else
 					{
 						if (pAttachment->Type == EAttachmentType::OUTPUT_COLOR)
 						{
+							bool isBackBufferAttachment = strcmp(pAttachment->pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0;
+
 							RenderPassAttachmentDesc renderPassAttachmentDesc = {};
-							renderPassAttachmentDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
+							renderPassAttachmentDesc.Format			= isBackBufferAttachment ? EFormat::FORMAT_B8G8R8A8_UNORM : EFormat::FORMAT_R8G8B8A8_UNORM;
 							renderPassAttachmentDesc.SampleCount	= 1;
 							renderPassAttachmentDesc.LoadOp			= ELoadOp::CLEAR;
 							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE;
 							renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::DONT_CARE;
 							renderPassAttachmentDesc.StencilStoreOp	= EStoreOp::DONT_CARE;
 							renderPassAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_DONT_CARE;
-							renderPassAttachmentDesc.FinalState		= strcmp(pAttachment->pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0 ? ETextureState::TEXTURE_STATE_PRESENT : ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+							renderPassAttachmentDesc.FinalState		= isBackBufferAttachment ? ETextureState::TEXTURE_STATE_PRESENT : ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 							renderPassAttachmentDescriptions.push_back(renderPassAttachmentDesc);
 
@@ -605,13 +777,28 @@ namespace LambdaEngine
 
 			//Create Pipeline Layout
 			{
-				DescriptorSetLayoutDesc descriptorSetLayout = {};
-				descriptorSetLayout.pDescriptorBindings = descriptorSetDescriptions.data();
-				descriptorSetLayout.DescriptorBindingCount = (uint32)descriptorSetDescriptions.size();
+				std::vector<DescriptorSetLayoutDesc> descriptorSetLayouts;
+				descriptorSetLayouts.reserve(2);
+
+				if (textureDescriptorSetDescriptions.size() > 0)
+				{
+					DescriptorSetLayoutDesc descriptorSetLayout = {};
+					descriptorSetLayout.pDescriptorBindings		= textureDescriptorSetDescriptions.data();
+					descriptorSetLayout.DescriptorBindingCount	= (uint32)textureDescriptorSetDescriptions.size();
+					descriptorSetLayouts.push_back(descriptorSetLayout);
+				}
+
+				if (bufferDescriptorSetDescriptions.size() > 0)
+				{
+					DescriptorSetLayoutDesc descriptorSetLayout = {};
+					descriptorSetLayout.pDescriptorBindings		= bufferDescriptorSetDescriptions.data();
+					descriptorSetLayout.DescriptorBindingCount	= (uint32)bufferDescriptorSetDescriptions.size();
+					descriptorSetLayouts.push_back(descriptorSetLayout);
+				}
 
 				PipelineLayoutDesc pipelineLayoutDesc = {};
-				pipelineLayoutDesc.pDescriptorSetLayouts	= &descriptorSetLayout;
-				pipelineLayoutDesc.DescriptorSetLayoutCount = 1;
+				pipelineLayoutDesc.pDescriptorSetLayouts	= descriptorSetLayouts.data();
+				pipelineLayoutDesc.DescriptorSetLayoutCount = (uint32)descriptorSetLayouts.size();
 				pipelineLayoutDesc.pConstantRanges			= &constantRangeDesc;
 				pipelineLayoutDesc.ConstantRangeCount		= constantRangeDesc.SizeInBytes > 0 ? 1 : 0;
 
@@ -620,8 +807,27 @@ namespace LambdaEngine
 
 			//Create Descriptor Set
 			{
-				IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
-				pRenderStage->pDescriptorSet = pDescriptorSet;
+				if (textureDescriptorSetDescriptions.size() > 0)
+				{
+					pRenderStage->ppTextureDescriptorSets = DBG_NEW IDescriptorSet*[m_BackBufferCount * pRenderStage->TextureSubDescriptorSetCount];
+
+					for (uint32 i = 0; i < m_BackBufferCount * pRenderStage->TextureSubDescriptorSetCount; i++)
+					{
+						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+						pRenderStage->ppTextureDescriptorSets[i] = pDescriptorSet;
+					}
+				}
+
+				if (bufferDescriptorSetDescriptions.size() > 0)
+				{
+					pRenderStage->ppBufferDescriptorSets = DBG_NEW IDescriptorSet*[m_BackBufferCount];
+
+					for (uint32 i = 0; i < m_BackBufferCount; i++)
+					{
+						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Buffer Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
+						pRenderStage->ppBufferDescriptorSets[i] = pDescriptorSet;
+					}
+				}
 			}
 
 			//Create Pipeline State
@@ -673,35 +879,31 @@ namespace LambdaEngine
 				{
 					pRenderStage->DrawType = pRenderStageDesc->GraphicsPipeline.DrawType;
 
-					auto vertexBufferIt = m_ResourceMap.find(pRenderStageDesc->GraphicsPipeline.pVertexBufferName);
-
-					if (vertexBufferIt == m_ResourceMap.end())
+					if (pRenderStageDesc->GraphicsPipeline.pIndexBufferName != nullptr)
 					{
-						LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as vertex buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->GraphicsPipeline.pVertexBufferName);
-						return false;
+						auto indexBufferIt = m_ResourceMap.find(pRenderStageDesc->GraphicsPipeline.pIndexBufferName);
+
+						if (indexBufferIt == m_ResourceMap.end())
+						{
+							LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as index buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->GraphicsPipeline.pIndexBufferName);
+							return false;
+						}
+
+						pRenderStage->pIndexBufferResource = &indexBufferIt->second;
 					}
 
-					pRenderStage->pVertexBufferResource = &vertexBufferIt->second;
-
-					auto indexBufferIt = m_ResourceMap.find(pRenderStageDesc->GraphicsPipeline.pIndexBufferName);
-
-					if (indexBufferIt == m_ResourceMap.end())
+					if (pRenderStageDesc->GraphicsPipeline.pMeshIndexBufferName != nullptr)
 					{
-						LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as index buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->GraphicsPipeline.pIndexBufferName);
-						return false;
+						auto meshIndexBufferIt = m_ResourceMap.find(pRenderStageDesc->GraphicsPipeline.pMeshIndexBufferName);
+
+						if (meshIndexBufferIt == m_ResourceMap.end())
+						{
+							LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as mesh index buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->GraphicsPipeline.pMeshIndexBufferName);
+							return false;
+						}
+
+						pRenderStage->pMeshIndexBufferResource = &meshIndexBufferIt->second;
 					}
-
-					pRenderStage->pIndexBufferResource = &indexBufferIt->second;
-
-					auto meshIndexBufferIt = m_ResourceMap.find(pRenderStageDesc->GraphicsPipeline.pMeshIndexBufferName);
-
-					if (meshIndexBufferIt == m_ResourceMap.end())
-					{
-						LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as mesh index buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->GraphicsPipeline.pMeshIndexBufferName);
-						return false;
-					}
-
-					pRenderStage->pMeshIndexBufferResource = &meshIndexBufferIt->second;
 				}
 
 				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateGraphicsPipelineState(pipelineDesc);
@@ -724,18 +926,34 @@ namespace LambdaEngine
 			}
 
 			//Link Attachment Resources to Render Stage (Descriptor Set)
-			for (uint32 r = 0; r < descriptorSetResources.size(); r++)
 			{
-				auto& resourceTuple = descriptorSetResources[r];
-				Resource* pResource = std::get<0>(resourceTuple);
+				for (uint32 r = 0; r < textureDescriptorSetResources.size(); r++)
+				{
+					auto& resourceTuple = textureDescriptorSetResources[r];
+					Resource* pResource = std::get<0>(resourceTuple);
 
-				ResourceBinding resourceBinding = {};
-				resourceBinding.pRenderStage	= pRenderStage;
-				resourceBinding.DescriptorType	= std::get<2>(resourceTuple);
-				resourceBinding.Binding			= r;
-				resourceBinding.TextureState	= std::get<1>(resourceTuple);
+					ResourceBinding resourceBinding = {};
+					resourceBinding.pRenderStage	= pRenderStage;
+					resourceBinding.DescriptorType	= std::get<2>(resourceTuple);
+					resourceBinding.Binding			= r;
+					resourceBinding.TextureState	= std::get<1>(resourceTuple);
 
-				pResource->ResourceBindings.push_back(resourceBinding);
+					pResource->ResourceBindings.push_back(resourceBinding);
+				}
+
+				for (uint32 r = 0; r < bufferDescriptorSetResources.size(); r++)
+				{
+					auto& resourceTuple = bufferDescriptorSetResources[r];
+					Resource* pResource = std::get<0>(resourceTuple);
+
+					ResourceBinding resourceBinding = {};
+					resourceBinding.pRenderStage	= pRenderStage;
+					resourceBinding.DescriptorType	= std::get<2>(resourceTuple);
+					resourceBinding.Binding			= r;
+					resourceBinding.TextureState	= std::get<1>(resourceTuple);
+
+					pResource->ResourceBindings.push_back(resourceBinding);
+				}
 			}
 
 			//Link Render Stage to Push Constant Resource
@@ -767,7 +985,7 @@ namespace LambdaEngine
 				{
 					Resource* pResource = renderTargets[r];
 
-					pRenderStage->RenderTargetResources.insert(pResource);
+					pRenderStage->RenderTargetResources.push_back(pResource);
 				}
 			}
 
@@ -958,7 +1176,8 @@ namespace LambdaEngine
 			}
 		}
 
-		m_DirtyDescriptorSetTextures.insert(pResource);
+		if (pResource->ResourceBindings.size() > 0)
+			m_DirtyDescriptorSetInternalTextures.insert(pResource);
 	}
 
 	void RenderGraph::UpdateResourceInternalBuffer(Resource* pResource, const ResourceUpdateDesc& desc)
@@ -989,7 +1208,8 @@ namespace LambdaEngine
 			}
 		}
 
-		m_DirtyDescriptorSetBuffers.insert(pResource);
+		if (pResource->ResourceBindings.size() > 0)
+			m_DirtyDescriptorSetInternalBuffers.insert(pResource);
 	}
 
 	void RenderGraph::UpdateResourceExternalTexture(Resource* pResource, const ResourceUpdateDesc& desc)
@@ -1029,7 +1249,7 @@ namespace LambdaEngine
 			}
 		}
 
-		m_DirtyDescriptorSetTextures.insert(pResource);
+		m_DirtyDescriptorSetExternalTextures.insert(pResource);
 	}
 
 	void RenderGraph::UpdateResourceExternalBuffer(Resource* pResource, const ResourceUpdateDesc& desc)
@@ -1058,7 +1278,7 @@ namespace LambdaEngine
 			}
 		}
 
-		m_DirtyDescriptorSetBuffers.insert(pResource);
+		m_DirtyDescriptorSetExternalBuffers.insert(pResource);
 	}
 
 	void RenderGraph::UpdateResourceExternalAccelerationStructure(Resource* pResource, const ResourceUpdateDesc& desc)
@@ -1171,19 +1391,19 @@ namespace LambdaEngine
 		uint32 clearColorCount = 0;
 		for (auto it = pRenderStage->RenderTargetResources.begin(); it != pRenderStage->RenderTargetResources.end(); it++)
 		{
-			ppTextureViews[textureViewCount++] = (*it)->Texture.TextureViews[backBufferIndex];
+			ppTextureViews[textureViewCount++] = (*it)->Texture.TextureViews.size() > 1 ? (*it)->Texture.TextureViews[backBufferIndex] : (*it)->Texture.TextureViews[0];
 
 			clearColorDescriptions[clearColorCount].Color[0]	= 0.0f;
 			clearColorDescriptions[clearColorCount].Color[1]	= 0.0f;
 			clearColorDescriptions[clearColorCount].Color[2]	= 0.0f;
-			clearColorDescriptions[clearColorCount].Color[3]	= 1.0f;
+			clearColorDescriptions[clearColorCount].Color[3]	= 0.0f;
 
 			clearColorCount++;
 		}
 
 		if (pRenderStage->pDepthStencilAttachment != nullptr)
 		{
-			pDeptchStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.TextureViews[0];
+			pDeptchStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.TextureViews.size() > 1 ? pRenderStage->pDepthStencilAttachment->Texture.TextureViews[backBufferIndex] : pRenderStage->pDepthStencilAttachment->Texture.TextureViews[0];
 
 			clearColorDescriptions[clearColorCount].Depth		= 1.0f;
 			clearColorDescriptions[clearColorCount].Stencil		= 0;
@@ -1226,18 +1446,40 @@ namespace LambdaEngine
 		pGraphicsCommandList->SetScissorRects(&scissorRect, 0, 1);
 
 		pGraphicsCommandList->BindGraphicsPipeline(pRenderStage->pPipelineState);
-		pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->pDescriptorSet, pRenderStage->pPipelineLayout);
+
+		if (pRenderStage->ppBufferDescriptorSets != nullptr)
+			pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppBufferDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0);
 
 		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 		{
-			uint64 offset = 0;
-			pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], offset);
+			pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0);
 
-			IBuffer* pDrawBuffer	= pRenderStage->pMeshIndexBufferResource->Buffer.Buffers[0];
-			uint32 drawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
-			uint32 stride			= sizeof(IndexedIndirectMeshArgument);
+			IBuffer* pDrawBuffer		= pRenderStage->pMeshIndexBufferResource->Buffer.Buffers[0];
+			uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
+			uint32 drawStride			= (uint32)glm::ceil((float)totalDrawCount / pRenderStage->TextureSubDescriptorSetCount);
+			uint32 indirectArgStride	= sizeof(IndexedIndirectMeshArgument);
 
-			pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, 0, drawCount, stride);
+			for (uint32 i = 0; i < pRenderStage->TextureSubDescriptorSetCount; i++)
+			{
+				if (pRenderStage->ppTextureDescriptorSets != nullptr)
+					pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[backBufferIndex * pRenderStage->TextureSubDescriptorSetCount + i], pRenderStage->pPipelineLayout, 0);
+
+				uint32 drawOffset = drawStride * i;
+				uint32 drawCount = glm::min(totalDrawCount - drawOffset, drawStride);
+				pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, drawOffset, drawCount, indirectArgStride);
+			}
+		}
+		else if (pRenderStage->DrawType == ERenderStageDrawType::FULLSCREEN_QUAD)
+		{
+			if (pRenderStage->TextureSubDescriptorSetCount > 1)
+			{
+				LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
+			}
+
+			if (pRenderStage->ppTextureDescriptorSets != nullptr)
+				pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, 0);
+
+			pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
 		}
 
 		pGraphicsCommandList->EndRenderPass();
@@ -1263,7 +1505,17 @@ namespace LambdaEngine
 		pComputeCommandList->Begin(nullptr);
 
 		pComputeCommandList->BindComputePipeline(pRenderStage->pPipelineState);
-		pComputeCommandList->BindDescriptorSetCompute(pRenderStage->pDescriptorSet, pRenderStage->pPipelineLayout);
+
+		if (pRenderStage->ppBufferDescriptorSets != nullptr)
+			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0);
+
+		if (pRenderStage->TextureSubDescriptorSetCount > 1)
+		{
+			LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and is Compute, this is currently not supported");
+		}
+
+		if (pRenderStage->ppTextureDescriptorSets != nullptr)
+			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, 0);
 
 		pComputeCommandList->Dispatch(pParameters->Compute.WorkGroupCountX, pParameters->Compute.WorkGroupCountY, pParameters->Compute.WorkGroupCountZ);
 
@@ -1289,7 +1541,17 @@ namespace LambdaEngine
 		pComputeCommandList->Begin(nullptr);
 
 		pComputeCommandList->BindComputePipeline(pRenderStage->pPipelineState);
-		pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->pDescriptorSet, pRenderStage->pPipelineLayout);
+
+		if (pRenderStage->ppBufferDescriptorSets != nullptr)
+			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0);
+
+		if (pRenderStage->TextureSubDescriptorSetCount > 1)
+		{
+			LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and is Ray Tracing, this is currently not supported");
+		}
+
+		if (pRenderStage->ppTextureDescriptorSets != nullptr)
+			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, 0);
 
 		pComputeCommandList->TraceRays(pParameters->RayTracing.RaygenOffset, pParameters->RayTracing.RayTraceWidth, pParameters->RayTracing.RayTraceHeight);
 

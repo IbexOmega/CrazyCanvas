@@ -45,8 +45,6 @@ layout (binding = 10) uniform LightBuffer
 	PointLight lights[MAX_POINT_LIGHTS];
 } u_Lights;
 
-const float GAMMA	= 2.2f;
-
 /*
 	Get position from depth
 */

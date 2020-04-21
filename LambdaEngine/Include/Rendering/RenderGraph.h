@@ -40,6 +40,7 @@ namespace LambdaEngine
 		RenderStageDesc* pRenderStages			= nullptr;
 		uint32 RenderStageCount					= 0;
 		uint32 BackBufferCount					= 3;
+		uint32 MaxTexturesPerDescriptorSet		= 1;
 	};
 
 	struct ResourceUpdateDesc
@@ -174,20 +175,22 @@ namespace LambdaEngine
 
 		struct RenderStage
 		{
-			ERenderStageDrawType	DrawType					= ERenderStageDrawType::NONE;
-			Resource*				pVertexBufferResource		= nullptr;
-			Resource*				pIndexBufferResource		= nullptr;
-			Resource*				pMeshIndexBufferResource	= nullptr;
+			ERenderStageDrawType	DrawType						= ERenderStageDrawType::NONE;
+			Resource*				pVertexBufferResource			= nullptr;
+			Resource*				pIndexBufferResource			= nullptr;
+			Resource*				pMeshIndexBufferResource		= nullptr;
 
-			RenderStageParameters	Parameters					= {};
-			IPipelineLayout*		pPipelineLayout				= nullptr;
-			IPipelineState*			pPipelineState				= nullptr;
-			IDescriptorSet*			pDescriptorSet				= nullptr;
-			IRenderPass*			pRenderPass					= nullptr;
+			RenderStageParameters	Parameters						= {};
+			IPipelineLayout*		pPipelineLayout					= nullptr;
+			IPipelineState*			pPipelineState					= nullptr;
+			uint32					TextureSubDescriptorSetCount	= 1;
+			IDescriptorSet**		ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
+			IDescriptorSet**		ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
+			IRenderPass*			pRenderPass						= nullptr;
 
-			Resource*				pPushConstantsResource		= nullptr;
-			std::set<Resource*>		RenderTargetResources;
-			Resource*				pDepthStencilAttachment		= nullptr;
+			Resource*				pPushConstantsResource			= nullptr;
+			std::vector<Resource*>	RenderTargetResources;
+			Resource*				pDepthStencilAttachment			= nullptr;
 		};
 
 		struct TextureSynchronization
@@ -285,6 +288,7 @@ namespace LambdaEngine
 		IDescriptorHeap*									m_pDescriptorHeap				= nullptr;
 
 		uint32												m_BackBufferCount				= 0;
+		uint32												m_MaxTexturesPerDescriptorSet	= 0;
 		
 		IFence*												m_pFence						= nullptr;
 		uint64												m_SignalValue					= 1;
@@ -303,8 +307,10 @@ namespace LambdaEngine
 		uint32												m_SynchronizationStageCount		= 0;
 
 		std::unordered_map<std::string, Resource>			m_ResourceMap;
-		std::set<Resource*>									m_DirtyDescriptorSetTextures;
-		std::set<Resource*>									m_DirtyDescriptorSetBuffers;
+		std::set<Resource*>									m_DirtyDescriptorSetInternalTextures;
+		std::set<Resource*>									m_DirtyDescriptorSetInternalBuffers;
+		std::set<Resource*>									m_DirtyDescriptorSetExternalTextures;
+		std::set<Resource*>									m_DirtyDescriptorSetExternalBuffers;
 		std::set<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
 	};
 }

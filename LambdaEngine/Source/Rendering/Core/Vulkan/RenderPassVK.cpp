@@ -185,12 +185,16 @@ namespace LambdaEngine
 			}
 
 			//DepthStencil
-			if (subpass.DepthStencilAttachmentState != ETextureState::TEXTURE_STATE_UNKNOWN || subpass.DepthStencilAttachmentState != ETextureState::TEXTURE_STATE_DONT_CARE)
+			if (subpass.DepthStencilAttachmentState != ETextureState::TEXTURE_STATE_UNKNOWN && subpass.DepthStencilAttachmentState != ETextureState::TEXTURE_STATE_DONT_CARE)
 			{
 				pResultSubpasses[i].DepthStencil.attachment = subpass.RenderTargetCount;
 				pResultSubpasses[i].DepthStencil.layout		= ConvertTextureState(subpass.DepthStencilAttachmentState);
 
 				vkSubpass.pDepthStencilAttachment	= &pResultSubpasses[i].DepthStencil;
+			}
+			else
+			{
+				vkSubpass.pDepthStencilAttachment = nullptr;
 			}
 
 			vkSubpass.inputAttachmentCount		= subpass.InputAttachmentCount;

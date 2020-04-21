@@ -183,9 +183,9 @@ namespace LambdaEngine
 		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset) = 0;
 		virtual void BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) = 0;
 
-		virtual void BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)	= 0;
-		virtual void BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)		= 0;
-		virtual void BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)	= 0;
+		virtual void BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)	= 0;
+		virtual void BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)		= 0;
+		virtual void BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)	= 0;
 
 		virtual void BindGraphicsPipeline(const IPipelineState* pPipeline)	    = 0;
 		virtual void BindComputePipeline(const IPipelineState* pPipeline)		= 0;
