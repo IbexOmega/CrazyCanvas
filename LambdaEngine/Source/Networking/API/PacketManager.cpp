@@ -23,16 +23,18 @@ namespace LambdaEngine
 		delete[] m_pPackets;
 	}
 
-	void PacketManager::EnqueuePacket(NetworkPacket* packet)
+	void PacketManager::EnqueuePacket(NetworkPacket* pPacket)
 	{
-		EnqueuePacket(packet, nullptr);
+		EnqueuePacket(pPacket, nullptr);
 	}
 
-	void PacketManager::EnqueuePacket(NetworkPacket* packet, IPacketListener* listener)
+	void PacketManager::EnqueuePacket(NetworkPacket* pPacket, IPacketListener* listener)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
-		packet->GetHeader().UID = GetNextMessageUID();
-		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ packet, listener});
+		pPacket->GetHeader().UID = GetNextMessageUID();
+		if (listener)
+			pPacket->GetHeader().ReliableUID = GetNextMessageReliableUID();
+		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ pPacket, listener});
 	}
 
 	NetworkPacket* PacketManager::GetFreePacket()
@@ -43,6 +45,7 @@ namespace LambdaEngine
 			NetworkPacket* packet = *m_PacketsFree.rbegin();
 			m_PacketsFree.erase(packet);
 			packet->m_SizeOfBuffer = 0;
+			packet->GetHeader().ReliableUID = 0;
 			return packet;
 		}
 		LOG_ERROR("[PacketManager]: No free packets exist. Please increase the nr of packets");
@@ -136,7 +139,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool PacketManager::DecodePackets(const char* buffer, int32 bytesReceived, NetworkPacket** packetsRead, int32& nrOfPackets)
+	bool PacketManager::DecodePackets(const char* buffer, int32 bytesReceived, std::vector<NetworkPacket*>& packetsRead)
 	{
 		Header header;
 		uint16 offset = sizeof(Header);
@@ -169,6 +172,8 @@ namespace LambdaEngine
 		ProcessSequence(header.Sequence);
 		ProcessAcks(header.Ack, header.AckBits);
 
+		packetsRead.reserve(header.Packets);
+
 		for (int i = 0; i < header.Packets; i++)
 		{
 			NetworkPacket* message = GetFreePacket();
@@ -179,9 +184,33 @@ namespace LambdaEngine
 			memcpy(message->GetBuffer(), buffer + offset + messageHeaderSize, messageHeader.Size - messageHeaderSize);
 			offset += messageHeader.Size;
 			message->m_Salt = header.Salt;
-			packetsRead[i] = message;
+
+			if (message->IsReliable())
+			{
+				m_MessagesReceivedOrdered.insert(message);
+			}
+			else
+			{
+				packetsRead.push_back(message);
+			}
 		}
-		nrOfPackets = header.Packets;
+
+		std::vector<NetworkPacket*> messagesComplete;
+		for (NetworkPacket* message : m_MessagesReceivedOrdered)
+		{
+			if (message->GetReliableUID() != m_NextExpectedMessageNr)
+				break;
+
+			m_NextExpectedMessageNr++;
+			packetsRead.push_back(message);
+			messagesComplete.push_back(message);
+		}
+
+		for (NetworkPacket* message : messagesComplete)
+		{
+			m_MessagesReceivedOrdered.erase(message);
+		}
+
 		return true;
 	}
 
@@ -201,17 +230,14 @@ namespace LambdaEngine
 		DeleteEmptyBundles();
 	}
 
-	void PacketManager::Free(NetworkPacket** packets, int32 nrOfPackets)
+	void PacketManager::Free(std::vector<NetworkPacket*>& packets)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockPacketsFree);
-		for (int i = 0; i < nrOfPackets; i++)
+		for (NetworkPacket* pPacket : packets)
 		{
-			NetworkPacket* packet = packets[i];
-			if (packet)
-			{
-				m_PacketsFree.insert(packet);
-			}
+			m_PacketsFree.insert(pPacket);
 		}
+		packets.clear();
 	}
 
 	const NetworkStatistics* PacketManager::GetStatistics() const
@@ -245,7 +271,8 @@ namespace LambdaEngine
 		m_QueueIndex = 0;
 		m_ReceivedSequenceBits = 0;
 		m_LastReceivedSequenceNr = 0;
-		m_NextExpectedMessageNr = 0;
+		m_NextExpectedMessageNr = 1;
+		m_ReliableMessagesSent = 1;
 
 		m_Statistics.Reset();
 	}
@@ -317,32 +344,11 @@ namespace LambdaEngine
 
 			for (MessageInfo& message : messages)
 			{
-				m_MessagesAcked.insert(message);
+				if (message.Listener)
+				{
+					message.Listener->OnPacketDelivered(message.Packet);
+				}
 			}
-
-			ProcessAllReceivedMessages();
-		}
-	}
-
-	void PacketManager::ProcessAllReceivedMessages()
-	{
-		std::vector<MessageInfo> messagesComplete;
-		for (const MessageInfo& message : m_MessagesAcked)
-		{
-			if (message.GetUID() != m_NextExpectedMessageNr)
-				return;
-
-			m_NextExpectedMessageNr++;
-			if (message.Listener)
-			{
-				message.Listener->OnPacketDelivered(message.Packet);
-			}
-			messagesComplete.push_back(message);
-		}
-
-		for (MessageInfo& message : messagesComplete)
-		{
-			m_MessagesAcked.erase(message);
 		}
 	}
 
@@ -376,6 +382,11 @@ namespace LambdaEngine
 	uint32 PacketManager::GetNextMessageUID()
 	{
 		return m_Statistics.m_MessagesSent++;
+	}
+
+	uint32 PacketManager::GetNextMessageReliableUID()
+	{
+		return m_ReliableMessagesSent++;
 	}
 
 	void PacketManager::DeleteEmptyBundles()
