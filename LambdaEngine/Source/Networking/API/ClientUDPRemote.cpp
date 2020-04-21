@@ -70,7 +70,7 @@ namespace LambdaEngine
 
 	bool ClientUDPRemote::HandleReceivedPacket(NetworkPacket* pPacket)
 	{
-		LOG_MESSAGE("PING %fms", m_PacketManager.GetPing().AsMilliSeconds());
+		LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 		uint16 packetType = pPacket->GetType();
 
 		if (packetType == NetworkPacket::TYPE_CONNNECT)
@@ -85,7 +85,7 @@ namespace LambdaEngine
 		}
 		else if (packetType == NetworkPacket::TYPE_CHALLENGE)
 		{
-			uint64 expectedAnswer = PacketManager::DoChallenge(m_PacketManager.GetSalt(), pPacket->GetRemoteSalt());
+			uint64 expectedAnswer = PacketManager::DoChallenge(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
 			BinaryDecoder decoder(pPacket);
 			uint64 answer = decoder.ReadUInt64();
 			if (answer == expectedAnswer)
@@ -176,6 +176,11 @@ namespace LambdaEngine
 	EClientState ClientUDPRemote::GetState() const
 	{
 		return m_State;
+	}
+
+	const NetworkStatistics* ClientUDPRemote::GetStatistics() const
+	{
+		return m_PacketManager.GetStatistics();
 	}
 
 	void ClientUDPRemote::Release()

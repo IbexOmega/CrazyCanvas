@@ -7,6 +7,7 @@
 
 #include "Networking/API/NetworkPacket.h"
 #include "Networking/API/IPEndPoint.h"
+#include "Networking/API/NetworkStatistics.h"
 
 #include "Threading/API/SpinLock.h"
 
@@ -69,9 +70,7 @@ namespace LambdaEngine
 
 		void Free(NetworkPacket** packets, int32 nrOfPackets);
 
-		const Timestamp& GetPing() const;
-
-		uint64 GetSalt() const;
+		const NetworkStatistics* GetStatistics() const;
 
 		void Reset();
 
@@ -103,16 +102,10 @@ namespace LambdaEngine
 		SpinLock m_LockPacketsWaitingForAck;
 
 		std::atomic_int m_QueueIndex;
-
-		uint32 m_PacketsCounter;
-		uint32 m_MessageCounter;
 		std::atomic_uint32_t m_LastReceivedSequenceNr;
 		std::atomic_uint32_t m_ReceivedSequenceBits;
 
-		Timestamp m_Ping;
-
-		std::atomic_uint64_t m_Salt;
-		std::atomic_uint64_t m_SaltRemote;
+		NetworkStatistics m_Statistics;
 
 		uint8 m_MaximumTries;
 

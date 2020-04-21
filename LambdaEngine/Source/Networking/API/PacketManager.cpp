@@ -12,14 +12,6 @@ namespace LambdaEngine
 {
 	PacketManager::PacketManager(uint16 packets, uint8 maximumTries) :
 		m_NrOfPackets(packets),
-		m_QueueIndex(0),
-		m_PacketsCounter(0),
-		m_MessageCounter(0),
-		m_ReceivedSequenceBits(0),
-		m_LastReceivedSequenceNr(0),
-		m_Salt(0),
-		m_SaltRemote(0),
-		m_Ping(UINT64_MAX),
 		m_MaximumTries(maximumTries)
 	{
 		m_pPackets = DBG_NEW NetworkPacket[packets];
@@ -124,12 +116,13 @@ namespace LambdaEngine
 	void PacketManager::WriteHeaderAndStoreBundle(char* buffer, int32& bytesWritten, Header& header, Bundle& bundle, std::vector<MessageInfo>& reliableMessages)
 	{
 		header.Sequence = GetNextPacketSequenceNr();
-		header.Salt		= GetSalt();
+		header.Salt		= m_Statistics.GetSalt();
 		header.Ack		= m_LastReceivedSequenceNr;
 		header.AckBits	= m_ReceivedSequenceBits;
 		memcpy(buffer, &header, sizeof(Header));
 
 		bytesWritten = header.Size;
+		m_Statistics.m_BytesSent += bytesWritten;
 
 		bundle.Timestamp = EngineLoop::GetTimeSinceStart();
 
@@ -147,7 +140,7 @@ namespace LambdaEngine
 	{
 		Header header;
 		uint16 offset = sizeof(Header);
-
+		m_Statistics.m_BytesReceived += bytesReceived;
 		memcpy(&header, buffer, offset);
 
 		if (header.Size != bytesReceived)
@@ -160,15 +153,15 @@ namespace LambdaEngine
 			LOG_ERROR("[PacketManager]: Received a packet without a salt");
 			return false;
 		}
-		else if (m_SaltRemote != header.Salt)
+		else if (m_Statistics.GetRemoteSalt() != header.Salt)
 		{
-			if (m_SaltRemote == 0)
+			if (m_Statistics.GetRemoteSalt() == 0)
 			{
-				m_SaltRemote = header.Salt;
+				m_Statistics.m_SaltRemote = header.Salt;
 			}
 			else
 			{
-				LOG_ERROR("[PacketManager]: Received a packet with a new salt [Prev %lu : New %lu]", m_SaltRemote.load(), header.Salt);
+				LOG_ERROR("[PacketManager]: Received a packet with a new salt [Prev %lu : New %lu]", m_Statistics.GetRemoteSalt(), header.Salt);
 				return false;
 			}
 		}
@@ -221,14 +214,9 @@ namespace LambdaEngine
 		}
 	}
 
-	const Timestamp& PacketManager::GetPing() const
+	const NetworkStatistics* PacketManager::GetStatistics() const
 	{
-		return m_Ping;
-	}
-
-	uint64 PacketManager::GetSalt() const
-	{
-		return m_Salt;
+		return &m_Statistics;
 	}
 
 	void PacketManager::Reset()
@@ -254,9 +242,11 @@ namespace LambdaEngine
 			m_MessagesWaitingForAck.clear();
 		}
 
-		m_Salt = Random::UInt64();
-		m_SaltRemote = 0;
-		m_Ping = Timestamp::MilliSeconds(10.0f);
+		m_QueueIndex = 0;
+		m_ReceivedSequenceBits = 0;
+		m_LastReceivedSequenceNr = 0;
+
+		m_Statistics.Reset();
 	}
 
 	void PacketManager::ProcessSequence(uint32 sequence)
@@ -265,8 +255,17 @@ namespace LambdaEngine
 		{
 			//New sequence number received so shift everything delta steps
 			int32 delta = sequence - m_LastReceivedSequenceNr;
-			m_ReceivedSequenceBits = m_ReceivedSequenceBits << delta;
 			m_LastReceivedSequenceNr = sequence;
+
+			for (int i = 0; i < delta; i++)
+			{
+				if (m_ReceivedSequenceBits >> (sizeof(uint32) * 8 - 1) & 0)
+				{
+					//The last bit that gets removed was never acked.
+					m_Statistics.m_PacketsLost++;
+				}
+				m_ReceivedSequenceBits = m_ReceivedSequenceBits << 1;
+			}
 		}
 		else
 		{
@@ -299,7 +298,7 @@ namespace LambdaEngine
 		static const double scalar2 = 1.0 - scalar1;
 		if (rtt != UINT64_MAX)
 		{
-			m_Ping = (rtt.AsNanoSeconds() * scalar1) + (m_Ping.AsNanoSeconds() * scalar2);
+			m_Statistics.m_Ping = (rtt.AsNanoSeconds() * scalar1) + (m_Statistics.GetPing().AsNanoSeconds() * scalar2);
 		}
 	}
 
@@ -349,12 +348,12 @@ namespace LambdaEngine
 
 	uint32 PacketManager::GetNextPacketSequenceNr()
 	{
-		return ++m_PacketsCounter;
+		return m_Statistics.m_PacketsSent++;
 	}
 
 	uint32 PacketManager::GetNextMessageUID()
 	{
-		return ++m_MessageCounter;
+		return m_Statistics.m_MessagesSent++;
 	}
 
 	void PacketManager::DeleteEmptyBundles()
@@ -403,7 +402,7 @@ namespace LambdaEngine
 		for (auto& pair : m_MessagesWaitingForAck)
 		{
 			delta = EngineLoop::GetTimeSinceStart() - pair.second.LastSent;
-			if (delta > GetPing() * 2.0F)
+			if (delta > m_Statistics.GetPing() * 2.0F)
 			{
 				if (pair.second.Tries > m_MaximumTries)
 				{

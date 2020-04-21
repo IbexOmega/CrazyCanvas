@@ -26,6 +26,7 @@ namespace LambdaEngine
 		virtual const IPEndPoint& GetEndPoint() const override;
 		virtual NetworkPacket* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
+		virtual const NetworkStatistics* GetStatistics() const override;
 
 		bool Connect(const IPEndPoint& ipEndPoint);
 

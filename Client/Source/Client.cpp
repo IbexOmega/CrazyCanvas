@@ -27,7 +27,7 @@ Client::Client() :
 
     m_pClient = ClientUDP::Create(this, 512, 10);
 
-    if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.119"), 4444)))
+    if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
     {
         LOG_ERROR("Failed to connect!");
     }
@@ -97,7 +97,7 @@ void Client::OnKeyDown(LambdaEngine::EKey key)
         if (m_pClient->IsConnected())
             m_pClient->Disconnect();
         else
-            m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.119"), 4444));
+            m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444));
     }
     else
     {

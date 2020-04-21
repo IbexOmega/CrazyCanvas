@@ -5,6 +5,7 @@
 #include "Networking/API/IClientUDPHandler.h"
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
+#include "Networking/API/NetworkStatistics.h"
 
 #include "Log/Log.h"
 
@@ -104,6 +105,11 @@ namespace LambdaEngine
 		return m_State;
 	}
 
+	const NetworkStatistics* ClientUDP::GetStatistics() const
+	{
+		return m_PacketManager.GetStatistics();
+	}
+
 	bool ClientUDP::OnThreadsStarted()
 	{
 		m_pSocket = PlatformNetworkUtils::CreateSocketUDP();
@@ -196,12 +202,12 @@ namespace LambdaEngine
 
 	void ClientUDP::HandleReceivedPacket(NetworkPacket* pPacket)
 	{
-		LOG_MESSAGE("PING %fms", m_PacketManager.GetPing().AsMilliSeconds());
+		LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 		uint16 packetType = pPacket->GetType();
 
 		if (packetType == NetworkPacket::TYPE_CHALLENGE)
 		{
-			uint64 answer = PacketManager::DoChallenge(m_PacketManager.GetSalt(), pPacket->GetRemoteSalt());
+			uint64 answer = PacketManager::DoChallenge(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
 			NetworkPacket* pResponse = GetFreePacket(NetworkPacket::TYPE_CHALLENGE);
 			BinaryEncoder encoder(pResponse);
 			encoder.WriteUInt64(answer);
