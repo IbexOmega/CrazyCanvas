@@ -21,13 +21,13 @@ namespace LambdaEngine
 		}
 	}
 	
-	bool FenceVK::Init(const FenceDesc& desc)
+	bool FenceVK::Init(const FenceDesc* pDesc)
 	{
 		VkSemaphoreTypeCreateInfo typeInfo = { };
 		typeInfo.sType			= VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
 		typeInfo.pNext			= nullptr;
 		typeInfo.semaphoreType	= VK_SEMAPHORE_TYPE_TIMELINE;
-        typeInfo.initialValue	= desc.InitalValue;
+        typeInfo.initialValue	= pDesc->InitalValue;
 
 		VkSemaphoreCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -40,10 +40,12 @@ namespace LambdaEngine
 			LOG_VULKAN_ERROR(result, "[FenceVK]: Failed to create semaphore");
 			return false;
 		}
-        
-        SetName(desc.pName);
-        m_Desc = desc;
-		return true;
+        else
+        {
+            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
+            SetName(pDesc->pName);
+            return true;
+        }
 	}
 
 	void FenceVK::Wait(uint64 waitValue, uint64 timeOut) const

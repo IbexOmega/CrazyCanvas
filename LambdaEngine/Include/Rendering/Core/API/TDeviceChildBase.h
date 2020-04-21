@@ -51,7 +51,8 @@ namespace LambdaEngine
             
 			if (strongReferences < 1)
 			{
-				delete this;
+                const GraphicsDeviceBase* pDeviceBase = reinterpret_cast<const GraphicsDeviceBase*>(m_pDevice);
+                pDeviceBase->DestroyObject(this);
 			}
 
 			return strongReferences;
@@ -70,8 +71,6 @@ namespace LambdaEngine
 
         FORCEINLINE virtual const IGraphicsDevice* GetDevice() const override
         {
-            //Cast the device to the correct type, this way we do not actually need to include any implementation.
-            //Not the prettiest solution but it works
             return reinterpret_cast<const IGraphicsDevice*>(m_pDevice);
         }
 

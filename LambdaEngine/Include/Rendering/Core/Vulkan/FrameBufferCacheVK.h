@@ -91,18 +91,18 @@ namespace LambdaEngine
 		using FrameBufferMapEntry	= std::pair<const FrameBufferCacheKey, VkFramebuffer>;
 
 	public:
-		FrameBufferCacheVK(const GraphicsDeviceVK* pDevice);
-		~FrameBufferCacheVK();
-		
-		DECL_UNIQUE_CLASS(FrameBufferCacheVK);
+        DECL_UNIQUE_CLASS(FrameBufferCacheVK);
 
-		void DestroyRenderPass(VkRenderPass renderPass);
-		void DestroyImageView(VkImageView imageView);
+        FrameBufferCacheVK(const GraphicsDeviceVK* pDevice);
+        ~FrameBufferCacheVK();        
+
+		void DestroyRenderPass(VkRenderPass renderPass) const;
+		void DestroyImageView(VkImageView imageView) const;
 		
 		VkFramebuffer GetFrameBuffer(const FrameBufferCacheKey& key, uint32 width, uint32 height);
 
 	private:
 		const GraphicsDeviceVK* const	m_pDevice = nullptr;
-		FrameBufferMap					m_FrameBufferMap;		
+		mutable FrameBufferMap			m_FrameBufferMap;
 	};
 }

@@ -48,10 +48,10 @@ namespace LambdaEngine
 		m_CommandList = VK_NULL_HANDLE;
 	}
 
-	bool CommandListVK::Init(ICommandAllocator* pAllocator, const CommandListDesc& desc)
+	bool CommandListVK::Init(ICommandAllocator* pAllocator, const CommandListDesc* pDesc)
 	{
 		VkCommandBufferLevel level;
-		if (desc.CommandListType == ECommandListType::COMMAND_LIST_PRIMARY)
+		if (pDesc->CommandListType == ECommandListType::COMMAND_LIST_PRIMARY)
 		{
 			level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		}
@@ -68,9 +68,10 @@ namespace LambdaEngine
 		}
 		else
 		{
-			m_Desc = desc;
+            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
+            
 			m_Type = pAllocator->GetType();
-			SetName(desc.pName);
+			SetName(pDesc->pName);
 			
 			pVkCommandAllocator->AddRef();
 			m_pAllocator = pVkCommandAllocator;

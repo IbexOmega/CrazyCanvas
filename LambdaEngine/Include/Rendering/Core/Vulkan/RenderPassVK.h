@@ -25,7 +25,7 @@ namespace LambdaEngine
 		RenderPassVK(const GraphicsDeviceVK* pDevice);
 		~RenderPassVK();
 
-		bool Init(const RenderPassDesc& desc);
+		bool Init(const RenderPassDesc* pDesc);
 
 		FORCEINLINE VkRenderPass GetRenderPass() const
 		{
@@ -47,12 +47,12 @@ namespace LambdaEngine
 		}
 
 	private:
-		void CreateAttachmentDescriptions(const RenderPassDesc& desc, VkAttachmentDescription* pResultAttachments);
-		void CreateSubpassDescriptions(const RenderPassDesc& desc, SubpassData* pResultSubpasses);
-		void CreateSubpassDependencies(const RenderPassDesc& desc, VkSubpassDependency* pResultSubpassDependencies);
+		void CreateAttachmentDescriptions(const RenderPassDesc* pDesc, VkAttachmentDescription* pResultAttachments);
+		void CreateSubpassDescriptions(const RenderPassDesc* pDesc, SubpassData* pResultSubpasses);
+		void CreateSubpassDependencies(const RenderPassDesc* pDesc, VkSubpassDependency* pResultSubpassDependencies);
 
 	private:
-		VkRenderPass	m_RenderPass;
+		VkRenderPass	m_RenderPass = VK_NULL_HANDLE;
 		RenderPassDesc	m_Desc;
 	};
 }

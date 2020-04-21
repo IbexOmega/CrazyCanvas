@@ -114,7 +114,7 @@ Sandbox::Sandbox()
 	samplerDesc.MinLOD				= 0.0f;
 	samplerDesc.MaxLOD				= 1.0f;
 
-	m_pLinearSampler = RenderSystem::GetDevice()->CreateSampler(samplerDesc);
+	m_pLinearSampler = RenderSystem::GetDevice()->CreateSampler(&samplerDesc);
 
 	std::vector<RenderStageDesc> renderStages;
 
@@ -368,10 +368,12 @@ Sandbox::Sandbox()
 	renderGraphDesc.pRenderStages		= renderStages.data();
 	renderGraphDesc.RenderStageCount	= (uint32)renderStages.size();
 
+    return;
+    
 	LambdaEngine::Clock clock;
 	clock.Reset();
 	clock.Tick();
-
+    
 	m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
 
 	m_pRenderGraph->Init(renderGraphDesc);
@@ -819,7 +821,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	m_pCamera->Update();
 	m_pScene->UpdateCamera(m_pCamera);
 
-	m_pRenderer->Render();
+	//m_pRenderer->Render();
 }
 
 void Sandbox::FixedTick(LambdaEngine::Timestamp delta)

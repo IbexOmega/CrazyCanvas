@@ -16,7 +16,7 @@ namespace LambdaEngine
 		ShaderVK(const GraphicsDeviceVK* pDevice);
 		~ShaderVK();
 
-		bool Init(const ShaderDesc& desc);
+		bool Init(const ShaderDesc* pDesc);
 
         void FillSpecializationInfo(VkSpecializationInfo& specializationInfo, std::vector<VkSpecializationMapEntry>& specializationEntries) const;
         void FillShaderStageInfo(VkPipelineShaderStageCreateInfo& shaderStageInfo, const VkSpecializationInfo* pSpecializationInfo)			const;

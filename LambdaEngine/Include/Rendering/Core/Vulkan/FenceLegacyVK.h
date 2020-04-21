@@ -19,7 +19,7 @@ namespace LambdaEngine
         FenceLegacyVK(const GraphicsDeviceVK* pDevice);
 		~FenceLegacyVK();
 
-        bool Init(const FenceDesc& desc);
+        bool Init(const FenceDesc* pDesc);
 
         FORCEINLINE VkSemaphore GetSemaphore() const
         {

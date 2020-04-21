@@ -1,7 +1,24 @@
 #pragma once
 #include "Containers/String.h"
 
-// Exporting dynamic libraries
+/*
+* Configuration
+*/
+#if defined(LAMBDA_CONFIG_DEBUG)
+	#define LAMBDA_DEBUG
+#elif defined(LAMBDA_CONFIG_RELEASE)
+	#define LAMBDA_RELEASE
+#elif defined(LAMBDA_CONFIG_PRODUCTION)
+	#define LAMBDA_PRODUCTION
+#endif
+
+#if defined(LAMBDA_DEBUG) || defined(LAMBDA_RELEASE)
+	#define LAMBDA_DEVELOPMENT
+#endif
+
+/*
+* Exporting dynamic libraries
+*/ 
 #if defined(LAMBDA_PLATFORM_WINDOWS) && defined(LAMBDA_SHARED_LIB) 
 	#ifdef LAMBDA_EXPORT	
 		#define LAMBDA_API _declspec(dllexport)
@@ -12,10 +29,14 @@
 	#define LAMBDA_API
 #endif
 
-// Unused params
+/*
+* Unused params
+*/ 
 #define UNREFERENCED_VARIABLE(variable) (void)variable
 
-// Declaration helpers
+/*
+* Declaration helpers
+*/ 
 #define DECL_REMOVE_COPY(Typename) \
 	Typename(const Typename&) = delete; \
 	Typename& operator=(const Typename&) = delete \
@@ -52,18 +73,24 @@
 
 #define DECL_INTERFACE(Typename) DECL_ABSTRACT_CLASS(Typename)
 
-// Helper Macros
+/*
+* Helper Macros
+*/ 
 #define ZERO_MEMORY(memory, size)	memset((void*)memory, 0, size)
 #define ARR_SIZE(arr)				sizeof(arr) / sizeof(arr[0])
 
-// Forceinline
+/*
+* Forceinline
+*/ 
 #ifdef LAMBDA_VISUAL_STUDIO
 	#define FORCEINLINE __forceinline
 #else
 	#define FORCEINLINE __attribute__((always_inline)) inline
 #endif
 
-// Delete and Release
+/*
+* Delete and Release
+*/ 
 #define DELETE_OBJECT(object)	delete (object); (object) = nullptr
 #define SAFEDELETE(object)		if ((object))	{ DELETE_OBJECT(object); }
 
@@ -73,9 +100,13 @@
 #define RELEASE(object)			(object)->Release(); (object) = nullptr
 #define SAFERELEASE(object)		if ((object))	{ RELEASE(object); }
 
-// Bit-Mask helpers
+/*
+* Bit-Mask helpers
+*/ 
 #define BIT(bit)	(1 << bit)
 #define FLAG(bit)	BIT(bit)
 
-// String preprocessor
+/*
+* String preprocessor
+*/ 
 #define STRING_CONCAT(x, y) x##y

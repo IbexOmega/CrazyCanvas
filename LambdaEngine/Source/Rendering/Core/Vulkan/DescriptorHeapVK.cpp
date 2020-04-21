@@ -23,30 +23,30 @@ namespace LambdaEngine
 		}
 	}
 	
-	bool DescriptorHeapVK::Init(const DescriptorHeapDesc& desc)
+	bool DescriptorHeapVK::Init(const DescriptorHeapDesc* pDesc)
 	{
 		constexpr uint32 DESCRIPTOR_TYPE_COUNT = 7;
 		VkDescriptorPoolSize poolSizes[DESCRIPTOR_TYPE_COUNT];
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		poolSizes[0].descriptorCount = desc.DescriptorCount.UnorderedAccessBufferDescriptorCount;
+		poolSizes[0].descriptorCount = pDesc->DescriptorCount.UnorderedAccessBufferDescriptorCount;
 
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		poolSizes[1].descriptorCount = desc.DescriptorCount.UnorderedAccessTextureDescriptorCount;
+		poolSizes[1].descriptorCount = pDesc->DescriptorCount.UnorderedAccessTextureDescriptorCount;
 
 		poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[2].descriptorCount = desc.DescriptorCount.ConstantBufferDescriptorCount;
+		poolSizes[2].descriptorCount = pDesc->DescriptorCount.ConstantBufferDescriptorCount;
 
 		poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[3].descriptorCount = desc.DescriptorCount.TextureCombinedSamplerDescriptorCount;
+		poolSizes[3].descriptorCount = pDesc->DescriptorCount.TextureCombinedSamplerDescriptorCount;
 
 		poolSizes[4].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		poolSizes[4].descriptorCount = desc.DescriptorCount.TextureDescriptorCount;
+		poolSizes[4].descriptorCount = pDesc->DescriptorCount.TextureDescriptorCount;
 
 		poolSizes[5].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-		poolSizes[5].descriptorCount = desc.DescriptorCount.AccelerationStructureDescriptorCount;
+		poolSizes[5].descriptorCount = pDesc->DescriptorCount.AccelerationStructureDescriptorCount;
 
 		poolSizes[6].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-		poolSizes[6].descriptorCount = desc.DescriptorCount.SamplerDescriptorCount;
+		poolSizes[6].descriptorCount = pDesc->DescriptorCount.SamplerDescriptorCount;
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType			= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -54,14 +54,14 @@ namespace LambdaEngine
 		poolInfo.flags			= VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 		poolInfo.poolSizeCount	= DESCRIPTOR_TYPE_COUNT;
 		poolInfo.pPoolSizes		= poolSizes;
-		poolInfo.maxSets		= desc.DescriptorCount.DescriptorSetCount;
+		poolInfo.maxSets		= pDesc->DescriptorCount.DescriptorSetCount;
 		
 		VkResult result = vkCreateDescriptorPool(m_pDevice->Device, &poolInfo, nullptr, &m_DescriptorHeap);
 		if (result != VK_SUCCESS)
 		{
-			if (desc.pName)
+			if (pDesc->pName)
 			{
-				LOG_VULKAN_ERROR(result, "[DescriptorHeapVK]: Failed to create DescriptorHeap \"%s\"", desc.pName);
+				LOG_VULKAN_ERROR(result, "[DescriptorHeapVK]: Failed to create DescriptorHeap \"%s\"", pDesc->pName);
 			}
 			else
 			{
@@ -72,13 +72,13 @@ namespace LambdaEngine
 		}
 		else
 		{
-			m_Desc			= desc;
-			m_HeapStatus	= desc.DescriptorCount;
-			SetName(desc.pName);
+            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
+			m_HeapStatus	= pDesc->DescriptorCount;
+			SetName(pDesc->pName);
 
-			if (desc.pName)
+			if (pDesc->pName)
 			{
-				D_LOG_MESSAGE("[DescriptorHeapVK]: Created DescriptorHeap \"%s\"", desc.pName);
+				D_LOG_MESSAGE("[DescriptorHeapVK]: Created DescriptorHeap \"%s\"", pDesc->pName);
 			}
 			else
 			{
@@ -105,11 +105,13 @@ namespace LambdaEngine
 		newStatus.UnorderedAccessBufferDescriptorCount	-= count.UnorderedAccessBufferDescriptorCount;
 		newStatus.UnorderedAccessTextureDescriptorCount	-= count.UnorderedAccessTextureDescriptorCount;
 
+#ifndef LAMBDA_PRODUCTION
 		if (!CheckValidDescriptorCount(newStatus))
 		{
 			LOG_ERROR("[DescriptorHeapVK]: Not enough descriptors in DescriptorHeap for allocation");
 			return VK_NULL_HANDLE;
 		}
+#endif
 
 		VkDescriptorSetAllocateInfo allocate = {};
 		allocate.sType				= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

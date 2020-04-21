@@ -14,8 +14,6 @@ namespace LambdaEngine
 
 	TextureVK::~TextureVK()
 	{
-        LOG_MESSAGE("[TextureVK]: Destroying Texture");
-        
 		if (m_Memory != VK_NULL_HANDLE)
 		{
 			vkFreeMemory(m_pDevice->Device, m_Memory, nullptr);
@@ -29,59 +27,59 @@ namespace LambdaEngine
 		}
 	}
 
-	bool TextureVK::Init(const TextureDesc& desc)
+	bool TextureVK::Init(const TextureDesc* pDesc)
 	{
 		VkImageCreateInfo info = {};
 		info.sType					= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		info.pNext					= nullptr;
 		info.flags					= 0;
-		info.format					= ConvertFormat(desc.Format);
-		info.extent.width			= desc.Width;
-		info.extent.height			= desc.Height;
-		info.extent.depth			= desc.Depth;
-		info.arrayLayers			= desc.ArrayCount;
+		info.format					= ConvertFormat(pDesc->Format);
+		info.extent.width			= pDesc->Width;
+		info.extent.height			= pDesc->Height;
+		info.extent.depth			= pDesc->Depth;
+		info.arrayLayers			= pDesc->ArrayCount;
 		info.initialLayout			= VK_IMAGE_LAYOUT_UNDEFINED;
-		info.mipLevels				= desc.Miplevels;
+		info.mipLevels				= pDesc->Miplevels;
 		info.pQueueFamilyIndices	= nullptr;
 		info.queueFamilyIndexCount	= 0;
-		info.samples				= ConvertSamples(desc.SampleCount);
+		info.samples				= ConvertSamples(pDesc->SampleCount);
 		info.sharingMode			= VK_SHARING_MODE_EXCLUSIVE;
 		info.tiling					= VK_IMAGE_TILING_OPTIMAL;
         
-		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_RENDER_TARGET)
+		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_RENDER_TARGET)
 		{
 			info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 		}
-		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE)
+		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE)
 		{
 			info.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 		}
-		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL)
+		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL)
 		{
 			info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 		}
-		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS)
+		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS)
 		{
 			info.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
 		}
-		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_COPY_DST)
+		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_COPY_DST)
 		{
 			info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		}
-		if (desc.Flags & FTextureFlags::TEXTURE_FLAG_COPY_SRC)
+		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_COPY_SRC)
 		{
 			info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 		}
 
-		if (desc.Type == ETextureType::TEXTURE_1D)
+		if (pDesc->Type == ETextureType::TEXTURE_1D)
 		{
 			info.imageType = VK_IMAGE_TYPE_1D;
 		}
-		else if (desc.Type == ETextureType::TEXTURE_2D)
+		else if (pDesc->Type == ETextureType::TEXTURE_2D)
 		{
 			info.imageType = VK_IMAGE_TYPE_2D;
 		}
-		else if (desc.Type == ETextureType::TEXTURE_3D)
+		else if (pDesc->Type == ETextureType::TEXTURE_3D)
 		{
 			info.imageType = VK_IMAGE_TYPE_3D;
 		}
@@ -94,9 +92,9 @@ namespace LambdaEngine
 		}
 		else
 		{
-			D_LOG_MESSAGE("[TextureVK]: Created texture w=%d, h=%d, d=%d", desc.Width, desc.Height, desc.Depth);
+			D_LOG_MESSAGE("[TextureVK]: Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
 
-			m_Desc = desc;
+            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
 			SetName(m_Desc.pName);
 		}
 
@@ -143,12 +141,17 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void TextureVK::InitWithImage(VkImage image, const TextureDesc& desc)
+	void TextureVK::InitWithImage(VkImage image, const TextureDesc* pDesc)
 	{
+        VALIDATE(image != VK_NULL_HANDLE);
+        VALIDATE(pDesc != nullptr);
+        
 		m_Image = image;
-		m_Desc	= desc;
-
+        memcpy(&m_Desc, pDesc, sizeof(m_Desc));
+        
 		SetName(m_Desc.pName);
+        
+        D_LOG_MESSAGE("[TextureVK]: Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
 	}
 	
 	void TextureVK::SetName(const char* pName)

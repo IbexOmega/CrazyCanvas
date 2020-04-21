@@ -39,7 +39,7 @@ namespace LambdaEngine
 		PipelineLayoutVK(const GraphicsDeviceVK* pDevice);
 		~PipelineLayoutVK();
 
-		bool Init(const PipelineLayoutDesc& desc);
+		bool Init(const PipelineLayoutDesc* pDesc);
 
 		FORCEINLINE VkPipelineLayout GetPipelineLayout() const
 		{

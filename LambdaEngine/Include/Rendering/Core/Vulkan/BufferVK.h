@@ -2,6 +2,8 @@
 #include "Rendering/Core/API/IBuffer.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
+#include "Rendering/Core/Vulkan/DeviceAllocatorVK.h"
+
 #include "Vulkan.h"
 
 namespace LambdaEngine
@@ -16,7 +18,7 @@ namespace LambdaEngine
         BufferVK(const GraphicsDeviceVK* pDevice);
         ~BufferVK();
         
-        bool Init(const BufferDesc& desc);
+        bool Init(const BufferDesc* pDesc, IDeviceAllocator* pAllocator);
         
         FORCEINLINE VkBuffer GetBuffer() const
         {
@@ -44,11 +46,13 @@ namespace LambdaEngine
         }
 
     private:
-        VkBuffer        m_Buffer                = VK_NULL_HANDLE;
-        VkDeviceMemory  m_Memory                = VK_NULL_HANDLE;
-        VkDeviceAddress m_DeviceAddress         = 0;
-        VkDeviceAddress m_AlignementRequirement = 0;
-        bool            m_IsMapped              = false;
-        BufferDesc      m_Desc;
+        DeviceAllocatorVK*  m_pAllocator         = nullptr;
+        VkBuffer            m_Buffer                = VK_NULL_HANDLE;
+        VkDeviceMemory      m_Memory                = VK_NULL_HANDLE;
+        VkDeviceAddress     m_DeviceAddress         = 0;
+        VkDeviceAddress     m_AlignementRequirement = 0;
+        bool                m_IsMapped              = false;
+        AllocationVK        m_Allocation;
+        BufferDesc          m_Desc;
     };
 }

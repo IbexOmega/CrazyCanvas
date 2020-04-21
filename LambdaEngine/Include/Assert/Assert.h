@@ -27,3 +27,5 @@ LAMBDA_API void HandleAssert(const char* pLine, int line);
 #else
     #define ASSERT(condition)
 #endif
+
+#define VALIDATE(condition) ASSERT(condition)

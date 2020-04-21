@@ -17,7 +17,7 @@ namespace LambdaEngine
 		AccelerationStructureVK(const GraphicsDeviceVK* pDevice);
 		~AccelerationStructureVK();
 
-		bool Init(const AccelerationStructureDesc& desc);
+		bool Init(const AccelerationStructureDesc* pDesc);
 
 		FORCEINLINE VkAccelerationStructureKHR GetAccelerationStructure() const
 		{

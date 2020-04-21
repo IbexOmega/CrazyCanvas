@@ -4,12 +4,14 @@
 
 namespace LambdaEngine
 {
-    IGraphicsDevice* CreateGraphicsDevice(EGraphicsAPI api, const GraphicsDeviceDesc& desc)
+    IGraphicsDevice* CreateGraphicsDevice(EGraphicsAPI api, const GraphicsDeviceDesc* pDesc)
     {
+        VALIDATE(pDesc != nullptr);
+        
         if (api == EGraphicsAPI::VULKAN)
         {
             GraphicsDeviceVK* pDevice = DBG_NEW GraphicsDeviceVK();
-            if (pDevice->Init(desc))
+            if (pDevice->Init(pDesc))
             {
                 return pDevice;
             }

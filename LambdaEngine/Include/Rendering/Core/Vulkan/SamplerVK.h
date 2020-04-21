@@ -16,7 +16,7 @@ namespace LambdaEngine
 		SamplerVK(const GraphicsDeviceVK* pDevice);
 		~SamplerVK();
 
-		bool Init(const SamplerDesc& desc);
+		bool Init(const SamplerDesc* pDesc);
 
 		FORCEINLINE VkSampler GetSampler() const
 		{

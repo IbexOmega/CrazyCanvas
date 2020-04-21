@@ -19,7 +19,7 @@ namespace LambdaEngine
 		CommandListVK(const GraphicsDeviceVK* pDevice);
 		~CommandListVK();
 
-		bool Init(ICommandAllocator* pAllocator, const CommandListDesc& desc);
+		bool Init(ICommandAllocator* pAllocator, const CommandListDesc* pDesc);
 
 		FORCEINLINE VkCommandBuffer GetCommandBuffer() const
 		{

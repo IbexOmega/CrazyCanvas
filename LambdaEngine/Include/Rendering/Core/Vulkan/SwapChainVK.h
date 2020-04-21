@@ -20,7 +20,7 @@ namespace LambdaEngine
         SwapChainVK(const GraphicsDeviceVK* pDevice);
         ~SwapChainVK();
         
-        bool Init(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc& desc);
+        bool Init(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc);
         
         // IDeviceChild interface
         virtual void SetName(const char* pName) override final;

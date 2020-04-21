@@ -16,8 +16,8 @@ namespace LambdaEngine
 		TextureVK(const GraphicsDeviceVK* pDevice);
 		~TextureVK();
 
-		bool Init(const TextureDesc& desc);
-		void InitWithImage(VkImage image, const TextureDesc& desc);
+		bool Init(const TextureDesc* pDesc);
+		void InitWithImage(VkImage image, const TextureDesc* pDesc);
 
         FORCEINLINE VkImage GetImage() const
         {

@@ -37,19 +37,19 @@ namespace LambdaEngine
 		}
 	}
 
-	bool PipelineLayoutVK::Init(const PipelineLayoutDesc& desc)
+	bool PipelineLayoutVK::Init(const PipelineLayoutDesc* pDesc)
 	{
 		VkPushConstantRange		constantRanges[MAX_CONSTANT_RANGES];
 		DescriptorSetLayoutData	descriptorSetLayouts[MAX_DESCRIPTOR_SET_LAYOUTS];
 		
-		CreatePushConstantRanges(desc.pConstantRanges, desc.ConstantRangeCount, constantRanges);
-		CreateDescriptorSetLayout(desc.pDescriptorSetLayouts, desc.DescriptorSetLayoutCount, descriptorSetLayouts);
+		CreatePushConstantRanges(pDesc->pConstantRanges, pDesc->ConstantRangeCount, constantRanges);
+		CreateDescriptorSetLayout(pDesc->pDescriptorSetLayouts, pDesc->DescriptorSetLayoutCount, descriptorSetLayouts);
         
 #ifndef LAMBDA_PRODUCTION
         //Check limits
         VkPhysicalDeviceLimits limits   = m_pDevice->GetDeviceLimits();
         DescriptorCountDesc totalCount  = {};
-        for (uint32 i = 0; i < desc.DescriptorSetLayoutCount; i++)
+        for (uint32 i = 0; i < pDesc->DescriptorSetLayoutCount; i++)
         {
             totalCount.AccelerationStructureDescriptorCount     += m_DescriptorCounts[i].AccelerationStructureDescriptorCount;
             totalCount.ConstantBufferDescriptorCount            += m_DescriptorCounts[i].ConstantBufferDescriptorCount;
@@ -77,16 +77,16 @@ namespace LambdaEngine
 		pipelineLayoutCreateInfo.pNext					= nullptr;
 		pipelineLayoutCreateInfo.flags					= 0;
 		pipelineLayoutCreateInfo.pSetLayouts			= m_DescriptorSetLayouts;
-		pipelineLayoutCreateInfo.setLayoutCount			= desc.DescriptorSetLayoutCount;
+		pipelineLayoutCreateInfo.setLayoutCount			= pDesc->DescriptorSetLayoutCount;
 		pipelineLayoutCreateInfo.pPushConstantRanges	= constantRanges;
-		pipelineLayoutCreateInfo.pushConstantRangeCount = desc.ConstantRangeCount;
+		pipelineLayoutCreateInfo.pushConstantRangeCount = pDesc->ConstantRangeCount;
 
 		VkResult result = vkCreatePipelineLayout(m_pDevice->Device, &pipelineLayoutCreateInfo, nullptr, &m_PipelineLayout);
 		if (result != VK_SUCCESS)
 		{
-			if (desc.pName)
+			if (pDesc->pName)
 			{
-				LOG_VULKAN_ERROR(result, "[PipelineLayoutVK]: Failed to create PipelineLayout \"%s\"", desc.pName);
+				LOG_VULKAN_ERROR(result, "[PipelineLayoutVK]: Failed to create PipelineLayout \"%s\"", pDesc->pName);
 			}
 			else
 			{
@@ -97,11 +97,11 @@ namespace LambdaEngine
 		}
 		else
 		{
-			SetName(desc.pName);
+			SetName(pDesc->pName);
 
-			if (desc.pName)
+			if (pDesc->pName)
 			{
-				D_LOG_MESSAGE("[PipelineLayoutVK]: Created PipelineLayout \"%s\"", desc.pName);
+				D_LOG_MESSAGE("[PipelineLayoutVK]: Created PipelineLayout \"%s\"", pDesc->pName);
 			}
 			else
 			{

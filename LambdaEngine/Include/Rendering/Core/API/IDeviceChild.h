@@ -8,7 +8,7 @@ namespace LambdaEngine
     class IDeviceChild
     {
     public:
-        DECL_DEVICE_INTERFACE(IDeviceChild);
+        DECL_INTERFACE(IDeviceChild);
 
         /*
         * Decrements the referencecounter for the object

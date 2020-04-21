@@ -41,12 +41,12 @@ namespace LambdaEngine
 		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
 		commandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
-		s_pCopyCommandList = RenderSystem::GetDevice()->CreateCommandList(s_pCopyCommandAllocator, commandListDesc);
+		s_pCopyCommandList = RenderSystem::GetDevice()->CreateCommandList(s_pCopyCommandAllocator, &commandListDesc);
 
 		FenceDesc fenceDesc = {};
 		fenceDesc.pName			= "Resource Loader Copy Fence";
 		fenceDesc.InitalValue	= 0;
-		s_pCopyFence = RenderSystem::GetDevice()->CreateFence(fenceDesc);
+		s_pCopyFence = RenderSystem::GetDevice()->CreateFence(&fenceDesc);
 
 		return true;
 	}
@@ -409,7 +409,7 @@ namespace LambdaEngine
 		textureDesc.Miplevels	= miplevels;
 		textureDesc.SampleCount = 1;
 
-		ITexture* pTexture = RenderSystem::GetDevice()->CreateTexture(textureDesc);
+		ITexture* pTexture = RenderSystem::GetDevice()->CreateTexture(&textureDesc, nullptr);
 
 		if (pTexture == nullptr)
 		{
@@ -425,7 +425,7 @@ namespace LambdaEngine
 		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		bufferDesc.SizeInBytes	= pixelDataSize;
 
-		IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(bufferDesc);
+		IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, nullptr);
 
 		if (pTextureData == nullptr)
 		{
@@ -538,7 +538,7 @@ namespace LambdaEngine
 		shaderDesc.pConstants			= pConstants;
 		shaderDesc.ShaderConstantCount	= shaderConstantCount;
 
-		IShader* pShader = RenderSystem::GetDevice()->CreateShader(shaderDesc);
+		IShader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
 
 		SAFEDELETE_ARRAY(pShaderSource);
 
