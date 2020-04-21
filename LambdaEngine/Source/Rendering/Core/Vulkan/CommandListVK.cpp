@@ -621,22 +621,22 @@ namespace LambdaEngine
         vkCmdBindVertexBuffers(m_CommandList, firstBuffer, vertexBufferCount, m_VertexBuffers, m_VertexBufferOffsets);
 	}
 
-	void CommandListVK::BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)
+	void CommandListVK::BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)
 	{
 		CHECK_GRAPHICS(m_pAllocator);
-		BindDescriptorSet(pDescriptorSet, pPipelineLayout, VK_PIPELINE_BIND_POINT_GRAPHICS);
+		BindDescriptorSet(pDescriptorSet, pPipelineLayout, setIndex, VK_PIPELINE_BIND_POINT_GRAPHICS);
 	}
 
-	void CommandListVK::BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)
+	void CommandListVK::BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-		BindDescriptorSet(pDescriptorSet, pPipelineLayout, VK_PIPELINE_BIND_POINT_COMPUTE);
+		BindDescriptorSet(pDescriptorSet, pPipelineLayout, setIndex, VK_PIPELINE_BIND_POINT_COMPUTE);
 	}
 
-	void CommandListVK::BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout)
+	void CommandListVK::BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-		BindDescriptorSet(pDescriptorSet, pPipelineLayout, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+		BindDescriptorSet(pDescriptorSet, pPipelineLayout, setIndex, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 	}
 
 	void CommandListVK::BindGraphicsPipeline(const IPipelineState* pPipeline)
@@ -747,12 +747,12 @@ namespace LambdaEngine
 		return m_pAllocator;
 	}
 	
-	FORCEINLINE void CommandListVK::BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, VkPipelineBindPoint bindPoint)
+	FORCEINLINE void CommandListVK::BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex, VkPipelineBindPoint bindPoint)
 	{
 		const PipelineLayoutVK* pVkPipelineLayout	= reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
 		const DescriptorSetVK* pVkDescriptorSet		= reinterpret_cast<const DescriptorSetVK*>(pDescriptorSet);
 
 		VkDescriptorSet descriptorSet = pVkDescriptorSet->GetDescriptorSet();
-		vkCmdBindDescriptorSets(m_CommandList, bindPoint, pVkPipelineLayout->GetPipelineLayout(), 0, 1, &descriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(m_CommandList, bindPoint, pVkPipelineLayout->GetPipelineLayout(), setIndex, 1, &descriptorSet, 0, nullptr);
 	}
 }

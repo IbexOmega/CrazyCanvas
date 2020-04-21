@@ -48,6 +48,10 @@ public:
 	virtual void OnScroll(int32 delta)                                  override;
 
 private:
+	bool InitRendererForDeferred(uint32 backBufferCount, uint32 maxTexturesPerDescriptorSet);
+	bool InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPerDescriptorSet);
+
+private:
 	LambdaEngine::ResourceManager*			m_pResourceManager		= nullptr;
 
 	GUID_Lambda								m_ToneSoundEffectGUID;
@@ -65,6 +69,7 @@ private:
 	LambdaEngine::Scene*					m_pScene				= nullptr;
 	LambdaEngine::Camera*					m_pCamera				= nullptr;
 	LambdaEngine::ISampler*					m_pLinearSampler		= nullptr;
+	LambdaEngine::ISampler*					m_pNearestSampler		= nullptr;
 
 	LambdaEngine::RenderGraph*				m_pRenderGraph			= nullptr;
 	LambdaEngine::Renderer*					m_pRenderer				= nullptr;

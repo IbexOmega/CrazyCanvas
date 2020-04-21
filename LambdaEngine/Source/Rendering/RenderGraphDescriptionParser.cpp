@@ -513,7 +513,6 @@ namespace LambdaEngine
 				{
 					renderStage.GraphicsPipeline.pGraphicsDesc			= pSourceRenderStage->GraphicsPipeline.pGraphicsDesc;
 					renderStage.GraphicsPipeline.DrawType				= pSourceRenderStage->GraphicsPipeline.DrawType;
-					renderStage.GraphicsPipeline.pVertexBufferName		= pSourceRenderStage->GraphicsPipeline.pVertexBufferName;
 					renderStage.GraphicsPipeline.pIndexBufferName		= pSourceRenderStage->GraphicsPipeline.pIndexBufferName;
 					renderStage.GraphicsPipeline.pMeshIndexBufferName	= pSourceRenderStage->GraphicsPipeline.pMeshIndexBufferName;
 					break;
@@ -544,7 +543,7 @@ namespace LambdaEngine
 				for (const InternalRenderStageExternalInputAttachment* pExternalInputAttachment : sortedRenderStageIt->second->ExternalInputAttachments)
 				{
 					AttachmentSynchronizationDesc attachmentSynchronization = {};
-					attachmentSynchronization.Type				= EAttachmentSynchronizationType::OWNERSHIP_CHANGE;
+					attachmentSynchronization.Type				= EAttachmentSynchronizationType::OWNERSHIP_CHANGE_READ;
 					attachmentSynchronization.ToQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
 					attachmentSynchronization.FromAttachment	= *pExternalInputAttachment->pAttachment;
 					attachmentSynchronization.ToAttachment		= *pExternalInputAttachment->pAttachment;
@@ -578,21 +577,37 @@ namespace LambdaEngine
 			{
 				for (const InternalRenderStageOutputAttachment* pOutputAttachment : sortedRenderStageIt->second->OutputAttachments)
 				{
-					if (!IsAttachmentReserved(pOutputAttachment->pAttachment->pName))
+					auto finalStateOfAttachmentIt = finalStateOfAttachments.find(pOutputAttachment->pAttachment->pName);
+
+					//If final state not found this is the only stage that uses the attachment -> no synchronization required
+					if (finalStateOfAttachmentIt == finalStateOfAttachments.end())
 					{
-						auto finalStateOfAttachmentIt = finalStateOfAttachments.find(pOutputAttachment->pAttachment->pName);
+						continue;
+					}
 
-						if (finalStateOfAttachmentIt != finalStateOfAttachments.end())
-						{
-							AttachmentSynchronizationDesc attachmentSynchronization = {};
-							attachmentSynchronization.Type				= EAttachmentSynchronizationType::TRANSITION_FOR_WRITE;
-							attachmentSynchronization.FromQueueOwner	= finalStateOfAttachmentIt->second.second;
-							attachmentSynchronization.ToQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
-							attachmentSynchronization.FromAttachment	= *finalStateOfAttachmentIt->second.first;
-							attachmentSynchronization.ToAttachment		= *pOutputAttachment->pAttachment;
+					//If the attachment is a renderpass attachment, the transition will be handled by a renderpass...
+					if (pOutputAttachment->pAttachment->Type != EAttachmentType::OUTPUT_COLOR && pOutputAttachment->pAttachment->Type != EAttachmentType::OUTPUT_DEPTH_STENCIL)
+					{
+						AttachmentSynchronizationDesc attachmentSynchronization = {};
+						attachmentSynchronization.Type				= EAttachmentSynchronizationType::TRANSITION_FOR_WRITE;
+						attachmentSynchronization.FromQueueOwner	= finalStateOfAttachmentIt->second.second;
+						attachmentSynchronization.ToQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
+						attachmentSynchronization.FromAttachment	= *finalStateOfAttachmentIt->second.first;
+						attachmentSynchronization.ToAttachment		= *pOutputAttachment->pAttachment;
 
-							synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
-						}
+						synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
+					}
+					//... unless it also belonged to another queue
+					else if (finalStateOfAttachmentIt->second.second != sortedRenderStageIt->second->pRenderStage->PipelineType)
+					{
+						AttachmentSynchronizationDesc attachmentSynchronization = {};
+						attachmentSynchronization.Type				= EAttachmentSynchronizationType::OWNERSHIP_CHANGE_WRITE;
+						attachmentSynchronization.FromQueueOwner	= finalStateOfAttachmentIt->second.second;
+						attachmentSynchronization.ToQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
+						attachmentSynchronization.FromAttachment	= *finalStateOfAttachmentIt->second.first;
+						attachmentSynchronization.ToAttachment		= *pOutputAttachment->pAttachment;
+
+						synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
 					}
 				}
 			}
@@ -654,13 +669,13 @@ namespace LambdaEngine
 
 				if (transitionedResourceStateIt != transitionedResourceStates.end())
 				{
-					//Only TRANSITION_FOR_READ needs repairing
-					if (transitionedResourceStateIt->second.first == EAttachmentState::READ)
+					//If its state already is read, or the access type will be handled by a renderpass, it might just be a queue ownership change
+					if (transitionedResourceStateIt->second.first == EAttachmentState::READ || attachmentSynchronizationIt->FromAttachment.Type == EAttachmentType::OUTPUT_COLOR || attachmentSynchronizationIt->FromAttachment.Type == EAttachmentType::OUTPUT_DEPTH_STENCIL)
 					{
 						if (attachmentSynchronizationIt->ToQueueOwner != transitionedResourceStateIt->second.second)
 						{
 							attachmentSynchronizationIt->FromQueueOwner = transitionedResourceStateIt->second.second;
-							attachmentSynchronizationIt->Type = EAttachmentSynchronizationType::OWNERSHIP_CHANGE;
+							attachmentSynchronizationIt->Type = EAttachmentSynchronizationType::OWNERSHIP_CHANGE_READ;
 						}
 						else
 						{
@@ -681,11 +696,12 @@ namespace LambdaEngine
 				case EAttachmentSynchronizationType::NONE:
 					resultState = transitionedResourceStateIt != transitionedResourceStates.end() ? transitionedResourceStateIt->second.first : EAttachmentState::NONE;
 					break;
-				case EAttachmentSynchronizationType::OWNERSHIP_CHANGE:		//Assume READ state if OWNERSHIP_CHANGE, Todo: rethink this, maybe consequtive writes should be possible
+				case EAttachmentSynchronizationType::OWNERSHIP_CHANGE_READ:
 				case EAttachmentSynchronizationType::TRANSITION_FOR_READ:
 					resultState = EAttachmentState::READ;
 					break;
 				case EAttachmentSynchronizationType::TRANSITION_FOR_WRITE:
+				case EAttachmentSynchronizationType::OWNERSHIP_CHANGE_WRITE:
 					resultState = EAttachmentState::WRITE;
 					break;
 				}
@@ -695,7 +711,7 @@ namespace LambdaEngine
 			}
 		}
 
-		//Update first encounters
+		//Update first encounters, is this really necessary? Shouldn't the previous step SortPipelineStages, where we traverse backwards fix first encounters?
 		for (auto firstEncounterSynchronizationIt = firstEncounterOfAttachmentSynchronizations.begin(); firstEncounterSynchronizationIt != firstEncounterOfAttachmentSynchronizations.end(); firstEncounterSynchronizationIt++)
 		{
 			firstEncounterSynchronizationIt->second->FromQueueOwner = transitionedResourceStates[firstEncounterSynchronizationIt->first].second;
@@ -704,15 +720,31 @@ namespace LambdaEngine
 		//Pruning of OWNERSHIP_CHANGE from x -> x and empty synchronization stages
 		for (auto synchronizationStageIt = sortedSynchronizationStages.begin(); synchronizationStageIt != sortedSynchronizationStages.end();)
 		{
-			//Remove unnecessary OWNERSHIP_CHANGEs
 			for (auto attachmentSynchronizationIt = synchronizationStageIt->Synchronizations.begin(); attachmentSynchronizationIt != synchronizationStageIt->Synchronizations.end(); )
 			{
-				if (attachmentSynchronizationIt->Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE)
+				//Remove unnecessary OWNERSHIP_CHANGEs
+				if (attachmentSynchronizationIt->Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE_READ || attachmentSynchronizationIt->Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE_WRITE)
 				{
 					if (attachmentSynchronizationIt->FromQueueOwner == attachmentSynchronizationIt->ToQueueOwner)
 					{
 						attachmentSynchronizationIt = synchronizationStageIt->Synchronizations.erase(attachmentSynchronizationIt);
 						continue;
+					}
+				}
+				//Remove TRANSITION_FOR_READ synchronizations that get handled by Renderpass
+				else if (attachmentSynchronizationIt->Type == EAttachmentSynchronizationType::TRANSITION_FOR_READ)
+				{
+					if (attachmentSynchronizationIt->FromAttachment.Type == EAttachmentType::OUTPUT_COLOR || attachmentSynchronizationIt->FromAttachment.Type == EAttachmentType::OUTPUT_DEPTH_STENCIL)
+					{
+						if (attachmentSynchronizationIt->FromQueueOwner == attachmentSynchronizationIt->ToQueueOwner)
+						{
+							attachmentSynchronizationIt = synchronizationStageIt->Synchronizations.erase(attachmentSynchronizationIt);
+							continue;
+						}
+						else
+						{
+							attachmentSynchronizationIt->Type = EAttachmentSynchronizationType::OWNERSHIP_CHANGE_READ;
+						}
 					}
 				}
 
@@ -1053,10 +1085,15 @@ namespace LambdaEngine
 							strcat(fileOutputBuffer, synchronization.FromAttachment.pName);
 							strcat(fileOutputBuffer, "\\n--TRANSITION FOR READ--\\n");
 						}
-						else if (synchronization.Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE)
+						else if (synchronization.Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE_READ)
 						{
 							strcat(fileOutputBuffer, synchronization.FromAttachment.pName);
-							strcat(fileOutputBuffer, "\\n--OWNERSHIP CHANGE--\\n");
+							strcat(fileOutputBuffer, "\\n--OWNERSHIP CHANGE READ--\\n");
+						}
+						else if (synchronization.Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE_WRITE)
+						{
+							strcat(fileOutputBuffer, synchronization.FromAttachment.pName);
+							strcat(fileOutputBuffer, "\\n--OWNERSHIP CHANGE WRITE--\\n");
 						}
 						else if (synchronization.Type == EAttachmentSynchronizationType::TRANSITION_FOR_WRITE)
 						{
