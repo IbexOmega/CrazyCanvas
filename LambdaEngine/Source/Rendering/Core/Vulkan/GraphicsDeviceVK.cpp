@@ -36,7 +36,7 @@ namespace LambdaEngine
 	{
 		ValidationLayer("REQ_V_L_BASE"),
 		ValidationLayer("VK_LAYER_KHRONOS_validation"),
-		ValidationLayer("VK_LAYER_RENDERDOC_Capture")
+		//ValidationLayer("VK_LAYER_RENDERDOC_Capture")
 	};
 
 	constexpr ValidationLayer OPTIONAL_VALIDATION_LAYERS[]
@@ -911,7 +911,7 @@ namespace LambdaEngine
 		deviceFeatures.vertexPipelineStoresAndAtomics	= true;
 		deviceFeatures.fragmentStoresAndAtomics			= true;
 		deviceFeatures.multiDrawIndirect				= true;
-		deviceFeatures.geometryShader					= true;
+		//deviceFeatures.geometryShader					= true;
 
 		VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
 		deviceFeatures2.sType	 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
