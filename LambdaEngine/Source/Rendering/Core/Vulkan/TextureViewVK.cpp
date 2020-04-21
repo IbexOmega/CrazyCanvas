@@ -16,11 +16,7 @@ namespace LambdaEngine
 
     TextureViewVK::~TextureViewVK()
     {
-        if (m_ImageView != VK_NULL_HANDLE)
-        {
-            vkDestroyImageView(m_pDevice->Device, m_ImageView, nullptr);
-            m_ImageView = VK_NULL_HANDLE;
-        }
+        m_pDevice->DestroyImageView(&m_ImageView);
         
         SAFERELEASE(m_pTexture);
     }

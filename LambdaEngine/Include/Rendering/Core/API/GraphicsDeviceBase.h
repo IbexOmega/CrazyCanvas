@@ -1,6 +1,8 @@
 #pragma once
 #include "IGraphicsDevice.h"
 
+#include "Threading/API/SpinLock.h"
+
 #include "Containers/TArray.h"
 
 namespace LambdaEngine
@@ -13,11 +15,15 @@ namespace LambdaEngine
         DECL_UNIQUE_CLASS(GraphicsDeviceBase);
         
         GraphicsDeviceBase();
-        ~GraphicsDeviceBase();
+        ~GraphicsDeviceBase() = default;
         
-        void DestroyObject(IDeviceChild* pObject);
+        void DestroyObject(IDeviceChild* pObject) const;
+        
+        //IGraphicsDevice interface
+        virtual void Release() override;
         
     private:
-        TArray<IDeviceChild*> m_GarbageObjects;
+        mutable TArray<IDeviceChild*>   m_GarbageObjects;
+        mutable SpinLock                m_GarbageLock;
     };
 }

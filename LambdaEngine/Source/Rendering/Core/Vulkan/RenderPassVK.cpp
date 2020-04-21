@@ -14,11 +14,7 @@ namespace LambdaEngine
 
 	RenderPassVK::~RenderPassVK()
 	{
-		if (m_RenderPass != VK_NULL_HANDLE)
-		{
-			vkDestroyRenderPass(m_pDevice->Device, m_RenderPass, nullptr);
-			m_RenderPass = VK_NULL_HANDLE;
-		}
+        m_pDevice->DestroyRenderPass(&m_RenderPass);
 	}
 
 	bool RenderPassVK::Init(const RenderPassDesc& desc)

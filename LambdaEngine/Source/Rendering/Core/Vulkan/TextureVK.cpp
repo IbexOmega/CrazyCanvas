@@ -14,8 +14,6 @@ namespace LambdaEngine
 
 	TextureVK::~TextureVK()
 	{
-        LOG_MESSAGE("[TextureVK]: Destroying Texture");
-        
 		if (m_Memory != VK_NULL_HANDLE)
 		{
 			vkFreeMemory(m_pDevice->Device, m_Memory, nullptr);

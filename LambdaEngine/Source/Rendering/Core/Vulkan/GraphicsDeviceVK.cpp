@@ -79,7 +79,7 @@ namespace LambdaEngine
 	};
 
 	GraphicsDeviceVK::GraphicsDeviceVK()
-        : IGraphicsDevice(),
+        : GraphicsDeviceBase(),
         RayTracingProperties(),
         m_DeviceQueueFamilyIndices(),
         m_DeviceLimits(),
@@ -140,6 +140,32 @@ namespace LambdaEngine
 		return true;
 	}
 
+    void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
+    {
+        ASSERT(m_pFrameBufferCache != nullptr);
+        
+        if (*pRenderPass != VK_NULL_HANDLE)
+        {
+            m_pFrameBufferCache->DestroyRenderPass(*pRenderPass);
+            
+            vkDestroyRenderPass(Device, *pRenderPass, nullptr);
+            *pRenderPass = VK_NULL_HANDLE;
+        }
+    }
+
+    void GraphicsDeviceVK::DestroyImageView(VkImageView* pImageView) const
+    {
+        ASSERT(m_pFrameBufferCache != nullptr);
+        
+        if (*pImageView != VK_NULL_HANDLE)
+        {
+            m_pFrameBufferCache->DestroyImageView(*pImageView);
+            
+            vkDestroyImageView(Device, *pImageView, nullptr);
+            *pImageView = VK_NULL_HANDLE;
+        }
+    }
+
 	VkFramebuffer GraphicsDeviceVK::GetFrameBuffer(const IRenderPass* pRenderPass, const ITextureView* const* ppRenderTargets, uint32 renderTargetCount, const ITextureView* pDepthStencil, uint32 width, uint32 height) const
 	{
 		FrameBufferCacheKey key = { };
@@ -171,6 +197,7 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::Release()
 	{
+        GraphicsDeviceBase::Release();
 		delete this;
 	}
 
@@ -344,7 +371,7 @@ namespace LambdaEngine
 			return nullptr;
 		}
         
-        ASSERT(queueFamilyIndex < m_QueueFamilyProperties.size());
+        ASSERT(queueFamilyIndex < uint32(m_QueueFamilyProperties.size()));
         ASSERT(index            < m_QueueFamilyProperties[queueFamilyIndex].queueCount);
 
 		CommandQueueVK* pQueue = DBG_NEW CommandQueueVK(this);
@@ -1159,8 +1186,11 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkGetSemaphoreCounterValue);
 		}
 
-		//TOOO: Check for extension
-		GET_DEVICE_PROC_ADDR(Device, vkGetBufferDeviceAddress);
+        //Buffer Address
+        if (IsDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
+        {
+            GET_DEVICE_PROC_ADDR(Device, vkGetBufferDeviceAddress);
+        }
 
 	}
 

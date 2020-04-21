@@ -4,7 +4,7 @@
 #include "Utilities/StringHash.h"
 
 #include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/IGraphicsDevice.h"
+#include "Rendering/Core/API/GraphicsDeviceBase.h"
 
 #include "Vulkan.h"
 
@@ -29,7 +29,7 @@ namespace LambdaEngine
 		}
 	};
 
-	class GraphicsDeviceVK final : public IGraphicsDevice
+	class GraphicsDeviceVK final : public GraphicsDeviceBase
 	{
 	public:
 		GraphicsDeviceVK();
@@ -37,13 +37,16 @@ namespace LambdaEngine
 
 		bool Init(const GraphicsDeviceDesc& desc);
 
-		VkFramebuffer GetFrameBuffer(const IRenderPass* pRenderPass, const ITextureView* const* ppRenderTargets, uint32 renderTargetCount, const ITextureView* pDepthStencil, uint32 width, uint32 height) const;
+        void DestroyRenderPass(VkRenderPass* pRenderPass) const;
+        void DestroyImageView(VkImageView* pImageView) const;
 		
 		bool IsInstanceExtensionEnabled(const char* pExtensionName) const;
 		bool IsDeviceExtensionEnabled(const char* pExtensionName)	const;
 
 		void SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type)	const;
 		
+        VkFramebuffer GetFrameBuffer(const IRenderPass* pRenderPass, const ITextureView* const* ppRenderTargets, uint32 renderTargetCount, const ITextureView* pDepthStencil, uint32 width, uint32 height) const;
+        
 		uint32						GetQueueFamilyIndexFromQueueType(ECommandQueueType type)	const;
 		VkFormatProperties			GetFormatProperties(VkFormat format)						const;
 		VkPhysicalDeviceProperties	GetPhysicalDeviceProperties()								const;
