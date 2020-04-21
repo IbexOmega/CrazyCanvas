@@ -18,7 +18,8 @@ namespace LambdaEngine
 		m_pSocket(nullptr),
 		m_PacketManager(packets, maximumTries),
 		m_pHandler(pHandler), 
-		m_State(STATE_DISCONNECTED)
+		m_State(STATE_DISCONNECTED),
+		m_pSendBuffer()
 	{
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Clients.insert(this);
@@ -288,6 +289,8 @@ namespace LambdaEngine
 
 	void ClientUDP::FixedTickStatic(Timestamp timestamp)
 	{
+		UNREFERENCED_VARIABLE(timestamp);
+
 		if (!s_Clients.empty())
 		{
 			std::scoped_lock<SpinLock> lock(s_Lock);

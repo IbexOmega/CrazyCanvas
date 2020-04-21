@@ -38,7 +38,6 @@ namespace LambdaEngine
 
 	void ClientUDPRemote::OnDataReceived(const char* data, int32 size)
 	{
-		int32 packetsReceived;
 		if (m_PacketManager.DecodePackets(data, size, m_Packets))
 		{
 			for (NetworkPacket* pPacket : m_Packets)
