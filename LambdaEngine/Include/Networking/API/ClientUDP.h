@@ -15,6 +15,8 @@ namespace LambdaEngine
 		public IClientUDP,
 		protected IPacketListener
 	{
+		friend class NetworkUtils;
+
 	public:
 		~ClientUDP();
 
@@ -50,6 +52,12 @@ namespace LambdaEngine
 		void HandleReceivedPacket(NetworkPacket* pPacket);
 		void TransmitPackets();
 
+	public:
+		static ClientUDP* Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries);
+
+	private:
+		static void FixedTickStatic(Timestamp timestamp);
+
 	private:
 		ISocketUDP* m_pSocket;
 		IPEndPoint m_IPEndPoint;
@@ -57,9 +65,11 @@ namespace LambdaEngine
 		SpinLock m_Lock;
 		IClientUDPHandler* m_pHandler;
 		EClientState m_State;
+		std::atomic_bool m_SendDisconnectPacket;
 		char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
 
-	public:
-		static ClientUDP* Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries);
+	private:
+		static std::set<ClientUDP*> s_Clients;
+		static SpinLock s_Lock;
 	};
 }

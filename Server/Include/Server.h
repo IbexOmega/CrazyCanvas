@@ -9,7 +9,7 @@
 #include "Networking/API/IServerUDPHandler.h"
 #include "Networking/API/IClientUDP.h"
 
-#include "Networking/API/IClientUDPHandler.h"
+#include "Networking/API/IClientUDPRemoteHandler.h"
 
 #include <set>
 
@@ -23,7 +23,7 @@ public:
 	~Server();
 
 	virtual void OnClientConnected(LambdaEngine::IClientUDP* pClient) override;
-	virtual LambdaEngine::IClientUDPHandler* CreateClientUDPHandler() override;
+	virtual LambdaEngine::IClientUDPRemoteHandler* CreateClientUDPHandler() override;
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;

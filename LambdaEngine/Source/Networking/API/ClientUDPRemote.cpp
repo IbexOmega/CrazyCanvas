@@ -3,7 +3,7 @@
 #include "Networking/API/ISocketUDP.h"
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/ServerUDP.h"
-#include "Networking/API/IClientUDPHandler.h"
+#include "Networking/API/IClientUDPRemoteHandler.h"
 #include "Networking/API/BinaryDecoder.h"
 
 #include "Log/Log.h"

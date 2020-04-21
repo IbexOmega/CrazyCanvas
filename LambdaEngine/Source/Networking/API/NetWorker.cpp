@@ -15,7 +15,7 @@ namespace LambdaEngine
 		m_ThreadsStarted(false),
 		m_ReceiverStopped(false),
 		m_Initiated(false),
-		m_ThreadsTerminated(false),
+		m_ThreadsTerminated(true),
 		m_Release(false),
 		m_pReceiveBuffer()
 	{
@@ -80,7 +80,7 @@ namespace LambdaEngine
 	bool NetWorker::StartThreads()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
-		if (!ThreadsAreRunning())
+		if (!ThreadsAreRunning() && m_ThreadsTerminated)
 		{
 			m_Run = true;
 			m_ThreadsStarted = false;

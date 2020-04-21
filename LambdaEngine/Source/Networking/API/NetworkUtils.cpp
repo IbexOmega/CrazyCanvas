@@ -4,7 +4,7 @@
 #include "Networking/API/IPAddress.h"
 #include "Networking/API/IPEndPoint.h"
 #include "Networking/API/ServerUDP.h"
-
+#include "Networking/API/ClientUDP.h"
 
 namespace LambdaEngine
 {
@@ -22,6 +22,7 @@ namespace LambdaEngine
 	void NetworkUtils::FixedTick(Timestamp dt)
 	{
 		ServerUDP::FixedTickStatic(dt);
+		ClientUDP::FixedTickStatic(dt);
 	}
 
 	void NetworkUtils::Release()

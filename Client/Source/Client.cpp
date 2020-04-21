@@ -69,6 +69,12 @@ void Client::OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine
     LOG_MESSAGE("OnPacketReceivedUDP()");
 }
 
+void Client::OnServerFullUDP(LambdaEngine::IClientUDP* pClient)
+{
+    UNREFERENCED_VARIABLE(pClient);
+    LOG_ERROR("OnServerFullUDP()");
+}
+
 void Client::OnPacketDelivered(LambdaEngine::NetworkPacket* pPacket)
 {
     UNREFERENCED_VARIABLE(pPacket);
@@ -84,7 +90,7 @@ void Client::OnPacketResent(LambdaEngine::NetworkPacket* pPacket, uint8 tries)
 void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8 tries)
 {
     UNREFERENCED_VARIABLE(pPacket);
-    LOG_INFO("OnPacketMaxTriesReached(%d)", tries);
+    LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
 
 void Client::OnKeyDown(LambdaEngine::EKey key)
@@ -130,6 +136,13 @@ void Client::FixedTick(LambdaEngine::Timestamp delta)
     UNREFERENCED_VARIABLE(delta);
 
     m_pClient->Flush();
+
+
+
+    if (m_pClient->IsConnected())
+        m_pClient->Disconnect();
+    else
+        m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444));
 }
 
 namespace LambdaEngine

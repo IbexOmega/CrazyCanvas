@@ -11,7 +11,7 @@ namespace LambdaEngine
 	class ISocketUDP;
 	class ClientUDPRemote;
 	class IServerUDPHandler;
-	class IClientUDPHandler;
+	class IClientUDPRemoteHandler;
 
 	class LAMBDA_API ServerUDP : public NetWorker, public IServer
 	{
@@ -43,7 +43,8 @@ namespace LambdaEngine
 
 	private:
 		void Transmit(const IPEndPoint& ipEndPoint, const char* data, int32 bytesToWrite);
-		IClientUDPHandler* CreateClientUDPHandler();
+		IClientUDPRemoteHandler* CreateClientUDPHandler();
+		ClientUDPRemote* GetOrCreateClient(const IPEndPoint& sender, bool& newConnection);
 		void OnClientDisconnected(ClientUDPRemote* client, bool sendDisconnectPacket);
 		void SendDisconnect(ClientUDPRemote* client);
 		void SendServerFull(ClientUDPRemote* client);
