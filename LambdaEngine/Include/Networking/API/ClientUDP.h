@@ -26,14 +26,16 @@ namespace LambdaEngine
 		virtual const IPEndPoint& GetEndPoint() const override;
 		virtual NetworkPacket* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
+		virtual const NetworkStatistics* GetStatistics() const override;
 
 		bool Connect(const IPEndPoint& ipEndPoint);
 
 	protected:
-		ClientUDP(IClientUDPHandler* pHandler, uint16 packets);
+		ClientUDP(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries);
 
-		virtual void OnPacketDelivered(NetworkPacket* packet) override;
-		virtual void OnPacketResent(NetworkPacket* packet) override;
+		virtual void OnPacketDelivered(NetworkPacket* pPacket) override;
+		virtual void OnPacketResent(NetworkPacket* pPacket, uint8 tries) override;
+		virtual void OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries) override;
 
 		virtual bool OnThreadsStarted() override;
 		virtual void RunTranmitter() override;
@@ -58,6 +60,6 @@ namespace LambdaEngine
 		char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
 
 	public:
-		static ClientUDP* Create(IClientUDPHandler* pHandler, uint16 packets);
+		static ClientUDP* Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries);
 	};
 }

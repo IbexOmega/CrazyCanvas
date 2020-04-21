@@ -143,8 +143,8 @@ Sandbox::~Sandbox()
 
 	SAFEDELETE(m_pScene);
 	SAFEDELETE(m_pCamera);
-	SAFEDELETE(m_pLinearSampler);
-	SAFEDELETE(m_pNearestSampler);
+	SAFERELEASE(m_pLinearSampler);
+	SAFERELEASE(m_pNearestSampler);
 
 	SAFEDELETE(m_pRenderGraph);
 	SAFEDELETE(m_pRenderer);
@@ -295,38 +295,38 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 
 void Sandbox::OnKeyHeldDown(LambdaEngine::EKey key)
 {
-	UNREFERENCED_PARAMETER(key);
+	UNREFERENCED_VARIABLE(key);
 	//LOG_MESSAGE("Key Held Down: %d", key);
 }
 
 void Sandbox::OnKeyUp(LambdaEngine::EKey key)
 {
-	UNREFERENCED_PARAMETER(key);
+	UNREFERENCED_VARIABLE(key);
 	//LOG_MESSAGE("Key Released: %d", key);
 }
 
 void Sandbox::OnMouseMove(int32 x, int32 y)
 {
-	UNREFERENCED_PARAMETER(x);
-	UNREFERENCED_PARAMETER(y);
+	UNREFERENCED_VARIABLE(x);
+	UNREFERENCED_VARIABLE(y);
 	//LOG_MESSAGE("Mouse Moved: x=%d, y=%d", x, y);
 }
 
 void Sandbox::OnButtonPressed(LambdaEngine::EMouseButton button)
 {
-	UNREFERENCED_PARAMETER(button);
+	UNREFERENCED_VARIABLE(button);
 	LOG_MESSAGE("Mouse Button Pressed: %d", button);
 }
 
 void Sandbox::OnButtonReleased(LambdaEngine::EMouseButton button)
 {
-	UNREFERENCED_PARAMETER(button);
+	UNREFERENCED_VARIABLE(button);
 	LOG_MESSAGE("Mouse Button Released: %d", button);
 }
 
 void Sandbox::OnScroll(int32 delta)
 {
-	UNREFERENCED_PARAMETER(delta);
+	UNREFERENCED_VARIABLE(delta);
 	//LOG_MESSAGE("Mouse Scrolled: %d", delta);
 }
 
@@ -418,7 +418,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
 {
-	UNREFERENCED_PARAMETER(delta);
+	UNREFERENCED_VARIABLE(delta);
     //LOG_MESSAGE("Fixed delta: %.6f ms", delta.AsMilliSeconds());
 }
 

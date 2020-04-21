@@ -25,7 +25,7 @@ namespace LambdaEngine
         
         static void Tick();
         
-        static void MakeCall(dispatch_block_t block);
+        static void MakeCall(dispatch_block_t block, bool waitUntilFinished);
         
     private:
         static MacRunLoopSource* s_pMainThread;

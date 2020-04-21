@@ -25,7 +25,7 @@ Client::Client() :
     PlatformApplication::Get()->GetWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
-    m_pClient = ClientUDP::Create(this, 512);
+    m_pClient = ClientUDP::Create(this, 512, 10);
 
     if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
     {
@@ -40,45 +40,51 @@ Client::~Client()
 
 void Client::OnConnectingUDP(LambdaEngine::IClientUDP* pClient)
 {
-    UNREFERENCED_PARAMETER(pClient);
+    UNREFERENCED_VARIABLE(pClient);
     LOG_MESSAGE("OnConnectingUDP()");
 }
 
 void Client::OnConnectedUDP(LambdaEngine::IClientUDP* pClient)
 {
-    UNREFERENCED_PARAMETER(pClient);
+    UNREFERENCED_VARIABLE(pClient);
     LOG_MESSAGE("OnConnectedUDP()");
 }
 
 void Client::OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient)
 {
-    UNREFERENCED_PARAMETER(pClient);
+    UNREFERENCED_VARIABLE(pClient);
     LOG_MESSAGE("OnDisconnectingUDP()");
 }
 
 void Client::OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient)
 {
-    UNREFERENCED_PARAMETER(pClient);
+    UNREFERENCED_VARIABLE(pClient);
     LOG_MESSAGE("OnDisconnectedUDP()");
 }
 
 void Client::OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket)
 {
-    UNREFERENCED_PARAMETER(pClient);
-    UNREFERENCED_PARAMETER(pPacket);
+    UNREFERENCED_VARIABLE(pClient);
+    UNREFERENCED_VARIABLE(pPacket);
     LOG_MESSAGE("OnPacketReceivedUDP()");
 }
 
 void Client::OnPacketDelivered(LambdaEngine::NetworkPacket* pPacket)
 {
-    UNREFERENCED_PARAMETER(pPacket);
+    UNREFERENCED_VARIABLE(pPacket);
     LOG_INFO("OnPacketDelivered()");
 }
 
-void Client::OnPacketResent(LambdaEngine::NetworkPacket* pPacket)
+void Client::OnPacketResent(LambdaEngine::NetworkPacket* pPacket, uint8 tries)
 {
-    UNREFERENCED_PARAMETER(pPacket);
-    LOG_INFO("OnPacketResent()");
+    UNREFERENCED_VARIABLE(pPacket);
+    LOG_INFO("OnPacketResent(%d)", tries);
+}
+
+void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8 tries)
+{
+    UNREFERENCED_VARIABLE(pPacket);
+    LOG_INFO("OnPacketMaxTriesReached(%d)", tries);
 }
 
 void Client::OnKeyDown(LambdaEngine::EKey key)

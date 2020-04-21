@@ -10,17 +10,17 @@
 
 namespace LambdaEngine
 {
-	ClientUDPRemote::ClientUDPRemote(uint16 packets, const IPEndPoint& ipEndPoint, ServerUDP* pServer) :
+	ClientUDPRemote::ClientUDPRemote(uint16 packets, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer) :
 		m_pServer(pServer),
 		m_IPEndPoint(ipEndPoint),
-		m_PacketManager(packets),
+		m_PacketManager(packets, maximumTries),
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
-		m_pPackets(),
+		m_Packets(),
 		m_Release(false),
 		m_DisconnectedByRemote(false)
 	{
-		m_PacketManager.GenerateSalt();
+		m_Packets.reserve(64);
 	}
 
 	ClientUDPRemote::~ClientUDPRemote()
@@ -39,14 +39,14 @@ namespace LambdaEngine
 	void ClientUDPRemote::OnDataReceived(const char* data, int32 size)
 	{
 		int32 packetsReceived;
-		if (m_PacketManager.DecodePackets(data, size, m_pPackets, packetsReceived))
+		if (m_PacketManager.DecodePackets(data, size, m_Packets))
 		{
-			for (int i = 0; i < packetsReceived; i++)
+			for (NetworkPacket* pPacket : m_Packets)
 			{
-				if (!HandleReceivedPacket(m_pPackets[i]))
+				if (!HandleReceivedPacket(pPacket))
 					return;
 			}
-			m_PacketManager.Free(m_pPackets, packetsReceived);
+			m_PacketManager.Free(m_Packets);
 		}
 	}
 
@@ -54,6 +54,9 @@ namespace LambdaEngine
 	{
 		int32 bytesWritten = 0;
 		bool done = false;
+
+		m_PacketManager.Tick();
+		m_PacketManager.SwapPacketQueues();
 
 		while (!done)
 		{
@@ -67,7 +70,7 @@ namespace LambdaEngine
 
 	bool ClientUDPRemote::HandleReceivedPacket(NetworkPacket* pPacket)
 	{
-		LOG_MESSAGE("PING %fms", m_PacketManager.GetPing().AsMilliSeconds());
+		LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 		uint16 packetType = pPacket->GetType();
 
 		if (packetType == NetworkPacket::TYPE_CONNNECT)
@@ -82,10 +85,10 @@ namespace LambdaEngine
 		}
 		else if (packetType == NetworkPacket::TYPE_CHALLENGE)
 		{
-			uint64 answer = PacketManager::DoChallenge(m_PacketManager.GetSalt(), pPacket->GetRemoteSalt());
-			
+			uint64 expectedAnswer = PacketManager::DoChallenge(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
 			BinaryDecoder decoder(pPacket);
-			if (decoder.ReadUInt64() == answer)
+			uint64 answer = decoder.ReadUInt64();
+			if (answer == expectedAnswer)
 			{
 				m_PacketManager.EnqueuePacket(GetFreePacket(NetworkPacket::TYPE_ACCEPTED));
 
@@ -97,7 +100,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ClientUDPRemote]: Client responded with the wrong answer, is it a fake client? [%s]", m_IPEndPoint.ToString().c_str());
+				LOG_ERROR("[ClientUDPRemote]: Client responded with %lu, expected %lu, is it a fake client? [%s]", answer, expectedAnswer, m_IPEndPoint.ToString().c_str());
 			}	
 		}
 		else if (packetType == NetworkPacket::TYPE_DISCONNECT)
@@ -173,6 +176,11 @@ namespace LambdaEngine
 	EClientState ClientUDPRemote::GetState() const
 	{
 		return m_State;
+	}
+
+	const NetworkStatistics* ClientUDPRemote::GetStatistics() const
+	{
+		return m_PacketManager.GetStatistics();
 	}
 
 	void ClientUDPRemote::Release()

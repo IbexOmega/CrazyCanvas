@@ -24,8 +24,7 @@ namespace LambdaEngine
 	class LAMBDA_API ResourceManager
 	{
 	public:
-		DECL_REMOVE_COPY(ResourceManager);
-		DECL_REMOVE_MOVE(ResourceManager);
+		DECL_UNIQUE_CLASS(ResourceManager);
 
 		ResourceManager(IGraphicsDevice* pGraphicsDevice, IAudioDevice* pAudioDevice);
 		~ResourceManager();

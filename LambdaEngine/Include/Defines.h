@@ -13,7 +13,7 @@
 #endif
 
 // Unused params
-#define UNREFERENCED_VARIABLE(variable) variable
+#define UNREFERENCED_VARIABLE(variable) (void)variable
 
 // Declaration helpers
 #define DECL_REMOVE_COPY(Typename) \

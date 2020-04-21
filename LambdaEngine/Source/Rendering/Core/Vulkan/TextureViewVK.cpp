@@ -16,11 +16,7 @@ namespace LambdaEngine
 
     TextureViewVK::~TextureViewVK()
     {
-        if (m_ImageView != VK_NULL_HANDLE)
-        {
-            vkDestroyImageView(m_pDevice->Device, m_ImageView, nullptr);
-            m_ImageView = VK_NULL_HANDLE;
-        }
+        m_pDevice->DestroyImageView(&m_ImageView);
         
         SAFERELEASE(m_pTexture);
     }
@@ -101,7 +97,7 @@ namespace LambdaEngine
             TDeviceChild::SetName(pName);
             m_pDevice->SetVulkanObjectName(pName, (uint64)m_ImageView, VK_OBJECT_TYPE_IMAGE_VIEW);
 
-            m_Desc.pName = m_DebugName;
+            m_Desc.pName = m_pDebugName;
         }
     }
 

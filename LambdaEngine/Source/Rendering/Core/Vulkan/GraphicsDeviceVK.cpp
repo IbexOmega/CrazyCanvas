@@ -18,7 +18,6 @@
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
 #include "Rendering/Core/Vulkan/AccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
-#include "Rendering/Core/Vulkan/FrameBufferVK.h"
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/DescriptorHeapVK.h"
@@ -76,17 +75,18 @@ namespace LambdaEngine
 		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME),
 		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
+        Extension("VK_KHR_shader_draw_parameters"),
 	};
 
-	GraphicsDeviceVK::GraphicsDeviceVK() :
-		Instance(VK_NULL_HANDLE),
-		Device(VK_NULL_HANDLE),
-		PhysicalDevice(VK_NULL_HANDLE),
-		vkSetDebugUtilsObjectNameEXT(nullptr),
-		vkDestroyDebugUtilsMessengerEXT(nullptr),
-		vkCreateDebugUtilsMessengerEXT(nullptr),
-		m_DebugMessenger(VK_NULL_HANDLE),
-		m_DeviceLimits()
+	GraphicsDeviceVK::GraphicsDeviceVK()
+        : GraphicsDeviceBase(),
+        RayTracingProperties(),
+        m_DeviceQueueFamilyIndices(),
+        m_DeviceLimits(),
+        m_QueueFamilyProperties(),
+        m_EnabledValidationLayers(),
+        m_EnabledInstanceExtensions(),
+        m_EnabledDeviceExtensions()
 	{
 	}
 
@@ -140,30 +140,64 @@ namespace LambdaEngine
 		return true;
 	}
 
-	VkFramebuffer GraphicsDeviceVK::GetFrameBuffer(
-		const IRenderPass* pRenderPass,
-		const ITextureView* const* ppRenderTargets,
-		uint32 renderTargetCount,
-		const ITextureView* pDepthStencil,
-		uint32 width,
-		uint32 height) const
-	{
-		FrameBufferCacheKey key = {};
+    void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
+    {
+        ASSERT(m_pFrameBufferCache != nullptr);
+        
+        if (*pRenderPass != VK_NULL_HANDLE)
+        {
+            m_pFrameBufferCache->DestroyRenderPass(*pRenderPass);
+            
+            vkDestroyRenderPass(Device, *pRenderPass, nullptr);
+            *pRenderPass = VK_NULL_HANDLE;
+        }
+    }
 
+    void GraphicsDeviceVK::DestroyImageView(VkImageView* pImageView) const
+    {
+        ASSERT(m_pFrameBufferCache != nullptr);
+        
+        if (*pImageView != VK_NULL_HANDLE)
+        {
+            m_pFrameBufferCache->DestroyImageView(*pImageView);
+            
+            vkDestroyImageView(Device, *pImageView, nullptr);
+            *pImageView = VK_NULL_HANDLE;
+        }
+    }
+
+	VkFramebuffer GraphicsDeviceVK::GetFrameBuffer(const IRenderPass* pRenderPass, const ITextureView* const* ppRenderTargets, uint32 renderTargetCount, const ITextureView* pDepthStencil, uint32 width, uint32 height) const
+	{
+		FrameBufferCacheKey key = { };
 		for (uint32 i = 0; i < renderTargetCount; i++)
 		{
-			key.ColorAttachmentsViews[i] = reinterpret_cast<const TextureViewVK*>(ppRenderTargets[i])->GetImageView();
+            const TextureViewVK* pRenderTargetVk = reinterpret_cast<const TextureViewVK*>(ppRenderTargets[i]);
+			key.ColorAttachmentsViews[i] = pRenderTargetVk->GetImageView();
 		}
 
 		key.ColorAttachmentViewCount	= renderTargetCount;
-		key.DepthStencilView			= pDepthStencil != nullptr ? reinterpret_cast<const TextureViewVK*>(pDepthStencil)->GetImageView() : nullptr;
-		key.RenderPass					= reinterpret_cast<const RenderPassVK*>(pRenderPass)->GetRenderPass();
+        
+        if (pDepthStencil)
+        {
+            const TextureViewVK* pDepthStencilVk = reinterpret_cast<const TextureViewVK*>(pDepthStencil);
+            key.DepthStencilView = pDepthStencilVk->GetImageView();
+        }
+        else
+        {
+            key.DepthStencilView = VK_NULL_HANDLE;
+        }
+        
+        ASSERT(pRenderPass != nullptr);
+        
+        const RenderPassVK* pRenderPassVk = reinterpret_cast<const RenderPassVK*>(pRenderPass);
+        key.RenderPass = pRenderPassVk->GetRenderPass();
 		
 		return m_pFrameBufferCache->GetFrameBuffer(key, width, height);
 	}
 
 	void GraphicsDeviceVK::Release()
 	{
+        GraphicsDeviceBase::Release();
 		delete this;
 	}
 
@@ -206,20 +240,6 @@ namespace LambdaEngine
 		else
 		{
 			return pDescriptorSet;
-		}
-	}
-
-	IFrameBuffer* GraphicsDeviceVK::CreateFrameBuffer(IRenderPass* pRenderPass, const FrameBufferDesc& desc) const
-	{
-		FrameBufferVK* pFrameBuffer = DBG_NEW FrameBufferVK(this);
-		if (!pFrameBuffer->Init(pRenderPass, desc))
-		{
-			pFrameBuffer->Release();
-			return nullptr;
-		}
-		else
-		{
-			return pFrameBuffer;
 		}
 	}
 
@@ -329,26 +349,33 @@ namespace LambdaEngine
 
 	ICommandQueue* GraphicsDeviceVK::CreateCommandQueue(const char* pName, ECommandQueueType queueType) const
 	{
-		int32 queueFamilyIndex = 0;
+        uint32  index               = 0;
+		int32   queueFamilyIndex    = 0;
 		if (queueType == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
 		{
-			queueFamilyIndex = m_DeviceQueueFamilyIndices.GraphicsFamily;
+			queueFamilyIndex    = m_DeviceQueueFamilyIndices.GraphicsFamily;
+            index               = m_NextGraphicsQueue++;
 		}
 		else if (queueType == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
 		{
-			queueFamilyIndex = m_DeviceQueueFamilyIndices.ComputeFamily;
+			queueFamilyIndex    = m_DeviceQueueFamilyIndices.ComputeFamily;
+            index               = m_NextComputeQueue++;
 		}
 		else if (queueType == ECommandQueueType::COMMAND_QUEUE_COPY)
 		{
-			queueFamilyIndex = m_DeviceQueueFamilyIndices.TransferFamily;
+			queueFamilyIndex    = m_DeviceQueueFamilyIndices.TransferFamily;
+            index               = m_NextTransferQueue++;
 		}
 		else
 		{
 			return nullptr;
 		}
+        
+        ASSERT(queueFamilyIndex < uint32(m_QueueFamilyProperties.size()));
+        ASSERT(index            < m_QueueFamilyProperties[queueFamilyIndex].queueCount);
 
 		CommandQueueVK* pQueue = DBG_NEW CommandQueueVK(this);
-		if (!pQueue->Init(pName, queueFamilyIndex, 0))
+		if (!pQueue->Init(pName, queueFamilyIndex, index))
 		{
 			pQueue->Release();
 			return nullptr;
@@ -614,7 +641,7 @@ namespace LambdaEngine
 		appInfo.engineVersion       = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.apiVersion          = VK_API_VERSION_1_2;
 
-		LOG_MESSAGE("[GraphicsDeviceVK]: Requsted API Version: %u.%u.%u (%u)", appInfo.apiVersion >> 22, (appInfo.apiVersion << 10) >> 22, (appInfo.apiVersion << 20) >> 20, appInfo.apiVersion);
+		LOG_MESSAGE("[GraphicsDeviceVK]: Requsted API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(appInfo.apiVersion), VK_VERSION_MINOR(appInfo.apiVersion), VK_VERSION_PATCH(appInfo.apiVersion), appInfo.apiVersion);
 
 		VkInstanceCreateInfo instanceCreateInfo = {};
 		instanceCreateInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -712,12 +739,19 @@ namespace LambdaEngine
 		SetEnabledDeviceExtensions();
 		m_DeviceQueueFamilyIndices = FindQueueFamilies(PhysicalDevice);
 
+        //Store the properties of each queuefamily
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, nullptr);
+
+        m_QueueFamilyProperties.resize(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, m_QueueFamilyProperties.data());
+        
 		// Save device's limits
 		VkPhysicalDeviceProperties deviceProperties = GetPhysicalDeviceProperties();
 		m_DeviceLimits = deviceProperties.limits;
 
 		LOG_MESSAGE("[GraphicsDeviceVK]: Chosen device: %s", deviceProperties.deviceName);
-		LOG_MESSAGE("[GraphicsDeviceVK]: API Version: %u.%u.%u (%u)", deviceProperties.apiVersion >> 22, (deviceProperties.apiVersion << 10) >> 22, (deviceProperties.apiVersion << 20) >> 20, deviceProperties.apiVersion);
+		LOG_MESSAGE("[GraphicsDeviceVK]: API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(deviceProperties.apiVersion), VK_VERSION_MINOR(deviceProperties.apiVersion), VK_VERSION_PATCH(deviceProperties.apiVersion), deviceProperties.apiVersion);
 
 		return true;
 	}
@@ -1153,8 +1187,11 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkGetSemaphoreCounterValue);
 		}
 
-		//TOOO: Check for extension
-		GET_DEVICE_PROC_ADDR(Device, vkGetBufferDeviceAddress);
+        //Buffer Address
+        if (IsDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
+        {
+            GET_DEVICE_PROC_ADDR(Device, vkGetBufferDeviceAddress);
+        }
 
 	}
 

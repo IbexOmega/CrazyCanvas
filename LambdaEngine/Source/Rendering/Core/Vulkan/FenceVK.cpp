@@ -100,7 +100,7 @@ namespace LambdaEngine
 			TDeviceChild::SetName(pName);
 			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Semaphore, VK_OBJECT_TYPE_SEMAPHORE);
 
-			m_Desc.pName = m_DebugName;
+			m_Desc.pName = m_pDebugName;
 		}
 	}
 }

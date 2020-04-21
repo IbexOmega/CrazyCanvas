@@ -14,11 +14,7 @@ namespace LambdaEngine
 
 	RenderPassVK::~RenderPassVK()
 	{
-		if (m_RenderPass != VK_NULL_HANDLE)
-		{
-			vkDestroyRenderPass(m_pDevice->Device, m_RenderPass, nullptr);
-			m_RenderPass = VK_NULL_HANDLE;
-		}
+        m_pDevice->DestroyRenderPass(&m_RenderPass);
 	}
 
 	bool RenderPassVK::Init(const RenderPassDesc& desc)
@@ -86,7 +82,7 @@ namespace LambdaEngine
 			TDeviceChild::SetName(pName);
 			m_pDevice->SetVulkanObjectName(pName, (uint64)m_RenderPass, VK_OBJECT_TYPE_RENDER_PASS);
 
-			m_Desc.pName = m_DebugName;
+			m_Desc.pName = m_pDebugName;
 		}
 	}
 

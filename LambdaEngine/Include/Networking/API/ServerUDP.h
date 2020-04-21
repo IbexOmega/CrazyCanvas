@@ -32,7 +32,7 @@ namespace LambdaEngine
 		void SetSimulatePacketLoss(float lossPercentage);
 
 	protected:
-		ServerUDP(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPerClient);
+		ServerUDP(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPerClient, uint8 maximumTries);
 
 		virtual bool OnThreadsStarted() override;
 		virtual void RunTranmitter() override;
@@ -50,7 +50,7 @@ namespace LambdaEngine
 		void SendServerNotAccepting(ClientUDPRemote* client);
 
 	public:
-		static ServerUDP* Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packets);
+		static ServerUDP* Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packets, uint8 maximumTries);
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);
@@ -62,6 +62,7 @@ namespace LambdaEngine
 		SpinLock m_LockClients;
 		uint16 m_PacketsPerClient;
 		uint8 m_MaxClients;
+		uint8 m_MaxTries;
 		float m_PacketLoss;
 		std::atomic_bool m_Accepting;
 		IServerUDPHandler* m_pHandler;

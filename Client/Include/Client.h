@@ -26,8 +26,9 @@ public:
 	virtual void OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient) override;
 	virtual void OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket) override;
 
-	virtual void OnPacketDelivered(LambdaEngine::NetworkPacket* packet) override;
-	virtual void OnPacketResent(LambdaEngine::NetworkPacket* packet) override;
+	virtual void OnPacketDelivered(LambdaEngine::NetworkPacket* pPacket) override;
+	virtual void OnPacketResent(LambdaEngine::NetworkPacket* pPacket, uint8 tries) override;
+	virtual void OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8 tries) override;
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;

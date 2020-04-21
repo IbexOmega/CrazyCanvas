@@ -8,6 +8,7 @@ namespace LambdaEngine
 {
 	class NetworkPacket;
 	class IPacketListener;
+	class NetworkStatistics;
 
 	enum EClientState
 	{
@@ -32,5 +33,6 @@ namespace LambdaEngine
 		virtual const IPEndPoint& GetEndPoint() const = 0;
 		virtual NetworkPacket* GetFreePacket(uint16 packetType) = 0;
 		virtual EClientState GetState() const = 0;
+		virtual const NetworkStatistics* GetStatistics() const = 0;
 	};
 }

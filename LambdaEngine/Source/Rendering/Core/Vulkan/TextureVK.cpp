@@ -14,8 +14,6 @@ namespace LambdaEngine
 
 	TextureVK::~TextureVK()
 	{
-        LOG_MESSAGE("[TextureVK]: Destroying Texture");
-        
 		if (m_Memory != VK_NULL_HANDLE)
 		{
 			vkFreeMemory(m_pDevice->Device, m_Memory, nullptr);
@@ -158,7 +156,7 @@ namespace LambdaEngine
 			TDeviceChild::SetName(pName);
 			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Image, VK_OBJECT_TYPE_IMAGE);
 
-			m_Desc.pName = m_DebugName;
+            m_Desc.pName = m_pDebugName;
 		}
 	}
 }

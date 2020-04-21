@@ -125,7 +125,7 @@ namespace LambdaEngine
         s_pMainThread->RunInMode((CFRunLoopMode)NSDefaultRunLoopMode);
     }
 
-    void MacMainThread::MakeCall(dispatch_block_t block)
+    void MacMainThread::MakeCall(dispatch_block_t block, bool waitUntilFinished)
     {
         dispatch_block_t copiedBlock = Block_copy(block);
         
@@ -136,11 +136,25 @@ namespace LambdaEngine
         }
         else
         {
+            // Otherwise schedule block on main thread
             ASSERT(s_pMainThread != nullptr);
 
-            // Otherwise schedule block on main thread
-            s_pMainThread->ScheduleBlock(copiedBlock);
-            s_pMainThread->WakeUp();
+            if (waitUntilFinished)
+            {
+                dispatch_semaphore_t    waitSemaphore   = dispatch_semaphore_create(0);
+                dispatch_block_t        waitableBlock   = Block_copy(^{ copiedBlock(); dispatch_semaphore_signal(waitSemaphore); });
+                
+                s_pMainThread->ScheduleBlock(waitableBlock);
+                s_pMainThread->RunInMode((CFStringRef)NSDefaultRunLoopMode);
+                
+                dispatch_semaphore_wait(waitSemaphore, DISPATCH_TIME_FOREVER);
+                Block_release(waitableBlock);
+            }
+            else
+            {
+                s_pMainThread->ScheduleBlock(copiedBlock);
+                s_pMainThread->WakeUp();
+            }
         }
         
         Block_release(copiedBlock);

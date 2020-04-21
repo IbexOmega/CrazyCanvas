@@ -30,10 +30,10 @@ namespace LambdaEngine
 		virtual void SetName(const char* pName) override;
 
 		//ICommandList interface
-		virtual void Begin(const SecondaryCommandListBeginDesc* pBeginDesc)	override final;
+		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc)	override final;
 
 		virtual void Reset() override final;
-		virtual void End()	 override final;
+		virtual bool End()	 override final;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) override final;
 		virtual void EndRenderPass() override final;
@@ -44,8 +44,8 @@ namespace LambdaEngine
 		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)	override final;
 		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)      override final;
 
-		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrier* pTextureBarriers, uint32 textureBarrierCount)	override final;
-		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrier* pBufferBarriers, uint32 bufferBarrierCount)		override final;
+		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)	override final;
+		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)		override final;
 
 		virtual void GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter) override final;
 

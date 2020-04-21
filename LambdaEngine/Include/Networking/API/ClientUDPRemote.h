@@ -24,9 +24,10 @@ namespace LambdaEngine
 		virtual const IPEndPoint& GetEndPoint() const override;
 		virtual NetworkPacket* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
+		virtual const NetworkStatistics* GetStatistics() const override;
 
 	protected:
-		ClientUDPRemote(uint16 packets, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
+		ClientUDPRemote(uint16 packets, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
 
 	private:
 		PacketManager* GetPacketManager();
@@ -39,7 +40,7 @@ namespace LambdaEngine
 		IPEndPoint m_IPEndPoint;
 		PacketManager m_PacketManager;
 		SpinLock m_Lock;
-		NetworkPacket* m_pPackets[32];
+		std::vector<NetworkPacket*> m_Packets;
 		IClientUDPHandler* m_pHandler;
 		EClientState m_State;
 		std::atomic_bool m_Release;

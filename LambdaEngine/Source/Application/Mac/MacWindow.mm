@@ -62,7 +62,7 @@ namespace LambdaEngine
         MacMainThread::MakeCall(^
         {
             [m_pWindow makeKeyAndOrderFront:m_pWindow];
-        });
+        }, true);
     }
 
     void MacWindow::SetTitle(const char* pTitle)
@@ -74,7 +74,33 @@ namespace LambdaEngine
         MacMainThread::MakeCall(^
         {
             [m_pWindow setTitle:title];
-        });
+        }, true);
+    }
+
+    uint16 MacWindow::GetWidth() const
+    {
+        SCOPED_AUTORELEASE_POOL();
+        
+        __block NSRect contentRect;
+        MacMainThread::MakeCall(^
+        {
+            contentRect = [m_pWindow frame];
+        }, true);
+        
+        return uint16(contentRect.size.width);
+    }
+
+    uint16 MacWindow::GetHeight() const
+    {
+        SCOPED_AUTORELEASE_POOL();
+        
+        __block NSRect contentRect;
+        MacMainThread::MakeCall(^
+        {
+            contentRect = [m_pWindow frame];
+        }, true);
+        
+        return uint16(contentRect.size.height);
     }
 }
 

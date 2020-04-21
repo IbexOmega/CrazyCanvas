@@ -8,7 +8,7 @@ namespace LambdaEngine
     class IDeviceChild
     {
     public:
-        DECL_DEVICE_INTERFACE(IDeviceChild);
+        DECL_INTERFACE(IDeviceChild);
 
         /*
         * Decrements the referencecounter for the object
@@ -37,6 +37,6 @@ namespace LambdaEngine
          *
          * return - A pointer to the device that created this object
          */
-        virtual const IGraphicsDevice*  GetDevice() const = 0;
+        virtual const IGraphicsDevice* GetDevice() const = 0;
     };
 }

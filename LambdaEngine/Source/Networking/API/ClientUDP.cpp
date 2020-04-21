@@ -5,28 +5,34 @@
 #include "Networking/API/IClientUDPHandler.h"
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
+#include "Networking/API/NetworkStatistics.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	ClientUDP::ClientUDP(IClientUDPHandler* pHandler, uint16 packets) :
+	ClientUDP::ClientUDP(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries) :
 		m_pSocket(nullptr),
-		m_PacketManager(packets),
+		m_PacketManager(packets, maximumTries),
 		m_pHandler(pHandler), 
 		m_State(STATE_DISCONNECTED)
 	{
 
 	}
 
-	void ClientUDP::OnPacketDelivered(NetworkPacket* packet)
+	void ClientUDP::OnPacketDelivered(NetworkPacket* pPacket)
 	{
-		
+		LOG_INFO("ClientUDP::OnPacketDelivered() | %s", pPacket->ToString().c_str());
 	}
 
-	void ClientUDP::OnPacketResent(NetworkPacket* packet)
+	void ClientUDP::OnPacketResent(NetworkPacket* pPacket, uint8 tries)
 	{
+		LOG_INFO("ClientUDP::OnPacketResent(%d) | %s", tries, pPacket->ToString().c_str());
+	}
 
+	void ClientUDP::OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries)
+	{
+		LOG_INFO("ClientUDP::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
 	}
 
 	ClientUDP::~ClientUDP()
@@ -99,6 +105,11 @@ namespace LambdaEngine
 		return m_State;
 	}
 
+	const NetworkStatistics* ClientUDP::GetStatistics() const
+	{
+		return m_PacketManager.GetStatistics();
+	}
+
 	bool ClientUDP::OnThreadsStarted()
 	{
 		m_pSocket = PlatformNetworkUtils::CreateSocketUDP();
@@ -108,7 +119,7 @@ namespace LambdaEngine
 			{
 				m_State = STATE_CONNECTING;
 				m_pHandler->OnConnectingUDP(this);
-				m_PacketManager.GenerateSalt();
+				m_PacketManager.Reset();
 				SendConnectRequest();
 				return true;
 			}
@@ -119,9 +130,10 @@ namespace LambdaEngine
 	void ClientUDP::RunReceiver()
 	{
 		int32 bytesReceived = 0;
-		int32 packetsReceived = 0;
-		NetworkPacket* packets[32];
+		std::vector<NetworkPacket*> packets;
 		IPEndPoint sender;
+
+		packets.reserve(64);
 
 		while (!ShouldTerminate())
 		{
@@ -131,13 +143,13 @@ namespace LambdaEngine
 				break;
 			}
 
-			if (m_PacketManager.DecodePackets(m_pReceiveBuffer, bytesReceived, packets, packetsReceived))
+			if (m_PacketManager.DecodePackets(m_pReceiveBuffer, bytesReceived, packets))
 			{
-				for (int i = 0; i < packetsReceived; i++)
+				for (NetworkPacket* pPacket : packets)
 				{
-					HandleReceivedPacket(packets[i]);
+					HandleReceivedPacket(pPacket);
 				}
-				m_PacketManager.Free(packets, packetsReceived);
+				m_PacketManager.Free(packets);
 			}
 		}
 	}
@@ -191,13 +203,12 @@ namespace LambdaEngine
 
 	void ClientUDP::HandleReceivedPacket(NetworkPacket* pPacket)
 	{
-		LOG_MESSAGE("PING %fms", m_PacketManager.GetPing().AsMilliSeconds());
+		LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 		uint16 packetType = pPacket->GetType();
 
 		if (packetType == NetworkPacket::TYPE_CHALLENGE)
 		{
-			uint64 answer = PacketManager::DoChallenge(m_PacketManager.GetSalt(), pPacket->GetRemoteSalt());
-
+			uint64 answer = PacketManager::DoChallenge(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
 			NetworkPacket* pResponse = GetFreePacket(NetworkPacket::TYPE_CHALLENGE);
 			BinaryEncoder encoder(pResponse);
 			encoder.WriteUInt64(answer);
@@ -205,9 +216,12 @@ namespace LambdaEngine
 		}
 		else if (packetType == NetworkPacket::TYPE_ACCEPTED)
 		{
-			LOG_INFO("[ClientUDP]: Connected");
-			m_State = STATE_CONNECTED;
-			m_pHandler->OnConnectedUDP(this);
+			if (m_State == STATE_CONNECTING)
+			{
+				LOG_INFO("[ClientUDP]: Connected");
+				m_State = STATE_CONNECTED;
+				m_pHandler->OnConnectedUDP(this);
+			}
 		}
 		else if (packetType == NetworkPacket::TYPE_DISCONNECT)
 		{
@@ -227,6 +241,9 @@ namespace LambdaEngine
 		int32 bytesSent = 0;
 		bool done = false;
 
+		m_PacketManager.Tick();
+		m_PacketManager.SwapPacketQueues();
+
 		while (!done)
 		{
 			done = m_PacketManager.EncodePackets(m_pSendBuffer, bytesWritten);
@@ -240,8 +257,8 @@ namespace LambdaEngine
 		}
 	}
 
-	ClientUDP* ClientUDP::Create(IClientUDPHandler* pHandler, uint16 packets)
+	ClientUDP* ClientUDP::Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries)
 	{
-		return DBG_NEW ClientUDP(pHandler, packets);
+		return DBG_NEW ClientUDP(pHandler, packets, maximumTries);
 	}
 }

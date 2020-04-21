@@ -10,22 +10,12 @@
 
 namespace LambdaEngine
 {
-	PacketManager::PacketManager(uint16 packets) :
-		m_QueueIndex(0),
-		m_PacketsCounter(0),
-		m_MessageCounter(0),
-		m_ReceivedSequenceBits(0),
-		m_LastReceivedSequenceNr(0),
-		m_Salt(0),
-		m_SaltRemote(0),
-		m_Ping(0)
+	PacketManager::PacketManager(uint16 packets, uint8 maximumTries) :
+		m_NrOfPackets(packets),
+		m_MaximumTries(maximumTries)
 	{
 		m_pPackets = DBG_NEW NetworkPacket[packets];
-
-		for (int i = 0; i < packets; i++)
-		{
-			m_PacketsFree.insert(&m_pPackets[i]);
-		}
+		Reset();
 	}
 
 	PacketManager::~PacketManager()
@@ -33,16 +23,18 @@ namespace LambdaEngine
 		delete[] m_pPackets;
 	}
 
-	void PacketManager::EnqueuePacket(NetworkPacket* packet)
+	void PacketManager::EnqueuePacket(NetworkPacket* pPacket)
 	{
-		EnqueuePacket(packet, nullptr);
+		EnqueuePacket(pPacket, nullptr);
 	}
 
-	void PacketManager::EnqueuePacket(NetworkPacket* packet, IPacketListener* listener)
+	void PacketManager::EnqueuePacket(NetworkPacket* pPacket, IPacketListener* listener)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
-		packet->GetHeader().UID = GetNextMessageUID();
-		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ packet, listener});
+		pPacket->GetHeader().UID = GetNextMessageUID();
+		if (listener)
+			pPacket->GetHeader().ReliableUID = GetNextMessageReliableUID();
+		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ pPacket, listener});
 	}
 
 	NetworkPacket* PacketManager::GetFreePacket()
@@ -52,6 +44,8 @@ namespace LambdaEngine
 		{
 			NetworkPacket* packet = *m_PacketsFree.rbegin();
 			m_PacketsFree.erase(packet);
+			packet->m_SizeOfBuffer = 0;
+			packet->GetHeader().ReliableUID = 0;
 			return packet;
 		}
 		LOG_ERROR("[PacketManager]: No free packets exist. Please increase the nr of packets");
@@ -60,9 +54,7 @@ namespace LambdaEngine
 
 	bool PacketManager::EncodePackets(char* buffer, int32& bytesWritten)
 	{
-		int index = m_QueueIndex;
-		m_QueueIndex = m_QueueIndex % 2;
-		std::queue<MessageInfo>& packets = m_PacketsToSend[index];
+		std::queue<MessageInfo>& packets = m_PacketsToSend[(m_QueueIndex + 1) % 2];
 
 		Header header;
 		header.Size = sizeof(Header);
@@ -74,6 +66,8 @@ namespace LambdaEngine
 		Bundle bundle;
 
 		bytesWritten = 0;
+
+		std::vector<MessageInfo> reliableMessages;
 
 		while (!packets.empty())
 		{
@@ -92,16 +86,11 @@ namespace LambdaEngine
 				memcpy(buffer + header.Size, packet->GetBufferReadOnly(), packetBufferSize);
 				header.Size += packetBufferSize;
 
-				messageInfo.LastSent = EngineLoop::GetTimeSinceStart();
-				
 				//Is this a reliable message ?
 				if (messageInfo.Listener)
 				{
-					bundle.Infos[header.Packets] = messageInfo;
-				}
-				else
-				{
-					bundle.Infos[header.Packets] = MessageInfo();
+					bundle.MessageUIDs.insert(messageInfo.GetUID());
+					reliableMessages.push_back(messageInfo);
 				}
 
 				header.Packets++;
@@ -109,46 +98,52 @@ namespace LambdaEngine
 				//Have we Processed all messages or have we reach the limit of 32
 				if (packets.empty())
 				{
-					WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle);
+					WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle, reliableMessages);
 					return true;
 				}
 				else if (header.Packets == 32)
 				{
-					WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle);
+					WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle, reliableMessages);
 					return false;
 				}
 			}
 			else
 			{
-				WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle);
+				WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle, reliableMessages);
 				return false;
 			}
 		}
 		return true;
 	}
 
-	void PacketManager::WriteHeaderAndStoreBundle(char* buffer, int32& bytesWritten, Header& header, Bundle& bundle)
+	void PacketManager::WriteHeaderAndStoreBundle(char* buffer, int32& bytesWritten, Header& header, Bundle& bundle, std::vector<MessageInfo>& reliableMessages)
 	{
 		header.Sequence = GetNextPacketSequenceNr();
-		header.Salt		= GetSalt();
+		header.Salt		= m_Statistics.GetSalt();
 		header.Ack		= m_LastReceivedSequenceNr;
 		header.AckBits	= m_ReceivedSequenceBits;
 		memcpy(buffer, &header, sizeof(Header));
 
-		bundle.Count			= header.Packets;
-		bundle.SentTimeStamp	= EngineLoop::GetTimeSinceStart();
-
 		bytesWritten = header.Size;
+		m_Statistics.m_BytesSent += bytesWritten;
+
+		bundle.Timestamp = EngineLoop::GetTimeSinceStart();
 
 		std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
 		m_PacketsWaitingForAck.insert({ header.Sequence, bundle });
+		for (MessageInfo& message : reliableMessages)
+		{
+			message.LastSent = bundle.Timestamp;
+			message.Tries++;
+			m_MessagesWaitingForAck.insert_or_assign(message.GetUID(), message);
+		}
 	}
 
-	bool PacketManager::DecodePackets(const char* buffer, int32 bytesReceived, NetworkPacket** packetsRead, int32& nrOfPackets)
+	bool PacketManager::DecodePackets(const char* buffer, int32 bytesReceived, std::vector<NetworkPacket*>& packetsRead)
 	{
 		Header header;
 		uint16 offset = sizeof(Header);
-
+		m_Statistics.m_BytesReceived += bytesReceived;
 		memcpy(&header, buffer, offset);
 
 		if (header.Size != bytesReceived)
@@ -161,21 +156,23 @@ namespace LambdaEngine
 			LOG_ERROR("[PacketManager]: Received a packet without a salt");
 			return false;
 		}
-		else if (m_SaltRemote != header.Salt)
+		else if (m_Statistics.GetRemoteSalt() != header.Salt)
 		{
-			if (m_SaltRemote == 0)
+			if (m_Statistics.GetRemoteSalt() == 0)
 			{
-				m_SaltRemote = header.Salt;
+				m_Statistics.m_SaltRemote = header.Salt;
 			}
 			else
 			{
-				LOG_ERROR("[PacketManager]: Received a packet with a new salt [Prev %lu : New %lu]", m_SaltRemote.load(), header.Salt);
+				LOG_ERROR("[PacketManager]: Received a packet with a new salt [Prev %lu : New %lu]", m_Statistics.GetRemoteSalt(), header.Salt);
 				return false;
 			}
 		}
 
 		ProcessSequence(header.Sequence);
 		ProcessAcks(header.Ack, header.AckBits);
+
+		packetsRead.reserve(header.Packets);
 
 		for (int i = 0; i < header.Packets; i++)
 		{
@@ -187,39 +184,97 @@ namespace LambdaEngine
 			memcpy(message->GetBuffer(), buffer + offset + messageHeaderSize, messageHeader.Size - messageHeaderSize);
 			offset += messageHeader.Size;
 			message->m_Salt = header.Salt;
-			packetsRead[i] = message;
+
+			if (message->IsReliable())
+			{
+				m_MessagesReceivedOrdered.insert(message);
+			}
+			else
+			{
+				packetsRead.push_back(message);
+			}
 		}
-		nrOfPackets = header.Packets;
+
+		std::vector<NetworkPacket*> messagesComplete;
+		for (NetworkPacket* message : m_MessagesReceivedOrdered)
+		{
+			if (message->GetReliableUID() != m_NextExpectedMessageNr)
+				break;
+
+			m_NextExpectedMessageNr++;
+			packetsRead.push_back(message);
+			messagesComplete.push_back(message);
+		}
+
+		for (NetworkPacket* message : messagesComplete)
+		{
+			m_MessagesReceivedOrdered.erase(message);
+		}
+
 		return true;
 	}
 
-	void PacketManager::Free(NetworkPacket** packets, int32 nrOfPackets)
+	void PacketManager::SwapPacketQueues()
+	{
+		m_QueueIndex = (m_QueueIndex + 1) % 2;
+	}
+
+	void PacketManager::Tick()
+	{
+		if (m_PacketsWaitingForAck.empty() && m_MessagesWaitingForAck.empty())
+			return;
+
+		std::vector<MessageInfo> m_MessagesToResend;
+		FindMessagesToResend(m_MessagesToResend);
+		ReSendMessages(m_MessagesToResend);
+		DeleteEmptyBundles();
+	}
+
+	void PacketManager::Free(std::vector<NetworkPacket*>& packets)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockPacketsFree);
-		for (int i = 0; i < nrOfPackets; i++)
+		for (NetworkPacket* pPacket : packets)
 		{
-			NetworkPacket* packet = packets[i];
-			if (packet)
+			m_PacketsFree.insert(pPacket);
+		}
+		packets.clear();
+	}
+
+	const NetworkStatistics* PacketManager::GetStatistics() const
+	{
+		return &m_Statistics;
+	}
+
+	void PacketManager::Reset()
+	{
+		{
+			std::scoped_lock<SpinLock> lock1(m_LockPacketsFree);
+			m_PacketsFree.clear();
+			for (int i = 0; i < m_NrOfPackets; i++)
 			{
-				m_PacketsFree.insert(packet);
+				m_PacketsFree.insert(&m_pPackets[i]);
 			}
 		}
-	}
+		
+		{
+			std::scoped_lock<SpinLock> lock2(m_LockPacketsToSend);
+			m_PacketsToSend[0] = {};
+			m_PacketsToSend[1] = {};
+		}
 
-	const Timestamp& PacketManager::GetPing() const
-	{
-		return m_Ping;
-	}
+		{
+			std::scoped_lock<SpinLock> lock3(m_LockPacketsWaitingForAck);
+			m_PacketsWaitingForAck.clear();
+			m_MessagesWaitingForAck.clear();
+		}
 
-	void PacketManager::GenerateSalt()
-	{
-		m_Salt = Random::UInt64();
-		m_SaltRemote = 0;
-	}
+		m_QueueIndex = 0;
+		m_ReceivedSequenceBits = 0;
+		m_LastReceivedSequenceNr = 0;
+		m_NextExpectedMessageNr = 1;
+		m_ReliableMessagesSent = 1;
 
-	uint64 PacketManager::GetSalt() const
-	{
-		return m_Salt;
+		m_Statistics.Reset();
 	}
 
 	void PacketManager::ProcessSequence(uint32 sequence)
@@ -228,8 +283,17 @@ namespace LambdaEngine
 		{
 			//New sequence number received so shift everything delta steps
 			int32 delta = sequence - m_LastReceivedSequenceNr;
-			m_ReceivedSequenceBits = m_ReceivedSequenceBits << delta;
 			m_LastReceivedSequenceNr = sequence;
+
+			for (int i = 0; i < delta; i++)
+			{
+				if (m_ReceivedSequenceBits >> (sizeof(uint32) * 8 - 1) & 0)
+				{
+					//The last bit that gets removed was never acked.
+					m_Statistics.m_PacketsLost++;
+				}
+				m_ReceivedSequenceBits = m_ReceivedSequenceBits << 1;
+			}
 		}
 		else
 		{
@@ -245,8 +309,9 @@ namespace LambdaEngine
 
 	void PacketManager::ProcessAcks(uint32 ack, uint32 ackBits)
 	{
-		Timestamp rtt = INT32_MAX;
+		Timestamp rtt = UINT64_MAX;
 		uint32 top = std::min(32, (int32)ack);
+
 		for (uint8 i = 1; i <= top; i++)
 		{
 			if (ackBits & 1)
@@ -257,41 +322,53 @@ namespace LambdaEngine
 		}
 		ProcessAck(ack, rtt);
 
-		if(rtt != INT32_MAX)
-			m_Ping = rtt;
+		static const double scalar1 = 1.0 / 10.0;
+		static const double scalar2 = 1.0 - scalar1;
+		if (rtt != UINT64_MAX)
+		{
+			m_Statistics.m_Ping = (rtt.AsNanoSeconds() * scalar1) + (m_Statistics.GetPing().AsNanoSeconds() * scalar2);
+		}
 	}
 
 	void PacketManager::ProcessAck(uint32 ack, Timestamp& rtt)
 	{
-		Bundle bundle;
-		MessageInfo* messageInfo = nullptr;
-		Timestamp ping;
-		if (GetAndRemoveBundle(ack, bundle))
+		std::vector<MessageInfo> messages;
+		Timestamp timestamp;
+		if (GetMessagesAndRemoveBundle(ack, messages, timestamp))
 		{
-			for (uint8 i = 0; i < bundle.Count; i++)
+			timestamp = EngineLoop::GetTimeSinceStart() - timestamp;
+			if (timestamp < rtt)
 			{
-				messageInfo = &bundle.Infos[i];
-				if (messageInfo->Listener)
-				{
-					messageInfo->Listener->OnPacketDelivered(messageInfo->Packet);
-				}
+				rtt = timestamp;
 			}
-			ping = EngineLoop::GetTimeSinceStart() - bundle.SentTimeStamp;
-			if (ping < rtt)
+
+			for (MessageInfo& message : messages)
 			{
-				rtt = ping;
+				if (message.Listener)
+				{
+					message.Listener->OnPacketDelivered(message.Packet);
+				}
 			}
 		}
 	}
 
-	bool PacketManager::GetAndRemoveBundle(uint32 sequence, Bundle& bundle)
+	bool PacketManager::GetMessagesAndRemoveBundle(uint32 sequence, std::vector<MessageInfo>& messages, Timestamp& sentTimestamp)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
-		auto iterator = m_PacketsWaitingForAck.find(sequence);
-		if (iterator != m_PacketsWaitingForAck.end())
+		auto packetIterator = m_PacketsWaitingForAck.find(sequence);
+		if (packetIterator != m_PacketsWaitingForAck.end())
 		{
-			bundle = iterator->second;
-			m_PacketsWaitingForAck.erase(sequence);
+			sentTimestamp = packetIterator->second.Timestamp;
+			for (uint32 messageUID : packetIterator->second.MessageUIDs)
+			{
+				auto messageIterator = m_MessagesWaitingForAck.find(messageUID);
+				if (messageIterator != m_MessagesWaitingForAck.end())
+				{
+					messages.push_back(messageIterator->second);
+					m_MessagesWaitingForAck.erase(messageIterator);
+				}
+			}
+			m_PacketsWaitingForAck.erase(packetIterator);
 			return true;
 		}
 		return false;
@@ -299,25 +376,97 @@ namespace LambdaEngine
 
 	uint32 PacketManager::GetNextPacketSequenceNr()
 	{
-		return ++m_PacketsCounter;
+		return m_Statistics.m_PacketsSent++;
 	}
 
 	uint32 PacketManager::GetNextMessageUID()
 	{
-		return ++m_MessageCounter;
+		return m_Statistics.m_MessagesSent++;
 	}
 
-	void PacketManager::Clear()
+	uint32 PacketManager::GetNextMessageReliableUID()
 	{
-		std::scoped_lock<SpinLock> lock1(m_LockPacketsFree);
-		m_PacketsFree.clear();
+		return m_ReliableMessagesSent++;
+	}
 
-		std::scoped_lock<SpinLock> lock2(m_LockPacketsToSend);
-		m_PacketsToSend[0] = {};
-		m_PacketsToSend[1] = {};
+	void PacketManager::DeleteEmptyBundles()
+	{
+		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
+		Timestamp maxTimeToStoreBundle = Timestamp::Seconds(1);
+		std::vector<uint32> bundlesToRemove;
+		std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
+		for (auto& pair : m_PacketsWaitingForAck)
+		{
+			std::vector<uint32> UIDsToRemove;
+			std::set<uint32>& messageUIDs = pair.second.MessageUIDs;
 
-		std::scoped_lock<SpinLock> lock3(m_LockPacketsWaitingForAck);
-		m_PacketsWaitingForAck.clear();
+			for (uint32 uid : messageUIDs)
+			{
+				auto messageIterator = m_MessagesWaitingForAck.find(uid);
+				if (messageIterator == m_MessagesWaitingForAck.end())
+				{
+					UIDsToRemove.push_back(uid);
+				}
+			}
+
+			for (uint32 uid : UIDsToRemove)
+			{
+				messageUIDs.erase(uid);
+			}
+
+			if (messageUIDs.empty() && currentTime - pair.second.Timestamp >= maxTimeToStoreBundle)
+			{
+				bundlesToRemove.push_back(pair.first);
+			}
+		}
+
+		for (uint32 uid : bundlesToRemove)
+		{
+			m_PacketsWaitingForAck.erase(uid);
+		}
+	}
+
+	void PacketManager::FindMessagesToResend(std::vector<MessageInfo>& messages)
+	{
+		Timestamp delta;
+		std::vector<MessageInfo> packetsReachMaxTries;
+		std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
+
+		for (auto& pair : m_MessagesWaitingForAck)
+		{
+			delta = EngineLoop::GetTimeSinceStart() - pair.second.LastSent;
+			if (delta > m_Statistics.GetPing() * 2.0F)
+			{
+				if (pair.second.Tries > m_MaximumTries)
+				{
+					packetsReachMaxTries.push_back(pair.second);
+				}
+				else
+				{
+					messages.push_back(pair.second);
+				}
+			}
+		}
+
+		for (MessageInfo& message : packetsReachMaxTries)
+		{
+			message.Listener->OnPacketMaxTriesReached(message.Packet, message.Tries);
+			m_MessagesWaitingForAck.erase(message.GetUID());
+		}
+	}
+
+	void PacketManager::ReSendMessages(const std::vector<MessageInfo>& messages)
+	{
+		for (MessageInfo messageInfo : messages)
+		{
+			messageInfo.Listener->OnPacketResent(messageInfo.Packet, messageInfo.Tries);
+		}
+
+		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
+		for (MessageInfo messageInfo : messages)
+		{
+			m_PacketsToSend[m_QueueIndex].push(messageInfo);
+		}
 	}
 
 	uint64 PacketManager::DoChallenge(uint64 clientSalt, uint64 serverSalt)

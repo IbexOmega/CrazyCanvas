@@ -24,7 +24,7 @@ namespace LambdaEngine
 		m_FrameBufferMap.clear();
 	}
 
-	void FrameBufferCacheVK::DestroyRenderPass(VkRenderPass renderPass)
+	void FrameBufferCacheVK::DestroyRenderPass(VkRenderPass renderPass) const
 	{
 		for (FrameBufferMap::iterator it = m_FrameBufferMap.begin(); it != m_FrameBufferMap.end();)
 		{
@@ -42,7 +42,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void FrameBufferCacheVK::DestroyImageView(VkImageView imageView)
+	void FrameBufferCacheVK::DestroyImageView(VkImageView imageView) const
 	{
 		for (FrameBufferMap::iterator it = m_FrameBufferMap.begin(); it != m_FrameBufferMap.end();)
 		{

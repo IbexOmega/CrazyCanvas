@@ -104,10 +104,10 @@ namespace LambdaEngine
 	{
 		switch (format)
 		{		
-		case EFormat::FORMAT_R8G8B8A8_UNORM:
-		case EFormat::FORMAT_B8G8R8A8_UNORM:		return 4;
-		}
-
-		return 0;
+        case EFormat::FORMAT_D24_UNORM_S8_UINT:
+        case EFormat::FORMAT_R8G8B8A8_UNORM:
+        case EFormat::FORMAT_B8G8R8A8_UNORM:        return 4;
+        default:                                    return 0;
+        }
 	}
 }
