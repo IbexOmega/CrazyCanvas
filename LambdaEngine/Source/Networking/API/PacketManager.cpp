@@ -245,6 +245,7 @@ namespace LambdaEngine
 		m_QueueIndex = 0;
 		m_ReceivedSequenceBits = 0;
 		m_LastReceivedSequenceNr = 0;
+		m_NextExpectedMessageNr = 0;
 
 		m_Statistics.Reset();
 	}
@@ -316,11 +317,32 @@ namespace LambdaEngine
 
 			for (MessageInfo& message : messages)
 			{
-				if (message.Listener)
-				{
-					message.Listener->OnPacketDelivered(message.Packet);
-				}
+				m_MessagesAcked.insert(message);
 			}
+
+			ProcessAllReceivedMessages();
+		}
+	}
+
+	void PacketManager::ProcessAllReceivedMessages()
+	{
+		std::vector<MessageInfo> messagesComplete;
+		for (const MessageInfo& message : m_MessagesAcked)
+		{
+			if (message.GetUID() != m_NextExpectedMessageNr)
+				return;
+
+			m_NextExpectedMessageNr++;
+			if (message.Listener)
+			{
+				message.Listener->OnPacketDelivered(message.Packet);
+			}
+			messagesComplete.push_back(message);
+		}
+
+		for (MessageInfo& message : messagesComplete)
+		{
+			m_MessagesAcked.erase(message);
 		}
 	}
 

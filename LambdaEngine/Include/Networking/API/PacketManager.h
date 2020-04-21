@@ -36,6 +36,14 @@ namespace LambdaEngine
 			}
 		};
 
+		struct MessageInfoComparator
+		{
+			bool operator() (const MessageInfo& lhs, const MessageInfo& rhs) const
+			{
+				return lhs.GetUID() < rhs.GetUID();
+			}
+		};
+
 		struct Bundle
 		{
 			std::set<uint32> MessageUIDs;
@@ -80,6 +88,7 @@ namespace LambdaEngine
 		void ProcessSequence(uint32 sequence);
 		void ProcessAcks(uint32 ack, uint32 ackBits);
 		void ProcessAck(uint32 ack, Timestamp& rtt);
+		void ProcessAllReceivedMessages();
 
 		bool GetMessagesAndRemoveBundle(uint32 sequence, std::vector<MessageInfo>& messages, Timestamp& sentTimestamp);
 		uint32 GetNextPacketSequenceNr();
@@ -96,6 +105,7 @@ namespace LambdaEngine
 		std::queue<MessageInfo> m_PacketsToSend[2];
 		std::unordered_map<uint32, Bundle> m_PacketsWaitingForAck;
 		std::unordered_map<uint32, MessageInfo> m_MessagesWaitingForAck;
+		std::set<MessageInfo, MessageInfoComparator> m_MessagesAcked;
 
 		SpinLock m_LockPacketsFree;
 		SpinLock m_LockPacketsToSend;
@@ -107,6 +117,7 @@ namespace LambdaEngine
 
 		NetworkStatistics m_Statistics;
 
+		uint32 m_NextExpectedMessageNr;
 		uint8 m_MaximumTries;
 
 	public:
