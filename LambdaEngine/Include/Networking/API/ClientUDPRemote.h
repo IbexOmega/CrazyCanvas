@@ -7,7 +7,7 @@
 namespace LambdaEngine
 {
 	class ServerUDP;
-	class IClientUDPHandler;
+	class IClientUDPRemoteHandler;
 
 	class LAMBDA_API ClientUDPRemote : public IClientUDP
 	{
@@ -41,7 +41,7 @@ namespace LambdaEngine
 		PacketManager m_PacketManager;
 		SpinLock m_Lock;
 		std::vector<NetworkPacket*> m_Packets;
-		IClientUDPHandler* m_pHandler;
+		IClientUDPRemoteHandler* m_pHandler;
 		EClientState m_State;
 		std::atomic_bool m_Release;
 		bool m_DisconnectedByRemote;

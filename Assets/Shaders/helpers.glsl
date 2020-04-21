@@ -1,6 +1,7 @@
 
 const float PI 		= 3.14159265359f;
 const float EPSILON = 0.001f;
+const float GAMMA   = 2.2f;
 
 const float MAX_TEMPORAL_FRAMES = 256.0f;
 

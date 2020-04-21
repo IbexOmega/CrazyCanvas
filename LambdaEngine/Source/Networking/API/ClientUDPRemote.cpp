@@ -3,7 +3,7 @@
 #include "Networking/API/ISocketUDP.h"
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/ServerUDP.h"
-#include "Networking/API/IClientUDPHandler.h"
+#include "Networking/API/IClientUDPRemoteHandler.h"
 #include "Networking/API/BinaryDecoder.h"
 
 #include "Log/Log.h"
@@ -38,7 +38,6 @@ namespace LambdaEngine
 
 	void ClientUDPRemote::OnDataReceived(const char* data, int32 size)
 	{
-		int32 packetsReceived;
 		if (m_PacketManager.DecodePackets(data, size, m_Packets))
 		{
 			for (NetworkPacket* pPacket : m_Packets)

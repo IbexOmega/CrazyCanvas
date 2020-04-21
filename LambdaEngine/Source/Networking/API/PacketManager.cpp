@@ -68,6 +68,7 @@ namespace LambdaEngine
 		bytesWritten = 0;
 
 		std::vector<MessageInfo> reliableMessages;
+		std::vector<NetworkPacket*> nonReliableMessages;
 
 		while (!packets.empty())
 		{
@@ -92,6 +93,10 @@ namespace LambdaEngine
 					bundle.MessageUIDs.insert(messageInfo.GetUID());
 					reliableMessages.push_back(messageInfo);
 				}
+				else
+				{
+					nonReliableMessages.push_back(messageInfo.Packet);
+				}
 
 				header.Packets++;
 
@@ -99,17 +104,20 @@ namespace LambdaEngine
 				if (packets.empty())
 				{
 					WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle, reliableMessages);
+					Free(nonReliableMessages);
 					return true;
 				}
 				else if (header.Packets == 32)
 				{
 					WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle, reliableMessages);
+					Free(nonReliableMessages);
 					return false;
 				}
 			}
 			else
 			{
 				WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle, reliableMessages);
+				Free(nonReliableMessages);
 				return false;
 			}
 		}
@@ -174,6 +182,8 @@ namespace LambdaEngine
 
 		packetsRead.reserve(header.Packets);
 
+		std::vector<NetworkPacket*> messagesToFree;
+
 		for (int i = 0; i < header.Packets; i++)
 		{
 			NetworkPacket* message = GetFreePacket();
@@ -187,7 +197,14 @@ namespace LambdaEngine
 
 			if (message->IsReliable())
 			{
-				m_MessagesReceivedOrdered.insert(message);
+				if (message->GetReliableUID() >= m_NextExpectedMessageNr)
+				{
+					m_MessagesReceivedOrdered.insert(message);
+				}
+				else
+				{
+					messagesToFree.push_back(message);
+				}
 			}
 			else
 			{
@@ -195,11 +212,16 @@ namespace LambdaEngine
 			}
 		}
 
+		Free(messagesToFree);
+
 		std::vector<NetworkPacket*> messagesComplete;
 		for (NetworkPacket* message : m_MessagesReceivedOrdered)
 		{
 			if (message->GetReliableUID() != m_NextExpectedMessageNr)
+			{
+				LOG_MESSAGE("Skipped %d != %d", message->GetReliableUID(), m_NextExpectedMessageNr);
 				break;
+			}
 
 			m_NextExpectedMessageNr++;
 			packetsRead.push_back(message);
@@ -326,7 +348,7 @@ namespace LambdaEngine
 		static const double scalar2 = 1.0 - scalar1;
 		if (rtt != UINT64_MAX)
 		{
-			m_Statistics.m_Ping = (rtt.AsNanoSeconds() * scalar1) + (m_Statistics.GetPing().AsNanoSeconds() * scalar2);
+			m_Statistics.m_Ping = (uint64)((rtt.AsNanoSeconds() * scalar1) + (m_Statistics.GetPing().AsNanoSeconds() * scalar2));
 		}
 	}
 
@@ -342,13 +364,18 @@ namespace LambdaEngine
 				rtt = timestamp;
 			}
 
+			std::vector<NetworkPacket*> messagesToFree;
+			messagesToFree.reserve(messages.size());
 			for (MessageInfo& message : messages)
 			{
 				if (message.Listener)
 				{
+					messagesToFree.push_back(message.Packet);
 					message.Listener->OnPacketDelivered(message.Packet);
 				}
 			}
+
+			Free(messagesToFree);
 		}
 	}
 
@@ -430,28 +457,37 @@ namespace LambdaEngine
 	{
 		Timestamp delta;
 		std::vector<MessageInfo> packetsReachMaxTries;
-		std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
+		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
 
-		for (auto& pair : m_MessagesWaitingForAck)
 		{
-			delta = EngineLoop::GetTimeSinceStart() - pair.second.LastSent;
-			if (delta > m_Statistics.GetPing() * 2.0F)
+			std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
+
+			for (auto& pair : m_MessagesWaitingForAck)
 			{
-				if (pair.second.Tries > m_MaximumTries)
+				delta = EngineLoop::GetTimeSinceStart() - pair.second.LastSent;
+				if ((float64)delta.AsNanoSeconds() > (float64)m_Statistics.GetPing().AsNanoSeconds() * 2.0F)
 				{
-					packetsReachMaxTries.push_back(pair.second);
-				}
-				else
-				{
-					messages.push_back(pair.second);
+					if (pair.second.Tries > m_MaximumTries)
+					{
+						packetsReachMaxTries.push_back(pair.second);
+					}
+					else
+					{
+						pair.second.LastSent = currentTime;
+						messages.push_back(pair.second);
+					}
 				}
 			}
-		}
 
+			for (MessageInfo& message : packetsReachMaxTries)
+			{
+				m_MessagesWaitingForAck.erase(message.GetUID());
+			}
+		}
+		
 		for (MessageInfo& message : packetsReachMaxTries)
 		{
 			message.Listener->OnPacketMaxTriesReached(message.Packet, message.Tries);
-			m_MessagesWaitingForAck.erase(message.GetUID());
 		}
 	}
 

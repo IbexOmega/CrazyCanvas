@@ -25,7 +25,7 @@ Client::Client() :
     PlatformApplication::Get()->GetWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
-    m_pClient = ClientUDP::Create(this, 512, 10);
+    m_pClient = ClientUDP::Create(this, 1024, 100);
 
     if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
     {
@@ -47,7 +47,17 @@ void Client::OnConnectingUDP(LambdaEngine::IClientUDP* pClient)
 void Client::OnConnectedUDP(LambdaEngine::IClientUDP* pClient)
 {
     UNREFERENCED_VARIABLE(pClient);
+    using namespace LambdaEngine;
+
     LOG_MESSAGE("OnConnectedUDP()");
+
+    for (int i = 0; i < 1000; i++)
+    {
+        NetworkPacket* pPacket = m_pClient->GetFreePacket(1);
+        BinaryEncoder encoder(pPacket);
+        encoder.WriteInt32(i);
+        m_pClient->SendReliable(pPacket, this);
+    }
 }
 
 void Client::OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient)
@@ -69,6 +79,12 @@ void Client::OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine
     LOG_MESSAGE("OnPacketReceivedUDP()");
 }
 
+void Client::OnServerFullUDP(LambdaEngine::IClientUDP* pClient)
+{
+    UNREFERENCED_VARIABLE(pClient);
+    LOG_ERROR("OnServerFullUDP()");
+}
+
 void Client::OnPacketDelivered(LambdaEngine::NetworkPacket* pPacket)
 {
     UNREFERENCED_VARIABLE(pPacket);
@@ -84,7 +100,7 @@ void Client::OnPacketResent(LambdaEngine::NetworkPacket* pPacket, uint8 tries)
 void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8 tries)
 {
     UNREFERENCED_VARIABLE(pPacket);
-    LOG_INFO("OnPacketMaxTriesReached(%d)", tries);
+    LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
 
 void Client::OnKeyDown(LambdaEngine::EKey key)

@@ -1,6 +1,0 @@
-digraph G {
-compound=true;
-	rankdir = LR;
-	splines=polyline
-	rs0 [shape = box, label = "Pipeline Stage 0\nRender Stage 0\nTest Geometry Render Stage"];
-}

@@ -42,6 +42,8 @@ namespace LambdaEngine
 		{
 			if (IsClosed() && !IsNonBlocking())
 				return false;
+			else if (WSAGetLastError() == WSAECONNRESET)
+				return true;
 
 			LOG_ERROR_CRIT("Failed to receive datagram packet");
 			PrintLastError();

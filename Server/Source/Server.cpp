@@ -26,8 +26,9 @@ Server::Server()
 {
 	using namespace LambdaEngine;
 
-	m_pServer = ServerUDP::Create(this, 10, 512, 10);
+	m_pServer = ServerUDP::Create(this, 100, 4096, 10);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
+	m_pServer->SetSimulatePacketLoss(0.9f);
 
 	UpdateTitle();
 }
@@ -39,18 +40,19 @@ Server::~Server()
 
 void Server::OnClientConnected(LambdaEngine::IClientUDP* pClient)
 {
-
+	UNREFERENCED_VARIABLE(pClient);
 }
 
-LambdaEngine::IClientUDPHandler* Server::CreateClientUDPHandler()
+LambdaEngine::IClientUDPRemoteHandler* Server::CreateClientUDPHandler()
 {
 	return DBG_NEW ClientUDPHandler();
 }
 
 void Server::OnKeyDown(LambdaEngine::EKey key)
 {
-	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(key);
+
+	using namespace LambdaEngine;
 
 	if(m_pServer->IsRunning())
 		m_pServer->Stop();
@@ -82,8 +84,7 @@ void Server::Tick(LambdaEngine::Timestamp delta)
 
 void Server::FixedTick(LambdaEngine::Timestamp delta)
 {
-	using namespace LambdaEngine;
-    UNREFERENCED_VARIABLE(delta);
+	UNREFERENCED_VARIABLE(delta);
 }
 
 namespace LambdaEngine

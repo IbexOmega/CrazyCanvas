@@ -36,7 +36,8 @@ namespace LambdaEngine
 		NONE					= 0,
 		TRANSITION_FOR_WRITE	= 1,
 		TRANSITION_FOR_READ		= 2,
-		OWNERSHIP_CHANGE		= 3,
+		OWNERSHIP_CHANGE_WRITE	= 3,
+		OWNERSHIP_CHANGE_READ	= 4,
 	};
 
 	enum class EAttachmentState : uint8
@@ -95,8 +96,9 @@ namespace LambdaEngine
 
 	enum class ERenderStageDrawType : uint8
 	{
-		NONE				= 0,
+		NONE					= 0,
 		SCENE_INDIRECT			= 1,
+		FULLSCREEN_QUAD			= 2,
 	};
 
 	struct RenderStageAttachment
@@ -139,7 +141,6 @@ namespace LambdaEngine
 			{
 				GraphicsPipelineStateDesc*		pGraphicsDesc;
 				ERenderStageDrawType			DrawType;
-				const char*						pVertexBufferName;
 				const char*						pIndexBufferName;
 				const char*						pMeshIndexBufferName;
 			} GraphicsPipeline;
@@ -324,12 +325,5 @@ namespace LambdaEngine
 
 		default:																	return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
 		}
-	}
-
-	bool FORCEINLINE IsAttachmentReserved(const char* pAttachmentName)
-	{
-		if (strcmp(pAttachmentName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0) return true;
-
-		return false;
 	}
 }

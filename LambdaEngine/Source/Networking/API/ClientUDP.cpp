@@ -11,13 +11,25 @@
 
 namespace LambdaEngine
 {
+	std::set<ClientUDP*> ClientUDP::s_Clients;
+	SpinLock ClientUDP::s_Lock;
+
 	ClientUDP::ClientUDP(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries) :
 		m_pSocket(nullptr),
 		m_PacketManager(packets, maximumTries),
 		m_pHandler(pHandler), 
-		m_State(STATE_DISCONNECTED)
+		m_State(STATE_DISCONNECTED),
+		m_pSendBuffer()
 	{
+		std::scoped_lock<SpinLock> lock(s_Lock);
+		s_Clients.insert(this);
+	}
 
+	ClientUDP::~ClientUDP()
+	{
+		std::scoped_lock<SpinLock> lock(s_Lock);
+		s_Clients.erase(this);
+		LOG_INFO("[ClientUDP]: Released");
 	}
 
 	void ClientUDP::OnPacketDelivered(NetworkPacket* pPacket)
@@ -33,11 +45,7 @@ namespace LambdaEngine
 	void ClientUDP::OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries)
 	{
 		LOG_INFO("ClientUDP::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
-	}
-
-	ClientUDP::~ClientUDP()
-	{
-		LOG_INFO("[ClientUDP]: Released");
+		Disconnect();
 	}
 
 	bool ClientUDP::Connect(const IPEndPoint& ipEndPoint)
@@ -119,11 +127,14 @@ namespace LambdaEngine
 			{
 				m_State = STATE_CONNECTING;
 				m_pHandler->OnConnectingUDP(this);
-				m_PacketManager.Reset();
+				m_SendDisconnectPacket = true;
 				SendConnectRequest();
 				return true;
 			}
+			LOG_ERROR("[ClientUDP]: Failed To Bind socket");
+			return false;
 		}
+		LOG_ERROR("[ClientUDP]: Failed To Create socket");
 		return false;
 	}
 
@@ -143,14 +154,17 @@ namespace LambdaEngine
 				break;
 			}
 
-			if (m_PacketManager.DecodePackets(m_pReceiveBuffer, bytesReceived, packets))
+			if (bytesReceived >= 0)
 			{
-				for (NetworkPacket* pPacket : packets)
+				if (m_PacketManager.DecodePackets(m_pReceiveBuffer, bytesReceived, packets))
 				{
-					HandleReceivedPacket(pPacket);
+					for (NetworkPacket* pPacket : packets)
+					{
+						HandleReceivedPacket(pPacket);
+					}
+					m_PacketManager.Free(packets);
 				}
-				m_PacketManager.Free(packets);
-			}
+			}	
 		}
 	}
 
@@ -173,6 +187,7 @@ namespace LambdaEngine
 		m_State = STATE_DISCONNECTED;
 		if(m_pHandler)
 			m_pHandler->OnDisconnectedUDP(this);
+		m_PacketManager.Reset();
 	}
 
 	void ClientUDP::OnTerminationRequested()
@@ -180,7 +195,9 @@ namespace LambdaEngine
 		LOG_WARNING("[ClientUDP]: Disconnecting...");
 		m_State = STATE_DISCONNECTING;
 		m_pHandler->OnDisconnectingUDP(this);
-		SendDisconnectRequest();
+
+		if(m_SendDisconnectPacket)
+			SendDisconnectRequest();
 	}
 
 	void ClientUDP::OnReleaseRequested()
@@ -209,6 +226,8 @@ namespace LambdaEngine
 		if (packetType == NetworkPacket::TYPE_CHALLENGE)
 		{
 			uint64 answer = PacketManager::DoChallenge(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
+			ASSERT(answer != 0);
+
 			NetworkPacket* pResponse = GetFreePacket(NetworkPacket::TYPE_CHALLENGE);
 			BinaryEncoder encoder(pResponse);
 			encoder.WriteUInt64(answer);
@@ -225,6 +244,13 @@ namespace LambdaEngine
 		}
 		else if (packetType == NetworkPacket::TYPE_DISCONNECT)
 		{
+			m_SendDisconnectPacket = false;
+			Disconnect();
+		}
+		else if (packetType == NetworkPacket::TYPE_SERVER_FULL)
+		{
+			m_SendDisconnectPacket = false;
+			m_pHandler->OnServerFullUDP(this);
 			Disconnect();
 		}
 		else
@@ -241,7 +267,6 @@ namespace LambdaEngine
 		int32 bytesSent = 0;
 		bool done = false;
 
-		m_PacketManager.Tick();
 		m_PacketManager.SwapPacketQueues();
 
 		while (!done)
@@ -260,5 +285,19 @@ namespace LambdaEngine
 	ClientUDP* ClientUDP::Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries)
 	{
 		return DBG_NEW ClientUDP(pHandler, packets, maximumTries);
+	}
+
+	void ClientUDP::FixedTickStatic(Timestamp timestamp)
+	{
+		UNREFERENCED_VARIABLE(timestamp);
+
+		if (!s_Clients.empty())
+		{
+			std::scoped_lock<SpinLock> lock(s_Lock);
+			for (ClientUDP* client : s_Clients)
+			{
+				client->m_PacketManager.Tick();
+			}
+		}
 	}
 }

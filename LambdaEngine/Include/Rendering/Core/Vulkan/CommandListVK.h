@@ -57,9 +57,9 @@ namespace LambdaEngine
 		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset) override;
 		virtual void BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) override final;
 
-		virtual void BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout) override final;
-		virtual void BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout) override final;
-		virtual void BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout) override final;
+		virtual void BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex) override final;
+		virtual void BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex) override final;
+		virtual void BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex) override final;
 
 		virtual void BindGraphicsPipeline(const IPipelineState* pPipeline)		override final;
 		virtual void BindComputePipeline(const IPipelineState* pPipeline)		override final;
@@ -95,7 +95,7 @@ namespace LambdaEngine
 	
 
 	private:
-		void BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, VkPipelineBindPoint bindPoint);
+		void BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex, VkPipelineBindPoint bindPoint);
 
 	private:
 		VkCommandBuffer						m_CommandList					= VK_NULL_HANDLE;

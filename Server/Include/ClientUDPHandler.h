@@ -2,7 +2,7 @@
 
 #include "LambdaEngine.h"
 
-#include "Networking/API/IClientUDPHandler.h"
+#include "Networking/API/IClientUDPRemoteHandler.h"
 
 namespace LambdaEngine
 {
@@ -10,7 +10,7 @@ namespace LambdaEngine
 	class IClientUDP;
 }
 
-class ClientUDPHandler : public LambdaEngine::IClientUDPHandler
+class ClientUDPHandler : public LambdaEngine::IClientUDPRemoteHandler
 {
 public:
 	ClientUDPHandler();
@@ -21,4 +21,7 @@ public:
 	virtual void OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient) override;
 	virtual void OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient) override;
 	virtual void OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket) override;
+
+private:
+	int counter = 0;
 };
