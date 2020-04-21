@@ -1,15 +1,20 @@
-#include "Containers/THashTable.h"
 #include "Resources/ResourceLoader.h"
+
 #include "Rendering/Core/API/ICommandAllocator.h"
 #include "Rendering/Core/API/ICommandList.h"
 #include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/RenderSystem.h"
 #include "Rendering/Core/API/IFence.h"
-#include "Audio/AudioSystem.h"
-#include "Resources/STB.h"
 #include "Rendering/Core/API/GraphicsHelpers.h"
 
+#include "Rendering/RenderSystem.h"
+
+#include "Audio/AudioSystem.h"
+
+#include "Resources/STB.h"
+
 #include "Log/Log.h"
+
+#include "Containers/THashTable.h"
 
 #include <tiny_obj_loader.h>
 #include <cstdio>
@@ -85,8 +90,9 @@ namespace LambdaEngine
 			if (material.diffuse_texname.length() > 0)
 			{
 				std::string texturePath = pDir + material.diffuse_texname;
-				auto loadedTexture = loadedTexturesMap.find(texturePath);
+                ConvertBackslashes(texturePath);
 
+                auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
 					ITexture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
@@ -104,8 +110,9 @@ namespace LambdaEngine
 			if (material.bump_texname.length() > 0)
 			{
 				std::string texturePath = pDir + material.bump_texname;
-				auto loadedTexture = loadedTexturesMap.find(texturePath);
-
+                ConvertBackslashes(texturePath);
+                
+                auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
 					ITexture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
@@ -123,8 +130,9 @@ namespace LambdaEngine
 			if (material.ambient_texname.length() > 0)
 			{
 				std::string texturePath = pDir + material.ambient_texname;
-				auto loadedTexture = loadedTexturesMap.find(texturePath);
-
+                ConvertBackslashes(texturePath);
+                
+                auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
 					ITexture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
@@ -142,8 +150,9 @@ namespace LambdaEngine
 			if (material.specular_highlight_texname.length() > 0)
 			{
 				std::string texturePath = pDir + material.specular_highlight_texname;
-				auto loadedTexture = loadedTexturesMap.find(texturePath);
-
+                ConvertBackslashes(texturePath);
+                
+                auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
 					ITexture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
@@ -366,7 +375,7 @@ namespace LambdaEngine
 
 		if (pPixels == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to laod texture file: \"%s\"", pFilepath);
+			LOG_ERROR("[ResourceLoader]: Failed to load texture file: \"%s\"", pFilepath);
 			return nullptr;
 		}
 
@@ -576,4 +585,14 @@ namespace LambdaEngine
 
 		return true;
 	}
+
+    void ResourceLoader::ConvertBackslashes(std::string& string)
+    {
+        size_t pos = string.find_first_of('\\');
+        while (pos != std::string::npos)
+        {
+            string.replace(pos, 1, 1, '/');
+            pos = string.find_first_of('\\', pos + 1);
+        }
+    }
 }

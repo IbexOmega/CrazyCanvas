@@ -1,12 +1,14 @@
 #pragma once
-
-#include "Rendering/Core/API/IGraphicsDevice.h"
 #include "Audio/API/IAudioDevice.h"
 
+#include "Rendering/Core/API/IGraphicsDevice.h"
 #include "Rendering/Core/API/ITexture.h"
 #include "Rendering/Core/API/IShader.h"
+
 #include "Audio/API/ISoundEffect3D.h"
+
 #include "Game/Scene.h"
+
 #include "Material.h"
 #include "Mesh.h"
 
@@ -91,6 +93,7 @@ namespace LambdaEngine
 
 	private:
 		static bool ReadDataFromFile(const char* pFilepath, byte** ppData, uint32* pDataSize);
+        static void ConvertBackslashes(std::string& string);
 
 	private:
 		static ICommandAllocator*		s_pCopyCommandAllocator;
