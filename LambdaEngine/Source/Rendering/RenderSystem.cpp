@@ -16,6 +16,7 @@
 #include "Rendering/Core/API/IDescriptorHeap.h"
 #include "Rendering/Core/API/IDescriptorSet.h"
 #include "Rendering/Core/API/IAccelerationStructure.h"
+#include "Rendering/Core/API/IDeviceAllocator.h"
 
 #include "Application/API/PlatformApplication.h"
 
@@ -59,13 +60,19 @@ namespace LambdaEngine
 			return false;
 		}
 		
-		//BufferDesc bufferDesc = { };
-		//bufferDesc.pName		= "VertexBuffer";
-		//bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-		//bufferDesc.Flags		= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_SRC | BUFFER_FLAG_COPY_DST;
-		//bufferDesc.SizeInBytes	= 64;
+        DeviceAllocatorDesc allocatorDesc = { };
+        allocatorDesc.pName             = "Main Allocator";
+        allocatorDesc.PageSizeInBytes   = MEGA_BYTE(64);
+        
+        IDeviceAllocator* pAllocator = s_pGraphicsDevice->CreateDeviceAllocator(&allocatorDesc);
+        
+		BufferDesc bufferDesc = { };
+		bufferDesc.pName		= "VertexBuffer";
+		bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+		bufferDesc.Flags		= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_SRC | BUFFER_FLAG_COPY_DST;
+		bufferDesc.SizeInBytes	= 64;
 
-		//IBuffer* pBuffer = s_pGraphicsDevice->CreateBuffer(bufferDesc);
+		IBuffer* pBuffer = s_pGraphicsDevice->CreateBuffer(&bufferDesc, pAllocator);
 
 		//TextureDesc textureDesc = { };
 		//textureDesc.pName		= "Texture";

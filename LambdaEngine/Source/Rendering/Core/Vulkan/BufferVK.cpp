@@ -129,7 +129,6 @@ namespace LambdaEngine
         }
 
         int32 memoryTypeIndex = FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, memoryProperties);
-        
         if (pAllocator)
         {
             DeviceAllocatorVK* pAllocatorVk = reinterpret_cast<DeviceAllocatorVK*>(pAllocator);

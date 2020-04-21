@@ -78,10 +78,9 @@ namespace LambdaEngine
                 SCOPED_AUTORELEASE_POOL();
                 
                 [s_pConsoleWindow appendStringAndScroll:string];
-                
                 [string release];
                 
-                //MacApplication::ProcessMessages();
+                MacApplication::ProcessMessages();
             }, false);
         }
     }
@@ -93,17 +92,18 @@ namespace LambdaEngine
             NSString* string        = [CocoaConsoleWindow convertStringWithArgs:pFormat args:args];
             NSString* finalString   = [string stringByAppendingString:@"\n"];
             
+            [string release];
+
             MacMainThread::MakeCall(^
             {
                 SCOPED_AUTORELEASE_POOL();
                 
                 [s_pConsoleWindow appendStringAndScroll:finalString];
-                
                 [finalString release];
-                [string release];
                 
-                //MacApplication::ProcessMessages();
+                MacApplication::ProcessMessages();
             }, false);
+            
         }
     }
     

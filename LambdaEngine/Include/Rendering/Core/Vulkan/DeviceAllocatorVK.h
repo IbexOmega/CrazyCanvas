@@ -52,6 +52,7 @@ namespace LambdaEngine
         
     private:
         TArray<DeviceMemoryPageVK*> m_Pages;
+        VkPhysicalDeviceProperties  m_DeviceProperties;
         DeviceAllocatorStatistics   m_Statistics;
         DeviceAllocatorDesc         m_Desc;
     };
