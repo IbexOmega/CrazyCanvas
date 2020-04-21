@@ -13,7 +13,7 @@ struct SVertex
 struct SInstance
 {
     mat4    Transform;
-    uint    MeshMaterialIndex_Mask;
+    uint    Mask_MeshMaterialIndex;
     uint    SBTRecordOffset_Flags;
     uint    AccelerationStructureHandleTop32;
     uint    AccelerationStructureHandleBottom32;
@@ -45,6 +45,10 @@ struct SPerFrameBuffer
 	vec4 Up;
 };
 
+
+layout (constant_id = 0) const uint OTHER_TEXTURES_IN_PASS                  = 0;
+layout (constant_id = 1) const uint ALLOWED_TEXTURES_PER_DESCRIPTOR_SET     = 5;
+
 layout(binding = 0, set = 1) buffer Vertices            { SVertex val[]; }              b_Vertices;
 layout(binding = 1, set = 1) buffer Indices             { uint val[]; }                 b_Indices;
 layout(binding = 2, set = 1) buffer Instances           { SInstance val[]; }            b_Instances;
@@ -60,11 +64,12 @@ layout(location = 5) out vec4 out_Position;
 
 void main()
 {
-    SInstance instance              = b_Instances.val[gl_InstanceIndex];
-    SVertex vertex                  = b_Vertices.val[gl_VertexIndex];
-    SPerFrameBuffer perFrameBuffer  = u_PerFrameBuffer.val;
-    SMeshIndexDesc meshIndexDesc    = b_MeshIndices.val[gl_DrawIDARB]; 
+    SInstance instance                          = b_Instances.val[gl_InstanceIndex];
+    SVertex vertex                              = b_Vertices.val[gl_VertexIndex];
+    SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
 
+    uint meshIndexID                            = (instance.Mask_MeshMaterialIndex) & 0x00FFFFFF;
+    SMeshIndexDesc meshIndexDesc                = b_MeshIndices.val[meshIndexID];
     //mat4 transform;
 	// transform[0] = vec4(instanceData.Transform[0], 0.0f);
 	// transform[1] = vec4(instanceData.Transform[1], 0.0f);
@@ -78,7 +83,9 @@ void main()
 	vec3 bitangent 	= normalize(cross(normal, tangent));
     vec2 texCoord   = vertex.TexCoord.xy;
 
-    out_MaterialIndex   = meshIndexDesc.MaterialIndex;
+    uint materialsRenderedPerPass = (ALLOWED_TEXTURES_PER_DESCRIPTOR_SET - OTHER_TEXTURES_IN_PASS) / 5;
+
+    out_MaterialIndex   = meshIndexDesc.MaterialIndex % materialsRenderedPerPass;
 	out_Normal 			= normal;
 	out_Tangent 		= tangent;
 	out_Bitangent 		= bitangent;

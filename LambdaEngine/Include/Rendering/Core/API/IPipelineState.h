@@ -43,7 +43,7 @@ namespace LambdaEngine
 		const IShader* pHullShader							= nullptr;
 		const IShader* pDomainShader						= nullptr;
 
-		//Required
+		//Both
 		const IShader* pPixelShader							= nullptr;
 	};
 

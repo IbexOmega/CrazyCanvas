@@ -135,6 +135,16 @@ namespace LambdaEngine
 		return instanceIndex;
 	}
 
+	uint32 Scene::GetIndirectArgumentOffset(uint32 materialIndex) const
+	{
+		auto it = m_MaterialIndexToIndirectArgOffsetMap.find(materialIndex);
+
+		if (it != m_MaterialIndexToIndirectArgOffsetMap.end())
+			return it->second;
+
+		return m_pSceneMeshIndexBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument);
+	}
+
 	bool Scene::Init(const SceneDesc& desc)
 	{
 		m_pName = desc.pName;
@@ -158,15 +168,11 @@ namespace LambdaEngine
 		clock.Reset();
 		clock.Tick();
 
-		m_SortedInstances.clear();
-
 		uint32 currentNumSceneVertices = 0;
 		uint32 currentNumSceneIndices = 0;
 
-		m_SortedInstances.reserve(m_Instances.size());
-
-		std::vector<IndexedIndirectMeshArgument> meshIndexBuffer;
-		meshIndexBuffer.reserve(200);
+		std::multimap<uint32, std::pair<MappedMaterial, IndexedIndirectMeshArgument>> materialIndexToMeshIndex;
+		uint32 indirectArgCount = 0;
 
 		for (uint32 meshIndex = 0; meshIndex < m_Meshes.size(); meshIndex++)
 		{
@@ -180,32 +186,60 @@ namespace LambdaEngine
 			{
 				MappedMaterial& mappedMaterial = mappedMesh.MappedMaterials[materialIndex];
 
-				uint32 instanceCount = (uint32)mappedMaterial.InstanceIndices.size();
-				uint32 baseInstanceIndex = (uint32)m_SortedInstances.size();
-
-				for (uint32 instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
-				{
-					Instance instance = m_Instances[mappedMaterial.InstanceIndices[instanceIndex]];
-					instance.MeshMaterialIndex = uint32(meshIndexBuffer.size());
-
-					m_SortedInstances.push_back(instance);
-				}
-
 				IndexedIndirectMeshArgument indirectMeshArgument = {};
 				indirectMeshArgument.IndexCount			= pMesh->IndexCount;
-				indirectMeshArgument.InstanceCount		= instanceCount;
+				//indirectMeshArgument.InstanceCount		= instanceCount;
 				indirectMeshArgument.FirstIndex			= currentNumSceneIndices;
 				indirectMeshArgument.VertexOffset		= currentNumSceneVertices;
-				indirectMeshArgument.FirstInstance		= baseInstanceIndex;
-				indirectMeshArgument.MaterialIndex		= mappedMaterial.MaterialIndex;
+				//indirectMeshArgument.FirstInstance		= baseInstanceIndex;
+				//indirectMeshArgument.MaterialIndex		= mappedMaterial.MaterialIndex;
 				indirectMeshArgument.Padding0			= 0;
 				indirectMeshArgument.Padding1			= 0;
 
-				meshIndexBuffer.push_back(indirectMeshArgument);
+				indirectArgCount++;
+				materialIndexToMeshIndex.insert(std::make_pair(mappedMaterial.MaterialIndex, std::make_pair(mappedMaterial, indirectMeshArgument)));
 			}
 
 			currentNumSceneVertices = newNumSceneVertices;
 			currentNumSceneIndices = newNumSceneIndices;
+		}
+
+		m_IndirectArgs.clear();
+		m_IndirectArgs.reserve(indirectArgCount);
+
+		m_SortedInstances.clear();
+		m_SortedInstances.reserve(m_Instances.size());
+
+		//Extra Loop to sort Indirect Args by Material
+		uint32 prevMaterialIndex = UINT32_MAX;
+		for (auto it = materialIndexToMeshIndex.begin(); it != materialIndexToMeshIndex.end(); it++)
+		{
+			uint32 currentMaterialIndex = it->first;
+			MappedMaterial& mappedMaterial = it->second.first;
+			IndexedIndirectMeshArgument& indirectArg = it->second.second;
+
+			uint32 instanceCount = (uint32)mappedMaterial.InstanceIndices.size();
+			uint32 baseInstanceIndex = (uint32)m_SortedInstances.size();
+
+			for (uint32 instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
+			{
+				Instance instance = m_Instances[mappedMaterial.InstanceIndices[instanceIndex]];
+				instance.MeshMaterialIndex = (uint32)m_IndirectArgs.size();
+
+				m_SortedInstances.push_back(instance);
+			}
+
+			if (prevMaterialIndex != currentMaterialIndex)
+			{
+				prevMaterialIndex = currentMaterialIndex;
+				m_MaterialIndexToIndirectArgOffsetMap[currentMaterialIndex] = m_IndirectArgs.size();
+			}
+
+			indirectArg.InstanceCount = instanceCount;
+			indirectArg.FirstInstance = baseInstanceIndex;
+			indirectArg.MaterialIndex = mappedMaterial.MaterialIndex;
+
+			m_IndirectArgs.push_back(indirectArg);
 		}
 
 		m_SceneAlbedoMaps.resize(MAX_UNIQUE_MATERIALS);
@@ -420,7 +454,7 @@ namespace LambdaEngine
 
 		
 		{
-			uint32 sceneMeshIndexBufferSize = uint32(meshIndexBuffer.size() * sizeof(IndexedIndirectMeshArgument));
+			uint32 sceneMeshIndexBufferSize = uint32(m_IndirectArgs.size() * sizeof(IndexedIndirectMeshArgument));
 
 			if (m_pSceneMeshIndexCopyBuffer == nullptr || sceneMeshIndexBufferSize > m_pSceneMeshIndexCopyBuffer->GetDesc().SizeInBytes)
 			{
@@ -436,7 +470,7 @@ namespace LambdaEngine
 			}
 
 			void* pMapped = m_pSceneMeshIndexCopyBuffer->Map();
-			memcpy(pMapped, meshIndexBuffer.data(), sceneMeshIndexBufferSize);
+			memcpy(pMapped, m_IndirectArgs.data(), sceneMeshIndexBufferSize);
 			m_pSceneMeshIndexCopyBuffer->Unmap();
 
 			if (m_pSceneMeshIndexBuffer == nullptr || sceneMeshIndexBufferSize > m_pSceneMeshIndexBuffer->GetDesc().SizeInBytes)

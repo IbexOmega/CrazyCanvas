@@ -33,7 +33,7 @@ Sandbox::Sandbox()
 	using namespace LambdaEngine;
 
 	constexpr const uint32 BACK_BUFFER_COUNT = 3;
-	constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 160;
+	constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 5;
 
 	m_pResourceManager = DBG_NEW LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice(), m_pResourceManager);
@@ -80,8 +80,6 @@ Sandbox::Sandbox()
 
 	m_pCamera->Init(cameraDesc);
 
-
-
 	//GUID_Lambda blurShaderGUID					= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/blur.spv",					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
 	
 	//GUID_Lambda lightVertexShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/lightVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
@@ -126,7 +124,6 @@ Sandbox::Sandbox()
 	samplerNearestDesc.MaxLOD				= 1.0f;
 
 	m_pNearestSampler = RenderSystem::GetDevice()->CreateSampler(samplerNearestDesc);
-
 
 	InitRendererForDeferred(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 
@@ -536,6 +533,7 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 	renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
 	renderGraphDesc.BackBufferCount				= backBufferCount;
 	renderGraphDesc.MaxTexturesPerDescriptorSet = maxTexturesPerDescriptorSet;
+	renderGraphDesc.pScene						= m_pScene;
 
 	LambdaEngine::Clock clock;
 	clock.Reset();
@@ -946,6 +944,7 @@ bool Sandbox::InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPe
 	renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
 	renderGraphDesc.BackBufferCount				= backBufferCount;
 	renderGraphDesc.MaxTexturesPerDescriptorSet = maxTexturesPerDescriptorSet;
+	renderGraphDesc.pScene						= m_pScene;
 
 	LambdaEngine::Clock clock;
 	clock.Reset();

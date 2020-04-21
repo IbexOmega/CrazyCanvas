@@ -91,7 +91,7 @@ namespace LambdaEngine
 		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 		uint32 AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 
-		uint32 GetIndirectArgumentOffset(uint32 materialIndex) { return m_MaterialIndexToIndirectArgOffsetMap[materialIndex]; }
+		uint32 GetIndirectArgumentOffset(uint32 materialIndex) const;
 
 		//Todo: Make these const
 		FORCEINLINE IBuffer*				GetPerFrameBuffer()				{ return m_pPerFrameBuffer;}
@@ -125,7 +125,8 @@ namespace LambdaEngine
 		ICommandAllocator*						m_pCopyCommandAllocator					= nullptr;
 		ICommandList*							m_pCopyCommandList						= nullptr;
 
-		std::unordered_map<uint32, uint32>		m_MaterialIndexToIndirectArgOffsetMap;
+		std::map<uint32, uint32>				m_MaterialIndexToIndirectArgOffsetMap;
+		std::vector<IndexedIndirectMeshArgument> m_IndirectArgs;
 
 		IBuffer*								m_pSceneMaterialPropertiesCopyBuffer	= nullptr;
 		IBuffer*								m_pSceneVertexCopyBuffer				= nullptr;

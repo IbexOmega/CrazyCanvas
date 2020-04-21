@@ -19,12 +19,13 @@ layout(location = 3) in vec3 in_Bitangent;
 layout(location = 4) in vec2 in_TexCoord;
 layout(location = 5) in vec4 in_Position;
 
-layout(binding = 5, set = 1) buffer MaterialParameters  { SMaterialParameters val[]; }  b_MaterialParameters;
-layout(binding = 0, set = 0) uniform sampler2D u_SceneAlbedoMaps[10];
-layout(binding = 1, set = 0) uniform sampler2D u_SceneNormalMaps[10];
-layout(binding = 2, set = 0) uniform sampler2D u_SceneAOMaps[10];
-layout(binding = 3, set = 0) uniform sampler2D u_SceneMetallicMaps[10];
-layout(binding = 4, set = 0) uniform sampler2D u_SceneRougnessMaps[10];
+layout(binding = 0, set = 0) uniform sampler2D u_SceneAlbedoMaps[1];
+layout(binding = 1, set = 0) uniform sampler2D u_SceneNormalMaps[1];
+layout(binding = 2, set = 0) uniform sampler2D u_SceneAOMaps[1];
+layout(binding = 3, set = 0) uniform sampler2D u_SceneMetallicMaps[1];
+layout(binding = 4, set = 0) uniform sampler2D u_SceneRougnessMaps[1];
+
+layout(binding = 5, set = 1) buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
 
 layout(location = 0) out vec4 out_Albedo_AO;
 layout(location = 1) out vec4 out_Normals_Metall_Rough;

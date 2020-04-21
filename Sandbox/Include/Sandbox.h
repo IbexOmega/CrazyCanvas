@@ -71,7 +71,7 @@ private:
 	LambdaEngine::ISampler*					m_pLinearSampler		= nullptr;
 	LambdaEngine::ISampler*					m_pNearestSampler		= nullptr;
 
-	LambdaEngine::RenderGraph*				m_pRenderGraph	= nullptr;
+	LambdaEngine::RenderGraph*				m_pRenderGraph			= nullptr;
 	LambdaEngine::Renderer*					m_pRenderer				= nullptr;
 
 	bool									m_SpawnPlayAts;

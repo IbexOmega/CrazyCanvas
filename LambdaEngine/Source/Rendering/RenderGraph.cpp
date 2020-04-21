@@ -15,6 +15,7 @@
 #include "Rendering/Core/API/ITextureView.h"
 #include "Rendering/Core/API/ICommandQueue.h"
 #include "Rendering/Core/API/IFence.h"
+#include "Rendering/Core/API/IShader.h"
 #include "Rendering/RenderSystem.h"
 
 #include "Game/Scene.h"
@@ -79,12 +80,16 @@ namespace LambdaEngine
 
 				for (uint32 b = 0; b < m_BackBufferCount; b++)
 				{
-					SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
-
-					for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
+					if (pRenderStage->ppTextureDescriptorSets != nullptr)
 					{
-						SAFERELEASE(pRenderStage->ppTextureDescriptorSets[b * pRenderStage->TextureSubDescriptorSetCount + s]);
+						for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
+						{
+							SAFERELEASE(pRenderStage->ppTextureDescriptorSets[b * pRenderStage->TextureSubDescriptorSetCount + s]);
+						}
 					}
+
+					if (pRenderStage->ppBufferDescriptorSets != nullptr)
+						SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
 				}
 				
 				SAFEDELETE_ARRAY(pRenderStage->ppTextureDescriptorSets);
@@ -113,6 +118,7 @@ namespace LambdaEngine
 		std::vector<PipelineStageDesc>							pipelineStageDescriptions;
 		std::vector<RenderStageResourceDesc>					resourceDescriptions;
 
+		m_pScene						= desc.pScene;
 		m_BackBufferCount				= desc.BackBufferCount;
 		m_MaxTexturesPerDescriptorSet	= desc.MaxTexturesPerDescriptorSet;
 
@@ -279,7 +285,7 @@ namespace LambdaEngine
 							{
 								uint32 index = b * pRenderStage->TextureSubDescriptorSetCount + s;
 		
-								pRenderStage->ppTextureDescriptorSets[index]->WriteTextureDescriptors(
+								pRenderStage->ppTextureDescriptorSets[b * pRenderStage->TextureSubDescriptorSetCount + s]->WriteTextureDescriptors(
 									&pResource->Texture.TextureViews[s * actualSubResourceCount],
 									&pResource->Texture.Samplers[s * actualSubResourceCount],
 									pResourceBinding->TextureState,
@@ -614,6 +620,7 @@ namespace LambdaEngine
 			//Calculate the total number of textures we want to bind
 			uint32 textureSlots = 0;
 			uint32 totalNumberOfTextures = 0;
+			uint32 totalNumberOfNonMaterialTextures = 0;
 			uint32 textureSubresourceCount = 0;
 			bool textureSubResourceCountSame = true;
 			for (uint32 a = 0; a < pRenderStageDesc->AttachmentCount; a++)
@@ -634,10 +641,20 @@ namespace LambdaEngine
 
 						textureSubresourceCount = pAttachment->SubResourceCount;
 						totalNumberOfTextures += textureSubresourceCount;
+
+						if (strcmp(pAttachment->pName, SCENE_ALBEDO_MAPS)		!= 0 &&
+							strcmp(pAttachment->pName, SCENE_NORMAL_MAPS)		!= 0 &&
+							strcmp(pAttachment->pName, SCENE_AO_MAPS)			!= 0 &&
+							strcmp(pAttachment->pName, SCENE_ROUGHNESS_MAPS)	!= 0 &&
+							strcmp(pAttachment->pName, SCENE_METALLIC_MAPS)		!= 0)
+						{
+							totalNumberOfNonMaterialTextures += textureSubresourceCount;
+						}
 					}
 					else
 					{
 						totalNumberOfTextures++;
+						totalNumberOfNonMaterialTextures++;
 					}
 				}
 			}
@@ -654,6 +671,7 @@ namespace LambdaEngine
 			}
 
 			pRenderStage->TextureSubDescriptorSetCount = glm::max((uint32)glm::ceil((float)totalNumberOfTextures / m_MaxTexturesPerDescriptorSet), 1u);
+			pRenderStage->MaterialsRenderedPerPass = (m_MaxTexturesPerDescriptorSet - totalNumberOfNonMaterialTextures) / 5; //5 textures per material
 
 			std::vector<DescriptorBindingDesc> textureDescriptorSetDescriptions;
 			textureDescriptorSetDescriptions.reserve(pRenderStageDesc->AttachmentCount);
@@ -809,9 +827,10 @@ namespace LambdaEngine
 			{
 				if (textureDescriptorSetDescriptions.size() > 0)
 				{
-					pRenderStage->ppTextureDescriptorSets = DBG_NEW IDescriptorSet*[m_BackBufferCount * pRenderStage->TextureSubDescriptorSetCount];
+					uint32 textureDescriptorSetCount = m_BackBufferCount * pRenderStage->TextureSubDescriptorSetCount;
+					pRenderStage->ppTextureDescriptorSets = DBG_NEW IDescriptorSet*[textureDescriptorSetCount];
 
-					for (uint32 i = 0; i < m_BackBufferCount * pRenderStage->TextureSubDescriptorSetCount; i++)
+					for (uint32 i = 0; i < textureDescriptorSetCount; i++)
 					{
 						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
 						pRenderStage->ppTextureDescriptorSets[i] = pDescriptorSet;
@@ -1456,17 +1475,23 @@ namespace LambdaEngine
 
 			IBuffer* pDrawBuffer		= pRenderStage->pMeshIndexBufferResource->Buffer.Buffers[0];
 			uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
-			uint32 drawStride			= (uint32)glm::ceil((float)totalDrawCount / pRenderStage->TextureSubDescriptorSetCount);
 			uint32 indirectArgStride	= sizeof(IndexedIndirectMeshArgument);
 
+			uint32 drawOffset = 0;
 			for (uint32 i = 0; i < pRenderStage->TextureSubDescriptorSetCount; i++)
 			{
+				uint32 newBaseMaterialIndex		= (i + 1) * pRenderStage->MaterialsRenderedPerPass;
+				uint32 newDrawOffset			= m_pScene->GetIndirectArgumentOffset(newBaseMaterialIndex);
+				uint32 drawCount				= newDrawOffset - drawOffset;
+
 				if (pRenderStage->ppTextureDescriptorSets != nullptr)
 					pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[backBufferIndex * pRenderStage->TextureSubDescriptorSetCount + i], pRenderStage->pPipelineLayout, 0);
 
-				uint32 drawOffset = drawStride * i;
-				uint32 drawCount = glm::min(totalDrawCount - drawOffset, drawStride);
-				pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, drawOffset, drawCount, indirectArgStride);
+				pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, drawOffset * indirectArgStride, drawCount, indirectArgStride);
+				drawOffset = newDrawOffset;
+
+				if (newDrawOffset >= totalDrawCount)
+					break;
 			}
 		}
 		else if (pRenderStage->DrawType == ERenderStageDrawType::FULLSCREEN_QUAD)

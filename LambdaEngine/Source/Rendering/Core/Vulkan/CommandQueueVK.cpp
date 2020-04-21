@@ -180,7 +180,6 @@ namespace LambdaEngine
         if (!m_WaitSemaphores.empty())
         {
             //If we need to flushbarriers, then add a lock so that vkQueueSubmit is protected
-            std::scoped_lock<SpinLock> lock(m_SpinLock);
 
             VkSubmitInfo submitInfo = { };
             submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;

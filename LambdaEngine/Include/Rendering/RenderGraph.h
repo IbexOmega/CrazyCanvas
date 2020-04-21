@@ -32,6 +32,7 @@ namespace LambdaEngine
 	class ISampler;
 	class IBuffer;
 	class IFence;
+	class Scene;
 
 	struct RenderGraphDesc
 	{
@@ -41,6 +42,7 @@ namespace LambdaEngine
 		uint32 RenderStageCount					= 0;
 		uint32 BackBufferCount					= 3;
 		uint32 MaxTexturesPerDescriptorSet		= 1;
+		Scene* pScene							= nullptr;
 	};
 
 	struct ResourceUpdateDesc
@@ -114,6 +116,11 @@ namespace LambdaEngine
 		};
 	};
 
+	struct MaterialBindingInfo
+	{
+		uint32	Stride;
+	};
+
 	class LAMBDA_API RenderGraph
 	{
 		enum class EResourceType
@@ -184,6 +191,7 @@ namespace LambdaEngine
 			IPipelineLayout*		pPipelineLayout					= nullptr;
 			IPipelineState*			pPipelineState					= nullptr;
 			uint32					TextureSubDescriptorSetCount	= 1;
+			uint32					MaterialsRenderedPerPass		= 1;
 			IDescriptorSet**		ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
 			IDescriptorSet**		ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
 			IRenderPass*			pRenderPass						= nullptr;
@@ -284,6 +292,8 @@ namespace LambdaEngine
 
 	private:
 		const IGraphicsDevice*								m_pGraphicsDevice;
+
+		const Scene*										m_pScene						= nullptr;
 
 		IDescriptorHeap*									m_pDescriptorHeap				= nullptr;
 
