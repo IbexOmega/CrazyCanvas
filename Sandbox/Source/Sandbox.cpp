@@ -107,7 +107,7 @@ Sandbox::Sandbox()
 	samplerLinearDesc.MinLOD				= 0.0f;
 	samplerLinearDesc.MaxLOD				= 1.0f;
 
-	m_pLinearSampler = RenderSystem::GetDevice()->CreateSampler(samplerLinearDesc);
+	m_pLinearSampler = RenderSystem::GetDevice()->CreateSampler(&samplerLinearDesc);
 
 	SamplerDesc samplerNearestDesc = {};
 	samplerNearestDesc.pName				= "Nearest Sampler";
@@ -123,7 +123,7 @@ Sandbox::Sandbox()
 	samplerNearestDesc.MinLOD				= 0.0f;
 	samplerNearestDesc.MaxLOD				= 1.0f;
 
-	m_pNearestSampler = RenderSystem::GetDevice()->CreateSampler(samplerNearestDesc);
+	m_pNearestSampler = RenderSystem::GetDevice()->CreateSampler(&samplerNearestDesc);
 
 	InitRendererForDeferred(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 

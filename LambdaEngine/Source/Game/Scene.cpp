@@ -156,7 +156,7 @@ namespace LambdaEngine
 		commandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
 
-		m_pCopyCommandList		= m_pGraphicsDevice->CreateCommandList(m_pCopyCommandAllocator, commandListDesc);
+		m_pCopyCommandList		= m_pGraphicsDevice->CreateCommandList(m_pCopyCommandAllocator, &commandListDesc);
 
 		return true;
 	}
@@ -319,7 +319,7 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 				bufferDesc.SizeInBytes	= sceneMaterialPropertiesSize;
 
-				m_pSceneMaterialPropertiesCopyBuffer = m_pGraphicsDevice->CreateBuffer(bufferDesc);
+				m_pSceneMaterialPropertiesCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			void* pMapped = m_pSceneMaterialPropertiesCopyBuffer->Map();
@@ -336,7 +336,7 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 				bufferDesc.SizeInBytes	= sceneMaterialPropertiesSize;
 
-				m_pSceneMaterialProperties = m_pGraphicsDevice->CreateBuffer(bufferDesc);
+				m_pSceneMaterialProperties = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			m_pCopyCommandList->CopyBuffer(m_pSceneMaterialPropertiesCopyBuffer, 0, m_pSceneMaterialProperties, 0, sceneMaterialPropertiesSize);
@@ -356,7 +356,7 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 				bufferDesc.SizeInBytes	= sceneVertexBufferSize;
 
-				m_pSceneVertexCopyBuffer = m_pGraphicsDevice->CreateBuffer(bufferDesc);
+				m_pSceneVertexCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			void* pMapped = m_pSceneVertexCopyBuffer->Map();
@@ -373,7 +373,7 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
 				bufferDesc.SizeInBytes	= sceneVertexBufferSize;
 
-				m_pSceneVertexBuffer = m_pGraphicsDevice->CreateBuffer(bufferDesc);
+				m_pSceneVertexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			m_pCopyCommandList->CopyBuffer(m_pSceneVertexCopyBuffer, 0, m_pSceneVertexBuffer, 0, sceneVertexBufferSize);
@@ -393,7 +393,7 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 				bufferDesc.SizeInBytes	= sceneIndexBufferSize;
 
-				m_pSceneIndexCopyBuffer = m_pGraphicsDevice->CreateBuffer(bufferDesc);
+				m_pSceneIndexCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			void* pMapped = m_pSceneIndexCopyBuffer->Map();
@@ -410,7 +410,7 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
 				bufferDesc.SizeInBytes	= sceneIndexBufferSize;
 
-				m_pSceneIndexBuffer = m_pGraphicsDevice->CreateBuffer(bufferDesc);
+				m_pSceneIndexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			m_pCopyCommandList->CopyBuffer(m_pSceneIndexCopyBuffer, 0, m_pSceneIndexBuffer, 0, sceneIndexBufferSize);
@@ -429,7 +429,7 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 				bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
 
-				m_pSceneInstanceCopyBuffer = m_pGraphicsDevice->CreateBuffer(bufferDesc);
+				m_pSceneInstanceCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			void* pMapped = m_pSceneInstanceCopyBuffer->Map();
@@ -446,7 +446,7 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 				bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
 
-				m_pSceneInstanceBuffer = m_pGraphicsDevice->CreateBuffer(bufferDesc);
+				m_pSceneInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			m_pCopyCommandList->CopyBuffer(m_pSceneInstanceCopyBuffer, 0, m_pSceneInstanceBuffer, 0, sceneInstanceBufferSize);
@@ -466,7 +466,7 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 				bufferDesc.SizeInBytes	= sceneMeshIndexBufferSize;
 
-				m_pSceneMeshIndexCopyBuffer = m_pGraphicsDevice->CreateBuffer(bufferDesc);
+				m_pSceneMeshIndexCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			void* pMapped = m_pSceneMeshIndexCopyBuffer->Map();
@@ -483,7 +483,7 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDIRECT_BUFFER;
 				bufferDesc.SizeInBytes	= sceneMeshIndexBufferSize;
 
-				m_pSceneMeshIndexBuffer = m_pGraphicsDevice->CreateBuffer(bufferDesc);
+				m_pSceneMeshIndexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			m_pCopyCommandList->CopyBuffer(m_pSceneMeshIndexCopyBuffer, 0, m_pSceneMeshIndexBuffer, 0, sceneMeshIndexBufferSize);
