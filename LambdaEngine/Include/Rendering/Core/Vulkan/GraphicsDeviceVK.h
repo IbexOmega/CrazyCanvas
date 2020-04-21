@@ -37,11 +37,11 @@ namespace LambdaEngine
 
 		bool Init(const GraphicsDeviceDesc* pDesc);
 
-        VkResult AllocateMemory(const VkMemoryRequirements* pMemoryRequirements, VkDeviceMemory* pDeviceMemory, VkMemoryPropertyFlags memoryProperties) const;
-        void FreeMemory(VkDeviceMemory deviceMemory) const;
+        VkResult    AllocateMemory(VkDeviceMemory* pDeviceMemory, VkDeviceSize sizeInBytes, int32 memoryIndex)  const;
+        void        FreeMemory(VkDeviceMemory deviceMemory)                                                     const;
         
-        void DestroyRenderPass(VkRenderPass* pRenderPass) const;
-        void DestroyImageView(VkImageView* pImageView) const;
+        void DestroyRenderPass(VkRenderPass* pRenderPass)   const;
+        void DestroyImageView(VkImageView* pImageView)      const;
 		
 		bool IsInstanceExtensionEnabled(const char* pExtensionName) const;
 		bool IsDeviceExtensionEnabled(const char* pExtensionName)	const;

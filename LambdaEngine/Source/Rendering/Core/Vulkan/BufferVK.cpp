@@ -128,10 +128,12 @@ namespace LambdaEngine
             memoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         }
 
+        int32 memoryTypeIndex = FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, memoryProperties);
+        
         if (pAllocator)
         {
             DeviceAllocatorVK* pAllocatorVk = reinterpret_cast<DeviceAllocatorVK*>(pAllocator);
-            if (!pAllocatorVk->Allocate(&m_Allocation))
+            if (!pAllocatorVk->Allocate(&m_Allocation, memoryRequirements.size, memoryRequirements.alignment, memoryTypeIndex))
             {
                 LOG_ERROR("[BufferVK]: Failed to allocate memory");
                 return false;
@@ -146,7 +148,7 @@ namespace LambdaEngine
         }
         else
         {
-            result = m_pDevice->AllocateMemory(&memoryRequirements, &m_Memory, memoryProperties);
+            result = m_pDevice->AllocateMemory(&m_Memory, memoryRequirements.size, memoryTypeIndex);
             if (result != VK_SUCCESS)
             {
                 LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to allocate memory");

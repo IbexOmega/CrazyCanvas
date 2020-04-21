@@ -2,11 +2,14 @@
 #include "Rendering/Core/API/IDeviceAllocator.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
+#include "Containers/TArray.h"
+
 #include "Vulkan.h"
 
 namespace LambdaEngine
 {
     class GraphicsDeviceVK;
+    class DeviceMemoryPageVK;
 
     struct DeviceMemoryBlockVK;
 
@@ -27,8 +30,11 @@ namespace LambdaEngine
         
         bool Init(const DeviceAllocatorDesc* pDesc);
         
-        bool Allocate(AllocationVK* pAllocation);
+        bool Allocate(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex);
         bool Free(AllocationVK* pAllocation);
+        
+        void* Map(AllocationVK* pAllocation);
+        void Unmap(AllocationVK* pAllocation);
         
         // IDeviceChild Interface
         virtual void SetName(const char* pName) override final;
@@ -45,6 +51,7 @@ namespace LambdaEngine
         }
         
     private:
+        TArray<DeviceMemoryPageVK*> m_Pages;
         DeviceAllocatorStatistics   m_Statistics;
         DeviceAllocatorDesc         m_Desc;
     };

@@ -22,9 +22,9 @@
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/DescriptorHeapVK.h"
 #include "Rendering/Core/Vulkan/DescriptorSetVK.h"
-#include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/FrameBufferCacheVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
+#include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
 {
@@ -150,13 +150,10 @@ namespace LambdaEngine
 		return true;
 	}
 
-    VkResult GraphicsDeviceVK::AllocateMemory(const VkMemoryRequirements* pMemoryRequirements, VkDeviceMemory* pDeviceMemory, VkMemoryPropertyFlags memoryProperties) const
+    VkResult GraphicsDeviceVK::AllocateMemory(VkDeviceMemory* pDeviceMemory, VkDeviceSize sizeInBytes, int32 memoryIndex) const
     {
-        VALIDATE(pMemoryRequirements    !=  nullptr);
-        VALIDATE(pDeviceMemory          !=  nullptr);
-        VALIDATE(m_UsedAllocations      <   m_DeviceLimits.maxMemoryAllocationCount);
-        
-        int32 memoryTypeIndex = FindMemoryType(PhysicalDevice, pMemoryRequirements->memoryTypeBits, memoryProperties);
+        VALIDATE(pDeviceMemory      !=  nullptr);
+        VALIDATE(m_UsedAllocations  <   m_DeviceLimits.maxMemoryAllocationCount);
 
         VkMemoryAllocateFlagsInfo allocateFlagsInfo = {};
         allocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
@@ -165,8 +162,8 @@ namespace LambdaEngine
         VkMemoryAllocateInfo allocateInfo = { };
         allocateInfo.sType              = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocateInfo.pNext              = &allocateFlagsInfo;
-        allocateInfo.memoryTypeIndex    = memoryTypeIndex;
-        allocateInfo.allocationSize     = pMemoryRequirements->size;
+        allocateInfo.memoryTypeIndex    = memoryIndex;
+        allocateInfo.allocationSize     = sizeInBytes;
 
         VkResult result = vkAllocateMemory(Device, &allocateInfo, nullptr, pDeviceMemory);
         if (result != VK_SUCCESS)
@@ -176,7 +173,7 @@ namespace LambdaEngine
         else
         {
             m_UsedAllocations++;
-            D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes to buffer. Allocations %u / &u", pMemoryRequirements->size, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+            D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes to buffer. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
         }
         
         return result;
