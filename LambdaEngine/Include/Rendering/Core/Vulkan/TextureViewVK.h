@@ -17,7 +17,7 @@ namespace LambdaEngine
         TextureViewVK(const GraphicsDeviceVK* pDevice);
         ~TextureViewVK();
         
-        bool Init(const TextureViewDesc& desc);
+        bool Init(const TextureViewDesc* pDesc);
         
         FORCEINLINE VkImageView GetImageView() const
         {

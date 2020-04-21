@@ -28,6 +28,10 @@
 
 namespace LambdaEngine
 {
+    /*
+     * ValidationLayers and Extensions
+     */
+
 	constexpr ValidationLayer REQUIRED_VALIDATION_LAYERS[]
 	{
 		ValidationLayer("REQ_V_L_BASE"),
@@ -78,6 +82,10 @@ namespace LambdaEngine
         Extension("VK_KHR_shader_draw_parameters"),
 	};
 
+    /*
+     * GraphicsDeviceVK
+     */
+
 	GraphicsDeviceVK::GraphicsDeviceVK()
         : GraphicsDeviceBase(),
         RayTracingProperties(),
@@ -113,9 +121,11 @@ namespace LambdaEngine
 		}
 	}
 
-	bool GraphicsDeviceVK::Init(const GraphicsDeviceDesc& desc)
+	bool GraphicsDeviceVK::Init(const GraphicsDeviceDesc* pDesc)
 	{
-		if (!InitInstance(desc))
+        VALIDATE(pDesc != nullptr);
+        
+		if (!InitInstance(pDesc))
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Instance could not be initialized!");
 			return false;
@@ -125,7 +135,7 @@ namespace LambdaEngine
 			LOG_MESSAGE("[GraphicsDeviceVK]: Vulkan Instance initialized!");
 		}
 
-		if (!InitDevice(desc))
+		if (!InitDevice(pDesc))
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Device could not be initialized!");
 			return false;
@@ -139,6 +149,45 @@ namespace LambdaEngine
 
 		return true;
 	}
+
+    VkResult GraphicsDeviceVK::AllocateMemory(const VkMemoryRequirements* pMemoryRequirements, VkDeviceMemory* pDeviceMemory, VkMemoryPropertyFlags memoryProperties) const
+    {
+        VALIDATE(pMemoryRequirements    !=  nullptr);
+        VALIDATE(pDeviceMemory          !=  nullptr);
+        VALIDATE(m_UsedAllocations      <   m_DeviceLimits.maxMemoryAllocationCount);
+        
+        int32 memoryTypeIndex = FindMemoryType(PhysicalDevice, pMemoryRequirements->memoryTypeBits, memoryProperties);
+
+        VkMemoryAllocateFlagsInfo allocateFlagsInfo = {};
+        allocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+        allocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
+        VkMemoryAllocateInfo allocateInfo = { };
+        allocateInfo.sType              = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocateInfo.pNext              = &allocateFlagsInfo;
+        allocateInfo.memoryTypeIndex    = memoryTypeIndex;
+        allocateInfo.allocationSize     = pMemoryRequirements->size;
+
+        VkResult result = vkAllocateMemory(Device, &allocateInfo, nullptr, pDeviceMemory);
+        if (result != VK_SUCCESS)
+        {
+            LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to allocate memory");
+        }
+        else
+        {
+            m_UsedAllocations++;
+            D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes to buffer. Allocations %u / &u", pMemoryRequirements->size, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+        }
+        
+        return result;
+    }
+
+    void GraphicsDeviceVK::FreeMemory(VkDeviceMemory deviceMemory) const
+    {
+        VALIDATE(deviceMemory != VK_NULL_HANDLE);
+        vkFreeMemory(Device, deviceMemory, nullptr);
+        m_UsedAllocations--;
+    }
 
     void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
     {
@@ -195,16 +244,26 @@ namespace LambdaEngine
 		return m_pFrameBufferCache->GetFrameBuffer(key, width, height);
 	}
 
+    /*
+     * Release
+     */
+
 	void GraphicsDeviceVK::Release()
 	{
         GraphicsDeviceBase::Release();
 		delete this;
 	}
 
-	IPipelineLayout* GraphicsDeviceVK::CreatePipelineLayout(const PipelineLayoutDesc& desc) const
+    /*
+     * Create functions
+     */
+
+	IPipelineLayout* GraphicsDeviceVK::CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
 		PipelineLayoutVK* pPipelineLayout = DBG_NEW PipelineLayoutVK(this);
-		if (!pPipelineLayout->Init(desc))
+		if (!pPipelineLayout->Init(pDesc))
 		{
 			pPipelineLayout->Release();
 			return nullptr;
@@ -215,10 +274,12 @@ namespace LambdaEngine
 		}
 	}
 
-	IDescriptorHeap* GraphicsDeviceVK::CreateDescriptorHeap(const DescriptorHeapDesc& desc) const
+	IDescriptorHeap* GraphicsDeviceVK::CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
 		DescriptorHeapVK* pDescriptorHeap = DBG_NEW DescriptorHeapVK(this);
-		if (!pDescriptorHeap->Init(desc))
+		if (!pDescriptorHeap->Init(pDesc))
 		{
 			pDescriptorHeap->Release();
 			return nullptr;
@@ -231,6 +292,9 @@ namespace LambdaEngine
 
 	IDescriptorSet* GraphicsDeviceVK::CreateDescriptorSet(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const
 	{
+        VALIDATE(pPipelineLayout != nullptr);
+        VALIDATE(pDescriptorHeap != nullptr);
+        
 		DescriptorSetVK* pDescriptorSet = DBG_NEW DescriptorSetVK(this);
 		if (!pDescriptorSet->Init(pName, pPipelineLayout, descriptorLayoutIndex, pDescriptorHeap))
 		{
@@ -243,10 +307,12 @@ namespace LambdaEngine
 		}
 	}
 
-	IRenderPass* GraphicsDeviceVK::CreateRenderPass(const RenderPassDesc& desc) const
+	IRenderPass* GraphicsDeviceVK::CreateRenderPass(const RenderPassDesc* pDesc) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
  		RenderPassVK* pRenderPass = DBG_NEW RenderPassVK(this);
-		if (!pRenderPass->Init(desc))
+		if (!pRenderPass->Init(pDesc))
 		{
 			pRenderPass->Release();
 			return nullptr;
@@ -257,10 +323,12 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) const
+	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
 		GraphicsPipelineStateVK* pPipelineState = DBG_NEW GraphicsPipelineStateVK(this);
-		if (!pPipelineState->Init(desc))
+		if (!pPipelineState->Init(pDesc))
 		{
 			pPipelineState->Release();
 			return nullptr;
@@ -271,10 +339,12 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineStateDesc& desc) const
+	IPipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
 		ComputePipelineStateVK* pPipelineState = DBG_NEW ComputePipelineStateVK(this);
-		if (!pPipelineState->Init(desc))
+		if (!pPipelineState->Init(pDesc))
 		{
 			pPipelineState->Release();
 			return nullptr;
@@ -285,10 +355,12 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineStateDesc& desc) const
+	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
 		RayTracingPipelineStateVK* pPipelineState = DBG_NEW RayTracingPipelineStateVK(this);
-		if (!pPipelineState->Init(desc))
+		if (!pPipelineState->Init(pDesc))
 		{
 			pPipelineState->Release();
 			return nullptr;
@@ -299,8 +371,10 @@ namespace LambdaEngine
 		}
 	}
 
-	IAccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc& desc) const
+	IAccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
 		//TODO: Query this in some other way
 		if (this->vkCreateAccelerationStructureKHR == nullptr)
 		{
@@ -308,7 +382,7 @@ namespace LambdaEngine
 		}
 
 		AccelerationStructureVK* pAccelerationStructure = DBG_NEW AccelerationStructureVK(this);
-		if (!pAccelerationStructure->Init(desc))
+		if (!pAccelerationStructure->Init(pDesc))
 		{
 			pAccelerationStructure->Release();
 			return nullptr;
@@ -319,10 +393,12 @@ namespace LambdaEngine
 		}
 	}
 
-	ICommandList* GraphicsDeviceVK::CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc) const
+	ICommandList* GraphicsDeviceVK::CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc* pDesc) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
         CommandListVK* pCommandListVK = DBG_NEW CommandListVK(this);
-        if (!pCommandListVK->Init(pAllocator, desc))
+        if (!pCommandListVK->Init(pAllocator, pDesc))
         {
             pCommandListVK->Release();
             return nullptr;
@@ -371,7 +447,7 @@ namespace LambdaEngine
 			return nullptr;
 		}
         
-        ASSERT(queueFamilyIndex < uint32(m_QueueFamilyProperties.size()));
+        ASSERT(queueFamilyIndex < int32(m_QueueFamilyProperties.size()));
         ASSERT(index            < m_QueueFamilyProperties[queueFamilyIndex].queueCount);
 
 		CommandQueueVK* pQueue = DBG_NEW CommandQueueVK(this);
@@ -386,12 +462,14 @@ namespace LambdaEngine
 		}
 	}
 
-	IFence* GraphicsDeviceVK::CreateFence(const FenceDesc& desc) const
+	IFence* GraphicsDeviceVK::CreateFence(const FenceDesc* pDesc) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
 		if (IsDeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
 		{
 			FenceVK* pFenceVk = DBG_NEW FenceVK(this);
-			if (!pFenceVk->Init(desc))
+			if (!pFenceVk->Init(pDesc))
 			{
 				pFenceVk->Release();
 				return nullptr;
@@ -404,7 +482,7 @@ namespace LambdaEngine
 		else
 		{
 			FenceLegacyVK* pFenceLegacyVk = DBG_NEW FenceLegacyVK(this);
-			if (!pFenceLegacyVk->Init(desc))
+			if (!pFenceLegacyVk->Init(pDesc))
 			{
 				pFenceLegacyVk->Release();
 				return nullptr;
@@ -416,6 +494,12 @@ namespace LambdaEngine
 		}
 	}
 
+    IDeviceAllocator* GraphicsDeviceVK::CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const
+    {
+        VALIDATE(pDesc != nullptr);
+        return nullptr;
+    }
+    
 	void GraphicsDeviceVK::CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst) const
 	{
 		DescriptorSetVK*		pDstVk			= reinterpret_cast<DescriptorSetVK*>(pDst);
@@ -473,10 +557,12 @@ namespace LambdaEngine
 		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
 	}
 
-	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc& desc) const
+	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc* pDesc, IDeviceAllocator* pAllocator) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
 		BufferVK* pBuffer = DBG_NEW BufferVK(this);
-		if (!pBuffer->Init(desc))
+		if (!pBuffer->Init(pDesc, pAllocator))
 		{
             pBuffer->Release();
 			return nullptr;
@@ -487,10 +573,12 @@ namespace LambdaEngine
 		}
 	}
 
-	ITexture* GraphicsDeviceVK::CreateTexture(const TextureDesc& desc) const
+	ITexture* GraphicsDeviceVK::CreateTexture(const TextureDesc* pDesc, IDeviceAllocator* pAllocator) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
 		TextureVK* pTexture = DBG_NEW TextureVK(this);
-		if (!pTexture->Init(desc))
+		if (!pTexture->Init(pDesc))
 		{
             pTexture->Release();
 			return nullptr;
@@ -501,10 +589,12 @@ namespace LambdaEngine
 		}
 	}
 
-	ISampler* GraphicsDeviceVK::CreateSampler(const SamplerDesc& desc) const
+	ISampler* GraphicsDeviceVK::CreateSampler(const SamplerDesc* pDesc) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
 		SamplerVK* pSampler = DBG_NEW SamplerVK(this);
-		if (!pSampler->Init(desc))
+		if (!pSampler->Init(pDesc))
 		{
 			pSampler->Release();
 			return nullptr;
@@ -515,10 +605,12 @@ namespace LambdaEngine
 		}
 	}
 
-	ITextureView* GraphicsDeviceVK::CreateTextureView(const TextureViewDesc& desc) const
+	ITextureView* GraphicsDeviceVK::CreateTextureView(const TextureViewDesc* pDesc) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
         TextureViewVK* pTextureView = DBG_NEW TextureViewVK(this);
-        if (!pTextureView->Init(desc))
+        if (!pTextureView->Init(pDesc))
         {
             pTextureView->Release();
             return nullptr;
@@ -529,10 +621,12 @@ namespace LambdaEngine
 		}
 	}
 
-	IShader* GraphicsDeviceVK::CreateShader(const ShaderDesc& desc) const
+	IShader* GraphicsDeviceVK::CreateShader(const ShaderDesc* pDesc) const
 	{
+        VALIDATE(pDesc != nullptr);
+        
 		ShaderVK* pShader = DBG_NEW ShaderVK(this);
-		if (!pShader->Init(desc))
+		if (!pShader->Init(pDesc))
 		{
 			pShader->Release();
 			return nullptr;
@@ -543,10 +637,14 @@ namespace LambdaEngine
 		}
 	}
 
-    ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc& desc) const
+    ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc) const
     {
+        VALIDATE(pDesc          != nullptr);
+        VALIDATE(pWindow        != nullptr);
+        VALIDATE(pCommandQueue  != nullptr);
+        
         SwapChainVK* pSwapChain = DBG_NEW SwapChainVK(this);
-        if (!pSwapChain->Init(pWindow, pCommandQueue, desc))
+        if (!pSwapChain->Init(pWindow, pCommandQueue, pDesc))
         {
             pSwapChain->Release();
             return nullptr;
@@ -614,9 +712,9 @@ namespace LambdaEngine
 		return physicalDeviceProperties;
 	}
 
-	bool GraphicsDeviceVK::InitInstance(const GraphicsDeviceDesc& desc)
+	bool GraphicsDeviceVK::InitInstance(const GraphicsDeviceDesc* pDesc)
 	{
-		if (desc.Debug)
+		if (pDesc->Debug)
 		{
 			if (!SetEnabledValidationLayers())
 			{
@@ -651,7 +749,7 @@ namespace LambdaEngine
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
 
-		if (desc.Debug)
+		if (pDesc->Debug)
 		{
 			PopulateDebugMessengerCreateInfo(debugCreateInfo);
 
@@ -674,7 +772,7 @@ namespace LambdaEngine
 
 		RegisterInstanceExtensionData();
 
-		if (desc.Debug)
+		if (pDesc->Debug)
 		{
 			VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
 			PopulateDebugMessengerCreateInfo(createInfo);
@@ -690,7 +788,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool GraphicsDeviceVK::InitDevice(const GraphicsDeviceDesc& desc)
+	bool GraphicsDeviceVK::InitDevice(const GraphicsDeviceDesc* pDesc)
 	{
 		if (!InitPhysicalDevice())
 		{
@@ -698,7 +796,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!InitLogicalDevice(desc))
+		if (!InitLogicalDevice(pDesc))
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Could not initialize Logical Device!");
 			return false;
@@ -756,7 +854,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool GraphicsDeviceVK::InitLogicalDevice(const GraphicsDeviceDesc& desc)
+	bool GraphicsDeviceVK::InitLogicalDevice(const GraphicsDeviceDesc* pDesc)
 	{
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 		std::set<int32> uniqueQueueFamilies =
@@ -786,6 +884,7 @@ namespace LambdaEngine
 
 		VkPhysicalDeviceVulkan11Features deviceFeatures11 = {};
 		deviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+        deviceFeatures11.pNext  = nullptr;
 		deviceFeatures11.pNext	= &deviceFeatures12;
 
 		VkPhysicalDeviceFeatures deviceFeatures = {};
@@ -808,7 +907,7 @@ namespace LambdaEngine
 		createInfo.enabledExtensionCount    = (uint32)m_EnabledDeviceExtensions.size();
 		createInfo.ppEnabledExtensionNames  = m_EnabledDeviceExtensions.data();
 
-		if (desc.Debug)
+		if (pDesc->Debug)
 		{
 			createInfo.enabledLayerCount    = (uint32)m_EnabledValidationLayers.size();
 			createInfo.ppEnabledLayerNames  = m_EnabledValidationLayers.data();
@@ -824,8 +923,11 @@ namespace LambdaEngine
 			LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to create logical device!");
 			return false;
 		}
-
-		return true;
+        else
+        {
+            D_LOG_MESSAGE("[GraphicsDeviceVK]: Created Device");
+            return true;
+        }
 	}
 
 	bool GraphicsDeviceVK::SetEnabledValidationLayers()

@@ -16,7 +16,7 @@ namespace LambdaEngine
 		GraphicsPipelineStateVK(const GraphicsDeviceVK* pDevice);
 		~GraphicsPipelineStateVK();
 
-		bool Init(const GraphicsPipelineStateDesc& desc);
+		bool Init(const GraphicsPipelineStateDesc* pDesc);
 
         FORCEINLINE VkPipeline GetPipeline() const
         {
@@ -36,10 +36,10 @@ namespace LambdaEngine
 		bool CreateShaderData(std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,
 			std::vector<VkSpecializationInfo>& shaderStagesSpecializationInfos,
 			std::vector<std::vector<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps,
-			const GraphicsPipelineStateDesc& desc);
+			const GraphicsPipelineStateDesc* pDesc);
 
 	private:
-		VkPipeline m_Pipeline;
+		VkPipeline m_Pipeline = VK_NULL_HANDLE;
 
 		VkPipelineInputAssemblyStateCreateInfo	m_InputAssembly;
 		VkPipelineRasterizationStateCreateInfo	m_RasterizerState;
@@ -47,6 +47,6 @@ namespace LambdaEngine
 		VkPipelineColorBlendStateCreateInfo		m_BlendState;
 		VkPipelineDepthStencilStateCreateInfo	m_DepthStencilState;
 
-		VkPipelineColorBlendAttachmentState*	m_pColorBlendAttachmentStates;
+		VkPipelineColorBlendAttachmentState*	m_pColorBlendAttachmentStates = nullptr;
 	};
 }

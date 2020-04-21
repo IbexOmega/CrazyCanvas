@@ -17,7 +17,7 @@ namespace LambdaEngine
 		RayTracingPipelineStateVK(const GraphicsDeviceVK* pDevice);
 		~RayTracingPipelineStateVK();
 
-		bool Init(const RayTracingPipelineStateDesc& desc);
+		bool Init(const RayTracingPipelineStateDesc* pDesc);
 
 		FORCEINLINE VkDeviceSize GetBindingOffsetRaygenGroup()	const { return m_BindingOffsetRaygenShaderGroup; }
 		FORCEINLINE VkDeviceSize GetBindingOffsetHitGroup()		const { return m_BindingOffsetHitShaderGroup; }
@@ -51,7 +51,7 @@ namespace LambdaEngine
 			std::vector<VkSpecializationInfo>& shaderStagesSpecializationInfos,
 			std::vector<std::vector<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps,
 			std::vector<VkRayTracingShaderGroupCreateInfoKHR>& shaderGroups,
-			const RayTracingPipelineStateDesc& desc);
+			const RayTracingPipelineStateDesc* pDesc);
 
 	private:
 		VkPipeline	m_Pipeline  = VK_NULL_HANDLE;

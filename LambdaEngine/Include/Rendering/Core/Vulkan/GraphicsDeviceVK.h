@@ -35,8 +35,11 @@ namespace LambdaEngine
 		GraphicsDeviceVK();
 		~GraphicsDeviceVK();
 
-		bool Init(const GraphicsDeviceDesc& desc);
+		bool Init(const GraphicsDeviceDesc* pDesc);
 
+        VkResult AllocateMemory(const VkMemoryRequirements* pMemoryRequirements, VkDeviceMemory* pDeviceMemory, VkMemoryPropertyFlags memoryProperties) const;
+        void FreeMemory(VkDeviceMemory deviceMemory) const;
+        
         void DestroyRenderPass(VkRenderPass* pRenderPass) const;
         void DestroyImageView(VkImageView* pImageView) const;
 		
@@ -62,43 +65,45 @@ namespace LambdaEngine
 		}
 
 		// IGraphicsDevice Interface
-		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc& desc) const override final;
-		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc& desc) const override final;
+		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const override final;
+		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const override final;
 
 		virtual IDescriptorSet* CreateDescriptorSet(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const override final;
 
-		virtual IRenderPass*	CreateRenderPass(const RenderPassDesc& desc)	const override final;
-		virtual ITextureView*	CreateTextureView(const TextureViewDesc& desc)	const override final;
+		virtual IRenderPass*	CreateRenderPass(const RenderPassDesc* pDesc)	const override final;
+		virtual ITextureView*	CreateTextureView(const TextureViewDesc* pDesc)	const override final;
 
-		virtual IShader*	CreateShader(const ShaderDesc& desc)	const override final;
+		virtual IShader*	CreateShader(const ShaderDesc* pDesc)	const override final;
 
-		virtual IBuffer*	CreateBuffer(const BufferDesc& desc)	const override final;
-		virtual ITexture*	CreateTexture(const TextureDesc& desc)	const override final;
-		virtual ISampler*	CreateSampler(const SamplerDesc& desc)	const override final;
+		virtual IBuffer*	CreateBuffer(const BufferDesc* pDesc, IDeviceAllocator* pAllocator)	    const override final;
+		virtual ITexture*	CreateTexture(const TextureDesc* pDesc, IDeviceAllocator* pAllocator)	const override final;
+		virtual ISampler*	CreateSampler(const SamplerDesc* pDesc)	                                const override final;
 
-		virtual ISwapChain* CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc& desc)	const override final;
+		virtual ISwapChain* CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)	const override final;
 
-		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) 	  const override final;
-		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineStateDesc& desc) 	  const override final;
-		virtual IPipelineState* CreateRayTracingPipelineState(const RayTracingPipelineStateDesc& desc) const override final;
+		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) 	  const override final;
+		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 	  const override final;
+		virtual IPipelineState* CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const override final;
 
-		virtual IAccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc& desc) const override final;
+		virtual IAccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const override final;
 
 		virtual ICommandQueue*		CreateCommandQueue(const char* pName, ECommandQueueType queueType)				const override final;
 		virtual ICommandAllocator*	CreateCommandAllocator(const char* pName, ECommandQueueType queueType)			const override final;
-		virtual ICommandList*		CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc)	const override final;
-		virtual IFence*				CreateFence(const FenceDesc& desc)												const override final;
+		virtual ICommandList*		CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc* pDesc)	const override final;
+		virtual IFence*				CreateFence(const FenceDesc* pDesc)												const override final;
 
+        virtual IDeviceAllocator* CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const override final;
+        
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst)																			const override final;
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const override final;
 
 		virtual void Release() override final;
 
 	private:
-		bool InitInstance(const GraphicsDeviceDesc& desc);
-		bool InitDevice(const GraphicsDeviceDesc& desc);
+		bool InitInstance(const GraphicsDeviceDesc* pDesc);
+		bool InitDevice(const GraphicsDeviceDesc* pDesc);
 		bool InitPhysicalDevice();
-		bool InitLogicalDevice(const GraphicsDeviceDesc& desc);
+		bool InitLogicalDevice(const GraphicsDeviceDesc* pDesc);
 
 		bool SetEnabledValidationLayers();
 		bool SetEnabledInstanceExtensions();
@@ -158,6 +163,8 @@ namespace LambdaEngine
         mutable uint32 m_NextGraphicsQueue  = 0;
         mutable uint32 m_NextComputeQueue   = 0;
         mutable uint32 m_NextTransferQueue  = 0;
+        
+        mutable uint32 m_UsedAllocations = 0;
         
 		std::vector<const char*>	m_EnabledValidationLayers;
 		std::vector<const char*>	m_EnabledInstanceExtensions;

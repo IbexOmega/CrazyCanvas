@@ -80,7 +80,7 @@ namespace LambdaEngine
         m_Buffers.clear();
     }
 
-    bool SwapChainVK::Init(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc& desc)
+    bool SwapChainVK::Init(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)
     {
         //Create platform specific surface
 #if defined(LAMBDA_PLATFORM_MACOS)
@@ -139,9 +139,9 @@ namespace LambdaEngine
         semaphoreInfo.flags = 0;
 
         //Create semaphores
-        m_ImageSemaphores.resize(desc.BufferCount);
-        m_RenderSemaphores.resize(desc.BufferCount);
-        for (uint32 i = 0; i < desc.BufferCount; i++)
+        m_ImageSemaphores.resize(pDesc->BufferCount);
+        m_RenderSemaphores.resize(pDesc->BufferCount);
+        for (uint32 i = 0; i < pDesc->BufferCount; i++)
         {
             VkResult result = vkCreateSemaphore(m_pDevice->Device, &semaphoreInfo, nullptr, &m_ImageSemaphores[i]);
             if (result != VK_SUCCESS)
@@ -157,11 +157,11 @@ namespace LambdaEngine
                 return false;
             }
 
-            std::string name = std::string(desc.pName) + " ImageSemaphore[" + std::to_string(i) + "]";
+            std::string name = std::string(pDesc->pName) + " ImageSemaphore[" + std::to_string(i) + "]";
             m_pDevice->SetVulkanObjectName(name.c_str(), (uint64)m_ImageSemaphores[i], VK_OBJECT_TYPE_SEMAPHORE);
             D_LOG_MESSAGE("[SwapChainVK]: Created Semaphore %p", m_ImageSemaphores[i]);
 
-            name = std::string(desc.pName) + " RenderSemaphore[" + std::to_string(i) + "]";
+            name = std::string(pDesc->pName) + " RenderSemaphore[" + std::to_string(i) + "]";
             m_pDevice->SetVulkanObjectName(name.c_str(), (uint64)m_RenderSemaphores[i], VK_OBJECT_TYPE_SEMAPHORE);
             D_LOG_MESSAGE("[SwapChainVK]: Created Semaphore %p", m_RenderSemaphores[i]);
         }
@@ -179,7 +179,7 @@ namespace LambdaEngine
         vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, formats.data());
 
         //Find the swapchain format we want
-        VkFormat lookingFor = ConvertFormat(desc.Format);
+        VkFormat lookingFor = ConvertFormat(pDesc->Format);
         m_VkFormat = { VK_FORMAT_UNDEFINED, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
         for (const VkSurfaceFormatKHR& availableFormat : formats)
         {
@@ -218,7 +218,7 @@ namespace LambdaEngine
         vkGetPhysicalDeviceSurfacePresentModesKHR(m_pDevice->PhysicalDevice, m_Surface, &presentModeCount, presentModes.data());
 
         m_PresentationMode = VK_PRESENT_MODE_FIFO_KHR;
-        if (!desc.VerticalSync)
+        if (!pDesc->VerticalSync)
         {
             //Search for the mailbox mode
             for (const VkPresentModeKHR& availablePresentMode : presentModes)
@@ -254,21 +254,20 @@ namespace LambdaEngine
             return false;
         }
 
-        if (desc.BufferCount < capabilities.minImageCount || desc.BufferCount > capabilities.maxImageCount)
+        if (pDesc->BufferCount < capabilities.minImageCount || pDesc->BufferCount > capabilities.maxImageCount)
         {
-            LOG_ERROR("[SwapChainVK]: Number of buffers(=%u) is not supported. MinBuffers=%u MaxBuffers=%u", desc.BufferCount, capabilities.minImageCount, capabilities.maxImageCount);
+            LOG_ERROR("[SwapChainVK]: Number of buffers(=%u) is not supported. MinBuffers=%u MaxBuffers=%u", pDesc->BufferCount, capabilities.minImageCount, capabilities.maxImageCount);
             return false;
         }
 
-        D_LOG_MESSAGE("[SwapChainVK]: Number of buffers in SwapChain '%u'", desc.BufferCount);
-        
-        m_Desc      = desc;
+        D_LOG_MESSAGE("[SwapChainVK]: Number of buffers in SwapChain '%u'", pDesc->BufferCount);
+        memcpy(&m_Desc, pDesc, sizeof(m_Desc));
         m_pWindow   = pWindow;
 
         m_pCommandQueue = reinterpret_cast<CommandQueueVK*>(pCommandQueue);
         m_pCommandQueue->AddRef();
 
-        return InitSwapChain(desc.Width, desc.Height);
+        return InitSwapChain(pDesc->Width, pDesc->Height);
     }
 
     bool SwapChainVK::InitSwapChain(uint32 width, uint32 height)
@@ -385,7 +384,7 @@ namespace LambdaEngine
             desc.SampleCount    = 1;
 
             TextureVK* pTexture = DBG_NEW TextureVK(m_pDevice);
-            pTexture->InitWithImage(textures[i], desc);
+            pTexture->InitWithImage(textures[i], &desc);
             m_Buffers.emplace_back(pTexture);
         }
 

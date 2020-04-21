@@ -21,52 +21,52 @@ namespace LambdaEngine
         SAFERELEASE(m_pTexture);
     }
 
-    bool TextureViewVK::Init(const TextureViewDesc& desc)
+    bool TextureViewVK::Init(const TextureViewDesc* pDesc)
     {
-        TextureVK*  pTextureVk  = reinterpret_cast<TextureVK*>(desc.pTexture);
+        TextureVK*  pTextureVk  = reinterpret_cast<TextureVK*>(pDesc->pTexture);
         TextureDesc textureDesc = pTextureVk->GetDesc();
         
-        ASSERT(desc.Format == textureDesc.Format);
+        ASSERT(pDesc->Format == textureDesc.Format);
         
         VkImageViewCreateInfo createInfo = {};
         createInfo.sType                            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         createInfo.pNext                            = nullptr;
         createInfo.flags                            = 0;
-        createInfo.format                           = ConvertFormat(desc.Format);
+        createInfo.format                           = ConvertFormat(pDesc->Format);
         createInfo.image                            = pTextureVk->GetImage();
         createInfo.components.r                     = VK_COMPONENT_SWIZZLE_R;
         createInfo.components.g                     = VK_COMPONENT_SWIZZLE_G;
         createInfo.components.b                     = VK_COMPONENT_SWIZZLE_B;
         createInfo.components.a                     = VK_COMPONENT_SWIZZLE_A;
-        createInfo.subresourceRange.baseArrayLayer  = desc.ArrayIndex;
-        createInfo.subresourceRange.layerCount      = desc.ArrayCount;
-        createInfo.subresourceRange.baseMipLevel    = desc.Miplevel;
-        createInfo.subresourceRange.levelCount      = desc.MiplevelCount;
+        createInfo.subresourceRange.baseArrayLayer  = pDesc->ArrayIndex;
+        createInfo.subresourceRange.layerCount      = pDesc->ArrayCount;
+        createInfo.subresourceRange.baseMipLevel    = pDesc->Miplevel;
+        createInfo.subresourceRange.levelCount      = pDesc->MiplevelCount;
         
-        if ((desc.Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET)   ||
-			(desc.Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE) ||
-			(desc.Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS))
+        if ((pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET)   ||
+			(pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE) ||
+			(pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS))
         {
             createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         }
-        else if (desc.Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL)
+        else if (pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL)
         {
             createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         }
         
-        if (desc.Type == ETextureViewType::TEXTURE_VIEW_1D)
+        if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_1D)
         {
             createInfo.viewType = VK_IMAGE_VIEW_TYPE_1D;
         }
-        else if (desc.Type == ETextureViewType::TEXTURE_VIEW_2D)
+        else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_2D)
         {
             createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         }
-        else if (desc.Type == ETextureViewType::TEXTURE_VIEW_3D)
+        else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_3D)
         {
             createInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
         }
-        else if (desc.Type == ETextureViewType::TEXTURE_VIEW_CUBE)
+        else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_CUBE)
         {
             createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
         }
@@ -79,9 +79,11 @@ namespace LambdaEngine
         }
         else
         {
-            m_Desc = desc;
-            SetName(desc.pName);
+            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
+            SetName(pDesc->pName);
         
+            D_LOG_MESSAGE("[TextureViewVK]: Created ImageView");
+            
             pTextureVk->AddRef();
             m_pTexture = pTextureVk;
 

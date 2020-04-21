@@ -16,7 +16,7 @@ namespace LambdaEngine
 		ComputePipelineStateVK(const GraphicsDeviceVK* pDevice);
 		~ComputePipelineStateVK();
 
-		bool Init(const ComputePipelineStateDesc& desc);
+		bool Init(const ComputePipelineStateDesc* pDesc);
 
         FORCEINLINE VkPipeline GetPipeline() const 
         {

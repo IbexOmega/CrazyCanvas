@@ -254,7 +254,7 @@ namespace LambdaEngine
 				sceneMaterialPropertiesBufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 				sceneMaterialPropertiesBufferDesc.SizeInBytes	= sceneMaterialPropertiesSize;
 
-				m_pSceneMaterialProperties = m_pGraphicsDevice->CreateBuffer(sceneMaterialPropertiesBufferDesc);
+				m_pSceneMaterialProperties = m_pGraphicsDevice->CreateBuffer(&sceneMaterialPropertiesBufferDesc, nullptr);
 			}
 
 			void* pMapped = m_pSceneMaterialProperties->Map();
@@ -275,7 +275,7 @@ namespace LambdaEngine
 				sceneVertexBufferDesc.Flags						= FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
 				sceneVertexBufferDesc.SizeInBytes				= sceneVertexBufferSize;
 
-				m_pSceneVertexBuffer = m_pGraphicsDevice->CreateBuffer(sceneVertexBufferDesc);
+				m_pSceneVertexBuffer = m_pGraphicsDevice->CreateBuffer(&sceneVertexBufferDesc, nullptr);
 			}
 
 			void* pMapped = m_pSceneVertexBuffer->Map();
@@ -296,7 +296,7 @@ namespace LambdaEngine
 				sceneIndexBufferDesc.Flags						= FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
 				sceneIndexBufferDesc.SizeInBytes				= sceneIndexBufferSize;
 
-				m_pSceneIndexBuffer = m_pGraphicsDevice->CreateBuffer(sceneIndexBufferDesc);
+				m_pSceneIndexBuffer = m_pGraphicsDevice->CreateBuffer(&sceneIndexBufferDesc, nullptr);
 			}
 
 			void* pMapped = m_pSceneIndexBuffer->Map();
@@ -317,7 +317,7 @@ namespace LambdaEngine
 				sceneInstanceBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 				sceneInstanceBufferDesc.SizeInBytes				= sceneIndexBufferSize;
 
-				m_pSceneInstanceBuffer = m_pGraphicsDevice->CreateBuffer(sceneInstanceBufferDesc);
+				m_pSceneInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&sceneInstanceBufferDesc, nullptr);
 			}
 
 			void* pMapped = m_pSceneInstanceBuffer->Map();
@@ -339,7 +339,7 @@ namespace LambdaEngine
 				sceneMeshIndexBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDIRECT_BUFFER;
 				sceneMeshIndexBufferDesc.SizeInBytes			= sceneMeshIndexBufferSize;
 
-				m_pSceneMeshIndexBuffer = m_pGraphicsDevice->CreateBuffer(sceneMeshIndexBufferDesc);
+				m_pSceneMeshIndexBuffer = m_pGraphicsDevice->CreateBuffer(&sceneMeshIndexBufferDesc, nullptr);
 			}
 
 			void* pMapped = m_pSceneMeshIndexBuffer->Map();
@@ -355,7 +355,7 @@ namespace LambdaEngine
 			sceneMeshIndexBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
 			sceneMeshIndexBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
 
-			m_pPerFrameBuffer = m_pGraphicsDevice->CreateBuffer(sceneMeshIndexBufferDesc);
+			m_pPerFrameBuffer = m_pGraphicsDevice->CreateBuffer(&sceneMeshIndexBufferDesc, nullptr);
 		}
 
 		m_pName = desc.pName;

@@ -6,9 +6,9 @@
 
 namespace LambdaEngine
 {
-	RenderPassVK::RenderPassVK(const GraphicsDeviceVK* pDevice) :
-		TDeviceChild(pDevice),
-		m_RenderPass(VK_NULL_HANDLE)
+	RenderPassVK::RenderPassVK(const GraphicsDeviceVK* pDevice)
+        : TDeviceChild(pDevice),
+        m_Desc()
 	{
 	}
 
@@ -17,18 +17,18 @@ namespace LambdaEngine
         m_pDevice->DestroyRenderPass(&m_RenderPass);
 	}
 
-	bool RenderPassVK::Init(const RenderPassDesc& desc)
+	bool RenderPassVK::Init(const RenderPassDesc* pDesc)
 	{
 		SubpassData				subpasses[MAX_SUBPASSES];
 		VkSubpassDependency		subpassDependencies[MAX_SUBPASS_DEPENDENCIES];
 		VkAttachmentDescription attachments[MAX_COLOR_ATTACHMENTS];
 
-		CreateAttachmentDescriptions(desc, attachments);
-		CreateSubpassDescriptions(desc, subpasses);
-		CreateSubpassDependencies(desc, subpassDependencies);
+		CreateAttachmentDescriptions(pDesc, attachments);
+		CreateSubpassDescriptions(pDesc, subpasses);
+		CreateSubpassDependencies(pDesc, subpassDependencies);
 
 		VkSubpassDescription subpassDescriptions[MAX_SUBPASSES];
-		for (uint32 i = 0; i < desc.SubpassCount; i++)
+		for (uint32 i = 0; i < pDesc->SubpassCount; i++)
 		{
 			subpassDescriptions[i] = subpasses[i].Subpass;
 		}
@@ -37,18 +37,18 @@ namespace LambdaEngine
 		renderPassCreateInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassCreateInfo.pNext				= nullptr;
 		renderPassCreateInfo.flags				= NULL;
-		renderPassCreateInfo.attachmentCount	= desc.AttachmentCount;
+		renderPassCreateInfo.attachmentCount	= pDesc->AttachmentCount;
 		renderPassCreateInfo.pAttachments		= attachments;
-		renderPassCreateInfo.subpassCount		= desc.SubpassCount;
+		renderPassCreateInfo.subpassCount		= pDesc->SubpassCount;
 		renderPassCreateInfo.pSubpasses			= subpassDescriptions;
-		renderPassCreateInfo.dependencyCount	= desc.SubpassDependencyCount;
+		renderPassCreateInfo.dependencyCount	= pDesc->SubpassDependencyCount;
 		renderPassCreateInfo.pDependencies		= subpassDependencies;
 
 		if (vkCreateRenderPass(m_pDevice->Device, &renderPassCreateInfo, nullptr, &m_RenderPass) != VK_SUCCESS)
 		{
-			if (desc.pName)
+			if (pDesc->pName)
 			{
-				LOG_ERROR("[RenderPassVK]: vkCreateRenderPass failed for \"%s\"", desc.pName);
+				LOG_ERROR("[RenderPassVK]: vkCreateRenderPass failed for \"%s\"", pDesc->pName);
 			}
 			else
 			{
@@ -59,16 +59,16 @@ namespace LambdaEngine
 		}
 		else
 		{
-			m_Desc = desc;
-			SetName(desc.pName);
+            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
+			SetName(pDesc->pName);
 
-			if (desc.pName)
+			if (pDesc->pName)
 			{
-				D_LOG_MESSAGE("[RenderPassVK]: Renderpass \"%s\" successfully initialized!", desc.pName);
+				D_LOG_MESSAGE("[RenderPassVK]: Renderpass \"%s\" successfully initialized", pDesc->pName);
 			}
 			else
 			{
-				D_LOG_MESSAGE("[RenderPassVK]: Renderpass successfully initialized!");
+				D_LOG_MESSAGE("[RenderPassVK]: Renderpass successfully initialized");
 			}
 
 			return true;
@@ -86,13 +86,13 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderPassVK::CreateAttachmentDescriptions(const RenderPassDesc& desc, VkAttachmentDescription* pResultAttachments)
+	void RenderPassVK::CreateAttachmentDescriptions(const RenderPassDesc* pDesc, VkAttachmentDescription* pResultAttachments)
 	{
-		ASSERT(desc.AttachmentCount <= MAX_COLOR_ATTACHMENTS);
+		ASSERT(pDesc->AttachmentCount <= MAX_COLOR_ATTACHMENTS);
 
-		for (uint32 i = 0; i < desc.AttachmentCount; i++)
+		for (uint32 i = 0; i < pDesc->AttachmentCount; i++)
 		{
-			const RenderPassAttachmentDesc& attachment		= desc.pAttachments[i];
+			const RenderPassAttachmentDesc& attachment		= pDesc->pAttachments[i];
 			VkAttachmentDescription&		vkAttachment	= pResultAttachments[i];
 
 			vkAttachment = {};
@@ -108,14 +108,14 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderPassVK::CreateSubpassDescriptions(const RenderPassDesc& desc, SubpassData* pResultSubpasses)
+	void RenderPassVK::CreateSubpassDescriptions(const RenderPassDesc* pDesc, SubpassData* pResultSubpasses)
 	{
-		ASSERT(desc.SubpassCount <= MAX_SUBPASSES);
+		ASSERT(pDesc->SubpassCount <= MAX_SUBPASSES);
 
-		for (uint32 i = 0; i < desc.SubpassCount; i++)
+		for (uint32 i = 0; i < pDesc->SubpassCount; i++)
 		{
 			VkSubpassDescription&			vkSubpass	= pResultSubpasses[i].Subpass;
-			const RenderPassSubpassDesc&	subpass		= desc.pSubpasses[i];
+			const RenderPassSubpassDesc&	subpass		= pDesc->pSubpasses[i];
 
 			ASSERT(subpass.InputAttachmentCount <= MAX_COLOR_ATTACHMENTS);
 			ASSERT(subpass.RenderTargetCount	<= MAX_COLOR_ATTACHMENTS);
@@ -199,18 +199,18 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderPassVK::CreateSubpassDependencies(const RenderPassDesc& desc, VkSubpassDependency* pResultSubpassDependencies)
+	void RenderPassVK::CreateSubpassDependencies(const RenderPassDesc* pDesc, VkSubpassDependency* pResultSubpassDependencies)
 	{
-		ASSERT(desc.SubpassDependencyCount <= MAX_SUBPASS_DEPENDENCIES);
+		ASSERT(pDesc->SubpassDependencyCount <= MAX_SUBPASS_DEPENDENCIES);
 
-		for (uint32 i = 0; i < desc.SubpassDependencyCount; i++)
+		for (uint32 i = 0; i < pDesc->SubpassDependencyCount; i++)
 		{
 			VkSubpassDependency&					vkSubpassDependency = pResultSubpassDependencies[i];
-			const RenderPassSubpassDependencyDesc&	subpassDependency	= desc.pSubpassDependencies[i];
+			const RenderPassSubpassDependencyDesc&	subpassDependency	= pDesc->pSubpassDependencies[i];
 
 			vkSubpassDependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-			vkSubpassDependency.srcSubpass		= subpassDependency.SrcSubpass != EXTERNAL_SUBPASS ? subpassDependency.SrcSubpass : VK_SUBPASS_EXTERNAL;
-			vkSubpassDependency.dstSubpass		= subpassDependency.DstSubpass != EXTERNAL_SUBPASS ? subpassDependency.DstSubpass : VK_SUBPASS_EXTERNAL;
+			vkSubpassDependency.srcSubpass		= (subpassDependency.SrcSubpass != EXTERNAL_SUBPASS) ? subpassDependency.SrcSubpass : VK_SUBPASS_EXTERNAL;
+			vkSubpassDependency.dstSubpass		= (subpassDependency.DstSubpass != EXTERNAL_SUBPASS) ? subpassDependency.DstSubpass : VK_SUBPASS_EXTERNAL;
 			vkSubpassDependency.srcStageMask	= ConvertPipelineStage(subpassDependency.SrcStageMask);
 			vkSubpassDependency.dstStageMask	= ConvertPipelineStage(subpassDependency.DstStageMask);
 			vkSubpassDependency.srcAccessMask	= ConvertMemoryAccessFlags(subpassDependency.SrcAccessMask);

@@ -114,7 +114,7 @@ Sandbox::Sandbox()
 	samplerDesc.MinLOD				= 0.0f;
 	samplerDesc.MaxLOD				= 1.0f;
 
-	m_pLinearSampler = RenderSystem::GetDevice()->CreateSampler(samplerDesc);
+	m_pLinearSampler = RenderSystem::GetDevice()->CreateSampler(&samplerDesc);
 
 	std::vector<RenderStageDesc> renderStages;
 

@@ -14,9 +14,10 @@ namespace LambdaEngine
     struct TextureViewDesc;
 	struct PipelineLayoutDesc;
 	struct DescriptorHeapDesc;
+    struct DeviceAllocatorDesc;
     struct ComputePipelineStateDesc;
     struct GraphicsPipelineStateDesc;
-	struct AccelerationStructureDesc;
+    struct AccelerationStructureDesc;
     struct RayTracingPipelineStateDesc;
 
     class Window;
@@ -35,7 +36,8 @@ namespace LambdaEngine
 	class IPipelineState;
 	class IDescriptorHeap;
 	class IPipelineLayout;
-	class ICommandAllocator;
+    class IDeviceAllocator;
+    class ICommandAllocator;
 	class IAccelerationStructure;
 
 	enum class EGraphicsAPI
@@ -61,33 +63,35 @@ namespace LambdaEngine
 	public:
 		DECL_DEVICE_INTERFACE(IGraphicsDevice);
 
-		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc& desc) const = 0;
-		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc& desc) const = 0;
+		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const = 0;
+		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const = 0;
 
 		virtual IDescriptorSet*	CreateDescriptorSet(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const = 0;
 
-		virtual IRenderPass*  CreateRenderPass(const RenderPassDesc& desc)	 const = 0;
-		virtual ITextureView* CreateTextureView(const TextureViewDesc& desc) const = 0;
+		virtual IRenderPass*  CreateRenderPass(const RenderPassDesc* pDesc)	 const = 0;
+		virtual ITextureView* CreateTextureView(const TextureViewDesc* pDesc) const = 0;
 		
-		virtual IShader* CreateShader(const ShaderDesc& desc)	const = 0;
+		virtual IShader* CreateShader(const ShaderDesc* pDesc)	const = 0;
 
-		virtual IBuffer*  CreateBuffer(const BufferDesc& desc)	const = 0;
-		virtual ITexture* CreateTexture(const TextureDesc& desc)	const = 0;
-		virtual ISampler* CreateSampler(const SamplerDesc& desc)	const = 0;
+		virtual IBuffer*  CreateBuffer(const BufferDesc* pDesc, IDeviceAllocator* pAllocator)	const = 0;
+		virtual ITexture* CreateTexture(const TextureDesc* pDesc, IDeviceAllocator* pAllocator)	const = 0;
+		virtual ISampler* CreateSampler(const SamplerDesc* pDesc)	const = 0;
 
-        virtual ISwapChain*	CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc& desc)	const = 0;
+        virtual ISwapChain*	CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)	const = 0;
 
-		virtual IPipelineState*	CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) 	  const = 0;
-		virtual IPipelineState*	CreateComputePipelineState(const ComputePipelineStateDesc& desc) 	  const = 0;
-		virtual IPipelineState*	CreateRayTracingPipelineState(const RayTracingPipelineStateDesc& desc) const = 0;
+		virtual IPipelineState*	CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) 	const = 0;
+		virtual IPipelineState*	CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 	    const = 0;
+		virtual IPipelineState*	CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const = 0;
 		
-		virtual IAccelerationStructure*	CreateAccelerationStructure(const AccelerationStructureDesc& desc) const = 0;
+		virtual IAccelerationStructure*	CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const = 0;
 		
-		virtual ICommandQueue*		CreateCommandQueue(const char* pName, ECommandQueueType queueType)			  const = 0;
-		virtual ICommandAllocator*	CreateCommandAllocator(const char* pName, ECommandQueueType queueType)		  const = 0;
-		virtual ICommandList*		CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc& desc) const = 0;
-		virtual IFence*				CreateFence(const FenceDesc& desc)											  const = 0;
+		virtual ICommandQueue*		CreateCommandQueue(const char* pName, ECommandQueueType queueType)			    const = 0;
+		virtual ICommandAllocator*	CreateCommandAllocator(const char* pName, ECommandQueueType queueType)		    const = 0;
+		virtual ICommandList*		CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc* pDesc)  const = 0;
+		virtual IFence*				CreateFence(const FenceDesc* pDesc)											    const = 0;
 
+        virtual IDeviceAllocator* CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const = 0;
+        
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst)																			const = 0;
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const = 0;
 
@@ -99,5 +103,5 @@ namespace LambdaEngine
 		virtual void Release() = 0;
 	};
 
-	LAMBDA_API IGraphicsDevice* CreateGraphicsDevice(EGraphicsAPI api, const GraphicsDeviceDesc& desc);
+	LAMBDA_API IGraphicsDevice* CreateGraphicsDevice(EGraphicsAPI api, const GraphicsDeviceDesc* pDesc);
 }
