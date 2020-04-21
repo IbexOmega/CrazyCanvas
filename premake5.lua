@@ -34,8 +34,7 @@ workspace "LambdaEngine"
         defines
         {
             "_DEBUG",
-            "LAMBDA_DEBUG",
-            "LAMBDA_DEVELOP",
+            "LAMBDA_CONFIG_DEBUG",
         }
     filter "configurations:Release"
         symbols "on"
@@ -44,8 +43,7 @@ workspace "LambdaEngine"
         defines
         {
             "NDEBUG",
-            "LAMBDA_RELEASE",
-            "LAMBDA_DEVELOP",
+            "LAMBDA_CONFIG_RELEASE",
         }
     filter "configurations:Production"
         symbols "off"
@@ -54,7 +52,7 @@ workspace "LambdaEngine"
         defines
         {
             "NDEBUG",
-            "LAMBDA_PRODUCTION",
+            "LAMBDA_CONFIG_PRODUCTION",
         }
     filter {}
 

@@ -16,7 +16,7 @@ namespace LambdaEngine
 		DescriptorHeapVK(const GraphicsDeviceVK* pDevice);
 		~DescriptorHeapVK();
 
-		bool Init(const DescriptorHeapDesc& desc);
+		bool Init(const DescriptorHeapDesc* pDesc);
 
 		VkDescriptorSet AllocateDescriptorSet(const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex);
 		void			FreeDescriptorSet(VkDescriptorSet descriptorSet);

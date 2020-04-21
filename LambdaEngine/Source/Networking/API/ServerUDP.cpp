@@ -122,40 +122,37 @@ namespace LambdaEngine
 				break;
 			}
 
+			if (bytesReceived < 0)
+				continue;
+
 			if (m_PacketLoss > 0.0f)
 				if (Random::Float32() <= m_PacketLoss)
 					continue;
 
 
-			ClientUDPRemote* pClient = nullptr;
+			bool newConnection = false;
+			ClientUDPRemote* pClient = GetOrCreateClient(sender, newConnection);
+
+			if (newConnection)
 			{
-				std::scoped_lock<SpinLock> lock(m_LockClients);
-				auto pIterator = m_Clients.find(sender);
-				if (pIterator != m_Clients.end())
+				if (!IsAcceptingConnections())
 				{
-					pClient = pIterator->second;
+					SendServerNotAccepting(pClient);
+					pClient->Release();
+					continue;
+				}
+				else if (m_Clients.size() >= m_MaxClients)
+				{
+					SendServerFull(pClient);
+					pClient->Release();
+					continue;
 				}
 				else
 				{
-					pClient = DBG_NEW ClientUDPRemote(m_PacketsPerClient, m_MaxTries, sender, this);
-					if (!IsAcceptingConnections())
-					{
-						SendServerNotAccepting(pClient);
-						pClient->Release();
-						continue;
-					}
-					else if(m_Clients.size() >= m_MaxClients)
-					{
-						SendServerFull(pClient);
-						pClient->Release();
-						continue;
-					}
-					else
-					{
-						m_Clients.insert({ sender, pClient });
-					}
+					m_Clients.insert({ sender, pClient });
 				}
 			}
+
 			pClient->OnDataReceived(m_pReceiveBuffer, bytesReceived);
 		}
 	}
@@ -207,9 +204,25 @@ namespace LambdaEngine
 		}
 	}
 
-	IClientUDPHandler* ServerUDP::CreateClientUDPHandler()
+	IClientUDPRemoteHandler* ServerUDP::CreateClientUDPHandler()
 	{
 		return m_pHandler->CreateClientUDPHandler();
+	}
+
+	ClientUDPRemote* ServerUDP::GetOrCreateClient(const IPEndPoint& sender, bool& newConnection)
+	{
+		std::scoped_lock<SpinLock> lock(m_LockClients);
+		auto pIterator = m_Clients.find(sender);
+		if (pIterator != m_Clients.end())
+		{
+			newConnection = false;
+			return pIterator->second;
+		}
+		else
+		{
+			newConnection = true;
+			return DBG_NEW ClientUDPRemote(m_PacketsPerClient, m_MaxTries, sender, this);
+		}
 	}
 
 	void ServerUDP::OnClientDisconnected(ClientUDPRemote* client, bool sendDisconnectPacket)
@@ -223,19 +236,19 @@ namespace LambdaEngine
 
 	void ServerUDP::SendDisconnect(ClientUDPRemote* client)
 	{
-		client->SendUnreliable(client->GetFreePacket(NetworkPacket::TYPE_DISCONNECT));
+		client->m_PacketManager.EnqueuePacket(client->GetFreePacket(NetworkPacket::TYPE_DISCONNECT));
 		client->SendPackets();
 	}
 
 	void ServerUDP::SendServerFull(ClientUDPRemote* client)
 	{
-		client->SendUnreliable(client->GetFreePacket(NetworkPacket::TYPE_SERVER_FULL));
+		client->m_PacketManager.EnqueuePacket(client->GetFreePacket(NetworkPacket::TYPE_SERVER_FULL));
 		client->SendPackets();
 	}
 
 	void ServerUDP::SendServerNotAccepting(ClientUDPRemote* client)
 	{
-		client->SendUnreliable(client->GetFreePacket(NetworkPacket::TYPE_SERVER_NOT_ACCEPTING));
+		client->m_PacketManager.EnqueuePacket(client->GetFreePacket(NetworkPacket::TYPE_SERVER_NOT_ACCEPTING));
 		client->SendPackets();
 	}
 

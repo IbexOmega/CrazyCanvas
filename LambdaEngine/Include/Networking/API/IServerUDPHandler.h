@@ -5,7 +5,7 @@
 namespace LambdaEngine
 {
 	class IClientUDP;
-	class IClientUDPHandler;
+	class IClientUDPRemoteHandler;
 
 	class LAMBDA_API IServerUDPHandler
 	{
@@ -13,6 +13,6 @@ namespace LambdaEngine
 		DECL_INTERFACE(IServerUDPHandler);
 
 		virtual void OnClientConnected(IClientUDP* pClient) = 0;
-		virtual IClientUDPHandler* CreateClientUDPHandler() = 0;
+		virtual IClientUDPRemoteHandler* CreateClientUDPHandler() = 0;
 	};
 }

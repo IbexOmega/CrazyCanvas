@@ -28,6 +28,7 @@ Server::Server()
 
 	m_pServer = ServerUDP::Create(this, 10, 512, 10);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
+	//m_pServer->SetSimulatePacketLoss(0.9f);
 
 	UpdateTitle();
 }
@@ -42,7 +43,7 @@ void Server::OnClientConnected(LambdaEngine::IClientUDP* pClient)
 
 }
 
-LambdaEngine::IClientUDPHandler* Server::CreateClientUDPHandler()
+LambdaEngine::IClientUDPRemoteHandler* Server::CreateClientUDPHandler()
 {
 	return DBG_NEW ClientUDPHandler();
 }

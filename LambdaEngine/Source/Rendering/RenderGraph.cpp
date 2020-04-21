@@ -472,7 +472,7 @@ namespace LambdaEngine
 		fenceDesc.pName			= "Render Stage Fence";
 		fenceDesc.InitalValue	= 0;
 
-		m_pFence = m_pGraphicsDevice->CreateFence(fenceDesc);
+		m_pFence = m_pGraphicsDevice->CreateFence(&fenceDesc);
 
 		if (m_pFence == nullptr)
 		{
@@ -501,7 +501,7 @@ namespace LambdaEngine
 		descriptorHeapDesc.pName			= "Render Graph Descriptor Heap";
 		descriptorHeapDesc.DescriptorCount	= descriptorCountDesc;
 
-		m_pDescriptorHeap = m_pGraphicsDevice->CreateDescriptorHeap(descriptorHeapDesc);
+		m_pDescriptorHeap = m_pGraphicsDevice->CreateDescriptorHeap(&descriptorHeapDesc);
 
 		return m_pDescriptorHeap != nullptr;
 	}
@@ -820,7 +820,7 @@ namespace LambdaEngine
 				pipelineLayoutDesc.pConstantRanges			= &constantRangeDesc;
 				pipelineLayoutDesc.ConstantRangeCount		= constantRangeDesc.SizeInBytes > 0 ? 1 : 0;
 
-				pRenderStage->pPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(pipelineLayoutDesc);
+				pRenderStage->pPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 			}
 
 			//Create Descriptor Set
@@ -888,7 +888,7 @@ namespace LambdaEngine
 					renderPassDesc.pSubpassDependencies		= &renderPassSubpassDependencyDesc;
 					renderPassDesc.SubpassDependencyCount	= 1;
 
-					IRenderPass* pRenderPass		= m_pGraphicsDevice->CreateRenderPass(renderPassDesc);
+					IRenderPass* pRenderPass		= m_pGraphicsDevice->CreateRenderPass(&renderPassDesc);
 					pipelineDesc.pRenderPass		= pRenderPass;
 
 					pRenderStage->pRenderPass		= pRenderPass;
@@ -925,7 +925,7 @@ namespace LambdaEngine
 					}
 				}
 
-				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateGraphicsPipelineState(pipelineDesc);
+				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateGraphicsPipelineState(&pipelineDesc);
 			}
 			else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
 			{
@@ -933,7 +933,7 @@ namespace LambdaEngine
 
 				pipelineDesc.pPipelineLayout = pRenderStage->pPipelineLayout;
 
-				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateComputePipelineState(pipelineDesc);
+				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateComputePipelineState(&pipelineDesc);
 			}
 			else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
 			{
@@ -941,7 +941,7 @@ namespace LambdaEngine
 
 				pipelineDesc.pPipelineLayout = pRenderStage->pPipelineLayout;
 
-				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateRayTracingPipelineState(pipelineDesc);
+				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateRayTracingPipelineState(&pipelineDesc);
 			}
 
 			//Link Attachment Resources to Render Stage (Descriptor Set)
@@ -1121,14 +1121,14 @@ namespace LambdaEngine
 				graphicsCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_PRIMARY;
 				graphicsCommandListDesc.Flags					= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
-				pPipelineStage->ppGraphicsCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppGraphicsCommandAllocators[f], graphicsCommandListDesc);
+				pPipelineStage->ppGraphicsCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppGraphicsCommandAllocators[f], &graphicsCommandListDesc);
 
 				CommandListDesc computeCommandListDesc = {};
 				computeCommandListDesc.pName					= "Render Graph Compute Command List";
 				computeCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_PRIMARY;
 				computeCommandListDesc.Flags					= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
-				pPipelineStage->ppComputeCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppComputeCommandAllocators[f], computeCommandListDesc);
+				pPipelineStage->ppComputeCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppComputeCommandAllocators[f], &computeCommandListDesc);
 			}
 		}
 
@@ -1164,10 +1164,10 @@ namespace LambdaEngine
 				SAFERELEASE(*ppTexture);
 				SAFERELEASE(*ppTextureView);
 
-				ITexture* pTexture			= m_pGraphicsDevice->CreateTexture(textureDesc);
+				ITexture* pTexture			= m_pGraphicsDevice->CreateTexture(&textureDesc, nullptr);
 
 				textureViewDesc.pTexture = pTexture;
-				ITextureView* pTextureView	= m_pGraphicsDevice->CreateTextureView(textureViewDesc);
+				ITextureView* pTextureView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 				(*ppTexture)		= pTexture;
 				(*ppTextureView)	= pTextureView;
@@ -1190,7 +1190,7 @@ namespace LambdaEngine
 				const SamplerDesc& samplerDesc = *desc.InternalTextureUpdate.ppSamplerDesc[sr];
 
 				SAFERELEASE(*ppSampler);
-				ISampler* pSampler = m_pGraphicsDevice->CreateSampler(samplerDesc);
+				ISampler* pSampler = m_pGraphicsDevice->CreateSampler(&samplerDesc);
 				(*ppSampler) = pSampler;
 			}
 		}
@@ -1211,7 +1211,7 @@ namespace LambdaEngine
 			uint64* pSizeInBytes	= &pResource->Buffer.SizesInBytes[sr];
 
 			SAFERELEASE(*ppBuffer);
-			IBuffer* pBuffer = m_pGraphicsDevice->CreateBuffer(*desc.InternalBufferUpdate.ppBufferDesc[sr]);
+			IBuffer* pBuffer = m_pGraphicsDevice->CreateBuffer(desc.InternalBufferUpdate.ppBufferDesc[sr], nullptr);
 			
 			(*ppBuffer)		= pBuffer;
 			(*pSizeInBytes) = bufferDesc.SizeInBytes;

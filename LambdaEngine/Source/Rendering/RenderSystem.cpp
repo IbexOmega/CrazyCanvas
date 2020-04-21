@@ -35,7 +35,7 @@ namespace LambdaEngine
 		deviceDesc.Debug = false;
 #endif
 
-		s_pGraphicsDevice = CreateGraphicsDevice(EGraphicsAPI::VULKAN, deviceDesc);
+		s_pGraphicsDevice = CreateGraphicsDevice(EGraphicsAPI::VULKAN, &deviceDesc);
 		if (!s_pGraphicsDevice)
 		{
 			return false;

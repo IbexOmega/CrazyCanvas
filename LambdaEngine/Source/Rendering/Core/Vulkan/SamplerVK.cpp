@@ -21,25 +21,25 @@ namespace LambdaEngine
 		}
 	}
 
-	bool SamplerVK::Init(const SamplerDesc& desc)
+	bool SamplerVK::Init(const SamplerDesc* pDesc)
 	{
 		VkSamplerCreateInfo samplerCreateInfo = {};
 		samplerCreateInfo.sType					    = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 		samplerCreateInfo.pNext					    = nullptr;
 		samplerCreateInfo.flags					    = 0;
-		samplerCreateInfo.minFilter				    = ConvertFilter(desc.MinFilter);
-		samplerCreateInfo.magFilter				    = ConvertFilter(desc.MagFilter);
-		samplerCreateInfo.mipmapMode			    = ConvertMipmapMode(desc.MipmapMode);
-		samplerCreateInfo.addressModeU			    = ConvertAddressMode(desc.AddressModeU);
-		samplerCreateInfo.addressModeV			    = ConvertAddressMode(desc.AddressModeV);
-		samplerCreateInfo.addressModeW			    = ConvertAddressMode(desc.AddressModeW);
-		samplerCreateInfo.mipLodBias			    = desc.MipLODBias;
-		samplerCreateInfo.anisotropyEnable		    = desc.AnisotropyEnabled ? VK_TRUE : VK_FALSE;
-		samplerCreateInfo.maxAnisotropy			    = desc.MaxAnisotropy;
+		samplerCreateInfo.minFilter				    = ConvertFilter(pDesc->MinFilter);
+		samplerCreateInfo.magFilter				    = ConvertFilter(pDesc->MagFilter);
+		samplerCreateInfo.mipmapMode			    = ConvertMipmapMode(pDesc->MipmapMode);
+		samplerCreateInfo.addressModeU			    = ConvertAddressMode(pDesc->AddressModeU);
+		samplerCreateInfo.addressModeV			    = ConvertAddressMode(pDesc->AddressModeV);
+		samplerCreateInfo.addressModeW			    = ConvertAddressMode(pDesc->AddressModeW);
+		samplerCreateInfo.mipLodBias			    = pDesc->MipLODBias;
+		samplerCreateInfo.anisotropyEnable		    = pDesc->AnisotropyEnabled ? VK_TRUE : VK_FALSE;
+		samplerCreateInfo.maxAnisotropy			    = pDesc->MaxAnisotropy;
 		samplerCreateInfo.compareEnable			    = VK_FALSE;
 		samplerCreateInfo.compareOp				    = VK_COMPARE_OP_ALWAYS;
-		samplerCreateInfo.minLod				    = desc.MinLOD;
-		samplerCreateInfo.maxLod				    = desc.MaxLOD;
+		samplerCreateInfo.minLod				    = pDesc->MinLOD;
+		samplerCreateInfo.maxLod				    = pDesc->MaxLOD;
 		samplerCreateInfo.borderColor			    = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 		samplerCreateInfo.unnormalizedCoordinates   = VK_FALSE;
 
@@ -51,9 +51,11 @@ namespace LambdaEngine
 		}
 		else
 		{
-			m_Desc = desc;
-			SetName(desc.pName);
+            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
+			SetName(pDesc->pName);
 			
+            D_LOG_MESSAGE("[SamplerVK]: Created sampler");
+            
 			return true;
 		}
 	}

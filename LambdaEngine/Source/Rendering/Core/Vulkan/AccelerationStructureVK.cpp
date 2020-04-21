@@ -29,7 +29,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool AccelerationStructureVK::Init(const AccelerationStructureDesc& desc)
+	bool AccelerationStructureVK::Init(const AccelerationStructureDesc* pDesc)
 	{
 		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
 		accelerationStructureCreateInfo.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -38,7 +38,7 @@ namespace LambdaEngine
 		accelerationStructureCreateInfo.maxGeometryCount	= 1;
 		accelerationStructureCreateInfo.deviceAddress		= VK_NULL_HANDLE;
 		accelerationStructureCreateInfo.flags				= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		if (desc.Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+		if (pDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 		{
 			accelerationStructureCreateInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 		}
@@ -48,21 +48,21 @@ namespace LambdaEngine
 		geometryTypeInfo.pNext = nullptr;
 		
 		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
-		if (desc.Type == EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP)
+		if (pDesc->Type == EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP)
 		{
 			accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 			
 			geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_INSTANCES_KHR;
-			geometryTypeInfo.maxPrimitiveCount	= desc.InstanceCount;
+			geometryTypeInfo.maxPrimitiveCount	= pDesc->InstanceCount;
 		}
 		else
 		{
 			accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 
 			geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-			geometryTypeInfo.maxPrimitiveCount	= desc.MaxTriangleCount;
+			geometryTypeInfo.maxPrimitiveCount	= pDesc->MaxTriangleCount;
 			geometryTypeInfo.indexType			= VK_INDEX_TYPE_UINT32;
-			geometryTypeInfo.maxVertexCount		= desc.MaxVertexCount;
+			geometryTypeInfo.maxVertexCount		= pDesc->MaxVertexCount;
 			geometryTypeInfo.vertexFormat		= VK_FORMAT_R32G32B32_SFLOAT;
 			geometryTypeInfo.allowsTransforms	= VK_TRUE;
 		}
@@ -72,9 +72,9 @@ namespace LambdaEngine
 		VkResult result = m_pDevice->vkCreateAccelerationStructureKHR(m_pDevice->Device, &accelerationStructureCreateInfo, nullptr, &m_AccelerationStructure);
 		if (result != VK_SUCCESS)
 		{
-			if (desc.pName)
+			if (pDesc->pName)
 			{
-				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: vkCreateAccelerationStructureKHR failed for \"%s\"", desc.pName);
+				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: vkCreateAccelerationStructureKHR failed for \"%s\"", pDesc->pName);
 			}
 			else
 			{
@@ -85,8 +85,8 @@ namespace LambdaEngine
 		}
 		else
 		{
-			m_Desc = desc;
-			SetName(desc.pName);
+            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
+			SetName(pDesc->pName);
 		}
 
 		VkMemoryRequirements memoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR);

@@ -47,7 +47,13 @@ namespace LambdaEngine
 		bytesReceived = recvfrom(m_Socket, pBuffer, size, 0, (struct sockaddr*)&socketAddress, &socketAddressSize);
 		if (bytesReceived == SOCKET_ERROR)
 		{
-            int32 error = errno;
+			int32 error = errno;
+
+			if (IsClosed() && !IsNonBlocking())
+				return false;
+			else if (error == ECONNREFUSED)
+				return true;
+
 			LOG_ERROR_CRIT("Failed to receive data from");
 			PrintLastError(error);
 			return false;

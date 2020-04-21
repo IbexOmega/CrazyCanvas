@@ -46,7 +46,7 @@ namespace LambdaEngine
 		swapChainDesc.SampleCount	= 1;
 		swapChainDesc.VerticalSync	= false;
 		
-		m_pSwapChain = m_pGraphicsDevice->CreateSwapChain(desc.pWindow, RenderSystem::GetGraphicsQueue(), swapChainDesc);
+		m_pSwapChain = m_pGraphicsDevice->CreateSwapChain(desc.pWindow, RenderSystem::GetGraphicsQueue(), &swapChainDesc);
 
 		if (m_pSwapChain == nullptr)
 		{
@@ -74,7 +74,7 @@ namespace LambdaEngine
 			textureViewDesc.Miplevel		= 0;
 			textureViewDesc.ArrayIndex		= 0;
 			
-			ITextureView* pBackBufferView	= m_pGraphicsDevice->CreateTextureView(textureViewDesc);
+			ITextureView* pBackBufferView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 			if (pBackBufferView == nullptr)
 			{

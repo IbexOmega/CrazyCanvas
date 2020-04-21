@@ -213,7 +213,7 @@ namespace LambdaEngine
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 
-		(*ppMappedTextureView) = m_pGraphicsDevice->CreateTextureView(textureViewDesc);
+		(*ppMappedTextureView) = m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 		return guid;
 	}
@@ -246,7 +246,7 @@ namespace LambdaEngine
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 
-		(*ppMappedTextureView) = m_pGraphicsDevice->CreateTextureView(textureViewDesc);
+		(*ppMappedTextureView) = m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 		return guid;
 	}
@@ -487,7 +487,7 @@ namespace LambdaEngine
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 
-		(*ppMappedTextureView) = m_pGraphicsDevice->CreateTextureView(textureViewDesc);
+		(*ppMappedTextureView) = m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 		return guid;
 	}
@@ -528,8 +528,8 @@ namespace LambdaEngine
 		defaultNormalMapViewDesc.Miplevel		= 0;
 		defaultNormalMapViewDesc.ArrayIndex		= 0;
 
-		m_TextureViews[DEFAULT_COLOR_MAP]		= m_pGraphicsDevice->CreateTextureView(defaultColorMapViewDesc);
-		m_TextureViews[DEFAULT_NORMAL_MAP]		= m_pGraphicsDevice->CreateTextureView(defaultNormalMapViewDesc);
+		m_TextureViews[DEFAULT_COLOR_MAP]		= m_pGraphicsDevice->CreateTextureView(&defaultColorMapViewDesc);
+		m_TextureViews[DEFAULT_NORMAL_MAP]		= m_pGraphicsDevice->CreateTextureView(&defaultNormalMapViewDesc);
 
 		Material* pDefaultMaterial = DBG_NEW Material();
 		pDefaultMaterial->pAlbedoMap				= m_Textures[DEFAULT_COLOR_MAP];

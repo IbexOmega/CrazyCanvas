@@ -430,28 +430,37 @@ namespace LambdaEngine
 	{
 		Timestamp delta;
 		std::vector<MessageInfo> packetsReachMaxTries;
-		std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
+		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
 
-		for (auto& pair : m_MessagesWaitingForAck)
 		{
-			delta = EngineLoop::GetTimeSinceStart() - pair.second.LastSent;
-			if (delta > m_Statistics.GetPing() * 2.0F)
+			std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
+
+			for (auto& pair : m_MessagesWaitingForAck)
 			{
-				if (pair.second.Tries > m_MaximumTries)
+				delta = EngineLoop::GetTimeSinceStart() - pair.second.LastSent;
+				if (delta > m_Statistics.GetPing() * 2.0F)
 				{
-					packetsReachMaxTries.push_back(pair.second);
-				}
-				else
-				{
-					messages.push_back(pair.second);
+					if (pair.second.Tries > m_MaximumTries)
+					{
+						packetsReachMaxTries.push_back(pair.second);
+					}
+					else
+					{
+						pair.second.LastSent = currentTime;
+						messages.push_back(pair.second);
+					}
 				}
 			}
-		}
 
+			for (MessageInfo& message : packetsReachMaxTries)
+			{
+				m_MessagesWaitingForAck.erase(message.GetUID());
+			}
+		}
+		
 		for (MessageInfo& message : packetsReachMaxTries)
 		{
 			message.Listener->OnPacketMaxTriesReached(message.Packet, message.Tries);
-			m_MessagesWaitingForAck.erase(message.GetUID());
 		}
 	}
 

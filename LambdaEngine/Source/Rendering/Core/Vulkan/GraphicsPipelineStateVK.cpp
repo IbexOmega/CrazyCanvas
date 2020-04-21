@@ -9,10 +9,8 @@
 
 namespace LambdaEngine
 {
-	GraphicsPipelineStateVK::GraphicsPipelineStateVK(const GraphicsDeviceVK* pDevice) : 
-		TDeviceChild(pDevice),
-		m_Pipeline(VK_NULL_HANDLE),
-		m_pColorBlendAttachmentStates(nullptr)
+	GraphicsPipelineStateVK::GraphicsPipelineStateVK(const GraphicsDeviceVK* pDevice)
+        : TDeviceChild(pDevice)
 	{
 		//Default InputAssembly
 		m_InputAssembly.sType                   = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -86,14 +84,14 @@ namespace LambdaEngine
 		SAFEDELETE_ARRAY(m_pColorBlendAttachmentStates);
 	}
 
-	bool GraphicsPipelineStateVK::Init(const GraphicsPipelineStateDesc& desc)
+	bool GraphicsPipelineStateVK::Init(const GraphicsPipelineStateDesc* pDesc)
 	{
 		 // Define shader stage create infos
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStagesInfos;
 		std::vector<VkSpecializationInfo> shaderStagesSpecializationInfos;
 		std::vector<std::vector<VkSpecializationMapEntry>> shaderStagesSpecializationMaps;
 
-		if (!CreateShaderData(shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps, desc))
+		if (!CreateShaderData(shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps, pDesc))
 		{
 			return false;
 		}
@@ -129,11 +127,11 @@ namespace LambdaEngine
 		dynamicState.pDynamicStates     = dynamicStates;
 		dynamicState.dynamicStateCount  = 2;
 
-		m_pColorBlendAttachmentStates = DBG_NEW VkPipelineColorBlendAttachmentState[desc.BlendAttachmentStateCount];
+		m_pColorBlendAttachmentStates = DBG_NEW VkPipelineColorBlendAttachmentState[pDesc->BlendAttachmentStateCount];
 
-		for (uint32 i = 0; i < desc.BlendAttachmentStateCount; i++)
+		for (uint32 i = 0; i < pDesc->BlendAttachmentStateCount; i++)
 		{
-			const BlendAttachmentState* pBlendAttachmentState = desc.pBlendAttachmentStates;
+			const BlendAttachmentState* pBlendAttachmentState = pDesc->pBlendAttachmentStates;
 
 			VkPipelineColorBlendAttachmentState blendAttachment = {};
 			blendAttachment.blendEnable			= pBlendAttachmentState->BlendEnabled ? VK_TRUE : VK_FALSE;
@@ -143,8 +141,11 @@ namespace LambdaEngine
 		}
 
 		m_BlendState.pAttachments			= m_pColorBlendAttachmentStates;
-		m_BlendState.attachmentCount		= desc.BlendAttachmentStateCount;
+		m_BlendState.attachmentCount		= pDesc->BlendAttachmentStateCount;
 
+        const PipelineLayoutVK* pPipelineLayoutVk  = reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
+        const RenderPassVK*     pRenderPassVk      = reinterpret_cast<const RenderPassVK*>(pDesc->pRenderPass);
+        
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType                  = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		pipelineInfo.pNext                  = nullptr;
@@ -159,21 +160,41 @@ namespace LambdaEngine
 		pipelineInfo.pDepthStencilState     = &m_DepthStencilState;
 		pipelineInfo.pColorBlendState       = &m_BlendState;
 		pipelineInfo.pDynamicState          = &dynamicState;
-		pipelineInfo.renderPass             = reinterpret_cast<const RenderPassVK*>(desc.pRenderPass)->GetRenderPass();
-		pipelineInfo.layout                 = reinterpret_cast<const PipelineLayoutVK*>(desc.pPipelineLayout)->GetPipelineLayout();
+		pipelineInfo.renderPass             = pRenderPassVk->GetRenderPass();
+		pipelineInfo.layout                 = pPipelineLayoutVk->GetPipelineLayout();
 		pipelineInfo.subpass                = 0;
 		pipelineInfo.basePipelineHandle     = VK_NULL_HANDLE;
 		pipelineInfo.basePipelineIndex      = -1;
 
-		if (vkCreateGraphicsPipelines(m_pDevice->Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
+        VkResult result = vkCreateGraphicsPipelines(m_pDevice->Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
+		if (result != VK_SUCCESS)
 		{
-			LOG_ERROR("[GraphicsPipelineStateVK]: vkCreateGraphicsPipelines failed for %s", desc.pName);
+            if (pDesc->pName)
+            {
+                LOG_VULKAN_ERROR(result, "[GraphicsPipelineStateVK]: vkCreateGraphicsPipelines failed for %s", pDesc->pName);
+            }
+            else
+            {
+                LOG_VULKAN_ERROR(result, "[GraphicsPipelineStateVK]: vkCreateGraphicsPipelines failed for");
+            }
+            
 			return false;
 		}
-
-		SetName(desc.pName);
-
-		return true;
+        else
+        {
+            SetName(pDesc->pName);
+            
+            if (pDesc->pName)
+            {
+                D_LOG_MESSAGE("[GraphicsPipelineStateVK]: Created Pipeline for %s", pDesc->pName);
+            }
+            else
+            {
+                D_LOG_MESSAGE("[GraphicsPipelineStateVK]: Created Pipeline");
+            }
+            
+            return true;
+        }
 	}
 
 	void GraphicsPipelineStateVK::SetName(const char* pName)
@@ -189,13 +210,13 @@ namespace LambdaEngine
 		std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesInfos, 
 		std::vector<VkSpecializationInfo>& shaderStagesSpecializationInfos, 
 		std::vector<std::vector<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps, 
-		const GraphicsPipelineStateDesc& desc)
+		const GraphicsPipelineStateDesc* pDesc)
 	{
-		if (desc.pMeshShader != nullptr)
+		if (pDesc->pMeshShader != nullptr)
 		{
 			//Mesh Shader
 			{
-				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(desc.pMeshShader);
+				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pMeshShader);
 
 				VkPipelineShaderStageCreateInfo shaderCreateInfo;
 				VkSpecializationInfo shaderSpecializationInfo;
@@ -210,9 +231,9 @@ namespace LambdaEngine
 			}
 
 			//Task shader
-			if (desc.pTaskShader)
+			if (pDesc->pTaskShader)
 			{
-				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(desc.pTaskShader);
+				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pTaskShader);
 
 				VkPipelineShaderStageCreateInfo shaderCreateInfo;
 				VkSpecializationInfo shaderSpecializationInfo;
@@ -229,9 +250,9 @@ namespace LambdaEngine
 		else
 		{
 			//Vertex Shader
-			if (desc.pVertexShader != nullptr)
+			if (pDesc->pVertexShader != nullptr)
 			{
-				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(desc.pVertexShader);
+				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pVertexShader);
 
 				VkPipelineShaderStageCreateInfo shaderCreateInfo;
 				VkSpecializationInfo shaderSpecializationInfo;
@@ -246,9 +267,9 @@ namespace LambdaEngine
 			}
 			else
 			{
-				if (desc.pName)
+				if (pDesc->pName)
 				{
-					LOG_ERROR("[GraphicsPipelineStateVK]: Vertex Shader and Mesh Shader can not both be nullptr for %s", desc.pName);
+					LOG_ERROR("[GraphicsPipelineStateVK]: Vertex Shader and Mesh Shader can not both be nullptr for %s", pDesc->pName);
 				}
 				else
 				{
@@ -259,9 +280,9 @@ namespace LambdaEngine
 			}
 
 			//Geometry Shader
-			if (desc.pGeometryShader != nullptr)
+			if (pDesc->pGeometryShader != nullptr)
 			{
-				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(desc.pGeometryShader);
+				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pGeometryShader);
 
 				VkPipelineShaderStageCreateInfo shaderCreateInfo;
 				VkSpecializationInfo shaderSpecializationInfo;
@@ -276,9 +297,9 @@ namespace LambdaEngine
 			}
 
 			//Hull Shader
-			if (desc.pHullShader != nullptr)
+			if (pDesc->pHullShader != nullptr)
 			{
-				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(desc.pHullShader);
+				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pHullShader);
 
 				VkPipelineShaderStageCreateInfo shaderCreateInfo;
 				VkSpecializationInfo shaderSpecializationInfo;
@@ -293,9 +314,9 @@ namespace LambdaEngine
 			}
 
 			//Domain Shader
-			if (desc.pDomainShader != nullptr)
+			if (pDesc->pDomainShader != nullptr)
 			{
-				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(desc.pDomainShader);
+				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pDomainShader);
 
 				VkPipelineShaderStageCreateInfo shaderCreateInfo;
 				VkSpecializationInfo shaderSpecializationInfo;
@@ -311,9 +332,9 @@ namespace LambdaEngine
 		}
 
 		//Pixel Shader
-		if (desc.pPixelShader != nullptr)
+		if (pDesc->pPixelShader != nullptr)
 		{
-			const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(desc.pPixelShader);
+			const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pPixelShader);
 
 			VkPipelineShaderStageCreateInfo shaderCreateInfo;
 			VkSpecializationInfo shaderSpecializationInfo;

@@ -496,7 +496,7 @@ namespace LambdaEngine
 			sceneMeshIndexBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
 			sceneMeshIndexBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
 
-			m_pPerFrameBuffer = m_pGraphicsDevice->CreateBuffer(sceneMeshIndexBufferDesc);
+			m_pPerFrameBuffer = m_pGraphicsDevice->CreateBuffer(&sceneMeshIndexBufferDesc, nullptr);
 		}
 
 		m_pCopyCommandList->End();
