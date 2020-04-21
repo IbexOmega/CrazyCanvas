@@ -40,7 +40,7 @@ namespace LambdaEngine
 		IPEndPoint m_IPEndPoint;
 		PacketManager m_PacketManager;
 		SpinLock m_Lock;
-		NetworkPacket* m_pPackets[32];
+		std::vector<NetworkPacket*> m_Packets;
 		IClientUDPHandler* m_pHandler;
 		EClientState m_State;
 		std::atomic_bool m_Release;

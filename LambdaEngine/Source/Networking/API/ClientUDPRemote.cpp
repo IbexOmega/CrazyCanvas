@@ -16,11 +16,11 @@ namespace LambdaEngine
 		m_PacketManager(packets, maximumTries),
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
-		m_pPackets(),
+		m_Packets(),
 		m_Release(false),
 		m_DisconnectedByRemote(false)
 	{
-		
+		m_Packets.reserve(64);
 	}
 
 	ClientUDPRemote::~ClientUDPRemote()
@@ -39,14 +39,14 @@ namespace LambdaEngine
 	void ClientUDPRemote::OnDataReceived(const char* data, int32 size)
 	{
 		int32 packetsReceived;
-		if (m_PacketManager.DecodePackets(data, size, m_pPackets, packetsReceived))
+		if (m_PacketManager.DecodePackets(data, size, m_Packets))
 		{
-			for (int i = 0; i < packetsReceived; i++)
+			for (NetworkPacket* pPacket : m_Packets)
 			{
-				if (!HandleReceivedPacket(m_pPackets[i]))
+				if (!HandleReceivedPacket(pPacket))
 					return;
 			}
-			m_PacketManager.Free(m_pPackets, packetsReceived);
+			m_PacketManager.Free(m_Packets);
 		}
 	}
 

@@ -18,6 +18,7 @@ namespace LambdaEngine
 			uint16 Size = 0;
 			uint16 Type = 0;
 			uint32 UID = 0;
+			uint32 ReliableUID = 0;
 		};
 #pragma pack(pop)
 
@@ -52,6 +53,9 @@ namespace LambdaEngine
 		NetworkPacket* AppendBytes(uint16 bytes);
 
 		uint64 GetRemoteSalt() const;
+
+		bool IsReliable() const;
+		uint32 GetReliableUID() const;
 
 		std::string ToString() const;
 

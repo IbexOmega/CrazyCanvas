@@ -67,6 +67,16 @@ namespace LambdaEngine
 		return m_Salt;
 	}
 
+	bool NetworkPacket::IsReliable() const
+	{
+		return m_Header.ReliableUID != 0;
+	}
+
+	uint32 NetworkPacket::GetReliableUID() const
+	{
+		return m_Header.ReliableUID;
+	}
+
 	std::string NetworkPacket::ToString() const
 	{
 		std::string type;

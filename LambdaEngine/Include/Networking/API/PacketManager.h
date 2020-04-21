@@ -36,11 +36,11 @@ namespace LambdaEngine
 			}
 		};
 
-		struct MessageInfoComparator
+		struct NetworkPacketComparator
 		{
-			bool operator() (const MessageInfo& lhs, const MessageInfo& rhs) const
+			bool operator() (const NetworkPacket* lhs, const NetworkPacket* rhs) const
 			{
-				return lhs.GetUID() < rhs.GetUID();
+				return lhs->GetReliableUID() < rhs->GetReliableUID();
 			}
 		};
 
@@ -72,11 +72,11 @@ namespace LambdaEngine
 		NetworkPacket* GetFreePacket();
 
 		bool EncodePackets(char* buffer, int32& bytesWritten);
-		bool DecodePackets(const char* buffer, int32 bytesReceived, NetworkPacket** packetsRead, int32& nrOfPackets);
+		bool DecodePackets(const char* buffer, int32 bytesReceived, std::vector<NetworkPacket*>& packetsRead);
 		void SwapPacketQueues();
 		void Tick();
 
-		void Free(NetworkPacket** packets, int32 nrOfPackets);
+		void Free(std::vector<NetworkPacket*>& packets);
 
 		const NetworkStatistics* GetStatistics() const;
 
@@ -88,11 +88,11 @@ namespace LambdaEngine
 		void ProcessSequence(uint32 sequence);
 		void ProcessAcks(uint32 ack, uint32 ackBits);
 		void ProcessAck(uint32 ack, Timestamp& rtt);
-		void ProcessAllReceivedMessages();
 
 		bool GetMessagesAndRemoveBundle(uint32 sequence, std::vector<MessageInfo>& messages, Timestamp& sentTimestamp);
 		uint32 GetNextPacketSequenceNr();
 		uint32 GetNextMessageUID();
+		uint32 GetNextMessageReliableUID();
 
 		void DeleteEmptyBundles();
 		void FindMessagesToResend(std::vector<MessageInfo>& messages);
@@ -105,7 +105,7 @@ namespace LambdaEngine
 		std::queue<MessageInfo> m_PacketsToSend[2];
 		std::unordered_map<uint32, Bundle> m_PacketsWaitingForAck;
 		std::unordered_map<uint32, MessageInfo> m_MessagesWaitingForAck;
-		std::set<MessageInfo, MessageInfoComparator> m_MessagesAcked;
+		std::set<NetworkPacket*, NetworkPacketComparator> m_MessagesReceivedOrdered;
 
 		SpinLock m_LockPacketsFree;
 		SpinLock m_LockPacketsToSend;
@@ -116,7 +116,7 @@ namespace LambdaEngine
 		std::atomic_uint32_t m_ReceivedSequenceBits;
 
 		NetworkStatistics m_Statistics;
-
+		uint32 m_ReliableMessagesSent;
 		uint32 m_NextExpectedMessageNr;
 		uint8 m_MaximumTries;
 

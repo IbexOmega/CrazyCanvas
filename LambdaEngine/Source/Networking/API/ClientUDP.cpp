@@ -22,17 +22,17 @@ namespace LambdaEngine
 
 	void ClientUDP::OnPacketDelivered(NetworkPacket* pPacket)
 	{
-		LOG_INFO("OnPacketDelivered() | %s", pPacket->ToString().c_str());
+		LOG_INFO("ClientUDP::OnPacketDelivered() | %s", pPacket->ToString().c_str());
 	}
 
 	void ClientUDP::OnPacketResent(NetworkPacket* pPacket, uint8 tries)
 	{
-		LOG_INFO("OnPacketResent(%d) | %s", tries, pPacket->ToString().c_str());
+		LOG_INFO("ClientUDP::OnPacketResent(%d) | %s", tries, pPacket->ToString().c_str());
 	}
 
 	void ClientUDP::OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries)
 	{
-		LOG_INFO("OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
+		LOG_INFO("ClientUDP::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
 	}
 
 	ClientUDP::~ClientUDP()
@@ -130,9 +130,10 @@ namespace LambdaEngine
 	void ClientUDP::RunReceiver()
 	{
 		int32 bytesReceived = 0;
-		int32 packetsReceived = 0;
-		NetworkPacket* packets[32];
+		std::vector<NetworkPacket*> packets;
 		IPEndPoint sender;
+
+		packets.reserve(64);
 
 		while (!ShouldTerminate())
 		{
@@ -142,13 +143,13 @@ namespace LambdaEngine
 				break;
 			}
 
-			if (m_PacketManager.DecodePackets(m_pReceiveBuffer, bytesReceived, packets, packetsReceived))
+			if (m_PacketManager.DecodePackets(m_pReceiveBuffer, bytesReceived, packets))
 			{
-				for (int i = 0; i < packetsReceived; i++)
+				for (NetworkPacket* pPacket : packets)
 				{
-					HandleReceivedPacket(packets[i]);
+					HandleReceivedPacket(pPacket);
 				}
-				m_PacketManager.Free(packets, packetsReceived);
+				m_PacketManager.Free(packets);
 			}
 		}
 	}
