@@ -2,7 +2,7 @@
 #include "Rendering/Core/API/IAccelerationStructure.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
-#include "Vulkan.h"
+#include "Rendering/Core/Vulkan/DeviceAllocatorVK.h"
 
 namespace LambdaEngine
 {
@@ -17,7 +17,7 @@ namespace LambdaEngine
 		AccelerationStructureVK(const GraphicsDeviceVK* pDevice);
 		~AccelerationStructureVK();
 
-		bool Init(const AccelerationStructureDesc* pDesc);
+		bool Init(const AccelerationStructureDesc* pDesc, IDeviceAllocator* pAllocator);
 
 		FORCEINLINE VkAccelerationStructureKHR GetAccelerationStructure() const
 		{
@@ -57,12 +57,14 @@ namespace LambdaEngine
 		VkMemoryRequirements GetMemoryRequirements(VkAccelerationStructureMemoryRequirementsTypeKHR type);
 
 	private:
+		DeviceAllocatorVK*			m_pAllocator							= nullptr;
 		VkAccelerationStructureKHR	m_AccelerationStructure					= VK_NULL_HANDLE;
 		VkDeviceMemory				m_AccelerationStructureMemory			= VK_NULL_HANDLE;
 		VkDeviceAddress				m_AccelerationStructureDeviceAddress	= 0;
 		VkDeviceSize				m_ScratchMemorySize						= 0;
 		VkDeviceSize				m_ScratchMemoryAlignment				= 0;
 
-		AccelerationStructureDesc m_Desc;
+		AllocationVK				m_Allocation;
+		AccelerationStructureDesc	m_Desc;
 	};
 }

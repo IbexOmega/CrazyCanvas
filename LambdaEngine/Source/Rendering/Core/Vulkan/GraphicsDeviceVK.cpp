@@ -368,7 +368,7 @@ namespace LambdaEngine
 		}
 	}
 
-	IAccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const
+	IAccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, IDeviceAllocator* pAllocator) const
 	{
         VALIDATE(pDesc != nullptr);
         
@@ -379,7 +379,7 @@ namespace LambdaEngine
 		}
 
 		AccelerationStructureVK* pAccelerationStructure = DBG_NEW AccelerationStructureVK(this);
-		if (!pAccelerationStructure->Init(pDesc))
+		if (!pAccelerationStructure->Init(pDesc, pAllocator))
 		{
 			pAccelerationStructure->Release();
 			return nullptr;
