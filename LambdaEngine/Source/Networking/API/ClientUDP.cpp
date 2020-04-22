@@ -16,7 +16,7 @@ namespace LambdaEngine
 
 	ClientUDP::ClientUDP(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries) :
 		m_pSocket(nullptr),
-		m_PacketManager(packets, maximumTries),
+		m_PacketManager(this, packets, maximumTries),
 		m_pHandler(pHandler), 
 		m_State(STATE_DISCONNECTED),
 		m_pSendBuffer()
@@ -83,7 +83,14 @@ namespace LambdaEngine
 
 	bool ClientUDP::SendUnreliable(NetworkPacket* packet)
 	{
-		return SendReliable(packet, nullptr);
+		if (!IsConnected())
+		{
+			LOG_WARNING("[ClientUDP]: Can not send packet before a connection has been established");
+			return false;
+		}
+
+		m_PacketManager.EnqueuePacket(packet);
+		return true;
 	}
 
 	bool ClientUDP::SendReliable(NetworkPacket* packet, IPacketListener* listener)
@@ -94,7 +101,7 @@ namespace LambdaEngine
 			return false;
 		}
 			
-		m_PacketManager.EnqueuePacket(packet, listener);
+		m_PacketManager.EnqueuePacketReliable(packet, listener);
 		return true;
 	}
 
@@ -208,13 +215,13 @@ namespace LambdaEngine
 
 	void ClientUDP::SendConnectRequest()
 	{
-		m_PacketManager.EnqueuePacket(GetFreePacket(NetworkPacket::TYPE_CONNNECT), this);
+		m_PacketManager.EnqueuePacketReliable(GetFreePacket(NetworkPacket::TYPE_CONNNECT));
 		TransmitPackets();
 	}
 
 	void ClientUDP::SendDisconnectRequest()
 	{
-		m_PacketManager.EnqueuePacket(GetFreePacket(NetworkPacket::TYPE_DISCONNECT), this);
+		m_PacketManager.EnqueuePacketReliable(GetFreePacket(NetworkPacket::TYPE_DISCONNECT));
 		TransmitPackets();
 	}
 
@@ -231,7 +238,7 @@ namespace LambdaEngine
 			NetworkPacket* pResponse = GetFreePacket(NetworkPacket::TYPE_CHALLENGE);
 			BinaryEncoder encoder(pResponse);
 			encoder.WriteUInt64(answer);
-			m_PacketManager.EnqueuePacket(pResponse, this);
+			m_PacketManager.EnqueuePacket(pResponse);
 		}
 		else if (packetType == NetworkPacket::TYPE_ACCEPTED)
 		{

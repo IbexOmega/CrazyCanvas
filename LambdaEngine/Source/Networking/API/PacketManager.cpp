@@ -10,7 +10,8 @@
 
 namespace LambdaEngine
 {
-	PacketManager::PacketManager(uint16 packets, uint8 maximumTries) :
+	PacketManager::PacketManager(IPacketListener* pListener, uint16 packets, uint8 maximumTries) :
+		m_pListener(pListener),
 		m_NrOfPackets(packets),
 		m_MaximumTries(maximumTries)
 	{
@@ -25,15 +26,17 @@ namespace LambdaEngine
 
 	void PacketManager::EnqueuePacket(NetworkPacket* pPacket)
 	{
-		EnqueuePacket(pPacket, nullptr);
+		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
+		pPacket->GetHeader().UID = GetNextMessageUID();
+		pPacket->GetHeader().ReliableUID = 0;
+		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ pPacket, nullptr });
 	}
 
-	void PacketManager::EnqueuePacket(NetworkPacket* pPacket, IPacketListener* listener)
+	void PacketManager::EnqueuePacketReliable(NetworkPacket* pPacket, IPacketListener* listener)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
 		pPacket->GetHeader().UID = GetNextMessageUID();
-		if (listener)
-			pPacket->GetHeader().ReliableUID = GetNextMessageReliableUID();
+		pPacket->GetHeader().ReliableUID = GetNextMessageReliableUID();
 		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ pPacket, listener});
 	}
 
@@ -88,7 +91,7 @@ namespace LambdaEngine
 				header.Size += packetBufferSize;
 
 				//Is this a reliable message ?
-				if (messageInfo.Listener)
+				if (messageInfo.Packet->IsReliable())
 				{
 					bundle.MessageUIDs.insert(messageInfo.GetUID());
 					reliableMessages.push_back(messageInfo);
@@ -183,6 +186,7 @@ namespace LambdaEngine
 		packetsRead.reserve(header.Packets);
 
 		std::vector<NetworkPacket*> messagesToFree;
+		bool hasReliableMessage = false;
 
 		for (int i = 0; i < header.Packets; i++)
 		{
@@ -195,8 +199,13 @@ namespace LambdaEngine
 			offset += messageHeader.Size;
 			message->m_Salt = header.Salt;
 
-			if (message->IsReliable())
+			if (message->GetType() == NetworkPacket::TYPE_NETWORK_ACK)
 			{
+				messagesToFree.push_back(message);
+			}
+			else if (message->IsReliable())
+			{
+				hasReliableMessage = true;
 				if (message->GetReliableUID() >= m_NextExpectedMessageNr)
 				{
 					m_MessagesReceivedOrdered.insert(message);
@@ -231,6 +240,13 @@ namespace LambdaEngine
 		for (NetworkPacket* message : messagesComplete)
 		{
 			m_MessagesReceivedOrdered.erase(message);
+		}
+
+		if (hasReliableMessage && m_PacketsToSend[m_QueueIndex].empty())
+		{
+			NetworkPacket* pPacket = GetFreePacket();
+			pPacket->SetType(NetworkPacket::TYPE_NETWORK_ACK);
+			EnqueuePacket(pPacket);
 		}
 
 		return true;
@@ -368,11 +384,13 @@ namespace LambdaEngine
 			messagesToFree.reserve(messages.size());
 			for (MessageInfo& message : messages)
 			{
+				messagesToFree.push_back(message.Packet);
+
 				if (message.Listener)
 				{
-					messagesToFree.push_back(message.Packet);
 					message.Listener->OnPacketDelivered(message.Packet);
 				}
+				m_pListener->OnPacketDelivered(message.Packet);
 			}
 
 			Free(messagesToFree);
@@ -485,9 +503,12 @@ namespace LambdaEngine
 			}
 		}
 		
-		for (MessageInfo& message : packetsReachMaxTries)
+		for (MessageInfo& messageInfo : packetsReachMaxTries)
 		{
-			message.Listener->OnPacketMaxTriesReached(message.Packet, message.Tries);
+			if(messageInfo.Listener)
+				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Packet, messageInfo.Tries);
+
+			m_pListener->OnPacketMaxTriesReached(messageInfo.Packet, messageInfo.Tries);
 		}
 	}
 
@@ -495,7 +516,10 @@ namespace LambdaEngine
 	{
 		for (MessageInfo messageInfo : messages)
 		{
-			messageInfo.Listener->OnPacketResent(messageInfo.Packet, messageInfo.Tries);
+			if (messageInfo.Listener)
+				messageInfo.Listener->OnPacketResent(messageInfo.Packet, messageInfo.Tries);
+
+			m_pListener->OnPacketResent(messageInfo.Packet, messageInfo.Tries);
 		}
 
 		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
