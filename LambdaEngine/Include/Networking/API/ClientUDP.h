@@ -24,7 +24,7 @@ namespace LambdaEngine
 		virtual void Release() override;
 		virtual bool IsConnected() override;
 		virtual bool SendUnreliable(NetworkPacket* packet) override;
-		virtual bool SendReliable(NetworkPacket* packet, IPacketListener* listener) override;
+		virtual bool SendReliable(NetworkPacket* packet, IPacketListener* listener = nullptr) override;
 		virtual const IPEndPoint& GetEndPoint() const override;
 		virtual NetworkPacket* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
