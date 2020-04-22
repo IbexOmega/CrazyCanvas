@@ -1,5 +1,7 @@
 #include "Log/Log.h"
 
+#include <mutex>
+
 #include "Math/MathUtilities.h"
 
 #include "Rendering/Core/Vulkan/DeviceAllocatorVK.h"
@@ -38,14 +40,38 @@ namespace LambdaEngine
     public:
         DECL_UNIQUE_CLASS(DeviceMemoryPageVK);
         
-        DeviceMemoryPageVK(const GraphicsDeviceVK* pDevice, uint32 memoryIndex)
+        DeviceMemoryPageVK(const GraphicsDeviceVK* pDevice, const uint32 id, const uint32 memoryIndex)
             : m_pDevice(pDevice),
-            m_MemoryIndex(memoryIndex)
+            m_MemoryIndex(memoryIndex),
+            m_ID(id)
         {
         }
         
         ~DeviceMemoryPageVK()
         {
+            VALIDATE(ValidateBlock(m_pHead));
+            VALIDATE(ValidateNoOverlap());
+
+#ifdef LAMBDA_DEVELOPMENT
+            if (m_pHead->pNext != nullptr)
+            {
+                LOG_WARNING("[DeviceMemoryPageVK]: Memoryleak detected, m_pHead->pNext is not nullptr");
+            }
+
+            if (m_pHead->pPrevious != nullptr)
+            {
+                LOG_WARNING("[DeviceMemoryPageVK]: Memoryleak detected, m_pHead->pPrevious is not nullptr");
+            }
+#endif
+            DeviceMemoryBlockVK* pIterator = m_pHead;
+            while (pIterator != nullptr)
+            {
+                DeviceMemoryBlockVK* pBlock = pIterator;
+                pIterator = pBlock->pNext;
+
+                SAFEDELETE(pBlock);
+            }
+
             if (m_MappingCount > 0)
             {
                 vkUnmapMemory(m_pDevice->Device, m_DeviceMemory);
@@ -54,6 +80,9 @@ namespace LambdaEngine
                 m_pHostMemory   = nullptr;
                 m_MappingCount  = 0;
             }
+
+            vkFreeMemory(m_pDevice->Device, m_DeviceMemory, nullptr);
+            m_DeviceMemory = VK_NULL_HANDLE;
         }
         
         bool Init(uint64 sizeInBytes)
@@ -88,6 +117,9 @@ namespace LambdaEngine
             
             // Find a suitable block
             DeviceMemoryBlockVK* pBestFit = nullptr;
+            
+            VALIDATE(ValidateBlock(m_pHead));
+
             for (DeviceMemoryBlockVK* pIterator = m_pHead; pIterator != nullptr; pIterator = pIterator->pNext)
             {
                 if (!pIterator->IsFree)
@@ -100,7 +132,7 @@ namespace LambdaEngine
                     continue;
                 }
                 
-                uint64 paddedOffset = AlignUp(pIterator->Offset, alignment);
+                paddedOffset = AlignUp(pIterator->Offset, alignment);
                 if (pageGranularity > 1)
                 {
                     DeviceMemoryBlockVK* pNext      = pIterator->pNext;
@@ -139,6 +171,7 @@ namespace LambdaEngine
             {
                 DeviceMemoryBlockVK* pNewBlock = DBG_NEW DeviceMemoryBlockVK();
                 pNewBlock->Offset           = pBestFit->Offset + paddedSizeInBytes;
+                pNewBlock->pPage            = this;
                 pNewBlock->pNext            = pBestFit->pNext;
                 pNewBlock->pPrevious        = pBestFit;
                 pNewBlock->SizeInBytes      = pBestFit->SizeInBytes - paddedSizeInBytes;
@@ -165,18 +198,60 @@ namespace LambdaEngine
         bool Free(AllocationVK* pAllocation)
         {
             VALIDATE(pAllocation != nullptr);
+
             DeviceMemoryBlockVK* pBlock = pAllocation->pBlock;
-            
+            pBlock->IsFree = true;
+
             VALIDATE(pBlock != nullptr);
             VALIDATE(ValidateBlock(pBlock));
             
-                        
+            DeviceMemoryBlockVK* pPrevious = pBlock->pPrevious;
+            if (pPrevious)
+            {
+                if (pPrevious->IsFree)
+                {
+                    pPrevious->pNext = pBlock->pNext;
+                    if (pBlock->pNext)
+                    {
+                        pBlock->pNext->pPrevious = pPrevious;
+                    }
+
+                    pPrevious->SizeInBytes      += pBlock->TotalSizeInBytes;
+                    pPrevious->TotalSizeInBytes += pBlock->TotalSizeInBytes;
+
+                    SAFEDELETE(pBlock);
+                    pBlock = pPrevious;
+                }
+            }
+
+            DeviceMemoryBlockVK* pNext = pBlock->pNext;
+            if (pNext)
+            {
+                if (pNext->IsFree)
+                {
+                    if (pNext->pNext)
+                    {
+                        pNext->pNext->pPrevious = pBlock;
+                    }
+                    pBlock->pNext = pNext->pNext;
+
+                    pBlock->SizeInBytes         += pNext->TotalSizeInBytes;
+                    pBlock->TotalSizeInBytes    += pNext->TotalSizeInBytes;
+
+                    SAFEDELETE(pNext);
+                }
+            }
             
             VALIDATE(ValidateNoOverlap());
+
+            pAllocation->Memory = VK_NULL_HANDLE;
+            pAllocation->Offset = 0;
+            pAllocation->pBlock = nullptr;
+
             return true;
         }
         
-        void* Map(AllocationVK* pAllocation)
+        void* Map(const AllocationVK* pAllocation)
         {
             VALIDATE(pAllocation != nullptr);
             DeviceMemoryBlockVK* pBlock = pAllocation->pBlock;
@@ -195,7 +270,7 @@ namespace LambdaEngine
             return m_pHostMemory + pAllocation->Offset;
         }
         
-        void Unmap(AllocationVK* pAllocation)
+        void Unmap(const AllocationVK* pAllocation)
         {
             VALIDATE(pAllocation != nullptr);
             DeviceMemoryBlockVK* pBlock = pAllocation->pBlock;
@@ -203,16 +278,30 @@ namespace LambdaEngine
             VALIDATE(pBlock != nullptr);
             VALIDATE(ValidateBlock(pBlock));
             
-            m_MappingCount = 0;
+            m_MappingCount--;
             if (m_MappingCount <= 0)
             {
                 vkUnmapMemory(m_pDevice->Device, m_DeviceMemory);
+                m_MappingCount = 0;
+            }
+        }
+
+        void SetName(const char* pName)
+        {
+            if (pName)
+            {
+                m_pDevice->SetVulkanObjectName(pName, (uint64)m_DeviceMemory, VK_OBJECT_TYPE_DEVICE_MEMORY);
             }
         }
         
         FORCEINLINE uint32 GetMemoryIndex() const
         {
             return m_MemoryIndex;
+        }
+
+        FORCEINLINE uint32 GetID() const
+        {
+            return m_ID;
         }
         
     private:
@@ -238,11 +327,11 @@ namespace LambdaEngine
             DeviceMemoryBlockVK* pIterator = m_pHead;
             while (pIterator != nullptr)
             {
-                pIterator = pIterator->pNext;
                 if (pIterator == pBlock)
                 {
                     return true;
                 }
+                pIterator = pIterator->pNext;
             }
             
             return false;
@@ -271,6 +360,7 @@ namespace LambdaEngine
     private:
         const GraphicsDeviceVK* const   m_pDevice;
         const uint32                    m_MemoryIndex;
+        const uint32                    m_ID;
         
         DeviceMemoryBlockVK*    m_pHead         = nullptr;
         byte*                   m_pHostMemory   = nullptr;
@@ -291,6 +381,10 @@ namespace LambdaEngine
 
     DeviceAllocatorVK::~DeviceAllocatorVK()
     {
+        for (DeviceMemoryPageVK* pMemoryPage : m_Pages)
+        {
+            SAFEDELETE(pMemoryPage);
+        }
     }
 
     bool DeviceAllocatorVK::Init(const DeviceAllocatorDesc* pDesc)
@@ -312,22 +406,34 @@ namespace LambdaEngine
     {
         VALIDATE(pAllocation != nullptr);
         
+        std::scoped_lock<SpinLock> lock(m_Lock);
+
         if (!m_Pages.empty())
         {
             for (DeviceMemoryPageVK* pMemoryPage : m_Pages)
             {
                 VALIDATE(pMemoryPage != nullptr);
+
                 if (pMemoryPage->GetMemoryIndex() == memoryIndex)
                 {
-                    return pMemoryPage->Allocate(pAllocation, sizeInBytes, alignment, m_DeviceProperties.limits.bufferImageGranularity);
+                    // Try and allocate otherwise we continue the search
+                    if (pMemoryPage->Allocate(pAllocation, sizeInBytes, alignment, m_DeviceProperties.limits.bufferImageGranularity))
+                    {
+                        return true;
+                    }
                 }
             }
         }
         
-        DeviceMemoryPageVK* pNewMemoryPage = DBG_NEW DeviceMemoryPageVK(m_pDevice, memoryIndex);
+        DeviceMemoryPageVK* pNewMemoryPage = DBG_NEW DeviceMemoryPageVK(m_pDevice, uint32(m_Pages.size()), memoryIndex);
         if (!pNewMemoryPage->Init(m_Desc.PageSizeInBytes))
         {
+            SAFEDELETE(pNewMemoryPage);
             return false;
+        }
+        else
+        {
+            SetPageName(pNewMemoryPage);
         }
         
         m_Pages.emplace_back(pNewMemoryPage);
@@ -336,6 +442,8 @@ namespace LambdaEngine
 
     bool DeviceAllocatorVK::Free(AllocationVK* pAllocation)
     {
+        std::scoped_lock<SpinLock> lock(m_Lock);
+
         VALIDATE(pAllocation != nullptr);
         DeviceMemoryBlockVK* pBlock = pAllocation->pBlock;
         
@@ -346,8 +454,10 @@ namespace LambdaEngine
         return pPage->Free(pAllocation);
     }
 
-    void* DeviceAllocatorVK::Map(AllocationVK* pAllocation)
+    void* DeviceAllocatorVK::Map(const AllocationVK* pAllocation)
     {
+        std::scoped_lock<SpinLock> lock(m_Lock);
+
         VALIDATE(pAllocation != nullptr);
         DeviceMemoryBlockVK* pBlock = pAllocation->pBlock;
         
@@ -358,8 +468,10 @@ namespace LambdaEngine
         return pPage->Map(pAllocation);
     }
 
-    void DeviceAllocatorVK::Unmap(AllocationVK* pAllocation)
+    void DeviceAllocatorVK::Unmap(const AllocationVK* pAllocation)
     {
+        std::scoped_lock<SpinLock> lock(m_Lock);
+
         VALIDATE(pAllocation != nullptr);
         DeviceMemoryBlockVK* pBlock = pAllocation->pBlock;
         
@@ -370,8 +482,29 @@ namespace LambdaEngine
         return pPage->Unmap(pAllocation);
     }
 
+    void DeviceAllocatorVK::SetPageName(DeviceMemoryPageVK* pMemoryPage)
+    {
+        VALIDATE(pMemoryPage != nullptr);
+
+        if (m_pDebugName)
+        {
+            std::string name = std::string(m_pDebugName) + "[PageID=" + std::to_string(pMemoryPage->GetID()) + "]";
+            pMemoryPage->SetName(name.c_str());
+        }
+    }
+
     void DeviceAllocatorVK::SetName(const char* pName)
     {
-        //TODO: Create this function
+        if (pName)
+        {
+            std::scoped_lock<SpinLock> lock(m_Lock);
+
+            TDeviceChild::SetName(pName);
+                
+            for (DeviceMemoryPageVK* pMemoryPage : m_Pages)
+            {
+                SetPageName(pMemoryPage);
+            }
+        }
     }
 }

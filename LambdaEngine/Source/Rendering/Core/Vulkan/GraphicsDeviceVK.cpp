@@ -173,7 +173,7 @@ namespace LambdaEngine
         else
         {
             m_UsedAllocations++;
-            D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes to buffer. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+            D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
         }
         
         return result;
@@ -528,7 +528,7 @@ namespace LambdaEngine
         VALIDATE(pDesc != nullptr);
         
 		TextureVK* pTexture = DBG_NEW TextureVK(this);
-		if (!pTexture->Init(pDesc))
+		if (!pTexture->Init(pDesc, pAllocator))
 		{
             pTexture->Release();
 			return nullptr;
@@ -767,7 +767,6 @@ namespace LambdaEngine
 		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
-
 		if (pDesc->Debug)
 		{
 			PopulateDebugMessengerCreateInfo(debugCreateInfo);
@@ -906,17 +905,16 @@ namespace LambdaEngine
         deviceFeatures11.pNext  = nullptr;
 		deviceFeatures11.pNext	= &deviceFeatures12;
 
-		VkPhysicalDeviceFeatures deviceFeatures = {};
-		deviceFeatures.fillModeNonSolid					= true;
-		deviceFeatures.vertexPipelineStoresAndAtomics	= true;
-		deviceFeatures.fragmentStoresAndAtomics			= true;
-		deviceFeatures.multiDrawIndirect				= true;
-		//deviceFeatures.geometryShader					= true;
+		VkPhysicalDeviceFeatures desiredDeviceFeatures = {};
+		desiredDeviceFeatures.fillModeNonSolid					= true;
+		desiredDeviceFeatures.vertexPipelineStoresAndAtomics	= true;
+		desiredDeviceFeatures.fragmentStoresAndAtomics			= true;
+		desiredDeviceFeatures.multiDrawIndirect					= true;
 
 		VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
 		deviceFeatures2.sType	 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 		deviceFeatures2.pNext	 = &deviceFeatures11;
-		deviceFeatures2.features = deviceFeatures;
+		deviceFeatures2.features = desiredDeviceFeatures;
 
 		VkDeviceCreateInfo createInfo = {};
 		createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

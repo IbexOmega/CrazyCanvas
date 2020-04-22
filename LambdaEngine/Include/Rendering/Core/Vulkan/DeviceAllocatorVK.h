@@ -1,8 +1,10 @@
 #pragma once
-#include "Rendering/Core/API/IDeviceAllocator.h"
-#include "Rendering/Core/API/TDeviceChildBase.h"
+#include "Threading/API/SpinLock.h"
 
 #include "Containers/TArray.h"
+
+#include "Rendering/Core/API/IDeviceAllocator.h"
+#include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
 
@@ -33,9 +35,9 @@ namespace LambdaEngine
         bool Allocate(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex);
         bool Free(AllocationVK* pAllocation);
         
-        void* Map(AllocationVK* pAllocation);
-        void Unmap(AllocationVK* pAllocation);
-        
+        void* Map(const AllocationVK* pAllocation);
+        void Unmap(const AllocationVK* pAllocation);
+
         // IDeviceChild Interface
         virtual void SetName(const char* pName) override final;
         
@@ -49,11 +51,15 @@ namespace LambdaEngine
         {
             return m_Desc;
         }
+
+    private:
+        void SetPageName(DeviceMemoryPageVK* pMemoryPage);
         
     private:
         TArray<DeviceMemoryPageVK*> m_Pages;
         VkPhysicalDeviceProperties  m_DeviceProperties;
         DeviceAllocatorStatistics   m_Statistics;
         DeviceAllocatorDesc         m_Desc;
+        SpinLock                    m_Lock;
     };
 }

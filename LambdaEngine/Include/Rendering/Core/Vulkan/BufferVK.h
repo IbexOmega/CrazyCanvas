@@ -4,8 +4,6 @@
 
 #include "Rendering/Core/Vulkan/DeviceAllocatorVK.h"
 
-#include "Vulkan.h"
-
 namespace LambdaEngine
 {
     class GraphicsDeviceVK;
@@ -46,7 +44,7 @@ namespace LambdaEngine
         }
 
     private:
-        DeviceAllocatorVK*  m_pAllocator         = nullptr;
+        DeviceAllocatorVK*  m_pAllocator            = nullptr;
         VkBuffer            m_Buffer                = VK_NULL_HANDLE;
         VkDeviceMemory      m_Memory                = VK_NULL_HANDLE;
         VkDeviceAddress     m_DeviceAddress         = 0;

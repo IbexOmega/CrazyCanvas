@@ -45,7 +45,7 @@ namespace LambdaEngine
 		{
             uint64 strongReferences;
             {
-                std::scoped_lock<SpinLock> lock(m_Lock);
+                std::scoped_lock<SpinLock> lock(m_RefLock);
                 strongReferences = --m_StrongReferences;
             }
             
@@ -60,12 +60,13 @@ namespace LambdaEngine
 
 		virtual uint64 AddRef() override
 		{
-            std::scoped_lock<SpinLock> lock(m_Lock);
+            std::scoped_lock<SpinLock> lock(m_RefLock);
 			return ++m_StrongReferences;
 		}
         
 		virtual void SetName(const char* pName) override
 		{
+            std::scoped_lock<SpinLock> lock(m_DebugNameLock);
 			strncpy(m_pDebugName, pName, MAX_DEVICE_CHILD_NAME_LENGTH);
 		}
 
@@ -75,11 +76,13 @@ namespace LambdaEngine
         }
 
 	protected:
-		const TGraphicsDevice* const	m_pDevice       = nullptr;
-		char*							m_pDebugName    = nullptr;
+		const TGraphicsDevice* const m_pDevice = nullptr;
+		
+        char*	 m_pDebugName = nullptr;
+        SpinLock m_DebugNameLock;
 
 	private:
-        SpinLock    m_Lock;
-		uint64      m_StrongReferences = 0;
+        SpinLock m_RefLock;
+		uint64   m_StrongReferences = 0;
 	};
 }
