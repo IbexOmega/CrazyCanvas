@@ -30,8 +30,8 @@ namespace LambdaEngine
 	bool RenderSystem::Init()
 	{
 		GraphicsDeviceDesc deviceDesc = { };
-#ifndef LAMBDA_PRODUCTION
-		deviceDesc.Debug = true;
+#ifdef LAMBDA_DEVELOPMENT
+		deviceDesc.Debug = false;
 #else
 		deviceDesc.Debug = false;
 #endif

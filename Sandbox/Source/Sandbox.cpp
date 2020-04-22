@@ -234,14 +234,9 @@ void Sandbox::InitTestAudio()
 
 void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 {
-	//LOG_MESSAGE("Key Pressed: %d", key);
-
-	using namespace LambdaEngine;
-
-	if (key == EKey::KEY_A)
-	{
-		LOG_MESSAGE("A Key Pressed");
-	}
+    using namespace LambdaEngine;
+    
+    LOG_MESSAGE("Key Pressed: %s", KeyToString(key));
 
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
@@ -292,14 +287,20 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 
 void Sandbox::OnKeyHeldDown(LambdaEngine::EKey key)
 {
-	UNREFERENCED_VARIABLE(key);
-	//LOG_MESSAGE("Key Held Down: %d", key);
+    using namespace LambdaEngine;
+    
+    UNREFERENCED_VARIABLE(key);
+    
+    LOG_MESSAGE("Key held down: %s", KeyToString(key));
 }
 
 void Sandbox::OnKeyUp(LambdaEngine::EKey key)
 {
+    using namespace LambdaEngine;
+    
 	UNREFERENCED_VARIABLE(key);
-	//LOG_MESSAGE("Key Released: %d", key);
+	
+    LOG_MESSAGE("Key Released: %s", KeyToString(key));
 }
 
 void Sandbox::OnMouseMove(int32 x, int32 y)
@@ -362,47 +363,47 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	constexpr float CAMERA_MOVEMENT_SPEED = 1.4f;
 	constexpr float CAMERA_ROTATION_SPEED = 45.0f;
 
-	if (Input::GetKeyboardState().IsKeyDown(EKey::KEY_W) && Input::GetKeyboardState().IsKeyUp(EKey::KEY_S))
+	if (Input::IsKeyDown(EKey::KEY_W) && Input::IsKeyUp(EKey::KEY_S))
 	{
 		m_pCamera->Translate(glm::vec3(0.0f, 0.0f, CAMERA_MOVEMENT_SPEED * delta.AsSeconds()));
 	}
-	else if (Input::GetKeyboardState().IsKeyDown(EKey::KEY_S) && Input::GetKeyboardState().IsKeyUp(EKey::KEY_W))
+	else if (Input::IsKeyDown(EKey::KEY_S) && Input::IsKeyUp(EKey::KEY_W))
 	{
 		m_pCamera->Translate(glm::vec3(0.0f, 0.0f, -CAMERA_MOVEMENT_SPEED * delta.AsSeconds()));
 	}
 
-	if (Input::GetKeyboardState().IsKeyDown(EKey::KEY_A) && Input::GetKeyboardState().IsKeyUp(EKey::KEY_D))
+	if (Input::IsKeyDown(EKey::KEY_A) && Input::IsKeyUp(EKey::KEY_D))
 	{
 		m_pCamera->Translate(glm::vec3(-CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
 	}
-	else if (Input::GetKeyboardState().IsKeyDown(EKey::KEY_D) && Input::GetKeyboardState().IsKeyUp(EKey::KEY_A))
+	else if (Input::IsKeyDown(EKey::KEY_D) && Input::IsKeyUp(EKey::KEY_A))
 	{
 		m_pCamera->Translate(glm::vec3(CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
 	}
 
-	if (Input::GetKeyboardState().IsKeyDown(EKey::KEY_Q) && Input::GetKeyboardState().IsKeyUp(EKey::KEY_E))
+	if (Input::IsKeyDown(EKey::KEY_Q) && Input::IsKeyUp(EKey::KEY_E))
 	{
 		m_pCamera->Translate(glm::vec3(0.0f, CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f));
 	}
-	else if (Input::GetKeyboardState().IsKeyDown(EKey::KEY_E) && Input::GetKeyboardState().IsKeyUp(EKey::KEY_Q))
+	else if (Input::IsKeyDown(EKey::KEY_E) && Input::IsKeyUp(EKey::KEY_Q))
 	{
 		m_pCamera->Translate(glm::vec3(0.0f, -CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f));
 	}
 
-	if (Input::GetKeyboardState().IsKeyDown(EKey::KEY_UP) && Input::GetKeyboardState().IsKeyUp(EKey::KEY_DOWN))
+	if (Input::IsKeyDown(EKey::KEY_UP) && Input::IsKeyUp(EKey::KEY_DOWN))
 	{
 		m_pCamera->Rotate(glm::vec3(-CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
 	}
-	else if (Input::GetKeyboardState().IsKeyDown(EKey::KEY_DOWN) && Input::GetKeyboardState().IsKeyUp(EKey::KEY_UP))
+	else if (Input::IsKeyDown(EKey::KEY_DOWN) && Input::IsKeyUp(EKey::KEY_UP))
 	{
 		m_pCamera->Rotate(glm::vec3(CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
 	}
 	
-	if (Input::GetKeyboardState().IsKeyDown(EKey::KEY_LEFT) && Input::GetKeyboardState().IsKeyUp(EKey::KEY_RIGHT))
+	if (Input::IsKeyDown(EKey::KEY_LEFT) && Input::IsKeyUp(EKey::KEY_RIGHT))
 	{
 		m_pCamera->Rotate(glm::vec3(0.0f, -CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f));
 	}
-	else if (Input::GetKeyboardState().IsKeyDown(EKey::KEY_RIGHT) && Input::GetKeyboardState().IsKeyUp(EKey::KEY_LEFT))
+	else if (Input::IsKeyDown(EKey::KEY_RIGHT) && Input::IsKeyUp(EKey::KEY_LEFT))
 	{
 		m_pCamera->Rotate(glm::vec3(0.0f, CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f));
 	}

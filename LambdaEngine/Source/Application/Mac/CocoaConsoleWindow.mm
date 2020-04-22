@@ -169,6 +169,11 @@
     return YES;
 }
 
+- (BOOL) acceptsFirstResponder
+{
+    return NO;
+}
+
 + (NSString*) convertStringWithArgs:(const char *)format args:(va_list)args
 {
     NSString* tempFormat    = [NSString stringWithUTF8String:format];

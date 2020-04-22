@@ -26,6 +26,7 @@
 - (NSUInteger) getLineCount;
 
 - (BOOL) windowShouldClose:(NSWindow*) sender;
+- (BOOL) acceptsFirstResponder;
 
 + (NSString*) convertStringWithArgs:(const char*) format args:(va_list) args;
 

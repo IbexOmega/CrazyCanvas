@@ -2,7 +2,6 @@
 #include "Log/Log.h"
 
 #include "Memory/Memory.h"
-
 #include "Application/Mac/MacConsole.h"
 #include "Application/Mac/MacApplication.h"
 #include "Application/Mac/CocoaAppController.h"
@@ -12,6 +11,8 @@
 #include "Input/Mac/MacInputCodeTable.h"
 
 #include "Threading/Mac/MacMainThread.h"
+
+#include <mutex>
 
 #include <Appkit/Appkit.h>
 
@@ -59,19 +60,44 @@ namespace LambdaEngine
 
     void MacApplication::ProcessBufferedMessages()
     {
+        m_IsProcessingEvents = true;
+        
         for (MacMessage& message : m_BufferedMessages)
         {
-            if (message.event)
+            VALIDATE(message.event);
+            
+//            switch([message.event type])
+//            {
+//                case NSEventTypeKeyUp:
+//                {
+//                    const uint16  macKey = [message.event keyCode];
+//                    const EKey    key    = MacInputCodeTable::GetKey(macKey);
+//
+//                    LOG_MESSAGE("Key Up (ProcessBufferedMessages): %s", KeyToString(key));
+//
+//                    break;
+//                }
+//
+//                case NSEventTypeKeyDown:
+//                {
+//                    const uint16  macKey = [message.event keyCode];
+//                    const EKey    key    = MacInputCodeTable::GetKey(macKey);
+//
+//                    LOG_MESSAGE("Key Down (ProcessBufferedMessages): %s", KeyToString(key));
+//
+//                    break;
+//                }
+//            }
+            
+            for (IApplicationMessageHandler* pHandler : m_MessageHandlers)
             {
-                for (IApplicationMessageHandler* pHandler : m_MessageHandlers)
-                {
-                    pHandler->HandleEvent(message.event);
-                }
-                
-                [message.event release];
+                pHandler->HandleEvent(message.event);
             }
+            
+            [message.event release];
         }
-        
+
+        m_IsProcessingEvents = false;
         m_BufferedMessages.clear();
     }
 
@@ -229,28 +255,31 @@ namespace LambdaEngine
         SCOPED_AUTORELEASE_POOL();
         
         //Make sure this function is called on the main thread, calling from other threads result in undefined
-        ASSERT([NSThread isMainThread]);
+        VALIDATE([NSThread isMainThread]);
         
         if (s_pApplication)
         {
-            NSEvent* event = nil;
-            while (true)
+            if (!s_pApplication->m_IsProcessingEvents)
             {
-                event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES];
-                if (event == nil)
+                NSEvent* event = nil;
+                while (true)
                 {
-                    break;
-                }
-                
-                //Buffer event before sending it to the rest of the system
-                s_pApplication->BufferEvent(event);
+                    event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES];
+                    if (event == nil)
+                    {
+                        break;
+                    }
+                    
+                    //Buffer event before sending it to the rest of the system
+                    s_pApplication->BufferEvent(event);
 
-                [NSApp sendEvent:event];
-                [NSApp updateWindows];
-                
-                if (s_pApplication->m_IsTerminating)
-                {
-                    return false;
+                    [NSApp sendEvent:event];
+                    [NSApp updateWindows];
+                    
+                    if (s_pApplication->m_IsTerminating)
+                    {
+                        return false;
+                    }
                 }
             }
         }
@@ -263,9 +292,33 @@ namespace LambdaEngine
         SCOPED_AUTORELEASE_POOL();
         
         MacMessage message = { };
-        message.event = [event retain];
-
-        m_BufferedMessages.push_back(message);
+        message.event           = [event retain];
+        message.notification    = nullptr;
+        
+//        switch([message.event type])
+//        {
+//            case NSEventTypeKeyUp:
+//            {
+//                const uint16  macKey = [event keyCode];
+//                const EKey    key    = MacInputCodeTable::GetKey(macKey);
+//
+//                LOG_MESSAGE("Key Up (BufferEvent): %s", KeyToString(key));
+//
+//                break;
+//            }
+//
+//            case NSEventTypeKeyDown:
+//            {
+//                const uint16  macKey = [event keyCode];
+//                const EKey    key    = MacInputCodeTable::GetKey(macKey);
+//
+//                LOG_MESSAGE("Key Down (BufferEvent): %s", KeyToString(key));
+//
+//                break;
+//            }
+//        }
+        
+        m_BufferedMessages.emplace_back(message);
     }
 
     bool MacApplication::PostRelease()
