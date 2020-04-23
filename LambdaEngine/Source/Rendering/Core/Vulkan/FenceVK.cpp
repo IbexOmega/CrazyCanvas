@@ -2,107 +2,42 @@
 
 #include "Rendering/Core/Vulkan/FenceVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
-#include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
 {
 	FenceVK::FenceVK(const GraphicsDeviceVK* pDevice)
-		: TDeviceChild(pDevice),
-        m_Desc()
+		: TDeviceChild(pDevice)
 	{
 	}
 	
 	FenceVK::~FenceVK()
 	{
-		if (m_Semaphore != VK_NULL_HANDLE)
-		{
-			vkDestroySemaphore(m_pDevice->Device, m_Semaphore, nullptr);
-			m_Semaphore = VK_NULL_HANDLE;
-		}
 	}
 	
 	bool FenceVK::Init(const FenceDesc* pDesc)
 	{
-		VkSemaphoreTypeCreateInfo typeInfo = { };
-		typeInfo.sType			= VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
-		typeInfo.pNext			= nullptr;
-		typeInfo.semaphoreType	= VK_SEMAPHORE_TYPE_TIMELINE;
-        typeInfo.initialValue	= pDesc->InitalValue;
-
-		VkSemaphoreCreateInfo info = {};
-		info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-		info.pNext = (const void*)&typeInfo;
-		info.flags = 0;
-
-		VkResult result = vkCreateSemaphore(m_pDevice->Device, &info, nullptr, &m_Semaphore);
-		if (result != VK_SUCCESS)
-		{
-			LOG_VULKAN_ERROR(result, "[FenceVK]: Failed to create semaphore");
-			return false;
-		}
-        else
-        {
-            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
-            SetName(pDesc->pName);
-            return true;
-        }
-	}
-
-	void FenceVK::Wait(uint64 waitValue, uint64 timeOut) const
-	{
-		VkSemaphoreWaitInfo waitInfo = {};
-		waitInfo.sType			= VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
-		waitInfo.pNext			= nullptr;
-		waitInfo.flags			= 0;
-		waitInfo.semaphoreCount = 1;
-		waitInfo.pSemaphores	= &m_Semaphore;
-		waitInfo.pValues		= &waitValue;
-
-		VkResult result = m_pDevice->vkWaitSemaphores(m_pDevice->Device, &waitInfo, timeOut);
-		if (result != VK_SUCCESS)
-		{
-			LOG_VULKAN_ERROR(result, "[FenceVK]: Failed to wait for semaphore");
-		}
-	}
-
-	void FenceVK::Signal(uint64 signalValue)
-	{
-		VkSemaphoreSignalInfo signalInfo = { };
-		signalInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
-		signalInfo.pNext		= nullptr;
-		signalInfo.value		= signalValue;
-		signalInfo.semaphore	= m_Semaphore;
-
-		VkResult result = m_pDevice->vkSignalSemaphore(m_pDevice->Device, &signalInfo);
-		if (result != VK_SUCCESS)
-		{
-			LOG_VULKAN_ERROR(result, "[FenceVK]: Failed to signal semaphore");
-		}
-}
-
-	uint64 FenceVK::GetValue() const
-	{
-		uint64	 value	= 0;
-		VkResult result = m_pDevice->vkGetSemaphoreCounterValue(m_pDevice->Device, m_Semaphore, &value);
-		if (result != VK_SUCCESS)
-		{
-			LOG_VULKAN_ERROR(result, "[FenceVK]: Failed to retrive fence-value");
-			return 0xffffffffffffffff;
-		}
-		else
-		{
-			return value;
-		}
+		//LOG_WARNING("[FenceLegacyVK]: 'Init'FUNCTION NOT IMPLEMENTED");
+		return true;
 	}
 	
 	void FenceVK::SetName(const char* pName)
 	{
-		if (pName)
-		{
-			TDeviceChild::SetName(pName);
-			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Semaphore, VK_OBJECT_TYPE_SEMAPHORE);
+		//LOG_WARNING("[FenceLegacyVK]: 'SetName'FUNCTION NOT IMPLEMENTED");
+	}
+	
+	void FenceVK::Wait(uint64 waitValue, uint64 timeOut) const
+	{
+		//LOG_WARNING("[FenceLegacyVK]: 'Wait'FUNCTION NOT IMPLEMENTED");
+	}
+	
+	void FenceVK::Signal(uint64 signalValue)
+	{
+		//LOG_WARNING("[FenceLegacyVK]: 'Signal'FUNCTION NOT IMPLEMENTED");
+	}
 
-			m_Desc.pName = m_pDebugName;
-		}
+	uint64 FenceVK::GetValue() const
+	{
+		//LOG_WARNING("[FenceLegacyVK]: 'GetValue' FUNCTION NOT IMPLEMENTED");
+		return uint64(0);
 	}
 }

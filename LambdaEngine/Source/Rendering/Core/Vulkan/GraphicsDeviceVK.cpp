@@ -5,8 +5,8 @@
 
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/FenceVK.h"
+#include "Rendering/Core/Vulkan/FenceTimelineVK.h"
 #include "Rendering/Core/Vulkan/SamplerVK.h"
-#include "Rendering/Core/Vulkan/FenceLegacyVK.h"
 #include "Rendering/Core/Vulkan/CommandAllocatorVK.h"
 #include "Rendering/Core/Vulkan/CommandListVK.h"
 #include "Rendering/Core/Vulkan/CommandQueueVK.h"
@@ -464,6 +464,19 @@ namespace LambdaEngine
         
 		if (IsDeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
 		{
+			FenceTimelineVK* pFenceTimelineVk = DBG_NEW FenceTimelineVK(this);
+			if (!pFenceTimelineVk->Init(pDesc))
+			{
+				pFenceTimelineVk->Release();
+				return nullptr;
+			}
+			else
+			{
+				return pFenceTimelineVk;
+			}
+		}
+		else
+		{
 			FenceVK* pFenceVk = DBG_NEW FenceVK(this);
 			if (!pFenceVk->Init(pDesc))
 			{
@@ -473,19 +486,6 @@ namespace LambdaEngine
 			else
 			{
 				return pFenceVk;
-			}
-		}
-		else
-		{
-			FenceLegacyVK* pFenceLegacyVk = DBG_NEW FenceLegacyVK(this);
-			if (!pFenceLegacyVk->Init(pDesc))
-			{
-				pFenceLegacyVk->Release();
-				return nullptr;
-			}
-			else
-			{
-				return pFenceLegacyVk;
 			}
 		}
 	}
