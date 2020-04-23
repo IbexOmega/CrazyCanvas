@@ -3,7 +3,7 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
-#include "Containers/TArray.h"
+#include "Rendering/Core/API/IRenderPass.h"
 
 namespace LambdaEngine
 {
@@ -33,7 +33,8 @@ namespace LambdaEngine
 		const char* pName									= "";
 		const IRenderPass* pRenderPass						= nullptr;
 		const IPipelineLayout* pPipelineLayout				= nullptr;
-		const BlendAttachmentState* pBlendAttachmentStates	= nullptr;
+		
+		BlendAttachmentState pBlendAttachmentStates[MAX_COLOR_ATTACHMENTS];
 		uint32 BlendAttachmentStateCount					= 0;
 
 		//New Style

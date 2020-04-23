@@ -20,7 +20,8 @@ namespace LambdaEngine
 		const char* pName									= "";
 		const IRenderPass* pRenderPass						= nullptr;
 		const IPipelineLayout* pPipelineLayout				= nullptr;
-		const BlendAttachmentState* pBlendAttachmentStates	= nullptr;
+
+		BlendAttachmentState pBlendAttachmentStates[MAX_COLOR_ATTACHMENTS];
 		uint32 BlendAttachmentStateCount					= 0;
 
 		//New Style
@@ -58,7 +59,7 @@ namespace LambdaEngine
 		uint32					ClosestHitShaderCount		= 0;
 	};
 
-	class PipelineStateManager
+	class LAMBDA_API PipelineStateManager
 	{
 	public:
 		DECL_STATIC_CLASS(PipelineStateManager);
