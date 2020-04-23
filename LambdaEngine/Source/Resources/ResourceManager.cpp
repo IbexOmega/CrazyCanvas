@@ -308,9 +308,13 @@ namespace LambdaEngine
 	{
 		for (auto it = s_Shaders.begin(); it != s_Shaders.end(); it++)
 		{
-			ShaderLoadDesc loadDesc = s_ShaderLoadConfigurations[it->first];
+			if (it->second != nullptr)
+			{
+				SAFERELEASE(it->second);
+				ShaderLoadDesc loadDesc = s_ShaderLoadConfigurations[it->first];
 
-			it->second = ResourceLoader::LoadShaderFromFile(loadDesc.pFilepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
+				it->second = ResourceLoader::LoadShaderFromFile(loadDesc.pFilepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
+			}
 		}
 	}
 

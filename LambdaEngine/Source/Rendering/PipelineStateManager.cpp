@@ -141,7 +141,7 @@ namespace LambdaEngine
 		pDstDesc->pName						= pSrcDesc->pName;
 		pDstDesc->pRenderPass				= pSrcDesc->pRenderPass;
 		pDstDesc->pPipelineLayout			= pSrcDesc->pPipelineLayout;
-		pDstDesc->pBlendAttachmentStates	= pSrcDesc->pBlendAttachmentStates;
+		memcpy(pDstDesc->pBlendAttachmentStates, pSrcDesc->pBlendAttachmentStates, MAX_COLOR_ATTACHMENTS * sizeof(BlendAttachmentState));
 		pDstDesc->BlendAttachmentStateCount = pSrcDesc->BlendAttachmentStateCount;
 		pDstDesc->pTaskShader				= ResourceManager::GetShader(pSrcDesc->TaskShader);
 		pDstDesc->pMeshShader				= ResourceManager::GetShader(pSrcDesc->MeshShader);

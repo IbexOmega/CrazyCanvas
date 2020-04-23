@@ -857,7 +857,7 @@ namespace LambdaEngine
 				GraphicsManagedPipelineStateDesc pipelineDesc		= *pRenderStageDesc->GraphicsPipeline.pGraphicsDesc;
 
 				pipelineDesc.pPipelineLayout				= pRenderStage->pPipelineLayout;
-				pipelineDesc.pBlendAttachmentStates			= renderPassBlendAttachmentStates.data();
+				memcpy(pipelineDesc.pBlendAttachmentStates, renderPassBlendAttachmentStates.data(), renderPassBlendAttachmentStates.size() * sizeof(BlendAttachmentState));
 				pipelineDesc.BlendAttachmentStateCount		= (uint32)renderPassBlendAttachmentStates.size();
 
 				//Create RenderPass
