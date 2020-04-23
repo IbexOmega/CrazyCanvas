@@ -35,7 +35,7 @@ Sandbox::Sandbox()
 	using namespace LambdaEngine;
 
 	constexpr const uint32 BACK_BUFFER_COUNT = 3;
-	constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
+	constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 16;
 
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 

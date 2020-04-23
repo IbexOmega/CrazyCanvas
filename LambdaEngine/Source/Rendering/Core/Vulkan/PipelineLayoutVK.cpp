@@ -45,7 +45,7 @@ namespace LambdaEngine
 		CreatePushConstantRanges(pDesc->pConstantRanges, pDesc->ConstantRangeCount, constantRanges);
 		CreateDescriptorSetLayout(pDesc->pDescriptorSetLayouts, pDesc->DescriptorSetLayoutCount, descriptorSetLayouts);
         
-#ifndef LAMBDA_PRODUCTION
+#ifdef LAMBDA_DEVELOPMENT
         //Check limits
         VkPhysicalDeviceLimits limits   = m_pDevice->GetDeviceLimits();
         DescriptorCountDesc totalCount  = {};
@@ -61,15 +61,15 @@ namespace LambdaEngine
             totalCount.UnorderedAccessTextureDescriptorCount    += m_DescriptorCounts[i].UnorderedAccessTextureDescriptorCount;
         }
         
-        ASSERT(totalCount.UnorderedAccessTextureDescriptorCount < limits.maxPerStageDescriptorStorageImages);
-        ASSERT(totalCount.UnorderedAccessBufferDescriptorCount  < limits.maxPerStageDescriptorStorageBuffers);
-        ASSERT(totalCount.ConstantBufferDescriptorCount         < limits.maxPerStageDescriptorUniformBuffers);
+        VALIDATE(totalCount.UnorderedAccessTextureDescriptorCount < limits.maxPerStageDescriptorStorageImages);
+        VALIDATE(totalCount.UnorderedAccessBufferDescriptorCount  < limits.maxPerStageDescriptorStorageBuffers);
+        VALIDATE(totalCount.ConstantBufferDescriptorCount         < limits.maxPerStageDescriptorUniformBuffers);
         
         const uint32 totalSamplerDescriptorCount = totalCount.TextureCombinedSamplerDescriptorCount + totalCount.SamplerDescriptorCount;
-        ASSERT(totalSamplerDescriptorCount < limits.maxPerStageDescriptorSamplers);
+        VALIDATE(totalSamplerDescriptorCount < limits.maxPerStageDescriptorSamplers);
 
         const uint32 totalTextureDescriptorCount = totalCount.TextureCombinedSamplerDescriptorCount + totalCount.TextureDescriptorCount;
-        ASSERT(totalTextureDescriptorCount < limits.maxPerStageDescriptorSampledImages);
+        VALIDATE(totalTextureDescriptorCount < limits.maxPerStageDescriptorSampledImages);
 #endif
         
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = { };

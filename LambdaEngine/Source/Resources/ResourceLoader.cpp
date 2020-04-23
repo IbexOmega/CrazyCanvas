@@ -34,7 +34,7 @@ namespace LambdaEngine
 	*  --------------------------glslang Helpers Begin---------------------------------
 	*/
 
-	const TBuiltInResource* GetDefaultBuiltInResources()
+	static const TBuiltInResource* GetDefaultBuiltInResources()
 	{
 		static TBuiltInResource defaultBuiltInResources = {};
 
@@ -134,7 +134,7 @@ namespace LambdaEngine
 		return &defaultBuiltInResources;
 	}
 
-	inline EShLanguage ConvertShaderStageToEShLanguage(FShaderStageFlags shaderStage)
+	static EShLanguage ConvertShaderStageToEShLanguage(FShaderStageFlags shaderStage)
 	{
 		switch (shaderStage)
 		{
@@ -767,9 +767,9 @@ namespace LambdaEngine
 		shader.setStringsWithLengths(&pSource, &foundBracket, 1);
 
 		//Todo: Fetch this
-		int clientInputSemanticsVersion									= 110;
-		glslang::EShTargetClientVersion vulkanClientVersion				= glslang::EShTargetVulkan_1_2;
-		glslang::EShTargetLanguageVersion targetVersion					= glslang::EShTargetSpv_1_5;
+		int32 clientInputSemanticsVersion							    = 110;
+		glslang::EShTargetClientVersion vulkanClientVersion				= glslang::EShTargetVulkan_1_0;
+		glslang::EShTargetLanguageVersion targetVersion					= glslang::EShTargetSpv_1_0;
 
 		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
 		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
@@ -816,5 +816,7 @@ namespace LambdaEngine
 		spv::SpvBuildLogger logger;
 		glslang::SpvOptions spvOptions;
 		glslang::GlslangToSpv(*program.getIntermediate(shaderType), sourceSPIRV, &logger, &spvOptions);
+        
+        return true;
 	}
 }
