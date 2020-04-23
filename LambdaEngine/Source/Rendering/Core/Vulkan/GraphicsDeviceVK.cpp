@@ -87,7 +87,7 @@ namespace LambdaEngine
      */
 
 	GraphicsDeviceVK::GraphicsDeviceVK()
-        : GraphicsDeviceBase(),
+        : IGraphicsDevice(),
         RayTracingProperties(),
         m_DeviceQueueFamilyIndices(),
         m_DeviceLimits(),
@@ -247,7 +247,6 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::Release()
 	{
-        GraphicsDeviceBase::Release();
 		delete this;
 	}
 

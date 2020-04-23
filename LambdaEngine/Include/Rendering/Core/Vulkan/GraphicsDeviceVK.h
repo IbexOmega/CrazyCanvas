@@ -4,7 +4,7 @@
 #include "Utilities/StringHash.h"
 
 #include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/GraphicsDeviceBase.h"
+#include "Rendering/Core/API/IGraphicsDevice.h"
 
 #include "Vulkan.h"
 
@@ -29,7 +29,7 @@ namespace LambdaEngine
 		}
 	};
 
-	class GraphicsDeviceVK final : public GraphicsDeviceBase
+	class GraphicsDeviceVK final : public IGraphicsDevice
 	{
 	public:
 		GraphicsDeviceVK();

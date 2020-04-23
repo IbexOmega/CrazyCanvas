@@ -1,10 +1,10 @@
 #pragma once
 #include "IDeviceChild.h"
-#include "GraphicsDeviceBase.h"
 
 #include "Threading/API/SpinLock.h"
 
 #include <mutex>
+
 #include <string.h>
 
 #define MAX_DEVICE_CHILD_NAME_LENGTH 256
@@ -51,8 +51,7 @@ namespace LambdaEngine
             
 			if (strongReferences < 1)
 			{
-                const GraphicsDeviceBase* pDeviceBase = reinterpret_cast<const GraphicsDeviceBase*>(m_pDevice);
-                pDeviceBase->DestroyObject(this);
+                delete this;
 			}
 
 			return strongReferences;
