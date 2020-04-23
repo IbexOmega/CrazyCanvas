@@ -25,7 +25,7 @@ namespace LambdaEngine
 	{
 		struct MessageInfo
 		{
-			NetworkPacket*	Packet		= nullptr;
+			NetworkPacket* Packet		= nullptr;
 			IPacketListener* Listener	= nullptr;
 			Timestamp LastSent			= 0;
 			uint8 Tries					= 0;
@@ -64,11 +64,11 @@ namespace LambdaEngine
 
 
 	public:
-		PacketManager(uint16 packets, uint8 maximumTries);
+		PacketManager(IPacketListener* pListener, uint16 packets, uint8 maximumTries);
 		~PacketManager();
 
 		void EnqueuePacket(NetworkPacket* packet);
-		void EnqueuePacket(NetworkPacket* packet, IPacketListener* listener);
+		void EnqueuePacketReliable(NetworkPacket* packet, IPacketListener* listener = nullptr);
 		NetworkPacket* GetFreePacket();
 
 		bool EncodePackets(char* buffer, int32& bytesWritten);
@@ -114,6 +114,8 @@ namespace LambdaEngine
 		std::atomic_int m_QueueIndex;
 		std::atomic_uint32_t m_LastReceivedSequenceNr;
 		std::atomic_uint32_t m_ReceivedSequenceBits;
+
+		IPacketListener* m_pListener;
 
 		NetworkStatistics m_Statistics;
 		uint32 m_ReliableMessagesSent;

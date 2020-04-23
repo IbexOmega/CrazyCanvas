@@ -60,6 +60,6 @@ namespace LambdaEngine
 	private:
 		std::atomic_flag m_Flag = ATOMIC_FLAG_INIT;
 		std::thread::id m_ThreadId;
-		int m_Counter;
+		int32 m_Counter;
 	};
 }

@@ -75,8 +75,10 @@ namespace LambdaEngine
         CocoaAppController* m_pAppDelegate  = nullptr;
         bool                m_IsTerminating = false;
         
-        std::vector<MacMessage>                     m_BufferedMessages;
-        std::vector<IApplicationMessageHandler*>    m_MessageHandlers;
+        std::vector<MacMessage> m_BufferedMessages;
+        bool                    m_IsProcessingEvents = false;
+        
+        std::vector<IApplicationMessageHandler*> m_MessageHandlers;
 
     private:
         static MacApplication* s_pApplication;

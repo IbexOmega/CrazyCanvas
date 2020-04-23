@@ -10,7 +10,8 @@
 
 namespace LambdaEngine
 {
-	PacketManager::PacketManager(uint16 packets, uint8 maximumTries) :
+	PacketManager::PacketManager(IPacketListener* pListener, uint16 packets, uint8 maximumTries) :
+		m_pListener(pListener),
 		m_NrOfPackets(packets),
 		m_MaximumTries(maximumTries)
 	{
@@ -25,15 +26,17 @@ namespace LambdaEngine
 
 	void PacketManager::EnqueuePacket(NetworkPacket* pPacket)
 	{
-		EnqueuePacket(pPacket, nullptr);
+		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
+		pPacket->GetHeader().UID = GetNextMessageUID();
+		pPacket->GetHeader().ReliableUID = 0;
+		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ pPacket, nullptr });
 	}
 
-	void PacketManager::EnqueuePacket(NetworkPacket* pPacket, IPacketListener* listener)
+	void PacketManager::EnqueuePacketReliable(NetworkPacket* pPacket, IPacketListener* listener)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
 		pPacket->GetHeader().UID = GetNextMessageUID();
-		if (listener)
-			pPacket->GetHeader().ReliableUID = GetNextMessageReliableUID();
+		pPacket->GetHeader().ReliableUID = GetNextMessageReliableUID();
 		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ pPacket, listener});
 	}
 
@@ -68,6 +71,7 @@ namespace LambdaEngine
 		bytesWritten = 0;
 
 		std::vector<MessageInfo> reliableMessages;
+		std::vector<NetworkPacket*> nonReliableMessages;
 
 		while (!packets.empty())
 		{
@@ -87,10 +91,14 @@ namespace LambdaEngine
 				header.Size += packetBufferSize;
 
 				//Is this a reliable message ?
-				if (messageInfo.Listener)
+				if (messageInfo.Packet->IsReliable())
 				{
 					bundle.MessageUIDs.insert(messageInfo.GetUID());
 					reliableMessages.push_back(messageInfo);
+				}
+				else
+				{
+					nonReliableMessages.push_back(messageInfo.Packet);
 				}
 
 				header.Packets++;
@@ -99,17 +107,20 @@ namespace LambdaEngine
 				if (packets.empty())
 				{
 					WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle, reliableMessages);
+					Free(nonReliableMessages);
 					return true;
 				}
 				else if (header.Packets == 32)
 				{
 					WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle, reliableMessages);
+					Free(nonReliableMessages);
 					return false;
 				}
 			}
 			else
 			{
 				WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle, reliableMessages);
+				Free(nonReliableMessages);
 				return false;
 			}
 		}
@@ -174,6 +185,9 @@ namespace LambdaEngine
 
 		packetsRead.reserve(header.Packets);
 
+		std::vector<NetworkPacket*> messagesToFree;
+		bool hasReliableMessage = false;
+
 		for (int i = 0; i < header.Packets; i++)
 		{
 			NetworkPacket* message = GetFreePacket();
@@ -185,9 +199,21 @@ namespace LambdaEngine
 			offset += messageHeader.Size;
 			message->m_Salt = header.Salt;
 
-			if (message->IsReliable())
+			if (message->GetType() == NetworkPacket::TYPE_NETWORK_ACK)
 			{
-				m_MessagesReceivedOrdered.insert(message);
+				messagesToFree.push_back(message);
+			}
+			else if (message->IsReliable())
+			{
+				hasReliableMessage = true;
+				if (message->GetReliableUID() >= m_NextExpectedMessageNr)
+				{
+					m_MessagesReceivedOrdered.insert(message);
+				}
+				else
+				{
+					messagesToFree.push_back(message);
+				}
 			}
 			else
 			{
@@ -195,11 +221,16 @@ namespace LambdaEngine
 			}
 		}
 
+		Free(messagesToFree);
+
 		std::vector<NetworkPacket*> messagesComplete;
 		for (NetworkPacket* message : m_MessagesReceivedOrdered)
 		{
 			if (message->GetReliableUID() != m_NextExpectedMessageNr)
+			{
+				LOG_MESSAGE("Skipped %d != %d", message->GetReliableUID(), m_NextExpectedMessageNr);
 				break;
+			}
 
 			m_NextExpectedMessageNr++;
 			packetsRead.push_back(message);
@@ -209,6 +240,13 @@ namespace LambdaEngine
 		for (NetworkPacket* message : messagesComplete)
 		{
 			m_MessagesReceivedOrdered.erase(message);
+		}
+
+		if (hasReliableMessage && m_PacketsToSend[m_QueueIndex].empty())
+		{
+			NetworkPacket* pPacket = GetFreePacket();
+			pPacket->SetType(NetworkPacket::TYPE_NETWORK_ACK);
+			EnqueuePacket(pPacket);
 		}
 
 		return true;
@@ -326,7 +364,7 @@ namespace LambdaEngine
 		static const double scalar2 = 1.0 - scalar1;
 		if (rtt != UINT64_MAX)
 		{
-			m_Statistics.m_Ping = (rtt.AsNanoSeconds() * scalar1) + (m_Statistics.GetPing().AsNanoSeconds() * scalar2);
+			m_Statistics.m_Ping = (uint64)((rtt.AsNanoSeconds() * scalar1) + (m_Statistics.GetPing().AsNanoSeconds() * scalar2));
 		}
 	}
 
@@ -342,13 +380,20 @@ namespace LambdaEngine
 				rtt = timestamp;
 			}
 
+			std::vector<NetworkPacket*> messagesToFree;
+			messagesToFree.reserve(messages.size());
 			for (MessageInfo& message : messages)
 			{
+				messagesToFree.push_back(message.Packet);
+
 				if (message.Listener)
 				{
 					message.Listener->OnPacketDelivered(message.Packet);
 				}
+				m_pListener->OnPacketDelivered(message.Packet);
 			}
+
+			Free(messagesToFree);
 		}
 	}
 
@@ -438,7 +483,7 @@ namespace LambdaEngine
 			for (auto& pair : m_MessagesWaitingForAck)
 			{
 				delta = EngineLoop::GetTimeSinceStart() - pair.second.LastSent;
-				if (delta > m_Statistics.GetPing() * 2.0F)
+				if ((float64)delta.AsNanoSeconds() > (float64)m_Statistics.GetPing().AsNanoSeconds() * 2.0F)
 				{
 					if (pair.second.Tries > m_MaximumTries)
 					{
@@ -458,9 +503,12 @@ namespace LambdaEngine
 			}
 		}
 		
-		for (MessageInfo& message : packetsReachMaxTries)
+		for (MessageInfo& messageInfo : packetsReachMaxTries)
 		{
-			message.Listener->OnPacketMaxTriesReached(message.Packet, message.Tries);
+			if(messageInfo.Listener)
+				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Packet, messageInfo.Tries);
+
+			m_pListener->OnPacketMaxTriesReached(messageInfo.Packet, messageInfo.Tries);
 		}
 	}
 
@@ -468,7 +516,10 @@ namespace LambdaEngine
 	{
 		for (MessageInfo messageInfo : messages)
 		{
-			messageInfo.Listener->OnPacketResent(messageInfo.Packet, messageInfo.Tries);
+			if (messageInfo.Listener)
+				messageInfo.Listener->OnPacketResent(messageInfo.Packet, messageInfo.Tries);
+
+			m_pListener->OnPacketResent(messageInfo.Packet, messageInfo.Tries);
 		}
 
 		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);

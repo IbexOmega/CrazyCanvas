@@ -1,4 +1,6 @@
 #ifdef LAMBDA_PLATFORM_MACOS
+#include "Log/Log.h"
+
 #include "Input/Mac/MacInputDevice.h"
 #include "Input/Mac/MacInputCodeTable.h"
 
@@ -27,7 +29,15 @@ namespace LambdaEngine
                 const uint16  macKey = [event keyCode];
                 const EKey    key    = MacInputCodeTable::GetKey(macKey);
                 
-                OnKeyDown(key);
+                if ([event isARepeat])
+                {
+                    OnKeyHeldDown(key);
+                }
+                else
+                {
+                    OnKeyDown(key);
+                }
+                
                 break;
             }
             

@@ -29,7 +29,7 @@ namespace LambdaEngine
 		virtual void Release() = 0;
 		virtual bool IsConnected() = 0;
 		virtual bool SendUnreliable(NetworkPacket* packet) = 0;
-		virtual bool SendReliable(NetworkPacket* packet, IPacketListener* listener) = 0;
+		virtual bool SendReliable(NetworkPacket* packet, IPacketListener* listener = nullptr) = 0;
 		virtual const IPEndPoint& GetEndPoint() const = 0;
 		virtual NetworkPacket* GetFreePacket(uint16 packetType) = 0;
 		virtual EClientState GetState() const = 0;

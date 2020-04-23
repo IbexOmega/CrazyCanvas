@@ -110,3 +110,9 @@
 * String preprocessor
 */ 
 #define STRING_CONCAT(x, y) x##y
+
+/*
+ * Helpers for size
+ */
+
+#define MEGA_BYTE(megabytes) (megabytes) * 1024 * 1024

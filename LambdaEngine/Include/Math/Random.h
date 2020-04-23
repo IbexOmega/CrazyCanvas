@@ -7,8 +7,6 @@ namespace LambdaEngine
 {
 	class LAMBDA_API Random
 	{
-		friend class EngineLoop;
-
 	public:
 		DECL_STATIC_CLASS(Random);
 

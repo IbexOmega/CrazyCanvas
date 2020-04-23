@@ -173,7 +173,7 @@ namespace LambdaEngine
         else
         {
             m_UsedAllocations++;
-            D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes to buffer. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+            D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
         }
         
         return result;
@@ -368,7 +368,7 @@ namespace LambdaEngine
 		}
 	}
 
-	IAccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const
+	IAccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, IDeviceAllocator* pAllocator) const
 	{
         VALIDATE(pDesc != nullptr);
         
@@ -379,7 +379,7 @@ namespace LambdaEngine
 		}
 
 		AccelerationStructureVK* pAccelerationStructure = DBG_NEW AccelerationStructureVK(this);
-		if (!pAccelerationStructure->Init(pDesc))
+		if (!pAccelerationStructure->Init(pDesc, pAllocator))
 		{
 			pAccelerationStructure->Release();
 			return nullptr;
@@ -494,65 +494,18 @@ namespace LambdaEngine
     IDeviceAllocator* GraphicsDeviceVK::CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const
     {
         VALIDATE(pDesc != nullptr);
-        return nullptr;
+        
+        DeviceAllocatorVK* pAllocator = DBG_NEW DeviceAllocatorVK(this);
+        if (!pAllocator->Init(pDesc))
+        {
+            pAllocator->Release();
+            return nullptr;
+        }
+        else
+        {
+            return pAllocator;
+        }
     }
-    
-	void GraphicsDeviceVK::CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst) const
-	{
-		DescriptorSetVK*		pDstVk			= reinterpret_cast<DescriptorSetVK*>(pDst);
-		const DescriptorSetVK*	pSrcVk			= reinterpret_cast<const DescriptorSetVK*>(pSrc);
-		uint32					bindingCount	= pSrcVk->GetDescriptorBindingDescCount();
-
-		VkCopyDescriptorSet copyDescriptorSet = {};
-		copyDescriptorSet.sType				= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-		copyDescriptorSet.pNext				= nullptr;
-		copyDescriptorSet.dstSet			= pDstVk->GetDescriptorSet();
-		copyDescriptorSet.srcSet			= pSrcVk->GetDescriptorSet();
-		copyDescriptorSet.srcArrayElement	= 0;
-		copyDescriptorSet.dstArrayElement	= 0;
-
-		std::vector<VkCopyDescriptorSet> descriptorSetCopies;
-		descriptorSetCopies.reserve(bindingCount);
-		for (uint32 i = 0; i < bindingCount; i++)
-		{
-			DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
-
-			copyDescriptorSet.descriptorCount	= binding.DescriptorCount;
-			copyDescriptorSet.srcBinding		= binding.Binding;
-			copyDescriptorSet.dstBinding		= copyDescriptorSet.srcBinding;
-			
-			descriptorSetCopies.push_back(copyDescriptorSet);
-		}
-
-		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
-	}
-
-	void GraphicsDeviceVK::CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount) const
-	{
-		DescriptorSetVK*		pDstVk = reinterpret_cast<DescriptorSetVK*>(pDst);
-		const DescriptorSetVK*	pSrcVk = reinterpret_cast<const DescriptorSetVK*>(pSrc);
-
-		VkCopyDescriptorSet copyDescriptorSet = {};
-		copyDescriptorSet.sType				= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-		copyDescriptorSet.pNext				= nullptr;
-		copyDescriptorSet.dstSet			= pDstVk->GetDescriptorSet();
-		copyDescriptorSet.srcSet			= pSrcVk->GetDescriptorSet();
-		copyDescriptorSet.srcArrayElement	= 0;
-		copyDescriptorSet.dstArrayElement	= 0;
-
-		std::vector<VkCopyDescriptorSet> descriptorSetCopies;
-		descriptorSetCopies.reserve(copyBindingCount);
-		for (uint32 i = 0; i < copyBindingCount; i++)
-		{
-			copyDescriptorSet.descriptorCount	= pCopyBindings[i].DescriptorCount;
-			copyDescriptorSet.dstBinding		= pCopyBindings[i].DstBinding;
-			copyDescriptorSet.srcBinding		= pCopyBindings[i].SrcBinding;
-
-			descriptorSetCopies.push_back(copyDescriptorSet);
-		}
-		
-		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
-	}
 
 	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc* pDesc, IDeviceAllocator* pAllocator) const
 	{
@@ -575,7 +528,7 @@ namespace LambdaEngine
         VALIDATE(pDesc != nullptr);
         
 		TextureVK* pTexture = DBG_NEW TextureVK(this);
-		if (!pTexture->Init(pDesc))
+		if (!pTexture->Init(pDesc, pAllocator))
 		{
             pTexture->Release();
 			return nullptr;
@@ -652,6 +605,71 @@ namespace LambdaEngine
 		}
     }
 
+    /*
+     * Copy Descriptor sets
+     */
+
+    void GraphicsDeviceVK::CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst) const
+    {
+        DescriptorSetVK*        pDstVk            = reinterpret_cast<DescriptorSetVK*>(pDst);
+        const DescriptorSetVK*    pSrcVk            = reinterpret_cast<const DescriptorSetVK*>(pSrc);
+        uint32                    bindingCount    = pSrcVk->GetDescriptorBindingDescCount();
+
+        VkCopyDescriptorSet copyDescriptorSet = {};
+        copyDescriptorSet.sType                = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+        copyDescriptorSet.pNext                = nullptr;
+        copyDescriptorSet.dstSet            = pDstVk->GetDescriptorSet();
+        copyDescriptorSet.srcSet            = pSrcVk->GetDescriptorSet();
+        copyDescriptorSet.srcArrayElement    = 0;
+        copyDescriptorSet.dstArrayElement    = 0;
+
+        std::vector<VkCopyDescriptorSet> descriptorSetCopies;
+        descriptorSetCopies.reserve(bindingCount);
+        for (uint32 i = 0; i < bindingCount; i++)
+        {
+            DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
+
+            copyDescriptorSet.descriptorCount    = binding.DescriptorCount;
+            copyDescriptorSet.srcBinding        = binding.Binding;
+            copyDescriptorSet.dstBinding        = copyDescriptorSet.srcBinding;
+            
+            descriptorSetCopies.push_back(copyDescriptorSet);
+        }
+
+        vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
+    }
+
+    void GraphicsDeviceVK::CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount) const
+    {
+        DescriptorSetVK*        pDstVk = reinterpret_cast<DescriptorSetVK*>(pDst);
+        const DescriptorSetVK*    pSrcVk = reinterpret_cast<const DescriptorSetVK*>(pSrc);
+
+        VkCopyDescriptorSet copyDescriptorSet = {};
+        copyDescriptorSet.sType                = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+        copyDescriptorSet.pNext                = nullptr;
+        copyDescriptorSet.dstSet            = pDstVk->GetDescriptorSet();
+        copyDescriptorSet.srcSet            = pSrcVk->GetDescriptorSet();
+        copyDescriptorSet.srcArrayElement    = 0;
+        copyDescriptorSet.dstArrayElement    = 0;
+
+        std::vector<VkCopyDescriptorSet> descriptorSetCopies;
+        descriptorSetCopies.reserve(copyBindingCount);
+        for (uint32 i = 0; i < copyBindingCount; i++)
+        {
+            copyDescriptorSet.descriptorCount    = pCopyBindings[i].DescriptorCount;
+            copyDescriptorSet.dstBinding        = pCopyBindings[i].DstBinding;
+            copyDescriptorSet.srcBinding        = pCopyBindings[i].SrcBinding;
+
+            descriptorSetCopies.push_back(copyDescriptorSet);
+        }
+        
+        vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
+    }
+
+    /*
+     * Helpers
+     */
+
 	void GraphicsDeviceVK::SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type) const
 	{
 		if (pName)
@@ -709,6 +727,10 @@ namespace LambdaEngine
 		return physicalDeviceProperties;
 	}
 
+    /*
+     * Init GraphicsDevice
+     */
+
 	bool GraphicsDeviceVK::InitInstance(const GraphicsDeviceDesc* pDesc)
 	{
 		if (pDesc->Debug)
@@ -745,7 +767,6 @@ namespace LambdaEngine
 		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
-
 		if (pDesc->Debug)
 		{
 			PopulateDebugMessengerCreateInfo(debugCreateInfo);
@@ -884,17 +905,16 @@ namespace LambdaEngine
         deviceFeatures11.pNext  = nullptr;
 		deviceFeatures11.pNext	= &deviceFeatures12;
 
-		VkPhysicalDeviceFeatures deviceFeatures = {};
-		deviceFeatures.fillModeNonSolid					= true;
-		deviceFeatures.vertexPipelineStoresAndAtomics	= true;
-		deviceFeatures.fragmentStoresAndAtomics			= true;
-		deviceFeatures.multiDrawIndirect				= true;
-		deviceFeatures.geometryShader					= true;
+		VkPhysicalDeviceFeatures desiredDeviceFeatures = {};
+		desiredDeviceFeatures.fillModeNonSolid					= true;
+		desiredDeviceFeatures.vertexPipelineStoresAndAtomics	= true;
+		desiredDeviceFeatures.fragmentStoresAndAtomics			= true;
+		desiredDeviceFeatures.multiDrawIndirect					= true;
 
 		VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
 		deviceFeatures2.sType	 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 		deviceFeatures2.pNext	 = &deviceFeatures11;
-		deviceFeatures2.features = deviceFeatures;
+		deviceFeatures2.features = desiredDeviceFeatures;
 
 		VkDeviceCreateInfo createInfo = {};
 		createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

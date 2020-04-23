@@ -259,6 +259,8 @@ namespace LambdaEngine
 
 	void ServerUDP::FixedTickStatic(Timestamp timestamp)
 	{
+		UNREFERENCED_VARIABLE(timestamp);
+
 		if (!s_Servers.empty())
 		{
 			std::scoped_lock<SpinLock> lock(s_Lock);

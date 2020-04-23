@@ -13,7 +13,7 @@ namespace LambdaEngine
 	ClientUDPRemote::ClientUDPRemote(uint16 packets, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer) :
 		m_pServer(pServer),
 		m_IPEndPoint(ipEndPoint),
-		m_PacketManager(packets, maximumTries),
+		m_PacketManager(this, packets, maximumTries),
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
 		m_Packets(),
@@ -31,6 +31,22 @@ namespace LambdaEngine
 			LOG_INFO("[ClientUDPRemote]: Released");
 	}
 
+	void ClientUDPRemote::OnPacketDelivered(NetworkPacket* pPacket)
+	{
+		LOG_INFO("ClientUDPRemote::OnPacketDelivered() | %s", pPacket->ToString().c_str());
+	}
+
+	void ClientUDPRemote::OnPacketResent(NetworkPacket* pPacket, uint8 tries)
+	{
+		LOG_INFO("ClientUDPRemote::OnPacketResent(%d) | %s", tries, pPacket->ToString().c_str());
+	}
+
+	void ClientUDPRemote::OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries)
+	{
+		LOG_INFO("ClientUDPRemote::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
+		Disconnect();
+	}
+
 	PacketManager* ClientUDPRemote::GetPacketManager()
 	{
 		return &m_PacketManager;
@@ -38,7 +54,6 @@ namespace LambdaEngine
 
 	void ClientUDPRemote::OnDataReceived(const char* data, int32 size)
 	{
-		int32 packetsReceived;
 		if (m_PacketManager.DecodePackets(data, size, m_Packets))
 		{
 			for (NetworkPacket* pPacket : m_Packets)
@@ -148,7 +163,14 @@ namespace LambdaEngine
 
 	bool ClientUDPRemote::SendUnreliable(NetworkPacket* packet)
 	{
-		return SendReliable(packet, nullptr);
+		if (!IsConnected())
+		{
+			LOG_WARNING("[ClientUDPRemote]: Can not send packet before a connection has been established");
+			return false;
+		}
+
+		m_PacketManager.EnqueuePacket(packet);
+		return true;
 	}
 
 	bool ClientUDPRemote::SendReliable(NetworkPacket* packet, IPacketListener* listener)
@@ -159,7 +181,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_PacketManager.EnqueuePacket(packet, listener);
+		m_PacketManager.EnqueuePacketReliable(packet, listener);
 		return true;
 	}
 

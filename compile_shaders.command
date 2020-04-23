@@ -1,18 +1,17 @@
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 cd "${DIR}"
 
-./tools/glslc -fshader-stage=vertex assets/shaders/vertex.glsl -o assets/shaders/vertex.spv 
-./tools/glslc -fshader-stage=fragment assets/shaders/fragment.glsl -o assets/shaders/fragment.spv
+./tools/glslc -O -fshader-stage=compute Assets/Shaders/blur.glsl -o assets/shaders/blur.spv 
+./tools/glslc -O -fshader-stage=vertex Assets/Shaders/fullscreenQuad.glsl -o assets/shaders/fullscreenQuad.spv
 
-./tools/glslc -fshader-stage=vertex assets/shaders/geometryVertex.glsl -o assets/shaders/geometryVertex.spv 
-./tools/glslc -fshader-stage=fragment assets/shaders/geometryFragment.glsl -o assets/shaders/geometryFragment.spv
+./tools/glslc -O -fshader-stage=vertex Assets/Shaders/geometryDefVertex.glsl -o assets/shaders/geometryDefVertex.spv 
+./tools/glslc -O -fshader-stage=fragment Assets/Shaders/geometryDefPixel.glsl -o assets/shaders/geometryDefPixel.spv
 
-./tools/glslc -fshader-stage=vertex assets/shaders/lightVertex.glsl -o assets/shaders/lightVertex.spv 
-./tools/glslc -fshader-stage=fragment assets/shaders/lightFragment.glsl -o assets/shaders/lightFragment.spv
+./tools/glslc -O -fshader-stage=vertex Assets/Shaders/geometryVisVertex.glsl -o assets/shaders/geometryVisVertex.spv 
+./tools/glslc -O -fshader-stage=fragment Assets/Shaders/geometryVisPixel.glsl -o assets/shaders/geometryVisPixel.spv
 
-./tools/glslc -fshader-stage=vertex assets/shaders/skyboxVertex.glsl -o assets/shaders/skyboxVertex.spv 
-./tools/glslc -fshader-stage=fragment assets/shaders/skyboxFragment.glsl -o assets/shaders/skyboxFragment.spv
+./tools/glslc -O -fshader-stage=vertex Assets/Shaders/lightVertex.glsl -o assets/shaders/lightVertex.spv 
+./tools/glslc -O -fshader-stage=fragment Assets/Shaders/lightPixel.glsl -o assets/shaders/lightPixel.spv
 
-./tools/glslc -fshader-stage=vertex assets/shaders/filterCubemap.glsl -o assets/shaders/filterCubemap.spv 
-./tools/glslc -fshader-stage=fragment assets/shaders/genCubemapFragment.glsl -o assets/shaders/genCubemapFragment.spv
-./tools/glslc -fshader-stage=fragment assets/shaders/genIrradianceFragment.glsl -o assets/shaders/genIrradianceFragment.spv
+./tools/glslc -O -fshader-stage=fragment Assets/Shaders/shadingVisPixel.glsl -o assets/shaders/shadingVisPixel.spv 
+./tools/glslc -O -fshader-stage=fragment Assets/Shaders/shadingDefPixel.glsl -o assets/shaders/shadingDefPixel.spv

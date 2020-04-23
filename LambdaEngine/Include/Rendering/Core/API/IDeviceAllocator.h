@@ -5,7 +5,8 @@ namespace LambdaEngine
 {
     struct DeviceAllocatorDesc
     {
-        uint64 PageSize = 0;
+        const char* pName               = "";
+        uint64      PageSizeInBytes     = 0;
     };
 
     struct DeviceAllocatorStatistics

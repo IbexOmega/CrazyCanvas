@@ -83,7 +83,7 @@ namespace LambdaEngine
 		virtual IPipelineState*	CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 	    const = 0;
 		virtual IPipelineState*	CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const = 0;
 		
-		virtual IAccelerationStructure*	CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const = 0;
+		virtual IAccelerationStructure*	CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, IDeviceAllocator* pAllocator) const = 0;
 		
 		virtual ICommandQueue*		CreateCommandQueue(const char* pName, ECommandQueueType queueType)			    const = 0;
 		virtual ICommandAllocator*	CreateCommandAllocator(const char* pName, ECommandQueueType queueType)		    const = 0;

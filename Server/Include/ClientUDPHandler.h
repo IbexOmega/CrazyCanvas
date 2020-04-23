@@ -21,4 +21,7 @@ public:
 	virtual void OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient) override;
 	virtual void OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient) override;
 	virtual void OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket) override;
+
+private:
+	int counter = 0;
 };

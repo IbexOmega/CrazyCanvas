@@ -16,6 +16,7 @@
 #include "Rendering/Core/API/IDescriptorHeap.h"
 #include "Rendering/Core/API/IDescriptorSet.h"
 #include "Rendering/Core/API/IAccelerationStructure.h"
+#include "Rendering/Core/API/IDeviceAllocator.h"
 
 #include "Application/API/PlatformApplication.h"
 
@@ -29,7 +30,7 @@ namespace LambdaEngine
 	bool RenderSystem::Init()
 	{
 		GraphicsDeviceDesc deviceDesc = { };
-#ifndef LAMBDA_PRODUCTION
+#ifdef LAMBDA_DEVELOPMENT
 		deviceDesc.Debug = true;
 #else
 		deviceDesc.Debug = false;
@@ -59,13 +60,43 @@ namespace LambdaEngine
 			return false;
 		}
 		
-		//BufferDesc bufferDesc = { };
-		//bufferDesc.pName		= "VertexBuffer";
-		//bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-		//bufferDesc.Flags		= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_SRC | BUFFER_FLAG_COPY_DST;
-		//bufferDesc.SizeInBytes	= 64;
+        DeviceAllocatorDesc allocatorDesc = { };
+        allocatorDesc.pName             = "Main Allocator";
+        allocatorDesc.PageSizeInBytes   = MEGA_BYTE(64);
+        
+        IDeviceAllocator* pAllocator = s_pGraphicsDevice->CreateDeviceAllocator(&allocatorDesc);
+        
+		BufferDesc bufferDesc = { };
+		bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
+		bufferDesc.Flags		= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_SRC | BUFFER_FLAG_COPY_DST;
+		bufferDesc.SizeInBytes	= 64;
 
-		//IBuffer* pBuffer = s_pGraphicsDevice->CreateBuffer(bufferDesc);
+		bufferDesc.pName = "VertexBuffer 1";
+		IBuffer* pBuffer1 = s_pGraphicsDevice->CreateBuffer(&bufferDesc, pAllocator);
+		pBuffer1->Map();
+
+		bufferDesc.pName = "VertexBuffer 2";
+		IBuffer* pBuffer2 = s_pGraphicsDevice->CreateBuffer(&bufferDesc, pAllocator);
+		pBuffer2->Map();
+
+		bufferDesc.pName = "VertexBuffer 3";
+		IBuffer* pBuffer3 = s_pGraphicsDevice->CreateBuffer(&bufferDesc, pAllocator);
+		pBuffer3->Map();
+
+		bufferDesc.pName = "VertexBuffer 4";
+		IBuffer* pBuffer4 = s_pGraphicsDevice->CreateBuffer(&bufferDesc, pAllocator);
+		pBuffer4->Map();
+
+		bufferDesc.pName = "VertexBuffer 5";
+		IBuffer* pBuffer5 = s_pGraphicsDevice->CreateBuffer(&bufferDesc, pAllocator);
+		pBuffer5->Map();
+
+		SAFERELEASE(pBuffer1);
+		SAFERELEASE(pBuffer2);
+		SAFERELEASE(pBuffer3);
+		SAFERELEASE(pBuffer4);
+		SAFERELEASE(pBuffer5);
+		SAFERELEASE(pAllocator);
 
 		//TextureDesc textureDesc = { };
 		//textureDesc.pName		= "Texture";
@@ -307,6 +338,8 @@ namespace LambdaEngine
 
 	bool RenderSystem::Release()
 	{
+		s_pGraphicsQueue->Flush();
+
 		SAFERELEASE(s_pGraphicsQueue);
 		SAFERELEASE(s_pComputeQueue);
 		SAFERELEASE(s_pCopyQueue);
