@@ -786,7 +786,7 @@ namespace LambdaEngine
 							renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::CLEAR;
 							renderPassAttachmentDesc.StencilStoreOp = EStoreOp::STORE;
 							renderPassAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_UNKNOWN;
-							renderPassAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY;
+							renderPassAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 							renderPassDepthStencilDescription = renderPassAttachmentDesc;
 							pDepthStencilResource = &it->second;

@@ -662,17 +662,17 @@ namespace LambdaEngine
 		byte* pShaderRawSource = nullptr;
 		uint32 shaderRawSourceSize = 0;
 
-		if (!ReadDataFromFile(pFilepath, &pShaderRawSource, &shaderRawSourceSize))
-		{
-			LOG_ERROR("[ResourceDevice]: Failed to open shader file \"%s\"", pFilepath);
-			return nullptr;
-		}
-
 		std::vector<uint32> sourceSPIRV;
 		uint32 sourceSPIRVSize = 0;
 
 		if (lang == EShaderLang::GLSL)
 		{
+			if (!ReadDataFromFile(pFilepath, "r", &pShaderRawSource, &shaderRawSourceSize))
+			{
+				LOG_ERROR("[ResourceDevice]: Failed to open shader file \"%s\"", pFilepath);
+				return nullptr;
+			}
+			
 			if (!CompileGLSLToSPIRV(pFilepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, sourceSPIRV))
 			{
 				LOG_ERROR("[ResourceDevice]: Failed to compile GLSL to SPIRV for \"%s\"", pFilepath);
@@ -683,6 +683,12 @@ namespace LambdaEngine
 		}
 		else if (lang == EShaderLang::SPIRV)
 		{
+			if (!ReadDataFromFile(pFilepath, "rb", &pShaderRawSource, &shaderRawSourceSize))
+			{
+				LOG_ERROR("[ResourceDevice]: Failed to open shader file \"%s\"", pFilepath);
+				return nullptr;
+			}
+			
 			sourceSPIRV.resize((uint32)glm::ceil((float)shaderRawSourceSize / sizeof(uint32)));
 			memcpy(sourceSPIRV.data(), pShaderRawSource, shaderRawSourceSize);
 
@@ -724,9 +730,9 @@ namespace LambdaEngine
 		return pSound;
 	}
 
-	bool ResourceLoader::ReadDataFromFile(const char* pFilepath, byte** ppData, uint32* pDataSize)
+	bool ResourceLoader::ReadDataFromFile(const char* pFilepath, const char* pMode, byte** ppData, uint32* pDataSize)
 	{
-		FILE* pFile = fopen(pFilepath, "rb");
+		FILE* pFile = fopen(pFilepath, pMode);
 
 		if (pFile == nullptr)
 		{

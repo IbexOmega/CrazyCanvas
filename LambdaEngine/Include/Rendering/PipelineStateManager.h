@@ -58,7 +58,7 @@ namespace LambdaEngine
 		uint32					ClosestHitShaderCount		= 0;
 	};
 
-	class PipelineStateManager
+	class LAMBDA_API PipelineStateManager
 	{
 	public:
 		DECL_STATIC_CLASS(PipelineStateManager);

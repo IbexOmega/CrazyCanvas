@@ -91,7 +91,7 @@ namespace LambdaEngine
 		static ISoundEffect3D* LoadSoundEffectFromFile(const char* pFilepath);
 
 	private:
-		static bool ReadDataFromFile(const char* pFilepath, byte** ppData, uint32* pDataSize);
+		static bool ReadDataFromFile(const char* pFilepath, const char* pMode, byte** ppData, uint32* pDataSize);
         static void ConvertBackslashes(std::string& string);
 
 		static bool CompileGLSLToSPIRV(const char* pFilepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>& sourceSPIRV);
