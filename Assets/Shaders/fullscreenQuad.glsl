@@ -1,5 +1,6 @@
-#version 450
+#version 460
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_GOOGLE_include_directive : enable
 
 layout(location = 0) out vec2 out_TexCoord;
 

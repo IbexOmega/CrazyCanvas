@@ -10,9 +10,11 @@
 
 #include "Rendering/RenderSystem.h"
 #include "Rendering/Renderer.h"
+#include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraphDescriptionParser.h"
 #include "Rendering/Core/API/ITextureView.h"
 #include "Rendering/Core/API/ISampler.h"
+#include "Rendering/Core/API/ICommandQueue.h"
 
 #include "Audio/AudioSystem.h"
 #include "Audio/API/IAudioListener.h"
@@ -33,24 +35,23 @@ Sandbox::Sandbox()
 	using namespace LambdaEngine;
 
 	constexpr const uint32 BACK_BUFFER_COUNT = 3;
-	constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 5;
+	constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 
-	m_pResourceManager = DBG_NEW LambdaEngine::ResourceManager(LambdaEngine::RenderSystem::GetDevice(), LambdaEngine::AudioSystem::GetDevice());
-	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice(), m_pResourceManager);
+	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
 	SceneDesc sceneDesc = {};
 	sceneDesc.pName = "Test Scene";
 	m_pScene->Init(sceneDesc);
 
 	std::vector<GameObject>	sceneGameObjects;
-	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
+	ResourceManager::LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
 
 	for (GameObject& gameObject : sceneGameObjects)
 	{
 		m_pScene->AddDynamicGameObject(gameObject, glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)));
 	}
 
-	uint32 bunnyMeshGUID = m_pResourceManager->LoadMeshFromFile("../Assets/Meshes/bunny.obj");
+	uint32 bunnyMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/bunny.obj");
 
 	GameObject bunnyGameObject = {};
 	bunnyGameObject.Mesh = bunnyMeshGUID;
@@ -58,7 +59,7 @@ Sandbox::Sandbox()
 
 	m_pScene->AddDynamicGameObject(bunnyGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f)));
 
-	uint32 gunMeshGUID = m_pResourceManager->LoadMeshFromFile("../Assets/Meshes/gun.obj");
+	uint32 gunMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/gun.obj");
 
 	GameObject gunGameObject = {};
 	gunGameObject.Mesh = gunMeshGUID;
@@ -80,18 +81,18 @@ Sandbox::Sandbox()
 
 	m_pCamera->Init(cameraDesc);
 
-	//GUID_Lambda blurShaderGUID					= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/blur.spv",					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
+	//GUID_Lambda blurShaderGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/blur.spv",					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
 	
-	//GUID_Lambda lightVertexShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/lightVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda lightPixelShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/lightPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
+	//GUID_Lambda lightVertexShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/lightVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
+	//GUID_Lambda lightPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/lightPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
 
-	//GUID_Lambda raygenRadianceShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/raygenRadiance.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda closestHitRadianceShaderGUID	= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/closestHitRadiance.spv",	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::SPIRV);
-	//GUID_Lambda missRadianceShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/missRadiance.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda closestHitShadowShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/closestHitShadow.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::SPIRV);
-	//GUID_Lambda missShadowShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/missShadow.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::SPIRV);
+	//GUID_Lambda raygenRadianceShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/raygenRadiance.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::SPIRV);
+	//GUID_Lambda closestHitRadianceShaderGUID	= ResourceManager::LoadShaderFromFile("../Assets/Shaders/closestHitRadiance.spv",	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::SPIRV);
+	//GUID_Lambda missRadianceShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/missRadiance.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::SPIRV);
+	//GUID_Lambda closestHitShadowShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/closestHitShadow.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::SPIRV);
+	//GUID_Lambda missShadowShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/missShadow.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::SPIRV);
 
-	//GUID_Lambda particleUpdateShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/particleUpdate.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
+	//GUID_Lambda particleUpdateShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/particleUpdate.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
 
 	SamplerDesc samplerLinearDesc = {};
 	samplerLinearDesc.pName					= "Linear Sampler";
@@ -134,7 +135,6 @@ Sandbox::Sandbox()
 
 Sandbox::~Sandbox()
 {
-	SAFEDELETE(m_pResourceManager);
 	SAFEDELETE(m_pAudioListener);
 	SAFEDELETE(m_pAudioGeometry);
 
@@ -151,11 +151,11 @@ void Sandbox::InitTestAudio()
 {
 	using namespace LambdaEngine;
 
-	m_ToneSoundEffectGUID = m_pResourceManager->LoadSoundEffectFromFile("../Assets/Sounds/noise.wav");
-	m_GunSoundEffectGUID = m_pResourceManager->LoadSoundEffectFromFile("../Assets/Sounds/GUN_FIRE-GoodSoundForYou.wav");
+	m_ToneSoundEffectGUID = ResourceManager::LoadSoundEffectFromFile("../Assets/Sounds/noise.wav");
+	m_GunSoundEffectGUID = ResourceManager::LoadSoundEffectFromFile("../Assets/Sounds/GUN_FIRE-GoodSoundForYou.wav");
 
-	m_pToneSoundEffect = m_pResourceManager->GetSoundEffect(m_ToneSoundEffectGUID);
-	m_pGunSoundEffect = m_pResourceManager->GetSoundEffect(m_GunSoundEffectGUID);
+	m_pToneSoundEffect = ResourceManager::GetSoundEffect(m_ToneSoundEffectGUID);
+	m_pGunSoundEffect = ResourceManager::GetSoundEffect(m_GunSoundEffectGUID);
 
 	SoundInstance3DDesc soundInstanceDesc = {};
 	soundInstanceDesc.pSoundEffect = m_pToneSoundEffect;
@@ -187,8 +187,8 @@ void Sandbox::InitTestAudio()
 
 	m_pAudioGeometry = AudioSystem::GetDevice()->CreateAudioGeometry();
 
-	GUID_Lambda sphereGUID = m_pResourceManager->LoadMeshFromFile("../Assets/Meshes/sphere.obj");
-	Mesh* sphereMesh = m_pResourceManager->GetMesh(sphereGUID);
+	GUID_Lambda sphereGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/sphere.obj");
+	Mesh* sphereMesh = ResourceManager::GetMesh(sphereGUID);
 	glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(10.0f));
 	AudioMeshParameters audioMeshParameters = {};
 	audioMeshParameters.DirectOcclusion = 0.0f;
@@ -204,7 +204,7 @@ void Sandbox::InitTestAudio()
 	m_pAudioGeometry->Init(audioGeometryDesc);*/
 
 	/*std::vector<GraphicsObject> sponzaGraphicsObjects;
-	m_pResourceManager->LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sponzaGraphicsObjects);
+	ResourceManager::LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sponzaGraphicsObjects);
 
 	std::vector<Mesh*> sponzaMeshes;
 	std::vector<glm::mat4> sponzaMeshTransforms;
@@ -212,7 +212,7 @@ void Sandbox::InitTestAudio()
 
 	for (GraphicsObject& graphicsObject : sponzaGraphicsObjects)
 	{
-		sponzaMeshes.push_back(m_pResourceManager->GetMesh(graphicsObject.Mesh));
+		sponzaMeshes.push_back(ResourceManager::GetMesh(graphicsObject.Mesh));
 		sponzaMeshTransforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(0.001f)));
 
 		LambdaEngine::AudioMeshParameters audioMeshParameters = {};
@@ -241,7 +241,14 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
 
-	if (key == EKey::KEY_KEYPAD_1)
+	if (key == EKey::KEY_KEYPAD_5)
+	{
+		RenderSystem::GetGraphicsQueue()->Flush();
+		RenderSystem::GetComputeQueue()->Flush();
+		ResourceManager::ReloadAllShaders();
+		PipelineStateManager::ReloadPipelineStates();
+	}
+	/*if (key == EKey::KEY_KEYPAD_1)
 	{
 		m_pToneSoundInstance->Toggle();
 	}
@@ -282,7 +289,7 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 			LOG_MESSAGE("ReverbSphere %s", reverbSphereActive ? "Enabled" : "Disabled");
 			m_pReverbSphere->SetActive(reverbSphereActive);
 		}
-	}
+	}*/
 }
 
 void Sandbox::OnKeyHeldDown(LambdaEngine::EKey key)
@@ -436,16 +443,16 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 {
 	using namespace LambdaEngine;
 
-	GUID_Lambda geometryVertexShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/geometryDefVertex.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
-	GUID_Lambda geometryPixelShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/geometryDefPixel.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
+	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,		EShaderLang::GLSL);
 
-	GUID_Lambda fullscreenQuadShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/fullscreenQuad.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
-	GUID_Lambda shadingPixelShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/shadingDefPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
+	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/fullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/shadingDefPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
 	std::vector<RenderStageDesc> renderStages;
 
 	const char*									pGeometryRenderStageName = "Geometry Render Stage";
-	GraphicsPipelineStateDesc					geometryPipelineStateDesc = {};
+	GraphicsManagedPipelineStateDesc			geometryPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			geometryRenderStageAttachments;
 
 	{
@@ -479,8 +486,8 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 		//renderStage.PushConstants				= pushConstants;
 
 		geometryPipelineStateDesc.pName				= "Geometry Pass Pipeline State";
-		geometryPipelineStateDesc.pVertexShader		= m_pResourceManager->GetShader(geometryVertexShaderGUID);
-		geometryPipelineStateDesc.pPixelShader		= m_pResourceManager->GetShader(geometryPixelShaderGUID);
+		geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
+		geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
 
 		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
 
@@ -493,7 +500,7 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 	}
 
 	const char*									pShadingRenderStageName = "Shading Render Stage";
-	GraphicsPipelineStateDesc					shadingPipelineStateDesc = {};
+	GraphicsManagedPipelineStateDesc			shadingPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
 
 	{
@@ -514,8 +521,8 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 		//renderStage.PushConstants				= pushConstants;
 
 		shadingPipelineStateDesc.pName				= "Shading Pass Pipeline State";
-		shadingPipelineStateDesc.pVertexShader		= m_pResourceManager->GetShader(fullscreenQuadShaderGUID);
-		shadingPipelineStateDesc.pPixelShader		= m_pResourceManager->GetShader(shadingPixelShaderGUID);
+		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
+		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
 
 		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
 
@@ -846,16 +853,16 @@ bool Sandbox::InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPe
 {
 	using namespace LambdaEngine;
 
-	GUID_Lambda geometryVertexShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/geometryVisVertex.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
-	GUID_Lambda geometryPixelShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/geometryVisPixel.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
+	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryVisVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryVisPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	GUID_Lambda fullscreenQuadShaderGUID		= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/fullscreenQuad.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
-	GUID_Lambda shadingPixelShaderGUID			= m_pResourceManager->LoadShaderFromFile("../Assets/Shaders/shadingVisPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
+	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/fullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/shadingVisPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
 	std::vector<RenderStageDesc> renderStages;
 
 	const char*									pGeometryRenderStageName = "Geometry Render Stage";
-	GraphicsPipelineStateDesc					geometryPipelineStateDesc = {};
+	GraphicsManagedPipelineStateDesc			geometryPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			geometryRenderStageAttachments;
 
 	{
@@ -878,8 +885,8 @@ bool Sandbox::InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPe
 		//renderStage.PushConstants				= pushConstants;
 
 		geometryPipelineStateDesc.pName				= "Geometry Pass Pipeline State";
-		geometryPipelineStateDesc.pVertexShader		= m_pResourceManager->GetShader(geometryVertexShaderGUID);
-		geometryPipelineStateDesc.pPixelShader		= m_pResourceManager->GetShader(geometryPixelShaderGUID);
+		geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
+		geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
 
 		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
 
@@ -892,7 +899,7 @@ bool Sandbox::InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPe
 	}
 
 	const char*									pShadingRenderStageName = "Shading Render Stage";
-	GraphicsPipelineStateDesc					shadingPipelineStateDesc = {};
+	GraphicsManagedPipelineStateDesc			shadingPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
 
 	{
@@ -925,8 +932,8 @@ bool Sandbox::InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPe
 		//renderStage.PushConstants				= pushConstants;
 
 		shadingPipelineStateDesc.pName				= "Shading Pass Pipeline State";
-		shadingPipelineStateDesc.pVertexShader		= m_pResourceManager->GetShader(fullscreenQuadShaderGUID);
-		shadingPipelineStateDesc.pPixelShader		= m_pResourceManager->GetShader(shadingPixelShaderGUID);
+		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
+		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
 
 		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
 

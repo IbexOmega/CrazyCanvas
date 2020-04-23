@@ -1,6 +1,7 @@
-#version 450
+#version 460
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shader_draw_parameters : enable
+#extension GL_GOOGLE_include_directive : enable
 
 struct SVertex
 {
@@ -28,8 +29,6 @@ struct SMeshIndexDesc
     uint	FirstInstance;
     
     uint	MaterialIndex;
-    uint	Padding0;
-    uint    Padding1;
 };
 
 struct SPerFrameBuffer
@@ -47,7 +46,7 @@ struct SPerFrameBuffer
 
 
 layout (constant_id = 0) const uint OTHER_TEXTURES_IN_PASS                  = 0;
-layout (constant_id = 1) const uint ALLOWED_TEXTURES_PER_DESCRIPTOR_SET     = 5;
+layout (constant_id = 1) const uint ALLOWED_TEXTURES_PER_DESCRIPTOR_SET     = 256;
 
 layout(binding = 0, set = 1) buffer Vertices            { SVertex val[]; }              b_Vertices;
 layout(binding = 1, set = 1) buffer Indices             { uint val[]; }                 b_Indices;

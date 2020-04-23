@@ -16,7 +16,6 @@ namespace LambdaEngine
 
 	class IGraphicsDevice;
 	class IAudioDevice;
-	class ResourceManager;
 	class IBuffer;
 	class ITexture;
 	class ITextureView;
@@ -38,8 +37,6 @@ namespace LambdaEngine
 		uint32	FirstInstance		= 0;
 		
 		uint32	MaterialIndex		= 0;
-		uint32	Padding0			= 0;
-		uint32	Padding1			= 0;
 	};
 
 	struct SceneDesc
@@ -80,7 +77,7 @@ namespace LambdaEngine
 		DECL_REMOVE_COPY(Scene);
 		DECL_REMOVE_MOVE(Scene);
 
-		Scene(const IGraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice, const ResourceManager* pResourceManager);
+		Scene(const IGraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice);
 		~Scene();
 
 		bool Init(const SceneDesc& desc);
@@ -118,7 +115,6 @@ namespace LambdaEngine
 	private:
 		const IGraphicsDevice*					m_pGraphicsDevice;
 		const IAudioDevice*						m_pAudioDevice;
-		const ResourceManager*					m_pResourceManager;
 
 		const char*								m_pName;
 

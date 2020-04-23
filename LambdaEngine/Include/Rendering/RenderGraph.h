@@ -42,7 +42,7 @@ namespace LambdaEngine
 		uint32 RenderStageCount					= 0;
 		uint32 BackBufferCount					= 3;
 		uint32 MaxTexturesPerDescriptorSet		= 1;
-		Scene* pScene							= nullptr;
+		const Scene* pScene						= nullptr;
 	};
 
 	struct ResourceUpdateDesc
@@ -188,8 +188,9 @@ namespace LambdaEngine
 			Resource*				pMeshIndexBufferResource		= nullptr;
 
 			RenderStageParameters	Parameters						= {};
+			uint64					PipelineStateID					= 0;
+			EPipelineStateType		PipelineStateType				= EPipelineStateType::NONE;
 			IPipelineLayout*		pPipelineLayout					= nullptr;
-			IPipelineState*			pPipelineState					= nullptr;
 			uint32					TextureSubDescriptorSetCount	= 1;
 			uint32					MaterialsRenderedPerPass		= 1;
 			IDescriptorSet**		ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
@@ -284,9 +285,9 @@ namespace LambdaEngine
 			ICommandList** ppFirstExecutionStage, 
 			ICommandList** ppSecondExecutionStage, 
 			uint32 backBufferIndex);
-		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
-		void ExecuteComputeRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
-		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
+		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
+		void ExecuteComputeRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
+		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
 
 		uint32 CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc);
 

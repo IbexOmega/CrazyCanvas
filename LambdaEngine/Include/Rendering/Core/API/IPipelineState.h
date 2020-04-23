@@ -7,6 +7,9 @@
 
 namespace LambdaEngine
 {
+	constexpr uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
+	constexpr uint32 MAX_MISS_SHADER_COUNT			= 8;
+
 	class IShader;
 	class IRenderPass;
 	class IPipelineLayout;
@@ -50,8 +53,8 @@ namespace LambdaEngine
 	struct ComputePipelineStateDesc
 	{
 		const char*				pName				= "";
-		const IShader*			pShader				= nullptr;
 		const IPipelineLayout*	pPipelineLayout		= nullptr;
+		const IShader*			pShader				= nullptr;
 	};
 
 	struct RayTracingPipelineStateDesc
@@ -59,10 +62,12 @@ namespace LambdaEngine
 		const char*				pName					= "";
 		const IPipelineLayout*	pPipelineLayout			= nullptr;
 		uint32					MaxRecursionDepth		= 1;	
+
 		const IShader*			pRaygenShader			= nullptr;
-		const IShader* const*	ppMissShaders			= nullptr;
+		const IShader* 			ppMissShaders[MAX_MISS_SHADER_COUNT];
+		const IShader*			ppClosestHitShaders[MAX_CLOSEST_HIT_SHADER_COUNT]; 
+
 		uint32					MissShaderCount			= 0;
-		const IShader* const*	ppClosestHitShaders		= nullptr;
 		uint32					ClosestHitShaderCount	= 0;
 	};
 

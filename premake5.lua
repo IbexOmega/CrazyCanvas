@@ -224,6 +224,7 @@ workspace "LambdaEngine"
 			"Dependencies/WavLib",
 			"Dependencies/stb",
 			"Dependencies/portaudio/include",
+			"Dependencies/glslang/include",
 		}
         
 		links 
@@ -264,11 +265,25 @@ workspace "LambdaEngine"
 			links
 			{
 				"portaudio_x64_d.lib",
+				"glslangd.lib",
+				"SPIRVd.lib",
+				"SPIRV-Toolsd.lib",
+				"SPIRV-Tools-optd.lib",
+				"OSDependentd.lib",
+				"OGLCompilerd.lib",
+				"HLSLd.lib",
 			}
 		filter { "system:windows", "configurations:Release or Production" }
 			links
 			{
 				"portaudio_x64.lib",
+				"glslang.lib",
+				"SPIRV.lib",
+				"SPIRV-Tools.lib",
+				"SPIRV-Tools-opt.lib",
+				"OSDependent.lib",
+				"OGLCompiler.lib",
+				"HLSL.lib",
 			}
 		-- Mac
 		filter { "system:macosx" }

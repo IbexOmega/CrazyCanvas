@@ -5,6 +5,8 @@
 
 namespace LambdaEngine
 {
+	union ShaderConstant;
+
 	class IGraphicsDevice;
 	class IAudioDevice;
 
@@ -23,11 +25,19 @@ namespace LambdaEngine
 
 	class LAMBDA_API ResourceManager
 	{
-	public:
-		DECL_UNIQUE_CLASS(ResourceManager);
+		struct ShaderLoadDesc
+		{
+			const char*			pFilepath				= nullptr;
+			FShaderStageFlags	Stage					= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			EShaderLang			Lang					= EShaderLang::NONE;
+			const char*			pEntryPoint				= nullptr;
+		};
 
-		ResourceManager(IGraphicsDevice* pGraphicsDevice, IAudioDevice* pAudioDevice);
-		~ResourceManager();
+	public:
+		DECL_STATIC_CLASS(ResourceManager);
+
+		static bool Init();
+		static bool Release();
 
 		/*
 		* Load a Scene from file, (experimental, only tested with Sponza Scene)
@@ -37,14 +47,14 @@ namespace LambdaEngine
 		*	result - A vector where all loaded GameObject(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		bool LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& result);
+		static bool LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& result);
 
 		/*
 		* Load a mesh from file
 		*	pFilepath - Path to the .obj file
 		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
-		GUID_Lambda LoadMeshFromFile(const char* pFilepath);
+		static GUID_Lambda LoadMeshFromFile(const char* pFilepath);
 
 		/*
 		* Load a mesh from memory
@@ -54,7 +64,7 @@ namespace LambdaEngine
 		*	numIndices - The Indexcount
 		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
-		GUID_Lambda LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices);
+		static GUID_Lambda LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices);
 
 		/*
 		* Load a material from memory
@@ -62,7 +72,7 @@ namespace LambdaEngine
 		*	properties - Material Properties which are to be used for this material
 		* return - a valid GUID if the materials was loaded, otherwise returns GUID_NONE
 		*/
-		GUID_Lambda LoadMaterialFromMemory(GUID_Lambda albedoMap, GUID_Lambda normalMap, GUID_Lambda ambientOcclusionMap, GUID_Lambda metallicMap, GUID_Lambda roughnessMap, const MaterialProperties& properties);
+		static GUID_Lambda LoadMaterialFromMemory(GUID_Lambda albedoMap, GUID_Lambda normalMap, GUID_Lambda ambientOcclusionMap, GUID_Lambda metallicMap, GUID_Lambda roughnessMap, const MaterialProperties& properties);
 
 		/*
 		* Load a texture from file
@@ -71,7 +81,7 @@ namespace LambdaEngine
 		*	generateMips - If mipmaps should be generated on load
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
-		GUID_Lambda LoadTextureFromFile(const char* pFilepath, EFormat format, bool generateMips);
+		static GUID_Lambda LoadTextureFromFile(const char* pFilepath, EFormat format, bool generateMips);
 
 		/*
 		* Load a texture from memory
@@ -84,65 +94,51 @@ namespace LambdaEngine
 		*	generateMips - If mipmaps should be generated on load
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
-		GUID_Lambda LoadTextureFromMemory(const char* pName, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips);
+		static GUID_Lambda LoadTextureFromMemory(const char* pName, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips);
 
 		/*
 		* Load sound from file
 		*	pFilepath - Path to the shader file
 		*	stage - Which stage the shader belongs to
 		*	lang - The language of the shader file
-		*	pConstants - Optional shader constants, can be nullptr
-		*	shaderConstantCount - The number of entries in pConstants
 		*	pEntryPoint - The name of the shader entrypoint
 		* return - a valid GUID if the shader was loaded, otherwise returns GUID_NONE
 		*/
-		GUID_Lambda LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, ShaderConstant* pConstants = nullptr, uint32 shaderConstantCount = 0, const char* pEntryPoint = "main");
+		static GUID_Lambda LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint = "main");
 
 		/*
 		* Load sound from file
 		*	pFilepath - Path to the audio file
 		* return - a valid GUID if the sound was loaded, otherwise returns GUID_NONE
 		*/
-		GUID_Lambda LoadSoundEffectFromFile(const char* pFilepath);
+		static GUID_Lambda LoadSoundEffectFromFile(const char* pFilepath);
 
-		Mesh*					GetMesh(GUID_Lambda guid);
-		const Mesh*				GetMesh(GUID_Lambda guid) const;
+		static void ReloadAllShaders();
 
-		Material*				GetMaterial(GUID_Lambda guid);
-		const Material*			GetMaterial(GUID_Lambda guid) const;
-
-		ITexture*				GetTexture(GUID_Lambda guid);
-		const ITexture*			GetTexture(GUID_Lambda guid) const;
-		
-		ITextureView*			GetTextureView(GUID_Lambda guid);
-		const ITextureView*		GetTextureView(GUID_Lambda guid) const;
-
-		IShader*				GetShader(GUID_Lambda guid);
-		const IShader*			GetShader(GUID_Lambda guid) const;
-
-		ISoundEffect3D*			GetSoundEffect(GUID_Lambda guid);
-		const ISoundEffect3D*	GetSoundEffect(GUID_Lambda guid) const;
+		static Mesh*					GetMesh(GUID_Lambda guid);
+		static Material*				GetMaterial(GUID_Lambda guid);
+		static ITexture*				GetTexture(GUID_Lambda guid);
+		static ITextureView*			GetTextureView(GUID_Lambda guid);
+		static IShader*					GetShader(GUID_Lambda guid);
+		static ISoundEffect3D*			GetSoundEffect(GUID_Lambda guid);
 
 	private:
-		GUID_Lambda RegisterLoadedMesh(Mesh* pMesh);
-		GUID_Lambda RegisterLoadedMaterial(Material* pMaterial);
-		GUID_Lambda RegisterLoadedTexture(ITexture* pTexture);
+		static GUID_Lambda RegisterLoadedMesh(Mesh* pMesh);
+		static GUID_Lambda RegisterLoadedMaterial(Material* pMaterial);
+		static GUID_Lambda RegisterLoadedTexture(ITexture* pTexture);
 
-		void InitDefaultResources();
-
-	private:
-		IGraphicsDevice* m_pGraphicsDevice;
-		IAudioDevice* m_pAudioDevice;
-
-		std::unordered_map<GUID_Lambda, Mesh*>	   m_Meshes;
-		std::unordered_map<GUID_Lambda, Material*> m_Materials;
-		std::unordered_map<GUID_Lambda, ITexture*> m_Textures;
-		std::unordered_map<GUID_Lambda, ITextureView*> m_TextureViews;
-		std::unordered_map<GUID_Lambda, IShader*> m_Shaders;
-		std::unordered_map<GUID_Lambda, ISoundEffect3D*> m_SoundEffects;
+		static void InitDefaultResources();
 
 	private:
-		static GUID_Lambda s_NextFreeGUID;
+		static GUID_Lambda											s_NextFreeGUID;
 
+		static std::unordered_map<GUID_Lambda, Mesh*>				s_Meshes;
+		static std::unordered_map<GUID_Lambda, Material*>			s_Materials;
+		static std::unordered_map<GUID_Lambda, ITexture*>			s_Textures;
+		static std::unordered_map<GUID_Lambda, ITextureView*>		s_TextureViews;
+		static std::unordered_map<GUID_Lambda, IShader*>			s_Shaders;
+		static std::unordered_map<GUID_Lambda, ISoundEffect3D*>		s_SoundEffects;
+
+		static std::unordered_map<GUID_Lambda, ShaderLoadDesc>		s_ShaderLoadConfigurations;
 	};
 }
