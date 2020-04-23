@@ -462,6 +462,7 @@ namespace LambdaEngine
 		s_Meshes[GUID_NONE]					= nullptr;
 		s_Materials[GUID_NONE]				= nullptr;
 		s_Textures[GUID_NONE]				= nullptr;
+        s_Shaders[GUID_NONE]                = nullptr;
 
 		byte defaultColor[4]				= { 255, 255, 255, 255 };
 		byte defaultNormal[4]				= { 127, 127, 127, 0   };
