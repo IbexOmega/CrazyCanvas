@@ -233,7 +233,7 @@ namespace LambdaEngine
             key.DepthStencilView = VK_NULL_HANDLE;
         }
         
-        ASSERT(pRenderPass != nullptr);
+        VALIDATE(pRenderPass != nullptr);
         
         const RenderPassVK* pRenderPassVk = reinterpret_cast<const RenderPassVK*>(pRenderPass);
         key.RenderPass = pRenderPassVk->GetRenderPass();
