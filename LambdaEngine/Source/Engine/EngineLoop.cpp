@@ -138,12 +138,22 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!ResourceManager::Init())
+		{
+			return false;
+		}
+
 		return true;
 	}
 	
 	bool EngineLoop::Release()
 	{
 		Input::Release();
+
+		if (!ResourceManager::Release())
+		{
+			return false;
+		}
 
 		if (!ResourceLoader::Release())
 		{

@@ -17,6 +17,7 @@
 #include "Rendering/Core/API/IFence.h"
 #include "Rendering/Core/API/IShader.h"
 #include "Rendering/RenderSystem.h"
+#include "Rendering/PipelineStateManager.h"
 
 #include "Game/Scene.h"
 
@@ -96,7 +97,7 @@ namespace LambdaEngine
 				SAFEDELETE_ARRAY(pRenderStage->ppBufferDescriptorSets);
 				SAFERELEASE(pRenderStage->pPipelineLayout);
 				SAFERELEASE(pRenderStage->pRenderPass);
-				SAFERELEASE(pRenderStage->pPipelineState);
+				PipelineStateManager::ReleasePipelineState(pRenderStage->PipelineStateID);
 			}
 			else if (pPipelineStage->Type == EPipelineStageType::SYNCHRONIZATION)
 			{
@@ -415,12 +416,13 @@ namespace LambdaEngine
 				if (pPipelineStage->Type == EPipelineStageType::RENDER)
 				{
 					RenderStage* pRenderStage = &m_pRenderStages[pPipelineStage->StageIndex];
+					IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 
-					switch (pRenderStage->pPipelineState->GetType())
+					switch (pPipelineState->GetType())
 					{
-					case EPipelineStateType::GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineStage->ppGraphicsCommandAllocators[resourceIndex],		pPipelineStage->ppGraphicsCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
-					case EPipelineStateType::COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
-					case EPipelineStateType::RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[resourceIndex],		pPipelineStage->ppGraphicsCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
 					}
 
 					currentExecutionStage++;
@@ -852,7 +854,7 @@ namespace LambdaEngine
 			//Create Pipeline State
 			if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
 			{
-				GraphicsPipelineStateDesc pipelineDesc		= *pRenderStageDesc->GraphicsPipeline.pGraphicsDesc;
+				GraphicsManagedPipelineStateDesc pipelineDesc		= *pRenderStageDesc->GraphicsPipeline.pGraphicsDesc;
 
 				pipelineDesc.pPipelineLayout				= pRenderStage->pPipelineLayout;
 				pipelineDesc.pBlendAttachmentStates			= renderPassBlendAttachmentStates.data();
@@ -925,23 +927,26 @@ namespace LambdaEngine
 					}
 				}
 
-				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateGraphicsPipelineState(&pipelineDesc);
+				pRenderStage->PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineDesc);
+				//pRenderStage->pPipelineState = m_pGraphicsDevice->CreateGraphicsPipelineState(&pipelineDesc);
 			}
 			else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
 			{
-				ComputePipelineStateDesc pipelineDesc = *pRenderStageDesc->ComputePipeline.pComputeDesc;
+				ComputeManagedPipelineStateDesc pipelineDesc = *pRenderStageDesc->ComputePipeline.pComputeDesc;
 
 				pipelineDesc.pPipelineLayout = pRenderStage->pPipelineLayout;
 
-				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateComputePipelineState(&pipelineDesc);
+				pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
+				//pRenderStage->pPipelineState = m_pGraphicsDevice->CreateComputePipelineState(&pipelineDesc);
 			}
 			else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
 			{
-				RayTracingPipelineStateDesc pipelineDesc = *pRenderStageDesc->RayTracingPipeline.pRayTracingDesc;
+				RayTracingManagedPipelineStateDesc pipelineDesc = *pRenderStageDesc->RayTracingPipeline.pRayTracingDesc;
 
 				pipelineDesc.pPipelineLayout = pRenderStage->pPipelineLayout;
 
-				pRenderStage->pPipelineState = m_pGraphicsDevice->CreateRayTracingPipelineState(&pipelineDesc);
+				pRenderStage->PipelineStateID = PipelineStateManager::CreateRayTracingPipelineState(&pipelineDesc);
+				//pRenderStage->pPipelineState = m_pGraphicsDevice->CreateRayTracingPipelineState(&pipelineDesc);
 			}
 
 			//Link Attachment Resources to Render Stage (Descriptor Set)
@@ -1388,6 +1393,7 @@ namespace LambdaEngine
 
 	void RenderGraph::ExecuteGraphicsRenderStage(
 		RenderStage*		pRenderStage, 
+		IPipelineState*		pPipelineState,
 		ICommandAllocator*	pGraphicsCommandAllocator, 
 		ICommandList*		pGraphicsCommandList, 
 		ICommandList**		ppExecutionStage, 
@@ -1464,7 +1470,7 @@ namespace LambdaEngine
 
 		pGraphicsCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		pGraphicsCommandList->BindGraphicsPipeline(pRenderStage->pPipelineState);
+		pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
 
 		if (pRenderStage->ppBufferDescriptorSets != nullptr)
 			pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppBufferDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0);
@@ -1515,6 +1521,7 @@ namespace LambdaEngine
 
 	void RenderGraph::ExecuteComputeRenderStage(
 		RenderStage*		pRenderStage, 
+		IPipelineState*		pPipelineState,
 		ICommandAllocator*	pComputeCommandAllocator,
 		ICommandList*		pComputeCommandList,
 		ICommandList**		ppExecutionStage, 
@@ -1529,7 +1536,7 @@ namespace LambdaEngine
 		pComputeCommandList->Reset();
 		pComputeCommandList->Begin(nullptr);
 
-		pComputeCommandList->BindComputePipeline(pRenderStage->pPipelineState);
+		pComputeCommandList->BindComputePipeline(pPipelineState);
 
 		if (pRenderStage->ppBufferDescriptorSets != nullptr)
 			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0);
@@ -1551,6 +1558,7 @@ namespace LambdaEngine
 
 	void RenderGraph::ExecuteRayTracingRenderStage(
 		RenderStage*		pRenderStage, 
+		IPipelineState*		pPipelineState,
 		ICommandAllocator*	pComputeCommandAllocator,
 		ICommandList*		pComputeCommandList,
 		ICommandList**		ppExecutionStage, 
@@ -1565,7 +1573,7 @@ namespace LambdaEngine
 		pComputeCommandList->Reset();
 		pComputeCommandList->Begin(nullptr);
 
-		pComputeCommandList->BindComputePipeline(pRenderStage->pPipelineState);
+		pComputeCommandList->BindComputePipeline(pPipelineState);
 
 		if (pRenderStage->ppBufferDescriptorSets != nullptr)
 			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0);
@@ -1591,12 +1599,12 @@ namespace LambdaEngine
 
 		if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
 		{
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->pMeshShader != nullptr)		? FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER		: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER		: 0;
 
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->pVertexShader != nullptr)		? FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER	: 0;
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->pGeometryShader != nullptr)	? FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER	: 0;
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->pHullShader != nullptr)		? FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER		: 0;
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->pDomainShader != nullptr)		? FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER	: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->VertexShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER	: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->GeometryShader	!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER	: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->HullShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER		: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->DomainShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER	: 0;
 
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		}

@@ -38,7 +38,7 @@ namespace LambdaEngine
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
 			return (uint64)m_Module;
-		}
+		}		
 
 	private:
 		VkShaderModule	m_Module	= VK_NULL_HANDLE;

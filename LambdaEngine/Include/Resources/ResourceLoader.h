@@ -12,6 +12,7 @@
 #include "Material.h"
 #include "Mesh.h"
 
+
 namespace LambdaEngine
 {
 	class LAMBDA_API ResourceLoader
@@ -77,12 +78,10 @@ namespace LambdaEngine
 		*	pFilepath - Path to the shader file
 		*	stage - Which stage the shader belongs to
 		*	lang - The language of the shader file
-		*	pConstants - Optional shader constants, can be nullptr
-		*	shaderConstantCount - The number of entries in pConstants
 		*	pEntryPoint - The name of the shader entrypoint
 		* return - an IShader* if the shader was loaded, otherwise nullptr will be returned
 		*/
-		static IShader* LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, ShaderConstant* pConstants = nullptr, uint32 shaderConstantCount = 0, const char* pEntryPoint = "main");
+		static IShader* LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint = "main");
 
 		/*
 		* Load sound from file
@@ -94,6 +93,8 @@ namespace LambdaEngine
 	private:
 		static bool ReadDataFromFile(const char* pFilepath, byte** ppData, uint32* pDataSize);
         static void ConvertBackslashes(std::string& string);
+
+		static bool CompileGLSLToSPIRV(const char* pFilepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>& sourceSPIRV);
 
 	private:
 		static ICommandAllocator*		s_pCopyCommandAllocator;

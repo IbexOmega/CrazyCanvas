@@ -41,7 +41,8 @@ namespace LambdaEngine
 	enum class EShaderLang : uint32
 	{
 		NONE	= 0,
-		SPIRV	= BIT(0),
+		SPIRV	= 1,
+		GLSL	= 2,
 	};
 
 	enum class ELoadOp : uint8

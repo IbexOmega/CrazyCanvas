@@ -18,6 +18,7 @@ namespace LambdaEngine
 
 		bool Init(const GraphicsPipelineStateDesc* pDesc);
 
+
         FORCEINLINE VkPipeline GetPipeline() const
         {
             return m_Pipeline;

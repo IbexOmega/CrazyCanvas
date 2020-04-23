@@ -52,8 +52,6 @@ private:
 	bool InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPerDescriptorSet);
 
 private:
-	LambdaEngine::ResourceManager*			m_pResourceManager		= nullptr;
-
 	GUID_Lambda								m_ToneSoundEffectGUID;
 	LambdaEngine::ISoundEffect3D*			m_pToneSoundEffect		= nullptr;
 	LambdaEngine::ISoundInstance3D*			m_pToneSoundInstance	= nullptr;
