@@ -125,8 +125,7 @@ namespace LambdaEngine
 	struct BuildTopLevelAccelerationStructureDesc
 	{
 		IAccelerationStructure* pAccelerationStructure	= nullptr;
-		uint32					Flags					= 0;
-		IBuffer*				pScratchBuffer			= nullptr; 
+		uint32					Flags					= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
 		const IBuffer*			pInstanceBuffer			= nullptr;
 		uint32					InstanceCount			= 0;
 		bool					Update					= false;
@@ -135,8 +134,7 @@ namespace LambdaEngine
 	struct BuildBottomLevelAccelerationStructureDesc
 	{
 		IAccelerationStructure*	pAccelerationStructure	= nullptr;
-		uint32					Flags					= 0;
-		IBuffer*				pScratchBuffer			= nullptr;
+		uint32					Flags					= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
 		const IBuffer*			pVertexBuffer			= nullptr; 
 		uint32					FirstVertexIndex		= 0; 
 		uint32					VertexStride			= 0;

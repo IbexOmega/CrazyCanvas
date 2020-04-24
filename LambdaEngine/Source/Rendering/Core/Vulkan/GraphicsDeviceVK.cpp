@@ -893,15 +893,20 @@ namespace LambdaEngine
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
+		VkPhysicalDeviceRayTracingFeaturesKHR rayTracingFeatures = {};
+		rayTracingFeatures.sType						= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		rayTracingFeatures.rayTracing					= true;
+		//rayTracingFeatures.rayQuery					= true;
+		//rayTracingFeatures.rayTracingPrimitiveCulling	= true;
+
 		VkPhysicalDeviceVulkan12Features deviceFeatures12 = {};
 		deviceFeatures12.sType					= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-		deviceFeatures12.pNext					= nullptr;
+		deviceFeatures12.pNext					= &rayTracingFeatures;
 		deviceFeatures12.bufferDeviceAddress	= true;
 		deviceFeatures12.timelineSemaphore		= true;
 
 		VkPhysicalDeviceVulkan11Features deviceFeatures11 = {};
 		deviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-        deviceFeatures11.pNext  = nullptr;
 		deviceFeatures11.pNext	= &deviceFeatures12;
 
 		VkPhysicalDeviceFeatures desiredDeviceFeatures = {};

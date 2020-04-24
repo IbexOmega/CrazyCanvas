@@ -11,6 +11,7 @@
 #include "Rendering/Core/API/ICommandQueue.h"
 #include "Rendering/Core/API/ICommandAllocator.h"
 #include "Rendering/Core/API/ICommandList.h"
+#include "Rendering/Core/API/IAccelerationStructure.h"
 #include "Rendering/RenderSystem.h"
 
 #include "Log/Log.h"
@@ -28,7 +29,9 @@ namespace LambdaEngine
 	Scene::~Scene()
 	{
 		SAFERELEASE(m_pCopyCommandAllocator);
+		SAFERELEASE(m_pASBuildCommandAllocator);
 		SAFERELEASE(m_pCopyCommandList);
+		SAFERELEASE(m_pASBuildCommandList);
 		SAFERELEASE(m_pSceneMaterialPropertiesCopyBuffer);
 		SAFERELEASE(m_pSceneVertexCopyBuffer);
 		SAFERELEASE(m_pSceneIndexCopyBuffer);
@@ -44,6 +47,8 @@ namespace LambdaEngine
 
 	void Scene::UpdateCamera(const Camera* pCamera)
 	{
+		RenderSystem::GetGraphicsQueue()->Flush();
+		RenderSystem::GetComputeQueue()->Flush();
 		PerFrameBuffer perFrameBuffer = {};
 		perFrameBuffer.Camera = pCamera->GetData();
 
@@ -64,12 +69,12 @@ namespace LambdaEngine
 	uint32 Scene::AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform)
 	{
 		Instance instance = {};
-		instance.Transform = transform;
-		instance.MeshMaterialIndex = 0;
-		instance.Mask = 0;
-		instance.SBTRecordOffset = 0;
-		instance.Flags = 0;
-		instance.AccelerationStructureHandle = 0;
+		instance.Transform						= glm::transpose(transform);
+		instance.MeshMaterialIndex				= 0;
+		instance.Mask							= 0;
+		instance.SBTRecordOffset				= 0;
+		instance.Flags							= 0;
+		instance.AccelerationStructureHandle	= 0;
 
 		m_Instances.push_back(instance);
 
@@ -148,14 +153,28 @@ namespace LambdaEngine
 	{
 		m_pName = desc.pName;
 
-		m_pCopyCommandAllocator = m_pGraphicsDevice->CreateCommandAllocator("Scene Command Allocator", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+		m_pCopyCommandAllocator		= m_pGraphicsDevice->CreateCommandAllocator("Scene Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
 
-		CommandListDesc commandListDesc = {};
-		commandListDesc.pName			= "Scene Command List";
-		commandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
+		CommandListDesc copyCommandListDesc = {};
+		copyCommandListDesc.pName				= "Scene Copy Command List";
+		copyCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+		copyCommandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_PRIMARY;
 
-		m_pCopyCommandList		= m_pGraphicsDevice->CreateCommandList(m_pCopyCommandAllocator, &commandListDesc);
+		m_pCopyCommandList = m_pGraphicsDevice->CreateCommandList(m_pCopyCommandAllocator, &copyCommandListDesc);
+		
+		m_RayTracingEnabled = desc.RayTracingEnabled;
+
+		if (m_RayTracingEnabled)
+		{
+			m_pASBuildCommandAllocator	= m_pGraphicsDevice->CreateCommandAllocator("Scene AS Build Command Allocator", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+
+			CommandListDesc asBuildCommandListDesc = {};
+			asBuildCommandListDesc.pName			= "Scene AS Build Command List";
+			asBuildCommandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+			asBuildCommandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_PRIMARY;
+
+			m_pASBuildCommandList = m_pGraphicsDevice->CreateCommandList(m_pASBuildCommandAllocator, &asBuildCommandListDesc);
+		}
 
 		return true;
 	}
@@ -166,6 +185,24 @@ namespace LambdaEngine
 
 		clock.Reset();
 		clock.Tick();
+
+		/*------------Ray Tracing Section Begin-------------*/
+		std::vector<BuildBottomLevelAccelerationStructureDesc> blasBuildDescriptions;
+		blasBuildDescriptions.reserve(m_Meshes.size());
+
+		if (m_RayTracingEnabled)
+		{
+			AccelerationStructureDesc tlasDesc = {};
+			tlasDesc.pName			= "TLAS";
+			tlasDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP;
+			tlasDesc.Flags			= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+			tlasDesc.InstanceCount	= m_Instances.size();
+
+			m_pTLAS = m_pGraphicsDevice->CreateAccelerationStructure(&tlasDesc, nullptr);
+
+			m_BLASs.reserve(m_Meshes.size());
+		}
+		/*-------------Ray Tracing Section End--------------*/
 
 		uint32 currentNumSceneVertices = 0;
 		uint32 currentNumSceneIndices = 0;
@@ -178,8 +215,39 @@ namespace LambdaEngine
 			MappedMesh& mappedMesh = m_MappedMeshes[meshIndex];
 			const Mesh* pMesh = m_Meshes[meshIndex];
 
-			uint32 newNumSceneVertices = currentNumSceneVertices + pMesh->VertexCount;
-			uint32 newNumSceneIndices = currentNumSceneIndices + pMesh->IndexCount;
+			uint32 newNumSceneVertices	= currentNumSceneVertices	+ pMesh->VertexCount;
+			uint32 newNumSceneIndices	= currentNumSceneIndices	+ pMesh->IndexCount;
+
+			/*------------Ray Tracing Section Begin-------------*/
+			uint64 accelerationStructureHandle = 0;
+
+			if (m_RayTracingEnabled)
+			{
+				AccelerationStructureDesc blasDesc = {};
+				blasDesc.pName				= "BLAS";
+				blasDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_BOTTOM;
+				blasDesc.Flags				= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
+				blasDesc.MaxTriangleCount	= pMesh->IndexCount / 3;
+				blasDesc.MaxVertexCount		= pMesh->VertexCount;
+				blasDesc.AllowsTransform	= false;
+
+				IAccelerationStructure* pBLAS = m_pGraphicsDevice->CreateAccelerationStructure(&blasDesc, nullptr);
+				accelerationStructureHandle = pBLAS->GetHandle();
+				m_BLASs.push_back(pBLAS);
+
+				BuildBottomLevelAccelerationStructureDesc blasBuildDesc = {};
+				blasBuildDesc.pAccelerationStructure		= pBLAS;
+				blasBuildDesc.Flags							= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
+				blasBuildDesc.FirstVertexIndex				= currentNumSceneVertices;
+				blasBuildDesc.VertexStride					= sizeof(Vertex);
+				blasBuildDesc.IndexBufferByteOffset			= currentNumSceneIndices * sizeof(uint32);
+				blasBuildDesc.TriangleCount					= pMesh->IndexCount / 3;
+				blasBuildDesc.pTransform					= nullptr;
+				blasBuildDesc.Update						= false;
+
+				blasBuildDescriptions.push_back(blasBuildDesc);
+			}
+			/*-------------Ray Tracing Section End--------------*/
 
 			for (uint32 materialIndex = 0; materialIndex < mappedMesh.MappedMaterials.size(); materialIndex++)
 			{
@@ -189,6 +257,14 @@ namespace LambdaEngine
 				indirectMeshArgument.IndexCount			= pMesh->IndexCount;
 				indirectMeshArgument.FirstIndex			= currentNumSceneIndices;
 				indirectMeshArgument.VertexOffset		= currentNumSceneVertices;
+
+				/*------------Ray Tracing Section Begin-------------*/
+				if (m_RayTracingEnabled)
+				{
+					indirectMeshArgument.InstanceCount		= (uint32)((accelerationStructureHandle >> 32)	& 0x00000000FFFFFFFF); // Temporarily store BLAS Handle in Instance Count and First Instance 
+					indirectMeshArgument.FirstInstance		= (uint32)((accelerationStructureHandle)		& 0x00000000FFFFFFFF); // these are used in the next stage
+				}
+				/*-------------Ray Tracing Section End--------------*/
 
 				indirectArgCount++;
 				materialIndexToMeshIndex.insert(std::make_pair(mappedMaterial.MaterialIndex, std::make_pair(mappedMaterial, indirectMeshArgument)));
@@ -215,10 +291,21 @@ namespace LambdaEngine
 			uint32 instanceCount = (uint32)mappedMaterial.InstanceIndices.size();
 			uint32 baseInstanceIndex = (uint32)m_SortedInstances.size();
 
+			/*------------Ray Tracing Section Begin-------------*/
+			uint64 accelerationStructureHandle = ((((uint64)indirectArg.InstanceCount) << 32) & 0xFFFFFFFF00000000) | (((uint64)indirectArg.FirstInstance) & 0x00000000FFFFFFFF);
+			/*-------------Ray Tracing Section End--------------*/
+
 			for (uint32 instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
 			{
 				Instance instance = m_Instances[mappedMaterial.InstanceIndices[instanceIndex]];
-				instance.MeshMaterialIndex = (uint32)m_IndirectArgs.size();
+				instance.MeshMaterialIndex				= (uint32)m_IndirectArgs.size();
+
+				/*------------Ray Tracing Section Begin-------------*/
+				instance.AccelerationStructureHandle	= accelerationStructureHandle;
+				instance.SBTRecordOffset				= 0;
+				instance.Flags							= 0x00000001;
+				instance.Mask							= 0xFF;
+				/*-------------Ray Tracing Section End--------------*/
 
 				m_SortedInstances.push_back(instance);
 			}
@@ -234,6 +321,24 @@ namespace LambdaEngine
 			indirectArg.MaterialIndex = mappedMaterial.MaterialIndex;
 
 			m_IndirectArgs.push_back(indirectArg);
+		}
+
+		//Create InstanceBuffer
+		{
+			uint32 sceneInstanceBufferSize = uint32(m_SortedInstances.size() * sizeof(Instance));
+
+			if (m_pSceneInstanceBuffer == nullptr || sceneInstanceBufferSize > m_pSceneInstanceBuffer->GetDesc().SizeInBytes)
+			{
+				SAFERELEASE(m_pSceneInstanceBuffer);
+
+				BufferDesc bufferDesc = {};
+				bufferDesc.pName		= "Scene Instance Buffer";
+				bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
+
+				m_pSceneInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
+			}
 		}
 
 		m_SceneAlbedoMaps.resize(MAX_UNIQUE_MATERIALS);
@@ -364,7 +469,7 @@ namespace LambdaEngine
 				BufferDesc bufferDesc = {};
 				bufferDesc.pName		= "Scene Vertex Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
+				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
 				bufferDesc.SizeInBytes	= sceneVertexBufferSize;
 
 				m_pSceneVertexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
@@ -401,7 +506,7 @@ namespace LambdaEngine
 				BufferDesc bufferDesc = {};
 				bufferDesc.pName		= "Scene Index Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
+				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDEX_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
 				bufferDesc.SizeInBytes	= sceneIndexBufferSize;
 
 				m_pSceneIndexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
@@ -410,6 +515,7 @@ namespace LambdaEngine
 			m_pCopyCommandList->CopyBuffer(m_pSceneIndexCopyBuffer, 0, m_pSceneIndexBuffer, 0, sceneIndexBufferSize);
 		}
 
+		//Instances
 		{
 			uint32 sceneInstanceBufferSize = uint32(m_SortedInstances.size() * sizeof(Instance));
 
@@ -437,7 +543,7 @@ namespace LambdaEngine
 				BufferDesc bufferDesc = {};
 				bufferDesc.pName		= "Scene Instance Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
 				bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
 
 				m_pSceneInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
@@ -446,7 +552,7 @@ namespace LambdaEngine
 			m_pCopyCommandList->CopyBuffer(m_pSceneInstanceCopyBuffer, 0, m_pSceneInstanceBuffer, 0, sceneInstanceBufferSize);
 		}
 
-		
+		//Indirect Args
 		{
 			uint32 sceneMeshIndexBufferSize = uint32(m_IndirectArgs.size() * sizeof(IndexedIndirectMeshArgument));
 
@@ -495,8 +601,41 @@ namespace LambdaEngine
 
 		m_pCopyCommandList->End();
 
-		RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_pCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+		RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_pCopyCommandList, 1,		FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
 		RenderSystem::GetGraphicsQueue()->Flush();
+
+		/*------------Ray Tracing Section Begin-------------*/
+		if (m_RayTracingEnabled)
+		{
+			m_pASBuildCommandAllocator->Reset();
+			m_pASBuildCommandList->Reset();
+
+			m_pASBuildCommandList->Begin(nullptr);
+
+			for (uint32 i = 0; i < 1; i++)
+			{
+				BuildBottomLevelAccelerationStructureDesc& blasBuildDesc = blasBuildDescriptions[i];
+				blasBuildDesc.pVertexBuffer		= m_pSceneVertexBuffer;
+				blasBuildDesc.pIndexBuffer		= m_pSceneIndexBuffer;
+
+				m_pASBuildCommandList->BuildBottomLevelAccelerationStructure(&blasBuildDesc);
+			}
+
+			BuildTopLevelAccelerationStructureDesc tlasBuildDesc = {};
+			tlasBuildDesc.pAccelerationStructure	= m_pTLAS;
+			tlasBuildDesc.Flags						= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+			tlasBuildDesc.pInstanceBuffer			= m_pSceneInstanceBuffer;
+			tlasBuildDesc.InstanceCount				= m_Instances.size();
+			tlasBuildDesc.Update					= false;
+
+			m_pASBuildCommandList->BuildTopLevelAccelerationStructure(&tlasBuildDesc);
+
+			m_pASBuildCommandList->End();
+
+			RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_pASBuildCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+			RenderSystem::GetGraphicsQueue()->Flush();
+		}
+		/*-------------Ray Tracing Section End--------------*/
 
 		D_LOG_MESSAGE("[Scene]: Successfully finalized \"%s\"! ", m_pName);
 

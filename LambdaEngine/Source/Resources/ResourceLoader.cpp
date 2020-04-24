@@ -669,13 +669,13 @@ namespace LambdaEngine
 		{
 			if (!ReadDataFromFile(pFilepath, "r", &pShaderRawSource, &shaderRawSourceSize))
 			{
-				LOG_ERROR("[ResourceDevice]: Failed to open shader file \"%s\"", pFilepath);
+				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", pFilepath);
 				return nullptr;
 			}
 			
 			if (!CompileGLSLToSPIRV(pFilepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, sourceSPIRV))
 			{
-				LOG_ERROR("[ResourceDevice]: Failed to compile GLSL to SPIRV for \"%s\"", pFilepath);
+				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", pFilepath);
 				return nullptr;
 			}
 
@@ -685,7 +685,7 @@ namespace LambdaEngine
 		{
 			if (!ReadDataFromFile(pFilepath, "rb", &pShaderRawSource, &shaderRawSourceSize))
 			{
-				LOG_ERROR("[ResourceDevice]: Failed to open shader file \"%s\"", pFilepath);
+				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", pFilepath);
 				return nullptr;
 			}
 			

@@ -160,7 +160,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				std::vector<PipelineTextureBarrierDesc*> Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
+				std::vector<uint32>			Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
 				std::vector<ITexture*>		Textures;
 				std::vector<ITextureView*>	TextureViews;
 				std::vector<ISampler*>		Samplers;
@@ -168,7 +168,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				std::vector<PipelineBufferBarrierDesc*> Barriers;
+				std::vector<uint32>			Barriers;
 				std::vector<IBuffer*>		Buffers;
 				std::vector<uint64>			Offsets;
 				std::vector<uint64>			SizesInBytes;
@@ -206,14 +206,14 @@ namespace LambdaEngine
 		{
 			FShaderStageFlags		SrcShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 			FShaderStageFlags		DstShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			std::vector<PipelineTextureBarrierDesc> Barriers;
+			std::vector<uint32>		Barriers;
 		};
 
 		struct BufferSynchronization
 		{
 			FShaderStageFlags		SrcShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 			FShaderStageFlags		DstShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			std::vector<PipelineBufferBarrierDesc> Barriers;
+			std::vector<uint32>		Barriers;
 		};
 
 		struct SynchronizationStage
@@ -323,5 +323,8 @@ namespace LambdaEngine
 		std::set<Resource*>									m_DirtyDescriptorSetExternalTextures;
 		std::set<Resource*>									m_DirtyDescriptorSetExternalBuffers;
 		std::set<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
+
+		std::vector<PipelineTextureBarrierDesc>				m_TextureBarriers;
+		std::vector<PipelineBufferBarrierDesc>				m_BufferBarriers;
 	};
 }

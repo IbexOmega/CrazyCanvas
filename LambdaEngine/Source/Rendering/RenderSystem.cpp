@@ -59,7 +59,7 @@ namespace LambdaEngine
 		{
 			return false;
 		}
-		
+
         DeviceAllocatorDesc allocatorDesc = { };
         allocatorDesc.pName             = "Main Allocator";
         allocatorDesc.PageSizeInBytes   = MEGA_BYTE(64);

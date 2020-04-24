@@ -310,10 +310,15 @@ namespace LambdaEngine
 		{
 			if (it->second != nullptr)
 			{
-				SAFERELEASE(it->second);
 				ShaderLoadDesc loadDesc = s_ShaderLoadConfigurations[it->first];
 
-				it->second = ResourceLoader::LoadShaderFromFile(loadDesc.pFilepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
+				IShader* pShader = ResourceLoader::LoadShaderFromFile(loadDesc.pFilepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
+
+				if (pShader != nullptr)
+				{
+					SAFERELEASE(it->second);
+					it->second = pShader;
+				}
 			}
 		}
 	}

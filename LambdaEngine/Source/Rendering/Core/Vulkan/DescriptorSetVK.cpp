@@ -154,8 +154,8 @@ namespace LambdaEngine
             accelerationStructures[i] = pAccelerationStructureVk->GetAccelerationStructure();
         }
         
-        VkWriteDescriptorSetAccelerationStructureNV descriptorAccelerationStructureInfo = {};
-        descriptorAccelerationStructureInfo.sType                       = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
+        VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo = {};
+        descriptorAccelerationStructureInfo.sType                       = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
         descriptorAccelerationStructureInfo.accelerationStructureCount  = descriptorCount;
         descriptorAccelerationStructureInfo.pAccelerationStructures     = accelerationStructures.data();
 
@@ -165,7 +165,7 @@ namespace LambdaEngine
         accelerationStructureWrite.dstSet           = m_DescriptorSet;
         accelerationStructureWrite.dstBinding       = firstBinding;
         accelerationStructureWrite.descriptorCount  = 1;
-        accelerationStructureWrite.descriptorType   = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+        accelerationStructureWrite.descriptorType   = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         accelerationStructureWrite.pBufferInfo      = nullptr;
         accelerationStructureWrite.pImageInfo       = nullptr;
         accelerationStructureWrite.pTexelBufferView = nullptr;

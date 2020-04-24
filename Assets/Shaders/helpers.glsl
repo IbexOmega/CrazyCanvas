@@ -5,6 +5,57 @@ const float GAMMA   = 2.2f;
 
 const float MAX_TEMPORAL_FRAMES = 256.0f;
 
+struct SPositions
+{
+    vec3 WorldPos; 
+    vec3 ViewPos;
+};
+
+struct SRayDirections
+{
+    vec3 ReflDir; 
+    vec3 ViewDir;
+};
+
+vec3 CalculateNormal(vec4 sampledNormalMetallicRoughness)
+{
+	vec3 normal;
+	normal.xy 	= sampledNormalMetallicRoughness.xy;
+	normal.z 	= sqrt(1.0f - dot(normal.xy, normal.xy));
+	if (sampledNormalMetallicRoughness.a < 0)
+	{
+		normal.z = -normal.z;
+	}
+	normal = normalize(normal);
+	return normal;
+}
+
+SPositions CalculatePositionsFromDepth(vec2 screenTexCoord, float sampledDepth, mat4 cameraProjectionInv, mat4 cameraViewInv)
+{
+	vec2 xy = screenTexCoord * 2.0f - 1.0f;
+
+	vec4 clipSpacePosition = vec4(xy, sampledDepth, 1.0f);
+	vec4 viewSpacePosition = cameraProjectionInv * clipSpacePosition;
+	viewSpacePosition = viewSpacePosition / viewSpacePosition.w;
+	vec4 homogenousPosition = cameraViewInv * viewSpacePosition;
+
+    SPositions positions;
+	positions.WorldPos  = homogenousPosition.xyz;
+	positions.ViewPos   = viewSpacePosition.xyz;
+    return positions;
+}
+
+SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition, mat4 cameraViewInv)
+{
+	vec4 u_CameraOrigin = cameraViewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	vec3 origDirection = normalize(hitPosition - cameraPosition);
+
+    SRayDirections rayDirections;
+	rayDirections.ReflDir = reflect(origDirection, normal);
+	rayDirections.ViewDir = -origDirection;
+    return rayDirections;
+}
+
 vec4 bilateralBlur13Roughness(sampler2D image, vec4 centerColor, vec2 texCoords, vec2 direction, float roughness) 
 {
     vec3 color = vec3(0.0f);
