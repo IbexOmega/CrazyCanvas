@@ -3,6 +3,8 @@
 
 #include "Log/Log.h"
 
+#include "Application/API/PlatformConsole.h"
+
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/FenceVK.h"
 #include "Rendering/Core/Vulkan/FenceTimelineVK.h"
@@ -462,7 +464,7 @@ namespace LambdaEngine
 	{
         VALIDATE(pDesc != nullptr);
         
-		if (IsDeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
+		if (UseTimelineFences())
 		{
 			FenceTimelineVK* pFenceTimelineVk = DBG_NEW FenceTimelineVK(this);
 			if (!pFenceTimelineVk->Init(pDesc))
@@ -1261,6 +1263,11 @@ namespace LambdaEngine
 		return false;
 	}
 
+	bool GraphicsDeviceVK::UseTimelineFences() const
+	{
+		return (vkWaitSemaphores != nullptr);
+	}
+
 	void GraphicsDeviceVK::RegisterInstanceExtensionData()
 	{
 		//Required
@@ -1321,19 +1328,23 @@ namespace LambdaEngine
 
 		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
 		{
-			LOG_MESSAGE("[Validation Layer]: %s\n", pCallbackData->pMessage);
+			LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);
+			PlatformConsole::Print("\n");
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
 		{
-			LOG_MESSAGE("[Validation Layer]: %s\n", pCallbackData->pMessage);
+			LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);
+			PlatformConsole::Print("\n");
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		{
-			LOG_WARNING("[Validation Layer]: %s\n", pCallbackData->pMessage);
+			LOG_WARNING("[Validation Layer]: %s", pCallbackData->pMessage);
+			PlatformConsole::Print("\n");
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		{
-			LOG_ERROR("[Validation Layer]: %s\n", pCallbackData->pMessage);
+			LOG_ERROR("[Validation Layer]: %s", pCallbackData->pMessage);
+			PlatformConsole::Print("\n");
 		}
 
 		return VK_FALSE;

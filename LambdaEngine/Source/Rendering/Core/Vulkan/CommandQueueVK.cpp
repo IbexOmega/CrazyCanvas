@@ -116,7 +116,7 @@ namespace LambdaEngine
             
             //Check if we are using FenceTimelineVK
             VkFence submitFence = VK_NULL_HANDLE;
-            if (m_pDevice->vkWaitSemaphores)
+            if (m_pDevice->UseTimelineFences())
             {
                 // Perform empty submit on queue for wait on the semaphore
                 InternalFlushBarriers();
