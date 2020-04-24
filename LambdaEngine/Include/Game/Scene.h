@@ -74,8 +74,7 @@ namespace LambdaEngine
 		};
 		
 	public:
-		DECL_REMOVE_COPY(Scene);
-		DECL_REMOVE_MOVE(Scene);
+		DECL_UNIQUE_CLASS(Scene);
 
 		Scene(const IGraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice);
 		~Scene();

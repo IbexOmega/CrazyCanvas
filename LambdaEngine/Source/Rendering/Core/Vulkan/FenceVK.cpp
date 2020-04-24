@@ -5,7 +5,7 @@
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 #define PRIMITIVE_START_COUNT   4
-#define FENCE_LOG_STATE_ENABLE  1
+#define FENCE_LOG_STATE_ENABLE  0
 
 #if FENCE_LOG_STATE_ENABLE
     #define FENCE_LOG_STATE(...) D_LOG_INFO(__VA_ARGS__)
@@ -143,9 +143,8 @@ namespace LambdaEngine
         // Wait for semaphores that were waited on during CPU - wait, this is to enable reuse of them
         FlushWaitSemaphores(queue);
         
-        uint64      cpuWaitValue    = 0;
         VkSemaphore waitSemaphore   = VK_NULL_HANDLE;
-        for (TArray<FenceValueVk>::iterator it = m_PendingValues.begin(); it != m_PendingValues.end(); it++)
+        for (TArray<FenceValueVk>::iterator it = m_PendingValues.begin(); it != m_PendingValues.end();)
         {
             if (it->Value > waitValue)
             {
@@ -161,14 +160,35 @@ namespace LambdaEngine
             {
                 VALIDATE(it->SemaphoreState == ESemaphoreState::SEMAPHORE_STATE_WAITING);
                 
-                if (it->Value > cpuWaitValue)
+                VkResult result = vkGetFenceStatus(m_pDevice->Device, it->Fence);
+                if (result == VK_NOT_READY)
                 {
-                    cpuWaitValue = it->Value;
+                    // Fence is not signaled so wait for this value to finish
+                    result = vkWaitForFences(m_pDevice->Device, 1, &it->Fence, true, UINT64_MAX);
+                    FENCE_LOG_STATE("[FenceVK]: GPU wait. Waited For fence=%p", it->Fence);
+                }
+                
+                if (result == VK_SUCCESS)
+                {
+                    // Fence should be finished here
+                    if (waitValue > m_LastCompletedValue)
+                    {
+                        m_LastCompletedValue = it->Value;
+                        FENCE_LOG_STATE("[FenceVK]: GPU wait. Fence Finished. LastCompletedValue=%llu", m_LastCompletedValue);
+                    }
+                 
+                    // Make sure we can reuse this fence and semaphore
+                    DisposeFence(it->Fence);
+                    DisposeSemaphore(it->Semaphore);
+                    
+                    it = m_PendingValues.erase(m_PendingValues.begin());
+                    continue;
                 }
             }
+            
+            it++;
         }
         
-        Wait(cpuWaitValue, UINT64_MAX);
         return waitSemaphore;
     }
 
@@ -330,14 +350,14 @@ namespace LambdaEngine
         }
         else
         {
-            m_Fences.push_back(fence);
+            m_Fences.insert(m_Fences.begin(), fence);
         }
     }
 
     void FenceVK::DisposeSemaphore(VkSemaphore semaphore) const
     {
         VALIDATE(semaphore != VK_NULL_HANDLE);
-        m_Semaphores.push_back(semaphore);
+        m_Semaphores.insert(m_Semaphores.begin(), semaphore);
     }
 
     void FenceVK::AddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags waitStage) const
