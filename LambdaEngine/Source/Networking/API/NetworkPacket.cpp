@@ -90,9 +90,9 @@ namespace LambdaEngine
 		case TYPE_DISCONNECT:			type = "TYPE_DISCONNECT";  break;
 		case TYPE_CHALLENGE:			type = "TYPE_CHALLENGE";  break;
 		case TYPE_ACCEPTED:				type = "TYPE_ACCEPTED";  break;
+		case TYPE_NETWORK_ACK:			type = "TYPE_NETWORK_ACK";  break;
 		case TYPE_NETWORK_DISCOVERY:	type = "TYPE_NETWORK_DISCOVERY";  break;
-		default:
-			break;
+		default:						type = std::to_string(m_Header.Type); break;
 		}
 		return "[Type=" + type + "], [Size=" + std::to_string(GetBufferSize()) + "]";
 	}

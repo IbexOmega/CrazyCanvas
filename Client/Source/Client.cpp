@@ -27,7 +27,7 @@ Client::Client() :
 
     m_pClient = ClientUDP::Create(this, 1024, 100);
 
-    if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.119"), 4444)))
+    if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
     {
         LOG_ERROR("Failed to connect!");
     }
@@ -51,7 +51,7 @@ void Client::OnConnectedUDP(LambdaEngine::IClientUDP* pClient)
 
     LOG_MESSAGE("OnConnectedUDP()");
 
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 1; i++)
     {
         NetworkPacket* pPacket = m_pClient->GetFreePacket(1);
         BinaryEncoder encoder(pPacket);
@@ -113,7 +113,7 @@ void Client::OnKeyDown(LambdaEngine::EKey key)
         if (m_pClient->IsConnected())
             m_pClient->Disconnect();
         else
-            m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.119"), 4444));
+            m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444));
     }
     else
     {
