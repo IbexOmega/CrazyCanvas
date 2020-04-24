@@ -733,7 +733,6 @@ namespace LambdaEngine
 	bool ResourceLoader::ReadDataFromFile(const char* pFilepath, const char* pMode, byte** ppData, uint32* pDataSize)
 	{
 		FILE* pFile = fopen(pFilepath, pMode);
-
 		if (pFile == nullptr)
 		{
 			LOG_ERROR("[ResourceDevice]: Failed to load file \"%s\"", pFilepath);
@@ -749,7 +748,6 @@ namespace LambdaEngine
 		fread(*ppData, 1, (*pDataSize), pFile);
 
 		fclose(pFile);
-
 		return true;
 	}
 
