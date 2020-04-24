@@ -32,8 +32,10 @@ namespace LambdaEngine
 
 	RenderGraph::~RenderGraph()
 	{
-		SAFERELEASE(m_pDescriptorHeap);
-		SAFERELEASE(m_pFence);
+        m_pFence->Wait(m_SignalValue, UINT64_MAX);
+        SAFERELEASE(m_pFence);
+
+        SAFERELEASE(m_pDescriptorHeap);
 		SAFEDELETE_ARRAY(m_ppExecutionStages);
 
 		for (auto it = m_ResourceMap.begin(); it != m_ResourceMap.end(); it++)

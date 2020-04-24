@@ -5,7 +5,7 @@
 #include "Rendering/Core/Vulkan/CommandQueueVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/CommandListVK.h"
-#include "Rendering/Core/Vulkan/FenceTimelineVK.h"
+#include "Rendering/Core/Vulkan/FenceVK.h"
 #include "Rendering/Core/Vulkan/FenceTimelineVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
@@ -55,19 +55,32 @@ namespace LambdaEngine
 
 	}
 
-	void CommandQueueVK::AddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlagBits waitStage)
+	void CommandQueueVK::AddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags waitStage)
 	{
         std::scoped_lock<SpinLock> lock(m_SpinLock);
+        InternalAddWaitSemaphore(semaphore, waitStage);
         
-		m_WaitSemaphores.push_back(semaphore);
-		m_WaitStages.push_back(waitStage);
 	}
 
 	void CommandQueueVK::AddSignalSemaphore(VkSemaphore semaphore)
 	{
         std::scoped_lock<SpinLock> lock(m_SpinLock);
-		m_SignalSemaphores.push_back(semaphore);
+		InternalAddSignalSemaphore(semaphore);
 	}
+
+    void CommandQueueVK::InternalAddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags waitStage)
+    {
+        VALIDATE(semaphore != VK_NULL_HANDLE);
+        
+        m_WaitSemaphores.push_back(semaphore);
+        m_WaitStages.push_back(waitStage);
+    }
+
+    void CommandQueueVK::InternalAddSignalSemaphore(VkSemaphore semaphore)
+    {
+        VALIDATE(semaphore != VK_NULL_HANDLE);
+        m_SignalSemaphores.push_back(semaphore);
+    }
 
 	void CommandQueueVK::FlushBarriers()
 	{
@@ -76,7 +89,7 @@ namespace LambdaEngine
         InternalFlushBarriers();
 	}
 	
-	bool CommandQueueVK::ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, const IFence* pSignalFence, uint64 signalValue)
+	bool CommandQueueVK::ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, IFence* pSignalFence, uint64 signalValue)
 	{
 #ifndef LAMBDA_PRODUCTION
         if (numCommandLists >= MAX_COMMANDBUFFERS)
@@ -95,65 +108,101 @@ namespace LambdaEngine
                 m_SubmitCommandBuffers[i] = pCommandListVk->GetCommandBuffer();
             }
 
-            // Perform empty submit on queue for wait on the semaphore
-            InternalFlushBarriers();
-
+            //Setup common submit info
             VkSubmitInfo submitInfo = { };
             submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            submitInfo.pCommandBuffers        = m_SubmitCommandBuffers;
-            submitInfo.commandBufferCount    = numCommandLists;
-
-            const FenceTimelineVK* pWaitFenceVk      = reinterpret_cast<const FenceTimelineVK*>(pWaitFence);
-            const FenceTimelineVK* pSignalFenceVk    = reinterpret_cast<const FenceTimelineVK*>(pSignalFence);
-
-            //Add Timeline Semaphores
-            uint64 signalValues[]    = { signalValue };
-            uint32 SignalValueCount = 0;
+            submitInfo.pCommandBuffers      = m_SubmitCommandBuffers;
+            submitInfo.commandBufferCount   = numCommandLists;
             
-            VkSemaphore             waitSemaphoreVk = VK_NULL_HANDLE;
-            VkPipelineStageFlags    waitStageVk = 0;
-            uint64 waitValues[]      = { waitValue };
-            uint32 waitValueCount    = 0;
-
-            if (pWaitFenceVk && m_pDevice->vkWaitSemaphores)
+            //Check if we are using FenceTimelineVK
+            VkFence submitFence = VK_NULL_HANDLE;
+            if (m_pDevice->UseTimelineFences())
             {
-                waitSemaphoreVk = pWaitFenceVk->GetSemaphore();
-                waitStageVk        = ConvertPipelineStage(waitStage);
+                // Perform empty submit on queue for wait on the semaphore
+                InternalFlushBarriers();
+                
+                const FenceTimelineVK*  pWaitFenceVk      = reinterpret_cast<const FenceTimelineVK*>(pWaitFence);
+                FenceTimelineVK*        pSignalFenceVk    = reinterpret_cast<FenceTimelineVK*>(pSignalFence);
 
-                waitValueCount = 1;
-            }
+                //Add Timeline Semaphores
+                uint64 signalValues[]   = { signalValue };
+                uint32 SignalValueCount = 0;
 
-            if (pSignalFenceVk && m_pDevice->vkWaitSemaphores)
-            {
-                m_SignalSemaphores.insert(m_SignalSemaphores.begin(), pSignalFenceVk->GetSemaphore());
-                SignalValueCount = 1;
-            }
-            
-            //TODO: Add ability to query this functionallty from the device
-            VkTimelineSemaphoreSubmitInfo fenceSubmitInfo = {};
-            if (m_pDevice->vkGetSemaphoreCounterValue)
-            {
+                VkSemaphore          waitSemaphoreVk = VK_NULL_HANDLE;
+                VkPipelineStageFlags waitStageVk     = 0;
+                uint64 waitValues[]   = { waitValue };
+                uint32 waitValueCount = 0;
+
+                if (pWaitFenceVk)
+                {
+                   waitSemaphoreVk = pWaitFenceVk->GetSemaphore();
+                   waitStageVk     = ConvertPipelineStage(waitStage);
+
+                   waitValueCount = 1;
+                }
+
+                if (pSignalFenceVk)
+                {
+                   m_SignalSemaphores.insert(m_SignalSemaphores.begin(), pSignalFenceVk->GetSemaphore());
+                   SignalValueCount = 1;
+                }
+
+                //TODO: Add ability to query this functionallty from the device
+                VkTimelineSemaphoreSubmitInfo fenceSubmitInfo = {};
                 fenceSubmitInfo.sType                        = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
                 fenceSubmitInfo.pNext                        = nullptr;
                 fenceSubmitInfo.signalSemaphoreValueCount    = SignalValueCount;
-                fenceSubmitInfo.pSignalSemaphoreValues        = signalValues;
-                fenceSubmitInfo.waitSemaphoreValueCount        = waitValueCount;
-                fenceSubmitInfo.pWaitSemaphoreValues        = waitValues;
-
-                submitInfo.pNext = (const void*)&fenceSubmitInfo;
+                fenceSubmitInfo.pSignalSemaphoreValues       = signalValues;
+                fenceSubmitInfo.waitSemaphoreValueCount      = waitValueCount;
+                fenceSubmitInfo.pWaitSemaphoreValues         = waitValues;
+                
+                submitInfo.pNext                = (const void*)&fenceSubmitInfo;
+                submitInfo.waitSemaphoreCount   = waitValueCount;
+                submitInfo.pWaitSemaphores      = &waitSemaphoreVk;
+                submitInfo.pWaitDstStageMask    = &waitStageVk;
             }
             else
             {
-                submitInfo.pNext = nullptr;
+                const FenceVK*  pWaitFenceVk   = reinterpret_cast<const FenceVK*>(pWaitFence);
+                FenceVK*        pSignalFenceVk = reinterpret_cast<FenceVK*>(pSignalFence);
+                
+                if (pSignalFenceVk)
+                {
+                    VkSemaphore signalSemaphore = pSignalFenceVk->SignalGPU(signalValue, m_Queue);
+                    if (signalSemaphore != VK_NULL_HANDLE)
+                    {
+                        InternalAddSignalSemaphore(signalSemaphore);
+                        submitFence = pSignalFenceVk->GetSignalFence(signalValue);
+                    }
+                }
+                
+                if (pWaitFenceVk)
+                {
+                    VkSemaphore             waitSemaphore   = pWaitFenceVk->WaitGPU(waitValue, m_Queue);
+                    VkPipelineStageFlagBits waitStageVk     = ConvertPipelineStage(waitStage);
+                    
+                    if (waitSemaphore != VK_NULL_HANDLE)
+                    {
+                        InternalAddWaitSemaphore(waitSemaphore, waitStageVk);
+                    }
+                }
+                
+                VALIDATE(m_WaitSemaphores.size() == m_WaitStages.size());
+                
+                submitInfo.pNext                = nullptr;
+                submitInfo.waitSemaphoreCount   = uint32(m_WaitSemaphores.size());
+                submitInfo.pWaitSemaphores      = m_WaitSemaphores.data();
+                submitInfo.pWaitDstStageMask    = m_WaitStages.data();
+                
+                m_WaitSemaphores.clear();
+                m_WaitStages.clear();
             }
-
+            
+            //Setup common signal semaphores
             submitInfo.signalSemaphoreCount = uint32(m_SignalSemaphores.size());
             submitInfo.pSignalSemaphores    = m_SignalSemaphores.data();
-            submitInfo.waitSemaphoreCount   = waitValueCount;
-            submitInfo.pWaitSemaphores      = &waitSemaphoreVk;
-            submitInfo.pWaitDstStageMask    = &waitStageVk;
-
-            VkResult result = vkQueueSubmit(m_Queue, 1, &submitInfo, VK_NULL_HANDLE);
+            
+            VkResult result = vkQueueSubmit(m_Queue, 1, &submitInfo, submitFence);
             if (result != VK_SUCCESS)
             {
                 LOG_VULKAN_ERROR(result, "[CommandQueueVK]: Executing commandlists failed");
@@ -182,15 +231,17 @@ namespace LambdaEngine
         {
             //If we need to flushbarriers, then add a lock so that vkQueueSubmit is protected
 
+            VALIDATE(m_WaitSemaphores.size() == m_WaitStages.size());
+            
             VkSubmitInfo submitInfo = { };
             submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             submitInfo.pNext                = nullptr;
-            submitInfo.commandBufferCount    = 0;
-            submitInfo.pCommandBuffers        = nullptr;
+            submitInfo.commandBufferCount   = 0;
+            submitInfo.pCommandBuffers      = nullptr;
             submitInfo.signalSemaphoreCount = 0;
             submitInfo.pSignalSemaphores    = nullptr;
-            submitInfo.waitSemaphoreCount    = uint32(m_WaitSemaphores.size());
-            submitInfo.pWaitSemaphores        = m_WaitSemaphores.data();
+            submitInfo.waitSemaphoreCount   = uint32(m_WaitSemaphores.size());
+            submitInfo.pWaitSemaphores      = m_WaitSemaphores.data();
             submitInfo.pWaitDstStageMask    = m_WaitStages.data();
 
             VkResult result = vkQueueSubmit(m_Queue, 1, &submitInfo, VK_NULL_HANDLE);

@@ -52,6 +52,9 @@ namespace LambdaEngine
 		PerFrameBuffer perFrameBuffer = {};
 		perFrameBuffer.Camera = pCamera->GetData();
 
+        // TODO: Remove this flush
+        RenderSystem::GetGraphicsQueue()->Flush();
+        
 		void* pMapped = m_pPerFrameBuffer->Map();
 		memcpy(pMapped, &perFrameBuffer, sizeof(PerFrameBuffer));
 		m_pPerFrameBuffer->Unmap();

@@ -24,7 +24,7 @@ namespace LambdaEngine
                 const CGFloat height    = 720.0f;
                 
                 s_pConsoleWindow = [[CocoaConsoleWindow alloc] init: width height:height];
-                [s_pConsoleWindow setColor:EConsoleColor::COLOR_YELLOW];
+                [s_pConsoleWindow setColor:EConsoleColor::COLOR_WHITE];
                 
                 MacApplication::ProcessMessages();
             }, true);

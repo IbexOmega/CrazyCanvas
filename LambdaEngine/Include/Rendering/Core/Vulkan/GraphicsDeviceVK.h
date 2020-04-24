@@ -45,6 +45,7 @@ namespace LambdaEngine
 		
 		bool IsInstanceExtensionEnabled(const char* pExtensionName) const;
 		bool IsDeviceExtensionEnabled(const char* pExtensionName)	const;
+		bool UseTimelineFences() const;
 
 		void SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type)	const;
 		
@@ -151,7 +152,7 @@ namespace LambdaEngine
 		PFN_vkWaitSemaphores			vkWaitSemaphores			= nullptr;
 		PFN_vkSignalSemaphore			vkSignalSemaphore			= nullptr;
 		PFN_vkGetSemaphoreCounterValue	vkGetSemaphoreCounterValue	= nullptr;
-
+	
 	private:
 		VkDebugUtilsMessengerEXT	m_DebugMessenger	= VK_NULL_HANDLE;
 		FrameBufferCacheVK*			m_pFrameBufferCache	= nullptr;

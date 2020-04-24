@@ -30,7 +30,7 @@ namespace LambdaEngine
             
             m_Source = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sourceContext);
             
-            ASSERT(m_Source != nullptr);
+            VALIDATE(m_Source != nullptr);
             
             CFStringRef cfRunLoopMode = (CFStringRef)m_RunLoopMode;
             CFRunLoopAddSource(m_RunLoop, m_Source, cfRunLoopMode);
@@ -121,7 +121,7 @@ namespace LambdaEngine
 
     void MacMainThread::Tick()
     {
-        ASSERT(s_pMainThread != nullptr);
+        VALIDATE(s_pMainThread != nullptr);
         s_pMainThread->RunInMode((CFRunLoopMode)NSDefaultRunLoopMode);
     }
 
@@ -137,7 +137,7 @@ namespace LambdaEngine
         else
         {
             // Otherwise schedule block on main thread
-            ASSERT(s_pMainThread != nullptr);
+            VALIDATE(s_pMainThread != nullptr);
 
             if (waitUntilFinished)
             {

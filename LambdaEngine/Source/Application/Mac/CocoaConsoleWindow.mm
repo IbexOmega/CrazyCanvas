@@ -174,7 +174,7 @@
     return NO;
 }
 
-+ (NSString*) convertStringWithArgs:(const char *)format args:(va_list)args
++ (NSString*) convertStringWithArgs:(const char*) format args:(va_list)args
 {
     NSString* tempFormat    = [NSString stringWithUTF8String:format];
     NSString* result        = [[NSString alloc] initWithFormat:tempFormat arguments:args];
