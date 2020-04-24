@@ -74,6 +74,11 @@ namespace LambdaEngine
         
         void FlushWaitSemaphores(VkQueue queue) const;
         
+        /*
+         * Debug tools
+         */
+        bool FenceCanReset(VkFence fence) const;
+        
     private:
         mutable TArray<FenceValueVk>    m_PendingValues;
         mutable TArray<VkFence>         m_Fences;

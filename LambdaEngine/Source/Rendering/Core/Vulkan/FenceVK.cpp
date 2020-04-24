@@ -4,9 +4,14 @@
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
-#define PRIMITIVE_START_COUNT 4
+#define PRIMITIVE_START_COUNT   4
+#define FENCE_LOG_STATE_ENABLE  1
 
-#define FENCE_LOG_STATE(...) D_LOG_INFO(__VA_ARGS__)
+#if FENCE_LOG_STATE_ENABLE
+    #define FENCE_LOG_STATE(...) D_LOG_INFO(__VA_ARGS__)
+#else
+    #define FENCE_LOG_STATE(...)
+#endif
 
 namespace LambdaEngine
 {
@@ -212,6 +217,8 @@ namespace LambdaEngine
             {
                 // Fence is not signaled so wait for this value to finish
                 result = vkWaitForFences(m_pDevice->Device, 1, &fenceValue.Fence, true, timeOut);
+                
+                FENCE_LOG_STATE("[FenceVK]: CPU wait. Waited For fence=%p", fenceValue.Fence);
             }
             
             if (result != VK_TIMEOUT)
@@ -224,6 +231,7 @@ namespace LambdaEngine
                     FENCE_LOG_STATE("[FenceVK]: CPU wait. Fence Finished. LastCompletedValue=%llu", m_LastCompletedValue);
                 }
              
+                // Make sure we can reuse this fence
                 DisposeFence(fenceValue.Fence);
                 
                 // If semaphore state is waiting it must be complete by now
@@ -311,8 +319,9 @@ namespace LambdaEngine
     void FenceVK::DisposeFence(VkFence fence) const
     {
         VALIDATE(fence != VK_NULL_HANDLE);
+        VALIDATE(FenceCanReset(fence));
         
-        FENCE_LOG_STATE("[FenceVK]: DisposeFence");
+        FENCE_LOG_STATE("[FenceVK]: DisposeFence: fence=%p", fence);
         
         VkResult result = vkResetFences(m_pDevice->Device, 1, &fence);
         if (result != VK_SUCCESS)
@@ -374,5 +383,10 @@ namespace LambdaEngine
                 m_WaitStages.clear();
             }
         }
+    }
+
+    bool FenceVK::FenceCanReset(VkFence fence) const
+    {
+        return (vkGetFenceStatus(m_pDevice->Device, fence) == VK_SUCCESS);
     }
 }
