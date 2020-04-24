@@ -5,7 +5,8 @@
 #include "Rendering/Core/Vulkan/CommandQueueVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/CommandListVK.h"
-#include "Rendering/Core/Vulkan/FenceVK.h"
+#include "Rendering/Core/Vulkan/FenceTimelineVK.h"
+#include "Rendering/Core/Vulkan/FenceTimelineVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 namespace LambdaEngine
@@ -102,8 +103,8 @@ namespace LambdaEngine
             submitInfo.pCommandBuffers        = m_SubmitCommandBuffers;
             submitInfo.commandBufferCount    = numCommandLists;
 
-            const FenceVK* pWaitFenceVk        = reinterpret_cast<const FenceVK*>(pWaitFence);
-            const FenceVK* pSignalFenceVk    = reinterpret_cast<const FenceVK*>(pSignalFence);
+            const FenceTimelineVK* pWaitFenceVk      = reinterpret_cast<const FenceTimelineVK*>(pWaitFence);
+            const FenceTimelineVK* pSignalFenceVk    = reinterpret_cast<const FenceTimelineVK*>(pSignalFence);
 
             //Add Timeline Semaphores
             uint64 signalValues[]    = { signalValue };

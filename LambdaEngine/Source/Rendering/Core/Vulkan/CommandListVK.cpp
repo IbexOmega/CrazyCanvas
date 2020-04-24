@@ -17,8 +17,8 @@
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
 #ifndef LAMBDA_DISABLE_VULKAN_CHECKS
-	#define CHECK_GRAPHICS(pAllocator)	ASSERT((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
-	#define CHECK_COMPUTE(pAllocator)	ASSERT((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_COMPUTE);
+	#define CHECK_GRAPHICS(pAllocator)	VALIDATE((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+	#define CHECK_COMPUTE(pAllocator)	VALIDATE((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_COMPUTE);
 #else
 	#define CHECK_GRAPHICS(pAllocator)
 	#define CHECK_COMPUTE(pAllocator)
@@ -112,7 +112,7 @@ namespace LambdaEngine
 		{
 			const RenderPassVK*	pRenderPassVk = reinterpret_cast<const RenderPassVK*>(pBeginDesc->pRenderPass);
 
-			ASSERT(pRenderPassVk != nullptr);
+			VALIDATE(pRenderPassVk != nullptr);
             
 			inheritanceInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 			inheritanceInfo.pNext					= nullptr;
@@ -158,13 +158,13 @@ namespace LambdaEngine
 
 	void CommandListVK::BeginRenderPass(const BeginRenderPassDesc* pBeginDesc)
 	{
-		ASSERT(pBeginDesc != nullptr);
+		VALIDATE(pBeginDesc != nullptr);
 
 		const RenderPassVK*		pVkRenderPass	= reinterpret_cast<const RenderPassVK*>(pBeginDesc->pRenderPass);
 		VkFramebuffer			vkFramebuffer	= m_pDevice->GetFrameBuffer(pBeginDesc->pRenderPass, pBeginDesc->ppRenderTargets, pBeginDesc->RenderTargetCount, pBeginDesc->pDepthStencil, pBeginDesc->Width, pBeginDesc->Height);
 
-		ASSERT(pVkRenderPass != nullptr);
-		ASSERT(vkFramebuffer != VK_NULL_HANDLE);
+		VALIDATE(pVkRenderPass != nullptr);
+		VALIDATE(vkFramebuffer != VK_NULL_HANDLE);
 
 		for (uint32 i = 0; i < pBeginDesc->ClearColorCount; i++)
 		{
@@ -199,10 +199,10 @@ namespace LambdaEngine
 
 	void CommandListVK::BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)
 	{
-		ASSERT(pBuildDesc != nullptr);
+		VALIDATE(pBuildDesc != nullptr);
 
-		ASSERT(pBuildDesc->pInstanceBuffer	!= nullptr);
-		ASSERT(pBuildDesc->pScratchBuffer	!= nullptr);
+		VALIDATE(pBuildDesc->pInstanceBuffer	!= nullptr);
+		VALIDATE(pBuildDesc->pScratchBuffer	!= nullptr);
 		const BufferVK* pInstanceBufferVk	= reinterpret_cast<const BufferVK*>(pBuildDesc->pInstanceBuffer);
 		BufferVK*		pScratchBufferVk	= reinterpret_cast<BufferVK*>(pBuildDesc->pScratchBuffer);
 
@@ -236,14 +236,14 @@ namespace LambdaEngine
 			accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 		}
 
-		ASSERT(pBuildDesc->pAccelerationStructure != nullptr);
+		VALIDATE(pBuildDesc->pAccelerationStructure != nullptr);
 
 		AccelerationStructureVK* pAccelerationStructureVk	= reinterpret_cast<AccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
 		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAdress();
 
 #ifndef LAMBDA_DISABLE_ASSERT
 		BufferDesc scratchBufferDesc = pScratchBufferVk->GetDesc();
-		ASSERT(scratchBufferDesc.SizeInBytes >= pAccelerationStructureVk->GetScratchMemorySizeRequirement());
+		VALIDATE(scratchBufferDesc.SizeInBytes >= pAccelerationStructureVk->GetScratchMemorySizeRequirement());
 #endif
 
 		if (pBuildDesc->Update)
@@ -263,7 +263,7 @@ namespace LambdaEngine
 		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->InstanceCount;
 		accelerationStructureOffsetInfo.primitiveOffset = 0;
 
-		ASSERT(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
+		VALIDATE(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
 
 		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
 		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CommandList, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
@@ -271,11 +271,11 @@ namespace LambdaEngine
 
 	void CommandListVK::BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)
 	{
-		ASSERT(pBuildDesc != nullptr);
+		VALIDATE(pBuildDesc != nullptr);
 
-		ASSERT(pBuildDesc->pScratchBuffer	!= nullptr);
-		ASSERT(pBuildDesc->pVertexBuffer	!= nullptr);
-		ASSERT(pBuildDesc->pIndexBuffer		!= nullptr);
+		VALIDATE(pBuildDesc->pScratchBuffer	!= nullptr);
+		VALIDATE(pBuildDesc->pVertexBuffer	!= nullptr);
+		VALIDATE(pBuildDesc->pIndexBuffer		!= nullptr);
 
 		BufferVK*		pScratchBufferVk	= reinterpret_cast<BufferVK*>(pBuildDesc->pScratchBuffer);
 		const BufferVK* pVertexBufferVk		= reinterpret_cast<const BufferVK*>(pBuildDesc->pVertexBuffer);
@@ -287,7 +287,7 @@ namespace LambdaEngine
 		VkDeviceOrHostAddressConstKHR indexDataAddressUnion = {};
 		indexDataAddressUnion.deviceAddress = pIndexBufferVk->GetDeviceAdress();
 
-		ASSERT(pBuildDesc->pTransform != nullptr);
+		VALIDATE(pBuildDesc->pTransform != nullptr);
 
 		VkDeviceOrHostAddressConstKHR transformDataAddressUnion = {};
 		transformDataAddressUnion.hostAddress = pBuildDesc->pTransform;
@@ -318,7 +318,7 @@ namespace LambdaEngine
 		AccelerationStructureVK* pAccelerationStructureVk = reinterpret_cast<AccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
 #ifndef LAMBDA_DISABLE_ASSERT
 		BufferDesc scratchBufferDesc = pScratchBufferVk->GetDesc();
-		ASSERT(scratchBufferDesc.SizeInBytes >= pAccelerationStructureVk->GetScratchMemorySizeRequirement());
+		VALIDATE(scratchBufferDesc.SizeInBytes >= pAccelerationStructureVk->GetScratchMemorySizeRequirement());
 #endif
 
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
@@ -345,7 +345,7 @@ namespace LambdaEngine
 		accelerationStructureOffsetInfo.firstVertex		= pBuildDesc->FirstVertexIndex;
 		accelerationStructureOffsetInfo.transformOffset = 0;
 
-		ASSERT(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
+		VALIDATE(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
 
 		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
 		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CommandList, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
@@ -353,8 +353,8 @@ namespace LambdaEngine
 
 	void CommandListVK::CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)
 	{
-		ASSERT(pSrc != nullptr);
-		ASSERT(pDst != nullptr);
+		VALIDATE(pSrc != nullptr);
+		VALIDATE(pDst != nullptr);
 
 		const BufferVK* pVkSrc	= reinterpret_cast<const BufferVK*>(pSrc);
 		BufferVK*		pVkDst	= reinterpret_cast<BufferVK*>(pDst);
@@ -369,8 +369,8 @@ namespace LambdaEngine
 
 	void CommandListVK::CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)
 	{
-		ASSERT(pSrc != nullptr);
-		ASSERT(pDst != nullptr);
+		VALIDATE(pSrc != nullptr);
+		VALIDATE(pDst != nullptr);
 
 		const BufferVK* pVkSrc	= reinterpret_cast<const BufferVK*>(pSrc);
 		TextureVK*		pVkDst	= reinterpret_cast<TextureVK*>(pDst);
@@ -392,8 +392,8 @@ namespace LambdaEngine
 
 	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)
 	{
-		ASSERT(pTextureBarriers		!= nullptr);
-		ASSERT(textureBarrierCount	< MAX_IMAGE_BARRIERS);
+		VALIDATE(pTextureBarriers		!= nullptr);
+		VALIDATE(textureBarrierCount	< MAX_IMAGE_BARRIERS);
 
 		TextureVK*		pVkTexture	= nullptr;
 		VkImageLayout	oldLayout	= VK_IMAGE_LAYOUT_UNDEFINED;
@@ -437,8 +437,8 @@ namespace LambdaEngine
 
 	void CommandListVK::PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)
 	{
-		ASSERT(pBufferBarriers		!= nullptr);
-		ASSERT(bufferBarrierCount	< MAX_BUFFER_BARRIERS);
+		VALIDATE(pBufferBarriers		!= nullptr);
+		VALIDATE(bufferBarrierCount	< MAX_BUFFER_BARRIERS);
 
 		BufferVK* pVkBuffer = nullptr;
 		for (uint32 i = 0; i < bufferBarrierCount; i++)
@@ -464,7 +464,7 @@ namespace LambdaEngine
 
 	void CommandListVK::GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter)
 	{
-		ASSERT(pTexture != nullptr);
+		VALIDATE(pTexture != nullptr);
 
 		TextureVK*		pVkTexture		= reinterpret_cast<TextureVK*>(pTexture);
 		TextureDesc		desc			= pVkTexture->GetDesc();
@@ -642,7 +642,7 @@ namespace LambdaEngine
 	void CommandListVK::BindGraphicsPipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_GRAPHICS(m_pAllocator);
-        ASSERT(pPipeline->GetType()		== EPipelineStateType::GRAPHICS);
+        VALIDATE(pPipeline->GetType()		== EPipelineStateType::GRAPHICS);
         
         const GraphicsPipelineStateVK* pPipelineVk = reinterpret_cast<const GraphicsPipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineVk->GetPipeline());
@@ -651,7 +651,7 @@ namespace LambdaEngine
 	void CommandListVK::BindComputePipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-        ASSERT(pPipeline->GetType()		== EPipelineStateType::COMPUTE);
+        VALIDATE(pPipeline->GetType()		== EPipelineStateType::COMPUTE);
         
         const ComputePipelineStateVK* pPipelineVk = reinterpret_cast<const ComputePipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineVk->GetPipeline());
@@ -660,7 +660,7 @@ namespace LambdaEngine
 	void CommandListVK::BindRayTracingPipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-        ASSERT(pPipeline->GetType()		== EPipelineStateType::RAY_TRACING);
+        VALIDATE(pPipeline->GetType()		== EPipelineStateType::RAY_TRACING);
         
         const RayTracingPipelineStateVK* pPipelineVk = reinterpret_cast<const RayTracingPipelineStateVK*>(pPipeline);
         m_pCurrentRayTracingPipeline = pPipelineVk;
@@ -730,12 +730,12 @@ namespace LambdaEngine
 
 	void CommandListVK::ExecuteSecondary(const ICommandList* pSecondary)
 	{
-		ASSERT(m_Desc.CommandListType == ECommandListType::COMMAND_LIST_PRIMARY);
+		VALIDATE(m_Desc.CommandListType == ECommandListType::COMMAND_LIST_PRIMARY);
 		const CommandListVK* pVkSecondary = reinterpret_cast<const CommandListVK*>(pSecondary);
 
 #ifndef LAMBDA_DISABLE_ASSERTS 
 		CommandListDesc	desc = pVkSecondary->GetDesc();
-		ASSERT(desc.CommandListType == ECommandListType::COMMAND_LIST_SECONDARY);
+		VALIDATE(desc.CommandListType == ECommandListType::COMMAND_LIST_SECONDARY);
 #endif
 
 		vkCmdExecuteCommands(m_CommandList, 1, &pVkSecondary->m_CommandList);

@@ -7,6 +7,7 @@
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
+#include "Rendering/Core/Vulkan/AccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/SamplerVK.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
@@ -66,7 +67,7 @@ namespace LambdaEngine
 
 	void DescriptorSetVK::WriteTextureDescriptors(const ITextureView* const* ppTextures, const ISampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
 	{
-		ASSERT(ppTextures		!= nullptr);
+		VALIDATE(ppTextures != nullptr);
 
 		const TextureViewVK* const* ppVkTextureViews	= reinterpret_cast<const TextureViewVK* const*>(ppTextures);
 		const SamplerVK* const*		ppVkSamplers		= reinterpret_cast<const SamplerVK* const*>(ppSamplers);
@@ -81,13 +82,13 @@ namespace LambdaEngine
 			VkDescriptorImageInfo& imageInfo = imageInfos[i];
 			imageInfo.imageLayout = imageLayout;
 
-			ASSERT(ppVkTextureViews[i] != nullptr);
+			VALIDATE(ppVkTextureViews[i] != nullptr);
 			imageInfo.imageView	= ppVkTextureViews[i]->GetImageView();
 			
 			if (descriptorTypeVk == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 			{
-				ASSERT(ppVkSamplers		!= nullptr);
-				ASSERT(ppVkSamplers[i]	!= nullptr);
+				VALIDATE(ppVkSamplers		!= nullptr);
+				VALIDATE(ppVkSamplers[i]	!= nullptr);
 				imageInfo.sampler = ppVkSamplers[i]->GetSampler();
 			}
 		}
@@ -108,9 +109,9 @@ namespace LambdaEngine
 
 	void DescriptorSetVK::WriteBufferDescriptors(const IBuffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
 	{
-		ASSERT(ppBuffers	!= nullptr);
-		ASSERT(pOffsets		!= nullptr);
-		ASSERT(pSizes		!= nullptr);
+		VALIDATE(ppBuffers	!= nullptr);
+		VALIDATE(pOffsets	!= nullptr);
+		VALIDATE(pSizes		!= nullptr);
 
 		const BufferVK* const*	ppVkBuffers			= reinterpret_cast<const BufferVK* const*>(ppBuffers);
 		VkDescriptorType		descriptorTypeVk	= ConvertDescriptorType(descriptorType);
@@ -122,7 +123,7 @@ namespace LambdaEngine
 			bufferInfo.offset	= pOffsets[i];
 			bufferInfo.range		= pSizes[i];
 
-			ASSERT(ppVkBuffers[i] != nullptr);
+			VALIDATE(ppVkBuffers[i] != nullptr);
 			bufferInfo.buffer	= ppVkBuffers[i]->GetBuffer();
 		}
 
@@ -140,8 +141,36 @@ namespace LambdaEngine
 		vkUpdateDescriptorSets(m_pDevice->Device, 1, &descriptorImageWrite, 0, nullptr);
 	}
 
-	void DescriptorSetVK::WriteAccelerationStructureDescriptors(uint32 firstBinding, uint32 descriptorCount)
+	void DescriptorSetVK::WriteAccelerationStructureDescriptors(const IAccelerationStructure* const * ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount)
 	{
+        VALIDATE(ppAccelerationStructures != nullptr);
+        
+        TArray<VkAccelerationStructureKHR> accelerationStructures(descriptorCount);
+        for (uint32_t i = 0; i < descriptorCount; i++)
+        {
+            const AccelerationStructureVK* pAccelerationStructureVk = reinterpret_cast<const AccelerationStructureVK*>(ppAccelerationStructures[i]);
+
+            VALIDATE(pAccelerationStructureVk != nullptr);
+            accelerationStructures[i] = pAccelerationStructureVk->GetAccelerationStructure();
+        }
+        
+        VkWriteDescriptorSetAccelerationStructureNV descriptorAccelerationStructureInfo = {};
+        descriptorAccelerationStructureInfo.sType                       = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
+        descriptorAccelerationStructureInfo.accelerationStructureCount  = descriptorCount;
+        descriptorAccelerationStructureInfo.pAccelerationStructures     = accelerationStructures.data();
+
+        VkWriteDescriptorSet accelerationStructureWrite = {};
+        accelerationStructureWrite.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        accelerationStructureWrite.pNext            = &descriptorAccelerationStructureInfo;
+        accelerationStructureWrite.dstSet           = m_DescriptorSet;
+        accelerationStructureWrite.dstBinding       = firstBinding;
+        accelerationStructureWrite.descriptorCount  = 1;
+        accelerationStructureWrite.descriptorType   = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+        accelerationStructureWrite.pBufferInfo      = nullptr;
+        accelerationStructureWrite.pImageInfo       = nullptr;
+        accelerationStructureWrite.pTexelBufferView = nullptr;
+
+        vkUpdateDescriptorSets(m_pDevice->Device, 1, &accelerationStructureWrite, 0, nullptr);
 	}
 
 	IDescriptorHeap* DescriptorSetVK::GetHeap()

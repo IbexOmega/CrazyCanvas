@@ -3,6 +3,7 @@
 #include "LambdaEngine.h"
 #include "Core/API/GraphicsTypes.h"
 #include "Core/API/IPipelineState.h"
+#include "PipelineStateManager.h"
 
 namespace LambdaEngine
 {
@@ -139,20 +140,20 @@ namespace LambdaEngine
 		{
 			struct
 			{
-				GraphicsPipelineStateDesc*		pGraphicsDesc;
-				ERenderStageDrawType			DrawType;
-				const char*						pIndexBufferName;
-				const char*						pMeshIndexBufferName;
+				GraphicsManagedPipelineStateDesc*		pGraphicsDesc;
+				ERenderStageDrawType					DrawType;
+				const char*								pIndexBufferName;
+				const char*								pMeshIndexBufferName;
 			} GraphicsPipeline;
 
 			struct
 			{
-				ComputePipelineStateDesc*		pComputeDesc;
+				ComputeManagedPipelineStateDesc*		pComputeDesc;
 			} ComputePipeline;
 
 			struct
 			{
-				RayTracingPipelineStateDesc*	pRayTracingDesc;
+				RayTracingManagedPipelineStateDesc*		pRayTracingDesc;
 			} RayTracingPipeline;
 		};
 	};

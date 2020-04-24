@@ -19,11 +19,11 @@ namespace LambdaEngine
 
 	void Input::Tick()
 	{
-		KeyboardState   newKeyboardState = s_pInputDevice->GetKeyboardState();
-		MouseState      newMouseState = s_pInputDevice->GetMouseState();
+		KeyboardState   newKeyboardState    = s_pInputDevice->GetKeyboardState();
+		MouseState      newMouseState       = s_pInputDevice->GetMouseState();
 
-		s_KeyboardState = newKeyboardState;
-		s_MouseState	= newMouseState;
+        memcpy(&s_KeyboardState, &newKeyboardState, sizeof(KeyboardState));
+        memcpy(&s_MouseState, &newMouseState, sizeof(MouseState));
 	}
 
 	void Input::AddKeyboardHandler(IKeyboardHandler* pHandler)

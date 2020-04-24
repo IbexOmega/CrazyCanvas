@@ -224,6 +224,7 @@ workspace "LambdaEngine"
 			"Dependencies/WavLib",
 			"Dependencies/stb",
 			"Dependencies/portaudio/include",
+			"Dependencies/glslang/include",
 		}
         
 		links 
@@ -242,20 +243,28 @@ workspace "LambdaEngine"
 			
 			libdirs
 			{
+				-- Vulkan
 				"C:/VulkanSDK/1.2.135.0/Lib",
 				"D:/VulkanSDK/1.2.135.0/Lib",
 				"D:/Vulkan/1.2.135.0/Lib",
+
+				-- FMOD
 				"C:/FMOD Studio API Windows/api/core/lib/x64",
 				"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64",
 				"D:/FMOD Studio API Windows/api/core/lib/x64",
+				
+				-- PortAudio
 				"Dependencies/portaudio/lib",
 			}
 			
 			sysincludedirs
 			{
+				-- Vulkan
 				"C:/VulkanSDK/1.2.135.0/Include",
 				"D:/VulkanSDK/1.2.135.0/Include",
 				"D:/Vulkan/1.2.135.0/Include",
+
+				-- FMOD
 				"C:/FMOD Studio API Windows/api/core/inc",
 				"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
 				"D:/FMOD Studio API Windows/api/core/inc",
@@ -263,12 +272,32 @@ workspace "LambdaEngine"
 		filter { "system:windows", "configurations:Debug" }
 			links
 			{
+				-- Audio
 				"portaudio_x64_d.lib",
+
+				-- Shader Compilation
+				"glslangd.lib",
+				"SPIRVd.lib",
+				"SPIRV-Toolsd.lib",
+				"SPIRV-Tools-optd.lib",
+				"OSDependentd.lib",
+				"OGLCompilerd.lib",
+				"HLSLd.lib",
 			}
 		filter { "system:windows", "configurations:Release or Production" }
 			links
 			{
+				-- Audio
 				"portaudio_x64.lib",
+
+				-- Shader Compilation
+				"glslang.lib",
+				"SPIRV.lib",
+				"SPIRV-Tools.lib",
+				"SPIRV-Tools-opt.lib",
+				"OSDependent.lib",
+				"OGLCompiler.lib",
+				"HLSL.lib",
 			}
 		-- Mac
 		filter { "system:macosx" }
@@ -286,10 +315,24 @@ workspace "LambdaEngine"
 			
 			links 
 			{
+				-- Vulkan
                 "vulkan.1",
 				"vulkan.1.2.135",
+				
+				-- Audio
 				"portaudio",
 				"fmodL",
+
+				-- Shader Compilation
+				"glslang",
+				"SPIRV",
+				"SPIRV-Tools",
+				"SPIRV-Tools-opt",
+				"OSDependent",
+				"OGLCompiler",
+				"HLSL",
+
+				-- Native
                 "Cocoa.framework",
                 "MetalKit.framework",
 			}

@@ -2,11 +2,12 @@
 #include "Rendering/Core/API/ITexture.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
-#include "Vulkan.h"
+#include "Rendering/Core/Vulkan/DeviceAllocatorVK.h"
 
 namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
+    class DeviceAllocatorVK;
 
 	class TextureVK : public TDeviceChildBase<GraphicsDeviceVK, ITexture>
 	{
@@ -16,7 +17,7 @@ namespace LambdaEngine
 		TextureVK(const GraphicsDeviceVK* pDevice);
 		~TextureVK();
 
-		bool Init(const TextureDesc* pDesc);
+		bool Init(const TextureDesc* pDesc, IDeviceAllocator* pAllocator);
 		void InitWithImage(VkImage image, const TextureDesc* pDesc);
 
         FORCEINLINE VkImage GetImage() const
@@ -27,7 +28,7 @@ namespace LambdaEngine
         // IDeviceChild interface
         virtual void SetName(const char* pName) override final;
 
-        //´ITexture interface
+        // ITexture interface
         FORCEINLINE virtual TextureDesc GetDesc() const override final
         {
             return m_Desc;
@@ -39,9 +40,11 @@ namespace LambdaEngine
         }
 
 	private:
-		VkImage			m_Image		= VK_NULL_HANDLE;
-		VkDeviceMemory	m_Memory	= VK_NULL_HANDLE;
+        DeviceAllocatorVK*  m_pAllocator    = nullptr;
+		VkImage			    m_Image		    = VK_NULL_HANDLE;
+		VkDeviceMemory	    m_Memory	    = VK_NULL_HANDLE;
         
-		TextureDesc m_Desc;
+        AllocationVK    m_Allocation;
+		TextureDesc     m_Desc;
 	};
 }

@@ -10,6 +10,7 @@ namespace LambdaEngine
 {
     BufferVK::BufferVK(const GraphicsDeviceVK* pDevice)
         : TDeviceChild(pDevice),
+        m_Allocation(),
         m_Desc()
     {
     }
@@ -137,6 +138,9 @@ namespace LambdaEngine
                 LOG_ERROR("[BufferVK]: Failed to allocate memory");
                 return false;
             }
+
+            pAllocatorVk->AddRef();
+            m_pAllocator = pAllocatorVk;
             
             result = vkBindBufferMemory(m_pDevice->Device, m_Buffer, m_Allocation.Memory, m_Allocation.Offset);
             if (result != VK_SUCCESS)
@@ -178,32 +182,49 @@ namespace LambdaEngine
     void* BufferVK::Map()
     {
         void* pHostMemory = nullptr;
-		VkResult result = vkMapMemory(m_pDevice->Device, m_Memory, 0, VK_WHOLE_SIZE, 0, &pHostMemory);
-        if (result != VK_SUCCESS)
+        if (m_pAllocator)
         {
-            if (m_pDebugName)
-            {
-                LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer %s", m_pDebugName);
-            }
-            else
-            {
-                LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer");
-            }
-            
-            return nullptr;
+            pHostMemory = m_pAllocator->Map(&m_Allocation);
+            m_IsMapped = true;
         }
         else
         {
-            m_IsMapped = true;
-            return pHostMemory;
+		    VkResult result = vkMapMemory(m_pDevice->Device, m_Memory, 0, VK_WHOLE_SIZE, 0, &pHostMemory);
+            if (result != VK_SUCCESS)
+            {
+                if (m_pDebugName)
+                {
+                    LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer %s", m_pDebugName);
+                }
+                else
+                {
+                    LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer");
+                }
+            
+                return nullptr;
+            }
+            else
+            {
+                m_IsMapped = true;
+            }
         }
+
+        return pHostMemory;
     }
 
     void BufferVK::Unmap()
     {
         ASSERT(m_IsMapped);
         
-        vkUnmapMemory(m_pDevice->Device, m_Memory);
+        if (m_pAllocator)
+        {
+            m_pAllocator->Unmap(&m_Allocation);
+        }
+        else
+        {
+            vkUnmapMemory(m_pDevice->Device, m_Memory);
+        }
+
         m_IsMapped = false;
     }
 

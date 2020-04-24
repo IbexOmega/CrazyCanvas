@@ -4,7 +4,7 @@
 #include "Utilities/StringHash.h"
 
 #include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/GraphicsDeviceBase.h"
+#include "Rendering/Core/API/IGraphicsDevice.h"
 
 #include "Vulkan.h"
 
@@ -29,7 +29,7 @@ namespace LambdaEngine
 		}
 	};
 
-	class GraphicsDeviceVK final : public GraphicsDeviceBase
+	class GraphicsDeviceVK final : public IGraphicsDevice
 	{
 	public:
 		GraphicsDeviceVK();
@@ -85,7 +85,7 @@ namespace LambdaEngine
 		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 	  const override final;
 		virtual IPipelineState* CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const override final;
 
-		virtual IAccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const override final;
+		virtual IAccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, IDeviceAllocator* pAllocator) const override final;
 
 		virtual ICommandQueue*		CreateCommandQueue(const char* pName, ECommandQueueType queueType)				const override final;
 		virtual ICommandAllocator*	CreateCommandAllocator(const char* pName, ECommandQueueType queueType)			const override final;

@@ -6,10 +6,9 @@
 
 @interface CocoaWindow : NSWindow
 
-- (BOOL)canBecomeKeyWindow;
-- (BOOL)canBecomeMainWindow;
-- (BOOL)acceptsMouseMovedEvents;
-- (BOOL)acceptsFirstResponder;
+- (BOOL) canBecomeKeyWindow;
+- (BOOL) canBecomeMainWindow;
+- (BOOL) acceptsMouseMovedEvents;
 
 @end
 

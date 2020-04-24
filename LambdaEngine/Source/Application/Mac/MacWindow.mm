@@ -84,7 +84,7 @@ namespace LambdaEngine
         __block NSRect contentRect;
         MacMainThread::MakeCall(^
         {
-            contentRect = [m_pWindow frame];
+            contentRect = [m_pWindow contentRectForFrameRect:[m_pWindow frame]];
         }, true);
         
         return uint16(contentRect.size.width);
@@ -97,7 +97,7 @@ namespace LambdaEngine
         __block NSRect contentRect;
         MacMainThread::MakeCall(^
         {
-            contentRect = [m_pWindow frame];
+            contentRect = [m_pWindow contentRectForFrameRect:[m_pWindow frame]];
         }, true);
         
         return uint16(contentRect.size.height);

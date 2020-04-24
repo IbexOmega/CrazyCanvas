@@ -19,10 +19,9 @@
 
 namespace LambdaEngine
 {
-	Scene::Scene(const IGraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice, const ResourceManager* pResourceManager) :
+	Scene::Scene(const IGraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice) :
 		m_pGraphicsDevice(pGraphicsDevice),
-		m_pAudioDevice(pAudioDevice),
-		m_pResourceManager(pResourceManager)
+		m_pAudioDevice(pAudioDevice)
 	{
 	}
 
@@ -79,7 +78,7 @@ namespace LambdaEngine
 
 		if (m_GUIDToMappedMeshes.count(gameObject.Mesh) == 0)
 		{
-			const Mesh* pMesh = m_pResourceManager->GetMesh(gameObject.Mesh);
+			const Mesh* pMesh = ResourceManager::GetMesh(gameObject.Mesh);
 
 			uint32 currentNumSceneVertices = (uint32)m_SceneVertexArray.size();
 			m_SceneVertexArray.resize(currentNumSceneVertices + pMesh->VertexCount);
@@ -107,7 +106,7 @@ namespace LambdaEngine
 
 		if (m_GUIDToMaterials.count(gameObject.Material) == 0)
 		{
-			m_Materials.push_back(m_pResourceManager->GetMaterial(gameObject.Material));
+			m_Materials.push_back(ResourceManager::GetMaterial(gameObject.Material));
 			globalMaterialIndex = uint32(m_Materials.size() - 1);
 
 			m_GUIDToMaterials[gameObject.Material] = globalMaterialIndex;
@@ -188,13 +187,8 @@ namespace LambdaEngine
 
 				IndexedIndirectMeshArgument indirectMeshArgument = {};
 				indirectMeshArgument.IndexCount			= pMesh->IndexCount;
-				//indirectMeshArgument.InstanceCount		= instanceCount;
 				indirectMeshArgument.FirstIndex			= currentNumSceneIndices;
 				indirectMeshArgument.VertexOffset		= currentNumSceneVertices;
-				//indirectMeshArgument.FirstInstance		= baseInstanceIndex;
-				//indirectMeshArgument.MaterialIndex		= mappedMaterial.MaterialIndex;
-				indirectMeshArgument.Padding0			= 0;
-				indirectMeshArgument.Padding1			= 0;
 
 				indirectArgCount++;
 				materialIndexToMeshIndex.insert(std::make_pair(mappedMaterial.MaterialIndex, std::make_pair(mappedMaterial, indirectMeshArgument)));
@@ -279,7 +273,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				const Material* pMaterial = m_pResourceManager->GetMaterial(DEFAULT_MATERIAL);
+				const Material* pMaterial = ResourceManager::GetMaterial(DEFAULT_MATERIAL);
 
 				m_SceneAlbedoMaps[i]				= pMaterial->pAlbedoMap;
 				m_SceneNormalMaps[i]				= pMaterial->pNormalMap;

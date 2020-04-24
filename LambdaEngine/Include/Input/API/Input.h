@@ -22,9 +22,26 @@ namespace LambdaEngine
 		static void AddMouseHandler(IMouseHandler* pHandler);
 
 		static void SetInputMode(EInputMode inputMode);
+        
+        FORCEINLINE static bool IsKeyDown(EKey key)
+        {
+            return s_KeyboardState.IsKeyDown(key);
+        }
+        
+        FORCEINLINE static bool IsKeyUp(EKey key)
+        {
+            return s_KeyboardState.IsKeyUp(key);
+        }
 
-		FORCEINLINE static const KeyboardState& GetKeyboardState()	{ return s_KeyboardState; }
-		FORCEINLINE static const MouseState& GetMouseState()		{ return s_MouseState; }
+		FORCEINLINE static const KeyboardState& GetKeyboardState()
+        {
+            return s_KeyboardState;
+        }
+        
+		FORCEINLINE static const MouseState& GetMouseState()
+        {
+            return s_MouseState;
+        }
 
 	private:
 		static IInputDevice* s_pInputDevice;

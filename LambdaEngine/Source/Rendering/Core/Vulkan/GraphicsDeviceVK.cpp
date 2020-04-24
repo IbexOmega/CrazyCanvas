@@ -5,8 +5,8 @@
 
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/FenceVK.h"
+#include "Rendering/Core/Vulkan/FenceTimelineVK.h"
 #include "Rendering/Core/Vulkan/SamplerVK.h"
-#include "Rendering/Core/Vulkan/FenceLegacyVK.h"
 #include "Rendering/Core/Vulkan/CommandAllocatorVK.h"
 #include "Rendering/Core/Vulkan/CommandListVK.h"
 #include "Rendering/Core/Vulkan/CommandQueueVK.h"
@@ -87,7 +87,7 @@ namespace LambdaEngine
      */
 
 	GraphicsDeviceVK::GraphicsDeviceVK()
-        : GraphicsDeviceBase(),
+        : IGraphicsDevice(),
         RayTracingProperties(),
         m_DeviceQueueFamilyIndices(),
         m_DeviceLimits(),
@@ -173,7 +173,7 @@ namespace LambdaEngine
         else
         {
             m_UsedAllocations++;
-            D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes to buffer. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+            D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
         }
         
         return result;
@@ -233,7 +233,7 @@ namespace LambdaEngine
             key.DepthStencilView = VK_NULL_HANDLE;
         }
         
-        ASSERT(pRenderPass != nullptr);
+        VALIDATE(pRenderPass != nullptr);
         
         const RenderPassVK* pRenderPassVk = reinterpret_cast<const RenderPassVK*>(pRenderPass);
         key.RenderPass = pRenderPassVk->GetRenderPass();
@@ -247,7 +247,6 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::Release()
 	{
-        GraphicsDeviceBase::Release();
 		delete this;
 	}
 
@@ -368,7 +367,7 @@ namespace LambdaEngine
 		}
 	}
 
-	IAccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const
+	IAccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, IDeviceAllocator* pAllocator) const
 	{
         VALIDATE(pDesc != nullptr);
         
@@ -379,7 +378,7 @@ namespace LambdaEngine
 		}
 
 		AccelerationStructureVK* pAccelerationStructure = DBG_NEW AccelerationStructureVK(this);
-		if (!pAccelerationStructure->Init(pDesc))
+		if (!pAccelerationStructure->Init(pDesc, pAllocator))
 		{
 			pAccelerationStructure->Release();
 			return nullptr;
@@ -465,6 +464,19 @@ namespace LambdaEngine
         
 		if (IsDeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
 		{
+			FenceTimelineVK* pFenceTimelineVk = DBG_NEW FenceTimelineVK(this);
+			if (!pFenceTimelineVk->Init(pDesc))
+			{
+				pFenceTimelineVk->Release();
+				return nullptr;
+			}
+			else
+			{
+				return pFenceTimelineVk;
+			}
+		}
+		else
+		{
 			FenceVK* pFenceVk = DBG_NEW FenceVK(this);
 			if (!pFenceVk->Init(pDesc))
 			{
@@ -474,19 +486,6 @@ namespace LambdaEngine
 			else
 			{
 				return pFenceVk;
-			}
-		}
-		else
-		{
-			FenceLegacyVK* pFenceLegacyVk = DBG_NEW FenceLegacyVK(this);
-			if (!pFenceLegacyVk->Init(pDesc))
-			{
-				pFenceLegacyVk->Release();
-				return nullptr;
-			}
-			else
-			{
-				return pFenceLegacyVk;
 			}
 		}
 	}
@@ -528,7 +527,7 @@ namespace LambdaEngine
         VALIDATE(pDesc != nullptr);
         
 		TextureVK* pTexture = DBG_NEW TextureVK(this);
-		if (!pTexture->Init(pDesc))
+		if (!pTexture->Init(pDesc, pAllocator))
 		{
             pTexture->Release();
 			return nullptr;
@@ -767,7 +766,6 @@ namespace LambdaEngine
 		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
-
 		if (pDesc->Debug)
 		{
 			PopulateDebugMessengerCreateInfo(debugCreateInfo);
@@ -906,17 +904,16 @@ namespace LambdaEngine
         deviceFeatures11.pNext  = nullptr;
 		deviceFeatures11.pNext	= &deviceFeatures12;
 
-		VkPhysicalDeviceFeatures deviceFeatures = {};
-		deviceFeatures.fillModeNonSolid					= true;
-		deviceFeatures.vertexPipelineStoresAndAtomics	= true;
-		deviceFeatures.fragmentStoresAndAtomics			= true;
-		deviceFeatures.multiDrawIndirect				= true;
-		//deviceFeatures.geometryShader					= true;
+		VkPhysicalDeviceFeatures desiredDeviceFeatures = {};
+		desiredDeviceFeatures.fillModeNonSolid					= true;
+		desiredDeviceFeatures.vertexPipelineStoresAndAtomics	= true;
+		desiredDeviceFeatures.fragmentStoresAndAtomics			= true;
+		desiredDeviceFeatures.multiDrawIndirect					= true;
 
 		VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
 		deviceFeatures2.sType	 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 		deviceFeatures2.pNext	 = &deviceFeatures11;
-		deviceFeatures2.features = deviceFeatures;
+		deviceFeatures2.features = desiredDeviceFeatures;
 
 		VkDeviceCreateInfo createInfo = {};
 		createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

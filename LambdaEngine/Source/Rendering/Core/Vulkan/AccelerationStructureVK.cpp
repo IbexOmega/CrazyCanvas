@@ -9,6 +9,7 @@ namespace LambdaEngine
 {
 	AccelerationStructureVK::AccelerationStructureVK(const GraphicsDeviceVK* pDevice) 
 		: TDeviceChild(pDevice),
+		m_Allocation(),
 		m_Desc()
 	{
 	}
@@ -17,19 +18,32 @@ namespace LambdaEngine
 	{
 		if (m_AccelerationStructure != VK_NULL_HANDLE)
 		{
-			vkFreeMemory(m_pDevice->Device, m_AccelerationStructureMemory, nullptr);
-			m_AccelerationStructureMemory = VK_NULL_HANDLE;
-
-			ASSERT(m_pDevice->vkDestroyAccelerationStructureKHR != nullptr);
+			VALIDATE(m_pDevice->vkDestroyAccelerationStructureKHR != nullptr);
 
 			m_pDevice->vkDestroyAccelerationStructureKHR(m_pDevice->Device, m_AccelerationStructure, nullptr);
 			m_AccelerationStructure = VK_NULL_HANDLE;
 
 			m_AccelerationStructureDeviceAddress = 0;
 		}
+
+		if (m_pAllocator)
+		{
+			m_pAllocator->Free(&m_Allocation);
+			memset(&m_Allocation, 0, sizeof(m_Allocation));
+
+			RELEASE(m_pAllocator);
+		}
+		else
+		{
+			if (m_AccelerationStructureMemory != VK_NULL_HANDLE)
+			{
+				vkFreeMemory(m_pDevice->Device, m_AccelerationStructureMemory, nullptr);
+				m_AccelerationStructureMemory = VK_NULL_HANDLE;
+			}
+		}
 	}
 
-	bool AccelerationStructureVK::Init(const AccelerationStructureDesc* pDesc)
+	bool AccelerationStructureVK::Init(const AccelerationStructureDesc* pDesc, IDeviceAllocator* pAllocator)
 	{
 		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
 		accelerationStructureCreateInfo.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -67,7 +81,7 @@ namespace LambdaEngine
 			geometryTypeInfo.allowsTransforms	= VK_TRUE;
 		}
 
-		ASSERT(m_pDevice->vkCreateAccelerationStructureKHR != nullptr);
+		VALIDATE(m_pDevice->vkCreateAccelerationStructureKHR != nullptr);
 
 		VkResult result = m_pDevice->vkCreateAccelerationStructureKHR(m_pDevice->Device, &accelerationStructureCreateInfo, nullptr, &m_AccelerationStructure);
 		if (result != VK_SUCCESS)
@@ -89,38 +103,45 @@ namespace LambdaEngine
 			SetName(pDesc->pName);
 		}
 
-		VkMemoryRequirements memoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR);
-		VkMemoryAllocateInfo memoryAllocateInfo = {};
-		memoryAllocateInfo.sType			= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		memoryAllocateInfo.pNext			= nullptr;
-		memoryAllocateInfo.allocationSize	= memoryRequirements.size;
-		memoryAllocateInfo.memoryTypeIndex	= FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-		result = vkAllocateMemory(m_pDevice->Device, &memoryAllocateInfo, nullptr, &m_AccelerationStructureMemory);
-		if (result != VK_SUCCESS)
-		{
-			if (m_Desc.pName)
-			{
-				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: vkAllocateMemory failed for \"%s\"", m_Desc.pName);
-			}
-			else
-			{
-				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: vkAllocateMemory failed");
-			}
-
-			return false;
-		}
+		VkMemoryRequirements	memoryRequirements	= GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR);
+		int32					memoryTypeIndex		= FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 		VkBindAccelerationStructureMemoryInfoKHR accelerationStructureMemoryInfo = {};
 		accelerationStructureMemoryInfo.sType					= VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_KHR;
 		accelerationStructureMemoryInfo.pNext					= nullptr;
-		accelerationStructureMemoryInfo.memoryOffset			= 0;
 		accelerationStructureMemoryInfo.deviceIndexCount		= 0;
 		accelerationStructureMemoryInfo.pDeviceIndices			= nullptr;
 		accelerationStructureMemoryInfo.accelerationStructure	= m_AccelerationStructure;
-		accelerationStructureMemoryInfo.memory					= m_AccelerationStructureMemory;
 
-		ASSERT(m_pDevice->vkBindAccelerationStructureMemoryKHR != nullptr);
+		if (pAllocator)
+		{
+			DeviceAllocatorVK* pAllocatorVk = reinterpret_cast<DeviceAllocatorVK*>(pAllocator);
+			if (!pAllocatorVk->Allocate(&m_Allocation, memoryRequirements.size, memoryRequirements.alignment, memoryTypeIndex))
+			{
+				LOG_ERROR("[AccelerationStructureVK]: Failed to allocate memory");
+				return false;
+			}
+
+			pAllocatorVk->AddRef();
+			m_pAllocator = pAllocatorVk;
+
+			accelerationStructureMemoryInfo.memoryOffset	= m_Allocation.Offset;
+			accelerationStructureMemoryInfo.memory			= m_Allocation.Memory;
+		}
+		else
+		{
+			result = m_pDevice->AllocateMemory(&m_AccelerationStructureMemory, memoryRequirements.size, memoryTypeIndex);
+			if (result != VK_SUCCESS)
+			{
+				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: Failed to allocate memory");
+				return false;
+			}
+
+			accelerationStructureMemoryInfo.memoryOffset	= 0;
+			accelerationStructureMemoryInfo.memory			= m_AccelerationStructureMemory;
+		}
+
+		VALIDATE(m_pDevice->vkBindAccelerationStructureMemoryKHR != nullptr);
 
 		result = m_pDevice->vkBindAccelerationStructureMemoryKHR(m_pDevice->Device, 1, &accelerationStructureMemoryInfo);
 		if (result != VK_SUCCESS)
@@ -142,7 +163,7 @@ namespace LambdaEngine
 		accelerationStructureDeviceAddressInfo.pNext					= nullptr;
 		accelerationStructureDeviceAddressInfo.accelerationStructure	= m_AccelerationStructure;
 
-		ASSERT(m_pDevice->vkGetAccelerationStructureDeviceAddressKHR != nullptr);
+		VALIDATE(m_pDevice->vkGetAccelerationStructureDeviceAddressKHR != nullptr);
 		m_AccelerationStructureDeviceAddress = m_pDevice->vkGetAccelerationStructureDeviceAddressKHR(m_pDevice->Device, &accelerationStructureDeviceAddressInfo);
 
 		if (m_Desc.pName)
@@ -185,7 +206,7 @@ namespace LambdaEngine
 		memoryRequirements2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
 		memoryRequirements2.pNext = nullptr;
 
-		ASSERT(m_pDevice->vkGetAccelerationStructureMemoryRequirementsKHR != nullptr);
+		VALIDATE(m_pDevice->vkGetAccelerationStructureMemoryRequirementsKHR != nullptr);
 
 		m_pDevice->vkGetAccelerationStructureMemoryRequirementsKHR(m_pDevice->Device, &memoryRequirementsInfo, &memoryRequirements2);
 		return memoryRequirements2.memoryRequirements;

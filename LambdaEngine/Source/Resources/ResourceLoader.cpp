@@ -16,6 +16,10 @@
 
 #include "Containers/THashTable.h"
 
+#include <glslangStandAlone/DirStackFileIncluder.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
+#include <glslang/Public/ShaderLang.h>
+
 #include <tiny_obj_loader.h>
 #include <cstdio>
 
@@ -25,6 +29,138 @@ namespace LambdaEngine
 	ICommandList*			ResourceLoader::s_pCopyCommandList			= nullptr;
 	IFence*					ResourceLoader::s_pCopyFence				= nullptr;
 	uint64					ResourceLoader::s_SignalValue				= 1;
+
+	/*
+	*  --------------------------glslang Helpers Begin---------------------------------
+	*/
+
+	static const TBuiltInResource* GetDefaultBuiltInResources()
+	{
+		static TBuiltInResource defaultBuiltInResources = {};
+
+		defaultBuiltInResources.maxLights									= 32;
+		defaultBuiltInResources.maxClipPlanes								= 6;
+		defaultBuiltInResources.maxTextureUnits								= 32;
+		defaultBuiltInResources.maxTextureCoords							= 32;
+		defaultBuiltInResources.maxVertexAttribs							= 64;
+		defaultBuiltInResources.maxVertexUniformComponents					= 4096;
+		defaultBuiltInResources.maxVaryingFloats							= 64;
+		defaultBuiltInResources.maxVertexTextureImageUnits					= 32;
+		defaultBuiltInResources.maxCombinedTextureImageUnits				= 80;
+		defaultBuiltInResources.maxTextureImageUnits						= 32;
+		defaultBuiltInResources.maxFragmentUniformComponents				= 4096;
+		defaultBuiltInResources.maxDrawBuffers								= 32;
+		defaultBuiltInResources.maxVertexUniformVectors						= 128;
+		defaultBuiltInResources.maxVaryingVectors							= 8;
+		defaultBuiltInResources.maxFragmentUniformVectors					= 16;
+		defaultBuiltInResources.maxVertexOutputVectors						= 16;
+		defaultBuiltInResources.maxFragmentInputVectors						= 15;
+		defaultBuiltInResources.minProgramTexelOffset						= -8;
+		defaultBuiltInResources.maxProgramTexelOffset						= 7;
+		defaultBuiltInResources.maxClipDistances							= 8;
+		defaultBuiltInResources.maxComputeWorkGroupCountX					= 65535;
+		defaultBuiltInResources.maxComputeWorkGroupCountY					= 65535;
+		defaultBuiltInResources.maxComputeWorkGroupCountZ					= 65535;
+		defaultBuiltInResources.maxComputeWorkGroupSizeX					= 1024;
+		defaultBuiltInResources.maxComputeWorkGroupSizeY					= 1024;
+		defaultBuiltInResources.maxComputeWorkGroupSizeZ					= 64;
+		defaultBuiltInResources.maxComputeUniformComponents					= 1024;
+		defaultBuiltInResources.maxComputeTextureImageUnits					= 16;
+		defaultBuiltInResources.maxComputeImageUniforms						= 8;
+		defaultBuiltInResources.maxComputeAtomicCounters					= 8;
+		defaultBuiltInResources.maxComputeAtomicCounterBuffers				= 1;
+		defaultBuiltInResources.maxVaryingComponents						= 60;
+		defaultBuiltInResources.maxVertexOutputComponents					= 64;
+		defaultBuiltInResources.maxGeometryInputComponents					= 64;
+		defaultBuiltInResources.maxGeometryOutputComponents					= 128;
+		defaultBuiltInResources.maxFragmentInputComponents					= 128;
+		defaultBuiltInResources.maxImageUnits								= 8;
+		defaultBuiltInResources.maxCombinedImageUnitsAndFragmentOutputs		= 8;
+		defaultBuiltInResources.maxCombinedShaderOutputResources			= 8;
+		defaultBuiltInResources.maxImageSamples								= 0;
+		defaultBuiltInResources.maxVertexImageUniforms						= 0;
+		defaultBuiltInResources.maxTessControlImageUniforms					= 0;
+		defaultBuiltInResources.maxTessEvaluationImageUniforms				= 0;
+		defaultBuiltInResources.maxGeometryImageUniforms					= 0;
+		defaultBuiltInResources.maxFragmentImageUniforms					= 8;
+		defaultBuiltInResources.maxCombinedImageUniforms					= 8;
+		defaultBuiltInResources.maxGeometryTextureImageUnits				= 16;
+		defaultBuiltInResources.maxGeometryOutputVertices					= 256;
+		defaultBuiltInResources.maxGeometryTotalOutputComponents			= 1024;
+		defaultBuiltInResources.maxGeometryUniformComponents				= 1024;
+		defaultBuiltInResources.maxGeometryVaryingComponents				= 64;
+		defaultBuiltInResources.maxTessControlInputComponents				= 128;
+		defaultBuiltInResources.maxTessControlOutputComponents				= 128;
+		defaultBuiltInResources.maxTessControlTextureImageUnits				= 16;
+		defaultBuiltInResources.maxTessControlUniformComponents				= 1024;
+		defaultBuiltInResources.maxTessControlTotalOutputComponents			= 4096;
+		defaultBuiltInResources.maxTessEvaluationInputComponents			= 128;
+		defaultBuiltInResources.maxTessEvaluationOutputComponents			= 128;
+		defaultBuiltInResources.maxTessEvaluationTextureImageUnits			= 16;
+		defaultBuiltInResources.maxTessEvaluationUniformComponents			= 1024;
+		defaultBuiltInResources.maxTessPatchComponents						= 120;
+		defaultBuiltInResources.maxPatchVertices							= 32;
+		defaultBuiltInResources.maxTessGenLevel								= 64;
+		defaultBuiltInResources.maxViewports								= 16;
+		defaultBuiltInResources.maxVertexAtomicCounters						= 0;
+		defaultBuiltInResources.maxTessControlAtomicCounters				= 0;
+		defaultBuiltInResources.maxTessEvaluationAtomicCounters				= 0;
+		defaultBuiltInResources.maxGeometryAtomicCounters					= 0;
+		defaultBuiltInResources.maxFragmentAtomicCounters					= 8;
+		defaultBuiltInResources.maxCombinedAtomicCounters					= 8;
+		defaultBuiltInResources.maxAtomicCounterBindings					= 1;
+		defaultBuiltInResources.maxVertexAtomicCounterBuffers				= 0;
+		defaultBuiltInResources.maxTessControlAtomicCounterBuffers			= 0;
+		defaultBuiltInResources.maxTessEvaluationAtomicCounterBuffers		= 0;
+		defaultBuiltInResources.maxGeometryAtomicCounterBuffers				= 0;
+		defaultBuiltInResources.maxFragmentAtomicCounterBuffers				= 1;
+		defaultBuiltInResources.maxCombinedAtomicCounterBuffers				= 1;
+		defaultBuiltInResources.maxAtomicCounterBufferSize					= 16384;
+		defaultBuiltInResources.maxTransformFeedbackBuffers					= 4;
+		defaultBuiltInResources.maxTransformFeedbackInterleavedComponents	= 64;
+		defaultBuiltInResources.maxCullDistances							= 8;
+		defaultBuiltInResources.maxCombinedClipAndCullDistances				= 8;
+		defaultBuiltInResources.maxSamples									= 4;
+		defaultBuiltInResources.limits.nonInductiveForLoops					= true;
+		defaultBuiltInResources.limits.whileLoops							= true;
+		defaultBuiltInResources.limits.doWhileLoops							= true;
+		defaultBuiltInResources.limits.generalUniformIndexing				= true;
+		defaultBuiltInResources.limits.generalAttributeMatrixVectorIndexing = true;
+		defaultBuiltInResources.limits.generalVaryingIndexing				= true;
+		defaultBuiltInResources.limits.generalSamplerIndexing				= true;
+		defaultBuiltInResources.limits.generalVariableIndexing				= true;
+		defaultBuiltInResources.limits.generalConstantMatrixVectorIndexing	= true;
+
+		return &defaultBuiltInResources;
+	}
+
+	static EShLanguage ConvertShaderStageToEShLanguage(FShaderStageFlags shaderStage)
+	{
+		switch (shaderStage)
+		{
+		case FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER:			return EShLanguage::EShLangMeshNV;
+		case FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER:			return EShLanguage::EShLangTaskNV;
+		case FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER:		return EShLanguage::EShLangVertex;
+		case FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER:		return EShLanguage::EShLangGeometry;
+		case FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER:			return EShLanguage::EShLangTessControl;
+		case FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER:		return EShLanguage::EShLangTessEvaluation;
+		case FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER:			return EShLanguage::EShLangFragment;
+		case FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER:		return EShLanguage::EShLangCompute;
+		case FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER:		return EShLanguage::EShLangRayGen;
+		case FShaderStageFlags::SHADER_STAGE_FLAG_INTERSECT_SHADER:		return EShLanguage::EShLangIntersect;
+		case FShaderStageFlags::SHADER_STAGE_FLAG_ANY_HIT_SHADER:		return EShLanguage::EShLangAnyHit;
+		case FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER:	return EShLanguage::EShLangClosestHit;
+		case FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER:			return EShLanguage::EShLangMiss;
+
+		case FShaderStageFlags::SHADER_STAGE_FLAG_NONE:
+		default:
+			return EShLanguage::EShLangCount;
+		}
+	}
+
+	/*
+	*  --------------------------glslang Helpers End---------------------------------
+	*/
 
 	bool ResourceLoader::Init()
 	{
@@ -48,6 +184,8 @@ namespace LambdaEngine
 		fenceDesc.InitalValue	= 0;
 		s_pCopyFence = RenderSystem::GetDevice()->CreateFence(&fenceDesc);
 
+		glslang::InitializeProcess();
+
 		return true;
 	}
 
@@ -56,6 +194,8 @@ namespace LambdaEngine
 		SAFERELEASE(s_pCopyCommandAllocator);
 		SAFERELEASE(s_pCopyCommandList);
 		SAFERELEASE(s_pCopyFence);
+
+		glslang::FinalizeProcess();
 
 		return true;
 	}
@@ -517,30 +657,57 @@ namespace LambdaEngine
 		return pTexture;
 	}
 
-	IShader* ResourceLoader::LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, ShaderConstant* pConstants, uint32 shaderConstantCount, const char* pEntryPoint)
+	IShader* ResourceLoader::LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint)
 	{
-		byte* pShaderSource = nullptr;
-		uint32 shaderSourceSize = 0;
+		byte* pShaderRawSource = nullptr;
+		uint32 shaderRawSourceSize = 0;
 
-		if (!ReadDataFromFile(pFilepath, &pShaderSource, &shaderSourceSize))
+		std::vector<uint32> sourceSPIRV;
+		uint32 sourceSPIRVSize = 0;
+
+		if (lang == EShaderLang::GLSL)
 		{
-			LOG_WARNING("[ResourceDevice]: Failed to open shader file \"%s\"", pFilepath);
-			return nullptr;
+			if (!ReadDataFromFile(pFilepath, "r", &pShaderRawSource, &shaderRawSourceSize))
+			{
+				LOG_ERROR("[ResourceDevice]: Failed to open shader file \"%s\"", pFilepath);
+				return nullptr;
+			}
+			
+			if (!CompileGLSLToSPIRV(pFilepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, sourceSPIRV))
+			{
+				LOG_ERROR("[ResourceDevice]: Failed to compile GLSL to SPIRV for \"%s\"", pFilepath);
+				return nullptr;
+			}
+
+			sourceSPIRVSize = sourceSPIRV.size() * sizeof(uint32);
+		}
+		else if (lang == EShaderLang::SPIRV)
+		{
+			if (!ReadDataFromFile(pFilepath, "rb", &pShaderRawSource, &shaderRawSourceSize))
+			{
+				LOG_ERROR("[ResourceDevice]: Failed to open shader file \"%s\"", pFilepath);
+				return nullptr;
+			}
+			
+			sourceSPIRV.resize((uint32)glm::ceil((float)shaderRawSourceSize / sizeof(uint32)));
+			memcpy(sourceSPIRV.data(), pShaderRawSource, shaderRawSourceSize);
+
+			sourceSPIRVSize = shaderRawSourceSize;
 		}
 
 		ShaderDesc shaderDesc = {};
 		shaderDesc.pName				= pFilepath;
-		shaderDesc.pSource				= reinterpret_cast<char*>(pShaderSource);
-		shaderDesc.SourceSize			= shaderSourceSize;
+		shaderDesc.pSource				= reinterpret_cast<char*>(sourceSPIRV.data());
+		shaderDesc.SourceSize			= sourceSPIRVSize;
 		shaderDesc.pEntryPoint			= pEntryPoint;
 		shaderDesc.Stage				= stage;
 		shaderDesc.Lang					= lang;
-		shaderDesc.pConstants			= pConstants;
-		shaderDesc.ShaderConstantCount	= shaderConstantCount;
+		shaderDesc.pConstants			= nullptr;
+		shaderDesc.ShaderConstantCount	= 0;
 
 		IShader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
 
-		SAFEDELETE_ARRAY(pShaderSource);
+		SAFEDELETE_ARRAY(pShaderRawSource);
 
 		return pShader;
 	}
@@ -554,7 +721,7 @@ namespace LambdaEngine
 
 		if (!pSound->Init(soundDesc))
 		{
-			LOG_WARNING("[ResourceDevice]: Failed to initialize sound \"%s\"", pFilepath);
+			LOG_ERROR("[ResourceDevice]: Failed to initialize sound \"%s\"", pFilepath);
 			return nullptr;
 		}
 
@@ -563,13 +730,13 @@ namespace LambdaEngine
 		return pSound;
 	}
 
-	bool ResourceLoader::ReadDataFromFile(const char* pFilepath, byte** ppData, uint32* pDataSize)
+	bool ResourceLoader::ReadDataFromFile(const char* pFilepath, const char* pMode, byte** ppData, uint32* pDataSize)
 	{
-		FILE* pFile = fopen(pFilepath, "rb");
+		FILE* pFile = fopen(pFilepath, pMode);
 
 		if (pFile == nullptr)
 		{
-			LOG_WARNING("[ResourceDevice]: Failed to load file \"%s\"", pFilepath);
+			LOG_ERROR("[ResourceDevice]: Failed to load file \"%s\"", pFilepath);
 			return false;
 		}
 
@@ -595,4 +762,67 @@ namespace LambdaEngine
             pos = string.find_first_of('\\', pos + 1);
         }
     }
+
+	bool ResourceLoader::CompileGLSLToSPIRV(const char* pFilepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>& sourceSPIRV)
+	{
+		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
+		glslang::TShader shader(shaderType);
+
+		std::string source			= std::string(pSource);
+		int32 foundBracket			= source.find_last_of("}") + 1;
+		shader.setStringsWithLengths(&pSource, &foundBracket, 1);
+
+		//Todo: Fetch this
+		int32 clientInputSemanticsVersion							    = 110;
+		glslang::EShTargetClientVersion vulkanClientVersion				= glslang::EShTargetVulkan_1_0;
+		glslang::EShTargetLanguageVersion targetVersion					= glslang::EShTargetSpv_1_0;
+
+		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
+		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
+		shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
+
+		const TBuiltInResource* pResources	= GetDefaultBuiltInResources();
+		EShMessages messages				= static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
+		const int defaultVersion			= 100;
+
+		std::string preprocessedGLSL;
+		DirStackFileIncluder includer;
+
+		//Get Directory Path of File
+		std::string filepath		= std::string(pFilepath);
+		size_t found				= filepath.find_last_of("/\\");
+		std::string directoryPath	= filepath.substr(0, found);
+
+		includer.pushExternalLocalDirectory(directoryPath);
+
+		if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
+		{
+			LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", pFilepath, shader.getInfoLog(), shader.getInfoDebugLog());
+			return false;
+		}
+
+		const char* pPreprocessedGLSL = preprocessedGLSL.c_str();
+		shader.setStrings(&pPreprocessedGLSL, 1);
+
+		if (!shader.parse(pResources, defaultVersion, false, messages))
+		{
+			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", pFilepath, shader.getInfoLog(), shader.getInfoDebugLog());
+			return false;
+		}
+
+		glslang::TProgram program;
+		program.addShader(&shader);
+
+		if (!program.link(messages))
+		{
+			LOG_ERROR("[ResourceLoader]: GLSL Linking failed for: \"%s\"\n%s\n%s", pFilepath, shader.getInfoLog(), shader.getInfoDebugLog());
+			return false;
+		}
+
+		spv::SpvBuildLogger logger;
+		glslang::SpvOptions spvOptions;
+		glslang::GlslangToSpv(*program.getIntermediate(shaderType), sourceSPIRV, &logger, &spvOptions);
+        
+        return true;
+	}
 }

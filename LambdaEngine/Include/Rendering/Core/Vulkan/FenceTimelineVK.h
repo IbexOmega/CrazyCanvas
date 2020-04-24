@@ -8,40 +8,37 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
-    /*
-    * Fences used for systems that does not support Timeline Semaphores
-    */
-	class FenceLegacyVK : public TDeviceChildBase<GraphicsDeviceVK, IFence>
+	class FenceTimelineVK : public TDeviceChildBase<GraphicsDeviceVK, IFence>
 	{
 		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IFence>;
 
 	public:
-        FenceLegacyVK(const GraphicsDeviceVK* pDevice);
-		~FenceLegacyVK();
+		FenceTimelineVK(const GraphicsDeviceVK* pDevice);
+		~FenceTimelineVK();
 
-        bool Init(const FenceDesc* pDesc);
+		bool Init(const FenceDesc* pDesc);
 
         FORCEINLINE VkSemaphore GetSemaphore() const
         {
             return m_Semaphore;
         }
-
+        
         // IDeviceChild interface
         virtual void SetName(const char* pName) override final;
-
+        
         // IFence interface
-        virtual void Wait(uint64 waitValue, uint64 timeOut) const override final;
-        virtual void Signal(uint64 signalValue)                     override final;
+        virtual void Wait(uint64 waitValue, uint64 timeOut)	const override final;
+        virtual void Signal(uint64 signalValue)                   override final;
 
         virtual uint64 GetValue() const override final;
-
+        
         FORCEINLINE virtual FenceDesc GetDesc() const override final
         {
             return m_Desc;
         }
-
-    private:
-        VkSemaphore m_Semaphore = VK_NULL_HANDLE;
+		
+	private:
+		VkSemaphore m_Semaphore = VK_NULL_HANDLE;
         FenceDesc   m_Desc;
 	};
 }
