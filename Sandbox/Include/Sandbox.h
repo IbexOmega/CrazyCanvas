@@ -48,8 +48,8 @@ public:
 	virtual void OnScroll(int32 delta)                                  override;
 
 private:
-	bool InitRendererForDeferred(uint32 backBufferCount, uint32 maxTexturesPerDescriptorSet);
-	bool InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPerDescriptorSet);
+	bool InitRendererForDeferred();
+	bool InitRendererForVisBuf();
 
 private:
 	GUID_Lambda								m_ToneSoundEffectGUID;

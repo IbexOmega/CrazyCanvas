@@ -43,7 +43,7 @@ namespace LambdaEngine
 
 	constexpr ValidationLayer OPTIONAL_VALIDATION_LAYERS[]
 	{
-		ValidationLayer("OPT_V_L_BASE")
+		ValidationLayer("OPT_V_L_BASE"),
 	};
 
 	constexpr Extension REQUIRED_INSTANCE_EXTENSIONS[]

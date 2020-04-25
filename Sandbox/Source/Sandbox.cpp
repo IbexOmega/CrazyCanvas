@@ -29,19 +29,20 @@
 
 #include "Threading/API/Thread.h"
 
+constexpr const uint32 BACK_BUFFER_COUNT = 3;
+constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
+constexpr const bool RAY_TRACING_ENABLED = false;
+
 Sandbox::Sandbox()
     : Game()
 {
 	using namespace LambdaEngine;
 
-	constexpr const uint32 BACK_BUFFER_COUNT = 3;
-	constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
-
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
 	SceneDesc sceneDesc = {};
 	sceneDesc.pName				= "Test Scene";
-	sceneDesc.RayTracingEnabled = true;
+	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
 	m_pScene->Init(sceneDesc);
 
 	std::vector<GameObject>	sceneGameObjects;
@@ -127,7 +128,7 @@ Sandbox::Sandbox()
 
 	m_pNearestSampler = RenderSystem::GetDevice()->CreateSampler(&samplerNearestDesc);
 
-	InitRendererForDeferred(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
+	InitRendererForDeferred();
 
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 
@@ -440,7 +441,7 @@ namespace LambdaEngine
     }
 }
 
-bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTexturesPerDescriptorSet)
+bool Sandbox::InitRendererForDeferred()
 {
 	using namespace LambdaEngine;
 
@@ -481,10 +482,10 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 		geometryRenderStageAttachments.push_back({ SCENE_ROUGHNESS_MAPS,						EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS });
 		geometryRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS });
 
-
-		geometryRenderStageAttachments.push_back({ "GEOMETRY_ALBEDO_AO_BUFFER",					EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	backBufferCount });
-		geometryRenderStageAttachments.push_back({ "GEOMETRY_NORM_MET_ROUGH_BUFFER",			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	backBufferCount });
-		geometryRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",					EAttachmentType::OUTPUT_DEPTH_STENCIL,								FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	backBufferCount });
+		
+		geometryRenderStageAttachments.push_back({ "GEOMETRY_ALBEDO_AO_BUFFER",					EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
+		geometryRenderStageAttachments.push_back({ "GEOMETRY_NORM_MET_ROUGH_BUFFER",			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
+		geometryRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",					EAttachmentType::OUTPUT_DEPTH_STENCIL,								FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
 
 		RenderStagePushConstants pushConstants = {};
 		pushConstants.pName			= "Geometry Pass Push Constants";
@@ -514,15 +515,16 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 	RayTracingManagedPipelineStateDesc			rayTracingPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			rayTracingRenderStageAttachments;
 
+	if (RAY_TRACING_ENABLED)
 	{
-		rayTracingRenderStageAttachments.push_back({ "GEOMETRY_ALBEDO_AO_BUFFER",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	backBufferCount });
-		rayTracingRenderStageAttachments.push_back({ "GEOMETRY_NORM_MET_ROUGH_BUFFER",				EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	backBufferCount });
-		rayTracingRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",						EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	backBufferCount });
+		rayTracingRenderStageAttachments.push_back({ "GEOMETRY_ALBEDO_AO_BUFFER",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT });
+		rayTracingRenderStageAttachments.push_back({ "GEOMETRY_NORM_MET_ROUGH_BUFFER",				EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT });
+		rayTracingRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",						EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT });
 	
 		rayTracingRenderStageAttachments.push_back({ "SCENE_TLAS",									EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE,				FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	1 });
 		rayTracingRenderStageAttachments.push_back({ PER_FRAME_BUFFER,								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, 1 });
 
-		rayTracingRenderStageAttachments.push_back({ "RADIANCE_TEXTURE",							EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE,					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	backBufferCount });
+		rayTracingRenderStageAttachments.push_back({ "RADIANCE_TEXTURE",							EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE,					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT });
 
 		RenderStagePushConstants pushConstants = {};
 		pushConstants.pName			= "Ray Tracing Pass Push Constants";
@@ -553,12 +555,14 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
 
 	{
-		shadingRenderStageAttachments.push_back({ "GEOMETRY_ALBEDO_AO_BUFFER",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	backBufferCount });
-		shadingRenderStageAttachments.push_back({ "GEOMETRY_NORM_MET_ROUGH_BUFFER",				EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	backBufferCount });
-		shadingRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",						EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	backBufferCount });
-		shadingRenderStageAttachments.push_back({ "RADIANCE_TEXTURE",							EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	backBufferCount });
+		shadingRenderStageAttachments.push_back({ "GEOMETRY_ALBEDO_AO_BUFFER",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
+		shadingRenderStageAttachments.push_back({ "GEOMETRY_NORM_MET_ROUGH_BUFFER",				EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
+		shadingRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",						EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
 
-		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	backBufferCount });
+		if (RAY_TRACING_ENABLED)
+			shadingRenderStageAttachments.push_back({ "RADIANCE_TEXTURE",							EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
+
+		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
 
 		RenderStagePushConstants pushConstants = {};
 		pushConstants.pName			= "Shading Pass Push Constants";
@@ -589,8 +593,8 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 	renderGraphDesc.CreateDebugGraph			= true;
 	renderGraphDesc.pRenderStages				= renderStages.data();
 	renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
-	renderGraphDesc.BackBufferCount				= backBufferCount;
-	renderGraphDesc.MaxTexturesPerDescriptorSet = maxTexturesPerDescriptorSet;
+	renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+	renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
 	renderGraphDesc.pScene						= m_pScene;
 
 	LambdaEngine::Clock clock;
@@ -625,6 +629,7 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 		m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
 	}
 
+	if (RAY_TRACING_ENABLED)
 	{
 		RenderStageParameters rayTracingRenderStageParameters = {};
 		rayTracingRenderStageParameters.pRenderStageName = pRayTracingRenderStageName;
@@ -736,9 +741,9 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 		samplerDesc.MinLOD				= 0.0f;
 		samplerDesc.MaxLOD				= 1.0f;
 
-		std::vector<TextureDesc*> textureDescriptions(backBufferCount, &textureDesc);
-		std::vector<TextureViewDesc*> textureViewDescriptions(backBufferCount, &textureViewDesc);
-		std::vector<SamplerDesc*> samplerDescriptions(backBufferCount, &samplerDesc);
+		std::vector<TextureDesc*> textureDescriptions(BACK_BUFFER_COUNT, &textureDesc);
+		std::vector<TextureViewDesc*> textureViewDescriptions(BACK_BUFFER_COUNT, &textureViewDesc);
+		std::vector<SamplerDesc*> samplerDescriptions(BACK_BUFFER_COUNT, &samplerDesc);
 
 		ResourceUpdateDesc resourceUpdateDesc = {};
 		resourceUpdateDesc.pResourceName							= "GEOMETRY_ALBEDO_AO_BUFFER";
@@ -787,9 +792,9 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 		samplerDesc.MinLOD				= 0.0f;
 		samplerDesc.MaxLOD				= 1.0f;
 
-		std::vector<TextureDesc*> textureDescriptions(backBufferCount, &textureDesc);
-		std::vector<TextureViewDesc*> textureViewDescriptions(backBufferCount, &textureView);
-		std::vector<SamplerDesc*> samplerDescriptions(backBufferCount, &samplerDesc);
+		std::vector<TextureDesc*> textureDescriptions(BACK_BUFFER_COUNT, &textureDesc);
+		std::vector<TextureViewDesc*> textureViewDescriptions(BACK_BUFFER_COUNT, &textureView);
+		std::vector<SamplerDesc*> samplerDescriptions(BACK_BUFFER_COUNT, &samplerDesc);
 
 		ResourceUpdateDesc resourceUpdateDesc = {};
 		resourceUpdateDesc.pResourceName							= "GEOMETRY_NORM_MET_ROUGH_BUFFER";
@@ -838,9 +843,9 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 		samplerDesc.MinLOD				= 0.0f;
 		samplerDesc.MaxLOD				= 1.0f;
 
-		std::vector<TextureDesc*> textureDescriptions(backBufferCount, &textureDesc);
-		std::vector<TextureViewDesc*> textureViewDescriptions(backBufferCount, &textureViewDesc);
-		std::vector<SamplerDesc*> samplerDescriptions(backBufferCount, &samplerDesc);
+		std::vector<TextureDesc*> textureDescriptions(BACK_BUFFER_COUNT, &textureDesc);
+		std::vector<TextureViewDesc*> textureViewDescriptions(BACK_BUFFER_COUNT, &textureViewDesc);
+		std::vector<SamplerDesc*> samplerDescriptions(BACK_BUFFER_COUNT, &samplerDesc);
 
 		ResourceUpdateDesc resourceUpdateDesc = {};
 		resourceUpdateDesc.pResourceName							= "GEOMETRY_DEPTH_STENCIL";
@@ -851,6 +856,7 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
+	if (RAY_TRACING_ENABLED)
 	{
 		TextureDesc textureDesc	= {};
 		textureDesc.pName				= "Radiance Texture";
@@ -889,9 +895,9 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 		samplerDesc.MinLOD				= 0.0f;
 		samplerDesc.MaxLOD				= 1.0f;
 
-		std::vector<TextureDesc*> textureDescriptions(backBufferCount, &textureDesc);
-		std::vector<TextureViewDesc*> textureViewDescriptions(backBufferCount, &textureViewDesc);
-		std::vector<SamplerDesc*> samplerDescriptions(backBufferCount, &samplerDesc);
+		std::vector<TextureDesc*> textureDescriptions(BACK_BUFFER_COUNT, &textureDesc);
+		std::vector<TextureViewDesc*> textureViewDescriptions(BACK_BUFFER_COUNT, &textureViewDesc);
+		std::vector<SamplerDesc*> samplerDescriptions(BACK_BUFFER_COUNT, &samplerDesc);
 
 		ResourceUpdateDesc resourceUpdateDesc = {};
 		resourceUpdateDesc.pResourceName							= "RADIANCE_TEXTURE";
@@ -962,14 +968,14 @@ bool Sandbox::InitRendererForDeferred(uint32 backBufferCount, uint32 maxTextures
 	rendererDesc.pName				= "Renderer";
 	rendererDesc.pRenderGraph		= m_pRenderGraph;
 	rendererDesc.pWindow			= PlatformApplication::Get()->GetWindow();
-	rendererDesc.BackBufferCount	= backBufferCount;
+	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
 	
 	m_pRenderer->Init(rendererDesc);
 
 	return true;
 }
 
-bool Sandbox::InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPerDescriptorSet)
+bool Sandbox::InitRendererForVisBuf()
 {
 	using namespace LambdaEngine;
 
@@ -991,7 +997,7 @@ bool Sandbox::InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPe
 
 		geometryRenderStageAttachments.push_back({ PER_FRAME_BUFFER,							EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1});
 
-		geometryRenderStageAttachments.push_back({ "GEOMETRY_VISIBILITY_BUFFER",				EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	backBufferCount });
+		geometryRenderStageAttachments.push_back({ "GEOMETRY_VISIBILITY_BUFFER",				EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
 		geometryRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",					EAttachmentType::OUTPUT_DEPTH_STENCIL,								FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1 });
 
 		RenderStagePushConstants pushConstants = {};
@@ -1023,7 +1029,7 @@ bool Sandbox::InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPe
 	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
 
 	{
-		shadingRenderStageAttachments.push_back({ "GEOMETRY_VISIBILITY_BUFFER",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	backBufferCount });
+		shadingRenderStageAttachments.push_back({ "GEOMETRY_VISIBILITY_BUFFER",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
 
 		shadingRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1});
 		shadingRenderStageAttachments.push_back({ SCENE_INDEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1});
@@ -1039,7 +1045,7 @@ bool Sandbox::InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPe
 		shadingRenderStageAttachments.push_back({ SCENE_ROUGHNESS_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS});
 		shadingRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS});
 
-		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	backBufferCount });
+		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
 
 		RenderStagePushConstants pushConstants = {};
 		pushConstants.pName			= "Shading Pass Push Constants";
@@ -1070,8 +1076,8 @@ bool Sandbox::InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPe
 	renderGraphDesc.CreateDebugGraph			= true;
 	renderGraphDesc.pRenderStages				= renderStages.data();
 	renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
-	renderGraphDesc.BackBufferCount				= backBufferCount;
-	renderGraphDesc.MaxTexturesPerDescriptorSet = maxTexturesPerDescriptorSet;
+	renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+	renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
 	renderGraphDesc.pScene						= m_pScene;
 
 	LambdaEngine::Clock clock;
@@ -1198,9 +1204,9 @@ bool Sandbox::InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPe
 		samplerNearestDesc.MinLOD				= 0.0f;
 		samplerNearestDesc.MaxLOD				= 1.0f;
 
-		std::vector<TextureDesc*> visibilityBufferTextureDescriptions(backBufferCount, &visibilityBufferDesc);
-		std::vector<TextureViewDesc*> visibilityBufferTextureViewDescriptions(backBufferCount, &visibilityBufferViewDesc);
-		std::vector<SamplerDesc*> visibilityBufferSamplerDescriptions(backBufferCount, &samplerNearestDesc);
+		std::vector<TextureDesc*> visibilityBufferTextureDescriptions(BACK_BUFFER_COUNT, &visibilityBufferDesc);
+		std::vector<TextureViewDesc*> visibilityBufferTextureViewDescriptions(BACK_BUFFER_COUNT, &visibilityBufferViewDesc);
+		std::vector<SamplerDesc*> visibilityBufferSamplerDescriptions(BACK_BUFFER_COUNT, &samplerNearestDesc);
 
 		ResourceUpdateDesc resourceUpdateDesc = {};
 		resourceUpdateDesc.pResourceName							= "GEOMETRY_VISIBILITY_BUFFER";
@@ -1306,7 +1312,7 @@ bool Sandbox::InitRendererForVisBuf(uint32 backBufferCount, uint32 maxTexturesPe
 	rendererDesc.pName				= "Renderer";
 	rendererDesc.pRenderGraph		= m_pRenderGraph;
 	rendererDesc.pWindow			= PlatformApplication::Get()->GetWindow();
-	rendererDesc.BackBufferCount	= backBufferCount;
+	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
 	
 	m_pRenderer->Init(rendererDesc);
 
