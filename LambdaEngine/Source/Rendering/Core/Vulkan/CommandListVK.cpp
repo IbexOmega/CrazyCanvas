@@ -384,6 +384,33 @@ namespace LambdaEngine
 		vkCmdCopyBufferToImage(m_CommandList, pVkSrc->GetBuffer(), pVkDst->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 	}
 
+	void CommandListVK::BlitTexture(const ITexture* pSrc, ETextureState srcState, ITexture* pDst, ETextureState dstState, EFilter filter)
+	{
+		VALIDATE(pSrc != nullptr);
+		VALIDATE(pDst != nullptr);
+
+		const TextureVK*	pVkSrc	= reinterpret_cast<const TextureVK*>(pSrc);
+		TextureVK*			pVkDst	= reinterpret_cast<TextureVK*>(pDst);
+
+		VkImageLayout		vkSrcLayout = ConvertTextureState(srcState);
+		VkImageLayout		vkDstLayout = ConvertTextureState(dstState);
+		VkFilter			vkFilter	= ConvertFilter(filter);
+
+		VkImageSubresourceLayers srcSubresource = {};
+		srcSubresource.aspectMask;
+		srcSubresource.mipLevel;
+		srcSubresource.baseArrayLayer;
+		srcSubresource.layerCount;
+
+		VkImageBlit region = {};
+		region.srcSubresource;
+		region.srcOffsets[2];
+		region.dstSubresource;
+		region.dstOffsets[2];
+
+		vkCmdBlitImage(m_CommandList, pVkSrc->GetImage(), vkSrcLayout, pVkDst->GetImage(), vkDstLayout, 1, &region, vkFilter);
+	}
+
 	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)
 	{
 		VALIDATE(pTextureBarriers		!= nullptr);

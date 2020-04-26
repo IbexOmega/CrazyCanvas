@@ -667,6 +667,11 @@ namespace LambdaEngine
         vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
     }
 
+	void GraphicsDeviceVK::GetMaxComputeWorkGroupSize(uint32 pWorkGroupSize[3]) const
+	{
+		memcpy(pWorkGroupSize, m_DeviceLimits.maxComputeWorkGroupSize, sizeof(uint32) * 3);
+	}
+
     /*
      * Helpers
      */

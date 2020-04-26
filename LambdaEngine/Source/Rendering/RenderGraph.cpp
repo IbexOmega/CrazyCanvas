@@ -530,10 +530,10 @@ namespace LambdaEngine
 					
 				if (accessType != EAttachmentAccessType::EXTERNAL_INPUT)
 				{
-					//Internal
+					//Internal Input or Output
 					if (simpleType == ESimpleResourceType::TEXTURE)
 					{
-						pResource->Type	= EResourceType::INTERNAL_TEXTURE;
+						pResource->Type = strcmp(pAttachment->pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0 ? EResourceType::EXTERNAL_TEXTURE : EResourceType::INTERNAL_TEXTURE;
 						pResource->Texture.Textures.resize(pResource->SubResourceCount);
 						pResource->Texture.TextureViews.resize(pResource->SubResourceCount);
 						pResource->Texture.Samplers.resize(pResource->SubResourceCount);
@@ -547,7 +547,7 @@ namespace LambdaEngine
 					}
 					else if (simpleType == ESimpleResourceType::COLOR_ATTACHMENT)
 					{
-						pResource->Type	= strcmp(pAttachment->pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0 ? EResourceType::EXTERNAL_TEXTURE : EResourceType::INTERNAL_TEXTURE;
+						pResource->Type = strcmp(pAttachment->pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0 ? EResourceType::EXTERNAL_TEXTURE : EResourceType::INTERNAL_TEXTURE;
 						pResource->Texture.Textures.resize(pResource->SubResourceCount);
 						pResource->Texture.TextureViews.resize(pResource->SubResourceCount);
 						pResource->Texture.Samplers.resize(pResource->SubResourceCount);
@@ -567,7 +567,7 @@ namespace LambdaEngine
 				}
 				else
 				{
-					//External
+					//External Input
 					if (simpleType == ESimpleResourceType::TEXTURE)
 					{
 						pResource->Type	= EResourceType::EXTERNAL_TEXTURE;
@@ -720,6 +720,8 @@ namespace LambdaEngine
 						return false;
 					}
 
+					Resource* pResource = &it->second;
+
 					//Descriptors
 					if (AttachmentsNeedsDescriptor(pAttachment->Type))
 					{
@@ -738,7 +740,7 @@ namespace LambdaEngine
 							descriptorBinding.Binding			= textureDescriptorBindingIndex++;
 
 							textureDescriptorSetDescriptions.push_back(descriptorBinding);
-							textureDescriptorSetResources.push_back(std::make_tuple(&it->second, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
+							textureDescriptorSetResources.push_back(std::make_tuple(pResource, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
 						}
 						else
 						{
@@ -746,7 +748,7 @@ namespace LambdaEngine
 							descriptorBinding.Binding			= bufferDescriptorBindingIndex++;
 
 							bufferDescriptorSetDescriptions.push_back(descriptorBinding);
-							bufferDescriptorSetResources.push_back(std::make_tuple(&it->second, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
+							bufferDescriptorSetResources.push_back(std::make_tuple(pResource, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
 						}
 							
 					}
@@ -776,7 +778,7 @@ namespace LambdaEngine
 							blendAttachmentState.ColorComponentsMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
 
 							renderPassBlendAttachmentStates.push_back(blendAttachmentState);
-							renderTargets.push_back(&it->second);
+							renderTargets.push_back(pResource);
 						}
 						else if (pAttachment->Type == EAttachmentType::OUTPUT_DEPTH_STENCIL)
 						{
@@ -791,7 +793,7 @@ namespace LambdaEngine
 							renderPassAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 							renderPassDepthStencilDescription = renderPassAttachmentDesc;
-							pDepthStencilResource = &it->second;
+							pDepthStencilResource = pResource;
 						}
 					}
 				}
@@ -1030,7 +1032,9 @@ namespace LambdaEngine
 
 			for (const AttachmentSynchronizationDesc& attachmentSynchronizationDesc : pSynchronizationStageDesc->Synchronizations)
 			{
-				ESimpleResourceType barrierType = GetSimpleType(attachmentSynchronizationDesc.FromAttachment.Type);
+				bool isBackBuffer = strcmp(attachmentSynchronizationDesc.FromAttachment.pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0;
+
+				ESimpleResourceType barrierType = !isBackBuffer ? GetSimpleType(attachmentSynchronizationDesc.FromAttachment.Type) : ESimpleResourceType::TEXTURE;
 
 				auto it = m_ResourceMap.find(attachmentSynchronizationDesc.FromAttachment.pName);
 
@@ -1044,30 +1048,105 @@ namespace LambdaEngine
 
 				if (barrierType == ESimpleResourceType::TEXTURE)
 				{
-					PipelineTextureBarrierDesc textureBarrier = {};
-					textureBarrier.QueueBefore			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.FromQueueOwner);
-					textureBarrier.QueueAfter			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.ToQueueOwner);
-					textureBarrier.StateBefore			= ConvertAttachmentTypeToTextureState(attachmentSynchronizationDesc.FromAttachment.Type);
-					textureBarrier.StateAfter			= ConvertAttachmentTypeToTextureState(attachmentSynchronizationDesc.ToAttachment.Type);
-					textureBarrier.SrcMemoryAccessFlags = ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.FromAttachment.Type);
-					textureBarrier.DstMemoryAccessFlags = ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.ToAttachment.Type);
-
-					TextureSynchronization textureSynchronization = {};
-					textureSynchronization.SrcShaderStage		= GetLastShaderStageInMask(attachmentSynchronizationDesc.FromAttachment.ShaderStages);
-					textureSynchronization.DstShaderStage		= GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
-
-					textureSynchronization.Barriers.reserve(pResource->SubResourceCount);
-
-					for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)
+					//Special Case for Back Buffer
+					if (!isBackBuffer)
 					{
-						m_TextureBarriers.push_back(textureBarrier);
-						uint32 barrierIndex = m_TextureBarriers.size() - 1;
+						PipelineTextureBarrierDesc textureBarrier = {};
+						textureBarrier.QueueBefore			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.FromQueueOwner);
+						textureBarrier.QueueAfter			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.ToQueueOwner);
+						textureBarrier.StateBefore			= ConvertAttachmentTypeToTextureState(attachmentSynchronizationDesc.FromAttachment.Type);
+						textureBarrier.SrcMemoryAccessFlags = ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.FromAttachment.Type);
 
-						textureSynchronization.Barriers.push_back(barrierIndex);
-						pResource->Texture.Barriers.push_back(barrierIndex);
+						if (attachmentSynchronizationDesc.Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE_READ || attachmentSynchronizationDesc.Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE_WRITE)
+						{
+							textureBarrier.StateAfter			= textureBarrier.StateBefore;
+							textureBarrier.DstMemoryAccessFlags = textureBarrier.SrcMemoryAccessFlags;
+						}
+						else
+						{
+							textureBarrier.StateAfter			= ConvertAttachmentTypeToTextureState(attachmentSynchronizationDesc.ToAttachment.Type);
+							textureBarrier.DstMemoryAccessFlags = ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.ToAttachment.Type);
+						}
+
+						TextureSynchronization textureSynchronization = {};
+						textureSynchronization.SrcShaderStage		= GetLastShaderStageInMask(attachmentSynchronizationDesc.FromAttachment.ShaderStages);
+						textureSynchronization.DstShaderStage		= GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
+
+						textureSynchronization.Barriers.reserve(pResource->SubResourceCount);
+
+						for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)
+						{
+							m_TextureBarriers.push_back(textureBarrier);
+							uint32 barrierIndex = m_TextureBarriers.size() - 1;
+
+							textureSynchronization.Barriers.push_back(barrierIndex);
+							pResource->Texture.Barriers.push_back(barrierIndex);
+						}
+
+						pSynchronizationStage->TextureSynchronizations[attachmentSynchronizationDesc.FromAttachment.pName] = textureSynchronization;
 					}
+					else
+					{
+						//Barrier is for Back Buffer, this means that the Back Buffer is not synchronized by a Render Pass
 
-					pSynchronizationStage->TextureSynchronizations[attachmentSynchronizationDesc.FromAttachment.pName] = textureSynchronization;
+						PipelineTextureBarrierDesc textureBarrier = {};
+						textureBarrier.QueueBefore			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.FromQueueOwner);
+						textureBarrier.QueueAfter			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.ToQueueOwner);
+
+						TextureSynchronization textureSynchronization = {};
+
+						//From "GetNextImage" to Write State
+						if (attachmentSynchronizationDesc.FromAttachment.Type == EAttachmentType::NONE) 
+						{
+							textureBarrier.StateBefore			= ETextureState::TEXTURE_STATE_DONT_CARE;
+							textureBarrier.SrcMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+
+							textureSynchronization.SrcShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+						}
+						else
+						{
+							textureBarrier.StateBefore			= ConvertAttachmentTypeToTextureState(attachmentSynchronizationDesc.FromAttachment.Type);
+							textureBarrier.SrcMemoryAccessFlags = ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.FromAttachment.Type);
+
+							textureSynchronization.SrcShaderStage = GetLastShaderStageInMask(attachmentSynchronizationDesc.FromAttachment.ShaderStages);
+						}
+
+						//To Present State
+						if (attachmentSynchronizationDesc.ToAttachment.Type == EAttachmentType::NONE) 
+						{
+							textureBarrier.StateAfter				= ETextureState::TEXTURE_STATE_PRESENT;
+							textureBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+
+							textureSynchronization.DstShaderStage	= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+						}
+						else if (attachmentSynchronizationDesc.Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE_READ || attachmentSynchronizationDesc.Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE_WRITE)
+						{
+							textureBarrier.StateAfter				= textureBarrier.StateBefore;
+							textureBarrier.DstMemoryAccessFlags		= textureBarrier.SrcMemoryAccessFlags;
+
+							textureSynchronization.DstShaderStage	= GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
+						}
+						else
+						{
+							textureBarrier.StateAfter				= ConvertAttachmentTypeToTextureState(attachmentSynchronizationDesc.ToAttachment.Type);
+							textureBarrier.DstMemoryAccessFlags		= ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.ToAttachment.Type);
+
+							textureSynchronization.DstShaderStage	= GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
+						}
+						
+						textureSynchronization.Barriers.reserve(pResource->SubResourceCount);
+
+						for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)
+						{
+							m_TextureBarriers.push_back(textureBarrier);
+							uint32 barrierIndex = m_TextureBarriers.size() - 1;
+
+							textureSynchronization.Barriers.push_back(barrierIndex);
+							pResource->Texture.Barriers.push_back(barrierIndex);
+						}
+
+						pSynchronizationStage->TextureSynchronizations[attachmentSynchronizationDesc.FromAttachment.pName] = textureSynchronization;
+					}
 				}
 				else if (barrierType == ESimpleResourceType::BUFFER)
 				{
@@ -1075,7 +1154,15 @@ namespace LambdaEngine
 					bufferBarrier.QueueBefore			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.FromQueueOwner);
 					bufferBarrier.QueueAfter			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.ToQueueOwner);
 					bufferBarrier.SrcMemoryAccessFlags	= ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.FromAttachment.Type);
-					bufferBarrier.DstMemoryAccessFlags	= ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.ToAttachment.Type);
+
+					if (attachmentSynchronizationDesc.Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE_READ || attachmentSynchronizationDesc.Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE_WRITE)
+					{
+						bufferBarrier.DstMemoryAccessFlags = bufferBarrier.SrcMemoryAccessFlags;
+					}
+					else
+					{
+						bufferBarrier.DstMemoryAccessFlags = ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.ToAttachment.Type);
+					}
 
 					BufferSynchronization bufferSynchronization = {};
 					bufferSynchronization.SrcShaderStage = GetLastShaderStageInMask(attachmentSynchronizationDesc.FromAttachment.ShaderStages);
@@ -1278,7 +1365,10 @@ namespace LambdaEngine
 			}
 		}
 
-		m_DirtyDescriptorSetExternalTextures.insert(pResource);
+		if (strcmp(desc.pResourceName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0)
+			m_DirtyDescriptorSetInternalTextures.insert(pResource);
+		else
+			m_DirtyDescriptorSetExternalTextures.insert(pResource);
 	}
 
 	void RenderGraph::UpdateResourceExternalBuffer(Resource* pResource, const ResourceUpdateDesc& desc)

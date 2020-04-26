@@ -95,6 +95,8 @@ namespace LambdaEngine
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst)																			const = 0;
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const = 0;
 
+		virtual void GetMaxComputeWorkGroupSize(uint32 pWorkGroupSize[3])	const = 0;
+
 		/*
 		* Releases the graphicsdevice. Unlike all other graphics interfaces, the graphicsdevice
 		* is not referencecounted. This means that a call to release will delete the graphicsdevice. This 

@@ -98,6 +98,8 @@ namespace LambdaEngine
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst)																			const override final;
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const override final;
 
+		virtual void GetMaxComputeWorkGroupSize(uint32 pWorkGroupSize[3])	const override final;
+
 		virtual void Release() override final;
 
 	private:
