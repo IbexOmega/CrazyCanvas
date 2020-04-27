@@ -31,6 +31,8 @@ namespace LambdaEngine
         {
         case EFormat::FORMAT_R8G8B8A8_UNORM:		return VK_FORMAT_R8G8B8A8_UNORM;
         case EFormat::FORMAT_B8G8R8A8_UNORM:		return VK_FORMAT_B8G8R8A8_UNORM;
+        case EFormat::FORMAT_R8G8B8A8_SNORM:		return VK_FORMAT_R8G8B8A8_SNORM;
+        case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return VK_FORMAT_R16G16B16A16_SFLOAT;
 		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return VK_FORMAT_D24_UNORM_S8_UINT;
         default:                        return VK_FORMAT_UNDEFINED;
         }

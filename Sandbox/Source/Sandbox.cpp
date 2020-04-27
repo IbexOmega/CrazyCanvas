@@ -31,7 +31,7 @@
 
 constexpr const uint32 BACK_BUFFER_COUNT = 3;
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
-constexpr const bool RAY_TRACING_ENABLED = false;
+constexpr const bool RAY_TRACING_ENABLED = true;
 
 Sandbox::Sandbox()
     : Game()
@@ -71,6 +71,8 @@ Sandbox::Sandbox()
 	m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.5f, 0.0f)));
 
 	m_pScene->Finalize();
+
+	m_pScene->UpdateDirectionalLight(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 	m_pCamera = DBG_NEW Camera();
 
@@ -564,6 +566,9 @@ bool Sandbox::InitRendererForDeferred()
 		if (RAY_TRACING_ENABLED)
 			shadingRenderStageAttachments.push_back({ "RADIANCE_TEXTURE",						EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
 
+		shadingRenderStageAttachments.push_back({ "LIGHTS_BUFFER",								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, 1 });
+		shadingRenderStageAttachments.push_back({ PER_FRAME_BUFFER,								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, 1 });
+
 		shadingRenderStageAttachments.push_back({ "SHADED_TEXTURE",								EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT });
 
 		RenderStagePushConstants pushConstants = {};
@@ -685,6 +690,15 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
+		IBuffer* pBuffer = m_pScene->GetLightsBuffer();
+		ResourceUpdateDesc resourceUpdateDesc				= {};
+		resourceUpdateDesc.pResourceName					= "LIGHTS_BUFFER";
+		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	}
+
+	{
 		IBuffer* pBuffer = m_pScene->GetPerFrameBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= PER_FRAME_BUFFER;
@@ -803,7 +817,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.pName				= "Norm-Met-Rough G-Buffer Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
-		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
+		textureDesc.Format				= EFormat::FORMAT_R16G16B16A16_SFLOAT;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width				= PlatformApplication::Get()->GetWindow()->GetWidth();
 		textureDesc.Height				= PlatformApplication::Get()->GetWindow()->GetHeight();

@@ -295,6 +295,13 @@ float GeometryOpt(float NdotV, float NdotL, float roughness)
 	return GeometryGGX(NdotV, roughness) * GeometryGGX(NdotL, roughness);
 }
 
+vec3 ToneMap(vec3 color, float gamma)
+{
+	vec3 result = color / (color + vec3(1.0f));
+	result = pow(result, vec3(1.0f / gamma));
+	return result;
+}
+
 float gold_noise3(vec3 x, float seed, float min, float max)
 {
     const float GOLD_PHI = 1.61803398874989484820459 * 00000.1; // Golden Ratio   
