@@ -186,7 +186,7 @@ namespace LambdaEngine
 
     void MacApplication::Terminate()
     {
-        s_pApplication->m_IsTerminating = true;
+        [NSApp terminate:nil];
     }
 
     Window* MacApplication::CreateWindow(const char* pTitle, uint32 width, uint32 height)
@@ -233,7 +233,7 @@ namespace LambdaEngine
             return false;
         }
         
-        //Process events in the queue
+        // Process events in the queue
         ProcessMessages();
         
         [NSApp finishLaunching];
@@ -247,6 +247,9 @@ namespace LambdaEngine
         bool shouldExit = ProcessMessages();
         s_pApplication->ProcessBufferedMessages();
 
+        // We are done by updating (We have processed all events)
+        [NSApp updateWindows];
+        
         return shouldExit;
     }
 
@@ -254,7 +257,7 @@ namespace LambdaEngine
     {
         SCOPED_AUTORELEASE_POOL();
         
-        //Make sure this function is called on the main thread, calling from other threads result in undefined
+        // Make sure this function is called on the main thread, calling from other threads result in undefined
         VALIDATE([NSThread isMainThread]);
         
         if (s_pApplication)
@@ -270,16 +273,10 @@ namespace LambdaEngine
                         break;
                     }
                     
-                    //Buffer event before sending it to the rest of the system
+                    // Buffer event before sending it to the rest of the system
                     s_pApplication->BufferEvent(event);
 
                     [NSApp sendEvent:event];
-                    [NSApp updateWindows];
-                    
-                    if (s_pApplication->m_IsTerminating)
-                    {
-                        return false;
-                    }
                 }
             }
         }
