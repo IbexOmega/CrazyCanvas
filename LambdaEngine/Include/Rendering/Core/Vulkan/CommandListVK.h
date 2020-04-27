@@ -74,6 +74,10 @@ namespace LambdaEngine
 		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)  override final;
 		virtual void DrawIndexedIndirect(const IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)							override final;
 
+		virtual void BeginQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)											override final;
+		virtual void Timestamp(IQueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)	override final;
+		virtual void EndQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)											override final;
+
 		virtual void ExecuteSecondary(const ICommandList* pSecondary) override final;
 
 		virtual ICommandAllocator* GetAllocator() const override final;

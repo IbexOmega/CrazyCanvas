@@ -49,10 +49,10 @@ namespace LambdaEngine
             }
             
             D_LOG_MESSAGE("[CommandQueueVK]: Created commandqueue from queuefamily=%u with index=%u", queueFamilyIndex, index);
+
+            m_Type = m_pDevice->GetCommandQueueTypeFromQueueIndex(queueFamilyIndex);
             return true;
         }
-        
-
 	}
 
 	void CommandQueueVK::AddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags waitStage)
