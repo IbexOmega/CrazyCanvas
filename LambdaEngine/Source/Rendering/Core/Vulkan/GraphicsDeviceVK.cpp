@@ -81,7 +81,8 @@ namespace LambdaEngine
 		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME),
 		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
-        Extension("VK_KHR_shader_draw_parameters"),
+        Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
+		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME)
 	};
 
     /*
@@ -256,6 +257,11 @@ namespace LambdaEngine
      * Create functions
      */
 
+	void GraphicsDeviceVK::QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const
+	{
+		memcpy(pFeatures, &m_DeviceFeatures, sizeof(m_DeviceFeatures));
+	}
+
 	IPipelineLayout* GraphicsDeviceVK::CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const
 	{
         VALIDATE(pDesc != nullptr);
@@ -373,8 +379,7 @@ namespace LambdaEngine
 	{
         VALIDATE(pDesc != nullptr);
         
-		//TODO: Query this in some other way
-		if (this->vkCreateAccelerationStructureKHR == nullptr)
+		if (!m_DeviceFeatures.RayTracing)
 		{
 			return nullptr;
 		}
@@ -667,11 +672,6 @@ namespace LambdaEngine
         vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
     }
 
-	void GraphicsDeviceVK::GetMaxComputeWorkGroupSize(uint32 pWorkGroupSize[3]) const
-	{
-		memcpy(pWorkGroupSize, m_DeviceLimits.maxComputeWorkGroupSize, sizeof(uint32) * 3);
-	}
-
     /*
      * Helpers
      */
@@ -778,8 +778,9 @@ namespace LambdaEngine
 		{
 			PopulateDebugMessengerCreateInfo(debugCreateInfo);
 
-			instanceCreateInfo.enabledLayerCount    = (uint32_t)m_EnabledValidationLayers.size();
-			instanceCreateInfo.ppEnabledLayerNames  = m_EnabledValidationLayers.data();
+			const char* pKhronosValidationLayerName = "VK_LAYER_KHRONOS_validation";
+			instanceCreateInfo.enabledLayerCount    = 1;
+			instanceCreateInfo.ppEnabledLayerNames  = &pKhronosValidationLayerName;
 			instanceCreateInfo.pNext                = &debugCreateInfo;
 		}
 		else
@@ -828,6 +829,12 @@ namespace LambdaEngine
 			return false;
 		}
 
+		// Set up device features
+		m_DeviceFeatures.MeshShaders		= IsDeviceExtensionEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME);
+		m_DeviceFeatures.RayTracing			= IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME);
+		m_DeviceFeatures.GeometryShaders	= m_DeviceFeaturesVk.geometryShader;
+		memcpy(&m_DeviceFeatures.MaxComputeWorkGroupSize, m_DeviceLimits.maxComputeWorkGroupSize, sizeof(uint32) * 3);
+
 		RegisterDeviceExtensionData();
 		return true;
 	}
@@ -863,7 +870,7 @@ namespace LambdaEngine
 		SetEnabledDeviceExtensions();
 		m_DeviceQueueFamilyIndices = FindQueueFamilies(PhysicalDevice);
 
-        //Store the properties of each queuefamily
+        // Store the properties of each queuefamily
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, nullptr);
 
@@ -873,6 +880,8 @@ namespace LambdaEngine
 		// Save device's limits
 		VkPhysicalDeviceProperties deviceProperties = GetPhysicalDeviceProperties();
 		m_DeviceLimits = deviceProperties.limits;
+
+		vkGetPhysicalDeviceFeatures(PhysicalDevice, &m_DeviceFeaturesVk);
 
 		LOG_MESSAGE("[GraphicsDeviceVK]: Chosen device: %s", deviceProperties.deviceName);
 		LOG_MESSAGE("[GraphicsDeviceVK]: API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(deviceProperties.apiVersion), VK_VERSION_MINOR(deviceProperties.apiVersion), VK_VERSION_PATCH(deviceProperties.apiVersion), deviceProperties.apiVersion);
@@ -975,7 +984,6 @@ namespace LambdaEngine
 		for (const VkLayerProperties& availableValidationLayerProperties : availableValidationLayers)
 		{
 			uint32 availableValidationLayerHash = HashString<const char*>(availableValidationLayerProperties.layerName);
-
 			for (auto requiredValidationLayer = requiredValidationLayers.begin(); requiredValidationLayer != requiredValidationLayers.end(); requiredValidationLayer++)
 			{
 				if (availableValidationLayerHash == requiredValidationLayer->Hash)

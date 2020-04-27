@@ -672,8 +672,8 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		uint32 maxWorkGroupSize[3];
-		RenderSystem::GetDevice()->GetMaxComputeWorkGroupSize(maxWorkGroupSize);
+		GraphicsDeviceFeatureDesc features = { };
+		RenderSystem::GetDevice()->QueryDeviceFeatures(&features);
 
 		RenderStageParameters postProcessRenderStageParameters = {};
 		postProcessRenderStageParameters.pRenderStageName				= pPostProcessRenderStageName;

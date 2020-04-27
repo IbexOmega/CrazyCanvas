@@ -6,8 +6,8 @@
 
 namespace LambdaEngine
 {
-	class GraphicsDeviceVK;
 	class BufferVK;
+	class GraphicsDeviceVK;
 
 	class AccelerationStructureVK : public TDeviceChildBase<GraphicsDeviceVK, IAccelerationStructure>
 	{
