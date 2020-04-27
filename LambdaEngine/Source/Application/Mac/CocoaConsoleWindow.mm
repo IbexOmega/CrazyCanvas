@@ -62,12 +62,11 @@
     SCOPED_AUTORELEASE_POOL();
     
     NSAttributedString* attributedString = [[NSAttributedString alloc] initWithString:string attributes:consoleColor];
-    
+        
     NSTextStorage* storage = [textView textStorage];
     [storage beginEditing];
-    [storage appendAttributedString:attributedString];
     
-    //Remove lines
+    // Remove lines
     NSUInteger  lineCount   = [self getLineCount];
     NSString*   textString  = [textView string];
     if (lineCount >= 196)
@@ -88,11 +87,13 @@
         [storage deleteCharactersInRange:range];
     }
     
+    // Add the new string
+    [storage appendAttributedString:attributedString];
     [storage setFont:[NSFont fontWithName:@"Courier" size:12.0f]];
+    
     [storage endEditing];
     
-    NSUInteger stringLength = [textString length];
-    [textView scrollRangeToVisible:NSMakeRange(stringLength, 0)];
+    [textView scrollToEndOfDocument:textView];
     
     [attributedString release];
 }
@@ -120,7 +121,7 @@
     [attributes addObject:NSForegroundColorAttributeName];
     [attributes addObject:NSBackgroundColorAttributeName];
 
-    //Add foreground color
+    // Add foreground color
     if (color == EConsoleColor::COLOR_WHITE)
     {
         [colors addObject:[NSColor colorWithSRGBRed:1.0f green:1.0f blue:1.0f alpha:1.0f]];
@@ -138,7 +139,7 @@
         [colors addObject:[NSColor colorWithSRGBRed:1.0f green:1.0f blue:0.0f alpha:1.0f]];
     }
     
-    //Add background color
+    // Add background color
     [colors addObject:[NSColor colorWithSRGBRed:0.1f green:0.1f blue:0.1f alpha:0.1f]];
     
     consoleColor = [[NSDictionary alloc] initWithObjects:colors forKeys:attributes];
