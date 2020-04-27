@@ -16,10 +16,12 @@ namespace LambdaEngine
 
     enum class EFormat : uint8
     {
-        NONE						= 0,
-        FORMAT_R8G8B8A8_UNORM		= 1,
-        FORMAT_B8G8R8A8_UNORM		= 2,
-		FORMAT_D24_UNORM_S8_UINT	= 3
+        NONE							= 0,
+        FORMAT_R8G8B8A8_UNORM			= 1,
+        FORMAT_B8G8R8A8_UNORM			= 2,
+        FORMAT_R8G8B8A8_SNORM			= 3,
+        FORMAT_R16G16B16A16_SFLOAT		= 4,
+		FORMAT_D24_UNORM_S8_UINT		= 5
     };
 
 	enum class ECommandQueueType : uint8

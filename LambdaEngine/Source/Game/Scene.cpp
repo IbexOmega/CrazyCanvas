@@ -37,6 +37,7 @@ namespace LambdaEngine
 		SAFERELEASE(m_pSceneIndexCopyBuffer);
 		SAFERELEASE(m_pSceneInstanceCopyBuffer);
 		SAFERELEASE(m_pSceneMeshIndexCopyBuffer);
+		SAFERELEASE(m_pLightsBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
 		SAFERELEASE(m_pSceneMaterialProperties);
 		SAFERELEASE(m_pSceneVertexBuffer);
@@ -45,16 +46,30 @@ namespace LambdaEngine
 		SAFERELEASE(m_pSceneMeshIndexBuffer);
 	}
 
-	void Scene::UpdateCamera(const Camera* pCamera)
+	void Scene::UpdateDirectionalLight(const glm::vec3& direction, const glm::vec3& spectralIntensity)
 	{
+		// TODO: Remove this flush
 		RenderSystem::GetGraphicsQueue()->Flush();
 		RenderSystem::GetComputeQueue()->Flush();
+
+		LightsBuffer lightsBuffer = {};
+		lightsBuffer.Direction			= glm::vec4(direction, 1.0f);
+		lightsBuffer.SpectralIntensity	= glm::vec4(spectralIntensity, 1.0f);
+
+		void* pMapped = m_pLightsBuffer->Map();
+		memcpy(pMapped, &lightsBuffer, sizeof(LightsBuffer));
+		m_pLightsBuffer->Unmap();
+	}
+
+	void Scene::UpdateCamera(const Camera* pCamera)
+	{
+        // TODO: Remove this flush
+		RenderSystem::GetGraphicsQueue()->Flush();
+		RenderSystem::GetComputeQueue()->Flush();
+
 		PerFrameBuffer perFrameBuffer = {};
 		perFrameBuffer.Camera = pCamera->GetData();
 
-        // TODO: Remove this flush
-        RenderSystem::GetGraphicsQueue()->Flush();
-        
 		void* pMapped = m_pPerFrameBuffer->Map();
 		memcpy(pMapped, &perFrameBuffer, sizeof(PerFrameBuffer));
 		m_pPerFrameBuffer->Unmap();
@@ -177,6 +192,28 @@ namespace LambdaEngine
 			asBuildCommandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_PRIMARY;
 
 			m_pASBuildCommandList = m_pGraphicsDevice->CreateCommandList(m_pASBuildCommandAllocator, &asBuildCommandListDesc);
+		}
+
+		//Lights Buffer
+		{
+			BufferDesc lightsBufferDesc = {};
+			lightsBufferDesc.pName					= "Scene Lights Buffer";
+			lightsBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
+			lightsBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
+			lightsBufferDesc.SizeInBytes			= sizeof(LightsBuffer);
+
+			m_pLightsBuffer = m_pGraphicsDevice->CreateBuffer(&lightsBufferDesc, nullptr);
+		}
+
+		//Per Frame Buffer
+		{
+			BufferDesc perFrameBufferDesc = {};
+			perFrameBufferDesc.pName				= "Scene Per Frame Buffer";
+			perFrameBufferDesc.MemoryType			= EMemoryType::MEMORY_CPU_VISIBLE;
+			perFrameBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
+			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
+
+			m_pPerFrameBuffer = m_pGraphicsDevice->CreateBuffer(&perFrameBufferDesc, nullptr);
 		}
 
 		return true;
@@ -590,16 +627,6 @@ namespace LambdaEngine
 			}
 
 			m_pCopyCommandList->CopyBuffer(m_pSceneMeshIndexCopyBuffer, 0, m_pSceneMeshIndexBuffer, 0, sceneMeshIndexBufferSize);
-		}
-
-		{
-			BufferDesc sceneMeshIndexBufferDesc = {};
-			sceneMeshIndexBufferDesc.pName					= "Scene Per Frame Buffer";
-			sceneMeshIndexBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
-			sceneMeshIndexBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
-			sceneMeshIndexBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
-
-			m_pPerFrameBuffer = m_pGraphicsDevice->CreateBuffer(&sceneMeshIndexBufferDesc, nullptr);
 		}
 
 		m_pCopyCommandList->End();

@@ -705,7 +705,7 @@ namespace LambdaEngine
 		{
 			for (auto attachmentSynchronizationIt = synchronizationStageIt->Synchronizations.begin(); attachmentSynchronizationIt != synchronizationStageIt->Synchronizations.end(); )
 			{
-				const char* pAttachmentName = attachmentSynchronizationIt->FromAttachment.pName;
+				const char* pAttachmentName = attachmentSynchronizationIt->ToAttachment.pName;
 				auto firstEncounterOfAttachmentSynchronizationIt = firstEncounterOfAttachmentSynchronizations.find(pAttachmentName);
 
 				//Store first encounter in graph of each attachment synchronization, their from queue is not known until we have traversed the entire graph to the end

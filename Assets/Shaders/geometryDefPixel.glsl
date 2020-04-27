@@ -20,11 +20,13 @@ layout(location = 3) in vec3 in_Bitangent;
 layout(location = 4) in vec2 in_TexCoord;
 layout(location = 5) in vec4 in_Position;
 
-layout(binding = 0, set = 0) uniform sampler2D u_SceneAlbedoMaps[1];
-layout(binding = 1, set = 0) uniform sampler2D u_SceneNormalMaps[1];
-layout(binding = 2, set = 0) uniform sampler2D u_SceneAOMaps[1];
-layout(binding = 3, set = 0) uniform sampler2D u_SceneMetallicMaps[1];
-layout(binding = 4, set = 0) uniform sampler2D u_SceneRougnessMaps[1];
+#define MAX_UNIQUE_MATERIALS 32
+
+layout(binding = 0, set = 0) uniform sampler2D u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 1, set = 0) uniform sampler2D u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 2, set = 0) uniform sampler2D u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 3, set = 0) uniform sampler2D u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 4, set = 0) uniform sampler2D u_SceneRougnessMaps[MAX_UNIQUE_MATERIALS];
 
 layout(binding = 5, set = 1) buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
 

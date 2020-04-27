@@ -48,6 +48,12 @@ namespace LambdaEngine
 
 	class LAMBDA_API Scene
 	{
+		struct LightsBuffer
+		{
+			glm::vec4 Direction;
+			glm::vec4 SpectralIntensity;
+		};
+
 		struct PerFrameBuffer
 		{
 			CameraData Camera;
@@ -85,6 +91,7 @@ namespace LambdaEngine
 		bool Init(const SceneDesc& desc);
 		bool Finalize();
 
+		void UpdateDirectionalLight(const glm::vec3& direction, const glm::vec3& spectralIntensity);
 		void UpdateCamera(const Camera* pCamera);
 
 		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
@@ -95,7 +102,8 @@ namespace LambdaEngine
 		//Todo: Make these const
 		FORCEINLINE IAccelerationStructure*	GetTLAS()						{ return m_pTLAS;}
 
-		FORCEINLINE IBuffer*				GetPerFrameBuffer()				{ return m_pPerFrameBuffer;}
+		FORCEINLINE IBuffer*				GetLightsBuffer()				{ return m_pLightsBuffer; }
+		FORCEINLINE IBuffer*				GetPerFrameBuffer()				{ return m_pPerFrameBuffer; }
 		FORCEINLINE ITexture**				GetAlbedoMaps()					{ return m_SceneAlbedoMaps.data(); }			
 		FORCEINLINE ITexture**				GetNormalMaps()					{ return m_SceneNormalMaps.data(); }
 		FORCEINLINE ITexture**				GetAmbientOcclusionMaps()		{ return m_SceneAmbientOcclusionMaps.data(); }
@@ -136,6 +144,7 @@ namespace LambdaEngine
 		IBuffer*									m_pSceneInstanceCopyBuffer				= nullptr;
 		IBuffer*									m_pSceneMeshIndexCopyBuffer				= nullptr;
 
+		IBuffer*									m_pLightsBuffer							= nullptr;
 		IBuffer*									m_pPerFrameBuffer						= nullptr;
 
 		std::vector<ITexture*>						m_SceneAlbedoMaps;				
