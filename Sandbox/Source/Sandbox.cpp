@@ -30,7 +30,11 @@
 #include "Threading/API/Thread.h"
 
 constexpr const uint32 BACK_BUFFER_COUNT = 3;
+#ifdef LAMBDA_PLATFORM_MACOS
+constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
+#else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
+#endif
 constexpr const bool RAY_TRACING_ENABLED = false;
 
 Sandbox::Sandbox()

@@ -6,6 +6,7 @@
 #include "Application/API/PlatformMisc.h"
 
 #include <mutex>
+#include <stdio.h>
 
 namespace LambdaEngine
 {
@@ -45,7 +46,7 @@ namespace LambdaEngine
 
             ZERO_MEMORY(buffer, sizeof(buffer));
 
-            vsprintf_s(buffer, BUFFER_SIZE - 1, pFormat, args);
+            vsnprintf(buffer, BUFFER_SIZE - 1, pFormat, args);
             PlatformConsole::PrintLine(buffer);
         
             if (s_DebuggerOutputEnabled)
