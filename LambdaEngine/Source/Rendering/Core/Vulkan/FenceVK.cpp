@@ -125,9 +125,6 @@ namespace LambdaEngine
             {
                 if (fenceValue.Value == value)
                 {
-                    VALIDATE(fenceValue.IsFenceSignaled == false);
-                    
-                    fenceValue.IsFenceSignaled = true;
                     return fenceValue.Fence;
                 }
             }
@@ -194,7 +191,7 @@ namespace LambdaEngine
 
     VkSemaphore FenceVK::SignalGPU(uint64 signalValue, VkQueue queue)
     {
-        FENCE_LOG_STATE("[FenceVK]: GPU Signal. signalValue=%llu", signalValue);
+        FENCE_LOG_STATE("[FenceVK]: GPU Reset. signalValue=%llu", signalValue);
         
         // Wait for semaphores that were waited on during CPU - wait, this is to enable reuse of them
         FlushWaitSemaphores(queue);
@@ -204,7 +201,6 @@ namespace LambdaEngine
         {
             FenceValueVk fenceValue = { };
             fenceValue.Fence            = QueryFence();
-            fenceValue.IsFenceSignaled  = false;
             fenceValue.Semaphore        = QuerySemaphore();
             fenceValue.SemaphoreState   = ESemaphoreState::SEMAPHORE_STATE_SIGNALED;
             fenceValue.Value            = signalValue;
@@ -229,8 +225,6 @@ namespace LambdaEngine
             {
                 break;
             }
-            
-            VALIDATE(fenceValue.IsFenceSignaled == true);
             
             VkResult result = vkGetFenceStatus(m_pDevice->Device, fenceValue.Fence);
             if (result == VK_NOT_READY)
@@ -270,10 +264,10 @@ namespace LambdaEngine
         }
 	}
 	
-	void FenceVK::Signal(uint64 signalValue)
+	void FenceVK::Reset(uint64 resetValue)
 	{
-        VALIDATE(signalValue > m_LastCompletedValue);
-        m_LastCompletedValue = signalValue;
+        VALIDATE(resetValue > m_LastCompletedValue);
+        m_LastCompletedValue = resetValue;
 	}
 
     VkFence FenceVK::QueryFence() const

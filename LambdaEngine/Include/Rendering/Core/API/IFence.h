@@ -24,11 +24,11 @@ namespace LambdaEngine
 		virtual void Wait(uint64 waitValue, uint64 timeOut) const	= 0;
 
 		/*
-		* Signals the fence from the host with a non-blocking operation
+		* Reset the fence from the host with a non-blocking operation
 		*
-		* signalValue - Value to set the fence to
+		* resetValue - Value to set the fence to
 		*/
-		virtual void Signal(uint64 signalValue)	= 0;
+		virtual void Reset(uint64 resetValue)	= 0;
 
 		/*
 		* Retrives the current value of the fence
