@@ -25,6 +25,7 @@
 
 namespace LambdaEngine
 {
+	IDeviceAllocator*		ResourceLoader::s_pAllocator				= nullptr;
 	ICommandAllocator*		ResourceLoader::s_pCopyCommandAllocator		= nullptr;
 	ICommandList*			ResourceLoader::s_pCopyCommandList			= nullptr;
 	IFence*					ResourceLoader::s_pCopyFence				= nullptr;
@@ -184,6 +185,11 @@ namespace LambdaEngine
 		fenceDesc.InitalValue	= 0;
 		s_pCopyFence = RenderSystem::GetDevice()->CreateFence(&fenceDesc);
 
+		DeviceAllocatorDesc allocatorDesc = {};
+		allocatorDesc.pName				= "Resource Allocator";
+		allocatorDesc.PageSizeInBytes	= MEGA_BYTE(64);
+		s_pAllocator = RenderSystem::GetDevice()->CreateDeviceAllocator(&allocatorDesc);
+
 		glslang::InitializeProcess();
 
 		return true;
@@ -191,6 +197,7 @@ namespace LambdaEngine
 
 	bool ResourceLoader::Release()
 	{
+		SAFERELEASE(s_pAllocator);
 		SAFERELEASE(s_pCopyCommandAllocator);
 		SAFERELEASE(s_pCopyCommandList);
 		SAFERELEASE(s_pCopyFence);
@@ -549,7 +556,7 @@ namespace LambdaEngine
 		textureDesc.Miplevels	= miplevels;
 		textureDesc.SampleCount = 1;
 
-		ITexture* pTexture = RenderSystem::GetDevice()->CreateTexture(&textureDesc, nullptr);
+		ITexture* pTexture = RenderSystem::GetDevice()->CreateTexture(&textureDesc, s_pAllocator);
 
 		if (pTexture == nullptr)
 		{
@@ -565,7 +572,7 @@ namespace LambdaEngine
 		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		bufferDesc.SizeInBytes	= pixelDataSize;
 
-		IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, nullptr);
+		IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, s_pAllocator);
 
 		if (pTextureData == nullptr)
 		{
