@@ -760,7 +760,7 @@ namespace LambdaEngine
 							bool isBackBufferAttachment = strcmp(pAttachment->pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0;
 
 							RenderPassAttachmentDesc renderPassAttachmentDesc = {};
-							renderPassAttachmentDesc.Format			= isBackBufferAttachment ? EFormat::FORMAT_B8G8R8A8_UNORM : EFormat::FORMAT_R8G8B8A8_UNORM;
+							renderPassAttachmentDesc.Format			= isBackBufferAttachment ? EFormat::FORMAT_B8G8R8A8_UNORM : pAttachment->TextureFormat;
 							renderPassAttachmentDesc.SampleCount	= 1;
 							renderPassAttachmentDesc.LoadOp			= ELoadOp::CLEAR;
 							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE;
@@ -783,7 +783,7 @@ namespace LambdaEngine
 						else if (pAttachment->Type == EAttachmentType::OUTPUT_DEPTH_STENCIL)
 						{
 							RenderPassAttachmentDesc renderPassAttachmentDesc = {};
-							renderPassAttachmentDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
+							renderPassAttachmentDesc.Format			= pAttachment->TextureFormat;
 							renderPassAttachmentDesc.SampleCount	= 1;
 							renderPassAttachmentDesc.LoadOp			= ELoadOp::CLEAR;
 							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE;
