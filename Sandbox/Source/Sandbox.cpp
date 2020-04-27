@@ -31,7 +31,7 @@
 
 constexpr const uint32 BACK_BUFFER_COUNT = 3;
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
-constexpr const bool RAY_TRACING_ENABLED = true;
+constexpr const bool RAY_TRACING_ENABLED = false;
 
 Sandbox::Sandbox()
     : Game()
