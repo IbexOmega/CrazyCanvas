@@ -1035,6 +1035,7 @@ namespace LambdaEngine
 				bool isBackBuffer = strcmp(attachmentSynchronizationDesc.FromAttachment.pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0;
 
 				ESimpleResourceType barrierType = !isBackBuffer ? GetSimpleType(attachmentSynchronizationDesc.FromAttachment.Type) : ESimpleResourceType::TEXTURE;
+				EAttachmentAccessType accessType = GetAttachmentAccessType(attachmentSynchronizationDesc.FromAttachment.Type);
 
 				auto it = m_ResourceMap.find(attachmentSynchronizationDesc.FromAttachment.pName);
 
@@ -1069,8 +1070,19 @@ namespace LambdaEngine
 						}
 
 						TextureSynchronization textureSynchronization = {};
-						textureSynchronization.SrcShaderStage		= GetLastShaderStageInMask(attachmentSynchronizationDesc.FromAttachment.ShaderStages);
-						textureSynchronization.DstShaderStage		= GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
+						textureSynchronization.SrcShaderStage			= GetLastShaderStageInMask(attachmentSynchronizationDesc.FromAttachment.ShaderStages);
+						textureSynchronization.DstShaderStage			= GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
+						
+						if (accessType == EAttachmentAccessType::EXTERNAL_INPUT)
+						{
+							textureSynchronization.BarrierUseFrameIndex		= 0;
+							textureSynchronization.SameFrameBarrierOffset	= 1;
+						}
+						else
+						{
+							textureSynchronization.BarrierUseFrameIndex		= 1;
+							textureSynchronization.SameFrameBarrierOffset	= pResource->SubResourceCount;
+						}
 
 						textureSynchronization.Barriers.reserve(pResource->SubResourceCount);
 
@@ -1133,6 +1145,17 @@ namespace LambdaEngine
 
 							textureSynchronization.DstShaderStage	= GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
 						}
+
+						if (accessType == EAttachmentAccessType::EXTERNAL_INPUT)
+						{
+							textureSynchronization.BarrierUseFrameIndex		= 0;
+							textureSynchronization.SameFrameBarrierOffset	= 1;
+						}
+						else
+						{
+							textureSynchronization.BarrierUseFrameIndex		= 1;
+							textureSynchronization.SameFrameBarrierOffset	= pResource->SubResourceCount;
+						}
 						
 						textureSynchronization.Barriers.reserve(pResource->SubResourceCount);
 
@@ -1165,8 +1188,19 @@ namespace LambdaEngine
 					}
 
 					BufferSynchronization bufferSynchronization = {};
-					bufferSynchronization.SrcShaderStage = GetLastShaderStageInMask(attachmentSynchronizationDesc.FromAttachment.ShaderStages);
-					bufferSynchronization.DstShaderStage = GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
+					bufferSynchronization.SrcShaderStage			= GetLastShaderStageInMask(attachmentSynchronizationDesc.FromAttachment.ShaderStages);
+					bufferSynchronization.DstShaderStage			= GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
+
+					if (accessType == EAttachmentAccessType::EXTERNAL_INPUT)
+					{
+						bufferSynchronization.BarrierUseFrameIndex		= 0;
+						bufferSynchronization.SameFrameBarrierOffset	= 1;
+					}
+					else
+					{
+						bufferSynchronization.BarrierUseFrameIndex		= 1;
+						bufferSynchronization.SameFrameBarrierOffset	= pResource->SubResourceCount;
+					}
 
 					bufferSynchronization.Barriers.reserve(pResource->SubResourceCount);
 
@@ -1436,7 +1470,7 @@ namespace LambdaEngine
 			FPipelineStageFlags srcPipelineStage = ConvertShaderStageToPipelineStage(pTextureSynchronization->SrcShaderStage);
 			FPipelineStageFlags dstPipelineStage = ConvertShaderStageToPipelineStage(pTextureSynchronization->DstShaderStage);
 
-			for (uint32 b = 0; b < pTextureSynchronization->Barriers.size(); b++)
+			for (uint32 b = pTextureSynchronization->BarrierUseFrameIndex * backBufferIndex; b < pTextureSynchronization->Barriers.size(); b += pTextureSynchronization->SameFrameBarrierOffset)
 			{
 				const PipelineTextureBarrierDesc* pBarrier = &m_TextureBarriers[pTextureSynchronization->Barriers[b]];
 
@@ -1464,8 +1498,8 @@ namespace LambdaEngine
 					if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
 					{
 						//Compute -> Graphics
-						pGraphicsCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
 						pComputeCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
+						pGraphicsCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
 
 						(*ppFirstExecutionStage) = pComputeCommandList;
 						(*ppSecondExecutionStage) = pGraphicsCommandList;
@@ -1489,7 +1523,7 @@ namespace LambdaEngine
 			FPipelineStageFlags srcPipelineStage = ConvertShaderStageToPipelineStage(pBufferSynchronization->SrcShaderStage);
 			FPipelineStageFlags dstPipelineStage = ConvertShaderStageToPipelineStage(pBufferSynchronization->DstShaderStage);
 
-			for (uint32 b = 0; b < pBufferSynchronization->Barriers.size(); b++)
+			for (uint32 b = pBufferSynchronization->BarrierUseFrameIndex * backBufferIndex; b < pBufferSynchronization->Barriers.size(); b += pBufferSynchronization->SameFrameBarrierOffset)
 			{
 				const PipelineBufferBarrierDesc* pBarrier = &m_BufferBarriers[pBufferSynchronization->Barriers[b]];
 
@@ -1517,8 +1551,8 @@ namespace LambdaEngine
 					if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
 					{
 						//Compute -> Graphics
-						pGraphicsCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
 						pComputeCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
+						pGraphicsCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
 
 						(*ppFirstExecutionStage) = pComputeCommandList;
 						(*ppSecondExecutionStage) = pGraphicsCommandList;
