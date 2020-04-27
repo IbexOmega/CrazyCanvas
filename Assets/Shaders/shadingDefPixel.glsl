@@ -28,7 +28,7 @@ layout(location = 0) in vec2	in_TexCoord;
 layout(binding = 0, set = 0) uniform sampler2D 	u_AlbedoAO;
 layout(binding = 1, set = 0) uniform sampler2D 	u_NormalMetallicRoughness;
 layout(binding = 2, set = 0) uniform sampler2D 	u_DepthStencil;
-layout(binding = 3, set = 0) uniform sampler2D 	u_Radiance;
+//layout(binding = 3, set = 0) uniform sampler2D 	u_Radiance;
 
 layout(binding = 0, set = 1) uniform LightsBuffer     { SLightsBuffer val; }        u_LightsBuffer;
 layout(binding = 1, set = 1) uniform PerFrameBuffer   { SPerFrameBuffer val; }      u_PerFrameBuffer;
@@ -48,15 +48,14 @@ void main()
 	}
 
     vec4 sampledDepthStencil                = texture(u_DepthStencil,               in_TexCoord);
-    vec4 sampledRadiance                    = texture(u_Radiance,                   in_TexCoord);
+    //vec4 sampledRadiance                    = texture(u_Radiance,                   in_TexCoord);
 
     vec3 albedo         = sampledAlbedoAO.rgb;
     vec3 normal         = CalculateNormal(sampledNormalMetallicRoughness);
     float ao            = sampledAlbedoAO.a;
     float metallic      = sampledNormalMetallicRoughness.b;
     float roughness     = abs(sampledNormalMetallicRoughness.a);
-    
-    vec3 radiance = sampledRadiance.rgb;
+    //vec3 radiance = sampledRadiance.rgb;
 
     SLightsBuffer lightsBuffer                  = u_LightsBuffer.val;
     SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
