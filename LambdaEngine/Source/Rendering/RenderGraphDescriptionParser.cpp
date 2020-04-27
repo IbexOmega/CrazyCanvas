@@ -407,7 +407,7 @@ namespace LambdaEngine
 		std::unordered_map<std::string, std::pair<const RenderStageAttachment*, EPipelineStateType>> finalStateOfAttachmentsFromPreviousFrame;
 
 		//Store this, because it should be last, not first
-		SynchronizationStageDesc endSynchronizationStage;
+		std::vector<AttachmentSynchronizationDesc> endSynchronizations;
 		bool endSynchronizationStageValid = false;
 
 		for (auto sortedRenderStageIt = weightedRenderStageMap.begin(); sortedRenderStageIt != weightedRenderStageMap.end(); sortedRenderStageIt++)
@@ -492,7 +492,7 @@ namespace LambdaEngine
 				}
 			}
 
-			//Create Input (From Prev Frame) to Output Synchronizations
+			//Create Input (From Prev Frame) to Output Synchronizations, but push the synchronizations to the final stage
 			{
 				for (const InternalRenderStageAttachment* pOutputAttachment : sortedRenderStageIt->second->OutputAttachments)
 				{
@@ -526,7 +526,7 @@ namespace LambdaEngine
 							backBufferPostSynchronization.FromAttachment		= backBufferToAttachment;
 							backBufferPostSynchronization.ToAttachment			= backBufferFromAttachment;
 
-							endSynchronizationStage.Synchronizations.push_back(backBufferPostSynchronization);
+							endSynchronizations.push_back(backBufferPostSynchronization);
 
 							endSynchronizationStageValid = true;
 							continue;
@@ -553,7 +553,9 @@ namespace LambdaEngine
 						attachmentSynchronization.FromAttachment	= *finalStateOfAttachmentIt->second.first;
 						attachmentSynchronization.ToAttachment		= *pAttachment;
 
-						synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
+						//synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
+						endSynchronizations.push_back(attachmentSynchronization);
+						endSynchronizationStageValid = true;
 					}
 					//... unless it also belonged to another queue
 					else if (finalStateOfAttachmentIt->second.second != sortedRenderStageIt->second->pRenderStage->PipelineType)
@@ -565,7 +567,9 @@ namespace LambdaEngine
 						attachmentSynchronization.FromAttachment	= *finalStateOfAttachmentIt->second.first;
 						attachmentSynchronization.ToAttachment		= *pAttachment;
 
-						synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
+						//synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
+						endSynchronizations.push_back(attachmentSynchronization);
+						endSynchronizationStageValid = true;
 					}
 				}
 			}
@@ -587,7 +591,7 @@ namespace LambdaEngine
 				{
 					for (AttachmentSynchronizationDesc& desc : synchronizationStage.Synchronizations)
 					{
-						endSynchronizationStage.Synchronizations.push_back(desc);
+						endSynchronizations.push_back(desc);
 					}
 
 					endSynchronizationStageValid = true;
@@ -641,7 +645,10 @@ namespace LambdaEngine
 
 		if (endSynchronizationStageValid)
 		{
-			for (AttachmentSynchronizationDesc& synchronization : endSynchronizationStage.Synchronizations)
+			SynchronizationStageDesc toGraphicsSynchronizationStage;
+			SynchronizationStageDesc toComputeSynchronizationStage;
+
+			for (AttachmentSynchronizationDesc& synchronization : endSynchronizations)
 			{
 				if (synchronization.FromAttachment.Type == EAttachmentType::NONE)
 				{
@@ -652,14 +659,36 @@ namespace LambdaEngine
 						synchronization.FromAttachment = *finalStateOfAttachments[synchronization.ToAttachment.pName];
 					}
 				}
+
+				if (synchronization.ToQueueOwner == EPipelineStateType::GRAPHICS)
+				{
+					toGraphicsSynchronizationStage.Synchronizations.push_back(synchronization);
+				}
+				else if (synchronization.ToQueueOwner == EPipelineStateType::COMPUTE || synchronization.ToQueueOwner == EPipelineStateType::RAY_TRACING)
+				{
+					toComputeSynchronizationStage.Synchronizations.push_back(synchronization);
+				}
 			}
 
-			sortedSynchronizationStages.push_back(endSynchronizationStage);
+			if (toGraphicsSynchronizationStage.Synchronizations.size() > 0)
+			{
+				sortedSynchronizationStages.push_back(toGraphicsSynchronizationStage);
 
-			PipelineStageDesc synchronizationPipelineStage = {};
-			synchronizationPipelineStage.Type		= EPipelineStageType::SYNCHRONIZATION;
-			synchronizationPipelineStage.StageIndex = uint32(sortedSynchronizationStages.size() - 1);
-			sortedPipelineStages.push_back(synchronizationPipelineStage);
+				PipelineStageDesc synchronizationPipelineStage = {};
+				synchronizationPipelineStage.Type			= EPipelineStageType::SYNCHRONIZATION;
+				synchronizationPipelineStage.StageIndex		= uint32(sortedSynchronizationStages.size() - 1);
+				sortedPipelineStages.push_back(synchronizationPipelineStage);
+			}
+
+			if (toComputeSynchronizationStage.Synchronizations.size() > 0)
+			{
+				sortedSynchronizationStages.push_back(toComputeSynchronizationStage);
+
+				PipelineStageDesc synchronizationPipelineStage = {};
+				synchronizationPipelineStage.Type			= EPipelineStageType::SYNCHRONIZATION;
+				synchronizationPipelineStage.StageIndex		= uint32(sortedSynchronizationStages.size() - 1);
+				sortedPipelineStages.push_back(synchronizationPipelineStage);
+			}
 		}
 
 		return true;
@@ -687,7 +716,7 @@ namespace LambdaEngine
 
 				auto transitionedResourceStateIt = transitionedResourceStates.find(pAttachmentName);
 
-				if (transitionedResourceStateIt != transitionedResourceStates.end())
+				if (attachmentSynchronizationIt->Type != EAttachmentSynchronizationType::TRANSITION_FOR_WRITE && attachmentSynchronizationIt->Type != EAttachmentSynchronizationType::OWNERSHIP_CHANGE_WRITE && transitionedResourceStateIt != transitionedResourceStates.end())
 				{
 					//If its state already is read, or the access type will be handled by a renderpass, it might just be a queue ownership change
 					if (transitionedResourceStateIt->second.first == EAttachmentState::READ || attachmentSynchronizationIt->FromAttachment.Type == EAttachmentType::OUTPUT_COLOR || attachmentSynchronizationIt->FromAttachment.Type == EAttachmentType::OUTPUT_DEPTH_STENCIL)
