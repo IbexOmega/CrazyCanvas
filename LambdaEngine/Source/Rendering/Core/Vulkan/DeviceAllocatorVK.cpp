@@ -163,7 +163,10 @@ namespace LambdaEngine
                 }
             }
             
-            VALIDATE(pBestFit != nullptr);
+            if (pBestFit == nullptr)
+            {
+                return false;
+            }
             
             // Divide block
             const uint64 paddedSizeInBytes = (padding + sizeInBytes);

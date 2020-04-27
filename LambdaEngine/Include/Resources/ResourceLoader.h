@@ -4,6 +4,7 @@
 #include "Rendering/Core/API/IGraphicsDevice.h"
 #include "Rendering/Core/API/ITexture.h"
 #include "Rendering/Core/API/IShader.h"
+#include "Rendering/Core/API/IDeviceAllocator.h"
 
 #include "Audio/API/ISoundEffect3D.h"
 
@@ -11,7 +12,6 @@
 
 #include "Material.h"
 #include "Mesh.h"
-
 
 namespace LambdaEngine
 {
@@ -97,6 +97,7 @@ namespace LambdaEngine
 		static bool CompileGLSLToSPIRV(const char* pFilepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>& sourceSPIRV);
 
 	private:
+		static IDeviceAllocator*		s_pAllocator;
 		static ICommandAllocator*		s_pCopyCommandAllocator;
 		static ICommandList*			s_pCopyCommandList;
 		static IFence*					s_pCopyFence;

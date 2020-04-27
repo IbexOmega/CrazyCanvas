@@ -186,8 +186,7 @@ namespace LambdaEngine
 		scratchBufferDesc.SizeInBytes	= scratchMemoryRequirements.size;
 
 		m_pScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&scratchBufferDesc, pAllocator));
-
-		return true;
+		return m_pScratchBuffer != nullptr;
 	}
 
 	void AccelerationStructureVK::SetName(const char* pName)

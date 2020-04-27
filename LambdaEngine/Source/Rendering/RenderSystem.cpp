@@ -18,6 +18,8 @@
 #include "Rendering/Core/API/IAccelerationStructure.h"
 #include "Rendering/Core/API/IDeviceAllocator.h"
 
+#include "Rendering/ResourceCollector.h"
+
 #include "Application/API/PlatformApplication.h"
 
 namespace LambdaEngine
@@ -66,6 +68,8 @@ namespace LambdaEngine
         
         IDeviceAllocator* pAllocator = s_pGraphicsDevice->CreateDeviceAllocator(&allocatorDesc);
         
+		ResourceCollector collector;
+
 		BufferDesc bufferDesc = { };
 		bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
 		bufferDesc.Flags		= BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | BUFFER_FLAG_COPY_SRC | BUFFER_FLAG_COPY_DST;
@@ -75,27 +79,33 @@ namespace LambdaEngine
 		IBuffer* pBuffer1 = s_pGraphicsDevice->CreateBuffer(&bufferDesc, pAllocator);
 		pBuffer1->Map();
 
+		collector.DisposeResource(pBuffer1);
+
 		bufferDesc.pName = "VertexBuffer 2";
 		IBuffer* pBuffer2 = s_pGraphicsDevice->CreateBuffer(&bufferDesc, pAllocator);
 		pBuffer2->Map();
+
+		collector.DisposeResource(pBuffer2);
 
 		bufferDesc.pName = "VertexBuffer 3";
 		IBuffer* pBuffer3 = s_pGraphicsDevice->CreateBuffer(&bufferDesc, pAllocator);
 		pBuffer3->Map();
 
+		collector.DisposeResource(pBuffer3);
+
 		bufferDesc.pName = "VertexBuffer 4";
 		IBuffer* pBuffer4 = s_pGraphicsDevice->CreateBuffer(&bufferDesc, pAllocator);
 		pBuffer4->Map();
+
+		collector.DisposeResource(pBuffer4);
 
 		bufferDesc.pName = "VertexBuffer 5";
 		IBuffer* pBuffer5 = s_pGraphicsDevice->CreateBuffer(&bufferDesc, pAllocator);
 		pBuffer5->Map();
 
-		SAFERELEASE(pBuffer1);
-		SAFERELEASE(pBuffer2);
-		SAFERELEASE(pBuffer3);
-		SAFERELEASE(pBuffer4);
-		SAFERELEASE(pBuffer5);
+		collector.DisposeResource(pBuffer5);
+
+		collector.Reset();
 		SAFERELEASE(pAllocator);
 
 		TextureDesc textureDesc = { };

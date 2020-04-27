@@ -46,7 +46,7 @@ struct SPerFrameBuffer
 
 
 layout (constant_id = 0) const uint OTHER_TEXTURES_IN_PASS                  = 0;
-layout (constant_id = 1) const uint ALLOWED_TEXTURES_PER_DESCRIPTOR_SET     = 256;
+layout (constant_id = 1) const uint ALLOWED_TEXTURES_PER_DESCRIPTOR_SET     = 8;
 
 layout(binding = 0, set = 1) buffer Vertices            { SVertex val[]; }              b_Vertices;
 layout(binding = 1, set = 1) buffer Indices             { uint val[]; }                 b_Indices;

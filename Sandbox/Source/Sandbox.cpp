@@ -30,8 +30,12 @@
 #include "Threading/API/Thread.h"
 
 constexpr const uint32 BACK_BUFFER_COUNT = 3;
+#ifdef LAMBDA_PLATFORM_MACOS
+constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
+#else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
-constexpr const bool RAY_TRACING_ENABLED = true;
+#endif
+constexpr const bool RAY_TRACING_ENABLED = false;
 
 Sandbox::Sandbox()
     : Game()
@@ -344,7 +348,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-    //LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
+    LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
     
 	float dt = (float)delta.AsSeconds();
 	m_Timer += dt;
@@ -677,8 +681,8 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		uint32 maxWorkGroupSize[3];
-		RenderSystem::GetDevice()->GetMaxComputeWorkGroupSize(maxWorkGroupSize);
+		GraphicsDeviceFeatureDesc features = { };
+		RenderSystem::GetDevice()->QueryDeviceFeatures(&features);
 
 		RenderStageParameters postProcessRenderStageParameters = {};
 		postProcessRenderStageParameters.pRenderStageName				= pPostProcessRenderStageName;

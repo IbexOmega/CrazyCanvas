@@ -66,6 +66,8 @@ namespace LambdaEngine
 		}
 
 		// IGraphicsDevice Interface
+		virtual void QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const override final;
+
 		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const override final;
 		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const override final;
 
@@ -98,8 +100,6 @@ namespace LambdaEngine
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst)																			const override final;
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const override final;
 
-		virtual void GetMaxComputeWorkGroupSize(uint32 pWorkGroupSize[3])	const override final;
-
 		virtual void Release() override final;
 
 	private:
@@ -130,7 +130,7 @@ namespace LambdaEngine
 		VkPhysicalDevice	PhysicalDevice	= VK_NULL_HANDLE;
 		VkDevice			Device			= VK_NULL_HANDLE;
 
-		//Extension Data
+		// Extension Data
 		VkPhysicalDeviceRayTracingPropertiesKHR	RayTracingProperties;
 
 		PFN_vkSetDebugUtilsObjectNameEXT	vkSetDebugUtilsObjectNameEXT	= nullptr;
@@ -147,10 +147,10 @@ namespace LambdaEngine
 		PFN_vkGetRayTracingShaderGroupHandlesKHR				vkGetRayTracingShaderGroupHandlesKHR			= nullptr;
 		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR								= nullptr;
 
-		//BufferAddresses
+		// BufferAddresses
 		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
 
-		//Timeline-Semaphores
+		// Timeline-Semaphores
 		PFN_vkWaitSemaphores			vkWaitSemaphores			= nullptr;
 		PFN_vkSignalSemaphore			vkSignalSemaphore			= nullptr;
 		PFN_vkGetSemaphoreCounterValue	vkGetSemaphoreCounterValue	= nullptr;
@@ -159,8 +159,10 @@ namespace LambdaEngine
 		VkDebugUtilsMessengerEXT	m_DebugMessenger	= VK_NULL_HANDLE;
 		FrameBufferCacheVK*			m_pFrameBufferCache	= nullptr;
 
-        QueueFamilyIndices     m_DeviceQueueFamilyIndices;
-        VkPhysicalDeviceLimits m_DeviceLimits;
+		GraphicsDeviceFeatureDesc		m_DeviceFeatures;
+        QueueFamilyIndices			m_DeviceQueueFamilyIndices;
+        VkPhysicalDeviceLimits		m_DeviceLimits;
+		VkPhysicalDeviceFeatures	m_DeviceFeaturesVk;
        
         std::vector<VkQueueFamilyProperties> m_QueueFamilyProperties;
         mutable uint32 m_NextGraphicsQueue  = 0;
