@@ -72,9 +72,9 @@ void main()
 
     //Directional Light
     {
-        vec3 lightDir       = normalize(vec3(1.0f, 1.0f, 0.0f));
+        vec3 lightDir       = normalize(lightsBuffer.Direction.xyz);
         vec3 halfway        = normalize(viewDir + lightDir);
-        vec3 radiance       = vec3(20.0f);
+        vec3 radiance       = vec3(lightsBuffer.SpectralIntensity.rgb);
 
         float NdotL         = max(dot(normal, lightDir), 0.0f);
         float HdotV         = max(dot(halfway, viewDir), 0.0f);

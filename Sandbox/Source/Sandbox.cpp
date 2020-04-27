@@ -72,7 +72,7 @@ Sandbox::Sandbox()
 
 	m_pScene->Finalize();
 
-	m_pScene->UpdateDirectionalLight(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	m_pScene->UpdateDirectionalLight(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(30.0f));
 
 	m_pCamera = DBG_NEW Camera();
 
