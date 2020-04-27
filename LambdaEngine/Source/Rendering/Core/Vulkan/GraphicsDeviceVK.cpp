@@ -774,11 +774,11 @@ namespace LambdaEngine
 		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
-		if (pDesc->Debug)
-		{
-			PopulateDebugMessengerCreateInfo(debugCreateInfo);
+        const char* pKhronosValidationLayerName = "VK_LAYER_KHRONOS_validation";
+        if (pDesc->Debug)
+        {
+            PopulateDebugMessengerCreateInfo(debugCreateInfo);
 
-			const char* pKhronosValidationLayerName = "VK_LAYER_KHRONOS_validation";
 			instanceCreateInfo.enabledLayerCount    = 1;
 			instanceCreateInfo.ppEnabledLayerNames  = &pKhronosValidationLayerName;
 			instanceCreateInfo.pNext                = &debugCreateInfo;
