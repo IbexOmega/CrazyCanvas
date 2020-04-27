@@ -65,18 +65,20 @@ namespace LambdaEngine
 		}
 	}
 
-	void FenceTimelineVK::Signal(uint64 signalValue)
+	void FenceTimelineVK::Reset(uint64 resetValue)
 	{
+		VALIDATE(resetValue < GetValue());
+
 		VkSemaphoreSignalInfo signalInfo = { };
 		signalInfo.sType		= VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
 		signalInfo.pNext		= nullptr;
-		signalInfo.value		= signalValue;
+		signalInfo.value		= resetValue;
 		signalInfo.semaphore	= m_Semaphore;
 
 		VkResult result = m_pDevice->vkSignalSemaphore(m_pDevice->Device, &signalInfo);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[FenceVK]: Failed to signal semaphore");
+			LOG_VULKAN_ERROR(result, "[FenceVK]: Failed to reset semaphore");
 		}
 }
 

@@ -32,7 +32,7 @@ namespace LambdaEngine
 
 	RenderGraph::~RenderGraph()
 	{
-        m_pFence->Wait(m_SignalValue, UINT64_MAX);
+        m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
         SAFERELEASE(m_pFence);
 
         SAFERELEASE(m_pDescriptorHeap);

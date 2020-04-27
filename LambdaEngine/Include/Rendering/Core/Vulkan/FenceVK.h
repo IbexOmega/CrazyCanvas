@@ -20,13 +20,10 @@ namespace LambdaEngine
 
     struct FenceValueVk
     {
+        uint64          Value          = 0;
+        VkFence         Fence          = VK_NULL_HANDLE;
         VkSemaphore     Semaphore      = VK_NULL_HANDLE;
         ESemaphoreState SemaphoreState = ESemaphoreState::SEMAPHORE_STATE_NEW;
-        
-        VkFence Fence           = VK_NULL_HANDLE;
-        bool    IsFenceSignaled = false;
-        
-        uint64 Value = 0;
     };
 
     /*
@@ -51,7 +48,7 @@ namespace LambdaEngine
 
         // IFence interface
         virtual void Wait(uint64 waitValue, uint64 timeOut) const override final;
-        virtual void Signal(uint64 signalValue)                   override final;
+        virtual void Reset(uint64 resetValue)                     override final;
 
         FORCEINLINE virtual uint64 GetValue() const override final
         {
