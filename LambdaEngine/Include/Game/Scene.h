@@ -138,6 +138,9 @@ namespace LambdaEngine
 		std::map<uint32, uint32>					m_MaterialIndexToIndirectArgOffsetMap;
 		std::vector<IndexedIndirectMeshArgument>	m_IndirectArgs;
 
+		IBuffer*									m_pLightsCopyBuffer						= nullptr;
+		IBuffer*									m_pPerFrameCopyBuffer					= nullptr;
+
 		IBuffer*									m_pSceneMaterialPropertiesCopyBuffer	= nullptr;
 		IBuffer*									m_pSceneVertexCopyBuffer				= nullptr;
 		IBuffer*									m_pSceneIndexCopyBuffer					= nullptr;

@@ -48,6 +48,13 @@ namespace LambdaEngine
 
 	void Scene::UpdateDirectionalLight(const glm::vec3& direction, const glm::vec3& spectralIntensity)
 	{
+		RenderSystem::GetGraphicsQueue()->Flush();
+
+		m_pCopyCommandAllocator->Reset();
+		m_pCopyCommandList->Reset();
+
+		m_pCopyCommandList->Begin(nullptr);
+
 		// TODO: Remove this flush
 		RenderSystem::GetGraphicsQueue()->Flush();
 		RenderSystem::GetComputeQueue()->Flush();
@@ -56,13 +63,27 @@ namespace LambdaEngine
 		lightsBuffer.Direction			= glm::vec4(direction, 1.0f);
 		lightsBuffer.SpectralIntensity	= glm::vec4(spectralIntensity, 1.0f);
 
-		void* pMapped = m_pLightsBuffer->Map();
+		void* pMapped = m_pLightsCopyBuffer->Map();
 		memcpy(pMapped, &lightsBuffer, sizeof(LightsBuffer));
-		m_pLightsBuffer->Unmap();
+		m_pLightsCopyBuffer->Unmap();
+
+		m_pCopyCommandList->CopyBuffer(m_pLightsCopyBuffer, 0, m_pLightsBuffer, 0, sizeof(LightsBuffer));
+
+		m_pCopyCommandList->End();
+
+		RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_pCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+		RenderSystem::GetGraphicsQueue()->Flush();
 	}
 
 	void Scene::UpdateCamera(const Camera* pCamera)
 	{
+		RenderSystem::GetGraphicsQueue()->Flush();
+
+		m_pCopyCommandAllocator->Reset();
+		m_pCopyCommandList->Reset();
+
+		m_pCopyCommandList->Begin(nullptr);
+
         // TODO: Remove this flush
 		RenderSystem::GetGraphicsQueue()->Flush();
 		RenderSystem::GetComputeQueue()->Flush();
@@ -70,9 +91,16 @@ namespace LambdaEngine
 		PerFrameBuffer perFrameBuffer = {};
 		perFrameBuffer.Camera = pCamera->GetData();
 
-		void* pMapped = m_pPerFrameBuffer->Map();
+		void* pMapped = m_pPerFrameCopyBuffer->Map();
 		memcpy(pMapped, &perFrameBuffer, sizeof(PerFrameBuffer));
-		m_pPerFrameBuffer->Unmap();
+		m_pPerFrameCopyBuffer->Unmap();
+
+		m_pCopyCommandList->CopyBuffer(m_pPerFrameCopyBuffer, 0, m_pPerFrameBuffer, 0, sizeof(PerFrameBuffer));
+
+		m_pCopyCommandList->End();
+
+		RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_pCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+		RenderSystem::GetGraphicsQueue()->Flush();
 	}
 
 	uint32 Scene::AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform)
@@ -196,10 +224,18 @@ namespace LambdaEngine
 
 		//Lights Buffer
 		{
+			BufferDesc lightsCopyBufferDesc = {};
+			lightsCopyBufferDesc.pName					= "Scene Lights Copy Buffer";
+			lightsCopyBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
+			lightsCopyBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+			lightsCopyBufferDesc.SizeInBytes			= sizeof(LightsBuffer);
+
+			m_pLightsCopyBuffer = m_pGraphicsDevice->CreateBuffer(&lightsCopyBufferDesc, nullptr);
+
 			BufferDesc lightsBufferDesc = {};
 			lightsBufferDesc.pName					= "Scene Lights Buffer";
-			lightsBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
-			lightsBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
+			lightsBufferDesc.MemoryType				= EMemoryType::MEMORY_GPU;
+			lightsBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlags::BUFFER_FLAG_COPY_DST;
 			lightsBufferDesc.SizeInBytes			= sizeof(LightsBuffer);
 
 			m_pLightsBuffer = m_pGraphicsDevice->CreateBuffer(&lightsBufferDesc, nullptr);
@@ -207,10 +243,18 @@ namespace LambdaEngine
 
 		//Per Frame Buffer
 		{
+			BufferDesc perFrameCopyBufferDesc = {};
+			perFrameCopyBufferDesc.pName					= "Scene Per Frame Copy Buffer";
+			perFrameCopyBufferDesc.MemoryType				= EMemoryType::MEMORY_CPU_VISIBLE;
+			perFrameCopyBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+			perFrameCopyBufferDesc.SizeInBytes				= sizeof(PerFrameBuffer);
+
+			m_pPerFrameCopyBuffer = m_pGraphicsDevice->CreateBuffer(&perFrameCopyBufferDesc, nullptr);
+
 			BufferDesc perFrameBufferDesc = {};
 			perFrameBufferDesc.pName				= "Scene Per Frame Buffer";
-			perFrameBufferDesc.MemoryType			= EMemoryType::MEMORY_CPU_VISIBLE;
-			perFrameBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
+			perFrameBufferDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+			perFrameBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlags::BUFFER_FLAG_COPY_DST;;
 			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
 
 			m_pPerFrameBuffer = m_pGraphicsDevice->CreateBuffer(&perFrameBufferDesc, nullptr);

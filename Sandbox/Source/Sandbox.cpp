@@ -89,6 +89,9 @@ Sandbox::Sandbox()
 	cameraDesc.FarPlane		= 1000.0f;
 
 	m_pCamera->Init(cameraDesc);
+	m_pCamera->Update();
+
+	m_pScene->UpdateCamera(m_pCamera);
 
 	//GUID_Lambda blurShaderGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/blur.spv",					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
 	
