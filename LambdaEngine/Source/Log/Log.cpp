@@ -1,7 +1,11 @@
 #include "Log/Log.h"
 
+#include "Threading/API/SpinLock.h"
+
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/PlatformMisc.h"
+
+#include <mutex>
 
 namespace LambdaEngine
 {
@@ -11,11 +15,13 @@ namespace LambdaEngine
     {
         va_list args;
         va_start(args, pFormat);
-        VPrint(severity, pFormat, args);
+        
+        PrintV(severity, pFormat, args);
+
         va_end(args);
     }
 
-    void Log::VPrint(ELogSeverity severity, const char* pFormat, va_list args)
+    void Log::PrintV(ELogSeverity severity, const char* pFormat, va_list args)
     {
         if (severity == ELogSeverity::LOG_INFO)
         {
@@ -30,14 +36,22 @@ namespace LambdaEngine
             PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
         }
 
-        va_list argsCopy;
-        va_copy(argsCopy, args);
-        PlatformConsole::VPrintLine(pFormat, argsCopy);
-        va_end(argsCopy);
-        
-        if (s_DebuggerOutputEnabled)
         {
-            PlatformMisc::OutputDebugStringV(pFormat, args);
+            static SpinLock bufferLock;
+            std::scoped_lock<SpinLock> lock(bufferLock);
+
+            constexpr const uint32 BUFFER_SIZE = 2048;
+            static char buffer[BUFFER_SIZE];
+
+            ZERO_MEMORY(buffer, sizeof(buffer));
+
+            vsprintf_s(buffer, BUFFER_SIZE - 1, pFormat, args);
+            PlatformConsole::PrintLine(buffer);
+        
+            if (s_DebuggerOutputEnabled)
+            {
+                PlatformMisc::OutputDebugString(buffer);
+            }
         }
 
 		if (severity != ELogSeverity::LOG_MESSAGE)
@@ -50,16 +64,18 @@ namespace LambdaEngine
     {
         va_list args;
         va_start(args, pFormat);
-        VPrintTraceError(pFunction, pFormat, args);
+
+        PrintTraceErrorV(pFunction, pFormat, args);
+        
         va_end(args);
     }
 
-    void Log::VPrintTraceError(const char* pFunction, const char* pFormat, va_list args)
+    void Log::PrintTraceErrorV(const char* pFunction, const char* pFormat, va_list args)
     {
         PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
         PlatformConsole::Print("CRITICAL ERROR IN '%s': ", pFunction);
         PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
 
-        VPrint(ELogSeverity::LOG_ERROR, pFormat, args);
+        PrintV(ELogSeverity::LOG_ERROR, pFormat, args);
     }
 }

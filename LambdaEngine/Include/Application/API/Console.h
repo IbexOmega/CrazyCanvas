@@ -23,8 +23,8 @@ namespace LambdaEngine
         
         static void Print(const char*, ...)          { }
         static void PrintLine(const char*, ...)      { }
-        static void VPrint(const char*, va_list)     { }
-        static void VPrintLine(const char*, va_list) { }
+        static void PrintV(const char*, va_list)     { }
+        static void PrintLineV(const char*, va_list) { }
         
         /*
         * Clears the console screen

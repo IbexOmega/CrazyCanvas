@@ -190,7 +190,7 @@ namespace LambdaEngine
 
     void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
     {
-        ASSERT(m_pFrameBufferCache != nullptr);
+        VALIDATE(m_pFrameBufferCache != nullptr);
         
         if (*pRenderPass != VK_NULL_HANDLE)
         {
@@ -203,7 +203,7 @@ namespace LambdaEngine
 
     void GraphicsDeviceVK::DestroyImageView(VkImageView* pImageView) const
     {
-        ASSERT(m_pFrameBufferCache != nullptr);
+        VALIDATE(m_pFrameBufferCache != nullptr);
         
         if (*pImageView != VK_NULL_HANDLE)
         {
@@ -445,8 +445,8 @@ namespace LambdaEngine
 			return nullptr;
 		}
         
-        ASSERT(queueFamilyIndex < int32(m_QueueFamilyProperties.size()));
-        ASSERT(index            < m_QueueFamilyProperties[queueFamilyIndex].queueCount);
+        VALIDATE(queueFamilyIndex < int32(m_QueueFamilyProperties.size()));
+        VALIDATE(index            < m_QueueFamilyProperties[queueFamilyIndex].queueCount);
 
 		CommandQueueVK* pQueue = DBG_NEW CommandQueueVK(this);
 		if (!pQueue->Init(pName, queueFamilyIndex, index))
@@ -763,6 +763,7 @@ namespace LambdaEngine
 
 		VkInstanceCreateInfo instanceCreateInfo = {};
 		instanceCreateInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+		instanceCreateInfo.flags = 0;
 		instanceCreateInfo.pApplicationInfo         = &appInfo;
 		instanceCreateInfo.enabledExtensionCount    = (uint32_t)m_EnabledInstanceExtensions.size();
 		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
@@ -779,6 +780,7 @@ namespace LambdaEngine
 		else
 		{
 			instanceCreateInfo.enabledLayerCount    = 0;
+			instanceCreateInfo.ppEnabledLayerNames	= nullptr;
 			instanceCreateInfo.pNext                = nullptr;
 		}
 

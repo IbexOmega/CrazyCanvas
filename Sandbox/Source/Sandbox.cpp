@@ -342,7 +342,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-    //LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
+    LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
     
 	float dt = (float)delta.AsSeconds();
 	m_Timer += dt;

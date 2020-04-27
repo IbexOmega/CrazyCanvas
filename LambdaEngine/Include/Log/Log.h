@@ -16,7 +16,15 @@
 #define LOG_ERROR(...)      LOG(LambdaEngine::ELogSeverity::LOG_ERROR, __VA_ARGS__)
 #define LOG_ERROR_CRIT(...) LambdaEngine::Log::PrintTraceError(FUNCTION_SIG, __VA_ARGS__)
 
-#ifdef LAMBDA_DEBUG
+#ifndef LAMBDA_ENABLE_LOGS
+    #ifdef LAMBDA_DEVELOPMENT
+        #define LAMBDA_ENABLE_LOGS 1
+    #else
+        #define LAMBDA_ENABLE_LOGS 0
+    #endif
+#endif
+
+#if LAMBDA_ENABLE_LOGS
     #define D_LOG(severity, ...)    LOG(severity, __VA_ARGS__)
     #define D_LOG_MESSAGE(...)      LOG_MESSAGE(__VA_ARGS__)
 	#define D_LOG_INFO(...)			LOG_INFO(__VA_ARGS__)
@@ -51,7 +59,7 @@ namespace LambdaEngine
         * args      - Arguments for the formatted string
         */
         static void Print(ELogSeverity severity, const char* pFormat, ...);
-        static void VPrint(ELogSeverity severity, const char* pFormat, va_list args);
+        static void PrintV(ELogSeverity severity, const char* pFormat, va_list args);
         
         /*
         * Prints an error message with the function-signature where the error occured
@@ -61,7 +69,7 @@ namespace LambdaEngine
         * args      - The arguments to the formatted string
         */
         static void PrintTraceError(const char* pFunction, const char* pFormat, ...);
-        static void VPrintTraceError(const char* pFunction, const char* pFormat, va_list args);
+        static void PrintTraceErrorV(const char* pFunction, const char* pFormat, va_list args);
         
         /*
         * Enables the log to print to the debugger using PlatformMisc::OutputDebugString
