@@ -33,7 +33,7 @@ namespace LambdaEngine
 			case FShaderStageFlags::SHADER_STAGE_FLAG_ANY_HIT_SHADER:		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 			case FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER:	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 			case FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER:			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
-			default:														return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			default:														return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP;
 		}
 	}
 

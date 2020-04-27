@@ -114,6 +114,15 @@ namespace LambdaEngine
 
 		SetName(pDesc->pName);
 
+		if (pDesc->pName)
+		{
+			D_LOG_MESSAGE("[RayTracingPipelineStateVK]: Created Pipeline for %s", pDesc->pName);
+		}
+		else
+		{
+			D_LOG_MESSAGE("[RayTracingPipelineStateVK]: Created Pipeline");
+		}
+
 		return true;
 	}
 

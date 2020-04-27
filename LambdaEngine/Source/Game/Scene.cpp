@@ -169,7 +169,7 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			m_pASBuildCommandAllocator	= m_pGraphicsDevice->CreateCommandAllocator("Scene AS Build Command Allocator", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+			m_pASBuildCommandAllocator	= m_pGraphicsDevice->CreateCommandAllocator("Scene AS Build Command Allocator", ECommandQueueType::COMMAND_QUEUE_COMPUTE);
 
 			CommandListDesc asBuildCommandListDesc = {};
 			asBuildCommandListDesc.pName			= "Scene AS Build Command List";
@@ -635,8 +635,8 @@ namespace LambdaEngine
 
 			m_pASBuildCommandList->End();
 
-			RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_pASBuildCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
-			RenderSystem::GetGraphicsQueue()->Flush();
+			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pASBuildCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+			RenderSystem::GetComputeQueue()->Flush();
 		}
 		/*-------------Ray Tracing Section End--------------*/
 

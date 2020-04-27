@@ -123,6 +123,8 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderGraph
 	{
+		static constexpr const char* RENDER_GRAPH_BACK_BUFFER_PROXY = "BACK_BUFFER_PROXY_TEXTURE";
+
 		enum class EResourceType
 		{
 			UNKNOWN								= 0,
@@ -204,15 +206,19 @@ namespace LambdaEngine
 
 		struct TextureSynchronization
 		{
-			FShaderStageFlags		SrcShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			FShaderStageFlags		DstShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			FShaderStageFlags		SrcShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			FShaderStageFlags		DstShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			uint32					BarrierUseFrameIndex	= 0;
+			uint32					SameFrameBarrierOffset	= 1;
 			std::vector<uint32>		Barriers;
 		};
 
 		struct BufferSynchronization
 		{
-			FShaderStageFlags		SrcShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			FShaderStageFlags		DstShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			FShaderStageFlags		SrcShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			FShaderStageFlags		DstShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			uint32					BarrierUseFrameIndex	= 0;
+			uint32					SameFrameBarrierOffset	= 1;
 			std::vector<uint32>		Barriers;
 		};
 
