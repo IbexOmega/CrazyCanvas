@@ -1455,11 +1455,9 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 
 		pGraphicsCommandAllocator->Reset();
-		pGraphicsCommandList->Reset();
 		pGraphicsCommandList->Begin(nullptr);
 
 		pComputeCommandAllocator->Reset();
-		pComputeCommandList->Reset();
 		pComputeCommandList->Begin(nullptr);
 
 		//Texture Synchronizations
@@ -1583,8 +1581,6 @@ namespace LambdaEngine
 		RenderStageParameters* pParameters = &pRenderStage->Parameters;
 
 		pGraphicsCommandAllocator->Reset();
-
-		pGraphicsCommandList->Reset();
 		pGraphicsCommandList->Begin(nullptr);
 
 		uint32 flags = FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_INLINE;
@@ -1713,8 +1709,6 @@ namespace LambdaEngine
 		RenderStageParameters* pParameters = &pRenderStage->Parameters;
 
 		pComputeCommandAllocator->Reset();
-
-		pComputeCommandList->Reset();
 		pComputeCommandList->Begin(nullptr);
 
 		pComputeCommandList->BindComputePipeline(pPipelineState);
@@ -1750,8 +1744,6 @@ namespace LambdaEngine
 		RenderStageParameters* pParameters = &pRenderStage->Parameters;
 
 		pComputeCommandAllocator->Reset();
-
-		pComputeCommandList->Reset();
 		pComputeCommandList->Begin(nullptr);
 
 		pComputeCommandList->BindRayTracingPipeline(pPipelineState);

@@ -159,9 +159,7 @@ namespace LambdaEngine
 		DECL_DEVICE_INTERFACE(ICommandList);
 
 		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc) = 0;
-		
-		virtual void Reset() = 0;
-		virtual bool End()	 = 0;
+		virtual bool End()	                                                = 0;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) = 0;
 		virtual void EndRenderPass() = 0;

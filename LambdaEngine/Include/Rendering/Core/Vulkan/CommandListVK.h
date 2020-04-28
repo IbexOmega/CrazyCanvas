@@ -31,9 +31,7 @@ namespace LambdaEngine
 
 		//ICommandList interface
 		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc)	override final;
-
-		virtual void Reset() override final;
-		virtual bool End()	 override final;
+        virtual bool End()                                                  override final;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) override final;
 		virtual void EndRenderPass() override final;

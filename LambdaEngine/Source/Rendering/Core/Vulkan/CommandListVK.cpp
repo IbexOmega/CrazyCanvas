@@ -92,11 +92,6 @@ namespace LambdaEngine
 		}
     }
 
-	void CommandListVK::Reset()
-	{
-		vkResetCommandBuffer(m_CommandList, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-	}
-
 	bool CommandListVK::Begin(const SecondaryCommandListBeginDesc* pBeginDesc)
 	{
 		VkCommandBufferBeginInfo beginInfo = {};

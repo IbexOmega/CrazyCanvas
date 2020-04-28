@@ -51,8 +51,6 @@ namespace LambdaEngine
 		RenderSystem::GetGraphicsQueue()->Flush();
 
 		m_pCopyCommandAllocator->Reset();
-		m_pCopyCommandList->Reset();
-
 		m_pCopyCommandList->Begin(nullptr);
 
 		// TODO: Remove this flush
@@ -80,8 +78,6 @@ namespace LambdaEngine
 		RenderSystem::GetGraphicsQueue()->Flush();
 
 		m_pCopyCommandAllocator->Reset();
-		m_pCopyCommandList->Reset();
-
 		m_pCopyCommandList->Begin(nullptr);
 
         // TODO: Remove this flush
@@ -484,8 +480,6 @@ namespace LambdaEngine
 		LOG_INFO("Scene Build took %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
 
 		m_pCopyCommandAllocator->Reset();
-		m_pCopyCommandList->Reset();
-
 		m_pCopyCommandList->Begin(nullptr);
 
 		//Material Properties
@@ -682,8 +676,6 @@ namespace LambdaEngine
 		if (m_RayTracingEnabled)
 		{
 			m_pASBuildCommandAllocator->Reset();
-			m_pASBuildCommandList->Reset();
-
 			m_pASBuildCommandList->Begin(nullptr);
 
 			for (uint32 i = 0; i < 1; i++)
