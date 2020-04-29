@@ -5,7 +5,7 @@
 
 #define LOG_VULKAN_ERROR(result, ...) \
     LOG_ERROR(__VA_ARGS__); \
-    LOG_ERROR("%s CODE: %s", VkResultToString(result), GetVkErrorString(result)) \
+    LOG_ERROR("%s CODE: %s", LambdaEngine::VkResultToString(result), LambdaEngine::GetVkErrorString(result)) \
 
 namespace LambdaEngine
 {
@@ -34,7 +34,7 @@ namespace LambdaEngine
         case EFormat::FORMAT_R8G8B8A8_SNORM:		return VK_FORMAT_R8G8B8A8_SNORM;
         case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return VK_FORMAT_R16G16B16A16_SFLOAT;
 		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return VK_FORMAT_D24_UNORM_S8_UINT;
-        default:                        return VK_FORMAT_UNDEFINED;
+        default:                                    return VK_FORMAT_UNDEFINED;
         }
     }
 
@@ -119,7 +119,7 @@ namespace LambdaEngine
         case EDescriptorType::DESCRIPTOR_ACCELERATION_STRUCTURE:			return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         case EDescriptorType::DESCRIPTOR_SAMPLER:                           return VK_DESCRIPTOR_TYPE_SAMPLER;
         case EDescriptorType::DESCRIPTOR_UNKNOWN:
-        default:                                                            return VkDescriptorType(0);
+        default: return VkDescriptorType(0);
         }
     }
 
@@ -163,6 +163,57 @@ namespace LambdaEngine
         vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_MISS_SHADER)        ? VK_SHADER_STAGE_MISS_BIT_NV                   : 0;
 
         return vkShaderTypeMask;
+    }
+
+    inline VkQueryType ConvertQueryType(EQueryType queryType)
+    {
+        switch (queryType)
+        {
+        case EQueryType::QUERY_TYPE_TIMESTAMP:			    return VK_QUERY_TYPE_TIMESTAMP;
+        case EQueryType::QUERY_TYPE_OCCLUSION:			    return VK_QUERY_TYPE_OCCLUSION;
+        case EQueryType::QUERY_TYPE_PIPELINE_STATISTICS:	return VK_QUERY_TYPE_PIPELINE_STATISTICS;
+        case EQueryType::NONE:
+        default: return VkQueryType(0);
+        }
+    }
+
+    inline VkQueryPipelineStatisticFlagBits ConvertQueryPipelineStatisticsFlag(FQueryPipelineStatisticsFlag pipelineStatisticsFlag)
+    {
+        switch (pipelineStatisticsFlag)
+        {
+        case QUERY_PIPELINE_STATISTICS_FLAG_INPUT_ASSEMBLY_VERTICES:                        return VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
+        case QUERY_PIPELINE_STATISTICS_FLAG_INPUT_ASSEMBLY_PRIMITIVES:                      return VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT;
+        case QUERY_PIPELINE_STATISTICS_FLAG_VERTEX_SHADER_INVOCATIONS:                      return VK_QUERY_PIPELINE_STATISTIC_VERTEX_SHADER_INVOCATIONS_BIT;
+        case QUERY_PIPELINE_STATISTICS_FLAG_GEOMETRY_SHADER_INVOCATIONS:                    return VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_INVOCATIONS_BIT;
+        case QUERY_PIPELINE_STATISTICS_FLAG_GEOMETRY_SHADER_PRIMITIVES:                     return VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_PRIMITIVES_BIT;
+        case QUERY_PIPELINE_STATISTICS_FLAG_CLIPPING_INVOCATIONS:                           return VK_QUERY_PIPELINE_STATISTIC_CLIPPING_INVOCATIONS_BIT;
+        case QUERY_PIPELINE_STATISTICS_FLAG_CLIPPING_PRIMITIVES:                            return VK_QUERY_PIPELINE_STATISTIC_CLIPPING_PRIMITIVES_BIT;
+        case QUERY_PIPELINE_STATISTICS_FLAG_FRAGMENT_SHADER_INVOCATIONS:                    return VK_QUERY_PIPELINE_STATISTIC_FRAGMENT_SHADER_INVOCATIONS_BIT;
+        case QUERY_PIPELINE_STATISTICS_FLAG_TESSELLATION_CONTROL_SHADER_PATCHES:            return VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_CONTROL_SHADER_PATCHES_BIT;
+        case QUERY_PIPELINE_STATISTICS_FLAG_TESSELLATION_EVALUATION_SHADER_INVOCATIONS:     return VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_EVALUATION_SHADER_INVOCATIONS_BIT;
+        case QUERY_PIPELINE_STATISTICS_FLAG_COMPUTE_SHADER_INVOCATIONS:                     return VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT;
+        case QUERY_PIPELINE_STATISTICS_FLAG_NONE:                                                   
+        default: return VkQueryPipelineStatisticFlagBits(0);
+        }
+    }
+
+    inline uint32 ConvertQueryPipelineStatisticsMask(uint32 pipelineStatisticsMask)
+    {
+        uint32 vkPipelineStatisticsMask = 0;
+
+        vkPipelineStatisticsMask |= (pipelineStatisticsMask & QUERY_PIPELINE_STATISTICS_FLAG_INPUT_ASSEMBLY_VERTICES)                       ? VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT                       : 0;
+        vkPipelineStatisticsMask |= (pipelineStatisticsMask & QUERY_PIPELINE_STATISTICS_FLAG_INPUT_ASSEMBLY_PRIMITIVES)                     ? VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT                     : 0;
+        vkPipelineStatisticsMask |= (pipelineStatisticsMask & QUERY_PIPELINE_STATISTICS_FLAG_VERTEX_SHADER_INVOCATIONS)                     ? VK_QUERY_PIPELINE_STATISTIC_VERTEX_SHADER_INVOCATIONS_BIT                     : 0;
+        vkPipelineStatisticsMask |= (pipelineStatisticsMask & QUERY_PIPELINE_STATISTICS_FLAG_GEOMETRY_SHADER_INVOCATIONS)                   ? VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_INVOCATIONS_BIT                   : 0;
+        vkPipelineStatisticsMask |= (pipelineStatisticsMask & QUERY_PIPELINE_STATISTICS_FLAG_GEOMETRY_SHADER_PRIMITIVES)                    ? VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_PRIMITIVES_BIT                    : 0;
+        vkPipelineStatisticsMask |= (pipelineStatisticsMask & QUERY_PIPELINE_STATISTICS_FLAG_CLIPPING_INVOCATIONS)                          ? VK_QUERY_PIPELINE_STATISTIC_CLIPPING_INVOCATIONS_BIT                          : 0;
+        vkPipelineStatisticsMask |= (pipelineStatisticsMask & QUERY_PIPELINE_STATISTICS_FLAG_CLIPPING_PRIMITIVES)                           ? VK_QUERY_PIPELINE_STATISTIC_CLIPPING_PRIMITIVES_BIT                           : 0;
+        vkPipelineStatisticsMask |= (pipelineStatisticsMask & QUERY_PIPELINE_STATISTICS_FLAG_FRAGMENT_SHADER_INVOCATIONS)                   ? VK_QUERY_PIPELINE_STATISTIC_FRAGMENT_SHADER_INVOCATIONS_BIT                   : 0;
+        vkPipelineStatisticsMask |= (pipelineStatisticsMask & QUERY_PIPELINE_STATISTICS_FLAG_TESSELLATION_CONTROL_SHADER_PATCHES)           ? VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_CONTROL_SHADER_PATCHES_BIT           : 0;
+        vkPipelineStatisticsMask |= (pipelineStatisticsMask & QUERY_PIPELINE_STATISTICS_FLAG_TESSELLATION_EVALUATION_SHADER_INVOCATIONS)    ? VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_EVALUATION_SHADER_INVOCATIONS_BIT    : 0;
+        vkPipelineStatisticsMask |= (pipelineStatisticsMask & QUERY_PIPELINE_STATISTICS_FLAG_COMPUTE_SHADER_INVOCATIONS)                    ? VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT                    : 0;
+
+        return vkPipelineStatisticsMask;
     }
 
     inline VkPipelineStageFlagBits ConvertPipelineStage(FPipelineStageFlags pipelineStage)

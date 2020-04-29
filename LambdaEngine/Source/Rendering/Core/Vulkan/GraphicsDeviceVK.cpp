@@ -25,6 +25,7 @@
 #include "Rendering/Core/Vulkan/DescriptorHeapVK.h"
 #include "Rendering/Core/Vulkan/DescriptorSetVK.h"
 #include "Rendering/Core/Vulkan/FrameBufferCacheVK.h"
+#include "Rendering/Core/Vulkan/QueryHeapVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
@@ -261,6 +262,22 @@ namespace LambdaEngine
 	void GraphicsDeviceVK::QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const
 	{
 		memcpy(pFeatures, &m_DeviceFeatures, sizeof(m_DeviceFeatures));
+	}
+
+	IQueryHeap* GraphicsDeviceVK::CreateQueryHeap(const QueryHeapDesc* pDesc) const
+	{
+		VALIDATE(pDesc != nullptr);
+
+		QueryHeapVK* pQueryHeap = DBG_NEW QueryHeapVK(this);
+		if (!pQueryHeap->Init(pDesc))
+		{
+			pQueryHeap->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pQueryHeap;
+		}
 	}
 
 	IPipelineLayout* GraphicsDeviceVK::CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const
@@ -718,6 +735,24 @@ namespace LambdaEngine
 		}
 	}
 
+	ECommandQueueType GraphicsDeviceVK::GetCommandQueueTypeFromQueueIndex(uint32 queueFamilyIndex) const
+	{
+		if (queueFamilyIndex == m_DeviceQueueFamilyIndices.GraphicsFamily)
+		{
+			return ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+		}
+		else if (queueFamilyIndex == m_DeviceQueueFamilyIndices.ComputeFamily)
+		{
+			return ECommandQueueType::COMMAND_QUEUE_COMPUTE;
+		}
+		else if (queueFamilyIndex == m_DeviceQueueFamilyIndices.TransferFamily)
+		{
+			return ECommandQueueType::COMMAND_QUEUE_COPY;
+		}
+
+		return ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+	}
+
 	VkFormatProperties GraphicsDeviceVK::GetFormatProperties(VkFormat format) const
 	{
 		VkFormatProperties properties = {};
@@ -915,8 +950,7 @@ namespace LambdaEngine
 		{
 			m_DeviceQueueFamilyIndices.GraphicsFamily,
 			m_DeviceQueueFamilyIndices.ComputeFamily,
-			m_DeviceQueueFamilyIndices.TransferFamily,
-			m_DeviceQueueFamilyIndices.PresentFamily
+			m_DeviceQueueFamilyIndices.TransferFamily
 		};
 
 		float queuePriority = 1.0f;
@@ -1194,7 +1228,6 @@ namespace LambdaEngine
 		indices.GraphicsFamily  = GetQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT, queueFamilies);
 		indices.ComputeFamily   = GetQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT, queueFamilies);
 		indices.TransferFamily  = GetQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT, queueFamilies);
-		indices.PresentFamily   = indices.GraphicsFamily; //Assume present support at this stage
 
 		return indices;
 	}

@@ -256,11 +256,9 @@ namespace LambdaEngine
         
         void* Map(const AllocationVK* pAllocation)
         {
-            VALIDATE(pAllocation != nullptr);
-            DeviceMemoryBlockVK* pBlock = pAllocation->pBlock;
-            
-            VALIDATE(pBlock != nullptr);
-            VALIDATE(ValidateBlock(pBlock));
+            VALIDATE(pAllocation            != nullptr);
+            VALIDATE(pAllocation->pBlock    != nullptr);
+            VALIDATE(ValidateBlock(pAllocation->pBlock));
             
             if (m_MappingCount <= 0)
             {
@@ -276,10 +274,10 @@ namespace LambdaEngine
         void Unmap(const AllocationVK* pAllocation)
         {
             VALIDATE(pAllocation != nullptr);
-            DeviceMemoryBlockVK* pBlock = pAllocation->pBlock;
-            
-            VALIDATE(pBlock != nullptr);
-            VALIDATE(ValidateBlock(pBlock));
+            VALIDATE(pAllocation->pBlock != nullptr);
+            VALIDATE(ValidateBlock(pAllocation->pBlock));
+
+            UNREFERENCED_VARIABLE(pAllocation);
             
             m_MappingCount--;
             if (m_MappingCount <= 0)

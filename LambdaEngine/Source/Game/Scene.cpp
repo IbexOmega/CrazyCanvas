@@ -51,8 +51,6 @@ namespace LambdaEngine
 		RenderSystem::GetGraphicsQueue()->Flush();
 
 		m_pCopyCommandAllocator->Reset();
-		m_pCopyCommandList->Reset();
-
 		m_pCopyCommandList->Begin(nullptr);
 
 		// TODO: Remove this flush
@@ -80,8 +78,6 @@ namespace LambdaEngine
 		RenderSystem::GetGraphicsQueue()->Flush();
 
 		m_pCopyCommandAllocator->Reset();
-		m_pCopyCommandList->Reset();
-
 		m_pCopyCommandList->Begin(nullptr);
 
         // TODO: Remove this flush
@@ -483,8 +479,6 @@ namespace LambdaEngine
 		LOG_INFO("Scene Build took %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
 
 		m_pCopyCommandAllocator->Reset();
-		m_pCopyCommandList->Reset();
-
 		m_pCopyCommandList->Begin(nullptr);
 
 		//Material Properties
@@ -703,8 +697,6 @@ namespace LambdaEngine
 			IBuffer* pTransformBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 
 			m_pASBuildCommandAllocator->Reset();
-			m_pASBuildCommandList->Reset();
-
 			m_pASBuildCommandList->Begin(nullptr);
 
 			m_pASBuildCommandList->CopyBuffer(pTransformCopyBuffer, 0, pTransformBuffer, 0, sizeof(glm::mat3x4));

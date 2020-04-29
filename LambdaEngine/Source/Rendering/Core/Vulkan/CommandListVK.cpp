@@ -13,6 +13,7 @@
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/DescriptorSetVK.h"
+#include "Rendering/Core/Vulkan/QueryHeapVK.h"
 #include "Rendering/Core/Vulkan/AccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
@@ -90,11 +91,6 @@ namespace LambdaEngine
 			m_Desc.pName = m_pDebugName;
 		}
     }
-
-	void CommandListVK::Reset()
-	{
-		vkResetCommandBuffer(m_CommandList, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-	}
 
 	bool CommandListVK::Begin(const SecondaryCommandListBeginDesc* pBeginDesc)
 	{
@@ -747,6 +743,26 @@ namespace LambdaEngine
 	{
 		const BufferVK* pDrawBufferVk = reinterpret_cast<const BufferVK*>(pDrawBuffer);
 		vkCmdDrawIndexedIndirect(m_CommandList, pDrawBufferVk->GetBuffer(), offset, drawCount, stride);
+	}
+
+	void CommandListVK::BeginQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)
+	{
+		QueryHeapVK*		pQueryHeapVk	= reinterpret_cast<QueryHeapVK*>(pQueryHeap);
+		VkQueryControlFlags controlFlagsVk	= VK_QUERY_CONTROL_PRECISE_BIT;
+		vkCmdBeginQuery(m_CommandList, pQueryHeapVk->GetQueryPool(), queryIndex, controlFlagsVk);
+	}
+
+	void CommandListVK::Timestamp(IQueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)
+	{
+		QueryHeapVK*			pQueryHeapVk		= reinterpret_cast<QueryHeapVK*>(pQueryHeap);
+		VkPipelineStageFlagBits	pipelineStageFlagVk	= ConvertPipelineStage(pipelineStageFlag);
+		vkCmdWriteTimestamp(m_CommandList, pipelineStageFlagVk, pQueryHeapVk->GetQueryPool(), queryIndex);
+	}
+
+	void CommandListVK::EndQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)
+	{
+		QueryHeapVK* pQueryHeapVk = reinterpret_cast<QueryHeapVK*>(pQueryHeap);
+		vkCmdEndQuery(m_CommandList, pQueryHeapVk->GetQueryPool(), queryIndex);
 	}
 
 	void CommandListVK::ExecuteSecondary(const ICommandList* pSecondary)

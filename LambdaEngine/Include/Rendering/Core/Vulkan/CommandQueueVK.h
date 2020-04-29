@@ -45,6 +45,11 @@ namespace LambdaEngine
 		{
 			return (uint64)m_Queue;
 		}
+
+		FORCEINLINE virtual ECommandQueueType GetType() const override final
+		{
+			return m_Type;
+		}
         
     private:
         VkResult InternalFlushBarriers();
@@ -53,8 +58,10 @@ namespace LambdaEngine
         void InternalAddSignalSemaphore(VkSemaphore semaphore);
 
 	private:
-		VkQueue	        m_Queue = VK_NULL_HANDLE;
-		VkCommandBuffer m_SubmitCommandBuffers[MAX_COMMANDBUFFERS];
+		VkQueue				m_Queue = VK_NULL_HANDLE;
+		ECommandQueueType	m_Type	= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+
+		VkCommandBuffer		m_SubmitCommandBuffers[MAX_COMMANDBUFFERS];
 
 		TArray<VkSemaphore>             m_SignalSemaphores;
 		TArray<VkSemaphore>             m_WaitSemaphores;

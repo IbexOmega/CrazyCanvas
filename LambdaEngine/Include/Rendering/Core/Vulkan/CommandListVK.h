@@ -31,9 +31,7 @@ namespace LambdaEngine
 
 		//ICommandList interface
 		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc)	override final;
-
-		virtual void Reset() override final;
-		virtual bool End()	 override final;
+        virtual bool End()                                                  override final;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) override final;
 		virtual void EndRenderPass() override final;
@@ -73,6 +71,10 @@ namespace LambdaEngine
 		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)                          override final;
 		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)  override final;
 		virtual void DrawIndexedIndirect(const IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)							override final;
+
+		virtual void BeginQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)											override final;
+		virtual void Timestamp(IQueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)	override final;
+		virtual void EndQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)											override final;
 
 		virtual void ExecuteSecondary(const ICommandList* pSecondary) override final;
 

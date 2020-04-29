@@ -11,6 +11,7 @@ namespace LambdaEngine
 {
 	class IBuffer;
 	class ITexture;
+	class IQueryHeap;
 	class IRenderPass;
 	class ITextureView;
 	class IPipelineState;
@@ -159,9 +160,7 @@ namespace LambdaEngine
 		DECL_DEVICE_INTERFACE(ICommandList);
 
 		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc) = 0;
-		
-		virtual void Reset() = 0;
-		virtual bool End()	 = 0;
+		virtual bool End()	                                                = 0;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) = 0;
 		virtual void EndRenderPass() = 0;
@@ -201,6 +200,9 @@ namespace LambdaEngine
 		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)	= 0;
 		virtual void DrawIndexedIndirect(const IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)							= 0;
 
+		virtual void BeginQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)											= 0;
+		virtual void Timestamp(IQueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)	= 0;
+		virtual void EndQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)											= 0;
 
 		virtual void ExecuteSecondary(const ICommandList* pSecondary) = 0;
 

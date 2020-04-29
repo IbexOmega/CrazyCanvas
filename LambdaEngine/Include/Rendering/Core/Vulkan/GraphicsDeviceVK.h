@@ -21,11 +21,10 @@ namespace LambdaEngine
 		int32 GraphicsFamily	= -1;
 		int32 ComputeFamily		= -1;
 		int32 TransferFamily	= -1;
-		int32 PresentFamily		= -1;
 
 		bool IsComplete()
 		{
-			return (GraphicsFamily >= 0) && (ComputeFamily >= 0) && (TransferFamily >= 0) && (PresentFamily >= 0);
+			return (GraphicsFamily >= 0) && (ComputeFamily >= 0) && (TransferFamily >= 0);
 		}
 	};
 
@@ -52,6 +51,7 @@ namespace LambdaEngine
         VkFramebuffer GetFrameBuffer(const IRenderPass* pRenderPass, const ITextureView* const* ppRenderTargets, uint32 renderTargetCount, const ITextureView* pDepthStencil, uint32 width, uint32 height) const;
         
 		uint32						GetQueueFamilyIndexFromQueueType(ECommandQueueType type)	const;
+		ECommandQueueType			GetCommandQueueTypeFromQueueIndex(uint32 queueFamilyIndex)	const;
 		VkFormatProperties			GetFormatProperties(VkFormat format)						const;
 		VkPhysicalDeviceProperties	GetPhysicalDeviceProperties()								const;
         
@@ -66,7 +66,7 @@ namespace LambdaEngine
 		}
 
 		// IGraphicsDevice Interface
-		virtual void QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const override final;
+		virtual IQueryHeap* CreateQueryHeap(const QueryHeapDesc* pDesc) const override final;
 
 		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const override final;
 		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const override final;
@@ -99,6 +99,8 @@ namespace LambdaEngine
         
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst)																			const override final;
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const override final;
+
+		virtual void QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const override final;
 
 		virtual void Release() override final;
 
@@ -160,9 +162,9 @@ namespace LambdaEngine
 		FrameBufferCacheVK*			m_pFrameBufferCache	= nullptr;
 
 		GraphicsDeviceFeatureDesc		m_DeviceFeatures;
-        QueueFamilyIndices			m_DeviceQueueFamilyIndices;
-        VkPhysicalDeviceLimits		m_DeviceLimits;
-		VkPhysicalDeviceFeatures	m_DeviceFeaturesVk;
+        QueueFamilyIndices				m_DeviceQueueFamilyIndices;
+        VkPhysicalDeviceLimits			m_DeviceLimits;
+		VkPhysicalDeviceFeatures		m_DeviceFeaturesVk;
        
         std::vector<VkQueueFamilyProperties> m_QueueFamilyProperties;
         mutable uint32 m_NextGraphicsQueue  = 0;

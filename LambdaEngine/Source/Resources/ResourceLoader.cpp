@@ -588,8 +588,6 @@ namespace LambdaEngine
 		s_pCopyFence->Wait(waitValue, UINT64_MAX);
 
 		s_pCopyCommandAllocator->Reset();
-		s_pCopyCommandList->Reset();
-
 		s_pCopyCommandList->Begin(nullptr);
 
 		CopyTextureFromBufferDesc copyDesc = {};
