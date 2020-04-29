@@ -1767,7 +1767,7 @@ namespace LambdaEngine
 		if (pRenderStage->ppTextureDescriptorSets != nullptr)
 			pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppTextureDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, 0);
 
-		pComputeCommandList->TraceRays(pParameters->RayTracing.RaygenOffset, pParameters->RayTracing.RayTraceWidth, pParameters->RayTracing.RayTraceHeight);
+		pComputeCommandList->TraceRays(pParameters->RayTracing.RayTraceWidth, pParameters->RayTracing.RayTraceHeight, pParameters->RayTracing.RayTraceDepth);
 
 		pComputeCommandList->End();
 

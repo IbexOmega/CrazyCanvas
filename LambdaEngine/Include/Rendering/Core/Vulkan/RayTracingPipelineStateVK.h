@@ -6,7 +6,9 @@
 
 namespace LambdaEngine
 {
+	class ICommandAllocator;
 	class GraphicsDeviceVK;
+	class ICommandList;
 	class BufferVK;
 
 	class RayTracingPipelineStateVK : public TDeviceChildBase<GraphicsDeviceVK, IPipelineState>
@@ -54,8 +56,12 @@ namespace LambdaEngine
 			const RayTracingPipelineStateDesc* pDesc);
 
 	private:
-		VkPipeline	m_Pipeline  = VK_NULL_HANDLE;
-        BufferVK*	m_pSBT      = nullptr;
+		VkPipeline	m_Pipeline						= VK_NULL_HANDLE;
+		BufferVK*	m_pShaderHandleStorageBuffer	= nullptr;
+        BufferVK*	m_pSBT							= nullptr;
+
+		ICommandAllocator*	m_pCommandAllocator		= nullptr;
+		ICommandList*		m_pCommandList			= nullptr;
 
 		VkDeviceSize m_BindingOffsetRaygenShaderGroup   = 0;
 		VkDeviceSize m_BindingOffsetHitShaderGroup      = 0;

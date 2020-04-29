@@ -41,11 +41,11 @@ void main()
     vec4 sampledNormalMetallicRoughness     = texture(u_NormalMetallicRoughness,    in_TexCoord);
 
     //Skybox
-	if (dot(sampledNormalMetallicRoughness, sampledNormalMetallicRoughness) < EPSILON)
-	{
-		out_Color = vec4(sampledAlbedoAO.rgb, 1.0f);
-		return;
-	}
+	// if (dot(sampledNormalMetallicRoughness, sampledNormalMetallicRoughness) < EPSILON)
+	// {
+	// 	out_Color = vec4(sampledAlbedoAO.rgb, 1.0f);
+	// 	return;
+	// }
 
     vec4 sampledDepthStencil                = texture(u_DepthStencil,               in_TexCoord);
     //vec4 sampledRadiance                    = texture(u_Radiance,                   in_TexCoord);
@@ -55,7 +55,6 @@ void main()
     float ao            = sampledAlbedoAO.a;
     float metallic      = sampledNormalMetallicRoughness.b;
     float roughness     = abs(sampledNormalMetallicRoughness.a);
-    //vec3 radiance = sampledRadiance.rgb;
 
     SLightsBuffer lightsBuffer                  = u_LightsBuffer.val;
     SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;

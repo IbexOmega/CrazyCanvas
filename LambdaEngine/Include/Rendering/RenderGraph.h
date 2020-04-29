@@ -109,9 +109,9 @@ namespace LambdaEngine
 
 			struct
 			{
-				uint32 RaygenOffset;
 				uint32 RayTraceWidth;
 				uint32 RayTraceHeight;
+				uint32 RayTraceDepth;
 			} RayTracing;
 		};
 	};

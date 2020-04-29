@@ -141,7 +141,8 @@ namespace LambdaEngine
 		const IBuffer*			pIndexBuffer			= nullptr;
 		uint32					IndexBufferByteOffset	= 0; 
 		uint32					TriangleCount			= 0;
-		const void*				pTransform				= nullptr;
+		const IBuffer*			pTransformBuffer		= nullptr;
+		uint32					TransformByteOffset		= 0;
 		bool					Update					= false;
 	};
 
@@ -193,7 +194,7 @@ namespace LambdaEngine
 		virtual void BindComputePipeline(const IPipelineState* pPipeline)		= 0;
 		virtual void BindRayTracingPipeline(const IPipelineState* pPipeline)	= 0;
 
-		virtual void TraceRays(uint32 width, uint32 height, uint32 raygenOffset)						= 0;
+		virtual void TraceRays(uint32 width, uint32 height, uint32 depth)								= 0;
 		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ)	= 0;
 
 		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)							= 0;

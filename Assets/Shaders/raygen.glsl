@@ -6,7 +6,7 @@
 
 struct SRayPayload
 {
-	float Depth;
+	vec3 Color;
 };
 
 struct SPerFrameBuffer
@@ -44,11 +44,11 @@ void main()
 	vec3 normal = CalculateNormal(sampledNormalMetallicRoughness);
 
     //Skybox
-	if (dot(sampledNormalMetallicRoughness, sampledNormalMetallicRoughness) < EPSILON)
-	{
-		imageStore(u_Radiance, pixelCoords, vec4(1.0f, 0.0f, 1.0f, 0.0f));
-		return;
-	}
+	// if (dot(sampledNormalMetallicRoughness, sampledNormalMetallicRoughness) < EPSILON)
+	// {
+	// 	imageStore(u_Radiance, pixelCoords, vec4(1.0f, 0.0f, 1.0f, 1.0f));
+	// 	return;
+	// }
 
     SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
 
@@ -60,6 +60,12 @@ void main()
 	SPositions positions            = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
     SRayDirections rayDirections    =  CalculateRayDirections(positions.WorldPos, normal, perFrameBuffer.Position.xyz, perFrameBuffer.ViewInv);
 
+	vec2 d = screenTexCoord * 2.0 - 1.0;
+
+	vec4 origin = perFrameBuffer.ViewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	vec4 target = perFrameBuffer.ProjectionInv * vec4(d.x, d.y, 1.0f, 1.0f);
+	vec4 direction = perFrameBuffer.ViewInv * vec4(normalize(target.xyz / target.w), 0.0f) ;
+
 	//Define new Rays Parameters
 	uint rayFlags           = gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT;
 	uint cullMask           = 0xFF;
@@ -70,7 +76,8 @@ void main()
 	float Tmax              = 10000.0f;
     const int payload       = 0;
 
-    traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, positions.WorldPos, Tmin, rayDirections.ReflDir, Tmax, payload);
+	s_RayPayload.Color = vec3(0.0f, 0.0f, 1.0f);
+    traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
 
-	imageStore(u_Radiance, pixelCoords, vec4(s_RayPayload.Depth, 0.0f, 0.0f, 0.0f));
+	imageStore(u_Radiance, pixelCoords, vec4(s_RayPayload.Color, 1.0f));
 }

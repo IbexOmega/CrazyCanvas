@@ -313,7 +313,7 @@ namespace LambdaEngine
 				blasDesc.Flags				= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
 				blasDesc.MaxTriangleCount	= pMesh->IndexCount / 3;
 				blasDesc.MaxVertexCount		= pMesh->VertexCount;
-				blasDesc.AllowsTransform	= false;
+				blasDesc.AllowsTransform	= true;
 
 				IAccelerationStructure* pBLAS = m_pGraphicsDevice->CreateAccelerationStructure(&blasDesc, nullptr);
 				accelerationStructureHandle = pBLAS->GetHandle();
@@ -326,7 +326,6 @@ namespace LambdaEngine
 				blasBuildDesc.VertexStride					= sizeof(Vertex);
 				blasBuildDesc.IndexBufferByteOffset			= currentNumSceneIndices * sizeof(uint32);
 				blasBuildDesc.TriangleCount					= pMesh->IndexCount / 3;
-				blasBuildDesc.pTransform					= nullptr;
 				blasBuildDesc.Update						= false;
 
 				blasBuildDescriptions.push_back(blasBuildDesc);
@@ -387,7 +386,7 @@ namespace LambdaEngine
 				/*------------Ray Tracing Section Begin-------------*/
 				instance.AccelerationStructureHandle	= accelerationStructureHandle;
 				instance.SBTRecordOffset				= 0;
-				instance.Flags							= 0x00000001;
+				instance.Flags							= 0x00000001 | 0x00000004;
 				instance.Mask							= 0xFF;
 				/*-------------Ray Tracing Section End--------------*/
 
@@ -681,16 +680,42 @@ namespace LambdaEngine
 		/*------------Ray Tracing Section Begin-------------*/
 		if (m_RayTracingEnabled)
 		{
+			BufferDesc bufferCopyDesc = {};
+			bufferCopyDesc.pName		= "Transform Copy Buffer";
+			bufferCopyDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
+			bufferCopyDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+			bufferCopyDesc.SizeInBytes	= sizeof(glm::mat3x4);
+
+			IBuffer* pTransformCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferCopyDesc, nullptr);
+
+			glm::mat3x4 identity(1.0f);
+
+			void* pMapped = pTransformCopyBuffer->Map();
+			memcpy(pMapped, &identity, sizeof(glm::mat3x4));
+			pTransformCopyBuffer->Unmap();
+
+			BufferDesc bufferDesc = {};
+			bufferDesc.pName		= "Transform Buffer";
+			bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
+			bufferDesc.SizeInBytes	= sizeof(glm::mat3x4);
+
+			IBuffer* pTransformBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
+
 			m_pASBuildCommandAllocator->Reset();
 			m_pASBuildCommandList->Reset();
 
 			m_pASBuildCommandList->Begin(nullptr);
 
-			for (uint32 i = 0; i < 1; i++)
+			m_pASBuildCommandList->CopyBuffer(pTransformCopyBuffer, 0, pTransformBuffer, 0, sizeof(glm::mat3x4));
+
+			for (uint32 i = 0; i < blasBuildDescriptions.size(); i++)
 			{
 				BuildBottomLevelAccelerationStructureDesc& blasBuildDesc = blasBuildDescriptions[i];
-				blasBuildDesc.pVertexBuffer		= m_pSceneVertexBuffer;
-				blasBuildDesc.pIndexBuffer		= m_pSceneIndexBuffer;
+				blasBuildDesc.pVertexBuffer			= m_pSceneVertexBuffer;
+				blasBuildDesc.pIndexBuffer			= m_pSceneIndexBuffer;
+				blasBuildDesc.pTransformBuffer		= pTransformBuffer;
+				blasBuildDesc.TransformByteOffset	= 0;
 
 				m_pASBuildCommandList->BuildBottomLevelAccelerationStructure(&blasBuildDesc);
 			}

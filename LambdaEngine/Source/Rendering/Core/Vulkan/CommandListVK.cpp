@@ -291,10 +291,10 @@ namespace LambdaEngine
 		geometryDataDesc.indexType		= VK_INDEX_TYPE_UINT32;
 		geometryDataDesc.indexData		= indexDataAddressUnion;
 
-		if (pBuildDesc->pTransform != nullptr)
+		VkDeviceOrHostAddressConstKHR transformDataAddressUnion = {};
+		if (pBuildDesc->pTransformBuffer != nullptr)
 		{
-			VkDeviceOrHostAddressConstKHR transformDataAddressUnion = {};
-			transformDataAddressUnion.hostAddress = pBuildDesc->pTransform;
+			transformDataAddressUnion.deviceAddress = reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer)->GetDeviceAdress();
 			geometryDataDesc.transformData = transformDataAddressUnion;
 		}
 		else
@@ -337,7 +337,7 @@ namespace LambdaEngine
 		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->TriangleCount;
 		accelerationStructureOffsetInfo.primitiveOffset = pBuildDesc->IndexBufferByteOffset;
 		accelerationStructureOffsetInfo.firstVertex		= pBuildDesc->FirstVertexIndex;
-		accelerationStructureOffsetInfo.transformOffset = 0;
+		accelerationStructureOffsetInfo.transformOffset = pBuildDesc->TransformByteOffset;
 
 		VALIDATE(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
 

@@ -1,12 +1,14 @@
 #include "Log/Log.h"
 
 #include "Rendering/Core/Vulkan/RayTracingPipelineStateVK.h"
+#include "Rendering/Core/Vulkan/CommandAllocatorVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
+#include "Rendering/Core/Vulkan/CommandListVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
-#include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/RenderSystem.h"
 
 namespace LambdaEngine
 {
@@ -24,6 +26,9 @@ namespace LambdaEngine
 		}
 
 		SAFERELEASE(m_pSBT);
+		SAFERELEASE(m_pShaderHandleStorageBuffer);
+		SAFERELEASE(m_pCommandAllocator);
+		SAFERELEASE(m_pCommandList);
 	}
 
 	bool RayTracingPipelineStateVK::Init(const RayTracingPipelineStateDesc* pDesc)
@@ -48,6 +53,7 @@ namespace LambdaEngine
         
 		VkRayTracingPipelineCreateInfoKHR rayTracingPipelineInfo = {};
 		rayTracingPipelineInfo.sType				= VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+		rayTracingPipelineInfo.flags				= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
 		rayTracingPipelineInfo.stageCount			= (uint32)shaderStagesInfos.size();
 		rayTracingPipelineInfo.pStages				= shaderStagesInfos.data();
 		rayTracingPipelineInfo.groupCount			= (uint32)shaderGroups.size();
@@ -74,15 +80,15 @@ namespace LambdaEngine
 		uint32 shaderGroupHandleSize = m_pDevice->RayTracingProperties.shaderGroupHandleSize;
 		uint32 sbtSize = shaderGroupHandleSize * uint32(shaderGroups.size());
 
-		BufferDesc sbtBufferDesc = {};
-		sbtBufferDesc.pName			= "Shader Binding Table";
-		sbtBufferDesc.Flags			= BUFFER_FLAG_RAY_TRACING;
-		sbtBufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
-		sbtBufferDesc.SizeInBytes   = sbtSize;
+		BufferDesc shaderHandleStorageDesc = {};
+		shaderHandleStorageDesc.pName			= "Shader Handle Storage";
+		shaderHandleStorageDesc.Flags			= BUFFER_FLAG_COPY_SRC;
+		shaderHandleStorageDesc.MemoryType		= EMemoryType::MEMORY_CPU_VISIBLE;
+		shaderHandleStorageDesc.SizeInBytes		= sbtSize;
 
-		m_pSBT = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&sbtBufferDesc, nullptr));
+		m_pShaderHandleStorageBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&shaderHandleStorageDesc, nullptr));
 
-		void* pMapped = m_pSBT->Map();
+		void* pMapped = m_pShaderHandleStorageBuffer->Map();
         
         result = m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, (uint32)shaderGroups.size(), sbtSize, pMapped);
 		if (result!= VK_SUCCESS)
@@ -98,8 +104,34 @@ namespace LambdaEngine
             
 			return false;
 		}
-        
-		m_pSBT->Unmap();
+
+		m_pShaderHandleStorageBuffer->Unmap();
+
+		m_pCommandAllocator					= m_pDevice->CreateCommandAllocator("Ray Tracing Pipeline SBT Copy", ECommandQueueType::COMMAND_QUEUE_COMPUTE);
+
+		CommandListDesc commandListDesc = {};
+		commandListDesc.pName				= "Ray Tracing Pipeline Command List";
+		commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_PRIMARY;
+		commandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+
+		m_pCommandList						= m_pDevice->CreateCommandList(m_pCommandAllocator, &commandListDesc);
+
+		BufferDesc sbtDesc = {};
+		sbtDesc.pName			= "Shader Binding Table";
+		sbtDesc.Flags			= BUFFER_FLAG_COPY_DST | BUFFER_FLAG_RAY_TRACING;
+		sbtDesc.MemoryType		= EMemoryType::MEMORY_GPU;
+		sbtDesc.SizeInBytes		= sbtSize;
+
+		m_pSBT = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&sbtDesc, nullptr));
+
+		m_pCommandAllocator->Reset();
+		m_pCommandList->Reset();
+
+		m_pCommandList->Begin(nullptr);
+		m_pCommandList->CopyBuffer(m_pShaderHandleStorageBuffer, 0, m_pSBT, 0, sbtSize);
+		m_pCommandList->End();
+
+		RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN , nullptr, 0, nullptr, 0);
 
 		m_BindingStride						= shaderGroupHandleSize;
 		

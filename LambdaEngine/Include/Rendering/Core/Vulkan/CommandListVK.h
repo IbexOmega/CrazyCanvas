@@ -66,7 +66,7 @@ namespace LambdaEngine
 		virtual void BindComputePipeline(const IPipelineState* pPipeline)		override final;
 		virtual void BindRayTracingPipeline(const IPipelineState* pPipeline)	override final;
 
-		virtual void TraceRays(uint32 width, uint32 height, uint32 raygenOffset) override final;
+		virtual void TraceRays(uint32 width, uint32 height, uint32 depth) override final;
 
 		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ) override final;
 

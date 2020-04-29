@@ -6,12 +6,12 @@
 
 struct SRayPayload
 {
-	float Depth;
+	vec3 Color;
 };
 
 layout(location = 0) rayPayloadInEXT SRayPayload s_RayPayload;
 
 void main() 
 {
-    s_RayPayload.Depth = 0.0f;
+    s_RayPayload.Color = vec3(1.0f, 1.0f, 0.0f);
 }

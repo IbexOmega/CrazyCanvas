@@ -82,7 +82,8 @@ namespace LambdaEngine
 		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
         Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
-		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME)
+		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
+		Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
     /*
@@ -127,7 +128,7 @@ namespace LambdaEngine
 	bool GraphicsDeviceVK::Init(const GraphicsDeviceDesc* pDesc)
 	{
         VALIDATE(pDesc != nullptr);
-        
+
 		if (!InitInstance(pDesc))
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Instance could not be initialized!");
@@ -754,7 +755,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		//USE API VERSION 1.2 for now, maybe change to 1.0 later
+		// USE API VERSION 1.2 for now, maybe change to 1.0 later
 		VkApplicationInfo appInfo = {};
 		appInfo.sType               = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pNext               = nullptr;
@@ -768,16 +769,34 @@ namespace LambdaEngine
 
 		VkInstanceCreateInfo instanceCreateInfo = {};
 		instanceCreateInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-		instanceCreateInfo.flags = 0;
+		instanceCreateInfo.flags					= 0;
 		instanceCreateInfo.pApplicationInfo         = &appInfo;
 		instanceCreateInfo.enabledExtensionCount    = (uint32_t)m_EnabledInstanceExtensions.size();
 		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
 
+		VkValidationFeaturesEXT validationFeatures	= {};
+		validationFeatures.sType					= VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+
+		VkValidationFeatureEnableEXT enabledValidationFeatures[] =
+		{
+			VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+			//VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
+		};
+
+		if (pDesc->Debug)
+		{
+			validationFeatures.pEnabledValidationFeatures		= enabledValidationFeatures;
+			validationFeatures.enabledValidationFeatureCount	= ARR_SIZE(enabledValidationFeatures);
+		}
+
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
         const char* pKhronosValidationLayerName = "VK_LAYER_KHRONOS_validation";
+
         if (pDesc->Debug)
         {
             PopulateDebugMessengerCreateInfo(debugCreateInfo);
+
+			debugCreateInfo.pNext = &validationFeatures;
 
 			instanceCreateInfo.enabledLayerCount    = 1;
 			instanceCreateInfo.ppEnabledLayerNames  = &pKhronosValidationLayerName;
@@ -1331,6 +1350,8 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkSignalSemaphore);
 			GET_DEVICE_PROC_ADDR(Device, vkGetSemaphoreCounterValue);
 		}
+
+		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR = nullptr;
 
         //Buffer Address
         if (IsDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))

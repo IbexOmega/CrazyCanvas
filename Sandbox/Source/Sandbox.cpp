@@ -35,8 +35,8 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
-constexpr const bool RAY_TRACING_ENABLED = false;
-constexpr const bool POST_PROCESSING_ENABLED = false;
+constexpr const bool RAY_TRACING_ENABLED		= false;
+constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 Sandbox::Sandbox()
     : Game()
@@ -50,13 +50,13 @@ Sandbox::Sandbox()
 	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
 	m_pScene->Init(sceneDesc);
 
-	std::vector<GameObject>	sceneGameObjects;
+	/*std::vector<GameObject>	sceneGameObjects;
 	ResourceManager::LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
 
 	for (GameObject& gameObject : sceneGameObjects)
 	{
 		m_pScene->AddDynamicGameObject(gameObject, glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)));
-	}
+	}*/
 
 	uint32 bunnyMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/bunny.obj");
 
@@ -72,8 +72,8 @@ Sandbox::Sandbox()
 	gunGameObject.Mesh = gunMeshGUID;
 	gunGameObject.Material = DEFAULT_MATERIAL;
 
-	m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
-	m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.5f, 0.0f)));
+	/*m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
+	m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.5f, 0.0f)));*/
 
 	m_pScene->Finalize();
 
@@ -681,9 +681,9 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		RenderStageParameters rayTracingRenderStageParameters = {};
 		rayTracingRenderStageParameters.pRenderStageName			= pRayTracingRenderStageName;
-		rayTracingRenderStageParameters.RayTracing.RaygenOffset		= 0;
 		rayTracingRenderStageParameters.RayTracing.RayTraceWidth	= renderWidth;
 		rayTracingRenderStageParameters.RayTracing.RayTraceHeight	= renderHeight;
+		rayTracingRenderStageParameters.RayTracing.RayTraceDepth	= 1;
 
 		m_pRenderGraph->UpdateRenderStageParameters(rayTracingRenderStageParameters);
 	}
