@@ -125,7 +125,6 @@ namespace LambdaEngine
 		m_pSBT = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&sbtDesc, nullptr));
 
 		m_pCommandAllocator->Reset();
-		m_pCommandList->Reset();
 
 		m_pCommandList->Begin(nullptr);
 		m_pCommandList->CopyBuffer(m_pShaderHandleStorageBuffer, 0, m_pSBT, 0, sbtSize);
