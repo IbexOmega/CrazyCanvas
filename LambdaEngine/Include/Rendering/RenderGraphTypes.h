@@ -104,10 +104,11 @@ namespace LambdaEngine
 
 	struct RenderStageAttachment
 	{
-		const char* pName				= "";
-		EAttachmentType Type			= EAttachmentType::NONE;
-		uint32 ShaderStages				= SHADER_STAGE_FLAG_NONE;
-		uint32 SubResourceCount			= 1;
+		const char*			pName				= "";
+		EAttachmentType		Type				= EAttachmentType::NONE;
+		uint32				ShaderStages		= SHADER_STAGE_FLAG_NONE;
+		uint32				SubResourceCount	= 1;
+		EFormat				TextureFormat		= EFormat::NONE;
 	};
 
 	struct RenderStagePushConstants

@@ -13,7 +13,7 @@ struct SVertex
 
 struct SInstance
 {
-    mat4    Transform;
+    mat3x4  Transform;
     uint    Mask_MeshMaterialIndex;
     uint    SBTRecordOffset_Flags;
     uint    AccelerationStructureHandleTop32;
@@ -46,7 +46,7 @@ struct SPerFrameBuffer
 
 
 layout (constant_id = 0) const uint OTHER_TEXTURES_IN_PASS                  = 0;
-layout (constant_id = 1) const uint ALLOWED_TEXTURES_PER_DESCRIPTOR_SET     = 16;
+layout (constant_id = 1) const uint ALLOWED_TEXTURES_PER_DESCRIPTOR_SET     = 256;
 
 layout(binding = 0, set = 1) buffer Vertices            { SVertex val[]; }              b_Vertices;
 layout(binding = 1, set = 1) buffer Indices             { uint val[]; }                 b_Indices;
@@ -69,16 +69,18 @@ void main()
 
     uint meshIndexID                            = (instance.Mask_MeshMaterialIndex) & 0x00FFFFFF;
     SMeshIndexDesc meshIndexDesc                = b_MeshIndices.val[meshIndexID];
-    //mat4 transform;
-	// transform[0] = vec4(instanceData.Transform[0], 0.0f);
-	// transform[1] = vec4(instanceData.Transform[1], 0.0f);
-	// transform[2] = vec4(instanceData.Transform[2], 0.0f);
-	// transform[3] = vec4(instanceData.Transform[3], 1.0f);
 
-    vec4 worldPosition = instance.Transform * vec4(vertex.Position.xyz,  1.0f);
+    mat4 transform;
+	transform[0] = vec4(instance.Transform[0]);
+	transform[1] = vec4(instance.Transform[1]);
+	transform[2] = vec4(instance.Transform[2]);
+	transform[3] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    transform = transpose(transform);
 
-    vec3 normal 	= normalize((instance.Transform  * vec4(vertex.Normal.xyz, 0.0f)).xyz);
-	vec3 tangent    = normalize((instance.Transform  * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
+    vec4 worldPosition = transform * vec4(vertex.Position.xyz,  1.0f);
+
+    vec3 normal 	= normalize((transform  * vec4(vertex.Normal.xyz, 0.0f)).xyz);
+	vec3 tangent    = normalize((transform  * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
 	vec3 bitangent 	= normalize(cross(normal, tangent));
     vec2 texCoord   = vertex.TexCoord.xy;
 

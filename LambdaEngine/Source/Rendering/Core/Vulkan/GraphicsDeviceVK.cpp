@@ -3,6 +3,8 @@
 
 #include "Log/Log.h"
 
+#include "Application/API/PlatformConsole.h"
+
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/FenceVK.h"
 #include "Rendering/Core/Vulkan/FenceTimelineVK.h"
@@ -23,6 +25,7 @@
 #include "Rendering/Core/Vulkan/DescriptorHeapVK.h"
 #include "Rendering/Core/Vulkan/DescriptorSetVK.h"
 #include "Rendering/Core/Vulkan/FrameBufferCacheVK.h"
+#include "Rendering/Core/Vulkan/QueryHeapVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
@@ -41,7 +44,7 @@ namespace LambdaEngine
 
 	constexpr ValidationLayer OPTIONAL_VALIDATION_LAYERS[]
 	{
-		ValidationLayer("OPT_V_L_BASE")
+		ValidationLayer("OPT_V_L_BASE"),
 	};
 
 	constexpr Extension REQUIRED_INSTANCE_EXTENSIONS[]
@@ -79,7 +82,9 @@ namespace LambdaEngine
 		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME),
 		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
-        Extension("VK_KHR_shader_draw_parameters"),
+        Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
+		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
+		Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
     /*
@@ -124,7 +129,7 @@ namespace LambdaEngine
 	bool GraphicsDeviceVK::Init(const GraphicsDeviceDesc* pDesc)
 	{
         VALIDATE(pDesc != nullptr);
-        
+
 		if (!InitInstance(pDesc))
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Instance could not be initialized!");
@@ -188,7 +193,7 @@ namespace LambdaEngine
 
     void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
     {
-        ASSERT(m_pFrameBufferCache != nullptr);
+        VALIDATE(m_pFrameBufferCache != nullptr);
         
         if (*pRenderPass != VK_NULL_HANDLE)
         {
@@ -201,7 +206,7 @@ namespace LambdaEngine
 
     void GraphicsDeviceVK::DestroyImageView(VkImageView* pImageView) const
     {
-        ASSERT(m_pFrameBufferCache != nullptr);
+        VALIDATE(m_pFrameBufferCache != nullptr);
         
         if (*pImageView != VK_NULL_HANDLE)
         {
@@ -253,6 +258,27 @@ namespace LambdaEngine
     /*
      * Create functions
      */
+
+	void GraphicsDeviceVK::QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const
+	{
+		memcpy(pFeatures, &m_DeviceFeatures, sizeof(m_DeviceFeatures));
+	}
+
+	IQueryHeap* GraphicsDeviceVK::CreateQueryHeap(const QueryHeapDesc* pDesc) const
+	{
+		VALIDATE(pDesc != nullptr);
+
+		QueryHeapVK* pQueryHeap = DBG_NEW QueryHeapVK(this);
+		if (!pQueryHeap->Init(pDesc))
+		{
+			pQueryHeap->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pQueryHeap;
+		}
+	}
 
 	IPipelineLayout* GraphicsDeviceVK::CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const
 	{
@@ -371,8 +397,7 @@ namespace LambdaEngine
 	{
         VALIDATE(pDesc != nullptr);
         
-		//TODO: Query this in some other way
-		if (this->vkCreateAccelerationStructureKHR == nullptr)
+		if (!m_DeviceFeatures.RayTracing)
 		{
 			return nullptr;
 		}
@@ -443,8 +468,8 @@ namespace LambdaEngine
 			return nullptr;
 		}
         
-        ASSERT(queueFamilyIndex < int32(m_QueueFamilyProperties.size()));
-        ASSERT(index            < m_QueueFamilyProperties[queueFamilyIndex].queueCount);
+        VALIDATE(queueFamilyIndex < int32(m_QueueFamilyProperties.size()));
+        VALIDATE(index            < m_QueueFamilyProperties[queueFamilyIndex].queueCount);
 
 		CommandQueueVK* pQueue = DBG_NEW CommandQueueVK(this);
 		if (!pQueue->Init(pName, queueFamilyIndex, index))
@@ -462,7 +487,7 @@ namespace LambdaEngine
 	{
         VALIDATE(pDesc != nullptr);
         
-		if (IsDeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
+		if (UseTimelineFences())
 		{
 			FenceTimelineVK* pFenceTimelineVk = DBG_NEW FenceTimelineVK(this);
 			if (!pFenceTimelineVk->Init(pDesc))
@@ -710,6 +735,24 @@ namespace LambdaEngine
 		}
 	}
 
+	ECommandQueueType GraphicsDeviceVK::GetCommandQueueTypeFromQueueIndex(uint32 queueFamilyIndex) const
+	{
+		if (queueFamilyIndex == m_DeviceQueueFamilyIndices.GraphicsFamily)
+		{
+			return ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+		}
+		else if (queueFamilyIndex == m_DeviceQueueFamilyIndices.ComputeFamily)
+		{
+			return ECommandQueueType::COMMAND_QUEUE_COMPUTE;
+		}
+		else if (queueFamilyIndex == m_DeviceQueueFamilyIndices.TransferFamily)
+		{
+			return ECommandQueueType::COMMAND_QUEUE_COPY;
+		}
+
+		return ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+	}
+
 	VkFormatProperties GraphicsDeviceVK::GetFormatProperties(VkFormat format) const
 	{
 		VkFormatProperties properties = {};
@@ -747,7 +790,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		//USE API VERSION 1.2 for now, maybe change to 1.0 later
+		// USE API VERSION 1.2 for now, maybe change to 1.0 later
 		VkApplicationInfo appInfo = {};
 		appInfo.sType               = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pNext               = nullptr;
@@ -761,22 +804,43 @@ namespace LambdaEngine
 
 		VkInstanceCreateInfo instanceCreateInfo = {};
 		instanceCreateInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+		instanceCreateInfo.flags					= 0;
 		instanceCreateInfo.pApplicationInfo         = &appInfo;
 		instanceCreateInfo.enabledExtensionCount    = (uint32_t)m_EnabledInstanceExtensions.size();
 		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
 
-		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
+		VkValidationFeaturesEXT validationFeatures	= {};
+		validationFeatures.sType					= VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+
+		VkValidationFeatureEnableEXT enabledValidationFeatures[] =
+		{
+			VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+			//VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
+		};
+
 		if (pDesc->Debug)
 		{
-			PopulateDebugMessengerCreateInfo(debugCreateInfo);
+			validationFeatures.pEnabledValidationFeatures		= enabledValidationFeatures;
+			validationFeatures.enabledValidationFeatureCount	= ARR_SIZE(enabledValidationFeatures);
+		}
 
-			instanceCreateInfo.enabledLayerCount    = (uint32_t)m_EnabledValidationLayers.size();
-			instanceCreateInfo.ppEnabledLayerNames  = m_EnabledValidationLayers.data();
+		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
+        const char* pKhronosValidationLayerName = "VK_LAYER_KHRONOS_validation";
+
+        if (pDesc->Debug)
+        {
+            PopulateDebugMessengerCreateInfo(debugCreateInfo);
+
+			debugCreateInfo.pNext = &validationFeatures;
+
+			instanceCreateInfo.enabledLayerCount    = 1;
+			instanceCreateInfo.ppEnabledLayerNames  = &pKhronosValidationLayerName;
 			instanceCreateInfo.pNext                = &debugCreateInfo;
 		}
 		else
 		{
 			instanceCreateInfo.enabledLayerCount    = 0;
+			instanceCreateInfo.ppEnabledLayerNames	= nullptr;
 			instanceCreateInfo.pNext                = nullptr;
 		}
 
@@ -819,6 +883,12 @@ namespace LambdaEngine
 			return false;
 		}
 
+		// Set up device features
+		m_DeviceFeatures.MeshShaders		= IsDeviceExtensionEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME);
+		m_DeviceFeatures.RayTracing			= IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME);
+		m_DeviceFeatures.GeometryShaders	= m_DeviceFeaturesVk.geometryShader;
+		memcpy(&m_DeviceFeatures.MaxComputeWorkGroupSize, m_DeviceLimits.maxComputeWorkGroupSize, sizeof(uint32) * 3);
+
 		RegisterDeviceExtensionData();
 		return true;
 	}
@@ -854,7 +924,7 @@ namespace LambdaEngine
 		SetEnabledDeviceExtensions();
 		m_DeviceQueueFamilyIndices = FindQueueFamilies(PhysicalDevice);
 
-        //Store the properties of each queuefamily
+        // Store the properties of each queuefamily
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, nullptr);
 
@@ -864,6 +934,8 @@ namespace LambdaEngine
 		// Save device's limits
 		VkPhysicalDeviceProperties deviceProperties = GetPhysicalDeviceProperties();
 		m_DeviceLimits = deviceProperties.limits;
+
+		vkGetPhysicalDeviceFeatures(PhysicalDevice, &m_DeviceFeaturesVk);
 
 		LOG_MESSAGE("[GraphicsDeviceVK]: Chosen device: %s", deviceProperties.deviceName);
 		LOG_MESSAGE("[GraphicsDeviceVK]: API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(deviceProperties.apiVersion), VK_VERSION_MINOR(deviceProperties.apiVersion), VK_VERSION_PATCH(deviceProperties.apiVersion), deviceProperties.apiVersion);
@@ -878,8 +950,7 @@ namespace LambdaEngine
 		{
 			m_DeviceQueueFamilyIndices.GraphicsFamily,
 			m_DeviceQueueFamilyIndices.ComputeFamily,
-			m_DeviceQueueFamilyIndices.TransferFamily,
-			m_DeviceQueueFamilyIndices.PresentFamily
+			m_DeviceQueueFamilyIndices.TransferFamily
 		};
 
 		float queuePriority = 1.0f;
@@ -893,15 +964,20 @@ namespace LambdaEngine
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
+		VkPhysicalDeviceRayTracingFeaturesKHR rayTracingFeatures = {};
+		rayTracingFeatures.sType						= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		rayTracingFeatures.rayTracing					= true;
+		//rayTracingFeatures.rayQuery					= true;
+		//rayTracingFeatures.rayTracingPrimitiveCulling	= true;
+
 		VkPhysicalDeviceVulkan12Features deviceFeatures12 = {};
 		deviceFeatures12.sType					= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-		deviceFeatures12.pNext					= nullptr;
+		deviceFeatures12.pNext					= &rayTracingFeatures;
 		deviceFeatures12.bufferDeviceAddress	= true;
 		deviceFeatures12.timelineSemaphore		= true;
 
 		VkPhysicalDeviceVulkan11Features deviceFeatures11 = {};
 		deviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-        deviceFeatures11.pNext  = nullptr;
 		deviceFeatures11.pNext	= &deviceFeatures12;
 
 		VkPhysicalDeviceFeatures desiredDeviceFeatures = {};
@@ -961,7 +1037,6 @@ namespace LambdaEngine
 		for (const VkLayerProperties& availableValidationLayerProperties : availableValidationLayers)
 		{
 			uint32 availableValidationLayerHash = HashString<const char*>(availableValidationLayerProperties.layerName);
-
 			for (auto requiredValidationLayer = requiredValidationLayers.begin(); requiredValidationLayer != requiredValidationLayers.end(); requiredValidationLayer++)
 			{
 				if (availableValidationLayerHash == requiredValidationLayer->Hash)
@@ -1153,7 +1228,6 @@ namespace LambdaEngine
 		indices.GraphicsFamily  = GetQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT, queueFamilies);
 		indices.ComputeFamily   = GetQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT, queueFamilies);
 		indices.TransferFamily  = GetQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT, queueFamilies);
-		indices.PresentFamily   = indices.GraphicsFamily; //Assume present support at this stage
 
 		return indices;
 	}
@@ -1261,6 +1335,11 @@ namespace LambdaEngine
 		return false;
 	}
 
+	bool GraphicsDeviceVK::UseTimelineFences() const
+	{
+		return (vkWaitSemaphores != nullptr);
+	}
+
 	void GraphicsDeviceVK::RegisterInstanceExtensionData()
 	{
 		//Required
@@ -1305,6 +1384,8 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkGetSemaphoreCounterValue);
 		}
 
+		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR = nullptr;
+
         //Buffer Address
         if (IsDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
         {
@@ -1321,19 +1402,23 @@ namespace LambdaEngine
 
 		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
 		{
-			LOG_MESSAGE("[Validation Layer]: %s\n", pCallbackData->pMessage);
+			LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);
+			PlatformConsole::Print("\n");
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
 		{
-			LOG_MESSAGE("[Validation Layer]: %s\n", pCallbackData->pMessage);
+			LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);
+			PlatformConsole::Print("\n");
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		{
-			LOG_WARNING("[Validation Layer]: %s\n", pCallbackData->pMessage);
+			LOG_WARNING("[Validation Layer]: %s", pCallbackData->pMessage);
+			PlatformConsole::Print("\n");
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		{
-			LOG_ERROR("[Validation Layer]: %s\n", pCallbackData->pMessage);
+			LOG_ERROR("[Validation Layer]: %s", pCallbackData->pMessage);
+			PlatformConsole::Print("\n");
 		}
 
 		return VK_FALSE;

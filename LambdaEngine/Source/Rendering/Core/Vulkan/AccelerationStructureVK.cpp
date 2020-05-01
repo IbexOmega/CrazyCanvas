@@ -16,6 +16,8 @@ namespace LambdaEngine
 
 	AccelerationStructureVK::~AccelerationStructureVK()
 	{
+		SAFERELEASE(m_pScratchBuffer);
+
 		if (m_AccelerationStructure != VK_NULL_HANDLE)
 		{
 			VALIDATE(m_pDevice->vkDestroyAccelerationStructureKHR != nullptr);
@@ -78,7 +80,7 @@ namespace LambdaEngine
 			geometryTypeInfo.indexType			= VK_INDEX_TYPE_UINT32;
 			geometryTypeInfo.maxVertexCount		= pDesc->MaxVertexCount;
 			geometryTypeInfo.vertexFormat		= VK_FORMAT_R32G32B32_SFLOAT;
-			geometryTypeInfo.allowsTransforms	= VK_TRUE;
+			geometryTypeInfo.allowsTransforms	= pDesc->AllowsTransform ? VK_TRUE : VK_FALSE;
 		}
 
 		VALIDATE(m_pDevice->vkCreateAccelerationStructureKHR != nullptr);
@@ -176,10 +178,15 @@ namespace LambdaEngine
 		}
 
 		VkMemoryRequirements scratchMemoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR);
-		m_ScratchMemorySize			= scratchMemoryRequirements.size;
-		m_ScratchMemoryAlignment	= scratchMemoryRequirements.alignment;
 
-		return true;
+		BufferDesc scratchBufferDesc = {};
+		scratchBufferDesc.pName			= "Acceleration Structure Scratch Buffer";
+		scratchBufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+		scratchBufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_RAY_TRACING;
+		scratchBufferDesc.SizeInBytes	= scratchMemoryRequirements.size;
+
+		m_pScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&scratchBufferDesc, pAllocator));
+		return m_pScratchBuffer != nullptr;
 	}
 
 	void AccelerationStructureVK::SetName(const char* pName)

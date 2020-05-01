@@ -6,8 +6,8 @@
 
 namespace LambdaEngine
 {
-	class GraphicsDeviceVK;
 	class BufferVK;
+	class GraphicsDeviceVK;
 
 	class AccelerationStructureVK : public TDeviceChildBase<GraphicsDeviceVK, IAccelerationStructure>
 	{
@@ -24,19 +24,13 @@ namespace LambdaEngine
 			return m_AccelerationStructure;
 		}
 
+		FORCEINLINE BufferVK* GetScratchBuffer()
+		{
+			return m_pScratchBuffer;
+		}
+
 		// IDeviceChild interface
 		virtual void SetName(const char* pName) override final;
-
-		// IAccelerationStructure interface
-		FORCEINLINE virtual uint64 GetScratchMemorySizeRequirement() const override final
-		{
-			return m_ScratchMemorySize;
-		}
-
-		FORCEINLINE virtual uint64 GetScratchMemoryAlignmentRequirement() const override final
-		{
-			return m_ScratchMemoryAlignment;
-		}
 
 		FORCEINLINE virtual uint64 GetDeviceAdress() const override final
 		{
@@ -61,8 +55,7 @@ namespace LambdaEngine
 		VkAccelerationStructureKHR	m_AccelerationStructure					= VK_NULL_HANDLE;
 		VkDeviceMemory				m_AccelerationStructureMemory			= VK_NULL_HANDLE;
 		VkDeviceAddress				m_AccelerationStructureDeviceAddress	= 0;
-		VkDeviceSize				m_ScratchMemorySize						= 0;
-		VkDeviceSize				m_ScratchMemoryAlignment				= 0;
+		BufferVK*					m_pScratchBuffer						= nullptr;
 
 		AllocationVK				m_Allocation;
 		AccelerationStructureDesc	m_Desc;

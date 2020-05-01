@@ -47,7 +47,7 @@ namespace LambdaEngine
             
             // Fixed update
             accumulator += delta;
-            //while (accumulator >= timestep)
+            while (accumulator >= timestep)
             {
                 fixedClock.Tick();
                 FixedTick(fixedClock.GetDeltaTime());
@@ -71,7 +71,7 @@ namespace LambdaEngine
 
 		AudioSystem::Tick();
 
-        //Tick game
+        // Tick game
         Game::Get()->Tick(delta);
         
         return true;
@@ -79,7 +79,7 @@ namespace LambdaEngine
 
     void EngineLoop::FixedTick(Timestamp delta)
     {
-        //Tick game
+        // Tick game
         Game::Get()->FixedTick(delta);
 		NetworkUtils::FixedTick(delta);
     }

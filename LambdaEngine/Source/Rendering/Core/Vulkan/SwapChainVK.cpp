@@ -32,7 +32,7 @@ namespace LambdaEngine
 			RELEASE(m_pCommandQueue);
 		}
     	
-        //Destroy semaphores
+        // Destroy semaphores
         for (uint32 i = 0; i < m_Desc.BufferCount; i++)
         {
             if (m_ImageSemaphores[i] != VK_NULL_HANDLE)
@@ -48,7 +48,7 @@ namespace LambdaEngine
             }
         }
         
-        //Destroy surface
+        // Destroy surface
         if (m_Surface != VK_NULL_HANDLE)
         {
             vkDestroySurfaceKHR(m_pDevice->Instance, m_Surface, nullptr);
@@ -82,9 +82,13 @@ namespace LambdaEngine
 
     bool SwapChainVK::Init(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)
     {
-        //Create platform specific surface
+        VALIDATE(pWindow        != nullptr);
+        VALIDATE(pCommandQueue  != nullptr);
+        VALIDATE(pDesc          != nullptr);
+
+        // Create platform specific surface
 #if defined(LAMBDA_PLATFORM_MACOS)
-        //Create surface for macOS
+        // Create surface for macOS
         {
             VkMacOSSurfaceCreateInfoMVK info = {};
             info.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
@@ -97,7 +101,7 @@ namespace LambdaEngine
             }
         }
 #elif defined(LAMBDA_PLATFORM_WINDOWS)
-        //Create a surface for windows
+        // Create a surface for windows
         {
             VkWin32SurfaceCreateInfoKHR info = {};
             info.sType      = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -122,23 +126,23 @@ namespace LambdaEngine
             D_LOG_MESSAGE("[SwapChainVK]: Created Surface");
         }
         
-        //Check for presentationsupport
-        VkBool32            presentSupport  = false;
-        QueueFamilyIndices  familyIndices   = m_pDevice->GetQueueFamilyIndices();
-        vkGetPhysicalDeviceSurfaceSupportKHR(m_pDevice->PhysicalDevice, familyIndices.PresentFamily, m_Surface, &presentSupport);
+        // Check for presentationsupport
+        VkBool32    presentSupport      = false;
+        uint32      queueFamilyIndex    = m_pDevice->GetQueueFamilyIndexFromQueueType(pCommandQueue->GetType());
+        vkGetPhysicalDeviceSurfaceSupportKHR(m_pDevice->PhysicalDevice, queueFamilyIndex, m_Surface, &presentSupport);
         if (!presentSupport)
         {
-            LOG_ERROR("[SwapChainVK]: Queuefamily does not support presentation");
+            LOG_ERROR("[SwapChainVK]: Queue does not support presentation");
             return false;
         }
 
-        //Setup semaphore structure
+        // Setup semaphore structure
         VkSemaphoreCreateInfo semaphoreInfo = {};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
         semaphoreInfo.pNext = nullptr;
         semaphoreInfo.flags = 0;
 
-        //Create semaphores
+        // Create semaphores
         m_ImageSemaphores.resize(pDesc->BufferCount);
         m_RenderSemaphores.resize(pDesc->BufferCount);
         for (uint32 i = 0; i < pDesc->BufferCount; i++)
@@ -166,7 +170,7 @@ namespace LambdaEngine
             D_LOG_MESSAGE("[SwapChainVK]: Created Semaphore %p", m_RenderSemaphores[i]);
         }
 
-        //Get supported surface formats
+        // Get supported surface formats
         uint32 formatCount = 0;
         VkResult result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, nullptr);
         if (result != VK_SUCCESS)
@@ -178,7 +182,7 @@ namespace LambdaEngine
         std::vector<VkSurfaceFormatKHR> formats(formatCount);
         vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, formats.data());
 
-        //Find the swapchain format we want
+        // Find the swapchain format we want
         VkFormat lookingFor = ConvertFormat(pDesc->Format);
         m_VkFormat = { VK_FORMAT_UNDEFINED, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
         for (const VkSurfaceFormatKHR& availableFormat : formats)
@@ -205,7 +209,7 @@ namespace LambdaEngine
             return false;
         }
 
-        //Get presentation modes
+        // Get presentation modes
         uint32 presentModeCount = 0;
         result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_pDevice->PhysicalDevice, m_Surface, &presentModeCount, nullptr);
         if (result != VK_SUCCESS)
@@ -220,7 +224,7 @@ namespace LambdaEngine
         m_PresentationMode = VK_PRESENT_MODE_FIFO_KHR;
         if (!pDesc->VerticalSync)
         {
-            //Search for the mailbox mode
+            // Search for the mailbox mode
             for (const VkPresentModeKHR& availablePresentMode : presentModes)
             {
                 if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
@@ -230,7 +234,7 @@ namespace LambdaEngine
                 }
             }
 
-            //If mailbox is not available we choose immediete
+            // If mailbox is not available we choose immediete
             if (m_PresentationMode == VK_PRESENT_MODE_FIFO_KHR)
             {
                 for (const VkPresentModeKHR& availablePresentMode : presentModes)
@@ -280,7 +284,7 @@ namespace LambdaEngine
             return false;
         }
 
-        //Choose swapchain extent (Size)
+        // Choose swapchain extent (Size)
         VkExtent2D newExtent = {};
         if (capabilities.currentExtent.width    != UINT32_MAX ||
             capabilities.currentExtent.height   != UINT32_MAX ||
@@ -300,37 +304,25 @@ namespace LambdaEngine
 
         D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain size w: %u h: %u", newExtent.width, newExtent.height);
 
-        //Create swapchain
+        // Create swapchain
         VkSwapchainCreateInfoKHR info = {};
-        info.sType              = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        info.pNext              = nullptr;
-        info.surface            = m_Surface;
-        info.minImageCount      = m_Desc.BufferCount;
-        info.imageFormat        = m_VkFormat.format;
-        info.imageColorSpace    = m_VkFormat.colorSpace;
-        info.imageExtent        = newExtent;
-        info.imageArrayLayers   = 1;
-        info.imageUsage         = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        info.preTransform       = capabilities.currentTransform;
-        info.compositeAlpha     = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        info.presentMode        = m_PresentationMode;
-        info.clipped            = VK_TRUE;
-        info.oldSwapchain       = VK_NULL_HANDLE;
-
-        QueueFamilyIndices familyIndices = m_pDevice->GetQueueFamilyIndices();
-        if (familyIndices.GraphicsFamily != familyIndices.PresentFamily)
-        {
-            uint32 queueFamilyIndices[] = { uint32(familyIndices.GraphicsFamily), uint32(familyIndices.PresentFamily) };
-            info.imageSharingMode       = VK_SHARING_MODE_CONCURRENT;
-            info.queueFamilyIndexCount  = 2;
-            info.pQueueFamilyIndices    = queueFamilyIndices;
-        }
-        else
-        {
-            info.imageSharingMode       = VK_SHARING_MODE_EXCLUSIVE;
-            info.queueFamilyIndexCount  = 0;
-            info.pQueueFamilyIndices    = nullptr;
-        }
+        info.sType                  = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        info.pNext                  = nullptr;
+        info.surface                = m_Surface;
+        info.minImageCount          = m_Desc.BufferCount;
+        info.imageFormat            = m_VkFormat.format;
+        info.imageColorSpace        = m_VkFormat.colorSpace;
+        info.imageExtent            = newExtent;
+        info.imageArrayLayers       = 1;
+        info.imageSharingMode       = VK_SHARING_MODE_EXCLUSIVE;
+        info.queueFamilyIndexCount  = 0;
+        info.pQueueFamilyIndices    = nullptr;
+        info.imageUsage             = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+        info.preTransform           = capabilities.currentTransform;
+        info.compositeAlpha         = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        info.presentMode            = m_PresentationMode;
+        info.clipped                = VK_TRUE;
+        info.oldSwapchain           = VK_NULL_HANDLE;
 
         result = vkCreateSwapchainKHR(m_pDevice->Device, &info, nullptr, &m_SwapChain);
         if (result != VK_SUCCESS)
@@ -346,7 +338,7 @@ namespace LambdaEngine
             m_SemaphoreIndex = 0;
         }
 
-        //Get SwapChain images
+        // Get SwapChain images
         uint32 imageCount = 0;
         vkGetSwapchainImagesKHR(m_pDevice->Device, m_SwapChain, &imageCount, nullptr);
         m_Desc.BufferCount = imageCount;

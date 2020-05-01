@@ -62,9 +62,9 @@ namespace LambdaEngine
 			GUID_Lambda guid = RegisterLoadedTexture(pTexture);
 
 			//RegisterLoadedTexture will create a TextureView for the texture, this needs to be registered in the correct materials
-			for (uint32 i = 0; i < materials.size(); i++)
+			for (uint32 j = 0; j < materials.size(); j++)
 			{
-				Material* pMaterial = materials[i];
+				Material* pMaterial = materials[j];
 
 				if (pMaterial->pAlbedoMap == pTexture)
 					pMaterial->pAlbedoMapView = s_TextureViews[guid];
@@ -310,10 +310,15 @@ namespace LambdaEngine
 		{
 			if (it->second != nullptr)
 			{
-				SAFERELEASE(it->second);
 				ShaderLoadDesc loadDesc = s_ShaderLoadConfigurations[it->first];
 
-				it->second = ResourceLoader::LoadShaderFromFile(loadDesc.pFilepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
+				IShader* pShader = ResourceLoader::LoadShaderFromFile(loadDesc.pFilepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
+
+				if (pShader != nullptr)
+				{
+					SAFERELEASE(it->second);
+					it->second = pShader;
+				}
 			}
 		}
 	}

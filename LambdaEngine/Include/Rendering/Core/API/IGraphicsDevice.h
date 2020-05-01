@@ -9,6 +9,7 @@ namespace LambdaEngine
     struct TextureDesc;
 	struct SamplerDesc;
     struct SwapChainDesc;
+	struct QueryHeapDesc;
 	struct RenderPassDesc;
     struct CommandListDesc;
     struct TextureViewDesc;
@@ -28,6 +29,7 @@ namespace LambdaEngine
 	class ISampler;
     class ITexture;
     class ISwapChain;
+	class IQueryHeap;
     class IRenderPass;
     class ITextureView;
     class ICommandList;
@@ -52,6 +54,14 @@ namespace LambdaEngine
 		uint32 DescriptorCount	= 0;
 	};
 
+	struct GraphicsDeviceFeatureDesc
+	{
+		uint32	MaxComputeWorkGroupSize[3];
+		bool	RayTracing;
+		bool	MeshShaders;
+		bool	GeometryShaders;
+	};
+
 	struct GraphicsDeviceDesc
 	{
 		const char* pName = "";
@@ -62,6 +72,8 @@ namespace LambdaEngine
 	{
 	public:
 		DECL_DEVICE_INTERFACE(IGraphicsDevice);
+
+		virtual IQueryHeap* CreateQueryHeap(const QueryHeapDesc* pDesc) const = 0;
 
 		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const = 0;
 		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const = 0;
@@ -94,6 +106,8 @@ namespace LambdaEngine
         
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst)																			const = 0;
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const = 0;
+		
+		virtual void QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const = 0;
 
 		/*
 		* Releases the graphicsdevice. Unlike all other graphics interfaces, the graphicsdevice

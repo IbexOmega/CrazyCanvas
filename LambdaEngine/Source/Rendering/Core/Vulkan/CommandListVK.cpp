@@ -13,6 +13,7 @@
 #include "Rendering/Core/Vulkan/RenderPassVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
 #include "Rendering/Core/Vulkan/DescriptorSetVK.h"
+#include "Rendering/Core/Vulkan/QueryHeapVK.h"
 #include "Rendering/Core/Vulkan/AccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
@@ -90,11 +91,6 @@ namespace LambdaEngine
 			m_Desc.pName = m_pDebugName;
 		}
     }
-
-	void CommandListVK::Reset()
-	{
-		vkResetCommandBuffer(m_CommandList, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-	}
 
 	bool CommandListVK::Begin(const SecondaryCommandListBeginDesc* pBeginDesc)
 	{
@@ -201,10 +197,11 @@ namespace LambdaEngine
 	{
 		VALIDATE(pBuildDesc != nullptr);
 
-		VALIDATE(pBuildDesc->pInstanceBuffer	!= nullptr);
-		VALIDATE(pBuildDesc->pScratchBuffer	!= nullptr);
-		const BufferVK* pInstanceBufferVk	= reinterpret_cast<const BufferVK*>(pBuildDesc->pInstanceBuffer);
-		BufferVK*		pScratchBufferVk	= reinterpret_cast<BufferVK*>(pBuildDesc->pScratchBuffer);
+		VALIDATE(pBuildDesc->pAccelerationStructure != nullptr);
+		VALIDATE(pBuildDesc->pInstanceBuffer		!= nullptr);
+		AccelerationStructureVK* pAccelerationStructureVk	= reinterpret_cast<AccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
+		BufferVK*		pScratchBufferVk					= pAccelerationStructureVk->GetScratchBuffer();
+		const BufferVK* pInstanceBufferVk					= reinterpret_cast<const BufferVK*>(pBuildDesc->pInstanceBuffer);
 
 		VkDeviceOrHostAddressConstKHR instancesDataAddressUnion = {};
 		instancesDataAddressUnion.deviceAddress = pInstanceBufferVk->GetDeviceAdress();
@@ -221,6 +218,7 @@ namespace LambdaEngine
 		geometryData.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 		geometryData.geometryType	= VK_GEOMETRY_TYPE_INSTANCES_KHR;
 		geometryData.geometry		= geometryDataUnion;
+		geometryData.flags			= 0;
 
 		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
 
@@ -228,7 +226,7 @@ namespace LambdaEngine
 		accelerationStructureBuildInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 		accelerationStructureBuildInfo.type						= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 		accelerationStructureBuildInfo.geometryArrayOfPointers	= VK_FALSE;
-		accelerationStructureBuildInfo.geometryCount			= pBuildDesc->InstanceCount;
+		accelerationStructureBuildInfo.geometryCount			= 1;
 		accelerationStructureBuildInfo.ppGeometries				= &pGeometryData;
 		accelerationStructureBuildInfo.flags					= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
 		if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
@@ -236,15 +234,7 @@ namespace LambdaEngine
 			accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 		}
 
-		VALIDATE(pBuildDesc->pAccelerationStructure != nullptr);
-
-		AccelerationStructureVK* pAccelerationStructureVk	= reinterpret_cast<AccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
 		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAdress();
-
-#ifndef LAMBDA_DISABLE_ASSERT
-		BufferDesc scratchBufferDesc = pScratchBufferVk->GetDesc();
-		VALIDATE(scratchBufferDesc.SizeInBytes >= pAccelerationStructureVk->GetScratchMemorySizeRequirement());
-#endif
 
 		if (pBuildDesc->Update)
 		{
@@ -273,24 +263,20 @@ namespace LambdaEngine
 	{
 		VALIDATE(pBuildDesc != nullptr);
 
-		VALIDATE(pBuildDesc->pScratchBuffer	!= nullptr);
-		VALIDATE(pBuildDesc->pVertexBuffer	!= nullptr);
-		VALIDATE(pBuildDesc->pIndexBuffer		!= nullptr);
+		VALIDATE(pBuildDesc->pAccelerationStructure != nullptr);
+		VALIDATE(pBuildDesc->pVertexBuffer			!= nullptr);
+		VALIDATE(pBuildDesc->pIndexBuffer			!= nullptr);
 
-		BufferVK*		pScratchBufferVk	= reinterpret_cast<BufferVK*>(pBuildDesc->pScratchBuffer);
-		const BufferVK* pVertexBufferVk		= reinterpret_cast<const BufferVK*>(pBuildDesc->pVertexBuffer);
-		const BufferVK* pIndexBufferVk		= reinterpret_cast<const BufferVK*>(pBuildDesc->pIndexBuffer);
+		AccelerationStructureVK*	pAccelerationStructureVk	= reinterpret_cast<AccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
+		BufferVK*					pScratchBufferVk			= pAccelerationStructureVk->GetScratchBuffer();
+		const BufferVK*				pVertexBufferVk				= reinterpret_cast<const BufferVK*>(pBuildDesc->pVertexBuffer);
+		const BufferVK*				pIndexBufferVk				= reinterpret_cast<const BufferVK*>(pBuildDesc->pIndexBuffer);
 
 		VkDeviceOrHostAddressConstKHR vertexDataAddressUnion = {};
 		vertexDataAddressUnion.deviceAddress = pVertexBufferVk->GetDeviceAdress();
 
 		VkDeviceOrHostAddressConstKHR indexDataAddressUnion = {};
 		indexDataAddressUnion.deviceAddress = pIndexBufferVk->GetDeviceAdress();
-
-		VALIDATE(pBuildDesc->pTransform != nullptr);
-
-		VkDeviceOrHostAddressConstKHR transformDataAddressUnion = {};
-		transformDataAddressUnion.hostAddress = pBuildDesc->pTransform;
 
 		VkAccelerationStructureGeometryTrianglesDataKHR geometryDataDesc = {};
 		geometryDataDesc.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
@@ -300,7 +286,17 @@ namespace LambdaEngine
 		geometryDataDesc.vertexStride	= pBuildDesc->VertexStride;
 		geometryDataDesc.indexType		= VK_INDEX_TYPE_UINT32;
 		geometryDataDesc.indexData		= indexDataAddressUnion;
-		geometryDataDesc.transformData	= transformDataAddressUnion;
+
+		VkDeviceOrHostAddressConstKHR transformDataAddressUnion = {};
+		if (pBuildDesc->pTransformBuffer != nullptr)
+		{
+			transformDataAddressUnion.deviceAddress = reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer)->GetDeviceAdress();
+			geometryDataDesc.transformData = transformDataAddressUnion;
+		}
+		else
+		{
+			geometryDataDesc.transformData = { 0 };
+		}
 
 		VkAccelerationStructureGeometryDataKHR geometryDataUnion = {};
 		geometryDataUnion.triangles = geometryDataDesc;
@@ -315,15 +311,9 @@ namespace LambdaEngine
 		VkDeviceOrHostAddressKHR scratchBufferAddressUnion = {};
 		scratchBufferAddressUnion.deviceAddress = pScratchBufferVk->GetDeviceAdress();
 
-		AccelerationStructureVK* pAccelerationStructureVk = reinterpret_cast<AccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
-#ifndef LAMBDA_DISABLE_ASSERT
-		BufferDesc scratchBufferDesc = pScratchBufferVk->GetDesc();
-		VALIDATE(scratchBufferDesc.SizeInBytes >= pAccelerationStructureVk->GetScratchMemorySizeRequirement());
-#endif
-
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
 		accelerationStructureBuildInfo.sType	= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-		accelerationStructureBuildInfo.type		= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		accelerationStructureBuildInfo.type		= VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 		accelerationStructureBuildInfo.flags	= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
 		if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 		{
@@ -343,7 +333,7 @@ namespace LambdaEngine
 		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->TriangleCount;
 		accelerationStructureOffsetInfo.primitiveOffset = pBuildDesc->IndexBufferByteOffset;
 		accelerationStructureOffsetInfo.firstVertex		= pBuildDesc->FirstVertexIndex;
-		accelerationStructureOffsetInfo.transformOffset = 0;
+		accelerationStructureOffsetInfo.transformOffset = pBuildDesc->TransformByteOffset;
 
 		VALIDATE(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
 
@@ -388,6 +378,33 @@ namespace LambdaEngine
 		copyRegion.imageExtent.width				= desc.Width;
 
 		vkCmdCopyBufferToImage(m_CommandList, pVkSrc->GetBuffer(), pVkDst->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+	}
+
+	void CommandListVK::BlitTexture(const ITexture* pSrc, ETextureState srcState, ITexture* pDst, ETextureState dstState, EFilter filter)
+	{
+		VALIDATE(pSrc != nullptr);
+		VALIDATE(pDst != nullptr);
+
+		const TextureVK*	pVkSrc	= reinterpret_cast<const TextureVK*>(pSrc);
+		TextureVK*			pVkDst	= reinterpret_cast<TextureVK*>(pDst);
+
+		VkImageLayout		vkSrcLayout = ConvertTextureState(srcState);
+		VkImageLayout		vkDstLayout = ConvertTextureState(dstState);
+		VkFilter			vkFilter	= ConvertFilter(filter);
+
+		VkImageSubresourceLayers srcSubresource = {};
+		srcSubresource.aspectMask;
+		srcSubresource.mipLevel;
+		srcSubresource.baseArrayLayer;
+		srcSubresource.layerCount;
+
+		VkImageBlit region = {};
+		region.srcSubresource;
+		region.srcOffsets[2];
+		region.dstSubresource;
+		region.dstOffsets[2];
+
+		vkCmdBlitImage(m_CommandList, pVkSrc->GetImage(), vkSrcLayout, pVkDst->GetImage(), vkDstLayout, 1, &region, vkFilter);
 	}
 
 	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)
@@ -459,7 +476,7 @@ namespace LambdaEngine
 
 		VkPipelineStageFlags sourceStage		= ConvertPipelineStageMask(srcStage);
 		VkPipelineStageFlags destinationStage	= ConvertPipelineStageMask(dstStage);
-		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, bufferBarrierCount, m_ImageBarriers);
+		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, 0, nullptr, bufferBarrierCount, m_BufferBarriers, 0, nullptr);
 	}
 
 	void CommandListVK::GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter)
@@ -726,6 +743,26 @@ namespace LambdaEngine
 	{
 		const BufferVK* pDrawBufferVk = reinterpret_cast<const BufferVK*>(pDrawBuffer);
 		vkCmdDrawIndexedIndirect(m_CommandList, pDrawBufferVk->GetBuffer(), offset, drawCount, stride);
+	}
+
+	void CommandListVK::BeginQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)
+	{
+		QueryHeapVK*		pQueryHeapVk	= reinterpret_cast<QueryHeapVK*>(pQueryHeap);
+		VkQueryControlFlags controlFlagsVk	= VK_QUERY_CONTROL_PRECISE_BIT;
+		vkCmdBeginQuery(m_CommandList, pQueryHeapVk->GetQueryPool(), queryIndex, controlFlagsVk);
+	}
+
+	void CommandListVK::Timestamp(IQueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)
+	{
+		QueryHeapVK*			pQueryHeapVk		= reinterpret_cast<QueryHeapVK*>(pQueryHeap);
+		VkPipelineStageFlagBits	pipelineStageFlagVk	= ConvertPipelineStage(pipelineStageFlag);
+		vkCmdWriteTimestamp(m_CommandList, pipelineStageFlagVk, pQueryHeapVk->GetQueryPool(), queryIndex);
+	}
+
+	void CommandListVK::EndQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)
+	{
+		QueryHeapVK* pQueryHeapVk = reinterpret_cast<QueryHeapVK*>(pQueryHeap);
+		vkCmdEndQuery(m_CommandList, pQueryHeapVk->GetQueryPool(), queryIndex);
 	}
 
 	void CommandListVK::ExecuteSecondary(const ICommandList* pSecondary)

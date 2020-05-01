@@ -24,7 +24,7 @@ namespace LambdaEngine
 		*
 		* return - Returns true if submition of commandlists are successful
 		*/
-		virtual bool ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, const IFence* pSignalFence, uint64 signalValue) = 0;
+		virtual bool ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, IFence* pSignalFence, uint64 signalValue) = 0;
 		
 		/*
 		* Waits for the queue to finish all work that has been submited to it
@@ -36,6 +36,7 @@ namespace LambdaEngine
         * 
         * return - Returns a valid handle on success otherwise zero
         */
-		virtual uint64 GetHandle() const = 0;
+		virtual uint64				GetHandle() const = 0;
+		virtual ECommandQueueType	GetType()	const = 0;
 	};
 }

@@ -11,6 +11,7 @@ namespace LambdaEngine
 {
 	class IBuffer;
 	class ITexture;
+	class IQueryHeap;
 	class IRenderPass;
 	class ITextureView;
 	class IPipelineState;
@@ -125,8 +126,7 @@ namespace LambdaEngine
 	struct BuildTopLevelAccelerationStructureDesc
 	{
 		IAccelerationStructure* pAccelerationStructure	= nullptr;
-		uint32					Flags					= 0;
-		IBuffer*				pScratchBuffer			= nullptr; 
+		uint32					Flags					= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
 		const IBuffer*			pInstanceBuffer			= nullptr;
 		uint32					InstanceCount			= 0;
 		bool					Update					= false;
@@ -135,15 +135,15 @@ namespace LambdaEngine
 	struct BuildBottomLevelAccelerationStructureDesc
 	{
 		IAccelerationStructure*	pAccelerationStructure	= nullptr;
-		uint32					Flags					= 0;
-		IBuffer*				pScratchBuffer			= nullptr;
+		uint32					Flags					= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
 		const IBuffer*			pVertexBuffer			= nullptr; 
 		uint32					FirstVertexIndex		= 0; 
 		uint32					VertexStride			= 0;
 		const IBuffer*			pIndexBuffer			= nullptr;
 		uint32					IndexBufferByteOffset	= 0; 
 		uint32					TriangleCount			= 0;
-		const void*				pTransform				= nullptr;
+		const IBuffer*			pTransformBuffer		= nullptr;
+		uint32					TransformByteOffset		= 0;
 		bool					Update					= false;
 	};
 
@@ -160,9 +160,7 @@ namespace LambdaEngine
 		DECL_DEVICE_INTERFACE(ICommandList);
 
 		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc) = 0;
-		
-		virtual void Reset() = 0;
-		virtual bool End()	 = 0;
+		virtual bool End()	                                                = 0;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) = 0;
 		virtual void EndRenderPass() = 0;
@@ -170,8 +168,9 @@ namespace LambdaEngine
 		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)		= 0;
 		virtual void BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)	= 0;
 
-		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes) = 0;
-		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)		= 0;
+		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)				= 0;
+		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)					= 0;
+		virtual void BlitTexture(const ITexture* pSrc, ETextureState srcState, ITexture* pDst, ETextureState dstState, EFilter filter)	= 0;
 
 		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)	= 0;
 		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)		= 0;
@@ -194,12 +193,16 @@ namespace LambdaEngine
 		virtual void BindComputePipeline(const IPipelineState* pPipeline)		= 0;
 		virtual void BindRayTracingPipeline(const IPipelineState* pPipeline)	= 0;
 
-		virtual void TraceRays(uint32 width, uint32 height, uint32 raygenOffset)						= 0;
+		virtual void TraceRays(uint32 width, uint32 height, uint32 depth)								= 0;
 		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ)	= 0;
 
 		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)							= 0;
 		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)	= 0;
 		virtual void DrawIndexedIndirect(const IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)							= 0;
+
+		virtual void BeginQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)											= 0;
+		virtual void Timestamp(IQueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)	= 0;
+		virtual void EndQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)											= 0;
 
 		virtual void ExecuteSecondary(const ICommandList* pSecondary) = 0;
 

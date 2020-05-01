@@ -24,7 +24,7 @@ namespace LambdaEngine
 
 		bool Init(const char* pName, uint32 queueFamilyIndex, uint32 index);
 
-		void AddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlagBits waitStage);
+		void AddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags waitStage);
 		void AddSignalSemaphore(VkSemaphore semaphore);
 
 		void FlushBarriers();
@@ -38,20 +38,30 @@ namespace LambdaEngine
 		virtual void SetName(const char* pName) override final;
 		
 		// ICommandQueue interface
-		virtual bool ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, const IFence* pSignalFence, uint64 signalValue) override final;
+		virtual bool ExecuteCommandLists(const ICommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const IFence* pWaitFence, uint64 waitValue, IFence* pSignalFence, uint64 signalValue) override final;
 		virtual void Flush() override final;
 
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
 			return (uint64)m_Queue;
 		}
+
+		FORCEINLINE virtual ECommandQueueType GetType() const override final
+		{
+			return m_Type;
+		}
         
     private:
         VkResult InternalFlushBarriers();
+        
+        void InternalAddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags waitStage);
+        void InternalAddSignalSemaphore(VkSemaphore semaphore);
 
 	private:
-		VkQueue	        m_Queue = VK_NULL_HANDLE;
-		VkCommandBuffer m_SubmitCommandBuffers[MAX_COMMANDBUFFERS];
+		VkQueue				m_Queue = VK_NULL_HANDLE;
+		ECommandQueueType	m_Type	= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+
+		VkCommandBuffer		m_SubmitCommandBuffers[MAX_COMMANDBUFFERS];
 
 		TArray<VkSemaphore>             m_SignalSemaphores;
 		TArray<VkSemaphore>             m_WaitSemaphores;

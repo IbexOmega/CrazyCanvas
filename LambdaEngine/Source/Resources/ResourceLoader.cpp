@@ -25,6 +25,7 @@
 
 namespace LambdaEngine
 {
+	IDeviceAllocator*		ResourceLoader::s_pAllocator				= nullptr;
 	ICommandAllocator*		ResourceLoader::s_pCopyCommandAllocator		= nullptr;
 	ICommandList*			ResourceLoader::s_pCopyCommandList			= nullptr;
 	IFence*					ResourceLoader::s_pCopyFence				= nullptr;
@@ -184,6 +185,11 @@ namespace LambdaEngine
 		fenceDesc.InitalValue	= 0;
 		s_pCopyFence = RenderSystem::GetDevice()->CreateFence(&fenceDesc);
 
+		DeviceAllocatorDesc allocatorDesc = {};
+		allocatorDesc.pName				= "Resource Allocator";
+		allocatorDesc.PageSizeInBytes	= MEGA_BYTE(64);
+		s_pAllocator = RenderSystem::GetDevice()->CreateDeviceAllocator(&allocatorDesc);
+
 		glslang::InitializeProcess();
 
 		return true;
@@ -191,6 +197,7 @@ namespace LambdaEngine
 
 	bool ResourceLoader::Release()
 	{
+		SAFERELEASE(s_pAllocator);
 		SAFERELEASE(s_pCopyCommandAllocator);
 		SAFERELEASE(s_pCopyCommandList);
 		SAFERELEASE(s_pCopyFence);
@@ -549,7 +556,7 @@ namespace LambdaEngine
 		textureDesc.Miplevels	= miplevels;
 		textureDesc.SampleCount = 1;
 
-		ITexture* pTexture = RenderSystem::GetDevice()->CreateTexture(&textureDesc, nullptr);
+		ITexture* pTexture = RenderSystem::GetDevice()->CreateTexture(&textureDesc, s_pAllocator);
 
 		if (pTexture == nullptr)
 		{
@@ -565,7 +572,7 @@ namespace LambdaEngine
 		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		bufferDesc.SizeInBytes	= pixelDataSize;
 
-		IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, nullptr);
+		IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, s_pAllocator);
 
 		if (pTextureData == nullptr)
 		{
@@ -581,8 +588,6 @@ namespace LambdaEngine
 		s_pCopyFence->Wait(waitValue, UINT64_MAX);
 
 		s_pCopyCommandAllocator->Reset();
-		s_pCopyCommandList->Reset();
-
 		s_pCopyCommandList->Begin(nullptr);
 
 		CopyTextureFromBufferDesc copyDesc = {};
@@ -669,13 +674,13 @@ namespace LambdaEngine
 		{
 			if (!ReadDataFromFile(pFilepath, "r", &pShaderRawSource, &shaderRawSourceSize))
 			{
-				LOG_ERROR("[ResourceDevice]: Failed to open shader file \"%s\"", pFilepath);
+				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", pFilepath);
 				return nullptr;
 			}
 			
 			if (!CompileGLSLToSPIRV(pFilepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, sourceSPIRV))
 			{
-				LOG_ERROR("[ResourceDevice]: Failed to compile GLSL to SPIRV for \"%s\"", pFilepath);
+				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", pFilepath);
 				return nullptr;
 			}
 
@@ -685,7 +690,7 @@ namespace LambdaEngine
 		{
 			if (!ReadDataFromFile(pFilepath, "rb", &pShaderRawSource, &shaderRawSourceSize))
 			{
-				LOG_ERROR("[ResourceDevice]: Failed to open shader file \"%s\"", pFilepath);
+				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", pFilepath);
 				return nullptr;
 			}
 			
@@ -733,7 +738,6 @@ namespace LambdaEngine
 	bool ResourceLoader::ReadDataFromFile(const char* pFilepath, const char* pMode, byte** ppData, uint32* pDataSize)
 	{
 		FILE* pFile = fopen(pFilepath, pMode);
-
 		if (pFile == nullptr)
 		{
 			LOG_ERROR("[ResourceDevice]: Failed to load file \"%s\"", pFilepath);
@@ -749,7 +753,6 @@ namespace LambdaEngine
 		fread(*ppData, 1, (*pDataSize), pFile);
 
 		fclose(pFile);
-
 		return true;
 	}
 

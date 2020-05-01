@@ -41,7 +41,7 @@ namespace LambdaEngine
 		va_list args;
 		va_start(args, pMessage);
 
-		VPrint(pMessage, args);
+		PrintV(pMessage, args);
 
 		va_end(args);
 	}
@@ -51,12 +51,12 @@ namespace LambdaEngine
 		va_list args;
 		va_start(args, pMessage);
 
-		VPrintLine(pMessage, args);
+		PrintLineV(pMessage, args);
 
 		va_end(args);
 	}
 
-	void Win32Console::VPrint(const char* pMessage, va_list args)
+	void Win32Console::PrintV(const char* pMessage, va_list args)
 	{
 		std::scoped_lock<SpinLock> lock(g_ConsoleLock);
 
@@ -64,17 +64,17 @@ namespace LambdaEngine
 		{
 			constexpr uint32 BUFFER_SIZE = 1024;
 			static char buffer[BUFFER_SIZE];
-			ZERO_MEMORY(buffer, BUFFER_SIZE);
 
-			int numChars = vsprintf_s(buffer, BUFFER_SIZE, pMessage, args);
+			int numChars = vsprintf_s(buffer, BUFFER_SIZE - 1, pMessage, args);
 			if (numChars > 0)
 			{
+				buffer[numChars] = 0;
 				WriteConsoleA(s_OutputHandle, buffer, numChars, 0, NULL);
 			}
 		}
 	}
 
-	void Win32Console::VPrintLine(const char* pMessage, va_list args)
+	void Win32Console::PrintLineV(const char* pMessage, va_list args)
 	{
 		std::scoped_lock<SpinLock> lock(g_ConsoleLock);
 
@@ -82,12 +82,13 @@ namespace LambdaEngine
 		{
 			constexpr uint32 BUFFER_SIZE = 2048;
 			static char buffer[BUFFER_SIZE];
-			ZERO_MEMORY(buffer, BUFFER_SIZE);
-
-			int numChars = vsprintf_s(buffer, BUFFER_SIZE - 1, pMessage, args);
+			
+			int numChars = vsprintf_s(buffer, BUFFER_SIZE - 2, pMessage, args);
 			if (numChars > 0)
 			{
-				buffer[numChars] = '\n';
+				buffer[numChars]		= '\n';
+				buffer[numChars + 1]	= 0;
+				
 				WriteConsoleA(s_OutputHandle, buffer, numChars + 1, 0, NULL);
 			}
 		}
@@ -99,19 +100,16 @@ namespace LambdaEngine
 
 		if (s_OutputHandle)
 		{
-			CONSOLE_SCREEN_BUFFER_INFO csbi;
-
-			if (!GetConsoleScreenBufferInfo(s_OutputHandle, &csbi))
+			CONSOLE_SCREEN_BUFFER_INFO csbi = { };
+			if (GetConsoleScreenBufferInfo(s_OutputHandle, &csbi))
 			{
-				return;
+				COORD		dst			= { 0, -csbi.dwSize.Y };
+				CHAR_INFO	fillInfo	= { '\0', FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE };
+				ScrollConsoleScreenBufferA(s_OutputHandle, &csbi.srWindow, nullptr, dst, &fillInfo);
+
+				COORD cursorPos = { 0, 0 };
+				SetConsoleCursorPosition(s_OutputHandle, cursorPos);
 			}
-
-			COORD dst = { 0, -csbi.dwSize.Y };
-			CHAR_INFO fillInfo = { '\0', FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE };
-			ScrollConsoleScreenBufferA(s_OutputHandle, &csbi.srWindow, nullptr, dst, &fillInfo);
-
-			COORD cursorPos = { 0, 0 };
-			SetConsoleCursorPosition(s_OutputHandle, cursorPos);
 		}
 	}
 

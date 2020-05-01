@@ -109,9 +109,9 @@ namespace LambdaEngine
 
 			struct
 			{
-				uint32 RaygenOffset;
 				uint32 RayTraceWidth;
 				uint32 RayTraceHeight;
+				uint32 RayTraceDepth;
 			} RayTracing;
 		};
 	};
@@ -123,6 +123,8 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderGraph
 	{
+		static constexpr const char* RENDER_GRAPH_BACK_BUFFER_PROXY = "BACK_BUFFER_PROXY_TEXTURE";
+
 		enum class EResourceType
 		{
 			UNKNOWN								= 0,
@@ -160,7 +162,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				std::vector<PipelineTextureBarrierDesc*> Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
+				std::vector<uint32>			Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
 				std::vector<ITexture*>		Textures;
 				std::vector<ITextureView*>	TextureViews;
 				std::vector<ISampler*>		Samplers;
@@ -168,7 +170,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				std::vector<PipelineBufferBarrierDesc*> Barriers;
+				std::vector<uint32>			Barriers;
 				std::vector<IBuffer*>		Buffers;
 				std::vector<uint64>			Offsets;
 				std::vector<uint64>			SizesInBytes;
@@ -204,16 +206,20 @@ namespace LambdaEngine
 
 		struct TextureSynchronization
 		{
-			FShaderStageFlags		SrcShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			FShaderStageFlags		DstShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			std::vector<PipelineTextureBarrierDesc> Barriers;
+			FShaderStageFlags		SrcShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			FShaderStageFlags		DstShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			uint32					BarrierUseFrameIndex	= 0;
+			uint32					SameFrameBarrierOffset	= 1;
+			std::vector<uint32>		Barriers;
 		};
 
 		struct BufferSynchronization
 		{
-			FShaderStageFlags		SrcShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			FShaderStageFlags		DstShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			std::vector<PipelineBufferBarrierDesc> Barriers;
+			FShaderStageFlags		SrcShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			FShaderStageFlags		DstShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			uint32					BarrierUseFrameIndex	= 0;
+			uint32					SameFrameBarrierOffset	= 1;
+			std::vector<uint32>		Barriers;
 		};
 
 		struct SynchronizationStage
@@ -323,5 +329,8 @@ namespace LambdaEngine
 		std::set<Resource*>									m_DirtyDescriptorSetExternalTextures;
 		std::set<Resource*>									m_DirtyDescriptorSetExternalBuffers;
 		std::set<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
+
+		std::vector<PipelineTextureBarrierDesc>				m_TextureBarriers;
+		std::vector<PipelineBufferBarrierDesc>				m_BufferBarriers;
 	};
 }
