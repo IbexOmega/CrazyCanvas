@@ -9,6 +9,7 @@ namespace LambdaEngine
 {
 	class LAMBDA_API NetworkPacket
 	{
+		friend class PacketTranscoder;
 		friend class PacketManager;
 
 	public:

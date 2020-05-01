@@ -19,7 +19,6 @@ namespace LambdaEngine
 {
 	class IPacketListener;
 	class ISocketUDP;
-	class IDispatcherHandler;
 
 	class LAMBDA_API PacketManager
 	{
