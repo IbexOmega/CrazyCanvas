@@ -12,6 +12,8 @@ namespace LambdaEngine
 
 	SoundInstance3DLambda::~SoundInstance3DLambda()
 	{
+		SAFEDELETE_ARRAY(m_pWaveForm);
+
 		PaError result;
 
 		result = Pa_CloseStream(m_pStream);
@@ -25,11 +27,12 @@ namespace LambdaEngine
 	{
 		SoundEffect3DLambda* pSoundEffect = reinterpret_cast<SoundEffect3DLambda*>(desc.pSoundEffect);
 
-		m_CurrentSample = 0;
-		m_SampleCount	= pSoundEffect->GetSampleCount();
-		m_ChannelCount	= pSoundEffect->GetChannelCount();
-		m_pWaveForm		= new float32[m_SampleCount * m_ChannelCount];
-		memcpy(m_pWaveForm, pSoundEffect->GetWaveform(), sizeof(float32) * m_SampleCount * m_ChannelCount);
+		m_CurrentBufferIndex		= 0;
+		m_SampleCount		= pSoundEffect->GetSampleCount();
+		m_ChannelCount		= pSoundEffect->GetChannelCount();
+		m_TotalSampleCount = m_SampleCount * m_ChannelCount;
+		m_pWaveForm			= new float32[m_TotalSampleCount];
+		memcpy(m_pWaveForm, pSoundEffect->GetWaveform(), sizeof(float32) * m_TotalSampleCount);
 
 		PaError result;
 
@@ -40,7 +43,7 @@ namespace LambdaEngine
 			m_ChannelCount,          /* stereo output */
 			paFloat32,  /* 32 bit floating point output */
 			pSoundEffect->GetSampleRate(),
-			256,			/* frames per buffer, i.e. the number
+			128,	/* frames per buffer, i.e. the number
 							   of sample frames that PortAudio will
 							   request from the callback. Many apps
 							   may want to use
@@ -113,19 +116,21 @@ namespace LambdaEngine
 		return 1.0f;
 	}
 
-	void SoundInstance3DLambda::LocalAudioCallback(float* pOutputBuffer, unsigned long framesPerBuffer)
+	int32 SoundInstance3DLambda::LocalAudioCallback(float* pOutputBuffer, unsigned long framesPerBuffer)
 	{
-		for (uint32 f = 0; f < framesPerBuffer / m_ChannelCount; f++)
+		for (uint32 f = 0; f < framesPerBuffer; f++)
 		{
 			for (uint32 c = 0; c < m_ChannelCount; c++)
 			{
-				float sample = m_pWaveForm[m_CurrentSample * m_ChannelCount + c];
+				float sample = m_pWaveForm[m_CurrentBufferIndex++];
 				(*(pOutputBuffer++)) = sample;	
 			}
 
-			m_CurrentSample++;
-			m_CurrentSample = m_CurrentSample % (m_SampleCount * m_ChannelCount);
+			if (m_CurrentBufferIndex == m_TotalSampleCount)
+				m_CurrentBufferIndex = 0;
 		}
+
+		return paNoError;
 	}
 
 	int32 SoundInstance3DLambda::PortAudioCallback(
@@ -140,12 +145,9 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pTimeInfo);
 		UNREFERENCED_VARIABLE(statusFlags);
 
-		if (pUserData != nullptr)
-		{
-			reinterpret_cast<SoundInstance3DLambda*>(pUserData)->LocalAudioCallback(
-				reinterpret_cast<float32*>(pOutputBuffer), framesPerBuffer);
-		}
+		SoundInstance3DLambda* pInstance = reinterpret_cast<SoundInstance3DLambda*>(pUserData);
+		VALIDATE(pInstance != nullptr);
 
-		return paNoError;
+		return pInstance->LocalAudioCallback(reinterpret_cast<float32*>(pOutputBuffer), framesPerBuffer);
 	}
 }

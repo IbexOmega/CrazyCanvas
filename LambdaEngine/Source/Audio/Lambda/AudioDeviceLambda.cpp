@@ -35,7 +35,7 @@ namespace LambdaEngine
 			LOG_ERROR("[AudioDeviceLambda]: Could not initialize PortAudio, error: \"%s\"", Pa_GetErrorText(result));
 			return false;
 		}
-		
+
 		return true;
 	}
 

@@ -118,6 +118,7 @@ Server::Server()
 
 Server::~Server()
 {
+	SAFEDELETE(m_pToneSoundInstance);
 	SAFEDELETE(m_pAudioListener);
 	SAFEDELETE(m_pAudioGeometry);
 }

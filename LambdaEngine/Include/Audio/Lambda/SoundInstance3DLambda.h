@@ -29,7 +29,7 @@ namespace LambdaEngine
 		virtual float GetPitch() override final;
 
 	private:
-		void LocalAudioCallback(float* pOutputBuffer, unsigned long framesPerBuffer);
+		int32 LocalAudioCallback(float* pOutputBuffer, unsigned long framesPerBuffer);
 		
 	private:
 		/*
@@ -50,7 +50,8 @@ namespace LambdaEngine
 		
 		float32* m_pWaveForm;
 		uint32 m_SampleCount;
-		uint32 m_CurrentSample;
+		uint32 m_CurrentBufferIndex;
 		uint32 m_ChannelCount;
+		uint32 m_TotalSampleCount;
 	};
 }

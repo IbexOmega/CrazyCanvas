@@ -11,7 +11,7 @@ namespace LambdaEngine
 
 	SoundEffect3DLambda::~SoundEffect3DLambda()
 	{
-		
+		SAFEDELETE_ARRAY(m_pWaveForm);
 	}
 
 	bool SoundEffect3DLambda::Init(const SoundEffect3DDesc& desc)
