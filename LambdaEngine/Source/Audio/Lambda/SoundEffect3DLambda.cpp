@@ -16,7 +16,7 @@ namespace LambdaEngine
 
 	bool SoundEffect3DLambda::Init(const SoundEffect3DDesc& desc)
 	{
-		LoadWavFile(desc.pFilepath, &m_pWaveForm, &m_Header);
+		LoadWavFileFloat(desc.pFilepath, &m_pWaveForm, &m_Header);
 		
 		/*constexpr float AMPLITUDE = 0.5f;
 		constexpr float FREQUENCY = 1000;

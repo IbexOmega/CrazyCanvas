@@ -48,7 +48,7 @@ namespace LambdaEngine
 	private:
 		PaStream* m_pStream;
 		
-		int16* m_pWaveForm;
+		float32* m_pWaveForm;
 		uint32 m_SampleCount;
 		uint32 m_CurrentSample;
 		uint32 m_ChannelCount;

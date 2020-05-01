@@ -28,8 +28,8 @@ namespace LambdaEngine
 		m_CurrentSample = 0;
 		m_SampleCount	= pSoundEffect->GetSampleCount();
 		m_ChannelCount	= pSoundEffect->GetChannelCount();
-		m_pWaveForm		= new int16[m_SampleCount * m_ChannelCount];
-		memcpy(m_pWaveForm, pSoundEffect->GetWaveform(), sizeof(int16) * m_SampleCount * m_ChannelCount);
+		m_pWaveForm		= new float32[m_SampleCount * m_ChannelCount];
+		memcpy(m_pWaveForm, pSoundEffect->GetWaveform(), sizeof(float32) * m_SampleCount * m_ChannelCount);
 
 		PaError result;
 
@@ -38,7 +38,7 @@ namespace LambdaEngine
 			&m_pStream,
 			0,          /* no input channels */
 			m_ChannelCount,          /* stereo output */
-			paInt16,  /* 32 bit floating point output */
+			paFloat32,  /* 32 bit floating point output */
 			pSoundEffect->GetSampleRate(),
 			256,			/* frames per buffer, i.e. the number
 							   of sample frames that PortAudio will
@@ -143,7 +143,7 @@ namespace LambdaEngine
 		if (pUserData != nullptr)
 		{
 			reinterpret_cast<SoundInstance3DLambda*>(pUserData)->LocalAudioCallback(
-				reinterpret_cast<float*>(pOutputBuffer), framesPerBuffer);
+				reinterpret_cast<float32*>(pOutputBuffer), framesPerBuffer);
 		}
 
 		return paNoError;
