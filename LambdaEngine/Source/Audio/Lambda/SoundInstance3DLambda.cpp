@@ -122,31 +122,6 @@ namespace LambdaEngine
 
 	void SoundInstance3DLambda::UpdateVolume(float masterVolume, const AudioListenerDesc* pAudioListeners, uint32 count)
 	{
-		//Todo: How to deal with multiple listeners?
-
-		if (count > 1)
-		{
-			LOG_WARNING("[SoundInstance3DLambda]: Update3D called with multiple AudioListeners, this is currently not supported!");
-			return;
-		}
-
-		float localVolume = masterVolume * m_Volume;
-
-		m_OutputVolume = 0.0f;
-
-		for (uint32 i = 0; i < count; i++)
-		{
-			const AudioListenerDesc* pAudioListener = &pAudioListeners[i];
-
-			float distance		= glm::max(pAudioListener->AttenuationStartDistance, glm::distance(pAudioListener->Position, m_Position));
-			float attenuation	= pAudioListener->AttenuationStartDistance / (pAudioListener->AttenuationStartDistance + pAudioListener->AttenuationRollOffFactor * (distance - pAudioListener->AttenuationStartDistance));
-
-			float globalVolume	= localVolume * pAudioListener->Volume;
-
-			m_OutputVolume += globalVolume * attenuation;
-
-			LOG_WARNING("[SoundInstance3DLambda]: Final: %f", m_OutputVolume);
-		}
 	}
 
 	int32 SoundInstance3DLambda::LocalAudioCallback(float* pOutputBuffer, unsigned long framesPerBuffer)
