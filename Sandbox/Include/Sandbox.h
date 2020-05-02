@@ -14,7 +14,6 @@ namespace LambdaEngine
 	class RenderGraph;
 	class Renderer;
 	class ResourceManager;
-	class IAudioListener;
 	class ISoundEffect3D;
 	class ISoundInstance3D;
 	class IAudioGeometry;
@@ -52,6 +51,8 @@ private:
 	bool InitRendererForVisBuf();
 
 private:
+	uint32									m_AudioListenerIndex	= 0;
+
 	GUID_Lambda								m_ToneSoundEffectGUID;
 	LambdaEngine::ISoundEffect3D*			m_pToneSoundEffect		= nullptr;
 	LambdaEngine::ISoundInstance3D*			m_pToneSoundInstance	= nullptr;
@@ -59,7 +60,6 @@ private:
 	GUID_Lambda								m_GunSoundEffectGUID;
 	LambdaEngine::ISoundEffect3D*			m_pGunSoundEffect		= nullptr;
 
-	LambdaEngine::IAudioListener*			m_pAudioListener		= nullptr;
 
 	LambdaEngine::IReverbSphere*			m_pReverbSphere			= nullptr;
 	LambdaEngine::IAudioGeometry*			m_pAudioGeometry		= nullptr;

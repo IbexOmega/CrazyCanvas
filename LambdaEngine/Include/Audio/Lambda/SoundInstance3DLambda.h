@@ -5,6 +5,8 @@
 
 namespace LambdaEngine
 {
+	struct AudioListenerDesc;
+
 	class IAudioDevice;
 	class AudioDeviceLambda;
 	
@@ -16,18 +18,20 @@ namespace LambdaEngine
 
 		virtual bool Init(const SoundInstance3DDesc* pDesc) override final;
 
-		virtual void Play() override final;
-		virtual void Pause() override final;
-		virtual void Stop() override final;
-		virtual void Toggle() override final;
+		virtual void Play()		override final;
+		virtual void Pause()	override final;
+		virtual void Stop()		override final;
+		virtual void Toggle()	override final;
 
 		virtual void SetPosition(const glm::vec3& position) override final;
-		virtual void SetVolume(float volume) override final;
-		virtual void SetPitch(float pitch) override final;
+		virtual void SetVolume(float volume)				override final;
+		virtual void SetPitch(float pitch)					override final;
 
-		virtual const glm::vec3& GetPosition() override final;
-		virtual float GetVolume() override final;
-		virtual float GetPitch() override final;
+		virtual const glm::vec3&	GetPosition()	const override final;
+		virtual float				GetVolume()		const override final;
+		virtual float				GetPitch()		const override final;
+
+		void UpdateVolume(float masterVolume, const AudioListenerDesc* pAudioListeners, uint32 count);
 
 	private:
 		int32 LocalAudioCallback(float* pOutputBuffer, unsigned long framesPerBuffer);
@@ -56,5 +60,10 @@ namespace LambdaEngine
 		uint32 m_CurrentBufferIndex;
 		uint32 m_ChannelCount;
 		uint32 m_TotalSampleCount;
+
+		glm::vec3	m_Position;
+
+		float m_Volume		= 1.0f;
+		float m_OutputVolume			= 1.0f;
 	};
 }

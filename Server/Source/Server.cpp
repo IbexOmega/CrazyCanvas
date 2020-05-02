@@ -25,7 +25,6 @@
 
 #include "Resources/ResourceManager.h"
 #include "Audio/AudioSystem.h"
-#include "Audio/API/IAudioListener.h"
 #include "Audio/API/ISoundEffect3D.h"
 #include "Audio/API/ISoundInstance3D.h"
 #include "Audio/API/IAudioGeometry.h"
@@ -45,8 +44,7 @@ Server::Server()
 	soundInstanceDesc.pSoundEffect = m_pGunSoundEffect;
 	soundInstanceDesc.Flags = FSoundModeFlags::SOUND_MODE_LOOPING;
 
-	m_pToneSoundInstance = AudioSystem::GetDevice()->CreateSoundInstance();
-	m_pToneSoundInstance->Init(soundInstanceDesc);
+	m_pToneSoundInstance = AudioSystem::GetDevice()->CreateSoundInstance(&soundInstanceDesc);
 	m_pToneSoundInstance->SetVolume(0.1f);
 
 	/*m_SpawnPlayAts = false;

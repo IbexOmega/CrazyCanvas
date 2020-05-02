@@ -63,8 +63,8 @@ namespace LambdaEngine
 		*/
 		virtual void SetPitch(float pitch) = 0;
 
-		virtual const glm::vec3& GetPosition() = 0;
-		virtual float GetVolume() = 0;
-		virtual float GetPitch() = 0;
+		virtual const glm::vec3& GetPosition()	const = 0;
+		virtual float GetVolume()				const = 0;
+		virtual float GetPitch()				const = 0;
 	};
 }

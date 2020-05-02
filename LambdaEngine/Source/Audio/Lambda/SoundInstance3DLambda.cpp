@@ -1,17 +1,20 @@
 #include "Audio/Lambda/SoundInstance3DLambda.h"
 #include "Audio/Lambda/SoundEffect3DLambda.h"
+#include "Audio/Lambda/AudioDeviceLambda.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	SoundInstance3DLambda::SoundInstance3DLambda(const IAudioDevice* pAudioDevice)
+	SoundInstance3DLambda::SoundInstance3DLambda(const IAudioDevice* pAudioDevice) :
+		m_pAudioDevice(reinterpret_cast<const AudioDeviceLambda*>(pAudioDevice))
 	{
-		UNREFERENCED_VARIABLE(pAudioDevice);
 	}
 
 	SoundInstance3DLambda::~SoundInstance3DLambda()
 	{
+		m_pAudioDevice->DeleteSoundInstance(this);
+		
 		SAFEDELETE_ARRAY(m_pWaveForm);
 
 		PaError result;
@@ -27,10 +30,12 @@ namespace LambdaEngine
 	{
 		VALIDATE(pDesc);
 
+		const SoundEffect3DLambda* pSoundEffect = reinterpret_cast<const SoundEffect3DLambda*>(pDesc->pSoundEffect);
+
 		m_CurrentBufferIndex		= 0;
 		m_SampleCount		= pSoundEffect->GetSampleCount();
 		m_ChannelCount		= pSoundEffect->GetChannelCount();
-		m_TotalSampleCount = m_SampleCount * m_ChannelCount;
+		m_TotalSampleCount	= m_SampleCount * m_ChannelCount;
 		m_pWaveForm			= new float32[m_TotalSampleCount];
 		memcpy(m_pWaveForm, pSoundEffect->GetWaveform(), sizeof(float32) * m_TotalSampleCount);
 
@@ -87,12 +92,12 @@ namespace LambdaEngine
 
 	void SoundInstance3DLambda::SetPosition(const glm::vec3& position)
 	{
-		UNREFERENCED_VARIABLE(position);
+		m_Position = position;
 	}
 
 	void SoundInstance3DLambda::SetVolume(float volume)
 	{
-		UNREFERENCED_VARIABLE(volume);
+		m_Volume = volume;
 	}
 
 	void SoundInstance3DLambda::SetPitch(float pitch)
@@ -100,20 +105,48 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pitch);
 	}
 
-	const glm::vec3& SoundInstance3DLambda::GetPosition()
+	const glm::vec3& SoundInstance3DLambda::GetPosition() const
 	{
-		static glm::vec3 temp;
-		return temp;
+		return m_Position;
 	}
 
-	float SoundInstance3DLambda::GetVolume()
+	float SoundInstance3DLambda::GetVolume() const
+	{
+		return m_Volume;
+	}
+
+	float SoundInstance3DLambda::GetPitch() const
 	{
 		return 1.0f;
 	}
 
-	float SoundInstance3DLambda::GetPitch()
+	void SoundInstance3DLambda::UpdateVolume(float masterVolume, const AudioListenerDesc* pAudioListeners, uint32 count)
 	{
-		return 1.0f;
+		//Todo: How to deal with multiple listeners?
+
+		if (count > 1)
+		{
+			LOG_WARNING("[SoundInstance3DLambda]: Update3D called with multiple AudioListeners, this is currently not supported!");
+			return;
+		}
+
+		float localVolume = masterVolume * m_Volume;
+
+		m_OutputVolume = 0.0f;
+
+		for (uint32 i = 0; i < count; i++)
+		{
+			const AudioListenerDesc* pAudioListener = &pAudioListeners[i];
+
+			float distance		= glm::max(pAudioListener->AttenuationStartDistance, glm::distance(pAudioListener->Position, m_Position));
+			float attenuation	= pAudioListener->AttenuationStartDistance / (pAudioListener->AttenuationStartDistance + pAudioListener->AttenuationRollOffFactor * (distance - pAudioListener->AttenuationStartDistance));
+
+			float globalVolume	= localVolume * pAudioListener->Volume;
+
+			m_OutputVolume += globalVolume * attenuation;
+
+			LOG_WARNING("[SoundInstance3DLambda]: Final: %f", m_OutputVolume);
+		}
 	}
 
 	int32 SoundInstance3DLambda::LocalAudioCallback(float* pOutputBuffer, unsigned long framesPerBuffer)
@@ -123,7 +156,7 @@ namespace LambdaEngine
 			for (uint32 c = 0; c < m_ChannelCount; c++)
 			{
 				float sample = m_pWaveForm[m_CurrentBufferIndex++];
-				(*(pOutputBuffer++)) = sample;	
+				(*(pOutputBuffer++)) = m_OutputVolume * sample;
 			}
 
 			if (m_CurrentBufferIndex == m_TotalSampleCount)

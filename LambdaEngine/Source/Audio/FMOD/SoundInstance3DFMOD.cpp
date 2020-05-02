@@ -118,17 +118,17 @@ namespace LambdaEngine
 		}
 	}
 
-	const glm::vec3& SoundInstance3DFMOD::GetPosition()
+	const glm::vec3& SoundInstance3DFMOD::GetPosition() const
 	{
 		return m_Position;
 	}
 
-	float SoundInstance3DFMOD::GetVolume()
+	float SoundInstance3DFMOD::GetVolume() const
 	{
 		return m_Volume;
 	}
 
-	float SoundInstance3DFMOD::GetPitch()
+	float SoundInstance3DFMOD::GetPitch() const
 	{
 		return m_Pitch;
 	}

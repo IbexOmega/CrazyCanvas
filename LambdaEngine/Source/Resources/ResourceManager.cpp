@@ -474,7 +474,7 @@ namespace LambdaEngine
         s_Shaders[GUID_NONE]                = nullptr;
 
 		byte defaultColor[4]				= { 255, 255, 255, 255 };
-		byte defaultNormal[4]				= { 127, 127, 127, 0   };
+		byte defaultNormal[4]				= { 127, 127, 255, 0   };
 		ITexture* pDefaultColorMap			= ResourceLoader::LoadTextureFromMemory("Default Color Map", defaultColor, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
 		ITexture* pDefaultNormalMap			= ResourceLoader::LoadTextureFromMemory("Default Normal Map", defaultNormal, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
 

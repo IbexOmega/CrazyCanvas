@@ -28,9 +28,9 @@ namespace LambdaEngine
 		virtual void SetVolume(float volume) override final;
 		virtual void SetPitch(float pitch) override final;
 		
-		virtual const glm::vec3& GetPosition() override final;
-		virtual float GetVolume() override final;
-		virtual float GetPitch() override final;
+		virtual const glm::vec3& GetPosition()	const override final;
+		virtual float GetVolume()				const override final;
+		virtual float GetPitch()				const override final;
 		
 	private:
 		bool IsPlaying();

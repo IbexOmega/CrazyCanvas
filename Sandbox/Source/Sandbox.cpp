@@ -17,7 +17,6 @@
 #include "Rendering/Core/API/ICommandQueue.h"
 
 #include "Audio/AudioSystem.h"
-#include "Audio/API/IAudioListener.h"
 #include "Audio/API/ISoundEffect3D.h"
 #include "Audio/API/ISoundInstance3D.h"
 #include "Audio/API/IAudioGeometry.h"
@@ -147,7 +146,6 @@ Sandbox::Sandbox()
 
 Sandbox::~Sandbox()
 {
-	SAFEDELETE(m_pAudioListener);
 	SAFEDELETE(m_pAudioGeometry);
 
 	SAFEDELETE(m_pScene);
@@ -163,6 +161,8 @@ void Sandbox::InitTestAudio()
 {
 	using namespace LambdaEngine;
 
+	m_AudioListenerIndex = AudioSystem::GetDevice()->CreateAudioListener();
+
 	m_ToneSoundEffectGUID = ResourceManager::LoadSoundEffectFromFile("../Assets/Sounds/noise.wav");
 	m_GunSoundEffectGUID = ResourceManager::LoadSoundEffectFromFile("../Assets/Sounds/GUN_FIRE-GoodSoundForYou.wav");
 
@@ -170,11 +170,10 @@ void Sandbox::InitTestAudio()
 	m_pGunSoundEffect = ResourceManager::GetSoundEffect(m_GunSoundEffectGUID);
 
 	SoundInstance3DDesc soundInstanceDesc = {};
-	soundInstanceDesc.pSoundEffect = m_pToneSoundEffect;
+	soundInstanceDesc.pSoundEffect = m_pGunSoundEffect;
 	soundInstanceDesc.Flags = FSoundModeFlags::SOUND_MODE_LOOPING;
 
-	m_pToneSoundInstance = AudioSystem::GetDevice()->CreateSoundInstance();
-	m_pToneSoundInstance->Init(&soundInstanceDesc);
+	m_pToneSoundInstance = AudioSystem::GetDevice()->CreateSoundInstance(&soundInstanceDesc);
 	m_pToneSoundInstance->SetVolume(0.5f);
 
 	/*m_SpawnPlayAts = false;
@@ -352,7 +351,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-    LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
+    //LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
     
 	float dt = (float)delta.AsSeconds();
 	m_Timer += dt;
@@ -428,6 +427,14 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	}
 
 	m_pCamera->Update();
+	
+	AudioListenerDesc listenerDesc = {};
+	listenerDesc.Position		= m_pCamera->GetPosition();
+	listenerDesc.Forward		= m_pCamera->GetForwardVec();
+	listenerDesc.Up				= m_pCamera->GetUpVec();
+
+	AudioSystem::GetDevice()->UpdateAudioListener(m_AudioListenerIndex, &listenerDesc);
+
 	m_pScene->UpdateCamera(m_pCamera);
 		
 	m_pRenderer->Render();

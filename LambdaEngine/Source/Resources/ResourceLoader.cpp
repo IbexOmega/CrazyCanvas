@@ -719,18 +719,18 @@ namespace LambdaEngine
 
 	ISoundEffect3D* ResourceLoader::LoadSoundEffectFromFile(const char* pFilepath)
 	{
-		ISoundEffect3D* pSound = AudioSystem::GetDevice()->CreateSoundEffect();
+		SoundEffect3DDesc soundDesc = {};
+		soundDesc.pFilepath = pFilepath;
 
-		SoundEffect3DDesc soundDesc		= {};
-		soundDesc.pFilepath		= pFilepath;
+		ISoundEffect3D* pSound = AudioSystem::GetDevice()->CreateSoundEffect(&soundDesc);
 
-		if (!pSound->Init(&soundDesc))
+		if (pSound == nullptr)
 		{
-			LOG_ERROR("[ResourceDevice]: Failed to initialize sound \"%s\"", pFilepath);
+			LOG_ERROR("[ResourceLoader]: Failed to initialize sound \"%s\"", pFilepath);
 			return nullptr;
 		}
 
-		D_LOG_MESSAGE("[ResourceDevice]: Loaded Sound \"%s\"", pFilepath);
+		D_LOG_MESSAGE("[ResourceLoader]: Loaded Sound \"%s\"", pFilepath);
 
 		return pSound;
 	}

@@ -53,6 +53,7 @@ namespace LambdaEngine
 		FORCEINLINE const glm::mat4& GetViewInvMat()			const	{ return m_ViewInv;			}
 		FORCEINLINE const glm::vec3& GetPosition()				const	{ return m_Position;		}
 		FORCEINLINE const glm::vec3& GetRotation()				const	{ return m_Rotation;		}
+		FORCEINLINE const glm::vec3& GetForwardVec()			const	{ return m_Forward;			}
 		FORCEINLINE const glm::vec3& GetRightVec()				const	{ return m_Right;			}
 		FORCEINLINE const glm::vec3& GetUpVec()					const	{ return m_Up;				}
 
@@ -70,7 +71,7 @@ namespace LambdaEngine
 		glm::vec3 m_Position;
 		glm::vec3 m_Rotation;
 
-		glm::vec3 m_Direction;
+		glm::vec3 m_Forward;
 		glm::vec3 m_Right;
 		glm::vec3 m_Up;
 

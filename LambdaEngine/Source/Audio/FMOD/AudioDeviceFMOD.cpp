@@ -1,5 +1,4 @@
 #include "Audio/FMOD/AudioDeviceFMOD.h"
-#include "Audio/FMOD/AudioListenerFMOD.h"
 #include "Audio/FMOD/SoundEffect3DFMOD.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 #include "Audio/FMOD/AudioGeometryFMOD.h"
@@ -30,11 +29,7 @@ namespace LambdaEngine
 	}
 
 	AudioDeviceFMOD::AudioDeviceFMOD() :
-		pSystem(nullptr),
-		m_MaxNumAudioListeners(0),
-		m_NumAudioListeners(0),
-		m_pMusicHandle(nullptr),
-		m_pMusicChannel(nullptr)
+		pSystem(nullptr)
 	{
 		
 	}
@@ -178,40 +173,99 @@ namespace LambdaEngine
 		}
 	}
 
-	IAudioListener* AudioDeviceFMOD::CreateAudioListener()
+	void AudioDeviceFMOD::UpdateAudioListener(uint32 index, const AudioListenerDesc* pDesc)
+	{
+		FMOD_VECTOR fmodPosition	= { pDesc->Position.x,		pDesc->Position.y,		pDesc->Position.z };
+		FMOD_VECTOR fmodVelocity	= { 0.0f,					0.0f,					0.0f };
+		FMOD_VECTOR fmodForward		= { pDesc->Forward.x,		pDesc->Forward.y,		pDesc->Forward.z };
+		FMOD_VECTOR fmodUp			= { pDesc->Up.x,			pDesc->Up.y,			pDesc->Up.z };
+
+		FMOD_System_Set3DListenerAttributes(pSystem, index, &fmodPosition, &fmodVelocity, &fmodForward, &fmodUp);
+	}
+
+	uint32 AudioDeviceFMOD::CreateAudioListener()
 	{
 		if (m_NumAudioListeners >= m_MaxNumAudioListeners)
 		{
-			LOG_WARNING("[AudioDeviceFMOD]: AudioListenerFMOD could not be created, max amount reached for %s!", m_pName);
-			return nullptr;
+			LOG_WARNING("[AudioDeviceFMOD]: Audio Listener could not be created, max amount reached for %s!", m_pName);
+			return UINT32_MAX;
 		}
 
-		AudioListenerFMOD* pAudioListener = DBG_NEW AudioListenerFMOD(this);
-
-		AudioListenerDesc audioListenerDesc = {};
-		audioListenerDesc.ListenerIndex = m_NumAudioListeners++;
-		pAudioListener->Init(&audioListenerDesc);
-
-		return pAudioListener;
+		return m_NumAudioListeners++;
 	}
 
-	ISoundEffect3D* AudioDeviceFMOD::CreateSoundEffect() const
+	ISoundEffect3D* AudioDeviceFMOD::CreateSoundEffect(const SoundEffect3DDesc* pDesc)
 	{
-		return DBG_NEW SoundEffect3DFMOD(this);
+		VALIDATE(pDesc != nullptr);
+
+		SoundEffect3DFMOD* pSoundEffect = DBG_NEW SoundEffect3DFMOD(this);
+
+		if (!pSoundEffect->Init(pDesc))
+		{
+			return nullptr;
+		}
+		else
+		{
+			return pSoundEffect;
+		}
 	}
 
-	ISoundInstance3D* AudioDeviceFMOD::CreateSoundInstance() const
+	ISoundInstance3D* AudioDeviceFMOD::CreateSoundInstance(const SoundInstance3DDesc* pDesc)
 	{
-		return DBG_NEW SoundInstance3DFMOD(this);
+		VALIDATE(pDesc != nullptr);
+
+		SoundInstance3DFMOD* pSoundInstance = DBG_NEW SoundInstance3DFMOD(this);
+
+		if (!pSoundInstance->Init(pDesc))
+		{
+			return nullptr;
+		}
+		else
+		{
+			return pSoundInstance;
+		}
 	}
 
-	IAudioGeometry* AudioDeviceFMOD::CreateAudioGeometry() const
+	IAudioGeometry* AudioDeviceFMOD::CreateAudioGeometry(const AudioGeometryDesc* pDesc)
 	{
-		return DBG_NEW AudioGeometryFMOD(this);
+		VALIDATE(pDesc != nullptr);
+
+		AudioGeometryFMOD* pAudioGeometry = DBG_NEW AudioGeometryFMOD(this);
+
+		if (!pAudioGeometry->Init(pDesc))
+		{
+			return nullptr;
+		}
+		else
+		{
+			return pAudioGeometry;
+		}
 	}
 
-	IReverbSphere* AudioDeviceFMOD::CreateReverbSphere() const
+	IReverbSphere* AudioDeviceFMOD::CreateReverbSphere(const ReverbSphereDesc* pDesc)
 	{
-		return DBG_NEW ReverbSphereFMOD(this);
+		VALIDATE(pDesc != nullptr);
+
+		ReverbSphereFMOD* pReverbSphere = DBG_NEW ReverbSphereFMOD(this);
+
+		if (!pReverbSphere->Init(pDesc))
+		{
+			return nullptr;
+		}
+		else
+		{
+			return pReverbSphere;
+		}
+	}
+
+	void AudioDeviceFMOD::SetMasterVolume(float volume)
+	{
+		LOG_WARNING("[AudioDeviceFMOD]: SetMasterVolume called but not implemented!");
+	}
+
+	float AudioDeviceFMOD::GetMasterVolume() const
+	{
+		LOG_WARNING("[AudioDeviceFMOD]: GetMasterVolume called but not implemented!");
+		return 0;
 	}
 };
