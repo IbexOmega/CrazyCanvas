@@ -7,6 +7,7 @@
 namespace LambdaEngine
 {
 	class IAudioDevice;
+	class AudioDeviceLambda;
 
 	class SoundEffect3DLambda : public ISoundEffect3D
 	{
@@ -14,7 +15,7 @@ namespace LambdaEngine
 		SoundEffect3DLambda(const IAudioDevice* pAudioDevice);
 		~SoundEffect3DLambda();
 
-		virtual bool Init(const SoundEffect3DDesc& desc) override final;
+		virtual bool Init(const SoundEffect3DDesc* pDesc) override final;
 		virtual void PlayOnceAt(const glm::vec3& position, const glm::vec3& velocity, float volume, float pitch) override final;
 
 		FORCEINLINE const float32* GetWaveform()	{ return m_pWaveForm; }

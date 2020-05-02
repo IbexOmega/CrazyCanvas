@@ -19,10 +19,10 @@ namespace LambdaEngine
 
 		/*
 		* Initialize this AudioListenerFMOD
-		*	desc - A description of initialization parameters
+		*	pDesc - A description of initialization parameters
 		* return - true if the initialization was successfull, otherwise returns false
 		*/
-		virtual bool Init(const AudioListenerDesc& desc) = 0;
+		virtual bool Init(const AudioListenerDesc* pDesc) = 0;
 
 		/*
 		* Update the 3D Attributes of this AudioListenerFMOD

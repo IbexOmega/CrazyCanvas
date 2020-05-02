@@ -63,12 +63,14 @@ namespace LambdaEngine
 		}
 	}
 
-	bool AudioDeviceFMOD::Init(const AudioDeviceDesc& desc)
+	bool AudioDeviceFMOD::Init(const AudioDeviceDesc* pDesc)
 	{
-		m_pName = desc.pName;
-		m_MaxNumAudioListeners = desc.MaxNumAudioListeners;
+		VALIDATE(pDesc);
 
-		if (desc.Debug)
+		m_pName = pDesc->pName;
+		m_MaxNumAudioListeners = pDesc->MaxNumAudioListeners;
+
+		if (pDesc->Debug)
 		{
 			FMOD_DEBUG_FLAGS debugLevel		= FMOD_DEBUG_LEVEL_LOG;
 			FMOD_DEBUG_MODE debugMode		= FMOD_DEBUG_MODE_CALLBACK;
@@ -95,7 +97,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (FMOD_System_SetGeometrySettings(pSystem, desc.MaxWorldSize) != FMOD_OK)
+		if (FMOD_System_SetGeometrySettings(pSystem, pDesc->MaxWorldSize) != FMOD_OK)
 		{
 			LOG_ERROR("[AudioDeviceFMOD]: FMOD Geometry Settings could not be set for %s", m_pName);
 			return false;
@@ -188,7 +190,7 @@ namespace LambdaEngine
 
 		AudioListenerDesc audioListenerDesc = {};
 		audioListenerDesc.ListenerIndex = m_NumAudioListeners++;
-		pAudioListener->Init(audioListenerDesc);
+		pAudioListener->Init(&audioListenerDesc);
 
 		return pAudioListener;
 	}

@@ -724,7 +724,7 @@ namespace LambdaEngine
 		SoundEffect3DDesc soundDesc		= {};
 		soundDesc.pFilepath		= pFilepath;
 
-		if (!pSound->Init(soundDesc))
+		if (!pSound->Init(&soundDesc))
 		{
 			LOG_ERROR("[ResourceDevice]: Failed to initialize sound \"%s\"", pFilepath);
 			return nullptr;

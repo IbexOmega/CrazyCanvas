@@ -23,9 +23,9 @@ namespace LambdaEngine
 		}
 	}
 
-	bool SoundInstance3DLambda::Init(const SoundInstance3DDesc& desc)
+	bool SoundInstance3DLambda::Init(const SoundInstance3DDesc* pDesc)
 	{
-		SoundEffect3DLambda* pSoundEffect = reinterpret_cast<SoundEffect3DLambda*>(desc.pSoundEffect);
+		VALIDATE(pDesc);
 
 		m_CurrentBufferIndex		= 0;
 		m_SampleCount		= pSoundEffect->GetSampleCount();

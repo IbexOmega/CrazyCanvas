@@ -14,9 +14,12 @@ namespace LambdaEngine
 		SAFEDELETE_ARRAY(m_pWaveForm);
 	}
 
-	bool SoundEffect3DLambda::Init(const SoundEffect3DDesc& desc)
+	bool SoundEffect3DLambda::Init(const SoundEffect3DDesc* pDesc)
 	{
+        VALIDATE(pDesc);
+
 		LoadWavFileFloat(desc.pFilepath, &m_pWaveForm, &m_Header);
+		
 		
 		/*constexpr float AMPLITUDE = 0.5f;
 		constexpr float FREQUENCY = 1000;

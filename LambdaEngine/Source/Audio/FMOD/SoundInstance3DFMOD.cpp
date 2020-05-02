@@ -21,21 +21,23 @@ namespace LambdaEngine
 	{
 	}
 
-	bool SoundInstance3DFMOD::Init(const SoundInstance3DDesc& desc)
+	bool SoundInstance3DFMOD::Init(const SoundInstance3DDesc* pDesc)
 	{
-		m_pName = desc.pName;
+		VALIDATE(pDesc);
 
-		if (desc.pSoundEffect == nullptr)
+		m_pName = pDesc->pName;
+
+		if (pDesc->pSoundEffect == nullptr)
 		{
 			LOG_WARNING("[SoundInstance3DFMOD]: Init failed for %s, pSoundEffect can't be nullptr", m_pName);
 			return false;
 		}
 
-		m_pSoundEffect	= reinterpret_cast<SoundEffect3DFMOD*>(desc.pSoundEffect);
+		m_pSoundEffect	= reinterpret_cast<SoundEffect3DFMOD*>(pDesc->pSoundEffect);
 		
 		m_Mode = FMOD_3D;
 
-		if (desc.Flags & FSoundModeFlags::SOUND_MODE_LOOPING)
+		if (pDesc->Flags & FSoundModeFlags::SOUND_MODE_LOOPING)
 		{
 			m_Mode |= FMOD_LOOP_NORMAL;
 		}

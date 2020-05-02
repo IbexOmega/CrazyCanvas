@@ -14,7 +14,7 @@ namespace LambdaEngine
 		SoundEffect3DFMOD(const IAudioDevice* pAudioDevice);
 		~SoundEffect3DFMOD();
 
-		virtual bool Init(const SoundEffect3DDesc& desc) override final;
+		virtual bool Init(const SoundEffect3DDesc* pDesc) override final;
 		virtual void PlayOnceAt(const glm::vec3& position, const glm::vec3& velocity, float volume, float pitch) override final;
 		
 		FMOD_SOUND* GetHandle();

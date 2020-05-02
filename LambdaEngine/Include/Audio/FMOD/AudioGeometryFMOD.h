@@ -14,7 +14,7 @@ namespace LambdaEngine
 		AudioGeometryFMOD(const IAudioDevice* pAudioDevice);
 		~AudioGeometryFMOD();
 
-		virtual bool Init(const AudioGeometryDesc& desc) override final;
+		virtual bool Init(const AudioGeometryDesc* pDesc) override final;
 		virtual void SetActive(bool active) override final;
 		virtual void SetPosition(const glm::vec3& position) override final;
 		virtual void SetRotation(const glm::vec3& forward, const glm::vec3& up) override final;

@@ -14,7 +14,7 @@ namespace LambdaEngine
 		AudioListenerFMOD(const IAudioDevice* pAudioDevice);
 		~AudioListenerFMOD();
 
-		virtual bool Init(const AudioListenerDesc& desc) override final;
+		virtual bool Init(const AudioListenerDesc* pDesc) override final;
 		virtual void Update(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up) override final;
 		
 	private:

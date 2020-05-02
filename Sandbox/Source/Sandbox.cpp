@@ -142,7 +142,7 @@ Sandbox::Sandbox()
 
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 
-	//InitTestAudio();
+	InitTestAudio();
 }
 
 Sandbox::~Sandbox()
@@ -174,7 +174,7 @@ void Sandbox::InitTestAudio()
 	soundInstanceDesc.Flags = FSoundModeFlags::SOUND_MODE_LOOPING;
 
 	m_pToneSoundInstance = AudioSystem::GetDevice()->CreateSoundInstance();
-	m_pToneSoundInstance->Init(soundInstanceDesc);
+	m_pToneSoundInstance->Init(&soundInstanceDesc);
 	m_pToneSoundInstance->SetVolume(0.5f);
 
 	/*m_SpawnPlayAts = false;

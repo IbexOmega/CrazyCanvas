@@ -6,6 +6,7 @@
 namespace LambdaEngine
 {
 	class IAudioDevice;
+	class AudioDeviceLambda;
 	
 	class SoundInstance3DLambda : public ISoundInstance3D
 	{
@@ -13,7 +14,7 @@ namespace LambdaEngine
 		SoundInstance3DLambda(const IAudioDevice* pAudioDevice);
 		~SoundInstance3DLambda();
 
-		virtual bool Init(const SoundInstance3DDesc& desc) override final;
+		virtual bool Init(const SoundInstance3DDesc* pDesc) override final;
 
 		virtual void Play() override final;
 		virtual void Pause() override final;
@@ -46,6 +47,8 @@ namespace LambdaEngine
 			void* pUserData);
 
 	private:
+		const AudioDeviceLambda* m_pAudioDevice;
+
 		PaStream* m_pStream;
 		
 		float32* m_pWaveForm;

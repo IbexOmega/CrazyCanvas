@@ -17,7 +17,7 @@ namespace LambdaEngine
 		AudioDeviceFMOD();
 		~AudioDeviceFMOD();
 
-		virtual bool Init(const AudioDeviceDesc& desc) override final;
+		virtual bool Init(const AudioDeviceDesc* pDesc) override final;
 
 		virtual void Tick() override final;
 

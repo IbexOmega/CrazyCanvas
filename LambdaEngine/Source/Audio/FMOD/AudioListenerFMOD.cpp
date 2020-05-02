@@ -14,10 +14,12 @@ namespace LambdaEngine
 	{
 	}
 
-	bool AudioListenerFMOD::Init(const AudioListenerDesc& desc)
+	bool AudioListenerFMOD::Init(const AudioListenerDesc* pDesc)
 	{
-		m_pName = desc.pName;
-		m_ListenerIndex = desc.ListenerIndex;
+		VALIDATE(pDesc);
+
+		m_pName = pDesc->pName;
+		m_ListenerIndex = pDesc->ListenerIndex;
 
 		D_LOG_MESSAGE("[AudioListenerFMOD]: AudioListenerFMOD %s successfully initialized!", m_pName);
 

@@ -17,7 +17,7 @@ namespace LambdaEngine
 		SoundInstance3DFMOD(const IAudioDevice* pAudioDevice);
 		~SoundInstance3DFMOD();
 
-		virtual bool Init(const SoundInstance3DDesc& desc) override final;
+		virtual bool Init(const SoundInstance3DDesc* pDesc) override final;
 
 		virtual void Play() override final;
 		virtual void Pause() override final;

@@ -31,10 +31,10 @@ namespace LambdaEngine
 		
 		/*
 		* Initialize this AudioDeviceFMOD
-		*	desc - A description of initialization parameters
+		*	pDesc - A description of initialization parameters
 		* return - true if the initialization was successful, otherwise returns false
 		*/
-		virtual bool Init(const AudioDeviceDesc& desc) = 0;
+		virtual bool Init(const AudioDeviceDesc* pDesc) = 0;
 
 		/*
 		* Tick the audio device

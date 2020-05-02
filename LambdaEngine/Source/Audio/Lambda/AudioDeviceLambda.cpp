@@ -23,9 +23,15 @@ namespace LambdaEngine
 		}
 	}
 
-	bool AudioDeviceLambda::Init(const AudioDeviceDesc& desc)
+	bool AudioDeviceLambda::Init(const AudioDeviceDesc* pDesc)
 	{
-		UNREFERENCED_VARIABLE(desc);
+		VALIDATE(pDesc);
+
+		if (pDesc->MaxNumAudioListeners > 1)
+		{
+			LOG_ERROR("[AudioDeviceLambda]: MaxNumAudioListeners can not be greater than 1 in the current version of the Audio Engine");
+			return false;
+		}
 
 		PaError result;
 

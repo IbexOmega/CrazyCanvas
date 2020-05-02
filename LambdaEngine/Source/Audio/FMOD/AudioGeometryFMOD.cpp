@@ -31,17 +31,19 @@ namespace LambdaEngine
 		}
 	}
 
-	bool AudioGeometryFMOD::Init(const AudioGeometryDesc& desc)
+	bool AudioGeometryFMOD::Init(const AudioGeometryDesc* pDesc)
 	{
-		m_pName = desc.pName;
+		VALIDATE(pDesc);
+
+		m_pName = pDesc->pName;
 
 		uint32 numVertices = 0;
 		std::vector<FMODInitPolygon> polygons;
 
-		for (uint32 m = 0; m < desc.NumMeshes; m++)
+		for (uint32 m = 0; m < pDesc->NumMeshes; m++)
 		{
-			const Mesh* pMesh = desc.ppMeshes[m];
-			glm::mat4 transform = desc.pTransforms != nullptr ? desc.pTransforms[m] : glm::mat4(1.0f);
+			const Mesh* pMesh = pDesc->ppMeshes[m];
+			glm::mat4 transform = pDesc->pTransforms != nullptr ? pDesc->pTransforms[m] : glm::mat4(1.0f);
 
 			numVertices += pMesh->IndexCount;
 
@@ -69,7 +71,7 @@ namespace LambdaEngine
 		{
 			FMODInitPolygon& polygon = polygons[t];
 			FMOD_VECTOR* pTriangle = polygon.Triangle;
-			const AudioMeshParameters& audioMeshParameters = desc.pAudioMeshParameters[polygon.MeshIndex];
+			const AudioMeshParameters& audioMeshParameters = pDesc->pAudioMeshParameters[polygon.MeshIndex];
 
 			if (FMOD_Geometry_AddPolygon(m_pGeometry, audioMeshParameters.DirectOcclusion, audioMeshParameters.ReverbOcclusion, audioMeshParameters.DoubleSided ? 1 : 0, 3, pTriangle, nullptr) != FMOD_OK)
 			{

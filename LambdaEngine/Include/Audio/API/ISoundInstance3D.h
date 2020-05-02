@@ -22,10 +22,10 @@ namespace LambdaEngine
 
 		/*
 		* Initialize this SoundInstance3DFMOD
-		*	desc - A description of initialization parameters
+		*	pDesc - A description of initialization parameters
 		* return - true if the initialization was successfull, otherwise returns false
 		*/
-		virtual bool Init(const SoundInstance3DDesc& desc) = 0;
+		virtual bool Init(const SoundInstance3DDesc* pDesc) = 0;
 
 		/*
 		* Play the sound instance

@@ -17,7 +17,7 @@ namespace LambdaEngine
 		AudioDeviceLambda();
 		~AudioDeviceLambda();
 
-		virtual bool Init(const AudioDeviceDesc& desc) override final;
+		virtual bool Init(const AudioDeviceDesc* pDesc) override final;
 
 		virtual void Tick() override final;
 

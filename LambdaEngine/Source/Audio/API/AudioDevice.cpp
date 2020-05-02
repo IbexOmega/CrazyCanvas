@@ -22,7 +22,7 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
-		if (pDevice->Init(desc))
+		if (pDevice->Init(&desc))
 		{
 			return pDevice;
 		}
