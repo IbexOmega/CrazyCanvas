@@ -497,7 +497,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	m_pCamera->Update();
 	m_pScene->UpdateCamera(m_pCamera);
 		
-	//m_pRenderer->Render();
+	m_pRenderer->Render();
 }
 
 void Sandbox::FixedTick(LambdaEngine::Timestamp delta)

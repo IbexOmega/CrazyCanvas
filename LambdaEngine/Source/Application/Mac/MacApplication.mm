@@ -109,13 +109,14 @@ namespace LambdaEngine
         }
         
         // Create mainwindow for application
-        m_pMainWindow = (MacWindow*)MacApplication::CreateWindow("Lambda Game Engine", 1440, 900);
-        if (!m_pMainWindow)
+        MacWindow* pWindow = (MacWindow*)MacApplication::CreateWindow("Lambda Game Engine", 1440, 900);
+        if (!pWindow)
         {
             return false;
         }
         
-        m_pMainWindow->Show();
+        pWindow->Show();
+        MakeMainWindow(pWindow);
         
         return true;
     }
@@ -397,6 +398,11 @@ namespace LambdaEngine
         }
         
         m_IsProcessingEvents = false;
+    }
+
+    void MacApplication::MakeMainWindow(IWindow* pMainWindow)
+    {
+        m_pMainWindow = reinterpret_cast<MacWindow*>(pMainWindow);
     }
 
     IWindow* MacApplication::GetForegroundWindow() const
