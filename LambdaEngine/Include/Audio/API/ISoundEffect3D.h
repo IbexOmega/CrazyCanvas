@@ -16,7 +16,7 @@ namespace LambdaEngine
 		DECL_INTERFACE(ISoundEffect3D);
 
 				/*
-		* Initialize this SoundEffect3DFMOD
+		* Initialize this SoundEffect3D
 		*	pDesc - A description of initialization parameters
 		* return - true if the initialization was successfull, otherwise returns false
 		*/

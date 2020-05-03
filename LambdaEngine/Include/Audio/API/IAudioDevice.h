@@ -5,11 +5,13 @@
 
 namespace LambdaEngine
 {
+	struct MusicDesc;
 	struct AudioGeometryDesc;
 	struct ReverbSphereDesc;
 	struct SoundEffect3DDesc;
 	struct SoundInstance3DDesc;
 
+	class IMusic;
 	class ISoundEffect3D;
 	class ISoundInstance3D;
 	class IAudioGeometry;
@@ -55,31 +57,10 @@ namespace LambdaEngine
 		*/
 		virtual void Tick() = 0;
 
-		/*
-		* Load Music for streaming, only one music file can be loaded at any given time per AudioDeviceFMOD
-		*	pFilepath - A filepath to the audiofile
-		* return - true if the initialization was successfull, otherwise returns false
-		*/
-		virtual bool LoadMusic(const char* pFilepath) = 0;
-
-		/*
-		* Play the currently loaded music
-		*/
-		virtual void PlayMusic() = 0;
-
-		/*
-		* Pause the currently loaded music
-		*/
-		virtual void PauseMusic() = 0;
-
-		/*
-		* Toggle the played/paused state of the currently loaded music
-		*/
-		virtual void ToggleMusic() = 0;
-
 		virtual void UpdateAudioListener(uint32 index, const AudioListenerDesc* pDesc) = 0;
 
 		virtual uint32				CreateAudioListener()									= 0;
+		virtual IMusic*				CreateMusic(const MusicDesc* pDesc)						= 0;
 		virtual ISoundEffect3D*		CreateSoundEffect(const SoundEffect3DDesc* pDesc)		= 0;
 		virtual ISoundInstance3D*	CreateSoundInstance(const SoundInstance3DDesc* pDesc)	= 0;
 		virtual IAudioGeometry*		CreateAudioGeometry(const AudioGeometryDesc* pDesc)		= 0;
