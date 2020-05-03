@@ -17,7 +17,7 @@ namespace LambdaEngine
 		SoundInstance3DFMOD(const IAudioDevice* pAudioDevice);
 		~SoundInstance3DFMOD();
 
-		virtual bool Init(const SoundInstance3DDesc& desc) override final;
+		virtual bool Init(const SoundInstance3DDesc* pDesc) override final;
 
 		virtual void Play() override final;
 		virtual void Pause() override final;
@@ -28,9 +28,9 @@ namespace LambdaEngine
 		virtual void SetVolume(float volume) override final;
 		virtual void SetPitch(float pitch) override final;
 		
-		virtual const glm::vec3& GetPosition() override final;
-		virtual float GetVolume() override final;
-		virtual float GetPitch() override final;
+		virtual const glm::vec3& GetPosition()	const override final;
+		virtual float GetVolume()				const override final;
+		virtual float GetPitch()				const override final;
 		
 	private:
 		bool IsPlaying();

@@ -448,7 +448,12 @@ workspace "LambdaEngine"
             "LambdaEngine/Include",
             "%{prj.name}/Include",
         }
-        
+		
+		sysincludedirs
+		{
+			"Dependencies/glm",
+		}
+
         -- Files
 		files 
 		{
@@ -490,7 +495,12 @@ workspace "LambdaEngine"
 		{
             "LambdaEngine/Include",
             "%{prj.name}/Include",
-        }
+		}
+		
+		sysincludedirs
+		{
+			"Dependencies/glm",
+		}
         
         -- Files
 		files 

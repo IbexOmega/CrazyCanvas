@@ -17,6 +17,18 @@
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
 
+#include "Networking/API/PacketTransceiver.h"
+
+
+void print(std::vector<uint32>& newAcks)
+{
+    for (uint32 ack : newAcks)
+    {
+        LOG_INFO("ProcessAck(%d)", ack);
+    }
+    newAcks.clear();
+}
+
 Client::Client() : 
     m_pClient(nullptr)
 {
@@ -25,17 +37,29 @@ Client::Client() :
     PlatformApplication::Get()->GetMainWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
-    m_pClient = ClientUDP::Create(this, 1024, 100);
+    NetworkStatistics s;
+    std::vector<uint32> newAcks;
+
+    PacketTransceiver tranciver;
+    tranciver.ProcessAcks(3, 0b00000000000000000000000000000001, &s, newAcks); print(newAcks);
+    tranciver.ProcessAcks(6, 0b00000000000000000000000000000101, &s, newAcks); print(newAcks);
+    tranciver.ProcessAcks(2, 0b00000000000000000000000000000000, &s, newAcks); print(newAcks);
+    tranciver.ProcessAcks(7, 0b00000000000000000000000000011111, &s, newAcks); print(newAcks);
+    tranciver.ProcessAcks(8, 0b00000000000000000000000001111111, &s, newAcks); print(newAcks);
+    tranciver.ProcessAcks(12, 0b00000000110000000000000000111111, &s, newAcks); print(newAcks);
+
+
+    /*m_pClient = ClientUDP::Create(this, 1024, 100);
 
     if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
     {
         LOG_ERROR("Failed to connect!");
-    }
+    }*/
 }
 
 Client::~Client()
 {
-    m_pClient->Release();
+    //m_pClient->Release();
 }
 
 void Client::OnConnectingUDP(LambdaEngine::IClientUDP* pClient)
@@ -146,7 +170,7 @@ void Client::FixedTick(LambdaEngine::Timestamp delta)
     using namespace LambdaEngine;
     UNREFERENCED_VARIABLE(delta);
 
-    m_pClient->Flush();
+    //m_pClient->Flush();
 }
 
 namespace LambdaEngine

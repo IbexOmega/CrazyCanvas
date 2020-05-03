@@ -13,6 +13,17 @@
 
 #include <set>
 
+
+namespace LambdaEngine
+{
+	class ResourceManager;
+	class IAudioListener;
+	class ISoundEffect3D;
+	class ISoundInstance3D;
+	class IAudioGeometry;
+	class IReverbSphere;
+}
+
 class Server : 
 	public LambdaEngine::Game,
 	public LambdaEngine::IKeyboardHandler,
@@ -39,4 +50,16 @@ private:
 
 private:
 	LambdaEngine::ServerUDP* m_pServer;
+
+	GUID_Lambda								m_ToneSoundEffectGUID;
+	LambdaEngine::ISoundEffect3D* m_pToneSoundEffect = nullptr;
+	LambdaEngine::ISoundInstance3D* m_pToneSoundInstance = nullptr;
+
+	GUID_Lambda								m_GunSoundEffectGUID;
+	LambdaEngine::ISoundEffect3D* m_pGunSoundEffect = nullptr;
+
+	LambdaEngine::IAudioListener* m_pAudioListener = nullptr;
+
+	LambdaEngine::IReverbSphere* m_pReverbSphere = nullptr;
+	LambdaEngine::IAudioGeometry* m_pAudioGeometry = nullptr;
 };
