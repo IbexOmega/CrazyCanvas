@@ -422,9 +422,9 @@ namespace LambdaEngine
 
 					switch (pPipelineState->GetType())
 					{
-					case EPipelineStateType::GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[resourceIndex],		pPipelineStage->ppGraphicsCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
-					case EPipelineStateType::COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
-					case EPipelineStateType::RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::PIPELINE_GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[resourceIndex],		pPipelineStage->ppGraphicsCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::PIPELINE_COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::PIPELINE_RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
 					}
 
 					currentExecutionStage++;
@@ -693,7 +693,7 @@ namespace LambdaEngine
 			std::vector<RenderPassAttachmentDesc>	renderPassAttachmentDescriptions;
 			RenderPassAttachmentDesc				renderPassDepthStencilDescription;
 			std::vector<ETextureState>				renderPassRenderTargetStates;
-			std::vector<BlendAttachmentState>		renderPassBlendAttachmentStates;
+			std::vector<BlendAttachmentStateDesc>		renderPassBlendAttachmentStates;
 			std::vector<Resource*>					renderTargets;
 			Resource*								pDepthStencilResource = nullptr;
 			std::vector<std::tuple<Resource*, ETextureState, EDescriptorType>>	textureDescriptorSetResources;
@@ -773,9 +773,9 @@ namespace LambdaEngine
 
 							renderPassRenderTargetStates.push_back(ETextureState::TEXTURE_STATE_RENDER_TARGET);
 
-							BlendAttachmentState blendAttachmentState = {};
+							BlendAttachmentStateDesc blendAttachmentState = {};
 							blendAttachmentState.BlendEnabled			= false;
-							blendAttachmentState.ColorComponentsMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+							blendAttachmentState.RenderTargetComponentsMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
 
 							renderPassBlendAttachmentStates.push_back(blendAttachmentState);
 							renderTargets.push_back(pResource);
@@ -856,12 +856,12 @@ namespace LambdaEngine
 			}
 
 			//Create Pipeline State
-			if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
+			if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_GRAPHICS)
 			{
 				GraphicsManagedPipelineStateDesc pipelineDesc		= *pRenderStageDesc->GraphicsPipeline.pGraphicsDesc;
 
 				pipelineDesc.pPipelineLayout				= pRenderStage->pPipelineLayout;
-				memcpy(pipelineDesc.pBlendAttachmentStates, renderPassBlendAttachmentStates.data(), renderPassBlendAttachmentStates.size() * sizeof(BlendAttachmentState));
+				memcpy(pipelineDesc.pBlendAttachmentStates, renderPassBlendAttachmentStates.data(), renderPassBlendAttachmentStates.size() * sizeof(BlendAttachmentStateDesc));
 				pipelineDesc.BlendAttachmentStateCount		= (uint32)renderPassBlendAttachmentStates.size();
 
 				//Create RenderPass
@@ -933,7 +933,7 @@ namespace LambdaEngine
 
 				pRenderStage->PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineDesc);
 			}
-			else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
+			else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_COMPUTE)
 			{
 				ComputeManagedPipelineStateDesc pipelineDesc = *pRenderStageDesc->ComputePipeline.pComputeDesc;
 
@@ -941,7 +941,7 @@ namespace LambdaEngine
 
 				pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
 			}
-			else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
+			else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_RAY_TRACING)
 			{
 				RayTracingManagedPipelineStateDesc pipelineDesc = *pRenderStageDesc->RayTracingPipeline.pRayTracingDesc;
 
@@ -1000,7 +1000,7 @@ namespace LambdaEngine
 			//Link RenderPass to RenderPass Attachments
 			if (renderTargets.size() > 0)
 			{
-				if (pRenderStageDesc->PipelineType != EPipelineStateType::GRAPHICS)
+				if (pRenderStageDesc->PipelineType != EPipelineStateType::PIPELINE_GRAPHICS)
 				{
 					LOG_ERROR("[RenderGraph]: There are resources that a RenderPass should be linked to, but Render Stage %u is not a Graphics Pipeline State", i);
 					return false;
@@ -1778,7 +1778,7 @@ namespace LambdaEngine
 	{
 		uint32 shaderStageMask = 0;
 
-		if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
+		if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_GRAPHICS)
 		{
 			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER		: 0;
 
@@ -1789,11 +1789,11 @@ namespace LambdaEngine
 
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		}
-		else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
+		else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_COMPUTE)
 		{
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 		}
-		else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
+		else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_RAY_TRACING)
 		{
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER;
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;

@@ -43,7 +43,7 @@ namespace LambdaEngine
         //IPipelineState interface
 		FORCEINLINE virtual EPipelineStateType GetType() const override final
         {
-            return EPipelineStateType::RAY_TRACING;
+            return EPipelineStateType::PIPELINE_RAY_TRACING;
         }
 
 	private:

@@ -11,7 +11,7 @@ namespace LambdaEngine
     struct SwapChainDesc
     {
         const char* pName           = "";
-        EFormat     Format          = EFormat::NONE;
+        EFormat     Format          = EFormat::FORMAT_NONE;
         uint32      Width           = 0;
         uint32      Height          = 0;
         uint32      BufferCount     = 0;

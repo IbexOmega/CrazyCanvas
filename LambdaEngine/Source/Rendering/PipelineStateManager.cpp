@@ -79,9 +79,9 @@ namespace LambdaEngine
 		{
 			switch (it->second->GetType())
 			{
-			case EPipelineStateType::GRAPHICS:			s_GraphicsPipelineStateDescriptions.erase(id); break;
-			case EPipelineStateType::COMPUTE:			s_ComputePipelineStateDescriptions.erase(id); break;
-			case EPipelineStateType::RAY_TRACING:		s_RayTracingPipelineStateDescriptions.erase(id); break;
+			case EPipelineStateType::PIPELINE_GRAPHICS:			s_GraphicsPipelineStateDescriptions.erase(id); break;
+			case EPipelineStateType::PIPELINE_COMPUTE:			s_ComputePipelineStateDescriptions.erase(id); break;
+			case EPipelineStateType::PIPELINE_RAY_TRACING:		s_RayTracingPipelineStateDescriptions.erase(id); break;
 			}
 
 			SAFERELEASE(it->second);
@@ -108,21 +108,21 @@ namespace LambdaEngine
 			IPipelineState* pNewPipelineState = nullptr;
 			switch (it->second->GetType())
 			{
-				case EPipelineStateType::GRAPHICS:
+				case EPipelineStateType::PIPELINE_GRAPHICS:
 				{
 					GraphicsPipelineStateDesc pipelineStateDesc = {};
 					FillGraphicsPipelineStateDesc(&pipelineStateDesc, &s_GraphicsPipelineStateDescriptions[it->first]);
 					pNewPipelineState = RenderSystem::GetDevice()->CreateGraphicsPipelineState(&pipelineStateDesc);
 					break;
 				}
-				case EPipelineStateType::COMPUTE:
+				case EPipelineStateType::PIPELINE_COMPUTE:
 				{
 					ComputePipelineStateDesc pipelineStateDesc = {};
 					FillComputePipelineStateDesc(&pipelineStateDesc, &s_ComputePipelineStateDescriptions[it->first]);
 					pNewPipelineState = RenderSystem::GetDevice()->CreateComputePipelineState(&pipelineStateDesc);
 					break;
 				}
-				case EPipelineStateType::RAY_TRACING:
+				case EPipelineStateType::PIPELINE_RAY_TRACING:
 				{
 					RayTracingPipelineStateDesc pipelineStateDesc = {};
 					FillRayTracingPipelineStateDesc(&pipelineStateDesc, &s_RayTracingPipelineStateDescriptions[it->first]);
@@ -141,7 +141,7 @@ namespace LambdaEngine
 		pDstDesc->pName						= pSrcDesc->pName;
 		pDstDesc->pRenderPass				= pSrcDesc->pRenderPass;
 		pDstDesc->pPipelineLayout			= pSrcDesc->pPipelineLayout;
-		memcpy(pDstDesc->pBlendAttachmentStates, pSrcDesc->pBlendAttachmentStates, MAX_COLOR_ATTACHMENTS * sizeof(BlendAttachmentState));
+		memcpy(pDstDesc->pBlendAttachmentStates, pSrcDesc->pBlendAttachmentStates, MAX_COLOR_ATTACHMENTS * sizeof(BlendAttachmentStateDesc));
 		pDstDesc->BlendAttachmentStateCount = pSrcDesc->BlendAttachmentStateCount;
 		pDstDesc->pTaskShader				= ResourceManager::GetShader(pSrcDesc->TaskShader);
 		pDstDesc->pMeshShader				= ResourceManager::GetShader(pSrcDesc->MeshShader);

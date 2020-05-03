@@ -20,7 +20,7 @@ namespace LambdaEngine
     struct BufferDesc
     {
         const char* pName       = "";
-        EMemoryType MemoryType  = EMemoryType::NONE;
+        EMemoryType MemoryType  = EMemoryType::MEMORY_TYPE_NONE;
         uint32      Flags       = FBufferFlags::BUFFER_FLAG_NONE;
         uint64      SizeInBytes = 0;
     };

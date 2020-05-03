@@ -12,12 +12,12 @@ namespace LambdaEngine
 {
 	struct RenderPassAttachmentDesc
 	{
-		EFormat			Format			= EFormat::NONE;
+		EFormat			Format			= EFormat::FORMAT_NONE;
 		uint32			SampleCount		= 0;
-		ELoadOp			LoadOp			= ELoadOp::NONE;
-		EStoreOp		StoreOp			= EStoreOp::NONE;
-		ELoadOp			StencilLoadOp	= ELoadOp::NONE;
-		EStoreOp		StencilStoreOp	= EStoreOp::NONE;
+		ELoadOp			LoadOp			= ELoadOp::LOAD_OP_NONE;
+		EStoreOp		StoreOp			= EStoreOp::STORE_OP_NONE;
+		ELoadOp			StencilLoadOp	= ELoadOp::LOAD_OP_NONE;
+		EStoreOp		StencilStoreOp	= EStoreOp::STORE_OP_NONE;
 		ETextureState	InitialState	= ETextureState::TEXTURE_STATE_UNKNOWN;
 		ETextureState	FinalState		= ETextureState::TEXTURE_STATE_UNKNOWN;
 	};

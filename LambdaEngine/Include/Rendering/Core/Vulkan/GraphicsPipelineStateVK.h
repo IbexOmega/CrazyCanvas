@@ -18,7 +18,6 @@ namespace LambdaEngine
 
 		bool Init(const GraphicsPipelineStateDesc* pDesc);
 
-
         FORCEINLINE VkPipeline GetPipeline() const
         {
             return m_Pipeline;
@@ -30,7 +29,7 @@ namespace LambdaEngine
         // IPipelineState interface
 		FORCEINLINE virtual EPipelineStateType GetType() const override final
         {
-            return EPipelineStateType::GRAPHICS;
+            return EPipelineStateType::PIPELINE_GRAPHICS;
         }
 
 	private:
@@ -41,13 +40,5 @@ namespace LambdaEngine
 
 	private:
 		VkPipeline m_Pipeline = VK_NULL_HANDLE;
-
-		VkPipelineInputAssemblyStateCreateInfo	m_InputAssembly;
-		VkPipelineRasterizationStateCreateInfo	m_RasterizerState;
-		VkPipelineMultisampleStateCreateInfo	m_MultisamplingState;
-		VkPipelineColorBlendStateCreateInfo		m_BlendState;
-		VkPipelineDepthStencilStateCreateInfo	m_DepthStencilState;
-
-		VkPipelineColorBlendAttachmentState*	m_pColorBlendAttachmentStates = nullptr;
 	};
 }

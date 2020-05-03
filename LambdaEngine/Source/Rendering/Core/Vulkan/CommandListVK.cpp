@@ -17,7 +17,13 @@
 #include "Rendering/Core/Vulkan/AccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
-#ifndef LAMBDA_DISABLE_VULKAN_CHECKS
+#ifdef LAMBDA_DEBUG
+	#define LAMBDA_VULKAN_CHECKS_ENABLED 1
+#else
+	#define LAMBDA_VULKAN_CHECKS_ENABLED 0
+#endif
+
+#if LAMBDA_VULKAN_CHECKS_ENABLED
 	#define CHECK_GRAPHICS(pAllocator)	VALIDATE((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
 	#define CHECK_COMPUTE(pAllocator)	VALIDATE((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_COMPUTE);
 #else
@@ -664,7 +670,7 @@ namespace LambdaEngine
 	void CommandListVK::BindGraphicsPipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_GRAPHICS(m_pAllocator);
-        VALIDATE(pPipeline->GetType()		== EPipelineStateType::GRAPHICS);
+        VALIDATE(pPipeline->GetType()		== EPipelineStateType::PIPELINE_GRAPHICS);
         
         const GraphicsPipelineStateVK* pPipelineVk = reinterpret_cast<const GraphicsPipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineVk->GetPipeline());
@@ -673,7 +679,7 @@ namespace LambdaEngine
 	void CommandListVK::BindComputePipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-        VALIDATE(pPipeline->GetType()		== EPipelineStateType::COMPUTE);
+        VALIDATE(pPipeline->GetType()		== EPipelineStateType::PIPELINE_COMPUTE);
         
         const ComputePipelineStateVK* pPipelineVk = reinterpret_cast<const ComputePipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineVk->GetPipeline());
@@ -682,7 +688,7 @@ namespace LambdaEngine
 	void CommandListVK::BindRayTracingPipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-        VALIDATE(pPipeline->GetType()		== EPipelineStateType::RAY_TRACING);
+        VALIDATE(pPipeline->GetType()		== EPipelineStateType::PIPELINE_RAY_TRACING);
         
         const RayTracingPipelineStateVK* pPipelineVk = reinterpret_cast<const RayTracingPipelineStateVK*>(pPipeline);
         m_pCurrentRayTracingPipeline = pPipelineVk;

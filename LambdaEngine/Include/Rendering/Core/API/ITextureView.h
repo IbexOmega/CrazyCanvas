@@ -29,7 +29,7 @@ namespace LambdaEngine
         const char*         pName           = "";
         ITexture*           pTexture        = nullptr;
         uint32              Flags           = FTextureViewFlags::TEXTURE_VIEW_FLAG_NONE;
-        EFormat             Format          = EFormat::NONE;
+        EFormat             Format          = EFormat::FORMAT_NONE;
         ETextureViewType    Type            = ETextureViewType::TEXTURE_VIEW_NONE;
         uint32              MiplevelCount   = 0;
         uint32              ArrayCount      = 0;

@@ -101,8 +101,8 @@ namespace LambdaEngine
 		ITexture*			pTexture				= nullptr;
 		ETextureState		StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
 		ETextureState		StateAfter				= ETextureState::TEXTURE_STATE_UNKNOWN;
-		ECommandQueueType	QueueBefore				= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
-		ECommandQueueType	QueueAfter				= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+		ECommandQueueType	QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
+		ECommandQueueType	QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
 		uint32				SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
 		uint32				DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
 		uint32				TextureFlags			= FTextureFlags::TEXTURE_FLAG_NONE;
@@ -115,8 +115,8 @@ namespace LambdaEngine
 	struct PipelineBufferBarrierDesc
 	{
 		IBuffer*			pBuffer					= nullptr;
-		ECommandQueueType	QueueBefore				= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
-		ECommandQueueType	QueueAfter				= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+		ECommandQueueType	QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
+		ECommandQueueType	QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
 		uint32				SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
 		uint32				DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
 		uint64				Offset					= 0;
@@ -149,7 +149,7 @@ namespace LambdaEngine
 	struct CommandListDesc
 	{
         const char*         pName           = "";
-		ECommandListType	CommandListType = ECommandListType::COMMAND_LIST_UNKNOWN;
+		ECommandListType	CommandListType = ECommandListType::COMMAND_LIST_TYPE_UNKNOWN;
 		uint32				Flags			= FCommandListFlags::COMMAND_LIST_FLAG_NONE;
 	};
 
@@ -169,9 +169,9 @@ namespace LambdaEngine
 		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)		= 0;
 		virtual void BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)	= 0;
 
-		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)				= 0;
-		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)					= 0;
-		virtual void BlitTexture(const ITexture* pSrc, ETextureState srcState, ITexture* pDst, ETextureState dstState, EFilter filter)	= 0;
+		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)					= 0;
+		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)						= 0;
+		virtual void BlitTexture(const ITexture* pSrc, ETextureState srcState, ITexture* pDst, ETextureState dstState, EFilterType filter)	= 0;
 
 		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)	= 0;
 		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)		= 0;

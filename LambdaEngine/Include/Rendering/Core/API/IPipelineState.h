@@ -1,9 +1,6 @@
 #pragma once
-
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
-
-#include "Rendering/Core/API/IRenderPass.h"
 
 namespace LambdaEngine
 {
@@ -14,48 +11,111 @@ namespace LambdaEngine
 	class IRenderPass;
 	class IPipelineLayout;
 
-	enum class EPipelineStateType : uint8
+	union ShaderConstant
 	{
-		NONE            = 0,
-		GRAPHICS        = 1,
-		COMPUTE         = 2,
-		RAY_TRACING     = 3,
+		byte	Data[4];
+		float	Float;
+		int32	Integer;
 	};
 
-	struct BlendAttachmentState
+	struct ShaderModuleDesc
 	{
-		bool BlendEnabled				= false;
-		uint32 ColorComponentsMask		= FColorComponentFlags::COLOR_COMPONENT_FLAG_NONE;
+		IShader*				pShader				= nullptr;
+		const ShaderConstant*	pConstants			= nullptr;
+		uint32					ShaderConstantCount = 0;
+	};
+
+	enum class EPipelineStateType : uint8
+	{
+		NONE					= 0,
+		PIPELINE_GRAPHICS       = 1,
+		PIPELINE_COMPUTE        = 2,
+		PIPELINE_RAY_TRACING    = 3,
+	};
+
+	struct InputAssemblyDesc
+	{
+		EPrimitiveTopology	PrimitiveTopology		= EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		bool				PrimitiveRestartEnable	= false;
+	};
+
+	struct RasterizerStateDesc
+	{
+		EPolygonMode	PolygonMode					= EPolygonMode::POLYGON_MODE_FILL;
+		ECullMode		CullMode					= ECullMode::CULL_MODE_NONE;
+		bool			FrontFaceCounterClockWise	= false;
+		bool			RasterizerDiscardEnable		= false;
+		bool			DepthBiasEnable				= false;
+		bool			DepthClampEnable			= false;
+		bool			MultisampleEnable			= false;
+		float			LineWidth					= 1.0f;
+		float			DepthBiasClamp				= 0.0f;
+		float			DepthBiasConstantFactor		= 0.0f;
+		float			DepthBiasSlopeFactor		= 0.0f;
+	};
+
+	struct DepthStencilStateDesc
+	{
+
+	};
+
+	struct BlendAttachmentStateDesc
+	{
+		bool			BlendEnabled				= false;
+		uint32			RenderTargetComponentsMask	= FColorComponentFlags::COLOR_COMPONENT_FLAG_NONE;
+		EBlendOp		BlendOp						= EBlendOp::BLEND_OP_ADD;
+		EBlendFactor	SrcBlend					= EBlendFactor::BLEND_FACTOR_ONE;
+		EBlendFactor	DstBlend					= EBlendFactor::BLEND_FACTOR_ZERO;
+		EBlendOp		BlendOpAlpha				= EBlendOp::BLEND_OP_ADD;
+		EBlendFactor	SrcBlendAlpha				= EBlendFactor::BLEND_FACTOR_ONE;
+		EBlendFactor	DstBlendAlpha				= EBlendFactor::BLEND_FACTOR_ZERO;
+	};
+
+	struct BlendStateDesc
+	{
+		bool		AlphaToCoverageEnable	= true;
+		bool		AlphaToOneEnable		= true;
+		bool		LogicOpEnable			= false;
+		ELogicOp	LogicOp					= ELogicOp::LOGIC_OP_NOOP;
+
+		const BlendAttachmentStateDesc*	pBlendAttachmentStates		= nullptr;
+		uint32							BlendAttachmentStateCount	= 0;
+
+		float BlendConstants[4];
 	};
 
 	struct GraphicsPipelineStateDesc
 	{
-		const char* pName									= "";
-		const IRenderPass* pRenderPass						= nullptr;
-		const IPipelineLayout* pPipelineLayout				= nullptr;
+		const char* pName = "";
 		
-		BlendAttachmentState pBlendAttachmentStates[MAX_COLOR_ATTACHMENTS];
-		uint32 BlendAttachmentStateCount					= 0;
+		const IRenderPass*		pRenderPass		= nullptr;
+		const IPipelineLayout*	pPipelineLayout	= nullptr;
 
-		//New Style
-		const IShader* pTaskShader							= nullptr;
-		const IShader* pMeshShader							= nullptr;
+		InputAssemblyDesc		InputAssembly		= { };
+		DepthStencilStateDesc	DepthStencilState	= { };
+		BlendStateDesc			BlendState			= { };
+		RasterizerStateDesc		RasterizerState		= { };
+		uint32					SampleMask			= 0;
+		uint32					SampleCount			= 1;
+		uint32					Subpass				= 0;
 
-		//Old Style
-		const IShader* pVertexShader						= nullptr;
-		const IShader* pGeometryShader						= nullptr;
-		const IShader* pHullShader							= nullptr;
-		const IShader* pDomainShader						= nullptr;
-
-		//Both
-		const IShader* pPixelShader							= nullptr;
+		// "New Style"
+		const ShaderModuleDesc* pTaskShader;
+		const ShaderModuleDesc* pMeshShader;
+		// "Old style"
+		const ShaderModuleDesc* pVertexShader;
+		const ShaderModuleDesc* pHullShader;
+		const ShaderModuleDesc* pDomainShader;
+		const ShaderModuleDesc* pGeometryShader;
+		// Common
+		const ShaderModuleDesc* PixelShader;
 	};
 
 	struct ComputePipelineStateDesc
 	{
-		const char*				pName				= "";
-		const IPipelineLayout*	pPipelineLayout		= nullptr;
-		const IShader*			pShader				= nullptr;
+		const char*				pName			= "";
+		const IPipelineLayout*	pPipelineLayout	= nullptr;
+		const ShaderModuleDesc*	pShader			= nullptr;
 	};
 
 	struct RayTracingPipelineStateDesc
@@ -64,12 +124,11 @@ namespace LambdaEngine
 		const IPipelineLayout*	pPipelineLayout			= nullptr;
 		uint32					MaxRecursionDepth		= 1;	
 
-		const IShader*			pRaygenShader			= nullptr;
-		const IShader* 			ppMissShaders[MAX_MISS_SHADER_COUNT];
-		const IShader*			ppClosestHitShaders[MAX_CLOSEST_HIT_SHADER_COUNT]; 
-
-		uint32					MissShaderCount			= 0;
-		uint32					ClosestHitShaderCount	= 0;
+		const ShaderModuleDesc*		pRaygenShader			= nullptr;
+		const ShaderModuleDesc**	ppMissShaders			= nullptr;
+		uint32						MissShaderCount			= 0;
+		const ShaderModuleDesc**	ppClosestHitShaders		= nullptr; 
+		uint32						ClosestHitShaderCount	= 0;
 	};
 
 	class IPipelineState : public IDeviceChild

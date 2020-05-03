@@ -1,5 +1,7 @@
 #include "Log/Log.h"
 
+#include "Containers/TArray.h"
+
 #include "Rendering/Core/Vulkan/GraphicsPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/PipelineLayoutVK.h"
@@ -12,65 +14,6 @@ namespace LambdaEngine
 	GraphicsPipelineStateVK::GraphicsPipelineStateVK(const GraphicsDeviceVK* pDevice)
         : TDeviceChild(pDevice)
 	{
-		//Default InputAssembly
-		m_InputAssembly.sType                   = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		m_InputAssembly.flags                   = 0;
-		m_InputAssembly.pNext                   = nullptr;
-		m_InputAssembly.topology                = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		m_InputAssembly.primitiveRestartEnable  = VK_FALSE;
-
-		//Default RasterizerState
-		m_RasterizerState.sType                     = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		m_RasterizerState.flags                     = 0;
-		m_RasterizerState.pNext                     = nullptr;
-		m_RasterizerState.polygonMode               = VK_POLYGON_MODE_FILL;
-		m_RasterizerState.lineWidth                 = 1.0f;
-		m_RasterizerState.cullMode                  = VK_CULL_MODE_BACK_BIT;
-		m_RasterizerState.frontFace                 = VK_FRONT_FACE_CLOCKWISE;
-		m_RasterizerState.depthBiasEnable           = VK_FALSE;
-		m_RasterizerState.depthClampEnable          = VK_FALSE;
-		m_RasterizerState.rasterizerDiscardEnable   = VK_FALSE;
-		m_RasterizerState.depthBiasClamp            = 0.0f;
-		m_RasterizerState.depthBiasConstantFactor   = 0.0f;
-		m_RasterizerState.depthBiasSlopeFactor      = 0.0f;
-
-		//MultisamplingState
-		m_MultisamplingState.sType                  = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		m_MultisamplingState.flags                  = 0;
-		m_MultisamplingState.pNext                  = nullptr;
-		m_MultisamplingState.alphaToCoverageEnable  = VK_FALSE;
-		m_MultisamplingState.alphaToOneEnable       = VK_FALSE;
-		m_MultisamplingState.minSampleShading       = 0.0f;
-		m_MultisamplingState.sampleShadingEnable    = VK_FALSE;
-		m_MultisamplingState.rasterizationSamples   = VK_SAMPLE_COUNT_1_BIT;
-		m_MultisamplingState.pSampleMask            = nullptr;
-
-		//BlendState
-		m_BlendState.sType              = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-		m_BlendState.flags              = 0;
-		m_BlendState.pNext              = nullptr;
-		m_BlendState.logicOpEnable      = VK_FALSE;
-		m_BlendState.logicOp            = VK_LOGIC_OP_COPY;
-		m_BlendState.pAttachments       = nullptr;
-		m_BlendState.attachmentCount    = 0;
-		m_BlendState.blendConstants[0]  = 0.0f;
-		m_BlendState.blendConstants[1]  = 0.0f;
-		m_BlendState.blendConstants[2]  = 0.0f;
-		m_BlendState.blendConstants[3]  = 0.0f;
-
-		//DepthstencilStated
-		m_DepthStencilState.sType                   = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-		m_DepthStencilState.flags                   = 0;
-		m_DepthStencilState.pNext                   = nullptr;
-		m_DepthStencilState.depthTestEnable         = VK_TRUE;
-		m_DepthStencilState.depthWriteEnable        = VK_TRUE;
-		m_DepthStencilState.depthCompareOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
-		m_DepthStencilState.depthBoundsTestEnable   = VK_FALSE;
-		m_DepthStencilState.stencilTestEnable       = VK_FALSE;
-		m_DepthStencilState.minDepthBounds          = 0.0f;
-		m_DepthStencilState.maxDepthBounds          = 1.0f; 
-		m_DepthStencilState.front                   = {};
-		m_DepthStencilState.back                    = {};
 	}
 
 	GraphicsPipelineStateVK::~GraphicsPipelineStateVK()
@@ -80,12 +23,15 @@ namespace LambdaEngine
 			vkDestroyPipeline(m_pDevice->Device, m_Pipeline, nullptr);
 			m_Pipeline = VK_NULL_HANDLE;
 		}
-
-		SAFEDELETE_ARRAY(m_pColorBlendAttachmentStates);
 	}
 
 	bool GraphicsPipelineStateVK::Init(const GraphicsPipelineStateDesc* pDesc)
 	{
+		VALIDATE(pDesc != nullptr);
+
+		const PipelineLayoutVK* pPipelineLayoutVk	= reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
+		const RenderPassVK*		pRenderPassVk		= reinterpret_cast<const RenderPassVK*>(pDesc->pRenderPass);
+
 		 // Define shader stage create infos
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStagesInfos;
 		std::vector<VkSpecializationInfo> shaderStagesSpecializationInfos;
@@ -95,6 +41,87 @@ namespace LambdaEngine
 		{
 			return false;
 		}
+
+		// Default InputAssembly
+		VkPipelineInputAssemblyStateCreateInfo inputAssembly = { };
+		inputAssembly.sType						= VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		inputAssembly.pNext						= nullptr;
+		inputAssembly.flags						= 0;
+		inputAssembly.topology					= ConvertPrimitiveToplogy(pDesc->InputAssembly.PrimitiveTopology);
+		inputAssembly.primitiveRestartEnable	= (pDesc->InputAssembly.PrimitiveRestartEnable) ? VK_TRUE : VK_FALSE;
+
+		// Default RasterizerState
+		VkPipelineRasterizationStateCreateInfo rasterizerState = { };
+		rasterizerState.sType					= VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterizerState.flags					= 0;
+		rasterizerState.pNext					= nullptr;
+		rasterizerState.polygonMode				= ConvertPolygonMode(pDesc->RasterizerState.PolygonMode);
+		rasterizerState.lineWidth				= pDesc->RasterizerState.LineWidth;
+		rasterizerState.cullMode				= ConvertCullMode(pDesc->RasterizerState.CullMode);
+		rasterizerState.frontFace				= (pDesc->RasterizerState.FrontFaceCounterClockWise) ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
+		rasterizerState.depthBiasEnable			= (pDesc->RasterizerState.DepthBiasEnable)			? VK_TRUE : VK_FALSE;
+		rasterizerState.depthClampEnable		= (pDesc->RasterizerState.DepthClampEnable)			? VK_TRUE : VK_FALSE;
+		rasterizerState.rasterizerDiscardEnable = (pDesc->RasterizerState.RasterizerDiscardEnable)	? VK_TRUE : VK_FALSE;
+		rasterizerState.depthBiasClamp			= pDesc->RasterizerState.DepthBiasClamp;
+		rasterizerState.depthBiasConstantFactor = pDesc->RasterizerState.DepthBiasConstantFactor;
+		rasterizerState.depthBiasSlopeFactor	= pDesc->RasterizerState.DepthBiasSlopeFactor;
+
+		// MultisamplingState
+		VkPipelineMultisampleStateCreateInfo multisamplingState = { };
+		multisamplingState.sType					= VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisamplingState.flags					= 0;
+		multisamplingState.pNext					= nullptr;
+		multisamplingState.alphaToCoverageEnable	= (pDesc->BlendState.AlphaToCoverageEnable) ? VK_TRUE : VK_FALSE;
+		multisamplingState.alphaToOneEnable			= (pDesc->BlendState.AlphaToOneEnable)		? VK_TRUE : VK_FALSE;
+		multisamplingState.minSampleShading			= 0.0f;
+		multisamplingState.sampleShadingEnable		= (pDesc->RasterizerState.MultisampleEnable) ? VK_TRUE : VK_FALSE;
+		multisamplingState.rasterizationSamples		= ConvertSampleCount(pDesc->SampleCount);
+
+		VkSampleMask sampleMask = pDesc->SampleMask;
+		multisamplingState.pSampleMask = &sampleMask;
+
+		// BlendState
+		VkPipelineColorBlendAttachmentState* pBlendAttachments = DBG_NEW VkPipelineColorBlendAttachmentState[pDesc->BlendState.BlendAttachmentStateCount];
+		for (uint32 i = 0; i < pDesc->BlendState.BlendAttachmentStateCount; i++)
+		{
+			VkPipelineColorBlendAttachmentState*	pAttachmentVk	= pBlendAttachments + i;
+			const BlendAttachmentStateDesc*			pAttachment		= pDesc->BlendState.pBlendAttachmentStates + i;
+
+			pAttachmentVk->blendEnable			= (pAttachment->BlendEnabled) ? VK_TRUE : VK_FALSE;
+			pAttachmentVk->colorWriteMask		= ConvertColorComponentMask(pAttachment->RenderTargetComponentsMask);
+			pAttachmentVk->colorBlendOp			= ConvertBlendOp(pAttachment->BlendOp);
+			pAttachmentVk->srcColorBlendFactor	= ConvertBlendFactor(pAttachment->SrcBlend);
+			pAttachmentVk->dstColorBlendFactor	= ConvertBlendFactor(pAttachment->DstBlend);
+			pAttachmentVk->alphaBlendOp			= ConvertBlendOp(pAttachment->BlendOpAlpha);
+			pAttachmentVk->srcAlphaBlendFactor	= ConvertBlendFactor(pAttachment->SrcBlendAlpha);
+			pAttachmentVk->dstAlphaBlendFactor	= ConvertBlendFactor(pAttachment->DstBlendAlpha);
+		}
+
+		VkPipelineColorBlendStateCreateInfo blendState = { };
+		blendState.sType				= VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		blendState.flags				= 0;
+		blendState.pNext				= nullptr;
+		blendState.logicOp				= ConvertLogicOp(pDesc->BlendState.LogicOp);
+		blendState.logicOpEnable		= (pDesc->BlendState.LogicOpEnable) ? VK_TRUE : VK_FALSE;
+		blendState.pAttachments			= pBlendAttachments;
+		blendState.attachmentCount		= pDesc->BlendState.BlendAttachmentStateCount;
+		memcpy(blendState.blendConstants, pDesc->BlendState.BlendConstants, sizeof(float) * 4);
+
+		// DepthstencilState
+		VkPipelineDepthStencilStateCreateInfo depthStencilState = { };
+		depthStencilState.sType					= VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencilState.flags					= 0;
+		depthStencilState.pNext					= nullptr;
+		depthStencilState.depthTestEnable		= VK_TRUE;
+		depthStencilState.depthWriteEnable		= VK_TRUE;
+		depthStencilState.depthCompareOp		= VK_COMPARE_OP_LESS_OR_EQUAL;
+		depthStencilState.depthBoundsTestEnable = VK_FALSE;
+		depthStencilState.stencilTestEnable		= VK_FALSE;
+		depthStencilState.minDepthBounds		= 0.0f;
+		depthStencilState.maxDepthBounds		= 1.0f;
+		depthStencilState.front					= {};
+		depthStencilState.back					= {};
+
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 		vertexInputInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -126,25 +153,6 @@ namespace LambdaEngine
 		dynamicState.pNext              = nullptr;
 		dynamicState.pDynamicStates     = dynamicStates;
 		dynamicState.dynamicStateCount  = 2;
-
-		m_pColorBlendAttachmentStates = DBG_NEW VkPipelineColorBlendAttachmentState[pDesc->BlendAttachmentStateCount];
-
-		for (uint32 i = 0; i < pDesc->BlendAttachmentStateCount; i++)
-		{
-			const BlendAttachmentState* pBlendAttachmentState = pDesc->pBlendAttachmentStates;
-
-			VkPipelineColorBlendAttachmentState blendAttachment = {};
-			blendAttachment.blendEnable			= pBlendAttachmentState->BlendEnabled ? VK_TRUE : VK_FALSE;
-			blendAttachment.colorWriteMask		= ConvertColorComponentMask(pBlendAttachmentState->ColorComponentsMask);
-
-			m_pColorBlendAttachmentStates[i] = blendAttachment;
-		}
-
-		m_BlendState.pAttachments			= m_pColorBlendAttachmentStates;
-		m_BlendState.attachmentCount		= pDesc->BlendAttachmentStateCount;
-
-        const PipelineLayoutVK* pPipelineLayoutVk  = reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
-        const RenderPassVK*     pRenderPassVk      = reinterpret_cast<const RenderPassVK*>(pDesc->pRenderPass);
         
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType                  = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -153,12 +161,12 @@ namespace LambdaEngine
 		pipelineInfo.stageCount             = uint32_t(shaderStagesInfos.size());
 		pipelineInfo.pStages                = shaderStagesInfos.data();
 		pipelineInfo.pVertexInputState      = &vertexInputInfo;
-		pipelineInfo.pInputAssemblyState    = &m_InputAssembly;
+		pipelineInfo.pInputAssemblyState    = &inputAssembly;
 		pipelineInfo.pViewportState         = &viewportState;
-		pipelineInfo.pRasterizationState    = &m_RasterizerState;
-		pipelineInfo.pMultisampleState      = &m_MultisamplingState;
-		pipelineInfo.pDepthStencilState     = &m_DepthStencilState;
-		pipelineInfo.pColorBlendState       = &m_BlendState;
+		pipelineInfo.pRasterizationState    = &rasterizerState;
+		pipelineInfo.pMultisampleState      = &multisamplingState;
+		pipelineInfo.pDepthStencilState     = &depthStencilState;
+		pipelineInfo.pColorBlendState       = &blendState;
 		pipelineInfo.pDynamicState          = &dynamicState;
 		pipelineInfo.renderPass             = pRenderPassVk->GetRenderPass();
 		pipelineInfo.layout                 = pPipelineLayoutVk->GetPipelineLayout();

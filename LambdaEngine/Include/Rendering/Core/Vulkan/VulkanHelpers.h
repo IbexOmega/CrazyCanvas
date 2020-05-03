@@ -38,7 +38,7 @@ namespace LambdaEngine
         }
     }
 
-    inline VkSampleCountFlagBits ConvertSamples(uint32 samples)
+    inline VkSampleCountFlagBits ConvertSampleCount(uint32 samples)
     {
         switch (samples)
         {
@@ -57,10 +57,10 @@ namespace LambdaEngine
 	{
 		switch (loadOp)
 		{
-		case ELoadOp::CLEAR:		return VK_ATTACHMENT_LOAD_OP_CLEAR;
-		case ELoadOp::LOAD:			return VK_ATTACHMENT_LOAD_OP_LOAD;
-		case ELoadOp::DONT_CARE:	return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		default:					return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		case ELoadOp::LOAD_OP_CLEAR:		return VK_ATTACHMENT_LOAD_OP_CLEAR;
+		case ELoadOp::LOAD_OP_LOAD:			return VK_ATTACHMENT_LOAD_OP_LOAD;
+		case ELoadOp::LOAD_OP_DONT_CARE:
+		default:					        return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		}
 	}
 
@@ -68,19 +68,19 @@ namespace LambdaEngine
 	{
 		switch (storeOp)
 		{
-		case EStoreOp::STORE:		return VK_ATTACHMENT_STORE_OP_STORE;
-		case EStoreOp::DONT_CARE:	return VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		default:					return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		case EStoreOp::STORE_OP_STORE:		return VK_ATTACHMENT_STORE_OP_STORE;
+		case EStoreOp::STORE_OP_DONT_CARE:
+		default:					        return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		}
 	}
 
-	inline VkFilter ConvertFilter(EFilter filter)
+	inline VkFilter ConvertFilter(EFilterType filter)
 	{
 		switch (filter)
 		{
-		case EFilter::NEAREST:		return VK_FILTER_NEAREST;
-		case EFilter::LINEAR:		return VK_FILTER_LINEAR;
-		default:					return VK_FILTER_LINEAR;
+		case EFilterType::FILTER_TYPE_NEAREST:		return VK_FILTER_NEAREST;
+		case EFilterType::FILTER_TYPE_LINEAR:		return VK_FILTER_LINEAR;
+		default:					                return VK_FILTER_LINEAR;
 		}
 	}
 
@@ -88,22 +88,22 @@ namespace LambdaEngine
 	{
 		switch (mipmapMode)
 		{
-		case EMipmapMode::NEAREST:		return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-		case EMipmapMode::LINEAR:		return VK_SAMPLER_MIPMAP_MODE_LINEAR;
-		default:						return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		case EMipmapMode::MIPMAP_MODE_NEAREST:		return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+		case EMipmapMode::MIPMAP_MODE_LINEAR:		return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		default:						            return VK_SAMPLER_MIPMAP_MODE_LINEAR;
 		}
 	}
 
-	inline VkSamplerAddressMode ConvertAddressMode(EAddressMode addressMode)
+	inline VkSamplerAddressMode ConvertAddressMode(ESamplerAddressMode addressMode)
 	{
 		switch (addressMode)
 		{
-		case EAddressMode::REPEAT:					return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		case EAddressMode::MIRRORED_REPEAT:			return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-		case EAddressMode::CLAMP_TO_EDGE:			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		case EAddressMode::CLAMP_TO_BORDER:			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-		case EAddressMode::MIRRORED_CLAMP_TO_EDGE:	return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-		default:									return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		case ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT:					return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		case ESamplerAddressMode::SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:			return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+		case ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		case ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		case ESamplerAddressMode::SAMPLER_ADDRESS_MODE_MIRRORED_CLAMP_TO_EDGE:	return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+		default:									                            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		}
 	}
 
@@ -111,14 +111,14 @@ namespace LambdaEngine
     {
         switch (descriptorType)
         {
-        case EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_TEXTURE:		    return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        case EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER:	return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        case EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE:			return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        case EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER:			return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        case EDescriptorType::DESCRIPTOR_CONSTANT_BUFFER:			        return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        case EDescriptorType::DESCRIPTOR_ACCELERATION_STRUCTURE:			return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-        case EDescriptorType::DESCRIPTOR_SAMPLER:                           return VK_DESCRIPTOR_TYPE_SAMPLER;
-        case EDescriptorType::DESCRIPTOR_UNKNOWN:
+        case EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_TEXTURE:		    return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        case EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER:	return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        case EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE:			return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        case EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER:			return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        case EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER:			        return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        case EDescriptorType::DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE:			return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        case EDescriptorType::DESCRIPTOR_TYPE_SAMPLER:                          return VK_DESCRIPTOR_TYPE_SAMPLER;
+        case EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN:
         default: return VkDescriptorType(0);
         }
     }
@@ -172,7 +172,7 @@ namespace LambdaEngine
         case EQueryType::QUERY_TYPE_TIMESTAMP:			    return VK_QUERY_TYPE_TIMESTAMP;
         case EQueryType::QUERY_TYPE_OCCLUSION:			    return VK_QUERY_TYPE_OCCLUSION;
         case EQueryType::QUERY_TYPE_PIPELINE_STATISTICS:	return VK_QUERY_TYPE_PIPELINE_STATISTICS;
-        case EQueryType::NONE:
+        case EQueryType::QUERY_TYPE_NONE:
         default: return VkQueryType(0);
         }
     }
@@ -304,7 +304,7 @@ namespace LambdaEngine
 		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_INDIRECT_COMMAND_READ)					? VK_ACCESS_INDIRECT_COMMAND_READ_BIT : 0;
 		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_INDEX_READ)								? VK_ACCESS_INDEX_READ_BIT : 0;
 		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_VERTEX_ATTRIBUTE_READ)					? VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT : 0;
-		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_CONSTANT_BUFFER_READ)							? VK_ACCESS_UNIFORM_READ_BIT : 0;
+		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_CONSTANT_BUFFER_READ)					? VK_ACCESS_UNIFORM_READ_BIT : 0;
 		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_INPUT_ATTACHMENT_READ)					? VK_ACCESS_INPUT_ATTACHMENT_READ_BIT : 0;
 		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_SHADER_READ)							    ? VK_ACCESS_SHADER_READ_BIT : 0;
 		vkAccessFlags |= (accessFlags & MEMORY_ACCESS_FLAG_SHADER_WRITE)							? VK_ACCESS_SHADER_WRITE_BIT : 0;
@@ -356,6 +356,105 @@ namespace LambdaEngine
             case ETextureState::TEXTURE_STATE_DONT_CARE:
             case ETextureState::TEXTURE_STATE_UNKNOWN:
             default: return VK_IMAGE_LAYOUT_UNDEFINED;
+        }
+    }
+
+    inline VkPrimitiveTopology ConvertPrimitiveToplogy(EPrimitiveTopology topology)
+    {
+        switch (topology)
+        {
+        case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_NONE:
+        default: return VkPrimitiveTopology(0);
+        }
+    }
+
+    inline VkPolygonMode ConvertPolygonMode(EPolygonMode polygonMode)
+    {
+        switch (polygonMode)
+        {
+        case EPolygonMode::POLYGON_MODE_FILL:	return VK_POLYGON_MODE_FILL;
+        case EPolygonMode::POLYGON_MODE_LINE:	return VK_POLYGON_MODE_LINE;
+        case EPolygonMode::POLYGON_MODE_POINT:	return VK_POLYGON_MODE_POINT;
+        default: return VkPolygonMode(0);
+        }
+    }
+
+    inline VkCullModeFlagBits ConvertCullMode(ECullMode cullMode)
+    {
+        switch (cullMode)
+        {
+        case ECullMode::CULL_MODE_NONE:	    return VK_CULL_MODE_NONE;
+        case ECullMode::CULL_MODE_FRONT:	return VK_CULL_MODE_FRONT_BIT;
+        case ECullMode::CULL_MODE_BACK:	    return VK_CULL_MODE_BACK_BIT;
+        default: return VkCullModeFlagBits(0);
+        }
+    }
+
+    inline VkBlendOp ConvertBlendOp(EBlendOp blendOp)
+    {
+        switch (blendOp)
+        {
+        case EBlendOp::BLEND_OP_ADD:        return VK_BLEND_OP_ADD;
+        case EBlendOp::BLEND_OP_SUB:        return VK_BLEND_OP_SUBTRACT;
+        case EBlendOp::BLEND_OP_REV_SUB:    return VK_BLEND_OP_REVERSE_SUBTRACT;
+        case EBlendOp::BLEND_OP_MIN:        return VK_BLEND_OP_MIN;
+        case EBlendOp::BLEND_OP_MAX:        return VK_BLEND_OP_MAX;
+        case EBlendOp::BLEND_OP_NONE:
+        default: return VkBlendOp(0);
+        }
+    }
+
+    inline VkBlendFactor ConvertBlendFactor(EBlendFactor blendFactor)
+    {
+        switch (blendFactor)
+        {
+        case EBlendFactor::BLEND_FACTOR_ZERO:                       return VK_BLEND_FACTOR_ZERO;
+        case EBlendFactor::BLEND_FACTOR_ONE:                        return VK_BLEND_FACTOR_ONE;
+        case EBlendFactor::BLEND_FACTOR_SRC_COLOR:                  return VK_BLEND_FACTOR_SRC_COLOR;
+        case EBlendFactor::BLEND_FACTOR_INV_SRC_COLOR:        return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+        case EBlendFactor::BLEND_FACTOR_DST_COLOR:                  return VK_BLEND_FACTOR_DST_COLOR;
+        case EBlendFactor::BLEND_FACTOR_INV_DST_COLOR:        return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+        case EBlendFactor::BLEND_FACTOR_SRC_ALPHA:                  return VK_BLEND_FACTOR_SRC_ALPHA;
+        case EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA:        return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        case EBlendFactor::BLEND_FACTOR_DST_ALPHA:                  return VK_BLEND_FACTOR_DST_ALPHA;
+        case EBlendFactor::BLEND_FACTOR_INV_DST_ALPHA:        return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+        case EBlendFactor::BLEND_FACTOR_CONSTANT_COLOR:             return VK_BLEND_FACTOR_CONSTANT_COLOR;
+        case EBlendFactor::BLEND_FACTOR_INV_CONSTANT_COLOR:   return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
+        case EBlendFactor::BLEND_FACTOR_CONSTANT_ALPHA:             return VK_BLEND_FACTOR_CONSTANT_ALPHA;
+        case EBlendFactor::BLEND_FACTOR_INV_CONSTANT_ALPHA:   return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+        case EBlendFactor::BLEND_FACTOR_SRC_ALPHA_SATURATE:         return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+        case EBlendFactor::BLEND_FACTOR_SRC1_COLOR:                 return VK_BLEND_FACTOR_SRC1_COLOR;
+        case EBlendFactor::BLEND_FACTOR_INV_SRC1_COLOR:       return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+        case EBlendFactor::BLEND_FACTOR_SRC1_ALPHA:                 return VK_BLEND_FACTOR_SRC1_ALPHA;
+        case EBlendFactor::BLEND_FACTOR_INV_SRC1_ALPHA:       return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+        case EBlendFactor::BLEND_FACTOR_NONE:
+        default: return VkBlendFactor(0);
+        }
+    }
+
+    inline VkLogicOp ConvertLogicOp(ELogicOp logicOp)
+    {
+        switch (logicOp)
+        {
+        case ELogicOp::LOGIC_OP_CLEAR:			   return VK_LOGIC_OP_CLEAR;
+        case ELogicOp::LOGIC_OP_AND:			   return VK_LOGIC_OP_AND;
+        case ELogicOp::LOGIC_OP_AND_REVERSE:	   return VK_LOGIC_OP_AND_REVERSE;
+        case ELogicOp::LOGIC_OP_COPY:			   return VK_LOGIC_OP_COPY;
+        case ELogicOp::LOGIC_OP_AND_INVERTED:	   return VK_LOGIC_OP_AND_INVERTED;
+        case ELogicOp::LOGIC_OP_NO_OP:			   return VK_LOGIC_OP_NO_OP;
+        case ELogicOp::LOGIC_OP_XOR:			   return VK_LOGIC_OP_XOR;
+        case ELogicOp::LOGIC_OP_OR:				   return VK_LOGIC_OP_OR;
+        case ELogicOp::LOGIC_OP_NOR:			   return VK_LOGIC_OP_NOR;
+        case ELogicOp::LOGIC_OP_EQUIVALENT:		   return VK_LOGIC_OP_EQUIVALENT;
+        case ELogicOp::LOGIC_OP_INVERT:			   return VK_LOGIC_OP_INVERT;
+        case ELogicOp::LOGIC_OP_OR_REVERSE:		   return VK_LOGIC_OP_OR_REVERSE;
+        case ELogicOp::LOGIC_OP_COPY_INVERTED:	   return VK_LOGIC_OP_COPY_INVERTED;
+        case ELogicOp::LOGIC_OP_OR_INVERTED:	   return VK_LOGIC_OP_OR_INVERTED;
+        case ELogicOp::LOGIC_OP_NAND:			   return VK_LOGIC_OP_NAND;
+        case ELogicOp::LOGIC_OP_SET:			   return VK_LOGIC_OP_SET;
+        case ELogicOp::LOGIC_OP_NONE:
+        default: return VkLogicOp(0);
         }
     }
 

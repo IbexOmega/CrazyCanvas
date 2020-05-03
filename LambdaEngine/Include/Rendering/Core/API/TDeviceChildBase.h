@@ -4,7 +4,6 @@
 #include "Threading/API/SpinLock.h"
 
 #include <mutex>
-
 #include <string.h>
 
 #define MAX_DEVICE_CHILD_NAME_LENGTH 256

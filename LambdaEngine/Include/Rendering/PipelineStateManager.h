@@ -9,7 +9,7 @@
 
 namespace LambdaEngine
 {
-	struct BlendAttachmentState;
+	struct BlendAttachmentStateDesc;
 
 	class IPipelineState;
 	class IRenderPass;
@@ -21,7 +21,7 @@ namespace LambdaEngine
 		const IRenderPass* pRenderPass						= nullptr;
 		const IPipelineLayout* pPipelineLayout				= nullptr;
 
-		BlendAttachmentState pBlendAttachmentStates[MAX_COLOR_ATTACHMENTS];
+		BlendAttachmentStateDesc pBlendAttachmentStates[MAX_COLOR_ATTACHMENTS];
 		uint32 BlendAttachmentStateCount					= 0;
 
 		//New Style

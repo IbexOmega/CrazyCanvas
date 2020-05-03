@@ -111,9 +111,9 @@ Sandbox::Sandbox()
 	samplerLinearDesc.MinFilter				= EFilter::LINEAR;
 	samplerLinearDesc.MagFilter				= EFilter::LINEAR;
 	samplerLinearDesc.MipmapMode			= EMipmapMode::LINEAR;
-	samplerLinearDesc.AddressModeU			= EAddressMode::REPEAT;
-	samplerLinearDesc.AddressModeV			= EAddressMode::REPEAT;
-	samplerLinearDesc.AddressModeW			= EAddressMode::REPEAT;
+	samplerLinearDesc.AddressModeU			= ESamplerAddressMode::REPEAT;
+	samplerLinearDesc.AddressModeV			= ESamplerAddressMode::REPEAT;
+	samplerLinearDesc.AddressModeW			= ESamplerAddressMode::REPEAT;
 	samplerLinearDesc.MipLODBias			= 0.0f;
 	samplerLinearDesc.AnisotropyEnabled		= false;
 	samplerLinearDesc.MaxAnisotropy			= 16;
@@ -127,9 +127,9 @@ Sandbox::Sandbox()
 	samplerNearestDesc.MinFilter			= EFilter::NEAREST;
 	samplerNearestDesc.MagFilter			= EFilter::NEAREST;
 	samplerNearestDesc.MipmapMode			= EMipmapMode::NEAREST;
-	samplerNearestDesc.AddressModeU			= EAddressMode::REPEAT;
-	samplerNearestDesc.AddressModeV			= EAddressMode::REPEAT;
-	samplerNearestDesc.AddressModeW			= EAddressMode::REPEAT;
+	samplerNearestDesc.AddressModeU			= ESamplerAddressMode::REPEAT;
+	samplerNearestDesc.AddressModeV			= ESamplerAddressMode::REPEAT;
+	samplerNearestDesc.AddressModeW			= ESamplerAddressMode::REPEAT;
 	samplerNearestDesc.MipLODBias			= 0.0f;
 	samplerNearestDesc.AnisotropyEnabled	= false;
 	samplerNearestDesc.MaxAnisotropy		= 16;
@@ -513,7 +513,7 @@ bool Sandbox::InitRendererForDeferred()
 		geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
 		geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::SCENE_INDIRECT;
 		renderStage.GraphicsPipeline.pIndexBufferName		= SCENE_INDEX_BUFFER;
@@ -555,7 +555,7 @@ bool Sandbox::InitRendererForDeferred()
 		rayTracingPipelineStateDesc.ClosestHitShaderCount	= 1;
 		rayTracingPipelineStateDesc.MissShaderCount			= 1;
 
-		renderStage.PipelineType							= EPipelineStateType::RAY_TRACING;
+		renderStage.PipelineType							= EPipelineStateType::PIPELINE_RAY_TRACING;
 
 		renderStage.RayTracingPipeline.pRayTracingDesc		= &rayTracingPipelineStateDesc;
 
@@ -596,7 +596,7 @@ bool Sandbox::InitRendererForDeferred()
 		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
 		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
 		renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
@@ -629,7 +629,7 @@ bool Sandbox::InitRendererForDeferred()
 		postProcessPipelineStateDesc.pName		= "Post-Process Pass Pipeline State";
 		postProcessPipelineStateDesc.Shader		= postProcessShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::COMPUTE;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_COMPUTE;
 
 		renderStage.ComputePipeline.pComputeDesc			= &postProcessPipelineStateDesc;
 
@@ -803,9 +803,9 @@ bool Sandbox::InitRendererForDeferred()
 		samplerDesc.MinFilter			= EFilter::NEAREST;
 		samplerDesc.MagFilter			= EFilter::NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeV		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeW		= EAddressMode::REPEAT;
+		samplerDesc.AddressModeU		= ESamplerAddressMode::REPEAT;
+		samplerDesc.AddressModeV		= ESamplerAddressMode::REPEAT;
+		samplerDesc.AddressModeW		= ESamplerAddressMode::REPEAT;
 		samplerDesc.MipLODBias			= 0.0f;
 		samplerDesc.AnisotropyEnabled	= false;
 		samplerDesc.MaxAnisotropy		= 16;
@@ -854,9 +854,9 @@ bool Sandbox::InitRendererForDeferred()
 		samplerDesc.MinFilter			= EFilter::NEAREST;
 		samplerDesc.MagFilter			= EFilter::NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeV		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeW		= EAddressMode::REPEAT;
+		samplerDesc.AddressModeU		= ESamplerAddressMode::REPEAT;
+		samplerDesc.AddressModeV		= ESamplerAddressMode::REPEAT;
+		samplerDesc.AddressModeW		= ESamplerAddressMode::REPEAT;
 		samplerDesc.MipLODBias			= 0.0f;
 		samplerDesc.AnisotropyEnabled	= false;
 		samplerDesc.MaxAnisotropy		= 16;
@@ -905,9 +905,9 @@ bool Sandbox::InitRendererForDeferred()
 		samplerDesc.MinFilter			= EFilter::NEAREST;
 		samplerDesc.MagFilter			= EFilter::NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeV		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeW		= EAddressMode::REPEAT;
+		samplerDesc.AddressModeU		= ESamplerAddressMode::REPEAT;
+		samplerDesc.AddressModeV		= ESamplerAddressMode::REPEAT;
+		samplerDesc.AddressModeW		= ESamplerAddressMode::REPEAT;
 		samplerDesc.MipLODBias			= 0.0f;
 		samplerDesc.AnisotropyEnabled	= false;
 		samplerDesc.MaxAnisotropy		= 16;
@@ -957,9 +957,9 @@ bool Sandbox::InitRendererForDeferred()
 		samplerDesc.MinFilter			= EFilter::NEAREST;
 		samplerDesc.MagFilter			= EFilter::NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeV		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeW		= EAddressMode::REPEAT;
+		samplerDesc.AddressModeU		= ESamplerAddressMode::REPEAT;
+		samplerDesc.AddressModeV		= ESamplerAddressMode::REPEAT;
+		samplerDesc.AddressModeW		= ESamplerAddressMode::REPEAT;
 		samplerDesc.MipLODBias			= 0.0f;
 		samplerDesc.AnisotropyEnabled	= false;
 		samplerDesc.MaxAnisotropy		= 16;
@@ -1009,9 +1009,9 @@ bool Sandbox::InitRendererForDeferred()
 		samplerDesc.MinFilter			= EFilter::NEAREST;
 		samplerDesc.MagFilter			= EFilter::NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeV		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeW		= EAddressMode::REPEAT;
+		samplerDesc.AddressModeU		= ESamplerAddressMode::REPEAT;
+		samplerDesc.AddressModeV		= ESamplerAddressMode::REPEAT;
+		samplerDesc.AddressModeW		= ESamplerAddressMode::REPEAT;
 		samplerDesc.MipLODBias			= 0.0f;
 		samplerDesc.AnisotropyEnabled	= false;
 		samplerDesc.MaxAnisotropy		= 16;
@@ -1137,7 +1137,7 @@ bool Sandbox::InitRendererForVisBuf()
 		geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
 		geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::SCENE_INDIRECT;
 		renderStage.GraphicsPipeline.pIndexBufferName		= SCENE_INDEX_BUFFER;
@@ -1184,7 +1184,7 @@ bool Sandbox::InitRendererForVisBuf()
 		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
 		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
 		renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
@@ -1318,9 +1318,9 @@ bool Sandbox::InitRendererForVisBuf()
 		samplerNearestDesc.MinFilter			= EFilter::NEAREST;
 		samplerNearestDesc.MagFilter			= EFilter::NEAREST;
 		samplerNearestDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerNearestDesc.AddressModeU			= EAddressMode::REPEAT;
-		samplerNearestDesc.AddressModeV			= EAddressMode::REPEAT;
-		samplerNearestDesc.AddressModeW			= EAddressMode::REPEAT;
+		samplerNearestDesc.AddressModeU			= ESamplerAddressMode::REPEAT;
+		samplerNearestDesc.AddressModeV			= ESamplerAddressMode::REPEAT;
+		samplerNearestDesc.AddressModeW			= ESamplerAddressMode::REPEAT;
 		samplerNearestDesc.MipLODBias			= 0.0f;
 		samplerNearestDesc.AnisotropyEnabled	= false;
 		samplerNearestDesc.MaxAnisotropy		= 16;

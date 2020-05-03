@@ -98,7 +98,7 @@ namespace LambdaEngine
 			vkAttachment = {};
 			vkAttachment.flags				= NULL;
 			vkAttachment.format				= ConvertFormat(attachment.Format);
-			vkAttachment.samples			= ConvertSamples(attachment.SampleCount);
+			vkAttachment.samples			= ConvertSampleCount(attachment.SampleCount);
 			vkAttachment.loadOp				= ConvertLoadOp(attachment.LoadOp);
 			vkAttachment.storeOp			= ConvertStoreOp(attachment.StoreOp);
 			vkAttachment.stencilLoadOp		= ConvertLoadOp(attachment.StencilLoadOp);

@@ -15,8 +15,8 @@ namespace LambdaEngine
     struct TextureDesc
     {
         const char*     pName           = "";
-        EMemoryType     MemoryType      = EMemoryType::NONE;
-        EFormat         Format          = EFormat::NONE;
+        EMemoryType     MemoryType      = EMemoryType::MEMORY_TYPE_NONE;
+        EFormat         Format          = EFormat::FORMAT_NONE;
         ETextureType    Type            = ETextureType::TEXTURE_NONE;
         uint32          Flags           = FTextureFlags::TEXTURE_FLAG_NONE;
         uint32          Width           = 0;

@@ -6,15 +6,15 @@ namespace LambdaEngine
 {
 	enum class EAccelerationStructureType
 	{
-		ACCELERATION_STRUCTURE_NONE		= 0,
-		ACCELERATION_STRUCTURE_TOP		= 1,
-		ACCELERATION_STRUCTURE_BOTTOM	= 2,
+		ACCELERATION_STRUCTURE_TYPE_NONE	= 0,
+		ACCELERATION_STRUCTURE_TYPE_TOP		= 1,
+		ACCELERATION_STRUCTURE_TYPE_BOTTOM	= 2,
 	};
 
 	struct AccelerationStructureDesc
 	{
 		const char*					pName				= "";
-		EAccelerationStructureType	Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_NONE;
+		EAccelerationStructureType	Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_NONE;
 		uint32						Flags				= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
 		uint32						InstanceCount		= 8;
 		uint32						MaxTriangleCount	= 0;

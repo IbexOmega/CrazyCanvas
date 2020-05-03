@@ -428,7 +428,7 @@ namespace LambdaEngine
 			
 			switch (renderStage.PipelineType)
 			{
-				case EPipelineStateType::GRAPHICS:
+				case EPipelineStateType::PIPELINE_GRAPHICS:
 				{
 					renderStage.GraphicsPipeline.pGraphicsDesc			= pSourceRenderStage->GraphicsPipeline.pGraphicsDesc;
 					renderStage.GraphicsPipeline.DrawType				= pSourceRenderStage->GraphicsPipeline.DrawType;
@@ -436,12 +436,12 @@ namespace LambdaEngine
 					renderStage.GraphicsPipeline.pMeshIndexBufferName	= pSourceRenderStage->GraphicsPipeline.pMeshIndexBufferName;
 					break;
 				}
-				case EPipelineStateType::COMPUTE:
+				case EPipelineStateType::PIPELINE_COMPUTE:
 				{
 					renderStage.ComputePipeline.pComputeDesc = pSourceRenderStage->ComputePipeline.pComputeDesc;
 					break;
 				}
-				case EPipelineStateType::RAY_TRACING:
+				case EPipelineStateType::PIPELINE_RAY_TRACING:
 				{
 					renderStage.RayTracingPipeline.pRayTracingDesc = pSourceRenderStage->RayTracingPipeline.pRayTracingDesc;
 					break;
@@ -498,7 +498,7 @@ namespace LambdaEngine
 				{
 					//Check if this resource is back buffer and this is not graphics queue
 					
-					if (pSourceRenderStage->PipelineType != EPipelineStateType::GRAPHICS)
+					if (pSourceRenderStage->PipelineType != EPipelineStateType::PIPELINE_GRAPHICS)
 					{
 						if (strcmp(pOutputAttachment->AttachmentName.c_str(), RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0)
 						{
@@ -512,7 +512,7 @@ namespace LambdaEngine
 
 							AttachmentSynchronizationDesc backBufferPreSynchronization = {};
 							backBufferPreSynchronization.Type					= EAttachmentSynchronizationType::TRANSITION_FOR_WRITE;
-							backBufferPreSynchronization.FromQueueOwner			= EPipelineStateType::GRAPHICS;
+							backBufferPreSynchronization.FromQueueOwner			= EPipelineStateType::PIPELINE_GRAPHICS;
 							backBufferPreSynchronization.ToQueueOwner			= sortedRenderStageIt->second->pRenderStage->PipelineType;
 							backBufferPreSynchronization.FromAttachment			= backBufferFromAttachment;
 							backBufferPreSynchronization.ToAttachment			= backBufferToAttachment;
@@ -522,7 +522,7 @@ namespace LambdaEngine
 							AttachmentSynchronizationDesc backBufferPostSynchronization = {};
 							backBufferPostSynchronization.Type					= EAttachmentSynchronizationType::TRANSITION_FOR_READ;
 							backBufferPostSynchronization.FromQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
-							backBufferPostSynchronization.ToQueueOwner			= EPipelineStateType::GRAPHICS; 
+							backBufferPostSynchronization.ToQueueOwner			= EPipelineStateType::PIPELINE_GRAPHICS; 
 							backBufferPostSynchronization.FromAttachment		= backBufferToAttachment;
 							backBufferPostSynchronization.ToAttachment			= backBufferFromAttachment;
 
@@ -660,11 +660,11 @@ namespace LambdaEngine
 					}
 				}
 
-				if (synchronization.ToQueueOwner == EPipelineStateType::GRAPHICS)
+				if (synchronization.ToQueueOwner == EPipelineStateType::PIPELINE_GRAPHICS)
 				{
 					toGraphicsSynchronizationStage.Synchronizations.push_back(synchronization);
 				}
-				else if (synchronization.ToQueueOwner == EPipelineStateType::COMPUTE || synchronization.ToQueueOwner == EPipelineStateType::RAY_TRACING)
+				else if (synchronization.ToQueueOwner == EPipelineStateType::PIPELINE_COMPUTE || synchronization.ToQueueOwner == EPipelineStateType::PIPELINE_RAY_TRACING)
 				{
 					toComputeSynchronizationStage.Synchronizations.push_back(synchronization);
 				}
@@ -1543,9 +1543,9 @@ namespace LambdaEngine
 	{
 		switch (pipelineState)
 		{
-		case EPipelineStateType::GRAPHICS:		strcat(pStringBuffer, "GRAPHICS");	break;
-		case EPipelineStateType::COMPUTE:		strcat(pStringBuffer, "COMPUTE");	break;
-		case EPipelineStateType::RAY_TRACING:	strcat(pStringBuffer, "COMPUTE");	break;
+		case EPipelineStateType::PIPELINE_GRAPHICS:		strcat(pStringBuffer, "PIPELINE_GRAPHICS");	break;
+		case EPipelineStateType::PIPELINE_COMPUTE:		strcat(pStringBuffer, "PIPELINE_COMPUTE");	break;
+		case EPipelineStateType::PIPELINE_RAY_TRACING:	strcat(pStringBuffer, "PIPELINE_COMPUTE");	break;
 		}
 	}
 }

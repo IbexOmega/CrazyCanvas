@@ -56,7 +56,7 @@ namespace LambdaEngine
 		info.mipLevels				= pDesc->Miplevels;
 		info.pQueueFamilyIndices	= nullptr;
 		info.queueFamilyIndexCount	= 0;
-		info.samples				= ConvertSamples(pDesc->SampleCount);
+		info.samples				= ConvertSampleCount(pDesc->SampleCount);
 		info.sharingMode			= VK_SHARING_MODE_EXCLUSIVE;
 		info.tiling					= VK_IMAGE_TILING_OPTIMAL;
         

@@ -7,7 +7,7 @@ namespace LambdaEngine
 	struct QueryHeapDesc
 	{
 		const char* pName					= "";
-		EQueryType	Type					= EQueryType::NONE;
+		EQueryType	Type					= EQueryType::QUERY_TYPE_NONE;
 		uint32		QueryCount				= 0;
 		uint32		PipelineStatisticsFlags = 0;
 	};
