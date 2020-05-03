@@ -19,9 +19,9 @@ namespace LambdaEngine
         MacWindow();
         ~MacWindow();
 
-        // IWindow interface
-        virtual bool Init(const char* pTitle, uint32 width, uint32 height)  override final;
+        bool Init(const char* pTitle, uint32 width, uint32 height);
         
+        // IWindow interface
         virtual void Show()     override final;
         virtual void Close()    override final;
         

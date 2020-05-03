@@ -76,18 +76,23 @@ namespace LambdaEngine
     MacApplication::MacApplication()
         : Application()
     {
+    	VALIDATE_MSG(s_pApplication == nullptr, "[MacApplication]: An instance of application already exists");
+		s_pApplication = this;
     }
 
     MacApplication::~MacApplication()
     {
         SCOPED_AUTORELEASE_POOL();
         
-        [m_pAppDelegate release];
-        
+        VALIDATE_MSG(s_pApplication != nullptr, "[MacApplication]: Instance of application has already been deleted");
+		s_pApplication = nullptr;
+
         for (MacWindow* pWindow : m_Windows)
         {
             SAFERELEASE(pWindow);
         }
+
+        [m_pAppDelegate release];
     }
 
     bool MacApplication::Init()
@@ -396,12 +401,12 @@ namespace LambdaEngine
 
     IWindow* MacApplication::GetForegroundWindow() const
     {
-        VALIDATE(s_pApplication != nullptr);
+        VALIDATE(MacApplication::Get() != nullptr);
         
         NSWindow* keyWindow = [NSApp keyWindow];
         if ([keyWindow isKindOfClass:[CocoaWindow class]])
         {
-            return s_pApplication->GetWindowFromNSWindow((CocoaWindow*)keyWindow);
+            return MacApplication::Get()->GetWindowFromNSWindow((CocoaWindow*)keyWindow);
         }
         
         return nullptr;
@@ -409,8 +414,13 @@ namespace LambdaEngine
 
     IWindow* MacApplication::GetMainWindow() const
     {
-        VALIDATE(s_pApplication != nullptr);
-        return s_pApplication->m_pMainWindow;
+        VALIDATE(MacApplication::Get() != nullptr);
+        return MacApplication::Get()->m_pMainWindow;
+    }
+
+    void MacApplication::AddWindow(MacWindow* pWindow)
+    {
+        m_Windows.emplace_back(pWindow);
     }
 
     /*
@@ -430,16 +440,16 @@ namespace LambdaEngine
             SAFEDELETE(pWindow);
         }
         
-        VALIDATE(s_pApplication != nullptr);
+        VALIDATE(MacApplication::Get() != nullptr);
         
-        s_pApplication->m_Windows.emplace_back(pWindow);
+        MacApplication::Get()->AddWindow(pWindow);
         return pWindow;
     }
 
     IInputDevice* MacApplication::CreateInputDevice(EInputMode)
     {
         MacInputDevice* pInputDevice = DBG_NEW MacInputDevice();
-        s_pApplication->AddMacMessageHandler(pInputDevice);
+        MacApplication::Get()->AddMacMessageHandler(pInputDevice);
 
         return pInputDevice;
     }
@@ -458,8 +468,8 @@ namespace LambdaEngine
 
         MacMainThread::PreInit();
         
-        s_pApplication = DBG_NEW MacApplication();
-        if (!s_pApplication->Init())
+        MacApplication* pApplication = DBG_NEW MacApplication();
+        if (!pApplication->Init())
         {
             return false;
         }
@@ -481,7 +491,7 @@ namespace LambdaEngine
         MacMainThread::Tick();
         
         bool shouldExit = ProcessMessages();
-        s_pApplication->ProcessStoredEvents();
+        MacApplication::Get()->ProcessStoredEvents();
 
         // We are done by updating (We have processed all events)
         [NSApp updateWindows];
@@ -496,10 +506,10 @@ namespace LambdaEngine
         // Make sure this function is called on the main thread, calling from other threads result in undefined
         VALIDATE([NSThread isMainThread]);
         
-        if (s_pApplication)
+        if (MacApplication::Get())
         {
             // Checking events while processing buffered events causes some events to get lost
-            if (!s_pApplication->m_IsProcessingEvents)
+            if (!MacApplication::Get()->m_IsProcessingEvents)
             {
                 NSEvent* event = nil;
                 while (true)
@@ -510,12 +520,12 @@ namespace LambdaEngine
                         break;
                     }
                     
-                    s_pApplication->StoreNSEvent(event);
+                    MacApplication::Get()->StoreNSEvent(event);
                     [NSApp sendEvent:event];
                 }
             }
             
-            if (s_pApplication->m_IsTerminating)
+            if (MacApplication::Get()->m_IsTerminating)
             {
                 return false;
             }

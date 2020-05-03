@@ -73,9 +73,14 @@ namespace LambdaEngine
         
         virtual void ProcessStoredEvents() override final;
 
+        virtual void MakeMainWindow(IWindow* pMainWindow) override final;
+
         virtual IWindow* GetForegroundWindow()   const override final;
         virtual IWindow* GetMainWindow()         const override final;
         
+    private:
+        void AddWindow(MacWindow* pWindow);
+
     public:
         static bool PreInit();
         static bool PostRelease();

@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
-#include "Application/API/Window.h"
+#include "Application/API/IWindow.h"
 
 #include "Windows.h"
 
@@ -9,20 +9,24 @@
 
 namespace LambdaEngine
 {
-	class Win32Window : public Window
+	class Win32Window : public IWindow
 	{
 	public:
 		Win32Window() = default;
 		~Win32Window();
 
-		// Window interface
-		virtual bool Init(const char* pTitle, uint32 width, uint32 height) override final;
+		bool Init(const char* pTitle, uint32 width, uint32 height);
 
+		// Window interface
 		virtual void Show() 	override final;
 		virtual void Close() 	override final;
 
 		virtual void Minimize() override final;
         virtual void Maximize() override final;
+
+		virtual void Restore() override final;
+
+		virtual void ToggleFullscreen() override final;
 
 		virtual void SetTitle(const char* pTitle) override final;
 

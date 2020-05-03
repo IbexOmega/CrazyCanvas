@@ -10,19 +10,19 @@ namespace LambdaEngine
 		RAWINPUTDEVICE devices[2];
 		ZERO_MEMORY(devices, sizeof(RAWINPUTDEVICE) * 2);
 
-		//Keyboard
-		devices[0].dwFlags = RIDEV_REMOVE;
-		devices[0].hwndTarget = 0;
-		devices[0].usUsage = 0x06;
-		devices[0].usUsagePage = 0x01;
+		// Keyboard
+		devices[0].dwFlags		= RIDEV_REMOVE;
+		devices[0].hwndTarget	= 0;
+		devices[0].usUsage		= 0x06;
+		devices[0].usUsagePage	= 0x01;
 
-		//Mouse
-		devices[1].dwFlags = RIDEV_REMOVE;
-		devices[1].hwndTarget = 0;
-		devices[1].usUsage = 0x02;
-		devices[1].usUsagePage = 0x01;
+		// Mouse
+		devices[1].dwFlags		= RIDEV_REMOVE;
+		devices[1].hwndTarget	= 0;
+		devices[1].usUsage		= 0x02;
+		devices[1].usUsagePage	= 0x01;
 
-		BOOL bResult = RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE));
+		BOOL bResult = ::RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE));
 		if (bResult == FALSE)
 		{
 			LOG_ERROR("[Win32RawInputDevice]: Failed to unregister raw input devices");
@@ -38,19 +38,19 @@ namespace LambdaEngine
 		RAWINPUTDEVICE devices[2];
 		ZERO_MEMORY(devices, sizeof(RAWINPUTDEVICE) * 2);
 
-		//Keyboard
+		// Keyboard
 		devices[0].dwFlags		= RIDEV_NOLEGACY;
 		devices[0].hwndTarget	= 0;
 		devices[0].usUsage		= 0x06;
 		devices[0].usUsagePage	= 0x01;
 
-		//Mouse
+		// Mouse
 		devices[1].dwFlags		= 0;
 		devices[1].hwndTarget	= 0;
 		devices[1].usUsage		= 0x02;
 		devices[1].usUsagePage	= 0x01;
 
-		BOOL bResult = RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE));
+		BOOL bResult = ::RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE));
 		if (bResult == FALSE)
 		{
 			LOG_ERROR("[Win32RawInputDevice]: Failed to register raw input devices");
@@ -71,7 +71,7 @@ namespace LambdaEngine
 			case WM_INPUT:
 			{
 				UINT uSize = 0;
-				GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &uSize, sizeof(RAWINPUTHEADER));
+				::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &uSize, sizeof(RAWINPUTHEADER));
 				
 				LPBYTE lpBytes = DBG_NEW BYTE[uSize];
 				if (lpBytes == NULL)
@@ -79,7 +79,7 @@ namespace LambdaEngine
 					return 0;
 				}
 
-				if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpBytes, &uSize, sizeof(RAWINPUTHEADER)) != uSize)
+				if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpBytes, &uSize, sizeof(RAWINPUTHEADER)) != uSize)
 				{
 					LOG_ERROR("[Win32RawInputDevice]: GetRawInputData does not return correct size");
 

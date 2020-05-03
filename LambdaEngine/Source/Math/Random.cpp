@@ -1,11 +1,15 @@
-#include "Random.h"
+#include "Math/Random.h"
 
-#include <time.h>
-#include <chrono>
+#include "Time/API/PlatformTime.h"
 
 namespace LambdaEngine
 {
-	std::default_random_engine Random::s_Generator((uint32)std::chrono::system_clock::now().time_since_epoch().count());
+	std::default_random_engine Random::s_Generator((uint32)0);
+
+	void Random::PreInit()
+	{
+		s_Generator = std::default_random_engine((uint32)PlatformTime::GetPerformanceCounter());
+	}
 
 	int32 Random::Int32(int32 min, int32 max)
 	{

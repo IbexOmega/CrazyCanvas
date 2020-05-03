@@ -5,13 +5,12 @@
 #include "Time/API/PlatformTime.h"
 #include "Time/API/Clock.h"
 
+#include "Math/Random.h"
+
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformConsole.h"
 
 #include "Input/API/Input.h"
-
-#include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/ICommandQueue.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 
@@ -108,6 +107,8 @@ namespace LambdaEngine
 
 		PlatformTime::PreInit();
               
+		Random::PreInit();
+
 		return true;
 	}
 	

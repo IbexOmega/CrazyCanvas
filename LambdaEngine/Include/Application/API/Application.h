@@ -28,6 +28,8 @@ namespace LambdaEngine
         */
         virtual void ProcessStoredEvents() = 0; 
 
+        virtual void MakeMainWindow(IWindow* pMainWindow) = 0;
+
         virtual IWindow* GetForegroundWindow()   const = 0;
         virtual IWindow* GetMainWindow()         const = 0;
         

@@ -18,10 +18,10 @@ namespace LambdaEngine
 	{
 		std::scoped_lock<SpinLock> lock(g_ConsoleLock);
 
-		if (AllocConsole())
+		if (::AllocConsole())
 		{
-			s_OutputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-			SetConsoleTitleA("Lambda Engine Debug Console");
+			s_OutputHandle = ::GetStdHandle(STD_OUTPUT_HANDLE);
+			::SetConsoleTitleA("Lambda Engine Debug Console");
 		}
 	}
 
@@ -31,7 +31,7 @@ namespace LambdaEngine
 
 		if (s_OutputHandle)
 		{
-			FreeConsole();
+			::FreeConsole();
 			s_OutputHandle = 0;
 		}
 	}
@@ -69,7 +69,7 @@ namespace LambdaEngine
 			if (numChars > 0)
 			{
 				buffer[numChars] = 0;
-				WriteConsoleA(s_OutputHandle, buffer, numChars, 0, NULL);
+				::WriteConsoleA(s_OutputHandle, buffer, numChars, 0, NULL);
 			}
 		}
 	}
@@ -89,7 +89,7 @@ namespace LambdaEngine
 				buffer[numChars]		= '\n';
 				buffer[numChars + 1]	= 0;
 				
-				WriteConsoleA(s_OutputHandle, buffer, numChars + 1, 0, NULL);
+				::WriteConsoleA(s_OutputHandle, buffer, numChars + 1, 0, NULL);
 			}
 		}
 	}
@@ -101,14 +101,14 @@ namespace LambdaEngine
 		if (s_OutputHandle)
 		{
 			CONSOLE_SCREEN_BUFFER_INFO csbi = { };
-			if (GetConsoleScreenBufferInfo(s_OutputHandle, &csbi))
+			if (::GetConsoleScreenBufferInfo(s_OutputHandle, &csbi))
 			{
 				COORD		dst			= { 0, -csbi.dwSize.Y };
 				CHAR_INFO	fillInfo	= { '\0', FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE };
-				ScrollConsoleScreenBufferA(s_OutputHandle, &csbi.srWindow, nullptr, dst, &fillInfo);
+				::ScrollConsoleScreenBufferA(s_OutputHandle, &csbi.srWindow, nullptr, dst, &fillInfo);
 
 				COORD cursorPos = { 0, 0 };
-				SetConsoleCursorPosition(s_OutputHandle, cursorPos);
+				::SetConsoleCursorPosition(s_OutputHandle, cursorPos);
 			}
 		}
 	}
@@ -149,7 +149,7 @@ namespace LambdaEngine
 				break;
 			}
 
-			SetConsoleTextAttribute(s_OutputHandle, wColor);
+			::SetConsoleTextAttribute(s_OutputHandle, wColor);
 		}
 	}
 }

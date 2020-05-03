@@ -8,8 +8,6 @@ namespace LambdaEngine
     public:       
 		DECL_ABSTRACT_CLASS(IWindow);
         
-        virtual bool Init(const char* pTitle, uint32 width, uint32 height)  = 0;
-        
         virtual void Show()   = 0;
         virtual void Close()  = 0;
         

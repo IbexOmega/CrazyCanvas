@@ -1,6 +1,11 @@
 #pragma once
 #include "LambdaEngine.h"
 
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma warning(push)
+	#pragma warning(disable : 4251)
+#endif
+
 namespace LambdaEngine
 {
 	class Timestamp
@@ -160,3 +165,7 @@ namespace LambdaEngine
 		return (left.m_NanoSeconds <= right.m_NanoSeconds);
 	}
 }
+
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma warning(pop)
+#endif
