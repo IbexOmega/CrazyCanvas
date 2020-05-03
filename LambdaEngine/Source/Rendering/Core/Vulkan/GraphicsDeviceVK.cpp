@@ -611,7 +611,7 @@ namespace LambdaEngine
 		}
 	}
 
-    ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc) const
+    ISwapChain* GraphicsDeviceVK::CreateSwapChain(const IWindow* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc) const
     {
         VALIDATE(pDesc          != nullptr);
         VALIDATE(pWindow        != nullptr);

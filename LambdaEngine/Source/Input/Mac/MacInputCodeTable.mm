@@ -140,6 +140,33 @@ namespace LambdaEngine
     {
         return s_MouseButtonCodeTable[mouseButton];
     }
+
+    uint32 MacInputCodeTable::GetModiferMask(uint32 modifierFlags)
+    {
+        uint32 modifierMask = 0;
+        if (modifierFlags & NSEventModifierFlagControl)
+        {
+            modifierMask |= FModifierFlag::MODIFIER_FLAG_CTRL;
+        }
+        if (modifierFlags & NSEventModifierFlagShift)
+        {
+            modifierMask |= FModifierFlag::MODIFIER_FLAG_SHIFT;
+        }
+        if (modifierFlags & NSEventModifierFlagOption)
+        {
+            modifierMask |= FModifierFlag::MODIFIER_FLAG_ALT;
+        }
+        if (modifierFlags & NSEventModifierFlagCommand)
+        {
+            modifierMask |= FModifierFlag::MODIFIER_FLAG_SUPER;
+        }
+        if (modifierFlags & NSEventModifierFlagCapsLock)
+        {
+            modifierMask |= FModifierFlag::MODIFIER_FLAG_CAPS_LOCK;
+        }
+        
+        return modifierMask;
+    }
 }
 
 #endif

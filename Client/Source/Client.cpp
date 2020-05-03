@@ -9,7 +9,7 @@
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformApplication.h"
 #include "Application/API/PlatformConsole.h"
-#include "Application/API/Window.h"
+#include "Application/API/IWindow.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IPAddress.h"
@@ -103,7 +103,7 @@ void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8
     LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
 
-void Client::OnKeyDown(LambdaEngine::EKey key)
+void Client::KeyPressed(LambdaEngine::EKey key)
 {
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(key);

@@ -10,8 +10,8 @@ namespace LambdaEngine
 	public:
 		DECL_ABSTRACT_CLASS(InputDeviceBase);
 
-        virtual KeyboardState   GetKeyboardState() const override;
-        virtual MouseState      GetMouseState() const override;
+        virtual KeyboardState   GetKeyboardState()  const override;
+        virtual MouseState      GetMouseState()     const override;
 
 		virtual void AddKeyboardHandler(IKeyboardHandler* pHandler) override;
 		virtual void AddMouseHandler(IMouseHandler* pHandler) 		override;
@@ -19,14 +19,15 @@ namespace LambdaEngine
 		virtual void RemoveKeyboardHandler(IKeyboardHandler* pHandler) 	override;
 		virtual void RemoveMouseHandler(IMouseHandler* pHandler) 		override;
 
-		void OnKeyDown(EKey key);
-		void OnKeyHeldDown(EKey key);
-		void OnKeyUp(EKey key);
-
-		void OnMouseMove(int32 x, int32 y);
-		void OnMouseButtonPressed(EMouseButton button);
+    protected:
+		void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat);
+		void OnKeyReleased(EKey key);
+        void OnKeyTyped(uint32 character);
+        
+		void OnMouseMoved(int32 x, int32 y);
+		void OnMouseButtonPressed(EMouseButton button, uint32 modifierMask);
 		void OnMouseButtonReleased(EMouseButton button);
-		void OnMouseScrolled(int32 delta);
+		void OnMouseScrolled(int32 deltaX, int32 deltaY);
 
 	private:
 		KeyboardState	m_KeyboardState;

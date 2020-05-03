@@ -4,7 +4,6 @@
 #include "Application/Mac/MacWindow.h"
 #include "Application/Mac/MacApplication.h"
 #include "Application/Mac/CocoaWindow.h"
-#include "Application/Mac/CocoaWindowDelegate.h"
 #include "Application/Mac/CocoaContentView.h"
 #include "Application/Mac/MacScopedPool.h"
 
@@ -12,13 +11,17 @@
 
 namespace LambdaEngine
 {
+    MacWindow::MacWindow()
+        : IWindow()
+    {
+    }
+
     MacWindow::~MacWindow()
     {
         SCOPED_AUTORELEASE_POOL();
         
         [m_pWindow release];
         [m_pView release];
-        [m_pDelegate release];
     }
 
     bool MacWindow::Init(const char* pTitle, uint32 width, uint32 height)
@@ -35,13 +38,6 @@ namespace LambdaEngine
             return false;
         }
         
-        m_pDelegate = [[CocoaWindowDelegate alloc] init];
-        if (!m_pDelegate)
-        {
-            LOG_ERROR("[MacWindow]: Failed to create CocoaWindowDelegate");
-            return false;
-        }
-        
         m_pView = [[CocoaContentView alloc] init];
         if (!m_pView)
         {
@@ -51,8 +47,13 @@ namespace LambdaEngine
         
         NSString* title = [NSString stringWithUTF8String:pTitle];
         [m_pWindow setTitle:title];
-        [m_pWindow setDelegate:m_pDelegate];
+        [m_pWindow setAcceptsMouseMovedEvents:YES];
         [m_pWindow setContentView:m_pView];
+        [m_pWindow setRestorable:NO];
+        [m_pWindow makeFirstResponder:m_pView];
+        
+        const NSWindowCollectionBehavior behavior = NSWindowCollectionBehaviorFullScreenPrimary | NSWindowCollectionBehaviorManaged;
+        [m_pWindow setCollectionBehavior:behavior];
         
         return true;
     }
@@ -62,6 +63,59 @@ namespace LambdaEngine
         MacMainThread::MakeCall(^
         {
             [m_pWindow makeKeyAndOrderFront:m_pWindow];
+        }, true);
+    }
+
+    void MacWindow::Close()
+    {
+        MacMainThread::MakeCall(^
+        {
+            [m_pWindow performClose:m_pWindow];
+        }, true);
+    }
+
+    void MacWindow::Minimize()
+    {
+        MacMainThread::MakeCall(^
+        {
+            [m_pWindow miniaturize:m_pWindow];
+        }, true);
+    }
+
+    void MacWindow::Maximize()
+    {
+        MacMainThread::MakeCall(^
+        {
+            if ([m_pWindow isMiniaturized])
+            {
+                [m_pWindow deminiaturize:m_pWindow];
+            }
+            
+            [m_pWindow zoom:m_pWindow];
+        }, true);
+    }
+
+    void MacWindow::Restore()
+    {
+        MacMainThread::MakeCall(^
+        {
+            if ([m_pWindow isMiniaturized])
+            {
+                [m_pWindow deminiaturize:m_pWindow];
+            }
+            
+            if ([m_pWindow isZoomed])
+            {
+                [m_pWindow zoom:m_pWindow];
+            }
+        }, true);
+    }
+
+    void MacWindow::ToggleFullscreen()
+    {
+        MacMainThread::MakeCall(^
+        {
+            [m_pWindow toggleFullScreen:m_pWindow];
         }, true);
     }
 
@@ -101,6 +155,16 @@ namespace LambdaEngine
         }, true);
         
         return uint16(contentRect.size.height);
+    }
+
+    void* MacWindow::GetHandle() const
+    {
+        return (void*)m_pWindow;
+    }
+
+    const void* MacWindow::GetView() const
+    {
+        return (const void*)m_pView;
     }
 }
 

@@ -15,24 +15,21 @@ namespace LambdaEngine
 		Win32Window() = default;
 		~Win32Window();
 
-		virtual bool Init(const char* pTitle, uint32 width, uint32 height) override;
+		// Window interface
+		virtual bool Init(const char* pTitle, uint32 width, uint32 height) override final;
 
-		virtual void SetTitle(const char* pTitle) override;
+		virtual void Show() 	override final;
+		virtual void Close() 	override final;
 
-		virtual void Show() override;
+		virtual void Minimize() override final;
+        virtual void Maximize() override final;
+
+		virtual void SetTitle(const char* pTitle) override final;
 
 		virtual uint16		GetWidth()	const override final;
 		virtual uint16		GetHeight() const override final;
-		
-		FORCEINLINE virtual void* GetHandle() const override final
-		{ 
-			return (void*)m_hWnd; 
-		}
-
-		FORCEINLINE virtual const void* GetView() const override final
-        {
-            return nullptr;
-        }
+		virtual void* 		GetHandle() const override final;
+		virtual const void* GetView() 	const override final;
 
 	private:
 		HWND m_hWnd = 0;

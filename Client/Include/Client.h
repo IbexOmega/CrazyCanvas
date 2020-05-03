@@ -37,7 +37,7 @@ public:
     virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
 	// Inherited via IKeyboardHandler
-	virtual void OnKeyDown(LambdaEngine::EKey key)      override;
+	virtual void KeyPressed(LambdaEngine::EKey key)      override;
 	virtual void OnKeyHeldDown(LambdaEngine::EKey key)  override;
 	virtual void OnKeyUp(LambdaEngine::EKey key)        override;
 

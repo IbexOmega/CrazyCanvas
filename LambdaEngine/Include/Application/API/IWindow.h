@@ -1,17 +1,25 @@
 #pragma once
-#include "LambdaEngine.h"
+#include "Core/RefCountedObject.h"
 
 namespace LambdaEngine
 {
-    class Window
+    class IWindow : public RefCountedObject
     {
     public:       
-		DECL_ABSTRACT_CLASS(Window);
+		DECL_ABSTRACT_CLASS(IWindow);
         
         virtual bool Init(const char* pTitle, uint32 width, uint32 height)  = 0;
         
-        virtual void Show() = 0;
+        virtual void Show()   = 0;
+        virtual void Close()  = 0;
         
+        virtual void Minimize() = 0;
+        virtual void Maximize() = 0;
+        
+        virtual void Restore() = 0;
+        
+        virtual void ToggleFullscreen() = 0;
+
         virtual void SetTitle(const char* pTitle) = 0;
         
         /*
@@ -32,8 +40,7 @@ namespace LambdaEngine
         */
         virtual const void* GetView() const = 0;
 
-		virtual uint16 GetWidth()  const = 0;
-        
-		virtual uint16 GetHeight() const = 0;
+        virtual uint16 GetWidth()  const = 0;
+        virtual uint16 GetHeight() const = 0;
     };
 }

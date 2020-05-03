@@ -9,7 +9,7 @@
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformApplication.h"
 #include "Application/API/PlatformConsole.h"
-#include "Application/API/Window.h"
+#include "Application/API/IWindow.h"
 
 #include "Threading/API/Thread.h"
 
@@ -48,7 +48,7 @@ LambdaEngine::IClientUDPRemoteHandler* Server::CreateClientUDPHandler()
 	return DBG_NEW ClientUDPHandler();
 }
 
-void Server::OnKeyDown(LambdaEngine::EKey key)
+void Server::KeyPressed(LambdaEngine::EKey key)
 {
 	UNREFERENCED_VARIABLE(key);
 

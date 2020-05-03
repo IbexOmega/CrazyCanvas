@@ -28,15 +28,17 @@ namespace LambdaEngine
 
 		void BufferMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 
-		virtual void AddMessageHandler(IApplicationMessageHandler* pHandler) 	override;
-		virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) override;
+		Win32Window* 	GetWindowFromHandle(HWND hWnd);
+		HINSTANCE 		GetInstanceHandle();
+
+		// Application
+		virtual void AddMessageHandler(IApplicationMessageHandler* pHandler) 	override final;
+		virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) override final;
         
-		virtual void ProcessBufferedMessages() override;
+		virtual void ProcessBufferedMessages() override final;
 
-        virtual Window*         GetWindow()         override;
-        virtual const Window*   GetWindow() const   override;
-
-		HINSTANCE GetInstanceHandle();
+        virtual Window* GetForegroundWindow()   const override final;
+        virtual Window* GetMainWindow()         const override final;
 
 	public:
 		static bool PreInit(HINSTANCE hInstance);
@@ -59,11 +61,12 @@ namespace LambdaEngine
 		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	private:
-		Win32Window*	m_pWindow	= nullptr;
-		HINSTANCE		m_hInstance = 0;
+		Win32Window*	m_pMainWindow	= nullptr;
+		HINSTANCE		m_hInstance 	= 0;
 		
-		std::vector<Win32Message> 					m_BufferedMessages;
-		std::vector<IApplicationMessageHandler*> 	m_MessageHandlers;
+		TArray<Win32Window*>		m_Windows;
+		TArray<Win32Message> 		m_BufferedMessages;
+		TArray<IMessageHandler*> 	m_MessageHandlers;
 
 	private:
 		static Win32Application* s_pApplication;

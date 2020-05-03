@@ -62,6 +62,7 @@ namespace LambdaEngine
 		Input::Tick();
 
 		Thread::Join();
+        
 		PlatformNetworkUtils::Tick(delta);
 
         if (!PlatformApplication::Tick())
@@ -81,6 +82,7 @@ namespace LambdaEngine
     {
         // Tick game
         Game::Get()->FixedTick(delta);
+        
 		NetworkUtils::FixedTick(delta);
     }
 
@@ -175,13 +177,14 @@ namespace LambdaEngine
 	
 	bool EngineLoop::PostRelease()
 	{
-		if (!PlatformApplication::PostRelease())
-		{
-			return false;
-		}
-
-		Thread::Release();
-		PlatformNetworkUtils::Release();
+        Thread::Release();
+        
+        PlatformNetworkUtils::Release();
+        
+        if (!PlatformApplication::PostRelease())
+        {
+            return false;
+        }
 
 #ifndef LAMBDA_PRODUCTION
         PlatformConsole::Close();

@@ -37,6 +37,7 @@
         
         [self setTitle:@"Lambda Engine Debug Console"];
         [self setContentView:scrollView];
+        [self setDelegate:self];
         [self setInitialFirstResponder:textView];
         [self setOpaque:YES];
         
