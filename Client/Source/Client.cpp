@@ -22,7 +22,7 @@ Client::Client() :
 {
 	using namespace LambdaEngine;
     
-    PlatformApplication::Get()->GetWindow()->SetTitle("Client");
+    PlatformApplication::Get()->GetMainWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
     m_pClient = ClientUDP::Create(this, 1024, 100);
@@ -103,9 +103,10 @@ void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8
     LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
 
-void Client::KeyPressed(LambdaEngine::EKey key)
+void Client::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	using namespace LambdaEngine;
+
 	UNREFERENCED_VARIABLE(key);
 
     if (key == EKey::KEY_ENTER)
@@ -125,14 +126,14 @@ void Client::KeyPressed(LambdaEngine::EKey key)
     }
 }
 
-void Client::OnKeyHeldDown(LambdaEngine::EKey key)
+void Client::KeyReleased(LambdaEngine::EKey key)
 {
-	UNREFERENCED_VARIABLE(key);
+    UNREFERENCED_VARIABLE(key);
 }
 
-void Client::OnKeyUp(LambdaEngine::EKey key)
+void Client::KeyTyped(uint32 character) 
 {
-	UNREFERENCED_VARIABLE(key);
+    UNREFERENCED_VARIABLE(character);
 }
 
 void Client::Tick(LambdaEngine::Timestamp delta)
