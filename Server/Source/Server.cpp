@@ -9,7 +9,7 @@
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformApplication.h"
 #include "Application/API/PlatformConsole.h"
-#include "Application/API/Window.h"
+#include "Application/API/IWindow.h"
 
 #include "Threading/API/Thread.h"
 
@@ -131,7 +131,7 @@ LambdaEngine::IClientUDPRemoteHandler* Server::CreateClientUDPHandler()
 	return DBG_NEW ClientUDPHandler();
 }
 
-void Server::OnKeyDown(LambdaEngine::EKey key)
+void Server::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	UNREFERENCED_VARIABLE(key);
 
@@ -143,20 +143,20 @@ void Server::OnKeyDown(LambdaEngine::EKey key)
 		m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
 }
 
-void Server::OnKeyHeldDown(LambdaEngine::EKey key)
+void Server::KeyReleased(LambdaEngine::EKey key)
 {
 	UNREFERENCED_VARIABLE(key);
 }
 
-void Server::OnKeyUp(LambdaEngine::EKey key)
+void Server::KeyTyped(uint32 character)
 {
-	UNREFERENCED_VARIABLE(key);
+	UNREFERENCED_VARIABLE(character);
 }
 
 void Server::UpdateTitle()
 {
 	using namespace LambdaEngine;
-	PlatformApplication::Get()->GetWindow()->SetTitle("Server");
+	PlatformApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 }
 

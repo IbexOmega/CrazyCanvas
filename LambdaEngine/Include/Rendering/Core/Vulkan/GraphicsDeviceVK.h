@@ -82,7 +82,7 @@ namespace LambdaEngine
 		virtual ITexture*	CreateTexture(const TextureDesc* pDesc, IDeviceAllocator* pAllocator)	const override final;
 		virtual ISampler*	CreateSampler(const SamplerDesc* pDesc)	                                const override final;
 
-		virtual ISwapChain* CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)	const override final;
+		virtual ISwapChain* CreateSwapChain(const IWindow* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)	const override final;
 
 		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) 	  const override final;
 		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 	  const override final;

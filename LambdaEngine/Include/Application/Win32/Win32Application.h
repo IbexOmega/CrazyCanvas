@@ -9,6 +9,8 @@
 
 namespace LambdaEngine
 {
+	class IWin32MessageHandler;
+
 	/*
 	* Struct used to buffer events from the OS
 	*/
@@ -20,23 +22,44 @@ namespace LambdaEngine
 		LPARAM 	lParam 		= 0;
 	};
 
+	/*
+	 * Class that represents the OS- application. Handles windows and the event loop.
+	 */
 	class LAMBDA_API Win32Application : public Application
 	{
 	public:
 		Win32Application(HINSTANCE hInstance);
 		~Win32Application();
 
-		void BufferMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
+		void AddWin32MessageHandler(IWin32MessageHandler* pHandler);
+		void RemoveWin32MessageHandler(IWin32MessageHandler* pHandler);
 
-		virtual void AddMessageHandler(IApplicationMessageHandler* pHandler) 	override;
-		virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) override;
+		void StoreMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
+
+		void ProcessMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
+
+		/*
+		* Returns a Win32Window from a native windowhandle
+		*	hWnd	- Native window handle
+		*	return	- An instance of the Win32Window that has the 'hWnd' -handle. 
+		*				Returns nullptr if handle is invalid
+		*/
+		Win32Window* 	GetWindowFromHandle(HWND hWnd) const;
+		HINSTANCE 		GetInstanceHandle();
+
+		// Application
+		virtual void AddWindowHandler(IWindowHandler* pWindowHandler) 		override final;
+		virtual void RemoveWindowHandler(IWindowHandler* pWindowHandler)	override final;
         
-		virtual void ProcessBufferedMessages() override;
+		virtual void ProcessStoredEvents() override final;
 
-        virtual Window*         GetWindow()         override;
-        virtual const Window*   GetWindow() const   override;
+		virtual void MakeMainWindow(IWindow* pMainWindow) override final;
 
-		HINSTANCE GetInstanceHandle();
+        virtual IWindow* GetForegroundWindow()   const override final;
+        virtual IWindow* GetMainWindow()         const override final;
+
+	private:
+		void AddWindow(Win32Window* pWindow);
 
 	public:
 		static bool PreInit(HINSTANCE hInstance);
@@ -45,7 +68,7 @@ namespace LambdaEngine
 		static bool Tick();
 		static bool ProcessMessages();
 
-		static Window*			CreateWindow(const char* pTitle, uint32 width, uint32 height);
+		static IWindow*			CreateWindow(const char* pTitle, uint32 width, uint32 height);
 		static IInputDevice* 	CreateInputDevice(EInputMode inputType);
 
 		static void Terminate();
@@ -59,11 +82,14 @@ namespace LambdaEngine
 		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	private:
-		Win32Window*	m_pWindow	= nullptr;
-		HINSTANCE		m_hInstance = 0;
+		Win32Window*	m_pMainWindow		= nullptr;
+		HINSTANCE		m_hInstance 		= 0;
+		bool			m_IsTrackingMouse	= false;
 		
-		std::vector<Win32Message> 					m_BufferedMessages;
-		std::vector<IApplicationMessageHandler*> 	m_MessageHandlers;
+		TArray<Win32Window*>			m_Windows;
+		TArray<Win32Message> 			m_StoredMessages;
+		TArray<IWindowHandler*> 		m_WindowHandlers;
+		TArray<IWin32MessageHandler*>	m_MessageHandlers;
 
 	private:
 		static Win32Application* s_pApplication;

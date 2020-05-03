@@ -4,7 +4,7 @@
 
 namespace LambdaEngine
 {
-	class Window;
+	class IWindow;
 	class ITexture;
 	class ISwapChain;
 	class RenderGraph;
@@ -14,7 +14,7 @@ namespace LambdaEngine
 	struct RendererDesc
 	{
 		const char*		pName			= "";
-		Window*			pWindow			= nullptr;
+		IWindow*			pWindow			= nullptr;
 		RenderGraph*	pRenderGraph	= nullptr;
 		uint32			BackBufferCount = 3;
 	};

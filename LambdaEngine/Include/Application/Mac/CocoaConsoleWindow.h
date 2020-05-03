@@ -14,19 +14,14 @@
     NSDictionary*   consoleColor;
 }
 
-- (id)   init:(CGFloat) width height:(CGFloat) height;
-- (void) dealloc;
+- (id) init:(CGFloat) width height:(CGFloat) height;
 
 - (void) appendStringAndScroll:(NSString*) string;
-
 - (void) clearWindow;
 
 - (void) setColor:(LambdaEngine::EConsoleColor) color;
 
 - (NSUInteger) getLineCount;
-
-- (BOOL) windowShouldClose:(NSWindow*) sender;
-- (BOOL) acceptsFirstResponder;
 
 + (NSString*) convertStringWithArgs:(const char*) format args:(va_list) args;
 

@@ -2,6 +2,8 @@
 
 #include "LambdaEngine.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 	class IPAddress;

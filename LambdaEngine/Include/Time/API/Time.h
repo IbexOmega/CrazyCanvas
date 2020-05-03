@@ -16,8 +16,7 @@ namespace LambdaEngine
 		* with the frequency that can be queried from PlatformTime::GetPerformanceFrequency. This means that it is not necessary 
 		* what the tick count represents as long as PlatformTime::GetPerformanceCounter() / PlatformTime::GetPerformanceFrequency() will 
 		* result in the current time.
-		*
-		* return - The number of ticks
+		*	return - The number of ticks
 		*/
 		static uint64	GetPerformanceCounter()		{ return 0; }
 		static uint64	GetPerformanceFrequency()	{ return 1; }

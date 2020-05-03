@@ -4,7 +4,7 @@
 
 #include "Containers/String.h"
 
-#include "Application/API/Window.h"
+#include "Application/API/IWindow.h"
 #include "Application/API/PlatformApplication.h"
 
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
@@ -80,7 +80,7 @@ namespace LambdaEngine
         m_Buffers.clear();
     }
 
-    bool SwapChainVK::Init(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)
+    bool SwapChainVK::Init(const IWindow* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)
     {
         VALIDATE(pWindow        != nullptr);
         VALIDATE(pCommandQueue  != nullptr);

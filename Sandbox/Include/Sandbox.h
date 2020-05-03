@@ -5,6 +5,9 @@
 #include "Input/API/IKeyboardHandler.h"
 #include "Input/API/IMouseHandler.h"
 
+#include "Application/API/IWindowHandler.h"
+#include "Application/API/PlatformApplication.h"
+
 #include "Containers/TArray.h"
 
 namespace LambdaEngine
@@ -23,7 +26,7 @@ namespace LambdaEngine
 	class ISampler;
 }
 
-class Sandbox : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IMouseHandler
+class Sandbox : public LambdaEngine::Game, public LambdaEngine::IKeyboardHandler, public LambdaEngine::IMouseHandler, LambdaEngine::IWindowHandler
 {
 public:
 	Sandbox();
@@ -31,20 +34,28 @@ public:
 
 	void InitTestAudio();
 
+    // Inherited via IWindowHandler
+    virtual void FocusChanged(LambdaEngine::IWindow* pWindow, bool hasFocus)                                                 override;
+    virtual void WindowMoved(LambdaEngine::IWindow* pWindow, int16 x, int16 y)                                               override;
+    virtual void WindowResized(LambdaEngine::IWindow* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)  override;
+    virtual void WindowClosed(LambdaEngine::IWindow* pWindow)                                                                override;
+    virtual void MouseEntered(LambdaEngine::IWindow* pWindow)                                                                override;
+    virtual void MouseLeft(LambdaEngine::IWindow* pWindow)                                                                   override;
+    
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
     virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
 	// Inherited via IKeyboardHandler
-	virtual void OnKeyDown(LambdaEngine::EKey key)      override;
-	virtual void OnKeyHeldDown(LambdaEngine::EKey key)  override;
-	virtual void OnKeyUp(LambdaEngine::EKey key)        override;
+	virtual void KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)     override;
+	virtual void KeyReleased(LambdaEngine::EKey key)                                        override;
+	virtual void KeyTyped(uint32 character)                                                 override;
 
 	// Inherited via IMouseHandler
-	virtual void OnMouseMove(int32 x, int32 y)                          override;
-	virtual void OnButtonPressed(LambdaEngine::EMouseButton button)     override;
-	virtual void OnButtonReleased(LambdaEngine::EMouseButton button)    override;
-	virtual void OnScroll(int32 delta)                                  override;
+	virtual void MouseMoved(int32 x, int32 y)                                               override;
+	virtual void ButtonPressed(LambdaEngine::EMouseButton button, uint32 modifierMask)      override;
+	virtual void ButtonReleased(LambdaEngine::EMouseButton button)                          override;
+    virtual void MouseScrolled(int32 deltaX, int32 deltaY)                                  override;
 
 private:
 	bool InitRendererForDeferred();

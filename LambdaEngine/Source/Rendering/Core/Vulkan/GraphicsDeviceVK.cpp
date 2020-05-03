@@ -611,7 +611,7 @@ namespace LambdaEngine
 		}
 	}
 
-    ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc) const
+    ISwapChain* GraphicsDeviceVK::CreateSwapChain(const IWindow* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc) const
     {
         VALIDATE(pDesc          != nullptr);
         VALIDATE(pWindow        != nullptr);
@@ -737,15 +737,15 @@ namespace LambdaEngine
 
 	ECommandQueueType GraphicsDeviceVK::GetCommandQueueTypeFromQueueIndex(uint32 queueFamilyIndex) const
 	{
-		if (queueFamilyIndex == m_DeviceQueueFamilyIndices.GraphicsFamily)
+		if (queueFamilyIndex == uint32(m_DeviceQueueFamilyIndices.GraphicsFamily))
 		{
 			return ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
 		}
-		else if (queueFamilyIndex == m_DeviceQueueFamilyIndices.ComputeFamily)
+		else if (queueFamilyIndex == uint32(m_DeviceQueueFamilyIndices.ComputeFamily))
 		{
 			return ECommandQueueType::COMMAND_QUEUE_COMPUTE;
 		}
-		else if (queueFamilyIndex == m_DeviceQueueFamilyIndices.TransferFamily)
+		else if (queueFamilyIndex == uint32(m_DeviceQueueFamilyIndices.TransferFamily))
 		{
 			return ECommandQueueType::COMMAND_QUEUE_COPY;
 		}
@@ -1383,8 +1383,6 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkSignalSemaphore);
 			GET_DEVICE_PROC_ADDR(Device, vkGetSemaphoreCounterValue);
 		}
-
-		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR = nullptr;
 
         //Buffer Address
         if (IsDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))

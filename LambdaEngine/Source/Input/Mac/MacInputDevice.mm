@@ -4,107 +4,132 @@
 #include "Input/Mac/MacInputDevice.h"
 #include "Input/Mac/MacInputCodeTable.h"
 
+#include "Application/Mac/MacApplication.h"
 #include "Application/Mac/MacScopedPool.h"
 
 #include <AppKit/AppKit.h>
 
 namespace LambdaEngine
 {
-    void MacInputDevice::HandleEvent(NSEvent* event)
+    void MacInputDevice::HandleEvent(const MacEvent* pEvent)
     {
-        NSEventType eventType = [event type];
-        switch(eventType)
+        NSEvent* event = pEvent->pEvent;
+        if (event)
         {
-            case NSEventTypeKeyUp:
+            NSEventType eventType = [event type];
+            switch(eventType)
             {
-                const uint16  macKey = [event keyCode];
-                const EKey    key    = MacInputCodeTable::GetKey(macKey);
-                
-                OnKeyUp(key);
-                break;
-            }
-                
-            case NSEventTypeKeyDown:
-            {
-                const uint16  macKey = [event keyCode];
-                const EKey    key    = MacInputCodeTable::GetKey(macKey);
-                
-                if ([event isARepeat])
+                case NSEventTypeKeyUp:
                 {
-                    OnKeyHeldDown(key);
+                    const uint16  macKey = [event keyCode];
+                    const EKey    key    = MacInputCodeTable::GetKey(macKey);
+                    
+                    OnKeyReleased(key);
+                    break;
                 }
-                else
+                    
+                case NSEventTypeKeyDown:
                 {
-                    OnKeyDown(key);
-                }
+                    const uint16  macKey = [event keyCode];
+                    const EKey    key    = MacInputCodeTable::GetKey(macKey);
                 
-                break;
-            }
-            
-            case NSEventTypeLeftMouseUp:
-            case NSEventTypeRightMouseUp:
-            case NSEventTypeOtherMouseUp:
-            {
-                const NSInteger         macButton   = [event buttonNumber];
-                const EMouseButton      button      = MacInputCodeTable::GetMouseButton(int32(macButton));
-                
-                if (button != EMouseButton::MOUSE_BUTTON_UNKNOWN)
-                {
-                    OnMouseButtonReleased(button);
+                    const uint32 modifierFlags  = [event modifierFlags];
+                    const uint32 modifiers      = MacInputCodeTable::GetModiferMask(modifierFlags);
+                    
+                    OnKeyPressed(key, modifiers, [event isARepeat]);
+                    break;
                 }
                 
-                break;
-            }
-            
-            case NSEventTypeLeftMouseDown:
-            case NSEventTypeRightMouseDown:
-            case NSEventTypeOtherMouseDown:
-            {
-                const NSInteger       macButton   = [event buttonNumber];
-                const EMouseButton    button      = MacInputCodeTable::GetMouseButton(int32(macButton));
-                
-                if (button != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+                case NSEventTypeLeftMouseUp:
+                case NSEventTypeRightMouseUp:
+                case NSEventTypeOtherMouseUp:
                 {
-                    OnMouseButtonPressed(button);
+                    const NSInteger         macButton   = [event buttonNumber];
+                    const EMouseButton      button      = MacInputCodeTable::GetMouseButton(int32(macButton));
+                    
+                    if (button != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+                    {
+                        OnMouseButtonReleased(button);
+                    }
+                    
+                    break;
                 }
                 
-                break;
-            }
-                
-            case NSEventTypeMouseMoved:
-            {
-                const NSPoint   mousePosition   = [event locationInWindow];
-                NSWindow*       window          = [event window];
-                
-                int32 x = 0;
-                int32 y = 0;
-                if (window)
+                case NSEventTypeLeftMouseDown:
+                case NSEventTypeRightMouseDown:
+                case NSEventTypeOtherMouseDown:
                 {
-                    const NSRect contentRect = [window frame];
-                    x = int32(mousePosition.x);
-                    y = int32(contentRect.size.height - mousePosition.y);
+                    const NSInteger       macButton   = [event buttonNumber];
+                    const EMouseButton    button      = MacInputCodeTable::GetMouseButton(int32(macButton));
+                    
+                    const NSUInteger modifierFlags = [event modifierFlags];
+                    const uint32     modifierMask  = MacInputCodeTable::GetModiferMask(modifierFlags);
+                    
+                    if (button != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+                    {
+                        OnMouseButtonPressed(button, modifierMask);
+                    }
+                    
+                    break;
                 }
-                else
+                
+                case NSEventTypeLeftMouseDragged:
+                case NSEventTypeOtherMouseDragged:
+                case NSEventTypeRightMouseDragged:
+                case NSEventTypeMouseMoved:
                 {
-                    x = int32(mousePosition.x);
-                    y = int32(mousePosition.y);
+                    const NSPoint mousePosition = [event locationInWindow];
+                    
+                    int32 x = 0;
+                    int32 y = 0;
+                    if (pEvent->pEventWindow)
+                    {
+                        const NSRect contentRect = [pEvent->pEventWindow frame];
+                        x = int32(mousePosition.x);
+                        y = int32(contentRect.size.height - mousePosition.y);
+                    }
+                    else
+                    {
+                        x = int32(mousePosition.x);
+                        y = int32(mousePosition.y);
+                    }
+     
+                    OnMouseMoved(x, y);
+                    break;
                 }
- 
-                OnMouseMove(x, y);
-                break;
+                    
+                case NSEventTypeScrollWheel:
+                {
+                    CGFloat scrollDeltaX = [event scrollingDeltaX];
+                    CGFloat scrollDeltaY = [event scrollingDeltaY];
+                    if ([event hasPreciseScrollingDeltas])
+                    {
+                        scrollDeltaX *= 0.1;
+                        scrollDeltaY *= 0.1;
+                    }
+                    
+                    OnMouseScrolled(int32(scrollDeltaX), int32(scrollDeltaY));
+                    break;
+                }
+                    
+                default:
+                {
+                    break;
+                }
             }
-                
-            case NSEventTypeScrollWheel:
+        }
+        else if (pEvent->pKeyTypedText)
+        {
+            NSString*   text    = pEvent->pKeyTypedText;
+            NSUInteger  count   = [text length];
+            for (NSUInteger i = 0; i < count; i++)
             {
-                const CGFloat scrollDelta = [event scrollingDeltaX];
-                
-                OnMouseScrolled(int32(scrollDelta));
-                break;
-            }
-                
-            default:
-            {
-                break;
+                // Equal to unsigned short
+                const unichar codepoint = [text characterAtIndex:i];
+                if ((codepoint & 0xff00) != 0xf700)
+                {
+                    OnKeyTyped(uint32(codepoint));
+                }
             }
         }
     }

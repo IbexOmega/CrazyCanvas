@@ -5,13 +5,12 @@
 #include "Time/API/PlatformTime.h"
 #include "Time/API/Clock.h"
 
+#include "Math/Random.h"
+
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformConsole.h"
 
 #include "Input/API/Input.h"
-
-#include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/ICommandQueue.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 
@@ -62,6 +61,7 @@ namespace LambdaEngine
 		Input::Tick();
 
 		Thread::Join();
+        
 		PlatformNetworkUtils::Tick(delta);
 
         if (!PlatformApplication::Tick())
@@ -81,6 +81,7 @@ namespace LambdaEngine
     {
         // Tick game
         Game::Get()->FixedTick(delta);
+        
 		NetworkUtils::FixedTick(delta);
     }
 
@@ -106,6 +107,8 @@ namespace LambdaEngine
 
 		PlatformTime::PreInit();
               
+		Random::PreInit();
+
 		return true;
 	}
 	
@@ -175,13 +178,14 @@ namespace LambdaEngine
 	
 	bool EngineLoop::PostRelease()
 	{
-		if (!PlatformApplication::PostRelease())
-		{
-			return false;
-		}
-
-		Thread::Release();
-		PlatformNetworkUtils::Release();
+        Thread::Release();
+        
+        PlatformNetworkUtils::Release();
+        
+        if (!PlatformApplication::PostRelease())
+        {
+            return false;
+        }
 
 #ifndef LAMBDA_PRODUCTION
         PlatformConsole::Close();

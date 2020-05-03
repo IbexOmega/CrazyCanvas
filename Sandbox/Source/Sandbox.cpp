@@ -22,6 +22,8 @@
 #include "Audio/API/IAudioGeometry.h"
 #include "Audio/API/IReverbSphere.h"
 
+#include "Application/API/IWindow.h"
+
 #include "Game/Scene.h"
 
 #include "Time/API/Clock.h"
@@ -42,6 +44,8 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
+    PlatformApplication::Get()->AddWindowHandler(this);
+    
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
 	SceneDesc sceneDesc = {};
@@ -146,6 +150,8 @@ Sandbox::Sandbox()
 
 Sandbox::~Sandbox()
 {
+    LambdaEngine::PlatformApplication::Get()->RemoveWindowHandler(this);
+    
 	SAFEDELETE(m_pAudioGeometry);
 
 	SAFEDELETE(m_pScene);
@@ -243,12 +249,68 @@ void Sandbox::InitTestAudio()
 	m_pAudioGeometry->Init(audioGeometryDesc);*/
 }
 
-void Sandbox::OnKeyDown(LambdaEngine::EKey key)
+void Sandbox::FocusChanged(LambdaEngine::IWindow* pWindow, bool hasFocus)
+{
+    LOG_MESSAGE("Window Moved: hasFocus=%s", hasFocus ? "true" : "false");
+}
+
+void Sandbox::WindowMoved(LambdaEngine::IWindow* pWindow, int16 x, int16 y)
+{
+    LOG_MESSAGE("Window Moved: x=%d, y=%d", x, y);
+}
+
+void Sandbox::WindowResized(LambdaEngine::IWindow* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)
+{
+    LOG_MESSAGE("Window Resized: width=%u, height=%u, type=%u", width, height, uint32(type));
+}
+
+void Sandbox::WindowClosed(LambdaEngine::IWindow* pWindow)
+{
+    LOG_MESSAGE("Window closed");
+}
+
+void Sandbox::MouseEntered(LambdaEngine::IWindow* pWindow)
+{
+    LOG_MESSAGE("Mouse Entered");
+}
+
+void Sandbox::MouseLeft(LambdaEngine::IWindow* pWindow)
+{
+    LOG_MESSAGE("Mouse Left");
+}
+
+void Sandbox::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
     using namespace LambdaEngine;
     
-    LOG_MESSAGE("Key Pressed: %s", KeyToString(key));
+    LOG_MESSAGE("Key Pressed: %s, isRepeat=%s", KeyToString(key), isRepeat ? "true" : "false");
 
+    if (isRepeat)
+    {
+        return;
+    }
+    
+    if (key == EKey::KEY_ESCAPE)
+    {
+        PlatformApplication::Get()->GetMainWindow()->Close();
+    }
+    if (key == EKey::KEY_1)
+    {
+        PlatformApplication::Get()->GetMainWindow()->Minimize();
+    }
+    if (key == EKey::KEY_2)
+    {
+        PlatformApplication::Get()->GetMainWindow()->Maximize();
+    }
+    if (key == EKey::KEY_3)
+    {
+        PlatformApplication::Get()->GetMainWindow()->Restore();
+    }
+    if (key == EKey::KEY_4)
+    {
+        PlatformApplication::Get()->GetMainWindow()->ToggleFullscreen();
+    }
+    
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
 
@@ -303,16 +365,7 @@ void Sandbox::OnKeyDown(LambdaEngine::EKey key)
 	}*/
 }
 
-void Sandbox::OnKeyHeldDown(LambdaEngine::EKey key)
-{
-    using namespace LambdaEngine;
-    
-    UNREFERENCED_VARIABLE(key);
-    
-    LOG_MESSAGE("Key held down: %s", KeyToString(key));
-}
-
-void Sandbox::OnKeyUp(LambdaEngine::EKey key)
+void Sandbox::KeyReleased(LambdaEngine::EKey key)
 {
     using namespace LambdaEngine;
     
@@ -321,29 +374,43 @@ void Sandbox::OnKeyUp(LambdaEngine::EKey key)
     LOG_MESSAGE("Key Released: %s", KeyToString(key));
 }
 
-void Sandbox::OnMouseMove(int32 x, int32 y)
+void Sandbox::KeyTyped(uint32 character)
+{
+    using namespace LambdaEngine;
+    
+    UNREFERENCED_VARIABLE(character);
+    
+    LOG_MESSAGE("Key Text: %c", char(character));
+}
+
+void Sandbox::MouseMoved(int32 x, int32 y)
 {
 	UNREFERENCED_VARIABLE(x);
 	UNREFERENCED_VARIABLE(y);
-	//LOG_MESSAGE("Mouse Moved: x=%d, y=%d", x, y);
+    
+	LOG_MESSAGE("Mouse Moved: x=%d, y=%d", x, y);
 }
 
-void Sandbox::OnButtonPressed(LambdaEngine::EMouseButton button)
+void Sandbox::ButtonPressed(LambdaEngine::EMouseButton button, uint32 modifierMask)
 {
 	UNREFERENCED_VARIABLE(button);
+    UNREFERENCED_VARIABLE(modifierMask);
+    
 	LOG_MESSAGE("Mouse Button Pressed: %d", button);
 }
 
-void Sandbox::OnButtonReleased(LambdaEngine::EMouseButton button)
+void Sandbox::ButtonReleased(LambdaEngine::EMouseButton button)
 {
 	UNREFERENCED_VARIABLE(button);
 	LOG_MESSAGE("Mouse Button Released: %d", button);
 }
 
-void Sandbox::OnScroll(int32 delta)
+void Sandbox::MouseScrolled(int32 deltaX, int32 deltaY)
 {
-	UNREFERENCED_VARIABLE(delta);
-	//LOG_MESSAGE("Mouse Scrolled: %d", delta);
+	UNREFERENCED_VARIABLE(deltaX);
+    UNREFERENCED_VARIABLE(deltaY);
+    
+	LOG_MESSAGE("Mouse Scrolled: x=%d, y=%d", deltaX, deltaY);
 }
 
 
@@ -663,8 +730,8 @@ bool Sandbox::InitRendererForDeferred()
 	clock.Tick();
 	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
 
-	uint32 renderWidth	= PlatformApplication::Get()->GetWindow()->GetWidth();
-	uint32 renderHeight = PlatformApplication::Get()->GetWindow()->GetHeight();
+	uint32 renderWidth	= PlatformApplication::Get()->GetMainWindow()->GetWidth();
+	uint32 renderHeight = PlatformApplication::Get()->GetMainWindow()->GetHeight();
 	
 	{
 		RenderStageParameters geometryRenderStageParameters = {};
@@ -788,8 +855,8 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-		textureDesc.Width				= PlatformApplication::Get()->GetWindow()->GetWidth();
-		textureDesc.Height				= PlatformApplication::Get()->GetWindow()->GetHeight();
+		textureDesc.Width				= PlatformApplication::Get()->GetMainWindow()->GetWidth();
+		textureDesc.Height				= PlatformApplication::Get()->GetMainWindow()->GetHeight();
 		textureDesc.Depth				= 1;
 		textureDesc.SampleCount			= 1;
 		textureDesc.Miplevels			= 1;
@@ -839,8 +906,8 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R16G16B16A16_SFLOAT;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-		textureDesc.Width				= PlatformApplication::Get()->GetWindow()->GetWidth();
-		textureDesc.Height				= PlatformApplication::Get()->GetWindow()->GetHeight();
+		textureDesc.Width				= PlatformApplication::Get()->GetMainWindow()->GetWidth();
+		textureDesc.Height				= PlatformApplication::Get()->GetMainWindow()->GetHeight();
 		textureDesc.Depth				= 1;
 		textureDesc.SampleCount			= 1;
 		textureDesc.Miplevels			= 1;
@@ -890,8 +957,8 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_D24_UNORM_S8_UINT;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-		textureDesc.Width				= PlatformApplication::Get()->GetWindow()->GetWidth();
-		textureDesc.Height				= PlatformApplication::Get()->GetWindow()->GetHeight();
+		textureDesc.Width				= PlatformApplication::Get()->GetMainWindow()->GetWidth();
+		textureDesc.Height				= PlatformApplication::Get()->GetMainWindow()->GetHeight();
 		textureDesc.Depth				= 1;
 		textureDesc.SampleCount			= 1;
 		textureDesc.Miplevels			= 1;
@@ -942,8 +1009,8 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-		textureDesc.Width				= PlatformApplication::Get()->GetWindow()->GetWidth();
-		textureDesc.Height				= PlatformApplication::Get()->GetWindow()->GetHeight();
+		textureDesc.Width				= PlatformApplication::Get()->GetMainWindow()->GetWidth();
+		textureDesc.Height				= PlatformApplication::Get()->GetMainWindow()->GetHeight();
 		textureDesc.Depth				= 1;
 		textureDesc.SampleCount			= 1;
 		textureDesc.Miplevels			= 1;
@@ -994,8 +1061,8 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-		textureDesc.Width				= PlatformApplication::Get()->GetWindow()->GetWidth();
-		textureDesc.Height				= PlatformApplication::Get()->GetWindow()->GetHeight();
+		textureDesc.Width				= PlatformApplication::Get()->GetMainWindow()->GetWidth();
+		textureDesc.Height				= PlatformApplication::Get()->GetMainWindow()->GetHeight();
 		textureDesc.Depth				= 1;
 		textureDesc.SampleCount			= 1;
 		textureDesc.Miplevels			= 1;
@@ -1095,7 +1162,7 @@ bool Sandbox::InitRendererForDeferred()
 	RendererDesc rendererDesc = {};
 	rendererDesc.pName				= "Renderer";
 	rendererDesc.pRenderGraph		= m_pRenderGraph;
-	rendererDesc.pWindow			= PlatformApplication::Get()->GetWindow();
+	rendererDesc.pWindow			= PlatformApplication::Get()->GetMainWindow();
 	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
 	
 	m_pRenderer->Init(rendererDesc);
@@ -1221,8 +1288,8 @@ bool Sandbox::InitRendererForVisBuf()
 	clock.Tick();
 	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
 
-	uint32 renderWidth	= PlatformApplication::Get()->GetWindow()->GetWidth();
-	uint32 renderHeight = PlatformApplication::Get()->GetWindow()->GetHeight();
+	uint32 renderWidth	= PlatformApplication::Get()->GetMainWindow()->GetWidth();
+	uint32 renderHeight = PlatformApplication::Get()->GetMainWindow()->GetHeight();
 	
 	{
 		RenderStageParameters geometryRenderStageParameters = {};
@@ -1303,8 +1370,8 @@ bool Sandbox::InitRendererForVisBuf()
 		visibilityBufferDesc.MemoryType		= EMemoryType::MEMORY_GPU;
 		visibilityBufferDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
 		visibilityBufferDesc.Flags			= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-		visibilityBufferDesc.Width			= PlatformApplication::Get()->GetWindow()->GetWidth();
-		visibilityBufferDesc.Height			= PlatformApplication::Get()->GetWindow()->GetHeight();
+		visibilityBufferDesc.Width			= PlatformApplication::Get()->GetMainWindow()->GetWidth();
+		visibilityBufferDesc.Height			= PlatformApplication::Get()->GetMainWindow()->GetHeight();
 		visibilityBufferDesc.Depth			= 1;
 		visibilityBufferDesc.SampleCount	= 1;
 		visibilityBufferDesc.Miplevels		= 1;
@@ -1354,8 +1421,8 @@ bool Sandbox::InitRendererForVisBuf()
 		depthStencilDesc.MemoryType		= EMemoryType::MEMORY_GPU;
 		depthStencilDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
 		depthStencilDesc.Flags			= TEXTURE_FLAG_DEPTH_STENCIL;
-		depthStencilDesc.Width			= PlatformApplication::Get()->GetWindow()->GetWidth();
-		depthStencilDesc.Height			= PlatformApplication::Get()->GetWindow()->GetHeight();
+		depthStencilDesc.Width			= PlatformApplication::Get()->GetMainWindow()->GetWidth();
+		depthStencilDesc.Height			= PlatformApplication::Get()->GetMainWindow()->GetHeight();
 		depthStencilDesc.Depth			= 1;
 		depthStencilDesc.SampleCount	= 1;
 		depthStencilDesc.Miplevels		= 1;
@@ -1441,7 +1508,7 @@ bool Sandbox::InitRendererForVisBuf()
 	RendererDesc rendererDesc = {};
 	rendererDesc.pName				= "Renderer";
 	rendererDesc.pRenderGraph		= m_pRenderGraph;
-	rendererDesc.pWindow			= PlatformApplication::Get()->GetWindow();
+	rendererDesc.pWindow			= PlatformApplication::Get()->GetMainWindow();
 	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
 	
 	m_pRenderer->Init(rendererDesc);

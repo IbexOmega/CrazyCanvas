@@ -9,7 +9,7 @@
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformApplication.h"
 #include "Application/API/PlatformConsole.h"
-#include "Application/API/Window.h"
+#include "Application/API/IWindow.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IPAddress.h"
@@ -34,7 +34,7 @@ Client::Client() :
 {
 	using namespace LambdaEngine;
     
-    PlatformApplication::Get()->GetWindow()->SetTitle("Client");
+    PlatformApplication::Get()->GetMainWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
     NetworkStatistics s;
@@ -127,9 +127,10 @@ void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8
     LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
 
-void Client::OnKeyDown(LambdaEngine::EKey key)
+void Client::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	using namespace LambdaEngine;
+
 	UNREFERENCED_VARIABLE(key);
 
     if (key == EKey::KEY_ENTER)
@@ -149,14 +150,14 @@ void Client::OnKeyDown(LambdaEngine::EKey key)
     }
 }
 
-void Client::OnKeyHeldDown(LambdaEngine::EKey key)
+void Client::KeyReleased(LambdaEngine::EKey key)
 {
-	UNREFERENCED_VARIABLE(key);
+    UNREFERENCED_VARIABLE(key);
 }
 
-void Client::OnKeyUp(LambdaEngine::EKey key)
+void Client::KeyTyped(uint32 character) 
 {
-	UNREFERENCED_VARIABLE(key);
+    UNREFERENCED_VARIABLE(character);
 }
 
 void Client::Tick(LambdaEngine::Timestamp delta)

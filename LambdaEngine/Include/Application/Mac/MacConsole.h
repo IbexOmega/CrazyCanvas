@@ -4,13 +4,9 @@
 #include "Application/API/Console.h"
 
 #ifdef __OBJC__
-
 @class CocoaConsoleWindow;
-
 #else
-
 class CocoaConsoleWindow;
-
 #endif
 
 namespace LambdaEngine

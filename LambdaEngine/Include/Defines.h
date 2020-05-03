@@ -1,5 +1,4 @@
 #pragma once
-#include "Containers/String.h"
 
 /*
 * Configuration
@@ -107,12 +106,14 @@
 #define FLAG(bit)	BIT(bit)
 
 /*
-* String preprocessor
+* String preprocessor handling
+*   There are two versions of STRING_CONCAT, this is so that you can use __LINE__, __FILE__ etc. within the macro,
+*   therefore always use STRING_CONCAT
 */ 
-#define STRING_CONCAT(x, y) x##y
+#define _STRING_CONCAT(x, y) x##y
+#define STRING_CONCAT(x, y) _STRING_CONCAT(x, y)
 
 /*
  * Helpers for size
  */
-
 #define MEGA_BYTE(megabytes) (megabytes) * 1024 * 1024

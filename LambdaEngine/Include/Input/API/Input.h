@@ -1,5 +1,5 @@
 #pragma once
-#include "InputDevice.h"
+#include "IInputDevice.h"
 
 #include "Application/API/PlatformApplication.h"
 

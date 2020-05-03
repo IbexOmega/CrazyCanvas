@@ -3,6 +3,8 @@
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformConsole.h"
 
+#include <stdio.h>
+
 void HandleAssert(const char* pFile, int line)
 {
     using namespace LambdaEngine;
