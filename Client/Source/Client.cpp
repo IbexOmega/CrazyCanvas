@@ -41,11 +41,11 @@ Client::Client() :
     std::vector<uint32> newAcks;
 
     PacketTransceiver tranciver;
-    tranciver.ProcessAcks(3, 0b00000000000000000000000000000001, &s, newAcks); print(newAcks);
-    tranciver.ProcessAcks(6, 0b00000000000000000000000000000101, &s, newAcks); print(newAcks);
-    tranciver.ProcessAcks(2, 0b00000000000000000000000000000000, &s, newAcks); print(newAcks);
-    tranciver.ProcessAcks(7, 0b00000000000000000000000000011111, &s, newAcks); print(newAcks);
-    tranciver.ProcessAcks(8, 0b00000000000000000000000001111111, &s, newAcks); print(newAcks);
+    tranciver.ProcessAcks(3,  0b00000000000000000000000000000001, &s, newAcks); print(newAcks);
+    tranciver.ProcessAcks(6,  0b00000000000000000000000000000101, &s, newAcks); print(newAcks);
+    tranciver.ProcessAcks(2,  0b00000000000000000000000000000000, &s, newAcks); print(newAcks);
+    tranciver.ProcessAcks(7,  0b00000000000000000000000000011111, &s, newAcks); print(newAcks);
+    tranciver.ProcessAcks(8,  0b00000000000000000000000001111111, &s, newAcks); print(newAcks);
     tranciver.ProcessAcks(12, 0b00000000110000000000000000111111, &s, newAcks); print(newAcks);
 
 
