@@ -2,8 +2,9 @@
 
 #include "Networking/API/NetWorker.h"
 #include "Networking/API/IClientUDP.h"
-#include "Networking/API/PacketManager.h"
+#include "Networking/API/PacketManager2.h"
 #include "Networking/API/IPacketListener.h"
+#include "Networking/API/PacketTransceiver.h"
 
 namespace LambdaEngine
 {
@@ -60,8 +61,8 @@ namespace LambdaEngine
 
 	private:
 		ISocketUDP* m_pSocket;
-		IPEndPoint m_IPEndPoint;
-		PacketManager m_PacketManager;
+		PacketTransceiver m_Transciver;
+		PacketManager2 m_PacketManager;
 		SpinLock m_Lock;
 		IClientUDPHandler* m_pHandler;
 		EClientState m_State;

@@ -27,14 +27,14 @@ Server::Server()
 {
 	using namespace LambdaEngine;
 
-	
+	m_pServer = ServerUDP::Create(this, 100, 4096, 10);
+	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
+	//m_pServer->SetSimulatePacketLoss(0.9f);
 }
 
 Server::~Server()
 {
-	SAFEDELETE(m_pToneSoundInstance);
-	SAFEDELETE(m_pAudioListener);
-	SAFEDELETE(m_pAudioGeometry);
+	m_pServer->Release();
 }
 
 void Server::OnClientConnected(LambdaEngine::IClientUDP* pClient)

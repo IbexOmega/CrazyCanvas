@@ -3,12 +3,12 @@
 #include "Networking/API/ISocketUDP.h"
 #include "Networking/API/ClientUDPRemote.h"
 #include "Networking/API/IServerUDPHandler.h"
+#include "Networking/API/PacketTransceiver.h"
+#include "Networking/API/BinaryEncoder.h"
 
 #include "Math/Random.h"
 
 #include "Log/Log.h"
-
-#include "Networking/API/BinaryEncoder.h"
 
 namespace LambdaEngine
 {
@@ -102,6 +102,7 @@ namespace LambdaEngine
 		{
 			if (m_pSocket->Bind(m_IPEndPoint))
 			{
+				m_Transciver.SetSocket(m_pSocket);
 				LOG_INFO("[ServerUDP]: Started %s", m_IPEndPoint.ToString().c_str());
 				return true;
 			}
@@ -111,7 +112,47 @@ namespace LambdaEngine
 
 	void ServerUDP::RunReceiver()
 	{
-		int32 bytesReceived = 0;
+		IPEndPoint sender;
+
+		while (!ShouldTerminate())
+		{
+			if (!m_Transciver.ReceiveBegin(sender))
+				continue;
+
+			bool newConnection = false;
+			ClientUDPRemote* pClient = GetOrCreateClient(sender, newConnection);
+
+			if (newConnection)
+			{
+				if (!IsAcceptingConnections())
+				{
+					SendServerNotAccepting(pClient);
+					pClient->Release();
+					continue;
+				}
+				else if (m_Clients.size() >= m_MaxClients)
+				{
+					SendServerFull(pClient);
+					pClient->Release();
+					continue;
+				}
+				else
+				{
+					m_Clients.insert({ sender, pClient });
+				}
+			}
+
+			pClient->OnDataReceived(&m_Transciver);
+		}
+
+
+
+
+
+
+
+
+		/*int32 bytesReceived = 0;
 		IPEndPoint sender;
 
 		while (!ShouldTerminate())
@@ -154,7 +195,7 @@ namespace LambdaEngine
 			}
 
 			pClient->OnDataReceived(m_pReceiveBuffer, bytesReceived);
-		}
+		}*/
 	}
 
 	void ServerUDP::RunTranmitter()
@@ -166,7 +207,7 @@ namespace LambdaEngine
 				std::scoped_lock<SpinLock> lock(m_LockClients);
 				for (auto& tuple : m_Clients)
 				{
-					tuple.second->SendPackets();
+					tuple.second->SendPackets(&m_Transciver);
 				}
 			}
 		}
@@ -236,20 +277,20 @@ namespace LambdaEngine
 
 	void ServerUDP::SendDisconnect(ClientUDPRemote* client)
 	{
-		client->m_PacketManager.EnqueuePacket(client->GetFreePacket(NetworkPacket::TYPE_DISCONNECT));
-		client->SendPackets();
+		client->m_PacketManager.EnqueuePacketUnreliable(client->GetFreePacket(NetworkPacket::TYPE_DISCONNECT));
+		client->SendPackets(&m_Transciver);
 	}
 
 	void ServerUDP::SendServerFull(ClientUDPRemote* client)
 	{
-		client->m_PacketManager.EnqueuePacket(client->GetFreePacket(NetworkPacket::TYPE_SERVER_FULL));
-		client->SendPackets();
+		client->m_PacketManager.EnqueuePacketUnreliable(client->GetFreePacket(NetworkPacket::TYPE_SERVER_FULL));
+		client->SendPackets(&m_Transciver);
 	}
 
 	void ServerUDP::SendServerNotAccepting(ClientUDPRemote* client)
 	{
-		client->m_PacketManager.EnqueuePacket(client->GetFreePacket(NetworkPacket::TYPE_SERVER_NOT_ACCEPTING));
-		client->SendPackets();
+		client->m_PacketManager.EnqueuePacketUnreliable(client->GetFreePacket(NetworkPacket::TYPE_SERVER_NOT_ACCEPTING));
+		client->SendPackets(&m_Transciver);
 	}
 
 	ServerUDP* ServerUDP::Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetsPerClient, uint8 maximumTries)

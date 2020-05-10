@@ -3,10 +3,12 @@
 #include "LambdaEngine.h"
 #include "Containers/TQueue.h"
 #include "Containers/TArray.h"
+#include "Containers/TSet.h"
 
 namespace LambdaEngine
 {
 	class NetworkPacket;
+	class PacketPool;
 
 	class LAMBDA_API PacketTranscoder
 	{
@@ -26,8 +28,8 @@ namespace LambdaEngine
 	public:
 		DECL_STATIC_CLASS(PacketTranscoder);
 
-		static bool EncodePackets(char* buffer, uint16 bufferSize, std::queue<NetworkPacket*>& packetsToEncode, uint16& bytesWritten, Header* pHeader);
-		static bool DecodePackets(const char* buffer, uint16 bufferSize, std::vector<NetworkPacket*>& packetsDecoded, Header* pHeader);
+		static bool EncodePackets(char* buffer, uint16 bufferSize, PacketPool* pPacketPool, std::queue<NetworkPacket*>& packetsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader);
+		static bool DecodePackets(const char* buffer, uint16 bufferSize, PacketPool* pPacketPool, std::vector<NetworkPacket*>& packetsDecoded, Header* pHeader);
 
 	private:
 		static uint16 WritePacket(char* buffer, NetworkPacket* pPacket);

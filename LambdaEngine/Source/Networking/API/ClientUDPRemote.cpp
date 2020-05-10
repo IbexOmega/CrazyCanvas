@@ -5,6 +5,7 @@
 #include "Networking/API/ServerUDP.h"
 #include "Networking/API/IClientUDPRemoteHandler.h"
 #include "Networking/API/BinaryDecoder.h"
+#include "Networking/API/PacketTransceiver.h"
 
 #include "Log/Log.h"
 
@@ -12,15 +13,14 @@ namespace LambdaEngine
 {
 	ClientUDPRemote::ClientUDPRemote(uint16 packets, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer) :
 		m_pServer(pServer),
-		m_IPEndPoint(ipEndPoint),
-		m_PacketManager(this, packets, maximumTries),
+		//m_PacketManager(this, packets, maximumTries),
+		m_PacketManager(),
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
-		m_Packets(),
 		m_Release(false),
 		m_DisconnectedByRemote(false)
 	{
-		m_Packets.reserve(64);
+		m_PacketManager.SetEndPoint(ipEndPoint);
 	}
 
 	ClientUDPRemote::~ClientUDPRemote()
@@ -47,14 +47,23 @@ namespace LambdaEngine
 		Disconnect();
 	}
 
-	PacketManager* ClientUDPRemote::GetPacketManager()
+	PacketManager2* ClientUDPRemote::GetPacketManager()
 	{
 		return &m_PacketManager;
 	}
 
-	void ClientUDPRemote::OnDataReceived(const char* data, int32 size)
+	void ClientUDPRemote::OnDataReceived(PacketTransceiver* pTransciver)
 	{
-		if (m_PacketManager.DecodePackets(data, size, m_Packets))
+		std::vector<NetworkPacket*> packets;
+		m_PacketManager.QueryBegin(pTransciver, packets);
+		for (NetworkPacket* pPacket : packets)
+		{
+			if (!HandleReceivedPacket(pPacket))
+				return;
+		}
+		m_PacketManager.QueryEnd(packets);
+
+		/*if (m_PacketManager.DecodePackets(data, size, m_Packets))
 		{
 			for (NetworkPacket* pPacket : m_Packets)
 			{
@@ -62,14 +71,17 @@ namespace LambdaEngine
 					return;
 			}
 			m_PacketManager.Free(m_Packets);
-		}
+		}*/
 	}
 
-	void ClientUDPRemote::SendPackets()
+	void ClientUDPRemote::SendPackets(PacketTransceiver* pTransciver)
 	{
-		int32 bytesWritten = 0;
-		bool done = false;
+		m_PacketManager.Tick();
+		m_PacketManager.Flush(pTransciver);
 
+
+		/*int32 bytesWritten = 0;
+		bool done = false;
 		m_PacketManager.Tick();
 		m_PacketManager.SwapPacketQueues();
 
@@ -80,7 +92,7 @@ namespace LambdaEngine
 			{
 				m_pServer->Transmit(m_IPEndPoint, m_pSendBuffer, bytesWritten);
 			}
-		}
+		}*/
 	}
 
 	bool ClientUDPRemote::HandleReceivedPacket(NetworkPacket* pPacket)
@@ -90,7 +102,7 @@ namespace LambdaEngine
 
 		if (packetType == NetworkPacket::TYPE_CONNNECT)
 		{
-			m_PacketManager.EnqueuePacket(GetFreePacket(NetworkPacket::TYPE_CHALLENGE));
+			m_PacketManager.EnqueuePacketUnreliable(GetFreePacket(NetworkPacket::TYPE_CHALLENGE));
 
 			if (!m_pHandler)
 			{
@@ -105,7 +117,7 @@ namespace LambdaEngine
 			uint64 answer = decoder.ReadUInt64();
 			if (answer == expectedAnswer)
 			{
-				m_PacketManager.EnqueuePacket(GetFreePacket(NetworkPacket::TYPE_ACCEPTED));
+				m_PacketManager.EnqueuePacketUnreliable(GetFreePacket(NetworkPacket::TYPE_ACCEPTED));
 
 				if (m_State == STATE_CONNECTING)
 				{
@@ -115,7 +127,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ClientUDPRemote]: Client responded with %lu, expected %lu, is it a fake client? [%s]", answer, expectedAnswer, m_IPEndPoint.ToString().c_str());
+				LOG_ERROR("[ClientUDPRemote]: Client responded with %lu, expected %lu, is it a fake client? [%s]", answer, expectedAnswer, GetEndPoint().ToString().c_str());
 			}	
 		}
 		else if (packetType == NetworkPacket::TYPE_DISCONNECT)
@@ -169,7 +181,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_PacketManager.EnqueuePacket(packet);
+		m_PacketManager.EnqueuePacketUnreliable(packet);
 		return true;
 	}
 
@@ -187,12 +199,12 @@ namespace LambdaEngine
 
 	const IPEndPoint& ClientUDPRemote::GetEndPoint() const
 	{
-		return m_IPEndPoint;
+		return m_PacketManager.GetEndPoint();
 	}
 
 	NetworkPacket* ClientUDPRemote::GetFreePacket(uint16 packetType)
 	{
-		return m_PacketManager.GetFreePacket()->SetType(packetType);
+		return m_PacketManager.GetPacketPool()->RequestFreePacket()->SetType(packetType);
 	}
 
 	EClientState ClientUDPRemote::GetState() const
