@@ -6,6 +6,7 @@
 #include "Networking/API/IClientUDPRemoteHandler.h"
 #include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/PacketTransceiver.h"
+#include "Networking/API/NetworkChallenge.h"
 
 #include "Log/Log.h"
 
@@ -47,7 +48,7 @@ namespace LambdaEngine
 		Disconnect();
 	}
 
-	PacketManager2* ClientUDPRemote::GetPacketManager()
+	PacketManager* ClientUDPRemote::GetPacketManager()
 	{
 		return &m_PacketManager;
 	}
@@ -62,37 +63,12 @@ namespace LambdaEngine
 				return;
 		}
 		m_PacketManager.QueryEnd(packets);
-
-		/*if (m_PacketManager.DecodePackets(data, size, m_Packets))
-		{
-			for (NetworkPacket* pPacket : m_Packets)
-			{
-				if (!HandleReceivedPacket(pPacket))
-					return;
-			}
-			m_PacketManager.Free(m_Packets);
-		}*/
 	}
 
 	void ClientUDPRemote::SendPackets(PacketTransceiver* pTransciver)
 	{
 		m_PacketManager.Tick();
 		m_PacketManager.Flush(pTransciver);
-
-
-		/*int32 bytesWritten = 0;
-		bool done = false;
-		m_PacketManager.Tick();
-		m_PacketManager.SwapPacketQueues();
-
-		while (!done)
-		{
-			done = m_PacketManager.EncodePackets(m_pSendBuffer, bytesWritten);
-			if (bytesWritten > 0)
-			{
-				m_pServer->Transmit(m_IPEndPoint, m_pSendBuffer, bytesWritten);
-			}
-		}*/
 	}
 
 	bool ClientUDPRemote::HandleReceivedPacket(NetworkPacket* pPacket)
@@ -112,7 +88,7 @@ namespace LambdaEngine
 		}
 		else if (packetType == NetworkPacket::TYPE_CHALLENGE)
 		{
-			uint64 expectedAnswer = PacketManager::DoChallenge(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
+			uint64 expectedAnswer = NetworkChallenge::Compute(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
 			BinaryDecoder decoder(pPacket);
 			uint64 answer = decoder.ReadUInt64();
 			if (answer == expectedAnswer)

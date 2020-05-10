@@ -144,58 +144,6 @@ namespace LambdaEngine
 
 			pClient->OnDataReceived(&m_Transciver);
 		}
-
-
-
-
-
-
-
-
-		/*int32 bytesReceived = 0;
-		IPEndPoint sender;
-
-		while (!ShouldTerminate())
-		{
-			if (!m_pSocket->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX, bytesReceived, sender))
-			{
-				TerminateThreads();
-				break;
-			}
-
-			if (bytesReceived < 0)
-				continue;
-
-			if (m_PacketLoss > 0.0f)
-				if (Random::Float32() <= m_PacketLoss)
-					continue;
-
-
-			bool newConnection = false;
-			ClientUDPRemote* pClient = GetOrCreateClient(sender, newConnection);
-
-			if (newConnection)
-			{
-				if (!IsAcceptingConnections())
-				{
-					SendServerNotAccepting(pClient);
-					pClient->Release();
-					continue;
-				}
-				else if (m_Clients.size() >= m_MaxClients)
-				{
-					SendServerFull(pClient);
-					pClient->Release();
-					continue;
-				}
-				else
-				{
-					m_Clients.insert({ sender, pClient });
-				}
-			}
-
-			pClient->OnDataReceived(m_pReceiveBuffer, bytesReceived);
-		}*/
 	}
 
 	void ServerUDP::RunTranmitter()

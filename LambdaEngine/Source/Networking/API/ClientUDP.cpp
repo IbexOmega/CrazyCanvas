@@ -7,8 +7,7 @@
 #include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/NetworkStatistics.h"
 #include "Networking/API/PacketPool.h"
-
-#include "Networking/API/PacketManager.h"
+#include "Networking/API/NetworkChallenge.h"
 
 #include "Log/Log.h"
 
@@ -166,36 +165,6 @@ namespace LambdaEngine
 			}
 			m_PacketManager.QueryEnd(packets);
 		}
-
-
-
-
-		/*int32 bytesReceived = 0;
-		std::vector<NetworkPacket*> packets;
-		IPEndPoint sender;
-
-		packets.reserve(64);
-
-		while (!ShouldTerminate())
-		{
-			if (!m_pSocket->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX, bytesReceived, sender))
-			{
-				TerminateThreads();
-				break;
-			}
-
-			if (bytesReceived >= 0)
-			{
-				if (m_PacketManager.DecodePackets(m_pReceiveBuffer, bytesReceived, packets))
-				{
-					for (NetworkPacket* pPacket : packets)
-					{
-						HandleReceivedPacket(pPacket);
-					}
-					m_PacketManager.Free(packets);
-				}
-			}	
-		}*/
 	}
 
 	void ClientUDP::RunTranmitter()
@@ -255,7 +224,7 @@ namespace LambdaEngine
 
 		if (packetType == NetworkPacket::TYPE_CHALLENGE)
 		{
-			uint64 answer = PacketManager::DoChallenge(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
+			uint64 answer = NetworkChallenge::Compute(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
 			ASSERT(answer != 0);
 
 			NetworkPacket* pResponse = GetFreePacket(NetworkPacket::TYPE_CHALLENGE);

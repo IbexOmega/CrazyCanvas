@@ -2,9 +2,8 @@
 
 #include "Networking/API/NetWorker.h"
 #include "Networking/API/IClientUDP.h"
-#include "Networking/API/PacketManager.h"
 #include "Networking/API/IPacketListener.h"
-#include "Networking/API/PacketManager2.h"
+#include "Networking/API/PacketManager.h"
 
 namespace LambdaEngine
 {
@@ -39,14 +38,14 @@ namespace LambdaEngine
 		virtual void OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries) override;
 
 	private:
-		PacketManager2* GetPacketManager();
+		PacketManager* GetPacketManager();
 		void OnDataReceived(PacketTransceiver* pTransciver);
 		void SendPackets(PacketTransceiver* pTransciver);
 		bool HandleReceivedPacket(NetworkPacket* pPacket);
 
 	private:
 		ServerUDP* m_pServer;
-		PacketManager2 m_PacketManager;
+		PacketManager m_PacketManager;
 		SpinLock m_Lock;
 		IClientUDPRemoteHandler* m_pHandler;
 		EClientState m_State;
