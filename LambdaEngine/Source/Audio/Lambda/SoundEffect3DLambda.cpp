@@ -22,8 +22,7 @@ namespace LambdaEngine
 	{
         VALIDATE(pDesc);
 
-		int32 result = LoadWavFileFloat(pDesc->pFilepath, &m_pWaveForm, &m_Header);
-		
+		int32 result = WavLibLoadFileFloat32(pDesc->pFilepath, &m_pWaveForm, &m_Header, WAV_LIB_FLAG_MONO);
 		if (result != WAVE_SUCCESS)
 		{
 			return false;

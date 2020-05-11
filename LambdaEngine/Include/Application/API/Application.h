@@ -5,7 +5,7 @@ namespace LambdaEngine
 {
     class IWindow;
 	class IInputDevice;
-    class IWindowHandler;
+    class IEventHandler;
 
     // Different input devices that can be created
     enum class EInputMode
@@ -20,15 +20,17 @@ namespace LambdaEngine
 	public:
         DECL_ABSTRACT_CLASS(Application);
 
-        virtual void AddWindowHandler(IWindowHandler* pMessageHandler)    = 0;
-        virtual void RemoveWindowHandler(IWindowHandler* pMessageHandler) = 0;
-        
+        virtual void AddEventHandler(IEventHandler* pEventHandler)    = 0;
+        virtual void RemoveEventHandler(IEventHandler* pEventHandler) = 0;
+
         /*
         * Application buffers all OS-events, and gets processed in a batch with this function
         */
         virtual void ProcessStoredEvents() = 0; 
 
         virtual void MakeMainWindow(IWindow* pMainWindow) = 0;
+
+        virtual void SetInputMode(EInputMode inputMode) = 0;
 
         virtual IWindow* GetForegroundWindow()   const = 0;
         virtual IWindow* GetMainWindow()         const = 0;
@@ -56,8 +58,7 @@ namespace LambdaEngine
         */
         static void Terminate() { }
 
-        static IWindow*          CreateWindow(const char*, uint32, uint32)   { return nullptr; }
-		static IInputDevice*    CreateInputDevice(EInputMode)               { return nullptr; }
+        static IWindow* CreateWindow(const char*, uint32, uint32) { return nullptr; }
 
         static Application* Get() { return nullptr; }
 	};

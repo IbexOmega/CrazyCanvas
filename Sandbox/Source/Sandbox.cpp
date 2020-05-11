@@ -44,7 +44,7 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
-    PlatformApplication::Get()->AddWindowHandler(this);
+    PlatformApplication::Get()->AddEventHandler(this);
     
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
@@ -150,7 +150,7 @@ Sandbox::Sandbox()
 
 Sandbox::~Sandbox()
 {
-    LambdaEngine::PlatformApplication::Get()->RemoveWindowHandler(this);
+    LambdaEngine::PlatformApplication::Get()->RemoveEventHandler(this);
     
 	SAFEDELETE(m_pAudioGeometry);
 
@@ -517,10 +517,7 @@ namespace LambdaEngine
 {
     Game* CreateGame()
     {
-        Sandbox* pSandbox = DBG_NEW Sandbox();
-        Input::AddKeyboardHandler(pSandbox);
-        Input::AddMouseHandler(pSandbox);
-        
+        Sandbox* pSandbox = DBG_NEW Sandbox();        
         return pSandbox;
     }
 }
