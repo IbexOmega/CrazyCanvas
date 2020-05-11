@@ -54,13 +54,13 @@ Sandbox::Sandbox()
 	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
 	m_pScene->Init(sceneDesc);
 
-	/*std::vector<GameObject>	sceneGameObjects;
+	std::vector<GameObject>	sceneGameObjects;
 	ResourceManager::LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
 
 	for (GameObject& gameObject : sceneGameObjects)
 	{
 		m_pScene->AddDynamicGameObject(gameObject, glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)));
-	}*/
+	}
 
 	uint32 bunnyMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/bunny.obj");
 
@@ -76,8 +76,8 @@ Sandbox::Sandbox()
 	gunGameObject.Mesh = gunMeshGUID;
 	gunGameObject.Material = DEFAULT_MATERIAL;
 
-	/*m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
-	m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.5f, 0.0f)));*/
+	m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
+	m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.5f, 0.0f)));
 
 	m_pScene->Finalize();
 
@@ -96,19 +96,6 @@ Sandbox::Sandbox()
 	m_pCamera->Update();
 
 	m_pScene->UpdateCamera(m_pCamera);
-
-	//GUID_Lambda blurShaderGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/blur.spv",					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
-	
-	//GUID_Lambda lightVertexShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/lightVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda lightPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/lightPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
-
-	//GUID_Lambda raygenRadianceShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/raygenRadiance.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda closestHitRadianceShaderGUID	= ResourceManager::LoadShaderFromFile("../Assets/Shaders/closestHitRadiance.spv",	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::SPIRV);
-	//GUID_Lambda missRadianceShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/missRadiance.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda closestHitShadowShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/closestHitShadow.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::SPIRV);
-	//GUID_Lambda missShadowShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/missShadow.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::SPIRV);
-
-	//GUID_Lambda particleUpdateShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/particleUpdate.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
 
 	SamplerDesc samplerLinearDesc = {};
 	samplerLinearDesc.pName					= "Linear Sampler";
@@ -146,7 +133,7 @@ Sandbox::Sandbox()
 
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 
-	InitTestAudio();
+	//InitTestAudio();
 }
 
 Sandbox::~Sandbox()
