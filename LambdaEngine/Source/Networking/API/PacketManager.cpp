@@ -316,9 +316,17 @@ namespace LambdaEngine
 					messageInfo.Retries++;
 
 					if (messageInfo.Retries < 10)
+					{
 						m_MessagesToSend[m_QueueIndex].push(messageInfo.Packet);
+						messageInfo.LastSent = currentTime;
+
+						if (messageInfo.Listener)
+							messageInfo.Listener->OnPacketResent(messageInfo.Packet, messageInfo.Retries);
+					}
 					else
+					{
 						messagesToDelete.push_back(pair);
+					}
 				}
 			}
 
