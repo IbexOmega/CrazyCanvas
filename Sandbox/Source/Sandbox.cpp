@@ -45,7 +45,8 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
-    PlatformApplication::Get()->AddEventHandler(this);
+    
+	PlatformApplication::Get()->AddEventHandler(this);
     
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 

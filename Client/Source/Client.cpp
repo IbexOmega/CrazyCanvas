@@ -24,7 +24,7 @@ Client::Client() :
     m_pClient(nullptr)
 {
 	using namespace LambdaEngine;
-    
+    PlatformApplication::Get()->AddEventHandler(this);
     PlatformApplication::Get()->GetMainWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
@@ -130,16 +130,6 @@ void Client::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepe
     }
 }
 
-void Client::KeyReleased(LambdaEngine::EKey key)
-{
-    UNREFERENCED_VARIABLE(key);
-}
-
-void Client::KeyTyped(uint32 character) 
-{
-    UNREFERENCED_VARIABLE(character);
-}
-
 void Client::Tick(LambdaEngine::Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
@@ -158,7 +148,6 @@ namespace LambdaEngine
     Game* CreateGame()
     {
 		Client* pSandbox = DBG_NEW Client();
-        Input::AddKeyboardHandler(pSandbox);
         
         return pSandbox;
     }
