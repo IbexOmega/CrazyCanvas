@@ -27,6 +27,8 @@ Server::Server()
 {
 	using namespace LambdaEngine;
 
+	PlatformApplication::Get()->AddEventHandler(this);
+
 	m_pServer = ServerUDP::Create(this, 100, 4096, 10);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
 	//m_pServer->SetSimulatePacketLoss(0.9f);
@@ -91,7 +93,6 @@ namespace LambdaEngine
     Game* CreateGame()
     {
 		Server* pSandbox = DBG_NEW Server();
-        Input::AddKeyboardHandler(pSandbox);
         
         return pSandbox;
     }

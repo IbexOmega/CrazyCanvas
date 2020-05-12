@@ -24,6 +24,8 @@ Client::Client() :
     m_pClient(nullptr)
 {
 	using namespace LambdaEngine;
+
+	PlatformApplication::Get()->AddEventHandler(this);
     
     PlatformApplication::Get()->GetMainWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
@@ -158,7 +160,6 @@ namespace LambdaEngine
     Game* CreateGame()
     {
 		Client* pSandbox = DBG_NEW Client();
-        Input::AddKeyboardHandler(pSandbox);
         
         return pSandbox;
     }

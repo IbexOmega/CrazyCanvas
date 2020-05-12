@@ -216,6 +216,12 @@ namespace LambdaEngine
 		}
 	}
 
+	void RenderGraph::GetAndIncrementFence(IFence** ppFence, uint64* pSignalValue)
+	{
+		(*pSignalValue) = m_SignalValue++;
+		(*ppFence) = m_pFence;
+	}
+
 	void RenderGraph::Update()
 	{
 		if (m_DirtyDescriptorSetInternalTextures.size() > 0 ||
@@ -1653,7 +1659,7 @@ namespace LambdaEngine
 
 		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 		{
-			pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0);
+			pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::UINT32);
 
 			IBuffer* pDrawBuffer		= pRenderStage->pMeshIndexBufferResource->Buffer.Buffers[0];
 			uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));

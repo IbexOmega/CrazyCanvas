@@ -53,7 +53,7 @@ namespace LambdaEngine
 
 		virtual void SetConstantRange(const IPipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) override final;
 
-		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset) override;
+		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset, EIndexType indexType) override;
 		virtual void BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) override final;
 
 		virtual void BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex) override final;

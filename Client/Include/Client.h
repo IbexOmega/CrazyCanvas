@@ -2,8 +2,7 @@
 
 #include "Game/Game.h"
 
-#include "Input/API/IKeyboardHandler.h"
-#include "Input/API/IMouseHandler.h"
+#include "Application/API/EventHandler.h"
 
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/ClientUDP.h"
@@ -11,7 +10,7 @@
 
 class Client :
 	public LambdaEngine::Game,
-	public LambdaEngine::IKeyboardHandler,
+	public LambdaEngine::EventHandler,
 	public LambdaEngine::IPacketListener,
 	public LambdaEngine::IClientUDPHandler
 {
@@ -35,7 +34,6 @@ public:
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
     virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
-	// Inherited via IKeyboardHandler
 	virtual void KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)     override;
 	virtual void KeyReleased(LambdaEngine::EKey key)                                        override;
 	virtual void KeyTyped(uint32 character)                                                 override;

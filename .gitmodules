@@ -7,3 +7,6 @@
 [submodule "Dependencies/WavLib"]
 	path = Dependencies/WavLib
 	url = https://github.com/Mumsfilibaba/WavLib
+[submodule "Dependencies/imgui"]
+	path = Dependencies/imgui
+	url = https://github.com/Mumsfilibaba/imgui.git

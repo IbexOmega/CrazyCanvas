@@ -2,8 +2,7 @@
 
 #include "Game/Game.h"
 
-#include "Input/API/IKeyboardHandler.h"
-#include "Input/API/IMouseHandler.h"
+#include "Application/API/EventHandler.h"
 
 #include "Networking/API/ServerUDP.h"
 #include "Networking/API/IServerUDPHandler.h"
@@ -15,7 +14,7 @@
 
 class Server : 
 	public LambdaEngine::Game,
-	public LambdaEngine::IKeyboardHandler,
+	public LambdaEngine::EventHandler,
 	public LambdaEngine::IServerUDPHandler
 {
 public:

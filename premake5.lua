@@ -100,6 +100,7 @@ workspace "LambdaEngine"
 	-- Dependencies
 	group "Dependencies"
 		include "Dependencies/WavLib"
+		include "Dependencies/imgui"
 	
 		-- tinyobjloader Project
 		project "tinyobjloader"
@@ -228,6 +229,7 @@ workspace "LambdaEngine"
 			"Dependencies/glm",
 			"Dependencies/tinyobjloader",
 			"Dependencies/WavLib",
+			"Dependencies/imgui",
 			"Dependencies/stb",
 			"Dependencies/portaudio/include",
 			"Dependencies/glslang/include",
@@ -237,6 +239,7 @@ workspace "LambdaEngine"
 		{ 
 			"tinyobjloader",
 			"WavLib",
+			"ImGui",
 		}
 		
 		-- Win32
@@ -410,6 +413,7 @@ workspace "LambdaEngine"
 		sysincludedirs
 		{
 			"Dependencies/glm",
+			"Dependencies/imgui",
 		}
         
         -- Files
@@ -458,6 +462,7 @@ workspace "LambdaEngine"
 		sysincludedirs
 		{
 			"Dependencies/glm",
+			"Dependencies/imgui",
 		}
 
         -- Files
@@ -506,6 +511,7 @@ workspace "LambdaEngine"
 		sysincludedirs
 		{
 			"Dependencies/glm",
+			"Dependencies/imgui",
 		}
         
         -- Files
