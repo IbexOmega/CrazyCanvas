@@ -37,7 +37,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
-constexpr const bool RAY_TRACING_ENABLED		= false;
+constexpr const bool RAY_TRACING_ENABLED		= true;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 Sandbox::Sandbox()
