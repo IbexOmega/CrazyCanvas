@@ -35,8 +35,6 @@ public:
     virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
 	virtual void KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)     override;
-	virtual void KeyReleased(LambdaEngine::EKey key)                                        override;
-	virtual void KeyTyped(uint32 character)                                                 override;
 
 private:
 	LambdaEngine::ClientUDP* m_pClient;

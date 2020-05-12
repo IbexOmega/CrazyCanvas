@@ -67,7 +67,6 @@ namespace LambdaEngine
 
 	void ClientUDPRemote::SendPackets(PacketTransceiver* pTransciver)
 	{
-		m_PacketManager.Tick();
 		m_PacketManager.Flush(pTransciver);
 	}
 
@@ -75,6 +74,8 @@ namespace LambdaEngine
 	{
 		LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 		uint16 packetType = pPacket->GetType();
+
+		LOG_MESSAGE("ClientUDPRemote::OnPacketReceivedUDP(%s)", pPacket->ToString().c_str());
 
 		if (packetType == NetworkPacket::TYPE_CONNNECT)
 		{
@@ -117,6 +118,11 @@ namespace LambdaEngine
 			m_pHandler->OnPacketReceivedUDP(this, pPacket);
 		}
 		return true;
+	}
+
+	void ClientUDPRemote::Tick(Timestamp delta)
+	{
+		m_PacketManager.Tick(delta);
 	}
 
 	void ClientUDPRemote::Disconnect()

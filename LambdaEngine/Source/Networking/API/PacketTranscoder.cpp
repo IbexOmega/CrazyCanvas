@@ -92,7 +92,7 @@ namespace LambdaEngine
 
 		memcpy(&messageHeader, buffer, messageHeaderSize);
 		memcpy(pPacket->GetBuffer(), buffer + messageHeaderSize, messageHeader.Size - messageHeaderSize);
-
+		pPacket->m_SizeOfBuffer = messageHeader.Size - sizeof(NetworkPacket::Header);
 		return messageHeader.Size;
 	}
 }

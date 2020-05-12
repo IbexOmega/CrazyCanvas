@@ -25,7 +25,7 @@ namespace LambdaEngine
 			NetworkPacket* Packet		= nullptr;
 			IPacketListener* Listener	= nullptr;
 			Timestamp LastSent			= 0;
-			uint8 Tries					= 0;
+			uint8 Retries				= 0;
 		};
 
 		struct Bundle
@@ -45,7 +45,7 @@ namespace LambdaEngine
 		void QueryBegin(PacketTransceiver* pTransceiver, std::vector<NetworkPacket*>& packetsReturned);
 		void QueryEnd(std::vector<NetworkPacket*>& packetsReceived);
 
-		void Tick();
+		void Tick(Timestamp delta);
 
 		PacketPool* GetPacketPool();
 		const NetworkStatistics* GetStatistics() const;
@@ -62,6 +62,9 @@ namespace LambdaEngine
 		void HandleAcks(const std::vector<uint32>& acks);
 		void GetReliableUIDsFromAcks(const std::vector<uint32>& acks, std::vector<uint32>& ackedReliableUIDs);
 		void GetReliableMessageInfosFromUIDs(const std::vector<uint32>& ackedReliableUIDs, std::vector<MessageInfo>& ackedReliableMessages);
+		void RegisterRTT(Timestamp rtt);
+		void DeleteOldBundles();
+		void ResendOrDeleteMessages();
 
 	private:
 		NetworkStatistics m_Statistics;
@@ -72,6 +75,7 @@ namespace LambdaEngine
 		std::set<NetworkPacket*> m_ReliableMessagesReceived;
 		std::unordered_map<uint32, Bundle> m_Bundles;
 		std::atomic_int m_QueueIndex;
+		Timestamp m_Timer;
 		SpinLock m_LockMessagesToSend;
 		SpinLock m_LockBundles;
 	};

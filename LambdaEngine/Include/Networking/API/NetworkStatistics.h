@@ -43,6 +43,7 @@ namespace LambdaEngine
 		uint32 RegisterMessageSent();
 		uint32 RegisterReliableMessageSent();
 		void RegisterReliableMessageReceived();
+		void RegisterPacketLoss();
 		void SetLastReceivedSequenceNr(uint32 sequence);
 		void SetReceivedSequenceBits(uint32 sequenceBits);
 		void SetLastReceivedAckNr(uint32 ack);

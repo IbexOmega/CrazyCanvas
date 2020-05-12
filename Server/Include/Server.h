@@ -28,10 +28,7 @@ public:
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
     virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
-	// Inherited via IKeyboardHandler
 	virtual void KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)     override;
-	virtual void KeyReleased(LambdaEngine::EKey key)                                        override;
-	virtual void KeyTyped(uint32 character)                                                 override;
 
 private:
 	void UpdateTitle();

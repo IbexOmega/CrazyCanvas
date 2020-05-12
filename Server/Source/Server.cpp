@@ -26,6 +26,7 @@
 Server::Server()
 {
 	using namespace LambdaEngine;
+	PlatformApplication::Get()->AddEventHandler(this);
 
 	PlatformApplication::Get()->AddEventHandler(this);
 
@@ -59,16 +60,6 @@ void Server::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepe
 		m_pServer->Stop();
 	else
 		m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
-}
-
-void Server::KeyReleased(LambdaEngine::EKey key)
-{
-	UNREFERENCED_VARIABLE(key);
-}
-
-void Server::KeyTyped(uint32 character)
-{
-	UNREFERENCED_VARIABLE(character);
 }
 
 void Server::UpdateTitle()

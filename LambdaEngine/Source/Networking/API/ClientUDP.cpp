@@ -65,6 +65,16 @@ namespace LambdaEngine
 		return false;
 	}
 
+	void ClientUDP::SetSimulateReceivingPacketLoss(float32 lossRatio)
+	{
+		m_Transciver.SetSimulateReceivingPacketLoss(lossRatio);
+	}
+
+	void ClientUDP::SetSimulateTransmittingPacketLoss(float32 lossRatio)
+	{
+		m_Transciver.SetSimulateTransmittingPacketLoss(lossRatio);
+	}
+
 	void ClientUDP::Disconnect()
 	{
 		TerminateThreads();
@@ -207,13 +217,13 @@ namespace LambdaEngine
 
 	void ClientUDP::SendConnectRequest()
 	{
-		m_PacketManager.EnqueuePacketReliable(GetFreePacket(NetworkPacket::TYPE_CONNNECT));
+		m_PacketManager.EnqueuePacketReliable(GetFreePacket(NetworkPacket::TYPE_CONNNECT), this);
 		TransmitPackets();
 	}
 
 	void ClientUDP::SendDisconnectRequest()
 	{
-		m_PacketManager.EnqueuePacketReliable(GetFreePacket(NetworkPacket::TYPE_DISCONNECT));
+		m_PacketManager.EnqueuePacketReliable(GetFreePacket(NetworkPacket::TYPE_DISCONNECT), this);
 		TransmitPackets();
 	}
 
@@ -230,7 +240,7 @@ namespace LambdaEngine
 			NetworkPacket* pResponse = GetFreePacket(NetworkPacket::TYPE_CHALLENGE);
 			BinaryEncoder encoder(pResponse);
 			encoder.WriteUInt64(answer);
-			m_PacketManager.EnqueuePacketReliable(pResponse);
+			m_PacketManager.EnqueuePacketReliable(pResponse, this);
 		}
 		else if (packetType == NetworkPacket::TYPE_ACCEPTED)
 		{
@@ -261,29 +271,12 @@ namespace LambdaEngine
 	void ClientUDP::TransmitPackets()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
-
-		//m_PacketManager.Tick();
 		m_PacketManager.Flush(&m_Transciver);
+	}
 
-
-
-		/*int32 bytesWritten = 0;
-		int32 bytesSent = 0;
-		bool done = false;
-
-		m_PacketManager.SwapPacketQueues();
-
-		while (!done)
-		{
-			done = m_PacketManager.EncodePackets(m_pSendBuffer, bytesWritten);
-			if (bytesWritten > 0)
-			{
-				if (!m_pSocket->SendTo(m_pSendBuffer, bytesWritten, bytesSent, m_IPEndPoint))
-				{
-					TerminateThreads();
-				}
-			}
-		}*/
+	void ClientUDP::Tick(Timestamp delta)
+	{
+		m_PacketManager.Tick(delta);
 	}
 
 	ClientUDP* ClientUDP::Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries)
@@ -300,7 +293,7 @@ namespace LambdaEngine
 			std::scoped_lock<SpinLock> lock(s_Lock);
 			for (ClientUDP* client : s_Clients)
 			{
-				client->m_PacketManager.Tick();
+				client->Tick(timestamp);
 			}
 		}
 	}

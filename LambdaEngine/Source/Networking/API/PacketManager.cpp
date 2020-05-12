@@ -4,6 +4,8 @@
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/PacketTransceiver.h"
 
+#include "Engine/EngineLoop.h"
+
 namespace LambdaEngine
 {
 	PacketManager::PacketManager() :
@@ -22,7 +24,7 @@ namespace LambdaEngine
 	{
 		std::scoped_lock<SpinLock> lock(m_LockMessagesToSend);
 		uint32 UID = EnqueuePacket(pPacket, m_Statistics.RegisterReliableMessageSent());
-		m_MessagesWaitingForAck.insert({ UID, MessageInfo{ pPacket, pListener } });
+		m_MessagesWaitingForAck.insert({ UID, MessageInfo{ pPacket, pListener, EngineLoop::GetTimeSinceStart()} });
 		return UID;
 	}
 
@@ -46,6 +48,8 @@ namespace LambdaEngine
 		m_QueueIndex = (m_QueueIndex + 1) % 2;
 		std::queue<NetworkPacket*>& packets = m_MessagesToSend[indexToUse];
 
+		Timestamp timestamp = EngineLoop::GetTimeSinceStart();
+
 		while (!packets.empty())
 		{
 			Bundle bundle;
@@ -53,6 +57,8 @@ namespace LambdaEngine
 
 			if (!bundle.ReliableUIDs.empty())
 			{
+				bundle.Timestamp = timestamp;
+
 				std::scoped_lock<SpinLock> lock(m_LockBundles);
 				m_Bundles.insert({ bundleUID, bundle });
 			}
@@ -80,9 +86,18 @@ namespace LambdaEngine
 		m_PacketPool.FreePackets(packetsReceived);
 	}
 
-	void PacketManager::Tick()
+	void PacketManager::Tick(Timestamp delta)
 	{
+		static const Timestamp delay = Timestamp::Seconds(1);
 
+		m_Timer += delta;
+		if (m_Timer >= delay)
+		{
+			m_Timer -= delay;
+			DeleteOldBundles();
+		}
+
+		ResendOrDeleteMessages();
 	}
 
 	PacketPool* PacketManager::GetPacketPool()
@@ -123,31 +138,48 @@ namespace LambdaEngine
 	void PacketManager::FindPacketsToReturn(const std::vector<NetworkPacket*>& packetsReceived, std::vector<NetworkPacket*>& packetsReturned)
 	{
 		bool reliableMessagesInserted = false;
+		bool hasReliableMessage = false;
+
+		std::vector<NetworkPacket*> packetsToFree;
+		packetsToFree.reserve(32);
 
 		for (NetworkPacket* pPacket : packetsReceived)
 		{
 			if (!pPacket->IsReliable())																//Unreliable Packet
 			{
-				packetsReturned.push_back(pPacket);
+				if (pPacket->GetType() == NetworkPacket::TYPE_NETWORK_ACK)
+					packetsToFree.push_back(pPacket);
+				else
+					packetsReturned.push_back(pPacket);
 			}
-			else if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)	//Reliable Packet in correct order
+			else
 			{
-				packetsReturned.push_back(pPacket);
-				m_Statistics.RegisterReliableMessageReceived();
-			}
-			else if(pPacket->GetReliableUID() > m_Statistics.GetLastReceivedReliableUID())			//Reliable Packet in incorrect order
-			{
-				m_ReliableMessagesReceived.insert(pPacket);
-				reliableMessagesInserted = true;
-			}
-			else																					//Reliable Packet already received before
-			{
-				m_PacketPool.FreePacket(pPacket);
+				hasReliableMessage = true;
+
+				if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)		//Reliable Packet in correct order
+				{
+					packetsReturned.push_back(pPacket);
+					m_Statistics.RegisterReliableMessageReceived();
+				}
+				else if (pPacket->GetReliableUID() > m_Statistics.GetLastReceivedReliableUID())		//Reliable Packet in incorrect order
+				{
+					m_ReliableMessagesReceived.insert(pPacket);
+					reliableMessagesInserted = true;
+				}
+				else																				//Reliable Packet already received before
+				{
+					packetsToFree.push_back(pPacket);
+				}
 			}
 		}
 
-		if(reliableMessagesInserted)
+		m_PacketPool.FreePackets(packetsToFree);
+
+		if (reliableMessagesInserted)
 			UntangleReliablePackets(packetsReturned);
+
+		if (hasReliableMessage && m_MessagesToSend[m_QueueIndex].empty())
+			EnqueuePacketUnreliable(m_PacketPool.RequestFreePacket()->SetType(NetworkPacket::TYPE_NETWORK_ACK));
 	}
 
 	void PacketManager::UntangleReliablePackets(std::vector<NetworkPacket*>& packetsReturned)
@@ -200,6 +232,8 @@ namespace LambdaEngine
 		ackedReliableUIDs.reserve(128);
 		std::scoped_lock<SpinLock> lock(m_LockBundles);
 
+		Timestamp timestamp = 0;
+
 		for (uint32 ack : acks)
 		{
 			auto& iterator = m_Bundles.find(ack);
@@ -209,8 +243,14 @@ namespace LambdaEngine
 				for (uint32 UID : bundle.ReliableUIDs)
 					ackedReliableUIDs.push_back(UID);
 
+				timestamp = bundle.Timestamp;
 				m_Bundles.erase(iterator);
 			}
+		}
+
+		if (timestamp != 0)
+		{
+			RegisterRTT(EngineLoop::GetTimeSinceStart() - timestamp);
 		}
 	}
 
@@ -227,6 +267,70 @@ namespace LambdaEngine
 				ackedReliableMessages.push_back(iterator->second);
 				m_MessagesWaitingForAck.erase(iterator);
 			}
+		}
+	}
+
+	void PacketManager::RegisterRTT(Timestamp rtt)
+	{
+		static const double scalar1 = 1.0f / 10.0f;
+		static const double scalar2 = 1.0f - scalar1;
+		m_Statistics.m_Ping = (uint64)((rtt.AsNanoSeconds() * scalar1) + (m_Statistics.GetPing().AsNanoSeconds() * scalar2));
+	}
+
+	void PacketManager::DeleteOldBundles()
+	{
+		Timestamp maxAllowedTime = m_Statistics.GetPing() * 100;
+		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
+
+		std::vector<uint32> bundlesToDelete;
+
+		std::scoped_lock<SpinLock> lock(m_LockBundles);
+		for (auto& pair : m_Bundles)
+		{
+			if (currentTime - pair.second.Timestamp > maxAllowedTime)
+			{
+				bundlesToDelete.push_back(pair.first);
+				m_Statistics.RegisterPacketLoss();
+			}
+		}
+
+		for (uint32 UID : bundlesToDelete)
+			m_Bundles.erase(UID);
+	}
+
+	void PacketManager::ResendOrDeleteMessages()
+	{
+		Timestamp maxAllowedTime = m_Statistics.GetPing() * 2;
+		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
+
+		std::vector<std::pair<const uint32, MessageInfo>> messagesToDelete;
+
+		{
+			std::scoped_lock<SpinLock> lock(m_LockMessagesToSend);
+
+			for (auto& pair : m_MessagesWaitingForAck)
+			{
+				MessageInfo& messageInfo = pair.second;
+				if (currentTime - messageInfo.LastSent > maxAllowedTime)
+				{
+					messageInfo.Retries++;
+
+					if (messageInfo.Retries < 10)
+						m_MessagesToSend[m_QueueIndex].push(messageInfo.Packet);
+					else
+						messagesToDelete.push_back(pair);
+				}
+			}
+
+			for (auto& pair : messagesToDelete)
+				m_MessagesWaitingForAck.erase(pair.first);
+		}
+		
+		for (auto& pair : messagesToDelete)
+		{
+			MessageInfo& messageInfo = pair.second;
+			if (messageInfo.Listener)
+				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Packet, messageInfo.Retries);
 		}
 	}
 }
