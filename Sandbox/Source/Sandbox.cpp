@@ -21,6 +21,7 @@
 #include "Audio/API/ISoundInstance3D.h"
 #include "Audio/API/IAudioGeometry.h"
 #include "Audio/API/IReverbSphere.h"
+#include "Audio/API/IMusic.h"
 
 #include "Application/API/IWindow.h"
 
@@ -53,13 +54,13 @@ Sandbox::Sandbox()
 	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
 	m_pScene->Init(sceneDesc);
 
-	/*std::vector<GameObject>	sceneGameObjects;
+	std::vector<GameObject>	sceneGameObjects;
 	ResourceManager::LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
 
 	for (GameObject& gameObject : sceneGameObjects)
 	{
 		m_pScene->AddDynamicGameObject(gameObject, glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)));
-	}*/
+	}
 
 	uint32 bunnyMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/bunny.obj");
 
@@ -75,8 +76,8 @@ Sandbox::Sandbox()
 	gunGameObject.Mesh = gunMeshGUID;
 	gunGameObject.Material = DEFAULT_MATERIAL;
 
-	/*m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
-	m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.5f, 0.0f)));*/
+	m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
+	m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.5f, 0.0f)));
 
 	m_pScene->Finalize();
 
@@ -95,19 +96,6 @@ Sandbox::Sandbox()
 	m_pCamera->Update();
 
 	m_pScene->UpdateCamera(m_pCamera);
-
-	//GUID_Lambda blurShaderGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/blur.spv",					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
-	
-	//GUID_Lambda lightVertexShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/lightVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda lightPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/lightPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
-
-	//GUID_Lambda raygenRadianceShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/raygenRadiance.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda closestHitRadianceShaderGUID	= ResourceManager::LoadShaderFromFile("../Assets/Shaders/closestHitRadiance.spv",	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::SPIRV);
-	//GUID_Lambda missRadianceShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/missRadiance.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda closestHitShadowShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/closestHitShadow.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::SPIRV);
-	//GUID_Lambda missShadowShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/missShadow.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::SPIRV);
-
-	//GUID_Lambda particleUpdateShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/particleUpdate.spv",		FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SPIRV);
 
 	SamplerDesc samplerLinearDesc = {};
 	samplerLinearDesc.pName					= "Linear Sampler";
@@ -145,7 +133,7 @@ Sandbox::Sandbox()
 
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 
-	InitTestAudio();
+	//InitTestAudio();
 }
 
 Sandbox::~Sandbox()
@@ -167,27 +155,33 @@ void Sandbox::InitTestAudio()
 {
 	using namespace LambdaEngine;
 
-	m_AudioListenerIndex = AudioSystem::GetDevice()->CreateAudioListener();
+	//m_AudioListenerIndex = AudioSystem::GetDevice()->CreateAudioListener();
 
-	m_ToneSoundEffectGUID = ResourceManager::LoadSoundEffectFromFile("../Assets/Sounds/noise.wav");
-	m_GunSoundEffectGUID = ResourceManager::LoadSoundEffectFromFile("../Assets/Sounds/GUN_FIRE-GoodSoundForYou.wav");
+	//m_ToneSoundEffectGUID = ResourceManager::LoadSoundEffectFromFile("../Assets/Sounds/noise.wav");
+	//m_GunSoundEffectGUID = ResourceManager::LoadSoundEffectFromFile("../Assets/Sounds/GUN_FIRE-GoodSoundForYou.wav");
 
-	m_pToneSoundEffect = ResourceManager::GetSoundEffect(m_ToneSoundEffectGUID);
-	m_pGunSoundEffect = ResourceManager::GetSoundEffect(m_GunSoundEffectGUID);
+	//m_pToneSoundEffect = ResourceManager::GetSoundEffect(m_ToneSoundEffectGUID);
+	//m_pGunSoundEffect = ResourceManager::GetSoundEffect(m_GunSoundEffectGUID);
 
-	SoundInstance3DDesc soundInstanceDesc = {};
-	soundInstanceDesc.pSoundEffect = m_pGunSoundEffect;
-	soundInstanceDesc.Flags = FSoundModeFlags::SOUND_MODE_LOOPING;
+	//SoundInstance3DDesc soundInstanceDesc = {};
+	//soundInstanceDesc.pSoundEffect = m_pGunSoundEffect;
+	//soundInstanceDesc.Flags = FSoundModeFlags::SOUND_MODE_LOOPING;
 
-	m_pToneSoundInstance = AudioSystem::GetDevice()->CreateSoundInstance(&soundInstanceDesc);
-	m_pToneSoundInstance->SetVolume(0.5f);
+	//m_pToneSoundInstance = AudioSystem::GetDevice()->CreateSoundInstance(&soundInstanceDesc);
+	//m_pToneSoundInstance->SetVolume(0.5f);
+
+	MusicDesc musicDesc = {};
+	musicDesc.pFilepath		= "../Assets/Sounds/halo_theme.ogg";
+	musicDesc.Volume		= 0.5f;
+	musicDesc.Pitch			= 1.0f;
+
+	AudioSystem::GetDevice()->CreateMusic(&musicDesc);
 
 	/*m_SpawnPlayAts = false;
 	m_GunshotTimer = 0.0f;
 	m_GunshotDelay = 1.0f;
 	m_Timer = 0.0f;
 
-	AudioSystem::GetDevice()->LoadMusic("../Assets/Sounds/halo_theme.ogg");
 
 	m_pAudioListener = AudioSystem::GetDevice()->CreateAudioListener();
 	m_pAudioListener->Update(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));

@@ -2,7 +2,7 @@
 
 #include "Networking/API/NetWorker.h"
 #include "Networking/API/IServer.h"
-#include "Networking/API/PacketManager.h"
+#include "Networking/API/PacketTransceiver.h"
 
 #include "Containers/THashTable.h"
 
@@ -59,6 +59,7 @@ namespace LambdaEngine
 	private:
 		ISocketUDP* m_pSocket;
 		IPEndPoint m_IPEndPoint;
+		PacketTransceiver m_Transciver;
 		SpinLock m_Lock;
 		SpinLock m_LockClients;
 		uint16 m_PacketsPerClient;

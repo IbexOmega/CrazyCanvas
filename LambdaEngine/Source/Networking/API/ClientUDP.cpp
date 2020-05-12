@@ -6,6 +6,8 @@
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/NetworkStatistics.h"
+#include "Networking/API/PacketPool.h"
+#include "Networking/API/NetworkChallenge.h"
 
 #include "Log/Log.h"
 
@@ -16,7 +18,8 @@ namespace LambdaEngine
 
 	ClientUDP::ClientUDP(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries) :
 		m_pSocket(nullptr),
-		m_PacketManager(this, packets, maximumTries),
+		//m_PacketManager(this, packets, maximumTries),
+		m_PacketManager(),
 		m_pHandler(pHandler), 
 		m_State(STATE_DISCONNECTED),
 		m_pSendBuffer()
@@ -55,7 +58,7 @@ namespace LambdaEngine
 			if (StartThreads())
 			{
 				LOG_WARNING("[ClientUDP]: Connecting...");
-				m_IPEndPoint = ipEndPoint;
+				m_PacketManager.SetEndPoint(ipEndPoint);
 				return true;
 			}
 		}
@@ -89,7 +92,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_PacketManager.EnqueuePacket(packet);
+		m_PacketManager.EnqueuePacketUnreliable(packet);
 		return true;
 	}
 
@@ -107,12 +110,12 @@ namespace LambdaEngine
 
 	const IPEndPoint& ClientUDP::GetEndPoint() const
 	{
-		return m_IPEndPoint;
+		return m_PacketManager.GetEndPoint();
 	}
 
 	NetworkPacket* ClientUDP::GetFreePacket(uint16 packetType)
 	{
-		return m_PacketManager.GetFreePacket()->SetType(packetType);
+		return m_PacketManager.GetPacketPool()->RequestFreePacket()->SetType(packetType);
 	}
 
 	EClientState ClientUDP::GetState() const
@@ -132,6 +135,7 @@ namespace LambdaEngine
 		{
 			if (m_pSocket->Bind(IPEndPoint(IPAddress::ANY, 0)))
 			{
+				m_Transciver.SetSocket(m_pSocket);
 				m_State = STATE_CONNECTING;
 				m_pHandler->OnConnectingUDP(this);
 				m_SendDisconnectPacket = true;
@@ -147,31 +151,19 @@ namespace LambdaEngine
 
 	void ClientUDP::RunReceiver()
 	{
-		int32 bytesReceived = 0;
-		std::vector<NetworkPacket*> packets;
 		IPEndPoint sender;
-
-		packets.reserve(64);
-
 		while (!ShouldTerminate())
 		{
-			if (!m_pSocket->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX, bytesReceived, sender))
-			{
-				TerminateThreads();
-				break;
-			}
+			if (!m_Transciver.ReceiveBegin(sender))
+				continue;
 
-			if (bytesReceived >= 0)
+			std::vector<NetworkPacket*> packets;
+			m_PacketManager.QueryBegin(&m_Transciver, packets);
+			for (NetworkPacket* pPacket : packets)
 			{
-				if (m_PacketManager.DecodePackets(m_pReceiveBuffer, bytesReceived, packets))
-				{
-					for (NetworkPacket* pPacket : packets)
-					{
-						HandleReceivedPacket(pPacket);
-					}
-					m_PacketManager.Free(packets);
-				}
-			}	
+				HandleReceivedPacket(pPacket);
+			}
+			m_PacketManager.QueryEnd(packets);
 		}
 	}
 
@@ -232,13 +224,13 @@ namespace LambdaEngine
 
 		if (packetType == NetworkPacket::TYPE_CHALLENGE)
 		{
-			uint64 answer = PacketManager::DoChallenge(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
+			uint64 answer = NetworkChallenge::Compute(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
 			ASSERT(answer != 0);
 
 			NetworkPacket* pResponse = GetFreePacket(NetworkPacket::TYPE_CHALLENGE);
 			BinaryEncoder encoder(pResponse);
 			encoder.WriteUInt64(answer);
-			m_PacketManager.EnqueuePacket(pResponse);
+			m_PacketManager.EnqueuePacketReliable(pResponse);
 		}
 		else if (packetType == NetworkPacket::TYPE_ACCEPTED)
 		{
@@ -270,7 +262,12 @@ namespace LambdaEngine
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
-		int32 bytesWritten = 0;
+		//m_PacketManager.Tick();
+		m_PacketManager.Flush(&m_Transciver);
+
+
+
+		/*int32 bytesWritten = 0;
 		int32 bytesSent = 0;
 		bool done = false;
 
@@ -286,7 +283,7 @@ namespace LambdaEngine
 					TerminateThreads();
 				}
 			}
-		}
+		}*/
 	}
 
 	ClientUDP* ClientUDP::Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries)

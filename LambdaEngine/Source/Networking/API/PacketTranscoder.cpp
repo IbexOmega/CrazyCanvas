@@ -1,32 +1,45 @@
 #include "Networking/API/PacketTranscoder.h"
 #include "Networking/API/NetworkPacket.h"
+#include "Networking/API/PacketPool.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	bool PacketTranscoder::EncodePackets(char* buffer, uint16 bufferSize, std::queue<NetworkPacket*>& packetsToEncode, uint16& bytesWritten, Header* pHeader)
+	bool PacketTranscoder::EncodePackets(char* buffer, uint16 bufferSize, PacketPool* pPacketPool, std::queue<NetworkPacket*>& packetsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader)
 	{
 		pHeader->Size = sizeof(Header);
 		pHeader->Packets = 0;
 
 		bytesWritten = 0;
 
+		std::vector<NetworkPacket*> packetsToFree;
+
 		while (!packetsToEncode.empty())
 		{
 			NetworkPacket* packet = packetsToEncode.front();
+
+			//Make sure the packet is not bigger than the max size
+			ASSERT(packet->GetTotalSize() + sizeof(Header) <= bufferSize);
 
 			if (packet->GetTotalSize() + pHeader->Size <= bufferSize)
 			{
 				packetsToEncode.pop();
 				pHeader->Size += WritePacket(buffer + pHeader->Size, packet);
 				pHeader->Packets++;
+
+				if (packet->IsReliable())
+					reliableUIDsSent.insert(packet->GetReliableUID());
+				else
+					packetsToFree.push_back(packet);
 			}
 			else
 			{
 				break;
 			}
 		}
+
+		pPacketPool->FreePackets(packetsToFree);
 
 		memcpy(buffer, pHeader, sizeof(Header));
 
@@ -47,7 +60,7 @@ namespace LambdaEngine
 		return headerSize + bufferSize;
 	}
 
-	bool PacketTranscoder::DecodePackets(const char* buffer, uint16 bufferSize, std::vector<NetworkPacket*>& packetsDecoded, Header* pHeader)
+	bool PacketTranscoder::DecodePackets(const char* buffer, uint16 bufferSize, PacketPool* pPacketPool, std::vector<NetworkPacket*>& packetsDecoded, Header* pHeader)
 	{
 		uint16 offset = sizeof(Header);
 
@@ -58,6 +71,9 @@ namespace LambdaEngine
 			LOG_ERROR("[PacketTranscoder]: Received a packet with size missmatch [Exp %d : Rec %d]", pHeader->Size, bufferSize);
 			return false;
 		}
+
+		if (!pPacketPool->RequestFreePackets(pHeader->Packets, packetsDecoded))
+			return false;
 
 		for (int i = 0; i < pHeader->Packets; i++)
 		{

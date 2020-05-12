@@ -1,127 +1,78 @@
 #pragma once
 
 #include "LambdaEngine.h"
+#include "Containers/TQueue.h"
+#include "Containers/TArray.h"
 #include "Containers/TSet.h"
 #include "Containers/THashTable.h"
-#include "Containers/TQueue.h"
 
-#include "Networking/API/NetworkPacket.h"
-#include "Networking/API/IPEndPoint.h"
 #include "Networking/API/NetworkStatistics.h"
+#include "Networking/API/PacketPool.h"
+#include "Networking/API/IPEndPoint.h"
 
 #include "Threading/API/SpinLock.h"
 
-#include <atomic>
-
-#include "Time/API/Timestamp.h"
-
 namespace LambdaEngine
 {
+	class NetworkPacket;
 	class IPacketListener;
-	class ISocketUDP;
 
 	class LAMBDA_API PacketManager
 	{
+	public:
 		struct MessageInfo
 		{
 			NetworkPacket* Packet		= nullptr;
 			IPacketListener* Listener	= nullptr;
 			Timestamp LastSent			= 0;
 			uint8 Tries					= 0;
-
-			uint32 GetUID() const
-			{
-				return Packet->GetHeader().UID;
-			}
-		};
-
-		struct NetworkPacketComparator
-		{
-			bool operator() (const NetworkPacket* lhs, const NetworkPacket* rhs) const
-			{
-				return lhs->GetReliableUID() < rhs->GetReliableUID();
-			}
 		};
 
 		struct Bundle
 		{
-			std::set<uint32> MessageUIDs;
+			std::set<uint32> ReliableUIDs;
 			Timestamp Timestamp = 0;
 		};
 
-#pragma pack(push, 1)
-		struct Header
-		{
-			uint16 Size		= 0;
-			uint64 Salt		= 0;
-			uint32 Sequence = 0;
-			uint32 Ack		= 0;
-			uint32 AckBits	= 0;
-			uint8  Packets	= 0;
-		};
-#pragma pack(pop)
-
-
 	public:
-		PacketManager(IPacketListener* pListener, uint16 packets, uint8 maximumTries);
+		PacketManager();
 		~PacketManager();
 
-		void EnqueuePacket(NetworkPacket* packet);
-		void EnqueuePacketReliable(NetworkPacket* packet, IPacketListener* listener = nullptr);
-		NetworkPacket* GetFreePacket();
+		uint32 EnqueuePacketReliable(NetworkPacket* pPacket, IPacketListener* pListener = nullptr);
+		uint32 EnqueuePacketUnreliable(NetworkPacket* pPacket);
 
-		bool EncodePackets(char* buffer, int32& bytesWritten);
-		bool DecodePackets(const char* buffer, int32 bytesReceived, std::vector<NetworkPacket*>& packetsRead);
-		void SwapPacketQueues();
+		void Flush(PacketTransceiver* pTransceiver);
+		void QueryBegin(PacketTransceiver* pTransceiver, std::vector<NetworkPacket*>& packetsReturned);
+		void QueryEnd(std::vector<NetworkPacket*>& packetsReceived);
+
 		void Tick();
 
-		void Free(std::vector<NetworkPacket*>& packets);
-
+		PacketPool* GetPacketPool();
 		const NetworkStatistics* GetStatistics() const;
+		const IPEndPoint& GetEndPoint() const;
+
+		void SetEndPoint(const IPEndPoint& ipEndPoint);
 
 		void Reset();
 
 	private:
-		void WriteHeaderAndStoreBundle(char* buffer, int32& bytesWritten, Header& header, Bundle& bundle, std::vector<MessageInfo>& reliableMessages);
-
-		void ProcessSequence(uint32 sequence);
-		void ProcessAcks(uint32 ack, uint32 ackBits);
-		void ProcessAck(uint32 ack, Timestamp& rtt);
-
-		bool GetMessagesAndRemoveBundle(uint32 sequence, std::vector<MessageInfo>& messages, Timestamp& sentTimestamp);
-		uint32 GetNextPacketSequenceNr();
-		uint32 GetNextMessageUID();
-		uint32 GetNextMessageReliableUID();
-
-		void DeleteEmptyBundles();
-		void FindMessagesToResend(std::vector<MessageInfo>& messages);
-		void ReSendMessages(const std::vector<MessageInfo>& messages);
+		uint32 EnqueuePacket(NetworkPacket* pPacket, uint32 reliableUID);
+		void FindPacketsToReturn(const std::vector<NetworkPacket*>& packetsReceived, std::vector<NetworkPacket*>& packetsReturned);
+		void UntangleReliablePackets(std::vector<NetworkPacket*>& packetsReturned);
+		void HandleAcks(const std::vector<uint32>& acks);
+		void GetReliableUIDsFromAcks(const std::vector<uint32>& acks, std::vector<uint32>& ackedReliableUIDs);
+		void GetReliableMessageInfosFromUIDs(const std::vector<uint32>& ackedReliableUIDs, std::vector<MessageInfo>& ackedReliableMessages);
 
 	private:
-		uint16 m_NrOfPackets;
-		NetworkPacket* m_pPackets;
-		std::set<NetworkPacket*> m_PacketsFree;
-		std::queue<MessageInfo> m_PacketsToSend[2];
-		std::unordered_map<uint32, Bundle> m_PacketsWaitingForAck;
-		std::unordered_map<uint32, MessageInfo> m_MessagesWaitingForAck;
-		std::set<NetworkPacket*, NetworkPacketComparator> m_MessagesReceivedOrdered;
-
-		SpinLock m_LockPacketsFree;
-		SpinLock m_LockPacketsToSend;
-		SpinLock m_LockPacketsWaitingForAck;
-
-		std::atomic_int m_QueueIndex;
-		std::atomic_uint32_t m_LastReceivedSequenceNr;
-		std::atomic_uint32_t m_ReceivedSequenceBits;
-
-		IPacketListener* m_pListener;
-
 		NetworkStatistics m_Statistics;
-		uint32 m_ReliableMessagesSent;
-		uint32 m_NextExpectedMessageNr;
-		uint8 m_MaximumTries;
-
-	public:
-		static uint64 DoChallenge(uint64 clientSalt, uint64 serverSalt);
+		PacketPool m_PacketPool;
+		IPEndPoint m_IPEndPoint;
+		std::queue<NetworkPacket*> m_MessagesToSend[2];
+		std::unordered_map<uint32, MessageInfo> m_MessagesWaitingForAck;
+		std::set<NetworkPacket*> m_ReliableMessagesReceived;
+		std::unordered_map<uint32, Bundle> m_Bundles;
+		std::atomic_int m_QueueIndex;
+		SpinLock m_LockMessagesToSend;
+		SpinLock m_LockBundles;
 	};
 }

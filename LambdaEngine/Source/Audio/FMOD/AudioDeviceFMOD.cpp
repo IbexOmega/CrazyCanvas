@@ -1,4 +1,5 @@
 #include "Audio/FMOD/AudioDeviceFMOD.h"
+#include "Audio/FMOD/MusicFMOD.h"
 #include "Audio/FMOD/SoundEffect3DFMOD.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 #include "Audio/FMOD/AudioGeometryFMOD.h"
@@ -28,21 +29,13 @@ namespace LambdaEngine
 		return FMOD_OK;
 	}
 
-	AudioDeviceFMOD::AudioDeviceFMOD() :
-		pSystem(nullptr)
+	AudioDeviceFMOD::AudioDeviceFMOD()
 	{
 		
 	}
 
 	AudioDeviceFMOD::~AudioDeviceFMOD()
-	{
-		if (m_pMusicHandle != nullptr)
-		{
-			FMOD_Channel_Stop(m_pMusicChannel);
-			FMOD_Sound_Release(m_pMusicHandle);
-			m_pMusicHandle = nullptr;
-		}
-		
+	{		
 		if (pSystem != nullptr)
 		{
 			if (FMOD_System_Release(pSystem) != FMOD_OK)
@@ -108,71 +101,6 @@ namespace LambdaEngine
 		FMOD_System_Update(pSystem);
 	}
 
-	bool AudioDeviceFMOD::LoadMusic(const char* pFilepath)
-	{
-		if (m_pMusicHandle != nullptr)
-		{
-			FMOD_Sound_Release(m_pMusicHandle);
-			m_pMusicHandle = nullptr;
-		}
-		
-		FMOD_MODE mode = FMOD_2D | FMOD_LOOP_NORMAL | FMOD_CREATESTREAM;
-
-		FMOD_CREATESOUNDEXINFO soundCreateInfo = {};
-		soundCreateInfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
-		
-		if (FMOD_System_CreateSound(pSystem, pFilepath, mode, &soundCreateInfo, &m_pMusicHandle) != FMOD_OK)
-		{
-			LOG_WARNING("[AudioDeviceFMOD]: Music \"%s\" could not be initialized in %s", pFilepath, m_pName);
-			return false;
-		}
-
-		if (FMOD_System_PlaySound(pSystem, m_pMusicHandle, nullptr, true, &m_pMusicChannel) != FMOD_OK)
-		{
-			LOG_WARNING("[AudioDeviceFMOD]: Music \"%s\" could not be played in %s", pFilepath, m_pName);
-			return false;
-		}
-
-		D_LOG_MESSAGE("[AudioDeviceFMOD]: Loaded Music \"%s\" in %s", pFilepath, m_pName);
-		
-		return true;
-	}
-
-	void AudioDeviceFMOD::PlayMusic()
-	{
-		FMOD_BOOL isPlaying = 0;
-		FMOD_Channel_IsPlaying(m_pMusicChannel, &isPlaying);
-
-		if (isPlaying)
-		{
-			FMOD_Channel_SetPaused(m_pMusicChannel, 0);
-		}
-	}
-
-	void AudioDeviceFMOD::PauseMusic()
-	{
-		FMOD_BOOL isPlaying = 0;
-		FMOD_Channel_IsPlaying(m_pMusicChannel, &isPlaying);
-
-		if (isPlaying)
-		{
-			FMOD_Channel_SetPaused(m_pMusicChannel, 1);
-		}
-	}
-
-	void AudioDeviceFMOD::ToggleMusic()
-	{
-		FMOD_BOOL isPlaying = 0;
-		FMOD_Channel_IsPlaying(m_pMusicChannel, &isPlaying);
-
-		if (isPlaying)
-		{
-			FMOD_BOOL isPaused = 0;
-			FMOD_Channel_GetPaused(m_pMusicChannel, &isPaused);
-			FMOD_Channel_SetPaused(m_pMusicChannel, (isPaused ^ 0x1));
-		}
-	}
-
 	void AudioDeviceFMOD::UpdateAudioListener(uint32 index, const AudioListenerDesc* pDesc)
 	{
 		FMOD_VECTOR fmodPosition	= { pDesc->Position.x,		pDesc->Position.y,		pDesc->Position.z };
@@ -192,6 +120,22 @@ namespace LambdaEngine
 		}
 
 		return m_NumAudioListeners++;
+	}
+
+	IMusic* AudioDeviceFMOD::CreateMusic(const MusicDesc* pDesc)
+	{
+		VALIDATE(pDesc != nullptr);
+
+		MusicFMOD* pMusic = DBG_NEW MusicFMOD(this);
+
+		if (!pMusic->Init(pDesc))
+		{
+			return nullptr;
+		}
+		else
+		{
+			return pMusic;
+		}
 	}
 
 	ISoundEffect3D* AudioDeviceFMOD::CreateSoundEffect(const SoundEffect3DDesc* pDesc)

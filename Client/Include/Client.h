@@ -5,7 +5,6 @@
 #include "Input/API/IKeyboardHandler.h"
 #include "Input/API/IMouseHandler.h"
 
-#include "Networking/API/PacketManager.h"
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/ClientUDP.h"
 #include "Networking/API/IClientUDPHandler.h"

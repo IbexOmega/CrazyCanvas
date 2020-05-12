@@ -24,6 +24,11 @@ namespace LambdaEngine
 		return m_MessagesSent;
 	}
 
+	uint32 NetworkStatistics::GetReliableMessagesSent() const
+	{
+		return m_ReliableMessagesSent;
+	}
+
 	uint32 NetworkStatistics::GetPacketsReceived() const
 	{
 		return m_PacketsReceived;
@@ -89,6 +94,11 @@ namespace LambdaEngine
 		return m_ReceivedAckBits;
 	}
 
+	uint32 NetworkStatistics::GetLastReceivedReliableUID() const
+	{
+		return m_LastReceivedReliableUID;
+	}
+
 	void NetworkStatistics::Reset()
 	{
 		m_Salt						= Random::UInt64();
@@ -96,6 +106,7 @@ namespace LambdaEngine
 		m_Ping						= Timestamp::MilliSeconds(10.0f);
 		m_PacketsSent				= 0;
 		m_MessagesSent				= 0;
+		m_ReliableMessagesSent		= 0;
 		m_PacketsReceived			= 0;
 		m_MessagesReceived			= 0;
 		m_PacketsLost				= 0;
@@ -105,11 +116,27 @@ namespace LambdaEngine
 		m_ReceivedSequenceBits		= 0;
 		m_LastReceivedAckNr			= 0;
 		m_ReceivedAckBits			= 0;
+		m_LastReceivedReliableUID	= 0;
 	}
 
 	uint32 NetworkStatistics::RegisterPacketSent()
 	{
 		return ++m_PacketsSent;
+	}
+
+	uint32 NetworkStatistics::RegisterMessageSent()
+	{
+		return ++m_MessagesSent;
+	}
+
+	uint32 NetworkStatistics::RegisterReliableMessageSent()
+	{
+		return ++m_ReliableMessagesSent;
+	}
+
+	void NetworkStatistics::RegisterReliableMessageReceived()
+	{
+		m_LastReceivedReliableUID++;
 	}
 
 	void NetworkStatistics::SetLastReceivedSequenceNr(uint32 sequence)

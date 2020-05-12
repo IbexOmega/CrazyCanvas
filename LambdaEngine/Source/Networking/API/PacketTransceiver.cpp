@@ -16,7 +16,7 @@ namespace LambdaEngine
 
 	}
 
-	int32 PacketTransceiver::Transmit(std::queue<NetworkPacket*>& packets, const IPEndPoint& ipEndPoint, NetworkStatistics* pStatistics)
+	int32 PacketTransceiver::Transmit(PacketPool* pPacketPool, std::queue<NetworkPacket*>& packets, std::set<uint32>& reliableUIDsSent, const IPEndPoint& ipEndPoint, NetworkStatistics* pStatistics)
 	{
 		if (packets.empty())
 			return 0;
@@ -30,7 +30,7 @@ namespace LambdaEngine
 		header.Ack		= pStatistics->GetLastReceivedSequenceNr();
 		header.AckBits	= pStatistics->GetReceivedSequenceBits();
 
-		PacketTranscoder::EncodePackets(m_pSendBuffer, MAXIMUM_PACKET_SIZE, packets, bytesWritten, &header);
+		PacketTranscoder::EncodePackets(m_pSendBuffer, MAXIMUM_PACKET_SIZE + sizeof(PacketTranscoder::Header), pPacketPool, packets, reliableUIDsSent, bytesWritten, &header);
 
 		if (!m_pSocket->SendTo(m_pSendBuffer, bytesWritten, bytesTransmitted, ipEndPoint))
 			return -1;
@@ -40,17 +40,21 @@ namespace LambdaEngine
 		return header.Sequence;
 	}
 
-	bool PacketTransceiver::Receive(std::vector<NetworkPacket*>& packets, IPEndPoint& ipEndPoint, std::vector<uint32>& newAcks, NetworkStatistics* pStatistics)
+	bool PacketTransceiver::ReceiveBegin(IPEndPoint& sender)
 	{
-		int32 bytesReceived = 0;
+		m_BytesReceived = 0;
 
-		if (!m_pSocket->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX, bytesReceived, ipEndPoint))
+		if (!m_pSocket->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX, m_BytesReceived, sender))
 			return false;
-		else if (bytesReceived < 0)
-			return false;
-		
+
+		return m_BytesReceived > 0;
+	}
+
+	bool PacketTransceiver::ReceiveEnd(PacketPool* pPacketPool, std::vector<NetworkPacket*>& packets, std::vector<uint32>& newAcks, NetworkStatistics* pStatistics)
+	{
 		PacketTranscoder::Header header;
-		PacketTranscoder::DecodePackets(m_pReceiveBuffer, bytesReceived, packets, &header);
+		if (!PacketTranscoder::DecodePackets(m_pReceiveBuffer, m_BytesReceived, pPacketPool, packets, &header))
+			return false;
 
 		if (!ValidateHeaderSalt(&header, pStatistics))
 			return false;

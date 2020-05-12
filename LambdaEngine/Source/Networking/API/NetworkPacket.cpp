@@ -5,7 +5,9 @@ namespace LambdaEngine
 	NetworkPacket::NetworkPacket() : 
 		m_SizeOfBuffer(0),
 		m_pBuffer(),
-		m_Header()
+		m_Header(),
+		m_IsBorrowed(false),
+		m_Salt(0)
 	{
 
 	}

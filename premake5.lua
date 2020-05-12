@@ -109,9 +109,15 @@ workspace "LambdaEngine"
 			systemversion "latest"
 			location "Dependencies/projectfiles/tinyobjloader"
 			
-			filter "configurations:Debug"
+			filter "configurations:Debug or Release"
 				symbols "on"
-				runtime "Debug"
+				runtime "Release"
+				optimize "Full"
+			filter{}
+			
+			filter "configurations:Production"
+				symbols "off"
+				runtime "Release"
 				optimize "Full"
 			filter{}
 			

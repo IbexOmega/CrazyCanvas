@@ -2,13 +2,14 @@
 
 #include "Networking/API/NetWorker.h"
 #include "Networking/API/IClientUDP.h"
-#include "Networking/API/PacketManager.h"
 #include "Networking/API/IPacketListener.h"
+#include "Networking/API/PacketManager.h"
 
 namespace LambdaEngine
 {
 	class ServerUDP;
 	class IClientUDPRemoteHandler;
+	class PacketTransceiver;
 
 	class LAMBDA_API ClientUDPRemote : 
 		public IClientUDP,
@@ -38,16 +39,14 @@ namespace LambdaEngine
 
 	private:
 		PacketManager* GetPacketManager();
-		void OnDataReceived(const char* data, int32 size);
-		void SendPackets();
+		void OnDataReceived(PacketTransceiver* pTransciver);
+		void SendPackets(PacketTransceiver* pTransciver);
 		bool HandleReceivedPacket(NetworkPacket* pPacket);
 
 	private:
 		ServerUDP* m_pServer;
-		IPEndPoint m_IPEndPoint;
 		PacketManager m_PacketManager;
 		SpinLock m_Lock;
-		std::vector<NetworkPacket*> m_Packets;
 		IClientUDPRemoteHandler* m_pHandler;
 		EClientState m_State;
 		std::atomic_bool m_Release;

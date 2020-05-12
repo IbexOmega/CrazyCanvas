@@ -12,6 +12,7 @@ namespace LambdaEngine
 	{
 		friend class PacketTransceiver;
 		friend class PacketManager;
+		friend class PacketManager2;
 
 	public:
 		NetworkStatistics();
@@ -19,6 +20,7 @@ namespace LambdaEngine
 
 		uint32 GetPacketsSent()				const;
 		uint32 GetMessagesSent()			const;
+		uint32 GetReliableMessagesSent()	const;
 		uint32 GetPacketsReceived()			const;
 		uint32 GetMessagesReceived()		const;
 		uint32 GetPacketsLost()				const;
@@ -32,11 +34,15 @@ namespace LambdaEngine
 		uint32 GetReceivedSequenceBits()	const;
 		uint32 GetLastReceivedAckNr()		const;
 		uint32 GetReceivedAckBits()			const;
+		uint32 GetLastReceivedReliableUID()	const;
 
 	private:
 		void Reset();
 
 		uint32 RegisterPacketSent();
+		uint32 RegisterMessageSent();
+		uint32 RegisterReliableMessageSent();
+		void RegisterReliableMessageReceived();
 		void SetLastReceivedSequenceNr(uint32 sequence);
 		void SetReceivedSequenceBits(uint32 sequenceBits);
 		void SetLastReceivedAckNr(uint32 ack);
@@ -47,6 +53,7 @@ namespace LambdaEngine
 		uint32 m_PacketsLost;
 		uint32 m_PacketsSent;
 		uint32 m_MessagesSent;
+		uint32 m_ReliableMessagesSent;
 		uint32 m_PacketsReceived;
 		uint32 m_MessagesReceived;
 		uint32 m_BytesSent;
@@ -62,5 +69,7 @@ namespace LambdaEngine
 
 		std::atomic_uint32_t m_LastReceivedAckNr;
 		std::atomic_uint32_t m_ReceivedAckBits;
+
+		std::atomic_uint32_t m_LastReceivedReliableUID;
 	};
 }
