@@ -33,6 +33,9 @@ namespace LambdaEngine
 
 		bool Connect(const IPEndPoint& ipEndPoint);
 
+		void SetSimulateReceivingPacketLoss(float32 lossRatio);
+		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
+
 	protected:
 		ClientUDP(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries);
 
@@ -52,6 +55,7 @@ namespace LambdaEngine
 		void SendDisconnectRequest();
 		void HandleReceivedPacket(NetworkPacket* pPacket);
 		void TransmitPackets();
+		void Tick(Timestamp delta);
 
 	public:
 		static ClientUDP* Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries);

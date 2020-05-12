@@ -256,15 +256,12 @@ namespace LambdaEngine
 
 		void UpdateRenderStageParameters(const RenderStageParameters& desc);
 
+		void GetAndIncrementFence(IFence** ppFence, uint64* pSignalValue);
+
 		/*
 		* Updates the RenderGraph, applying the updates made to resources with UpdateResource by writing them to the appropriate Descriptor Sets, the RenderGraph will wait for device idle if it needs to
 		*/
 		void Update();
-
-
-		/*
-		* 
-		*/
 		void Render(uint64 frameIndex, uint32 backBufferIndex);
 
 	private:

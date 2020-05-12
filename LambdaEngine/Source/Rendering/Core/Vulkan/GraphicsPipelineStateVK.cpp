@@ -97,13 +97,51 @@ namespace LambdaEngine
 		}
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
-		vertexInputInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputInfo.flags                           = 0;
-		vertexInputInfo.pNext                           = nullptr;
-		vertexInputInfo.vertexAttributeDescriptionCount = 0;
-		vertexInputInfo.pVertexAttributeDescriptions    = nullptr;
-		vertexInputInfo.vertexBindingDescriptionCount   = 0;
-		vertexInputInfo.pVertexBindingDescriptions      = nullptr;
+		vertexInputInfo.sType	= VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		vertexInputInfo.flags	= 0;
+		vertexInputInfo.pNext	= nullptr;
+
+		TArray<VkVertexInputBindingDescription> bindingDescriptors;
+		TArray<VkVertexInputAttributeDescription> attributeDescriptors;
+		bindingDescriptors.reserve(pDesc->VertexInputBindingCount);
+
+		if (pDesc->VertexInputBindingCount > 0)
+		{
+			for (uint32 b = 0; b < pDesc->VertexInputBindingCount; b++)
+			{
+				const VertexInputBindingDesc* pInputBindingDesc = &pDesc->pVertexInputBindings[b];
+
+				VkVertexInputBindingDescription vkInputBindingDesc = {};
+				vkInputBindingDesc.binding		= pInputBindingDesc->Binding;
+				vkInputBindingDesc.stride		= pInputBindingDesc->Stride;
+				vkInputBindingDesc.inputRate	= ConvertVertexInputRate(pInputBindingDesc->InputRate);
+				bindingDescriptors.push_back(vkInputBindingDesc);
+
+				for (uint32 a = 0; a < pInputBindingDesc->AttributeCount; a++)
+				{
+					const VertexInputAttributeDesc* pInputAttributeDesc = &pInputBindingDesc->pAttributes[a];
+
+					VkVertexInputAttributeDescription vkInputAttributeDesc = {};
+					vkInputAttributeDesc.location	= pInputAttributeDesc->Location;
+					vkInputAttributeDesc.binding	= pInputBindingDesc->Binding;
+					vkInputAttributeDesc.format		= ConvertFormat(pInputAttributeDesc->Format);
+					vkInputAttributeDesc.offset		= pInputAttributeDesc->Offset;
+					attributeDescriptors.push_back(vkInputAttributeDesc);
+				}
+			}
+
+			vertexInputInfo.vertexAttributeDescriptionCount = (uint32)attributeDescriptors.size();
+			vertexInputInfo.pVertexAttributeDescriptions    = attributeDescriptors.data();
+			vertexInputInfo.vertexBindingDescriptionCount   = (uint32)bindingDescriptors.size();
+			vertexInputInfo.pVertexBindingDescriptions      = bindingDescriptors.data();
+		}
+		else
+		{
+			vertexInputInfo.vertexAttributeDescriptionCount = 0;
+			vertexInputInfo.pVertexAttributeDescriptions    = nullptr;
+			vertexInputInfo.vertexBindingDescriptionCount   = 0;
+			vertexInputInfo.pVertexBindingDescriptions      = nullptr;
+		}
 
 		VkPipelineViewportStateCreateInfo viewportState = {};
 		viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -136,6 +174,12 @@ namespace LambdaEngine
 			VkPipelineColorBlendAttachmentState blendAttachment = {};
 			blendAttachment.blendEnable			= pBlendAttachmentState->BlendEnabled ? VK_TRUE : VK_FALSE;
 			blendAttachment.colorWriteMask		= ConvertColorComponentMask(pBlendAttachmentState->ColorComponentsMask);
+			blendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+			blendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+			blendAttachment.colorBlendOp		= VK_BLEND_OP_ADD;
+			blendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+			blendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+			blendAttachment.alphaBlendOp		= VK_BLEND_OP_ADD;
 
 			m_pColorBlendAttachmentStates[i] = blendAttachment;
 		}

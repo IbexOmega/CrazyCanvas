@@ -6,6 +6,7 @@
 
 struct SRayPayload
 {
+	uint AllowPrints;
 	vec3 Color;
 };
 
@@ -76,6 +77,7 @@ void main()
 	float Tmax              = 10000.0f;
     const int payload       = 0;
 
+	s_RayPayload.AllowPrints = pixelCoords == ivec2(0) ? 1 : 0;
 	s_RayPayload.Color = vec3(0.0f, 0.0f, 1.0f);
     traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
 

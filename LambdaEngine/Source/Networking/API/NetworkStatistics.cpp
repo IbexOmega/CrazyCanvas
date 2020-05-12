@@ -139,6 +139,11 @@ namespace LambdaEngine
 		m_LastReceivedReliableUID++;
 	}
 
+	void NetworkStatistics::RegisterPacketLoss()
+	{
+		m_PacketsLost++;
+	}
+
 	void NetworkStatistics::SetLastReceivedSequenceNr(uint32 sequence)
 	{
 		m_LastReceivedSequenceNr = sequence;

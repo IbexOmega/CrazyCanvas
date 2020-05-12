@@ -13,12 +13,12 @@ namespace LambdaEngine
 
 	struct ShaderDesc
 	{
-		const char* pName				= "";
-		const char* pSource				= "";
-		uint32 SourceSize				= 0;
-		const char* pEntryPoint			= "main";
-		FShaderStageFlags Stage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-		EShaderLang Lang				= EShaderLang::NONE;
+		const char*			pName			= "";
+		const char*			pSource			= "";
+		uint32				SourceSize		= 0;
+		const char*			pEntryPoint		= "main";
+		FShaderStageFlags	Stage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		EShaderLang			Lang			= EShaderLang::NONE;
 
 		ShaderConstant* pConstants		= nullptr;
 		uint32 ShaderConstantCount		= 0;

@@ -90,9 +90,14 @@ namespace LambdaEngine
 		return m_Accepting;
 	}
 
-	void ServerUDP::SetSimulatePacketLoss(float lossPercentage)
+	void ServerUDP::SetSimulateReceivingPacketLoss(float32 lossRatio)
 	{
-		m_PacketLoss = lossPercentage;
+		m_Transciver.SetSimulateReceivingPacketLoss(lossRatio);
+	}
+
+	void ServerUDP::SetSimulateTransmittingPacketLoss(float32 lossRatio)
+	{
+		m_Transciver.SetSimulateTransmittingPacketLoss(lossRatio);
 	}
 
 	bool ServerUDP::OnThreadsStarted()
@@ -241,6 +246,16 @@ namespace LambdaEngine
 		client->SendPackets(&m_Transciver);
 	}
 
+	void ServerUDP::Tick(Timestamp delta)
+	{
+		std::scoped_lock<SpinLock> lock(m_LockClients);
+		for (auto& pair : m_Clients)
+		{
+			pair.second->Tick(delta);
+		}
+		Flush();
+	}
+
 	ServerUDP* ServerUDP::Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetsPerClient, uint8 maximumTries)
 	{
 		return DBG_NEW ServerUDP(pHandler, maxClients, packetsPerClient, maximumTries);
@@ -255,7 +270,7 @@ namespace LambdaEngine
 			std::scoped_lock<SpinLock> lock(s_Lock);
 			for (ServerUDP* server : s_Servers)
 			{
-				server->Flush();
+				server->Tick(timestamp);
 			}
 		}
 	}

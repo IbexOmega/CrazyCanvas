@@ -26,10 +26,13 @@
 Server::Server()
 {
 	using namespace LambdaEngine;
+	PlatformApplication::Get()->AddEventHandler(this);
+
+	PlatformApplication::Get()->AddEventHandler(this);
 
 	m_pServer = ServerUDP::Create(this, 100, 4096, 10);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
-	//m_pServer->SetSimulatePacketLoss(0.9f);
+	m_pServer->SetSimulateReceivingPacketLoss(0.1f);
 }
 
 Server::~Server()
@@ -59,16 +62,6 @@ void Server::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepe
 		m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
 }
 
-void Server::KeyReleased(LambdaEngine::EKey key)
-{
-	UNREFERENCED_VARIABLE(key);
-}
-
-void Server::KeyTyped(uint32 character)
-{
-	UNREFERENCED_VARIABLE(character);
-}
-
 void Server::UpdateTitle()
 {
 	using namespace LambdaEngine;
@@ -91,7 +84,6 @@ namespace LambdaEngine
     Game* CreateGame()
     {
 		Server* pSandbox = DBG_NEW Server();
-        Input::AddKeyboardHandler(pSandbox);
         
         return pSandbox;
     }

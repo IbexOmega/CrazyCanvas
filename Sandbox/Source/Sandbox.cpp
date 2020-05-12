@@ -9,6 +9,7 @@
 #include "Resources/ResourceManager.h"
 
 #include "Rendering/RenderSystem.h"
+#include "Rendering/ImGuiRenderer.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraphDescriptionParser.h"
@@ -31,6 +32,8 @@
 
 #include "Threading/API/Thread.h"
 
+#include <imgui.h>
+
 constexpr const uint32 BACK_BUFFER_COUNT = 3;
 #ifdef LAMBDA_PLATFORM_MACOS
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
@@ -45,7 +48,8 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
-    PlatformApplication::Get()->AddEventHandler(this);
+    
+	PlatformApplication::Get()->AddEventHandler(this);
     
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
@@ -85,10 +89,12 @@ Sandbox::Sandbox()
 
 	m_pCamera = DBG_NEW Camera();
 
+	IWindow* pWindow = PlatformApplication::Get()->GetMainWindow();
+
 	CameraDesc cameraDesc = {};
 	cameraDesc.FOVDegrees	= 90.0f;
-	cameraDesc.Width		= 1440.0f;
-	cameraDesc.Height		= 900.0f;
+	cameraDesc.Width		= pWindow->GetWidth();
+	cameraDesc.Height		= pWindow->GetHeight();
 	cameraDesc.NearPlane	= 0.001f;
 	cameraDesc.FarPlane		= 1000.0f;
 
@@ -522,8 +528,15 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	AudioSystem::GetDevice()->UpdateAudioListener(m_AudioListenerIndex, &listenerDesc);
 
 	m_pScene->UpdateCamera(m_pCamera);
-		
-	m_pRenderer->Render();
+
+	ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("Test Window", NULL))
+	{
+		ImGui::Button("Test Button");
+	}
+	ImGui::End();
+
+	m_pRenderer->Render(delta);
 }
 
 void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
@@ -746,8 +759,9 @@ bool Sandbox::InitRendererForDeferred()
 	clock.Tick();
 	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
 
-	uint32 renderWidth	= PlatformApplication::Get()->GetMainWindow()->GetWidth();
-	uint32 renderHeight = PlatformApplication::Get()->GetMainWindow()->GetHeight();
+	IWindow* pWindow	= PlatformApplication::Get()->GetMainWindow();
+	uint32 renderWidth	= pWindow->GetWidth();
+	uint32 renderHeight = pWindow->GetHeight();
 	
 	{
 		RenderStageParameters geometryRenderStageParameters = {};
@@ -1177,11 +1191,12 @@ bool Sandbox::InitRendererForDeferred()
 
 	RendererDesc rendererDesc = {};
 	rendererDesc.pName				= "Renderer";
+	rendererDesc.Debug				= true;
 	rendererDesc.pRenderGraph		= m_pRenderGraph;
 	rendererDesc.pWindow			= PlatformApplication::Get()->GetMainWindow();
 	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
 	
-	m_pRenderer->Init(rendererDesc);
+	m_pRenderer->Init(&rendererDesc);
 
 	m_pRenderGraph->Update();
 
@@ -1527,7 +1542,7 @@ bool Sandbox::InitRendererForVisBuf()
 	rendererDesc.pWindow			= PlatformApplication::Get()->GetMainWindow();
 	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
 	
-	m_pRenderer->Init(rendererDesc);
+	m_pRenderer->Init(&rendererDesc);
 
 	return true;
 }
