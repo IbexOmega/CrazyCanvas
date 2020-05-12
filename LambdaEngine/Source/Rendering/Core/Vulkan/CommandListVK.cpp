@@ -619,10 +619,10 @@ namespace LambdaEngine
 		vkCmdPushConstants(m_CommandList, pVkPipelineLayout->GetPipelineLayout(), shaderStageMaskVk, offset, size, pConstants);
 	}
 
-	void CommandListVK::BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset)
+	void CommandListVK::BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset, EIndexType indexType)
 	{
         const BufferVK* pIndexBufferVK = reinterpret_cast<const BufferVK*>(pIndexBuffer);
-        vkCmdBindIndexBuffer(m_CommandList, pIndexBufferVK->GetBuffer(), offset, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(m_CommandList, pIndexBufferVK->GetBuffer(), offset, ConvertIndexType(indexType));
 	}
 
 	void CommandListVK::BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount)

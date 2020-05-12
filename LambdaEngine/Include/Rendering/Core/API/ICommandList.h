@@ -72,7 +72,7 @@ namespace LambdaEngine
 		const ITextureView*			pDepthStencil		= nullptr;
 		uint32						Width				= 0;
 		uint32						Height				= 0;
-		uint32						Flags				= 0;
+		uint32						Flags				= FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_NONE;
 		const ClearColorDesc*		pClearColors		= nullptr;
 		uint32						ClearColorCount		= 0;
 		struct
@@ -182,7 +182,7 @@ namespace LambdaEngine
 		
 		virtual void SetConstantRange(const IPipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) = 0;
 
-		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset) = 0;
+		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset, EIndexType indexType) = 0;
 		virtual void BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) = 0;
 
 		virtual void BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)	= 0;

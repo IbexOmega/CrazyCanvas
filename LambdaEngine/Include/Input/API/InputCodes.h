@@ -159,8 +159,8 @@ namespace LambdaEngine
 		MOUSE_BUTTON_UNKNOWN    = 0,
 
 		MOUSE_BUTTON_LEFT       = 1,
-		MOUSE_BUTTON_MIDDLE     = 2,
-		MOUSE_BUTTON_RIGHT      = 3,
+		MOUSE_BUTTON_RIGHT      = 2,
+		MOUSE_BUTTON_MIDDLE     = 3,
 		MOUSE_BUTTON_BACK       = 4,
 		MOUSE_BUTTON_FORWARD    = 5,
 

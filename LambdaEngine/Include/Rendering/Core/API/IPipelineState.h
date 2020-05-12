@@ -28,27 +28,46 @@ namespace LambdaEngine
 		uint32 ColorComponentsMask		= FColorComponentFlags::COLOR_COMPONENT_FLAG_NONE;
 	};
 
+	struct VertexInputAttributeDesc
+	{
+		uint32		Location	=	0;
+		uint32		Offset		=	0;
+		EFormat		Format		=	EFormat::NONE;
+	};
+
+	struct VertexInputBindingDesc
+	{
+		uint32						Binding			= 0;
+		uint32						Stride			= 0;
+		EVertexInputRate			InputRate		= EVertexInputRate::NONE;
+		VertexInputAttributeDesc*	pAttributes		= nullptr;
+		uint32						AttributeCount	= 0;
+	};
+
 	struct GraphicsPipelineStateDesc
 	{
-		const char* pName									= "";
-		const IRenderPass* pRenderPass						= nullptr;
-		const IPipelineLayout* pPipelineLayout				= nullptr;
+		const char*					pName						= "";
+		const IRenderPass*			pRenderPass					= nullptr;
+		const IPipelineLayout*		pPipelineLayout				= nullptr;
+
+		VertexInputBindingDesc*		pVertexInputBindings		= nullptr;
+		uint32						VertexInputBindingCount		= 0;
 		
-		BlendAttachmentState pBlendAttachmentStates[MAX_COLOR_ATTACHMENTS];
-		uint32 BlendAttachmentStateCount					= 0;
+		BlendAttachmentState		pBlendAttachmentStates		[MAX_COLOR_ATTACHMENTS];
+		uint32						BlendAttachmentStateCount	= 0;
 
 		//New Style
-		const IShader* pTaskShader							= nullptr;
-		const IShader* pMeshShader							= nullptr;
+		const IShader*				pTaskShader					= nullptr;
+		const IShader*				pMeshShader					= nullptr;
 
 		//Old Style
-		const IShader* pVertexShader						= nullptr;
-		const IShader* pGeometryShader						= nullptr;
-		const IShader* pHullShader							= nullptr;
-		const IShader* pDomainShader						= nullptr;
+		const IShader*				pVertexShader				= nullptr;
+		const IShader*				pGeometryShader				= nullptr;
+		const IShader*				pHullShader					= nullptr;
+		const IShader*				pDomainShader				= nullptr;
 
 		//Both
-		const IShader* pPixelShader							= nullptr;
+		const IShader*				pPixelShader				= nullptr;
 	};
 
 	struct ComputePipelineStateDesc
