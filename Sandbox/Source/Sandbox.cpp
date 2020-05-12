@@ -245,36 +245,50 @@ void Sandbox::InitTestAudio()
 
 void Sandbox::FocusChanged(LambdaEngine::IWindow* pWindow, bool hasFocus)
 {
+	UNREFERENCED_VARIABLE(pWindow);
+	
     LOG_MESSAGE("Window Moved: hasFocus=%s", hasFocus ? "true" : "false");
 }
 
 void Sandbox::WindowMoved(LambdaEngine::IWindow* pWindow, int16 x, int16 y)
 {
+	UNREFERENCED_VARIABLE(pWindow);
+	
     LOG_MESSAGE("Window Moved: x=%d, y=%d", x, y);
 }
 
 void Sandbox::WindowResized(LambdaEngine::IWindow* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)
 {
+	UNREFERENCED_VARIABLE(pWindow);
+	
     LOG_MESSAGE("Window Resized: width=%u, height=%u, type=%u", width, height, uint32(type));
 }
 
 void Sandbox::WindowClosed(LambdaEngine::IWindow* pWindow)
 {
+	UNREFERENCED_VARIABLE(pWindow);
+	
     LOG_MESSAGE("Window closed");
 }
 
 void Sandbox::MouseEntered(LambdaEngine::IWindow* pWindow)
 {
+	UNREFERENCED_VARIABLE(pWindow);
+	
     LOG_MESSAGE("Mouse Entered");
 }
 
 void Sandbox::MouseLeft(LambdaEngine::IWindow* pWindow)
 {
+	UNREFERENCED_VARIABLE(pWindow);
+	
     LOG_MESSAGE("Mouse Left");
 }
 
 void Sandbox::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
+	UNREFERENCED_VARIABLE(modifierMask);
+	
     using namespace LambdaEngine;
     
     LOG_MESSAGE("Key Pressed: %s, isRepeat=%s", KeyToString(key), isRepeat ? "true" : "false");

@@ -16,6 +16,7 @@ namespace LambdaEngine
 {
 	class NetworkPacket;
 	class IPacketListener;
+	class PacketTransceiver;
 
 	class LAMBDA_API PacketManager
 	{

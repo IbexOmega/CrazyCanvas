@@ -202,7 +202,7 @@ namespace LambdaEngine
 
 		for (uint32 ack : acks)
 		{
-			auto& iterator = m_Bundles.find(ack);
+			auto iterator = m_Bundles.find(ack);
 			if (iterator != m_Bundles.end())
 			{
 				Bundle& bundle = iterator->second;
@@ -221,7 +221,7 @@ namespace LambdaEngine
 
 		for (uint32 UID : ackedReliableUIDs)
 		{
-			auto& iterator = m_MessagesWaitingForAck.find(UID);
+			auto iterator = m_MessagesWaitingForAck.find(UID);
 			if (iterator != m_MessagesWaitingForAck.end())
 			{
 				ackedReliableMessages.push_back(iterator->second);
