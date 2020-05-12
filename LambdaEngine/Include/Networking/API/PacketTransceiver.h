@@ -26,8 +26,10 @@ namespace LambdaEngine
 
 		void SetSocket(ISocketUDP* pSocket);
 
-	//private:
-	public:
+		void SetSimulateReceivingPacketLoss(float32 lossRatio);
+		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
+
+	private:
 		static bool ValidateHeaderSalt(PacketTranscoder::Header* header, NetworkStatistics* pStatistics);
 		static void ProcessSequence(uint32 sequence, NetworkStatistics* pStatistics);
 		static void ProcessAcks(uint32 ack, uint32 ackBits, NetworkStatistics* pStatistics, std::vector<uint32>& newAcks);
@@ -35,6 +37,8 @@ namespace LambdaEngine
 	private:
 		ISocketUDP* m_pSocket;
 		int32 m_BytesReceived;
+		float32 m_ReceivingLossRatio;
+		float32 m_TransmittingLossRatio;
 		char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
 		char m_pReceiveBuffer[UINT16_MAX];
 	};

@@ -55,13 +55,13 @@ void Client::OnConnectedUDP(LambdaEngine::IClientUDP* pClient)
 
     LOG_MESSAGE("OnConnectedUDP()");
 
-    for (int i = 0; i < 1; i++)
+    /*for (int i = 0; i < 1; i++)
     {
         NetworkPacket* pPacket = m_pClient->GetFreePacket(1);
         BinaryEncoder encoder(pPacket);
         encoder.WriteInt32(i);
         m_pClient->SendReliable(pPacket, this);
-    }
+    }*/
 }
 
 void Client::OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient)
@@ -80,7 +80,7 @@ void Client::OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine
 {
     UNREFERENCED_VARIABLE(pClient);
     UNREFERENCED_VARIABLE(pPacket);
-    LOG_MESSAGE("OnPacketReceivedUDP()");
+    LOG_MESSAGE("OnPacketReceivedUDP(%s)", pPacket->ToString().c_str());
 }
 
 void Client::OnServerFullUDP(LambdaEngine::IClientUDP* pClient)
@@ -92,7 +92,7 @@ void Client::OnServerFullUDP(LambdaEngine::IClientUDP* pClient)
 void Client::OnPacketDelivered(LambdaEngine::NetworkPacket* pPacket)
 {
     UNREFERENCED_VARIABLE(pPacket);
-    LOG_INFO("OnPacketDelivered()");
+    LOG_INFO("OnPacketDelivered(%s)", pPacket->ToString().c_str());
 }
 
 void Client::OnPacketResent(LambdaEngine::NetworkPacket* pPacket, uint8 tries)

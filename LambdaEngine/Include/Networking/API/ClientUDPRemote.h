@@ -42,6 +42,7 @@ namespace LambdaEngine
 		void OnDataReceived(PacketTransceiver* pTransciver);
 		void SendPackets(PacketTransceiver* pTransciver);
 		bool HandleReceivedPacket(NetworkPacket* pPacket);
+		void Tick(Timestamp delta);
 
 	private:
 		ServerUDP* m_pServer;

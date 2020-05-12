@@ -29,7 +29,8 @@ namespace LambdaEngine
 		virtual void SetAcceptingConnections(bool accepting) override;
 		virtual bool IsAcceptingConnections() override;
 
-		void SetSimulatePacketLoss(float lossPercentage);
+		void SetSimulateReceivingPacketLoss(float32 lossRatio);
+		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
 
 	protected:
 		ServerUDP(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPerClient, uint8 maximumTries);
@@ -49,6 +50,7 @@ namespace LambdaEngine
 		void SendDisconnect(ClientUDPRemote* client);
 		void SendServerFull(ClientUDPRemote* client);
 		void SendServerNotAccepting(ClientUDPRemote* client);
+		void Tick(Timestamp delta);
 
 	public:
 		static ServerUDP* Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packets, uint8 maximumTries);
