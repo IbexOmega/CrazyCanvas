@@ -35,7 +35,6 @@ namespace LambdaEngine
 		void RemoveWin32MessageHandler(IWin32MessageHandler* pHandler);
 
 		void StoreMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
-		void ProcessMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 
 		/*
 		* Returns a Win32Window from a native windowhandle
@@ -61,6 +60,9 @@ namespace LambdaEngine
 
 	private:
 		void AddWindow(Win32Window* pWindow);
+
+		void ProcessMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
+		void ProcessRawInput(WPARAM wParam, LPARAM lParam);
 
 	public:
 		static bool PreInit(HINSTANCE hInstance);

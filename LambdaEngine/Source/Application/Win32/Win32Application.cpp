@@ -321,6 +321,12 @@ namespace LambdaEngine
 				break;
 			}
 
+			case WM_INPUT:
+			{
+				ProcessRawInput(wParam, lParam);
+				break;
+			}
+
 			case WM_SIZE:
 			{
 				EResizeType resizeType = EResizeType::RESIZE_TYPE_NONE;
@@ -388,6 +394,49 @@ namespace LambdaEngine
 		{
 			pHandler->MessageProc(hWnd, uMessage, wParam, lParam);
 		}
+	}
+
+	void Win32Application::ProcessRawInput(WPARAM wParam, LPARAM lParam)
+	{
+		UINT	dwSize	= 0;
+		LPBYTE	pBytes = nullptr;
+		::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
+		if (pBytes == NULL)
+		{
+			LOG_ERROR("[Win32Application]: Failed to read raw input data");
+			return;
+		}
+		else
+		{
+			pBytes = DBG_NEW BYTE[dwSize];
+		}
+
+		if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, pBytes, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
+		{
+			LOG_ERROR("[Win32Application]: GetRawInputData does not return correct size");
+			return;
+		}
+
+		RAWINPUT* pRaw = (RAWINPUT*)pBytes;
+		if (pRaw->header.dwType == RIM_TYPEKEYBOARD)
+		{
+			pRaw->data.keyboard.VKey;
+
+			const uint32	modifierMask = Win32InputCodeTable::GetModifierMask();
+			EKey			keyCode = Win32InputCodeTable::GetKeyFromScanCode(pRaw->data.keyboard.MakeCode);
+			//bool			isRepeat = (lParam & REPEAT_KEY_MASK);
+
+			for (IEventHandler* pEventHandler : m_EventHandlers)
+			{
+				pEventHandler->KeyPressed(keyCode, modifierMask, false);
+			}
+		}
+		else if (pRaw->header.dwType == RIM_TYPEMOUSE)
+		{
+
+		}
+
+		SAFEDELETE_ARRAY(pBytes);
 	}
 
 	Win32Window* Win32Application::GetWindowFromHandle(HWND hWnd) const
