@@ -36,8 +36,6 @@ namespace LambdaEngine
 
 		void StoreMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 
-		void ProcessMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
-
 		/*
 		* Returns a Win32Window from a native windowhandle
 		*	hWnd	- Native window handle
@@ -47,19 +45,24 @@ namespace LambdaEngine
 		Win32Window* 	GetWindowFromHandle(HWND hWnd) const;
 		HINSTANCE 		GetInstanceHandle();
 
-		// Application
-		virtual void AddWindowHandler(IWindowHandler* pWindowHandler) 		override final;
-		virtual void RemoveWindowHandler(IWindowHandler* pWindowHandler)	override final;
+		// Application interface
+		virtual void AddEventHandler(IEventHandler* pEventHandler)		override final;
+		virtual void RemoveEventHandler(IEventHandler* pEventHandler)	override final;
         
 		virtual void ProcessStoredEvents() override final;
 
 		virtual void MakeMainWindow(IWindow* pMainWindow) override final;
+
+		virtual void SetInputMode(EInputMode inputMode) override final;
 
         virtual IWindow* GetForegroundWindow()   const override final;
         virtual IWindow* GetMainWindow()         const override final;
 
 	private:
 		void AddWindow(Win32Window* pWindow);
+
+		void ProcessMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
+		void ProcessRawInput(WPARAM wParam, LPARAM lParam);
 
 	public:
 		static bool PreInit(HINSTANCE hInstance);
@@ -68,8 +71,11 @@ namespace LambdaEngine
 		static bool Tick();
 		static bool ProcessMessages();
 
-		static IWindow*			CreateWindow(const char* pTitle, uint32 width, uint32 height);
-		static IInputDevice* 	CreateInputDevice(EInputMode inputType);
+		static bool RegisterWindowClass();
+		static bool RegisterRawInputDevices();
+		static bool UnregisterRawInputDevices();
+
+		static IWindow*	CreateWindow(const char* pTitle, uint32 width, uint32 height);
 
 		static void Terminate();
 
@@ -84,11 +90,13 @@ namespace LambdaEngine
 	private:
 		Win32Window*	m_pMainWindow		= nullptr;
 		HINSTANCE		m_hInstance 		= 0;
-		bool			m_IsTrackingMouse	= false;
+
+		EInputMode	m_InputMode			= EInputMode::INPUT_NONE;
+		bool		m_IsTrackingMouse	= false;
 		
 		TArray<Win32Window*>			m_Windows;
 		TArray<Win32Message> 			m_StoredMessages;
-		TArray<IWindowHandler*> 		m_WindowHandlers;
+		TArray<IEventHandler*> 			m_EventHandlers;
 		TArray<IWin32MessageHandler*>	m_MessageHandlers;
 
 	private:
