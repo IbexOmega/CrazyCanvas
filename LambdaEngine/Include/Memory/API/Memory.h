@@ -1,4 +1,5 @@
 #pragma once
+#include "LambdaEngine.h"
 
 #if defined(LAMBDA_DEBUG) && defined(LAMBDA_VISUAL_STUDIO)
     #include <stdlib.h>
@@ -10,3 +11,17 @@
     #define DBG_NEW                 new
     #define SET_DEBUG_FLAGS(...)    (void)0
 #endif
+
+namespace LambdaEngine
+{
+	class Memory
+	{
+	public:
+		DECL_STATIC_CLASS(Memory);
+		
+		static void* Malloc(uint64 sizeInBytes);
+		static void* Malloc(uint64 sizeInBytes, uint64 alignment);
+		
+		static void Free(void* pPtr);
+	};
+}
