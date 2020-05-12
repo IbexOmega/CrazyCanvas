@@ -304,6 +304,17 @@ void Sandbox::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRep
     {
         PlatformApplication::Get()->GetMainWindow()->ToggleFullscreen();
     }
+	if (key == EKey::KEY_5)
+	{
+		if (PlatformApplication::Get()->GetInputMode() == EInputMode::INPUT_MODE_STANDARD)
+		{
+			PlatformApplication::Get()->SetInputMode(EInputMode::INPUT_MODE_RAW);
+		}
+		else
+		{
+			PlatformApplication::Get()->SetInputMode(EInputMode::INPUT_MODE_STANDARD);
+		}
+	}
     
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
