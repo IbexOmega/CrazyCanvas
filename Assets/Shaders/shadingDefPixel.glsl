@@ -3,7 +3,7 @@
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_debug_printf : enable
 
-#include "helpers.glsl"
+#include "Helpers.glsl"
 
 struct SLightsBuffer
 {
@@ -54,7 +54,7 @@ void main()
     vec3 albedo         = sampledAlbedoAO.rgb;
     vec3 normal         = CalculateNormal(sampledNormalMetallicRoughness);
     float ao            = sampledAlbedoAO.a;
-    float metallic      = sampledNormalMetallicRoughness.b;
+    float metallic      = sampledNormalMetallicRoughness.b * 0.5f + 0.5f;
     float roughness     = abs(sampledNormalMetallicRoughness.a);
 
     SLightsBuffer lightsBuffer                  = u_LightsBuffer.val;

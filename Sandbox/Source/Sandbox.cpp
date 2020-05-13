@@ -504,10 +504,102 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 	m_pScene->UpdateCamera(m_pCamera);
 
+	ImGui::ShowDemoWindow();
+
 	ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("Test Window", NULL))
 	{
 		ImGui::Button("Test Button");
+
+		uint32 modFrameIndex = m_pRenderer->GetModFrameIndex();
+
+		ITextureView* const *	ppTextureViews		= nullptr;
+		uint32			textureViewCount		= 0;
+
+		static ImGuiTexture albedoTexture = {};
+		static ImGuiTexture normalTexture = {};
+
+		if (m_pRenderGraph->GetResourceTextureViews("GEOMETRY_ALBEDO_AO_BUFFER", &ppTextureViews, &textureViewCount))
+		{
+			ITextureView* pTextureView = ppTextureViews[modFrameIndex];
+			albedoTexture.pTextureView = pTextureView;
+
+			float32 aspectRatio = (float32)pTextureView->GetDesc().pTexture->GetDesc().Width / (float32)pTextureView->GetDesc().pTexture->GetDesc().Height;
+
+			ImGui::Image(&albedoTexture, ImVec2(aspectRatio * 256.0f, 256.0f));
+		}
+
+		if (m_pRenderGraph->GetResourceTextureViews("GEOMETRY_NORM_MET_ROUGH_BUFFER", &ppTextureViews, &textureViewCount))
+		{
+			ITextureView* pTextureView = ppTextureViews[modFrameIndex];
+
+			normalTexture.pTextureView		= pTextureView;
+
+			const char* items[] = { "ALL", "Normal XY", "Metallic", "Roughness" };
+			static int currentItem = 0;
+			ImGui::ListBox("Rendered Data", &currentItem, items, IM_ARRAYSIZE(items), 4);
+
+			if (currentItem == 0)
+			{
+				normalTexture.ReservedIncludeMask = 0x00008421;
+
+				normalTexture.ChannelMult[0] = 0.5f;
+				normalTexture.ChannelMult[1] = 0.5f;
+				normalTexture.ChannelMult[2] = 0.5f;
+				normalTexture.ChannelMult[3] = 0.5f;
+
+				normalTexture.ChannelAdd[0] = 0.5f;
+				normalTexture.ChannelAdd[1] = 0.5f;
+				normalTexture.ChannelAdd[2] = 0.5f;
+				normalTexture.ChannelAdd[3] = 0.5f;
+			}
+			else if (currentItem == 1)
+			{
+				normalTexture.ReservedIncludeMask = 0x00008400;
+
+				normalTexture.ChannelMult[0] = 0.5f;
+				normalTexture.ChannelMult[1] = 0.5f;
+				normalTexture.ChannelMult[2] = 0.0f;
+				normalTexture.ChannelMult[3] = 0.0f;
+
+				normalTexture.ChannelAdd[0] = 0.5f;
+				normalTexture.ChannelAdd[1] = 0.5f;
+				normalTexture.ChannelAdd[2] = 0.0f;
+				normalTexture.ChannelAdd[3] = 1.0f;
+			}
+			else if (currentItem == 2)
+			{
+				normalTexture.ReservedIncludeMask = 0x00002220;
+
+				normalTexture.ChannelMult[0] = 0.5f;
+				normalTexture.ChannelMult[1] = 0.5f;
+				normalTexture.ChannelMult[2] = 0.5f;
+				normalTexture.ChannelMult[3] = 0.0f;
+
+				normalTexture.ChannelAdd[0] = 0.5f;
+				normalTexture.ChannelAdd[1] = 0.5f;
+				normalTexture.ChannelAdd[2] = 0.5f;
+				normalTexture.ChannelAdd[3] = 1.0f;
+			}
+			else if (currentItem == 3)
+			{
+				normalTexture.ReservedIncludeMask = 0x00001110;
+
+				normalTexture.ChannelMult[0] = 0.5f;
+				normalTexture.ChannelMult[1] = 0.5f;
+				normalTexture.ChannelMult[2] = 0.5f;
+				normalTexture.ChannelMult[3] = 0.0f;
+
+				normalTexture.ChannelAdd[0] = 0.5f;
+				normalTexture.ChannelAdd[1] = 0.5f;
+				normalTexture.ChannelAdd[2] = 0.5f;
+				normalTexture.ChannelAdd[3] = 1.0f;
+			}
+
+			float32 aspectRatio = (float32)pTextureView->GetDesc().pTexture->GetDesc().Width / (float32)pTextureView->GetDesc().pTexture->GetDesc().Height;
+
+			ImGui::Image(&normalTexture, ImVec2(aspectRatio * 256.0f, 256.0f));
+		}
 	}
 	ImGui::End();
 
@@ -533,17 +625,17 @@ bool Sandbox::InitRendererForDeferred()
 {
 	using namespace LambdaEngine;
 
-	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryDefVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryDefPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/fullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/shadingDefPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingDefPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	GUID_Lambda raygenShaderGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/raygen.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda closestHitShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/closestHit.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
-	GUID_Lambda missShaderGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/miss.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda raygenShaderGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Raygen.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda closestHitShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ClosestHit.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
+	GUID_Lambda missShaderGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Miss.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
 
-	GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/postProcess.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
+	GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/PostProcess.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
 
 	//GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
 	//GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
@@ -1182,11 +1274,11 @@ bool Sandbox::InitRendererForVisBuf()
 {
 	using namespace LambdaEngine;
 
-	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryVisVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryVisPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryVisVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryVisPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/fullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/shadingVisPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingVisPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
 	std::vector<RenderStageDesc> renderStages;
 

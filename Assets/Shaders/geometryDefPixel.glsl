@@ -2,7 +2,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_GOOGLE_include_directive : enable
 
-#include "helpers.glsl"
+#include "Helpers.glsl"
 
 struct SMaterialParameters
 {
@@ -57,7 +57,7 @@ void main()
     vec3 storedAlbedo       = materialParameters.Albedo.rgb * sampledAlbedo;
     float storedAO          = materialParameters.Ambient * sampledAO;
 	vec2 storedNormal 	    = sampledNormal.xy;
-    float storedMetallic    = materialParameters.Metallic * sampledMetallic;
+    float storedMetallic    = materialParameters.Metallic * sampledMetallic * 2.0f - 1.0f; //Converting for better precision
 	float storedRoughness    = max(materialParameters.Roughness * sampledRoughness, 0.00001f);
 	if (sampledNormal.z < 0)
 	{

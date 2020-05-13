@@ -264,6 +264,11 @@ namespace LambdaEngine
 		void Update();
 		void Render(uint64 frameIndex, uint32 backBufferIndex);
 
+		bool GetResourceTextures(const char* pResourceName, ITexture* const ** pppTexture, uint32* pTextureView)					const;
+		bool GetResourceTextureViews(const char* pResourceName, ITextureView* const ** pppTextureViews, uint32* pTextureViewCount)		const;
+		bool GetResourceBuffers(const char* pResourceName, IBuffer* const ** pppBuffers, uint32* pBufferCount)					const;
+		bool GetResourceAccelerationStructure(const char* pResourceName, IAccelerationStructure** ppAccelerationStructure)		const;
+
 	private:
 		bool CreateFence();
 		bool CreateDescriptorHeap();

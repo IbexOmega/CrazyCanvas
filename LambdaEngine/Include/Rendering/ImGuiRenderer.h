@@ -5,6 +5,8 @@
 
 #include "Time/API/Timestamp.h"
 
+#include "Containers/THashTable.h"
+
 namespace LambdaEngine
 {
 	class ICommandAllocator;
@@ -30,6 +32,14 @@ namespace LambdaEngine
 		uint32		BackBufferCount		= 0;
 		uint32		VertexBufferSize	= 0;
 		uint32		IndexBufferSize		= 0;
+	};
+
+	struct ImGuiTexture
+	{
+		ITextureView*	pTextureView		= nullptr;
+		float32			ChannelMult[4]		= { 1.0f, 1.0f, 1.0f, 1.0f };
+		float32			ChannelAdd[4]		= { 0.0f, 0.0f, 0.0f, 0.0f };
+		uint32			ReservedIncludeMask = 0x00008421; //0000 0000 0000 0000 1000 0100 0010 0001
 	};
 
 	class LAMBDA_API ImGuiRenderer : public EventHandler
@@ -69,7 +79,6 @@ namespace LambdaEngine
 		bool CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize);
 		bool CreateTextures();
 		bool CreateSamplers();
-		bool CreateShaders();
 		bool CreateRenderPass();
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSet();
@@ -85,15 +94,12 @@ namespace LambdaEngine
 
 		IDeviceAllocator*		m_pAllocator				= nullptr;
 
-		IPipelineState*			m_pPipelineState			= nullptr;
+		uint64					m_PipelineStateID			= 0;
 		IPipelineLayout*		m_pPipelineLayout			= nullptr;
 		IDescriptorHeap*		m_pDescriptorHeap			= nullptr;
 		IDescriptorSet*			m_pDescriptorSet			= nullptr;
 
 		IRenderPass*			m_pRenderPass				= nullptr;
-
-		IShader*				m_pVertexShader				= nullptr;
-		IShader*				m_pPixelShader				= nullptr;
 
 		IBuffer*				m_pVertexCopyBuffer			= nullptr;
 		IBuffer*				m_pIndexCopyBuffer			= nullptr;
@@ -104,5 +110,7 @@ namespace LambdaEngine
 		ITextureView*			m_pFontTextureView			= nullptr;
 
 		ISampler*				m_pSampler					= nullptr;
+
+		THashTable<ITextureView*, IDescriptorSet*>	m_TextureDescriptorSetMap;
 	};
 }

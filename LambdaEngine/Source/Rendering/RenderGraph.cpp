@@ -404,13 +404,11 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::Render(uint64 frameIndex, uint32 backBufferIndex)
+	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)
 	{
 		ZERO_MEMORY(m_ppExecutionStages, m_ExecutionStageCount * sizeof(ICommandList*));
 
 		uint32 currentExecutionStage = 0;
-
-		uint64 resourceIndex = frameIndex % 3;
 
 		if (m_SignalValue > 3)
 			m_pFence->Wait(m_SignalValue - 3, UINT64_MAX);
@@ -428,9 +426,9 @@ namespace LambdaEngine
 
 					switch (pPipelineState->GetType())
 					{
-					case EPipelineStateType::GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[resourceIndex],		pPipelineStage->ppGraphicsCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
-					case EPipelineStateType::COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
-					case EPipelineStateType::RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[modFrameIndex],		pPipelineStage->ppGraphicsCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[modFrameIndex],		pPipelineStage->ppComputeCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[modFrameIndex],		pPipelineStage->ppComputeCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
 					}
 
 					currentExecutionStage++;
@@ -441,10 +439,10 @@ namespace LambdaEngine
 
 					ExecuteSynchronizationStage(
 						pSynchronizationStage,
-						pPipelineStage->ppGraphicsCommandAllocators[resourceIndex],
-						pPipelineStage->ppGraphicsCommandLists[resourceIndex],
-						pPipelineStage->ppComputeCommandAllocators[resourceIndex],
-						pPipelineStage->ppComputeCommandLists[resourceIndex],
+						pPipelineStage->ppGraphicsCommandAllocators[modFrameIndex],
+						pPipelineStage->ppGraphicsCommandLists[modFrameIndex],
+						pPipelineStage->ppComputeCommandAllocators[modFrameIndex],
+						pPipelineStage->ppComputeCommandLists[modFrameIndex],
 						&m_ppExecutionStages[currentExecutionStage],
 						&m_ppExecutionStages[currentExecutionStage + 1],
 						backBufferIndex);
@@ -474,6 +472,61 @@ namespace LambdaEngine
 				m_SignalValue++;
 			}
 		}
+	}
+
+	bool RenderGraph::GetResourceTextures(const char* pResourceName, ITexture* const ** pppTexture, uint32* pTextureView) const
+	{
+		auto it = m_ResourceMap.find(pResourceName);
+
+		if (it != m_ResourceMap.end())
+		{
+			(*pppTexture)		= it->second.Texture.Textures.data();
+			(*pTextureView)		= (uint32)it->second.Texture.Textures.size();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool RenderGraph::GetResourceTextureViews(const char* pResourceName, ITextureView* const ** pppTextureViews, uint32* pTextureViewCount) const
+	{
+		auto it = m_ResourceMap.find(pResourceName);
+
+		if (it != m_ResourceMap.end())
+		{
+			(*pppTextureViews)		= it->second.Texture.TextureViews.data();
+			(*pTextureViewCount)	= (uint32)it->second.Texture.TextureViews.size();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool RenderGraph::GetResourceBuffers(const char* pResourceName, IBuffer* const ** pppBuffers, uint32* pBufferCount) const
+	{
+		auto it = m_ResourceMap.find(pResourceName);
+
+		if (it != m_ResourceMap.end())
+		{
+			(*pppBuffers)			= it->second.Buffer.Buffers.data();
+			(*pBufferCount)			= (uint32)it->second.Buffer.Buffers.size();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool RenderGraph::GetResourceAccelerationStructure(const char* pResourceName, IAccelerationStructure** ppAccelerationStructure) const
+	{
+		auto it = m_ResourceMap.find(pResourceName);
+
+		if (it != m_ResourceMap.end())
+		{
+			(*ppAccelerationStructure) = it->second.AccelerationStructure.pTLAS;
+			return true;
+		}
+
+		return false;
 	}
 
 	bool RenderGraph::CreateFence()

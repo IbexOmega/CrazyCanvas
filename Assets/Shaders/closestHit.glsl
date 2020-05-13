@@ -3,7 +3,7 @@
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_debug_printf : enable
 
-#include "helpers.glsl"
+#include "Helpers.glsl"
 
 struct SRayPayload
 {
