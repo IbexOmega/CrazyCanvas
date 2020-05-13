@@ -9,5 +9,5 @@ namespace LambdaEngine
 		
 		static void* 	VirtualAlloc(uint64 sizeInBytes) 	{ return nullptr; }
 		static bool		VirtualProtect(void* pMemory)		{ return false; }
-	}
+	};
 }

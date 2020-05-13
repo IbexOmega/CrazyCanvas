@@ -1,16 +1,16 @@
-#include "Memory/API/Memory.h"
+#include "Memory/API/MemoryAllocator.h"
 
 namespace LambdaEngine
 {
-	void* Memory::Malloc(uint64 sizeInBytes)
+	void* MemoryAllocator::Malloc(uint64 sizeInBytes)
 	{
 	}
 
-	void* Memory::Malloc(uint64 sizeInBytes, uint64 alignment)
+	void* MemoryAllocator::Malloc(uint64 sizeInBytes, uint64 alignment)
 	{
 	}
 
-	void Memory::Free(void* pPtr)
+	void MemoryAllocator::Free(void* pPtr)
 	{
 	}
 }

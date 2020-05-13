@@ -14,10 +14,10 @@
 
 namespace LambdaEngine
 {
-	class Memory
+	class MemoryAllocator
 	{
 	public:
-		DECL_STATIC_CLASS(Memory);
+		DECL_STATIC_CLASS(MemoryAllocator);
 		
 		static void* Malloc(uint64 sizeInBytes);
 		static void* Malloc(uint64 sizeInBytes, uint64 alignment);
