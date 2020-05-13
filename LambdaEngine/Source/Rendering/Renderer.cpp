@@ -49,6 +49,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(pDesc);
 		VALIDATE(pDesc->pWindow);
+		VALIDATE(pDesc->pRenderGraph);
 
 		m_pName				= pDesc->pName;
 		m_pRenderGraph		= pDesc->pRenderGraph;
@@ -181,9 +182,7 @@ namespace LambdaEngine
 
 			pCommandAllocator->Reset();
 			pCommandList->Begin(nullptr);
-
 			m_pImGuiRenderer->Render(pCommandList, m_ppBackBufferViews[m_BackBufferIndex], m_ModFrameIndex, m_BackBufferIndex);
-
 			pCommandList->End();
 
 			IFence* pFence;
