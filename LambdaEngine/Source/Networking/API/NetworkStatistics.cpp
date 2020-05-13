@@ -1,5 +1,7 @@
 #include "Networking/API/NetworkStatistics.h"
 
+#include "Engine/EngineLoop.h"
+
 #include "Math/Random.h"
 
 namespace LambdaEngine
@@ -44,7 +46,7 @@ namespace LambdaEngine
 		return m_PacketsLost;
 	}
 
-	float64 NetworkStatistics::GetPacketlossRate() const
+	float64 NetworkStatistics::GetPacketLossRate() const
 	{
 		return m_PacketsLost / (float64)m_PacketsSent;
 	}
@@ -99,6 +101,16 @@ namespace LambdaEngine
 		return m_LastReceivedReliableUID;
 	}
 
+	Timestamp NetworkStatistics::GetTimestapLastSent() const
+	{
+		return m_TimestampLastSent;
+	}
+
+	Timestamp NetworkStatistics::GetTimestapLastReceived() const
+	{
+		return m_TimestampLastReceived;
+	}
+
 	void NetworkStatistics::Reset()
 	{
 		m_Salt						= Random::UInt64();
@@ -117,10 +129,13 @@ namespace LambdaEngine
 		m_LastReceivedAckNr			= 0;
 		m_ReceivedAckBits			= 0;
 		m_LastReceivedReliableUID	= 0;
+		m_TimestampLastSent			= 0;
+		m_TimestampLastReceived		= 0;
 	}
 
 	uint32 NetworkStatistics::RegisterPacketSent()
 	{
+		m_TimestampLastSent = EngineLoop::GetTimeSinceStart();
 		return ++m_PacketsSent;
 	}
 
@@ -134,6 +149,13 @@ namespace LambdaEngine
 		return ++m_ReliableMessagesSent;
 	}
 
+	void NetworkStatistics::RegisterPacketReceived(uint32 bytes)
+	{
+		m_PacketsReceived++;
+		m_BytesReceived += bytes;
+		m_TimestampLastReceived = EngineLoop::GetTimeSinceStart();
+	}
+
 	void NetworkStatistics::RegisterReliableMessageReceived()
 	{
 		m_LastReceivedReliableUID++;
@@ -142,6 +164,11 @@ namespace LambdaEngine
 	void NetworkStatistics::RegisterPacketLoss()
 	{
 		m_PacketsLost++;
+	}
+
+	void NetworkStatistics::RegisterBytesSent(uint32 bytes)
+	{
+		m_BytesSent += bytes;
 	}
 
 	void NetworkStatistics::SetLastReceivedSequenceNr(uint32 sequence)
