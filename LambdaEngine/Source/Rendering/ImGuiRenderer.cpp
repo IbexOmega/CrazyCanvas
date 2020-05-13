@@ -380,6 +380,11 @@ namespace LambdaEngine
 		io.AddInputCharacter(character);
 	}
 
+	ImGuiContext* ImGuiRenderer::GetImguiContext()
+	{
+		return ImGui::GetCurrentContext();
+	}
+
 	bool ImGuiRenderer::InitImGui(IWindow* pWindow)
 	{
 		IMGUI_CHECKVERSION();

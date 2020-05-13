@@ -7,6 +7,8 @@
 
 #include "Containers/THashTable.h"
 
+struct ImGuiContext;
+
 namespace LambdaEngine
 {
 	class ICommandAllocator;
@@ -71,6 +73,9 @@ namespace LambdaEngine
 		virtual void KeyPressed(EKey key, uint32 modifierMask, bool isRepeat)							override final;
 		virtual void KeyReleased(EKey key)																override final;
 		virtual void KeyTyped(uint32 character)															override final;
+
+	public:
+		static ImGuiContext* GetImguiContext();
 
 	private:
 		bool InitImGui(IWindow* pWindow);

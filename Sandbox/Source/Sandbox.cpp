@@ -43,6 +43,8 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 constexpr const bool RAY_TRACING_ENABLED		= false;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
+constexpr const bool RENDERING_DEBUG_ENABLED	= true;
+
 Sandbox::Sandbox()
     : Game()
 {
@@ -833,7 +835,7 @@ bool Sandbox::InitRendererForDeferred()
 
 	RenderGraphDesc renderGraphDesc = {};
 	renderGraphDesc.pName						= "Render Graph";
-	renderGraphDesc.CreateDebugGraph			= true;
+	renderGraphDesc.CreateDebugGraph			= RENDERING_DEBUG_ENABLED;
 	renderGraphDesc.pRenderStages				= renderStages.data();
 	renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
 	renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
@@ -1283,12 +1285,17 @@ bool Sandbox::InitRendererForDeferred()
 
 	RendererDesc rendererDesc = {};
 	rendererDesc.pName				= "Renderer";
-	rendererDesc.Debug				= true;
+	rendererDesc.Debug				= RENDERING_DEBUG_ENABLED;
 	rendererDesc.pRenderGraph		= m_pRenderGraph;
 	rendererDesc.pWindow			= PlatformApplication::Get()->GetMainWindow();
 	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
 	
 	m_pRenderer->Init(&rendererDesc);
+
+	if (RENDERING_DEBUG_ENABLED)
+	{
+		ImGui::SetCurrentContext(ImGuiRenderer::GetImguiContext());
+	}
 
 	m_pRenderGraph->Update();
 
@@ -1393,7 +1400,7 @@ bool Sandbox::InitRendererForVisBuf()
 
 	RenderGraphDesc renderGraphDesc = {};
 	renderGraphDesc.pName						= "Render Graph";
-	renderGraphDesc.CreateDebugGraph			= true;
+	renderGraphDesc.CreateDebugGraph			= RENDERING_DEBUG_ENABLED;
 	renderGraphDesc.pRenderStages				= renderStages.data();
 	renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
 	renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
