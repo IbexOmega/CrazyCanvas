@@ -13,8 +13,6 @@ int main(int, const char*[])
 {
 	using namespace LambdaEngine;
 
-	SET_DEBUG_FLAGS();
-
 #ifdef LAMBDA_PLATFORM_WINDOWS
 	if (!EngineLoop::PreInit(hInstance))
 #else

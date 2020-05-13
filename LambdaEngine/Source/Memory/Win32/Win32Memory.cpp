@@ -18,14 +18,33 @@ namespace LambdaEngine
 		}
 	}
 	
-	bool Win32Memory::VirtualProtect(void* pMemory)
+	bool Win32Memory::VirtualProtect(void* pMemory, uint64 sizeInBytes)
 	{
-		return false;
+		DWORD	dwOldProtect	= 0;
+		LPVOID	lpAddress		= pMemory;
+
+		return ::VirtualProtect(lpAddress, sizeInBytes, PAGE_NOACCESS, &dwOldProtect);
 	}
 
 	bool Win32Memory::VirtualFree(void* pMemory)
 	{
 		return false;
+	}
+
+	uint64 Win32Memory::GetPageSize()
+	{
+		SYSTEM_INFO systemInfo = { };
+		::GetSystemInfo(&systemInfo);
+
+		return uint64(systemInfo.dwPageSize);
+	}
+	
+	uint64 Win32Memory::GetAllocationGranularity()
+	{
+		SYSTEM_INFO systemInfo = { };
+		::GetSystemInfo(&systemInfo);
+
+		return uint64(systemInfo.dwAllocationGranularity);
 	}
 }
 

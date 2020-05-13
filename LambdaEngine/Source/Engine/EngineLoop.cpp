@@ -29,11 +29,11 @@ namespace LambdaEngine
 
 	void EngineLoop::Run()
 	{
-        const Timestamp timestep    = Timestamp::Seconds(1.0 / 60.0);
-        Timestamp accumulator       = Timestamp(0);
+        Clock			fixedClock;
+        const Timestamp timestep	= Timestamp::Seconds(1.0 / 60.0);
+        Timestamp		accumulator = Timestamp(0);
         
         g_Clock.Reset();
-        Clock fixedClock;
         
         bool isRunning = true;
         while (isRunning)
@@ -91,9 +91,12 @@ namespace LambdaEngine
 	bool EngineLoop::PreInit()
 #endif
 	{
-#ifndef LAMBDA_PRODUCTION
+#ifdef LAMBDA_DEVELOPMENT
         PlatformConsole::Show();
+
         Log::SetDebuggerOutputEnabled(true);
+
+		MemoryAllocator::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
 #endif
 
 #ifdef LAMBDA_PLATFORM_WINDOWS

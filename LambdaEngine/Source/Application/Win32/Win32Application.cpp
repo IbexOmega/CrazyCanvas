@@ -33,6 +33,8 @@ namespace LambdaEngine
 			SAFERELEASE(pWindow);
 		}
 
+		SAFEDELETE_ARRAY(m_RawInput.pInputBuffer);
+
 		m_hInstance = 0;
 	}
 
@@ -133,8 +135,11 @@ namespace LambdaEngine
 			m_RawInput.MouseY = cursorPos.y;
 
 			// Register input devices for the main window
-			HWND hWnd = (HWND)m_pMainWindow->GetHandle();
-			RegisterRawInputDevices(hWnd);
+			if (m_pMainWindow)
+			{
+				HWND hWnd = (HWND)m_pMainWindow->GetHandle();
+				RegisterRawInputDevices(hWnd);
+			}
 		}
 		else if (inputMode == EInputMode::INPUT_MODE_STANDARD)
 		{
@@ -518,8 +523,8 @@ namespace LambdaEngine
 		if (pWindow)
 		{
 			pApplication->MakeMainWindow(pWindow);
-			pWindow->Show();
 			
+			pWindow->Show();
 			return true;
 		}
 		else

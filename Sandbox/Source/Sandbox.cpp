@@ -50,12 +50,15 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
-    
 	PlatformApplication::Get()->AddEventHandler(this);
     
-	MemoryAllocator::SetDebugFlags(MEMORY_DEBUG_FLAGS_BUFFER_OVERFLOW_PROTECT);
-	void* pMem = MemoryAllocator::Malloc(128);
+	const uint32 size = 128;
+	byte* pMem = DBG_NEW byte[size];
 	
+	for (uint32 i = 0; i < size; i++)
+	{
+		pMem[i] = 'a';
+	}
 	
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
@@ -450,6 +453,8 @@ void Sandbox::MouseScrolled(int32 deltaX, int32 deltaY)
 void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
+
+	return;
 
     //LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
     

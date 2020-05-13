@@ -18,8 +18,7 @@ namespace LambdaEngine
 
 		/*
 		* Initializes modules that are needed in EngineLoop::Init()
-		*
-		* return - Returns true if successfull
+		*	return - Returns true if successfull
 		*/
 #ifdef LAMBDA_PLATFORM_WINDOWS
 		static bool PreInit(HINSTANCE hInstance);
@@ -29,8 +28,7 @@ namespace LambdaEngine
 
 		/*
 		* Initializes all engine modules
-		*
-		* return - Returns true if successfull
+		*	return - Returns true if successfull
 		*/
 		static bool Init();
 
@@ -41,15 +39,13 @@ namespace LambdaEngine
 
 		/*
 		* Releases all engine modules
-		*
-		* return - Returns true if successfull
+		*	return - Returns true if successfull
 		*/
 		static bool Release();
 
 		/*
 		* Releases all modules that are still needed in release
-		*
-		* return - Returns true if successful
+		*	return - Returns true if successful
 		*/
 		static bool PostRelease();
 
@@ -58,18 +54,15 @@ namespace LambdaEngine
 	private:
 		/*
 		* Engine tick, advances the whole engine one frame. Should only be called from run
-		*
-		* delta - The time between this frame and the last frame
-		*
-		* return - Returns true if the engine should perform next tick
+		*	delta	- The time between this frame and the last frame
+		*	return	- Returns true if the engine should perform next tick
 		*/
 		static bool Tick(Timestamp delta);
         
         /*
         * Fixed engine tick, advances the whole engine one frame at a fixed framerate (Current every 16ms).
         * Should only be called from run
-        *
-        * delta - The time between this frame and the last frame
+        *	delta - The time between this frame and the last frame
         */
         static void FixedTick(Timestamp delta);
 	};

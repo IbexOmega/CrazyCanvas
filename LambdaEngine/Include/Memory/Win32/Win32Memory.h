@@ -11,8 +11,11 @@ namespace LambdaEngine
 		DECL_STATIC_CLASS(Win32Memory);
 
 		static void*	VirtualAlloc(uint64 sizeInBytes);
-		static bool		VirtualProtect(void* pMemory);
+		static bool		VirtualProtect(void* pMemory, uint64 sizeInBytes);
 		static bool		VirtualFree(void* pMemory);
+
+		static uint64 GetPageSize();
+		static uint64 GetAllocationGranularity();
 	};
 
 	typedef Win32Memory PlatformMemory;
