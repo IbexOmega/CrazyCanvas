@@ -40,6 +40,8 @@ namespace LambdaEngine
 
 		PacketTranscoder::EncodePackets(m_pSendBuffer, MAXIMUM_PACKET_SIZE + sizeof(PacketTranscoder::Header), pPacketPool, packets, reliableUIDsSent, bytesWritten, &header);
 
+		pStatistics->RegisterBytesSent(bytesWritten);
+
 #ifndef LAMBDA_CONFIG_PRODUCTION
 		if (m_TransmittingLossRatio > 0.0f && Random::Float32() <= m_TransmittingLossRatio)
 		{
@@ -85,6 +87,8 @@ namespace LambdaEngine
 
 		ProcessSequence(header.Sequence, pStatistics);
 		ProcessAcks(header.Ack, header.AckBits, pStatistics, newAcks);
+
+		pStatistics->RegisterPacketReceived(m_BytesReceived);
 
 		return true;
 	}

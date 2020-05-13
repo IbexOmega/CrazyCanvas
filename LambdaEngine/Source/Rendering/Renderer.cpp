@@ -27,7 +27,7 @@ namespace LambdaEngine
 
 		if (m_pSwapChain != nullptr)
 		{
-			for (uint32 i = 0; i < m_pSwapChain->GetDesc().BufferCount; i++)
+			for (uint32 i = 0; i < m_BackBufferCount; i++)
 			{
 				SAFERELEASE(m_ppBackBuffers[i]);
 				SAFERELEASE(m_ppBackBufferViews[i]);
@@ -49,16 +49,18 @@ namespace LambdaEngine
 	{
 		VALIDATE(pDesc);
 		VALIDATE(pDesc->pWindow);
+		VALIDATE(pDesc->pRenderGraph);
 
-		m_pName			= pDesc->pName;
-		m_pRenderGraph	= pDesc->pRenderGraph;
+		m_pName				= pDesc->pName;
+		m_pRenderGraph		= pDesc->pRenderGraph;
+		m_BackBufferCount	= pDesc->BackBufferCount;
 
 		SwapChainDesc swapChainDesc = {};
 		swapChainDesc.pName			= "Renderer Swap Chain";
 		swapChainDesc.Format		= EFormat::FORMAT_B8G8R8A8_UNORM;
 		swapChainDesc.Width			= 0;
 		swapChainDesc.Height		= 0;
-		swapChainDesc.BufferCount	= pDesc->BackBufferCount;
+		swapChainDesc.BufferCount	= m_BackBufferCount;
 		swapChainDesc.SampleCount	= 1;
 		swapChainDesc.VerticalSync	= false;
 		
@@ -115,7 +117,7 @@ namespace LambdaEngine
 
 			ImGuiRendererDesc guiRendererDesc = {};
 			guiRendererDesc.pWindow				= pDesc->pWindow;
-			guiRendererDesc.BackBufferCount		= pDesc->BackBufferCount;
+			guiRendererDesc.BackBufferCount		= m_BackBufferCount;
 			guiRendererDesc.VertexBufferSize	= MEGA_BYTE(8);
 			guiRendererDesc.IndexBufferSize		= MEGA_BYTE(8);
 
@@ -143,26 +145,44 @@ namespace LambdaEngine
 
 		return true;
 	}
+
+	void Renderer::Begin(Timestamp delta)
+	{
+		m_BackBufferIndex = m_pSwapChain->GetCurrentBackBufferIndex();
+
+		if (m_pImGuiRenderer != nullptr)
+		{
+			IWindow* pWindow = PlatformApplication::Get()->GetMainWindow();
+			m_pImGuiRenderer->Begin(delta, pWindow->GetWidth(), pWindow->GetHeight(), 1.0f, 1.0f);
+		}
+	}
+
+	void Renderer::End(Timestamp delta)
+	{
+		UNREFERENCED_VARIABLE(delta);
+
+		m_pSwapChain->Present();
+
+		m_FrameIndex++;
+		m_ModFrameIndex = m_FrameIndex % m_BackBufferCount;
+	}
 	
 	void Renderer::Render(Timestamp delta)
 	{
-		uint64 modFrameIndex	= m_FrameIndex % 3;
-		uint64 backBufferIndex	= m_pSwapChain->GetCurrentBackBufferIndex();
+		UNREFERENCED_VARIABLE(delta);
 
-		m_pRenderGraph->Render(m_FrameIndex, backBufferIndex);
+		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
 
 		if (m_pImGuiRenderer != nullptr)
 		{
 			m_pImGuiRenderer->End();
 
-			ICommandAllocator* pCommandAllocator = m_ppImGuiCommandAllocators[modFrameIndex];
-			ICommandList* pCommandList = m_ppImGuiCommandLists[modFrameIndex];
+			ICommandAllocator* pCommandAllocator = m_ppImGuiCommandAllocators[m_ModFrameIndex];
+			ICommandList* pCommandList = m_ppImGuiCommandLists[m_ModFrameIndex];
 
 			pCommandAllocator->Reset();
 			pCommandList->Begin(nullptr);
-
-			m_pImGuiRenderer->Render(pCommandList, m_ppBackBufferViews[backBufferIndex], modFrameIndex, backBufferIndex);
-
+			m_pImGuiRenderer->Render(pCommandList, m_ppBackBufferViews[m_BackBufferIndex], m_ModFrameIndex, m_BackBufferIndex);
 			pCommandList->End();
 
 			IFence* pFence;
@@ -170,13 +190,6 @@ namespace LambdaEngine
 
 			m_pRenderGraph->GetAndIncrementFence(&pFence, &signalValue);
 			RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, pFence, signalValue - 1, pFence, signalValue);
-
-			IWindow* pWindow = PlatformApplication::Get()->GetMainWindow();
-			m_pImGuiRenderer->Begin(delta, pWindow->GetWidth(), pWindow->GetHeight(), 1.0f, 1.0f);
 		}
-
-		m_pSwapChain->Present();
-
-		m_FrameIndex++;
 	}
 }

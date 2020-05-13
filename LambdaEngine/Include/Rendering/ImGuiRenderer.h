@@ -5,6 +5,10 @@
 
 #include "Time/API/Timestamp.h"
 
+#include "Containers/THashTable.h"
+
+struct ImGuiContext;
+
 namespace LambdaEngine
 {
 	class ICommandAllocator;
@@ -30,6 +34,16 @@ namespace LambdaEngine
 		uint32		BackBufferCount		= 0;
 		uint32		VertexBufferSize	= 0;
 		uint32		IndexBufferSize		= 0;
+	};
+
+	struct ImGuiTexture
+	{
+		ITextureView*	pTextureView		= nullptr;
+		float32			ChannelMult[4]		= { 1.0f, 1.0f, 1.0f, 1.0f };
+		float32			ChannelAdd[4]		= { 0.0f, 0.0f, 0.0f, 0.0f };
+		uint32			ReservedIncludeMask = 0x00008421; //0000 0000 0000 0000 1000 0100 0010 0001
+		GUID_Lambda		VertexShaderGUID	= GUID_NONE;
+		GUID_Lambda		PixelShaderGUID		= GUID_NONE;
 	};
 
 	class LAMBDA_API ImGuiRenderer : public EventHandler
@@ -62,6 +76,9 @@ namespace LambdaEngine
 		virtual void KeyReleased(EKey key)																override final;
 		virtual void KeyTyped(uint32 character)															override final;
 
+	public:
+		static ImGuiContext* GetImguiContext();
+
 	private:
 		bool InitImGui(IWindow* pWindow);
 		bool CreateCopyCommandList();
@@ -69,11 +86,13 @@ namespace LambdaEngine
 		bool CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize);
 		bool CreateTextures();
 		bool CreateSamplers();
-		bool CreateShaders();
 		bool CreateRenderPass();
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSet();
+		bool CreateShaders();
 		bool CreatePipelineState();
+
+		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);
 
 	private:
 		const IGraphicsDevice*	m_pGraphicsDevice			= nullptr;
@@ -85,15 +104,15 @@ namespace LambdaEngine
 
 		IDeviceAllocator*		m_pAllocator				= nullptr;
 
-		IPipelineState*			m_pPipelineState			= nullptr;
+		uint64					m_PipelineStateID			= 0;
 		IPipelineLayout*		m_pPipelineLayout			= nullptr;
 		IDescriptorHeap*		m_pDescriptorHeap			= nullptr;
 		IDescriptorSet*			m_pDescriptorSet			= nullptr;
 
-		IRenderPass*			m_pRenderPass				= nullptr;
+		GUID_Lambda				m_VertexShaderGUID			= 0;
+		GUID_Lambda				m_PixelShaderGUID			= 0;
 
-		IShader*				m_pVertexShader				= nullptr;
-		IShader*				m_pPixelShader				= nullptr;
+		IRenderPass*			m_pRenderPass				= nullptr;
 
 		IBuffer*				m_pVertexCopyBuffer			= nullptr;
 		IBuffer*				m_pIndexCopyBuffer			= nullptr;
@@ -104,5 +123,8 @@ namespace LambdaEngine
 		ITextureView*			m_pFontTextureView			= nullptr;
 
 		ISampler*				m_pSampler					= nullptr;
+
+		THashTable<ITextureView*, IDescriptorSet*>					m_TextureDescriptorSetMap;
+		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 	};
 }

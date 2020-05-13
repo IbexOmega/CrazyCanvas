@@ -40,7 +40,7 @@ namespace LambdaEngine
 		uint32						Binding			= 0;
 		uint32						Stride			= 0;
 		EVertexInputRate			InputRate		= EVertexInputRate::NONE;
-		VertexInputAttributeDesc*	pAttributes		= nullptr;
+		VertexInputAttributeDesc	pAttributes		[MAX_ATTRIBUTES_PER_VERTEX];
 		uint32						AttributeCount	= 0;
 	};
 
@@ -50,7 +50,7 @@ namespace LambdaEngine
 		const IRenderPass*			pRenderPass					= nullptr;
 		const IPipelineLayout*		pPipelineLayout				= nullptr;
 
-		VertexInputBindingDesc*		pVertexInputBindings		= nullptr;
+		VertexInputBindingDesc		pVertexInputBindings		[MAX_VERTEX_INPUT_ATTACHMENTS];
 		uint32						VertexInputBindingCount		= 0;
 		
 		BlendAttachmentState		pBlendAttachmentStates		[MAX_COLOR_ATTACHMENTS];

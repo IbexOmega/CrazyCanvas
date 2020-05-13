@@ -745,12 +745,20 @@ namespace LambdaEngine
 		}
 
 		fseek(pFile, 0, SEEK_END);
-		(*pDataSize) = ftell(pFile);
-		rewind(pFile);
+		int32 length = ftell(pFile);
+		fseek(pFile, 0, SEEK_SET);
 
-		(*ppData) = DBG_NEW byte[(*pDataSize)];
+		byte* pData = (byte*)calloc(length, sizeof(byte));
 
-		fread(*ppData, 1, (*pDataSize), pFile);
+		int32 read = fread(pData, 1, length, pFile);
+		if (read == 0)
+		{
+			LOG_ERROR("[ResourceDevice]: Failed to read file \"%s\"", pFilepath);
+			return false;
+		}
+
+		(*ppData)		= pData;
+		(*pDataSize)	= length;
 
 		fclose(pFile);
 		return true;
@@ -772,8 +780,10 @@ namespace LambdaEngine
 		glslang::TShader shader(shaderType);
 
 		std::string source			= std::string(pSource);
-		int32 foundBracket			= source.find_last_of("}") + 1;
-		shader.setStringsWithLengths(&pSource, &foundBracket, 1);
+		int32 foundBracket			= source.find_last_of('}') + 1;
+		source[foundBracket]		= '\0';
+		const char* pFinalSource	= source.c_str();
+		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
 
 		//Todo: Fetch this
 		int32 clientInputSemanticsVersion							    = 110;

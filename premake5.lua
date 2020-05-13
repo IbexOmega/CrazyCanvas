@@ -436,6 +436,7 @@ workspace "LambdaEngine"
 		links 
 		{ 
 			"LambdaEngine",
+			"ImGui",
 		}
 
     project "*"
@@ -485,6 +486,7 @@ workspace "LambdaEngine"
 		links 
 		{ 
 			"LambdaEngine",
+			"ImGui",
 		}
 
     project "*"
@@ -534,5 +536,6 @@ workspace "LambdaEngine"
 		links 
 		{ 
 			"LambdaEngine",
+			"ImGui",
 		}
     project "*"

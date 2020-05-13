@@ -36,7 +36,14 @@ namespace LambdaEngine
 
 		bool Init(const RendererDesc* pDesc);
 
+		void Begin(Timestamp delta);
+		void End(Timestamp delta);
+
 		void Render(Timestamp delta);
+
+		FORCEINLINE uint32 GetFrameIndex()		{ return m_FrameIndex; }
+		FORCEINLINE uint32 GetModFrameIndex()	{ return m_ModFrameIndex; }
+		FORCEINLINE uint32 GetBufferIndex()		{ return m_BackBufferIndex; }
 
 	private:
 		const char*				m_pName;
@@ -52,7 +59,11 @@ namespace LambdaEngine
 		ITexture**				m_ppBackBuffers					= nullptr;
 		ITextureView**			m_ppBackBufferViews				= nullptr;
 
-		uint32					m_FrameIndex = 0;
+		uint32					m_BackBufferCount				= 0;
+
+		uint32					m_FrameIndex					= 0;
+		uint32					m_ModFrameIndex					= 0;
+		uint32					m_BackBufferIndex				= 0;
 
 	};
 }
