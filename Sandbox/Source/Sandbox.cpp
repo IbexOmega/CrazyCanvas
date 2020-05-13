@@ -1,6 +1,6 @@
 #include "Sandbox.h"
 
-#include "Memory/Memory.h"
+#include "Memory/API/PlatformMemory.h"
 
 #include "Log/Log.h"
 
@@ -51,6 +51,9 @@ Sandbox::Sandbox()
     
 	PlatformApplication::Get()->AddEventHandler(this);
     
+	void* pMem = PlatformMemory::VirtualAlloc(128);
+	
+	
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
 	SceneDesc sceneDesc = {};

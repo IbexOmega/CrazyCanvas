@@ -1,7 +1,7 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #include "Log/Log.h"
 
-#include "Memory/Memory.h"
+#include "Memory/API/Memory.h"
 
 #include "Application/API/IEventHandler.h"
 

@@ -13,6 +13,8 @@ namespace LambdaEngine
 		static void* 	VirtualAlloc(uint64 sizeInBytes);
 		static bool		VirtualProtect(void* pMemory);
 	};
+
+	typedef MacMemory PlatformMemory;
 }
 
 #endif
