@@ -684,9 +684,9 @@ namespace LambdaEngine
 	{
 		SamplerDesc samplerDesc = {};
 		samplerDesc.pName				= "ImGui Sampler";
-		samplerDesc.MinFilter			= EFilter::LINEAR;
-		samplerDesc.MagFilter			= EFilter::LINEAR;
-		samplerDesc.MipmapMode			= EMipmapMode::LINEAR;
+		samplerDesc.MinFilter			= EFilter::NEAREST;
+		samplerDesc.MagFilter			= EFilter::NEAREST;
+		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
 		samplerDesc.AddressModeU		= EAddressMode::MIRRORED_REPEAT;
 		samplerDesc.AddressModeV		= samplerDesc.AddressModeU;
 		samplerDesc.AddressModeW		= samplerDesc.AddressModeU;

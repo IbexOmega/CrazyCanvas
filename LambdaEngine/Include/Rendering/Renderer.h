@@ -36,6 +36,9 @@ namespace LambdaEngine
 
 		bool Init(const RendererDesc* pDesc);
 
+		void Begin(Timestamp delta);
+		void End(Timestamp delta);
+
 		void Render(Timestamp delta);
 
 		FORCEINLINE uint32 GetFrameIndex()		{ return m_FrameIndex; }

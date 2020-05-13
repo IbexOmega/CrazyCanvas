@@ -531,6 +531,8 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 	m_pScene->UpdateCamera(m_pCamera);
 
+	m_pRenderer->Begin(delta);
+
 	ImGui::ShowDemoWindow();
 
 	ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
@@ -658,6 +660,8 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	ImGui::End();
 
 	m_pRenderer->Render(delta);
+
+	m_pRenderer->End(delta);
 }
 
 void Sandbox::FixedTick(LambdaEngine::Timestamp delta)

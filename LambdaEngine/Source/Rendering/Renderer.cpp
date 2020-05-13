@@ -144,10 +144,31 @@ namespace LambdaEngine
 
 		return true;
 	}
+
+	void Renderer::Begin(Timestamp delta)
+	{
+		m_BackBufferIndex = m_pSwapChain->GetCurrentBackBufferIndex();
+
+		if (m_pImGuiRenderer != nullptr)
+		{
+			IWindow* pWindow = PlatformApplication::Get()->GetMainWindow();
+			m_pImGuiRenderer->Begin(delta, pWindow->GetWidth(), pWindow->GetHeight(), 1.0f, 1.0f);
+		}
+	}
+
+	void Renderer::End(Timestamp delta)
+	{
+		UNREFERENCED_VARIABLE(delta);
+
+		m_pSwapChain->Present();
+
+		m_FrameIndex++;
+		m_ModFrameIndex = m_FrameIndex % m_BackBufferCount;
+	}
 	
 	void Renderer::Render(Timestamp delta)
 	{
-		m_BackBufferIndex = m_pSwapChain->GetCurrentBackBufferIndex();
+		UNREFERENCED_VARIABLE(delta);
 
 		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
 
@@ -170,14 +191,6 @@ namespace LambdaEngine
 
 			m_pRenderGraph->GetAndIncrementFence(&pFence, &signalValue);
 			RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, pFence, signalValue - 1, pFence, signalValue);
-
-			IWindow* pWindow = PlatformApplication::Get()->GetMainWindow();
-			m_pImGuiRenderer->Begin(delta, pWindow->GetWidth(), pWindow->GetHeight(), 1.0f, 1.0f);
 		}
-
-		m_pSwapChain->Present();
-
-		m_FrameIndex++;
-		m_ModFrameIndex = m_FrameIndex % m_BackBufferCount;
 	}
 }
