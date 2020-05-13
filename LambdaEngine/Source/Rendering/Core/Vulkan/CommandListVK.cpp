@@ -385,14 +385,14 @@ namespace LambdaEngine
 		VALIDATE(pSrc != nullptr);
 		VALIDATE(pDst != nullptr);
 
-		const TextureVK*	pVkSrc	= reinterpret_cast<const TextureVK*>(pSrc);
+		/*const TextureVK*	pVkSrc	= reinterpret_cast<const TextureVK*>(pSrc);
 		TextureVK*			pVkDst	= reinterpret_cast<TextureVK*>(pDst);
 
 		VkImageLayout		vkSrcLayout = ConvertTextureState(srcState);
 		VkImageLayout		vkDstLayout = ConvertTextureState(dstState);
 		VkFilter			vkFilter	= ConvertFilter(filter);
 
-		VkImageSubresourceLayers srcSubresource = {};
+		/*VkImageSubresourceLayers srcSubresource = {};
 		srcSubresource.aspectMask;
 		srcSubresource.mipLevel;
 		srcSubresource.baseArrayLayer;
@@ -404,7 +404,7 @@ namespace LambdaEngine
 		region.dstSubresource;
 		region.dstOffsets[2];
 
-		vkCmdBlitImage(m_CommandList, pVkSrc->GetImage(), vkSrcLayout, pVkDst->GetImage(), vkDstLayout, 1, &region, vkFilter);
+		vkCmdBlitImage(m_CommandList, pVkSrc->GetImage(), vkSrcLayout, pVkDst->GetImage(), vkDstLayout, 1, &region, vkFilter);*/
 	}
 
 	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)
