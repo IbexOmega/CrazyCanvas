@@ -137,7 +137,9 @@ Sandbox::Sandbox()
 
 	m_pNearestSampler = RenderSystem::GetDevice()->CreateSampler(&samplerNearestDesc);
 
-	InitRendererForDeferred();
+	InitRendererForEmpty();
+
+	//InitRendererForDeferred();
 
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 
@@ -549,7 +551,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 		static ImGuiTexture normalTexture = {};
 		static ImGuiTexture depthStencilTexture = {};
 
-		if (m_pRenderGraph->GetResourceTextureViews("GEOMETRY_ALBEDO_AO_BUFFER", &ppTextureViews, &textureViewCount))
+		/*if (m_pRenderGraph->GetResourceTextureViews("GEOMETRY_ALBEDO_AO_BUFFER", &ppTextureViews, &textureViewCount))
 		{
 			ITextureView* pTextureView = ppTextureViews[modFrameIndex];
 			albedoTexture.pTextureView = pTextureView;
@@ -655,7 +657,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 			float32 aspectRatio = (float32)pTextureView->GetDesc().pTexture->GetDesc().Width / (float32)pTextureView->GetDesc().pTexture->GetDesc().Height;
 
 			ImGui::Image(&depthStencilTexture, ImVec2(aspectRatio * 256.0f, 256.0f));
-		}
+		}*/
 	}
 	ImGui::End();
 
@@ -677,6 +679,90 @@ namespace LambdaEngine
         Sandbox* pSandbox = DBG_NEW Sandbox();        
         return pSandbox;
     }
+}
+
+bool Sandbox::InitRendererForEmpty()
+{
+	using namespace LambdaEngine;
+
+	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/StaticPixel.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+
+	std::vector<RenderStageDesc> renderStages;
+
+	const char*									pShadingRenderStageName = "Shading Render Stage";
+	GraphicsManagedPipelineStateDesc			shadingPipelineStateDesc = {};
+	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
+
+	{
+		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,									FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, EFormat::FORMAT_B8G8R8A8_UNORM });
+
+		RenderStagePushConstants pushConstants = {};
+		pushConstants.pName			= "Shading Pass Push Constants";
+		pushConstants.DataSize		= sizeof(int32) * 2;
+
+		RenderStageDesc renderStage = {};
+		renderStage.pName						= pShadingRenderStageName;
+		renderStage.pAttachments				= shadingRenderStageAttachments.data();
+		renderStage.AttachmentCount				= (uint32)shadingRenderStageAttachments.size();
+
+		shadingPipelineStateDesc.pName				= "Shading Pass Pipeline State";
+		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
+		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
+
+		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
+
+		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
+		renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
+		renderStage.GraphicsPipeline.pMeshIndexBufferName	= nullptr;
+		renderStage.GraphicsPipeline.pGraphicsDesc			= &shadingPipelineStateDesc;
+
+		renderStages.push_back(renderStage);
+	}
+
+	RenderGraphDesc renderGraphDesc = {};
+	renderGraphDesc.pName						= "Render Graph";
+	renderGraphDesc.CreateDebugGraph			= RENDERING_DEBUG_ENABLED;
+	renderGraphDesc.pRenderStages				= renderStages.data();
+	renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
+	renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+	renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
+	renderGraphDesc.pScene						= nullptr;
+
+	m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
+
+	m_pRenderGraph->Init(renderGraphDesc);
+
+	IWindow* pWindow = PlatformApplication::Get()->GetMainWindow();
+	uint32 renderWidth	= pWindow->GetWidth();
+	uint32 renderHeight = pWindow->GetHeight();
+
+	{
+		RenderStageParameters shadingRenderStageParameters = {};
+		shadingRenderStageParameters.pRenderStageName	= pShadingRenderStageName;
+		shadingRenderStageParameters.Graphics.Width		= renderWidth;
+		shadingRenderStageParameters.Graphics.Height	= renderHeight;
+
+		m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
+	}
+
+	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
+
+	RendererDesc rendererDesc = {};
+	rendererDesc.pName				= "Renderer";
+	rendererDesc.Debug				= RENDERING_DEBUG_ENABLED;
+	rendererDesc.pRenderGraph		= m_pRenderGraph;
+	rendererDesc.pWindow			= PlatformApplication::Get()->GetMainWindow();
+	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
+	
+	m_pRenderer->Init(&rendererDesc);
+
+	if (RENDERING_DEBUG_ENABLED)
+	{
+		ImGui::SetCurrentContext(ImGuiRenderer::GetImguiContext());
+	}
+
+	return true;
 }
 
 bool Sandbox::InitRendererForDeferred()

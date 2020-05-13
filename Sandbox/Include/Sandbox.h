@@ -52,6 +52,7 @@ public:
     virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
 private:
+	bool InitRendererForEmpty();
 	bool InitRendererForDeferred();
 	bool InitRendererForVisBuf();
 
