@@ -545,6 +545,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 		static ImGuiTexture albedoTexture = {};
 		static ImGuiTexture normalTexture = {};
+		static ImGuiTexture depthStencilTexture = {};
 
 		if (m_pRenderGraph->GetResourceTextureViews("GEOMETRY_ALBEDO_AO_BUFFER", &ppTextureViews, &textureViewCount))
 		{
@@ -562,7 +563,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 			normalTexture.pTextureView		= pTextureView;
 
-			const char* items[] = { "ALL", "Normal XY", "Metallic", "Roughness" };
+			const char* items[] = { "ALL", "Normal", "Metallic", "Roughness" };
 			static int currentItem = 0;
 			ImGui::ListBox("Rendered Data", &currentItem, items, IM_ARRAYSIZE(items), 4);
 
@@ -582,17 +583,19 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 			}
 			else if (currentItem == 1)
 			{
-				normalTexture.ReservedIncludeMask = 0x00008400;
+				normalTexture.ReservedIncludeMask = 0x00008420;
 
 				normalTexture.ChannelMult[0] = 0.5f;
 				normalTexture.ChannelMult[1] = 0.5f;
-				normalTexture.ChannelMult[2] = 0.0f;
+				normalTexture.ChannelMult[2] = 0.5f;
 				normalTexture.ChannelMult[3] = 0.0f;
 
 				normalTexture.ChannelAdd[0] = 0.5f;
 				normalTexture.ChannelAdd[1] = 0.5f;
-				normalTexture.ChannelAdd[2] = 0.0f;
+				normalTexture.ChannelAdd[2] = 0.5f;
 				normalTexture.ChannelAdd[3] = 1.0f;
+
+				normalTexture.PixelShaderGUID = m_ImGuiPixelShaderNormalGUID;
 			}
 			else if (currentItem == 2)
 			{
@@ -626,6 +629,30 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 			float32 aspectRatio = (float32)pTextureView->GetDesc().pTexture->GetDesc().Width / (float32)pTextureView->GetDesc().pTexture->GetDesc().Height;
 
 			ImGui::Image(&normalTexture, ImVec2(aspectRatio * 256.0f, 256.0f));
+		}
+
+		if (m_pRenderGraph->GetResourceTextureViews("GEOMETRY_DEPTH_STENCIL", &ppTextureViews, &textureViewCount))
+		{
+			ITextureView* pTextureView = ppTextureViews[modFrameIndex];
+			depthStencilTexture.pTextureView = pTextureView;
+
+			depthStencilTexture.ReservedIncludeMask = 0x00008880;
+
+			depthStencilTexture.ChannelMult[0] = 1.0f;
+			depthStencilTexture.ChannelMult[1] = 1.0f;
+			depthStencilTexture.ChannelMult[2] = 1.0f;
+			depthStencilTexture.ChannelMult[3] = 0.0f;
+
+			depthStencilTexture.ChannelAdd[0] = 0.0f;
+			depthStencilTexture.ChannelAdd[1] = 0.0f;
+			depthStencilTexture.ChannelAdd[2] = 0.0f;
+			depthStencilTexture.ChannelAdd[3] = 1.0f;
+
+			depthStencilTexture.PixelShaderGUID		= m_ImGuiPixelShaderDepthUID;
+
+			float32 aspectRatio = (float32)pTextureView->GetDesc().pTexture->GetDesc().Width / (float32)pTextureView->GetDesc().pTexture->GetDesc().Height;
+
+			ImGui::Image(&depthStencilTexture, ImVec2(aspectRatio * 256.0f, 256.0f));
 		}
 	}
 	ImGui::End();
@@ -663,6 +690,9 @@ bool Sandbox::InitRendererForDeferred()
 	GUID_Lambda missShaderGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Miss.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
 
 	GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/PostProcess.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
+
+	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelNormal.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderDepthUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelDepth.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
 	//GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
 	//GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);

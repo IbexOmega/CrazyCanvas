@@ -20,6 +20,7 @@ typedef double	float64;
 // Other
 typedef unsigned int GUID_Lambda;
 
+
 // Disable the Macro redefinition warning for now
 #ifdef LAMBDA_VISUAL_STUDIO
 	#pragma warning(disable : 4005)
@@ -91,3 +92,5 @@ typedef unsigned int GUID_Lambda;
 #endif
 
 constexpr uint32 MAX_UNIQUE_MATERIALS = 32;
+
+constexpr GUID_Lambda GUID_NONE = UINT32_MAX;

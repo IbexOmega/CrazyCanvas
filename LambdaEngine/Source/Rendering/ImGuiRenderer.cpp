@@ -122,6 +122,12 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!CreateShaders())
+		{
+			LOG_ERROR("[ImGuiRenderer]: Failed to create Shaders");
+			return false;
+		}
+
 		if (!CreatePipelineState())
 		{
 			LOG_ERROR("[ImGuiRenderer]: Failed to create PipelineState");
@@ -219,9 +225,6 @@ namespace LambdaEngine
 
 		pCommandList->SetViewports(&viewport, 0, 1);
 
-		IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_PipelineStateID);
-		pCommandList->BindGraphicsPipeline(pPipelineState);
-
 		uint64 offset = 0;
 		pCommandList->BindVertexBuffers(&pVertexBuffer, 0, &offset, 1);
 		pCommandList->BindIndexBuffer(pIndexBuffer, 0, EIndexType::UINT16);
@@ -281,26 +284,62 @@ namespace LambdaEngine
 
 					if (pCmd->TextureId)
 					{
-						ImGuiTexture*		pImGuiImage	= reinterpret_cast<ImGuiTexture*>(pCmd->TextureId);
+						ImGuiTexture*		pImGuiTexture	= reinterpret_cast<ImGuiTexture*>(pCmd->TextureId);
 						IDescriptorSet* pDescriptorSet	= nullptr;
 
-						auto it = m_TextureDescriptorSetMap.find(pImGuiImage->pTextureView);
+						auto textureIt = m_TextureDescriptorSetMap.find(pImGuiTexture->pTextureView);
 
-						if (it == m_TextureDescriptorSetMap.end())
+						if (textureIt == m_TextureDescriptorSetMap.end())
 						{
 							pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_pPipelineLayout, 0, m_pDescriptorHeap);
-							m_TextureDescriptorSetMap.insert({ pImGuiImage->pTextureView, pDescriptorSet });
+							m_TextureDescriptorSetMap.insert({ pImGuiTexture->pTextureView, pDescriptorSet });
 
-							pDescriptorSet->WriteTextureDescriptors(&pImGuiImage->pTextureView, &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
+							pDescriptorSet->WriteTextureDescriptors(&pImGuiTexture->pTextureView, &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
 						}
 						else
 						{
-							pDescriptorSet = it->second;
+							pDescriptorSet = textureIt->second;
+						}
+						
+						GUID_Lambda vertexShaderGUID	= pImGuiTexture->VertexShaderGUID == GUID_NONE	? m_VertexShaderGUID	: pImGuiTexture->VertexShaderGUID;
+						GUID_Lambda pixelShaderGUID		= pImGuiTexture->PixelShaderGUID == GUID_NONE	? m_PixelShaderGUID		: pImGuiTexture->PixelShaderGUID;
+
+						auto vertexShaderIt = m_ShadersIDToPipelineStateIDMap.find(vertexShaderGUID);
+
+						if (vertexShaderIt != m_ShadersIDToPipelineStateIDMap.end())
+						{
+							auto pixelShaderIt = vertexShaderIt->second.find(pixelShaderGUID);
+
+							if (pixelShaderIt != vertexShaderIt->second.end())
+							{
+								IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pixelShaderIt->second);
+								pCommandList->BindGraphicsPipeline(pPipelineState);
+							}
+							else
+							{
+								uint64 pipelineGUID = InternalCreatePipelineState(vertexShaderGUID, pixelShaderGUID);
+
+								vertexShaderIt->second.insert({ pixelShaderGUID, pipelineGUID });
+
+								IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pipelineGUID);
+								pCommandList->BindGraphicsPipeline(pPipelineState);
+							}
+						}
+						else
+						{
+							uint64 pipelineGUID = InternalCreatePipelineState(vertexShaderGUID, pixelShaderGUID);
+
+							THashTable<GUID_Lambda, uint64> pixelShaderToPipelineStateMap;
+							pixelShaderToPipelineStateMap.insert({ pixelShaderGUID, pipelineGUID });
+							m_ShadersIDToPipelineStateIDMap.insert({ vertexShaderGUID, pixelShaderToPipelineStateMap });
+
+							IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pipelineGUID);
+							pCommandList->BindGraphicsPipeline(pPipelineState);
 						}
 
-						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiImage->ChannelMult,			4 * sizeof(float32),	4 * sizeof(float32));
-						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiImage->ChannelAdd,			4 * sizeof(float32),	8 * sizeof(float32));
-						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, &pImGuiImage->ReservedIncludeMask,		sizeof(uint32),		12 * sizeof(float32));
+						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelMult,			4 * sizeof(float32),	4 * sizeof(float32));
+						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelAdd,				4 * sizeof(float32),	8 * sizeof(float32));
+						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, &pImGuiTexture->ReservedIncludeMask,		sizeof(uint32),		12 * sizeof(float32));
 
 						pCommandList->BindDescriptorSetGraphics(pDescriptorSet, m_pPipelineLayout, 0);
 					}
@@ -309,6 +348,9 @@ namespace LambdaEngine
 						constexpr const float32 DEFAULT_CHANNEL_MULT[4]					= { 1.0f, 1.0f, 1.0f, 1.0f };
 						constexpr const float32 DEFAULT_CHANNEL_ADD[4]					= { 0.0f, 0.0f, 0.0f, 0.0f };
 						constexpr const uint32 DEFAULT_CHANNEL_RESERVED_INCLUDE_MASK	= 0x00008421;  //0000 0000 0000 0000 1000 0100 0010 0001
+
+						IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_PipelineStateID);
+						pCommandList->BindGraphicsPipeline(pPipelineState);
 
 						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_MULT,						4 * sizeof(float32),	4 * sizeof(float32));
 						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_ADD,						4 * sizeof(float32),	8 * sizeof(float32));
@@ -766,11 +808,26 @@ namespace LambdaEngine
 		return m_pDescriptorSet != nullptr;
 	}
 
+	bool ImGuiRenderer::CreateShaders()
+	{
+		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiVertex.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
+		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
+		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
+	}
+
 	bool ImGuiRenderer::CreatePipelineState()
 	{
-		uint32 shaderIndexVertex	= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiVertex.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,		EShaderLang::GLSL);
-		uint32 shaderIndexPixel		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixel.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,		EShaderLang::GLSL);
+		m_PipelineStateID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID);
 
+		THashTable<GUID_Lambda, uint64> pixelShaderToPipelineStateMap;
+		pixelShaderToPipelineStateMap.insert({ m_PixelShaderGUID, m_PipelineStateID });
+		m_ShadersIDToPipelineStateIDMap.insert({ m_VertexShaderGUID, pixelShaderToPipelineStateMap });
+
+		return true;
+	}
+
+	uint64 ImGuiRenderer::InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader)
+	{
 		VertexInputAttributeDesc pVertexAttributeDesc[3] = {};
 		pVertexAttributeDesc[0].Location	= 0;
 		pVertexAttributeDesc[0].Offset		= IM_OFFSETOF(ImDrawVert, pos);
@@ -801,11 +858,9 @@ namespace LambdaEngine
 		pipelineStateDesc.VertexInputBindingCount		= 1;
 		pipelineStateDesc.pBlendAttachmentStates[0]		= blendAttachmentState;
 		pipelineStateDesc.BlendAttachmentStateCount		= 1;
-		pipelineStateDesc.VertexShader					= shaderIndexVertex;
-		pipelineStateDesc.PixelShader					= shaderIndexPixel;
+		pipelineStateDesc.VertexShader					= vertexShader;
+		pipelineStateDesc.PixelShader					= pixelShader;
 
-		m_PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
-
-		return true;
+		return PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
 	}
 }
