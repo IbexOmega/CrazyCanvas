@@ -42,7 +42,10 @@ namespace LambdaEngine
 
 #ifndef LAMBDA_CONFIG_PRODUCTION
 		if (m_TransmittingLossRatio > 0.0f && Random::Float32() <= m_TransmittingLossRatio)
+		{
+			LOG_WARNING("[PacketTransceiver]: Simulated Transmitting Packetloss");
 			return header.Sequence;
+		}
 #endif
 
 		if (!m_pSocket->SendTo(m_pSendBuffer, bytesWritten, bytesTransmitted, ipEndPoint))
@@ -62,7 +65,10 @@ namespace LambdaEngine
 
 #ifndef LAMBDA_CONFIG_PRODUCTION
 		if (m_ReceivingLossRatio > 0.0f && Random::Float32() <= m_ReceivingLossRatio)
+		{
+			LOG_WARNING("[PacketTransceiver]: Simulated Receiving Packetloss");
 			return false;
+		}	
 #endif
 
 		return m_BytesReceived > 0;

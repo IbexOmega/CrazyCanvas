@@ -16,6 +16,7 @@
 #include "Rendering/Core/API/ICommandQueue.h"
 #include "Rendering/Core/API/IFence.h"
 #include "Rendering/Core/API/IShader.h"
+
 #include "Rendering/RenderSystem.h"
 #include "Rendering/PipelineStateManager.h"
 
@@ -550,7 +551,7 @@ namespace LambdaEngine
 	{
 		constexpr uint32 DESCRIPTOR_COUNT = 1024;
 
-		DescriptorCountDesc descriptorCountDesc = {};
+		DescriptorCountDesc descriptorCountDesc = { };
 		descriptorCountDesc.DescriptorSetCount							= DESCRIPTOR_COUNT;
 		descriptorCountDesc.SamplerDescriptorCount						= DESCRIPTOR_COUNT;
 		descriptorCountDesc.TextureDescriptorCount						= DESCRIPTOR_COUNT;
@@ -560,7 +561,7 @@ namespace LambdaEngine
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount		= DESCRIPTOR_COUNT;
 		descriptorCountDesc.AccelerationStructureDescriptorCount		= DESCRIPTOR_COUNT;
 
-		DescriptorHeapDesc descriptorHeapDesc = {};
+		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.pName			= "Render Graph Descriptor Heap";
 		descriptorHeapDesc.DescriptorCount	= descriptorCountDesc;
 

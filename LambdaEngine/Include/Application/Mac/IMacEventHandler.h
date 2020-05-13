@@ -3,20 +3,24 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #include "LambdaEngine.h"
 
+#ifdef __OBJC__
+@class NSEvent;
+#else
+class NSEvent;
+#endif
+
 namespace LambdaEngine
 {
-    struct MacEvent;
-
-    class IMacMessageHandler
+    class IMacEventHandler
     {
     public:
-        DECL_INTERFACE(IMacMessageHandler);
+        DECL_INTERFACE(IMacEventHandler);
         
         /*
         * Handles events sent to the application
         *   event - The event sent from the application.
         */
-        virtual void HandleEvent(const MacEvent* pEvent) = 0;
+        virtual void HandleEvent(NSEvent* event) = 0;
     };
 }
 

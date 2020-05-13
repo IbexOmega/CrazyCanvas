@@ -12,7 +12,7 @@ namespace LambdaEngine
 		DECL_INTERFACE(IPacketListener);
 
 		virtual void OnPacketDelivered(NetworkPacket* pPacket) = 0;
-		virtual void OnPacketResent(NetworkPacket* pPacket, uint8 tries) = 0;
-		virtual void OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries) = 0;
+		virtual void OnPacketResent(NetworkPacket* pPacket, uint8 retries) = 0;
+		virtual void OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 retries) = 0;
 	};
 }

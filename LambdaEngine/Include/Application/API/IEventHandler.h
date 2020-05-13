@@ -59,9 +59,11 @@ namespace LambdaEngine
         virtual void MouseLeft(IWindow* pWindow) = 0;
 
         /*
-        * Will be called when a mouse move event occurs
-        *	x - The new horizontal window coordinates of the mouse
-        *	y - The new vertices window coordinates of the mouse
+        * Will be called when a mouse move event occurs. Mouse coordinates are in screen space.
+        * When using RAW input this the coordinates are reletive to how much the mouse have moved and does not
+        * correspond to either screen or client area space.
+        *	x - The new horizontal coordinates of the mouse
+        *	y - The new vertical coordinates of the mouse
         */
         virtual void MouseMoved(int32 x, int32 y) = 0;
 

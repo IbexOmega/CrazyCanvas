@@ -24,7 +24,7 @@ class CocoaAppDelegate;
 namespace LambdaEngine
 {
     class MacWindow;
-    class IMacMessageHandler;
+    class IMacEventHandler;
 
     /*
     * Struct used to buffer events from the OS
@@ -56,30 +56,45 @@ namespace LambdaEngine
         ~MacApplication();
 
         bool Init();
-        bool InitMenu();
         
-        void AddMacMessageHandler(IMacMessageHandler* pMacMessageHandler);
-        void RemoveMacMessageHandler(IMacMessageHandler* pMacMessageHandler);
+        void AddMacEventHandler(IMacEventHandler* pMacMessageHandler);
+        void RemoveMacEventHandler(IMacEventHandler* pMacMessageHandler);
         
         void StoreNSEvent(NSEvent* pEvent);
         void StoreEvent(const MacEvent* pEvent);
-        void ProcessEvent(const MacEvent* pEvent);
+		
+		FORCEINLINE bool IsTerminating() const
+		{
+			return m_IsTerminating;
+		}
+		
+		FORCEINLINE bool IsProcessingEvents() const
+		{
+			return m_IsProcessingEvents;
+		}
         
         MacWindow* GetWindowFromNSWindow(CocoaWindow* pWindow);
 
         // Application
-        virtual void AddWindowHandler(IWindowHandler* pHandler)    override final;
-        virtual void RemoveWindowHandler(IWindowHandler* pHandler) override final;
+        virtual void AddEventHandler(IEventHandler* pHandler)    override final;
+        virtual void RemoveEventHandler(IEventHandler* pHandler) override final;
         
         virtual void ProcessStoredEvents() override final;
 
         virtual void MakeMainWindow(IWindow* pMainWindow) override final;
 
+		virtual void SetInputMode(EInputMode inputMode) override final;
+		
+		virtual EInputMode GetInputMode() const override final;
+		
         virtual IWindow* GetForegroundWindow()   const override final;
         virtual IWindow* GetMainWindow()         const override final;
         
     private:
-        void AddWindow(MacWindow* pWindow);
+		void AddWindow(MacWindow* pWindow);
+        
+		void ProcessNSEvent(NSEvent* pEvent);
+		void ProcessStoredEvent(const MacEvent* pEvent);
 
     public:
         static bool PreInit();
@@ -90,13 +105,9 @@ namespace LambdaEngine
         
         static void Terminate();
         
-        static IWindow*          CreateWindow(const char* pTitle, uint32 width, uint32 height);
-        static IInputDevice*    CreateInputDevice(EInputMode inputMode);
+        static IWindow* CreateWindow(const char* pTitle, uint32 width, uint32 height);
         
-        FORCEINLINE static MacApplication* Get()
-        {
-            return s_pApplication;
-        }
+		static MacApplication* Get();
         
     private:
         CocoaAppDelegate* m_pAppDelegate    = nullptr;
@@ -107,8 +118,8 @@ namespace LambdaEngine
         
         TArray<MacWindow*>          m_Windows;
         TArray<MacEvent>            m_StoredEvents;
-        TArray<IWindowHandler*>     m_WindowHandlers;
-        TArray<IMacMessageHandler*> m_MessageHandlers;
+        TArray<IEventHandler*>     	m_EventHandlers;
+        TArray<IMacEventHandler*> 	m_MacEventHandlers;
         
     private:
         static MacApplication* s_pApplication;
