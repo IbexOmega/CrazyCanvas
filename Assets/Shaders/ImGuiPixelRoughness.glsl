@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : enable
 
 #include "ImGuiHelpers.glsl"
+#include "Helpers.glsl"
 
 layout(location = 0) in struct { vec4 Color; vec2 UV; } In;
 
@@ -15,7 +16,7 @@ layout(push_constant) uniform PushConstants
     uint ReservedIncludeMask;
 } u_PC;
 
-layout(location = 0) out vec4 fColor;
+layout(location = 0) out vec4 fColor; 
 
 void main()
 {
@@ -24,9 +25,7 @@ void main()
 
     vec4 sampledColor = texture(sTexture, In.UV.st);
 
-    const float zNear = 0.001f;
-    const float zFar = 1000.0f;
-    sampledColor.r = zNear * zFar / (zFar + sampledColor.r * (zNear - zFar));
+    sampledColor.a      = abs(sampledColor.a);
 
     float R = dot(ChannelBitMult(includeMask, 0), sampledColor);
     float G = dot(ChannelBitMult(includeMask, 1), sampledColor);

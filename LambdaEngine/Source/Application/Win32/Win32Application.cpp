@@ -514,7 +514,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		Win32Window* pWindow = (Win32Window*)Win32Application::CreateWindow("Lambda Game Engine", 1440, 900);
+		Win32Window* pWindow = (Win32Window*)Win32Application::CreateWindow("Lambda Game Engine", 1920, 1080);
 		if (pWindow)
 		{
 			pApplication->MakeMainWindow(pWindow);
