@@ -7,7 +7,8 @@ namespace LambdaEngine
 	public:
 		DECL_STATIC_CLASS(Memory);
 		
-		static void* 	VirtualAlloc(uint64 sizeInBytes) 	{ return nullptr; }
+		static void*	VirtualAlloc(uint64 sizeInBytes)	{ return nullptr; }
 		static bool		VirtualProtect(void* pMemory)		{ return false; }
+		static bool		VirtualFree(void* pMemory)			{ return false; }
 	};
 }

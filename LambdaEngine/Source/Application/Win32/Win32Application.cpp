@@ -502,7 +502,7 @@ namespace LambdaEngine
 		VALIDATE(hInstance != NULL);
 
 		Win32Application* pApplication = DBG_NEW Win32Application(hInstance);
-		pApplication->SetInputMode(EInputMode::INPUT_MODE_STANDARD);
+		pApplication->SetInputMode(EInputMode::INPUT_MODE_RAW);
 
 		if (!RegisterWindowClass())
 		{

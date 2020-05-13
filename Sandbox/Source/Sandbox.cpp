@@ -1,6 +1,6 @@
 #include "Sandbox.h"
 
-#include "Memory/API/PlatformMemory.h"
+#include "Memory/API/MemoryAllocator.h"
 
 #include "Log/Log.h"
 
@@ -51,7 +51,8 @@ Sandbox::Sandbox()
     
 	PlatformApplication::Get()->AddEventHandler(this);
     
-	void* pMem = PlatformMemory::VirtualAlloc(128);
+	MemoryAllocator::SetDebugFlags(MEMORY_DEBUG_FLAGS_BUFFER_OVERFLOW_PROTECT);
+	void* pMem = MemoryAllocator::Malloc(128);
 	
 	
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
