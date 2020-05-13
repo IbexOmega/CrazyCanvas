@@ -1,4 +1,8 @@
 #version 450 core
+#extension GL_GOOGLE_include_directive : enable
+
+#include "ImGuiHelpers.glsl"
+
 layout(location = 0) in struct { vec4 Color; vec2 UV; } In;
 
 layout(set=0, binding=0) uniform sampler2D sTexture;
@@ -12,16 +16,6 @@ layout(push_constant) uniform PushConstants
 } u_PC;
 
 layout(location = 0) out vec4 fColor;
-
-vec4 ChannelBitMult(uint mask, uint dstChannel)
-{
-    uint shift = (3 - dstChannel) * 4;
-    return vec4(
-        float((mask >> (shift + 3)) & 0x00000001), 
-        float((mask >> (shift + 2)) & 0x00000001), 
-        float((mask >> (shift + 1)) & 0x00000001), 
-        float((mask >> (shift + 0)) & 0x00000001));
-}   
 
 void main()
 {

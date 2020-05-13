@@ -138,9 +138,6 @@ namespace LambdaEngine
 				m_ppImGuiCommandAllocators[b]			= pCommandAllocator;
 				m_ppImGuiCommandLists[b]				= m_pGraphicsDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
 			}
-
-			
-			m_pImGuiRenderer->Begin(1.0f / 60.0f, pDesc->pWindow->GetWidth(), pDesc->pWindow->GetHeight(), 1.0f, 1.0f);
 		}
 
 		return true;
