@@ -79,6 +79,7 @@ namespace LambdaEngine
 		if (pPacket->m_IsBorrowed)
 		{
 			pPacket->m_IsBorrowed = false;
+			pPacket->m_SizeOfBuffer = 0;
 			m_PacketsFree.push_back(pPacket);
 		}
 		else
@@ -101,6 +102,7 @@ namespace LambdaEngine
 			if (pPacket->m_IsBorrowed)
 			{
 				pPacket->m_IsBorrowed = false;
+				pPacket->m_SizeOfBuffer = 0;
 				m_PacketsFree.push_back(pPacket);
 			}
 			else
@@ -126,5 +128,14 @@ namespace LambdaEngine
 #endif
 			m_PacketsFree.push_back(pPacket);
 		}
+	}
+	uint16 PacketPool::GetSize() const
+	{
+		return m_Packets.size();
+	}
+
+	uint16 PacketPool::GetFreePackets() const
+	{
+		return m_PacketsFree.size();
 	}
 }

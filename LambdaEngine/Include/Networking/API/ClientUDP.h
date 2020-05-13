@@ -39,6 +39,8 @@ namespace LambdaEngine
 	protected:
 		ClientUDP(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries);
 
+		virtual PacketManager* GetPacketManager() override;
+
 		virtual void OnPacketDelivered(NetworkPacket* pPacket) override;
 		virtual void OnPacketResent(NetworkPacket* pPacket, uint8 tries) override;
 		virtual void OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries) override;

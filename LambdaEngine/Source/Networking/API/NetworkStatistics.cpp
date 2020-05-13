@@ -149,9 +149,10 @@ namespace LambdaEngine
 		return ++m_ReliableMessagesSent;
 	}
 
-	void NetworkStatistics::RegisterPacketReceived(uint32 bytes)
+	void NetworkStatistics::RegisterPacketReceived(uint32 messages, uint32 bytes)
 	{
 		m_PacketsReceived++;
+		m_MessagesReceived += messages,
 		m_BytesReceived += bytes;
 		m_TimestampLastReceived = EngineLoop::GetTimeSinceStart();
 	}

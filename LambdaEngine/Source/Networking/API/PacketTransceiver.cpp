@@ -88,7 +88,7 @@ namespace LambdaEngine
 		ProcessSequence(header.Sequence, pStatistics);
 		ProcessAcks(header.Ack, header.AckBits, pStatistics, newAcks);
 
-		pStatistics->RegisterPacketReceived(m_BytesReceived);
+		pStatistics->RegisterPacketReceived(packets.size(), m_BytesReceived);
 
 		return true;
 	}

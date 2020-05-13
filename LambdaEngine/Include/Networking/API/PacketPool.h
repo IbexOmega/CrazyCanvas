@@ -23,6 +23,9 @@ namespace LambdaEngine
 	
 		void Reset();
 
+		uint16 GetSize() const;
+		uint16 GetFreePackets() const;
+
 	private:
 		std::vector<NetworkPacket*> m_Packets;
 		std::vector<NetworkPacket*> m_PacketsFree;
