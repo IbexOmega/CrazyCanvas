@@ -1,20 +1,20 @@
 :: Misc
-"tools/glslc.exe" -O -fshader-stage=compute 	Assets/Shaders/blur.glsl -o 					Assets/Shaders/blur.spv
-"tools/glslc.exe" -O -fshader-stage=vertex 		Assets/Shaders/fullscreenQuad.glsl -o 			Assets/Shaders/fullscreenQuad.spv
+"tools/glslc.exe" -O -fshader-stage=compute 	Assets/Shaders/Blur.glsl -o 					Assets/Shaders/Blur.spv
+"tools/glslc.exe" -O -fshader-stage=vertex 		Assets/Shaders/FullscreenQuad.glsl -o 			Assets/Shaders/FullscreenQuad.spv
 
 :: Geometry Pass
-"tools/glslc.exe" -O -fshader-stage=vertex 		Assets/Shaders/geometryDefVertex.glsl -o 		Assets/Shaders/geometryDefVertex.spv
-"tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/geometryDefPixel.glsl -o 		Assets/Shaders/geometryDefPixel.spv
+"tools/glslc.exe" -O -fshader-stage=vertex 		Assets/Shaders/GeometryDefVertex.glsl -o 		Assets/Shaders/GeometryDefVertex.spv
+"tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/GeometryDefPixel.glsl -o 		Assets/Shaders/GeometryDefPixel.spv
 
-"tools/glslc.exe" -O -fshader-stage=vertex 		Assets/Shaders/geometryVisVertex.glsl -o 		Assets/Shaders/geometryVisVertex.spv
-"tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/geometryVisPixel.glsl -o 		Assets/Shaders/geometryVisPixel.spv
+"tools/glslc.exe" -O -fshader-stage=vertex 		Assets/Shaders/GeometryVisVertex.glsl -o 		Assets/Shaders/GeometryVisVertex.spv
+"tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/GeometryVisPixel.glsl -o 		Assets/Shaders/GeometryVisPixel.spv
 
 :: Light Pass
-"tools/glslc.exe" -O -fshader-stage=vertex 		Assets/Shaders/lightVertex.glsl -o 				Assets/Shaders/lightVertex.spv
-"tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/lightPixel.glsl -o 				Assets/Shaders/lightPixel.spv
+"tools/glslc.exe" -O -fshader-stage=vertex 		Assets/Shaders/LightVertex.glsl -o 				Assets/Shaders/LightVertex.spv
+"tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/LightPixel.glsl -o 				Assets/Shaders/LightPixel.spv
 
-"tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/shadingVisPixel.glsl -o 			Assets/Shaders/shadingVisPixel.spv
-"tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/shadingDefPixel.glsl -o 			Assets/Shaders/shadingDefPixel.spv
+"tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/ShadingVisPixel.glsl -o 			Assets/Shaders/ShadingVisPixel.spv
+"tools/glslc.exe" -O -fshader-stage=fragment 	Assets/Shaders/ShadingDefPixel.glsl -o 			Assets/Shaders/ShadingDefPixel.spv
 
 :: Raytracing
 

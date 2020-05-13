@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-#include "helpers.glsl"
+#include "Helpers.glsl"
 
 #define MAX_POINT_LIGHTS 	4
 #define MAX_REFLECTION_MIPS 6.0f

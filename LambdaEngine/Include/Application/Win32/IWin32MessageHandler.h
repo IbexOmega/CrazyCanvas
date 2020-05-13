@@ -16,7 +16,7 @@ namespace LambdaEngine
         * Handles messages sent from the application's messageproc
         * See https://docs.microsoft.com/en-us/windows/win32/learnwin32/writing-the-window-procedure
         */
-        virtual LRESULT MessageProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) = 0;
+        virtual LRESULT ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) = 0;
     };
 }
 

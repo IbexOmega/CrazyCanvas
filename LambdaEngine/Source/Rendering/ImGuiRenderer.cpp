@@ -1,5 +1,6 @@
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/RenderSystem.h"
+#include "Rendering/PipelineStateManager.h"
 
 #include "Rendering/Core/API/ICommandAllocator.h"
 #include "Rendering/Core/API/IDeviceAllocator.h"
@@ -20,113 +21,12 @@
 #include "Application/API/IWindow.h"
 #include "Application/API/PlatformApplication.h"
 
+#include "Resources/ResourceManager.h"
+
 #include <imgui.h>
 
 namespace LambdaEngine
 {
-	// glsl_shader.vert, compiled with:
-	// # glslangValidator -V -x -o glsl_shader.vert.u32 glsl_shader.vert
-	/*
-	#version 450 core
-	layout(location = 0) in vec2 aPos;
-	layout(location = 1) in vec2 aUV;
-	layout(location = 2) in vec4 aColor;
-	layout(push_constant) uniform uPushConstant { vec2 uScale; vec2 uTranslate; } pc;
-	out gl_PerVertex { vec4 gl_Position; };
-	layout(location = 0) out struct { vec4 Color; vec2 UV; } Out;
-	void main()
-	{
-		Out.Color = aColor;
-		Out.UV = aUV;
-		gl_Position = vec4(aPos * pc.uScale + pc.uTranslate, 0, 1);
-	}
-	*/
-	static uint32_t s_VertSpirv[] =
-	{
-		0x07230203,0x00010000,0x00080001,0x0000002e,0x00000000,0x00020011,0x00000001,0x0006000b,
-		0x00000001,0x4c534c47,0x6474732e,0x3035342e,0x00000000,0x0003000e,0x00000000,0x00000001,
-		0x000a000f,0x00000000,0x00000004,0x6e69616d,0x00000000,0x0000000b,0x0000000f,0x00000015,
-		0x0000001b,0x0000001c,0x00030003,0x00000002,0x000001c2,0x00040005,0x00000004,0x6e69616d,
-		0x00000000,0x00030005,0x00000009,0x00000000,0x00050006,0x00000009,0x00000000,0x6f6c6f43,
-		0x00000072,0x00040006,0x00000009,0x00000001,0x00005655,0x00030005,0x0000000b,0x0074754f,
-		0x00040005,0x0000000f,0x6c6f4361,0x0000726f,0x00030005,0x00000015,0x00565561,0x00060005,
-		0x00000019,0x505f6c67,0x65567265,0x78657472,0x00000000,0x00060006,0x00000019,0x00000000,
-		0x505f6c67,0x7469736f,0x006e6f69,0x00030005,0x0000001b,0x00000000,0x00040005,0x0000001c,
-		0x736f5061,0x00000000,0x00060005,0x0000001e,0x73755075,0x6e6f4368,0x6e617473,0x00000074,
-		0x00050006,0x0000001e,0x00000000,0x61635375,0x0000656c,0x00060006,0x0000001e,0x00000001,
-		0x61725475,0x616c736e,0x00006574,0x00030005,0x00000020,0x00006370,0x00040047,0x0000000b,
-		0x0000001e,0x00000000,0x00040047,0x0000000f,0x0000001e,0x00000002,0x00040047,0x00000015,
-		0x0000001e,0x00000001,0x00050048,0x00000019,0x00000000,0x0000000b,0x00000000,0x00030047,
-		0x00000019,0x00000002,0x00040047,0x0000001c,0x0000001e,0x00000000,0x00050048,0x0000001e,
-		0x00000000,0x00000023,0x00000000,0x00050048,0x0000001e,0x00000001,0x00000023,0x00000008,
-		0x00030047,0x0000001e,0x00000002,0x00020013,0x00000002,0x00030021,0x00000003,0x00000002,
-		0x00030016,0x00000006,0x00000020,0x00040017,0x00000007,0x00000006,0x00000004,0x00040017,
-		0x00000008,0x00000006,0x00000002,0x0004001e,0x00000009,0x00000007,0x00000008,0x00040020,
-		0x0000000a,0x00000003,0x00000009,0x0004003b,0x0000000a,0x0000000b,0x00000003,0x00040015,
-		0x0000000c,0x00000020,0x00000001,0x0004002b,0x0000000c,0x0000000d,0x00000000,0x00040020,
-		0x0000000e,0x00000001,0x00000007,0x0004003b,0x0000000e,0x0000000f,0x00000001,0x00040020,
-		0x00000011,0x00000003,0x00000007,0x0004002b,0x0000000c,0x00000013,0x00000001,0x00040020,
-		0x00000014,0x00000001,0x00000008,0x0004003b,0x00000014,0x00000015,0x00000001,0x00040020,
-		0x00000017,0x00000003,0x00000008,0x0003001e,0x00000019,0x00000007,0x00040020,0x0000001a,
-		0x00000003,0x00000019,0x0004003b,0x0000001a,0x0000001b,0x00000003,0x0004003b,0x00000014,
-		0x0000001c,0x00000001,0x0004001e,0x0000001e,0x00000008,0x00000008,0x00040020,0x0000001f,
-		0x00000009,0x0000001e,0x0004003b,0x0000001f,0x00000020,0x00000009,0x00040020,0x00000021,
-		0x00000009,0x00000008,0x0004002b,0x00000006,0x00000028,0x00000000,0x0004002b,0x00000006,
-		0x00000029,0x3f800000,0x00050036,0x00000002,0x00000004,0x00000000,0x00000003,0x000200f8,
-		0x00000005,0x0004003d,0x00000007,0x00000010,0x0000000f,0x00050041,0x00000011,0x00000012,
-		0x0000000b,0x0000000d,0x0003003e,0x00000012,0x00000010,0x0004003d,0x00000008,0x00000016,
-		0x00000015,0x00050041,0x00000017,0x00000018,0x0000000b,0x00000013,0x0003003e,0x00000018,
-		0x00000016,0x0004003d,0x00000008,0x0000001d,0x0000001c,0x00050041,0x00000021,0x00000022,
-		0x00000020,0x0000000d,0x0004003d,0x00000008,0x00000023,0x00000022,0x00050085,0x00000008,
-		0x00000024,0x0000001d,0x00000023,0x00050041,0x00000021,0x00000025,0x00000020,0x00000013,
-		0x0004003d,0x00000008,0x00000026,0x00000025,0x00050081,0x00000008,0x00000027,0x00000024,
-		0x00000026,0x00050051,0x00000006,0x0000002a,0x00000027,0x00000000,0x00050051,0x00000006,
-		0x0000002b,0x00000027,0x00000001,0x00070050,0x00000007,0x0000002c,0x0000002a,0x0000002b,
-		0x00000028,0x00000029,0x00050041,0x00000011,0x0000002d,0x0000001b,0x0000000d,0x0003003e,
-		0x0000002d,0x0000002c,0x000100fd,0x00010038
-	};
-
-	// glsl_shader.frag, compiled with:
-	// # glslangValidator -V -x -o glsl_shader.frag.u32 glsl_shader.frag
-	/*
-	#version 450 core
-	layout(location = 0) out vec4 fColor;
-	layout(set=0, binding=0) uniform sampler2D sTexture;
-	layout(location = 0) in struct { vec4 Color; vec2 UV; } In;
-	void main()
-	{
-		fColor = In.Color * texture(sTexture, In.UV.st);
-	}
-	*/
-	static uint32_t s_PixelSpirv[] =
-	{
-		0x07230203,0x00010000,0x00080001,0x0000001e,0x00000000,0x00020011,0x00000001,0x0006000b,
-		0x00000001,0x4c534c47,0x6474732e,0x3035342e,0x00000000,0x0003000e,0x00000000,0x00000001,
-		0x0007000f,0x00000004,0x00000004,0x6e69616d,0x00000000,0x00000009,0x0000000d,0x00030010,
-		0x00000004,0x00000007,0x00030003,0x00000002,0x000001c2,0x00040005,0x00000004,0x6e69616d,
-		0x00000000,0x00040005,0x00000009,0x6c6f4366,0x0000726f,0x00030005,0x0000000b,0x00000000,
-		0x00050006,0x0000000b,0x00000000,0x6f6c6f43,0x00000072,0x00040006,0x0000000b,0x00000001,
-		0x00005655,0x00030005,0x0000000d,0x00006e49,0x00050005,0x00000016,0x78655473,0x65727574,
-		0x00000000,0x00040047,0x00000009,0x0000001e,0x00000000,0x00040047,0x0000000d,0x0000001e,
-		0x00000000,0x00040047,0x00000016,0x00000022,0x00000000,0x00040047,0x00000016,0x00000021,
-		0x00000000,0x00020013,0x00000002,0x00030021,0x00000003,0x00000002,0x00030016,0x00000006,
-		0x00000020,0x00040017,0x00000007,0x00000006,0x00000004,0x00040020,0x00000008,0x00000003,
-		0x00000007,0x0004003b,0x00000008,0x00000009,0x00000003,0x00040017,0x0000000a,0x00000006,
-		0x00000002,0x0004001e,0x0000000b,0x00000007,0x0000000a,0x00040020,0x0000000c,0x00000001,
-		0x0000000b,0x0004003b,0x0000000c,0x0000000d,0x00000001,0x00040015,0x0000000e,0x00000020,
-		0x00000001,0x0004002b,0x0000000e,0x0000000f,0x00000000,0x00040020,0x00000010,0x00000001,
-		0x00000007,0x00090019,0x00000013,0x00000006,0x00000001,0x00000000,0x00000000,0x00000000,
-		0x00000001,0x00000000,0x0003001b,0x00000014,0x00000013,0x00040020,0x00000015,0x00000000,
-		0x00000014,0x0004003b,0x00000015,0x00000016,0x00000000,0x0004002b,0x0000000e,0x00000018,
-		0x00000001,0x00040020,0x00000019,0x00000001,0x0000000a,0x00050036,0x00000002,0x00000004,
-		0x00000000,0x00000003,0x000200f8,0x00000005,0x00050041,0x00000010,0x00000011,0x0000000d,
-		0x0000000f,0x0004003d,0x00000007,0x00000012,0x00000011,0x0004003d,0x00000014,0x00000017,
-		0x00000016,0x00050041,0x00000019,0x0000001a,0x0000000d,0x00000018,0x0004003d,0x0000000a,
-		0x0000001b,0x0000001a,0x00050057,0x00000007,0x0000001c,0x00000017,0x0000001b,0x00050085,
-		0x00000007,0x0000001d,0x00000012,0x0000001c,0x0003003e,0x00000009,0x0000001d,0x000100fd,
-		0x00010038
-	};
-
 	ImGuiRenderer::ImGuiRenderer(const IGraphicsDevice* pGraphicsDevice) :
 		m_pGraphicsDevice(pGraphicsDevice)
 	{
@@ -139,13 +39,10 @@ namespace LambdaEngine
 		SAFERELEASE(m_pCopyCommandAllocator);
 		SAFERELEASE(m_pCopyCommandList);
 		SAFERELEASE(m_pAllocator);
-		SAFERELEASE(m_pPipelineState);
 		SAFERELEASE(m_pPipelineLayout);
 		SAFERELEASE(m_pDescriptorHeap);
 		SAFERELEASE(m_pDescriptorSet);
 		SAFERELEASE(m_pRenderPass);
-		SAFERELEASE(m_pVertexShader);
-		SAFERELEASE(m_pPixelShader);
 		SAFERELEASE(m_pVertexCopyBuffer);
 		SAFERELEASE(m_pIndexCopyBuffer);
 
@@ -207,12 +104,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateShaders())
-		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create shaders");
-			return false;
-		}
-
 		if (!CreateRenderPass())
 		{
 			LOG_ERROR("[ImGuiRenderer]: Failed to create RenderPass");
@@ -228,6 +119,12 @@ namespace LambdaEngine
 		if (!CreateDescriptorSet())
 		{
 			LOG_ERROR("[ImGuiRenderer]: Failed to create DescriptorSet");
+			return false;
+		}
+
+		if (!CreateShaders())
+		{
+			LOG_ERROR("[ImGuiRenderer]: Failed to create Shaders");
 			return false;
 		}
 
@@ -249,7 +146,7 @@ namespace LambdaEngine
 		ImGuiIO& io = ImGui::GetIO();
 		io.DeltaTime = float32(delta.AsSeconds());
 
-		io.DisplaySize				= ImVec2((float)windowWidth, (float)windowHeight);
+		io.DisplaySize				= ImVec2((float32)windowWidth, (float32)windowHeight);
 		io.DisplayFramebufferScale	= ImVec2(scaleX, scaleY);
 
 		ImGui::NewFrame();
@@ -277,13 +174,10 @@ namespace LambdaEngine
 		IBuffer* pIndexBuffer	= m_ppIndexBuffers[modFrameIndex];
 
 		{
-			ImDrawVert* pVertexMapping = nullptr;
-			ImDrawIdx* pIndexMapping = nullptr;
-
 			uint32 vertexBufferSize		= 0;
 			uint32 indexBufferSize		= 0;
-			pVertexMapping				= reinterpret_cast<ImDrawVert*>(m_pVertexCopyBuffer->Map());
-			pIndexMapping				= reinterpret_cast<ImDrawIdx*>(m_pIndexCopyBuffer->Map());
+			byte* pVertexMapping				= reinterpret_cast<byte*>(m_pVertexCopyBuffer->Map());
+			byte* pIndexMapping				= reinterpret_cast<byte*>(m_pIndexCopyBuffer->Map());
 
 			for (int n = 0; n < pDrawData->CmdListsCount; n++)
 			{
@@ -292,8 +186,8 @@ namespace LambdaEngine
 				memcpy(pVertexMapping + vertexBufferSize,	pDrawList->VtxBuffer.Data, pDrawList->VtxBuffer.Size * sizeof(ImDrawVert));
 				memcpy(pIndexMapping + indexBufferSize,		pDrawList->IdxBuffer.Data, pDrawList->IdxBuffer.Size * sizeof(ImDrawIdx));
 
-				vertexBufferSize += pDrawList->VtxBuffer.Size * sizeof(ImDrawVert);
-				indexBufferSize += pDrawList->IdxBuffer.Size * sizeof(ImDrawIdx);
+				vertexBufferSize	+= pDrawList->VtxBuffer.Size * sizeof(ImDrawVert);
+				indexBufferSize		+= pDrawList->IdxBuffer.Size * sizeof(ImDrawIdx);
 			}
 
 			m_pVertexCopyBuffer->Unmap();
@@ -330,9 +224,6 @@ namespace LambdaEngine
 		viewport.y			= 0.0f;
 
 		pCommandList->SetViewports(&viewport, 0, 1);
-
-		pCommandList->BindGraphicsPipeline(m_pPipelineState);
-		pCommandList->BindDescriptorSetGraphics(m_pDescriptorSet, m_pPipelineLayout, 0);
 
 		uint64 offset = 0;
 		pCommandList->BindVertexBuffers(&pVertexBuffer, 0, &offset, 1);
@@ -384,12 +275,89 @@ namespace LambdaEngine
 
 					// Apply scissor/clipping rectangle
 					ScissorRect scissorRect = {};
-					scissorRect.x				= (int32_t)clipRect.x;
-					scissorRect.y				= (int32_t)clipRect.y;
-					scissorRect.Width			= uint32_t(clipRect.z - clipRect.x);
-					scissorRect.Height			= uint32_t(clipRect.w - clipRect.y);
+					scissorRect.x				= (int32)clipRect.x;
+					scissorRect.y				= (int32)clipRect.y;
+					scissorRect.Width			= uint32(clipRect.z - clipRect.x);
+					scissorRect.Height			= uint32(clipRect.w - clipRect.y);
 
 					pCommandList->SetScissorRects(&scissorRect, 0, 1);
+
+					if (pCmd->TextureId)
+					{
+						ImGuiTexture*		pImGuiTexture	= reinterpret_cast<ImGuiTexture*>(pCmd->TextureId);
+						IDescriptorSet* pDescriptorSet	= nullptr;
+
+						auto textureIt = m_TextureDescriptorSetMap.find(pImGuiTexture->pTextureView);
+
+						if (textureIt == m_TextureDescriptorSetMap.end())
+						{
+							pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_pPipelineLayout, 0, m_pDescriptorHeap);
+							m_TextureDescriptorSetMap.insert({ pImGuiTexture->pTextureView, pDescriptorSet });
+
+							pDescriptorSet->WriteTextureDescriptors(&pImGuiTexture->pTextureView, &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
+						}
+						else
+						{
+							pDescriptorSet = textureIt->second;
+						}
+						
+						GUID_Lambda vertexShaderGUID	= pImGuiTexture->VertexShaderGUID == GUID_NONE	? m_VertexShaderGUID	: pImGuiTexture->VertexShaderGUID;
+						GUID_Lambda pixelShaderGUID		= pImGuiTexture->PixelShaderGUID == GUID_NONE	? m_PixelShaderGUID		: pImGuiTexture->PixelShaderGUID;
+
+						auto vertexShaderIt = m_ShadersIDToPipelineStateIDMap.find(vertexShaderGUID);
+
+						if (vertexShaderIt != m_ShadersIDToPipelineStateIDMap.end())
+						{
+							auto pixelShaderIt = vertexShaderIt->second.find(pixelShaderGUID);
+
+							if (pixelShaderIt != vertexShaderIt->second.end())
+							{
+								IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pixelShaderIt->second);
+								pCommandList->BindGraphicsPipeline(pPipelineState);
+							}
+							else
+							{
+								uint64 pipelineGUID = InternalCreatePipelineState(vertexShaderGUID, pixelShaderGUID);
+
+								vertexShaderIt->second.insert({ pixelShaderGUID, pipelineGUID });
+
+								IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pipelineGUID);
+								pCommandList->BindGraphicsPipeline(pPipelineState);
+							}
+						}
+						else
+						{
+							uint64 pipelineGUID = InternalCreatePipelineState(vertexShaderGUID, pixelShaderGUID);
+
+							THashTable<GUID_Lambda, uint64> pixelShaderToPipelineStateMap;
+							pixelShaderToPipelineStateMap.insert({ pixelShaderGUID, pipelineGUID });
+							m_ShadersIDToPipelineStateIDMap.insert({ vertexShaderGUID, pixelShaderToPipelineStateMap });
+
+							IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pipelineGUID);
+							pCommandList->BindGraphicsPipeline(pPipelineState);
+						}
+
+						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelMult,			4 * sizeof(float32),	4 * sizeof(float32));
+						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelAdd,				4 * sizeof(float32),	8 * sizeof(float32));
+						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, &pImGuiTexture->ReservedIncludeMask,		sizeof(uint32),		12 * sizeof(float32));
+
+						pCommandList->BindDescriptorSetGraphics(pDescriptorSet, m_pPipelineLayout, 0);
+					}
+					else
+					{
+						constexpr const float32 DEFAULT_CHANNEL_MULT[4]					= { 1.0f, 1.0f, 1.0f, 1.0f };
+						constexpr const float32 DEFAULT_CHANNEL_ADD[4]					= { 0.0f, 0.0f, 0.0f, 0.0f };
+						constexpr const uint32 DEFAULT_CHANNEL_RESERVED_INCLUDE_MASK	= 0x00008421;  //0000 0000 0000 0000 1000 0100 0010 0001
+
+						IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_PipelineStateID);
+						pCommandList->BindGraphicsPipeline(pPipelineState);
+
+						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_MULT,						4 * sizeof(float32),	4 * sizeof(float32));
+						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_ADD,						4 * sizeof(float32),	8 * sizeof(float32));
+						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, &DEFAULT_CHANNEL_RESERVED_INCLUDE_MASK,		sizeof(uint32),		12 * sizeof(float32));
+
+						pCommandList->BindDescriptorSetGraphics(m_pDescriptorSet, m_pPipelineLayout, 0);
+					}
 
 					// Draw
 					pCommandList->DrawIndexInstanced(pCmd->ElemCount, 1, pCmd->IdxOffset + globalIndexOffset, pCmd->VtxOffset + globalVertexOffset, 0);
@@ -452,6 +420,11 @@ namespace LambdaEngine
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.AddInputCharacter(character);
+	}
+
+	ImGuiContext* ImGuiRenderer::GetImguiContext()
+	{
+		return ImGui::GetCurrentContext();
 	}
 
 	bool ImGuiRenderer::InitImGui(IWindow* pWindow)
@@ -728,30 +701,6 @@ namespace LambdaEngine
 		return m_pSampler != nullptr;
 	}
 
-	bool ImGuiRenderer::CreateShaders()
-	{
-		ShaderDesc vertexShaderDesc = {};
-		vertexShaderDesc.pName			= "ImGui Vertex Shader";
-		vertexShaderDesc.pSource		= reinterpret_cast<const char*>(s_VertSpirv);
-		vertexShaderDesc.SourceSize		= sizeof(s_VertSpirv);
-		vertexShaderDesc.pEntryPoint	= "main";
-		vertexShaderDesc.Stage			= FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
-		vertexShaderDesc.Lang			= EShaderLang::SPIRV;
-
-		ShaderDesc pixelShaderDesc = {};
-		pixelShaderDesc.pName			= "ImGui Pixel Shader";
-		pixelShaderDesc.pSource			= reinterpret_cast<const char*>(s_PixelSpirv);
-		pixelShaderDesc.SourceSize		= sizeof(s_PixelSpirv);
-		pixelShaderDesc.pEntryPoint		= "main";
-		pixelShaderDesc.Stage			= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
-		pixelShaderDesc.Lang			= EShaderLang::SPIRV;
-
-		m_pVertexShader = m_pGraphicsDevice->CreateShader(&vertexShaderDesc);
-		m_pPixelShader = m_pGraphicsDevice->CreateShader(&pixelShaderDesc);
-
-		return m_pVertexShader != nullptr && m_pPixelShader != nullptr;
-	}
-
 	bool ImGuiRenderer::CreateRenderPass()
 	{
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
@@ -809,17 +758,24 @@ namespace LambdaEngine
 		descriptorSetLayoutDesc.pDescriptorBindings		= &descriptorBindingDesc;
 		descriptorSetLayoutDesc.DescriptorBindingCount	= 1;
 
-		ConstantRangeDesc constantRangeDesc = {};
-		constantRangeDesc.ShaderStageFlags		= FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
-		constantRangeDesc.SizeInBytes			= 4 * sizeof(float32);
-		constantRangeDesc.OffsetInBytes			= 0;
+		ConstantRangeDesc constantRangeVertexDesc = {};
+		constantRangeVertexDesc.ShaderStageFlags		= FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		constantRangeVertexDesc.SizeInBytes				= 4 * sizeof(float32);
+		constantRangeVertexDesc.OffsetInBytes			= 0;
+
+		ConstantRangeDesc constantRangePixelDesc = {};
+		constantRangePixelDesc.ShaderStageFlags			= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		constantRangePixelDesc.SizeInBytes				= 8 * sizeof(float32) + sizeof(uint32);
+		constantRangePixelDesc.OffsetInBytes			= constantRangeVertexDesc.SizeInBytes;
+
+		ConstantRangeDesc pConstantRanges[2] = { constantRangeVertexDesc, constantRangePixelDesc };
 
 		PipelineLayoutDesc pipelineLayoutDesc = {};
 		pipelineLayoutDesc.pName						= "ImGui Pipeline Layout";
 		pipelineLayoutDesc.pDescriptorSetLayouts		= &descriptorSetLayoutDesc;
 		pipelineLayoutDesc.DescriptorSetLayoutCount		= 1;
-		pipelineLayoutDesc.pConstantRanges				= &constantRangeDesc;
-		pipelineLayoutDesc.ConstantRangeCount			= 1;
+		pipelineLayoutDesc.pConstantRanges				= pConstantRanges;
+		pipelineLayoutDesc.ConstantRangeCount			= ARRAYSIZE(pConstantRanges);
 
 		m_pPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 
@@ -852,7 +808,25 @@ namespace LambdaEngine
 		return m_pDescriptorSet != nullptr;
 	}
 
+	bool ImGuiRenderer::CreateShaders()
+	{
+		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiVertex.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
+		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
+		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
+	}
+
 	bool ImGuiRenderer::CreatePipelineState()
+	{
+		m_PipelineStateID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID);
+
+		THashTable<GUID_Lambda, uint64> pixelShaderToPipelineStateMap;
+		pixelShaderToPipelineStateMap.insert({ m_PixelShaderGUID, m_PipelineStateID });
+		m_ShadersIDToPipelineStateIDMap.insert({ m_VertexShaderGUID, pixelShaderToPipelineStateMap });
+
+		return true;
+	}
+
+	uint64 ImGuiRenderer::InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader)
 	{
 		VertexInputAttributeDesc pVertexAttributeDesc[3] = {};
 		pVertexAttributeDesc[0].Location	= 0;
@@ -869,26 +843,24 @@ namespace LambdaEngine
 		vertexInputBindingDesc.Binding			= 0;
 		vertexInputBindingDesc.Stride			= sizeof(ImDrawVert);
 		vertexInputBindingDesc.InputRate		= EVertexInputRate::PER_VERTEX;
-		vertexInputBindingDesc.pAttributes		= pVertexAttributeDesc;
+		memcpy(vertexInputBindingDesc.pAttributes, pVertexAttributeDesc, 3 * sizeof(VertexInputAttributeDesc));
 		vertexInputBindingDesc.AttributeCount	= 3;
 
 		BlendAttachmentState blendAttachmentState = {};
 		blendAttachmentState.BlendEnabled			= true;
 		blendAttachmentState.ColorComponentsMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
 
-		GraphicsPipelineStateDesc pipelineStateDesc = {};
+		GraphicsManagedPipelineStateDesc pipelineStateDesc = {};
 		pipelineStateDesc.pName							= "ImGui Pipeline State";
 		pipelineStateDesc.pRenderPass					= m_pRenderPass;
 		pipelineStateDesc.pPipelineLayout				= m_pPipelineLayout;
-		pipelineStateDesc.pVertexInputBindings			= &vertexInputBindingDesc;
+		pipelineStateDesc.pVertexInputBindings[0]		= vertexInputBindingDesc;
 		pipelineStateDesc.VertexInputBindingCount		= 1;
 		pipelineStateDesc.pBlendAttachmentStates[0]		= blendAttachmentState;
 		pipelineStateDesc.BlendAttachmentStateCount		= 1;
-		pipelineStateDesc.pVertexShader					= m_pVertexShader;
-		pipelineStateDesc.pPixelShader					= m_pPixelShader;
+		pipelineStateDesc.VertexShader					= vertexShader;
+		pipelineStateDesc.PixelShader					= pixelShader;
 
-		m_pPipelineState = m_pGraphicsDevice->CreateGraphicsPipelineState(&pipelineStateDesc);
-
-		return m_pPipelineState != nullptr;
+		return PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
 	}
 }

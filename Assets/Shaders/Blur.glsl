@@ -1,6 +1,6 @@
 #version 460
 
-#include "helpers.glsl"
+#include "Helpers.glsl"
 
 layout (local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
 

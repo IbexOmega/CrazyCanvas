@@ -16,10 +16,6 @@ namespace LambdaEngine
 {
 	Win32Application* Win32Application::s_pApplication = nullptr;
 
-	/*
-	* Instance
-	*/
-
 	Win32Application::Win32Application(HINSTANCE hInstance)
 		: m_hInstance(hInstance)
 	{
@@ -105,38 +101,58 @@ namespace LambdaEngine
 
 		for (Win32Message& message : messagesToProcess)
 		{
-			ProcessMessage(message.hWnd, message.uMessage, message.wParam, message.lParam);
+			ProcessStoredMessage(message.hWnd, message.uMessage, message.wParam, message.lParam, message.RawInput.MouseDeltaX, message.RawInput.MouseDeltaY);
 		}
 	}
 
 	void Win32Application::MakeMainWindow(IWindow* pMainWindow)
 	{
 		m_pMainWindow = reinterpret_cast<Win32Window*>(pMainWindow);
+
+		if (m_InputMode == EInputMode::INPUT_MODE_RAW)
+		{
+			HWND hwnd = (HWND)m_pMainWindow->GetHandle();
+			RegisterRawInputDevices(hwnd);
+		}
 	}
 
 	void Win32Application::SetInputMode(EInputMode inputMode)
 	{
-		if (inputMode == m_InputMode)
+		if (inputMode == m_InputMode || inputMode == EInputMode::INPUT_MODE_NONE)
 		{
 			return;
 		}
 
-		if (inputMode == EInputMode::INPUT_RAW)
+		if (inputMode == EInputMode::INPUT_MODE_RAW)
 		{
-			RegisterRawInputDevices();
+			// Get the cursor position
+			POINT cursorPos = { };
+			::GetCursorPos(&cursorPos);
+
+			m_RawInput.MouseX = cursorPos.x;
+			m_RawInput.MouseY = cursorPos.y;
+
+			// Register input devices for the main window
+			HWND hWnd = (HWND)m_pMainWindow->GetHandle();
+			RegisterRawInputDevices(hWnd);
 		}
-		else if (inputMode == EInputMode::INPUT_STANDARD)
+		else if (inputMode == EInputMode::INPUT_MODE_STANDARD)
 		{
-			if (m_InputMode == EInputMode::INPUT_RAW)
+			if (m_InputMode == EInputMode::INPUT_MODE_RAW)
 			{
 				UnregisterRawInputDevices();
 			}
 		}
-
+		
 		m_InputMode = inputMode;
 	}
 
-	void Win32Application::ProcessMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
+	EInputMode Win32Application::GetInputMode() const
+	{
+		return m_InputMode;
+	}
+
+	void Win32Application::ProcessStoredMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam, int32 mouseDeltaX, int32 mouseDeltaY)
 	{
 		constexpr uint16 SCAN_CODE_MASK		= 0x01ff;
 		constexpr uint32 REPEAT_KEY_MASK	= 0x40000000;
@@ -148,10 +164,10 @@ namespace LambdaEngine
 			case WM_KEYDOWN:
 			case WM_SYSKEYDOWN:
 			{
-				const uint32	modifierMask = Win32InputCodeTable::GetModifierMask();
-				const uint16	scancode = HIWORD(lParam) & SCAN_CODE_MASK;
-				EKey			keyCode = Win32InputCodeTable::GetKeyFromScanCode(scancode);
-				bool			isRepeat = (lParam & REPEAT_KEY_MASK);
+				const uint32	modifierMask	= Win32InputCodeTable::GetModifierMask();
+				const uint16	scancode		= HIWORD(lParam) & SCAN_CODE_MASK;
+				EKey			keyCode			= Win32InputCodeTable::GetKeyFromScanCode(scancode);
+				bool			isRepeat		= (lParam & REPEAT_KEY_MASK);
 
 				for (IEventHandler* pEventHandler : m_EventHandlers)
 				{
@@ -164,8 +180,8 @@ namespace LambdaEngine
 			case WM_KEYUP:
 			case WM_SYSKEYUP:
 			{
-				const uint16	scancode = HIWORD(lParam) & SCAN_CODE_MASK;
-				EKey			keyCode = Win32InputCodeTable::GetKeyFromScanCode(scancode);
+				const uint16	scancode	= HIWORD(lParam) & SCAN_CODE_MASK;
+				EKey			keyCode		= Win32InputCodeTable::GetKeyFromScanCode(scancode);
 
 				for (IEventHandler* pEventHandler : m_EventHandlers)
 				{
@@ -189,21 +205,29 @@ namespace LambdaEngine
 
 			case WM_MOUSEMOVE:
 			{
-				const int32 x = GET_X_LPARAM(lParam);
-				const int32 y = GET_Y_LPARAM(lParam);
-
-				for (IEventHandler* pEventHandler : m_EventHandlers)
+				// Prevent double messages of mouse moved for main windows
+				if (pMessageWindow == m_pMainWindow)
 				{
-					pEventHandler->MouseMoved(x, y);
+					if (m_InputMode == EInputMode::INPUT_MODE_STANDARD)
+					{
+						const int32 x = GET_X_LPARAM(lParam);
+						const int32 y = GET_Y_LPARAM(lParam);
+
+						for (IEventHandler* pEventHandler : m_EventHandlers)
+						{
+							pEventHandler->MouseMoved(x, y);
+						}
+					}
 				}
 
+				// Mouse must have entered the window
 				if (!m_IsTrackingMouse)
 				{
 					m_IsTrackingMouse = true;
 
 					TRACKMOUSEEVENT tme = { sizeof(tme) };
-					tme.dwFlags = TME_LEAVE;
-					tme.hwndTrack = hWnd;
+					tme.dwFlags		= TME_LEAVE;
+					tme.hwndTrack	= hWnd;
 					TrackMouseEvent(&tme);
 
 					for (IEventHandler* pEventHandler : m_EventHandlers)
@@ -323,7 +347,14 @@ namespace LambdaEngine
 
 			case WM_INPUT:
 			{
-				ProcessRawInput(wParam, lParam);
+				m_RawInput.MouseX += mouseDeltaX;
+				m_RawInput.MouseY += mouseDeltaY;
+
+				for (IEventHandler* pEventHandler : m_EventHandlers)
+				{
+					pEventHandler->MouseMoved(m_RawInput.MouseX, m_RawInput.MouseY);
+				}
+
 				break;
 			}
 
@@ -380,7 +411,6 @@ namespace LambdaEngine
 			case WM_KILLFOCUS:
 			{
 				bool hasFocus = (uMessage == WM_SETFOCUS);
-
 				for (IEventHandler* pEventHandler : m_EventHandlers)
 				{
 					pEventHandler->FocusChanged(pMessageWindow, hasFocus);
@@ -389,54 +419,47 @@ namespace LambdaEngine
 				break;
 			}
 		}
-
-		for (IWin32MessageHandler* pHandler : m_MessageHandlers)
-		{
-			pHandler->MessageProc(hWnd, uMessage, wParam, lParam);
-		}
 	}
 
-	void Win32Application::ProcessRawInput(WPARAM wParam, LPARAM lParam)
+	LRESULT Win32Application::ProcessRawInput(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
-		UINT	dwSize	= 0;
-		LPBYTE	pBytes = nullptr;
+		UINT dwSize = 0;
 		::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
-		if (pBytes == NULL)
+		if (dwSize > m_RawInput.BufferSize)
 		{
-			LOG_ERROR("[Win32Application]: Failed to read raw input data");
-			return;
+			m_RawInput.BufferSize	= dwSize;
+			m_RawInput.pInputBuffer = DBG_NEW byte[dwSize];
+		}
+
+		if (!m_RawInput.pInputBuffer)
+		{
+			LOG_ERROR("[Win32Application]: Failed to allocate Raw Input buffer");
+			return 0;
+		}
+
+		if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, m_RawInput.pInputBuffer, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
+		{
+			LOG_ERROR("[Win32Application]: GetRawInputData did not return correct size");
+			return 0;
+		}
+
+		RAWINPUT* pRaw = (RAWINPUT*)m_RawInput.pInputBuffer;
+		if (pRaw->header.dwType == RIM_TYPEMOUSE)
+		{
+			const int32 deltaX = pRaw->data.mouse.lLastX;
+			const int32 deltaY = pRaw->data.mouse.lLastY;
+
+			if (deltaX != 0 && deltaY != 0)
+			{
+				StoreMessage(hWnd, uMessage, wParam, lParam, deltaX, deltaY);
+			}
+
+			return 0;
 		}
 		else
 		{
-			pBytes = DBG_NEW BYTE[dwSize];
+			return ::DefRawInputProc(&pRaw, 1, sizeof(RAWINPUTHEADER));
 		}
-
-		if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, pBytes, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
-		{
-			LOG_ERROR("[Win32Application]: GetRawInputData does not return correct size");
-			return;
-		}
-
-		RAWINPUT* pRaw = (RAWINPUT*)pBytes;
-		if (pRaw->header.dwType == RIM_TYPEKEYBOARD)
-		{
-			pRaw->data.keyboard.VKey;
-
-			const uint32	modifierMask = Win32InputCodeTable::GetModifierMask();
-			EKey			keyCode = Win32InputCodeTable::GetKeyFromScanCode(pRaw->data.keyboard.MakeCode);
-			//bool			isRepeat = (lParam & REPEAT_KEY_MASK);
-
-			for (IEventHandler* pEventHandler : m_EventHandlers)
-			{
-				pEventHandler->KeyPressed(keyCode, modifierMask, false);
-			}
-		}
-		else if (pRaw->header.dwType == RIM_TYPEMOUSE)
-		{
-
-		}
-
-		SAFEDELETE_ARRAY(pBytes);
 	}
 
 	Win32Window* Win32Application::GetWindowFromHandle(HWND hWnd) const
@@ -455,7 +478,7 @@ namespace LambdaEngine
 
 	HINSTANCE Win32Application::GetInstanceHandle()
 	{
-		return Win32Application::Get()->m_hInstance;
+		return m_hInstance;
 	}
 
 	IWindow* Win32Application::GetForegroundWindow() const
@@ -474,15 +497,12 @@ namespace LambdaEngine
 		m_Windows.emplace_back(pWindow);
 	}
 
-	/*
-	* Static
-	*/
-
 	bool Win32Application::PreInit(HINSTANCE hInstance)
 	{
 		VALIDATE(hInstance != NULL);
 
 		Win32Application* pApplication = DBG_NEW Win32Application(hInstance);
+		pApplication->SetInputMode(EInputMode::INPUT_MODE_STANDARD);
 
 		if (!RegisterWindowClass())
 		{
@@ -549,6 +569,7 @@ namespace LambdaEngine
 	{
 		WNDCLASS wc = { };
 		ZERO_MEMORY(&wc, sizeof(WNDCLASS));
+
 		wc.hInstance		= Win32Application::Get()->GetInstanceHandle();
 		wc.lpszClassName	= WINDOW_CLASS;
 		wc.hbrBackground	= (HBRUSH)::GetStockObject(BLACK_BRUSH);
@@ -567,62 +588,52 @@ namespace LambdaEngine
 		}
 	}
 
-	bool Win32Application::RegisterRawInputDevices()
+	bool Win32Application::RegisterRawInputDevices(HWND hWnd)
 	{
-		RAWINPUTDEVICE devices[2];
-		ZERO_MEMORY(devices, sizeof(RAWINPUTDEVICE) * 2);
-
-		// Keyboard
-		devices[0].dwFlags		= RIDEV_NOLEGACY;
-		devices[0].hwndTarget	= 0;
-		devices[0].usUsage		= 0x06;
-		devices[0].usUsagePage	= 0x01;
+		constexpr uint32 DEVICE_COUNT = 1;
+		RAWINPUTDEVICE devices[DEVICE_COUNT];
+		ZERO_MEMORY(devices, sizeof(RAWINPUTDEVICE) * DEVICE_COUNT);
 
 		// Mouse
-		devices[1].dwFlags		= 0;
-		devices[1].hwndTarget	= 0;
-		devices[1].usUsage		= 0x02;
-		devices[1].usUsagePage	= 0x01;
+		devices[0].dwFlags		= 0;
+		devices[0].hwndTarget	= hWnd;
+		devices[0].usUsage		= 0x02;
+		devices[0].usUsagePage	= 0x01;
 
-		BOOL bResult = ::RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE));
+		BOOL bResult = ::RegisterRawInputDevices(devices, DEVICE_COUNT, sizeof(RAWINPUTDEVICE));
 		if (bResult == FALSE)
 		{
-			LOG_ERROR("[Win32Application]: Failed to register raw input devices");
+			LOG_ERROR("[Win32Application]: Failed to register Raw Input devices");
 			return false;
 		}
 		else
 		{
-			D_LOG_MESSAGE("[Win32Application]: Registered keyboard and mouse devices");
+			D_LOG_MESSAGE("[Win32Application]: Registered Raw Input devices");
 			return true;
 		}
 	}
 
 	bool Win32Application::UnregisterRawInputDevices()
 	{
-		RAWINPUTDEVICE devices[2];
-		ZERO_MEMORY(devices, sizeof(RAWINPUTDEVICE) * 2);
-
-		// Keyboard
-		devices[0].dwFlags		= RIDEV_REMOVE;
-		devices[0].hwndTarget	= 0;
-		devices[0].usUsage		= 0x06;
-		devices[0].usUsagePage	= 0x01;
+		constexpr uint32 DEVICE_COUNT = 1;
+		RAWINPUTDEVICE devices[DEVICE_COUNT];
+		ZERO_MEMORY(devices, sizeof(RAWINPUTDEVICE) * DEVICE_COUNT);
 
 		// Mouse
-		devices[1].dwFlags		= RIDEV_REMOVE;
-		devices[1].hwndTarget	= 0;
-		devices[1].usUsage		= 0x02;
-		devices[1].usUsagePage	= 0x01;
+		devices[0].dwFlags		= RIDEV_REMOVE;
+		devices[0].hwndTarget	= 0;
+		devices[0].usUsage		= 0x02;
+		devices[0].usUsagePage	= 0x01;
 
-		BOOL bResult = ::RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE));
+		BOOL bResult = ::RegisterRawInputDevices(devices, DEVICE_COUNT, sizeof(RAWINPUTDEVICE));
 		if (bResult == FALSE)
 		{
-			LOG_ERROR("[Win32Application]: Failed to unregister raw input devices");
+			LOG_ERROR("[Win32Application]: Failed to unregister Raw Input devices");
 			return false;
 		}
 		else
 		{
-			D_LOG_MESSAGE("[Win32Application]: Unregistered keyboard and mouse devices");
+			D_LOG_MESSAGE("[Win32Application]: Unregistered Raw Input devices");
 			return true;
 		}
 	}
@@ -648,17 +659,82 @@ namespace LambdaEngine
 		PostQuitMessage(0);
 	}
 
+	Win32Application* Win32Application::Get()
+	{
+		return s_pApplication;
+	}
+
 	LRESULT Win32Application::WindowProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
 		VALIDATE(Win32Application::Get() != nullptr);
-
-		Win32Application::Get()->StoreMessage(hWnd, uMessage, wParam, lParam);
-		return ::DefWindowProc(hWnd, uMessage, wParam, lParam);
+		return Win32Application::Get()->ProcessMessage(hWnd, uMessage, wParam, lParam);
 	}
 
-	void Win32Application::StoreMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
+	LRESULT Win32Application::ProcessMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
-		m_StoredMessages.push_back({ hWnd, uMessage, wParam, lParam });
+		// Let other modules handle messages
+		bool	messageHandled	= false;
+		LRESULT result			= 0;
+		for (IWin32MessageHandler* pMessageHandler : m_MessageHandlers)
+		{
+			result = pMessageHandler->ProcessMessage(hWnd, uMessage, wParam, lParam);
+			if (result == 0)
+			{
+				messageHandled = true;
+			}
+		}
+
+		// Process messages
+		switch (uMessage)
+		{
+			case WM_INPUT:
+			{
+				return ProcessRawInput(hWnd, uMessage, wParam, lParam);
+			}
+
+			case WM_MOUSEMOVE:
+			case WM_KEYDOWN:
+			case WM_SYSKEYDOWN:
+			case WM_KEYUP:
+			case WM_SYSKEYUP:
+			case WM_CHAR:
+			case WM_SYSCHAR:
+			case WM_LBUTTONDOWN:
+			case WM_MBUTTONDOWN:
+			case WM_RBUTTONDOWN:
+			case WM_XBUTTONDOWN:
+			case WM_LBUTTONUP:
+			case WM_MBUTTONUP:
+			case WM_RBUTTONUP:
+			case WM_XBUTTONUP:
+			case WM_MOUSEWHEEL:
+			case WM_MOUSEHWHEEL:
+			case WM_MOVE:
+			case WM_SIZE:
+			case WM_MOUSELEAVE:
+			case WM_DESTROY:
+			case WM_SETFOCUS:
+			case WM_KILLFOCUS:
+			{
+				StoreMessage(hWnd, uMessage, wParam, lParam, 0, 0);
+				return 0;
+			}
+		}
+
+		// Return the default or result from MessageHandler
+		if (!messageHandled)
+		{
+			return ::DefWindowProc(hWnd, uMessage, wParam, lParam);
+		}
+		else
+		{
+			return result;
+		}
+	}
+
+	void Win32Application::StoreMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam, int32 mouseDeltaX, int32 mouseDeltaY)
+	{
+		m_StoredMessages.push_back({ hWnd, uMessage, wParam, lParam, mouseDeltaX, mouseDeltaY });
 	}
 }
 
