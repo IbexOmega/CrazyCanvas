@@ -775,7 +775,7 @@ namespace LambdaEngine
 		pipelineLayoutDesc.pDescriptorSetLayouts		= &descriptorSetLayoutDesc;
 		pipelineLayoutDesc.DescriptorSetLayoutCount		= 1;
 		pipelineLayoutDesc.pConstantRanges				= pConstantRanges;
-		pipelineLayoutDesc.ConstantRangeCount			= ARRAYSIZE(pConstantRanges);
+		pipelineLayoutDesc.ConstantRangeCount			= ARR_SIZE(pConstantRanges);
 
 		m_pPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 

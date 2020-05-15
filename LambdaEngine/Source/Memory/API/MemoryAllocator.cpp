@@ -21,8 +21,7 @@ namespace LambdaEngine
 			
 			uint64	usableSize		= totalSize - pageSize;
 			byte*	pProtectionPage	= pMemory + (usableSize);
-			bool result = PlatformMemory::VirtualProtect(pProtectionPage, pageSize);
-			if (!result)
+			if (!PlatformMemory::VirtualProtect(pProtectionPage, pageSize))
 			{
 				return nullptr;
 			}
@@ -39,7 +38,11 @@ namespace LambdaEngine
 
 	void* MemoryAllocator::Malloc(uint64 sizeInBytes, uint64 alignment)
 	{
+#ifdef LAMBDA_PLATFORM_WINDOWS
 		return _aligned_malloc(sizeInBytes, alignment);
+#elseif LAMBDA_PLATFORM_MACOS
+		return aligned_alloc(alignment, sizeInBytes);
+#endif
 	}
 
 	void MemoryAllocator::Free(void* pPtr)
