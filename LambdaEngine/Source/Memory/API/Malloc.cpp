@@ -12,7 +12,7 @@
 #ifdef LAMBDA_PLATFORM_WINDOWS
 	#define debug_malloc(sizeInBytes, pFileName, lineNumber)	_malloc_dbg(sizeInBytes, _NORMAL_BLOCK, pFileName, lineNumber)
 #elif defined(LAMBDA_PLATFORM_MACOS)
-	#define debug_malloc(sizeInBytes, pFileName, lineNumber)	malloc(sizeInBytes, _NORMAL_BLOCK, pFileName, lineNumber)
+	#define debug_malloc(sizeInBytes, pFileName, lineNumber)	 malloc(sizeInBytes); (void)pFileName; (void)lineNumber
 #endif
 
 #define ALLOCATION_HEADER_SIZE __STDCPP_DEFAULT_NEW_ALIGNMENT__
@@ -78,7 +78,7 @@ void operator delete[](void* pPtr, size_t) noexcept
 */
 namespace LambdaEngine
 {
-	uint32 Malloc::s_DebugFlags = 0;
+	uint16 Malloc::s_DebugFlags = 0;
 
 	void* Malloc::Allocate(uint64 sizeInBytes)
 	{
@@ -122,28 +122,7 @@ namespace LambdaEngine
 
 	void* Malloc::AllocateDbg(uint64 sizeInBytes, const char* pFileName, int32 lineNumber)
 	{
-		if (sizeInBytes == 0)
-		{
-			return nullptr;
-		}
-
-		const uint64 sizeWithHeader = sizeInBytes + ALLOCATION_HEADER_SIZE;
-		
-		void* pResult = nullptr;
-		if (s_DebugFlags & MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT)
-		{
-			pResult = AllocateProtected(sizeWithHeader);
-		}
-		else
-		{
-			pResult = debug_malloc(sizeWithHeader, pFileName, lineNumber);
-		}
-
-		byte* const pAllocation		= reinterpret_cast<byte*>(pResult) + ALLOCATION_HEADER_SIZE;
-		void* const pAlignedAddress = AlignAddress(pAllocation, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
-		SetAllocationFlags(pAlignedAddress);
-
-		return pAlignedAddress;
+		return AllocateDbg(sizeInBytes, __STDCPP_DEFAULT_NEW_ALIGNMENT__, pFileName, lineNumber);
 	}
 
 	void* Malloc::AllocateDbg(uint64 sizeInBytes, uint64 alignment, const char* pFileName, int32 lineNumber)
@@ -153,24 +132,43 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
+		if (alignment < __STDCPP_DEFAULT_NEW_ALIGNMENT__)
+		{
+			alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__;
+		}
+
+		const uint64 sizeWithHeader = sizeInBytes + ALLOCATION_HEADER_SIZE;
+		const uint64 alignedSize	= AlignUp(sizeWithHeader, alignment);
+
+		void* pResult = nullptr;
 		if (s_DebugFlags & MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT)
 		{
-			return Allocate(sizeInBytes, alignment);
+			pResult = AllocateProtected(alignedSize);
 		}
 		else
 		{
-			return debug_aligned_malloc(sizeInBytes, alignment, pFileName, lineNumber);
+			pResult = debug_malloc(alignedSize, pFileName, lineNumber);
 		}
+
+		byte* const pMemory			= reinterpret_cast<byte*>(pResult);
+		byte* const pAllocation		= pMemory + ALLOCATION_HEADER_SIZE;
+		void* const pAlignedAddress = AlignAddress(pAllocation, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+
+		const uint16 padding = reinterpret_cast<byte*>(pAlignedAddress) - pMemory;
+		SetAllocationFlags(pAlignedAddress, padding);
+
+		return pAlignedAddress;
 	}
 
 	void Malloc::Free(void* pPtr)
 	{
 		VALIDATE(pPtr != nullptr);
 
+		const uint16 flags 		= GetAllocationFlags(pPtr);
+		const uint16 padding 	= GetAllocationPadding(pPtr);
+		
 		byte* const pBytes		= reinterpret_cast<byte*>(pPtr);
-		byte* const pAllocation = pBytes - ALLOCATION_HEADER_SIZE;
-
-		uint32 flags = GetAllocationFlags(pAllocation);
+		byte* const pAllocation = pBytes - padding;
 		if (flags & MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT)
 		{
 			PlatformMemory::VirtualFree(pAllocation);
@@ -226,16 +224,39 @@ namespace LambdaEngine
 	{
 		VALIDATE(padding >= ALLOCATION_HEADER_SIZE);
 
+		// Get address to flags
+		byte* pMemory = reinterpret_cast<byte*>(pAllocation) - sizeof(uint16);
+		
+		uint16* const pFlagsPtr = reinterpret_cast<uint16*>(pMemory);
+		(*pFlagsPtr) = uint16(s_DebugFlags);
+		
 		// Get address to padding
-		byte* const pPtr = reinterpret_cast<byte*>(pAllocation) - padding;
-
-
-		(*reinterpret_cast<uint32*>(pPtr)) = uint32(s_DebugFlags);
+		pMemory = reinterpret_cast<byte*>(pMemory) - sizeof(uint16);
+		
+		uint16* const pSizePtr = reinterpret_cast<uint16*>(pMemory);
+		(*pSizePtr) = padding;
 	}
 	
-	uint32 Malloc::GetAllocationFlags(void* pAllocation)
+	uint16 Malloc::GetAllocationFlags(void* pAllocation)
 	{
-		uint32* pFlag = reinterpret_cast<uint32*>(pAllocation);
-		return (*pFlag);
+		// Get address to padding
+		byte* pMemory = reinterpret_cast<byte*>(pAllocation) - sizeof(uint16);
+		
+		uint16* const pFlagsPtr = reinterpret_cast<uint16*>(pMemory);
+		const uint16 flags = uint16(*pFlagsPtr);
+		
+		return flags;
+	}
+
+	uint16 Malloc::GetAllocationPadding(void* pAllocation)
+	{
+		// Get address to padding
+		constexpr uint16 offset = sizeof(uint16) * 2;
+		byte* pMemory = reinterpret_cast<byte*>(pAllocation) - offset;
+		
+		uint16* const pSizePtr = reinterpret_cast<uint16*>(pMemory);
+		const uint16 padding = uint16(*pSizePtr);
+		
+		return padding;
 	}
 }

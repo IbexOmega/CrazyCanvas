@@ -2,6 +2,8 @@
 #include "Types.h"
 #include "Defines.h"
 
+#include <new>
+
 #ifdef LAMBDA_DEBUG
 	#define DBG_NEW	new(__FILE__, __LINE__)
 #else
@@ -46,7 +48,7 @@ void	operator delete[](void* pPtr, size_t sizeInBytes)	noexcept;
 
 namespace LambdaEngine
 {
-	enum FMemoryDebugFlags : uint32
+	enum FMemoryDebugFlags : uint16
 	{
 		MEMORY_DEBUG_FLAGS_NONE				= 0,
 		MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT	= FLAG(1),
@@ -73,9 +75,10 @@ namespace LambdaEngine
 		static void* AlignAddress(void* pAddress, uint64 alignment);
 
 		static void		SetAllocationFlags(void* pAllocation, uint16 padding);
-		static uint32	GetAllocationFlags(void* pAllocation);
+		static uint16	GetAllocationFlags(void* pAllocation);
+		static uint16	GetAllocationPadding(void* pAllocation);
 
 	private:
-		static uint32 s_DebugFlags;
+		static uint16 s_DebugFlags;
 	};
 }
