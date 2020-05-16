@@ -1,6 +1,6 @@
 #include "Sandbox.h"
 
-#include "Memory/API/MemoryAllocator.h"
+#include "Memory/API/Malloc.h"
 
 #include "Log/Log.h"
 
@@ -53,14 +53,14 @@ Sandbox::Sandbox()
 	PlatformApplication::Get()->AddEventHandler(this);
     
 	const uint32 size = 128;
-	byte* pMem = (byte*)MemoryAllocator::Malloc(size);//DBG_NEW byte[size];
+	byte* pMem = DBG_NEW byte[size];
 	
-	for (uint32 i = 0; i < size+1; i++)
+	for (uint32 i = 0; i < size; i++)
 	{
 		pMem[i] = 'a';
 	}
 	
-	MemoryAllocator::Free(pMem);
+	SAFEDELETE_ARRAY(pMem);
 	
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 

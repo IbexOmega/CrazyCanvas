@@ -7,7 +7,7 @@ namespace LambdaEngine
 {
 	void* Win32Memory::VirtualAlloc(uint64 sizeInBytes)
 	{
-		void* pAddress = ::VirtualAlloc(0, sizeInBytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		void* pAddress = ::VirtualAlloc(NULL, sizeInBytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		if (pAddress)
 		{
 			return pAddress;
@@ -28,7 +28,8 @@ namespace LambdaEngine
 
 	bool Win32Memory::VirtualFree(void* pMemory)
 	{
-		return false;
+		LPVOID lpAddress = pMemory;
+		return ::VirtualFree(lpAddress, 0, MEM_RELEASE);
 	}
 
 	uint64 Win32Memory::GetPageSize()

@@ -96,7 +96,7 @@ namespace LambdaEngine
 
         Log::SetDebuggerOutputEnabled(true);
 
-		MemoryAllocator::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
+		Malloc::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
 #endif
 
 #ifdef LAMBDA_PLATFORM_WINDOWS

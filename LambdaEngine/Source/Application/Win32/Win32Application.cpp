@@ -17,7 +17,11 @@ namespace LambdaEngine
 	Win32Application* Win32Application::s_pApplication = nullptr;
 
 	Win32Application::Win32Application(HINSTANCE hInstance)
-		: m_hInstance(hInstance)
+		: m_hInstance(hInstance),
+		m_Windows(),
+		m_StoredMessages(),
+		m_EventHandlers(),
+		m_MessageHandlers()
 	{
 		VALIDATE_MSG(s_pApplication == nullptr, "[Win32Application]: An instance of application already exists");
 		s_pApplication = this;
