@@ -55,8 +55,6 @@ namespace LambdaEngine
         MacApplication();
         ~MacApplication();
 
-        bool Init();
-        
         void AddMacEventHandler(IMacEventHandler* pMacMessageHandler);
         void RemoveMacEventHandler(IMacEventHandler* pMacMessageHandler);
         
@@ -73,16 +71,17 @@ namespace LambdaEngine
 			return m_IsProcessingEvents;
 		}
         
-        MacWindow* GetWindowFromNSWindow(CocoaWindow* pWindow);
+        MacWindow* GetWindowFromNSWindow(CocoaWindow* pWindow) const;
 
         // Application
-        virtual void AddEventHandler(IEventHandler* pHandler)    override final;
-        virtual void RemoveEventHandler(IEventHandler* pHandler) override final;
+		virtual bool Create(IEventHandler* pEventHandler) override final;
         
         virtual void ProcessStoredEvents() override final;
 
         virtual void MakeMainWindow(IWindow* pMainWindow) override final;
 
+		virtual bool SupportsRawInput() const override final;
+		
 		virtual void SetInputMode(EInputMode inputMode) override final;
 		
 		virtual EInputMode GetInputMode() const override final;
@@ -100,25 +99,25 @@ namespace LambdaEngine
         static bool PreInit();
         static bool PostRelease();
         
-        static bool Tick();
         static bool ProcessMessages();
         
         static void Terminate();
         
-        static IWindow* CreateWindow(const char* pTitle, uint32 width, uint32 height);
-        
+        static IWindow* 	CreateWindow(const char* pTitle, uint32 width, uint32 height);
+		static Application* CreateApplication();
+		
 		static MacApplication* Get();
         
     private:
-        CocoaAppDelegate* m_pAppDelegate    = nullptr;
-        MacWindow*        m_pMainWindow     = nullptr;
+        CocoaAppDelegate* 	m_pAppDelegate	= nullptr;
+        MacWindow*        	m_pMainWindow	= nullptr;
+		IEventHandler*		m_pEventHandler	= nullptr;
         
         bool m_IsProcessingEvents   = false;
         bool m_IsTerminating        = false;
         
         TArray<MacWindow*>          m_Windows;
         TArray<MacEvent>            m_StoredEvents;
-        TArray<IEventHandler*>     	m_EventHandlers;
         TArray<IMacEventHandler*> 	m_MacEventHandlers;
         
     private:
