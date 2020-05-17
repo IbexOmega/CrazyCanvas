@@ -20,8 +20,7 @@ namespace LambdaEngine
 	public:
         DECL_ABSTRACT_CLASS(Application);
 
-        virtual void AddEventHandler(IEventHandler* pEventHandler)    = 0;
-        virtual void RemoveEventHandler(IEventHandler* pEventHandler) = 0;
+        virtual bool Create(IEventHandler* pEventHandler) = 0;
 
         /*
         * Application buffers all OS-events, and gets processed in a batch with this function
@@ -34,6 +33,8 @@ namespace LambdaEngine
         *   pMainWindow - New main window
         */
         virtual void MakeMainWindow(IWindow* pMainWindow) = 0;
+
+        virtual bool SupportsRawInput() const = 0;
 
         /*
         * Sets the input mode for the main window
@@ -48,12 +49,6 @@ namespace LambdaEngine
     public:
 		static bool PreInit() 		{ return true; }
 		static bool PostRelease() 	{ return true; }
-		
-        /*
-        * Application ticks one frame, processes OS- events and then processes the buffered events
-        *   return - Returns false if the OS- sent a quit message. Happens when terminate is called. 
-        */
-		static bool Tick() { return false; }
 
         /*
         * Processes all event from the OS and bufferes them up

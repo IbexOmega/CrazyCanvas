@@ -71,12 +71,13 @@ namespace LambdaEngine
 		HINSTANCE 		GetInstanceHandle();
 
 		// Application interface
-		virtual void AddEventHandler(IEventHandler* pEventHandler)		override final;
-		virtual void RemoveEventHandler(IEventHandler* pEventHandler)	override final;
-        
+		virtual bool Create(IEventHandler* pEventHandler) override final;
+
 		virtual void ProcessStoredEvents() override final;
 
 		virtual void MakeMainWindow(IWindow* pMainWindow) override final;
+
+		virtual bool SupportsRawInput() const override final;
 
 		virtual void SetInputMode(EInputMode inputMode) override final;
 
@@ -93,13 +94,13 @@ namespace LambdaEngine
 		LRESULT ProcessRawInput(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 
 	public:
-		static bool PreInit(HINSTANCE hInstance);
+		static bool PreInit();
 		static bool PostRelease();
 
-		static bool Tick();
 		static bool ProcessMessages();
 
-		static IWindow*	CreateWindow(const char* pTitle, uint32 width, uint32 height);
+		static IWindow*		CreateWindow(const char* pTitle, uint32 width, uint32 height);
+		static Application* CreateApplication();
 
 		static void Terminate();
 
@@ -114,6 +115,7 @@ namespace LambdaEngine
 
 	private:
 		Win32Window*	m_pMainWindow	= nullptr;
+		IEventHandler*	m_pEventHandler = nullptr;
 		HINSTANCE		m_hInstance		= 0;
 
 		RawInputState	m_RawInput			= { };
@@ -122,7 +124,6 @@ namespace LambdaEngine
 		
 		TArray<Win32Window*>			m_Windows;
 		TArray<Win32Message> 			m_StoredMessages;
-		TArray<IEventHandler*> 			m_EventHandlers;
 		TArray<IWin32MessageHandler*>	m_MessageHandlers;
 
 	private:

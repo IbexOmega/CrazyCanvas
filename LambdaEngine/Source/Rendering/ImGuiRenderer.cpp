@@ -19,7 +19,7 @@
 #include "Rendering/Core/API/IBuffer.h"
 
 #include "Application/API/IWindow.h"
-#include "Application/API/PlatformApplication.h"
+#include "Application/API/CommonApplication.h"
 
 #include "Resources/ResourceManager.h"
 
@@ -136,7 +136,7 @@ namespace LambdaEngine
 
 		m_pDescriptorSet->WriteTextureDescriptors(&m_pFontTextureView, &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
 
-		PlatformApplication::Get()->AddEventHandler(this);
+		CommonApplication::Get()->AddEventHandler(this);
 
 		return true;
 	}

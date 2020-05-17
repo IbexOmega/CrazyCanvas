@@ -162,7 +162,11 @@ namespace LambdaEngine
 
 	void Malloc::Free(void* pPtr)
 	{
-		VALIDATE(pPtr != nullptr);
+		// It appears that it is legal that free recives a nullptr so we support is aswell
+		if (pPtr == nullptr)
+		{
+			return;
+		}
 
 		const uint16 flags 		= GetAllocationFlags(pPtr);
 		const uint16 padding 	= GetAllocationPadding(pPtr);

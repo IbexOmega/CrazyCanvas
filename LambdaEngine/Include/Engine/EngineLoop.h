@@ -20,11 +20,7 @@ namespace LambdaEngine
 		* Initializes modules that are needed in EngineLoop::Init()
 		*	return - Returns true if successfull
 		*/
-#ifdef LAMBDA_PLATFORM_WINDOWS
-		static bool PreInit(HINSTANCE hInstance);
-#else
 		static bool PreInit();
-#endif
 
 		/*
 		* Initializes all engine modules

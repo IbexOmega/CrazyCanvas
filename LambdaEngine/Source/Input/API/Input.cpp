@@ -1,6 +1,6 @@
 #include "Input/API/Input.h"
 
-#include "Application/API/PlatformApplication.h"
+#include "Application/API/CommonApplication.h"
 
 namespace LambdaEngine
 {
@@ -12,6 +12,7 @@ namespace LambdaEngine
 
 	void Input::ButtonPressed(EMouseButton button, uint32 modifierMask)
 	{
+		UNREFERENCED_VARIABLE(modifierMask);
 		m_MouseState.ButtonStates[button] = true;
 	}
 
@@ -34,6 +35,8 @@ namespace LambdaEngine
 
 	void Input::KeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
 	{
+		UNREFERENCED_VARIABLE(modifierMask);
+
 		if (!isRepeat)
 		{
 			m_KeyboardState.KeyStates[key] = true;
@@ -52,14 +55,14 @@ namespace LambdaEngine
 	bool Input::Init()
 	{
 		s_pInstance = DBG_NEW Input();
-		PlatformApplication::Get()->AddEventHandler(s_pInstance);
+		CommonApplication::Get()->AddEventHandler(s_pInstance);
 
         return (s_pInstance != nullptr);
 	}
 
 	void Input::Release()
 	{
-		PlatformApplication::Get()->RemoveEventHandler(s_pInstance);
+		CommonApplication::Get()->RemoveEventHandler(s_pInstance);
 		SAFEDELETE(s_pInstance);
 	}
 

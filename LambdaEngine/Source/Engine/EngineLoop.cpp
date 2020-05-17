@@ -9,6 +9,7 @@
 
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformConsole.h"
+#include "Application/API/CommonApplication.h"
 
 #include "Input/API/Input.h"
 
@@ -64,7 +65,7 @@ namespace LambdaEngine
         
 		PlatformNetworkUtils::Tick(delta);
 
-        if (!PlatformApplication::Tick())
+        if (!CommonApplication::Tick())
         {
             return false;
         }
@@ -85,11 +86,7 @@ namespace LambdaEngine
 		NetworkUtils::FixedTick(delta);
     }
 
-#ifdef LAMBDA_PLATFORM_WINDOWS
-	bool EngineLoop::PreInit(HINSTANCE hInstance)
-#else
 	bool EngineLoop::PreInit()
-#endif
 	{
 #ifdef LAMBDA_DEVELOPMENT
         PlatformConsole::Show();
@@ -99,11 +96,7 @@ namespace LambdaEngine
 		Malloc::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
 #endif
 
-#ifdef LAMBDA_PLATFORM_WINDOWS
-        if (!PlatformApplication::PreInit(hInstance))
-#else
-        if (!PlatformApplication::PreInit())
-#endif
+        if (!CommonApplication::PreInit())
         {
             return false;
         }
@@ -190,7 +183,7 @@ namespace LambdaEngine
             return false;
         }
 
-#ifndef LAMBDA_PRODUCTION
+#ifdef LAMBDA_DEVELOPMENT
         PlatformConsole::Close();
 #endif
 		return true;
