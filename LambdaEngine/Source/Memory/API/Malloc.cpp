@@ -243,7 +243,7 @@ namespace LambdaEngine
 	
 	uint16 Malloc::GetAllocationFlags(void* pAllocation)
 	{
-		// Get address to padding
+		// Get address to flags
 		byte* pMemory = reinterpret_cast<byte*>(pAllocation) - sizeof(uint16);
 		
 		uint16* const pFlagsPtr = reinterpret_cast<uint16*>(pMemory);
