@@ -58,6 +58,7 @@ namespace LambdaEngine
 			if (StartThreads())
 			{
 				LOG_WARNING("[ClientUDP]: Connecting...");
+				m_PacketManager.Reset();
 				m_PacketManager.SetEndPoint(ipEndPoint);
 				return true;
 			}
@@ -138,6 +139,11 @@ namespace LambdaEngine
 		return m_PacketManager.GetStatistics();
 	}
 
+	PacketManager* ClientUDP::GetPacketManager()
+	{
+		return &m_PacketManager;
+	}
+
 	bool ClientUDP::OnThreadsStarted()
 	{
 		m_pSocket = PlatformNetworkUtils::CreateSocketUDP();
@@ -196,7 +202,6 @@ namespace LambdaEngine
 		m_State = STATE_DISCONNECTED;
 		if(m_pHandler)
 			m_pHandler->OnDisconnectedUDP(this);
-		m_PacketManager.Reset();
 	}
 
 	void ClientUDP::OnTerminationRequested()
@@ -277,6 +282,7 @@ namespace LambdaEngine
 	void ClientUDP::Tick(Timestamp delta)
 	{
 		m_PacketManager.Tick(delta);
+		Flush();
 	}
 
 	ClientUDP* ClientUDP::Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries)

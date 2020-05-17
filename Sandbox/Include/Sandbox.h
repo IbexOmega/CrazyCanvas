@@ -77,8 +77,9 @@ private:
 	LambdaEngine::RenderGraph*				m_pRenderGraph			= nullptr;
 	LambdaEngine::Renderer*					m_pRenderer				= nullptr;
 
-	GUID_Lambda								m_ImGuiPixelShaderNormalGUID	= GUID_NONE;
-	GUID_Lambda								m_ImGuiPixelShaderDepthUID		= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelShaderNormalGUID		= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelShaderDepthGUID			= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelShaderRoughnessGUID		= GUID_NONE;
 
 	bool									m_SpawnPlayAts;
 	float									m_GunshotTimer;

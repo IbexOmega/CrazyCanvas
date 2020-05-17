@@ -8,6 +8,12 @@
 #include "Networking/API/ClientUDP.h"
 #include "Networking/API/IClientUDPHandler.h"
 
+namespace LambdaEngine
+{
+	class RenderGraph;
+	class Renderer;
+}
+
 class Client :
 	public LambdaEngine::Game,
 	public LambdaEngine::EventHandler,
@@ -37,5 +43,14 @@ public:
 	virtual void KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)     override;
 
 private:
+	bool InitRendererForEmpty();
+
+private:
 	LambdaEngine::ClientUDP* m_pClient;
+
+
+	LambdaEngine::RenderGraph* m_pRenderGraph = nullptr;
+	LambdaEngine::Renderer* m_pRenderer = nullptr;
+	GUID_Lambda	m_ImGuiPixelShaderNormalGUID = GUID_NONE;
+	GUID_Lambda	m_ImGuiPixelShaderDepthUID = GUID_NONE;
 };

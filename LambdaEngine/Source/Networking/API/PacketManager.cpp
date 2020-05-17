@@ -225,6 +225,8 @@ namespace LambdaEngine
 			}
 			packetsToFree.push_back(messageInfo.Packet);
 		}
+
+		m_PacketPool.FreePackets(packetsToFree);
 	}
 
 	void PacketManager::GetReliableUIDsFromAcks(const std::vector<uint32>& acks, std::vector<uint32>& ackedReliableUIDs)
@@ -334,11 +336,17 @@ namespace LambdaEngine
 				m_MessagesWaitingForAck.erase(pair.first);
 		}
 		
+		std::vector<NetworkPacket*> packetsToFree;
+		packetsToFree.reserve(messagesToDelete.size());
+
 		for (auto& pair : messagesToDelete)
 		{
 			MessageInfo& messageInfo = pair.second;
+			packetsToFree.push_back(messageInfo.Packet);
 			if (messageInfo.Listener)
 				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Packet, messageInfo.Retries);
 		}
+
+		m_PacketPool.FreePackets(packetsToFree);
 	}
 }

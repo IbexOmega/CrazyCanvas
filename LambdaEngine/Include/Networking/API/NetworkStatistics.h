@@ -101,7 +101,7 @@ namespace LambdaEngine
 		uint32 RegisterPacketSent();
 		uint32 RegisterMessageSent();
 		uint32 RegisterReliableMessageSent();
-		void RegisterPacketReceived(uint32 bytes);
+		void RegisterPacketReceived(uint32 messages, uint32 bytes);
 		void RegisterReliableMessageReceived();
 		void RegisterPacketLoss();
 		void RegisterBytesSent(uint32 bytes);

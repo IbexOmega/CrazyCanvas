@@ -33,12 +33,13 @@ namespace LambdaEngine
 	protected:
 		ClientUDPRemote(uint16 packets, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
 
+		virtual PacketManager* GetPacketManager() override;
+
 		virtual void OnPacketDelivered(NetworkPacket* pPacket) override;
 		virtual void OnPacketResent(NetworkPacket* pPacket, uint8 tries) override;
 		virtual void OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries) override;
 
 	private:
-		PacketManager* GetPacketManager();
 		void OnDataReceived(PacketTransceiver* pTransciver);
 		void SendPackets(PacketTransceiver* pTransciver);
 		bool HandleReceivedPacket(NetworkPacket* pPacket);
