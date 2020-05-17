@@ -239,10 +239,10 @@ namespace LambdaEngine
 
 	bool CommonApplication::Tick()
 	{
-		bool result = PlatformApplication::ProcessMessages();
+		bool shouldRun = PlatformApplication::ProcessMessages();
 		CommonApplication::Get()->ProcessStoredEvents();
 		
-		return result;
+		return shouldRun;
 	}
 
 	void CommonApplication::Terminate()
