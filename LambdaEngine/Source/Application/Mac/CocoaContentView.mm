@@ -20,6 +20,16 @@
     return NO;
 }
 
+- (BOOL) wantsUpdateLayer
+{
+    return YES;
+}
+
+- (BOOL) acceptsFirstMouse:(NSEvent* ) event
+{
+    return YES;
+}
+
 - (NSArray*) validAttributesForMarkedText
 {
     return [NSArray array];
@@ -55,14 +65,10 @@
     // Store this as a special type of event
     using namespace LambdaEngine;
     
-    MacApplication* pMacApplication = MacApplication::Get();
-    if (pMacApplication)
-    {
-        MacEvent storedEvent = { };
-        storedEvent.pKeyTypedText = [characters copy];
-        
-        pMacApplication->StoreEvent(&storedEvent);
-    }
+	MacEvent storedEvent = { };
+	storedEvent.pKeyTypedText = [characters copy];
+	
+	MacApplication::Get()->StoreEvent(&storedEvent);
 }
 
 /*
@@ -110,6 +116,16 @@
 {
     CGFloat backingScaleFactor = [[self window] backingScaleFactor];
     [[self layer] setContentsScale:backingScaleFactor];
+}
+
+- (void) mouseExited:(NSEvent* ) event
+{
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
+}
+
+- (void) mouseEntered:(NSEvent* )event
+{
+    LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
 @end

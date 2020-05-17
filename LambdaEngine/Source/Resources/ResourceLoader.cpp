@@ -711,8 +711,7 @@ namespace LambdaEngine
 		shaderDesc.ShaderConstantCount	= 0;
 
 		IShader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
-
-		SAFEDELETE_ARRAY(pShaderRawSource);
+		Malloc::Free(pShaderRawSource);
 
 		return pShader;
 	}
@@ -748,7 +747,8 @@ namespace LambdaEngine
 		int32 length = ftell(pFile);
 		fseek(pFile, 0, SEEK_SET);
 
-		byte* pData = (byte*)calloc(length, sizeof(byte));
+		byte* pData = (byte*)Malloc::Allocate(length);
+		ZERO_MEMORY(pData, length * sizeof(byte));
 
 		int32 read = fread(pData, 1, length, pFile);
 		if (read == 0)

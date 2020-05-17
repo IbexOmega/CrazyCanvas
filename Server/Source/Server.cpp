@@ -1,13 +1,13 @@
 #include "Server.h"
 
-#include "Memory/Memory.h"
+#include "Memory/API/Malloc.h"
 
 #include "Log/Log.h"
 
 #include "Input/API/Input.h"
 
 #include "Application/API/PlatformMisc.h"
-#include "Application/API/PlatformApplication.h"
+#include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/IWindow.h"
 
@@ -26,7 +26,7 @@
 Server::Server()
 {
 	using namespace LambdaEngine;
-	PlatformApplication::Get()->AddEventHandler(this);
+	CommonApplication::Get()->AddEventHandler(this);
 
 	m_pServer = ServerUDP::Create(this, 100, 4096, 10);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
@@ -51,6 +51,7 @@ LambdaEngine::IClientUDPRemoteHandler* Server::CreateClientUDPHandler()
 void Server::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	UNREFERENCED_VARIABLE(key);
+	UNREFERENCED_VARIABLE(isRepeat);
 
 	using namespace LambdaEngine;
 
@@ -63,7 +64,7 @@ void Server::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepe
 void Server::UpdateTitle()
 {
 	using namespace LambdaEngine;
-	PlatformApplication::Get()->GetMainWindow()->SetTitle("Server");
+	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 }
 

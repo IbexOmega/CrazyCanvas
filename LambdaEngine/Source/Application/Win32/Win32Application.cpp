@@ -17,10 +17,15 @@ namespace LambdaEngine
 	Win32Application* Win32Application::s_pApplication = nullptr;
 
 	Win32Application::Win32Application(HINSTANCE hInstance)
-		: m_hInstance(hInstance)
+		: m_hInstance(hInstance),
+		m_Windows(),
+		m_StoredMessages(),
+		m_MessageHandlers()
 	{
 		VALIDATE_MSG(s_pApplication == nullptr, "[Win32Application]: An instance of application already exists");
 		s_pApplication = this;
+
+		VALIDATE(hInstance != NULL);
 	}
 
 	Win32Application::~Win32Application()
@@ -32,6 +37,8 @@ namespace LambdaEngine
 		{
 			SAFERELEASE(pWindow);
 		}
+
+		SAFEDELETE_ARRAY(m_RawInput.pInputBuffer);
 
 		m_hInstance = 0;
 	}
@@ -65,33 +72,17 @@ namespace LambdaEngine
 		}
 	}
 
-	void Win32Application::AddEventHandler(IEventHandler* pEventHandler)
+	bool Win32Application::Create(IEventHandler* pEventHandler)
 	{
-		// Check first so that this handler is not already added
-		const uint32 count = uint32(m_EventHandlers.size());
-		for (uint32 i = 0; i < count; i++)
+		VALIDATE(pEventHandler != nullptr);
+		m_pEventHandler = pEventHandler;
+
+		if (!RegisterWindowClass())
 		{
-			if (pEventHandler == m_EventHandlers[i])
-			{
-				return;
-			}
+			return false;
 		}
 
-		// Add new handler
-		m_EventHandlers.emplace_back(pEventHandler);
-	}
-
-	void Win32Application::RemoveEventHandler(IEventHandler* pEventHandler)
-	{
-		const uint32 count = uint32(m_EventHandlers.size());
-		for (uint32 i = 0; i < count; i++)
-		{
-			if (pEventHandler == m_EventHandlers[i])
-			{
-				m_EventHandlers.erase(m_EventHandlers.begin() + i);
-				break;
-			}
-		}
+		return true;
 	}
 
 	void Win32Application::ProcessStoredEvents()
@@ -116,6 +107,11 @@ namespace LambdaEngine
 		}
 	}
 
+	bool Win32Application::SupportsRawInput() const
+	{
+		return true;
+	}
+
 	void Win32Application::SetInputMode(EInputMode inputMode)
 	{
 		if (inputMode == m_InputMode || inputMode == EInputMode::INPUT_MODE_NONE)
@@ -133,8 +129,11 @@ namespace LambdaEngine
 			m_RawInput.MouseY = cursorPos.y;
 
 			// Register input devices for the main window
-			HWND hWnd = (HWND)m_pMainWindow->GetHandle();
-			RegisterRawInputDevices(hWnd);
+			if (m_pMainWindow)
+			{
+				HWND hWnd = (HWND)m_pMainWindow->GetHandle();
+				RegisterRawInputDevices(hWnd);
+			}
 		}
 		else if (inputMode == EInputMode::INPUT_MODE_STANDARD)
 		{
@@ -169,11 +168,7 @@ namespace LambdaEngine
 				EKey			keyCode			= Win32InputCodeTable::GetKeyFromScanCode(scancode);
 				bool			isRepeat		= (lParam & REPEAT_KEY_MASK);
 
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->KeyPressed(keyCode, modifierMask, isRepeat);
-				}
-
+				m_pEventHandler->KeyPressed(keyCode, modifierMask, isRepeat);
 				break;
 			}
 
@@ -183,11 +178,7 @@ namespace LambdaEngine
 				const uint16	scancode	= HIWORD(lParam) & SCAN_CODE_MASK;
 				EKey			keyCode		= Win32InputCodeTable::GetKeyFromScanCode(scancode);
 
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->KeyReleased(keyCode);
-				}
-
+				m_pEventHandler->KeyReleased(keyCode);
 				break;
 			}
 
@@ -195,11 +186,7 @@ namespace LambdaEngine
 			case WM_SYSCHAR:
 			{
 				const uint32 character = uint32(wParam);
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->KeyTyped(character);
-				}
-
+				m_pEventHandler->KeyTyped(character);
 				break;
 			}
 
@@ -213,10 +200,7 @@ namespace LambdaEngine
 						const int32 x = GET_X_LPARAM(lParam);
 						const int32 y = GET_Y_LPARAM(lParam);
 
-						for (IEventHandler* pEventHandler : m_EventHandlers)
-						{
-							pEventHandler->MouseMoved(x, y);
-						}
+						m_pEventHandler->MouseMoved(x, y);
 					}
 				}
 
@@ -230,10 +214,7 @@ namespace LambdaEngine
 					tme.hwndTrack	= hWnd;
 					TrackMouseEvent(&tme);
 
-					for (IEventHandler* pEventHandler : m_EventHandlers)
-					{
-						pEventHandler->MouseEntered(pMessageWindow);
-					}
+					m_pEventHandler->MouseEntered(pMessageWindow);
 				}
 
 				break;
@@ -267,11 +248,7 @@ namespace LambdaEngine
 				}
 
 				const uint32 modifierMask = Win32InputCodeTable::GetModifierMask();
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->ButtonPressed(button, modifierMask);
-				}
-
+				m_pEventHandler->ButtonPressed(button, modifierMask);
 				break;
 			}
 
@@ -302,21 +279,14 @@ namespace LambdaEngine
 					button = EMouseButton::MOUSE_BUTTON_FORWARD;
 				}
 
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->ButtonReleased(button);
-				}
-
+				m_pEventHandler->ButtonReleased(button);
 				break;
 			}
 
 			case WM_MOUSEWHEEL:
 			{
 				const int32 scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->MouseScrolled(0, scrollDelta);
-				}
+				m_pEventHandler->MouseScrolled(0, scrollDelta);
 
 				break;
 			}
@@ -324,11 +294,7 @@ namespace LambdaEngine
 			case WM_MOUSEHWHEEL:
 			{
 				const int32 scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->MouseScrolled(scrollDelta, 0);
-				}
-
+				m_pEventHandler->MouseScrolled(scrollDelta, 0);
 				break;
 			}
 
@@ -337,11 +303,7 @@ namespace LambdaEngine
 				const int16 x = (int16)LOWORD(lParam);
 				const int16 y = (int16)HIWORD(lParam);
 
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->WindowMoved(pMessageWindow, x, y);
-				}
-
+				m_pEventHandler->WindowMoved(pMessageWindow, x, y);
 				break;
 			}
 
@@ -350,11 +312,7 @@ namespace LambdaEngine
 				m_RawInput.MouseX += mouseDeltaX;
 				m_RawInput.MouseY += mouseDeltaY;
 
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->MouseMoved(m_RawInput.MouseX, m_RawInput.MouseY);
-				}
-
+				m_pEventHandler->MouseMoved(m_RawInput.MouseX, m_RawInput.MouseY);
 				break;
 			}
 
@@ -373,21 +331,13 @@ namespace LambdaEngine
 				const uint16 width	= (uint16)LOWORD(lParam);
 				const uint16 height = (uint16)HIWORD(lParam);
 
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->WindowResized(pMessageWindow, width, height, resizeType);
-				}
-
+				m_pEventHandler->WindowResized(pMessageWindow, width, height, resizeType);
 				break;
 			}
 
 			case WM_MOUSELEAVE:
 			{
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->MouseLeft(pMessageWindow);
-				}
-
+				m_pEventHandler->MouseLeft(pMessageWindow);
 				m_IsTrackingMouse = false;
 				break;
 			}
@@ -399,11 +349,7 @@ namespace LambdaEngine
 					Terminate();
 				}
 
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->WindowClosed(pMessageWindow);
-				}
-
+				m_pEventHandler->WindowClosed(pMessageWindow);
 				break;
 			}
 
@@ -411,11 +357,7 @@ namespace LambdaEngine
 			case WM_KILLFOCUS:
 			{
 				bool hasFocus = (uMessage == WM_SETFOCUS);
-				for (IEventHandler* pEventHandler : m_EventHandlers)
-				{
-					pEventHandler->FocusChanged(pMessageWindow, hasFocus);
-				}
-
+				m_pEventHandler->FocusChanged(pMessageWindow, hasFocus);
 				break;
 			}
 		}
@@ -497,35 +439,14 @@ namespace LambdaEngine
 		m_Windows.emplace_back(pWindow);
 	}
 
-	bool Win32Application::PreInit(HINSTANCE hInstance)
+	bool Win32Application::PreInit()
 	{
-		VALIDATE(hInstance != NULL);
-
-		Win32Application* pApplication = DBG_NEW Win32Application(hInstance);
-		pApplication->SetInputMode(EInputMode::INPUT_MODE_STANDARD);
-
-		if (!RegisterWindowClass())
-		{
-			return false;
-		}
-
 		if (!Win32InputCodeTable::Init())
 		{
 			return false;
 		}
 
-		Win32Window* pWindow = (Win32Window*)Win32Application::CreateWindow("Lambda Game Engine", 1920, 1080);
-		if (pWindow)
-		{
-			pApplication->MakeMainWindow(pWindow);
-			pWindow->Show();
-			
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		return true;
 	}
 	
 	bool Win32Application::PostRelease()
@@ -538,14 +459,6 @@ namespace LambdaEngine
 
 		SAFEDELETE(s_pApplication);
 		return true;
-	}
-	
-	bool Win32Application::Tick()
-	{
-		bool result = ProcessMessages();
-		Win32Application::Get()->ProcessStoredEvents();
-
-		return result;
 	}
 
 	bool Win32Application::ProcessMessages()
@@ -651,6 +564,12 @@ namespace LambdaEngine
 		}
 		
 		return pWindow;
+	}
+
+	Application* Win32Application::CreateApplication()
+	{
+		HINSTANCE hInstance = static_cast<HINSTANCE>(GetModuleHandle(0));
+		return DBG_NEW Win32Application(hInstance);
 	}
 
 	void Win32Application::Terminate()

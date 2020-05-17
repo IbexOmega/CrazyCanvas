@@ -1,6 +1,6 @@
 #include "Client.h"
 
-#include "Memory/Memory.h"
+#include "Memory/API/Malloc.h"
 
 #include "Log/Log.h"
 
@@ -17,7 +17,7 @@
 #include <imgui.h>
 
 #include "Application/API/PlatformMisc.h"
-#include "Application/API/PlatformApplication.h"
+#include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/IWindow.h"
 
@@ -40,8 +40,9 @@ Client::Client() :
     m_pClient(nullptr)
 {
 	using namespace LambdaEngine;
-    PlatformApplication::Get()->AddEventHandler(this);
-    PlatformApplication::Get()->GetMainWindow()->SetTitle("Client");
+	
+    CommonApplication::Get()->AddEventHandler(this);
+    CommonApplication::Get()->GetMainWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
 	InitRendererForEmpty();

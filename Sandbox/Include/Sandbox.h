@@ -2,7 +2,6 @@
 #include "Game/Game.h"
 
 #include "Application/API/EventHandler.h"
-#include "Application/API/PlatformApplication.h"
 
 #include "Containers/TArray.h"
 
