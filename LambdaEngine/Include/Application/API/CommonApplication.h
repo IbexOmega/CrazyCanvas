@@ -11,6 +11,10 @@ namespace LambdaEngine
 		CommonApplication();
 		~CommonApplication();
 		
+		bool Create();
+		
+		void ProcessStoredMessages();
+		
 	public:
 		static bool PreInit();
 		static bool PostRelease();
