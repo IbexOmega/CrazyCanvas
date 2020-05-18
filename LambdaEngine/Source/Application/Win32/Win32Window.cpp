@@ -76,12 +76,12 @@ namespace LambdaEngine
 			{
 				if (!(pDesc->Style & WINDOW_STYLE_FLAG_CLOSABLE))
 				{
-					EnableMenuItem(GetSystemMenu(m_hWnd, FALSE), SC_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					::EnableMenuItem(::GetSystemMenu(m_hWnd, FALSE), SC_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 				}
 			}
 
 			m_StyleFlags = pDesc->Style;
-			UpdateWindow(m_hWnd);
+			::UpdateWindow(m_hWnd);
 			return true;
 		}
 	}
@@ -140,7 +140,7 @@ namespace LambdaEngine
 		VALIDATE(m_hWnd != 0);
 
 		RECT rect = { };
-		GetClientRect(m_hWnd, &rect);
+		::GetClientRect(m_hWnd, &rect);
 		return uint16(rect.right - rect.left);
 	}
 
@@ -149,7 +149,7 @@ namespace LambdaEngine
 		VALIDATE(m_hWnd != 0);
 
 		RECT rect = { };
-		GetClientRect(m_hWnd, &rect);
+		::GetClientRect(m_hWnd, &rect);
 		return uint16(rect.bottom - rect.top);
 	}
 
