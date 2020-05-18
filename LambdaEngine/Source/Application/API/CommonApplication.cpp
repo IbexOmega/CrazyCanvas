@@ -39,7 +39,13 @@ namespace LambdaEngine
 		//}
 		m_pPlatformApplication->SetInputMode(EInputMode::INPUT_MODE_STANDARD);
 
-		IWindow* pWindow = PlatformApplication::CreateWindow("Lambda Engine", 1440, 900);
+		WindowDesc windowDesc = { };
+		windowDesc.pTitle 	= "Lambda Engine";
+		windowDesc.Width 	= 1440;
+		windowDesc.Height 	= 900;
+		windowDesc.Style 	= WINDOW_STYLE_FLAG_TITLED | WINDOW_STYLE_FLAG_CLOSABLE;//WINDOW_STYLE_FLAG_TITLED | WINDOW_STYLE_FLAG_CLOSABLE | WINDOW_STYLE_FLAG_RESIZEABLE | WINDOW_STYLE_FLAG_MINIMIZABLE;
+		
+		IWindow* pWindow = PlatformApplication::CreateWindow(&windowDesc);
 		if (pWindow)
 		{
 			m_pPlatformApplication->MakeMainWindow(pWindow);

@@ -24,13 +24,35 @@ namespace LambdaEngine
         [m_pView release];
     }
 
-    bool MacWindow::Init(const char* pTitle, uint32 width, uint32 height)
+    bool MacWindow::Init(const WindowDesc* pDesc)
     {
+		VALIDATE(pDesc != nullptr);
+		
         SCOPED_AUTORELEASE_POOL();
         
-        NSUInteger  windowStyle = NSWindowStyleMaskTitled  | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
-        NSRect      windowRect  = NSMakeRect(0.0f, 0.0f, CGFloat(width), CGFloat(height));
-        
+		NSUInteger windowStyle = 0;
+		if (pDesc->Style != 0)
+		{
+			windowStyle = NSWindowStyleMaskTitled;
+			if (pDesc->Style & WINDOW_STYLE_FLAG_CLOSABLE)
+			{
+				windowStyle |= NSWindowStyleMaskClosable;
+			}
+			if (pDesc->Style & WINDOW_STYLE_FLAG_RESIZEABLE)
+			{
+				windowStyle |= NSWindowStyleMaskResizable;
+			}
+			if (pDesc->Style & WINDOW_STYLE_FLAG_MINIMIZABLE)
+			{
+				windowStyle |= NSWindowStyleMaskMiniaturizable;
+			}
+		}
+		else
+		{
+			windowStyle = NSWindowStyleMaskBorderless;
+		}
+		
+		const NSRect windowRect = NSMakeRect(0.0f, 0.0f, CGFloat(pDesc->Width), CGFloat(pDesc->Height));
         m_pWindow = [[CocoaWindow alloc] initWithContentRect:windowRect styleMask:windowStyle backing:NSBackingStoreBuffered defer:NO];
         if (!m_pWindow)
         {
@@ -45,16 +67,35 @@ namespace LambdaEngine
             return false;
         }
         
-        NSString* title = [NSString stringWithUTF8String:pTitle];
-        [m_pWindow setTitle:title];
+		if (pDesc->Style & WINDOW_STYLE_FLAG_TITLED)
+		{
+			if (pDesc->pTitle)
+			{
+				NSString* title = [NSString stringWithUTF8String:pDesc->pTitle];
+				[m_pWindow setTitle:title];
+			}
+		}
+		
         [m_pWindow setAcceptsMouseMovedEvents:YES];
         [m_pWindow setContentView:m_pView];
         [m_pWindow setRestorable:NO];
         [m_pWindow makeFirstResponder:m_pView];
         
-        const NSWindowCollectionBehavior behavior = NSWindowCollectionBehaviorFullScreenPrimary | NSWindowCollectionBehaviorManaged;
+		// Disable fullscreen toggle if window is not resizeable
+        NSWindowCollectionBehavior behavior = NSWindowCollectionBehaviorManaged;
+		if (pDesc->Style & WINDOW_STYLE_FLAG_RESIZEABLE)
+		{
+			behavior |= NSWindowCollectionBehaviorFullScreenPrimary;
+		}
+		else
+		{
+			behavior |= NSWindowCollectionBehaviorFullScreenAuxiliary;
+		}
+		
         [m_pWindow setCollectionBehavior:behavior];
         
+		// Set styleflags
+		m_StyleFlags = pDesc->Style;
         return true;
     }
 
@@ -68,31 +109,40 @@ namespace LambdaEngine
 
     void MacWindow::Close()
     {
-        MacMainThread::MakeCall(^
-        {
-            [m_pWindow performClose:m_pWindow];
-        }, true);
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_CLOSABLE)
+		{
+			MacMainThread::MakeCall(^
+			{
+				[m_pWindow performClose:m_pWindow];
+			}, true);
+		}
     }
 
     void MacWindow::Minimize()
     {
-        MacMainThread::MakeCall(^
-        {
-            [m_pWindow miniaturize:m_pWindow];
-        }, true);
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_MINIMIZABLE)
+		{
+			MacMainThread::MakeCall(^
+			{
+				[m_pWindow miniaturize:m_pWindow];
+			}, true);
+		}
     }
 
     void MacWindow::Maximize()
     {
-        MacMainThread::MakeCall(^
-        {
-            if ([m_pWindow isMiniaturized])
-            {
-                [m_pWindow deminiaturize:m_pWindow];
-            }
-            
-            [m_pWindow zoom:m_pWindow];
-        }, true);
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_RESIZEABLE)
+		{
+			MacMainThread::MakeCall(^
+			{
+				if ([m_pWindow isMiniaturized])
+				{
+					[m_pWindow deminiaturize:m_pWindow];
+				}
+				
+				[m_pWindow zoom:m_pWindow];
+			}, true);
+		}
     }
 
     void MacWindow::Restore()
@@ -113,10 +163,13 @@ namespace LambdaEngine
 
     void MacWindow::ToggleFullscreen()
     {
-        MacMainThread::MakeCall(^
-        {
-            [m_pWindow toggleFullScreen:m_pWindow];
-        }, true);
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_RESIZEABLE)
+		{
+			MacMainThread::MakeCall(^
+			{
+				[m_pWindow toggleFullScreen:m_pWindow];
+			}, true);
+		}
     }
 
     void MacWindow::SetTitle(const char* pTitle)
@@ -124,11 +177,13 @@ namespace LambdaEngine
         SCOPED_AUTORELEASE_POOL();
         
         NSString* title = [NSString stringWithUTF8String:pTitle];
-        
-        MacMainThread::MakeCall(^
-        {
-            [m_pWindow setTitle:title];
-        }, true);
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_TITLED)
+		{
+			MacMainThread::MakeCall(^
+			{
+				[m_pWindow setTitle:title];
+			}, true);
+		}
     }
 
     uint16 MacWindow::GetWidth() const

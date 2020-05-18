@@ -3,6 +3,23 @@
 
 namespace LambdaEngine
 {
+	enum FWindowStyleFlags : uint32
+	{
+		WINDOW_STYLE_FLAG_NONE 			= 0,
+		WINDOW_STYLE_FLAG_TITLED 		= FLAG(1),
+		WINDOW_STYLE_FLAG_CLOSABLE 		= FLAG(2),
+		WINDOW_STYLE_FLAG_MINIMIZABLE 	= FLAG(3),
+		WINDOW_STYLE_FLAG_RESIZEABLE 	= FLAG(4),
+	};
+
+	struct WindowDesc
+	{
+		const char* pTitle 	= "";
+		uint16 		Width 	= 0;
+		uint16		Height	= 0;
+		uint32		Style	= 0;
+	};
+
     class IWindow : public RefCountedObject
     {
     public:       

@@ -103,7 +103,7 @@ namespace LambdaEngine
         
         static void Terminate();
         
-        static IWindow* 	CreateWindow(const char* pTitle, uint32 width, uint32 height);
+        static IWindow* 	CreateWindow(const WindowDesc* pDesc);
 		static Application* CreateApplication();
 		
 		static MacApplication* Get();

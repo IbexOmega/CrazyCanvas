@@ -15,7 +15,7 @@ namespace LambdaEngine
 		Win32Window() = default;
 		~Win32Window();
 
-		bool Init(const char* pTitle, uint32 width, uint32 height);
+		bool Init(const WindowDesc* pDesc);
 
 		// Window interface
 		virtual void Show() 	override final;

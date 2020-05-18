@@ -536,16 +536,19 @@ namespace LambdaEngine
         [NSApp terminate:nil];
     }
 
-    IWindow* MacApplication::CreateWindow(const char* pTitle, uint32 width, uint32 height)
+    IWindow* MacApplication::CreateWindow(const WindowDesc* pDesc)
     {
         MacWindow* pWindow = DBG_NEW MacWindow();
-        if (!pWindow->Init(pTitle, width, height))
+        if (!pWindow->Init(pDesc))
         {
             SAFEDELETE(pWindow);
         }
-        
-        MacApplication::Get()->AddWindow(pWindow);
-        return pWindow;
+		else
+		{
+			MacApplication::Get()->AddWindow(pWindow);
+		}
+		
+		return pWindow;
     }
 
 	Application* MacApplication::CreateApplication()

@@ -13,10 +13,10 @@ namespace LambdaEngine
 		::DestroyWindow(m_hWnd);
 	}
 
-	bool Win32Window::Init(const char* pTitle, uint32 width, uint32 height)
+	bool Win32Window::Init(const WindowDesc* pDesc)
 	{
 		DWORD	dwStyle		= WS_OVERLAPPEDWINDOW | WS_MINIMIZE;
-		RECT	clientRect 	= { 0, 0, LONG(width), LONG(height) };
+		RECT	clientRect 	= { 0, 0, LONG(pDesc->Width), LONG(pDesc->Height) };
 		::AdjustWindowRect(&clientRect, dwStyle, FALSE);
 
 		INT nWidth	= clientRect.right - clientRect.left;
@@ -25,7 +25,7 @@ namespace LambdaEngine
 		constexpr uint32 MAX_CHARS = 256;
 		static wchar_t title[MAX_CHARS];
 
-		size_t charsWritten = mbstowcs(title, pTitle, MAX_CHARS);
+		size_t charsWritten = mbstowcs(title, pDesc->pTitle, MAX_CHARS);
 		if (charsWritten != static_cast<size_t>(-1))
 		{
 			title[charsWritten] = L'\0';

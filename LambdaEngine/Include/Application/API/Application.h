@@ -3,6 +3,7 @@
 
 namespace LambdaEngine
 {
+	struct WindowDesc;
     class IWindow;
 	class IInputDevice;
     class IEventHandler;
@@ -61,8 +62,8 @@ namespace LambdaEngine
         */
         static void Terminate() { }
 
-        static IWindow* 	CreateWindow(const char*, uint32, uint32)	{ return nullptr; }
-		static Application* CreateApplication()							{ return nullptr; }
+        static IWindow* 	CreateWindow(const WindowDesc* pDesc)	{ return nullptr; }
+		static Application* CreateApplication()						{ return nullptr; }
 		
         static Application* Get() { return nullptr; }
 	};

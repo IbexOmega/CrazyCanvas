@@ -19,7 +19,7 @@ namespace LambdaEngine
         MacWindow();
         ~MacWindow();
 
-        bool Init(const char* pTitle, uint32 width, uint32 height);
+        bool Init(const WindowDesc* pDesc);
         
         // IWindow interface
         virtual void Show()     override final;
@@ -42,6 +42,8 @@ namespace LambdaEngine
     private:
         CocoaWindow*            m_pWindow   = nullptr;
         CocoaContentView*       m_pView     = nullptr;
+		
+		uint32 m_StyleFlags = 0;
     };
 }
 

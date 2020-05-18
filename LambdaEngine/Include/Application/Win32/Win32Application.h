@@ -99,7 +99,7 @@ namespace LambdaEngine
 
 		static bool ProcessMessages();
 
-		static IWindow*		CreateWindow(const char* pTitle, uint32 width, uint32 height);
+		static IWindow*		CreateWindow(const WindowDesc* pDesc);
 		static Application* CreateApplication();
 
 		static void Terminate();
