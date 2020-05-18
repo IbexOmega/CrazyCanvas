@@ -131,7 +131,7 @@ namespace LambdaEngine
 
     void MacWindow::Maximize()
     {
-		if (m_StyleFlags & WINDOW_STYLE_FLAG_RESIZEABLE)
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_MAXIMIZABLE)
 		{
 			MacMainThread::MakeCall(^
 			{
