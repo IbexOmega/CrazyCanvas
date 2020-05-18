@@ -30,14 +30,14 @@ namespace LambdaEngine
 		}
 
 		// Set prefered inputmode
-		if (m_pPlatformApplication->SupportsRawInput())
-		{
-			m_pPlatformApplication->SetInputMode(EInputMode::INPUT_MODE_RAW);
-		}
-		else
-		{
-			m_pPlatformApplication->SetInputMode(EInputMode::INPUT_MODE_STANDARD);
-		}
+		//if (m_pPlatformApplication->SupportsRawInput())
+		//{
+		//	m_pPlatformApplication->SetInputMode(EInputMode::INPUT_MODE_RAW);
+		//}
+		//else
+		//{
+		//}
+		m_pPlatformApplication->SetInputMode(EInputMode::INPUT_MODE_STANDARD);
 
 		IWindow* pWindow = PlatformApplication::CreateWindow("Lambda Engine", 1440, 900);
 		if (pWindow)
