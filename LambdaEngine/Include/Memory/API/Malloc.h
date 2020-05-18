@@ -35,12 +35,13 @@ void operator delete[](void* pPtr, const char* pFileName, int32 lineNumber) noex
 /*
 * Custom new and delete
 */
-void*	operator new(size_t sizeInBytes);
-void*	operator new[](size_t sizeInBytes);
-void	operator delete(void* pPtr)							noexcept;
-void	operator delete[](void* pPtr)						noexcept;
-void	operator delete(void* pPtr, size_t sizeInBytes)		noexcept;
-void	operator delete[](void* pPtr, size_t sizeInBytes)	noexcept;
+void* operator new(size_t sizeInBytes);
+void* operator new[](size_t sizeInBytes);
+
+void operator delete(void* pPtr)						noexcept;
+void operator delete[](void* pPtr)						noexcept;
+void operator delete(void* pPtr, size_t sizeInBytes)	noexcept;
+void operator delete[](void* pPtr, size_t sizeInBytes)	noexcept;
 
 /*
 * Custom memory handler

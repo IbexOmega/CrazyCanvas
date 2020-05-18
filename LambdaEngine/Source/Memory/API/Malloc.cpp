@@ -1,6 +1,8 @@
 #include "Memory/API/Malloc.h"
 #include "Memory/API/PlatformMemory.h"
 
+#include "Application/API/PlatformMisc.h"
+
 #include "Math/Math.h"
 
 #include <stdlib.h>
@@ -9,9 +11,23 @@
 	#include <crtdbg.h>
 #endif
 
+#ifdef LAMBDA_PRODUCTION
+	#define DISABLE_MEM_DEBUG
+#endif
+
+#ifdef DISABLE_MEM_DEBUG
+	#define MEM_DEBUG_ENABLED 0
+#else
+	#define MEM_DEBUG_ENABLED 1
+#endif
+
 #ifdef LAMBDA_PLATFORM_WINDOWS
+	#define aligned_malloc(sizeInBytes, alignment) 				malloc(sizeInBytes); (void)alignment
+
 	#define debug_malloc(sizeInBytes, pFileName, lineNumber)	_malloc_dbg(sizeInBytes, _NORMAL_BLOCK, pFileName, lineNumber)
 #elif defined(LAMBDA_PLATFORM_MACOS)
+	#define aligned_malloc(sizeInBytes, alignment) 				aligned_alloc(sizeInBytes, alignment)
+
 	#define debug_malloc(sizeInBytes, pFileName, lineNumber)	 malloc(sizeInBytes); (void)pFileName; (void)lineNumber
 #endif
 
@@ -82,11 +98,16 @@ namespace LambdaEngine
 
 	void* Malloc::Allocate(uint64 sizeInBytes)
 	{
+#if MEM_DEBUG_ENABLED
 		return Allocate(sizeInBytes, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+#else
+		return malloc(sizeInBytes);
+#endif
 	}
 
 	void* Malloc::Allocate(uint64 sizeInBytes, uint64 alignment)
 	{
+#if MEM_DEBUG_ENABLED
 		if (sizeInBytes == 0)
 		{
 			return nullptr;
@@ -114,19 +135,38 @@ namespace LambdaEngine
 		byte* const pAllocation		= pMemory + ALLOCATION_HEADER_SIZE;
 		void* const pAlignedAddress = AlignAddress(pAllocation, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
 
-		const uint16 padding = reinterpret_cast<byte*>(pAlignedAddress) - pMemory;
+		const uint16 padding 			= reinterpret_cast<byte*>(pAlignedAddress) - pMemory;
+#if 0
+		const uint64 address			= reinterpret_cast<uint64>(pMemory);
+		const uint64 alignedAddress 	= reinterpret_cast<uint64>(pAlignedAddress);
+		const uint64 addressEnd			= address + alignedSize;
+		const uint64 alignedAddressEnd 	= alignedAddress + sizeInBytes;
+		
+		VALIDATE(alignedAddressEnd <= addressEnd);
+	
+		PlatformMisc::OutputDebugString("Allocating memory: size=%llu, sizeWithHeader=%llu, alignedSize=%llu, padding=%u", sizeInBytes, sizeWithHeader, alignedSize, padding);
+		PlatformMisc::OutputDebugString("Adress=%llu, AdressEnd=%llu, AlignedAdress=%llu, AlignedAdressEnd=%llu,", address, addressEnd, alignedAddress, alignedAddressEnd);
+#endif
+		
 		SetAllocationFlags(pAlignedAddress, padding);
-
 		return pAlignedAddress;
+#else
+		return aligned_malloc(sizeInBytes, alignment);
+#endif
 	}
 
 	void* Malloc::AllocateDbg(uint64 sizeInBytes, const char* pFileName, int32 lineNumber)
 	{
+#if MEM_DEBUG_ENABLED
 		return AllocateDbg(sizeInBytes, __STDCPP_DEFAULT_NEW_ALIGNMENT__, pFileName, lineNumber);
+#else
+		return debug_malloc(sizeInBytes, pFileName, lineNumber);
+#endif
 	}
 
 	void* Malloc::AllocateDbg(uint64 sizeInBytes, uint64 alignment, const char* pFileName, int32 lineNumber)
 	{
+#if MEM_DEBUG_ENABLED
 		if (sizeInBytes == 0)
 		{
 			return nullptr;
@@ -158,10 +198,14 @@ namespace LambdaEngine
 		SetAllocationFlags(pAlignedAddress, padding);
 
 		return pAlignedAddress;
+#else
+		return aligned_malloc(sizeInBytes, alignment);
+#endif
 	}
 
 	void Malloc::Free(void* pPtr)
 	{
+#if MEM_DEBUG_ENABLED
 		// It appears that it is legal that free recives a nullptr so we support is aswell
 		if (pPtr == nullptr)
 		{
@@ -181,6 +225,9 @@ namespace LambdaEngine
 		{
 			free(pAllocation);
 		}
+#else
+		free(pPtr);
+#endif
 	}
 	
 	void Malloc::SetDebugFlags(uint32 debugFlags)
