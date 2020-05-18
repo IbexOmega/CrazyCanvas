@@ -25,6 +25,10 @@ namespace LambdaEngine
 			{
 				dwStyle |= WS_CAPTION;
 			}
+			if (pDesc->Style & WINDOW_STYLE_FLAG_CLOSABLE)
+			{
+				dwStyle |= WS_SYSMENU;
+			}
 			if (pDesc->Style & WINDOW_STYLE_FLAG_MINIMIZABLE)
 			{
 				dwStyle |= WS_SYSMENU | WS_MINIMIZEBOX;
@@ -90,20 +94,29 @@ namespace LambdaEngine
 
 	void Win32Window::Close()
 	{
-		VALIDATE(m_hWnd != 0);
-		::DestroyWindow(m_hWnd);
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_CLOSABLE)
+		{
+			VALIDATE(m_hWnd != 0);
+			::DestroyWindow(m_hWnd);
+		}
 	}
 
 	void Win32Window::Minimize()
 	{
-		VALIDATE(m_hWnd != 0);
-		::ShowWindow(m_hWnd, SW_MINIMIZE);
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_MINIMIZABLE)
+		{
+			VALIDATE(m_hWnd != 0);
+			::ShowWindow(m_hWnd, SW_MINIMIZE);
+		}
 	}
 
 	void Win32Window::Maximize()
 	{
-		VALIDATE(m_hWnd != 0);
-		::ShowWindow(m_hWnd, SW_MAXIMIZE);
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_MAXIMIZABLE)
+		{
+			VALIDATE(m_hWnd != 0);
+			::ShowWindow(m_hWnd, SW_MAXIMIZE);
+		}
 	}
 
 	void Win32Window::Restore()
@@ -126,7 +139,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(m_hWnd != 0);
 
-		RECT rect = {};
+		RECT rect = { };
 		GetClientRect(m_hWnd, &rect);
 		return uint16(rect.right - rect.left);
 	}
@@ -135,7 +148,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(m_hWnd != 0);
 
-		RECT rect = {};
+		RECT rect = { };
 		GetClientRect(m_hWnd, &rect);
 		return uint16(rect.bottom - rect.top);
 	}
