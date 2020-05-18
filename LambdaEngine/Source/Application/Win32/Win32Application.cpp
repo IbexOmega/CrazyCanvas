@@ -6,6 +6,7 @@
 #include "Application/API/IEventHandler.h"
 
 #include "Application/Win32/Win32Application.h"
+#include "Application/Win32/Win32Window.h"
 #include "Application/Win32/IWin32MessageHandler.h"
 
 #include "Input/Win32/Win32InputCodeTable.h"

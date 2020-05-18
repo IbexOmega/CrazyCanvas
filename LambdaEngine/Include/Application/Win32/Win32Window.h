@@ -36,7 +36,8 @@ namespace LambdaEngine
 		virtual const void* GetView() 	const override final;
 
 	private:
-		HWND m_hWnd = 0;
+		HWND	m_hWnd			= 0;
+		DWORD	m_StyleFlags	= 0;
 	};
 }
 

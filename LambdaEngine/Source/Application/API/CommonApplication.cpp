@@ -1,5 +1,6 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformApplication.h"
+#include "Application/API/IWindow.h"
 
 namespace LambdaEngine
 {
@@ -43,8 +44,8 @@ namespace LambdaEngine
 		windowDesc.pTitle 	= "Lambda Engine";
 		windowDesc.Width 	= 1440;
 		windowDesc.Height 	= 900;
-		windowDesc.Style 	= WINDOW_STYLE_FLAG_TITLED | WINDOW_STYLE_FLAG_CLOSABLE;//WINDOW_STYLE_FLAG_TITLED | WINDOW_STYLE_FLAG_CLOSABLE | WINDOW_STYLE_FLAG_RESIZEABLE | WINDOW_STYLE_FLAG_MINIMIZABLE;
-		
+		windowDesc.Style	= WINDOW_STYLE_FLAG_TITLED | WINDOW_STYLE_FLAG_RESIZEABLE | WINDOW_STYLE_FLAG_MAXIMIZABLE | WINDOW_STYLE_FLAG_MINIMIZABLE | WINDOW_STYLE_FLAG_CLOSABLE;
+
 		IWindow* pWindow = PlatformApplication::CreateWindow(&windowDesc);
 		if (pWindow)
 		{

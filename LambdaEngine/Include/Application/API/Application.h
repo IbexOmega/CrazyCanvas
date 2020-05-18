@@ -62,8 +62,8 @@ namespace LambdaEngine
         */
         static void Terminate() { }
 
-        static IWindow* 	CreateWindow(const WindowDesc* pDesc)	{ return nullptr; }
-		static Application* CreateApplication()						{ return nullptr; }
+        static IWindow* 	CreateWindow(const WindowDesc*)	{ return nullptr; }
+		static Application* CreateApplication()				{ return nullptr; }
 		
         static Application* Get() { return nullptr; }
 	};

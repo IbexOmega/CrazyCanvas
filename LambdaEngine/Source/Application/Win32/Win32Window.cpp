@@ -15,8 +15,35 @@ namespace LambdaEngine
 
 	bool Win32Window::Init(const WindowDesc* pDesc)
 	{
-		DWORD	dwStyle		= WS_OVERLAPPEDWINDOW | WS_MINIMIZE;
-		RECT	clientRect 	= { 0, 0, LONG(pDesc->Width), LONG(pDesc->Height) };
+		VALIDATE(pDesc != nullptr);
+
+		DWORD dwStyle = 0; 
+		if (pDesc->Style != 0)
+		{
+			dwStyle = WS_OVERLAPPED;
+			if (pDesc->Style & WINDOW_STYLE_FLAG_TITLED)
+			{
+				dwStyle |= WS_CAPTION;
+			}
+			if (pDesc->Style & WINDOW_STYLE_FLAG_MINIMIZABLE)
+			{
+				dwStyle |= WS_SYSMENU | WS_MINIMIZEBOX;
+			}
+			if (pDesc->Style & WINDOW_STYLE_FLAG_MAXIMIZABLE)
+			{
+				dwStyle |= WS_SYSMENU | WS_MAXIMIZEBOX;
+			}
+			if (pDesc->Style & WINDOW_STYLE_FLAG_RESIZEABLE)
+			{
+				dwStyle |= WS_THICKFRAME;
+			}
+		}
+		else
+		{
+			dwStyle = WS_POPUP;
+		}
+
+		RECT clientRect = { 0, 0, LONG(pDesc->Width), LONG(pDesc->Height) };
 		::AdjustWindowRect(&clientRect, dwStyle, FALSE);
 
 		INT nWidth	= clientRect.right - clientRect.left;
@@ -40,6 +67,16 @@ namespace LambdaEngine
 		}
 		else
 		{
+			// If the window has a sysmenu we check if the closebutton should be active
+			if (dwStyle & WS_SYSMENU)
+			{
+				if (!(pDesc->Style & WINDOW_STYLE_FLAG_CLOSABLE))
+				{
+					EnableMenuItem(GetSystemMenu(m_hWnd, FALSE), SC_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+				}
+			}
+
+			m_StyleFlags = pDesc->Style;
 			UpdateWindow(m_hWnd);
 			return true;
 		}

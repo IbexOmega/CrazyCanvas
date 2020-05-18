@@ -5,10 +5,11 @@
 
 #include "Application/API/Application.h"
 
-#include "Win32Window.h"
+#include "Windows.h"
 
 namespace LambdaEngine
 {
+	class Win32Window;
 	class IWin32MessageHandler;
 
 	/*
