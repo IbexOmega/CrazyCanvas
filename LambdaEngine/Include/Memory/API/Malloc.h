@@ -7,7 +7,7 @@
 #ifdef LAMBDA_DEBUG
 	#define DBG_NEW	new(__FILE__, __LINE__)
 #else
-	#define DBG_NEW	new()
+	#define DBG_NEW	new
 #endif
 
 /*
