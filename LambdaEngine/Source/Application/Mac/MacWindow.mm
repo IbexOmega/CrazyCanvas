@@ -12,7 +12,7 @@
 namespace LambdaEngine
 {
     MacWindow::MacWindow()
-        : IWindow()
+        : Window()
     {
     }
 
@@ -145,6 +145,12 @@ namespace LambdaEngine
 		}
     }
 
+	bool MacWindow::IsActiveWindow() const
+	{
+        NSWindow* keyWindow = [NSApp keyWindow];
+		return keyWindow == m_pWindow;
+	}
+
     void MacWindow::Restore()
     {
         MacMainThread::MakeCall(^
@@ -186,6 +192,40 @@ namespace LambdaEngine
 		}
     }
 
+	void MacWindow::SetPosition(int32 x, int32 y)
+	{
+		MacMainThread::MakeCall(^
+		{
+			NSRect frame = [m_pWindow frame];
+			
+			// TODO: Make sure this is correct
+			[m_pWindow setFrameOrigin:NSMakePoint(x, y - frame.size.height + 1)];
+		}, true);
+	}
+
+	void MacWindow::GetPosition(int32* pPosX, int32* pPosY) const
+	{
+		__block NSRect frame;
+		MacMainThread::MakeCall(^
+		{
+			frame = [m_pWindow frame];
+		}, true);
+		
+		(*pPosX) = frame.origin.x;
+		(*pPosY) = frame.origin.y;
+	}
+
+	void MacWindow::SetSize(uint16 width, uint16 height)
+	{
+        MacMainThread::MakeCall(^
+        {
+			NSRect frame = [m_pWindow frame];
+			frame.size.width 	= width;
+			frame.size.height 	= height;
+			[m_pWindow setFrame: frame display: YES animate: YES];
+		}, true);
+	}
+
     uint16 MacWindow::GetWidth() const
     {
         SCOPED_AUTORELEASE_POOL();
@@ -220,7 +260,12 @@ namespace LambdaEngine
     const void* MacWindow::GetView() const
     {
         return (const void*)m_pView;
-    }
+	}
+
+	float32 MacWindow::GetClientAreaScale() const
+	{
+		return 1.0f;
+	}
 }
 
 #endif

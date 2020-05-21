@@ -5,7 +5,6 @@ namespace LambdaEngine
 {
 	struct WindowDesc;
 	class Window;
-	class IInputDevice;
 	class EventHandler;
 
 	// Different input devices that can be created
@@ -19,24 +18,36 @@ namespace LambdaEngine
 	class LAMBDA_API Application
 	{
 	public:
-		DECL_ABSTRACT_CLASS(Application);
+		DECL_UNIQUE_CLASS(Application);
+		
+		virtual bool 	Create() = 0;
+		virtual Window*	CreateWindow(const WindowDesc* pDesc) = 0;
+		
+		virtual void 			SetEventHandler(EventHandler* pEventHandler) 	{ m_pEventHandler = pEventHandler; }
+		virtual EventHandler* 	GetEventHandler() const 						{ return m_pEventHandler; }
+		
+		virtual void Tick() = 0;
+		
+		virtual void ProcessStoredEvents() = 0;
 
-		virtual bool Create(EventHandler* pEventHandler) = 0;
-
-		virtual void ProcessStoredEvents() = 0; 
-
-		virtual void MakeMainWindow(Window* pMainWindow) = 0;
-
+		virtual void Terminate() = 0;
+		
 		virtual bool SupportsRawInput() const = 0;
 
-		virtual void SetInputMode(EInputMode inputMode) = 0;
-		
-		virtual EInputMode GetInputMode() const = 0;
+		virtual void 		SetInputMode(Window* pWindow, EInputMode inputMode) = 0;
+		virtual EInputMode	GetInputMode(Window* pWindow) const 				= 0;
 
-		virtual Window* GetForegroundWindow()   const = 0;
-		virtual Window* GetMainWindow()         const = 0;
+		virtual void 	SetActiveWindow(Window* pWindow) 	= 0;
+		virtual Window* GetActiveWindow() const 			= 0;
 		
-		public:
+		virtual void 	SetCapture(Window* pWindow) { }
+		virtual Window* GetCapture() const 			{ return nullptr; };
+		
+	protected:
+		Application()	= default;
+		~Application() 	= default;
+
+	public:
 		static bool PreInit() 		{ return true; }
 		static bool PostRelease() 	{ return true; }
 
@@ -44,13 +55,12 @@ namespace LambdaEngine
 		* Processes all event from the OS and bufferes them up
 		*   return - Returns false if the OS- sent a quit message
 		*/
-		static bool ProcessMessages() { return false; }
+		static bool PeekMessages() { return false; }
 
-		static void Terminate() { }
-
-		static Window* 		CreateWindow(const WindowDesc*)	{ return nullptr; }
-		static Application* CreateApplication()				{ return nullptr; }
+		static Application* CreateApplication()	{ return nullptr; }
+		static Application* Get() 				{ return nullptr; }
 		
-		static Application* Get() { return nullptr; }
+	protected:
+		EventHandler* m_pEventHandler = nullptr;
 	};
 }

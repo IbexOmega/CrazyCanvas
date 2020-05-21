@@ -52,9 +52,6 @@ namespace LambdaEngine
     class MacApplication : public Application
     {
     public:
-        MacApplication();
-        ~MacApplication();
-
         void AddMacEventHandler(IMacEventHandler* pMacMessageHandler);
         void RemoveMacEventHandler(IMacEventHandler* pMacMessageHandler);
         
@@ -73,23 +70,30 @@ namespace LambdaEngine
         
         MacWindow* GetWindowFromNSWindow(CocoaWindow* pWindow) const;
 
+	public:
+		
         // Application
-		virtual bool Create(IEventHandler* pEventHandler) override final;
+		virtual bool	Create() 								override final;
+		virtual Window*	CreateWindow(const WindowDesc* pDesc) 	override final;
         
-        virtual void ProcessStoredEvents() override final;
+		virtual void Tick() override final;
+		
+		virtual void ProcessStoredEvents() override final;
 
-        virtual void MakeMainWindow(IWindow* pMainWindow) override final;
-
+		virtual void Terminate() override final;
+		
 		virtual bool SupportsRawInput() const override final;
-		
-		virtual void SetInputMode(EInputMode inputMode) override final;
-		
-		virtual EInputMode GetInputMode() const override final;
-		
-        virtual IWindow* GetForegroundWindow()   const override final;
-        virtual IWindow* GetMainWindow()         const override final;
+
+		virtual void 		SetInputMode(Window* pWindow, EInputMode inputMode) override final;
+		virtual EInputMode	GetInputMode(Window* pWindow) const 				override final;
+
+		virtual void 	SetActiveWindow(Window* pWindow) 	override final;
+		virtual Window* GetActiveWindow() const 			override final;
         
     private:
+        MacApplication();
+        virtual ~MacApplication();
+
 		void AddWindow(MacWindow* pWindow);
         
 		void ProcessNSEvent(NSEvent* pEvent);
@@ -100,18 +104,12 @@ namespace LambdaEngine
         static bool PostRelease();
         
         static bool ProcessMessages();
-        
-        static void Terminate();
-        
-        static IWindow* 	CreateWindow(const WindowDesc* pDesc);
-		static Application* CreateApplication();
-		
-		static MacApplication* Get();
+
+		static Application* 	CreateApplication();
+		static MacApplication* 	Get();
         
     private:
         CocoaAppDelegate* 	m_pAppDelegate	= nullptr;
-        MacWindow*        	m_pMainWindow	= nullptr;
-		IEventHandler*		m_pEventHandler	= nullptr;
         
         bool m_IsProcessingEvents   = false;
         bool m_IsTerminating        = false;

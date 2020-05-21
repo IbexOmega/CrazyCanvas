@@ -3,7 +3,7 @@
 
 #include "Memory/API/Memory.h"
 
-#include "Application/API/IEventHandler.h"
+#include "Application/API/EventHandler.h"
 
 #include "Application/Mac/MacConsole.h"
 #include "Application/Mac/MacApplication.h"
@@ -145,33 +145,6 @@ namespace LambdaEngine
         [m_pAppDelegate release];
     }
 
-    bool MacApplication::Create(IEventHandler* pEventHandler)
-    {
-        SCOPED_AUTORELEASE_POOL();
-        
-        [NSApplication sharedApplication];
-        
-        VALIDATE(NSApp != nullptr);
-        
-        [NSApp activateIgnoringOtherApps:YES];
-        [NSApp setPresentationOptions:NSApplicationPresentationDefault];
-        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-		
-        m_pAppDelegate = [[CocoaAppDelegate alloc] init];
-        [NSApp setDelegate:m_pAppDelegate];
-        
-        if (!InitMenu())
-        {
-            LOG_ERROR("[MacApplication]: Failed to initialize the application menu");
-            return false;
-        }
-		
-        // Setup eventhandler
-		m_pEventHandler = pEventHandler;
-	
-        return true;
-    }
-
     void MacApplication::AddMacEventHandler(IMacEventHandler* pMacMessageHandler)
     {
         //Check first so that this handler is not already added
@@ -258,11 +231,6 @@ namespace LambdaEngine
                 LOG_MESSAGE("Window will close");
                 
                 MacWindow* pWindow = GetWindowFromNSWindow(pEvent->pEventWindow);
-                if (pWindow == m_pMainWindow)
-                {
-                    m_IsTerminating = true;
-                }
-                
 				m_pEventHandler->WindowClosed(pWindow);
             }
             else if (name == NSWindowDidMoveNotification)
@@ -465,6 +433,46 @@ namespace LambdaEngine
         return nullptr;
     }
 
+	bool MacApplication::Create()
+	{
+		SCOPED_AUTORELEASE_POOL();
+		
+		[NSApplication sharedApplication];
+		
+		VALIDATE(NSApp != nullptr);
+		
+		[NSApp activateIgnoringOtherApps:YES];
+		[NSApp setPresentationOptions:NSApplicationPresentationDefault];
+		[NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+		
+		m_pAppDelegate = [[CocoaAppDelegate alloc] init];
+		[NSApp setDelegate:m_pAppDelegate];
+		
+		if (!InitMenu())
+		{
+			LOG_ERROR("[MacApplication]: Failed to initialize the application menu");
+			return false;
+		}
+
+		[NSApp finishLaunching];
+		return true;
+	}
+
+	Window* MacApplication::CreateWindow(const WindowDesc* pDesc)
+	{
+		MacWindow* pWindow = DBG_NEW MacWindow();
+		if (!pWindow->Init(pDesc))
+		{
+			SAFEDELETE(pWindow);
+		}
+		else
+		{
+			AddWindow(pWindow);
+		}
+		
+		return pWindow;
+	}
+
     void MacApplication::ProcessStoredEvents()
     {
         m_IsProcessingEvents = true;
@@ -481,35 +489,44 @@ namespace LambdaEngine
 		
         // We are done by updating (We have processed all events)
         [NSApp updateWindows];
+    }
+
+	void MacApplication::Tick()
+	{
+		ProcessStoredEvents();
 		
 		// Also process the mainthread
         MacMainThread::Tick();
-    }
-
-    void MacApplication::MakeMainWindow(IWindow* pMainWindow)
-    {
-        m_pMainWindow = reinterpret_cast<MacWindow*>(pMainWindow);
-    }
+	}
 
 	bool MacApplication::SupportsRawInput() const
 	{
 		return false;
 	}
 
-	void MacApplication::SetInputMode(EInputMode inputMode)
+	void MacApplication::SetInputMode(Window* pWindow, EInputMode inputMode)
 	{
+		UNREFERENCED_VARIABLE(pWindow);
+		
 		if (inputMode != EInputMode::INPUT_MODE_STANDARD)
 		{
 			LOG_ERROR("[MacApplication]: Unsupported inputmode");
 		}
 	}
 
-	EInputMode MacApplication::GetInputMode() const
+	EInputMode MacApplication::GetInputMode(Window* pWindow) const
 	{
+		UNREFERENCED_VARIABLE(pWindow);
 		return EInputMode::INPUT_MODE_STANDARD;
 	}
 
-    IWindow* MacApplication::GetForegroundWindow() const
+	void MacApplication::SetActiveWindow(Window *pWindow)
+	{
+		CocoaWindow* pCocoaWindow = reinterpret_cast<CocoaWindow*>(pWindow->GetHandle());
+		[pCocoaWindow makeKeyAndOrderFront:pCocoaWindow];
+	}
+
+    Window* MacApplication::GetActiveWindow() const
     {
         NSWindow* keyWindow = [NSApp keyWindow];
         if ([keyWindow isKindOfClass:[CocoaWindow class]])
@@ -521,11 +538,6 @@ namespace LambdaEngine
         return nullptr;
     }
 
-    IWindow* MacApplication::GetMainWindow() const
-    {
-        return m_pMainWindow;
-    }
-
     void MacApplication::AddWindow(MacWindow* pWindow)
     {
         m_Windows.emplace_back(pWindow);
@@ -534,21 +546,6 @@ namespace LambdaEngine
     void MacApplication::Terminate()
     {
         [NSApp terminate:nil];
-    }
-
-    IWindow* MacApplication::CreateWindow(const WindowDesc* pDesc)
-    {
-        MacWindow* pWindow = DBG_NEW MacWindow();
-        if (!pWindow->Init(pDesc))
-        {
-            SAFEDELETE(pWindow);
-        }
-		else
-		{
-			MacApplication::Get()->AddWindow(pWindow);
-		}
-		
-		return pWindow;
     }
 
 	Application* MacApplication::CreateApplication()
@@ -570,11 +567,6 @@ namespace LambdaEngine
         {
             return false;
         }
-        
-        // Process events in the queue
-        ProcessMessages();
-        
-		[NSApp finishLaunching];
 		
         return true;
     }
@@ -620,7 +612,7 @@ namespace LambdaEngine
         
         MacMainThread::PostRelease();
         return true;
-    }
+	}
 }
 
 #endif

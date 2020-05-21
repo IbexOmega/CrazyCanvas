@@ -11,8 +11,9 @@ namespace LambdaEngine
 	public:
 		DECL_UNIQUE_CLASS(CommonApplication);
 
-		bool Create(Application* pPlatformApplication);
-
+		bool 	Create(Application* pPlatformApplication);
+		Window* CreateWIndow(const WindowDesc* pDesc);
+		
 		void RemoveEventHandler(EventHandler* pEventHandler);
 		void AddEventHandler(EventHandler* pEventHandler);
 
@@ -23,22 +24,18 @@ namespace LambdaEngine
 		bool Tick();
 
 		/*
-		* Application buffers all OS-events, and gets processed in a batch with this function
-		*/
-		void ProcessStoredEvents();
-
-		/*
 		* Sends a quit message to the application. This results in the application will begin the termination
 		* sequence the next tick-iteration.
 		*/
-		static void Terminate();
+		void Terminate();
 
 		/*
 		* Sets the window to be the current main window, this is not the same as the window that has
 		* currently has input focus, that would be the active window.
 		*   pMainWindow - New main window
 		*/
-		void MakeMainWindow(Window* pMainWindow);
+		void 	MakeMainWindow(Window* pMainWindow);
+		Window* GetMainWindow()	const { return m_pMainWindow; }
 
 		bool SupportsRawInput() const;
 
@@ -46,17 +43,13 @@ namespace LambdaEngine
 		* Sets the input mode for the selected window
 		*/
 		void		SetInputMode(Window* pWindow, EInputMode inputMode);
-		EInputMode	GetInputMode(Window* pWindow) { return m_pPlatformApplication->GetInputMode(); }
-
-		void	SetFocus(Window* pWindow);
-		Window* GetFocus() const { return nullptr; }
+		EInputMode	GetInputMode(Window* pWindow) { return m_pPlatformApplication->GetInputMode(pWindow); }
 
 		void	SetCapture(Window* pWindow);
-		Window* GetCapture() const { return nullptr; }
+		Window* GetCapture() const { return m_pPlatformApplication->GetCapture(); }
 		
 		void	SetActiveWindow(Window* pWindow);
-		Window* GetActiveWindow()	const { return nullptr; }
-		Window* GetMainWindow()		const { return m_pMainWindow; }
+		Window* GetActiveWindow() const { return m_pPlatformApplication->GetActiveWindow(); }
 
 	public:
 		// EventHandler Interface

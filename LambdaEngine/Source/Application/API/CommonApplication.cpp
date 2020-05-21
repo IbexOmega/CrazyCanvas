@@ -33,19 +33,13 @@ namespace LambdaEngine
 		//{
 		//}
 
-
 		WindowDesc windowDesc = { };
 		windowDesc.pTitle 	= "Lambda Engine";
 		windowDesc.Width 	= 1440;
 		windowDesc.Height 	= 900;
 		windowDesc.Style	= WINDOW_STYLE_FLAG_TITLED | WINDOW_STYLE_FLAG_CLOSABLE;
 
-		if (!pPlatformApplication->Create(this))
-		{
-			return false;
-		}
-
-		Window* pWindow = PlatformApplication::CreateWindow(&windowDesc);
+		Window* pWindow = m_pPlatformApplication->CreateWindow(&windowDesc);
 		if (pWindow)
 		{
 			MakeMainWindow(pWindow);
@@ -90,11 +84,6 @@ namespace LambdaEngine
 		}
 	}
 
-	void CommonApplication::ProcessStoredEvents()
-	{
-		m_pPlatformApplication->ProcessStoredEvents();
-	}
-
 	void CommonApplication::MakeMainWindow(Window* pMainWindow)
 	{
 		VALIDATE(pMainWindow != nullptr);
@@ -108,20 +97,17 @@ namespace LambdaEngine
 
 	void CommonApplication::SetInputMode(Window* pWindow, EInputMode inputMode)
 	{
-		m_pPlatformApplication->SetInputMode(inputMode);
-	}
-
-	void CommonApplication::SetFocus(Window* pWindow)
-	{
-		//TODO: Implement
+		m_pPlatformApplication->SetInputMode(pWindow, inputMode);
 	}
 
 	void CommonApplication::SetCapture(Window* pWindow)
 	{
+		m_pPlatformApplication->SetCapture(pWindow);
 	}
 
 	void CommonApplication::SetActiveWindow(Window* pWindow)
 	{
+		m_pPlatformApplication->SetActiveWindow(pWindow);
 	}
 
 	void CommonApplication::FocusChanged(Window* pWindow, bool hasFocus)
@@ -243,14 +229,23 @@ namespace LambdaEngine
 
 	bool CommonApplication::PreInit()
 	{
-		Application*		pPlatformApplication	= PlatformApplication::CreateApplication();
-		CommonApplication*	pApplication			= CreateApplication(pPlatformApplication);
-		if (!pApplication)
+		if (!PlatformApplication::PreInit())
 		{
 			return false;
 		}
-	
-		if (!PlatformApplication::PreInit())
+		
+		Application* pPlatformApplication = PlatformApplication::CreateApplication();
+		if (!pPlatformApplication->Create())
+		{
+			return false;
+		}
+		
+		CommonApplication* pApplication = CreateApplication(pPlatformApplication);
+		if (pApplication)
+		{
+			pPlatformApplication->SetEventHandler(pApplication);
+		}
+		else
 		{
 			return false;
 		}
@@ -261,14 +256,14 @@ namespace LambdaEngine
 	bool CommonApplication::Tick()
 	{
 		bool shouldRun = PlatformApplication::ProcessMessages();
-		ProcessStoredEvents();
+		m_pPlatformApplication->Tick();
 		
 		return shouldRun;
 	}
 
 	void CommonApplication::Terminate()
 	{
-		PlatformApplication::Terminate();
+		m_pPlatformApplication->Terminate();
 	}
 
 	CommonApplication* CommonApplication::CreateApplication(Application* pPlatformApplication)
