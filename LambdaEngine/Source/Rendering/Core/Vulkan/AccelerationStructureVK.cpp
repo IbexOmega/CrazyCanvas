@@ -4,6 +4,7 @@
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/Vulkan.h"
 
 namespace LambdaEngine
 {
@@ -63,7 +64,6 @@ namespace LambdaEngine
 		geometryTypeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
 		geometryTypeInfo.pNext = nullptr;
 		
-		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
 		if (pDesc->Type == EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP)
 		{
 			accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
@@ -82,6 +82,8 @@ namespace LambdaEngine
 			geometryTypeInfo.vertexFormat		= VK_FORMAT_R32G32B32_SFLOAT;
 			geometryTypeInfo.allowsTransforms	= pDesc->AllowsTransform ? VK_TRUE : VK_FALSE;
 		}
+
+		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
 
 		VALIDATE(m_pDevice->vkCreateAccelerationStructureKHR != nullptr);
 

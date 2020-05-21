@@ -250,8 +250,10 @@ namespace LambdaEngine
 		}
 
 		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
-		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->InstanceCount;
-		accelerationStructureOffsetInfo.primitiveOffset = 0;
+		accelerationStructureOffsetInfo.primitiveCount		= pBuildDesc->InstanceCount;
+		accelerationStructureOffsetInfo.primitiveOffset		= 0x0;
+		accelerationStructureOffsetInfo.firstVertex			= 0;
+		accelerationStructureOffsetInfo.transformOffset		= 0x0;
 
 		VALIDATE(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
 
@@ -272,44 +274,29 @@ namespace LambdaEngine
 		const BufferVK*				pVertexBufferVk				= reinterpret_cast<const BufferVK*>(pBuildDesc->pVertexBuffer);
 		const BufferVK*				pIndexBufferVk				= reinterpret_cast<const BufferVK*>(pBuildDesc->pIndexBuffer);
 
-		VkDeviceOrHostAddressConstKHR vertexDataAddressUnion = {};
-		vertexDataAddressUnion.deviceAddress = pVertexBufferVk->GetDeviceAdress();
-
-		VkDeviceOrHostAddressConstKHR indexDataAddressUnion = {};
-		indexDataAddressUnion.deviceAddress = pIndexBufferVk->GetDeviceAdress();
-
 		VkAccelerationStructureGeometryTrianglesDataKHR geometryDataDesc = {};
-		geometryDataDesc.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-		geometryDataDesc.pNext			= nullptr;
-		geometryDataDesc.vertexFormat	= VK_FORMAT_R32G32B32_SFLOAT;
-		geometryDataDesc.vertexData		= vertexDataAddressUnion;
-		geometryDataDesc.vertexStride	= pBuildDesc->VertexStride;
-		geometryDataDesc.indexType		= VK_INDEX_TYPE_UINT32;
-		geometryDataDesc.indexData		= indexDataAddressUnion;
+		geometryDataDesc.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+		geometryDataDesc.pNext						= nullptr;
+		geometryDataDesc.vertexFormat				= VK_FORMAT_R32G32B32_SFLOAT;
+		geometryDataDesc.vertexData.deviceAddress	= pVertexBufferVk->GetDeviceAdress();
+		geometryDataDesc.vertexStride				= pBuildDesc->VertexStride;
+		geometryDataDesc.indexType					= VK_INDEX_TYPE_UINT32;
+		geometryDataDesc.indexData.deviceAddress	= pIndexBufferVk->GetDeviceAdress();
 
 		VkDeviceOrHostAddressConstKHR transformDataAddressUnion = {};
 		if (pBuildDesc->pTransformBuffer != nullptr)
 		{
-			transformDataAddressUnion.deviceAddress = reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer)->GetDeviceAdress();
-			geometryDataDesc.transformData = transformDataAddressUnion;
+			const BufferVK* pTransformBufferVk = reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer);
+			geometryDataDesc.transformData.deviceAddress = pTransformBufferVk->GetDeviceAdress();
 		}
-		else
-		{
-			geometryDataDesc.transformData = { 0 };
-		}
-
-		VkAccelerationStructureGeometryDataKHR geometryDataUnion = {};
-		geometryDataUnion.triangles = geometryDataDesc;
 
 		VkAccelerationStructureGeometryKHR geometryData = {};
-		geometryData.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		geometryData.pNext			= nullptr;
-		geometryData.geometryType	= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-		geometryData.geometry		= geometryDataUnion;
-		geometryData.flags			= VK_GEOMETRY_OPAQUE_BIT_KHR; //Cant be opaque if we want to utilize any-hit shaders
+		geometryData.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryData.pNext					= nullptr;
+		geometryData.geometryType			= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+		geometryData.geometry.triangles		= geometryDataDesc;
+		geometryData.flags					= VK_GEOMETRY_OPAQUE_BIT_KHR; //Cant be opaque if we want to utilize any-hit shaders
 
-		VkDeviceOrHostAddressKHR scratchBufferAddressUnion = {};
-		scratchBufferAddressUnion.deviceAddress = pScratchBufferVk->GetDeviceAdress();
 
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
 		accelerationStructureBuildInfo.sType	= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
@@ -321,13 +308,13 @@ namespace LambdaEngine
 		}
 
 		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
-		accelerationStructureBuildInfo.geometryArrayOfPointers	= VK_FALSE;
-		accelerationStructureBuildInfo.geometryCount			= 1;
-		accelerationStructureBuildInfo.ppGeometries				= &pGeometryData;
-		accelerationStructureBuildInfo.update					= VK_FALSE;
-		accelerationStructureBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
-		accelerationStructureBuildInfo.dstAccelerationStructure = pAccelerationStructureVk->GetAccelerationStructure();
-		accelerationStructureBuildInfo.scratchData				= scratchBufferAddressUnion;
+		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
+		accelerationStructureBuildInfo.geometryCount				= 1;
+		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
+		accelerationStructureBuildInfo.update						= VK_FALSE;
+		accelerationStructureBuildInfo.srcAccelerationStructure		= VK_NULL_HANDLE;
+		accelerationStructureBuildInfo.dstAccelerationStructure		= pAccelerationStructureVk->GetAccelerationStructure();
+		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAdress();
 
 		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
 		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->TriangleCount;
@@ -691,33 +678,12 @@ namespace LambdaEngine
 
         if (m_pDevice->vkCmdTraceRaysKHR)
         {
-            BufferVK* pShaderBindingTableVk = m_pCurrentRayTracingPipeline->GetShaderBindingTable();
+            const VkStridedBufferRegionKHR* pRaygen		= m_pCurrentRayTracingPipeline->GetRaygenBufferRegion();
+            const VkStridedBufferRegionKHR* pMiss		= m_pCurrentRayTracingPipeline->GetMissBufferRegion();
+            const VkStridedBufferRegionKHR* pHit		= m_pCurrentRayTracingPipeline->GetHitBufferRegion();
+            const VkStridedBufferRegionKHR* pCallable	= m_pCurrentRayTracingPipeline->GetCallableBufferRegion();
             
-            VkStridedBufferRegionKHR rayGen = {};
-            rayGen.buffer   = pShaderBindingTableVk->GetBuffer();
-            rayGen.offset   = m_pCurrentRayTracingPipeline->GetBindingOffsetRaygenGroup();
-            rayGen.stride   = m_pCurrentRayTracingPipeline->GetBindingStride();
-            rayGen.size     = m_pCurrentRayTracingPipeline->GetBindingSizeRaygenGroup();
-
-            VkStridedBufferRegionKHR miss = {};
-            miss.buffer   = pShaderBindingTableVk->GetBuffer();
-            miss.offset   = m_pCurrentRayTracingPipeline->GetBindingOffsetMissGroup();
-            miss.stride   = rayGen.stride;
-            miss.size     = m_pCurrentRayTracingPipeline->GetBindingSizeMissGroup();
-            
-            VkStridedBufferRegionKHR hit = {};
-            hit.buffer   = pShaderBindingTableVk->GetBuffer();
-            hit.offset   = m_pCurrentRayTracingPipeline->GetBindingOffsetHitGroup();
-            hit.stride   = rayGen.stride;
-            hit.size     = m_pCurrentRayTracingPipeline->GetBindingSizeHitGroup();
-            
-            VkStridedBufferRegionKHR callable = {};
-            callable.buffer   = VK_NULL_HANDLE;
-            callable.offset   = 0;
-            callable.stride   = 0;
-            callable.size     = 0;
-            
-            m_pDevice->vkCmdTraceRaysKHR(m_CommandList, &rayGen, &miss, &hit, &callable, width, height, depth);
+            m_pDevice->vkCmdTraceRaysKHR(m_CommandList, pRaygen, pMiss, pHit, pCallable, width, height, depth);
         }
 	}
 

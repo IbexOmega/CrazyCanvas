@@ -29,10 +29,35 @@ namespace LambdaEngine
 		SAFERELEASE(m_pShaderHandleStorageBuffer);
 		SAFERELEASE(m_pCommandAllocator);
 		SAFERELEASE(m_pCommandList);
+
+		m_RaygenBufferRegion	= {};
+		m_HitBufferRegion		= {};
+		m_MissBufferRegion		= {};
+		m_CallableBufferRegion	= {};
 	}
 
 	bool RayTracingPipelineStateVK::Init(const RayTracingPipelineStateDesc* pDesc)
 	{
+		VALIDATE(pDesc != nullptr);
+		
+		if (pDesc->pRaygenShader == nullptr)
+		{
+			LOG_ERROR("[RayTracingPipelineStateVK]: pRaygenShader cannot be nullptr!");
+			return false;
+		}
+
+		if (pDesc->ClosestHitShaderCount == 0)
+		{
+			LOG_ERROR("[RayTracingPipelineStateVK]: ClosestHitShaderCount cannot be zero!");
+			return false;
+		}
+
+		if (pDesc->MissShaderCount == 0)
+		{
+			LOG_ERROR("[RayTracingPipelineStateVK]: MissShaderCount cannot be zero!");
+			return false;
+		}
+
 		// Define shader stage create infos
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStagesInfos;
 		std::vector<VkSpecializationInfo> shaderStagesSpecializationInfos;
@@ -41,6 +66,7 @@ namespace LambdaEngine
 
 		if (!CreateShaderData(shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps, shaderGroups, pDesc))
         {
+			LOG_ERROR("[RayTracingPipelineStateVK]: Failed to create shader data!");
             return false;
         }
 
@@ -53,7 +79,7 @@ namespace LambdaEngine
         
 		VkRayTracingPipelineCreateInfoKHR rayTracingPipelineInfo = {};
 		rayTracingPipelineInfo.sType				= VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-		rayTracingPipelineInfo.flags				= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
+		//rayTracingPipelineInfo.flags				= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
 		rayTracingPipelineInfo.stageCount			= (uint32)shaderStagesInfos.size();
 		rayTracingPipelineInfo.pStages				= shaderStagesInfos.data();
 		rayTracingPipelineInfo.groupCount			= (uint32)shaderGroups.size();
@@ -132,16 +158,20 @@ namespace LambdaEngine
 
 		RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN , nullptr, 0, nullptr, 0);
 
-		m_BindingStride						= shaderGroupHandleSize;
+		m_RaygenBufferRegion.buffer				= m_pSBT->GetBuffer();
+		m_RaygenBufferRegion.offset				= 0;
+		m_RaygenBufferRegion.size				= shaderGroupHandleSize;
+		m_RaygenBufferRegion.stride				= shaderGroupHandleSize;
 		
-        m_BindingOffsetRaygenShaderGroup	= 0;
-        m_BindingSizeRaygenShaderGroup      = m_BindingStride;
-        
-		m_BindingOffsetHitShaderGroup		= m_BindingOffsetRaygenShaderGroup + m_BindingSizeRaygenShaderGroup;
-        m_BindingSizeHitShaderGroup         = m_BindingStride * pDesc->ClosestHitShaderCount;
-        
-		m_BindingOffsetMissShaderGroup		= m_BindingOffsetHitShaderGroup + m_BindingSizeHitShaderGroup;
-        m_BindingSizeMissShaderGroup        = m_BindingStride * pDesc->MissShaderCount;
+		m_HitBufferRegion.buffer				= m_pSBT->GetBuffer();
+		m_HitBufferRegion.offset				= m_RaygenBufferRegion.offset + m_RaygenBufferRegion.size;
+		m_HitBufferRegion.size					= VkDeviceSize(pDesc->ClosestHitShaderCount) * VkDeviceSize(shaderGroupHandleSize);
+		m_HitBufferRegion.stride				= shaderGroupHandleSize;
+		
+		m_MissBufferRegion.buffer				= m_pSBT->GetBuffer();
+		m_MissBufferRegion.offset				= m_HitBufferRegion.offset + m_HitBufferRegion.size;
+		m_MissBufferRegion.size					= VkDeviceSize(pDesc->MissShaderCount) * VkDeviceSize(shaderGroupHandleSize);
+		m_MissBufferRegion.stride				= shaderGroupHandleSize;
 
 		SetName(pDesc->pName);
 

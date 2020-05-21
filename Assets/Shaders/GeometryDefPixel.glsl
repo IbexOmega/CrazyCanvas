@@ -3,6 +3,7 @@
 #extension GL_GOOGLE_include_directive : enable
 
 #include "Helpers.glsl"
+#include "Defines.glsl"
 
 struct SMaterialParameters
 {
@@ -22,13 +23,13 @@ layout(location = 5) in vec4 in_Position;
 
 #define MAX_UNIQUE_MATERIALS 32
 
-layout(binding = 0, set = 0) uniform sampler2D u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 1, set = 0) uniform sampler2D u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 2, set = 0) uniform sampler2D u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 3, set = 0) uniform sampler2D u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 4, set = 0) uniform sampler2D u_SceneRougnessMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 5, set = BUFFER_SET_INDEX) buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
 
-layout(binding = 5, set = 1) buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneRougnessMaps[MAX_UNIQUE_MATERIALS];
 
 layout(location = 0) out vec4 out_Albedo_AO;
 layout(location = 1) out vec4 out_Normals_Metall_Rough;

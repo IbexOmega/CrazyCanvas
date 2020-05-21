@@ -4,6 +4,7 @@
 #extension GL_EXT_debug_printf : enable
 
 #include "Helpers.glsl"
+#include "Defines.glsl"
 
 struct SLightsBuffer
 {
@@ -26,13 +27,14 @@ struct SPerFrameBuffer
 
 layout(location = 0) in vec2	in_TexCoord;
 
-layout(binding = 0, set = 0) uniform sampler2D 	u_AlbedoAO;
-layout(binding = 1, set = 0) uniform sampler2D 	u_NormalMetallicRoughness;
-layout(binding = 2, set = 0) uniform sampler2D 	u_DepthStencil;
-//layout(binding = 3, set = 0) uniform sampler2D 	u_Radiance;
+layout(binding = 0, set = BUFFER_SET_INDEX) uniform LightsBuffer     { SLightsBuffer val; }        u_LightsBuffer;
+layout(binding = 1, set = BUFFER_SET_INDEX) uniform PerFrameBuffer   { SPerFrameBuffer val; }      u_PerFrameBuffer;
 
-layout(binding = 0, set = 1) uniform LightsBuffer     { SLightsBuffer val; }        u_LightsBuffer;
-layout(binding = 1, set = 1) uniform PerFrameBuffer   { SPerFrameBuffer val; }      u_PerFrameBuffer;
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_AlbedoAO;
+layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_NormalMetallicRoughness;
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_DepthStencil;
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_Radiance;
+
 
 layout(location = 0) out vec4	out_Color;
 
@@ -49,7 +51,7 @@ void main()
 	// }
 
     vec4 sampledDepthStencil                = texture(u_DepthStencil,               in_TexCoord);
-    //vec4 sampledRadiance                    = texture(u_Radiance,                   in_TexCoord);
+    vec4 sampledRadiance                    = texture(u_Radiance,                   in_TexCoord);
 
     vec3 albedo         = sampledAlbedoAO.rgb;
     vec3 normal         = CalculateNormal(sampledNormalMetallicRoughness);
@@ -97,5 +99,11 @@ void main()
     
     vec3 colorLDR   = ToneMap(colorHDR, GAMMA);
 
-    out_Color = vec4(colorLDR, 1.0f);
+    // if (gl_FragCoord.xy == vec2(0.5f))
+	// {
+	// 	debugPrintfEXT("Vafan");
+    // }
+
+    //out_Color = vec4(colorLDR, 1.0f);
+    out_Color = sampledRadiance;
 }

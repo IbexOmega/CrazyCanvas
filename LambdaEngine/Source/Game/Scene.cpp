@@ -312,6 +312,7 @@ namespace LambdaEngine
 				blasDesc.AllowsTransform	= true;
 
 				IAccelerationStructure* pBLAS = m_pGraphicsDevice->CreateAccelerationStructure(&blasDesc, nullptr);
+				//IAccelerationStructure* pBLAS = RayTracingTestVK::CreateBLAS(m_pGraphicsDevice, &blasDesc);
 				accelerationStructureHandle = pBLAS->GetHandle();
 				m_BLASs.push_back(pBLAS);
 
@@ -382,7 +383,7 @@ namespace LambdaEngine
 				/*------------Ray Tracing Section Begin-------------*/
 				instance.AccelerationStructureHandle	= accelerationStructureHandle;
 				instance.SBTRecordOffset				= 0;
-				instance.Flags							= 0x00000001 | 0x00000004;
+				instance.Flags							= 0x00000001/* | 0x00000004*/;
 				instance.Mask							= 0xFF;
 				/*-------------Ray Tracing Section End--------------*/
 
@@ -682,10 +683,13 @@ namespace LambdaEngine
 
 			IBuffer* pTransformCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferCopyDesc, nullptr);
 
-			glm::mat3x4 identity(1.0f);
+			glm::mat3x4 transform_matrix = {
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f };
 
 			void* pMapped = pTransformCopyBuffer->Map();
-			memcpy(pMapped, &identity, sizeof(glm::mat3x4));
+			memcpy(pMapped, &transform_matrix, sizeof(glm::mat3x4));
 			pTransformCopyBuffer->Unmap();
 
 			BufferDesc bufferDesc = {};
@@ -703,21 +707,31 @@ namespace LambdaEngine
 
 			for (uint32 i = 0; i < blasBuildDescriptions.size(); i++)
 			{
-				BuildBottomLevelAccelerationStructureDesc& blasBuildDesc = blasBuildDescriptions[i];
-				blasBuildDesc.pVertexBuffer			= m_pSceneVertexBuffer;
-				blasBuildDesc.pIndexBuffer			= m_pSceneIndexBuffer;
-				blasBuildDesc.pTransformBuffer		= pTransformBuffer;
-				blasBuildDesc.TransformByteOffset	= 0;
+				BuildBottomLevelAccelerationStructureDesc* pBlasBuildDesc = &blasBuildDescriptions[i];
+				pBlasBuildDesc->pVertexBuffer			= m_pSceneVertexBuffer;
+				pBlasBuildDesc->pIndexBuffer			= m_pSceneIndexBuffer;
+				pBlasBuildDesc->pTransformBuffer		= pTransformBuffer;
+				pBlasBuildDesc->TransformByteOffset		= 0;
 
-				m_pASBuildCommandList->BuildBottomLevelAccelerationStructure(&blasBuildDesc);
+				//RayTracingTestVK::BuildBLAS(m_pGraphicsDevice, pBlasBuildDesc, m_pASBuildCommandList);
+
+				m_pASBuildCommandList->BuildBottomLevelAccelerationStructure(pBlasBuildDesc);
 			}
+
+			//AccelerationStructureDesc tlasDesc = {};
+			//tlasDesc.pName			= "TLAS";
+			//tlasDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP;
+			//tlasDesc.Flags			= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
+			//tlasDesc.InstanceCount	= 1; //m_Instances.size();
 
 			BuildTopLevelAccelerationStructureDesc tlasBuildDesc = {};
 			tlasBuildDesc.pAccelerationStructure	= m_pTLAS;
-			tlasBuildDesc.Flags						= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+			tlasBuildDesc.Flags						= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
 			tlasBuildDesc.pInstanceBuffer			= m_pSceneInstanceBuffer;
 			tlasBuildDesc.InstanceCount				= m_Instances.size();
 			tlasBuildDesc.Update					= false;
+
+			//m_pTLAS = RayTracingTestVK::CreateTLAS(m_pGraphicsDevice, &tlasDesc, &tlasBuildDesc, m_pASBuildCommandList);
 
 			m_pASBuildCommandList->BuildTopLevelAccelerationStructure(&tlasBuildDesc);
 
@@ -725,6 +739,8 @@ namespace LambdaEngine
 
 			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pASBuildCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
 			RenderSystem::GetComputeQueue()->Flush();
+
+			//RayTracingTestVK::Debug(m_pGraphicsDevice, blasBuildDescriptions[0].pAccelerationStructure, m_pTLAS);
 		}
 		/*-------------Ray Tracing Section End--------------*/
 

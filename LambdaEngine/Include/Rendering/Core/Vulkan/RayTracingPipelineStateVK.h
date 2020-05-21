@@ -21,23 +21,35 @@ namespace LambdaEngine
 
 		bool Init(const RayTracingPipelineStateDesc* pDesc);
 
-		FORCEINLINE VkDeviceSize GetBindingOffsetRaygenGroup()	const { return m_BindingOffsetRaygenShaderGroup; }
-		FORCEINLINE VkDeviceSize GetBindingOffsetHitGroup()		const { return m_BindingOffsetHitShaderGroup; }
-		FORCEINLINE VkDeviceSize GetBindingOffsetMissGroup()	const { return m_BindingOffsetMissShaderGroup; }
-        FORCEINLINE VkDeviceSize GetBindingSizeRaygenGroup()    const { return m_BindingSizeRaygenShaderGroup; }
-        FORCEINLINE VkDeviceSize GetBindingSizeHitGroup()       const { return m_BindingSizeHitShaderGroup; }
-        FORCEINLINE VkDeviceSize GetBindingSizeMissGroup()      const { return m_BindingSizeMissShaderGroup; }
-		FORCEINLINE VkDeviceSize GetBindingStride()				const { return m_BindingStride; }
-
 		FORCEINLINE VkPipeline GetPipeline() const
         {
             return m_Pipeline;
         }
+
+		FORCEINLINE BufferVK* GetSBT() const
+		{
+			return m_pSBT;
+		}
         
-        FORCEINLINE BufferVK* GetShaderBindingTable() const
+        FORCEINLINE const VkStridedBufferRegionKHR* GetRaygenBufferRegion() const
         {
-            return m_pSBT;
+            return &m_RaygenBufferRegion;
         }
+
+		FORCEINLINE const VkStridedBufferRegionKHR* GetHitBufferRegion() const
+		{
+			return &m_HitBufferRegion;
+		}
+
+		FORCEINLINE const VkStridedBufferRegionKHR* GetMissBufferRegion() const
+		{
+			return &m_MissBufferRegion;
+		}
+
+		FORCEINLINE const VkStridedBufferRegionKHR* GetCallableBufferRegion() const
+		{
+			return &m_CallableBufferRegion;
+		}
         
         //IDeviceChild interface
 		virtual void SetName(const char* pName) override final;
@@ -56,19 +68,16 @@ namespace LambdaEngine
 			const RayTracingPipelineStateDesc* pDesc);
 
 	private:
-		VkPipeline	m_Pipeline						= VK_NULL_HANDLE;
-		BufferVK*	m_pShaderHandleStorageBuffer	= nullptr;
-        BufferVK*	m_pSBT							= nullptr;
+		VkPipeline	m_Pipeline								= VK_NULL_HANDLE;
+		BufferVK*	m_pShaderHandleStorageBuffer			= nullptr;
+        BufferVK*	m_pSBT									= nullptr;
 
-		ICommandAllocator*	m_pCommandAllocator		= nullptr;
-		ICommandList*		m_pCommandList			= nullptr;
+		ICommandAllocator*	m_pCommandAllocator				= nullptr;
+		ICommandList*		m_pCommandList					= nullptr;
 
-		VkDeviceSize m_BindingOffsetRaygenShaderGroup   = 0;
-		VkDeviceSize m_BindingOffsetHitShaderGroup      = 0;
-		VkDeviceSize m_BindingOffsetMissShaderGroup     = 0;
-        VkDeviceSize m_BindingSizeRaygenShaderGroup     = 0;
-        VkDeviceSize m_BindingSizeHitShaderGroup        = 0;
-        VkDeviceSize m_BindingSizeMissShaderGroup       = 0;
-		VkDeviceSize m_BindingStride                    = 0;
+		VkStridedBufferRegionKHR	m_RaygenBufferRegion	= {};
+		VkStridedBufferRegionKHR	m_HitBufferRegion		= {};
+		VkStridedBufferRegionKHR	m_MissBufferRegion		= {};
+		VkStridedBufferRegionKHR	m_CallableBufferRegion	= {};
 	};
 }

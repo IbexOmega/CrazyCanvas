@@ -1,6 +1,10 @@
 #pragma once
 #include "LambdaEngine.h"
 
+#ifdef CreateWindow
+#undef CreateWindow
+#endif
+
 namespace LambdaEngine
 {
     class IWindow;

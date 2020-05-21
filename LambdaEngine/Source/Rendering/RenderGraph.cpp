@@ -225,6 +225,97 @@ namespace LambdaEngine
 
 	void RenderGraph::Update()
 	{
+		if (m_DirtyDescriptorSetInternalBuffers.size()			> 0 || 
+			m_DirtyDescriptorSetExternalBuffers.size()			> 0 || 
+			m_DirtyDescriptorSetAccelerationStructures.size()	> 0)
+		{
+			//Copy old descriptor set and replace old with copy, then write into the new copy
+			for (uint32 r = 0; r < m_RenderStageCount; r++)
+			{
+				RenderStage* pRenderStage		= &m_pRenderStages[r];
+
+				if (pRenderStage->ppBufferDescriptorSets != nullptr)
+				{
+					for (uint32 b = 0; b < m_BackBufferCount; b++)
+					{
+						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Buffer Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+						m_pGraphicsDevice->CopyDescriptorSet(pRenderStage->ppBufferDescriptorSets[b], pDescriptorSet);
+						SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
+						pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
+					}
+				}
+			}
+
+			//Internal Buffers
+			if (m_DirtyDescriptorSetInternalBuffers.size() > 0)
+			{
+				for (Resource* pResource : m_DirtyDescriptorSetInternalBuffers)
+				{
+					for (uint32 rb = 0; rb < pResource->ResourceBindings.size(); rb++)
+					{
+						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
+
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						{
+							pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
+								&pResource->Buffer.Buffers[b],
+								&pResource->Buffer.Offsets[b],
+								&pResource->Buffer.SizesInBytes[b],
+								pResourceBinding->Binding,
+								1,
+								pResourceBinding->DescriptorType);
+						}
+					}
+				}
+
+				m_DirtyDescriptorSetInternalBuffers.clear();
+			}
+
+			//External Buffers
+			if (m_DirtyDescriptorSetExternalBuffers.size() > 0)
+			{
+				for (Resource* pResource : m_DirtyDescriptorSetExternalBuffers)
+				{
+					for (uint32 rb = 0; rb < pResource->ResourceBindings.size(); rb++)
+					{
+						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
+
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						{
+							pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
+								pResource->Buffer.Buffers.data(),
+								pResource->Buffer.Offsets.data(),
+								pResource->Buffer.SizesInBytes.data(),
+								pResourceBinding->Binding,
+								pResource->SubResourceCount,
+								pResourceBinding->DescriptorType);
+						}
+					}
+				}
+
+				m_DirtyDescriptorSetExternalBuffers.clear();
+			}
+
+			//Acceleration Structures
+			if (m_DirtyDescriptorSetAccelerationStructures.size() > 0)
+			{
+				for (Resource* pResource : m_DirtyDescriptorSetAccelerationStructures)
+				{
+					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[0]; //Assume only one acceleration structure
+
+					for (uint32 b = 0; b < m_BackBufferCount; b++)
+					{
+						pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteAccelerationStructureDescriptors(
+							&pResource->AccelerationStructure.pTLAS,
+							pResourceBinding->Binding,
+							1);
+					}
+				}
+
+				m_DirtyDescriptorSetAccelerationStructures.clear();
+			}
+		}
+
 		if (m_DirtyDescriptorSetInternalTextures.size() > 0 ||
 			m_DirtyDescriptorSetExternalTextures.size() > 0)
 		{
@@ -240,7 +331,7 @@ namespace LambdaEngine
 						for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
 						{
 							uint32 descriptorSetIndex = b * pRenderStage->TextureSubDescriptorSetCount + s;
-							IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+							IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->ppBufferDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
 							m_pGraphicsDevice->CopyDescriptorSet(pRenderStage->ppTextureDescriptorSets[descriptorSetIndex], pDescriptorSet);
 							SAFERELEASE(pRenderStage->ppTextureDescriptorSets[descriptorSetIndex]);
 							pRenderStage->ppTextureDescriptorSets[descriptorSetIndex] = pDescriptorSet;
@@ -308,99 +399,6 @@ namespace LambdaEngine
 				}
 
 				m_DirtyDescriptorSetExternalTextures.clear();
-			}
-		}
-
-		if (m_DirtyDescriptorSetInternalBuffers.size()			> 0 || 
-			m_DirtyDescriptorSetExternalBuffers.size()			> 0 || 
-			m_DirtyDescriptorSetAccelerationStructures.size()	> 0)
-		{
-			//Copy old descriptor set and replace old with copy, then write into the new copy
-			for (uint32 r = 0; r < m_RenderStageCount; r++)
-			{
-				RenderStage* pRenderStage		= &m_pRenderStages[r];
-
-				if (pRenderStage->ppBufferDescriptorSets != nullptr)
-				{
-					for (uint32 b = 0; b < m_BackBufferCount; b++)
-					{
-						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Buffer Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
-						m_pGraphicsDevice->CopyDescriptorSet(pRenderStage->ppBufferDescriptorSets[b], pDescriptorSet);
-						SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
-						pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
-					}
-				}
-			}
-
-			//Internal Buffers
-			if (m_DirtyDescriptorSetInternalBuffers.size() > 0)
-			{
-				for (Resource* pResource : m_DirtyDescriptorSetInternalBuffers)
-				{
-					for (uint32 rb = 0; rb < pResource->ResourceBindings.size(); rb++)
-					{
-						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
-
-						for (uint32 b = 0; b < m_BackBufferCount; b++)
-						{
-							pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
-								&pResource->Buffer.Buffers[b],
-								&pResource->Buffer.Offsets[b],
-								&pResource->Buffer.SizesInBytes[b],
-								pResourceBinding->Binding,
-								1,
-								pResourceBinding->DescriptorType);
-						}
-					}
-				}
-
-				m_DirtyDescriptorSetInternalBuffers.clear();
-			}
-
-
-
-			//External Buffers
-			if (m_DirtyDescriptorSetExternalBuffers.size() > 0)
-			{
-				for (Resource* pResource : m_DirtyDescriptorSetExternalBuffers)
-				{
-					for (uint32 rb = 0; rb < pResource->ResourceBindings.size(); rb++)
-					{
-						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
-
-						for (uint32 b = 0; b < m_BackBufferCount; b++)
-						{
-							pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
-								pResource->Buffer.Buffers.data(),
-								pResource->Buffer.Offsets.data(),
-								pResource->Buffer.SizesInBytes.data(),
-								pResourceBinding->Binding,
-								pResource->SubResourceCount,
-								pResourceBinding->DescriptorType);
-						}
-					}
-				}
-
-				m_DirtyDescriptorSetExternalBuffers.clear();
-			}
-
-			//Acceleration Structures
-			if (m_DirtyDescriptorSetAccelerationStructures.size() > 0)
-			{
-				for (Resource* pResource : m_DirtyDescriptorSetAccelerationStructures)
-				{
-					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[0]; //Assume only one acceleration structure
-
-					for (uint32 b = 0; b < m_BackBufferCount; b++)
-					{
-						pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteAccelerationStructureDescriptors(
-							&pResource->AccelerationStructure.pTLAS,
-							pResourceBinding->Binding,
-							1);
-					}
-				}
-
-				m_DirtyDescriptorSetAccelerationStructures.clear();
 			}
 		}
 	}
@@ -863,19 +861,19 @@ namespace LambdaEngine
 				std::vector<DescriptorSetLayoutDesc> descriptorSetLayouts;
 				descriptorSetLayouts.reserve(2);
 
-				if (textureDescriptorSetDescriptions.size() > 0)
-				{
-					DescriptorSetLayoutDesc descriptorSetLayout = {};
-					descriptorSetLayout.pDescriptorBindings		= textureDescriptorSetDescriptions.data();
-					descriptorSetLayout.DescriptorBindingCount	= (uint32)textureDescriptorSetDescriptions.size();
-					descriptorSetLayouts.push_back(descriptorSetLayout);
-				}
-
 				if (bufferDescriptorSetDescriptions.size() > 0)
 				{
 					DescriptorSetLayoutDesc descriptorSetLayout = {};
 					descriptorSetLayout.pDescriptorBindings		= bufferDescriptorSetDescriptions.data();
 					descriptorSetLayout.DescriptorBindingCount	= (uint32)bufferDescriptorSetDescriptions.size();
+					descriptorSetLayouts.push_back(descriptorSetLayout);
+				}
+
+				if (textureDescriptorSetDescriptions.size() > 0)
+				{
+					DescriptorSetLayoutDesc descriptorSetLayout = {};
+					descriptorSetLayout.pDescriptorBindings		= textureDescriptorSetDescriptions.data();
+					descriptorSetLayout.DescriptorBindingCount	= (uint32)textureDescriptorSetDescriptions.size();
 					descriptorSetLayouts.push_back(descriptorSetLayout);
 				}
 
@@ -890,6 +888,17 @@ namespace LambdaEngine
 
 			//Create Descriptor Set
 			{
+				if (bufferDescriptorSetDescriptions.size() > 0)
+				{
+					pRenderStage->ppBufferDescriptorSets = DBG_NEW IDescriptorSet*[m_BackBufferCount];
+
+					for (uint32 i = 0; i < m_BackBufferCount; i++)
+					{
+						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Buffer Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+						pRenderStage->ppBufferDescriptorSets[i] = pDescriptorSet;
+					}
+				}
+
 				if (textureDescriptorSetDescriptions.size() > 0)
 				{
 					uint32 textureDescriptorSetCount = m_BackBufferCount * pRenderStage->TextureSubDescriptorSetCount;
@@ -897,21 +906,12 @@ namespace LambdaEngine
 
 					for (uint32 i = 0; i < textureDescriptorSetCount; i++)
 					{
-						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->ppBufferDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
 						pRenderStage->ppTextureDescriptorSets[i] = pDescriptorSet;
 					}
 				}
 
-				if (bufferDescriptorSetDescriptions.size() > 0)
-				{
-					pRenderStage->ppBufferDescriptorSets = DBG_NEW IDescriptorSet*[m_BackBufferCount];
-
-					for (uint32 i = 0; i < m_BackBufferCount; i++)
-					{
-						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Buffer Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
-						pRenderStage->ppBufferDescriptorSets[i] = pDescriptorSet;
-					}
-				}
+				
 			}
 
 			//Create Pipeline State
@@ -1708,8 +1708,13 @@ namespace LambdaEngine
 
 		pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
 
+		uint32 textureDescriptorSetBindingIndex = 0;
+
 		if (pRenderStage->ppBufferDescriptorSets != nullptr)
-			pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppBufferDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0);
+		{
+			pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppBufferDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, 0);
+			textureDescriptorSetBindingIndex = 1;
+		}
 
 		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 		{
@@ -1727,7 +1732,7 @@ namespace LambdaEngine
 				uint32 drawCount				= newDrawOffset - drawOffset;
 
 				if (pRenderStage->ppTextureDescriptorSets != nullptr)
-					pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[backBufferIndex * pRenderStage->TextureSubDescriptorSetCount + i], pRenderStage->pPipelineLayout, 0);
+					pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[backBufferIndex * pRenderStage->TextureSubDescriptorSetCount + i], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
 
 				pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, drawOffset * indirectArgStride, drawCount, indirectArgStride);
 				drawOffset = newDrawOffset;
@@ -1744,7 +1749,7 @@ namespace LambdaEngine
 			}
 
 			if (pRenderStage->ppTextureDescriptorSets != nullptr)
-				pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, 0);
+				pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
 
 			pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
 		}
@@ -1772,8 +1777,13 @@ namespace LambdaEngine
 
 		pComputeCommandList->BindComputePipeline(pPipelineState);
 
+		uint32 textureDescriptorSetBindingIndex = 0;
+
 		if (pRenderStage->ppBufferDescriptorSets != nullptr)
-			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0);
+		{
+			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, 0);
+			textureDescriptorSetBindingIndex = 1;
+		}
 
 		if (pRenderStage->TextureSubDescriptorSetCount > 1)
 		{
@@ -1781,7 +1791,7 @@ namespace LambdaEngine
 		}
 
 		if (pRenderStage->ppTextureDescriptorSets != nullptr)
-			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, 0);
+			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
 
 		pComputeCommandList->Dispatch(pParameters->Compute.WorkGroupCountX, pParameters->Compute.WorkGroupCountY, pParameters->Compute.WorkGroupCountZ);
 
@@ -1807,8 +1817,13 @@ namespace LambdaEngine
 
 		pComputeCommandList->BindRayTracingPipeline(pPipelineState);
 
+		uint32 textureDescriptorSetBindingIndex = 0;
+
 		if (pRenderStage->ppBufferDescriptorSets != nullptr)
-			pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppBufferDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0);
+		{
+			pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppBufferDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, 0);
+			textureDescriptorSetBindingIndex = 1;
+		}
 
 		if (pRenderStage->TextureSubDescriptorSetCount > 1)
 		{
@@ -1816,7 +1831,7 @@ namespace LambdaEngine
 		}
 
 		if (pRenderStage->ppTextureDescriptorSets != nullptr)
-			pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppTextureDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, 0);
+			pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppTextureDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
 
 		pComputeCommandList->TraceRays(pParameters->RayTracing.RayTraceWidth, pParameters->RayTracing.RayTraceHeight, pParameters->RayTracing.RayTraceDepth);
 

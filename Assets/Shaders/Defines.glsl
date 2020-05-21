@@ -1,0 +1,2 @@
+#define BUFFER_SET_INDEX 0
+#define TEXTURE_SET_INDEX 1
