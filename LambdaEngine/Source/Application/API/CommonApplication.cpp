@@ -185,6 +185,14 @@ namespace LambdaEngine
 		}
 	}
 
+	void CommonApplication::MouseMovedRaw(int32 deltaX, int32 deltaY)
+	{
+		for (EventHandler* pEventHandler : m_EventHandlers)
+		{
+			pEventHandler->MouseMovedRaw(deltaX, deltaY);
+		}
+	}
+
 	void CommonApplication::ButtonPressed(EMouseButton button, uint32 modifierMask)
 	{
 		for (EventHandler* pEventHandler : m_EventHandlers)

@@ -68,6 +68,7 @@ namespace LambdaEngine
 		virtual void MouseLeft(Window* pWindow)														override final;
 
 		virtual void MouseMoved(int32 x, int32 y)								override final;
+		virtual void MouseMovedRaw(int32 deltaX, int32 deltaY)					override final;
 		virtual void ButtonPressed(EMouseButton button, uint32 modifierMask)	override final;
 		virtual void ButtonReleased(EMouseButton button)						override final;
 		virtual void MouseScrolled(int32 deltaX, int32 deltaY)					override final;
