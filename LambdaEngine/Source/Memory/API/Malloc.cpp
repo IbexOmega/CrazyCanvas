@@ -24,7 +24,7 @@
 #ifdef LAMBDA_PLATFORM_WINDOWS
 	#define aligned_malloc(sizeInBytes, alignment) 				malloc(sizeInBytes); (void)alignment
 
-	#define debug_malloc(sizeInBytes, pFileName, lineNumber)	_malloc_dbg(sizeInBytes, _NORMAL_BLOCK, pFileName, lineNumber)
+	#define debug_malloc(sizeInBytes, pFileName, lineNumber)	_malloc_dbg(sizeInBytes, _NORMAL_BLOCK, pFileName, lineNumber); (void)pFileName; (void)lineNumber
 #elif defined(LAMBDA_PLATFORM_MACOS)
 	#define aligned_malloc(sizeInBytes, alignment) 				aligned_alloc(sizeInBytes, alignment)
 
@@ -135,7 +135,7 @@ namespace LambdaEngine
 		byte* const pAllocation		= pMemory + ALLOCATION_HEADER_SIZE;
 		void* const pAlignedAddress = AlignAddress(pAllocation, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
 
-		const uint16 padding 			= reinterpret_cast<byte*>(pAlignedAddress) - pMemory;
+		const int64 padding 			= reinterpret_cast<byte*>(pAlignedAddress) - pMemory;
 #if 0
 		const uint64 address			= reinterpret_cast<uint64>(pMemory);
 		const uint64 alignedAddress 	= reinterpret_cast<uint64>(pAlignedAddress);
@@ -148,7 +148,7 @@ namespace LambdaEngine
 		PlatformMisc::OutputDebugString("Adress=%llu, AdressEnd=%llu, AlignedAdress=%llu, AlignedAdressEnd=%llu,", address, addressEnd, alignedAddress, alignedAddressEnd);
 #endif
 		
-		SetAllocationFlags(pAlignedAddress, padding);
+		SetAllocationFlags(pAlignedAddress, uint16(padding));
 		return pAlignedAddress;
 #else
 		return aligned_malloc(sizeInBytes, alignment);
@@ -194,11 +194,14 @@ namespace LambdaEngine
 		byte* const pAllocation		= pMemory + ALLOCATION_HEADER_SIZE;
 		void* const pAlignedAddress = AlignAddress(pAllocation, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
 
-		const uint16 padding = reinterpret_cast<byte*>(pAlignedAddress) - pMemory;
-		SetAllocationFlags(pAlignedAddress, padding);
+		const int64 padding = reinterpret_cast<byte*>(pAlignedAddress) - pMemory;
+		SetAllocationFlags(pAlignedAddress, uint16(padding));
 
 		return pAlignedAddress;
 #else
+		UNREFERENCED_VARIABLE(pFileName);
+		UNREFERENCED_VARIABLE(lineNumber);
+
 		return aligned_malloc(sizeInBytes, alignment);
 #endif
 	}
@@ -230,7 +233,7 @@ namespace LambdaEngine
 #endif
 	}
 	
-	void Malloc::SetDebugFlags(uint32 debugFlags)
+	void Malloc::SetDebugFlags(uint16 debugFlags)
 	{
 #ifdef LAMBDA_PLATFORM_WINDOWS
 		if (debugFlags & MEMORY_DEBUG_FLAGS_LEAK_CHECK)

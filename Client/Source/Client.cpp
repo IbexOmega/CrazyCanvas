@@ -232,7 +232,7 @@ bool Client::InitRendererForEmpty()
 
 	m_pRenderGraph->Init(renderGraphDesc);
 
-	IWindow* pWindow = PlatformApplication::Get()->GetMainWindow();
+	Window* pWindow = PlatformApplication::Get()->GetMainWindow();
 	uint32 renderWidth = pWindow->GetWidth();
 	uint32 renderHeight = pWindow->GetHeight();
 

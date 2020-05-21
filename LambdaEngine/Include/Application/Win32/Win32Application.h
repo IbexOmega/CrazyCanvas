@@ -72,11 +72,11 @@ namespace LambdaEngine
 		HINSTANCE 		GetInstanceHandle();
 
 		// Application interface
-		virtual bool Create(IEventHandler* pEventHandler) override final;
+		virtual bool Create(EventHandler* pEventHandler) override final;
 
 		virtual void ProcessStoredEvents() override final;
 
-		virtual void MakeMainWindow(IWindow* pMainWindow) override final;
+		virtual void MakeMainWindow(Window* pMainWindow) override final;
 
 		virtual bool SupportsRawInput() const override final;
 
@@ -84,8 +84,8 @@ namespace LambdaEngine
 
 		virtual EInputMode GetInputMode() const override final;
 
-        virtual IWindow* GetForegroundWindow()   const override final;
-        virtual IWindow* GetMainWindow()         const override final;
+        virtual Window* GetForegroundWindow()   const override final;
+        virtual Window* GetMainWindow()         const override final;
 
 	private:
 		void AddWindow(Win32Window* pWindow);
@@ -100,7 +100,7 @@ namespace LambdaEngine
 
 		static bool ProcessMessages();
 
-		static IWindow*		CreateWindow(const WindowDesc* pDesc);
+		static Window*		CreateWindow(const WindowDesc* pDesc);
 		static Application* CreateApplication();
 
 		static void Terminate();
@@ -116,7 +116,7 @@ namespace LambdaEngine
 
 	private:
 		Win32Window*	m_pMainWindow	= nullptr;
-		IEventHandler*	m_pEventHandler = nullptr;
+		EventHandler*	m_pEventHandler = nullptr;
 		HINSTANCE		m_hInstance		= 0;
 
 		RawInputState	m_RawInput			= { };

@@ -18,7 +18,7 @@
 #include "Rendering/Core/API/IShader.h"
 #include "Rendering/Core/API/IBuffer.h"
 
-#include "Application/API/IWindow.h"
+#include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
 
 #include "Resources/ResourceManager.h"
@@ -427,7 +427,7 @@ namespace LambdaEngine
 		return ImGui::GetCurrentContext();
 	}
 
-	bool ImGuiRenderer::InitImGui(IWindow* pWindow)
+	bool ImGuiRenderer::InitImGui(Window* pWindow)
 	{
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();

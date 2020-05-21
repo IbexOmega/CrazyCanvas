@@ -25,7 +25,7 @@ namespace LambdaEngine
 		* pFormat 	- A formated string to display
 		* args		- Arguments for the string
 		*/
-        static void OutputDebugString(const char*, ...)			{ }
-        static void OutputDebugStringV(const char*, va_list)	{ }
+		static void OutputDebugString(const char*, ...)			{ }
+		static void OutputDebugStringV(const char*, va_list)	{ }
 	};
 }

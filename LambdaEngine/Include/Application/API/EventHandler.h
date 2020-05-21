@@ -1,88 +1,154 @@
 #pragma once
-#include "IEventHandler.h"
+#include "Input/API/InputCodes.h"
+
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma warning(push)
+	#pragma warning(disable : 4100) // Disable unreferenced variable warning
+#endif
 
 namespace LambdaEngine
 {
-	class EventHandler : public IEventHandler
+	enum class EResizeType
+	{
+		RESIZE_TYPE_NONE = 0,
+		RESIZE_TYPE_MAXIMIZE = 1,
+		RESIZE_TYPE_MINIMIZE = 2,
+	};
+
+	class Window;
+
+	class EventHandler
 	{
 	public:
-		EventHandler()	= default;
-		~EventHandler() = default;
+		DECL_INTERFACE(EventHandler);
 
-        virtual void FocusChanged(IWindow* pWindow, bool hasFocus) override
-        {
-            UNREFERENCED_VARIABLE(pWindow);
-            UNREFERENCED_VARIABLE(hasFocus);
-        }
+		/*
+		* Called when window focus changed.
+		*   pWindow     - The window that changed focus status
+		*   hasFocus    - True if pWindow got focus, otherwise false
+		*/
+		virtual void FocusChanged(Window* pWindow, bool hasFocus)
+		{
+		}
 
-        virtual void WindowMoved(IWindow* pWindow, int16 x, int16 y) override
-        {
-            UNREFERENCED_VARIABLE(pWindow);
-            UNREFERENCED_VARIABLE(x);
-            UNREFERENCED_VARIABLE(y);
-        }
-        
-        virtual void WindowResized(IWindow* pWindow, uint16 width, uint16 height, EResizeType type) override
-        {
-            UNREFERENCED_VARIABLE(pWindow);
-            UNREFERENCED_VARIABLE(width);
-            UNREFERENCED_VARIABLE(height);
-            UNREFERENCED_VARIABLE(type);
-        }
-        
-        virtual void WindowClosed(IWindow* pWindow) override
-        {
-            UNREFERENCED_VARIABLE(pWindow);
-        }
-        
-        virtual void MouseEntered(IWindow* pWindow) override
-        {
-            UNREFERENCED_VARIABLE(pWindow);
-        }
-        
-        virtual void MouseLeft(IWindow* pWindow) override
-        {
-            UNREFERENCED_VARIABLE(pWindow);
-        }
-        
-        virtual void MouseMoved(int32 x, int32 y) override
-        {
-            UNREFERENCED_VARIABLE(x);
-            UNREFERENCED_VARIABLE(y);
-        }
-        
-        virtual void ButtonPressed(EMouseButton button, uint32 modifierMask) override
-        {
-            UNREFERENCED_VARIABLE(button);
-            UNREFERENCED_VARIABLE(modifierMask);
-        }
-        
-        virtual void ButtonReleased(EMouseButton button) override
-        {
-            UNREFERENCED_VARIABLE(button);
-        }
-        
-        virtual void MouseScrolled(int32 deltaX, int32 deltaY) override
-        {
-            UNREFERENCED_VARIABLE(deltaX);
-            UNREFERENCED_VARIABLE(deltaY);
-        }
+		/*
+		* Called when window moved.
+		*   pWindow - The window that moved
+		*   x       - New x position of the window
+		*   y       - New y position of the window
+		*/
+		virtual void WindowMoved(Window* pWindow, int16 x, int16 y)
+		{
+		}
 
-        virtual void KeyPressed(EKey key, uint32 modifierMask, bool isRepeat) override
-        {
-            UNREFERENCED_VARIABLE(key);
-            UNREFERENCED_VARIABLE(modifierMask);
-            UNREFERENCED_VARIABLE(isRepeat);
-        }
-        
-        virtual void KeyReleased(EKey key) override
-        {
-            UNREFERENCED_VARIABLE(key);
-        }
+		/*
+		* Called when window focus changed.
+		*   pWindow - The window that got focus
+		*   width   - The new width of the window
+		*   height  - The new height of the window
+		*/
+		virtual void WindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type)
+		{
+		}
 
-        virtual void KeyTyped(uint32 character) override
-        {
-            UNREFERENCED_VARIABLE(character);
-        }
+		/*
+		* Called when a window is closed
+		*  pWindow - The closed window
+		*/
+		virtual void WindowClosed(Window* pWindow)
+		{
+		}
+
+		/*
+		* Called when the mousecursor entered a window
+		*  pWindow - The window that the mouse entered
+		*/
+		virtual void MouseEntered(Window* pWindow)
+		{
+		}
+
+		/*
+		* Called when the mousecursor left a window
+		*  pWindow - The window that the mouse left
+		*/
+		virtual void MouseLeft(Window* pWindow)
+		{
+		}
+
+		/*
+		* Will be called when a mouse move event occurs. Mouse coordinates are in the active window's client space.
+		*	x - The new horizontal coordinates of the mouse
+		*	y - The new vertical coordinates of the mouse
+		*/
+		virtual void MouseMoved(int32 x, int32 y)
+		{
+		}
+
+		/*
+		* Will be called when a raw mouse move event occurs. Mouse coordinates are raw delta values of the mouse movement.
+		* This function will only be called when Raw input is activated on a window
+		*	deltaX - The raw mouse x-coordinate delta
+		*	deltaY - The raw mouse y-coordinate delta
+		*/
+		virtual void MouseMovedRaw(int32 deltaX, int32 deltaY)
+		{
+		}
+
+		/*
+		* Will be called when a mouse button pressed event occurs
+		*	button - Which button was pressed
+		*/
+		virtual void ButtonPressed(EMouseButton button, uint32 modifierMask)
+		{
+		}
+
+		/*
+		* Will be called when a mouse button released event occurs
+		*	button - Which button was released
+		*/
+		virtual void ButtonReleased(EMouseButton button)
+		{
+		}
+
+		/*
+		* Will be called when a mouse scroll event occurs
+		*   deltaX - The amount of scrolling delta < 0 for left scrolling and delta > 0 for right scrolling
+		*   deltaY - The amount of scrolling delta < 0 for downwards scrolling and delta > 0 for upwards scrolling
+		*/
+		virtual void MouseScrolled(int32 deltaX, int32 deltaY)
+		{
+		}
+
+		/*
+		* Will be called when a key pressed event occurs
+		*	key             - Which key was pressed.
+		*   modifierMask    - A mask of values from FModiferFlag- enumeration indicating what modifer
+							  keys were pressed at the same time as key.
+		*   isRepeat        - True if the key already were down and this message is a repeat message.
+							  Sent when a key is continuously held down.
+		*/
+		virtual void KeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
+		{
+		}
+
+		/*
+		 * Will be called when a key released event occurs
+		 *    key - Which key was released
+		 */
+		virtual void KeyReleased(EKey key)
+		{
+		}
+
+		/*
+		* Will be called once for each event that occurs when a key is continually held down
+		*    character - Unicode character for the key that recently were pressed
+		*/
+		virtual void KeyTyped(uint32 character)
+		{
+		}
 	};
 }
+
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma warning(pop)
+#endif

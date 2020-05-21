@@ -1,6 +1,6 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformApplication.h"
-#include "Application/API/IWindow.h"
+#include "Application/API/Window.h"
 
 namespace LambdaEngine
 {
@@ -19,16 +19,10 @@ namespace LambdaEngine
 		s_pCommonApplication = nullptr;
 	}
 
-	bool CommonApplication::Create()
+	bool CommonApplication::Create(Application* pPlatformApplication)
 	{
-		m_pPlatformApplication = PlatformApplication::CreateApplication();
-		VALIDATE(m_pPlatformApplication != nullptr);
-
-		// Init platform
-		if (!m_pPlatformApplication->Create(this))
-		{
-			return false;
-		}
+		VALIDATE(pPlatformApplication != nullptr);
+		m_pPlatformApplication = pPlatformApplication;
 
 		// Set prefered inputmode
 		//if (m_pPlatformApplication->SupportsRawInput())
@@ -38,7 +32,7 @@ namespace LambdaEngine
 		//else
 		//{
 		//}
-		m_pPlatformApplication->SetInputMode(EInputMode::INPUT_MODE_STANDARD);
+
 
 		WindowDesc windowDesc = { };
 		windowDesc.pTitle 	= "Lambda Engine";
@@ -46,10 +40,17 @@ namespace LambdaEngine
 		windowDesc.Height 	= 900;
 		windowDesc.Style	= WINDOW_STYLE_FLAG_TITLED | WINDOW_STYLE_FLAG_CLOSABLE;
 
-		IWindow* pWindow = PlatformApplication::CreateWindow(&windowDesc);
+		if (!pPlatformApplication->Create(this))
+		{
+			return false;
+		}
+
+		Window* pWindow = PlatformApplication::CreateWindow(&windowDesc);
 		if (pWindow)
 		{
-			m_pPlatformApplication->MakeMainWindow(pWindow);
+			MakeMainWindow(pWindow);
+			SetInputMode(pWindow, EInputMode::INPUT_MODE_STANDARD);
+			
 			pWindow->Show();
 		}
 		else
@@ -60,7 +61,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void CommonApplication::AddEventHandler(IEventHandler* pEventHandler)
+	void CommonApplication::AddEventHandler(EventHandler* pEventHandler)
 	{
 		// Check first so that this handler is not already added
 		const uint32 count = uint32(m_EventHandlers.size());
@@ -76,7 +77,7 @@ namespace LambdaEngine
 		m_EventHandlers.emplace_back(pEventHandler);
 	}
 
-	void CommonApplication::RemoveEventHandler(IEventHandler* pEventHandler)
+	void CommonApplication::RemoveEventHandler(EventHandler* pEventHandler)
 	{
 		const uint32 count = uint32(m_EventHandlers.size());
 		for (uint32 i = 0; i < count; i++)
@@ -94,9 +95,10 @@ namespace LambdaEngine
 		m_pPlatformApplication->ProcessStoredEvents();
 	}
 
-	void CommonApplication::MakeMainWindow(IWindow* pMainWindow)
+	void CommonApplication::MakeMainWindow(Window* pMainWindow)
 	{
-		m_pPlatformApplication->MakeMainWindow(pMainWindow);
+		VALIDATE(pMainWindow != nullptr);
+		m_pMainWindow = pMainWindow;
 	}
 
 	bool CommonApplication::SupportsRawInput() const
@@ -104,69 +106,72 @@ namespace LambdaEngine
 		return m_pPlatformApplication->SupportsRawInput();
 	}
 
-	void CommonApplication::SetInputMode(EInputMode inputMode)
+	void CommonApplication::SetInputMode(Window* pWindow, EInputMode inputMode)
 	{
 		m_pPlatformApplication->SetInputMode(inputMode);
 	}
 
-	EInputMode CommonApplication::GetInputMode() const
+	void CommonApplication::SetFocus(Window* pWindow)
 	{
-		return m_pPlatformApplication->GetInputMode();
+		//TODO: Implement
 	}
 
-	IWindow* CommonApplication::GetForegroundWindow() const
+	void CommonApplication::SetCapture(Window* pWindow)
 	{
-		return m_pPlatformApplication->GetForegroundWindow();
 	}
 
-	IWindow* CommonApplication::GetMainWindow() const
+	void CommonApplication::SetActiveWindow(Window* pWindow)
 	{
-		return m_pPlatformApplication->GetMainWindow();
 	}
 
-	void CommonApplication::FocusChanged(IWindow* pWindow, bool hasFocus)
+	void CommonApplication::FocusChanged(Window* pWindow, bool hasFocus)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->FocusChanged(pWindow, hasFocus);
 		}
 	}
 
-	void CommonApplication::WindowMoved(IWindow* pWindow, int16 x, int16 y)
+	void CommonApplication::WindowMoved(Window* pWindow, int16 x, int16 y)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->WindowMoved(pWindow, x, y);
 		}
 	}
 
-	void CommonApplication::WindowResized(IWindow* pWindow, uint16 width, uint16 height, EResizeType type)
+	void CommonApplication::WindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->WindowResized(pWindow, width, height, type);
 		}
 	}
 
-	void CommonApplication::WindowClosed(IWindow* pWindow)
+	void CommonApplication::WindowClosed(Window* pWindow)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		if (pWindow == m_pMainWindow)
+		{
+			Terminate();
+		}
+
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->WindowClosed(pWindow);
 		}
 	}
 
-	void CommonApplication::MouseEntered(IWindow* pWindow)
+	void CommonApplication::MouseEntered(Window* pWindow)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->MouseEntered(pWindow);
 		}
 	}
 
-	void CommonApplication::MouseLeft(IWindow* pWindow)
+	void CommonApplication::MouseLeft(Window* pWindow)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->MouseLeft(pWindow);
 		}
@@ -174,7 +179,7 @@ namespace LambdaEngine
 
 	void CommonApplication::MouseMoved(int32 x, int32 y)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->MouseMoved(x, y);
 		}
@@ -182,7 +187,7 @@ namespace LambdaEngine
 
 	void CommonApplication::ButtonPressed(EMouseButton button, uint32 modifierMask)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->ButtonPressed(button, modifierMask);
 		}
@@ -190,7 +195,7 @@ namespace LambdaEngine
 
 	void CommonApplication::ButtonReleased(EMouseButton button)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->ButtonReleased(button);
 		}
@@ -198,7 +203,7 @@ namespace LambdaEngine
 
 	void CommonApplication::MouseScrolled(int32 deltaX, int32 deltaY)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->MouseScrolled(deltaX, deltaY);
 		}
@@ -206,7 +211,7 @@ namespace LambdaEngine
 
 	void CommonApplication::KeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->KeyPressed(key, modifierMask, isRepeat);
 		}
@@ -214,7 +219,7 @@ namespace LambdaEngine
 
 	void CommonApplication::KeyReleased(EKey key)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->KeyReleased(key);
 		}
@@ -222,7 +227,7 @@ namespace LambdaEngine
 
 	void CommonApplication::KeyTyped(uint32 character)
 	{
-		for (IEventHandler* pEventHandler : m_EventHandlers)
+		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->KeyTyped(character);
 		}
@@ -230,8 +235,9 @@ namespace LambdaEngine
 
 	bool CommonApplication::PreInit()
 	{
-		CommonApplication* pApplication = DBG_NEW CommonApplication();
-		if (!pApplication->Create())
+		Application*		pPlatformApplication	= PlatformApplication::CreateApplication();
+		CommonApplication*	pApplication			= CreateApplication(pPlatformApplication);
+		if (!pApplication)
 		{
 			return false;
 		}
@@ -247,7 +253,7 @@ namespace LambdaEngine
 	bool CommonApplication::Tick()
 	{
 		bool shouldRun = PlatformApplication::ProcessMessages();
-		CommonApplication::Get()->ProcessStoredEvents();
+		ProcessStoredEvents();
 		
 		return shouldRun;
 	}
@@ -257,8 +263,23 @@ namespace LambdaEngine
 		PlatformApplication::Terminate();
 	}
 
+	CommonApplication* CommonApplication::CreateApplication(Application* pPlatformApplication)
+	{
+		CommonApplication* pApplication = DBG_NEW CommonApplication();
+		if (!pApplication->Create(pPlatformApplication))
+		{
+			delete pApplication;
+			return nullptr;
+		}
+		else
+		{
+			return pApplication;
+		}
+	}
+
 	CommonApplication* CommonApplication::Get()
 	{
+		VALIDATE(s_pCommonApplication != nullptr);
 		return s_pCommonApplication;
 	}
 

@@ -6,7 +6,7 @@
 
 namespace LambdaEngine
 {
-	class IWindow;
+	class Window;
 	class ITexture;
 	class ISwapChain;
 	class RenderGraph;
@@ -20,7 +20,7 @@ namespace LambdaEngine
 	{
 		const char*		pName			= "";
 		bool			Debug			= false;
-		IWindow*		pWindow			= nullptr;
+		Window*		pWindow			= nullptr;
 		RenderGraph*	pRenderGraph	= nullptr;
 		uint32			BackBufferCount = 3;
 	};

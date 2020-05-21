@@ -1,4 +1,10 @@
+#pragma once
 #include "LambdaEngine.h"
+
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma warning(push)
+	#pragma warning(disable : 4100) // Disable unreferenced variable warning
+#endif
 
 namespace LambdaEngine
 {
@@ -15,3 +21,8 @@ namespace LambdaEngine
 		static uint64 GetAllocationGranularity()	{ return 0; }
 	};
 }
+
+
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma warning(pop)
+#endif

@@ -3,7 +3,7 @@
 
 #include "Log/Log.h"
 
-#include "Application/API/IEventHandler.h"
+#include "Application/API/EventHandler.h"
 
 #include "Application/Win32/Win32Application.h"
 #include "Application/Win32/Win32Window.h"
@@ -73,7 +73,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool Win32Application::Create(IEventHandler* pEventHandler)
+	bool Win32Application::Create(EventHandler* pEventHandler)
 	{
 		VALIDATE(pEventHandler != nullptr);
 		m_pEventHandler = pEventHandler;
@@ -97,7 +97,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void Win32Application::MakeMainWindow(IWindow* pMainWindow)
+	void Win32Application::MakeMainWindow(Window* pMainWindow)
 	{
 		m_pMainWindow = reinterpret_cast<Win32Window*>(pMainWindow);
 
@@ -345,11 +345,6 @@ namespace LambdaEngine
 
 			case WM_DESTROY:
 			{
-				if (pMessageWindow == m_pMainWindow)
-				{
-					Terminate();
-				}
-
 				m_pEventHandler->WindowClosed(pMessageWindow);
 				break;
 			}
@@ -424,13 +419,13 @@ namespace LambdaEngine
 		return m_hInstance;
 	}
 
-	IWindow* Win32Application::GetForegroundWindow() const
+	Window* Win32Application::GetForegroundWindow() const
 	{
 		HWND hForegroundWindow = ::GetForegroundWindow();
 		return GetWindowFromHandle(hForegroundWindow);
 	}
 
-	IWindow* Win32Application::GetMainWindow() const
+	Window* Win32Application::GetMainWindow() const
 	{
 		return m_pMainWindow;
 	}
@@ -552,7 +547,7 @@ namespace LambdaEngine
 		}
 	}
 
-	IWindow* Win32Application::CreateWindow(const WindowDesc* pDesc)
+	Window* Win32Application::CreateWindow(const WindowDesc* pDesc)
 	{
 		Win32Window* pWindow = DBG_NEW Win32Window();
 		if (!pWindow->Init(pDesc))

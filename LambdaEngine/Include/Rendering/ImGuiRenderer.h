@@ -26,11 +26,11 @@ namespace LambdaEngine
 	class ISampler;
 	class IShader;
 	class IBuffer;
-	class IWindow;
+	class Window;
 
 	struct ImGuiRendererDesc
 	{
-		IWindow*	pWindow				= nullptr;
+		Window*	pWindow				= nullptr;
 		uint32		BackBufferCount		= 0;
 		uint32		VertexBufferSize	= 0;
 		uint32		IndexBufferSize		= 0;
@@ -80,7 +80,7 @@ namespace LambdaEngine
 		static ImGuiContext* GetImguiContext();
 
 	private:
-		bool InitImGui(IWindow* pWindow);
+		bool InitImGui(Window* pWindow);
 		bool CreateCopyCommandList();
 		bool CreateAllocator(uint32 pageSize);
 		bool CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize);

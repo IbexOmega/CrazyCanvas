@@ -30,12 +30,12 @@ public:
 	void InitTestAudio();
 
     // Inherited via IEventHandler
-    virtual void FocusChanged(LambdaEngine::IWindow* pWindow, bool hasFocus)                                                 override;
-    virtual void WindowMoved(LambdaEngine::IWindow* pWindow, int16 x, int16 y)                                               override;
-    virtual void WindowResized(LambdaEngine::IWindow* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)  override;
-    virtual void WindowClosed(LambdaEngine::IWindow* pWindow)                                                                override;
-    virtual void MouseEntered(LambdaEngine::IWindow* pWindow)                                                                override;
-    virtual void MouseLeft(LambdaEngine::IWindow* pWindow)                                                                   override;
+    virtual void FocusChanged(LambdaEngine::Window* pWindow, bool hasFocus)                                                 override;
+    virtual void WindowMoved(LambdaEngine::Window* pWindow, int16 x, int16 y)                                               override;
+    virtual void WindowResized(LambdaEngine::Window* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)  override;
+    virtual void WindowClosed(LambdaEngine::Window* pWindow)                                                                override;
+    virtual void MouseEntered(LambdaEngine::Window* pWindow)                                                                override;
+    virtual void MouseLeft(LambdaEngine::Window* pWindow)                                                                   override;
 
 	virtual void KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)     override;
 	virtual void KeyReleased(LambdaEngine::EKey key)                                        override;
