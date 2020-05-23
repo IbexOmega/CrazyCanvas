@@ -20,6 +20,11 @@ namespace LambdaEngine
 	NetworkPacket* NetworkPacket::SetType(uint16 type)
 	{
 		m_Header.Type = type;
+
+#ifndef LAMBDA_CONFIG_PRODUCTION
+		PacketTypeToString(m_Header.Type, m_Type);
+#endif
+
 		return this;
 	}
 
@@ -82,20 +87,25 @@ namespace LambdaEngine
 	std::string NetworkPacket::ToString() const
 	{
 		std::string type;
-		switch (m_Header.Type)
-		{
-		case TYPE_UNDEFINED:			type = "TYPE_UNDEFINED";  break;
-		case TYPE_PING:					type = "TYPE_PING";  break;
-		case TYPE_SERVER_FULL:			type = "TYPE_SERVER_FULL";  break;
-		case TYPE_SERVER_NOT_ACCEPTING: type = "TYPE_SERVER_NOT_ACCEPTING";  break;
-		case TYPE_CONNNECT:				type = "TYPE_CONNNECT";  break;
-		case TYPE_DISCONNECT:			type = "TYPE_DISCONNECT";  break;
-		case TYPE_CHALLENGE:			type = "TYPE_CHALLENGE";  break;
-		case TYPE_ACCEPTED:				type = "TYPE_ACCEPTED";  break;
-		case TYPE_NETWORK_ACK:			type = "TYPE_NETWORK_ACK";  break;
-		case TYPE_NETWORK_DISCOVERY:	type = "TYPE_NETWORK_DISCOVERY";  break;
-		default:						type = std::to_string(m_Header.Type); break;
-		}
+		PacketTypeToString(m_Header.Type, type);
 		return "[Type=" + type + "], [Size=" + std::to_string(GetBufferSize()) + "]";
+	}
+
+	void NetworkPacket::PacketTypeToString(uint16 type, std::string& str)
+	{
+		switch (type)
+		{
+		case TYPE_UNDEFINED:			str = "TYPE_UNDEFINED";  break;
+		case TYPE_PING:					str = "TYPE_PING";  break;
+		case TYPE_SERVER_FULL:			str = "TYPE_SERVER_FULL";  break;
+		case TYPE_SERVER_NOT_ACCEPTING: str = "TYPE_SERVER_NOT_ACCEPTING";  break;
+		case TYPE_CONNNECT:				str = "TYPE_CONNNECT";  break;
+		case TYPE_DISCONNECT:			str = "TYPE_DISCONNECT";  break;
+		case TYPE_CHALLENGE:			str = "TYPE_CHALLENGE";  break;
+		case TYPE_ACCEPTED:				str = "TYPE_ACCEPTED";  break;
+		case TYPE_NETWORK_ACK:			str = "TYPE_NETWORK_ACK";  break;
+		case TYPE_NETWORK_DISCOVERY:	str = "TYPE_NETWORK_DISCOVERY";  break;
+		default:						str = "USER_PACKET(" + std::to_string(type) + ")"; break;
+		}
 	}
 }

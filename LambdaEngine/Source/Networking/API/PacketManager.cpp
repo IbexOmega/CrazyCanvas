@@ -206,6 +206,11 @@ namespace LambdaEngine
 		}
 	}
 
+	/*
+	* Finds packets that have been sent erlier and are now acked.
+	* Notifies the listener that the packet was succesfully delivered.
+	* Removes the packet and returns it to the pool.
+	*/
 	void PacketManager::HandleAcks(const std::vector<uint32>& acks)
 	{
 		std::vector<uint32> ackedReliableUIDs;

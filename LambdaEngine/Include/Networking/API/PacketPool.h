@@ -5,6 +5,8 @@
 
 #include "Threading/API/SpinLock.h"
 
+//#define DEBUG_PACKET_POOL
+
 namespace LambdaEngine
 {
 	class NetworkPacket;
@@ -25,6 +27,10 @@ namespace LambdaEngine
 
 		uint16 GetSize() const;
 		uint16 GetFreePackets() const;
+
+	private:
+		void Request(NetworkPacket* pPacket);
+		void Free(NetworkPacket* pPacket);
 
 	private:
 		std::vector<NetworkPacket*> m_Packets;

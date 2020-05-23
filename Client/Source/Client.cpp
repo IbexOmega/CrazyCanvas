@@ -232,7 +232,7 @@ bool Client::InitRendererForEmpty()
 
 	m_pRenderGraph->Init(renderGraphDesc);
 
-	IWindow* pWindow = PlatformApplication::Get()->GetMainWindow();
+	IWindow* pWindow = CommonApplication::Get()->GetMainWindow();
 	uint32 renderWidth = pWindow->GetWidth();
 	uint32 renderHeight = pWindow->GetHeight();
 
@@ -251,7 +251,7 @@ bool Client::InitRendererForEmpty()
 	rendererDesc.pName = "Renderer";
 	rendererDesc.Debug = RENDERING_DEBUG_ENABLED;
 	rendererDesc.pRenderGraph = m_pRenderGraph;
-	rendererDesc.pWindow = PlatformApplication::Get()->GetMainWindow();
+	rendererDesc.pWindow = CommonApplication::Get()->GetMainWindow();
 	rendererDesc.BackBufferCount = BACK_BUFFER_COUNT;
 
 	m_pRenderer->Init(&rendererDesc);

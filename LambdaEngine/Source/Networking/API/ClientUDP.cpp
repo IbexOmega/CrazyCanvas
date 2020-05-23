@@ -58,7 +58,6 @@ namespace LambdaEngine
 			if (StartThreads())
 			{
 				LOG_WARNING("[ClientUDP]: Connecting...");
-				m_PacketManager.Reset();
 				m_PacketManager.SetEndPoint(ipEndPoint);
 				return true;
 			}
@@ -152,6 +151,7 @@ namespace LambdaEngine
 			if (m_pSocket->Bind(IPEndPoint(IPAddress::ANY, 0)))
 			{
 				m_Transciver.SetSocket(m_pSocket);
+				m_PacketManager.Reset();
 				m_State = STATE_CONNECTING;
 				m_pHandler->OnConnectingUDP(this);
 				m_SendDisconnectPacket = true;
