@@ -132,8 +132,6 @@ namespace LambdaEngine
 			pPacket->m_SizeOfBuffer = 0;
 			m_PacketsFree.push_back(pPacket);
 		}
-
-		LOG_ERROR("[PacketPool]: RESET!");
 	}
 
 	uint16 PacketPool::GetSize() const

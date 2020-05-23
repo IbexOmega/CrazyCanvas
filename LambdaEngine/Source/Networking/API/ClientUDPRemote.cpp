@@ -12,10 +12,9 @@
 
 namespace LambdaEngine
 {
-	ClientUDPRemote::ClientUDPRemote(uint16 packets, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer) :
+	ClientUDPRemote::ClientUDPRemote(uint16 packetPoolSize, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer) :
 		m_pServer(pServer),
-		//m_PacketManager(this, packets, maximumTries),
-		m_PacketManager(),
+		m_PacketManager(packetPoolSize, maximumTries),
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
 		m_Release(false),

@@ -131,8 +131,8 @@ void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8
 void Client::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	using namespace LambdaEngine;
-
-	UNREFERENCED_VARIABLE(key);
+	UNREFERENCED_VARIABLE(modifierMask);
+	UNREFERENCED_VARIABLE(isRepeat);
 
     if (key == EKey::KEY_ENTER)
     {
