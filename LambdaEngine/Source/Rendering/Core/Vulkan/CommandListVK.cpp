@@ -203,38 +203,32 @@ namespace LambdaEngine
 		BufferVK*		pScratchBufferVk					= pAccelerationStructureVk->GetScratchBuffer();
 		const BufferVK* pInstanceBufferVk					= reinterpret_cast<const BufferVK*>(pBuildDesc->pInstanceBuffer);
 
-		VkDeviceOrHostAddressConstKHR instancesDataAddressUnion = {};
-		instancesDataAddressUnion.deviceAddress = pInstanceBufferVk->GetDeviceAdress();
-
-		VkAccelerationStructureGeometryInstancesDataKHR instancesDataDesc = {};
-		instancesDataDesc.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-		instancesDataDesc.arrayOfPointers	= VK_FALSE;
-		instancesDataDesc.data				= instancesDataAddressUnion;
-
-		VkAccelerationStructureGeometryDataKHR geometryDataUnion = {};
-		geometryDataUnion.instances = instancesDataDesc;
-
 		VkAccelerationStructureGeometryKHR geometryData = {};
-		geometryData.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		geometryData.geometryType	= VK_GEOMETRY_TYPE_INSTANCES_KHR;
-		geometryData.geometry		= geometryDataUnion;
-		geometryData.flags			= 0;
+		geometryData.sType									= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryData.flags									= VK_GEOMETRY_OPAQUE_BIT_KHR;
+		geometryData.geometryType							= VK_GEOMETRY_TYPE_INSTANCES_KHR;
+		geometryData.geometry.instances.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+		geometryData.geometry.instances.arrayOfPointers		= VK_FALSE;
+		geometryData.geometry.instances.data.deviceAddress	= pInstanceBufferVk->GetDeviceAdress();
 
 		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
 
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
-		accelerationStructureBuildInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-		accelerationStructureBuildInfo.type						= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-		accelerationStructureBuildInfo.geometryArrayOfPointers	= VK_FALSE;
-		accelerationStructureBuildInfo.geometryCount			= 1;
-		accelerationStructureBuildInfo.ppGeometries				= &pGeometryData;
-		accelerationStructureBuildInfo.flags					= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
-		{
-			accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
-		}
-
+		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
+		accelerationStructureBuildInfo.geometryCount				= 1;
+		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
 		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAdress();
+
+		//Extra Flags
+		{
+			if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			}
+		}
 
 		if (pBuildDesc->Update)
 		{
@@ -274,40 +268,29 @@ namespace LambdaEngine
 		const BufferVK*				pVertexBufferVk				= reinterpret_cast<const BufferVK*>(pBuildDesc->pVertexBuffer);
 		const BufferVK*				pIndexBufferVk				= reinterpret_cast<const BufferVK*>(pBuildDesc->pIndexBuffer);
 
-		VkAccelerationStructureGeometryTrianglesDataKHR geometryDataDesc = {};
-		geometryDataDesc.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-		geometryDataDesc.pNext						= nullptr;
-		geometryDataDesc.vertexFormat				= VK_FORMAT_R32G32B32_SFLOAT;
-		geometryDataDesc.vertexData.deviceAddress	= pVertexBufferVk->GetDeviceAdress();
-		geometryDataDesc.vertexStride				= pBuildDesc->VertexStride;
-		geometryDataDesc.indexType					= VK_INDEX_TYPE_UINT32;
-		geometryDataDesc.indexData.deviceAddress	= pIndexBufferVk->GetDeviceAdress();
+		VkAccelerationStructureGeometryKHR geometryData = {};
+		geometryData.sType											= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryData.flags											= VK_GEOMETRY_OPAQUE_BIT_KHR; //Cant be opaque if we want to utilize any-hit shaders
+		geometryData.geometryType									= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+		geometryData.geometry.triangles.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+		geometryData.geometry.triangles.vertexFormat				= VK_FORMAT_R32G32B32_SFLOAT;
+		geometryData.geometry.triangles.vertexData.deviceAddress	= pVertexBufferVk->GetDeviceAdress();
+		geometryData.geometry.triangles.vertexStride				= pBuildDesc->VertexStride;
+		geometryData.geometry.triangles.indexType					= VK_INDEX_TYPE_UINT32;
+		geometryData.geometry.triangles.indexData.deviceAddress		= pIndexBufferVk->GetDeviceAdress();
 
-		VkDeviceOrHostAddressConstKHR transformDataAddressUnion = {};
 		if (pBuildDesc->pTransformBuffer != nullptr)
 		{
 			const BufferVK* pTransformBufferVk = reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer);
-			geometryDataDesc.transformData.deviceAddress = pTransformBufferVk->GetDeviceAdress();
-		}
-
-		VkAccelerationStructureGeometryKHR geometryData = {};
-		geometryData.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		geometryData.pNext					= nullptr;
-		geometryData.geometryType			= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-		geometryData.geometry.triangles		= geometryDataDesc;
-		geometryData.flags					= VK_GEOMETRY_OPAQUE_BIT_KHR; //Cant be opaque if we want to utilize any-hit shaders
-
-
-		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
-		accelerationStructureBuildInfo.sType	= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-		accelerationStructureBuildInfo.type		= VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		accelerationStructureBuildInfo.flags	= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
-		{
-			accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			geometryData.geometry.triangles.transformData.deviceAddress = pTransformBufferVk->GetDeviceAdress();
 		}
 
 		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
+
+		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
+		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 		accelerationStructureBuildInfo.geometryCount				= 1;
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
@@ -316,6 +299,14 @@ namespace LambdaEngine
 		accelerationStructureBuildInfo.dstAccelerationStructure		= pAccelerationStructureVk->GetAccelerationStructure();
 		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAdress();
 
+		//Extra Flags
+		{
+			if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			}
+		}
+		
 		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
 		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->TriangleCount;
 		accelerationStructureOffsetInfo.primitiveOffset = pBuildDesc->IndexBufferByteOffset;

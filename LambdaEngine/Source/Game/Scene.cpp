@@ -116,7 +116,7 @@ namespace LambdaEngine
 		instance.Mask							= 0;
 		instance.SBTRecordOffset				= 0;
 		instance.Flags							= 0;
-		instance.AccelerationStructureHandle	= 0;
+		instance.AccelerationStructureAddress	= 0;
 
 		m_Instances.push_back(instance);
 
@@ -275,7 +275,7 @@ namespace LambdaEngine
 			AccelerationStructureDesc tlasDesc = {};
 			tlasDesc.pName			= "TLAS";
 			tlasDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP;
-			tlasDesc.Flags			= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+			tlasDesc.Flags			= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;// FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
 			tlasDesc.InstanceCount	= m_Instances.size();
 
 			m_pTLAS = m_pGraphicsDevice->CreateAccelerationStructure(&tlasDesc, nullptr);
@@ -299,7 +299,7 @@ namespace LambdaEngine
 			uint32 newNumSceneIndices	= currentNumSceneIndices	+ pMesh->IndexCount;
 
 			/*------------Ray Tracing Section Begin-------------*/
-			uint64 accelerationStructureHandle = 0;
+			uint64 accelerationStructureDeviceAddress = 0;
 
 			if (m_RayTracingEnabled)
 			{
@@ -309,11 +309,11 @@ namespace LambdaEngine
 				blasDesc.Flags				= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
 				blasDesc.MaxTriangleCount	= pMesh->IndexCount / 3;
 				blasDesc.MaxVertexCount		= pMesh->VertexCount;
-				blasDesc.AllowsTransform	= true;
+				blasDesc.AllowsTransform	= false;
 
 				IAccelerationStructure* pBLAS = m_pGraphicsDevice->CreateAccelerationStructure(&blasDesc, nullptr);
 				//IAccelerationStructure* pBLAS = RayTracingTestVK::CreateBLAS(m_pGraphicsDevice, &blasDesc);
-				accelerationStructureHandle = pBLAS->GetHandle();
+				accelerationStructureDeviceAddress = pBLAS->GetDeviceAdress();
 				m_BLASs.push_back(pBLAS);
 
 				BuildBottomLevelAccelerationStructureDesc blasBuildDesc = {};
@@ -341,8 +341,8 @@ namespace LambdaEngine
 				/*------------Ray Tracing Section Begin-------------*/
 				if (m_RayTracingEnabled)
 				{
-					indirectMeshArgument.InstanceCount		= (uint32)((accelerationStructureHandle >> 32)	& 0x00000000FFFFFFFF); // Temporarily store BLAS Handle in Instance Count and First Instance 
-					indirectMeshArgument.FirstInstance		= (uint32)((accelerationStructureHandle)		& 0x00000000FFFFFFFF); // these are used in the next stage
+					indirectMeshArgument.InstanceCount		= (uint32)((accelerationStructureDeviceAddress >> 32)	& 0x00000000FFFFFFFF); // Temporarily store BLAS Device Address in Instance Count and First Instance 
+					indirectMeshArgument.FirstInstance		= (uint32)((accelerationStructureDeviceAddress)			& 0x00000000FFFFFFFF); // these are used in the next stage
 				}
 				/*-------------Ray Tracing Section End--------------*/
 
@@ -372,7 +372,7 @@ namespace LambdaEngine
 			uint32 baseInstanceIndex = (uint32)m_SortedInstances.size();
 
 			/*------------Ray Tracing Section Begin-------------*/
-			uint64 accelerationStructureHandle = ((((uint64)indirectArg.InstanceCount) << 32) & 0xFFFFFFFF00000000) | (((uint64)indirectArg.FirstInstance) & 0x00000000FFFFFFFF);
+			uint64 accelerationStructureDeviceAddress = ((((uint64)indirectArg.InstanceCount) << 32) & 0xFFFFFFFF00000000) | (((uint64)indirectArg.FirstInstance) & 0x00000000FFFFFFFF);
 			/*-------------Ray Tracing Section End--------------*/
 
 			for (uint32 instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
@@ -381,7 +381,7 @@ namespace LambdaEngine
 				instance.MeshMaterialIndex				= (uint32)m_IndirectArgs.size();
 
 				/*------------Ray Tracing Section Begin-------------*/
-				instance.AccelerationStructureHandle	= accelerationStructureHandle;
+				instance.AccelerationStructureAddress	= accelerationStructureDeviceAddress;
 				instance.SBTRecordOffset				= 0;
 				instance.Flags							= 0x00000001/* | 0x00000004*/;
 				instance.Mask							= 0xFF;
@@ -710,7 +710,7 @@ namespace LambdaEngine
 				BuildBottomLevelAccelerationStructureDesc* pBlasBuildDesc = &blasBuildDescriptions[i];
 				pBlasBuildDesc->pVertexBuffer			= m_pSceneVertexBuffer;
 				pBlasBuildDesc->pIndexBuffer			= m_pSceneIndexBuffer;
-				pBlasBuildDesc->pTransformBuffer		= pTransformBuffer;
+				pBlasBuildDesc->pTransformBuffer		= nullptr;
 				pBlasBuildDesc->TransformByteOffset		= 0;
 
 				//RayTracingTestVK::BuildBLAS(m_pGraphicsDevice, pBlasBuildDesc, m_pASBuildCommandList);
@@ -720,7 +720,7 @@ namespace LambdaEngine
 
 			//AccelerationStructureDesc tlasDesc = {};
 			//tlasDesc.pName			= "TLAS";
-			//tlasDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP;
+			//tlasDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP;
 			//tlasDesc.Flags			= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
 			//tlasDesc.InstanceCount	= 1; //m_Instances.size();
 

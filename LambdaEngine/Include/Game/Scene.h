@@ -66,7 +66,7 @@ namespace LambdaEngine
 			uint32 Mask					: 8;
 			uint32 SBTRecordOffset		: 24;
 			uint32 Flags				: 8;
-			uint64 AccelerationStructureHandle;
+			uint64 AccelerationStructureAddress;
 		};
 
 		struct MappedMaterial

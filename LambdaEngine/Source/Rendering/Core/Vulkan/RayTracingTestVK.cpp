@@ -466,11 +466,11 @@ namespace LambdaEngine
 		//const BufferVK* pIndexBufferVk		= reinterpret_cast<const BufferVK*>(pBuildDesc->pIndexBuffer);
 		//const BufferVK* pTransformBufferVk	= reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer);
 
-		struct Vertex
+		struct VertexTemp
 		{
 			float pos[3];
 		};
-		std::vector<Vertex> vertices = {
+		std::vector<VertexTemp> vertices = {
 			{{1.0f, 1.0f, 0.0f}},
 			{{-1.0f, 1.0f, 0.0f}},
 			{{0.0f, -1.0f, 0.0f}} };
@@ -480,7 +480,7 @@ namespace LambdaEngine
 
 		std::vector<glm::mat3x4> transforms = { scale };
 
-		auto vertex_buffer_size = vertices.size() * sizeof(Vertex);
+		auto vertex_buffer_size = vertices.size() * sizeof(VertexTemp);
 		auto index_buffer_size = indices.size() * sizeof(uint32_t);
 		auto transform_buffer_size = transforms.size() * sizeof(glm::mat3x4);
 
@@ -535,7 +535,7 @@ namespace LambdaEngine
 		acceleration_geometry.geometry.triangles.sType							= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
 		acceleration_geometry.geometry.triangles.vertexFormat					= VK_FORMAT_R32G32B32_SFLOAT;
 		acceleration_geometry.geometry.triangles.vertexData.deviceAddress		= vertex_data_device_address.deviceAddress;
-		acceleration_geometry.geometry.triangles.vertexStride					= sizeof(Vertex);
+		acceleration_geometry.geometry.triangles.vertexStride					= sizeof(VertexTemp);
 		acceleration_geometry.geometry.triangles.indexType						= VK_INDEX_TYPE_UINT32;
 		acceleration_geometry.geometry.triangles.indexData.deviceAddress		= index_data_device_address.deviceAddress;
 		//acceleration_geometry.geometry.triangles.transformData.deviceAddress	= transform_data_device_address.deviceAddress;
@@ -613,7 +613,7 @@ namespace LambdaEngine
 		instance.mask                                   = 0xFF;
 		instance.instanceShaderBindingTableRecordOffset = 0;
 		instance.flags                                  = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-		instance.accelerationStructureReference         = s_pBLAS->GetHandle();																										//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXTodo: Is this right?
+		instance.accelerationStructureReference         = s_pBLAS->GetDeviceAdress();																										//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXTodo: Is this right?
 
 		std::vector<VkAccelerationStructureInstanceKHR> instances(1, instance);
 

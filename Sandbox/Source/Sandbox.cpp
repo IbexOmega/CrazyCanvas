@@ -96,7 +96,7 @@ Sandbox::Sandbox()
 
 	//Triangle
 	{
-		/*uint32 triangleMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/triangle.obj");
+		uint32 triangleMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/triangle.obj");
 
 		GameObject triangleGameObject = {};
 		triangleGameObject.Mesh = triangleMeshGUID;
@@ -111,12 +111,12 @@ Sandbox::Sandbox()
 		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
 		transform = glm::scale(transform, scale);
 
-		m_pScene->AddDynamicGameObject(triangleGameObject, glm::mat4(1.0f));*/
+		m_pScene->AddDynamicGameObject(triangleGameObject, glm::mat4(1.0f));
 	}
 
 	//Sphere
 	{
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/sphere.obj");
+		/*uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/sphere.obj");
 
 		GameObject sphereGameObject = {};
 		sphereGameObject.Mesh = sphereMeshGUID;
@@ -131,7 +131,7 @@ Sandbox::Sandbox()
 		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
 		transform = glm::scale(transform, scale);
 
-		m_pScene->AddDynamicGameObject(sphereGameObject, glm::mat4(1.0f));
+		m_pScene->AddDynamicGameObject(sphereGameObject, glm::mat4(1.0f));*/
 	}
 
 	m_pScene->Finalize();
@@ -591,7 +591,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	{
 		ImGui::Button("Test Button");
 
-		/*uint32 modFrameIndex = m_pRenderer->GetModFrameIndex();
+		uint32 modFrameIndex = m_pRenderer->GetModFrameIndex();
 
 		ITextureView* const *	ppTextureViews		= nullptr;
 		uint32			textureViewCount		= 0;
@@ -738,7 +738,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 			}
 
 			ImGui::EndTabBar();
-		}*/
+		}
 	}
 	ImGui::End();
 

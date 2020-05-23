@@ -50,7 +50,6 @@ namespace LambdaEngine
 	{
 		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
 		accelerationStructureCreateInfo.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-		accelerationStructureCreateInfo.pNext				= nullptr;
 		accelerationStructureCreateInfo.compactedSize		= 0;
 		accelerationStructureCreateInfo.maxGeometryCount	= 1;
 		accelerationStructureCreateInfo.deviceAddress		= VK_NULL_HANDLE;
@@ -70,6 +69,7 @@ namespace LambdaEngine
 			
 			geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_INSTANCES_KHR;
 			geometryTypeInfo.maxPrimitiveCount	= pDesc->InstanceCount;
+			geometryTypeInfo.allowsTransforms	= VK_FALSE;
 		}
 		else
 		{
@@ -112,7 +112,6 @@ namespace LambdaEngine
 
 		VkBindAccelerationStructureMemoryInfoKHR accelerationStructureMemoryInfo = {};
 		accelerationStructureMemoryInfo.sType					= VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_KHR;
-		accelerationStructureMemoryInfo.pNext					= nullptr;
 		accelerationStructureMemoryInfo.deviceIndexCount		= 0;
 		accelerationStructureMemoryInfo.pDeviceIndices			= nullptr;
 		accelerationStructureMemoryInfo.accelerationStructure	= m_AccelerationStructure;
@@ -164,7 +163,6 @@ namespace LambdaEngine
 
 		VkAccelerationStructureDeviceAddressInfoKHR accelerationStructureDeviceAddressInfo = {};
 		accelerationStructureDeviceAddressInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-		accelerationStructureDeviceAddressInfo.pNext					= nullptr;
 		accelerationStructureDeviceAddressInfo.accelerationStructure	= m_AccelerationStructure;
 
 		VALIDATE(m_pDevice->vkGetAccelerationStructureDeviceAddressKHR != nullptr);

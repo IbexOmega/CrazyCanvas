@@ -1,7 +1,7 @@
 #version 460
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_ray_tracing : enable
-#extension GL_EXT_debug_printf : enable
+//#extension GL_EXT_debug_printf : enable
 
 #include "Helpers.glsl"
 
@@ -21,6 +21,6 @@ void main()
 
     if (s_RayPayload.AllowPrints == 1)
     {
-        debugPrintfEXT("Hit");
+        //debugPrintfEXT("Hit");
     }
 }

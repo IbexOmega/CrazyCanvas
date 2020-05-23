@@ -142,11 +142,11 @@ namespace LambdaEngine
 			}
 		}
 
-		RayTracingTestVK::InitCommandLists();
+		/*RayTracingTestVK::InitCommandLists();
 		RayTracingTestVK::CreateBLAS();
 		RayTracingTestVK::BuildBLAS();
 		RayTracingTestVK::CreateTLAS();
-		RayTracingTestVK::InitRenderer(m_ppBackBufferViews, 8, 9, 10);
+		RayTracingTestVK::InitRenderer(m_ppBackBufferViews, 8, 9, 10);*/
 
 		return true;
 	}
@@ -176,9 +176,9 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(delta);
 
-		//m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
+		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
 
-		RayTracingTestVK::Render(m_ModFrameIndex, m_BackBufferIndex);
+		//RayTracingTestVK::Render(m_ModFrameIndex, m_BackBufferIndex);
 
 		if (m_pImGuiRenderer != nullptr)
 		{
@@ -195,8 +195,8 @@ namespace LambdaEngine
 			IFence* pFence;
 			uint64 signalValue;
 
-			//m_pRenderGraph->GetAndIncrementFence(&pFence, &signalValue);
-			RayTracingTestVK::GetAndIncrementFence(&pFence, &signalValue);
+			m_pRenderGraph->GetAndIncrementFence(&pFence, &signalValue);
+			//RayTracingTestVK::GetAndIncrementFence(&pFence, &signalValue);
 			RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, pFence, signalValue - 1, pFence, signalValue);
 		}
 	}
