@@ -46,6 +46,16 @@ namespace LambdaEngine
 		bool RayTracingEnabled				= false;
 	};
 
+	struct Instance
+	{
+		glm::mat3x4 Transform;
+		uint32 MeshMaterialIndex : 24;
+		uint32 Mask : 8;
+		uint32 SBTRecordOffset : 24;
+		uint32 Flags : 8;
+		uint64 AccelerationStructureAddress;
+	};
+
 	class LAMBDA_API Scene
 	{
 		struct LightsBuffer
@@ -59,15 +69,7 @@ namespace LambdaEngine
 			CameraData Camera;
 		};
 
-		struct Instance
-		{
-			glm::mat3x4 Transform;
-			uint32 MeshMaterialIndex	: 24;
-			uint32 Mask					: 8;
-			uint32 SBTRecordOffset		: 24;
-			uint32 Flags				: 8;
-			uint64 AccelerationStructureAddress;
-		};
+
 
 		struct MappedMaterial
 		{

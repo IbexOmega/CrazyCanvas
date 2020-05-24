@@ -776,7 +776,7 @@ namespace LambdaEngine
 
 	bool ResourceLoader::CompileGLSLToSPIRV(const char* pFilepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>& sourceSPIRV)
 	{
-		static std::vector<uint32> RAYGEN_SPIRV =
+		/*static std::vector<uint32> RAYGEN_SPIRV =
 		{
 			0x07230203,0x00010000,0x00080008,0x00000092,0000000000,0x00020011,0x000014e9,0x0006000a,
 			0x5f565053,0x5f52484b,0x5f796172,0x63617274,0x00676e69,0x0006000b,0x00000001,0x4c534c47,
@@ -995,7 +995,7 @@ namespace LambdaEngine
 			sourceSPIRV.resize(MISS_SPIRV.size());
 			memcpy(sourceSPIRV.data(), MISS_SPIRV.data(), MISS_SPIRV.size() * sizeof(uint32));
 			return true;
-		}
+		}*/
 
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
 		glslang::TShader shader(shaderType);

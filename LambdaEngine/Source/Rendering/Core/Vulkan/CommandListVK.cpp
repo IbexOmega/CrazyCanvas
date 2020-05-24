@@ -270,7 +270,7 @@ namespace LambdaEngine
 
 		VkAccelerationStructureGeometryKHR geometryData = {};
 		geometryData.sType											= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		geometryData.flags											= VK_GEOMETRY_OPAQUE_BIT_KHR; //Cant be opaque if we want to utilize any-hit shaders
+		geometryData.flags											= VK_GEOMETRY_OPAQUE_BIT_KHR; // TODO: Cant be opaque if we want to utilize any-hit shaders
 		geometryData.geometryType									= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
 		geometryData.geometry.triangles.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
 		geometryData.geometry.triangles.vertexFormat				= VK_FORMAT_R32G32B32_SFLOAT;
@@ -637,7 +637,7 @@ namespace LambdaEngine
 	void CommandListVK::BindGraphicsPipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_GRAPHICS(m_pAllocator);
-        VALIDATE(pPipeline->GetType()		== EPipelineStateType::GRAPHICS);
+        VALIDATE(pPipeline->GetType() == EPipelineStateType::GRAPHICS);
         
         const GraphicsPipelineStateVK* pPipelineVk = reinterpret_cast<const GraphicsPipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineVk->GetPipeline());
@@ -646,7 +646,7 @@ namespace LambdaEngine
 	void CommandListVK::BindComputePipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-        VALIDATE(pPipeline->GetType()		== EPipelineStateType::COMPUTE);
+        VALIDATE(pPipeline->GetType() == EPipelineStateType::COMPUTE);
         
         const ComputePipelineStateVK* pPipelineVk = reinterpret_cast<const ComputePipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineVk->GetPipeline());
@@ -655,7 +655,7 @@ namespace LambdaEngine
 	void CommandListVK::BindRayTracingPipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-        VALIDATE(pPipeline->GetType()		== EPipelineStateType::RAY_TRACING);
+        VALIDATE(pPipeline->GetType() == EPipelineStateType::RAY_TRACING);
         
         const RayTracingPipelineStateVK* pPipelineVk = reinterpret_cast<const RayTracingPipelineStateVK*>(pPipeline);
         m_pCurrentRayTracingPipeline = pPipelineVk;
@@ -666,16 +666,14 @@ namespace LambdaEngine
 	void CommandListVK::TraceRays(uint32 width, uint32 height, uint32 depth)
 	{
 		CHECK_COMPUTE(m_pAllocator);
+		VALIDATE(m_pDevice->vkCmdTraceRaysKHR);
 
-        if (m_pDevice->vkCmdTraceRaysKHR)
-        {
-            const VkStridedBufferRegionKHR* pRaygen		= m_pCurrentRayTracingPipeline->GetRaygenBufferRegion();
-            const VkStridedBufferRegionKHR* pMiss		= m_pCurrentRayTracingPipeline->GetMissBufferRegion();
-            const VkStridedBufferRegionKHR* pHit		= m_pCurrentRayTracingPipeline->GetHitBufferRegion();
-            const VkStridedBufferRegionKHR* pCallable	= m_pCurrentRayTracingPipeline->GetCallableBufferRegion();
+        const VkStridedBufferRegionKHR* pRaygen		= m_pCurrentRayTracingPipeline->GetRaygenBufferRegion();
+        const VkStridedBufferRegionKHR* pMiss		= m_pCurrentRayTracingPipeline->GetMissBufferRegion();
+        const VkStridedBufferRegionKHR* pHit		= m_pCurrentRayTracingPipeline->GetHitBufferRegion();
+        const VkStridedBufferRegionKHR* pCallable	= m_pCurrentRayTracingPipeline->GetCallableBufferRegion();
             
-            m_pDevice->vkCmdTraceRaysKHR(m_CommandList, pRaygen, pMiss, pHit, pCallable, width, height, depth);
-        }
+        m_pDevice->vkCmdTraceRaysKHR(m_CommandList, pRaygen, pMiss, pHit, pCallable, width, height, depth);
 	}
 
 	void CommandListVK::Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ)

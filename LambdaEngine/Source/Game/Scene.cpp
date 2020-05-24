@@ -218,7 +218,7 @@ namespace LambdaEngine
 			m_pASBuildCommandList = m_pGraphicsDevice->CreateCommandList(m_pASBuildCommandAllocator, &asBuildCommandListDesc);
 		}
 
-		//Lights Buffer
+		// Lights Buffer
 		{
 			BufferDesc lightsCopyBufferDesc = {};
 			lightsCopyBufferDesc.pName					= "Scene Lights Copy Buffer";
@@ -237,7 +237,7 @@ namespace LambdaEngine
 			m_pLightsBuffer = m_pGraphicsDevice->CreateBuffer(&lightsBufferDesc, nullptr);
 		}
 
-		//Per Frame Buffer
+		// Per Frame Buffer
 		{
 			BufferDesc perFrameCopyBufferDesc = {};
 			perFrameCopyBufferDesc.pName					= "Scene Per Frame Copy Buffer";
@@ -360,7 +360,7 @@ namespace LambdaEngine
 		m_SortedInstances.clear();
 		m_SortedInstances.reserve(m_Instances.size());
 
-		//Extra Loop to sort Indirect Args by Material
+		// Extra Loop to sort Indirect Args by Material
 		uint32 prevMaterialIndex = UINT32_MAX;
 		for (auto it = materialIndexToMeshIndex.begin(); it != materialIndexToMeshIndex.end(); it++)
 		{
@@ -403,7 +403,7 @@ namespace LambdaEngine
 			m_IndirectArgs.push_back(indirectArg);
 		}
 
-		//Create InstanceBuffer
+		// Create InstanceBuffer
 		{
 			uint32 sceneInstanceBufferSize = uint32(m_SortedInstances.size() * sizeof(Instance));
 
@@ -482,7 +482,7 @@ namespace LambdaEngine
 		m_pCopyCommandAllocator->Reset();
 		m_pCopyCommandList->Begin(nullptr);
 
-		//Material Properties
+		// Material Properties
 		{
 			uint32 sceneMaterialPropertiesSize = uint32(sceneMaterialProperties.size() * sizeof(MaterialProperties));
 
@@ -519,7 +519,7 @@ namespace LambdaEngine
 			m_pCopyCommandList->CopyBuffer(m_pSceneMaterialPropertiesCopyBuffer, 0, m_pSceneMaterialProperties, 0, sceneMaterialPropertiesSize);
 		}
 
-		//Vertices
+		// Vertices
 		{
 			uint32 sceneVertexBufferSize = uint32(m_SceneVertexArray.size() * sizeof(Vertex));
 
@@ -556,7 +556,7 @@ namespace LambdaEngine
 			m_pCopyCommandList->CopyBuffer(m_pSceneVertexCopyBuffer, 0, m_pSceneVertexBuffer, 0, sceneVertexBufferSize);
 		}
 		
-		//Indices
+		// Indices
 		{
 			uint32 sceneIndexBufferSize = uint32(m_SceneIndexArray.size() * sizeof(uint32));
 
@@ -593,7 +593,7 @@ namespace LambdaEngine
 			m_pCopyCommandList->CopyBuffer(m_pSceneIndexCopyBuffer, 0, m_pSceneIndexBuffer, 0, sceneIndexBufferSize);
 		}
 
-		//Instances
+		// Instances
 		{
 			uint32 sceneInstanceBufferSize = uint32(m_SortedInstances.size() * sizeof(Instance));
 
@@ -630,7 +630,7 @@ namespace LambdaEngine
 			m_pCopyCommandList->CopyBuffer(m_pSceneInstanceCopyBuffer, 0, m_pSceneInstanceBuffer, 0, sceneInstanceBufferSize);
 		}
 
-		//Indirect Args
+		// Indirect Args
 		{
 			uint32 sceneMeshIndexBufferSize = uint32(m_IndirectArgs.size() * sizeof(IndexedIndirectMeshArgument));
 

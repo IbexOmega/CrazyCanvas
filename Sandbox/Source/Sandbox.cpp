@@ -766,17 +766,17 @@ bool Sandbox::InitRendererForEmpty()
 {
 	using namespace LambdaEngine;
 
-	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/StaticPixel.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda fullscreenQuadShaderGUID	= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,	EShaderLang::GLSL);
+	GUID_Lambda shadingPixelShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/StaticPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
 
 	std::vector<RenderStageDesc> renderStages;
 
-	const char*									pShadingRenderStageName = "Shading Render Stage";
-	GraphicsManagedPipelineStateDesc			shadingPipelineStateDesc = {};
-	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
+	const char*							pShadingRenderStageName = "Shading Render Stage";
+	GraphicsManagedPipelineStateDesc	shadingPipelineStateDesc = {};
+	std::vector<RenderStageAttachment>	shadingRenderStageAttachments;
 
 	{
-		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,									FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, EFormat::FORMAT_B8G8R8A8_UNORM });
+		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT, EAttachmentType::OUTPUT_COLOR, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, BACK_BUFFER_COUNT, EFormat::FORMAT_B8G8R8A8_UNORM });
 
 		RenderStagePushConstants pushConstants = {};
 		pushConstants.pName			= "Shading Pass Push Constants";

@@ -27,32 +27,61 @@ namespace LambdaEngine
 	{
 		constexpr uint32 DESCRIPTOR_TYPE_COUNT = 7;
 		VkDescriptorPoolSize poolSizes[DESCRIPTOR_TYPE_COUNT];
-		poolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		poolSizes[0].descriptorCount = pDesc->DescriptorCount.UnorderedAccessBufferDescriptorCount;
+		uint32 poolCount = 0;
 
-		poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		poolSizes[1].descriptorCount = pDesc->DescriptorCount.UnorderedAccessTextureDescriptorCount;
+		if (pDesc->DescriptorCount.UnorderedAccessBufferDescriptorCount > 0)
+		{
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.UnorderedAccessBufferDescriptorCount;
+			poolCount++;
+		}
 
-		poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[2].descriptorCount = pDesc->DescriptorCount.ConstantBufferDescriptorCount;
+		if (pDesc->DescriptorCount.UnorderedAccessTextureDescriptorCount > 0)
+		{
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.UnorderedAccessTextureDescriptorCount;
+			poolCount++;
+		}
 
-		poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[3].descriptorCount = pDesc->DescriptorCount.TextureCombinedSamplerDescriptorCount;
+		if (pDesc->DescriptorCount.ConstantBufferDescriptorCount > 0)
+		{
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.ConstantBufferDescriptorCount;
+		}
 
-		poolSizes[4].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		poolSizes[4].descriptorCount = pDesc->DescriptorCount.TextureDescriptorCount;
+		if (pDesc->DescriptorCount.TextureCombinedSamplerDescriptorCount > 0)
+		{
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.TextureCombinedSamplerDescriptorCount;
+			poolCount++;
+		}
 
-		poolSizes[5].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-		poolSizes[5].descriptorCount = pDesc->DescriptorCount.AccelerationStructureDescriptorCount;
+		if (pDesc->DescriptorCount.TextureDescriptorCount > 0)
+		{
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.TextureDescriptorCount;
+			poolCount++;
+		}
 
-		poolSizes[6].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-		poolSizes[6].descriptorCount = pDesc->DescriptorCount.SamplerDescriptorCount;
+		if (pDesc->DescriptorCount.AccelerationStructureDescriptorCount > 0)
+		{
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.AccelerationStructureDescriptorCount;
+			poolCount++;
+		}
+
+		if (pDesc->DescriptorCount.SamplerDescriptorCount > 0)
+		{
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_SAMPLER;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.SamplerDescriptorCount;
+			poolCount++;
+		}
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType			= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.pNext			= nullptr;
 		poolInfo.flags			= VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-		poolInfo.poolSizeCount	= DESCRIPTOR_TYPE_COUNT;
+		poolInfo.poolSizeCount	= poolCount;
 		poolInfo.pPoolSizes		= poolSizes;
 		poolInfo.maxSets		= pDesc->DescriptorCount.DescriptorSetCount;
 		
@@ -74,8 +103,8 @@ namespace LambdaEngine
 		{
             memcpy(&m_Desc, pDesc, sizeof(m_Desc));
 			m_HeapStatus	= pDesc->DescriptorCount;
-			SetName(pDesc->pName);
 		
+			SetName(pDesc->pName);
 			if (pDesc->pName)
 			{
 				D_LOG_MESSAGE("[DescriptorHeapVK]: Created DescriptorHeap \"%s\"", pDesc->pName);

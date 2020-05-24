@@ -11,7 +11,11 @@ namespace LambdaEngine
 	class CommandAllocatorVK;
 	class CommandListVK;
 	class ITextureView;
+	class IPipelineState;
+	class IPipelineLayout;
 	class IFence;
+	class IDescriptorHeap;
+	class IDescriptorSet;
 
 	class RayTracingTestVK
 	{
@@ -50,6 +54,12 @@ namespace LambdaEngine
 		static CommandListVK*					s_pGraphicsPreCommandLists[3];
 		static CommandListVK*					s_pGraphicsPostCommandLists[3];
 		static CommandListVK*					s_pComputeCommandLists[3];
+
+		static IPipelineState*					s_pPipelineState;
+		static IPipelineLayout*					s_pPipelineLayout;
+
+		static IDescriptorHeap*					s_pDescriptorHeap;
+		static IDescriptorSet*					s_pDescriptorSets[3];
 
 		static VkPipeline						s_Pipeline;
 		static VkPipelineLayout					s_PipelineLayout;
