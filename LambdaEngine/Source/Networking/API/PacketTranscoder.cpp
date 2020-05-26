@@ -93,6 +93,11 @@ namespace LambdaEngine
 		memcpy(&messageHeader, buffer, messageHeaderSize);
 		memcpy(pPacket->GetBuffer(), buffer + messageHeaderSize, messageHeader.Size - messageHeaderSize);
 		pPacket->m_SizeOfBuffer = messageHeader.Size - sizeof(NetworkPacket::Header);
+
+#ifndef LAMBDA_CONFIG_PRODUCTION
+		pPacket->SetType(messageHeader.Type); //Only for debugging, to create a string with the type name
+#endif
+
 		return messageHeader.Size;
 	}
 }

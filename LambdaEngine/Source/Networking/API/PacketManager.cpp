@@ -8,9 +8,11 @@
 
 namespace LambdaEngine
 {
-	PacketManager::PacketManager() :
-		m_PacketPool(1024),
-		m_QueueIndex(0)
+	PacketManager::PacketManager(uint16 poolSize, int32 maxRetries, float32 resendRTTMultiplier) :
+		m_PacketPool(poolSize),
+		m_QueueIndex(0),
+		m_MaxRetries(maxRetries),
+		m_ResendRTTMultiplier(resendRTTMultiplier)
 	{
 
 	}
@@ -206,6 +208,11 @@ namespace LambdaEngine
 		}
 	}
 
+	/*
+	* Finds packets that have been sent erlier and are now acked.
+	* Notifies the listener that the packet was succesfully delivered.
+	* Removes the packet and returns it to the pool.
+	*/
 	void PacketManager::HandleAcks(const std::vector<uint32>& acks)
 	{
 		std::vector<uint32> ackedReliableUIDs;
@@ -302,7 +309,11 @@ namespace LambdaEngine
 
 	void PacketManager::ResendOrDeleteMessages()
 	{
-		Timestamp maxAllowedTime = m_Statistics.GetPing() * 2;
+		static Timestamp minTime = Timestamp::MilliSeconds(5);
+		Timestamp maxAllowedTime = (uint64)((float64)m_Statistics.GetPing().AsNanoSeconds() * m_ResendRTTMultiplier);
+		if (maxAllowedTime < minTime)
+			maxAllowedTime = minTime;
+
 		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
 
 		std::vector<std::pair<const uint32, MessageInfo>> messagesToDelete;
@@ -317,7 +328,7 @@ namespace LambdaEngine
 				{
 					messageInfo.Retries++;
 
-					if (messageInfo.Retries < 10)
+					if (messageInfo.Retries < m_MaxRetries)
 					{
 						m_MessagesToSend[m_QueueIndex].push(messageInfo.Packet);
 						messageInfo.LastSent = currentTime;

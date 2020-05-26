@@ -256,9 +256,9 @@ namespace LambdaEngine
 		Flush();
 	}
 
-	ServerUDP* ServerUDP::Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetsPerClient, uint8 maximumTries)
+	ServerUDP* ServerUDP::Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPoolSize, uint8 maximumTries)
 	{
-		return DBG_NEW ServerUDP(pHandler, maxClients, packetsPerClient, maximumTries);
+		return DBG_NEW ServerUDP(pHandler, maxClients, packetPoolSize, maximumTries);
 	}
 
 	void ServerUDP::FixedTickStatic(Timestamp timestamp)

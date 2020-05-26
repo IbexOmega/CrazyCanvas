@@ -31,7 +31,7 @@ namespace LambdaEngine
 		virtual const NetworkStatistics* GetStatistics() const override;
 
 	protected:
-		ClientUDPRemote(uint16 packets, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
+		ClientUDPRemote(uint16 packetPoolSize, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
 
 		virtual PacketManager* GetPacketManager() override;
 

@@ -131,8 +131,8 @@ void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8
 void Client::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	using namespace LambdaEngine;
-
-	UNREFERENCED_VARIABLE(key);
+	UNREFERENCED_VARIABLE(modifierMask);
+	UNREFERENCED_VARIABLE(isRepeat);
 
     if (key == EKey::KEY_ENTER)
     {
@@ -232,7 +232,7 @@ bool Client::InitRendererForEmpty()
 
 	m_pRenderGraph->Init(renderGraphDesc);
 
-	Window* pWindow = PlatformApplication::Get()->GetMainWindow();
+	Window* pWindow = CommonApplication::Get()->GetMainWindow();
 	uint32 renderWidth = pWindow->GetWidth();
 	uint32 renderHeight = pWindow->GetHeight();
 
@@ -251,7 +251,7 @@ bool Client::InitRendererForEmpty()
 	rendererDesc.pName = "Renderer";
 	rendererDesc.Debug = RENDERING_DEBUG_ENABLED;
 	rendererDesc.pRenderGraph = m_pRenderGraph;
-	rendererDesc.pWindow = PlatformApplication::Get()->GetMainWindow();
+	rendererDesc.pWindow = CommonApplication::Get()->GetMainWindow();
 	rendererDesc.BackBufferCount = BACK_BUFFER_COUNT;
 
 	m_pRenderer->Init(&rendererDesc);

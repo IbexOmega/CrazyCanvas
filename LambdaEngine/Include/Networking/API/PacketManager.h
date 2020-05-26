@@ -36,7 +36,7 @@ namespace LambdaEngine
 		};
 
 	public:
-		PacketManager();
+		PacketManager(uint16 poolSize, int32 maxRetries, float32 resendRTTMultiplier = 2.0f);
 		~PacketManager();
 
 		uint32 EnqueuePacketReliable(NetworkPacket* pPacket, IPacketListener* pListener = nullptr);
@@ -77,6 +77,8 @@ namespace LambdaEngine
 		std::unordered_map<uint32, Bundle> m_Bundles;
 		std::atomic_int m_QueueIndex;
 		Timestamp m_Timer;
+		float32 m_ResendRTTMultiplier;
+		int32 m_MaxRetries;
 		SpinLock m_LockMessagesToSend;
 		SpinLock m_LockBundles;
 	};

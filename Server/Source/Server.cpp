@@ -28,9 +28,9 @@ Server::Server()
 	using namespace LambdaEngine;
 	CommonApplication::Get()->AddEventHandler(this);
 
-	m_pServer = ServerUDP::Create(this, 100, 4096, 10);
+	m_pServer = ServerUDP::Create(this, 100, 1024, 10);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
-	m_pServer->SetSimulateReceivingPacketLoss(0.1f);
+	//m_pServer->SetSimulateReceivingPacketLoss(0.1f);
 }
 
 Server::~Server()
@@ -51,6 +51,7 @@ LambdaEngine::IClientUDPRemoteHandler* Server::CreateClientUDPHandler()
 void Server::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	UNREFERENCED_VARIABLE(key);
+	UNREFERENCED_VARIABLE(modifierMask);
 	UNREFERENCED_VARIABLE(isRepeat);
 
 	using namespace LambdaEngine;

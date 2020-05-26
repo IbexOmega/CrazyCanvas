@@ -37,7 +37,7 @@ namespace LambdaEngine
 		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
 
 	protected:
-		ClientUDP(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries);
+		ClientUDP(IClientUDPHandler* pHandler, uint16 packetPoolSize, uint8 maximumTries);
 
 		virtual PacketManager* GetPacketManager() override;
 
