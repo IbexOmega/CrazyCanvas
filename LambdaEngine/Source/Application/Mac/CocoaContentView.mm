@@ -39,12 +39,12 @@
 {
     // Interpret key event and make sure we get a KeyTyped event
     [self interpretKeyEvents:[NSArray arrayWithObject: event]];
-    MacApplication::Get()->StoreEvent()
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
 - (void) keyUp:(NSEvent*) event
 {
-    // Disables sounds when pressing a key
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
 - (void) insertText:(id) string replacementRange:(NSRange) replacementRange
@@ -66,10 +66,10 @@
     // Store this as a special type of event
     using namespace LambdaEngine;
     
-	MacEvent storedEvent = { };
-	storedEvent.pKeyTypedText = [characters copy];
+	MacEvent event = { };
+	event.pKeyTypedText = [characters copy];
 	
-	MacApplication::Get()->StoreEvent(&storedEvent);
+	MacApplication::Get()->StoreEvent(event);
 }
 
 /*

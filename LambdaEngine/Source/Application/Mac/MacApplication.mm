@@ -150,19 +150,19 @@ namespace LambdaEngine
 
 	void MacApplication::StoreNSEvent(NSEvent* pEvent)
 	{
-		MacEvent storedEvent 	= { };
-		storedEvent.pEvent 		= [pEvent retain];
+		MacEvent event 	= { };
+		event.pEvent 		= [pEvent retain];
 
 		NSWindow* window = [pEvent window];
 		if (window)
 		{
 			if ([window isKindOfClass:[CocoaWindow class]])
 			{
-				storedEvent.pEventWindow = reinterpret_cast<CocoaWindow*>([window retain]);
+				event.pEventWindow = reinterpret_cast<CocoaWindow*>([window retain]);
 			}
 		}
 		
-		StoreEvent(&storedEvent);
+		StoreEvent(event);
 	}
 
 	void MacApplication::StoreEvent(const MacEvent& event)
@@ -172,7 +172,7 @@ namespace LambdaEngine
 
 	bool MacApplication::ProcessStoredEvent(const MacEvent& event)
 	{
-		NSEvent*		event			= event.pEvent;
+		NSEvent*		nsEvent			= event.pEvent;
 		NSNotification*	notification	= event.pNotification;
 		
 		if (notification)
@@ -183,78 +183,78 @@ namespace LambdaEngine
 				VALIDATE(event.pEventWindow != nullptr);
 				
 				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
-				m_pEventHandler->WindowClosed(pWindow);
+				m_pEventHandler->OnWindowClosed(pWindow);
 			}
 			else if (name == NSWindowDidMoveNotification)
 			{
 				VALIDATE(event.pEventWindow != nullptr);
 				
 				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
-				m_pEventHandler->WindowMoved(pWindow, int16(event.Position.x), int16(event.Position.y));
+				m_pEventHandler->OnWindowMoved(pWindow, int16(event.Position.x), int16(event.Position.y));
 			}
 			else if (name == NSWindowDidResizeNotification)
 			{
 				VALIDATE(event.pEventWindow != nullptr);
 				
 				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
-				m_pEventHandler->WindowResized(pWindow, uint16(event.Size.width), uint16(event.Size.height), EResizeType::RESIZE_TYPE_NONE);
+				m_pEventHandler->OnWindowResized(pWindow, uint16(event.Size.width), uint16(event.Size.height), EResizeType::RESIZE_TYPE_NONE);
 			}
 			else if (name == NSWindowDidMiniaturizeNotification)
 			{
 				VALIDATE(event.pEventWindow != nullptr);
 				
 				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
-				m_pEventHandler->WindowResized(pWindow, uint16(event.Size.width), uint16(event.Size.height), EResizeType::RESIZE_TYPE_MINIMIZE);
+				m_pEventHandler->OnWindowResized(pWindow, uint16(event.Size.width), uint16(event.Size.height), EResizeType::RESIZE_TYPE_MINIMIZE);
 			}
 			else if (name == NSWindowDidDeminiaturizeNotification)
 			{
 				VALIDATE(event.pEventWindow != nullptr);
 				
 				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
-				m_pEventHandler->WindowResized(pWindow, uint16(event.Size.width), uint16(event.Size.height), EResizeType::RESIZE_TYPE_MAXIMIZE);
+				m_pEventHandler->OnWindowResized(pWindow, uint16(event.Size.width), uint16(event.Size.height), EResizeType::RESIZE_TYPE_MAXIMIZE);
 			}
 			else if (name == NSWindowDidBecomeKeyNotification)
 			{
 				VALIDATE(event.pEventWindow != nullptr);
 				
 				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
-				m_pEventHandler->FocusChanged(pWindow, true);
+				m_pEventHandler->OnFocusChanged(pWindow, true);
 			}
 			else if (name == NSWindowDidResignKeyNotification)
 			{
 				VALIDATE(event.pEventWindow != nullptr);
 				
 				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
-				m_pEventHandler->FocusChanged(pWindow, false);
+				m_pEventHandler->OnFocusChanged(pWindow, false);
 			}
 			else if (name == NSApplicationWillTerminateNotification)
 			{
 				return false;
 			}
 		}
-		else if (event)
+		else if (nsEvent)
 		{
-			NSEventType type = [event type];
+			NSEventType type = [nsEvent type];
 			switch(type)
 			{
 				case NSEventTypeKeyUp:
 				{
-					const uint16  macKey = [event keyCode];
+					const uint16  macKey = [nsEvent keyCode];
 					const EKey    key    = MacInputCodeTable::GetKey(macKey);
 
-					m_pEventHandler->KeyReleased(key);
+					m_pEventHandler->OnKeyReleased(key);
 					break;
 				}
 				   
 				case NSEventTypeKeyDown:
 				{
-					const uint16	macKey	= [event keyCode];
+					const uint16	macKey	= [nsEvent keyCode];
 					const EKey		key		= MacInputCodeTable::GetKey(macKey);
 
-					const uint32 modifierFlags	= [event modifierFlags];
+					const uint32 modifierFlags	= [nsEvent modifierFlags];
 					const uint32 modifiers		= MacInputCodeTable::GetModiferMask(modifierFlags);
 
-					m_pEventHandler->KeyPressed(key, modifiers, [event isARepeat]);
+					m_pEventHandler->OnKeyPressed(key, modifiers, [nsEvent isARepeat]);
 					break;
 				}
 
@@ -262,10 +262,10 @@ namespace LambdaEngine
 				case NSEventTypeRightMouseUp:
 				case NSEventTypeOtherMouseUp:
 				{
-					const NSInteger		macButton	= [event buttonNumber];
+					const NSInteger		macButton	= [nsEvent buttonNumber];
 					const EMouseButton	button		= MacInputCodeTable::GetMouseButton(int32(macButton));
 						
-					m_pEventHandler->ButtonReleased(button);
+					m_pEventHandler->OnButtonReleased(button);
 					break;
 				}
 
@@ -273,13 +273,13 @@ namespace LambdaEngine
 				case NSEventTypeRightMouseDown:
 				case NSEventTypeOtherMouseDown:
 				{
-					const NSInteger		macButton	= [event buttonNumber];
+					const NSInteger		macButton	= [nsEvent buttonNumber];
 					const EMouseButton	button		= MacInputCodeTable::GetMouseButton(int32(macButton));
 
-					const NSUInteger	modifierFlags	= [event modifierFlags];
+					const NSUInteger	modifierFlags	= [nsEvent modifierFlags];
 					const uint32		modifierMask	= MacInputCodeTable::GetModiferMask(modifierFlags);
 
-					m_pEventHandler->ButtonPressed(button, modifierMask);
+					m_pEventHandler->OnButtonPressed(button, modifierMask);
 					break;
 				}
 
@@ -288,15 +288,15 @@ namespace LambdaEngine
 				case NSEventTypeRightMouseDragged:
 				case NSEventTypeMouseMoved:
 				{
-					if (pEvent->pEventWindow)
+					if (event.pEventWindow)
 					{
-						const NSPoint	mousePosition	= [event locationInWindow];
-						const NSRect	contentRect 	= [pEvent->pEventWindow frame];
+						const NSPoint	mousePosition	= [nsEvent locationInWindow];
+						const NSRect	contentRect 	= [event.pEventWindow frame];
 						
 						const int32 x = int32(mousePosition.x);
 						const int32 y = int32(contentRect.size.height - mousePosition.y);
 						
-						m_pEventHandler->MouseMoved(x, y);
+						m_pEventHandler->OnMouseMoved(x, y);
 					}
 					
 					break;
@@ -304,24 +304,24 @@ namespace LambdaEngine
 				   
 				case NSEventTypeScrollWheel:
 				{
-					CGFloat scrollDeltaX = [event scrollingDeltaX];
-					CGFloat scrollDeltaY = [event scrollingDeltaY];
-					if ([event hasPreciseScrollingDeltas])
+					CGFloat scrollDeltaX = [nsEvent scrollingDeltaX];
+					CGFloat scrollDeltaY = [nsEvent scrollingDeltaY];
+					if ([nsEvent hasPreciseScrollingDeltas])
 					{
 						scrollDeltaX *= 0.1;
 						scrollDeltaY *= 0.1;
 					}
 						
-					m_pEventHandler->MouseScrolled(int32(scrollDeltaX), int32(scrollDeltaY));
+					m_pEventHandler->OnMouseScrolled(int32(scrollDeltaX), int32(scrollDeltaY));
 					break;
 				}
 					
 				case NSEventTypeMouseEntered:
 				{
-					MacWindow* pWindow = GetWindowFromNSWindow(pEvent->pEventWindow);
+					MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
 					if (pWindow)
 					{
-						m_pEventHandler->MouseEntered(pWindow);
+						m_pEventHandler->OnMouseEntered(pWindow);
 					}
 
 					break;
@@ -329,10 +329,10 @@ namespace LambdaEngine
 					
 				case NSEventTypeMouseExited:
 				{
-					MacWindow* pWindow = GetWindowFromNSWindow(pEvent->pEventWindow);
+					MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
 					if (pWindow)
 					{
-						m_pEventHandler->MouseLeft(pWindow);
+						m_pEventHandler->OnMouseLeft(pWindow);
 					}
 
 					break;
@@ -354,7 +354,7 @@ namespace LambdaEngine
 				const unichar codepoint = [text characterAtIndex:i];
 				if ((codepoint & 0xff00) != 0xf700)
 				{
-					m_pEventHandler->KeyTyped(uint32(codepoint));
+					m_pEventHandler->OnKeyTyped(uint32(codepoint));
 				}
 			}
 		}
@@ -423,24 +423,28 @@ namespace LambdaEngine
 		}
 	}
 
-	void MacApplication::ProcessStoredEvents()
+	bool MacApplication::ProcessStoredEvents()
 	{
 		m_IsProcessingEvents = true;
 		
 		TArray<MacEvent> eventsToProcess = TArray<MacEvent>(m_StoredEvents);
 		m_StoredEvents.clear();
 		
+		bool shouldRun = true;
 		for (const MacEvent& event : eventsToProcess)
 		{
-			if (event.)
-
-			ProcessStoredEvent(&event);
+			if (!ProcessStoredEvent(event))
+			{
+				shouldRun = false;
+			}
 		}
 		
 		m_IsProcessingEvents = false;
 		
 		// We are done by updating (We have processed all events)
 		[NSApp updateWindows];
+		
+		return shouldRun;
 	}
 
 	bool MacApplication::Tick()

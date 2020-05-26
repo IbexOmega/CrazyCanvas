@@ -34,7 +34,7 @@ namespace LambdaEngine
         
         virtual void ToggleFullscreen() override final;
 
-        virtual void SetTitle(const char* pTitle) override final;
+        virtual void SetTitle(const String& title) override final;
         
 		virtual void SetPosition(int32 x, int32 y)                  override final;
 		virtual void GetPosition(int32* pPosX, int32* pPosY) const  override final;

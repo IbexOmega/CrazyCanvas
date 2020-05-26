@@ -91,7 +91,7 @@ namespace LambdaEngine
 
 		void AddWindow(MacWindow* pWindow);
 
-		void ProcessStoredEvent(const MacEvent& event);
+		bool ProcessStoredEvent(const MacEvent& event);
 
 	public:
 		static bool PeekEvents();
