@@ -35,6 +35,12 @@
     return [NSArray array];
 }
 
+- (void) viewWillMoveToWindow:(NSWindow*) window
+{
+    NSTrackingArea* trackingArea = [[NSTrackingArea alloc] initWithRect:[self bounds] options: (NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways) owner:self userInfo:nil];
+    [self addTrackingArea:trackingArea];
+}
+
 - (void) keyDown:(NSEvent*) event
 {
     // Interpret key event and make sure we get a KeyTyped event
@@ -47,57 +53,57 @@
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
-- (void)mouseDown:(NSEvent*) event
+- (void) mouseDown:(NSEvent*) event
 {
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
-- (void)mouseDragged:(NSEvent*) event
+- (void) mouseDragged:(NSEvent*) event
 {
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
-- (void)mouseUp:(NSEvent*) event
+- (void) mouseUp:(NSEvent*) event
 {
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
-- (void)mouseMoved:(NSEvent*) event
+- (void) mouseMoved:(NSEvent*) event
 {
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
-- (void)rightMouseDown:(NSEvent*) event
+- (void) rightMouseDown:(NSEvent*) event
 {
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
-- (void)rightMouseDragged:(NSEvent*) event
+- (void) rightMouseDragged:(NSEvent*) event
 {
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
-- (void)rightMouseUp:(NSEvent*) event
+- (void) rightMouseUp:(NSEvent*) event
 {
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
-- (void)otherMouseDown:(NSEvent*) event
+- (void) otherMouseDown:(NSEvent*) event
 {
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
-- (void)otherMouseDragged:(NSEvent*) event
+- (void) otherMouseDragged:(NSEvent*) event
 {
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
-- (void)otherMouseUp:(NSEvent*) event
+- (void) otherMouseUp:(NSEvent*) event
 {
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
-- (void)scrollWheel:(NSEvent*) event
+- (void) scrollWheel:(NSEvent*) event
 {
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }

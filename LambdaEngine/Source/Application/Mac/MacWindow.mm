@@ -261,7 +261,8 @@ namespace LambdaEngine
 
 	float32 MacWindow::GetClientAreaScale() const
 	{
-		return 1.0f;
+		CGFloat scale = [m_pWindow backingScaleFactor];
+		return static_cast<float32>(scale);
 	}
 }
 

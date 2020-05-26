@@ -132,9 +132,6 @@ namespace LambdaEngine
 	MacApplication::~MacApplication()
 	{
 		SCOPED_AUTORELEASE_POOL();
-		
-		VALIDATE_MSG(s_pApplication != nullptr, "[MacApplication]: Instance of application has already been deleted");
-		s_pApplication = nullptr;
 
 		// Destroy windows
 		for (MacWindow* pWindow : m_Windows)
@@ -144,6 +141,9 @@ namespace LambdaEngine
 
 		[m_pAppDelegate release];
 		
+		VALIDATE_MSG(s_pApplication != nullptr, "[MacApplication]: Instance of application has already been deleted");
+		s_pApplication = nullptr;
+		
 		// Release mainthread
 		MacMainThread::PostRelease();
 	}
@@ -151,7 +151,7 @@ namespace LambdaEngine
 	void MacApplication::StoreNSEvent(NSEvent* pEvent)
 	{
 		MacEvent event 	= { };
-		event.pEvent 		= [pEvent retain];
+		event.pEvent = [pEvent retain];
 
 		NSWindow* window = [pEvent window];
 		if (window)
