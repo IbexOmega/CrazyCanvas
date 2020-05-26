@@ -5,6 +5,8 @@
 
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
+#include <mutex>
+
 namespace LambdaEngine
 {
 	FrameBufferCacheVK::FrameBufferCacheVK(const GraphicsDeviceVK* pDevice)
@@ -26,6 +28,8 @@ namespace LambdaEngine
 
 	void FrameBufferCacheVK::DestroyRenderPass(VkRenderPass renderPass) const
 	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		
 		for (FrameBufferMap::iterator it = m_FrameBufferMap.begin(); it != m_FrameBufferMap.end();)
 		{
 			if (it->first.Contains(renderPass))
@@ -44,6 +48,8 @@ namespace LambdaEngine
 
 	void FrameBufferCacheVK::DestroyImageView(VkImageView imageView) const
 	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		
 		for (FrameBufferMap::iterator it = m_FrameBufferMap.begin(); it != m_FrameBufferMap.end();)
 		{
 			if (it->first.Contains(imageView))
@@ -62,6 +68,8 @@ namespace LambdaEngine
 
 	VkFramebuffer FrameBufferCacheVK::GetFrameBuffer(const FrameBufferCacheKey& key, uint32 width, uint32 height)
 	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		
 		// Check if this framebuffer extists and return it
 		FrameBufferMap::iterator entry = m_FrameBufferMap.find(key);
 		if (entry != m_FrameBufferMap.end())
@@ -98,7 +106,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			D_LOG_MESSAGE("[FrameBufferCacheVK]: Created framebuffer");
+			D_LOG_MESSAGE("[FrameBufferCacheVK]: Created framebuffer [0]:%p [1]:%p [2]:%p [3]:%p [4]:%p [5]:%p [6]:%p [7]:%p [Depth]:%p [Pass]:%p", key.ColorAttachmentsViews[0], key.ColorAttachmentsViews[1], key.ColorAttachmentsViews[2], key.ColorAttachmentsViews[3], key.ColorAttachmentsViews[4], key.ColorAttachmentsViews[5], key.ColorAttachmentsViews[6], key.ColorAttachmentsViews[7], key.DepthStencilView, key.RenderPass);
 
 			m_FrameBufferMap.insert(FrameBufferMapEntry(key, frameBuffer));
 			return frameBuffer;

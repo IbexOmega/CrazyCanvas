@@ -19,7 +19,7 @@
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformConsole.h"
-#include "Application/API/IWindow.h"
+#include "Application/API/Window.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IPAddress.h"
