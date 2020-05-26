@@ -47,6 +47,61 @@
 	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
 }
 
+- (void)mouseDown:(NSEvent*) event
+{
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
+}
+
+- (void)mouseDragged:(NSEvent*) event
+{
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
+}
+
+- (void)mouseUp:(NSEvent*) event
+{
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
+}
+
+- (void)mouseMoved:(NSEvent*) event
+{
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
+}
+
+- (void)rightMouseDown:(NSEvent*) event
+{
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
+}
+
+- (void)rightMouseDragged:(NSEvent*) event
+{
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
+}
+
+- (void)rightMouseUp:(NSEvent*) event
+{
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
+}
+
+- (void)otherMouseDown:(NSEvent*) event
+{
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
+}
+
+- (void)otherMouseDragged:(NSEvent*) event
+{
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
+}
+
+- (void)otherMouseUp:(NSEvent*) event
+{
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
+}
+
+- (void)scrollWheel:(NSEvent*) event
+{
+	LambdaEngine::MacApplication::Get()->StoreNSEvent(event);
+}
+
 - (void) insertText:(id) string replacementRange:(NSRange) replacementRange
 {
     SCOPED_AUTORELEASE_POOL();

@@ -432,7 +432,15 @@ void Sandbox::OnMouseMoved(int32 x, int32 y)
 	UNREFERENCED_VARIABLE(x);
 	UNREFERENCED_VARIABLE(y);
     
-	//LOG_MESSAGE("Mouse Moved: x=%d, y=%d", x, y);
+	LOG_MESSAGE("Mouse Moved: x=%d, y=%d", x, y);
+}
+
+void Sandbox::OnMouseMovedRaw(int32 deltaX, int32 deltaY)
+{
+	UNREFERENCED_VARIABLE(deltaX);
+	UNREFERENCED_VARIABLE(deltaY);
+    
+	LOG_MESSAGE("Mouse Delta: x=%d, y=%d", deltaX, deltaY);
 }
 
 void Sandbox::OnButtonPressed(LambdaEngine::EMouseButton button, uint32 modifierMask)
@@ -440,13 +448,13 @@ void Sandbox::OnButtonPressed(LambdaEngine::EMouseButton button, uint32 modifier
 	UNREFERENCED_VARIABLE(button);
     UNREFERENCED_VARIABLE(modifierMask);
     
-	//LOG_MESSAGE("Mouse Button Pressed: %d", button);
+	LOG_MESSAGE("Mouse Button Pressed: %d", button);
 }
 
 void Sandbox::OnButtonReleased(LambdaEngine::EMouseButton button)
 {
 	UNREFERENCED_VARIABLE(button);
-	//LOG_MESSAGE("Mouse Button Released: %d", button);
+	LOG_MESSAGE("Mouse Button Released: %d", button);
 }
 
 void Sandbox::OnMouseScrolled(int32 deltaX, int32 deltaY)
@@ -454,7 +462,7 @@ void Sandbox::OnMouseScrolled(int32 deltaX, int32 deltaY)
 	UNREFERENCED_VARIABLE(deltaX);
     UNREFERENCED_VARIABLE(deltaY);
     
-	//LOG_MESSAGE("Mouse Scrolled: x=%d, y=%d", deltaX, deltaY);
+	LOG_MESSAGE("Mouse Scrolled: x=%d, y=%d", deltaX, deltaY);
 }
 
 

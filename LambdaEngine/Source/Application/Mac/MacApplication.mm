@@ -229,6 +229,7 @@ namespace LambdaEngine
 			}
 			else if (name == NSApplicationWillTerminateNotification)
 			{
+				m_IsTerminating = true;
 				return false;
 			}
 		}
@@ -297,9 +298,8 @@ namespace LambdaEngine
 						const int32 y = int32(contentRect.size.height - mousePosition.y);
 						
 						m_pEventHandler->OnMouseMoved(x, y);
+						break;
 					}
-					
-					break;
 				}
 				   
 				case NSEventTypeScrollWheel:

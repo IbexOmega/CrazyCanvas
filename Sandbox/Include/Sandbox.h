@@ -42,6 +42,7 @@ public:
 	virtual void OnKeyTyped(uint32 character)                                                 override;
 	
 	virtual void OnMouseMoved(int32 x, int32 y)                                               override;
+	virtual void OnMouseMovedRaw(int32 deltaX, int32 deltaY)                                  override;
 	virtual void OnButtonPressed(LambdaEngine::EMouseButton button, uint32 modifierMask)      override;
 	virtual void OnButtonReleased(LambdaEngine::EMouseButton button)                          override;
     virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)                                  override;
