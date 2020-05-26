@@ -292,7 +292,7 @@ namespace LambdaEngine
 					if (event.pEventWindow)
 					{
 						const NSPoint	mousePosition	= [nsEvent locationInWindow];
-						const NSRect	contentRect 	= [event.pEventWindow frame];
+						const NSRect	contentRect 	= [[event.pEventWindow contentView] frame];
 						
 						const int32 x = int32(mousePosition.x);
 						const int32 y = int32(contentRect.size.height - mousePosition.y);
