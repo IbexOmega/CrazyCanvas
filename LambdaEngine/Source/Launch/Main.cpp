@@ -2,7 +2,7 @@
 
 namespace LambdaEngine
 {
-    extern Game* CreateGame();
+	extern Game* CreateGame();
 }
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
@@ -26,13 +26,13 @@ int main(int, const char*[])
 	Game* pGame = CreateGame();	
 	EngineLoop::Run();
 
-    SAFEDELETE(pGame);
+	SAFEDELETE(pGame);
 
-    if (!EngineLoop::Release())
-    {
-        return -1;
-    }
-    
+	if (!EngineLoop::Release())
+	{
+		return -1;
+	}
+	
 	if (!EngineLoop::PostRelease())
 	{
 		return -1;

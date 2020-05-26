@@ -56,7 +56,7 @@ namespace LambdaEngine
 		constexpr uint32 MAX_CHARS = 256;
 		static wchar_t title[MAX_CHARS];
 
-		size_t charsWritten = mbstowcs(title, pDesc->pTitle, MAX_CHARS);
+		size_t charsWritten = mbstowcs(title, pDesc->Title.c_str(), MAX_CHARS);
 		if (charsWritten != static_cast<size_t>(-1))
 		{
 			title[charsWritten] = L'\0';
@@ -80,7 +80,9 @@ namespace LambdaEngine
 				}
 			}
 
-			memcpy(&m_Desc, pDesc, sizeof(WindowDesc));
+			// Set descripton
+			m_Desc = (*pDesc);
+
 			::UpdateWindow(m_hWnd);
 			return true;
 		}
@@ -164,10 +166,10 @@ namespace LambdaEngine
 		return (void*)m_hWnd;
 	}
 
-	void Win32Window::SetTitle(const char* pTitle)
+	void Win32Window::SetTitle(const String& title)
 	{
 		VALIDATE(m_hWnd != 0);
-		::SetWindowTextA(m_hWnd, pTitle);
+		::SetWindowTextA(m_hWnd, title.c_str());
 	}
 	
 	void Win32Window::SetPosition(int32 x, int32 y)

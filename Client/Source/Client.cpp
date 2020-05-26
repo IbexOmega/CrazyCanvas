@@ -128,7 +128,7 @@ void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8
     LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
 
-void Client::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
+void Client::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	using namespace LambdaEngine;
 

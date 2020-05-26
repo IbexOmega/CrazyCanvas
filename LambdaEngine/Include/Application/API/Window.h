@@ -1,6 +1,8 @@
 #pragma once
 #include "Core/RefCountedObject.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 	enum FWindowStyleFlags : uint32
@@ -15,10 +17,10 @@ namespace LambdaEngine
 
 	struct WindowDesc
 	{
-		const char* pTitle 	= "";
-		uint16 		Width 	= 0;
-		uint16		Height	= 0;
-		uint32		Style	= 0;
+		String Title	= "";
+		uint16 Width 	= 0;
+		uint16 Height	= 0;
+		uint32 Style	= 0;
 	};
 
 	class Window : public RefCountedObject
@@ -45,7 +47,7 @@ namespace LambdaEngine
 		
 		virtual void ToggleFullscreen() = 0;
 
-		virtual void SetTitle(const char* pTitle) = 0;
+		virtual void SetTitle(const String& title) = 0;
 		
 		virtual void SetPosition(int32 x, int32 y)                  = 0;
 		virtual void GetPosition(int32* pPosX, int32* pPosY) const  = 0;
@@ -56,7 +58,10 @@ namespace LambdaEngine
 		*               Win32:  HWND
 		*               Mac:    NSWindow*
 		*/
-		virtual void* GetHandle() const = 0;
+		virtual void* GetHandle() const
+		{
+			return nullptr;
+		}
 
 		/*
 		* Return a handle to the client area of the window. May be nullptr on some platforms
@@ -64,18 +69,31 @@ namespace LambdaEngine
 		*               Win32:  nullptr
 		*               Mac:    NSView*
 		*/
-		virtual const void* GetView() const { return nullptr; }
+		virtual const void* GetView() const 
+		{ 
+			return nullptr; 
+		}
 
 		virtual void SetSize(uint16 width, uint16 height) = 0;
 		
-		virtual uint16 GetWidth()  const { return 0; }
-		virtual uint16 GetHeight() const { return 0; }
+		virtual uint16 GetWidth()  const 
+		{ 
+			return 0; 
+		}
+
+		virtual uint16 GetHeight() const 
+		{ 
+			return 0; 
+		}
 		
 		/*
 		* Returns the scale of the client area. This is necessary for High resolution displays scales the resolution.
 		*   return - Floating point scale of client area, assumes that the scaling is uniform
 		*/
-		virtual float32 GetClientAreaScale() const { return 1.0f; }
+		virtual float32 GetClientAreaScale() const 
+		{ 
+			return 1.0f; 
+		}
 
 	protected:
 		WindowDesc m_Desc;

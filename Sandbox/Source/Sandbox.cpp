@@ -263,49 +263,49 @@ void Sandbox::InitTestAudio()
 	m_pAudioGeometry->Init(audioGeometryDesc);*/
 }
 
-void Sandbox::FocusChanged(LambdaEngine::Window* pWindow, bool hasFocus)
+void Sandbox::OnFocusChanged(LambdaEngine::Window* pWindow, bool hasFocus)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
     LOG_MESSAGE("Window Moved: hasFocus=%s", hasFocus ? "true" : "false");
 }
 
-void Sandbox::WindowMoved(LambdaEngine::Window* pWindow, int16 x, int16 y)
+void Sandbox::OnWindowMoved(LambdaEngine::Window* pWindow, int16 x, int16 y)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
     LOG_MESSAGE("Window Moved: x=%d, y=%d", x, y);
 }
 
-void Sandbox::WindowResized(LambdaEngine::Window* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)
+void Sandbox::OnWindowResized(LambdaEngine::Window* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
     LOG_MESSAGE("Window Resized: width=%u, height=%u, type=%u", width, height, uint32(type));
 }
 
-void Sandbox::WindowClosed(LambdaEngine::Window* pWindow)
+void Sandbox::OnWindowClosed(LambdaEngine::Window* pWindow)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
     LOG_MESSAGE("Window closed");
 }
 
-void Sandbox::MouseEntered(LambdaEngine::Window* pWindow)
+void Sandbox::OnMouseEntered(LambdaEngine::Window* pWindow)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
     LOG_MESSAGE("Mouse Entered");
 }
 
-void Sandbox::MouseLeft(LambdaEngine::Window* pWindow)
+void Sandbox::OnMouseLeft(LambdaEngine::Window* pWindow)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
     LOG_MESSAGE("Mouse Left");
 }
 
-void Sandbox::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
+void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	UNREFERENCED_VARIABLE(modifierMask);
 	
@@ -409,7 +409,7 @@ void Sandbox::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRep
 	}*/
 }
 
-void Sandbox::KeyReleased(LambdaEngine::EKey key)
+void Sandbox::OnKeyReleased(LambdaEngine::EKey key)
 {
     using namespace LambdaEngine;
     
@@ -418,7 +418,7 @@ void Sandbox::KeyReleased(LambdaEngine::EKey key)
     LOG_MESSAGE("Key Released: %s", KeyToString(key));
 }
 
-void Sandbox::KeyTyped(uint32 character)
+void Sandbox::OnKeyTyped(uint32 character)
 {
     using namespace LambdaEngine;
     
@@ -427,7 +427,7 @@ void Sandbox::KeyTyped(uint32 character)
     LOG_MESSAGE("Key Text: %c", char(character));
 }
 
-void Sandbox::MouseMoved(int32 x, int32 y)
+void Sandbox::OnMouseMoved(int32 x, int32 y)
 {
 	UNREFERENCED_VARIABLE(x);
 	UNREFERENCED_VARIABLE(y);
@@ -435,7 +435,7 @@ void Sandbox::MouseMoved(int32 x, int32 y)
 	//LOG_MESSAGE("Mouse Moved: x=%d, y=%d", x, y);
 }
 
-void Sandbox::ButtonPressed(LambdaEngine::EMouseButton button, uint32 modifierMask)
+void Sandbox::OnButtonPressed(LambdaEngine::EMouseButton button, uint32 modifierMask)
 {
 	UNREFERENCED_VARIABLE(button);
     UNREFERENCED_VARIABLE(modifierMask);
@@ -443,13 +443,13 @@ void Sandbox::ButtonPressed(LambdaEngine::EMouseButton button, uint32 modifierMa
 	//LOG_MESSAGE("Mouse Button Pressed: %d", button);
 }
 
-void Sandbox::ButtonReleased(LambdaEngine::EMouseButton button)
+void Sandbox::OnButtonReleased(LambdaEngine::EMouseButton button)
 {
 	UNREFERENCED_VARIABLE(button);
 	//LOG_MESSAGE("Mouse Button Released: %d", button);
 }
 
-void Sandbox::MouseScrolled(int32 deltaX, int32 deltaY)
+void Sandbox::OnMouseScrolled(int32 deltaX, int32 deltaY)
 {
 	UNREFERENCED_VARIABLE(deltaX);
     UNREFERENCED_VARIABLE(deltaY);

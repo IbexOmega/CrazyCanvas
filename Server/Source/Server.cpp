@@ -48,7 +48,7 @@ LambdaEngine::IClientUDPRemoteHandler* Server::CreateClientUDPHandler()
 	return DBG_NEW ClientUDPHandler();
 }
 
-void Server::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
+void Server::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	UNREFERENCED_VARIABLE(key);
 	UNREFERENCED_VARIABLE(isRepeat);

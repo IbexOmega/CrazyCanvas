@@ -20,15 +20,27 @@ namespace LambdaEngine
 	public:
 		DECL_UNIQUE_CLASS(Application);
 		
-		virtual bool 	Create() = 0;
-		virtual Window*	CreateWindow(const WindowDesc* pDesc) = 0;
+		virtual ~Application()
+		{
+		}
+
+		virtual bool 	Create()								= 0;
+		virtual Window*	CreateWindow(const WindowDesc* pDesc)	= 0;
 		
-		virtual void 			SetEventHandler(EventHandler* pEventHandler) 	{ m_pEventHandler = pEventHandler; }
-		virtual EventHandler* 	GetEventHandler() const 						{ return m_pEventHandler; }
+		virtual void SetEventHandler(EventHandler* pEventHandler) 
+		{ 
+			VALIDATE(pEventHandler != nullptr);
+			m_pEventHandler = pEventHandler; 
+		}
+
+		virtual EventHandler* GetEventHandler() const
+		{ 
+			return m_pEventHandler; 
+		}
 		
-		virtual void Tick() = 0;
+		virtual bool Tick() = 0;
 		
-		virtual void ProcessStoredEvents() = 0;
+		virtual bool ProcessStoredEvents() = 0;
 
 		virtual void Terminate() = 0;
 		
@@ -37,28 +49,39 @@ namespace LambdaEngine
 		virtual void 		SetInputMode(Window* pWindow, EInputMode inputMode) = 0;
 		virtual EInputMode	GetInputMode(Window* pWindow) const 				= 0;
 
-		virtual void 	SetActiveWindow(Window* pWindow) 	= 0;
-		virtual Window* GetActiveWindow() const 			= 0;
+		virtual void SetActiveWindow(Window* pWindow)
+		{
+		}
 		
-		virtual void 	SetCapture(Window* pWindow) { }
-		virtual Window* GetCapture() const 			{ return nullptr; };
+		virtual Window* GetActiveWindow() const
+		{
+			return nullptr;
+		}
+		
+		virtual void SetCapture(Window* pWindow) 
+		{ 
+		}
+		
+		virtual Window* GetCapture() const
+		{ 
+			return nullptr;
+		}
 		
 	protected:
-		Application()	= default;
-		~Application() 	= default;
+		Application() = default;
 
 	public:
-		static bool PreInit() 		{ return true; }
-		static bool PostRelease() 	{ return true; }
-
 		/*
 		* Processes all event from the OS and bufferes them up
-		*   return - Returns false if the OS- sent a quit message
 		*/
-		static bool PeekMessages() { return false; }
+		static void PeekEvents()
+		{
+		}
 
-		static Application* CreateApplication()	{ return nullptr; }
-		static Application* Get() 				{ return nullptr; }
+		static Application* CreateApplication()	
+		{ 
+			return nullptr; 
+		}
 		
 	protected:
 		EventHandler* m_pEventHandler = nullptr;

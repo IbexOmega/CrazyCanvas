@@ -23,40 +23,36 @@ class CocoaAppDelegate;
 
 namespace LambdaEngine
 {
-    class MacWindow;
-    class IMacEventHandler;
+	class MacWindow;
 
-    /*
-    * Struct used to buffer events from the OS
-    */
-    struct MacEvent
-    {
-    public:
-        MacEvent();
-        MacEvent(const MacEvent& other);
-        ~MacEvent();
-        
-    public:
-        CocoaWindow*    pEventWindow    = nullptr;
-        NSEvent*        pEvent          = nullptr;
-        NSNotification* pNotification   = nullptr;
-        NSString*       pKeyTypedText   = nullptr;
-        
-        CGSize  Size;
-        CGPoint Position;
-    };
+	/*
+	* Struct used to buffer events from the OS
+	*/
+	struct MacEvent
+	{
+	public:
+		MacEvent();
+		MacEvent(const MacEvent& other);
+		~MacEvent();
+		
+	public:
+		CocoaWindow*	pEventWindow	= nullptr;
+		NSEvent*		pEvent			= nullptr;
+		NSNotification*	pNotification	= nullptr;
+		NSString*		pKeyTypedText	= nullptr;
+		
+		CGSize  Size;
+		CGPoint Position;
+	};
 
-    /*
-     * Class that represents the OS- application. Handles windows and the event loop.
-     */
-    class MacApplication : public Application
-    {
-    public:
-        void AddMacEventHandler(IMacEventHandler* pMacMessageHandler);
-        void RemoveMacEventHandler(IMacEventHandler* pMacMessageHandler);
-        
-        void StoreNSEvent(NSEvent* pEvent);
-        void StoreEvent(const MacEvent* pEvent);
+	/*
+	 * Class that represents the OS- application. Handles windows and the event loop.
+	 */
+	class MacApplication : public Application
+	{
+	public:		
+		void StoreNSEvent(NSEvent* pEvent);
+		void StoreEvent(const MacEvent& event);
 		
 		FORCEINLINE bool IsTerminating() const
 		{
@@ -67,18 +63,17 @@ namespace LambdaEngine
 		{
 			return m_IsProcessingEvents;
 		}
-        
-        MacWindow* GetWindowFromNSWindow(CocoaWindow* pWindow) const;
+		
+		MacWindow* GetWindowFromNSWindow(CocoaWindow* pWindow) const;
 
 	public:
-		
-        // Application
+		// Application Interface
 		virtual bool	Create() 								override final;
 		virtual Window*	CreateWindow(const WindowDesc* pDesc) 	override final;
-        
-		virtual void Tick() override final;
 		
-		virtual void ProcessStoredEvents() override final;
+		virtual bool Tick() override final;
+		
+		virtual bool ProcessStoredEvents() override final;
 
 		virtual void Terminate() override final;
 		
@@ -89,40 +84,35 @@ namespace LambdaEngine
 
 		virtual void 	SetActiveWindow(Window* pWindow) 	override final;
 		virtual Window* GetActiveWindow() const 			override final;
-        
-    private:
-        MacApplication();
-        virtual ~MacApplication();
+		
+	private:
+		MacApplication();
+		~MacApplication();
 
 		void AddWindow(MacWindow* pWindow);
-        
-		void ProcessNSEvent(NSEvent* pEvent);
-		void ProcessStoredEvent(const MacEvent* pEvent);
 
-    public:
-        static bool PreInit();
-        static bool PostRelease();
-        
-        static bool ProcessMessages();
+		void ProcessStoredEvent(const MacEvent& event);
+
+	public:
+		static bool PeekEvents();
 
 		static Application* 	CreateApplication();
 		static MacApplication* 	Get();
-        
-    private:
-        CocoaAppDelegate* 	m_pAppDelegate	= nullptr;
-        
-        bool m_IsProcessingEvents   = false;
-        bool m_IsTerminating        = false;
-        
-        TArray<MacWindow*>          m_Windows;
-        TArray<MacEvent>            m_StoredEvents;
-        TArray<IMacEventHandler*> 	m_MacEventHandlers;
-        
-    private:
-        static MacApplication* s_pApplication;
-    };
+		
+	private:
+		CocoaAppDelegate* 	m_pAppDelegate	= nullptr;
+		
+		bool m_IsProcessingEvents   = false;
+		bool m_IsTerminating        = false;
+		
+		TArray<MacWindow*>	m_Windows;
+		TArray<MacEvent>	m_StoredEvents;
+		
+	private:
+		static MacApplication* s_pApplication;
+	};
 
-    typedef MacApplication PlatformApplication;
+	typedef MacApplication PlatformApplication;
 }
 
 #endif

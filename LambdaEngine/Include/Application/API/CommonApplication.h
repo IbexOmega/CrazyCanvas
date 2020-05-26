@@ -11,8 +11,8 @@ namespace LambdaEngine
 	public:
 		DECL_UNIQUE_CLASS(CommonApplication);
 
-		bool 	Create(Application* pPlatformApplication);
-		Window* CreateWIndow(const WindowDesc* pDesc);
+		bool 	Create();
+		Window* CreateWindow(const WindowDesc* pDesc);
 		
 		void RemoveEventHandler(EventHandler* pEventHandler);
 		void AddEventHandler(EventHandler* pEventHandler);
@@ -34,44 +34,59 @@ namespace LambdaEngine
 		* currently has input focus, that would be the active window.
 		*   pMainWindow - New main window
 		*/
-		void 	MakeMainWindow(Window* pMainWindow);
-		Window* GetMainWindow()	const { return m_pMainWindow; }
+		void MakeMainWindow(Window* pMainWindow);
+		
+		FORCEINLINE Window* GetMainWindow()	const
+		{ 
+			return m_pMainWindow; 
+		}
 
 		bool SupportsRawInput() const;
 
 		/*
 		* Sets the input mode for the selected window
 		*/
-		void		SetInputMode(Window* pWindow, EInputMode inputMode);
-		EInputMode	GetInputMode(Window* pWindow) { return m_pPlatformApplication->GetInputMode(pWindow); }
-
-		void	SetCapture(Window* pWindow);
-		Window* GetCapture() const { return m_pPlatformApplication->GetCapture(); }
+		void SetInputMode(Window* pWindow, EInputMode inputMode);
 		
-		void	SetActiveWindow(Window* pWindow);
-		Window* GetActiveWindow() const { return m_pPlatformApplication->GetActiveWindow(); }
+		FORCEINLINE EInputMode GetInputMode(Window* pWindow)
+		{ 
+			return m_pPlatformApplication->GetInputMode(pWindow); 
+		}
+
+		void SetCapture(Window* pWindow);
+		
+		FORCEINLINE Window* GetCapture() const
+		{ 
+			return m_pPlatformApplication->GetCapture();
+		}
+		
+		void SetActiveWindow(Window* pWindow);
+		
+		FORCEINLINE Window* GetActiveWindow() const 
+		{ 
+			return m_pPlatformApplication->GetActiveWindow();
+		}
 
 	public:
 		// EventHandler Interface
-		virtual void FocusChanged(Window* pWindow, bool hasFocus)									override final;
-		virtual void WindowMoved(Window* pWindow, int16 x, int16 y)									override final;
-		virtual void WindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type)	override final;
-		virtual void WindowClosed(Window* pWindow)													override final;
-		virtual void MouseEntered(Window* pWindow)													override final;
-		virtual void MouseLeft(Window* pWindow)														override final;
+		virtual void OnFocusChanged(Window* pWindow, bool hasFocus)										override final;
+		virtual void OnWindowMoved(Window* pWindow, int16 x, int16 y)									override final;
+		virtual void OnWindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type)	override final;
+		virtual void OnWindowClosed(Window* pWindow)													override final;
+		virtual void OnMouseEntered(Window* pWindow)													override final;
+		virtual void OnMouseLeft(Window* pWindow)														override final;
 
-		virtual void MouseMoved(int32 x, int32 y)								override final;
-		virtual void MouseMovedRaw(int32 deltaX, int32 deltaY)					override final;
-		virtual void ButtonPressed(EMouseButton button, uint32 modifierMask)	override final;
-		virtual void ButtonReleased(EMouseButton button)						override final;
-		virtual void MouseScrolled(int32 deltaX, int32 deltaY)					override final;
+		virtual void OnMouseMoved(int32 x, int32 y)								override final;
+		virtual void OnMouseMovedRaw(int32 deltaX, int32 deltaY)				override final;
+		virtual void OnButtonPressed(EMouseButton button, uint32 modifierMask)	override final;
+		virtual void OnButtonReleased(EMouseButton button)						override final;
+		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)				override final;
 
-		virtual void KeyPressed(EKey key, uint32 modifierMask, bool isRepeat)	override final;
-		virtual void KeyReleased(EKey key)										override final;
-		virtual void KeyTyped(uint32 character)									override final;
+		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)	override final;
+		virtual void OnKeyReleased(EKey key)									override final;
+		virtual void OnKeyTyped(uint32 character)								override final;
 		
 	private:
-		// Hide constructor
 		CommonApplication();
 		~CommonApplication();
 
@@ -79,7 +94,6 @@ namespace LambdaEngine
 		static bool PreInit();
 		static bool PostRelease();
 
-		static CommonApplication* CreateApplication(Application* pPlatformApplication);
 		static CommonApplication* Get();
 		
 	private:

@@ -178,7 +178,7 @@ namespace LambdaEngine
 		
 		PlatformNetworkUtils::Release();
 		
-		if (!PlatformApplication::PostRelease())
+		if (!CommonApplication::PostRelease())
 		{
 			return false;
 		}

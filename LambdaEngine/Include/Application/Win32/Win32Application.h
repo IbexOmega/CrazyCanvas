@@ -36,27 +36,11 @@ namespace LambdaEngine
 	};
 
 	/*
-	* Struct used handle rawinput
-	*/
-
-	struct RawInputState
-	{
-		byte*	pInputBuffer	= nullptr;
-		uint32	BufferSize		= 0;
-
-		int32 MouseX = 0;
-		int32 MouseY = 0;
-	};
-
-	/*
 	 * Class that represents the OS- application. Handles windows and the event loop.
 	 */
 	class LAMBDA_API Win32Application : public Application
 	{
 	public:
-		Win32Application(HINSTANCE hInstance);
-		~Win32Application();
-
 		void AddWin32MessageHandler(IWin32MessageHandler* pHandler);
 		void RemoveWin32MessageHandler(IWin32MessageHandler* pHandler);
 
@@ -71,23 +55,32 @@ namespace LambdaEngine
 		Win32Window* 	GetWindowFromHandle(HWND hWnd) const;
 		HINSTANCE 		GetInstanceHandle();
 
+	public:
 		// Application interface
-		virtual bool Create(EventHandler* pEventHandler) override final;
+		virtual bool 	Create()								override final;
+		virtual Window* CreateWindow(const WindowDesc* pDesc)	override final;
 
-		virtual void ProcessStoredEvents() override final;
+		virtual bool Tick() override final;
 
-		virtual void MakeMainWindow(Window* pMainWindow) override final;
+		virtual bool ProcessStoredEvents() override final;
+
+		virtual void Terminate() override final;
 
 		virtual bool SupportsRawInput() const override final;
 
-		virtual void SetInputMode(EInputMode inputMode) override final;
+		virtual void 		SetInputMode(Window* pWindow, EInputMode inputMode) override final;
+		virtual EInputMode	GetInputMode(Window* pWindow) const					override final;
 
-		virtual EInputMode GetInputMode() const override final;
+		virtual void	SetActiveWindow(Window* pWindow)	override final;
+		virtual Window* GetActiveWindow() const				override final;
 
-        virtual Window* GetForegroundWindow()   const override final;
-        virtual Window* GetMainWindow()         const override final;
+		virtual void	SetCapture(Window* pWindow)	override final; 
+		virtual Window* GetCapture() const			override final;
 
 	private:
+		Win32Application(HINSTANCE hInstance);
+		~Win32Application();
+
 		void AddWindow(Win32Window* pWindow);
 
 		void	ProcessStoredMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam, int32 mouseDeltaX, int32 mouseDeltaY);
@@ -95,17 +88,10 @@ namespace LambdaEngine
 		LRESULT ProcessRawInput(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 
 	public:
-		static bool PreInit();
-		static bool PostRelease();
-
-		static bool ProcessMessages();
-
-		static Window*		CreateWindow(const WindowDesc* pDesc);
-		static Application* CreateApplication();
-
-		static void Terminate();
-
-		static Win32Application* Get();
+		static void PeekEvents();
+		
+		static Application*			CreateApplication();
+		static Win32Application*	Get();
 
 	private:
 		static bool RegisterWindowClass();
@@ -115,14 +101,12 @@ namespace LambdaEngine
 		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	private:
-		Win32Window*	m_pMainWindow	= nullptr;
-		EventHandler*	m_pEventHandler = nullptr;
-		HINSTANCE		m_hInstance		= 0;
+		HINSTANCE m_hInstance = 0;
 
-		RawInputState	m_RawInput			= { };
-		EInputMode		m_InputMode			= EInputMode::INPUT_MODE_NONE;
-		bool			m_IsTrackingMouse	= false;
-		
+		EInputMode	m_InputMode			= EInputMode::INPUT_MODE_NONE;
+		bool		m_IsTrackingMouse	= false;
+
+		TArray<byte>					m_RawInputBuffer;
 		TArray<Win32Window*>			m_Windows;
 		TArray<Win32Message> 			m_StoredMessages;
 		TArray<IWin32MessageHandler*>	m_MessageHandlers;

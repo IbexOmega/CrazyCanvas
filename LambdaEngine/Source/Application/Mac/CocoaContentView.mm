@@ -39,6 +39,7 @@
 {
     // Interpret key event and make sure we get a KeyTyped event
     [self interpretKeyEvents:[NSArray arrayWithObject: event]];
+    MacApplication::Get()->StoreEvent()
 }
 
 - (void) keyUp:(NSEvent*) event

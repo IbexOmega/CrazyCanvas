@@ -10,9 +10,9 @@ namespace LambdaEngine
 {
 	enum class EResizeType
 	{
-		RESIZE_TYPE_NONE = 0,
-		RESIZE_TYPE_MAXIMIZE = 1,
-		RESIZE_TYPE_MINIMIZE = 2,
+		RESIZE_TYPE_NONE		= 0,
+		RESIZE_TYPE_MAXIMIZE	= 1,
+		RESIZE_TYPE_MINIMIZE	= 2,
 	};
 
 	class Window;
@@ -27,7 +27,7 @@ namespace LambdaEngine
 		*   pWindow     - The window that changed focus status
 		*   hasFocus    - True if pWindow got focus, otherwise false
 		*/
-		virtual void FocusChanged(Window* pWindow, bool hasFocus)
+		virtual void OnFocusChanged(Window* pWindow, bool hasFocus)
 		{
 		}
 
@@ -37,7 +37,7 @@ namespace LambdaEngine
 		*   x       - New x position of the window
 		*   y       - New y position of the window
 		*/
-		virtual void WindowMoved(Window* pWindow, int16 x, int16 y)
+		virtual void OnWindowMoved(Window* pWindow, int16 x, int16 y)
 		{
 		}
 
@@ -47,7 +47,7 @@ namespace LambdaEngine
 		*   width   - The new width of the window
 		*   height  - The new height of the window
 		*/
-		virtual void WindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type)
+		virtual void OnWindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type)
 		{
 		}
 
@@ -55,7 +55,7 @@ namespace LambdaEngine
 		* Called when a window is closed
 		*  pWindow - The closed window
 		*/
-		virtual void WindowClosed(Window* pWindow)
+		virtual void OnWindowClosed(Window* pWindow)
 		{
 		}
 
@@ -63,7 +63,7 @@ namespace LambdaEngine
 		* Called when the mousecursor entered a window
 		*  pWindow - The window that the mouse entered
 		*/
-		virtual void MouseEntered(Window* pWindow)
+		virtual void OnMouseEntered(Window* pWindow)
 		{
 		}
 
@@ -71,7 +71,7 @@ namespace LambdaEngine
 		* Called when the mousecursor left a window
 		*  pWindow - The window that the mouse left
 		*/
-		virtual void MouseLeft(Window* pWindow)
+		virtual void OnMouseLeft(Window* pWindow)
 		{
 		}
 
@@ -80,7 +80,7 @@ namespace LambdaEngine
 		*	x - The new horizontal coordinates of the mouse
 		*	y - The new vertical coordinates of the mouse
 		*/
-		virtual void MouseMoved(int32 x, int32 y)
+		virtual void OnMouseMoved(int32 x, int32 y)
 		{
 		}
 
@@ -90,7 +90,7 @@ namespace LambdaEngine
 		*	deltaX - The raw mouse x-coordinate delta
 		*	deltaY - The raw mouse y-coordinate delta
 		*/
-		virtual void MouseMovedRaw(int32 deltaX, int32 deltaY)
+		virtual void OnMouseMovedRaw(int32 deltaX, int32 deltaY)
 		{
 		}
 
@@ -98,7 +98,7 @@ namespace LambdaEngine
 		* Will be called when a mouse button pressed event occurs
 		*	button - Which button was pressed
 		*/
-		virtual void ButtonPressed(EMouseButton button, uint32 modifierMask)
+		virtual void OnButtonPressed(EMouseButton button, uint32 modifierMask)
 		{
 		}
 
@@ -106,7 +106,7 @@ namespace LambdaEngine
 		* Will be called when a mouse button released event occurs
 		*	button - Which button was released
 		*/
-		virtual void ButtonReleased(EMouseButton button)
+		virtual void OnButtonReleased(EMouseButton button)
 		{
 		}
 
@@ -115,7 +115,7 @@ namespace LambdaEngine
 		*   deltaX - The amount of scrolling delta < 0 for left scrolling and delta > 0 for right scrolling
 		*   deltaY - The amount of scrolling delta < 0 for downwards scrolling and delta > 0 for upwards scrolling
 		*/
-		virtual void MouseScrolled(int32 deltaX, int32 deltaY)
+		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)
 		{
 		}
 
@@ -127,7 +127,7 @@ namespace LambdaEngine
 		*   isRepeat        - True if the key already were down and this message is a repeat message.
 							  Sent when a key is continuously held down.
 		*/
-		virtual void KeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
+		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
 		{
 		}
 
@@ -135,7 +135,7 @@ namespace LambdaEngine
 		 * Will be called when a key released event occurs
 		 *    key - Which key was released
 		 */
-		virtual void KeyReleased(EKey key)
+		virtual void OnKeyReleased(EKey key)
 		{
 		}
 
@@ -143,7 +143,7 @@ namespace LambdaEngine
 		* Will be called once for each event that occurs when a key is continually held down
 		*    character - Unicode character for the key that recently were pressed
 		*/
-		virtual void KeyTyped(uint32 character)
+		virtual void OnKeyTyped(uint32 character)
 		{
 		}
 	};
