@@ -135,7 +135,7 @@ namespace LambdaEngine
 		uint32 AttachmentCount						= 0;
 		RenderStagePushConstants PushConstants		= {};
 
-		EPipelineStateType PipelineType				= EPipelineStateType::PIPELINE_TYPE_NONE;
+		EPipelineStateType PipelineType				= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 
 		union
 		{
@@ -162,8 +162,8 @@ namespace LambdaEngine
 	struct AttachmentSynchronizationDesc
 	{
 		EAttachmentSynchronizationType	Type			= EAttachmentSynchronizationType::NONE;
-		EPipelineStateType				FromQueueOwner	= EPipelineStateType::PIPELINE_TYPE_NONE;
-		EPipelineStateType				ToQueueOwner	= EPipelineStateType::PIPELINE_TYPE_NONE;
+		EPipelineStateType				FromQueueOwner	= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
+		EPipelineStateType				ToQueueOwner	= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 		RenderStageAttachment			FromAttachment;
 		RenderStageAttachment			ToAttachment;
 	};

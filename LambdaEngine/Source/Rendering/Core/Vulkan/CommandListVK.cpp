@@ -665,7 +665,7 @@ namespace LambdaEngine
 	void CommandListVK::BindGraphicsPipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_GRAPHICS(m_pAllocator);
-        VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_TYPE_GRAPHICS);
+        VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS);
         
         const GraphicsPipelineStateVK* pPipelineVk = reinterpret_cast<const GraphicsPipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineVk->GetPipeline());
@@ -674,7 +674,7 @@ namespace LambdaEngine
 	void CommandListVK::BindComputePipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-        VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_TYPE_COMPUTE);
+        VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE);
         
         const ComputePipelineStateVK* pPipelineVk = reinterpret_cast<const ComputePipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineVk->GetPipeline());
@@ -683,7 +683,7 @@ namespace LambdaEngine
 	void CommandListVK::BindRayTracingPipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-        VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_TYPE_RAY_TRACING);
+        VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING);
         
         const RayTracingPipelineStateVK* pPipelineVk = reinterpret_cast<const RayTracingPipelineStateVK*>(pPipeline);
         m_pCurrentRayTracingPipeline = pPipelineVk;

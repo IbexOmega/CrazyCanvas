@@ -24,10 +24,10 @@ namespace LambdaEngine
 
 	enum class EPipelineStateType : uint8
 	{
-		PIPELINE_TYPE_NONE			= 0,
-		PIPELINE_TYPE_GRAPHICS		= 1,
-		PIPELINE_TYPE_COMPUTE		= 2,
-		PIPELINE_TYPE_RAY_TRACING	= 3,
+		PIPELINE_STATE_TYPE_NONE		= 0,
+		PIPELINE_STATE_TYPE_GRAPHICS	= 1,
+		PIPELINE_STATE_TYPE_COMPUTE		= 2,
+		PIPELINE_STATE_TYPE_RAY_TRACING	= 3,
 	};
 
 	struct InputAssemblyDesc
@@ -67,7 +67,7 @@ namespace LambdaEngine
 	struct BlendAttachmentStateDesc
 	{
 		bool			BlendEnabled				= false;
-		uint32			RenderTargetComponentsMask	= FColorComponentFlags::COLOR_COMPONENT_FLAG_NONE;
+		uint32			RenderTargetComponentMask	= FColorComponentFlags::COLOR_COMPONENT_FLAG_NONE;
 		EBlendOp		BlendOp						= EBlendOp::BLEND_OP_ADD;
 		EBlendFactor	SrcBlend					= EBlendFactor::BLEND_FACTOR_ONE;
 		EBlendFactor	DstBlend					= EBlendFactor::BLEND_FACTOR_ZERO;

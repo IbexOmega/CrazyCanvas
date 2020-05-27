@@ -166,31 +166,31 @@ namespace LambdaEngine
 					}
 				}
 
-				if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_ACCELERATION_STRUCTURE)
+				if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE)
 				{
                     descriptorCount.AccelerationStructureDescriptorCount += binding.DescriptorCount;
 				}
-				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_CONSTANT_BUFFER)
+				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER)
 				{
 					descriptorCount.ConstantBufferDescriptorCount += binding.DescriptorCount;
 				}
-				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_SAMPLER)
+				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_SAMPLER)
 				{
 					descriptorCount.SamplerDescriptorCount += binding.DescriptorCount;
 				}
-				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER)
+				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER)
 				{
 					descriptorCount.TextureCombinedSamplerDescriptorCount += binding.DescriptorCount;
 				}
-				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_TEXTURE)
+				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_TEXTURE)
 				{
 					descriptorCount.TextureDescriptorCount += binding.DescriptorCount;
 				}
-				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER)
+				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER)
 				{
 					descriptorCount.UnorderedAccessBufferDescriptorCount += binding.DescriptorCount;
 				}
-				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE)
+				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE)
 				{
 					descriptorCount.UnorderedAccessTextureDescriptorCount += binding.DescriptorCount;
 				}

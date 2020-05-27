@@ -101,7 +101,7 @@ namespace LambdaEngine
 			const BlendAttachmentStateDesc*			pAttachment		= pDesc->BlendState.pBlendAttachmentStates + i;
 
 			pAttachmentVk->blendEnable			= (pAttachment->BlendEnabled) ? VK_TRUE : VK_FALSE;
-			pAttachmentVk->colorWriteMask		= ConvertColorComponentMask(pAttachment->RenderTargetComponentsMask);
+			pAttachmentVk->colorWriteMask		= ConvertColorComponentMask(pAttachment->RenderTargetComponentMask);
 			pAttachmentVk->colorBlendOp			= ConvertBlendOp(pAttachment->BlendOp);
 			pAttachmentVk->srcColorBlendFactor	= ConvertBlendFactor(pAttachment->SrcBlend);
 			pAttachmentVk->dstColorBlendFactor	= ConvertBlendFactor(pAttachment->DstBlend);

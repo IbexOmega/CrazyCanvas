@@ -8,10 +8,10 @@ namespace LambdaEngine
 	{
 		switch (pipelineStateType)
 		{
-		case EPipelineStateType::PIPELINE_TYPE_GRAPHICS:		return ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
-		case EPipelineStateType::PIPELINE_TYPE_COMPUTE:		return ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE;
-		case EPipelineStateType::PIPELINE_TYPE_RAY_TRACING:	return ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE;
-		case EPipelineStateType::PIPELINE_TYPE_NONE:			
+		case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		return ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
+		case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		return ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE;
+		case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	return ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE;
+		case EPipelineStateType::PIPELINE_STATE_TYPE_NONE:			
 		default:										return ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		}
 	}

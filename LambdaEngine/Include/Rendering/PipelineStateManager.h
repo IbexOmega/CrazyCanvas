@@ -1,8 +1,8 @@
 #pragma once
-
 #include "LambdaEngine.h"
 
 #include "Rendering/Core/API/IPipelineState.h"
+
 #include "Resources/ResourceManager.h"
 
 #include "Containers/THashTable.h"
@@ -86,10 +86,10 @@ namespace LambdaEngine
 		static void FillRayTracingPipelineStateDesc(RayTracingPipelineStateDesc* pDstDesc, const RayTracingManagedPipelineStateDesc* pSrcDesc);
 
 	private:
-		static uint64															s_CurrentPipelineIndex;
-		static std::unordered_map<uint64, IPipelineState*>						s_PipelineStates;
-		static std::unordered_map<uint64, GraphicsManagedPipelineStateDesc>		s_GraphicsPipelineStateDescriptions;
-		static std::unordered_map<uint64, ComputeManagedPipelineStateDesc>		s_ComputePipelineStateDescriptions;
-		static std::unordered_map<uint64, RayTracingManagedPipelineStateDesc>	s_RayTracingPipelineStateDescriptions;
+		static uint64													s_CurrentPipelineIndex;
+		static THashTable<uint64, IPipelineState*>						s_PipelineStates;
+		static THashTable<uint64, GraphicsManagedPipelineStateDesc>		s_GraphicsPipelineStateDescriptions;
+		static THashTable<uint64, ComputeManagedPipelineStateDesc>		s_ComputePipelineStateDescriptions;
+		static THashTable<uint64, RayTracingManagedPipelineStateDesc>	s_RayTracingPipelineStateDescriptions;
 	};
 }

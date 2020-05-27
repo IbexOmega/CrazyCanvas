@@ -29,7 +29,7 @@ namespace LambdaEngine
 		// IPipelineState interface
 		FORCEINLINE virtual EPipelineStateType GetType() const override final
 		{
-			return EPipelineStateType::PIPELINE_TYPE_GRAPHICS;
+			return EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 		}
 
 	private:

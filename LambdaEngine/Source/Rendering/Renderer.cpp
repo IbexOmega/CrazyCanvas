@@ -127,15 +127,15 @@ namespace LambdaEngine
 
 			CommandListDesc commandListDesc = {};
 			commandListDesc.pName			= "ImGui Copy Command List";
-			commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
+			commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 			commandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 			for (uint32 b = 0; b < backBufferCount; b++)
 			{
-				ICommandAllocator* pCommandAllocator	= m_pGraphicsDevice->CreateCommandAllocator("ImGui Rendering Command Allocator", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+				ICommandAllocator* pCommandAllocator	= m_pGraphicsDevice->CreateCommandAllocator("ImGui Rendering Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 				
-				m_ppImGuiCommandAllocators[b]			= pCommandAllocator;
-				m_ppImGuiCommandLists[b]				= m_pGraphicsDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
+				m_ppImGuiCommandAllocators[b]	= pCommandAllocator;
+				m_ppImGuiCommandLists[b]		= m_pGraphicsDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
 			}
 		}
 

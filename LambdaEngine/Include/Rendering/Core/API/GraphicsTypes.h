@@ -7,23 +7,23 @@ namespace LambdaEngine
 	* Constants
 	*/
 
-	constexpr uint32 MAX_COLOR_ATTACHMENTS			= 8;
-	constexpr uint32 MAX_SUBPASSES					= 16;
-	constexpr uint32 MAX_SUBPASS_DEPENDENCIES		= 16;
-	constexpr uint32 MAX_VERTEX_INPUT_ATTACHMENTS	= 8;
-	constexpr uint32 MAX_ATTRIBUTES_PER_VERTEX		= 8;
-	constexpr uint32 MAX_IMAGE_BARRIERS				= 16;
-	constexpr uint32 MAX_BUFFER_BARRIERS			= 16;
-	constexpr uint32 MAX_VIEWPORTS					= 8;
-	constexpr uint32 MAX_VERTEX_BUFFERS				= 32;
-	constexpr uint32 MAX_DESCRIPTOR_BINDINGS		= 32;
-	constexpr uint32 MAX_CONSTANT_RANGES			= 16;
-	constexpr uint32 MAX_DESCRIPTOR_SET_LAYOUTS		= 16;
-	constexpr uint32 MAX_IMMUTABLE_SAMPLERS			= 32;
-	constexpr uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
-	constexpr uint32 MAX_MISS_SHADER_COUNT			= 8;
+	constexpr const uint32 MAX_COLOR_ATTACHMENTS		= 8;
+	constexpr const uint32 MAX_SUBPASSES				= 16;
+	constexpr const uint32 MAX_SUBPASS_DEPENDENCIES		= 16;
+	constexpr const uint32 MAX_VERTEX_INPUT_ATTACHMENTS	= 8;
+	constexpr const uint32 MAX_ATTRIBUTES_PER_VERTEX	= 8;
+	constexpr const uint32 MAX_IMAGE_BARRIERS			= 16;
+	constexpr const uint32 MAX_BUFFER_BARRIERS			= 16;
+	constexpr const uint32 MAX_VIEWPORTS				= 8;
+	constexpr const uint32 MAX_VERTEX_BUFFERS			= 32;
+	constexpr const uint32 MAX_DESCRIPTOR_BINDINGS		= 32;
+	constexpr const uint32 MAX_CONSTANT_RANGES			= 16;
+	constexpr const uint32 MAX_DESCRIPTOR_SET_LAYOUTS	= 16;
+	constexpr const uint32 MAX_IMMUTABLE_SAMPLERS		= 32;
+	constexpr const uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
+	constexpr const uint32 MAX_MISS_SHADER_COUNT		= 8;
 
-	constexpr uint32 EXTERNAL_SUBPASS	= 0xFFFFFFFF;
+	constexpr const uint32 EXTERNAL_SUBPASS	= 0xFFFFFFFF;
 
 	/*
 	* Enums

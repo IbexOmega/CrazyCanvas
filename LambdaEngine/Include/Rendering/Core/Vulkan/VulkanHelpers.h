@@ -51,6 +51,7 @@ namespace LambdaEngine
 		case ECompareOp::COMPARE_OP_NOT_EQUAL:			return VK_COMPARE_OP_NOT_EQUAL;
 		case ECompareOp::COMPARE_OP_GREATER_OR_EQUAL:	return VK_COMPARE_OP_GREATER_OR_EQUAL;
 		case ECompareOp::COMPARE_OP_ALWAYS:				return VK_COMPARE_OP_ALWAYS;
+		default:										return VkCompareOp(0);
 		}
 	}
 
@@ -66,6 +67,7 @@ namespace LambdaEngine
 		case EStencilOp::STENCIL_OP_INVERT:					return VK_STENCIL_OP_INVERT;
 		case EStencilOp::STENCIL_OP_INCREMENT_AND_WRAP:		return VK_STENCIL_OP_INCREMENT_AND_WRAP;
 		case EStencilOp::STENCIL_OP_DECREMENT_AND_WRAP:		return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+		default:											return VkStencilOp(0);
 		}
 	}
 
@@ -532,6 +534,7 @@ namespace LambdaEngine
 		stencilOpState.depthFailOp	= ConvertStencilOp(stencilOpStateDesc.DepthFailOp);
 		stencilOpState.failOp		= ConvertStencilOp(stencilOpStateDesc.FailOp);
 		stencilOpState.passOp		= ConvertStencilOp(stencilOpStateDesc.PassOp);
+		return stencilOpState;
 	}
 
 	inline const char* VkFormatToString(VkFormat format)

@@ -141,7 +141,7 @@ namespace LambdaEngine
 		struct ResourceBinding
 		{
 			RenderStage*	pRenderStage	= nullptr;
-			EDescriptorType DescriptorType	= EDescriptorType::DESCRIPTOR_UNKNOWN;
+			EDescriptorType DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
 			uint32			Binding			= 0;
 
 			ETextureState TextureState		= ETextureState::TEXTURE_STATE_UNKNOWN;
@@ -191,7 +191,7 @@ namespace LambdaEngine
 
 			RenderStageParameters	Parameters						= {};
 			uint64					PipelineStateID					= 0;
-			EPipelineStateType		PipelineStateType				= EPipelineStateType::PIPELINE_TYPE_NONE;
+			EPipelineStateType		PipelineStateType				= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 			IPipelineLayout*		pPipelineLayout					= nullptr;
 			uint32					TextureSubDescriptorSetCount	= 1;
 			uint32					MaterialsRenderedPerPass		= 1;

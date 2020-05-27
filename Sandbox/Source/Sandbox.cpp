@@ -117,12 +117,12 @@ Sandbox::Sandbox()
 
 	SamplerDesc samplerLinearDesc = {};
 	samplerLinearDesc.pName					= "Linear Sampler";
-	samplerLinearDesc.MinFilter				= EFilter::LINEAR;
-	samplerLinearDesc.MagFilter				= EFilter::LINEAR;
-	samplerLinearDesc.MipmapMode			= EMipmapMode::LINEAR;
-	samplerLinearDesc.AddressModeU			= ESamplerAddressMode::REPEAT;
-	samplerLinearDesc.AddressModeV			= ESamplerAddressMode::REPEAT;
-	samplerLinearDesc.AddressModeW			= ESamplerAddressMode::REPEAT;
+	samplerLinearDesc.MinFilter				= EFilterType::FILTER_TYPE_LINEAR;
+	samplerLinearDesc.MagFilter				= EFilterType::FILTER_TYPE_LINEAR;
+	samplerLinearDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_LINEAR;
+	samplerLinearDesc.AddressModeU			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerLinearDesc.AddressModeV			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerLinearDesc.AddressModeW			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 	samplerLinearDesc.MipLODBias			= 0.0f;
 	samplerLinearDesc.AnisotropyEnabled		= false;
 	samplerLinearDesc.MaxAnisotropy			= 16;
@@ -133,12 +133,12 @@ Sandbox::Sandbox()
 
 	SamplerDesc samplerNearestDesc = {};
 	samplerNearestDesc.pName				= "Nearest Sampler";
-	samplerNearestDesc.MinFilter			= EFilter::NEAREST;
-	samplerNearestDesc.MagFilter			= EFilter::NEAREST;
-	samplerNearestDesc.MipmapMode			= EMipmapMode::NEAREST;
-	samplerNearestDesc.AddressModeU			= ESamplerAddressMode::REPEAT;
-	samplerNearestDesc.AddressModeV			= ESamplerAddressMode::REPEAT;
-	samplerNearestDesc.AddressModeW			= ESamplerAddressMode::REPEAT;
+	samplerNearestDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
+	samplerNearestDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
+	samplerNearestDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
+	samplerNearestDesc.AddressModeU			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerNearestDesc.AddressModeV			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerNearestDesc.AddressModeW			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 	samplerNearestDesc.MipLODBias			= 0.0f;
 	samplerNearestDesc.AnisotropyEnabled	= false;
 	samplerNearestDesc.MaxAnisotropy		= 16;
@@ -740,8 +740,8 @@ bool Sandbox::InitRendererForEmpty()
 {
 	using namespace LambdaEngine;
 
-	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/StaticPixel.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SHADER_LANG_GLSL);
+	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/StaticPixel.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SHADER_LANG_GLSL);
 
 	std::vector<RenderStageDesc> renderStages;
 
@@ -765,7 +765,7 @@ bool Sandbox::InitRendererForEmpty()
 		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
 		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
 		renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
@@ -824,27 +824,27 @@ bool Sandbox::InitRendererForDeferred()
 {
 	using namespace LambdaEngine;
 
-	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryDefVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryDefPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryDefVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SHADER_LANG_GLSL);
+	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryDefPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SHADER_LANG_GLSL);
 
-	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingDefPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SHADER_LANG_GLSL);
+	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingDefPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SHADER_LANG_GLSL);
 
-	GUID_Lambda raygenShaderGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Raygen.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda closestHitShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ClosestHit.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
-	GUID_Lambda missShaderGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Miss.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda raygenShaderGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Raygen.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::SHADER_LANG_GLSL);
+	GUID_Lambda closestHitShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ClosestHit.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::SHADER_LANG_GLSL);
+	GUID_Lambda missShaderGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Miss.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::SHADER_LANG_GLSL);
 
-	GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/PostProcess.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
+	GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/PostProcess.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::SHADER_LANG_GLSL);
 
-	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelNormal.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelDepth.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelRoughness.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelNormal.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SHADER_LANG_GLSL);
+	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelDepth.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SHADER_LANG_GLSL);
+	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelRoughness.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SHADER_LANG_GLSL);
 
-	//GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
+	//GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SHADER_LANG_SPIRV);
+	//GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SHADER_LANG_SPIRV);
 
-	//GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/fullscreenQuad.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/shadingDefPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
+	//GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/fullscreenQuad.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SHADER_LANG_SPIRV);
+	//GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/shadingDefPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SHADER_LANG_SPIRV);
 	
 	std::vector<RenderStageDesc> renderStages;
 
@@ -886,7 +886,7 @@ bool Sandbox::InitRendererForDeferred()
 		geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
 		geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::PIPELINE_TYPE_GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::SCENE_INDIRECT;
 		renderStage.GraphicsPipeline.pIndexBufferName		= SCENE_INDEX_BUFFER;
@@ -928,7 +928,7 @@ bool Sandbox::InitRendererForDeferred()
 		rayTracingPipelineStateDesc.ClosestHitShaderCount	= 1;
 		rayTracingPipelineStateDesc.MissShaderCount			= 1;
 
-		renderStage.PipelineType							= EPipelineStateType::PIPELINE_TYPE_RAY_TRACING;
+		renderStage.PipelineType							= EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING;
 
 		renderStage.RayTracingPipeline.pRayTracingDesc		= &rayTracingPipelineStateDesc;
 
@@ -969,7 +969,7 @@ bool Sandbox::InitRendererForDeferred()
 		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
 		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::PIPELINE_TYPE_GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
 		renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
@@ -1002,7 +1002,7 @@ bool Sandbox::InitRendererForDeferred()
 		postProcessPipelineStateDesc.pName		= "Post-Process Pass Pipeline State";
 		postProcessPipelineStateDesc.Shader		= postProcessShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::PIPELINE_TYPE_COMPUTE;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE;
 
 		renderStage.ComputePipeline.pComputeDesc			= &postProcessPipelineStateDesc;
 
@@ -1152,7 +1152,7 @@ bool Sandbox::InitRendererForDeferred()
 		TextureDesc textureDesc	= {};
 		textureDesc.pName				= "Albedo-AO G-Buffer Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
-		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width				= CommonApplication::Get()->GetMainWindow()->GetWidth();
@@ -1174,12 +1174,12 @@ bool Sandbox::InitRendererForDeferred()
 
 		SamplerDesc samplerDesc = {};
 		samplerDesc.pName				= "Nearest Sampler";
-		samplerDesc.MinFilter			= EFilter::NEAREST;
-		samplerDesc.MagFilter			= EFilter::NEAREST;
-		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= ESamplerAddressMode::REPEAT;
-		samplerDesc.AddressModeV		= ESamplerAddressMode::REPEAT;
-		samplerDesc.AddressModeW		= ESamplerAddressMode::REPEAT;
+		samplerDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
+		samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerDesc.MipLODBias			= 0.0f;
 		samplerDesc.AnisotropyEnabled	= false;
 		samplerDesc.MaxAnisotropy		= 16;
@@ -1203,7 +1203,7 @@ bool Sandbox::InitRendererForDeferred()
 		TextureDesc textureDesc	= {};
 		textureDesc.pName				= "Norm-Met-Rough G-Buffer Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
-		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R16G16B16A16_SFLOAT;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width				= CommonApplication::Get()->GetMainWindow()->GetWidth();
@@ -1225,12 +1225,12 @@ bool Sandbox::InitRendererForDeferred()
 
 		SamplerDesc samplerDesc = {};
 		samplerDesc.pName				= "Nearest Sampler";
-		samplerDesc.MinFilter			= EFilter::NEAREST;
-		samplerDesc.MagFilter			= EFilter::NEAREST;
-		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= ESamplerAddressMode::REPEAT;
-		samplerDesc.AddressModeV		= ESamplerAddressMode::REPEAT;
-		samplerDesc.AddressModeW		= ESamplerAddressMode::REPEAT;
+		samplerDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
+		samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerDesc.MipLODBias			= 0.0f;
 		samplerDesc.AnisotropyEnabled	= false;
 		samplerDesc.MaxAnisotropy		= 16;
@@ -1254,7 +1254,7 @@ bool Sandbox::InitRendererForDeferred()
 		TextureDesc textureDesc = {};
 		textureDesc.pName				= "Geometry Pass Depth Stencil Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
-		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format				= EFormat::FORMAT_D24_UNORM_S8_UINT;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width				= CommonApplication::Get()->GetMainWindow()->GetWidth();
@@ -1276,12 +1276,12 @@ bool Sandbox::InitRendererForDeferred()
 
 		SamplerDesc samplerDesc = {};
 		samplerDesc.pName				= "Nearest Sampler";
-		samplerDesc.MinFilter			= EFilter::NEAREST;
-		samplerDesc.MagFilter			= EFilter::NEAREST;
-		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= ESamplerAddressMode::REPEAT;
-		samplerDesc.AddressModeV		= ESamplerAddressMode::REPEAT;
-		samplerDesc.AddressModeW		= ESamplerAddressMode::REPEAT;
+		samplerDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
+		samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerDesc.MipLODBias			= 0.0f;
 		samplerDesc.AnisotropyEnabled	= false;
 		samplerDesc.MaxAnisotropy		= 16;
@@ -1306,7 +1306,7 @@ bool Sandbox::InitRendererForDeferred()
 		TextureDesc textureDesc	= {};
 		textureDesc.pName				= "Radiance Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
-		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width				= CommonApplication::Get()->GetMainWindow()->GetWidth();
@@ -1328,12 +1328,12 @@ bool Sandbox::InitRendererForDeferred()
 
 		SamplerDesc samplerDesc = {};
 		samplerDesc.pName				= "Nearest Sampler";
-		samplerDesc.MinFilter			= EFilter::NEAREST;
-		samplerDesc.MagFilter			= EFilter::NEAREST;
-		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= ESamplerAddressMode::REPEAT;
-		samplerDesc.AddressModeV		= ESamplerAddressMode::REPEAT;
-		samplerDesc.AddressModeW		= ESamplerAddressMode::REPEAT;
+		samplerDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
+		samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerDesc.MipLODBias			= 0.0f;
 		samplerDesc.AnisotropyEnabled	= false;
 		samplerDesc.MaxAnisotropy		= 16;
@@ -1358,7 +1358,7 @@ bool Sandbox::InitRendererForDeferred()
 		TextureDesc textureDesc	= {};
 		textureDesc.pName				= "Shaded Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
-		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width				= CommonApplication::Get()->GetMainWindow()->GetWidth();
@@ -1380,12 +1380,12 @@ bool Sandbox::InitRendererForDeferred()
 
 		SamplerDesc samplerDesc = {};
 		samplerDesc.pName				= "Nearest Sampler";
-		samplerDesc.MinFilter			= EFilter::NEAREST;
-		samplerDesc.MagFilter			= EFilter::NEAREST;
-		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= ESamplerAddressMode::REPEAT;
-		samplerDesc.AddressModeV		= ESamplerAddressMode::REPEAT;
-		samplerDesc.AddressModeW		= ESamplerAddressMode::REPEAT;
+		samplerDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
+		samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerDesc.MipLODBias			= 0.0f;
 		samplerDesc.AnisotropyEnabled	= false;
 		samplerDesc.MaxAnisotropy		= 16;
@@ -1482,11 +1482,11 @@ bool Sandbox::InitRendererForVisBuf()
 {
 	using namespace LambdaEngine;
 
-	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryVisVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryVisPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryVisVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SHADER_LANG_GLSL);
+	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryVisPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SHADER_LANG_GLSL);
 
-	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingVisPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SHADER_LANG_GLSL);
+	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingVisPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SHADER_LANG_GLSL);
 
 	std::vector<RenderStageDesc> renderStages;
 
@@ -1517,7 +1517,7 @@ bool Sandbox::InitRendererForVisBuf()
 		geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
 		geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::PIPELINE_TYPE_GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::SCENE_INDIRECT;
 		renderStage.GraphicsPipeline.pIndexBufferName		= SCENE_INDEX_BUFFER;
@@ -1564,7 +1564,7 @@ bool Sandbox::InitRendererForVisBuf()
 		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
 		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::PIPELINE_TYPE_GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
 		renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
@@ -1673,7 +1673,7 @@ bool Sandbox::InitRendererForVisBuf()
 		TextureDesc visibilityBufferDesc	= {};
 		visibilityBufferDesc.pName			= "Visibility Buffer Texture";
 		visibilityBufferDesc.Type			= ETextureType::TEXTURE_TYPE_2D;
-		visibilityBufferDesc.MemoryType		= EMemoryType::MEMORY_GPU;
+		visibilityBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
 		visibilityBufferDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
 		visibilityBufferDesc.Flags			= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		visibilityBufferDesc.Width			= CommonApplication::Get()->GetMainWindow()->GetWidth();
@@ -1695,12 +1695,12 @@ bool Sandbox::InitRendererForVisBuf()
 
 		SamplerDesc samplerNearestDesc = {};
 		samplerNearestDesc.pName				= "Nearest Sampler";
-		samplerNearestDesc.MinFilter			= EFilter::NEAREST;
-		samplerNearestDesc.MagFilter			= EFilter::NEAREST;
-		samplerNearestDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerNearestDesc.AddressModeU			= ESamplerAddressMode::REPEAT;
-		samplerNearestDesc.AddressModeV			= ESamplerAddressMode::REPEAT;
-		samplerNearestDesc.AddressModeW			= ESamplerAddressMode::REPEAT;
+		samplerNearestDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerNearestDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerNearestDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
+		samplerNearestDesc.AddressModeU			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerNearestDesc.AddressModeV			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerNearestDesc.AddressModeW			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerNearestDesc.MipLODBias			= 0.0f;
 		samplerNearestDesc.AnisotropyEnabled	= false;
 		samplerNearestDesc.MaxAnisotropy		= 16;
@@ -1724,7 +1724,7 @@ bool Sandbox::InitRendererForVisBuf()
 		TextureDesc depthStencilDesc = {};
 		depthStencilDesc.pName			= "Geometry Pass Depth Stencil Texture";
 		depthStencilDesc.Type			= ETextureType::TEXTURE_TYPE_2D;
-		depthStencilDesc.MemoryType		= EMemoryType::MEMORY_GPU;
+		depthStencilDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
 		depthStencilDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
 		depthStencilDesc.Flags			= TEXTURE_FLAG_DEPTH_STENCIL;
 		depthStencilDesc.Width			= CommonApplication::Get()->GetMainWindow()->GetWidth();

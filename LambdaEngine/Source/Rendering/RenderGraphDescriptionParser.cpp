@@ -428,7 +428,7 @@ namespace LambdaEngine
 			
 			switch (renderStage.PipelineType)
 			{
-				case EPipelineStateType::PIPELINE_TYPE_GRAPHICS:
+				case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:
 				{
 					renderStage.GraphicsPipeline.pGraphicsDesc			= pSourceRenderStage->GraphicsPipeline.pGraphicsDesc;
 					renderStage.GraphicsPipeline.DrawType				= pSourceRenderStage->GraphicsPipeline.DrawType;
@@ -436,12 +436,12 @@ namespace LambdaEngine
 					renderStage.GraphicsPipeline.pMeshIndexBufferName	= pSourceRenderStage->GraphicsPipeline.pMeshIndexBufferName;
 					break;
 				}
-				case EPipelineStateType::PIPELINE_TYPE_COMPUTE:
+				case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:
 				{
 					renderStage.ComputePipeline.pComputeDesc = pSourceRenderStage->ComputePipeline.pComputeDesc;
 					break;
 				}
-				case EPipelineStateType::PIPELINE_TYPE_RAY_TRACING:
+				case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:
 				{
 					renderStage.RayTracingPipeline.pRayTracingDesc = pSourceRenderStage->RayTracingPipeline.pRayTracingDesc;
 					break;
@@ -498,7 +498,7 @@ namespace LambdaEngine
 				{
 					//Check if this resource is back buffer and this is not graphics queue
 					
-					if (pSourceRenderStage->PipelineType != EPipelineStateType::PIPELINE_TYPE_GRAPHICS)
+					if (pSourceRenderStage->PipelineType != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 					{
 						if (strcmp(pOutputAttachment->AttachmentName.c_str(), RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0)
 						{
@@ -512,7 +512,7 @@ namespace LambdaEngine
 
 							AttachmentSynchronizationDesc backBufferPreSynchronization = {};
 							backBufferPreSynchronization.Type					= EAttachmentSynchronizationType::TRANSITION_FOR_WRITE;
-							backBufferPreSynchronization.FromQueueOwner			= EPipelineStateType::PIPELINE_TYPE_GRAPHICS;
+							backBufferPreSynchronization.FromQueueOwner			= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 							backBufferPreSynchronization.ToQueueOwner			= sortedRenderStageIt->second->pRenderStage->PipelineType;
 							backBufferPreSynchronization.FromAttachment			= backBufferFromAttachment;
 							backBufferPreSynchronization.ToAttachment			= backBufferToAttachment;
@@ -522,7 +522,7 @@ namespace LambdaEngine
 							AttachmentSynchronizationDesc backBufferPostSynchronization = {};
 							backBufferPostSynchronization.Type					= EAttachmentSynchronizationType::TRANSITION_FOR_READ;
 							backBufferPostSynchronization.FromQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
-							backBufferPostSynchronization.ToQueueOwner			= EPipelineStateType::PIPELINE_TYPE_GRAPHICS; 
+							backBufferPostSynchronization.ToQueueOwner			= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS; 
 							backBufferPostSynchronization.FromAttachment		= backBufferToAttachment;
 							backBufferPostSynchronization.ToAttachment			= backBufferFromAttachment;
 
@@ -660,11 +660,11 @@ namespace LambdaEngine
 					}
 				}
 
-				if (synchronization.ToQueueOwner == EPipelineStateType::PIPELINE_TYPE_GRAPHICS)
+				if (synchronization.ToQueueOwner == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 				{
 					toGraphicsSynchronizationStage.Synchronizations.push_back(synchronization);
 				}
-				else if (synchronization.ToQueueOwner == EPipelineStateType::PIPELINE_TYPE_COMPUTE || synchronization.ToQueueOwner == EPipelineStateType::PIPELINE_TYPE_RAY_TRACING)
+				else if (synchronization.ToQueueOwner == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE || synchronization.ToQueueOwner == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 				{
 					toComputeSynchronizationStage.Synchronizations.push_back(synchronization);
 				}
@@ -1543,9 +1543,9 @@ namespace LambdaEngine
 	{
 		switch (pipelineState)
 		{
-		case EPipelineStateType::PIPELINE_TYPE_GRAPHICS:		strcat(pStringBuffer, "PIPELINE_GRAPHICS");	break;
-		case EPipelineStateType::PIPELINE_TYPE_COMPUTE:		strcat(pStringBuffer, "PIPELINE_COMPUTE");	break;
-		case EPipelineStateType::PIPELINE_TYPE_RAY_TRACING:	strcat(pStringBuffer, "PIPELINE_COMPUTE");	break;
+		case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		strcat(pStringBuffer, "PIPELINE_GRAPHICS");	break;
+		case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		strcat(pStringBuffer, "PIPELINE_COMPUTE");	break;
+		case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	strcat(pStringBuffer, "PIPELINE_COMPUTE");	break;
 		}
 	}
 }

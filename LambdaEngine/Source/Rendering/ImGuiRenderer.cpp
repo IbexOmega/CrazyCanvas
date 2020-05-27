@@ -134,7 +134,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_pDescriptorSet->WriteTextureDescriptors(&m_pFontTextureView, &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
+		m_pDescriptorSet->WriteTextureDescriptors(&m_pFontTextureView, &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 
 		CommonApplication::Get()->AddEventHandler(this);
 
@@ -294,7 +294,7 @@ namespace LambdaEngine
 							pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_pPipelineLayout, 0, m_pDescriptorHeap);
 							m_TextureDescriptorSetMap.insert({ pImGuiTexture->pTextureView, pDescriptorSet });
 
-							pDescriptorSet->WriteTextureDescriptors(&pImGuiTexture->pTextureView, &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
+							pDescriptorSet->WriteTextureDescriptors(&pImGuiTexture->pTextureView, &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 						}
 						else
 						{
@@ -483,7 +483,7 @@ namespace LambdaEngine
 
 	bool ImGuiRenderer::CreateCopyCommandList()
 	{
-		m_pCopyCommandAllocator = m_pGraphicsDevice->CreateCommandAllocator("ImGui Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+		m_pCopyCommandAllocator = m_pGraphicsDevice->CreateCommandAllocator("ImGui Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
 		if (m_pCopyCommandAllocator == nullptr)
 		{
@@ -492,7 +492,7 @@ namespace LambdaEngine
 
 		CommandListDesc commandListDesc = {};
 		commandListDesc.pName				= "ImGui Copy Command List";
-		commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_PRIMARY;
+		commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 		commandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 		m_pCopyCommandList = m_pGraphicsDevice->CreateCommandList(m_pCopyCommandAllocator, &commandListDesc);
@@ -515,25 +515,25 @@ namespace LambdaEngine
 	{
 		BufferDesc vertexCopyBufferDesc = {};
 		vertexCopyBufferDesc.pName			= "ImGui Vertex Copy Buffer";
-		vertexCopyBufferDesc.MemoryType		= EMemoryType::MEMORY_CPU_VISIBLE;
+		vertexCopyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		vertexCopyBufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		vertexCopyBufferDesc.SizeInBytes	= vertexBufferSize;
 
 		BufferDesc indexCopyBufferDesc = {};
 		indexCopyBufferDesc.pName			= "ImGui Index Copy Buffer";
-		indexCopyBufferDesc.MemoryType		= EMemoryType::MEMORY_CPU_VISIBLE;
+		indexCopyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		indexCopyBufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		indexCopyBufferDesc.SizeInBytes		= indexBufferSize;
 
 		BufferDesc vertexBufferDesc = {};
 		vertexBufferDesc.pName				= "ImGui Vertex Buffer";
-		vertexBufferDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		vertexBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		vertexBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
 		vertexBufferDesc.SizeInBytes		= vertexBufferSize;
 
 		BufferDesc indexBufferDesc = {};
 		indexBufferDesc.pName				= "ImGui Index Buffer";
-		indexBufferDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		indexBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		indexBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
 		indexBufferDesc.SizeInBytes			= vertexBufferSize;
 
@@ -574,7 +574,7 @@ namespace LambdaEngine
 
 		BufferDesc fontBufferDesc = {};
 		fontBufferDesc.pName				= "ImGui Font Buffer";
-		fontBufferDesc.MemoryType			= EMemoryType::MEMORY_CPU_VISIBLE;
+		fontBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		fontBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		fontBufferDesc.SizeInBytes			= textureSize;
 
@@ -591,7 +591,7 @@ namespace LambdaEngine
 
 		TextureDesc fontTextureDesc = {};
 		fontTextureDesc.pName		= "ImGui Font Texture";
-		fontTextureDesc.MemoryType  = EMemoryType::MEMORY_GPU;
+		fontTextureDesc.MemoryType  = EMemoryType::MEMORY_TYPE_GPU;
 		fontTextureDesc.Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
 		fontTextureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
 		fontTextureDesc.Flags		= FTextureFlags::TEXTURE_FLAG_COPY_DST | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
@@ -628,8 +628,8 @@ namespace LambdaEngine
 		transitionToCopyDstBarrier.pTexture					= m_pFontTexture;
 		transitionToCopyDstBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
 		transitionToCopyDstBarrier.StateAfter				= ETextureState::TEXTURE_STATE_COPY_DST;
-		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
-		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
+		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		transitionToCopyDstBarrier.SrcMemoryAccessFlags		= 0;
 		transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 		transitionToCopyDstBarrier.TextureFlags				= fontTextureDesc.Flags;
@@ -645,8 +645,8 @@ namespace LambdaEngine
 		transitionToShaderReadBarrier.pTexture					= m_pFontTexture;
 		transitionToShaderReadBarrier.StateBefore				= ETextureState::TEXTURE_STATE_COPY_DST;
 		transitionToShaderReadBarrier.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-		transitionToShaderReadBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
-		transitionToShaderReadBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
+		transitionToShaderReadBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		transitionToShaderReadBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		transitionToShaderReadBarrier.SrcMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 		transitionToShaderReadBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
 		transitionToShaderReadBarrier.TextureFlags				= fontTextureDesc.Flags;
@@ -684,10 +684,10 @@ namespace LambdaEngine
 	{
 		SamplerDesc samplerDesc = {};
 		samplerDesc.pName				= "ImGui Sampler";
-		samplerDesc.MinFilter			= EFilter::NEAREST;
-		samplerDesc.MagFilter			= EFilter::NEAREST;
-		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= EAddressMode::MIRRORED_REPEAT;
+		samplerDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
+		samplerDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
+		samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
 		samplerDesc.AddressModeV		= samplerDesc.AddressModeU;
 		samplerDesc.AddressModeW		= samplerDesc.AddressModeU;
 		samplerDesc.MipLODBias			= 0.0f; 
@@ -706,10 +706,10 @@ namespace LambdaEngine
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
 		colorAttachmentDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
 		colorAttachmentDesc.SampleCount		= 1;
-		colorAttachmentDesc.LoadOp			= ELoadOp::LOAD;
-		colorAttachmentDesc.StoreOp			= EStoreOp::STORE;
-		colorAttachmentDesc.StencilLoadOp	= ELoadOp::DONT_CARE;
-		colorAttachmentDesc.StencilStoreOp	= EStoreOp::DONT_CARE;
+		colorAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_LOAD;
+		colorAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_STORE;
+		colorAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
+		colorAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
 		colorAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_PRESENT;
 		colorAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_PRESENT;
 
@@ -748,7 +748,7 @@ namespace LambdaEngine
 	bool ImGuiRenderer::CreatePipelineLayout()
 	{
 		DescriptorBindingDesc descriptorBindingDesc = {};
-		descriptorBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER;
+		descriptorBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
 		descriptorBindingDesc.DescriptorCount		= 1;
 		descriptorBindingDesc.Binding				= 0;
 		descriptorBindingDesc.ShaderStageMask		= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
@@ -810,8 +810,8 @@ namespace LambdaEngine
 
 	bool ImGuiRenderer::CreateShaders()
 	{
-		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiVertex.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
-		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
+		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiVertex.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
 	}
 
@@ -842,13 +842,13 @@ namespace LambdaEngine
 		VertexInputBindingDesc vertexInputBindingDesc = {};
 		vertexInputBindingDesc.Binding			= 0;
 		vertexInputBindingDesc.Stride			= sizeof(ImDrawVert);
-		vertexInputBindingDesc.InputRate		= EVertexInputRate::PER_VERTEX;
+		vertexInputBindingDesc.InputRate		= EVertexInputRate::VERTEX_INPUT_PER_VERTEX;
 		memcpy(vertexInputBindingDesc.pAttributes, pVertexAttributeDesc, 3 * sizeof(VertexInputAttributeDesc));
 		vertexInputBindingDesc.AttributeCount	= 3;
 
-		BlendAttachmentState blendAttachmentState = {};
-		blendAttachmentState.BlendEnabled			= true;
-		blendAttachmentState.ColorComponentsMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+		BlendAttachmentStateDesc blendAttachmentState = {};
+		blendAttachmentState.BlendEnabled				= true;
+		blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
 
 		GraphicsManagedPipelineStateDesc pipelineStateDesc = {};
 		pipelineStateDesc.pName							= "ImGui Pipeline State";

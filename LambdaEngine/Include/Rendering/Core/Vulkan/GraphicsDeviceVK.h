@@ -87,7 +87,7 @@ namespace LambdaEngine
 
 		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) 	  const override final;
 		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 	  const override final;
-		virtual IPipelineState* CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const override final;
+		virtual IPipelineState* CreateRayTracingPipelineState(ICommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc) const override final;
 
 		virtual IAccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, IDeviceAllocator* pAllocator) const override final;
 

@@ -4,6 +4,8 @@
 
 namespace LambdaEngine
 {
+	class ISampler;
+
 	struct ConstantRangeDesc
 	{
 		uint32 ShaderStageFlags = 0;

@@ -427,9 +427,9 @@ namespace LambdaEngine
 
 					switch (pPipelineState->GetType())
 					{
-					case EPipelineStateType::PIPELINE_TYPE_GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[modFrameIndex],		pPipelineStage->ppGraphicsCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
-					case EPipelineStateType::PIPELINE_TYPE_COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[modFrameIndex],		pPipelineStage->ppComputeCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
-					case EPipelineStateType::PIPELINE_TYPE_RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[modFrameIndex],		pPipelineStage->ppComputeCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[modFrameIndex],		pPipelineStage->ppGraphicsCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[modFrameIndex],		pPipelineStage->ppComputeCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[modFrameIndex],		pPipelineStage->ppComputeCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
 					}
 
 					currentExecutionStage++;
@@ -834,7 +834,7 @@ namespace LambdaEngine
 
 							BlendAttachmentStateDesc blendAttachmentState = {};
 							blendAttachmentState.BlendEnabled			= false;
-							blendAttachmentState.RenderTargetComponentsMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+							blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
 
 							renderPassBlendAttachmentStates.push_back(blendAttachmentState);
 							renderTargets.push_back(pResource);
@@ -915,7 +915,7 @@ namespace LambdaEngine
 			}
 
 			//Create Pipeline State
-			if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_TYPE_GRAPHICS)
+			if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 			{
 				GraphicsManagedPipelineStateDesc pipelineDesc		= *pRenderStageDesc->GraphicsPipeline.pGraphicsDesc;
 
@@ -992,7 +992,7 @@ namespace LambdaEngine
 
 				pRenderStage->PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineDesc);
 			}
-			else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_TYPE_COMPUTE)
+			else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 			{
 				ComputeManagedPipelineStateDesc pipelineDesc = *pRenderStageDesc->ComputePipeline.pComputeDesc;
 
@@ -1000,7 +1000,7 @@ namespace LambdaEngine
 
 				pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
 			}
-			else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_TYPE_RAY_TRACING)
+			else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 			{
 				RayTracingManagedPipelineStateDesc pipelineDesc = *pRenderStageDesc->RayTracingPipeline.pRayTracingDesc;
 
@@ -1059,7 +1059,7 @@ namespace LambdaEngine
 			//Link RenderPass to RenderPass Attachments
 			if (renderTargets.size() > 0)
 			{
-				if (pRenderStageDesc->PipelineType != EPipelineStateType::PIPELINE_TYPE_GRAPHICS)
+				if (pRenderStageDesc->PipelineType != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 				{
 					LOG_ERROR("[RenderGraph]: There are resources that a RenderPass should be linked to, but Render Stage %u is not a Graphics Pipeline State", i);
 					return false;
@@ -1829,7 +1829,7 @@ namespace LambdaEngine
 	{
 		uint32 shaderStageMask = 0;
 
-		if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_TYPE_GRAPHICS)
+		if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
 			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER		: 0;
 
@@ -1840,11 +1840,11 @@ namespace LambdaEngine
 
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		}
-		else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_TYPE_COMPUTE)
+		else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 		}
-		else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_TYPE_RAY_TRACING)
+		else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 		{
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER;
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;

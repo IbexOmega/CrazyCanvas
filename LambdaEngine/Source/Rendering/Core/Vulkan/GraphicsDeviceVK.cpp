@@ -379,12 +379,12 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const
+	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(ICommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
 		
 		RayTracingPipelineStateVK* pPipelineState = DBG_NEW RayTracingPipelineStateVK(this);
-		if (!pPipelineState->Init(pDesc))
+		if (!pPipelineState->Init(pCommandQueue, pDesc))
 		{
 			pPipelineState->Release();
 			return nullptr;

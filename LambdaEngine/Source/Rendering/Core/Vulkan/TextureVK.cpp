@@ -116,11 +116,11 @@ namespace LambdaEngine
 		vkGetImageMemoryRequirements(m_pDevice->Device, m_Image, &memoryRequirements);
 
 		VkMemoryPropertyFlags memoryProperties = 0;
-		if (m_Desc.MemoryType == EMemoryType::MEMORY_CPU_VISIBLE)
+		if (m_Desc.MemoryType == EMemoryType::MEMORY_TYPE_CPU_VISIBLE)
 		{
 			memoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 		}
-		else if (m_Desc.MemoryType == EMemoryType::MEMORY_GPU)
+		else if (m_Desc.MemoryType == EMemoryType::MEMORY_TYPE_GPU)
 		{
 			memoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 		}

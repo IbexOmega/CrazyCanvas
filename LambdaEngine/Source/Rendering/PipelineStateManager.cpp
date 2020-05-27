@@ -102,9 +102,9 @@ namespace LambdaEngine
 			
 			switch (it->second->GetType())
 			{
-			case EPipelineStateType::PIPELINE_TYPE_GRAPHICS:			s_GraphicsPipelineStateDescriptions.erase(id); break;
-			case EPipelineStateType::PIPELINE_TYPE_COMPUTE:			s_ComputePipelineStateDescriptions.erase(id); break;
-			case EPipelineStateType::PIPELINE_TYPE_RAY_TRACING:		s_RayTracingPipelineStateDescriptions.erase(id); break;
+			case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:			s_GraphicsPipelineStateDescriptions.erase(id); break;
+			case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:			s_ComputePipelineStateDescriptions.erase(id); break;
+			case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:		s_RayTracingPipelineStateDescriptions.erase(id); break;
 			}
 
 			SAFERELEASE(it->second);
@@ -134,21 +134,21 @@ namespace LambdaEngine
 			
 			switch (it->second->GetType())
 			{
-				case EPipelineStateType::PIPELINE_TYPE_GRAPHICS:
+				case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:
 				{
 					GraphicsPipelineStateDesc pipelineStateDesc = {};
 					FillGraphicsPipelineStateDesc(&pipelineStateDesc, &s_GraphicsPipelineStateDescriptions[it->first]);
 					pNewPipelineState = RenderSystem::GetDevice()->CreateGraphicsPipelineState(&pipelineStateDesc);
 					break;
 				}
-				case EPipelineStateType::PIPELINE_TYPE_COMPUTE:
+				case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:
 				{
 					ComputePipelineStateDesc pipelineStateDesc = {};
 					FillComputePipelineStateDesc(&pipelineStateDesc, &s_ComputePipelineStateDescriptions[it->first]);
 					pNewPipelineState = RenderSystem::GetDevice()->CreateComputePipelineState(&pipelineStateDesc);
 					break;
 				}
-				case EPipelineStateType::PIPELINE_TYPE_RAY_TRACING:
+				case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:
 				{
 					RayTracingPipelineStateDesc pipelineStateDesc = {};
 					FillRayTracingPipelineStateDesc(&pipelineStateDesc, &s_RayTracingPipelineStateDescriptions[it->first]);
