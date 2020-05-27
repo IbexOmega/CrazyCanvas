@@ -1,21 +1,7 @@
+#ifndef HELPERS_SHADER
+#define HELPERS_SHADER
 
-const float PI 		= 3.14159265359f;
-const float EPSILON = 0.001f;
-const float GAMMA   = 2.2f;
-
-const float MAX_TEMPORAL_FRAMES = 256.0f;
-
-struct SPositions
-{
-    vec3 WorldPos; 
-    vec3 ViewPos;
-};
-
-struct SRayDirections
-{
-    vec3 ReflDir; 
-    vec3 ViewDir;
-};
+#include "Defines.glsl"
 
 vec3 CalculateNormal(vec4 sampledNormalMetallicRoughness)
 {
@@ -340,3 +326,5 @@ vec3 ReflectanceDirection(vec3 reflDir, vec3 Rt, vec3 Rb, float roughness, vec2 
         coneVector.x * Rb.y + coneVector.y * reflDir.y + coneVector.z * Rt.y, 
         coneVector.x * Rb.z + coneVector.y * reflDir.z + coneVector.z * Rt.z); 
 }
+
+#endif

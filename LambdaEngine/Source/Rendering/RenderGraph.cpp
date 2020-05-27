@@ -1666,6 +1666,12 @@ namespace LambdaEngine
 		ICommandList**			ppFirstExecutionStage,
 		ICommandList**			ppSecondExecutionStage)
 	{
+		static TSet<uint64> synchronizedTextureHandles;
+		static TSet<uint64> synchronizedBufferHandles;
+
+		synchronizedTextureHandles.clear();
+		synchronizedBufferHandles.clear();
+
 		pGraphicsCommandAllocator->Reset();
 		pGraphicsCommandList->Begin(nullptr);
 
@@ -1683,6 +1689,13 @@ namespace LambdaEngine
 			for (uint32 b = pTextureSynchronization->BarrierUseFrameIndex * m_BackBufferIndex; b < pTextureSynchronization->Barriers.size(); b += pTextureSynchronization->SameFrameBarrierOffset)
 			{
 				const PipelineTextureBarrierDesc* pBarrier = &m_TextureBarriers[pTextureSynchronization->Barriers[b]];
+
+				uint64 textureHandle = pBarrier->pTexture->GetHandle();
+
+				if (synchronizedTextureHandles.count(textureHandle) > 0)
+					continue;
+
+				synchronizedTextureHandles.insert(textureHandle);
 
 				if (pBarrier->QueueBefore == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
 				{
@@ -1736,6 +1749,13 @@ namespace LambdaEngine
 			for (uint32 b = pBufferSynchronization->BarrierUseFrameIndex * m_BackBufferIndex; b < pBufferSynchronization->Barriers.size(); b += pBufferSynchronization->SameFrameBarrierOffset)
 			{
 				const PipelineBufferBarrierDesc* pBarrier = &m_BufferBarriers[pBufferSynchronization->Barriers[b]];
+
+				uint64 bufferHandle = pBarrier->pBuffer->GetHandle();
+
+				if (synchronizedBufferHandles.count(bufferHandle) > 0)
+					continue;
+
+				synchronizedBufferHandles.insert(bufferHandle);
 
 				if (pBarrier->QueueBefore == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
 				{

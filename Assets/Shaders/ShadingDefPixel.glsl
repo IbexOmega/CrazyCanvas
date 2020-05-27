@@ -12,19 +12,6 @@ struct SLightsBuffer
 	vec4    SpectralIntensity;
 };
 
-struct SPerFrameBuffer
-{
-    mat4 Projection;
-	mat4 View;
-	mat4 LastProjection;
-	mat4 LastView;
-	mat4 ViewInv;
-	mat4 ProjectionInv;
-	vec4 Position;
-	vec4 Right;
-	vec4 Up;
-};
-
 layout(location = 0) in vec2	in_TexCoord;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform LightsBuffer     { SLightsBuffer val; }        u_LightsBuffer;

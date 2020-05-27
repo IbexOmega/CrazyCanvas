@@ -23,6 +23,7 @@ namespace LambdaEngine
 	class ICommandAllocator;
 	class ICommandList;
 	class IAccelerationStructure;
+	class IDeviceAllocator;
 	
 	struct GameObject
 	{
@@ -131,6 +132,8 @@ namespace LambdaEngine
 
 		const char*									m_pName;
 
+		IDeviceAllocator*							m_pDeviceAllocator						= nullptr;
+
 		ICommandAllocator*							m_pCopyCommandAllocator					= nullptr;
 		ICommandList*								m_pCopyCommandList						= nullptr;
 
@@ -148,10 +151,6 @@ namespace LambdaEngine
 		IBuffer*									m_pLightsCopyBuffer						= nullptr;
 		IBuffer*									m_pPerFrameCopyBuffer					= nullptr;
 
-		//IBuffer*									m_pSceneRayTracingVertexBuffer			= nullptr;
-		//IBuffer*									m_pSceneRayTracingIndexBuffer			= nullptr;
-		//IBuffer*									m_pSceneRayTracingInstanceBuffer		= nullptr;
-
 		IBuffer*									m_pSceneMaterialPropertiesCopyBuffer	= nullptr;
 		IBuffer*									m_pSceneVertexCopyBuffer				= nullptr;
 		IBuffer*									m_pSceneIndexCopyBuffer					= nullptr;
@@ -161,11 +160,11 @@ namespace LambdaEngine
 		IBuffer*									m_pLightsBuffer							= nullptr;
 		IBuffer*									m_pPerFrameBuffer						= nullptr;
 
-		std::vector<ITexture*>						m_SceneAlbedoMaps;				
-		std::vector<ITexture*>						m_SceneNormalMaps;				
-		std::vector<ITexture*>						m_SceneAmbientOcclusionMaps;	
-		std::vector<ITexture*>						m_SceneMetallicMaps;			
-		std::vector<ITexture*>						m_SceneRoughnessMaps;			
+		std::vector<ITexture*>						m_SceneAlbedoMaps;
+		std::vector<ITexture*>						m_SceneNormalMaps;
+		std::vector<ITexture*>						m_SceneAmbientOcclusionMaps;
+		std::vector<ITexture*>						m_SceneMetallicMaps;
+		std::vector<ITexture*>						m_SceneRoughnessMaps;
 
 		std::vector<ITextureView*>					m_SceneAlbedoMapViews;
 		std::vector<ITextureView*>					m_SceneNormalMapViews;

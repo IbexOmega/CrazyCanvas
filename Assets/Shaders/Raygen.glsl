@@ -11,26 +11,14 @@ struct SRayPayload
 	vec3 Color;
 };
 
-struct SPerFrameBuffer
-{
-    mat4 Projection;
-	mat4 View;
-	mat4 LastProjection;
-	mat4 LastView;
-	mat4 ViewInv;
-	mat4 ProjectionInv;
-	vec4 Position;
-	vec4 Right;
-	vec4 Up;
-};
-
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform accelerationStructureEXT   u_TLAS;
-layout(binding = 1, set = BUFFER_SET_INDEX) uniform PerFrameBuffer     { SPerFrameBuffer val; }        u_PerFrameBuffer;
+layout(binding = 6, set = BUFFER_SET_INDEX) uniform PerFrameBuffer     { SPerFrameBuffer val; }        u_PerFrameBuffer;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_AlbedoAO;
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_NormalMetallicRoughness;
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_DepthStencil;
-layout(binding = 3, set = TEXTURE_SET_INDEX, rgba8) writeonly uniform image2D   u_Radiance;
+
+layout(binding = 8, set = TEXTURE_SET_INDEX, rgba8) writeonly uniform image2D   u_Radiance;
 
 layout(location = 0) rayPayloadEXT SRayPayload s_RayPayload;
 
@@ -43,8 +31,8 @@ void main()
 	vec2 d = screenTexCoord * 2.0 - 1.0;
 
 	//Sample GBuffer
-	//vec4 sampledNormalMetallicRoughness = texture(u_NormalMetallicRoughness, screenTexCoord);
-	//vec3 normal = CalculateNormal(sampledNormalMetallicRoughness);
+	vec4 sampledNormalMetallicRoughness = texture(u_NormalMetallicRoughness, screenTexCoord);
+	vec3 normal = CalculateNormal(sampledNormalMetallicRoughness);
 
     //Skybox
 	// if (dot(sampledNormalMetallicRoughness, sampledNormalMetallicRoughness) < EPSILON)
@@ -56,18 +44,16 @@ void main()
     SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
 
 	//Sample GBuffer
-	//vec4 sampledAlbedoAO    = texture(u_AlbedoAO, screenTexCoord);
-	//float sampledDepth      = texture(u_DepthStencil, screenTexCoord).r;
+	vec4 sampledAlbedoAO    = texture(u_AlbedoAO, screenTexCoord);
+	float sampledDepth      = texture(u_DepthStencil, screenTexCoord).r;
 
 	//Define Constants
-	//SPositions positions            = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
-    //SRayDirections rayDirections    = CalculateRayDirections(positions.WorldPos, normal, perFrameBuffer.Position.xyz, perFrameBuffer.ViewInv);
-
-	vec4 origin 	= perFrameBuffer.ViewInv 		* vec4(0.0f , 0.0f, 0.0f, 1.0f);
-	vec4 target 	= perFrameBuffer.ProjectionInv 	* vec4(d.x, d.y, 1.0f, 1.0f);
-	vec4 direction 	= perFrameBuffer.ViewInv 		* vec4(normalize(target.xyz), 0.0f);
+	SPositions positions            = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
+    SRayDirections rayDirections    = CalculateRayDirections(positions.WorldPos, normal, perFrameBuffer.Position.xyz, perFrameBuffer.ViewInv);	
 
 	//Define new Rays Parameters
+	const vec3 		origin 				= positions.WorldPos + normal * 0.025f;
+	const vec3 		direction			= rayDirections.ReflDir;
 	const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
 	const uint 		cullMask           	= 0xFF;
     const uint 		sbtRecordOffset    	= 0;

@@ -5,48 +5,6 @@
 
 #include "Defines.glsl"
 
-struct SVertex
-{
-    vec4    Position;
-    vec4    Normal;
-    vec4    Tangent;
-    vec4    TexCoord;
-};
-
-struct SInstance
-{
-    mat3x4  Transform;
-    uint    Mask_MeshMaterialIndex;
-    uint    SBTRecordOffset_Flags;
-    uint    AccelerationStructureHandleTop32;
-    uint    AccelerationStructureHandleBottom32;
-};
-
-struct SMeshIndexDesc
-{
-    uint	IndexCount;
-    uint	InstanceCount;
-    uint	FirstIndex;
-    int	    VertexOffset;
-    uint	FirstInstance;
-    
-    uint	MaterialIndex;
-};
-
-struct SPerFrameBuffer
-{
-    mat4 Projection;
-	mat4 View;
-	mat4 LastProjection;
-	mat4 LastView;
-	mat4 ViewInv;
-	mat4 ProjectionInv;
-	vec4 Position;
-	vec4 Right;
-	vec4 Up;
-};
-
-
 layout (constant_id = 0) const uint OTHER_TEXTURES_IN_PASS                  = 0;
 layout (constant_id = 1) const uint ALLOWED_TEXTURES_PER_DESCRIPTOR_SET     = 256;
 

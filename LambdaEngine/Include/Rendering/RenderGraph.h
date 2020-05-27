@@ -4,10 +4,15 @@
 
 #include "Rendering/Core/API/ICommandList.h"
 #include "Rendering/Core/API/GraphicsTypes.h"
+
+#include "Containers/THashTable.h"
+#include "Containers/TArray.h"
+#include "Containers/TSet.h"
+
 #include "RenderGraphTypes.h"
+
 #include "Utilities/StringHash.h"
 
-#include <unordered_map>
 #include <set>
 
 namespace LambdaEngine
@@ -162,18 +167,18 @@ namespace LambdaEngine
 
 			struct
 			{
-				std::vector<uint32>			Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
-				std::vector<ITexture*>		Textures;
-				std::vector<ITextureView*>	TextureViews;
-				std::vector<ISampler*>		Samplers;
+				TArray<uint32>			Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
+				TArray<ITexture*>		Textures;
+				TArray<ITextureView*>	TextureViews;
+				TArray<ISampler*>		Samplers;
 			} Texture;
 
 			struct
 			{
-				std::vector<uint32>			Barriers;
-				std::vector<IBuffer*>		Buffers;
-				std::vector<uint64>			Offsets;
-				std::vector<uint64>			SizesInBytes;
+				TArray<uint32>			Barriers;
+				TArray<IBuffer*>		Buffers;
+				TArray<uint64>			Offsets;
+				TArray<uint64>			SizesInBytes;
 			} Buffer;
 
 			struct
@@ -200,7 +205,7 @@ namespace LambdaEngine
 			IRenderPass*			pRenderPass						= nullptr;
 
 			Resource*				pPushConstantsResource			= nullptr;
-			std::vector<Resource*>	RenderTargetResources;
+			TArray<Resource*>	RenderTargetResources;
 			Resource*				pDepthStencilAttachment			= nullptr;
 		};
 
@@ -210,7 +215,7 @@ namespace LambdaEngine
 			FShaderStageFlags		DstShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 			uint32					BarrierUseFrameIndex	= 0;
 			uint32					SameFrameBarrierOffset	= 1;
-			std::vector<uint32>		Barriers;
+			TArray<uint32>			Barriers;
 		};
 
 		struct BufferSynchronization
@@ -219,13 +224,13 @@ namespace LambdaEngine
 			FShaderStageFlags		DstShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 			uint32					BarrierUseFrameIndex	= 0;
 			uint32					SameFrameBarrierOffset	= 1;
-			std::vector<uint32>		Barriers;
+			TArray<uint32>			Barriers;
 		};
 
 		struct SynchronizationStage
 		{
-			std::unordered_map<std::string, TextureSynchronization> TextureSynchronizations;
-			std::unordered_map<std::string, BufferSynchronization> BufferSynchronizations;
+			THashTable<std::string, TextureSynchronization> TextureSynchronizations;
+			THashTable<std::string, BufferSynchronization> BufferSynchronizations;
 		};
 
 		struct PipelineStage
@@ -328,21 +333,21 @@ namespace LambdaEngine
 		PipelineStage*										m_pPipelineStages					= nullptr;
 		uint32												m_PipelineStageCount				= 0;
 
-		std::unordered_map<std::string, uint32>				m_RenderStageMap;
+		THashTable<std::string, uint32>						m_RenderStageMap;
 		RenderStage*										m_pRenderStages						= nullptr;
 		uint32												m_RenderStageCount					= 0;
 
 		SynchronizationStage*								m_pSynchronizationStages			= nullptr;
 		uint32												m_SynchronizationStageCount			= 0;
 
-		std::unordered_map<std::string, Resource>			m_ResourceMap;
-		std::set<Resource*>									m_DirtyDescriptorSetInternalTextures;
-		std::set<Resource*>									m_DirtyDescriptorSetInternalBuffers;
-		std::set<Resource*>									m_DirtyDescriptorSetExternalTextures;
-		std::set<Resource*>									m_DirtyDescriptorSetExternalBuffers;
-		std::set<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
+		THashTable<std::string, Resource>					m_ResourceMap;
+		TSet<Resource*>										m_DirtyDescriptorSetInternalTextures;
+		TSet<Resource*>										m_DirtyDescriptorSetInternalBuffers;
+		TSet<Resource*>										m_DirtyDescriptorSetExternalTextures;
+		TSet<Resource*>										m_DirtyDescriptorSetExternalBuffers;
+		TSet<Resource*>										m_DirtyDescriptorSetAccelerationStructures;
 
-		std::vector<PipelineTextureBarrierDesc>				m_TextureBarriers;
-		std::vector<PipelineBufferBarrierDesc>				m_BufferBarriers;
+		TArray<PipelineTextureBarrierDesc>					m_TextureBarriers;
+		TArray<PipelineBufferBarrierDesc>					m_BufferBarriers;
 	};
 }

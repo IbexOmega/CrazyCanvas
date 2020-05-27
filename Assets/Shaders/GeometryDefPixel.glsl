@@ -5,23 +5,12 @@
 #include "Helpers.glsl"
 #include "Defines.glsl"
 
-struct SMaterialParameters
-{
-    vec4    Albedo;
-    float   Ambient;
-    float   Metallic;
-    float   Roughness;
-    float   Unreserved;
-};
-
 layout(location = 0) in flat uint in_MaterialIndex;
 layout(location = 1) in vec3 in_Normal;
 layout(location = 2) in vec3 in_Tangent;
 layout(location = 3) in vec3 in_Bitangent;
 layout(location = 4) in vec2 in_TexCoord;
 layout(location = 5) in vec4 in_Position;
-
-#define MAX_UNIQUE_MATERIALS 32
 
 layout(binding = 5, set = BUFFER_SET_INDEX) buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
 
