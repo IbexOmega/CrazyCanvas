@@ -116,7 +116,7 @@ private:
 * Header files should be included in compilation units (.cpp). Only reason to include in the header is when a class/struct is 
 using the type not as a pointer or reference. This means that forward declarations has to be used.
 
-* Classes that are meant to used outside the engine- project, and are not header-only should use the DLL-export directive before the class-name
+* Classes that are meant to be used outside the engine- project, and are not header-only should use the DLL-export directive before the class-name
 ```
 class LAMBDA_API MyClass
 {
@@ -124,7 +124,7 @@ class LAMBDA_API MyClass
 ```
 
 ### Interfaces
-* Interfaces do not contain any state (i.e no variables) and does not provide any functiondefinition. All functions should be pure virtual.
+* Interfaces do not contain any state (i.e no variables) and does not provide any function definition. All functions should be pure virtual.
 
 * Interfaces should use the capital letter 'I' as prefix.
 
