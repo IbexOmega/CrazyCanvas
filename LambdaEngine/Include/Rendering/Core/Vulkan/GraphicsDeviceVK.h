@@ -148,6 +148,8 @@ namespace LambdaEngine
 		PFN_vkCreateRayTracingPipelinesKHR						vkCreateRayTracingPipelinesKHR					= nullptr;
 		PFN_vkGetRayTracingShaderGroupHandlesKHR				vkGetRayTracingShaderGroupHandlesKHR			= nullptr;
 		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR								= nullptr;
+		PFN_vkCopyAccelerationStructureToMemoryKHR				vkCopyAccelerationStructureToMemoryKHR			= nullptr;
+		PFN_vkCmdCopyAccelerationStructureToMemoryKHR			vkCmdCopyAccelerationStructureToMemoryKHR		= nullptr;
 
 		// BufferAddresses
 		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;

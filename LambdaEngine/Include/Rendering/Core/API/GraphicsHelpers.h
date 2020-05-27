@@ -90,14 +90,14 @@ namespace LambdaEngine
 	FORCEINLINE bool CheckValidDescriptorCount(const DescriptorCountDesc& count)
 	{
 		return
-			(count.DescriptorSetCount						> 0) &&
-			(count.AccelerationStructureDescriptorCount		> 0) &&
-			(count.ConstantBufferDescriptorCount			> 0) &&
-			(count.SamplerDescriptorCount					> 0) &&
-			(count.TextureCombinedSamplerDescriptorCount	> 0) &&
-			(count.TextureDescriptorCount					> 0) &&
-			(count.UnorderedAccessBufferDescriptorCount		> 0) &&
-			(count.UnorderedAccessTextureDescriptorCount	> 0);
+			(count.DescriptorSetCount						>= 0) &&
+			(count.AccelerationStructureDescriptorCount		>= 0) &&
+			(count.ConstantBufferDescriptorCount			>= 0) &&
+			(count.SamplerDescriptorCount					>= 0) &&
+			(count.TextureCombinedSamplerDescriptorCount	>= 0) &&
+			(count.TextureDescriptorCount					>= 0) &&
+			(count.UnorderedAccessBufferDescriptorCount		>= 0) &&
+			(count.UnorderedAccessTextureDescriptorCount	>= 0);
 	}
 
 	FORCEINLINE uint32 TextureFormatStride(EFormat format)

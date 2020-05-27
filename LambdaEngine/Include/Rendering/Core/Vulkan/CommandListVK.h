@@ -45,6 +45,7 @@ namespace LambdaEngine
 
 		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)	override final;
 		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)		override final;
+		virtual void PipelineMemoryBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineMemoryBarrierDesc* pMemoryBarriers, uint32 bufferMemoryCount)			override final;
 
 		virtual void GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter) override final;
 
@@ -107,6 +108,7 @@ namespace LambdaEngine
         
         VkImageMemoryBarrier    m_ImageBarriers[MAX_IMAGE_BARRIERS];
 		VkBufferMemoryBarrier   m_BufferBarriers[MAX_BUFFER_BARRIERS];
+		VkMemoryBarrier			m_MemoryBarriers[MAX_MEMORY_BARRIERS];
         VkViewport              m_Viewports[MAX_VIEWPORTS];
         VkRect2D                m_ScissorRects[MAX_VIEWPORTS];
         VkBuffer                m_VertexBuffers[MAX_VERTEX_BUFFERS];

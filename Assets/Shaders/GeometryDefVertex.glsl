@@ -3,6 +3,8 @@
 #extension GL_ARB_shader_draw_parameters : enable
 #extension GL_GOOGLE_include_directive : enable
 
+#include "Defines.glsl"
+
 struct SVertex
 {
     vec4    Position;
@@ -48,11 +50,11 @@ struct SPerFrameBuffer
 layout (constant_id = 0) const uint OTHER_TEXTURES_IN_PASS                  = 0;
 layout (constant_id = 1) const uint ALLOWED_TEXTURES_PER_DESCRIPTOR_SET     = 256;
 
-layout(binding = 0, set = 1) buffer Vertices            { SVertex val[]; }              b_Vertices;
-layout(binding = 1, set = 1) buffer Indices             { uint val[]; }                 b_Indices;
-layout(binding = 2, set = 1) buffer Instances           { SInstance val[]; }            b_Instances;
-layout(binding = 3, set = 1) buffer MeshIndices         { SMeshIndexDesc val[]; }       b_MeshIndices;
-layout(binding = 4, set = 1) uniform PerFrameBuffer     { SPerFrameBuffer val; }        u_PerFrameBuffer;
+layout(binding = 0, set = BUFFER_SET_INDEX) buffer Vertices            { SVertex val[]; }              b_Vertices;
+layout(binding = 1, set = BUFFER_SET_INDEX) buffer Indices             { uint val[]; }                 b_Indices;
+layout(binding = 2, set = BUFFER_SET_INDEX) buffer Instances           { SInstance val[]; }            b_Instances;
+layout(binding = 3, set = BUFFER_SET_INDEX) buffer MeshIndices         { SMeshIndexDesc val[]; }       b_MeshIndices;
+layout(binding = 4, set = BUFFER_SET_INDEX) uniform PerFrameBuffer     { SPerFrameBuffer val; }        u_PerFrameBuffer;
 
 layout(location = 0) out flat uint out_MaterialIndex;
 layout(location = 1) out vec3 out_Normal;

@@ -41,7 +41,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
-constexpr const bool RAY_TRACING_ENABLED		= false;
+constexpr const bool RAY_TRACING_ENABLED		= true;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDERING_DEBUG_ENABLED	= true;
@@ -70,30 +70,79 @@ Sandbox::Sandbox()
 	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
 	m_pScene->Init(sceneDesc);
 
-	std::vector<GameObject>	sceneGameObjects;
-	ResourceManager::LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
-
-	for (GameObject& gameObject : sceneGameObjects)
+	//Sponza
 	{
-		m_pScene->AddDynamicGameObject(gameObject, glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)));
+		std::vector<GameObject>	sceneGameObjects;
+		ResourceManager::LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
+
+		for (GameObject& gameObject : sceneGameObjects)
+		{
+			m_pScene->AddDynamicGameObject(gameObject, glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)));
+		}
 	}
 
-	uint32 bunnyMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/bunny.obj");
+	//Bunny
+	{
+		/*uint32 bunnyMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/bunny.obj");
 
-	GameObject bunnyGameObject = {};
-	bunnyGameObject.Mesh = bunnyMeshGUID;
-	bunnyGameObject.Material = DEFAULT_MATERIAL;
+		GameObject bunnyGameObject = {};
+		bunnyGameObject.Mesh = bunnyMeshGUID;
+		bunnyGameObject.Material = DEFAULT_MATERIAL;
 
-	m_pScene->AddDynamicGameObject(bunnyGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f)));
+		m_pScene->AddDynamicGameObject(bunnyGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f)));*/
+	}
 
-	uint32 gunMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/gun.obj");
+	//Gun
+	{
+		//uint32 gunMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/gun.obj");
 
-	GameObject gunGameObject = {};
-	gunGameObject.Mesh = gunMeshGUID;
-	gunGameObject.Material = DEFAULT_MATERIAL;
+		//GameObject gunGameObject = {};
+		//gunGameObject.Mesh = gunMeshGUID;
+		//gunGameObject.Material = DEFAULT_MATERIAL;
 
-	m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
-	m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.5f, 0.0f)));
+		//m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
+		//m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.5f, 0.0f)));
+	}
+
+	//Triangle
+	{
+		/*uint32 triangleMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/triangle.obj");
+
+		GameObject triangleGameObject = {};
+		triangleGameObject.Mesh = triangleMeshGUID;
+		triangleGameObject.Material = DEFAULT_MATERIAL;
+
+		glm::vec3 position(1.0f, 0.0f, 0.0f);
+		glm::vec4 rotation(0.0f, 1.0f, 0.0f, -glm::half_pi<float>());
+		glm::vec3 scale(1.0f);
+
+		glm::mat4 transform(1.0f);
+		transform = glm::translate(transform, position);
+		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+		transform = glm::scale(transform, scale);
+
+		m_pScene->AddDynamicGameObject(triangleGameObject, glm::mat4(1.0f));*/
+	}
+
+	//Sphere
+	{
+		/*uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/sphere.obj");
+
+		GameObject sphereGameObject = {};
+		sphereGameObject.Mesh = sphereMeshGUID;
+		sphereGameObject.Material = DEFAULT_MATERIAL;
+
+		glm::vec3 position(1.0f, 0.0f, 0.0f);
+		glm::vec4 rotation(0.0f, 1.0f, 0.0f, -glm::half_pi<float>());
+		glm::vec3 scale(1.0f);
+
+		glm::mat4 transform(1.0f);
+		transform = glm::translate(transform, position);
+		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+		transform = glm::scale(transform, scale);
+
+		m_pScene->AddDynamicGameObject(sphereGameObject, glm::mat4(1.0f));*/
+	}
 
 	m_pScene->Finalize();
 
@@ -148,6 +197,8 @@ Sandbox::Sandbox()
 	m_pNearestSampler = RenderSystem::GetDevice()->CreateSampler(&samplerNearestDesc);
 
 	//InitRendererForEmpty();
+
+	//InitRendererForRayTracingOnly();
 
 	InitRendererForDeferred();
 
@@ -574,8 +625,6 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 		static ImGuiTexture normalTexture = {};
 		static ImGuiTexture depthStencilTexture = {};
 		 
-		
-
 		float windowWidth = ImGui::GetWindowWidth();
 
 		if (ImGui::BeginTabBar("G-Buffer"))
@@ -672,8 +721,6 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderRoughnessGUID;
 					}
 
-
-
 					float32 aspectRatio = (float32)pTextureView->GetDesc().pTexture->GetDesc().Width / (float32)pTextureView->GetDesc().pTexture->GetDesc().Height;
 
 					ImGui::Image(&normalTexture, ImVec2(windowWidth, windowWidth / aspectRatio));
@@ -740,17 +787,17 @@ bool Sandbox::InitRendererForEmpty()
 {
 	using namespace LambdaEngine;
 
-	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/StaticPixel.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda fullscreenQuadShaderGUID	= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,	EShaderLang::GLSL);
+	GUID_Lambda shadingPixelShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/StaticPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
 
 	std::vector<RenderStageDesc> renderStages;
 
-	const char*									pShadingRenderStageName = "Shading Render Stage";
-	GraphicsManagedPipelineStateDesc			shadingPipelineStateDesc = {};
-	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
+	const char*							pShadingRenderStageName = "Shading Render Stage";
+	GraphicsManagedPipelineStateDesc	shadingPipelineStateDesc = {};
+	std::vector<RenderStageAttachment>	shadingRenderStageAttachments;
 
 	{
-		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,									FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, EFormat::FORMAT_B8G8R8A8_UNORM });
+		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT, EAttachmentType::OUTPUT_COLOR, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, BACK_BUFFER_COUNT, EFormat::FORMAT_B8G8R8A8_UNORM });
 
 		RenderStagePushConstants pushConstants = {};
 		pushConstants.pName			= "Shading Pass Push Constants";
@@ -1139,8 +1186,9 @@ bool Sandbox::InitRendererForDeferred()
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
+	if (RAY_TRACING_ENABLED)
 	{
-		IAccelerationStructure* pTLAS = m_pScene->GetTLAS();
+		const IAccelerationStructure* pTLAS = m_pScene->GetTLAS();
 		ResourceUpdateDesc resourceUpdateDesc					= {};
 		resourceUpdateDesc.pResourceName						= "SCENE_TLAS";
 		resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= pTLAS;
@@ -1303,52 +1351,66 @@ bool Sandbox::InitRendererForDeferred()
 
 	if (RAY_TRACING_ENABLED)
 	{
-		TextureDesc textureDesc	= {};
-		textureDesc.pName				= "Radiance Texture";
-		textureDesc.Type				= ETextureType::TEXTURE_2D;
-		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
-		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
-		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-		textureDesc.Width				= CommonApplication::Get()->GetMainWindow()->GetWidth();
-		textureDesc.Height				= CommonApplication::Get()->GetMainWindow()->GetHeight();
-		textureDesc.Depth				= 1;
-		textureDesc.SampleCount			= 1;
-		textureDesc.Miplevels			= 1;
-		textureDesc.ArrayCount			= 1;
+		TextureDesc		pTextureDescriptions[BACK_BUFFER_COUNT];
+		TextureViewDesc pTextureViewDescriptions[BACK_BUFFER_COUNT];
+		SamplerDesc		pSamplerDescriptions[BACK_BUFFER_COUNT];
 
-		TextureViewDesc textureViewDesc = { };
-		textureViewDesc.pName			= "Radiance Texture View";
-		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
-		textureViewDesc.Miplevel		= 0;
-		textureViewDesc.MiplevelCount	= 1;
-		textureViewDesc.ArrayIndex		= 0;
-		textureViewDesc.ArrayCount		= 1;
-		textureViewDesc.Format			= textureDesc.Format;
+		std::vector<TextureDesc*>		vectorTextureDescriptions(BACK_BUFFER_COUNT);
+		std::vector<TextureViewDesc*>	vectorTextureViewDescriptions(BACK_BUFFER_COUNT);
+		std::vector<SamplerDesc*>		vectorSamplerDescriptions(BACK_BUFFER_COUNT);
 
-		SamplerDesc samplerDesc = {};
-		samplerDesc.pName				= "Nearest Sampler";
-		samplerDesc.MinFilter			= EFilter::NEAREST;
-		samplerDesc.MagFilter			= EFilter::NEAREST;
-		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeV		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeW		= EAddressMode::REPEAT;
-		samplerDesc.MipLODBias			= 0.0f;
-		samplerDesc.AnisotropyEnabled	= false;
-		samplerDesc.MaxAnisotropy		= 16;
-		samplerDesc.MinLOD				= 0.0f;
-		samplerDesc.MaxLOD				= 1.0f;
+		char pTextureNames[BACK_BUFFER_COUNT][32];
+		char pTextureViewNames[BACK_BUFFER_COUNT][32];
+		char pSamplerNames[BACK_BUFFER_COUNT][32];
 
-		std::vector<TextureDesc*> textureDescriptions(BACK_BUFFER_COUNT, &textureDesc);
-		std::vector<TextureViewDesc*> textureViewDescriptions(BACK_BUFFER_COUNT, &textureViewDesc);
-		std::vector<SamplerDesc*> samplerDescriptions(BACK_BUFFER_COUNT, &samplerDesc);
+		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
+		{
+			sprintf(pTextureNames[b], "Radiance Texture %u", b);
+			pTextureDescriptions[b].pName				= pTextureNames[b];
+			pTextureDescriptions[b].Type				= ETextureType::TEXTURE_2D;
+			pTextureDescriptions[b].MemoryType			= EMemoryType::MEMORY_GPU;
+			pTextureDescriptions[b].Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
+			pTextureDescriptions[b].Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+			pTextureDescriptions[b].Width				= PlatformApplication::Get()->GetMainWindow()->GetWidth();
+			pTextureDescriptions[b].Height				= PlatformApplication::Get()->GetMainWindow()->GetHeight();
+			pTextureDescriptions[b].Depth				= 1;
+			pTextureDescriptions[b].SampleCount			= 1;
+			pTextureDescriptions[b].Miplevels			= 1;
+			pTextureDescriptions[b].ArrayCount			= 1;
+			vectorTextureDescriptions[b] = &pTextureDescriptions[b];
+
+			sprintf(pTextureViewNames[b], "Radiance Texture View %u", b);
+			pTextureViewDescriptions[b].pName			= pTextureViewNames[b];
+			pTextureViewDescriptions[b].Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			pTextureViewDescriptions[b].Type			= ETextureViewType::TEXTURE_VIEW_2D;
+			pTextureViewDescriptions[b].Miplevel		= 0;
+			pTextureViewDescriptions[b].MiplevelCount	= 1;
+			pTextureViewDescriptions[b].ArrayIndex		= 0;
+			pTextureViewDescriptions[b].ArrayCount		= 1;
+			pTextureViewDescriptions[b].Format			= pTextureDescriptions[b].Format;
+			vectorTextureViewDescriptions[b] = &pTextureViewDescriptions[b];
+
+			sprintf(pSamplerNames[b], "Radiance Sampler %u", b);
+			pSamplerDescriptions[b].pName				= pSamplerNames[b];
+			pSamplerDescriptions[b].MinFilter			= EFilter::NEAREST;
+			pSamplerDescriptions[b].MagFilter			= EFilter::NEAREST;
+			pSamplerDescriptions[b].MipmapMode			= EMipmapMode::NEAREST;
+			pSamplerDescriptions[b].AddressModeU		= EAddressMode::REPEAT;
+			pSamplerDescriptions[b].AddressModeV		= EAddressMode::REPEAT;
+			pSamplerDescriptions[b].AddressModeW		= EAddressMode::REPEAT;
+			pSamplerDescriptions[b].MipLODBias			= 0.0f;
+			pSamplerDescriptions[b].AnisotropyEnabled	= false;
+			pSamplerDescriptions[b].MaxAnisotropy		= 16;
+			pSamplerDescriptions[b].MinLOD				= 0.0f;
+			pSamplerDescriptions[b].MaxLOD				= 1.0f;
+			vectorSamplerDescriptions[b] = &pSamplerDescriptions[b];
+		}
 
 		ResourceUpdateDesc resourceUpdateDesc = {};
 		resourceUpdateDesc.pResourceName							= "RADIANCE_TEXTURE";
-		resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= textureDescriptions.data();
-		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= textureViewDescriptions.data();
-		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= samplerDescriptions.data();
+		resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= vectorTextureDescriptions.data();
+		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= vectorTextureViewDescriptions.data();
+		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= vectorSamplerDescriptions.data();
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}

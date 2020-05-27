@@ -591,10 +591,25 @@ namespace LambdaEngine
 				{
 					for (AttachmentSynchronizationDesc& desc : synchronizationStage.Synchronizations)
 					{
-						endSynchronizations.push_back(desc);
-					}
+						if (strcmp(desc.ToAttachment.pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) != 0)
+						{
+							endSynchronizations.push_back(desc);
+							endSynchronizationStageValid = true;
+						}
+						else
+						{
+							//Assume only one resource requires to be in front (RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 
-					endSynchronizationStageValid = true;
+							SynchronizationStageDesc backBufferSynchronizationStage = { };
+							backBufferSynchronizationStage.Synchronizations.push_back(desc);
+							sortedSynchronizationStages.push_back(backBufferSynchronizationStage);
+
+							PipelineStageDesc synchronizationPipelineStage = {};
+							synchronizationPipelineStage.Type		= EPipelineStageType::SYNCHRONIZATION;
+							synchronizationPipelineStage.StageIndex = uint32(sortedSynchronizationStages.size() - 1);
+							sortedPipelineStages.push_back(synchronizationPipelineStage);
+						}
+					}
 				}
 			}
 		}

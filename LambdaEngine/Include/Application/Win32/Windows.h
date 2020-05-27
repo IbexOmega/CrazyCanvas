@@ -14,6 +14,10 @@
 			#undef OutputDebugString
 		#endif
 
+		#ifdef CreateWindow
+			#undef CreateWindow
+		#endif
+
 		#ifdef ERROR
 			#undef ERROR
 		#endif

@@ -86,7 +86,7 @@ namespace LambdaEngine
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
         Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
-		Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
+		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
     /*
@@ -642,12 +642,12 @@ namespace LambdaEngine
         uint32                    bindingCount    = pSrcVk->GetDescriptorBindingDescCount();
 
         VkCopyDescriptorSet copyDescriptorSet = {};
-        copyDescriptorSet.sType                = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-        copyDescriptorSet.pNext                = nullptr;
-        copyDescriptorSet.dstSet            = pDstVk->GetDescriptorSet();
-        copyDescriptorSet.srcSet            = pSrcVk->GetDescriptorSet();
-        copyDescriptorSet.srcArrayElement    = 0;
-        copyDescriptorSet.dstArrayElement    = 0;
+        copyDescriptorSet.sType					= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+        copyDescriptorSet.pNext					= nullptr;
+        copyDescriptorSet.dstSet				= pDstVk->GetDescriptorSet();
+        copyDescriptorSet.srcSet				= pSrcVk->GetDescriptorSet();
+        copyDescriptorSet.srcArrayElement		= 0;
+        copyDescriptorSet.dstArrayElement		= 0;
 
         std::vector<VkCopyDescriptorSet> descriptorSetCopies;
         descriptorSetCopies.reserve(bindingCount);
@@ -655,9 +655,9 @@ namespace LambdaEngine
         {
             DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
 
-            copyDescriptorSet.descriptorCount    = binding.DescriptorCount;
-            copyDescriptorSet.srcBinding        = binding.Binding;
-            copyDescriptorSet.dstBinding        = copyDescriptorSet.srcBinding;
+            copyDescriptorSet.descriptorCount		= binding.DescriptorCount;
+            copyDescriptorSet.srcBinding			= binding.Binding;
+            copyDescriptorSet.dstBinding			= copyDescriptorSet.srcBinding;
             
             descriptorSetCopies.push_back(copyDescriptorSet);
         }
@@ -671,20 +671,20 @@ namespace LambdaEngine
         const DescriptorSetVK*    pSrcVk = reinterpret_cast<const DescriptorSetVK*>(pSrc);
 
         VkCopyDescriptorSet copyDescriptorSet = {};
-        copyDescriptorSet.sType                = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-        copyDescriptorSet.pNext                = nullptr;
-        copyDescriptorSet.dstSet            = pDstVk->GetDescriptorSet();
-        copyDescriptorSet.srcSet            = pSrcVk->GetDescriptorSet();
-        copyDescriptorSet.srcArrayElement    = 0;
-        copyDescriptorSet.dstArrayElement    = 0;
+        copyDescriptorSet.sType					= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+        copyDescriptorSet.pNext					= nullptr;
+        copyDescriptorSet.dstSet				= pDstVk->GetDescriptorSet();
+        copyDescriptorSet.srcSet				= pSrcVk->GetDescriptorSet();
+        copyDescriptorSet.srcArrayElement		= 0;
+        copyDescriptorSet.dstArrayElement		= 0;
 
         std::vector<VkCopyDescriptorSet> descriptorSetCopies;
         descriptorSetCopies.reserve(copyBindingCount);
         for (uint32 i = 0; i < copyBindingCount; i++)
         {
-            copyDescriptorSet.descriptorCount    = pCopyBindings[i].DescriptorCount;
-            copyDescriptorSet.dstBinding        = pCopyBindings[i].DstBinding;
-            copyDescriptorSet.srcBinding        = pCopyBindings[i].SrcBinding;
+            copyDescriptorSet.descriptorCount		= pCopyBindings[i].DescriptorCount;
+            copyDescriptorSet.dstBinding			= pCopyBindings[i].DstBinding;
+            copyDescriptorSet.srcBinding			= pCopyBindings[i].SrcBinding;
 
             descriptorSetCopies.push_back(copyDescriptorSet);
         }
@@ -817,7 +817,7 @@ namespace LambdaEngine
 		VkValidationFeatureEnableEXT enabledValidationFeatures[] =
 		{
 			VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
-			//VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
+			VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
 		};
 
 		if (pDesc->Debug)
@@ -859,6 +859,8 @@ namespace LambdaEngine
 		{
 			VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
 			PopulateDebugMessengerCreateInfo(createInfo);
+
+			createInfo.pNext = &validationFeatures;
 
 			result = vkCreateDebugUtilsMessengerEXT(Instance, &createInfo, nullptr, &m_DebugMessenger);
 			if (result != VK_SUCCESS)
@@ -988,6 +990,7 @@ namespace LambdaEngine
 
 			supportedDeviceFeatures10 = deviceFeatures2.features;
 		}
+
 
 		VkPhysicalDeviceRayTracingFeaturesKHR enabledRayTracingFeatures = {};
 		enabledRayTracingFeatures.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
@@ -1164,7 +1167,7 @@ namespace LambdaEngine
 	void GraphicsDeviceVK::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 	{
 		createInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		createInfo.messageSeverity	= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT /*| VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT*/ | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		createInfo.messageSeverity	= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 		createInfo.messageType		= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 		createInfo.pfnUserCallback	= DebugCallback;
 		createInfo.pUserData		= nullptr;
@@ -1390,6 +1393,8 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkCreateRayTracingPipelinesKHR);
 			GET_DEVICE_PROC_ADDR(Device, vkGetRayTracingShaderGroupHandlesKHR);
 			GET_DEVICE_PROC_ADDR(Device, vkCmdTraceRaysKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCopyAccelerationStructureToMemoryKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdCopyAccelerationStructureToMemoryKHR);
 
 			//Query Ray Tracing properties
 			RayTracingProperties = {};

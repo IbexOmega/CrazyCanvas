@@ -83,7 +83,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				IAccelerationStructure* pTLAS;
+				const IAccelerationStructure* pTLAS;
 			} ExternalAccelerationStructure;
 		};
 	};
@@ -178,7 +178,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				IAccelerationStructure* pTLAS;
+				const IAccelerationStructure* pTLAS;
 			} AccelerationStructure;
 		};
 
@@ -267,11 +267,12 @@ namespace LambdaEngine
 		bool GetResourceTextures(const char* pResourceName, ITexture* const ** pppTexture, uint32* pTextureView)					const;
 		bool GetResourceTextureViews(const char* pResourceName, ITextureView* const ** pppTextureViews, uint32* pTextureViewCount)		const;
 		bool GetResourceBuffers(const char* pResourceName, IBuffer* const ** pppBuffers, uint32* pBufferCount)					const;
-		bool GetResourceAccelerationStructure(const char* pResourceName, IAccelerationStructure** ppAccelerationStructure)		const;
+		bool GetResourceAccelerationStructure(const char* pResourceName, const IAccelerationStructure** ppAccelerationStructure)		const;
 
 	private:
 		bool CreateFence();
 		bool CreateDescriptorHeap();
+		bool CreateCopyCommandLists();
 		bool CreateResources(const std::vector<RenderStageResourceDesc>& resourceDescriptions);
 		bool CreateRenderStages(const std::vector<RenderStageDesc>& renderStageDescriptions);
 		bool CreateSynchronizationStages(const std::vector<SynchronizationStageDesc>& synchronizationStageDescriptions);
@@ -291,39 +292,48 @@ namespace LambdaEngine
 			ICommandAllocator* pComputeCommandAllocator, 
 			ICommandList* pComputeCommandList, 
 			ICommandList** ppFirstExecutionStage, 
-			ICommandList** ppSecondExecutionStage, 
-			uint32 backBufferIndex);
-		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
-		void ExecuteComputeRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
-		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
+			ICommandList** ppSecondExecutionStage);
+		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList, ICommandList** ppExecutionStage);
+		void ExecuteComputeRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage);
+		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage);
 
 		uint32 CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc);
 
 	private:
 		const IGraphicsDevice*								m_pGraphicsDevice;
 
-		const Scene*										m_pScene						= nullptr;
+		const Scene*										m_pScene							= nullptr;
 
-		IDescriptorHeap*									m_pDescriptorHeap				= nullptr;
+		IDescriptorHeap*									m_pDescriptorHeap					= nullptr;
 
-		uint32												m_BackBufferCount				= 0;
-		uint32												m_MaxTexturesPerDescriptorSet	= 0;
+		uint64												m_ModFrameIndex						= 0;
+		uint32												m_BackBufferIndex					= 0;
+		uint32												m_BackBufferCount					= 0;
+		uint32												m_MaxTexturesPerDescriptorSet		= 0;
 		
-		IFence*												m_pFence						= nullptr;
-		uint64												m_SignalValue					= 1;
+		IFence*												m_pFence							= nullptr;
+		uint64												m_SignalValue						= 1;
 
-		ICommandList**										m_ppExecutionStages				= nullptr;
-		uint32												m_ExecutionStageCount			= 0;
+		ICommandAllocator**									m_ppGraphicsCopyCommandAllocators	= nullptr;
+		ICommandList**										m_ppGraphicsCopyCommandLists		= nullptr;
+		bool												m_ExecuteGraphicsCopy				= false;
 
-		PipelineStage*										m_pPipelineStages				= nullptr;
-		uint32												m_PipelineStageCount			= 0;
+		ICommandAllocator**									m_ppComputeCopyCommandAllocators	= nullptr;
+		ICommandList**										m_ppComputeCopyCommandLists			= nullptr;
+		bool												m_ExecuteComputeCopy				= false;
+
+		ICommandList**										m_ppExecutionStages					= nullptr;
+		uint32												m_ExecutionStageCount				= 0;
+
+		PipelineStage*										m_pPipelineStages					= nullptr;
+		uint32												m_PipelineStageCount				= 0;
 
 		std::unordered_map<std::string, uint32>				m_RenderStageMap;
-		RenderStage*										m_pRenderStages					= nullptr;
-		uint32												m_RenderStageCount				= 0;
+		RenderStage*										m_pRenderStages						= nullptr;
+		uint32												m_RenderStageCount					= 0;
 
-		SynchronizationStage*								m_pSynchronizationStages		= nullptr;
-		uint32												m_SynchronizationStageCount		= 0;
+		SynchronizationStage*								m_pSynchronizationStages			= nullptr;
+		uint32												m_SynchronizationStageCount			= 0;
 
 		std::unordered_map<std::string, Resource>			m_ResourceMap;
 		std::set<Resource*>									m_DirtyDescriptorSetInternalTextures;

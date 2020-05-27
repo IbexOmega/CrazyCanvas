@@ -203,38 +203,32 @@ namespace LambdaEngine
 		BufferVK*		pScratchBufferVk					= pAccelerationStructureVk->GetScratchBuffer();
 		const BufferVK* pInstanceBufferVk					= reinterpret_cast<const BufferVK*>(pBuildDesc->pInstanceBuffer);
 
-		VkDeviceOrHostAddressConstKHR instancesDataAddressUnion = {};
-		instancesDataAddressUnion.deviceAddress = pInstanceBufferVk->GetDeviceAdress();
-
-		VkAccelerationStructureGeometryInstancesDataKHR instancesDataDesc = {};
-		instancesDataDesc.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-		instancesDataDesc.arrayOfPointers	= VK_FALSE;
-		instancesDataDesc.data				= instancesDataAddressUnion;
-
-		VkAccelerationStructureGeometryDataKHR geometryDataUnion = {};
-		geometryDataUnion.instances = instancesDataDesc;
-
 		VkAccelerationStructureGeometryKHR geometryData = {};
-		geometryData.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		geometryData.geometryType	= VK_GEOMETRY_TYPE_INSTANCES_KHR;
-		geometryData.geometry		= geometryDataUnion;
-		geometryData.flags			= 0;
+		geometryData.sType									= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryData.flags									= VK_GEOMETRY_OPAQUE_BIT_KHR;
+		geometryData.geometryType							= VK_GEOMETRY_TYPE_INSTANCES_KHR;
+		geometryData.geometry.instances.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+		geometryData.geometry.instances.arrayOfPointers		= VK_FALSE;
+		geometryData.geometry.instances.data.deviceAddress	= pInstanceBufferVk->GetDeviceAdress();
 
 		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
 
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
-		accelerationStructureBuildInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-		accelerationStructureBuildInfo.type						= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-		accelerationStructureBuildInfo.geometryArrayOfPointers	= VK_FALSE;
-		accelerationStructureBuildInfo.geometryCount			= 1;
-		accelerationStructureBuildInfo.ppGeometries				= &pGeometryData;
-		accelerationStructureBuildInfo.flags					= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
-		{
-			accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
-		}
-
+		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
+		accelerationStructureBuildInfo.geometryCount				= 1;
+		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
 		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAdress();
+
+		//Extra Flags
+		{
+			if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			}
+		}
 
 		if (pBuildDesc->Update)
 		{
@@ -250,8 +244,10 @@ namespace LambdaEngine
 		}
 
 		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
-		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->InstanceCount;
-		accelerationStructureOffsetInfo.primitiveOffset = 0;
+		accelerationStructureOffsetInfo.primitiveCount		= pBuildDesc->InstanceCount;
+		accelerationStructureOffsetInfo.primitiveOffset		= 0x0;
+		accelerationStructureOffsetInfo.firstVertex			= 0;
+		accelerationStructureOffsetInfo.transformOffset		= 0x0;
 
 		VALIDATE(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
 
@@ -272,63 +268,45 @@ namespace LambdaEngine
 		const BufferVK*				pVertexBufferVk				= reinterpret_cast<const BufferVK*>(pBuildDesc->pVertexBuffer);
 		const BufferVK*				pIndexBufferVk				= reinterpret_cast<const BufferVK*>(pBuildDesc->pIndexBuffer);
 
-		VkDeviceOrHostAddressConstKHR vertexDataAddressUnion = {};
-		vertexDataAddressUnion.deviceAddress = pVertexBufferVk->GetDeviceAdress();
+		VkAccelerationStructureGeometryKHR geometryData = {};
+		geometryData.sType											= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryData.flags											= VK_GEOMETRY_OPAQUE_BIT_KHR; // TODO: Cant be opaque if we want to utilize any-hit shaders
+		geometryData.geometryType									= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+		geometryData.geometry.triangles.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+		geometryData.geometry.triangles.vertexFormat				= VK_FORMAT_R32G32B32_SFLOAT;
+		geometryData.geometry.triangles.vertexData.deviceAddress	= pVertexBufferVk->GetDeviceAdress();
+		geometryData.geometry.triangles.vertexStride				= pBuildDesc->VertexStride;
+		geometryData.geometry.triangles.indexType					= VK_INDEX_TYPE_UINT32;
+		geometryData.geometry.triangles.indexData.deviceAddress		= pIndexBufferVk->GetDeviceAdress();
 
-		VkDeviceOrHostAddressConstKHR indexDataAddressUnion = {};
-		indexDataAddressUnion.deviceAddress = pIndexBufferVk->GetDeviceAdress();
-
-		VkAccelerationStructureGeometryTrianglesDataKHR geometryDataDesc = {};
-		geometryDataDesc.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-		geometryDataDesc.pNext			= nullptr;
-		geometryDataDesc.vertexFormat	= VK_FORMAT_R32G32B32_SFLOAT;
-		geometryDataDesc.vertexData		= vertexDataAddressUnion;
-		geometryDataDesc.vertexStride	= pBuildDesc->VertexStride;
-		geometryDataDesc.indexType		= VK_INDEX_TYPE_UINT32;
-		geometryDataDesc.indexData		= indexDataAddressUnion;
-
-		VkDeviceOrHostAddressConstKHR transformDataAddressUnion = {};
 		if (pBuildDesc->pTransformBuffer != nullptr)
 		{
-			transformDataAddressUnion.deviceAddress = reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer)->GetDeviceAdress();
-			geometryDataDesc.transformData = transformDataAddressUnion;
-		}
-		else
-		{
-			geometryDataDesc.transformData = { 0 };
-		}
-
-		VkAccelerationStructureGeometryDataKHR geometryDataUnion = {};
-		geometryDataUnion.triangles = geometryDataDesc;
-
-		VkAccelerationStructureGeometryKHR geometryData = {};
-		geometryData.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		geometryData.pNext			= nullptr;
-		geometryData.geometryType	= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-		geometryData.geometry		= geometryDataUnion;
-		geometryData.flags			= VK_GEOMETRY_OPAQUE_BIT_KHR; //Cant be opaque if we want to utilize any-hit shaders
-
-		VkDeviceOrHostAddressKHR scratchBufferAddressUnion = {};
-		scratchBufferAddressUnion.deviceAddress = pScratchBufferVk->GetDeviceAdress();
-
-		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
-		accelerationStructureBuildInfo.sType	= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-		accelerationStructureBuildInfo.type		= VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		accelerationStructureBuildInfo.flags	= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
-		{
-			accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			const BufferVK* pTransformBufferVk = reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer);
+			geometryData.geometry.triangles.transformData.deviceAddress = pTransformBufferVk->GetDeviceAdress();
 		}
 
 		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
-		accelerationStructureBuildInfo.geometryArrayOfPointers	= VK_FALSE;
-		accelerationStructureBuildInfo.geometryCount			= 1;
-		accelerationStructureBuildInfo.ppGeometries				= &pGeometryData;
-		accelerationStructureBuildInfo.update					= VK_FALSE;
-		accelerationStructureBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
-		accelerationStructureBuildInfo.dstAccelerationStructure = pAccelerationStructureVk->GetAccelerationStructure();
-		accelerationStructureBuildInfo.scratchData				= scratchBufferAddressUnion;
 
+		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
+		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
+		accelerationStructureBuildInfo.geometryCount				= 1;
+		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
+		accelerationStructureBuildInfo.update						= VK_FALSE;
+		accelerationStructureBuildInfo.srcAccelerationStructure		= VK_NULL_HANDLE;
+		accelerationStructureBuildInfo.dstAccelerationStructure		= pAccelerationStructureVk->GetAccelerationStructure();
+		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAdress();
+
+		//Extra Flags
+		{
+			if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			}
+		}
+		
 		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
 		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->TriangleCount;
 		accelerationStructureOffsetInfo.primitiveOffset = pBuildDesc->IndexBufferByteOffset;
@@ -477,6 +455,26 @@ namespace LambdaEngine
 		VkPipelineStageFlags sourceStage		= ConvertPipelineStageMask(srcStage);
 		VkPipelineStageFlags destinationStage	= ConvertPipelineStageMask(dstStage);
 		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, 0, nullptr, bufferBarrierCount, m_BufferBarriers, 0, nullptr);
+	}
+
+	void CommandListVK::PipelineMemoryBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineMemoryBarrierDesc* pMemoryBarriers, uint32 bufferMemoryCount)
+	{
+		VALIDATE(pMemoryBarriers != nullptr);
+		VALIDATE(bufferMemoryCount < MAX_MEMORY_BARRIERS);
+
+		for (uint32 i = 0; i < bufferMemoryCount; i++)
+		{
+			const PipelineMemoryBarrierDesc* pBarrier = &pMemoryBarriers[i];
+
+			m_MemoryBarriers[i].sType				= VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+			m_MemoryBarriers[i].pNext				= nullptr;
+			m_MemoryBarriers[i].srcAccessMask		= ConvertMemoryAccessFlags(pBarrier->SrcMemoryAccessFlags);
+			m_MemoryBarriers[i].dstAccessMask		= ConvertMemoryAccessFlags(pBarrier->DstMemoryAccessFlags);
+		}
+
+		VkPipelineStageFlags sourceStage		= ConvertPipelineStageMask(srcStage);
+		VkPipelineStageFlags destinationStage	= ConvertPipelineStageMask(dstStage);
+		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, bufferMemoryCount, m_MemoryBarriers, 0, nullptr, 0, nullptr);
 	}
 
 	void CommandListVK::GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter)
@@ -659,7 +657,7 @@ namespace LambdaEngine
 	void CommandListVK::BindGraphicsPipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_GRAPHICS(m_pAllocator);
-        VALIDATE(pPipeline->GetType()		== EPipelineStateType::GRAPHICS);
+        VALIDATE(pPipeline->GetType() == EPipelineStateType::GRAPHICS);
         
         const GraphicsPipelineStateVK* pPipelineVk = reinterpret_cast<const GraphicsPipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineVk->GetPipeline());
@@ -668,7 +666,7 @@ namespace LambdaEngine
 	void CommandListVK::BindComputePipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-        VALIDATE(pPipeline->GetType()		== EPipelineStateType::COMPUTE);
+        VALIDATE(pPipeline->GetType() == EPipelineStateType::COMPUTE);
         
         const ComputePipelineStateVK* pPipelineVk = reinterpret_cast<const ComputePipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineVk->GetPipeline());
@@ -677,7 +675,7 @@ namespace LambdaEngine
 	void CommandListVK::BindRayTracingPipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-        VALIDATE(pPipeline->GetType()		== EPipelineStateType::RAY_TRACING);
+        VALIDATE(pPipeline->GetType() == EPipelineStateType::RAY_TRACING);
         
         const RayTracingPipelineStateVK* pPipelineVk = reinterpret_cast<const RayTracingPipelineStateVK*>(pPipeline);
         m_pCurrentRayTracingPipeline = pPipelineVk;
@@ -688,37 +686,14 @@ namespace LambdaEngine
 	void CommandListVK::TraceRays(uint32 width, uint32 height, uint32 depth)
 	{
 		CHECK_COMPUTE(m_pAllocator);
+		VALIDATE(m_pDevice->vkCmdTraceRaysKHR);
 
-        if (m_pDevice->vkCmdTraceRaysKHR)
-        {
-            BufferVK* pShaderBindingTableVk = m_pCurrentRayTracingPipeline->GetShaderBindingTable();
+        const VkStridedBufferRegionKHR* pRaygen		= m_pCurrentRayTracingPipeline->GetRaygenBufferRegion();
+        const VkStridedBufferRegionKHR* pMiss		= m_pCurrentRayTracingPipeline->GetMissBufferRegion();
+        const VkStridedBufferRegionKHR* pHit		= m_pCurrentRayTracingPipeline->GetHitBufferRegion();
+        const VkStridedBufferRegionKHR* pCallable	= m_pCurrentRayTracingPipeline->GetCallableBufferRegion();
             
-            VkStridedBufferRegionKHR rayGen = {};
-            rayGen.buffer   = pShaderBindingTableVk->GetBuffer();
-            rayGen.offset   = m_pCurrentRayTracingPipeline->GetBindingOffsetRaygenGroup();
-            rayGen.stride   = m_pCurrentRayTracingPipeline->GetBindingStride();
-            rayGen.size     = m_pCurrentRayTracingPipeline->GetBindingSizeRaygenGroup();
-
-            VkStridedBufferRegionKHR miss = {};
-            miss.buffer   = pShaderBindingTableVk->GetBuffer();
-            miss.offset   = m_pCurrentRayTracingPipeline->GetBindingOffsetMissGroup();
-            miss.stride   = rayGen.stride;
-            miss.size     = m_pCurrentRayTracingPipeline->GetBindingSizeMissGroup();
-            
-            VkStridedBufferRegionKHR hit = {};
-            hit.buffer   = pShaderBindingTableVk->GetBuffer();
-            hit.offset   = m_pCurrentRayTracingPipeline->GetBindingOffsetHitGroup();
-            hit.stride   = rayGen.stride;
-            hit.size     = m_pCurrentRayTracingPipeline->GetBindingSizeHitGroup();
-            
-            VkStridedBufferRegionKHR callable = {};
-            callable.buffer   = VK_NULL_HANDLE;
-            callable.offset   = 0;
-            callable.stride   = 0;
-            callable.size     = 0;
-            
-            m_pDevice->vkCmdTraceRaysKHR(m_CommandList, &rayGen, &miss, &hit, &callable, width, height, depth);
-        }
+        m_pDevice->vkCmdTraceRaysKHR(m_CommandList, pRaygen, pMiss, pHit, pCallable, width, height, depth);
 	}
 
 	void CommandListVK::Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ)

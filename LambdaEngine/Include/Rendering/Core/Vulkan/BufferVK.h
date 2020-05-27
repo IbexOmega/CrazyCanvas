@@ -10,6 +10,8 @@ namespace LambdaEngine
 
     class BufferVK : public TDeviceChildBase<GraphicsDeviceVK, IBuffer>
     {
+		friend class RayTracingTestVK;
+
         using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IBuffer>;
 
     public:

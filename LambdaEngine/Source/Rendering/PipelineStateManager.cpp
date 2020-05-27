@@ -191,7 +191,6 @@ namespace LambdaEngine
 	{
 		pDstDesc->pName							= pSrcDesc->pName;
 		pDstDesc->pPipelineLayout				= pSrcDesc->pPipelineLayout;
-		pDstDesc->pPipelineLayout				= pSrcDesc->pPipelineLayout;
 		pDstDesc->MaxRecursionDepth				= pSrcDesc->MaxRecursionDepth;
 		pDstDesc->MissShaderCount				= pSrcDesc->MissShaderCount;
 		pDstDesc->ClosestHitShaderCount			= pSrcDesc->ClosestHitShaderCount;

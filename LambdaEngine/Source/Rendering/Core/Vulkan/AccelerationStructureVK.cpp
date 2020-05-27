@@ -4,6 +4,7 @@
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/Vulkan.h"
 
 namespace LambdaEngine
 {
@@ -49,7 +50,6 @@ namespace LambdaEngine
 	{
 		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
 		accelerationStructureCreateInfo.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-		accelerationStructureCreateInfo.pNext				= nullptr;
 		accelerationStructureCreateInfo.compactedSize		= 0;
 		accelerationStructureCreateInfo.maxGeometryCount	= 1;
 		accelerationStructureCreateInfo.deviceAddress		= VK_NULL_HANDLE;
@@ -63,13 +63,13 @@ namespace LambdaEngine
 		geometryTypeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
 		geometryTypeInfo.pNext = nullptr;
 		
-		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
 		if (pDesc->Type == EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP)
 		{
 			accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 			
 			geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_INSTANCES_KHR;
 			geometryTypeInfo.maxPrimitiveCount	= pDesc->InstanceCount;
+			geometryTypeInfo.allowsTransforms	= VK_FALSE;
 		}
 		else
 		{
@@ -82,6 +82,8 @@ namespace LambdaEngine
 			geometryTypeInfo.vertexFormat		= VK_FORMAT_R32G32B32_SFLOAT;
 			geometryTypeInfo.allowsTransforms	= pDesc->AllowsTransform ? VK_TRUE : VK_FALSE;
 		}
+
+		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
 
 		VALIDATE(m_pDevice->vkCreateAccelerationStructureKHR != nullptr);
 
@@ -110,7 +112,6 @@ namespace LambdaEngine
 
 		VkBindAccelerationStructureMemoryInfoKHR accelerationStructureMemoryInfo = {};
 		accelerationStructureMemoryInfo.sType					= VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_KHR;
-		accelerationStructureMemoryInfo.pNext					= nullptr;
 		accelerationStructureMemoryInfo.deviceIndexCount		= 0;
 		accelerationStructureMemoryInfo.pDeviceIndices			= nullptr;
 		accelerationStructureMemoryInfo.accelerationStructure	= m_AccelerationStructure;
@@ -162,7 +163,6 @@ namespace LambdaEngine
 
 		VkAccelerationStructureDeviceAddressInfoKHR accelerationStructureDeviceAddressInfo = {};
 		accelerationStructureDeviceAddressInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-		accelerationStructureDeviceAddressInfo.pNext					= nullptr;
 		accelerationStructureDeviceAddressInfo.accelerationStructure	= m_AccelerationStructure;
 
 		VALIDATE(m_pDevice->vkGetAccelerationStructureDeviceAddressKHR != nullptr);
@@ -186,7 +186,14 @@ namespace LambdaEngine
 		scratchBufferDesc.SizeInBytes	= scratchMemoryRequirements.size;
 
 		m_pScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&scratchBufferDesc, pAllocator));
-		return m_pScratchBuffer != nullptr;
+		if (m_pScratchBuffer)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	void AccelerationStructureVK::SetName(const char* pName)

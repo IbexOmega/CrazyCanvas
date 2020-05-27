@@ -27,6 +27,8 @@ namespace LambdaEngine
 
     class IBuffer : public IDeviceChild
     {
+		friend class RayTracingTestVK;
+
     public:
         DECL_DEVICE_INTERFACE(IBuffer);
 
