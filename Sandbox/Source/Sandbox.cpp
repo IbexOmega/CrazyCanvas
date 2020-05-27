@@ -1371,8 +1371,8 @@ bool Sandbox::InitRendererForDeferred()
 			pTextureDescriptions[b].MemoryType			= EMemoryType::MEMORY_GPU;
 			pTextureDescriptions[b].Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
 			pTextureDescriptions[b].Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-			pTextureDescriptions[b].Width				= PlatformApplication::Get()->GetMainWindow()->GetWidth();
-			pTextureDescriptions[b].Height				= PlatformApplication::Get()->GetMainWindow()->GetHeight();
+			pTextureDescriptions[b].Width				= renderWidth;
+			pTextureDescriptions[b].Height				= renderHeight;
 			pTextureDescriptions[b].Depth				= 1;
 			pTextureDescriptions[b].SampleCount			= 1;
 			pTextureDescriptions[b].Miplevels			= 1;
