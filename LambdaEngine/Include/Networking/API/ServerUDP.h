@@ -2,7 +2,7 @@
 
 #include "Networking/API/NetWorker.h"
 #include "Networking/API/IServer.h"
-#include "Networking/API/PacketManager.h"
+#include "Networking/API/PacketTransceiver.h"
 
 #include "Containers/THashTable.h"
 
@@ -29,7 +29,8 @@ namespace LambdaEngine
 		virtual void SetAcceptingConnections(bool accepting) override;
 		virtual bool IsAcceptingConnections() override;
 
-		void SetSimulatePacketLoss(float lossPercentage);
+		void SetSimulateReceivingPacketLoss(float32 lossRatio);
+		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
 
 	protected:
 		ServerUDP(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPerClient, uint8 maximumTries);
@@ -49,9 +50,10 @@ namespace LambdaEngine
 		void SendDisconnect(ClientUDPRemote* client);
 		void SendServerFull(ClientUDPRemote* client);
 		void SendServerNotAccepting(ClientUDPRemote* client);
+		void Tick(Timestamp delta);
 
 	public:
-		static ServerUDP* Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packets, uint8 maximumTries);
+		static ServerUDP* Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPoolSize, uint8 maximumTries);
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);
@@ -59,6 +61,7 @@ namespace LambdaEngine
 	private:
 		ISocketUDP* m_pSocket;
 		IPEndPoint m_IPEndPoint;
+		PacketTransceiver m_Transciver;
 		SpinLock m_Lock;
 		SpinLock m_LockClients;
 		uint16 m_PacketsPerClient;

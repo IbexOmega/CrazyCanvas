@@ -9,7 +9,10 @@ namespace LambdaEngine
 {
 	class LAMBDA_API NetworkPacket
 	{
+		friend class PacketTranscoder;
+		friend class PacketPool;
 		friend class PacketManager;
+		friend class PacketManager2;
 
 	public:
 #pragma pack(push, 1)
@@ -64,9 +67,18 @@ namespace LambdaEngine
 		NetworkPacket();
 
 	private:
+		static void PacketTypeToString(uint16 type, std::string& str);
+
+	private:
 		Header m_Header;
 		uint64 m_Salt;
 		uint16 m_SizeOfBuffer;
+		bool m_IsBorrowed;
+
+#ifndef LAMBDA_CONFIG_PRODUCTION
+		std::string m_Type;
+#endif
+
 		char m_pBuffer[MAXIMUM_PACKET_SIZE];
 	};
 }

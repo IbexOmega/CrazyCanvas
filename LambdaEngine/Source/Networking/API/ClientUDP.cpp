@@ -6,6 +6,8 @@
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/NetworkStatistics.h"
+#include "Networking/API/PacketPool.h"
+#include "Networking/API/NetworkChallenge.h"
 
 #include "Log/Log.h"
 
@@ -14,9 +16,9 @@ namespace LambdaEngine
 	std::set<ClientUDP*> ClientUDP::s_Clients;
 	SpinLock ClientUDP::s_Lock;
 
-	ClientUDP::ClientUDP(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries) :
+	ClientUDP::ClientUDP(IClientUDPHandler* pHandler, uint16 packetPoolSize, uint8 maximumTries) :
 		m_pSocket(nullptr),
-		m_PacketManager(this, packets, maximumTries),
+		m_PacketManager(packetPoolSize, maximumTries),
 		m_pHandler(pHandler), 
 		m_State(STATE_DISCONNECTED),
 		m_pSendBuffer()
@@ -55,11 +57,21 @@ namespace LambdaEngine
 			if (StartThreads())
 			{
 				LOG_WARNING("[ClientUDP]: Connecting...");
-				m_IPEndPoint = ipEndPoint;
+				m_PacketManager.SetEndPoint(ipEndPoint);
 				return true;
 			}
 		}
 		return false;
+	}
+
+	void ClientUDP::SetSimulateReceivingPacketLoss(float32 lossRatio)
+	{
+		m_Transciver.SetSimulateReceivingPacketLoss(lossRatio);
+	}
+
+	void ClientUDP::SetSimulateTransmittingPacketLoss(float32 lossRatio)
+	{
+		m_Transciver.SetSimulateTransmittingPacketLoss(lossRatio);
 	}
 
 	void ClientUDP::Disconnect()
@@ -89,7 +101,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_PacketManager.EnqueuePacket(packet);
+		m_PacketManager.EnqueuePacketUnreliable(packet);
 		return true;
 	}
 
@@ -107,12 +119,12 @@ namespace LambdaEngine
 
 	const IPEndPoint& ClientUDP::GetEndPoint() const
 	{
-		return m_IPEndPoint;
+		return m_PacketManager.GetEndPoint();
 	}
 
 	NetworkPacket* ClientUDP::GetFreePacket(uint16 packetType)
 	{
-		return m_PacketManager.GetFreePacket()->SetType(packetType);
+		return m_PacketManager.GetPacketPool()->RequestFreePacket()->SetType(packetType);
 	}
 
 	EClientState ClientUDP::GetState() const
@@ -125,6 +137,11 @@ namespace LambdaEngine
 		return m_PacketManager.GetStatistics();
 	}
 
+	PacketManager* ClientUDP::GetPacketManager()
+	{
+		return &m_PacketManager;
+	}
+
 	bool ClientUDP::OnThreadsStarted()
 	{
 		m_pSocket = PlatformNetworkUtils::CreateSocketUDP();
@@ -132,6 +149,8 @@ namespace LambdaEngine
 		{
 			if (m_pSocket->Bind(IPEndPoint(IPAddress::ANY, 0)))
 			{
+				m_Transciver.SetSocket(m_pSocket);
+				m_PacketManager.Reset();
 				m_State = STATE_CONNECTING;
 				m_pHandler->OnConnectingUDP(this);
 				m_SendDisconnectPacket = true;
@@ -147,31 +166,19 @@ namespace LambdaEngine
 
 	void ClientUDP::RunReceiver()
 	{
-		int32 bytesReceived = 0;
-		std::vector<NetworkPacket*> packets;
 		IPEndPoint sender;
-
-		packets.reserve(64);
-
 		while (!ShouldTerminate())
 		{
-			if (!m_pSocket->ReceiveFrom(m_pReceiveBuffer, UINT16_MAX, bytesReceived, sender))
-			{
-				TerminateThreads();
-				break;
-			}
+			if (!m_Transciver.ReceiveBegin(sender))
+				continue;
 
-			if (bytesReceived >= 0)
+			std::vector<NetworkPacket*> packets;
+			m_PacketManager.QueryBegin(&m_Transciver, packets);
+			for (NetworkPacket* pPacket : packets)
 			{
-				if (m_PacketManager.DecodePackets(m_pReceiveBuffer, bytesReceived, packets))
-				{
-					for (NetworkPacket* pPacket : packets)
-					{
-						HandleReceivedPacket(pPacket);
-					}
-					m_PacketManager.Free(packets);
-				}
-			}	
+				HandleReceivedPacket(pPacket);
+			}
+			m_PacketManager.QueryEnd(packets);
 		}
 	}
 
@@ -194,7 +201,6 @@ namespace LambdaEngine
 		m_State = STATE_DISCONNECTED;
 		if(m_pHandler)
 			m_pHandler->OnDisconnectedUDP(this);
-		m_PacketManager.Reset();
 	}
 
 	void ClientUDP::OnTerminationRequested()
@@ -215,13 +221,13 @@ namespace LambdaEngine
 
 	void ClientUDP::SendConnectRequest()
 	{
-		m_PacketManager.EnqueuePacketReliable(GetFreePacket(NetworkPacket::TYPE_CONNNECT));
+		m_PacketManager.EnqueuePacketReliable(GetFreePacket(NetworkPacket::TYPE_CONNNECT), this);
 		TransmitPackets();
 	}
 
 	void ClientUDP::SendDisconnectRequest()
 	{
-		m_PacketManager.EnqueuePacketReliable(GetFreePacket(NetworkPacket::TYPE_DISCONNECT));
+		m_PacketManager.EnqueuePacketReliable(GetFreePacket(NetworkPacket::TYPE_DISCONNECT), this);
 		TransmitPackets();
 	}
 
@@ -232,13 +238,13 @@ namespace LambdaEngine
 
 		if (packetType == NetworkPacket::TYPE_CHALLENGE)
 		{
-			uint64 answer = PacketManager::DoChallenge(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
+			uint64 answer = NetworkChallenge::Compute(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
 			ASSERT(answer != 0);
 
 			NetworkPacket* pResponse = GetFreePacket(NetworkPacket::TYPE_CHALLENGE);
 			BinaryEncoder encoder(pResponse);
 			encoder.WriteUInt64(answer);
-			m_PacketManager.EnqueuePacket(pResponse);
+			m_PacketManager.EnqueuePacketReliable(pResponse, this);
 		}
 		else if (packetType == NetworkPacket::TYPE_ACCEPTED)
 		{
@@ -269,29 +275,22 @@ namespace LambdaEngine
 	void ClientUDP::TransmitPackets()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
-
-		int32 bytesWritten = 0;
-		int32 bytesSent = 0;
-		bool done = false;
-
-		m_PacketManager.SwapPacketQueues();
-
-		while (!done)
-		{
-			done = m_PacketManager.EncodePackets(m_pSendBuffer, bytesWritten);
-			if (bytesWritten > 0)
-			{
-				if (!m_pSocket->SendTo(m_pSendBuffer, bytesWritten, bytesSent, m_IPEndPoint))
-				{
-					TerminateThreads();
-				}
-			}
-		}
+		m_PacketManager.Flush(&m_Transciver);
 	}
 
-	ClientUDP* ClientUDP::Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries)
+	void ClientUDP::Tick(Timestamp delta)
 	{
-		return DBG_NEW ClientUDP(pHandler, packets, maximumTries);
+		if (m_State != STATE_DISCONNECTED)
+		{
+			m_PacketManager.Tick(delta);
+		}
+		
+		Flush();
+	}
+
+	ClientUDP* ClientUDP::Create(IClientUDPHandler* pHandler, uint16 packetPoolSize, uint8 maximumTries)
+	{
+		return DBG_NEW ClientUDP(pHandler, packetPoolSize, maximumTries);
 	}
 
 	void ClientUDP::FixedTickStatic(Timestamp timestamp)
@@ -303,7 +302,7 @@ namespace LambdaEngine
 			std::scoped_lock<SpinLock> lock(s_Lock);
 			for (ClientUDP* client : s_Clients)
 			{
-				client->m_PacketManager.Tick();
+				client->Tick(timestamp);
 			}
 		}
 	}

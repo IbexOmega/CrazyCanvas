@@ -21,11 +21,11 @@ namespace LambdaEngine
 		DECL_INTERFACE(ISoundInstance3D);
 
 		/*
-		* Initialize this SoundInstance3DFMOD
-		*	desc - A description of initialization parameters
+		* Initialize this SoundInstance3D
+		*	pDesc - A description of initialization parameters
 		* return - true if the initialization was successfull, otherwise returns false
 		*/
-		virtual bool Init(const SoundInstance3DDesc& desc) = 0;
+		virtual bool Init(const SoundInstance3DDesc* pDesc) = 0;
 
 		/*
 		* Play the sound instance
@@ -63,8 +63,8 @@ namespace LambdaEngine
 		*/
 		virtual void SetPitch(float pitch) = 0;
 
-		virtual const glm::vec3& GetPosition() = 0;
-		virtual float GetVolume() = 0;
-		virtual float GetPitch() = 0;
+		virtual const glm::vec3& GetPosition()	const = 0;
+		virtual float GetVolume()				const = 0;
+		virtual float GetPitch()				const = 0;
 	};
 }

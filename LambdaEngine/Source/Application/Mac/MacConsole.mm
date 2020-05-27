@@ -14,8 +14,9 @@ namespace LambdaEngine
 
     void MacConsole::Show()
     {
-        if (s_pConsoleWindow == nil)
+        if (s_pConsoleWindow == nullptr)
         {
+			__block CocoaConsoleWindow* pConsoleWindow = nullptr;
             MacMainThread::MakeCall(^
             {
                 SCOPED_AUTORELEASE_POOL();
@@ -23,26 +24,28 @@ namespace LambdaEngine
                 const CGFloat width     = 1280.0f;
                 const CGFloat height    = 720.0f;
                 
-                s_pConsoleWindow = [[CocoaConsoleWindow alloc] init: width height:height];
-                [s_pConsoleWindow setColor:EConsoleColor::COLOR_WHITE];
+                pConsoleWindow = [[CocoaConsoleWindow alloc] init: width height:height];
+                [pConsoleWindow setColor:EConsoleColor::COLOR_WHITE];
                 
-                MacApplication::ProcessMessages();
+                MacApplication::PeekEvents();
             }, true);
+			
+			s_pConsoleWindow = pConsoleWindow;
         }
     }
     
     void MacConsole::Close()
     {
-        if (s_pConsoleWindow != nil)
+        if (s_pConsoleWindow != nullptr)
         {
             MacMainThread::MakeCall(^
             {
                 SCOPED_AUTORELEASE_POOL();
                 
-                MacApplication::ProcessMessages();
+                MacApplication::PeekEvents();
                 
                 [s_pConsoleWindow release];
-                s_pConsoleWindow = nil;
+                s_pConsoleWindow = nullptr;
             }, true);
         }
     }
@@ -80,7 +83,7 @@ namespace LambdaEngine
                 [s_pConsoleWindow appendStringAndScroll:string];
                 [string release];
                 
-                MacApplication::ProcessMessages();
+                MacApplication::PeekEvents();
             }, false);
         }
     }
@@ -101,9 +104,8 @@ namespace LambdaEngine
                 [s_pConsoleWindow appendStringAndScroll:finalString];
                 [finalString release];
                 
-                MacApplication::ProcessMessages();
+                MacApplication::PeekEvents();
             }, false);
-            
         }
     }
     

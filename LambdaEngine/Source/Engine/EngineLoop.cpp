@@ -5,13 +5,13 @@
 #include "Time/API/PlatformTime.h"
 #include "Time/API/Clock.h"
 
+#include "Math/Random.h"
+
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformConsole.h"
+#include "Application/API/CommonApplication.h"
 
 #include "Input/API/Input.h"
-
-#include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/ICommandQueue.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 
@@ -26,86 +26,85 @@
 
 namespace LambdaEngine
 {
-    static Clock g_Clock;
+	static Clock g_Clock;
 
 	void EngineLoop::Run()
 	{
-        const Timestamp timestep    = Timestamp::Seconds(1.0 / 60.0);
-        Timestamp accumulator       = Timestamp(0);
-        
-        g_Clock.Reset();
-        Clock fixedClock;
-        
-        bool isRunning = true;
-        while (isRunning)
-        {
+		Clock			fixedClock;
+		const Timestamp timestep	= Timestamp::Seconds(1.0 / 60.0);
+		Timestamp		accumulator = Timestamp(0);
+		
+		g_Clock.Reset();
+		
+		bool isRunning = true;
+		while (isRunning)
+		{
 			g_Clock.Tick();
-            
-            // Update
+			
+			// Update
 			Timestamp delta = g_Clock.GetDeltaTime();
-            isRunning = Tick(delta);
-            
-            // Fixed update
-            accumulator += delta;
-            while (accumulator >= timestep)
-            {
-                fixedClock.Tick();
-                FixedTick(fixedClock.GetDeltaTime());
-                
-                accumulator -= timestep;
-            }
-        }
-    }
+			isRunning = Tick(delta);
+			
+			// Fixed update
+			accumulator += delta;
+			while (accumulator >= timestep)
+			{
+				fixedClock.Tick();
+				FixedTick(fixedClock.GetDeltaTime());
+				
+				accumulator -= timestep;
+			}
+		}
+	}
 
-    bool EngineLoop::Tick(Timestamp delta)
-    {
+	bool EngineLoop::Tick(Timestamp delta)
+	{
 		Input::Tick();
 
 		Thread::Join();
+		
 		PlatformNetworkUtils::Tick(delta);
 
-        if (!PlatformApplication::Tick())
-        {
-            return false;
-        }
+		if (!CommonApplication::Get()->Tick())
+		{
+			return false;
+		}
 
 		AudioSystem::Tick();
 
-        // Tick game
-        Game::Get()->Tick(delta);
-        
-        return true;
+		// Tick game
+		Game::Get()->Tick(delta);
+		
+		return true;
 	}
 
-    void EngineLoop::FixedTick(Timestamp delta)
-    {
-        // Tick game
-        Game::Get()->FixedTick(delta);
-		NetworkUtils::FixedTick(delta);
-    }
-
-#ifdef LAMBDA_PLATFORM_WINDOWS
-	bool EngineLoop::PreInit(HINSTANCE hInstance)
-#else
-	bool EngineLoop::PreInit()
-#endif
+	void EngineLoop::FixedTick(Timestamp delta)
 	{
-#ifndef LAMBDA_PRODUCTION
-        PlatformConsole::Show();
-        Log::SetDebuggerOutputEnabled(true);
+		// Tick game
+		Game::Get()->FixedTick(delta);
+		
+		NetworkUtils::FixedTick(delta);
+	}
+
+	bool EngineLoop::PreInit()
+	{
+#ifdef LAMBDA_DEVELOPMENT
+		PlatformConsole::Show();
+
+		Log::SetDebuggerOutputEnabled(true);
+
+		Malloc::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
 #endif
 
-#ifdef LAMBDA_PLATFORM_WINDOWS
-        if (!PlatformApplication::PreInit(hInstance))
-#else
-        if (!PlatformApplication::PreInit())
-#endif
-        {
-            return false;
-        }
+		if (!CommonApplication::PreInit())
+		{
+			return false;
+		}
 
 		PlatformTime::PreInit();
-              
+			  
+		Random::PreInit();
+
 		return true;
 	}
 	
@@ -175,22 +174,23 @@ namespace LambdaEngine
 	
 	bool EngineLoop::PostRelease()
 	{
-		if (!PlatformApplication::PostRelease())
+		Thread::Release();
+		
+		PlatformNetworkUtils::Release();
+		
+		if (!CommonApplication::PostRelease())
 		{
 			return false;
 		}
 
-		Thread::Release();
-		PlatformNetworkUtils::Release();
-
-#ifndef LAMBDA_PRODUCTION
-        PlatformConsole::Close();
+#ifdef LAMBDA_DEVELOPMENT
+		PlatformConsole::Close();
 #endif
 		return true;
-    }
+	}
 
-    Timestamp EngineLoop::GetTimeSinceStart()
-    {
-        return g_Clock.GetTotalTime();
-    }
+	Timestamp EngineLoop::GetTimeSinceStart()
+	{
+		return g_Clock.GetTotalTime();
+	}
 }

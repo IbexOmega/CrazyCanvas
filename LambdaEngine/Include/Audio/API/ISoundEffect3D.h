@@ -16,11 +16,11 @@ namespace LambdaEngine
 		DECL_INTERFACE(ISoundEffect3D);
 
 				/*
-		* Initialize this SoundEffect3DFMOD
-		*	desc - A description of initialization parameters
+		* Initialize this SoundEffect3D
+		*	pDesc - A description of initialization parameters
 		* return - true if the initialization was successfull, otherwise returns false
 		*/
-		virtual bool Init(const SoundEffect3DDesc& desc) = 0;
+		virtual bool Init(const SoundEffect3DDesc* pDesc) = 0;
 
 		/*
 		* Play and forget, plays a single sound instance using this sound with the given properties

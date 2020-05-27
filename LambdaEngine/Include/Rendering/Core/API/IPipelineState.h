@@ -84,12 +84,31 @@ namespace LambdaEngine
 		float BlendConstants[4];
 	};
 
+	struct VertexInputAttributeDesc
+	{
+		uint32		Location	=	0;
+		uint32		Offset		=	0;
+		EFormat		Format		=	EFormat::NONE;
+	};
+
+	struct VertexInputBindingDesc
+	{
+		uint32						Binding			= 0;
+		uint32						Stride			= 0;
+		EVertexInputRate			InputRate		= EVertexInputRate::NONE;
+		VertexInputAttributeDesc	pAttributes		[MAX_ATTRIBUTES_PER_VERTEX];
+		uint32						AttributeCount	= 0;
+	};
+
 	struct GraphicsPipelineStateDesc
 	{
 		const char* pName = "";
 		
 		const IRenderPass*		pRenderPass		= nullptr;
 		const IPipelineLayout*	pPipelineLayout	= nullptr;
+
+		VertexInputBindingDesc		pVertexInputBindings		[MAX_VERTEX_INPUT_ATTACHMENTS];
+		uint32						VertexInputBindingCount		= 0;
 
 		InputAssemblyDesc		InputAssembly		= { };
 		DepthStencilStateDesc	DepthStencilState	= { };

@@ -16,6 +16,7 @@
 #include "Rendering/Core/API/ICommandQueue.h"
 #include "Rendering/Core/API/IFence.h"
 #include "Rendering/Core/API/IShader.h"
+
 #include "Rendering/RenderSystem.h"
 #include "Rendering/PipelineStateManager.h"
 
@@ -216,6 +217,12 @@ namespace LambdaEngine
 		}
 	}
 
+	void RenderGraph::GetAndIncrementFence(IFence** ppFence, uint64* pSignalValue)
+	{
+		(*pSignalValue) = m_SignalValue++;
+		(*ppFence) = m_pFence;
+	}
+
 	void RenderGraph::Update()
 	{
 		if (m_DirtyDescriptorSetInternalTextures.size() > 0 ||
@@ -398,13 +405,11 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::Render(uint64 frameIndex, uint32 backBufferIndex)
+	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)
 	{
 		ZERO_MEMORY(m_ppExecutionStages, m_ExecutionStageCount * sizeof(ICommandList*));
 
 		uint32 currentExecutionStage = 0;
-
-		uint64 resourceIndex = frameIndex % 3;
 
 		if (m_SignalValue > 3)
 			m_pFence->Wait(m_SignalValue - 3, UINT64_MAX);
@@ -422,9 +427,9 @@ namespace LambdaEngine
 
 					switch (pPipelineState->GetType())
 					{
-					case EPipelineStateType::PIPELINE_GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[resourceIndex],		pPipelineStage->ppGraphicsCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
-					case EPipelineStateType::PIPELINE_COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
-					case EPipelineStateType::PIPELINE_RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[resourceIndex],		pPipelineStage->ppComputeCommandLists[resourceIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::PIPELINE_GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[modFrameIndex],		pPipelineStage->ppGraphicsCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::PIPELINE_COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[modFrameIndex],		pPipelineStage->ppComputeCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::PIPELINE_RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[modFrameIndex],		pPipelineStage->ppComputeCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
 					}
 
 					currentExecutionStage++;
@@ -435,10 +440,10 @@ namespace LambdaEngine
 
 					ExecuteSynchronizationStage(
 						pSynchronizationStage,
-						pPipelineStage->ppGraphicsCommandAllocators[resourceIndex],
-						pPipelineStage->ppGraphicsCommandLists[resourceIndex],
-						pPipelineStage->ppComputeCommandAllocators[resourceIndex],
-						pPipelineStage->ppComputeCommandLists[resourceIndex],
+						pPipelineStage->ppGraphicsCommandAllocators[modFrameIndex],
+						pPipelineStage->ppGraphicsCommandLists[modFrameIndex],
+						pPipelineStage->ppComputeCommandAllocators[modFrameIndex],
+						pPipelineStage->ppComputeCommandLists[modFrameIndex],
 						&m_ppExecutionStages[currentExecutionStage],
 						&m_ppExecutionStages[currentExecutionStage + 1],
 						backBufferIndex);
@@ -470,6 +475,61 @@ namespace LambdaEngine
 		}
 	}
 
+	bool RenderGraph::GetResourceTextures(const char* pResourceName, ITexture* const ** pppTexture, uint32* pTextureView) const
+	{
+		auto it = m_ResourceMap.find(pResourceName);
+
+		if (it != m_ResourceMap.end())
+		{
+			(*pppTexture)		= it->second.Texture.Textures.data();
+			(*pTextureView)		= (uint32)it->second.Texture.Textures.size();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool RenderGraph::GetResourceTextureViews(const char* pResourceName, ITextureView* const ** pppTextureViews, uint32* pTextureViewCount) const
+	{
+		auto it = m_ResourceMap.find(pResourceName);
+
+		if (it != m_ResourceMap.end())
+		{
+			(*pppTextureViews)		= it->second.Texture.TextureViews.data();
+			(*pTextureViewCount)	= (uint32)it->second.Texture.TextureViews.size();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool RenderGraph::GetResourceBuffers(const char* pResourceName, IBuffer* const ** pppBuffers, uint32* pBufferCount) const
+	{
+		auto it = m_ResourceMap.find(pResourceName);
+
+		if (it != m_ResourceMap.end())
+		{
+			(*pppBuffers)			= it->second.Buffer.Buffers.data();
+			(*pBufferCount)			= (uint32)it->second.Buffer.Buffers.size();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool RenderGraph::GetResourceAccelerationStructure(const char* pResourceName, IAccelerationStructure** ppAccelerationStructure) const
+	{
+		auto it = m_ResourceMap.find(pResourceName);
+
+		if (it != m_ResourceMap.end())
+		{
+			(*ppAccelerationStructure) = it->second.AccelerationStructure.pTLAS;
+			return true;
+		}
+
+		return false;
+	}
+
 	bool RenderGraph::CreateFence()
 	{
 		FenceDesc fenceDesc = {};
@@ -491,7 +551,7 @@ namespace LambdaEngine
 	{
 		constexpr uint32 DESCRIPTOR_COUNT = 1024;
 
-		DescriptorCountDesc descriptorCountDesc = {};
+		DescriptorCountDesc descriptorCountDesc = { };
 		descriptorCountDesc.DescriptorSetCount							= DESCRIPTOR_COUNT;
 		descriptorCountDesc.SamplerDescriptorCount						= DESCRIPTOR_COUNT;
 		descriptorCountDesc.TextureDescriptorCount						= DESCRIPTOR_COUNT;
@@ -501,7 +561,7 @@ namespace LambdaEngine
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount		= DESCRIPTOR_COUNT;
 		descriptorCountDesc.AccelerationStructureDescriptorCount		= DESCRIPTOR_COUNT;
 
-		DescriptorHeapDesc descriptorHeapDesc = {};
+		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.pName			= "Render Graph Descriptor Heap";
 		descriptorHeapDesc.DescriptorCount	= descriptorCountDesc;
 
@@ -673,9 +733,8 @@ namespace LambdaEngine
 				LOG_ERROR("[RenderGraph]: Total number of required texture slots %u for render stage %s is more than MaxTexturesPerDescriptorSet %u. This only works if all texture bindings have either 1 or the same subresource count", textureSlots, pRenderStageDesc->pName, m_MaxTexturesPerDescriptorSet);
 				return false;
 			}
-
-			pRenderStage->TextureSubDescriptorSetCount = glm::max((uint32)glm::ceil((float)totalNumberOfTextures / m_MaxTexturesPerDescriptorSet), 1u);
 			pRenderStage->MaterialsRenderedPerPass = (m_MaxTexturesPerDescriptorSet - totalNumberOfNonMaterialTextures) / 5; //5 textures per material
+			pRenderStage->TextureSubDescriptorSetCount = (uint32)glm::ceil((float)totalNumberOfTextures / float(pRenderStage->MaterialsRenderedPerPass * 5));
 
 			std::vector<DescriptorBindingDesc> textureDescriptorSetDescriptions;
 			textureDescriptorSetDescriptions.reserve(pRenderStageDesc->AttachmentCount);
@@ -1455,11 +1514,9 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 
 		pGraphicsCommandAllocator->Reset();
-		pGraphicsCommandList->Reset();
 		pGraphicsCommandList->Begin(nullptr);
 
 		pComputeCommandAllocator->Reset();
-		pComputeCommandList->Reset();
 		pComputeCommandList->Begin(nullptr);
 
 		//Texture Synchronizations
@@ -1583,8 +1640,6 @@ namespace LambdaEngine
 		RenderStageParameters* pParameters = &pRenderStage->Parameters;
 
 		pGraphicsCommandAllocator->Reset();
-
-		pGraphicsCommandList->Reset();
 		pGraphicsCommandList->Begin(nullptr);
 
 		uint32 flags = FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_INLINE;
@@ -1658,7 +1713,7 @@ namespace LambdaEngine
 
 		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 		{
-			pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0);
+			pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::UINT32);
 
 			IBuffer* pDrawBuffer		= pRenderStage->pMeshIndexBufferResource->Buffer.Buffers[0];
 			uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
@@ -1713,8 +1768,6 @@ namespace LambdaEngine
 		RenderStageParameters* pParameters = &pRenderStage->Parameters;
 
 		pComputeCommandAllocator->Reset();
-
-		pComputeCommandList->Reset();
 		pComputeCommandList->Begin(nullptr);
 
 		pComputeCommandList->BindComputePipeline(pPipelineState);
@@ -1750,8 +1803,6 @@ namespace LambdaEngine
 		RenderStageParameters* pParameters = &pRenderStage->Parameters;
 
 		pComputeCommandAllocator->Reset();
-
-		pComputeCommandList->Reset();
 		pComputeCommandList->Begin(nullptr);
 
 		pComputeCommandList->BindRayTracingPipeline(pPipelineState);
@@ -1767,7 +1818,7 @@ namespace LambdaEngine
 		if (pRenderStage->ppTextureDescriptorSets != nullptr)
 			pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppTextureDescriptorSets[backBufferIndex], pRenderStage->pPipelineLayout, 0);
 
-		pComputeCommandList->TraceRays(pParameters->RayTracing.RaygenOffset, pParameters->RayTracing.RayTraceWidth, pParameters->RayTracing.RayTraceHeight);
+		pComputeCommandList->TraceRays(pParameters->RayTracing.RayTraceWidth, pParameters->RayTracing.RayTraceHeight, pParameters->RayTracing.RayTraceDepth);
 
 		pComputeCommandList->End();
 

@@ -5,7 +5,7 @@
 
 #define LOG_VULKAN_ERROR(result, ...) \
     LOG_ERROR(__VA_ARGS__); \
-    LOG_ERROR("%s CODE: %s", LambdaEngine::VkResultToString(result), LambdaEngine::GetVkErrorString(result)) \
+    LOG_ERROR("[%s]: %s", LambdaEngine::VkResultToString(result), LambdaEngine::GetVkErrorString(result)) \
 
 namespace LambdaEngine
 {
@@ -29,6 +29,7 @@ namespace LambdaEngine
     {
         switch (format)
         {
+		case EFormat::FORMAT_R32G32_SFLOAT:			return VK_FORMAT_R32G32_SFLOAT;
         case EFormat::FORMAT_R8G8B8A8_UNORM:		return VK_FORMAT_R8G8B8A8_UNORM;
         case EFormat::FORMAT_B8G8R8A8_UNORM:		return VK_FORMAT_B8G8R8A8_UNORM;
         case EFormat::FORMAT_R8G8B8A8_SNORM:		return VK_FORMAT_R8G8B8A8_SNORM;
@@ -37,6 +38,16 @@ namespace LambdaEngine
         default:                                    return VK_FORMAT_UNDEFINED;
         }
     }
+
+	inline VkIndexType ConvertIndexType(EIndexType indexType)
+	{
+		switch (indexType)
+		{
+		case EIndexType::UINT16:		return VK_INDEX_TYPE_UINT16;
+		case EIndexType::UINT32:		return VK_INDEX_TYPE_UINT32;
+		default:						return VK_INDEX_TYPE_MAX_ENUM;
+		}
+	}
 
     inline VkSampleCountFlagBits ConvertSampleCount(uint32 samples)
     {
@@ -468,6 +479,17 @@ namespace LambdaEngine
 		vkColorComponentBits |= (mask & COLOR_COMPONENT_FLAG_A) ? VK_COLOR_COMPONENT_A_BIT : 0;
 
 		return vkColorComponentBits;
+	}
+
+	inline VkVertexInputRate ConvertVertexInputRate(EVertexInputRate inputRate)
+	{
+		switch (inputRate)
+		{
+		case EVertexInputRate::PER_VERTEX:							return VK_VERTEX_INPUT_RATE_VERTEX;
+		case EVertexInputRate::PER_INSTANCE:						return VK_VERTEX_INPUT_RATE_INSTANCE;
+		case EVertexInputRate::NONE:
+		default: return VK_VERTEX_INPUT_RATE_MAX_ENUM;
+		}
 	}
 
 	inline const char* VkFormatToString(VkFormat format)

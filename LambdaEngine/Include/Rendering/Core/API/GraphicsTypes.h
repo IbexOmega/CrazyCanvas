@@ -12,13 +12,21 @@ namespace LambdaEngine
 
     enum class EFormat : uint8
     {
-		FORMAT_NONE						= 0,
-        FORMAT_R8G8B8A8_UNORM			= 1,
-        FORMAT_B8G8R8A8_UNORM			= 2,
-        FORMAT_R8G8B8A8_SNORM			= 3,
-        FORMAT_R16G16B16A16_SFLOAT		= 4,
-		FORMAT_D24_UNORM_S8_UINT		= 5
+        NONE							= 0,
+		FORMAT_R32G32_SFLOAT			= 1,
+        FORMAT_R8G8B8A8_UNORM			= 2,
+        FORMAT_B8G8R8A8_UNORM			= 3,
+        FORMAT_R8G8B8A8_SNORM			= 4,
+        FORMAT_R16G16B16A16_SFLOAT		= 5,
+		FORMAT_D24_UNORM_S8_UINT		= 6
     };
+
+	enum class EIndexType
+	{
+		NONE					= 0,
+		UINT16					= 1,
+		UINT32					= 2,
+	};
 
 	enum class ECommandQueueType : uint8
 	{
@@ -318,6 +326,13 @@ namespace LambdaEngine
 		QUERY_PIPELINE_STATISTICS_FLAG_TESSELLATION_CONTROL_SHADER_PATCHES			= FLAG(9),
 		QUERY_PIPELINE_STATISTICS_FLAG_TESSELLATION_EVALUATION_SHADER_INVOCATIONS	= FLAG(10),
 		QUERY_PIPELINE_STATISTICS_FLAG_COMPUTE_SHADER_INVOCATIONS					= FLAG(11),
+	};
+
+	enum class EVertexInputRate : uint8
+	{
+		NONE			= 0,
+		PER_VERTEX		= 1,
+		PER_INSTANCE	= 2,
 	};
 
 	struct DescriptorCountDesc

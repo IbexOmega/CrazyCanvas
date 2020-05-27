@@ -21,8 +21,6 @@ namespace LambdaEngine
 
 	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID = DEFAULT_NORMAL_MAP + 1;
 
-	constexpr GUID_Lambda GUID_NONE = UINT32_MAX;
-
 	class LAMBDA_API ResourceManager
 	{
 		struct ShaderLoadDesc

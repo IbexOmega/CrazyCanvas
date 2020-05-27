@@ -2,8 +2,7 @@
 
 #include "Game/Game.h"
 
-#include "Input/API/IKeyboardHandler.h"
-#include "Input/API/IMouseHandler.h"
+#include "Application/API/EventHandler.h"
 
 #include "Networking/API/ServerUDP.h"
 #include "Networking/API/IServerUDPHandler.h"
@@ -15,7 +14,7 @@
 
 class Server : 
 	public LambdaEngine::Game,
-	public LambdaEngine::IKeyboardHandler,
+	public LambdaEngine::EventHandler,
 	public LambdaEngine::IServerUDPHandler
 {
 public:
@@ -29,10 +28,7 @@ public:
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
     virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
-	// Inherited via IKeyboardHandler
-	virtual void OnKeyDown(LambdaEngine::EKey key)      override;
-	virtual void OnKeyHeldDown(LambdaEngine::EKey key)  override;
-	virtual void OnKeyUp(LambdaEngine::EKey key)        override;
+	virtual void OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)     override;
 
 private:
 	void UpdateTitle();

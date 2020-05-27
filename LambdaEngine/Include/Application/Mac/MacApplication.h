@@ -5,85 +5,114 @@
 
 #include "Application/API/Application.h"
 
-#include "MacWindow.h"
+#include <CoreGraphics/CoreGraphics.h>
 
 #ifdef __OBJC__
-
 @class NSEvent;
-@class NSWindow;
 @class NSNotification;
-@class CocoaAppController;
-
+@class NSString;
+@class CocoaWindow;
+@class CocoaAppDelegate;
 #else
-
 class NSEvent;
-class NSWindow;
 class NSNotification;
-class CocoaAppController;
-
+class NSString;
+class CocoaWindow;
+class CocoaAppDelegate;
 #endif
 
 namespace LambdaEngine
 {
-    /*
-    * Struct used to buffer events from the OS
-    */
-    struct MacMessage
-    {
-        NSEvent*        event           = nullptr;
-        NSNotification* notification    = nullptr;
-    };
+	class MacWindow;
 
-    class MacApplication : public Application
-    {
-    public:
-        MacApplication() = default;
-        ~MacApplication();
+	/*
+	* Struct used to buffer events from the OS
+	*/
+	struct MacEvent
+	{
+	public:
+		MacEvent();
+		MacEvent(const MacEvent& other);
+		~MacEvent();
+		
+	public:
+		CocoaWindow*	pEventWindow	= nullptr;
+		NSEvent*		pEvent			= nullptr;
+		NSNotification*	pNotification	= nullptr;
+		NSString*		pKeyTypedText	= nullptr;
+		
+		CGSize  Size;
+		CGPoint Position;
+	};
 
-        bool Init();
-        bool InitMenu();
-        
-        void BufferEvent(NSEvent* event);
+	/*
+	 * Class that represents the OS- application. Handles windows and the event loop.
+	 */
+	class MacApplication : public Application
+	{
+	public:		
+		void StoreNSEvent(NSEvent* pEvent);
+		void StoreEvent(const MacEvent& event);
+		
+		FORCEINLINE bool IsTerminating() const
+		{
+			return m_IsTerminating;
+		}
+		
+		FORCEINLINE bool IsProcessingEvents() const
+		{
+			return m_IsProcessingEvents;
+		}
+		
+		MacWindow* GetWindowFromNSWindow(CocoaWindow* pWindow) const;
 
-        virtual void AddMessageHandler(IApplicationMessageHandler* pHandler)    override final;
-        virtual void RemoveMessageHandler(IApplicationMessageHandler* pHandler) override final;
-        
-        virtual void ProcessBufferedMessages() override final;
+	public:
+		// Application Interface
+		virtual bool	Create() 								override final;
+		virtual Window*	CreateWindow(const WindowDesc* pDesc) 	override final;
+		
+		virtual bool Tick() override final;
+		
+		virtual bool ProcessStoredEvents() override final;
 
-        virtual Window*         GetWindow()         override final;
-        virtual const Window*   GetWindow() const   override final;
-        
-    public:
-        static bool PreInit();
-        static bool PostRelease();
-        
-        static bool Tick();
-        static bool ProcessMessages();
-        
-        static void Terminate();
-        
-        static Window*          CreateWindow(const char* pTitle, uint32 width, uint32 height);
-        static IInputDevice*    CreateInputDevice(EInputMode inputMode);
-        
-        FORCEINLINE static MacApplication* Get()
-        {
-            return s_pApplication;
-        }
-        
-    private:
-        MacWindow*          m_pWindow       = nullptr;
-        CocoaAppController* m_pAppDelegate  = nullptr;
-        
-        std::vector<MacMessage> m_BufferedMessages;
-        bool                    m_IsProcessingEvents = false;
-        
-        std::vector<IApplicationMessageHandler*> m_MessageHandlers;
+		virtual void Terminate() override final;
+		
+		virtual bool SupportsRawInput() const override final;
 
-    private:
-        static MacApplication* s_pApplication;
-    };
+		virtual void 		SetInputMode(Window* pWindow, EInputMode inputMode) override final;
+		virtual EInputMode	GetInputMode(Window* pWindow) const 				override final;
 
-    typedef MacApplication PlatformApplication;
+		virtual void 	SetActiveWindow(Window* pWindow) 	override final;
+		virtual Window* GetActiveWindow() const 			override final;
+		
+	private:
+		MacApplication();
+		~MacApplication();
+
+		void AddWindow(MacWindow* pWindow);
+
+		bool ProcessStoredEvent(const MacEvent& event);
+
+	public:
+		static bool PeekEvents();
+
+		static Application* 	CreateApplication();
+		static MacApplication* 	Get();
+		
+	private:
+		CocoaAppDelegate* 	m_pAppDelegate	= nullptr;
+		
+		bool m_IsProcessingEvents   = false;
+		bool m_IsTerminating        = false;
+		
+		TArray<MacWindow*>	m_Windows;
+		TArray<MacEvent>	m_StoredEvents;
+		
+	private:
+		static MacApplication* s_pApplication;
+	};
+
+	typedef MacApplication PlatformApplication;
 }
 
 #endif

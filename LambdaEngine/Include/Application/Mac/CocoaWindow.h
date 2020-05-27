@@ -4,12 +4,7 @@
 
 #include <AppKit/AppKit.h>
 
-@interface CocoaWindow : NSWindow
-
-- (BOOL) canBecomeKeyWindow;
-- (BOOL) canBecomeMainWindow;
-- (BOOL) acceptsMouseMovedEvents;
-
+@interface CocoaWindow : NSWindow<NSWindowDelegate>
 @end
 
 #else

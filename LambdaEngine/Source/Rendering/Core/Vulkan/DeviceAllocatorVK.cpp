@@ -1,6 +1,7 @@
 #include "Log/Log.h"
 
 #include <mutex>
+#include <string>
 
 #include "Math/MathUtilities.h"
 

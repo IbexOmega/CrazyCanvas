@@ -4,17 +4,11 @@
 #include "Application/API/Window.h"
 
 #ifdef __OBJC__
-
 @class CocoaWindow;
 @class CocoaContentView;
-@class CocoaWindowDelegate;
-
 #else
-
 class CocoaWindow;
 class CocoaContentView;
-class CocoaWindowDelegate;
-
 #endif
 
 namespace LambdaEngine
@@ -22,33 +16,44 @@ namespace LambdaEngine
     class MacWindow : public Window
     {
     public:
-        MacWindow() = default;
+        MacWindow();
         ~MacWindow();
 
-        virtual bool Init(const char* pTitle, uint32 width, uint32 height)  override final;
+        bool Init(const WindowDesc* pDesc);
         
-        virtual void Show() override final;
+        // IWindow interface
+        virtual void Show()     override final;
+        virtual void Close()    override final;
+        
+        virtual void Minimize() override final;
+        virtual void Maximize() override final;
+        
+		virtual bool IsActiveWindow() const override final;
+		
+        virtual void Restore() override final;
+        
+        virtual void ToggleFullscreen() override final;
 
-        virtual void SetTitle(const char* pTitle) override final;
+        virtual void SetTitle(const String& title) override final;
         
+		virtual void SetPosition(int32 x, int32 y)                  override final;
+		virtual void GetPosition(int32* pPosX, int32* pPosY) const  override final;
+		
+		virtual void*       GetHandle() const override final;
+		virtual const void* GetView()   const override final;
+		
+		virtual void SetSize(uint16 width, uint16 height) override final;
+		
         virtual uint16 GetWidth()  const override final;
-        
         virtual uint16 GetHeight() const override final;
         
-        FORCEINLINE virtual void* GetHandle() const override final
-        {
-            return (void*)m_pWindow;
-        }
-
-        FORCEINLINE virtual const void* GetView() const override final
-        {
-            return m_pView;
-        }
-        
+		virtual float32 GetClientAreaScale() const override final;
+		
     private:
         CocoaWindow*            m_pWindow   = nullptr;
         CocoaContentView*       m_pView     = nullptr;
-        CocoaWindowDelegate*    m_pDelegate = nullptr;
+		
+		uint32 m_StyleFlags = 0;
     };
 }
 

@@ -1,5 +1,7 @@
 #include "Log/Log.h"
 
+#include <string>
+
 #include "Rendering/Core/Vulkan/FenceVK.h"
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"

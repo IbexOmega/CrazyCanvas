@@ -37,7 +37,7 @@ namespace LambdaEngine
 		{
 			buffer[written]		= '\n';
 			buffer[written + 1] = 0;
-			OutputDebugStringA(buffer);
+			::OutputDebugStringA(buffer);
 		}
 	}
 }

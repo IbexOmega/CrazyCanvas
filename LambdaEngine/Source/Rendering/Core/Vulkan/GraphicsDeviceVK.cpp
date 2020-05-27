@@ -29,6 +29,8 @@
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
+#define ENABLE_IF_SUPPORTED(feature) feature = feature && true;
+
 namespace LambdaEngine
 {
     /*
@@ -39,7 +41,7 @@ namespace LambdaEngine
 	{
 		ValidationLayer("REQ_V_L_BASE"),
 		ValidationLayer("VK_LAYER_KHRONOS_validation"),
-		//ValidationLayer("VK_LAYER_RENDERDOC_Capture")
+		// ValidationLayer("VK_LAYER_RENDERDOC_Capture")
 	};
 
 	constexpr ValidationLayer OPTIONAL_VALIDATION_LAYERS[]
@@ -83,7 +85,8 @@ namespace LambdaEngine
 		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
         Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
-		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME)
+		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
+		Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
     /*
@@ -128,7 +131,7 @@ namespace LambdaEngine
 	bool GraphicsDeviceVK::Init(const GraphicsDeviceDesc* pDesc)
 	{
         VALIDATE(pDesc != nullptr);
-        
+
 		if (!InitInstance(pDesc))
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Instance could not be initialized!");
@@ -736,15 +739,15 @@ namespace LambdaEngine
 
 	ECommandQueueType GraphicsDeviceVK::GetCommandQueueTypeFromQueueIndex(uint32 queueFamilyIndex) const
 	{
-		if (queueFamilyIndex == m_DeviceQueueFamilyIndices.GraphicsFamily)
+		if (queueFamilyIndex == uint32(m_DeviceQueueFamilyIndices.GraphicsFamily))
 		{
 			return ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
 		}
-		else if (queueFamilyIndex == m_DeviceQueueFamilyIndices.ComputeFamily)
+		else if (queueFamilyIndex == uint32(m_DeviceQueueFamilyIndices.ComputeFamily))
 		{
 			return ECommandQueueType::COMMAND_QUEUE_COMPUTE;
 		}
-		else if (queueFamilyIndex == m_DeviceQueueFamilyIndices.TransferFamily)
+		else if (queueFamilyIndex == uint32(m_DeviceQueueFamilyIndices.TransferFamily))
 		{
 			return ECommandQueueType::COMMAND_QUEUE_COPY;
 		}
@@ -789,7 +792,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		//USE API VERSION 1.2 for now, maybe change to 1.0 later
+		// USE API VERSION 1.2 for now, maybe change to 1.0 later
 		VkApplicationInfo appInfo = {};
 		appInfo.sType               = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pNext               = nullptr;
@@ -803,16 +806,34 @@ namespace LambdaEngine
 
 		VkInstanceCreateInfo instanceCreateInfo = {};
 		instanceCreateInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-		instanceCreateInfo.flags = 0;
+		instanceCreateInfo.flags					= 0;
 		instanceCreateInfo.pApplicationInfo         = &appInfo;
 		instanceCreateInfo.enabledExtensionCount    = (uint32_t)m_EnabledInstanceExtensions.size();
 		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
 
+		VkValidationFeaturesEXT validationFeatures	= {};
+		validationFeatures.sType					= VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+
+		VkValidationFeatureEnableEXT enabledValidationFeatures[] =
+		{
+			VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+			//VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
+		};
+
+		if (pDesc->Debug)
+		{
+			validationFeatures.pEnabledValidationFeatures		= enabledValidationFeatures;
+			validationFeatures.enabledValidationFeatureCount	= ARR_SIZE(enabledValidationFeatures);
+		}
+
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
         const char* pKhronosValidationLayerName = "VK_LAYER_KHRONOS_validation";
+
         if (pDesc->Debug)
         {
             PopulateDebugMessengerCreateInfo(debugCreateInfo);
+
+			debugCreateInfo.pNext = &validationFeatures;
 
 			instanceCreateInfo.enabledLayerCount    = 1;
 			instanceCreateInfo.ppEnabledLayerNames  = &pKhronosValidationLayerName;
@@ -945,36 +966,60 @@ namespace LambdaEngine
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
-		VkPhysicalDeviceRayTracingFeaturesKHR rayTracingFeatures = {};
-		rayTracingFeatures.sType						= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
-		rayTracingFeatures.rayTracing					= true;
-		//rayTracingFeatures.rayQuery					= true;
-		//rayTracingFeatures.rayTracingPrimitiveCulling	= true;
+		VkPhysicalDeviceRayTracingFeaturesKHR	supportedRayTracingFeatures		= {};
+		VkPhysicalDeviceVulkan12Features		supportedDeviceFeatures12		= {};
+		VkPhysicalDeviceVulkan11Features		supportedDeviceFeatures11		= {};
+		VkPhysicalDeviceFeatures				supportedDeviceFeatures10		= {};
 
-		VkPhysicalDeviceVulkan12Features deviceFeatures12 = {};
-		deviceFeatures12.sType					= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-		deviceFeatures12.pNext					= &rayTracingFeatures;
-		deviceFeatures12.bufferDeviceAddress	= true;
-		deviceFeatures12.timelineSemaphore		= true;
+		{
+			VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+			supportedRayTracingFeatures.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
 
-		VkPhysicalDeviceVulkan11Features deviceFeatures11 = {};
-		deviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-		deviceFeatures11.pNext	= &deviceFeatures12;
+			supportedDeviceFeatures12.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+			supportedDeviceFeatures12.pNext			= &supportedRayTracingFeatures;
 
-		VkPhysicalDeviceFeatures desiredDeviceFeatures = {};
-		desiredDeviceFeatures.fillModeNonSolid					= true;
-		desiredDeviceFeatures.vertexPipelineStoresAndAtomics	= true;
-		desiredDeviceFeatures.fragmentStoresAndAtomics			= true;
-		desiredDeviceFeatures.multiDrawIndirect					= true;
+			supportedDeviceFeatures11.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+			supportedDeviceFeatures11.pNext		= &supportedDeviceFeatures12;
 
-		VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-		deviceFeatures2.sType	 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-		deviceFeatures2.pNext	 = &deviceFeatures11;
-		deviceFeatures2.features = desiredDeviceFeatures;
+			deviceFeatures2.sType					= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+			deviceFeatures2.pNext					= &supportedDeviceFeatures11;
+
+			vkGetPhysicalDeviceFeatures2(PhysicalDevice, &deviceFeatures2);
+
+			supportedDeviceFeatures10 = deviceFeatures2.features;
+		}
+
+		VkPhysicalDeviceRayTracingFeaturesKHR enabledRayTracingFeatures = {};
+		enabledRayTracingFeatures.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+
+		VkPhysicalDeviceVulkan12Features enabledDeviceFeatures12 = {};
+		enabledDeviceFeatures12.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		enabledDeviceFeatures12.pNext		= &enabledRayTracingFeatures;
+
+		VkPhysicalDeviceVulkan11Features enabledDeviceFeatures11 = {};
+		enabledDeviceFeatures11.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+		enabledDeviceFeatures11.pNext		= &enabledDeviceFeatures12;
+
+		VkPhysicalDeviceFeatures enabledDeviceFeatures10 = {};
+
+		enabledRayTracingFeatures.rayTracing						= supportedRayTracingFeatures.rayTracing;
+
+		enabledDeviceFeatures12.bufferDeviceAddress					= supportedDeviceFeatures12.bufferDeviceAddress;
+		enabledDeviceFeatures12.timelineSemaphore					= supportedDeviceFeatures12.timelineSemaphore;
+
+		enabledDeviceFeatures10.fillModeNonSolid					= supportedDeviceFeatures10.fillModeNonSolid;
+		enabledDeviceFeatures10.vertexPipelineStoresAndAtomics		= supportedDeviceFeatures10.vertexPipelineStoresAndAtomics;
+		enabledDeviceFeatures10.fragmentStoresAndAtomics			= supportedDeviceFeatures10.fragmentStoresAndAtomics;
+		enabledDeviceFeatures10.multiDrawIndirect					= supportedDeviceFeatures10.multiDrawIndirect;
+
+		VkPhysicalDeviceFeatures2 enabledDeviceFeatures2 = {};
+		enabledDeviceFeatures2.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		enabledDeviceFeatures2.pNext		= &enabledDeviceFeatures11;
+		enabledDeviceFeatures2.features		= enabledDeviceFeatures10;
 
 		VkDeviceCreateInfo createInfo = {};
 		createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-		createInfo.pNext					= &deviceFeatures2;
+		createInfo.pNext					= &enabledDeviceFeatures2;
 		createInfo.flags					= 0;
 		createInfo.queueCreateInfoCount		= (uint32)queueCreateInfos.size();
 		createInfo.pQueueCreateInfos		= queueCreateInfos.data();
@@ -1119,7 +1164,7 @@ namespace LambdaEngine
 	void GraphicsDeviceVK::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 	{
 		createInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		createInfo.messageSeverity	= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		createInfo.messageSeverity	= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT /*| VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT*/ | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 		createInfo.messageType		= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 		createInfo.pfnUserCallback	= DebugCallback;
 		createInfo.pUserData		= nullptr;

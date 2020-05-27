@@ -1,46 +1,72 @@
 #include "Input/API/Input.h"
 
+#include "Application/API/CommonApplication.h"
+
 namespace LambdaEngine
 {
-	IInputDevice*   Input::s_pInputDevice = nullptr;
-	KeyboardState   Input::s_KeyboardState;
-	MouseState      Input::s_MouseState;
+	Input* Input::s_pInstance = nullptr;
+
+	/*
+	* Instance
+	*/
+
+	void Input::OnButtonPressed(EMouseButton button, uint32 modifierMask)
+	{
+		UNREFERENCED_VARIABLE(modifierMask);
+		m_MouseState.ButtonStates[button] = true;
+	}
+
+	void Input::OnButtonReleased(EMouseButton button)
+	{
+		m_MouseState.ButtonStates[button] = false;
+	}
+
+	void Input::OnMouseMoved(int32 x, int32 y)
+	{
+		m_MouseState.x = x;
+		m_MouseState.y = y;
+	}
+
+	void Input::OnMouseScrolled(int32 deltaX, int32 deltaY)
+	{
+		m_MouseState.ScrollX = deltaX;
+		m_MouseState.ScrollY = deltaY;
+	}
+
+	void Input::OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
+	{
+		UNREFERENCED_VARIABLE(modifierMask);
+
+		if (!isRepeat)
+		{
+			m_KeyboardState.KeyStates[key] = true;
+		}
+	}
+
+	void Input::OnKeyReleased(EKey key)
+	{
+		m_KeyboardState.KeyStates[key] = false;
+	}
+
+	/*
+	* Static
+	*/
 
 	bool Input::Init()
 	{
-		s_pInputDevice = PlatformApplication::CreateInputDevice(EInputMode::INPUT_STANDARD);
-        return (s_pInputDevice != nullptr);
+		s_pInstance = DBG_NEW Input();
+		CommonApplication::Get()->AddEventHandler(s_pInstance);
+
+        return (s_pInstance != nullptr);
 	}
 
 	void Input::Release()
 	{
-		SAFEDELETE(s_pInputDevice);
+		CommonApplication::Get()->RemoveEventHandler(s_pInstance);
+		SAFEDELETE(s_pInstance);
 	}
 
 	void Input::Tick()
 	{
-		KeyboardState   newKeyboardState    = s_pInputDevice->GetKeyboardState();
-		MouseState      newMouseState       = s_pInputDevice->GetMouseState();
-
-        memcpy(&s_KeyboardState, &newKeyboardState, sizeof(KeyboardState));
-        memcpy(&s_MouseState, &newMouseState, sizeof(MouseState));
-	}
-
-	void Input::AddKeyboardHandler(IKeyboardHandler* pHandler)
-	{
-        ASSERT(s_pInputDevice != nullptr);
-        s_pInputDevice->AddKeyboardHandler(pHandler);
-	}
-
-	void Input::AddMouseHandler(IMouseHandler* pHandler)
-	{
-        ASSERT(s_pInputDevice != nullptr);
-        s_pInputDevice->AddMouseHandler(pHandler);
-	}
-	
-	void Input::SetInputMode(EInputMode inputMode)
-	{
-		SAFEDELETE(s_pInputDevice);
-		s_pInputDevice = PlatformApplication::CreateInputDevice(inputMode);
 	}
 }

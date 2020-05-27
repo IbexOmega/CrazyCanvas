@@ -2,17 +2,21 @@
 
 #include "Game/Game.h"
 
-#include "Input/API/IKeyboardHandler.h"
-#include "Input/API/IMouseHandler.h"
+#include "Application/API/EventHandler.h"
 
-#include "Networking/API/PacketManager.h"
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/ClientUDP.h"
 #include "Networking/API/IClientUDPHandler.h"
 
+namespace LambdaEngine
+{
+	class RenderGraph;
+	class Renderer;
+}
+
 class Client :
 	public LambdaEngine::Game,
-	public LambdaEngine::IKeyboardHandler,
+	public LambdaEngine::EventHandler,
 	public LambdaEngine::IPacketListener,
 	public LambdaEngine::IClientUDPHandler
 {
@@ -36,11 +40,17 @@ public:
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
     virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
-	// Inherited via IKeyboardHandler
-	virtual void OnKeyDown(LambdaEngine::EKey key)      override;
-	virtual void OnKeyHeldDown(LambdaEngine::EKey key)  override;
-	virtual void OnKeyUp(LambdaEngine::EKey key)        override;
+	virtual void OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)     override;
+
+private:
+	bool InitRendererForEmpty();
 
 private:
 	LambdaEngine::ClientUDP* m_pClient;
+
+
+	LambdaEngine::RenderGraph* m_pRenderGraph = nullptr;
+	LambdaEngine::Renderer* m_pRenderer = nullptr;
+	GUID_Lambda	m_ImGuiPixelShaderNormalGUID = GUID_NONE;
+	GUID_Lambda	m_ImGuiPixelShaderDepthUID = GUID_NONE;
 };

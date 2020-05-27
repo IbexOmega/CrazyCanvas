@@ -75,7 +75,7 @@ namespace LambdaEngine
             memcpy(&m_Desc, pDesc, sizeof(m_Desc));
 			m_HeapStatus	= pDesc->DescriptorCount;
 			SetName(pDesc->pName);
-
+		
 			if (pDesc->pName)
 			{
 				D_LOG_MESSAGE("[DescriptorHeapVK]: Created DescriptorHeap \"%s\"", pDesc->pName);

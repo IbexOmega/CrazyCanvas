@@ -1,281 +1,110 @@
-#include "Engine/EngineLoop.h"
-#include "Log/Log.h"
-
-#include "Networking/API/IPAddress.h"
-#include "Networking/API/ISocketUDP.h"
-#include "Networking/API/IPacketListener.h"
 #include "Networking/API/PacketManager.h"
 
-#include "Math/Random.h"
+#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/IPacketListener.h"
+#include "Networking/API/PacketTransceiver.h"
+
+#include "Engine/EngineLoop.h"
 
 namespace LambdaEngine
 {
-	PacketManager::PacketManager(IPacketListener* pListener, uint16 packets, uint8 maximumTries) :
-		m_pListener(pListener),
-		m_NrOfPackets(packets),
-		m_MaximumTries(maximumTries)
+	PacketManager::PacketManager(uint16 poolSize, int32 maxRetries, float32 resendRTTMultiplier) :
+		m_PacketPool(poolSize),
+		m_QueueIndex(0),
+		m_MaxRetries(maxRetries),
+		m_ResendRTTMultiplier(resendRTTMultiplier)
 	{
-		m_pPackets = DBG_NEW NetworkPacket[packets];
-		Reset();
+
 	}
 
 	PacketManager::~PacketManager()
 	{
-		delete[] m_pPackets;
+
 	}
 
-	void PacketManager::EnqueuePacket(NetworkPacket* pPacket)
+	uint32 PacketManager::EnqueuePacketReliable(NetworkPacket* pPacket, IPacketListener* pListener)
 	{
-		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
-		pPacket->GetHeader().UID = GetNextMessageUID();
-		pPacket->GetHeader().ReliableUID = 0;
-		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ pPacket, nullptr });
+		std::scoped_lock<SpinLock> lock(m_LockMessagesToSend);
+		uint32 UID = EnqueuePacket(pPacket, m_Statistics.RegisterReliableMessageSent());
+		m_MessagesWaitingForAck.insert({ UID, MessageInfo{ pPacket, pListener, EngineLoop::GetTimeSinceStart()} });
+		return UID;
 	}
 
-	void PacketManager::EnqueuePacketReliable(NetworkPacket* pPacket, IPacketListener* listener)
+	uint32 PacketManager::EnqueuePacketUnreliable(NetworkPacket* pPacket)
 	{
-		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
-		pPacket->GetHeader().UID = GetNextMessageUID();
-		pPacket->GetHeader().ReliableUID = GetNextMessageReliableUID();
-		m_PacketsToSend[m_QueueIndex].push(MessageInfo{ pPacket, listener});
+		std::scoped_lock<SpinLock> lock(m_LockMessagesToSend);
+		return EnqueuePacket(pPacket, 0);
 	}
 
-	NetworkPacket* PacketManager::GetFreePacket()
+	uint32 PacketManager::EnqueuePacket(NetworkPacket* pPacket, uint32 reliableUID)
 	{
-		std::scoped_lock<SpinLock> lock(m_LockPacketsFree);
-		if(!m_PacketsFree.empty())
-		{
-			NetworkPacket* packet = *m_PacketsFree.rbegin();
-			m_PacketsFree.erase(packet);
-			packet->m_SizeOfBuffer = 0;
-			packet->GetHeader().ReliableUID = 0;
-			return packet;
-		}
-		LOG_ERROR("[PacketManager]: No free packets exist. Please increase the nr of packets");
-		return nullptr;
+		pPacket->GetHeader().UID = m_Statistics.RegisterMessageSent();
+		pPacket->GetHeader().ReliableUID = reliableUID;
+		m_MessagesToSend[m_QueueIndex].push(pPacket);
+		return pPacket->GetHeader().UID;
 	}
 
-	bool PacketManager::EncodePackets(char* buffer, int32& bytesWritten)
+	void PacketManager::Flush(PacketTransceiver* pTransceiver)
 	{
-		std::queue<MessageInfo>& packets = m_PacketsToSend[(m_QueueIndex + 1) % 2];
+		int32 indexToUse = m_QueueIndex;
+		m_QueueIndex = (m_QueueIndex + 1) % 2;
+		std::queue<NetworkPacket*>& packets = m_MessagesToSend[indexToUse];
 
-		Header header;
-		header.Size = sizeof(Header);
-
-		NetworkPacket* packet = nullptr;
-		uint16 packetBufferSize = 0;
-		uint16 packetHeaderSize = 0;
-
-		Bundle bundle;
-
-		bytesWritten = 0;
-
-		std::vector<MessageInfo> reliableMessages;
-		std::vector<NetworkPacket*> nonReliableMessages;
+		Timestamp timestamp = EngineLoop::GetTimeSinceStart();
 
 		while (!packets.empty())
 		{
-			MessageInfo& messageInfo = packets.front();
-			packet = messageInfo.Packet;
-			packetBufferSize = packet->GetBufferSize();
-			packetHeaderSize = packet->GetHeaderSize();
+			Bundle bundle;
+			uint32 bundleUID = pTransceiver->Transmit(&m_PacketPool, packets, bundle.ReliableUIDs, m_IPEndPoint, &m_Statistics);
 
-			//Makes sure there is enough space to add the message
-			if (packet->GetTotalSize() + header.Size < MAXIMUM_PACKET_SIZE)
+			if (!bundle.ReliableUIDs.empty())
 			{
-				packets.pop();
-				packet->GetHeader().Size = packet->GetTotalSize();
-				memcpy(buffer + header.Size, &packet->GetHeader(), packetHeaderSize);
-				header.Size += packetHeaderSize;
-				memcpy(buffer + header.Size, packet->GetBufferReadOnly(), packetBufferSize);
-				header.Size += packetBufferSize;
+				bundle.Timestamp = timestamp;
 
-				//Is this a reliable message ?
-				if (messageInfo.Packet->IsReliable())
-				{
-					bundle.MessageUIDs.insert(messageInfo.GetUID());
-					reliableMessages.push_back(messageInfo);
-				}
-				else
-				{
-					nonReliableMessages.push_back(messageInfo.Packet);
-				}
-
-				header.Packets++;
-
-				//Have we Processed all messages or have we reach the limit of 32
-				if (packets.empty())
-				{
-					WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle, reliableMessages);
-					Free(nonReliableMessages);
-					return true;
-				}
-				else if (header.Packets == 32)
-				{
-					WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle, reliableMessages);
-					Free(nonReliableMessages);
-					return false;
-				}
+				std::scoped_lock<SpinLock> lock(m_LockBundles);
+				m_Bundles.insert({ bundleUID, bundle });
 			}
-			else
-			{
-				WriteHeaderAndStoreBundle(buffer, bytesWritten, header, bundle, reliableMessages);
-				Free(nonReliableMessages);
-				return false;
-			}
-		}
-		return true;
-	}
-
-	void PacketManager::WriteHeaderAndStoreBundle(char* buffer, int32& bytesWritten, Header& header, Bundle& bundle, std::vector<MessageInfo>& reliableMessages)
-	{
-		header.Sequence = GetNextPacketSequenceNr();
-		header.Salt		= m_Statistics.GetSalt();
-		header.Ack		= m_LastReceivedSequenceNr;
-		header.AckBits	= m_ReceivedSequenceBits;
-		memcpy(buffer, &header, sizeof(Header));
-
-		bytesWritten = header.Size;
-		m_Statistics.m_BytesSent += bytesWritten;
-
-		bundle.Timestamp = EngineLoop::GetTimeSinceStart();
-
-		std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
-		m_PacketsWaitingForAck.insert({ header.Sequence, bundle });
-		for (MessageInfo& message : reliableMessages)
-		{
-			message.LastSent = bundle.Timestamp;
-			message.Tries++;
-			m_MessagesWaitingForAck.insert_or_assign(message.GetUID(), message);
 		}
 	}
 
-	bool PacketManager::DecodePackets(const char* buffer, int32 bytesReceived, std::vector<NetworkPacket*>& packetsRead)
+	void PacketManager::QueryBegin(PacketTransceiver* pTransceiver, std::vector<NetworkPacket*>& packetsReturned)
 	{
-		Header header;
-		uint16 offset = sizeof(Header);
-		m_Statistics.m_BytesReceived += bytesReceived;
-		memcpy(&header, buffer, offset);
+		std::vector<NetworkPacket*> packets;
+		IPEndPoint ipEndPoint;
+		std::vector<uint32> acks;
 
-		if (header.Size != bytesReceived)
-		{
-			LOG_ERROR("[PacketManager]: Received a packet with size missmatch [Exp %d : Rec %d]", header.Size, bytesReceived);
-			return false;
-		}
-		else if (header.Salt == 0)
-		{
-			LOG_ERROR("[PacketManager]: Received a packet without a salt");
-			return false;
-		}
-		else if (m_Statistics.GetRemoteSalt() != header.Salt)
-		{
-			if (m_Statistics.GetRemoteSalt() == 0)
-			{
-				m_Statistics.m_SaltRemote = header.Salt;
-			}
-			else
-			{
-				LOG_ERROR("[PacketManager]: Received a packet with a new salt [Prev %lu : New %lu]", m_Statistics.GetRemoteSalt(), header.Salt);
-				return false;
-			}
-		}
-
-		ProcessSequence(header.Sequence);
-		ProcessAcks(header.Ack, header.AckBits);
-
-		packetsRead.reserve(header.Packets);
-
-		std::vector<NetworkPacket*> messagesToFree;
-		bool hasReliableMessage = false;
-
-		for (int i = 0; i < header.Packets; i++)
-		{
-			NetworkPacket* message = GetFreePacket();
-			NetworkPacket::Header& messageHeader = message->GetHeader();
-			uint8 messageHeaderSize = message->GetHeaderSize();
-
-			memcpy(&messageHeader, buffer + offset, messageHeaderSize);
-			memcpy(message->GetBuffer(), buffer + offset + messageHeaderSize, messageHeader.Size - messageHeaderSize);
-			offset += messageHeader.Size;
-			message->m_Salt = header.Salt;
-
-			if (message->GetType() == NetworkPacket::TYPE_NETWORK_ACK)
-			{
-				messagesToFree.push_back(message);
-			}
-			else if (message->IsReliable())
-			{
-				hasReliableMessage = true;
-				if (message->GetReliableUID() >= m_NextExpectedMessageNr)
-				{
-					m_MessagesReceivedOrdered.insert(message);
-				}
-				else
-				{
-					messagesToFree.push_back(message);
-				}
-			}
-			else
-			{
-				packetsRead.push_back(message);
-			}
-		}
-
-		Free(messagesToFree);
-
-		std::vector<NetworkPacket*> messagesComplete;
-		for (NetworkPacket* message : m_MessagesReceivedOrdered)
-		{
-			if (message->GetReliableUID() != m_NextExpectedMessageNr)
-			{
-				LOG_MESSAGE("Skipped %d != %d", message->GetReliableUID(), m_NextExpectedMessageNr);
-				break;
-			}
-
-			m_NextExpectedMessageNr++;
-			packetsRead.push_back(message);
-			messagesComplete.push_back(message);
-		}
-
-		for (NetworkPacket* message : messagesComplete)
-		{
-			m_MessagesReceivedOrdered.erase(message);
-		}
-
-		if (hasReliableMessage && m_PacketsToSend[m_QueueIndex].empty())
-		{
-			NetworkPacket* pPacket = GetFreePacket();
-			pPacket->SetType(NetworkPacket::TYPE_NETWORK_ACK);
-			EnqueuePacket(pPacket);
-		}
-
-		return true;
-	}
-
-	void PacketManager::SwapPacketQueues()
-	{
-		m_QueueIndex = (m_QueueIndex + 1) % 2;
-	}
-
-	void PacketManager::Tick()
-	{
-		if (m_PacketsWaitingForAck.empty() && m_MessagesWaitingForAck.empty())
+		if (!pTransceiver->ReceiveEnd(&m_PacketPool, packets, acks, &m_Statistics))
 			return;
 
-		std::vector<MessageInfo> m_MessagesToResend;
-		FindMessagesToResend(m_MessagesToResend);
-		ReSendMessages(m_MessagesToResend);
-		DeleteEmptyBundles();
+		packetsReturned.clear();
+		packetsReturned.reserve(packets.size());
+
+		HandleAcks(acks);
+		FindPacketsToReturn(packets, packetsReturned);
 	}
 
-	void PacketManager::Free(std::vector<NetworkPacket*>& packets)
+	void PacketManager::QueryEnd(std::vector<NetworkPacket*>& packetsReceived)
 	{
-		std::scoped_lock<SpinLock> lock(m_LockPacketsFree);
-		for (NetworkPacket* pPacket : packets)
+		m_PacketPool.FreePackets(packetsReceived);
+	}
+
+	void PacketManager::Tick(Timestamp delta)
+	{
+		static const Timestamp delay = Timestamp::Seconds(1);
+
+		m_Timer += delta;
+		if (m_Timer >= delay)
 		{
-			m_PacketsFree.insert(pPacket);
+			m_Timer -= delay;
+			DeleteOldBundles();
 		}
-		packets.clear();
+
+		ResendOrDeleteMessages();
+	}
+
+	PacketPool* PacketManager::GetPacketPool()
+	{
+		return &m_PacketPool;
 	}
 
 	const NetworkStatistics* PacketManager::GetStatistics() const
@@ -283,254 +112,252 @@ namespace LambdaEngine
 		return &m_Statistics;
 	}
 
+	const IPEndPoint& PacketManager::GetEndPoint() const
+	{
+		return m_IPEndPoint;
+	}
+
+	void PacketManager::SetEndPoint(const IPEndPoint& ipEndPoint)
+	{
+		m_IPEndPoint = ipEndPoint;
+	}
+
 	void PacketManager::Reset()
 	{
-		{
-			std::scoped_lock<SpinLock> lock1(m_LockPacketsFree);
-			m_PacketsFree.clear();
-			for (int i = 0; i < m_NrOfPackets; i++)
-			{
-				m_PacketsFree.insert(&m_pPackets[i]);
-			}
-		}
-		
-		{
-			std::scoped_lock<SpinLock> lock2(m_LockPacketsToSend);
-			m_PacketsToSend[0] = {};
-			m_PacketsToSend[1] = {};
-		}
+		std::scoped_lock<SpinLock> lock1(m_LockMessagesToSend);
+		std::scoped_lock<SpinLock> lock2(m_LockBundles);
+		m_MessagesToSend[0] = {};
+		m_MessagesToSend[1] = {};
+		m_MessagesWaitingForAck.clear();
+		m_ReliableMessagesReceived.clear();
+		m_Bundles.clear();
 
-		{
-			std::scoped_lock<SpinLock> lock3(m_LockPacketsWaitingForAck);
-			m_PacketsWaitingForAck.clear();
-			m_MessagesWaitingForAck.clear();
-		}
-
-		m_QueueIndex = 0;
-		m_ReceivedSequenceBits = 0;
-		m_LastReceivedSequenceNr = 0;
-		m_NextExpectedMessageNr = 1;
-		m_ReliableMessagesSent = 1;
-
+		m_PacketPool.Reset();
 		m_Statistics.Reset();
+		m_QueueIndex = 0;
 	}
 
-	void PacketManager::ProcessSequence(uint32 sequence)
+	void PacketManager::FindPacketsToReturn(const std::vector<NetworkPacket*>& packetsReceived, std::vector<NetworkPacket*>& packetsReturned)
 	{
-		if (sequence > m_LastReceivedSequenceNr)
-		{
-			//New sequence number received so shift everything delta steps
-			int32 delta = sequence - m_LastReceivedSequenceNr;
-			m_LastReceivedSequenceNr = sequence;
+		bool reliableMessagesInserted = false;
+		bool hasReliableMessage = false;
 
-			for (int i = 0; i < delta; i++)
+		std::vector<NetworkPacket*> packetsToFree;
+		packetsToFree.reserve(32);
+
+		for (NetworkPacket* pPacket : packetsReceived)
+		{
+			if (!pPacket->IsReliable())																//Unreliable Packet
 			{
-				if (m_ReceivedSequenceBits >> (sizeof(uint32) * 8 - 1) & 0)
+				if (pPacket->GetType() == NetworkPacket::TYPE_NETWORK_ACK)
+					packetsToFree.push_back(pPacket);
+				else
+					packetsReturned.push_back(pPacket);
+			}
+			else
+			{
+				hasReliableMessage = true;
+
+				if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)		//Reliable Packet in correct order
 				{
-					//The last bit that gets removed was never acked.
-					m_Statistics.m_PacketsLost++;
+					packetsReturned.push_back(pPacket);
+					m_Statistics.RegisterReliableMessageReceived();
 				}
-				m_ReceivedSequenceBits = m_ReceivedSequenceBits << 1;
-			}
-		}
-		else
-		{
-			//Old sequence number received so write 1 to the coresponding bit
-			int32 index = m_LastReceivedSequenceNr - sequence - 1;
-			if (index >= 0 && index < 32)
-			{
-				int32 mask = 1 << index;
-				m_ReceivedSequenceBits |= mask;
-			}
-		}
-	}
-
-	void PacketManager::ProcessAcks(uint32 ack, uint32 ackBits)
-	{
-		Timestamp rtt = UINT64_MAX;
-		uint32 top = std::min(32, (int32)ack);
-
-		for (uint8 i = 1; i <= top; i++)
-		{
-			if (ackBits & 1)
-			{
-				ProcessAck(ack - i, rtt);
-			}
-			ackBits >>= 1;
-		}
-		ProcessAck(ack, rtt);
-
-		static const double scalar1 = 1.0 / 10.0;
-		static const double scalar2 = 1.0 - scalar1;
-		if (rtt != UINT64_MAX)
-		{
-			m_Statistics.m_Ping = (uint64)((rtt.AsNanoSeconds() * scalar1) + (m_Statistics.GetPing().AsNanoSeconds() * scalar2));
-		}
-	}
-
-	void PacketManager::ProcessAck(uint32 ack, Timestamp& rtt)
-	{
-		std::vector<MessageInfo> messages;
-		Timestamp timestamp;
-		if (GetMessagesAndRemoveBundle(ack, messages, timestamp))
-		{
-			timestamp = EngineLoop::GetTimeSinceStart() - timestamp;
-			if (timestamp < rtt)
-			{
-				rtt = timestamp;
-			}
-
-			std::vector<NetworkPacket*> messagesToFree;
-			messagesToFree.reserve(messages.size());
-			for (MessageInfo& message : messages)
-			{
-				messagesToFree.push_back(message.Packet);
-
-				if (message.Listener)
+				else if (pPacket->GetReliableUID() > m_Statistics.GetLastReceivedReliableUID())		//Reliable Packet in incorrect order
 				{
-					message.Listener->OnPacketDelivered(message.Packet);
+					m_ReliableMessagesReceived.insert(pPacket);
+					reliableMessagesInserted = true;
 				}
-				m_pListener->OnPacketDelivered(message.Packet);
-			}
-
-			Free(messagesToFree);
-		}
-	}
-
-	bool PacketManager::GetMessagesAndRemoveBundle(uint32 sequence, std::vector<MessageInfo>& messages, Timestamp& sentTimestamp)
-	{
-		std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
-		auto packetIterator = m_PacketsWaitingForAck.find(sequence);
-		if (packetIterator != m_PacketsWaitingForAck.end())
-		{
-			sentTimestamp = packetIterator->second.Timestamp;
-			for (uint32 messageUID : packetIterator->second.MessageUIDs)
-			{
-				auto messageIterator = m_MessagesWaitingForAck.find(messageUID);
-				if (messageIterator != m_MessagesWaitingForAck.end())
+				else																				//Reliable Packet already received before
 				{
-					messages.push_back(messageIterator->second);
-					m_MessagesWaitingForAck.erase(messageIterator);
+					packetsToFree.push_back(pPacket);
 				}
 			}
-			m_PacketsWaitingForAck.erase(packetIterator);
-			return true;
 		}
-		return false;
+
+		m_PacketPool.FreePackets(packetsToFree);
+
+		if (reliableMessagesInserted)
+			UntangleReliablePackets(packetsReturned);
+
+		if (hasReliableMessage && m_MessagesToSend[m_QueueIndex].empty())
+			EnqueuePacketUnreliable(m_PacketPool.RequestFreePacket()->SetType(NetworkPacket::TYPE_NETWORK_ACK));
 	}
 
-	uint32 PacketManager::GetNextPacketSequenceNr()
+	void PacketManager::UntangleReliablePackets(std::vector<NetworkPacket*>& packetsReturned)
 	{
-		return m_Statistics.m_PacketsSent++;
-	}
+		std::vector<NetworkPacket*> packetsToErase;
 
-	uint32 PacketManager::GetNextMessageUID()
-	{
-		return m_Statistics.m_MessagesSent++;
-	}
-
-	uint32 PacketManager::GetNextMessageReliableUID()
-	{
-		return m_ReliableMessagesSent++;
-	}
-
-	void PacketManager::DeleteEmptyBundles()
-	{
-		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
-		Timestamp maxTimeToStoreBundle = Timestamp::Seconds(1);
-		std::vector<uint32> bundlesToRemove;
-		std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
-		for (auto& pair : m_PacketsWaitingForAck)
+		for (NetworkPacket* pPacket : m_ReliableMessagesReceived)
 		{
-			std::vector<uint32> UIDsToRemove;
-			std::set<uint32>& messageUIDs = pair.second.MessageUIDs;
-
-			for (uint32 uid : messageUIDs)
+			if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)
 			{
-				auto messageIterator = m_MessagesWaitingForAck.find(uid);
-				if (messageIterator == m_MessagesWaitingForAck.end())
-				{
-					UIDsToRemove.push_back(uid);
-				}
+				packetsReturned.push_back(pPacket);
+				packetsToErase.push_back(pPacket);
+				m_Statistics.RegisterReliableMessageReceived();
 			}
-
-			for (uint32 uid : UIDsToRemove)
+			else
 			{
-				messageUIDs.erase(uid);
-			}
-
-			if (messageUIDs.empty() && currentTime - pair.second.Timestamp >= maxTimeToStoreBundle)
-			{
-				bundlesToRemove.push_back(pair.first);
+				break;
 			}
 		}
 
-		for (uint32 uid : bundlesToRemove)
+		for (NetworkPacket* pPacket : packetsToErase)
 		{
-			m_PacketsWaitingForAck.erase(uid);
+			m_ReliableMessagesReceived.erase(pPacket);
 		}
 	}
 
-	void PacketManager::FindMessagesToResend(std::vector<MessageInfo>& messages)
+	/*
+	* Finds packets that have been sent erlier and are now acked.
+	* Notifies the listener that the packet was succesfully delivered.
+	* Removes the packet and returns it to the pool.
+	*/
+	void PacketManager::HandleAcks(const std::vector<uint32>& acks)
 	{
-		Timestamp delta;
-		std::vector<MessageInfo> packetsReachMaxTries;
+		std::vector<uint32> ackedReliableUIDs;
+		GetReliableUIDsFromAcks(acks, ackedReliableUIDs);
+
+		std::vector<MessageInfo> messagesAcked;
+		GetReliableMessageInfosFromUIDs(ackedReliableUIDs, messagesAcked);
+
+		std::vector<NetworkPacket*> packetsToFree;
+		packetsToFree.reserve(messagesAcked.size());
+
+		for (MessageInfo& messageInfo : messagesAcked)
+		{
+			if (messageInfo.Listener)
+			{
+				messageInfo.Listener->OnPacketDelivered(messageInfo.Packet);
+			}
+			packetsToFree.push_back(messageInfo.Packet);
+		}
+
+		m_PacketPool.FreePackets(packetsToFree);
+	}
+
+	void PacketManager::GetReliableUIDsFromAcks(const std::vector<uint32>& acks, std::vector<uint32>& ackedReliableUIDs)
+	{
+		ackedReliableUIDs.reserve(128);
+		std::scoped_lock<SpinLock> lock(m_LockBundles);
+
+		Timestamp timestamp = 0;
+
+		for (uint32 ack : acks)
+		{
+			auto iterator = m_Bundles.find(ack);
+			if (iterator != m_Bundles.end())
+			{
+				Bundle& bundle = iterator->second;
+				for (uint32 UID : bundle.ReliableUIDs)
+					ackedReliableUIDs.push_back(UID);
+
+				timestamp = bundle.Timestamp;
+				m_Bundles.erase(iterator);
+			}
+		}
+
+		if (timestamp != 0)
+		{
+			RegisterRTT(EngineLoop::GetTimeSinceStart() - timestamp);
+		}
+	}
+
+	void PacketManager::GetReliableMessageInfosFromUIDs(const std::vector<uint32>& ackedReliableUIDs, std::vector<MessageInfo>& ackedReliableMessages)
+	{
+		ackedReliableMessages.reserve(128);
+		std::scoped_lock<SpinLock> lock(m_LockMessagesToSend);
+
+		for (uint32 UID : ackedReliableUIDs)
+		{
+			auto iterator = m_MessagesWaitingForAck.find(UID);
+			if (iterator != m_MessagesWaitingForAck.end())
+			{
+				ackedReliableMessages.push_back(iterator->second);
+				m_MessagesWaitingForAck.erase(iterator);
+			}
+		}
+	}
+
+	void PacketManager::RegisterRTT(Timestamp rtt)
+	{
+		static const double scalar1 = 1.0f / 10.0f;
+		static const double scalar2 = 1.0f - scalar1;
+		m_Statistics.m_Ping = (uint64)((rtt.AsNanoSeconds() * scalar1) + (m_Statistics.GetPing().AsNanoSeconds() * scalar2));
+	}
+
+	void PacketManager::DeleteOldBundles()
+	{
+		Timestamp maxAllowedTime = m_Statistics.GetPing() * 100;
 		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
 
+		std::vector<uint32> bundlesToDelete;
+
+		std::scoped_lock<SpinLock> lock(m_LockBundles);
+		for (auto& pair : m_Bundles)
 		{
-			std::scoped_lock<SpinLock> lock(m_LockPacketsWaitingForAck);
+			if (currentTime - pair.second.Timestamp > maxAllowedTime)
+			{
+				bundlesToDelete.push_back(pair.first);
+				m_Statistics.RegisterPacketLoss();
+			}
+		}
+
+		for (uint32 UID : bundlesToDelete)
+			m_Bundles.erase(UID);
+	}
+
+	void PacketManager::ResendOrDeleteMessages()
+	{
+		static Timestamp minTime = Timestamp::MilliSeconds(5);
+		Timestamp maxAllowedTime = (uint64)((float64)m_Statistics.GetPing().AsNanoSeconds() * m_ResendRTTMultiplier);
+		if (maxAllowedTime < minTime)
+			maxAllowedTime = minTime;
+
+		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
+
+		std::vector<std::pair<const uint32, MessageInfo>> messagesToDelete;
+
+		{
+			std::scoped_lock<SpinLock> lock(m_LockMessagesToSend);
 
 			for (auto& pair : m_MessagesWaitingForAck)
 			{
-				delta = EngineLoop::GetTimeSinceStart() - pair.second.LastSent;
-				if ((float64)delta.AsNanoSeconds() > (float64)m_Statistics.GetPing().AsNanoSeconds() * 2.0F)
+				MessageInfo& messageInfo = pair.second;
+				if (currentTime - messageInfo.LastSent > maxAllowedTime)
 				{
-					if (pair.second.Tries > m_MaximumTries)
+					messageInfo.Retries++;
+
+					if (messageInfo.Retries < m_MaxRetries)
 					{
-						packetsReachMaxTries.push_back(pair.second);
+						m_MessagesToSend[m_QueueIndex].push(messageInfo.Packet);
+						messageInfo.LastSent = currentTime;
+
+						if (messageInfo.Listener)
+							messageInfo.Listener->OnPacketResent(messageInfo.Packet, messageInfo.Retries);
 					}
 					else
 					{
-						pair.second.LastSent = currentTime;
-						messages.push_back(pair.second);
+						messagesToDelete.push_back(pair);
 					}
 				}
 			}
 
-			for (MessageInfo& message : packetsReachMaxTries)
-			{
-				m_MessagesWaitingForAck.erase(message.GetUID());
-			}
+			for (auto& pair : messagesToDelete)
+				m_MessagesWaitingForAck.erase(pair.first);
 		}
 		
-		for (MessageInfo& messageInfo : packetsReachMaxTries)
-		{
-			if(messageInfo.Listener)
-				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Packet, messageInfo.Tries);
+		std::vector<NetworkPacket*> packetsToFree;
+		packetsToFree.reserve(messagesToDelete.size());
 
-			m_pListener->OnPacketMaxTriesReached(messageInfo.Packet, messageInfo.Tries);
-		}
-	}
-
-	void PacketManager::ReSendMessages(const std::vector<MessageInfo>& messages)
-	{
-		for (MessageInfo messageInfo : messages)
+		for (auto& pair : messagesToDelete)
 		{
+			MessageInfo& messageInfo = pair.second;
+			packetsToFree.push_back(messageInfo.Packet);
 			if (messageInfo.Listener)
-				messageInfo.Listener->OnPacketResent(messageInfo.Packet, messageInfo.Tries);
-
-			m_pListener->OnPacketResent(messageInfo.Packet, messageInfo.Tries);
+				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Packet, messageInfo.Retries);
 		}
 
-		std::scoped_lock<SpinLock> lock(m_LockPacketsToSend);
-		for (MessageInfo messageInfo : messages)
-		{
-			m_PacketsToSend[m_QueueIndex].push(messageInfo);
-		}
-	}
-
-	uint64 PacketManager::DoChallenge(uint64 clientSalt, uint64 serverSalt)
-	{
-		return clientSalt & serverSalt;
+		m_PacketPool.FreePackets(packetsToFree);
 	}
 }

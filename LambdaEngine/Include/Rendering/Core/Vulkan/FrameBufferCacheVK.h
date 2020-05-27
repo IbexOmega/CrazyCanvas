@@ -5,6 +5,8 @@
 
 #include "Utilities/HashUtilities.h"
 
+#include "Threading/API/Spinlock.h"
+
 #include "Vulkan.h"
 
 namespace LambdaEngine
@@ -104,5 +106,6 @@ namespace LambdaEngine
 	private:
 		const GraphicsDeviceVK* const	m_pDevice = nullptr;
 		mutable FrameBufferMap			m_FrameBufferMap;
+		mutable SpinLock 				m_Lock;
 	};
 }

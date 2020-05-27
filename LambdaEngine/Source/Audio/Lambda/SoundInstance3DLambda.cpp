@@ -1,17 +1,22 @@
 #include "Audio/Lambda/SoundInstance3DLambda.h"
 #include "Audio/Lambda/SoundEffect3DLambda.h"
+#include "Audio/Lambda/AudioDeviceLambda.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	SoundInstance3DLambda::SoundInstance3DLambda(const IAudioDevice* pAudioDevice)
+	SoundInstance3DLambda::SoundInstance3DLambda(const IAudioDevice* pAudioDevice) :
+		m_pAudioDevice(reinterpret_cast<const AudioDeviceLambda*>(pAudioDevice))
 	{
-		UNREFERENCED_VARIABLE(pAudioDevice);
 	}
 
 	SoundInstance3DLambda::~SoundInstance3DLambda()
 	{
+		m_pAudioDevice->DeleteSoundInstance(this);
+		
+		SAFEDELETE_ARRAY(m_pWaveForm);
+
 		PaError result;
 
 		result = Pa_CloseStream(m_pStream);
@@ -21,15 +26,18 @@ namespace LambdaEngine
 		}
 	}
 
-	bool SoundInstance3DLambda::Init(const SoundInstance3DDesc& desc)
+	bool SoundInstance3DLambda::Init(const SoundInstance3DDesc* pDesc)
 	{
-		SoundEffect3DLambda* pSoundEffect = reinterpret_cast<SoundEffect3DLambda*>(desc.pSoundEffect);
+		VALIDATE(pDesc);
 
-		m_CurrentSample = 0;
-		m_SampleCount	= pSoundEffect->GetSampleCount();
-		m_ChannelCount	= pSoundEffect->GetChannelCount();
-		m_pWaveForm		= new int16[m_SampleCount * m_ChannelCount];
-		memcpy(m_pWaveForm, pSoundEffect->GetWaveform(), sizeof(int16) * m_SampleCount * m_ChannelCount);
+		const SoundEffect3DLambda* pSoundEffect = reinterpret_cast<const SoundEffect3DLambda*>(pDesc->pSoundEffect);
+
+		m_CurrentBufferIndex		= 0;
+		m_SampleCount		= pSoundEffect->GetSampleCount();
+		m_ChannelCount		= pSoundEffect->GetChannelCount();
+		m_TotalSampleCount	= m_SampleCount * m_ChannelCount;
+		m_pWaveForm			= new float32[m_TotalSampleCount];
+		memcpy(m_pWaveForm, pSoundEffect->GetWaveform(), sizeof(float32) * m_TotalSampleCount);
 
 		PaError result;
 
@@ -38,9 +46,9 @@ namespace LambdaEngine
 			&m_pStream,
 			0,          /* no input channels */
 			m_ChannelCount,          /* stereo output */
-			paInt16,  /* 32 bit floating point output */
+			paFloat32,  /* 32 bit floating point output */
 			pSoundEffect->GetSampleRate(),
-			256,			/* frames per buffer, i.e. the number
+			128,	/* frames per buffer, i.e. the number
 							   of sample frames that PortAudio will
 							   request from the callback. Many apps
 							   may want to use
@@ -84,12 +92,12 @@ namespace LambdaEngine
 
 	void SoundInstance3DLambda::SetPosition(const glm::vec3& position)
 	{
-		UNREFERENCED_VARIABLE(position);
+		m_Position = position;
 	}
 
 	void SoundInstance3DLambda::SetVolume(float volume)
 	{
-		UNREFERENCED_VARIABLE(volume);
+		m_Volume = volume;
 	}
 
 	void SoundInstance3DLambda::SetPitch(float pitch)
@@ -97,35 +105,40 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pitch);
 	}
 
-	const glm::vec3& SoundInstance3DLambda::GetPosition()
+	const glm::vec3& SoundInstance3DLambda::GetPosition() const
 	{
-		static glm::vec3 temp;
-		return temp;
+		return m_Position;
 	}
 
-	float SoundInstance3DLambda::GetVolume()
+	float SoundInstance3DLambda::GetVolume() const
+	{
+		return m_Volume;
+	}
+
+	float SoundInstance3DLambda::GetPitch() const
 	{
 		return 1.0f;
 	}
 
-	float SoundInstance3DLambda::GetPitch()
+	void SoundInstance3DLambda::UpdateVolume(float masterVolume, const AudioListenerDesc* pAudioListeners, uint32 count)
 	{
-		return 1.0f;
 	}
 
-	void SoundInstance3DLambda::LocalAudioCallback(float* pOutputBuffer, unsigned long framesPerBuffer)
+	int32 SoundInstance3DLambda::LocalAudioCallback(float* pOutputBuffer, unsigned long framesPerBuffer)
 	{
-		for (uint32 f = 0; f < framesPerBuffer / m_ChannelCount; f++)
+		for (uint32 f = 0; f < framesPerBuffer; f++)
 		{
 			for (uint32 c = 0; c < m_ChannelCount; c++)
 			{
-				float sample = m_pWaveForm[m_CurrentSample * m_ChannelCount + c];
-				(*(pOutputBuffer++)) = sample;	
+				float sample = m_pWaveForm[m_CurrentBufferIndex++];
+				(*(pOutputBuffer++)) = m_OutputVolume * sample;
 			}
 
-			m_CurrentSample++;
-			m_CurrentSample = m_CurrentSample % (m_SampleCount * m_ChannelCount);
+			if (m_CurrentBufferIndex == m_TotalSampleCount)
+				m_CurrentBufferIndex = 0;
 		}
+
+		return paNoError;
 	}
 
 	int32 SoundInstance3DLambda::PortAudioCallback(
@@ -140,12 +153,9 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pTimeInfo);
 		UNREFERENCED_VARIABLE(statusFlags);
 
-		if (pUserData != nullptr)
-		{
-			reinterpret_cast<SoundInstance3DLambda*>(pUserData)->LocalAudioCallback(
-				reinterpret_cast<float*>(pOutputBuffer), framesPerBuffer);
-		}
+		SoundInstance3DLambda* pInstance = reinterpret_cast<SoundInstance3DLambda*>(pUserData);
+		VALIDATE(pInstance != nullptr);
 
-		return paNoError;
+		return pInstance->LocalAudioCallback(reinterpret_cast<float32*>(pOutputBuffer), framesPerBuffer);
 	}
 }

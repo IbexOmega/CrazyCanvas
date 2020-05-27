@@ -72,7 +72,7 @@ namespace LambdaEngine
 		const ITextureView*			pDepthStencil		= nullptr;
 		uint32						Width				= 0;
 		uint32						Height				= 0;
-		uint32						Flags				= 0;
+		uint32						Flags				= FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_NONE;
 		const ClearColorDesc*		pClearColors		= nullptr;
 		uint32						ClearColorCount		= 0;
 		struct
@@ -142,7 +142,8 @@ namespace LambdaEngine
 		const IBuffer*			pIndexBuffer			= nullptr;
 		uint32					IndexBufferByteOffset	= 0; 
 		uint32					TriangleCount			= 0;
-		const void*				pTransform				= nullptr;
+		const IBuffer*			pTransformBuffer		= nullptr;
+		uint32					TransformByteOffset		= 0;
 		bool					Update					= false;
 	};
 
@@ -159,9 +160,7 @@ namespace LambdaEngine
 		DECL_DEVICE_INTERFACE(ICommandList);
 
 		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc) = 0;
-		
-		virtual void Reset() = 0;
-		virtual bool End()	 = 0;
+		virtual bool End()	                                                = 0;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) = 0;
 		virtual void EndRenderPass() = 0;
@@ -183,7 +182,7 @@ namespace LambdaEngine
 		
 		virtual void SetConstantRange(const IPipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) = 0;
 
-		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset) = 0;
+		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset, EIndexType indexType) = 0;
 		virtual void BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) = 0;
 
 		virtual void BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)	= 0;
@@ -194,7 +193,7 @@ namespace LambdaEngine
 		virtual void BindComputePipeline(const IPipelineState* pPipeline)		= 0;
 		virtual void BindRayTracingPipeline(const IPipelineState* pPipeline)	= 0;
 
-		virtual void TraceRays(uint32 width, uint32 height, uint32 raygenOffset)						= 0;
+		virtual void TraceRays(uint32 width, uint32 height, uint32 depth)								= 0;
 		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ)	= 0;
 
 		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)							= 0;

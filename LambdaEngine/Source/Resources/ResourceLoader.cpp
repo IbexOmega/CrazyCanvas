@@ -588,8 +588,6 @@ namespace LambdaEngine
 		s_pCopyFence->Wait(waitValue, UINT64_MAX);
 
 		s_pCopyCommandAllocator->Reset();
-		s_pCopyCommandList->Reset();
-
 		s_pCopyCommandList->Begin(nullptr);
 
 		CopyTextureFromBufferDesc copyDesc = {};
@@ -713,26 +711,25 @@ namespace LambdaEngine
 		shaderDesc.ShaderConstantCount	= 0;
 
 		IShader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
-
-		SAFEDELETE_ARRAY(pShaderRawSource);
+		Malloc::Free(pShaderRawSource);
 
 		return pShader;
 	}
 
 	ISoundEffect3D* ResourceLoader::LoadSoundEffectFromFile(const char* pFilepath)
 	{
-		ISoundEffect3D* pSound = AudioSystem::GetDevice()->CreateSoundEffect();
+		SoundEffect3DDesc soundDesc = {};
+		soundDesc.pFilepath = pFilepath;
 
-		SoundEffect3DDesc soundDesc		= {};
-		soundDesc.pFilepath		= pFilepath;
+		ISoundEffect3D* pSound = AudioSystem::GetDevice()->CreateSoundEffect(&soundDesc);
 
-		if (!pSound->Init(soundDesc))
+		if (pSound == nullptr)
 		{
-			LOG_ERROR("[ResourceDevice]: Failed to initialize sound \"%s\"", pFilepath);
+			LOG_ERROR("[ResourceLoader]: Failed to initialize sound \"%s\"", pFilepath);
 			return nullptr;
 		}
 
-		D_LOG_MESSAGE("[ResourceDevice]: Loaded Sound \"%s\"", pFilepath);
+		D_LOG_MESSAGE("[ResourceLoader]: Loaded Sound \"%s\"", pFilepath);
 
 		return pSound;
 	}
@@ -742,17 +739,30 @@ namespace LambdaEngine
 		FILE* pFile = fopen(pFilepath, pMode);
 		if (pFile == nullptr)
 		{
-			LOG_ERROR("[ResourceDevice]: Failed to load file \"%s\"", pFilepath);
+			LOG_ERROR("[ResourceLoader]: Failed to load file \"%s\"", pFilepath);
 			return false;
 		}
 
 		fseek(pFile, 0, SEEK_END);
-		(*pDataSize) = ftell(pFile);
-		rewind(pFile);
+		int32 length = ftell(pFile) + 1;
+		fseek(pFile, 0, SEEK_SET);
 
-		(*ppData) = DBG_NEW byte[(*pDataSize)];
+		byte* pData = reinterpret_cast<byte*>(Malloc::Allocate(length * sizeof(byte)));
+		ZERO_MEMORY(pData, length * sizeof(byte));
 
-		fread(*ppData, 1, (*pDataSize), pFile);
+		int32 read = fread(pData, 1, length, pFile);
+		if (read == 0)
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to read file \"%s\"", pFilepath);
+			return false;
+		}
+		else
+		{
+			pData[read] = '\0';
+		}
+		
+		(*ppData)		= pData;
+		(*pDataSize)	= length;
 
 		fclose(pFile);
 		return true;
@@ -774,8 +784,10 @@ namespace LambdaEngine
 		glslang::TShader shader(shaderType);
 
 		std::string source			= std::string(pSource);
-		int32 foundBracket			= source.find_last_of("}") + 1;
-		shader.setStringsWithLengths(&pSource, &foundBracket, 1);
+		int32 foundBracket			= source.find_last_of('}') + 1;
+		source[foundBracket]		= '\0';
+		const char* pFinalSource	= source.c_str();
+		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
 
 		//Todo: Fetch this
 		int32 clientInputSemanticsVersion							    = 110;

@@ -4,6 +4,7 @@
 #include "Networking/API/IClientUDP.h"
 #include "Networking/API/PacketManager.h"
 #include "Networking/API/IPacketListener.h"
+#include "Networking/API/PacketTransceiver.h"
 
 namespace LambdaEngine
 {
@@ -32,8 +33,13 @@ namespace LambdaEngine
 
 		bool Connect(const IPEndPoint& ipEndPoint);
 
+		void SetSimulateReceivingPacketLoss(float32 lossRatio);
+		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
+
 	protected:
-		ClientUDP(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries);
+		ClientUDP(IClientUDPHandler* pHandler, uint16 packetPoolSize, uint8 maximumTries);
+
+		virtual PacketManager* GetPacketManager() override;
 
 		virtual void OnPacketDelivered(NetworkPacket* pPacket) override;
 		virtual void OnPacketResent(NetworkPacket* pPacket, uint8 tries) override;
@@ -51,6 +57,7 @@ namespace LambdaEngine
 		void SendDisconnectRequest();
 		void HandleReceivedPacket(NetworkPacket* pPacket);
 		void TransmitPackets();
+		void Tick(Timestamp delta);
 
 	public:
 		static ClientUDP* Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries);
@@ -60,7 +67,7 @@ namespace LambdaEngine
 
 	private:
 		ISocketUDP* m_pSocket;
-		IPEndPoint m_IPEndPoint;
+		PacketTransceiver m_Transciver;
 		PacketManager m_PacketManager;
 		SpinLock m_Lock;
 		IClientUDPHandler* m_pHandler;

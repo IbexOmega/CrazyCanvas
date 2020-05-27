@@ -31,9 +31,7 @@ namespace LambdaEngine
 
 		//ICommandList interface
 		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc)	override final;
-
-		virtual void Reset() override final;
-		virtual bool End()	 override final;
+        virtual bool End()                                                  override final;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) override final;
 		virtual void EndRenderPass() override final;
@@ -55,7 +53,7 @@ namespace LambdaEngine
 
 		virtual void SetConstantRange(const IPipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) override final;
 
-		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset) override;
+		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset, EIndexType indexType) override;
 		virtual void BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) override final;
 
 		virtual void BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex) override final;
@@ -66,7 +64,7 @@ namespace LambdaEngine
 		virtual void BindComputePipeline(const IPipelineState* pPipeline)		override final;
 		virtual void BindRayTracingPipeline(const IPipelineState* pPipeline)	override final;
 
-		virtual void TraceRays(uint32 width, uint32 height, uint32 raygenOffset) override final;
+		virtual void TraceRays(uint32 width, uint32 height, uint32 depth) override final;
 
 		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ) override final;
 

@@ -98,11 +98,6 @@ namespace LambdaEngine
 		}
     }
 
-	void CommandListVK::Reset()
-	{
-		vkResetCommandBuffer(m_CommandList, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-	}
-
 	bool CommandListVK::Begin(const SecondaryCommandListBeginDesc* pBeginDesc)
 	{
 		VkCommandBufferBeginInfo beginInfo = {};
@@ -298,10 +293,10 @@ namespace LambdaEngine
 		geometryDataDesc.indexType		= VK_INDEX_TYPE_UINT32;
 		geometryDataDesc.indexData		= indexDataAddressUnion;
 
-		if (pBuildDesc->pTransform != nullptr)
+		VkDeviceOrHostAddressConstKHR transformDataAddressUnion = {};
+		if (pBuildDesc->pTransformBuffer != nullptr)
 		{
-			VkDeviceOrHostAddressConstKHR transformDataAddressUnion = {};
-			transformDataAddressUnion.hostAddress = pBuildDesc->pTransform;
+			transformDataAddressUnion.deviceAddress = reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer)->GetDeviceAdress();
 			geometryDataDesc.transformData = transformDataAddressUnion;
 		}
 		else
@@ -344,7 +339,7 @@ namespace LambdaEngine
 		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->TriangleCount;
 		accelerationStructureOffsetInfo.primitiveOffset = pBuildDesc->IndexBufferByteOffset;
 		accelerationStructureOffsetInfo.firstVertex		= pBuildDesc->FirstVertexIndex;
-		accelerationStructureOffsetInfo.transformOffset = 0;
+		accelerationStructureOffsetInfo.transformOffset = pBuildDesc->TransformByteOffset;
 
 		VALIDATE(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
 
@@ -396,14 +391,14 @@ namespace LambdaEngine
 		VALIDATE(pSrc != nullptr);
 		VALIDATE(pDst != nullptr);
 
-		const TextureVK*	pVkSrc	= reinterpret_cast<const TextureVK*>(pSrc);
+		/*const TextureVK*	pVkSrc	= reinterpret_cast<const TextureVK*>(pSrc);
 		TextureVK*			pVkDst	= reinterpret_cast<TextureVK*>(pDst);
 
 		VkImageLayout		vkSrcLayout = ConvertTextureState(srcState);
 		VkImageLayout		vkDstLayout = ConvertTextureState(dstState);
 		VkFilter			vkFilter	= ConvertFilter(filter);
 
-		VkImageSubresourceLayers srcSubresource = {};
+		/*VkImageSubresourceLayers srcSubresource = {};
 		srcSubresource.aspectMask;
 		srcSubresource.mipLevel;
 		srcSubresource.baseArrayLayer;
@@ -415,7 +410,7 @@ namespace LambdaEngine
 		region.dstSubresource;
 		region.dstOffsets[2];
 
-		vkCmdBlitImage(m_CommandList, pVkSrc->GetImage(), vkSrcLayout, pVkDst->GetImage(), vkDstLayout, 1, &region, vkFilter);
+		vkCmdBlitImage(m_CommandList, pVkSrc->GetImage(), vkSrcLayout, pVkDst->GetImage(), vkDstLayout, 1, &region, vkFilter);*/
 	}
 
 	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)
@@ -630,10 +625,10 @@ namespace LambdaEngine
 		vkCmdPushConstants(m_CommandList, pVkPipelineLayout->GetPipelineLayout(), shaderStageMaskVk, offset, size, pConstants);
 	}
 
-	void CommandListVK::BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset)
+	void CommandListVK::BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset, EIndexType indexType)
 	{
         const BufferVK* pIndexBufferVK = reinterpret_cast<const BufferVK*>(pIndexBuffer);
-        vkCmdBindIndexBuffer(m_CommandList, pIndexBufferVK->GetBuffer(), offset, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(m_CommandList, pIndexBufferVK->GetBuffer(), offset, ConvertIndexType(indexType));
 	}
 
 	void CommandListVK::BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount)

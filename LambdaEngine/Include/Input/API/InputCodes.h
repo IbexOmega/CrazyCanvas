@@ -143,13 +143,24 @@ namespace LambdaEngine
 		KEY_COUNT   = KEY_LAST + 1
 	};
 
+    enum FModifierFlag
+    {
+        MODIFIER_FLAG_NONE       = 0,
+        MODIFIER_FLAG_CTRL       = FLAG(1),
+        MODIFIER_FLAG_ALT        = FLAG(2),
+        MODIFIER_FLAG_SHIFT      = FLAG(3),
+        MODIFIER_FLAG_CAPS_LOCK  = FLAG(4),
+        MODIFIER_FLAG_SUPER      = FLAG(5),
+        MODIFIER_FLAG_NUM_LOCK   = FLAG(6),
+    };
+
 	enum EMouseButton : uint8
 	{
 		MOUSE_BUTTON_UNKNOWN    = 0,
 
 		MOUSE_BUTTON_LEFT       = 1,
-		MOUSE_BUTTON_MIDDLE     = 2,
-		MOUSE_BUTTON_RIGHT      = 3,
+		MOUSE_BUTTON_RIGHT      = 2,
+		MOUSE_BUTTON_MIDDLE     = 3,
 		MOUSE_BUTTON_BACK       = 4,
 		MOUSE_BUTTON_FORWARD    = 5,
 

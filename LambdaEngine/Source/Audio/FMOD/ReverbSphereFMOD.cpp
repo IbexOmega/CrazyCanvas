@@ -24,9 +24,11 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ReverbSphereFMOD::Init(const ReverbSphereDesc& desc)
+	bool ReverbSphereFMOD::Init(const ReverbSphereDesc* pDesc)
 	{
-		m_pName = desc.pName;
+		VALIDATE(pDesc);
+
+		m_pName = pDesc->pName;
 
 		if (FMOD_System_CreateReverb3D(m_pAudioDevice->pSystem, &m_pReverb) != FMOD_OK)
 		{
@@ -34,9 +36,9 @@ namespace LambdaEngine
 			return false;
 		}
 
-		SetReverbSetting(desc.ReverbSetting);
+		SetReverbSetting(pDesc->ReverbSetting);
 
-		Set3DAttributes(desc.Position, desc.MinDistance, desc.MaxDistance);
+		Set3DAttributes(pDesc->Position, pDesc->MinDistance, pDesc->MaxDistance);
 
 		D_LOG_MESSAGE("[ReverbSphereFMOD]: Successfully initialized %s!", m_pName);
 

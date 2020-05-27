@@ -2,13 +2,14 @@
 
 #include "Networking/API/NetWorker.h"
 #include "Networking/API/IClientUDP.h"
-#include "Networking/API/PacketManager.h"
 #include "Networking/API/IPacketListener.h"
+#include "Networking/API/PacketManager.h"
 
 namespace LambdaEngine
 {
 	class ServerUDP;
 	class IClientUDPRemoteHandler;
+	class PacketTransceiver;
 
 	class LAMBDA_API ClientUDPRemote : 
 		public IClientUDP,
@@ -30,24 +31,24 @@ namespace LambdaEngine
 		virtual const NetworkStatistics* GetStatistics() const override;
 
 	protected:
-		ClientUDPRemote(uint16 packets, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
+		ClientUDPRemote(uint16 packetPoolSize, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
+
+		virtual PacketManager* GetPacketManager() override;
 
 		virtual void OnPacketDelivered(NetworkPacket* pPacket) override;
 		virtual void OnPacketResent(NetworkPacket* pPacket, uint8 tries) override;
 		virtual void OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries) override;
 
 	private:
-		PacketManager* GetPacketManager();
-		void OnDataReceived(const char* data, int32 size);
-		void SendPackets();
+		void OnDataReceived(PacketTransceiver* pTransciver);
+		void SendPackets(PacketTransceiver* pTransciver);
 		bool HandleReceivedPacket(NetworkPacket* pPacket);
+		void Tick(Timestamp delta);
 
 	private:
 		ServerUDP* m_pServer;
-		IPEndPoint m_IPEndPoint;
 		PacketManager m_PacketManager;
 		SpinLock m_Lock;
-		std::vector<NetworkPacket*> m_Packets;
 		IClientUDPRemoteHandler* m_pHandler;
 		EClientState m_State;
 		std::atomic_bool m_Release;

@@ -48,10 +48,10 @@ namespace LambdaEngine
 
 		/*
 		* Initialize this ReverbSphereFMOD
-		*	desc - A description of initialization parameters
+		*	pDesc - A description of initialization parameters
 		* return - true if the initialization was successfull, otherwise returns false
 		*/
-		virtual bool Init(const ReverbSphereDesc& desc) = 0;
+		virtual bool Init(const ReverbSphereDesc* pDesc) = 0;
 
 		/*
 		* Set whether the geometry should be processed by the audio engine

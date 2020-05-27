@@ -109,9 +109,9 @@ namespace LambdaEngine
 
 			struct
 			{
-				uint32 RaygenOffset;
 				uint32 RayTraceWidth;
 				uint32 RayTraceHeight;
+				uint32 RayTraceDepth;
 			} RayTracing;
 		};
 	};
@@ -256,16 +256,18 @@ namespace LambdaEngine
 
 		void UpdateRenderStageParameters(const RenderStageParameters& desc);
 
+		void GetAndIncrementFence(IFence** ppFence, uint64* pSignalValue);
+
 		/*
 		* Updates the RenderGraph, applying the updates made to resources with UpdateResource by writing them to the appropriate Descriptor Sets, the RenderGraph will wait for device idle if it needs to
 		*/
 		void Update();
-
-
-		/*
-		* 
-		*/
 		void Render(uint64 frameIndex, uint32 backBufferIndex);
+
+		bool GetResourceTextures(const char* pResourceName, ITexture* const ** pppTexture, uint32* pTextureView)					const;
+		bool GetResourceTextureViews(const char* pResourceName, ITextureView* const ** pppTextureViews, uint32* pTextureViewCount)		const;
+		bool GetResourceBuffers(const char* pResourceName, IBuffer* const ** pppBuffers, uint32* pBufferCount)					const;
+		bool GetResourceAccelerationStructure(const char* pResourceName, IAccelerationStructure** ppAccelerationStructure)		const;
 
 	private:
 		bool CreateFence();

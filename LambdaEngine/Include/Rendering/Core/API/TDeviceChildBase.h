@@ -21,7 +21,7 @@ namespace LambdaEngine
             m_pDevice(pDevice)
         {
             constexpr uint32 sizeInBytes = sizeof(char) * MAX_DEVICE_CHILD_NAME_LENGTH;
-            m_pDebugName = (char*)malloc(sizeInBytes);
+            m_pDebugName = reinterpret_cast<char*>(Malloc::AllocateDbg(sizeInBytes, __FILE__, __LINE__));
             
             ZERO_MEMORY(m_pDebugName, sizeInBytes);
 
@@ -32,7 +32,7 @@ namespace LambdaEngine
         {
             if (m_pDebugName)
             {
-                free((void*)m_pDebugName);
+                Malloc::Free(reinterpret_cast<void*>(m_pDebugName));
                 m_pDebugName = nullptr;
             }
             

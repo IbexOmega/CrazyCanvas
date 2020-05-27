@@ -100,6 +100,7 @@ workspace "LambdaEngine"
 	-- Dependencies
 	group "Dependencies"
 		include "Dependencies/WavLib"
+		include "Dependencies/imgui"
 	
 		-- tinyobjloader Project
 		project "tinyobjloader"
@@ -109,9 +110,15 @@ workspace "LambdaEngine"
 			systemversion "latest"
 			location "Dependencies/projectfiles/tinyobjloader"
 			
-			filter "configurations:Debug"
+			filter "configurations:Debug or Release"
 				symbols "on"
-				runtime "Debug"
+				runtime "Release"
+				optimize "Full"
+			filter{}
+			
+			filter "configurations:Production"
+				symbols "off"
+				runtime "Release"
 				optimize "Full"
 			filter{}
 			
@@ -181,6 +188,9 @@ workspace "LambdaEngine"
 				
 				"%{prj.name}/Include/Threading/Mac/**",
                 "%{prj.name}/Source/Threading/Mac/**",
+				
+				"%{prj.name}/Include/Memory/Mac/**",
+                "%{prj.name}/Source/Memory/Mac/**",
             }
         -- Remove files not available for macos builds
         filter "system:macosx"
@@ -202,6 +212,9 @@ workspace "LambdaEngine"
 				
 				"%{prj.name}/Include/Threading/Win32/**",
                 "%{prj.name}/Source/Threading/Win32/**",
+				
+				"%{prj.name}/Include/Memory/Win32/**",
+                "%{prj.name}/Source/Memory/Win32/**",
             }
         filter {}
 
@@ -222,6 +235,7 @@ workspace "LambdaEngine"
 			"Dependencies/glm",
 			"Dependencies/tinyobjloader",
 			"Dependencies/WavLib",
+			"Dependencies/imgui",
 			"Dependencies/stb",
 			"Dependencies/portaudio/include",
 			"Dependencies/glslang/include",
@@ -231,6 +245,7 @@ workspace "LambdaEngine"
 		{ 
 			"tinyobjloader",
 			"WavLib",
+			"ImGui",
 		}
 		
 		-- Win32
@@ -404,6 +419,7 @@ workspace "LambdaEngine"
 		sysincludedirs
 		{
 			"Dependencies/glm",
+			"Dependencies/imgui",
 		}
         
         -- Files
@@ -426,6 +442,7 @@ workspace "LambdaEngine"
 		links 
 		{ 
 			"LambdaEngine",
+			"ImGui",
 		}
 
     project "*"
@@ -448,7 +465,13 @@ workspace "LambdaEngine"
             "LambdaEngine/Include",
             "%{prj.name}/Include",
         }
-        
+		
+		sysincludedirs
+		{
+			"Dependencies/glm",
+			"Dependencies/imgui",
+		}
+
         -- Files
 		files 
 		{
@@ -469,6 +492,7 @@ workspace "LambdaEngine"
 		links 
 		{ 
 			"LambdaEngine",
+			"ImGui",
 		}
 
     project "*"
@@ -490,7 +514,13 @@ workspace "LambdaEngine"
 		{
             "LambdaEngine/Include",
             "%{prj.name}/Include",
-        }
+		}
+		
+		sysincludedirs
+		{
+			"Dependencies/glm",
+			"Dependencies/imgui",
+		}
         
         -- Files
 		files 
@@ -512,5 +542,6 @@ workspace "LambdaEngine"
 		links 
 		{ 
 			"LambdaEngine",
+			"ImGui",
 		}
     project "*"

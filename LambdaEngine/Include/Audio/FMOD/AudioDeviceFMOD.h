@@ -5,7 +5,6 @@
 
 namespace LambdaEngine
 {
-	class AudioListenerFMOD;
 	class SoundEffect3DFMOD;
 	class SoundInstance3DFMOD;
 	class AudioGeometryFMOD;
@@ -17,32 +16,30 @@ namespace LambdaEngine
 		AudioDeviceFMOD();
 		~AudioDeviceFMOD();
 
-		virtual bool Init(const AudioDeviceDesc& desc) override final;
+		virtual bool Init(const AudioDeviceDesc* pDesc) override final;
 
 		virtual void Tick() override final;
 
-		virtual bool LoadMusic(const char* pFilepath) override final;
-		virtual void PlayMusic() override final;
-		virtual void PauseMusic() override final;
-		virtual void ToggleMusic() override final;
+		virtual void UpdateAudioListener(uint32 index, const AudioListenerDesc* pDesc) override final;
 
+		virtual uint32				CreateAudioListener()									override final;
+		virtual IMusic*				CreateMusic(const MusicDesc* pDesc)						override final;
+		virtual ISoundEffect3D*		CreateSoundEffect(const SoundEffect3DDesc* pDesc)		override final;
+		virtual ISoundInstance3D*	CreateSoundInstance(const SoundInstance3DDesc* pDesc)	override final;
+		virtual IAudioGeometry*		CreateAudioGeometry(const AudioGeometryDesc* pDesc)		override final;
+		virtual IReverbSphere*		CreateReverbSphere(const ReverbSphereDesc* pDesc)		override final;
 
-		virtual IAudioListener*		CreateAudioListener()		override final;
-		virtual ISoundEffect3D*		CreateSoundEffect()			const override final;
-		virtual ISoundInstance3D*	CreateSoundInstance()		const override final;
-		virtual IAudioGeometry*		CreateAudioGeometry()		const override final;
-		virtual IReverbSphere*		CreateReverbSphere()		const override final;
+		virtual void SetMasterVolume(float volume) override final;
+
+		virtual float GetMasterVolume() const override final;
 
 	public:
-		FMOD_SYSTEM* pSystem;
+		FMOD_SYSTEM* pSystem					= nullptr;
 
 	private:
-		const char*		m_pName;
+		const char*		m_pName					= "";
 
-		uint32			m_MaxNumAudioListeners;
-		uint32			m_NumAudioListeners;
-
-		FMOD_SOUND*		m_pMusicHandle;
-		FMOD_CHANNEL*	m_pMusicChannel;
+		uint32			m_MaxNumAudioListeners	= 0;
+		uint32			m_NumAudioListeners		= 0;
 	};
 }

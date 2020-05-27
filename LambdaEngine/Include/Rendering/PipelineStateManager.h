@@ -17,25 +17,28 @@ namespace LambdaEngine
 
 	struct GraphicsManagedPipelineStateDesc
 	{
-		const char* pName									= "";
-		const IRenderPass* pRenderPass						= nullptr;
-		const IPipelineLayout* pPipelineLayout				= nullptr;
+		const char*					pName						= "";
+		const IRenderPass*			pRenderPass					= nullptr;
+		const IPipelineLayout*		pPipelineLayout				= nullptr;
 
-		BlendAttachmentStateDesc pBlendAttachmentStates[MAX_COLOR_ATTACHMENTS];
-		uint32 BlendAttachmentStateCount					= 0;
+		VertexInputBindingDesc		pVertexInputBindings		[MAX_VERTEX_INPUT_ATTACHMENTS];
+		uint32						VertexInputBindingCount		= 0;
+
+		BlendAttachmentStateDesc	pBlendAttachmentStates		[MAX_COLOR_ATTACHMENTS];
+		uint32						BlendAttachmentStateCount	= 0;
 
 		//New Style
-		GUID_Lambda TaskShader								= GUID_NONE;
-		GUID_Lambda MeshShader								= GUID_NONE;
+		GUID_Lambda					TaskShader					= GUID_NONE;
+		GUID_Lambda					MeshShader					= GUID_NONE;
 
 		//Old Style
-		GUID_Lambda VertexShader							= GUID_NONE;
-		GUID_Lambda GeometryShader							= GUID_NONE;
-		GUID_Lambda HullShader								= GUID_NONE;
-		GUID_Lambda DomainShader							= GUID_NONE;
+		GUID_Lambda					VertexShader				= GUID_NONE;
+		GUID_Lambda					GeometryShader				= GUID_NONE;
+		GUID_Lambda					HullShader					= GUID_NONE;
+		GUID_Lambda					DomainShader				= GUID_NONE;
 
 		//Both
-		GUID_Lambda PixelShader								= GUID_NONE;
+		GUID_Lambda					PixelShader					= GUID_NONE;
 	};
 
 	struct ComputeManagedPipelineStateDesc

@@ -5,13 +5,7 @@
 #include <Appkit/Appkit.h>
 #include <MetalKit/MetalKit.h>
 
-@interface CocoaContentView : MTKView
-
-- (BOOL) acceptsFirstResponder;
-
-- (void) keyDown:(NSEvent*) event;
-- (void) keyUp:(NSEvent*) event;
-
+@interface CocoaContentView : MTKView<NSTextInputClient>
 @end
 
 #else

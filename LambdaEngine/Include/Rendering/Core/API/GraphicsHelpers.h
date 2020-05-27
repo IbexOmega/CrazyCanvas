@@ -108,6 +108,7 @@ namespace LambdaEngine
         case EFormat::FORMAT_R8G8B8A8_UNORM:
         case EFormat::FORMAT_B8G8R8A8_UNORM:
         case EFormat::FORMAT_R8G8B8A8_SNORM:		return 4;
+		case EFormat::FORMAT_R32G32_SFLOAT:
         case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 8;
         default:                                    return 0;
         }

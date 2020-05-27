@@ -156,7 +156,7 @@ namespace LambdaEngine
 	
 	EKey Win32InputCodeTable::GetKeyFromVirtualKey(uint32 virtualKey)
 	{
-		uint32 scanCode = MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC);
+		const uint32 scanCode = MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC);
 		return s_KeyCodeTable[scanCode];
 	}
 	
@@ -167,9 +167,40 @@ namespace LambdaEngine
 	
 	uint16 Win32InputCodeTable::GetVirtualKeyFromKey(EKey key)
 	{
-		uint16	scancode	= s_ScanCodeTable[key];
-		UINT	virtualKey	= MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX);
+		const uint16	scancode	= s_ScanCodeTable[key];
+		const UINT		virtualKey	= MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX);
 		return uint16(virtualKey);
+	}
+	
+	uint32 Win32InputCodeTable::GetModifierMask()
+	{
+		uint32 modifiers = 0;
+		if (GetKeyState(VK_CONTROL) & 0x8000)
+		{
+			modifiers |= FModifierFlag::MODIFIER_FLAG_CTRL;
+		}
+		if (GetKeyState(VK_MENU) & 0x8000)
+		{
+			modifiers |= FModifierFlag::MODIFIER_FLAG_ALT;
+		}
+		if (GetKeyState(VK_SHIFT) & 0x8000)
+		{
+			modifiers |= FModifierFlag::MODIFIER_FLAG_SHIFT;
+		}
+		if (GetKeyState(VK_CAPITAL) & 1)
+		{
+			modifiers |= FModifierFlag::MODIFIER_FLAG_CAPS_LOCK;
+		}
+		if ((GetKeyState(VK_LWIN) | GetKeyState(VK_RWIN)) & 0x8000)
+		{
+			modifiers |= FModifierFlag::MODIFIER_FLAG_SUPER;
+		}
+		if (GetKeyState(VK_NUMLOCK) & 1)
+		{
+			modifiers |= FModifierFlag::MODIFIER_FLAG_NUM_LOCK;
+		}
+
+		return modifiers;
 	}
 }
 
