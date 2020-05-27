@@ -12,7 +12,7 @@
 namespace LambdaEngine
 {
     MacWindow::MacWindow()
-        : IWindow()
+        : Window()
     {
     }
 
@@ -24,13 +24,35 @@ namespace LambdaEngine
         [m_pView release];
     }
 
-    bool MacWindow::Init(const char* pTitle, uint32 width, uint32 height)
+    bool MacWindow::Init(const WindowDesc* pDesc)
     {
+		VALIDATE(pDesc != nullptr);
+		
         SCOPED_AUTORELEASE_POOL();
         
-        NSUInteger  windowStyle = NSWindowStyleMaskTitled  | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
-        NSRect      windowRect  = NSMakeRect(0.0f, 0.0f, CGFloat(width), CGFloat(height));
-        
+		NSUInteger windowStyle = 0;
+		if (pDesc->Style != 0)
+		{
+			windowStyle = NSWindowStyleMaskTitled;
+			if (pDesc->Style & WINDOW_STYLE_FLAG_CLOSABLE)
+			{
+				windowStyle |= NSWindowStyleMaskClosable;
+			}
+			if (pDesc->Style & WINDOW_STYLE_FLAG_RESIZEABLE)
+			{
+				windowStyle |= NSWindowStyleMaskResizable;
+			}
+			if (pDesc->Style & WINDOW_STYLE_FLAG_MINIMIZABLE)
+			{
+				windowStyle |= NSWindowStyleMaskMiniaturizable;
+			}
+		}
+		else
+		{
+			windowStyle = NSWindowStyleMaskBorderless;
+		}
+		
+		const NSRect windowRect = NSMakeRect(0.0f, 0.0f, CGFloat(pDesc->Width), CGFloat(pDesc->Height));
         m_pWindow = [[CocoaWindow alloc] initWithContentRect:windowRect styleMask:windowStyle backing:NSBackingStoreBuffered defer:NO];
         if (!m_pWindow)
         {
@@ -45,16 +67,32 @@ namespace LambdaEngine
             return false;
         }
         
-        NSString* title = [NSString stringWithUTF8String:pTitle];
-        [m_pWindow setTitle:title];
+		if (pDesc->Style & WINDOW_STYLE_FLAG_TITLED)
+		{
+			NSString* title = [NSString stringWithUTF8String:pDesc->Title.c_str()];
+			[m_pWindow setTitle:title];
+		}
+		
         [m_pWindow setAcceptsMouseMovedEvents:YES];
         [m_pWindow setContentView:m_pView];
         [m_pWindow setRestorable:NO];
         [m_pWindow makeFirstResponder:m_pView];
         
-        const NSWindowCollectionBehavior behavior = NSWindowCollectionBehaviorFullScreenPrimary | NSWindowCollectionBehaviorManaged;
+		// Disable fullscreen toggle if window is not resizeable
+        NSWindowCollectionBehavior behavior = NSWindowCollectionBehaviorManaged;
+		if (pDesc->Style & WINDOW_STYLE_FLAG_RESIZEABLE)
+		{
+			behavior |= NSWindowCollectionBehaviorFullScreenPrimary;
+		}
+		else
+		{
+			behavior |= NSWindowCollectionBehaviorFullScreenAuxiliary;
+		}
+		
         [m_pWindow setCollectionBehavior:behavior];
         
+		// Set styleflags
+		m_StyleFlags = pDesc->Style;
         return true;
     }
 
@@ -68,32 +106,47 @@ namespace LambdaEngine
 
     void MacWindow::Close()
     {
-        MacMainThread::MakeCall(^
-        {
-            [m_pWindow performClose:m_pWindow];
-        }, true);
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_CLOSABLE)
+		{
+			MacMainThread::MakeCall(^
+			{
+				[m_pWindow performClose:m_pWindow];
+			}, true);
+		}
     }
 
     void MacWindow::Minimize()
     {
-        MacMainThread::MakeCall(^
-        {
-            [m_pWindow miniaturize:m_pWindow];
-        }, true);
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_MINIMIZABLE)
+		{
+			MacMainThread::MakeCall(^
+			{
+				[m_pWindow miniaturize:m_pWindow];
+			}, true);
+		}
     }
 
     void MacWindow::Maximize()
     {
-        MacMainThread::MakeCall(^
-        {
-            if ([m_pWindow isMiniaturized])
-            {
-                [m_pWindow deminiaturize:m_pWindow];
-            }
-            
-            [m_pWindow zoom:m_pWindow];
-        }, true);
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_MAXIMIZABLE)
+		{
+			MacMainThread::MakeCall(^
+			{
+				if ([m_pWindow isMiniaturized])
+				{
+					[m_pWindow deminiaturize:m_pWindow];
+				}
+				
+				[m_pWindow zoom:m_pWindow];
+			}, true);
+		}
     }
+
+	bool MacWindow::IsActiveWindow() const
+	{
+        NSWindow* keyWindow = [NSApp keyWindow];
+		return keyWindow == m_pWindow;
+	}
 
     void MacWindow::Restore()
     {
@@ -113,23 +166,62 @@ namespace LambdaEngine
 
     void MacWindow::ToggleFullscreen()
     {
-        MacMainThread::MakeCall(^
-        {
-            [m_pWindow toggleFullScreen:m_pWindow];
-        }, true);
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_RESIZEABLE)
+		{
+			MacMainThread::MakeCall(^
+			{
+				[m_pWindow toggleFullScreen:m_pWindow];
+			}, true);
+		}
     }
 
-    void MacWindow::SetTitle(const char* pTitle)
+    void MacWindow::SetTitle(const String& title)
     {
         SCOPED_AUTORELEASE_POOL();
         
-        NSString* title = [NSString stringWithUTF8String:pTitle];
-        
+		NSString* nsTitle = [NSString stringWithUTF8String:title.c_str()];
+		if (m_StyleFlags & WINDOW_STYLE_FLAG_TITLED)
+		{
+			MacMainThread::MakeCall(^
+			{
+				[m_pWindow setTitle:nsTitle];
+			}, true);
+		}
+    }
+
+	void MacWindow::SetPosition(int32 x, int32 y)
+	{
+		MacMainThread::MakeCall(^
+		{
+			NSRect frame = [m_pWindow frame];
+			
+			// TODO: Make sure this is correct
+			[m_pWindow setFrameOrigin:NSMakePoint(x, y - frame.size.height + 1)];
+		}, true);
+	}
+
+	void MacWindow::GetPosition(int32* pPosX, int32* pPosY) const
+	{
+		__block NSRect frame;
+		MacMainThread::MakeCall(^
+		{
+			frame = [m_pWindow frame];
+		}, true);
+		
+		(*pPosX) = frame.origin.x;
+		(*pPosY) = frame.origin.y;
+	}
+
+	void MacWindow::SetSize(uint16 width, uint16 height)
+	{
         MacMainThread::MakeCall(^
         {
-            [m_pWindow setTitle:title];
-        }, true);
-    }
+			NSRect frame = [m_pWindow frame];
+			frame.size.width 	= width;
+			frame.size.height 	= height;
+			[m_pWindow setFrame: frame display: YES animate: YES];
+		}, true);
+	}
 
     uint16 MacWindow::GetWidth() const
     {
@@ -159,13 +251,19 @@ namespace LambdaEngine
 
     void* MacWindow::GetHandle() const
     {
-        return (void*)m_pWindow;
+        return reinterpret_cast<void*>(m_pWindow);
     }
 
     const void* MacWindow::GetView() const
     {
-        return (const void*)m_pView;
-    }
+        return reinterpret_cast<const void*>(m_pView);
+	}
+
+	float32 MacWindow::GetClientAreaScale() const
+	{
+		CGFloat scale = [m_pWindow backingScaleFactor];
+		return static_cast<float32>(scale);
+	}
 }
 
 #endif

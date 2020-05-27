@@ -31,7 +31,7 @@
 /*
 * Unused params
 */ 
-#define UNREFERENCED_VARIABLE(variable) (void)variable
+#define UNREFERENCED_VARIABLE(variable) (void)(variable)
 
 /*
 * Declaration helpers
@@ -86,18 +86,6 @@
 #else
 	#define FORCEINLINE __attribute__((always_inline)) inline
 #endif
-
-/*
-* Delete and Release
-*/ 
-#define DELETE_OBJECT(object)	delete (object); (object) = nullptr
-#define SAFEDELETE(object)		if ((object))	{ DELETE_OBJECT(object); }
-
-#define DELETE_ARRAY(array)		delete[] (array); (array) = nullptr
-#define SAFEDELETE_ARRAY(array)	if ((array))	{ DELETE_ARRAY(array); }
-
-#define RELEASE(object)			(object)->Release(); (object) = nullptr
-#define SAFERELEASE(object)		if ((object))	{ RELEASE(object); }
 
 /*
 * Bit-Mask helpers

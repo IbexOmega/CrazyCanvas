@@ -1,9 +1,9 @@
 #ifdef LAMBDA_PLATFORM_MACOS
 #include "Log/Log.h"
 
-#include "Memory/Memory.h"
+#include "Memory/API/Memory.h"
 
-#include "Application/API/IEventHandler.h"
+#include "Application/API/EventHandler.h"
 
 #include "Application/Mac/MacConsole.h"
 #include "Application/Mac/MacApplication.h"
@@ -11,7 +11,6 @@
 #include "Application/Mac/MacWindow.h"
 #include "Application/Mac/CocoaWindow.h"
 #include "Application/Mac/CocoaAppDelegate.h"
-#include "Application/Mac/IMacEventHandler.h"
 
 #include "Input/Mac/MacInputCodeTable.h"
 
@@ -72,286 +71,191 @@ namespace LambdaEngine
 	   return true;
 	}
 
-    /*
-     * MacEvent
-     */
+	/*
+	 * MacEvent
+	 */
 
-    MacEvent::MacEvent()
-    {
-    }
-
-    MacEvent::MacEvent(const MacEvent& other)
-        : pEventWindow((other.pEventWindow) ? [other.pEventWindow retain] : nullptr),
-        pEvent((other.pEvent) ? [other.pEvent retain] : nullptr),
-        pNotification((other.pNotification) ? [other.pNotification retain] : nullptr),
-        pKeyTypedText((other.pKeyTypedText) ? [other.pKeyTypedText retain] : nullptr),
-        Size(other.Size),
-        Position(other.Position)
-    {
-    }
-
-    MacEvent::~MacEvent()
-    {
-        if (pEventWindow)
-        {
-            [pEventWindow release];
-            pEventWindow = nullptr;
-        }
-        
-        if (pEvent)
-        {
-            [pEvent release];
-            pEvent = nullptr;
-        }
-        
-        if (pNotification)
-        {
-            [pNotification release];
-            pNotification = nullptr;
-        }
-        
-        if (pKeyTypedText)
-        {
-            [pKeyTypedText release];
-            pKeyTypedText = nullptr;
-        }
-    }
-
-    /*
-     * MacApplication
-     */
-
-    MacApplication* MacApplication::s_pApplication = nullptr;
-
-    MacApplication::MacApplication()
-        : Application()
-    {
-    	VALIDATE_MSG(s_pApplication == nullptr, "[MacApplication]: An instance of application already exists");
-		s_pApplication = this;
-    }
-
-    MacApplication::~MacApplication()
-    {
-        SCOPED_AUTORELEASE_POOL();
-        
-        VALIDATE_MSG(s_pApplication != nullptr, "[MacApplication]: Instance of application has already been deleted");
-		s_pApplication = nullptr;
-
-        for (MacWindow* pWindow : m_Windows)
-        {
-            SAFERELEASE(pWindow);
-        }
-
-        [m_pAppDelegate release];
-    }
-
-    bool MacApplication::Init()
-    {
-        SCOPED_AUTORELEASE_POOL();
-        
-        m_pAppDelegate = [[CocoaAppDelegate alloc] init];
-        [NSApp setDelegate:m_pAppDelegate];
-        
-        if (!InitMenu())
-        {
-            LOG_ERROR("[MacApplication]: Failed to initialize the application menu");
-            return false;
-        }
-        
-        // Create mainwindow for application
-        MacWindow* pWindow = (MacWindow*)MacApplication::CreateWindow("Lambda Game Engine", 1440, 900);
-        if (!pWindow)
-        {
-            return false;
-        }
-        
-        pWindow->Show();
-        MakeMainWindow(pWindow);
-        
-        return true;
-    }
-
-    void MacApplication::AddMacEventHandler(IMacEventHandler* pMacMessageHandler)
-    {
-        //Check first so that this handler is not already added
-        const uint32 count = uint32(m_MacEventHandlers.size());
-        for (uint32 i = 0; i < count; i++)
-        {
-            if (pMacMessageHandler == m_MacEventHandlers[i])
-            {
-                return;
-            }
-        }
-
-        // Add new handler
-        m_MacEventHandlers.emplace_back(pMacMessageHandler);
-    }
-
-    void MacApplication::RemoveMacEventHandler(IMacEventHandler* pMacMessageHandler)
-    {
-        const uint32 count = uint32(m_MacEventHandlers.size());
-        for (uint32 i = 0; i < count; i++)
-        {
-            if (pMacMessageHandler == m_MacEventHandlers[i])
-            {
-                // A handler must be unique since we check for it when adding a handler, therefore we can break here
-                m_MacEventHandlers.erase(m_MacEventHandlers.begin() + i);
-                break;
-            }
-        }
-    }
-
-    void MacApplication::StoreNSEvent(NSEvent* pEvent)
-    {
-        MacEvent storedEvent = { };
-        storedEvent.pEvent = [pEvent retain];
-
-        NSWindow* window = [pEvent window];
-        if (window)
-        {
-            if ([window isKindOfClass:[CocoaWindow class]])
-            {
-                storedEvent.pEventWindow = (CocoaWindow*)[window retain];
-            }
-        }
-        
-        StoreEvent(&storedEvent);
-    }
-
-    void MacApplication::StoreEvent(const MacEvent* pEvent)
-    {
-        m_StoredEvents.emplace_back(*pEvent);
-    }
-
-	void MacApplication::ProcessNSEvent(NSEvent* pEvent)
+	MacEvent::MacEvent()
 	{
-		// Store the event for later
-		StoreNSEvent(pEvent);
-		
-		// Let all the eventhandlers know
-        for (IMacEventHandler* pMacEventHandler : m_MacEventHandlers)
-        {
-            pMacEventHandler->HandleEvent(pEvent);
-        }
 	}
 
-    void MacApplication::ProcessStoredEvent(const MacEvent* pEvent)
-    {
-        NSEvent*        event           = pEvent->pEvent;
-        NSNotification* notification    = pEvent->pNotification;
-        
-        if (notification)
-        {
-            NSNotificationName name = [notification name];
-            if (name == NSWindowWillCloseNotification)
-            {
-                VALIDATE(pEvent->pEventWindow != nullptr);
-                
-                LOG_MESSAGE("Window will close");
-                
-                MacWindow* pWindow = GetWindowFromNSWindow(pEvent->pEventWindow);
-                if (pWindow == m_pMainWindow)
-                {
-                    m_IsTerminating = true;
-                }
-                
-                for (IEventHandler* pHandler : m_EventHandlers)
-                {
-                    pHandler->WindowClosed(pWindow);
-                }
-            }
-            else if (name == NSWindowDidMoveNotification)
-            {
-                VALIDATE(pEvent->pEventWindow != nullptr);
-                
-                MacWindow* pWindow = GetWindowFromNSWindow(pEvent->pEventWindow);
-                for (IEventHandler* pHandler : m_EventHandlers)
-                {
-                    pHandler->WindowMoved(pWindow, int16(pEvent->Position.x), int16(pEvent->Position.y));
-                }
-            }
-            else if (name == NSWindowDidResizeNotification)
-            {
-                VALIDATE(pEvent->pEventWindow != nullptr);
-                
-                MacWindow* pWindow = GetWindowFromNSWindow(pEvent->pEventWindow);
-                for (IEventHandler* pHandler : m_EventHandlers)
-                {
-                    pHandler->WindowResized(pWindow, uint16(pEvent->Size.width), uint16(pEvent->Size.height), EResizeType::RESIZE_TYPE_NONE);
-                }
-            }
-            else if (name == NSWindowDidMiniaturizeNotification)
-            {
-                VALIDATE(pEvent->pEventWindow != nullptr);
-                
-                MacWindow* pWindow = GetWindowFromNSWindow(pEvent->pEventWindow);
-                for (IEventHandler* pHandler : m_EventHandlers)
-                {
-                    pHandler->WindowResized(pWindow, uint16(pEvent->Size.width), uint16(pEvent->Size.height), EResizeType::RESIZE_TYPE_MINIMIZE);
-                }
-            }
-            else if (name == NSWindowDidDeminiaturizeNotification)
-            {
-                VALIDATE(pEvent->pEventWindow != nullptr);
-                
-                MacWindow* pWindow = GetWindowFromNSWindow(pEvent->pEventWindow);
-                for (IEventHandler* pHandler : m_EventHandlers)
-                {
-                    pHandler->WindowResized(pWindow, uint16(pEvent->Size.width), uint16(pEvent->Size.height), EResizeType::RESIZE_TYPE_MAXIMIZE);
-                }
-            }
-            else if (name == NSWindowDidBecomeKeyNotification)
-            {
-                VALIDATE(pEvent->pEventWindow != nullptr);
-                
-                MacWindow* pWindow = GetWindowFromNSWindow(pEvent->pEventWindow);
-                for (IEventHandler* pHandler : m_EventHandlers)
-                {
-                    pHandler->FocusChanged(pWindow, true);
-                }
-            }
-            else if (name == NSWindowDidResignKeyNotification)
-            {
-                VALIDATE(pEvent->pEventWindow != nullptr);
-                
-                MacWindow* pWindow = GetWindowFromNSWindow(pEvent->pEventWindow);
-                for (IEventHandler* pHandler : m_EventHandlers)
-                {
-                    pHandler->FocusChanged(pWindow, false);
-                }
-            }
-        }
-        else if (event)
-        {
-            NSEventType type = [event type];
+	MacEvent::MacEvent(const MacEvent& other)
+		: pEventWindow((other.pEventWindow) ? [other.pEventWindow retain] : nullptr),
+		pEvent((other.pEvent) ? [other.pEvent retain] : nullptr),
+		pNotification((other.pNotification) ? [other.pNotification retain] : nullptr),
+		pKeyTypedText((other.pKeyTypedText) ? [other.pKeyTypedText retain] : nullptr),
+		Size(other.Size),
+		Position(other.Position)
+	{
+	}
+
+	MacEvent::~MacEvent()
+	{
+		if (pEventWindow)
+		{
+			[pEventWindow release];
+			pEventWindow = nullptr;
+		}
+		
+		if (pEvent)
+		{
+			[pEvent release];
+			pEvent = nullptr;
+		}
+		
+		if (pNotification)
+		{
+			[pNotification release];
+			pNotification = nullptr;
+		}
+		
+		if (pKeyTypedText)
+		{
+			[pKeyTypedText release];
+			pKeyTypedText = nullptr;
+		}
+	}
+
+	/*
+	 * MacApplication
+	 */
+
+	MacApplication* MacApplication::s_pApplication = nullptr;
+
+	MacApplication::MacApplication()
+		: Application()
+	{
+		VALIDATE_MSG(s_pApplication == nullptr, "[MacApplication]: An instance of application already exists");
+		s_pApplication = this;
+	}
+
+	MacApplication::~MacApplication()
+	{
+		SCOPED_AUTORELEASE_POOL();
+
+		// Destroy windows
+		for (MacWindow* pWindow : m_Windows)
+		{
+			SAFERELEASE(pWindow);
+		}
+
+		[m_pAppDelegate release];
+		
+		VALIDATE_MSG(s_pApplication != nullptr, "[MacApplication]: Instance of application has already been deleted");
+		s_pApplication = nullptr;
+		
+		// Release mainthread
+		MacMainThread::PostRelease();
+	}
+
+	void MacApplication::StoreNSEvent(NSEvent* pEvent)
+	{
+		MacEvent event 	= { };
+		event.pEvent = [pEvent retain];
+
+		NSWindow* window = [pEvent window];
+		if (window)
+		{
+			if ([window isKindOfClass:[CocoaWindow class]])
+			{
+				event.pEventWindow = reinterpret_cast<CocoaWindow*>([window retain]);
+			}
+		}
+		
+		StoreEvent(event);
+	}
+
+	void MacApplication::StoreEvent(const MacEvent& event)
+	{
+		m_StoredEvents.emplace_back(event);
+	}
+
+	bool MacApplication::ProcessStoredEvent(const MacEvent& event)
+	{
+		NSEvent*		nsEvent			= event.pEvent;
+		NSNotification*	notification	= event.pNotification;
+		
+		if (notification)
+		{
+			NSNotificationName name = [notification name];
+			if (name == NSWindowWillCloseNotification)
+			{
+				VALIDATE(event.pEventWindow != nullptr);
+				
+				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
+				m_pEventHandler->OnWindowClosed(pWindow);
+			}
+			else if (name == NSWindowDidMoveNotification)
+			{
+				VALIDATE(event.pEventWindow != nullptr);
+				
+				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
+				m_pEventHandler->OnWindowMoved(pWindow, int16(event.Position.x), int16(event.Position.y));
+			}
+			else if (name == NSWindowDidResizeNotification)
+			{
+				VALIDATE(event.pEventWindow != nullptr);
+				
+				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
+				m_pEventHandler->OnWindowResized(pWindow, uint16(event.Size.width), uint16(event.Size.height), EResizeType::RESIZE_TYPE_NONE);
+			}
+			else if (name == NSWindowDidMiniaturizeNotification)
+			{
+				VALIDATE(event.pEventWindow != nullptr);
+				
+				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
+				m_pEventHandler->OnWindowResized(pWindow, uint16(event.Size.width), uint16(event.Size.height), EResizeType::RESIZE_TYPE_MINIMIZE);
+			}
+			else if (name == NSWindowDidDeminiaturizeNotification)
+			{
+				VALIDATE(event.pEventWindow != nullptr);
+				
+				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
+				m_pEventHandler->OnWindowResized(pWindow, uint16(event.Size.width), uint16(event.Size.height), EResizeType::RESIZE_TYPE_MAXIMIZE);
+			}
+			else if (name == NSWindowDidBecomeKeyNotification)
+			{
+				VALIDATE(event.pEventWindow != nullptr);
+				
+				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
+				m_pEventHandler->OnFocusChanged(pWindow, true);
+			}
+			else if (name == NSWindowDidResignKeyNotification)
+			{
+				VALIDATE(event.pEventWindow != nullptr);
+				
+				MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
+				m_pEventHandler->OnFocusChanged(pWindow, false);
+			}
+			else if (name == NSApplicationWillTerminateNotification)
+			{
+				m_IsTerminating = true;
+				return false;
+			}
+		}
+		else if (nsEvent)
+		{
+			NSEventType type = [nsEvent type];
 			switch(type)
 			{
 				case NSEventTypeKeyUp:
 				{
-					const uint16  macKey = [event keyCode];
+					const uint16  macKey = [nsEvent keyCode];
 					const EKey    key    = MacInputCodeTable::GetKey(macKey);
 
-					for (IEventHandler* pHandler : m_EventHandlers)
-					{
-						pHandler->KeyReleased(key);
-					}
-
+					m_pEventHandler->OnKeyReleased(key);
 					break;
 				}
 				   
 				case NSEventTypeKeyDown:
 				{
-					const uint16  macKey = [event keyCode];
-					const EKey    key    = MacInputCodeTable::GetKey(macKey);
+					const uint16	macKey	= [nsEvent keyCode];
+					const EKey		key		= MacInputCodeTable::GetKey(macKey);
 
-					const uint32 modifierFlags  = [event modifierFlags];
-					const uint32 modifiers      = MacInputCodeTable::GetModiferMask(modifierFlags);
+					const uint32 modifierFlags	= [nsEvent modifierFlags];
+					const uint32 modifiers		= MacInputCodeTable::GetModiferMask(modifierFlags);
 
-					for (IEventHandler* pHandler : m_EventHandlers)
-					{
-						pHandler->KeyPressed(key, modifiers, [event isARepeat]);
-					}
-					
+					m_pEventHandler->OnKeyPressed(key, modifiers, [nsEvent isARepeat]);
 					break;
 				}
 
@@ -359,14 +263,10 @@ namespace LambdaEngine
 				case NSEventTypeRightMouseUp:
 				case NSEventTypeOtherMouseUp:
 				{
-					const NSInteger         macButton   = [event buttonNumber];
-					const EMouseButton      button      = MacInputCodeTable::GetMouseButton(int32(macButton));
-					
-					for (IEventHandler* pHandler : m_EventHandlers)
-					{
-						pHandler->ButtonReleased(button);
-					}
-				   
+					const NSInteger		macButton	= [nsEvent buttonNumber];
+					const EMouseButton	button		= MacInputCodeTable::GetMouseButton(int32(macButton));
+						
+					m_pEventHandler->OnButtonReleased(button);
 					break;
 				}
 
@@ -374,17 +274,13 @@ namespace LambdaEngine
 				case NSEventTypeRightMouseDown:
 				case NSEventTypeOtherMouseDown:
 				{
-					const NSInteger       macButton   = [event buttonNumber];
-					const EMouseButton    button      = MacInputCodeTable::GetMouseButton(int32(macButton));
+					const NSInteger		macButton	= [nsEvent buttonNumber];
+					const EMouseButton	button		= MacInputCodeTable::GetMouseButton(int32(macButton));
 
-					const NSUInteger modifierFlags = [event modifierFlags];
-					const uint32     modifierMask  = MacInputCodeTable::GetModiferMask(modifierFlags);
-				   
-					for (IEventHandler* pHandler : m_EventHandlers)
-					{
-						pHandler->ButtonPressed(button, modifierMask);
-					}
-					
+					const NSUInteger	modifierFlags	= [nsEvent modifierFlags];
+					const uint32		modifierMask	= MacInputCodeTable::GetModiferMask(modifierFlags);
+
+					m_pEventHandler->OnButtonPressed(button, modifierMask);
 					break;
 				}
 
@@ -393,79 +289,52 @@ namespace LambdaEngine
 				case NSEventTypeRightMouseDragged:
 				case NSEventTypeMouseMoved:
 				{
-					const NSPoint mousePosition = [event locationInWindow];
-
-					int32 x = 0;
-					int32 y = 0;
-					if (pEvent->pEventWindow)
+					if (event.pEventWindow)
 					{
-					   const NSRect contentRect = [pEvent->pEventWindow frame];
-					   x = int32(mousePosition.x);
-					   y = int32(contentRect.size.height - mousePosition.y);
+						const NSPoint	mousePosition	= [nsEvent locationInWindow];
+						const NSRect	contentRect 	= [[event.pEventWindow contentView] frame];
+						
+						const int32 x = int32(mousePosition.x);
+						const int32 y = int32(contentRect.size.height - mousePosition.y);
+						
+						m_pEventHandler->OnMouseMoved(x, y);
+						break;
 					}
-					else
-					{
-					   x = int32(mousePosition.x);
-					   y = int32(mousePosition.y);
-					}
-					
-					for (IEventHandler* pHandler : m_EventHandlers)
-					{
-						pHandler->MouseMoved(x, y);
-					}
-					
-					break;
 				}
 				   
 				case NSEventTypeScrollWheel:
 				{
-					CGFloat scrollDeltaX = [event scrollingDeltaX];
-					CGFloat scrollDeltaY = [event scrollingDeltaY];
-					if ([event hasPreciseScrollingDeltas])
+					CGFloat scrollDeltaX = [nsEvent scrollingDeltaX];
+					CGFloat scrollDeltaY = [nsEvent scrollingDeltaY];
+					if ([nsEvent hasPreciseScrollingDeltas])
 					{
-					   scrollDeltaX *= 0.1;
-					   scrollDeltaY *= 0.1;
+						scrollDeltaX *= 0.1;
+						scrollDeltaY *= 0.1;
 					}
-					
-					for (IEventHandler* pHandler : m_EventHandlers)
-					{
-						pHandler->MouseScrolled(int32(scrollDeltaX), int32(scrollDeltaY));
-					}
-					
+						
+					m_pEventHandler->OnMouseScrolled(int32(scrollDeltaX), int32(scrollDeltaY));
 					break;
 				}
 					
 				case NSEventTypeMouseEntered:
 				{
-					if (pEvent->pEventWindow)
+					MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
+					if (pWindow)
 					{
-						MacWindow* pWindow = GetWindowFromNSWindow(pEvent->pEventWindow);
-						if (pWindow)
-						{
-							for (IEventHandler* pHandler : m_EventHandlers)
-							{
-								pHandler->MouseEntered(pWindow);
-							}
-						}
+						m_pEventHandler->OnMouseEntered(pWindow);
 					}
-					
+
 					break;
 				}
 					
 				case NSEventTypeMouseExited:
 				{
-					if (pEvent->pEventWindow)
+					MacWindow* pWindow = GetWindowFromNSWindow(event.pEventWindow);
+					if (pWindow)
 					{
-						MacWindow* pWindow = GetWindowFromNSWindow(pEvent->pEventWindow);
-						if (pWindow)
-						{
-							for (IEventHandler* pHandler : m_EventHandlers)
-							{
-								pHandler->MouseLeft(pWindow);
-							}
-						}
+						m_pEventHandler->OnMouseLeft(pWindow);
 					}
-					
+
 					break;
 				}
 					
@@ -474,238 +343,207 @@ namespace LambdaEngine
 					break;
 				}
 			}
-        }
-        else if (pEvent->pKeyTypedText)
-        {
-            NSString*   text    = pEvent->pKeyTypedText;
-            NSUInteger  count   = [text length];
-            for (NSUInteger i = 0; i < count; i++)
-            {
-                // Equal to unsigned short
-                const unichar codepoint = [text characterAtIndex:i];
-                if ((codepoint & 0xff00) != 0xf700)
-                {
-					for (IEventHandler* pHandler : m_EventHandlers)
-					{
-						pHandler->KeyTyped(uint32(codepoint));
-					}
-                }
-            }
-        }
-    }
-
-    MacWindow* MacApplication::GetWindowFromNSWindow(CocoaWindow* pWindow)
-    {
-        for (MacWindow* pMacWindow : m_Windows)
-        {
-            CocoaWindow* nsHandle = (CocoaWindow*)pMacWindow->GetHandle();
-            if (nsHandle == pWindow)
-            {
-                return pMacWindow;
-            }
-        }
-        
-        return nullptr;
-    }
-
-    void MacApplication::AddEventHandler(IEventHandler* pEventHandler)
-    {
-        // Check first so that this handler is not already added
-		const uint32 count = uint32(m_EventHandlers.size());
-		for (uint32 i = 0; i < count; i++)
+		}
+		else if (event.pKeyTypedText)
 		{
-			if (pEventHandler == m_EventHandlers[i])
+			NSString*	text	= event.pKeyTypedText;
+			NSUInteger	count	= [text length];
+			for (NSUInteger i = 0; i < count; i++)
 			{
-				return;
+				// Equal to unsigned short
+				const unichar codepoint = [text characterAtIndex:i];
+				if ((codepoint & 0xff00) != 0xf700)
+				{
+					m_pEventHandler->OnKeyTyped(uint32(codepoint));
+				}
 			}
 		}
 
-		// Add new handler
-		m_EventHandlers.emplace_back(pEventHandler);
-    }
+		return true;
+	}
 
-    void MacApplication::RemoveEventHandler(IEventHandler* pEventHandler)
-    {
-        const uint32 count = uint32(m_EventHandlers.size());
-		for (uint32 i = 0; i < count; i++)
-		{
-			if (pEventHandler == m_EventHandlers[i])
-			{
-                // A handler must be unique since we check for it when adding a handler, therefore we can break here
-				m_EventHandlers.erase(m_EventHandlers.begin() + i);
-				break;
-			}
-		}
-    }
-
-    void MacApplication::ProcessStoredEvents()
-    {
-        m_IsProcessingEvents = true;
-        
-        TArray<MacEvent> eventsToProcess = TArray<MacEvent>(m_StoredEvents);
-        m_StoredEvents.clear();
-        
-        for (const MacEvent& event : eventsToProcess)
-        {
-            ProcessStoredEvent(&event);
-        }
-        
-        m_IsProcessingEvents = false;
-    }
-
-    void MacApplication::MakeMainWindow(IWindow* pMainWindow)
-    {
-        m_pMainWindow = reinterpret_cast<MacWindow*>(pMainWindow);
-    }
-
-	void MacApplication::SetInputMode(EInputMode inputMode)
+	MacWindow* MacApplication::GetWindowFromNSWindow(CocoaWindow* pWindow) const
 	{
+		for (MacWindow* pMacWindow : m_Windows)
+		{
+			CocoaWindow* nsHandle = reinterpret_cast<CocoaWindow*>(pMacWindow->GetHandle());
+			if (nsHandle == pWindow)
+			{
+				return pMacWindow;
+			}
+		}
+		
+		return nullptr;
+	}
+
+	bool MacApplication::Create()
+	{
+		SCOPED_AUTORELEASE_POOL();
+		
+		[NSApplication sharedApplication];
+		
+		VALIDATE(NSApp != nullptr);
+		
+		[NSApp activateIgnoringOtherApps:YES];
+		[NSApp setPresentationOptions:NSApplicationPresentationDefault];
+		[NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+		
+		m_pAppDelegate = [[CocoaAppDelegate alloc] init];
+		[NSApp setDelegate:m_pAppDelegate];
+		
+		MacMainThread::PreInit();
+		
+		if (!MacInputCodeTable::Init())
+		{
+			return false;
+		}
+
+		if (!InitMenu())
+		{
+			LOG_ERROR("[MacApplication]: Failed to initialize the application menu");
+			return false;
+		}
+
+		[NSApp finishLaunching];
+		return true;
+	}
+
+	Window* MacApplication::CreateWindow(const WindowDesc* pDesc)
+	{
+		MacWindow* pWindow = DBG_NEW MacWindow();
+		if (!pWindow->Init(pDesc))
+		{
+			SAFEDELETE(pWindow);
+			return nullptr;
+		}
+		else
+		{
+			AddWindow(pWindow);
+			return pWindow;
+		}
+	}
+
+	bool MacApplication::ProcessStoredEvents()
+	{
+		m_IsProcessingEvents = true;
+		
+		TArray<MacEvent> eventsToProcess = TArray<MacEvent>(m_StoredEvents);
+		m_StoredEvents.clear();
+		
+		bool shouldRun = true;
+		for (const MacEvent& event : eventsToProcess)
+		{
+			if (!ProcessStoredEvent(event))
+			{
+				shouldRun = false;
+			}
+		}
+		
+		m_IsProcessingEvents = false;
+		
+		// We are done by updating (We have processed all events)
+		[NSApp updateWindows];
+		
+		return shouldRun;
+	}
+
+	bool MacApplication::Tick()
+	{
+		bool shouldExit = ProcessStoredEvents();
+
+		// Also process the mainthread
+		MacMainThread::Tick();
+		return shouldExit;
+	}
+
+	bool MacApplication::SupportsRawInput() const
+	{
+		return false;
+	}
+
+	void MacApplication::SetInputMode(Window* pWindow, EInputMode inputMode)
+	{
+		UNREFERENCED_VARIABLE(pWindow);
+		
 		if (inputMode != EInputMode::INPUT_MODE_STANDARD)
 		{
 			LOG_ERROR("[MacApplication]: Unsupported inputmode");
 		}
 	}
 
-	EInputMode MacApplication::GetInputMode() const
+	EInputMode MacApplication::GetInputMode(Window* pWindow) const
 	{
+		UNREFERENCED_VARIABLE(pWindow);
 		return EInputMode::INPUT_MODE_STANDARD;
 	}
 
-    IWindow* MacApplication::GetForegroundWindow() const
-    {
-        VALIDATE(MacApplication::Get() != nullptr);
-        
-        NSWindow* keyWindow = [NSApp keyWindow];
-        if ([keyWindow isKindOfClass:[CocoaWindow class]])
-        {
-            return MacApplication::Get()->GetWindowFromNSWindow((CocoaWindow*)keyWindow);
-        }
-        
-        return nullptr;
-    }
-
-    IWindow* MacApplication::GetMainWindow() const
-    {
-        VALIDATE(MacApplication::Get() != nullptr);
-        return MacApplication::Get()->m_pMainWindow;
-    }
-
-    void MacApplication::AddWindow(MacWindow* pWindow)
-    {
-        m_Windows.emplace_back(pWindow);
-    }
-
-    void MacApplication::Terminate()
-    {
-        [NSApp terminate:nil];
-    }
-
-    IWindow* MacApplication::CreateWindow(const char* pTitle, uint32 width, uint32 height)
-    {
-        MacWindow* pWindow = DBG_NEW MacWindow();
-        if (!pWindow->Init(pTitle, width, height))
-        {
-            SAFEDELETE(pWindow);
-        }
-        
-        VALIDATE(MacApplication::Get() != nullptr);
-        
-        MacApplication::Get()->AddWindow(pWindow);
-        return pWindow;
-    }
-
-    MacApplication* MacApplication::Get()
+	void MacApplication::SetActiveWindow(Window *pWindow)
 	{
+		CocoaWindow* pCocoaWindow = reinterpret_cast<CocoaWindow*>(pWindow->GetHandle());
+		[pCocoaWindow makeKeyAndOrderFront:pCocoaWindow];
+	}
+
+	Window* MacApplication::GetActiveWindow() const
+	{
+		NSWindow* keyWindow = [NSApp keyWindow];
+		if ([keyWindow isKindOfClass:[CocoaWindow class]])
+		{
+			CocoaWindow* nsHandle = reinterpret_cast<CocoaWindow*>(keyWindow);
+			return GetWindowFromNSWindow(nsHandle);
+		}
+		
+		return nullptr;
+	}
+
+	void MacApplication::AddWindow(MacWindow* pWindow)
+	{
+		m_Windows.emplace_back(pWindow);
+	}
+
+	void MacApplication::Terminate()
+	{
+		[NSApp terminate:nil];
+	}
+
+	Application* MacApplication::CreateApplication()
+	{
+		return DBG_NEW MacApplication();
+	}
+
+	MacApplication* MacApplication::Get()
+	{
+		VALIDATE(s_pApplication != nullptr);
 		return s_pApplication;
 	}
 
-    bool MacApplication::PreInit()
-    {
-        SCOPED_AUTORELEASE_POOL();
-        
-        [NSApplication sharedApplication];
-        
-        VALIDATE(NSApp != nil);
-        
-        [NSApp activateIgnoringOtherApps:YES];
-        [NSApp setPresentationOptions:NSApplicationPresentationDefault];
-        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-
-        MacMainThread::PreInit();
-        
-        MacApplication* pApplication = DBG_NEW MacApplication();
-        if (!pApplication->Init())
-        {
-            return false;
-        }
-        
-        if (!MacInputCodeTable::Init())
-        {
-            return false;
-        }
-        
-        // Process events in the queue
-        ProcessMessages();
-        
-        [NSApp finishLaunching];
-        return true;
-    }
-
-    bool MacApplication::Tick()
-    {
-        MacMainThread::Tick();
-        
-        bool shouldExit = ProcessMessages();
-        MacApplication::Get()->ProcessStoredEvents();
-
-        // We are done by updating (We have processed all events)
-        [NSApp updateWindows];
-        
-        return shouldExit;
-    }
-
-    bool MacApplication::ProcessMessages()
-    {
-        SCOPED_AUTORELEASE_POOL();
-        
-        // Make sure this function is called on the main thread, calling from other threads result in undefined
-        VALIDATE([NSThread isMainThread]);
-        
-        if (MacApplication::Get())
-        {
-            // Checking events while processing buffered events causes some events to get lost
-            if (!MacApplication::Get()->IsProcessingEvents())
-            {
-                NSEvent* event = nil;
-                while (true)
-                {
-                    event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES];
-                    if (!event)
-                    {
-                        break;
-                    }
-                    
-                    MacApplication::Get()->StoreNSEvent(event);
-                    [NSApp sendEvent:event];
-                }
-            }
-            
-            if (MacApplication::Get()->IsTerminating())
-            {
-                return false;
-            }
-        }
-        
-        return true;
-    }
-
-    bool MacApplication::PostRelease()
-    {
-        SAFEDELETE(s_pApplication);
-        
-        MacMainThread::PostRelease();
-        return true;
-    }
+	bool MacApplication::PeekEvents()
+	{
+		SCOPED_AUTORELEASE_POOL();
+		
+		// Make sure this function is called on the main thread, calling from other threads result in undefined
+		VALIDATE([NSThread isMainThread]);
+		
+		if (s_pApplication)
+		{
+			// Checking events while processing buffered events causes some events to get lost
+			if (!MacApplication::Get()->IsProcessingEvents())
+			{
+				NSEvent* event = nil;
+				while (true)
+				{
+					event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES];
+					if (!event)
+					{
+						break;
+					}
+					
+					[NSApp sendEvent:event];
+				}
+			}
+		}
+		
+		return true;
+	}
 }
 
 #endif

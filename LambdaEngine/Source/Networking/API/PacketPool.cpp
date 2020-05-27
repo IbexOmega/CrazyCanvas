@@ -36,7 +36,7 @@ namespace LambdaEngine
 			m_PacketsFree.pop_back();
 
 #ifndef LAMBDA_CONFIG_PRODUCTION
-			pPacket->m_IsBorrowed = true;
+			Request(pPacket);
 #endif
 		}
 		else
@@ -50,7 +50,7 @@ namespace LambdaEngine
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
-		int32 delta = m_PacketsFree.size() - nrOfPackets;
+		int32 delta = (int32)m_PacketsFree.size() - nrOfPackets;
 
 		if (delta < 0)
 		{
@@ -63,7 +63,9 @@ namespace LambdaEngine
 
 #ifndef LAMBDA_CONFIG_PRODUCTION
 		for (int32 i = 0; i < nrOfPackets; i++)
-			packetsReturned[i]->m_IsBorrowed = true;
+		{
+			Request(packetsReturned[i]);
+		}
 #endif
 
 		return true;
@@ -72,22 +74,7 @@ namespace LambdaEngine
 	void PacketPool::FreePacket(NetworkPacket* pPacket)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
-
-#ifdef LAMBDA_CONFIG_PRODUCTION
-		m_PacketsFree.push_back(pPacket);
-#else
-		if (pPacket->m_IsBorrowed)
-		{
-			pPacket->m_IsBorrowed = false;
-			pPacket->m_SizeOfBuffer = 0;
-			m_PacketsFree.push_back(pPacket);
-		}
-		else
-		{
-			LOG_ERROR("[PacketPool]: Packet was returned multiple times!");
-			DEBUGBREAK();
-		}
-#endif
+		Free(pPacket);
 	}
 
 	void PacketPool::FreePackets(std::vector<NetworkPacket*>& packets)
@@ -95,24 +82,40 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		for (NetworkPacket* pPacket : packets)
 		{
-
-#ifdef LAMBDA_CONFIG_PRODUCTION
-			m_PacketsFree.push_back(pPacket);
-#else
-			if (pPacket->m_IsBorrowed)
-			{
-				pPacket->m_IsBorrowed = false;
-				pPacket->m_SizeOfBuffer = 0;
-				m_PacketsFree.push_back(pPacket);
-			}
-			else
-			{
-				LOG_ERROR("[PacketPool]: Packet was returned multiple times!");
-				DEBUGBREAK();
-			}
-#endif
+			Free(pPacket);
 		}
 		packets.clear();
+	}
+
+	void PacketPool::Request(NetworkPacket* pPacket)
+	{
+		pPacket->m_IsBorrowed = true;
+
+#ifdef DEBUG_PACKET_POOL
+		LOG_MESSAGE("[PacketPool]: Lending [%x]", pPacket);
+#endif
+	}
+
+	void PacketPool::Free(NetworkPacket* pPacket)
+	{
+#ifdef DEBUG_PACKET_POOL
+		LOG_MESSAGE("[PacketPool]: Freeing [%x]%s", pPacket, pPacket->ToString().c_str());
+#endif
+
+#ifndef LAMBDA_CONFIG_PRODUCTION
+		if (pPacket->m_IsBorrowed)
+		{
+			pPacket->m_IsBorrowed = false;
+		}
+		else
+		{
+			LOG_ERROR("[PacketPool]: Packet was returned multiple times!");
+			DEBUGBREAK();
+		}
+#endif
+
+		pPacket->m_SizeOfBuffer = 0;
+		m_PacketsFree.push_back(pPacket);
 	}
 
 	void PacketPool::Reset()
@@ -126,16 +129,18 @@ namespace LambdaEngine
 #ifndef LAMBDA_CONFIG_PRODUCTION
 			pPacket->m_IsBorrowed = false;
 #endif
+			pPacket->m_SizeOfBuffer = 0;
 			m_PacketsFree.push_back(pPacket);
 		}
 	}
+
 	uint16 PacketPool::GetSize() const
 	{
-		return m_Packets.size();
+		return (uint16)m_Packets.size();
 	}
 
 	uint16 PacketPool::GetFreePackets() const
 	{
-		return m_PacketsFree.size();
+		return (uint16)m_PacketsFree.size();
 	}
 }

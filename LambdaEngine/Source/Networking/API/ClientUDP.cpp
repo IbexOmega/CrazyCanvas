@@ -16,10 +16,9 @@ namespace LambdaEngine
 	std::set<ClientUDP*> ClientUDP::s_Clients;
 	SpinLock ClientUDP::s_Lock;
 
-	ClientUDP::ClientUDP(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries) :
+	ClientUDP::ClientUDP(IClientUDPHandler* pHandler, uint16 packetPoolSize, uint8 maximumTries) :
 		m_pSocket(nullptr),
-		//m_PacketManager(this, packets, maximumTries),
-		m_PacketManager(),
+		m_PacketManager(packetPoolSize, maximumTries),
 		m_pHandler(pHandler), 
 		m_State(STATE_DISCONNECTED),
 		m_pSendBuffer()
@@ -58,7 +57,6 @@ namespace LambdaEngine
 			if (StartThreads())
 			{
 				LOG_WARNING("[ClientUDP]: Connecting...");
-				m_PacketManager.Reset();
 				m_PacketManager.SetEndPoint(ipEndPoint);
 				return true;
 			}
@@ -152,6 +150,7 @@ namespace LambdaEngine
 			if (m_pSocket->Bind(IPEndPoint(IPAddress::ANY, 0)))
 			{
 				m_Transciver.SetSocket(m_pSocket);
+				m_PacketManager.Reset();
 				m_State = STATE_CONNECTING;
 				m_pHandler->OnConnectingUDP(this);
 				m_SendDisconnectPacket = true;
@@ -281,13 +280,17 @@ namespace LambdaEngine
 
 	void ClientUDP::Tick(Timestamp delta)
 	{
-		m_PacketManager.Tick(delta);
+		if (m_State != STATE_DISCONNECTED)
+		{
+			m_PacketManager.Tick(delta);
+		}
+		
 		Flush();
 	}
 
-	ClientUDP* ClientUDP::Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries)
+	ClientUDP* ClientUDP::Create(IClientUDPHandler* pHandler, uint16 packetPoolSize, uint8 maximumTries)
 	{
-		return DBG_NEW ClientUDP(pHandler, packets, maximumTries);
+		return DBG_NEW ClientUDP(pHandler, packetPoolSize, maximumTries);
 	}
 
 	void ClientUDP::FixedTickStatic(Timestamp timestamp)

@@ -1,6 +1,6 @@
 #include "Input/API/Input.h"
 
-#include "Application/API/PlatformApplication.h"
+#include "Application/API/CommonApplication.h"
 
 namespace LambdaEngine
 {
@@ -10,37 +10,40 @@ namespace LambdaEngine
 	* Instance
 	*/
 
-	void Input::ButtonPressed(EMouseButton button, uint32 modifierMask)
+	void Input::OnButtonPressed(EMouseButton button, uint32 modifierMask)
 	{
+		UNREFERENCED_VARIABLE(modifierMask);
 		m_MouseState.ButtonStates[button] = true;
 	}
 
-	void Input::ButtonReleased(EMouseButton button)
+	void Input::OnButtonReleased(EMouseButton button)
 	{
 		m_MouseState.ButtonStates[button] = false;
 	}
 
-	void Input::MouseMoved(int32 x, int32 y)
+	void Input::OnMouseMoved(int32 x, int32 y)
 	{
 		m_MouseState.x = x;
 		m_MouseState.y = y;
 	}
 
-	void Input::MouseScrolled(int32 deltaX, int32 deltaY)
+	void Input::OnMouseScrolled(int32 deltaX, int32 deltaY)
 	{
 		m_MouseState.ScrollX = deltaX;
 		m_MouseState.ScrollY = deltaY;
 	}
 
-	void Input::KeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
+	void Input::OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
 	{
+		UNREFERENCED_VARIABLE(modifierMask);
+
 		if (!isRepeat)
 		{
 			m_KeyboardState.KeyStates[key] = true;
 		}
 	}
 
-	void Input::KeyReleased(EKey key)
+	void Input::OnKeyReleased(EKey key)
 	{
 		m_KeyboardState.KeyStates[key] = false;
 	}
@@ -52,14 +55,14 @@ namespace LambdaEngine
 	bool Input::Init()
 	{
 		s_pInstance = DBG_NEW Input();
-		PlatformApplication::Get()->AddEventHandler(s_pInstance);
+		CommonApplication::Get()->AddEventHandler(s_pInstance);
 
         return (s_pInstance != nullptr);
 	}
 
 	void Input::Release()
 	{
-		PlatformApplication::Get()->RemoveEventHandler(s_pInstance);
+		CommonApplication::Get()->RemoveEventHandler(s_pInstance);
 		SAFEDELETE(s_pInstance);
 	}
 

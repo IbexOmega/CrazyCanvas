@@ -711,8 +711,7 @@ namespace LambdaEngine
 		shaderDesc.ShaderConstantCount	= 0;
 
 		IShader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
-
-		SAFEDELETE_ARRAY(pShaderRawSource);
+		Malloc::Free(pShaderRawSource);
 
 		return pShader;
 	}
@@ -740,23 +739,28 @@ namespace LambdaEngine
 		FILE* pFile = fopen(pFilepath, pMode);
 		if (pFile == nullptr)
 		{
-			LOG_ERROR("[ResourceDevice]: Failed to load file \"%s\"", pFilepath);
+			LOG_ERROR("[ResourceLoader]: Failed to load file \"%s\"", pFilepath);
 			return false;
 		}
 
 		fseek(pFile, 0, SEEK_END);
-		int32 length = ftell(pFile);
+		int32 length = ftell(pFile) + 1;
 		fseek(pFile, 0, SEEK_SET);
 
-		byte* pData = (byte*)calloc(length, sizeof(byte));
+		byte* pData = reinterpret_cast<byte*>(Malloc::Allocate(length * sizeof(byte)));
+		ZERO_MEMORY(pData, length * sizeof(byte));
 
 		int32 read = fread(pData, 1, length, pFile);
 		if (read == 0)
 		{
-			LOG_ERROR("[ResourceDevice]: Failed to read file \"%s\"", pFilepath);
+			LOG_ERROR("[ResourceLoader]: Failed to read file \"%s\"", pFilepath);
 			return false;
 		}
-
+		else
+		{
+			pData[read] = '\0';
+		}
+		
 		(*ppData)		= pData;
 		(*pDataSize)	= length;
 

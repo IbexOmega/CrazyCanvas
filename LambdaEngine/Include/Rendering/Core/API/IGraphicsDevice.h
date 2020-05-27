@@ -21,7 +21,7 @@ namespace LambdaEngine
     struct AccelerationStructureDesc;
     struct RayTracingPipelineStateDesc;
 
-    class IWindow;
+    class Window;
 	class IFence;
     class IFence;
 	class IShader;
@@ -89,7 +89,7 @@ namespace LambdaEngine
 		virtual ITexture* CreateTexture(const TextureDesc* pDesc, IDeviceAllocator* pAllocator)	const = 0;
 		virtual ISampler* CreateSampler(const SamplerDesc* pDesc)	const = 0;
 
-        virtual ISwapChain*	CreateSwapChain(const IWindow* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)	const = 0;
+        virtual ISwapChain*	CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)	const = 0;
 
 		virtual IPipelineState*	CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) 	const = 0;
 		virtual IPipelineState*	CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 	    const = 0;

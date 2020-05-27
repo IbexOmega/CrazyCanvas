@@ -20,7 +20,7 @@ namespace LambdaEngine
         SwapChainVK(const GraphicsDeviceVK* pDevice);
         ~SwapChainVK();
         
-        bool Init(const IWindow* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc);
+        bool Init(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc);
         
         // IDeviceChild interface
         virtual void SetName(const char* pName) override final;
@@ -35,7 +35,7 @@ namespace LambdaEngine
         
         virtual ICommandQueue* GetCommandQueue() override final;
 
-        FORCEINLINE virtual const IWindow* GetWindow() const override final
+        FORCEINLINE virtual const Window* GetWindow() const override final
         {
             return m_pWindow;
         }
@@ -57,7 +57,7 @@ namespace LambdaEngine
         void        ReleaseResources();
         
     private:
-        const IWindow*   m_pWindow       = nullptr;
+        const Window*   m_pWindow       = nullptr;
         CommandQueueVK* m_pCommandQueue = nullptr;
 
         VkSurfaceKHR    m_Surface           = VK_NULL_HANDLE;

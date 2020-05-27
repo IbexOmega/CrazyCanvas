@@ -1,6 +1,6 @@
 #include "Client.h"
 
-#include "Memory/Memory.h"
+#include "Memory/API/Malloc.h"
 
 #include "Log/Log.h"
 
@@ -17,9 +17,9 @@
 #include <imgui.h>
 
 #include "Application/API/PlatformMisc.h"
-#include "Application/API/PlatformApplication.h"
+#include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformConsole.h"
-#include "Application/API/IWindow.h"
+#include "Application/API/Window.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IPAddress.h"
@@ -40,8 +40,9 @@ Client::Client() :
     m_pClient(nullptr)
 {
 	using namespace LambdaEngine;
-    PlatformApplication::Get()->AddEventHandler(this);
-    PlatformApplication::Get()->GetMainWindow()->SetTitle("Client");
+	
+    CommonApplication::Get()->AddEventHandler(this);
+    CommonApplication::Get()->GetMainWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
 
 	InitRendererForEmpty();
@@ -127,11 +128,11 @@ void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8
     LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
 
-void Client::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
+void Client::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	using namespace LambdaEngine;
-
-	UNREFERENCED_VARIABLE(key);
+	UNREFERENCED_VARIABLE(modifierMask);
+	UNREFERENCED_VARIABLE(isRepeat);
 
     if (key == EKey::KEY_ENTER)
     {
@@ -231,7 +232,7 @@ bool Client::InitRendererForEmpty()
 
 	m_pRenderGraph->Init(renderGraphDesc);
 
-	IWindow* pWindow = PlatformApplication::Get()->GetMainWindow();
+	Window* pWindow = CommonApplication::Get()->GetMainWindow();
 	uint32 renderWidth = pWindow->GetWidth();
 	uint32 renderHeight = pWindow->GetHeight();
 
@@ -250,7 +251,7 @@ bool Client::InitRendererForEmpty()
 	rendererDesc.pName = "Renderer";
 	rendererDesc.Debug = RENDERING_DEBUG_ENABLED;
 	rendererDesc.pRenderGraph = m_pRenderGraph;
-	rendererDesc.pWindow = PlatformApplication::Get()->GetMainWindow();
+	rendererDesc.pWindow = CommonApplication::Get()->GetMainWindow();
 	rendererDesc.BackBufferCount = BACK_BUFFER_COUNT;
 
 	m_pRenderer->Init(&rendererDesc);

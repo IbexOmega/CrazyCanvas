@@ -53,7 +53,7 @@ namespace LambdaEngine
 		void Tick(Timestamp delta);
 
 	public:
-		static ServerUDP* Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packets, uint8 maximumTries);
+		static ServerUDP* Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPoolSize, uint8 maximumTries);
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);

@@ -13,10 +13,41 @@ namespace LambdaEngine
 		::DestroyWindow(m_hWnd);
 	}
 
-	bool Win32Window::Init(const char* pTitle, uint32 width, uint32 height)
+	bool Win32Window::Init(const WindowDesc* pDesc)
 	{
-		DWORD	dwStyle		= WS_OVERLAPPEDWINDOW | WS_MINIMIZE;
-		RECT	clientRect 	= { 0, 0, LONG(width), LONG(height) };
+		VALIDATE(pDesc != nullptr);
+
+		DWORD dwStyle = 0; 
+		if (pDesc->Style != 0)
+		{
+			dwStyle = WS_OVERLAPPED;
+			if (pDesc->Style & WINDOW_STYLE_FLAG_TITLED)
+			{
+				dwStyle |= WS_CAPTION;
+			}
+			if (pDesc->Style & WINDOW_STYLE_FLAG_CLOSABLE)
+			{
+				dwStyle |= WS_SYSMENU;
+			}
+			if (pDesc->Style & WINDOW_STYLE_FLAG_MINIMIZABLE)
+			{
+				dwStyle |= WS_SYSMENU | WS_MINIMIZEBOX;
+			}
+			if (pDesc->Style & WINDOW_STYLE_FLAG_MAXIMIZABLE)
+			{
+				dwStyle |= WS_SYSMENU | WS_MAXIMIZEBOX;
+			}
+			if (pDesc->Style & WINDOW_STYLE_FLAG_RESIZEABLE)
+			{
+				dwStyle |= WS_THICKFRAME;
+			}
+		}
+		else
+		{
+			dwStyle = WS_POPUP;
+		}
+
+		RECT clientRect = { 0, 0, LONG(pDesc->Width), LONG(pDesc->Height) };
 		::AdjustWindowRect(&clientRect, dwStyle, FALSE);
 
 		INT nWidth	= clientRect.right - clientRect.left;
@@ -25,7 +56,7 @@ namespace LambdaEngine
 		constexpr uint32 MAX_CHARS = 256;
 		static wchar_t title[MAX_CHARS];
 
-		size_t charsWritten = mbstowcs(title, pTitle, MAX_CHARS);
+		size_t charsWritten = mbstowcs(title, pDesc->Title.c_str(), MAX_CHARS);
 		if (charsWritten != static_cast<size_t>(-1))
 		{
 			title[charsWritten] = L'\0';
@@ -40,7 +71,19 @@ namespace LambdaEngine
 		}
 		else
 		{
-			UpdateWindow(m_hWnd);
+			// If the window has a sysmenu we check if the closebutton should be active
+			if (dwStyle & WS_SYSMENU)
+			{
+				if (!(pDesc->Style & WINDOW_STYLE_FLAG_CLOSABLE))
+				{
+					::EnableMenuItem(::GetSystemMenu(m_hWnd, FALSE), SC_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+				}
+			}
+
+			// Set descripton
+			m_Desc = (*pDesc);
+
+			::UpdateWindow(m_hWnd);
 			return true;
 		}
 	}
@@ -53,20 +96,35 @@ namespace LambdaEngine
 
 	void Win32Window::Close()
 	{
-		VALIDATE(m_hWnd != 0);
-		::DestroyWindow(m_hWnd);
+		if (m_Desc.Style & WINDOW_STYLE_FLAG_CLOSABLE)
+		{
+			VALIDATE(m_hWnd != 0);
+			::DestroyWindow(m_hWnd);
+		}
 	}
 
 	void Win32Window::Minimize()
 	{
-		VALIDATE(m_hWnd != 0);
-		::ShowWindow(m_hWnd, SW_MINIMIZE);
+		if (m_Desc.Style & WINDOW_STYLE_FLAG_MINIMIZABLE)
+		{
+			VALIDATE(m_hWnd != 0);
+			::ShowWindow(m_hWnd, SW_MINIMIZE);
+		}
 	}
 
 	void Win32Window::Maximize()
 	{
-		VALIDATE(m_hWnd != 0);
-		::ShowWindow(m_hWnd, SW_MAXIMIZE);
+		if (m_Desc.Style & WINDOW_STYLE_FLAG_MAXIMIZABLE)
+		{
+			VALIDATE(m_hWnd != 0);
+			::ShowWindow(m_hWnd, SW_MAXIMIZE);
+		}
+	}
+
+	bool Win32Window::IsActiveWindow() const
+	{
+		HWND hActiveWindow = ::GetActiveWindow();
+		return (m_hWnd == hActiveWindow);
 	}
 
 	void Win32Window::Restore()
@@ -89,8 +147,8 @@ namespace LambdaEngine
 	{
 		VALIDATE(m_hWnd != 0);
 
-		RECT rect = {};
-		GetClientRect(m_hWnd, &rect);
+		RECT rect = { };
+		::GetClientRect(m_hWnd, &rect);
 		return uint16(rect.right - rect.left);
 	}
 
@@ -98,8 +156,8 @@ namespace LambdaEngine
 	{
 		VALIDATE(m_hWnd != 0);
 
-		RECT rect = {};
-		GetClientRect(m_hWnd, &rect);
+		RECT rect = { };
+		::GetClientRect(m_hWnd, &rect);
 		return uint16(rect.bottom - rect.top);
 	}
 
@@ -108,15 +166,38 @@ namespace LambdaEngine
 		return (void*)m_hWnd;
 	}
 
-	const void* Win32Window::GetView() const
-	{
-		return nullptr;
-	}
-
-	void Win32Window::SetTitle(const char* pTitle)
+	void Win32Window::SetTitle(const String& title)
 	{
 		VALIDATE(m_hWnd != 0);
-		::SetWindowTextA(m_hWnd, pTitle);
+		::SetWindowTextA(m_hWnd, title.c_str());
+	}
+	
+	void Win32Window::SetPosition(int32 x, int32 y)
+	{
+		VALIDATE(m_hWnd != 0);
+		::SetWindowPos(m_hWnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+	}
+	
+	void Win32Window::GetPosition(int32* pPosX, int32* pPosY) const
+	{
+		VALIDATE(m_hWnd != 0);
+		VALIDATE(pPosX	!= nullptr);
+		VALIDATE(pPosY	!= nullptr);
+
+		WINDOWPLACEMENT placement = { };
+		placement.length = sizeof(WINDOWPLACEMENT);
+
+		if (::GetWindowPlacement(m_hWnd, &placement))
+		{
+			(*pPosX) = placement.rcNormalPosition.left;
+			(*pPosY) = placement.rcNormalPosition.bottom;
+		}
+	}
+	
+	void Win32Window::SetSize(uint16 width, uint16 height)
+	{
+		VALIDATE(m_hWnd != 0);
+		::SetWindowPos(m_hWnd, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 	}
 }
 

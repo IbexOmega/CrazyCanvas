@@ -26,11 +26,11 @@ namespace LambdaEngine
 	class ISampler;
 	class IShader;
 	class IBuffer;
-	class IWindow;
+	class Window;
 
 	struct ImGuiRendererDesc
 	{
-		IWindow*	pWindow				= nullptr;
+		Window*	pWindow				= nullptr;
 		uint32		BackBufferCount		= 0;
 		uint32		VertexBufferSize	= 0;
 		uint32		IndexBufferSize		= 0;
@@ -68,19 +68,19 @@ namespace LambdaEngine
 		//virtual void WindowClosed(IWindow* pWindow)													override final;
 		//virtual void MouseEntered(IWindow* pWindow)													override final;
 		//virtual void MouseLeft(IWindow* pWindow)														override final;
-		virtual void MouseMoved(int32 x, int32 y)														override final;
-		virtual void ButtonPressed(EMouseButton button, uint32 modifierMask)							override final;
-		virtual void ButtonReleased(EMouseButton button)												override final;
-		virtual void MouseScrolled(int32 deltaX, int32 deltaY)											override final;
-		virtual void KeyPressed(EKey key, uint32 modifierMask, bool isRepeat)							override final;
-		virtual void KeyReleased(EKey key)																override final;
-		virtual void KeyTyped(uint32 character)															override final;
+		virtual void OnMouseMoved(int32 x, int32 y)														override final;
+		virtual void OnButtonPressed(EMouseButton button, uint32 modifierMask)							override final;
+		virtual void OnButtonReleased(EMouseButton button)												override final;
+		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)											override final;
+		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)							override final;
+		virtual void OnKeyReleased(EKey key)																override final;
+		virtual void OnKeyTyped(uint32 character)															override final;
 
 	public:
 		static ImGuiContext* GetImguiContext();
 
 	private:
-		bool InitImGui(IWindow* pWindow);
+		bool InitImGui(Window* pWindow);
 		bool CreateCopyCommandList();
 		bool CreateAllocator(uint32 pageSize);
 		bool CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize);

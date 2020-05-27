@@ -188,6 +188,9 @@ workspace "LambdaEngine"
 				
 				"%{prj.name}/Include/Threading/Mac/**",
                 "%{prj.name}/Source/Threading/Mac/**",
+				
+				"%{prj.name}/Include/Memory/Mac/**",
+                "%{prj.name}/Source/Memory/Mac/**",
             }
         -- Remove files not available for macos builds
         filter "system:macosx"
@@ -209,6 +212,9 @@ workspace "LambdaEngine"
 				
 				"%{prj.name}/Include/Threading/Win32/**",
                 "%{prj.name}/Source/Threading/Win32/**",
+				
+				"%{prj.name}/Include/Memory/Win32/**",
+                "%{prj.name}/Source/Memory/Win32/**",
             }
         filter {}
 

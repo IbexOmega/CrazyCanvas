@@ -34,41 +34,62 @@ namespace LambdaEngine
 
 	uint64 PipelineStateManager::CreateGraphicsPipelineState(const GraphicsManagedPipelineStateDesc* pDesc)
 	{
-		uint64 pipelineIndex = s_CurrentPipelineIndex++;
-
-		s_GraphicsPipelineStateDescriptions[pipelineIndex] = *pDesc;
-
 		GraphicsPipelineStateDesc pipelineStateDesc = {};
 		FillGraphicsPipelineStateDesc(&pipelineStateDesc, pDesc);
 
-		s_PipelineStates[pipelineIndex] = RenderSystem::GetDevice()->CreateGraphicsPipelineState(&pipelineStateDesc);
-		return pipelineIndex;
+		IPipelineState* pPipelineState = RenderSystem::GetDevice()->CreateGraphicsPipelineState(&pipelineStateDesc);
+		if (pPipelineState)
+		{
+			uint64 pipelineIndex = s_CurrentPipelineIndex++;
+			s_GraphicsPipelineStateDescriptions[pipelineIndex] 	= *pDesc;
+			s_PipelineStates[pipelineIndex] 					= pPipelineState;
+			return pipelineIndex;
+		}
+		else
+		{
+			D_LOG_ERROR("[PipelineStateManager]: PipelineState is nullptr");
+			return 0;
+		}
 	}
 
 	uint64 PipelineStateManager::CreateComputePipelineState(const ComputeManagedPipelineStateDesc* pDesc)
 	{
-		uint64 pipelineIndex = s_CurrentPipelineIndex++;
-
-		s_ComputePipelineStateDescriptions[pipelineIndex] = *pDesc;
-
 		ComputePipelineStateDesc pipelineStateDesc = {};
 		FillComputePipelineStateDesc(&pipelineStateDesc, pDesc);
 
-		s_PipelineStates[pipelineIndex] = RenderSystem::GetDevice()->CreateComputePipelineState(&pipelineStateDesc);
-		return pipelineIndex;
+		IPipelineState* pPipelineState = RenderSystem::GetDevice()->CreateComputePipelineState(&pipelineStateDesc);
+		if (pPipelineState)
+		{
+			uint64 pipelineIndex = s_CurrentPipelineIndex++;
+			s_ComputePipelineStateDescriptions[pipelineIndex] 	= *pDesc;
+			s_PipelineStates[pipelineIndex] 					= pPipelineState;
+			return pipelineIndex;
+		}
+		else
+		{
+			D_LOG_ERROR("[PipelineStateManager]: PipelineState is nullptr");
+			return 0;
+		}
 	}
 
 	uint64 PipelineStateManager::CreateRayTracingPipelineState(const RayTracingManagedPipelineStateDesc* pDesc)
 	{
-		uint64 pipelineIndex = s_CurrentPipelineIndex++;
-
-		s_RayTracingPipelineStateDescriptions[pipelineIndex] = *pDesc;
-
 		RayTracingPipelineStateDesc pipelineStateDesc = {};
 		FillRayTracingPipelineStateDesc(&pipelineStateDesc, pDesc);
 
-		s_PipelineStates[pipelineIndex] = RenderSystem::GetDevice()->CreateRayTracingPipelineState(&pipelineStateDesc);
-		return pipelineIndex;
+		IPipelineState* pPipelineState = RenderSystem::GetDevice()->CreateRayTracingPipelineState(&pipelineStateDesc);
+		if (pPipelineState)
+		{
+			uint64 pipelineIndex = s_CurrentPipelineIndex++;
+			s_RayTracingPipelineStateDescriptions[pipelineIndex] 	= *pDesc;
+			s_PipelineStates[pipelineIndex] 						= pPipelineState;
+			return pipelineIndex;
+		}
+		else
+		{
+			D_LOG_ERROR("[PipelineStateManager]: PipelineState is nullptr");
+			return 0;
+		}
 	}
 
 	void PipelineStateManager::ReleasePipelineState(uint64 id)
@@ -77,6 +98,8 @@ namespace LambdaEngine
 
 		if (it != s_PipelineStates.end())
 		{
+			VALIDATE(it->second != nullptr);
+			
 			switch (it->second->GetType())
 			{
 			case EPipelineStateType::GRAPHICS:			s_GraphicsPipelineStateDescriptions.erase(id); break;
@@ -106,6 +129,9 @@ namespace LambdaEngine
 		for (auto it = s_PipelineStates.begin(); it != s_PipelineStates.end(); it++)
 		{
 			IPipelineState* pNewPipelineState = nullptr;
+			
+			VALIDATE(it->second != nullptr);
+			
 			switch (it->second->GetType())
 			{
 				case EPipelineStateType::GRAPHICS:

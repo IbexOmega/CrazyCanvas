@@ -45,153 +45,117 @@
 {
     using namespace LambdaEngine;
     
-    MacApplication* pMacApplication = MacApplication::Get();
-    if (pMacApplication)
-    {
-        MacEvent storedEvent = { };
-        storedEvent.pNotification = [notification retain];
-        storedEvent.pEventWindow  = [self retain];
-        
-        pMacApplication->StoreEvent(&storedEvent);
-    }
+	MacEvent event = { };
+	event.pNotification = [notification retain];
+	event.pEventWindow  = [self retain];
+	
+	MacApplication::Get()->StoreEvent(event);
 }
 
 - (void) windowDidResize:(NSNotification* ) notification
 {
     using namespace LambdaEngine;
     
-    MacApplication* pMacApplication = MacApplication::Get();
-    if (pMacApplication)
-    {
-        MacEvent storedEvent = { };
-        storedEvent.pNotification = [notification retain];
-        storedEvent.pEventWindow  = [self retain];
-        
-        const NSRect contentRect = [[self contentView] frame];
-        storedEvent.Size = contentRect.size;
-        
-        pMacApplication->StoreEvent(&storedEvent);
-    }
+	MacEvent event = { };
+	event.pNotification = [notification retain];
+	event.pEventWindow  = [self retain];
+	
+	const NSRect contentRect = [[self contentView] frame];
+	event.Size = contentRect.size;
+	
+	MacApplication::Get()->StoreEvent(event);
 }
 
 - (void) windowDidMove:(NSNotification* ) notification
 {
     using namespace LambdaEngine;
     
-    MacApplication* pMacApplication = MacApplication::Get();
-    if (pMacApplication)
-    {
-        MacEvent storedEvent = { };
-        storedEvent.pNotification = [notification retain];
-        storedEvent.pEventWindow  = [self retain];
-        
-        const NSRect contentRect = [self contentRectForFrameRect:[self frame]];
-        storedEvent.Position = contentRect.origin;
-        
-        pMacApplication->StoreEvent(&storedEvent);
-    }
+	MacEvent event = { };
+	event.pNotification = [notification retain];
+	event.pEventWindow  = [self retain];
+	
+	const NSRect contentRect = [self contentRectForFrameRect:[self frame]];
+	event.Position = contentRect.origin;
+	
+	MacApplication::Get()->StoreEvent(event);
 }
 
 - (void) windowDidMiniaturize:(NSNotification*) notification
 {
     using namespace LambdaEngine;
     
-    MacApplication* pMacApplication = MacApplication::Get();
-    if (pMacApplication)
-    {
-        MacEvent storedEvent = { };
-        storedEvent.pNotification = [notification retain];
-        storedEvent.pEventWindow  = [self retain];
-        
-        const NSRect contentRect = [self contentRectForFrameRect:[self frame]];
-        storedEvent.Size = contentRect.size;
-        
-        pMacApplication->StoreEvent(&storedEvent);
-    }
+	MacEvent event = { };
+	event.pNotification = [notification retain];
+	event.pEventWindow  = [self retain];
+	
+	const NSRect contentRect = [self contentRectForFrameRect:[self frame]];
+	event.Size = contentRect.size;
+	
+	MacApplication::Get()->StoreEvent(event);
 }
 
 - (void) windowDidDeminiaturize:(NSNotification*) notification
 {
     using namespace LambdaEngine;
-    
-    MacApplication* pMacApplication = MacApplication::Get();
-    if (pMacApplication)
-    {
-        MacEvent storedEvent = { };
-        storedEvent.pNotification = [notification retain];
-        storedEvent.pEventWindow  = [self retain];
-        
-        const NSRect contentRect = [[self contentView] frame];
-        storedEvent.Size = contentRect.size;
-        
-        pMacApplication->StoreEvent(&storedEvent);
-    }
+
+	MacEvent event = { };
+	event.pNotification = [notification retain];
+	event.pEventWindow  = [self retain];
+	
+	const NSRect contentRect = [[self contentView] frame];
+	event.Size = contentRect.size;
+	
+	MacApplication::Get()->StoreEvent(event);
 }
 
 - (void) windowDidEnterFullScreen:(NSNotification*) notification
 {
     using namespace LambdaEngine;
     
-    MacApplication* pMacApplication = MacApplication::Get();
-    if (pMacApplication)
-    {
-        MacEvent storedEvent = { };
-        storedEvent.pNotification = [notification retain];
-        storedEvent.pEventWindow  = [self retain];
-        
-        const NSRect contentRect = [[self contentView] frame];
-        storedEvent.Size = contentRect.size;
-        
-        pMacApplication->StoreEvent(&storedEvent);
-    }
+	MacEvent event = { };
+	event.pNotification = [notification retain];
+	event.pEventWindow  = [self retain];
+	
+	const NSRect contentRect = [[self contentView] frame];
+	event.Size = contentRect.size;
+	
+	MacApplication::Get()->StoreEvent(event);
 }
 
 - (void) windowDidExitFullScreen:(NSNotification*) notification
 {
     using namespace LambdaEngine;
     
-    MacApplication* pMacApplication = MacApplication::Get();
-    if (pMacApplication)
-    {
-        MacEvent storedEvent = { };
-        storedEvent.pNotification = [notification retain];
-        storedEvent.pEventWindow  = [self retain];
-        
-        const NSRect contentRect = [[self contentView] frame];
-        storedEvent.Size = contentRect.size;
-        
-        pMacApplication->StoreEvent(&storedEvent);
-    }
+	MacEvent event = { };
+	event.pNotification = [notification retain];
+	event.pEventWindow  = [self retain];
+	
+	const NSRect contentRect = [[self contentView] frame];
+	event.Size = contentRect.size;
+	
+	MacApplication::Get()->StoreEvent(event);
 }
 
 - (void) windowDidBecomeKey:(NSNotification*) notification
 {
     using namespace LambdaEngine;
-    
-    MacApplication* pMacApplication = MacApplication::Get();
-    if (pMacApplication)
-    {
-        MacEvent storedEvent = { };
-        storedEvent.pNotification = [notification retain];
-        storedEvent.pEventWindow  = [self retain];
-        
-        pMacApplication->StoreEvent(&storedEvent);
-    }
+
+	MacEvent event = { };
+	event.pNotification = [notification retain];
+	event.pEventWindow  = [self retain];
+	
+	MacApplication::Get()->StoreEvent(event);
 }
 
 - (void) windowDidResignKey:(NSNotification*) notification
 {
     using namespace LambdaEngine;
     
-    MacApplication* pMacApplication = MacApplication::Get();
-    if (pMacApplication)
-    {
-        MacEvent storedEvent = { };
-        storedEvent.pNotification = [notification retain];
-        storedEvent.pEventWindow  = [self retain];
-        
-        pMacApplication->StoreEvent(&storedEvent);
-    }
+	MacEvent event = { };
+	event.pNotification = [notification retain];
+	event.pEventWindow  = [self retain];
+	
+	MacApplication::Get()->StoreEvent(event);
 }
 
 @end

@@ -18,14 +18,10 @@
 {
     using namespace LambdaEngine;
     
-    MacApplication* pMacApplication = MacApplication::Get();
-    if (pMacApplication)
-    {
-        MacEvent storedEvent = { };
-        storedEvent.pNotification = [notification retain];
+    MacEvent storedEvent = { };
+    storedEvent.pNotification = [notification retain];
         
-        pMacApplication->StoreEvent(&storedEvent);
-    }
+    MacApplication::Get()->StoreEvent(storedEvent);
 }
 
 @end
