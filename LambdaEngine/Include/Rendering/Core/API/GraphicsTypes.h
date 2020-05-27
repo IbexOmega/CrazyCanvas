@@ -3,29 +3,55 @@
 
 namespace LambdaEngine
 {
-    enum class EMemoryType : uint8
-    {
-		MEMORY_TYPE_NONE		= 0,
-        MEMORY_TYPE_CPU_VISIBLE = 1,
-        MEMORY_TYPE_GPU			= 2,
-    };
+	/*
+	* Constants
+	*/
 
-    enum class EFormat : uint8
-    {
-        NONE							= 0,
+	constexpr uint32 MAX_COLOR_ATTACHMENTS			= 8;
+	constexpr uint32 MAX_SUBPASSES					= 16;
+	constexpr uint32 MAX_SUBPASS_DEPENDENCIES		= 16;
+	constexpr uint32 MAX_VERTEX_INPUT_ATTACHMENTS	= 8;
+	constexpr uint32 MAX_ATTRIBUTES_PER_VERTEX		= 8;
+	constexpr uint32 MAX_IMAGE_BARRIERS				= 16;
+	constexpr uint32 MAX_BUFFER_BARRIERS			= 16;
+	constexpr uint32 MAX_VIEWPORTS					= 8;
+	constexpr uint32 MAX_VERTEX_BUFFERS				= 32;
+	constexpr uint32 MAX_DESCRIPTOR_BINDINGS		= 32;
+	constexpr uint32 MAX_CONSTANT_RANGES			= 16;
+	constexpr uint32 MAX_DESCRIPTOR_SET_LAYOUTS		= 16;
+	constexpr uint32 MAX_IMMUTABLE_SAMPLERS			= 32;
+	constexpr uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
+	constexpr uint32 MAX_MISS_SHADER_COUNT			= 8;
+
+	constexpr uint32 EXTERNAL_SUBPASS	= 0xFFFFFFFF;
+
+	/*
+	* Enums
+	*/
+
+	enum class EMemoryType : uint8
+	{
+		MEMORY_TYPE_NONE		= 0,
+		MEMORY_TYPE_CPU_VISIBLE = 1,
+		MEMORY_TYPE_GPU			= 2,
+	};
+
+	enum class EFormat : uint8
+	{
+		FORMAT_NONE						= 0,
 		FORMAT_R32G32_SFLOAT			= 1,
-        FORMAT_R8G8B8A8_UNORM			= 2,
-        FORMAT_B8G8R8A8_UNORM			= 3,
-        FORMAT_R8G8B8A8_SNORM			= 4,
-        FORMAT_R16G16B16A16_SFLOAT		= 5,
+		FORMAT_R8G8B8A8_UNORM			= 2,
+		FORMAT_B8G8R8A8_UNORM			= 3,
+		FORMAT_R8G8B8A8_SNORM			= 4,
+		FORMAT_R16G16B16A16_SFLOAT		= 5,
 		FORMAT_D24_UNORM_S8_UINT		= 6
-    };
+	};
 
 	enum class EIndexType
 	{
-		NONE					= 0,
-		UINT16					= 1,
-		UINT32					= 2,
+		INDEX_TYPE_NONE		= 0,
+		INDEX_TYPE_UINT16	= 1,
+		INDEX_TYPE_UINT32	= 2,
 	};
 
 	enum class ECommandQueueType : uint8
@@ -208,6 +234,30 @@ namespace LambdaEngine
 		BLEND_FACTOR_INV_SRC1_ALPHA		= 19,
 	};
 
+	enum class ECompareOp
+	{
+		COMPARE_OP_NEVER			= 0,
+		COMPARE_OP_LESS				= 1,
+		COMPARE_OP_EQUAL			= 2,
+		COMPARE_OP_LESS_OR_EQUAL	= 3,
+		COMPARE_OP_GREATER			= 4,
+		COMPARE_OP_NOT_EQUAL		= 5,
+		COMPARE_OP_GREATER_OR_EQUAL	= 6,
+		COMPARE_OP_ALWAYS			= 7,
+	};
+
+	enum class EStencilOp
+	{
+		STENCIL_OP_KEEP					= 0,
+		STENCIL_OP_ZERO					= 1,
+		STENCIL_OP_REPLACE				= 2,
+		STENCIL_OP_INCREMENT_AND_CLAMP	= 3,
+		STENCIL_OP_DECREMENT_AND_CLAMP	= 4,
+		STENCIL_OP_INVERT				= 5,
+		STENCIL_OP_INCREMENT_AND_WRAP	= 6,
+		STENCIL_OP_DECREMENT_AND_WRAP	= 7,
+	};
+
 	enum FShaderStageFlags : uint32
 	{
 		SHADER_STAGE_FLAG_NONE					= 0,
@@ -330,10 +380,14 @@ namespace LambdaEngine
 
 	enum class EVertexInputRate : uint8
 	{
-		NONE			= 0,
-		PER_VERTEX		= 1,
-		PER_INSTANCE	= 2,
+		VERTEX_INPUT_NONE			= 0,
+		VERTEX_INPUT_PER_VERTEX		= 1,
+		VERTEX_INPUT_PER_INSTANCE	= 2,
 	};
+
+	/*
+	* Structs
+	*/
 
 	struct DescriptorCountDesc
 	{
@@ -349,19 +403,30 @@ namespace LambdaEngine
 
 	struct Viewport
 	{
-		float MinDepth	= 0.0f;
-		float MaxDepth	= 0.0f;
-		float Width		= 0.0f;
-		float Height	= 0.0f;
-		float x		    = 0.0f;
-		float y		    = 0.0f;
+		float32 MinDepth	= 0.0f;
+		float32 MaxDepth	= 1.0f;
+		float32 Width		= 0.0f;
+		float32 Height		= 0.0f;
+		float32 x			= 0.0f;
+		float32 y			= 0.0f;
 	};
 
 	struct ScissorRect
 	{
 		uint32 Width	= 0;
 		uint32 Height	= 0;
-		int32 x		    = 0;
-		int32 y		    = 0;
+		int32 x			= 0;
+		int32 y			= 0;
+	};
+
+	struct StencilOpStateDesc
+	{
+		EStencilOp	FailOp			= EStencilOp::STENCIL_OP_ZERO;
+		EStencilOp	PassOp			= EStencilOp::STENCIL_OP_ZERO;
+		EStencilOp	DepthFailOp		= EStencilOp::STENCIL_OP_ZERO;
+		ECompareOp	CompareOp		= ECompareOp::COMPARE_OP_LESS_OR_EQUAL;
+		uint32		CompareMask		= 0x00000000;
+		uint32		WriteMask		= 0x00000000;
+		uint32		Reference		= 0x00000000;
 	};
 }

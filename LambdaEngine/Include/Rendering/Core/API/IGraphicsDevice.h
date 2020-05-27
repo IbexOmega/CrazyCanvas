@@ -3,43 +3,43 @@
 
 namespace LambdaEngine
 {
-    struct FenceDesc;
+	struct FenceDesc;
 	struct ShaderDesc;
-    struct BufferDesc;
-    struct TextureDesc;
+	struct BufferDesc;
+	struct TextureDesc;
 	struct SamplerDesc;
-    struct SwapChainDesc;
+	struct SwapChainDesc;
 	struct QueryHeapDesc;
 	struct RenderPassDesc;
-    struct CommandListDesc;
-    struct TextureViewDesc;
+	struct CommandListDesc;
+	struct TextureViewDesc;
 	struct PipelineLayoutDesc;
 	struct DescriptorHeapDesc;
-    struct DeviceAllocatorDesc;
-    struct ComputePipelineStateDesc;
-    struct GraphicsPipelineStateDesc;
-    struct AccelerationStructureDesc;
-    struct RayTracingPipelineStateDesc;
+	struct DeviceAllocatorDesc;
+	struct ComputePipelineStateDesc;
+	struct GraphicsPipelineStateDesc;
+	struct AccelerationStructureDesc;
+	struct RayTracingPipelineStateDesc;
 
-    class Window;
+	class Window;
 	class IFence;
-    class IFence;
+	class IFence;
 	class IShader;
-    class IBuffer;
+	class IBuffer;
 	class ISampler;
-    class ITexture;
-    class ISwapChain;
+	class ITexture;
+	class ISwapChain;
 	class IQueryHeap;
-    class IRenderPass;
-    class ITextureView;
-    class ICommandList;
-    class ICommandQueue;
+	class IRenderPass;
+	class ITextureView;
+	class ICommandList;
+	class ICommandQueue;
 	class IDescriptorSet;
 	class IPipelineState;
 	class IDescriptorHeap;
 	class IPipelineLayout;
-    class IDeviceAllocator;
-    class ICommandAllocator;
+	class IDeviceAllocator;
+	class ICommandAllocator;
 	class IAccelerationStructure;
 
 	enum class EGraphicsAPI
@@ -89,7 +89,7 @@ namespace LambdaEngine
 		virtual ITexture* CreateTexture(const TextureDesc* pDesc, IDeviceAllocator* pAllocator)	const = 0;
 		virtual ISampler* CreateSampler(const SamplerDesc* pDesc)	const = 0;
 
-        virtual ISwapChain*	CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)	const = 0;
+		virtual ISwapChain*	CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)	const = 0;
 
 		virtual IPipelineState*	CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) 	const = 0;
 		virtual IPipelineState*	CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 	    const = 0;
@@ -102,8 +102,8 @@ namespace LambdaEngine
 		virtual ICommandList*		CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc* pDesc)  const = 0;
 		virtual IFence*				CreateFence(const FenceDesc* pDesc)											    const = 0;
 
-        virtual IDeviceAllocator* CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const = 0;
-        
+		virtual IDeviceAllocator* CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const = 0;
+		
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst)																			const = 0;
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const = 0;
 		

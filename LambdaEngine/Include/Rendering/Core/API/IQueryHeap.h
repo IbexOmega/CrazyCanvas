@@ -19,17 +19,15 @@ namespace LambdaEngine
 
 		/*
 		* Get the results from the query heap
-		*
-		* firstQuery	- Index to the first query in the heap starting at zero
-		* queryCount	- Number of queries to get results from
-		* pData			- Array of type uint64 that the results will be written to, must have size of queryCount
+		*	 firstQuery	- Index to the first query in the heap starting at zero
+		*	 queryCount	- Number of queries to get results from
+		*	 pData		- Array of type uint64 that the results will be written to, must have size of queryCount
 		*/
 		virtual bool GetResults(uint32 firstQuery, uint32 queryCount, uint64* pData) const = 0;
 
 		/*
 		* Returns the API-specific handle to the underlaying QueryHeap-resource
-		*
-		* return - Returns a valid handle on success otherwise zero
+		*	return - Returns a valid handle on success otherwise zero
 		*/
 		virtual uint64			GetHandle() const = 0;
 		virtual QueryHeapDesc	GetDesc()	const = 0;

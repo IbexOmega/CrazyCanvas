@@ -24,8 +24,8 @@
 #endif
 
 #if LAMBDA_VULKAN_CHECKS_ENABLED
-	#define CHECK_GRAPHICS(pAllocator)	VALIDATE((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
-	#define CHECK_COMPUTE(pAllocator)	VALIDATE((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_COMPUTE);
+	#define CHECK_GRAPHICS(pAllocator)	VALIDATE((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+	#define CHECK_COMPUTE(pAllocator)	VALIDATE((pAllocator)->GetType() == LambdaEngine::ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 #else
 	#define CHECK_GRAPHICS(pAllocator)
 	#define CHECK_COMPUTE(pAllocator)
@@ -58,7 +58,7 @@ namespace LambdaEngine
 	bool CommandListVK::Init(ICommandAllocator* pAllocator, const CommandListDesc* pDesc)
 	{
 		VkCommandBufferLevel level;
-		if (pDesc->CommandListType == ECommandListType::COMMAND_LIST_PRIMARY)
+		if (pDesc->CommandListType == ECommandListType::COMMAND_LIST_TYPE_PRIMARY)
 		{
 			level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		}
@@ -386,7 +386,7 @@ namespace LambdaEngine
 		vkCmdCopyBufferToImage(m_CommandList, pVkSrc->GetBuffer(), pVkDst->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 	}
 
-	void CommandListVK::BlitTexture(const ITexture* pSrc, ETextureState srcState, ITexture* pDst, ETextureState dstState, EFilter filter)
+	void CommandListVK::BlitTexture(const ITexture* pSrc, ETextureState srcState, ITexture* pDst, ETextureState dstState, EFilterType filter)
 	{
 		VALIDATE(pSrc != nullptr);
 		VALIDATE(pDst != nullptr);
@@ -520,8 +520,8 @@ namespace LambdaEngine
 		PipelineTextureBarrierDesc textureBarrier = { };
 		textureBarrier.pTexture				= pTexture;
 		textureBarrier.TextureFlags			= desc.Flags;
-		textureBarrier.QueueAfter			= ECommandQueueType::COMMAND_QUEUE_NONE;
-		textureBarrier.QueueBefore			= ECommandQueueType::COMMAND_QUEUE_NONE;
+		textureBarrier.QueueAfter			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		textureBarrier.QueueBefore			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 
 		if (stateBefore != ETextureState::TEXTURE_STATE_COPY_DST)
 		{
@@ -665,7 +665,7 @@ namespace LambdaEngine
 	void CommandListVK::BindGraphicsPipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_GRAPHICS(m_pAllocator);
-        VALIDATE(pPipeline->GetType()		== EPipelineStateType::PIPELINE_GRAPHICS);
+        VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_TYPE_GRAPHICS);
         
         const GraphicsPipelineStateVK* pPipelineVk = reinterpret_cast<const GraphicsPipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineVk->GetPipeline());
@@ -674,7 +674,7 @@ namespace LambdaEngine
 	void CommandListVK::BindComputePipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-        VALIDATE(pPipeline->GetType()		== EPipelineStateType::PIPELINE_COMPUTE);
+        VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_TYPE_COMPUTE);
         
         const ComputePipelineStateVK* pPipelineVk = reinterpret_cast<const ComputePipelineStateVK*>(pPipeline);
         vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineVk->GetPipeline());
@@ -683,7 +683,7 @@ namespace LambdaEngine
 	void CommandListVK::BindRayTracingPipeline(const IPipelineState* pPipeline)
 	{
 		CHECK_COMPUTE(m_pAllocator);
-        VALIDATE(pPipeline->GetType()		== EPipelineStateType::PIPELINE_RAY_TRACING);
+        VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_TYPE_RAY_TRACING);
         
         const RayTracingPipelineStateVK* pPipelineVk = reinterpret_cast<const RayTracingPipelineStateVK*>(pPipeline);
         m_pCurrentRayTracingPipeline = pPipelineVk;
@@ -773,12 +773,12 @@ namespace LambdaEngine
 
 	void CommandListVK::ExecuteSecondary(const ICommandList* pSecondary)
 	{
-		VALIDATE(m_Desc.CommandListType == ECommandListType::COMMAND_LIST_PRIMARY);
+		VALIDATE(m_Desc.CommandListType == ECommandListType::COMMAND_LIST_TYPE_PRIMARY);
 		const CommandListVK* pVkSecondary = reinterpret_cast<const CommandListVK*>(pSecondary);
 
 #ifndef LAMBDA_DISABLE_ASSERTS 
 		CommandListDesc	desc = pVkSecondary->GetDesc();
-		VALIDATE(desc.CommandListType == ECommandListType::COMMAND_LIST_SECONDARY);
+		VALIDATE(desc.CommandListType == ECommandListType::COMMAND_LIST_TYPE_SECONDARY);
 #endif
 
 		vkCmdExecuteCommands(m_CommandList, 1, &pVkSecondary->m_CommandList);

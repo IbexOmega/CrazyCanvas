@@ -108,7 +108,7 @@ namespace LambdaEngine
 		EAttachmentType		Type				= EAttachmentType::NONE;
 		uint32				ShaderStages		= SHADER_STAGE_FLAG_NONE;
 		uint32				SubResourceCount	= 1;
-		EFormat				TextureFormat		= EFormat::NONE;
+		EFormat				TextureFormat		= EFormat::FORMAT_NONE;
 	};
 
 	struct RenderStagePushConstants
@@ -135,7 +135,7 @@ namespace LambdaEngine
 		uint32 AttachmentCount						= 0;
 		RenderStagePushConstants PushConstants		= {};
 
-		EPipelineStateType PipelineType				= EPipelineStateType::NONE;
+		EPipelineStateType PipelineType				= EPipelineStateType::PIPELINE_TYPE_NONE;
 
 		union
 		{
@@ -162,8 +162,8 @@ namespace LambdaEngine
 	struct AttachmentSynchronizationDesc
 	{
 		EAttachmentSynchronizationType	Type			= EAttachmentSynchronizationType::NONE;
-		EPipelineStateType				FromQueueOwner	= EPipelineStateType::NONE;
-		EPipelineStateType				ToQueueOwner	= EPipelineStateType::NONE;
+		EPipelineStateType				FromQueueOwner	= EPipelineStateType::PIPELINE_TYPE_NONE;
+		EPipelineStateType				ToQueueOwner	= EPipelineStateType::PIPELINE_TYPE_NONE;
 		RenderStageAttachment			FromAttachment;
 		RenderStageAttachment			ToAttachment;
 	};
@@ -208,24 +208,24 @@ namespace LambdaEngine
 	{
 		switch (attachmentType)
 		{
-		case EAttachmentType::INPUT_SHADER_RESOURCE_TEXTURE:						return EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_TEXTURE;
-		case EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:				return EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER;
-		case EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE:						return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
-		case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:						return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
+		case EAttachmentType::INPUT_SHADER_RESOURCE_TEXTURE:						return EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_TEXTURE;
+		case EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:				return EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		case EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE:						return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+		case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:						return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-		case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:				return EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_TEXTURE;
-		case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:		return EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER;
-		case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE:				return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
-		case EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER:						return EDescriptorType::DESCRIPTOR_CONSTANT_BUFFER;
-		case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:				return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
-		case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:				return EDescriptorType::DESCRIPTOR_ACCELERATION_STRUCTURE;
+		case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:				return EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_TEXTURE;
+		case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:		return EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE:				return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+		case EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER:						return EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+		case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:				return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:				return EDescriptorType::DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
 
-		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
-		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
-		case EAttachmentType::OUTPUT_COLOR:											return EDescriptorType::DESCRIPTOR_UNKNOWN;
-		case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return EDescriptorType::DESCRIPTOR_UNKNOWN;
+		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		case EAttachmentType::OUTPUT_COLOR:											return EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
+		case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
 
-		default:																	return EDescriptorType::DESCRIPTOR_UNKNOWN;
+		default:																	return EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
 		}
 	}
 

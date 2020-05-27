@@ -2,15 +2,6 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
-#define MAX_COLOR_ATTACHMENTS		8
-#define MAX_SUBPASSES				16
-#define MAX_SUBPASS_DEPENDENCIES	16
-
-#define MAX_VERTEX_INPUT_ATTACHMENTS 8
-#define MAX_ATTRIBUTES_PER_VERTEX 8
-
-#define EXTERNAL_SUBPASS 0xFFFFFFFF
-
 namespace LambdaEngine 
 {
 	struct RenderPassAttachmentDesc
@@ -63,8 +54,7 @@ namespace LambdaEngine
 
 		/*
 		* Returns the API-specific handle to the underlaying resource
-		*
-		* return - Returns a valid handle on success otherwise zero
+		*	return - Returns a valid handle on success otherwise zero
 		*/
 		virtual uint64			GetHandle()	const = 0;
 		virtual RenderPassDesc	GetDesc()	const = 0;

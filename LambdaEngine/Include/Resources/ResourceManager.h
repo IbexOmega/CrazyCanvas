@@ -10,12 +10,10 @@ namespace LambdaEngine
 	class IGraphicsDevice;
 	class IAudioDevice;
 
-	//Meshes
-
-	//Meshes
+	// Meshes
 	constexpr GUID_Lambda DEFAULT_MATERIAL = 0;
 
-	//Textures
+	// Textures
 	constexpr GUID_Lambda DEFAULT_COLOR_MAP = DEFAULT_MATERIAL + 1;
 	constexpr GUID_Lambda DEFAULT_NORMAL_MAP = DEFAULT_COLOR_MAP + 1;
 
@@ -25,10 +23,10 @@ namespace LambdaEngine
 	{
 		struct ShaderLoadDesc
 		{
-			const char*			pFilepath				= nullptr;
-			FShaderStageFlags	Stage					= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			EShaderLang			Lang					= EShaderLang::NONE;
-			const char*			pEntryPoint				= nullptr;
+			const char*			pFilepath	= nullptr;
+			FShaderStageFlags	Stage		= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			EShaderLang			Lang		= EShaderLang::SHADER_LANG_NONE;
+			const char*			pEntryPoint	= nullptr;
 		};
 
 	public:

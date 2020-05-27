@@ -21,8 +21,7 @@ namespace LambdaEngine
 
 		/*
 		* Returns the API-specific handle to the underlying resource
-		*
-		* return - Returns a valid handle on success otherwise zero
+		*	return - Returns a valid handle on success otherwise zero
 		*/
 		virtual uint64      GetHandle() const = 0;
 		virtual ShaderDesc	GetDesc()   const = 0;

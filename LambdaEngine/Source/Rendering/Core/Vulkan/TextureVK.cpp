@@ -85,15 +85,15 @@ namespace LambdaEngine
 			info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 		}
 
-		if (pDesc->Type == ETextureType::TEXTURE_1D)
+		if (pDesc->Type == ETextureType::TEXTURE_TYPE_1D)
 		{
 			info.imageType = VK_IMAGE_TYPE_1D;
 		}
-		else if (pDesc->Type == ETextureType::TEXTURE_2D)
+		else if (pDesc->Type == ETextureType::TEXTURE_TYPE_2D)
 		{
 			info.imageType = VK_IMAGE_TYPE_2D;
 		}
-		else if (pDesc->Type == ETextureType::TEXTURE_3D)
+		else if (pDesc->Type == ETextureType::TEXTURE_TYPE_3D)
 		{
 			info.imageType = VK_IMAGE_TYPE_3D;
 		}

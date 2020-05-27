@@ -64,7 +64,7 @@ namespace LambdaEngine
 		geometryTypeInfo.pNext = nullptr;
 		
 		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
-		if (pDesc->Type == EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP)
+		if (pDesc->Type == EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP)
 		{
 			accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 			
@@ -181,7 +181,7 @@ namespace LambdaEngine
 
 		BufferDesc scratchBufferDesc = {};
 		scratchBufferDesc.pName			= "Acceleration Structure Scratch Buffer";
-		scratchBufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+		scratchBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		scratchBufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_RAY_TRACING;
 		scratchBufferDesc.SizeInBytes	= scratchMemoryRequirements.size;
 

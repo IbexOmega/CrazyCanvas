@@ -18,18 +18,20 @@ namespace LambdaEngine
 
 		bool Init(const ShaderDesc* pDesc);
 
-        void FillSpecializationInfo(VkSpecializationInfo& specializationInfo, std::vector<VkSpecializationMapEntry>& specializationEntries) const;
-        void FillShaderStageInfo(VkPipelineShaderStageCreateInfo& shaderStageInfo, const VkSpecializationInfo* pSpecializationInfo)			const;
+		FORCEINLINE VkShaderModule GetShaderModule() const
+		{
+			return m_Module;
+		}
 
-        FORCEINLINE VkShaderModule GetShaderModule() const
-        {
-            return m_Module;
-        }
+		FORCEINLINE const char* GetEntryPoint() const
+		{
+			return m_Desc.pEntryPoint;
+		}
 
-        // IDeviceChild interface
-        virtual void SetName(const char* pName) override final;
+		// IDeviceChild interface
+		virtual void SetName(const char* pName) override final;
 
-        // IShader interface
+		// IShader interface
 		FORCEINLINE virtual ShaderDesc GetDesc() const override final
 		{
 			return m_Desc;
@@ -37,7 +39,7 @@ namespace LambdaEngine
 
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
-			return (uint64)m_Module;
+			return reinterpret_cast<uint64>(m_Module);
 		}		
 
 	private:

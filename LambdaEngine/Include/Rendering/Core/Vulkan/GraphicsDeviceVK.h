@@ -36,11 +36,11 @@ namespace LambdaEngine
 
 		bool Init(const GraphicsDeviceDesc* pDesc);
 
-        VkResult    AllocateMemory(VkDeviceMemory* pDeviceMemory, VkDeviceSize sizeInBytes, int32 memoryIndex)  const;
-        void        FreeMemory(VkDeviceMemory deviceMemory)                                                     const;
-        
-        void DestroyRenderPass(VkRenderPass* pRenderPass)   const;
-        void DestroyImageView(VkImageView* pImageView)      const;
+		VkResult	AllocateMemory(VkDeviceMemory* pDeviceMemory, VkDeviceSize sizeInBytes, int32 memoryIndex)	const;
+		void		FreeMemory(VkDeviceMemory deviceMemory)														const;
+		
+		void DestroyRenderPass(VkRenderPass* pRenderPass)	const;
+		void DestroyImageView(VkImageView* pImageView)		const;
 		
 		bool IsInstanceExtensionEnabled(const char* pExtensionName) const;
 		bool IsDeviceExtensionEnabled(const char* pExtensionName)	const;
@@ -48,23 +48,24 @@ namespace LambdaEngine
 
 		void SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type)	const;
 		
-        VkFramebuffer GetFrameBuffer(const IRenderPass* pRenderPass, const ITextureView* const* ppRenderTargets, uint32 renderTargetCount, const ITextureView* pDepthStencil, uint32 width, uint32 height) const;
-        
+		VkFramebuffer GetFrameBuffer(const IRenderPass* pRenderPass, const ITextureView* const* ppRenderTargets, uint32 renderTargetCount, const ITextureView* pDepthStencil, uint32 width, uint32 height) const;
+		
 		uint32						GetQueueFamilyIndexFromQueueType(ECommandQueueType type)	const;
 		ECommandQueueType			GetCommandQueueTypeFromQueueIndex(uint32 queueFamilyIndex)	const;
 		VkFormatProperties			GetFormatProperties(VkFormat format)						const;
 		VkPhysicalDeviceProperties	GetPhysicalDeviceProperties()								const;
-        
-        FORCEINLINE VkPhysicalDeviceLimits GetDeviceLimits() const
-        {
-            return m_DeviceLimits;
-        }
+		
+		FORCEINLINE VkPhysicalDeviceLimits GetDeviceLimits() const
+		{
+			return m_DeviceLimits;
+		}
 
 		FORCEINLINE QueueFamilyIndices GetQueueFamilyIndices() const
 		{
 			return m_DeviceQueueFamilyIndices;
 		}
 
+	public:
 		// IGraphicsDevice Interface
 		virtual IQueryHeap* CreateQueryHeap(const QueryHeapDesc* pDesc) const override final;
 
@@ -78,9 +79,9 @@ namespace LambdaEngine
 
 		virtual IShader*	CreateShader(const ShaderDesc* pDesc)	const override final;
 
-		virtual IBuffer*	CreateBuffer(const BufferDesc* pDesc, IDeviceAllocator* pAllocator)	    const override final;
+		virtual IBuffer*	CreateBuffer(const BufferDesc* pDesc, IDeviceAllocator* pAllocator)		const override final;
 		virtual ITexture*	CreateTexture(const TextureDesc* pDesc, IDeviceAllocator* pAllocator)	const override final;
-		virtual ISampler*	CreateSampler(const SamplerDesc* pDesc)	                                const override final;
+		virtual ISampler*	CreateSampler(const SamplerDesc* pDesc)									const override final;
 
 		virtual ISwapChain* CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)	const override final;
 
@@ -95,8 +96,8 @@ namespace LambdaEngine
 		virtual ICommandList*		CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc* pDesc)	const override final;
 		virtual IFence*				CreateFence(const FenceDesc* pDesc)												const override final;
 
-        virtual IDeviceAllocator* CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const override final;
-        
+		virtual IDeviceAllocator* CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const override final;
+		
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst)																			const override final;
 		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const override final;
 
@@ -132,7 +133,12 @@ namespace LambdaEngine
 		VkPhysicalDevice	PhysicalDevice	= VK_NULL_HANDLE;
 		VkDevice			Device			= VK_NULL_HANDLE;
 
-		// Extension Data
+	public:
+		/*
+		* Extension Data
+		*/
+
+		// Ray-Tracing
 		VkPhysicalDeviceRayTracingPropertiesKHR	RayTracingProperties;
 
 		PFN_vkSetDebugUtilsObjectNameEXT	vkSetDebugUtilsObjectNameEXT	= nullptr;
@@ -149,7 +155,7 @@ namespace LambdaEngine
 		PFN_vkGetRayTracingShaderGroupHandlesKHR				vkGetRayTracingShaderGroupHandlesKHR			= nullptr;
 		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR								= nullptr;
 
-		// BufferAddresses
+		// Buffer Addresses
 		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
 
 		// Timeline-Semaphores
@@ -162,19 +168,18 @@ namespace LambdaEngine
 		FrameBufferCacheVK*			m_pFrameBufferCache	= nullptr;
 
 		GraphicsDeviceFeatureDesc		m_DeviceFeatures;
-        QueueFamilyIndices				m_DeviceQueueFamilyIndices;
-        VkPhysicalDeviceLimits			m_DeviceLimits;
+		QueueFamilyIndices				m_DeviceQueueFamilyIndices;
+		VkPhysicalDeviceLimits			m_DeviceLimits;
 		VkPhysicalDeviceFeatures		m_DeviceFeaturesVk;
-       
-        std::vector<VkQueueFamilyProperties> m_QueueFamilyProperties;
-        mutable uint32 m_NextGraphicsQueue  = 0;
-        mutable uint32 m_NextComputeQueue   = 0;
-        mutable uint32 m_NextTransferQueue  = 0;
-        
-        mutable uint32 m_UsedAllocations = 0;
-        
-		std::vector<const char*>	m_EnabledValidationLayers;
-		std::vector<const char*>	m_EnabledInstanceExtensions;
-		std::vector<const char*>	m_EnabledDeviceExtensions;
+	   
+		TArray<VkQueueFamilyProperties> m_QueueFamilyProperties;
+		mutable uint32 m_NextGraphicsQueue	= 0;
+		mutable uint32 m_NextComputeQueue	= 0;
+		mutable uint32 m_NextTransferQueue	= 0;
+		mutable uint32 m_UsedAllocations	= 0;
+		
+		TArray<const char*>	m_EnabledValidationLayers;
+		TArray<const char*>	m_EnabledInstanceExtensions;
+		TArray<const char*>	m_EnabledDeviceExtensions;
 	};
 }

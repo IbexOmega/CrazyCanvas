@@ -4,9 +4,6 @@
 
 namespace LambdaEngine
 {
-	constexpr uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
-	constexpr uint32 MAX_MISS_SHADER_COUNT			= 8;
-
 	class IShader;
 	class IRenderPass;
 	class IPipelineLayout;
@@ -14,7 +11,7 @@ namespace LambdaEngine
 	union ShaderConstant
 	{
 		byte	Data[4];
-		float	Float;
+		float32	Float;
 		int32	Integer;
 	};
 
@@ -27,10 +24,10 @@ namespace LambdaEngine
 
 	enum class EPipelineStateType : uint8
 	{
-		NONE					= 0,
-		PIPELINE_GRAPHICS       = 1,
-		PIPELINE_COMPUTE        = 2,
-		PIPELINE_RAY_TRACING    = 3,
+		PIPELINE_TYPE_NONE			= 0,
+		PIPELINE_TYPE_GRAPHICS		= 1,
+		PIPELINE_TYPE_COMPUTE		= 2,
+		PIPELINE_TYPE_RAY_TRACING	= 3,
 	};
 
 	struct InputAssemblyDesc
@@ -48,15 +45,23 @@ namespace LambdaEngine
 		bool			DepthBiasEnable				= false;
 		bool			DepthClampEnable			= false;
 		bool			MultisampleEnable			= false;
-		float			LineWidth					= 1.0f;
-		float			DepthBiasClamp				= 0.0f;
-		float			DepthBiasConstantFactor		= 0.0f;
-		float			DepthBiasSlopeFactor		= 0.0f;
+		float32			LineWidth					= 1.0f;
+		float32			DepthBiasClamp				= 0.0f;
+		float32			DepthBiasConstantFactor		= 0.0f;
+		float32			DepthBiasSlopeFactor		= 0.0f;
 	};
 
 	struct DepthStencilStateDesc
 	{
-
+		bool				DepthTestEnable			= true;
+		bool				DepthWriteEnable		= true;
+		bool				DepthBoundsTestEnable	= false;
+		bool				StencilTestEnable		= false;
+		float32				MinDepthBounds			= 0.0f;
+		float32				MaxDepthBounds			= 1.0f;
+		ECompareOp			CompareOp				= ECompareOp::COMPARE_OP_LESS_OR_EQUAL;
+		StencilOpStateDesc	FrontFace				= { };
+		StencilOpStateDesc	BackFace				= { };
 	};
 
 	struct BlendAttachmentStateDesc
@@ -73,30 +78,28 @@ namespace LambdaEngine
 
 	struct BlendStateDesc
 	{
-		bool		AlphaToCoverageEnable	= true;
-		bool		AlphaToOneEnable		= true;
-		bool		LogicOpEnable			= false;
-		ELogicOp	LogicOp					= ELogicOp::LOGIC_OP_NOOP;
-
 		const BlendAttachmentStateDesc*	pBlendAttachmentStates		= nullptr;
 		uint32							BlendAttachmentStateCount	= 0;
-
-		float BlendConstants[4];
+		bool							AlphaToCoverageEnable	= true;
+		bool							AlphaToOneEnable		= true;
+		bool							LogicOpEnable			= false;
+		ELogicOp						LogicOp					= ELogicOp::LOGIC_OP_NO_OP;
+		float32							BlendConstants[4];
 	};
 
 	struct VertexInputAttributeDesc
 	{
-		uint32		Location	=	0;
-		uint32		Offset		=	0;
-		EFormat		Format		=	EFormat::NONE;
+		uint32	Location = 0;
+		uint32	Offset	 = 0;
+		EFormat	Format	 = EFormat::FORMAT_NONE;
 	};
 
 	struct VertexInputBindingDesc
 	{
 		uint32						Binding			= 0;
 		uint32						Stride			= 0;
-		EVertexInputRate			InputRate		= EVertexInputRate::NONE;
-		VertexInputAttributeDesc	pAttributes		[MAX_ATTRIBUTES_PER_VERTEX];
+		EVertexInputRate			InputRate		= EVertexInputRate::VERTEX_INPUT_NONE;
+		VertexInputAttributeDesc	pAttributes[MAX_ATTRIBUTES_PER_VERTEX];
 		uint32						AttributeCount	= 0;
 	};
 
@@ -107,8 +110,8 @@ namespace LambdaEngine
 		const IRenderPass*		pRenderPass		= nullptr;
 		const IPipelineLayout*	pPipelineLayout	= nullptr;
 
-		VertexInputBindingDesc		pVertexInputBindings		[MAX_VERTEX_INPUT_ATTACHMENTS];
-		uint32						VertexInputBindingCount		= 0;
+		VertexInputBindingDesc	pVertexInputBindings[MAX_VERTEX_INPUT_ATTACHMENTS];
+		uint32					VertexInputBindingCount	= 0;
 
 		InputAssemblyDesc		InputAssembly		= { };
 		DepthStencilStateDesc	DepthStencilState	= { };
@@ -119,15 +122,15 @@ namespace LambdaEngine
 		uint32					Subpass				= 0;
 
 		// "New Style"
-		const ShaderModuleDesc* pTaskShader;
-		const ShaderModuleDesc* pMeshShader;
+		const ShaderModuleDesc* pTaskShader = nullptr;
+		const ShaderModuleDesc* pMeshShader = nullptr;
 		// "Old style"
-		const ShaderModuleDesc* pVertexShader;
-		const ShaderModuleDesc* pHullShader;
-		const ShaderModuleDesc* pDomainShader;
-		const ShaderModuleDesc* pGeometryShader;
+		const ShaderModuleDesc* pVertexShader	= nullptr;
+		const ShaderModuleDesc* pHullShader		= nullptr;
+		const ShaderModuleDesc* pDomainShader	= nullptr;
+		const ShaderModuleDesc* pGeometryShader	= nullptr;
 		// Common
-		const ShaderModuleDesc* PixelShader;
+		const ShaderModuleDesc* pPixelShader	= nullptr;
 	};
 
 	struct ComputePipelineStateDesc
@@ -139,9 +142,9 @@ namespace LambdaEngine
 
 	struct RayTracingPipelineStateDesc
 	{
-		const char*				pName					= "";
-		const IPipelineLayout*	pPipelineLayout			= nullptr;
-		uint32					MaxRecursionDepth		= 1;	
+		const char*				pName				= "";
+		const IPipelineLayout*	pPipelineLayout		= nullptr;
+		uint32					MaxRecursionDepth	= 1;	
 
 		const ShaderModuleDesc*		pRaygenShader			= nullptr;
 		const ShaderModuleDesc**	ppMissShaders			= nullptr;

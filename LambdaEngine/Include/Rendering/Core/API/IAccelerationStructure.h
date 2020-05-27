@@ -29,18 +29,16 @@ namespace LambdaEngine
 
 		/*
 		* Returns this resource's address on the device
-		*
-		* return -  Returns a valid 64-bit address on success, otherwise zero. Returns zero on systems that
-		*           does not support deviceaddresses.
+		*	return -	Returns a valid 64-bit address on success, otherwise zero. Returns zero on systems that
+		*				does not support deviceaddresses.
 		*/
 		virtual uint64 GetDeviceAdress() const = 0;
 
 		/*
 		* Returns the API-specific handle to the underlaying TopLevelAccelerationStructure-resource
-		*
-		* return - Returns a valid handle on success otherwise zero
+		*	return - Returns a valid handle on success otherwise zero
 		*/
-		virtual uint64                      GetHandle() const = 0;
-		virtual AccelerationStructureDesc   GetDesc()   const = 0;
+		virtual uint64						GetHandle()	const = 0;
+		virtual AccelerationStructureDesc	GetDesc()	const = 0;
 	};
 }

@@ -50,23 +50,23 @@ namespace LambdaEngine
 		{
 			return m_Type;
 		}
-        
-    private:
-        VkResult InternalFlushBarriers();
-        
-        void InternalAddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags waitStage);
-        void InternalAddSignalSemaphore(VkSemaphore semaphore);
+		
+	private:
+		VkResult InternalFlushBarriers();
+		
+		void InternalAddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags waitStage);
+		void InternalAddSignalSemaphore(VkSemaphore semaphore);
 
 	private:
 		VkQueue				m_Queue = VK_NULL_HANDLE;
-		ECommandQueueType	m_Type	= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+		ECommandQueueType	m_Type	= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
 
 		VkCommandBuffer		m_SubmitCommandBuffers[MAX_COMMANDBUFFERS];
 
 		TArray<VkSemaphore>             m_SignalSemaphores;
 		TArray<VkSemaphore>             m_WaitSemaphores;
 		TArray<VkPipelineStageFlags>    m_WaitStages;
-        
-        SpinLock m_SpinLock;
+		
+		SpinLock m_SpinLock;
 	};
 }

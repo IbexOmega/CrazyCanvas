@@ -8,11 +8,11 @@ namespace LambdaEngine
 	{
 		switch (pipelineStateType)
 		{
-		case EPipelineStateType::PIPELINE_GRAPHICS:		return ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
-		case EPipelineStateType::PIPELINE_COMPUTE:		return ECommandQueueType::COMMAND_QUEUE_COMPUTE;
-		case EPipelineStateType::PIPELINE_RAY_TRACING:	return ECommandQueueType::COMMAND_QUEUE_COMPUTE;
-		case EPipelineStateType::NONE:			
-		default:								return ECommandQueueType::COMMAND_QUEUE_NONE;
+		case EPipelineStateType::PIPELINE_TYPE_GRAPHICS:		return ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
+		case EPipelineStateType::PIPELINE_TYPE_COMPUTE:		return ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE;
+		case EPipelineStateType::PIPELINE_TYPE_RAY_TRACING:	return ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE;
+		case EPipelineStateType::PIPELINE_TYPE_NONE:			
+		default:										return ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		}
 	}
 
@@ -104,13 +104,13 @@ namespace LambdaEngine
 	{
 		switch (format)
 		{		
-        case EFormat::FORMAT_D24_UNORM_S8_UINT:
-        case EFormat::FORMAT_R8G8B8A8_UNORM:
-        case EFormat::FORMAT_B8G8R8A8_UNORM:
-        case EFormat::FORMAT_R8G8B8A8_SNORM:		return 4;
+		case EFormat::FORMAT_D24_UNORM_S8_UINT:
+		case EFormat::FORMAT_R8G8B8A8_UNORM:
+		case EFormat::FORMAT_B8G8R8A8_UNORM:
+		case EFormat::FORMAT_R8G8B8A8_SNORM:		return 4;
 		case EFormat::FORMAT_R32G32_SFLOAT:
-        case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 8;
-        default:                                    return 0;
-        }
+		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 8;
+		default:									return 0;
+		}
 	}
 }

@@ -14,43 +14,43 @@ namespace LambdaEngine
 	class TDeviceChildBase : public IBase
 	{
 	public:
-        DECL_UNIQUE_CLASS(TDeviceChildBase);
+		DECL_UNIQUE_CLASS(TDeviceChildBase);
 
-        TDeviceChildBase(const TGraphicsDevice* pDevice)
-            : IBase(),
-            m_pDevice(pDevice)
-        {
-            constexpr uint32 sizeInBytes = sizeof(char) * MAX_DEVICE_CHILD_NAME_LENGTH;
-            m_pDebugName = reinterpret_cast<char*>(Malloc::AllocateDbg(sizeInBytes, __FILE__, __LINE__));
-            
-            ZERO_MEMORY(m_pDebugName, sizeInBytes);
+		TDeviceChildBase(const TGraphicsDevice* pDevice)
+			: IBase(),
+			m_pDevice(pDevice)
+		{
+			constexpr uint32 sizeInBytes = sizeof(char) * MAX_DEVICE_CHILD_NAME_LENGTH;
+			m_pDebugName = reinterpret_cast<char*>(Malloc::AllocateDbg(sizeInBytes, __FILE__, __LINE__));
+			
+			ZERO_MEMORY(m_pDebugName, sizeInBytes);
 
-            AddRef();
-        }
+			AddRef();
+		}
 
-        virtual ~TDeviceChildBase()
-        {
-            if (m_pDebugName)
-            {
-                Malloc::Free(reinterpret_cast<void*>(m_pDebugName));
-                m_pDebugName = nullptr;
-            }
-            
-            m_StrongReferences = 0;
-        }
+		virtual ~TDeviceChildBase()
+		{
+			if (m_pDebugName)
+			{
+				Malloc::Free(reinterpret_cast<void*>(m_pDebugName));
+				m_pDebugName = nullptr;
+			}
+			
+			m_StrongReferences = 0;
+		}
 
-        
+		
 		virtual uint64 Release() override
 		{
-            uint64 strongReferences;
-            {
-                std::scoped_lock<SpinLock> lock(m_RefLock);
-                strongReferences = --m_StrongReferences;
-            }
-            
+			uint64 strongReferences;
+			{
+				std::scoped_lock<SpinLock> lock(m_RefLock);
+				strongReferences = --m_StrongReferences;
+			}
+			
 			if (strongReferences < 1)
 			{
-                delete this;
+				delete this;
 			}
 
 			return strongReferences;
@@ -58,29 +58,29 @@ namespace LambdaEngine
 
 		virtual uint64 AddRef() override
 		{
-            std::scoped_lock<SpinLock> lock(m_RefLock);
+			std::scoped_lock<SpinLock> lock(m_RefLock);
 			return ++m_StrongReferences;
 		}
-        
+		
 		virtual void SetName(const char* pName) override
 		{
-            std::scoped_lock<SpinLock> lock(m_DebugNameLock);
+			std::scoped_lock<SpinLock> lock(m_DebugNameLock);
 			strncpy(m_pDebugName, pName, MAX_DEVICE_CHILD_NAME_LENGTH);
 		}
 
-        FORCEINLINE virtual const IGraphicsDevice* GetDevice() const override
-        {
-            return reinterpret_cast<const IGraphicsDevice*>(m_pDevice);
-        }
+		FORCEINLINE virtual const IGraphicsDevice* GetDevice() const override
+		{
+			return reinterpret_cast<const IGraphicsDevice*>(m_pDevice);
+		}
 
 	protected:
 		const TGraphicsDevice* const m_pDevice = nullptr;
 		
-        char*	 m_pDebugName = nullptr;
-        SpinLock m_DebugNameLock;
+		char*	 m_pDebugName = nullptr;
+		SpinLock m_DebugNameLock;
 
 	private:
-        SpinLock m_RefLock;
+		SpinLock m_RefLock;
 		uint64   m_StrongReferences = 0;
 	};
 }

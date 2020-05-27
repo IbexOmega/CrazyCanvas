@@ -886,7 +886,7 @@ bool Sandbox::InitRendererForDeferred()
 		geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
 		geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::PIPELINE_GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_TYPE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::SCENE_INDIRECT;
 		renderStage.GraphicsPipeline.pIndexBufferName		= SCENE_INDEX_BUFFER;
@@ -928,7 +928,7 @@ bool Sandbox::InitRendererForDeferred()
 		rayTracingPipelineStateDesc.ClosestHitShaderCount	= 1;
 		rayTracingPipelineStateDesc.MissShaderCount			= 1;
 
-		renderStage.PipelineType							= EPipelineStateType::PIPELINE_RAY_TRACING;
+		renderStage.PipelineType							= EPipelineStateType::PIPELINE_TYPE_RAY_TRACING;
 
 		renderStage.RayTracingPipeline.pRayTracingDesc		= &rayTracingPipelineStateDesc;
 
@@ -969,7 +969,7 @@ bool Sandbox::InitRendererForDeferred()
 		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
 		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::PIPELINE_GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_TYPE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
 		renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
@@ -1002,7 +1002,7 @@ bool Sandbox::InitRendererForDeferred()
 		postProcessPipelineStateDesc.pName		= "Post-Process Pass Pipeline State";
 		postProcessPipelineStateDesc.Shader		= postProcessShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::PIPELINE_COMPUTE;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_TYPE_COMPUTE;
 
 		renderStage.ComputePipeline.pComputeDesc			= &postProcessPipelineStateDesc;
 
@@ -1151,7 +1151,7 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		TextureDesc textureDesc	= {};
 		textureDesc.pName				= "Albedo-AO G-Buffer Texture";
-		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
@@ -1202,7 +1202,7 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		TextureDesc textureDesc	= {};
 		textureDesc.pName				= "Norm-Met-Rough G-Buffer Texture";
-		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R16G16B16A16_SFLOAT;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
@@ -1253,7 +1253,7 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		TextureDesc textureDesc = {};
 		textureDesc.pName				= "Geometry Pass Depth Stencil Texture";
-		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_D24_UNORM_S8_UINT;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
@@ -1305,7 +1305,7 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		TextureDesc textureDesc	= {};
 		textureDesc.pName				= "Radiance Texture";
-		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
@@ -1357,7 +1357,7 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		TextureDesc textureDesc	= {};
 		textureDesc.pName				= "Shaded Texture";
-		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
@@ -1517,7 +1517,7 @@ bool Sandbox::InitRendererForVisBuf()
 		geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
 		geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::PIPELINE_GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_TYPE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::SCENE_INDIRECT;
 		renderStage.GraphicsPipeline.pIndexBufferName		= SCENE_INDEX_BUFFER;
@@ -1564,7 +1564,7 @@ bool Sandbox::InitRendererForVisBuf()
 		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
 		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::PIPELINE_GRAPHICS;
+		renderStage.PipelineType						= EPipelineStateType::PIPELINE_TYPE_GRAPHICS;
 
 		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
 		renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
@@ -1672,7 +1672,7 @@ bool Sandbox::InitRendererForVisBuf()
 	{
 		TextureDesc visibilityBufferDesc	= {};
 		visibilityBufferDesc.pName			= "Visibility Buffer Texture";
-		visibilityBufferDesc.Type			= ETextureType::TEXTURE_2D;
+		visibilityBufferDesc.Type			= ETextureType::TEXTURE_TYPE_2D;
 		visibilityBufferDesc.MemoryType		= EMemoryType::MEMORY_GPU;
 		visibilityBufferDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
 		visibilityBufferDesc.Flags			= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
@@ -1723,7 +1723,7 @@ bool Sandbox::InitRendererForVisBuf()
 	{
 		TextureDesc depthStencilDesc = {};
 		depthStencilDesc.pName			= "Geometry Pass Depth Stencil Texture";
-		depthStencilDesc.Type			= ETextureType::TEXTURE_2D;
+		depthStencilDesc.Type			= ETextureType::TEXTURE_TYPE_2D;
 		depthStencilDesc.MemoryType		= EMemoryType::MEMORY_GPU;
 		depthStencilDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
 		depthStencilDesc.Flags			= TEXTURE_FLAG_DEPTH_STENCIL;

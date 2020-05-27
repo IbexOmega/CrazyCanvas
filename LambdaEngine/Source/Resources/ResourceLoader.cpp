@@ -165,7 +165,7 @@ namespace LambdaEngine
 
 	bool ResourceLoader::Init()
 	{
-		s_pCopyCommandAllocator = RenderSystem::GetDevice()->CreateCommandAllocator("Resource Loader Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+		s_pCopyCommandAllocator = RenderSystem::GetDevice()->CreateCommandAllocator("Resource Loader Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
 		if (s_pCopyCommandAllocator == nullptr)
 		{
@@ -175,7 +175,7 @@ namespace LambdaEngine
 
 		CommandListDesc commandListDesc = {};
 		commandListDesc.pName			= "Resource Loader Copy Command List";
-		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
+		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 		commandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 		s_pCopyCommandList = RenderSystem::GetDevice()->CreateCommandList(s_pCopyCommandAllocator, &commandListDesc);
@@ -545,9 +545,9 @@ namespace LambdaEngine
 
 		TextureDesc textureDesc = {};
 		textureDesc.pName		= pName;
-		textureDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+		textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format		= format;
-		textureDesc.Type		= ETextureType::TEXTURE_2D;
+		textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.Flags		= FTextureFlags::TEXTURE_FLAG_COPY_SRC | FTextureFlags::TEXTURE_FLAG_COPY_DST | usageFlags;
 		textureDesc.Width		= width;
 		textureDesc.Height		= height;
@@ -568,7 +568,7 @@ namespace LambdaEngine
 
 		BufferDesc bufferDesc	= {};
 		bufferDesc.pName		= "Texture Copy Buffer";
-		bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
+		bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		bufferDesc.SizeInBytes	= pixelDataSize;
 
@@ -606,8 +606,8 @@ namespace LambdaEngine
 		transitionToCopyDstBarrier.pTexture					= pTexture;
 		transitionToCopyDstBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
 		transitionToCopyDstBarrier.StateAfter				= ETextureState::TEXTURE_STATE_COPY_DST;
-		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
-		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
+		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		transitionToCopyDstBarrier.SrcMemoryAccessFlags		= 0;
 		transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 		transitionToCopyDstBarrier.TextureFlags				= textureDesc.Flags;
@@ -629,8 +629,8 @@ namespace LambdaEngine
 			transitionToShaderReadBarrier.pTexture					= pTexture;
 			transitionToShaderReadBarrier.StateBefore				= ETextureState::TEXTURE_STATE_COPY_DST;
 			transitionToShaderReadBarrier.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-			transitionToShaderReadBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
-			transitionToShaderReadBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
+			transitionToShaderReadBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+			transitionToShaderReadBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 			transitionToShaderReadBarrier.SrcMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 			transitionToShaderReadBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
 			transitionToShaderReadBarrier.TextureFlags				= textureDesc.Flags;
@@ -670,7 +670,7 @@ namespace LambdaEngine
 		std::vector<uint32> sourceSPIRV;
 		uint32 sourceSPIRVSize = 0;
 
-		if (lang == EShaderLang::GLSL)
+		if (lang == EShaderLang::SHADER_LANG_GLSL)
 		{
 			if (!ReadDataFromFile(pFilepath, "r", &pShaderRawSource, &shaderRawSourceSize))
 			{
@@ -686,7 +686,7 @@ namespace LambdaEngine
 
 			sourceSPIRVSize = sourceSPIRV.size() * sizeof(uint32);
 		}
-		else if (lang == EShaderLang::SPIRV)
+		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
 		{
 			if (!ReadDataFromFile(pFilepath, "rb", &pShaderRawSource, &shaderRawSourceSize))
 			{
@@ -707,8 +707,6 @@ namespace LambdaEngine
 		shaderDesc.pEntryPoint			= pEntryPoint;
 		shaderDesc.Stage				= stage;
 		shaderDesc.Lang					= lang;
-		shaderDesc.pConstants			= nullptr;
-		shaderDesc.ShaderConstantCount	= 0;
 
 		IShader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
 		Malloc::Free(pShaderRawSource);

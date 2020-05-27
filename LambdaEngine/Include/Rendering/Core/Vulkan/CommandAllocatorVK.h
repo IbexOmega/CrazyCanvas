@@ -39,6 +39,6 @@ namespace LambdaEngine
 
 	private:
 		VkCommandPool		m_CommandPool	= VK_NULL_HANDLE;
-		ECommandQueueType	m_Type			= ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+		ECommandQueueType	m_Type			= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
 	};
 }

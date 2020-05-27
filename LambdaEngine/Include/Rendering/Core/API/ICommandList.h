@@ -2,11 +2,6 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
-#define MAX_IMAGE_BARRIERS  16
-#define MAX_BUFFER_BARRIERS	16
-#define MAX_VIEWPORTS       8
-#define MAX_VERTEX_BUFFERS  32
-
 namespace LambdaEngine
 {
 	class IBuffer;
@@ -35,13 +30,13 @@ namespace LambdaEngine
 
 	struct SecondaryCommandListBeginDesc
 	{
-		const IRenderPass*	        pRenderPass		    = nullptr;
-		uint32				        SubPass			    = 0;
-		const ITextureView* const * ppRenderTargets	    = nullptr;
-        uint32                      RenderTargetCount   = 0;
-        const ITextureView*         pDepthStencilView   = nullptr;
-        uint32                      Width               = 0;
-        uint32                      Height              = 0;
+		const IRenderPass*			pRenderPass			= nullptr;
+		uint32						SubPass				= 0;
+		const ITextureView* const * ppRenderTargets		= nullptr;
+		uint32						RenderTargetCount	= 0;
+		const ITextureView*			pDepthStencilView	= nullptr;
+		uint32						Width				= 0;
+		uint32						Height				= 0;
 	};
 
 #ifdef LAMBDA_VISUAL_STUDIO
@@ -149,7 +144,7 @@ namespace LambdaEngine
 
 	struct CommandListDesc
 	{
-        const char*         pName           = "";
+		const char*			pName			= "";
 		ECommandListType	CommandListType = ECommandListType::COMMAND_LIST_TYPE_UNKNOWN;
 		uint32				Flags			= FCommandListFlags::COMMAND_LIST_FLAG_NONE;
 	};
@@ -160,7 +155,7 @@ namespace LambdaEngine
 		DECL_DEVICE_INTERFACE(ICommandList);
 
 		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc) = 0;
-		virtual bool End()	                                                = 0;
+		virtual bool End()													= 0;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) = 0;
 		virtual void EndRenderPass() = 0;
@@ -189,7 +184,7 @@ namespace LambdaEngine
 		virtual void BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)		= 0;
 		virtual void BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)	= 0;
 
-		virtual void BindGraphicsPipeline(const IPipelineState* pPipeline)	    = 0;
+		virtual void BindGraphicsPipeline(const IPipelineState* pPipeline)		= 0;
 		virtual void BindComputePipeline(const IPipelineState* pPipeline)		= 0;
 		virtual void BindRayTracingPipeline(const IPipelineState* pPipeline)	= 0;
 
@@ -213,8 +208,7 @@ namespace LambdaEngine
 		/*
 		* Returns a pointer to the allocator used to allocate this commandlist. Caller should call Release on 
 		* the returned pointer
-		*
-		* return - Returns a valid pointer if successful otherwise nullptr
+		*	return - Returns a valid pointer if successful otherwise nullptr
 		*/
 		virtual ICommandAllocator*	GetAllocator()	const = 0;
 	};

@@ -191,7 +191,7 @@ namespace LambdaEngine
 
 			RenderStageParameters	Parameters						= {};
 			uint64					PipelineStateID					= 0;
-			EPipelineStateType		PipelineStateType				= EPipelineStateType::NONE;
+			EPipelineStateType		PipelineStateType				= EPipelineStateType::PIPELINE_TYPE_NONE;
 			IPipelineLayout*		pPipelineLayout					= nullptr;
 			uint32					TextureSubDescriptorSetCount	= 1;
 			uint32					MaterialsRenderedPerPass		= 1;

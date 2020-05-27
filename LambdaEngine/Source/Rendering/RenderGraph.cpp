@@ -427,9 +427,9 @@ namespace LambdaEngine
 
 					switch (pPipelineState->GetType())
 					{
-					case EPipelineStateType::PIPELINE_GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[modFrameIndex],		pPipelineStage->ppGraphicsCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
-					case EPipelineStateType::PIPELINE_COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[modFrameIndex],		pPipelineStage->ppComputeCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
-					case EPipelineStateType::PIPELINE_RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[modFrameIndex],		pPipelineStage->ppComputeCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::PIPELINE_TYPE_GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[modFrameIndex],		pPipelineStage->ppGraphicsCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::PIPELINE_TYPE_COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[modFrameIndex],		pPipelineStage->ppComputeCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
+					case EPipelineStateType::PIPELINE_TYPE_RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[modFrameIndex],		pPipelineStage->ppComputeCommandLists[modFrameIndex],		&m_ppExecutionStages[currentExecutionStage], backBufferIndex);	break;
 					}
 
 					currentExecutionStage++;
@@ -461,11 +461,11 @@ namespace LambdaEngine
 
 			if (pCommandList != nullptr)
 			{
-				if (pCommandList->GetType() == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+				if (pCommandList->GetType() == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 				{
 					RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 				}
-				else if (pCommandList->GetType() == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+				else if (pCommandList->GetType() == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 				{
 					RenderSystem::GetComputeQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 				}
@@ -821,10 +821,10 @@ namespace LambdaEngine
 							RenderPassAttachmentDesc renderPassAttachmentDesc = {};
 							renderPassAttachmentDesc.Format			= isBackBufferAttachment ? EFormat::FORMAT_B8G8R8A8_UNORM : pAttachment->TextureFormat;
 							renderPassAttachmentDesc.SampleCount	= 1;
-							renderPassAttachmentDesc.LoadOp			= ELoadOp::CLEAR;
-							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE;
-							renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::DONT_CARE;
-							renderPassAttachmentDesc.StencilStoreOp	= EStoreOp::DONT_CARE;
+							renderPassAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_CLEAR;
+							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE_OP_STORE;
+							renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
+							renderPassAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
 							renderPassAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_DONT_CARE;
 							renderPassAttachmentDesc.FinalState		= isBackBufferAttachment ? ETextureState::TEXTURE_STATE_PRESENT : ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
@@ -844,10 +844,10 @@ namespace LambdaEngine
 							RenderPassAttachmentDesc renderPassAttachmentDesc = {};
 							renderPassAttachmentDesc.Format			= pAttachment->TextureFormat;
 							renderPassAttachmentDesc.SampleCount	= 1;
-							renderPassAttachmentDesc.LoadOp			= ELoadOp::CLEAR;
-							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE;
-							renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::CLEAR;
-							renderPassAttachmentDesc.StencilStoreOp = EStoreOp::STORE;
+							renderPassAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_CLEAR;
+							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE_OP_STORE;
+							renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_CLEAR;
+							renderPassAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_STORE;
 							renderPassAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_UNKNOWN;
 							renderPassAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
@@ -915,7 +915,7 @@ namespace LambdaEngine
 			}
 
 			//Create Pipeline State
-			if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_GRAPHICS)
+			if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_TYPE_GRAPHICS)
 			{
 				GraphicsManagedPipelineStateDesc pipelineDesc		= *pRenderStageDesc->GraphicsPipeline.pGraphicsDesc;
 
@@ -941,7 +941,7 @@ namespace LambdaEngine
 					renderPassSubpassDependencyDesc.SrcStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 					renderPassSubpassDependencyDesc.DstStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
-					if (renderPassDepthStencilDescription.Format != EFormat::NONE) 
+					if (renderPassDepthStencilDescription.Format != EFormat::FORMAT_NONE) 
 						renderPassAttachmentDescriptions.push_back(renderPassDepthStencilDescription);
 
 					RenderPassDesc renderPassDesc = {};
@@ -992,7 +992,7 @@ namespace LambdaEngine
 
 				pRenderStage->PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineDesc);
 			}
-			else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_COMPUTE)
+			else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_TYPE_COMPUTE)
 			{
 				ComputeManagedPipelineStateDesc pipelineDesc = *pRenderStageDesc->ComputePipeline.pComputeDesc;
 
@@ -1000,7 +1000,7 @@ namespace LambdaEngine
 
 				pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
 			}
-			else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_RAY_TRACING)
+			else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_TYPE_RAY_TRACING)
 			{
 				RayTracingManagedPipelineStateDesc pipelineDesc = *pRenderStageDesc->RayTracingPipeline.pRayTracingDesc;
 
@@ -1059,7 +1059,7 @@ namespace LambdaEngine
 			//Link RenderPass to RenderPass Attachments
 			if (renderTargets.size() > 0)
 			{
-				if (pRenderStageDesc->PipelineType != EPipelineStateType::PIPELINE_GRAPHICS)
+				if (pRenderStageDesc->PipelineType != EPipelineStateType::PIPELINE_TYPE_GRAPHICS)
 				{
 					LOG_ERROR("[RenderGraph]: There are resources that a RenderPass should be linked to, but Render Stage %u is not a Graphics Pipeline State", i);
 					return false;
@@ -1303,19 +1303,19 @@ namespace LambdaEngine
 			
 			for (uint32 f = 0; f < m_BackBufferCount; f++)
 			{
-				pPipelineStage->ppGraphicsCommandAllocators[f]	= m_pGraphicsDevice->CreateCommandAllocator("Render Graph Graphics Command Allocator", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
-				pPipelineStage->ppComputeCommandAllocators[f]	= m_pGraphicsDevice->CreateCommandAllocator("Render Graph Compute Command Allocator", ECommandQueueType::COMMAND_QUEUE_COMPUTE);
+				pPipelineStage->ppGraphicsCommandAllocators[f]	= m_pGraphicsDevice->CreateCommandAllocator("Render Graph Graphics Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+				pPipelineStage->ppComputeCommandAllocators[f]	= m_pGraphicsDevice->CreateCommandAllocator("Render Graph Compute Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 
 				CommandListDesc graphicsCommandListDesc = {};
 				graphicsCommandListDesc.pName					= "Render Graph Graphics Command List";
-				graphicsCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_PRIMARY;
+				graphicsCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 				graphicsCommandListDesc.Flags					= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 				pPipelineStage->ppGraphicsCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppGraphicsCommandAllocators[f], &graphicsCommandListDesc);
 
 				CommandListDesc computeCommandListDesc = {};
 				computeCommandListDesc.pName					= "Render Graph Compute Command List";
-				computeCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_PRIMARY;
+				computeCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 				computeCommandListDesc.Flags					= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 				pPipelineStage->ppComputeCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppComputeCommandAllocators[f], &computeCommandListDesc);
@@ -1531,9 +1531,9 @@ namespace LambdaEngine
 			{
 				const PipelineTextureBarrierDesc* pBarrier = &m_TextureBarriers[pTextureSynchronization->Barriers[b]];
 
-				if (pBarrier->QueueBefore == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+				if (pBarrier->QueueBefore == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 				{
-					if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+					if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 					{
 						//Graphics -> Compute
 						pGraphicsCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
@@ -1542,7 +1542,7 @@ namespace LambdaEngine
 						(*ppFirstExecutionStage) = pGraphicsCommandList;
 						(*ppSecondExecutionStage) = pComputeCommandList;
 					}
-					else if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+					else if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 					{
 						//Graphics -> Graphics
 						pGraphicsCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
@@ -1550,9 +1550,9 @@ namespace LambdaEngine
 						(*ppSecondExecutionStage) = pGraphicsCommandList;
 					}
 				}
-				else if (pBarrier->QueueBefore == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+				else if (pBarrier->QueueBefore == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 				{
-					if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+					if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 					{
 						//Compute -> Graphics
 						pComputeCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
@@ -1561,7 +1561,7 @@ namespace LambdaEngine
 						(*ppFirstExecutionStage) = pComputeCommandList;
 						(*ppSecondExecutionStage) = pGraphicsCommandList;
 					}
-					else if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+					else if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 					{
 						//Compute -> Compute
 						pComputeCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
@@ -1584,9 +1584,9 @@ namespace LambdaEngine
 			{
 				const PipelineBufferBarrierDesc* pBarrier = &m_BufferBarriers[pBufferSynchronization->Barriers[b]];
 
-				if (pBarrier->QueueBefore == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+				if (pBarrier->QueueBefore == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 				{
-					if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+					if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 					{
 						//Graphics -> Compute
 						pGraphicsCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
@@ -1595,7 +1595,7 @@ namespace LambdaEngine
 						(*ppFirstExecutionStage) = pGraphicsCommandList;
 						(*ppSecondExecutionStage) = pComputeCommandList;
 					}
-					else if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+					else if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 					{
 						//Graphics -> Graphics
 						pGraphicsCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
@@ -1603,9 +1603,9 @@ namespace LambdaEngine
 						(*ppSecondExecutionStage) = pGraphicsCommandList;
 					}
 				}
-				else if (pBarrier->QueueBefore == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+				else if (pBarrier->QueueBefore == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 				{
-					if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+					if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 					{
 						//Compute -> Graphics
 						pComputeCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
@@ -1614,7 +1614,7 @@ namespace LambdaEngine
 						(*ppFirstExecutionStage) = pComputeCommandList;
 						(*ppSecondExecutionStage) = pGraphicsCommandList;
 					}
-					else if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+					else if (pBarrier->QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 					{
 						//Compute -> Compute
 						pComputeCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, pBarrier, 1);
@@ -1713,7 +1713,7 @@ namespace LambdaEngine
 
 		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 		{
-			pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::UINT32);
+			pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::INDEX_TYPE_UINT32);
 
 			IBuffer* pDrawBuffer		= pRenderStage->pMeshIndexBufferResource->Buffer.Buffers[0];
 			uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
@@ -1829,7 +1829,7 @@ namespace LambdaEngine
 	{
 		uint32 shaderStageMask = 0;
 
-		if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_GRAPHICS)
+		if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_TYPE_GRAPHICS)
 		{
 			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER		: 0;
 
@@ -1840,11 +1840,11 @@ namespace LambdaEngine
 
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		}
-		else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_COMPUTE)
+		else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_TYPE_COMPUTE)
 		{
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 		}
-		else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_RAY_TRACING)
+		else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_TYPE_RAY_TRACING)
 		{
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER;
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;

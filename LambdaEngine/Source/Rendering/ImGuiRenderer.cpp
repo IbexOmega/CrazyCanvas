@@ -227,7 +227,7 @@ namespace LambdaEngine
 
 		uint64 offset = 0;
 		pCommandList->BindVertexBuffers(&pVertexBuffer, 0, &offset, 1);
-		pCommandList->BindIndexBuffer(pIndexBuffer, 0, EIndexType::UINT16);
+		pCommandList->BindIndexBuffer(pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT16);
 
 		// Setup scale and translation:
 		// Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
@@ -593,7 +593,7 @@ namespace LambdaEngine
 		fontTextureDesc.pName		= "ImGui Font Texture";
 		fontTextureDesc.MemoryType  = EMemoryType::MEMORY_GPU;
 		fontTextureDesc.Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
-		fontTextureDesc.Type		= ETextureType::TEXTURE_2D;
+		fontTextureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
 		fontTextureDesc.Flags		= FTextureFlags::TEXTURE_FLAG_COPY_DST | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		fontTextureDesc.Width		= width;
 		fontTextureDesc.Height		= height;

@@ -41,7 +41,8 @@ namespace LambdaEngine
 
 		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)				override final;
 		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)					override final;
-		virtual void BlitTexture(const ITexture* pSrc, ETextureState srcState, ITexture* pDst, ETextureState dstState, EFilter filter)	override final;
+		
+		virtual void BlitTexture(const ITexture* pSrc, ETextureState srcState, ITexture* pDst, ETextureState dstState, EFilterType filter)	override final;
 
 		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)	override final;
 		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)		override final;

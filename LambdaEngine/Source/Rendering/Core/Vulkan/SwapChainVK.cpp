@@ -366,7 +366,7 @@ namespace LambdaEngine
         {
             TextureDesc desc = {};
             desc.pName          = names[i];
-            desc.Type           = ETextureType::TEXTURE_2D;
+            desc.Type           = ETextureType::TEXTURE_TYPE_2D;
             desc.Flags          = TEXTURE_FLAG_RENDER_TARGET;
             desc.MemoryType     = EMemoryType::MEMORY_GPU;
             desc.Format         = m_Desc.Format;

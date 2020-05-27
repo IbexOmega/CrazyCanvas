@@ -2,11 +2,6 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
-#define MAX_DESCRIPTOR_BINDINGS		32
-#define MAX_CONSTANT_RANGES			16
-#define MAX_DESCRIPTOR_SET_LAYOUTS	16
-#define MAX_IMMUTABLE_SAMPLERS		32
-
 namespace LambdaEngine
 {
 	struct ConstantRangeDesc

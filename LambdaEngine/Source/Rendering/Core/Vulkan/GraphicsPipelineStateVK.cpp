@@ -12,7 +12,7 @@
 namespace LambdaEngine
 {
 	GraphicsPipelineStateVK::GraphicsPipelineStateVK(const GraphicsDeviceVK* pDevice)
-        : TDeviceChild(pDevice)
+		: TDeviceChild(pDevice)
 	{
 	}
 
@@ -33,14 +33,27 @@ namespace LambdaEngine
 		const RenderPassVK*		pRenderPassVk		= reinterpret_cast<const RenderPassVK*>(pDesc->pRenderPass);
 
 		 // Define shader stage create infos
-		std::vector<VkPipelineShaderStageCreateInfo> shaderStagesInfos;
-		std::vector<VkSpecializationInfo> shaderStagesSpecializationInfos;
-		std::vector<std::vector<VkSpecializationMapEntry>> shaderStagesSpecializationMaps;
+		TArray<VkPipelineShaderStageCreateInfo>		shaderStagesInfos;
+		TArray<VkSpecializationInfo>				shaderStagesSpecializationInfos;
+		TArray<TArray<VkSpecializationMapEntry>>	shaderStagesSpecializationMaps;
 
-		if (!CreateShaderData(shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps, pDesc))
+		// Mesh-Shader Pipeline
+		if (pDesc->pMeshShader != nullptr)
 		{
-			return false;
+			CreateShaderStageInfo(pDesc->pMeshShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
+			CreateShaderStageInfo(pDesc->pTaskShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
 		}
+		else if (pDesc->pVertexShader)
+		{
+			// Vertex-Shader Pipeline
+			CreateShaderStageInfo(pDesc->pVertexShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
+			CreateShaderStageInfo(pDesc->pHullShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
+			CreateShaderStageInfo(pDesc->pDomainShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
+			CreateShaderStageInfo(pDesc->pGeometryShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
+		}
+
+		// Pixel-Shader
+		CreateShaderStageInfo(pDesc->pPixelShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
 
 		// Default InputAssembly
 		VkPipelineInputAssemblyStateCreateInfo inputAssembly = { };
@@ -77,8 +90,8 @@ namespace LambdaEngine
 		multisamplingState.sampleShadingEnable		= (pDesc->RasterizerState.MultisampleEnable) ? VK_TRUE : VK_FALSE;
 		multisamplingState.rasterizationSamples		= ConvertSampleCount(pDesc->SampleCount);
 
-		VkSampleMask sampleMask = pDesc->SampleMask;
-		multisamplingState.pSampleMask = &sampleMask;
+		VkSampleMask sampleMask			= pDesc->SampleMask;
+		multisamplingState.pSampleMask	= &sampleMask;
 
 		// BlendState
 		VkPipelineColorBlendAttachmentState* pBlendAttachments = DBG_NEW VkPipelineColorBlendAttachmentState[pDesc->BlendState.BlendAttachmentStateCount];
@@ -112,24 +125,23 @@ namespace LambdaEngine
 		depthStencilState.sType					= VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		depthStencilState.flags					= 0;
 		depthStencilState.pNext					= nullptr;
-		depthStencilState.depthTestEnable		= VK_TRUE;
-		depthStencilState.depthWriteEnable		= VK_TRUE;
-		depthStencilState.depthCompareOp		= VK_COMPARE_OP_LESS_OR_EQUAL;
-		depthStencilState.depthBoundsTestEnable = VK_FALSE;
-		depthStencilState.stencilTestEnable		= VK_FALSE;
-		depthStencilState.minDepthBounds		= 0.0f;
-		depthStencilState.maxDepthBounds		= 1.0f;
-		depthStencilState.front					= {};
-		depthStencilState.back					= {};
-
+		depthStencilState.depthTestEnable		= pDesc->DepthStencilState.DepthTestEnable ? VK_TRUE : VK_FALSE;
+		depthStencilState.depthWriteEnable		= pDesc->DepthStencilState.DepthWriteEnable ? VK_TRUE : VK_FALSE;
+		depthStencilState.depthCompareOp		= ConvertCompareOp(pDesc->DepthStencilState.CompareOp);
+		depthStencilState.depthBoundsTestEnable = pDesc->DepthStencilState.DepthBoundsTestEnable ? VK_TRUE : VK_FALSE;
+		depthStencilState.stencilTestEnable		= pDesc->DepthStencilState.StencilTestEnable ? VK_TRUE : VK_FALSE;;
+		depthStencilState.minDepthBounds		= pDesc->DepthStencilState.MinDepthBounds;
+		depthStencilState.maxDepthBounds		= pDesc->DepthStencilState.MaxDepthBounds;
+		depthStencilState.front					= ConvertStencilOpState(pDesc->DepthStencilState.FrontFace);
+		depthStencilState.back					= ConvertStencilOpState(pDesc->DepthStencilState.BackFace);
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
-		vertexInputInfo.sType	= VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputInfo.flags	= 0;
-		vertexInputInfo.pNext	= nullptr;
+		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		vertexInputInfo.flags = 0;
+		vertexInputInfo.pNext = nullptr;
 
-		TArray<VkVertexInputBindingDescription> bindingDescriptors;
-		TArray<VkVertexInputAttributeDescription> attributeDescriptors;
+		TArray<VkVertexInputBindingDescription>		bindingDescriptors;
+		TArray<VkVertexInputAttributeDescription>	attributeDescriptors;
 		bindingDescriptors.reserve(pDesc->VertexInputBindingCount);
 
 		if (pDesc->VertexInputBindingCount > 0)
@@ -139,9 +151,9 @@ namespace LambdaEngine
 				const VertexInputBindingDesc* pInputBindingDesc = &pDesc->pVertexInputBindings[b];
 
 				VkVertexInputBindingDescription vkInputBindingDesc = {};
-				vkInputBindingDesc.binding		= pInputBindingDesc->Binding;
-				vkInputBindingDesc.stride		= pInputBindingDesc->Stride;
-				vkInputBindingDesc.inputRate	= ConvertVertexInputRate(pInputBindingDesc->InputRate);
+				vkInputBindingDesc.binding	 = pInputBindingDesc->Binding;
+				vkInputBindingDesc.stride	 = pInputBindingDesc->Stride;
+				vkInputBindingDesc.inputRate = ConvertVertexInputRate(pInputBindingDesc->InputRate);
 				bindingDescriptors.push_back(vkInputBindingDesc);
 
 				for (uint32 a = 0; a < pInputBindingDesc->AttributeCount; a++)
@@ -157,28 +169,31 @@ namespace LambdaEngine
 				}
 			}
 
-			vertexInputInfo.vertexAttributeDescriptionCount = (uint32)attributeDescriptors.size();
-			vertexInputInfo.pVertexAttributeDescriptions    = attributeDescriptors.data();
-			vertexInputInfo.vertexBindingDescriptionCount   = (uint32)bindingDescriptors.size();
-			vertexInputInfo.pVertexBindingDescriptions      = bindingDescriptors.data();
+			vertexInputInfo.vertexAttributeDescriptionCount	= (uint32)attributeDescriptors.size();
+			vertexInputInfo.pVertexAttributeDescriptions	= attributeDescriptors.data();
+			vertexInputInfo.vertexBindingDescriptionCount	= (uint32)bindingDescriptors.size();
+			vertexInputInfo.pVertexBindingDescriptions		= bindingDescriptors.data();
 		}
 		else
 		{
-			vertexInputInfo.vertexAttributeDescriptionCount = 0;
-			vertexInputInfo.pVertexAttributeDescriptions    = nullptr;
-			vertexInputInfo.vertexBindingDescriptionCount   = 0;
-			vertexInputInfo.pVertexBindingDescriptions      = nullptr;
+			vertexInputInfo.vertexAttributeDescriptionCount	= 0;
+			vertexInputInfo.pVertexAttributeDescriptions	= nullptr;
+			vertexInputInfo.vertexBindingDescriptionCount	= 0;
+			vertexInputInfo.pVertexBindingDescriptions		= nullptr;
 		}
 
+		// Viewport count
+		// TODO: If we need more than one viewport, we need to support this somehow
 		VkPipelineViewportStateCreateInfo viewportState = {};
-		viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		viewportState.flags         = 0;
-		viewportState.pNext         = nullptr;
-		viewportState.viewportCount = 1;
-		viewportState.pViewports    = nullptr;
-		viewportState.scissorCount  = 1;
-		viewportState.pScissors     = nullptr;
+		viewportState.sType			= VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportState.flags			= 0;
+		viewportState.pNext			= nullptr;
+		viewportState.viewportCount	= 1;
+		viewportState.pViewports	= nullptr;
+		viewportState.scissorCount	= 1;
+		viewportState.pScissors		= nullptr;
 
+		// Dynamic state
 		VkDynamicState dynamicStates[] =
 		{
 			VK_DYNAMIC_STATE_VIEWPORT,
@@ -186,86 +201,62 @@ namespace LambdaEngine
 		};
 
 		VkPipelineDynamicStateCreateInfo dynamicState = {};
-		dynamicState.sType              = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamicState.flags              = 0;
-		dynamicState.pNext              = nullptr;
-		dynamicState.pDynamicStates     = dynamicStates;
-		dynamicState.dynamicStateCount  = 2;
+		dynamicState.sType				= VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicState.flags				= 0;
+		dynamicState.pNext				= nullptr;
+		dynamicState.pDynamicStates		= dynamicStates;
+		dynamicState.dynamicStateCount	= 2;
 
-		m_pColorBlendAttachmentStates = DBG_NEW VkPipelineColorBlendAttachmentState[pDesc->BlendAttachmentStateCount];
-
-		for (uint32 i = 0; i < pDesc->BlendAttachmentStateCount; i++)
-		{
-			const BlendAttachmentState* pBlendAttachmentState = pDesc->pBlendAttachmentStates;
-
-			VkPipelineColorBlendAttachmentState blendAttachment = {};
-			blendAttachment.blendEnable			= pBlendAttachmentState->BlendEnabled ? VK_TRUE : VK_FALSE;
-			blendAttachment.colorWriteMask		= ConvertColorComponentMask(pBlendAttachmentState->ColorComponentsMask);
-			blendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-			blendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-			blendAttachment.colorBlendOp		= VK_BLEND_OP_ADD;
-			blendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-			blendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-			blendAttachment.alphaBlendOp		= VK_BLEND_OP_ADD;
-
-			m_pColorBlendAttachmentStates[i] = blendAttachment;
-		}
-
-		m_BlendState.pAttachments			= m_pColorBlendAttachmentStates;
-		m_BlendState.attachmentCount		= pDesc->BlendAttachmentStateCount;
-
-        const PipelineLayoutVK* pPipelineLayoutVk  = reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
-        const RenderPassVK*     pRenderPassVk      = reinterpret_cast<const RenderPassVK*>(pDesc->pRenderPass);
-        
+		// Pipeline info
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
-		pipelineInfo.sType                  = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipelineInfo.pNext                  = nullptr;
-		pipelineInfo.flags                  = 0;
-		pipelineInfo.stageCount             = uint32_t(shaderStagesInfos.size());
-		pipelineInfo.pStages                = shaderStagesInfos.data();
-		pipelineInfo.pVertexInputState      = &vertexInputInfo;
-		pipelineInfo.pInputAssemblyState    = &inputAssembly;
-		pipelineInfo.pViewportState         = &viewportState;
-		pipelineInfo.pRasterizationState    = &rasterizerState;
-		pipelineInfo.pMultisampleState      = &multisamplingState;
-		pipelineInfo.pDepthStencilState     = &depthStencilState;
-		pipelineInfo.pColorBlendState       = &blendState;
-		pipelineInfo.pDynamicState          = &dynamicState;
-		pipelineInfo.renderPass             = pRenderPassVk->GetRenderPass();
-		pipelineInfo.layout                 = pPipelineLayoutVk->GetPipelineLayout();
-		pipelineInfo.subpass                = 0;
-		pipelineInfo.basePipelineHandle     = VK_NULL_HANDLE;
-		pipelineInfo.basePipelineIndex      = -1;
+		pipelineInfo.sType					= VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipelineInfo.pNext					= nullptr;
+		pipelineInfo.flags					= 0;
+		pipelineInfo.stageCount				= uint32_t(shaderStagesInfos.size());
+		pipelineInfo.pStages				= shaderStagesInfos.data();
+		pipelineInfo.pVertexInputState		= &vertexInputInfo;
+		pipelineInfo.pInputAssemblyState	= &inputAssembly;
+		pipelineInfo.pViewportState			= &viewportState;
+		pipelineInfo.pRasterizationState	= &rasterizerState;
+		pipelineInfo.pMultisampleState		= &multisamplingState;
+		pipelineInfo.pDepthStencilState		= &depthStencilState;
+		pipelineInfo.pColorBlendState		= &blendState;
+		pipelineInfo.pDynamicState			= &dynamicState;
+		pipelineInfo.renderPass				= pRenderPassVk->GetRenderPass();
+		pipelineInfo.layout					= pPipelineLayoutVk->GetPipelineLayout();
+		pipelineInfo.subpass				= 0;
+		pipelineInfo.basePipelineHandle		= VK_NULL_HANDLE;
+		pipelineInfo.basePipelineIndex		= -1;
 
-        VkResult result = vkCreateGraphicsPipelines(m_pDevice->Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
+		VkResult result = vkCreateGraphicsPipelines(m_pDevice->Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
 		if (result != VK_SUCCESS)
 		{
-            if (pDesc->pName)
-            {
-                LOG_VULKAN_ERROR(result, "[GraphicsPipelineStateVK]: vkCreateGraphicsPipelines failed for %s", pDesc->pName);
-            }
-            else
-            {
-                LOG_VULKAN_ERROR(result, "[GraphicsPipelineStateVK]: vkCreateGraphicsPipelines failed for");
-            }
-            
+			if (pDesc->pName)
+			{
+				LOG_VULKAN_ERROR(result, "[GraphicsPipelineStateVK]: vkCreateGraphicsPipelines failed for %s", pDesc->pName);
+			}
+			else
+			{
+				LOG_VULKAN_ERROR(result, "[GraphicsPipelineStateVK]: vkCreateGraphicsPipelines failed");
+			}
+			
 			return false;
 		}
-        else
-        {
-            SetName(pDesc->pName);
-            
-            if (pDesc->pName)
-            {
-                D_LOG_MESSAGE("[GraphicsPipelineStateVK]: Created Pipeline for %s", pDesc->pName);
-            }
-            else
-            {
-                D_LOG_MESSAGE("[GraphicsPipelineStateVK]: Created Pipeline");
-            }
-            
-            return true;
-        }
+		else
+		{
+			SetName(pDesc->pName);
+			
+			if (pDesc->pName)
+			{
+				D_LOG_MESSAGE("[GraphicsPipelineStateVK]: Created Pipeline for %s", pDesc->pName);
+			}
+			else
+			{
+				D_LOG_MESSAGE("[GraphicsPipelineStateVK]: Created Pipeline");
+			}
+			
+			return true;
+		}
 	}
 
 	void GraphicsPipelineStateVK::SetName(const char* pName)
@@ -276,149 +267,50 @@ namespace LambdaEngine
 			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Pipeline, VK_OBJECT_TYPE_PIPELINE);
 		}
 	}
-
-	bool GraphicsPipelineStateVK::CreateShaderData(
-		std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesInfos, 
-		std::vector<VkSpecializationInfo>& shaderStagesSpecializationInfos, 
-		std::vector<std::vector<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps, 
-		const GraphicsPipelineStateDesc* pDesc)
+	
+	void GraphicsPipelineStateVK::CreateShaderStageInfo(const ShaderModuleDesc* pShaderModule, TArray<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,
+		TArray<VkSpecializationInfo>& shaderStagesSpecializationInfos, TArray<TArray<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps)
 	{
-		if (pDesc->pMeshShader != nullptr)
+		const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pShaderModule->pShader);
+
+		// ShaderStageInfo
+		VkPipelineShaderStageCreateInfo shaderCreateInfo = { };
+		shaderCreateInfo.sType	= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderCreateInfo.pNext	= nullptr;
+		shaderCreateInfo.flags	= 0;
+		shaderCreateInfo.stage	= ConvertShaderStageFlag(pShader->GetDesc().Stage);
+		shaderCreateInfo.module	= pShader->GetShaderModule();
+		shaderCreateInfo.pName	= pShader->GetEntryPoint();
+
+		// Shader Constants
+		if (pShaderModule->ShaderConstantCount)
 		{
-			//Mesh Shader
+			TArray<VkSpecializationMapEntry> specializationEntires(pShaderModule->ShaderConstantCount);
+			for (uint32 i = 0; i < pShaderModule->ShaderConstantCount; i++)
 			{
-				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pMeshShader);
-
-				VkPipelineShaderStageCreateInfo shaderCreateInfo;
-				VkSpecializationInfo shaderSpecializationInfo;
-				std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
-
-				pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-				pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
-
-				shaderStagesInfos.push_back(shaderCreateInfo);
-				shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
-				shaderStagesSpecializationMaps.push_back(shaderSpecializationMapEntries);
+				VkSpecializationMapEntry specializationEntry = {};
+				specializationEntry.constantID	= i;
+				specializationEntry.offset		= i * sizeof(ShaderConstant);
+				specializationEntry.size		= sizeof(ShaderConstant);
+				specializationEntires.emplace_back(specializationEntry);
 			}
 
-			//Task shader
-			if (pDesc->pTaskShader)
-			{
-				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pTaskShader);
+			shaderStagesSpecializationMaps.emplace_back(specializationEntires);
 
-				VkPipelineShaderStageCreateInfo shaderCreateInfo;
-				VkSpecializationInfo shaderSpecializationInfo;
-				std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
+			VkSpecializationInfo specializationInfo = { };
+			specializationInfo.mapEntryCount	= static_cast<uint32>(specializationEntires.size());
+			specializationInfo.pMapEntries		= specializationEntires.data();
+			specializationInfo.dataSize			= pShaderModule->ShaderConstantCount * sizeof(ShaderConstant);
+			specializationInfo.pData			= pShaderModule->pConstants;
+			shaderStagesSpecializationInfos.emplace_back(specializationInfo);
 
-				pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-				pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
-
-				shaderStagesInfos.push_back(shaderCreateInfo);
-				shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
-				shaderStagesSpecializationMaps.push_back(shaderSpecializationMapEntries);
-			}
+			shaderCreateInfo.pSpecializationInfo = &shaderStagesSpecializationInfos.back();
 		}
 		else
 		{
-			//Vertex Shader
-			if (pDesc->pVertexShader != nullptr)
-			{
-				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pVertexShader);
-
-				VkPipelineShaderStageCreateInfo shaderCreateInfo;
-				VkSpecializationInfo shaderSpecializationInfo;
-				std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
-
-				pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-				pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
-
-				shaderStagesInfos.push_back(shaderCreateInfo);
-				shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
-				shaderStagesSpecializationMaps.push_back(shaderSpecializationMapEntries);
-			}
-			else
-			{
-				if (pDesc->pName)
-				{
-					LOG_ERROR("[GraphicsPipelineStateVK]: Vertex Shader and Mesh Shader can not both be nullptr for %s", pDesc->pName);
-				}
-				else
-				{
-					LOG_ERROR("[GraphicsPipelineStateVK]: Vertex Shader and Mesh Shader can not both be nullptr");
-				}
-
-				return false;
-			}
-
-			//Geometry Shader
-			if (pDesc->pGeometryShader != nullptr)
-			{
-				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pGeometryShader);
-
-				VkPipelineShaderStageCreateInfo shaderCreateInfo;
-				VkSpecializationInfo shaderSpecializationInfo;
-				std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
-
-				pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-				pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
-
-				shaderStagesInfos.push_back(shaderCreateInfo);
-				shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
-				shaderStagesSpecializationMaps.push_back(shaderSpecializationMapEntries);
-			}
-
-			//Hull Shader
-			if (pDesc->pHullShader != nullptr)
-			{
-				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pHullShader);
-
-				VkPipelineShaderStageCreateInfo shaderCreateInfo;
-				VkSpecializationInfo shaderSpecializationInfo;
-				std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
-
-				pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-				pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
-
-				shaderStagesInfos.push_back(shaderCreateInfo);
-				shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
-				shaderStagesSpecializationMaps.push_back(shaderSpecializationMapEntries);
-			}
-
-			//Domain Shader
-			if (pDesc->pDomainShader != nullptr)
-			{
-				const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pDomainShader);
-
-				VkPipelineShaderStageCreateInfo shaderCreateInfo;
-				VkSpecializationInfo shaderSpecializationInfo;
-				std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
-
-				pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-				pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
-
-				shaderStagesInfos.push_back(shaderCreateInfo);
-				shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
-				shaderStagesSpecializationMaps.push_back(shaderSpecializationMapEntries);
-			}
+			shaderCreateInfo.pSpecializationInfo = nullptr;
 		}
 
-		//Pixel Shader
-		if (pDesc->pPixelShader != nullptr)
-		{
-			const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pDesc->pPixelShader);
-
-			VkPipelineShaderStageCreateInfo shaderCreateInfo;
-			VkSpecializationInfo shaderSpecializationInfo;
-			std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
-
-			pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-			pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
-
-			shaderStagesInfos.push_back(shaderCreateInfo);
-			shaderStagesSpecializationInfos.push_back(shaderSpecializationInfo);
-			shaderStagesSpecializationMaps.push_back(shaderSpecializationMapEntries);
-		}
-
-		return true;
+		shaderStagesInfos.emplace_back(shaderCreateInfo);
 	}
 }
