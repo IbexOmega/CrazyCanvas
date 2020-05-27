@@ -7,7 +7,6 @@
 
 struct SRayPayload
 {
-    uint AllowPrints;
 	vec3 Color;
 };
 
@@ -18,9 +17,4 @@ hitAttributeEXT vec3 attribs;
 void main() 
 {
     s_RayPayload.Color = vec3(0.0f, 1.0f, 0.0f);
-
-    if (s_RayPayload.AllowPrints == 1)
-    {
-        //debugPrintfEXT("Hit");
-    }
 }

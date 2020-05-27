@@ -8,7 +8,6 @@
 
 struct SRayPayload
 {
-	uint AllowPrints;
 	vec3 Color;
 };
 
@@ -55,8 +54,6 @@ void main()
 	// }
 
     SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
-	
-	
 
 	//Sample GBuffer
 	//vec4 sampledAlbedoAO    = texture(u_AlbedoAO, screenTexCoord);
@@ -80,96 +77,8 @@ void main()
 	const float 	Tmax              	= 10000.0f;
     const int 		payload       		= 0;
 
-	if (pixelCoords == ivec2(0))
-	{
-		//debugPrintfEXT("Snopp");
-		//debugPrintfEXT("Pos: %f, %f, %f Dir: %f, %f, %f", origin.x, origin.y, origin.z, direction.x, direction.y, direction.z);
-		s_RayPayload.AllowPrints = 1;
-	}
-	else
-	{
-		s_RayPayload.AllowPrints = 0;
-	}
-
 	s_RayPayload.Color = vec3(1.0f, 0.0f, 0.0f);
     traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
 
 	imageStore(u_Radiance, pixelCoords, vec4(s_RayPayload.Color, 1.0f));
-
-	// if (screenTexCoord.x < 0.25f)
-	// {
-	// 	if (screenTexCoord.y < 0.25f)
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[0].x), 1.0f));
-	// 	}
-	// 	else if (screenTexCoord.y < 0.5f)
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[0].y), 1.0f));
-	// 	}
-	// 	else if (screenTexCoord.y < 0.75f)
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[0].z), 1.0f));
-	// 	}
-	// 	else
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[0].w), 1.0f));
-	// 	}
-	// }
-	// else if (screenTexCoord.x < 0.5f)
-	// {
-	// 	if (screenTexCoord.y < 0.25f)
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[1].x), 1.0f));
-	// 	}
-	// 	else if (screenTexCoord.y < 0.5f)
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[1].y), 1.0f));
-	// 	}
-	// 	else if (screenTexCoord.y < 0.75f)
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[1].z), 1.0f));
-	// 	}
-	// 	else
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[1].w), 1.0f));
-	// 	}
-	// }
-	// else if (screenTexCoord.x < 0.75f)
-	// {
-	// 	if (screenTexCoord.y < 0.25f)
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[2].x), 1.0f));
-	// 	}
-	// 	else if (screenTexCoord.y < 0.5f)
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[2].y), 1.0f));
-	// 	}
-	// 	else if (screenTexCoord.y < 0.75f)
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[2].z), 1.0f));
-	// 	}
-	// 	else
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[2].w), 1.0f));
-	// 	}
-	// }
-	// else
-	// {
-	// 	if (screenTexCoord.y < 0.25f)
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[3].x), 1.0f));
-	// 	}
-	// 	else if (screenTexCoord.y < 0.5f)
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[3].y), 1.0f));
-	// 	}
-	// 	else if (screenTexCoord.y < 0.75f)
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[3].z), 1.0f));
-	// 	}
-	// 	else
-	// 	{
-	// 		imageStore(u_Radiance, pixelCoords, vec4(vec3(perFrameBuffer.ProjectionInv[3].w), 1.0f));
-	// 	}
-	// }
 }
