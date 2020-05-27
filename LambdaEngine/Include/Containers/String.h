@@ -5,3 +5,5 @@
 #ifdef LAMBDA_VISUAL_STUDIO
 	#pragma warning(disable : 4251)
 #endif
+
+using String = std::string;

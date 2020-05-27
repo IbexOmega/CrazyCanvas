@@ -9,7 +9,7 @@
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformConsole.h"
-#include "Application/API/IWindow.h"
+#include "Application/API/Window.h"
 
 #include "Threading/API/Thread.h"
 
@@ -48,7 +48,7 @@ LambdaEngine::IClientUDPRemoteHandler* Server::CreateClientUDPHandler()
 	return DBG_NEW ClientUDPHandler();
 }
 
-void Server::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
+void Server::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	UNREFERENCED_VARIABLE(key);
 	UNREFERENCED_VARIABLE(modifierMask);

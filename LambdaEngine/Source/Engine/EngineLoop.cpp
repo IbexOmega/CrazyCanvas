@@ -26,83 +26,83 @@
 
 namespace LambdaEngine
 {
-    static Clock g_Clock;
+	static Clock g_Clock;
 
 	void EngineLoop::Run()
 	{
-        Clock			fixedClock;
-        const Timestamp timestep	= Timestamp::Seconds(1.0 / 60.0);
-        Timestamp		accumulator = Timestamp(0);
-        
-        g_Clock.Reset();
-        
-        bool isRunning = true;
-        while (isRunning)
-        {
+		Clock			fixedClock;
+		const Timestamp timestep	= Timestamp::Seconds(1.0 / 60.0);
+		Timestamp		accumulator = Timestamp(0);
+		
+		g_Clock.Reset();
+		
+		bool isRunning = true;
+		while (isRunning)
+		{
 			g_Clock.Tick();
-            
-            // Update
+			
+			// Update
 			Timestamp delta = g_Clock.GetDeltaTime();
-            isRunning = Tick(delta);
-            
-            // Fixed update
-            accumulator += delta;
-            while (accumulator >= timestep)
-            {
-                fixedClock.Tick();
-                FixedTick(fixedClock.GetDeltaTime());
-                
-                accumulator -= timestep;
-            }
-        }
-    }
+			isRunning = Tick(delta);
+			
+			// Fixed update
+			accumulator += delta;
+			while (accumulator >= timestep)
+			{
+				fixedClock.Tick();
+				FixedTick(fixedClock.GetDeltaTime());
+				
+				accumulator -= timestep;
+			}
+		}
+	}
 
-    bool EngineLoop::Tick(Timestamp delta)
-    {
+	bool EngineLoop::Tick(Timestamp delta)
+	{
 		Input::Tick();
 
 		Thread::Join();
-        
+		
 		PlatformNetworkUtils::Tick(delta);
 
-        if (!CommonApplication::Tick())
-        {
-            return false;
-        }
+		if (!CommonApplication::Get()->Tick())
+		{
+			return false;
+		}
 
 		AudioSystem::Tick();
 
-        // Tick game
-        Game::Get()->Tick(delta);
-        
-        return true;
+		// Tick game
+		Game::Get()->Tick(delta);
+		
+		return true;
 	}
 
-    void EngineLoop::FixedTick(Timestamp delta)
-    {
-        // Tick game
-        Game::Get()->FixedTick(delta);
-        
+	void EngineLoop::FixedTick(Timestamp delta)
+	{
+		// Tick game
+		Game::Get()->FixedTick(delta);
+		
 		NetworkUtils::FixedTick(delta);
-    }
+	}
 
 	bool EngineLoop::PreInit()
 	{
 #ifdef LAMBDA_DEVELOPMENT
-        PlatformConsole::Show();
+		PlatformConsole::Show();
 
-        Log::SetDebuggerOutputEnabled(true);
+		Log::SetDebuggerOutputEnabled(true);
 
 		Malloc::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
 #endif
 
-        if (!CommonApplication::PreInit())
-        {
-            return false;
-        }
+		if (!CommonApplication::PreInit())
+		{
+			return false;
+		}
 
 		PlatformTime::PreInit();
-              
+			  
 		Random::PreInit();
 
 		return true;
@@ -174,23 +174,23 @@ namespace LambdaEngine
 	
 	bool EngineLoop::PostRelease()
 	{
-        Thread::Release();
-        
-        PlatformNetworkUtils::Release();
-        
-        if (!PlatformApplication::PostRelease())
-        {
-            return false;
-        }
+		Thread::Release();
+		
+		PlatformNetworkUtils::Release();
+		
+		if (!CommonApplication::PostRelease())
+		{
+			return false;
+		}
 
 #ifdef LAMBDA_DEVELOPMENT
-        PlatformConsole::Close();
+		PlatformConsole::Close();
 #endif
 		return true;
-    }
+	}
 
-    Timestamp EngineLoop::GetTimeSinceStart()
-    {
-        return g_Clock.GetTotalTime();
-    }
+	Timestamp EngineLoop::GetTimeSinceStart()
+	{
+		return g_Clock.GetTotalTime();
+	}
 }

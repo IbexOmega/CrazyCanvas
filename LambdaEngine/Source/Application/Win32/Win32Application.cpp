@@ -3,7 +3,7 @@
 
 #include "Log/Log.h"
 
-#include "Application/API/IEventHandler.h"
+#include "Application/API/EventHandler.h"
 
 #include "Application/Win32/Win32Application.h"
 #include "Application/Win32/Win32Window.h"
@@ -31,15 +31,21 @@ namespace LambdaEngine
 
 	Win32Application::~Win32Application()
 	{
-		VALIDATE_MSG(s_pApplication != nullptr, "[Win32Application]: Instance of application has already been deleted");
-		s_pApplication = nullptr;
-
+		// Destroy all windows
 		for (Win32Window* pWindow : m_Windows)
 		{
 			SAFERELEASE(pWindow);
 		}
 
-		SAFEDELETE_ARRAY(m_RawInput.pInputBuffer);
+		// Unregister window class after destroying all windows
+		if (!::UnregisterClass(WINDOW_CLASS, m_hInstance))
+		{
+			LOG_ERROR("[Win32Application]: Failed to unregister windowclass");
+		}
+
+		// Destroy application
+		VALIDATE_MSG(s_pApplication != nullptr, "[Win32Application]: Instance of application has already been deleted");
+		s_pApplication = nullptr;
 
 		m_hInstance = 0;
 	}
@@ -73,12 +79,14 @@ namespace LambdaEngine
 		}
 	}
 
-	bool Win32Application::Create(IEventHandler* pEventHandler)
+	bool Win32Application::Create()
 	{
-		VALIDATE(pEventHandler != nullptr);
-		m_pEventHandler = pEventHandler;
-
 		if (!RegisterWindowClass())
+		{
+			return false;
+		}
+
+		if (!Win32InputCodeTable::Init())
 		{
 			return false;
 		}
@@ -86,26 +94,25 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void Win32Application::ProcessStoredEvents()
+	bool Win32Application::ProcessStoredEvents()
 	{
 		TArray<Win32Message> messagesToProcess = TArray<Win32Message>(m_StoredMessages);
 		m_StoredMessages.clear();
 
+		bool shouldRun = true;
 		for (Win32Message& message : messagesToProcess)
 		{
-			ProcessStoredMessage(message.hWnd, message.uMessage, message.wParam, message.lParam, message.RawInput.MouseDeltaX, message.RawInput.MouseDeltaY);
+			if (message.uMessage == WM_QUIT)
+			{
+				shouldRun = false;
+			}
+			else
+			{
+				ProcessStoredMessage(message.hWnd, message.uMessage, message.wParam, message.lParam, message.RawInput.MouseDeltaX, message.RawInput.MouseDeltaY);
+			}
 		}
-	}
 
-	void Win32Application::MakeMainWindow(IWindow* pMainWindow)
-	{
-		m_pMainWindow = reinterpret_cast<Win32Window*>(pMainWindow);
-
-		if (m_InputMode == EInputMode::INPUT_MODE_RAW)
-		{
-			HWND hwnd = (HWND)m_pMainWindow->GetHandle();
-			RegisterRawInputDevices(hwnd);
-		}
+		return shouldRun;
 	}
 
 	bool Win32Application::SupportsRawInput() const
@@ -113,8 +120,10 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void Win32Application::SetInputMode(EInputMode inputMode)
+	void Win32Application::SetInputMode(Window* pWindow, EInputMode inputMode)
 	{
+		VALIDATE(pWindow != nullptr);
+
 		if (inputMode == m_InputMode || inputMode == EInputMode::INPUT_MODE_NONE)
 		{
 			return;
@@ -122,19 +131,8 @@ namespace LambdaEngine
 
 		if (inputMode == EInputMode::INPUT_MODE_RAW)
 		{
-			// Get the cursor position
-			POINT cursorPos = { };
-			::GetCursorPos(&cursorPos);
-
-			m_RawInput.MouseX = cursorPos.x;
-			m_RawInput.MouseY = cursorPos.y;
-
-			// Register input devices for the main window
-			if (m_pMainWindow)
-			{
-				HWND hWnd = (HWND)m_pMainWindow->GetHandle();
-				RegisterRawInputDevices(hWnd);
-			}
+			HWND hWnd = (HWND)pWindow->GetHandle();
+			RegisterRawInputDevices(hWnd);
 		}
 		else if (inputMode == EInputMode::INPUT_MODE_STANDARD)
 		{
@@ -147,7 +145,7 @@ namespace LambdaEngine
 		m_InputMode = inputMode;
 	}
 
-	EInputMode Win32Application::GetInputMode() const
+	EInputMode Win32Application::GetInputMode(Window* pWindow) const
 	{
 		return m_InputMode;
 	}
@@ -169,7 +167,7 @@ namespace LambdaEngine
 				EKey			keyCode			= Win32InputCodeTable::GetKeyFromScanCode(scancode);
 				bool			isRepeat		= (lParam & REPEAT_KEY_MASK);
 
-				m_pEventHandler->KeyPressed(keyCode, modifierMask, isRepeat);
+				m_pEventHandler->OnKeyPressed(keyCode, modifierMask, isRepeat);
 				break;
 			}
 
@@ -179,7 +177,7 @@ namespace LambdaEngine
 				const uint16	scancode	= HIWORD(lParam) & SCAN_CODE_MASK;
 				EKey			keyCode		= Win32InputCodeTable::GetKeyFromScanCode(scancode);
 
-				m_pEventHandler->KeyReleased(keyCode);
+				m_pEventHandler->OnKeyReleased(keyCode);
 				break;
 			}
 
@@ -187,23 +185,17 @@ namespace LambdaEngine
 			case WM_SYSCHAR:
 			{
 				const uint32 character = uint32(wParam);
-				m_pEventHandler->KeyTyped(character);
+				m_pEventHandler->OnKeyTyped(character);
 				break;
 			}
 
 			case WM_MOUSEMOVE:
 			{
 				// Prevent double messages of mouse moved for main windows
-				if (pMessageWindow == m_pMainWindow)
-				{
-					if (m_InputMode == EInputMode::INPUT_MODE_STANDARD)
-					{
-						const int32 x = GET_X_LPARAM(lParam);
-						const int32 y = GET_Y_LPARAM(lParam);
+				const int32 x = GET_X_LPARAM(lParam);
+				const int32 y = GET_Y_LPARAM(lParam);
 
-						m_pEventHandler->MouseMoved(x, y);
-					}
-				}
+				m_pEventHandler->OnMouseMoved(x, y);
 
 				// Mouse must have entered the window
 				if (!m_IsTrackingMouse)
@@ -215,7 +207,7 @@ namespace LambdaEngine
 					tme.hwndTrack	= hWnd;
 					TrackMouseEvent(&tme);
 
-					m_pEventHandler->MouseEntered(pMessageWindow);
+					m_pEventHandler->OnMouseEntered(pMessageWindow);
 				}
 
 				break;
@@ -249,7 +241,7 @@ namespace LambdaEngine
 				}
 
 				const uint32 modifierMask = Win32InputCodeTable::GetModifierMask();
-				m_pEventHandler->ButtonPressed(button, modifierMask);
+				m_pEventHandler->OnButtonPressed(button, modifierMask);
 				break;
 			}
 
@@ -280,14 +272,14 @@ namespace LambdaEngine
 					button = EMouseButton::MOUSE_BUTTON_FORWARD;
 				}
 
-				m_pEventHandler->ButtonReleased(button);
+				m_pEventHandler->OnButtonReleased(button);
 				break;
 			}
 
 			case WM_MOUSEWHEEL:
 			{
 				const int32 scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-				m_pEventHandler->MouseScrolled(0, scrollDelta);
+				m_pEventHandler->OnMouseScrolled(0, scrollDelta);
 
 				break;
 			}
@@ -295,7 +287,7 @@ namespace LambdaEngine
 			case WM_MOUSEHWHEEL:
 			{
 				const int32 scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-				m_pEventHandler->MouseScrolled(scrollDelta, 0);
+				m_pEventHandler->OnMouseScrolled(scrollDelta, 0);
 				break;
 			}
 
@@ -304,16 +296,13 @@ namespace LambdaEngine
 				const int16 x = (int16)LOWORD(lParam);
 				const int16 y = (int16)HIWORD(lParam);
 
-				m_pEventHandler->WindowMoved(pMessageWindow, x, y);
+				m_pEventHandler->OnWindowMoved(pMessageWindow, x, y);
 				break;
 			}
 
 			case WM_INPUT:
 			{
-				m_RawInput.MouseX += mouseDeltaX;
-				m_RawInput.MouseY += mouseDeltaY;
-
-				m_pEventHandler->MouseMoved(m_RawInput.MouseX, m_RawInput.MouseY);
+				m_pEventHandler->OnMouseMovedRaw(mouseDeltaX, mouseDeltaY);
 				break;
 			}
 
@@ -332,25 +321,20 @@ namespace LambdaEngine
 				const uint16 width	= (uint16)LOWORD(lParam);
 				const uint16 height = (uint16)HIWORD(lParam);
 
-				m_pEventHandler->WindowResized(pMessageWindow, width, height, resizeType);
+				m_pEventHandler->OnWindowResized(pMessageWindow, width, height, resizeType);
 				break;
 			}
 
 			case WM_MOUSELEAVE:
 			{
-				m_pEventHandler->MouseLeft(pMessageWindow);
+				m_pEventHandler->OnMouseLeft(pMessageWindow);
 				m_IsTrackingMouse = false;
 				break;
 			}
 
 			case WM_DESTROY:
 			{
-				if (pMessageWindow == m_pMainWindow)
-				{
-					Terminate();
-				}
-
-				m_pEventHandler->WindowClosed(pMessageWindow);
+				m_pEventHandler->OnWindowClosed(pMessageWindow);
 				break;
 			}
 
@@ -358,7 +342,7 @@ namespace LambdaEngine
 			case WM_KILLFOCUS:
 			{
 				bool hasFocus = (uMessage == WM_SETFOCUS);
-				m_pEventHandler->FocusChanged(pMessageWindow, hasFocus);
+				m_pEventHandler->OnFocusChanged(pMessageWindow, hasFocus);
 				break;
 			}
 		}
@@ -368,25 +352,18 @@ namespace LambdaEngine
 	{
 		UINT dwSize = 0;
 		::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
-		if (dwSize > m_RawInput.BufferSize)
+		if (dwSize > m_RawInputBuffer.size())
 		{
-			m_RawInput.BufferSize	= dwSize;
-			m_RawInput.pInputBuffer = DBG_NEW byte[dwSize];
+			m_RawInputBuffer.resize(dwSize);
 		}
 
-		if (!m_RawInput.pInputBuffer)
-		{
-			LOG_ERROR("[Win32Application]: Failed to allocate Raw Input buffer");
-			return 0;
-		}
-
-		if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, m_RawInput.pInputBuffer, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
+		if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, m_RawInputBuffer.data(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
 		{
 			LOG_ERROR("[Win32Application]: GetRawInputData did not return correct size");
 			return 0;
 		}
 
-		RAWINPUT* pRaw = (RAWINPUT*)m_RawInput.pInputBuffer;
+		RAWINPUT* pRaw = (RAWINPUT*)m_RawInputBuffer.data();
 		if (pRaw->header.dwType == RIM_TYPEMOUSE)
 		{
 			const int32 deltaX = pRaw->data.mouse.lLastX;
@@ -424,15 +401,46 @@ namespace LambdaEngine
 		return m_hInstance;
 	}
 
-	IWindow* Win32Application::GetForegroundWindow() const
+	void Win32Application::SetActiveWindow(Window* pWindow)
 	{
-		HWND hForegroundWindow = ::GetForegroundWindow();
-		return GetWindowFromHandle(hForegroundWindow);
+		HWND hActiveWindow = static_cast<HWND>(pWindow->GetHandle());
+		BOOL bResult = ::SetForegroundWindow(hActiveWindow);
+		if (!bResult)
+		{
+			LOG_ERROR("[Win32Application]: Failed to set active window");
+		}
 	}
 
-	IWindow* Win32Application::GetMainWindow() const
+	Window* Win32Application::GetActiveWindow() const
 	{
-		return m_pMainWindow;
+		HWND hForegroundWindow = ::GetActiveWindow();
+		if (hForegroundWindow)
+		{
+			return GetWindowFromHandle(hForegroundWindow);
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+	void Win32Application::SetCapture(Window* pWindow)
+	{
+		HWND hCaptureWindow = static_cast<HWND>(pWindow->GetHandle());
+		::SetCapture(hCaptureWindow);
+	}
+
+	Window* Win32Application::GetCapture() const
+	{
+		HWND hCaptureWindow = ::GetCapture();
+		if (hCaptureWindow)
+		{
+			return GetWindowFromHandle(hCaptureWindow);
+		}
+		else
+		{
+			return nullptr;
+		}
 	}
 
 	void Win32Application::AddWindow(Win32Window* pWindow)
@@ -440,43 +448,14 @@ namespace LambdaEngine
 		m_Windows.emplace_back(pWindow);
 	}
 
-	bool Win32Application::PreInit()
-	{
-		if (!Win32InputCodeTable::Init())
-		{
-			return false;
-		}
-
-		return true;
-	}
-	
-	bool Win32Application::PostRelease()
-	{
-		if (!::UnregisterClass(WINDOW_CLASS, Win32Application::Get()->GetInstanceHandle()))
-		{
-			LOG_ERROR("[Win32Application]: Failed to unregister windowclass");
-			return false;
-		}
-
-		SAFEDELETE(s_pApplication);
-		return true;
-	}
-
-	bool Win32Application::ProcessMessages()
+	void Win32Application::PeekEvents()
 	{
 		MSG msg = { };
 		while (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			::TranslateMessage(&msg);
 			::DispatchMessage(&msg);
-
-			if (msg.message == WM_QUIT)
-			{
-				return false;
-			}
 		}
-
-		return true;
 	}
 
 	bool Win32Application::RegisterWindowClass()
@@ -552,19 +531,24 @@ namespace LambdaEngine
 		}
 	}
 
-	IWindow* Win32Application::CreateWindow(const WindowDesc* pDesc)
+	Window* Win32Application::CreateWindow(const WindowDesc* pDesc)
 	{
 		Win32Window* pWindow = DBG_NEW Win32Window();
 		if (!pWindow->Init(pDesc))
 		{
 			SAFEDELETE(pWindow);
+			return nullptr;
 		}
 		else
 		{
-			Win32Application::Get()->AddWindow(pWindow);
+			AddWindow(pWindow);
+			return pWindow;
 		}
-		
-		return pWindow;
+	}
+
+	bool Win32Application::Tick()
+	{
+		return ProcessStoredEvents();
 	}
 
 	Application* Win32Application::CreateApplication()
@@ -575,18 +559,20 @@ namespace LambdaEngine
 
 	void Win32Application::Terminate()
 	{
-		//TODO: Maybe take in the exitcode
-		PostQuitMessage(0);
+		// TODO: Maybe take in the exitcode
+
+		// HACK: Do this for now
+		StoreMessage(0, WM_QUIT, 0, 0, 0, 0);
 	}
 
 	Win32Application* Win32Application::Get()
 	{
+		VALIDATE(s_pApplication != nullptr);
 		return s_pApplication;
 	}
 
 	LRESULT Win32Application::WindowProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
-		VALIDATE(Win32Application::Get() != nullptr);
 		return Win32Application::Get()->ProcessMessage(hWnd, uMessage, wParam, lParam);
 	}
 

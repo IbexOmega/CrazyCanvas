@@ -4,7 +4,7 @@
 
 #include "Containers/String.h"
 
-#include "Application/API/IWindow.h"
+#include "Application/API/Window.h"
 #include "Application/API/PlatformApplication.h"
 
 #include "Rendering/Core/Vulkan/SwapChainVK.h"
@@ -67,20 +67,22 @@ namespace LambdaEngine
         const uint32 bufferCount = uint32(m_Buffers.size());
         for (uint32 i = 0; i < bufferCount; i++)
         {
+#ifdef LAMBDA_DEVELOPMENT
             uint64 refCount = m_Buffers[i]->Release();
-#ifndef LAMBDA_PRODUCTION
             if (refCount > 0)
             {
                 LOG_ERROR("[SwapChainVK]: All external references to all buffers must be released before calling Release or ResizeBuffers");
                 DEBUGBREAK();
             }
+#else
+            m_Buffers[i]->Release();
 #endif
             m_Buffers[i] = nullptr;
         }
         m_Buffers.clear();
     }
 
-    bool SwapChainVK::Init(const IWindow* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)
+    bool SwapChainVK::Init(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)
     {
         VALIDATE(pWindow        != nullptr);
         VALIDATE(pCommandQueue  != nullptr);

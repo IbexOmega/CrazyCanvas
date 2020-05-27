@@ -19,7 +19,7 @@
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformConsole.h"
-#include "Application/API/IWindow.h"
+#include "Application/API/Window.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IPAddress.h"
@@ -128,7 +128,7 @@ void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8
     LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
 
-void Client::KeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
+void Client::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(modifierMask);
@@ -232,7 +232,7 @@ bool Client::InitRendererForEmpty()
 
 	m_pRenderGraph->Init(renderGraphDesc);
 
-	IWindow* pWindow = CommonApplication::Get()->GetMainWindow();
+	Window* pWindow = CommonApplication::Get()->GetMainWindow();
 	uint32 renderWidth = pWindow->GetWidth();
 	uint32 renderHeight = pWindow->GetHeight();
 

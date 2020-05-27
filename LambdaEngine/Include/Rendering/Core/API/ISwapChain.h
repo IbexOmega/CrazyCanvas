@@ -4,7 +4,7 @@
 
 namespace LambdaEngine
 {
-    class IWindow;
+    class Window;
     class ITexture;
     class ICommandQueue;
     
@@ -47,7 +47,7 @@ namespace LambdaEngine
         *
         * return - Pointer to the window specified when the swapchain were created.
         */
-        virtual const IWindow*   GetWindow() const = 0;
+        virtual const Window*   GetWindow() const = 0;
 
         /*
         * Returns the buffer specified as parameter. Caller is responsible for calling release on the

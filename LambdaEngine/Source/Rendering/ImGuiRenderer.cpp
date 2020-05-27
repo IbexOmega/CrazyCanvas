@@ -18,7 +18,7 @@
 #include "Rendering/Core/API/IShader.h"
 #include "Rendering/Core/API/IBuffer.h"
 
-#include "Application/API/IWindow.h"
+#include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
 
 #include "Resources/ResourceManager.h"
@@ -371,32 +371,32 @@ namespace LambdaEngine
 		pCommandList->EndRenderPass();
 	}
 
-	void ImGuiRenderer::MouseMoved(int32 x, int32 y)
+	void ImGuiRenderer::OnMouseMoved(int32 x, int32 y)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.MousePos = ImVec2(float32(x), float32(y));
 	}
 
-	void ImGuiRenderer::ButtonPressed(EMouseButton button, uint32 modifierMask)
+	void ImGuiRenderer::OnButtonPressed(EMouseButton button, uint32 modifierMask)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.MouseDown[button - 1] = true;
 	}
 
-	void ImGuiRenderer::ButtonReleased(EMouseButton button)
+	void ImGuiRenderer::OnButtonReleased(EMouseButton button)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.MouseDown[button - 1] = false;
 	}
 
-	void ImGuiRenderer::MouseScrolled(int32 deltaX, int32 deltaY)
+	void ImGuiRenderer::OnMouseScrolled(int32 deltaX, int32 deltaY)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.MouseWheelH	+= (float32)deltaX;
 		io.MouseWheel	+= (float32)deltaY;
 	}
 
-	void ImGuiRenderer::KeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
+	void ImGuiRenderer::OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.KeysDown[key] = true;
@@ -406,7 +406,7 @@ namespace LambdaEngine
 		io.KeySuper	= io.KeysDown[EKey::KEY_LEFT_SUPER]		|| io.KeysDown[EKey::KEY_RIGHT_SUPER];
 	}
 
-	void ImGuiRenderer::KeyReleased(EKey key)
+	void ImGuiRenderer::OnKeyReleased(EKey key)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.KeysDown[key] = false;
@@ -416,7 +416,7 @@ namespace LambdaEngine
 		io.KeySuper	= io.KeysDown[EKey::KEY_LEFT_SUPER]		|| io.KeysDown[EKey::KEY_RIGHT_SUPER];
 	}
 
-	void ImGuiRenderer::KeyTyped(uint32 character)
+	void ImGuiRenderer::OnKeyTyped(uint32 character)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.AddInputCharacter(character);
@@ -427,7 +427,7 @@ namespace LambdaEngine
 		return ImGui::GetCurrentContext();
 	}
 
-	bool ImGuiRenderer::InitImGui(IWindow* pWindow)
+	bool ImGuiRenderer::InitImGui(Window* pWindow)
 	{
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();

@@ -26,3 +26,6 @@ Dependencies/bin-int/
 
 #Other ignored files
 *.dot
+
+#Ignore files for settings
+*.ini

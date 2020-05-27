@@ -27,7 +27,7 @@ namespace LambdaEngine
                 pConsoleWindow = [[CocoaConsoleWindow alloc] init: width height:height];
                 [pConsoleWindow setColor:EConsoleColor::COLOR_WHITE];
                 
-                MacApplication::ProcessMessages();
+                MacApplication::PeekEvents();
             }, true);
 			
 			s_pConsoleWindow = pConsoleWindow;
@@ -36,16 +36,16 @@ namespace LambdaEngine
     
     void MacConsole::Close()
     {
-        if (s_pConsoleWindow != nil)
+        if (s_pConsoleWindow != nullptr)
         {
             MacMainThread::MakeCall(^
             {
                 SCOPED_AUTORELEASE_POOL();
                 
-                MacApplication::ProcessMessages();
+                MacApplication::PeekEvents();
                 
                 [s_pConsoleWindow release];
-                s_pConsoleWindow = nil;
+                s_pConsoleWindow = nullptr;
             }, true);
         }
     }
@@ -83,7 +83,7 @@ namespace LambdaEngine
                 [s_pConsoleWindow appendStringAndScroll:string];
                 [string release];
                 
-                MacApplication::ProcessMessages();
+                MacApplication::PeekEvents();
             }, false);
         }
     }
@@ -104,7 +104,7 @@ namespace LambdaEngine
                 [s_pConsoleWindow appendStringAndScroll:finalString];
                 [finalString release];
                 
-                MacApplication::ProcessMessages();
+                MacApplication::PeekEvents();
             }, false);
         }
     }

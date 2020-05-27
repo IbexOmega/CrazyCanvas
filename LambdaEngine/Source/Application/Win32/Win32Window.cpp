@@ -56,7 +56,7 @@ namespace LambdaEngine
 		constexpr uint32 MAX_CHARS = 256;
 		static wchar_t title[MAX_CHARS];
 
-		size_t charsWritten = mbstowcs(title, pDesc->pTitle, MAX_CHARS);
+		size_t charsWritten = mbstowcs(title, pDesc->Title.c_str(), MAX_CHARS);
 		if (charsWritten != static_cast<size_t>(-1))
 		{
 			title[charsWritten] = L'\0';
@@ -80,7 +80,9 @@ namespace LambdaEngine
 				}
 			}
 
-			m_StyleFlags = pDesc->Style;
+			// Set descripton
+			m_Desc = (*pDesc);
+
 			::UpdateWindow(m_hWnd);
 			return true;
 		}
@@ -94,7 +96,7 @@ namespace LambdaEngine
 
 	void Win32Window::Close()
 	{
-		if (m_StyleFlags & WINDOW_STYLE_FLAG_CLOSABLE)
+		if (m_Desc.Style & WINDOW_STYLE_FLAG_CLOSABLE)
 		{
 			VALIDATE(m_hWnd != 0);
 			::DestroyWindow(m_hWnd);
@@ -103,7 +105,7 @@ namespace LambdaEngine
 
 	void Win32Window::Minimize()
 	{
-		if (m_StyleFlags & WINDOW_STYLE_FLAG_MINIMIZABLE)
+		if (m_Desc.Style & WINDOW_STYLE_FLAG_MINIMIZABLE)
 		{
 			VALIDATE(m_hWnd != 0);
 			::ShowWindow(m_hWnd, SW_MINIMIZE);
@@ -112,11 +114,17 @@ namespace LambdaEngine
 
 	void Win32Window::Maximize()
 	{
-		if (m_StyleFlags & WINDOW_STYLE_FLAG_MAXIMIZABLE)
+		if (m_Desc.Style & WINDOW_STYLE_FLAG_MAXIMIZABLE)
 		{
 			VALIDATE(m_hWnd != 0);
 			::ShowWindow(m_hWnd, SW_MAXIMIZE);
 		}
+	}
+
+	bool Win32Window::IsActiveWindow() const
+	{
+		HWND hActiveWindow = ::GetActiveWindow();
+		return (m_hWnd == hActiveWindow);
 	}
 
 	void Win32Window::Restore()
@@ -158,15 +166,38 @@ namespace LambdaEngine
 		return (void*)m_hWnd;
 	}
 
-	const void* Win32Window::GetView() const
-	{
-		return nullptr;
-	}
-
-	void Win32Window::SetTitle(const char* pTitle)
+	void Win32Window::SetTitle(const String& title)
 	{
 		VALIDATE(m_hWnd != 0);
-		::SetWindowTextA(m_hWnd, pTitle);
+		::SetWindowTextA(m_hWnd, title.c_str());
+	}
+	
+	void Win32Window::SetPosition(int32 x, int32 y)
+	{
+		VALIDATE(m_hWnd != 0);
+		::SetWindowPos(m_hWnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+	}
+	
+	void Win32Window::GetPosition(int32* pPosX, int32* pPosY) const
+	{
+		VALIDATE(m_hWnd != 0);
+		VALIDATE(pPosX	!= nullptr);
+		VALIDATE(pPosY	!= nullptr);
+
+		WINDOWPLACEMENT placement = { };
+		placement.length = sizeof(WINDOWPLACEMENT);
+
+		if (::GetWindowPlacement(m_hWnd, &placement))
+		{
+			(*pPosX) = placement.rcNormalPosition.left;
+			(*pPosY) = placement.rcNormalPosition.bottom;
+		}
+	}
+	
+	void Win32Window::SetSize(uint16 width, uint16 height)
+	{
+		VALIDATE(m_hWnd != 0);
+		::SetWindowPos(m_hWnd, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 	}
 }
 

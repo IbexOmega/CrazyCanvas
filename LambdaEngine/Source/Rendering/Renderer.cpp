@@ -10,7 +10,8 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/ImGuiRenderer.h"
 
-#include "Application/API/PlatformApplication.h"
+#include "Application/API/Window.h"
+#include "Application/API/CommonApplication.h"
 
 #include "Log/Log.h"
 
@@ -23,8 +24,6 @@ namespace LambdaEngine
 
 	Renderer::~Renderer()
 	{
-		
-
 		if (m_pSwapChain != nullptr)
 		{
 			for (uint32 i = 0; i < m_BackBufferCount; i++)
@@ -149,7 +148,7 @@ namespace LambdaEngine
 
 		if (m_pImGuiRenderer != nullptr)
 		{
-			IWindow* pWindow = PlatformApplication::Get()->GetMainWindow();
+			Window* pWindow = CommonApplication::Get()->GetMainWindow();
 			m_pImGuiRenderer->Begin(delta, pWindow->GetWidth(), pWindow->GetHeight(), 1.0f, 1.0f);
 		}
 	}

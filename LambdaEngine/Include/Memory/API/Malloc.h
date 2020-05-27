@@ -69,7 +69,7 @@ namespace LambdaEngine
 		
 		static void Free(void* pPtr);
 		
-		static void SetDebugFlags(uint32 debugFlags);
+		static void SetDebugFlags(uint16 debugFlags);
 
 	private:
 		static void* AllocateProtected(uint64 sizeInBytes);
