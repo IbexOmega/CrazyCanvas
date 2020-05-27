@@ -147,6 +147,9 @@ namespace LambdaEngine
 
 	EInputMode Win32Application::GetInputMode(Window* pWindow) const
 	{
+		UNREFERENCED_VARIABLE(pWindow);
+
+		// TODO: Return proper inputmode based on window
 		return m_InputMode;
 	}
 

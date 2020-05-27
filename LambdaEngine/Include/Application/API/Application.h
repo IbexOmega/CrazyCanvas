@@ -1,6 +1,11 @@
 #pragma once
 #include "LambdaEngine.h"
 
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma warning(push)
+	#pragma warning(disable : 4100) // Disable unreferenced variable warning
+#endif
+
 namespace LambdaEngine
 {
 	struct WindowDesc;
@@ -87,3 +92,7 @@ namespace LambdaEngine
 		EventHandler* m_pEventHandler = nullptr;
 	};
 }
+
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma warning(pop)
+#endif

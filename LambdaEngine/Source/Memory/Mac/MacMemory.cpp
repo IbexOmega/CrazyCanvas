@@ -54,6 +54,5 @@ namespace LambdaEngine
 	{
 		return 0;
 	}
-}
 
 #endif
