@@ -14,6 +14,8 @@
 #include "Rendering/Core/API/IAccelerationStructure.h"
 #include "Rendering/RenderSystem.h"
 
+#include "Rendering/Core/Vulkan/Vulkan.h"
+
 #include "Log/Log.h"
 
 #include "Time/API/Clock.h"
@@ -547,13 +549,61 @@ namespace LambdaEngine
 				BufferDesc bufferDesc = {};
 				bufferDesc.pName		= "Scene Vertex Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
+				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
 				bufferDesc.SizeInBytes	= sceneVertexBufferSize;
 
 				m_pSceneVertexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			m_pCopyCommandList->CopyBuffer(m_pSceneVertexCopyBuffer, 0, m_pSceneVertexBuffer, 0, sceneVertexBufferSize);
+
+			if (m_RayTracingEnabled)
+			{
+				std::vector<Vertex> vertices(3);
+				vertices[0].Position	= glm::vec3(1.0f, 1.0f, 0.0f);
+				vertices[0].Normal		= glm::vec3(0.0f, 0.0f, -1.0f);
+				vertices[0].Tangent		= glm::vec3(1.0f, 0.0f, 0.0f);
+				vertices[0].TexCoord	= glm::vec2(1.0f, 0.0f);
+				vertices[1].Position	= glm::vec3(-1.0f, 1.0f, 0.0f);
+				vertices[1].Normal		= glm::vec3(0.0f, 0.0f, -1.0f);
+				vertices[1].Tangent		= glm::vec3(1.0f, 0.0f, 0.0f);
+				vertices[1].TexCoord	= glm::vec2(0.0f, 0.0f);
+				vertices[2].Position	= glm::vec3(0.0f, -1.0f, 0.0f);
+				vertices[2].Normal		= glm::vec3(0.0f, 0.0f, -1.0f);
+				vertices[2].Tangent		= glm::vec3(1.0f, 0.0f, 0.0f);
+				vertices[2].TexCoord	= glm::vec2(0.5f, 0.5f);
+
+				auto vertex_buffer_size			= vertices.size()	* sizeof(Vertex);
+
+				BufferDesc vertexBufferDesc = {};
+				vertexBufferDesc.pName				= "Temp Vertex Buffer";
+				vertexBufferDesc.MemoryType			= EMemoryType::MEMORY_CPU_VISIBLE;
+				vertexBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
+				vertexBufferDesc.SizeInBytes		= vertex_buffer_size;
+
+				m_pSceneRayTracingVertexBuffer = m_pGraphicsDevice->CreateBuffer(&vertexBufferDesc, nullptr);
+
+				void* pMapped = m_pSceneRayTracingVertexBuffer->Map();
+				memcpy(pMapped, vertices.data(), vertex_buffer_size);
+				m_pSceneRayTracingVertexBuffer->Unmap();
+
+				/*if (m_pSceneRayTracingVertexBuffer == nullptr || sceneVertexBufferSize > m_pSceneRayTracingVertexBuffer->GetDesc().SizeInBytes)
+				{
+					SAFERELEASE(m_pSceneRayTracingVertexBuffer);
+
+					BufferDesc bufferDesc = {};
+					bufferDesc.pName		= "Scene Ray Tracing Vertex Buffer";
+					bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
+					bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
+					bufferDesc.SizeInBytes	= sceneVertexBufferSize;
+
+					m_pSceneRayTracingVertexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
+				}
+
+				void* pMapped = m_pSceneRayTracingVertexBuffer->Map();
+				memcpy(pMapped, m_SceneVertexArray.data(), sceneVertexBufferSize);
+				m_pSceneRayTracingVertexBuffer->Unmap();*/
+			}
 		}
 		
 		// Indices
@@ -584,13 +634,49 @@ namespace LambdaEngine
 				BufferDesc bufferDesc = {};
 				bufferDesc.pName		= "Scene Index Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDEX_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
+				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
 				bufferDesc.SizeInBytes	= sceneIndexBufferSize;
 
 				m_pSceneIndexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			m_pCopyCommandList->CopyBuffer(m_pSceneIndexCopyBuffer, 0, m_pSceneIndexBuffer, 0, sceneIndexBufferSize);
+
+			if (m_RayTracingEnabled)
+			{
+				std::vector<uint32_t> indices = { 0, 1, 2 };
+
+				auto index_buffer_size			= indices.size()	* sizeof(uint32_t);
+
+				BufferDesc indexBufferDesc = {};
+				indexBufferDesc.pName				= "Temp Index Buffer";
+				indexBufferDesc.MemoryType			= EMemoryType::MEMORY_CPU_VISIBLE;
+				indexBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
+				indexBufferDesc.SizeInBytes			= index_buffer_size;
+
+				m_pSceneRayTracingIndexBuffer = m_pGraphicsDevice->CreateBuffer(&indexBufferDesc, nullptr);
+
+				pMapped = m_pSceneRayTracingIndexBuffer->Map();
+				memcpy(pMapped, indices.data(), index_buffer_size);
+				m_pSceneRayTracingIndexBuffer->Unmap();
+
+				/*if (m_pSceneRayTracingIndexBuffer == nullptr || sceneIndexBufferSize > m_pSceneRayTracingIndexBuffer->GetDesc().SizeInBytes)
+				{
+					SAFERELEASE(m_pSceneRayTracingIndexBuffer);
+
+					BufferDesc bufferDesc = {};
+					bufferDesc.pName		= "Scene Ray Tracing Index Buffer";
+					bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
+					bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_INDEX_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
+					bufferDesc.SizeInBytes	= sceneIndexBufferSize;
+
+					m_pSceneRayTracingIndexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
+				}
+
+				void* pMapped = m_pSceneRayTracingIndexBuffer->Map();
+				memcpy(pMapped, m_SceneIndexArray.data(), sceneIndexBufferSize);
+				m_pSceneRayTracingIndexBuffer->Unmap();*/
+			}
 		}
 
 		// Instances
@@ -621,13 +707,65 @@ namespace LambdaEngine
 				BufferDesc bufferDesc = {};
 				bufferDesc.pName		= "Scene Instance Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
+				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 				bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
 
 				m_pSceneInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 			}
 
 			m_pCopyCommandList->CopyBuffer(m_pSceneInstanceCopyBuffer, 0, m_pSceneInstanceBuffer, 0, sceneInstanceBufferSize);
+
+			if (m_RayTracingEnabled)
+			{
+				VkTransformMatrixKHR transform_matrix = 
+				{
+					1.0f, 0.0f, 0.0f, 0.0f,
+					0.0f, 1.0f, 0.0f, 0.0f,
+					0.0f, 0.0f, 1.0f, 0.0f 
+				};
+
+				Instance instance{};
+				memcpy(&instance.Transform, &transform_matrix, sizeof(instance.Transform));
+
+				instance.MeshMaterialIndex				= 0;
+				instance.Mask							= 0xFF;
+				instance.SBTRecordOffset				= 0;
+				instance.Flags							= VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+				instance.AccelerationStructureAddress	= m_SortedInstances[0].AccelerationStructureAddress;
+
+				std::vector<Instance> instances(1, instance);
+
+				BufferDesc instanceBufferDesc = {};
+				instanceBufferDesc.pName		= "Temp Instance Buffer";
+				instanceBufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
+				instanceBufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_NONE;
+				instanceBufferDesc.SizeInBytes	= instances.size() * sizeof(VkAccelerationStructureInstanceKHR);
+
+				m_pSceneRayTracingInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&instanceBufferDesc, nullptr);
+
+				void* pMapped;
+
+				pMapped = m_pSceneRayTracingInstanceBuffer->Map();
+				memcpy(pMapped, instances.data(), instances.size() * sizeof(VkAccelerationStructureInstanceKHR));
+				m_pSceneRayTracingInstanceBuffer->Unmap();
+
+				/*if (m_pSceneRayTracingInstanceBuffer == nullptr || sceneInstanceBufferSize > m_pSceneRayTracingInstanceBuffer->GetDesc().SizeInBytes)
+				{
+					SAFERELEASE(m_pSceneRayTracingInstanceBuffer);
+
+					BufferDesc bufferDesc = {};
+					bufferDesc.pName		= "Scene Ray Tracing InstanceBuffer";
+					bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
+					bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_RAY_TRACING;
+					bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
+
+					m_pSceneRayTracingInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
+				}
+
+				void* pMapped = m_pSceneRayTracingInstanceBuffer->Map();
+				memcpy(pMapped, m_SortedInstances.data(), sceneInstanceBufferSize);
+				m_pSceneRayTracingInstanceBuffer->Unmap();*/
+			}
 		}
 
 		// Indirect Args
@@ -708,8 +846,8 @@ namespace LambdaEngine
 			for (uint32 i = 0; i < blasBuildDescriptions.size(); i++)
 			{
 				BuildBottomLevelAccelerationStructureDesc* pBlasBuildDesc = &blasBuildDescriptions[i];
-				pBlasBuildDesc->pVertexBuffer			= m_pSceneVertexBuffer;
-				pBlasBuildDesc->pIndexBuffer			= m_pSceneIndexBuffer;
+				pBlasBuildDesc->pVertexBuffer			= m_pSceneRayTracingVertexBuffer;
+				pBlasBuildDesc->pIndexBuffer			= m_pSceneRayTracingIndexBuffer;
 				pBlasBuildDesc->pTransformBuffer		= nullptr;
 				pBlasBuildDesc->TransformByteOffset		= 0;
 
@@ -727,7 +865,7 @@ namespace LambdaEngine
 			BuildTopLevelAccelerationStructureDesc tlasBuildDesc = {};
 			tlasBuildDesc.pAccelerationStructure	= m_pTLAS;
 			tlasBuildDesc.Flags						= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
-			tlasBuildDesc.pInstanceBuffer			= m_pSceneInstanceBuffer;
+			tlasBuildDesc.pInstanceBuffer			= m_pSceneRayTracingInstanceBuffer;
 			tlasBuildDesc.InstanceCount				= m_Instances.size();
 			tlasBuildDesc.Update					= false;
 

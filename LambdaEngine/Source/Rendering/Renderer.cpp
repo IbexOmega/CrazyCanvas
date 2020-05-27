@@ -25,8 +25,6 @@ namespace LambdaEngine
 
 	Renderer::~Renderer()
 	{
-		
-
 		if (m_pSwapChain != nullptr)
 		{
 			for (uint32 i = 0; i < m_BackBufferCount; i++)
@@ -143,10 +141,11 @@ namespace LambdaEngine
 		}
 
 		RayTracingTestVK::InitCommandLists();
-		RayTracingTestVK::CreateBLAS();
+		/*RayTracingTestVK::CreateBLAS();
 		RayTracingTestVK::BuildBLAS();
-		RayTracingTestVK::CreateTLAS();
-		RayTracingTestVK::InitRenderer(m_ppBackBufferViews, 8, 9, 10);
+		RayTracingTestVK::CreateTLAS();*/
+		RayTracingTestVK::SetTLASFromScene(m_pRenderGraph->m_pScene);
+		RayTracingTestVK::InitRenderer(m_ppBackBufferViews, 4, 5, 6);
 
 		return true;
 	}

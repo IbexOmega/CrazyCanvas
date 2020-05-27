@@ -83,7 +83,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				IAccelerationStructure* pTLAS;
+				const IAccelerationStructure* pTLAS;
 			} ExternalAccelerationStructure;
 		};
 	};
@@ -123,6 +123,8 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderGraph
 	{
+		friend class Renderer;
+
 		static constexpr const char* RENDER_GRAPH_BACK_BUFFER_PROXY = "BACK_BUFFER_PROXY_TEXTURE";
 
 		enum class EResourceType
@@ -178,7 +180,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				IAccelerationStructure* pTLAS;
+				const IAccelerationStructure* pTLAS;
 			} AccelerationStructure;
 		};
 
@@ -267,7 +269,7 @@ namespace LambdaEngine
 		bool GetResourceTextures(const char* pResourceName, ITexture* const ** pppTexture, uint32* pTextureView)					const;
 		bool GetResourceTextureViews(const char* pResourceName, ITextureView* const ** pppTextureViews, uint32* pTextureViewCount)		const;
 		bool GetResourceBuffers(const char* pResourceName, IBuffer* const ** pppBuffers, uint32* pBufferCount)					const;
-		bool GetResourceAccelerationStructure(const char* pResourceName, IAccelerationStructure** ppAccelerationStructure)		const;
+		bool GetResourceAccelerationStructure(const char* pResourceName, const IAccelerationStructure** ppAccelerationStructure)		const;
 
 	private:
 		bool CreateFence();

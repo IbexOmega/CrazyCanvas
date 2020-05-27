@@ -29,12 +29,12 @@ layout(binding = 0, set = 0) uniform accelerationStructureEXT   u_TLAS;
 layout(binding = 1, set = 0, rgba8) writeonly uniform image2D   u_Radiance;
 
 // layout(binding = 0, set = BUFFER_SET_INDEX) uniform accelerationStructureEXT   u_TLAS;
-// layout(binding = 1, set = BUFFER_SET_INDEX) uniform PerFrameBuffer     { SPerFrameBuffer val; }        u_PerFrameBuffer;
+//layout(binding = 1, set = BUFFER_SET_INDEX) uniform PerFrameBuffer     { SPerFrameBuffer val; }        u_PerFrameBuffer;
 
 // layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_AlbedoAO;
 // layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_NormalMetallicRoughness;
 // layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_DepthStencil;
-// layout(binding = 3, set = TEXTURE_SET_INDEX, rgba8) writeonly uniform image2D   u_Radiance;
+// layout(binding = 0, set = TEXTURE_SET_INDEX, rgba8) writeonly uniform image2D   u_Radiance;
 
 layout(location = 0) rayPayloadEXT SRayPayload s_RayPayload;
 
@@ -44,6 +44,7 @@ void main()
 	const ivec2 pixelCoords = ivec2(gl_LaunchIDEXT.xy);
 	const vec2 pixelCenter = vec2(pixelCoords) + vec2(0.5f);
 	vec2 screenTexCoord = (pixelCenter / vec2(gl_LaunchSizeEXT.xy));
+	vec2 d = screenTexCoord * 2.0 - 1.0;
 
 	//Sample GBuffer
 	//vec4 sampledNormalMetallicRoughness = texture(u_NormalMetallicRoughness, screenTexCoord);
@@ -57,6 +58,10 @@ void main()
 	// }
 
     //SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
+	
+	// vec4 origin = perFrameBuffer.ViewInv * vec4(0,0,0,1);
+	// vec4 target = perFrameBuffer.ProjectionInv * vec4(d.x, d.y, 1, 1) ;
+	// vec4 direction = perFrameBuffer.ViewInv * vec4(normalize(target.xyz), 0) ;
 
 	//Sample GBuffer
 	//vec4 sampledAlbedoAO    = texture(u_AlbedoAO, screenTexCoord);
@@ -66,7 +71,6 @@ void main()
 	//SPositions positions            = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
     //SRayDirections rayDirections    = CalculateRayDirections(positions.WorldPos, normal, perFrameBuffer.Position.xyz, perFrameBuffer.ViewInv);
 
-	vec2 d = screenTexCoord * 2.0 - 1.0;
 
 	mat4 projInv = mat4
 	(
@@ -87,11 +91,6 @@ void main()
 	vec4 origin = viewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	vec4 target = projInv * vec4(d.x, d.y, 1.0f, 1.0f);
 	vec4 direction = viewInv * vec4(normalize(target.xyz/* / target.w*/), 0.0f) ;
-
-
-	// vec4 origin = perFrameBuffer.ViewInv * vec4(0,0,0,1);
-	// vec4 target = perFrameBuffer.ProjectionInv * vec4(d.x, d.y, 1, 1) ;
-	// vec4 direction = perFrameBuffer.ViewInv * vec4(normalize(target.xyz), 0) ;
 
 	//Define new Rays Parameters
 	const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;

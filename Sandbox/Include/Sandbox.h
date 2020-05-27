@@ -53,6 +53,7 @@ public:
 
 private:
 	bool InitRendererForEmpty();
+	bool InitRendererForRayTracingOnly();
 	bool InitRendererForDeferred();
 	bool InitRendererForVisBuf();
 

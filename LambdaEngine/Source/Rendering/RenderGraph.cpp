@@ -563,7 +563,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	bool RenderGraph::GetResourceAccelerationStructure(const char* pResourceName, IAccelerationStructure** ppAccelerationStructure) const
+	bool RenderGraph::GetResourceAccelerationStructure(const char* pResourceName, IAccelerationStructure const ** ppAccelerationStructure) const
 	{
 		auto it = m_ResourceMap.find(pResourceName);
 

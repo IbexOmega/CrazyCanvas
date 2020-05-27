@@ -16,6 +16,7 @@ namespace LambdaEngine
 	class IFence;
 	class IDescriptorHeap;
 	class IDescriptorSet;
+	class Scene;
 
 	class RayTracingTestVK
 	{
@@ -29,6 +30,8 @@ namespace LambdaEngine
 		static void BuildBLAS();
 		static void CreateTLAS();
 
+		static void SetTLASFromScene(const Scene* pScene);
+
 		static void GetAndIncrementFence(IFence** ppFence, uint64* pSignalValue);
 
 		static void Render(uint64 modFrameIndex, uint32 backBufferIndex);
@@ -36,6 +39,8 @@ namespace LambdaEngine
 		static void Debug(IAccelerationStructure* pBLAS, IAccelerationStructure* pTLAS);
 
 	private:
+		static const AccelerationStructureVK*	s_pSceneTLAS;
+
 		static AccelerationStructureVK*			s_pTLAS;
 		static AccelerationStructureVK*			s_pBLAS;
 
@@ -55,18 +60,12 @@ namespace LambdaEngine
 		static CommandListVK*					s_pGraphicsPostCommandLists[3];
 		static CommandListVK*					s_pComputeCommandLists[3];
 
-		static IPipelineState*					s_pPipelineState;
+		static uint64							s_PipelineStateID;
 		static IPipelineLayout*					s_pPipelineLayout;
 
 		static IDescriptorHeap*					s_pDescriptorHeap;
 		static IDescriptorSet*					s_pDescriptorSets[3];
 
-		static VkPipeline						s_Pipeline;
-		static VkPipelineLayout					s_PipelineLayout;
-		static VkDescriptorSetLayout			s_DescriptorSetLayout;
 		static BufferVK*						s_pSBT;
-
-		static VkDescriptorPool					s_DescriptorPool;
-		static VkDescriptorSet					s_DescriptorSets[3];
 	};
 }

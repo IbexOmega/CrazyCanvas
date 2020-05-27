@@ -188,7 +188,9 @@ Sandbox::Sandbox()
 
 	//InitRendererForEmpty();
 
-	InitRendererForDeferred();
+	InitRendererForRayTracingOnly();
+
+	//InitRendererForDeferred();
 
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 
@@ -846,6 +848,130 @@ bool Sandbox::InitRendererForEmpty()
 	return true;
 }
 
+bool Sandbox::InitRendererForRayTracingOnly()
+{
+	using namespace LambdaEngine;
+
+	GUID_Lambda raygenShaderGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Raygen.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda closestHitShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ClosestHit.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
+	GUID_Lambda missShaderGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Miss.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
+
+	const char*									pRayTracingRenderStageName = "Ray Tracing Render Stage";
+	RayTracingManagedPipelineStateDesc			rayTracingPipelineStateDesc = {};
+	std::vector<RenderStageAttachment>			rayTracingRenderStageAttachments;
+
+	std::vector<RenderStageDesc> renderStages;
+
+	if (RAY_TRACING_ENABLED)
+	{
+		//rayTracingRenderStageAttachments.push_back({ "GEOMETRY_ALBEDO_AO_BUFFER",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT, EFormat::FORMAT_R8G8B8A8_UNORM		 });
+		//rayTracingRenderStageAttachments.push_back({ "GEOMETRY_NORM_MET_ROUGH_BUFFER",				EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT, EFormat::FORMAT_R16G16B16A16_SFLOAT	 });
+		//rayTracingRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",						EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT, EFormat::FORMAT_D24_UNORM_S8_UINT	 });
+	
+		rayTracingRenderStageAttachments.push_back({ "SCENE_TLAS",									EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE,				FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	1 });
+		//rayTracingRenderStageAttachments.push_back({ PER_FRAME_BUFFER,								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, 1 });
+
+		rayTracingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,							EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE,					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT, EFormat::FORMAT_B8G8R8A8_UNORM });
+
+		RenderStagePushConstants pushConstants = {};
+		pushConstants.pName			= "Ray Tracing Pass Push Constants";
+		pushConstants.DataSize		= sizeof(int32) * 2;
+
+		RenderStageDesc renderStage = {};
+		renderStage.pName						= pRayTracingRenderStageName;
+		renderStage.pAttachments				= rayTracingRenderStageAttachments.data();
+		renderStage.AttachmentCount				= (uint32)rayTracingRenderStageAttachments.size();
+		//renderStage.PushConstants				= pushConstants;
+
+		rayTracingPipelineStateDesc.pName					= "Ray Tracing Pass Pipeline State";
+		rayTracingPipelineStateDesc.RaygenShader			= raygenShaderGUID;
+		rayTracingPipelineStateDesc.pClosestHitShaders[0]	= closestHitShaderGUID;
+		rayTracingPipelineStateDesc.pMissShaders[0]			= missShaderGUID;
+		rayTracingPipelineStateDesc.ClosestHitShaderCount	= 1;
+		rayTracingPipelineStateDesc.MissShaderCount			= 1;
+
+		renderStage.PipelineType							= EPipelineStateType::RAY_TRACING;
+
+		renderStage.RayTracingPipeline.pRayTracingDesc		= &rayTracingPipelineStateDesc;
+
+		renderStages.push_back(renderStage);
+	}
+
+	RenderGraphDesc renderGraphDesc = {};
+	renderGraphDesc.pName						= "Render Graph";
+	renderGraphDesc.CreateDebugGraph			= RENDERING_DEBUG_ENABLED;
+	renderGraphDesc.pRenderStages				= renderStages.data();
+	renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
+	renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+	renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
+	renderGraphDesc.pScene						= m_pScene;
+
+	LambdaEngine::Clock clock;
+	clock.Reset();
+	clock.Tick();
+
+	m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
+
+	m_pRenderGraph->Init(renderGraphDesc);
+
+	clock.Tick();
+	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
+
+	IWindow* pWindow	= PlatformApplication::Get()->GetMainWindow();
+	uint32 renderWidth	= pWindow->GetWidth();
+	uint32 renderHeight = pWindow->GetHeight();
+
+	{
+		IBuffer* pBuffer = m_pScene->GetPerFrameBuffer();
+		ResourceUpdateDesc resourceUpdateDesc				= {};
+		resourceUpdateDesc.pResourceName					= PER_FRAME_BUFFER;
+		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	}
+
+	if (RAY_TRACING_ENABLED)
+	{
+		RenderStageParameters rayTracingRenderStageParameters = {};
+		rayTracingRenderStageParameters.pRenderStageName			= pRayTracingRenderStageName;
+		rayTracingRenderStageParameters.RayTracing.RayTraceWidth	= renderWidth;
+		rayTracingRenderStageParameters.RayTracing.RayTraceHeight	= renderHeight;
+		rayTracingRenderStageParameters.RayTracing.RayTraceDepth	= 1;
+
+		m_pRenderGraph->UpdateRenderStageParameters(rayTracingRenderStageParameters);
+	}
+
+	if (RAY_TRACING_ENABLED)
+	{
+		const IAccelerationStructure* pTLAS = m_pScene->GetTLAS();
+		ResourceUpdateDesc resourceUpdateDesc = {};
+		resourceUpdateDesc.pResourceName						= "SCENE_TLAS";
+		resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= pTLAS;
+
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	}
+
+	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
+
+	RendererDesc rendererDesc = {};
+	rendererDesc.pName				= "Renderer";
+	rendererDesc.Debug				= RENDERING_DEBUG_ENABLED;
+	rendererDesc.pRenderGraph		= m_pRenderGraph;
+	rendererDesc.pWindow			= PlatformApplication::Get()->GetMainWindow();
+	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
+	
+	m_pRenderer->Init(&rendererDesc);
+
+	if (RENDERING_DEBUG_ENABLED)
+	{
+		ImGui::SetCurrentContext(ImGuiRenderer::GetImguiContext());
+	}
+
+	m_pRenderGraph->Update();
+
+	return true;
+}
+
 bool Sandbox::InitRendererForDeferred()
 {
 	using namespace LambdaEngine;
@@ -1165,8 +1291,9 @@ bool Sandbox::InitRendererForDeferred()
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
+	if (RAY_TRACING_ENABLED)
 	{
-		IAccelerationStructure* pTLAS = m_pScene->GetTLAS();
+		const IAccelerationStructure* pTLAS = m_pScene->GetTLAS();
 		ResourceUpdateDesc resourceUpdateDesc					= {};
 		resourceUpdateDesc.pResourceName						= "SCENE_TLAS";
 		resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= pTLAS;
