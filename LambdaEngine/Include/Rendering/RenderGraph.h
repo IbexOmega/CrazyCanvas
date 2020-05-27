@@ -123,8 +123,6 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderGraph
 	{
-		friend class Renderer;
-
 		static constexpr const char* RENDER_GRAPH_BACK_BUFFER_PROXY = "BACK_BUFFER_PROXY_TEXTURE";
 
 		enum class EResourceType

@@ -12,6 +12,7 @@
 #include "Rendering/Core/API/ICommandAllocator.h"
 #include "Rendering/Core/API/ICommandList.h"
 #include "Rendering/Core/API/IAccelerationStructure.h"
+#include "Rendering/Core/API/IFence.h"
 #include "Rendering/RenderSystem.h"
 
 #include "Rendering/Core/Vulkan/Vulkan.h"
@@ -31,9 +32,14 @@ namespace LambdaEngine
 	Scene::~Scene()
 	{
 		SAFERELEASE(m_pCopyCommandAllocator);
-		SAFERELEASE(m_pASBuildCommandAllocator);
 		SAFERELEASE(m_pCopyCommandList);
-		SAFERELEASE(m_pASBuildCommandList);
+
+		SAFERELEASE(m_pBLASBuildCommandAllocator);
+		SAFERELEASE(m_pTLASBuildCommandAllocator);
+		SAFERELEASE(m_pBLASBuildCommandList);
+		SAFERELEASE(m_pTLASBuildCommandList);
+		SAFERELEASE(m_pASFence);
+
 		SAFERELEASE(m_pSceneMaterialPropertiesCopyBuffer);
 		SAFERELEASE(m_pSceneVertexCopyBuffer);
 		SAFERELEASE(m_pSceneIndexCopyBuffer);
@@ -210,14 +216,31 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			m_pASBuildCommandAllocator	= m_pGraphicsDevice->CreateCommandAllocator("Scene AS Build Command Allocator", ECommandQueueType::COMMAND_QUEUE_COMPUTE);
+			m_pBLASBuildCommandAllocator = m_pGraphicsDevice->CreateCommandAllocator("Scene BLAS Build Command Allocator", ECommandQueueType::COMMAND_QUEUE_COMPUTE);
 
-			CommandListDesc asBuildCommandListDesc = {};
-			asBuildCommandListDesc.pName			= "Scene AS Build Command List";
-			asBuildCommandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-			asBuildCommandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_PRIMARY;
+			CommandListDesc blasBuildCommandListDesc = {};
+			blasBuildCommandListDesc.pName				= "Scene BLAS Build Command List";
+			blasBuildCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+			blasBuildCommandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_PRIMARY;
 
-			m_pASBuildCommandList = m_pGraphicsDevice->CreateCommandList(m_pASBuildCommandAllocator, &asBuildCommandListDesc);
+			m_pBLASBuildCommandList = m_pGraphicsDevice->CreateCommandList(m_pBLASBuildCommandAllocator, &blasBuildCommandListDesc);
+
+
+			m_pTLASBuildCommandAllocator = m_pGraphicsDevice->CreateCommandAllocator("Scene TLAS Build Command Allocator", ECommandQueueType::COMMAND_QUEUE_COMPUTE);
+
+			CommandListDesc tlasBuildCommandListDesc = {};
+			tlasBuildCommandListDesc.pName				= "Scene TLAS Build Command List";
+			tlasBuildCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+			tlasBuildCommandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_PRIMARY;
+
+			m_pTLASBuildCommandList = m_pGraphicsDevice->CreateCommandList(m_pTLASBuildCommandAllocator, &tlasBuildCommandListDesc);
+
+
+			FenceDesc asFenceDesc = {};
+			asFenceDesc.pName			= "Scene AS Fence";
+			asFenceDesc.InitalValue		= 0;
+
+			m_pASFence = m_pGraphicsDevice->CreateFence(&asFenceDesc);
 		}
 
 		// Lights Buffer
@@ -314,7 +337,6 @@ namespace LambdaEngine
 				blasDesc.AllowsTransform	= false;
 
 				IAccelerationStructure* pBLAS = m_pGraphicsDevice->CreateAccelerationStructure(&blasDesc, nullptr);
-				//IAccelerationStructure* pBLAS = RayTracingTestVK::CreateBLAS(m_pGraphicsDevice, &blasDesc);
 				accelerationStructureDeviceAddress = pBLAS->GetDeviceAdress();
 				m_BLASs.push_back(pBLAS);
 
@@ -556,54 +578,6 @@ namespace LambdaEngine
 			}
 
 			m_pCopyCommandList->CopyBuffer(m_pSceneVertexCopyBuffer, 0, m_pSceneVertexBuffer, 0, sceneVertexBufferSize);
-
-			if (m_RayTracingEnabled)
-			{
-				std::vector<Vertex> vertices(3);
-				vertices[0].Position	= glm::vec3(1.0f, 1.0f, 0.0f);
-				vertices[0].Normal		= glm::vec3(0.0f, 0.0f, -1.0f);
-				vertices[0].Tangent		= glm::vec3(1.0f, 0.0f, 0.0f);
-				vertices[0].TexCoord	= glm::vec2(1.0f, 0.0f);
-				vertices[1].Position	= glm::vec3(-1.0f, 1.0f, 0.0f);
-				vertices[1].Normal		= glm::vec3(0.0f, 0.0f, -1.0f);
-				vertices[1].Tangent		= glm::vec3(1.0f, 0.0f, 0.0f);
-				vertices[1].TexCoord	= glm::vec2(0.0f, 0.0f);
-				vertices[2].Position	= glm::vec3(0.0f, -1.0f, 0.0f);
-				vertices[2].Normal		= glm::vec3(0.0f, 0.0f, -1.0f);
-				vertices[2].Tangent		= glm::vec3(1.0f, 0.0f, 0.0f);
-				vertices[2].TexCoord	= glm::vec2(0.5f, 0.5f);
-
-				auto vertex_buffer_size			= vertices.size()	* sizeof(Vertex);
-
-				BufferDesc vertexBufferDesc = {};
-				vertexBufferDesc.pName				= "Temp Vertex Buffer";
-				vertexBufferDesc.MemoryType			= EMemoryType::MEMORY_CPU_VISIBLE;
-				vertexBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
-				vertexBufferDesc.SizeInBytes		= vertex_buffer_size;
-
-				m_pSceneRayTracingVertexBuffer = m_pGraphicsDevice->CreateBuffer(&vertexBufferDesc, nullptr);
-
-				void* pMapped = m_pSceneRayTracingVertexBuffer->Map();
-				memcpy(pMapped, vertices.data(), vertex_buffer_size);
-				m_pSceneRayTracingVertexBuffer->Unmap();
-
-				/*if (m_pSceneRayTracingVertexBuffer == nullptr || sceneVertexBufferSize > m_pSceneRayTracingVertexBuffer->GetDesc().SizeInBytes)
-				{
-					SAFERELEASE(m_pSceneRayTracingVertexBuffer);
-
-					BufferDesc bufferDesc = {};
-					bufferDesc.pName		= "Scene Ray Tracing Vertex Buffer";
-					bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
-					bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
-					bufferDesc.SizeInBytes	= sceneVertexBufferSize;
-
-					m_pSceneRayTracingVertexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
-				}
-
-				void* pMapped = m_pSceneRayTracingVertexBuffer->Map();
-				memcpy(pMapped, m_SceneVertexArray.data(), sceneVertexBufferSize);
-				m_pSceneRayTracingVertexBuffer->Unmap();*/
-			}
 		}
 		
 		// Indices
@@ -641,42 +615,6 @@ namespace LambdaEngine
 			}
 
 			m_pCopyCommandList->CopyBuffer(m_pSceneIndexCopyBuffer, 0, m_pSceneIndexBuffer, 0, sceneIndexBufferSize);
-
-			if (m_RayTracingEnabled)
-			{
-				std::vector<uint32_t> indices = { 0, 1, 2 };
-
-				auto index_buffer_size			= indices.size()	* sizeof(uint32_t);
-
-				BufferDesc indexBufferDesc = {};
-				indexBufferDesc.pName				= "Temp Index Buffer";
-				indexBufferDesc.MemoryType			= EMemoryType::MEMORY_CPU_VISIBLE;
-				indexBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
-				indexBufferDesc.SizeInBytes			= index_buffer_size;
-
-				m_pSceneRayTracingIndexBuffer = m_pGraphicsDevice->CreateBuffer(&indexBufferDesc, nullptr);
-
-				pMapped = m_pSceneRayTracingIndexBuffer->Map();
-				memcpy(pMapped, indices.data(), index_buffer_size);
-				m_pSceneRayTracingIndexBuffer->Unmap();
-
-				/*if (m_pSceneRayTracingIndexBuffer == nullptr || sceneIndexBufferSize > m_pSceneRayTracingIndexBuffer->GetDesc().SizeInBytes)
-				{
-					SAFERELEASE(m_pSceneRayTracingIndexBuffer);
-
-					BufferDesc bufferDesc = {};
-					bufferDesc.pName		= "Scene Ray Tracing Index Buffer";
-					bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
-					bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_INDEX_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
-					bufferDesc.SizeInBytes	= sceneIndexBufferSize;
-
-					m_pSceneRayTracingIndexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
-				}
-
-				void* pMapped = m_pSceneRayTracingIndexBuffer->Map();
-				memcpy(pMapped, m_SceneIndexArray.data(), sceneIndexBufferSize);
-				m_pSceneRayTracingIndexBuffer->Unmap();*/
-			}
 		}
 
 		// Instances
@@ -714,58 +652,6 @@ namespace LambdaEngine
 			}
 
 			m_pCopyCommandList->CopyBuffer(m_pSceneInstanceCopyBuffer, 0, m_pSceneInstanceBuffer, 0, sceneInstanceBufferSize);
-
-			if (m_RayTracingEnabled)
-			{
-				VkTransformMatrixKHR transform_matrix = 
-				{
-					1.0f, 0.0f, 0.0f, 0.0f,
-					0.0f, 1.0f, 0.0f, 0.0f,
-					0.0f, 0.0f, 1.0f, 0.0f 
-				};
-
-				Instance instance{};
-				memcpy(&instance.Transform, &transform_matrix, sizeof(instance.Transform));
-
-				instance.MeshMaterialIndex				= 0;
-				instance.Mask							= 0xFF;
-				instance.SBTRecordOffset				= 0;
-				instance.Flags							= VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-				instance.AccelerationStructureAddress	= m_SortedInstances[0].AccelerationStructureAddress;
-
-				std::vector<Instance> instances(1, instance);
-
-				BufferDesc instanceBufferDesc = {};
-				instanceBufferDesc.pName		= "Temp Instance Buffer";
-				instanceBufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
-				instanceBufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_NONE;
-				instanceBufferDesc.SizeInBytes	= instances.size() * sizeof(VkAccelerationStructureInstanceKHR);
-
-				m_pSceneRayTracingInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&instanceBufferDesc, nullptr);
-
-				void* pMapped;
-
-				pMapped = m_pSceneRayTracingInstanceBuffer->Map();
-				memcpy(pMapped, instances.data(), instances.size() * sizeof(VkAccelerationStructureInstanceKHR));
-				m_pSceneRayTracingInstanceBuffer->Unmap();
-
-				/*if (m_pSceneRayTracingInstanceBuffer == nullptr || sceneInstanceBufferSize > m_pSceneRayTracingInstanceBuffer->GetDesc().SizeInBytes)
-				{
-					SAFERELEASE(m_pSceneRayTracingInstanceBuffer);
-
-					BufferDesc bufferDesc = {};
-					bufferDesc.pName		= "Scene Ray Tracing InstanceBuffer";
-					bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
-					bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_RAY_TRACING;
-					bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
-
-					m_pSceneRayTracingInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
-				}
-
-				void* pMapped = m_pSceneRayTracingInstanceBuffer->Map();
-				memcpy(pMapped, m_SortedInstances.data(), sceneInstanceBufferSize);
-				m_pSceneRayTracingInstanceBuffer->Unmap();*/
-			}
 		}
 
 		// Indirect Args
@@ -813,69 +699,46 @@ namespace LambdaEngine
 		/*------------Ray Tracing Section Begin-------------*/
 		if (m_RayTracingEnabled)
 		{
-			BufferDesc bufferCopyDesc = {};
-			bufferCopyDesc.pName		= "Transform Copy Buffer";
-			bufferCopyDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
-			bufferCopyDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
-			bufferCopyDesc.SizeInBytes	= sizeof(glm::mat3x4);
-
-			IBuffer* pTransformCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferCopyDesc, nullptr);
-
-			glm::mat3x4 transform_matrix = {
-				1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f };
-
-			void* pMapped = pTransformCopyBuffer->Map();
-			memcpy(pMapped, &transform_matrix, sizeof(glm::mat3x4));
-			pTransformCopyBuffer->Unmap();
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.pName		= "Transform Buffer";
-			bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
-			bufferDesc.SizeInBytes	= sizeof(glm::mat3x4);
-
-			IBuffer* pTransformBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
-
-			m_pASBuildCommandAllocator->Reset();
-			m_pASBuildCommandList->Begin(nullptr);
-
-			m_pASBuildCommandList->CopyBuffer(pTransformCopyBuffer, 0, pTransformBuffer, 0, sizeof(glm::mat3x4));
-
-			for (uint32 i = 0; i < blasBuildDescriptions.size(); i++)
+			//Build BLASs
 			{
-				BuildBottomLevelAccelerationStructureDesc* pBlasBuildDesc = &blasBuildDescriptions[i];
-				pBlasBuildDesc->pVertexBuffer			= m_pSceneRayTracingVertexBuffer;
-				pBlasBuildDesc->pIndexBuffer			= m_pSceneRayTracingIndexBuffer;
-				pBlasBuildDesc->pTransformBuffer		= nullptr;
-				pBlasBuildDesc->TransformByteOffset		= 0;
+				m_pBLASBuildCommandAllocator->Reset();
+				m_pBLASBuildCommandList->Begin(nullptr);
 
-				//RayTracingTestVK::BuildBLAS(m_pGraphicsDevice, pBlasBuildDesc, m_pASBuildCommandList);
+				for (uint32 i = 0; i < blasBuildDescriptions.size(); i++)
+				{
+					BuildBottomLevelAccelerationStructureDesc* pBlasBuildDesc = &blasBuildDescriptions[i];
+					pBlasBuildDesc->pVertexBuffer			= m_pSceneVertexBuffer;
+					pBlasBuildDesc->pIndexBuffer			= m_pSceneIndexBuffer;
+					pBlasBuildDesc->pTransformBuffer		= nullptr;
+					pBlasBuildDesc->TransformByteOffset		= 0;
 
-				m_pASBuildCommandList->BuildBottomLevelAccelerationStructure(pBlasBuildDesc);
+					m_pBLASBuildCommandList->BuildBottomLevelAccelerationStructure(pBlasBuildDesc);
+				}
+
+				m_pBLASBuildCommandList->End();
 			}
 
-			//AccelerationStructureDesc tlasDesc = {};
-			//tlasDesc.pName			= "TLAS";
-			//tlasDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP;
-			//tlasDesc.Flags			= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
-			//tlasDesc.InstanceCount	= 1; //m_Instances.size();
+			//Build TLAS
+			{
+				m_pTLASBuildCommandAllocator->Reset();
+				m_pTLASBuildCommandList->Begin(nullptr);
 
-			BuildTopLevelAccelerationStructureDesc tlasBuildDesc = {};
-			tlasBuildDesc.pAccelerationStructure	= m_pTLAS;
-			tlasBuildDesc.Flags						= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
-			tlasBuildDesc.pInstanceBuffer			= m_pSceneRayTracingInstanceBuffer;
-			tlasBuildDesc.InstanceCount				= m_Instances.size();
-			tlasBuildDesc.Update					= false;
+				BuildTopLevelAccelerationStructureDesc tlasBuildDesc = {};
+				tlasBuildDesc.pAccelerationStructure	= m_pTLAS;
+				tlasBuildDesc.Flags						= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
+				tlasBuildDesc.pInstanceBuffer			= m_pSceneInstanceBuffer;
+				tlasBuildDesc.InstanceCount				= m_Instances.size();
+				tlasBuildDesc.Update					= false;
 
-			//m_pTLAS = RayTracingTestVK::CreateTLAS(m_pGraphicsDevice, &tlasDesc, &tlasBuildDesc, m_pASBuildCommandList);
+				//m_pTLAS = RayTracingTestVK::CreateTLAS(m_pGraphicsDevice, &tlasDesc, &tlasBuildDesc, m_pASBuildCommandList);
 
-			m_pASBuildCommandList->BuildTopLevelAccelerationStructure(&tlasBuildDesc);
+				m_pTLASBuildCommandList->BuildTopLevelAccelerationStructure(&tlasBuildDesc);
 
-			m_pASBuildCommandList->End();
+				m_pTLASBuildCommandList->End();
+			}
 
-			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pASBuildCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pBLASBuildCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, m_pASFence, 1);
+			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pTLASBuildCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pASFence, 1, nullptr, 0);
 			RenderSystem::GetComputeQueue()->Flush();
 
 			//RayTracingTestVK::Debug(m_pGraphicsDevice, blasBuildDescriptions[0].pAccelerationStructure, m_pTLAS);

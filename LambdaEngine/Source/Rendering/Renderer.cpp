@@ -10,8 +10,6 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/ImGuiRenderer.h"
 
-#include "Rendering/Core/Vulkan/RayTracingTestVK.h"
-
 #include "Application/API/PlatformApplication.h"
 
 #include "Log/Log.h"
@@ -140,13 +138,6 @@ namespace LambdaEngine
 			}
 		}
 
-		RayTracingTestVK::InitCommandLists();
-		/*RayTracingTestVK::CreateBLAS();
-		RayTracingTestVK::BuildBLAS();
-		RayTracingTestVK::CreateTLAS();*/
-		RayTracingTestVK::SetTLASFromScene(m_pRenderGraph->m_pScene);
-		RayTracingTestVK::InitRenderer(m_ppBackBufferViews, 4, 5, 6);
-
 		return true;
 	}
 
@@ -175,9 +166,7 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(delta);
 
-		//m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
-
-		RayTracingTestVK::Render(m_ModFrameIndex, m_BackBufferIndex);
+		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
 
 		if (m_pImGuiRenderer != nullptr)
 		{
@@ -188,14 +177,13 @@ namespace LambdaEngine
 
 			pCommandAllocator->Reset();
 			pCommandList->Begin(nullptr);
-			//m_pImGuiRenderer->Render(pCommandList, m_ppBackBufferViews[m_BackBufferIndex], m_ModFrameIndex, m_BackBufferIndex);
+			m_pImGuiRenderer->Render(pCommandList, m_ppBackBufferViews[m_BackBufferIndex], m_ModFrameIndex, m_BackBufferIndex);
 			pCommandList->End();
 
 			IFence* pFence;
 			uint64 signalValue;
 
-			//m_pRenderGraph->GetAndIncrementFence(&pFence, &signalValue);
-			RayTracingTestVK::GetAndIncrementFence(&pFence, &signalValue);
+			m_pRenderGraph->GetAndIncrementFence(&pFence, &signalValue);
 			RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, pFence, signalValue - 1, pFence, signalValue);
 		}
 	}

@@ -17,6 +17,7 @@ namespace LambdaEngine
 	class IGraphicsDevice;
 	class IAudioDevice;
 	class IBuffer;
+	class IFence;
 	class ITexture;
 	class ITextureView;
 	class ICommandAllocator;
@@ -69,8 +70,6 @@ namespace LambdaEngine
 			CameraData Camera;
 		};
 
-
-
 		struct MappedMaterial
 		{
 			uint32 MaterialIndex = 0;  //Index to Scene::m_Materials
@@ -106,7 +105,7 @@ namespace LambdaEngine
 
 		FORCEINLINE IBuffer*						GetLightsBuffer()				{ return m_pLightsBuffer; }
 		FORCEINLINE IBuffer*						GetPerFrameBuffer()				{ return m_pPerFrameBuffer; }
-		FORCEINLINE ITexture**						GetAlbedoMaps()					{ return m_SceneAlbedoMaps.data(); }			
+		FORCEINLINE ITexture**						GetAlbedoMaps()					{ return m_SceneAlbedoMaps.data(); }
 		FORCEINLINE ITexture**						GetNormalMaps()					{ return m_SceneNormalMaps.data(); }
 		FORCEINLINE ITexture**						GetAmbientOcclusionMaps()		{ return m_SceneAmbientOcclusionMaps.data(); }
 		FORCEINLINE ITexture**						GetMetallicMaps()				{ return m_SceneMetallicMaps.data(); }
@@ -133,9 +132,15 @@ namespace LambdaEngine
 		const char*									m_pName;
 
 		ICommandAllocator*							m_pCopyCommandAllocator					= nullptr;
-		ICommandAllocator*							m_pASBuildCommandAllocator				= nullptr;
 		ICommandList*								m_pCopyCommandList						= nullptr;
-		ICommandList*								m_pASBuildCommandList					= nullptr;
+
+		ICommandAllocator*							m_pBLASBuildCommandAllocator			= nullptr;
+		ICommandAllocator*							m_pTLASBuildCommandAllocator			= nullptr;
+
+		ICommandList*								m_pBLASBuildCommandList					= nullptr;
+		ICommandList*								m_pTLASBuildCommandList					= nullptr;
+
+		IFence*										m_pASFence								= nullptr;
 
 		std::map<uint32, uint32>					m_MaterialIndexToIndirectArgOffsetMap;
 		std::vector<IndexedIndirectMeshArgument>	m_IndirectArgs;
@@ -143,9 +148,9 @@ namespace LambdaEngine
 		IBuffer*									m_pLightsCopyBuffer						= nullptr;
 		IBuffer*									m_pPerFrameCopyBuffer					= nullptr;
 
-		IBuffer*									m_pSceneRayTracingVertexBuffer			= nullptr;
-		IBuffer*									m_pSceneRayTracingIndexBuffer			= nullptr;
-		IBuffer*									m_pSceneRayTracingInstanceBuffer		= nullptr;
+		//IBuffer*									m_pSceneRayTracingVertexBuffer			= nullptr;
+		//IBuffer*									m_pSceneRayTracingIndexBuffer			= nullptr;
+		//IBuffer*									m_pSceneRayTracingInstanceBuffer		= nullptr;
 
 		IBuffer*									m_pSceneMaterialPropertiesCopyBuffer	= nullptr;
 		IBuffer*									m_pSceneVertexCopyBuffer				= nullptr;

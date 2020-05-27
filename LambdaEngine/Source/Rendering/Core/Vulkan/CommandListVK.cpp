@@ -457,6 +457,26 @@ namespace LambdaEngine
 		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, 0, nullptr, bufferBarrierCount, m_BufferBarriers, 0, nullptr);
 	}
 
+	void CommandListVK::PipelineMemoryBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineMemoryBarrierDesc* pMemoryBarriers, uint32 bufferMemoryCount)
+	{
+		VALIDATE(pMemoryBarriers != nullptr);
+		VALIDATE(bufferMemoryCount < MAX_MEMORY_BARRIERS);
+
+		for (uint32 i = 0; i < bufferMemoryCount; i++)
+		{
+			const PipelineMemoryBarrierDesc* pBarrier = &pMemoryBarriers[i];
+
+			m_MemoryBarriers[i].sType				= VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+			m_MemoryBarriers[i].pNext				= nullptr;
+			m_MemoryBarriers[i].srcAccessMask		= ConvertMemoryAccessFlags(pBarrier->SrcMemoryAccessFlags);
+			m_MemoryBarriers[i].dstAccessMask		= ConvertMemoryAccessFlags(pBarrier->DstMemoryAccessFlags);
+		}
+
+		VkPipelineStageFlags sourceStage		= ConvertPipelineStageMask(srcStage);
+		VkPipelineStageFlags destinationStage	= ConvertPipelineStageMask(dstStage);
+		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, bufferMemoryCount, m_MemoryBarriers, 0, nullptr, 0, nullptr);
+	}
+
 	void CommandListVK::GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter)
 	{
 		VALIDATE(pTexture != nullptr);

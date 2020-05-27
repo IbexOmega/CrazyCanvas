@@ -11,8 +11,6 @@ namespace LambdaEngine
 
 	class AccelerationStructureVK : public TDeviceChildBase<GraphicsDeviceVK, IAccelerationStructure>
 	{
-		friend class RayTracingTestVK;
-
 		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IAccelerationStructure>;
 
 	public:
