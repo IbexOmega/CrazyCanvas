@@ -8,12 +8,13 @@
 #include "Containers/THashTable.h"
 #include "Containers/TArray.h"
 #include "Containers/TSet.h"
+#include "Containers/String.h"
 
 #include "RenderGraphTypes.h"
 
 #include "Utilities/StringHash.h"
 
-#include <set>
+#include "Time/API/Timestamp.h"
 
 namespace LambdaEngine
 {
@@ -42,6 +43,7 @@ namespace LambdaEngine
 	struct RenderGraphDesc
 	{
 		const char* pName						= "Render Graph";
+		bool CreateDebugStages					= false;
 		bool CreateDebugGraph					= false;
 		RenderStageDesc* pRenderStages			= nullptr;
 		uint32 RenderStageCount					= 0;
@@ -118,6 +120,11 @@ namespace LambdaEngine
 				uint32 RayTraceHeight;
 				uint32 RayTraceDepth;
 			} RayTracing;
+
+			struct
+			{
+				void* pUserData;
+			} Custom;
 		};
 	};
 
@@ -154,6 +161,7 @@ namespace LambdaEngine
 
 		struct Resource
 		{
+			const char*		pName				= "";
 			EResourceType	Type				= EResourceType::UNKNOWN;
 			uint32			SubResourceCount	= 0;
 
@@ -189,14 +197,18 @@ namespace LambdaEngine
 
 		struct RenderStage
 		{
+			EPipelineStateType		PipelineStateType				= EPipelineStateType::NONE;
+			RenderStageParameters	Parameters						= {};
+
+			bool					UsesCustomRenderer				= false;
+			ICustomRenderer*		pCustomRenderer					= nullptr;
+
 			ERenderStageDrawType	DrawType						= ERenderStageDrawType::NONE;
 			Resource*				pVertexBufferResource			= nullptr;
 			Resource*				pIndexBufferResource			= nullptr;
 			Resource*				pMeshIndexBufferResource		= nullptr;
 
-			RenderStageParameters	Parameters						= {};
 			uint64					PipelineStateID					= 0;
-			EPipelineStateType		PipelineStateType				= EPipelineStateType::NONE;
 			IPipelineLayout*		pPipelineLayout					= nullptr;
 			uint32					TextureSubDescriptorSetCount	= 1;
 			uint32					MaterialsRenderedPerPass		= 1;
@@ -205,7 +217,7 @@ namespace LambdaEngine
 			IRenderPass*			pRenderPass						= nullptr;
 
 			Resource*				pPushConstantsResource			= nullptr;
-			TArray<Resource*>	RenderTargetResources;
+			TArray<Resource*>		RenderTargetResources;
 			Resource*				pDepthStencilAttachment			= nullptr;
 		};
 
@@ -251,7 +263,7 @@ namespace LambdaEngine
 		RenderGraph(const IGraphicsDevice* pGraphicsDevice);
 		~RenderGraph();
 
-		bool Init(RenderGraphDesc& desc);
+		bool Init(const RenderGraphDesc* pDesc);
 
 		/*
 		* Updates a resource in the Render Graph, can be called at any time
@@ -267,17 +279,22 @@ namespace LambdaEngine
 		* Updates the RenderGraph, applying the updates made to resources with UpdateResource by writing them to the appropriate Descriptor Sets, the RenderGraph will wait for device idle if it needs to
 		*/
 		void Update();
+
+		void NewFrame(Timestamp delta);
+		void PrepareRender(Timestamp delta);
+
 		void Render(uint64 frameIndex, uint32 backBufferIndex);
 
-		bool GetResourceTextures(const char* pResourceName, ITexture* const ** pppTexture, uint32* pTextureView)					const;
+		bool GetResourceTextures(const char* pResourceName, ITexture* const ** pppTexture, uint32* pTextureView)						const;
 		bool GetResourceTextureViews(const char* pResourceName, ITextureView* const ** pppTextureViews, uint32* pTextureViewCount)		const;
-		bool GetResourceBuffers(const char* pResourceName, IBuffer* const ** pppBuffers, uint32* pBufferCount)					const;
+		bool GetResourceBuffers(const char* pResourceName, IBuffer* const ** pppBuffers, uint32* pBufferCount)							const;
 		bool GetResourceAccelerationStructure(const char* pResourceName, const IAccelerationStructure** ppAccelerationStructure)		const;
 
 	private:
 		bool CreateFence();
 		bool CreateDescriptorHeap();
 		bool CreateCopyCommandLists();
+		bool CreateCustomRenderers(std::vector<RenderStageDesc>& renderStageDescriptions);
 		bool CreateResources(const std::vector<RenderStageResourceDesc>& resourceDescriptions);
 		bool CreateRenderStages(const std::vector<RenderStageDesc>& renderStageDescriptions);
 		bool CreateSynchronizationStages(const std::vector<SynchronizationStageDesc>& synchronizationStageDescriptions);
@@ -319,6 +336,9 @@ namespace LambdaEngine
 		IFence*												m_pFence							= nullptr;
 		uint64												m_SignalValue						= 1;
 
+		TArray<ICustomRenderer*>							m_CustomRenderers;
+		TArray<ICustomRenderer*>							m_DebugRenderers;
+
 		ICommandAllocator**									m_ppGraphicsCopyCommandAllocators	= nullptr;
 		ICommandList**										m_ppGraphicsCopyCommandLists		= nullptr;
 		bool												m_ExecuteGraphicsCopy				= false;
@@ -333,14 +353,14 @@ namespace LambdaEngine
 		PipelineStage*										m_pPipelineStages					= nullptr;
 		uint32												m_PipelineStageCount				= 0;
 
-		THashTable<std::string, uint32>						m_RenderStageMap;
+		THashTable<String, uint32>							m_RenderStageMap;
 		RenderStage*										m_pRenderStages						= nullptr;
 		uint32												m_RenderStageCount					= 0;
 
 		SynchronizationStage*								m_pSynchronizationStages			= nullptr;
 		uint32												m_SynchronizationStageCount			= 0;
 
-		THashTable<std::string, Resource>					m_ResourceMap;
+		THashTable<String, Resource>						m_ResourceMap;
 		TSet<Resource*>										m_DirtyDescriptorSetInternalTextures;
 		TSet<Resource*>										m_DirtyDescriptorSetInternalBuffers;
 		TSet<Resource*>										m_DirtyDescriptorSetExternalTextures;

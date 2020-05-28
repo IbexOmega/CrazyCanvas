@@ -36,10 +36,10 @@ namespace LambdaEngine
 
 		bool Init(const RendererDesc* pDesc);
 
-		void Begin(Timestamp delta);
-		void End(Timestamp delta);
+		void NewFrame(Timestamp delta);
+		void PrepareRender(Timestamp delta);
 
-		void Render(Timestamp delta);
+		void Render();
 
 		FORCEINLINE uint32 GetFrameIndex()		{ return m_FrameIndex; }
 		FORCEINLINE uint32 GetModFrameIndex()	{ return m_ModFrameIndex; }
@@ -48,11 +48,6 @@ namespace LambdaEngine
 	private:
 		const char*				m_pName;
 		const IGraphicsDevice*	m_pGraphicsDevice;
-
-		ICommandAllocator**		m_ppImGuiCommandAllocators		= nullptr;
-		ICommandList**			m_ppImGuiCommandLists			= nullptr;
-
-		ImGuiRenderer*			m_pImGuiRenderer				= nullptr;
 
 		ISwapChain*				m_pSwapChain					= nullptr;
 		RenderGraph*			m_pRenderGraph					= nullptr;

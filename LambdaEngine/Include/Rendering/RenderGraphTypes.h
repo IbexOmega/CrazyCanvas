@@ -7,6 +7,10 @@
 
 namespace LambdaEngine
 {
+	class ICustomRenderer;
+
+	constexpr const char* RENDER_GRAPH_IMGUI_STAGE_NAME			= "RENDER_STAGE_IMGUI";
+
 	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT   = "BACK_BUFFER_TEXTURE";
 
 	constexpr const char* FULLSCREEN_QUAD_VERTEX_BUFFER		    = "FULLSCREEN_QUAD_VERTEX_BUFFER";
@@ -108,6 +112,7 @@ namespace LambdaEngine
 		EAttachmentType		Type				= EAttachmentType::NONE;
 		uint32				ShaderStages		= SHADER_STAGE_FLAG_NONE;
 		uint32				SubResourceCount	= 1;
+		bool				TemporalInput		= false;
 		EFormat				TextureFormat		= EFormat::NONE;
 	};
 
@@ -130,12 +135,14 @@ namespace LambdaEngine
 
 	struct RenderStageDesc
 	{
-		const char* pName							= "Render Stage";
-		RenderStageAttachment* pAttachments			= nullptr;
-		uint32 AttachmentCount						= 0;
-		RenderStagePushConstants PushConstants		= {};
+		const char*					pName				= "Render Stage";
+		RenderStageAttachment*		pAttachments		= nullptr;
+		uint32						AttachmentCount		= 0;
+		RenderStagePushConstants	PushConstants		= {};
 
-		EPipelineStateType PipelineType				= EPipelineStateType::NONE;
+		EPipelineStateType			PipelineType		= EPipelineStateType::NONE;
+		bool						UsesCustomRenderer	= false;
+		uint32						Priority			= UINT32_MAX;
 
 		union
 		{
@@ -156,6 +163,11 @@ namespace LambdaEngine
 			{
 				RayTracingManagedPipelineStateDesc*		pRayTracingDesc;
 			} RayTracingPipeline;
+
+			struct
+			{
+				ICustomRenderer*						pCustomRenderer;
+			} CustomRenderer;
 		};
 	};
 

@@ -50,27 +50,30 @@ namespace LambdaEngine
 		* return - true if the parsing succeeded, otherwise false
 		*/
 		static bool Parse(
-			RenderGraphDesc& desc,
+			const RenderGraphDesc* pDesc,
 			std::vector<RenderStageDesc>& sortedRenderStageDescriptions,
 			std::vector<SynchronizationStageDesc>& sortedSynchronizationStageDescriptions,
 			std::vector<PipelineStageDesc>& sortedPipelineStageDescriptions,
 			std::vector<RenderStageResourceDesc>& resourceDescriptions);
 
 	private:
+		static bool CreateDebugStages(const RenderGraphDesc* pDesc, std::vector<RenderStageDesc*>& renderStages);
+
 		/*
 		* Goes through each Render Stage and sorts its attachments into three groups, either Input, External Input or Output
 		*/
 		static bool SortRenderStagesAttachments(
-			const RenderGraphDesc& desc,
+			const std::vector<RenderStageDesc*>& renderStages,
 			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesInputAttachments,
 			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesExternalInputAttachments,
 			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesOutputAttachments,
 			std::vector<RenderStageResourceDesc>&											resourceDescriptions);
+
 		/*
 		* Parses everything to internal structures, creates bidirectional connections, separates temporal inputs from non-temporal inputs
 		*/
 		static bool ParseInitialStages(
-			const RenderGraphDesc& desc,
+			const std::vector<RenderStageDesc*>& renderStages,
 			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesInputAttachments,
 			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesExternalInputAttachments,
 			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesOutputAttachments,
@@ -79,6 +82,20 @@ namespace LambdaEngine
 			std::unordered_map<std::string, InternalRenderStageAttachment>&					parsedTemporalInputAttachments,
 			std::unordered_map<std::string, InternalRenderStageAttachment>&					parsedExternalInputAttachments,
 			std::unordered_map<std::string, InternalRenderStageAttachment>&					parsedOutputAttachments);
+
+		static bool ParseStage(
+			const RenderStageDesc* pRenderStage,
+			InternalRenderStage* pInternalRenderStage,
+			uint32* pGlobalAttachmentIndex,
+			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesInputAttachments,
+			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesExternalInputAttachments,
+			std::unordered_map<std::string, std::vector<const RenderStageAttachment*>>&		renderStagesOutputAttachments,
+			std::unordered_map<std::string, InternalRenderStage>&							parsedRenderStages,
+			std::unordered_map<std::string, InternalRenderStageAttachment>&					parsedInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageAttachment>&					parsedTemporalInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageAttachment>&					parsedExternalInputAttachments,
+			std::unordered_map<std::string, InternalRenderStageAttachment>&					parsedOutputAttachments);
+
 		/*
 		* Connects output resources to input resources, thereby marking resource transitions, also discovers input resources that miss output resources
 		*/
@@ -88,7 +105,9 @@ namespace LambdaEngine
 		/*
 		* For each renderpass, go through its ascendants and add 1 to their weights
 		*/
-		static bool WeightRenderStages(std::unordered_map<std::string, InternalRenderStage>& parsedRenderStages);
+		static bool WeightRenderStages(
+			std::unordered_map<std::string, InternalRenderStage>& parsedRenderStages,
+			std::unordered_map<std::string, InternalRenderStageAttachment>& parsedOutputAttachments);
 		static void RecursivelyWeightAncestors(InternalRenderStage* pRenderStage);
 		/*
 		* Sorts Render Stages and Creates Synchronization Stages
@@ -161,5 +180,9 @@ namespace LambdaEngine
 
 		static void SanitizeString(char* pString, uint32 numCharacters);
 		static void ConcatPipelineStateToString(char* pStringBuffer, EPipelineStateType pipelineState);
+
+	private:
+		static RenderStageDesc						s_ImGuiRenderStageDesc;
+		static std::vector<RenderStageAttachment>	s_ImGuiAttachments;
 	};
 }

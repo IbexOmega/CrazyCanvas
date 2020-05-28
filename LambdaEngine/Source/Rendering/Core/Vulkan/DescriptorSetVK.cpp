@@ -120,7 +120,7 @@ namespace LambdaEngine
 		for (uint32_t i = 0; i < descriptorCount; i++)
 		{
 			VkDescriptorBufferInfo& bufferInfo = bufferInfos[i];
-			bufferInfo.offset	= pOffsets[i];
+			bufferInfo.offset		= pOffsets[i];
 			bufferInfo.range		= pSizes[i];
 
 			VALIDATE(ppVkBuffers[i] != nullptr);
