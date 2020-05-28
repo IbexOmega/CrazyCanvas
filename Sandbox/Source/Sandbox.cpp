@@ -746,27 +746,30 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 				ImGui::EndTabItem();
 			}
 
-			if (ImGui::BeginTabItem("Ray Tracing"))
+			if (RAY_TRACING_ENABLED)
 			{
-				radianceTexture.ResourceName = "RADIANCE_TEXTURE";
+				if (ImGui::BeginTabItem("Ray Tracing"))
+				{
+					radianceTexture.ResourceName = "RADIANCE_TEXTURE";
 
-				radianceTexture.ReservedIncludeMask = 0x00008421;
+					radianceTexture.ReservedIncludeMask = 0x00008421;
 
-				radianceTexture.ChannelMult[0] = 1.0f;
-				radianceTexture.ChannelMult[1] = 1.0f;
-				radianceTexture.ChannelMult[2] = 1.0f;
-				radianceTexture.ChannelMult[3] = 0.0f;
+					radianceTexture.ChannelMult[0] = 1.0f;
+					radianceTexture.ChannelMult[1] = 1.0f;
+					radianceTexture.ChannelMult[2] = 1.0f;
+					radianceTexture.ChannelMult[3] = 0.0f;
 
-				radianceTexture.ChannelAdd[0] = 0.0f;
-				radianceTexture.ChannelAdd[1] = 0.0f;
-				radianceTexture.ChannelAdd[2] = 0.0f;
-				radianceTexture.ChannelAdd[3] = 1.0f;
+					radianceTexture.ChannelAdd[0] = 0.0f;
+					radianceTexture.ChannelAdd[1] = 0.0f;
+					radianceTexture.ChannelAdd[2] = 0.0f;
+					radianceTexture.ChannelAdd[3] = 1.0f;
 
-				radianceTexture.PixelShaderGUID = GUID_NONE;
+					radianceTexture.PixelShaderGUID = GUID_NONE;
 
-				ImGui::Image(&radianceTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+					ImGui::Image(&radianceTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
 
-				ImGui::EndTabItem();
+					ImGui::EndTabItem();
+				}
 			}
 
 			ImGui::EndTabBar();
