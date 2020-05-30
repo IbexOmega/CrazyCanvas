@@ -535,12 +535,13 @@ namespace LambdaEngine
 				{
 					RenderStage* pRenderStage = &m_pRenderStages[pPipelineStage->StageIndex];
 					IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
+					EPipelineStateType stateType = pPipelineState->GetType();
 
 					if (pRenderStage->UsesCustomRenderer)
 					{
 						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 
-						switch (pPipelineState->GetType())
+						switch (stateType)
 						{
 						case EPipelineStateType::GRAPHICS:		pCustomRenderer->Render(pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],	&m_ppExecutionStages[currentExecutionStage], m_ModFrameIndex, m_BackBufferIndex); break;
 						case EPipelineStateType::COMPUTE:		pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage], m_ModFrameIndex, m_BackBufferIndex); break;
@@ -549,7 +550,7 @@ namespace LambdaEngine
 					}
 					else
 					{
-						switch (pPipelineState->GetType())
+						switch (stateType)
 						{
 						case EPipelineStateType::GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],		pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],	&m_ppExecutionStages[currentExecutionStage]);	break;
 						case EPipelineStateType::COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],		pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
@@ -582,10 +583,10 @@ namespace LambdaEngine
 			{
 				m_ExecuteGraphicsCopy = false;
 
-				ICommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
+				ICommandList* pGraphicsCopyCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-				pCommandList->End();
-				RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				pGraphicsCopyCommandList->End();
+				RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 				m_SignalValue++;
 			}
 
@@ -593,10 +594,10 @@ namespace LambdaEngine
 			{
 				m_ExecuteComputeCopy = false;
 
-				ICommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
+				ICommandList* pComputeCopyCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-				pCommandList->End();
-				RenderSystem::GetComputeQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				pComputeCopyCommandList->End();
+				RenderSystem::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 				m_SignalValue++;
 			}
 		}
@@ -1124,9 +1125,14 @@ namespace LambdaEngine
 
 				pRenderStage->UsesCustomRenderer	= true;
 				pRenderStage->pCustomRenderer		= pCustomRenderer;
+				pRenderStage->FirstPipelineStage	= pCustomRenderer->GetFirstPipelineStage();
+				pRenderStage->LastPipelineStage		= pCustomRenderer->GetLastPipelineStage();
 			}
 			else
 			{
+				pRenderStage->FirstPipelineStage	= FindEarliestPipelineStage(pRenderStageDesc);
+				pRenderStage->LastPipelineStage		= FindLastPipelineStage(pRenderStageDesc);
+
 				ConstantRangeDesc constantRangeDesc = {};
 				constantRangeDesc.OffsetInBytes			= 0;
 				constantRangeDesc.ShaderStageFlags		= CreateShaderStageMask(pRenderStageDesc);
@@ -1694,6 +1700,9 @@ namespace LambdaEngine
 						initialBarrier.ArrayIndex					= 0;
 						initialBarrier.ArrayCount					= pFirstBarrier->ArrayCount;
 
+						FPipelineStageFlags srcPipelineStage = pResource->ResourceBindings[0].pRenderStage->FirstPipelineStage;
+						FPipelineStageFlags dstPipelineStage = pResource->ResourceBindings[0].pRenderStage->LastPipelineStage;
+
 						if (initialBarrier.QueueAfter == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
 						{
 							ICommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
@@ -1706,7 +1715,9 @@ namespace LambdaEngine
 								pCommandList->Begin(nullptr);
 							}
 
-							pCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &initialBarrier, 1);
+							
+
+							pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &initialBarrier, 1);
 						}
 						else if (initialBarrier.QueueAfter == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
 						{
@@ -1720,7 +1731,7 @@ namespace LambdaEngine
 								pCommandList->Begin(nullptr);
 							}
 
-							pCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &initialBarrier, 1);
+							pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &initialBarrier, 1);
 						}
 					}
 				}
@@ -2200,34 +2211,5 @@ namespace LambdaEngine
 		pComputeCommandList->End();
 
 		(*ppExecutionStage) = pComputeCommandList;
-	}
-
-	uint32 RenderGraph::CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc)
-	{
-		uint32 shaderStageMask = 0;
-
-		if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
-		{
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER		: 0;
-
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->VertexShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER	: 0;
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->GeometryShader	!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER	: 0;
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->HullShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER		: 0;
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->DomainShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER	: 0;
-
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->PixelShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER		: 0;
-		}
-		else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
-		{
-			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-		}
-		else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
-		{
-			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER;
-			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;
-			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER;
-		}
-
-		return shaderStageMask;
 	}
 }

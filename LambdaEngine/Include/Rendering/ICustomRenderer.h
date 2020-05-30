@@ -3,6 +3,8 @@
 #include "LambdaEngine.h"
 #include "Time/API/Timestamp.h"
 
+#include "Rendering/Core/API/GraphicsTypes.h"
+
 namespace LambdaEngine
 {
 	struct RenderPassAttachmentDesc;
@@ -46,6 +48,9 @@ namespace LambdaEngine
 		virtual void PrepareRender(Timestamp delta)		= 0;
 
 		virtual void Render(ICommandAllocator* pCommandAllocator, ICommandList* pCommandList, ICommandList** ppExecutionStage, uint32 modFrameIndex, uint32 backBufferIndex)		= 0;
+
+		virtual FPipelineStageFlags GetFirstPipelineStage()	= 0;
+		virtual FPipelineStageFlags GetLastPipelineStage()	= 0;
 	};
 }
 

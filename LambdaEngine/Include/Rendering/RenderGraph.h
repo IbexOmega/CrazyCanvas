@@ -203,6 +203,9 @@ namespace LambdaEngine
 			bool					UsesCustomRenderer				= false;
 			ICustomRenderer*		pCustomRenderer					= nullptr;
 
+			FPipelineStageFlags		FirstPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags		LastPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+
 			ERenderStageDrawType	DrawType						= ERenderStageDrawType::NONE;
 			Resource*				pVertexBufferResource			= nullptr;
 			Resource*				pIndexBufferResource			= nullptr;
@@ -317,8 +320,6 @@ namespace LambdaEngine
 		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList, ICommandList** ppExecutionStage);
 		void ExecuteComputeRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage);
 		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage);
-
-		uint32 CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc);
 
 	private:
 		const IGraphicsDevice*								m_pGraphicsDevice;

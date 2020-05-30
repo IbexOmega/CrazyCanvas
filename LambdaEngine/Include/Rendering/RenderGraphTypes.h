@@ -191,7 +191,7 @@ namespace LambdaEngine
 		uint32 StageIndex		= 0;
 	};
 
-	EAttachmentAccessType FORCEINLINE GetAttachmentAccessType(EAttachmentType attachmentType)
+	FORCEINLINE EAttachmentAccessType GetAttachmentAccessType(EAttachmentType attachmentType)
 	{
 		switch (attachmentType)
 		{
@@ -216,7 +216,7 @@ namespace LambdaEngine
 		}
 	}
 
-	EDescriptorType FORCEINLINE GetAttachmentDescriptorType(EAttachmentType attachmentType)
+	FORCEINLINE EDescriptorType GetAttachmentDescriptorType(EAttachmentType attachmentType)
 	{
 		switch (attachmentType)
 		{
@@ -241,7 +241,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool FORCEINLINE AttachmentsNeedsDescriptor(EAttachmentType attachmentType)
+	FORCEINLINE bool AttachmentsNeedsDescriptor(EAttachmentType attachmentType)
 	{
 		switch (attachmentType)
 		{
@@ -266,7 +266,7 @@ namespace LambdaEngine
 		}
 	}
 
-	ESimpleResourceType FORCEINLINE GetSimpleType(EAttachmentType attachmentType)
+	FORCEINLINE ESimpleResourceType GetSimpleType(EAttachmentType attachmentType)
 	{
 		switch (attachmentType)
 		{
@@ -316,7 +316,7 @@ namespace LambdaEngine
 		}
 	}
 
-	FMemoryAccessFlags FORCEINLINE ConvertAttachmentTypeToMemoryAccessFlags(EAttachmentType attachmentType)
+	FORCEINLINE FMemoryAccessFlags ConvertAttachmentTypeToMemoryAccessFlags(EAttachmentType attachmentType)
 	{
 		switch (attachmentType)
 		{
@@ -339,5 +339,84 @@ namespace LambdaEngine
 
 		default:																	return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
 		}
+	}
+
+	FORCEINLINE FPipelineStageFlags FindEarliestPipelineStage(const RenderStageDesc* pRenderStageDesc)
+	{
+		uint32 shaderStageMask = 0;
+
+		if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
+		{
+			if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
+			if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->VertexShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+			if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->GeometryShader	!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->HullShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->DomainShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->PixelShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+		}
+		else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
+		{
+			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+		}
+		else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
+		{
+			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+		}
+
+		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+	}
+
+	FORCEINLINE FPipelineStageFlags FindLastPipelineStage(const RenderStageDesc* pRenderStageDesc)
+	{
+		uint32 shaderStageMask = 0;
+
+		if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
+		{
+			if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->PixelShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+			if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->DomainShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->HullShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->GeometryShader	!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->VertexShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+			if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
+		}
+		else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
+		{
+			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+		}
+		else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
+		{
+			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+		}
+
+		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+	}
+
+	FORCEINLINE uint32 CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc)
+	{
+		uint32 shaderStageMask = 0;
+
+		if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
+		{
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER		: 0;
+
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->VertexShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER	: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->GeometryShader	!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER	: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->HullShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER		: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->DomainShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER	: 0;
+
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->PixelShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER		: 0;
+		}
+		else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
+		{
+			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		}
+		else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
+		{
+			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER;
+			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;
+			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER;
+		}
+
+		return shaderStageMask;
 	}
 }

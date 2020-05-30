@@ -76,6 +76,9 @@ namespace LambdaEngine
 
 		virtual void Render(ICommandAllocator* pCommandAllocator, ICommandList* pCommandList, ICommandList** ppExecutionStage, uint32 modFrameIndex, uint32 backBufferIndex)		override final;
 
+		FORCEINLINE virtual FPipelineStageFlags GetFirstPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
+		FORCEINLINE virtual FPipelineStageFlags GetLastPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
+
 		virtual void OnMouseMoved(int32 x, int32 y)										override final;
 		virtual void OnButtonPressed(EMouseButton button, uint32 modifierMask)			override final;
 		virtual void OnButtonReleased(EMouseButton button)								override final;

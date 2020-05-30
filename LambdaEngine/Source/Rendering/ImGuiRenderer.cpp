@@ -279,11 +279,34 @@ namespace LambdaEngine
 		ImGuiIO& io = ImGui::GetIO();
 		ImDrawData* pDrawData = ImGui::GetDrawData();
 
-		if (pDrawData == nullptr)
-			return;
+		ITextureView* pBackBuffer = m_ppBackBuffers[backBufferIndex];
+		uint32 width	= pBackBuffer->GetDesc().pTexture->GetDesc().Width;
+		uint32 height	= pBackBuffer->GetDesc().pTexture->GetDesc().Height;
 
-		if (pDrawData->CmdListsCount == 0)
+		BeginRenderPassDesc beginRenderPassDesc = {};
+		beginRenderPassDesc.pRenderPass			= m_pRenderPass;
+		beginRenderPassDesc.ppRenderTargets		= &pBackBuffer;
+		beginRenderPassDesc.RenderTargetCount	= 1;
+		beginRenderPassDesc.pDepthStencil		= nullptr;
+		beginRenderPassDesc.Width				= width;
+		beginRenderPassDesc.Height				= height;
+		beginRenderPassDesc.Flags				= FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_INLINE;
+		beginRenderPassDesc.pClearColors		= nullptr;
+		beginRenderPassDesc.ClearColorCount		= 0;
+		beginRenderPassDesc.Offset.x			= 0;
+		beginRenderPassDesc.Offset.y			= 0;
+
+		if (pDrawData == nullptr || pDrawData->CmdListsCount == 0)
+		{
+			//Begin and End RenderPass to transition Texture State (Lazy)
+			pCommandList->BeginRenderPass(&beginRenderPassDesc);
+			pCommandList->EndRenderPass();
+
+			pCommandList->End();
+
+			(*ppExecutionStage) = pCommandList;
 			return;
+		}
 
 		IBuffer* pVertexBuffer	= m_ppVertexBuffers[modFrameIndex];
 		IBuffer* pIndexBuffer	= m_ppIndexBuffers[modFrameIndex];
@@ -312,22 +335,7 @@ namespace LambdaEngine
 			pCommandList->CopyBuffer(m_pIndexCopyBuffer, 0, pIndexBuffer, 0, indexBufferSize);
 		}
 
-		ITextureView* pBackBuffer = m_ppBackBuffers[backBufferIndex];
-		uint32 width	= pBackBuffer->GetDesc().pTexture->GetDesc().Width;
-		uint32 height	= pBackBuffer->GetDesc().pTexture->GetDesc().Height;
-
-		BeginRenderPassDesc beginRenderPassDesc = {};
-		beginRenderPassDesc.pRenderPass			= m_pRenderPass;
-		beginRenderPassDesc.ppRenderTargets		= &pBackBuffer;
-		beginRenderPassDesc.RenderTargetCount	= 1;
-		beginRenderPassDesc.pDepthStencil		= nullptr;
-		beginRenderPassDesc.Width				= width;
-		beginRenderPassDesc.Height				= height;
-		beginRenderPassDesc.Flags				= FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_INLINE;
-		beginRenderPassDesc.pClearColors		= nullptr;
-		beginRenderPassDesc.ClearColorCount		= 0;
-		beginRenderPassDesc.Offset.x			= 0;
-		beginRenderPassDesc.Offset.y			= 0;
+		
 
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 	
