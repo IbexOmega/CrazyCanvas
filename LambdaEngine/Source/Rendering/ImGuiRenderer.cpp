@@ -119,12 +119,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderPass())
-		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create RenderPass");
-			return false;
-		}
-
 		if (!CreatePipelineLayout())
 		{
 			LOG_ERROR("[ImGuiRenderer]: Failed to create PipelineLayout");
@@ -143,16 +137,33 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreatePipelineState())
-		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create PipelineState");
-			return false;
-		}
+		
 
 		m_pDescriptorSet->WriteTextureDescriptors(&m_pFontTextureView, &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
 
 		CommonApplication::Get()->AddEventHandler(this);
 
+		return true;
+	}
+
+	bool ImGuiRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
+	{
+		VALIDATE(pPreInitDesc);
+
+		VALIDATE(pPreInitDesc->ColorAttachmentCount == 1);
+
+		if (!CreateRenderPass(&pPreInitDesc->pColorAttachmentDesc[0]))
+		{
+			LOG_ERROR("[ImGuiRenderer]: Failed to create RenderPass");
+			return false;
+		}
+
+		if (!CreatePipelineState())
+		{
+			LOG_ERROR("[ImGuiRenderer]: Failed to create PipelineState");
+			return false;
+		}
+		
 		return true;
 	}
 
@@ -800,50 +811,6 @@ namespace LambdaEngine
 		return m_pSampler != nullptr;
 	}
 
-	bool ImGuiRenderer::CreateRenderPass()
-	{
-		RenderPassAttachmentDesc colorAttachmentDesc = {};
-		colorAttachmentDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
-		colorAttachmentDesc.SampleCount		= 1;
-		colorAttachmentDesc.LoadOp			= ELoadOp::LOAD;
-		colorAttachmentDesc.StoreOp			= EStoreOp::STORE;
-		colorAttachmentDesc.StencilLoadOp	= ELoadOp::DONT_CARE;
-		colorAttachmentDesc.StencilStoreOp	= EStoreOp::DONT_CARE;
-		colorAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_PRESENT;
-		colorAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_PRESENT;
-
-		ETextureState pTextureState[1] = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
-
-		RenderPassSubpassDesc subpassDesc = {};
-		subpassDesc.pInputAttachmentStates		= nullptr;
-		subpassDesc.InputAttachmentCount		= 0;
-		subpassDesc.pRenderTargetStates			= pTextureState;
-		subpassDesc.pResolveAttachmentStates	= nullptr;
-		subpassDesc.RenderTargetCount			= 1;
-		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DONT_CARE;
-
-		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
-		subpassDependencyDesc.SrcSubpass		= EXTERNAL_SUBPASS;
-		subpassDependencyDesc.DstSubpass		= 0;
-		subpassDependencyDesc.SrcAccessMask		= 0;
-		subpassDependencyDesc.DstAccessMask		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-		subpassDependencyDesc.SrcStageMask		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
-		subpassDependencyDesc.DstStageMask		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
-
-		RenderPassDesc renderPassDesc = {};
-		renderPassDesc.pName					= "ImGui Render Pass";
-		renderPassDesc.pAttachments				= &colorAttachmentDesc;
-		renderPassDesc.AttachmentCount			= 1;
-		renderPassDesc.pSubpasses				= &subpassDesc;
-		renderPassDesc.SubpassCount				= 1;
-		renderPassDesc.pSubpassDependencies		= &subpassDependencyDesc;
-		renderPassDesc.SubpassDependencyCount	= 1;
-
-		m_pRenderPass = m_pGraphicsDevice->CreateRenderPass(&renderPassDesc);
-
-		return m_pRenderPass != nullptr;
-	}
-
 	bool ImGuiRenderer::CreatePipelineLayout()
 	{
 		DescriptorBindingDesc descriptorBindingDesc = {};
@@ -912,6 +879,50 @@ namespace LambdaEngine
 		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiVertex.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
 		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
+	}
+
+	bool ImGuiRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc)
+	{
+		RenderPassAttachmentDesc colorAttachmentDesc = {};
+		colorAttachmentDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
+		colorAttachmentDesc.SampleCount		= 1;
+		colorAttachmentDesc.LoadOp			= ELoadOp::LOAD;
+		colorAttachmentDesc.StoreOp			= EStoreOp::STORE;
+		colorAttachmentDesc.StencilLoadOp	= ELoadOp::DONT_CARE;
+		colorAttachmentDesc.StencilStoreOp	= EStoreOp::DONT_CARE;
+		colorAttachmentDesc.InitialState	= pBackBufferAttachmentDesc->InitialState;
+		colorAttachmentDesc.FinalState		= pBackBufferAttachmentDesc->FinalState;
+
+		ETextureState pTextureState[1] = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
+
+		RenderPassSubpassDesc subpassDesc = {};
+		subpassDesc.pInputAttachmentStates		= nullptr;
+		subpassDesc.InputAttachmentCount		= 0;
+		subpassDesc.pRenderTargetStates			= pTextureState;
+		subpassDesc.pResolveAttachmentStates	= nullptr;
+		subpassDesc.RenderTargetCount			= 1;
+		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DONT_CARE;
+
+		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
+		subpassDependencyDesc.SrcSubpass		= EXTERNAL_SUBPASS;
+		subpassDependencyDesc.DstSubpass		= 0;
+		subpassDependencyDesc.SrcAccessMask		= 0;
+		subpassDependencyDesc.DstAccessMask		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		subpassDependencyDesc.SrcStageMask		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+		subpassDependencyDesc.DstStageMask		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+
+		RenderPassDesc renderPassDesc = {};
+		renderPassDesc.pName					= "ImGui Render Pass";
+		renderPassDesc.pAttachments				= &colorAttachmentDesc;
+		renderPassDesc.AttachmentCount			= 1;
+		renderPassDesc.pSubpasses				= &subpassDesc;
+		renderPassDesc.SubpassCount				= 1;
+		renderPassDesc.pSubpassDependencies		= &subpassDependencyDesc;
+		renderPassDesc.SubpassDependencyCount	= 1;
+
+		m_pRenderPass = m_pGraphicsDevice->CreateRenderPass(&renderPassDesc);
+
+		return true;
 	}
 
 	bool ImGuiRenderer::CreatePipelineState()

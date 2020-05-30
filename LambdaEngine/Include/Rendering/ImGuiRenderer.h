@@ -54,6 +54,8 @@ namespace LambdaEngine
 
 		bool Init(const ImGuiRendererDesc* pDesc);
 
+		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
+
 		virtual void PreBuffersDescriptorSetWrite()		override final;
 		virtual void PreTexturesDescriptorSetWrite()	override final;
 
@@ -92,10 +94,10 @@ namespace LambdaEngine
 		bool CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize);
 		bool CreateTextures();
 		bool CreateSamplers();
-		bool CreateRenderPass();
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSet();
 		bool CreateShaders();
+		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 		bool CreatePipelineState();
 
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);

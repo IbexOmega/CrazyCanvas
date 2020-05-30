@@ -42,7 +42,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
 constexpr const bool RAY_TRACING_ENABLED		= true;
-constexpr const bool POST_PROCESSING_ENABLED	= false;
+constexpr const bool POST_PROCESSING_ENABLED	= true;
 
 constexpr const bool RENDER_GRAPH_DEBUG_ENABLED	= true;
 constexpr const bool RENDERING_DEBUG_ENABLED	= true;
@@ -940,6 +940,7 @@ bool Sandbox::InitRendererForDeferred()
 
 		RenderStageDesc renderStage = {};
 		renderStage.pName						= pGeometryRenderStageName;
+		renderStage.Priority					= UINT32_MAX;
 		renderStage.pAttachments				= geometryRenderStageAttachments.data();
 		renderStage.AttachmentCount				= (uint32)geometryRenderStageAttachments.size();
 		//renderStage.PushConstants				= pushConstants;
@@ -992,6 +993,7 @@ bool Sandbox::InitRendererForDeferred()
 
 		RenderStageDesc renderStage = {};
 		renderStage.pName						= pRayTracingRenderStageName;
+		renderStage.Priority					= UINT32_MAX;
 		renderStage.pAttachments				= rayTracingRenderStageAttachments.data();
 		renderStage.AttachmentCount				= (uint32)rayTracingRenderStageAttachments.size();
 		//renderStage.PushConstants				= pushConstants;
@@ -1025,10 +1027,10 @@ bool Sandbox::InitRendererForDeferred()
 		shadingRenderStageAttachments.push_back({ "LIGHTS_BUFFER",								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, 1, false });
 		shadingRenderStageAttachments.push_back({ PER_FRAME_BUFFER,								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, 1, false });
 
-		if (POST_PROCESSING_ENABLED)
+		/*if (POST_PROCESSING_ENABLED)
 			shadingRenderStageAttachments.push_back({ "SHADED_TEXTURE",							EAttachmentType::OUTPUT_COLOR,									FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-		else
-			shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,		EAttachmentType::OUTPUT_COLOR,									FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_B8G8R8A8_UNORM });
+		else*/
+		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,		EAttachmentType::OUTPUT_COLOR,									FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_B8G8R8A8_UNORM });
 
 		RenderStagePushConstants pushConstants = {};
 		pushConstants.pName			= "Shading Pass Push Constants";
@@ -1036,6 +1038,7 @@ bool Sandbox::InitRendererForDeferred()
 
 		RenderStageDesc renderStage = {};
 		renderStage.pName						= pShadingRenderStageName;
+		renderStage.Priority					= UINT32_MAX;
 		renderStage.pAttachments				= shadingRenderStageAttachments.data();
 		renderStage.AttachmentCount				= (uint32)shadingRenderStageAttachments.size();
 		//renderStage.PushConstants				= pushConstants;
@@ -1060,7 +1063,7 @@ bool Sandbox::InitRendererForDeferred()
 
 	if (POST_PROCESSING_ENABLED)
 	{
-		postProcessRenderStageAttachments.push_back({ "SHADED_TEXTURE",								EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R8G8B8A8_UNORM });
+		//postProcessRenderStageAttachments.push_back({ "SHADED_TEXTURE",								EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R8G8B8A8_UNORM });
 
 		postProcessRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE,					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_B8G8R8A8_UNORM });
 
@@ -1070,6 +1073,7 @@ bool Sandbox::InitRendererForDeferred()
 
 		RenderStageDesc renderStage = {};
 		renderStage.pName						= pPostProcessRenderStageName;
+		renderStage.Priority					= UINT32_MAX - 1;
 		renderStage.pAttachments				= postProcessRenderStageAttachments.data();
 		renderStage.AttachmentCount				= (uint32)postProcessRenderStageAttachments.size();
 		//renderStage.PushConstants				= pushConstants;
@@ -1444,7 +1448,7 @@ bool Sandbox::InitRendererForDeferred()
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
-	if (POST_PROCESSING_ENABLED || RENDERING_DEBUG_ENABLED)
+	/*if (POST_PROCESSING_ENABLED || RENDERING_DEBUG_ENABLED)
 	{
 		TextureDesc textureDesc	= {};
 		textureDesc.pName				= "Shaded Texture";
@@ -1494,7 +1498,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= samplerDescriptions.data();
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-	}
+	}*/
 
 	{
 		ITexture** ppAlbedoMaps						= m_pScene->GetAlbedoMaps();

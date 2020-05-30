@@ -5,16 +5,27 @@
 
 namespace LambdaEngine
 {
+	struct RenderPassAttachmentDesc;
+
 	class ICommandAllocator;
 	class ICommandList;
 	class ITextureView;
 	class IBuffer;
 	class IAccelerationStructure;
 
+	struct CustomRendererRenderGraphInitDesc
+	{
+		RenderPassAttachmentDesc*	pColorAttachmentDesc			= nullptr;
+		uint32						ColorAttachmentCount			= 0;
+		RenderPassAttachmentDesc*	pDepthStencilAttachmentDesc		= nullptr;
+	};
+
 	class ICustomRenderer
 	{
 	public:
 		DECL_INTERFACE(ICustomRenderer);
+
+		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) = 0;
 
 		virtual void PreBuffersDescriptorSetWrite()		= 0;
 		virtual void PreTexturesDescriptorSetWrite()	= 0;

@@ -4,6 +4,8 @@
 #define BUFFER_SET_INDEX 0
 #define TEXTURE_SET_INDEX 1
 
+#define NO_BUFFERS_TEXTURE_SET_INDEX 0
+
 #define MAX_UNIQUE_MATERIALS 32
 
 const float PI 		= 3.14159265359f;

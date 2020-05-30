@@ -528,15 +528,15 @@ namespace LambdaEngine
 			weightedInternalRenderStages.insert({ pInternalRenderStage->Weight, pInternalRenderStage });
 		}
 
-		THashTable<InternalRenderStage*, uint32> renderStageAddressToIndex;
+		THashTable<String, uint32> renderStageNameToIndex;
 		TArray<InternalRenderStage*> sortedRenderStages;
-		renderStageAddressToIndex.reserve(weightedInternalRenderStages.size());
+		renderStageNameToIndex.reserve(weightedInternalRenderStages.size());
 		sortedRenderStages.reserve(weightedInternalRenderStages.size());
 
 		for (auto renderStageIt = weightedInternalRenderStages.begin(); renderStageIt != weightedInternalRenderStages.end(); renderStageIt++)
 		{
 			InternalRenderStage* pInternalRenderStage = renderStageIt->second;
-			renderStageAddressToIndex[pInternalRenderStage] = (uint32)sortedRenderStages.size();
+			renderStageNameToIndex[pInternalRenderStage->pRenderStage->pName] = (uint32)sortedRenderStages.size();
 			sortedRenderStages.push_back(pInternalRenderStage);
 		}
 
@@ -561,7 +561,7 @@ namespace LambdaEngine
 						
 					if (prioritizedRenderStage != prioritizedOutputtingRenderStages.end())
 					{
-						LOG_ERROR("Multiple Render Stages with same Output but different priority: \"%s\" and \"%s\"", prioritizedRenderStage->second->pRenderStage->pName, pInternalRenderStage->pRenderStage->pName);
+						LOG_ERROR("[RenderGraphDescriptionParser]: Multiple Render Stages with same Output but same priority: \"%s\" and \"%s\"", prioritizedRenderStage->second->pRenderStage->pName, pInternalRenderStage->pRenderStage->pName);
 						return false;
 					}
 
@@ -573,32 +573,30 @@ namespace LambdaEngine
 			{
 				auto prioritizedRenderStageIt = prioritizedOutputtingRenderStages.rbegin();
 				InternalRenderStage* pLastInternalRenderStage = prioritizedRenderStageIt->second;
-				uint32 lastPriorityIndex = renderStageAddressToIndex[pLastInternalRenderStage];
+				uint32 lastPriorityIndex = renderStageNameToIndex[pLastInternalRenderStage->pRenderStage->pName];
 				prioritizedRenderStageIt++;
 
 				for (; prioritizedRenderStageIt != prioritizedOutputtingRenderStages.rend(); prioritizedRenderStageIt++)
 				{
 					InternalRenderStage* pCurrentInternalRenderStage = prioritizedRenderStageIt->second;
-					uint32 currentPriorityOrder = renderStageAddressToIndex[pCurrentInternalRenderStage];
+					uint32 currentPriorityOrder = renderStageNameToIndex[pCurrentInternalRenderStage->pRenderStage->pName];
 
 					if (lastPriorityIndex < currentPriorityOrder)
 					{
 						sortedRenderStages.erase(sortedRenderStages.begin() + currentPriorityOrder);
 
-						auto currentIterator = renderStageAddressToIndex.find(pCurrentInternalRenderStage);
+						auto currentIterator = renderStageNameToIndex.find(pCurrentInternalRenderStage->pRenderStage->pName);
 						currentIterator++;
 
-						for (auto addressToIndexIt = renderStageAddressToIndex.find(pLastInternalRenderStage); addressToIndexIt != currentIterator; addressToIndexIt++)
+						for (auto addressToIndexIt = renderStageNameToIndex.find(pLastInternalRenderStage->pRenderStage->pName); addressToIndexIt != currentIterator; addressToIndexIt++)
 						{
 							addressToIndexIt->second++;
 						}
 
 						sortedRenderStages.insert(sortedRenderStages.begin() + lastPriorityIndex, pCurrentInternalRenderStage);
-						renderStageAddressToIndex.insert({ pCurrentInternalRenderStage, lastPriorityIndex });
+						renderStageNameToIndex[pCurrentInternalRenderStage->pRenderStage->pName] = lastPriorityIndex;
 					}
 				}
-
-				int i = 0;
 			}
 		}
 
@@ -627,14 +625,15 @@ namespace LambdaEngine
 		std::vector<SynchronizationStageDesc>&					sortedSynchronizationStages,
 		std::vector<PipelineStageDesc>&							sortedPipelineStages)
 	{
-		std::multimap<uint32, const InternalRenderStage*> weightedRenderStageMap;
+		std::map<uint32, const InternalRenderStage*> weightedRenderStageMap;
 
 		for (auto renderStageIt = parsedRenderStages.begin(); renderStageIt != parsedRenderStages.end(); renderStageIt++)
 		{
-			weightedRenderStageMap.insert(std::make_pair(renderStageIt->second.Weight, &renderStageIt->second));
+			uint32 weight = renderStageIt->second.Weight;
+			weightedRenderStageMap[weight] = &renderStageIt->second;
 		}
 
-		std::unordered_map<std::string, std::pair<const RenderStageAttachment*, EPipelineStateType>> finalStateOfAttachmentsFromPreviousFrame;
+		std::unordered_map<std::string, std::pair<const InternalRenderStage*, const RenderStageAttachment*>> finalStateOfAttachmentsFromPreviousFrame;
 
 		//Store this, because it should be last, not first
 		std::vector<AttachmentSynchronizationDesc> endSynchronizations;
@@ -647,44 +646,14 @@ namespace LambdaEngine
 			const RenderStageDesc* pSourceRenderStage = sortedRenderStageIt->second->pRenderStage;
 			String renderStageName = pSourceRenderStage->pName;
 
-			/*std::string renderStageName = pSourceRenderStage->pName;
-
-			RenderStageDesc renderStage = {};
-			renderStage.pName							= pSourceRenderStage->pName;
-			renderStage.pAttachments					= pSourceRenderStage->pAttachments;
-			renderStage.AttachmentCount					= pSourceRenderStage->AttachmentCount;
-			renderStage.PushConstants					= pSourceRenderStage->PushConstants;
-
-			renderStage.PipelineType					= pSourceRenderStage->PipelineType;
-			
-			switch (renderStage.PipelineType)
-			{
-				case EPipelineStateType::GRAPHICS:
-				{
-					renderStage.GraphicsPipeline.pGraphicsDesc			= pSourceRenderStage->GraphicsPipeline.pGraphicsDesc;
-					renderStage.GraphicsPipeline.DrawType				= pSourceRenderStage->GraphicsPipeline.DrawType;
-					renderStage.GraphicsPipeline.pIndexBufferName		= pSourceRenderStage->GraphicsPipeline.pIndexBufferName;
-					renderStage.GraphicsPipeline.pMeshIndexBufferName	= pSourceRenderStage->GraphicsPipeline.pMeshIndexBufferName;
-					break;
-				}
-				case EPipelineStateType::COMPUTE:
-				{
-					renderStage.ComputePipeline.pComputeDesc = pSourceRenderStage->ComputePipeline.pComputeDesc;
-					break;
-				}
-				case EPipelineStateType::RAY_TRACING:
-				{
-					renderStage.RayTracingPipeline.pRayTracingDesc = pSourceRenderStage->RayTracingPipeline.pRayTracingDesc;
-					break;
-				}
-			}		*/
-
 			sortedRenderStages.push_back(*pSourceRenderStage);
 
 			PipelineStageDesc renderPipelineStage = {};
 			renderPipelineStage.Type = EPipelineStageType::RENDER;
 			renderPipelineStage.StageIndex = uint32(sortedRenderStages.size() - 1);
 			sortedPipelineStages.push_back(renderPipelineStage);
+
+			uint32 currentWeight = sortedRenderStageIt->second->Weight;
 
 			SynchronizationStageDesc synchronizationStage = {};
 
@@ -705,11 +674,49 @@ namespace LambdaEngine
 			{
 				for (const InternalRenderStageAttachment* pInputAttachment : sortedRenderStageIt->second->InputAttachments)
 				{
+					//Todo: This will not find attachments that have not been written to this frame.
+
+					//Find Last Outputting Render Stage using this attachment
+					EPipelineStateType				finalRenderStateType			= EPipelineStateType::NONE;
+					const RenderStageAttachment*	pFinalPreviousAttachmentState	= nullptr;
+					uint32 smallestPreviousWeight	= UINT32_MAX;
+					uint32 smallestPostWeight		= UINT32_MAX;
+					{
+						for (auto finalRenderStageIt = pInputAttachment->pConnectedAttachment->RenderStageNameToRenderStageAndAttachment.begin(); 
+							finalRenderStageIt != pInputAttachment->pConnectedAttachment->RenderStageNameToRenderStageAndAttachment.end(); 
+							finalRenderStageIt++)
+						{
+							InternalRenderStage* pFinalRenderStage = finalRenderStageIt->second.first;
+
+							if (pFinalRenderStage->Weight > currentWeight)
+							{
+								if (pFinalRenderStage->Weight < smallestPreviousWeight)
+								{
+									smallestPreviousWeight			= pFinalRenderStage->Weight;
+									finalRenderStateType			= pFinalRenderStage->pRenderStage->PipelineType;
+									pFinalPreviousAttachmentState	= finalRenderStageIt->second.second;
+								}
+							}
+							else if (smallestPreviousWeight == UINT32_MAX) //Previous is always higher priority than from previos frame
+							{
+								if (pFinalRenderStage->Weight < smallestPostWeight)
+								{
+									smallestPostWeight				= pFinalRenderStage->Weight;
+									finalRenderStateType			= pFinalRenderStage->pRenderStage->PipelineType;
+									pFinalPreviousAttachmentState	= finalRenderStageIt->second.second;
+								}
+							}
+						}
+					}
+
+					const RenderStageAttachment* pRequiredState = pInputAttachment->RenderStageNameToRenderStageAndAttachment.find(renderStageName)->second.second;
+
 					AttachmentSynchronizationDesc attachmentSynchronization = {};
 					attachmentSynchronization.Type				= EAttachmentSynchronizationType::TRANSITION_FOR_READ;
+					attachmentSynchronization.FromQueueOwner	= finalRenderStateType;
 					attachmentSynchronization.ToQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
-					attachmentSynchronization.FromAttachment	= *(pInputAttachment->pConnectedAttachment->RenderStageNameToRenderStageAndAttachment.begin()->second.second); //Assume only one write render stage
-					attachmentSynchronization.ToAttachment		= *(pInputAttachment->RenderStageNameToRenderStageAndAttachment.find(renderStageName)->second.second);
+					attachmentSynchronization.FromAttachment	= *(pFinalPreviousAttachmentState);
+					attachmentSynchronization.ToAttachment		= *(pRequiredState);
 
 					synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
 
@@ -718,56 +725,166 @@ namespace LambdaEngine
 					if (finalStateOfAttachmentIt == finalStateOfAttachmentsFromPreviousFrame.end())
 					{
 						finalStateOfAttachmentsFromPreviousFrame[pInputAttachment->AttachmentName] = 
-							std::make_pair(pInputAttachment->RenderStageNameToRenderStageAndAttachment.find(renderStageName)->second.second, sortedRenderStageIt->second->pRenderStage->PipelineType);
+							std::make_pair(sortedRenderStageIt->second, pRequiredState);
 					}
 				}
 			}
 
-			//Create Input (From Prev Frame) to Output Synchronizations, but push the synchronizations to the final stage
+			//Create Output to Output, and Input (From Prev Frame) to Output Synchronizations
 			{
 				for (const InternalRenderStageAttachment* pOutputAttachment : sortedRenderStageIt->second->OutputAttachments)
 				{
 					//Check if this resource is back buffer and this is not graphics queue
-					
-					if (pSourceRenderStage->PipelineType != EPipelineStateType::GRAPHICS)
+
+					//Find Last Previous Outputting Render Stage using this attachment
+					EPipelineStateType				previousRenderStateType			= EPipelineStateType::NONE;
+					const RenderStageAttachment*	pPreviousAttachmentState	= nullptr;
+					uint32 smallestPreviousWeight	= UINT32_MAX;
+					uint32 smallestPostWeight		= UINT32_MAX;
+
 					{
-						if (strcmp(pOutputAttachment->AttachmentName.c_str(), RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0)
+						auto finalStateOfAttachmentFromPreviousFrameIt = finalStateOfAttachmentsFromPreviousFrame.find(pOutputAttachment->AttachmentName);
+
+						if (finalStateOfAttachmentFromPreviousFrameIt != finalStateOfAttachmentsFromPreviousFrame.end())
 						{
-							RenderStageAttachment backBufferToAttachment = *(pOutputAttachment->RenderStageNameToRenderStageAndAttachment.find(renderStageName)->second.second);
+							const InternalRenderStage* pFinalRenderStage = finalStateOfAttachmentFromPreviousFrameIt->second.first;
 
-							RenderStageAttachment backBufferFromAttachment = {};
-							backBufferFromAttachment.pName				= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
-							backBufferFromAttachment.Type				= EAttachmentType::NONE;
-							backBufferFromAttachment.ShaderStages		= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-							backBufferFromAttachment.SubResourceCount	= backBufferToAttachment.SubResourceCount;
-
-							AttachmentSynchronizationDesc backBufferPreSynchronization = {};
-							backBufferPreSynchronization.Type					= EAttachmentSynchronizationType::TRANSITION_FOR_WRITE;
-							backBufferPreSynchronization.FromQueueOwner			= EPipelineStateType::GRAPHICS;
-							backBufferPreSynchronization.ToQueueOwner			= sortedRenderStageIt->second->pRenderStage->PipelineType;
-							backBufferPreSynchronization.FromAttachment			= backBufferFromAttachment;
-							backBufferPreSynchronization.ToAttachment			= backBufferToAttachment;
-
-							synchronizationStage.Synchronizations.push_back(backBufferPreSynchronization);
-
-							AttachmentSynchronizationDesc backBufferPostSynchronization = {};
-							backBufferPostSynchronization.Type					= EAttachmentSynchronizationType::TRANSITION_FOR_READ;
-							backBufferPostSynchronization.FromQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
-							backBufferPostSynchronization.ToQueueOwner			= EPipelineStateType::GRAPHICS; 
-							backBufferPostSynchronization.FromAttachment		= backBufferToAttachment;
-							backBufferPostSynchronization.ToAttachment			= backBufferFromAttachment;
-
-							endSynchronizations.push_back(backBufferPostSynchronization);
-
-							endSynchronizationStageValid = true;
-							continue;
+							if (pFinalRenderStage->Weight > currentWeight)
+							{
+								if (pFinalRenderStage->Weight < smallestPreviousWeight)
+								{
+									smallestPreviousWeight			= pFinalRenderStage->Weight;
+									previousRenderStateType			= pFinalRenderStage->pRenderStage->PipelineType;
+									pPreviousAttachmentState		= finalStateOfAttachmentFromPreviousFrameIt->second.second;
+								}
+							}
+							else
+							{
+								if (pFinalRenderStage->Weight < smallestPostWeight)
+								{
+									smallestPostWeight				= pFinalRenderStage->Weight;
+									previousRenderStateType			= pFinalRenderStage->pRenderStage->PipelineType;
+									pPreviousAttachmentState		= finalStateOfAttachmentFromPreviousFrameIt->second.second;
+								}
+							}
 						}
 					}
 
-					auto finalStateOfAttachmentIt = finalStateOfAttachmentsFromPreviousFrame.find(pOutputAttachment->AttachmentName);
+					//Check for more suitable Outputting Render Stages
+					{
+						for (auto outputtingRenderStageIt = pOutputAttachment->RenderStageNameToRenderStageAndAttachment.begin(); 
+							outputtingRenderStageIt != pOutputAttachment->RenderStageNameToRenderStageAndAttachment.end();
+							outputtingRenderStageIt++)
+						{
+							InternalRenderStage* pOutputtingRenderStage = outputtingRenderStageIt->second.first;
 
-					//If final state not found this is the only stage that uses the attachment -> no synchronization required
-					if (finalStateOfAttachmentIt == finalStateOfAttachmentsFromPreviousFrame.end())
+							if (pOutputtingRenderStage->Weight > currentWeight)
+							{
+								if (pOutputtingRenderStage->Weight < smallestPreviousWeight)
+								{
+									smallestPreviousWeight			= pOutputtingRenderStage->Weight;
+									previousRenderStateType			= pOutputtingRenderStage->pRenderStage->PipelineType;
+									pPreviousAttachmentState		= outputtingRenderStageIt->second.second;
+								}
+							}
+							else if (smallestPreviousWeight == UINT32_MAX) //Previous is always higher priority than from previous frame
+							{
+								if (pOutputtingRenderStage->Weight < smallestPostWeight)
+								{
+									smallestPostWeight				= pOutputtingRenderStage->Weight;
+									previousRenderStateType			= pOutputtingRenderStage->pRenderStage->PipelineType;
+									pPreviousAttachmentState		= outputtingRenderStageIt->second.second;
+								}
+							}
+						}
+					}
+
+					//If BackBuffer and no previous render stage uses this attachment, assume PRESENT state and GRAPHICS queue
+					const RenderStageAttachment* pBackBufferToAttachment = pOutputAttachment->RenderStageNameToRenderStageAndAttachment.find(renderStageName)->second.second;
+
+					RenderStageAttachment backBufferFromAttachment = {};
+					backBufferFromAttachment.pName				= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+					backBufferFromAttachment.Type				= EAttachmentType::NONE;
+					backBufferFromAttachment.ShaderStages		= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+					backBufferFromAttachment.SubResourceCount	= pBackBufferToAttachment->SubResourceCount;
+
+					if (strcmp(pOutputAttachment->AttachmentName.c_str(), RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0)
+					{
+						if (smallestPreviousWeight == UINT32_MAX)
+						{
+							previousRenderStateType		= EPipelineStateType::GRAPHICS;
+							pPreviousAttachmentState	= &backBufferFromAttachment;
+						}
+
+						if (pSourceRenderStage->PipelineType != EPipelineStateType::GRAPHICS)
+						{
+							if (smallestPostWeight != UINT32_MAX)
+							{
+								AttachmentSynchronizationDesc backBufferPostSynchronization = {};
+								backBufferPostSynchronization.Type					= EAttachmentSynchronizationType::TRANSITION_FOR_READ;
+								backBufferPostSynchronization.FromQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
+								backBufferPostSynchronization.ToQueueOwner			= EPipelineStateType::GRAPHICS; 
+								backBufferPostSynchronization.FromAttachment		= *pBackBufferToAttachment;
+								backBufferPostSynchronization.ToAttachment			= backBufferFromAttachment;
+
+								SynchronizationStageDesc* pNextStage = &sortedSynchronizationStages.back();
+
+								pNextStage->Synchronizations.push_back(backBufferPostSynchronization);
+							}
+						}
+					}
+
+					/*if (pSourceRenderStage->PipelineType != EPipelineStateType::GRAPHICS)
+					{
+						if (strcmp(pOutputAttachment->AttachmentName.c_str(), RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0)
+						{
+							
+
+							
+
+							if (smallestPreviousWeight == UINT32_MAX)
+							{
+								AttachmentSynchronizationDesc backBufferPreSynchronization = {};
+								backBufferPreSynchronization.Type					= EAttachmentSynchronizationType::TRANSITION_FOR_WRITE;
+								backBufferPreSynchronization.FromQueueOwner			= EPipelineStateType::GRAPHICS;
+								backBufferPreSynchronization.ToQueueOwner			= sortedRenderStageIt->second->pRenderStage->PipelineType;
+								backBufferPreSynchronization.FromAttachment			= backBufferFromAttachment;
+								backBufferPreSynchronization.ToAttachment			= backBufferToAttachment;
+
+								synchronizationStage.Synchronizations.push_back(backBufferPreSynchronization);
+							}
+							else if (previousRenderStateType == EPipelineStateType::GRAPHICS)
+							{
+								AttachmentSynchronizationDesc backBufferPreSynchronization = {};
+								backBufferPreSynchronization.Type					= EAttachmentSynchronizationType::TRANSITION_FOR_WRITE;
+								backBufferPreSynchronization.FromQueueOwner			= EPipelineStateType::GRAPHICS;
+								backBufferPreSynchronization.ToQueueOwner			= sortedRenderStageIt->second->pRenderStage->PipelineType;
+								backBufferPreSynchronization.FromAttachment			= backBufferFromAttachment;
+								backBufferPreSynchronization.ToAttachment			= backBufferToAttachment;
+
+								synchronizationStage.Synchronizations.push_back(backBufferPreSynchronization);
+							}
+
+							if (smallestPostWeight == UINT32_MAX)
+							{
+								AttachmentSynchronizationDesc backBufferPostSynchronization = {};
+								backBufferPostSynchronization.Type					= EAttachmentSynchronizationType::TRANSITION_FOR_READ;
+								backBufferPostSynchronization.FromQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
+								backBufferPostSynchronization.ToQueueOwner			= EPipelineStateType::GRAPHICS; 
+								backBufferPostSynchronization.FromAttachment		= backBufferToAttachment;
+								backBufferPostSynchronization.ToAttachment			= backBufferFromAttachment;
+
+								SynchronizationStageDesc* pNextStage = &sortedSynchronizationStages.back();
+
+								pNextStage->Synchronizations.push_back(backBufferPostSynchronization);
+							}
+
+							continue;
+						}
+					}*/
+
+					//If no previous at all, no synchronization needed
+					if (previousRenderStateType == EPipelineStateType::NONE)
 					{
 						continue;
 					}
@@ -779,28 +896,28 @@ namespace LambdaEngine
 					{
 						AttachmentSynchronizationDesc attachmentSynchronization = {};
 						attachmentSynchronization.Type				= EAttachmentSynchronizationType::TRANSITION_FOR_WRITE;
-						attachmentSynchronization.FromQueueOwner	= finalStateOfAttachmentIt->second.second;
+						attachmentSynchronization.FromQueueOwner	= previousRenderStateType;
 						attachmentSynchronization.ToQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
-						attachmentSynchronization.FromAttachment	= *finalStateOfAttachmentIt->second.first;
+						attachmentSynchronization.FromAttachment	= *pPreviousAttachmentState;
 						attachmentSynchronization.ToAttachment		= *pAttachment;
 
-						//synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
-						endSynchronizations.push_back(attachmentSynchronization);
-						endSynchronizationStageValid = true;
+						synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
+						/*endSynchronizations.push_back(attachmentSynchronization);
+						endSynchronizationStageValid = true;*/
 					}
 					//... unless it also belonged to another queue
-					else if (finalStateOfAttachmentIt->second.second != sortedRenderStageIt->second->pRenderStage->PipelineType)
+					else if (previousRenderStateType != sortedRenderStageIt->second->pRenderStage->PipelineType)
 					{
 						AttachmentSynchronizationDesc attachmentSynchronization = {};
 						attachmentSynchronization.Type				= EAttachmentSynchronizationType::OWNERSHIP_CHANGE_WRITE;
-						attachmentSynchronization.FromQueueOwner	= finalStateOfAttachmentIt->second.second;
+						attachmentSynchronization.FromQueueOwner	= previousRenderStateType;
 						attachmentSynchronization.ToQueueOwner		= sortedRenderStageIt->second->pRenderStage->PipelineType;
-						attachmentSynchronization.FromAttachment	= *finalStateOfAttachmentIt->second.first;
+						attachmentSynchronization.FromAttachment	= *pPreviousAttachmentState;
 						attachmentSynchronization.ToAttachment		= *pAttachment;
 
-						//synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
-						endSynchronizations.push_back(attachmentSynchronization);
-						endSynchronizationStageValid = true;
+						synchronizationStage.Synchronizations.push_back(attachmentSynchronization);
+						/*endSynchronizations.push_back(attachmentSynchronization);
+						endSynchronizationStageValid = true;*/
 					}
 				}
 			}

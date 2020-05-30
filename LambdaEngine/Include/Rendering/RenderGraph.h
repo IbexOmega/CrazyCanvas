@@ -294,7 +294,6 @@ namespace LambdaEngine
 		bool CreateFence();
 		bool CreateDescriptorHeap();
 		bool CreateCopyCommandLists();
-		bool CreateCustomRenderers(std::vector<RenderStageDesc>& renderStageDescriptions);
 		bool CreateResources(const std::vector<RenderStageResourceDesc>& resourceDescriptions);
 		bool CreateRenderStages(const std::vector<RenderStageDesc>& renderStageDescriptions);
 		bool CreateSynchronizationStages(const std::vector<SynchronizationStageDesc>& synchronizationStageDescriptions);

@@ -174,12 +174,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateCustomRenderers(renderStageDescriptions))
-		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create debug renderers", pDesc->pName);
-			return false;
-		}
-
 		if (!CreateResources(resourceDescriptions))
 		{ 
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Resources", pDesc->pName);
@@ -304,7 +298,7 @@ namespace LambdaEngine
 								pResource->Buffer.Offsets.data(), 
 								pResource->Buffer.SizesInBytes.data());
 						}
-						else
+						else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_UNKNOWN)
 						{
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
@@ -342,7 +336,7 @@ namespace LambdaEngine
 								pResource->Buffer.SizesInBytes.data(),
 								pResource->SubResourceCount);
 						}
-						else
+						else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_UNKNOWN)
 						{
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
@@ -375,7 +369,7 @@ namespace LambdaEngine
 							pResource->pName,
 							pResource->AccelerationStructure.pTLAS);
 					}
-					else
+					else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_UNKNOWN)
 					{
 						for (uint32 b = 0; b < m_BackBufferCount; b++)
 						{
@@ -435,7 +429,7 @@ namespace LambdaEngine
 								pResource->pName,
 								pResource->Texture.TextureViews.data());
 						}
-						else
+						else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_UNKNOWN)
 						{
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
@@ -475,7 +469,7 @@ namespace LambdaEngine
 								pResource->Texture.TextureViews.data(),
 								pResource->SubResourceCount);
 						}
-						else
+						else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_UNKNOWN)
 						{
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
@@ -557,7 +551,7 @@ namespace LambdaEngine
 					{
 						switch (pPipelineState->GetType())
 						{
-						case EPipelineStateType::GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],		pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
+						case EPipelineStateType::GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],		pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],	&m_ppExecutionStages[currentExecutionStage]);	break;
 						case EPipelineStateType::COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],		pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
 						case EPipelineStateType::RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],		pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
 						}
@@ -781,39 +775,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::CreateCustomRenderers(std::vector<RenderStageDesc>& renderStageDescriptions)
-	{
-		for (uint32 r = 0; r < renderStageDescriptions.size(); r++)
-		{
-			RenderStageDesc* pRenderStageDesc = &renderStageDescriptions[r];
-
-			if (!pRenderStageDesc->UsesCustomRenderer)
-				continue;
-
-			if (strcmp(pRenderStageDesc->pName, RENDER_GRAPH_IMGUI_STAGE_NAME) == 0)
-			{
-				ImGuiRenderer* pImGuiRenderer = DBG_NEW ImGuiRenderer(m_pGraphicsDevice);
-
-				ImGuiRendererDesc imguiRendererDesc = {};
-				imguiRendererDesc.BackBufferCount		= m_BackBufferCount;
-				imguiRendererDesc.VertexBufferSize		= MEGA_BYTE(8);
-				imguiRendererDesc.IndexBufferSize		= MEGA_BYTE(8);	
-
-				pImGuiRenderer->Init(&imguiRendererDesc);
-
-				pRenderStageDesc->CustomRenderer.pCustomRenderer = pImGuiRenderer;
-				m_CustomRenderers.push_back(pImGuiRenderer);
-				m_DebugRenderers.push_back(pImGuiRenderer);
-			}
-			else
-			{
-				m_CustomRenderers.push_back(pRenderStageDesc->CustomRenderer.pCustomRenderer);
-			}
-		}
-
-		return true;
-	}
-
 	bool RenderGraph::CreateResources(const std::vector<RenderStageResourceDesc>& resourceDescriptions)
 	{
 		m_ResourceMap.reserve(resourceDescriptions.size());
@@ -919,12 +880,12 @@ namespace LambdaEngine
 		m_RenderStageMap.reserve(m_RenderStageCount);
 		m_pRenderStages = DBG_NEW RenderStage[m_RenderStageCount];
 
-		for (uint32 i = 0; i < m_RenderStageCount; i++)
+		for (uint32 renderStageIndex = 0; renderStageIndex < m_RenderStageCount; renderStageIndex++)
 		{
-			const RenderStageDesc* pRenderStageDesc = &renderStageDescriptions[i];
+			const RenderStageDesc* pRenderStageDesc = &renderStageDescriptions[renderStageIndex];
 
-			RenderStage* pRenderStage = &m_pRenderStages[i];
-			m_RenderStageMap[pRenderStageDesc->pName] = i;
+			RenderStage* pRenderStage = &m_pRenderStages[renderStageIndex];
+			m_RenderStageMap[pRenderStageDesc->pName] = renderStageIndex;
 
 			//Calculate the total number of textures we want to bind
 			uint32 textureSlots = 0;
@@ -993,16 +954,16 @@ namespace LambdaEngine
 			RenderPassAttachmentDesc				renderPassDepthStencilDescription;
 			std::vector<ETextureState>				renderPassRenderTargetStates;
 			std::vector<BlendAttachmentState>		renderPassBlendAttachmentStates;
-			std::vector<Resource*>					renderTargets;
-			Resource*								pDepthStencilResource = nullptr;
-			std::vector<std::tuple<Resource*, ETextureState, EDescriptorType>>	textureDescriptorSetResources;
-			std::vector<std::tuple<Resource*, ETextureState, EDescriptorType>>	bufferDescriptorSetResources;
+			std::vector<std::pair<Resource*, ETextureState>>					renderStageRenderTargets;
+			Resource*															pDepthStencilResource = nullptr;
+			std::vector<std::tuple<Resource*, ETextureState, EDescriptorType>>	renderStageTextureResources;
+			std::vector<std::tuple<Resource*, ETextureState, EDescriptorType>>	renderStageBufferResources;
 			renderPassAttachmentDescriptions.reserve(pRenderStageDesc->AttachmentCount);
 			renderPassRenderTargetStates.reserve(pRenderStageDesc->AttachmentCount);
 			renderPassBlendAttachmentStates.reserve(pRenderStageDesc->AttachmentCount);
-			renderTargets.reserve(pRenderStageDesc->AttachmentCount);
-			textureDescriptorSetResources.reserve(pRenderStageDesc->AttachmentCount);
-			bufferDescriptorSetResources.reserve(pRenderStageDesc->AttachmentCount);
+			renderStageRenderTargets.reserve(pRenderStageDesc->AttachmentCount);
+			renderStageTextureResources.reserve(pRenderStageDesc->AttachmentCount);
+			renderStageBufferResources.reserve(pRenderStageDesc->AttachmentCount);
 
 			//Create Descriptors and RenderPass Attachments from RenderStage Attachments
 			for (uint32 a = 0; a < pRenderStageDesc->AttachmentCount; a++)
@@ -1022,7 +983,7 @@ namespace LambdaEngine
 					Resource* pResource = &it->second;
 
 					//Descriptors
-					if (AttachmentsNeedsDescriptor(pAttachment->Type) || pRenderStageDesc->UsesCustomRenderer)
+					if (AttachmentsNeedsDescriptor(pAttachment->Type))
 					{
 						ESimpleResourceType	simpleType		= GetSimpleType(pAttachment->Type);
 						EDescriptorType descriptorType		= GetAttachmentDescriptorType(pAttachment->Type);
@@ -1039,7 +1000,7 @@ namespace LambdaEngine
 							descriptorBinding.Binding			= textureDescriptorBindingIndex++;
 
 							textureDescriptorSetDescriptions.push_back(descriptorBinding);
-							textureDescriptorSetResources.push_back(std::make_tuple(pResource, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
+							renderStageTextureResources.push_back(std::make_tuple(pResource, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
 						}
 						else
 						{
@@ -1047,7 +1008,7 @@ namespace LambdaEngine
 							descriptorBinding.Binding			= bufferDescriptorBindingIndex++;
 
 							bufferDescriptorSetDescriptions.push_back(descriptorBinding);
-							bufferDescriptorSetResources.push_back(std::make_tuple(pResource, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
+							renderStageBufferResources.push_back(std::make_tuple(pResource, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
 						}
 					}
 					//RenderPass Attachments
@@ -1057,15 +1018,27 @@ namespace LambdaEngine
 						{
 							bool isBackBufferAttachment = strcmp(pAttachment->pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0;
 
+							ETextureState finalState = isBackBufferAttachment ? ETextureState::TEXTURE_STATE_PRESENT : ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+							ETextureState initialState = ETextureState::TEXTURE_STATE_UNKNOWN;
+
+							if (renderStageIndex > 0 && pResource->ResourceBindings.size() > 0)
+							{
+								initialState = pResource->ResourceBindings.back().TextureState;
+							}
+							else
+							{
+								initialState = ETextureState::TEXTURE_STATE_DONT_CARE;
+							}
+
 							RenderPassAttachmentDesc renderPassAttachmentDesc = {};
 							renderPassAttachmentDesc.Format			= isBackBufferAttachment ? EFormat::FORMAT_B8G8R8A8_UNORM : pAttachment->TextureFormat;
 							renderPassAttachmentDesc.SampleCount	= 1;
-							renderPassAttachmentDesc.LoadOp			= ELoadOp::CLEAR;
+							renderPassAttachmentDesc.LoadOp			= initialState != ETextureState::TEXTURE_STATE_UNKNOWN ? ELoadOp::LOAD : ELoadOp::CLEAR;
 							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE;
 							renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::DONT_CARE;
 							renderPassAttachmentDesc.StencilStoreOp	= EStoreOp::DONT_CARE;
-							renderPassAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_DONT_CARE;
-							renderPassAttachmentDesc.FinalState		= isBackBufferAttachment ? ETextureState::TEXTURE_STATE_PRESENT : ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+							renderPassAttachmentDesc.InitialState	= initialState;
+							renderPassAttachmentDesc.FinalState		= finalState;
 
 							renderPassAttachmentDescriptions.push_back(renderPassAttachmentDesc);
 
@@ -1076,10 +1049,21 @@ namespace LambdaEngine
 							blendAttachmentState.ColorComponentsMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
 
 							renderPassBlendAttachmentStates.push_back(blendAttachmentState);
-							renderTargets.push_back(pResource);
+							renderStageRenderTargets.push_back(std::make_pair(pResource, finalState));
 						}
 						else if (pAttachment->Type == EAttachmentType::OUTPUT_DEPTH_STENCIL)
 						{
+							ETextureState initialState = ETextureState::TEXTURE_STATE_UNKNOWN;
+
+							if (renderStageIndex > 0 && pResource->ResourceBindings.size() > 0)
+							{
+								initialState = pResource->ResourceBindings.back().TextureState;
+							}
+							else
+							{
+								initialState = ETextureState::TEXTURE_STATE_DONT_CARE;
+							}
+
 							RenderPassAttachmentDesc renderPassAttachmentDesc = {};
 							renderPassAttachmentDesc.Format			= pAttachment->TextureFormat;
 							renderPassAttachmentDesc.SampleCount	= 1;
@@ -1087,7 +1071,7 @@ namespace LambdaEngine
 							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE;
 							renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::CLEAR;
 							renderPassAttachmentDesc.StencilStoreOp = EStoreOp::STORE;
-							renderPassAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_UNKNOWN;
+							renderPassAttachmentDesc.InitialState	= initialState;
 							renderPassAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 							renderPassDepthStencilDescription = renderPassAttachmentDesc;
@@ -1099,8 +1083,47 @@ namespace LambdaEngine
 
 			if (pRenderStageDesc->UsesCustomRenderer)
 			{
+				ICustomRenderer* pCustomRenderer = nullptr;
+
+				if (strcmp(pRenderStageDesc->pName, RENDER_GRAPH_IMGUI_STAGE_NAME) == 0)
+				{
+					ImGuiRenderer* pImGuiRenderer = DBG_NEW ImGuiRenderer(m_pGraphicsDevice);
+
+					ImGuiRendererDesc imguiRendererDesc = {};
+					imguiRendererDesc.BackBufferCount	= m_BackBufferCount;
+					imguiRendererDesc.VertexBufferSize	= MEGA_BYTE(8);
+					imguiRendererDesc.IndexBufferSize	= MEGA_BYTE(8);
+
+					if (!pImGuiRenderer->Init(&imguiRendererDesc))
+					{
+						LOG_ERROR("[RenderGraph] Could not initialize ImGui Custom Renderer");
+						return false;
+					}
+
+					pCustomRenderer					= pImGuiRenderer;
+
+					m_CustomRenderers.push_back(pImGuiRenderer);
+					m_DebugRenderers.push_back(pImGuiRenderer);
+				}
+				else
+				{
+					pCustomRenderer = pRenderStageDesc->CustomRenderer.pCustomRenderer;
+					m_CustomRenderers.push_back(pRenderStageDesc->CustomRenderer.pCustomRenderer);
+				}
+
+				CustomRendererRenderGraphInitDesc customRendererInitDesc = {};
+				customRendererInitDesc.pColorAttachmentDesc			= renderPassAttachmentDescriptions.data();
+				customRendererInitDesc.ColorAttachmentCount			= (uint32)renderPassAttachmentDescriptions.size();
+				customRendererInitDesc.pDepthStencilAttachmentDesc	= renderPassDepthStencilDescription.Format != EFormat::NONE ? &renderPassDepthStencilDescription : nullptr;
+
+				if (!pCustomRenderer->RenderGraphInit(&customRendererInitDesc))
+				{
+					LOG_ERROR("[RenderGraph] Could not initialize Custom Renderer");
+					return false;
+				}
+
 				pRenderStage->UsesCustomRenderer	= true;
-				pRenderStage->pCustomRenderer		= pRenderStageDesc->CustomRenderer.pCustomRenderer;
+				pRenderStage->pCustomRenderer		= pCustomRenderer;
 			}
 			else
 			{
@@ -1263,11 +1286,53 @@ namespace LambdaEngine
 				}
 			}
 
-			//Link Attachment Resources to Render Stage (Descriptor Set)
+			//Link Attachment Resources to Render Stage
 			{
-				for (uint32 r = 0; r < textureDescriptorSetResources.size(); r++)
+				if (renderStageRenderTargets.size() > 0)
 				{
-					auto& resourceTuple = textureDescriptorSetResources[r];
+					if (pRenderStageDesc->PipelineType != EPipelineStateType::GRAPHICS)
+					{
+						LOG_ERROR("[RenderGraph]: There are resources that a RenderPass should be linked to, but Render Stage %u is not a Graphics Pipeline State", renderStageIndex);
+						return false;
+					}
+
+					for (uint32 r = 0; r < renderStageRenderTargets.size(); r++)
+					{
+						auto resourcePair = renderStageRenderTargets[r];
+						Resource* pResource = resourcePair.first;
+
+						ResourceBinding resourceBinding = {};
+						resourceBinding.pRenderStage	= pRenderStage;
+						resourceBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_UNKNOWN;
+						resourceBinding.Binding			= UINT32_MAX;
+						resourceBinding.TextureState	= resourcePair.second;
+
+						pResource->ResourceBindings.push_back(resourceBinding);
+						pRenderStage->RenderTargetResources.push_back(pResource);
+					}
+				}
+
+				if (pDepthStencilResource != nullptr)
+				{
+					if (pRenderStageDesc->PipelineType != EPipelineStateType::GRAPHICS)
+					{
+						LOG_ERROR("[RenderGraph]: There are resources that a RenderPass should be linked to, but Render Stage %u is not a Graphics Pipeline State", renderStageIndex);
+						return false;
+					}
+
+					ResourceBinding resourceBinding = {};
+					resourceBinding.pRenderStage	= pRenderStage;
+					resourceBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_UNKNOWN;
+					resourceBinding.Binding			= UINT32_MAX;
+					resourceBinding.TextureState	= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+
+					pDepthStencilResource->ResourceBindings.push_back(resourceBinding);
+					pRenderStage->pDepthStencilAttachment = pDepthStencilResource;
+				}
+
+				for (uint32 r = 0; r < renderStageTextureResources.size(); r++)
+				{
+					auto& resourceTuple = renderStageTextureResources[r];
 					Resource* pResource = std::get<0>(resourceTuple);
 
 					ResourceBinding resourceBinding = {};
@@ -1279,9 +1344,9 @@ namespace LambdaEngine
 					pResource->ResourceBindings.push_back(resourceBinding);
 				}
 
-				for (uint32 r = 0; r < bufferDescriptorSetResources.size(); r++)
+				for (uint32 r = 0; r < renderStageBufferResources.size(); r++)
 				{
-					auto& resourceTuple = bufferDescriptorSetResources[r];
+					auto& resourceTuple = renderStageBufferResources[r];
 					Resource* pResource = std::get<0>(resourceTuple);
 
 					ResourceBinding resourceBinding = {};
@@ -1309,25 +1374,6 @@ namespace LambdaEngine
 					return false;
 				}
 			}
-
-			//Link RenderPass to RenderPass Attachments
-			if (renderTargets.size() > 0)
-			{
-				if (pRenderStageDesc->PipelineType != EPipelineStateType::GRAPHICS)
-				{
-					LOG_ERROR("[RenderGraph]: There are resources that a RenderPass should be linked to, but Render Stage %u is not a Graphics Pipeline State", i);
-					return false;
-				}
-
-				for (uint32 r = 0; r < renderTargets.size(); r++)
-				{
-					Resource* pResource = renderTargets[r];
-
-					pRenderStage->RenderTargetResources.push_back(pResource);
-				}
-			}
-
-			pRenderStage->pDepthStencilAttachment = pDepthStencilResource;
 		}
 
 		return true;
@@ -1336,6 +1382,8 @@ namespace LambdaEngine
 	bool RenderGraph::CreateSynchronizationStages(const std::vector<SynchronizationStageDesc>& synchronizationStageDescriptions)
 	{
 		m_pSynchronizationStages = DBG_NEW SynchronizationStage[synchronizationStageDescriptions.size()];
+
+		bool firstTimeEnvounteringBackBuffer = false;
 
 		for (uint32 i = 0; i < synchronizationStageDescriptions.size(); i++)
 		{
@@ -1428,6 +1476,13 @@ namespace LambdaEngine
 
 							textureSynchronization.SrcShaderStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 						}
+						else if (attachmentSynchronizationDesc.FromAttachment.Type == EAttachmentType::OUTPUT_COLOR) //RenderPasses hardcoded to output in PRESENT state
+						{
+							textureBarrier.StateBefore			= ETextureState::TEXTURE_STATE_PRESENT;
+							textureBarrier.SrcMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+
+							textureSynchronization.SrcShaderStage = GetLastShaderStageInMask(attachmentSynchronizationDesc.FromAttachment.ShaderStages);
+						}
 						else
 						{
 							textureBarrier.StateBefore			= ConvertAttachmentTypeToTextureState(attachmentSynchronizationDesc.FromAttachment.Type);
@@ -1458,18 +1513,10 @@ namespace LambdaEngine
 
 							textureSynchronization.DstShaderStage	= GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
 						}
-
-						if (accessType == EAttachmentAccessType::EXTERNAL_INPUT)
-						{
-							textureSynchronization.BarrierUseFrameIndex		= 0;
-							textureSynchronization.SameFrameBarrierOffset	= 1;
-						}
-						else
-						{
-							textureSynchronization.BarrierUseFrameIndex		= 1;
-							textureSynchronization.SameFrameBarrierOffset	= pResource->SubResourceCount;
-						}
 						
+						textureSynchronization.BarrierUseFrameIndex		= 1;
+						textureSynchronization.SameFrameBarrierOffset	= pResource->SubResourceCount;
+												
 						textureSynchronization.Barriers.reserve(pResource->SubResourceCount);
 
 						for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)

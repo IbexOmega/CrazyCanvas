@@ -334,8 +334,8 @@ namespace LambdaEngine
 
 		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 		case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-		case EAttachmentType::OUTPUT_COLOR:											return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_COLOR_ATTACHMENT_WRITE;
-		case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_DEPTH_STENCIL_ATTACHMENT_WRITE;
+		case EAttachmentType::OUTPUT_COLOR:											return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE; //FMemoryAccessFlags::MEMORY_ACCESS_FLAG_COLOR_ATTACHMENT_WRITE;
+		case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE; //FMemoryAccessFlags::MEMORY_ACCESS_FLAG_DEPTH_STENCIL_ATTACHMENT_WRITE;
 
 		default:																	return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
 		}
