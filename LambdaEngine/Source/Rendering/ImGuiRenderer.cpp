@@ -25,6 +25,7 @@
 #include "Resources/ResourceManager.h"
 
 #include <imgui.h>
+#include <imnodes.h>
 
 namespace LambdaEngine
 {
@@ -35,6 +36,7 @@ namespace LambdaEngine
 
 	ImGuiRenderer::~ImGuiRenderer()
 	{
+		imnodes::Shutdown();
 		ImGui::DestroyContext();
 
 		SAFERELEASE(m_pCopyCommandAllocator);
@@ -548,6 +550,7 @@ namespace LambdaEngine
 	{
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
+		imnodes::Initialize();
 
 		ImGuiIO& io = ImGui::GetIO();
 		io.BackendPlatformName = "Lambda Engine";

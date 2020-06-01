@@ -13,6 +13,7 @@
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraphDescriptionParser.h"
+#include "Rendering/RenderGraphEditor.h"
 #include "Rendering/Core/API/ITextureView.h"
 #include "Rendering/Core/API/ISampler.h"
 #include "Rendering/Core/API/ICommandQueue.h"
@@ -41,8 +42,8 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
-constexpr const bool RAY_TRACING_ENABLED		= true;
-constexpr const bool POST_PROCESSING_ENABLED	= true;
+constexpr const bool RAY_TRACING_ENABLED		= false;
+constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDER_GRAPH_DEBUG_ENABLED	= true;
 constexpr const bool RENDERING_DEBUG_ENABLED	= true;
@@ -206,6 +207,8 @@ Sandbox::Sandbox()
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 
 	//InitTestAudio();
+
+	m_pRenderGraphEditor = DBG_NEW RenderGraphEditor();
 }
 
 Sandbox::~Sandbox()
@@ -221,6 +224,8 @@ Sandbox::~Sandbox()
 
 	SAFEDELETE(m_pRenderGraph);
 	SAFEDELETE(m_pRenderer);
+
+	SAFEDELETE(m_pRenderGraphEditor);
 }
 
 void Sandbox::InitTestAudio()
@@ -616,6 +621,10 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	float32 renderAspectRatio	= renderWidth / renderHeight;
 
 	m_pRenderer->NewFrame(delta);
+
+	m_pRenderGraphEditor->RenderGUI();
+
+	ImGui::ShowDemoWindow();
 
 	ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("Test Window", NULL))

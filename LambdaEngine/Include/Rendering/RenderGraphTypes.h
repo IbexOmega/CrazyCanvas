@@ -106,7 +106,7 @@ namespace LambdaEngine
 		FULLSCREEN_QUAD			= 2,
 	};
 
-	struct RenderStageAttachment
+	struct RenderStageAttachment //Todo: Rename to Resource
 	{
 		const char*			pName				= "";
 		EAttachmentType		Type				= EAttachmentType::NONE;
