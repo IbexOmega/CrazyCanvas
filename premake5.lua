@@ -276,6 +276,8 @@ workspace "LambdaEngine"
 			"Dependencies/portaudio/include",
 			"Dependencies/glslang/include",
 			"Dependencies/imnodes",
+			"Dependencies/rapidjson/include",
+			"Dependencies/ordered-map/include",
 		}
         
 		links 
@@ -461,6 +463,7 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/glm",
 			"Dependencies/imgui",
+			"Dependencies/ordered-map/include",
 		}
         
         -- Files
@@ -511,6 +514,7 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/glm",
 			"Dependencies/imgui",
+			"Dependencies/ordered-map/include",
 		}
 
         -- Files
@@ -561,6 +565,7 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/glm",
 			"Dependencies/imgui",
+			"Dependencies/ordered-map/include",
 		}
         
         -- Files

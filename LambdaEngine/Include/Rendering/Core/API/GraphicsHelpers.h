@@ -2,6 +2,8 @@
 #include "GraphicsTypes.h"
 #include "IPipelineState.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 	FORCEINLINE ECommandQueueType ConvertPipelineStateTypeToQueue(EPipelineStateType pipelineStateType)
@@ -112,5 +114,31 @@ namespace LambdaEngine
         case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 8;
         default:                                    return 0;
         }
+	}
+
+	FORCEINLINE String TextureFormatString(EFormat format)
+	{
+		switch (format)
+		{
+		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return "D24_UNORM_S8_UINT";
+		case EFormat::FORMAT_R8G8B8A8_UNORM:		return "R8G8B8A8_UNORM";
+		case EFormat::FORMAT_B8G8R8A8_UNORM:		return "B8G8R8A8_UNORM";
+		case EFormat::FORMAT_R8G8B8A8_SNORM:		return "R8G8B8A8_SNORM";
+		case EFormat::FORMAT_R32G32_SFLOAT:			return "R32G32_SFLOAT";
+		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return "R16G16B16A16_SFLOAT";
+		default:                                    return "NONE";
+		}
+	}
+
+	FORCEINLINE EFormat TextureFormatFromString(const String& string)
+	{
+		if		(string == "D24_UNORM_S8_UINT")		return EFormat::FORMAT_D24_UNORM_S8_UINT;
+		else if (string == "R8G8B8A8_UNORM")			return EFormat::FORMAT_R8G8B8A8_UNORM;
+		else if (string == "B8G8R8A8_UNORM")			return EFormat::FORMAT_B8G8R8A8_UNORM;
+		else if (string == "R8G8B8A8_SNORM")			return EFormat::FORMAT_R8G8B8A8_SNORM;
+		else if (string == "R32G32_SFLOAT")			return EFormat::FORMAT_R32G32_SFLOAT;
+		else if (string == "R16G16B16A16_SFLOAT")	return EFormat::FORMAT_R16G16B16A16_SFLOAT;
+
+		return EFormat::NONE;
 	}
 }

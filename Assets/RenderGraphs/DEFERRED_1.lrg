@@ -1,0 +1,825 @@
+{
+    "resources": [
+        {
+            "name": "SCENE_ALBEDO_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 32,
+            "texture_format": "R8G8B8A8_UNORM"
+        },
+        {
+            "name": "SCENE_MESH_INDEX_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        },
+        {
+            "name": "BACK_BUFFER_TEXTURE",
+            "type": "TEXTURE",
+            "sub_resource_type": "PER_FRAME",
+            "sub_resource_array_count": 1,
+            "texture_format": "B8G8R8A8_UNORM"
+        },
+        {
+            "name": "FULLSCREEN_QUAD_VERTEX_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        },
+        {
+            "name": "PER_FRAME_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        },
+        {
+            "name": "SCENE_VERTEX_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        },
+        {
+            "name": "SCENE_INDEX_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        },
+        {
+            "name": "SCENE_MAT_PARAM_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        },
+        {
+            "name": "SCENE_INSTANCE_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        },
+        {
+            "name": "SCENE_NORMAL_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 32,
+            "texture_format": "R8G8B8A8_UNORM"
+        },
+        {
+            "name": "SCENE_AO_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 32,
+            "texture_format": "R8G8B8A8_UNORM"
+        },
+        {
+            "name": "SCENE_ROUGHNESS_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 32,
+            "texture_format": "R8G8B8A8_UNORM"
+        },
+        {
+            "name": "SCENE_METALLIC_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 32,
+            "texture_format": "R8G8B8A8_UNORM"
+        },
+        {
+            "name": "GEOMETRY_ALBEDO",
+            "type": "TEXTURE",
+            "sub_resource_type": "PER_FRAME",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        },
+        {
+            "name": "NORMAL_METALLIC_ROUGHNESS",
+            "type": "TEXTURE",
+            "sub_resource_type": "PER_FRAME",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        },
+        {
+            "name": "DEPTH_STENCIL",
+            "type": "TEXTURE",
+            "sub_resource_type": "PER_FRAME",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        },
+        {
+            "name": "SCENE_TLAS",
+            "type": "ACCELERATION_STRUCTURE",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        },
+        {
+            "name": "RADIANCE_TEXTURE",
+            "type": "TEXTURE",
+            "sub_resource_type": "PER_FRAME",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        },
+        {
+            "name": "SCENE_LIGHTS_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE"
+        }
+    ],
+    "resource_state_groups": [
+		{
+			"name": "EXTERNAL_RESOURCES",
+			"node_index": 1,
+			"resource_states":
+			[
+				{
+					"name": "BACK_BUFFER_TEXTURE",
+					"removable": false,
+					"attribute_index": 0,
+					"input_link_index": -1,
+					"output_link_indices": []
+				},
+				{
+					"name": "FULLSCREEN_QUAD_VERTEX_BUFFER",
+					"removable": false,
+					"attribute_index": 4,
+					"input_link_index": -1,
+					"output_link_indices": []
+				},
+				{
+					"name": "PER_FRAME_BUFFER",
+					"removable": false,
+					"attribute_index": 6,
+					"input_link_index": -1,
+					"output_link_indices": [
+						0,
+						15,
+						29
+					]
+				},
+				{
+					"name": "SCENE_MAT_PARAM_BUFFER",
+					"removable": false,
+					"attribute_index": 8,
+					"input_link_index": -1,
+					"output_link_indices": [
+						1,
+						17
+					]
+				},
+				{
+					"name": "SCENE_VERTEX_BUFFER",
+					"removable": false,
+					"attribute_index": 10,
+					"input_link_index": -1,
+					"output_link_indices": [
+						2,
+						18
+					]
+				},
+				{
+					"name": "SCENE_INDEX_BUFFER",
+					"removable": false,
+					"attribute_index": 12,
+					"input_link_index": -1,
+					"output_link_indices": [
+						3,
+						19
+					]
+				},
+				{
+					"name": "SCENE_INSTANCE_BUFFER",
+					"removable": false,
+					"attribute_index": 14,
+					"input_link_index": -1,
+					"output_link_indices": [
+						4,
+						20
+					]
+				},
+				{
+					"name": "SCENE_MESH_INDEX_BUFFER",
+					"removable": false,
+					"attribute_index": 16,
+					"input_link_index": -1,
+					"output_link_indices": [
+						5,
+						21
+					]
+				},
+				{
+					"name": "SCENE_ALBEDO_MAPS",
+					"removable": false,
+					"attribute_index": 18,
+					"input_link_index": -1,
+					"output_link_indices": [
+						6,
+						22
+					]
+				},
+				{
+					"name": "SCENE_NORMAL_MAPS",
+					"removable": false,
+					"attribute_index": 20,
+					"input_link_index": -1,
+					"output_link_indices": [
+						7,
+						23
+					]
+				},
+				{
+					"name": "SCENE_AO_MAPS",
+					"removable": false,
+					"attribute_index": 22,
+					"input_link_index": -1,
+					"output_link_indices": [
+						8,
+						24
+					]
+				},
+				{
+					"name": "SCENE_ROUGHNESS_MAPS",
+					"removable": false,
+					"attribute_index": 24,
+					"input_link_index": -1,
+					"output_link_indices": [
+						9,
+						25
+					]
+				},
+				{
+					"name": "SCENE_METALLIC_MAPS",
+					"removable": false,
+					"attribute_index": 26,
+					"input_link_index": -1,
+					"output_link_indices": [
+						10,
+						26
+					]
+				},
+				{
+					"name": "SCENE_TLAS",
+					"removable": true,
+					"attribute_index": 66,
+					"input_link_index": -1,
+					"output_link_indices": [
+						27
+					]
+				},
+				{
+					"name": "SCENE_LIGHTS_BUFFER",
+					"removable": true,
+					"attribute_index": 100,
+					"input_link_index": -1,
+					"output_link_indices": [
+						30
+					]
+				}
+			]
+		},
+		{
+			"name": "TEMPORAL_RESOURCES",
+			"node_index": 2,
+			"resource_states": []
+		}
+    ],
+    "final_output_stage": {
+        "node_index": 0,
+        "back_buffer_state": {
+            "name": "BACK_BUFFER_TEXTURE",
+            "removable": false,
+            "attribute_index": 2,
+            "input_link_index": 35,
+            "output_link_indices": []
+        }
+    },
+    "render_stages": [
+        {
+            "name": "GEOMETRY_STAGE",
+            "node_index": 3,
+            "input_attribute_index": 28,
+            "type": "GRAPHICS",
+            "custom_renderer": false,
+            "shaders": {
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "GeometryDefVertex.glsl",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": "GeometryDefPixel.glsl"
+            },
+            "resource_states": [
+                {
+                    "name": "PER_FRAME_BUFFER",
+                    "removable": true,
+                    "attribute_index": 30,
+                    "input_link_index": 0,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_MAT_PARAM_BUFFER",
+                    "removable": true,
+                    "attribute_index": 32,
+                    "input_link_index": 1,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_VERTEX_BUFFER",
+                    "removable": true,
+                    "attribute_index": 34,
+                    "input_link_index": 2,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_INDEX_BUFFER",
+                    "removable": true,
+                    "attribute_index": 36,
+                    "input_link_index": 3,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_INSTANCE_BUFFER",
+                    "removable": true,
+                    "attribute_index": 38,
+                    "input_link_index": 4,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_MESH_INDEX_BUFFER",
+                    "removable": true,
+                    "attribute_index": 40,
+                    "input_link_index": 5,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_ALBEDO_MAPS",
+                    "removable": true,
+                    "attribute_index": 42,
+                    "input_link_index": 6,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_NORMAL_MAPS",
+                    "removable": true,
+                    "attribute_index": 44,
+                    "input_link_index": 7,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_AO_MAPS",
+                    "removable": true,
+                    "attribute_index": 46,
+                    "input_link_index": 8,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_ROUGHNESS_MAPS",
+                    "removable": true,
+                    "attribute_index": 48,
+                    "input_link_index": 9,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_METALLIC_MAPS",
+                    "removable": true,
+                    "attribute_index": 50,
+                    "input_link_index": 10,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "GEOMETRY_ALBEDO",
+                    "removable": true,
+                    "attribute_index": 52,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        11,
+                        31
+                    ]
+                },
+                {
+                    "name": "NORMAL_METALLIC_ROUGHNESS",
+                    "removable": true,
+                    "attribute_index": 54,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        12,
+                        32
+                    ]
+                },
+                {
+                    "name": "DEPTH_STENCIL",
+                    "removable": true,
+                    "attribute_index": 56,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        13,
+                        33
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "RAY_TRACING_STAGE",
+            "node_index": 4,
+            "input_attribute_index": 58,
+            "type": "RAY_TRACING",
+            "custom_renderer": false,
+            "shaders": {
+                "raygen_shader": "Raygen.glsl",
+                "miss_shaders": [
+                    "Miss.glsl"
+                ],
+                "closest_hit_shaders": [
+                    "ClosestHit.glsl"
+                ]
+            },
+            "resource_states": [
+                {
+                    "name": "GEOMETRY_ALBEDO",
+                    "removable": true,
+                    "attribute_index": 60,
+                    "input_link_index": 11,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "NORMAL_METALLIC_ROUGHNESS",
+                    "removable": true,
+                    "attribute_index": 62,
+                    "input_link_index": 12,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "DEPTH_STENCIL",
+                    "removable": true,
+                    "attribute_index": 64,
+                    "input_link_index": 13,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "PER_FRAME_BUFFER",
+                    "removable": true,
+                    "attribute_index": 70,
+                    "input_link_index": 15,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_MAT_PARAM_BUFFER",
+                    "removable": true,
+                    "attribute_index": 74,
+                    "input_link_index": 17,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_VERTEX_BUFFER",
+                    "removable": true,
+                    "attribute_index": 76,
+                    "input_link_index": 18,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_INDEX_BUFFER",
+                    "removable": true,
+                    "attribute_index": 78,
+                    "input_link_index": 19,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_INSTANCE_BUFFER",
+                    "removable": true,
+                    "attribute_index": 80,
+                    "input_link_index": 20,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_MESH_INDEX_BUFFER",
+                    "removable": true,
+                    "attribute_index": 82,
+                    "input_link_index": 21,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_ALBEDO_MAPS",
+                    "removable": true,
+                    "attribute_index": 84,
+                    "input_link_index": 22,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_NORMAL_MAPS",
+                    "removable": true,
+                    "attribute_index": 86,
+                    "input_link_index": 23,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_AO_MAPS",
+                    "removable": true,
+                    "attribute_index": 88,
+                    "input_link_index": 24,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_ROUGHNESS_MAPS",
+                    "removable": true,
+                    "attribute_index": 90,
+                    "input_link_index": 25,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_METALLIC_MAPS",
+                    "removable": true,
+                    "attribute_index": 92,
+                    "input_link_index": 26,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_TLAS",
+                    "removable": true,
+                    "attribute_index": 94,
+                    "input_link_index": 27,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "RADIANCE_TEXTURE",
+                    "removable": true,
+                    "attribute_index": 96,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        34
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "SHADING_STAGE",
+            "node_index": 5,
+            "input_attribute_index": 98,
+            "type": "GRAPHICS",
+            "custom_renderer": false,
+            "shaders": {
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "FullscreenQuad.glsl",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": "ShadingDefPixel.glsl"
+            },
+            "resource_states": [
+                {
+                    "name": "PER_FRAME_BUFFER",
+                    "removable": true,
+                    "attribute_index": 104,
+                    "input_link_index": 29,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_LIGHTS_BUFFER",
+                    "removable": true,
+                    "attribute_index": 106,
+                    "input_link_index": 30,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "GEOMETRY_ALBEDO",
+                    "removable": true,
+                    "attribute_index": 108,
+                    "input_link_index": 31,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "NORMAL_METALLIC_ROUGHNESS",
+                    "removable": true,
+                    "attribute_index": 110,
+                    "input_link_index": 32,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "DEPTH_STENCIL",
+                    "removable": true,
+                    "attribute_index": 112,
+                    "input_link_index": 33,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "RADIANCE_TEXTURE",
+                    "removable": true,
+                    "attribute_index": 114,
+                    "input_link_index": 34,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "BACK_BUFFER_TEXTURE",
+                    "removable": true,
+                    "attribute_index": 120,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        36
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "POST_PROCESSING_STAGE",
+            "node_index": 6,
+            "input_attribute_index": 116,
+            "type": "COMPUTE",
+            "custom_renderer": false,
+            "shaders": {
+                "shader": "PostProcess.glsl"
+            },
+            "resource_states": [
+                {
+                    "name": "BACK_BUFFER_TEXTURE",
+                    "removable": true,
+                    "attribute_index": 118,
+                    "input_link_index": 36,
+                    "output_link_indices": [
+                        35
+                    ]
+                }
+            ]
+        }
+    ],
+    "links": [
+        {
+            "link_index": 0,
+            "src_attribute_index": 7,
+            "dst_attribute_index": 30
+        },
+        {
+            "link_index": 1,
+            "src_attribute_index": 9,
+            "dst_attribute_index": 32
+        },
+        {
+            "link_index": 2,
+            "src_attribute_index": 11,
+            "dst_attribute_index": 34
+        },
+        {
+            "link_index": 3,
+            "src_attribute_index": 13,
+            "dst_attribute_index": 36
+        },
+        {
+            "link_index": 4,
+            "src_attribute_index": 15,
+            "dst_attribute_index": 38
+        },
+        {
+            "link_index": 5,
+            "src_attribute_index": 17,
+            "dst_attribute_index": 40
+        },
+        {
+            "link_index": 6,
+            "src_attribute_index": 19,
+            "dst_attribute_index": 42
+        },
+        {
+            "link_index": 7,
+            "src_attribute_index": 21,
+            "dst_attribute_index": 44
+        },
+        {
+            "link_index": 8,
+            "src_attribute_index": 23,
+            "dst_attribute_index": 46
+        },
+        {
+            "link_index": 9,
+            "src_attribute_index": 25,
+            "dst_attribute_index": 48
+        },
+        {
+            "link_index": 10,
+            "src_attribute_index": 27,
+            "dst_attribute_index": 50
+        },
+        {
+            "link_index": 11,
+            "src_attribute_index": 53,
+            "dst_attribute_index": 60
+        },
+        {
+            "link_index": 12,
+            "src_attribute_index": 55,
+            "dst_attribute_index": 62
+        },
+        {
+            "link_index": 13,
+            "src_attribute_index": 57,
+            "dst_attribute_index": 64
+        },
+        {
+            "link_index": 15,
+            "src_attribute_index": 7,
+            "dst_attribute_index": 70
+        },
+        {
+            "link_index": 17,
+            "src_attribute_index": 9,
+            "dst_attribute_index": 74
+        },
+        {
+            "link_index": 18,
+            "src_attribute_index": 11,
+            "dst_attribute_index": 76
+        },
+        {
+            "link_index": 19,
+            "src_attribute_index": 13,
+            "dst_attribute_index": 78
+        },
+        {
+            "link_index": 20,
+            "src_attribute_index": 15,
+            "dst_attribute_index": 80
+        },
+        {
+            "link_index": 21,
+            "src_attribute_index": 17,
+            "dst_attribute_index": 82
+        },
+        {
+            "link_index": 22,
+            "src_attribute_index": 19,
+            "dst_attribute_index": 84
+        },
+        {
+            "link_index": 23,
+            "src_attribute_index": 21,
+            "dst_attribute_index": 86
+        },
+        {
+            "link_index": 24,
+            "src_attribute_index": 23,
+            "dst_attribute_index": 88
+        },
+        {
+            "link_index": 25,
+            "src_attribute_index": 25,
+            "dst_attribute_index": 90
+        },
+        {
+            "link_index": 26,
+            "src_attribute_index": 27,
+            "dst_attribute_index": 92
+        },
+        {
+            "link_index": 27,
+            "src_attribute_index": 67,
+            "dst_attribute_index": 94
+        },
+        {
+            "link_index": 29,
+            "src_attribute_index": 7,
+            "dst_attribute_index": 104
+        },
+        {
+            "link_index": 30,
+            "src_attribute_index": 101,
+            "dst_attribute_index": 106
+        },
+        {
+            "link_index": 31,
+            "src_attribute_index": 53,
+            "dst_attribute_index": 108
+        },
+        {
+            "link_index": 32,
+            "src_attribute_index": 55,
+            "dst_attribute_index": 110
+        },
+        {
+            "link_index": 33,
+            "src_attribute_index": 57,
+            "dst_attribute_index": 112
+        },
+        {
+            "link_index": 34,
+            "src_attribute_index": 97,
+            "dst_attribute_index": 114
+        },
+        {
+            "link_index": 35,
+            "src_attribute_index": 119,
+            "dst_attribute_index": 2
+        },
+        {
+            "link_index": 36,
+            "src_attribute_index": 121,
+            "dst_attribute_index": 118
+        }
+    ]
+}
