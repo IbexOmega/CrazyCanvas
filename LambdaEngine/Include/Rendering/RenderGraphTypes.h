@@ -45,11 +45,12 @@ namespace LambdaEngine
 		OWNERSHIP_CHANGE_READ	= 4,
 	};
 
-	enum class EAttachmentState : uint8
+	enum class EResourceAccessState : uint8
 	{
 		NONE	= 0,
 		READ	= 1,
-		WRITE	= 2
+		WRITE	= 2,
+		PRESENT	= 3,
 	};
 
 	enum class EAttachmentAccessType : uint8

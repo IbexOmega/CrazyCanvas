@@ -66,6 +66,7 @@ namespace LambdaEngine
 	struct EditorRenderGraphResourceState
 	{
 		String			ResourceName		= "";
+		String			RenderStageName		= "";
 		bool			Removable			= true;
 		int32			InputLinkIndex		= -1;
 		TSet<int32>		OutputLinkIndices;
@@ -110,7 +111,9 @@ namespace LambdaEngine
 		EditorComputeShader			ComputeShaders;
 		EditorRayTracingShaders		RayTracingShaders;
 
-		tsl::ordered_map<String, int32>		ResourceStates;	
+		tsl::ordered_map<String, int32>		ResourceStates;
+
+		uint32						Weight					= 0;
 	};
 
 	struct EditorResourceStateGroup
@@ -122,9 +125,33 @@ namespace LambdaEngine
 
 	struct EditorFinalOutput
 	{
+		String		Name						= "";
 		int32		NodeIndex					= 0;
 		int32		BackBufferAttributeIndex	= 0;
 	};
+
+	struct EditorResourceSynchronization
+	{
+		ECommandQueueType		FromQueue		= ECommandQueueType::COMMAND_QUEUE_NONE;
+		ECommandQueueType		ToQueue			= ECommandQueueType::COMMAND_QUEUE_NONE;
+		EResourceAccessState	FromState		= EResourceAccessState::READ;
+		EResourceAccessState	ToState			= EResourceAccessState::READ;
+		EditorResource			Resource		= {};
+	};
+
+	struct EditorSynchronizationStage
+	{
+		std::vector<EditorResourceSynchronization> Synchronizations;
+	};
+
+	struct RenderGraphStructure
+	{
+		TArray<EditorRenderStage>					RenderStages;
+		TArray<EditorSynchronizationStage>			SynchronizationStages;
+		TArray<PipelineStageDesc>					PipelineStages;
+	};
+
+	
 
 	class RenderGraphEditor : public EventHandler
 	{
@@ -146,16 +173,20 @@ namespace LambdaEngine
 
 		void RenderResourceView();
 		void RenderAddResourceView();
+
 		void RenderShaderView();
+
 		void RenderGraphView();
 		void RenderAddRenderStageView();
 		void RenderSaveRenderGraphView();
 		void RenderLoadRenderGraphView();
 
+		void RenderPrasedRenderGraphView();
+
 		void RenderShaderBoxes(EditorRenderStage* pRenderStage);
 		void RenderShaderBoxCommon(String* pTarget, bool* pAdded = nullptr, bool* pRemoved = nullptr);
 
-		int32 CreateResourceState(const String& resourceName, bool removable);
+		int32 CreateResourceState(const String& resourceName, const String& renderStageName, bool removable);
 		bool CheckLinkValid(int32* pSrcAttributeIndex, int32* pDstAttributeIndex);
 
 		String RenderStageTypeToString(EPipelineStateType type);
@@ -175,6 +206,11 @@ namespace LambdaEngine
 		bool SaveToFile(const String& renderGraphName);
 		bool LoadFromFile(const String& filepath);
 
+		bool ParseStructure();
+		bool RecursivelyWeightParentRenderStages(EditorRenderStage* pChildRenderStage);
+		bool IsRenderStage(const String& name);
+		EResourceAccessState FindAccessStateFromResourceState(const EditorRenderGraphResourceState* pResourceState);
+
 	private:
 		TArray<EditorResourceStateGroup>					m_ResourceStateGroups;
 		EditorFinalOutput									m_FinalOutput		= {};
@@ -184,14 +220,18 @@ namespace LambdaEngine
 		THashTable<int32, String>							m_RenderStageNameByInputAttributeIndex;
 		THashTable<String, EditorRenderStage>				m_RenderStagesByName;
 		THashTable<int32, EditorRenderGraphResourceState>	m_ResourceStatesByHalfAttributeIndex;
-		THashTable<int32, EditorRenderGraphResourceLink>	m_ResourceStateLinks;
+		THashTable<int32, EditorRenderGraphResourceLink>	m_ResourceStateLinksByLinkIndex;
 
-		EPipelineStateType									m_CurrentlyAddingRenderStage				= EPipelineStateType::NONE;
-		EEditorResourceType									m_CurrentlyAddingResource					= EEditorResourceType::NONE;
+		EPipelineStateType									m_CurrentlyAddingRenderStage	= EPipelineStateType::NONE;
+		EEditorResourceType									m_CurrentlyAddingResource		= EEditorResourceType::NONE;
 
-		EditorStartedLinkInfo								m_StartedLinkInfo							= {};
+		EditorStartedLinkInfo								m_StartedLinkInfo				= {};
 
 		TArray<String>										m_FilesInShaderDirectory;
+
+		RenderGraphStructure								m_ParsedRenderGraphStructure	= {};
+		bool												m_ParsedGraphDirty				= true;
+		String												m_ParsingError					= "No Errors";
 
 	private:
 		static int32					s_NextNodeID;

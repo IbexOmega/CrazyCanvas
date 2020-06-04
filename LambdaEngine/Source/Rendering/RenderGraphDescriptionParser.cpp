@@ -1062,7 +1062,7 @@ namespace LambdaEngine
 		std::vector<PipelineStageDesc>&			sortedPipelineStages)
 	{
 		std::unordered_map<std::string, AttachmentSynchronizationDesc*> firstEncounterOfAttachmentSynchronizations;
-		std::unordered_map<std::string, std::pair<EAttachmentState, EPipelineStateType>> transitionedResourceStates;
+		std::unordered_map<std::string, std::pair<EResourceAccessState, EPipelineStateType>> transitionedResourceStates;
 
 		for (auto synchronizationStageIt = sortedSynchronizationStages.begin(); synchronizationStageIt != sortedSynchronizationStages.end(); synchronizationStageIt++)
 		{
@@ -1082,7 +1082,7 @@ namespace LambdaEngine
 				if (attachmentSynchronizationIt->Type != EAttachmentSynchronizationType::TRANSITION_FOR_WRITE && attachmentSynchronizationIt->Type != EAttachmentSynchronizationType::OWNERSHIP_CHANGE_WRITE && transitionedResourceStateIt != transitionedResourceStates.end())
 				{
 					//If its state already is read, or the access type will be handled by a renderpass, it might just be a queue ownership change
-					if (transitionedResourceStateIt->second.first == EAttachmentState::READ || attachmentSynchronizationIt->FromAttachment.Type == EAttachmentType::OUTPUT_COLOR || attachmentSynchronizationIt->FromAttachment.Type == EAttachmentType::OUTPUT_DEPTH_STENCIL)
+					if (transitionedResourceStateIt->second.first == EResourceAccessState::READ || attachmentSynchronizationIt->FromAttachment.Type == EAttachmentType::OUTPUT_COLOR || attachmentSynchronizationIt->FromAttachment.Type == EAttachmentType::OUTPUT_DEPTH_STENCIL)
 					{
 						if (attachmentSynchronizationIt->ToQueueOwner != transitionedResourceStateIt->second.second)
 						{
@@ -1101,20 +1101,20 @@ namespace LambdaEngine
 					}
 				}
 
-				EAttachmentState resultState = EAttachmentState::NONE;
+				EResourceAccessState resultState = EResourceAccessState::NONE;
 
 				switch (attachmentSynchronizationIt->Type)
 				{
 				case EAttachmentSynchronizationType::NONE:
-					resultState = transitionedResourceStateIt != transitionedResourceStates.end() ? transitionedResourceStateIt->second.first : EAttachmentState::NONE;
+					resultState = transitionedResourceStateIt != transitionedResourceStates.end() ? transitionedResourceStateIt->second.first : EResourceAccessState::NONE;
 					break;
 				case EAttachmentSynchronizationType::OWNERSHIP_CHANGE_READ:
 				case EAttachmentSynchronizationType::TRANSITION_FOR_READ:
-					resultState = EAttachmentState::READ;
+					resultState = EResourceAccessState::READ;
 					break;
 				case EAttachmentSynchronizationType::TRANSITION_FOR_WRITE:
 				case EAttachmentSynchronizationType::OWNERSHIP_CHANGE_WRITE:
-					resultState = EAttachmentState::WRITE;
+					resultState = EResourceAccessState::WRITE;
 					break;
 				}
 
