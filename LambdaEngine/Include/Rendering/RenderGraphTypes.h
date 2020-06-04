@@ -5,6 +5,8 @@
 #include "Core/API/IPipelineState.h"
 #include "PipelineStateManager.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 	class ICustomRenderer;
@@ -419,5 +421,17 @@ namespace LambdaEngine
 		}
 
 		return shaderStageMask;
+	}
+
+	FORCEINLINE String ResourceAccessStateToString(EResourceAccessState resourceAccessState)
+	{
+		switch (resourceAccessState)
+		{
+		case EResourceAccessState::READ:		return "READ";
+		case EResourceAccessState::WRITE:		return "WRITE";
+		case EResourceAccessState::PRESENT:		return "PRESENT";
+		case EResourceAccessState::NONE:		
+		default:								return "NONE";
+		}
 	}
 }

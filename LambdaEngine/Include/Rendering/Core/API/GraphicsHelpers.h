@@ -116,7 +116,7 @@ namespace LambdaEngine
         }
 	}
 
-	FORCEINLINE String TextureFormatString(EFormat format)
+	FORCEINLINE String TextureFormatToString(EFormat format)
 	{
 		switch (format)
 		{
@@ -133,12 +133,25 @@ namespace LambdaEngine
 	FORCEINLINE EFormat TextureFormatFromString(const String& string)
 	{
 		if		(string == "D24_UNORM_S8_UINT")		return EFormat::FORMAT_D24_UNORM_S8_UINT;
-		else if (string == "R8G8B8A8_UNORM")			return EFormat::FORMAT_R8G8B8A8_UNORM;
-		else if (string == "B8G8R8A8_UNORM")			return EFormat::FORMAT_B8G8R8A8_UNORM;
-		else if (string == "R8G8B8A8_SNORM")			return EFormat::FORMAT_R8G8B8A8_SNORM;
+		else if (string == "R8G8B8A8_UNORM")		return EFormat::FORMAT_R8G8B8A8_UNORM;
+		else if (string == "B8G8R8A8_UNORM")		return EFormat::FORMAT_B8G8R8A8_UNORM;
+		else if (string == "R8G8B8A8_SNORM")		return EFormat::FORMAT_R8G8B8A8_SNORM;
 		else if (string == "R32G32_SFLOAT")			return EFormat::FORMAT_R32G32_SFLOAT;
 		else if (string == "R16G16B16A16_SFLOAT")	return EFormat::FORMAT_R16G16B16A16_SFLOAT;
 
 		return EFormat::NONE;
+	}
+
+	FORCEINLINE String CommandQueueToString(ECommandQueueType commandQueue)
+	{
+		switch (commandQueue)
+		{
+		case ECommandQueueType::COMMAND_QUEUE_GRAPHICS:		return "GRAPHICS";
+		case ECommandQueueType::COMMAND_QUEUE_COMPUTE:		return "COMPUTE";
+		case ECommandQueueType::COMMAND_QUEUE_COPY:			return "COPY";
+		case ECommandQueueType::COMMAND_QUEUE_UNKNOWN:		return "UNKNOWN";
+		case ECommandQueueType::COMMAND_QUEUE_NONE:
+		default:											return "NONE";
+		}
 	}
 }
