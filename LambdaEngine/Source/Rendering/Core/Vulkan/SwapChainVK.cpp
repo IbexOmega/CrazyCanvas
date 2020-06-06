@@ -17,8 +17,7 @@ namespace LambdaEngine
 {
 	SwapChainVK::SwapChainVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice),
-		m_Buffers(),
-		m_Desc()
+		m_Buffers()
 	{
 	}
 
@@ -26,11 +25,8 @@ namespace LambdaEngine
 	{
 		ReleaseResources();
 
-		if (m_pCommandQueue)
-		{
-			m_pCommandQueue->FlushBarriers();
-			RELEASE(m_pCommandQueue);
-		}
+		VALIDATE(m_Desc.Queue != nullptr);
+		m_Desc.Queue.GetAs<CommandQueueVK>()->FlushBarriers();
 		
 		// Destroy semaphores
 		for (uint32 i = 0; i < m_Desc.BufferCount; i++)
@@ -82,11 +78,11 @@ namespace LambdaEngine
 		m_Buffers.clear();
 	}
 
-	bool SwapChainVK::Init(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)
+	bool SwapChainVK::Init(const SwapChainDesc* pDesc)
 	{
-		VALIDATE(pWindow        != nullptr);
-		VALIDATE(pCommandQueue  != nullptr);
-		VALIDATE(pDesc          != nullptr);
+		VALIDATE(pDesc->Window	!= nullptr);
+		VALIDATE(pDesc->Queue	!= nullptr);
+		VALIDATE(pDesc			!= nullptr);
 
 		// Create platform specific surface
 #if defined(LAMBDA_PLATFORM_MACOS)
@@ -96,7 +92,7 @@ namespace LambdaEngine
 			info.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
 			info.pNext = nullptr;
 			info.flags = 0;
-			info.pView = pWindow->GetView();
+			info.pView = pDesc->Window->GetView();
 			if (vkCreateMacOSSurfaceMVK(m_pDevice->Instance, &info, nullptr, &m_Surface))
 			{
 				m_Surface = VK_NULL_HANDLE;
@@ -109,7 +105,7 @@ namespace LambdaEngine
 			info.sType      = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 			info.pNext      = nullptr;
 			info.flags      = 0;
-			info.hwnd       = (HWND)pWindow->GetHandle();
+			info.hwnd       = reinterpret_cast<HWND>(pDesc->Window->GetHandle());
 			info.hinstance  = PlatformApplication::Get()->GetInstanceHandle();
 			if (vkCreateWin32SurfaceKHR(m_pDevice->Instance, &info, nullptr, &m_Surface) != VK_SUCCESS)
 			{
@@ -130,7 +126,7 @@ namespace LambdaEngine
 		
 		// Check for presentationsupport
 		VkBool32    presentSupport      = false;
-		uint32      queueFamilyIndex    = m_pDevice->GetQueueFamilyIndexFromQueueType(pCommandQueue->GetType());
+		uint32      queueFamilyIndex    = m_pDevice->GetQueueFamilyIndexFromQueueType(pDesc->Queue->GetType());
 		vkGetPhysicalDeviceSurfaceSupportKHR(m_pDevice->PhysicalDevice, queueFamilyIndex, m_Surface, &presentSupport);
 		if (!presentSupport)
 		{
@@ -163,12 +159,12 @@ namespace LambdaEngine
 				return false;
 			}
 
-			std::string name = std::string(pDesc->pName) + " ImageSemaphore[" + std::to_string(i) + "]";
-			m_pDevice->SetVulkanObjectName(name.c_str(), (uint64)m_ImageSemaphores[i], VK_OBJECT_TYPE_SEMAPHORE);
+			String name = pDesc->DebugName + " ImageSemaphore[" + std::to_string(i) + "]";
+			m_pDevice->SetVulkanObjectName(name, reinterpret_cast<uint64>(m_ImageSemaphores[i]), VK_OBJECT_TYPE_SEMAPHORE);
 			D_LOG_MESSAGE("[SwapChainVK]: Created Semaphore %p", m_ImageSemaphores[i]);
 
-			name = std::string(pDesc->pName) + " RenderSemaphore[" + std::to_string(i) + "]";
-			m_pDevice->SetVulkanObjectName(name.c_str(), (uint64)m_RenderSemaphores[i], VK_OBJECT_TYPE_SEMAPHORE);
+			name = pDesc->DebugName + " RenderSemaphore[" + std::to_string(i) + "]";
+			m_pDevice->SetVulkanObjectName(name, reinterpret_cast<uint64>(m_RenderSemaphores[i]), VK_OBJECT_TYPE_SEMAPHORE);
 			D_LOG_MESSAGE("[SwapChainVK]: Created Semaphore %p", m_RenderSemaphores[i]);
 		}
 
@@ -267,11 +263,7 @@ namespace LambdaEngine
 		}
 
 		D_LOG_MESSAGE("[SwapChainVK]: Number of buffers in SwapChain '%u'", pDesc->BufferCount);
-		memcpy(&m_Desc, pDesc, sizeof(m_Desc));
-		m_pWindow   = pWindow;
-
-		m_pCommandQueue = reinterpret_cast<CommandQueueVK*>(pCommandQueue);
-		m_pCommandQueue->AddRef();
+		m_Desc = *pDesc;
 
 		return InitSwapChain(pDesc->Width, pDesc->Height);
 	}
@@ -352,20 +344,11 @@ namespace LambdaEngine
 			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to retrive SwapChain-Images");
 			return false;
 		}
-
-		const char* names[] =
-		{
-			"BackBuffer[0]",
-			"BackBuffer[1]",
-			"BackBuffer[2]",
-			"BackBuffer[3]",
-			"BackBuffer[4]",
-		};
-		
+	
 		for (uint32 i = 0; i < imageCount; i++)
 		{
 			TextureDesc desc = {};
-			desc.pName			= names[i];
+			desc.DebugName		= m_Desc.DebugName + std::to_string(i);
 			desc.Type			= ETextureType::TEXTURE_TYPE_2D;
 			desc.Flags			= TEXTURE_FLAG_RENDER_TARGET;
 			desc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
@@ -399,7 +382,7 @@ namespace LambdaEngine
 		VkResult result = vkAcquireNextImageKHR(m_pDevice->Device, m_SwapChain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_BackBufferIndex);
 		if (result == VK_SUCCESS)
 		{
-			m_pCommandQueue->AddWaitSemaphore(semaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+			m_Desc.Queue.GetAs<CommandQueueVK>()->AddWaitSemaphore(semaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 		}
 		else
 		{
@@ -425,7 +408,7 @@ namespace LambdaEngine
 		submitInfo.pWaitSemaphores      = nullptr;
 		submitInfo.pWaitDstStageMask    = nullptr;
 
-		VkResult result = vkQueueSubmit(m_pCommandQueue->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+		VkResult result = vkQueueSubmit(m_Desc.Queue.GetAs<CommandQueueVK>()->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE);
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Submit failed");
@@ -442,7 +425,7 @@ namespace LambdaEngine
 		presentInfo.pResults			= nullptr;
 		presentInfo.pImageIndices		= &m_BackBufferIndex;
 
-		result = vkQueuePresentKHR(m_pCommandQueue->GetQueue(), &presentInfo);
+		result = vkQueuePresentKHR(m_Desc.Queue.GetAs<CommandQueueVK>()->GetQueue(), &presentInfo);
 		if (result == VK_SUCCESS)
 		{
 			m_SemaphoreIndex = (m_SemaphoreIndex + 1) % m_Desc.BufferCount;
@@ -469,7 +452,7 @@ namespace LambdaEngine
 		return InitSwapChain(width, height);
 	}
 
-	ITexture* SwapChainVK::GetBuffer(uint32 bufferIndex)
+	Texture* SwapChainVK::GetBuffer(uint32 bufferIndex)
 	{
 		ASSERT(bufferIndex < uint32(m_Buffers.size()));
 
@@ -478,7 +461,7 @@ namespace LambdaEngine
 		return pBuffer;
 	}
 
-	const ITexture* SwapChainVK::GetBuffer(uint32 bufferIndex) const
+	const Texture* SwapChainVK::GetBuffer(uint32 bufferIndex) const
 	{
 		ASSERT(bufferIndex < uint32(m_Buffers.size()));
 
@@ -487,20 +470,9 @@ namespace LambdaEngine
 		return pBuffer;
 	}
 
-	ICommandQueue* SwapChainVK::GetCommandQueue()
+	void SwapChainVK::SetName(const String& debugName)
 	{
-		m_pCommandQueue->AddRef();
-		return m_pCommandQueue;
-	}
-
-	void SwapChainVK::SetName(const char* pName)
-	{
-		if (pName)
-		{
-			TDeviceChild::SetName(pName);
-			m_pDevice->SetVulkanObjectName(pName, (uint64)m_SwapChain, VK_OBJECT_TYPE_SWAPCHAIN_KHR);
-
-			m_Desc.pName = m_pDebugName;
-		}
+		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_SwapChain), VK_OBJECT_TYPE_SWAPCHAIN_KHR);
+		m_Desc.DebugName = debugName;
 	}
 }

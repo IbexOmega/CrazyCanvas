@@ -1,21 +1,21 @@
 #pragma once
-#include "IDeviceChild.h"
+#include "DeviceChild.h"
 #include "GraphicsTypes.h"
 
 namespace LambdaEngine
 {
 	struct QueryHeapDesc
 	{
-		const char* pName					= "";
+		String		DebugName				= "";
 		EQueryType	Type					= EQueryType::QUERY_TYPE_NONE;
 		uint32		QueryCount				= 0;
 		uint32		PipelineStatisticsFlags = 0;
 	};
 
-	class IQueryHeap : public IDeviceChild
+	class QueryHeap : public DeviceChild
 	{
 	public:
-		DECL_DEVICE_INTERFACE(IQueryHeap);
+		DECL_DEVICE_INTERFACE(QueryHeap);
 
 		/*
 		* Get the results from the query heap
@@ -29,7 +29,14 @@ namespace LambdaEngine
 		* Returns the API-specific handle to the underlaying QueryHeap-resource
 		*	return - Returns a valid handle on success otherwise zero
 		*/
-		virtual uint64			GetHandle() const = 0;
-		virtual QueryHeapDesc	GetDesc()	const = 0;
+		virtual uint64 GetHandle() const = 0;
+		
+		virtual QueryHeapDesc GetDesc() const
+		{
+			return m_Desc;
+		}
+
+	protected:
+		QueryHeapDesc m_Desc;
 	};
 }

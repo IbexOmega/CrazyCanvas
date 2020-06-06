@@ -18,7 +18,7 @@ namespace LambdaEngine
 	class IReverbSphere;
 	class Scene;
 	class Camera;
-	class ISampler;
+	class Sampler;
 }
 
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::EventHandler
@@ -72,8 +72,8 @@ private:
 
 	LambdaEngine::Scene*					m_pScene				= nullptr;
 	LambdaEngine::Camera*					m_pCamera				= nullptr;
-	LambdaEngine::ISampler*					m_pLinearSampler		= nullptr;
-	LambdaEngine::ISampler*					m_pNearestSampler		= nullptr;
+	LambdaEngine::Sampler*					m_pLinearSampler		= nullptr;
+	LambdaEngine::Sampler*					m_pNearestSampler		= nullptr;
 
 	LambdaEngine::RenderGraph*				m_pRenderGraph			= nullptr;
 	LambdaEngine::Renderer*					m_pRenderer				= nullptr;

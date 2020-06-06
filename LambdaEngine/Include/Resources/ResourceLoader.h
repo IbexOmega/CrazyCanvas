@@ -1,10 +1,10 @@
 #pragma once
 #include "Audio/API/IAudioDevice.h"
 
-#include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/ITexture.h"
-#include "Rendering/Core/API/IShader.h"
-#include "Rendering/Core/API/IDeviceAllocator.h"
+#include "Rendering/Core/API/GraphicsDevice.h"
+#include "Rendering/Core/API/Texture.h"
+#include "Rendering/Core/API/Shader.h"
+#include "Rendering/Core/API/DeviceAllocator.h"
 
 #include "Audio/API/ISoundEffect3D.h"
 
@@ -32,7 +32,7 @@ namespace LambdaEngine
 		*	loadedTextures - A vector where all loaded Texture(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures);
+		static bool LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<Texture*>& loadedTextures);
 
 		/*
 		* Load a mesh from file
@@ -58,7 +58,7 @@ namespace LambdaEngine
 		*	generateMips - If mipmaps should be generated on load
 		* return - an ITexture* if the texture was loaded, otherwise nullptr will be returned
 		*/
-		static ITexture* LoadTextureFromFile(const char* pFilepath, EFormat format, bool generateMips);
+		static Texture* LoadTextureFromFile(const char* pFilepath, EFormat format, bool generateMips);
 
 		/*
 		* Load a texture from memory
@@ -71,7 +71,7 @@ namespace LambdaEngine
 		*	generateMips - If mipmaps should be generated on load
 		* return - an ITexture* if the texture was loaded, otherwise nullptr will be returned
 		*/
-		static ITexture* LoadTextureFromMemory(const char* pName, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips);
+		static Texture* LoadTextureFromMemory(const char* pName, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips);
 
 		/*
 		* Load sound from file
@@ -81,7 +81,7 @@ namespace LambdaEngine
 		*	pEntryPoint - The name of the shader entrypoint
 		* return - an IShader* if the shader was loaded, otherwise nullptr will be returned
 		*/
-		static IShader* LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint = "main");
+		static Shader* LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint = "main");
 
 		/*
 		* Load sound from file
@@ -97,10 +97,10 @@ namespace LambdaEngine
 		static bool CompileGLSLToSPIRV(const char* pFilepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>& sourceSPIRV);
 
 	private:
-		static IDeviceAllocator*		s_pAllocator;
-		static ICommandAllocator*		s_pCopyCommandAllocator;
-		static ICommandList*			s_pCopyCommandList;
-		static IFence*					s_pCopyFence;
+		static DeviceAllocator*		s_pAllocator;
+		static CommandAllocator*		s_pCopyCommandAllocator;
+		static CommandList*			s_pCopyCommandList;
+		static Fence*					s_pCopyFence;
 		static uint64					s_SignalValue;
 	};
 }

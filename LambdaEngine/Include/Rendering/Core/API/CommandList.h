@@ -1,19 +1,19 @@
 #pragma once
-#include "IDeviceChild.h"
+#include "DeviceChild.h"
 #include "GraphicsTypes.h"
 
 namespace LambdaEngine
 {
-	class IBuffer;
-	class ITexture;
-	class IQueryHeap;
-	class IRenderPass;
-	class ITextureView;
-	class IPipelineState;
-	class IDescriptorSet;
-	class IPipelineLayout;
-	class ICommandAllocator;
-	class IAccelerationStructure;
+	class Buffer;
+	class Texture;
+	class QueryHeap;
+	class RenderPass;
+	class TextureView;
+	class PipelineState;
+	class DescriptorSet;
+	class PipelineLayout;
+	class CommandAllocator;
+	class AccelerationStructure;
 
 	enum FCommandListFlags : uint32
 	{
@@ -30,11 +30,11 @@ namespace LambdaEngine
 
 	struct SecondaryCommandListBeginDesc
 	{
-		const IRenderPass*			pRenderPass			= nullptr;
+		const RenderPass*			pRenderPass			= nullptr;
 		uint32						SubPass				= 0;
-		const ITextureView* const * ppRenderTargets		= nullptr;
+		const TextureView* const *	ppRenderTargets		= nullptr;
 		uint32						RenderTargetCount	= 0;
-		const ITextureView*			pDepthStencilView	= nullptr;
+		const TextureView*			pDepthStencilView	= nullptr;
 		uint32						Width				= 0;
 		uint32						Height				= 0;
 	};
@@ -61,10 +61,10 @@ namespace LambdaEngine
 
 	struct BeginRenderPassDesc
 	{
-		const IRenderPass*			pRenderPass			= nullptr;
-		const ITextureView* const *	ppRenderTargets		= nullptr;
+		const RenderPass*			pRenderPass			= nullptr;
+		const TextureView* const *	ppRenderTargets		= nullptr;
 		uint32						RenderTargetCount	= 0;
-		const ITextureView*			pDepthStencil		= nullptr;
+		const TextureView*			pDepthStencil		= nullptr;
 		uint32						Width				= 0;
 		uint32						Height				= 0;
 		uint32						Flags				= FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_NONE;
@@ -93,7 +93,7 @@ namespace LambdaEngine
 	
 	struct PipelineTextureBarrierDesc
 	{
-		ITexture*			pTexture				= nullptr;
+		Texture*			pTexture				= nullptr;
 		ETextureState		StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
 		ETextureState		StateAfter				= ETextureState::TEXTURE_STATE_UNKNOWN;
 		ECommandQueueType	QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
@@ -109,7 +109,7 @@ namespace LambdaEngine
 
 	struct PipelineBufferBarrierDesc
 	{
-		IBuffer*			pBuffer					= nullptr;
+		Buffer*				pBuffer					= nullptr;
 		ECommandQueueType	QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
 		ECommandQueueType	QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
 		uint32				SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
@@ -120,39 +120,39 @@ namespace LambdaEngine
 
 	struct BuildTopLevelAccelerationStructureDesc
 	{
-		IAccelerationStructure* pAccelerationStructure	= nullptr;
+		AccelerationStructure* pAccelerationStructure	= nullptr;
 		uint32					Flags					= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
-		const IBuffer*			pInstanceBuffer			= nullptr;
+		const Buffer*			pInstanceBuffer			= nullptr;
 		uint32					InstanceCount			= 0;
 		bool					Update					= false;
 	};
 
 	struct BuildBottomLevelAccelerationStructureDesc
 	{
-		IAccelerationStructure*	pAccelerationStructure	= nullptr;
+		AccelerationStructure*	pAccelerationStructure	= nullptr;
 		uint32					Flags					= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
-		const IBuffer*			pVertexBuffer			= nullptr; 
+		const Buffer*			pVertexBuffer			= nullptr; 
 		uint32					FirstVertexIndex		= 0; 
 		uint32					VertexStride			= 0;
-		const IBuffer*			pIndexBuffer			= nullptr;
+		const Buffer*			pIndexBuffer			= nullptr;
 		uint32					IndexBufferByteOffset	= 0; 
 		uint32					TriangleCount			= 0;
-		const IBuffer*			pTransformBuffer		= nullptr;
+		const Buffer*			pTransformBuffer		= nullptr;
 		uint32					TransformByteOffset		= 0;
 		bool					Update					= false;
 	};
 
 	struct CommandListDesc
 	{
-		const char*			pName			= "";
+		String				DebugName		= "";
 		ECommandListType	CommandListType = ECommandListType::COMMAND_LIST_TYPE_UNKNOWN;
 		uint32				Flags			= FCommandListFlags::COMMAND_LIST_FLAG_NONE;
 	};
 
-	class ICommandList : public IDeviceChild
+	class CommandList : public DeviceChild
 	{
 	public:
-		DECL_DEVICE_INTERFACE(ICommandList);
+		DECL_DEVICE_INTERFACE(CommandList);
 
 		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc) = 0;
 		virtual bool End()													= 0;
@@ -163,53 +163,65 @@ namespace LambdaEngine
 		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)		= 0;
 		virtual void BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)	= 0;
 
-		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)					= 0;
-		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)						= 0;
-		virtual void BlitTexture(const ITexture* pSrc, ETextureState srcState, ITexture* pDst, ETextureState dstState, EFilterType filter)	= 0;
+		virtual void CopyBuffer(const Buffer* pSrc, uint64 srcOffset, Buffer* pDst, uint64 dstOffset, uint64 sizeInBytes)					= 0;
+		virtual void CopyTextureFromBuffer(const Buffer* pSrc, Texture* pDst, const CopyTextureFromBufferDesc& desc)						= 0;
+		virtual void BlitTexture(const Texture* pSrc, ETextureState srcState, Texture* pDst, ETextureState dstState, EFilterType filter)	= 0;
 
 		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)	= 0;
 		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)		= 0;
 
-		virtual void GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter) = 0;
+		virtual void GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter) = 0;
 
 		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)           = 0;
 		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)    = 0;
 		
-		virtual void SetConstantRange(const IPipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) = 0;
+		virtual void SetConstantRange(const PipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) = 0;
 
-		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset, EIndexType indexType) = 0;
-		virtual void BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) = 0;
+		virtual void BindIndexBuffer(const Buffer* pIndexBuffer, uint64 offset, EIndexType indexType) = 0;
+		virtual void BindVertexBuffers(const Buffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) = 0;
 
-		virtual void BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)	= 0;
-		virtual void BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)		= 0;
-		virtual void BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex)	= 0;
+		virtual void BindDescriptorSetGraphics(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex)	= 0;
+		virtual void BindDescriptorSetCompute(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex)		= 0;
+		virtual void BindDescriptorSetRayTracing(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex)	= 0;
 
-		virtual void BindGraphicsPipeline(const IPipelineState* pPipeline)		= 0;
-		virtual void BindComputePipeline(const IPipelineState* pPipeline)		= 0;
-		virtual void BindRayTracingPipeline(const IPipelineState* pPipeline)	= 0;
+		virtual void BindGraphicsPipeline(const PipelineState* pPipeline)		= 0;
+		virtual void BindComputePipeline(const PipelineState* pPipeline)		= 0;
+		virtual void BindRayTracingPipeline(PipelineState* pPipeline)			= 0;
 
 		virtual void TraceRays(uint32 width, uint32 height, uint32 depth)								= 0;
 		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ)	= 0;
 
 		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)							= 0;
 		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)	= 0;
-		virtual void DrawIndexedIndirect(const IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)							= 0;
+		virtual void DrawIndexedIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)							= 0;
 
-		virtual void BeginQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)											= 0;
-		virtual void Timestamp(IQueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)	= 0;
-		virtual void EndQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)											= 0;
+		virtual void BeginQuery(QueryHeap* pQueryHeap, uint32 queryIndex)											= 0;
+		virtual void Timestamp(QueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)	= 0;
+		virtual void EndQuery(QueryHeap* pQueryHeap, uint32 queryIndex)											= 0;
 
-		virtual void ExecuteSecondary(const ICommandList* pSecondary) = 0;
+		virtual void ExecuteSecondary(const CommandList* pSecondary) = 0;
 
-		virtual CommandListDesc		GetDesc()	const = 0;
-		virtual uint64				GetHandle()	const = 0;
-		virtual ECommandQueueType	GetType()	const = 0;
+		virtual uint64 GetHandle() const = 0;
+		
+		virtual CommandListDesc GetDesc() const
+		{
+			return m_Desc;
+		}
+
+		virtual ECommandQueueType GetType()	const
+		{
+			return m_QueueType;
+		}
 
 		/*
 		* Returns a pointer to the allocator used to allocate this commandlist. Caller should call Release on 
 		* the returned pointer
 		*	return - Returns a valid pointer if successful otherwise nullptr
 		*/
-		virtual ICommandAllocator*	GetAllocator()	const = 0;
+		virtual CommandAllocator* GetAllocator() = 0;
+
+	protected:
+		ECommandQueueType	m_QueueType = ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
+		CommandListDesc		m_Desc;
 	};
 }

@@ -1,11 +1,10 @@
 #pragma once
-#include "IDeviceChild.h"
-#include "GraphicsTypes.h"
+#include "Texture.h"
+
+#include "Core/Ref.h"
 
 namespace LambdaEngine
 {
-	class ITexture;
-
 	enum class ETextureViewType : uint8
 	{
 		TEXTURE_VIEW_NONE	= 0,
@@ -26,8 +25,8 @@ namespace LambdaEngine
 	
 	struct TextureViewDesc
 	{
-		const char*			pName			= "";
-		ITexture*			pTexture		= nullptr;
+		String				DebugName		= "";
+		Ref<Texture>		Texture			= nullptr;
 		uint32				Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_NONE;
 		EFormat				Format			= EFormat::FORMAT_NONE;
 		ETextureViewType	Type			= ETextureViewType::TEXTURE_VIEW_NONE;
@@ -37,13 +36,25 @@ namespace LambdaEngine
 		uint32				ArrayIndex		= 0;
 	};
 
-	class ITextureView : public IDeviceChild
+	class TextureView : public DeviceChild
 	{
 	public:
-		DECL_DEVICE_INTERFACE(ITextureView);
+		DECL_DEVICE_INTERFACE(TextureView);
 		
-		virtual ITexture*		GetTexture()		= 0;
-		virtual uint64			GetHandle()	const = 0;
-		virtual TextureViewDesc GetDesc()	const = 0;
+		virtual Texture* GetTexture() = 0;
+		
+		/*
+		* Returns the API-specific handle to the underlaying CommandQueue
+		*	return - Returns a valid handle on success otherwise zero
+		*/
+		virtual uint64 GetHandle() const = 0;
+		
+		virtual TextureViewDesc GetDesc() const
+		{
+			return m_Desc;
+		}
+
+	protected:
+		TextureViewDesc m_Desc;
 	};
 }

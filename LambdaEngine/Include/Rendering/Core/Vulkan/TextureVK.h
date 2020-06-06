@@ -1,5 +1,7 @@
 #pragma once
-#include "Rendering/Core/API/ITexture.h"
+#include "Core/Ref.h"
+
+#include "Rendering/Core/API/Texture.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Rendering/Core/Vulkan/DeviceAllocatorVK.h"
@@ -7,44 +9,38 @@
 namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
-    class DeviceAllocatorVK;
+	class DeviceAllocatorVK;
 
-	class TextureVK : public TDeviceChildBase<GraphicsDeviceVK, ITexture>
+	class TextureVK : public TDeviceChildBase<GraphicsDeviceVK, Texture>
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, ITexture>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, Texture>;
 
 	public:
 		TextureVK(const GraphicsDeviceVK* pDevice);
 		~TextureVK();
 
-		bool Init(const TextureDesc* pDesc, IDeviceAllocator* pAllocator);
+		bool Init(const TextureDesc* pDesc, DeviceAllocator* pAllocator);
 		void InitWithImage(VkImage image, const TextureDesc* pDesc);
 
-        FORCEINLINE VkImage GetImage() const
-        {
-            return m_Image;
-        }
+		FORCEINLINE VkImage GetImage() const
+		{
+			return m_Image;
+		}
 
-        // IDeviceChild interface
-        virtual void SetName(const char* pName) override final;
+	public:
+		// DeviceChild interface
+		virtual void SetName(const String& name) override final;
 
-        // ITexture interface
-        FORCEINLINE virtual TextureDesc GetDesc() const override final
-        {
-            return m_Desc;
-        }
-
-        FORCEINLINE virtual uint64 GetHandle() const override final
-        {
-            return (uint64)m_Image;
-        }
+		// Texture interface
+		FORCEINLINE virtual uint64 GetHandle() const override final
+		{
+			return reinterpret_cast<uint64>(m_Image);
+		}
 
 	private:
-        DeviceAllocatorVK*  m_pAllocator    = nullptr;
-		VkImage			    m_Image		    = VK_NULL_HANDLE;
-		VkDeviceMemory	    m_Memory	    = VK_NULL_HANDLE;
-        
-        AllocationVK    m_Allocation;
-		TextureDesc     m_Desc;
+		Ref<DeviceAllocatorVK>	m_Allocator	= nullptr;
+		VkImage					m_Image		= VK_NULL_HANDLE;
+		VkDeviceMemory			m_Memory	= VK_NULL_HANDLE;
+		AllocationVK			m_Allocation;
 	};
 }

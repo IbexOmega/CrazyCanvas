@@ -8,14 +8,13 @@ namespace LambdaEngine
 {
 	TextureVK::TextureVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice),
-		m_Allocation(),
-		m_Desc()
+		m_Allocation()
 	{
 	}
 
 	TextureVK::~TextureVK()
 	{
-		if (m_Memory != VK_NULL_HANDLE || m_pAllocator != nullptr)
+		if (m_Memory != VK_NULL_HANDLE || m_Allocator != nullptr)
 		{
 			if (m_Image != VK_NULL_HANDLE)
 			{
@@ -24,12 +23,9 @@ namespace LambdaEngine
 			}
 		}
 
-		if (m_pAllocator)
+		if (m_Allocator)
 		{
-			m_pAllocator->Free(&m_Allocation);
-			memset(&m_Allocation, 0, sizeof(m_Allocation));
-
-			RELEASE(m_pAllocator);
+			m_Allocator->Free(&m_Allocation);
 		}
 		else
 		{
@@ -41,7 +37,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool TextureVK::Init(const TextureDesc* pDesc, IDeviceAllocator* pAllocator)
+	bool TextureVK::Init(const TextureDesc* pDesc, DeviceAllocator* pAllocator)
 	{
 		VkImageCreateInfo info = {};
 		info.sType					= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -59,7 +55,7 @@ namespace LambdaEngine
 		info.samples				= ConvertSampleCount(pDesc->SampleCount);
 		info.sharingMode			= VK_SHARING_MODE_EXCLUSIVE;
 		info.tiling					= VK_IMAGE_TILING_OPTIMAL;
-        
+		
 		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_RENDER_TARGET)
 		{
 			info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -108,8 +104,8 @@ namespace LambdaEngine
 		{
 			D_LOG_MESSAGE("[TextureVK]: Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
 
-            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
-			SetName(m_Desc.pName);
+			m_Desc = *pDesc;
+			SetName(m_Desc.DebugName);
 		}
 
 		VkMemoryRequirements memoryRequirements = { };
@@ -135,8 +131,7 @@ namespace LambdaEngine
 				return false;
 			}
 
-			pAllocatorVk->AddRef();
-			m_pAllocator = pAllocatorVk;
+			m_Allocator = pAllocatorVk;
 
 			result = vkBindImageMemory(m_pDevice->Device, m_Image, m_Allocation.Memory, m_Allocation.Offset);
 			if (result != VK_SUCCESS)
@@ -167,25 +162,20 @@ namespace LambdaEngine
 
 	void TextureVK::InitWithImage(VkImage image, const TextureDesc* pDesc)
 	{
-        VALIDATE(image != VK_NULL_HANDLE);
-        VALIDATE(pDesc != nullptr);
-        
+		VALIDATE(image != VK_NULL_HANDLE);
+		VALIDATE(pDesc != nullptr);
+		
 		m_Image = image;
-        memcpy(&m_Desc, pDesc, sizeof(m_Desc));
-        
-		SetName(m_Desc.pName);
-        
-        D_LOG_MESSAGE("[TextureVK]: Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
+		m_Desc = *pDesc;
+		
+		SetName(m_Desc.DebugName);
+		
+		D_LOG_MESSAGE("[TextureVK]: Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
 	}
 	
-	void TextureVK::SetName(const char* pName)
+	void TextureVK::SetName(const String& debugName)
 	{
-		if (pName)
-		{
-			TDeviceChild::SetName(pName);
-			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Image, VK_OBJECT_TYPE_IMAGE);
-
-            m_Desc.pName = m_pDebugName;
-		}
+		m_pDevice->SetVulkanObjectName(debugName,reinterpret_cast<uint64>(m_Image), VK_OBJECT_TYPE_IMAGE);
+		m_Desc.DebugName = debugName;
 	}
 }

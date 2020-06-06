@@ -1,6 +1,5 @@
 #pragma once
 #include "GraphicsTypes.h"
-#include "IPipelineState.h"
 
 namespace LambdaEngine
 {
@@ -12,7 +11,7 @@ namespace LambdaEngine
 		case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		return ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE;
 		case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	return ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE;
 		case EPipelineStateType::PIPELINE_STATE_TYPE_NONE:			
-		default:										return ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		default:													return ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		}
 	}
 
@@ -85,19 +84,6 @@ namespace LambdaEngine
 		if (shaderStageMask & FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER)			lastStage = SHADER_STAGE_FLAG_MISS_SHADER;
 
 		return lastStage;
-	}
-
-	FORCEINLINE bool CheckValidDescriptorCount(const DescriptorCountDesc& count)
-	{
-		return
-			(count.DescriptorSetCount						> 0) &&
-			(count.AccelerationStructureDescriptorCount		> 0) &&
-			(count.ConstantBufferDescriptorCount			> 0) &&
-			(count.SamplerDescriptorCount					> 0) &&
-			(count.TextureCombinedSamplerDescriptorCount	> 0) &&
-			(count.TextureDescriptorCount					> 0) &&
-			(count.UnorderedAccessBufferDescriptorCount		> 0) &&
-			(count.UnorderedAccessTextureDescriptorCount	> 0);
 	}
 
 	FORCEINLINE uint32 TextureFormatStride(EFormat format)

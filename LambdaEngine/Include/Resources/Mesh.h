@@ -3,7 +3,7 @@
 
 #include "Math/Math.h"
 
-#include "Rendering/Core/API/IBuffer.h"
+#include "Rendering/Core/API/Buffer.h"
 
 #ifdef LAMBDA_VISUAL_STUDIO
 	#pragma warning(disable : 4324) //Disable alignment warning

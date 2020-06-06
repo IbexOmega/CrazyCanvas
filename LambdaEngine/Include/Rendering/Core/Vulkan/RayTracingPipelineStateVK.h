@@ -1,28 +1,28 @@
 #pragma once
-#include "Rendering/Core/API/IPipelineState.h"
-#include "Rendering/Core/API/TDeviceChildBase.h"
+#include "Core/Ref.h"
+
+#include "Rendering/Core/API/PipelineState.h"
 
 #include "Containers/TArray.h"
+
+#include "BufferVK.h"
 
 #include "Vulkan.h"
 
 namespace LambdaEngine
 {
-	class ICommandAllocator;
+	class CommandQueue;
 	class GraphicsDeviceVK;
-	class ICommandList;
-	class BufferVK;
-	class ICommandQueue;
 
-	class RayTracingPipelineStateVK : public TDeviceChildBase<GraphicsDeviceVK, IPipelineState>
+	class RayTracingPipelineStateVK : public TDeviceChildBase<GraphicsDeviceVK, PipelineState>
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IPipelineState>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, PipelineState>;
 
 	public:
 		RayTracingPipelineStateVK(const GraphicsDeviceVK* pDevice);
 		~RayTracingPipelineStateVK();
 
-		bool Init(ICommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc);
+		bool Init(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc);
 
 		FORCEINLINE VkDeviceSize GetBindingOffsetRaygenGroup() const 
 		{ 
@@ -64,16 +64,22 @@ namespace LambdaEngine
 			return m_Pipeline;
 		}
 		
-		FORCEINLINE BufferVK* GetShaderBindingTable() const
+		FORCEINLINE const BufferVK* GetShaderBindingTable() const
 		{
-			return m_pShaderBindingTable;
+			return m_ShaderBindingTable.Get();
 		}
 		
-		//IDeviceChild interface
-		virtual void SetName(const char* pName) override final;
+	public:
+		//DeviceChild interface
+		virtual void SetName(const String& name) override final;
 
 		//IPipelineState interface
-		FORCEINLINE virtual EPipelineStateType GetType() const override final
+		virtual uint64 GetHandle() const override final
+		{
+			return reinterpret_cast<uint64>(m_Pipeline);
+		}
+
+		virtual EPipelineStateType GetType() const override final
 		{
 			return EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING;
 		}
@@ -83,9 +89,9 @@ namespace LambdaEngine
 			TArray<VkSpecializationInfo>& shaderStagesSpecializationInfos, TArray<TArray<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps);
 
 	private:
-		VkPipeline	m_Pipeline					 = VK_NULL_HANDLE;
-		BufferVK*	m_pShaderHandleStorageBuffer = nullptr;
-		BufferVK*	m_pShaderBindingTable		 = nullptr;
+		VkPipeline		m_Pipeline						= VK_NULL_HANDLE;
+		Ref<BufferVK>	m_ShaderHandleStorageBuffer		= nullptr;
+		Ref<BufferVK>	m_ShaderBindingTable			= nullptr;
 
 		VkDeviceSize m_BindingOffsetRaygenShaderGroup	= 0;
 		VkDeviceSize m_BindingOffsetHitShaderGroup		= 0;

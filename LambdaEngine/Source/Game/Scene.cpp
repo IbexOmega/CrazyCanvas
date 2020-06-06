@@ -1,17 +1,17 @@
 #include "Game/Scene.h"
 
-#include "Rendering/Core/API/IGraphicsDevice.h"
+#include "Rendering/Core/API/GraphicsDevice.h"
 #include "Audio/API/IAudioDevice.h"
 #include "Resources/ResourceManager.h"
 
 #include "Resources/Mesh.h"
 #include "Resources/Material.h"
-#include "Rendering/Core/API/IBuffer.h"
-#include "Rendering/Core/API/ITexture.h"
-#include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/ICommandAllocator.h"
-#include "Rendering/Core/API/ICommandList.h"
-#include "Rendering/Core/API/IAccelerationStructure.h"
+#include "Rendering/Core/API/Buffer.h"
+#include "Rendering/Core/API/Texture.h"
+#include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/CommandAllocator.h"
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/AccelerationStructure.h"
 #include "Rendering/RenderSystem.h"
 
 #include "Log/Log.h"
@@ -20,7 +20,7 @@
 
 namespace LambdaEngine
 {
-	Scene::Scene(const IGraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice) :
+	Scene::Scene(const GraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice) :
 		m_pGraphicsDevice(pGraphicsDevice),
 		m_pAudioDevice(pAudioDevice)
 	{
@@ -198,7 +198,7 @@ namespace LambdaEngine
 		m_pCopyCommandAllocator		= m_pGraphicsDevice->CreateCommandAllocator("Scene Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
 		CommandListDesc copyCommandListDesc = {};
-		copyCommandListDesc.pName				= "Scene Copy Command List";
+		copyCommandListDesc.DebugName			= "Scene Copy Command List";
 		copyCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 		copyCommandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 
@@ -211,7 +211,7 @@ namespace LambdaEngine
 			m_pASBuildCommandAllocator	= m_pGraphicsDevice->CreateCommandAllocator("Scene AS Build Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 
 			CommandListDesc asBuildCommandListDesc = {};
-			asBuildCommandListDesc.pName			= "Scene AS Build Command List";
+			asBuildCommandListDesc.DebugName		= "Scene AS Build Command List";
 			asBuildCommandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 			asBuildCommandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 
@@ -221,7 +221,7 @@ namespace LambdaEngine
 		//Lights Buffer
 		{
 			BufferDesc lightsCopyBufferDesc = {};
-			lightsCopyBufferDesc.pName					= "Scene Lights Copy Buffer";
+			lightsCopyBufferDesc.DebugName				= "Scene Lights Copy Buffer";
 			lightsCopyBufferDesc.MemoryType				= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 			lightsCopyBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 			lightsCopyBufferDesc.SizeInBytes			= sizeof(LightsBuffer);
@@ -229,7 +229,7 @@ namespace LambdaEngine
 			m_pLightsCopyBuffer = m_pGraphicsDevice->CreateBuffer(&lightsCopyBufferDesc, nullptr);
 
 			BufferDesc lightsBufferDesc = {};
-			lightsBufferDesc.pName					= "Scene Lights Buffer";
+			lightsBufferDesc.DebugName				= "Scene Lights Buffer";
 			lightsBufferDesc.MemoryType				= EMemoryType::MEMORY_TYPE_GPU;
 			lightsBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlags::BUFFER_FLAG_COPY_DST;
 			lightsBufferDesc.SizeInBytes			= sizeof(LightsBuffer);
@@ -240,7 +240,7 @@ namespace LambdaEngine
 		//Per Frame Buffer
 		{
 			BufferDesc perFrameCopyBufferDesc = {};
-			perFrameCopyBufferDesc.pName					= "Scene Per Frame Copy Buffer";
+			perFrameCopyBufferDesc.DebugName				= "Scene Per Frame Copy Buffer";
 			perFrameCopyBufferDesc.MemoryType				= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 			perFrameCopyBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 			perFrameCopyBufferDesc.SizeInBytes				= sizeof(PerFrameBuffer);
@@ -248,7 +248,7 @@ namespace LambdaEngine
 			m_pPerFrameCopyBuffer = m_pGraphicsDevice->CreateBuffer(&perFrameCopyBufferDesc, nullptr);
 
 			BufferDesc perFrameBufferDesc = {};
-			perFrameBufferDesc.pName				= "Scene Per Frame Buffer";
+			perFrameBufferDesc.DebugName			= "Scene Per Frame Buffer";
 			perFrameBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 			perFrameBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlags::BUFFER_FLAG_COPY_DST;;
 			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
@@ -273,7 +273,7 @@ namespace LambdaEngine
 		if (m_RayTracingEnabled)
 		{
 			AccelerationStructureDesc tlasDesc = {};
-			tlasDesc.pName			= "TLAS";
+			tlasDesc.DebugName		= "TLAS";
 			tlasDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
 			tlasDesc.Flags			= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
 			tlasDesc.InstanceCount	= m_Instances.size();
@@ -304,14 +304,14 @@ namespace LambdaEngine
 			if (m_RayTracingEnabled)
 			{
 				AccelerationStructureDesc blasDesc = {};
-				blasDesc.pName				= "BLAS";
+				blasDesc.DebugName			= "BLAS";
 				blasDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_BOTTOM;
 				blasDesc.Flags				= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
 				blasDesc.MaxTriangleCount	= pMesh->IndexCount / 3;
 				blasDesc.MaxVertexCount		= pMesh->VertexCount;
 				blasDesc.AllowsTransform	= true;
 
-				IAccelerationStructure* pBLAS = m_pGraphicsDevice->CreateAccelerationStructure(&blasDesc, nullptr);
+				AccelerationStructure* pBLAS = m_pGraphicsDevice->CreateAccelerationStructure(&blasDesc, nullptr);
 				accelerationStructureHandle = pBLAS->GetHandle();
 				m_BLASs.push_back(pBLAS);
 
@@ -411,7 +411,7 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneInstanceBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Instance Buffer";
+				bufferDesc.DebugName	= "Scene Instance Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 				bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
@@ -490,7 +490,7 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneMaterialPropertiesCopyBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Material Properties Copy Buffer";
+				bufferDesc.DebugName	= "Scene Material Properties Copy Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 				bufferDesc.SizeInBytes	= sceneMaterialPropertiesSize;
@@ -507,7 +507,7 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneMaterialProperties);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Material Properties";
+				bufferDesc.DebugName	= "Scene Material Properties";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 				bufferDesc.SizeInBytes	= sceneMaterialPropertiesSize;
@@ -527,7 +527,7 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneVertexCopyBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Vertex Copy Buffer";
+				bufferDesc.DebugName	= "Scene Vertex Copy Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 				bufferDesc.SizeInBytes	= sceneVertexBufferSize;
@@ -544,7 +544,7 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneVertexBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Vertex Buffer";
+				bufferDesc.DebugName	= "Scene Vertex Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
 				bufferDesc.SizeInBytes	= sceneVertexBufferSize;
@@ -564,7 +564,7 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneIndexCopyBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Index Copy Buffer";
+				bufferDesc.DebugName	= "Scene Index Copy Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 				bufferDesc.SizeInBytes	= sceneIndexBufferSize;
@@ -581,7 +581,7 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneIndexBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Index Buffer";
+				bufferDesc.DebugName	= "Scene Index Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDEX_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
 				bufferDesc.SizeInBytes	= sceneIndexBufferSize;
@@ -601,7 +601,7 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneInstanceCopyBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Instance Copy Buffer";
+				bufferDesc.DebugName	= "Scene Instance Copy Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 				bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
@@ -618,7 +618,7 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneInstanceBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Instance Buffer";
+				bufferDesc.DebugName	= "Scene Instance Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
 				bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
@@ -638,7 +638,7 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneMeshIndexCopyBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Mesh Index Copy Buffer";
+				bufferDesc.DebugName	= "Scene Mesh Index Copy Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 				bufferDesc.SizeInBytes	= sceneMeshIndexBufferSize;
@@ -655,7 +655,7 @@ namespace LambdaEngine
 				SAFERELEASE(m_pSceneMeshIndexBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Mesh Index Buffer";
+				bufferDesc.DebugName	= "Scene Mesh Index Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDIRECT_BUFFER;
 				bufferDesc.SizeInBytes	= sceneMeshIndexBufferSize;
@@ -675,12 +675,12 @@ namespace LambdaEngine
 		if (m_RayTracingEnabled)
 		{
 			BufferDesc bufferCopyDesc = {};
-			bufferCopyDesc.pName		= "Transform Copy Buffer";
+			bufferCopyDesc.DebugName	= "Transform Copy Buffer";
 			bufferCopyDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 			bufferCopyDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 			bufferCopyDesc.SizeInBytes	= sizeof(glm::mat3x4);
 
-			IBuffer* pTransformCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferCopyDesc, nullptr);
+			Buffer* pTransformCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferCopyDesc, nullptr);
 
 			glm::mat3x4 identity(1.0f);
 
@@ -689,12 +689,12 @@ namespace LambdaEngine
 			pTransformCopyBuffer->Unmap();
 
 			BufferDesc bufferDesc = {};
-			bufferDesc.pName		= "Transform Buffer";
+			bufferDesc.DebugName	= "Transform Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_RAY_TRACING;
 			bufferDesc.SizeInBytes	= sizeof(glm::mat3x4);
 
-			IBuffer* pTransformBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
+			Buffer* pTransformBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, nullptr);
 
 			m_pASBuildCommandAllocator->Reset();
 			m_pASBuildCommandList->Begin(nullptr);

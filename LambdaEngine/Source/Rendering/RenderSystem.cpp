@@ -2,21 +2,21 @@
 
 #include "Rendering/RenderSystem.h"
 
-#include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/IBuffer.h"
-#include "Rendering/Core/API/ITexture.h"
-#include "Rendering/Core/API/IFence.h"
-#include "Rendering/Core/API/ISwapChain.h"
-#include "Rendering/Core/API/ICommandAllocator.h"
-#include "Rendering/Core/API/ICommandList.h"
-#include "Rendering/Core/API/ITextureView.h"
-#include "Rendering/Core/API/IRenderPass.h"
-#include "Rendering/Core/API/IPipelineLayout.h"
-#include "Rendering/Core/API/IDescriptorHeap.h"
-#include "Rendering/Core/API/IDescriptorSet.h"
-#include "Rendering/Core/API/IAccelerationStructure.h"
-#include "Rendering/Core/API/IDeviceAllocator.h"
+#include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/GraphicsDevice.h"
+#include "Rendering/Core/API/Buffer.h"
+#include "Rendering/Core/API/Texture.h"
+#include "Rendering/Core/API/Fence.h"
+#include "Rendering/Core/API/SwapChain.h"
+#include "Rendering/Core/API/CommandAllocator.h"
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/TextureView.h"
+#include "Rendering/Core/API/RenderPass.h"
+#include "Rendering/Core/API/PipelineLayout.h"
+#include "Rendering/Core/API/DescriptorHeap.h"
+#include "Rendering/Core/API/DescriptorSet.h"
+#include "Rendering/Core/API/AccelerationStructure.h"
+#include "Rendering/Core/API/DeviceAllocator.h"
 
 #include "Rendering/ResourceCollector.h"
 
@@ -24,10 +24,10 @@
 
 namespace LambdaEngine
 {
-	IGraphicsDevice*	RenderSystem::s_pGraphicsDevice = nullptr;
-	ICommandQueue*		RenderSystem::s_pGraphicsQueue	= nullptr;
-	ICommandQueue*		RenderSystem::s_pComputeQueue	= nullptr;
-	ICommandQueue*		RenderSystem::s_pCopyQueue		= nullptr;
+	GraphicsDevice*		RenderSystem::s_pGraphicsDevice = nullptr;
+	CommandQueue*		RenderSystem::s_pGraphicsQueue	= nullptr;
+	CommandQueue*		RenderSystem::s_pComputeQueue	= nullptr;
+	CommandQueue*		RenderSystem::s_pCopyQueue		= nullptr;
 
 	bool RenderSystem::Init()
 	{

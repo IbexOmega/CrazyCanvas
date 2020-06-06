@@ -1,5 +1,5 @@
 #pragma once
-#include "IDeviceChild.h"
+#include "DeviceChild.h"
 #include "GraphicsTypes.h"
 
 namespace LambdaEngine 
@@ -18,12 +18,10 @@ namespace LambdaEngine
 
 	struct RenderPassSubpassDesc
 	{
-		ETextureState*	pInputAttachmentStates		= nullptr;
-		uint32			InputAttachmentCount		= 0;
-		ETextureState*	pRenderTargetStates			= nullptr;
-		ETextureState*	pResolveAttachmentStates	= nullptr;
-		uint32			RenderTargetCount			= 0;
-		ETextureState	DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_UNKNOWN;
+		TArray<ETextureState>	InputAttachmentStates;
+		TArray<ETextureState>	RenderTargetStates;
+		TArray<ETextureState>	ResolveAttachmentStates;
+		ETextureState			DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_UNKNOWN;
 	};
 
 	struct RenderPassSubpassDependencyDesc
@@ -38,25 +36,29 @@ namespace LambdaEngine
 
 	struct RenderPassDesc
 	{
-		const char*								pName					= "";
-		const RenderPassAttachmentDesc*			pAttachments			= nullptr;
-		uint32									AttachmentCount			= 0;
-		const RenderPassSubpassDesc*			pSubpasses				= nullptr;
-		uint32									SubpassCount			= 0;
-		const RenderPassSubpassDependencyDesc*	pSubpassDependencies	= nullptr;
-		uint32									SubpassDependencyCount	= 0;
+		String									DebugName = "";
+		TArray<RenderPassAttachmentDesc>		Attachments;
+		TArray<RenderPassSubpassDesc>			Subpasses;
+		TArray<RenderPassSubpassDependencyDesc>	SubpassDependencies;
 	};
 
-	class IRenderPass : public IDeviceChild
+	class RenderPass : public DeviceChild
 	{
 	public:
-		DECL_DEVICE_INTERFACE(IRenderPass);
+		DECL_DEVICE_INTERFACE(RenderPass);
 
 		/*
 		* Returns the API-specific handle to the underlaying resource
 		*	return - Returns a valid handle on success otherwise zero
 		*/
-		virtual uint64			GetHandle()	const = 0;
-		virtual RenderPassDesc	GetDesc()	const = 0;
+		virtual uint64 GetHandle() const = 0;
+
+		virtual RenderPassDesc GetDesc() const
+		{
+			return m_Desc;
+		}
+
+	protected:
+		RenderPassDesc m_Desc;
 	};
 }

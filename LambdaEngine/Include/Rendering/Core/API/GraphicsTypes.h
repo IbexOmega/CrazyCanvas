@@ -16,12 +16,11 @@ namespace LambdaEngine
 	constexpr const uint32 MAX_BUFFER_BARRIERS			= 16;
 	constexpr const uint32 MAX_VIEWPORTS				= 8;
 	constexpr const uint32 MAX_VERTEX_BUFFERS			= 32;
-	constexpr const uint32 MAX_DESCRIPTOR_BINDINGS		= 32;
-	constexpr const uint32 MAX_CONSTANT_RANGES			= 16;
-	constexpr const uint32 MAX_DESCRIPTOR_SET_LAYOUTS	= 16;
-	constexpr const uint32 MAX_IMMUTABLE_SAMPLERS		= 32;
-	constexpr const uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
-	constexpr const uint32 MAX_MISS_SHADER_COUNT		= 8;
+	//constexpr const uint32 MAX_DESCRIPTOR_BINDINGS		= 32;
+	//constexpr const uint32 MAX_CONSTANT_RANGES			= 16;
+	//constexpr const uint32 MAX_IMMUTABLE_SAMPLERS		= 32;
+	//constexpr const uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
+	//constexpr const uint32 MAX_MISS_SHADER_COUNT		= 8;
 
 	constexpr const uint32 EXTERNAL_SUBPASS	= 0xFFFFFFFF;
 
@@ -258,6 +257,14 @@ namespace LambdaEngine
 		STENCIL_OP_DECREMENT_AND_WRAP	= 7,
 	};
 
+	enum class EPipelineStateType : uint8
+	{
+		PIPELINE_STATE_TYPE_NONE			= 0,
+		PIPELINE_STATE_TYPE_GRAPHICS		= 1,
+		PIPELINE_STATE_TYPE_COMPUTE			= 2,
+		PIPELINE_STATE_TYPE_RAY_TRACING		= 3,
+	};
+
 	enum FShaderStageFlags : uint32
 	{
 		SHADER_STAGE_FLAG_NONE					= 0,
@@ -388,18 +395,6 @@ namespace LambdaEngine
 	/*
 	* Structs
 	*/
-
-	struct DescriptorCountDesc
-	{
-		uint32 DescriptorSetCount						= 0;
-		uint32 SamplerDescriptorCount					= 0;
-		uint32 TextureDescriptorCount					= 0;
-		uint32 TextureCombinedSamplerDescriptorCount	= 0;
-		uint32 ConstantBufferDescriptorCount			= 0;
-		uint32 UnorderedAccessBufferDescriptorCount		= 0;
-		uint32 UnorderedAccessTextureDescriptorCount	= 0;
-		uint32 AccelerationStructureDescriptorCount		= 0;
-	};
 
 	struct Viewport
 	{

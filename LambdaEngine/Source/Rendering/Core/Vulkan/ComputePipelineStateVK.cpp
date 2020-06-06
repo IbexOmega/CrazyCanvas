@@ -27,7 +27,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(pDesc != nullptr);
 
-		const ShaderVK*			pShader				= reinterpret_cast<const ShaderVK*>(pDesc->pShader);
+		const ShaderVK*			pShader				= reinterpret_cast<const ShaderVK*>(pDesc->Shader.pShader);
 		const PipelineLayoutVK* pPipelineLayoutVk	= reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
 		VALIDATE(pShader			!= nullptr);
 		VALIDATE(pPipelineLayoutVk	!= nullptr);
@@ -39,14 +39,16 @@ namespace LambdaEngine
 		shaderCreateInfo.flags	= 0;
 		shaderCreateInfo.stage	= VK_SHADER_STAGE_COMPUTE_BIT;
 		shaderCreateInfo.module	= pShader->GetShaderModule();
-		shaderCreateInfo.pName	= pShader->GetEntryPoint();
+		shaderCreateInfo.pName	= pShader->GetEntryPoint().c_str();
 
 		// Shader Constants
 		VkSpecializationInfo specializationInfo = { };
-		if (pDesc->pShader->ShaderConstantCount)
+		if (!pDesc->Shader.ShaderConstants.empty())
 		{
-			TArray<VkSpecializationMapEntry> specializationEntires(pDesc->pShader->ShaderConstantCount);
-			for (uint32 i = 0; i < pDesc->pShader->ShaderConstantCount; i++)
+			const uint32 constantCount = static_cast<uint32>(pDesc->Shader.ShaderConstants.size());
+			
+			TArray<VkSpecializationMapEntry> specializationEntires(constantCount);
+			for (uint32 i = 0; i < constantCount; i++)
 			{
 				VkSpecializationMapEntry specializationEntry = {};
 				specializationEntry.constantID	= i;
@@ -57,8 +59,8 @@ namespace LambdaEngine
 
 			specializationInfo.mapEntryCount = static_cast<uint32>(specializationEntires.size());
 			specializationInfo.pMapEntries	 = specializationEntires.data();
-			specializationInfo.dataSize		 = pDesc->pShader->ShaderConstantCount * sizeof(ShaderConstant);
-			specializationInfo.pData		 = pDesc->pShader->pConstants;
+			specializationInfo.dataSize		 = constantCount * sizeof(ShaderConstant);
+			specializationInfo.pData		 = pDesc->Shader.ShaderConstants.data();
 
 			shaderCreateInfo.pSpecializationInfo = &specializationInfo;
 		}
@@ -79,9 +81,9 @@ namespace LambdaEngine
 		VkResult result = vkCreateComputePipelines(m_pDevice->Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
 		if (result != VK_SUCCESS)
 		{
-			if (pDesc->pName)
+			if (!pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[ComputePipelineStateVK]: vkCreateComputePipelines failed for %s", pDesc->pName);
+				LOG_VULKAN_ERROR(result, "[ComputePipelineStateVK]: vkCreateComputePipelines failed for %s", pDesc->DebugName.c_str());
 			}
 			else
 			{
@@ -92,11 +94,10 @@ namespace LambdaEngine
 		}
 		else
 		{
-			SetName(pDesc->pName);
-
-			if (pDesc->pName)
+			SetName(pDesc->DebugName);
+			if (!pDesc->DebugName.empty())
 			{
-				D_LOG_MESSAGE("[ComputePipelineStateVK]: Created Pipeline for %s", pDesc->pName);
+				D_LOG_MESSAGE("[ComputePipelineStateVK]: Created Pipeline for %s", pDesc->DebugName.c_str());
 			}
 			else
 			{
@@ -107,12 +108,9 @@ namespace LambdaEngine
 		}
 	}
 
-	void ComputePipelineStateVK::SetName(const char* pName)
+	void ComputePipelineStateVK::SetName(const String& debugName)
 	{
-		if (pName)
-		{
-			TDeviceChild::SetName(pName);
-			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Pipeline, VK_OBJECT_TYPE_PIPELINE);
-		}
+		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_Pipeline), VK_OBJECT_TYPE_PIPELINE);
+		m_DebugName = debugName;
 	}
 }

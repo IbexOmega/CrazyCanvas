@@ -1,8 +1,8 @@
 #pragma once
-
 #include "LambdaEngine.h"
-#include "Core/API/GraphicsTypes.h"
-#include "Core/API/IPipelineState.h"
+
+#include "Core/API/PipelineState.h"
+
 #include "PipelineStateManager.h"
 
 namespace LambdaEngine
@@ -141,7 +141,7 @@ namespace LambdaEngine
 		{
 			struct
 			{
-				GraphicsManagedPipelineStateDesc*		pGraphicsDesc;
+				ManagedGraphicsPipelineStateDesc*		pGraphicsDesc;
 				ERenderStageDrawType					DrawType;
 				const char*								pIndexBufferName;
 				const char*								pMeshIndexBufferName;
@@ -149,12 +149,12 @@ namespace LambdaEngine
 
 			struct
 			{
-				ComputeManagedPipelineStateDesc*		pComputeDesc;
+				ManagedComputePipelineStateDesc*		pComputeDesc;
 			} ComputePipeline;
 
 			struct
 			{
-				RayTracingManagedPipelineStateDesc*		pRayTracingDesc;
+				ManagedRayTracingPipelineStateDesc*		pRayTracingDesc;
 			} RayTracingPipeline;
 		};
 	};

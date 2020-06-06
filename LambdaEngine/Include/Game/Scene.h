@@ -14,14 +14,14 @@ namespace LambdaEngine
 	struct Mesh;
 	struct Material;
 
-	class IGraphicsDevice;
+	class GraphicsDevice;
 	class IAudioDevice;
-	class IBuffer;
-	class ITexture;
-	class ITextureView;
-	class ICommandAllocator;
-	class ICommandList;
-	class IAccelerationStructure;
+	class Buffer;
+	class Texture;
+	class TextureView;
+	class CommandAllocator;
+	class CommandList;
+	class AccelerationStructure;
 	
 	struct GameObject
 	{
@@ -85,7 +85,7 @@ namespace LambdaEngine
 	public:
 		DECL_UNIQUE_CLASS(Scene);
 
-		Scene(const IGraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice);
+		Scene(const GraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice);
 		~Scene();
 
 		bool Init(const SceneDesc& desc);
@@ -100,75 +100,75 @@ namespace LambdaEngine
 		uint32 GetIndirectArgumentOffset(uint32 materialIndex) const;
 
 		//Todo: Make these const
-		FORCEINLINE IAccelerationStructure*	GetTLAS()						{ return m_pTLAS;}
+		FORCEINLINE AccelerationStructure*	GetTLAS()						{ return m_pTLAS;}
 
-		FORCEINLINE IBuffer*				GetLightsBuffer()				{ return m_pLightsBuffer; }
-		FORCEINLINE IBuffer*				GetPerFrameBuffer()				{ return m_pPerFrameBuffer; }
-		FORCEINLINE ITexture**				GetAlbedoMaps()					{ return m_SceneAlbedoMaps.data(); }			
-		FORCEINLINE ITexture**				GetNormalMaps()					{ return m_SceneNormalMaps.data(); }
-		FORCEINLINE ITexture**				GetAmbientOcclusionMaps()		{ return m_SceneAmbientOcclusionMaps.data(); }
-		FORCEINLINE ITexture**				GetMetallicMaps()				{ return m_SceneMetallicMaps.data(); }
-		FORCEINLINE ITexture**				GetRoughnessMaps()				{ return m_SceneRoughnessMaps.data(); }
+		FORCEINLINE Buffer*				GetLightsBuffer()				{ return m_pLightsBuffer; }
+		FORCEINLINE Buffer*				GetPerFrameBuffer()				{ return m_pPerFrameBuffer; }
+		FORCEINLINE Texture**				GetAlbedoMaps()					{ return m_SceneAlbedoMaps.data(); }			
+		FORCEINLINE Texture**				GetNormalMaps()					{ return m_SceneNormalMaps.data(); }
+		FORCEINLINE Texture**				GetAmbientOcclusionMaps()		{ return m_SceneAmbientOcclusionMaps.data(); }
+		FORCEINLINE Texture**				GetMetallicMaps()				{ return m_SceneMetallicMaps.data(); }
+		FORCEINLINE Texture**				GetRoughnessMaps()				{ return m_SceneRoughnessMaps.data(); }
 
-		FORCEINLINE ITextureView**			GetAlbedoMapViews()				{ return m_SceneAlbedoMapViews.data(); }
-		FORCEINLINE ITextureView**			GetNormalMapViews()				{ return m_SceneNormalMapViews.data(); }
-		FORCEINLINE ITextureView**			GetAmbientOcclusionMapViews()	{ return m_SceneAmbientOcclusionMapViews.data(); }
-		FORCEINLINE ITextureView**			GetMetallicMapViews()			{ return m_SceneMetallicMapViews.data(); }
-		FORCEINLINE ITextureView**			GetRoughnessMapViews()			{ return m_SceneRoughnessMapViews.data(); }
+		FORCEINLINE TextureView**			GetAlbedoMapViews()				{ return m_SceneAlbedoMapViews.data(); }
+		FORCEINLINE TextureView**			GetNormalMapViews()				{ return m_SceneNormalMapViews.data(); }
+		FORCEINLINE TextureView**			GetAmbientOcclusionMapViews()	{ return m_SceneAmbientOcclusionMapViews.data(); }
+		FORCEINLINE TextureView**			GetMetallicMapViews()			{ return m_SceneMetallicMapViews.data(); }
+		FORCEINLINE TextureView**			GetRoughnessMapViews()			{ return m_SceneRoughnessMapViews.data(); }
 
-		FORCEINLINE IBuffer*				GetMaterialProperties()			{ return m_pSceneMaterialProperties; }	
-		FORCEINLINE IBuffer*				GetVertexBuffer()				{ return m_pSceneVertexBuffer; }		
-		FORCEINLINE IBuffer*				GetIndexBuffer()				{ return m_pSceneIndexBuffer; }		
-		FORCEINLINE IBuffer*				GetInstanceBufer()				{ return m_pSceneInstanceBuffer; }
-		FORCEINLINE IBuffer*				GetMeshIndexBuffer()			{ return m_pSceneMeshIndexBuffer; }	
+		FORCEINLINE Buffer*				GetMaterialProperties()			{ return m_pSceneMaterialProperties; }	
+		FORCEINLINE Buffer*				GetVertexBuffer()				{ return m_pSceneVertexBuffer; }		
+		FORCEINLINE Buffer*				GetIndexBuffer()				{ return m_pSceneIndexBuffer; }		
+		FORCEINLINE Buffer*				GetInstanceBufer()				{ return m_pSceneInstanceBuffer; }
+		FORCEINLINE Buffer*				GetMeshIndexBuffer()			{ return m_pSceneMeshIndexBuffer; }	
 																			
 		
 
 	private:
-		const IGraphicsDevice*						m_pGraphicsDevice;
+		const GraphicsDevice*						m_pGraphicsDevice;
 		const IAudioDevice*							m_pAudioDevice;
 
 		const char*									m_pName;
 
-		ICommandAllocator*							m_pCopyCommandAllocator					= nullptr;
-		ICommandAllocator*							m_pASBuildCommandAllocator				= nullptr;
-		ICommandList*								m_pCopyCommandList						= nullptr;
-		ICommandList*								m_pASBuildCommandList					= nullptr;
+		CommandAllocator*							m_pCopyCommandAllocator					= nullptr;
+		CommandAllocator*							m_pASBuildCommandAllocator				= nullptr;
+		CommandList*								m_pCopyCommandList						= nullptr;
+		CommandList*								m_pASBuildCommandList					= nullptr;
 
 		std::map<uint32, uint32>					m_MaterialIndexToIndirectArgOffsetMap;
 		std::vector<IndexedIndirectMeshArgument>	m_IndirectArgs;
 
-		IBuffer*									m_pLightsCopyBuffer						= nullptr;
-		IBuffer*									m_pPerFrameCopyBuffer					= nullptr;
+		Buffer*									m_pLightsCopyBuffer						= nullptr;
+		Buffer*									m_pPerFrameCopyBuffer					= nullptr;
 
-		IBuffer*									m_pSceneMaterialPropertiesCopyBuffer	= nullptr;
-		IBuffer*									m_pSceneVertexCopyBuffer				= nullptr;
-		IBuffer*									m_pSceneIndexCopyBuffer					= nullptr;
-		IBuffer*									m_pSceneInstanceCopyBuffer				= nullptr;
-		IBuffer*									m_pSceneMeshIndexCopyBuffer				= nullptr;
+		Buffer*									m_pSceneMaterialPropertiesCopyBuffer	= nullptr;
+		Buffer*									m_pSceneVertexCopyBuffer				= nullptr;
+		Buffer*									m_pSceneIndexCopyBuffer					= nullptr;
+		Buffer*									m_pSceneInstanceCopyBuffer				= nullptr;
+		Buffer*									m_pSceneMeshIndexCopyBuffer				= nullptr;
 
-		IBuffer*									m_pLightsBuffer							= nullptr;
-		IBuffer*									m_pPerFrameBuffer						= nullptr;
+		Buffer*									m_pLightsBuffer							= nullptr;
+		Buffer*									m_pPerFrameBuffer						= nullptr;
 
-		std::vector<ITexture*>						m_SceneAlbedoMaps;				
-		std::vector<ITexture*>						m_SceneNormalMaps;				
-		std::vector<ITexture*>						m_SceneAmbientOcclusionMaps;	
-		std::vector<ITexture*>						m_SceneMetallicMaps;			
-		std::vector<ITexture*>						m_SceneRoughnessMaps;			
+		std::vector<Texture*>						m_SceneAlbedoMaps;				
+		std::vector<Texture*>						m_SceneNormalMaps;				
+		std::vector<Texture*>						m_SceneAmbientOcclusionMaps;	
+		std::vector<Texture*>						m_SceneMetallicMaps;			
+		std::vector<Texture*>						m_SceneRoughnessMaps;			
 
-		std::vector<ITextureView*>					m_SceneAlbedoMapViews;
-		std::vector<ITextureView*>					m_SceneNormalMapViews;
-		std::vector<ITextureView*>					m_SceneAmbientOcclusionMapViews;
-		std::vector<ITextureView*>					m_SceneMetallicMapViews;
-		std::vector<ITextureView*>					m_SceneRoughnessMapViews;
+		std::vector<TextureView*>					m_SceneAlbedoMapViews;
+		std::vector<TextureView*>					m_SceneNormalMapViews;
+		std::vector<TextureView*>					m_SceneAmbientOcclusionMapViews;
+		std::vector<TextureView*>					m_SceneMetallicMapViews;
+		std::vector<TextureView*>					m_SceneRoughnessMapViews;
 		
-		IBuffer*									m_pSceneMaterialProperties		= nullptr;		//Indexed with result from IndirectMeshArgument::MaterialIndex, contains Scene Material Properties
-		IBuffer*									m_pSceneVertexBuffer			= nullptr;			//Indexed with result from Scene::m_pBaseVertexIndexBuffer + Scene::m_pSceneIndexBuffer and contains Scene Vertices
-		IBuffer*									m_pSceneIndexBuffer				= nullptr;			//Indexed with result from Scene::m_pMeshIndexBuffer + primitiveID * 3 + triangleCornerID and contains indices to Scene::m_pSceneVertexBuffer
-		IBuffer*									m_pSceneInstanceBuffer			= nullptr;			/*Indexed with InstanceID and contains per instance data, we can figure out the InstanceID during shading by using
+		Buffer*									m_pSceneMaterialProperties		= nullptr;		//Indexed with result from IndirectMeshArgument::MaterialIndex, contains Scene Material Properties
+		Buffer*									m_pSceneVertexBuffer			= nullptr;			//Indexed with result from Scene::m_pBaseVertexIndexBuffer + Scene::m_pSceneIndexBuffer and contains Scene Vertices
+		Buffer*									m_pSceneIndexBuffer				= nullptr;			//Indexed with result from Scene::m_pMeshIndexBuffer + primitiveID * 3 + triangleCornerID and contains indices to Scene::m_pSceneVertexBuffer
+		Buffer*									m_pSceneInstanceBuffer			= nullptr;			/*Indexed with InstanceID and contains per instance data, we can figure out the InstanceID during shading by using
 																						IndirectMeshArgument::BaseInstanceIndex, IndirectMeshArgument::VertexCount and primitiveID <-- Relative to drawID*/
 
-		IBuffer*									m_pSceneMeshIndexBuffer			= nullptr;		/*Indexed with drawID when Shading and contains IndirectMeshArgument structs, primarily:
+		Buffer*									m_pSceneMeshIndexBuffer			= nullptr;		/*Indexed with drawID when Shading and contains IndirectMeshArgument structs, primarily:
 																						IndirectMeshArgument::FirstIndex		will be used as BaseIndex to m_pSceneIndexBuffer, 
 																						IndirectMeshArgument::BaseVertexIndex	will be used as BaseIndex to m_pSceneVertexBuffer,
 																						IndirectMeshArgument::MaterialIndex		will be used as MaterialIndex to MaterialBuffers,
@@ -187,7 +187,7 @@ namespace LambdaEngine
 		std::vector<Instance>						m_SortedInstances;
 
 		bool										m_RayTracingEnabled			= false;
-		IAccelerationStructure*						m_pTLAS						= nullptr;
-		std::vector<IAccelerationStructure*>		m_BLASs;
+		AccelerationStructure*						m_pTLAS						= nullptr;
+		std::vector<AccelerationStructure*>		m_BLASs;
 	};
 }

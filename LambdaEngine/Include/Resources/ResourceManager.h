@@ -7,7 +7,7 @@ namespace LambdaEngine
 {
 	union ShaderConstant;
 
-	class IGraphicsDevice;
+	class GraphicsDevice;
 	class IAudioDevice;
 
 	// Meshes
@@ -113,15 +113,15 @@ namespace LambdaEngine
 
 		static Mesh*					GetMesh(GUID_Lambda guid);
 		static Material*				GetMaterial(GUID_Lambda guid);
-		static ITexture*				GetTexture(GUID_Lambda guid);
-		static ITextureView*			GetTextureView(GUID_Lambda guid);
-		static IShader*					GetShader(GUID_Lambda guid);
+		static Texture*				GetTexture(GUID_Lambda guid);
+		static TextureView*			GetTextureView(GUID_Lambda guid);
+		static Shader*					GetShader(GUID_Lambda guid);
 		static ISoundEffect3D*			GetSoundEffect(GUID_Lambda guid);
 
 	private:
 		static GUID_Lambda RegisterLoadedMesh(Mesh* pMesh);
 		static GUID_Lambda RegisterLoadedMaterial(Material* pMaterial);
-		static GUID_Lambda RegisterLoadedTexture(ITexture* pTexture);
+		static GUID_Lambda RegisterLoadedTexture(Texture* pTexture);
 
 		static void InitDefaultResources();
 
@@ -130,9 +130,9 @@ namespace LambdaEngine
 
 		static std::unordered_map<GUID_Lambda, Mesh*>				s_Meshes;
 		static std::unordered_map<GUID_Lambda, Material*>			s_Materials;
-		static std::unordered_map<GUID_Lambda, ITexture*>			s_Textures;
-		static std::unordered_map<GUID_Lambda, ITextureView*>		s_TextureViews;
-		static std::unordered_map<GUID_Lambda, IShader*>			s_Shaders;
+		static std::unordered_map<GUID_Lambda, Texture*>			s_Textures;
+		static std::unordered_map<GUID_Lambda, TextureView*>		s_TextureViews;
+		static std::unordered_map<GUID_Lambda, Shader*>			s_Shaders;
 		static std::unordered_map<GUID_Lambda, ISoundEffect3D*>		s_SoundEffects;
 
 		static std::unordered_map<GUID_Lambda, ShaderLoadDesc>		s_ShaderLoadConfigurations;

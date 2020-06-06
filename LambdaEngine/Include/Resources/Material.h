@@ -5,8 +5,8 @@
 
 namespace LambdaEngine
 {
-	class ITexture;
-	class ISampler;
+	class Texture;
+	class Sampler;
 
 	union MaterialProperties
 	{
@@ -28,16 +28,16 @@ namespace LambdaEngine
 	{
 		MaterialProperties Properties;
 
-		ITexture* pAlbedoMap					= nullptr;
-		ITexture* pNormalMap					= nullptr;
-		ITexture* pAmbientOcclusionMap			= nullptr;
-		ITexture* pMetallicMap					= nullptr;
-		ITexture* pRoughnessMap					= nullptr;
+		Texture* pAlbedoMap					= nullptr;
+		Texture* pNormalMap					= nullptr;
+		Texture* pAmbientOcclusionMap			= nullptr;
+		Texture* pMetallicMap					= nullptr;
+		Texture* pRoughnessMap					= nullptr;
 
-		ITextureView* pAlbedoMapView			= nullptr;
-		ITextureView* pNormalMapView			= nullptr;
-		ITextureView* pAmbientOcclusionMapView	= nullptr;
-		ITextureView* pMetallicMapView			= nullptr;
-		ITextureView* pRoughnessMapView			= nullptr;
+		TextureView* pAlbedoMapView			= nullptr;
+		TextureView* pNormalMapView			= nullptr;
+		TextureView* pAmbientOcclusionMapView	= nullptr;
+		TextureView* pMetallicMapView			= nullptr;
+		TextureView* pRoughnessMapView			= nullptr;
 	};
 }

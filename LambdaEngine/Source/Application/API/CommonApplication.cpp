@@ -103,7 +103,7 @@ namespace LambdaEngine
 	void CommonApplication::MakeMainWindow(Window* pMainWindow)
 	{
 		VALIDATE(pMainWindow != nullptr);
-		m_pMainWindow = pMainWindow;
+		m_MainWindow = pMainWindow;
 	}
 
 	bool CommonApplication::SupportsRawInput() const
@@ -152,7 +152,7 @@ namespace LambdaEngine
 
 	void CommonApplication::OnWindowClosed(Window* pWindow)
 	{
-		if (pWindow == m_pMainWindow)
+		if (pWindow == m_MainWindow.Get())
 		{
 			Terminate();
 		}

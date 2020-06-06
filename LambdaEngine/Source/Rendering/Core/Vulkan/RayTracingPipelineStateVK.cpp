@@ -23,12 +23,9 @@ namespace LambdaEngine
 			vkDestroyPipeline(m_pDevice->Device, m_Pipeline, nullptr);
 			m_Pipeline = VK_NULL_HANDLE;
 		}
-
-		SAFERELEASE(m_pShaderBindingTable);
-		SAFERELEASE(m_pShaderHandleStorageBuffer);
 	}
 
-	bool RayTracingPipelineStateVK::Init(ICommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc)
+	bool RayTracingPipelineStateVK::Init(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc)
 	{
 		// Define shader stage create infos
 		TArray<VkPipelineShaderStageCreateInfo>			shaderStagesInfos;
@@ -36,9 +33,9 @@ namespace LambdaEngine
 		TArray<TArray<VkSpecializationMapEntry>>		shaderStagesSpecializationMaps;
 		TArray<VkRayTracingShaderGroupCreateInfoKHR>	shaderGroups;
 
-		//Raygen Shader
+		// Raygen Shader
 		{
-			CreateShaderStageInfo(pDesc->pRaygenShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
+			CreateShaderStageInfo(&pDesc->RaygenShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
 
 			VkRayTracingShaderGroupCreateInfoKHR shaderGroupCreateInfo = {};
 			shaderGroupCreateInfo.sType					= VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
@@ -50,11 +47,10 @@ namespace LambdaEngine
 			shaderGroups.emplace_back(shaderGroupCreateInfo);
 		}
 
-		//Closest-Hit Shaders
-		for (uint32 i = 0; i < pDesc->ClosestHitShaderCount; i++)
+		// Closest-Hit Shaders
+		for (const ShaderModuleDesc& closetHitShader : pDesc->ClosestHitShaders)
 		{
-			const ShaderModuleDesc* pShaderModuleDesc = pDesc->ppClosestHitShaders[i];
-			CreateShaderStageInfo(pDesc->pRaygenShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
+			CreateShaderStageInfo(&closetHitShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
 
 			VkRayTracingShaderGroupCreateInfoKHR shaderGroupCreateInfo = {};
 			shaderGroupCreateInfo.sType					= VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
@@ -66,11 +62,10 @@ namespace LambdaEngine
 			shaderGroups.emplace_back(shaderGroupCreateInfo);
 		}
 
-		//Miss Shaders
-		for (uint32 i = 0; i < pDesc->MissShaderCount; i++)
+		// Miss Shaders
+		for (const ShaderModuleDesc& missShader : pDesc->MissShaders)
 		{
-			const ShaderModuleDesc* pShaderModuleDesc = pDesc->ppClosestHitShaders[i];
-			CreateShaderStageInfo(pDesc->pRaygenShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
+			CreateShaderStageInfo(&missShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
 
 			VkRayTracingShaderGroupCreateInfoKHR shaderGroupCreateInfo = {};
 			shaderGroupCreateInfo.sType					= VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
@@ -103,9 +98,9 @@ namespace LambdaEngine
 		VkResult result = m_pDevice->vkCreateRayTracingPipelinesKHR(m_pDevice->Device, VK_NULL_HANDLE, 1, &rayTracingPipelineInfo, nullptr, &m_Pipeline);
 		if (result != VK_SUCCESS)
 		{
-			if (pDesc->pName)
+			if (!pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkCreateRayTracingPipelinesKHR failed for \"%s\"", pDesc->pName);
+				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkCreateRayTracingPipelinesKHR failed for \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
@@ -116,24 +111,23 @@ namespace LambdaEngine
 		}
 
 		const uint32 shaderGroupHandleSize	= m_pDevice->RayTracingProperties.shaderGroupHandleSize;
-		const uint32 sbtSize				= shaderGroupHandleSize * uint32(shaderGroups.size());
+		const uint32 sbtSize				= shaderGroupHandleSize * static_cast<uint32>(shaderGroups.size());
 
 		BufferDesc shaderHandleStorageDesc = {};
-		shaderHandleStorageDesc.pName		= "Shader Handle Storage";
+		shaderHandleStorageDesc.DebugName	= "Shader Handle Storage";
 		shaderHandleStorageDesc.Flags		= BUFFER_FLAG_COPY_SRC;
 		shaderHandleStorageDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		shaderHandleStorageDesc.SizeInBytes	= sbtSize;
 
-		m_pShaderHandleStorageBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&shaderHandleStorageDesc, nullptr));
+		m_ShaderHandleStorageBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&shaderHandleStorageDesc, nullptr));
 
-		void* pMapped = m_pShaderHandleStorageBuffer->Map();
-		
-		result = m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, (uint32)shaderGroups.size(), sbtSize, pMapped);
+		void* pMapped = m_ShaderHandleStorageBuffer->Map();
+		result = m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, static_cast<uint32>(shaderGroups.size()), sbtSize, pMapped);
 		if (result!= VK_SUCCESS)
 		{
-			if (pDesc->pName)
+			if (!pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed for \"%s\"", pDesc->pName);
+				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed for \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
@@ -143,29 +137,28 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_pShaderHandleStorageBuffer->Unmap();
+		m_ShaderHandleStorageBuffer->Unmap();
 
-		ICommandAllocator* pCommandAllocator = m_pDevice->CreateCommandAllocator("Ray Tracing Pipeline SBT Copy", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
-
+		CommandAllocator* pCommandAllocator = m_pDevice->CreateCommandAllocator("Ray Tracing Pipeline SBT Copy", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 		CommandListDesc commandListDesc = {};
-		commandListDesc.pName			= "Ray Tracing Pipeline Command List";
+		commandListDesc.DebugName		= "Ray Tracing Pipeline Command List";
 		commandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 		commandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
-		ICommandList* pCommandList = m_pDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
+		CommandList* pCommandList = m_pDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
 
 		BufferDesc sbtDesc = {};
-		sbtDesc.pName		= "Shader Binding Table";
+		sbtDesc.DebugName	= "Shader Binding Table";
 		sbtDesc.Flags		= BUFFER_FLAG_COPY_DST | BUFFER_FLAG_RAY_TRACING;
 		sbtDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		sbtDesc.SizeInBytes	= sbtSize;
 
-		m_pShaderBindingTable = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&sbtDesc, nullptr));
+		m_ShaderBindingTable = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&sbtDesc, nullptr));
 
 		pCommandAllocator->Reset();
 
 		pCommandList->Begin(nullptr);
-		pCommandList->CopyBuffer(m_pShaderHandleStorageBuffer, 0, m_pShaderBindingTable, 0, sbtSize);
+		pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), 0, m_ShaderBindingTable.Get(), 0, sbtSize);
 		pCommandList->End();
 
 		pCommandQueue->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN , nullptr, 0, nullptr, 0);
@@ -176,15 +169,15 @@ namespace LambdaEngine
 		m_BindingSizeRaygenShaderGroup		= m_BindingStride;
 		
 		m_BindingOffsetHitShaderGroup		= m_BindingOffsetRaygenShaderGroup + m_BindingSizeRaygenShaderGroup;
-		m_BindingSizeHitShaderGroup			= m_BindingStride * pDesc->ClosestHitShaderCount;
+		m_BindingSizeHitShaderGroup			= m_BindingStride * static_cast<uint32>(pDesc->ClosestHitShaders.size());
 		
 		m_BindingOffsetMissShaderGroup		= m_BindingOffsetHitShaderGroup + m_BindingSizeHitShaderGroup;
-		m_BindingSizeMissShaderGroup		= m_BindingStride * pDesc->MissShaderCount;
+		m_BindingSizeMissShaderGroup		= m_BindingStride * static_cast<uint32>(pDesc->MissShaders.size());
 
-		SetName(pDesc->pName);
-		if (pDesc->pName)
+		SetName(pDesc->DebugName);
+		if (!pDesc->DebugName.empty())
 		{
-			D_LOG_MESSAGE("[RayTracingPipelineStateVK]: Created Pipeline for %s", pDesc->pName);
+			D_LOG_MESSAGE("[RayTracingPipelineStateVK]: Created Pipeline for %s", pDesc->DebugName.c_str());
 		}
 		else
 		{
@@ -197,13 +190,10 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void RayTracingPipelineStateVK::SetName(const char* pName)
+	void RayTracingPipelineStateVK::SetName(const String& debugName)
 	{
-		if (pName)
-		{
-			TDeviceChild::SetName(pName);
-			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Pipeline, VK_OBJECT_TYPE_PIPELINE);
-		}
+		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_Pipeline), VK_OBJECT_TYPE_PIPELINE);
+		m_DebugName = debugName;
 	}
 	
 	void RayTracingPipelineStateVK::CreateShaderStageInfo(const ShaderModuleDesc* pShaderModule, TArray<VkPipelineShaderStageCreateInfo>& shaderStagesInfos, 
@@ -218,28 +208,28 @@ namespace LambdaEngine
 		shaderCreateInfo.flags	= 0;
 		shaderCreateInfo.stage	= ConvertShaderStageFlag(pShader->GetDesc().Stage);
 		shaderCreateInfo.module	= pShader->GetShaderModule();
-		shaderCreateInfo.pName	= pShader->GetEntryPoint();
+		shaderCreateInfo.pName	= pShader->GetEntryPoint().c_str();
 
 		// Shader Constants
-		if (pShaderModule->ShaderConstantCount)
+		if (!pShaderModule->ShaderConstants.empty())
 		{
-			TArray<VkSpecializationMapEntry> specializationEntires(pShaderModule->ShaderConstantCount);
-			for (uint32 i = 0; i < pShaderModule->ShaderConstantCount; i++)
+			TArray<VkSpecializationMapEntry> specializationEntires(pShaderModule->ShaderConstants.size());
+			for (uint32 i = 0; i < pShaderModule->ShaderConstants.size(); i++)
 			{
 				VkSpecializationMapEntry specializationEntry = {};
-				specializationEntry.constantID	= i;
-				specializationEntry.offset		= i * sizeof(ShaderConstant);
-				specializationEntry.size		= sizeof(ShaderConstant);
+				specializationEntry.constantID = i;
+				specializationEntry.offset = i * sizeof(ShaderConstant);
+				specializationEntry.size = sizeof(ShaderConstant);
 				specializationEntires.emplace_back(specializationEntry);
 			}
 
 			shaderStagesSpecializationMaps.emplace_back(specializationEntires);
 
 			VkSpecializationInfo specializationInfo = { };
-			specializationInfo.mapEntryCount	= static_cast<uint32>(specializationEntires.size());
-			specializationInfo.pMapEntries		= specializationEntires.data();
-			specializationInfo.dataSize			= pShaderModule->ShaderConstantCount * sizeof(ShaderConstant);
-			specializationInfo.pData			= pShaderModule->pConstants;
+			specializationInfo.mapEntryCount = static_cast<uint32>(specializationEntires.size());
+			specializationInfo.pMapEntries = specializationEntires.data();
+			specializationInfo.dataSize = static_cast<uint32>(pShaderModule->ShaderConstants.size()) * sizeof(ShaderConstant);
+			specializationInfo.pData = pShaderModule->ShaderConstants.data();
 			shaderStagesSpecializationInfos.emplace_back(specializationInfo);
 
 			shaderCreateInfo.pSpecializationInfo = &shaderStagesSpecializationInfos.back();

@@ -13,9 +13,9 @@
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraphDescriptionParser.h"
-#include "Rendering/Core/API/ITextureView.h"
-#include "Rendering/Core/API/ISampler.h"
-#include "Rendering/Core/API/ICommandQueue.h"
+#include "Rendering/Core/API/TextureView.h"
+#include "Rendering/Core/API/Sampler.h"
+#include "Rendering/Core/API/CommandQueue.h"
 
 #include "Audio/AudioSystem.h"
 #include "Audio/API/ISoundEffect3D.h"
@@ -116,7 +116,7 @@ Sandbox::Sandbox()
 	m_pScene->UpdateCamera(m_pCamera);
 
 	SamplerDesc samplerLinearDesc = {};
-	samplerLinearDesc.pName					= "Linear Sampler";
+	samplerLinearDesc.DebugName				= "Linear Sampler";
 	samplerLinearDesc.MinFilter				= EFilterType::FILTER_TYPE_LINEAR;
 	samplerLinearDesc.MagFilter				= EFilterType::FILTER_TYPE_LINEAR;
 	samplerLinearDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_LINEAR;
@@ -132,7 +132,7 @@ Sandbox::Sandbox()
 	m_pLinearSampler = RenderSystem::GetDevice()->CreateSampler(&samplerLinearDesc);
 
 	SamplerDesc samplerNearestDesc = {};
-	samplerNearestDesc.pName				= "Nearest Sampler";
+	samplerNearestDesc.DebugName			= "Nearest Sampler";
 	samplerNearestDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
 	samplerNearestDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
 	samplerNearestDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
@@ -567,7 +567,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 		uint32 modFrameIndex = m_pRenderer->GetModFrameIndex();
 
-		ITextureView* const *	ppTextureViews		= nullptr;
+		TextureView* const *	ppTextureViews		= nullptr;
 		uint32			textureViewCount		= 0;
 
 		static ImGuiTexture albedoTexture = {};
@@ -584,10 +584,10 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 			{
 				if (m_pRenderGraph->GetResourceTextureViews("GEOMETRY_ALBEDO_AO_BUFFER", &ppTextureViews, &textureViewCount))
 				{
-					ITextureView* pTextureView = ppTextureViews[modFrameIndex];
+					TextureView* pTextureView = ppTextureViews[modFrameIndex];
 					albedoTexture.pTextureView = pTextureView;
 
-					float32 aspectRatio = (float32)pTextureView->GetDesc().pTexture->GetDesc().Width / (float32)pTextureView->GetDesc().pTexture->GetDesc().Height;
+					float32 aspectRatio = (float32)pTextureView->GetDesc().Texture->GetDesc().Width / (float32)pTextureView->GetDesc().Texture->GetDesc().Height;
 
 					ImGui::Image(&albedoTexture, ImVec2(windowWidth, windowWidth / aspectRatio));
 				}
@@ -599,7 +599,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 			{
 				if (m_pRenderGraph->GetResourceTextureViews("GEOMETRY_NORM_MET_ROUGH_BUFFER", &ppTextureViews, &textureViewCount))
 				{
-					ITextureView* pTextureView = ppTextureViews[modFrameIndex];
+					TextureView* pTextureView = ppTextureViews[modFrameIndex];
 
 					normalTexture.pTextureView = pTextureView;
 
@@ -674,7 +674,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 
 
-					float32 aspectRatio = (float32)pTextureView->GetDesc().pTexture->GetDesc().Width / (float32)pTextureView->GetDesc().pTexture->GetDesc().Height;
+					float32 aspectRatio = (float32)pTextureView->GetDesc().Texture->GetDesc().Width / (float32)pTextureView->GetDesc().Texture->GetDesc().Height;
 
 					ImGui::Image(&normalTexture, ImVec2(windowWidth, windowWidth / aspectRatio));
 				}
@@ -686,7 +686,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 			{
 				if (m_pRenderGraph->GetResourceTextureViews("GEOMETRY_DEPTH_STENCIL", &ppTextureViews, &textureViewCount))
 				{
-					ITextureView* pTextureView = ppTextureViews[modFrameIndex];
+					TextureView* pTextureView = ppTextureViews[modFrameIndex];
 					depthStencilTexture.pTextureView = pTextureView;
 
 					depthStencilTexture.ReservedIncludeMask = 0x00008880;
@@ -703,7 +703,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 					depthStencilTexture.PixelShaderGUID = m_ImGuiPixelShaderDepthGUID;
 
-					float32 aspectRatio = (float32)pTextureView->GetDesc().pTexture->GetDesc().Width / (float32)pTextureView->GetDesc().pTexture->GetDesc().Height;
+					float32 aspectRatio = (float32)pTextureView->GetDesc().Texture->GetDesc().Width / (float32)pTextureView->GetDesc().Texture->GetDesc().Height;
 
 					ImGui::Image(&depthStencilTexture, ImVec2(windowWidth, windowWidth / aspectRatio));
 				}
@@ -746,7 +746,7 @@ bool Sandbox::InitRendererForEmpty()
 	std::vector<RenderStageDesc> renderStages;
 
 	const char*									pShadingRenderStageName = "Shading Render Stage";
-	GraphicsManagedPipelineStateDesc			shadingPipelineStateDesc = {};
+	ManagedGraphicsPipelineStateDesc			shadingPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
 
 	{
@@ -761,9 +761,9 @@ bool Sandbox::InitRendererForEmpty()
 		renderStage.pAttachments				= shadingRenderStageAttachments.data();
 		renderStage.AttachmentCount				= (uint32)shadingRenderStageAttachments.size();
 
-		shadingPipelineStateDesc.pName				= "Shading Pass Pipeline State";
-		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
-		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
+		shadingPipelineStateDesc.DebugName			= "Shading Pass Pipeline State";
+		shadingPipelineStateDesc.VertexShader.ShaderGUID	= fullscreenQuadShaderGUID;
+		shadingPipelineStateDesc.PixelShader.ShaderGUID		= shadingPixelShaderGUID;
 
 		renderStage.PipelineType						= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 
@@ -849,7 +849,7 @@ bool Sandbox::InitRendererForDeferred()
 	std::vector<RenderStageDesc> renderStages;
 
 	const char*									pGeometryRenderStageName = "Geometry Render Stage";
-	GraphicsManagedPipelineStateDesc			geometryPipelineStateDesc = {};
+	ManagedGraphicsPipelineStateDesc			geometryPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			geometryRenderStageAttachments;
 
 	{
@@ -882,9 +882,9 @@ bool Sandbox::InitRendererForDeferred()
 		renderStage.AttachmentCount				= (uint32)geometryRenderStageAttachments.size();
 		//renderStage.PushConstants				= pushConstants;
 
-		geometryPipelineStateDesc.pName				= "Geometry Pass Pipeline State";
-		geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
-		geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
+		geometryPipelineStateDesc.DebugName			= "Geometry Pass Pipeline State";
+		geometryPipelineStateDesc.VertexShader.ShaderGUID		= geometryVertexShaderGUID;
+		geometryPipelineStateDesc.PixelShader.ShaderGUID		= geometryPixelShaderGUID;
 
 		renderStage.PipelineType						= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 
@@ -897,7 +897,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	const char*									pRayTracingRenderStageName = "Ray Tracing Render Stage";
-	RayTracingManagedPipelineStateDesc			rayTracingPipelineStateDesc = {};
+	ManagedRayTracingPipelineStateDesc			rayTracingPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			rayTracingRenderStageAttachments;
 
 	if (RAY_TRACING_ENABLED)
@@ -921,12 +921,16 @@ bool Sandbox::InitRendererForDeferred()
 		renderStage.AttachmentCount				= (uint32)rayTracingRenderStageAttachments.size();
 		//renderStage.PushConstants				= pushConstants;
 
-		rayTracingPipelineStateDesc.pName					= "Ray Tracing Pass Pipeline State";
-		rayTracingPipelineStateDesc.RaygenShader			= raygenShaderGUID;
-		rayTracingPipelineStateDesc.pClosestHitShaders[0]	= closestHitShaderGUID;
-		rayTracingPipelineStateDesc.pMissShaders[0]			= missShaderGUID;
-		rayTracingPipelineStateDesc.ClosestHitShaderCount	= 1;
-		rayTracingPipelineStateDesc.MissShaderCount			= 1;
+		rayTracingPipelineStateDesc.DebugName				= "Ray Tracing Pass Pipeline State";
+		rayTracingPipelineStateDesc.RaygenShader.ShaderGUID	= raygenShaderGUID;
+
+		ManagedShaderModule shaderModule;
+		shaderModule.ShaderGUID = closestHitShaderGUID;
+
+		rayTracingPipelineStateDesc.ClosestHitShaders		= { shaderModule };
+
+		shaderModule.ShaderGUID = missShaderGUID;
+		rayTracingPipelineStateDesc.MissShaders				= { shaderModule };
 
 		renderStage.PipelineType							= EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING;
 
@@ -936,7 +940,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	const char*									pShadingRenderStageName = "Shading Render Stage";
-	GraphicsManagedPipelineStateDesc			shadingPipelineStateDesc = {};
+	ManagedGraphicsPipelineStateDesc			shadingPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
 
 	{
@@ -965,9 +969,9 @@ bool Sandbox::InitRendererForDeferred()
 		renderStage.AttachmentCount				= (uint32)shadingRenderStageAttachments.size();
 		//renderStage.PushConstants				= pushConstants;
 
-		shadingPipelineStateDesc.pName				= "Shading Pass Pipeline State";
-		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
-		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
+		shadingPipelineStateDesc.DebugName					= "Shading Pass Pipeline State";
+		shadingPipelineStateDesc.VertexShader.ShaderGUID	= fullscreenQuadShaderGUID;
+		shadingPipelineStateDesc.PixelShader.ShaderGUID		= shadingPixelShaderGUID;
 
 		renderStage.PipelineType						= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 
@@ -980,7 +984,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	const char*									pPostProcessRenderStageName = "Post-Process Render Stage";
-	ComputeManagedPipelineStateDesc				postProcessPipelineStateDesc = {};
+	ManagedComputePipelineStateDesc				postProcessPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			postProcessRenderStageAttachments;
 
 	if (POST_PROCESSING_ENABLED)
@@ -999,8 +1003,8 @@ bool Sandbox::InitRendererForDeferred()
 		renderStage.AttachmentCount				= (uint32)postProcessRenderStageAttachments.size();
 		//renderStage.PushConstants				= pushConstants;
 
-		postProcessPipelineStateDesc.pName		= "Post-Process Pass Pipeline State";
-		postProcessPipelineStateDesc.Shader		= postProcessShaderGUID;
+		postProcessPipelineStateDesc.DebugName			= "Post-Process Pass Pipeline State";
+		postProcessPipelineStateDesc.Shader.ShaderGUID	= postProcessShaderGUID;
 
 		renderStage.PipelineType						= EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE;
 
@@ -1077,7 +1081,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetLightsBuffer();
+		Buffer* pBuffer = m_pScene->GetLightsBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= "LIGHTS_BUFFER";
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1086,7 +1090,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetPerFrameBuffer();
+		Buffer* pBuffer = m_pScene->GetPerFrameBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= PER_FRAME_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1095,7 +1099,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetMaterialProperties();
+		Buffer* pBuffer = m_pScene->GetMaterialProperties();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= SCENE_MAT_PARAM_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1104,7 +1108,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetVertexBuffer();
+		Buffer* pBuffer = m_pScene->GetVertexBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= SCENE_VERTEX_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1113,7 +1117,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetIndexBuffer();
+		Buffer* pBuffer = m_pScene->GetIndexBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= SCENE_INDEX_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1122,7 +1126,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetInstanceBufer();
+		Buffer* pBuffer = m_pScene->GetInstanceBufer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= SCENE_INSTANCE_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1131,7 +1135,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetMeshIndexBuffer();
+		Buffer* pBuffer = m_pScene->GetMeshIndexBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= SCENE_MESH_INDEX_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1140,7 +1144,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IAccelerationStructure* pTLAS = m_pScene->GetTLAS();
+		AccelerationStructure* pTLAS = m_pScene->GetTLAS();
 		ResourceUpdateDesc resourceUpdateDesc					= {};
 		resourceUpdateDesc.pResourceName						= "SCENE_TLAS";
 		resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= pTLAS;
@@ -1150,7 +1154,7 @@ bool Sandbox::InitRendererForDeferred()
 
 	{
 		TextureDesc textureDesc	= {};
-		textureDesc.pName				= "Albedo-AO G-Buffer Texture";
+		textureDesc.DebugName			= "Albedo-AO G-Buffer Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
@@ -1163,7 +1167,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.ArrayCount			= 1;
 
 		TextureViewDesc textureViewDesc = { };
-		textureViewDesc.pName			= "Albedo-AO G-Buffer Texture View";
+		textureViewDesc.DebugName		= "Albedo-AO G-Buffer Texture View";
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
 		textureViewDesc.Miplevel		= 0;
@@ -1173,7 +1177,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureViewDesc.Format			= textureDesc.Format;
 
 		SamplerDesc samplerDesc = {};
-		samplerDesc.pName				= "Nearest Sampler";
+		samplerDesc.DebugName			= "Nearest Sampler";
 		samplerDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
@@ -1201,7 +1205,7 @@ bool Sandbox::InitRendererForDeferred()
 
 	{
 		TextureDesc textureDesc	= {};
-		textureDesc.pName				= "Norm-Met-Rough G-Buffer Texture";
+		textureDesc.DebugName			= "Norm-Met-Rough G-Buffer Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R16G16B16A16_SFLOAT;
@@ -1214,7 +1218,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.ArrayCount			= 1;
 
 		TextureViewDesc textureView = { };
-		textureView.pName				= "Norm-Met-Rough G-Buffer Texture View";
+		textureView.DebugName			= "Norm-Met-Rough G-Buffer Texture View";
 		textureView.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureView.Type				= ETextureViewType::TEXTURE_VIEW_2D;
 		textureView.Miplevel			= 0;
@@ -1224,7 +1228,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureView.Format				= textureDesc.Format;
 
 		SamplerDesc samplerDesc = {};
-		samplerDesc.pName				= "Nearest Sampler";
+		samplerDesc.DebugName			= "Nearest Sampler";
 		samplerDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
@@ -1252,7 +1256,7 @@ bool Sandbox::InitRendererForDeferred()
 
 	{
 		TextureDesc textureDesc = {};
-		textureDesc.pName				= "Geometry Pass Depth Stencil Texture";
+		textureDesc.DebugName			= "Geometry Pass Depth Stencil Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format				= EFormat::FORMAT_D24_UNORM_S8_UINT;
@@ -1265,7 +1269,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.ArrayCount			= 1;
 
 		TextureViewDesc textureViewDesc = { };
-		textureViewDesc.pName			= "Geometry Pass Depth Stencil Texture View";
+		textureViewDesc.DebugName		= "Geometry Pass Depth Stencil Texture View";
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
 		textureViewDesc.Miplevel		= 0;
@@ -1275,7 +1279,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureViewDesc.Format			= textureDesc.Format;
 
 		SamplerDesc samplerDesc = {};
-		samplerDesc.pName				= "Nearest Sampler";
+		samplerDesc.DebugName			= "Nearest Sampler";
 		samplerDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
@@ -1304,7 +1308,7 @@ bool Sandbox::InitRendererForDeferred()
 	if (RAY_TRACING_ENABLED)
 	{
 		TextureDesc textureDesc	= {};
-		textureDesc.pName				= "Radiance Texture";
+		textureDesc.DebugName			= "Radiance Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
@@ -1317,7 +1321,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.ArrayCount			= 1;
 
 		TextureViewDesc textureViewDesc = { };
-		textureViewDesc.pName			= "Radiance Texture View";
+		textureViewDesc.DebugName		= "Radiance Texture View";
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
 		textureViewDesc.Miplevel		= 0;
@@ -1327,7 +1331,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureViewDesc.Format			= textureDesc.Format;
 
 		SamplerDesc samplerDesc = {};
-		samplerDesc.pName				= "Nearest Sampler";
+		samplerDesc.DebugName			= "Nearest Sampler";
 		samplerDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
@@ -1356,7 +1360,7 @@ bool Sandbox::InitRendererForDeferred()
 	if (POST_PROCESSING_ENABLED)
 	{
 		TextureDesc textureDesc	= {};
-		textureDesc.pName				= "Shaded Texture";
+		textureDesc.DebugName			= "Shaded Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
@@ -1369,7 +1373,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.ArrayCount			= 1;
 
 		TextureViewDesc textureViewDesc = { };
-		textureViewDesc.pName			= "Shaded Texture View";
+		textureViewDesc.DebugName		= "Shaded Texture View";
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
 		textureViewDesc.Miplevel		= 0;
@@ -1379,7 +1383,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureViewDesc.Format			= textureDesc.Format;
 
 		SamplerDesc samplerDesc = {};
-		samplerDesc.pName				= "Nearest Sampler";
+		samplerDesc.DebugName			= "Nearest Sampler";
 		samplerDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
@@ -1406,19 +1410,19 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		ITexture** ppAlbedoMaps						= m_pScene->GetAlbedoMaps();
-		ITexture** ppNormalMaps						= m_pScene->GetNormalMaps();
-		ITexture** ppAmbientOcclusionMaps			= m_pScene->GetAmbientOcclusionMaps();
-		ITexture** ppMetallicMaps					= m_pScene->GetMetallicMaps();
-		ITexture** ppRoughnessMaps					= m_pScene->GetRoughnessMaps();
+		Texture** ppAlbedoMaps						= m_pScene->GetAlbedoMaps();
+		Texture** ppNormalMaps						= m_pScene->GetNormalMaps();
+		Texture** ppAmbientOcclusionMaps			= m_pScene->GetAmbientOcclusionMaps();
+		Texture** ppMetallicMaps					= m_pScene->GetMetallicMaps();
+		Texture** ppRoughnessMaps					= m_pScene->GetRoughnessMaps();
 
-		ITextureView** ppAlbedoMapViews				= m_pScene->GetAlbedoMapViews();
-		ITextureView** ppNormalMapViews				= m_pScene->GetNormalMapViews();
-		ITextureView** ppAmbientOcclusionMapViews	= m_pScene->GetAmbientOcclusionMapViews();
-		ITextureView** ppMetallicMapViews			= m_pScene->GetMetallicMapViews();
-		ITextureView** ppRoughnessMapViews			= m_pScene->GetRoughnessMapViews();
+		TextureView** ppAlbedoMapViews				= m_pScene->GetAlbedoMapViews();
+		TextureView** ppNormalMapViews				= m_pScene->GetNormalMapViews();
+		TextureView** ppAmbientOcclusionMapViews	= m_pScene->GetAmbientOcclusionMapViews();
+		TextureView** ppMetallicMapViews			= m_pScene->GetMetallicMapViews();
+		TextureView** ppRoughnessMapViews			= m_pScene->GetRoughnessMapViews();
 
-		std::vector<ISampler*> samplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
+		std::vector<Sampler*> samplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
 
 		ResourceUpdateDesc albedoMapsUpdateDesc = {};
 		albedoMapsUpdateDesc.pResourceName								= SCENE_ALBEDO_MAPS;
@@ -1491,7 +1495,7 @@ bool Sandbox::InitRendererForVisBuf()
 	std::vector<RenderStageDesc> renderStages;
 
 	const char*									pGeometryRenderStageName = "Geometry Render Stage";
-	GraphicsManagedPipelineStateDesc			geometryPipelineStateDesc = {};
+	ManagedGraphicsPipelineStateDesc			geometryPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			geometryRenderStageAttachments;
 
 	{
@@ -1513,9 +1517,9 @@ bool Sandbox::InitRendererForVisBuf()
 		renderStage.AttachmentCount				= (uint32)geometryRenderStageAttachments.size();
 		//renderStage.PushConstants				= pushConstants;
 
-		geometryPipelineStateDesc.pName				= "Geometry Pass Pipeline State";
-		geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
-		geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
+		geometryPipelineStateDesc.DebugName					= "Geometry Pass Pipeline State";
+		geometryPipelineStateDesc.VertexShader.ShaderGUID	= geometryVertexShaderGUID;
+		geometryPipelineStateDesc.PixelShader.ShaderGUID	= geometryPixelShaderGUID;
 
 		renderStage.PipelineType						= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 
@@ -1528,7 +1532,7 @@ bool Sandbox::InitRendererForVisBuf()
 	}
 
 	const char*									pShadingRenderStageName = "Shading Render Stage";
-	GraphicsManagedPipelineStateDesc			shadingPipelineStateDesc = {};
+	ManagedGraphicsPipelineStateDesc			shadingPipelineStateDesc = {};
 	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
 
 	{
@@ -1560,9 +1564,9 @@ bool Sandbox::InitRendererForVisBuf()
 		renderStage.AttachmentCount				= (uint32)shadingRenderStageAttachments.size();
 		//renderStage.PushConstants				= pushConstants;
 
-		shadingPipelineStateDesc.pName				= "Shading Pass Pipeline State";
-		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
-		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
+		shadingPipelineStateDesc.DebugName					= "Shading Pass Pipeline State";
+		shadingPipelineStateDesc.VertexShader.ShaderGUID	= fullscreenQuadShaderGUID;
+		shadingPipelineStateDesc.PixelShader.ShaderGUID		= shadingPixelShaderGUID;
 
 		renderStage.PipelineType						= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 
@@ -1616,7 +1620,7 @@ bool Sandbox::InitRendererForVisBuf()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetPerFrameBuffer();
+		Buffer* pBuffer = m_pScene->GetPerFrameBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= PER_FRAME_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1625,7 +1629,7 @@ bool Sandbox::InitRendererForVisBuf()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetMaterialProperties();
+		Buffer* pBuffer = m_pScene->GetMaterialProperties();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= SCENE_MAT_PARAM_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1634,7 +1638,7 @@ bool Sandbox::InitRendererForVisBuf()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetVertexBuffer();
+		Buffer* pBuffer = m_pScene->GetVertexBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= SCENE_VERTEX_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1643,7 +1647,7 @@ bool Sandbox::InitRendererForVisBuf()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetIndexBuffer();
+		Buffer* pBuffer = m_pScene->GetIndexBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= SCENE_INDEX_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1652,7 +1656,7 @@ bool Sandbox::InitRendererForVisBuf()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetInstanceBufer();
+		Buffer* pBuffer = m_pScene->GetInstanceBufer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= SCENE_INSTANCE_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1661,7 +1665,7 @@ bool Sandbox::InitRendererForVisBuf()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetMeshIndexBuffer();
+		Buffer* pBuffer = m_pScene->GetMeshIndexBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.pResourceName					= SCENE_MESH_INDEX_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1671,7 +1675,7 @@ bool Sandbox::InitRendererForVisBuf()
 
 	{
 		TextureDesc visibilityBufferDesc	= {};
-		visibilityBufferDesc.pName			= "Visibility Buffer Texture";
+		visibilityBufferDesc.DebugName		= "Visibility Buffer Texture";
 		visibilityBufferDesc.Type			= ETextureType::TEXTURE_TYPE_2D;
 		visibilityBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
 		visibilityBufferDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
@@ -1684,7 +1688,7 @@ bool Sandbox::InitRendererForVisBuf()
 		visibilityBufferDesc.ArrayCount		= 1;
 
 		TextureViewDesc visibilityBufferViewDesc = { };
-		visibilityBufferViewDesc.pName			= "Visibility Buffer Texture View";
+		visibilityBufferViewDesc.DebugName		= "Visibility Buffer Texture View";
 		visibilityBufferViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		visibilityBufferViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
 		visibilityBufferViewDesc.Miplevel		= 0;
@@ -1694,7 +1698,7 @@ bool Sandbox::InitRendererForVisBuf()
 		visibilityBufferViewDesc.Format			= visibilityBufferDesc.Format;
 
 		SamplerDesc samplerNearestDesc = {};
-		samplerNearestDesc.pName				= "Nearest Sampler";
+		samplerNearestDesc.DebugName			= "Nearest Sampler";
 		samplerNearestDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerNearestDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerNearestDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
@@ -1722,7 +1726,7 @@ bool Sandbox::InitRendererForVisBuf()
 
 	{
 		TextureDesc depthStencilDesc = {};
-		depthStencilDesc.pName			= "Geometry Pass Depth Stencil Texture";
+		depthStencilDesc.DebugName		= "Geometry Pass Depth Stencil Texture";
 		depthStencilDesc.Type			= ETextureType::TEXTURE_TYPE_2D;
 		depthStencilDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
 		depthStencilDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
@@ -1735,7 +1739,7 @@ bool Sandbox::InitRendererForVisBuf()
 		depthStencilDesc.ArrayCount		= 1;
 
 		TextureViewDesc depthStencilViewDesc = { };
-		depthStencilViewDesc.pName			= "Geometry Pass Depth Stencil Texture View";
+		depthStencilViewDesc.DebugName		= "Geometry Pass Depth Stencil Texture View";
 		depthStencilViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL;
 		depthStencilViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
 		depthStencilViewDesc.Miplevel		= 0;
@@ -1756,19 +1760,19 @@ bool Sandbox::InitRendererForVisBuf()
 	}
 
 	{
-		ITexture** ppAlbedoMaps						= m_pScene->GetAlbedoMaps();
-		ITexture** ppNormalMaps						= m_pScene->GetNormalMaps();
-		ITexture** ppAmbientOcclusionMaps			= m_pScene->GetAmbientOcclusionMaps();
-		ITexture** ppMetallicMaps					= m_pScene->GetMetallicMaps();
-		ITexture** ppRoughnessMaps					= m_pScene->GetRoughnessMaps();
+		Texture** ppAlbedoMaps						= m_pScene->GetAlbedoMaps();
+		Texture** ppNormalMaps						= m_pScene->GetNormalMaps();
+		Texture** ppAmbientOcclusionMaps			= m_pScene->GetAmbientOcclusionMaps();
+		Texture** ppMetallicMaps					= m_pScene->GetMetallicMaps();
+		Texture** ppRoughnessMaps					= m_pScene->GetRoughnessMaps();
 
-		ITextureView** ppAlbedoMapViews				= m_pScene->GetAlbedoMapViews();
-		ITextureView** ppNormalMapViews				= m_pScene->GetNormalMapViews();
-		ITextureView** ppAmbientOcclusionMapViews	= m_pScene->GetAmbientOcclusionMapViews();
-		ITextureView** ppMetallicMapViews			= m_pScene->GetMetallicMapViews();
-		ITextureView** ppRoughnessMapViews			= m_pScene->GetRoughnessMapViews();
+		TextureView** ppAlbedoMapViews				= m_pScene->GetAlbedoMapViews();
+		TextureView** ppNormalMapViews				= m_pScene->GetNormalMapViews();
+		TextureView** ppAmbientOcclusionMapViews	= m_pScene->GetAmbientOcclusionMapViews();
+		TextureView** ppMetallicMapViews			= m_pScene->GetMetallicMapViews();
+		TextureView** ppRoughnessMapViews			= m_pScene->GetRoughnessMapViews();
 
-		std::vector<ISampler*> samplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
+		std::vector<Sampler*> samplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
 
 		ResourceUpdateDesc albedoMapsUpdateDesc = {};
 		albedoMapsUpdateDesc.pResourceName								= SCENE_ALBEDO_MAPS;

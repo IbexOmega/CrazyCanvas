@@ -2,21 +2,21 @@
 #include "Rendering/RenderSystem.h"
 #include "Rendering/PipelineStateManager.h"
 
-#include "Rendering/Core/API/ICommandAllocator.h"
-#include "Rendering/Core/API/IDeviceAllocator.h"
-#include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/IPipelineLayout.h"
-#include "Rendering/Core/API/IDescriptorHeap.h"
-#include "Rendering/Core/API/IDescriptorSet.h"
-#include "Rendering/Core/API/IPipelineState.h"
-#include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/ICommandList.h"
-#include "Rendering/Core/API/ITextureView.h"
-#include "Rendering/Core/API/IRenderPass.h"
-#include "Rendering/Core/API/ITexture.h"
-#include "Rendering/Core/API/ISampler.h"
-#include "Rendering/Core/API/IShader.h"
-#include "Rendering/Core/API/IBuffer.h"
+#include "Rendering/Core/API/CommandAllocator.h"
+#include "Rendering/Core/API/DeviceAllocator.h"
+#include "Rendering/Core/API/GraphicsDevice.h"
+#include "Rendering/Core/API/PipelineLayout.h"
+#include "Rendering/Core/API/DescriptorHeap.h"
+#include "Rendering/Core/API/DescriptorSet.h"
+#include "Rendering/Core/API/PipelineState.h"
+#include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/TextureView.h"
+#include "Rendering/Core/API/RenderPass.h"
+#include "Rendering/Core/API/Texture.h"
+#include "Rendering/Core/API/Sampler.h"
+#include "Rendering/Core/API/Shader.h"
+#include "Rendering/Core/API/Buffer.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -27,7 +27,7 @@
 
 namespace LambdaEngine
 {
-	ImGuiRenderer::ImGuiRenderer(const IGraphicsDevice* pGraphicsDevice) :
+	ImGuiRenderer::ImGuiRenderer(const GraphicsDevice* pGraphicsDevice) :
 		m_pGraphicsDevice(pGraphicsDevice)
 	{
 	}
@@ -158,7 +158,7 @@ namespace LambdaEngine
 		ImGui::Render();
 	}
 
-	void ImGuiRenderer::Render(ICommandList* pCommandList, ITextureView* pRenderTarget, uint32 modFrameIndex, uint32 backBufferIndex)
+	void ImGuiRenderer::Render(CommandList* pCommandList, TextureView* pRenderTarget, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
 		//Start drawing
 		ImGuiIO& io = ImGui::GetIO();
@@ -170,8 +170,8 @@ namespace LambdaEngine
 		if (pDrawData->CmdListsCount == 0)
 			return;
 
-		IBuffer* pVertexBuffer	= m_ppVertexBuffers[modFrameIndex];
-		IBuffer* pIndexBuffer	= m_ppIndexBuffers[modFrameIndex];
+		Buffer* pVertexBuffer	= m_ppVertexBuffers[modFrameIndex];
+		Buffer* pIndexBuffer	= m_ppIndexBuffers[modFrameIndex];
 
 		{
 			uint32 vertexBufferSize		= 0;
@@ -197,8 +197,8 @@ namespace LambdaEngine
 			pCommandList->CopyBuffer(m_pIndexCopyBuffer, 0, pIndexBuffer, 0, indexBufferSize);
 		}
 
-		uint32 width	= pRenderTarget->GetDesc().pTexture->GetDesc().Width;
-		uint32 height	= pRenderTarget->GetDesc().pTexture->GetDesc().Height;
+		uint32 width	= pRenderTarget->GetDesc().Texture->GetDesc().Width;
+		uint32 height	= pRenderTarget->GetDesc().Texture->GetDesc().Height;
 
 		BeginRenderPassDesc beginRenderPassDesc = {};
 		beginRenderPassDesc.pRenderPass			= m_pRenderPass;
@@ -285,7 +285,7 @@ namespace LambdaEngine
 					if (pCmd->TextureId)
 					{
 						ImGuiTexture*		pImGuiTexture	= reinterpret_cast<ImGuiTexture*>(pCmd->TextureId);
-						IDescriptorSet* pDescriptorSet	= nullptr;
+						DescriptorSet* pDescriptorSet	= nullptr;
 
 						auto textureIt = m_TextureDescriptorSetMap.find(pImGuiTexture->pTextureView);
 
@@ -312,7 +312,7 @@ namespace LambdaEngine
 
 							if (pixelShaderIt != vertexShaderIt->second.end())
 							{
-								IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pixelShaderIt->second);
+								PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pixelShaderIt->second);
 								pCommandList->BindGraphicsPipeline(pPipelineState);
 							}
 							else
@@ -321,7 +321,7 @@ namespace LambdaEngine
 
 								vertexShaderIt->second.insert({ pixelShaderGUID, pipelineGUID });
 
-								IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pipelineGUID);
+								PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pipelineGUID);
 								pCommandList->BindGraphicsPipeline(pPipelineState);
 							}
 						}
@@ -333,7 +333,7 @@ namespace LambdaEngine
 							pixelShaderToPipelineStateMap.insert({ pixelShaderGUID, pipelineGUID });
 							m_ShadersIDToPipelineStateIDMap.insert({ vertexShaderGUID, pixelShaderToPipelineStateMap });
 
-							IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pipelineGUID);
+							PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pipelineGUID);
 							pCommandList->BindGraphicsPipeline(pPipelineState);
 						}
 
@@ -349,7 +349,7 @@ namespace LambdaEngine
 						constexpr const float32 DEFAULT_CHANNEL_ADD[4]					= { 0.0f, 0.0f, 0.0f, 0.0f };
 						constexpr const uint32 DEFAULT_CHANNEL_RESERVED_INCLUDE_MASK	= 0x00008421;  //0000 0000 0000 0000 1000 0100 0010 0001
 
-						IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_PipelineStateID);
+						PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_PipelineStateID);
 						pCommandList->BindGraphicsPipeline(pPipelineState);
 
 						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_MULT,						4 * sizeof(float32),	4 * sizeof(float32));
@@ -491,7 +491,7 @@ namespace LambdaEngine
 		}
 
 		CommandListDesc commandListDesc = {};
-		commandListDesc.pName				= "ImGui Copy Command List";
+		commandListDesc.DebugName			= "ImGui Copy Command List";
 		commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 		commandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
@@ -503,7 +503,7 @@ namespace LambdaEngine
 	bool ImGuiRenderer::CreateAllocator(uint32 pageSize)
 	{
 		DeviceAllocatorDesc allocatorDesc = {};
-		allocatorDesc.pName				= "ImGui Allocator";
+		allocatorDesc.DebugName			= "ImGui Allocator";
 		allocatorDesc.PageSizeInBytes	= pageSize;
 
 		m_pAllocator = m_pGraphicsDevice->CreateDeviceAllocator(&allocatorDesc);
@@ -514,25 +514,25 @@ namespace LambdaEngine
 	bool ImGuiRenderer::CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize)
 	{
 		BufferDesc vertexCopyBufferDesc = {};
-		vertexCopyBufferDesc.pName			= "ImGui Vertex Copy Buffer";
+		vertexCopyBufferDesc.DebugName		= "ImGui Vertex Copy Buffer";
 		vertexCopyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		vertexCopyBufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		vertexCopyBufferDesc.SizeInBytes	= vertexBufferSize;
 
 		BufferDesc indexCopyBufferDesc = {};
-		indexCopyBufferDesc.pName			= "ImGui Index Copy Buffer";
+		indexCopyBufferDesc.DebugName		= "ImGui Index Copy Buffer";
 		indexCopyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		indexCopyBufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		indexCopyBufferDesc.SizeInBytes		= indexBufferSize;
 
 		BufferDesc vertexBufferDesc = {};
-		vertexBufferDesc.pName				= "ImGui Vertex Buffer";
+		vertexBufferDesc.DebugName			= "ImGui Vertex Buffer";
 		vertexBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		vertexBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
 		vertexBufferDesc.SizeInBytes		= vertexBufferSize;
 
 		BufferDesc indexBufferDesc = {};
-		indexBufferDesc.pName				= "ImGui Index Buffer";
+		indexBufferDesc.DebugName			= "ImGui Index Buffer";
 		indexBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
 		indexBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
 		indexBufferDesc.SizeInBytes			= vertexBufferSize;
@@ -540,13 +540,13 @@ namespace LambdaEngine
 		m_pVertexCopyBuffer					= m_pGraphicsDevice->CreateBuffer(&vertexCopyBufferDesc,	m_pAllocator);
 		m_pIndexCopyBuffer					= m_pGraphicsDevice->CreateBuffer(&indexCopyBufferDesc,		m_pAllocator);
 
-		m_ppVertexBuffers					= DBG_NEW IBuffer*[m_BackBufferCount];
-		m_ppIndexBuffers					= DBG_NEW IBuffer*[m_BackBufferCount];
+		m_ppVertexBuffers					= DBG_NEW Buffer*[m_BackBufferCount];
+		m_ppIndexBuffers					= DBG_NEW Buffer*[m_BackBufferCount];
 		
 		for (uint32 b = 0; b < m_BackBufferCount; b++)
 		{
-			IBuffer* pVertexBuffer			= m_pGraphicsDevice->CreateBuffer(&vertexBufferDesc,		m_pAllocator);
-			IBuffer* pIndexBuffer			= m_pGraphicsDevice->CreateBuffer(&indexBufferDesc,			m_pAllocator);
+			Buffer* pVertexBuffer			= m_pGraphicsDevice->CreateBuffer(&vertexBufferDesc,		m_pAllocator);
+			Buffer* pIndexBuffer			= m_pGraphicsDevice->CreateBuffer(&indexBufferDesc,			m_pAllocator);
 
 			if (pVertexBuffer != nullptr && pIndexBuffer != nullptr)
 			{
@@ -573,12 +573,12 @@ namespace LambdaEngine
 		int64 textureSize = 4 * width * height;
 
 		BufferDesc fontBufferDesc = {};
-		fontBufferDesc.pName				= "ImGui Font Buffer";
+		fontBufferDesc.DebugName			= "ImGui Font Buffer";
 		fontBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		fontBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		fontBufferDesc.SizeInBytes			= textureSize;
 
-		IBuffer* pFontBuffer = m_pGraphicsDevice->CreateBuffer(&fontBufferDesc, m_pAllocator);
+		Buffer* pFontBuffer = m_pGraphicsDevice->CreateBuffer(&fontBufferDesc, m_pAllocator);
 
 		if (pFontBuffer == nullptr)
 		{
@@ -590,7 +590,7 @@ namespace LambdaEngine
 		pFontBuffer->Unmap();
 
 		TextureDesc fontTextureDesc = {};
-		fontTextureDesc.pName		= "ImGui Font Texture";
+		fontTextureDesc.DebugName	= "ImGui Font Texture";
 		fontTextureDesc.MemoryType  = EMemoryType::MEMORY_TYPE_GPU;
 		fontTextureDesc.Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
 		fontTextureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
@@ -665,8 +665,8 @@ namespace LambdaEngine
 		SAFEDELETE(pFontBuffer);
 
 		TextureViewDesc fontTextureViewDesc = {};
-		fontTextureViewDesc.pName			= "ImGui Font Texture View";
-		fontTextureViewDesc.pTexture		= m_pFontTexture;
+		fontTextureViewDesc.DebugName		= "ImGui Font Texture View";
+		fontTextureViewDesc.Texture			= m_pFontTexture;
 		fontTextureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		fontTextureViewDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
 		fontTextureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
@@ -683,7 +683,7 @@ namespace LambdaEngine
 	bool ImGuiRenderer::CreateSamplers()
 	{
 		SamplerDesc samplerDesc = {};
-		samplerDesc.pName				= "ImGui Sampler";
+		samplerDesc.DebugName			= "ImGui Sampler";
 		samplerDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
@@ -713,14 +713,12 @@ namespace LambdaEngine
 		colorAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_PRESENT;
 		colorAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_PRESENT;
 
-		ETextureState pTextureState[1] = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
+		ETextureState textureState[1] = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
 
 		RenderPassSubpassDesc subpassDesc = {};
-		subpassDesc.pInputAttachmentStates		= nullptr;
-		subpassDesc.InputAttachmentCount		= 0;
-		subpassDesc.pRenderTargetStates			= pTextureState;
-		subpassDesc.pResolveAttachmentStates	= nullptr;
-		subpassDesc.RenderTargetCount			= 1;
+		subpassDesc.InputAttachmentStates		= { };
+		subpassDesc.RenderTargetStates			= { textureState[0] };
+		subpassDesc.ResolveAttachmentStates		= { };
 		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DONT_CARE;
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
@@ -732,13 +730,10 @@ namespace LambdaEngine
 		subpassDependencyDesc.DstStageMask		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
 		RenderPassDesc renderPassDesc = {};
-		renderPassDesc.pName					= "ImGui Render Pass";
-		renderPassDesc.pAttachments				= &colorAttachmentDesc;
-		renderPassDesc.AttachmentCount			= 1;
-		renderPassDesc.pSubpasses				= &subpassDesc;
-		renderPassDesc.SubpassCount				= 1;
-		renderPassDesc.pSubpassDependencies		= &subpassDependencyDesc;
-		renderPassDesc.SubpassDependencyCount	= 1;
+		renderPassDesc.DebugName				= "ImGui Render Pass";
+		renderPassDesc.Attachments				= { colorAttachmentDesc };
+		renderPassDesc.Subpasses				= { subpassDesc };
+		renderPassDesc.SubpassDependencies		= { subpassDependencyDesc };
 
 		m_pRenderPass = m_pGraphicsDevice->CreateRenderPass(&renderPassDesc);
 
@@ -752,11 +747,10 @@ namespace LambdaEngine
 		descriptorBindingDesc.DescriptorCount		= 1;
 		descriptorBindingDesc.Binding				= 0;
 		descriptorBindingDesc.ShaderStageMask		= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
-		descriptorBindingDesc.ppImmutableSamplers	= nullptr;
+		descriptorBindingDesc.ImmutableSamplers		= { };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc = {};
-		descriptorSetLayoutDesc.pDescriptorBindings		= &descriptorBindingDesc;
-		descriptorSetLayoutDesc.DescriptorBindingCount	= 1;
+		descriptorSetLayoutDesc.DescriptorBindings		= { descriptorBindingDesc };
 
 		ConstantRangeDesc constantRangeVertexDesc = {};
 		constantRangeVertexDesc.ShaderStageFlags		= FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
@@ -771,11 +765,9 @@ namespace LambdaEngine
 		ConstantRangeDesc pConstantRanges[2] = { constantRangeVertexDesc, constantRangePixelDesc };
 
 		PipelineLayoutDesc pipelineLayoutDesc = {};
-		pipelineLayoutDesc.pName						= "ImGui Pipeline Layout";
-		pipelineLayoutDesc.pDescriptorSetLayouts		= &descriptorSetLayoutDesc;
-		pipelineLayoutDesc.DescriptorSetLayoutCount		= 1;
-		pipelineLayoutDesc.pConstantRanges				= pConstantRanges;
-		pipelineLayoutDesc.ConstantRangeCount			= ARR_SIZE(pConstantRanges);
+		pipelineLayoutDesc.DebugName				= "ImGui Pipeline Layout";
+		pipelineLayoutDesc.DescriptorSetLayouts		= { descriptorSetLayoutDesc };
+		pipelineLayoutDesc.ConstantRanges			= { pConstantRanges[0], pConstantRanges[1] };
 
 		m_pPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 
@@ -784,8 +776,7 @@ namespace LambdaEngine
 
 	bool ImGuiRenderer::CreateDescriptorSet()
 	{
-		DescriptorCountDesc descriptorCountDesc = {};
-		descriptorCountDesc.DescriptorSetCount						= 64;
+		DescriptorHeapInfo descriptorCountDesc = {};
 		descriptorCountDesc.SamplerDescriptorCount					= 1;
 		descriptorCountDesc.TextureDescriptorCount					= 1;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount	= 64;
@@ -795,7 +786,8 @@ namespace LambdaEngine
 		descriptorCountDesc.AccelerationStructureDescriptorCount	= 1;
 
 		DescriptorHeapDesc descriptorHeapDesc = {};
-		descriptorHeapDesc.pName				= "ImGui Descriptor Heap";
+		descriptorHeapDesc.DebugName			= "ImGui Descriptor Heap";
+		descriptorHeapDesc.DescriptorSetCount	= 64;
 		descriptorHeapDesc.DescriptorCount		= descriptorCountDesc;
 
 		m_pDescriptorHeap = m_pGraphicsDevice->CreateDescriptorHeap(&descriptorHeapDesc);
@@ -828,38 +820,40 @@ namespace LambdaEngine
 
 	uint64 ImGuiRenderer::InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader)
 	{
-		VertexInputAttributeDesc pVertexAttributeDesc[3] = {};
-		pVertexAttributeDesc[0].Location	= 0;
-		pVertexAttributeDesc[0].Offset		= IM_OFFSETOF(ImDrawVert, pos);
-		pVertexAttributeDesc[0].Format		= EFormat::FORMAT_R32G32_SFLOAT;
-		pVertexAttributeDesc[1].Location	= 1;
-		pVertexAttributeDesc[1].Offset		= IM_OFFSETOF(ImDrawVert, uv);
-		pVertexAttributeDesc[1].Format		= EFormat::FORMAT_R32G32_SFLOAT;
-		pVertexAttributeDesc[2].Location	= 2;
-		pVertexAttributeDesc[2].Offset		= IM_OFFSETOF(ImDrawVert, col);
-		pVertexAttributeDesc[2].Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
+		InputElementDesc elemetDesc[3] = { };
+		elemetDesc[0].Binding		= 0;
+		elemetDesc[0].Stride		= sizeof(ImDrawVert);
+		elemetDesc[0].InputRate		= EVertexInputRate::VERTEX_INPUT_PER_VERTEX;
+		elemetDesc[0].Location		= 0;
+		elemetDesc[0].Format		= EFormat::FORMAT_R32G32_SFLOAT;
+		elemetDesc[0].Offset		= IM_OFFSETOF(ImDrawVert, pos);
 
-		VertexInputBindingDesc vertexInputBindingDesc = {};
-		vertexInputBindingDesc.Binding			= 0;
-		vertexInputBindingDesc.Stride			= sizeof(ImDrawVert);
-		vertexInputBindingDesc.InputRate		= EVertexInputRate::VERTEX_INPUT_PER_VERTEX;
-		memcpy(vertexInputBindingDesc.pAttributes, pVertexAttributeDesc, 3 * sizeof(VertexInputAttributeDesc));
-		vertexInputBindingDesc.AttributeCount	= 3;
+		elemetDesc[1].Binding		= 0;
+		elemetDesc[1].Stride		= sizeof(ImDrawVert);
+		elemetDesc[1].InputRate		= EVertexInputRate::VERTEX_INPUT_PER_VERTEX;
+		elemetDesc[1].Location		= 1;
+		elemetDesc[1].Format		= EFormat::FORMAT_R32G32_SFLOAT;
+		elemetDesc[1].Offset		= IM_OFFSETOF(ImDrawVert, uv);
+
+		elemetDesc[2].Binding		= 0;
+		elemetDesc[2].Stride		= sizeof(ImDrawVert);
+		elemetDesc[2].InputRate		= EVertexInputRate::VERTEX_INPUT_PER_VERTEX;
+		elemetDesc[2].Location		= 2;
+		elemetDesc[2].Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
+		elemetDesc[2].Offset		= IM_OFFSETOF(ImDrawVert, col);
 
 		BlendAttachmentStateDesc blendAttachmentState = {};
 		blendAttachmentState.BlendEnabled				= true;
 		blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
 
-		GraphicsManagedPipelineStateDesc pipelineStateDesc = {};
-		pipelineStateDesc.pName							= "ImGui Pipeline State";
-		pipelineStateDesc.pRenderPass					= m_pRenderPass;
-		pipelineStateDesc.pPipelineLayout				= m_pPipelineLayout;
-		pipelineStateDesc.pVertexInputBindings[0]		= vertexInputBindingDesc;
-		pipelineStateDesc.VertexInputBindingCount		= 1;
-		pipelineStateDesc.pBlendAttachmentStates[0]		= blendAttachmentState;
-		pipelineStateDesc.BlendAttachmentStateCount		= 1;
-		pipelineStateDesc.VertexShader					= vertexShader;
-		pipelineStateDesc.PixelShader					= pixelShader;
+		ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
+		pipelineStateDesc.DebugName							= "ImGui Pipeline State";
+		pipelineStateDesc.RenderPass						= m_pRenderPass;
+		pipelineStateDesc.PipelineLayout					= m_pPipelineLayout;
+		pipelineStateDesc.InputLayout						= { elemetDesc[0], elemetDesc[1], elemetDesc[2] };
+		pipelineStateDesc.BlendState.BlendAttachmentStates	= { blendAttachmentState };
+		pipelineStateDesc.VertexShader.ShaderGUID			= vertexShader;
+		pipelineStateDesc.PixelShader.ShaderGUID			= pixelShader;
 
 		return PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
 	}

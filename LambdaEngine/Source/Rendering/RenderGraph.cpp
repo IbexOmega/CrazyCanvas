@@ -1,21 +1,21 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphDescriptionParser.h"
 
-#include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/IDescriptorHeap.h"
-#include "Rendering/Core/API/IPipelineLayout.h"
-#include "Rendering/Core/API/IDescriptorSet.h"
-#include "Rendering/Core/API/IRenderPass.h"
+#include "Rendering/Core/API/GraphicsDevice.h"
+#include "Rendering/Core/API/DescriptorHeap.h"
+#include "Rendering/Core/API/PipelineLayout.h"
+#include "Rendering/Core/API/DescriptorSet.h"
+#include "Rendering/Core/API/RenderPass.h"
 #include "Rendering/Core/API/GraphicsHelpers.h"
-#include "Rendering/Core/API/ICommandAllocator.h"
-#include "Rendering/Core/API/ICommandList.h"
-#include "Rendering/Core/API/IBuffer.h"
-#include "Rendering/Core/API/ITexture.h"
-#include "Rendering/Core/API/ISampler.h"
-#include "Rendering/Core/API/ITextureView.h"
-#include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/IFence.h"
-#include "Rendering/Core/API/IShader.h"
+#include "Rendering/Core/API/CommandAllocator.h"
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/Buffer.h"
+#include "Rendering/Core/API/Texture.h"
+#include "Rendering/Core/API/Sampler.h"
+#include "Rendering/Core/API/TextureView.h"
+#include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/Fence.h"
+#include "Rendering/Core/API/Shader.h"
 
 #include "Rendering/RenderSystem.h"
 #include "Rendering/PipelineStateManager.h"
@@ -26,7 +26,7 @@
 
 namespace LambdaEngine
 {
-	RenderGraph::RenderGraph(const IGraphicsDevice* pGraphicsDevice) :
+	RenderGraph::RenderGraph(const GraphicsDevice* pGraphicsDevice) :
 		m_pGraphicsDevice(pGraphicsDevice)
 	{
 	}
@@ -217,7 +217,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::GetAndIncrementFence(IFence** ppFence, uint64* pSignalValue)
+	void RenderGraph::GetAndIncrementFence(Fence** ppFence, uint64* pSignalValue)
 	{
 		(*pSignalValue) = m_SignalValue++;
 		(*ppFence) = m_pFence;
@@ -240,7 +240,7 @@ namespace LambdaEngine
 						for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
 						{
 							uint32 descriptorSetIndex = b * pRenderStage->TextureSubDescriptorSetCount + s;
-							IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
 							m_pGraphicsDevice->CopyDescriptorSet(pRenderStage->ppTextureDescriptorSets[descriptorSetIndex], pDescriptorSet);
 							SAFERELEASE(pRenderStage->ppTextureDescriptorSets[descriptorSetIndex]);
 							pRenderStage->ppTextureDescriptorSets[descriptorSetIndex] = pDescriptorSet;
@@ -324,7 +324,7 @@ namespace LambdaEngine
 				{
 					for (uint32 b = 0; b < m_BackBufferCount; b++)
 					{
-						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Buffer Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
+						DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Buffer Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
 						m_pGraphicsDevice->CopyDescriptorSet(pRenderStage->ppBufferDescriptorSets[b], pDescriptorSet);
 						SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
 						pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
@@ -407,7 +407,7 @@ namespace LambdaEngine
 
 	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)
 	{
-		ZERO_MEMORY(m_ppExecutionStages, m_ExecutionStageCount * sizeof(ICommandList*));
+		ZERO_MEMORY(m_ppExecutionStages, m_ExecutionStageCount * sizeof(CommandList*));
 
 		uint32 currentExecutionStage = 0;
 
@@ -423,7 +423,7 @@ namespace LambdaEngine
 				if (pPipelineStage->Type == EPipelineStageType::RENDER)
 				{
 					RenderStage* pRenderStage = &m_pRenderStages[pPipelineStage->StageIndex];
-					IPipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
+					PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 
 					switch (pPipelineState->GetType())
 					{
@@ -457,7 +457,7 @@ namespace LambdaEngine
 
 		for (uint32 e = 0; e < m_ExecutionStageCount; e++)
 		{
-			ICommandList* pCommandList = m_ppExecutionStages[e];
+			CommandList* pCommandList = m_ppExecutionStages[e];
 
 			if (pCommandList != nullptr)
 			{
@@ -475,7 +475,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool RenderGraph::GetResourceTextures(const char* pResourceName, ITexture* const ** pppTexture, uint32* pTextureView) const
+	bool RenderGraph::GetResourceTextures(const char* pResourceName, Texture* const ** pppTexture, uint32* pTextureView) const
 	{
 		auto it = m_ResourceMap.find(pResourceName);
 
@@ -489,7 +489,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	bool RenderGraph::GetResourceTextureViews(const char* pResourceName, ITextureView* const ** pppTextureViews, uint32* pTextureViewCount) const
+	bool RenderGraph::GetResourceTextureViews(const char* pResourceName, TextureView* const ** pppTextureViews, uint32* pTextureViewCount) const
 	{
 		auto it = m_ResourceMap.find(pResourceName);
 
@@ -503,7 +503,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	bool RenderGraph::GetResourceBuffers(const char* pResourceName, IBuffer* const ** pppBuffers, uint32* pBufferCount) const
+	bool RenderGraph::GetResourceBuffers(const char* pResourceName, Buffer* const ** pppBuffers, uint32* pBufferCount) const
 	{
 		auto it = m_ResourceMap.find(pResourceName);
 
@@ -517,7 +517,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	bool RenderGraph::GetResourceAccelerationStructure(const char* pResourceName, IAccelerationStructure** ppAccelerationStructure) const
+	bool RenderGraph::GetResourceAccelerationStructure(const char* pResourceName, AccelerationStructure** ppAccelerationStructure) const
 	{
 		auto it = m_ResourceMap.find(pResourceName);
 
@@ -533,7 +533,7 @@ namespace LambdaEngine
 	bool RenderGraph::CreateFence()
 	{
 		FenceDesc fenceDesc = {};
-		fenceDesc.pName			= "Render Stage Fence";
+		fenceDesc.DebugName		= "Render Stage Fence";
 		fenceDesc.InitalValue	= 0;
 
 		m_pFence = m_pGraphicsDevice->CreateFence(&fenceDesc);
@@ -551,8 +551,7 @@ namespace LambdaEngine
 	{
 		constexpr uint32 DESCRIPTOR_COUNT = 1024;
 
-		DescriptorCountDesc descriptorCountDesc = { };
-		descriptorCountDesc.DescriptorSetCount							= DESCRIPTOR_COUNT;
+		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount						= DESCRIPTOR_COUNT;
 		descriptorCountDesc.TextureDescriptorCount						= DESCRIPTOR_COUNT;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount		= DESCRIPTOR_COUNT;
@@ -562,8 +561,9 @@ namespace LambdaEngine
 		descriptorCountDesc.AccelerationStructureDescriptorCount		= DESCRIPTOR_COUNT;
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
-		descriptorHeapDesc.pName			= "Render Graph Descriptor Heap";
-		descriptorHeapDesc.DescriptorCount	= descriptorCountDesc;
+		descriptorHeapDesc.DebugName			= "Render Graph Descriptor Heap";
+		descriptorHeapDesc.DescriptorSetCount	= DESCRIPTOR_COUNT;
+		descriptorHeapDesc.DescriptorCount		= descriptorCountDesc;
 
 		m_pDescriptorHeap = m_pGraphicsDevice->CreateDescriptorHeap(&descriptorHeapDesc);
 
@@ -790,7 +790,6 @@ namespace LambdaEngine
 
 						DescriptorBindingDesc descriptorBinding = {};
 						descriptorBinding.DescriptorType		= descriptorType;
-						descriptorBinding.ppImmutableSamplers	= nullptr;
 						descriptorBinding.ShaderStageMask		= pAttachment->ShaderStages;
 
 						if (simpleType == ESimpleResourceType::TEXTURE)
@@ -866,24 +865,24 @@ namespace LambdaEngine
 				if (textureDescriptorSetDescriptions.size() > 0)
 				{
 					DescriptorSetLayoutDesc descriptorSetLayout = {};
-					descriptorSetLayout.pDescriptorBindings		= textureDescriptorSetDescriptions.data();
-					descriptorSetLayout.DescriptorBindingCount	= (uint32)textureDescriptorSetDescriptions.size();
+					descriptorSetLayout.DescriptorBindings		= textureDescriptorSetDescriptions;
 					descriptorSetLayouts.push_back(descriptorSetLayout);
 				}
 
 				if (bufferDescriptorSetDescriptions.size() > 0)
 				{
 					DescriptorSetLayoutDesc descriptorSetLayout = {};
-					descriptorSetLayout.pDescriptorBindings		= bufferDescriptorSetDescriptions.data();
-					descriptorSetLayout.DescriptorBindingCount	= (uint32)bufferDescriptorSetDescriptions.size();
+					descriptorSetLayout.DescriptorBindings		= bufferDescriptorSetDescriptions;
 					descriptorSetLayouts.push_back(descriptorSetLayout);
 				}
 
 				PipelineLayoutDesc pipelineLayoutDesc = {};
-				pipelineLayoutDesc.pDescriptorSetLayouts	= descriptorSetLayouts.data();
-				pipelineLayoutDesc.DescriptorSetLayoutCount = (uint32)descriptorSetLayouts.size();
-				pipelineLayoutDesc.pConstantRanges			= &constantRangeDesc;
-				pipelineLayoutDesc.ConstantRangeCount		= constantRangeDesc.SizeInBytes > 0 ? 1 : 0;
+				pipelineLayoutDesc.DescriptorSetLayouts		= descriptorSetLayouts;
+
+				if (constantRangeDesc.SizeInBytes > 0)
+				{
+					pipelineLayoutDesc.ConstantRanges = { constantRangeDesc };
+				}
 
 				pRenderStage->pPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 			}
@@ -893,22 +892,22 @@ namespace LambdaEngine
 				if (textureDescriptorSetDescriptions.size() > 0)
 				{
 					uint32 textureDescriptorSetCount = m_BackBufferCount * pRenderStage->TextureSubDescriptorSetCount;
-					pRenderStage->ppTextureDescriptorSets = DBG_NEW IDescriptorSet*[textureDescriptorSetCount];
+					pRenderStage->ppTextureDescriptorSets = DBG_NEW DescriptorSet*[textureDescriptorSetCount];
 
 					for (uint32 i = 0; i < textureDescriptorSetCount; i++)
 					{
-						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+						DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
 						pRenderStage->ppTextureDescriptorSets[i] = pDescriptorSet;
 					}
 				}
 
 				if (bufferDescriptorSetDescriptions.size() > 0)
 				{
-					pRenderStage->ppBufferDescriptorSets = DBG_NEW IDescriptorSet*[m_BackBufferCount];
+					pRenderStage->ppBufferDescriptorSets = DBG_NEW DescriptorSet*[m_BackBufferCount];
 
 					for (uint32 i = 0; i < m_BackBufferCount; i++)
 					{
-						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Buffer Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
+						DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Buffer Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->ppTextureDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
 						pRenderStage->ppBufferDescriptorSets[i] = pDescriptorSet;
 					}
 				}
@@ -917,20 +916,15 @@ namespace LambdaEngine
 			//Create Pipeline State
 			if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 			{
-				GraphicsManagedPipelineStateDesc pipelineDesc		= *pRenderStageDesc->GraphicsPipeline.pGraphicsDesc;
+				ManagedGraphicsPipelineStateDesc pipelineDesc	= *pRenderStageDesc->GraphicsPipeline.pGraphicsDesc;
 
-				pipelineDesc.pPipelineLayout				= pRenderStage->pPipelineLayout;
-				memcpy(pipelineDesc.pBlendAttachmentStates, renderPassBlendAttachmentStates.data(), renderPassBlendAttachmentStates.size() * sizeof(BlendAttachmentStateDesc));
-				pipelineDesc.BlendAttachmentStateCount		= (uint32)renderPassBlendAttachmentStates.size();
+				pipelineDesc.PipelineLayout						= pRenderStage->pPipelineLayout;
+				pipelineDesc.BlendState.BlendAttachmentStates	= renderPassBlendAttachmentStates;
 
-				//Create RenderPass
+				// Create RenderPass
 				{
 					RenderPassSubpassDesc renderPassSubpassDesc = {};
-					renderPassSubpassDesc.pInputAttachmentStates		= nullptr;
-					renderPassSubpassDesc.InputAttachmentCount			= 0;
-					renderPassSubpassDesc.pResolveAttachmentStates		= nullptr;
-					renderPassSubpassDesc.pRenderTargetStates			= renderPassRenderTargetStates.data();
-					renderPassSubpassDesc.RenderTargetCount				= (uint32)renderPassRenderTargetStates.size();
+					renderPassSubpassDesc.RenderTargetStates			= renderPassRenderTargetStates;
 					renderPassSubpassDesc.DepthStencilAttachmentState	= pDepthStencilResource != nullptr ? ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT : ETextureState::TEXTURE_STATE_DONT_CARE;
 
 					RenderPassSubpassDependencyDesc renderPassSubpassDependencyDesc = {};
@@ -945,16 +939,13 @@ namespace LambdaEngine
 						renderPassAttachmentDescriptions.push_back(renderPassDepthStencilDescription);
 
 					RenderPassDesc renderPassDesc = {};
-					renderPassDesc.pName					= "";
-					renderPassDesc.pAttachments				= renderPassAttachmentDescriptions.data();
-					renderPassDesc.AttachmentCount			= (uint32)renderPassAttachmentDescriptions.size();
-					renderPassDesc.pSubpasses				= &renderPassSubpassDesc;
-					renderPassDesc.SubpassCount				= 1;
-					renderPassDesc.pSubpassDependencies		= &renderPassSubpassDependencyDesc;
-					renderPassDesc.SubpassDependencyCount	= 1;
+					renderPassDesc.DebugName				= "";
+					renderPassDesc.Attachments				= renderPassAttachmentDescriptions;
+					renderPassDesc.Subpasses				= { renderPassSubpassDesc };
+					renderPassDesc.SubpassDependencies		= { renderPassSubpassDependencyDesc };
 
-					IRenderPass* pRenderPass		= m_pGraphicsDevice->CreateRenderPass(&renderPassDesc);
-					pipelineDesc.pRenderPass		= pRenderPass;
+					RenderPass* pRenderPass		= m_pGraphicsDevice->CreateRenderPass(&renderPassDesc);
+					pipelineDesc.RenderPass		= pRenderPass;
 
 					pRenderStage->pRenderPass		= pRenderPass;
 				}
@@ -994,17 +985,17 @@ namespace LambdaEngine
 			}
 			else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 			{
-				ComputeManagedPipelineStateDesc pipelineDesc = *pRenderStageDesc->ComputePipeline.pComputeDesc;
+				ManagedComputePipelineStateDesc pipelineDesc = *pRenderStageDesc->ComputePipeline.pComputeDesc;
 
-				pipelineDesc.pPipelineLayout = pRenderStage->pPipelineLayout;
+				pipelineDesc.PipelineLayout = pRenderStage->pPipelineLayout;
 
 				pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
 			}
 			else if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 			{
-				RayTracingManagedPipelineStateDesc pipelineDesc = *pRenderStageDesc->RayTracingPipeline.pRayTracingDesc;
+				ManagedRayTracingPipelineStateDesc pipelineDesc = *pRenderStageDesc->RayTracingPipeline.pRayTracingDesc;
 
-				pipelineDesc.pPipelineLayout = pRenderStage->pPipelineLayout;
+				pipelineDesc.PipelineLayout = pRenderStage->pPipelineLayout;
 
 				pRenderStage->PipelineStateID = PipelineStateManager::CreateRayTracingPipelineState(&pipelineDesc);
 			}
@@ -1296,10 +1287,10 @@ namespace LambdaEngine
 			pPipelineStage->Type		= pPipelineStageDesc->Type;
 			pPipelineStage->StageIndex	= pPipelineStageDesc->StageIndex;
 
-			pPipelineStage->ppGraphicsCommandAllocators		= DBG_NEW ICommandAllocator*[m_BackBufferCount];
-			pPipelineStage->ppComputeCommandAllocators		= DBG_NEW ICommandAllocator*[m_BackBufferCount];
-			pPipelineStage->ppGraphicsCommandLists			= DBG_NEW ICommandList*[m_BackBufferCount];
-			pPipelineStage->ppComputeCommandLists			= DBG_NEW ICommandList*[m_BackBufferCount];
+			pPipelineStage->ppGraphicsCommandAllocators		= DBG_NEW CommandAllocator*[m_BackBufferCount];
+			pPipelineStage->ppComputeCommandAllocators		= DBG_NEW CommandAllocator*[m_BackBufferCount];
+			pPipelineStage->ppGraphicsCommandLists			= DBG_NEW CommandList*[m_BackBufferCount];
+			pPipelineStage->ppComputeCommandLists			= DBG_NEW CommandList*[m_BackBufferCount];
 			
 			for (uint32 f = 0; f < m_BackBufferCount; f++)
 			{
@@ -1307,14 +1298,14 @@ namespace LambdaEngine
 				pPipelineStage->ppComputeCommandAllocators[f]	= m_pGraphicsDevice->CreateCommandAllocator("Render Graph Compute Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 
 				CommandListDesc graphicsCommandListDesc = {};
-				graphicsCommandListDesc.pName					= "Render Graph Graphics Command List";
+				graphicsCommandListDesc.DebugName				= "Render Graph Graphics Command List";
 				graphicsCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 				graphicsCommandListDesc.Flags					= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 				pPipelineStage->ppGraphicsCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppGraphicsCommandAllocators[f], &graphicsCommandListDesc);
 
 				CommandListDesc computeCommandListDesc = {};
-				computeCommandListDesc.pName					= "Render Graph Compute Command List";
+				computeCommandListDesc.DebugName				= "Render Graph Compute Command List";
 				computeCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 				computeCommandListDesc.Flags					= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
@@ -1322,7 +1313,7 @@ namespace LambdaEngine
 			}
 		}
 
-		m_ppExecutionStages = DBG_NEW ICommandList*[m_ExecutionStageCount];
+		m_ppExecutionStages = DBG_NEW CommandList*[m_ExecutionStageCount];
 
 		return true;
 	}
@@ -1342,9 +1333,9 @@ namespace LambdaEngine
 	{
 		for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)
 		{
-			ITexture** ppTexture = &pResource->Texture.Textures[sr];
-			ITextureView** ppTextureView = &pResource->Texture.TextureViews[sr];
-			ISampler** ppSampler = &pResource->Texture.Samplers[sr];
+			Texture** ppTexture = &pResource->Texture.Textures[sr];
+			TextureView** ppTextureView = &pResource->Texture.TextureViews[sr];
+			Sampler** ppSampler = &pResource->Texture.Samplers[sr];
 
 			//Update Texture
 			{
@@ -1354,10 +1345,10 @@ namespace LambdaEngine
 				SAFERELEASE(*ppTexture);
 				SAFERELEASE(*ppTextureView);
 
-				ITexture* pTexture			= m_pGraphicsDevice->CreateTexture(&textureDesc, nullptr);
+				Texture* pTexture			= m_pGraphicsDevice->CreateTexture(&textureDesc, nullptr);
 
-				textureViewDesc.pTexture = pTexture;
-				ITextureView* pTextureView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
+				textureViewDesc.Texture = pTexture;
+				TextureView* pTextureView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 				(*ppTexture)		= pTexture;
 				(*ppTextureView)	= pTextureView;
@@ -1380,7 +1371,7 @@ namespace LambdaEngine
 				const SamplerDesc& samplerDesc = *desc.InternalTextureUpdate.ppSamplerDesc[sr];
 
 				SAFERELEASE(*ppSampler);
-				ISampler* pSampler = m_pGraphicsDevice->CreateSampler(&samplerDesc);
+				Sampler* pSampler = m_pGraphicsDevice->CreateSampler(&samplerDesc);
 				(*ppSampler) = pSampler;
 			}
 		}
@@ -1396,12 +1387,12 @@ namespace LambdaEngine
 		{
 			const BufferDesc& bufferDesc = *desc.InternalBufferUpdate.ppBufferDesc[sr];
 
-			IBuffer** ppBuffer		= &pResource->Buffer.Buffers[sr];
+			Buffer** ppBuffer		= &pResource->Buffer.Buffers[sr];
 			uint64* pOffset			= &pResource->Buffer.Offsets[sr];
 			uint64* pSizeInBytes	= &pResource->Buffer.SizesInBytes[sr];
 
 			SAFERELEASE(*ppBuffer);
-			IBuffer* pBuffer = m_pGraphicsDevice->CreateBuffer(desc.InternalBufferUpdate.ppBufferDesc[sr], nullptr);
+			Buffer* pBuffer = m_pGraphicsDevice->CreateBuffer(desc.InternalBufferUpdate.ppBufferDesc[sr], nullptr);
 			
 			(*ppBuffer)		= pBuffer;
 			(*pSizeInBytes) = bufferDesc.SizeInBytes;
@@ -1426,14 +1417,14 @@ namespace LambdaEngine
 		//Update Texture
 		for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)
 		{
-			ITexture** ppTexture = &pResource->Texture.Textures[sr];
-			ITextureView** ppTextureView = &pResource->Texture.TextureViews[sr];
-			ISampler** ppSampler = &pResource->Texture.Samplers[sr];
+			Texture** ppTexture = &pResource->Texture.Textures[sr];
+			TextureView** ppTextureView = &pResource->Texture.TextureViews[sr];
+			Sampler** ppSampler = &pResource->Texture.Samplers[sr];
 
 			//Update Texture
 			{
-				ITexture* pTexture			= desc.ExternalTextureUpdate.ppTextures[sr];
-				ITextureView* pTextureView	= desc.ExternalTextureUpdate.ppTextureViews[sr];
+				Texture* pTexture			= desc.ExternalTextureUpdate.ppTextures[sr];
+				TextureView* pTextureView	= desc.ExternalTextureUpdate.ppTextureViews[sr];
 
 				(*ppTexture) = pTexture;
 				(*ppTextureView) = pTextureView;
@@ -1453,7 +1444,7 @@ namespace LambdaEngine
 			//Update Sampler
 			if (desc.ExternalTextureUpdate.ppSamplers != nullptr)
 			{
-				ISampler* pSampler	= desc.ExternalTextureUpdate.ppSamplers[sr];
+				Sampler* pSampler	= desc.ExternalTextureUpdate.ppSamplers[sr];
 				(*ppSampler)		= pSampler;
 			}
 		}
@@ -1469,12 +1460,12 @@ namespace LambdaEngine
 		//Update Buffer
 		for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)
 		{
-			IBuffer** ppBuffer		= &pResource->Buffer.Buffers[sr];
+			Buffer** ppBuffer		= &pResource->Buffer.Buffers[sr];
 			uint64* pOffset			= &pResource->Buffer.Offsets[sr];
 			uint64* pSizeInBytes	= &pResource->Buffer.SizesInBytes[sr];
 
 
-			IBuffer* pBuffer = desc.ExternalBufferUpdate.ppBuffer[sr];
+			Buffer* pBuffer = desc.ExternalBufferUpdate.ppBuffer[sr];
 
 			(*ppBuffer)		= pBuffer;
 			(*pSizeInBytes) = pBuffer->GetDesc().SizeInBytes;
@@ -1503,12 +1494,12 @@ namespace LambdaEngine
 
 	void RenderGraph::ExecuteSynchronizationStage(
 		SynchronizationStage*	pSynchronizationStage, 
-		ICommandAllocator*		pGraphicsCommandAllocator, 
-		ICommandList*			pGraphicsCommandList, 
-		ICommandAllocator*		pComputeCommandAllocator, 
-		ICommandList*			pComputeCommandList,
-		ICommandList**			ppFirstExecutionStage,
-		ICommandList**			ppSecondExecutionStage, 
+		CommandAllocator*		pGraphicsCommandAllocator, 
+		CommandList*			pGraphicsCommandList, 
+		CommandAllocator*		pComputeCommandAllocator, 
+		CommandList*			pComputeCommandList,
+		CommandList**			ppFirstExecutionStage,
+		CommandList**			ppSecondExecutionStage, 
 		uint32					backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(backBufferIndex);
@@ -1631,10 +1622,10 @@ namespace LambdaEngine
 
 	void RenderGraph::ExecuteGraphicsRenderStage(
 		RenderStage*		pRenderStage, 
-		IPipelineState*		pPipelineState,
-		ICommandAllocator*	pGraphicsCommandAllocator, 
-		ICommandList*		pGraphicsCommandList, 
-		ICommandList**		ppExecutionStage, 
+		PipelineState*		pPipelineState,
+		CommandAllocator*	pGraphicsCommandAllocator, 
+		CommandList*		pGraphicsCommandList, 
+		CommandList**		ppExecutionStage, 
 		uint32				backBufferIndex)
 	{
 		RenderStageParameters* pParameters = &pRenderStage->Parameters;
@@ -1644,8 +1635,8 @@ namespace LambdaEngine
 
 		uint32 flags = FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_INLINE;
 
-		ITextureView* ppTextureViews[MAX_COLOR_ATTACHMENTS];
-		ITextureView* pDeptchStencilTextureView = nullptr;
+		TextureView* ppTextureViews[MAX_COLOR_ATTACHMENTS];
+		TextureView* pDeptchStencilTextureView = nullptr;
 		ClearColorDesc clearColorDescriptions[MAX_COLOR_ATTACHMENTS + 1];
 		
 		uint32 textureViewCount = 0;
@@ -1715,7 +1706,7 @@ namespace LambdaEngine
 		{
 			pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::INDEX_TYPE_UINT32);
 
-			IBuffer* pDrawBuffer		= pRenderStage->pMeshIndexBufferResource->Buffer.Buffers[0];
+			Buffer* pDrawBuffer		= pRenderStage->pMeshIndexBufferResource->Buffer.Buffers[0];
 			uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
 			uint32 indirectArgStride	= sizeof(IndexedIndirectMeshArgument);
 
@@ -1757,10 +1748,10 @@ namespace LambdaEngine
 
 	void RenderGraph::ExecuteComputeRenderStage(
 		RenderStage*		pRenderStage, 
-		IPipelineState*		pPipelineState,
-		ICommandAllocator*	pComputeCommandAllocator,
-		ICommandList*		pComputeCommandList,
-		ICommandList**		ppExecutionStage, 
+		PipelineState*		pPipelineState,
+		CommandAllocator*	pComputeCommandAllocator,
+		CommandList*		pComputeCommandList,
+		CommandList**		ppExecutionStage, 
 		uint32				backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(backBufferIndex);
@@ -1792,10 +1783,10 @@ namespace LambdaEngine
 
 	void RenderGraph::ExecuteRayTracingRenderStage(
 		RenderStage*		pRenderStage, 
-		IPipelineState*		pPipelineState,
-		ICommandAllocator*	pComputeCommandAllocator,
-		ICommandList*		pComputeCommandList,
-		ICommandList**		ppExecutionStage, 
+		PipelineState*		pPipelineState,
+		CommandAllocator*	pComputeCommandAllocator,
+		CommandList*		pComputeCommandList,
+		CommandList**		ppExecutionStage, 
 		uint32				backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(backBufferIndex);
@@ -1831,12 +1822,12 @@ namespace LambdaEngine
 
 		if (pRenderStageDesc->PipelineType == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER		: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader.ShaderGUID		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER		: 0;
 
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->VertexShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER	: 0;
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->GeometryShader	!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER	: 0;
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->HullShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER		: 0;
-			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->DomainShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER	: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->VertexShader.ShaderGUID	!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER	: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->GeometryShader.ShaderGUID != GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER	: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->HullShader.ShaderGUID		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER		: 0;
+			shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->DomainShader.ShaderGUID	!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER	: 0;
 
 			shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		}

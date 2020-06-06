@@ -7,20 +7,20 @@
 namespace LambdaEngine
 {
 	class Window;
-	class ITexture;
-	class ISwapChain;
+	class Texture;
+	class SwapChain;
 	class RenderGraph;
-	class ICommandList;
-	class ITextureView;
+	class CommandList;
+	class TextureView;
 	class ImGuiRenderer;
-	class IGraphicsDevice;
-	class ICommandAllocator;
+	class GraphicsDevice;
+	class CommandAllocator;
 	
 	struct RendererDesc
 	{
 		const char*		pName			= "";
 		bool			Debug			= false;
-		Window*		pWindow			= nullptr;
+		Window*			pWindow			= nullptr;
 		RenderGraph*	pRenderGraph	= nullptr;
 		uint32			BackBufferCount = 3;
 	};
@@ -31,7 +31,7 @@ namespace LambdaEngine
 		DECL_REMOVE_COPY(Renderer);
 		DECL_REMOVE_MOVE(Renderer);
 
-		Renderer(const IGraphicsDevice* pGraphicsDevice);
+		Renderer(const GraphicsDevice* pGraphicsDevice);
 		~Renderer();
 
 		bool Init(const RendererDesc* pDesc);
@@ -47,17 +47,17 @@ namespace LambdaEngine
 
 	private:
 		const char*				m_pName;
-		const IGraphicsDevice*	m_pGraphicsDevice;
+		const GraphicsDevice*	m_pGraphicsDevice;
 
-		ICommandAllocator**		m_ppImGuiCommandAllocators		= nullptr;
-		ICommandList**			m_ppImGuiCommandLists			= nullptr;
+		CommandAllocator**		m_ppImGuiCommandAllocators		= nullptr;
+		CommandList**			m_ppImGuiCommandLists			= nullptr;
 
 		ImGuiRenderer*			m_pImGuiRenderer				= nullptr;
 
-		ISwapChain*				m_pSwapChain					= nullptr;
+		SwapChain*				m_pSwapChain					= nullptr;
 		RenderGraph*			m_pRenderGraph					= nullptr;
-		ITexture**				m_ppBackBuffers					= nullptr;
-		ITextureView**			m_ppBackBufferViews				= nullptr;
+		Texture**				m_ppBackBuffers					= nullptr;
+		TextureView**			m_ppBackBufferViews				= nullptr;
 
 		uint32					m_BackBufferCount				= 0;
 

@@ -1,5 +1,7 @@
 #pragma once
-#include "Core/API/IDeviceChild.h"
+#include "Core/Ref.h"
+
+#include "Core/API/DeviceChild.h"
 
 #include "Containers/TArray.h"
 
@@ -14,12 +16,11 @@ namespace LambdaEngine
 		~ResourceCollector();
 
 		/*
-		* Handles destruction of a IDeviceChild* object. Can be called instead of SAFERELEASE macro or IDeviceChild::Release.
+		* Handles destruction of a DeviceChild* object. Can be called instead of SAFERELEASE macro or DeviceChild::Release.
 		* Call to ResourceCollector::Reset to destroy all collected resources.
-		*
-		* pObject - Object to remove
+		*	pObject - Object to remove
 		*/
-		void DisposeResource(IDeviceChild* pObject);
+		void DisposeResource(DeviceChild* pObject);
 		
 		/*
 		* Destroys all objects collected with ResourceCollector::DisposeResource
@@ -27,6 +28,6 @@ namespace LambdaEngine
 		void Reset();
 
 	private:
-		TArray<IDeviceChild*> m_Objects;
+		TArray<Ref<DeviceChild>> m_Objects;
 	};
 }

@@ -1,11 +1,11 @@
 #include "Rendering/Renderer.h"
-#include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/ICommandAllocator.h"
-#include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/ICommandList.h"
-#include "Rendering/Core/API/ISwapChain.h"
-#include "Rendering/Core/API/ITexture.h"
-#include "Rendering/Core/API/ITextureView.h"
+#include "Rendering/Core/API/GraphicsDevice.h"
+#include "Rendering/Core/API/CommandAllocator.h"
+#include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/SwapChain.h"
+#include "Rendering/Core/API/Texture.h"
+#include "Rendering/Core/API/TextureView.h"
 #include "Rendering/RenderSystem.h"
 #include "Rendering/RenderGraph.h"
 #include "Rendering/ImGuiRenderer.h"
@@ -17,7 +17,7 @@
 
 namespace LambdaEngine
 {
-	Renderer::Renderer(const IGraphicsDevice* pGraphicsDevice) :
+	Renderer::Renderer(const GraphicsDevice* pGraphicsDevice) :
 		m_pGraphicsDevice(pGraphicsDevice)
 	{
 	}
@@ -55,7 +55,9 @@ namespace LambdaEngine
 		m_BackBufferCount	= pDesc->BackBufferCount;
 
 		SwapChainDesc swapChainDesc = {};
-		swapChainDesc.pName			= "Renderer Swap Chain";
+		swapChainDesc.DebugName		= "Renderer Swap Chain";
+		swapChainDesc.Window		= pDesc->pWindow;
+		swapChainDesc.Queue			= RenderSystem::GetGraphicsQueue();
 		swapChainDesc.Format		= EFormat::FORMAT_B8G8R8A8_UNORM;
 		swapChainDesc.Width			= 0;
 		swapChainDesc.Height		= 0;
@@ -63,7 +65,7 @@ namespace LambdaEngine
 		swapChainDesc.SampleCount	= 1;
 		swapChainDesc.VerticalSync	= false;
 		
-		m_pSwapChain = m_pGraphicsDevice->CreateSwapChain(pDesc->pWindow, RenderSystem::GetGraphicsQueue(), &swapChainDesc);
+		m_pSwapChain = m_pGraphicsDevice->CreateSwapChain(&swapChainDesc);
 
 		if (m_pSwapChain == nullptr)
 		{
@@ -72,17 +74,17 @@ namespace LambdaEngine
 		}
 
 		uint32 backBufferCount	= m_pSwapChain->GetDesc().BufferCount;
-		m_ppBackBuffers			= DBG_NEW ITexture*[backBufferCount];
-		m_ppBackBufferViews		= DBG_NEW ITextureView*[backBufferCount];
+		m_ppBackBuffers			= DBG_NEW Texture*[backBufferCount];
+		m_ppBackBufferViews		= DBG_NEW TextureView*[backBufferCount];
 
 		for (uint32 v = 0; v < backBufferCount; v++)
 		{
-			ITexture* pBackBuffer	= m_pSwapChain->GetBuffer(v);
+			Texture* pBackBuffer	= m_pSwapChain->GetBuffer(v);
 			m_ppBackBuffers[v]		= pBackBuffer;
 
 			TextureViewDesc textureViewDesc = {};
-			textureViewDesc.pName			= "Renderer Back Buffer Texture View";
-			textureViewDesc.pTexture		= pBackBuffer;
+			textureViewDesc.DebugName		= "Renderer Back Buffer Texture View";
+			textureViewDesc.Texture			= pBackBuffer;
 			textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
 			textureViewDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
 			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
@@ -91,7 +93,7 @@ namespace LambdaEngine
 			textureViewDesc.Miplevel		= 0;
 			textureViewDesc.ArrayIndex		= 0;
 			
-			ITextureView* pBackBufferView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
+			TextureView* pBackBufferView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 			if (pBackBufferView == nullptr)
 			{
@@ -122,17 +124,17 @@ namespace LambdaEngine
 
 			m_pImGuiRenderer->Init(&guiRendererDesc);
 
-			m_ppImGuiCommandAllocators	= DBG_NEW ICommandAllocator*[backBufferCount];
-			m_ppImGuiCommandLists		= DBG_NEW ICommandList*[backBufferCount];
+			m_ppImGuiCommandAllocators	= DBG_NEW CommandAllocator*[backBufferCount];
+			m_ppImGuiCommandLists		= DBG_NEW CommandList*[backBufferCount];
 
 			CommandListDesc commandListDesc = {};
-			commandListDesc.pName			= "ImGui Copy Command List";
+			commandListDesc.DebugName		= "ImGui Copy Command List";
 			commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 			commandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 			for (uint32 b = 0; b < backBufferCount; b++)
 			{
-				ICommandAllocator* pCommandAllocator	= m_pGraphicsDevice->CreateCommandAllocator("ImGui Rendering Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+				CommandAllocator* pCommandAllocator	= m_pGraphicsDevice->CreateCommandAllocator("ImGui Rendering Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 				
 				m_ppImGuiCommandAllocators[b]	= pCommandAllocator;
 				m_ppImGuiCommandLists[b]		= m_pGraphicsDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
@@ -173,15 +175,15 @@ namespace LambdaEngine
 		{
 			m_pImGuiRenderer->End();
 
-			ICommandAllocator* pCommandAllocator = m_ppImGuiCommandAllocators[m_ModFrameIndex];
-			ICommandList* pCommandList = m_ppImGuiCommandLists[m_ModFrameIndex];
+			CommandAllocator* pCommandAllocator = m_ppImGuiCommandAllocators[m_ModFrameIndex];
+			CommandList* pCommandList = m_ppImGuiCommandLists[m_ModFrameIndex];
 
 			pCommandAllocator->Reset();
 			pCommandList->Begin(nullptr);
 			m_pImGuiRenderer->Render(pCommandList, m_ppBackBufferViews[m_BackBufferIndex], m_ModFrameIndex, m_BackBufferIndex);
 			pCommandList->End();
 
-			IFence* pFence;
+			Fence* pFence;
 			uint64 signalValue;
 
 			m_pRenderGraph->GetAndIncrementFence(&pFence, &signalValue);

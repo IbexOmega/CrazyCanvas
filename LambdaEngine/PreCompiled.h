@@ -6,3 +6,12 @@
 #include "Containers/THashTable.h"
 #include "Containers/TSet.h"
 #include "Containers/TQueue.h"
+
+// Math
+#include "Math/Math.h"
+#include "Math/Random.h"
+#include "Math/MathUtilities.h"
+
+// Core
+#include "Core/Ref.h"
+#include "Core/RefCountedObject.h"

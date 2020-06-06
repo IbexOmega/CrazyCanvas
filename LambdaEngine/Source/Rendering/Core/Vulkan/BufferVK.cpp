@@ -10,8 +10,7 @@ namespace LambdaEngine
 {
 	BufferVK::BufferVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice),
-		m_Allocation(),
-		m_Desc()
+		m_Allocation()
 	{
 	}
 
@@ -28,12 +27,10 @@ namespace LambdaEngine
 			m_Buffer = VK_NULL_HANDLE;
 		}
 		
-		if (m_pAllocator)
+		if (m_Allocator)
 		{
-			m_pAllocator->Free(&m_Allocation);
+			m_Allocator->Free(&m_Allocation);
 			memset(&m_Allocation, 0, sizeof(m_Allocation));
-			
-			RELEASE(m_pAllocator);
 		}
 		else
 		{
@@ -45,7 +42,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool BufferVK::Init(const BufferDesc* pDesc, IDeviceAllocator* pAllocator)
+	bool BufferVK::Init(const BufferDesc* pDesc, DeviceAllocator* pAllocator)
 	{
 		VkBufferCreateInfo info = {};
 		info.sType                  = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -112,8 +109,8 @@ namespace LambdaEngine
 		{
 			D_LOG_MESSAGE("[BufferVK]: Created Buffer");
 
-			memcpy(&m_Desc, pDesc, sizeof(m_Desc));
-			SetName(pDesc->pName);
+			m_Desc = *pDesc;
+			SetName(m_Desc.DebugName);
 		}
 
 		VkMemoryRequirements memoryRequirements = { };
@@ -139,8 +136,8 @@ namespace LambdaEngine
 				return false;
 			}
 
-			pAllocatorVk->AddRef();
-			m_pAllocator = pAllocatorVk;
+			// Save reference to allocator
+			m_Allocator = pAllocatorVk;
 			
 			result = vkBindBufferMemory(m_pDevice->Device, m_Buffer, m_Allocation.Memory, m_Allocation.Offset);
 			if (result != VK_SUCCESS)
@@ -182,9 +179,9 @@ namespace LambdaEngine
 	void* BufferVK::Map()
 	{
 		void* pHostMemory = nullptr;
-		if (m_pAllocator)
+		if (m_Allocator)
 		{
-			pHostMemory = m_pAllocator->Map(&m_Allocation);
+			pHostMemory = m_Allocator->Map(&m_Allocation);
 			m_IsMapped = true;
 		}
 		else
@@ -192,9 +189,9 @@ namespace LambdaEngine
 			VkResult result = vkMapMemory(m_pDevice->Device, m_Memory, 0, VK_WHOLE_SIZE, 0, &pHostMemory);
 			if (result != VK_SUCCESS)
 			{
-				if (m_pDebugName)
+				if (!m_Desc.DebugName.empty())
 				{
-					LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer %s", m_pDebugName);
+					LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer %s", m_Desc.DebugName.c_str());
 				}
 				else
 				{
@@ -214,11 +211,11 @@ namespace LambdaEngine
 
 	void BufferVK::Unmap()
 	{
-		ASSERT(m_IsMapped);
+		VALIDATE(m_IsMapped);
 		
-		if (m_pAllocator)
+		if (m_Allocator)
 		{
-			m_pAllocator->Unmap(&m_Allocation);
+			m_Allocator->Unmap(&m_Allocation);
 		}
 		else
 		{
@@ -228,20 +225,15 @@ namespace LambdaEngine
 		m_IsMapped = false;
 	}
 
-	void BufferVK::SetName(const char* pName)
+	void BufferVK::SetName(const String& debugname)
 	{
-		if (pName)
-		{
-			TDeviceChild::SetName(pName);
-			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Buffer, VK_OBJECT_TYPE_BUFFER);
-
-			m_Desc.pName = m_pDebugName;
-		}
+		m_pDevice->SetVulkanObjectName(debugname, reinterpret_cast<uint64>(m_Buffer), VK_OBJECT_TYPE_BUFFER);
+		m_Desc.DebugName = debugname;
 	}
 	
 	uint64 BufferVK::GetDeviceAdress() const
 	{
-		return uint64(m_DeviceAddress);
+		return static_cast<uint64>(m_DeviceAddress);
 	}
 	
 	uint64 BufferVK::GetAlignmentRequirement() const

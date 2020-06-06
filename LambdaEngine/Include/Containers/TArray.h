@@ -6,5 +6,8 @@
 	#pragma warning(disable : 4251)
 #endif
 
-template <typename T>
-using TArray = std::vector<T>;
+namespace LambdaEngine
+{
+	template <typename T>
+	using TArray = std::vector<T>;
+}

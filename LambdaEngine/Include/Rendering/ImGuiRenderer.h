@@ -11,21 +11,21 @@ struct ImGuiContext;
 
 namespace LambdaEngine
 {
-	class ICommandAllocator;
-	class IDeviceAllocator;
-	class IGraphicsDevice;
-	class IPipelineLayout;
-	class IDescriptorHeap;
-	class IDescriptorSet;
-	class IPipelineState;
-	class ICommandList;
-	class ITextureView;
-	class ICommandList;
-	class IRenderPass;
-	class ITexture;
-	class ISampler;
-	class IShader;
-	class IBuffer;
+	class CommandAllocator;
+	class DeviceAllocator;
+	class GraphicsDevice;
+	class PipelineLayout;
+	class DescriptorHeap;
+	class DescriptorSet;
+	class PipelineState;
+	class CommandList;
+	class TextureView;
+	class CommandList;
+	class RenderPass;
+	class Texture;
+	class Sampler;
+	class Shader;
+	class Buffer;
 	class Window;
 
 	struct ImGuiRendererDesc
@@ -38,7 +38,7 @@ namespace LambdaEngine
 
 	struct ImGuiTexture
 	{
-		ITextureView*	pTextureView		= nullptr;
+		TextureView*	pTextureView		= nullptr;
 		float32			ChannelMult[4]		= { 1.0f, 1.0f, 1.0f, 1.0f };
 		float32			ChannelAdd[4]		= { 0.0f, 0.0f, 0.0f, 0.0f };
 		uint32			ReservedIncludeMask = 0x00008421; //0000 0000 0000 0000 1000 0100 0010 0001
@@ -52,7 +52,7 @@ namespace LambdaEngine
 		DECL_REMOVE_COPY(ImGuiRenderer);
 		DECL_REMOVE_MOVE(ImGuiRenderer);
 
-		ImGuiRenderer(const IGraphicsDevice* pGraphicsDevice);
+		ImGuiRenderer(const GraphicsDevice* pGraphicsDevice);
 		~ImGuiRenderer();
 
 		bool Init(const ImGuiRendererDesc* pDesc);
@@ -60,21 +60,16 @@ namespace LambdaEngine
 		void Begin(Timestamp delta, uint32 windowWidth, uint32 windowHeight, float32 scaleX, float32 scaleY);
 		void End();
 
-		void Render(ICommandList* pCommandList, ITextureView* pRenderTarget, uint32 modFrameIndex, uint32 backBufferIndex);
+		void Render(CommandList* pCommandList, TextureView* pRenderTarget, uint32 modFrameIndex, uint32 backBufferIndex);
 
-		//virtual void FocusChanged(IWindow* pWindow, bool hasFocus)									override final;
-		//virtual void WindowMoved(IWindow* pWindow, int16 x, int16 y)									override final;
-		//virtual void WindowResized(IWindow* pWindow, uint16 width, uint16 height, EResizeType type)	override final;
-		//virtual void WindowClosed(IWindow* pWindow)													override final;
-		//virtual void MouseEntered(IWindow* pWindow)													override final;
-		//virtual void MouseLeft(IWindow* pWindow)														override final;
+		// EventHandler interface
 		virtual void OnMouseMoved(int32 x, int32 y)														override final;
 		virtual void OnButtonPressed(EMouseButton button, uint32 modifierMask)							override final;
 		virtual void OnButtonReleased(EMouseButton button)												override final;
-		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)											override final;
+		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)										override final;
 		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)							override final;
-		virtual void OnKeyReleased(EKey key)																override final;
-		virtual void OnKeyTyped(uint32 character)															override final;
+		virtual void OnKeyReleased(EKey key)															override final;
+		virtual void OnKeyTyped(uint32 character)														override final;
 
 	public:
 		static ImGuiContext* GetImguiContext();
@@ -95,36 +90,36 @@ namespace LambdaEngine
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);
 
 	private:
-		const IGraphicsDevice*	m_pGraphicsDevice			= nullptr;
+		const GraphicsDevice*	m_pGraphicsDevice			= nullptr;
 
 		uint32					m_BackBufferCount			= 0;
 
-		ICommandAllocator*		m_pCopyCommandAllocator		= nullptr;
-		ICommandList*			m_pCopyCommandList			= nullptr;
+		CommandAllocator*		m_pCopyCommandAllocator		= nullptr;
+		CommandList*			m_pCopyCommandList			= nullptr;
 
-		IDeviceAllocator*		m_pAllocator				= nullptr;
+		DeviceAllocator*		m_pAllocator				= nullptr;
 
 		uint64					m_PipelineStateID			= 0;
-		IPipelineLayout*		m_pPipelineLayout			= nullptr;
-		IDescriptorHeap*		m_pDescriptorHeap			= nullptr;
-		IDescriptorSet*			m_pDescriptorSet			= nullptr;
+		PipelineLayout*		m_pPipelineLayout			= nullptr;
+		DescriptorHeap*		m_pDescriptorHeap			= nullptr;
+		DescriptorSet*			m_pDescriptorSet			= nullptr;
 
 		GUID_Lambda				m_VertexShaderGUID			= 0;
 		GUID_Lambda				m_PixelShaderGUID			= 0;
 
-		IRenderPass*			m_pRenderPass				= nullptr;
+		RenderPass*			m_pRenderPass				= nullptr;
 
-		IBuffer*				m_pVertexCopyBuffer			= nullptr;
-		IBuffer*				m_pIndexCopyBuffer			= nullptr;
-		IBuffer**				m_ppVertexBuffers			= nullptr;
-		IBuffer**				m_ppIndexBuffers			= nullptr;
+		Buffer*				m_pVertexCopyBuffer			= nullptr;
+		Buffer*				m_pIndexCopyBuffer			= nullptr;
+		Buffer**				m_ppVertexBuffers			= nullptr;
+		Buffer**				m_ppIndexBuffers			= nullptr;
 
-		ITexture*				m_pFontTexture				= nullptr;
-		ITextureView*			m_pFontTextureView			= nullptr;
+		Texture*				m_pFontTexture				= nullptr;
+		TextureView*			m_pFontTextureView			= nullptr;
 
-		ISampler*				m_pSampler					= nullptr;
+		Sampler*				m_pSampler					= nullptr;
 
-		THashTable<ITextureView*, IDescriptorSet*>					m_TextureDescriptorSetMap;
+		THashTable<TextureView*, DescriptorSet*>					m_TextureDescriptorSetMap;
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 	};
 }

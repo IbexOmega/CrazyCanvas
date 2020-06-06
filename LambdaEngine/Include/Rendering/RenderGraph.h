@@ -2,7 +2,7 @@
 
 #include "LambdaEngine.h"
 
-#include "Rendering/Core/API/ICommandList.h"
+#include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/GraphicsTypes.h"
 #include "RenderGraphTypes.h"
 #include "Utilities/StringHash.h"
@@ -19,19 +19,19 @@ namespace LambdaEngine
 	struct SamplerDesc;
 	struct BufferDesc;
 
-	class IAccelerationStructure;
-	class ICommandAllocator;
-	class IGraphicsDevice;
-	class IPipelineLayout;
-	class IPipelineState;
-	class IDescriptorSet;
-	class IDescriptorHeap;
-	class ICommandList;
-	class ITextureView;
-	class ITexture;
-	class ISampler;
-	class IBuffer;
-	class IFence;
+	class AccelerationStructure;
+	class CommandAllocator;
+	class GraphicsDevice;
+	class PipelineLayout;
+	class PipelineState;
+	class DescriptorSet;
+	class DescriptorHeap;
+	class CommandList;
+	class TextureView;
+	class Texture;
+	class Sampler;
+	class Buffer;
+	class Fence;
 	class Scene;
 
 	struct RenderGraphDesc
@@ -71,19 +71,19 @@ namespace LambdaEngine
 
 			struct
 			{
-				ITexture**			ppTextures;
-				ITextureView**		ppTextureViews;
-				ISampler**			ppSamplers;
+				Texture**			ppTextures;
+				TextureView**		ppTextureViews;
+				Sampler**			ppSamplers;
 			} ExternalTextureUpdate;
 
 			struct
 			{
-				IBuffer**			ppBuffer;
+				Buffer**			ppBuffer;
 			} ExternalBufferUpdate;
 
 			struct
 			{
-				IAccelerationStructure* pTLAS;
+				AccelerationStructure* pTLAS;
 			} ExternalAccelerationStructure;
 		};
 	};
@@ -163,22 +163,22 @@ namespace LambdaEngine
 			struct
 			{
 				std::vector<uint32>			Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
-				std::vector<ITexture*>		Textures;
-				std::vector<ITextureView*>	TextureViews;
-				std::vector<ISampler*>		Samplers;
+				std::vector<Texture*>		Textures;
+				std::vector<TextureView*>	TextureViews;
+				std::vector<Sampler*>		Samplers;
 			} Texture;
 
 			struct
 			{
 				std::vector<uint32>			Barriers;
-				std::vector<IBuffer*>		Buffers;
+				std::vector<Buffer*>		Buffers;
 				std::vector<uint64>			Offsets;
 				std::vector<uint64>			SizesInBytes;
 			} Buffer;
 
 			struct
 			{
-				IAccelerationStructure* pTLAS;
+				AccelerationStructure* pTLAS;
 			} AccelerationStructure;
 		};
 
@@ -192,12 +192,12 @@ namespace LambdaEngine
 			RenderStageParameters	Parameters						= {};
 			uint64					PipelineStateID					= 0;
 			EPipelineStateType		PipelineStateType				= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
-			IPipelineLayout*		pPipelineLayout					= nullptr;
+			PipelineLayout*		pPipelineLayout					= nullptr;
 			uint32					TextureSubDescriptorSetCount	= 1;
 			uint32					MaterialsRenderedPerPass		= 1;
-			IDescriptorSet**		ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
-			IDescriptorSet**		ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
-			IRenderPass*			pRenderPass						= nullptr;
+			DescriptorSet**		ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
+			DescriptorSet**		ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
+			RenderPass*			pRenderPass						= nullptr;
 
 			Resource*				pPushConstantsResource			= nullptr;
 			std::vector<Resource*>	RenderTargetResources;
@@ -233,17 +233,17 @@ namespace LambdaEngine
 			EPipelineStageType	Type			= EPipelineStageType::NONE;
 			uint32				StageIndex		= 0;
 
-			ICommandAllocator** ppGraphicsCommandAllocators;
-			ICommandAllocator** ppComputeCommandAllocators;
-			ICommandList** ppGraphicsCommandLists;
-			ICommandList** ppComputeCommandLists;
+			CommandAllocator** ppGraphicsCommandAllocators;
+			CommandAllocator** ppComputeCommandAllocators;
+			CommandList** ppGraphicsCommandLists;
+			CommandList** ppComputeCommandLists;
 		};
 
 	public:
 		DECL_REMOVE_COPY(RenderGraph);
 		DECL_REMOVE_MOVE(RenderGraph);
 
-		RenderGraph(const IGraphicsDevice* pGraphicsDevice);
+		RenderGraph(const GraphicsDevice* pGraphicsDevice);
 		~RenderGraph();
 
 		bool Init(RenderGraphDesc& desc);
@@ -256,7 +256,7 @@ namespace LambdaEngine
 
 		void UpdateRenderStageParameters(const RenderStageParameters& desc);
 
-		void GetAndIncrementFence(IFence** ppFence, uint64* pSignalValue);
+		void GetAndIncrementFence(Fence** ppFence, uint64* pSignalValue);
 
 		/*
 		* Updates the RenderGraph, applying the updates made to resources with UpdateResource by writing them to the appropriate Descriptor Sets, the RenderGraph will wait for device idle if it needs to
@@ -264,10 +264,10 @@ namespace LambdaEngine
 		void Update();
 		void Render(uint64 frameIndex, uint32 backBufferIndex);
 
-		bool GetResourceTextures(const char* pResourceName, ITexture* const ** pppTexture, uint32* pTextureView)					const;
-		bool GetResourceTextureViews(const char* pResourceName, ITextureView* const ** pppTextureViews, uint32* pTextureViewCount)		const;
-		bool GetResourceBuffers(const char* pResourceName, IBuffer* const ** pppBuffers, uint32* pBufferCount)					const;
-		bool GetResourceAccelerationStructure(const char* pResourceName, IAccelerationStructure** ppAccelerationStructure)		const;
+		bool GetResourceTextures(const char* pResourceName, Texture* const ** pppTexture, uint32* pTextureView)					const;
+		bool GetResourceTextureViews(const char* pResourceName, TextureView* const ** pppTextureViews, uint32* pTextureViewCount)		const;
+		bool GetResourceBuffers(const char* pResourceName, Buffer* const ** pppBuffers, uint32* pBufferCount)					const;
+		bool GetResourceAccelerationStructure(const char* pResourceName, AccelerationStructure** ppAccelerationStructure)		const;
 
 	private:
 		bool CreateFence();
@@ -286,33 +286,33 @@ namespace LambdaEngine
 
 		void ExecuteSynchronizationStage(
 			SynchronizationStage* pSynchronizationStage, 
-			ICommandAllocator* pGraphicsCommandAllocator, 
-			ICommandList* pGraphicsCommandList, 
-			ICommandAllocator* pComputeCommandAllocator, 
-			ICommandList* pComputeCommandList, 
-			ICommandList** ppFirstExecutionStage, 
-			ICommandList** ppSecondExecutionStage, 
+			CommandAllocator* pGraphicsCommandAllocator, 
+			CommandList* pGraphicsCommandList, 
+			CommandAllocator* pComputeCommandAllocator, 
+			CommandList* pComputeCommandList, 
+			CommandList** ppFirstExecutionStage, 
+			CommandList** ppSecondExecutionStage, 
 			uint32 backBufferIndex);
-		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pGraphicsCommandAllocator, ICommandList* pGraphicsCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
-		void ExecuteComputeRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
-		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage, uint32 backBufferIndex);
+		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, PipelineState* pPipelineState, CommandAllocator* pGraphicsCommandAllocator, CommandList* pGraphicsCommandList, CommandList** ppExecutionStage, uint32 backBufferIndex);
+		void ExecuteComputeRenderStage(RenderStage* pRenderStage, PipelineState* pPipelineState, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage, uint32 backBufferIndex);
+		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, PipelineState* pPipelineState, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage, uint32 backBufferIndex);
 
 		uint32 CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc);
 
 	private:
-		const IGraphicsDevice*								m_pGraphicsDevice;
+		const GraphicsDevice*								m_pGraphicsDevice;
 
 		const Scene*										m_pScene						= nullptr;
 
-		IDescriptorHeap*									m_pDescriptorHeap				= nullptr;
+		DescriptorHeap*									m_pDescriptorHeap				= nullptr;
 
 		uint32												m_BackBufferCount				= 0;
 		uint32												m_MaxTexturesPerDescriptorSet	= 0;
 		
-		IFence*												m_pFence						= nullptr;
+		Fence*												m_pFence						= nullptr;
 		uint64												m_SignalValue					= 1;
 
-		ICommandList**										m_ppExecutionStages				= nullptr;
+		CommandList**										m_ppExecutionStages				= nullptr;
 		uint32												m_ExecutionStageCount			= 0;
 
 		PipelineStage*										m_pPipelineStages				= nullptr;

@@ -1,18 +1,18 @@
 #pragma once
-#include "IDeviceChild.h"
+#include "DeviceChild.h"
 
 namespace LambdaEngine
 {
 	struct FenceDesc
 	{
-		const char* pName		= "";
-		uint64		InitalValue	= 0;
+		String DebugName	= "";
+		uint64 InitalValue	= 0;
 	};
 
-	class IFence : public IDeviceChild
+	class Fence : public DeviceChild
 	{
 	public:
-		DECL_DEVICE_INTERFACE(IFence);
+		DECL_DEVICE_INTERFACE(Fence);
 
 		/*
 		* Wait for a certain value to be reached by the GPU
@@ -32,7 +32,14 @@ namespace LambdaEngine
 		* Retrives the current value of the fence
 		*	return - Returns a valid value if successful otherwise returns zero.
 		*/
-		virtual uint64      GetValue()  const = 0;
-		virtual FenceDesc   GetDesc()   const = 0;
+		virtual uint64 GetValue() const = 0;
+
+		virtual FenceDesc GetDesc() const
+		{
+			return m_Desc;
+		}
+
+	protected:
+		FenceDesc m_Desc;
 	};
 }

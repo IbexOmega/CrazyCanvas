@@ -1,5 +1,5 @@
 #pragma once
-#include "IDeviceChild.h"
+#include "DeviceChild.h"
 #include "GraphicsTypes.h"
 
 namespace LambdaEngine
@@ -14,7 +14,7 @@ namespace LambdaEngine
 
 	struct TextureDesc
 	{
-		const char*		pName		= "";
+		String			DebugName	= "";
 		EMemoryType		MemoryType	= EMemoryType::MEMORY_TYPE_NONE;
 		EFormat			Format		= EFormat::FORMAT_NONE;
 		ETextureType	Type		= ETextureType::TEXTURE_TYPE_NONE;
@@ -27,16 +27,23 @@ namespace LambdaEngine
 		uint32			SampleCount	= 0;
 	};
 
-	class ITexture : public IDeviceChild
+	class Texture : public DeviceChild
 	{
 	public:
-		DECL_DEVICE_INTERFACE(ITexture);
+		DECL_DEVICE_INTERFACE(Texture);
 
 		/*
 		* Returns the API-specific handle to the underlaying texture-resource
 		*	return - Returns a valid handle on success otherwise zero
 		*/
-		virtual uint64		GetHandle()	const = 0;
-		virtual TextureDesc	GetDesc()	const = 0;
+		virtual uint64 GetHandle() const = 0;
+		
+		virtual TextureDesc GetDesc() const
+		{
+			return m_Desc;
+		}
+
+	protected:
+		TextureDesc m_Desc;
 	};
 }
