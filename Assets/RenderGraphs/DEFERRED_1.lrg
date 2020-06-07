@@ -5,126 +5,144 @@
             "type": "TEXTURE",
             "sub_resource_type": "ARRAY",
             "sub_resource_array_count": 32,
-            "texture_format": "R8G8B8A8_UNORM"
+            "texture_format": "R8G8B8A8_UNORM",
+            "editable": false
         },
         {
             "name": "SCENE_MESH_INDEX_BUFFER",
             "type": "BUFFER",
             "sub_resource_type": "ARRAY",
             "sub_resource_array_count": 1,
-            "texture_format": "NONE"
+            "texture_format": "NONE",
+            "editable": false
         },
         {
             "name": "FULLSCREEN_QUAD_VERTEX_BUFFER",
             "type": "BUFFER",
             "sub_resource_type": "ARRAY",
             "sub_resource_array_count": 1,
-            "texture_format": "NONE"
+            "texture_format": "NONE",
+            "editable": false
         },
         {
             "name": "PER_FRAME_BUFFER",
             "type": "BUFFER",
             "sub_resource_type": "ARRAY",
             "sub_resource_array_count": 1,
-            "texture_format": "NONE"
-        },
-        {
-            "name": "SCENE_VERTEX_BUFFER",
-            "type": "BUFFER",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
-            "texture_format": "NONE"
-        },
-        {
-            "name": "SCENE_INDEX_BUFFER",
-            "type": "BUFFER",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
-            "texture_format": "NONE"
-        },
-        {
-            "name": "SCENE_MAT_PARAM_BUFFER",
-            "type": "BUFFER",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
-            "texture_format": "NONE"
-        },
-        {
-            "name": "SCENE_INSTANCE_BUFFER",
-            "type": "BUFFER",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
-            "texture_format": "NONE"
-        },
-        {
-            "name": "SCENE_NORMAL_MAPS",
-            "type": "TEXTURE",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 32,
-            "texture_format": "R8G8B8A8_UNORM"
-        },
-        {
-            "name": "SCENE_AO_MAPS",
-            "type": "TEXTURE",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 32,
-            "texture_format": "R8G8B8A8_UNORM"
-        },
-        {
-            "name": "SCENE_ROUGHNESS_MAPS",
-            "type": "TEXTURE",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 32,
-            "texture_format": "R8G8B8A8_UNORM"
-        },
-        {
-            "name": "SCENE_METALLIC_MAPS",
-            "type": "TEXTURE",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 32,
-            "texture_format": "R8G8B8A8_UNORM"
-        },
-        {
-            "name": "GEOMETRY_ALBEDO",
-            "type": "TEXTURE",
-            "sub_resource_type": "PER_FRAME",
-            "sub_resource_array_count": 1,
-            "texture_format": "NONE"
-        },
-        {
-            "name": "NORMAL_METALLIC_ROUGHNESS",
-            "type": "TEXTURE",
-            "sub_resource_type": "PER_FRAME",
-            "sub_resource_array_count": 1,
-            "texture_format": "NONE"
-        },
-        {
-            "name": "DEPTH_STENCIL",
-            "type": "TEXTURE",
-            "sub_resource_type": "PER_FRAME",
-            "sub_resource_array_count": 1,
-            "texture_format": "NONE"
-        },
-        {
-            "name": "SCENE_TLAS",
-            "type": "ACCELERATION_STRUCTURE",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
-            "texture_format": "NONE"
-        },
-        {
-            "name": "RADIANCE_TEXTURE",
-            "type": "TEXTURE",
-            "sub_resource_type": "PER_FRAME",
-            "sub_resource_array_count": 1,
-            "texture_format": "NONE"
+            "texture_format": "NONE",
+            "editable": false
         },
         {
             "name": "SCENE_LIGHTS_BUFFER",
             "type": "BUFFER",
             "sub_resource_type": "ARRAY",
             "sub_resource_array_count": 1,
-            "texture_format": "NONE"
+            "texture_format": "NONE",
+            "editable": false
+        },
+        {
+            "name": "SCENE_VERTEX_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE",
+            "editable": false
+        },
+        {
+            "name": "SCENE_INDEX_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE",
+            "editable": false
+        },
+        {
+            "name": "SCENE_MAT_PARAM_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE",
+            "editable": false
+        },
+        {
+            "name": "SCENE_INSTANCE_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE",
+            "editable": false
+        },
+		{
+            "name": "SCENE_TLAS",
+            "type": "ACCELERATION_STRUCTURE",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE",
+            "editable": false
+        },
+        {
+            "name": "SCENE_NORMAL_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 32,
+            "texture_format": "R8G8B8A8_UNORM",
+            "editable": false
+        },
+        {
+            "name": "SCENE_AO_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 32,
+            "texture_format": "R8G8B8A8_UNORM",
+            "editable": false
+        },
+        {
+            "name": "SCENE_ROUGHNESS_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 32,
+            "texture_format": "R8G8B8A8_UNORM",
+            "editable": false
+        },
+        {
+            "name": "SCENE_METALLIC_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_type": "ARRAY",
+            "sub_resource_array_count": 32,
+            "texture_format": "R8G8B8A8_UNORM",
+            "editable": false
+        },
+        {
+            "name": "GEOMETRY_ALBEDO",
+            "type": "TEXTURE",
+            "sub_resource_type": "PER_FRAME",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE",
+            "editable": true
+        },
+        {
+            "name": "NORMAL_METALLIC_ROUGHNESS",
+            "type": "TEXTURE",
+            "sub_resource_type": "PER_FRAME",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE",
+            "editable": true
+        },
+        {
+            "name": "DEPTH_STENCIL",
+            "type": "TEXTURE",
+            "sub_resource_type": "PER_FRAME",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE",
+            "editable": true
+        },
+        {
+            "name": "RADIANCE_TEXTURE",
+            "type": "TEXTURE",
+            "sub_resource_type": "PER_FRAME",
+            "sub_resource_array_count": 1,
+            "texture_format": "NONE",
+            "editable": true
         }
     ],
     "resource_state_groups": [

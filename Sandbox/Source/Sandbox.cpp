@@ -938,7 +938,6 @@ bool Sandbox::InitRendererForDeferred()
 		geometryRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false, EFormat::FORMAT_R8G8B8A8_UNORM });
 		geometryRenderStageAttachments.push_back({ SCENE_ROUGHNESS_MAPS,						EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false, EFormat::FORMAT_R8G8B8A8_UNORM });
 
-		
 		geometryRenderStageAttachments.push_back({ "GEOMETRY_ALBEDO_AO_BUFFER",					EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R8G8B8A8_UNORM		});
 		geometryRenderStageAttachments.push_back({ "GEOMETRY_NORM_MET_ROUGH_BUFFER",			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R16G16B16A16_SFLOAT	});
 		geometryRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",					EAttachmentType::OUTPUT_DEPTH_STENCIL,								FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_D24_UNORM_S8_UINT	});
@@ -978,7 +977,7 @@ bool Sandbox::InitRendererForDeferred()
 		rayTracingRenderStageAttachments.push_back({ "GEOMETRY_NORM_MET_ROUGH_BUFFER",				EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R16G16B16A16_SFLOAT	 });
 		rayTracingRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",						EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_D24_UNORM_S8_UINT	 });
 	
-		rayTracingRenderStageAttachments.push_back({ "SCENE_TLAS",									EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE,				FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	1, false });
+		rayTracingRenderStageAttachments.push_back({ SCENE_TLAS,									EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE,				FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	1, false });
 
 		rayTracingRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, 1, false });
 		rayTracingRenderStageAttachments.push_back({ SCENE_INDEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, 1, false });
@@ -1033,7 +1032,7 @@ bool Sandbox::InitRendererForDeferred()
 		if (RAY_TRACING_ENABLED)
 			shadingRenderStageAttachments.push_back({ "RADIANCE_TEXTURE",						EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R8G8B8A8_UNORM });
 
-		shadingRenderStageAttachments.push_back({ "LIGHTS_BUFFER",								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, 1, false });
+		shadingRenderStageAttachments.push_back({ SCENE_LIGHTS_BUFFER,							EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, 1, false });
 		shadingRenderStageAttachments.push_back({ PER_FRAME_BUFFER,								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, 1, false });
 
 		/*if (POST_PROCESSING_ENABLED)
@@ -1168,7 +1167,7 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		IBuffer* pBuffer = m_pScene->GetLightsBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= "LIGHTS_BUFFER";
+		resourceUpdateDesc.pResourceName					= SCENE_LIGHTS_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
@@ -1232,7 +1231,7 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		const IAccelerationStructure* pTLAS = m_pScene->GetTLAS();
 		ResourceUpdateDesc resourceUpdateDesc					= {};
-		resourceUpdateDesc.pResourceName						= "SCENE_TLAS";
+		resourceUpdateDesc.pResourceName						= SCENE_TLAS;
 		resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= pTLAS;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);

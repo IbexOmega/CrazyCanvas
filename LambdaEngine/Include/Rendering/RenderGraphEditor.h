@@ -52,6 +52,7 @@ namespace LambdaEngine
 		EEditorResourceType			Type					= EEditorResourceType::NONE;
 		EEditorSubResourceType		SubResourceType			= EEditorSubResourceType::NONE;
 		uint32						SubResourceArrayCount	= 1;
+		bool						Editable				= false;
 
 		EFormat						TextureFormat			= EFormat::NONE; //Todo: How to solve?
 	};
@@ -106,6 +107,7 @@ namespace LambdaEngine
 		int32						InputAttributeIndex		= 0;
 		EPipelineStateType			Type					= EPipelineStateType::NONE;
 		bool						CustomRenderer			= false;
+		bool						Enabled					= true;
 
 		EditorGraphicsShaders		GraphicsShaders;
 		EditorComputeShader			ComputeShaders;
@@ -139,6 +141,22 @@ namespace LambdaEngine
 		EditorResource			Resource		= {};
 	};
 
+	struct EditorParsedRenderStage
+	{
+		String						Name					= "";
+		EPipelineStateType			Type					= EPipelineStateType::NONE;
+		bool						CustomRenderer			= false;
+		bool						Enabled					= true;
+
+		EditorGraphicsShaders		GraphicsShaders;
+		EditorComputeShader			ComputeShaders;
+		EditorRayTracingShaders		RayTracingShaders;
+
+		TArray<String>				ResourceStateNames;
+
+		uint32						Weight					= 0;
+	};
+
 	struct EditorSynchronizationStage
 	{
 		std::vector<EditorResourceSynchronization> Synchronizations;
@@ -146,12 +164,10 @@ namespace LambdaEngine
 
 	struct RenderGraphStructure
 	{
-		TArray<EditorRenderStage>					RenderStages;
+		TArray<EditorParsedRenderStage>				RenderStages;
 		TArray<EditorSynchronizationStage>			SynchronizationStages;
 		TArray<PipelineStageDesc>					PipelineStages;
 	};
-
-	
 
 	class RenderGraphEditor : public EventHandler
 	{
@@ -171,17 +187,18 @@ namespace LambdaEngine
 	private:
 		void InitDefaultResources();
 
-		void RenderResourceView();
+		void RenderResourceView(float textWidth, float textHeight);
 		void RenderAddResourceView();
+		void RenderEditResourceView();
 
-		void RenderShaderView();
+		void RenderShaderView(float textWidth, float textHeight);
 
 		void RenderGraphView();
 		void RenderAddRenderStageView();
 		void RenderSaveRenderGraphView();
 		void RenderLoadRenderGraphView();
 
-		void RenderPrasedRenderGraphView();
+		void RenderParsedRenderGraphView();
 
 		void RenderShaderBoxes(EditorRenderStage* pRenderStage);
 		void RenderShaderBoxCommon(String* pTarget, bool* pAdded = nullptr, bool* pRemoved = nullptr);
@@ -206,16 +223,17 @@ namespace LambdaEngine
 		bool SaveToFile(const String& renderGraphName);
 		bool LoadFromFile(const String& filepath);
 
-		bool ParseStructure();
+		bool ParseStructure(bool generateImGuiStage);
 		bool RecursivelyWeightParentRenderStages(EditorRenderStage* pChildRenderStage);
 		bool IsRenderStage(const String& name);
 		EResourceAccessState FindAccessStateFromResourceState(const EditorRenderGraphResourceState* pResourceState);
+		void CreateParsedRenderStage(EditorParsedRenderStage* pDstRenderStage, const EditorRenderStage* pSrcRenderStage);
 
 	private:
 		TArray<EditorResourceStateGroup>					m_ResourceStateGroups;
 		EditorFinalOutput									m_FinalOutput		= {};
 
-		THashTable<String, EditorResource>					m_ResourcesByName;
+		tsl::ordered_map<String, EditorResource>			m_ResourcesByName;
 
 		THashTable<int32, String>							m_RenderStageNameByInputAttributeIndex;
 		THashTable<String, EditorRenderStage>				m_RenderStagesByName;
@@ -224,6 +242,7 @@ namespace LambdaEngine
 
 		EPipelineStateType									m_CurrentlyAddingRenderStage	= EPipelineStateType::NONE;
 		EEditorResourceType									m_CurrentlyAddingResource		= EEditorResourceType::NONE;
+		String												m_CurrentlyEditingResource		= "";
 
 		EditorStartedLinkInfo								m_StartedLinkInfo				= {};
 
