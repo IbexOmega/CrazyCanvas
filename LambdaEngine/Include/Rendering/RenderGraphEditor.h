@@ -2,7 +2,7 @@
 
 #include "LambdaEngine.h"
 
-#include "RenderGraphTypes.h"
+#include "RefactoredRenderGraphTypes.h"
 
 #include "Containers/String.h"
 #include "Containers/TArray.h"
@@ -15,21 +15,6 @@
 
 namespace LambdaEngine
 {
-	enum class EEditorResourceType : uint8
-	{
-		NONE					= 0,
-		TEXTURE					= 1,
-		BUFFER					= 2,
-		ACCELERATION_STRUCTURE	= 3,
-	};
-
-	enum class EEditorSubResourceType : uint8
-	{
-		NONE					= 0,
-		ARRAY					= 1,
-		PER_FRAME				= 2,
-	};
-
 	enum class EEditorPinType : uint8
 	{
 		INPUT					= 0,
@@ -49,8 +34,8 @@ namespace LambdaEngine
 	{
 		String						Name					= "";
 		
-		EEditorResourceType			Type					= EEditorResourceType::NONE;
-		EEditorSubResourceType		SubResourceType			= EEditorSubResourceType::NONE;
+		ERefactoredRenderGraphResourceType	Type					= ERefactoredRenderGraphResourceType::NONE;
+		ERefactoredRenderGraphSubResourceType	SubResourceType			= ERefactoredRenderGraphSubResourceType::NONE;
 		uint32						SubResourceArrayCount	= 1;
 		bool						Editable				= false;
 
@@ -69,38 +54,12 @@ namespace LambdaEngine
 		String			ResourceName		= "";
 		String			RenderStageName		= "";
 		bool			Removable			= true;
+		ERefactoredRenderGraphResourceBindingType BindingType = ERefactoredRenderGraphResourceBindingType::NONE;
 		int32			InputLinkIndex		= -1;
 		TSet<int32>		OutputLinkIndices;
 	};
 
-	struct EditorGraphicsShaders
-	{
-		String TaskShader		= "";
-		String MeshShader		= "";
-
-		String VertexShader		= "";
-		String GeometryShader	= "";
-		String HullShader		= "";
-		String DomainShader		= "";
-
-		String PixelShader		= "";
-	};
-
-	struct EditorComputeShader
-	{
-		String Shader			= "";
-	};
-
-	struct EditorRayTracingShaders
-	{
-		String			RaygenShader			= "";
-		String			pMissShaders[MAX_MISS_SHADER_COUNT];
-		String			pClosestHitShaders[MAX_CLOSEST_HIT_SHADER_COUNT];
-		uint32			MissShaderCount			= 0;
-		uint32			ClosestHitShaderCount	= 0;
-	};
-
-	struct EditorRenderStage
+	struct EditorRenderStageDesc
 	{
 		String						Name					= "";
 		int32						NodeIndex				= 0;
@@ -109,9 +68,23 @@ namespace LambdaEngine
 		bool						CustomRenderer			= false;
 		bool						Enabled					= true;
 
-		EditorGraphicsShaders		GraphicsShaders;
-		EditorComputeShader			ComputeShaders;
-		EditorRayTracingShaders		RayTracingShaders;
+		struct
+		{
+			RefactoredGraphicsShaders				Shaders;
+			ERefactoredRenderStageDrawType		DrawType;  //<------------------------------------------------------------- Lägg till dessa tre
+			String						IndexBufferName;
+			String						IndirectArgsBufferName;
+		} Graphics;
+
+		struct
+		{
+			String						ShaderName = "";
+		} Compute;
+
+		struct
+		{
+			RefactoredRayTracingShaders			Shaders;
+		} RayTracing;
 
 		tsl::ordered_map<String, int32>		ResourceStates;
 
@@ -130,43 +103,6 @@ namespace LambdaEngine
 		String		Name						= "";
 		int32		NodeIndex					= 0;
 		int32		BackBufferAttributeIndex	= 0;
-	};
-
-	struct EditorResourceSynchronization
-	{
-		ECommandQueueType		FromQueue		= ECommandQueueType::COMMAND_QUEUE_NONE;
-		ECommandQueueType		ToQueue			= ECommandQueueType::COMMAND_QUEUE_NONE;
-		EResourceAccessState	FromState		= EResourceAccessState::READ;
-		EResourceAccessState	ToState			= EResourceAccessState::READ;
-		EditorResource			Resource		= {};
-	};
-
-	struct EditorParsedRenderStage
-	{
-		String						Name					= "";
-		EPipelineStateType			Type					= EPipelineStateType::NONE;
-		bool						CustomRenderer			= false;
-		bool						Enabled					= true;
-
-		EditorGraphicsShaders		GraphicsShaders;
-		EditorComputeShader			ComputeShaders;
-		EditorRayTracingShaders		RayTracingShaders;
-
-		TArray<String>				ResourceStateNames;
-
-		uint32						Weight					= 0;
-	};
-
-	struct EditorSynchronizationStage
-	{
-		std::vector<EditorResourceSynchronization> Synchronizations;
-	};
-
-	struct RenderGraphStructure
-	{
-		TArray<EditorParsedRenderStage>				RenderStages;
-		TArray<EditorSynchronizationStage>			SynchronizationStages;
-		TArray<PipelineStageDesc>					PipelineStages;
 	};
 
 	class RenderGraphEditor : public EventHandler
@@ -200,34 +136,38 @@ namespace LambdaEngine
 
 		void RenderParsedRenderGraphView();
 
-		void RenderShaderBoxes(EditorRenderStage* pRenderStage);
+		void RenderShaderBoxes(EditorRenderStageDesc* pRenderStage);
 		void RenderShaderBoxCommon(String* pTarget, bool* pAdded = nullptr, bool* pRemoved = nullptr);
 
 		int32 CreateResourceState(const String& resourceName, const String& renderStageName, bool removable);
 		bool CheckLinkValid(int32* pSrcAttributeIndex, int32* pDstAttributeIndex);
 
 		String RenderStageTypeToString(EPipelineStateType type);
-		String RenderGraphResourceTypeToString(EEditorResourceType type);
-		String RenderGraphSubResourceTypeToString(EEditorSubResourceType type);
+		String RenderGraphResourceTypeToString(ERefactoredRenderGraphResourceType type);
+		String RenderGraphSubResourceTypeToString(ERefactoredRenderGraphSubResourceType type);
 
 		EPipelineStateType RenderStageTypeFromString(const String& string);
-		EEditorResourceType RenderGraphResourceTypeFromString(const String& string);
-		EEditorSubResourceType RenderGraphSubResourceTypeFromString(const String& string);
+		ERefactoredRenderGraphResourceType RenderGraphResourceTypeFromString(const String& string);
+		ERefactoredRenderGraphSubResourceType RenderGraphSubResourceTypeFromString(const String& string);
 
 		void DestroyLink(int32 linkIndex);
 
-		void PushPinColorIfNeeded(EEditorPinType pinType, EditorRenderStage* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
-		void PopPinColorIfNeeded(EEditorPinType pinType, EditorRenderStage* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
-		bool CustomPinColorNeeded(EEditorPinType pinType, EditorRenderStage* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
+		void PushPinColorIfNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
+		void PopPinColorIfNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
+		bool CustomPinColorNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
+
+		void CalculateResourceStateBindingTypes(const EditorRenderGraphResourceState* pResourceState, TArray<ERefactoredRenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames);
+		String ResourceStateBindingTypeToString(ERefactoredRenderGraphResourceBindingType bindingType, ERefactoredRenderGraphResourceType resourceType);
+		ERefactoredRenderGraphResourceBindingType ResourceStateBindingTypeFromString(const String& string);
 
 		bool SaveToFile(const String& renderGraphName);
 		bool LoadFromFile(const String& filepath);
 
 		bool ParseStructure(bool generateImGuiStage);
-		bool RecursivelyWeightParentRenderStages(EditorRenderStage* pChildRenderStage);
+		bool RecursivelyWeightParentRenderStages(EditorRenderStageDesc* pChildRenderStage);
 		bool IsRenderStage(const String& name);
-		EResourceAccessState FindAccessStateFromResourceState(const EditorRenderGraphResourceState* pResourceState);
-		void CreateParsedRenderStage(EditorParsedRenderStage* pDstRenderStage, const EditorRenderStage* pSrcRenderStage);
+		ERefactoredRenderGraphResourceAccessState FindAccessStateFromResourceState(const EditorRenderGraphResourceState* pResourceState);
+		void CreateParsedRenderStage(RefactoredRenderStageDesc* pDstRenderStage, const EditorRenderStageDesc* pSrcRenderStage);
 
 	private:
 		TArray<EditorResourceStateGroup>					m_ResourceStateGroups;
@@ -236,19 +176,19 @@ namespace LambdaEngine
 		tsl::ordered_map<String, EditorResource>			m_ResourcesByName;
 
 		THashTable<int32, String>							m_RenderStageNameByInputAttributeIndex;
-		THashTable<String, EditorRenderStage>				m_RenderStagesByName;
+		THashTable<String, EditorRenderStageDesc>				m_RenderStagesByName;
 		THashTable<int32, EditorRenderGraphResourceState>	m_ResourceStatesByHalfAttributeIndex;
 		THashTable<int32, EditorRenderGraphResourceLink>	m_ResourceStateLinksByLinkIndex;
 
 		EPipelineStateType									m_CurrentlyAddingRenderStage	= EPipelineStateType::NONE;
-		EEditorResourceType									m_CurrentlyAddingResource		= EEditorResourceType::NONE;
+		ERefactoredRenderGraphResourceType									m_CurrentlyAddingResource		= ERefactoredRenderGraphResourceType::NONE;
 		String												m_CurrentlyEditingResource		= "";
 
 		EditorStartedLinkInfo								m_StartedLinkInfo				= {};
 
 		TArray<String>										m_FilesInShaderDirectory;
 
-		RenderGraphStructure								m_ParsedRenderGraphStructure	= {};
+		RefactoredRenderGraphStructure								m_ParsedRenderGraphStructure	= {};
 		bool												m_ParsedGraphDirty				= true;
 		String												m_ParsingError					= "No Errors";
 
