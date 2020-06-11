@@ -33,7 +33,7 @@ constexpr const char* SCENE_MAT_PARAM_BUFFER				= "SCENE_MAT_PARAM_BUFFER";
 constexpr const char* SCENE_VERTEX_BUFFER					= "SCENE_VERTEX_BUFFER";
 constexpr const char* SCENE_INDEX_BUFFER					= "SCENE_INDEX_BUFFER";
 constexpr const char* SCENE_INSTANCE_BUFFER				    = "SCENE_INSTANCE_BUFFER";
-constexpr const char* SCENE_MESH_INDEX_BUFFER				= "SCENE_MESH_INDEX_BUFFER";
+constexpr const char* SCENE_INDIRECT_ARGS_BUFFER			= "SCENE_INDIRECT_ARGS_BUFFER";
 constexpr const char* SCENE_TLAS							= "SCENE_TLAS";
 
 constexpr const char* SCENE_ALBEDO_MAPS					    = "SCENE_ALBEDO_MAPS";
@@ -253,7 +253,7 @@ namespace LambdaEngine
 			resource.TextureFormat				= EFormat::FORMAT_B8G8R8A8_UNORM;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			m_FinalOutput.BackBufferAttributeIndex					= CreateResourceState(resource.Name, m_FinalOutput.Name, false);
+			m_FinalOutput.BackBufferAttributeIndex					= CreateResourceState(resource.Name, m_FinalOutput.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -265,7 +265,7 @@ namespace LambdaEngine
 			resource.Editable					= false;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -277,7 +277,7 @@ namespace LambdaEngine
 			resource.Editable					= false;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -289,7 +289,7 @@ namespace LambdaEngine
 			resource.Editable					= false;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -301,7 +301,7 @@ namespace LambdaEngine
 			resource.Editable					= false;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -313,7 +313,7 @@ namespace LambdaEngine
 			resource.Editable					= false;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -325,7 +325,7 @@ namespace LambdaEngine
 			resource.Editable					= false;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -337,19 +337,19 @@ namespace LambdaEngine
 			resource.Editable					= false;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
 			EditorResource resource = {};
-			resource.Name						= SCENE_MESH_INDEX_BUFFER;
+			resource.Name						= SCENE_INDIRECT_ARGS_BUFFER;
 			resource.Type						= ERefactoredRenderGraphResourceType::BUFFER;
 			resource.SubResourceType			= ERefactoredRenderGraphSubResourceType::ARRAY;
 			resource.SubResourceArrayCount		= 1;
 			resource.Editable					= false;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -361,7 +361,7 @@ namespace LambdaEngine
 			resource.Editable					= false;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -374,7 +374,7 @@ namespace LambdaEngine
 			resource.TextureFormat				= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -387,7 +387,7 @@ namespace LambdaEngine
 			resource.TextureFormat				= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -400,7 +400,7 @@ namespace LambdaEngine
 			resource.TextureFormat				= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -413,7 +413,7 @@ namespace LambdaEngine
 			resource.TextureFormat				= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		{
@@ -426,7 +426,7 @@ namespace LambdaEngine
 			resource.TextureFormat				= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_ResourcesByName[resource.Name]	= resource;
 
-			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false);
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERefactoredRenderGraphResourceBindingType::NONE);
 		}
 
 		m_ResourceStateGroups.resize(NUM_RESOURCE_STATE_GROUPS);
@@ -989,7 +989,7 @@ namespace LambdaEngine
 
 					if (pResourceStateGroup->ResourceStates.find(pResource->Name) == pResourceStateGroup->ResourceStates.end())
 					{
-						pResourceStateGroup->ResourceStates[pResource->Name] = CreateResourceState(pResource->Name, pResourceStateGroup->Name, true);
+						pResourceStateGroup->ResourceStates[pResource->Name] = CreateResourceState(pResource->Name, pResourceStateGroup->Name, true, ERefactoredRenderGraphResourceBindingType::READ_ONLY);
 						m_ParsedGraphDirty = true;
 					}
 				}
@@ -1157,12 +1157,98 @@ namespace LambdaEngine
 
 					if (pRenderStage->ResourceStates.find(pResource->Name) == pRenderStage->ResourceStates.end())
 					{
-						pRenderStage->ResourceStates[pResource->Name] = CreateResourceState(pResource->Name, pRenderStage->Name, true);
+						pRenderStage->ResourceStates[pResource->Name] = CreateResourceState(pResource->Name, pRenderStage->Name, true, ERefactoredRenderGraphResourceBindingType::READ_ONLY);
 						m_ParsedGraphDirty = true;
 					}
 				}
 
 				ImGui::EndDragDropTarget();
+			}
+
+			//If Graphics, Render draw type options
+			if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
+			{
+				TArray<ERefactoredRenderStageDrawType> drawTypes				= { ERefactoredRenderStageDrawType::SCENE_INDIRECT, ERefactoredRenderStageDrawType::FULLSCREEN_QUAD };
+				TArray<const char*> drawTypeNames								= { "SCENE INDIRECT", "FULLSCREEN QUAD" };
+				auto selectedDrawTypeIt											= std::find(drawTypes.begin(), drawTypes.end(), pRenderStage->Graphics.DrawType);
+				int32 selectedDrawType											= 0;
+				if (selectedDrawTypeIt != drawTypes.end()) selectedDrawType		= std::distance(drawTypes.begin(), selectedDrawTypeIt);
+
+				ImGui::Text(("\tDraw Type:"));
+				ImGui::SameLine();
+				ImGui::SetNextItemWidth(ImGui::CalcTextSize("FULLSCREEN QUAD").x + ImGui::GetFrameHeight() + 4.0f); //Max Length String to be displayed + Arrow Size + Some extra
+				if (ImGui::BeginCombo(("##Draw Type" + pRenderStage->Name).c_str(), drawTypeNames[selectedDrawType]))
+				{
+					for (uint32 dt = 0; dt < drawTypeNames.size(); dt++)
+					{
+						const bool is_selected = (selectedDrawType == dt);
+						if (ImGui::Selectable(drawTypeNames[dt], is_selected))
+						{
+							selectedDrawType = dt;
+							pRenderStage->Graphics.DrawType = drawTypes[selectedDrawType];
+							m_ParsedGraphDirty = true;
+						}
+
+						if (is_selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+
+				if (pRenderStage->Graphics.DrawType == ERefactoredRenderStageDrawType::SCENE_INDIRECT)
+				{
+					//Index Buffer
+					{
+						EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndexBufferAttributeIndex / 2];
+
+						PushPinColorIfNeeded(EEditorPinType::INPUT, pRenderStage, pResourceState, -1);
+						imnodes::BeginInputAttribute(pRenderStage->Graphics.IndexBufferAttributeIndex);
+						ImGui::Text("Index Buffer");
+
+						if (pResourceState->ResourceName.size() > 0)
+						{
+							ImGui::Text(pResourceState->ResourceName.c_str());
+							ImGui::SameLine();
+
+							if (pResourceState->Removable)
+							{
+								if (ImGui::Button("-"))
+								{
+									pResourceState->ResourceName = "";
+									DestroyLink(pResourceState->InputLinkIndex);
+								}
+							}
+						}
+						imnodes::EndInputAttribute();
+						PopPinColorIfNeeded(EEditorPinType::INPUT, pRenderStage, pResourceState, -1);
+					}
+					
+					//Indirect Args Buffer
+					{
+						EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2];
+
+						PushPinColorIfNeeded(EEditorPinType::INPUT, pRenderStage, pResourceState, -1);
+						imnodes::BeginInputAttribute(pRenderStage->Graphics.IndirectArgsBufferAttributeIndex);
+						ImGui::Text("Indirect Args Buffer");
+
+						if (pResourceState->ResourceName.size() > 0)
+						{
+							ImGui::Text(pResourceState->ResourceName.c_str());
+							ImGui::SameLine();
+
+							if (pResourceState->Removable)
+							{
+								if (ImGui::Button("-"))
+								{
+									pResourceState->ResourceName = "";
+									DestroyLink(pResourceState->InputLinkIndex);
+								}
+							}
+						}
+						imnodes::EndInputAttribute();
+						PopPinColorIfNeeded(EEditorPinType::INPUT, pRenderStage, pResourceState, -1);
+					}
+				}
 			}
 
 			//Render Shader Boxes
@@ -1240,7 +1326,7 @@ namespace LambdaEngine
 					EditorResource* pResource = &m_ResourcesByName[m_ResourceStatesByHalfAttributeIndex[srcAttributeIndex / 2].ResourceName];
 
 					if (pRenderStage->ResourceStates.find(pResource->Name) == pRenderStage->ResourceStates.end())
-						pRenderStage->ResourceStates[pResource->Name] = CreateResourceState(pResource->Name, pRenderStage->Name, true);
+						pRenderStage->ResourceStates[pResource->Name] = CreateResourceState(pResource->Name, pRenderStage->Name, true, ERefactoredRenderGraphResourceBindingType::READ_ONLY);
 
 					dstAttributeIndex = pRenderStage->ResourceStates[pResource->Name];
 				}
@@ -1248,13 +1334,21 @@ namespace LambdaEngine
 				EditorRenderGraphResourceState* pSrcResource = &m_ResourceStatesByHalfAttributeIndex[srcAttributeIndex / 2];
 				EditorRenderGraphResourceState* pDstResource = &m_ResourceStatesByHalfAttributeIndex[dstAttributeIndex / 2];
 
-				if (pSrcResource->ResourceName == pDstResource->ResourceName)
+				bool allowedDrawResource = pDstResource->BindingType == ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE && m_ResourcesByName[pSrcResource->ResourceName].Type == ERefactoredRenderGraphResourceType::BUFFER;
+
+				if (pSrcResource->ResourceName == pDstResource->ResourceName || allowedDrawResource)
 				{
 					//Destroy old link
 					if (pDstResource->InputLinkIndex != -1)
 					{
 						int32 linkToBeDestroyedIndex = pDstResource->InputLinkIndex;
 						DestroyLink(linkToBeDestroyedIndex);
+					}
+
+					//If this is a Draw Resource, rename it
+					if (allowedDrawResource)
+					{
+						pDstResource->ResourceName = pSrcResource->ResourceName;
 					}
 
 					EditorRenderGraphResourceLink newLink = {};
@@ -1345,6 +1439,13 @@ namespace LambdaEngine
 					newRenderStage.Enabled				= true;
 
 					s_NextAttributeID += 2;
+
+					if (m_CurrentlyAddingRenderStage == EPipelineStateType::GRAPHICS)
+					{
+						newRenderStage.Graphics.DrawType							= ERefactoredRenderStageDrawType::FULLSCREEN_QUAD;
+						newRenderStage.Graphics.IndexBufferAttributeIndex			= CreateResourceState("",	newRenderStage.Name, true, ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE);
+						newRenderStage.Graphics.IndirectArgsBufferAttributeIndex	= CreateResourceState("",	newRenderStage.Name, true, ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE);
+					}
 
 					m_RenderStageNameByInputAttributeIndex[newRenderStage.InputAttributeIndex] = newRenderStage.Name;
 					m_RenderStagesByName[newRenderStage.Name] = newRenderStage;
@@ -1786,13 +1887,13 @@ namespace LambdaEngine
 		}
 	}
 
-	int32 RenderGraphEditor::CreateResourceState(const String& resourceName, const String& renderStageName, bool removable)
+	int32 RenderGraphEditor::CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERefactoredRenderGraphResourceBindingType bindingType)
 	{
 		EditorRenderGraphResourceState resourceState = {};
 		resourceState.ResourceName		= resourceName;
 		resourceState.RenderStageName	= renderStageName;
 		resourceState.Removable			= removable;
-		resourceState.BindingType		= ERefactoredRenderGraphResourceBindingType::READ_ONLY;
+		resourceState.BindingType		= bindingType;
 
 		uint32 attributeIndex = s_NextAttributeID;
 		s_NextAttributeID += 2;
@@ -2284,6 +2385,101 @@ namespace LambdaEngine
 						writer.String("custom_renderer");
 						writer.Bool(pRenderStage->CustomRenderer);
 
+						if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
+						{
+							writer.String("draw_params");
+							writer.StartObject();
+							{
+								writer.String("draw_type");
+								writer.String(RenderStageDrawTypeToString(pRenderStage->Graphics.DrawType).c_str());
+
+								//Index Buffer Draw Resource
+								{
+									int32 attributeIndex = pRenderStage->Graphics.IndexBufferAttributeIndex;
+									EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+									const EditorResource* pResource = &m_ResourcesByName[pResourceState->ResourceName];
+
+									writer.String("index_buffer");
+									writer.StartObject();
+									{
+										writer.String("name");
+										writer.String(pResourceState->ResourceName.c_str());
+
+										writer.String("render_stage_name");
+										writer.String(pResourceState->RenderStageName.c_str());
+
+										writer.String("removable");
+										writer.Bool(pResourceState->Removable);
+
+										writer.String("binding_type");
+										writer.String(ResourceStateBindingTypeToString(pResourceState->BindingType, pResource->Type).c_str());
+
+										writer.String("attribute_index");
+										writer.Int(attributeIndex);
+
+										writer.String("input_link_index");
+										writer.Int(pResourceState->InputLinkIndex);
+
+										writer.String("output_link_indices");
+										writer.StartArray();
+										{
+											for (auto outputLinkIt = pResourceState->OutputLinkIndices.begin(); outputLinkIt != pResourceState->OutputLinkIndices.end(); outputLinkIt++)
+											{
+												int32 outputLinkIndex = *outputLinkIt;
+
+												writer.Int(outputLinkIndex);
+											}
+										}
+										writer.EndArray();
+									}
+									writer.EndObject();
+								}
+
+								//Indirect Args Buffer Draw Resource
+								{
+									int32 attributeIndex = pRenderStage->Graphics.IndirectArgsBufferAttributeIndex;
+									EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+									const EditorResource* pResource = &m_ResourcesByName[pResourceState->ResourceName];
+
+									writer.String("indirect_args_buffer");
+									writer.StartObject();
+									{
+										writer.String("name");
+										writer.String(pResourceState->ResourceName.c_str());
+
+										writer.String("render_stage_name");
+										writer.String(pResourceState->RenderStageName.c_str());
+
+										writer.String("removable");
+										writer.Bool(pResourceState->Removable);
+
+										writer.String("binding_type");
+										writer.String(ResourceStateBindingTypeToString(pResourceState->BindingType, pResource->Type).c_str());
+
+										writer.String("attribute_index");
+										writer.Int(attributeIndex);
+
+										writer.String("input_link_index");
+										writer.Int(pResourceState->InputLinkIndex);
+
+										writer.String("output_link_indices");
+										writer.StartArray();
+										{
+											for (auto outputLinkIt = pResourceState->OutputLinkIndices.begin(); outputLinkIt != pResourceState->OutputLinkIndices.end(); outputLinkIt++)
+											{
+												int32 outputLinkIndex = *outputLinkIt;
+
+												writer.Int(outputLinkIndex);
+											}
+										}
+										writer.EndArray();
+									}
+									writer.EndObject();
+								}
+							}
+							writer.EndObject();
+						}
+
 						writer.String("shaders");
 						writer.StartObject();
 						{
@@ -2623,6 +2819,64 @@ namespace LambdaEngine
 
 					if (renderStage.Type == EPipelineStateType::GRAPHICS)
 					{
+						GenericObject drawParamsObject	= renderStageObject["draw_params"].GetObject();
+
+						renderStage.Graphics.DrawType = RenderStageDrawTypeFromString(drawParamsObject["draw_type"].GetString());
+
+						//Index Buffer
+						{
+							GenericObject resourceStateObject = drawParamsObject["index_buffer"].GetObject();
+
+							String resourceName		= resourceStateObject["name"].GetString();
+							int32 attributeIndex	= resourceStateObject["attribute_index"].GetInt();
+
+							EditorRenderGraphResourceState resourceState = {};
+							resourceState.ResourceName		= resourceName;
+							resourceState.RenderStageName	= resourceStateObject["render_stage_name"].GetString();
+							resourceState.Removable			= resourceStateObject["removable"].GetBool();
+							resourceState.BindingType		= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
+							resourceState.InputLinkIndex	= resourceStateObject["input_link_index"].GetInt();
+						
+							GenericArray outputLinkIndicesArray = resourceStateObject["output_link_indices"].GetArray();
+
+							for (uint32 ol = 0; ol < outputLinkIndicesArray.Size(); ol++)
+							{
+								resourceState.OutputLinkIndices.insert(outputLinkIndicesArray[ol].GetInt());
+							}
+
+							loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2] = resourceState;
+							renderStage.Graphics.IndexBufferAttributeIndex = attributeIndex;
+
+							if (attributeIndex + 1 > largestAttributeID) largestAttributeID = attributeIndex + 1;
+						}
+
+						//Indirect Args Buffer
+						{
+							GenericObject resourceStateObject = drawParamsObject["indirect_args_buffer"].GetObject();
+
+							String resourceName		= resourceStateObject["name"].GetString();
+							int32 attributeIndex	= resourceStateObject["attribute_index"].GetInt();
+
+							EditorRenderGraphResourceState resourceState = {};
+							resourceState.ResourceName		= resourceName;
+							resourceState.RenderStageName	= resourceStateObject["render_stage_name"].GetString();
+							resourceState.Removable			= resourceStateObject["removable"].GetBool();
+							resourceState.BindingType		= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
+							resourceState.InputLinkIndex	= resourceStateObject["input_link_index"].GetInt();
+						
+							GenericArray outputLinkIndicesArray = resourceStateObject["output_link_indices"].GetArray();
+
+							for (uint32 ol = 0; ol < outputLinkIndicesArray.Size(); ol++)
+							{
+								resourceState.OutputLinkIndices.insert(outputLinkIndicesArray[ol].GetInt());
+							}
+
+							loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2] = resourceState;
+							renderStage.Graphics.IndirectArgsBufferAttributeIndex = attributeIndex;
+
+							if (attributeIndex + 1 > largestAttributeID) largestAttributeID = attributeIndex + 1;
+						}
+
 						renderStage.Graphics.Shaders.TaskShaderName		= shadersObject["task_shader"].GetString();
 						renderStage.Graphics.Shaders.MeshShaderName		= shadersObject["mesh_shader"].GetString();
 						renderStage.Graphics.Shaders.VertexShaderName	= shadersObject["vertex_shader"].GetString();
@@ -2827,28 +3081,7 @@ namespace LambdaEngine
 			}
 		}
 
-		////Push External Resources Initial State to Hash Table
-		//THashTable<String, TArray<EditorRenderGraphResourceState>> externalResourceStates;
-		//const EditorResourceStateGroup* pExternalResourceStateGroup = &m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX];
-		//for (auto resourceStateIt = pExternalResourceStateGroup->ResourceStates.begin(); resourceStateIt != pExternalResourceStateGroup->ResourceStates.end(); resourceStateIt++)
-		//{
-		//	const EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[resourceStateIt->second / 2];
-		//	externalResourceStates[pResourceState->ResourceName].push_back(*pResourceState);
-		//}
-
-		////Push Internal Resources Initial State to Hash Table
-		//THashTable<String, TArray<EditorRenderGraphResourceState>> internalResourceStates;
-		//const EditorResourceStateGroup* pTemporalResourceStateGroup = &m_ResourceStateGroups[TEMPORAL_RESOURCE_STATE_GROUP_INDEX];
-		//for (auto resourceStateIt = pTemporalResourceStateGroup->ResourceStates.begin(); resourceStateIt != pTemporalResourceStateGroup->ResourceStates.end(); resourceStateIt++)
-		//{
-		//	const EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[resourceStateIt->second / 2];
-		//	internalResourceStates[pResourceState->ResourceName].push_back(*pResourceState);
-		//}
-
-		//------------------------------------------------------------------------------------------Create Initial Synchronization Stage for RenderPass attachments?
-
-		//Loop Through each Render Stage in Order and create synchronization stages
-		TArray<RefactoredRenderStageDesc>				orderedRenderStages;
+		TArray<RefactoredRenderStageDesc>			orderedRenderStages;
 		TArray<RefactoredSynchronizationStageDesc>	orderedSynchronizationStages;
 		TArray<RefactoredPipelineStageDesc>			orderedPipelineStages;
 
@@ -2868,9 +3101,10 @@ namespace LambdaEngine
 			imguiRenderStage.Enabled			= true;
 		}
 
+		//Loop Through each Render Stage in Order and create synchronization stages
 		for (auto orderedRenderStageIt = orderedMappedRenderStages.rbegin(); orderedRenderStageIt != orderedMappedRenderStages.rend(); orderedRenderStageIt++)
 		{
-			EditorRenderStageDesc* pCurrentRenderStage = orderedRenderStageIt->second;
+			const EditorRenderStageDesc* pCurrentRenderStage = orderedRenderStageIt->second;
 
 			if (pCurrentRenderStage->Enabled)
 			{
@@ -2879,75 +3113,60 @@ namespace LambdaEngine
 				//Loop through each Resource State in the Render Stage
 				for (auto resourceStateIndexIt = pCurrentRenderStage->ResourceStates.begin(); resourceStateIndexIt != pCurrentRenderStage->ResourceStates.end(); resourceStateIndexIt++)
 				{
-					const EditorRenderGraphResourceState* pCurrentResourceState = &m_ResourceStatesByHalfAttributeIndex[resourceStateIndexIt->second / 2];
-					const EditorRenderGraphResourceState* pNextResourceState = nullptr;
-					const EditorRenderStageDesc* pNextRenderStage = nullptr;
+					const EditorRenderGraphResourceState* pCurrentResourceState		= &m_ResourceStatesByHalfAttributeIndex[resourceStateIndexIt->second / 2];
+			
+					FindAndCreateSynchronization(generateImGuiStage, orderedRenderStageIt, orderedMappedRenderStages, pCurrentResourceState, &synchronizationStage);
 
-					//Loop through the following Render Stages and find the first one that uses this Resource'
-					auto nextOrderedRenderStageIt = orderedRenderStageIt;
-					nextOrderedRenderStageIt++;
-					for (; nextOrderedRenderStageIt != orderedMappedRenderStages.rend(); nextOrderedRenderStageIt++)
+					finalStateOfResources[pCurrentResourceState->ResourceName] = pCurrentResourceState;
+				}
+
+				if (pCurrentRenderStage->Type == EPipelineStateType::GRAPHICS) //Check if this Render Stage is a Graphics Render Stage, if it is we need to check Draw Resources as well
+				{
+					if (pCurrentRenderStage->Graphics.DrawType == ERefactoredRenderStageDrawType::SCENE_INDIRECT)
 					{
-						const EditorRenderStageDesc* pPotentialNextRenderStage = nextOrderedRenderStageIt->second;
-						auto potentialNextResourceStateIt = pPotentialNextRenderStage->ResourceStates.find(pCurrentResourceState->ResourceName);
+						const EditorRenderGraphResourceState* pIndexBufferResourceState			= &m_ResourceStatesByHalfAttributeIndex[pCurrentRenderStage->Graphics.IndexBufferAttributeIndex / 2];
+						const EditorRenderGraphResourceState* pIndirectArgsBufferResourceState	= &m_ResourceStatesByHalfAttributeIndex[pCurrentRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2];
 
-						//See if this Render Stage uses Resource we are looking for
-						if (pPotentialNextRenderStage->Enabled)
+						if (pIndexBufferResourceState->ResourceName.size() > 0)
 						{
-							if (potentialNextResourceStateIt != pPotentialNextRenderStage->ResourceStates.end())
+							auto resourceStateIt = pCurrentRenderStage->ResourceStates.find(pIndexBufferResourceState->ResourceName);
+
+							if (resourceStateIt != pCurrentRenderStage->ResourceStates.end())
 							{
-								pNextResourceState = &m_ResourceStatesByHalfAttributeIndex[potentialNextResourceStateIt->second / 2];
-								pNextRenderStage = pPotentialNextRenderStage;
-								break;
+								const EditorRenderGraphResourceState* pIndexBufferDescriptorResourceState = &m_ResourceStatesByHalfAttributeIndex[resourceStateIt->second / 2];
+
+								if (pIndexBufferDescriptorResourceState->OutputLinkIndices.size() > 0)
+								{
+									m_ParsingError = "Draw resource \"" + pIndexBufferResourceState->ResourceName + "\" is also bound to descriptor set in write mode";
+									return false;
+								}
+							}
+							else
+							{
+								FindAndCreateSynchronization(generateImGuiStage, orderedRenderStageIt, orderedMappedRenderStages, pIndexBufferResourceState, &synchronizationStage);
+							}
+						}
+
+						if (pIndirectArgsBufferResourceState->ResourceName.size() > 0)
+						{
+							auto resourceStateIt = pCurrentRenderStage->ResourceStates.find(pIndirectArgsBufferResourceState->ResourceName);
+
+							if (resourceStateIt != pCurrentRenderStage->ResourceStates.end())
+							{
+								const EditorRenderGraphResourceState* pIndirectArgsBufferDescriptorResourceState = &m_ResourceStatesByHalfAttributeIndex[resourceStateIt->second / 2];
+
+								if (pIndirectArgsBufferDescriptorResourceState->OutputLinkIndices.size() > 0)
+								{
+									m_ParsingError = "Draw resource \"" + pIndexBufferResourceState->ResourceName + "\" is also bound to descriptor set in write mode";
+									return false;
+								}
+							}
+							else
+							{
+								FindAndCreateSynchronization(generateImGuiStage, orderedRenderStageIt, orderedMappedRenderStages, pIndirectArgsBufferResourceState, &synchronizationStage);
 							}
 						}
 					}
-
-					//If there is a Next State for the Resource, pNextResourceState will not be nullptr 
-					RefactoredResourceSynchronizationDesc resourceSynchronization = {};
-					bool isBackBuffer = pCurrentResourceState->ResourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
-
-					if (pNextResourceState != nullptr)
-					{
-						//Check if pNextResourceState belongs to a Render Stage, otherwise we need to check if it belongs to Final Output
-						if (pNextRenderStage != nullptr)
-						{
-							resourceSynchronization.FromState		= FindAccessStateFromResourceState(pCurrentResourceState);
-							resourceSynchronization.ToState			= FindAccessStateFromResourceState(pNextResourceState);
-							resourceSynchronization.FromQueue		= ConvertPipelineStateTypeToQueue(pCurrentRenderStage->Type);
-							resourceSynchronization.ToQueue			= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
-							resourceSynchronization.ResourceName	= pCurrentResourceState->ResourceName;
-						}
-
-						synchronizationStage.Synchronizations.push_back(resourceSynchronization);
-					}
-					else if (generateImGuiStage)
-					{
-						const EditorResource* pResource = &m_ResourcesByName[pCurrentResourceState->ResourceName];
-
-						if (pResource->Type == ERefactoredRenderGraphResourceType::TEXTURE && pResource->SubResourceType == ERefactoredRenderGraphSubResourceType::PER_FRAME)
-						{
-							resourceSynchronization.FromState		= FindAccessStateFromResourceState(pCurrentResourceState);
-							resourceSynchronization.ToState			= isBackBuffer ? ERefactoredRenderGraphResourceAccessState::WRITE : ERefactoredRenderGraphResourceAccessState::READ;
-							resourceSynchronization.FromQueue		= ConvertPipelineStateTypeToQueue(pCurrentRenderStage->Type);
-							resourceSynchronization.ToQueue			= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
-							resourceSynchronization.ResourceName	= pResource->Name;
-
-							synchronizationStage.Synchronizations.push_back(resourceSynchronization);
-						}
-					}
-					else if (isBackBuffer && pNextResourceState->RenderStageName == m_FinalOutput.Name)
-					{
-						resourceSynchronization.FromState		= FindAccessStateFromResourceState(pCurrentResourceState);
-						resourceSynchronization.ToState			= ERefactoredRenderGraphResourceAccessState::PRESENT;
-						resourceSynchronization.FromQueue		= ConvertPipelineStateTypeToQueue(pCurrentRenderStage->Type);
-						resourceSynchronization.ToQueue			= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
-						resourceSynchronization.ResourceName	= pCurrentResourceState->ResourceName;
-
-						synchronizationStage.Synchronizations.push_back(resourceSynchronization);
-					}
-
-					finalStateOfResources[pCurrentResourceState->ResourceName] = pCurrentResourceState;
 				}
 
 				RefactoredRenderStageDesc parsedRenderStage = {};
@@ -3073,6 +3292,95 @@ namespace LambdaEngine
 		return pResourceState->OutputLinkIndices.size() > 0 ? ERefactoredRenderGraphResourceAccessState::WRITE : ERefactoredRenderGraphResourceAccessState::READ;
 	}
 
+	void RenderGraphEditor::FindAndCreateSynchronization(
+		bool generateImGuiStage,
+		const std::multimap<uint32, EditorRenderStageDesc*>::reverse_iterator& currentOrderedRenderStageIt,
+		const std::multimap<uint32, EditorRenderStageDesc*>& orderedMappedRenderStages,
+		const EditorRenderGraphResourceState* pCurrentResourceState,
+		RefactoredSynchronizationStageDesc* pSynchronizationStage)
+	{
+		const EditorRenderStageDesc* pCurrentRenderStage				= currentOrderedRenderStageIt->second;
+
+		const EditorRenderGraphResourceState* pNextResourceState		= nullptr;
+		const EditorRenderStageDesc* pNextRenderStage					= nullptr;
+
+		//Loop through the following Render Stages and find the first one that uses this Resource
+		auto nextOrderedRenderStageIt = currentOrderedRenderStageIt;
+		nextOrderedRenderStageIt++;
+		for (; nextOrderedRenderStageIt != orderedMappedRenderStages.rend(); nextOrderedRenderStageIt++)
+		{
+			const EditorRenderStageDesc* pPotentialNextRenderStage = nextOrderedRenderStageIt->second;
+						
+			//Check if this Render Stage is enabled
+			if (pPotentialNextRenderStage->Enabled)
+			{
+				//See if this Render Stage uses Resource we are looking for
+				auto potentialNextResourceStateIt = pPotentialNextRenderStage->ResourceStates.find(pCurrentResourceState->ResourceName);
+
+				if (potentialNextResourceStateIt != pPotentialNextRenderStage->ResourceStates.end())
+				{
+					pNextResourceState = &m_ResourceStatesByHalfAttributeIndex[potentialNextResourceStateIt->second / 2];
+					pNextRenderStage = pPotentialNextRenderStage;
+					break;
+				}
+				else if (pPotentialNextRenderStage->Type == EPipelineStateType::GRAPHICS) //Check if this Render Stage is a Graphics Render Stage, if it is we need to check Draw Resources as well
+				{
+					if (pPotentialNextRenderStage->Graphics.DrawType == ERefactoredRenderStageDrawType::SCENE_INDIRECT)
+					{
+						const EditorRenderGraphResourceState* pIndexBufferResourceState				= &m_ResourceStatesByHalfAttributeIndex[pPotentialNextRenderStage->Graphics.IndexBufferAttributeIndex / 2];
+						const EditorRenderGraphResourceState* pIndirectArgsBufferResourceState		= &m_ResourceStatesByHalfAttributeIndex[pPotentialNextRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2];
+
+						if (pCurrentResourceState->ResourceName == pIndexBufferResourceState->ResourceName || pCurrentResourceState->ResourceName == pIndirectArgsBufferResourceState->ResourceName)
+						{
+							pNextRenderStage	= pPotentialNextRenderStage;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		//If there is a Next State for the Resource, pNextResourceState will not be nullptr 
+		RefactoredResourceSynchronizationDesc resourceSynchronization = {};
+		resourceSynchronization.ResourceName	= pCurrentResourceState->ResourceName;
+		resourceSynchronization.FromQueue		= ConvertPipelineStateTypeToQueue(pCurrentRenderStage->Type);
+		resourceSynchronization.FromState		= FindAccessStateFromResourceState(pCurrentResourceState);
+
+		bool isBackBuffer = pCurrentResourceState->ResourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+
+		if (pNextResourceState != nullptr)
+		{
+			//Check if pNextResourceState belongs to a Render Stage, otherwise we need to check if it belongs to Final Output
+			if (pNextRenderStage != nullptr)
+			{
+				resourceSynchronization.ToState			= FindAccessStateFromResourceState(pNextResourceState);
+				resourceSynchronization.ToQueue			= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
+							
+				pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
+			}
+		}
+		else if (generateImGuiStage)
+		{
+			//Capture resource synchronizations here, even for Back Buffer, PRESENT Synchronization is seperately solved later
+			const EditorResource* pResource = &m_ResourcesByName[pCurrentResourceState->ResourceName];
+
+			if (pResource->Type == ERefactoredRenderGraphResourceType::TEXTURE && pResource->SubResourceType == ERefactoredRenderGraphSubResourceType::PER_FRAME)
+			{
+				resourceSynchronization.ToState			= isBackBuffer ? ERefactoredRenderGraphResourceAccessState::WRITE : ERefactoredRenderGraphResourceAccessState::READ;
+				resourceSynchronization.ToQueue			= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+
+				pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
+			}
+		}
+		else if (isBackBuffer)
+		{
+			resourceSynchronization.ToState			= ERefactoredRenderGraphResourceAccessState::PRESENT;
+			resourceSynchronization.ToQueue			= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+
+			pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
+		}
+	}
+
 	void RenderGraphEditor::CreateParsedRenderStage(RefactoredRenderStageDesc* pDstRenderStage, const EditorRenderStageDesc* pSrcRenderStage)
 	{
 		pDstRenderStage->Name					= pSrcRenderStage->Name;
@@ -3098,8 +3406,8 @@ namespace LambdaEngine
 		{
 			pDstRenderStage->Graphics.Shaders					= pSrcRenderStage->Graphics.Shaders;
 			pDstRenderStage->Graphics.DrawType					= pSrcRenderStage->Graphics.DrawType;
-			pDstRenderStage->Graphics.IndexBufferName			= pSrcRenderStage->Graphics.IndexBufferName;
-			pDstRenderStage->Graphics.IndirectArgsBufferName	= pSrcRenderStage->Graphics.IndirectArgsBufferName;
+			pDstRenderStage->Graphics.IndexBufferName			= m_ResourceStatesByHalfAttributeIndex[pSrcRenderStage->Graphics.IndexBufferAttributeIndex / 2].ResourceName;
+			pDstRenderStage->Graphics.IndirectArgsBufferName	= m_ResourceStatesByHalfAttributeIndex[pSrcRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2].ResourceName;
 		}
 		else if (pDstRenderStage->Type == EPipelineStateType::COMPUTE)
 		{

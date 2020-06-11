@@ -57,9 +57,10 @@ namespace LambdaEngine
 	enum class ERefactoredRenderGraphResourceBindingType : uint8
 	{
 		NONE					= 0,
-		READ_ONLY					= 1,
+		READ_ONLY				= 1,
 		STORAGE					= 2,
 		ATTACHMENT				= 3,
+		DRAW_RESOURCE			= 4,
 	};
 
 	enum class ERefactoredRenderGraphSubResourceType : uint8
@@ -421,9 +422,26 @@ namespace LambdaEngine
 		{
 		case ERefactoredRenderGraphResourceAccessState::READ:		return "READ";
 		case ERefactoredRenderGraphResourceAccessState::WRITE:		return "WRITE";
-		case ERefactoredRenderGraphResourceAccessState::PRESENT:		return "PRESENT";
+		case ERefactoredRenderGraphResourceAccessState::PRESENT:	return "PRESENT";
 		case ERefactoredRenderGraphResourceAccessState::NONE:		
-		default:								return "NONE";
+		default:													return "NONE";
 		}
+	}
+
+	FORCEINLINE String RenderStageDrawTypeToString(ERefactoredRenderStageDrawType drawType)
+	{
+		switch (drawType)
+		{
+		case ERefactoredRenderStageDrawType::SCENE_INDIRECT:		return "SCENE_INDIRECT";
+		case ERefactoredRenderStageDrawType::FULLSCREEN_QUAD:		return "FULLSCREEN_QUAD";
+		default:													return "NONE";
+		}
+	}
+
+	FORCEINLINE ERefactoredRenderStageDrawType RenderStageDrawTypeFromString(const String& string)
+	{
+		if (string == "SCENE_INDIRECT")		return ERefactoredRenderStageDrawType::SCENE_INDIRECT;
+		if (string == "FULLSCREEN_QUAD")	return ERefactoredRenderStageDrawType::FULLSCREEN_QUAD;
+		return ERefactoredRenderStageDrawType::NONE;
 	}
 }

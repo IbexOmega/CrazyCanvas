@@ -72,8 +72,8 @@ namespace LambdaEngine
 		{
 			RefactoredGraphicsShaders				Shaders;
 			ERefactoredRenderStageDrawType		DrawType;  //<------------------------------------------------------------- Lägg till dessa tre
-			String						IndexBufferName;
-			String						IndirectArgsBufferName;
+			int32						IndexBufferAttributeIndex;
+			int32						IndirectArgsBufferAttributeIndex;
 		} Graphics;
 
 		struct
@@ -139,7 +139,7 @@ namespace LambdaEngine
 		void RenderShaderBoxes(EditorRenderStageDesc* pRenderStage);
 		void RenderShaderBoxCommon(String* pTarget, bool* pAdded = nullptr, bool* pRemoved = nullptr);
 
-		int32 CreateResourceState(const String& resourceName, const String& renderStageName, bool removable);
+		int32 CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERefactoredRenderGraphResourceBindingType bindingType);
 		bool CheckLinkValid(int32* pSrcAttributeIndex, int32* pDstAttributeIndex);
 
 		String RenderStageTypeToString(EPipelineStateType type);
@@ -167,6 +167,11 @@ namespace LambdaEngine
 		bool RecursivelyWeightParentRenderStages(EditorRenderStageDesc* pChildRenderStage);
 		bool IsRenderStage(const String& name);
 		ERefactoredRenderGraphResourceAccessState FindAccessStateFromResourceState(const EditorRenderGraphResourceState* pResourceState);
+		void FindAndCreateSynchronization(bool generateImGuiStage, 
+			const std::multimap<uint32, EditorRenderStageDesc*>::reverse_iterator& currentOrderedRenderStageIt, 
+			const std::multimap<uint32, EditorRenderStageDesc*>& orderedMappedRenderStages, 
+			const EditorRenderGraphResourceState* pCurrentResourceState, 
+			RefactoredSynchronizationStageDesc* pSynchronizationStage);
 		void CreateParsedRenderStage(RefactoredRenderStageDesc* pDstRenderStage, const EditorRenderStageDesc* pSrcRenderStage);
 
 	private:

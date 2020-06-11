@@ -414,7 +414,7 @@
                     "output_link_indices": []
                 },
                 {
-                    "name": "SCENE_MESH_INDEX_BUFFER",
+                    "name": "SCENE_INDIRECT_ARGS_BUFFER",
                     "render_stage_name": "GEOMETRY_STAGE",
                     "removable": true,
                     "binding_type": "STORAGE",
@@ -594,7 +594,7 @@
                     "output_link_indices": []
                 },
                 {
-                    "name": "SCENE_MESH_INDEX_BUFFER",
+                    "name": "SCENE_INDIRECT_ARGS_BUFFER",
                     "render_stage_name": "RAY_TRACING_STAGE",
                     "removable": true,
                     "binding_type": "STORAGE",
