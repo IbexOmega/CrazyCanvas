@@ -36,10 +36,10 @@ namespace LambdaEngine
 		
 		ERefactoredRenderGraphResourceType	Type					= ERefactoredRenderGraphResourceType::NONE;
 		ERefactoredRenderGraphSubResourceType	SubResourceType			= ERefactoredRenderGraphSubResourceType::NONE;
-		uint32						SubResourceArrayCount	= 1;
-		bool						Editable				= false;
+		uint32						SubResourceArrayCount		= 1;
+		bool						Editable					= false;
 
-		EFormat						TextureFormat			= EFormat::NONE; //Todo: How to solve?
+		EFormat						TextureFormat				= EFormat::NONE;
 	};
 
 	struct EditorRenderGraphResourceLink
@@ -71,7 +71,7 @@ namespace LambdaEngine
 		struct
 		{
 			RefactoredGraphicsShaders				Shaders;
-			ERefactoredRenderStageDrawType		DrawType;  //<------------------------------------------------------------- Lägg till dessa tre
+			ERefactoredRenderStageDrawType		DrawType;
 			int32						IndexBufferAttributeIndex;
 			int32						IndirectArgsBufferAttributeIndex;
 		} Graphics;

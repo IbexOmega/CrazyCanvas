@@ -121,6 +121,12 @@ namespace LambdaEngine
 	{
 		String	ResourceName			= "";
 		ERefactoredRenderGraphResourceBindingType BindingType = ERefactoredRenderGraphResourceBindingType::NONE;
+
+		struct
+		{
+			ERefactoredRenderGraphResourceAccessState	PreviousState	= ERefactoredRenderGraphResourceAccessState::NONE;
+			ERefactoredRenderGraphResourceAccessState	NextState		= ERefactoredRenderGraphResourceAccessState::NONE;
+		} AttachmentSynchronizations; //If this resource state is transitioned using a renderpass, that information is stored here
 	};
 
 	struct RefactoredRenderStageDesc
@@ -166,7 +172,7 @@ namespace LambdaEngine
 
 	struct RefactoredSynchronizationStageDesc
 	{
-		std::vector<RefactoredResourceSynchronizationDesc> Synchronizations;
+		TArray<RefactoredResourceSynchronizationDesc> Synchronizations;
 	};
 
 	/*-----------------------------------------------------------------Synchronization Stage Structs End / Pipeline Stage Structs Begin-----------------------------------------------------------------*/
@@ -182,135 +188,107 @@ namespace LambdaEngine
 	struct RefactoredRenderGraphStructure
 	{
 		TArray<RefactoredResourceDesc>				ResourceDescriptions;
-		TArray<RefactoredRenderStageDesc>				RenderStageDescriptions;
+		TArray<RefactoredRenderStageDesc>			RenderStageDescriptions;
 		TArray<RefactoredSynchronizationStageDesc>	SynchronizationStageDescriptions;
 		TArray<RefactoredPipelineStageDesc>			PipelineStageDescriptions;
 	};
 
-	//FORCEINLINE EAttachmentAccessType GetAttachmentAccessType(EAttachmentType attachmentType)
-	//{
-	//	switch (attachmentType)
-	//	{
-	//	case EAttachmentType::INPUT_SHADER_RESOURCE_TEXTURE:						return EAttachmentAccessType::INPUT;
-	//	case EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:				return EAttachmentAccessType::INPUT;
-	//	case EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE:						return EAttachmentAccessType::INPUT;
-	//	case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:						return EAttachmentAccessType::INPUT;
+	FORCEINLINE bool ResourceStateNeedsDescriptor(ERefactoredRenderGraphResourceBindingType bindingType)
+	{
+		switch (bindingType)
+		{
+		case ERefactoredRenderGraphResourceBindingType::READ_ONLY:			return true;
+		case ERefactoredRenderGraphResourceBindingType::STORAGE:			return true;
+		case ERefactoredRenderGraphResourceBindingType::ATTACHMENT:			return false;
+		case ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE:		return false;
 
-	//	case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:				return EAttachmentAccessType::EXTERNAL_INPUT;
-	//	case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:		return EAttachmentAccessType::EXTERNAL_INPUT;
-	//	case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE:				return EAttachmentAccessType::EXTERNAL_INPUT;
-	//	case EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER:						return EAttachmentAccessType::EXTERNAL_INPUT;
-	//	case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:				return EAttachmentAccessType::EXTERNAL_INPUT;
-	//	case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:				return EAttachmentAccessType::EXTERNAL_INPUT;
+		default:															return false;
+		}
+	}
 
-	//	case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return EAttachmentAccessType::OUTPUT;
-	//	case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return EAttachmentAccessType::OUTPUT;
-	//	case EAttachmentType::OUTPUT_COLOR:											return EAttachmentAccessType::OUTPUT;
-	//	case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return EAttachmentAccessType::OUTPUT;
+	FORCEINLINE uint32 CreateShaderStageMask(const RefactoredRenderStageDesc* pRenderStageDesc)
+	{
+		uint32 mask = 0;
 
-	//	default:																	return EAttachmentAccessType::NONE;
-	//	}
-	//}
+		if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
+		{
+			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size()	> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		}
+		else if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
+		{
+			if (pRenderStageDesc->Compute.ShaderName.size()						> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		}
+		else if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
+		{
+			if (pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.size()	> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER;
+			if (pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;
+			if (pRenderStageDesc->RayTracing.Shaders.MissShaderCount			> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER;
+		}
 
-	//FORCEINLINE EDescriptorType GetAttachmentDescriptorType(EAttachmentType attachmentType)
-	//{
-	//	switch (attachmentType)
-	//	{
-	//	case EAttachmentType::INPUT_SHADER_RESOURCE_TEXTURE:						return EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_TEXTURE;
-	//	case EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:				return EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER;
-	//	case EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE:						return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
-	//	case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:						return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
+		return mask;
+	}
 
-	//	case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:				return EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_TEXTURE;
-	//	case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:		return EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER;
-	//	case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE:				return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
-	//	case EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER:						return EDescriptorType::DESCRIPTOR_CONSTANT_BUFFER;
-	//	case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:				return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
-	//	case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:				return EDescriptorType::DESCRIPTOR_ACCELERATION_STRUCTURE;
+	FORCEINLINE EDescriptorType CalculateResourceStateDescriptorType(ERefactoredRenderGraphResourceType resourceType, ERefactoredRenderGraphResourceBindingType bindingType)
+	{
+		if (resourceType == ERefactoredRenderGraphResourceType::TEXTURE)
+		{
+			if (bindingType == ERefactoredRenderGraphResourceBindingType::READ_ONLY)
+			{
+				return EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER;
+			}
+			else if (bindingType == ERefactoredRenderGraphResourceBindingType::STORAGE)
+			{
+				return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
+			}
+		}
+		else if (resourceType == ERefactoredRenderGraphResourceType::BUFFER)
+		{
+			if (bindingType == ERefactoredRenderGraphResourceBindingType::READ_ONLY)
+			{
+				return EDescriptorType::DESCRIPTOR_CONSTANT_BUFFER;
+			}
+			else if (bindingType == ERefactoredRenderGraphResourceBindingType::STORAGE)
+			{
+				return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
+			}
+		}
+		else if (resourceType == ERefactoredRenderGraphResourceType::ACCELERATION_STRUCTURE)
+		{
+			if (bindingType == ERefactoredRenderGraphResourceBindingType::READ_ONLY)
+			{
+				return EDescriptorType::DESCRIPTOR_ACCELERATION_STRUCTURE;
+			}
+		}
 
-	//	case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
-	//	case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
-	//	case EAttachmentType::OUTPUT_COLOR:											return EDescriptorType::DESCRIPTOR_UNKNOWN;
-	//	case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return EDescriptorType::DESCRIPTOR_UNKNOWN;
+		return EDescriptorType::DESCRIPTOR_UNKNOWN;
+	}
 
-	//	default:																	return EDescriptorType::DESCRIPTOR_UNKNOWN;
-	//	}
-	//}
+	FORCEINLINE ETextureState CalculateResourceTextureState(ERefactoredRenderGraphResourceType resourceType, ERefactoredRenderGraphResourceBindingType bindingType, EFormat format)
+	{
+		if (resourceType == ERefactoredRenderGraphResourceType::TEXTURE)
+		{
+			if (bindingType == ERefactoredRenderGraphResourceBindingType::READ_ONLY)
+			{
+				return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+			}
+			else if (bindingType == ERefactoredRenderGraphResourceBindingType::STORAGE)
+			{
+				return ETextureState::TEXTURE_STATE_GENERAL;
+			}
+			else if (bindingType == ERefactoredRenderGraphResourceBindingType::ATTACHMENT)
+			{
+				return format != EFormat::FORMAT_D24_UNORM_S8_UINT ? ETextureState::TEXTURE_STATE_RENDER_TARGET : ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+			}
+		}
 
-	//FORCEINLINE bool AttachmentsNeedsDescriptor(EAttachmentType attachmentType)
-	//{
-	//	switch (attachmentType)
-	//	{
-	//	case EAttachmentType::INPUT_SHADER_RESOURCE_TEXTURE:						return true;
-	//	case EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:				return true;
-	//	case EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE:						return true;
-	//	case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:						return true;
-
-	//	case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:				return true;
-	//	case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:		return true;
-	//	case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE:				return true;
-	//	case EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER:						return true;
-	//	case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:				return true;
-	//	case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:				return true;
-
-	//	case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return true;
-	//	case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return true;
-	//	case EAttachmentType::OUTPUT_COLOR:											return false;
-	//	case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return false;
-
-	//	default:																	return false;
-	//	}
-	//}
-
-	//FORCEINLINE ESimpleResourceType GetSimpleType(EAttachmentType attachmentType)
-	//{
-	//	switch (attachmentType)
-	//	{
-	//	case EAttachmentType::INPUT_SHADER_RESOURCE_TEXTURE:						return ESimpleResourceType::TEXTURE;
-	//	case EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:				return ESimpleResourceType::TEXTURE;
-	//	case EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE:						return ESimpleResourceType::TEXTURE;
-	//	case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:						return ESimpleResourceType::BUFFER;
-
-	//	case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:				return ESimpleResourceType::TEXTURE;
-	//	case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:		return ESimpleResourceType::TEXTURE;
-	//	case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE:				return ESimpleResourceType::TEXTURE;
-	//	case EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER:						return ESimpleResourceType::BUFFER;
-	//	case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:				return ESimpleResourceType::BUFFER;
-	//	case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:				return ESimpleResourceType::ACCELERATION_STRUCTURE;
-
-	//	case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return ESimpleResourceType::TEXTURE;
-	//	case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return ESimpleResourceType::BUFFER;
-	//	case EAttachmentType::OUTPUT_COLOR:											return ESimpleResourceType::COLOR_ATTACHMENT;
-	//	case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return ESimpleResourceType::DEPTH_STENCIL_ATTACHMENT;
-
-	//	default:																	return ESimpleResourceType::NONE;
-	//	}
-	//}
-
-	//ETextureState FORCEINLINE ConvertAttachmentTypeToTextureState(EAttachmentType attachmentType)
-	//{
-	//	switch (attachmentType)
-	//	{
-	//	case EAttachmentType::INPUT_SHADER_RESOURCE_TEXTURE:						return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-	//	case EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:				return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-	//	case EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE:						return ETextureState::TEXTURE_STATE_GENERAL;
-	//	case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:						return ETextureState::TEXTURE_STATE_UNKNOWN;
-
-	//	case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:				return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-	//	case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:		return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-	//	case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE:				return ETextureState::TEXTURE_STATE_GENERAL;
-	//	case EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER:						return ETextureState::TEXTURE_STATE_UNKNOWN;
-	//	case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:				return ETextureState::TEXTURE_STATE_UNKNOWN;
-	//	case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:				return ETextureState::TEXTURE_STATE_UNKNOWN;
-
-	//	case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return ETextureState::TEXTURE_STATE_GENERAL;
-	//	case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return ETextureState::TEXTURE_STATE_UNKNOWN;
-	//	case EAttachmentType::OUTPUT_COLOR:											return ETextureState::TEXTURE_STATE_RENDER_TARGET;
-	//	case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
-
-	//	default:																	return ETextureState::TEXTURE_STATE_UNKNOWN;
-	//	}
-	//}
+		return ETextureState::TEXTURE_STATE_UNKNOWN;
+	}
 
 	//FORCEINLINE FMemoryAccessFlags ConvertAttachmentTypeToMemoryAccessFlags(EAttachmentType attachmentType)
 	//{

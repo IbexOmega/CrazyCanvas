@@ -3227,6 +3227,115 @@ namespace LambdaEngine
 			orderedPipelineStages.push_back({ ERefactoredRenderGraphPipelineStageType::SYNCHRONIZATION, uint32(orderedSynchronizationStages.size()) - 1 });
 		}
 
+		//Do a final pass to convert Barriers synchronizations to Render Pass transitions, where applicable
+		for (uint32 p = 0; p < orderedPipelineStages.size(); p++)
+		{
+			const RefactoredPipelineStageDesc* pPipelineStageDesc = &orderedPipelineStages[p];
+
+			if (pPipelineStageDesc->Type == ERefactoredRenderGraphPipelineStageType::RENDER)
+			{
+				RefactoredRenderStageDesc* pRenderStageDesc = &orderedRenderStages[pPipelineStageDesc->StageIndex];
+
+				//Check if this Render Stage is a Graphics Stage, if it is, we can look for Render Pass Attachments
+				if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
+				{
+					for (auto resourceStateIt = pRenderStageDesc->ResourceStates.begin(); resourceStateIt != pRenderStageDesc->ResourceStates.end(); resourceStateIt++)
+					{
+						RefactoredResourceState* pResourceState = &(*resourceStateIt);
+
+						//Check if this Resource State has a binding type of ATTACHMENT, if it does, we need to modify the surrounding barriers and the internal Previous- and Next States
+						if (pResourceState->BindingType == ERefactoredRenderGraphResourceBindingType::ATTACHMENT)
+						{
+							RefactoredSynchronizationStageDesc*						pPreviousSynchronizationStageDesc	= nullptr;
+							TArray<RefactoredResourceSynchronizationDesc>::iterator	previousSynchronizationDescIt;
+
+							RefactoredSynchronizationStageDesc*						pNextSynchronizationStageDesc		= nullptr;
+							TArray<RefactoredResourceSynchronizationDesc>::iterator nextSynchronizationDescIt;
+
+							//Find Previous Synchronization Stage that contains a Synchronization for this resource
+							if (p > 0)
+							{
+								for (int32 pp = p - 1; pp > 0; pp--)
+								{
+									const RefactoredPipelineStageDesc* pPreviousPipelineStageDesc = &orderedPipelineStages[pp];
+
+									if (pPreviousPipelineStageDesc->Type == ERefactoredRenderGraphPipelineStageType::SYNCHRONIZATION)
+									{
+										RefactoredSynchronizationStageDesc* pPotentialPreviousSynchronizationStageDesc = &orderedSynchronizationStages[pPreviousPipelineStageDesc->StageIndex];
+
+										for (auto synchronizationIt = pPotentialPreviousSynchronizationStageDesc->Synchronizations.begin(); synchronizationIt != pPotentialPreviousSynchronizationStageDesc->Synchronizations.end(); synchronizationIt++)
+										{
+											RefactoredResourceSynchronizationDesc* pSynchronizationDesc = &(*synchronizationIt);
+
+											if (pSynchronizationDesc->ResourceName == pResourceState->ResourceName)
+											{
+												pPreviousSynchronizationStageDesc	= pPotentialPreviousSynchronizationStageDesc;
+												previousSynchronizationDescIt		= synchronizationIt;
+												break;
+											}
+										}
+									}
+								}
+							}
+
+							//Find Next Synchronization Stage that contains a Synchronization for this resource
+							for (int32 np = p + 1; np < orderedPipelineStages.size(); np++)
+							{
+								const RefactoredPipelineStageDesc* pNextPipelineStageDesc = &orderedPipelineStages[np];
+
+								if (pNextPipelineStageDesc->Type == ERefactoredRenderGraphPipelineStageType::SYNCHRONIZATION)
+								{
+									RefactoredSynchronizationStageDesc* pPotentialNextSynchronizationStageDesc = &orderedSynchronizationStages[pNextPipelineStageDesc->StageIndex];
+
+									for (auto synchronizationIt = pPotentialNextSynchronizationStageDesc->Synchronizations.begin(); synchronizationIt != pPotentialNextSynchronizationStageDesc->Synchronizations.end(); synchronizationIt++)
+									{
+										RefactoredResourceSynchronizationDesc* pSynchronizationDesc = &(*synchronizationIt);
+
+										if (pSynchronizationDesc->ResourceName == pResourceState->ResourceName)
+										{
+											pNextSynchronizationStageDesc	= pPotentialNextSynchronizationStageDesc;
+											nextSynchronizationDescIt		= synchronizationIt;
+											break;
+										}
+									}
+								}
+							}
+
+							if (pPreviousSynchronizationStageDesc != nullptr)
+							{
+								pResourceState->AttachmentSynchronizations.PreviousState = previousSynchronizationDescIt->FromState;
+
+								//If this is a queue transfer, the barrier must remain but the state change should be handled by the Render Pass, otherwise remove it
+								if (previousSynchronizationDescIt->FromQueue != previousSynchronizationDescIt->ToQueue)
+								{
+									previousSynchronizationDescIt->ToState = previousSynchronizationDescIt->FromState;
+								}
+								else
+								{
+									pPreviousSynchronizationStageDesc->Synchronizations.erase(previousSynchronizationDescIt);
+								}
+							}
+
+							if (pNextSynchronizationStageDesc != nullptr)
+							{
+								pResourceState->AttachmentSynchronizations.NextState = nextSynchronizationDescIt->ToState;
+
+								//If this is a queue transfer, the barrier must remain but the state change should be handled by the Render Pass, otherwise remove it
+								if (nextSynchronizationDescIt->FromQueue != nextSynchronizationDescIt->ToQueue)
+								{
+									nextSynchronizationDescIt->FromState = nextSynchronizationDescIt->ToState;
+								}
+								else
+								{
+									pNextSynchronizationStageDesc->Synchronizations.erase(nextSynchronizationDescIt);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 		m_ParsedRenderGraphStructure.ResourceDescriptions.clear();
 		m_ParsedRenderGraphStructure.ResourceDescriptions.reserve(m_ResourcesByName.size());
 

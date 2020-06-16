@@ -134,14 +134,11 @@ namespace LambdaEngine
 
 	class LAMBDA_API RefactoredRenderGraph
 	{
-		enum class EResourceType
+		enum class EResourceOwnershipType
 		{
-			UNKNOWN								= 0,
-			INTERNAL_TEXTURE					= 2,
-			INTERNAL_BUFFER						= 3,
-			EXTERNAL_TEXTURE					= 4,
-			EXTERNAL_BUFFER						= 5,
-			EXTERNAL_ACCELERATION_STRUCTURE		= 6,
+			NONE				= 0,
+			INTERNAL			= 1,
+			EXTERNAL			= 2,
 		};
 
 		struct RenderStage;
@@ -158,7 +155,8 @@ namespace LambdaEngine
 		struct Resource
 		{
 			String					Name				= "";
-			EResourceType			Type				= EResourceType::UNKNOWN;
+			ERefactoredRenderGraphResourceType			Type				= ERefactoredRenderGraphResourceType::NONE;
+			EResourceOwnershipType	OwnershipType		= EResourceOwnershipType::NONE;
 			ERefactoredRenderGraphSubResourceType	SubResourceType		= ERefactoredRenderGraphSubResourceType::NONE;
 			uint32					SubResourceCount	= 0;
 
@@ -166,6 +164,7 @@ namespace LambdaEngine
 
 			struct
 			{
+				EFormat					Format;
 				TArray<uint32>			Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
 				TArray<ITexture*>		Textures;
 				TArray<ITextureView*>	TextureViews;
