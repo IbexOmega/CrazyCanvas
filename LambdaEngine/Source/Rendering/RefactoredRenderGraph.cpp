@@ -802,11 +802,16 @@ namespace LambdaEngine
 			Resource* pResource = &m_ResourceMap[pResourceDesc->Name];
 
 			pResource->Name				= pResourceDesc->Name;
+			pResource->SubResourceType	= pResourceDesc->SubResourceType;
 
-			if (pResourceDesc->SubResourceType == ERefactoredRenderGraphSubResourceType::ARRAY)
+			if (pResource->SubResourceType == ERefactoredRenderGraphSubResourceType::ARRAY)
+			{
 				pResource->SubResourceCount = pResourceDesc->SubResourceArrayCount;
-			else if (pResourceDesc->SubResourceType == ERefactoredRenderGraphSubResourceType::PER_FRAME)
+			}
+			else if (pResource->SubResourceType == ERefactoredRenderGraphSubResourceType::PER_FRAME)
+			{
 				pResource->SubResourceCount = m_BackBufferCount;
+			}
 					
 			if (!pResourceDesc->External)
 			{
@@ -907,7 +912,7 @@ namespace LambdaEngine
 				{
 					textureSlots++;
 
-					if (pResourceStateDesc->BindingType == ERefactoredRenderGraphResourceBindingType::READ_ONLY) //READ_ONLY texture -> assumes combined sampler
+					if (pResourceStateDesc->BindingType == ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER)
 					{
 						if (textureSubresourceCount > 0 && pResource->SubResourceCount != textureSubresourceCount)
 							textureSubResourceCountSame = false;
@@ -981,7 +986,7 @@ namespace LambdaEngine
 					return false;
 				}
 
-				const Resource* pResource = &resourceIt->second;
+				Resource* pResource = &resourceIt->second;
 
 				//Descriptors
 				if (ResourceStateNeedsDescriptor(pResourceStateDesc->BindingType))
@@ -1022,29 +1027,17 @@ namespace LambdaEngine
 				//RenderPass Attachments
 				else if (pResourceStateDesc->BindingType == ERefactoredRenderGraphResourceBindingType::ATTACHMENT)
 				{
-					----------------Find previous and next synchronization stage using this resource, but also, what if its a queue change? Borde lösas i editorn istället
-
-					
 					bool isColorAttachment = pResource->Texture.Format != EFormat::FORMAT_D24_UNORM_S8_UINT;
+
+					ETextureState initialState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.PrevBindingType, pResource->Texture.Format);
+					ETextureState finalState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.NextBindingType, pResource->Texture.Format);
 
 					if (isColorAttachment)
 					{
-						ETextureState finalState	= isBackBufferAttachment ? ETextureState::TEXTURE_STATE_PRESENT : ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-						ETextureState initialState	= ETextureState::TEXTURE_STATE_UNKNOWN;
-
-						if (renderStageIndex > 0 && pResource->ResourceBindings.size() > 0)
-						{
-							initialState = pResource->ResourceBindings.back().TextureState;
-						}
-						else
-						{
-							initialState = ETextureState::TEXTURE_STATE_DONT_CARE;
-						}
-
 						RenderPassAttachmentDesc renderPassAttachmentDesc = {};
 						renderPassAttachmentDesc.Format			= pResource->Texture.Format;
 						renderPassAttachmentDesc.SampleCount	= 1;
-						renderPassAttachmentDesc.LoadOp			= initialState != ETextureState::TEXTURE_STATE_UNKNOWN ? ELoadOp::LOAD : ELoadOp::CLEAR;
+						renderPassAttachmentDesc.LoadOp			= initialState != ETextureState::TEXTURE_STATE_DONT_CARE ? ELoadOp::LOAD : ELoadOp::CLEAR;
 						renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE;
 						renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::DONT_CARE;
 						renderPassAttachmentDesc.StencilStoreOp	= EStoreOp::DONT_CARE;
@@ -1064,26 +1057,15 @@ namespace LambdaEngine
 					}
 					else
 					{
-						ETextureState initialState = ETextureState::TEXTURE_STATE_UNKNOWN;
-
-						if (renderStageIndex > 0 && pResource->ResourceBindings.size() > 0)
-						{
-							initialState = pResource->ResourceBindings.back().TextureState;
-						}
-						else
-						{
-							initialState = ETextureState::TEXTURE_STATE_DONT_CARE;
-						}
-
 						RenderPassAttachmentDesc renderPassAttachmentDesc = {};
-						renderPassAttachmentDesc.Format			= pAttachment->TextureFormat;
+						renderPassAttachmentDesc.Format			= pResource->Texture.Format;
 						renderPassAttachmentDesc.SampleCount	= 1;
-						renderPassAttachmentDesc.LoadOp			= ELoadOp::CLEAR;
+						renderPassAttachmentDesc.LoadOp			= initialState != ETextureState::TEXTURE_STATE_DONT_CARE ? ELoadOp::LOAD : ELoadOp::CLEAR;
 						renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE;
-						renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::CLEAR;
+						renderPassAttachmentDesc.StencilLoadOp	= initialState != ETextureState::TEXTURE_STATE_DONT_CARE ? ELoadOp::LOAD : ELoadOp::CLEAR;
 						renderPassAttachmentDesc.StencilStoreOp = EStoreOp::STORE;
 						renderPassAttachmentDesc.InitialState	= initialState;
-						renderPassAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+						renderPassAttachmentDesc.FinalState		= finalState;
 
 						renderPassDepthStencilDescription = renderPassAttachmentDesc;
 						pDepthStencilResource = pResource;
@@ -1092,15 +1074,15 @@ namespace LambdaEngine
 				//Graphics Draw Resources (because Rasterization is a special little boy)
 				else if (pResourceStateDesc->BindingType == ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE)
 				{
-
+					ASSERT(false); //Implement this;
 				}
 			}
 
-			if (pRenderStageDesc->UsesCustomRenderer)
+			if (pRenderStageDesc->CustomRenderer)
 			{
 				ICustomRenderer* pCustomRenderer = nullptr;
 
-				if (strcmp(pRenderStageDesc->pName, RENDER_GRAPH_IMGUI_STAGE_NAME) == 0)
+				if (pRenderStageDesc->Name == RENDER_GRAPH_IMGUI_STAGE_NAME)
 				{
 					ImGuiRenderer* pImGuiRenderer = DBG_NEW ImGuiRenderer(m_pGraphicsDevice);
 
@@ -1122,8 +1104,9 @@ namespace LambdaEngine
 				}
 				else
 				{
-					pCustomRenderer = pRenderStageDesc->CustomRenderer.pCustomRenderer;
-					m_CustomRenderers.push_back(pRenderStageDesc->CustomRenderer.pCustomRenderer);
+					//Todo: Implement Custom Custom Renderer
+					/*pCustomRenderer = pRenderStageDesc->CustomRenderer.pCustomRenderer;
+					m_CustomRenderers.push_back(pRenderStageDesc->CustomRenderer.pCustomRenderer);*/
 				}
 
 				CustomRendererRenderGraphInitDesc customRendererInitDesc = {};
@@ -1147,10 +1130,11 @@ namespace LambdaEngine
 				pRenderStage->FirstPipelineStage	= FindEarliestPipelineStage(pRenderStageDesc);
 				pRenderStage->LastPipelineStage		= FindLastPipelineStage(pRenderStageDesc);
 
-				ConstantRangeDesc constantRangeDesc = {};
-				constantRangeDesc.OffsetInBytes			= 0;
-				constantRangeDesc.ShaderStageFlags		= CreateShaderStageMask(pRenderStageDesc);
-				constantRangeDesc.SizeInBytes			= pRenderStageDesc->PushConstants.DataSize;
+				//Todo: Implement Constant Range
+				//ConstantRangeDesc constantRangeDesc = {};
+				//constantRangeDesc.OffsetInBytes			= 0;
+				//constantRangeDesc.ShaderStageFlags		= CreateShaderStageMask(pRenderStageDesc);
+				//constantRangeDesc.SizeInBytes			= pRenderStageDesc->PushConstants.DataSize;
 
 				//Create Pipeline Layout
 				{
@@ -1176,8 +1160,8 @@ namespace LambdaEngine
 					PipelineLayoutDesc pipelineLayoutDesc = {};
 					pipelineLayoutDesc.pDescriptorSetLayouts	= descriptorSetLayouts.data();
 					pipelineLayoutDesc.DescriptorSetLayoutCount = (uint32)descriptorSetLayouts.size();
-					pipelineLayoutDesc.pConstantRanges			= &constantRangeDesc;
-					pipelineLayoutDesc.ConstantRangeCount		= constantRangeDesc.SizeInBytes > 0 ? 1 : 0;
+					//pipelineLayoutDesc.pConstantRanges			= &constantRangeDesc;
+					//pipelineLayoutDesc.ConstantRangeCount		= constantRangeDesc.SizeInBytes > 0 ? 1 : 0;
 
 					pRenderStage->pPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 				}
@@ -1211,11 +1195,19 @@ namespace LambdaEngine
 				}
 
 				//Create Pipeline State
-				if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
+				if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
 				{
-					GraphicsManagedPipelineStateDesc pipelineDesc		= *pRenderStageDesc->GraphicsPipeline.pGraphicsDesc;
-
+					GraphicsManagedPipelineStateDesc pipelineDesc = {};
+					pipelineDesc.pName							= pRenderStageDesc->Name.c_str();
 					pipelineDesc.pPipelineLayout				= pRenderStage->pPipelineLayout;
+					pipelineDesc.TaskShader						= ResourceManager::GetGUID(pRenderStageDesc->Graphics.Shaders.TaskShaderName);
+					pipelineDesc.MeshShader						= ResourceManager::GetGUID(pRenderStageDesc->Graphics.Shaders.MeshShaderName);	
+					pipelineDesc.VertexShader					= ResourceManager::GetGUID(pRenderStageDesc->Graphics.Shaders.VertexShaderName);
+					pipelineDesc.GeometryShader					= ResourceManager::GetGUID(pRenderStageDesc->Graphics.Shaders.GeometryShaderName);
+					pipelineDesc.HullShader						= ResourceManager::GetGUID(pRenderStageDesc->Graphics.Shaders.HullShaderName);
+					pipelineDesc.DomainShader					= ResourceManager::GetGUID(pRenderStageDesc->Graphics.Shaders.DomainShaderName);
+					pipelineDesc.PixelShader					= ResourceManager::GetGUID(pRenderStageDesc->Graphics.Shaders.PixelShaderName);
+
 					memcpy(pipelineDesc.pBlendAttachmentStates, renderPassBlendAttachmentStates.data(), renderPassBlendAttachmentStates.size() * sizeof(BlendAttachmentState));
 					pipelineDesc.BlendAttachmentStateCount		= (uint32)renderPassBlendAttachmentStates.size();
 
@@ -1257,60 +1249,75 @@ namespace LambdaEngine
 
 					//Set Draw Type and Draw Resource
 					{
-						pRenderStage->DrawType = pRenderStageDesc->GraphicsPipeline.DrawType;
+						pRenderStage->DrawType = pRenderStageDesc->Graphics.DrawType;
 
-						if (pRenderStageDesc->GraphicsPipeline.pIndexBufferName != nullptr)
+						if (pRenderStageDesc->Graphics.IndexBufferName.size() > 0)
 						{
-							auto indexBufferIt = m_ResourceMap.find(pRenderStageDesc->GraphicsPipeline.pIndexBufferName);
+							auto indexBufferIt = m_ResourceMap.find(pRenderStageDesc->Graphics.IndexBufferName);
 
 							if (indexBufferIt == m_ResourceMap.end())
 							{
-								LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as index buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->GraphicsPipeline.pIndexBufferName);
+								LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as index buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->Graphics.IndexBufferName.c_str());
 								return false;
 							}
 
 							pRenderStage->pIndexBufferResource = &indexBufferIt->second;
 						}
 
-						if (pRenderStageDesc->GraphicsPipeline.pMeshIndexBufferName != nullptr)
+						if (pRenderStageDesc->Graphics.IndirectArgsBufferName.size() > 0)
 						{
-							auto meshIndexBufferIt = m_ResourceMap.find(pRenderStageDesc->GraphicsPipeline.pMeshIndexBufferName);
+							auto indirectArgsBufferIt = m_ResourceMap.find(pRenderStageDesc->Graphics.IndirectArgsBufferName);
 
-							if (meshIndexBufferIt == m_ResourceMap.end())
+							if (indirectArgsBufferIt == m_ResourceMap.end())
 							{
-								LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as mesh index buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->GraphicsPipeline.pMeshIndexBufferName);
+								LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as mesh index buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->Graphics.IndirectArgsBufferName.c_str());
 								return false;
 							}
 
-							pRenderStage->pMeshIndexBufferResource = &meshIndexBufferIt->second;
+							pRenderStage->pIndirectArgsBufferResource = &indirectArgsBufferIt->second;
 						}
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineDesc);
 				}
-				else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
+				else if (pRenderStageDesc->Type == EPipelineStateType::COMPUTE)
 				{
-					ComputeManagedPipelineStateDesc pipelineDesc = *pRenderStageDesc->ComputePipeline.pComputeDesc;
-
-					pipelineDesc.pPipelineLayout = pRenderStage->pPipelineLayout;
+					ComputeManagedPipelineStateDesc pipelineDesc = {};
+					pipelineDesc.pName				= pRenderStageDesc->Name.c_str();
+					pipelineDesc.pPipelineLayout	= pRenderStage->pPipelineLayout;
+					pipelineDesc.Shader				= ResourceManager::GetGUID(pRenderStageDesc->Compute.ShaderName);
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
 				}
-				else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
+				else if (pRenderStageDesc->Type == EPipelineStateType::RAY_TRACING)
 				{
-					RayTracingManagedPipelineStateDesc pipelineDesc = *pRenderStageDesc->RayTracingPipeline.pRayTracingDesc;
+					RayTracingManagedPipelineStateDesc pipelineDesc = {};
+					pipelineDesc.pPipelineLayout	= pRenderStage->pPipelineLayout;
+					pipelineDesc.MaxRecursionDepth	= 1;
+					pipelineDesc.RaygenShader		= ResourceManager::GetGUID(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName);
 
-					pipelineDesc.pPipelineLayout = pRenderStage->pPipelineLayout;
+					for (uint32 ch = 0; ch < pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount; ch++)
+					{
+						pipelineDesc.pClosestHitShaders[ch] = ResourceManager::GetGUID(pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch]);
+					}
+
+					for (uint32 m = 0; m < pRenderStageDesc->RayTracing.Shaders.MissShaderCount; m++)
+					{
+						pipelineDesc.pMissShaders[m] = ResourceManager::GetGUID(pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m]);
+					}
+
+					pipelineDesc.ClosestHitShaderCount	= pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount;
+					pipelineDesc.MissShaderCount		= pRenderStageDesc->RayTracing.Shaders.MissShaderCount;
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateRayTracingPipelineState(&pipelineDesc);
 				}
 			}
 
-			//Link Attachment Resources to Render Stage
+			//Create Resource Bindings to Render Stage
 			{
 				if (renderStageRenderTargets.size() > 0)
 				{
-					if (pRenderStageDesc->PipelineType != EPipelineStateType::GRAPHICS)
+					if (pRenderStageDesc->Type != EPipelineStateType::GRAPHICS)
 					{
 						LOG_ERROR("[RenderGraph]: There are resources that a RenderPass should be linked to, but Render Stage %u is not a Graphics Pipeline State", renderStageIndex);
 						return false;
@@ -1327,14 +1334,14 @@ namespace LambdaEngine
 						resourceBinding.Binding			= UINT32_MAX;
 						resourceBinding.TextureState	= resourcePair.second;
 
-						pResource->ResourceBindings.push_back(resourceBinding);
+						pResource->ResourceBindings.push_back(resourceBinding);		//Create Binding to notify Custom Renderers
 						pRenderStage->RenderTargetResources.push_back(pResource);
 					}
 				}
 
 				if (pDepthStencilResource != nullptr)
 				{
-					if (pRenderStageDesc->PipelineType != EPipelineStateType::GRAPHICS)
+					if (pRenderStageDesc->Type != EPipelineStateType::GRAPHICS)
 					{
 						LOG_ERROR("[RenderGraph]: There are resources that a RenderPass should be linked to, but Render Stage %u is not a Graphics Pipeline State", renderStageIndex);
 						return false;
@@ -1346,7 +1353,7 @@ namespace LambdaEngine
 					resourceBinding.Binding			= UINT32_MAX;
 					resourceBinding.TextureState	= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
-					pDepthStencilResource->ResourceBindings.push_back(resourceBinding);
+					pDepthStencilResource->ResourceBindings.push_back(resourceBinding); //Create Binding to notify Custom Renderers
 					pRenderStage->pDepthStencilAttachment = pDepthStencilResource;
 				}
 
@@ -1380,7 +1387,7 @@ namespace LambdaEngine
 			}
 
 			//Link Render Stage to Push Constant Resource
-			if (pRenderStageDesc->PushConstants.DataSize > 0)
+			/*if (pRenderStageDesc->PushConstants.DataSize > 0)
 			{
 				auto it = m_ResourceMap.find(pRenderStageDesc->PushConstants.pName);
 
@@ -1393,13 +1400,13 @@ namespace LambdaEngine
 					LOG_ERROR("[RenderGraph]: Push Constants resource found in Render Stage but not in Resource Map \"%s\"", pRenderStageDesc->PushConstants.pName);
 					return false;
 				}
-			}
+			}*/
 		}
 
 		return true;
 	}
 
-	bool RefactoredRenderGraph::CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions)
+	bool RefactoredRenderGraph::CreateSynchronizationStages(const TArray<RefactoredSynchronizationStageDesc>& synchronizationStageDescriptions)
 	{
 		m_pSynchronizationStages = DBG_NEW SynchronizationStage[synchronizationStageDescriptions.size()];
 
@@ -1407,52 +1414,60 @@ namespace LambdaEngine
 
 		for (uint32 i = 0; i < synchronizationStageDescriptions.size(); i++)
 		{
-			const SynchronizationStageDesc* pSynchronizationStageDesc = &synchronizationStageDescriptions[i];
+			const RefactoredSynchronizationStageDesc* pSynchronizationStageDesc = &synchronizationStageDescriptions[i];
 
 			SynchronizationStage* pSynchronizationStage = &m_pSynchronizationStages[i];
 
-			for (const AttachmentSynchronizationDesc& attachmentSynchronizationDesc : pSynchronizationStageDesc->Synchronizations)
+			for (auto synchronizationIt = pSynchronizationStageDesc->Synchronizations.begin(); synchronizationIt != pSynchronizationStageDesc->Synchronizations.end; synchronizationIt++)
 			{
-				bool isBackBuffer = strcmp(attachmentSynchronizationDesc.FromAttachment.pName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0;
+				const RefactoredResourceSynchronizationDesc* pResourceSynchronizationDesc = &(*synchronizationIt);
 
-				ESimpleResourceType barrierType = !isBackBuffer ? GetSimpleType(attachmentSynchronizationDesc.FromAttachment.Type) : ESimpleResourceType::TEXTURE;
-				EAttachmentAccessType accessType = GetAttachmentAccessType(attachmentSynchronizationDesc.FromAttachment.Type);
+				//En massa skit kommer nog behöva göras om här, nu när Parsern tar hand om Back Buffer States korrekt.
 
-				auto it = m_ResourceMap.find(attachmentSynchronizationDesc.FromAttachment.pName);
+				auto it = m_ResourceMap.find(pResourceSynchronizationDesc->ResourceName);
 
 				if (it == m_ResourceMap.end())
 				{
-					LOG_ERROR("[RenderGraph]: Resource found in Synchronization Stage but not in Resource Map \"%s\"", attachmentSynchronizationDesc.FromAttachment.pName);
+					LOG_ERROR("[RenderGraph]: Resource found in Synchronization Stage but not in Resource Map \"%s\"", pResourceSynchronizationDesc->ResourceName.c_str());
 					return false;
 				}
 
-				Resource* pResource = &it->second;
+				const Resource* pResource = &it->second;
 
-				if (barrierType == ESimpleResourceType::TEXTURE)
+				if (pResource->Type == ERefactoredRenderGraphResourceType::TEXTURE)
 				{
+					auto prevRenderStageIt = m_RenderStageMap.find(pResourceSynchronizationDesc->PrevRenderStage);
+					auto nextRenderStageIt = m_RenderStageMap.find(pResourceSynchronizationDesc->NextRenderStage);
+
+					if (prevRenderStageIt == m_RenderStageMap.end())
+					{
+						LOG_ERROR("[RenderGraph]: Render Stage found in Synchronization but not in Render Stage Map \"%s\"", pResourceSynchronizationDesc->PrevRenderStage.c_str());
+						return false;
+					}
+
+					if (nextRenderStageIt == m_RenderStageMap.end())
+					{
+						LOG_ERROR("[RenderGraph]: Render Stage found in Synchronization but not in Render Stage Map \"%s\"", pResourceSynchronizationDesc->NextRenderStage.c_str());
+						return false;
+					}
+
+					const RenderStage* pPrevRenderStage = &m_pRenderStages[prevRenderStageIt->second];
+					const RenderStage* pNextRenderStage = &m_pRenderStages[nextRenderStageIt->second];
+
 					//Special Case for Back Buffer
 					if (!isBackBuffer)
 					{
 						PipelineTextureBarrierDesc textureBarrier = {};
-						textureBarrier.QueueBefore			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.FromQueueOwner);
-						textureBarrier.QueueAfter			= ConvertPipelineStateTypeToQueue(attachmentSynchronizationDesc.ToQueueOwner);
-						textureBarrier.StateBefore			= ConvertAttachmentTypeToTextureState(attachmentSynchronizationDesc.FromAttachment.Type);
-						textureBarrier.SrcMemoryAccessFlags = ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.FromAttachment.Type);
-
-						if (attachmentSynchronizationDesc.Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE_READ || attachmentSynchronizationDesc.Type == EAttachmentSynchronizationType::OWNERSHIP_CHANGE_WRITE)
-						{
-							textureBarrier.StateAfter			= textureBarrier.StateBefore;
-							textureBarrier.DstMemoryAccessFlags = textureBarrier.SrcMemoryAccessFlags;
-						}
-						else
-						{
-							textureBarrier.StateAfter			= ConvertAttachmentTypeToTextureState(attachmentSynchronizationDesc.ToAttachment.Type);
-							textureBarrier.DstMemoryAccessFlags = ConvertAttachmentTypeToMemoryAccessFlags(attachmentSynchronizationDesc.ToAttachment.Type);
-						}
+						textureBarrier.QueueBefore			= pResourceSynchronizationDesc->PrevQueue;
+						textureBarrier.QueueAfter			= pResourceSynchronizationDesc->NextQueue;
+						textureBarrier.StateBefore			= CalculateResourceTextureState(pResource->Type, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
+						textureBarrier.StateAfter			= CalculateResourceTextureState(pResource->Type, pResourceSynchronizationDesc->NextBindingType, pResource->Texture.Format);
+						textureBarrier.SrcMemoryAccessFlags = CalculateResourceAccessFlags(pResourceSynchronizationDesc->PrevBindingType);
+						textureBarrier.DstMemoryAccessFlags = CalculateResourceAccessFlags(pResourceSynchronizationDesc->NextBindingType);
 
 						TextureSynchronization textureSynchronization = {};
-						textureSynchronization.SrcShaderStage			= GetLastShaderStageInMask(attachmentSynchronizationDesc.FromAttachment.ShaderStages);
-						textureSynchronization.DstShaderStage			= GetFirstShaderStageInMask(attachmentSynchronizationDesc.ToAttachment.ShaderStages);
+						textureSynchronization.SrcShaderStage			= ConvertPipelineStageToShaderStage(pPrevRenderStage->LastPipelineStage);
+						textureSynchronization.DstShaderStage			= ConvertPipelineStageToShaderStage(pNextRenderStage->FirstPipelineStage);
 						
 						if (accessType == EAttachmentAccessType::EXTERNAL_INPUT)
 						{
@@ -1717,8 +1732,6 @@ namespace LambdaEngine
 								m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
 								pCommandList->Begin(nullptr);
 							}
-
-							
 
 							pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &initialBarrier, 1);
 						}

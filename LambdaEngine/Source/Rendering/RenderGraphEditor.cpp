@@ -989,7 +989,7 @@ namespace LambdaEngine
 
 					if (pResourceStateGroup->ResourceStates.find(pResource->Name) == pResourceStateGroup->ResourceStates.end())
 					{
-						pResourceStateGroup->ResourceStates[pResource->Name] = CreateResourceState(pResource->Name, pResourceStateGroup->Name, true, ERefactoredRenderGraphResourceBindingType::READ_ONLY);
+						pResourceStateGroup->ResourceStates[pResource->Name] = CreateResourceState(pResource->Name, pResourceStateGroup->Name, true, ERefactoredRenderGraphResourceBindingType::NONE);
 						m_ParsedGraphDirty = true;
 					}
 				}
@@ -1102,7 +1102,7 @@ namespace LambdaEngine
 
 				TArray<ERefactoredRenderGraphResourceBindingType> bindingTypes;
 				TArray<const char*> bindingTypeNames;
-				CalculateResourceStateBindingTypes(pResourceState, bindingTypes, bindingTypeNames);
+				CalculateResourceStateBindingTypes(pRenderStage, pResourceState, bindingTypes, bindingTypeNames);
 
 				if (bindingTypes.size() > 0)
 				{
@@ -1157,7 +1157,7 @@ namespace LambdaEngine
 
 					if (pRenderStage->ResourceStates.find(pResource->Name) == pRenderStage->ResourceStates.end())
 					{
-						pRenderStage->ResourceStates[pResource->Name] = CreateResourceState(pResource->Name, pRenderStage->Name, true, ERefactoredRenderGraphResourceBindingType::READ_ONLY);
+						pRenderStage->ResourceStates[pResource->Name] = CreateResourceState(pResource->Name, pRenderStage->Name, true, ERefactoredRenderGraphResourceBindingType::NONE);
 						m_ParsedGraphDirty = true;
 					}
 				}
@@ -1326,7 +1326,7 @@ namespace LambdaEngine
 					EditorResource* pResource = &m_ResourcesByName[m_ResourceStatesByHalfAttributeIndex[srcAttributeIndex / 2].ResourceName];
 
 					if (pRenderStage->ResourceStates.find(pResource->Name) == pRenderStage->ResourceStates.end())
-						pRenderStage->ResourceStates[pResource->Name] = CreateResourceState(pResource->Name, pRenderStage->Name, true, ERefactoredRenderGraphResourceBindingType::READ_ONLY);
+						pRenderStage->ResourceStates[pResource->Name] = CreateResourceState(pResource->Name, pRenderStage->Name, true, ERefactoredRenderGraphResourceBindingType::NONE);
 
 					dstAttributeIndex = pRenderStage->ResourceStates[pResource->Name];
 				}
@@ -1639,7 +1639,7 @@ namespace LambdaEngine
 						textBuffer0 += pResource->Name.c_str();
 						textBuffer1 += "Type: " + RenderGraphResourceTypeToString(pResource->Type);
 						textBuffer1 += "\n";
-						textBuffer1 += "Binding: " + ResourceStateBindingTypeToString(pResourceState->BindingType, pResource->Type);
+						textBuffer1 += "Binding: " + BindingTypeToString(pResourceState->BindingType);
 						textBuffer1 += "\n";
 						textBuffer1 += "Sub Resource Type: " + RenderGraphSubResourceTypeToString(pResource->SubResourceType);
 
@@ -1698,9 +1698,9 @@ namespace LambdaEngine
 
 						textBuffer0 += pResource->Name.c_str();
 						textBuffer1 += "\n";
-						textBuffer1 += CommandQueueToString(pSynchronization->FromQueue) + " -> " + CommandQueueToString(pSynchronization->ToQueue);
+						textBuffer1 += CommandQueueToString(pSynchronization->PrevQueue) + " -> " + CommandQueueToString(pSynchronization->NextQueue);
 						textBuffer1 += "\n";
-						textBuffer1 += ResourceAccessStateToString(pSynchronization->FromState) + " -> " + ResourceAccessStateToString(pSynchronization->ToState);
+						textBuffer1 += BindingTypeToString(pSynchronization->PrevBindingType) + " -> " + BindingTypeToString(pSynchronization->NextBindingType);
 						ImVec2 textSize = ImGui::CalcTextSize((textBuffer0 + textBuffer1 + "\n\n\n\n").c_str());
 
 						if (ImGui::BeginChild(("##" + std::to_string(pPipelineStage->StageIndex) + pResource->Name + " Child").c_str(), ImVec2(0.0f, textSize.y)))
@@ -1889,6 +1889,30 @@ namespace LambdaEngine
 
 	int32 RenderGraphEditor::CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERefactoredRenderGraphResourceBindingType bindingType)
 	{
+		if (bindingType == ERefactoredRenderGraphResourceBindingType::NONE)
+		{
+			const EditorResource* pResource = &m_ResourcesByName[resourceName];
+			
+			switch (pResource->Type)
+			{
+				case ERefactoredRenderGraphResourceType::TEXTURE:
+				{
+					bindingType = ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER;
+					break;
+				}
+				case ERefactoredRenderGraphResourceType::BUFFER:
+				{
+					bindingType = ERefactoredRenderGraphResourceBindingType::CONSTANT_BUFFER;
+					break;
+				}
+				case ERefactoredRenderGraphResourceType::ACCELERATION_STRUCTURE:
+				{
+					bindingType = ERefactoredRenderGraphResourceBindingType::ACCELERATION_STRUCTURE;
+					break;
+				}
+			}
+		}
+
 		EditorRenderGraphResourceState resourceState = {};
 		resourceState.ResourceName		= resourceName;
 		resourceState.RenderStageName	= renderStageName;
@@ -2054,7 +2078,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void RenderGraphEditor::CalculateResourceStateBindingTypes(const EditorRenderGraphResourceState* pResourceState, TArray<ERefactoredRenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames)
+	void RenderGraphEditor::CalculateResourceStateBindingTypes(const EditorRenderStageDesc* pRenderStage, const EditorRenderGraphResourceState* pResourceState, TArray<ERefactoredRenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames)
 	{
 		const EditorResource* pResource = &m_ResourcesByName[pResourceState->ResourceName];
 
@@ -2068,28 +2092,31 @@ namespace LambdaEngine
 				if (read && write)
 				{
 					//READ && WRITE TEXTURE
-					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::STORAGE);
-					bindingTypeNames.push_back("STORAGE");
+					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
+					bindingTypeNames.push_back("UNORDERED ACCESS RW");
 				}
 				else if (read)
 				{
 					//READ TEXTURE
-					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::READ_ONLY);
+					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER);
 					bindingTypeNames.push_back("COMBINED SAMPLER");
 
-					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::STORAGE);
-					bindingTypeNames.push_back("STORAGE");
+					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
+					bindingTypeNames.push_back("UNORDERED ACCESS R");
 				}
 				else if (write)
 				{
 					//WRITE TEXTURE
-					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::STORAGE);
-					bindingTypeNames.push_back("STORAGE");
+					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
+					bindingTypeNames.push_back("UNORDERED ACCESS W");
 
-					if (pResource->SubResourceType == ERefactoredRenderGraphSubResourceType::PER_FRAME || pResource->SubResourceArrayCount == 1)
+					if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
 					{
-						bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::ATTACHMENT);
-						bindingTypeNames.push_back("ATTACHMENT");
+						if (pResource->SubResourceType == ERefactoredRenderGraphSubResourceType::PER_FRAME || pResource->SubResourceArrayCount == 1)
+						{
+							bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::ATTACHMENT);
+							bindingTypeNames.push_back("ATTACHMENT");
+						}
 					}
 				}
 				break;
@@ -2099,23 +2126,23 @@ namespace LambdaEngine
 				if (read && write)
 				{
 					//READ && WRITE BUFFER
-					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::STORAGE);
-					bindingTypeNames.push_back("STORAGE");
+					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
+					bindingTypeNames.push_back("UNORDERED ACCESS RW");
 				}
 				else if (read)
 				{
 					//READ BUFFER
-					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::READ_ONLY);
-					bindingTypeNames.push_back("UNIFORM");
+					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::CONSTANT_BUFFER);
+					bindingTypeNames.push_back("CONSTANT BUFFER");
 
-					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::STORAGE);
-					bindingTypeNames.push_back("STORAGE");
+					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
+					bindingTypeNames.push_back("UNORDERED ACCESS R");
 				}
 				else if (write)
 				{
 					//WRITE BUFFER
-					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::STORAGE);
-					bindingTypeNames.push_back("STORAGE");
+					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
+					bindingTypeNames.push_back("UNORDERED ACCESS W");
 				}
 
 				break;
@@ -2125,23 +2152,23 @@ namespace LambdaEngine
 				if (read && write)
 				{
 					//READ && WRITE ACCELERATION_STRUCTURE
-					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::STORAGE);
-					bindingTypeNames.push_back("STORAGE");
+					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
+					bindingTypeNames.push_back("UNORDERED ACCESS RW");
 				}
 				else if (read)
 				{
 					//READ ACCELERATION_STRUCTURE
-					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::READ_ONLY);
-					bindingTypeNames.push_back("UNIFORM");
+					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::ACCELERATION_STRUCTURE);
+					bindingTypeNames.push_back("ACCELERATION STRUCTURE");
 
-					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::STORAGE);
-					bindingTypeNames.push_back("STORAGE");
+					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
+					bindingTypeNames.push_back("UNORDERED ACCESS R");
 				}
 				else if (write)
 				{
 					//WRITE ACCELERATION_STRUCTURE
-					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::STORAGE);
-					bindingTypeNames.push_back("STORAGE");
+					bindingTypes.push_back(ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
+					bindingTypeNames.push_back("UNORDERED ACCESS W");
 				}
 
 				break;
@@ -2149,37 +2176,19 @@ namespace LambdaEngine
 		}
 	}
 
-	String RenderGraphEditor::ResourceStateBindingTypeToString(ERefactoredRenderGraphResourceBindingType bindingType, ERefactoredRenderGraphResourceType resourceType)
+	String RenderGraphEditor::BindingTypeToString(ERefactoredRenderGraphResourceBindingType bindingType)
 	{
-		switch (resourceType)
+		switch (bindingType)
 		{
-			case ERefactoredRenderGraphResourceType::TEXTURE:
-			{
-				switch (bindingType)
-				{
-				case ERefactoredRenderGraphResourceBindingType::READ_ONLY:		return "COMBINED SAMPLER"; 
-				case ERefactoredRenderGraphResourceBindingType::STORAGE:		return "STORAGE";
-				case ERefactoredRenderGraphResourceBindingType::ATTACHMENT:		return "ATTACHMENT";
-				}
-			}
-			case ERefactoredRenderGraphResourceType::BUFFER:
-			{
-				switch (bindingType)
-				{
-				case ERefactoredRenderGraphResourceBindingType::READ_ONLY:		return "UNIFORM";
-				case ERefactoredRenderGraphResourceBindingType::STORAGE:		return "STORAGE";
-				}
-				break;
-			}
-			case ERefactoredRenderGraphResourceType::ACCELERATION_STRUCTURE:
-			{
-				switch (bindingType)
-				{
-				case ERefactoredRenderGraphResourceBindingType::READ_ONLY:		return "UNIFORM";
-				case ERefactoredRenderGraphResourceBindingType::STORAGE:		return "STORAGE";
-				}
-				break;
-			}
+			case ERefactoredRenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return "ACCELERATION_STRUCTURE";
+			case ERefactoredRenderGraphResourceBindingType::CONSTANT_BUFFER:				return "CONSTANT_BUFFER";
+			case ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER:				return "COMBINED_SAMPLER";
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return "UNORDERED_ACCESS_R";
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return "UNORDERED_ACCESS_W";
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return "UNORDERED_ACCESS_RW";
+			case ERefactoredRenderGraphResourceBindingType::ATTACHMENT:						return "ATTACHMENT";
+			case ERefactoredRenderGraphResourceBindingType::PRESENT:						return "PRESENT";
+			case ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE:					return "DRAW_RESOURCE";
 		}
 
 		return "INVALID";
@@ -2187,10 +2196,16 @@ namespace LambdaEngine
 
 	ERefactoredRenderGraphResourceBindingType RenderGraphEditor::ResourceStateBindingTypeFromString(const String& string)
 	{
-		if (string == "COMBINED SAMPLER")		return ERefactoredRenderGraphResourceBindingType::READ_ONLY;
-		if (string == "UNIFORM")				return ERefactoredRenderGraphResourceBindingType::READ_ONLY;
-		if (string == "STORAGE")				return ERefactoredRenderGraphResourceBindingType::STORAGE;
-		if (string == "ATTACHMENT")				return ERefactoredRenderGraphResourceBindingType::ATTACHMENT;
+		if (string == "ACCELERATION_STRUCTURE")		return ERefactoredRenderGraphResourceBindingType::ACCELERATION_STRUCTURE;
+		if (string == "CONSTANT_BUFFER")			return ERefactoredRenderGraphResourceBindingType::CONSTANT_BUFFER;
+		if (string == "COMBINED_SAMPLER")			return ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER;
+		if (string == "UNORDERED_ACCESS_R")			return ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ;
+		if (string == "UNORDERED_ACCESS_W")			return ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE;
+		if (string == "UNORDERED_ACCESS_RW")		return ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE;
+		if (string == "ATTACHMENT")					return ERefactoredRenderGraphResourceBindingType::ATTACHMENT;
+		if (string == "PRESENT")					return ERefactoredRenderGraphResourceBindingType::PRESENT;
+		if (string == "DRAW_RESOURCE")				return ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE;
+		return ERefactoredRenderGraphResourceBindingType::NONE;
 	}
 
 	bool RenderGraphEditor::SaveToFile(const String& renderGraphName)
@@ -2261,7 +2276,6 @@ namespace LambdaEngine
 							{
 								int32 attributeIndex = resourceStateIt->second;
 								const EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[attributeIndex / 2];
-								const EditorResource* pResource = &m_ResourcesByName[pResourceState->ResourceName];
 
 								writer.StartObject();
 								{
@@ -2275,7 +2289,7 @@ namespace LambdaEngine
 									writer.Bool(pResourceState->Removable);
 
 									writer.String("binding_type");
-									writer.String(ResourceStateBindingTypeToString(pResourceState->BindingType, pResource->Type).c_str());
+									writer.String(BindingTypeToString(pResourceState->BindingType).c_str());
 
 									writer.String("attribute_index");
 									writer.Int(attributeIndex);
@@ -2322,7 +2336,6 @@ namespace LambdaEngine
 				{
 					int32 attributeIndex = m_FinalOutput.BackBufferAttributeIndex;
 					EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[attributeIndex / 2];
-					const EditorResource* pResource = &m_ResourcesByName[pResourceState->ResourceName];
 
 					writer.String("name");
 					writer.String(pResourceState->ResourceName.c_str());
@@ -2334,7 +2347,7 @@ namespace LambdaEngine
 					writer.Bool(pResourceState->Removable);
 
 					writer.String("binding_type");
-					writer.String(ResourceStateBindingTypeToString(pResourceState->BindingType, pResource->Type).c_str());
+					writer.String(BindingTypeToString(pResourceState->BindingType).c_str());
 
 					writer.String("attribute_index");
 					writer.Int(attributeIndex);
@@ -2412,7 +2425,7 @@ namespace LambdaEngine
 										writer.Bool(pResourceState->Removable);
 
 										writer.String("binding_type");
-										writer.String(ResourceStateBindingTypeToString(pResourceState->BindingType, pResource->Type).c_str());
+										writer.String(BindingTypeToString(pResourceState->BindingType).c_str());
 
 										writer.String("attribute_index");
 										writer.Int(attributeIndex);
@@ -2454,7 +2467,7 @@ namespace LambdaEngine
 										writer.Bool(pResourceState->Removable);
 
 										writer.String("binding_type");
-										writer.String(ResourceStateBindingTypeToString(pResourceState->BindingType, pResource->Type).c_str());
+										writer.String(BindingTypeToString(pResourceState->BindingType).c_str());
 
 										writer.String("attribute_index");
 										writer.Int(attributeIndex);
@@ -2556,7 +2569,7 @@ namespace LambdaEngine
 									writer.Bool(pResourceState->Removable);
 
 									writer.String("binding_type");
-									writer.String(ResourceStateBindingTypeToString(pResourceState->BindingType, pResource->Type).c_str());
+									writer.String(BindingTypeToString(pResourceState->BindingType).c_str());
 
 									writer.String("attribute_index");
 									writer.Int(attributeIndex);
@@ -3201,10 +3214,10 @@ namespace LambdaEngine
 					if (pFinalResourceState->ResourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 					{
 						RefactoredResourceSynchronizationDesc resourceSynchronization = {};
-						resourceSynchronization.FromState		= FindAccessStateFromResourceState(pFinalResourceState);
-						resourceSynchronization.ToState			= ERefactoredRenderGraphResourceAccessState::PRESENT;
-						resourceSynchronization.FromQueue		= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
-						resourceSynchronization.ToQueue			= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+						resourceSynchronization.PrevBindingType	= pFinalResourceState->BindingType;
+						resourceSynchronization.NextBindingType = ERefactoredRenderGraphResourceBindingType::PRESENT;
+						resourceSynchronization.PrevQueue		= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+						resourceSynchronization.NextQueue			= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
 						resourceSynchronization.ResourceName	= pFinalResourceState->ResourceName;
 
 						imguiSynchronizationStage.Synchronizations.push_back(resourceSynchronization);
@@ -3213,7 +3226,7 @@ namespace LambdaEngine
 					}
 					else
 					{
-						resourceState.BindingType = ERefactoredRenderGraphResourceBindingType::READ_ONLY;
+						resourceState.BindingType = ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER;
 					}
 
 					imguiRenderStage.ResourceStates.push_back(resourceState);
@@ -3246,9 +3259,11 @@ namespace LambdaEngine
 						//Check if this Resource State has a binding type of ATTACHMENT, if it does, we need to modify the surrounding barriers and the internal Previous- and Next States
 						if (pResourceState->BindingType == ERefactoredRenderGraphResourceBindingType::ATTACHMENT)
 						{
+							RefactoredResourceState*								pPreviousResourceStateDesc			= nullptr;
 							RefactoredSynchronizationStageDesc*						pPreviousSynchronizationStageDesc	= nullptr;
 							TArray<RefactoredResourceSynchronizationDesc>::iterator	previousSynchronizationDescIt;
 
+							RefactoredResourceState*								pNextResourceStateDesc			= nullptr;
 							RefactoredSynchronizationStageDesc*						pNextSynchronizationStageDesc		= nullptr;
 							TArray<RefactoredResourceSynchronizationDesc>::iterator nextSynchronizationDescIt;
 
@@ -3263,14 +3278,29 @@ namespace LambdaEngine
 									{
 										RefactoredSynchronizationStageDesc* pPotentialPreviousSynchronizationStageDesc = &orderedSynchronizationStages[pPreviousPipelineStageDesc->StageIndex];
 
-										for (auto synchronizationIt = pPotentialPreviousSynchronizationStageDesc->Synchronizations.begin(); synchronizationIt != pPotentialPreviousSynchronizationStageDesc->Synchronizations.end(); synchronizationIt++)
+										for (auto prevSynchronizationIt = pPotentialPreviousSynchronizationStageDesc->Synchronizations.begin(); prevSynchronizationIt != pPotentialPreviousSynchronizationStageDesc->Synchronizations.end(); prevSynchronizationIt++)
 										{
-											RefactoredResourceSynchronizationDesc* pSynchronizationDesc = &(*synchronizationIt);
+											RefactoredResourceSynchronizationDesc* pSynchronizationDesc = &(*prevSynchronizationIt);
 
 											if (pSynchronizationDesc->ResourceName == pResourceState->ResourceName)
 											{
 												pPreviousSynchronizationStageDesc	= pPotentialPreviousSynchronizationStageDesc;
-												previousSynchronizationDescIt		= synchronizationIt;
+												previousSynchronizationDescIt		= prevSynchronizationIt;
+												break;
+											}
+										}
+									}
+									else if (pPreviousPipelineStageDesc->Type == ERefactoredRenderGraphPipelineStageType::RENDER)
+									{
+										RefactoredRenderStageDesc* pPotentialPreviousRenderStageDesc = &orderedRenderStages[pPreviousPipelineStageDesc->StageIndex];
+
+										for (auto prevResourceStateIt = pPotentialPreviousRenderStageDesc->ResourceStates.begin(); prevResourceStateIt != pPotentialPreviousRenderStageDesc->ResourceStates.end(); prevResourceStateIt++)
+										{
+											RefactoredResourceState* pPotentialPreviousResourceState = &(*prevResourceStateIt);
+
+											if (pPotentialPreviousResourceState->ResourceName == pResourceState->ResourceName)
+											{
+												pPreviousResourceStateDesc = pPotentialPreviousResourceState;
 												break;
 											}
 										}
@@ -3287,28 +3317,59 @@ namespace LambdaEngine
 								{
 									RefactoredSynchronizationStageDesc* pPotentialNextSynchronizationStageDesc = &orderedSynchronizationStages[pNextPipelineStageDesc->StageIndex];
 
-									for (auto synchronizationIt = pPotentialNextSynchronizationStageDesc->Synchronizations.begin(); synchronizationIt != pPotentialNextSynchronizationStageDesc->Synchronizations.end(); synchronizationIt++)
+									for (auto nextSynchronizationIt = pPotentialNextSynchronizationStageDesc->Synchronizations.begin(); nextSynchronizationIt != pPotentialNextSynchronizationStageDesc->Synchronizations.end(); nextSynchronizationIt++)
 									{
-										RefactoredResourceSynchronizationDesc* pSynchronizationDesc = &(*synchronizationIt);
+										RefactoredResourceSynchronizationDesc* pSynchronizationDesc = &(*nextSynchronizationIt);
 
 										if (pSynchronizationDesc->ResourceName == pResourceState->ResourceName)
 										{
 											pNextSynchronizationStageDesc	= pPotentialNextSynchronizationStageDesc;
-											nextSynchronizationDescIt		= synchronizationIt;
+											nextSynchronizationDescIt		= nextSynchronizationIt;
+											break;
+										}
+									}
+								}
+								else if (pNextPipelineStageDesc->Type == ERefactoredRenderGraphPipelineStageType::RENDER)
+								{
+									RefactoredRenderStageDesc* pPotentialNextRenderStageDesc = &orderedRenderStages[pNextPipelineStageDesc->StageIndex];
+
+									for (auto nextResourceStateIt = pPotentialNextRenderStageDesc->ResourceStates.begin(); nextResourceStateIt != pPotentialNextRenderStageDesc->ResourceStates.end(); nextResourceStateIt++)
+									{
+										RefactoredResourceState* pPotentialNextResourceState = &(*nextResourceStateIt);
+
+										if (pPotentialNextResourceState->ResourceName == pResourceState->ResourceName)
+										{
+											pNextResourceStateDesc = pPotentialNextResourceState;
 											break;
 										}
 									}
 								}
 							}
 
+							if (pPreviousResourceStateDesc != nullptr)
+							{
+								pResourceState->AttachmentSynchronizations.PrevBindingType = pPreviousResourceStateDesc->BindingType;
+							}
+							else
+							{
+								pResourceState->AttachmentSynchronizations.PrevBindingType = ERefactoredRenderGraphResourceBindingType::NONE;
+							}
+
+							if (pNextResourceStateDesc != nullptr)
+							{
+								pResourceState->AttachmentSynchronizations.NextBindingType = pNextResourceStateDesc->BindingType;
+							}
+							else
+							{
+								pResourceState->AttachmentSynchronizations.NextBindingType = ERefactoredRenderGraphResourceBindingType::NONE;
+							}
+
 							if (pPreviousSynchronizationStageDesc != nullptr)
 							{
-								pResourceState->AttachmentSynchronizations.PreviousState = previousSynchronizationDescIt->FromState;
-
 								//If this is a queue transfer, the barrier must remain but the state change should be handled by the Render Pass, otherwise remove it
-								if (previousSynchronizationDescIt->FromQueue != previousSynchronizationDescIt->ToQueue)
+								if (previousSynchronizationDescIt->PrevQueue != previousSynchronizationDescIt->NextQueue)
 								{
-									previousSynchronizationDescIt->ToState = previousSynchronizationDescIt->FromState;
+									previousSynchronizationDescIt->NextBindingType = previousSynchronizationDescIt->PrevBindingType;
 								}
 								else
 								{
@@ -3318,12 +3379,10 @@ namespace LambdaEngine
 
 							if (pNextSynchronizationStageDesc != nullptr)
 							{
-								pResourceState->AttachmentSynchronizations.NextState = nextSynchronizationDescIt->ToState;
-
 								//If this is a queue transfer, the barrier must remain but the state change should be handled by the Render Pass, otherwise remove it
-								if (nextSynchronizationDescIt->FromQueue != nextSynchronizationDescIt->ToQueue)
+								if (nextSynchronizationDescIt->PrevQueue != nextSynchronizationDescIt->NextQueue)
 								{
-									nextSynchronizationDescIt->FromState = nextSynchronizationDescIt->ToState;
+									nextSynchronizationDescIt->PrevBindingType = nextSynchronizationDescIt->NextBindingType;
 								}
 								else
 								{
@@ -3396,11 +3455,6 @@ namespace LambdaEngine
 		return m_RenderStagesByName.count(name) > 0;
 	}
 
-	ERefactoredRenderGraphResourceAccessState RenderGraphEditor::FindAccessStateFromResourceState(const EditorRenderGraphResourceState* pResourceState)
-	{
-		return pResourceState->OutputLinkIndices.size() > 0 ? ERefactoredRenderGraphResourceAccessState::WRITE : ERefactoredRenderGraphResourceAccessState::READ;
-	}
-
 	void RenderGraphEditor::FindAndCreateSynchronization(
 		bool generateImGuiStage,
 		const std::multimap<uint32, EditorRenderStageDesc*>::reverse_iterator& currentOrderedRenderStageIt,
@@ -3451,9 +3505,10 @@ namespace LambdaEngine
 
 		//If there is a Next State for the Resource, pNextResourceState will not be nullptr 
 		RefactoredResourceSynchronizationDesc resourceSynchronization = {};
+		resourceSynchronization.PrevRenderStage = pCurrentRenderStage->Name;
 		resourceSynchronization.ResourceName	= pCurrentResourceState->ResourceName;
-		resourceSynchronization.FromQueue		= ConvertPipelineStateTypeToQueue(pCurrentRenderStage->Type);
-		resourceSynchronization.FromState		= FindAccessStateFromResourceState(pCurrentResourceState);
+		resourceSynchronization.PrevQueue		= ConvertPipelineStateTypeToQueue(pCurrentRenderStage->Type);
+		resourceSynchronization.PrevBindingType	= pCurrentResourceState->BindingType;
 
 		bool isBackBuffer = pCurrentResourceState->ResourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
 
@@ -3462,8 +3517,9 @@ namespace LambdaEngine
 			//Check if pNextResourceState belongs to a Render Stage, otherwise we need to check if it belongs to Final Output
 			if (pNextRenderStage != nullptr)
 			{
-				resourceSynchronization.ToState			= FindAccessStateFromResourceState(pNextResourceState);
-				resourceSynchronization.ToQueue			= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
+				resourceSynchronization.NextRenderStage = pNextRenderStage->Name;
+				resourceSynchronization.NextQueue			= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
+				resourceSynchronization.NextBindingType = pNextResourceState->BindingType;
 							
 				pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
 			}
@@ -3475,16 +3531,17 @@ namespace LambdaEngine
 
 			if (pResource->Type == ERefactoredRenderGraphResourceType::TEXTURE && pResource->SubResourceType == ERefactoredRenderGraphSubResourceType::PER_FRAME)
 			{
-				resourceSynchronization.ToState			= isBackBuffer ? ERefactoredRenderGraphResourceAccessState::WRITE : ERefactoredRenderGraphResourceAccessState::READ;
-				resourceSynchronization.ToQueue			= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+				resourceSynchronization.NextRenderStage = RENDER_GRAPH_IMGUI_STAGE_NAME;
+				resourceSynchronization.NextQueue			= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+				resourceSynchronization.NextBindingType	= isBackBuffer ? ERefactoredRenderGraphResourceBindingType::ATTACHMENT : ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER;
 
 				pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
 			}
 		}
 		else if (isBackBuffer)
 		{
-			resourceSynchronization.ToState			= ERefactoredRenderGraphResourceAccessState::PRESENT;
-			resourceSynchronization.ToQueue			= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+			resourceSynchronization.NextQueue			= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+			resourceSynchronization.NextBindingType	= ERefactoredRenderGraphResourceBindingType::PRESENT;
 
 			pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
 		}

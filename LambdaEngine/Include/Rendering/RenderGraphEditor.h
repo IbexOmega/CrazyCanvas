@@ -156,8 +156,8 @@ namespace LambdaEngine
 		void PopPinColorIfNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
 		bool CustomPinColorNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
 
-		void CalculateResourceStateBindingTypes(const EditorRenderGraphResourceState* pResourceState, TArray<ERefactoredRenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames);
-		String ResourceStateBindingTypeToString(ERefactoredRenderGraphResourceBindingType bindingType, ERefactoredRenderGraphResourceType resourceType);
+		void CalculateResourceStateBindingTypes(const EditorRenderStageDesc* pRenderStage, const EditorRenderGraphResourceState* pResourceState, TArray<ERefactoredRenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames);
+		String BindingTypeToString(ERefactoredRenderGraphResourceBindingType bindingType);
 		ERefactoredRenderGraphResourceBindingType ResourceStateBindingTypeFromString(const String& string);
 
 		bool SaveToFile(const String& renderGraphName);
@@ -166,7 +166,6 @@ namespace LambdaEngine
 		bool ParseStructure(bool generateImGuiStage);
 		bool RecursivelyWeightParentRenderStages(EditorRenderStageDesc* pChildRenderStage);
 		bool IsRenderStage(const String& name);
-		ERefactoredRenderGraphResourceAccessState FindAccessStateFromResourceState(const EditorRenderGraphResourceState* pResourceState);
 		void FindAndCreateSynchronization(bool generateImGuiStage, 
 			const std::multimap<uint32, EditorRenderStageDesc*>::reverse_iterator& currentOrderedRenderStageIt, 
 			const std::multimap<uint32, EditorRenderStageDesc*>& orderedMappedRenderStages, 

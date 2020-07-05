@@ -2,6 +2,7 @@
 #include "ResourceLoader.h"
 
 #include "Containers/THashTable.h"
+#include "Containers/String.h"
 
 namespace LambdaEngine
 {
@@ -111,6 +112,8 @@ namespace LambdaEngine
 		*/
 		static GUID_Lambda LoadSoundEffectFromFile(const char* pFilepath);
 
+		static GUID_Lambda GetGUID(const String& name);
+
 		static void ReloadAllShaders();
 
 		static Mesh*					GetMesh(GUID_Lambda guid);
@@ -129,6 +132,8 @@ namespace LambdaEngine
 
 	private:
 		static GUID_Lambda											s_NextFreeGUID;
+
+		static std::unordered_map<String, GUID_Lambda>				s_NamesToGUIDs;
 
 		static std::unordered_map<GUID_Lambda, Mesh*>				s_Meshes;
 		static std::unordered_map<GUID_Lambda, Material*>			s_Materials;

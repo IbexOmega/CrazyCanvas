@@ -38,14 +38,6 @@ namespace LambdaEngine
 		SYNCHRONIZATION = 2,
 	};
 
-	enum class ERefactoredRenderGraphResourceAccessState : uint8
-	{
-		NONE	= 0,
-		READ	= 1,
-		WRITE	= 2,
-		PRESENT	= 3,
-	};
-
 	enum class ERefactoredRenderGraphResourceType : uint8
 	{
 		NONE					= 0,
@@ -56,11 +48,16 @@ namespace LambdaEngine
 
 	enum class ERefactoredRenderGraphResourceBindingType : uint8
 	{
-		NONE					= 0,
-		READ_ONLY				= 1,
-		STORAGE					= 2,
-		ATTACHMENT				= 3,
-		DRAW_RESOURCE			= 4,
+		NONE							= 0,
+		ACCELERATION_STRUCTURE			= 1,	//READ
+		CONSTANT_BUFFER					= 2,	//READ
+		COMBINED_SAMPLER				= 3,	//READ
+		UNORDERED_ACCESS_READ			= 4,	//READ
+		UNORDERED_ACCESS_WRITE			= 5,	//WRITE
+		UNORDERED_ACCESS_READ_WRITE		= 6,	//READ & WRITE
+		ATTACHMENT						= 7,	//WRITE
+		PRESENT							= 8,	//READ
+		DRAW_RESOURCE					= 9,	//READ
 	};
 
 	enum class ERefactoredRenderGraphSubResourceType : uint8
@@ -124,8 +121,8 @@ namespace LambdaEngine
 
 		struct
 		{
-			ERefactoredRenderGraphResourceAccessState	PreviousState	= ERefactoredRenderGraphResourceAccessState::NONE;
-			ERefactoredRenderGraphResourceAccessState	NextState		= ERefactoredRenderGraphResourceAccessState::NONE;
+			ERefactoredRenderGraphResourceBindingType	PrevBindingType		= ERefactoredRenderGraphResourceBindingType::NONE;
+			ERefactoredRenderGraphResourceBindingType	NextBindingType		= ERefactoredRenderGraphResourceBindingType::NONE;
 		} AttachmentSynchronizations; //If this resource state is transitioned using a renderpass, that information is stored here
 	};
 
@@ -163,11 +160,13 @@ namespace LambdaEngine
 
 	struct RefactoredResourceSynchronizationDesc
 	{
-		ECommandQueueType		FromQueue		= ECommandQueueType::COMMAND_QUEUE_NONE;
-		ECommandQueueType		ToQueue			= ECommandQueueType::COMMAND_QUEUE_NONE;
-		ERefactoredRenderGraphResourceAccessState	FromState		= ERefactoredRenderGraphResourceAccessState::READ;
-		ERefactoredRenderGraphResourceAccessState	ToState			= ERefactoredRenderGraphResourceAccessState::READ;
+		String					PrevRenderStage = "";
+		String					NextRenderStage	= "";
 		String					ResourceName	= "";
+		ECommandQueueType		PrevQueue		= ECommandQueueType::COMMAND_QUEUE_NONE;
+		ECommandQueueType		NextQueue		= ECommandQueueType::COMMAND_QUEUE_NONE;
+		ERefactoredRenderGraphResourceBindingType	PrevBindingType		= ERefactoredRenderGraphResourceBindingType::NONE;
+		ERefactoredRenderGraphResourceBindingType	NextBindingType		= ERefactoredRenderGraphResourceBindingType::NONE;
 	};
 
 	struct RefactoredSynchronizationStageDesc
@@ -197,10 +196,14 @@ namespace LambdaEngine
 	{
 		switch (bindingType)
 		{
-		case ERefactoredRenderGraphResourceBindingType::READ_ONLY:			return true;
-		case ERefactoredRenderGraphResourceBindingType::STORAGE:			return true;
-		case ERefactoredRenderGraphResourceBindingType::ATTACHMENT:			return false;
-		case ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE:		return false;
+		case ERefactoredRenderGraphResourceBindingType::CONSTANT_BUFFER:				return true;
+		case ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER:				return true;
+		case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return true;
+		case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return true;
+		case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return true;
+		case ERefactoredRenderGraphResourceBindingType::ATTACHMENT:						return false;
+		case ERefactoredRenderGraphResourceBindingType::PRESENT:						return false;
+		case ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE:					return false;
 
 		default:															return false;
 		}
@@ -238,31 +241,32 @@ namespace LambdaEngine
 	{
 		if (resourceType == ERefactoredRenderGraphResourceType::TEXTURE)
 		{
-			if (bindingType == ERefactoredRenderGraphResourceBindingType::READ_ONLY)
+			switch (bindingType)
 			{
-				return EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER;
-			}
-			else if (bindingType == ERefactoredRenderGraphResourceBindingType::STORAGE)
-			{
-				return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
+			case ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER:				return EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
 			}
 		}
 		else if (resourceType == ERefactoredRenderGraphResourceType::BUFFER)
 		{
-			if (bindingType == ERefactoredRenderGraphResourceBindingType::READ_ONLY)
+			switch (bindingType)
 			{
-				return EDescriptorType::DESCRIPTOR_CONSTANT_BUFFER;
-			}
-			else if (bindingType == ERefactoredRenderGraphResourceBindingType::STORAGE)
-			{
-				return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
+			case ERefactoredRenderGraphResourceBindingType::CONSTANT_BUFFER:				return EDescriptorType::DESCRIPTOR_CONSTANT_BUFFER;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
 			}
 		}
 		else if (resourceType == ERefactoredRenderGraphResourceType::ACCELERATION_STRUCTURE)
 		{
-			if (bindingType == ERefactoredRenderGraphResourceBindingType::READ_ONLY)
+			switch (bindingType)
 			{
-				return EDescriptorType::DESCRIPTOR_ACCELERATION_STRUCTURE;
+			case ERefactoredRenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return EDescriptorType::DESCRIPTOR_ACCELERATION_STRUCTURE;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
 			}
 		}
 
@@ -273,97 +277,88 @@ namespace LambdaEngine
 	{
 		if (resourceType == ERefactoredRenderGraphResourceType::TEXTURE)
 		{
-			if (bindingType == ERefactoredRenderGraphResourceBindingType::READ_ONLY)
+			switch (bindingType)
 			{
-				return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-			}
-			else if (bindingType == ERefactoredRenderGraphResourceBindingType::STORAGE)
-			{
-				return ETextureState::TEXTURE_STATE_GENERAL;
-			}
-			else if (bindingType == ERefactoredRenderGraphResourceBindingType::ATTACHMENT)
-			{
-				return format != EFormat::FORMAT_D24_UNORM_S8_UINT ? ETextureState::TEXTURE_STATE_RENDER_TARGET : ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+			case ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER:				return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return ETextureState::TEXTURE_STATE_GENERAL;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return ETextureState::TEXTURE_STATE_GENERAL;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return ETextureState::TEXTURE_STATE_GENERAL;
+			case ERefactoredRenderGraphResourceBindingType::ATTACHMENT:						return format != EFormat::FORMAT_D24_UNORM_S8_UINT ? ETextureState::TEXTURE_STATE_RENDER_TARGET : ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 			}
 		}
 
 		return ETextureState::TEXTURE_STATE_UNKNOWN;
 	}
 
-	//FORCEINLINE FMemoryAccessFlags ConvertAttachmentTypeToMemoryAccessFlags(EAttachmentType attachmentType)
-	//{
-	//	switch (attachmentType)
-	//	{
-	//	case EAttachmentType::INPUT_SHADER_RESOURCE_TEXTURE:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_SHADER_READ;
-	//	case EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_SHADER_READ;
-	//	case EAttachmentType::INPUT_UNORDERED_ACCESS_TEXTURE:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
-	//	case EAttachmentType::INPUT_UNORDERED_ACCESS_BUFFER:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+	FORCEINLINE uint32 CalculateResourceAccessFlags(ERefactoredRenderGraphResourceBindingType bindingType)
+	{
+		switch (bindingType)
+		{
+			case ERefactoredRenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_ACCELERATION_STRUCTURE_READ;
+			case ERefactoredRenderGraphResourceBindingType::CONSTANT_BUFFER:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_CONSTANT_BUFFER_READ;
+			case ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_SHADER_READ;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			case ERefactoredRenderGraphResourceBindingType::ATTACHMENT:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			case ERefactoredRenderGraphResourceBindingType::PRESENT:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			case ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE:					return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;																
+		}
 
-	//	case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_TEXTURE:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_SHADER_READ;
-	//	case EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER:		return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_SHADER_READ;
-	//	case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_TEXTURE:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
-	//	case EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_CONSTANT_BUFFER_READ;
-	//	case EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
-	//	case EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_ACCELERATION_STRUCTURE_READ;
+		return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+	}
 
-	//	case EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-	//	case EAttachmentType::OUTPUT_UNORDERED_ACCESS_BUFFER:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-	//	case EAttachmentType::OUTPUT_COLOR:											return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE; //FMemoryAccessFlags::MEMORY_ACCESS_FLAG_COLOR_ATTACHMENT_WRITE;
-	//	case EAttachmentType::OUTPUT_DEPTH_STENCIL:									return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE; //FMemoryAccessFlags::MEMORY_ACCESS_FLAG_DEPTH_STENCIL_ATTACHMENT_WRITE;
+	FORCEINLINE FPipelineStageFlags FindEarliestPipelineStage(const RefactoredRenderStageDesc* pRenderStageDesc)
+	{
+		uint32 shaderStageMask = 0;
 
-	//	default:																	return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
-	//	}
-	//}
+		if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
+		{
+			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size()	> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+		}
+		else if (pRenderStageDesc->Type == EPipelineStateType::COMPUTE)
+		{
+			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+		}
+		else if (pRenderStageDesc->Type == EPipelineStateType::RAY_TRACING)
+		{
+			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+		}
 
-	//FORCEINLINE FPipelineStageFlags FindEarliestPipelineStage(const RenderStageDesc* pRenderStageDesc)
-	//{
-	//	uint32 shaderStageMask = 0;
+		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+	}
 
-	//	if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
-	//	{
-	//		if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
-	//		if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->VertexShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
-	//		if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->GeometryShader	!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
-	//		if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->HullShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
-	//		if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->DomainShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
-	//		if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->PixelShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
-	//	}
-	//	else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
-	//	{
-	//		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
-	//	}
-	//	else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
-	//	{
-	//		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
-	//	}
+	FORCEINLINE FPipelineStageFlags FindLastPipelineStage(const RefactoredRenderStageDesc* pRenderStageDesc)
+	{
+		uint32 shaderStageMask = 0;
 
-	//	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-	//}
+		if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
+		{
+			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size() > 0)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
+		}
+		else if (pRenderStageDesc->Type == EPipelineStateType::COMPUTE)
+		{
+			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+		}
+		else if (pRenderStageDesc->Type == EPipelineStateType::RAY_TRACING)
+		{
+			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+		}
 
-	//FORCEINLINE FPipelineStageFlags FindLastPipelineStage(const RenderStageDesc* pRenderStageDesc)
-	//{
-	//	uint32 shaderStageMask = 0;
-
-	//	if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
-	//	{
-	//		if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->PixelShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
-	//		if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->DomainShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
-	//		if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->HullShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
-	//		if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->GeometryShader	!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
-	//		if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->VertexShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
-	//		if (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader		!= GUID_NONE)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
-	//	}
-	//	else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
-	//	{
-	//		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
-	//	}
-	//	else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
-	//	{
-	//		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
-	//	}
-
-	//	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-	//}
+		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+	}
 
 	//FORCEINLINE uint32 CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc)
 	//{
@@ -393,18 +388,6 @@ namespace LambdaEngine
 
 	//	return shaderStageMask;
 	//}
-
-	FORCEINLINE String ResourceAccessStateToString(ERefactoredRenderGraphResourceAccessState resourceAccessState)
-	{
-		switch (resourceAccessState)
-		{
-		case ERefactoredRenderGraphResourceAccessState::READ:		return "READ";
-		case ERefactoredRenderGraphResourceAccessState::WRITE:		return "WRITE";
-		case ERefactoredRenderGraphResourceAccessState::PRESENT:	return "PRESENT";
-		case ERefactoredRenderGraphResourceAccessState::NONE:		
-		default:													return "NONE";
-		}
-	}
 
 	FORCEINLINE String RenderStageDrawTypeToString(ERefactoredRenderStageDrawType drawType)
 	{

@@ -39,6 +39,36 @@ namespace LambdaEngine
 		}
 	}
 
+	FORCEINLINE FShaderStageFlags ConvertPipelineStageToShaderStage(FPipelineStageFlags pipelineStage)
+	{
+		switch (pipelineStage)
+		{
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN:							return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP:								return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM:							return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT:					return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT:						return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_SHADER:					return FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER:						return FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER:					return FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER:					return FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER:						return FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS:				return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS:				return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT:				return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER:					return FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY:								return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_HOST:								return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_STREAM_OUTPUT:					return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING:			return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER:				return FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD:		return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE:				return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER:						return FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER:						return FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER;
+		}
+	}
+
 	FORCEINLINE FShaderStageFlags GetFirstShaderStageInMask(uint32 shaderStageMask)
 	{
 		FShaderStageFlags firstStage = FShaderStageFlags::SHADER_STAGE_FLAG_NONE;

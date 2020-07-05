@@ -197,9 +197,9 @@ namespace LambdaEngine
 			FPipelineStageFlags		LastPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			ERefactoredRenderStageDrawType	DrawType						= ERefactoredRenderStageDrawType::NONE;
-			Resource*				pVertexBufferResource			= nullptr;
+			//Resource*				pVertexBufferResource			= nullptr;
 			Resource*				pIndexBufferResource			= nullptr;
-			Resource*				pMeshIndexBufferResource		= nullptr;
+			Resource*				pIndirectArgsBufferResource		= nullptr;
 
 			uint64					PipelineStateID					= 0;
 			IPipelineLayout*		pPipelineLayout					= nullptr;
