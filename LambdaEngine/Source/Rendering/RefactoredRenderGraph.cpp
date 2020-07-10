@@ -1078,7 +1078,6 @@ namespace LambdaEngine
 						pDepthStencilResource = pResource;
 					}
 				}
-				//Graphics Draw Resources (because Rasterization is a special little boy)
 				else if (pResourceStateDesc->BindingType == ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE)
 				{
 					ASSERT(false); //Todo: What todo here? Is this just error?
@@ -1475,11 +1474,6 @@ namespace LambdaEngine
 					textureSynchronization.DstShaderStage			= ConvertPipelineStageToShaderStage(pNextRenderStage->FirstPipelineStage);	
 					textureSynchronization.IsBackBuffer				= pResource->IsBackBuffer;
 
-					if (textureSynchronization.DstShaderStage == FShaderStageFlags::SHADER_STAGE_FLAG_NONE)
-					{
-						int awdhkjuawiu = 01;
-					}
-
 					textureSynchronization.Barriers.reserve(pResource->SubResourceCount);
 
 					for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)
@@ -1493,7 +1487,7 @@ namespace LambdaEngine
 
 					pSynchronizationStage->TextureSynchronizations[pResource->Name] = textureSynchronization;
 				}
-				else if (pResource->Type == ERefactoredRenderGraphResourceType::TEXTURE)
+				else if (pResource->Type == ERefactoredRenderGraphResourceType::BUFFER)
 				{
 					PipelineBufferBarrierDesc bufferBarrier = {};
 					bufferBarrier.QueueBefore			= pResourceSynchronizationDesc->PrevQueue;

@@ -45,8 +45,8 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 constexpr const bool RAY_TRACING_ENABLED		= true;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
-constexpr const bool RENDER_GRAPH_DEBUG_ENABLED	= true;
-constexpr const bool RENDERING_DEBUG_ENABLED	= true;
+constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= false;
+constexpr const bool RENDERING_DEBUG_ENABLED	= false;
 
 Sandbox::Sandbox()
     : Game()
@@ -208,7 +208,10 @@ Sandbox::Sandbox()
 
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 
-	m_pRenderGraphEditor->InitGUI();	//Must Be called after Renderer is initialized
+	if (RENDER_GRAPH_IMGUI_ENABLED)
+	{
+		m_pRenderGraphEditor->InitGUI();	//Must Be called after Renderer is initialized
+	}
 
 	//InitTestAudio();
 }
@@ -624,169 +627,173 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 	m_pRenderer->NewFrame(delta);
 
-	m_pRenderGraphEditor->RenderGUI();
-
-	ImGui::ShowDemoWindow();
-
-	ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
-	if (ImGui::Begin("Test Window", NULL))
+	if (RENDER_GRAPH_IMGUI_ENABLED)
 	{
-		ImGui::Button("Test Button");
 
-		uint32 modFrameIndex = m_pRenderer->GetModFrameIndex();
+		m_pRenderGraphEditor->RenderGUI();
 
-		ITextureView* const *	ppTextureViews		= nullptr;
-		uint32			textureViewCount		= 0;
+		ImGui::ShowDemoWindow();
 
-		static ImGuiTexture albedoTexture = {};
-		static ImGuiTexture normalTexture = {};
-		static ImGuiTexture depthStencilTexture = {};
-		static ImGuiTexture radianceTexture = {};
-		 
-		float windowWidth = ImGui::GetWindowWidth();
-
-		if (ImGui::BeginTabBar("G-Buffer"))
+		ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
+		if (ImGui::Begin("Test Window", NULL))
 		{
-			if (ImGui::BeginTabItem("Albedo AO"))
+			ImGui::Button("Test Button");
+
+			uint32 modFrameIndex = m_pRenderer->GetModFrameIndex();
+
+			ITextureView* const* ppTextureViews = nullptr;
+			uint32			textureViewCount = 0;
+
+			static ImGuiTexture albedoTexture = {};
+			static ImGuiTexture normalTexture = {};
+			static ImGuiTexture depthStencilTexture = {};
+			static ImGuiTexture radianceTexture = {};
+
+			float windowWidth = ImGui::GetWindowWidth();
+
+			if (ImGui::BeginTabBar("G-Buffer"))
 			{
-				albedoTexture.ResourceName = "GEOMETRY_ALBEDO_AO_BUFFER";
-
-				ImGui::Image(&albedoTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
-
-				ImGui::EndTabItem();
-			}
-
-			if (ImGui::BeginTabItem("Normal Metallic Roughness"))
-			{
-				normalTexture.ResourceName = "GEOMETRY_NORM_MET_ROUGH_BUFFER";
-
-				const char* items[] = { "ALL", "Normal", "Metallic", "Roughness" };
-				static int currentItem = 0;
-				ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), 4);
-
-				if (currentItem == 0)
+				if (ImGui::BeginTabItem("Albedo AO"))
 				{
-					normalTexture.ReservedIncludeMask = 0x00008421;
+					albedoTexture.ResourceName = "GEOMETRY_ALBEDO_AO_BUFFER";
 
-					normalTexture.ChannelMult[0] = 0.5f;
-					normalTexture.ChannelMult[1] = 0.5f;
-					normalTexture.ChannelMult[2] = 0.5f;
-					normalTexture.ChannelMult[3] = 0.5f;
-
-					normalTexture.ChannelAdd[0] = 0.5f;
-					normalTexture.ChannelAdd[1] = 0.5f;
-					normalTexture.ChannelAdd[2] = 0.5f;
-					normalTexture.ChannelAdd[3] = 0.5f;
-
-					normalTexture.PixelShaderGUID = GUID_NONE;
-				}
-				else if (currentItem == 1)
-				{
-					normalTexture.ReservedIncludeMask = 0x00008420;
-
-					normalTexture.ChannelMult[0] = 1.0f;
-					normalTexture.ChannelMult[1] = 1.0f;
-					normalTexture.ChannelMult[2] = 1.0f;
-					normalTexture.ChannelMult[3] = 0.0f;
-
-					normalTexture.ChannelAdd[0] = 0.0f;
-					normalTexture.ChannelAdd[1] = 0.0f;
-					normalTexture.ChannelAdd[2] = 0.0f;
-					normalTexture.ChannelAdd[3] = 1.0f;
-
-					normalTexture.PixelShaderGUID = m_ImGuiPixelShaderNormalGUID;
-				}
-				else if (currentItem == 2)
-				{
-					normalTexture.ReservedIncludeMask = 0x00002220;
-
-					normalTexture.ChannelMult[0] = 0.5f;
-					normalTexture.ChannelMult[1] = 0.5f;
-					normalTexture.ChannelMult[2] = 0.5f;
-					normalTexture.ChannelMult[3] = 0.0f;
-
-					normalTexture.ChannelAdd[0] = 0.5f;
-					normalTexture.ChannelAdd[1] = 0.5f;
-					normalTexture.ChannelAdd[2] = 0.5f;
-					normalTexture.ChannelAdd[3] = 1.0f;
-
-					normalTexture.PixelShaderGUID = GUID_NONE;
-				}
-				else if (currentItem == 3)
-				{
-					normalTexture.ReservedIncludeMask = 0x00001110;
-
-					normalTexture.ChannelMult[0] = 1.0f;
-					normalTexture.ChannelMult[1] = 1.0f;
-					normalTexture.ChannelMult[2] = 1.0f;
-					normalTexture.ChannelMult[3] = 0.0f;
-
-					normalTexture.ChannelAdd[0] = 0.0f;
-					normalTexture.ChannelAdd[1] = 0.0f;
-					normalTexture.ChannelAdd[2] = 0.0f;
-					normalTexture.ChannelAdd[3] = 1.0f;
-
-					normalTexture.PixelShaderGUID = m_ImGuiPixelShaderRoughnessGUID;
-				}
-
-				ImGui::Image(&normalTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
-
-				ImGui::EndTabItem();
-			}
-
-			if (ImGui::BeginTabItem("Depth Stencil"))
-			{
-				depthStencilTexture.ResourceName		= "GEOMETRY_DEPTH_STENCIL";
-
-				depthStencilTexture.ReservedIncludeMask = 0x00008880;
-
-				depthStencilTexture.ChannelMult[0] = 1.0f;
-				depthStencilTexture.ChannelMult[1] = 1.0f;
-				depthStencilTexture.ChannelMult[2] = 1.0f;
-				depthStencilTexture.ChannelMult[3] = 0.0f;
-
-				depthStencilTexture.ChannelAdd[0] = 0.0f;
-				depthStencilTexture.ChannelAdd[1] = 0.0f;
-				depthStencilTexture.ChannelAdd[2] = 0.0f;
-				depthStencilTexture.ChannelAdd[3] = 1.0f;
-
-				depthStencilTexture.PixelShaderGUID = m_ImGuiPixelShaderDepthGUID;
-
-				ImGui::Image(&depthStencilTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
-
-				ImGui::EndTabItem();
-			}
-
-			if (RAY_TRACING_ENABLED)
-			{
-				if (ImGui::BeginTabItem("Ray Tracing"))
-				{
-					radianceTexture.ResourceName = "RADIANCE_TEXTURE";
-
-					radianceTexture.ReservedIncludeMask = 0x00008421;
-
-					radianceTexture.ChannelMult[0] = 1.0f;
-					radianceTexture.ChannelMult[1] = 1.0f;
-					radianceTexture.ChannelMult[2] = 1.0f;
-					radianceTexture.ChannelMult[3] = 0.0f;
-
-					radianceTexture.ChannelAdd[0] = 0.0f;
-					radianceTexture.ChannelAdd[1] = 0.0f;
-					radianceTexture.ChannelAdd[2] = 0.0f;
-					radianceTexture.ChannelAdd[3] = 1.0f;
-
-					radianceTexture.PixelShaderGUID = GUID_NONE;
-
-					ImGui::Image(&radianceTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+					ImGui::Image(&albedoTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
 
 					ImGui::EndTabItem();
 				}
-			}
 
-			ImGui::EndTabBar();
+				if (ImGui::BeginTabItem("Normal Metallic Roughness"))
+				{
+					normalTexture.ResourceName = "GEOMETRY_NORM_MET_ROUGH_BUFFER";
+
+					const char* items[] = { "ALL", "Normal", "Metallic", "Roughness" };
+					static int currentItem = 0;
+					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), 4);
+
+					if (currentItem == 0)
+					{
+						normalTexture.ReservedIncludeMask = 0x00008421;
+
+						normalTexture.ChannelMult[0] = 0.5f;
+						normalTexture.ChannelMult[1] = 0.5f;
+						normalTexture.ChannelMult[2] = 0.5f;
+						normalTexture.ChannelMult[3] = 0.5f;
+
+						normalTexture.ChannelAdd[0] = 0.5f;
+						normalTexture.ChannelAdd[1] = 0.5f;
+						normalTexture.ChannelAdd[2] = 0.5f;
+						normalTexture.ChannelAdd[3] = 0.5f;
+
+						normalTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 1)
+					{
+						normalTexture.ReservedIncludeMask = 0x00008420;
+
+						normalTexture.ChannelMult[0] = 1.0f;
+						normalTexture.ChannelMult[1] = 1.0f;
+						normalTexture.ChannelMult[2] = 1.0f;
+						normalTexture.ChannelMult[3] = 0.0f;
+
+						normalTexture.ChannelAdd[0] = 0.0f;
+						normalTexture.ChannelAdd[1] = 0.0f;
+						normalTexture.ChannelAdd[2] = 0.0f;
+						normalTexture.ChannelAdd[3] = 1.0f;
+
+						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderNormalGUID;
+					}
+					else if (currentItem == 2)
+					{
+						normalTexture.ReservedIncludeMask = 0x00002220;
+
+						normalTexture.ChannelMult[0] = 0.5f;
+						normalTexture.ChannelMult[1] = 0.5f;
+						normalTexture.ChannelMult[2] = 0.5f;
+						normalTexture.ChannelMult[3] = 0.0f;
+
+						normalTexture.ChannelAdd[0] = 0.5f;
+						normalTexture.ChannelAdd[1] = 0.5f;
+						normalTexture.ChannelAdd[2] = 0.5f;
+						normalTexture.ChannelAdd[3] = 1.0f;
+
+						normalTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 3)
+					{
+						normalTexture.ReservedIncludeMask = 0x00001110;
+
+						normalTexture.ChannelMult[0] = 1.0f;
+						normalTexture.ChannelMult[1] = 1.0f;
+						normalTexture.ChannelMult[2] = 1.0f;
+						normalTexture.ChannelMult[3] = 0.0f;
+
+						normalTexture.ChannelAdd[0] = 0.0f;
+						normalTexture.ChannelAdd[1] = 0.0f;
+						normalTexture.ChannelAdd[2] = 0.0f;
+						normalTexture.ChannelAdd[3] = 1.0f;
+
+						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderRoughnessGUID;
+					}
+
+					ImGui::Image(&normalTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Depth Stencil"))
+				{
+					depthStencilTexture.ResourceName = "GEOMETRY_DEPTH_STENCIL";
+
+					depthStencilTexture.ReservedIncludeMask = 0x00008880;
+
+					depthStencilTexture.ChannelMult[0] = 1.0f;
+					depthStencilTexture.ChannelMult[1] = 1.0f;
+					depthStencilTexture.ChannelMult[2] = 1.0f;
+					depthStencilTexture.ChannelMult[3] = 0.0f;
+
+					depthStencilTexture.ChannelAdd[0] = 0.0f;
+					depthStencilTexture.ChannelAdd[1] = 0.0f;
+					depthStencilTexture.ChannelAdd[2] = 0.0f;
+					depthStencilTexture.ChannelAdd[3] = 1.0f;
+
+					depthStencilTexture.PixelShaderGUID = m_ImGuiPixelShaderDepthGUID;
+
+					ImGui::Image(&depthStencilTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (RAY_TRACING_ENABLED)
+				{
+					if (ImGui::BeginTabItem("Ray Tracing"))
+					{
+						radianceTexture.ResourceName = "RADIANCE_TEXTURE";
+
+						radianceTexture.ReservedIncludeMask = 0x00008421;
+
+						radianceTexture.ChannelMult[0] = 1.0f;
+						radianceTexture.ChannelMult[1] = 1.0f;
+						radianceTexture.ChannelMult[2] = 1.0f;
+						radianceTexture.ChannelMult[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+
+						ImGui::Image(&radianceTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+						ImGui::EndTabItem();
+					}
+				}
+
+				ImGui::EndTabBar();
+			}
 		}
+		ImGui::End();
 	}
-	ImGui::End();
 
 	m_pRenderer->PrepareRender(delta);
 

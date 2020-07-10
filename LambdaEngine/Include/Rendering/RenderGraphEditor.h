@@ -118,7 +118,7 @@ namespace LambdaEngine
 		void InitGUI();
 		void RenderGUI();
 
-		RefactoredRenderGraphStructure* CreateRenderGraphStructure(const String& filepath, bool debug);
+		RefactoredRenderGraphStructure* CreateRenderGraphStructure(const String& filepath, bool imGuiEnabled);
 
 		virtual void OnButtonReleased(EMouseButton button)						override final;
 		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat) override final;

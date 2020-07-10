@@ -194,9 +194,9 @@ namespace LambdaEngine
 		}
 	}
 
-	RefactoredRenderGraphStructure* RenderGraphEditor::CreateRenderGraphStructure(const String& filepath, bool debug)
+	RefactoredRenderGraphStructure* RenderGraphEditor::CreateRenderGraphStructure(const String& filepath, bool imGuiEnabled)
 	{
-		if (LoadFromFile(filepath, debug))
+		if (LoadFromFile(filepath, imGuiEnabled))
 		{
 			return &m_ParsedRenderGraphStructure;
 		}
