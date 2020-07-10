@@ -425,34 +425,21 @@ namespace LambdaEngine
 		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
-	//FORCEINLINE uint32 CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc)
-	//{
-	//	uint32 shaderStageMask = 0;
-
-	//	if (pRenderStageDesc->PipelineType == EPipelineStateType::GRAPHICS)
-	//	{
-	//		shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->MeshShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER		: 0;
-
-	//		shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->VertexShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER	: 0;
-	//		shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->GeometryShader	!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER	: 0;
-	//		shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->HullShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER		: 0;
-	//		shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->DomainShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER	: 0;
-
-	//		shaderStageMask |= (pRenderStageDesc->GraphicsPipeline.pGraphicsDesc->PixelShader		!= GUID_NONE)	? FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER		: 0;
-	//	}
-	//	else if (pRenderStageDesc->PipelineType == EPipelineStateType::COMPUTE)
-	//	{
-	//		shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-	//	}
-	//	else if (pRenderStageDesc->PipelineType == EPipelineStateType::RAY_TRACING)
-	//	{
-	//		shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER;
-	//		shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;
-	//		shaderStageMask |= FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER;
-	//	}
-
-	//	return shaderStageMask;
-	//}
+	FORCEINLINE bool IsReadOnly(ERefactoredRenderGraphResourceBindingType bindingType)
+	{
+		switch (bindingType)
+		{
+			case ERefactoredRenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return true;
+			case ERefactoredRenderGraphResourceBindingType::CONSTANT_BUFFER:				return true;
+			case ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER:				return true;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return true;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return false;
+			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return false;
+			case ERefactoredRenderGraphResourceBindingType::ATTACHMENT:						return false;
+			case ERefactoredRenderGraphResourceBindingType::PRESENT:						return true;
+			case ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE:					return true;
+		}
+	}
 
 	FORCEINLINE String RenderStageDrawTypeToString(ERefactoredRenderStageDrawType drawType)
 	{

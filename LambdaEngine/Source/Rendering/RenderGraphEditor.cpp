@@ -3086,6 +3086,8 @@ namespace LambdaEngine
 			m_CurrentlyAddingResource = ERefactoredRenderGraphResourceType::NONE;
 
 			m_StartedLinkInfo = {};
+
+			m_ParsedRenderGraphStructure = {};
 		}
 
 		InitDefaultResources();
@@ -3178,9 +3180,10 @@ namespace LambdaEngine
 				{
 					const EditorRenderGraphResourceState* pCurrentResourceState		= &m_ResourceStatesByHalfAttributeIndex[resourceStateIndexIt->second / 2];
 			
-					FindAndCreateSynchronization(generateImGuiStage, orderedRenderStageIt, orderedMappedRenderStages, pCurrentResourceState, &synchronizationStage);
-
-					finalStateOfResources[pCurrentResourceState->ResourceName] = pCurrentResourceState;
+					if (FindAndCreateSynchronization(generateImGuiStage, orderedRenderStageIt, orderedMappedRenderStages, pCurrentResourceState, &synchronizationStage))
+					{
+						finalStateOfResources[pCurrentResourceState->ResourceName] = pCurrentResourceState;
+					}
 				}
 
 				if (pCurrentRenderStage->Type == EPipelineStateType::GRAPHICS) //Check if this Render Stage is a Graphics Render Stage, if it is we need to check Draw Resources as well
@@ -3678,7 +3681,7 @@ namespace LambdaEngine
 		return pResource->Type == ERefactoredRenderGraphResourceType::TEXTURE && pResource->SubResourceCount == 1;
 	}
 
-	void RenderGraphEditor::FindAndCreateSynchronization(
+	bool RenderGraphEditor::FindAndCreateSynchronization(
 		bool generateImGuiStage,
 		const std::multimap<uint32, EditorRenderStageDesc*>::reverse_iterator& currentOrderedRenderStageIt,
 		const std::multimap<uint32, EditorRenderStageDesc*>& orderedMappedRenderStages,
@@ -3739,25 +3742,40 @@ namespace LambdaEngine
 
 		if (pNextResourceState != nullptr)
 		{
-			//Check if pNextResourceState belongs to a Render Stage, otherwise we need to check if it belongs to Final Output
-			if (pNextRenderStage != nullptr)
+			//If the ResourceState is Readonly and the current and next Binding Types are the same we dont want a synchronization, no matter what queue type
+			if (!IsReadOnly(pCurrentResourceState->BindingType) || pCurrentResourceState->BindingType != pNextResourceState->BindingType)
 			{
-				resourceSynchronization.NextRenderStage = pNextRenderStage->Name;
-				resourceSynchronization.NextQueue			= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
-				resourceSynchronization.NextBindingType = pNextResourceState->BindingType;
-							
-				pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
+				//Check if pNextResourceState belongs to a Render Stage, otherwise we need to check if it belongs to Final Output
+				if (pNextRenderStage != nullptr)
+				{
+					resourceSynchronization.NextRenderStage = pNextRenderStage->Name;
+					resourceSynchronization.NextQueue		= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
+					resourceSynchronization.NextBindingType = pNextResourceState->BindingType;
+
+					pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
+				}
 			}
 		}
 		else if (generateImGuiStage && CapturedByImGui(pResource))
 		{
-			//Todo: What if Subresource Count > 1
-			//Capture resource synchronizations here, even for Back Buffer, PRESENT Synchronization is seperately solved later
-			resourceSynchronization.NextRenderStage = RENDER_GRAPH_IMGUI_STAGE_NAME;
-			resourceSynchronization.NextQueue			= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
-			resourceSynchronization.NextBindingType	= isBackBuffer ? ERefactoredRenderGraphResourceBindingType::ATTACHMENT : ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER;
+			if (isBackBuffer)
+			{
+				resourceSynchronization.NextRenderStage = RENDER_GRAPH_IMGUI_STAGE_NAME;
+				resourceSynchronization.NextQueue		= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+				resourceSynchronization.NextBindingType = ERefactoredRenderGraphResourceBindingType::ATTACHMENT;
 
-			pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
+				pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
+			}
+			else if (!IsReadOnly(pCurrentResourceState->BindingType) || pCurrentResourceState->BindingType != ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER)
+			{
+				//Todo: What if Subresource Count > 1
+				//Capture resource synchronizations here, even for Back Buffer, PRESENT Synchronization is seperately solved later
+				resourceSynchronization.NextRenderStage = RENDER_GRAPH_IMGUI_STAGE_NAME;
+				resourceSynchronization.NextQueue		= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+				resourceSynchronization.NextBindingType = ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER;
+
+				pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
+			}
 		}
 		else if (isBackBuffer)
 		{
@@ -3805,17 +3823,23 @@ namespace LambdaEngine
 			//It is safe to add this synchronization here, since we know that the resource will not be captured by ImGui
 			if (pNextResourceState != nullptr)
 			{
-				//Check if pNextResourceState belongs to a Render Stage, otherwise we need to check if it belongs to Final Output
-				if (pNextRenderStage != nullptr)
+				//If the ResourceState is Readonly and the current and next Binding Types are the same we dont want a synchronization, no matter what queue type
+				if (!IsReadOnly(pCurrentResourceState->BindingType) || pCurrentResourceState->BindingType != pNextResourceState->BindingType)
 				{
-					resourceSynchronization.NextRenderStage = pNextRenderStage->Name;
-					resourceSynchronization.NextQueue		= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
-					resourceSynchronization.NextBindingType = pNextResourceState->BindingType;
-							
-					pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
+					//Check if pNextResourceState belongs to a Render Stage, otherwise we need to check if it belongs to Final Output
+					if (pNextRenderStage != nullptr)
+					{
+						resourceSynchronization.NextRenderStage = pNextRenderStage->Name;
+						resourceSynchronization.NextQueue	= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
+						resourceSynchronization.NextBindingType = pNextResourceState->BindingType;
+
+						pSynchronizationStage->Synchronizations.push_back(resourceSynchronization);
+					}
 				}
 			}
 		}
+
+		return true;
 	}
 
 	void RenderGraphEditor::CreateParsedRenderStage(RefactoredRenderStageDesc* pDstRenderStage, const EditorRenderStageDesc* pSrcRenderStage)

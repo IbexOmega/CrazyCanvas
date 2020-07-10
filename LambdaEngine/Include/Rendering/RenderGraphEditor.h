@@ -172,7 +172,7 @@ namespace LambdaEngine
 		bool RecursivelyWeightParentRenderStages(EditorRenderStageDesc* pChildRenderStage);
 		bool IsRenderStage(const String& name);
 		bool CapturedByImGui(const EditorResource* pResource);
-		void FindAndCreateSynchronization(bool generateImGuiStage,
+		bool FindAndCreateSynchronization(bool generateImGuiStage,
 			const std::multimap<uint32, EditorRenderStageDesc*>::reverse_iterator& currentOrderedRenderStageIt, 
 			const std::multimap<uint32, EditorRenderStageDesc*>& orderedMappedRenderStages, 
 			const EditorRenderGraphResourceState* pCurrentResourceState, 
