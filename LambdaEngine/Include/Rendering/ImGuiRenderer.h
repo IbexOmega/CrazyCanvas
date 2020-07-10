@@ -63,13 +63,9 @@ namespace LambdaEngine
 
 		virtual void UpdatePushConstants(void* pData, uint32 dataSize)	override final;
 
-		virtual void UpdateTextureArray(const char* pResourceName, const ITextureView* const * ppTextureViews, uint32 count)	override final;
-		virtual void UpdatePerBackBufferTextures(const char* pResourceName, const ITextureView* const * ppTextureViews)			override final;
-
-		virtual void UpdateBufferArray(const char* pResourceName, const IBuffer* const * ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count)	override final;
-		virtual void UpdatePerBackBufferBuffers(const char* pResourceName, const IBuffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes)		override final;
-
-		virtual void UpdateAccelerationStructure(const char* pResourceName, const IAccelerationStructure* pAccelerationStructure)	override final;
+		virtual void UpdateTextureResource(const String& resourceName, const ITextureView* const* ppTextureViews, uint32 count) override final;
+		virtual void UpdateBufferResource(const String& resourceName, const IBuffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count) override final;
+		virtual void UpdateAccelerationStructureResource(const String& resourceName, const IAccelerationStructure* pAccelerationStructure) override final;
 
 		virtual void NewFrame(Timestamp delta)		override final;
 		virtual void PrepareRender(Timestamp delta)		override final;
@@ -136,7 +132,7 @@ namespace LambdaEngine
 
 		ISampler*				m_pSampler					= nullptr;
 
-		THashTable<String, IDescriptorSet**>						m_PerBackBufferTextureResourceNameDescriptorSetsMap;
+		THashTable<String, IDescriptorSet**>						m_TextureResourceNameDescriptorSetsMap;
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 	};
 }

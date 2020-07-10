@@ -137,7 +137,7 @@ namespace LambdaEngine
 		{
 			guid = s_NextFreeGUID++;
 			ppMappedMesh = &s_Meshes[guid]; //Creates new entry if not existing
-			s_NamesToGUIDs[pFilepath] = guid;
+			RegisterNameToGUID(pFilepath, guid);
 		}
 
 		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(pFilepath);
@@ -212,7 +212,7 @@ namespace LambdaEngine
 			guid = s_NextFreeGUID++;
 			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
 			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
-			s_NamesToGUIDs[pFilepath] = guid;
+			RegisterNameToGUID(pFilepath, guid);
 		}
 
 		ITexture* pTexture = ResourceLoader::LoadTextureFromFile(pFilepath, format, generateMips);
@@ -246,7 +246,7 @@ namespace LambdaEngine
 			guid = s_NextFreeGUID++;
 			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
 			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
-			s_NamesToGUIDs[pName] = guid;
+			RegisterNameToGUID(pName, guid);
 		}
 
 		ITexture* pTexture = ResourceLoader::LoadTextureFromMemory(pName, pData, width, height, format, usageFlags, generateMips);
@@ -278,7 +278,7 @@ namespace LambdaEngine
 		{
 			guid = s_NextFreeGUID++;
 			ppMappedShader = &s_Shaders[guid]; //Creates new entry if not existing
-			s_NamesToGUIDs[pFilepath] = guid;
+			RegisterNameToGUID(pFilepath, guid);
 		}
 
 		ShaderLoadDesc loadDesc = {};
@@ -303,7 +303,7 @@ namespace LambdaEngine
 		{
 			guid = s_NextFreeGUID++;
 			ppMappedSoundEffect = &s_SoundEffects[guid]; //Creates new entry if not existing
-			s_NamesToGUIDs[pFilepath] = guid;
+			RegisterNameToGUID(pFilepath, guid);
 		}
 
 		(*ppMappedSoundEffect) = ResourceLoader::LoadSoundEffectFromFile(pFilepath);
@@ -461,7 +461,7 @@ namespace LambdaEngine
 			guid = s_NextFreeGUID++;
 			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
 			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
-			s_NamesToGUIDs[pResource->GetDesc().pName] = guid;
+			RegisterNameToGUID(pResource->GetDesc().pName, guid);
 		}
 
 		(*ppMappedTexture) = pResource;
@@ -482,6 +482,52 @@ namespace LambdaEngine
 		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		return guid;
+	}
+
+	void ResourceManager::RegisterNameToGUID(const String& string, GUID_Lambda guid)
+	{
+		//Register string as normal
+		if (s_NamesToGUIDs.count(string) > 0)
+		{
+			LOG_ERROR("[ResourceManager]: Resource with name \"%s\" has already been registered...", string.c_str());
+			return;
+		}
+
+		s_NamesToGUIDs[string] = guid;
+
+		//Calculate substring which only contains filename, if string is a path
+		size_t slashIt		= string.find_last_of('/');
+		size_t backslashIt	= string.find_last_of('\\');
+		
+		uint32 cutoffPoint = 0;
+
+		if (slashIt != string.npos && backslashIt != string.npos)
+		{
+			cutoffPoint = glm::max(slashIt, backslashIt) + 1;
+		}
+		else if (slashIt != string.npos)
+		{
+			cutoffPoint = slashIt + 1;
+		}
+		else if (backslashIt != string.npos)
+		{
+			cutoffPoint = glm::max(slashIt, backslashIt) + 1;
+		}
+		else
+		{
+			return;
+		}
+
+		//Register name, with path removed
+		String resourceName = string.substr(cutoffPoint);
+
+		if (s_NamesToGUIDs.count(resourceName) > 0)
+		{
+			LOG_ERROR("[ResourceManager]: Resource with name \"%s\" has already been registered...", resourceName.c_str());
+			return;
+		}
+
+		s_NamesToGUIDs[resourceName] = guid;
 	}
 
 	void ResourceManager::InitDefaultResources()

@@ -128,6 +128,8 @@ namespace LambdaEngine
 		static GUID_Lambda RegisterLoadedMaterial(Material* pMaterial);
 		static GUID_Lambda RegisterLoadedTexture(ITexture* pTexture);
 
+		static void RegisterNameToGUID(const String& string, GUID_Lambda guid);
+
 		static void InitDefaultResources();
 
 	private:

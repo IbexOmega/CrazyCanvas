@@ -49,7 +49,7 @@ namespace LambdaEngine
 		SAFERELEASE(m_pVertexCopyBuffer);
 		SAFERELEASE(m_pIndexCopyBuffer);
 
-		for (auto textureIt = m_PerBackBufferTextureResourceNameDescriptorSetsMap.begin(); textureIt != m_PerBackBufferTextureResourceNameDescriptorSetsMap.end(); textureIt++)
+		for (auto textureIt = m_TextureResourceNameDescriptorSetsMap.begin(); textureIt != m_TextureResourceNameDescriptorSetsMap.end(); textureIt++)
 		{
 			IDescriptorSet** pDescriptorSets = textureIt->second;
 
@@ -188,66 +188,55 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(dataSize);
 	}
 
-	void ImGuiRenderer::UpdateTextureArray(const char* pResourceName, const ITextureView* const* ppTextureViews, uint32 count)
+	void ImGuiRenderer::UpdateTextureResource(const String& resourceName, const ITextureView* const* ppTextureViews, uint32 count)
 	{
-		UNREFERENCED_VARIABLE(pResourceName);
-		UNREFERENCED_VARIABLE(ppTextureViews);
-		UNREFERENCED_VARIABLE(count);
-	}
-
-	void ImGuiRenderer::UpdatePerBackBufferTextures(const char* pResourceName, const ITextureView* const* ppTextureViews)
-	{
-		if (strcmp(pResourceName, RENDER_GRAPH_BACK_BUFFER_ATTACHMENT) == 0)
+		if (count == 1)
 		{
-			memcpy(m_ppBackBuffers, ppTextureViews, m_BackBufferCount * sizeof(ITextureView*));
-		}
-		else
-		{
-			auto textureIt = m_PerBackBufferTextureResourceNameDescriptorSetsMap.find(pResourceName);
+			auto textureIt = m_TextureResourceNameDescriptorSetsMap.find(resourceName);
 
-			if (textureIt == m_PerBackBufferTextureResourceNameDescriptorSetsMap.end())
+			if (textureIt == m_TextureResourceNameDescriptorSetsMap.end())
 			{
-				m_PerBackBufferTextureResourceNameDescriptorSetsMap[pResourceName] = DBG_NEW IDescriptorSet*[m_BackBufferCount];
+				m_TextureResourceNameDescriptorSetsMap[resourceName] = DBG_NEW IDescriptorSet * [count];
 
-				for (uint32 b = 0; b < m_BackBufferCount; b++)
+				for (uint32 b = 0; b < count; b++)
 				{
 					IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_pPipelineLayout, 0, m_pDescriptorHeap);
-					m_PerBackBufferTextureResourceNameDescriptorSetsMap[pResourceName][b] = pDescriptorSet;
+					m_TextureResourceNameDescriptorSetsMap[resourceName][b] = pDescriptorSet;
 
 					pDescriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
 				}
 			}
 			else
 			{
-				for (uint32 b = 0; b < m_BackBufferCount; b++)
+				for (uint32 b = 0; b < count; b++)
 				{
-					IDescriptorSet* pDescriptorSet = m_PerBackBufferTextureResourceNameDescriptorSetsMap[pResourceName][b];
+					IDescriptorSet* pDescriptorSet = m_TextureResourceNameDescriptorSetsMap[resourceName][b];
 					pDescriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
 				}
 			}
 		}
+		else if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
+		{
+			memcpy(m_ppBackBuffers, ppTextureViews, m_BackBufferCount * sizeof(ITextureView*));
+		}
+		else
+		{
+			LOG_WARNING("[ImGuiRenderer]: Textures with count > 1 is not implemented");
+		}
 	}
 
-	void ImGuiRenderer::UpdateBufferArray(const char* pResourceName, const IBuffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count)
+	void ImGuiRenderer::UpdateBufferResource(const String& resourceName, const IBuffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count)
 	{
-		UNREFERENCED_VARIABLE(pResourceName);
+		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(ppBuffers);
 		UNREFERENCED_VARIABLE(pOffsets);
 		UNREFERENCED_VARIABLE(pSizesInBytes);
 		UNREFERENCED_VARIABLE(count);
 	}
 
-	void ImGuiRenderer::UpdatePerBackBufferBuffers(const char* pResourceName, const IBuffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes)
+	void ImGuiRenderer::UpdateAccelerationStructureResource(const String& resourceName, const IAccelerationStructure* pAccelerationStructure)
 	{
-		UNREFERENCED_VARIABLE(pResourceName);
-		UNREFERENCED_VARIABLE(ppBuffers);
-		UNREFERENCED_VARIABLE(pOffsets);
-		UNREFERENCED_VARIABLE(pSizesInBytes);
-	}
-
-	void ImGuiRenderer::UpdateAccelerationStructure(const char* pResourceName, const IAccelerationStructure* pAccelerationStructure)
-	{
-		UNREFERENCED_VARIABLE(pResourceName);
+		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
 
@@ -411,9 +400,9 @@ namespace LambdaEngine
 					if (pCmd->TextureId)
 					{
 						ImGuiTexture*		pImGuiTexture	= reinterpret_cast<ImGuiTexture*>(pCmd->TextureId);
-						auto textureIt = m_PerBackBufferTextureResourceNameDescriptorSetsMap.find(pImGuiTexture->ResourceName);
+						auto textureIt = m_TextureResourceNameDescriptorSetsMap.find(pImGuiTexture->ResourceName);
 
-						if (textureIt == m_PerBackBufferTextureResourceNameDescriptorSetsMap.end()) continue;
+						if (textureIt == m_TextureResourceNameDescriptorSetsMap.end()) continue;
 
 						GUID_Lambda vertexShaderGUID	= pImGuiTexture->VertexShaderGUID == GUID_NONE	? m_VertexShaderGUID	: pImGuiTexture->VertexShaderGUID;
 						GUID_Lambda pixelShaderGUID		= pImGuiTexture->PixelShaderGUID == GUID_NONE	? m_PixelShaderGUID		: pImGuiTexture->PixelShaderGUID;
@@ -457,7 +446,8 @@ namespace LambdaEngine
 
 						IDescriptorSet** ppDescriptorSets = textureIt->second;
 
-						pCommandList->BindDescriptorSetGraphics(ppDescriptorSets[backBufferIndex], m_pPipelineLayout, 0);
+						//Todo: Do not assume 0 here, could be more textures
+						pCommandList->BindDescriptorSetGraphics(ppDescriptorSets[0], m_pPipelineLayout, 0);
 					}
 					else
 					{

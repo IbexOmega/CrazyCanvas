@@ -36,13 +36,9 @@ namespace LambdaEngine
 
 		virtual void UpdatePushConstants(void* pData, uint32 dataSize)	= 0;
 
-		virtual void UpdateTextureArray(const char* pResourceName, const ITextureView* const * ppTextureViews, uint32 count)	= 0;
-		virtual void UpdatePerBackBufferTextures(const char* pResourceName, const ITextureView* const * ppTextureViews)			= 0;
-
-		virtual void UpdateBufferArray(const char* pResourceName, const IBuffer* const * ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count)	= 0;
-		virtual void UpdatePerBackBufferBuffers(const char* pResourceName, const IBuffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes)		= 0;
-
-		virtual void UpdateAccelerationStructure(const char* pResourceName, const IAccelerationStructure* pAccelerationStructure)	= 0;
+		virtual void UpdateTextureResource(const String& resourceName, const ITextureView* const * ppTextureViews, uint32 count)	= 0;
+		virtual void UpdateBufferResource(const String& resourceName, const IBuffer* const * ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count)	= 0;
+		virtual void UpdateAccelerationStructureResource(const String& resourceName, const IAccelerationStructure* pAccelerationStructure)	= 0;
 
 		virtual void NewFrame(Timestamp delta)		= 0;
 		virtual void PrepareRender(Timestamp delta)		= 0;

@@ -35,11 +35,10 @@ namespace LambdaEngine
 		String						Name					= "";
 		
 		ERefactoredRenderGraphResourceType	Type					= ERefactoredRenderGraphResourceType::NONE;
-		ERefactoredRenderGraphSubResourceType	SubResourceType			= ERefactoredRenderGraphSubResourceType::NONE;
-		uint32						SubResourceArrayCount		= 1;
+		uint32						SubResourceCount			= 1;
 		bool						Editable					= false;
 
-		EFormat						TextureFormat				= EFormat::NONE;
+		uint32						TextureFormat				= 0;
 	};
 
 	struct EditorRenderGraphResourceLink
@@ -105,6 +104,8 @@ namespace LambdaEngine
 		int32		BackBufferAttributeIndex	= 0;
 	};
 
+	class RefactoredRenderGraph;
+
 	class RenderGraphEditor : public EventHandler
 	{
 	public:
@@ -114,7 +115,10 @@ namespace LambdaEngine
 		RenderGraphEditor();
 		~RenderGraphEditor();
 
+		void InitGUI();
 		void RenderGUI();
+
+		RefactoredRenderGraphStructure* CreateRenderGraphStructure(const String& filepath, bool debug);
 
 		virtual void OnButtonReleased(EMouseButton button)						override final;
 		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat) override final;
@@ -144,11 +148,9 @@ namespace LambdaEngine
 
 		String RenderStageTypeToString(EPipelineStateType type);
 		String RenderGraphResourceTypeToString(ERefactoredRenderGraphResourceType type);
-		String RenderGraphSubResourceTypeToString(ERefactoredRenderGraphSubResourceType type);
 
 		EPipelineStateType RenderStageTypeFromString(const String& string);
 		ERefactoredRenderGraphResourceType RenderGraphResourceTypeFromString(const String& string);
-		ERefactoredRenderGraphSubResourceType RenderGraphSubResourceTypeFromString(const String& string);
 
 		void DestroyLink(int32 linkIndex);
 
@@ -161,12 +163,14 @@ namespace LambdaEngine
 		ERefactoredRenderGraphResourceBindingType ResourceStateBindingTypeFromString(const String& string);
 
 		bool SaveToFile(const String& renderGraphName);
-		bool LoadFromFile(const String& filepath);
+		bool LoadFromFile(const String& filepath, bool generateImGuiStage);
+		void SetInitialNodePositions();
 
 		bool ParseStructure(bool generateImGuiStage);
 		bool RecursivelyWeightParentRenderStages(EditorRenderStageDesc* pChildRenderStage);
 		bool IsRenderStage(const String& name);
-		void FindAndCreateSynchronization(bool generateImGuiStage, 
+		bool CapturedByImGui(const EditorResource* pResource);
+		void FindAndCreateSynchronization(bool generateImGuiStage,
 			const std::multimap<uint32, EditorRenderStageDesc*>::reverse_iterator& currentOrderedRenderStageIt, 
 			const std::multimap<uint32, EditorRenderStageDesc*>& orderedMappedRenderStages, 
 			const EditorRenderGraphResourceState* pCurrentResourceState, 
@@ -174,6 +178,8 @@ namespace LambdaEngine
 		void CreateParsedRenderStage(RefactoredRenderStageDesc* pDstRenderStage, const EditorRenderStageDesc* pSrcRenderStage);
 
 	private:
+		bool												m_GUIInitialized = false;
+
 		TArray<EditorResourceStateGroup>					m_ResourceStateGroups;
 		EditorFinalOutput									m_FinalOutput		= {};
 

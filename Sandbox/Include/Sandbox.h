@@ -9,7 +9,7 @@ namespace LambdaEngine
 {
 	struct GameObject;
 
-	class RenderGraph;
+	class RefactoredRenderGraph;
 	class Renderer;
 	class ResourceManager;
 	class ISoundEffect3D;
@@ -77,7 +77,8 @@ private:
 	LambdaEngine::ISampler*					m_pLinearSampler		= nullptr;
 	LambdaEngine::ISampler*					m_pNearestSampler		= nullptr;
 
-	LambdaEngine::RenderGraph*				m_pRenderGraph			= nullptr;
+	//LambdaEngine::RenderGraph*				m_pRenderGraph			= nullptr;
+	LambdaEngine::RefactoredRenderGraph*	m_pRefactoredRenderGraph= nullptr;
 	LambdaEngine::Renderer*					m_pRenderer				= nullptr;
 
 	LambdaEngine::RenderGraphEditor*		m_pRenderGraphEditor	= nullptr;

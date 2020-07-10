@@ -7,7 +7,7 @@
 #include "Rendering/Core/API/ITexture.h"
 #include "Rendering/Core/API/ITextureView.h"
 #include "Rendering/RenderSystem.h"
-#include "Rendering/RenderGraph.h"
+#include "Rendering/RefactoredRenderGraph.h"
 #include "Rendering/ImGuiRenderer.h"
 
 #include "Application/API/Window.h"
@@ -98,7 +98,7 @@ namespace LambdaEngine
 		}
 		
 		ResourceUpdateDesc resourceUpdateDesc = {};
-		resourceUpdateDesc.pResourceName						= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+		resourceUpdateDesc.ResourceName							= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
 		resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppBackBuffers;
 		resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppBackBufferViews;
 

@@ -44,7 +44,7 @@ namespace LambdaEngine
 
 	struct RenderGraphDesc
 	{
-		const char* pName									= "Render Graph";
+		String Name									= "Render Graph";
 		RefactoredRenderGraphStructure* pParsedRenderGraphStructure	= nullptr;
 		uint32 BackBufferCount								= 3;
 		uint32 MaxTexturesPerDescriptorSet					= 1;
@@ -53,7 +53,7 @@ namespace LambdaEngine
 
 	struct ResourceUpdateDesc
 	{
-		const char* pResourceName	= "No Resource Name";
+		String ResourceName	= "No Resource Name";
 
 		union
 		{
@@ -155,9 +155,9 @@ namespace LambdaEngine
 		struct Resource
 		{
 			String					Name				= "";
+			bool					IsBackBuffer		= false;
 			ERefactoredRenderGraphResourceType			Type				= ERefactoredRenderGraphResourceType::NONE;
 			EResourceOwnershipType	OwnershipType		= EResourceOwnershipType::NONE;
-			ERefactoredRenderGraphSubResourceType	SubResourceType		= ERefactoredRenderGraphSubResourceType::NONE;
 			uint32					SubResourceCount	= 0;
 
 			std::vector<ResourceBinding>	ResourceBindings;
@@ -218,8 +218,7 @@ namespace LambdaEngine
 		{
 			FShaderStageFlags		SrcShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 			FShaderStageFlags		DstShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			uint32					BarrierUseFrameIndex	= 0;
-			uint32					SameFrameBarrierOffset	= 1;
+			bool					IsBackBuffer			= 0; //We need to know if this is the Back Buffer since that is the only resource which is triple buffered -> Only one barrier submit per frame instead of #SubResourceCount submits
 			TArray<uint32>			Barriers;
 		};
 
@@ -227,8 +226,6 @@ namespace LambdaEngine
 		{
 			FShaderStageFlags		SrcShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 			FShaderStageFlags		DstShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			uint32					BarrierUseFrameIndex	= 0;
-			uint32					SameFrameBarrierOffset	= 1;
 			TArray<uint32>			Barriers;
 		};
 

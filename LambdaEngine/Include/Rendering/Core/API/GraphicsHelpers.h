@@ -47,7 +47,7 @@ namespace LambdaEngine
 		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP:								return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM:							return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
 		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT:					return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT:						return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT:						return FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
 		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_SHADER:					return FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
 		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER:						return FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER;
 		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER:					return FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER;

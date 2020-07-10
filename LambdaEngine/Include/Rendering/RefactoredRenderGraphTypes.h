@@ -9,7 +9,7 @@
 
 namespace LambdaEngine
 {
-	/*constexpr const char* RENDER_GRAPH_IMGUI_STAGE_NAME			= "RENDER_STAGE_IMGUI";
+	constexpr const char* RENDER_GRAPH_IMGUI_STAGE_NAME			= "RENDER_STAGE_IMGUI";
 
 	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT   = "BACK_BUFFER_TEXTURE";
 
@@ -22,14 +22,14 @@ namespace LambdaEngine
 	constexpr const char* SCENE_VERTEX_BUFFER					= "SCENE_VERTEX_BUFFER";
 	constexpr const char* SCENE_INDEX_BUFFER					= "SCENE_INDEX_BUFFER";
 	constexpr const char* SCENE_INSTANCE_BUFFER				    = "SCENE_INSTANCE_BUFFER";
-	constexpr const char* SCENE_MESH_INDEX_BUFFER				= "SCENE_MESH_INDEX_BUFFER";
+	constexpr const char* SCENE_INDIRECT_ARGS_BUFFER			= "SCENE_INDIRECT_ARGS_BUFFER";
 	constexpr const char* SCENE_TLAS							= "SCENE_TLAS";
 
 	constexpr const char* SCENE_ALBEDO_MAPS					    = "SCENE_ALBEDO_MAPS";
 	constexpr const char* SCENE_NORMAL_MAPS					    = "SCENE_NORMAL_MAPS";
 	constexpr const char* SCENE_AO_MAPS						    = "SCENE_AO_MAPS";
 	constexpr const char* SCENE_ROUGHNESS_MAPS				    = "SCENE_ROUGHNESS_MAPS";
-	constexpr const char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";*/
+	constexpr const char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";
 
 	enum class ERefactoredRenderGraphPipelineStageType : uint8
 	{
@@ -60,13 +60,6 @@ namespace LambdaEngine
 		DRAW_RESOURCE					= 9,	//READ
 	};
 
-	enum class ERefactoredRenderGraphSubResourceType : uint8
-	{
-		NONE					= 0,
-		ARRAY					= 1,
-		PER_FRAME				= 2,
-	};
-
 	enum class ERefactoredRenderStageDrawType : uint8
 	{
 		NONE					= 0,
@@ -81,8 +74,7 @@ namespace LambdaEngine
 		String							Name					= "";
 		
 		ERefactoredRenderGraphResourceType		Type					= ERefactoredRenderGraphResourceType::NONE;
-		ERefactoredRenderGraphSubResourceType		SubResourceType			= ERefactoredRenderGraphSubResourceType::NONE;
-		uint32							SubResourceArrayCount	= 1;
+		uint32							SubResourceCount		= 1;
 
 		EFormat							TextureFormat			= EFormat::NONE; //Todo: How to solve?
 
@@ -196,6 +188,7 @@ namespace LambdaEngine
 	{
 		switch (bindingType)
 		{
+		case ERefactoredRenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return true;
 		case ERefactoredRenderGraphResourceBindingType::CONSTANT_BUFFER:				return true;
 		case ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER:				return true;
 		case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return true;
@@ -223,11 +216,11 @@ namespace LambdaEngine
 			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		}
-		else if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
+		else if (pRenderStageDesc->Type == EPipelineStateType::COMPUTE)
 		{
 			if (pRenderStageDesc->Compute.ShaderName.size()						> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 		}
-		else if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
+		else if (pRenderStageDesc->Type == EPipelineStateType::RAY_TRACING)
 		{
 			if (pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.size()	> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER;
 			if (pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;
@@ -279,11 +272,12 @@ namespace LambdaEngine
 		{
 			switch (bindingType)
 			{
-			case ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER:				return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+			case ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER:				return format != EFormat::FORMAT_D24_UNORM_S8_UINT ? ETextureState::TEXTURE_STATE_SHADER_READ_ONLY : ETextureState::TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY;
 			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return ETextureState::TEXTURE_STATE_GENERAL;
 			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return ETextureState::TEXTURE_STATE_GENERAL;
 			case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return ETextureState::TEXTURE_STATE_GENERAL;
 			case ERefactoredRenderGraphResourceBindingType::ATTACHMENT:						return format != EFormat::FORMAT_D24_UNORM_S8_UINT ? ETextureState::TEXTURE_STATE_RENDER_TARGET : ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+			case ERefactoredRenderGraphResourceBindingType::PRESENT:						return ETextureState::TEXTURE_STATE_PRESENT;
 			}
 		}
 
