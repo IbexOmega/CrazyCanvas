@@ -2,9 +2,9 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
-#define MAX_IMAGE_BARRIERS  16
-#define MAX_BUFFER_BARRIERS	16
-#define MAX_MEMORY_BARRIERS	16
+#define MAX_IMAGE_BARRIERS  512
+#define MAX_BUFFER_BARRIERS	512
+#define MAX_MEMORY_BARRIERS	512
 #define MAX_VIEWPORTS       8
 #define MAX_VERTEX_BUFFERS  32
 

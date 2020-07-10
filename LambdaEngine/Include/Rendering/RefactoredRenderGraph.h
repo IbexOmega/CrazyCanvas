@@ -152,6 +152,13 @@ namespace LambdaEngine
 			ETextureState TextureState		= ETextureState::TEXTURE_STATE_UNKNOWN;
 		};
 
+		struct ResourceBarrierInfo
+		{
+			uint32	SynchronizationStageIndex	= 0;
+			uint32	SynchronizationTypeIndex	= 0;
+			uint32	BarrierIndex				= 0;
+		};
+
 		struct Resource
 		{
 			String					Name				= "";
@@ -164,19 +171,19 @@ namespace LambdaEngine
 
 			struct
 			{
-				EFormat					Format;
-				TArray<uint32>			Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
-				TArray<ITexture*>		Textures;
-				TArray<ITextureView*>	TextureViews;
-				TArray<ISampler*>		Samplers;
+				EFormat								Format;
+				TArray<ResourceBarrierInfo>		BarriersPerSynchronizationStage; //Divided into #SubResourceCount Barriers per Synchronization Stage
+				TArray<ITexture*>					Textures;
+				TArray<ITextureView*>				TextureViews;
+				TArray<ISampler*>					Samplers;
 			} Texture;
 
 			struct
 			{
-				TArray<uint32>			Barriers;
-				TArray<IBuffer*>		Buffers;
-				TArray<uint64>			Offsets;
-				TArray<uint64>			SizesInBytes;
+				TArray<ResourceBarrierInfo>		BarriersPerSynchronizationStage;
+				TArray<IBuffer*>					Buffers;
+				TArray<uint64>						Offsets;
+				TArray<uint64>						SizesInBytes;
 			} Buffer;
 
 			struct
@@ -214,25 +221,14 @@ namespace LambdaEngine
 			Resource*				pDepthStencilAttachment			= nullptr;
 		};
 
-		struct TextureSynchronization
-		{
-			FShaderStageFlags		SrcShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			FShaderStageFlags		DstShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			bool					IsBackBuffer			= 0; //We need to know if this is the Back Buffer since that is the only resource which is triple buffered -> Only one barrier submit per frame instead of #SubResourceCount submits
-			TArray<uint32>			Barriers;
-		};
-
-		struct BufferSynchronization
-		{
-			FShaderStageFlags		SrcShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			FShaderStageFlags		DstShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			TArray<uint32>			Barriers;
-		};
-
 		struct SynchronizationStage
 		{
-			THashTable<std::string, TextureSynchronization> TextureSynchronizations;
-			THashTable<std::string, BufferSynchronization> BufferSynchronizations;
+			ECommandQueueType					ExecutionQueue			= ECommandQueueType::COMMAND_QUEUE_NONE;
+			FPipelineStageFlags					SrcPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags					DstPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+
+			TArray<PipelineBufferBarrierDesc>	BufferBarriers[2];
+			TArray<PipelineTextureBarrierDesc>	TextureBarriers[4];
 		};
 
 		struct PipelineStage
@@ -289,11 +285,9 @@ namespace LambdaEngine
 		bool CreateSynchronizationStages(const TArray<RefactoredSynchronizationStageDesc>& synchronizationStageDescriptions);
 		bool CreatePipelineStages(const TArray<RefactoredPipelineStageDesc>& pipelineStageDescriptions);
 
-		void UpdateResourceInternalTexture(Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceInternalBuffer(Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceExternalTexture(Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceExternalBuffer(Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceExternalAccelerationStructure(Resource* pResource, const ResourceUpdateDesc& desc);
+		void UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc& desc);
+		void UpdateResourceBuffer(Resource* pResource, const ResourceUpdateDesc& desc);
+		void UpdateResourceAccelerationStructure(Resource* pResource, const ResourceUpdateDesc& desc);
 
 		void ExecuteSynchronizationStage(
 			SynchronizationStage* pSynchronizationStage, 
@@ -347,13 +341,8 @@ namespace LambdaEngine
 		uint32												m_SynchronizationStageCount			= 0;
 
 		THashTable<String, Resource>						m_ResourceMap;
-		TSet<Resource*>										m_DirtyDescriptorSetInternalTextures;
-		TSet<Resource*>										m_DirtyDescriptorSetInternalBuffers;
-		TSet<Resource*>										m_DirtyDescriptorSetExternalTextures;
-		TSet<Resource*>										m_DirtyDescriptorSetExternalBuffers;
+		TSet<Resource*>										m_DirtyDescriptorSetTextures;
+		TSet<Resource*>										m_DirtyDescriptorSetBuffers;
 		TSet<Resource*>										m_DirtyDescriptorSetAccelerationStructures;
-
-		TArray<PipelineTextureBarrierDesc>					m_TextureBarriers;
-		TArray<PipelineBufferBarrierDesc>					m_BufferBarriers;
 	};
 }
