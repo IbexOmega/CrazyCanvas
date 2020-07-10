@@ -132,7 +132,7 @@ namespace LambdaEngine
 
 		ISampler*				m_pSampler					= nullptr;
 
-		THashTable<String, IDescriptorSet**>						m_TextureResourceNameDescriptorSetsMap;
+		THashTable<String, TArray<IDescriptorSet*>>					m_TextureResourceNameDescriptorSetsMap;
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 	};
 }

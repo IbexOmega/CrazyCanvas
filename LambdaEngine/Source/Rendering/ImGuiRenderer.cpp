@@ -51,14 +51,12 @@ namespace LambdaEngine
 
 		for (auto textureIt = m_TextureResourceNameDescriptorSetsMap.begin(); textureIt != m_TextureResourceNameDescriptorSetsMap.end(); textureIt++)
 		{
-			IDescriptorSet** pDescriptorSets = textureIt->second;
+			TArray<IDescriptorSet*>& descriptorSets = textureIt->second;
 
-			for (uint32 b = 0; b < m_BackBufferCount; b++)
+			for (uint32 d = 0; d < descriptorSets.size(); d++)
 			{
-				SAFERELEASE(pDescriptorSets[b]);
+				SAFERELEASE(descriptorSets[d]);
 			}
-
-			SAFEDELETE_ARRAY(pDescriptorSets)
 		}
 		
 		for (uint32 b = 0; b < m_BackBufferCount; b++)
@@ -196,7 +194,7 @@ namespace LambdaEngine
 
 			if (textureIt == m_TextureResourceNameDescriptorSetsMap.end())
 			{
-				m_TextureResourceNameDescriptorSetsMap[resourceName] = DBG_NEW IDescriptorSet * [count];
+				m_TextureResourceNameDescriptorSetsMap[resourceName].resize(count);
 
 				for (uint32 b = 0; b < count; b++)
 				{
@@ -444,10 +442,10 @@ namespace LambdaEngine
 						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelAdd,				4 * sizeof(float32),	8 * sizeof(float32));
 						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, &pImGuiTexture->ReservedIncludeMask,		sizeof(uint32),		12 * sizeof(float32));
 
-						IDescriptorSet** ppDescriptorSets = textureIt->second;
+						const TArray<IDescriptorSet*>& descriptorSets = textureIt->second;
 
 						//Todo: Do not assume 0 here, could be more textures
-						pCommandList->BindDescriptorSetGraphics(ppDescriptorSets[0], m_pPipelineLayout, 0);
+						pCommandList->BindDescriptorSetGraphics(descriptorSets[0], m_pPipelineLayout, 0);
 					}
 					else
 					{

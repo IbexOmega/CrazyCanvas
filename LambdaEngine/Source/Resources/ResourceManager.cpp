@@ -318,6 +318,9 @@ namespace LambdaEngine
 		if (guidIt != s_NamesToGUIDs.end())
 			return guidIt->second;
 
+		if (name.length() > 0)
+			LOG_ERROR("[ResourceManager]: Resource \"%s\" could not be fouund in ResourceManager", name.c_str());
+
 		return GUID_NONE;
 	}
 

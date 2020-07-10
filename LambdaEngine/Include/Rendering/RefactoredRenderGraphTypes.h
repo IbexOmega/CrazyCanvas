@@ -113,6 +113,7 @@ namespace LambdaEngine
 
 		struct
 		{
+			bool										PrevSameFrame		= true;
 			ERefactoredRenderGraphResourceBindingType	PrevBindingType		= ERefactoredRenderGraphResourceBindingType::NONE;
 			ERefactoredRenderGraphResourceBindingType	NextBindingType		= ERefactoredRenderGraphResourceBindingType::NONE;
 		} AttachmentSynchronizations; //If this resource state is transitioned using a renderpass, that information is stored here

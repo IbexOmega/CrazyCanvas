@@ -1037,7 +1037,14 @@ namespace LambdaEngine
 					ETextureState initialState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.PrevBindingType, pResource->Texture.Format);
 					ETextureState finalState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.NextBindingType, pResource->Texture.Format);
 
-					ELoadOp loadOp = (initialState == ETextureState::TEXTURE_STATE_DONT_CARE || initialState == ETextureState::TEXTURE_STATE_UNKNOWN) ? ELoadOp::CLEAR : ELoadOp::LOAD;
+					ELoadOp loadOp = ELoadOp::LOAD;
+
+					if (initialState == ETextureState::TEXTURE_STATE_DONT_CARE ||
+						initialState == ETextureState::TEXTURE_STATE_UNKNOWN ||
+						!pResourceStateDesc->AttachmentSynchronizations.PrevSameFrame)
+					{
+						loadOp = ELoadOp::CLEAR;
+					}
 
 					if (isColorAttachment)
 					{

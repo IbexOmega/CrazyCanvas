@@ -1,0 +1,484 @@
+{
+    "resources": [
+        {
+            "name": "BACK_BUFFER_TEXTURE",
+            "type": "TEXTURE",
+            "sub_resource_count": 1,
+            "editable": false,
+            "texture_format": 2
+        },
+        {
+            "name": "FULLSCREEN_QUAD_VERTEX_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_count": 1,
+            "editable": false,
+            "texture_format": 0
+        },
+        {
+            "name": "PER_FRAME_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_count": 1,
+            "editable": false,
+            "texture_format": 0
+        },
+        {
+            "name": "SCENE_LIGHTS_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_count": 1,
+            "editable": false,
+            "texture_format": 0
+        },
+        {
+            "name": "SCENE_MAT_PARAM_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_count": 1,
+            "editable": false,
+            "texture_format": 0
+        },
+        {
+            "name": "SCENE_VERTEX_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_count": 1,
+            "editable": false,
+            "texture_format": 0
+        },
+        {
+            "name": "SCENE_INDEX_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_count": 1,
+            "editable": false,
+            "texture_format": 0
+        },
+        {
+            "name": "SCENE_INSTANCE_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_count": 1,
+            "editable": false,
+            "texture_format": 0
+        },
+        {
+            "name": "SCENE_INDIRECT_ARGS_BUFFER",
+            "type": "BUFFER",
+            "sub_resource_count": 1,
+            "editable": false,
+            "texture_format": 0
+        },
+        {
+            "name": "SCENE_TLAS",
+            "type": "ACCELERATION_STRUCTURE",
+            "sub_resource_count": 1,
+            "editable": false,
+            "texture_format": 0
+        },
+        {
+            "name": "SCENE_ALBEDO_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_count": 32,
+            "editable": false,
+            "texture_format": 1
+        },
+        {
+            "name": "SCENE_NORMAL_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_count": 32,
+            "editable": false,
+            "texture_format": 1
+        },
+        {
+            "name": "SCENE_AO_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_count": 32,
+            "editable": false,
+            "texture_format": 1
+        },
+        {
+            "name": "SCENE_ROUGHNESS_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_count": 32,
+            "editable": false,
+            "texture_format": 1
+        },
+        {
+            "name": "SCENE_METALLIC_MAPS",
+            "type": "TEXTURE",
+            "sub_resource_count": 32,
+            "editable": false,
+            "texture_format": 1
+        },
+        {
+            "name": "G_BUFFER_ALBEDO_AO",
+            "type": "TEXTURE",
+            "sub_resource_count": 1,
+            "editable": true,
+            "texture_format": 1
+        }
+    ],
+    "resource_state_groups": [
+        {
+            "name": "EXTERNAL_RESOURCES",
+            "node_index": 68,
+            "resource_states": [
+                {
+                    "name": "FULLSCREEN_QUAD_VERTEX_BUFFER",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 88,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "PER_FRAME_BUFFER",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 90,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        23
+                    ]
+                },
+                {
+                    "name": "SCENE_LIGHTS_BUFFER",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 92,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_MAT_PARAM_BUFFER",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 94,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_VERTEX_BUFFER",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 96,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        19
+                    ]
+                },
+                {
+                    "name": "SCENE_INDEX_BUFFER",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 98,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        27
+                    ]
+                },
+                {
+                    "name": "SCENE_INSTANCE_BUFFER",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 100,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        21
+                    ]
+                },
+                {
+                    "name": "SCENE_INDIRECT_ARGS_BUFFER",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 102,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        22,
+                        26
+                    ]
+                },
+                {
+                    "name": "SCENE_TLAS",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "ACCELERATION_STRUCTURE",
+                    "attribute_index": 104,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_ALBEDO_MAPS",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 106,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        24
+                    ]
+                },
+                {
+                    "name": "SCENE_NORMAL_MAPS",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 108,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_AO_MAPS",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 110,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_ROUGHNESS_MAPS",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 112,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_METALLIC_MAPS",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 114,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                }
+            ]
+        },
+        {
+            "name": "TEMPORAL_RESOURCES",
+            "node_index": 69,
+            "resource_states": []
+        }
+    ],
+    "final_output_stage": {
+        "name": "FINAL_OUTPUT",
+        "node_index": 67,
+        "back_buffer_state": {
+            "name": "BACK_BUFFER_TEXTURE",
+            "render_stage_name": "FINAL_OUTPUT",
+            "removable": false,
+            "binding_type": "COMBINED_SAMPLER",
+            "attribute_index": 86,
+            "input_link_index": 29,
+            "output_link_indices": []
+        }
+    },
+    "render_stages": [
+        {
+            "name": "FORWARD",
+            "node_index": 70,
+            "input_attribute_index": 116,
+            "type": "GRAPHICS",
+            "custom_renderer": false,
+            "draw_params": {
+                "draw_type": "SCENE_INDIRECT",
+                "index_buffer": {
+                    "name": "SCENE_INDEX_BUFFER",
+                    "render_stage_name": "FORWARD",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 118,
+                    "input_link_index": 27,
+                    "output_link_indices": []
+                },
+                "indirect_args_buffer": {
+                    "name": "SCENE_INDIRECT_ARGS_BUFFER",
+                    "render_stage_name": "FORWARD",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 120,
+                    "input_link_index": 26,
+                    "output_link_indices": []
+                }
+            },
+            "shaders": {
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "ForwardVertex.glsl",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": "ForwardPixel.glsl"
+            },
+            "resource_states": [
+                {
+                    "name": "SCENE_VERTEX_BUFFER",
+                    "render_stage_name": "FORWARD",
+                    "removable": true,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "attribute_index": 122,
+                    "input_link_index": 19,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_INSTANCE_BUFFER",
+                    "render_stage_name": "FORWARD",
+                    "removable": true,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "attribute_index": 126,
+                    "input_link_index": 21,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_INDIRECT_ARGS_BUFFER",
+                    "render_stage_name": "FORWARD",
+                    "removable": true,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "attribute_index": 128,
+                    "input_link_index": 22,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "PER_FRAME_BUFFER",
+                    "render_stage_name": "FORWARD",
+                    "removable": true,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 130,
+                    "input_link_index": 23,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_ALBEDO_MAPS",
+                    "render_stage_name": "FORWARD",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 132,
+                    "input_link_index": 24,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "G_BUFFER_ALBEDO_AO",
+                    "render_stage_name": "FORWARD",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 144,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        28
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "SHADING",
+            "node_index": 117,
+            "input_attribute_index": 136,
+            "type": "GRAPHICS",
+            "custom_renderer": false,
+            "draw_params": {
+                "draw_type": "FULLSCREEN_QUAD",
+                "index_buffer": {
+                    "name": "",
+                    "render_stage_name": "SHADING",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 138,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                },
+                "indirect_args_buffer": {
+                    "name": "",
+                    "render_stage_name": "SHADING",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 140,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                }
+            },
+            "shaders": {
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "FullscreenQuad.glsl",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": "ShadingSimpleDefPixel.glsl"
+            },
+            "resource_states": [
+                {
+                    "name": "G_BUFFER_ALBEDO_AO",
+                    "render_stage_name": "SHADING",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 146,
+                    "input_link_index": 28,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "BACK_BUFFER_TEXTURE",
+                    "render_stage_name": "SHADING",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 148,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        29
+                    ]
+                }
+            ]
+        }
+    ],
+    "links": [
+        {
+            "link_index": 27,
+            "src_attribute_index": 99,
+            "dst_attribute_index": 118
+        },
+        {
+            "link_index": 19,
+            "src_attribute_index": 97,
+            "dst_attribute_index": 122
+        },
+        {
+            "link_index": 21,
+            "src_attribute_index": 101,
+            "dst_attribute_index": 126
+        },
+        {
+            "link_index": 22,
+            "src_attribute_index": 103,
+            "dst_attribute_index": 128
+        },
+        {
+            "link_index": 23,
+            "src_attribute_index": 91,
+            "dst_attribute_index": 130
+        },
+        {
+            "link_index": 24,
+            "src_attribute_index": 107,
+            "dst_attribute_index": 132
+        },
+        {
+            "link_index": 26,
+            "src_attribute_index": 103,
+            "dst_attribute_index": 120
+        },
+        {
+            "link_index": 28,
+            "src_attribute_index": 145,
+            "dst_attribute_index": 146
+        },
+        {
+            "link_index": 29,
+            "src_attribute_index": 149,
+            "dst_attribute_index": 86
+        }
+    ]
+}

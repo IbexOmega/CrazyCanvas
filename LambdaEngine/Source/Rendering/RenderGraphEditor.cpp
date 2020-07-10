@@ -194,14 +194,18 @@ namespace LambdaEngine
 		}
 	}
 
-	RefactoredRenderGraphStructure* RenderGraphEditor::CreateRenderGraphStructure(const String& filepath, bool imGuiEnabled)
+	RefactoredRenderGraphStructure RenderGraphEditor::CreateRenderGraphStructure(const String& filepath, bool imGuiEnabled)
 	{
+		RefactoredRenderGraphStructure returnStructure = {};
+
 		if (LoadFromFile(filepath, imGuiEnabled))
 		{
-			return &m_ParsedRenderGraphStructure;
+			returnStructure = m_ParsedRenderGraphStructure;
 		}
+
+		ResetState();
 		
-		return nullptr;
+		return returnStructure;
 	}
 
 	void RenderGraphEditor::OnButtonReleased(EMouseButton button)
@@ -3065,6 +3069,28 @@ namespace LambdaEngine
 		}
 	}
 
+	void RenderGraphEditor::ResetState()
+	{
+		//Reset to clear state
+		{
+			m_ResourceStateGroups.clear();
+			m_FinalOutput = {};
+
+			m_ResourcesByName.clear();
+			m_RenderStageNameByInputAttributeIndex.clear();
+			m_RenderStagesByName.clear();
+			m_ResourceStatesByHalfAttributeIndex.clear();
+			m_ResourceStateLinksByLinkIndex.clear();
+
+			m_CurrentlyAddingRenderStage = EPipelineStateType::NONE;
+			m_CurrentlyAddingResource = ERefactoredRenderGraphResourceType::NONE;
+
+			m_StartedLinkInfo = {};
+		}
+
+		InitDefaultResources();
+	}
+
 	bool RenderGraphEditor::ParseStructure(bool generateImGuiStage)
 	{
 		const EditorRenderGraphResourceState* pBackBufferFinalState = &m_ResourceStatesByHalfAttributeIndex[m_FinalOutput.BackBufferAttributeIndex / 2];
@@ -3361,6 +3387,7 @@ namespace LambdaEngine
 						//Check if this Resource State has a binding type of ATTACHMENT, if it does, we need to modify the surrounding barriers and the internal Previous- and Next States of the Resource State
 						if (pResourceState->BindingType == ERefactoredRenderGraphResourceBindingType::ATTACHMENT)
 						{
+							bool													prevSameFrame									= true;
 							RefactoredResourceState*								pPreviousResourceStateDesc						= nullptr;
 							int32													previousSynchronizationPipelineStageDescIndex	= -1;
 							TArray<RefactoredResourceSynchronizationDesc>::iterator	previousSynchronizationDescIt;
@@ -3383,6 +3410,7 @@ namespace LambdaEngine
 									else
 									{
 										pp = orderedPipelineStages.size() - 1;
+										prevSameFrame = false;
 
 										if (pp == p)
 											break;
@@ -3487,7 +3515,8 @@ namespace LambdaEngine
 
 							if (pPreviousResourceStateDesc != nullptr)
 							{
-								pResourceState->AttachmentSynchronizations.PrevBindingType = pPreviousResourceStateDesc->BindingType;
+								pResourceState->AttachmentSynchronizations.PrevBindingType	= pPreviousResourceStateDesc->BindingType;
+								pResourceState->AttachmentSynchronizations.PrevSameFrame	= prevSameFrame;
 							}
 							else
 							{

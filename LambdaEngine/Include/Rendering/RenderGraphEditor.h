@@ -118,7 +118,7 @@ namespace LambdaEngine
 		void InitGUI();
 		void RenderGUI();
 
-		RefactoredRenderGraphStructure* CreateRenderGraphStructure(const String& filepath, bool imGuiEnabled);
+		RefactoredRenderGraphStructure CreateRenderGraphStructure(const String& filepath, bool imGuiEnabled);
 
 		virtual void OnButtonReleased(EMouseButton button)						override final;
 		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat) override final;
@@ -166,6 +166,7 @@ namespace LambdaEngine
 		bool SaveToFile(const String& renderGraphName);
 		bool LoadFromFile(const String& filepath, bool generateImGuiStage);
 		void SetInitialNodePositions();
+		void ResetState();
 
 		bool ParseStructure(bool generateImGuiStage);
 		bool RecursivelyWeightParentRenderStages(EditorRenderStageDesc* pChildRenderStage);
@@ -187,7 +188,7 @@ namespace LambdaEngine
 		tsl::ordered_map<String, EditorResource>			m_ResourcesByName;
 
 		THashTable<int32, String>							m_RenderStageNameByInputAttributeIndex;
-		THashTable<String, EditorRenderStageDesc>				m_RenderStagesByName;
+		THashTable<String, EditorRenderStageDesc>			m_RenderStagesByName;
 		THashTable<int32, EditorRenderGraphResourceState>	m_ResourceStatesByHalfAttributeIndex;
 		THashTable<int32, EditorRenderGraphResourceLink>	m_ResourceStateLinksByLinkIndex;
 
@@ -199,7 +200,7 @@ namespace LambdaEngine
 
 		TArray<String>										m_FilesInShaderDirectory;
 
-		RefactoredRenderGraphStructure								m_ParsedRenderGraphStructure	= {};
+		RefactoredRenderGraphStructure						m_ParsedRenderGraphStructure	= {};
 		bool												m_ParsedGraphDirty				= true;
 		String												m_ParsingError					= "No Errors";
 

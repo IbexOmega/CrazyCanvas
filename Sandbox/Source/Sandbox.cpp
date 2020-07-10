@@ -45,7 +45,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 constexpr const bool RAY_TRACING_ENABLED		= true;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
-constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= false;
+constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
 constexpr const bool RENDERING_DEBUG_ENABLED	= false;
 
 Sandbox::Sandbox()
@@ -655,7 +655,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 			{
 				if (ImGui::BeginTabItem("Albedo AO"))
 				{
-					albedoTexture.ResourceName = "GEOMETRY_ALBEDO_AO_BUFFER";
+					albedoTexture.ResourceName = "G_BUFFER_ALBEDO_AO";
 
 					ImGui::Image(&albedoTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
 
@@ -664,7 +664,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 				if (ImGui::BeginTabItem("Normal Metallic Roughness"))
 				{
-					normalTexture.ResourceName = "GEOMETRY_NORM_MET_ROUGH_BUFFER";
+					normalTexture.ResourceName = "G_BUFFER_NORM_MET_ROUGH";
 
 					const char* items[] = { "ALL", "Normal", "Metallic", "Roughness" };
 					static int currentItem = 0;
@@ -742,7 +742,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 				if (ImGui::BeginTabItem("Depth Stencil"))
 				{
-					depthStencilTexture.ResourceName = "GEOMETRY_DEPTH_STENCIL";
+					depthStencilTexture.ResourceName = "G_BUFFER_DEPTH_STENCIL";
 
 					depthStencilTexture.ReservedIncludeMask = 0x00008880;
 
@@ -767,7 +767,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 				{
 					if (ImGui::BeginTabItem("Ray Tracing"))
 					{
-						radianceTexture.ResourceName = "RADIANCE_TEXTURE";
+						radianceTexture.ResourceName = "RADIANCE";
 
 						radianceTexture.ReservedIncludeMask = 0x00008421;
 
@@ -919,6 +919,11 @@ bool Sandbox::InitRendererForDeferred()
 	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelNormal.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelDepth.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelRoughness.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+
+	ResourceManager::LoadShaderFromFile("../Assets/Shaders/ForwardVertex.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
+	ResourceManager::LoadShaderFromFile("../Assets/Shaders/ForwardPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
+
+	ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingSimpleDefPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
 
 	////GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
 	////GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
@@ -1125,13 +1130,16 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		renderGraphFile = "../Assets/RenderGraphs/SIMPLE_DEFERRED.lrg";
 	}
-	if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
+	else if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 	{
 		renderGraphFile = "../Assets/RenderGraphs/RAY_TRACING_DEFERRED.lrg";
 	}
+	//renderGraphFile = "../Assets/RenderGraphs/TEST_DEFERRED.lrg";
+
+	RefactoredRenderGraphStructure renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
 
 	RenderGraphDesc renderGraphDesc = {};
-	renderGraphDesc.pParsedRenderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDERING_DEBUG_ENABLED);
+	renderGraphDesc.pParsedRenderGraphStructure = &renderGraphStructure;
 	renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 	renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
 	renderGraphDesc.pScene						= m_pScene;
@@ -1168,18 +1176,27 @@ bool Sandbox::InitRendererForDeferred()
 		m_pRefactoredRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
 	}
 
-	/*if (RAY_TRACING_ENABLED)
+	{
+		RenderStageParameters shadingRenderStageParameters = {};
+		shadingRenderStageParameters.pRenderStageName	= "FORWARD";
+		shadingRenderStageParameters.Graphics.Width		= renderWidth;
+		shadingRenderStageParameters.Graphics.Height	= renderHeight;
+
+		m_pRefactoredRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
+	}
+
+	if (RAY_TRACING_ENABLED)
 	{
 		RenderStageParameters rayTracingRenderStageParameters = {};
-		rayTracingRenderStageParameters.pRenderStageName			= pRayTracingRenderStageName;
+		rayTracingRenderStageParameters.pRenderStageName			= "RAY_TRACING";
 		rayTracingRenderStageParameters.RayTracing.RayTraceWidth	= renderWidth;
 		rayTracingRenderStageParameters.RayTracing.RayTraceHeight	= renderHeight;
 		rayTracingRenderStageParameters.RayTracing.RayTraceDepth	= 1;
 
-		m_pRenderGraph->UpdateRenderStageParameters(rayTracingRenderStageParameters);
+		m_pRefactoredRenderGraph->UpdateRenderStageParameters(rayTracingRenderStageParameters);
 	}
 
-	if (POST_PROCESSING_ENABLED)
+	/*if (POST_PROCESSING_ENABLED)
 	{
 		GraphicsDeviceFeatureDesc features = { };
 		RenderSystem::GetDevice()->QueryDeviceFeatures(&features);
