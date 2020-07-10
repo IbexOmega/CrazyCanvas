@@ -159,6 +159,7 @@ namespace LambdaEngine
 		bool CustomPinColorNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
 
 		void CalculateResourceStateBindingTypes(const EditorRenderStageDesc* pRenderStage, const EditorRenderGraphResourceState* pResourceState, TArray<ERefactoredRenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames);
+		String BindingTypeToShortString(ERefactoredRenderGraphResourceBindingType bindingType);
 		String BindingTypeToString(ERefactoredRenderGraphResourceBindingType bindingType);
 		ERefactoredRenderGraphResourceBindingType ResourceStateBindingTypeFromString(const String& string);
 

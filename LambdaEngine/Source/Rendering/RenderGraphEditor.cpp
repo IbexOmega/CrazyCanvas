@@ -1634,7 +1634,7 @@ namespace LambdaEngine
 						textBuffer0 += pResource->Name.c_str();
 						textBuffer1 += "Type: " + RenderGraphResourceTypeToString(pResource->Type);
 						textBuffer1 += "\n";
-						textBuffer1 += "Binding: " + BindingTypeToString(pResourceState->BindingType);
+						textBuffer1 += "Binding: " + BindingTypeToShortString(pResourceState->BindingType);
 						textBuffer1 += "\n";
 						textBuffer1 += "Sub Resource Count: " + std::to_string(pResource->SubResourceCount);
 
@@ -1675,7 +1675,7 @@ namespace LambdaEngine
 				ImGui::Text("RS: %d PS: %d", pPipelineStage->StageIndex, distance);
 				imnodes::EndNodeTitleBar();
 
-				if (ImGui::BeginChild(("##" + std::to_string(pPipelineStage->StageIndex) + " Child").c_str(), ImVec2(160.0f, 220.0f)))
+				if (ImGui::BeginChild(("##" + std::to_string(pPipelineStage->StageIndex) + " Child").c_str(), ImVec2(220.0f, 220.0f)))
 				{
 					for (auto synchronizationIt = pSynchronizationStage->Synchronizations.begin(); synchronizationIt != pSynchronizationStage->Synchronizations.end(); synchronizationIt++)
 					{
@@ -1689,7 +1689,7 @@ namespace LambdaEngine
 						textBuffer1 += "\n";
 						textBuffer1 += CommandQueueToString(pSynchronization->PrevQueue) + " -> " + CommandQueueToString(pSynchronization->NextQueue);
 						textBuffer1 += "\n";
-						textBuffer1 += BindingTypeToString(pSynchronization->PrevBindingType) + " -> " + BindingTypeToString(pSynchronization->NextBindingType);
+						textBuffer1 += BindingTypeToShortString(pSynchronization->PrevBindingType) + " -> " + BindingTypeToShortString(pSynchronization->NextBindingType);
 						ImVec2 textSize = ImGui::CalcTextSize((textBuffer0 + textBuffer1 + "\n\n\n\n").c_str());
 
 						if (ImGui::BeginChild(("##" + std::to_string(pPipelineStage->StageIndex) + pResource->Name + " Child").c_str(), ImVec2(0.0f, textSize.y)))
@@ -2145,6 +2145,24 @@ namespace LambdaEngine
 				break;
 			}
 		}
+	}
+
+	String RenderGraphEditor::BindingTypeToShortString(ERefactoredRenderGraphResourceBindingType bindingType)
+	{
+		switch (bindingType)
+		{
+		case ERefactoredRenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return "AS";
+		case ERefactoredRenderGraphResourceBindingType::CONSTANT_BUFFER:				return "CONST_BUF";
+		case ERefactoredRenderGraphResourceBindingType::COMBINED_SAMPLER:				return "COMB_SMPL";
+		case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return "UA_R";
+		case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return "UA_W";
+		case ERefactoredRenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return "UA_RW";
+		case ERefactoredRenderGraphResourceBindingType::ATTACHMENT:						return "ATTACHMENT";
+		case ERefactoredRenderGraphResourceBindingType::PRESENT:						return "PRESENT";
+		case ERefactoredRenderGraphResourceBindingType::DRAW_RESOURCE:					return "DR";
+		}
+
+		return "INVALID";
 	}
 
 	String RenderGraphEditor::BindingTypeToString(ERefactoredRenderGraphResourceBindingType bindingType)
@@ -3338,6 +3356,8 @@ namespace LambdaEngine
 					{
 						RefactoredResourceState* pResourceState = &(*resourceStateIt);
 
+						bool isBackBuffer = pResourceState->ResourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+
 						//Check if this Resource State has a binding type of ATTACHMENT, if it does, we need to modify the surrounding barriers and the internal Previous- and Next States of the Resource State
 						if (pResourceState->BindingType == ERefactoredRenderGraphResourceBindingType::ATTACHMENT)
 						{
@@ -3350,52 +3370,83 @@ namespace LambdaEngine
 							TArray<RefactoredResourceSynchronizationDesc>::iterator nextSynchronizationDescIt;
 
 							//Find Previous Synchronization Stage that contains a Synchronization for this resource
-							if (p > 0)
+							for (int32 pp = p - 1; pp != p; pp--)
 							{
-								for (int32 pp = p - 1; pp > 0; pp--)
+								//Loop around if needed
+								if (pp < 0)
 								{
-									const RefactoredPipelineStageDesc* pPreviousPipelineStageDesc = &orderedPipelineStages[pp];
-
-									if (pPreviousPipelineStageDesc->Type == ERefactoredRenderGraphPipelineStageType::SYNCHRONIZATION && previousSynchronizationPipelineStageDescIndex == -1)
+									//Back buffer is not allowed to loop around
+									if (isBackBuffer)
 									{
-										RefactoredSynchronizationStageDesc* pPotentialPreviousSynchronizationStageDesc = &orderedSynchronizationStages[pPreviousPipelineStageDesc->StageIndex];
-
-										for (auto prevSynchronizationIt = pPotentialPreviousSynchronizationStageDesc->Synchronizations.begin(); prevSynchronizationIt != pPotentialPreviousSynchronizationStageDesc->Synchronizations.end(); prevSynchronizationIt++)
-										{
-											RefactoredResourceSynchronizationDesc* pSynchronizationDesc = &(*prevSynchronizationIt);
-
-											if (pSynchronizationDesc->ResourceName == pResourceState->ResourceName)
-											{
-												previousSynchronizationPipelineStageDescIndex	= pp;
-												previousSynchronizationDescIt					= prevSynchronizationIt;
-												break;
-											}
-										}
-									}
-									else if (pPreviousPipelineStageDesc->Type == ERefactoredRenderGraphPipelineStageType::RENDER && pPreviousResourceStateDesc == nullptr)
-									{
-										RefactoredRenderStageDesc* pPotentialPreviousRenderStageDesc = &orderedRenderStages[pPreviousPipelineStageDesc->StageIndex];
-
-										for (auto prevResourceStateIt = pPotentialPreviousRenderStageDesc->ResourceStates.begin(); prevResourceStateIt != pPotentialPreviousRenderStageDesc->ResourceStates.end(); prevResourceStateIt++)
-										{
-											RefactoredResourceState* pPotentialPreviousResourceState = &(*prevResourceStateIt);
-
-											if (pPotentialPreviousResourceState->ResourceName == pResourceState->ResourceName)
-											{
-												pPreviousResourceStateDesc = pPotentialPreviousResourceState;
-												break;
-											}
-										}
-									}
-
-									if (previousSynchronizationPipelineStageDescIndex != -1 && pPreviousResourceStateDesc != nullptr)
 										break;
+									}
+									else
+									{
+										pp = orderedPipelineStages.size() - 1;
+
+										if (pp == p)
+											break;
+									}
 								}
+
+								const RefactoredPipelineStageDesc* pPreviousPipelineStageDesc = &orderedPipelineStages[pp];
+
+								if (pPreviousPipelineStageDesc->Type == ERefactoredRenderGraphPipelineStageType::SYNCHRONIZATION && previousSynchronizationPipelineStageDescIndex == -1)
+								{
+									RefactoredSynchronizationStageDesc* pPotentialPreviousSynchronizationStageDesc = &orderedSynchronizationStages[pPreviousPipelineStageDesc->StageIndex];
+
+									for (auto prevSynchronizationIt = pPotentialPreviousSynchronizationStageDesc->Synchronizations.begin(); prevSynchronizationIt != pPotentialPreviousSynchronizationStageDesc->Synchronizations.end(); prevSynchronizationIt++)
+									{
+										RefactoredResourceSynchronizationDesc* pSynchronizationDesc = &(*prevSynchronizationIt);
+
+										if (pSynchronizationDesc->ResourceName == pResourceState->ResourceName)
+										{
+											previousSynchronizationPipelineStageDescIndex	= pp;
+											previousSynchronizationDescIt					= prevSynchronizationIt;
+											break;
+										}
+									}
+								}
+								else if (pPreviousPipelineStageDesc->Type == ERefactoredRenderGraphPipelineStageType::RENDER && pPreviousResourceStateDesc == nullptr)
+								{
+									RefactoredRenderStageDesc* pPotentialPreviousRenderStageDesc = &orderedRenderStages[pPreviousPipelineStageDesc->StageIndex];
+
+									for (auto prevResourceStateIt = pPotentialPreviousRenderStageDesc->ResourceStates.begin(); prevResourceStateIt != pPotentialPreviousRenderStageDesc->ResourceStates.end(); prevResourceStateIt++)
+									{
+										RefactoredResourceState* pPotentialPreviousResourceState = &(*prevResourceStateIt);
+
+										if (pPotentialPreviousResourceState->ResourceName == pResourceState->ResourceName)
+										{
+											pPreviousResourceStateDesc = pPotentialPreviousResourceState;
+											break;
+										}
+									}
+								}
+
+								if (previousSynchronizationPipelineStageDescIndex != -1 && pPreviousResourceStateDesc != nullptr)
+									break;
 							}
 
 							//Find Next Synchronization Stage that contains a Synchronization for this resource
-							for (int32 np = p + 1; np < orderedPipelineStages.size(); np++)
+							for (int32 np = p + 1; np != p; np++)
 							{
+								//Loop around if needed
+								if (np >= orderedPipelineStages.size())
+								{
+									//Back buffer is not allowed to loop around
+									if (isBackBuffer)
+									{
+										break;
+									}
+									else
+									{
+										np = 0;
+
+										if (np == p)
+											break;
+									}
+								}
+
 								const RefactoredPipelineStageDesc* pNextPipelineStageDesc = &orderedPipelineStages[np];
 
 								if (pNextPipelineStageDesc->Type == ERefactoredRenderGraphPipelineStageType::SYNCHRONIZATION && nextSynchronizationPipelineStageDescIndex == -1)
@@ -3449,7 +3500,7 @@ namespace LambdaEngine
 							}
 							else
 							{
-								if (pResourceState->ResourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
+								if (isBackBuffer)
 								{
 									pResourceState->AttachmentSynchronizations.NextBindingType = ERefactoredRenderGraphResourceBindingType::PRESENT;
 								}
@@ -3497,7 +3548,7 @@ namespace LambdaEngine
 								}
 							}
 
-							if (nextSynchronizationPipelineStageDescIndex != -1)
+							if (nextSynchronizationPipelineStageDescIndex != -1 && previousSynchronizationPipelineStageDescIndex != nextSynchronizationPipelineStageDescIndex)
 							{
 								RefactoredSynchronizationStageDesc* pNextSynchronizationStage = &orderedSynchronizationStages[orderedPipelineStages[nextSynchronizationPipelineStageDescIndex].StageIndex];
 

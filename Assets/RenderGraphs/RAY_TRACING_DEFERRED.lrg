@@ -596,7 +596,7 @@
                     "name": "BACK_BUFFER_TEXTURE",
                     "render_stage_name": "SHADING",
                     "removable": true,
-                    "binding_type": "UNORDERED_ACCESS_W",
+                    "binding_type": "ATTACHMENT",
                     "attribute_index": 120,
                     "input_link_index": -1,
                     "output_link_indices": [
