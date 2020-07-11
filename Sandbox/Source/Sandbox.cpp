@@ -13,7 +13,7 @@
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraphEditor.h"
-#include "Rendering/RefactoredRenderGraph.h"
+#include "Rendering/RenderGraph.h"
 #include "Rendering/Core/API/ITextureView.h"
 #include "Rendering/Core/API/ISampler.h"
 #include "Rendering/Core/API/ICommandQueue.h"
@@ -42,8 +42,8 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
-constexpr const bool RAY_TRACING_ENABLED		= true;
-constexpr const bool POST_PROCESSING_ENABLED	= true;
+constexpr const bool RAY_TRACING_ENABLED		= false;
+constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
 constexpr const bool RENDERING_DEBUG_ENABLED	= false;
@@ -227,7 +227,7 @@ Sandbox::~Sandbox()
 	SAFERELEASE(m_pLinearSampler);
 	SAFERELEASE(m_pNearestSampler);
 
-	SAFEDELETE(m_pRefactoredRenderGraph);
+	SAFEDELETE(m_pRenderGraph);
 	SAFEDELETE(m_pRenderer);
 
 	SAFEDELETE(m_pRenderGraphEditor);
@@ -1140,10 +1140,10 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	//renderGraphFile = "../Assets/RenderGraphs/TEST_DEFERRED.lrg";
 
-	RefactoredRenderGraphStructure renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
+	RenderGraphStructureDesc renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
 
 	RenderGraphDesc renderGraphDesc = {};
-	renderGraphDesc.pParsedRenderGraphStructure = &renderGraphStructure;
+	renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
 	renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 	renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
 	renderGraphDesc.pScene						= m_pScene;
@@ -1152,8 +1152,8 @@ bool Sandbox::InitRendererForDeferred()
 	clock.Reset();
 	clock.Tick();
 
-	m_pRefactoredRenderGraph = DBG_NEW RefactoredRenderGraph(RenderSystem::GetDevice());
-	m_pRefactoredRenderGraph->Init(&renderGraphDesc);
+	m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
+	m_pRenderGraph->Init(&renderGraphDesc);
 
 	clock.Tick();
 	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
@@ -1168,7 +1168,7 @@ bool Sandbox::InitRendererForDeferred()
 		geometryRenderStageParameters.Graphics.Width	= renderWidth;
 		geometryRenderStageParameters.Graphics.Height	= renderHeight;
 
-		m_pRefactoredRenderGraph->UpdateRenderStageParameters(geometryRenderStageParameters);
+		m_pRenderGraph->UpdateRenderStageParameters(geometryRenderStageParameters);
 	}
 
 	{
@@ -1177,7 +1177,7 @@ bool Sandbox::InitRendererForDeferred()
 		shadingRenderStageParameters.Graphics.Width		= renderWidth;
 		shadingRenderStageParameters.Graphics.Height	= renderHeight;
 
-		m_pRefactoredRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
+		m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
 	}
 
 	{
@@ -1186,7 +1186,7 @@ bool Sandbox::InitRendererForDeferred()
 		shadingRenderStageParameters.Graphics.Width		= renderWidth;
 		shadingRenderStageParameters.Graphics.Height	= renderHeight;
 
-		m_pRefactoredRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
+		m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
 	}
 
 	if (RAY_TRACING_ENABLED)
@@ -1197,7 +1197,7 @@ bool Sandbox::InitRendererForDeferred()
 		rayTracingRenderStageParameters.RayTracing.RayTraceHeight	= renderHeight;
 		rayTracingRenderStageParameters.RayTracing.RayTraceDepth	= 1;
 
-		m_pRefactoredRenderGraph->UpdateRenderStageParameters(rayTracingRenderStageParameters);
+		m_pRenderGraph->UpdateRenderStageParameters(rayTracingRenderStageParameters);
 	}
 
 	if (POST_PROCESSING_ENABLED)
@@ -1220,7 +1220,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-		m_pRefactoredRenderGraph->UpdateResource(resourceUpdateDesc);
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	{
@@ -1229,7 +1229,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-		m_pRefactoredRenderGraph->UpdateResource(resourceUpdateDesc);
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	{
@@ -1238,7 +1238,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-		m_pRefactoredRenderGraph->UpdateResource(resourceUpdateDesc);
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	{
@@ -1247,7 +1247,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.ResourceName						= SCENE_VERTEX_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-		m_pRefactoredRenderGraph->UpdateResource(resourceUpdateDesc);
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	{
@@ -1256,7 +1256,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.ResourceName						= SCENE_INDEX_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-		m_pRefactoredRenderGraph->UpdateResource(resourceUpdateDesc);
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	{
@@ -1265,7 +1265,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.ResourceName						= SCENE_INSTANCE_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-		m_pRefactoredRenderGraph->UpdateResource(resourceUpdateDesc);
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	{
@@ -1274,7 +1274,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.ResourceName						= SCENE_INDIRECT_ARGS_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-		m_pRefactoredRenderGraph->UpdateResource(resourceUpdateDesc);
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	if (RAY_TRACING_ENABLED)
@@ -1284,7 +1284,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.ResourceName							= SCENE_TLAS;
 		resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= pTLAS;
 
-		m_pRefactoredRenderGraph->UpdateResource(resourceUpdateDesc);
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	{
@@ -1335,7 +1335,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= textureViewDescriptions.data();
 		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= samplerDescriptions.data();
 
-		m_pRefactoredRenderGraph->UpdateResource(resourceUpdateDesc);
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	{
@@ -1386,7 +1386,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= textureViewDescriptions.data();
 		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= samplerDescriptions.data();
 
-		m_pRefactoredRenderGraph->UpdateResource(resourceUpdateDesc);
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	{
@@ -1437,7 +1437,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= textureViewDescriptions.data();
 		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= samplerDescriptions.data();
 
-		m_pRefactoredRenderGraph->UpdateResource(resourceUpdateDesc);
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	if (RAY_TRACING_ENABLED)
@@ -1503,7 +1503,7 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= vectorTextureViewDescriptions.data();
 		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= vectorSamplerDescriptions.data();
 
-		m_pRefactoredRenderGraph->UpdateResource(resourceUpdateDesc);
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	/*if (POST_PROCESSING_ENABLED || RENDERING_DEBUG_ENABLED)
@@ -1603,11 +1603,11 @@ bool Sandbox::InitRendererForDeferred()
 		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= ppRoughnessMapViews;
 		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= samplers.data();
 
-		m_pRefactoredRenderGraph->UpdateResource(albedoMapsUpdateDesc);
-		m_pRefactoredRenderGraph->UpdateResource(normalMapsUpdateDesc);
-		m_pRefactoredRenderGraph->UpdateResource(aoMapsUpdateDesc);
-		m_pRefactoredRenderGraph->UpdateResource(metallicMapsUpdateDesc);
-		m_pRefactoredRenderGraph->UpdateResource(roughnessMapsUpdateDesc);
+		m_pRenderGraph->UpdateResource(albedoMapsUpdateDesc);
+		m_pRenderGraph->UpdateResource(normalMapsUpdateDesc);
+		m_pRenderGraph->UpdateResource(aoMapsUpdateDesc);
+		m_pRenderGraph->UpdateResource(metallicMapsUpdateDesc);
+		m_pRenderGraph->UpdateResource(roughnessMapsUpdateDesc);
 	}
 
 	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
@@ -1615,7 +1615,7 @@ bool Sandbox::InitRendererForDeferred()
 	RendererDesc rendererDesc = {};
 	rendererDesc.pName				= "Renderer";
 	rendererDesc.Debug				= RENDERING_DEBUG_ENABLED;
-	rendererDesc.pRenderGraph		= m_pRefactoredRenderGraph;
+	rendererDesc.pRenderGraph		= m_pRenderGraph;
 	rendererDesc.pWindow			= CommonApplication::Get()->GetMainWindow();
 	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
 	
@@ -1626,7 +1626,7 @@ bool Sandbox::InitRendererForDeferred()
 		ImGui::SetCurrentContext(ImGuiRenderer::GetImguiContext());
 	}
 
-	m_pRefactoredRenderGraph->Update();
+	m_pRenderGraph->Update();
 
 	return true;
 }

@@ -2,7 +2,7 @@
 
 #include "LambdaEngine.h"
 
-#include "RefactoredRenderGraphTypes.h"
+#include "RenderGraphTypes.h"
 
 #include "Containers/String.h"
 #include "Containers/TArray.h"
@@ -34,7 +34,7 @@ namespace LambdaEngine
 	{
 		String						Name					= "";
 		
-		ERefactoredRenderGraphResourceType	Type					= ERefactoredRenderGraphResourceType::NONE;
+		ERenderGraphResourceType	Type					= ERenderGraphResourceType::NONE;
 		uint32						SubResourceCount			= 1;
 		bool						Editable					= false;
 
@@ -53,7 +53,7 @@ namespace LambdaEngine
 		String			ResourceName		= "";
 		String			RenderStageName		= "";
 		bool			Removable			= true;
-		ERefactoredRenderGraphResourceBindingType BindingType = ERefactoredRenderGraphResourceBindingType::NONE;
+		ERenderGraphResourceBindingType BindingType = ERenderGraphResourceBindingType::NONE;
 		int32			InputLinkIndex		= -1;
 		TSet<int32>		OutputLinkIndices;
 	};
@@ -67,12 +67,21 @@ namespace LambdaEngine
 		bool						CustomRenderer			= false;
 		bool						Enabled					= true;
 
+		ERenderStageDimensionType	XDimType				= ERenderStageDimensionType::NONE;
+		ERenderStageDimensionType	YDimType				= ERenderStageDimensionType::NONE;
+		ERenderStageDimensionType	ZDimType				= ERenderStageDimensionType::NONE;
+
+		float32						XDimVariable			= 0.0f;
+		float32						YDimVariable			= 0.0f;
+		float32						ZDimVariable			= 0.0f;
+
 		struct
 		{
-			RefactoredGraphicsShaders				Shaders;
-			ERefactoredRenderStageDrawType		DrawType;
+			GraphicsShaderNames			Shaders;
+			ERenderStageDrawType		DrawType;
 			int32						IndexBufferAttributeIndex;
 			int32						IndirectArgsBufferAttributeIndex;
+
 		} Graphics;
 
 		struct
@@ -82,7 +91,7 @@ namespace LambdaEngine
 
 		struct
 		{
-			RefactoredRayTracingShaders			Shaders;
+			RayTracingShaderNames			Shaders;
 		} RayTracing;
 
 		tsl::ordered_map<String, int32>		ResourceStates;
@@ -104,7 +113,7 @@ namespace LambdaEngine
 		int32		BackBufferAttributeIndex	= 0;
 	};
 
-	class RefactoredRenderGraph;
+	class RenderGraph;
 
 	class RenderGraphEditor : public EventHandler
 	{
@@ -118,7 +127,7 @@ namespace LambdaEngine
 		void InitGUI();
 		void RenderGUI();
 
-		RefactoredRenderGraphStructure CreateRenderGraphStructure(const String& filepath, bool imGuiEnabled);
+		RenderGraphStructureDesc CreateRenderGraphStructure(const String& filepath, bool imGuiEnabled);
 
 		virtual void OnButtonReleased(EMouseButton button)						override final;
 		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat) override final;
@@ -143,14 +152,8 @@ namespace LambdaEngine
 		void RenderShaderBoxes(EditorRenderStageDesc* pRenderStage);
 		void RenderShaderBoxCommon(String* pTarget, bool* pAdded = nullptr, bool* pRemoved = nullptr);
 
-		int32 CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERefactoredRenderGraphResourceBindingType bindingType);
+		int32 CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERenderGraphResourceBindingType bindingType);
 		bool CheckLinkValid(int32* pSrcAttributeIndex, int32* pDstAttributeIndex);
-
-		String RenderStageTypeToString(EPipelineStateType type);
-		String RenderGraphResourceTypeToString(ERefactoredRenderGraphResourceType type);
-
-		EPipelineStateType RenderStageTypeFromString(const String& string);
-		ERefactoredRenderGraphResourceType RenderGraphResourceTypeFromString(const String& string);
 
 		void DestroyLink(int32 linkIndex);
 
@@ -158,10 +161,7 @@ namespace LambdaEngine
 		void PopPinColorIfNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
 		bool CustomPinColorNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
 
-		void CalculateResourceStateBindingTypes(const EditorRenderStageDesc* pRenderStage, const EditorRenderGraphResourceState* pResourceState, TArray<ERefactoredRenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames);
-		String BindingTypeToShortString(ERefactoredRenderGraphResourceBindingType bindingType);
-		String BindingTypeToString(ERefactoredRenderGraphResourceBindingType bindingType);
-		ERefactoredRenderGraphResourceBindingType ResourceStateBindingTypeFromString(const String& string);
+		void CalculateResourceStateBindingTypes(const EditorRenderStageDesc* pRenderStage, const EditorRenderGraphResourceState* pResourceState, TArray<ERenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames);
 
 		bool SaveToFile(const String& renderGraphName);
 		bool LoadFromFile(const String& filepath, bool generateImGuiStage);
@@ -176,8 +176,8 @@ namespace LambdaEngine
 			const std::multimap<uint32, EditorRenderStageDesc*>::reverse_iterator& currentOrderedRenderStageIt, 
 			const std::multimap<uint32, EditorRenderStageDesc*>& orderedMappedRenderStages, 
 			const EditorRenderGraphResourceState* pCurrentResourceState, 
-			RefactoredSynchronizationStageDesc* pSynchronizationStage);
-		void CreateParsedRenderStage(RefactoredRenderStageDesc* pDstRenderStage, const EditorRenderStageDesc* pSrcRenderStage);
+			SynchronizationStageDesc* pSynchronizationStage);
+		void CreateParsedRenderStage(RenderStageDesc* pDstRenderStage, const EditorRenderStageDesc* pSrcRenderStage);
 
 	private:
 		bool												m_GUIInitialized = false;
@@ -193,14 +193,14 @@ namespace LambdaEngine
 		THashTable<int32, EditorRenderGraphResourceLink>	m_ResourceStateLinksByLinkIndex;
 
 		EPipelineStateType									m_CurrentlyAddingRenderStage	= EPipelineStateType::NONE;
-		ERefactoredRenderGraphResourceType									m_CurrentlyAddingResource		= ERefactoredRenderGraphResourceType::NONE;
+		ERenderGraphResourceType							m_CurrentlyAddingResource		= ERenderGraphResourceType::NONE;
 		String												m_CurrentlyEditingResource		= "";
 
 		EditorStartedLinkInfo								m_StartedLinkInfo				= {};
 
 		TArray<String>										m_FilesInShaderDirectory;
 
-		RefactoredRenderGraphStructure						m_ParsedRenderGraphStructure	= {};
+		RenderGraphStructureDesc							m_ParsedRenderGraphStructure	= {};
 		bool												m_ParsedGraphDirty				= true;
 		String												m_ParsingError					= "No Errors";
 

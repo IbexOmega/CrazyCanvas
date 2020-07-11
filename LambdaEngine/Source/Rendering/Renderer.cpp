@@ -7,7 +7,7 @@
 #include "Rendering/Core/API/ITexture.h"
 #include "Rendering/Core/API/ITextureView.h"
 #include "Rendering/RenderSystem.h"
-#include "Rendering/RefactoredRenderGraph.h"
+#include "Rendering/RenderGraph.h"
 #include "Rendering/ImGuiRenderer.h"
 
 #include "Application/API/Window.h"

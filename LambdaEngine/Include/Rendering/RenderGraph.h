@@ -11,6 +11,7 @@
 #include "Containers/String.h"
 
 #include "RenderGraphTypes.h"
+#include "RenderGraphEditor.h"
 
 #include "Utilities/StringHash.h"
 
@@ -32,6 +33,7 @@ namespace LambdaEngine
 	class IPipelineState;
 	class IDescriptorSet;
 	class IDescriptorHeap;
+	class ICustomRenderer;
 	class ICommandList;
 	class ITextureView;
 	class ITexture;
@@ -42,19 +44,16 @@ namespace LambdaEngine
 
 	struct RenderGraphDesc
 	{
-		const char* pName						= "Render Graph";
-		bool CreateDebugStages					= false;
-		bool CreateDebugGraph					= false;
-		RenderStageDesc* pRenderStages			= nullptr;
-		uint32 RenderStageCount					= 0;
-		uint32 BackBufferCount					= 3;
-		uint32 MaxTexturesPerDescriptorSet		= 1;
-		const Scene* pScene						= nullptr;
+		String Name											= "Render Graph";
+		RenderGraphStructureDesc* pRenderGraphStructureDesc	= nullptr;
+		uint32 BackBufferCount								= 3;
+		uint32 MaxTexturesPerDescriptorSet					= 1;
+		const Scene* pScene									= nullptr;
 	};
 
 	struct ResourceUpdateDesc
 	{
-		const char* pResourceName	= "No Resource Name";
+		String ResourceName	= "No Resource Name";
 
 		union
 		{
@@ -135,17 +134,11 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderGraph
 	{
-		static constexpr const char* RENDER_GRAPH_BACK_BUFFER_PROXY = "BACK_BUFFER_PROXY_TEXTURE";
-
-		enum class EResourceType
+		enum class EResourceOwnershipType
 		{
-			UNKNOWN								= 0,
-			PUSH_CONSTANTS						= 1,
-			INTERNAL_TEXTURE					= 2,
-			INTERNAL_BUFFER						= 3,
-			EXTERNAL_TEXTURE					= 4,
-			EXTERNAL_BUFFER						= 5,
-			EXTERNAL_ACCELERATION_STRUCTURE		= 6,
+			NONE				= 0,
+			INTERNAL			= 1,
+			EXTERNAL			= 2,
 		};
 
 		struct RenderStage;
@@ -159,34 +152,38 @@ namespace LambdaEngine
 			ETextureState TextureState		= ETextureState::TEXTURE_STATE_UNKNOWN;
 		};
 
+		struct ResourceBarrierInfo
+		{
+			uint32	SynchronizationStageIndex	= 0;
+			uint32	SynchronizationTypeIndex	= 0;
+			uint32	BarrierIndex				= 0;
+		};
+
 		struct Resource
 		{
-			const char*		pName				= "";
-			EResourceType	Type				= EResourceType::UNKNOWN;
-			uint32			SubResourceCount	= 0;
+			String					Name				= "";
+			bool					IsBackBuffer		= false;
+			ERenderGraphResourceType			Type				= ERenderGraphResourceType::NONE;
+			EResourceOwnershipType	OwnershipType		= EResourceOwnershipType::NONE;
+			uint32					SubResourceCount	= 0;
 
 			std::vector<ResourceBinding>	ResourceBindings;
 
-			struct 
-			{
-				void*			pData;
-				uint32			DataSize;
-			} PushConstants;
-
 			struct
 			{
-				TArray<uint32>			Barriers; //Divided into #SubResourceCount Barriers per Synchronization Stage
-				TArray<ITexture*>		Textures;
-				TArray<ITextureView*>	TextureViews;
-				TArray<ISampler*>		Samplers;
+				EFormat								Format;
+				TArray<ResourceBarrierInfo>		BarriersPerSynchronizationStage; //Divided into #SubResourceCount Barriers per Synchronization Stage
+				TArray<ITexture*>					Textures;
+				TArray<ITextureView*>				TextureViews;
+				TArray<ISampler*>					Samplers;
 			} Texture;
 
 			struct
 			{
-				TArray<uint32>			Barriers;
-				TArray<IBuffer*>		Buffers;
-				TArray<uint64>			Offsets;
-				TArray<uint64>			SizesInBytes;
+				TArray<ResourceBarrierInfo>		BarriersPerSynchronizationStage;
+				TArray<IBuffer*>					Buffers;
+				TArray<uint64>						Offsets;
+				TArray<uint64>						SizesInBytes;
 			} Buffer;
 
 			struct
@@ -207,9 +204,9 @@ namespace LambdaEngine
 			FPipelineStageFlags		LastPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			ERenderStageDrawType	DrawType						= ERenderStageDrawType::NONE;
-			Resource*				pVertexBufferResource			= nullptr;
+			//Resource*				pVertexBufferResource			= nullptr;
 			Resource*				pIndexBufferResource			= nullptr;
-			Resource*				pMeshIndexBufferResource		= nullptr;
+			Resource*				pIndirectArgsBufferResource		= nullptr;
 
 			uint64					PipelineStateID					= 0;
 			IPipelineLayout*		pPipelineLayout					= nullptr;
@@ -224,33 +221,19 @@ namespace LambdaEngine
 			Resource*				pDepthStencilAttachment			= nullptr;
 		};
 
-		struct TextureSynchronization
-		{
-			FShaderStageFlags		SrcShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			FShaderStageFlags		DstShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			uint32					BarrierUseFrameIndex	= 0;
-			uint32					SameFrameBarrierOffset	= 1;
-			TArray<uint32>			Barriers;
-		};
-
-		struct BufferSynchronization
-		{
-			FShaderStageFlags		SrcShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			FShaderStageFlags		DstShaderStage			= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			uint32					BarrierUseFrameIndex	= 0;
-			uint32					SameFrameBarrierOffset	= 1;
-			TArray<uint32>			Barriers;
-		};
-
 		struct SynchronizationStage
 		{
-			THashTable<std::string, TextureSynchronization> TextureSynchronizations;
-			THashTable<std::string, BufferSynchronization> BufferSynchronizations;
+			ECommandQueueType					ExecutionQueue			= ECommandQueueType::COMMAND_QUEUE_NONE;
+			FPipelineStageFlags					SrcPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags					DstPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+
+			TArray<PipelineBufferBarrierDesc>	BufferBarriers[2];
+			TArray<PipelineTextureBarrierDesc>	TextureBarriers[4];
 		};
 
 		struct PipelineStage
 		{
-			EPipelineStageType	Type			= EPipelineStageType::NONE;
+			ERenderGraphPipelineStageType	Type			= ERenderGraphPipelineStageType::NONE;
 			uint32				StageIndex		= 0;
 
 			ICommandAllocator** ppGraphicsCommandAllocators;
@@ -297,17 +280,14 @@ namespace LambdaEngine
 		bool CreateFence();
 		bool CreateDescriptorHeap();
 		bool CreateCopyCommandLists();
-		bool CreateResources(const std::vector<RenderStageResourceDesc>& resourceDescriptions);
-		bool CreateRenderStages(const std::vector<RenderStageDesc>& renderStageDescriptions);
-		bool CreateSynchronizationStages(const std::vector<SynchronizationStageDesc>& synchronizationStageDescriptions);
-		bool CreatePipelineStages(const std::vector<PipelineStageDesc>& pipelineStageDescriptions);
+		bool CreateResources(const TArray<RenderGraphResourceDesc>& resourceDescriptions);
+		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages);
+		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions);
+		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
 
-		void UpdateResourcePushConstants(Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceInternalTexture(Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceInternalBuffer(Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceExternalTexture(Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceExternalBuffer(Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceExternalAccelerationStructure(Resource* pResource, const ResourceUpdateDesc& desc);
+		void UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc& desc);
+		void UpdateResourceBuffer(Resource* pResource, const ResourceUpdateDesc& desc);
+		void UpdateResourceAccelerationStructure(Resource* pResource, const ResourceUpdateDesc& desc);
 
 		void ExecuteSynchronizationStage(
 			SynchronizationStage* pSynchronizationStage, 
@@ -361,13 +341,8 @@ namespace LambdaEngine
 		uint32												m_SynchronizationStageCount			= 0;
 
 		THashTable<String, Resource>						m_ResourceMap;
-		TSet<Resource*>										m_DirtyDescriptorSetInternalTextures;
-		TSet<Resource*>										m_DirtyDescriptorSetInternalBuffers;
-		TSet<Resource*>										m_DirtyDescriptorSetExternalTextures;
-		TSet<Resource*>										m_DirtyDescriptorSetExternalBuffers;
+		TSet<Resource*>										m_DirtyDescriptorSetTextures;
+		TSet<Resource*>										m_DirtyDescriptorSetBuffers;
 		TSet<Resource*>										m_DirtyDescriptorSetAccelerationStructures;
-
-		TArray<PipelineTextureBarrierDesc>					m_TextureBarriers;
-		TArray<PipelineBufferBarrierDesc>					m_BufferBarriers;
 	};
 }

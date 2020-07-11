@@ -9,7 +9,7 @@ namespace LambdaEngine
 	class Window;
 	class ITexture;
 	class ISwapChain;
-	class RefactoredRenderGraph;
+	class RenderGraph;
 	class ICommandList;
 	class ITextureView;
 	class ImGuiRenderer;
@@ -21,7 +21,7 @@ namespace LambdaEngine
 		const char*		pName			= "";
 		bool			Debug			= false;
 		Window*		pWindow			= nullptr;
-		RefactoredRenderGraph*	pRenderGraph	= nullptr;
+		RenderGraph*	pRenderGraph	= nullptr;
 		uint32			BackBufferCount = 3;
 	};
 	
@@ -50,7 +50,7 @@ namespace LambdaEngine
 		const IGraphicsDevice*	m_pGraphicsDevice;
 
 		ISwapChain*				m_pSwapChain					= nullptr;
-		RefactoredRenderGraph*			m_pRenderGraph					= nullptr;
+		RenderGraph*			m_pRenderGraph					= nullptr;
 		ITexture**				m_ppBackBuffers					= nullptr;
 		ITextureView**			m_ppBackBufferViews				= nullptr;
 
