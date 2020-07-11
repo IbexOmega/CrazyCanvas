@@ -71,8 +71,8 @@ namespace LambdaEngine
 	{
 		NONE					= 0,
 		CONSTANT				= 1,
-		RELATIVE				= 2,
-		EXTERNAL				= 3,
+		EXTERNAL				= 2,
+		RELATIVE				= 3,
 		RELATIVE_1D				= 4,
 	};
 
@@ -128,15 +128,27 @@ namespace LambdaEngine
 		} AttachmentSynchronizations; //If this resource state is transitioned using a renderpass, that information is stored here
 	};
 
+	struct RenderStageParameters
+	{
+		ERenderStageDimensionType	XDimType		= ERenderStageDimensionType::NONE;
+		ERenderStageDimensionType	YDimType		= ERenderStageDimensionType::NONE;
+		ERenderStageDimensionType	ZDimType		= ERenderStageDimensionType::NONE;
+
+		float32						XDimVariable	= 0.0f;
+		float32						YDimVariable	= 0.0f;
+		float32						ZDimVariable	= 0.0f;
+	};
+
 	struct RenderStageDesc
 	{
-		String						Name			= "";
-		EPipelineStateType			Type			= EPipelineStateType::NONE;
-		bool						CustomRenderer	= false;
-		bool						Enabled			= true;
-		uint32						Weight			= 0;
+		String						Name				= "";
+		EPipelineStateType			Type				= EPipelineStateType::NONE;
+		bool						CustomRenderer		= false;
+		bool						Enabled				= true;
+		uint32						Weight				= 0;
+		RenderStageParameters		Parameters			= {};
 
-		TArray<RenderGraphResourceState>				ResourceStates;
+		TArray<RenderGraphResourceState> ResourceStates;
 
 		struct
 		{
@@ -575,5 +587,7 @@ namespace LambdaEngine
 		else if (string == "RELATIVE")		return ERenderStageDimensionType::RELATIVE;
 		else if (string == "EXTERNAL")		return ERenderStageDimensionType::EXTERNAL;
 		else if (string == "RELATIVE_1D")	return ERenderStageDimensionType::RELATIVE_1D;
+
+		return ERenderStageDimensionType::NONE;
 	}
 }

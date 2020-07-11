@@ -25,6 +25,8 @@
 
 #include "Log/Log.h"
 
+#include "Application/API/CommonApplication.h"
+
 namespace LambdaEngine
 {
 	constexpr const uint32 SAME_QUEUE_BACK_BUFFER_SYNCHRONIZATION_INDEX		= 0;
@@ -38,6 +40,7 @@ namespace LambdaEngine
 	RenderGraph::RenderGraph(const IGraphicsDevice* pGraphicsDevice) :
 		m_pGraphicsDevice(pGraphicsDevice)
 	{
+		CommonApplication::Get()->AddEventHandler(this);
 	}
 
 	RenderGraph::~RenderGraph()
@@ -233,18 +236,21 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::UpdateRenderStageParameters(const RenderStageParameters& desc)
+	void RenderGraph::UpdateRenderStageDimensions(const String& renderStageName, uint32 x, uint32 y, uint32 z)
 	{
-		auto it = m_RenderStageMap.find(desc.pRenderStageName);
+		auto it = m_RenderStageMap.find(renderStageName);
 
 		if (it != m_RenderStageMap.end())
 		{
 			RenderStage* pRenderStage = &m_pRenderStages[it->second];
-			pRenderStage->Parameters = desc;
+
+			if (pRenderStage->Parameters.XDimType == ERenderStageDimensionType::EXTERNAL) pRenderStage->Dimensions.x = x;
+			if (pRenderStage->Parameters.YDimType == ERenderStageDimensionType::EXTERNAL) pRenderStage->Dimensions.y = y;
+			if (pRenderStage->Parameters.ZDimType == ERenderStageDimensionType::EXTERNAL) pRenderStage->Dimensions.z = z;
 		}
 		else
 		{
-			LOG_WARNING("[RenderGraph]: UpdateRenderStageParameters failed, render stage with name \"%s\" could not be found", desc.pRenderStageName);
+			LOG_WARNING("[RenderGraph]: UpdateRenderStageParameters failed, render stage with name \"%s\" could not be found", renderStageName.c_str());
 			return;
 		}
 	}
@@ -391,21 +397,40 @@ namespace LambdaEngine
 					}
 					else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_UNKNOWN)
 					{
-						uint32 actualSubResourceCount = pResource->IsBackBuffer ? 1 : pResource->SubResourceCount / pRenderStage->TextureSubDescriptorSetCount;
-
-						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						if (pResource->IsBackBuffer)
 						{
-							for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
+							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
-								uint32 index = b * pRenderStage->TextureSubDescriptorSetCount + s;
-
-								pRenderStage->ppTextureDescriptorSets[b * pRenderStage->TextureSubDescriptorSetCount + s]->WriteTextureDescriptors(
-									&pResource->Texture.TextureViews[s * actualSubResourceCount],
-									&pResource->Texture.Samplers[s * actualSubResourceCount],
+								pRenderStage->ppTextureDescriptorSets[b]->WriteTextureDescriptors(
+									&pResource->Texture.TextureViews[b],
+									&pResource->Texture.Samplers[b],
 									pResourceBinding->TextureState,
 									pResourceBinding->Binding,
-									actualSubResourceCount,
+									1,
 									pResourceBinding->DescriptorType);
+							}
+						}
+						else
+						{
+							uint32 actualSubResourceCount = pResource->SubResourceCount / pRenderStage->TextureSubDescriptorSetCount;
+
+							for (uint32 b = 0; b < m_BackBufferCount; b++)
+							{
+								for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
+								{
+									uint32 index = b * pRenderStage->TextureSubDescriptorSetCount + s;
+
+									uint32 descriptorSetIndex = b * pRenderStage->TextureSubDescriptorSetCount + s;
+									uint32 subResourceIndex = s * actualSubResourceCount;
+
+									pRenderStage->ppTextureDescriptorSets[descriptorSetIndex]->WriteTextureDescriptors(
+										&pResource->Texture.TextureViews[subResourceIndex],
+										&pResource->Texture.Samplers[subResourceIndex],
+										pResourceBinding->TextureState,
+										pResourceBinding->Binding,
+										actualSubResourceCount,
+										pResourceBinding->DescriptorType);
+								}
 							}
 						}
 					}
@@ -598,6 +623,19 @@ namespace LambdaEngine
 		}
 
 		return false;
+	}
+
+	void RenderGraph::OnWindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type)
+	{
+		m_WindowWidth	= (float32)width;
+		m_WindowHeight	= (float32)height;
+
+		for (auto relativeRenderStageIt = m_WindowRelativeRenderStages.begin(); relativeRenderStageIt != m_WindowRelativeRenderStages.end(); relativeRenderStageIt++)
+		{
+			RenderStage* pRenderStage = &m_pRenderStages[*relativeRenderStageIt];
+
+			UpdateRelativeRenderStageDimensions(pRenderStage);
+		}
 	}
 
 	bool RenderGraph::CreateFence()
@@ -795,6 +833,32 @@ namespace LambdaEngine
 
 			RenderStage* pRenderStage = &m_pRenderStages[renderStageIndex];
 			m_RenderStageMap[pRenderStageDesc->Name] = renderStageIndex;
+
+			pRenderStage->Parameters = pRenderStageDesc->Parameters;
+
+			if (pRenderStage->Parameters.XDimType == ERenderStageDimensionType::RELATIVE ||
+				pRenderStage->Parameters.XDimType == ERenderStageDimensionType::RELATIVE_1D ||
+				pRenderStage->Parameters.YDimType == ERenderStageDimensionType::RELATIVE)
+			{
+				m_WindowRelativeRenderStages.insert(renderStageIndex);
+
+				UpdateRelativeRenderStageDimensions(pRenderStage);
+			}
+
+			if (pRenderStage->Parameters.XDimType == ERenderStageDimensionType::CONSTANT)
+			{
+				pRenderStage->Dimensions.x = pRenderStageDesc->Parameters.XDimVariable;
+			}
+
+			if (pRenderStage->Parameters.YDimType == ERenderStageDimensionType::CONSTANT)
+			{
+				pRenderStage->Dimensions.y = pRenderStageDesc->Parameters.YDimVariable;
+			}
+
+			if (pRenderStage->Parameters.ZDimType == ERenderStageDimensionType::CONSTANT)
+			{
+				pRenderStage->Dimensions.z = pRenderStageDesc->Parameters.ZDimVariable;
+			}
 
 			//Calculate the total number of textures we want to bind
 			uint32 textureSlots = 0;
@@ -1706,6 +1770,23 @@ namespace LambdaEngine
 		m_DirtyDescriptorSetAccelerationStructures.insert(pResource);
 	}
 
+	void RenderGraph::UpdateRelativeRenderStageDimensions(RenderStage* pRenderStage)
+	{
+		if (pRenderStage->Parameters.XDimType == ERenderStageDimensionType::RELATIVE_1D)
+		{
+			pRenderStage->Dimensions.x = uint32(pRenderStage->Parameters.XDimVariable * m_WindowWidth * m_WindowHeight);
+		}
+		else if (pRenderStage->Parameters.XDimType == ERenderStageDimensionType::RELATIVE)
+		{
+			pRenderStage->Dimensions.x = uint32(pRenderStage->Parameters.XDimVariable * m_WindowWidth);
+		}
+
+		if (pRenderStage->Parameters.YDimType == ERenderStageDimensionType::RELATIVE)
+		{
+			pRenderStage->Dimensions.y = uint32(pRenderStage->Parameters.YDimVariable * m_WindowHeight);
+		}
+	}
+
 	void RenderGraph::ExecuteSynchronizationStage(
 		SynchronizationStage*	pSynchronizationStage, 
 		ICommandAllocator*		pGraphicsCommandAllocator, 
@@ -1798,8 +1879,6 @@ namespace LambdaEngine
 		ICommandList*		pGraphicsCommandList, 
 		ICommandList**		ppExecutionStage)
 	{
-		RenderStageParameters* pParameters = &pRenderStage->Parameters;
-
 		pGraphicsCommandAllocator->Reset();
 		pGraphicsCommandList->Begin(nullptr);
 
@@ -1839,8 +1918,8 @@ namespace LambdaEngine
 		beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
 		beginRenderPassDesc.RenderTargetCount	= textureViewCount;
 		beginRenderPassDesc.pDepthStencil		= pDeptchStencilTextureView;
-		beginRenderPassDesc.Width				= pParameters->Graphics.Width;
-		beginRenderPassDesc.Height				= pParameters->Graphics.Height;
+		beginRenderPassDesc.Width				= pRenderStage->Dimensions.x;
+		beginRenderPassDesc.Height				= pRenderStage->Dimensions.y;
 		beginRenderPassDesc.Flags				= flags;
 		beginRenderPassDesc.pClearColors		= clearColorDescriptions;
 		beginRenderPassDesc.ClearColorCount		= clearColorCount;
@@ -1852,16 +1931,16 @@ namespace LambdaEngine
 		Viewport viewport = {};
 		viewport.MinDepth	= 0.0f;
 		viewport.MaxDepth	= 1.0f;
-		viewport.Width		= (float)pParameters->Graphics.Width;
-		viewport.Height		= (float)pParameters->Graphics.Height;
+		viewport.Width		= (float)pRenderStage->Dimensions.x;
+		viewport.Height		= (float)pRenderStage->Dimensions.y;
 		viewport.x			= 0.0f;
 		viewport.y			= 0.0f;
 
 		pGraphicsCommandList->SetViewports(&viewport, 0, 1);
 
 		ScissorRect scissorRect = {};
-		scissorRect.Width	= pParameters->Graphics.Width;
-		scissorRect.Height	= pParameters->Graphics.Height;
+		scissorRect.Width	= pRenderStage->Dimensions.x;
+		scissorRect.Height	= pRenderStage->Dimensions.y;
 		scissorRect.x		= 0;
 		scissorRect.y		= 0;
 
@@ -1928,8 +2007,6 @@ namespace LambdaEngine
 		ICommandList*		pComputeCommandList,
 		ICommandList**		ppExecutionStage)
 	{
-		RenderStageParameters* pParameters = &pRenderStage->Parameters;
-
 		pComputeCommandAllocator->Reset();
 		pComputeCommandList->Begin(nullptr);
 
@@ -1951,7 +2028,7 @@ namespace LambdaEngine
 		if (pRenderStage->ppTextureDescriptorSets != nullptr)
 			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
 
-		pComputeCommandList->Dispatch(pParameters->Compute.WorkGroupCountX, pParameters->Compute.WorkGroupCountY, pParameters->Compute.WorkGroupCountZ);
+		pComputeCommandList->Dispatch(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
 
 		pComputeCommandList->End();
 
@@ -1965,8 +2042,6 @@ namespace LambdaEngine
 		ICommandList*		pComputeCommandList,
 		ICommandList**		ppExecutionStage)
 	{
-		RenderStageParameters* pParameters = &pRenderStage->Parameters;
-
 		pComputeCommandAllocator->Reset();
 		pComputeCommandList->Begin(nullptr);
 
@@ -1988,7 +2063,7 @@ namespace LambdaEngine
 		if (pRenderStage->ppTextureDescriptorSets != nullptr)
 			pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
 
-		pComputeCommandList->TraceRays(pParameters->RayTracing.RayTraceWidth, pParameters->RayTracing.RayTraceHeight, pParameters->RayTracing.RayTraceDepth);
+		pComputeCommandList->TraceRays(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
 
 		pComputeCommandList->End();
 

@@ -3,122 +3,128 @@
         {
             "name": "BACK_BUFFER_TEXTURE",
             "type": "TEXTURE",
-            "sub_resource_type": "PER_FRAME",
-            "sub_resource_array_count": 1,
+            "sub_resource_count": 1,
             "editable": false,
-            "texture_format": "B8G8R8A8_UNORM"
+            "texture_format": 2
         },
         {
             "name": "FULLSCREEN_QUAD_VERTEX_BUFFER",
             "type": "BUFFER",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
+            "sub_resource_count": 1,
             "editable": false,
-            "texture_format": "NONE"
+            "texture_format": 0
         },
         {
             "name": "PER_FRAME_BUFFER",
             "type": "BUFFER",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
+            "sub_resource_count": 1,
             "editable": false,
-            "texture_format": "NONE"
+            "texture_format": 0
         },
         {
             "name": "SCENE_LIGHTS_BUFFER",
             "type": "BUFFER",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
+            "sub_resource_count": 1,
             "editable": false,
-            "texture_format": "NONE"
+            "texture_format": 0
         },
         {
             "name": "SCENE_MAT_PARAM_BUFFER",
             "type": "BUFFER",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
+            "sub_resource_count": 1,
             "editable": false,
-            "texture_format": "NONE"
+            "texture_format": 0
         },
         {
             "name": "SCENE_VERTEX_BUFFER",
             "type": "BUFFER",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
+            "sub_resource_count": 1,
             "editable": false,
-            "texture_format": "NONE"
+            "texture_format": 0
         },
         {
             "name": "SCENE_INDEX_BUFFER",
             "type": "BUFFER",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
+            "sub_resource_count": 1,
             "editable": false,
-            "texture_format": "NONE"
+            "texture_format": 0
         },
         {
             "name": "SCENE_INSTANCE_BUFFER",
             "type": "BUFFER",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
+            "sub_resource_count": 1,
             "editable": false,
-            "texture_format": "NONE"
+            "texture_format": 0
         },
         {
             "name": "SCENE_INDIRECT_ARGS_BUFFER",
             "type": "BUFFER",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
+            "sub_resource_count": 1,
             "editable": false,
-            "texture_format": "NONE"
+            "texture_format": 0
         },
         {
             "name": "SCENE_TLAS",
             "type": "ACCELERATION_STRUCTURE",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 1,
+            "sub_resource_count": 1,
             "editable": false,
-            "texture_format": "NONE"
+            "texture_format": 0
         },
         {
             "name": "SCENE_ALBEDO_MAPS",
             "type": "TEXTURE",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 32,
+            "sub_resource_count": 32,
             "editable": false,
-            "texture_format": "R8G8B8A8_UNORM"
+            "texture_format": 1
         },
         {
             "name": "SCENE_NORMAL_MAPS",
             "type": "TEXTURE",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 32,
+            "sub_resource_count": 32,
             "editable": false,
-            "texture_format": "R8G8B8A8_UNORM"
+            "texture_format": 1
         },
         {
             "name": "SCENE_AO_MAPS",
             "type": "TEXTURE",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 32,
+            "sub_resource_count": 32,
             "editable": false,
-            "texture_format": "R8G8B8A8_UNORM"
+            "texture_format": 1
         },
         {
             "name": "SCENE_ROUGHNESS_MAPS",
             "type": "TEXTURE",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 32,
+            "sub_resource_count": 32,
             "editable": false,
-            "texture_format": "R8G8B8A8_UNORM"
+            "texture_format": 1
         },
         {
             "name": "SCENE_METALLIC_MAPS",
             "type": "TEXTURE",
-            "sub_resource_type": "ARRAY",
-            "sub_resource_array_count": 32,
+            "sub_resource_count": 32,
             "editable": false,
-            "texture_format": "R8G8B8A8_UNORM"
+            "texture_format": 1
+        },
+        {
+            "name": "G_BUFFER_ALBEDO_AO",
+            "type": "TEXTURE",
+            "sub_resource_count": 1,
+            "editable": true,
+            "texture_format": 1
+        },
+        {
+            "name": "G_BUFFER_NORM_MET_ROUGH",
+            "type": "TEXTURE",
+            "sub_resource_count": 1,
+            "editable": true,
+            "texture_format": 4
+        },
+        {
+            "name": "G_BUFFER_DEPTH_STENCIL",
+            "type": "TEXTURE",
+            "sub_resource_count": 1,
+            "editable": true,
+            "texture_format": 5
         }
     ],
     "resource_state_groups": [
@@ -130,7 +136,7 @@
                     "name": "FULLSCREEN_QUAD_VERTEX_BUFFER",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "CONSTANT_BUFFER",
                     "attribute_index": 4,
                     "input_link_index": -1,
                     "output_link_indices": []
@@ -139,34 +145,41 @@
                     "name": "PER_FRAME_BUFFER",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "CONSTANT_BUFFER",
                     "attribute_index": 6,
                     "input_link_index": -1,
-                    "output_link_indices": []
+                    "output_link_indices": [
+                        4,
+                        14
+                    ]
                 },
                 {
                     "name": "SCENE_LIGHTS_BUFFER",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "CONSTANT_BUFFER",
                     "attribute_index": 8,
                     "input_link_index": -1,
-                    "output_link_indices": []
+                    "output_link_indices": [
+                        13
+                    ]
                 },
                 {
                     "name": "SCENE_MAT_PARAM_BUFFER",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "CONSTANT_BUFFER",
                     "attribute_index": 10,
                     "input_link_index": -1,
-                    "output_link_indices": []
+                    "output_link_indices": [
+                        5
+                    ]
                 },
                 {
                     "name": "SCENE_VERTEX_BUFFER",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "CONSTANT_BUFFER",
                     "attribute_index": 12,
                     "input_link_index": -1,
                     "output_link_indices": [
@@ -177,18 +190,19 @@
                     "name": "SCENE_INDEX_BUFFER",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "CONSTANT_BUFFER",
                     "attribute_index": 14,
                     "input_link_index": -1,
                     "output_link_indices": [
-                        1
+                        1,
+                        11
                     ]
                 },
                 {
                     "name": "SCENE_INSTANCE_BUFFER",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "CONSTANT_BUFFER",
                     "attribute_index": 16,
                     "input_link_index": -1,
                     "output_link_indices": [
@@ -199,18 +213,19 @@
                     "name": "SCENE_INDIRECT_ARGS_BUFFER",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "CONSTANT_BUFFER",
                     "attribute_index": 18,
                     "input_link_index": -1,
                     "output_link_indices": [
-                        3
+                        3,
+                        12
                     ]
                 },
                 {
                     "name": "SCENE_TLAS",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "ACCELERATION_STRUCTURE",
                     "attribute_index": 20,
                     "input_link_index": -1,
                     "output_link_indices": []
@@ -219,7 +234,7 @@
                     "name": "SCENE_ALBEDO_MAPS",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 22,
                     "input_link_index": -1,
                     "output_link_indices": [
@@ -230,7 +245,7 @@
                     "name": "SCENE_NORMAL_MAPS",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 24,
                     "input_link_index": -1,
                     "output_link_indices": [
@@ -241,7 +256,7 @@
                     "name": "SCENE_AO_MAPS",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 26,
                     "input_link_index": -1,
                     "output_link_indices": [
@@ -252,22 +267,22 @@
                     "name": "SCENE_ROUGHNESS_MAPS",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 28,
                     "input_link_index": -1,
                     "output_link_indices": [
-                        9
+                        10
                     ]
                 },
                 {
                     "name": "SCENE_METALLIC_MAPS",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
-                    "binding_type": "INVALID",
+                    "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 30,
                     "input_link_index": -1,
                     "output_link_indices": [
-                        10
+                        9
                     ]
                 }
             ]
@@ -285,181 +300,287 @@
             "name": "BACK_BUFFER_TEXTURE",
             "render_stage_name": "FINAL_OUTPUT",
             "removable": false,
-            "binding_type": "INVALID",
+            "binding_type": "COMBINED_SAMPLER",
             "attribute_index": 2,
-            "input_link_index": 12,
+            "input_link_index": 18,
             "output_link_indices": []
         }
     },
     "render_stages": [
         {
-            "name": "A",
+            "name": "GEOMETRY",
             "node_index": 3,
             "input_attribute_index": 32,
             "type": "GRAPHICS",
             "custom_renderer": false,
+			"x_dim_type": "RELATIVE",
+			"y_dim_type": "RELATIVE",
+			"z_dim_type": "NONE",
+			"x_dim_var": 1.0,
+			"y_dim_var": 1.0,
+			"z_dim_var": 0.0,
             "draw_params": {
                 "draw_type": "SCENE_INDIRECT",
                 "index_buffer": {
                     "name": "SCENE_INDEX_BUFFER",
-                    "render_stage_name": "A",
+                    "render_stage_name": "GEOMETRY",
                     "removable": true,
-                    "binding_type": "INVALID",
+                    "binding_type": "DRAW_RESOURCE",
                     "attribute_index": 34,
-                    "input_link_index": 4,
+                    "input_link_index": 11,
                     "output_link_indices": []
                 },
                 "indirect_args_buffer": {
                     "name": "SCENE_INDIRECT_ARGS_BUFFER",
-                    "render_stage_name": "A",
+                    "render_stage_name": "GEOMETRY",
                     "removable": true,
-                    "binding_type": "INVALID",
+                    "binding_type": "DRAW_RESOURCE",
                     "attribute_index": 36,
-                    "input_link_index": 5,
+                    "input_link_index": 12,
                     "output_link_indices": []
                 }
             },
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
-                "vertex_shader": "",
+                "vertex_shader": "GeometryDefVertex.glsl",
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
-                "pixel_shader": ""
+                "pixel_shader": "GeometryDefPixel.glsl"
             },
             "resource_states": [
                 {
-                    "name": "SCENE_ALBEDO_MAPS",
-                    "render_stage_name": "A",
+                    "name": "SCENE_VERTEX_BUFFER",
+                    "render_stage_name": "GEOMETRY",
                     "removable": true,
-                    "binding_type": "COMBINED SAMPLER",
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "attribute_index": 38,
+                    "input_link_index": 0,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_INDEX_BUFFER",
+                    "render_stage_name": "GEOMETRY",
+                    "removable": true,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "attribute_index": 40,
+                    "input_link_index": 1,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_INSTANCE_BUFFER",
+                    "render_stage_name": "GEOMETRY",
+                    "removable": true,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "attribute_index": 42,
+                    "input_link_index": 2,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_INDIRECT_ARGS_BUFFER",
+                    "render_stage_name": "GEOMETRY",
+                    "removable": true,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "attribute_index": 44,
+                    "input_link_index": 3,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "PER_FRAME_BUFFER",
+                    "render_stage_name": "GEOMETRY",
+                    "removable": true,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 46,
+                    "input_link_index": 4,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_MAT_PARAM_BUFFER",
+                    "render_stage_name": "GEOMETRY",
+                    "removable": true,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "attribute_index": 48,
+                    "input_link_index": 5,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_ALBEDO_MAPS",
+                    "render_stage_name": "GEOMETRY",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 50,
                     "input_link_index": 6,
                     "output_link_indices": []
                 },
                 {
                     "name": "SCENE_NORMAL_MAPS",
-                    "render_stage_name": "A",
+                    "render_stage_name": "GEOMETRY",
                     "removable": true,
-                    "binding_type": "COMBINED SAMPLER",
+                    "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 52,
                     "input_link_index": 7,
                     "output_link_indices": []
                 },
                 {
                     "name": "SCENE_AO_MAPS",
-                    "render_stage_name": "A",
+                    "render_stage_name": "GEOMETRY",
                     "removable": true,
-                    "binding_type": "COMBINED SAMPLER",
+                    "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 54,
                     "input_link_index": 8,
                     "output_link_indices": []
                 },
                 {
-                    "name": "SCENE_ROUGHNESS_MAPS",
-                    "render_stage_name": "A",
+                    "name": "SCENE_METALLIC_MAPS",
+                    "render_stage_name": "GEOMETRY",
                     "removable": true,
-                    "binding_type": "COMBINED SAMPLER",
+                    "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 56,
                     "input_link_index": 9,
                     "output_link_indices": []
                 },
                 {
-                    "name": "SCENE_METALLIC_MAPS",
-                    "render_stage_name": "A",
+                    "name": "SCENE_ROUGHNESS_MAPS",
+                    "render_stage_name": "GEOMETRY",
                     "removable": true,
-                    "binding_type": "COMBINED SAMPLER",
+                    "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 58,
                     "input_link_index": 10,
                     "output_link_indices": []
                 },
                 {
-                    "name": "BACK_BUFFER_TEXTURE",
-                    "render_stage_name": "A",
+                    "name": "G_BUFFER_ALBEDO_AO",
+                    "render_stage_name": "GEOMETRY",
                     "removable": true,
                     "binding_type": "ATTACHMENT",
                     "attribute_index": 60,
                     "input_link_index": -1,
                     "output_link_indices": [
-                        11
+                        15
+                    ]
+                },
+                {
+                    "name": "G_BUFFER_NORM_MET_ROUGH",
+                    "render_stage_name": "GEOMETRY",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 62,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        16
+                    ]
+                },
+                {
+                    "name": "G_BUFFER_DEPTH_STENCIL",
+                    "render_stage_name": "GEOMETRY",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 64,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        17
                     ]
                 }
             ]
         },
         {
-            "name": "B",
+            "name": "SHADING",
             "node_index": 4,
-            "input_attribute_index": 38,
-            "type": "COMPUTE",
+            "input_attribute_index": 66,
+            "type": "GRAPHICS",
             "custom_renderer": false,
-            "shaders": {
-                "shader": ""
-            },
-            "resource_states": [
-                {
-                    "name": "SCENE_VERTEX_BUFFER",
-                    "render_stage_name": "B",
+			"x_dim_type": "RELATIVE",
+			"y_dim_type": "RELATIVE",
+			"z_dim_type": "NONE",
+			"x_dim_var": 1.0,
+			"y_dim_var": 1.0,
+			"z_dim_var": 0.0,
+            "draw_params": {
+                "draw_type": "FULLSCREEN_QUAD",
+                "index_buffer": {
+                    "name": "",
+                    "render_stage_name": "SHADING",
                     "removable": true,
-                    "binding_type": "STORAGE",
-                    "attribute_index": 42,
-                    "input_link_index": 0,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 68,
+                    "input_link_index": -1,
                     "output_link_indices": []
                 },
-                {
-                    "name": "SCENE_INDEX_BUFFER",
-                    "render_stage_name": "B",
+                "indirect_args_buffer": {
+                    "name": "",
+                    "render_stage_name": "SHADING",
                     "removable": true,
-                    "binding_type": "STORAGE",
-                    "attribute_index": 44,
-                    "input_link_index": 1,
-                    "output_link_indices": [
-                        4
-                    ]
-                },
-                {
-                    "name": "SCENE_INSTANCE_BUFFER",
-                    "render_stage_name": "B",
-                    "removable": true,
-                    "binding_type": "STORAGE",
-                    "attribute_index": 46,
-                    "input_link_index": 2,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 70,
+                    "input_link_index": -1,
                     "output_link_indices": []
-                },
-                {
-                    "name": "SCENE_INDIRECT_ARGS_BUFFER",
-                    "render_stage_name": "B",
-                    "removable": true,
-                    "binding_type": "STORAGE",
-                    "attribute_index": 48,
-                    "input_link_index": 3,
-                    "output_link_indices": [
-                        5
-                    ]
                 }
-            ]
-        },
-        {
-            "name": "C",
-            "node_index": 5,
-            "input_attribute_index": 40,
-            "type": "RAY_TRACING",
-            "custom_renderer": false,
+            },
             "shaders": {
-                "raygen_shader": "",
-                "miss_shaders": [],
-                "closest_hit_shaders": []
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "FullscreenQuad.glsl",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": "ShadingDefPixel.glsl"
             },
             "resource_states": [
+                {
+                    "name": "SCENE_LIGHTS_BUFFER",
+                    "render_stage_name": "SHADING",
+                    "removable": true,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 72,
+                    "input_link_index": 13,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "PER_FRAME_BUFFER",
+                    "render_stage_name": "SHADING",
+                    "removable": true,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 74,
+                    "input_link_index": 14,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "G_BUFFER_ALBEDO_AO",
+                    "render_stage_name": "SHADING",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 76,
+                    "input_link_index": 15,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "G_BUFFER_NORM_MET_ROUGH",
+                    "render_stage_name": "SHADING",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 78,
+                    "input_link_index": 16,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "G_BUFFER_DEPTH_STENCIL",
+                    "render_stage_name": "SHADING",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 80,
+                    "input_link_index": 17,
+                    "output_link_indices": []
+                },
                 {
                     "name": "BACK_BUFFER_TEXTURE",
-                    "render_stage_name": "C",
+                    "render_stage_name": "SHADING",
                     "removable": true,
-                    "binding_type": "COMBINED SAMPLER",
-                    "attribute_index": 62,
-                    "input_link_index": 11,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 82,
+                    "input_link_index": -1,
                     "output_link_indices": [
-                        12
+                        18
                     ]
                 }
             ]
@@ -469,32 +590,32 @@
         {
             "link_index": 0,
             "src_attribute_index": 13,
-            "dst_attribute_index": 42
+            "dst_attribute_index": 38
         },
         {
             "link_index": 1,
             "src_attribute_index": 15,
-            "dst_attribute_index": 44
+            "dst_attribute_index": 40
         },
         {
             "link_index": 2,
             "src_attribute_index": 17,
-            "dst_attribute_index": 46
+            "dst_attribute_index": 42
         },
         {
             "link_index": 3,
             "src_attribute_index": 19,
-            "dst_attribute_index": 48
+            "dst_attribute_index": 44
         },
         {
             "link_index": 4,
-            "src_attribute_index": 45,
-            "dst_attribute_index": 34
+            "src_attribute_index": 7,
+            "dst_attribute_index": 46
         },
         {
             "link_index": 5,
-            "src_attribute_index": 49,
-            "dst_attribute_index": 36
+            "src_attribute_index": 11,
+            "dst_attribute_index": 48
         },
         {
             "link_index": 6,
@@ -513,22 +634,52 @@
         },
         {
             "link_index": 9,
-            "src_attribute_index": 29,
+            "src_attribute_index": 31,
             "dst_attribute_index": 56
         },
         {
             "link_index": 10,
-            "src_attribute_index": 31,
+            "src_attribute_index": 29,
             "dst_attribute_index": 58
         },
         {
             "link_index": 11,
-            "src_attribute_index": 61,
-            "dst_attribute_index": 62
+            "src_attribute_index": 15,
+            "dst_attribute_index": 34
         },
         {
             "link_index": 12,
+            "src_attribute_index": 19,
+            "dst_attribute_index": 36
+        },
+        {
+            "link_index": 13,
+            "src_attribute_index": 9,
+            "dst_attribute_index": 72
+        },
+        {
+            "link_index": 14,
+            "src_attribute_index": 7,
+            "dst_attribute_index": 74
+        },
+        {
+            "link_index": 15,
+            "src_attribute_index": 61,
+            "dst_attribute_index": 76
+        },
+        {
+            "link_index": 16,
             "src_attribute_index": 63,
+            "dst_attribute_index": 78
+        },
+        {
+            "link_index": 17,
+            "src_attribute_index": 65,
+            "dst_attribute_index": 80
+        },
+        {
+            "link_index": 18,
+            "src_attribute_index": 83,
             "dst_attribute_index": 2
         }
     ]

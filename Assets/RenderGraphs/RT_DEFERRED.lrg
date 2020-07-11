@@ -333,6 +333,12 @@
             "input_attribute_index": 32,
             "type": "GRAPHICS",
             "custom_renderer": false,
+			"x_dim_type": "RELATIVE",
+			"y_dim_type": "RELATIVE",
+			"z_dim_type": "NONE",
+			"x_dim_var": 1.0,
+			"y_dim_var": 1.0,
+			"z_dim_var": 0.0,
             "draw_params": {
                 "draw_type": "SCENE_INDIRECT",
                 "index_buffer": {
@@ -507,6 +513,12 @@
             "input_attribute_index": 66,
             "type": "GRAPHICS",
             "custom_renderer": false,
+			"x_dim_type": "RELATIVE",
+			"y_dim_type": "RELATIVE",
+			"z_dim_type": "NONE",
+			"x_dim_var": 1.0,
+			"y_dim_var": 1.0,
+			"z_dim_var": 0.0,
             "draw_params": {
                 "draw_type": "FULLSCREEN_QUAD",
                 "index_buffer": {
@@ -611,6 +623,12 @@
             "input_attribute_index": 84,
             "type": "RAY_TRACING",
             "custom_renderer": false,
+			"x_dim_type": "RELATIVE",
+			"y_dim_type": "RELATIVE",
+			"z_dim_type": "CONSTANT",
+			"x_dim_var": 1.0,
+			"y_dim_var": 1.0,
+			"z_dim_var": 1.0,
             "shaders": {
                 "raygen_shader": "Raygen.glsl",
                 "miss_shaders": [

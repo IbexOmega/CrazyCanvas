@@ -94,45 +94,12 @@ namespace LambdaEngine
 		};
 	};
 
-	struct RenderStageParameters
-	{
-		const char* pRenderStageName	= "No Render Stage Name";
-
-		union
-		{
-			struct
-			{
-				uint32 Width;
-				uint32 Height;
-			} Graphics;
-
-			struct
-			{
-				uint32 WorkGroupCountX;
-				uint32 WorkGroupCountY;
-				uint32 WorkGroupCountZ;
-			} Compute;
-
-			struct
-			{
-				uint32 RayTraceWidth;
-				uint32 RayTraceHeight;
-				uint32 RayTraceDepth;
-			} RayTracing;
-
-			struct
-			{
-				void* pUserData;
-			} Custom;
-		};
-	};
-
 	struct MaterialBindingInfo
 	{
 		uint32	Stride;
 	};
 
-	class LAMBDA_API RenderGraph
+	class LAMBDA_API RenderGraph : public EventHandler
 	{
 		enum class EResourceOwnershipType
 		{
@@ -197,6 +164,8 @@ namespace LambdaEngine
 			EPipelineStateType		PipelineStateType				= EPipelineStateType::NONE;
 			RenderStageParameters	Parameters						= {};
 
+			glm::uvec3				Dimensions						= glm::uvec3(0);
+
 			bool					UsesCustomRenderer				= false;
 			ICustomRenderer*		pCustomRenderer					= nullptr;
 
@@ -204,7 +173,6 @@ namespace LambdaEngine
 			FPipelineStageFlags		LastPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			ERenderStageDrawType	DrawType						= ERenderStageDrawType::NONE;
-			//Resource*				pVertexBufferResource			= nullptr;
 			Resource*				pIndexBufferResource			= nullptr;
 			Resource*				pIndirectArgsBufferResource		= nullptr;
 
@@ -256,8 +224,7 @@ namespace LambdaEngine
 		*	desc - The ResourceUpdateDesc, only the Update Parameters for the given update type should be set
 		*/
 		void UpdateResource(const ResourceUpdateDesc& desc);
-
-		void UpdateRenderStageParameters(const RenderStageParameters& desc);
+		void UpdateRenderStageDimensions(const String& renderStageName, uint32 x, uint32 y, uint32 z = 0.0f);
 
 		void GetAndIncrementFence(IFence** ppFence, uint64* pSignalValue);
 
@@ -276,6 +243,8 @@ namespace LambdaEngine
 		bool GetResourceBuffers(const char* pResourceName, IBuffer* const ** pppBuffers, uint32* pBufferCount)							const;
 		bool GetResourceAccelerationStructure(const char* pResourceName, const IAccelerationStructure** ppAccelerationStructure)		const;
 
+		virtual void OnWindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type) override;
+
 	private:
 		bool CreateFence();
 		bool CreateDescriptorHeap();
@@ -288,6 +257,7 @@ namespace LambdaEngine
 		void UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc& desc);
 		void UpdateResourceBuffer(Resource* pResource, const ResourceUpdateDesc& desc);
 		void UpdateResourceAccelerationStructure(Resource* pResource, const ResourceUpdateDesc& desc);
+		void UpdateRelativeRenderStageDimensions(RenderStage* pRenderStage);
 
 		void ExecuteSynchronizationStage(
 			SynchronizationStage* pSynchronizationStage, 
@@ -302,47 +272,51 @@ namespace LambdaEngine
 		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, IPipelineState* pPipelineState, ICommandAllocator* pComputeCommandAllocator, ICommandList* pComputeCommandList, ICommandList** ppExecutionStage);
 
 	private:
-		const IGraphicsDevice*								m_pGraphicsDevice;
+		const IGraphicsDevice*				m_pGraphicsDevice;
 
-		const Scene*										m_pScene							= nullptr;
+		const Scene*						m_pScene							= nullptr;
 
-		IDescriptorHeap*									m_pDescriptorHeap					= nullptr;
+		IDescriptorHeap*					m_pDescriptorHeap					= nullptr;
 
-		uint64												m_ModFrameIndex						= 0;
-		uint32												m_BackBufferIndex					= 0;
-		uint32												m_BackBufferCount					= 0;
-		uint32												m_MaxTexturesPerDescriptorSet		= 0;
-		
-		IFence*												m_pFence							= nullptr;
-		uint64												m_SignalValue						= 1;
+		float32								m_WindowWidth						= 0.0f;
+		float32								m_WindowHeight						= 0.0f;
 
-		TArray<ICustomRenderer*>							m_CustomRenderers;
-		TArray<ICustomRenderer*>							m_DebugRenderers;
+		uint64								m_ModFrameIndex						= 0;
+		uint32								m_BackBufferIndex					= 0;
+		uint32								m_BackBufferCount					= 0;
+		uint32								m_MaxTexturesPerDescriptorSet		= 0;
 
-		ICommandAllocator**									m_ppGraphicsCopyCommandAllocators	= nullptr;
-		ICommandList**										m_ppGraphicsCopyCommandLists		= nullptr;
-		bool												m_ExecuteGraphicsCopy				= false;
+		IFence*								m_pFence							= nullptr;
+		uint64								m_SignalValue						= 1;
 
-		ICommandAllocator**									m_ppComputeCopyCommandAllocators	= nullptr;
-		ICommandList**										m_ppComputeCopyCommandLists			= nullptr;
-		bool												m_ExecuteComputeCopy				= false;
+		TArray<ICustomRenderer*>			m_CustomRenderers;
+		TArray<ICustomRenderer*>			m_DebugRenderers;
 
-		ICommandList**										m_ppExecutionStages					= nullptr;
-		uint32												m_ExecutionStageCount				= 0;
+		ICommandAllocator**					m_ppGraphicsCopyCommandAllocators	= nullptr;
+		ICommandList**						m_ppGraphicsCopyCommandLists		= nullptr;
+		bool								m_ExecuteGraphicsCopy				= false;
 
-		PipelineStage*										m_pPipelineStages					= nullptr;
-		uint32												m_PipelineStageCount				= 0;
+		ICommandAllocator**					m_ppComputeCopyCommandAllocators	= nullptr;
+		ICommandList**						m_ppComputeCopyCommandLists			= nullptr;
+		bool								m_ExecuteComputeCopy				= false;
 
-		THashTable<String, uint32>							m_RenderStageMap;
-		RenderStage*										m_pRenderStages						= nullptr;
-		uint32												m_RenderStageCount					= 0;
+		ICommandList**						m_ppExecutionStages					= nullptr;
+		uint32								m_ExecutionStageCount				= 0;
 
-		SynchronizationStage*								m_pSynchronizationStages			= nullptr;
-		uint32												m_SynchronizationStageCount			= 0;
+		PipelineStage*						m_pPipelineStages					= nullptr;
+		uint32								m_PipelineStageCount				= 0;
 
-		THashTable<String, Resource>						m_ResourceMap;
-		TSet<Resource*>										m_DirtyDescriptorSetTextures;
-		TSet<Resource*>										m_DirtyDescriptorSetBuffers;
-		TSet<Resource*>										m_DirtyDescriptorSetAccelerationStructures;
+		THashTable<String, uint32>			m_RenderStageMap;
+		RenderStage*						m_pRenderStages						= nullptr;
+		uint32								m_RenderStageCount					= 0;
+		TSet<uint32>						m_WindowRelativeRenderStages;		// Contains Render Stage Indices that have Dimension Variables that depend on the current Window Size
+
+		SynchronizationStage*				m_pSynchronizationStages			= nullptr;
+		uint32								m_SynchronizationStageCount			= 0;
+
+		THashTable<String, Resource>		m_ResourceMap;
+		TSet<Resource*>						m_DirtyDescriptorSetTextures;
+		TSet<Resource*>						m_DirtyDescriptorSetBuffers;
+		TSet<Resource*>						m_DirtyDescriptorSetAccelerationStructures;
 	};
 }

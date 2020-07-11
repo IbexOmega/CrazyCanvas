@@ -66,14 +66,7 @@ namespace LambdaEngine
 		EPipelineStateType			Type					= EPipelineStateType::NONE;
 		bool						CustomRenderer			= false;
 		bool						Enabled					= true;
-
-		ERenderStageDimensionType	XDimType				= ERenderStageDimensionType::NONE;
-		ERenderStageDimensionType	YDimType				= ERenderStageDimensionType::NONE;
-		ERenderStageDimensionType	ZDimType				= ERenderStageDimensionType::NONE;
-
-		float32						XDimVariable			= 0.0f;
-		float32						YDimVariable			= 0.0f;
-		float32						ZDimVariable			= 0.0f;
+		RenderStageParameters		Parameters				= {};
 
 		struct
 		{

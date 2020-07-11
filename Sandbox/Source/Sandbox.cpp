@@ -42,7 +42,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
-constexpr const bool RAY_TRACING_ENABLED		= false;
+constexpr const bool RAY_TRACING_ENABLED		= true;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
@@ -1128,17 +1128,16 @@ bool Sandbox::InitRendererForDeferred()
 
 	if (!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/SIMPLE_DEFERRED.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
 	}
 	else if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/RAY_TRACING_DEFERRED.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/RT_DEFERRED.lrg";
 	}
 	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/RT_POST_PROCESS_DEFERRED.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/RT_PP_DEFERRED.lrg";
 	}
-	//renderGraphFile = "../Assets/RenderGraphs/TEST_DEFERRED.lrg";
 
 	RenderGraphStructureDesc renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
 
@@ -1162,57 +1161,48 @@ bool Sandbox::InitRendererForDeferred()
 	uint32 renderWidth	= pWindow->GetWidth();
 	uint32 renderHeight = pWindow->GetHeight();
 	
-	{
-		RenderStageParameters geometryRenderStageParameters = {};
-		geometryRenderStageParameters.pRenderStageName	= "GEOMETRY";
-		geometryRenderStageParameters.Graphics.Width	= renderWidth;
-		geometryRenderStageParameters.Graphics.Height	= renderHeight;
+	//{
+	//	RenderStageParameters geometryRenderStageParameters = {};
+	//	geometryRenderStageParameters.pRenderStageName	= "GEOMETRY";
+	//	geometryRenderStageParameters.Graphics.Width	= renderWidth;
+	//	geometryRenderStageParameters.Graphics.Height	= renderHeight;
 
-		m_pRenderGraph->UpdateRenderStageParameters(geometryRenderStageParameters);
-	}
+	//	m_pRenderGraph->UpdateRenderStageParameters(geometryRenderStageParameters);
+	//}
 
-	{
-		RenderStageParameters shadingRenderStageParameters = {};
-		shadingRenderStageParameters.pRenderStageName	= "SHADING";
-		shadingRenderStageParameters.Graphics.Width		= renderWidth;
-		shadingRenderStageParameters.Graphics.Height	= renderHeight;
+	//{
+	//	RenderStageParameters shadingRenderStageParameters = {};
+	//	shadingRenderStageParameters.pRenderStageName	= "SHADING";
+	//	shadingRenderStageParameters.Graphics.Width		= renderWidth;
+	//	shadingRenderStageParameters.Graphics.Height	= renderHeight;
 
-		m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
-	}
+	//	m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
+	//}
 
-	{
-		RenderStageParameters shadingRenderStageParameters = {};
-		shadingRenderStageParameters.pRenderStageName	= "FORWARD";
-		shadingRenderStageParameters.Graphics.Width		= renderWidth;
-		shadingRenderStageParameters.Graphics.Height	= renderHeight;
+	//if (RAY_TRACING_ENABLED)
+	//{
+	//	RenderStageParameters rayTracingRenderStageParameters = {};
+	//	rayTracingRenderStageParameters.pRenderStageName			= "RAY_TRACING";
+	//	rayTracingRenderStageParameters.RayTracing.RayTraceWidth	= renderWidth;
+	//	rayTracingRenderStageParameters.RayTracing.RayTraceHeight	= renderHeight;
+	//	rayTracingRenderStageParameters.RayTracing.RayTraceDepth	= 1;
 
-		m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
-	}
+	//	m_pRenderGraph->UpdateRenderStageParameters(rayTracingRenderStageParameters);
+	//}
 
-	if (RAY_TRACING_ENABLED)
-	{
-		RenderStageParameters rayTracingRenderStageParameters = {};
-		rayTracingRenderStageParameters.pRenderStageName			= "RAY_TRACING";
-		rayTracingRenderStageParameters.RayTracing.RayTraceWidth	= renderWidth;
-		rayTracingRenderStageParameters.RayTracing.RayTraceHeight	= renderHeight;
-		rayTracingRenderStageParameters.RayTracing.RayTraceDepth	= 1;
+	//if (POST_PROCESSING_ENABLED)
+	//{
+	//	GraphicsDeviceFeatureDesc features = { };
+	//	RenderSystem::GetDevice()->QueryDeviceFeatures(&features);
 
-		m_pRenderGraph->UpdateRenderStageParameters(rayTracingRenderStageParameters);
-	}
+	//	RenderStageParameters postProcessRenderStageParameters = {};
+	//	postProcessRenderStageParameters.pRenderStageName				= "POST_PROCESS";
+	//	postProcessRenderStageParameters.Compute.WorkGroupCountX		= (renderWidth * renderHeight);
+	//	postProcessRenderStageParameters.Compute.WorkGroupCountY		= 1;
+	//	postProcessRenderStageParameters.Compute.WorkGroupCountZ		= 1;
 
-	if (POST_PROCESSING_ENABLED)
-	{
-		GraphicsDeviceFeatureDesc features = { };
-		RenderSystem::GetDevice()->QueryDeviceFeatures(&features);
-
-		RenderStageParameters postProcessRenderStageParameters = {};
-		postProcessRenderStageParameters.pRenderStageName				= "POST_PROCESS";
-		postProcessRenderStageParameters.Compute.WorkGroupCountX		= (renderWidth * renderHeight);
-		postProcessRenderStageParameters.Compute.WorkGroupCountY		= 1;
-		postProcessRenderStageParameters.Compute.WorkGroupCountZ		= 1;
-
-		m_pRefactoredRenderGraph->UpdateRenderStageParameters(postProcessRenderStageParameters);
-	}
+	//	m_pRenderGraph->UpdateRenderStageParameters(postProcessRenderStageParameters);
+	//}
 
 	{
 		IBuffer* pBuffer = m_pScene->GetLightsBuffer();

@@ -1388,16 +1388,16 @@ namespace LambdaEngine
 		static const char* dimensionNames[] =
 		{
 			"CONSTANT",
-			"RELATIVE",
 			"EXTERNAL"
+			"RELATIVE",
 			"RELATIVE_1D",
 		};
 
 		static ERenderStageDimensionType dimensionTypes[] =
 		{
 			ERenderStageDimensionType::CONSTANT,
-			ERenderStageDimensionType::RELATIVE,
 			ERenderStageDimensionType::EXTERNAL,
+			ERenderStageDimensionType::RELATIVE,
 			ERenderStageDimensionType::RELATIVE_1D,
 		};
 
@@ -1494,7 +1494,7 @@ namespace LambdaEngine
 							ImGui::Text("Z: ");
 							ImGui::SameLine();
 							ImGui::PushItemWidth(maxOptionTextSize);
-							ImGui::Combo("##Render Stage Z Option", &selectedZOption, dimensionNames, 3);
+							ImGui::Combo("##Render Stage Z Option", &selectedZOption, dimensionNames, 2);
 							ImGui::PopItemWidth();
 
 							if (selectedZOption == 0 || selectedZOption == 1)
@@ -1538,7 +1538,7 @@ namespace LambdaEngine
 						ImGui::Text("Depth: ");
 						ImGui::SameLine();
 						ImGui::PushItemWidth(maxOptionTextSize);
-						ImGui::Combo("##Render Stage Z Option", &selectedZOption, dimensionNames, 3);
+						ImGui::Combo("##Render Stage Z Option", &selectedZOption, dimensionNames, 2);
 						ImGui::PopItemWidth();
 
 						if (selectedZOption == 0 || selectedZOption == 1)
@@ -1586,13 +1586,13 @@ namespace LambdaEngine
 					newRenderStage.CustomRenderer		= customRenderer;
 					newRenderStage.Enabled				= true;
 
-					newRenderStage.XDimType				= dimensionTypes[selectedXOption];
-					newRenderStage.YDimType				= dimensionTypes[selectedYOption];
-					newRenderStage.ZDimType				= dimensionTypes[selectedZOption];
+					newRenderStage.Parameters.XDimType		= dimensionTypes[selectedXOption];
+					newRenderStage.Parameters.YDimType		= dimensionTypes[selectedYOption];
+					newRenderStage.Parameters.ZDimType		= dimensionTypes[selectedZOption];
 
-					newRenderStage.XDimVariable			= xVariable;
-					newRenderStage.XDimVariable			= yVariable;
-					newRenderStage.XDimVariable			= zVariable;
+					newRenderStage.Parameters.XDimVariable	= xVariable;
+					newRenderStage.Parameters.XDimVariable	= yVariable;
+					newRenderStage.Parameters.XDimVariable	= zVariable;
 
 					s_NextAttributeID += 2;
 
@@ -2459,22 +2459,22 @@ namespace LambdaEngine
 						writer.Bool(pRenderStage->CustomRenderer);
 
 						writer.String("x_dim_type");
-						writer.String(RenderStageDimensionTypeToString(pRenderStage->XDimType).c_str());
+						writer.String(RenderStageDimensionTypeToString(pRenderStage->Parameters.XDimType).c_str());
 
 						writer.String("y_dim_type");
-						writer.String(RenderStageDimensionTypeToString(pRenderStage->YDimType).c_str());
+						writer.String(RenderStageDimensionTypeToString(pRenderStage->Parameters.YDimType).c_str());
 
 						writer.String("y_dim_type");
-						writer.String(RenderStageDimensionTypeToString(pRenderStage->ZDimType).c_str());
+						writer.String(RenderStageDimensionTypeToString(pRenderStage->Parameters.ZDimType).c_str());
 
 						writer.String("x_dim_var");
-						writer.Double(pRenderStage->XDimVariable);
+						writer.Double(pRenderStage->Parameters.XDimVariable);
 
 						writer.String("y_dim_var");
-						writer.Double(pRenderStage->YDimVariable);
+						writer.Double(pRenderStage->Parameters.YDimVariable);
 
 						writer.String("z_dim_var");
-						writer.Double(pRenderStage->ZDimVariable);
+						writer.Double(pRenderStage->Parameters.ZDimVariable);
 
 						if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
 						{
@@ -2904,13 +2904,13 @@ namespace LambdaEngine
 					renderStage.Type				= RenderStageTypeFromString(renderStageObject["type"].GetString());
 					renderStage.CustomRenderer		= renderStageObject["custom_renderer"].GetBool();
 
-					renderStage.XDimType			= RenderStageDimensionTypeFromString(renderStageObject["x_dim_type"].GetString());
-					renderStage.YDimType			= RenderStageDimensionTypeFromString(renderStageObject["y_dim_type"].GetString());
-					renderStage.ZDimType			= RenderStageDimensionTypeFromString(renderStageObject["z_dim_type"].GetString());
+					renderStage.Parameters.XDimType			= RenderStageDimensionTypeFromString(renderStageObject["x_dim_type"].GetString());
+					renderStage.Parameters.YDimType			= RenderStageDimensionTypeFromString(renderStageObject["y_dim_type"].GetString());
+					renderStage.Parameters.ZDimType			= RenderStageDimensionTypeFromString(renderStageObject["z_dim_type"].GetString());
 
-					renderStage.XDimVariable		= renderStageObject["x_dim_var"].GetDouble();
-					renderStage.YDimVariable		= renderStageObject["y_dim_var"].GetDouble();
-					renderStage.ZDimVariable		= renderStageObject["z_dim_var"].GetDouble();
+					renderStage.Parameters.XDimVariable		= renderStageObject["x_dim_var"].GetDouble();
+					renderStage.Parameters.YDimVariable		= renderStageObject["y_dim_var"].GetDouble();
+					renderStage.Parameters.ZDimVariable		= renderStageObject["z_dim_var"].GetDouble();
 
 					GenericObject shadersObject		= renderStageObject["shaders"].GetObject();
 					GenericArray resourceStateArray = renderStageObject["resource_states"].GetArray();
@@ -3944,7 +3944,8 @@ namespace LambdaEngine
 		pDstRenderStage->Type					= pSrcRenderStage->Type;
 		pDstRenderStage->CustomRenderer			= pSrcRenderStage->CustomRenderer;
 		pDstRenderStage->Enabled				= pSrcRenderStage->Enabled;
-		
+		pDstRenderStage->Parameters				= pSrcRenderStage->Parameters;
+
 		pDstRenderStage->Weight					= pSrcRenderStage->Weight;
 		pDstRenderStage->ResourceStates.reserve(pSrcRenderStage->ResourceStates.size());
 
