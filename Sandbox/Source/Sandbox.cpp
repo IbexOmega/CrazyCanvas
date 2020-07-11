@@ -43,7 +43,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
 constexpr const bool RAY_TRACING_ENABLED		= true;
-constexpr const bool POST_PROCESSING_ENABLED	= false;
+constexpr const bool POST_PROCESSING_ENABLED	= true;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
 constexpr const bool RENDERING_DEBUG_ENABLED	= false;
@@ -914,7 +914,7 @@ bool Sandbox::InitRendererForDeferred()
 	GUID_Lambda closestHitShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ClosestHit.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
 	GUID_Lambda missShaderGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Miss.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
 
-	//GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/PostProcess.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
+	GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/PostProcess.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
 
 	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelNormal.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelDepth.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
@@ -1134,6 +1134,10 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		renderGraphFile = "../Assets/RenderGraphs/RAY_TRACING_DEFERRED.lrg";
 	}
+	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
+	{
+		renderGraphFile = "../Assets/RenderGraphs/RT_POST_PROCESS_DEFERRED.lrg";
+	}
 	//renderGraphFile = "../Assets/RenderGraphs/TEST_DEFERRED.lrg";
 
 	RefactoredRenderGraphStructure renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
@@ -1196,19 +1200,19 @@ bool Sandbox::InitRendererForDeferred()
 		m_pRefactoredRenderGraph->UpdateRenderStageParameters(rayTracingRenderStageParameters);
 	}
 
-	/*if (POST_PROCESSING_ENABLED)
+	if (POST_PROCESSING_ENABLED)
 	{
 		GraphicsDeviceFeatureDesc features = { };
 		RenderSystem::GetDevice()->QueryDeviceFeatures(&features);
 
 		RenderStageParameters postProcessRenderStageParameters = {};
-		postProcessRenderStageParameters.pRenderStageName				= pPostProcessRenderStageName;
+		postProcessRenderStageParameters.pRenderStageName				= "POST_PROCESS";
 		postProcessRenderStageParameters.Compute.WorkGroupCountX		= (renderWidth * renderHeight);
 		postProcessRenderStageParameters.Compute.WorkGroupCountY		= 1;
 		postProcessRenderStageParameters.Compute.WorkGroupCountZ		= 1;
 
-		m_pRenderGraph->UpdateRenderStageParameters(postProcessRenderStageParameters);
-	}*/
+		m_pRefactoredRenderGraph->UpdateRenderStageParameters(postProcessRenderStageParameters);
+	}
 
 	{
 		IBuffer* pBuffer = m_pScene->GetLightsBuffer();

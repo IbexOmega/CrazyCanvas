@@ -391,23 +391,44 @@ namespace LambdaEngine
 					}
 					else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_UNKNOWN)
 					{
-						uint32 actualSubResourceCount = pResource->IsBackBuffer ? 1 : pResource->SubResourceCount / pRenderStage->TextureSubDescriptorSetCount;
-
-						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						if (pResource->IsBackBuffer)
 						{
-							for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
+							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
-								uint32 index = b * pRenderStage->TextureSubDescriptorSetCount + s;
-
-								pRenderStage->ppTextureDescriptorSets[b * pRenderStage->TextureSubDescriptorSetCount + s]->WriteTextureDescriptors(
-									&pResource->Texture.TextureViews[s * actualSubResourceCount],
-									&pResource->Texture.Samplers[s * actualSubResourceCount],
+								pRenderStage->ppTextureDescriptorSets[b]->WriteTextureDescriptors(
+									&pResource->Texture.TextureViews[b],
+									&pResource->Texture.Samplers[b],
 									pResourceBinding->TextureState,
 									pResourceBinding->Binding,
-									actualSubResourceCount,
+									1,
 									pResourceBinding->DescriptorType);
 							}
 						}
+						else
+						{
+							uint32 actualSubResourceCount = pResource->SubResourceCount / pRenderStage->TextureSubDescriptorSetCount;
+
+							for (uint32 b = 0; b < m_BackBufferCount; b++)
+							{
+								for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
+								{
+									uint32 index = b * pRenderStage->TextureSubDescriptorSetCount + s;
+
+									uint32 descriptorSetIndex	= b * pRenderStage->TextureSubDescriptorSetCount + s;
+									uint32 subResourceIndex		= s * actualSubResourceCount;
+
+									pRenderStage->ppTextureDescriptorSets[descriptorSetIndex]->WriteTextureDescriptors(
+										&pResource->Texture.TextureViews[subResourceIndex],
+										&pResource->Texture.Samplers[subResourceIndex],
+										pResourceBinding->TextureState,
+										pResourceBinding->Binding,
+										actualSubResourceCount,
+										pResourceBinding->DescriptorType);
+								}
+							}
+						}
+
+						
 					}
 				}
 			}
