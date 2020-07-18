@@ -54,6 +54,14 @@ namespace LambdaEngine
 		SAFERELEASE(m_pSceneMeshIndexBuffer);
 
 		SAFERELEASE(m_pDeviceAllocator);
+
+		SAFERELEASE(m_pTLAS);
+
+		for (IAccelerationStructure* pBLAS : m_BLASs)
+		{
+			SAFERELEASE(pBLAS);
+		}
+		m_BLASs.clear();
 	}
 
 	void Scene::UpdateDirectionalLight(const glm::vec3& direction, const glm::vec3& spectralIntensity)
