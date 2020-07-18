@@ -68,7 +68,7 @@ Sandbox::Sandbox()
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
 	SceneDesc sceneDesc = {};
-	sceneDesc.pName				= "Test Scene";
+	sceneDesc.Name				= "Test Scene";
 	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
 	m_pScene->Init(sceneDesc);
 

@@ -5,6 +5,7 @@
 
 #include "Resources/Mesh.h"
 #include "Containers/TArray.h"
+#include "Containers/String.h"
 #include "Camera.h"
 
 #include <map>
