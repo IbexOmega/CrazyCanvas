@@ -893,6 +893,10 @@ namespace LambdaEngine
 				pRenderStage->Dimensions.z = pRenderStageDesc->Parameters.ZDimVariable;
 			}
 
+			pRenderStage->Dimensions.x = glm::max<uint32>(1, pRenderStage->Dimensions.x);
+			pRenderStage->Dimensions.y = glm::max<uint32>(1, pRenderStage->Dimensions.y);
+			pRenderStage->Dimensions.z = glm::max<uint32>(1, pRenderStage->Dimensions.z);
+
 			//Calculate the total number of textures we want to bind
 			uint32 textureSlots = 0;
 			uint32 totalNumberOfTextures = 0;
@@ -1866,7 +1870,7 @@ namespace LambdaEngine
 
 			if (sameQueueBackBufferBarriers.size() > 0)
 			{
-				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, sameQueueBackBufferBarriers.data(), sameQueueBackBufferBarriers.size());
+				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, &otherQueueBackBufferBarriers[m_BackBufferIndex], 1);
 			}
 
 			if (sameQueueTextureBarriers.size() > 0)
@@ -1876,8 +1880,9 @@ namespace LambdaEngine
 
 			if (otherQueueBackBufferBarriers.size() > 0)
 			{
-				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, otherQueueBackBufferBarriers.data(), otherQueueBackBufferBarriers.size());
-				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, otherQueueBackBufferBarriers.data(), otherQueueBackBufferBarriers.size());
+				const PipelineTextureBarrierDesc* pTextureBarrier = &otherQueueBackBufferBarriers[m_BackBufferIndex];
+				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, pTextureBarrier, 1);
+				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, pTextureBarrier, 1);
 				(*ppSecondExecutionStage) = pSecondExecutionCommandList;
 			}
 

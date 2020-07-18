@@ -493,7 +493,7 @@ namespace LambdaEngine
 		case ERenderGraphResourceBindingType::DRAW_RESOURCE:				return "DR";
 		}
 
-		return "INVALID";
+		return "UNKNOWN";
 	}
 
 	FORCEINLINE String BindingTypeToString(ERenderGraphResourceBindingType bindingType)
@@ -511,7 +511,7 @@ namespace LambdaEngine
 		case ERenderGraphResourceBindingType::DRAW_RESOURCE:				return "DRAW_RESOURCE";
 		}
 
-		return "INVALID";
+		return "UNKNOWN";
 	}
 
 	FORCEINLINE ERenderGraphResourceBindingType ResourceStateBindingTypeFromString(const String& string)

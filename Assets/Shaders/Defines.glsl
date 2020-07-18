@@ -61,6 +61,12 @@ struct SMeshIndexDesc
     uint	MaterialIndex;
 };
 
+struct SLightsBuffer
+{
+    vec4    Direction;
+	vec4    SpectralIntensity;
+};
+
 struct SPerFrameBuffer
 {
     mat4 Projection;

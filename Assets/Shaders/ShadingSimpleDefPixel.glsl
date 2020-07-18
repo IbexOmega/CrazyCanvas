@@ -6,12 +6,6 @@
 #include "Helpers.glsl"
 #include "Defines.glsl"
 
-struct SLightsBuffer
-{
-    vec4    Direction;
-	vec4    SpectralIntensity;
-};
-
 layout(location = 0) in vec2	in_TexCoord;
 
 layout(binding = 0, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	u_AlbedoAO;

@@ -195,6 +195,7 @@ namespace LambdaEngine
 
 		RenderGraphStructureDesc							m_ParsedRenderGraphStructure	= {};
 		bool												m_ParsedGraphDirty				= true;
+		bool												m_ParsedGraphRenderDirty		= true;
 		String												m_ParsingError					= "No Errors";
 
 	private:

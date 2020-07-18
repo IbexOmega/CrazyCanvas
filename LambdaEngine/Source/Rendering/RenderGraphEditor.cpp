@@ -191,6 +191,7 @@ namespace LambdaEngine
 			}
 
 			m_ParsedGraphDirty = false;
+			m_ParsedGraphRenderDirty = true;
 		}
 	}
 
@@ -1046,6 +1047,9 @@ namespace LambdaEngine
 		{
 			EditorRenderStageDesc* pRenderStage = &renderStageIt->second;
 
+			int32 moveResourceStateAttributeIndex	= -1;
+			int32 moveResourceStateMoveAddition		= 0;
+
 			imnodes::BeginNode(pRenderStage->NodeIndex);
 
 			String renderStageType = RenderStageTypeToString(pRenderStage->Type);
@@ -1064,6 +1068,7 @@ namespace LambdaEngine
 			//Render Resource State
 			for (auto resourceStateIndexIt = pRenderStage->ResourceStates.begin(); resourceStateIndexIt != pRenderStage->ResourceStates.end(); resourceStateIndexIt++)
 			{
+				int32 resourceStateLocalIndex	= std::distance(pRenderStage->ResourceStates.begin(), resourceStateIndexIt);
 				int32 primaryAttributeIndex		= resourceStateIndexIt->second / 2;
 				int32 inputAttributeIndex		= resourceStateIndexIt->second;
 				int32 outputAttributeIndex		= inputAttributeIndex + 1;
@@ -1090,6 +1095,29 @@ namespace LambdaEngine
 				{
 					ImGui::InvisibleButton("##Resouce State Invisible Button", ImGui::CalcTextSize("-"));
 				}
+
+				if (resourceStateLocalIndex > 0)
+				{
+					ImGui::SameLine();
+
+					if (ImGui::ArrowButton("##Move Resource State Up Button", ImGuiDir_Up))
+					{
+						moveResourceStateAttributeIndex = primaryAttributeIndex;
+						moveResourceStateMoveAddition = -1;
+					}
+				}
+
+				if (resourceStateLocalIndex < pRenderStage->ResourceStates.size() - 1)
+				{
+					ImGui::SameLine();
+
+					if (ImGui::ArrowButton("##Move Resource State Down Button", ImGuiDir_Down))
+					{
+						moveResourceStateAttributeIndex = primaryAttributeIndex;
+						moveResourceStateMoveAddition = 1;
+					}
+				}
+
 				imnodes::EndOutputAttribute();
 				PopPinColorIfNeeded(EEditorPinType::OUTPUT, pRenderStage, pResourceState, outputAttributeIndex);
 
@@ -1282,6 +1310,17 @@ namespace LambdaEngine
 
 				m_ResourceStatesByHalfAttributeIndex.erase(primaryAttributeIndex);
 				m_ParsedGraphDirty = true;
+			}
+
+			//Move Resource State
+			if (moveResourceStateAttributeIndex != -1)
+			{
+				EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[moveResourceStateAttributeIndex];
+
+				auto resourceStateIt	= pRenderStage->ResourceStates.find(pResourceState->ResourceName);
+				String resourceName		= resourceStateIt->first;
+				int32 attributeIndex	= resourceStateIt->second;
+				pRenderStage->ResourceStates.insert_at_position(pRenderStage->ResourceStates.erase(resourceStateIt) + moveResourceStateMoveAddition, { resourceName, attributeIndex });
 			}
 		}
 
@@ -1763,12 +1802,21 @@ namespace LambdaEngine
 		links.clear();
 		links.reserve(m_ParsedRenderGraphStructure.PipelineStageDescriptions.size());
 
+		float nodeXPos = 0.0f;
+		float nodeXSpace = 350.0f;
+
 		//Resource State Groups
 		for (auto pipelineStageIt = m_ParsedRenderGraphStructure.PipelineStageDescriptions.begin(); pipelineStageIt != m_ParsedRenderGraphStructure.PipelineStageDescriptions.end(); pipelineStageIt++)
 		{
 			int32 distance	= std::distance(m_ParsedRenderGraphStructure.PipelineStageDescriptions.begin(), pipelineStageIt);
 			int32 nodeIndex	= INT32_MAX - distance;
 			const PipelineStageDesc* pPipelineStage = &(*pipelineStageIt);
+
+			if (m_ParsedGraphRenderDirty)
+			{
+				imnodes::SetNodeGridSpacePos(nodeIndex, ImVec2(nodeXPos, 0.0f));
+				nodeXPos += nodeXSpace;
+			}
 
 			imnodes::BeginNode(nodeIndex);
 
@@ -1820,6 +1868,41 @@ namespace LambdaEngine
 				}
 				ImGui::EndChild();
 
+				if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
+				{
+					ImGui::NewLine();
+					ImGui::Text("RenderPass Transitions:");
+
+					if (ImGui::BeginChild("##RenderPass Transitions", ImVec2(220.0f, 220.0f)))
+					{
+						for (auto resourceStateNameIt = pRenderStage->ResourceStates.begin(); resourceStateNameIt != pRenderStage->ResourceStates.end(); resourceStateNameIt++)
+						{
+							const RenderGraphResourceState* pResourceState = &(*resourceStateNameIt);
+
+							if (pResourceState->BindingType == ERenderGraphResourceBindingType::ATTACHMENT)
+							{
+								const EditorResource* pResource = &m_ResourcesByName[pResourceState->ResourceName];
+
+								textBuffer0 = "";
+								textBuffer1 = "";
+
+								textBuffer0 += pResource->Name.c_str();
+								textBuffer1 += BindingTypeToShortString(pResourceState->AttachmentSynchronizations.PrevBindingType) + " -> " + BindingTypeToShortString(pResourceState->AttachmentSynchronizations.NextBindingType);
+								ImVec2 textSize = ImGui::CalcTextSize((textBuffer0 + textBuffer1 + "\n\n\n").c_str());
+
+								if (ImGui::BeginChild(("##" + std::to_string(pPipelineStage->StageIndex) + pResource->Name + " Child").c_str(), ImVec2(0.0f, textSize.y)))
+								{
+									ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), textBuffer0.c_str());
+									ImGui::TextWrapped(textBuffer1.c_str());
+								}
+
+								ImGui::EndChild();
+							}
+						}
+					}
+					ImGui::EndChild();
+				}
+
 				imnodes::BeginInputAttribute(currentAttributeIndex--);
 				ImGui::InvisibleButton("##Resouce State Invisible Input Button", ImGui::CalcTextSize("-"));
 				imnodes::EndInputAttribute();
@@ -1836,7 +1919,7 @@ namespace LambdaEngine
 
 				imnodes::BeginNodeTitleBar();
 				ImGui::Text("Synchronization Stage");
-				ImGui::Text("RS: %d PS: %d", pPipelineStage->StageIndex, distance);
+				ImGui::Text("SS: %d PS: %d", pPipelineStage->StageIndex, distance);
 				imnodes::EndNodeTitleBar();
 
 				if (ImGui::BeginChild(("##" + std::to_string(pPipelineStage->StageIndex) + " Child").c_str(), ImVec2(220.0f, 220.0f)))
@@ -1893,6 +1976,8 @@ namespace LambdaEngine
 		}
 
 		imnodes::EndNodeEditor();
+
+		m_ParsedGraphRenderDirty = false;
 	}
 
 	void RenderGraphEditor::RenderShaderBoxes(EditorRenderStageDesc* pRenderStage)
@@ -2464,7 +2549,7 @@ namespace LambdaEngine
 						writer.String("y_dim_type");
 						writer.String(RenderStageDimensionTypeToString(pRenderStage->Parameters.YDimType).c_str());
 
-						writer.String("y_dim_type");
+						writer.String("z_dim_type");
 						writer.String(RenderStageDimensionTypeToString(pRenderStage->Parameters.ZDimType).c_str());
 
 						writer.String("x_dim_var");

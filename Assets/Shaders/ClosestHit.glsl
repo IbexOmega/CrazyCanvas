@@ -8,7 +8,7 @@
 
 struct SRayPayload
 {
-	vec3 Color;
+	vec3 OutgoingRadiance;
 };
 
 layout(binding = 1, set = BUFFER_SET_INDEX) buffer Vertices            { SVertex val[]; }              b_Vertices;
@@ -17,7 +17,8 @@ layout(binding = 3, set = BUFFER_SET_INDEX) buffer Instances           { SInstan
 layout(binding = 4, set = BUFFER_SET_INDEX) buffer MeshIndices         { SMeshIndexDesc val[]; }       b_MeshIndices;
 layout(binding = 5, set = BUFFER_SET_INDEX) buffer MaterialParameters  { SMaterialParameters val[]; }  b_MaterialParameters;
 
-layout(binding = 6, set = BUFFER_SET_INDEX) uniform PerFrameBuffer     { SPerFrameBuffer val; }        u_PerFrameBuffer;
+layout(binding = 6, set = BUFFER_SET_INDEX) uniform LightsBuffer       { SLightsBuffer val; }          u_LightsBuffer;
+layout(binding = 7, set = BUFFER_SET_INDEX) uniform PerFrameBuffer     { SPerFrameBuffer val; }        u_PerFrameBuffer;
 
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
@@ -82,7 +83,7 @@ void main()
 {
     SRayHitDescription hitDescription = CalculateTriangleData();
 
-    vec3 albedo = texture(u_SceneAlbedoMaps[hitDescription.MaterialIndex], hitDescription.TexCoord).rgb;
+    vec3 albedo = pow(  texture(u_SceneAlbedoMaps[hitDescription.MaterialIndex],    hitDescription.TexCoord).rgb, vec3(GAMMA));
 
-    s_RayPayload.Color = albedo;
+    s_RayPayload.OutgoingRadiance = albedo;
 }

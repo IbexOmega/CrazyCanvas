@@ -7,12 +7,12 @@
 
 struct SRayPayload
 {
-	vec3 Color;
+	vec3 OutgoingRadiance;
 };
 
 layout(location = 0) rayPayloadInEXT SRayPayload s_RayPayload;
 
 void main() 
 {
-    s_RayPayload.Color = vec3(0.0f, 0.0f, 1.0f);
+    s_RayPayload.OutgoingRadiance = vec3(0.0f, 0.0f, 0.0f);
 }

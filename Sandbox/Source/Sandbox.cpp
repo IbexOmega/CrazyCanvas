@@ -43,7 +43,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
 constexpr const bool RAY_TRACING_ENABLED		= true;
-constexpr const bool POST_PROCESSING_ENABLED	= false;
+constexpr const bool POST_PROCESSING_ENABLED	= true;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
 constexpr const bool RENDERING_DEBUG_ENABLED	= false;
@@ -937,7 +937,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/RT_PP_DEFERRED.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/TRT_PP_DEFERRED.lrg";
 	}
 
 	RenderGraphStructureDesc renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
