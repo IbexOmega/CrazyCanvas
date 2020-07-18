@@ -1695,7 +1695,8 @@ namespace LambdaEngine
 						pFirstBarrier = pTextureBarrier;
 				}
 
-				//Transfer to Initial State			
+				//Transfer to Initial State
+				if (pFirstBarrier != nullptr)
 				{
 					PipelineTextureBarrierDesc  initialBarrier = {};
 
@@ -1772,6 +1773,11 @@ namespace LambdaEngine
 			else if (pResource->OwnershipType == EResourceOwnershipType::EXTERNAL)
 			{
 				pBuffer = desc.ExternalBufferUpdate.ppBuffer[sr];
+			}
+			else
+			{
+				LOG_ERROR("[RenderGraph]: UpdateResourceBuffer called for Resource with unknown OwnershipType, \"%s\"", pResource->Name.c_str());
+				return;
 			}
 
 			(*ppBuffer)		= pBuffer;

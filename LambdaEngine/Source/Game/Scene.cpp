@@ -146,11 +146,11 @@ namespace LambdaEngine
 			const Mesh* pMesh = ResourceManager::GetMesh(gameObject.Mesh);
 
 			uint32 currentNumSceneVertices = (uint32)m_SceneVertexArray.size();
-			m_SceneVertexArray.resize(currentNumSceneVertices + pMesh->VertexCount);
+			m_SceneVertexArray.resize(uint64(currentNumSceneVertices + pMesh->VertexCount));
 			memcpy(&m_SceneVertexArray[currentNumSceneVertices], pMesh->pVertexArray, pMesh->VertexCount * sizeof(Vertex));
 
 			uint32 currentNumSceneIndices = (uint32)m_SceneIndexArray.size();
-			m_SceneIndexArray.resize(currentNumSceneIndices + pMesh->IndexCount);
+			m_SceneIndexArray.resize(uint64(currentNumSceneIndices + pMesh->IndexCount));
 			memcpy(&m_SceneIndexArray[currentNumSceneIndices], pMesh->pIndexArray, pMesh->IndexCount * sizeof(uint32));
 
 			m_Meshes.push_back(pMesh);
@@ -211,7 +211,7 @@ namespace LambdaEngine
 
 	bool Scene::Init(const SceneDesc& desc)
 	{
-		m_pName = desc.pName;
+		m_Name = desc.Name;
 
 		//Device Allocator
 		{
@@ -763,7 +763,7 @@ namespace LambdaEngine
 		}
 		/*-------------Ray Tracing Section End--------------*/
 
-		D_LOG_MESSAGE("[Scene]: Successfully finalized \"%s\"! ", m_pName);
+		D_LOG_MESSAGE("[Scene]: Successfully finalized \"%s\"! ", m_Name.c_str());
 
 		return true;
 	}

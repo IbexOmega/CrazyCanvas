@@ -44,8 +44,8 @@ namespace LambdaEngine
 
 	struct SceneDesc
 	{
-		const char* pName					= "Scene";
-		bool RayTracingEnabled				= false;
+		String	Name				= "Scene";
+		bool	RayTracingEnabled	= false;
 	};
 
 	struct Instance
@@ -130,7 +130,7 @@ namespace LambdaEngine
 		const IGraphicsDevice*						m_pGraphicsDevice;
 		const IAudioDevice*							m_pAudioDevice;
 
-		const char*									m_pName;
+		String										m_Name									= "Scene";
 
 		IDeviceAllocator*							m_pDeviceAllocator						= nullptr;
 

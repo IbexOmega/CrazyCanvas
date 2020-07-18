@@ -138,8 +138,8 @@ namespace LambdaEngine
 
 			struct
 			{
-				EFormat								Format;
-				TArray<ResourceBarrierInfo>		BarriersPerSynchronizationStage; //Divided into #SubResourceCount Barriers per Synchronization Stage
+				EFormat								Format	= EFormat::NONE;
+				TArray<ResourceBarrierInfo>			BarriersPerSynchronizationStage; //Divided into #SubResourceCount Barriers per Synchronization Stage
 				TArray<ITexture*>					Textures;
 				TArray<ITextureView*>				TextureViews;
 				TArray<ISampler*>					Samplers;
@@ -147,7 +147,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				TArray<ResourceBarrierInfo>		BarriersPerSynchronizationStage;
+				TArray<ResourceBarrierInfo>			BarriersPerSynchronizationStage;
 				TArray<IBuffer*>					Buffers;
 				TArray<uint64>						Offsets;
 				TArray<uint64>						SizesInBytes;
@@ -155,7 +155,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				const IAccelerationStructure* pTLAS;
+				const IAccelerationStructure* pTLAS		= nullptr;
 			} AccelerationStructure;
 		};
 
@@ -201,13 +201,13 @@ namespace LambdaEngine
 
 		struct PipelineStage
 		{
-			ERenderGraphPipelineStageType	Type			= ERenderGraphPipelineStageType::NONE;
-			uint32				StageIndex		= 0;
+			ERenderGraphPipelineStageType	Type							= ERenderGraphPipelineStageType::NONE;
+			uint32							StageIndex						= 0;
 
-			ICommandAllocator** ppGraphicsCommandAllocators;
-			ICommandAllocator** ppComputeCommandAllocators;
-			ICommandList** ppGraphicsCommandLists;
-			ICommandList** ppComputeCommandLists;
+			ICommandAllocator**				ppGraphicsCommandAllocators		= nullptr;
+			ICommandAllocator**				ppComputeCommandAllocators		= nullptr;
+			ICommandList**					ppGraphicsCommandLists			= nullptr;
+			ICommandList**					ppComputeCommandLists			= nullptr;
 		};
 
 	public:
