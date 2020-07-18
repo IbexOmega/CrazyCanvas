@@ -550,23 +550,53 @@ namespace LambdaEngine
 
 		//Wait Threads
 
+		//This is safe since the first Execution Stage should never be nullptr
+		ECommandQueueType currentBatchType = m_ppExecutionStages[0]->GetType();
+
+		static TArray<ICommandList*> currentBatch;
+
 		for (uint32 e = 0; e < m_ExecutionStageCount; e++)
 		{
 			ICommandList* pCommandList = m_ppExecutionStages[e];
 
 			if (pCommandList != nullptr)
 			{
-				if (pCommandList->GetType() == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+				ECommandQueueType currentType = pCommandList->GetType();
+
+				if (currentType != currentBatchType)
 				{
-					RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
-				}
-				else if (pCommandList->GetType() == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
-				{
-					RenderSystem::GetComputeQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+					{
+						RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.data(), currentBatch.size(), FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					}
+					else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+					{
+						RenderSystem::GetComputeQueue()->ExecuteCommandLists(currentBatch.data(), currentBatch.size(), FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					}
+
+					m_SignalValue++;
+					currentBatch.clear();
+
+					currentBatchType = currentType;
 				}
 
-				m_SignalValue++;
+				currentBatch.push_back(pCommandList);
 			}
+		}
+
+		if (!currentBatch.empty())
+		{
+			if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+			{
+				RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.data(), currentBatch.size(), FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+			}
+			else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+			{
+				RenderSystem::GetComputeQueue()->ExecuteCommandLists(currentBatch.data(), currentBatch.size(), FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+			}
+
+			m_SignalValue++;
+			currentBatch.clear();
 		}
 	}
 
