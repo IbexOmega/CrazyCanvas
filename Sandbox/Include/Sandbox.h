@@ -19,6 +19,8 @@ namespace LambdaEngine
 	class Scene;
 	class Camera;
 	class ISampler;
+
+	class RenderGraphEditor;
 }
 
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::EventHandler
@@ -77,6 +79,8 @@ private:
 
 	LambdaEngine::RenderGraph*				m_pRenderGraph			= nullptr;
 	LambdaEngine::Renderer*					m_pRenderer				= nullptr;
+
+	LambdaEngine::RenderGraphEditor*		m_pRenderGraphEditor	= nullptr;
 
 	GUID_Lambda								m_ImGuiPixelShaderNormalGUID		= GUID_NONE;
 	GUID_Lambda								m_ImGuiPixelShaderDepthGUID			= GUID_NONE;

@@ -13,6 +13,8 @@ namespace LambdaEngine
 {
 	GUID_Lambda												ResourceManager::s_NextFreeGUID = SMALLEST_UNRESERVED_GUID;
 
+	std::unordered_map<String, GUID_Lambda>					ResourceManager::s_NamesToGUIDs;
+
 	std::unordered_map<GUID_Lambda, Mesh*>					ResourceManager::s_Meshes;
 	std::unordered_map<GUID_Lambda, Material*>				ResourceManager::s_Materials;
 	std::unordered_map<GUID_Lambda, ITexture*>				ResourceManager::s_Textures;
@@ -135,6 +137,7 @@ namespace LambdaEngine
 		{
 			guid = s_NextFreeGUID++;
 			ppMappedMesh = &s_Meshes[guid]; //Creates new entry if not existing
+			RegisterNameToGUID(pFilepath, guid);
 		}
 
 		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(pFilepath);
@@ -209,6 +212,7 @@ namespace LambdaEngine
 			guid = s_NextFreeGUID++;
 			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
 			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
+			RegisterNameToGUID(pFilepath, guid);
 		}
 
 		ITexture* pTexture = ResourceLoader::LoadTextureFromFile(pFilepath, format, generateMips);
@@ -242,6 +246,7 @@ namespace LambdaEngine
 			guid = s_NextFreeGUID++;
 			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
 			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
+			RegisterNameToGUID(pName, guid);
 		}
 
 		ITexture* pTexture = ResourceLoader::LoadTextureFromMemory(pName, pData, width, height, format, usageFlags, generateMips);
@@ -273,6 +278,7 @@ namespace LambdaEngine
 		{
 			guid = s_NextFreeGUID++;
 			ppMappedShader = &s_Shaders[guid]; //Creates new entry if not existing
+			RegisterNameToGUID(pFilepath, guid);
 		}
 
 		ShaderLoadDesc loadDesc = {};
@@ -297,11 +303,25 @@ namespace LambdaEngine
 		{
 			guid = s_NextFreeGUID++;
 			ppMappedSoundEffect = &s_SoundEffects[guid]; //Creates new entry if not existing
+			RegisterNameToGUID(pFilepath, guid);
 		}
 
 		(*ppMappedSoundEffect) = ResourceLoader::LoadSoundEffectFromFile(pFilepath);
 
 		return guid;
+	}
+
+	GUID_Lambda ResourceManager::GetGUID(const String& name)
+	{
+		auto guidIt = s_NamesToGUIDs.find(name);
+
+		if (guidIt != s_NamesToGUIDs.end())
+			return guidIt->second;
+
+		if (name.length() > 0)
+			LOG_ERROR("[ResourceManager]: Resource \"%s\" could not be fouund in ResourceManager", name.c_str());
+
+		return GUID_NONE;
 	}
 
 	void ResourceManager::ReloadAllShaders()
@@ -444,6 +464,7 @@ namespace LambdaEngine
 			guid = s_NextFreeGUID++;
 			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
 			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
+			RegisterNameToGUID(pResource->GetDesc().pName, guid);
 		}
 
 		(*ppMappedTexture) = pResource;
@@ -464,6 +485,52 @@ namespace LambdaEngine
 		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		return guid;
+	}
+
+	void ResourceManager::RegisterNameToGUID(const String& string, GUID_Lambda guid)
+	{
+		//Register string as normal
+		if (s_NamesToGUIDs.count(string) > 0)
+		{
+			LOG_ERROR("[ResourceManager]: Resource with name \"%s\" has already been registered...", string.c_str());
+			return;
+		}
+
+		s_NamesToGUIDs[string] = guid;
+
+		//Calculate substring which only contains filename, if string is a path
+		size_t slashIt		= string.find_last_of('/');
+		size_t backslashIt	= string.find_last_of('\\');
+		
+		uint32 cutoffPoint = 0;
+
+		if (slashIt != string.npos && backslashIt != string.npos)
+		{
+			cutoffPoint = glm::max(slashIt, backslashIt) + 1;
+		}
+		else if (slashIt != string.npos)
+		{
+			cutoffPoint = slashIt + 1;
+		}
+		else if (backslashIt != string.npos)
+		{
+			cutoffPoint = glm::max(slashIt, backslashIt) + 1;
+		}
+		else
+		{
+			return;
+		}
+
+		//Register name, with path removed
+		String resourceName = string.substr(cutoffPoint);
+
+		if (s_NamesToGUIDs.count(resourceName) > 0)
+		{
+			LOG_ERROR("[ResourceManager]: Resource with name \"%s\" has already been registered...", resourceName.c_str());
+			return;
+		}
+
+		s_NamesToGUIDs[resourceName] = guid;
 	}
 
 	void ResourceManager::InitDefaultResources()

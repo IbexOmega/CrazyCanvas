@@ -91,6 +91,6 @@ void main()
 	// 	debugPrintfEXT("Vafan");
     // }
 
-    out_Color = vec4(colorLDR, 1.0f);
-    //out_Color = sampledRadiance;
+    //out_Color = vec4(colorLDR, 1.0f);
+    out_Color = sampledRadiance;
 }

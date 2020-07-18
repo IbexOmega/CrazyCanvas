@@ -12,7 +12,8 @@
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
-#include "Rendering/RenderGraphDescriptionParser.h"
+#include "Rendering/RenderGraphEditor.h"
+#include "Rendering/RenderGraph.h"
 #include "Rendering/Core/API/ITextureView.h"
 #include "Rendering/Core/API/ISampler.h"
 #include "Rendering/Core/API/ICommandQueue.h"
@@ -42,10 +43,10 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
 constexpr const bool RAY_TRACING_ENABLED		= true;
-constexpr const bool POST_PROCESSING_ENABLED	= true;
+constexpr const bool POST_PROCESSING_ENABLED	= false;
 
-constexpr const bool RENDER_GRAPH_DEBUG_ENABLED	= true;
-constexpr const bool RENDERING_DEBUG_ENABLED	= true;
+constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
+constexpr const bool RENDERING_DEBUG_ENABLED	= false;
 
 Sandbox::Sandbox()
     : Game()
@@ -197,6 +198,8 @@ Sandbox::Sandbox()
 
 	m_pNearestSampler = RenderSystem::GetDevice()->CreateSampler(&samplerNearestDesc);
 
+	m_pRenderGraphEditor = DBG_NEW RenderGraphEditor();
+
 	//InitRendererForEmpty();
 
 	//InitRendererForRayTracingOnly();
@@ -204,6 +207,11 @@ Sandbox::Sandbox()
 	InitRendererForDeferred();
 
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
+
+	if (RENDER_GRAPH_IMGUI_ENABLED)
+	{
+		m_pRenderGraphEditor->InitGUI();	//Must Be called after Renderer is initialized
+	}
 
 	//InitTestAudio();
 }
@@ -221,6 +229,8 @@ Sandbox::~Sandbox()
 
 	SAFEDELETE(m_pRenderGraph);
 	SAFEDELETE(m_pRenderer);
+
+	SAFEDELETE(m_pRenderGraphEditor);
 }
 
 void Sandbox::InitTestAudio()
@@ -319,42 +329,42 @@ void Sandbox::OnFocusChanged(LambdaEngine::Window* pWindow, bool hasFocus)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
-    LOG_MESSAGE("Window Moved: hasFocus=%s", hasFocus ? "true" : "false");
+    //LOG_MESSAGE("Window Moved: hasFocus=%s", hasFocus ? "true" : "false");
 }
 
 void Sandbox::OnWindowMoved(LambdaEngine::Window* pWindow, int16 x, int16 y)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
-    LOG_MESSAGE("Window Moved: x=%d, y=%d", x, y);
+    //LOG_MESSAGE("Window Moved: x=%d, y=%d", x, y);
 }
 
 void Sandbox::OnWindowResized(LambdaEngine::Window* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
-    LOG_MESSAGE("Window Resized: width=%u, height=%u, type=%u", width, height, uint32(type));
+    //LOG_MESSAGE("Window Resized: width=%u, height=%u, type=%u", width, height, uint32(type));
 }
 
 void Sandbox::OnWindowClosed(LambdaEngine::Window* pWindow)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
-    LOG_MESSAGE("Window closed");
+   // LOG_MESSAGE("Window closed");
 }
 
 void Sandbox::OnMouseEntered(LambdaEngine::Window* pWindow)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
-    LOG_MESSAGE("Mouse Entered");
+    //LOG_MESSAGE("Mouse Entered");
 }
 
 void Sandbox::OnMouseLeft(LambdaEngine::Window* pWindow)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
-    LOG_MESSAGE("Mouse Left");
+    //LOG_MESSAGE("Mouse Left");
 }
 
 void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
@@ -363,7 +373,7 @@ void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isR
 	
     using namespace LambdaEngine;
     
-    LOG_MESSAGE("Key Pressed: %s, isRepeat=%s", KeyToString(key), isRepeat ? "true" : "false");
+	//LOG_MESSAGE("Key Pressed: %s, isRepeat=%s", KeyToString(key), isRepeat ? "true" : "false");
 
     if (isRepeat)
     {
@@ -467,7 +477,7 @@ void Sandbox::OnKeyReleased(LambdaEngine::EKey key)
     
 	UNREFERENCED_VARIABLE(key);
 	
-    LOG_MESSAGE("Key Released: %s", KeyToString(key));
+	//LOG_MESSAGE("Key Released: %s", KeyToString(key));
 }
 
 void Sandbox::OnKeyTyped(uint32 character)
@@ -476,7 +486,7 @@ void Sandbox::OnKeyTyped(uint32 character)
     
     UNREFERENCED_VARIABLE(character);
     
-    LOG_MESSAGE("Key Text: %c", char(character));
+	//LOG_MESSAGE("Key Text: %c", char(character));
 }
 
 void Sandbox::OnMouseMoved(int32 x, int32 y)
@@ -484,7 +494,7 @@ void Sandbox::OnMouseMoved(int32 x, int32 y)
 	UNREFERENCED_VARIABLE(x);
 	UNREFERENCED_VARIABLE(y);
     
-	LOG_MESSAGE("Mouse Moved: x=%d, y=%d", x, y);
+	//LOG_MESSAGE("Mouse Moved: x=%d, y=%d", x, y);
 }
 
 void Sandbox::OnMouseMovedRaw(int32 deltaX, int32 deltaY)
@@ -492,7 +502,7 @@ void Sandbox::OnMouseMovedRaw(int32 deltaX, int32 deltaY)
 	UNREFERENCED_VARIABLE(deltaX);
 	UNREFERENCED_VARIABLE(deltaY);
     
-	LOG_MESSAGE("Mouse Delta: x=%d, y=%d", deltaX, deltaY);
+	//LOG_MESSAGE("Mouse Delta: x=%d, y=%d", deltaX, deltaY);
 }
 
 void Sandbox::OnButtonPressed(LambdaEngine::EMouseButton button, uint32 modifierMask)
@@ -500,13 +510,13 @@ void Sandbox::OnButtonPressed(LambdaEngine::EMouseButton button, uint32 modifier
 	UNREFERENCED_VARIABLE(button);
     UNREFERENCED_VARIABLE(modifierMask);
     
-	LOG_MESSAGE("Mouse Button Pressed: %d", button);
+	//LOG_MESSAGE("Mouse Button Pressed: %d", button);
 }
 
 void Sandbox::OnButtonReleased(LambdaEngine::EMouseButton button)
 {
 	UNREFERENCED_VARIABLE(button);
-	LOG_MESSAGE("Mouse Button Released: %d", button);
+	//LOG_MESSAGE("Mouse Button Released: %d", button);
 }
 
 void Sandbox::OnMouseScrolled(int32 deltaX, int32 deltaY)
@@ -514,7 +524,7 @@ void Sandbox::OnMouseScrolled(int32 deltaX, int32 deltaY)
 	UNREFERENCED_VARIABLE(deltaX);
     UNREFERENCED_VARIABLE(deltaY);
     
-	LOG_MESSAGE("Mouse Scrolled: x=%d, y=%d", deltaX, deltaY);
+	//LOG_MESSAGE("Mouse Scrolled: x=%d, y=%d", deltaX, deltaY);
 }
 
 
@@ -617,165 +627,173 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 	m_pRenderer->NewFrame(delta);
 
-	ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
-	if (ImGui::Begin("Test Window", NULL))
+	if (RENDER_GRAPH_IMGUI_ENABLED)
 	{
-		ImGui::Button("Test Button");
 
-		uint32 modFrameIndex = m_pRenderer->GetModFrameIndex();
+		m_pRenderGraphEditor->RenderGUI();
 
-		ITextureView* const *	ppTextureViews		= nullptr;
-		uint32			textureViewCount		= 0;
+		ImGui::ShowDemoWindow();
 
-		static ImGuiTexture albedoTexture = {};
-		static ImGuiTexture normalTexture = {};
-		static ImGuiTexture depthStencilTexture = {};
-		static ImGuiTexture radianceTexture = {};
-		 
-		float windowWidth = ImGui::GetWindowWidth();
-
-		if (ImGui::BeginTabBar("G-Buffer"))
+		ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
+		if (ImGui::Begin("Test Window", NULL))
 		{
-			if (ImGui::BeginTabItem("Albedo AO"))
+			ImGui::Button("Test Button");
+
+			uint32 modFrameIndex = m_pRenderer->GetModFrameIndex();
+
+			ITextureView* const* ppTextureViews = nullptr;
+			uint32			textureViewCount = 0;
+
+			static ImGuiTexture albedoTexture = {};
+			static ImGuiTexture normalTexture = {};
+			static ImGuiTexture depthStencilTexture = {};
+			static ImGuiTexture radianceTexture = {};
+
+			float windowWidth = ImGui::GetWindowWidth();
+
+			if (ImGui::BeginTabBar("G-Buffer"))
 			{
-				albedoTexture.ResourceName = "GEOMETRY_ALBEDO_AO_BUFFER";
-
-				ImGui::Image(&albedoTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
-
-				ImGui::EndTabItem();
-			}
-
-			if (ImGui::BeginTabItem("Normal Metallic Roughness"))
-			{
-				normalTexture.ResourceName = "GEOMETRY_NORM_MET_ROUGH_BUFFER";
-
-				const char* items[] = { "ALL", "Normal", "Metallic", "Roughness" };
-				static int currentItem = 0;
-				ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), 4);
-
-				if (currentItem == 0)
+				if (ImGui::BeginTabItem("Albedo AO"))
 				{
-					normalTexture.ReservedIncludeMask = 0x00008421;
+					albedoTexture.ResourceName = "G_BUFFER_ALBEDO_AO";
 
-					normalTexture.ChannelMult[0] = 0.5f;
-					normalTexture.ChannelMult[1] = 0.5f;
-					normalTexture.ChannelMult[2] = 0.5f;
-					normalTexture.ChannelMult[3] = 0.5f;
-
-					normalTexture.ChannelAdd[0] = 0.5f;
-					normalTexture.ChannelAdd[1] = 0.5f;
-					normalTexture.ChannelAdd[2] = 0.5f;
-					normalTexture.ChannelAdd[3] = 0.5f;
-
-					normalTexture.PixelShaderGUID = GUID_NONE;
-				}
-				else if (currentItem == 1)
-				{
-					normalTexture.ReservedIncludeMask = 0x00008420;
-
-					normalTexture.ChannelMult[0] = 1.0f;
-					normalTexture.ChannelMult[1] = 1.0f;
-					normalTexture.ChannelMult[2] = 1.0f;
-					normalTexture.ChannelMult[3] = 0.0f;
-
-					normalTexture.ChannelAdd[0] = 0.0f;
-					normalTexture.ChannelAdd[1] = 0.0f;
-					normalTexture.ChannelAdd[2] = 0.0f;
-					normalTexture.ChannelAdd[3] = 1.0f;
-
-					normalTexture.PixelShaderGUID = m_ImGuiPixelShaderNormalGUID;
-				}
-				else if (currentItem == 2)
-				{
-					normalTexture.ReservedIncludeMask = 0x00002220;
-
-					normalTexture.ChannelMult[0] = 0.5f;
-					normalTexture.ChannelMult[1] = 0.5f;
-					normalTexture.ChannelMult[2] = 0.5f;
-					normalTexture.ChannelMult[3] = 0.0f;
-
-					normalTexture.ChannelAdd[0] = 0.5f;
-					normalTexture.ChannelAdd[1] = 0.5f;
-					normalTexture.ChannelAdd[2] = 0.5f;
-					normalTexture.ChannelAdd[3] = 1.0f;
-
-					normalTexture.PixelShaderGUID = GUID_NONE;
-				}
-				else if (currentItem == 3)
-				{
-					normalTexture.ReservedIncludeMask = 0x00001110;
-
-					normalTexture.ChannelMult[0] = 1.0f;
-					normalTexture.ChannelMult[1] = 1.0f;
-					normalTexture.ChannelMult[2] = 1.0f;
-					normalTexture.ChannelMult[3] = 0.0f;
-
-					normalTexture.ChannelAdd[0] = 0.0f;
-					normalTexture.ChannelAdd[1] = 0.0f;
-					normalTexture.ChannelAdd[2] = 0.0f;
-					normalTexture.ChannelAdd[3] = 1.0f;
-
-					normalTexture.PixelShaderGUID = m_ImGuiPixelShaderRoughnessGUID;
-				}
-
-				ImGui::Image(&normalTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
-
-				ImGui::EndTabItem();
-			}
-
-			if (ImGui::BeginTabItem("Depth Stencil"))
-			{
-				depthStencilTexture.ResourceName		= "GEOMETRY_DEPTH_STENCIL";
-
-				depthStencilTexture.ReservedIncludeMask = 0x00008880;
-
-				depthStencilTexture.ChannelMult[0] = 1.0f;
-				depthStencilTexture.ChannelMult[1] = 1.0f;
-				depthStencilTexture.ChannelMult[2] = 1.0f;
-				depthStencilTexture.ChannelMult[3] = 0.0f;
-
-				depthStencilTexture.ChannelAdd[0] = 0.0f;
-				depthStencilTexture.ChannelAdd[1] = 0.0f;
-				depthStencilTexture.ChannelAdd[2] = 0.0f;
-				depthStencilTexture.ChannelAdd[3] = 1.0f;
-
-				depthStencilTexture.PixelShaderGUID = m_ImGuiPixelShaderDepthGUID;
-
-				ImGui::Image(&depthStencilTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
-
-				ImGui::EndTabItem();
-			}
-
-			if (RAY_TRACING_ENABLED)
-			{
-				if (ImGui::BeginTabItem("Ray Tracing"))
-				{
-					radianceTexture.ResourceName = "RADIANCE_TEXTURE";
-
-					radianceTexture.ReservedIncludeMask = 0x00008421;
-
-					radianceTexture.ChannelMult[0] = 1.0f;
-					radianceTexture.ChannelMult[1] = 1.0f;
-					radianceTexture.ChannelMult[2] = 1.0f;
-					radianceTexture.ChannelMult[3] = 0.0f;
-
-					radianceTexture.ChannelAdd[0] = 0.0f;
-					radianceTexture.ChannelAdd[1] = 0.0f;
-					radianceTexture.ChannelAdd[2] = 0.0f;
-					radianceTexture.ChannelAdd[3] = 1.0f;
-
-					radianceTexture.PixelShaderGUID = GUID_NONE;
-
-					ImGui::Image(&radianceTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+					ImGui::Image(&albedoTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
 
 					ImGui::EndTabItem();
 				}
-			}
 
-			ImGui::EndTabBar();
+				if (ImGui::BeginTabItem("Normal Metallic Roughness"))
+				{
+					normalTexture.ResourceName = "G_BUFFER_NORM_MET_ROUGH";
+
+					const char* items[] = { "ALL", "Normal", "Metallic", "Roughness" };
+					static int currentItem = 0;
+					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), 4);
+
+					if (currentItem == 0)
+					{
+						normalTexture.ReservedIncludeMask = 0x00008421;
+
+						normalTexture.ChannelMult[0] = 0.5f;
+						normalTexture.ChannelMult[1] = 0.5f;
+						normalTexture.ChannelMult[2] = 0.5f;
+						normalTexture.ChannelMult[3] = 0.5f;
+
+						normalTexture.ChannelAdd[0] = 0.5f;
+						normalTexture.ChannelAdd[1] = 0.5f;
+						normalTexture.ChannelAdd[2] = 0.5f;
+						normalTexture.ChannelAdd[3] = 0.5f;
+
+						normalTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 1)
+					{
+						normalTexture.ReservedIncludeMask = 0x00008420;
+
+						normalTexture.ChannelMult[0] = 1.0f;
+						normalTexture.ChannelMult[1] = 1.0f;
+						normalTexture.ChannelMult[2] = 1.0f;
+						normalTexture.ChannelMult[3] = 0.0f;
+
+						normalTexture.ChannelAdd[0] = 0.0f;
+						normalTexture.ChannelAdd[1] = 0.0f;
+						normalTexture.ChannelAdd[2] = 0.0f;
+						normalTexture.ChannelAdd[3] = 1.0f;
+
+						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderNormalGUID;
+					}
+					else if (currentItem == 2)
+					{
+						normalTexture.ReservedIncludeMask = 0x00002220;
+
+						normalTexture.ChannelMult[0] = 0.5f;
+						normalTexture.ChannelMult[1] = 0.5f;
+						normalTexture.ChannelMult[2] = 0.5f;
+						normalTexture.ChannelMult[3] = 0.0f;
+
+						normalTexture.ChannelAdd[0] = 0.5f;
+						normalTexture.ChannelAdd[1] = 0.5f;
+						normalTexture.ChannelAdd[2] = 0.5f;
+						normalTexture.ChannelAdd[3] = 1.0f;
+
+						normalTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 3)
+					{
+						normalTexture.ReservedIncludeMask = 0x00001110;
+
+						normalTexture.ChannelMult[0] = 1.0f;
+						normalTexture.ChannelMult[1] = 1.0f;
+						normalTexture.ChannelMult[2] = 1.0f;
+						normalTexture.ChannelMult[3] = 0.0f;
+
+						normalTexture.ChannelAdd[0] = 0.0f;
+						normalTexture.ChannelAdd[1] = 0.0f;
+						normalTexture.ChannelAdd[2] = 0.0f;
+						normalTexture.ChannelAdd[3] = 1.0f;
+
+						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderRoughnessGUID;
+					}
+
+					ImGui::Image(&normalTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Depth Stencil"))
+				{
+					depthStencilTexture.ResourceName = "G_BUFFER_DEPTH_STENCIL";
+
+					depthStencilTexture.ReservedIncludeMask = 0x00008880;
+
+					depthStencilTexture.ChannelMult[0] = 1.0f;
+					depthStencilTexture.ChannelMult[1] = 1.0f;
+					depthStencilTexture.ChannelMult[2] = 1.0f;
+					depthStencilTexture.ChannelMult[3] = 0.0f;
+
+					depthStencilTexture.ChannelAdd[0] = 0.0f;
+					depthStencilTexture.ChannelAdd[1] = 0.0f;
+					depthStencilTexture.ChannelAdd[2] = 0.0f;
+					depthStencilTexture.ChannelAdd[3] = 1.0f;
+
+					depthStencilTexture.PixelShaderGUID = m_ImGuiPixelShaderDepthGUID;
+
+					ImGui::Image(&depthStencilTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (RAY_TRACING_ENABLED)
+				{
+					if (ImGui::BeginTabItem("Ray Tracing"))
+					{
+						radianceTexture.ResourceName = "RADIANCE";
+
+						radianceTexture.ReservedIncludeMask = 0x00008421;
+
+						radianceTexture.ChannelMult[0] = 1.0f;
+						radianceTexture.ChannelMult[1] = 1.0f;
+						radianceTexture.ChannelMult[2] = 1.0f;
+						radianceTexture.ChannelMult[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+
+						ImGui::Image(&radianceTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+						ImGui::EndTabItem();
+					}
+				}
+
+				ImGui::EndTabBar();
+			}
 		}
+		ImGui::End();
 	}
-	ImGui::End();
 
 	m_pRenderer->PrepareRender(delta);
 
@@ -799,85 +817,85 @@ namespace LambdaEngine
 
 bool Sandbox::InitRendererForEmpty()
 {
-	using namespace LambdaEngine;
+	//using namespace LambdaEngine;
 
-	GUID_Lambda fullscreenQuadShaderGUID	= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,	EShaderLang::GLSL);
-	GUID_Lambda shadingPixelShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/StaticPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
+	//GUID_Lambda fullscreenQuadShaderGUID	= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,	EShaderLang::GLSL);
+	//GUID_Lambda shadingPixelShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/StaticPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
 
-	std::vector<RenderStageDesc> renderStages;
+	//std::vector<RenderStageDesc> renderStages;
 
-	const char*							pShadingRenderStageName = "Shading Render Stage";
-	GraphicsManagedPipelineStateDesc	shadingPipelineStateDesc = {};
-	std::vector<RenderStageAttachment>	shadingRenderStageAttachments;
+	//const char*							pShadingRenderStageName = "Shading Render Stage";
+	//GraphicsManagedPipelineStateDesc	shadingPipelineStateDesc = {};
+	//std::vector<RenderStageAttachment>	shadingRenderStageAttachments;
 
-	{
-		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT, EAttachmentType::OUTPUT_COLOR, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, BACK_BUFFER_COUNT, false, EFormat::FORMAT_B8G8R8A8_UNORM });
+	//{
+	//	shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT, EAttachmentType::OUTPUT_COLOR, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, BACK_BUFFER_COUNT, false, EFormat::FORMAT_B8G8R8A8_UNORM });
 
-		RenderStagePushConstants pushConstants = {};
-		pushConstants.pName			= "Shading Pass Push Constants";
-		pushConstants.DataSize		= sizeof(int32) * 2;
+	//	RenderStagePushConstants pushConstants = {};
+	//	pushConstants.pName			= "Shading Pass Push Constants";
+	//	pushConstants.DataSize		= sizeof(int32) * 2;
 
-		RenderStageDesc renderStage = {};
-		renderStage.pName						= pShadingRenderStageName;
-		renderStage.pAttachments				= shadingRenderStageAttachments.data();
-		renderStage.AttachmentCount				= (uint32)shadingRenderStageAttachments.size();
+	//	RenderStageDesc renderStage = {};
+	//	renderStage.pName						= pShadingRenderStageName;
+	//	renderStage.pAttachments				= shadingRenderStageAttachments.data();
+	//	renderStage.AttachmentCount				= (uint32)shadingRenderStageAttachments.size();
 
-		shadingPipelineStateDesc.pName				= "Shading Pass Pipeline State";
-		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
-		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
+	//	shadingPipelineStateDesc.pName				= "Shading Pass Pipeline State";
+	//	shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
+	//	shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
+	//	renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
 
-		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
-		renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
-		renderStage.GraphicsPipeline.pMeshIndexBufferName	= nullptr;
-		renderStage.GraphicsPipeline.pGraphicsDesc			= &shadingPipelineStateDesc;
+	//	renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
+	//	renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
+	//	renderStage.GraphicsPipeline.pMeshIndexBufferName	= nullptr;
+	//	renderStage.GraphicsPipeline.pGraphicsDesc			= &shadingPipelineStateDesc;
 
-		renderStages.push_back(renderStage);
-	}
+	//	renderStages.push_back(renderStage);
+	//}
 
-	RenderGraphDesc renderGraphDesc = {};
-	renderGraphDesc.pName						= "Render Graph";
-	renderGraphDesc.CreateDebugGraph			= RENDER_GRAPH_DEBUG_ENABLED;
-	renderGraphDesc.CreateDebugStages			= RENDERING_DEBUG_ENABLED;
-	renderGraphDesc.pRenderStages				= renderStages.data();
-	renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
-	renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
-	renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
-	renderGraphDesc.pScene						= nullptr;
+	//RenderGraphDesc renderGraphDesc = {};
+	//renderGraphDesc.pName						= "Render Graph";
+	//renderGraphDesc.CreateDebugGraph			= RENDER_GRAPH_DEBUG_ENABLED;
+	//renderGraphDesc.CreateDebugStages			= RENDERING_DEBUG_ENABLED;
+	//renderGraphDesc.pRenderStages				= renderStages.data();
+	//renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
+	//renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+	//renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
+	//renderGraphDesc.pScene						= nullptr;
 
-	m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
+	//m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
 
-	m_pRenderGraph->Init(&renderGraphDesc);
+	//m_pRenderGraph->Init(&renderGraphDesc);
 
-	Window* pWindow = CommonApplication::Get()->GetMainWindow();
-	uint32 renderWidth	= pWindow->GetWidth();
-	uint32 renderHeight = pWindow->GetHeight();
+	//Window* pWindow = CommonApplication::Get()->GetMainWindow();
+	//uint32 renderWidth	= pWindow->GetWidth();
+	//uint32 renderHeight = pWindow->GetHeight();
 
-	{
-		RenderStageParameters shadingRenderStageParameters = {};
-		shadingRenderStageParameters.pRenderStageName	= pShadingRenderStageName;
-		shadingRenderStageParameters.Graphics.Width		= renderWidth;
-		shadingRenderStageParameters.Graphics.Height	= renderHeight;
+	//{
+	//	RenderStageParameters shadingRenderStageParameters = {};
+	//	shadingRenderStageParameters.pRenderStageName	= pShadingRenderStageName;
+	//	shadingRenderStageParameters.Graphics.Width		= renderWidth;
+	//	shadingRenderStageParameters.Graphics.Height	= renderHeight;
 
-		m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
-	}
+	//	m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
+	//}
 
-	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
+	//m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
 
-	RendererDesc rendererDesc = {};
-	rendererDesc.pName				= "Renderer";
-	rendererDesc.Debug				= RENDERING_DEBUG_ENABLED;
-	rendererDesc.pRenderGraph		= m_pRenderGraph;
-	rendererDesc.pWindow			= CommonApplication::Get()->GetMainWindow();
-	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
-	
-	m_pRenderer->Init(&rendererDesc);
+	//RendererDesc rendererDesc = {};
+	//rendererDesc.pName				= "Renderer";
+	//rendererDesc.Debug				= RENDERING_DEBUG_ENABLED;
+	//rendererDesc.pRenderGraph		= m_pRenderGraph;
+	//rendererDesc.pWindow			= CommonApplication::Get()->GetMainWindow();
+	//rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
+	//
+	//m_pRenderer->Init(&rendererDesc);
 
-	if (RENDERING_DEBUG_ENABLED)
-	{
-		ImGui::SetCurrentContext(ImGuiRenderer::GetImguiContext());
-	}
+	//if (RENDERING_DEBUG_ENABLED)
+	//{
+	//	ImGui::SetCurrentContext(ImGuiRenderer::GetImguiContext());
+	//}
 
 	return true;
 }
@@ -902,198 +920,30 @@ bool Sandbox::InitRendererForDeferred()
 	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelDepth.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelRoughness.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	//GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefVertex.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/geometryDefPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
+	ResourceManager::LoadShaderFromFile("../Assets/Shaders/ForwardVertex.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
+	ResourceManager::LoadShaderFromFile("../Assets/Shaders/ForwardPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
 
-	//GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/fullscreenQuad.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::SPIRV);
-	//GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/shadingDefPixel.spv",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::SPIRV);
-	
-	std::vector<RenderStageDesc> renderStages;
+	ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingSimpleDefPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
 
-	const char*									pGeometryRenderStageName = "Geometry Render Stage";
-	GraphicsManagedPipelineStateDesc			geometryPipelineStateDesc = {};
-	std::vector<RenderStageAttachment>			geometryRenderStageAttachments;
+	String renderGraphFile = "";
 
+	if (!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 	{
-		geometryRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1, false});
-		geometryRenderStageAttachments.push_back({ SCENE_INDEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1, false});
-		geometryRenderStageAttachments.push_back({ SCENE_INSTANCE_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1, false});
-		geometryRenderStageAttachments.push_back({ SCENE_MESH_INDEX_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1, false});
-
-		geometryRenderStageAttachments.push_back({ PER_FRAME_BUFFER,							EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1, false });
-
-		geometryRenderStageAttachments.push_back({ SCENE_MAT_PARAM_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false });
-		geometryRenderStageAttachments.push_back({ SCENE_ALBEDO_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-		geometryRenderStageAttachments.push_back({ SCENE_NORMAL_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-		geometryRenderStageAttachments.push_back({ SCENE_AO_MAPS,								EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-		geometryRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-		geometryRenderStageAttachments.push_back({ SCENE_ROUGHNESS_MAPS,						EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-
-		
-		geometryRenderStageAttachments.push_back({ "GEOMETRY_ALBEDO_AO_BUFFER",					EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R8G8B8A8_UNORM		});
-		geometryRenderStageAttachments.push_back({ "GEOMETRY_NORM_MET_ROUGH_BUFFER",			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R16G16B16A16_SFLOAT	});
-		geometryRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",					EAttachmentType::OUTPUT_DEPTH_STENCIL,								FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_D24_UNORM_S8_UINT	});
-
-		RenderStagePushConstants pushConstants = {};
-		pushConstants.pName			= "Geometry Pass Push Constants";
-		pushConstants.DataSize		= sizeof(int32) * 2;
-
-		RenderStageDesc renderStage = {};
-		renderStage.pName						= pGeometryRenderStageName;
-		renderStage.Priority					= UINT32_MAX;
-		renderStage.pAttachments				= geometryRenderStageAttachments.data();
-		renderStage.AttachmentCount				= (uint32)geometryRenderStageAttachments.size();
-		//renderStage.PushConstants				= pushConstants;
-
-		geometryPipelineStateDesc.pName				= "Geometry Pass Pipeline State";
-		geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
-		geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
-
-		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
-
-		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::SCENE_INDIRECT;
-		renderStage.GraphicsPipeline.pIndexBufferName		= SCENE_INDEX_BUFFER;
-		renderStage.GraphicsPipeline.pMeshIndexBufferName	= SCENE_MESH_INDEX_BUFFER;
-		renderStage.GraphicsPipeline.pGraphicsDesc			= &geometryPipelineStateDesc;
-
-		renderStages.push_back(renderStage);
+		renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
+	}
+	else if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
+	{
+		renderGraphFile = "../Assets/RenderGraphs/RT_DEFERRED.lrg";
+	}
+	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
+	{
+		renderGraphFile = "../Assets/RenderGraphs/RT_PP_DEFERRED.lrg";
 	}
 
-	const char*									pRayTracingRenderStageName = "Ray Tracing Render Stage";
-	RayTracingManagedPipelineStateDesc			rayTracingPipelineStateDesc = {};
-	std::vector<RenderStageAttachment>			rayTracingRenderStageAttachments;
-
-	if (RAY_TRACING_ENABLED)
-	{
-		rayTracingRenderStageAttachments.push_back({ "GEOMETRY_ALBEDO_AO_BUFFER",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R8G8B8A8_UNORM		 });
-		rayTracingRenderStageAttachments.push_back({ "GEOMETRY_NORM_MET_ROUGH_BUFFER",				EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R16G16B16A16_SFLOAT	 });
-		rayTracingRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",						EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_D24_UNORM_S8_UINT	 });
-	
-		rayTracingRenderStageAttachments.push_back({ "SCENE_TLAS",									EAttachmentType::EXTERNAL_INPUT_ACCELERATION_STRUCTURE,				FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	1, false });
-
-		rayTracingRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, 1, false });
-		rayTracingRenderStageAttachments.push_back({ SCENE_INDEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, 1, false });
-		rayTracingRenderStageAttachments.push_back({ SCENE_INSTANCE_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, 1, false });
-		rayTracingRenderStageAttachments.push_back({ SCENE_MESH_INDEX_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, 1, false });
-
-		rayTracingRenderStageAttachments.push_back({ SCENE_MAT_PARAM_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	1 });
-		rayTracingRenderStageAttachments.push_back({ SCENE_ALBEDO_MAPS,								EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-		rayTracingRenderStageAttachments.push_back({ SCENE_NORMAL_MAPS,								EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-		rayTracingRenderStageAttachments.push_back({ SCENE_AO_MAPS,									EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-		rayTracingRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-		rayTracingRenderStageAttachments.push_back({ SCENE_ROUGHNESS_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	MAX_UNIQUE_MATERIALS, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-
-		rayTracingRenderStageAttachments.push_back({ PER_FRAME_BUFFER,								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER | FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, 1, false });
-
-		rayTracingRenderStageAttachments.push_back({ "RADIANCE_TEXTURE",							EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE,					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-
-		RenderStagePushConstants pushConstants = {};
-		pushConstants.pName			= "Ray Tracing Pass Push Constants";
-		pushConstants.DataSize		= sizeof(int32) * 2;
-
-		RenderStageDesc renderStage = {};
-		renderStage.pName						= pRayTracingRenderStageName;
-		renderStage.Priority					= UINT32_MAX;
-		renderStage.pAttachments				= rayTracingRenderStageAttachments.data();
-		renderStage.AttachmentCount				= (uint32)rayTracingRenderStageAttachments.size();
-		//renderStage.PushConstants				= pushConstants;
-
-		rayTracingPipelineStateDesc.pName					= "Ray Tracing Pass Pipeline State";
-		rayTracingPipelineStateDesc.RaygenShader			= raygenShaderGUID;
-		rayTracingPipelineStateDesc.pClosestHitShaders[0]	= closestHitShaderGUID;
-		rayTracingPipelineStateDesc.pMissShaders[0]			= missShaderGUID;
-		rayTracingPipelineStateDesc.ClosestHitShaderCount	= 1;
-		rayTracingPipelineStateDesc.MissShaderCount			= 1;
-
-		renderStage.PipelineType							= EPipelineStateType::RAY_TRACING;
-
-		renderStage.RayTracingPipeline.pRayTracingDesc		= &rayTracingPipelineStateDesc;
-
-		renderStages.push_back(renderStage);
-	}
-
-	const char*									pShadingRenderStageName = "Shading Render Stage";
-	GraphicsManagedPipelineStateDesc			shadingPipelineStateDesc = {};
-	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
-
-	{
-		shadingRenderStageAttachments.push_back({ "GEOMETRY_ALBEDO_AO_BUFFER",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R8G8B8A8_UNORM		 });
-		shadingRenderStageAttachments.push_back({ "GEOMETRY_NORM_MET_ROUGH_BUFFER",				EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R16G16B16A16_SFLOAT	 });
-		shadingRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",						EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_D24_UNORM_S8_UINT	 });
-
-		if (RAY_TRACING_ENABLED)
-			shadingRenderStageAttachments.push_back({ "RADIANCE_TEXTURE",						EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-
-		shadingRenderStageAttachments.push_back({ "LIGHTS_BUFFER",								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, 1, false });
-		shadingRenderStageAttachments.push_back({ PER_FRAME_BUFFER,								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, 1, false });
-
-		/*if (POST_PROCESSING_ENABLED)
-			shadingRenderStageAttachments.push_back({ "SHADED_TEXTURE",							EAttachmentType::OUTPUT_COLOR,									FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-		else*/
-		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,		EAttachmentType::OUTPUT_COLOR,									FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_B8G8R8A8_UNORM });
-
-		RenderStagePushConstants pushConstants = {};
-		pushConstants.pName			= "Shading Pass Push Constants";
-		pushConstants.DataSize		= sizeof(int32) * 2;
-
-		RenderStageDesc renderStage = {};
-		renderStage.pName						= pShadingRenderStageName;
-		renderStage.Priority					= UINT32_MAX;
-		renderStage.pAttachments				= shadingRenderStageAttachments.data();
-		renderStage.AttachmentCount				= (uint32)shadingRenderStageAttachments.size();
-		//renderStage.PushConstants				= pushConstants;
-
-		shadingPipelineStateDesc.pName				= "Shading Pass Pipeline State";
-		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
-		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
-
-		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
-
-		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
-		renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
-		renderStage.GraphicsPipeline.pMeshIndexBufferName	= nullptr;
-		renderStage.GraphicsPipeline.pGraphicsDesc			= &shadingPipelineStateDesc;
-
-		renderStages.push_back(renderStage);
-	}
-
-	const char*									pPostProcessRenderStageName = "Post-Process Render Stage";
-	ComputeManagedPipelineStateDesc				postProcessPipelineStateDesc = {};
-	std::vector<RenderStageAttachment>			postProcessRenderStageAttachments;
-
-	if (POST_PROCESSING_ENABLED)
-	{
-		//postProcessRenderStageAttachments.push_back({ "SHADED_TEXTURE",								EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_R8G8B8A8_UNORM });
-
-		postProcessRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_UNORDERED_ACCESS_TEXTURE,					FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,	BACK_BUFFER_COUNT, false, EFormat::FORMAT_B8G8R8A8_UNORM });
-
-		RenderStagePushConstants pushConstants = {};
-		pushConstants.pName			= "Post-Process Pass Push Constants";
-		pushConstants.DataSize		= sizeof(int32) * 2;
-
-		RenderStageDesc renderStage = {};
-		renderStage.pName						= pPostProcessRenderStageName;
-		renderStage.Priority					= UINT32_MAX - 1;
-		renderStage.pAttachments				= postProcessRenderStageAttachments.data();
-		renderStage.AttachmentCount				= (uint32)postProcessRenderStageAttachments.size();
-		//renderStage.PushConstants				= pushConstants;
-
-		postProcessPipelineStateDesc.pName		= "Post-Process Pass Pipeline State";
-		postProcessPipelineStateDesc.Shader		= postProcessShaderGUID;
-
-		renderStage.PipelineType						= EPipelineStateType::COMPUTE;
-
-		renderStage.ComputePipeline.pComputeDesc			= &postProcessPipelineStateDesc;
-
-		renderStages.push_back(renderStage);
-	}
+	RenderGraphStructureDesc renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
 
 	RenderGraphDesc renderGraphDesc = {};
-	renderGraphDesc.pName						= "Render Graph";
-	renderGraphDesc.CreateDebugGraph			= RENDER_GRAPH_DEBUG_ENABLED;
-	renderGraphDesc.CreateDebugStages			= RENDERING_DEBUG_ENABLED;
-	renderGraphDesc.pRenderStages				= renderStages.data();
-	renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
+	renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
 	renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 	renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
 	renderGraphDesc.pScene						= m_pScene;
@@ -1103,7 +953,6 @@ bool Sandbox::InitRendererForDeferred()
 	clock.Tick();
 
 	m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
-
 	m_pRenderGraph->Init(&renderGraphDesc);
 
 	clock.Tick();
@@ -1112,54 +961,11 @@ bool Sandbox::InitRendererForDeferred()
 	Window* pWindow	= CommonApplication::Get()->GetMainWindow();
 	uint32 renderWidth	= pWindow->GetWidth();
 	uint32 renderHeight = pWindow->GetHeight();
-	
-	{
-		RenderStageParameters geometryRenderStageParameters = {};
-		geometryRenderStageParameters.pRenderStageName	= pGeometryRenderStageName;
-		geometryRenderStageParameters.Graphics.Width	= renderWidth;
-		geometryRenderStageParameters.Graphics.Height	= renderHeight;
-
-		m_pRenderGraph->UpdateRenderStageParameters(geometryRenderStageParameters);
-	}
-
-	{
-		RenderStageParameters shadingRenderStageParameters = {};
-		shadingRenderStageParameters.pRenderStageName	= pShadingRenderStageName;
-		shadingRenderStageParameters.Graphics.Width		= renderWidth;
-		shadingRenderStageParameters.Graphics.Height	= renderHeight;
-
-		m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
-	}
-
-	if (RAY_TRACING_ENABLED)
-	{
-		RenderStageParameters rayTracingRenderStageParameters = {};
-		rayTracingRenderStageParameters.pRenderStageName			= pRayTracingRenderStageName;
-		rayTracingRenderStageParameters.RayTracing.RayTraceWidth	= renderWidth;
-		rayTracingRenderStageParameters.RayTracing.RayTraceHeight	= renderHeight;
-		rayTracingRenderStageParameters.RayTracing.RayTraceDepth	= 1;
-
-		m_pRenderGraph->UpdateRenderStageParameters(rayTracingRenderStageParameters);
-	}
-
-	if (POST_PROCESSING_ENABLED)
-	{
-		GraphicsDeviceFeatureDesc features = { };
-		RenderSystem::GetDevice()->QueryDeviceFeatures(&features);
-
-		RenderStageParameters postProcessRenderStageParameters = {};
-		postProcessRenderStageParameters.pRenderStageName				= pPostProcessRenderStageName;
-		postProcessRenderStageParameters.Compute.WorkGroupCountX		= (renderWidth * renderHeight);
-		postProcessRenderStageParameters.Compute.WorkGroupCountY		= 1;
-		postProcessRenderStageParameters.Compute.WorkGroupCountZ		= 1;
-
-		m_pRenderGraph->UpdateRenderStageParameters(postProcessRenderStageParameters);
-	}
 
 	{
 		IBuffer* pBuffer = m_pScene->GetLightsBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= "LIGHTS_BUFFER";
+		resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
@@ -1168,7 +974,7 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		IBuffer* pBuffer = m_pScene->GetPerFrameBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= PER_FRAME_BUFFER;
+		resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
@@ -1177,7 +983,7 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		IBuffer* pBuffer = m_pScene->GetMaterialProperties();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= SCENE_MAT_PARAM_BUFFER;
+		resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
@@ -1186,7 +992,7 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		IBuffer* pBuffer = m_pScene->GetVertexBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= SCENE_VERTEX_BUFFER;
+		resourceUpdateDesc.ResourceName						= SCENE_VERTEX_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
@@ -1195,7 +1001,7 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		IBuffer* pBuffer = m_pScene->GetIndexBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= SCENE_INDEX_BUFFER;
+		resourceUpdateDesc.ResourceName						= SCENE_INDEX_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
@@ -1204,16 +1010,16 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		IBuffer* pBuffer = m_pScene->GetInstanceBufer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= SCENE_INSTANCE_BUFFER;
+		resourceUpdateDesc.ResourceName						= SCENE_INSTANCE_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetMeshIndexBuffer();
+		IBuffer* pBuffer = m_pScene->GetIndirectArgsBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= SCENE_MESH_INDEX_BUFFER;
+		resourceUpdateDesc.ResourceName						= SCENE_INDIRECT_ARGS_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
@@ -1223,7 +1029,7 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		const IAccelerationStructure* pTLAS = m_pScene->GetTLAS();
 		ResourceUpdateDesc resourceUpdateDesc					= {};
-		resourceUpdateDesc.pResourceName						= "SCENE_TLAS";
+		resourceUpdateDesc.ResourceName							= SCENE_TLAS;
 		resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= pTLAS;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
@@ -1272,7 +1078,7 @@ bool Sandbox::InitRendererForDeferred()
 		std::vector<SamplerDesc*> samplerDescriptions(BACK_BUFFER_COUNT, &samplerDesc);
 
 		ResourceUpdateDesc resourceUpdateDesc = {};
-		resourceUpdateDesc.pResourceName							= "GEOMETRY_ALBEDO_AO_BUFFER";
+		resourceUpdateDesc.ResourceName								= "G_BUFFER_ALBEDO_AO";
 		resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= textureDescriptions.data();
 		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= textureViewDescriptions.data();
 		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= samplerDescriptions.data();
@@ -1323,7 +1129,7 @@ bool Sandbox::InitRendererForDeferred()
 		std::vector<SamplerDesc*> samplerDescriptions(BACK_BUFFER_COUNT, &samplerDesc);
 
 		ResourceUpdateDesc resourceUpdateDesc = {};
-		resourceUpdateDesc.pResourceName							= "GEOMETRY_NORM_MET_ROUGH_BUFFER";
+		resourceUpdateDesc.ResourceName								= "G_BUFFER_NORM_MET_ROUGH";
 		resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= textureDescriptions.data();
 		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= textureViewDescriptions.data();
 		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= samplerDescriptions.data();
@@ -1374,7 +1180,7 @@ bool Sandbox::InitRendererForDeferred()
 		std::vector<SamplerDesc*> samplerDescriptions(BACK_BUFFER_COUNT, &samplerDesc);
 
 		ResourceUpdateDesc resourceUpdateDesc = {};
-		resourceUpdateDesc.pResourceName							= "GEOMETRY_DEPTH_STENCIL";
+		resourceUpdateDesc.ResourceName								= "G_BUFFER_DEPTH_STENCIL";
 		resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= textureDescriptions.data();
 		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= textureViewDescriptions.data();
 		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= samplerDescriptions.data();
@@ -1440,65 +1246,13 @@ bool Sandbox::InitRendererForDeferred()
 		}
 
 		ResourceUpdateDesc resourceUpdateDesc = {};
-		resourceUpdateDesc.pResourceName							= "RADIANCE_TEXTURE";
+		resourceUpdateDesc.ResourceName								= "RADIANCE";
 		resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= vectorTextureDescriptions.data();
 		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= vectorTextureViewDescriptions.data();
 		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= vectorSamplerDescriptions.data();
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
-
-	/*if (POST_PROCESSING_ENABLED || RENDERING_DEBUG_ENABLED)
-	{
-		TextureDesc textureDesc	= {};
-		textureDesc.pName				= "Shaded Texture";
-		textureDesc.Type				= ETextureType::TEXTURE_2D;
-		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
-		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
-		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-		textureDesc.Width				= CommonApplication::Get()->GetMainWindow()->GetWidth();
-		textureDesc.Height				= CommonApplication::Get()->GetMainWindow()->GetHeight();
-		textureDesc.Depth				= 1;
-		textureDesc.SampleCount			= 1;
-		textureDesc.Miplevels			= 1;
-		textureDesc.ArrayCount			= 1;
-
-		TextureViewDesc textureViewDesc = { };
-		textureViewDesc.pName			= "Shaded Texture View";
-		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
-		textureViewDesc.Miplevel		= 0;
-		textureViewDesc.MiplevelCount	= 1;
-		textureViewDesc.ArrayIndex		= 0;
-		textureViewDesc.ArrayCount		= 1;
-		textureViewDesc.Format			= textureDesc.Format;
-
-		SamplerDesc samplerDesc = {};
-		samplerDesc.pName				= "Nearest Sampler";
-		samplerDesc.MinFilter			= EFilter::NEAREST;
-		samplerDesc.MagFilter			= EFilter::NEAREST;
-		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerDesc.AddressModeU		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeV		= EAddressMode::REPEAT;
-		samplerDesc.AddressModeW		= EAddressMode::REPEAT;
-		samplerDesc.MipLODBias			= 0.0f;
-		samplerDesc.AnisotropyEnabled	= false;
-		samplerDesc.MaxAnisotropy		= 16;
-		samplerDesc.MinLOD				= 0.0f;
-		samplerDesc.MaxLOD				= 1.0f;
-
-		std::vector<TextureDesc*> textureDescriptions(BACK_BUFFER_COUNT, &textureDesc);
-		std::vector<TextureViewDesc*> textureViewDescriptions(BACK_BUFFER_COUNT, &textureViewDesc);
-		std::vector<SamplerDesc*> samplerDescriptions(BACK_BUFFER_COUNT, &samplerDesc);
-
-		ResourceUpdateDesc resourceUpdateDesc = {};
-		resourceUpdateDesc.pResourceName							= "SHADED_TEXTURE";
-		resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= textureDescriptions.data();
-		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= textureViewDescriptions.data();
-		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= samplerDescriptions.data();
-
-		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-	}*/
 
 	{
 		ITexture** ppAlbedoMaps						= m_pScene->GetAlbedoMaps();
@@ -1516,31 +1270,31 @@ bool Sandbox::InitRendererForDeferred()
 		std::vector<ISampler*> samplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
 
 		ResourceUpdateDesc albedoMapsUpdateDesc = {};
-		albedoMapsUpdateDesc.pResourceName								= SCENE_ALBEDO_MAPS;
+		albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
 		albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppAlbedoMaps;
 		albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppAlbedoMapViews;
 		albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
 
 		ResourceUpdateDesc normalMapsUpdateDesc = {};
-		normalMapsUpdateDesc.pResourceName								= SCENE_NORMAL_MAPS;
+		normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
 		normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppNormalMaps;
 		normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppNormalMapViews;
 		normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
 
 		ResourceUpdateDesc aoMapsUpdateDesc = {};
-		aoMapsUpdateDesc.pResourceName									= SCENE_AO_MAPS;
+		aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
 		aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= ppAmbientOcclusionMaps;
 		aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= ppAmbientOcclusionMapViews;
 		aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= samplers.data();
 
 		ResourceUpdateDesc metallicMapsUpdateDesc = {};
-		metallicMapsUpdateDesc.pResourceName							= SCENE_METALLIC_MAPS;
+		metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
 		metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppMetallicMaps;
 		metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppMetallicMapViews;
 		metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
 
 		ResourceUpdateDesc roughnessMapsUpdateDesc = {};
-		roughnessMapsUpdateDesc.pResourceName							= SCENE_ROUGHNESS_MAPS;
+		roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
 		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= ppRoughnessMaps;
 		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= ppRoughnessMapViews;
 		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= samplers.data();
@@ -1575,345 +1329,345 @@ bool Sandbox::InitRendererForDeferred()
 
 bool Sandbox::InitRendererForVisBuf()
 {
-	using namespace LambdaEngine;
+	//using namespace LambdaEngine;
 
-	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryVisVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryVisPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	//GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryVisVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	//GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryVisPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingVisPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	//GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	//GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingVisPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	std::vector<RenderStageDesc> renderStages;
+	//std::vector<RenderStageDesc> renderStages;
 
-	const char*									pGeometryRenderStageName = "Geometry Render Stage";
-	GraphicsManagedPipelineStateDesc			geometryPipelineStateDesc = {};
-	std::vector<RenderStageAttachment>			geometryRenderStageAttachments;
+	//const char*									pGeometryRenderStageName = "Geometry Render Stage";
+	//GraphicsManagedPipelineStateDesc			geometryPipelineStateDesc = {};
+	//std::vector<RenderStageAttachment>			geometryRenderStageAttachments;
 
-	{
-		geometryRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1, false});
-		geometryRenderStageAttachments.push_back({ SCENE_INSTANCE_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1, false});
+	//{
+	//	geometryRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1, false});
+	//	geometryRenderStageAttachments.push_back({ SCENE_INSTANCE_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1, false});
 
-		geometryRenderStageAttachments.push_back({ PER_FRAME_BUFFER,							EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1, false });
+	//	geometryRenderStageAttachments.push_back({ PER_FRAME_BUFFER,							EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, 1, false });
 
-		geometryRenderStageAttachments.push_back({ "GEOMETRY_VISIBILITY_BUFFER",				EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false });
-		geometryRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",					EAttachmentType::OUTPUT_DEPTH_STENCIL,								FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false });
+	//	geometryRenderStageAttachments.push_back({ "GEOMETRY_VISIBILITY_BUFFER",				EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false });
+	//	geometryRenderStageAttachments.push_back({ "GEOMETRY_DEPTH_STENCIL",					EAttachmentType::OUTPUT_DEPTH_STENCIL,								FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false });
 
-		RenderStagePushConstants pushConstants = {};
-		pushConstants.pName			= "Geometry Pass Push Constants";
-		pushConstants.DataSize		= sizeof(int32) * 2;
+	//	RenderStagePushConstants pushConstants = {};
+	//	pushConstants.pName			= "Geometry Pass Push Constants";
+	//	pushConstants.DataSize		= sizeof(int32) * 2;
 
-		RenderStageDesc renderStage = {};
-		renderStage.pName						= pGeometryRenderStageName;
-		renderStage.pAttachments				= geometryRenderStageAttachments.data();
-		renderStage.AttachmentCount				= (uint32)geometryRenderStageAttachments.size();
-		//renderStage.PushConstants				= pushConstants;
+	//	RenderStageDesc renderStage = {};
+	//	renderStage.pName						= pGeometryRenderStageName;
+	//	renderStage.pAttachments				= geometryRenderStageAttachments.data();
+	//	renderStage.AttachmentCount				= (uint32)geometryRenderStageAttachments.size();
+	//	//renderStage.PushConstants				= pushConstants;
 
-		geometryPipelineStateDesc.pName				= "Geometry Pass Pipeline State";
-		geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
-		geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
+	//	geometryPipelineStateDesc.pName				= "Geometry Pass Pipeline State";
+	//	geometryPipelineStateDesc.VertexShader		= geometryVertexShaderGUID;
+	//	geometryPipelineStateDesc.PixelShader		= geometryPixelShaderGUID;
 
-		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
+	//	renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
 
-		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::SCENE_INDIRECT;
-		renderStage.GraphicsPipeline.pIndexBufferName		= SCENE_INDEX_BUFFER;
-		renderStage.GraphicsPipeline.pMeshIndexBufferName	= SCENE_MESH_INDEX_BUFFER;
-		renderStage.GraphicsPipeline.pGraphicsDesc			= &geometryPipelineStateDesc;
+	//	renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::SCENE_INDIRECT;
+	//	renderStage.GraphicsPipeline.pIndexBufferName		= SCENE_INDEX_BUFFER;
+	//	renderStage.GraphicsPipeline.pMeshIndexBufferName	= SCENE_MESH_INDEX_BUFFER;
+	//	renderStage.GraphicsPipeline.pGraphicsDesc			= &geometryPipelineStateDesc;
 
-		renderStages.push_back(renderStage);
-	}
+	//	renderStages.push_back(renderStage);
+	//}
 
-	const char*									pShadingRenderStageName = "Shading Render Stage";
-	GraphicsManagedPipelineStateDesc			shadingPipelineStateDesc = {};
-	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
-
-	{
-		shadingRenderStageAttachments.push_back({ "GEOMETRY_VISIBILITY_BUFFER",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false });
-
-		shadingRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false});
-		shadingRenderStageAttachments.push_back({ SCENE_INDEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false});
-		shadingRenderStageAttachments.push_back({ SCENE_INSTANCE_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false});
-		shadingRenderStageAttachments.push_back({ SCENE_MESH_INDEX_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false});
-
-		shadingRenderStageAttachments.push_back({ PER_FRAME_BUFFER,								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false });
+	//const char*									pShadingRenderStageName = "Shading Render Stage";
+	//GraphicsManagedPipelineStateDesc			shadingPipelineStateDesc = {};
+	//std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
+
+	//{
+	//	shadingRenderStageAttachments.push_back({ "GEOMETRY_VISIBILITY_BUFFER",					EAttachmentType::INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false });
+
+	//	shadingRenderStageAttachments.push_back({ SCENE_VERTEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false});
+	//	shadingRenderStageAttachments.push_back({ SCENE_INDEX_BUFFER,							EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false});
+	//	shadingRenderStageAttachments.push_back({ SCENE_INSTANCE_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false});
+	//	shadingRenderStageAttachments.push_back({ SCENE_MESH_INDEX_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false});
+
+	//	shadingRenderStageAttachments.push_back({ PER_FRAME_BUFFER,								EAttachmentType::EXTERNAL_INPUT_CONSTANT_BUFFER,					FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false });
 
-		shadingRenderStageAttachments.push_back({ SCENE_MAT_PARAM_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false });
-		shadingRenderStageAttachments.push_back({ SCENE_ALBEDO_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false});
-		shadingRenderStageAttachments.push_back({ SCENE_NORMAL_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false});
-		shadingRenderStageAttachments.push_back({ SCENE_AO_MAPS,								EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false});
-		shadingRenderStageAttachments.push_back({ SCENE_ROUGHNESS_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false});
-		shadingRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false});
-
-		shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false });
-
-		RenderStagePushConstants pushConstants = {};
-		pushConstants.pName			= "Shading Pass Push Constants";
-		pushConstants.DataSize		= sizeof(int32) * 2;
-
-		RenderStageDesc renderStage = {};
-		renderStage.pName						= pShadingRenderStageName;
-		renderStage.pAttachments				= shadingRenderStageAttachments.data();
-		renderStage.AttachmentCount				= (uint32)shadingRenderStageAttachments.size();
-		//renderStage.PushConstants				= pushConstants;
-
-		shadingPipelineStateDesc.pName				= "Shading Pass Pipeline State";
-		shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
-		shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
-
-		renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
-
-		renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
-		renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
-		renderStage.GraphicsPipeline.pMeshIndexBufferName	= nullptr;
-		renderStage.GraphicsPipeline.pGraphicsDesc			= &shadingPipelineStateDesc;
-
-		renderStages.push_back(renderStage);
-	}
-
-	RenderGraphDesc renderGraphDesc = {};
-	renderGraphDesc.pName						= "Render Graph";
-	renderGraphDesc.CreateDebugGraph			= RENDER_GRAPH_DEBUG_ENABLED;
-	renderGraphDesc.CreateDebugStages			= RENDERING_DEBUG_ENABLED;
-	renderGraphDesc.pRenderStages				= renderStages.data();
-	renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
-	renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
-	renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
-	renderGraphDesc.pScene						= m_pScene;
-
-	LambdaEngine::Clock clock;
-	clock.Reset();
-	clock.Tick();
-
-	m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
-
-	m_pRenderGraph->Init(&renderGraphDesc);
-
-	clock.Tick();
-	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
-
-	uint32 renderWidth	= CommonApplication::Get()->GetMainWindow()->GetWidth();
-	uint32 renderHeight = CommonApplication::Get()->GetMainWindow()->GetHeight();
-	
-	{
-		RenderStageParameters geometryRenderStageParameters = {};
-		geometryRenderStageParameters.pRenderStageName	= pGeometryRenderStageName;
-		geometryRenderStageParameters.Graphics.Width	= renderWidth;
-		geometryRenderStageParameters.Graphics.Height	= renderHeight;
-
-		m_pRenderGraph->UpdateRenderStageParameters(geometryRenderStageParameters);
-	}
-
-	{
-		RenderStageParameters shadingRenderStageParameters = {};
-		shadingRenderStageParameters.pRenderStageName	= pShadingRenderStageName;
-		shadingRenderStageParameters.Graphics.Width	= renderWidth;
-		shadingRenderStageParameters.Graphics.Height	= renderHeight;
-
-		m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
-	}
-
-	{
-		IBuffer* pBuffer = m_pScene->GetPerFrameBuffer();
-		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= PER_FRAME_BUFFER;
-		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
-
-		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-	}
-
-	{
-		IBuffer* pBuffer = m_pScene->GetMaterialProperties();
-		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= SCENE_MAT_PARAM_BUFFER;
-		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
-
-		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-	}
-
-	{
-		IBuffer* pBuffer = m_pScene->GetVertexBuffer();
-		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= SCENE_VERTEX_BUFFER;
-		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
-
-		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-	}
-
-	{
-		IBuffer* pBuffer = m_pScene->GetIndexBuffer();
-		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= SCENE_INDEX_BUFFER;
-		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
-
-		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-	}
-
-	{
-		IBuffer* pBuffer = m_pScene->GetInstanceBufer();
-		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= SCENE_INSTANCE_BUFFER;
-		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
-
-		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-	}
-
-	{
-		IBuffer* pBuffer = m_pScene->GetMeshIndexBuffer();
-		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.pResourceName					= SCENE_MESH_INDEX_BUFFER;
-		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
-
-		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-	}
-
-	{
-		TextureDesc visibilityBufferDesc	= {};
-		visibilityBufferDesc.pName			= "Visibility Buffer Texture";
-		visibilityBufferDesc.Type			= ETextureType::TEXTURE_2D;
-		visibilityBufferDesc.MemoryType		= EMemoryType::MEMORY_GPU;
-		visibilityBufferDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
-		visibilityBufferDesc.Flags			= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-		visibilityBufferDesc.Width			= CommonApplication::Get()->GetMainWindow()->GetWidth();
-		visibilityBufferDesc.Height			= CommonApplication::Get()->GetMainWindow()->GetHeight();
-		visibilityBufferDesc.Depth			= 1;
-		visibilityBufferDesc.SampleCount	= 1;
-		visibilityBufferDesc.Miplevels		= 1;
-		visibilityBufferDesc.ArrayCount		= 1;
-
-		TextureViewDesc visibilityBufferViewDesc = { };
-		visibilityBufferViewDesc.pName			= "Visibility Buffer Texture View";
-		visibilityBufferViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		visibilityBufferViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
-		visibilityBufferViewDesc.Miplevel		= 0;
-		visibilityBufferViewDesc.MiplevelCount	= 1;
-		visibilityBufferViewDesc.ArrayIndex		= 0;
-		visibilityBufferViewDesc.ArrayCount		= 1;
-		visibilityBufferViewDesc.Format			= visibilityBufferDesc.Format;
-
-		SamplerDesc samplerNearestDesc = {};
-		samplerNearestDesc.pName				= "Nearest Sampler";
-		samplerNearestDesc.MinFilter			= EFilter::NEAREST;
-		samplerNearestDesc.MagFilter			= EFilter::NEAREST;
-		samplerNearestDesc.MipmapMode			= EMipmapMode::NEAREST;
-		samplerNearestDesc.AddressModeU			= EAddressMode::REPEAT;
-		samplerNearestDesc.AddressModeV			= EAddressMode::REPEAT;
-		samplerNearestDesc.AddressModeW			= EAddressMode::REPEAT;
-		samplerNearestDesc.MipLODBias			= 0.0f;
-		samplerNearestDesc.AnisotropyEnabled	= false;
-		samplerNearestDesc.MaxAnisotropy		= 16;
-		samplerNearestDesc.MinLOD				= 0.0f;
-		samplerNearestDesc.MaxLOD				= 1.0f;
-
-		std::vector<TextureDesc*> visibilityBufferTextureDescriptions(BACK_BUFFER_COUNT, &visibilityBufferDesc);
-		std::vector<TextureViewDesc*> visibilityBufferTextureViewDescriptions(BACK_BUFFER_COUNT, &visibilityBufferViewDesc);
-		std::vector<SamplerDesc*> visibilityBufferSamplerDescriptions(BACK_BUFFER_COUNT, &samplerNearestDesc);
-
-		ResourceUpdateDesc resourceUpdateDesc = {};
-		resourceUpdateDesc.pResourceName							= "GEOMETRY_VISIBILITY_BUFFER";
-		resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= visibilityBufferTextureDescriptions.data();
-		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= visibilityBufferTextureViewDescriptions.data();
-		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= visibilityBufferSamplerDescriptions.data();
-
-		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-	}
-
-	{
-		TextureDesc depthStencilDesc = {};
-		depthStencilDesc.pName			= "Geometry Pass Depth Stencil Texture";
-		depthStencilDesc.Type			= ETextureType::TEXTURE_2D;
-		depthStencilDesc.MemoryType		= EMemoryType::MEMORY_GPU;
-		depthStencilDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
-		depthStencilDesc.Flags			= TEXTURE_FLAG_DEPTH_STENCIL;
-		depthStencilDesc.Width			= CommonApplication::Get()->GetMainWindow()->GetWidth();
-		depthStencilDesc.Height			= CommonApplication::Get()->GetMainWindow()->GetHeight();
-		depthStencilDesc.Depth			= 1;
-		depthStencilDesc.SampleCount	= 1;
-		depthStencilDesc.Miplevels		= 1;
-		depthStencilDesc.ArrayCount		= 1;
-
-		TextureViewDesc depthStencilViewDesc = { };
-		depthStencilViewDesc.pName			= "Geometry Pass Depth Stencil Texture View";
-		depthStencilViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL;
-		depthStencilViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
-		depthStencilViewDesc.Miplevel		= 0;
-		depthStencilViewDesc.MiplevelCount	= 1;
-		depthStencilViewDesc.ArrayIndex		= 0;
-		depthStencilViewDesc.ArrayCount		= 1;
-		depthStencilViewDesc.Format			= depthStencilDesc.Format;
-
-		TextureDesc*		pDepthStencilDesc		= &depthStencilDesc;
-		TextureViewDesc*	pDepthStencilViewDesc	= &depthStencilViewDesc;
-
-		ResourceUpdateDesc resourceUpdateDesc = {};
-		resourceUpdateDesc.pResourceName							= "GEOMETRY_DEPTH_STENCIL";
-		resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pDepthStencilDesc;
-		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pDepthStencilViewDesc;
-
-		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-	}
-
-	{
-		ITexture** ppAlbedoMaps						= m_pScene->GetAlbedoMaps();
-		ITexture** ppNormalMaps						= m_pScene->GetNormalMaps();
-		ITexture** ppAmbientOcclusionMaps			= m_pScene->GetAmbientOcclusionMaps();
-		ITexture** ppMetallicMaps					= m_pScene->GetMetallicMaps();
-		ITexture** ppRoughnessMaps					= m_pScene->GetRoughnessMaps();
-
-		ITextureView** ppAlbedoMapViews				= m_pScene->GetAlbedoMapViews();
-		ITextureView** ppNormalMapViews				= m_pScene->GetNormalMapViews();
-		ITextureView** ppAmbientOcclusionMapViews	= m_pScene->GetAmbientOcclusionMapViews();
-		ITextureView** ppMetallicMapViews			= m_pScene->GetMetallicMapViews();
-		ITextureView** ppRoughnessMapViews			= m_pScene->GetRoughnessMapViews();
-
-		std::vector<ISampler*> samplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
-
-		ResourceUpdateDesc albedoMapsUpdateDesc = {};
-		albedoMapsUpdateDesc.pResourceName								= SCENE_ALBEDO_MAPS;
-		albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppAlbedoMaps;
-		albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppAlbedoMapViews;
-		albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
-
-		ResourceUpdateDesc normalMapsUpdateDesc = {};
-		normalMapsUpdateDesc.pResourceName								= SCENE_NORMAL_MAPS;
-		normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppNormalMaps;
-		normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppNormalMapViews;
-		normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
-
-		ResourceUpdateDesc aoMapsUpdateDesc = {};
-		aoMapsUpdateDesc.pResourceName									= SCENE_AO_MAPS;
-		aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= ppAmbientOcclusionMaps;
-		aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= ppAmbientOcclusionMapViews;
-		aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= samplers.data();
-
-		ResourceUpdateDesc metallicMapsUpdateDesc = {};
-		metallicMapsUpdateDesc.pResourceName							= SCENE_METALLIC_MAPS;
-		metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppMetallicMaps;
-		metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppMetallicMapViews;
-		metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
-
-		ResourceUpdateDesc roughnessMapsUpdateDesc = {};
-		roughnessMapsUpdateDesc.pResourceName							= SCENE_ROUGHNESS_MAPS;
-		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= ppRoughnessMaps;
-		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= ppRoughnessMapViews;
-		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= samplers.data();
-
-		m_pRenderGraph->UpdateResource(albedoMapsUpdateDesc);
-		m_pRenderGraph->UpdateResource(normalMapsUpdateDesc);
-		m_pRenderGraph->UpdateResource(aoMapsUpdateDesc);
-		m_pRenderGraph->UpdateResource(metallicMapsUpdateDesc);
-		m_pRenderGraph->UpdateResource(roughnessMapsUpdateDesc);
-	}
-
-	m_pRenderGraph->Update();
-
-	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
-
-	RendererDesc rendererDesc = {};
-	rendererDesc.pName				= "Renderer";
-	rendererDesc.pRenderGraph		= m_pRenderGraph;
-	rendererDesc.pWindow			= CommonApplication::Get()->GetMainWindow();
-	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
-	
-	m_pRenderer->Init(&rendererDesc);
+	//	shadingRenderStageAttachments.push_back({ SCENE_MAT_PARAM_BUFFER,						EAttachmentType::EXTERNAL_INPUT_UNORDERED_ACCESS_BUFFER,			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	1, false });
+	//	shadingRenderStageAttachments.push_back({ SCENE_ALBEDO_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false});
+	//	shadingRenderStageAttachments.push_back({ SCENE_NORMAL_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false});
+	//	shadingRenderStageAttachments.push_back({ SCENE_AO_MAPS,								EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false});
+	//	shadingRenderStageAttachments.push_back({ SCENE_ROUGHNESS_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false});
+	//	shadingRenderStageAttachments.push_back({ SCENE_METALLIC_MAPS,							EAttachmentType::EXTERNAL_INPUT_SHADER_RESOURCE_COMBINED_SAMPLER,	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	MAX_UNIQUE_MATERIALS, false});
+
+	//	shadingRenderStageAttachments.push_back({ RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,			EAttachmentType::OUTPUT_COLOR,										FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	BACK_BUFFER_COUNT, false });
+
+	//	RenderStagePushConstants pushConstants = {};
+	//	pushConstants.pName			= "Shading Pass Push Constants";
+	//	pushConstants.DataSize		= sizeof(int32) * 2;
+
+	//	RenderStageDesc renderStage = {};
+	//	renderStage.pName						= pShadingRenderStageName;
+	//	renderStage.pAttachments				= shadingRenderStageAttachments.data();
+	//	renderStage.AttachmentCount				= (uint32)shadingRenderStageAttachments.size();
+	//	//renderStage.PushConstants				= pushConstants;
+
+	//	shadingPipelineStateDesc.pName				= "Shading Pass Pipeline State";
+	//	shadingPipelineStateDesc.VertexShader		= fullscreenQuadShaderGUID;
+	//	shadingPipelineStateDesc.PixelShader		= shadingPixelShaderGUID;
+
+	//	renderStage.PipelineType						= EPipelineStateType::GRAPHICS;
+
+	//	renderStage.GraphicsPipeline.DrawType				= ERenderStageDrawType::FULLSCREEN_QUAD;
+	//	renderStage.GraphicsPipeline.pIndexBufferName		= nullptr;
+	//	renderStage.GraphicsPipeline.pMeshIndexBufferName	= nullptr;
+	//	renderStage.GraphicsPipeline.pGraphicsDesc			= &shadingPipelineStateDesc;
+
+	//	renderStages.push_back(renderStage);
+	//}
+
+	//RenderGraphDesc renderGraphDesc = {};
+	//renderGraphDesc.pName						= "Render Graph";
+	//renderGraphDesc.CreateDebugGraph			= RENDER_GRAPH_DEBUG_ENABLED;
+	//renderGraphDesc.CreateDebugStages			= RENDERING_DEBUG_ENABLED;
+	//renderGraphDesc.pRenderStages				= renderStages.data();
+	//renderGraphDesc.RenderStageCount			= (uint32)renderStages.size();
+	//renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+	//renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
+	//renderGraphDesc.pScene						= m_pScene;
+
+	//LambdaEngine::Clock clock;
+	//clock.Reset();
+	//clock.Tick();
+
+	//m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
+
+	//m_pRenderGraph->Init(&renderGraphDesc);
+
+	//clock.Tick();
+	//LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
+
+	//uint32 renderWidth	= CommonApplication::Get()->GetMainWindow()->GetWidth();
+	//uint32 renderHeight = CommonApplication::Get()->GetMainWindow()->GetHeight();
+	//
+	//{
+	//	RenderStageParameters geometryRenderStageParameters = {};
+	//	geometryRenderStageParameters.pRenderStageName	= pGeometryRenderStageName;
+	//	geometryRenderStageParameters.Graphics.Width	= renderWidth;
+	//	geometryRenderStageParameters.Graphics.Height	= renderHeight;
+
+	//	m_pRenderGraph->UpdateRenderStageParameters(geometryRenderStageParameters);
+	//}
+
+	//{
+	//	RenderStageParameters shadingRenderStageParameters = {};
+	//	shadingRenderStageParameters.pRenderStageName	= pShadingRenderStageName;
+	//	shadingRenderStageParameters.Graphics.Width	= renderWidth;
+	//	shadingRenderStageParameters.Graphics.Height	= renderHeight;
+
+	//	m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
+	//}
+
+	//{
+	//	IBuffer* pBuffer = m_pScene->GetPerFrameBuffer();
+	//	ResourceUpdateDesc resourceUpdateDesc				= {};
+	//	resourceUpdateDesc.pResourceName					= PER_FRAME_BUFFER;
+	//	resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+	//	m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	//}
+
+	//{
+	//	IBuffer* pBuffer = m_pScene->GetMaterialProperties();
+	//	ResourceUpdateDesc resourceUpdateDesc				= {};
+	//	resourceUpdateDesc.pResourceName					= SCENE_MAT_PARAM_BUFFER;
+	//	resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+	//	m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	//}
+
+	//{
+	//	IBuffer* pBuffer = m_pScene->GetVertexBuffer();
+	//	ResourceUpdateDesc resourceUpdateDesc				= {};
+	//	resourceUpdateDesc.pResourceName					= SCENE_VERTEX_BUFFER;
+	//	resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+	//	m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	//}
+
+	//{
+	//	IBuffer* pBuffer = m_pScene->GetIndexBuffer();
+	//	ResourceUpdateDesc resourceUpdateDesc				= {};
+	//	resourceUpdateDesc.pResourceName					= SCENE_INDEX_BUFFER;
+	//	resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+	//	m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	//}
+
+	//{
+	//	IBuffer* pBuffer = m_pScene->GetInstanceBufer();
+	//	ResourceUpdateDesc resourceUpdateDesc				= {};
+	//	resourceUpdateDesc.pResourceName					= SCENE_INSTANCE_BUFFER;
+	//	resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+	//	m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	//}
+
+	//{
+	//	IBuffer* pBuffer = m_pScene->GetMeshIndexBuffer();
+	//	ResourceUpdateDesc resourceUpdateDesc				= {};
+	//	resourceUpdateDesc.pResourceName					= SCENE_MESH_INDEX_BUFFER;
+	//	resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+	//	m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	//}
+
+	//{
+	//	TextureDesc visibilityBufferDesc	= {};
+	//	visibilityBufferDesc.pName			= "Visibility Buffer Texture";
+	//	visibilityBufferDesc.Type			= ETextureType::TEXTURE_2D;
+	//	visibilityBufferDesc.MemoryType		= EMemoryType::MEMORY_GPU;
+	//	visibilityBufferDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+	//	visibilityBufferDesc.Flags			= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+	//	visibilityBufferDesc.Width			= CommonApplication::Get()->GetMainWindow()->GetWidth();
+	//	visibilityBufferDesc.Height			= CommonApplication::Get()->GetMainWindow()->GetHeight();
+	//	visibilityBufferDesc.Depth			= 1;
+	//	visibilityBufferDesc.SampleCount	= 1;
+	//	visibilityBufferDesc.Miplevels		= 1;
+	//	visibilityBufferDesc.ArrayCount		= 1;
+
+	//	TextureViewDesc visibilityBufferViewDesc = { };
+	//	visibilityBufferViewDesc.pName			= "Visibility Buffer Texture View";
+	//	visibilityBufferViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+	//	visibilityBufferViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+	//	visibilityBufferViewDesc.Miplevel		= 0;
+	//	visibilityBufferViewDesc.MiplevelCount	= 1;
+	//	visibilityBufferViewDesc.ArrayIndex		= 0;
+	//	visibilityBufferViewDesc.ArrayCount		= 1;
+	//	visibilityBufferViewDesc.Format			= visibilityBufferDesc.Format;
+
+	//	SamplerDesc samplerNearestDesc = {};
+	//	samplerNearestDesc.pName				= "Nearest Sampler";
+	//	samplerNearestDesc.MinFilter			= EFilter::NEAREST;
+	//	samplerNearestDesc.MagFilter			= EFilter::NEAREST;
+	//	samplerNearestDesc.MipmapMode			= EMipmapMode::NEAREST;
+	//	samplerNearestDesc.AddressModeU			= EAddressMode::REPEAT;
+	//	samplerNearestDesc.AddressModeV			= EAddressMode::REPEAT;
+	//	samplerNearestDesc.AddressModeW			= EAddressMode::REPEAT;
+	//	samplerNearestDesc.MipLODBias			= 0.0f;
+	//	samplerNearestDesc.AnisotropyEnabled	= false;
+	//	samplerNearestDesc.MaxAnisotropy		= 16;
+	//	samplerNearestDesc.MinLOD				= 0.0f;
+	//	samplerNearestDesc.MaxLOD				= 1.0f;
+
+	//	std::vector<TextureDesc*> visibilityBufferTextureDescriptions(BACK_BUFFER_COUNT, &visibilityBufferDesc);
+	//	std::vector<TextureViewDesc*> visibilityBufferTextureViewDescriptions(BACK_BUFFER_COUNT, &visibilityBufferViewDesc);
+	//	std::vector<SamplerDesc*> visibilityBufferSamplerDescriptions(BACK_BUFFER_COUNT, &samplerNearestDesc);
+
+	//	ResourceUpdateDesc resourceUpdateDesc = {};
+	//	resourceUpdateDesc.pResourceName							= "GEOMETRY_VISIBILITY_BUFFER";
+	//	resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= visibilityBufferTextureDescriptions.data();
+	//	resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= visibilityBufferTextureViewDescriptions.data();
+	//	resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= visibilityBufferSamplerDescriptions.data();
+
+	//	m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	//}
+
+	//{
+	//	TextureDesc depthStencilDesc = {};
+	//	depthStencilDesc.pName			= "Geometry Pass Depth Stencil Texture";
+	//	depthStencilDesc.Type			= ETextureType::TEXTURE_2D;
+	//	depthStencilDesc.MemoryType		= EMemoryType::MEMORY_GPU;
+	//	depthStencilDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
+	//	depthStencilDesc.Flags			= TEXTURE_FLAG_DEPTH_STENCIL;
+	//	depthStencilDesc.Width			= CommonApplication::Get()->GetMainWindow()->GetWidth();
+	//	depthStencilDesc.Height			= CommonApplication::Get()->GetMainWindow()->GetHeight();
+	//	depthStencilDesc.Depth			= 1;
+	//	depthStencilDesc.SampleCount	= 1;
+	//	depthStencilDesc.Miplevels		= 1;
+	//	depthStencilDesc.ArrayCount		= 1;
+
+	//	TextureViewDesc depthStencilViewDesc = { };
+	//	depthStencilViewDesc.pName			= "Geometry Pass Depth Stencil Texture View";
+	//	depthStencilViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL;
+	//	depthStencilViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+	//	depthStencilViewDesc.Miplevel		= 0;
+	//	depthStencilViewDesc.MiplevelCount	= 1;
+	//	depthStencilViewDesc.ArrayIndex		= 0;
+	//	depthStencilViewDesc.ArrayCount		= 1;
+	//	depthStencilViewDesc.Format			= depthStencilDesc.Format;
+
+	//	TextureDesc*		pDepthStencilDesc		= &depthStencilDesc;
+	//	TextureViewDesc*	pDepthStencilViewDesc	= &depthStencilViewDesc;
+
+	//	ResourceUpdateDesc resourceUpdateDesc = {};
+	//	resourceUpdateDesc.pResourceName							= "GEOMETRY_DEPTH_STENCIL";
+	//	resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pDepthStencilDesc;
+	//	resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pDepthStencilViewDesc;
+
+	//	m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	//}
+
+	//{
+	//	ITexture** ppAlbedoMaps						= m_pScene->GetAlbedoMaps();
+	//	ITexture** ppNormalMaps						= m_pScene->GetNormalMaps();
+	//	ITexture** ppAmbientOcclusionMaps			= m_pScene->GetAmbientOcclusionMaps();
+	//	ITexture** ppMetallicMaps					= m_pScene->GetMetallicMaps();
+	//	ITexture** ppRoughnessMaps					= m_pScene->GetRoughnessMaps();
+
+	//	ITextureView** ppAlbedoMapViews				= m_pScene->GetAlbedoMapViews();
+	//	ITextureView** ppNormalMapViews				= m_pScene->GetNormalMapViews();
+	//	ITextureView** ppAmbientOcclusionMapViews	= m_pScene->GetAmbientOcclusionMapViews();
+	//	ITextureView** ppMetallicMapViews			= m_pScene->GetMetallicMapViews();
+	//	ITextureView** ppRoughnessMapViews			= m_pScene->GetRoughnessMapViews();
+
+	//	std::vector<ISampler*> samplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
+
+	//	ResourceUpdateDesc albedoMapsUpdateDesc = {};
+	//	albedoMapsUpdateDesc.pResourceName								= SCENE_ALBEDO_MAPS;
+	//	albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppAlbedoMaps;
+	//	albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppAlbedoMapViews;
+	//	albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+
+	//	ResourceUpdateDesc normalMapsUpdateDesc = {};
+	//	normalMapsUpdateDesc.pResourceName								= SCENE_NORMAL_MAPS;
+	//	normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppNormalMaps;
+	//	normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppNormalMapViews;
+	//	normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+
+	//	ResourceUpdateDesc aoMapsUpdateDesc = {};
+	//	aoMapsUpdateDesc.pResourceName									= SCENE_AO_MAPS;
+	//	aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= ppAmbientOcclusionMaps;
+	//	aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= ppAmbientOcclusionMapViews;
+	//	aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= samplers.data();
+
+	//	ResourceUpdateDesc metallicMapsUpdateDesc = {};
+	//	metallicMapsUpdateDesc.pResourceName							= SCENE_METALLIC_MAPS;
+	//	metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppMetallicMaps;
+	//	metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppMetallicMapViews;
+	//	metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+
+	//	ResourceUpdateDesc roughnessMapsUpdateDesc = {};
+	//	roughnessMapsUpdateDesc.pResourceName							= SCENE_ROUGHNESS_MAPS;
+	//	roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= ppRoughnessMaps;
+	//	roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= ppRoughnessMapViews;
+	//	roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= samplers.data();
+
+	//	m_pRenderGraph->UpdateResource(albedoMapsUpdateDesc);
+	//	m_pRenderGraph->UpdateResource(normalMapsUpdateDesc);
+	//	m_pRenderGraph->UpdateResource(aoMapsUpdateDesc);
+	//	m_pRenderGraph->UpdateResource(metallicMapsUpdateDesc);
+	//	m_pRenderGraph->UpdateResource(roughnessMapsUpdateDesc);
+	//}
+
+	//m_pRenderGraph->Update();
+
+	//m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
+
+	//RendererDesc rendererDesc = {};
+	//rendererDesc.pName				= "Renderer";
+	//rendererDesc.pRenderGraph		= m_pRenderGraph;
+	//rendererDesc.pWindow			= CommonApplication::Get()->GetMainWindow();
+	//rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
+	//
+	//m_pRenderer->Init(&rendererDesc);
 
 	return true;
 }

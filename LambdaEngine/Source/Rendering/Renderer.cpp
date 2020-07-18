@@ -98,7 +98,7 @@ namespace LambdaEngine
 		}
 		
 		ResourceUpdateDesc resourceUpdateDesc = {};
-		resourceUpdateDesc.pResourceName						= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+		resourceUpdateDesc.ResourceName							= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
 		resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppBackBuffers;
 		resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppBackBufferViews;
 

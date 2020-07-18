@@ -122,7 +122,7 @@ namespace LambdaEngine
 		FORCEINLINE IBuffer*						GetVertexBuffer()				{ return m_pSceneVertexBuffer; }		
 		FORCEINLINE IBuffer*						GetIndexBuffer()				{ return m_pSceneIndexBuffer; }		
 		FORCEINLINE IBuffer*						GetInstanceBufer()				{ return m_pSceneInstanceBuffer; }
-		FORCEINLINE IBuffer*						GetMeshIndexBuffer()			{ return m_pSceneMeshIndexBuffer; }	
+		FORCEINLINE IBuffer*						GetIndirectArgsBuffer()			{ return m_pSceneMeshIndexBuffer; }	
 																			
 		
 

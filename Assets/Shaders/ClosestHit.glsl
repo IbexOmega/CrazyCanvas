@@ -23,7 +23,7 @@ layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAlbedoMaps
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneRougnessMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneRoughnessMaps[MAX_UNIQUE_MATERIALS];
 
 layout(location = 0) rayPayloadInEXT SRayPayload s_RayPayload;
 

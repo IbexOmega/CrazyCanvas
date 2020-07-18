@@ -132,6 +132,42 @@ workspace "LambdaEngine"
 				"Dependencies/tinyobjloader/tiny_obj_loader.h",
 				"Dependencies/tinyobjloader/tiny_obj_loader.cc",
 			}
+			
+		-- imnodes Project
+		project "imnodes"
+			kind "StaticLib"
+			language "C++"
+			cppdialect "C++17"
+			systemversion "latest"
+			location "Dependencies/projectfiles/imnodes"
+			
+			filter "configurations:Debug or Release"
+				symbols "on"
+				runtime "Release"
+				optimize "Full"
+			filter{}
+			
+			filter "configurations:Production"
+				symbols "off"
+				runtime "Release"
+				optimize "Full"
+			filter{}
+			
+			sysincludedirs
+			{
+				"Dependencies/imgui",
+			}
+			
+			-- Targets
+			targetdir ("Dependencies/bin/imnodes/" .. outputdir)
+			objdir ("Dependencies/bin-int/imnodes/" .. outputdir)
+					
+			-- Files
+			files 
+			{
+				"Dependencies/imnodes/imnodes.h",
+				"Dependencies/imnodes/imnodes.cpp",
+			}
 	group ""
 
     -- Engine Project
@@ -239,6 +275,9 @@ workspace "LambdaEngine"
 			"Dependencies/stb",
 			"Dependencies/portaudio/include",
 			"Dependencies/glslang/include",
+			"Dependencies/imnodes",
+			"Dependencies/rapidjson/include",
+			"Dependencies/ordered-map/include",
 		}
         
 		links 
@@ -246,6 +285,7 @@ workspace "LambdaEngine"
 			"tinyobjloader",
 			"WavLib",
 			"ImGui",
+			"imnodes",
 		}
 		
 		-- Win32
@@ -270,6 +310,9 @@ workspace "LambdaEngine"
 				
 				-- PortAudio
 				"Dependencies/portaudio/lib",
+				
+				-- imgui-node-editor
+				"Dependencies/imgui-node-editor/lib",
 			}
 			
 			sysincludedirs
@@ -420,6 +463,7 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/glm",
 			"Dependencies/imgui",
+			"Dependencies/ordered-map/include",
 		}
         
         -- Files
@@ -470,6 +514,7 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/glm",
 			"Dependencies/imgui",
+			"Dependencies/ordered-map/include",
 		}
 
         -- Files
@@ -520,6 +565,7 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/glm",
 			"Dependencies/imgui",
+			"Dependencies/ordered-map/include",
 		}
         
         -- Files

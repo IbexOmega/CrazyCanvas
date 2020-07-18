@@ -2,6 +2,8 @@
 #include "GraphicsTypes.h"
 #include "IPipelineState.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 	FORCEINLINE ECommandQueueType ConvertPipelineStateTypeToQueue(EPipelineStateType pipelineStateType)
@@ -34,6 +36,36 @@ namespace LambdaEngine
 			case FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER:	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 			case FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER:			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 			default:														return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP;
+		}
+	}
+
+	FORCEINLINE FShaderStageFlags ConvertPipelineStageToShaderStage(FPipelineStageFlags pipelineStage)
+	{
+		switch (pipelineStage)
+		{
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN:							return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP:								return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM:							return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT:					return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT:						return FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_SHADER:					return FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER:						return FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER:					return FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER:					return FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER:						return FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS:				return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS:				return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT:				return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER:					return FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY:								return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_HOST:								return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_STREAM_OUTPUT:					return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING:			return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER:				return FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD:		return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE:				return FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER:						return FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER;
+		case FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER:						return FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER;
 		}
 	}
 
@@ -112,5 +144,44 @@ namespace LambdaEngine
         case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 8;
         default:                                    return 0;
         }
+	}
+
+	FORCEINLINE String TextureFormatToString(EFormat format)
+	{
+		switch (format)
+		{
+		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return "D24_UNORM_S8_UINT";
+		case EFormat::FORMAT_R8G8B8A8_UNORM:		return "R8G8B8A8_UNORM";
+		case EFormat::FORMAT_B8G8R8A8_UNORM:		return "B8G8R8A8_UNORM";
+		case EFormat::FORMAT_R8G8B8A8_SNORM:		return "R8G8B8A8_SNORM";
+		case EFormat::FORMAT_R32G32_SFLOAT:			return "R32G32_SFLOAT";
+		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return "R16G16B16A16_SFLOAT";
+		default:                                    return "NONE";
+		}
+	}
+
+	FORCEINLINE EFormat TextureFormatFromString(const String& string)
+	{
+		if		(string == "D24_UNORM_S8_UINT")		return EFormat::FORMAT_D24_UNORM_S8_UINT;
+		else if (string == "R8G8B8A8_UNORM")		return EFormat::FORMAT_R8G8B8A8_UNORM;
+		else if (string == "B8G8R8A8_UNORM")		return EFormat::FORMAT_B8G8R8A8_UNORM;
+		else if (string == "R8G8B8A8_SNORM")		return EFormat::FORMAT_R8G8B8A8_SNORM;
+		else if (string == "R32G32_SFLOAT")			return EFormat::FORMAT_R32G32_SFLOAT;
+		else if (string == "R16G16B16A16_SFLOAT")	return EFormat::FORMAT_R16G16B16A16_SFLOAT;
+
+		return EFormat::NONE;
+	}
+
+	FORCEINLINE String CommandQueueToString(ECommandQueueType commandQueue)
+	{
+		switch (commandQueue)
+		{
+		case ECommandQueueType::COMMAND_QUEUE_GRAPHICS:		return "GRAPHICS";
+		case ECommandQueueType::COMMAND_QUEUE_COMPUTE:		return "COMPUTE";
+		case ECommandQueueType::COMMAND_QUEUE_COPY:			return "COPY";
+		case ECommandQueueType::COMMAND_QUEUE_UNKNOWN:		return "UNKNOWN";
+		case ECommandQueueType::COMMAND_QUEUE_NONE:
+		default:											return "NONE";
+		}
 	}
 }
