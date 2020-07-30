@@ -91,14 +91,7 @@ namespace LambdaEngine
         VkResult result = m_pDevice->vkCreateRayTracingPipelinesKHR(m_pDevice->Device, VK_NULL_HANDLE, 1, &rayTracingPipelineInfo, nullptr, &m_Pipeline);
 		if (result != VK_SUCCESS)
 		{
-            if (pDesc->pName)
-            {
-                LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkCreateRayTracingPipelinesKHR failed for \"%s\"", pDesc->pName);
-            }
-            else
-            {
-                LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkCreateRayTracingPipelinesKHR failed");
-            }
+            LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkCreateRayTracingPipelinesKHR failed for \"%s\"", pDesc->Name.c_str());
             
 			return false;
 		}
@@ -119,14 +112,7 @@ namespace LambdaEngine
         result = m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, (uint32)shaderGroups.size(), sbtSize, pMapped);
 		if (result!= VK_SUCCESS)
 		{
-            if (pDesc->pName)
-            {
-                LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed for \"%s\"", pDesc->pName);
-            }
-            else
-            {
-                LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed");
-            }
+            LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed for \"%s\"", pDesc->Name.c_str());
             
 			return false;
 		}
@@ -173,16 +159,9 @@ namespace LambdaEngine
 		m_MissBufferRegion.size					= VkDeviceSize(pDesc->MissShaderCount) * VkDeviceSize(shaderGroupHandleSize);
 		m_MissBufferRegion.stride				= shaderGroupHandleSize;
 
-		SetName(pDesc->pName);
+		SetName(pDesc->Name.c_str());
 
-		if (pDesc->pName)
-		{
-			D_LOG_MESSAGE("[RayTracingPipelineStateVK]: Created Pipeline for %s", pDesc->pName);
-		}
-		else
-		{
-			D_LOG_MESSAGE("[RayTracingPipelineStateVK]: Created Pipeline");
-		}
+		D_LOG_MESSAGE("[RayTracingPipelineStateVK]: Created Pipeline for %s", pDesc->Name.c_str());
 
 		return true;
 	}

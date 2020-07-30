@@ -5,6 +5,8 @@
 
 #include "Rendering/Core/API/IRenderPass.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 	constexpr uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
@@ -46,7 +48,7 @@ namespace LambdaEngine
 
 	struct GraphicsPipelineStateDesc
 	{
-		const char*					pName						= "";
+		String						Name						= "";
 		const IRenderPass*			pRenderPass					= nullptr;
 		const IPipelineLayout*		pPipelineLayout				= nullptr;
 
@@ -72,14 +74,14 @@ namespace LambdaEngine
 
 	struct ComputePipelineStateDesc
 	{
-		const char*				pName				= "";
+		String					Name				= "";
 		const IPipelineLayout*	pPipelineLayout		= nullptr;
 		const IShader*			pShader				= nullptr;
 	};
 
 	struct RayTracingPipelineStateDesc
 	{
-		const char*				pName					= "";
+		String					Name					= "";
 		const IPipelineLayout*	pPipelineLayout			= nullptr;
 		uint32					MaxRecursionDepth		= 1;	
 

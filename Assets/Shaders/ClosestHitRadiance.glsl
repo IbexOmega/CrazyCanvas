@@ -6,7 +6,7 @@
 #include "Helpers.glsl"
 #include "Defines.glsl"
 
-struct SRayPayload
+struct SRadiancePayload
 {
 	vec3 OutgoingRadiance;
 };
@@ -26,7 +26,7 @@ layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAOMaps[MAX
 layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneRoughnessMaps[MAX_UNIQUE_MATERIALS];
 
-layout(location = 0) rayPayloadInEXT SRayPayload s_RayPayload;
+layout(location = 0) rayPayloadInEXT SRadiancePayload s_RadiancePayload;
 
 hitAttributeEXT vec3 attribs;
 
@@ -85,5 +85,5 @@ void main()
 
     vec3 albedo = pow(  texture(u_SceneAlbedoMaps[hitDescription.MaterialIndex],    hitDescription.TexCoord).rgb, vec3(GAMMA));
 
-    s_RayPayload.OutgoingRadiance = albedo;
+    s_RadiancePayload.OutgoingRadiance = albedo;
 }

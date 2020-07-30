@@ -59,9 +59,9 @@ namespace LambdaEngine
 		virtual void PreBuffersDescriptorSetWrite()		override final;
 		virtual void PreTexturesDescriptorSetWrite()	override final;
 
-		virtual void UpdateParameters(void* pData)		override final;
+		//virtual void UpdateParameters(void* pData)		override final;
 
-		virtual void UpdatePushConstants(void* pData, uint32 dataSize)	override final;
+		//virtual void UpdatePushConstants(void* pData, uint32 dataSize)	override final;
 
 		virtual void UpdateTextureResource(const String& resourceName, const ITextureView* const* ppTextureViews, uint32 count) override final;
 		virtual void UpdateBufferResource(const String& resourceName, const IBuffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count) override final;
@@ -70,7 +70,7 @@ namespace LambdaEngine
 		virtual void NewFrame(Timestamp delta)		override final;
 		virtual void PrepareRender(Timestamp delta)		override final;
 
-		virtual void Render(ICommandAllocator* pCommandAllocator, ICommandList* pCommandList, ICommandList** ppExecutionStage, uint32 modFrameIndex, uint32 backBufferIndex)		override final;
+		virtual void Render(ICommandAllocator* pCommandAllocator, ICommandList* pCommandList, uint32 modFrameIndex, uint32 backBufferIndex, ICommandList** ppExecutionStage)		override final;
 
 		FORCEINLINE virtual FPipelineStageFlags GetFirstPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
 		FORCEINLINE virtual FPipelineStageFlags GetLastPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }

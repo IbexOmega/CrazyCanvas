@@ -213,29 +213,15 @@ namespace LambdaEngine
         VkResult result = vkCreateGraphicsPipelines(m_pDevice->Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
 		if (result != VK_SUCCESS)
 		{
-            if (pDesc->pName)
-            {
-                LOG_VULKAN_ERROR(result, "[GraphicsPipelineStateVK]: vkCreateGraphicsPipelines failed for %s", pDesc->pName);
-            }
-            else
-            {
-                LOG_VULKAN_ERROR(result, "[GraphicsPipelineStateVK]: vkCreateGraphicsPipelines failed for");
-            }
+            LOG_VULKAN_ERROR(result, "[GraphicsPipelineStateVK]: vkCreateGraphicsPipelines failed for %s", pDesc->Name.c_str());
             
 			return false;
 		}
         else
         {
-            SetName(pDesc->pName);
-            
-            if (pDesc->pName)
-            {
-                D_LOG_MESSAGE("[GraphicsPipelineStateVK]: Created Pipeline for %s", pDesc->pName);
-            }
-            else
-            {
-                D_LOG_MESSAGE("[GraphicsPipelineStateVK]: Created Pipeline");
-            }
+            SetName(pDesc->Name.c_str());
+
+            D_LOG_MESSAGE("[GraphicsPipelineStateVK]: Created Pipeline for %s", pDesc->Name.c_str());
             
             return true;
         }
@@ -311,14 +297,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				if (pDesc->pName)
-				{
-					LOG_ERROR("[GraphicsPipelineStateVK]: Vertex Shader and Mesh Shader can not both be nullptr for %s", pDesc->pName);
-				}
-				else
-				{
-					LOG_ERROR("[GraphicsPipelineStateVK]: Vertex Shader and Mesh Shader can not both be nullptr");
-				}
+				LOG_ERROR("[GraphicsPipelineStateVK]: Vertex Shader and Mesh Shader can not both be nullptr for %s", pDesc->Name.c_str());
 
 				return false;
 			}

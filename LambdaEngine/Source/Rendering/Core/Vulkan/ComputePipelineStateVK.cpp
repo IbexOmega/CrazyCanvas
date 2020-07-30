@@ -47,29 +47,15 @@ namespace LambdaEngine
         VkResult result = vkCreateComputePipelines(m_pDevice->Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
 		if (result != VK_SUCCESS)
 		{
-            if (pDesc->pName)
-            {
-                LOG_VULKAN_ERROR(result, "[ComputePipelineStateVK]: vkCreateComputePipelines failed for %s", pDesc->pName);
-            }
-            else
-            {
-                LOG_VULKAN_ERROR(result, "[ComputePipelineStateVK]: vkCreateComputePipelines failed");
-            }
+            LOG_VULKAN_ERROR(result, "[ComputePipelineStateVK]: vkCreateComputePipelines failed for %s", pDesc->Name.c_str());
             
 			return false;
 		}
         else
         {
-            SetName(pDesc->pName);
+            SetName(pDesc->Name.c_str());
 
-            if (pDesc->pName)
-            {
-                D_LOG_MESSAGE("[ComputePipelineStateVK]: Created Pipeline for %s", pDesc->pName);
-            }
-            else
-            {
-                D_LOG_MESSAGE("[ComputePipelineStateVK]: Created Pipeline");
-            }
+            D_LOG_MESSAGE("[ComputePipelineStateVK]: Created Pipeline for %s", pDesc->Name.c_str());
             
             return true;
         }

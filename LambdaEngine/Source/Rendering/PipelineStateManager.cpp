@@ -164,7 +164,7 @@ namespace LambdaEngine
 
 	void PipelineStateManager::FillGraphicsPipelineStateDesc(GraphicsPipelineStateDesc* pDstDesc, const GraphicsManagedPipelineStateDesc* pSrcDesc)
 	{
-		pDstDesc->pName						= pSrcDesc->pName;
+		pDstDesc->Name						= pSrcDesc->Name;
 		pDstDesc->pRenderPass				= pSrcDesc->pRenderPass;
 		pDstDesc->pPipelineLayout			= pSrcDesc->pPipelineLayout;
 		memcpy(pDstDesc->pVertexInputBindings, pSrcDesc->pVertexInputBindings, MAX_VERTEX_INPUT_ATTACHMENTS * sizeof(VertexInputBindingDesc));
@@ -182,14 +182,14 @@ namespace LambdaEngine
 
 	void PipelineStateManager::FillComputePipelineStateDesc(ComputePipelineStateDesc* pDstDesc, const ComputeManagedPipelineStateDesc* pSrcDesc)
 	{
-		pDstDesc->pName				= pSrcDesc->pName;
+		pDstDesc->Name				= pSrcDesc->Name;
 		pDstDesc->pPipelineLayout	= pSrcDesc->pPipelineLayout;
 		pDstDesc->pShader			= ResourceManager::GetShader(pSrcDesc->Shader);
 	}
 
 	void PipelineStateManager::FillRayTracingPipelineStateDesc(RayTracingPipelineStateDesc* pDstDesc, const RayTracingManagedPipelineStateDesc* pSrcDesc)
 	{
-		pDstDesc->pName							= pSrcDesc->pName;
+		pDstDesc->Name							= pSrcDesc->Name;
 		pDstDesc->pPipelineLayout				= pSrcDesc->pPipelineLayout;
 		pDstDesc->MaxRecursionDepth				= pSrcDesc->MaxRecursionDepth;
 		pDstDesc->MissShaderCount				= pSrcDesc->MissShaderCount;

@@ -6,6 +6,7 @@
 #include "Resources/ResourceManager.h"
 
 #include "Containers/THashTable.h"
+#include "Containers/String.h"
 
 namespace LambdaEngine
 {
@@ -17,7 +18,7 @@ namespace LambdaEngine
 
 	struct GraphicsManagedPipelineStateDesc
 	{
-		const char*					pName						= "";
+		String						Name						= "";
 		const IRenderPass*			pRenderPass					= nullptr;
 		const IPipelineLayout*		pPipelineLayout				= nullptr;
 
@@ -43,14 +44,14 @@ namespace LambdaEngine
 
 	struct ComputeManagedPipelineStateDesc
 	{
-		const char*				pName						= "";
+		String					Name						= "";
 		const IPipelineLayout*	pPipelineLayout				= nullptr;
 		GUID_Lambda				Shader						= GUID_NONE;
 	};
 
 	struct RayTracingManagedPipelineStateDesc
 	{
-		const char*				pName						= "";
+		String					Name						= "";
 		const IPipelineLayout*	pPipelineLayout				= nullptr;
 		uint32					MaxRecursionDepth			= 1;	
 

@@ -674,10 +674,12 @@
             "shaders": {
                 "raygen_shader": "Raygen.glsl",
                 "miss_shaders": [
-                    "Miss.glsl"
+                    "MissRadiance.glsl",
+					"MissShadow.glsl"
                 ],
                 "closest_hit_shaders": [
-                    "ClosestHit.glsl"
+                    "ClosestHitRadiance.glsl",
+					"ClosestHitShadow.glsl"
                 ]
             },
             "resource_states": [

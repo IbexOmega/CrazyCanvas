@@ -489,9 +489,9 @@ namespace LambdaEngine
 
 						switch (stateType)
 						{
-						case EPipelineStateType::GRAPHICS:		pCustomRenderer->Render(pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],	&m_ppExecutionStages[currentExecutionStage], m_ModFrameIndex, m_BackBufferIndex); break;
-						case EPipelineStateType::COMPUTE:		pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage], m_ModFrameIndex, m_BackBufferIndex); break;
-						case EPipelineStateType::RAY_TRACING:	pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage], m_ModFrameIndex, m_BackBufferIndex); break;
+						case EPipelineStateType::GRAPHICS:		pCustomRenderer->Render(pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],m_ModFrameIndex, m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
+						case EPipelineStateType::COMPUTE:		pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],	m_ModFrameIndex, m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
+						case EPipelineStateType::RAY_TRACING:	pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],	m_ModFrameIndex, m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
 						}
 					}
 					else
@@ -1215,7 +1215,7 @@ namespace LambdaEngine
 				if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
 				{
 					GraphicsManagedPipelineStateDesc pipelineDesc = {};
-					pipelineDesc.pName							= pRenderStageDesc->Name.c_str();
+					pipelineDesc.Name							= pRenderStageDesc->Name;
 					pipelineDesc.pPipelineLayout				= pRenderStage->pPipelineLayout;
 					pipelineDesc.TaskShader						= ResourceManager::GetGUID(pRenderStageDesc->Graphics.Shaders.TaskShaderName);
 					pipelineDesc.MeshShader						= ResourceManager::GetGUID(pRenderStageDesc->Graphics.Shaders.MeshShaderName);	
@@ -1300,7 +1300,7 @@ namespace LambdaEngine
 				else if (pRenderStageDesc->Type == EPipelineStateType::COMPUTE)
 				{
 					ComputeManagedPipelineStateDesc pipelineDesc = {};
-					pipelineDesc.pName				= pRenderStageDesc->Name.c_str();
+					pipelineDesc.Name				= pRenderStageDesc->Name;
 					pipelineDesc.pPipelineLayout	= pRenderStage->pPipelineLayout;
 					pipelineDesc.Shader				= ResourceManager::GetGUID(pRenderStageDesc->Compute.ShaderName);
 

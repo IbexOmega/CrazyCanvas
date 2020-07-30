@@ -5,14 +5,14 @@
 
 #include "Helpers.glsl"
 
-struct SRayPayload
+struct SRadiancePayload
 {
 	vec3 OutgoingRadiance;
 };
 
-layout(location = 0) rayPayloadInEXT SRayPayload s_RayPayload;
+layout(location = 0) rayPayloadInEXT SRadiancePayload s_RadiancePayload;
 
 void main() 
 {
-    s_RayPayload.OutgoingRadiance = vec3(0.0f, 0.0f, 0.0f);
+    s_RadiancePayload.OutgoingRadiance = vec3(0.0f, 0.0f, 0.0f);
 }

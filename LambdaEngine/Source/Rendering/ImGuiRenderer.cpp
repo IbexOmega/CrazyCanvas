@@ -175,16 +175,16 @@ namespace LambdaEngine
 	{
 	}
 
-	void ImGuiRenderer::UpdateParameters(void* pData)
-	{
-		UNREFERENCED_VARIABLE(pData);
-	}
+	//void ImGuiRenderer::UpdateParameters(void* pData)
+	//{
+	//	UNREFERENCED_VARIABLE(pData);
+	//}
 
-	void ImGuiRenderer::UpdatePushConstants(void* pData, uint32 dataSize)
+	/*void ImGuiRenderer::UpdatePushConstants(void* pData, uint32 dataSize)
 	{
 		UNREFERENCED_VARIABLE(pData);
 		UNREFERENCED_VARIABLE(dataSize);
-	}
+	}*/
 
 	void ImGuiRenderer::UpdateTextureResource(const String& resourceName, const ITextureView* const* ppTextureViews, uint32 count)
 	{
@@ -259,7 +259,7 @@ namespace LambdaEngine
 		ImGui::Render();
 	}
 
-	void ImGuiRenderer::Render(ICommandAllocator* pCommandAllocator, ICommandList* pCommandList, ICommandList** ppExecutionStage, uint32 modFrameIndex, uint32 backBufferIndex)
+	void ImGuiRenderer::Render(ICommandAllocator* pCommandAllocator, ICommandList* pCommandList, uint32 modFrameIndex, uint32 backBufferIndex, ICommandList** ppExecutionStage)
 	{
 		pCommandAllocator->Reset();
 		pCommandList->Begin(nullptr);
@@ -960,7 +960,7 @@ namespace LambdaEngine
 		blendAttachmentState.ColorComponentsMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
 
 		GraphicsManagedPipelineStateDesc pipelineStateDesc = {};
-		pipelineStateDesc.pName							= "ImGui Pipeline State";
+		pipelineStateDesc.Name							= "ImGui Pipeline State";
 		pipelineStateDesc.pRenderPass					= m_pRenderPass;
 		pipelineStateDesc.pPipelineLayout				= m_pPipelineLayout;
 		pipelineStateDesc.pVertexInputBindings[0]		= vertexInputBindingDesc;

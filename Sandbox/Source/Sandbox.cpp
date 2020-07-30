@@ -629,10 +629,9 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 	if (RENDER_GRAPH_IMGUI_ENABLED)
 	{
-
 		m_pRenderGraphEditor->RenderGUI();
 
-		ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
 
 		ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
 		if (ImGui::Begin("Test Window", NULL))
@@ -911,8 +910,10 @@ bool Sandbox::InitRendererForDeferred()
 	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingDefPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
 	GUID_Lambda raygenShaderGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Raygen.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda closestHitShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ClosestHit.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
-	GUID_Lambda missShaderGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Miss.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda closestHitRadianceShaderGUID	= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ClosestHitRadiance.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
+	GUID_Lambda missRadianceShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/MissRadiance.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda closestHitShadowShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ClosestHitShadow.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
+	GUID_Lambda missShadowShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/MissShadow.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
 
 	GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/PostProcess.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
 
