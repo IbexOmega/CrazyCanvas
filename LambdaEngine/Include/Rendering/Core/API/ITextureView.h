@@ -2,6 +2,8 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
     class ITexture;
@@ -26,7 +28,7 @@ namespace LambdaEngine
     
     struct TextureViewDesc
     {
-        const char*         pName           = "";
+        String				Name            = "";
         ITexture*           pTexture        = nullptr;
         uint32              Flags           = FTextureViewFlags::TEXTURE_VIEW_FLAG_NONE;
         EFormat             Format          = EFormat::NONE;

@@ -76,7 +76,7 @@ namespace LambdaEngine
 			m_ppBackBuffers[v]		= pBackBuffer;
 
 			TextureViewDesc textureViewDesc = {};
-			textureViewDesc.pName			= "Renderer Back Buffer Texture View";
+			textureViewDesc.Name			= "Renderer Back Buffer Texture View " + v;
 			textureViewDesc.pTexture		= pBackBuffer;
 			textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
 			textureViewDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;

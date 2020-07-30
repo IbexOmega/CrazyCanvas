@@ -108,8 +108,8 @@ namespace LambdaEngine
 		{
 			D_LOG_MESSAGE("[TextureVK]: Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
 
-            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
-			SetName(m_Desc.pName);
+			m_Desc = *pDesc;
+			SetName(m_Desc.Name.c_str());
 		}
 
 		VkMemoryRequirements memoryRequirements = { };
@@ -171,9 +171,9 @@ namespace LambdaEngine
         VALIDATE(pDesc != nullptr);
         
 		m_Image = image;
-        memcpy(&m_Desc, pDesc, sizeof(m_Desc));
+        m_Desc = *pDesc;
         
-		SetName(m_Desc.pName);
+		SetName(m_Desc.Name.c_str());
         
         D_LOG_MESSAGE("[TextureVK]: Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
 	}
@@ -185,7 +185,7 @@ namespace LambdaEngine
 			TDeviceChild::SetName(pName);
 			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Image, VK_OBJECT_TYPE_IMAGE);
 
-            m_Desc.pName = m_pDebugName;
+            m_Desc.Name = m_pDebugName;
 		}
 	}
 }

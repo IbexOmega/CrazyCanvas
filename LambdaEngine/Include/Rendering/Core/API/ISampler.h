@@ -2,11 +2,13 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 	struct SamplerDesc
 	{
-		const char*     pName			    = "Sampler";
+		String			Name			    = "Sampler";
 		EFilter         MinFilter		    = EFilter::NONE;
 		EFilter         MagFilter		    = EFilter::NONE;
 		EMipmapMode     MipmapMode		    = EMipmapMode::NONE;

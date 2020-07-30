@@ -51,8 +51,8 @@ namespace LambdaEngine
 		}
 		else
 		{
-            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
-			SetName(pDesc->pName);
+            m_Desc = *pDesc;
+			SetName(pDesc->Name.c_str());
 			
             D_LOG_MESSAGE("[SamplerVK]: Created sampler");
             
@@ -67,7 +67,7 @@ namespace LambdaEngine
 			TDeviceChild::SetName(pName);
 			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Sampler, VK_OBJECT_TYPE_SAMPLER);
 
-			m_Desc.pName = m_pDebugName;
+			m_Desc.Name = m_pDebugName;
 		}
 	}
 }

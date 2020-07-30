@@ -42,8 +42,8 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
-constexpr const bool RAY_TRACING_ENABLED		= true;
-constexpr const bool POST_PROCESSING_ENABLED	= true;
+constexpr const bool RAY_TRACING_ENABLED		= false;
+constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
 constexpr const bool RENDERING_DEBUG_ENABLED	= false;
@@ -75,7 +75,7 @@ Sandbox::Sandbox()
 	//Sponza
 	{
 		std::vector<GameObject>	sceneGameObjects;
-		ResourceManager::LoadSceneFromFile("../Assets/Scenes/sponza/", "sponza.obj", sceneGameObjects);
+		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
 
 		for (GameObject& gameObject : sceneGameObjects)
 		{
@@ -167,7 +167,7 @@ Sandbox::Sandbox()
 	m_pScene->UpdateCamera(m_pCamera);
 
 	SamplerDesc samplerLinearDesc = {};
-	samplerLinearDesc.pName					= "Linear Sampler";
+	samplerLinearDesc.Name					= "Linear Sampler";
 	samplerLinearDesc.MinFilter				= EFilter::LINEAR;
 	samplerLinearDesc.MagFilter				= EFilter::LINEAR;
 	samplerLinearDesc.MipmapMode			= EMipmapMode::LINEAR;
@@ -183,7 +183,7 @@ Sandbox::Sandbox()
 	m_pLinearSampler = RenderSystem::GetDevice()->CreateSampler(&samplerLinearDesc);
 
 	SamplerDesc samplerNearestDesc = {};
-	samplerNearestDesc.pName				= "Nearest Sampler";
+	samplerNearestDesc.Name					= "Nearest Sampler";
 	samplerNearestDesc.MinFilter			= EFilter::NEAREST;
 	samplerNearestDesc.MagFilter			= EFilter::NEAREST;
 	samplerNearestDesc.MipmapMode			= EMipmapMode::NEAREST;
@@ -903,28 +903,28 @@ bool Sandbox::InitRendererForDeferred()
 {
 	using namespace LambdaEngine;
 
-	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryDefVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/GeometryDefPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("GeometryDefVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("GeometryDefPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingDefPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("FullscreenQuad.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("ShadingDefPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	GUID_Lambda raygenShaderGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/Raygen.glsl",					FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda closestHitRadianceShaderGUID	= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ClosestHitRadiance.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
-	GUID_Lambda missRadianceShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/MissRadiance.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda closestHitShadowShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ClosestHitShadow.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
-	GUID_Lambda missShadowShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/MissShadow.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda raygenShaderGUID				= ResourceManager::LoadShaderFromFile("Raygen.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda closestHitRadianceShaderGUID	= ResourceManager::LoadShaderFromFile("ClosestHitRadiance.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
+	GUID_Lambda missRadianceShaderGUID			= ResourceManager::LoadShaderFromFile("MissRadiance.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
+	GUID_Lambda closestHitShadowShaderGUID		= ResourceManager::LoadShaderFromFile("ClosestHitShadow.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
+	GUID_Lambda missShadowShaderGUID			= ResourceManager::LoadShaderFromFile("MissShadow.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
 
-	GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("../Assets/Shaders/PostProcess.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
+	GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("PostProcess.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
 
-	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelNormal.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelDepth.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixelRoughness.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelNormal.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("ImGuiPixelDepth.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelRoughness.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	ResourceManager::LoadShaderFromFile("../Assets/Shaders/ForwardVertex.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
-	ResourceManager::LoadShaderFromFile("../Assets/Shaders/ForwardPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
+	ResourceManager::LoadShaderFromFile("ForwardVertex.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
+	ResourceManager::LoadShaderFromFile("ForwardPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
 
-	ResourceManager::LoadShaderFromFile("../Assets/Shaders/ShadingSimpleDefPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
+	ResourceManager::LoadShaderFromFile("ShadingSimpleDefPixel.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
 
 	String renderGraphFile = "";
 
@@ -1038,7 +1038,7 @@ bool Sandbox::InitRendererForDeferred()
 
 	{
 		TextureDesc textureDesc	= {};
-		textureDesc.pName				= "Albedo-AO G-Buffer Texture";
+		textureDesc.Name				= "Albedo-AO G-Buffer Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
@@ -1051,7 +1051,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.ArrayCount			= 1;
 
 		TextureViewDesc textureViewDesc = { };
-		textureViewDesc.pName			= "Albedo-AO G-Buffer Texture View";
+		textureViewDesc.Name			= "Albedo-AO G-Buffer Texture View";
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
 		textureViewDesc.Miplevel		= 0;
@@ -1061,7 +1061,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureViewDesc.Format			= textureDesc.Format;
 
 		SamplerDesc samplerDesc = {};
-		samplerDesc.pName				= "Nearest Sampler";
+		samplerDesc.Name				= "Nearest Sampler";
 		samplerDesc.MinFilter			= EFilter::NEAREST;
 		samplerDesc.MagFilter			= EFilter::NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
@@ -1089,7 +1089,7 @@ bool Sandbox::InitRendererForDeferred()
 
 	{
 		TextureDesc textureDesc	= {};
-		textureDesc.pName				= "Norm-Met-Rough G-Buffer Texture";
+		textureDesc.Name				= "Norm-Met-Rough G-Buffer Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R16G16B16A16_SFLOAT;
@@ -1102,7 +1102,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.ArrayCount			= 1;
 
 		TextureViewDesc textureView = { };
-		textureView.pName				= "Norm-Met-Rough G-Buffer Texture View";
+		textureView.Name				= "Norm-Met-Rough G-Buffer Texture View";
 		textureView.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureView.Type				= ETextureViewType::TEXTURE_VIEW_2D;
 		textureView.Miplevel			= 0;
@@ -1112,7 +1112,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureView.Format				= textureDesc.Format;
 
 		SamplerDesc samplerDesc = {};
-		samplerDesc.pName				= "Nearest Sampler";
+		samplerDesc.Name				= "Nearest Sampler";
 		samplerDesc.MinFilter			= EFilter::NEAREST;
 		samplerDesc.MagFilter			= EFilter::NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
@@ -1140,7 +1140,7 @@ bool Sandbox::InitRendererForDeferred()
 
 	{
 		TextureDesc textureDesc = {};
-		textureDesc.pName				= "Geometry Pass Depth Stencil Texture";
+		textureDesc.Name				= "Geometry Pass Depth Stencil Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_D24_UNORM_S8_UINT;
@@ -1153,7 +1153,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.ArrayCount			= 1;
 
 		TextureViewDesc textureViewDesc = { };
-		textureViewDesc.pName			= "Geometry Pass Depth Stencil Texture View";
+		textureViewDesc.Name			= "Geometry Pass Depth Stencil Texture View";
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
 		textureViewDesc.Miplevel		= 0;
@@ -1163,7 +1163,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureViewDesc.Format			= textureDesc.Format;
 
 		SamplerDesc samplerDesc = {};
-		samplerDesc.pName				= "Nearest Sampler";
+		samplerDesc.Name				= "Nearest Sampler";
 		samplerDesc.MinFilter			= EFilter::NEAREST;
 		samplerDesc.MagFilter			= EFilter::NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
@@ -1206,7 +1206,7 @@ bool Sandbox::InitRendererForDeferred()
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
 			sprintf(pTextureNames[b], "Radiance Texture %u", b);
-			pTextureDescriptions[b].pName				= pTextureNames[b];
+			pTextureDescriptions[b].Name				= pTextureNames[b];
 			pTextureDescriptions[b].Type				= ETextureType::TEXTURE_2D;
 			pTextureDescriptions[b].MemoryType			= EMemoryType::MEMORY_GPU;
 			pTextureDescriptions[b].Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
@@ -1220,7 +1220,7 @@ bool Sandbox::InitRendererForDeferred()
 			vectorTextureDescriptions[b] = &pTextureDescriptions[b];
 
 			sprintf(pTextureViewNames[b], "Radiance Texture View %u", b);
-			pTextureViewDescriptions[b].pName			= pTextureViewNames[b];
+			pTextureViewDescriptions[b].Name			= pTextureViewNames[b];
 			pTextureViewDescriptions[b].Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 			pTextureViewDescriptions[b].Type			= ETextureViewType::TEXTURE_VIEW_2D;
 			pTextureViewDescriptions[b].Miplevel		= 0;
@@ -1231,7 +1231,7 @@ bool Sandbox::InitRendererForDeferred()
 			vectorTextureViewDescriptions[b] = &pTextureViewDescriptions[b];
 
 			sprintf(pSamplerNames[b], "Radiance Sampler %u", b);
-			pSamplerDescriptions[b].pName				= pSamplerNames[b];
+			pSamplerDescriptions[b].Name				= pSamplerNames[b];
 			pSamplerDescriptions[b].MinFilter			= EFilter::NEAREST;
 			pSamplerDescriptions[b].MagFilter			= EFilter::NEAREST;
 			pSamplerDescriptions[b].MipmapMode			= EMipmapMode::NEAREST;

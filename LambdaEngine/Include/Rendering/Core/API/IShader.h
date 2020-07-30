@@ -2,6 +2,8 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 	union ShaderConstant
@@ -13,7 +15,7 @@ namespace LambdaEngine
 
 	struct ShaderDesc
 	{
-		const char*			pName			= "";
+		String				Name			= "";
 		const char*			pSource			= "";
 		uint32				SourceSize		= 0;
 		const char*			pEntryPoint		= "main";

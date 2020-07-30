@@ -13,7 +13,11 @@ namespace LambdaEngine
 {
 	GUID_Lambda												ResourceManager::s_NextFreeGUID = SMALLEST_UNRESERVED_GUID;
 
-	std::unordered_map<String, GUID_Lambda>					ResourceManager::s_NamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>					ResourceManager::s_MeshNamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>					ResourceManager::s_MaterialNamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>					ResourceManager::s_TextureNamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>					ResourceManager::s_ShaderNamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>					ResourceManager::s_SoundEffectNamesToGUIDs;
 
 	std::unordered_map<GUID_Lambda, Mesh*>					ResourceManager::s_Meshes;
 	std::unordered_map<GUID_Lambda, Material*>				ResourceManager::s_Materials;
@@ -43,14 +47,14 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceManager::LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& result)
+	bool ResourceManager::LoadSceneFromFile(const String& filename, std::vector<GameObject>& result)
 	{
 		std::vector<GameObject> sceneLocalGameObjects;
 		std::vector<Mesh*> meshes;
 		std::vector<Material*> materials;
 		std::vector<ITexture*> textures;
 
-		if (!ResourceLoader::LoadSceneFromFile(pDir, pFilename, sceneLocalGameObjects, meshes, materials, textures))
+		if (!ResourceLoader::LoadSceneFromFile(SCENE_DIR + filename, sceneLocalGameObjects, meshes, materials, textures))
 		{
 			return false;
 		}
@@ -115,45 +119,46 @@ namespace LambdaEngine
 		{
 			if (sceneLocalGameObjects[g].Mesh >= meshes.size())
 			{
-				LOG_ERROR("[ResourceManager]: GameObject %u in Scene %s has no Mesh", g, pFilename);
+				LOG_ERROR("[ResourceManager]: GameObject %u in Scene %s has no Mesh", g, filename.c_str());
 			}
 
 			if (sceneLocalGameObjects[g].Material >= materials.size())
 			{
 				result[g].Material = DEFAULT_MATERIAL;
-				LOG_WARNING("[ResourceManager]: GameObject %u in Scene %s has no Material, default Material assigned", g, pFilename);
+				LOG_WARNING("[ResourceManager]: GameObject %u in Scene %s has no Material, default Material assigned", g, filename.c_str());
 			}
 		}
 
 		return true;
 	}
 
-	GUID_Lambda ResourceManager::LoadMeshFromFile(const char* pFilepath)
+	GUID_Lambda ResourceManager::LoadMeshFromFile(const String& filename)
 	{
 		GUID_Lambda guid = GUID_NONE;
 		Mesh** ppMappedMesh = nullptr;
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedMesh = &s_Meshes[guid]; //Creates new entry if not existing
-			RegisterNameToGUID(pFilepath, guid);
+			guid							= s_NextFreeGUID++;
+			ppMappedMesh					= &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshNamesToGUIDs[filename]	= guid;
 		}
 
-		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(pFilepath);
+		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename);
 
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
+	GUID_Lambda ResourceManager::LoadMeshFromMemory(const String& name, const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
 	{
 		GUID_Lambda guid = GUID_NONE;
 		Mesh** ppMappedMesh = nullptr;
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedMesh = &s_Meshes[guid]; //Creates new entry if not existing
+			guid							= s_NextFreeGUID++;
+			ppMappedMesh					= &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshNamesToGUIDs[name]		= guid;
 		}
 
 		(*ppMappedMesh) = ResourceLoader::LoadMeshFromMemory(pVertices, numVertices, pIndices, numIndices);
@@ -161,15 +166,16 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadMaterialFromMemory(GUID_Lambda albedoMap, GUID_Lambda normalMap, GUID_Lambda ambientOcclusionMap, GUID_Lambda metallicMap, GUID_Lambda roughnessMap, const MaterialProperties& properties)
+	GUID_Lambda ResourceManager::LoadMaterialFromMemory(const String& name, GUID_Lambda albedoMap, GUID_Lambda normalMap, GUID_Lambda ambientOcclusionMap, GUID_Lambda metallicMap, GUID_Lambda roughnessMap, const MaterialProperties& properties)
 	{
 		GUID_Lambda guid = GUID_NONE;
 		Material* pMappedMaterial = nullptr;
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			pMappedMaterial = s_Materials[guid]; //Creates new entry if not existing
+			guid							= s_NextFreeGUID++;
+			pMappedMaterial					= s_Materials[guid]; //Creates new entry if not existing
+			s_MaterialNamesToGUIDs[name]	= guid;
 		}
 
 		ITexture* pAlbedoMap						= albedoMap				!= GUID_NONE ? s_Textures[albedoMap]			: s_Textures[DEFAULT_COLOR_MAP];
@@ -201,7 +207,7 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadTextureFromFile(const char* pFilepath, EFormat format, bool generateMips)
+	GUID_Lambda ResourceManager::LoadTextureFromFile(const String& filename, EFormat format, bool generateMips)
 	{
 		GUID_Lambda guid = GUID_NONE;
 		ITexture** ppMappedTexture = nullptr;
@@ -209,18 +215,18 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
-			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
-			RegisterNameToGUID(pFilepath, guid);
+			guid							= s_NextFreeGUID++;
+			ppMappedTexture					= &s_Textures[guid]; //Creates new entry if not existing
+			ppMappedTextureView				= &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureNamesToGUIDs[filename] = guid;
 		}
 
-		ITexture* pTexture = ResourceLoader::LoadTextureFromFile(pFilepath, format, generateMips);
+		ITexture* pTexture = ResourceLoader::LoadTextureFromFile(TEXTURE_DIR + filename, format, generateMips);
 
 		(*ppMappedTexture) = pTexture;
 
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.pName			= "Resource Manager Texture View";
+		textureViewDesc.Name			= filename + " Texture View";
 		textureViewDesc.pTexture		= pTexture;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= format;
@@ -235,7 +241,7 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadTextureFromMemory(const char* pName, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips)
+	GUID_Lambda ResourceManager::LoadTextureFromMemory(const String& name, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips)
 	{
 		GUID_Lambda guid = GUID_NONE;
 		ITexture** ppMappedTexture = nullptr;
@@ -243,18 +249,18 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
-			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
-			RegisterNameToGUID(pName, guid);
+			guid							= s_NextFreeGUID++;
+			ppMappedTexture					= &s_Textures[guid]; //Creates new entry if not existing
+			ppMappedTextureView				= &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureNamesToGUIDs[name]		= guid;
 		}
 
-		ITexture* pTexture = ResourceLoader::LoadTextureFromMemory(pName, pData, width, height, format, usageFlags, generateMips);
+		ITexture* pTexture = ResourceLoader::LoadTextureFromMemory(name, pData, width, height, format, usageFlags, generateMips);
 
 		(*ppMappedTexture) = pTexture;
 
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.pName			= "Resource Manager Texture View";
+		textureViewDesc.Name			= name + " Texture View";
 		textureViewDesc.pTexture		= pTexture;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= format;
@@ -269,59 +275,48 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint)
+	GUID_Lambda ResourceManager::LoadShaderFromFile(const String& filename, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint)
 	{
 		GUID_Lambda guid = GUID_NONE;
 		IShader** ppMappedShader = nullptr;
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedShader = &s_Shaders[guid]; //Creates new entry if not existing
-			RegisterNameToGUID(pFilepath, guid);
+			guid							= s_NextFreeGUID++;
+			ppMappedShader					= &s_Shaders[guid]; //Creates new entry if not existing
+			s_ShaderNamesToGUIDs[filename]	= guid;
 		}
 
+		String filepath = SHADER_DIR + filename;
+
 		ShaderLoadDesc loadDesc = {};
-		loadDesc.pFilepath				= pFilepath;
+		loadDesc.Filepath				= filepath;
 		loadDesc.Stage					= stage;
 		loadDesc.Lang					= lang;
 		loadDesc.pEntryPoint			= pEntryPoint;
 
 		s_ShaderLoadConfigurations[guid] = loadDesc;
 
-		(*ppMappedShader) = ResourceLoader::LoadShaderFromFile(pFilepath, stage, lang, pEntryPoint);
+		(*ppMappedShader) = ResourceLoader::LoadShaderFromFile(filepath, stage, lang, pEntryPoint);
 
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadSoundEffectFromFile(const char* pFilepath)
+	GUID_Lambda ResourceManager::LoadSoundEffectFromFile(const String& filename)
 	{
 		GUID_Lambda guid = GUID_NONE;
 		ISoundEffect3D** ppMappedSoundEffect = nullptr;
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedSoundEffect = &s_SoundEffects[guid]; //Creates new entry if not existing
-			RegisterNameToGUID(pFilepath, guid);
+			guid								= s_NextFreeGUID++;
+			ppMappedSoundEffect					= &s_SoundEffects[guid]; //Creates new entry if not existing
+			s_SoundEffectNamesToGUIDs[filename] = guid;
 		}
 
-		(*ppMappedSoundEffect) = ResourceLoader::LoadSoundEffectFromFile(pFilepath);
+		(*ppMappedSoundEffect) = ResourceLoader::LoadSoundEffectFromFile(SOUND_DIR + filename);
 
 		return guid;
-	}
-
-	GUID_Lambda ResourceManager::GetGUID(const String& name)
-	{
-		auto guidIt = s_NamesToGUIDs.find(name);
-
-		if (guidIt != s_NamesToGUIDs.end())
-			return guidIt->second;
-
-		if (name.length() > 0)
-			LOG_ERROR("[ResourceManager]: Resource \"%s\" could not be fouund in ResourceManager", name.c_str());
-
-		return GUID_NONE;
 	}
 
 	void ResourceManager::ReloadAllShaders()
@@ -332,7 +327,7 @@ namespace LambdaEngine
 			{
 				ShaderLoadDesc loadDesc = s_ShaderLoadConfigurations[it->first];
 
-				IShader* pShader = ResourceLoader::LoadShaderFromFile(loadDesc.pFilepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
+				IShader* pShader = ResourceLoader::LoadShaderFromFile(loadDesc.Filepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
 
 				if (pShader != nullptr)
 				{
@@ -341,6 +336,31 @@ namespace LambdaEngine
 				}
 			}
 		}
+	}
+
+	GUID_Lambda ResourceManager::GetMeshGUID(const String& name)
+	{
+		return GetGUID(s_MeshNamesToGUIDs, name);
+	}
+
+	GUID_Lambda ResourceManager::GetMaterialGUID(const String& name)
+	{
+		return GetGUID(s_MaterialNamesToGUIDs, name);
+	}
+
+	GUID_Lambda ResourceManager::GetTextureGUID(const String& name)
+	{
+		return GetGUID(s_TextureNamesToGUIDs, name);
+	}
+
+	GUID_Lambda ResourceManager::GetShaderGUID(const String& name)
+	{
+		return GetGUID(s_ShaderNamesToGUIDs, name);
+	}
+
+	GUID_Lambda ResourceManager::GetSoundEffectGUID(const String& name)
+	{
+		return GetGUID(s_SoundEffectNamesToGUIDs, name);
 	}
 
 	Mesh* ResourceManager::GetMesh(GUID_Lambda guid)
@@ -461,10 +481,10 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
-			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
-			RegisterNameToGUID(pResource->GetDesc().pName, guid);
+			guid												= s_NextFreeGUID++;
+			ppMappedTexture										= &s_Textures[guid]; //Creates new entry if not existing
+			ppMappedTextureView									= &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureNamesToGUIDs[pResource->GetDesc().Name]	= guid;
 		}
 
 		(*ppMappedTexture) = pResource;
@@ -472,7 +492,7 @@ namespace LambdaEngine
         ASSERT(pResource != nullptr);
         
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.pName			= "Resource Manager Texture View";
+		textureViewDesc.Name			= pResource->GetDesc().Name + " Texture View";
 		textureViewDesc.pTexture		= pResource;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= pResource->GetDesc().Format;
@@ -487,50 +507,17 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	void ResourceManager::RegisterNameToGUID(const String& string, GUID_Lambda guid)
+	GUID_Lambda ResourceManager::GetGUID(const std::unordered_map<String, GUID_Lambda>& namesToGUIDs, const String& name)
 	{
-		//Register string as normal
-		if (s_NamesToGUIDs.count(string) > 0)
-		{
-			LOG_ERROR("[ResourceManager]: Resource with name \"%s\" has already been registered...", string.c_str());
-			return;
-		}
+		auto guidIt = namesToGUIDs.find(name);
 
-		s_NamesToGUIDs[string] = guid;
+		if (guidIt != namesToGUIDs.end())
+			return guidIt->second;
 
-		//Calculate substring which only contains filename, if string is a path
-		size_t slashIt		= string.find_last_of('/');
-		size_t backslashIt	= string.find_last_of('\\');
-		
-		uint32 cutoffPoint = 0;
+		if (name.length() > 0)
+			LOG_ERROR("[ResourceManager]: Resource \"%s\" could not be fouund in ResourceManager", name.c_str());
 
-		if (slashIt != string.npos && backslashIt != string.npos)
-		{
-			cutoffPoint = glm::max(slashIt, backslashIt) + 1;
-		}
-		else if (slashIt != string.npos)
-		{
-			cutoffPoint = slashIt + 1;
-		}
-		else if (backslashIt != string.npos)
-		{
-			cutoffPoint = glm::max(slashIt, backslashIt) + 1;
-		}
-		else
-		{
-			return;
-		}
-
-		//Register name, with path removed
-		String resourceName = string.substr(cutoffPoint);
-
-		if (s_NamesToGUIDs.count(resourceName) > 0)
-		{
-			LOG_ERROR("[ResourceManager]: Resource with name \"%s\" has already been registered...", resourceName.c_str());
-			return;
-		}
-
-		s_NamesToGUIDs[resourceName] = guid;
+		return GUID_NONE;
 	}
 
 	void ResourceManager::InitDefaultResources()
@@ -549,7 +536,7 @@ namespace LambdaEngine
 		s_Textures[DEFAULT_NORMAL_MAP]		= pDefaultNormalMap;
 
 		TextureViewDesc defaultColorMapViewDesc = {};
-		defaultColorMapViewDesc.pName			= "Default Color Map View";
+		defaultColorMapViewDesc.Name			= "Default Color Map View";
 		defaultColorMapViewDesc.pTexture		= pDefaultColorMap;
 		defaultColorMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		defaultColorMapViewDesc.Format			= pDefaultColorMap->GetDesc().Format;
@@ -560,7 +547,7 @@ namespace LambdaEngine
 		defaultColorMapViewDesc.ArrayIndex		= 0;
 
 		TextureViewDesc defaultNormalMapViewDesc = {};
-		defaultNormalMapViewDesc.pName			= "Default Normal Map View";
+		defaultNormalMapViewDesc.Name			= "Default Normal Map View";
 		defaultNormalMapViewDesc.pTexture		= pDefaultNormalMap;
 		defaultNormalMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		defaultNormalMapViewDesc.Format			= pDefaultNormalMap->GetDesc().Format;

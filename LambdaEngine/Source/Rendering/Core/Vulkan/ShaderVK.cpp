@@ -40,8 +40,8 @@ namespace LambdaEngine
 		}
 		else
 		{
-            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
-			SetName(pDesc->pName);
+            m_Desc = *pDesc;
+			SetName(pDesc->Name.c_str());
 
             D_LOG_MESSAGE("[ShaderVK]: Created ShaderModule");
             
@@ -84,7 +84,7 @@ namespace LambdaEngine
 			TDeviceChild::SetName(pName);
 			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Module, VK_OBJECT_TYPE_SHADER_MODULE);
 
-			m_Desc.pName = m_pDebugName;
+			m_Desc.Name = m_pDebugName;
 		}
 	}
 }

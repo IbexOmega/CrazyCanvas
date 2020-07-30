@@ -28,7 +28,7 @@ namespace LambdaEngine
 		FMOD_SOUND*			m_pHandle;
 
 		//Local
-		const char*			m_pName;
+		String				m_Name;
 		uint32				m_LengthMS;
 	};
 }

@@ -293,12 +293,12 @@ namespace LambdaEngine
 		{
 			switch (bindingType)
 			{
-			case ERenderGraphResourceBindingType::COMBINED_SAMPLER:				return format != EFormat::FORMAT_D24_UNORM_S8_UINT ? ETextureState::TEXTURE_STATE_SHADER_READ_ONLY : ETextureState::TEXTURE_STATE_DEPTH_STENCIL_READ_ONLY;
+			case ERenderGraphResourceBindingType::COMBINED_SAMPLER:					return ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return ETextureState::TEXTURE_STATE_GENERAL;
 			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return ETextureState::TEXTURE_STATE_GENERAL;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return ETextureState::TEXTURE_STATE_GENERAL;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:		return ETextureState::TEXTURE_STATE_GENERAL;
 			case ERenderGraphResourceBindingType::ATTACHMENT:						return format != EFormat::FORMAT_D24_UNORM_S8_UINT ? ETextureState::TEXTURE_STATE_RENDER_TARGET : ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
-			case ERenderGraphResourceBindingType::PRESENT:						return ETextureState::TEXTURE_STATE_PRESENT;
+			case ERenderGraphResourceBindingType::PRESENT:							return ETextureState::TEXTURE_STATE_PRESENT;
 			}
 		}
 
@@ -310,13 +310,13 @@ namespace LambdaEngine
 		switch (bindingType)
 		{
 			case ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_ACCELERATION_STRUCTURE_READ;
-			case ERenderGraphResourceBindingType::CONSTANT_BUFFER:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_CONSTANT_BUFFER_READ;
-			case ERenderGraphResourceBindingType::COMBINED_SAMPLER:				return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_SHADER_READ;
+			case ERenderGraphResourceBindingType::CONSTANT_BUFFER:					return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_CONSTANT_BUFFER_READ;
+			case ERenderGraphResourceBindingType::COMBINED_SAMPLER:					return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_SHADER_READ;
 			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
 			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:		return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 			case ERenderGraphResourceBindingType::ATTACHMENT:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			case ERenderGraphResourceBindingType::PRESENT:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			case ERenderGraphResourceBindingType::PRESENT:							return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
 			case ERenderGraphResourceBindingType::DRAW_RESOURCE:					return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;																
 		}
 

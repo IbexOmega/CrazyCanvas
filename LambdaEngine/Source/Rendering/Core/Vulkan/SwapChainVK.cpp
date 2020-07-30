@@ -365,7 +365,7 @@ namespace LambdaEngine
         for (uint32 i = 0; i < imageCount; i++)
         {
             TextureDesc desc = {};
-            desc.pName          = names[i];
+            desc.Name			= names[i];
             desc.Type           = ETextureType::TEXTURE_2D;
             desc.Flags          = TEXTURE_FLAG_RENDER_TARGET;
             desc.MemoryType     = EMemoryType::MEMORY_GPU;

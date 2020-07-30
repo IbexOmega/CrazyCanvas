@@ -24,22 +24,21 @@ namespace LambdaEngine
 
 		/*
 		* Load a Scene from file, (experimental, only tested with Sponza Scene)
-		*	pDir - Path to the directory that holds the .obj file
-		*	pFilename - The name of the .obj file
+		*	filepath - Path to the .obj file
 		*	loadedGameObjects - A vector where all loaded GameObject(s) will be stored, th GUIDs of each GameObject is an index to the loadedMeshes and loadedMaterials vectors
 		*	loadedMeshes - A vector where all loaded Mesh(es) will be stored
 		*	loadedMaterials - A vector where all loaded Material(s) will be stored
 		*	loadedTextures - A vector where all loaded Texture(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures);
+		static bool LoadSceneFromFile(const String& filepath, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures);
 
 		/*
 		* Load a mesh from file
-		*	pFilepath - Path to the .obj file
+		*	filepath - Path to the .obj file
 		* return - a Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
-		static Mesh* LoadMeshFromFile(const char* pFilepath);
+		static Mesh* LoadMeshFromFile(const String& filepath);
 
 		/*
 		* Load a mesh from memory
@@ -53,16 +52,16 @@ namespace LambdaEngine
 
 		/*
 		* Load a texture from file
-		*	pFilepath - Path to the texture file
+		*	filepath - Path to the texture file
 		*	format - The format of the pixeldata
 		*	generateMips - If mipmaps should be generated on load
 		* return - an ITexture* if the texture was loaded, otherwise nullptr will be returned
 		*/
-		static ITexture* LoadTextureFromFile(const char* pFilepath, EFormat format, bool generateMips);
+		static ITexture* LoadTextureFromFile(const String& filepath, EFormat format, bool generateMips);
 
 		/*
 		* Load a texture from memory
-		*	pName - Name of the texture
+		*	name - Name of the texture
 		*	pData - The pixeldata
 		*	width - The pixel width of the texture
 		*	height - The pixel height of the texture
@@ -71,30 +70,30 @@ namespace LambdaEngine
 		*	generateMips - If mipmaps should be generated on load
 		* return - an ITexture* if the texture was loaded, otherwise nullptr will be returned
 		*/
-		static ITexture* LoadTextureFromMemory(const char* pName, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips);
+		static ITexture* LoadTextureFromMemory(const String& name, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips);
 
 		/*
 		* Load sound from file
-		*	pFilepath - Path to the shader file
+		*	filepath - Path to the shader file
 		*	stage - Which stage the shader belongs to
 		*	lang - The language of the shader file
 		*	pEntryPoint - The name of the shader entrypoint
 		* return - an IShader* if the shader was loaded, otherwise nullptr will be returned
 		*/
-		static IShader* LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint = "main");
+		static IShader* LoadShaderFromFile(const String& filepath, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint = "main");
 
 		/*
 		* Load sound from file
-		*	pFilepath - Path to the audio file
+		*	filepath - Path to the audio file
 		* return - an ISoundEffect3D* if the sound was loaded, otherwise nullptr will be returned
 		*/
-		static ISoundEffect3D* LoadSoundEffectFromFile(const char* pFilepath);
+		static ISoundEffect3D* LoadSoundEffectFromFile(const String& filepath);
 
 	private:
-		static bool ReadDataFromFile(const char* pFilepath, const char* pMode, byte** ppData, uint32* pDataSize);
+		static bool ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize);
         static void ConvertBackslashes(std::string& string);
 
-		static bool CompileGLSLToSPIRV(const char* pFilepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>& sourceSPIRV);
+		static bool CompileGLSLToSPIRV(const String& filepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>& sourceSPIRV);
 
 	private:
 		static IDeviceAllocator*		s_pAllocator;

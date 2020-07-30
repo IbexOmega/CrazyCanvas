@@ -699,7 +699,7 @@ namespace LambdaEngine
 		pFontBuffer->Unmap();
 
 		TextureDesc fontTextureDesc = {};
-		fontTextureDesc.pName		= "ImGui Font Texture";
+		fontTextureDesc.Name		= "ImGui Font Texture";
 		fontTextureDesc.MemoryType  = EMemoryType::MEMORY_GPU;
 		fontTextureDesc.Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
 		fontTextureDesc.Type		= ETextureType::TEXTURE_2D;
@@ -774,7 +774,7 @@ namespace LambdaEngine
 		SAFEDELETE(pFontBuffer);
 
 		TextureViewDesc fontTextureViewDesc = {};
-		fontTextureViewDesc.pName			= "ImGui Font Texture View";
+		fontTextureViewDesc.Name			= "ImGui Font Texture View";
 		fontTextureViewDesc.pTexture		= m_pFontTexture;
 		fontTextureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		fontTextureViewDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
@@ -792,7 +792,7 @@ namespace LambdaEngine
 	bool ImGuiRenderer::CreateSamplers()
 	{
 		SamplerDesc samplerDesc = {};
-		samplerDesc.pName				= "ImGui Sampler";
+		samplerDesc.Name				= "ImGui Sampler";
 		samplerDesc.MinFilter			= EFilter::NEAREST;
 		samplerDesc.MagFilter			= EFilter::NEAREST;
 		samplerDesc.MipmapMode			= EMipmapMode::NEAREST;
@@ -875,8 +875,8 @@ namespace LambdaEngine
 
 	bool ImGuiRenderer::CreateShaders()
 	{
-		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiVertex.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
-		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("../Assets/Shaders/ImGuiPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
+		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("ImGuiVertex.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
+		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("ImGuiPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
 	}
 

@@ -2,6 +2,8 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
     enum class ETextureType : uint8
@@ -14,7 +16,7 @@ namespace LambdaEngine
 
     struct TextureDesc
     {
-        const char*     pName           = "";
+        String			Name            = "";
         EMemoryType     MemoryType      = EMemoryType::NONE;
         EFormat         Format          = EFormat::NONE;
         ETextureType    Type            = ETextureType::TEXTURE_NONE;
