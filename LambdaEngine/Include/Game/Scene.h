@@ -94,8 +94,8 @@ namespace LambdaEngine
 		bool Init(const SceneDesc& desc);
 		bool Finalize();
 
-		void UpdateDirectionalLight(const glm::vec3& direction, const glm::vec3& spectralIntensity);
-		void UpdateCamera(const Camera* pCamera);
+		void UpdateDirectionalLight(ICommandList* pCommandList, const glm::vec3& direction, const glm::vec3& spectralIntensity);
+		void UpdateCamera(ICommandList* pCommandList, const Camera* pCamera);
 
 		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 		uint32 AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));

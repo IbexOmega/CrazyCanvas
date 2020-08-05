@@ -36,7 +36,7 @@ namespace LambdaEngine
 	struct ImGuiTexture
 	{
 		String			ResourceName		= "No Name";
-		float32			ChannelMult[4]		= { 1.0f, 1.0f, 1.0f, 1.0f };
+		float32			ChannelMul[4]		= { 1.0f, 1.0f, 1.0f, 1.0f };
 		float32			ChannelAdd[4]		= { 0.0f, 0.0f, 0.0f, 0.0f };
 		uint32			ReservedIncludeMask = 0x00008421; //0000 0000 0000 0000 1000 0100 0010 0001
 		GUID_Lambda		VertexShaderGUID	= GUID_NONE;
@@ -122,10 +122,10 @@ namespace LambdaEngine
 
 		IRenderPass*			m_pRenderPass				= nullptr;
 
-		IBuffer*				m_pVertexCopyBuffer			= nullptr;
-		IBuffer*				m_pIndexCopyBuffer			= nullptr;
-		IBuffer**				m_ppVertexBuffers			= nullptr;
-		IBuffer**				m_ppIndexBuffers			= nullptr;
+		IBuffer**				m_ppVertexCopyBuffers		= nullptr;
+		IBuffer**				m_ppIndexCopyBuffers		= nullptr;
+		IBuffer*				m_pVertexBuffer				= nullptr;
+		IBuffer*				m_pIndexBuffer				= nullptr;
 
 		ITexture*				m_pFontTexture				= nullptr;
 		ITextureView*			m_pFontTextureView			= nullptr;

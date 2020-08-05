@@ -64,17 +64,8 @@ namespace LambdaEngine
 		m_BLASs.clear();
 	}
 
-	void Scene::UpdateDirectionalLight(const glm::vec3& direction, const glm::vec3& spectralIntensity)
+	void Scene::UpdateDirectionalLight(ICommandList* pCommandList, const glm::vec3& direction, const glm::vec3& spectralIntensity)
 	{
-		RenderSystem::GetGraphicsQueue()->Flush();
-
-		m_pCopyCommandAllocator->Reset();
-		m_pCopyCommandList->Begin(nullptr);
-
-		// TODO: Remove this flush
-		RenderSystem::GetGraphicsQueue()->Flush();
-		RenderSystem::GetComputeQueue()->Flush();
-
 		LightsBuffer lightsBuffer = {};
 		lightsBuffer.Direction			= glm::vec4(direction, 1.0f);
 		lightsBuffer.SpectralIntensity	= glm::vec4(spectralIntensity, 1.0f);
@@ -83,25 +74,11 @@ namespace LambdaEngine
 		memcpy(pMapped, &lightsBuffer, sizeof(LightsBuffer));
 		m_pLightsCopyBuffer->Unmap();
 
-		m_pCopyCommandList->CopyBuffer(m_pLightsCopyBuffer, 0, m_pLightsBuffer, 0, sizeof(LightsBuffer));
-
-		m_pCopyCommandList->End();
-
-		RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_pCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
-		RenderSystem::GetGraphicsQueue()->Flush();
+		pCommandList->CopyBuffer(m_pLightsCopyBuffer, 0, m_pLightsBuffer, 0, sizeof(LightsBuffer));
 	}
 
-	void Scene::UpdateCamera(const Camera* pCamera)
+	void Scene::UpdateCamera(ICommandList* pCommandList, const Camera* pCamera)
 	{
-		RenderSystem::GetGraphicsQueue()->Flush();
-
-		m_pCopyCommandAllocator->Reset();
-		m_pCopyCommandList->Begin(nullptr);
-
-        // TODO: Remove this flush
-		RenderSystem::GetGraphicsQueue()->Flush();
-		RenderSystem::GetComputeQueue()->Flush();
-
 		PerFrameBuffer perFrameBuffer = {};
 		perFrameBuffer.Camera = pCamera->GetData();
 
@@ -109,12 +86,7 @@ namespace LambdaEngine
 		memcpy(pMapped, &perFrameBuffer, sizeof(PerFrameBuffer));
 		m_pPerFrameCopyBuffer->Unmap();
 
-		m_pCopyCommandList->CopyBuffer(m_pPerFrameCopyBuffer, 0, m_pPerFrameBuffer, 0, sizeof(PerFrameBuffer));
-
-		m_pCopyCommandList->End();
-
-		RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_pCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
-		RenderSystem::GetGraphicsQueue()->Flush();
+		pCommandList->CopyBuffer(m_pPerFrameCopyBuffer, 0, m_pPerFrameBuffer, 0, sizeof(PerFrameBuffer));
 	}
 
 	uint32 Scene::AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform)

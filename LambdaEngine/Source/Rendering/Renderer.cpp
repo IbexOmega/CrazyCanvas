@@ -109,7 +109,7 @@ namespace LambdaEngine
 
 	void Renderer::NewFrame(Timestamp delta)
 	{
-		m_pRenderGraph->NewFrame(delta);
+		m_pRenderGraph->NewFrame(m_ModFrameIndex, m_BackBufferIndex, delta);
 	}
 
 	void Renderer::PrepareRender(Timestamp delta)
@@ -121,11 +121,21 @@ namespace LambdaEngine
 	{
 		m_BackBufferIndex = m_pSwapChain->GetCurrentBackBufferIndex();
 
-		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
+		m_pRenderGraph->Render();
 
 		m_pSwapChain->Present();
 
 		m_FrameIndex++;
 		m_ModFrameIndex = m_FrameIndex % m_BackBufferCount;
+	}
+
+	ICommandList* Renderer::AcquireGraphicsCopyCommandList()
+	{
+		return m_pRenderGraph->AcquireGraphicsCopyCommandList();
+	}
+
+	ICommandList* Renderer::AcquireComputeCopyCommandList()
+	{
+		return m_pRenderGraph->AcquireComputeCopyCommandList();
 	}
 }

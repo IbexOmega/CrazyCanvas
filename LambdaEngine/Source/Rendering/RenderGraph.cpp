@@ -441,8 +441,11 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::NewFrame(Timestamp delta)
+	void RenderGraph::NewFrame(uint64 modFrameIndex, uint32 backBufferIndex, Timestamp delta)
 	{
+		m_ModFrameIndex = modFrameIndex;
+		m_BackBufferIndex = backBufferIndex;
+
 		for (uint32 r = 0; r < (uint32)m_CustomRenderers.size(); r++)
 		{
 			ICustomRenderer* pCustomRenderer = m_CustomRenderers[r];
@@ -459,11 +462,8 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)
+	void RenderGraph::Render()
 	{
-		m_ModFrameIndex		= modFrameIndex;
-		m_BackBufferIndex	= backBufferIndex;
-
 		ZERO_MEMORY(m_ppExecutionStages, m_ExecutionStageCount * sizeof(ICommandList*));
 
 		uint32 currentExecutionStage = 0;
@@ -601,6 +601,36 @@ namespace LambdaEngine
 				currentBatch.clear();
 			}
 		}
+	}
+
+	ICommandList* RenderGraph::AcquireGraphicsCopyCommandList()
+	{
+		ICommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
+
+		if (!m_ExecuteGraphicsCopy)
+		{
+			m_ExecuteGraphicsCopy = true;
+
+			m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
+			pCommandList->Begin(nullptr);
+		}
+
+		return pCommandList;
+	}
+
+	ICommandList* RenderGraph::AcquireComputeCopyCommandList()
+	{
+		ICommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
+
+		if (!m_ExecuteComputeCopy)
+		{
+			m_ExecuteComputeCopy = true;
+
+			m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
+			pCommandList->Begin(nullptr);
+		}
+
+		return pCommandList;
 	}
 
 	bool RenderGraph::GetResourceTextures(const char* pResourceName, ITexture* const ** pppTexture, uint32* pTextureView) const

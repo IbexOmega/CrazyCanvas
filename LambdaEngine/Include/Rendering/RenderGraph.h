@@ -233,10 +233,13 @@ namespace LambdaEngine
 		*/
 		void Update();
 
-		void NewFrame(Timestamp delta);
+		void NewFrame(uint64 frameIndex, uint32 backBufferIndex, Timestamp delta);
 		void PrepareRender(Timestamp delta);
 
-		void Render(uint64 frameIndex, uint32 backBufferIndex);
+		void Render();
+
+		ICommandList* AcquireGraphicsCopyCommandList();
+		ICommandList* AcquireComputeCopyCommandList();
 
 		bool GetResourceTextures(const char* pResourceName, ITexture* const ** pppTexture, uint32* pTextureView)						const;
 		bool GetResourceTextureViews(const char* pResourceName, ITextureView* const ** pppTextureViews, uint32* pTextureViewCount)		const;

@@ -148,8 +148,6 @@ Sandbox::Sandbox()
 
 	m_pScene->Finalize();
 
-	m_pScene->UpdateDirectionalLight(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(30.0f));
-
 	m_pCamera = DBG_NEW Camera();
 
 	Window* pWindow = CommonApplication::Get()->GetMainWindow();
@@ -163,8 +161,6 @@ Sandbox::Sandbox()
 
 	m_pCamera->Init(cameraDesc);
 	m_pCamera->Update();
-
-	m_pScene->UpdateCamera(m_pCamera);
 
 	SamplerDesc samplerLinearDesc = {};
 	samplerLinearDesc.Name					= "Linear Sampler";
@@ -207,6 +203,11 @@ Sandbox::Sandbox()
 	InitRendererForDeferred();
 
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
+
+	ICommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
+
+	m_pScene->UpdateCamera(pGraphicsCopyCommandList, m_pCamera);
+	m_pScene->UpdateDirectionalLight(pGraphicsCopyCommandList, glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(30.0f));
 
 	if (RENDER_GRAPH_IMGUI_ENABLED)
 	{
@@ -532,10 +533,13 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-	//return;
+	Render(delta);
+}
 
-    //LOG_MESSAGE("Delta: %.6f ms", delta.AsMilliSeconds());
-    
+void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
+{
+	using namespace LambdaEngine;
+
 	float dt = (float)delta.AsSeconds();
 	m_Timer += dt;
 
@@ -599,7 +603,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	{
 		m_pCamera->Rotate(glm::vec3(CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
 	}
-	
+
 	if (Input::IsKeyDown(EKey::KEY_LEFT) && Input::IsKeyUp(EKey::KEY_RIGHT))
 	{
 		m_pCamera->Rotate(glm::vec3(0.0f, -CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f));
@@ -610,22 +614,29 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	}
 
 	m_pCamera->Update();
-	
+
 	AudioListenerDesc listenerDesc = {};
-	listenerDesc.Position		= m_pCamera->GetPosition();
-	listenerDesc.Forward		= m_pCamera->GetForwardVec();
-	listenerDesc.Up				= m_pCamera->GetUpVec();
+	listenerDesc.Position = m_pCamera->GetPosition();
+	listenerDesc.Forward = m_pCamera->GetForwardVec();
+	listenerDesc.Up = m_pCamera->GetUpVec();
 
 	AudioSystem::GetDevice()->UpdateAudioListener(m_AudioListenerIndex, &listenerDesc);
+}
 
-	m_pScene->UpdateCamera(m_pCamera);
-
-	Window* pWindow = CommonApplication::Get()->GetMainWindow();
-	float32 renderWidth			= (float32)pWindow->GetWidth();
-	float32 renderHeight		= (float32)pWindow->GetHeight();
-	float32 renderAspectRatio	= renderWidth / renderHeight;
+void Sandbox::Render(LambdaEngine::Timestamp delta)
+{
+	using namespace LambdaEngine;
 
 	m_pRenderer->NewFrame(delta);
+
+	ICommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
+
+	m_pScene->UpdateCamera(pGraphicsCopyCommandList, m_pCamera);
+
+	Window* pWindow = CommonApplication::Get()->GetMainWindow();
+	float32 renderWidth = (float32)pWindow->GetWidth();
+	float32 renderHeight = (float32)pWindow->GetHeight();
+	float32 renderAspectRatio = renderWidth / renderHeight;
 
 	if (RENDER_GRAPH_IMGUI_ENABLED)
 	{
@@ -634,10 +645,8 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 		//ImGui::ShowDemoWindow();
 
 		ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
-		if (ImGui::Begin("Test Window", NULL))
+		if (ImGui::Begin("Debugging Window", NULL))
 		{
-			ImGui::Button("Test Button");
-
 			uint32 modFrameIndex = m_pRenderer->GetModFrameIndex();
 
 			ITextureView* const* ppTextureViews = nullptr;
@@ -649,6 +658,9 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 			static ImGuiTexture radianceTexture = {};
 
 			float windowWidth = ImGui::GetWindowWidth();
+
+			ImGui::Text("FPS: %f", 1.0f / delta.AsSeconds());
+			ImGui::Text("Frametime (ms): %f", delta.AsMilliSeconds());
 
 			if (ImGui::BeginTabBar("G-Buffer"))
 			{
@@ -673,10 +685,10 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 					{
 						normalTexture.ReservedIncludeMask = 0x00008421;
 
-						normalTexture.ChannelMult[0] = 0.5f;
-						normalTexture.ChannelMult[1] = 0.5f;
-						normalTexture.ChannelMult[2] = 0.5f;
-						normalTexture.ChannelMult[3] = 0.5f;
+						normalTexture.ChannelMul[0] = 0.5f;
+						normalTexture.ChannelMul[1] = 0.5f;
+						normalTexture.ChannelMul[2] = 0.5f;
+						normalTexture.ChannelMul[3] = 0.5f;
 
 						normalTexture.ChannelAdd[0] = 0.5f;
 						normalTexture.ChannelAdd[1] = 0.5f;
@@ -689,10 +701,10 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 					{
 						normalTexture.ReservedIncludeMask = 0x00008420;
 
-						normalTexture.ChannelMult[0] = 1.0f;
-						normalTexture.ChannelMult[1] = 1.0f;
-						normalTexture.ChannelMult[2] = 1.0f;
-						normalTexture.ChannelMult[3] = 0.0f;
+						normalTexture.ChannelMul[0] = 1.0f;
+						normalTexture.ChannelMul[1] = 1.0f;
+						normalTexture.ChannelMul[2] = 1.0f;
+						normalTexture.ChannelMul[3] = 0.0f;
 
 						normalTexture.ChannelAdd[0] = 0.0f;
 						normalTexture.ChannelAdd[1] = 0.0f;
@@ -705,10 +717,10 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 					{
 						normalTexture.ReservedIncludeMask = 0x00002220;
 
-						normalTexture.ChannelMult[0] = 0.5f;
-						normalTexture.ChannelMult[1] = 0.5f;
-						normalTexture.ChannelMult[2] = 0.5f;
-						normalTexture.ChannelMult[3] = 0.0f;
+						normalTexture.ChannelMul[0] = 0.5f;
+						normalTexture.ChannelMul[1] = 0.5f;
+						normalTexture.ChannelMul[2] = 0.5f;
+						normalTexture.ChannelMul[3] = 0.0f;
 
 						normalTexture.ChannelAdd[0] = 0.5f;
 						normalTexture.ChannelAdd[1] = 0.5f;
@@ -721,10 +733,10 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 					{
 						normalTexture.ReservedIncludeMask = 0x00001110;
 
-						normalTexture.ChannelMult[0] = 1.0f;
-						normalTexture.ChannelMult[1] = 1.0f;
-						normalTexture.ChannelMult[2] = 1.0f;
-						normalTexture.ChannelMult[3] = 0.0f;
+						normalTexture.ChannelMul[0] = 1.0f;
+						normalTexture.ChannelMul[1] = 1.0f;
+						normalTexture.ChannelMul[2] = 1.0f;
+						normalTexture.ChannelMul[3] = 0.0f;
 
 						normalTexture.ChannelAdd[0] = 0.0f;
 						normalTexture.ChannelAdd[1] = 0.0f;
@@ -745,10 +757,10 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 					depthStencilTexture.ReservedIncludeMask = 0x00008880;
 
-					depthStencilTexture.ChannelMult[0] = 1.0f;
-					depthStencilTexture.ChannelMult[1] = 1.0f;
-					depthStencilTexture.ChannelMult[2] = 1.0f;
-					depthStencilTexture.ChannelMult[3] = 0.0f;
+					depthStencilTexture.ChannelMul[0] = 1.0f;
+					depthStencilTexture.ChannelMul[1] = 1.0f;
+					depthStencilTexture.ChannelMul[2] = 1.0f;
+					depthStencilTexture.ChannelMul[3] = 0.0f;
 
 					depthStencilTexture.ChannelAdd[0] = 0.0f;
 					depthStencilTexture.ChannelAdd[1] = 0.0f;
@@ -770,10 +782,10 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 						radianceTexture.ReservedIncludeMask = 0x00008421;
 
-						radianceTexture.ChannelMult[0] = 1.0f;
-						radianceTexture.ChannelMult[1] = 1.0f;
-						radianceTexture.ChannelMult[2] = 1.0f;
-						radianceTexture.ChannelMult[3] = 0.0f;
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
 
 						radianceTexture.ChannelAdd[0] = 0.0f;
 						radianceTexture.ChannelAdd[1] = 0.0f;
@@ -797,12 +809,6 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	m_pRenderer->PrepareRender(delta);
 
 	m_pRenderer->Render();
-}
-
-void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
-{
-	UNREFERENCED_VARIABLE(delta);
-    //LOG_MESSAGE("Fixed delta: %.6f ms", delta.AsMilliSeconds());
 }
 
 namespace LambdaEngine
