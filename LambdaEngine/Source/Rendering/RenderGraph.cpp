@@ -1217,13 +1217,13 @@ namespace LambdaEngine
 					GraphicsManagedPipelineStateDesc pipelineDesc = {};
 					pipelineDesc.Name							= pRenderStageDesc->Name;
 					pipelineDesc.pPipelineLayout				= pRenderStage->pPipelineLayout;
-					pipelineDesc.TaskShader						= ResourceManager::GetShaderGUID(pRenderStageDesc->Graphics.Shaders.TaskShaderName);
-					pipelineDesc.MeshShader						= ResourceManager::GetShaderGUID(pRenderStageDesc->Graphics.Shaders.MeshShaderName);	
-					pipelineDesc.VertexShader					= ResourceManager::GetShaderGUID(pRenderStageDesc->Graphics.Shaders.VertexShaderName);
-					pipelineDesc.GeometryShader					= ResourceManager::GetShaderGUID(pRenderStageDesc->Graphics.Shaders.GeometryShaderName);
-					pipelineDesc.HullShader						= ResourceManager::GetShaderGUID(pRenderStageDesc->Graphics.Shaders.HullShaderName);
-					pipelineDesc.DomainShader					= ResourceManager::GetShaderGUID(pRenderStageDesc->Graphics.Shaders.DomainShaderName);
-					pipelineDesc.PixelShader					= ResourceManager::GetShaderGUID(pRenderStageDesc->Graphics.Shaders.PixelShaderName);
+					pipelineDesc.TaskShader						= pRenderStageDesc->Graphics.Shaders.TaskShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.TaskShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER,		EShaderLang::GLSL);
+					pipelineDesc.MeshShader						= pRenderStageDesc->Graphics.Shaders.MeshShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.MeshShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER,		EShaderLang::GLSL);
+					pipelineDesc.VertexShader					= pRenderStageDesc->Graphics.Shaders.VertexShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.VertexShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,		EShaderLang::GLSL);
+					pipelineDesc.GeometryShader					= pRenderStageDesc->Graphics.Shaders.GeometryShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.GeometryShaderName,	FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER,	EShaderLang::GLSL);
+					pipelineDesc.HullShader						= pRenderStageDesc->Graphics.Shaders.HullShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.HullShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER,		EShaderLang::GLSL);
+					pipelineDesc.DomainShader					= pRenderStageDesc->Graphics.Shaders.DomainShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.DomainShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER,		EShaderLang::GLSL);
+					pipelineDesc.PixelShader					= pRenderStageDesc->Graphics.Shaders.PixelShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.PixelShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,		EShaderLang::GLSL);
 
 					memcpy(pipelineDesc.pBlendAttachmentStates, renderPassBlendAttachmentStates.data(), renderPassBlendAttachmentStates.size() * sizeof(BlendAttachmentState));
 					pipelineDesc.BlendAttachmentStateCount		= (uint32)renderPassBlendAttachmentStates.size();
@@ -1302,7 +1302,7 @@ namespace LambdaEngine
 					ComputeManagedPipelineStateDesc pipelineDesc = {};
 					pipelineDesc.Name				= pRenderStageDesc->Name;
 					pipelineDesc.pPipelineLayout	= pRenderStage->pPipelineLayout;
-					pipelineDesc.Shader				= ResourceManager::GetShaderGUID(pRenderStageDesc->Compute.ShaderName);
+					pipelineDesc.Shader				= pRenderStageDesc->Compute.ShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Compute.ShaderName, FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::GLSL);
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
 				}
@@ -1311,16 +1311,16 @@ namespace LambdaEngine
 					RayTracingManagedPipelineStateDesc pipelineDesc = {};
 					pipelineDesc.pPipelineLayout	= pRenderStage->pPipelineLayout;
 					pipelineDesc.MaxRecursionDepth	= 1;
-					pipelineDesc.RaygenShader		= ResourceManager::GetShaderGUID(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName);
+					pipelineDesc.RaygenShader		= pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName, FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::GLSL);
 
 					for (uint32 ch = 0; ch < pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount; ch++)
 					{
-						pipelineDesc.pClosestHitShaders[ch] = ResourceManager::GetShaderGUID(pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch]);
+						pipelineDesc.pClosestHitShaders[ch] = pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch], FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, EShaderLang::GLSL);
 					}
 
 					for (uint32 m = 0; m < pRenderStageDesc->RayTracing.Shaders.MissShaderCount; m++)
 					{
-						pipelineDesc.pMissShaders[m] = ResourceManager::GetShaderGUID(pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m]);
+						pipelineDesc.pMissShaders[m] = pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m], FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER, EShaderLang::GLSL);
 					}
 
 					pipelineDesc.ClosestHitShaderCount	= pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount;

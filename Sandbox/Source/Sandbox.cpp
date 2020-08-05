@@ -903,28 +903,28 @@ bool Sandbox::InitRendererForDeferred()
 {
 	using namespace LambdaEngine;
 
-	GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("GeometryDefVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("GeometryDefPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	//GUID_Lambda geometryVertexShaderGUID		= ResourceManager::LoadShaderFromFile("GeometryDefVertex.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	//GUID_Lambda geometryPixelShaderGUID			= ResourceManager::LoadShaderFromFile("GeometryDefPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("FullscreenQuad.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("ShadingDefPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	//GUID_Lambda fullscreenQuadShaderGUID		= ResourceManager::LoadShaderFromFile("FullscreenQuad.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,			EShaderLang::GLSL);
+	//GUID_Lambda shadingPixelShaderGUID			= ResourceManager::LoadShaderFromFile("ShadingDefPixel.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	GUID_Lambda raygenShaderGUID				= ResourceManager::LoadShaderFromFile("Raygen.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda closestHitRadianceShaderGUID	= ResourceManager::LoadShaderFromFile("ClosestHitRadiance.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
-	GUID_Lambda missRadianceShaderGUID			= ResourceManager::LoadShaderFromFile("MissRadiance.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
-	GUID_Lambda closestHitShadowShaderGUID		= ResourceManager::LoadShaderFromFile("ClosestHitShadow.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
-	GUID_Lambda missShadowShaderGUID			= ResourceManager::LoadShaderFromFile("MissShadow.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
+	//GUID_Lambda raygenShaderGUID				= ResourceManager::LoadShaderFromFile("Raygen.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER,			EShaderLang::GLSL);
+	//GUID_Lambda closestHitRadianceShaderGUID	= ResourceManager::LoadShaderFromFile("ClosestHitRadiance.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
+	//GUID_Lambda missRadianceShaderGUID			= ResourceManager::LoadShaderFromFile("MissRadiance.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
+	//GUID_Lambda closestHitShadowShaderGUID		= ResourceManager::LoadShaderFromFile("ClosestHitShadow.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,	EShaderLang::GLSL);
+	//GUID_Lambda missShadowShaderGUID			= ResourceManager::LoadShaderFromFile("MissShadow.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER,			EShaderLang::GLSL);
 
-	GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("PostProcess.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
+	//GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("PostProcess.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
 
 	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelNormal.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("ImGuiPixelDepth.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelRoughness.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
-	ResourceManager::LoadShaderFromFile("ForwardVertex.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
-	ResourceManager::LoadShaderFromFile("ForwardPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
+	//ResourceManager::LoadShaderFromFile("ForwardVertex.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
+	//ResourceManager::LoadShaderFromFile("ForwardPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
 
-	ResourceManager::LoadShaderFromFile("ShadingSimpleDefPixel.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
+	//ResourceManager::LoadShaderFromFile("ShadingSimpleDefPixel.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
 
 	String renderGraphFile = "";
 
@@ -1060,7 +1060,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureViewDesc.ArrayCount		= 1;
 		textureViewDesc.Format			= textureDesc.Format;
 
-		SamplerDesc samplerDesc = {};
+		SamplerDesc samplerDesc			= { };
 		samplerDesc.Name				= "Nearest Sampler";
 		samplerDesc.MinFilter			= EFilter::NEAREST;
 		samplerDesc.MagFilter			= EFilter::NEAREST;
@@ -1101,7 +1101,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.Miplevels			= 1;
 		textureDesc.ArrayCount			= 1;
 
-		TextureViewDesc textureView = { };
+		TextureViewDesc textureView		= { };
 		textureView.Name				= "Norm-Met-Rough G-Buffer Texture View";
 		textureView.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureView.Type				= ETextureViewType::TEXTURE_VIEW_2D;

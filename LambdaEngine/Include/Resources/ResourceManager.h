@@ -122,11 +122,11 @@ namespace LambdaEngine
 
 		static void ReloadAllShaders();
 
-		static GUID_Lambda GetMeshGUID(const String& name);
-		static GUID_Lambda GetMaterialGUID(const String& name);
-		static GUID_Lambda GetTextureGUID(const String& name);
-		static GUID_Lambda GetShaderGUID(const String& name);
-		static GUID_Lambda GetSoundEffectGUID(const String& name);
+		static GUID_Lambda				GetMeshGUID(const String& name);
+		static GUID_Lambda				GetMaterialGUID(const String& name);
+		static GUID_Lambda				GetTextureGUID(const String& name);
+		static GUID_Lambda				GetShaderGUID(const String& name);
+		static GUID_Lambda				GetSoundEffectGUID(const String& name);
 
 		static Mesh*					GetMesh(GUID_Lambda guid);
 		static Material*				GetMaterial(GUID_Lambda guid);

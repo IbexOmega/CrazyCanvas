@@ -134,6 +134,10 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::LoadMeshFromFile(const String& filename)
 	{
+		auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename);
+		if (loadedMeshGUID != s_MeshNamesToGUIDs.end())
+			return loadedMeshGUID->second;
+
 		GUID_Lambda guid = GUID_NONE;
 		Mesh** ppMappedMesh = nullptr;
 
@@ -151,6 +155,10 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::LoadMeshFromMemory(const String& name, const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
 	{
+		auto loadedMeshGUID = s_MeshNamesToGUIDs.find(name);
+		if (loadedMeshGUID != s_MeshNamesToGUIDs.end())
+			return loadedMeshGUID->second;
+
 		GUID_Lambda guid = GUID_NONE;
 		Mesh** ppMappedMesh = nullptr;
 
@@ -168,6 +176,10 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::LoadMaterialFromMemory(const String& name, GUID_Lambda albedoMap, GUID_Lambda normalMap, GUID_Lambda ambientOcclusionMap, GUID_Lambda metallicMap, GUID_Lambda roughnessMap, const MaterialProperties& properties)
 	{
+		auto loadedMaterialGUID = s_MaterialNamesToGUIDs.find(name);
+		if (loadedMaterialGUID != s_MaterialNamesToGUIDs.end())
+			return loadedMaterialGUID->second;
+
 		GUID_Lambda guid = GUID_NONE;
 		Material* pMappedMaterial = nullptr;
 
@@ -209,6 +221,10 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::LoadTextureFromFile(const String& filename, EFormat format, bool generateMips)
 	{
+		auto loadedTextureGUID = s_TextureNamesToGUIDs.find(filename);
+		if (loadedTextureGUID != s_TextureNamesToGUIDs.end())
+			return loadedTextureGUID->second;
+
 		GUID_Lambda guid = GUID_NONE;
 		ITexture** ppMappedTexture = nullptr;
 		ITextureView** ppMappedTextureView = nullptr;
@@ -243,6 +259,10 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::LoadTextureFromMemory(const String& name, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips)
 	{
+		auto loadedTextureGUID = s_TextureNamesToGUIDs.find(name);
+		if (loadedTextureGUID != s_TextureNamesToGUIDs.end())
+			return loadedTextureGUID->second;
+
 		GUID_Lambda guid = GUID_NONE;
 		ITexture** ppMappedTexture = nullptr;
 		ITextureView** ppMappedTextureView = nullptr;
@@ -277,6 +297,10 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::LoadShaderFromFile(const String& filename, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint)
 	{
+		auto loadedShaderGUID = s_ShaderNamesToGUIDs.find(filename);
+		if (loadedShaderGUID != s_ShaderNamesToGUIDs.end())
+			return loadedShaderGUID->second;
+
 		GUID_Lambda guid = GUID_NONE;
 		IShader** ppMappedShader = nullptr;
 
@@ -304,6 +328,10 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::LoadSoundEffectFromFile(const String& filename)
 	{
+		auto loadedSoundEffectGUID = s_SoundEffectNamesToGUIDs.find(filename);
+		if (loadedSoundEffectGUID != s_SoundEffectNamesToGUIDs.end())
+			return loadedSoundEffectGUID->second;
+
 		GUID_Lambda guid = GUID_NONE;
 		ISoundEffect3D** ppMappedSoundEffect = nullptr;
 
