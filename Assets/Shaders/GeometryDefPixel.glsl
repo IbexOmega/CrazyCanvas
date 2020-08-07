@@ -38,8 +38,8 @@ void main()
 	float sampledMetallic 	=       texture(u_SceneMetallicMaps[in_MaterialIndex],    texCoord).r;
 	float sampledRoughness  =       texture(u_SceneRougnessMaps[in_MaterialIndex],    texCoord).r;
 
-	sampledNormal 	    = ((sampledNormal * 2.0f) - 1.0f);
-	sampledNormal 		= normalize(TBN * normalize(sampledNormal));
+	sampledNormal 	    	= normalize((sampledNormal * 2.0f) - 1.0f);
+	sampledNormal 			= normalize(TBN * normalize(sampledNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialIndex];
 

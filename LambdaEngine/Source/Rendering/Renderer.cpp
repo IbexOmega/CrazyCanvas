@@ -126,7 +126,7 @@ namespace LambdaEngine
 		m_pSwapChain->Present();
 
 		m_FrameIndex++;
-		m_ModFrameIndex = m_FrameIndex % m_BackBufferCount;
+		m_ModFrameIndex = m_FrameIndex % uint64(m_BackBufferCount);
 	}
 
 	ICommandList* Renderer::AcquireGraphicsCopyCommandList()

@@ -76,6 +76,7 @@ namespace LambdaEngine
 		glm::vec3 m_Up;
 
 		bool m_IsDirty;
+		bool m_LastIsDirty;
 	};
 }
 

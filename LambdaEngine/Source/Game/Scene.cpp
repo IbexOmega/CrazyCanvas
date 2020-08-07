@@ -77,10 +77,11 @@ namespace LambdaEngine
 		pCommandList->CopyBuffer(m_pLightsCopyBuffer, 0, m_pLightsBuffer, 0, sizeof(LightsBuffer));
 	}
 
-	void Scene::UpdateCamera(ICommandList* pCommandList, const Camera* pCamera)
+	void Scene::UpdatePerFrameBuffer(ICommandList* pCommandList, const Camera* pCamera, uint64 frameIndex)
 	{
 		PerFrameBuffer perFrameBuffer = {};
-		perFrameBuffer.Camera = pCamera->GetData();
+		perFrameBuffer.Camera		= pCamera->GetData();
+		perFrameBuffer.FrameIndex	= float32(frameIndex % FLT32_CONS_MAX_UINT32);
 
 		void* pMapped = m_pPerFrameCopyBuffer->Map();
 		memcpy(pMapped, &perFrameBuffer, sizeof(PerFrameBuffer));

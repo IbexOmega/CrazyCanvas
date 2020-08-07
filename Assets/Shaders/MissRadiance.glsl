@@ -7,12 +7,12 @@
 
 struct SRadiancePayload
 {
-	vec3 OutgoingRadiance;
+	vec3    OutgoingRadiance;
 };
 
 layout(location = 0) rayPayloadInEXT SRadiancePayload s_RadiancePayload;
 
 void main() 
 {
-    s_RadiancePayload.OutgoingRadiance = vec3(0.0f, 0.0f, 0.0f);
+    s_RadiancePayload.OutgoingRadiance  = vec3(0.529f, 0.808, 0.922f);
 }

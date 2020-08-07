@@ -9,6 +9,7 @@
 #define MAX_UNIQUE_MATERIALS 32
 
 const float PI 		= 3.14159265359f;
+const float TWO_PI  = 6.28318530718f;
 const float EPSILON = 0.001f;
 const float GAMMA   = 2.2f;
 
@@ -31,6 +32,7 @@ struct SRayHitDescription
     vec3 Normal;
     vec2 TexCoord;
     uint MaterialIndex;
+    mat3 LocalToWorld;
 };
 
 struct SVertex
@@ -78,6 +80,8 @@ struct SPerFrameBuffer
 	vec4 Position;
 	vec4 Right;
 	vec4 Up;
+
+    float FrameIndex;
 };
 
 struct SMaterialParameters

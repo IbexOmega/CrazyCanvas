@@ -42,7 +42,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
-constexpr const bool RAY_TRACING_ENABLED		= false;
+constexpr const bool RAY_TRACING_ENABLED		= true;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
@@ -205,9 +205,10 @@ Sandbox::Sandbox()
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 
 	ICommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
+	ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
 
-	m_pScene->UpdateCamera(pGraphicsCopyCommandList, m_pCamera);
-	m_pScene->UpdateDirectionalLight(pGraphicsCopyCommandList, glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(30.0f));
+	m_pScene->UpdatePerFrameBuffer(pGraphicsCopyCommandList, m_pCamera, m_pRenderer->GetFrameIndex());
+	m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(1.0f, 1.0f, 0.0f)), glm::vec3(1000.0f));
 
 	if (RENDER_GRAPH_IMGUI_ENABLED)
 	{
@@ -631,7 +632,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 	ICommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
 
-	m_pScene->UpdateCamera(pGraphicsCopyCommandList, m_pCamera);
+	m_pScene->UpdatePerFrameBuffer(pGraphicsCopyCommandList, m_pCamera, m_pRenderer->GetFrameIndex());
 
 	Window* pWindow = CommonApplication::Get()->GetMainWindow();
 	float32 renderWidth = (float32)pWindow->GetWidth();
@@ -940,7 +941,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	else if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/RT_DEFERRED.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED.lrg";
 	}
 	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 	{
@@ -1032,6 +1033,58 @@ bool Sandbox::InitRendererForDeferred()
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 	}
 
+	{
+		ITexture** ppAlbedoMaps						= m_pScene->GetAlbedoMaps();
+		ITexture** ppNormalMaps						= m_pScene->GetNormalMaps();
+		ITexture** ppAmbientOcclusionMaps			= m_pScene->GetAmbientOcclusionMaps();
+		ITexture** ppMetallicMaps					= m_pScene->GetMetallicMaps();
+		ITexture** ppRoughnessMaps					= m_pScene->GetRoughnessMaps();
+
+		ITextureView** ppAlbedoMapViews				= m_pScene->GetAlbedoMapViews();
+		ITextureView** ppNormalMapViews				= m_pScene->GetNormalMapViews();
+		ITextureView** ppAmbientOcclusionMapViews	= m_pScene->GetAmbientOcclusionMapViews();
+		ITextureView** ppMetallicMapViews			= m_pScene->GetMetallicMapViews();
+		ITextureView** ppRoughnessMapViews			= m_pScene->GetRoughnessMapViews();
+
+		std::vector<ISampler*> samplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
+
+		ResourceUpdateDesc albedoMapsUpdateDesc = {};
+		albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
+		albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppAlbedoMaps;
+		albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppAlbedoMapViews;
+		albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+
+		ResourceUpdateDesc normalMapsUpdateDesc = {};
+		normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
+		normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppNormalMaps;
+		normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppNormalMapViews;
+		normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+
+		ResourceUpdateDesc aoMapsUpdateDesc = {};
+		aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
+		aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= ppAmbientOcclusionMaps;
+		aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= ppAmbientOcclusionMapViews;
+		aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= samplers.data();
+
+		ResourceUpdateDesc metallicMapsUpdateDesc = {};
+		metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
+		metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppMetallicMaps;
+		metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppMetallicMapViews;
+		metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+
+		ResourceUpdateDesc roughnessMapsUpdateDesc = {};
+		roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
+		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= ppRoughnessMaps;
+		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= ppRoughnessMapViews;
+		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= samplers.data();
+
+		m_pRenderGraph->UpdateResource(albedoMapsUpdateDesc);
+		m_pRenderGraph->UpdateResource(normalMapsUpdateDesc);
+		m_pRenderGraph->UpdateResource(aoMapsUpdateDesc);
+		m_pRenderGraph->UpdateResource(metallicMapsUpdateDesc);
+		m_pRenderGraph->UpdateResource(roughnessMapsUpdateDesc);
+	}
+
 	if (RAY_TRACING_ENABLED)
 	{
 		const IAccelerationStructure* pTLAS = m_pScene->GetTLAS();
@@ -1040,6 +1093,21 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= pTLAS;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	}
+
+	{
+		GUID_Lambda blueNoiseID = ResourceManager::LoadTextureFromFile("LUTs/BlueNoiseRGBA.png", EFormat::FORMAT_R8G8B8A8_UNORM, false);
+
+		ITexture*		pBlueNoiseTexture		= ResourceManager::GetTexture(blueNoiseID);
+		ITextureView*	pBlueNoiseTextureView	= ResourceManager::GetTextureView(blueNoiseID);
+
+		ResourceUpdateDesc blueNoiseUpdateDesc = {};
+		blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";
+		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextures			= &pBlueNoiseTexture;
+		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
+		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &m_pNearestSampler;
+
+		m_pRenderGraph->UpdateResource(blueNoiseUpdateDesc);
 	}
 
 	{
@@ -1215,7 +1283,7 @@ bool Sandbox::InitRendererForDeferred()
 			pTextureDescriptions[b].Name				= pTextureNames[b];
 			pTextureDescriptions[b].Type				= ETextureType::TEXTURE_2D;
 			pTextureDescriptions[b].MemoryType			= EMemoryType::MEMORY_GPU;
-			pTextureDescriptions[b].Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
+			pTextureDescriptions[b].Format				= EFormat::FORMAT_R16G16B16A16_SFLOAT;
 			pTextureDescriptions[b].Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 			pTextureDescriptions[b].Width				= renderWidth;
 			pTextureDescriptions[b].Height				= renderHeight;
@@ -1259,58 +1327,6 @@ bool Sandbox::InitRendererForDeferred()
 		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= vectorSamplerDescriptions.data();
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-	}
-
-	{
-		ITexture** ppAlbedoMaps						= m_pScene->GetAlbedoMaps();
-		ITexture** ppNormalMaps						= m_pScene->GetNormalMaps();
-		ITexture** ppAmbientOcclusionMaps			= m_pScene->GetAmbientOcclusionMaps();
-		ITexture** ppMetallicMaps					= m_pScene->GetMetallicMaps();
-		ITexture** ppRoughnessMaps					= m_pScene->GetRoughnessMaps();
-
-		ITextureView** ppAlbedoMapViews				= m_pScene->GetAlbedoMapViews();
-		ITextureView** ppNormalMapViews				= m_pScene->GetNormalMapViews();
-		ITextureView** ppAmbientOcclusionMapViews	= m_pScene->GetAmbientOcclusionMapViews();
-		ITextureView** ppMetallicMapViews			= m_pScene->GetMetallicMapViews();
-		ITextureView** ppRoughnessMapViews			= m_pScene->GetRoughnessMapViews();
-
-		std::vector<ISampler*> samplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
-
-		ResourceUpdateDesc albedoMapsUpdateDesc = {};
-		albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
-		albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppAlbedoMaps;
-		albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppAlbedoMapViews;
-		albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
-
-		ResourceUpdateDesc normalMapsUpdateDesc = {};
-		normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
-		normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppNormalMaps;
-		normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppNormalMapViews;
-		normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
-
-		ResourceUpdateDesc aoMapsUpdateDesc = {};
-		aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
-		aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= ppAmbientOcclusionMaps;
-		aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= ppAmbientOcclusionMapViews;
-		aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= samplers.data();
-
-		ResourceUpdateDesc metallicMapsUpdateDesc = {};
-		metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
-		metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppMetallicMaps;
-		metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppMetallicMapViews;
-		metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
-
-		ResourceUpdateDesc roughnessMapsUpdateDesc = {};
-		roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
-		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= ppRoughnessMaps;
-		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= ppRoughnessMapViews;
-		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= samplers.data();
-
-		m_pRenderGraph->UpdateResource(albedoMapsUpdateDesc);
-		m_pRenderGraph->UpdateResource(normalMapsUpdateDesc);
-		m_pRenderGraph->UpdateResource(aoMapsUpdateDesc);
-		m_pRenderGraph->UpdateResource(metallicMapsUpdateDesc);
-		m_pRenderGraph->UpdateResource(roughnessMapsUpdateDesc);
 	}
 
 	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());

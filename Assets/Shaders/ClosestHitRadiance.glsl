@@ -8,7 +8,7 @@
 
 struct SRadiancePayload
 {
-	vec3 OutgoingRadiance;
+	vec3 	OutgoingRadiance;
 };
 
 layout(binding = 1, set = BUFFER_SET_INDEX) buffer Vertices            { SVertex val[]; }              b_Vertices;
@@ -75,6 +75,7 @@ SRayHitDescription CalculateTriangleData()
     hitDescription.Normal           = normal;
     hitDescription.TexCoord         = texCoord;
     hitDescription.MaterialIndex    = materialIndex;
+	hitDescription.LocalToWorld		= TBN;
 
     return hitDescription;
 }

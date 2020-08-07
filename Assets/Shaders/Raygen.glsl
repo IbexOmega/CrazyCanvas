@@ -3,6 +3,7 @@
 #extension GL_EXT_ray_tracing : enable
 //#extension GL_EXT_debug_printf : enable
 
+#include "BxDF.glsl"
 #include "Helpers.glsl"
 #include "Defines.glsl"
 
@@ -23,8 +24,9 @@ layout(binding = 7, set = BUFFER_SET_INDEX) uniform PerFrameBuffer     { SPerFra
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_AlbedoAO;
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_NormalMetallicRoughness;
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_DepthStencil;
+layout(binding = 8, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_BlueNoiseLUT;
 
-layout(binding = 8, set = TEXTURE_SET_INDEX, rgba8) writeonly uniform image2D   u_Radiance;
+layout(binding = 9, set = TEXTURE_SET_INDEX, rgba16f) uniform image2D   		u_Radiance;
 
 layout(location = 0) rayPayloadEXT SRadiancePayload s_RadiancePayload;
 layout(location = 1) rayPayloadEXT SShadowPayload 	s_ShadowPayload;
@@ -52,6 +54,7 @@ void main()
 	//Sample GBuffer
 	vec4 sampledAlbedoAO    = texture(u_AlbedoAO, screenTexCoord);
 	float sampledDepth      = texture(u_DepthStencil, screenTexCoord).r;
+	vec4 sampledRadiance 	= imageLoad(u_Radiance, pixelCoords);
 
 	//Unpack GBuffer
 	vec3 albedo         = sampledAlbedoAO.rgb;
@@ -60,83 +63,121 @@ void main()
     float metallic      = sampledNormalMetallicRoughness.b * 0.5f + 0.5f;
     float roughness     = abs(sampledNormalMetallicRoughness.a);
 
+	//Define local Coordinate System
+	vec3 tangent 	= vec3(0.0f);
+	vec3 bitangent 	= vec3(0.0f);
+	CreateCoordinateSystem(normal, tangent, bitangent);
+
+	//Create Transformation Matrices
+	mat3 localToWorld = mat3(tangent, bitangent, normal);
+	mat3 worldToLocal = transpose(localToWorld);
+
 	//Define Constants
 	SPositions positions            = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
-    SRayDirections rayDirections    = CalculateRayDirections(positions.WorldPos, normal, perFrameBuffer.Position.xyz, perFrameBuffer.ViewInv);	
-	float NdotV     				= max(dot(normal, rayDirections.ViewDir), 0.0f); //Same as cosTheta
+    SRayDirections rayDirections   	= CalculateRayDirections(positions.WorldPos, normal, perFrameBuffer.Position.xyz, perFrameBuffer.ViewInv);	
+	float NdotV     				= abs(dot(normal, rayDirections.ViewDir)); //Same as cosTheta
+	float alpha						= RoughnessToAlpha(roughness);
+	vec3 w_o 						= worldToLocal * rayDirections.ViewDir;
 
-	vec3 outgoingRadiance = vec3(0.0f);
+	//Create uniform Samples
+	float blueNoiseX = GoldNoise(vec3(d.x, d.y, 0.0f), perFrameBuffer.FrameIndex, 0.0f, 1.0f);
+    float blueNoiseY = GoldNoise(vec3(0.0f, d.x, d.y), perFrameBuffer.FrameIndex, 0.0f, 1.0f);
+	vec4 u = texture(u_BlueNoiseLUT, vec2(blueNoiseX, blueNoiseY));
+	
+	vec3 L_o 				= sampledRadiance.rgb;
+	float accumulation		= sampledRadiance.a;
+
+	if (perFrameBuffer.LastView != perFrameBuffer.View)
+	{
+		L_o					= vec3(0.0f);
+		accumulation		= 0.0f;
+	}
 
 	vec3 F_0 = vec3(0.04f);
-	vec3 F_0_Albedo = mix(F_0, albedo, metallic);
+	F_0 = mix(F_0, albedo, metallic);
 
-	//Shadow Rays
+	//Direct Lighting
 	{
 		//Directional Light
 		{
-			//Define Shadow Ray Parameters
-			const vec3 		origin 				= positions.WorldPos + normal * 0.025f;
-			const vec3 		direction			= lightsBuffer.Direction.xyz;
-			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
-			const uint 		cullMask           	= 0xFF;
-			const uint 		sbtRecordOffset    	= 1;
-			const uint 		sbtRecordStride    	= 0;
-			const uint 		missIndex          	= 1;
-			const float 	Tmin              	= 0.001f;
-			const float 	Tmax              	= 10000.0f;
-			const int 		payload       		= 1;
-		
-			//Send Shadow Ray
-			traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+			vec3 L_d 	= vec3(0.0f); 	//Describes the reflected radiance sum from light samples taken on this light
+			float N 	= 0.0f;			//Describes the amount of samples taken on this light, L_d should be divided with N before adding it to L_o
 
-			vec3 lightDir       = normalize(lightsBuffer.Direction.xyz);
-			vec3 halfway        = normalize(rayDirections.ViewDir + lightDir);
-			vec3 radiance       = vec3(lightsBuffer.SpectralIntensity.rgb);
+			//Estimate the Reflected Direct Radiance
+			{
+				vec3 worldLightDir 	= lightsBuffer.Direction.xyz;
+				vec3 w_i 			= worldToLocal * worldLightDir;
 
-			float NdotL         = max(dot(normal, lightDir), 0.0f);
-			float HdotV         = max(dot(halfway, rayDirections.ViewDir), 0.0f);
+				//Evaluate the BRDF in the Light Direction (ofcourse we don't need to sample it since we already know w_i)
+				SReflection reflection = f(w_o, w_i, alpha, F_0);
 
-			float NDF           = Distribution(normal, halfway, roughness);
-			float G             = GeometryOpt(NdotV, NdotL, roughness);
-			vec3 F              = Fresnel(F_0_Albedo, HdotV);
+				if (reflection.PDF > 0.0f)
+				{
+					//Define Shadow Ray Parameters
+					const vec3 		origin 				= positions.WorldPos + normal * 0.025f;
+					const vec3 		direction			= worldLightDir;
+					const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+					const uint 		cullMask           	= 0xFF;
+					const uint 		sbtRecordOffset    	= 1;
+					const uint 		sbtRecordStride    	= 0;
+					const uint 		missIndex          	= 1;
+					const float 	Tmin              	= 0.001f;
+					const float 	Tmax              	= 10000.0f;
+					const int 		payload       		= 1;
 
-			vec3 reflected      = F;                                                //k_S
-			vec3 refracted      = (vec3(1.0f) - reflected) * (1.0f - metallic);     //k_D
+					//Send Shadow Ray
+					s_ShadowPayload.Distance = 0.0f;
+					traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
 
-			vec3 numerator      = NDF * G * F;
-			float denominator   = 4.0f / NdotV * NdotL;
-			vec3 specular       = numerator / max(denominator, EPSILON);
+					float shadow 		= step(s_ShadowPayload.Distance, Tmin);
 
-			float shadow 		= step(s_ShadowPayload.Distance, Tmin);
+					L_d 	+= shadow * albedo * reflection.f * lightsBuffer.SpectralIntensity.rgb;// / reflection.PDF; // Since directional lights are described by a delta distribution we do not divide by the PDF (it will be 1)
+					
 
-			outgoingRadiance += shadow * (refracted * albedo / PI + specular) * radiance * NdotL; 
+					/*
+						If this was light was not described by a delta distribution we would include a PDF as divisor above and we would below !!Sample!! the BRDF with MIS to weight the
+					*/
+				}
+
+				N += 1.0f; //No matter if the PDF == 0 or if the light is occluded from the pixel this still counts as a sample (obviously)
+			}
+
+			L_o += L_d / N;
 		}
 	}
 
-	//Reflection Rays
+	//Indirect Lighting
 	{
-		//Define Reflection Ray Parameters
-		const vec3 		origin 				= positions.WorldPos + normal * 0.025f;
-		const vec3 		direction			= rayDirections.ReflDir;
-		const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
-		const uint 		cullMask           	= 0xFF;
-		const uint 		sbtRecordOffset    	= 0;
-		const uint 		sbtRecordStride    	= 0;
-		const uint 		missIndex          	= 0;
-		const float 	Tmin              	= 0.001f;
-		const float 	Tmax              	= 10000.0f;
-		const int 		payload       		= 0;
-		
-		//Send Reflection Ray
-		s_RadiancePayload.IncomingRadiance = vec3(0.0f, 0.0f, 0.0f);
-		traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+		//Sample the BRDF
+		SReflection reflection = Sample_f(w_o, alpha, F_0, u.xy);
 
-		//Calculate how much of the incoming radiance (from the Reflection Ray) gets reflected to the camera (Fresnel equations)
-		
-		vec3 F_0_IndirectLightning = mix(albedo, s_RadiancePayload.IncomingRadiance, metallic);
+		vec3 reflectionDir = localToWorld * reflection.w_i;
 
-		outgoingRadiance += 0.5f * Fresnel(F_0_IndirectLightning, NdotV);
+		if (reflection.PDF > 0.0f)
+		{
+			//Define Reflection Ray Parameters
+			const vec3 		origin 				= positions.WorldPos + normal * 0.025f;
+			const vec3 		direction			= reflectionDir;
+			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+			const uint 		cullMask           	= 0xFF;
+			const uint 		sbtRecordOffset    	= 0;
+			const uint 		sbtRecordStride    	= 0;
+			const uint 		missIndex          	= 0;
+			const float 	Tmin              	= 0.001f;
+			const float 	Tmax              	= 10000.0f;
+			const int 		payload       		= 0;
+			
+			//Send Reflection Ray
+			s_RadiancePayload.IncomingRadiance 	= vec3(0.0f, 0.0f, 0.0f);
+			traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+
+			L_o 				+= albedo * reflection.f * s_RadiancePayload.IncomingRadiance * reflection.CosTheta / reflection.PDF;
+		}
 	}
 
-	imageStore(u_Radiance, pixelCoords, vec4(outgoingRadiance, 1.0f));
+	accumulation 		+= 1.0f;
+
+	
+
+	imageStore(u_Radiance, pixelCoords, vec4(L_o, accumulation));
 }

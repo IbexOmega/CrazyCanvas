@@ -70,6 +70,8 @@ namespace LambdaEngine
 		struct PerFrameBuffer
 		{
 			CameraData Camera;
+
+			float32 FrameIndex; //We store the Frame Index as a float as it is commonly used as a seed
 		};
 
 		struct MappedMaterial
@@ -95,7 +97,7 @@ namespace LambdaEngine
 		bool Finalize();
 
 		void UpdateDirectionalLight(ICommandList* pCommandList, const glm::vec3& direction, const glm::vec3& spectralIntensity);
-		void UpdateCamera(ICommandList* pCommandList, const Camera* pCamera);
+		void UpdatePerFrameBuffer(ICommandList* pCommandList, const Camera* pCamera, uint64 frameIndex);
 
 		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 		uint32 AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));

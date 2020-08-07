@@ -44,8 +44,8 @@ namespace LambdaEngine
 		ICommandList* AcquireGraphicsCopyCommandList();
 		ICommandList* AcquireComputeCopyCommandList();
 
-		FORCEINLINE uint32 GetFrameIndex()		{ return m_FrameIndex; }
-		FORCEINLINE uint32 GetModFrameIndex()	{ return m_ModFrameIndex; }
+		FORCEINLINE uint64 GetFrameIndex()		{ return m_FrameIndex; }
+		FORCEINLINE uint64 GetModFrameIndex()	{ return m_ModFrameIndex; }
 		FORCEINLINE uint32 GetBufferIndex()		{ return m_BackBufferIndex; }
 
 	private:
@@ -59,8 +59,8 @@ namespace LambdaEngine
 
 		uint32					m_BackBufferCount				= 0;
 
-		uint32					m_FrameIndex					= 0;
-		uint32					m_ModFrameIndex					= 0;
+		uint64					m_FrameIndex					= 0;
+		uint64					m_ModFrameIndex					= 0;
 		uint32					m_BackBufferIndex				= 0;
 
 	};
