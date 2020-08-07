@@ -48,7 +48,7 @@ void main()
     float storedAO          = materialParameters.Ambient * sampledAO;
 	vec2 storedNormal 	    = sampledNormal.xy;
     float storedMetallic    = materialParameters.Metallic * sampledMetallic * 2.0f - 1.0f; //Converting for better precision
-	float storedRoughness    = max(materialParameters.Roughness * sampledRoughness, 0.00001f);
+	float storedRoughness   = max(materialParameters.Roughness * sampledRoughness, 0.00001f);
 	if (sampledNormal.z < 0)
 	{
 		storedRoughness = -storedRoughness;

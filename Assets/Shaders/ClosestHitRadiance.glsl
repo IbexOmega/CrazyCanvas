@@ -1,90 +1,73 @@
 #version 460
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_ray_tracing : enable
-//#extension GL_EXT_debug_printf : enable
 
 #include "Helpers.glsl"
 #include "Defines.glsl"
-
-struct SRadiancePayload
-{
-	vec3 	OutgoingRadiance;
-};
-
-layout(binding = 1, set = BUFFER_SET_INDEX) buffer Vertices            { SVertex val[]; }              b_Vertices;
-layout(binding = 2, set = BUFFER_SET_INDEX) buffer Indices             { uint val[]; }                 b_Indices;
-layout(binding = 3, set = BUFFER_SET_INDEX) buffer Instances           { SInstance val[]; }            b_Instances;
-layout(binding = 4, set = BUFFER_SET_INDEX) buffer MeshIndices         { SMeshIndexDesc val[]; }       b_MeshIndices;
-layout(binding = 5, set = BUFFER_SET_INDEX) buffer MaterialParameters  { SMaterialParameters val[]; }  b_MaterialParameters;
-
-layout(binding = 6, set = BUFFER_SET_INDEX) uniform LightsBuffer       { SLightsBuffer val; }          u_LightsBuffer;
-layout(binding = 7, set = BUFFER_SET_INDEX) uniform PerFrameBuffer     { SPerFrameBuffer val; }        u_PerFrameBuffer;
-
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneRoughnessMaps[MAX_UNIQUE_MATERIALS];
+#include "RayTracingInclude.glsl"
 
 layout(location = 0) rayPayloadInEXT SRadiancePayload s_RadiancePayload;
+layout(location = 1) rayPayloadEXT SShadowPayload 	s_ShadowPayload;
 
 hitAttributeEXT vec3 attribs;
 
-SRayHitDescription CalculateTriangleData()
-{
-    SMeshIndexDesc meshIndexDesc = b_MeshIndices.val[gl_InstanceCustomIndexEXT];
-	vec3 barycentricCoords = vec3(1.0f - attribs.x - attribs.y, attribs.x, attribs.y);
-
-    uint materialIndex      = meshIndexDesc.MaterialIndex;
-	uint meshVertexOffset   = meshIndexDesc.VertexOffset;
-	uint meshIndexOffset    = meshIndexDesc.FirstIndex;
-
-	ivec3 index = ivec3
-    (
-        b_Indices.val[meshIndexOffset + 3 * gl_PrimitiveID], 
-        b_Indices.val[meshIndexOffset + 3 * gl_PrimitiveID + 1], 
-        b_Indices.val[meshIndexOffset + 3 * gl_PrimitiveID + 2]
-    );
-
-	SVertex v0 = b_Vertices.val[meshVertexOffset + index.x];
-	SVertex v1 = b_Vertices.val[meshVertexOffset + index.y];
-	SVertex v2 = b_Vertices.val[meshVertexOffset + index.z];
-
-	vec2 texCoord = (v0.TexCoord.xy * barycentricCoords.x + v1.TexCoord.xy * barycentricCoords.y + v2.TexCoord.xy * barycentricCoords.z);
-
-	mat4 transform;
-	transform[0] = vec4(gl_ObjectToWorldEXT[0], 0.0f);
-	transform[1] = vec4(gl_ObjectToWorldEXT[1], 0.0f);
-	transform[2] = vec4(gl_ObjectToWorldEXT[2], 0.0f);
-	transform[3] = vec4(gl_ObjectToWorldEXT[3], 1.0f);
-
-	vec3 T = normalize(v0.Tangent.xyz * barycentricCoords.x + v1.Tangent.xyz * barycentricCoords.y + v2.Tangent.xyz * barycentricCoords.z);
-	vec3 N  = normalize(v0.Normal.xyz * barycentricCoords.x + v1.Normal.xyz * barycentricCoords.y + v2.Normal.xyz * barycentricCoords.z);
-
-	T = normalize(vec3(transform * vec4(T, 0.0)));
-	N = normalize(vec3(transform * vec4(N, 0.0)));
-	T = normalize(T - dot(T, N) * N);
-	vec3 B = cross(N, T);
-	mat3 TBN = mat3(T, B, N);
-
-	vec3 normal = texture(u_SceneNormalMaps[materialIndex], texCoord).xyz;
-	normal = normalize(normal * 2.0f - 1.0f);
-	normal = TBN * normal;
-
-    SRayHitDescription hitDescription;
-    hitDescription.Normal           = normal;
-    hitDescription.TexCoord         = texCoord;
-    hitDescription.MaterialIndex    = materialIndex;
-	hitDescription.LocalToWorld		= TBN;
-
-    return hitDescription;
-}
-
 void main() 
 {
-    SRayHitDescription hitDescription = CalculateTriangleData();
+    SRayHitDescription hitDescription = CalculateHitData(attribs, gl_InstanceCustomIndexEXT, gl_PrimitiveID, gl_ObjectToWorldEXT);
 
-    vec3 albedo = pow(  texture(u_SceneAlbedoMaps[hitDescription.MaterialIndex],    hitDescription.TexCoord).rgb, vec3(GAMMA));
+	vec3 hitPos = gl_WorldRayOriginEXT + normalize(gl_WorldRayDirectionEXT) * gl_HitTEXT;
 
-    s_RadiancePayload.OutgoingRadiance = albedo;
+    vec3 albedo 	= pow(  texture(u_SceneAlbedoMaps[hitDescription.MaterialIndex],    hitDescription.TexCoord).rgb, vec3(GAMMA));
+	float metallic 	= 		texture(u_SceneMetallicMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
+	float roughness = 		texture(u_SceneRoughnessMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
+
+	mat3 worldToLocal = transpose(hitDescription.LocalToWorld);
+
+	vec3 w_o 		= worldToLocal * -gl_WorldRayDirectionEXT;
+
+	float alpha		= RoughnessToAlpha(roughness);
+
+	vec3 F_0 = vec3(0.04f);
+	F_0 = mix(F_0, albedo, metallic);
+
+	vec3 L_o = vec3(0.0f);
+
+	//Emitted Light
+	{
+		vec3 L_e = vec3(0.0f);
+
+		L_o += L_e;
+	}
+
+	//Direct Lighting
+	{
+		//Directional Light
+		SLightSample dirLightSample = EvalDirectionalRadiance(w_o, alpha, F_0, worldToLocal);
+
+		if (dirLightSample.PDF > 0.0f)
+		{
+			//Define Shadow Ray Parameters
+			const vec3 		origin 				= hitPos + hitDescription.Normal * 0.025f;
+			const vec3 		direction			= dirLightSample.SampleWorldDir;
+			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+			const uint 		cullMask           	= 0xFF;
+			const uint 		sbtRecordOffset    	= 1;
+			const uint 		sbtRecordStride    	= 0;
+			const uint 		missIndex          	= 1;
+			const float 	Tmin              	= 0.001f;
+			const float 	Tmax              	= 10000.0f;
+			const int 		payload       		= 1;
+
+			//Send Shadow Ray
+			s_ShadowPayload.Distance = 0.0f;
+			traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+
+			float shadow 		= step(s_ShadowPayload.Distance, Tmin);
+
+			L_o += shadow * albedo * dirLightSample.L_d;
+		}
+	}
+
+
+    s_RadiancePayload.L += L_o;
 }

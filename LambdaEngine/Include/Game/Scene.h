@@ -64,7 +64,7 @@ namespace LambdaEngine
 		struct LightsBuffer
 		{
 			glm::vec4 Direction;
-			glm::vec4 SpectralIntensity;
+			glm::vec4 EmittedRadiance;
 		};
 
 		struct PerFrameBuffer

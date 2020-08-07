@@ -3,30 +3,9 @@
 #extension GL_EXT_ray_tracing : enable
 //#extension GL_EXT_debug_printf : enable
 
-#include "BxDF.glsl"
 #include "Helpers.glsl"
 #include "Defines.glsl"
-
-struct SRadiancePayload
-{
-	vec3 IncomingRadiance;
-};
-
-struct SShadowPayload
-{
-	float Distance;
-};
-
-layout(binding = 0, set = BUFFER_SET_INDEX) uniform accelerationStructureEXT   u_TLAS;
-layout(binding = 6, set = BUFFER_SET_INDEX) uniform LightsBuffer       { SLightsBuffer val; }          u_LightsBuffer;
-layout(binding = 7, set = BUFFER_SET_INDEX) uniform PerFrameBuffer     { SPerFrameBuffer val; }        u_PerFrameBuffer;
-
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_AlbedoAO;
-layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_NormalMetallicRoughness;
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_DepthStencil;
-layout(binding = 8, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_BlueNoiseLUT;
-
-layout(binding = 9, set = TEXTURE_SET_INDEX, rgba16f) uniform image2D   		u_Radiance;
+#include "RayTracingInclude.glsl"
 
 layout(location = 0) rayPayloadEXT SRadiancePayload s_RadiancePayload;
 layout(location = 1) rayPayloadEXT SShadowPayload 	s_ShadowPayload;
@@ -99,50 +78,29 @@ void main()
 	//Direct Lighting
 	{
 		//Directional Light
+		SLightSample dirLightSample = EvalDirectionalRadiance(w_o, alpha, F_0, worldToLocal);
+
+		if (dirLightSample.PDF > 0.0f)
 		{
-			vec3 L_d 	= vec3(0.0f); 	//Describes the reflected radiance sum from light samples taken on this light
-			float N 	= 0.0f;			//Describes the amount of samples taken on this light, L_d should be divided with N before adding it to L_o
+			//Define Shadow Ray Parameters
+			const vec3 		origin 				= positions.WorldPos + normal * 0.025f;
+			const vec3 		direction			= dirLightSample.SampleWorldDir;
+			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+			const uint 		cullMask           	= 0xFF;
+			const uint 		sbtRecordOffset    	= 1;
+			const uint 		sbtRecordStride    	= 0;
+			const uint 		missIndex          	= 1;
+			const float 	Tmin              	= 0.001f;
+			const float 	Tmax              	= 10000.0f;
+			const int 		payload       		= 1;
 
-			//Estimate the Reflected Direct Radiance
-			{
-				vec3 worldLightDir 	= lightsBuffer.Direction.xyz;
-				vec3 w_i 			= worldToLocal * worldLightDir;
+			//Send Shadow Ray
+			s_ShadowPayload.Distance = 0.0f;
+			traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
 
-				//Evaluate the BRDF in the Light Direction (ofcourse we don't need to sample it since we already know w_i)
-				SReflection reflection = f(w_o, w_i, alpha, F_0);
+			float shadow 		= step(s_ShadowPayload.Distance, Tmin);
 
-				if (reflection.PDF > 0.0f)
-				{
-					//Define Shadow Ray Parameters
-					const vec3 		origin 				= positions.WorldPos + normal * 0.025f;
-					const vec3 		direction			= worldLightDir;
-					const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
-					const uint 		cullMask           	= 0xFF;
-					const uint 		sbtRecordOffset    	= 1;
-					const uint 		sbtRecordStride    	= 0;
-					const uint 		missIndex          	= 1;
-					const float 	Tmin              	= 0.001f;
-					const float 	Tmax              	= 10000.0f;
-					const int 		payload       		= 1;
-
-					//Send Shadow Ray
-					s_ShadowPayload.Distance = 0.0f;
-					traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
-
-					float shadow 		= step(s_ShadowPayload.Distance, Tmin);
-
-					L_d 	+= shadow * albedo * reflection.f * lightsBuffer.SpectralIntensity.rgb;// / reflection.PDF; // Since directional lights are described by a delta distribution we do not divide by the PDF (it will be 1)
-					
-
-					/*
-						If this was light was not described by a delta distribution we would include a PDF as divisor above and we would below !!Sample!! the BRDF with MIS to weight the
-					*/
-				}
-
-				N += 1.0f; //No matter if the PDF == 0 or if the light is occluded from the pixel this still counts as a sample (obviously)
-			}
-
-			L_o += L_d / N;
+			L_o += shadow * albedo * dirLightSample.L_d;
 		}
 	}
 
@@ -168,16 +126,14 @@ void main()
 			const int 		payload       		= 0;
 			
 			//Send Reflection Ray
-			s_RadiancePayload.IncomingRadiance 	= vec3(0.0f, 0.0f, 0.0f);
+			s_RadiancePayload.L 	= vec3(0.0f, 0.0f, 0.0f);
 			traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
 
-			L_o 				+= albedo * reflection.f * s_RadiancePayload.IncomingRadiance * reflection.CosTheta / reflection.PDF;
+			L_o 				+= albedo * reflection.f * s_RadiancePayload.L * reflection.CosTheta / reflection.PDF;
 		}
 	}
 
 	accumulation 		+= 1.0f;
-
-	
 
 	imageStore(u_Radiance, pixelCoords, vec4(L_o, accumulation));
 }

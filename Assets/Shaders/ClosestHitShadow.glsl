@@ -3,11 +3,7 @@
 #extension GL_EXT_ray_tracing : enable
 
 #include "Helpers.glsl"
-
-struct SShadowPayload
-{
-	float Distance;
-};
+#include "RayTracingInclude.glsl"
 
 layout(location = 1) rayPayloadInEXT SShadowPayload s_ShadowPayload;
 

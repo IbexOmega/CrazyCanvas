@@ -72,10 +72,11 @@ Sandbox::Sandbox()
 	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
 	m_pScene->Init(sceneDesc);
 
-	//Sponza
+	//Scene
 	{
 		std::vector<GameObject>	sceneGameObjects;
 		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
+		//ResourceManager::LoadSceneFromFile("San_Miguel/san-miguel-low-poly.obj", sceneGameObjects);
 
 		for (GameObject& gameObject : sceneGameObjects)
 		{

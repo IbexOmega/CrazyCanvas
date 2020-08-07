@@ -21,20 +21,6 @@ struct SPositions
     vec3 ViewPos;
 };
 
-struct SRayDirections
-{
-    vec3 ReflDir; 
-    vec3 ViewDir;
-};
-
-struct SRayHitDescription
-{
-    vec3 Normal;
-    vec2 TexCoord;
-    uint MaterialIndex;
-    mat3 LocalToWorld;
-};
-
 struct SVertex
 {
     vec4    Position;
@@ -66,7 +52,7 @@ struct SMeshIndexDesc
 struct SLightsBuffer
 {
     vec4    Direction;
-	vec4    SpectralIntensity;
+	vec4    EmittedRadiance;
 };
 
 struct SPerFrameBuffer

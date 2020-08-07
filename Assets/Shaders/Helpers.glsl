@@ -31,17 +31,6 @@ SPositions CalculatePositionsFromDepth(vec2 screenTexCoord, float sampledDepth, 
     return positions;
 }
 
-SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition, mat4 cameraViewInv)
-{
-	vec4 u_CameraOrigin = cameraViewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	vec3 origDirection = normalize(hitPosition - cameraPosition);
-
-    SRayDirections rayDirections;
-	rayDirections.ReflDir = reflect(origDirection, normal);
-	rayDirections.ViewDir = -origDirection;
-    return rayDirections;
-}
-
 float LinearizeDepth(float depth, float near, float far)
 {
     float z = depth * 2.0 - 1.0;
