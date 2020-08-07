@@ -80,8 +80,8 @@ void main()
 	vec3 w_o 						= worldToLocal * rayDirections.ViewDir;
 
 	//Create uniform Samples
-	float blueNoiseX = GoldNoise(vec3(d.x, d.y, 0.0f), perFrameBuffer.FrameIndex, 0.0f, 1.0f);
-    float blueNoiseY = GoldNoise(vec3(0.0f, d.x, d.y), perFrameBuffer.FrameIndex, 0.0f, 1.0f);
+	float blueNoiseX = GoldNoise(vec3(d.x, 1.0f, 1.0f), perFrameBuffer.FrameIndex, 0.0f, 1.0f);
+    float blueNoiseY = GoldNoise(vec3(d.y, 1.0f, 1.0f), perFrameBuffer.FrameIndex, 0.0f, 1.0f);
 	vec4 u = texture(u_BlueNoiseLUT, vec2(blueNoiseX, blueNoiseY));
 	
 	vec3 L_o 				= sampledRadiance.rgb;
