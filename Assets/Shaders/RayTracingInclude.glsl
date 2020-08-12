@@ -12,7 +12,6 @@ struct SRayHitDescription
     vec3    Normal;
     vec2    TexCoord;
     uint    MaterialIndex;
-    mat3    LocalToWorld;
 };
 
 struct SLightSample
@@ -24,7 +23,12 @@ struct SLightSample
 
 struct SRadiancePayload
 {
-	vec3 	L;
+    vec3    ScatterPosition;
+    vec3    Albedo;
+    vec3    F_0;
+    float   Alpha;
+    float   Distance;
+	mat3    LocalToWorld;
 };
 
 struct SShadowPayload
@@ -49,7 +53,7 @@ layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D                  
 layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneRoughnessMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 8, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_BlueNoiseLUT;
+layout(binding = 8, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_BlueNoiseLUT[8];
 layout(binding = 9, set = TEXTURE_SET_INDEX, rgba16f) uniform image2D   		u_Radiance;
 
 
@@ -109,7 +113,6 @@ SRayHitDescription CalculateHitData(vec3 attribs, int indirectArgIndex, int prim
     hitDescription.Normal           = normal;
     hitDescription.TexCoord         = texCoord;
     hitDescription.MaterialIndex    = materialIndex;
-	hitDescription.LocalToWorld		= TBN;
 
     return hitDescription;
 }

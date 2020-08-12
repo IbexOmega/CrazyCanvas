@@ -9,5 +9,10 @@ layout(location = 0) rayPayloadInEXT SRadiancePayload s_RadiancePayload;
 
 void main() 
 {
-    s_RadiancePayload.L  = vec3(0.529f, 0.808, 0.922f);
+    s_RadiancePayload.ScatterPosition	= vec3(0.0f);
+    s_RadiancePayload.Albedo			= vec3(0.0f);
+    s_RadiancePayload.F_0				= vec3(0.0f);
+    s_RadiancePayload.Alpha				= 0.0f;
+    s_RadiancePayload.Distance			= 0.0f;
+    s_RadiancePayload.LocalToWorld 		= mat3(1.0f);
 }

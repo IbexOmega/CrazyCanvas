@@ -55,13 +55,12 @@ void main()
 	SPositions positions            = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
     SRayDirections rayDirections   	= CalculateRayDirections(positions.WorldPos, normal, perFrameBuffer.Position.xyz, perFrameBuffer.ViewInv);	
 	float NdotV     				= abs(dot(normal, rayDirections.ViewDir)); //Same as cosTheta
-	float alpha						= RoughnessToAlpha(roughness);
 	vec3 w_o 						= worldToLocal * rayDirections.ViewDir;
 
 	//Create uniform Samples
 	float blueNoiseX = GoldNoise(vec3(d.x, 1.0f, 1.0f), perFrameBuffer.FrameIndex, 0.0f, 1.0f);
     float blueNoiseY = GoldNoise(vec3(d.y, 1.0f, 1.0f), perFrameBuffer.FrameIndex, 0.0f, 1.0f);
-	vec4 u = texture(u_BlueNoiseLUT, vec2(blueNoiseX, blueNoiseY));
+	vec4 u = texture(u_BlueNoiseLUT[0], vec2(blueNoiseX, blueNoiseY));
 	
 	vec3 L_o 				= sampledRadiance.rgb;
 	float accumulation		= sampledRadiance.a;
@@ -73,67 +72,100 @@ void main()
 	}
 
 	vec3 F_0 = vec3(0.04f);
-	F_0 = mix(F_0, albedo, metallic);
 
-	//Direct Lighting
+	s_RadiancePayload.ScatterPosition	= positions.WorldPos + normal * 0.025f;
+	s_RadiancePayload.Albedo			= albedo;
+	s_RadiancePayload.F_0				= mix(F_0, albedo, metallic);
+	s_RadiancePayload.Alpha				= RoughnessToAlpha(roughness);
+	s_RadiancePayload.Distance			= 1.0f;
+	s_RadiancePayload.LocalToWorld 		= localToWorld;
+
+	int maxBounces 				= 3;
+	vec3 beta 					= vec3(1.0f);
+	
+	for (int b = 0; b < maxBounces; b++)
 	{
-		//Directional Light
-		SLightSample dirLightSample = EvalDirectionalRadiance(w_o, alpha, F_0, worldToLocal);
+		worldToLocal 					= transpose(s_RadiancePayload.LocalToWorld);
 
-		if (dirLightSample.PDF > 0.0f)
+		//Emitted light
 		{
-			//Define Shadow Ray Parameters
-			const vec3 		origin 				= positions.WorldPos + normal * 0.025f;
-			const vec3 		direction			= dirLightSample.SampleWorldDir;
-			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
-			const uint 		cullMask           	= 0xFF;
-			const uint 		sbtRecordOffset    	= 1;
-			const uint 		sbtRecordStride    	= 0;
-			const uint 		missIndex          	= 1;
-			const float 	Tmin              	= 0.001f;
-			const float 	Tmax              	= 10000.0f;
-			const int 		payload       		= 1;
-
-			//Send Shadow Ray
-			s_ShadowPayload.Distance = 0.0f;
-			traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
-
-			float shadow 		= step(s_ShadowPayload.Distance, Tmin);
-
-			L_o += shadow * albedo * dirLightSample.L_d;
-		}
-	}
-
-	//Indirect Lighting
-	{
-		//Sample the BRDF
-		SReflection reflection = Sample_f(w_o, alpha, F_0, u.xy);
-
-		vec3 reflectionDir = localToWorld * reflection.w_i;
-
-		if (reflection.PDF > 0.0f)
-		{
-			//Define Reflection Ray Parameters
-			const vec3 		origin 				= positions.WorldPos + normal * 0.025f;
-			const vec3 		direction			= reflectionDir;
-			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
-			const uint 		cullMask           	= 0xFF;
-			const uint 		sbtRecordOffset    	= 0;
-			const uint 		sbtRecordStride    	= 0;
-			const uint 		missIndex          	= 0;
-			const float 	Tmin              	= 0.001f;
-			const float 	Tmax              	= 10000.0f;
-			const int 		payload       		= 0;
 			
-			//Send Reflection Ray
-			s_RadiancePayload.L 	= vec3(0.0f, 0.0f, 0.0f);
-			traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+		}
 
-			L_o 				+= albedo * reflection.f * s_RadiancePayload.L * reflection.CosTheta / reflection.PDF;
+		//Direct Lighting (next event estimation)
+		if (roughness > EPSILON) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
+		{
+			//Directional Light
+			SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Alpha, s_RadiancePayload.F_0, worldToLocal);
+
+			if (dirLightSample.PDF > 0.0f)
+			{
+				//Define Shadow Ray Parameters
+				const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
+				const vec3 		direction			= dirLightSample.SampleWorldDir;
+				const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+				const uint 		cullMask           	= 0xFF;
+				const uint 		sbtRecordOffset    	= 1;
+				const uint 		sbtRecordStride    	= 0;
+				const uint 		missIndex          	= 1;
+				const float 	Tmin              	= 0.001f;
+				const float 	Tmax              	= 10000.0f;
+				const int 		payload       		= 1;
+
+				//Send Shadow Ray
+				s_ShadowPayload.Distance = 0.0f;
+				traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+
+				float shadow 		= step(s_ShadowPayload.Distance, Tmin);
+
+				L_o += beta * shadow * albedo * dirLightSample.L_d;
+			}
+
+			accumulation 		+= 1.0f;
+		}
+
+		//Indirect Lighting
+		{
+			//Sample the BRDF
+			SReflection reflection = Sample_f(w_o, s_RadiancePayload.Alpha, s_RadiancePayload.F_0, u.xy);
+
+			vec3 reflectionDir = localToWorld * reflection.w_i;
+
+			accumulation 		+= 1.0f;
+
+			if (reflection.PDF > 0.0f)
+			{
+				//Define Reflection Ray Parameters
+				const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
+				const vec3 		direction			= reflectionDir;
+				const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+				const uint 		cullMask           	= 0xFF;
+				const uint 		sbtRecordOffset    	= 0;
+				const uint 		sbtRecordStride    	= 0;
+				const uint 		missIndex          	= 0;
+				const float 	Tmin              	= 0.001f;
+				const float 	Tmax              	= 10000.0f;
+				const int 		payload       		= 0;
+				
+				//Send Reflection Ray
+				traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+
+				if (s_RadiancePayload.Distance > 0.0f)
+				{
+					beta 				*= s_RadiancePayload.Albedo * reflection.f * reflection.CosTheta / reflection.PDF;
+					w_o					= reflection.w_i;
+				}
+				else
+				{
+					break;
+				}
+			}
+			else
+			{
+				break;
+			}
 		}
 	}
-
-	accumulation 		+= 1.0f;
 
 	imageStore(u_Radiance, pixelCoords, vec4(L_o, accumulation));
 }

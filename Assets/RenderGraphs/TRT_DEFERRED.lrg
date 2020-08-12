@@ -136,7 +136,7 @@
         {
             "name": "BLUE_NOISE_LUT",
             "type": "TEXTURE",
-            "sub_resource_count": 1,
+            "sub_resource_count": 8,
             "editable": true,
             "texture_format": 1
         }
