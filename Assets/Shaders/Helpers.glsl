@@ -121,7 +121,7 @@ void CreateCoordinateSystem(in vec3 N, out vec3 Nt, out vec3 Nb)
         Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
     else 
         Nt = vec3(0, -N.z, N.y) / sqrt(N.y * N.y + N.z * N.z); 
-    //Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
+    Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
     Nb = cross(N, Nt); 
 } 
 
