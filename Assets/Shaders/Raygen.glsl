@@ -79,7 +79,7 @@ void main()
 	s_RadiancePayload.Distance			= 1.0f;
 	s_RadiancePayload.LocalToWorld 		= localToWorld;
 
-	int maxBounces 				= 8;
+	int maxBounces 				= 3;
 	vec3 beta 					= vec3(1.0f);
 	
 	vec3 temp = vec3(0.0f);
@@ -97,7 +97,7 @@ void main()
 		}
 
 		//Direct Lighting (next event estimation)
-		if (roughness > EPSILON) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
+		if (b == maxBounces - 1 && s_RadiancePayload.Alpha > EPSILON) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
 		{
 			//Directional Light
 			SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Alpha, s_RadiancePayload.F_0, worldToLocal);
@@ -117,12 +117,11 @@ void main()
 				const int 		payload       		= 1;
 
 				//Send Shadow Ray
-				s_ShadowPayload.Distance = 0.0f;
 				traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
 
 				float shadow 		= step(s_ShadowPayload.Distance, Tmin);
 
-				L_o += beta * shadow * dirLightSample.L_d /* * s_RadiancePayload.Albedo*/;
+				L_o += s_RadiancePayload.Albedo * beta * shadow * dirLightSample.L_d;
 			}
 
 			accumulation += 1.0f;
@@ -168,7 +167,7 @@ void main()
 				break;
 			}
 
-			accumulation += 1.0f;
+			//accumulation += 1.0f;
 		}
 	}
 

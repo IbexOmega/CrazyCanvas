@@ -32,7 +32,7 @@ void main()
 
     mat3 TBN = mat3(tangent, bitangent, normal);
 
-	vec3 sampledAlbedo 	    = pow(  texture(u_SceneAlbedoMaps[in_MaterialIndex],      texCoord).rgb, vec3(GAMMA));
+	vec3 sampledAlbedo 	    = /*pow(*/  texture(u_SceneAlbedoMaps[in_MaterialIndex],      texCoord).rgb/*, vec3(GAMMA))*/;
 	vec3 sampledNormal 	    =       texture(u_SceneNormalMaps[in_MaterialIndex],      texCoord).rgb;
 	float sampledAO 		=       texture(u_SceneAOMaps[in_MaterialIndex],          texCoord).r;
 	float sampledMetallic 	=       texture(u_SceneMetallicMaps[in_MaterialIndex],    texCoord).r;

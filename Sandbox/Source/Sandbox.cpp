@@ -209,7 +209,10 @@ Sandbox::Sandbox()
 	ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
 
 	m_pScene->UpdatePerFrameBuffer(pGraphicsCopyCommandList, m_pCamera, m_pRenderer->GetFrameIndex());
-	m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(1.0f, 1.0f, 0.0f)), glm::vec3(1000.0f));
+
+	m_LightAngle	= glm::half_pi<float>();
+	m_LightStrength = 1000.0f;
+	m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength));
 
 	if (RENDER_GRAPH_IMGUI_ENABLED)
 	{
@@ -664,8 +667,25 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 			ImGui::Text("FPS: %f", 1.0f / delta.AsSeconds());
 			ImGui::Text("Frametime (ms): %f", delta.AsMilliSeconds());
 
-			if (ImGui::BeginTabBar("G-Buffer"))
+			if (ImGui::BeginTabBar("Debugging Tabs"))
 			{
+				if (ImGui::BeginTabItem("Scene"))
+				{
+					if (ImGui::SliderFloat("Light Angle", &m_LightAngle, 0.0f, glm::two_pi<float>()))
+					{
+						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
+						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength));
+					}
+
+					if (ImGui::SliderFloat("Light Strength", &m_LightStrength, 0.0f, 10000.0f, "%.3f", 10.0f))
+					{
+						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
+						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength));
+					}
+
+					ImGui::EndTabItem();
+				}
+
 				if (ImGui::BeginTabItem("Albedo AO"))
 				{
 					albedoTexture.ResourceName = "G_BUFFER_ALBEDO_AO";

@@ -24,7 +24,7 @@ void main()
 	//Create Transformation Matrices
 	mat3 localToWorld = mat3(tangent, bitangent, hitDescription.Normal);
 
-    vec3 albedo 	= pow(  texture(u_SceneAlbedoMaps[hitDescription.MaterialIndex],    hitDescription.TexCoord).rgb, vec3(GAMMA));
+    vec3 albedo 	= /*pow(*/  texture(u_SceneAlbedoMaps[hitDescription.MaterialIndex],    hitDescription.TexCoord).rgb/*, vec3(GAMMA))*/;
 	float metallic 	= 		texture(u_SceneMetallicMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
 	float roughness = 		texture(u_SceneRoughnessMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
 
