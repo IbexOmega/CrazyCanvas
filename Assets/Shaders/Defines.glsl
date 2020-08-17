@@ -76,7 +76,7 @@ struct SMaterialParameters
     float   Ambient;
     float   Metallic;
     float   Roughness;
-    float   Unreserved;
+    uint    Reserved_Emissive;
 };
 
 #endif

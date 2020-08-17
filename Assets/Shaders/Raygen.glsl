@@ -17,7 +17,7 @@ vec3 SampleLights(vec3 w_o, mat3 worldToLocal, vec3 throughput)
 	//Directional Light
 	SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
 
-	if (dirLightSample.PDF > 0.0f)
+	if (dirLightSample.PDF > 0.0f && dot(dirLightSample.L_d, dirLightSample.L_d) > EPSILON)
 	{
 		//Define Shadow Ray Parameters
 		const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
@@ -71,8 +71,9 @@ void main()
 	vec3 albedo         = sampledAlbedoAO.rgb;
     vec3 normal         = CalculateNormal(sampledNormalMetallicRoughness);
     float ao            = sampledAlbedoAO.a;
-    float metallic      = sampledNormalMetallicRoughness.b * 0.5f + 0.5f;
+    float metallic      = abs(sampledNormalMetallicRoughness.b);
     float roughness     = max(EPSILON, abs(sampledNormalMetallicRoughness.a));
+	bool emissive		= sampledNormalMetallicRoughness.b > 0.0f;
 
 	//Define local Coordinate System
 	vec3 tangent 	= vec3(0.0f);
@@ -107,30 +108,33 @@ void main()
 	s_RadiancePayload.Albedo			= albedo;
 	s_RadiancePayload.Metallic			= metallic;
 	s_RadiancePayload.Roughness			= roughness;
+	s_RadiancePayload.Emissive			= emissive;
 	s_RadiancePayload.Distance			= 1.0f;
 	s_RadiancePayload.LocalToWorld 		= localToWorld;
 
-	const int maxBounces 				= 3;
+	const int maxBounces 				= 8;
 	const int russianRouletteStart		= 3;
 	vec3 throughput  					= vec3(1.0f);
 
-	const float MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS = EPSILON * 2.0f;
+	const float MIN_ROUGHNESS_DELTA_DISTRIBUTION = EPSILON * 2.0f;
 
 	for (int b = 0; b < maxBounces; b++)
 	{
 		vec4 u = texture(u_BlueNoiseLUT[b], vec2(blueNoiseX, blueNoiseY));			
+		bool isSpecular = s_RadiancePayload.Roughness < MIN_ROUGHNESS_DELTA_DISTRIBUTION;
 
-		//Emitted light
+		//Emissive Surface
+		if (s_RadiancePayload.Emissive)
 		{
-		
+			L_o 			+= throughput * s_RadiancePayload.Albedo * 100.0f;
+			//accumulation 	+= 1.0f;
 		}
 
 		//Direct Lighting (next event estimation)
-		
-		if (s_RadiancePayload.Roughness > MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
+		if (!isSpecular) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
 		{
 			L_o 			+= SampleLights(w_o, worldToLocal, throughput);
-			accumulation 	+= 1.0f;
+			//accumulation 	+= 1.0f;
 		}
 
 		//Indirect Lighting
@@ -196,6 +200,8 @@ void main()
 			}
 		}
 	}
+
+	accumulation 	+= 1.0f;
 
 	//Direct Lighting (next event estimation)
 	// if (s_RadiancePayload.Distance > 0.0f && s_RadiancePayload.Roughness > MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS)

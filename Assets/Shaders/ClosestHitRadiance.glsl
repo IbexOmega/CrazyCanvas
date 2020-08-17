@@ -26,18 +26,19 @@ void main()
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[hitDescription.MaterialIndex];
 
-	vec3 sampledAlbedo 		= pow(  texture(u_SceneAlbedoMaps[hitDescription.MaterialIndex],    hitDescription.TexCoord).rgb, vec3(GAMMA));
+	vec3 sampledAlbedo 		=		texture(u_SceneAlbedoMaps[hitDescription.MaterialIndex],    hitDescription.TexCoord).rgb;
 	float sampledMetallic 	= 		texture(u_SceneMetallicMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
 	float sampledRoughness 	= 		texture(u_SceneRoughnessMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
 
-    vec3 albedo       		= materialParameters.Albedo.rgb * sampledAlbedo;
-    float metallic    		= materialParameters.Metallic * sampledMetallic;
-	float roughness   		= max(materialParameters.Roughness * sampledRoughness, EPSILON);
+    vec3 albedo       		= pow(  materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
+    float metallic    		= 		materialParameters.Metallic * sampledMetallic;
+	float roughness   		= max(	materialParameters.Roughness * sampledRoughness, EPSILON);
 
 	s_RadiancePayload.ScatterPosition	= hitPos + hitDescription.Normal * RAY_NORMAL_OFFSET;
 	s_RadiancePayload.Albedo			= albedo;
 	s_RadiancePayload.Metallic			= metallic;
 	s_RadiancePayload.Roughness			= roughness;
+	s_RadiancePayload.Emissive			= (materialParameters.Reserved_Emissive & 0x1) == 1;
 	s_RadiancePayload.Distance			= gl_HitTEXT;
 	s_RadiancePayload.LocalToWorld 		= localToWorld;
 }

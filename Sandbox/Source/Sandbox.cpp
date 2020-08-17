@@ -48,6 +48,11 @@ constexpr const bool POST_PROCESSING_ENABLED	= false;
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
 constexpr const bool RENDERING_DEBUG_ENABLED	= false;
 
+constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
+constexpr const float DEFAULT_DIR_LIGHT_G			= 1.0f;
+constexpr const float DEFAULT_DIR_LIGHT_B			= 1.0f;
+constexpr const float DEFAULT_DIR_LIGHT_STRENGTH	= 0.0f;
+
 Sandbox::Sandbox()
     : Game()
 {
@@ -75,12 +80,16 @@ Sandbox::Sandbox()
 	//Scene
 	{
 		std::vector<GameObject>	sceneGameObjects;
-		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
+		ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original.obj", sceneGameObjects);
+		//ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
 		//ResourceManager::LoadSceneFromFile("San_Miguel/san-miguel-low-poly.obj", sceneGameObjects);
+
+		float scale = 1.0f;
+		//float scale = 0.01f;
 
 		for (GameObject& gameObject : sceneGameObjects)
 		{
-			m_pScene->AddDynamicGameObject(gameObject, glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)));
+			m_pScene->AddDynamicGameObject(gameObject, glm::scale(glm::mat4(1.0f), glm::vec3(scale)));
 		}
 	}
 
@@ -211,10 +220,10 @@ Sandbox::Sandbox()
 	m_pScene->UpdatePerFrameBuffer(pGraphicsCopyCommandList, m_pCamera, m_pRenderer->GetFrameIndex());
 
 	m_LightAngle	= glm::half_pi<float>();
-	m_LightStrength[0] = 1.0f;
-	m_LightStrength[1] = 1.0f;
-	m_LightStrength[2] = 1.0f;
-	m_LightStrength[3] = 1000.0f;
+	m_LightStrength[0] = DEFAULT_DIR_LIGHT_R;
+	m_LightStrength[1] = DEFAULT_DIR_LIGHT_G;
+	m_LightStrength[2] = DEFAULT_DIR_LIGHT_B;
+	m_LightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
 	m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
 
 	if (RENDER_GRAPH_IMGUI_ENABLED)
@@ -694,10 +703,10 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 					if (ImGui::Button("Reset Light"))
 					{
-						m_LightStrength[0] = 1.0f;
-						m_LightStrength[1] = 1.0f;
-						m_LightStrength[2] = 1.0f;
-						m_LightStrength[3] = 1000.0f;
+						m_LightStrength[0] = DEFAULT_DIR_LIGHT_R;
+						m_LightStrength[1] = DEFAULT_DIR_LIGHT_G;
+						m_LightStrength[2] = DEFAULT_DIR_LIGHT_B;
+						m_LightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
 
 						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
 						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
@@ -715,11 +724,11 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					ImGui::EndTabItem();
 				}
 
-				if (ImGui::BeginTabItem("Normal Metallic Roughness"))
+				if (ImGui::BeginTabItem("Normal Metallic Roughness Emissive"))
 				{
 					normalTexture.ResourceName = "G_BUFFER_NORM_MET_ROUGH";
 
-					const char* items[] = { "ALL", "Normal", "Metallic", "Roughness" };
+					const char* items[] = { "ALL", "Normal", "Metallic", "Roughness", "Emissive" };
 					static int currentItem = 0;
 					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
 
@@ -759,17 +768,17 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					{
 						normalTexture.ReservedIncludeMask = 0x00002220;
 
-						normalTexture.ChannelMul[0] = 0.5f;
-						normalTexture.ChannelMul[1] = 0.5f;
-						normalTexture.ChannelMul[2] = 0.5f;
+						normalTexture.ChannelMul[0] = 1.0f;
+						normalTexture.ChannelMul[1] = 1.0f;
+						normalTexture.ChannelMul[2] = 1.0f;
 						normalTexture.ChannelMul[3] = 0.0f;
 
-						normalTexture.ChannelAdd[0] = 0.5f;
-						normalTexture.ChannelAdd[1] = 0.5f;
-						normalTexture.ChannelAdd[2] = 0.5f;
+						normalTexture.ChannelAdd[0] = 0.0f;
+						normalTexture.ChannelAdd[1] = 0.0f;
+						normalTexture.ChannelAdd[2] = 0.0f;
 						normalTexture.ChannelAdd[3] = 1.0f;
 
-						normalTexture.PixelShaderGUID = GUID_NONE;
+						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderMetallicGUID;
 					}
 					else if (currentItem == 3)
 					{
@@ -786,6 +795,22 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 						normalTexture.ChannelAdd[3] = 1.0f;
 
 						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderRoughnessGUID;
+					}
+					else if (currentItem == 4)
+					{
+						normalTexture.ReservedIncludeMask = 0x00002220;
+
+						normalTexture.ChannelMul[0] = 1.0f;
+						normalTexture.ChannelMul[1] = 1.0f;
+						normalTexture.ChannelMul[2] = 1.0f;
+						normalTexture.ChannelMul[3] = 0.0f;
+
+						normalTexture.ChannelAdd[0] = 0.0f;
+						normalTexture.ChannelAdd[1] = 0.0f;
+						normalTexture.ChannelAdd[2] = 0.0f;
+						normalTexture.ChannelAdd[3] = 1.0f;
+
+						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderEmissiveGUID;
 					}
 
 					ImGui::Image(&normalTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
@@ -992,7 +1017,9 @@ bool Sandbox::InitRendererForDeferred()
 
 	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelNormal.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("ImGuiPixelDepth.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderMetallicGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelMetallic.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelRoughness.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderEmissiveGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelEmissive.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
 	//ResourceManager::LoadShaderFromFile("ForwardVertex.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
 	//ResourceManager::LoadShaderFromFile("ForwardPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);

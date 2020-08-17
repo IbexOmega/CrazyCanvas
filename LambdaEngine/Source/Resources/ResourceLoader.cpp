@@ -262,6 +262,20 @@ namespace LambdaEngine
 				}
 			}
 
+			pMaterial->Properties.Albedo = glm::vec4(material.diffuse[0], material.diffuse[1], material.diffuse[2], 1.0f);
+
+			if (material.emission[0] > 0.0f || material.emission[1] > 0.0f || material.emission[2] > 0.0f)
+			{
+				pMaterial->Properties.Albedo.x *= material.emission[0];
+				pMaterial->Properties.Albedo.y *= material.emission[1];
+				pMaterial->Properties.Albedo.z *= material.emission[2];
+				pMaterial->Properties.Reserved_Emissive |= 0x1;
+			}
+			else
+			{
+				pMaterial->Properties.Reserved_Emissive = 0x0;
+			}
+
 			if (material.bump_texname.length() > 0)
 			{
 				std::string texturePath = dirpath + material.bump_texname;
@@ -325,6 +339,9 @@ namespace LambdaEngine
 			loadedMaterials[m] = pMaterial;
 		}
 
+		bool hasNormals = false;
+		bool hasTexCoords = false;
+
 		for (uint32 s = 0; s < shapes.size(); s++)
 		{
 			tinyobj::shape_t& shape = shapes[s];
@@ -349,6 +366,9 @@ namespace LambdaEngine
 
 				if (index.normal_index >= 0)
 				{
+					//Assume that if one shape has normals, all have normals
+					hasNormals = true; 
+
 					vertex.Normal =
 					{
 						attributes.normals[3 * (size_t)index.normal_index + 0],
@@ -359,6 +379,9 @@ namespace LambdaEngine
 
 				if (index.texcoord_index >= 0)
 				{
+					//Assume that if one shape has tex coords, all have tex coords
+					hasTexCoords = true;
+
 					vertex.TexCoord =
 					{
 						attributes.texcoords[2 * (size_t)index.texcoord_index + 0],
@@ -375,16 +398,19 @@ namespace LambdaEngine
 				indices.push_back(uniqueVertices[vertex]);
 			}
 
-			//Calculate tangents
-			for (uint32 index = 0; index < indices.size(); index += 3)
+			//Calculate Tangents if Tex Coords exist
+			if (hasNormals && hasTexCoords)
 			{
-				Vertex& v0 = vertices[indices[(size_t)index + 0]];
-				Vertex& v1 = vertices[indices[(size_t)index + 1]];
-				Vertex& v2 = vertices[indices[(size_t)index + 2]];
+				for (uint32 index = 0; index < indices.size(); index += 3)
+				{
+					Vertex& v0 = vertices[indices[(size_t)index + 0]];
+					Vertex& v1 = vertices[indices[(size_t)index + 1]];
+					Vertex& v2 = vertices[indices[(size_t)index + 2]];
 
-				v0.CalculateTangent(v1, v2);
-				v1.CalculateTangent(v2, v0);
-				v2.CalculateTangent(v0, v1);
+					v0.CalculateTangent(v1, v2);
+					v1.CalculateTangent(v2, v0);
+					v2.CalculateTangent(v0, v1);
+				}
 			}
 
 			Mesh* pMesh = LoadMeshFromMemory(vertices.data(), uint32(vertices.size()), indices.data(), uint32(indices.size()));

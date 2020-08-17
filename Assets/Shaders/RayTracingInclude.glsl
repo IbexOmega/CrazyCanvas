@@ -29,6 +29,7 @@ struct SRadiancePayload
     vec3    Albedo;
     float   Metallic;
     float   Roughness;
+    bool    Emissive;
     float   Distance;
 	mat3    LocalToWorld;
 };

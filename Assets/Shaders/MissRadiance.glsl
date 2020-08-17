@@ -13,6 +13,7 @@ void main()
     s_RadiancePayload.Albedo			= vec3(0.0f);
     s_RadiancePayload.Metallic			= 0.0f;
     s_RadiancePayload.Roughness			= 0.0f;
+    s_RadiancePayload.Emissive          = false;
     s_RadiancePayload.Distance			= 0.0f;
     s_RadiancePayload.LocalToWorld 		= mat3(1.0f);
 }

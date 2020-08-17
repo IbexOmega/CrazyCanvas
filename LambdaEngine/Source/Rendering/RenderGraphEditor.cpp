@@ -436,6 +436,18 @@ namespace LambdaEngine
 			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE);
 		}
 
+		{
+			EditorResource resource = {};
+			resource.Name						= SCENE_METALLIC_MAPS;
+			resource.Type						= ERenderGraphResourceType::TEXTURE;
+			resource.SubResourceCount			= MAX_UNIQUE_MATERIALS;
+			resource.Editable					= false;
+			resource.TextureFormat				= 1;
+			m_ResourcesByName[resource.Name]	= resource;
+
+			externalResourcesGroup.ResourceStates[resource.Name] = CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE);
+		}
+
 		m_ResourceStateGroups.resize(NUM_RESOURCE_STATE_GROUPS);
 		m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX] = externalResourcesGroup;
 		m_ResourceStateGroups[TEMPORAL_RESOURCE_STATE_GROUP_INDEX] = temporalResourcesGroup;

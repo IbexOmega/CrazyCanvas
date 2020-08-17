@@ -32,22 +32,27 @@ void main()
 
     mat3 TBN = mat3(tangent, bitangent, normal);
 
-	vec3 sampledAlbedo 	    = pow(  texture(u_SceneAlbedoMaps[in_MaterialIndex],      texCoord).rgb, vec3(GAMMA));
+	vec3 sampledAlbedo 	    = 		texture(u_SceneAlbedoMaps[in_MaterialIndex],      texCoord).rgb;
 	vec3 sampledNormal 	    =       texture(u_SceneNormalMaps[in_MaterialIndex],      texCoord).rgb;
 	float sampledAO 		=       texture(u_SceneAOMaps[in_MaterialIndex],          texCoord).r;
 	float sampledMetallic 	=       texture(u_SceneMetallicMaps[in_MaterialIndex],    texCoord).r;
 	float sampledRoughness  =       texture(u_SceneRougnessMaps[in_MaterialIndex],    texCoord).r;
-
+	
 	sampledNormal 	    	= normalize((sampledNormal * 2.0f) - 1.0f);
 	sampledNormal 			= normalize(TBN * normalize(sampledNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialIndex];
 
 	//Store normal in 2 component x^2 + y^2 + z^2 = 1, store the sign with roughness
-    vec3 storedAlbedo       = materialParameters.Albedo.rgb * sampledAlbedo;
+    vec3 storedAlbedo       = pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
     float storedAO          = materialParameters.Ambient * sampledAO;
 	vec2 storedNormal 	    = sampledNormal.xy;
-    float storedMetallic    = materialParameters.Metallic * sampledMetallic * 2.0f - 1.0f; //Converting for better precision
+    float storedMetallic    = max(materialParameters.Metallic * sampledMetallic, EPSILON);
+	if ((materialParameters.Reserved_Emissive & 0x1) == 0)
+	{
+		storedMetallic = -storedMetallic;
+	}
+
 	float storedRoughness   = max(materialParameters.Roughness * sampledRoughness, EPSILON);
 	if (sampledNormal.z < 0)
 	{
