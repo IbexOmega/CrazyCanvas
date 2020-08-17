@@ -10,6 +10,42 @@
 layout(location = 0) rayPayloadEXT SRadiancePayload s_RadiancePayload;
 layout(location = 1) rayPayloadEXT SShadowPayload 	s_ShadowPayload;
 
+vec3 SampleLights(vec3 w_o, mat3 worldToLocal, vec3 throughput)
+{
+	vec3 L_d = vec3(0.0f);
+
+	const float MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS = EPSILON * 2.0f;
+	if (s_RadiancePayload.Roughness > MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
+	{
+		//Directional Light
+		SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
+
+		if (dirLightSample.PDF > 0.0f)
+		{
+			//Define Shadow Ray Parameters
+			const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
+			const vec3 		direction			= dirLightSample.SampleWorldDir;
+			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+			const uint 		cullMask           	= 0xFF;
+			const uint 		sbtRecordOffset    	= 1;
+			const uint 		sbtRecordStride    	= 0;
+			const uint 		missIndex          	= 1;
+			const float 	Tmin              	= 0.001f;
+			const float 	Tmax              	= 10000.0f;
+			const int 		payload       		= 1;
+
+			//Send Shadow Ray
+			traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+
+			float shadow 		= step(s_ShadowPayload.Distance, Tmin);
+
+			L_d += throughput * shadow * dirLightSample.L_d;
+		}
+	}
+
+	return L_d;
+}
+
 void main()
 {
     //Calculate Screen Coords
@@ -56,6 +92,7 @@ void main()
     SRayDirections rayDirections   	= CalculateRayDirections(positions.WorldPos, normal, perFrameBuffer.Position.xyz, perFrameBuffer.ViewInv);	
 	float NdotV     				= abs(dot(normal, rayDirections.ViewDir)); //Same as cosTheta
 	vec3 world_w_o 					= rayDirections.ViewDir;
+	vec3 w_o						= worldToLocal * world_w_o;
 
 	//Create uniform Samples
 	float blueNoiseX = GoldNoise(vec3(d.x, 1.0f, 1.0f), perFrameBuffer.FrameIndex, 0.0f, 1.0f);
@@ -77,17 +114,12 @@ void main()
 	s_RadiancePayload.Distance			= 1.0f;
 	s_RadiancePayload.LocalToWorld 		= localToWorld;
 
-	int maxBounces 				= 3;
-	vec3 beta 					= vec3(1.0f);
-	
-	vec3 temp = vec3(0.0f);
+	int maxBounces 				= 8;
+	vec3 throughput  			= vec3(1.0f);
 
 	for (int b = 0; b < maxBounces; b++)
 	{
-		vec4 u = texture(u_BlueNoiseLUT[b], vec2(blueNoiseX, blueNoiseY));
-
-		worldToLocal 	= transpose(s_RadiancePayload.LocalToWorld);
-		vec3 w_o		= worldToLocal * world_w_o;
+		vec4 u = texture(u_BlueNoiseLUT[b], vec2(blueNoiseX, blueNoiseY));		
 
 		//Emitted light
 		{
@@ -95,35 +127,9 @@ void main()
 		}
 
 		//Direct Lighting (next event estimation)
-		const float MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS = EPSILON * 2.0f;
-		if (b == maxBounces - 1 && s_RadiancePayload.Roughness > MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
 		{
-			//Directional Light
-			SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
-
-			if (dirLightSample.PDF > 0.0f)
-			{
-				//Define Shadow Ray Parameters
-				const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
-				const vec3 		direction			= dirLightSample.SampleWorldDir;
-				const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
-				const uint 		cullMask           	= 0xFF;
-				const uint 		sbtRecordOffset    	= 1;
-				const uint 		sbtRecordStride    	= 0;
-				const uint 		missIndex          	= 1;
-				const float 	Tmin              	= 0.001f;
-				const float 	Tmax              	= 10000.0f;
-				const int 		payload       		= 1;
-
-				//Send Shadow Ray
-				traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
-
-				float shadow 		= step(s_ShadowPayload.Distance, Tmin);
-
-				L_o += beta * shadow * dirLightSample.L_d;
-			}
-
-			accumulation += 1.0f;
+			L_o 			+= SampleLights(w_o, worldToLocal, throughput);
+			accumulation 	+= 1.0f;
 		}
 
 		//Indirect Lighting
@@ -133,12 +139,9 @@ void main()
 
 			vec3 reflectionDir = s_RadiancePayload.LocalToWorld * reflection.w_i;
 
-			if (b == maxBounces - 1)
-				temp = world_w_o;
-
 			if (reflection.PDF > 0.0f)
 			{
-				beta 				*= reflection.f * reflection.CosTheta / reflection.PDF;
+				throughput  		*= reflection.f * reflection.CosTheta / reflection.PDF;
 				world_w_o			= -reflectionDir;
 
 				//Define Reflection Ray Parameters
@@ -160,17 +163,30 @@ void main()
 				{
 					break;
 				}
+
+				worldToLocal 	= transpose(s_RadiancePayload.LocalToWorld);
+				w_o				= worldToLocal * world_w_o;
 			}
 			else
 			{
+				s_RadiancePayload.ScatterPosition	= vec3(0.0f);
+				s_RadiancePayload.Albedo			= vec3(0.0f);
+				s_RadiancePayload.Metallic			= 0.0f;
+				s_RadiancePayload.Roughness			= 0.0f;
+				s_RadiancePayload.Distance			= 0.0f;
+				s_RadiancePayload.LocalToWorld 		= mat3(1.0f);
+
 				break;
 			}
-
-			//accumulation += 1.0f;
 		}
 	}
 
-	temp = temp * 0.5f + 0.5f;
+	//Direct Lighting (next event estimation)
+	if (s_RadiancePayload.Distance > 0.0f)
+	{
+		L_o 			+= SampleLights(w_o, worldToLocal, throughput);
+		accumulation 	+= 1.0f;
+	}
 
 	imageStore(u_Radiance, pixelCoords, vec4(L_o, accumulation));
 }
