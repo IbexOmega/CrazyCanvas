@@ -32,8 +32,8 @@ void main()
 
 	s_RadiancePayload.ScatterPosition	= hitPos + hitDescription.Normal * 0.025f;
 	s_RadiancePayload.Albedo			= albedo;
-	s_RadiancePayload.F_0				= mix(F_0, albedo, metallic);
-	s_RadiancePayload.Alpha				= RoughnessToAlpha(roughness);
+	s_RadiancePayload.Metallic			= metallic;
+	s_RadiancePayload.Roughness			= roughness;
 	s_RadiancePayload.Distance			= gl_HitTEXT;
 	s_RadiancePayload.LocalToWorld 		= localToWorld;
 }

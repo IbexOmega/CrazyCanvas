@@ -40,7 +40,7 @@ void main()
     vec3 normal         = CalculateNormal(sampledNormalMetallicRoughness);
     float ao            = sampledAlbedoAO.a;
     float metallic      = sampledNormalMetallicRoughness.b * 0.5f + 0.5f;
-    float roughness     = abs(sampledNormalMetallicRoughness.a);
+    float roughness     = max(EPSILON, abs(sampledNormalMetallicRoughness.a));
 
 	//Define local Coordinate System
 	vec3 tangent 	= vec3(0.0f);
@@ -70,12 +70,10 @@ void main()
 		accumulation		= 0.0f;
 	}
 
-	vec3 F_0 = vec3(0.04f);
-
 	s_RadiancePayload.ScatterPosition	= positions.WorldPos + normal * 0.025f;
 	s_RadiancePayload.Albedo			= albedo;
-	s_RadiancePayload.F_0				= mix(F_0, albedo, metallic);
-	s_RadiancePayload.Alpha				= RoughnessToAlpha(roughness);
+	s_RadiancePayload.Metallic			= metallic;
+	s_RadiancePayload.Roughness			= roughness;
 	s_RadiancePayload.Distance			= 1.0f;
 	s_RadiancePayload.LocalToWorld 		= localToWorld;
 
@@ -97,10 +95,11 @@ void main()
 		}
 
 		//Direct Lighting (next event estimation)
-		if (b == maxBounces - 1 && s_RadiancePayload.Alpha > EPSILON) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
+		const float MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS = EPSILON * 2.0f;
+		if (b == maxBounces - 1 && s_RadiancePayload.Roughness > MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
 		{
 			//Directional Light
-			SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Alpha, s_RadiancePayload.F_0, worldToLocal);
+			SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
 
 			if (dirLightSample.PDF > 0.0f)
 			{
@@ -121,7 +120,7 @@ void main()
 
 				float shadow 		= step(s_ShadowPayload.Distance, Tmin);
 
-				L_o += s_RadiancePayload.Albedo * beta * shadow * dirLightSample.L_d;
+				L_o += beta * shadow * dirLightSample.L_d;
 			}
 
 			accumulation += 1.0f;
@@ -130,7 +129,7 @@ void main()
 		//Indirect Lighting
 		{
 			//Sample the BRDF
-			SReflection reflection = Sample_f(w_o, s_RadiancePayload.Alpha, s_RadiancePayload.F_0, u.xy);
+			SReflection reflection = Sample_f(w_o, s_RadiancePayload.Albedo,  s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, u.xy);
 
 			vec3 reflectionDir = s_RadiancePayload.LocalToWorld * reflection.w_i;
 
@@ -139,7 +138,7 @@ void main()
 
 			if (reflection.PDF > 0.0f)
 			{
-				beta 				*= s_RadiancePayload.Albedo * reflection.f * reflection.CosTheta / reflection.PDF;
+				beta 				*= reflection.f * reflection.CosTheta / reflection.PDF;
 				world_w_o			= -reflectionDir;
 
 				//Define Reflection Ray Parameters

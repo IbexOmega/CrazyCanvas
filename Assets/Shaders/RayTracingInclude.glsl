@@ -1,5 +1,5 @@
 #include "Defines.glsl"
-#include "BxDF.glsl"
+#include "EpicBRDF.glsl"
 
 struct SRayDirections
 {
@@ -25,8 +25,8 @@ struct SRadiancePayload
 {
     vec3    ScatterPosition;
     vec3    Albedo;
-    vec3    F_0;
-    float   Alpha;
+    float   Metallic;
+    float   Roughness;
     float   Distance;
 	mat3    LocalToWorld;
 };
@@ -117,7 +117,7 @@ SRayHitDescription CalculateHitData(vec3 attribs, int indirectArgIndex, int prim
     return hitDescription;
 }
 
-SLightSample EvalDirectionalRadiance(vec3 w_o, float alpha, vec3 F_0, mat3 worldToLocal)
+SLightSample EvalDirectionalRadiance(vec3 w_o, vec3 albedo, float metallic, float roughness, mat3 worldToLocal)
 {
     //Directional Light
     SLightSample sampleData;
@@ -131,11 +131,11 @@ SLightSample EvalDirectionalRadiance(vec3 w_o, float alpha, vec3 F_0, mat3 world
     float N 	    = 0.0f;			//Describes the amount of samples taken on this light, L_d should be divided with N before adding it to L_o
 
     //Evaluate the BRDF in the Light Direction (ofcourse we don't need to sample it since we already know w_i)
-    SReflection reflection = f(w_o, w_i, alpha, F_0);
+    SReflection reflection = f(w_o, w_i, albedo, metallic, roughness);
 
     if (reflection.PDF > 0.0f)
     {
-        SumL_d 	+= reflection.f * u_LightsBuffer.val.EmittedRadiance.rgb; // Since directional lights are described by a delta distribution we do not divide by the PDF (it will be 1)
+        SumL_d 	+= reflection.f * u_LightsBuffer.val.EmittedRadiance.rgb; // Since directional lights are described by a delta distribution we do not divide by the PDF (it will be 1) or multiply by the CosWeight
 
         /*
             If this was light was not described by a delta distribution we would include a PDF as divisor above and we would below !!Sample!! the BRDF with MIS to weight the
