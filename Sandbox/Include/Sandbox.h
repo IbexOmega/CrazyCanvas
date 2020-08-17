@@ -89,7 +89,7 @@ private:
 	GUID_Lambda								m_ImGuiPixelShaderRoughnessGUID		= GUID_NONE;
 
 	float									m_LightAngle;
-	float									m_LightStrength;
+	float									m_LightStrength[4];
 
 	bool									m_SpawnPlayAts;
 	float									m_GunshotTimer;

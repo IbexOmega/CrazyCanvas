@@ -13,7 +13,7 @@ struct SReflection
 	GGX Distribution function
 */
 float D(float NdotH, float alphaSqrd)
-{
+{   
 	float denom = ((NdotH * NdotH) * (alphaSqrd - 1.0f)) + 1.0f;
 	return alphaSqrd / (PI * denom * denom);
 }
@@ -74,7 +74,7 @@ void Microfacet_f(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in floa
     vec3 specular_f = D * G * F / (4.0f * NdotO * NdotI);
     vec3 diffuse_f  = k_D * albedo / PI;
 
-    f       = specular_f + diffuse_f;
+    f       = diffuse_f + specular_f;
     PDF     = D * NdotH / (4.0f * OdotH);
 }
 
@@ -89,10 +89,11 @@ void Microfacet_f(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in floa
 SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec2 u)
 {
     float alpha             = roughness * roughness;
-    float alphaSqrd         = alpha * alpha;
+    float alphaSqrd         = max(alpha * alpha, 0.0000001f);
 
     vec3 w_h                = Sample_w_h_SimpleSpecular(w_o, alphaSqrd, u);
-    vec3 w_i                = reflect(w_o, w_h);
+    vec3 w_i                = -reflect(w_o, w_h); //w_o is pointing out, negate reflect
+    //vec3 w_i                = 2.0f * dot(w_o, w_h) * w_h - w_o;
 
     SReflection reflection;
     reflection.PDF          = 0.0f;
@@ -138,7 +139,7 @@ SReflection f(vec3 w_o, vec3 w_i, vec3 albedo, float metallic, float roughness)
     if (SameHemisphere(w_o, w_i) < 0.0f) return reflection;
 
     float alpha             = roughness * roughness;
-    float alphaSqrd         = alpha * alpha;
+    float alphaSqrd         = max(alpha * alpha, 0.0000001f);
     vec3 w_h                = normalize(w_o + w_i);
 
     Microfacet_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, reflection.f, reflection.PDF);

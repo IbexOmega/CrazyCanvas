@@ -14,33 +14,29 @@ vec3 SampleLights(vec3 w_o, mat3 worldToLocal, vec3 throughput)
 {
 	vec3 L_d = vec3(0.0f);
 
-	const float MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS = EPSILON * 2.0f;
-	if (s_RadiancePayload.Roughness > MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
+	//Directional Light
+	SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
+
+	if (dirLightSample.PDF > 0.0f)
 	{
-		//Directional Light
-		SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
+		//Define Shadow Ray Parameters
+		const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
+		const vec3 		direction			= dirLightSample.SampleWorldDir;
+		const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+		const uint 		cullMask           	= 0xFF;
+		const uint 		sbtRecordOffset    	= 1;
+		const uint 		sbtRecordStride    	= 0;
+		const uint 		missIndex          	= 1;
+		const float 	Tmin              	= 0.001f;
+		const float 	Tmax              	= 10000.0f;
+		const int 		payload       		= 1;
 
-		if (dirLightSample.PDF > 0.0f)
-		{
-			//Define Shadow Ray Parameters
-			const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
-			const vec3 		direction			= dirLightSample.SampleWorldDir;
-			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
-			const uint 		cullMask           	= 0xFF;
-			const uint 		sbtRecordOffset    	= 1;
-			const uint 		sbtRecordStride    	= 0;
-			const uint 		missIndex          	= 1;
-			const float 	Tmin              	= 0.001f;
-			const float 	Tmax              	= 10000.0f;
-			const int 		payload       		= 1;
+		//Send Shadow Ray
+		traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
 
-			//Send Shadow Ray
-			traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+		float shadow 		= step(s_ShadowPayload.Distance, Tmin);
 
-			float shadow 		= step(s_ShadowPayload.Distance, Tmin);
-
-			L_d += throughput * shadow * dirLightSample.L_d;
-		}
+		L_d += throughput * shadow * dirLightSample.L_d;
 	}
 
 	return L_d;
@@ -107,19 +103,22 @@ void main()
 		accumulation		= 0.0f;
 	}
 
-	s_RadiancePayload.ScatterPosition	= positions.WorldPos + normal * 0.025f;
+	s_RadiancePayload.ScatterPosition	= positions.WorldPos + normal * RAY_NORMAL_OFFSET;
 	s_RadiancePayload.Albedo			= albedo;
 	s_RadiancePayload.Metallic			= metallic;
 	s_RadiancePayload.Roughness			= roughness;
 	s_RadiancePayload.Distance			= 1.0f;
 	s_RadiancePayload.LocalToWorld 		= localToWorld;
 
-	int maxBounces 				= 8;
-	vec3 throughput  			= vec3(1.0f);
+	const int maxBounces 				= 3;
+	const int russianRouletteStart		= 3;
+	vec3 throughput  					= vec3(1.0f);
+
+	const float MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS = EPSILON * 2.0f;
 
 	for (int b = 0; b < maxBounces; b++)
 	{
-		vec4 u = texture(u_BlueNoiseLUT[b], vec2(blueNoiseX, blueNoiseY));		
+		vec4 u = texture(u_BlueNoiseLUT[b], vec2(blueNoiseX, blueNoiseY));			
 
 		//Emitted light
 		{
@@ -127,6 +126,8 @@ void main()
 		}
 
 		//Direct Lighting (next event estimation)
+		
+		if (s_RadiancePayload.Roughness > MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
 		{
 			L_o 			+= SampleLights(w_o, worldToLocal, throughput);
 			accumulation 	+= 1.0f;
@@ -179,14 +180,29 @@ void main()
 				break;
 			}
 		}
+
+		//Russian Roulette
+		{
+			if (b > russianRouletteStart)
+			{
+				float p = max(throughput.r, max(throughput.g, throughput.b));
+
+				if (u.y > p)
+				{
+					break;
+				}
+
+				throughput *= 1.0f / p;
+			}
+		}
 	}
 
 	//Direct Lighting (next event estimation)
-	if (s_RadiancePayload.Distance > 0.0f)
-	{
-		L_o 			+= SampleLights(w_o, worldToLocal, throughput);
-		accumulation 	+= 1.0f;
-	}
+	// if (s_RadiancePayload.Distance > 0.0f && s_RadiancePayload.Roughness > MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS)
+	// {
+	// 	L_o 			+= SampleLights(w_o, worldToLocal, throughput);
+	// 	accumulation 	+= 1.0f;
+	// }
 
 	imageStore(u_Radiance, pixelCoords, vec4(L_o, accumulation));
 }

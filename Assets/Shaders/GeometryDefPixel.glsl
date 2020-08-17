@@ -32,7 +32,7 @@ void main()
 
     mat3 TBN = mat3(tangent, bitangent, normal);
 
-	vec3 sampledAlbedo 	    = /*pow(*/  texture(u_SceneAlbedoMaps[in_MaterialIndex],      texCoord).rgb/*, vec3(GAMMA))*/;
+	vec3 sampledAlbedo 	    = pow(  texture(u_SceneAlbedoMaps[in_MaterialIndex],      texCoord).rgb, vec3(GAMMA));
 	vec3 sampledNormal 	    =       texture(u_SceneNormalMaps[in_MaterialIndex],      texCoord).rgb;
 	float sampledAO 		=       texture(u_SceneAOMaps[in_MaterialIndex],          texCoord).r;
 	float sampledMetallic 	=       texture(u_SceneMetallicMaps[in_MaterialIndex],    texCoord).r;
@@ -48,7 +48,7 @@ void main()
     float storedAO          = materialParameters.Ambient * sampledAO;
 	vec2 storedNormal 	    = sampledNormal.xy;
     float storedMetallic    = materialParameters.Metallic * sampledMetallic * 2.0f - 1.0f; //Converting for better precision
-	float storedRoughness   = max(materialParameters.Roughness * sampledRoughness, 0.00001f);
+	float storedRoughness   = max(materialParameters.Roughness * sampledRoughness, EPSILON);
 	if (sampledNormal.z < 0)
 	{
 		storedRoughness = -storedRoughness;

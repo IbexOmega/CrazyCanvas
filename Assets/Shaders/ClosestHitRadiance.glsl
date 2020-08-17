@@ -24,13 +24,17 @@ void main()
 	//Create Transformation Matrices
 	mat3 localToWorld = mat3(tangent, bitangent, hitDescription.Normal);
 
-    vec3 albedo 	= /*pow(*/  texture(u_SceneAlbedoMaps[hitDescription.MaterialIndex],    hitDescription.TexCoord).rgb/*, vec3(GAMMA))*/;
-	float metallic 	= 		texture(u_SceneMetallicMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
-	float roughness = 		texture(u_SceneRoughnessMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
+	SMaterialParameters materialParameters = b_MaterialParameters.val[hitDescription.MaterialIndex];
 
-	vec3 F_0 = vec3(0.04f);
+	vec3 sampledAlbedo 		= pow(  texture(u_SceneAlbedoMaps[hitDescription.MaterialIndex],    hitDescription.TexCoord).rgb, vec3(GAMMA));
+	float sampledMetallic 	= 		texture(u_SceneMetallicMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
+	float sampledRoughness 	= 		texture(u_SceneRoughnessMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
 
-	s_RadiancePayload.ScatterPosition	= hitPos + hitDescription.Normal * 0.025f;
+    vec3 albedo       		= materialParameters.Albedo.rgb * sampledAlbedo;
+    float metallic    		= materialParameters.Metallic * sampledMetallic;
+	float roughness   		= max(materialParameters.Roughness * sampledRoughness, EPSILON);
+
+	s_RadiancePayload.ScatterPosition	= hitPos + hitDescription.Normal * RAY_NORMAL_OFFSET;
 	s_RadiancePayload.Albedo			= albedo;
 	s_RadiancePayload.Metallic			= metallic;
 	s_RadiancePayload.Roughness			= roughness;

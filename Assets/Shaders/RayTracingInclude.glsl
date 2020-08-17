@@ -1,6 +1,8 @@
 #include "Defines.glsl"
 #include "EpicBRDF.glsl"
 
+const float RAY_NORMAL_OFFSET   = 0.025;
+
 struct SRayDirections
 {
     vec3    ReflDir; 

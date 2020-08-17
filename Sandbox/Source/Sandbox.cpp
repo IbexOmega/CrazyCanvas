@@ -211,8 +211,11 @@ Sandbox::Sandbox()
 	m_pScene->UpdatePerFrameBuffer(pGraphicsCopyCommandList, m_pCamera, m_pRenderer->GetFrameIndex());
 
 	m_LightAngle	= glm::half_pi<float>();
-	m_LightStrength = 1000.0f;
-	m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength));
+	m_LightStrength[0] = 1.0f;
+	m_LightStrength[1] = 1.0f;
+	m_LightStrength[2] = 1.0f;
+	m_LightStrength[3] = 1000.0f;
+	m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
 
 	if (RENDER_GRAPH_IMGUI_ENABLED)
 	{
@@ -674,13 +677,30 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					if (ImGui::SliderFloat("Light Angle", &m_LightAngle, 0.0f, glm::two_pi<float>()))
 					{
 						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
-						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength));
+						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
 					}
 
-					if (ImGui::SliderFloat("Light Strength", &m_LightStrength, 0.0f, 10000.0f, "%.3f", 10.0f))
+					if (ImGui::SliderFloat3("Light Color", m_LightStrength, 0.0f, 1.0f))
 					{
 						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
-						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength));
+						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
+					}
+
+					if (ImGui::SliderFloat("Light Strength", &m_LightStrength[3], 0.0f, 10000.0f, "%.3f", 10.0f))
+					{
+						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
+						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
+					}
+
+					if (ImGui::Button("Reset Light"))
+					{
+						m_LightStrength[0] = 1.0f;
+						m_LightStrength[1] = 1.0f;
+						m_LightStrength[2] = 1.0f;
+						m_LightStrength[3] = 1000.0f;
+
+						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
+						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
 					}
 
 					ImGui::EndTabItem();
@@ -701,7 +721,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 					const char* items[] = { "ALL", "Normal", "Metallic", "Roughness" };
 					static int currentItem = 0;
-					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), 4);
+					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
 
 					if (currentItem == 0)
 					{
@@ -802,19 +822,44 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					{
 						radianceTexture.ResourceName = "RADIANCE";
 
-						radianceTexture.ReservedIncludeMask = 0x00008421;
+						const char* items[] = { "Combined", "Accumulation" };
+						static int currentItem = 0;
+						ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
 
-						radianceTexture.ChannelMul[0] = 1.0f;
-						radianceTexture.ChannelMul[1] = 1.0f;
-						radianceTexture.ChannelMul[2] = 1.0f;
-						radianceTexture.ChannelMul[3] = 0.0f;
+						if (currentItem == 0)
+						{
+							radianceTexture.ReservedIncludeMask = 0x00008421;
 
-						radianceTexture.ChannelAdd[0] = 0.0f;
-						radianceTexture.ChannelAdd[1] = 0.0f;
-						radianceTexture.ChannelAdd[2] = 0.0f;
-						radianceTexture.ChannelAdd[3] = 1.0f;
+							radianceTexture.ChannelMul[0] = 1.0f;
+							radianceTexture.ChannelMul[1] = 1.0f;
+							radianceTexture.ChannelMul[2] = 1.0f;
+							radianceTexture.ChannelMul[3] = 1.0f;
 
-						radianceTexture.PixelShaderGUID = GUID_NONE;
+							radianceTexture.ChannelAdd[0] = 0.0f;
+							radianceTexture.ChannelAdd[1] = 0.0f;
+							radianceTexture.ChannelAdd[2] = 0.0f;
+							radianceTexture.ChannelAdd[3] = 0.0f;
+
+							radianceTexture.PixelShaderGUID = GUID_NONE;
+						}
+						else if (currentItem == 1)
+						{
+							radianceTexture.ReservedIncludeMask = 0x00001110;
+
+							constexpr const float maxAccumulationInv = 1.0f / 6.55e4f;
+
+							radianceTexture.ChannelMul[0] = maxAccumulationInv;
+							radianceTexture.ChannelMul[1] = 0.0f;
+							radianceTexture.ChannelMul[2] = 0.0f;
+							radianceTexture.ChannelMul[3] = 0.0f;
+
+							radianceTexture.ChannelAdd[0] = 0.0f;
+							radianceTexture.ChannelAdd[1] = 0.0f;
+							radianceTexture.ChannelAdd[2] = 0.0f;
+							radianceTexture.ChannelAdd[3] = 1.0f;
+
+							radianceTexture.PixelShaderGUID = GUID_NONE;
+						}
 
 						ImGui::Image(&radianceTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
 
