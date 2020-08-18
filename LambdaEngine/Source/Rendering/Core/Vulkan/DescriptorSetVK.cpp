@@ -32,8 +32,10 @@ namespace LambdaEngine
 		m_pDescriptorHeap = VK_NULL_HANDLE;
 	}
 
-	bool DescriptorSetVK::Init(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap)
+	bool DescriptorSetVK::Init(const String& name, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap)
 	{
+		m_Name = name;
+
 		DescriptorHeapVK* pVkDescriptorHeap = reinterpret_cast<DescriptorHeapVK*>(pDescriptorHeap);
 		m_DescriptorSet = pVkDescriptorHeap->AllocateDescriptorSet(pPipelineLayout, descriptorLayoutIndex);
 		if (m_DescriptorSet == VK_NULL_HANDLE)
@@ -42,7 +44,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			SetName(pName);
+			SetName(name.c_str());
 
 			const PipelineLayoutVK*		pPipelineLayoutVk	= reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
 			DescriptorSetBindingsDesc	bindings			= pPipelineLayoutVk->GetDescriptorBindings(descriptorLayoutIndex);

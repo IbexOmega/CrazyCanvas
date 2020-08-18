@@ -656,7 +656,7 @@ namespace LambdaEngine
 		bufferDesc.pName		= "Texture Copy Buffer";
 		bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
 		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
-		bufferDesc.SizeInBytes	= arrayCount * pixelDataSize;
+		bufferDesc.SizeInBytes	= uint64(arrayCount * pixelDataSize);
 
 		IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, s_pAllocator);
 

@@ -20,6 +20,7 @@
 #include "Log/Log.h"
 
 #include "Time/API/Clock.h"
+#include "Math/Random.h"
 
 namespace LambdaEngine
 {
@@ -81,7 +82,9 @@ namespace LambdaEngine
 	{
 		PerFrameBuffer perFrameBuffer = {};
 		perFrameBuffer.Camera		= pCamera->GetData();
-		perFrameBuffer.FrameIndex	= float32(frameIndex % FLT32_CONS_MAX_UINT32);
+		perFrameBuffer.FrameIndex	= uint32(frameIndex % UINT32_MAX);
+		//perFrameBuffer.RandomSeed	= m_RandomSeeds[frameIndex % NUM_RANDOM_SEEDS];
+		perFrameBuffer.RandomSeed	= Random::Int32(INT32_MIN, INT32_MAX);
 
 		void* pMapped = m_pPerFrameCopyBuffer->Map();
 		memcpy(pMapped, &perFrameBuffer, sizeof(PerFrameBuffer));
@@ -185,6 +188,11 @@ namespace LambdaEngine
 	bool Scene::Init(const SceneDesc& desc)
 	{
 		m_Name = desc.Name;
+
+		for (uint32 i = 0; i < NUM_RANDOM_SEEDS; i++)
+		{
+			m_RandomSeeds[i] = Random::Int32(INT32_MIN, INT32_MAX);
+		}
 
 		//Device Allocator
 		{

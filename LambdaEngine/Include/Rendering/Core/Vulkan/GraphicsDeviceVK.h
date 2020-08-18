@@ -71,7 +71,7 @@ namespace LambdaEngine
 		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const override final;
 		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const override final;
 
-		virtual IDescriptorSet* CreateDescriptorSet(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const override final;
+		virtual IDescriptorSet* CreateDescriptorSet(const String& name, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const override final;
 
 		virtual IRenderPass*	CreateRenderPass(const RenderPassDesc* pDesc)	const override final;
 		virtual ITextureView*	CreateTextureView(const TextureViewDesc* pDesc)	const override final;

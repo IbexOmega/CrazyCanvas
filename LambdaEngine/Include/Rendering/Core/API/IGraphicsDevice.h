@@ -1,6 +1,8 @@
 #pragma once
 #include "GraphicsTypes.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
     struct FenceDesc;
@@ -78,7 +80,7 @@ namespace LambdaEngine
 		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const = 0;
 		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const = 0;
 
-		virtual IDescriptorSet*	CreateDescriptorSet(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const = 0;
+		virtual IDescriptorSet*	CreateDescriptorSet(const String& name, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const = 0;
 
 		virtual IRenderPass*  CreateRenderPass(const RenderPassDesc* pDesc)	 const = 0;
 		virtual ITextureView* CreateTextureView(const TextureViewDesc* pDesc) const = 0;

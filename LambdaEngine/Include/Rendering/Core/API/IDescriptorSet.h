@@ -2,6 +2,8 @@
 #include "IDeviceChild.h"
 #include "GraphicsTypes.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 	class IBuffer;
@@ -21,5 +23,7 @@ namespace LambdaEngine
 
 		virtual IDescriptorHeap*	GetHeap()			= 0;
 		virtual uint64				GetHandle() const	= 0;
+
+		virtual const String&		GetName() const		= 0;
 	};
 }

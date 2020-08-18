@@ -275,9 +275,10 @@ namespace LambdaEngine
 				{
 					for (uint32 b = 0; b < m_BackBufferCount; b++)
 					{
-						IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Buffer Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
-						m_pGraphicsDevice->CopyDescriptorSet(pRenderStage->ppBufferDescriptorSets[b], pDescriptorSet);
-						SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
+						IDescriptorSet* pSrcDescriptorSet	= pRenderStage->ppBufferDescriptorSets[b];
+						IDescriptorSet* pDescriptorSet		= m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+						m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
+						SAFERELEASE(pSrcDescriptorSet);
 						pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
 					}
 				}
@@ -368,9 +369,11 @@ namespace LambdaEngine
 						for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
 						{
 							uint32 descriptorSetIndex = b * pRenderStage->TextureSubDescriptorSetCount + s;
-							IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->ppBufferDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
-							m_pGraphicsDevice->CopyDescriptorSet(pRenderStage->ppTextureDescriptorSets[descriptorSetIndex], pDescriptorSet);
-							SAFERELEASE(pRenderStage->ppTextureDescriptorSets[descriptorSetIndex]);
+
+							IDescriptorSet* pSrcDescriptorSet	= pRenderStage->ppTextureDescriptorSets[descriptorSetIndex];
+							IDescriptorSet* pDescriptorSet		= m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->ppBufferDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
+							m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
+							SAFERELEASE(pSrcDescriptorSet);
 							pRenderStage->ppTextureDescriptorSets[descriptorSetIndex] = pDescriptorSet;
 						}
 					}
@@ -1054,7 +1057,9 @@ namespace LambdaEngine
 					{
 						ETextureState textureState = CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType, pResource->Texture.Format);
 
-						descriptorBinding.DescriptorCount	= pResource->IsBackBuffer ? 1 : pResource->SubResourceCount / pRenderStage->TextureSubDescriptorSetCount;
+						uint32 actualSubResourceCount		= pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount;
+
+						descriptorBinding.DescriptorCount	= pResource->IsBackBuffer ? 1 : (uint32)glm::ceil((float)actualSubResourceCount / pRenderStage->TextureSubDescriptorSetCount);
 						descriptorBinding.Binding			= textureDescriptorBindingIndex++;
 
 						textureDescriptorSetDescriptions.push_back(descriptorBinding);
@@ -1227,7 +1232,7 @@ namespace LambdaEngine
 
 						for (uint32 i = 0; i < m_BackBufferCount; i++)
 						{
-							IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Buffer Descriptor Set", pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+							IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pRenderStageDesc->Name + " Buffer Descriptor Set " + std::to_string(i), pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
 							pRenderStage->ppBufferDescriptorSets[i] = pDescriptorSet;
 						}
 					}
@@ -1239,7 +1244,7 @@ namespace LambdaEngine
 
 						for (uint32 i = 0; i < textureDescriptorSetCount; i++)
 						{
-							IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Render Stage Texture Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->ppBufferDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
+							IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pRenderStageDesc->Name + " Texture Descriptor Set " + std::to_string(i), pRenderStage->pPipelineLayout, pRenderStage->ppBufferDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
 							pRenderStage->ppTextureDescriptorSets[i] = pDescriptorSet;
 						}
 					}

@@ -91,9 +91,10 @@ void main()
 	vec3 world_w_o 					= rayDirections.ViewDir;
 	vec3 w_o						= worldToLocal * world_w_o;
 
-	//Create uniform Samples
-	float blueNoiseX = GoldNoise(vec3(d.x, 1.0f, 1.0f), perFrameBuffer.FrameIndex, 0.0f, 1.0f);
-    float blueNoiseY = GoldNoise(vec3(d.y, 1.0f, 1.0f), perFrameBuffer.FrameIndex, 0.0f, 1.0f);
+	//Define Sample Variables
+	uint randomSeed = perFrameBuffer.RandomSeed + pixelCoords.x * gl_LaunchSizeEXT.x + pixelCoords.y;
+    uvec3 randomSeedPoint = uvec3(randomSeed, randomSeed >> 10, randomSeed >> 20);
+	ivec3 blueNoiseSize = textureSize(u_BlueNoiseLUT, 0);
 	
 	vec3 L_o 				= sampledRadiance.rgb;
 	float accumulation		= sampledRadiance.a;
@@ -114,26 +115,31 @@ void main()
 
 	const int maxBounces 				= 8;
 	const int russianRouletteStart		= 3;
-	vec3 throughput  					= vec3(1.0f);
+	const int numSamplesPerFrame		= maxBounces * 3;
 
 	const float MIN_ROUGHNESS_DELTA_DISTRIBUTION = EPSILON * 2.0f;
 
+	vec3 throughput  					= vec3(1.0f);
+
 	for (int b = 0; b < maxBounces; b++)
 	{
-		vec4 u = texture(u_BlueNoiseLUT, vec3(blueNoiseX, blueNoiseY, b));			
+		int baseB = b * 3;
+		vec3 u = vec3( 	GenerateSample(baseB + 0, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 		GenerateSample(baseB + 1, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 		GenerateSample(baseB + 2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
 		bool isSpecular = s_RadiancePayload.Roughness < MIN_ROUGHNESS_DELTA_DISTRIBUTION;
 
 		//Emissive Surface
 		if (s_RadiancePayload.Emissive)
 		{
-			L_o 			+= throughput * s_RadiancePayload.Albedo * 100.0f;
+			L_o 			+= throughput * s_RadiancePayload.Albedo * 10.0f;
 			//accumulation 	+= 1.0f;
 		}
 
 		//Direct Lighting (next event estimation)
 		if (!isSpecular) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
 		{
-			L_o 			+= SampleLights(w_o, worldToLocal, throughput);
+			//L_o 			+= SampleLights(w_o, worldToLocal, throughput);
 			//accumulation 	+= 1.0f;
 		}
 
@@ -191,7 +197,7 @@ void main()
 			{
 				float p = max(throughput.r, max(throughput.g, throughput.b));
 
-				if (u.y > p)
+				if (u.z > p)
 				{
 					break;
 				}

@@ -3,6 +3,8 @@
 #include "Rendering/Core/API/IPipelineLayout.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
+#include "Containers/String.h"
+
 #include "Vulkan.h"
 
 namespace LambdaEngine
@@ -19,7 +21,7 @@ namespace LambdaEngine
 		DescriptorSetVK(const GraphicsDeviceVK* pDevice);
 		~DescriptorSetVK();
 
-		bool Init(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap);
+		bool Init(const String& name, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap);
 
 		FORCEINLINE VkDescriptorSet GetDescriptorSet() const
 		{
@@ -51,11 +53,18 @@ namespace LambdaEngine
 			return (uint64)m_pDescriptorHeap;
 		}
 
+		FORCEINLINE virtual const String& GetName() const override final
+		{
+			return m_Name;
+		}
+
 	private:
 		VkDescriptorSet			m_DescriptorSet		= VK_NULL_HANDLE;
 		DescriptorHeapVK*		m_pDescriptorHeap	= nullptr;
 		
 		DescriptorBindingDesc	m_Bindings[MAX_DESCRIPTOR_BINDINGS];
 		uint32					m_BindingCount	= 0;
+
+		String					m_Name; 
 	};
 }

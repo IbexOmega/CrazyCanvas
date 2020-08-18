@@ -67,7 +67,8 @@ struct SPerFrameBuffer
 	vec4 Right;
 	vec4 Up;
 
-    float FrameIndex;
+    uint FrameIndex;
+    uint RandomSeed;
 };
 
 struct SMaterialParameters

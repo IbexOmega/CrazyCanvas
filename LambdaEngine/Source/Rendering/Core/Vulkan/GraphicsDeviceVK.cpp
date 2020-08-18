@@ -314,13 +314,13 @@ namespace LambdaEngine
 		}
 	}
 
-	IDescriptorSet* GraphicsDeviceVK::CreateDescriptorSet(const char* pName, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const
+	IDescriptorSet* GraphicsDeviceVK::CreateDescriptorSet(const String& name, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const
 	{
         VALIDATE(pPipelineLayout != nullptr);
         VALIDATE(pDescriptorHeap != nullptr);
         
 		DescriptorSetVK* pDescriptorSet = DBG_NEW DescriptorSetVK(this);
-		if (!pDescriptorSet->Init(pName, pPipelineLayout, descriptorLayoutIndex, pDescriptorHeap))
+		if (!pDescriptorSet->Init(name, pPipelineLayout, descriptorLayoutIndex, pDescriptorHeap))
 		{
 			pDescriptorSet->Release();
 			return nullptr;

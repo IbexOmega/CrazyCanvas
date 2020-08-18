@@ -153,3 +153,11 @@ SLightSample EvalDirectionalRadiance(vec3 w_o, vec3 albedo, float metallic, floa
 
     return sampleData;
 }
+
+float GenerateSample(uint index, uvec3 p, uint numSamplesPerFrame, uvec3 blueNoiseSize)
+{
+	p.z = (p.z * numSamplesPerFrame + index);
+	p &= (blueNoiseSize - 1);
+
+	return min(texelFetch(u_BlueNoiseLUT, ivec3(p), 0).r, 0.9999999999999f);
+}

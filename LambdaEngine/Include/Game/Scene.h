@@ -12,6 +12,8 @@
 
 namespace LambdaEngine
 {
+	constexpr const uint32 NUM_RANDOM_SEEDS = 8192;
+
 	struct Mesh;
 	struct Material;
 
@@ -71,7 +73,8 @@ namespace LambdaEngine
 		{
 			CameraData Camera;
 
-			float32 FrameIndex; //We store the Frame Index as a float as it is commonly used as a seed
+			uint32 FrameIndex;
+			uint32 RandomSeed;
 		};
 
 		struct MappedMaterial
@@ -126,14 +129,14 @@ namespace LambdaEngine
 		FORCEINLINE IBuffer*						GetIndexBuffer()				{ return m_pSceneIndexBuffer; }		
 		FORCEINLINE IBuffer*						GetInstanceBufer()				{ return m_pSceneInstanceBuffer; }
 		FORCEINLINE IBuffer*						GetIndirectArgsBuffer()			{ return m_pSceneMeshIndexBuffer; }	
-																			
-		
 
 	private:
 		const IGraphicsDevice*						m_pGraphicsDevice;
 		const IAudioDevice*							m_pAudioDevice;
 
 		String										m_Name									= "Scene";
+
+		uint32										m_RandomSeeds[NUM_RANDOM_SEEDS];
 
 		IDeviceAllocator*							m_pDeviceAllocator						= nullptr;
 
