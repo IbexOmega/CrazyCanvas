@@ -1009,6 +1009,7 @@ namespace LambdaEngine
 
 		enabledDeviceFeatures12.bufferDeviceAddress					= supportedDeviceFeatures12.bufferDeviceAddress;
 		enabledDeviceFeatures12.timelineSemaphore					= supportedDeviceFeatures12.timelineSemaphore;
+		enabledDeviceFeatures12.descriptorIndexing					= supportedDeviceFeatures12.descriptorIndexing;
 
 		enabledDeviceFeatures10.fillModeNonSolid					= supportedDeviceFeatures10.fillModeNonSolid;
 		enabledDeviceFeatures10.vertexPipelineStoresAndAtomics		= supportedDeviceFeatures10.vertexPipelineStoresAndAtomics;

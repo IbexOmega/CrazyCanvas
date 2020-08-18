@@ -18,7 +18,6 @@
 
 #include <glslangStandAlone/DirStackFileIncluder.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
-#include <glslang/Public/ShaderLang.h>
 
 #include <tiny_obj_loader.h>
 #include <cstdio>
@@ -691,7 +690,7 @@ namespace LambdaEngine
 
 		for (uint32 i = 0; i < arrayCount; i++)
 		{
-			uint64 bufferOffset = i * pixelDataSize;
+			uint64 bufferOffset = uint64(i) * pixelDataSize;
 
 			void* pTextureDataDst = pTextureData->Map();
 			const void* pTextureDataSrc = ppData[i];
@@ -709,8 +708,6 @@ namespace LambdaEngine
 			copyDesc.MiplevelCount  = miplevels;
 			copyDesc.ArrayIndex		= i;
 			copyDesc.ArrayCount		= 1;
-
-			
 
 			s_pCopyCommandList->CopyTextureFromBuffer(pTextureData, pTexture, copyDesc);
 		}
@@ -888,9 +885,9 @@ namespace LambdaEngine
 		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
 
 		//Todo: Fetch this
-		int32 clientInputSemanticsVersion							    = 110;
-		glslang::EShTargetClientVersion vulkanClientVersion				= glslang::EShTargetVulkan_1_0;
-		glslang::EShTargetLanguageVersion targetVersion					= glslang::EShTargetSpv_1_0;
+		int32 clientInputSemanticsVersion							    = 100;
+		glslang::EShTargetClientVersion vulkanClientVersion				= glslang::EShTargetVulkan_1_2;
+		glslang::EShTargetLanguageVersion targetVersion					= glslang::EShTargetSpv_1_5;
 
 		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
 		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
@@ -898,9 +895,8 @@ namespace LambdaEngine
 
 		const TBuiltInResource* pResources	= GetDefaultBuiltInResources();
 		EShMessages messages				= static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
-		const int defaultVersion			= 100;
+		const int defaultVersion			= 110;
 
-		std::string preprocessedGLSL;
 		DirStackFileIncluder includer;
 
 		//Get Directory Path of File
@@ -909,16 +905,17 @@ namespace LambdaEngine
 
 		includer.pushExternalLocalDirectory(directoryPath);
 
-		if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
-		{
-			LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
-			return false;
-		}
+		//std::string preprocessedGLSL;
+		//if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
+		//{
+		//	LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
+		//	return false;
+		//}
 
-		const char* pPreprocessedGLSL = preprocessedGLSL.c_str();
-		shader.setStrings(&pPreprocessedGLSL, 1);
+		//const char* pPreprocessedGLSL = preprocessedGLSL.c_str();
+		//shader.setStrings(&pPreprocessedGLSL, 1);
 
-		if (!shader.parse(pResources, defaultVersion, false, messages))
+		if (!shader.parse(pResources, defaultVersion, false, messages, includer))
 		{
 			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
 			return false;

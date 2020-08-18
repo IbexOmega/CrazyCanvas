@@ -10,6 +10,8 @@
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 #include "Rendering/RenderSystem.h"
 
+#include "Math/MathUtilities.h"
+
 namespace LambdaEngine
 {
 	RayTracingPipelineStateVK::RayTracingPipelineStateVK(const GraphicsDeviceVK* pDevice)
@@ -96,8 +98,22 @@ namespace LambdaEngine
 			return false;
 		}
 
-		uint32 shaderGroupHandleSize = m_pDevice->RayTracingProperties.shaderGroupHandleSize;
-		uint32 sbtSize = shaderGroupHandleSize * uint32(shaderGroups.size());
+		uint32 shaderGroupBaseAlignment = m_pDevice->RayTracingProperties.shaderGroupBaseAlignment;
+		uint32 shaderGroupHandleSize	= m_pDevice->RayTracingProperties.shaderGroupHandleSize;
+
+		m_RaygenBufferRegion.offset				= 0;
+		m_RaygenBufferRegion.size				= shaderGroupHandleSize;
+		m_RaygenBufferRegion.stride				= shaderGroupHandleSize;
+		
+		m_HitBufferRegion.offset				= AlignUp(m_RaygenBufferRegion.offset + m_RaygenBufferRegion.size, shaderGroupBaseAlignment);
+		m_HitBufferRegion.size					= VkDeviceSize(pDesc->ClosestHitShaderCount) * VkDeviceSize(shaderGroupHandleSize);
+		m_HitBufferRegion.stride				= shaderGroupHandleSize;
+		
+		m_MissBufferRegion.offset				= AlignUp(m_HitBufferRegion.offset + m_HitBufferRegion.size, shaderGroupBaseAlignment);
+		m_MissBufferRegion.size					= VkDeviceSize(pDesc->MissShaderCount) * VkDeviceSize(shaderGroupHandleSize);
+		m_MissBufferRegion.stride				= shaderGroupHandleSize;
+		
+		uint32 sbtSize					= m_MissBufferRegion.offset + m_MissBufferRegion.size;
 
 		BufferDesc shaderHandleStorageDesc = {};
 		shaderHandleStorageDesc.pName			= "Shader Handle Storage";
@@ -144,20 +160,10 @@ namespace LambdaEngine
 
 		RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN , nullptr, 0, nullptr, 0);
 
-		m_RaygenBufferRegion.buffer				= m_pSBT->GetBuffer();
-		m_RaygenBufferRegion.offset				= 0;
-		m_RaygenBufferRegion.size				= shaderGroupHandleSize;
-		m_RaygenBufferRegion.stride				= shaderGroupHandleSize;
-		
-		m_HitBufferRegion.buffer				= m_pSBT->GetBuffer();
-		m_HitBufferRegion.offset				= m_RaygenBufferRegion.offset + m_RaygenBufferRegion.size;
-		m_HitBufferRegion.size					= VkDeviceSize(pDesc->ClosestHitShaderCount) * VkDeviceSize(shaderGroupHandleSize);
-		m_HitBufferRegion.stride				= shaderGroupHandleSize;
-		
-		m_MissBufferRegion.buffer				= m_pSBT->GetBuffer();
-		m_MissBufferRegion.offset				= m_HitBufferRegion.offset + m_HitBufferRegion.size;
-		m_MissBufferRegion.size					= VkDeviceSize(pDesc->MissShaderCount) * VkDeviceSize(shaderGroupHandleSize);
-		m_MissBufferRegion.stride				= shaderGroupHandleSize;
+		VkBuffer sbtBuffer				= m_pSBT->GetBuffer();
+		m_RaygenBufferRegion.buffer		= sbtBuffer;
+		m_HitBufferRegion.buffer		= sbtBuffer;
+		m_MissBufferRegion.buffer		= sbtBuffer;
 
 		SetName(pDesc->Name.c_str());
 

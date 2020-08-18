@@ -299,9 +299,9 @@ workspace "LambdaEngine"
 			libdirs
 			{
 				-- Vulkan
-				"C:/VulkanSDK/1.2.135.0/Lib",
-				"D:/VulkanSDK/1.2.135.0/Lib",
-				"D:/Vulkan/1.2.135.0/Lib",
+				"C:/VulkanSDK/1.2.148.1/Lib",
+				"D:/VulkanSDK/1.2.148.1/Lib",
+				"D:/Vulkan/1.2.148.1/Lib",
 
 				-- FMOD
 				"C:/FMOD Studio API Windows/api/core/lib/x64",
@@ -318,9 +318,9 @@ workspace "LambdaEngine"
 			sysincludedirs
 			{
 				-- Vulkan
-				"C:/VulkanSDK/1.2.135.0/Include",
-				"D:/VulkanSDK/1.2.135.0/Include",
-				"D:/Vulkan/1.2.135.0/Include",
+				"C:/VulkanSDK/1.2.148.1/Include",
+				"D:/VulkanSDK/1.2.148.1/Include",
+				"D:/Vulkan/1.2.148.1/Include",
 
 				-- FMOD
 				"C:/FMOD Studio API Windows/api/core/inc",
@@ -335,6 +335,8 @@ workspace "LambdaEngine"
 
 				-- Shader Compilation
 				"glslangd.lib",
+				"MachineIndependentd.lib",
+				"GenericCodeGend.lib",
 				"SPIRVd.lib",
 				"SPIRV-Toolsd.lib",
 				"SPIRV-Tools-optd.lib",
@@ -350,6 +352,8 @@ workspace "LambdaEngine"
 
 				-- Shader Compilation
 				"glslang.lib",
+				"MachineIndependent.lib",
+				"GenericCodeGen.lib",
 				"SPIRV.lib",
 				"SPIRV-Tools.lib",
 				"SPIRV-Tools-opt.lib",
