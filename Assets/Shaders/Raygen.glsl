@@ -120,7 +120,7 @@ void main()
 
 	for (int b = 0; b < maxBounces; b++)
 	{
-		vec4 u = texture(u_BlueNoiseLUT[b], vec2(blueNoiseX, blueNoiseY));			
+		vec4 u = texture(u_BlueNoiseLUT, vec3(blueNoiseX, blueNoiseY, b));			
 		bool isSpecular = s_RadiancePayload.Roughness < MIN_ROUGHNESS_DELTA_DISTRIBUTION;
 
 		//Emissive Surface

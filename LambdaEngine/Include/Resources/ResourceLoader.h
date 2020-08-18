@@ -52,17 +52,21 @@ namespace LambdaEngine
 
 		/*
 		* Load a texture from file
-		*	filepath - Path to the texture file
+		*	name - Name of the texture
+		*	dir - A root directory to be appended to entries of pFilepaths
+		*	pFilenames - Names of the texture files
+		*	count - Number of elements in pFilenames
 		*	format - The format of the pixeldata
 		*	generateMips - If mipmaps should be generated on load
 		* return - an ITexture* if the texture was loaded, otherwise nullptr will be returned
 		*/
-		static ITexture* LoadTextureFromFile(const String& filepath, EFormat format, bool generateMips);
+		static ITexture* LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips);
 
 		/*
 		* Load a texture from memory
 		*	name - Name of the texture
-		*	pData - The pixeldata
+		*	ppData - An array of pixeldata
+		*	arrayCount - Number of elements in ppData
 		*	width - The pixel width of the texture
 		*	height - The pixel height of the texture
 		*	format - The format of the pixeldata
@@ -70,7 +74,7 @@ namespace LambdaEngine
 		*	generateMips - If mipmaps should be generated on load
 		* return - an ITexture* if the texture was loaded, otherwise nullptr will be returned
 		*/
-		static ITexture* LoadTextureFromMemory(const String& name, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips);
+		static ITexture* LoadTextureArrayFromMemory(const String& name, const void* const * ppData, uint32 arrayCount, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips);
 
 		/*
 		* Load sound from file

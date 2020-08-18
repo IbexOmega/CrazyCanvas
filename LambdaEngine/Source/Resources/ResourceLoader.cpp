@@ -250,7 +250,7 @@ namespace LambdaEngine
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
+					ITexture* pTexture = LoadTextureArrayFromFile(material.diffuse_texname, dirpath, &material.diffuse_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pAlbedoMap			= pTexture;
 
@@ -284,7 +284,7 @@ namespace LambdaEngine
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
+					ITexture* pTexture = LoadTextureArrayFromFile(material.bump_texname, dirpath, &material.bump_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pNormalMap			= pTexture;
 
@@ -304,7 +304,7 @@ namespace LambdaEngine
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
+					ITexture* pTexture = LoadTextureArrayFromFile(material.ambient_texname, dirpath, &material.ambient_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pMetallicMap			= pTexture;
 
@@ -324,7 +324,7 @@ namespace LambdaEngine
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
+					ITexture* pTexture = LoadTextureArrayFromFile(material.specular_highlight_texname, dirpath, &material.specular_highlight_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pRoughnessMap		= pTexture;
 
@@ -532,43 +532,96 @@ namespace LambdaEngine
 		return pMesh;
 	}
 
-	ITexture* ResourceLoader::LoadTextureFromFile(const String& filepath, EFormat format, bool generateMips)
+	ITexture* ResourceLoader::LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
 	{
 		int texWidth = 0;
 		int texHeight = 0;
 		int bpp = 0;
 
-		void* pPixels = nullptr;
+		TArray<void*> stbi_pixels(count);
+
+		for (uint32 i = 0; i < count; i++)
+		{
+			String filepath = dir + pFilenames[i];
+
+			void* pPixels = nullptr;
+
+			if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
+			{
+				pPixels = (void*)stbi_load(filepath.c_str(), &texWidth, &texHeight, &bpp, STBI_rgb_alpha);
+			}
+			else if (format == EFormat::FORMAT_R16_UNORM)
+			{
+				pPixels = (void*)stbi_load_16(filepath.c_str(), &texWidth, &texHeight, &bpp, STBI_rgb_alpha);
+			}
+			else
+			{
+				LOG_ERROR("[ResourceLoader]: Texture format not supported for \"%s\"", filepath.c_str());
+				return nullptr;
+			}
+
+			if (pPixels == nullptr)
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to load texture file: \"%s\"", filepath.c_str());
+				return nullptr;
+			}
+
+			stbi_pixels[i] = pPixels;
+			D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
+		}
+
+		ITexture* pTexture = nullptr;
 
 		if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
 		{
-			pPixels = (void*)stbi_load(filepath.c_str(), &texWidth, &texHeight, &bpp, STBI_rgb_alpha);
+			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.data(), stbi_pixels.size(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
 		}
-		/*else if (format == EFormat::FORMAT_R32G32B32A32_FLOAT)
+		else if (format == EFormat::FORMAT_R16_UNORM)
 		{
-			pPixels = (void*)stbi_loadf(filename.c_str(), &texWidth, &texHeight, &bpp, STBI_rgb_alpha);
-		}*/
-		else
-		{
-			LOG_ERROR("[ResourceLoader]: Texture format not supported for \"%s\"", filepath.c_str());
-			return nullptr;
+			TArray<void*> pixels(count * 4);
+
+			for (uint32 i = 0; i < count; i++)
+			{
+				uint32 numPixels = texWidth * texHeight;
+				uint16* pPixelsR = new uint16[numPixels];
+				uint16* pPixelsG = new uint16[numPixels];
+				uint16* pPixelsB = new uint16[numPixels];
+				uint16* pPixelsA = new uint16[numPixels];
+
+				uint16* pSTBIPixels = reinterpret_cast<uint16*>(stbi_pixels[i]);
+
+				for (uint32 p = 0; p < numPixels; p++)
+				{
+					pPixelsR[p] = pSTBIPixels[4 * p + 0];
+					pPixelsG[p] = pSTBIPixels[4 * p + 1];
+					pPixelsB[p] = pSTBIPixels[4 * p + 2];
+					pPixelsA[p] = pSTBIPixels[4 * p + 3];
+				}
+
+				pixels[4 * i + 0] = pPixelsR;
+				pixels[4 * i + 1] = pPixelsG;
+				pixels[4 * i + 2] = pPixelsB;
+				pixels[4 * i + 3] = pPixelsA;
+			}
+
+			pTexture = LoadTextureArrayFromMemory(name, pixels.data(), pixels.size(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
+
+			for (uint32 i = 0; i < pixels.size(); i++)
+			{
+				uint16* pPixels = reinterpret_cast<uint16*>(pixels[i]);
+				SAFEDELETE_ARRAY(pPixels);
+			}
 		}
 
-		if (pPixels == nullptr)
+		for (uint32 i = 0; i < count; i++)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to load texture file: \"%s\"", filepath.c_str());
-			return nullptr;
+			stbi_image_free(stbi_pixels[i]);
 		}
-
-		D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
-
-		ITexture* pTexture = LoadTextureFromMemory(filepath, pPixels, texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
-		stbi_image_free(pPixels);
 
 		return pTexture;
 	}
 
-	ITexture* ResourceLoader::LoadTextureFromMemory(const String& name, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips)
+	ITexture* ResourceLoader::LoadTextureArrayFromMemory(const String& name, const void* const * ppData, uint32 arrayCount, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips)
 	{
 		uint32_t miplevels = 1u;
 
@@ -586,7 +639,7 @@ namespace LambdaEngine
 		textureDesc.Width		= width;
 		textureDesc.Height		= height;
 		textureDesc.Depth		= 1;
-		textureDesc.ArrayCount	= 1;
+		textureDesc.ArrayCount	= arrayCount;
 		textureDesc.Miplevels	= miplevels;
 		textureDesc.SampleCount = 1;
 
@@ -606,74 +659,82 @@ namespace LambdaEngine
 		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		bufferDesc.SizeInBytes	= pixelDataSize;
 
-		IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, s_pAllocator);
+		TArray<IBuffer*> textureBuffers(arrayCount);
 
-		if (pTextureData == nullptr)
+		for (uint32 i = 0; i < arrayCount; i++)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to create copy buffer for \"%s\"", name.c_str());
-			return nullptr;
-		}
+			IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, s_pAllocator);
 
-		void* pTextureDataDst = pTextureData->Map();
-		memcpy(pTextureDataDst, pData, pixelDataSize);
-		pTextureData->Unmap();
+			if (pTextureData == nullptr)
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to create copy buffer for \"%s\"", name.c_str());
+				return nullptr;
+			}
 
-		const uint64 waitValue = s_SignalValue - 1;
-		s_pCopyFence->Wait(waitValue, UINT64_MAX);
+			void* pTextureDataDst = pTextureData->Map();
+			const void* pTextureDataSrc = ppData[i];
+			memcpy(pTextureDataDst, pTextureDataSrc, pixelDataSize);
+			pTextureData->Unmap();
 
-		s_pCopyCommandAllocator->Reset();
-		s_pCopyCommandList->Begin(nullptr);
+			const uint64 waitValue = s_SignalValue - 1;
+			s_pCopyFence->Wait(waitValue, UINT64_MAX);
 
-		CopyTextureFromBufferDesc copyDesc = {};
-		copyDesc.SrcOffset		= 0;
-		copyDesc.SrcRowPitch	= 0;
-		copyDesc.SrcHeight		= 0;
-		copyDesc.Width			= width;
-		copyDesc.Height			= height;
-		copyDesc.Depth			= 1;
-		copyDesc.Miplevel		= 0;
-		copyDesc.MiplevelCount  = miplevels;
-		copyDesc.ArrayIndex		= 0;
-		copyDesc.ArrayCount		= 1;
+			s_pCopyCommandAllocator->Reset();
+			s_pCopyCommandList->Begin(nullptr);
 
-		PipelineTextureBarrierDesc transitionToCopyDstBarrier = {};
-		transitionToCopyDstBarrier.pTexture					= pTexture;
-		transitionToCopyDstBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
-		transitionToCopyDstBarrier.StateAfter				= ETextureState::TEXTURE_STATE_COPY_DST;
-		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
-		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
-		transitionToCopyDstBarrier.SrcMemoryAccessFlags		= 0;
-		transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-		transitionToCopyDstBarrier.TextureFlags				= textureDesc.Flags;
-		transitionToCopyDstBarrier.Miplevel					= 0;
-		transitionToCopyDstBarrier.MiplevelCount			= textureDesc.Miplevels;
-		transitionToCopyDstBarrier.ArrayIndex				= 0;
-		transitionToCopyDstBarrier.ArrayCount				= textureDesc.ArrayCount;
+			CopyTextureFromBufferDesc copyDesc = {};
+			copyDesc.SrcOffset		= 0;
+			copyDesc.SrcRowPitch	= 0;
+			copyDesc.SrcHeight		= 0;
+			copyDesc.Width			= width;
+			copyDesc.Height			= height;
+			copyDesc.Depth			= 1;
+			copyDesc.Miplevel		= 0;
+			copyDesc.MiplevelCount  = miplevels;
+			copyDesc.ArrayIndex		= i;
+			copyDesc.ArrayCount		= 1;
 
-		s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
+			PipelineTextureBarrierDesc transitionToCopyDstBarrier = {};
+			transitionToCopyDstBarrier.pTexture					= pTexture;
+			transitionToCopyDstBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
+			transitionToCopyDstBarrier.StateAfter				= ETextureState::TEXTURE_STATE_COPY_DST;
+			transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
+			transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
+			transitionToCopyDstBarrier.SrcMemoryAccessFlags		= 0;
+			transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			transitionToCopyDstBarrier.TextureFlags				= textureDesc.Flags;
+			transitionToCopyDstBarrier.Miplevel					= 0;
+			transitionToCopyDstBarrier.MiplevelCount			= textureDesc.Miplevels;
+			transitionToCopyDstBarrier.ArrayIndex				= i;
+			transitionToCopyDstBarrier.ArrayCount				= 1;
 
-		s_pCopyCommandList->CopyTextureFromBuffer(pTextureData, pTexture, copyDesc);
-		if (generateMips)
-		{
-			s_pCopyCommandList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_COPY_DST, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
-		}
-		else
-		{
-			PipelineTextureBarrierDesc transitionToShaderReadBarrier = {};
-			transitionToShaderReadBarrier.pTexture					= pTexture;
-			transitionToShaderReadBarrier.StateBefore				= ETextureState::TEXTURE_STATE_COPY_DST;
-			transitionToShaderReadBarrier.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-			transitionToShaderReadBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
-			transitionToShaderReadBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
-			transitionToShaderReadBarrier.SrcMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			transitionToShaderReadBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
-			transitionToShaderReadBarrier.TextureFlags				= textureDesc.Flags;
-			transitionToShaderReadBarrier.Miplevel					= 0;
-			transitionToShaderReadBarrier.MiplevelCount				= textureDesc.Miplevels;
-			transitionToShaderReadBarrier.ArrayIndex				= 0;
-			transitionToShaderReadBarrier.ArrayCount				= textureDesc.ArrayCount;
+			s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
 
-			s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &transitionToShaderReadBarrier, 1);
+			s_pCopyCommandList->CopyTextureFromBuffer(pTextureData, pTexture, copyDesc);
+			if (generateMips)
+			{
+				s_pCopyCommandList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_COPY_DST, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+			}
+			else
+			{
+				PipelineTextureBarrierDesc transitionToShaderReadBarrier = {};
+				transitionToShaderReadBarrier.pTexture					= pTexture;
+				transitionToShaderReadBarrier.StateBefore				= ETextureState::TEXTURE_STATE_COPY_DST;
+				transitionToShaderReadBarrier.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+				transitionToShaderReadBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
+				transitionToShaderReadBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
+				transitionToShaderReadBarrier.SrcMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+				transitionToShaderReadBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+				transitionToShaderReadBarrier.TextureFlags				= textureDesc.Flags;
+				transitionToShaderReadBarrier.Miplevel					= 0;
+				transitionToShaderReadBarrier.MiplevelCount				= textureDesc.Miplevels;
+				transitionToShaderReadBarrier.ArrayIndex				= i;
+				transitionToShaderReadBarrier.ArrayCount				= 1;
+
+				s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &transitionToShaderReadBarrier, 1);
+			}
+
+			textureBuffers[i] = pTextureData;
 		}
 
 		s_pCopyCommandList->End();
@@ -681,7 +742,12 @@ namespace LambdaEngine
 		if (!RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&s_pCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, nullptr, 0, s_pCopyFence, s_SignalValue))
 		{
 			LOG_ERROR("[ResourceLoader]: Texture could not be created as command list could not be executed for \"%s\"", name.c_str());
-			SAFERELEASE(pTextureData);
+
+			for (uint32 i = 0; i < arrayCount; i++)
+			{
+				SAFERELEASE(textureBuffers[i]);
+			}
+
 			return nullptr;
 		}
 		else
@@ -691,7 +757,11 @@ namespace LambdaEngine
 
 		//Todo: Remove this wait after garbage collection works
 		RenderSystem::GetGraphicsQueue()->Flush();
-		SAFERELEASE(pTextureData);
+
+		for (uint32 i = 0; i < arrayCount; i++)
+		{
+			SAFERELEASE(textureBuffers[i]);
+		}
 
 		return pTexture;
 	}

@@ -35,10 +35,11 @@ namespace LambdaEngine
 		String						Name					= "";
 		
 		ERenderGraphResourceType	Type					= ERenderGraphResourceType::NONE;
-		uint32						SubResourceCount			= 1;
-		bool						Editable					= false;
+		uint32						SubResourceCount		= 1;
+		bool						IsOfArrayType			= false;
+		bool						Editable				= false;
 
-		uint32						TextureFormat				= 0;
+		uint32						TextureFormat			= 0;
 	};
 
 	struct EditorRenderGraphResourceLink

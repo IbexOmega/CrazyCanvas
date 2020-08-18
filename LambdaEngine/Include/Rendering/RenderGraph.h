@@ -138,7 +138,8 @@ namespace LambdaEngine
 
 			struct
 			{
-				EFormat								Format	= EFormat::NONE;
+				bool								IsOfArrayType	= false;
+				EFormat								Format			= EFormat::NONE;
 				TArray<ResourceBarrierInfo>			BarriersPerSynchronizationStage; //Divided into #SubResourceCount Barriers per Synchronization Stage
 				TArray<ITexture*>					Textures;
 				TArray<ITextureView*>				TextureViews;
@@ -161,7 +162,6 @@ namespace LambdaEngine
 
 		struct RenderStage
 		{
-			EPipelineStateType		PipelineStateType				= EPipelineStateType::NONE;
 			RenderStageParameters	Parameters						= {};
 
 			glm::uvec3				Dimensions						= glm::uvec3(0);

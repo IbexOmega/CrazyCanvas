@@ -84,8 +84,8 @@ namespace LambdaEngine
 		
 		ERenderGraphResourceType		Type					= ERenderGraphResourceType::NONE;
 		uint32							SubResourceCount		= 1;
-
-		EFormat							TextureFormat			= EFormat::NONE; //Todo: How to solve?
+		bool							IsOfArrayType			= false;
+		EFormat							TextureFormat			= EFormat::NONE;
 
 		bool							External				= false;
 		bool							Temporal				= false;

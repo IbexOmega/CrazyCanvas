@@ -393,7 +393,7 @@ namespace LambdaEngine
 						pRenderStage->pCustomRenderer->UpdateTextureResource(
 							pResource->Name,
 							pResource->Texture.TextureViews.data(),
-							pResource->SubResourceCount);
+							pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount);
 					}
 					else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_UNKNOWN)
 					{
@@ -412,14 +412,12 @@ namespace LambdaEngine
 						}
 						else
 						{
-							uint32 actualSubResourceCount = pResource->SubResourceCount / pRenderStage->TextureSubDescriptorSetCount;
+							uint32 actualSubResourceCount = (uint32)glm::ceil(pResource->Texture.IsOfArrayType ? 1.0f : float32(pResource->SubResourceCount) / float32(pRenderStage->TextureSubDescriptorSetCount));
 
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
 								for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
 								{
-									uint32 index = b * pRenderStage->TextureSubDescriptorSetCount + s;
-
 									uint32 descriptorSetIndex = b * pRenderStage->TextureSubDescriptorSetCount + s;
 									uint32 subResourceIndex = s * actualSubResourceCount;
 
@@ -825,14 +823,15 @@ namespace LambdaEngine
 				//Internal
 				if (pResourceDesc->Type == ERenderGraphResourceType::TEXTURE)
 				{
-					
+					pResource->Type						= ERenderGraphResourceType::TEXTURE;
+					pResource->OwnershipType			= pResource->IsBackBuffer ? EResourceOwnershipType::EXTERNAL : EResourceOwnershipType::INTERNAL;
+					pResource->Texture.IsOfArrayType	= pResourceDesc->IsOfArrayType;
+					pResource->Texture.Format			= pResourceDesc->TextureFormat; 
 
-					pResource->Type					= ERenderGraphResourceType::TEXTURE;
-					pResource->OwnershipType		= pResource->IsBackBuffer ? EResourceOwnershipType::EXTERNAL : EResourceOwnershipType::INTERNAL;
-					pResource->Texture.Format		= pResourceDesc->TextureFormat; 
-					pResource->Texture.Textures.resize(pResource->SubResourceCount);
-					pResource->Texture.TextureViews.resize(pResource->SubResourceCount);
-					pResource->Texture.Samplers.resize(pResource->SubResourceCount);
+					uint32 actualSubResourceCount = pResourceDesc->IsOfArrayType ? 1 : pResource->SubResourceCount;
+					pResource->Texture.Textures.resize(actualSubResourceCount);
+					pResource->Texture.TextureViews.resize(actualSubResourceCount);
+					pResource->Texture.Samplers.resize(actualSubResourceCount);
 				}
 				else if (pResourceDesc->Type == ERenderGraphResourceType::BUFFER)
 				{
@@ -853,12 +852,15 @@ namespace LambdaEngine
 				//External
 				if (pResourceDesc->Type == ERenderGraphResourceType::TEXTURE)
 				{
-					pResource->Type				= ERenderGraphResourceType::TEXTURE;
-					pResource->OwnershipType	= EResourceOwnershipType::EXTERNAL;
-					pResource->Texture.Format	= pResourceDesc->TextureFormat; 
-					pResource->Texture.Textures.resize(pResource->SubResourceCount);
-					pResource->Texture.TextureViews.resize(pResource->SubResourceCount);
-					pResource->Texture.Samplers.resize(pResource->SubResourceCount);
+					pResource->Type						= ERenderGraphResourceType::TEXTURE;
+					pResource->OwnershipType			= EResourceOwnershipType::EXTERNAL;
+					pResource->Texture.IsOfArrayType	= pResourceDesc->IsOfArrayType;
+					pResource->Texture.Format			= pResourceDesc->TextureFormat; 
+
+					uint32 actualSubResourceCount = pResourceDesc->IsOfArrayType ? 1 : pResource->SubResourceCount;
+					pResource->Texture.Textures.resize(actualSubResourceCount);
+					pResource->Texture.TextureViews.resize(actualSubResourceCount);
+					pResource->Texture.Samplers.resize(actualSubResourceCount);
 				}
 				else if (pResourceDesc->Type == ERenderGraphResourceType::BUFFER)
 				{
@@ -931,7 +933,7 @@ namespace LambdaEngine
 			uint32 textureSlots = 0;
 			uint32 totalNumberOfTextures = 0;
 			uint32 totalNumberOfNonMaterialTextures = 0;
-			uint32 textureSubresourceCount = 0;
+			uint32 textureSubResourceCount = 0;
 			bool textureSubResourceCountSame = true;
 			for (uint32 rs = 0; rs < pRenderStageDesc->ResourceStates.size(); rs++)
 			{
@@ -951,13 +953,16 @@ namespace LambdaEngine
 				{
 					textureSlots++;
 
+					//Todo: Review this, this seems retarded
 					if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::COMBINED_SAMPLER)
 					{
-						if (textureSubresourceCount > 0 && pResource->SubResourceCount != textureSubresourceCount)
+						uint32 actualResourceSubResourceCount = pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount; //Samplers which are of array type only take up one slot
+
+						if (textureSubResourceCount > 0 && actualResourceSubResourceCount != textureSubResourceCount)
 							textureSubResourceCountSame = false;
 
-						textureSubresourceCount = pResource->SubResourceCount;
-						totalNumberOfTextures += textureSubresourceCount;
+						textureSubResourceCount = actualResourceSubResourceCount;
+						totalNumberOfTextures += textureSubResourceCount;
 
 						if (pResource->Name != SCENE_ALBEDO_MAPS	 &&
 							pResource->Name != SCENE_NORMAL_MAPS	 &&
@@ -965,7 +970,7 @@ namespace LambdaEngine
 							pResource->Name != SCENE_ROUGHNESS_MAPS	 &&
 							pResource->Name != SCENE_METALLIC_MAPS)
 						{
-							totalNumberOfNonMaterialTextures += textureSubresourceCount;
+							totalNumberOfNonMaterialTextures += textureSubResourceCount;
 						}
 					}
 					else
@@ -983,7 +988,8 @@ namespace LambdaEngine
 			}
 			else if (totalNumberOfTextures > m_MaxTexturesPerDescriptorSet && !textureSubResourceCountSame)
 			{
-				LOG_ERROR("[RenderGraph]: Total number of required texture slots %u for render stage %s is more than MaxTexturesPerDescriptorSet %u. This only works if all texture bindings have either 1 or the same subresource count", textureSlots, pRenderStageDesc->Name.c_str(), m_MaxTexturesPerDescriptorSet);
+				//If all texture have either 1 or the same subresource count we can divide the Render Stage into multiple passes, is this correct?
+				LOG_ERROR("[RenderGraph]: Total number of required texture slots %u for render stage %s is more than MaxTexturesPerDescriptorSet %u. This only works if all texture bindings have either 1 or the same subresource count", totalNumberOfTextures, pRenderStageDesc->Name.c_str(), m_MaxTexturesPerDescriptorSet);
 				return false;
 			}
 			pRenderStage->MaterialsRenderedPerPass = (m_MaxTexturesPerDescriptorSet - totalNumberOfNonMaterialTextures) / 5; //5 textures per material
@@ -1237,8 +1243,6 @@ namespace LambdaEngine
 							pRenderStage->ppTextureDescriptorSets[i] = pDescriptorSet;
 						}
 					}
-
-				
 				}
 
 				//Create Pipeline State
@@ -1553,7 +1557,8 @@ namespace LambdaEngine
 						}
 					}
 
-					for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)
+					uint32 actualSubResourceCount = pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount;
+					for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
 					{
 						TArray<PipelineTextureBarrierDesc>& targetArray = pSynchronizationStage->TextureBarriers[targetSynchronizationIndex];
 						targetArray.push_back(textureBarrier);
@@ -1655,7 +1660,8 @@ namespace LambdaEngine
 
 	void RenderGraph::UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc& desc)
 	{
-		for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)
+		uint32 actualSubResourceCount = pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount;
+		for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
 		{
 			ITexture** ppTexture = &pResource->Texture.Textures[sr];
 			ITextureView** ppTextureView = &pResource->Texture.TextureViews[sr];
@@ -1704,6 +1710,17 @@ namespace LambdaEngine
 				return;
 			}
 
+			TextureDesc textureDesc = pTexture->GetDesc();
+
+			if (pResource->Texture.IsOfArrayType)
+			{
+				if (textureDesc.ArrayCount != pResource->SubResourceCount)
+				{
+					LOG_ERROR("[RenderGraph]: UpdateResourceTexture for resource of array type with length %u but ArrayCount was %u", pResource->SubResourceCount, textureDesc.ArrayCount);
+					return;
+				}
+			}
+
 			(*ppTexture)		= pTexture;
 			(*ppTextureView)	= pTextureView;
 			(*ppSampler)		= pSampler;
@@ -1721,9 +1738,9 @@ namespace LambdaEngine
 
 					pTextureBarrier->pTexture		= pTexture;
 					pTextureBarrier->Miplevel		= 0;
-					pTextureBarrier->MiplevelCount	= pTexture->GetDesc().Miplevels;
+					pTextureBarrier->MiplevelCount	= textureDesc.Miplevels;
 					pTextureBarrier->ArrayIndex		= 0;
-					pTextureBarrier->ArrayCount		= pTexture->GetDesc().ArrayCount;
+					pTextureBarrier->ArrayCount		= textureDesc.ArrayCount;
 
 					if (pFirstBarrier == nullptr)
 						pFirstBarrier = pTextureBarrier;

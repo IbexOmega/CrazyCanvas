@@ -10,11 +10,12 @@ namespace LambdaEngine
 
     enum class ETextureViewType : uint8
     {
-        TEXTURE_VIEW_NONE   = 0,
-        TEXTURE_VIEW_1D     = 1,
-        TEXTURE_VIEW_2D     = 2,
-        TEXTURE_VIEW_3D     = 3,
-        TEXTURE_VIEW_CUBE   = 4,
+        TEXTURE_VIEW_NONE		= 0,
+        TEXTURE_VIEW_1D			= 1,
+        TEXTURE_VIEW_2D			= 2,
+        TEXTURE_VIEW_2D_ARRAY   = 3,
+        TEXTURE_VIEW_3D			= 4,
+        TEXTURE_VIEW_CUBE		= 5,
     };
 
     enum FTextureViewFlags : uint32

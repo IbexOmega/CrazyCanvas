@@ -53,6 +53,8 @@ constexpr const float DEFAULT_DIR_LIGHT_G			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_B			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_STRENGTH	= 0.0f;
 
+constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
+
 Sandbox::Sandbox()
     : Game()
 {
@@ -1034,7 +1036,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	else if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_NEW.lrg";
 	}
 	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 	{
@@ -1189,46 +1191,27 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		GUID_Lambda blueNoise0ID = ResourceManager::LoadTextureFromFile("LUTs/BlueNoise/LDR_RGBA_0.png", EFormat::FORMAT_R8G8B8A8_UNORM, false);
-		GUID_Lambda blueNoise1ID = ResourceManager::LoadTextureFromFile("LUTs/BlueNoise/LDR_RGBA_1.png", EFormat::FORMAT_R8G8B8A8_UNORM, false);
-		GUID_Lambda blueNoise2ID = ResourceManager::LoadTextureFromFile("LUTs/BlueNoise/LDR_RGBA_2.png", EFormat::FORMAT_R8G8B8A8_UNORM, false);
-		GUID_Lambda blueNoise3ID = ResourceManager::LoadTextureFromFile("LUTs/BlueNoise/LDR_RGBA_3.png", EFormat::FORMAT_R8G8B8A8_UNORM, false);
-		GUID_Lambda blueNoise4ID = ResourceManager::LoadTextureFromFile("LUTs/BlueNoise/LDR_RGBA_4.png", EFormat::FORMAT_R8G8B8A8_UNORM, false);
-		GUID_Lambda blueNoise5ID = ResourceManager::LoadTextureFromFile("LUTs/BlueNoise/LDR_RGBA_5.png", EFormat::FORMAT_R8G8B8A8_UNORM, false);
-		GUID_Lambda blueNoise6ID = ResourceManager::LoadTextureFromFile("LUTs/BlueNoise/LDR_RGBA_6.png", EFormat::FORMAT_R8G8B8A8_UNORM, false);
-		GUID_Lambda blueNoise7ID = ResourceManager::LoadTextureFromFile("LUTs/BlueNoise/LDR_RGBA_7.png", EFormat::FORMAT_R8G8B8A8_UNORM, false);
+		
 
-		ITexture* pBlueNoiseTextures[8] =
+		String blueNoiseLUTFileNames[NUM_BLUE_NOISE_LUTS];
+
+		for (uint32 i = 0; i < NUM_BLUE_NOISE_LUTS; i++)
 		{
-			ResourceManager::GetTexture(blueNoise0ID),
-			ResourceManager::GetTexture(blueNoise1ID),
-			ResourceManager::GetTexture(blueNoise2ID),
-			ResourceManager::GetTexture(blueNoise3ID),
-			ResourceManager::GetTexture(blueNoise4ID),
-			ResourceManager::GetTexture(blueNoise5ID),
-			ResourceManager::GetTexture(blueNoise6ID),
-			ResourceManager::GetTexture(blueNoise7ID),
-		};
+			char str[5];
+			snprintf(str, 5, "%04d", i);
+			blueNoiseLUTFileNames[i] = "LUTs/BlueNoise/256_256/HDR_RGBA_" + std::string(str) + ".png";
+		}
 
-		ITextureView* pBlueNoiseTextureViews[8] =
-		{
-			ResourceManager::GetTextureView(blueNoise0ID),
-			ResourceManager::GetTextureView(blueNoise1ID),
-			ResourceManager::GetTextureView(blueNoise2ID),
-			ResourceManager::GetTextureView(blueNoise3ID),
-			ResourceManager::GetTextureView(blueNoise4ID),
-			ResourceManager::GetTextureView(blueNoise5ID),
-			ResourceManager::GetTextureView(blueNoise6ID),
-			ResourceManager::GetTextureView(blueNoise7ID),
-		};
+		GUID_Lambda blueNoiseID = ResourceManager::LoadTextureArrayFromFile("Blue Noise Texture", blueNoiseLUTFileNames, NUM_BLUE_NOISE_LUTS, EFormat::FORMAT_R16_UNORM, false);
 
-		std::vector<ISampler*> samplers(8, m_pNearestSampler);
+		ITexture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
+		ITextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
 
 		ResourceUpdateDesc blueNoiseUpdateDesc = {};
 		blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";
-		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextures			= pBlueNoiseTextures;
-		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= pBlueNoiseTextureViews;
-		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextures			= &pBlueNoiseTexture;
+		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
+		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &m_pNearestSampler;
 
 		m_pRenderGraph->UpdateResource(blueNoiseUpdateDesc);
 	}

@@ -63,6 +63,10 @@ namespace LambdaEngine
         {
             createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         }
+		else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_2D_ARRAY)
+		{
+			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		}
         else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_3D)
         {
             createInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;

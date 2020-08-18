@@ -82,6 +82,17 @@ namespace LambdaEngine
 		static GUID_Lambda LoadMaterialFromMemory(const String& name, GUID_Lambda albedoMap, GUID_Lambda normalMap, GUID_Lambda ambientOcclusionMap, GUID_Lambda metallicMap, GUID_Lambda roughnessMap, const MaterialProperties& properties);
 
 		/*
+		* Load multiple textures from file and combine in a Texture Array
+		*	name - A Name of given to the textureArray
+		*	pFilenames - Names of the texture files
+		*	count - number of elements in pFilenames
+		*	format - The format of the pixeldata
+		*	generateMips - If mipmaps should be generated on load
+		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
+		*/
+		static GUID_Lambda LoadTextureArrayFromFile(const String& name, const String* pFilenames, uint32 count, EFormat format, bool generateMips);
+
+		/*
 		* Load a texture from file
 		*	filename - Name of the texture file
 		*	format - The format of the pixeldata

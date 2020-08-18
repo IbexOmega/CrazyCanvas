@@ -42,7 +42,8 @@ namespace LambdaEngine
 		"B8G8R8A8_UNORM",
 		"R8G8B8A8_SNORM",
 		"R16G16B16A16_SFLOAT",
-		"D24_UNORM_S8_UINT"
+		"D24_UNORM_S8_UINT",
+		"R16_UNORM"
 	};
 
 	constexpr const EFormat TEXTURE_FORMATS[] =
@@ -52,7 +53,8 @@ namespace LambdaEngine
 		EFormat::FORMAT_B8G8R8A8_UNORM,
 		EFormat::FORMAT_R8G8B8A8_SNORM,
 		EFormat::FORMAT_R16G16B16A16_SFLOAT,
-		EFormat::FORMAT_D24_UNORM_S8_UINT
+		EFormat::FORMAT_D24_UNORM_S8_UINT,
+		EFormat::FORMAT_R16_UNORM
 	};
 
 	RenderGraphEditor::RenderGraphEditor()
@@ -537,6 +539,11 @@ namespace LambdaEngine
 
 			if (pSelectedResource->Type == ERenderGraphResourceType::TEXTURE)
 			{
+				if (pSelectedResource->SubResourceCount > 1)
+				{
+					ImGui::Text("Is of Array Type: %s", pSelectedResource->IsOfArrayType ? "True" : "False");
+				}
+
 				ImGui::Text("Texture Format: %s", TEXTURE_FORMAT_NAMES[pSelectedResource->TextureFormat]);
 			}
 		}
@@ -613,9 +620,10 @@ namespace LambdaEngine
 		constexpr const int32 RESOURCE_NAME_BUFFER_LENGTH = 256;
 		static char resourceNameBuffer[RESOURCE_NAME_BUFFER_LENGTH];
 		static int32 subResourceCount		= 1;
+		static bool isOfArrayType			= false;
 		static int32 selectedFormat			= 0;
 
-		ImGui::SetNextWindowSize(ImVec2(360, 200));
+		ImGui::SetNextWindowSize(ImVec2(460, 200));
 		if (ImGui::BeginPopupModal("Add Resource ##Popup"))
 		{
 			if (m_CurrentlyAddingResource != ERenderGraphResourceType::NONE)
@@ -628,10 +636,20 @@ namespace LambdaEngine
 
 				ImGui::Text("Sub Resource Count: ");
 				ImGui::SameLine();
-				ImGui::SliderInt("##Sub Resource Count", &subResourceCount, 1, 128);
+				if (ImGui::InputInt("##Sub Resource Count", &subResourceCount, 1, 100))
+				{
+					subResourceCount = glm::clamp<int32>(subResourceCount, 1, 1024);
+				}
 
 				if (m_CurrentlyAddingResource == ERenderGraphResourceType::TEXTURE)
 				{
+					if (subResourceCount > 1)
+					{
+						ImGui::Text("Is of Array Type: ");
+						ImGui::SameLine();
+						ImGui::Checkbox("##Is of Array Type", &isOfArrayType);
+					}
+
 					ImGui::Text("Format: ");
 					ImGui::SameLine();
 					ImGui::Combo("##Resource Format", &selectedFormat, TEXTURE_FORMAT_NAMES, ARR_SIZE(TEXTURE_FORMAT_NAMES));
@@ -673,6 +691,11 @@ namespace LambdaEngine
 
 					if (m_CurrentlyAddingResource == ERenderGraphResourceType::TEXTURE)
 					{
+						if (newResource.SubResourceCount > 1)
+						{
+							newResource.IsOfArrayType = isOfArrayType;
+						}
+
 						newResource.TextureFormat = selectedFormat;
 					}
 
@@ -692,7 +715,9 @@ namespace LambdaEngine
 				if (done)
 				{
 					ZERO_MEMORY(resourceNameBuffer, RESOURCE_NAME_BUFFER_LENGTH);
+					isOfArrayType			= false;
 					subResourceCount		= 1;
+					selectedFormat			= 0;
 					m_CurrentlyAddingResource	= ERenderGraphResourceType::NONE;
 					ImGui::CloseCurrentPopup();
 				}
@@ -711,9 +736,10 @@ namespace LambdaEngine
 		constexpr const int32 RESOURCE_NAME_BUFFER_LENGTH = 256;
 		static char resourceNameBuffer[RESOURCE_NAME_BUFFER_LENGTH];
 		static int32 subResourceCount		= -1;
+		static bool isOfArrayType			= false;
 		static int32 selectedFormat			= -1;
 
-		ImGui::SetNextWindowSize(ImVec2(360, 200));
+		ImGui::SetNextWindowSize(ImVec2(460, 200));
 		if (ImGui::BeginPopupModal("Edit Resource ##Popup"))
 		{
 			if (m_CurrentlyEditingResource != "")
@@ -735,8 +761,12 @@ namespace LambdaEngine
 					memcpy(resourceNameBuffer, m_CurrentlyEditingResource.c_str(), m_CurrentlyEditingResource.size());
 				}
 
-				subResourceCount	= pEditedResource->SubResourceCount;
-				selectedFormat		= pEditedResource->TextureFormat;
+				if (subResourceCount == -1)
+				{
+					subResourceCount	= pEditedResource->SubResourceCount;
+					isOfArrayType		= pEditedResource->IsOfArrayType;
+					selectedFormat		= pEditedResource->TextureFormat;
+				}
 
 				ImGui::AlignTextToFramePadding();
 
@@ -746,10 +776,20 @@ namespace LambdaEngine
 
 				ImGui::Text("Sub Resource Count: ");
 				ImGui::SameLine();
-				ImGui::SliderInt("##Sub Resource Count", &subResourceCount, 1, 128);
-
-				if (m_CurrentlyAddingResource == ERenderGraphResourceType::TEXTURE)
+				if (ImGui::InputInt("##Sub Resource Count", &subResourceCount, 1, 100))
 				{
+					subResourceCount = glm::clamp<int32>(subResourceCount, 1, 1024);
+				}
+
+				if (pEditedResource->Type == ERenderGraphResourceType::TEXTURE)
+				{
+					if (subResourceCount > 1)
+					{
+						ImGui::Text("Is of Array Type: ");
+						ImGui::SameLine();
+						ImGui::Checkbox("##Is of Array Type", &isOfArrayType);
+					}
+
 					ImGui::Text("Format: ");
 					ImGui::SameLine();
 					ImGui::Combo("##Resource Format", &selectedFormat, TEXTURE_FORMAT_NAMES, ARR_SIZE(TEXTURE_FORMAT_NAMES));
@@ -826,6 +866,11 @@ namespace LambdaEngine
 
 					if (pEditedResource->Type == ERenderGraphResourceType::TEXTURE)
 					{
+						if (editedResourceCopy.SubResourceCount > 1)
+						{
+							editedResourceCopy.IsOfArrayType = isOfArrayType;
+						}
+
 						editedResourceCopy.TextureFormat = selectedFormat;
 					}
 
@@ -844,6 +889,8 @@ namespace LambdaEngine
 				{
 					ZERO_MEMORY(resourceNameBuffer, RESOURCE_NAME_BUFFER_LENGTH);
 					subResourceCount		= -1;
+					isOfArrayType			= false;
+					selectedFormat			= -1;
 					m_CurrentlyEditingResource	= "";
 					ImGui::CloseCurrentPopup();
 				}
@@ -2397,6 +2444,9 @@ namespace LambdaEngine
 						writer.String("sub_resource_count");
 						writer.Uint(pResource->SubResourceCount);
 
+						writer.String("is_of_array_type");
+						writer.Bool(pResource->IsOfArrayType);
+
 						writer.String("editable");
 						writer.Bool(pResource->Editable);
 
@@ -2858,6 +2908,7 @@ namespace LambdaEngine
 					resource.Name					= resourceObject["name"].GetString();
 					resource.Type					= RenderGraphResourceTypeFromString(resourceObject["type"].GetString());
 					resource.SubResourceCount		= resourceObject["sub_resource_count"].GetUint();
+					resource.IsOfArrayType			= resourceObject.HasMember("is_of_array_type") ? resourceObject["is_of_array_type"].GetBool() : false;
 					resource.TextureFormat			= resourceObject["texture_format"].GetUint();
 					resource.Editable				= resourceObject["editable"].GetBool();
 
@@ -3821,6 +3872,7 @@ namespace LambdaEngine
 			parsedResource.Name						= pResource->Name;
 			parsedResource.Type						= pResource->Type;
 			parsedResource.SubResourceCount			= pResource->SubResourceCount;
+			parsedResource.IsOfArrayType			= pResource->IsOfArrayType;
 			parsedResource.TextureFormat			= TEXTURE_FORMATS[pResource->TextureFormat];
 			parsedResource.External					= m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX].ResourceStates.count(pResource->Name) > 0;
 			parsedResource.Temporal					= m_ResourceStateGroups[TEMPORAL_RESOURCE_STATE_GROUP_INDEX].ResourceStates.count(pResource->Name) > 0;

@@ -22,7 +22,8 @@ namespace LambdaEngine
         FORMAT_B8G8R8A8_UNORM			= 3,
         FORMAT_R8G8B8A8_SNORM			= 4,
         FORMAT_R16G16B16A16_SFLOAT		= 5,
-		FORMAT_D24_UNORM_S8_UINT		= 6
+		FORMAT_D24_UNORM_S8_UINT		= 6,
+		FORMAT_R16_UNORM				= 7,
     };
 
 	enum class EIndexType

@@ -219,9 +219,9 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadTextureFromFile(const String& filename, EFormat format, bool generateMips)
+	GUID_Lambda ResourceManager::LoadTextureArrayFromFile(const String& name, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
 	{
-		auto loadedTextureGUID = s_TextureNamesToGUIDs.find(filename);
+		auto loadedTextureGUID = s_TextureNamesToGUIDs.find(name);
 		if (loadedTextureGUID != s_TextureNamesToGUIDs.end())
 			return loadedTextureGUID->second;
 
@@ -234,27 +234,34 @@ namespace LambdaEngine
 			guid							= s_NextFreeGUID++;
 			ppMappedTexture					= &s_Textures[guid]; //Creates new entry if not existing
 			ppMappedTextureView				= &s_TextureViews[guid]; //Creates new entry if not existing
-			s_TextureNamesToGUIDs[filename] = guid;
+			s_TextureNamesToGUIDs[name]		= guid;
 		}
 
-		ITexture* pTexture = ResourceLoader::LoadTextureFromFile(TEXTURE_DIR + filename, format, generateMips);
+		ITexture* pTexture = ResourceLoader::LoadTextureArrayFromFile(name, TEXTURE_DIR, pFilenames, count, format, generateMips);
 
 		(*ppMappedTexture) = pTexture;
 
+		TextureDesc textureDesc = pTexture->GetDesc();
+
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.Name			= filename + " Texture View";
+		textureViewDesc.Name			= name + " Texture View";
 		textureViewDesc.pTexture		= pTexture;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= format;
-		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
-		textureViewDesc.MiplevelCount	= pTexture->GetDesc().Miplevels;
-		textureViewDesc.ArrayCount		= pTexture->GetDesc().ArrayCount;
+		textureViewDesc.Type			= textureDesc.ArrayCount > 1 ? ETextureViewType::TEXTURE_VIEW_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
+		textureViewDesc.ArrayCount		= textureDesc.ArrayCount;
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 
 		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		return guid;
+	}
+
+	GUID_Lambda ResourceManager::LoadTextureFromFile(const String& filename, EFormat format, bool generateMips)
+	{
+		return LoadTextureArrayFromFile(filename, &filename, 1, format, generateMips);
 	}
 
 	GUID_Lambda ResourceManager::LoadTextureFromMemory(const String& name, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips)
@@ -275,7 +282,7 @@ namespace LambdaEngine
 			s_TextureNamesToGUIDs[name]		= guid;
 		}
 
-		ITexture* pTexture = ResourceLoader::LoadTextureFromMemory(name, pData, width, height, format, usageFlags, generateMips);
+		ITexture* pTexture = ResourceLoader::LoadTextureArrayFromMemory(name, &pData, 1, width, height, format, usageFlags, generateMips);
 
 		(*ppMappedTexture) = pTexture;
 
@@ -557,8 +564,10 @@ namespace LambdaEngine
 
 		byte defaultColor[4]				= { 255, 255, 255, 255 };
 		byte defaultNormal[4]				= { 127, 127, 255, 0   };
-		ITexture* pDefaultColorMap			= ResourceLoader::LoadTextureFromMemory("Default Color Map", defaultColor, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
-		ITexture* pDefaultNormalMap			= ResourceLoader::LoadTextureFromMemory("Default Normal Map", defaultNormal, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
+		void* pDefaultColor					= (void*)defaultColor;
+		void* pDefaultNormal				= (void*)defaultNormal;
+		ITexture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
+		ITexture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
 
 		s_Textures[DEFAULT_COLOR_MAP]		= pDefaultColorMap;
 		s_Textures[DEFAULT_NORMAL_MAP]		= pDefaultNormalMap;
