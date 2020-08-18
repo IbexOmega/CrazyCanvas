@@ -657,33 +657,49 @@ namespace LambdaEngine
 		bufferDesc.pName		= "Texture Copy Buffer";
 		bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
 		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
-		bufferDesc.SizeInBytes	= pixelDataSize;
+		bufferDesc.SizeInBytes	= arrayCount * pixelDataSize;
 
-		TArray<IBuffer*> textureBuffers(arrayCount);
+		IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, s_pAllocator);
+
+		if (pTextureData == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to create copy buffer for \"%s\"", name.c_str());
+			return nullptr;
+		}
+
+		const uint64 waitValue = s_SignalValue - 1;
+		s_pCopyFence->Wait(waitValue, UINT64_MAX);
+
+		s_pCopyCommandAllocator->Reset();
+		s_pCopyCommandList->Begin(nullptr);
+
+		PipelineTextureBarrierDesc transitionToCopyDstBarrier = {};
+		transitionToCopyDstBarrier.pTexture					= pTexture;
+		transitionToCopyDstBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
+		transitionToCopyDstBarrier.StateAfter				= ETextureState::TEXTURE_STATE_COPY_DST;
+		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
+		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
+		transitionToCopyDstBarrier.SrcMemoryAccessFlags		= 0;
+		transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		transitionToCopyDstBarrier.TextureFlags				= textureDesc.Flags;
+		transitionToCopyDstBarrier.Miplevel					= 0;
+		transitionToCopyDstBarrier.MiplevelCount			= textureDesc.Miplevels;
+		transitionToCopyDstBarrier.ArrayIndex				= 0;
+		transitionToCopyDstBarrier.ArrayCount				= textureDesc.ArrayCount;
+
+		s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
 
 		for (uint32 i = 0; i < arrayCount; i++)
 		{
-			IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, s_pAllocator);
-
-			if (pTextureData == nullptr)
-			{
-				LOG_ERROR("[ResourceLoader]: Failed to create copy buffer for \"%s\"", name.c_str());
-				return nullptr;
-			}
+			uint64 bufferOffset = i * pixelDataSize;
 
 			void* pTextureDataDst = pTextureData->Map();
 			const void* pTextureDataSrc = ppData[i];
-			memcpy(pTextureDataDst, pTextureDataSrc, pixelDataSize);
+			memcpy((void*)(uint64(pTextureDataDst) + bufferOffset), pTextureDataSrc, pixelDataSize);
 			pTextureData->Unmap();
 
-			const uint64 waitValue = s_SignalValue - 1;
-			s_pCopyFence->Wait(waitValue, UINT64_MAX);
-
-			s_pCopyCommandAllocator->Reset();
-			s_pCopyCommandList->Begin(nullptr);
-
 			CopyTextureFromBufferDesc copyDesc = {};
-			copyDesc.SrcOffset		= 0;
+			copyDesc.SrcOffset		= bufferOffset;
 			copyDesc.SrcRowPitch	= 0;
 			copyDesc.SrcHeight		= 0;
 			copyDesc.Width			= width;
@@ -694,47 +710,32 @@ namespace LambdaEngine
 			copyDesc.ArrayIndex		= i;
 			copyDesc.ArrayCount		= 1;
 
-			PipelineTextureBarrierDesc transitionToCopyDstBarrier = {};
-			transitionToCopyDstBarrier.pTexture					= pTexture;
-			transitionToCopyDstBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
-			transitionToCopyDstBarrier.StateAfter				= ETextureState::TEXTURE_STATE_COPY_DST;
-			transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
-			transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
-			transitionToCopyDstBarrier.SrcMemoryAccessFlags		= 0;
-			transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			transitionToCopyDstBarrier.TextureFlags				= textureDesc.Flags;
-			transitionToCopyDstBarrier.Miplevel					= 0;
-			transitionToCopyDstBarrier.MiplevelCount			= textureDesc.Miplevels;
-			transitionToCopyDstBarrier.ArrayIndex				= i;
-			transitionToCopyDstBarrier.ArrayCount				= 1;
-
-			s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
+			
 
 			s_pCopyCommandList->CopyTextureFromBuffer(pTextureData, pTexture, copyDesc);
-			if (generateMips)
-			{
-				s_pCopyCommandList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_COPY_DST, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
-			}
-			else
-			{
-				PipelineTextureBarrierDesc transitionToShaderReadBarrier = {};
-				transitionToShaderReadBarrier.pTexture					= pTexture;
-				transitionToShaderReadBarrier.StateBefore				= ETextureState::TEXTURE_STATE_COPY_DST;
-				transitionToShaderReadBarrier.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-				transitionToShaderReadBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
-				transitionToShaderReadBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
-				transitionToShaderReadBarrier.SrcMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-				transitionToShaderReadBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
-				transitionToShaderReadBarrier.TextureFlags				= textureDesc.Flags;
-				transitionToShaderReadBarrier.Miplevel					= 0;
-				transitionToShaderReadBarrier.MiplevelCount				= textureDesc.Miplevels;
-				transitionToShaderReadBarrier.ArrayIndex				= i;
-				transitionToShaderReadBarrier.ArrayCount				= 1;
+		}
 
-				s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &transitionToShaderReadBarrier, 1);
-			}
+		if (generateMips)
+		{
+			s_pCopyCommandList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_COPY_DST, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+		}
+		else
+		{
+			PipelineTextureBarrierDesc transitionToShaderReadBarrier = {};
+			transitionToShaderReadBarrier.pTexture					= pTexture;
+			transitionToShaderReadBarrier.StateBefore				= ETextureState::TEXTURE_STATE_COPY_DST;
+			transitionToShaderReadBarrier.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+			transitionToShaderReadBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
+			transitionToShaderReadBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
+			transitionToShaderReadBarrier.SrcMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			transitionToShaderReadBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			transitionToShaderReadBarrier.TextureFlags				= textureDesc.Flags;
+			transitionToShaderReadBarrier.Miplevel					= 0;
+			transitionToShaderReadBarrier.MiplevelCount				= textureDesc.Miplevels;
+			transitionToShaderReadBarrier.ArrayIndex				= 0;
+			transitionToShaderReadBarrier.ArrayCount				= textureDesc.ArrayCount;
 
-			textureBuffers[i] = pTextureData;
+			s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &transitionToShaderReadBarrier, 1);
 		}
 
 		s_pCopyCommandList->End();
@@ -742,11 +743,7 @@ namespace LambdaEngine
 		if (!RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&s_pCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, nullptr, 0, s_pCopyFence, s_SignalValue))
 		{
 			LOG_ERROR("[ResourceLoader]: Texture could not be created as command list could not be executed for \"%s\"", name.c_str());
-
-			for (uint32 i = 0; i < arrayCount; i++)
-			{
-				SAFERELEASE(textureBuffers[i]);
-			}
+			SAFERELEASE(pTextureData);
 
 			return nullptr;
 		}
@@ -758,10 +755,7 @@ namespace LambdaEngine
 		//Todo: Remove this wait after garbage collection works
 		RenderSystem::GetGraphicsQueue()->Flush();
 
-		for (uint32 i = 0; i < arrayCount; i++)
-		{
-			SAFERELEASE(textureBuffers[i]);
-		}
+		SAFERELEASE(pTextureData);
 
 		return pTexture;
 	}
