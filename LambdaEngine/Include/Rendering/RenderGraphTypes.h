@@ -83,6 +83,7 @@ namespace LambdaEngine
 		String							Name					= "";
 		
 		ERenderGraphResourceType		Type					= ERenderGraphResourceType::NONE;
+		bool							BackBufferBound			= false;
 		uint32							SubResourceCount		= 1;
 		bool							IsOfArrayType			= false;
 		EFormat							TextureFormat			= EFormat::NONE;

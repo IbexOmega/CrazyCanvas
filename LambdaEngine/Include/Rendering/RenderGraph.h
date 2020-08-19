@@ -128,11 +128,12 @@ namespace LambdaEngine
 
 		struct Resource
 		{
-			String					Name				= "";
-			bool					IsBackBuffer		= false;
-			ERenderGraphResourceType			Type				= ERenderGraphResourceType::NONE;
-			EResourceOwnershipType	OwnershipType		= EResourceOwnershipType::NONE;
-			uint32					SubResourceCount	= 0;
+			String						Name				= "";
+			bool						IsBackBuffer		= false;
+			ERenderGraphResourceType	Type				= ERenderGraphResourceType::NONE;
+			EResourceOwnershipType		OwnershipType		= EResourceOwnershipType::NONE;
+			bool						BackBufferBound		= false;
+			uint32						SubResourceCount	= 0;
 
 			std::vector<ResourceBinding>	ResourceBindings;
 

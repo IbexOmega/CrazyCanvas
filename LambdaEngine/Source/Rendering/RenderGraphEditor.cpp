@@ -534,7 +534,17 @@ namespace LambdaEngine
 			String resourceType = RenderGraphResourceTypeToString(pSelectedResource->Type);
 			ImGui::Text("Type: %s", resourceType.c_str());
 
-			String subResourceCount = std::to_string(pSelectedResource->SubResourceCount);
+			String subResourceCount;
+
+			if (pSelectedResource->BackBufferBound)
+			{
+				subResourceCount = "Back Buffer Bound";
+			}
+			else
+			{
+				subResourceCount = std::to_string(pSelectedResource->SubResourceCount);
+			}
+
 			ImGui::Text("Sub Resource Count: %s", subResourceCount.c_str());
 
 			if (pSelectedResource->Type == ERenderGraphResourceType::TEXTURE)
@@ -622,6 +632,7 @@ namespace LambdaEngine
 	{
 		constexpr const int32 RESOURCE_NAME_BUFFER_LENGTH = 256;
 		static char resourceNameBuffer[RESOURCE_NAME_BUFFER_LENGTH];
+		static bool backBufferBound			= false;
 		static int32 subResourceCount		= 1;
 		static bool isOfArrayType			= false;
 		static int32 selectedFormat			= 0;
@@ -637,11 +648,29 @@ namespace LambdaEngine
 				ImGui::SameLine();
 				ImGui::InputText("##Resource Name", resourceNameBuffer, RESOURCE_NAME_BUFFER_LENGTH, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank);
 
+				ImGui::Text("Back Buffer Bound: ");
+				ImGui::SameLine();
+				ImGui::Checkbox("##Back Buffer Bound", &backBufferBound);
+
 				ImGui::Text("Sub Resource Count: ");
 				ImGui::SameLine();
+
+				if (backBufferBound)
+				{
+					subResourceCount = 1;
+					ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+				}
+
 				if (ImGui::InputInt("##Sub Resource Count", &subResourceCount, 1, 100))
 				{
 					subResourceCount = glm::clamp<int32>(subResourceCount, 1, 1024);
+				}
+
+				if (backBufferBound)
+				{
+					ImGui::PopItemFlag();
+					ImGui::PopStyleVar();
 				}
 
 				if (m_CurrentlyAddingResource == ERenderGraphResourceType::TEXTURE)
@@ -690,7 +719,8 @@ namespace LambdaEngine
 					EditorResource newResource = {};
 					newResource.Name				= resourceNameBuffer;
 					newResource.Type				= m_CurrentlyAddingResource;
-					newResource.SubResourceCount	= subResourceCount;
+					newResource.BackBufferBound		= backBufferBound;
+					newResource.SubResourceCount	= backBufferBound ? 1 : subResourceCount;
 
 					if (m_CurrentlyAddingResource == ERenderGraphResourceType::TEXTURE)
 					{
@@ -718,6 +748,7 @@ namespace LambdaEngine
 				if (done)
 				{
 					ZERO_MEMORY(resourceNameBuffer, RESOURCE_NAME_BUFFER_LENGTH);
+					backBufferBound			= false;
 					isOfArrayType			= false;
 					subResourceCount		= 1;
 					selectedFormat			= 0;
@@ -738,6 +769,7 @@ namespace LambdaEngine
 	{
 		constexpr const int32 RESOURCE_NAME_BUFFER_LENGTH = 256;
 		static char resourceNameBuffer[RESOURCE_NAME_BUFFER_LENGTH];
+		static bool backBufferBound			= false;
 		static int32 subResourceCount		= -1;
 		static bool isOfArrayType			= false;
 		static int32 selectedFormat			= -1;
@@ -766,6 +798,7 @@ namespace LambdaEngine
 
 				if (subResourceCount == -1)
 				{
+					backBufferBound		= pEditedResource->BackBufferBound;
 					subResourceCount	= pEditedResource->SubResourceCount;
 					isOfArrayType		= pEditedResource->IsOfArrayType;
 					selectedFormat		= pEditedResource->TextureFormat;
@@ -777,11 +810,29 @@ namespace LambdaEngine
 				ImGui::SameLine();
 				ImGui::InputText("##Resource Name", resourceNameBuffer, RESOURCE_NAME_BUFFER_LENGTH, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank);
 
+				ImGui::Text("Back Buffer Bound: ");
+				ImGui::SameLine();
+				ImGui::Checkbox("##Back Buffer Bound", &backBufferBound);
+
 				ImGui::Text("Sub Resource Count: ");
 				ImGui::SameLine();
+
+				if (backBufferBound)
+				{
+					subResourceCount = 1;
+					ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+				}
+
 				if (ImGui::InputInt("##Sub Resource Count", &subResourceCount, 1, 100))
 				{
 					subResourceCount = glm::clamp<int32>(subResourceCount, 1, 1024);
+				}
+
+				if (backBufferBound)
+				{
+					ImGui::PopItemFlag();
+					ImGui::PopStyleVar();
 				}
 
 				if (pEditedResource->Type == ERenderGraphResourceType::TEXTURE)
@@ -862,6 +913,7 @@ namespace LambdaEngine
 					}
 
 					pEditedResource->Name				= resourceNameBuffer;
+					pEditedResource->BackBufferBound	= backBufferBound;
 					pEditedResource->SubResourceCount	= subResourceCount;
 
 					if (pEditedResource->Type == ERenderGraphResourceType::TEXTURE)
@@ -886,6 +938,7 @@ namespace LambdaEngine
 				if (done)
 				{
 					ZERO_MEMORY(resourceNameBuffer, RESOURCE_NAME_BUFFER_LENGTH);
+					backBufferBound			= false;
 					subResourceCount		= -1;
 					isOfArrayType			= false;
 					selectedFormat			= -1;
@@ -2382,7 +2435,7 @@ namespace LambdaEngine
 
 					if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
 					{
-						if (resourceIt->IsOfArrayType == false)
+						if (resourceIt->IsOfArrayType == false && (resourceIt->SubResourceCount == 1 || resourceIt->BackBufferBound))
 						{
 							bindingTypes.push_back(ERenderGraphResourceBindingType::ATTACHMENT);
 							bindingTypeNames.push_back("ATTACHMENT");
@@ -2406,7 +2459,7 @@ namespace LambdaEngine
 
 					if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
 					{
-						if (resourceIt->IsOfArrayType == false)
+						if (resourceIt->IsOfArrayType == false && (resourceIt->SubResourceCount == 1 || resourceIt->BackBufferBound))
 						{
 							bindingTypes.push_back(ERenderGraphResourceBindingType::ATTACHMENT);
 							bindingTypeNames.push_back("ATTACHMENT");
@@ -2493,6 +2546,9 @@ namespace LambdaEngine
 
 						writer.String("type");
 						writer.String(RenderGraphResourceTypeToString(resource.Type).c_str());
+
+						writer.String("back_buffer_bound");
+						writer.Bool(resource.BackBufferBound);
 
 						writer.String("sub_resource_count");
 						writer.Uint(resource.SubResourceCount);
@@ -2957,6 +3013,7 @@ namespace LambdaEngine
 					EditorResource resource = {};
 					resource.Name					= resourceObject["name"].GetString();
 					resource.Type					= RenderGraphResourceTypeFromString(resourceObject["type"].GetString());
+					resource.BackBufferBound		= resourceObject.HasMember("back_buffer_bound") ? resourceObject["back_buffer_bound"].GetBool() : false;
 					resource.SubResourceCount		= resourceObject["sub_resource_count"].GetUint();
 					resource.IsOfArrayType			= resourceObject.HasMember("is_of_array_type") ? resourceObject["is_of_array_type"].GetBool() : false;
 					resource.TextureFormat			= resourceObject["texture_format"].GetUint();
@@ -3927,6 +3984,7 @@ namespace LambdaEngine
 			RenderGraphResourceDesc parsedResource = {};
 			parsedResource.Name						= resource.Name;
 			parsedResource.Type						= resource.Type;
+			parsedResource.BackBufferBound			= resource.BackBufferBound;
 			parsedResource.SubResourceCount			= resource.SubResourceCount;
 			parsedResource.IsOfArrayType			= resource.IsOfArrayType;
 			parsedResource.TextureFormat			= TEXTURE_FORMATS[resource.TextureFormat];

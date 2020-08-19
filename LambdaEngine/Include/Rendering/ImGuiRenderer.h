@@ -63,8 +63,8 @@ namespace LambdaEngine
 
 		//virtual void UpdatePushConstants(void* pData, uint32 dataSize)	override final;
 
-		virtual void UpdateTextureResource(const String& resourceName, const ITextureView* const* ppTextureViews, uint32 count) override final;
-		virtual void UpdateBufferResource(const String& resourceName, const IBuffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count) override final;
+		virtual void UpdateTextureResource(const String& resourceName, const ITextureView* const* ppTextureViews, uint32 count, bool backBufferBound) override final;
+		virtual void UpdateBufferResource(const String& resourceName, const IBuffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const IAccelerationStructure* pAccelerationStructure) override final;
 
 		virtual void NewFrame(Timestamp delta)		override final;

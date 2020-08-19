@@ -29,10 +29,10 @@
 
 namespace LambdaEngine
 {
-	constexpr const uint32 SAME_QUEUE_BACK_BUFFER_SYNCHRONIZATION_INDEX		= 0;
-	constexpr const uint32 SAME_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX			= 1;
-	constexpr const uint32 OTHER_QUEUE_BACK_BUFFER_SYNCHRONIZATION_INDEX	= 2;
-	constexpr const uint32 OTHER_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX		= 3;
+	constexpr const uint32 SAME_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX	= 0;
+	constexpr const uint32 SAME_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX				= 1;
+	constexpr const uint32 OTHER_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX	= 2;
+	constexpr const uint32 OTHER_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX			= 3;
 
 	constexpr const uint32 SAME_QUEUE_BUFFER_SYNCHRONIZATION_INDEX			= 0;
 	constexpr const uint32 OTHER_QUEUE_BUFFER_SYNCHRONIZATION_INDEX			= 1;
@@ -304,19 +304,36 @@ namespace LambdaEngine
 								pResource->Buffer.Buffers.data(),
 								pResource->Buffer.Offsets.data(),
 								pResource->Buffer.SizesInBytes.data(),
-								pResource->SubResourceCount);
+								pResource->SubResourceCount,
+								pResource->BackBufferBound);
 						}
 						else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_UNKNOWN)
 						{
-							for (uint32 b = 0; b < m_BackBufferCount; b++)
+							if (pResource->BackBufferBound)
 							{
-								pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
-									pResource->Buffer.Buffers.data(),
-									pResource->Buffer.Offsets.data(),
-									pResource->Buffer.SizesInBytes.data(),
-									pResourceBinding->Binding,
-									pResource->SubResourceCount,
-									pResourceBinding->DescriptorType);
+								for (uint32 b = 0; b < m_BackBufferCount; b++)
+								{
+									pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
+										&pResource->Buffer.Buffers[b],
+										&pResource->Buffer.Offsets[b],
+										&pResource->Buffer.SizesInBytes[b],
+										pResourceBinding->Binding,
+										1,
+										pResourceBinding->DescriptorType);
+								}
+							}
+							else
+							{
+								for (uint32 b = 0; b < m_BackBufferCount; b++)
+								{
+									pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
+										pResource->Buffer.Buffers.data(),
+										pResource->Buffer.Offsets.data(),
+										pResource->Buffer.SizesInBytes.data(),
+										pResourceBinding->Binding,
+										pResource->SubResourceCount,
+										pResourceBinding->DescriptorType);
+								}
 							}
 						}
 					}
@@ -396,11 +413,12 @@ namespace LambdaEngine
 						pRenderStage->pCustomRenderer->UpdateTextureResource(
 							pResource->Name,
 							pResource->Texture.TextureViews.data(),
-							pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount);
+							pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount,
+							pResource->BackBufferBound);
 					}
 					else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_UNKNOWN)
 					{
-						if (pResource->IsBackBuffer)
+						if (pResource->BackBufferBound)
 						{
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
@@ -811,8 +829,9 @@ namespace LambdaEngine
 
 			pResource->Name				= pResourceDesc->Name;
 			pResource->IsBackBuffer		= pResourceDesc->Name == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+			pResource->BackBufferBound	= pResource->IsBackBuffer || pResourceDesc->BackBufferBound;
 
-			if (pResource->IsBackBuffer)
+			if (pResource->BackBufferBound)
 			{
 				pResource->SubResourceCount = m_BackBufferCount;
 			}
@@ -959,7 +978,8 @@ namespace LambdaEngine
 					//Todo: Review this, this seems retarded
 					if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::COMBINED_SAMPLER)
 					{
-						uint32 actualResourceSubResourceCount = pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount; //Samplers which are of array type only take up one slot
+						//Samplers which are of array type only take up one slot, same for back buffer bound resources
+						uint32 actualResourceSubResourceCount = (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount; 
 
 						if (textureSubResourceCount > 0 && actualResourceSubResourceCount != textureSubResourceCount)
 							textureSubResourceCountSame = false;
@@ -1057,9 +1077,9 @@ namespace LambdaEngine
 					{
 						ETextureState textureState = CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType, pResource->Texture.Format);
 
-						uint32 actualSubResourceCount		= pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount;
+						uint32 actualSubResourceCount		= (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount;
 
-						descriptorBinding.DescriptorCount	= pResource->IsBackBuffer ? 1 : (uint32)glm::ceil((float)actualSubResourceCount / pRenderStage->TextureSubDescriptorSetCount);
+						descriptorBinding.DescriptorCount	= (uint32)glm::ceil((float)actualSubResourceCount / pRenderStage->TextureSubDescriptorSetCount);
 						descriptorBinding.Binding			= textureDescriptorBindingIndex++;
 
 						textureDescriptorSetDescriptions.push_back(descriptorBinding);
@@ -1079,7 +1099,6 @@ namespace LambdaEngine
 				{
 					if (pResource->SubResourceCount > 1 && pResource->SubResourceCount != m_BackBufferCount)
 					{
-						//Todo: Maybe allow resources to have a subresource count which always equals back buffer count
 						LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but does not have a subresource count equal to 1 or Back buffer Count: %u", pResource->Name.c_str(), pResource->SubResourceCount);
 						return false;
 					}
@@ -1548,9 +1567,9 @@ namespace LambdaEngine
 
 					if (prevQueue == nextQueue)
 					{
-						if (pResource->IsBackBuffer)
+						if (pResource->BackBufferBound)
 						{
-							targetSynchronizationIndex = SAME_QUEUE_BACK_BUFFER_SYNCHRONIZATION_INDEX;
+							targetSynchronizationIndex = SAME_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX;
 						}
 						else
 						{
@@ -1559,9 +1578,9 @@ namespace LambdaEngine
 					}
 					else
 					{
-						if (pResource->IsBackBuffer)
+						if (pResource->BackBufferBound)
 						{
-							targetSynchronizationIndex = OTHER_QUEUE_BACK_BUFFER_SYNCHRONIZATION_INDEX;
+							targetSynchronizationIndex = OTHER_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX;
 						}
 						else
 						{
@@ -1672,7 +1691,22 @@ namespace LambdaEngine
 
 	void RenderGraph::UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc& desc)
 	{
-		uint32 actualSubResourceCount = pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount;
+		uint32 actualSubResourceCount = 0;
+
+		if (pResource->BackBufferBound)
+		{
+			actualSubResourceCount = m_BackBufferCount;
+		}
+		else if (pResource->Texture.IsOfArrayType)
+		{
+			actualSubResourceCount = 1;
+		}
+		else
+		{
+			actualSubResourceCount = pResource->SubResourceCount;
+		}
+
+
 		for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
 		{
 			ITexture** ppTexture = &pResource->Texture.Textures[sr];
@@ -1817,8 +1851,10 @@ namespace LambdaEngine
 
 	void RenderGraph::UpdateResourceBuffer(Resource* pResource, const ResourceUpdateDesc& desc)
 	{
+		uint32 actualSubResourceCount = pResource->BackBufferBound ? m_BackBufferCount : pResource->SubResourceCount;
+
 		//Update Buffer
-		for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)
+		for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
 		{
 			const BufferDesc& bufferDesc = *desc.InternalBufferUpdate.ppBufferDesc[sr];
 
@@ -1843,8 +1879,10 @@ namespace LambdaEngine
 				return;
 			}
 
+			BufferDesc origBufferDesc = pBuffer->GetDesc();
+
 			(*ppBuffer)		= pBuffer;
-			(*pSizeInBytes) = pBuffer->GetDesc().SizeInBytes;
+			(*pSizeInBytes) = origBufferDesc.SizeInBytes;
 			(*pOffset)		= 0;
 
 			for (uint32 b = sr; b < pResource->Buffer.BarriersPerSynchronizationStage.size(); b += pResource->SubResourceCount)
@@ -1855,7 +1893,7 @@ namespace LambdaEngine
 				PipelineBufferBarrierDesc* pBufferBarrier = &pSynchronizationStage->BufferBarriers[pBarrierInfo->SynchronizationTypeIndex][pBarrierInfo->BarrierIndex];
 
 				pBufferBarrier->pBuffer		= pBuffer;
-				pBufferBarrier->SizeInBytes = pBuffer->GetDesc().SizeInBytes;
+				pBufferBarrier->SizeInBytes = origBufferDesc.SizeInBytes;
 				pBufferBarrier->Offset		= 0;
 			}
 		}
@@ -1922,9 +1960,9 @@ namespace LambdaEngine
 
 		//Texture Synchronizations
 		{
-			const TArray<PipelineTextureBarrierDesc>& sameQueueBackBufferBarriers	= pSynchronizationStage->TextureBarriers[SAME_QUEUE_BACK_BUFFER_SYNCHRONIZATION_INDEX];
+			const TArray<PipelineTextureBarrierDesc>& sameQueueBackBufferBarriers	= pSynchronizationStage->TextureBarriers[SAME_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX];
 			const TArray<PipelineTextureBarrierDesc>& sameQueueTextureBarriers		= pSynchronizationStage->TextureBarriers[SAME_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX];
-			const TArray<PipelineTextureBarrierDesc>& otherQueueBackBufferBarriers	= pSynchronizationStage->TextureBarriers[OTHER_QUEUE_BACK_BUFFER_SYNCHRONIZATION_INDEX];
+			const TArray<PipelineTextureBarrierDesc>& otherQueueBackBufferBarriers	= pSynchronizationStage->TextureBarriers[OTHER_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX];
 			const TArray<PipelineTextureBarrierDesc>& otherQueueTextureBarriers		= pSynchronizationStage->TextureBarriers[OTHER_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX];
 
 			if (sameQueueBackBufferBarriers.size() > 0)
@@ -1995,6 +2033,7 @@ namespace LambdaEngine
 		uint32 clearColorCount = 0;
 		for (Resource* pResource : pRenderStage->RenderTargetResources)
 		{
+			//Assume resource is Back Buffer Bound if there is more than 1 Texture View
 			ppTextureViews[textureViewCount++] = pResource->Texture.TextureViews.size() > 1 ? pResource->Texture.TextureViews[m_BackBufferIndex] : pResource->Texture.TextureViews[0];
 
 			clearColorDescriptions[clearColorCount].Color[0]	= 0.0f;

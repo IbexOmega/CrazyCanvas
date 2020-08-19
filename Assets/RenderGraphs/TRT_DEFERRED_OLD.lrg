@@ -3,7 +3,6 @@
         {
             "name": "BACK_BUFFER_TEXTURE",
             "type": "TEXTURE",
-            "back_buffer_bound": false,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": false,
@@ -12,7 +11,6 @@
         {
             "name": "FULLSCREEN_QUAD_VERTEX_BUFFER",
             "type": "BUFFER",
-            "back_buffer_bound": false,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": false,
@@ -21,7 +19,6 @@
         {
             "name": "PER_FRAME_BUFFER",
             "type": "BUFFER",
-            "back_buffer_bound": false,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": false,
@@ -30,7 +27,6 @@
         {
             "name": "SCENE_LIGHTS_BUFFER",
             "type": "BUFFER",
-            "back_buffer_bound": false,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": false,
@@ -39,7 +35,6 @@
         {
             "name": "SCENE_MAT_PARAM_BUFFER",
             "type": "BUFFER",
-            "back_buffer_bound": false,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": false,
@@ -48,7 +43,6 @@
         {
             "name": "SCENE_VERTEX_BUFFER",
             "type": "BUFFER",
-            "back_buffer_bound": false,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": false,
@@ -57,7 +51,6 @@
         {
             "name": "SCENE_INDEX_BUFFER",
             "type": "BUFFER",
-            "back_buffer_bound": false,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": false,
@@ -66,7 +59,6 @@
         {
             "name": "SCENE_INSTANCE_BUFFER",
             "type": "BUFFER",
-            "back_buffer_bound": false,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": false,
@@ -75,7 +67,6 @@
         {
             "name": "SCENE_INDIRECT_ARGS_BUFFER",
             "type": "BUFFER",
-            "back_buffer_bound": false,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": false,
@@ -84,7 +75,6 @@
         {
             "name": "SCENE_TLAS",
             "type": "ACCELERATION_STRUCTURE",
-            "back_buffer_bound": false,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": false,
@@ -93,7 +83,6 @@
         {
             "name": "SCENE_ALBEDO_MAPS",
             "type": "TEXTURE",
-            "back_buffer_bound": false,
             "sub_resource_count": 32,
             "is_of_array_type": false,
             "editable": false,
@@ -102,7 +91,6 @@
         {
             "name": "SCENE_NORMAL_MAPS",
             "type": "TEXTURE",
-            "back_buffer_bound": false,
             "sub_resource_count": 32,
             "is_of_array_type": false,
             "editable": false,
@@ -111,7 +99,6 @@
         {
             "name": "SCENE_AO_MAPS",
             "type": "TEXTURE",
-            "back_buffer_bound": false,
             "sub_resource_count": 32,
             "is_of_array_type": false,
             "editable": false,
@@ -120,7 +107,6 @@
         {
             "name": "SCENE_ROUGHNESS_MAPS",
             "type": "TEXTURE",
-            "back_buffer_bound": false,
             "sub_resource_count": 32,
             "is_of_array_type": false,
             "editable": false,
@@ -129,7 +115,6 @@
         {
             "name": "SCENE_METALLIC_MAPS",
             "type": "TEXTURE",
-            "back_buffer_bound": false,
             "sub_resource_count": 32,
             "is_of_array_type": false,
             "editable": false,
@@ -138,7 +123,6 @@
         {
             "name": "G_BUFFER_ALBEDO_AO",
             "type": "TEXTURE",
-            "back_buffer_bound": true,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": true,
@@ -147,7 +131,6 @@
         {
             "name": "G_BUFFER_NORM_MET_ROUGH",
             "type": "TEXTURE",
-            "back_buffer_bound": true,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": true,
@@ -156,16 +139,14 @@
         {
             "name": "G_BUFFER_DEPTH_STENCIL",
             "type": "TEXTURE",
-            "back_buffer_bound": true,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": true,
             "texture_format": 5
         },
         {
-            "name": "DIRECT_RADIANCE",
+            "name": "RADIANCE",
             "type": "TEXTURE",
-            "back_buffer_bound": false,
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": true,
@@ -174,20 +155,10 @@
         {
             "name": "BLUE_NOISE_LUT",
             "type": "TEXTURE",
-            "back_buffer_bound": false,
             "sub_resource_count": 512,
             "is_of_array_type": true,
             "editable": true,
             "texture_format": 6
-        },
-        {
-            "name": "INDIRECT_RADIANCE",
-            "type": "TEXTURE",
-            "back_buffer_bound": false,
-            "sub_resource_count": 1,
-            "is_of_array_type": false,
-            "editable": true,
-            "texture_format": 4
         }
     ],
     "resource_state_groups": [
@@ -380,7 +351,7 @@
             "node_index": 2,
             "resource_states": [
                 {
-                    "name": "DIRECT_RADIANCE",
+                    "name": "RADIANCE",
                     "render_stage_name": "TEMPORAL_RESOURCES",
                     "removable": true,
                     "binding_type": "COMBINED_SAMPLER",
@@ -388,50 +359,6 @@
                     "input_link_index": -1,
                     "output_link_indices": [
                         36
-                    ]
-                },
-                {
-                    "name": "INDIRECT_RADIANCE",
-                    "render_stage_name": "TEMPORAL_RESOURCES",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 134,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        40
-                    ]
-                },
-                {
-                    "name": "G_BUFFER_ALBEDO_AO",
-                    "render_stage_name": "TEMPORAL_RESOURCES",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 136,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        41
-                    ]
-                },
-                {
-                    "name": "G_BUFFER_NORM_MET_ROUGH",
-                    "render_stage_name": "TEMPORAL_RESOURCES",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 138,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        42
-                    ]
-                },
-                {
-                    "name": "G_BUFFER_DEPTH_STENCIL",
-                    "render_stage_name": "TEMPORAL_RESOURCES",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 140,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        43
                     ]
                 }
             ]
@@ -599,7 +526,7 @@
                     "removable": true,
                     "binding_type": "ATTACHMENT",
                     "attribute_index": 60,
-                    "input_link_index": 41,
+                    "input_link_index": -1,
                     "output_link_indices": [
                         15,
                         26
@@ -611,7 +538,7 @@
                     "removable": true,
                     "binding_type": "ATTACHMENT",
                     "attribute_index": 62,
-                    "input_link_index": 42,
+                    "input_link_index": -1,
                     "output_link_indices": [
                         16,
                         27
@@ -623,7 +550,7 @@
                     "removable": true,
                     "binding_type": "ATTACHMENT",
                     "attribute_index": 64,
-                    "input_link_index": 43,
+                    "input_link_index": -1,
                     "output_link_indices": [
                         17,
                         28
@@ -720,21 +647,12 @@
                     "output_link_indices": []
                 },
                 {
-                    "name": "DIRECT_RADIANCE",
+                    "name": "RADIANCE",
                     "render_stage_name": "SHADING",
                     "removable": true,
                     "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 118,
                     "input_link_index": 34,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "INDIRECT_RADIANCE",
-                    "render_stage_name": "SHADING",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 132,
-                    "input_link_index": 39,
                     "output_link_indices": []
                 },
                 {
@@ -928,7 +846,7 @@
                     "output_link_indices": []
                 },
                 {
-                    "name": "DIRECT_RADIANCE",
+                    "name": "RADIANCE",
                     "render_stage_name": "RAY_TRACING",
                     "removable": true,
                     "binding_type": "UNORDERED_ACCESS_RW",
@@ -936,17 +854,6 @@
                     "input_link_index": 36,
                     "output_link_indices": [
                         34
-                    ]
-                },
-                {
-                    "name": "INDIRECT_RADIANCE",
-                    "render_stage_name": "RAY_TRACING",
-                    "removable": true,
-                    "binding_type": "UNORDERED_ACCESS_RW",
-                    "attribute_index": 130,
-                    "input_link_index": 40,
-                    "output_link_indices": [
-                        39
                     ]
                 }
             ]
@@ -1142,31 +1049,6 @@
             "link_index": 38,
             "src_attribute_index": 127,
             "dst_attribute_index": 128
-        },
-        {
-            "link_index": 39,
-            "src_attribute_index": 131,
-            "dst_attribute_index": 132
-        },
-        {
-            "link_index": 40,
-            "src_attribute_index": 135,
-            "dst_attribute_index": 130
-        },
-        {
-            "link_index": 41,
-            "src_attribute_index": 137,
-            "dst_attribute_index": 60
-        },
-        {
-            "link_index": 42,
-            "src_attribute_index": 139,
-            "dst_attribute_index": 62
-        },
-        {
-            "link_index": 43,
-            "src_attribute_index": 141,
-            "dst_attribute_index": 64
         }
     ]
 }

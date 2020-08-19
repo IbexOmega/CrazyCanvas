@@ -53,8 +53,9 @@ namespace LambdaEngine
 		*	resourceName - Name of the resource being updated
 		*	ppTextureViews - An array of textureviews that represent the update data
 		*	count - Size of ppTextureViews
+		*	backBufferBound - Describes if subresources are bound in array or 1 / Back buffer
 		*/
-		virtual void UpdateTextureResource(const String& resourceName, const ITextureView* const * ppTextureViews, uint32 count)	= 0;
+		virtual void UpdateTextureResource(const String& resourceName, const ITextureView* const * ppTextureViews, uint32 count, bool backBufferBound)	= 0;
 		/*
 		* Called when a ResourceUpdate is scheduled in the RenderGraph for the given buffer
 		*	resourceName - Name of the resource being updated
@@ -62,8 +63,9 @@ namespace LambdaEngine
 		*	pOffsets - An array of offsets into each ppBuffers entry
 		*	pSizesInBytes - An array of sizes representing the data size of each target sub entry in each ppBuffers entry
 		*	count - size of ppBuffers, pOffsets and pSizesInBytes
+		*	backBufferBound - Describes if subresources are bound in array or 1 / Back buffer
 		*/
-		virtual void UpdateBufferResource(const String& resourceName, const IBuffer* const * ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count)	= 0;
+		virtual void UpdateBufferResource(const String& resourceName, const IBuffer* const * ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)	= 0;
 		/*
 		* Called when a ResourceUpdate is scheduled in the RenderGraph for the given acceleration structure
 		*	resourceName - Name of the resource being updated

@@ -186,60 +186,94 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(dataSize);
 	}*/
 
-	void ImGuiRenderer::UpdateTextureResource(const String& resourceName, const ITextureView* const* ppTextureViews, uint32 count)
+	void ImGuiRenderer::UpdateTextureResource(const String& resourceName, const ITextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
 	{
-		if (count == 1)
+		if (count == 1 || backBufferBound)
 		{
-			auto textureIt = m_TextureResourceNameDescriptorSetsMap.find(resourceName);
-
-			if (textureIt == m_TextureResourceNameDescriptorSetsMap.end())
+			if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 			{
-				TArray<IDescriptorSet*>& descriptorSets = m_TextureResourceNameDescriptorSetsMap[resourceName];
-				descriptorSets.resize(count);
-
-				for (uint32 b = 0; b < count; b++)
-				{
-					IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_pPipelineLayout, 0, m_pDescriptorHeap);
-					descriptorSets[b] = pDescriptorSet;
-
-					pDescriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
-				}
+				memcpy(m_ppBackBuffers, ppTextureViews, m_BackBufferCount * sizeof(ITextureView*));
 			}
 			else
 			{
-				TArray<IDescriptorSet*>& descriptorSets = m_TextureResourceNameDescriptorSetsMap[resourceName];
+				auto textureIt = m_TextureResourceNameDescriptorSetsMap.find(resourceName);
 
-				if (descriptorSets.size() == count)
+				if (textureIt == m_TextureResourceNameDescriptorSetsMap.end())
 				{
-					for (uint32 b = 0; b < count; b++)
+					TArray<IDescriptorSet*>& descriptorSets = m_TextureResourceNameDescriptorSetsMap[resourceName];
+
+					if (backBufferBound)
 					{
-						IDescriptorSet* pDescriptorSet = descriptorSets[b];
-						pDescriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
+						descriptorSets.resize(m_BackBufferCount);
+
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						{
+							IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_pPipelineLayout, 0, m_pDescriptorHeap);
+							descriptorSets[b] = pDescriptorSet;
+
+							pDescriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
+						}
+					}
+					else
+					{
+						descriptorSets.resize(count);
+
+						for (uint32 b = 0; b < count; b++)
+						{
+							IDescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_pPipelineLayout, 0, m_pDescriptorHeap);
+							descriptorSets[b] = pDescriptorSet;
+
+							pDescriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
+						}
 					}
 				}
 				else
 				{
-					LOG_ERROR("[ImGuiRenderer]: Texture count changed between calls to UpdateTextureResource for resource \"%s\"", resourceName.c_str());
+					TArray<IDescriptorSet*>& descriptorSets = m_TextureResourceNameDescriptorSetsMap[resourceName];
+
+					if (backBufferBound)
+					{
+						if (descriptorSets.size() == m_BackBufferCount)
+						{
+							for (uint32 b = 0; b < m_BackBufferCount; b++)
+							{
+								IDescriptorSet* pDescriptorSet = descriptorSets[b];
+								pDescriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
+							}
+						}
+					}
+					else
+					{
+						if (descriptorSets.size() == count)
+						{
+							for (uint32 b = 0; b < count; b++)
+							{
+								IDescriptorSet* pDescriptorSet = descriptorSets[b];
+								pDescriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER);
+							}
+						}
+						else
+						{
+							LOG_ERROR("[ImGuiRenderer]: Texture count changed between calls to UpdateTextureResource for resource \"%s\"", resourceName.c_str());
+						}
+					}
 				}
 			}
 		}
-		else if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
-		{
-			memcpy(m_ppBackBuffers, ppTextureViews, m_BackBufferCount * sizeof(ITextureView*));
-		}
 		else
 		{
-			LOG_WARNING("[ImGuiRenderer]: Textures with count > 1 is not implemented");
+			LOG_WARNING("[ImGuiRenderer]: Textures with count > 1 and not BackBufferBound is not implemented");
 		}
 	}
 
-	void ImGuiRenderer::UpdateBufferResource(const String& resourceName, const IBuffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count)
+	void ImGuiRenderer::UpdateBufferResource(const String& resourceName, const IBuffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(ppBuffers);
 		UNREFERENCED_VARIABLE(pOffsets);
 		UNREFERENCED_VARIABLE(pSizesInBytes);
 		UNREFERENCED_VARIABLE(count);
+		UNREFERENCED_VARIABLE(backBufferBound);
 	}
 
 	void ImGuiRenderer::UpdateAccelerationStructureResource(const String& resourceName, const IAccelerationStructure* pAccelerationStructure)
@@ -454,8 +488,15 @@ namespace LambdaEngine
 
 						const TArray<IDescriptorSet*>& descriptorSets = textureIt->second;
 
-						//Todo: Do not assume 0 here, could be more textures
-						pCommandList->BindDescriptorSetGraphics(descriptorSets[0], m_pPipelineLayout, 0);
+						//Todo: Allow other sizes than 1
+						if (descriptorSets.size() == 1)
+						{
+							pCommandList->BindDescriptorSetGraphics(descriptorSets[0], m_pPipelineLayout, 0);
+						}
+						else
+						{
+							pCommandList->BindDescriptorSetGraphics(descriptorSets[backBufferIndex], m_pPipelineLayout, 0);
+						}
 					}
 					else
 					{
