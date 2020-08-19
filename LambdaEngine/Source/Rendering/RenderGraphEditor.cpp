@@ -347,7 +347,18 @@ namespace LambdaEngine
 
 		{
 			EditorResource resource = {};
-			resource.Name						= SCENE_INSTANCE_BUFFER;
+			resource.Name						= SCENE_PRIMARY_INSTANCE_BUFFER;
+			resource.Type						= ERenderGraphResourceType::BUFFER;
+			resource.SubResourceCount			= 1;
+			resource.Editable					= false;
+			m_Resources.push_back(resource);
+
+			externalResourcesGroup.ResourceStateIdents.push_back(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+		}
+
+		{
+			EditorResource resource = {};
+			resource.Name						= SCENE_SECONDARY_INSTANCE_BUFFER;
 			resource.Type						= ERenderGraphResourceType::BUFFER;
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
@@ -1575,7 +1586,10 @@ namespace LambdaEngine
 						auto resourceStateIdentIt = pRenderStage->FindResourceStateIdent(resourceIt->Name);
 
 						if (resourceStateIdentIt == pRenderStage->ResourceStateIdents.end())
+						{
 							pRenderStage->ResourceStateIdents.push_back(CreateResourceState(resourceIt->Name, pRenderStage->Name, true, ERenderGraphResourceBindingType::NONE));
+							resourceStateIdentIt = pRenderStage->ResourceStateIdents.begin() + (pRenderStage->ResourceStateIdents.size() - 1);
+						}
 
 						dstAttributeIndex = resourceStateIdentIt->AttributeIndex;
 					}

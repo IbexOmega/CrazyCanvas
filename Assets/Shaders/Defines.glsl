@@ -29,13 +29,18 @@ struct SVertex
     vec4    TexCoord;
 };
 
-struct SInstance
+struct SPrimaryInstance
 {
     mat3x4  Transform;
     uint    Mask_MeshMaterialIndex;
     uint    SBTRecordOffset_Flags;
     uint    AccelerationStructureHandleTop32;
     uint    AccelerationStructureHandleBottom32;
+};
+
+struct SSecondaryInstance
+{
+    mat4    PrevTransform;
 };
 
 struct SMeshIndexDesc
@@ -59,8 +64,8 @@ struct SPerFrameBuffer
 {
     mat4 Projection;
 	mat4 View;
-	mat4 LastProjection;
-	mat4 LastView;
+	mat4 PrevProjection;
+	mat4 PrevView;
 	mat4 ViewInv;
 	mat4 ProjectionInv;
 	vec4 Position;

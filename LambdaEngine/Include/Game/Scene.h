@@ -51,7 +51,7 @@ namespace LambdaEngine
 		bool	RayTracingEnabled	= false;
 	};
 
-	struct Instance
+	struct InstancePrimary
 	{
 		glm::mat3x4 Transform;
 		uint32 MeshMaterialIndex : 24;
@@ -59,6 +59,11 @@ namespace LambdaEngine
 		uint32 SBTRecordOffset : 24;
 		uint32 Flags : 8;
 		uint64 AccelerationStructureAddress;
+	};
+
+	struct InstanceSecondary
+	{
+		glm::mat4 PrevTransform;
 	};
 
 	class LAMBDA_API Scene
@@ -127,8 +132,9 @@ namespace LambdaEngine
 		FORCEINLINE IBuffer*						GetMaterialProperties()			{ return m_pSceneMaterialProperties; }	
 		FORCEINLINE IBuffer*						GetVertexBuffer()				{ return m_pSceneVertexBuffer; }		
 		FORCEINLINE IBuffer*						GetIndexBuffer()				{ return m_pSceneIndexBuffer; }		
-		FORCEINLINE IBuffer*						GetInstanceBufer()				{ return m_pSceneInstanceBuffer; }
-		FORCEINLINE IBuffer*						GetIndirectArgsBuffer()			{ return m_pSceneMeshIndexBuffer; }	
+		FORCEINLINE IBuffer*						GetPrimaryInstanceBuffer()		{ return m_pScenePrimaryInstanceBuffer; }
+		FORCEINLINE IBuffer*						GetSecondaryInstanceBuffer()	{ return m_pSceneSecondaryInstanceBuffer; }
+		FORCEINLINE IBuffer*						GetIndirectArgsBuffer()			{ return m_pSceneIndirectArgsBuffer; }	
 
 	private:
 		const IGraphicsDevice*						m_pGraphicsDevice;
@@ -160,8 +166,9 @@ namespace LambdaEngine
 		IBuffer*									m_pSceneMaterialPropertiesCopyBuffer	= nullptr;
 		IBuffer*									m_pSceneVertexCopyBuffer				= nullptr;
 		IBuffer*									m_pSceneIndexCopyBuffer					= nullptr;
-		IBuffer*									m_pSceneInstanceCopyBuffer				= nullptr;
-		IBuffer*									m_pSceneMeshIndexCopyBuffer				= nullptr;
+		IBuffer*									m_pScenePrimaryInstanceCopyBuffer		= nullptr;
+		IBuffer*									m_pSceneSecondaryInstanceCopyBuffer		= nullptr;
+		IBuffer*									m_pSceneIndirectArgsCopyBuffer			= nullptr;
 
 		IBuffer*									m_pLightsBuffer							= nullptr;
 		IBuffer*									m_pPerFrameBuffer						= nullptr;
@@ -179,16 +186,18 @@ namespace LambdaEngine
 		std::vector<ITextureView*>					m_SceneRoughnessMapViews;
 		
 		IBuffer*									m_pSceneMaterialProperties		= nullptr;		//Indexed with result from IndirectMeshArgument::MaterialIndex, contains Scene Material Properties
-		IBuffer*									m_pSceneVertexBuffer			= nullptr;			//Indexed with result from Scene::m_pBaseVertexIndexBuffer + Scene::m_pSceneIndexBuffer and contains Scene Vertices
-		IBuffer*									m_pSceneIndexBuffer				= nullptr;			//Indexed with result from Scene::m_pMeshIndexBuffer + primitiveID * 3 + triangleCornerID and contains indices to Scene::m_pSceneVertexBuffer
-		IBuffer*									m_pSceneInstanceBuffer			= nullptr;			/*Indexed with InstanceID and contains per instance data, we can figure out the InstanceID during shading by using
-																						IndirectMeshArgument::BaseInstanceIndex, IndirectMeshArgument::VertexCount and primitiveID <-- Relative to drawID*/
-
-		IBuffer*									m_pSceneMeshIndexBuffer			= nullptr;		/*Indexed with drawID when Shading and contains IndirectMeshArgument structs, primarily:
-																						IndirectMeshArgument::FirstIndex		will be used as BaseIndex to m_pSceneIndexBuffer, 
-																						IndirectMeshArgument::BaseVertexIndex	will be used as BaseIndex to m_pSceneVertexBuffer,
-																						IndirectMeshArgument::MaterialIndex		will be used as MaterialIndex to MaterialBuffers,
-																						IndirectMeshArgument::BaseInstanceIndex will be used as BaseIndex to m_pSceneInstanceBuffer*/
+		IBuffer*									m_pSceneVertexBuffer			= nullptr;		//Indexed with result from Scene::m_pBaseVertexIndexBuffer + Scene::m_pSceneIndexBuffer and contains Scene Vertices
+		IBuffer*									m_pSceneIndexBuffer				= nullptr;		//Indexed with result from Scene::m_pMeshIndexBuffer + primitiveID * 3 + triangleCornerID and contains indices to Scene::m_pSceneVertexBuffer
+		IBuffer*									m_pScenePrimaryInstanceBuffer	= nullptr;		/*Indexed with InstanceID and contains per instance data (must be same as VkAccelerationStructureInstanceKHR since this buffer is used as instance buffer for ray tracing),
+																										we can figure out the InstanceID during shading by using
+																										IndexedIndirectMeshArgument::BaseInstanceIndex, IndexedIndirectMeshArgument::VertexCount and primitiveID <-- Relative to drawID*/
+		IBuffer*									m_pSceneSecondaryInstanceBuffer	= nullptr;		/*Because m_pScenePrimaryInstanceBuffer is used as ray tracing instance buffer we cant fit all per instance data in it, 
+																										the rest of the data goes into this buffer instead. This Buffer contains elements of type InstanceSecondary*/
+		IBuffer*									m_pSceneIndirectArgsBuffer		= nullptr;		/*Indexed with drawID when Shading and contains IndexedIndirectMeshArgument structs, primarily:
+																										IndexedIndirectMeshArgument::FirstIndex		will be used as BaseIndex to m_pSceneIndexBuffer, 
+																										IndexedIndirectMeshArgument::BaseVertexIndex	will be used as BaseIndex to m_pSceneVertexBuffer,
+																										IndexedIndirectMeshArgument::MaterialIndex		will be used as MaterialIndex to MaterialBuffers,
+																										IndexedIndirectMeshArgument::BaseInstanceIndex will be used as BaseIndex to m_pSceneInstanceBuffer*/
 
 		std::map<GUID_Lambda, uint32>				m_GUIDToMappedMeshes;
 		std::vector<MappedMesh>						m_MappedMeshes;
@@ -199,8 +208,10 @@ namespace LambdaEngine
 		std::map<GUID_Lambda, uint32>				m_GUIDToMaterials;
 		std::vector<const Material*>				m_Materials;
 
-		std::vector<Instance>						m_Instances;
-		std::vector<Instance>						m_SortedInstances;
+		std::vector<InstancePrimary>				m_PrimaryInstances;
+		std::vector<InstanceSecondary>				m_SecondaryInstances;
+		std::vector<InstancePrimary>				m_SortedPrimaryInstances;
+		std::vector<InstanceSecondary>				m_SortedSecondaryInstances;
 
 		bool										m_RayTracingEnabled			= false;
 		IAccelerationStructure*						m_pTLAS						= nullptr;

@@ -84,8 +84,8 @@ namespace LambdaEngine
 			m_View = glm::lookAt(m_Position, m_Position + m_Forward, m_Up);
 			m_ViewInv = glm::inverse(m_View);
 
-			m_Data.LastProjection	= m_Data.Projection;
-			m_Data.LastView			= m_Data.View;
+			m_Data.PrevProjection	= m_Data.Projection;
+			m_Data.PrevView			= m_Data.View;
 			m_Data.Projection		= m_Projection;
 			m_Data.View				= m_View;
 			m_Data.ViewInv			= m_ViewInv;
@@ -98,8 +98,8 @@ namespace LambdaEngine
 		}
 		else if (m_LastIsDirty)
 		{
-			m_Data.LastProjection	= m_Data.Projection;
-			m_Data.LastView			= m_Data.View;
+			m_Data.PrevProjection	= m_Data.Projection;
+			m_Data.PrevView			= m_Data.View;
 
 			m_LastIsDirty = false;
 		}

@@ -9,8 +9,8 @@ namespace LambdaEngine
 	{
 		glm::mat4 Projection		= glm::mat4(1.0f);
 		glm::mat4 View				= glm::mat4(1.0f);
-		glm::mat4 LastProjection	= glm::mat4(1.0f);
-		glm::mat4 LastView			= glm::mat4(1.0f);
+		glm::mat4 PrevProjection	= glm::mat4(1.0f);
+		glm::mat4 PrevView			= glm::mat4(1.0f);
 		glm::mat4 ViewInv			= glm::mat4(1.0f);
 		glm::mat4 ProjectionInv		= glm::mat4(1.0f);
 		glm::vec4 Position			= glm::vec4(0.0f);

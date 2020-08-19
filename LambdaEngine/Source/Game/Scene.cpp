@@ -44,15 +44,17 @@ namespace LambdaEngine
 		SAFERELEASE(m_pSceneMaterialPropertiesCopyBuffer);
 		SAFERELEASE(m_pSceneVertexCopyBuffer);
 		SAFERELEASE(m_pSceneIndexCopyBuffer);
-		SAFERELEASE(m_pSceneInstanceCopyBuffer);
-		SAFERELEASE(m_pSceneMeshIndexCopyBuffer);
+		SAFERELEASE(m_pScenePrimaryInstanceCopyBuffer);
+		SAFERELEASE(m_pSceneSecondaryInstanceCopyBuffer);
+		SAFERELEASE(m_pSceneIndirectArgsCopyBuffer);
 		SAFERELEASE(m_pLightsBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
 		SAFERELEASE(m_pSceneMaterialProperties);
 		SAFERELEASE(m_pSceneVertexBuffer);
 		SAFERELEASE(m_pSceneIndexBuffer);
-		SAFERELEASE(m_pSceneInstanceBuffer);
-		SAFERELEASE(m_pSceneMeshIndexBuffer);
+		SAFERELEASE(m_pScenePrimaryInstanceBuffer);
+		SAFERELEASE(m_pSceneSecondaryInstanceBuffer);
+		SAFERELEASE(m_pSceneIndirectArgsBuffer);
 
 		SAFERELEASE(m_pDeviceAllocator);
 
@@ -104,17 +106,21 @@ namespace LambdaEngine
 
 	uint32 Scene::AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform)
 	{
-		Instance instance = {};
-		instance.Transform						= glm::transpose(transform);
-		instance.MeshMaterialIndex				= 0;
-		instance.Mask							= 0;
-		instance.SBTRecordOffset				= 0;
-		instance.Flags							= 0;
-		instance.AccelerationStructureAddress	= 0;
+		InstancePrimary primaryInstance = {};
+		primaryInstance.Transform						= glm::transpose(transform);
+		primaryInstance.MeshMaterialIndex				= 0;
+		primaryInstance.Mask							= 0;
+		primaryInstance.SBTRecordOffset					= 0;
+		primaryInstance.Flags							= 0;
+		primaryInstance.AccelerationStructureAddress	= 0;
 
-		m_Instances.push_back(instance);
+		InstanceSecondary secondaryInstance = {};
+		secondaryInstance.PrevTransform					= transform;
 
-		uint32 instanceIndex = uint32(m_Instances.size() - 1);
+		m_PrimaryInstances.push_back(primaryInstance);
+		m_SecondaryInstances.push_back(secondaryInstance);
+
+		uint32 instanceIndex = uint32(m_PrimaryInstances.size() - 1);
 		uint32 meshIndex = 0;
 
 		if (m_GUIDToMappedMeshes.count(gameObject.Mesh) == 0)
@@ -182,7 +188,7 @@ namespace LambdaEngine
 		if (it != m_MaterialIndexToIndirectArgOffsetMap.end())
 			return it->second;
 
-		return m_pSceneMeshIndexBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument);
+		return m_pSceneIndirectArgsBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument);
 	}
 
 	bool Scene::Init(const SceneDesc& desc)
@@ -300,7 +306,7 @@ namespace LambdaEngine
 			tlasDesc.pName			= "TLAS";
 			tlasDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP;
 			tlasDesc.Flags			= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;// FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-			tlasDesc.InstanceCount	= m_Instances.size();
+			tlasDesc.InstanceCount	= m_PrimaryInstances.size();
 
 			m_pTLAS = m_pGraphicsDevice->CreateAccelerationStructure(&tlasDesc, m_pDeviceAllocator);
 
@@ -380,8 +386,11 @@ namespace LambdaEngine
 		m_IndirectArgs.clear();
 		m_IndirectArgs.reserve(indirectArgCount);
 
-		m_SortedInstances.clear();
-		m_SortedInstances.reserve(m_Instances.size());
+		m_SortedPrimaryInstances.clear();
+		m_SortedPrimaryInstances.reserve(m_PrimaryInstances.size());
+
+		m_SortedSecondaryInstances.clear();
+		m_SortedSecondaryInstances.reserve(m_SecondaryInstances.size());
 
 		// Extra Loop to sort Indirect Args by Material
 		uint32 prevMaterialIndex = UINT32_MAX;
@@ -392,7 +401,7 @@ namespace LambdaEngine
 			IndexedIndirectMeshArgument& indirectArg = it->second.second;
 
 			uint32 instanceCount = (uint32)mappedMaterial.InstanceIndices.size();
-			uint32 baseInstanceIndex = (uint32)m_SortedInstances.size();
+			uint32 baseInstanceIndex = (uint32)m_SortedPrimaryInstances.size();
 
 			/*------------Ray Tracing Section Begin-------------*/
 			uint64 accelerationStructureDeviceAddress = ((((uint64)indirectArg.InstanceCount) << 32) & 0xFFFFFFFF00000000) | (((uint64)indirectArg.FirstInstance) & 0x00000000FFFFFFFF);
@@ -400,17 +409,19 @@ namespace LambdaEngine
 
 			for (uint32 instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
 			{
-				Instance instance = m_Instances[mappedMaterial.InstanceIndices[instanceIndex]];
-				instance.MeshMaterialIndex				= (uint32)m_IndirectArgs.size();
+				InstancePrimary primaryInstance		= m_PrimaryInstances[mappedMaterial.InstanceIndices[instanceIndex]];
+				InstanceSecondary secondaryInstance	= m_SecondaryInstances[mappedMaterial.InstanceIndices[instanceIndex]];
+				primaryInstance.MeshMaterialIndex				= (uint32)m_IndirectArgs.size();
 
 				/*------------Ray Tracing Section Begin-------------*/
-				instance.AccelerationStructureAddress	= accelerationStructureDeviceAddress;
-				instance.SBTRecordOffset				= 0;
-				instance.Flags							= 0x00000001; //Culling Disabled
-				instance.Mask							= 0xFF;
+				primaryInstance.AccelerationStructureAddress	= accelerationStructureDeviceAddress;
+				primaryInstance.SBTRecordOffset					= 0;
+				primaryInstance.Flags							= 0x00000001; //Culling Disabled
+				primaryInstance.Mask							= 0xFF;
 				/*-------------Ray Tracing Section End--------------*/
 
-				m_SortedInstances.push_back(instance);
+				m_SortedPrimaryInstances.push_back(primaryInstance);
+				m_SortedSecondaryInstances.push_back(secondaryInstance);
 			}
 
 			if (prevMaterialIndex != currentMaterialIndex)
@@ -426,23 +437,37 @@ namespace LambdaEngine
 			m_IndirectArgs.push_back(indirectArg);
 		}
 
-		// Create InstanceBuffer
-		{
-			uint32 sceneInstanceBufferSize = uint32(m_SortedInstances.size() * sizeof(Instance));
+		//// Create InstanceBuffers
+		//{
+		//	uint32 scenePrimaryInstanceBufferSize = uint32(m_SortedInstances.size() * sizeof(InstancePrimary));
+		//	uint32 sceneSecondaryInstanceBufferSize = uint32(m_SortedInstances.size() * sizeof(InstanceSecondary));
 
-			if (m_pSceneInstanceBuffer == nullptr || sceneInstanceBufferSize > m_pSceneInstanceBuffer->GetDesc().SizeInBytes)
-			{
-				SAFERELEASE(m_pSceneInstanceBuffer);
+		//	if (m_pScenePrimaryInstanceBuffer == nullptr || scenePrimaryInstanceBufferSize > m_pScenePrimaryInstanceBuffer->GetDesc().SizeInBytes)
+		//	{
+		//		SAFERELEASE(m_pScenePrimaryInstanceBuffer);
 
-				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Instance Buffer";
-				bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-				bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
+		//		BufferDesc bufferDesc = {};
+		//		bufferDesc.pName		= "Scene Primary Instance Buffer";
+		//		bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+		//		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+		//		bufferDesc.SizeInBytes	= scenePrimaryInstanceBufferSize;
 
-				m_pSceneInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
-			}
-		}
+		//		m_pScenePrimaryInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+		//	}
+
+		//	if (m_pSceneSecondaryInstanceBuffer == nullptr || sceneSecondaryInstanceBufferSize > m_pSceneSecondaryInstanceBuffer->GetDesc().SizeInBytes)
+		//	{
+		//		SAFERELEASE(m_pSceneSecondaryInstanceBuffer);
+
+		//		BufferDesc bufferDesc = {};
+		//		bufferDesc.pName		= "Scene Secondary Instance Buffer";
+		//		bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+		//		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+		//		bufferDesc.SizeInBytes	= sceneSecondaryInstanceBufferSize;
+
+		//		m_pSceneSecondaryInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+		//	}
+		//}
 
 		m_SceneAlbedoMaps.resize(MAX_UNIQUE_MATERIALS);
 		m_SceneNormalMaps.resize(MAX_UNIQUE_MATERIALS);
@@ -618,48 +643,80 @@ namespace LambdaEngine
 
 		// Instances
 		{
-			uint32 sceneInstanceBufferSize = uint32(m_SortedInstances.size() * sizeof(Instance));
+			uint32 scenePrimaryInstanceBufferSize = uint32(m_SortedPrimaryInstances.size() * sizeof(InstancePrimary));
+			uint32 sceneSecondaryInstanceBufferSize = uint32(m_SortedSecondaryInstances.size() * sizeof(InstanceSecondary));
 
-			if (m_pSceneInstanceCopyBuffer == nullptr || sceneInstanceBufferSize > m_pSceneInstanceCopyBuffer->GetDesc().SizeInBytes)
+			if (m_pScenePrimaryInstanceCopyBuffer == nullptr || scenePrimaryInstanceBufferSize > m_pScenePrimaryInstanceCopyBuffer->GetDesc().SizeInBytes)
 			{
-				SAFERELEASE(m_pSceneInstanceCopyBuffer);
+				SAFERELEASE(m_pScenePrimaryInstanceCopyBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Instance Copy Buffer";
+				bufferDesc.pName		= "Scene Primary Instance Copy Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
-				bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
+				bufferDesc.SizeInBytes	= scenePrimaryInstanceBufferSize;
 
-				m_pSceneInstanceCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+				m_pScenePrimaryInstanceCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
 			}
 
-			void* pMapped = m_pSceneInstanceCopyBuffer->Map();
-			memcpy(pMapped, m_SortedInstances.data(), sceneInstanceBufferSize);
-			m_pSceneInstanceCopyBuffer->Unmap();
-
-			if (m_pSceneInstanceBuffer == nullptr || sceneInstanceBufferSize > m_pSceneInstanceBuffer->GetDesc().SizeInBytes)
+			if (m_pSceneSecondaryInstanceCopyBuffer == nullptr || sceneSecondaryInstanceBufferSize > m_pSceneSecondaryInstanceCopyBuffer->GetDesc().SizeInBytes)
 			{
-				SAFERELEASE(m_pSceneInstanceBuffer);
+				SAFERELEASE(m_pSceneSecondaryInstanceCopyBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.pName		= "Scene Instance Buffer";
-				bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-				bufferDesc.SizeInBytes	= sceneInstanceBufferSize;
+				bufferDesc.pName		= "Scene Secondary Instance Copy Buffer";
+				bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
+				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+				bufferDesc.SizeInBytes	= sceneSecondaryInstanceBufferSize;
 
-				m_pSceneInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+				m_pSceneSecondaryInstanceCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
 			}
 
-			m_pCopyCommandList->CopyBuffer(m_pSceneInstanceCopyBuffer, 0, m_pSceneInstanceBuffer, 0, sceneInstanceBufferSize);
+			void* pPrimaryMapped = m_pScenePrimaryInstanceCopyBuffer->Map();
+			memcpy(pPrimaryMapped, m_SortedPrimaryInstances.data(), scenePrimaryInstanceBufferSize);
+			m_pScenePrimaryInstanceCopyBuffer->Unmap();
+
+			void* pSecondaryMapped = m_pSceneSecondaryInstanceCopyBuffer->Map();
+			memcpy(pSecondaryMapped, m_SortedSecondaryInstances.data(), sceneSecondaryInstanceBufferSize);
+			m_pSceneSecondaryInstanceCopyBuffer->Unmap();
+
+			if (m_pScenePrimaryInstanceBuffer == nullptr || scenePrimaryInstanceBufferSize > m_pScenePrimaryInstanceBuffer->GetDesc().SizeInBytes)
+			{
+				SAFERELEASE(m_pScenePrimaryInstanceBuffer);
+
+				BufferDesc bufferDesc = {};
+				bufferDesc.pName		= "Scene Primary Instance Buffer";
+				bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				bufferDesc.SizeInBytes	= scenePrimaryInstanceBufferSize;
+
+				m_pScenePrimaryInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			}
+
+			if (m_pSceneSecondaryInstanceBuffer == nullptr || scenePrimaryInstanceBufferSize > m_pSceneSecondaryInstanceBuffer->GetDesc().SizeInBytes)
+			{
+				SAFERELEASE(m_pSceneSecondaryInstanceBuffer);
+
+				BufferDesc bufferDesc = {};
+				bufferDesc.pName		= "Scene Secondary Instance Buffer";
+				bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				bufferDesc.SizeInBytes	= sceneSecondaryInstanceBufferSize;
+
+				m_pSceneSecondaryInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			}
+
+			m_pCopyCommandList->CopyBuffer(m_pScenePrimaryInstanceCopyBuffer, 0, m_pScenePrimaryInstanceBuffer, 0, scenePrimaryInstanceBufferSize);
+			m_pCopyCommandList->CopyBuffer(m_pSceneSecondaryInstanceCopyBuffer, 0, m_pSceneSecondaryInstanceBuffer, 0, scenePrimaryInstanceBufferSize);
 		}
 
 		// Indirect Args
 		{
 			uint32 sceneMeshIndexBufferSize = uint32(m_IndirectArgs.size() * sizeof(IndexedIndirectMeshArgument));
 
-			if (m_pSceneMeshIndexCopyBuffer == nullptr || sceneMeshIndexBufferSize > m_pSceneMeshIndexCopyBuffer->GetDesc().SizeInBytes)
+			if (m_pSceneIndirectArgsCopyBuffer == nullptr || sceneMeshIndexBufferSize > m_pSceneIndirectArgsCopyBuffer->GetDesc().SizeInBytes)
 			{
-				SAFERELEASE(m_pSceneMeshIndexCopyBuffer);
+				SAFERELEASE(m_pSceneIndirectArgsCopyBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.pName		= "Scene Mesh Index Copy Buffer";
@@ -667,16 +724,16 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 				bufferDesc.SizeInBytes	= sceneMeshIndexBufferSize;
 
-				m_pSceneMeshIndexCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+				m_pSceneIndirectArgsCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
 			}
 
-			void* pMapped = m_pSceneMeshIndexCopyBuffer->Map();
+			void* pMapped = m_pSceneIndirectArgsCopyBuffer->Map();
 			memcpy(pMapped, m_IndirectArgs.data(), sceneMeshIndexBufferSize);
-			m_pSceneMeshIndexCopyBuffer->Unmap();
+			m_pSceneIndirectArgsCopyBuffer->Unmap();
 
-			if (m_pSceneMeshIndexBuffer == nullptr || sceneMeshIndexBufferSize > m_pSceneMeshIndexBuffer->GetDesc().SizeInBytes)
+			if (m_pSceneIndirectArgsBuffer == nullptr || sceneMeshIndexBufferSize > m_pSceneIndirectArgsBuffer->GetDesc().SizeInBytes)
 			{
-				SAFERELEASE(m_pSceneMeshIndexBuffer);
+				SAFERELEASE(m_pSceneIndirectArgsBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.pName		= "Scene Mesh Index Buffer";
@@ -684,10 +741,10 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDIRECT_BUFFER;
 				bufferDesc.SizeInBytes	= sceneMeshIndexBufferSize;
 
-				m_pSceneMeshIndexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+				m_pSceneIndirectArgsBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
 			}
 
-			m_pCopyCommandList->CopyBuffer(m_pSceneMeshIndexCopyBuffer, 0, m_pSceneMeshIndexBuffer, 0, sceneMeshIndexBufferSize);
+			m_pCopyCommandList->CopyBuffer(m_pSceneIndirectArgsCopyBuffer, 0, m_pSceneIndirectArgsBuffer, 0, sceneMeshIndexBufferSize);
 		}
 
 		m_pCopyCommandList->End();
@@ -725,8 +782,8 @@ namespace LambdaEngine
 				BuildTopLevelAccelerationStructureDesc tlasBuildDesc = {};
 				tlasBuildDesc.pAccelerationStructure	= m_pTLAS;
 				tlasBuildDesc.Flags						= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
-				tlasBuildDesc.pInstanceBuffer			= m_pSceneInstanceBuffer;
-				tlasBuildDesc.InstanceCount				= m_Instances.size();
+				tlasBuildDesc.pInstanceBuffer			= m_pScenePrimaryInstanceBuffer;
+				tlasBuildDesc.InstanceCount				= m_PrimaryInstances.size();
 				tlasBuildDesc.Update					= false;
 
 				//m_pTLAS = RayTracingTestVK::CreateTLAS(m_pGraphicsDevice, &tlasDesc, &tlasBuildDesc, m_pASBuildCommandList);

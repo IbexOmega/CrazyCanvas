@@ -673,6 +673,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 			static ImGuiTexture albedoTexture = {};
 			static ImGuiTexture normalTexture = {};
+			static ImGuiTexture motionTexture = {};
 			static ImGuiTexture depthStencilTexture = {};
 			static ImGuiTexture radianceTexture = {};
 
@@ -815,6 +816,27 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					}
 
 					ImGui::Image(&normalTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Motion"))
+				{
+					motionTexture.ResourceName = "G_BUFFER_MOTION";
+
+					motionTexture.ReservedIncludeMask = 0x00008400;
+
+					motionTexture.ChannelMul[0] = 10.0f;
+					motionTexture.ChannelMul[1] = 10.0f;
+					motionTexture.ChannelMul[2] = 0.0f;
+					motionTexture.ChannelMul[3] = 0.0f;
+
+					motionTexture.ChannelAdd[0] = 0.0f;
+					motionTexture.ChannelAdd[1] = 0.0f;
+					motionTexture.ChannelAdd[2] = 0.0f;
+					motionTexture.ChannelAdd[3] = 1.0f;
+
+					ImGui::Image(&motionTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
 
 					ImGui::EndTabItem();
 				}
@@ -1127,9 +1149,18 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetInstanceBufer();
+		IBuffer* pBuffer = m_pScene->GetPrimaryInstanceBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
-		resourceUpdateDesc.ResourceName						= SCENE_INSTANCE_BUFFER;
+		resourceUpdateDesc.ResourceName						= SCENE_PRIMARY_INSTANCE_BUFFER;
+		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+
+		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+	}
+
+	{
+		IBuffer* pBuffer = m_pScene->GetSecondaryInstanceBuffer();
+		ResourceUpdateDesc resourceUpdateDesc				= {};
+		resourceUpdateDesc.ResourceName						= SCENE_SECONDARY_INSTANCE_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
@@ -1333,6 +1364,45 @@ bool Sandbox::InitRendererForDeferred()
 
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName								= "PREV_G_BUFFER_NORM_MET_ROUGH";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+	{
+		TextureDesc textureDesc	= {};
+		textureDesc.Name					= "G-Buffer Motion Texture";
+		textureDesc.Type					= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType				= EMemoryType::MEMORY_GPU;
+		textureDesc.Format					= EFormat::FORMAT_R8G8B8A8_UNORM;
+		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width					= CommonApplication::Get()->GetMainWindow()->GetWidth();
+		textureDesc.Height					= CommonApplication::Get()->GetMainWindow()->GetHeight();
+		textureDesc.Depth					= 1;
+		textureDesc.SampleCount				= 1;
+		textureDesc.Miplevels				= 1;
+		textureDesc.ArrayCount				= 1;
+
+		TextureViewDesc textureViewDesc		= { };
+		textureViewDesc.Name				= "G-Buffer Motion Texture View";
+		textureViewDesc.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel			= 0;
+		textureViewDesc.MiplevelCount		= 1;
+		textureViewDesc.ArrayIndex			= 0;
+		textureViewDesc.ArrayCount			= 1;
+		textureViewDesc.Format				= textureDesc.Format;
+
+		SamplerDesc* pSamplerDesc = &m_pNearestSampler->GetDesc();
+
+		{
+			TextureDesc* pTextureDesc			= &textureDesc;
+			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "G_BUFFER_MOTION";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;

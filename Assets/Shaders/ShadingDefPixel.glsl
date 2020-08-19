@@ -13,9 +13,10 @@ layout(binding = 1, set = BUFFER_SET_INDEX) uniform PerFrameBuffer   { SPerFrame
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_AlbedoAO;
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_NormalMetallicRoughness;
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_DepthStencil;
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_DirectRadiance;
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_IndirectRadiance;
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_Motion;
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_DepthStencil;
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_DirectRadiance;
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_IndirectRadiance;
 
 layout(location = 0) out vec4	out_Color;
 layout(location = 1) out vec4   out_Albedo_AO;
@@ -25,7 +26,7 @@ void main()
 {
     vec4 sampledAlbedoAO                    = texture(u_AlbedoAO,                   in_TexCoord);
     vec4 sampledNormalMetallicRoughness     = texture(u_NormalMetallicRoughness,    in_TexCoord);
-    float sampledDepth                      = texture(u_DepthStencil,    in_TexCoord).r;
+    float sampledDepth                      = texture(u_DepthStencil,               in_TexCoord).r;
 
     out_Albedo_AO               = sampledAlbedoAO;
     out_Normals_Metall_Rough    = sampledNormalMetallicRoughness;

@@ -101,7 +101,7 @@ void main()
 	vec3 L_o_Indirect 		= sampledIndirectRadiance.rgb;
 	float accumulation		= sampledDirectRadiance.a;
 
-	if (perFrameBuffer.LastView != perFrameBuffer.View)
+	if (perFrameBuffer.PrevView != perFrameBuffer.View)
 	{
 		L_o_Direct			= vec3(0.0f);
 		L_o_Indirect		= vec3(0.0f);

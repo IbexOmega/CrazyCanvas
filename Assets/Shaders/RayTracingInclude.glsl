@@ -42,7 +42,7 @@ struct SShadowPayload
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform accelerationStructureEXT   u_TLAS;
 layout(binding = 1, set = BUFFER_SET_INDEX) buffer Vertices            { SVertex val[]; }              b_Vertices;
 layout(binding = 2, set = BUFFER_SET_INDEX) buffer Indices             { uint val[]; }                 b_Indices;
-layout(binding = 3, set = BUFFER_SET_INDEX) buffer Instances           { SInstance val[]; }            b_Instances;
+layout(binding = 3, set = BUFFER_SET_INDEX) buffer PrimaryInstances    { SPrimaryInstance val[]; }     b_PrimaryInstances;
 layout(binding = 4, set = BUFFER_SET_INDEX) buffer MeshIndices         { SMeshIndexDesc val[]; }       b_MeshIndices;
 layout(binding = 5, set = BUFFER_SET_INDEX) buffer MaterialParameters  { SMaterialParameters val[]; }  b_MaterialParameters;
 layout(binding = 6, set = BUFFER_SET_INDEX) uniform LightsBuffer       { SLightsBuffer val; }          u_LightsBuffer;

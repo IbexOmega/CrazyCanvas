@@ -64,7 +64,16 @@
             "texture_format": 0
         },
         {
-            "name": "SCENE_INSTANCE_BUFFER",
+            "name": "SCENE_PRIMARY_INSTANCE_BUFFER",
+            "type": "BUFFER",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "is_of_array_type": false,
+            "editable": false,
+            "texture_format": 0
+        },
+        {
+            "name": "SCENE_SECONDARY_INSTANCE_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
@@ -215,6 +224,15 @@
             "is_of_array_type": false,
             "editable": true,
             "texture_format": 5
+        },
+        {
+            "name": "G_BUFFER_MOTION",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "is_of_array_type": false,
+            "editable": true,
+            "texture_format": 3
         }
     ],
     "resource_state_groups": [
@@ -295,7 +313,7 @@
                     ]
                 },
                 {
-                    "name": "SCENE_INSTANCE_BUFFER",
+                    "name": "SCENE_PRIMARY_INSTANCE_BUFFER",
                     "render_stage_name": "EXTERNAL_RESOURCES",
                     "removable": false,
                     "binding_type": "CONSTANT_BUFFER",
@@ -304,6 +322,17 @@
                     "output_link_indices": [
                         2,
                         22
+                    ]
+                },
+                {
+                    "name": "SCENE_SECONDARY_INSTANCE_BUFFER",
+                    "render_stage_name": "EXTERNAL_RESOURCES",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "attribute_index": 154,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        49
                     ]
                 },
                 {
@@ -536,12 +565,21 @@
                     "output_link_indices": []
                 },
                 {
-                    "name": "SCENE_INSTANCE_BUFFER",
+                    "name": "SCENE_PRIMARY_INSTANCE_BUFFER",
                     "render_stage_name": "GEOMETRY",
                     "removable": true,
                     "binding_type": "UNORDERED_ACCESS_R",
                     "attribute_index": 42,
                     "input_link_index": 2,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SCENE_SECONDARY_INSTANCE_BUFFER",
+                    "render_stage_name": "GEOMETRY",
+                    "removable": true,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "attribute_index": 156,
+                    "input_link_index": 49,
                     "output_link_indices": []
                 },
                 {
@@ -638,6 +676,17 @@
                     "output_link_indices": [
                         16,
                         27
+                    ]
+                },
+                {
+                    "name": "G_BUFFER_MOTION",
+                    "render_stage_name": "GEOMETRY",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 158,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        50
                     ]
                 },
                 {
@@ -740,6 +789,15 @@
                     "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 80,
                     "input_link_index": 17,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "G_BUFFER_MOTION",
+                    "render_stage_name": "SHADING",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 160,
+                    "input_link_index": 50,
                     "output_link_indices": []
                 },
                 {
@@ -858,7 +916,7 @@
                     "output_link_indices": []
                 },
                 {
-                    "name": "SCENE_INSTANCE_BUFFER",
+                    "name": "SCENE_PRIMARY_INSTANCE_BUFFER",
                     "render_stage_name": "RAY_TRACING",
                     "removable": true,
                     "binding_type": "UNORDERED_ACCESS_R",
@@ -1235,6 +1293,16 @@
             "link_index": 48,
             "src_attribute_index": 131,
             "dst_attribute_index": 134
+        },
+        {
+            "link_index": 49,
+            "src_attribute_index": 155,
+            "dst_attribute_index": 156
+        },
+        {
+            "link_index": 50,
+            "src_attribute_index": 159,
+            "dst_attribute_index": 160
         }
     ]
 }
