@@ -847,30 +847,47 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 				{
 					if (ImGui::BeginTabItem("Ray Tracing"))
 					{
-						radianceTexture.ResourceName = "RADIANCE";
-
-						const char* items[] = { "Combined", "Accumulation" };
+						const char* items[] = { "Direct", "Indirect", "Accumulation" };
 						static int currentItem = 0;
 						ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
 
 						if (currentItem == 0)
 						{
-							radianceTexture.ReservedIncludeMask = 0x00008421;
+							radianceTexture.ResourceName		= "DIRECT_RADIANCE";
+							radianceTexture.ReservedIncludeMask = 0x00008420;
 
 							radianceTexture.ChannelMul[0] = 1.0f;
 							radianceTexture.ChannelMul[1] = 1.0f;
 							radianceTexture.ChannelMul[2] = 1.0f;
-							radianceTexture.ChannelMul[3] = 1.0f;
+							radianceTexture.ChannelMul[3] = 0.0f;
 
 							radianceTexture.ChannelAdd[0] = 0.0f;
 							radianceTexture.ChannelAdd[1] = 0.0f;
 							radianceTexture.ChannelAdd[2] = 0.0f;
-							radianceTexture.ChannelAdd[3] = 0.0f;
+							radianceTexture.ChannelAdd[3] = 1.0f;
 
 							radianceTexture.PixelShaderGUID = GUID_NONE;
 						}
 						else if (currentItem == 1)
 						{
+							radianceTexture.ResourceName		= "INDIRECT_RADIANCE";
+							radianceTexture.ReservedIncludeMask = 0x00008420;
+
+							radianceTexture.ChannelMul[0] = 1.0f;
+							radianceTexture.ChannelMul[1] = 1.0f;
+							radianceTexture.ChannelMul[2] = 1.0f;
+							radianceTexture.ChannelMul[3] = 0.0f;
+
+							radianceTexture.ChannelAdd[0] = 0.0f;
+							radianceTexture.ChannelAdd[1] = 0.0f;
+							radianceTexture.ChannelAdd[2] = 0.0f;
+							radianceTexture.ChannelAdd[3] = 1.0f;
+
+							radianceTexture.PixelShaderGUID = GUID_NONE;
+						}
+						else if (currentItem == 2)
+						{
+							radianceTexture.ResourceName		= "DIRECT_RADIANCE";
 							radianceTexture.ReservedIncludeMask = 0x00001110;
 
 							constexpr const float maxAccumulationInv = 1.0f / 6.55e4f;
@@ -1371,68 +1388,55 @@ bool Sandbox::InitRendererForDeferred()
 
 	if (RAY_TRACING_ENABLED)
 	{
-		TextureDesc		pTextureDescriptions[BACK_BUFFER_COUNT];
-		TextureViewDesc pTextureViewDescriptions[BACK_BUFFER_COUNT];
-		SamplerDesc		pSamplerDescriptions[BACK_BUFFER_COUNT];
-
-		std::vector<TextureDesc*>		vectorTextureDescriptions(BACK_BUFFER_COUNT);
-		std::vector<TextureViewDesc*>	vectorTextureViewDescriptions(BACK_BUFFER_COUNT);
-		std::vector<SamplerDesc*>		vectorSamplerDescriptions(BACK_BUFFER_COUNT);
-
-		char pTextureNames[BACK_BUFFER_COUNT][32];
-		char pTextureViewNames[BACK_BUFFER_COUNT][32];
-		char pSamplerNames[BACK_BUFFER_COUNT][32];
+		std::vector<TextureDesc>		textureDescriptions(BACK_BUFFER_COUNT);
+		std::vector<TextureViewDesc>	textureViewDescriptions(BACK_BUFFER_COUNT);
+		std::vector<SamplerDesc>		samplerDescriptions(BACK_BUFFER_COUNT, m_pNearestSampler->GetDesc());
 
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
-			sprintf(pTextureNames[b], "Radiance Texture %u", b);
-			pTextureDescriptions[b].Name				= pTextureNames[b];
-			pTextureDescriptions[b].Type				= ETextureType::TEXTURE_2D;
-			pTextureDescriptions[b].MemoryType			= EMemoryType::MEMORY_GPU;
-			pTextureDescriptions[b].Format				= EFormat::FORMAT_R16G16B16A16_SFLOAT;
-			pTextureDescriptions[b].Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-			pTextureDescriptions[b].Width				= renderWidth;
-			pTextureDescriptions[b].Height				= renderHeight;
-			pTextureDescriptions[b].Depth				= 1;
-			pTextureDescriptions[b].SampleCount			= 1;
-			pTextureDescriptions[b].Miplevels			= 1;
-			pTextureDescriptions[b].ArrayCount			= 1;
-			vectorTextureDescriptions[b] = &pTextureDescriptions[b];
+			TextureDesc& textureDesc = textureDescriptions[b];
+			textureDesc.Name				= "Direct Radiance Texture " + std::to_string(b);
+			textureDesc.Type				= ETextureType::TEXTURE_2D;
+			textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+			textureDesc.Format				= EFormat::FORMAT_R16G16B16A16_SFLOAT;
+			textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+			textureDesc.Width				= renderWidth;
+			textureDesc.Height				= renderHeight;
+			textureDesc.Depth				= 1;
+			textureDesc.SampleCount			= 1;
+			textureDesc.Miplevels			= 1;
+			textureDesc.ArrayCount			= 1;
 
-			sprintf(pTextureViewNames[b], "Radiance Texture View %u", b);
-			pTextureViewDescriptions[b].Name			= pTextureViewNames[b];
-			pTextureViewDescriptions[b].Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-			pTextureViewDescriptions[b].Type			= ETextureViewType::TEXTURE_VIEW_2D;
-			pTextureViewDescriptions[b].Miplevel		= 0;
-			pTextureViewDescriptions[b].MiplevelCount	= 1;
-			pTextureViewDescriptions[b].ArrayIndex		= 0;
-			pTextureViewDescriptions[b].ArrayCount		= 1;
-			pTextureViewDescriptions[b].Format			= pTextureDescriptions[b].Format;
-			vectorTextureViewDescriptions[b] = &pTextureViewDescriptions[b];
-
-			sprintf(pSamplerNames[b], "Radiance Sampler %u", b);
-			pSamplerDescriptions[b].Name				= pSamplerNames[b];
-			pSamplerDescriptions[b].MinFilter			= EFilter::NEAREST;
-			pSamplerDescriptions[b].MagFilter			= EFilter::NEAREST;
-			pSamplerDescriptions[b].MipmapMode			= EMipmapMode::NEAREST;
-			pSamplerDescriptions[b].AddressModeU		= EAddressMode::REPEAT;
-			pSamplerDescriptions[b].AddressModeV		= EAddressMode::REPEAT;
-			pSamplerDescriptions[b].AddressModeW		= EAddressMode::REPEAT;
-			pSamplerDescriptions[b].MipLODBias			= 0.0f;
-			pSamplerDescriptions[b].AnisotropyEnabled	= false;
-			pSamplerDescriptions[b].MaxAnisotropy		= 16;
-			pSamplerDescriptions[b].MinLOD				= 0.0f;
-			pSamplerDescriptions[b].MaxLOD				= 1.0f;
-			vectorSamplerDescriptions[b] = &pSamplerDescriptions[b];
+			TextureViewDesc& textureViewDesc = textureViewDescriptions[b];
+			textureViewDesc.Name			= "Direct Radiance Texture View " + std::to_string(b);
+			textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+			textureViewDesc.Miplevel		= 0;
+			textureViewDesc.MiplevelCount	= 1;
+			textureViewDesc.ArrayIndex		= 0;
+			textureViewDesc.ArrayCount		= 1;
+			textureViewDesc.Format			= textureDesc.Format;
 		}
 
-		ResourceUpdateDesc resourceUpdateDesc = {};
-		resourceUpdateDesc.ResourceName								= "RADIANCE";
-		resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= vectorTextureDescriptions.data();
-		resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= vectorTextureViewDescriptions.data();
-		resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= vectorSamplerDescriptions.data();
+		TextureDesc* pTextureDescriptions			= textureDescriptions.data();
+		TextureViewDesc* pTextureViewDescriptions	= textureViewDescriptions.data();
+		SamplerDesc* pSamplerDescriptions			= samplerDescriptions.data();
 
-		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		ResourceUpdateDesc directRadianceResourceUpdateDesc = {};
+		directRadianceResourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE";
+		directRadianceResourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDescriptions;
+		directRadianceResourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDescriptions;
+		directRadianceResourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDescriptions;
+
+		m_pRenderGraph->UpdateResource(directRadianceResourceUpdateDesc);
+
+		ResourceUpdateDesc indirectRadianceResourceUpdateDesc = {};
+		indirectRadianceResourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE";
+		indirectRadianceResourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDescriptions;
+		indirectRadianceResourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDescriptions;
+		indirectRadianceResourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDescriptions;
+
+		m_pRenderGraph->UpdateResource(indirectRadianceResourceUpdateDesc);
 	}
 
 	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());

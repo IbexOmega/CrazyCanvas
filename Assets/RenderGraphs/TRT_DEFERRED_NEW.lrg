@@ -145,7 +145,7 @@
             "texture_format": 5
         },
         {
-            "name": "RADIANCE",
+            "name": "DIRECT_RADIANCE",
             "type": "TEXTURE",
             "sub_resource_count": 1,
             "is_of_array_type": false,
@@ -159,6 +159,14 @@
             "is_of_array_type": true,
             "editable": true,
             "texture_format": 6
+        },
+        {
+            "name": "INDIRECT_RADIANCE",
+            "type": "TEXTURE",
+            "sub_resource_count": 1,
+            "is_of_array_type": false,
+            "editable": true,
+            "texture_format": 4
         }
     ],
     "resource_state_groups": [
@@ -351,7 +359,7 @@
             "node_index": 2,
             "resource_states": [
                 {
-                    "name": "RADIANCE",
+                    "name": "DIRECT_RADIANCE",
                     "render_stage_name": "TEMPORAL_RESOURCES",
                     "removable": true,
                     "binding_type": "COMBINED_SAMPLER",
@@ -359,6 +367,17 @@
                     "input_link_index": -1,
                     "output_link_indices": [
                         36
+                    ]
+                },
+                {
+                    "name": "INDIRECT_RADIANCE",
+                    "render_stage_name": "TEMPORAL_RESOURCES",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 134,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        40
                     ]
                 }
             ]
@@ -647,12 +666,21 @@
                     "output_link_indices": []
                 },
                 {
-                    "name": "RADIANCE",
+                    "name": "DIRECT_RADIANCE",
                     "render_stage_name": "SHADING",
                     "removable": true,
                     "binding_type": "COMBINED_SAMPLER",
                     "attribute_index": 118,
                     "input_link_index": 34,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "INDIRECT_RADIANCE",
+                    "render_stage_name": "SHADING",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 132,
+                    "input_link_index": 39,
                     "output_link_indices": []
                 },
                 {
@@ -846,7 +874,7 @@
                     "output_link_indices": []
                 },
                 {
-                    "name": "RADIANCE",
+                    "name": "DIRECT_RADIANCE",
                     "render_stage_name": "RAY_TRACING",
                     "removable": true,
                     "binding_type": "UNORDERED_ACCESS_RW",
@@ -854,6 +882,17 @@
                     "input_link_index": 36,
                     "output_link_indices": [
                         34
+                    ]
+                },
+                {
+                    "name": "INDIRECT_RADIANCE",
+                    "render_stage_name": "RAY_TRACING",
+                    "removable": true,
+                    "binding_type": "UNORDERED_ACCESS_RW",
+                    "attribute_index": 130,
+                    "input_link_index": 40,
+                    "output_link_indices": [
+                        39
                     ]
                 }
             ]
@@ -1049,6 +1088,16 @@
             "link_index": 38,
             "src_attribute_index": 127,
             "dst_attribute_index": 128
+        },
+        {
+            "link_index": 39,
+            "src_attribute_index": 131,
+            "dst_attribute_index": 132
+        },
+        {
+            "link_index": 40,
+            "src_attribute_index": 135,
+            "dst_attribute_index": 130
         }
     ]
 }

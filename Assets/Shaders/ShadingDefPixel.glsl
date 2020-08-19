@@ -14,7 +14,8 @@ layout(binding = 1, set = BUFFER_SET_INDEX) uniform PerFrameBuffer   { SPerFrame
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_AlbedoAO;
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_NormalMetallicRoughness;
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_DepthStencil;
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_Radiance;
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_DirectRadiance;
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_IndirectRadiance;
 
 layout(location = 0) out vec4	out_Color;
 
@@ -79,9 +80,11 @@ void main()
     
     // vec3 colorLDR   = ToneMap(outgoingRadiance, GAMMA);
 
-    vec4 sampledRadiance                    = texture(u_Radiance,                   in_TexCoord);
+    vec4 sampledDirectRadiance              = texture(u_DirectRadiance,   in_TexCoord);
+    vec4 sampledIndirectRadiance            = texture(u_IndirectRadiance, in_TexCoord);
 
-    vec3 colorLDR   = ToneMap(sampledRadiance.rgb / sampledRadiance.a, GAMMA);
+    vec3 colorHDR   = (sampledDirectRadiance.rgb + sampledIndirectRadiance.rgb) / sampledDirectRadiance.a;
+    vec3 colorLDR   = ToneMap(colorHDR, GAMMA);
 
     out_Color = vec4(colorLDR, 1.0f);
 }

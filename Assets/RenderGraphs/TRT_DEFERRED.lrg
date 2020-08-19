@@ -4,6 +4,7 @@
             "name": "BACK_BUFFER_TEXTURE",
             "type": "TEXTURE",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 2
         },
@@ -11,6 +12,7 @@
             "name": "FULLSCREEN_QUAD_VERTEX_BUFFER",
             "type": "BUFFER",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 0
         },
@@ -18,6 +20,7 @@
             "name": "PER_FRAME_BUFFER",
             "type": "BUFFER",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 0
         },
@@ -25,6 +28,7 @@
             "name": "SCENE_LIGHTS_BUFFER",
             "type": "BUFFER",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 0
         },
@@ -32,6 +36,7 @@
             "name": "SCENE_MAT_PARAM_BUFFER",
             "type": "BUFFER",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 0
         },
@@ -39,6 +44,7 @@
             "name": "SCENE_VERTEX_BUFFER",
             "type": "BUFFER",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 0
         },
@@ -46,6 +52,7 @@
             "name": "SCENE_INDEX_BUFFER",
             "type": "BUFFER",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 0
         },
@@ -53,6 +60,7 @@
             "name": "SCENE_INSTANCE_BUFFER",
             "type": "BUFFER",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 0
         },
@@ -60,6 +68,7 @@
             "name": "SCENE_INDIRECT_ARGS_BUFFER",
             "type": "BUFFER",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 0
         },
@@ -67,6 +76,7 @@
             "name": "SCENE_TLAS",
             "type": "ACCELERATION_STRUCTURE",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 0
         },
@@ -74,6 +84,7 @@
             "name": "SCENE_ALBEDO_MAPS",
             "type": "TEXTURE",
             "sub_resource_count": 32,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 1
         },
@@ -81,6 +92,7 @@
             "name": "SCENE_NORMAL_MAPS",
             "type": "TEXTURE",
             "sub_resource_count": 32,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 1
         },
@@ -88,6 +100,7 @@
             "name": "SCENE_AO_MAPS",
             "type": "TEXTURE",
             "sub_resource_count": 32,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 1
         },
@@ -95,6 +108,7 @@
             "name": "SCENE_ROUGHNESS_MAPS",
             "type": "TEXTURE",
             "sub_resource_count": 32,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 1
         },
@@ -102,6 +116,7 @@
             "name": "SCENE_METALLIC_MAPS",
             "type": "TEXTURE",
             "sub_resource_count": 32,
+            "is_of_array_type": false,
             "editable": false,
             "texture_format": 1
         },
@@ -109,6 +124,7 @@
             "name": "G_BUFFER_ALBEDO_AO",
             "type": "TEXTURE",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": true,
             "texture_format": 1
         },
@@ -116,6 +132,7 @@
             "name": "G_BUFFER_NORM_MET_ROUGH",
             "type": "TEXTURE",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": true,
             "texture_format": 4
         },
@@ -123,6 +140,7 @@
             "name": "G_BUFFER_DEPTH_STENCIL",
             "type": "TEXTURE",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": true,
             "texture_format": 5
         },
@@ -130,15 +148,17 @@
             "name": "RADIANCE",
             "type": "TEXTURE",
             "sub_resource_count": 1,
+            "is_of_array_type": false,
             "editable": true,
             "texture_format": 4
         },
         {
             "name": "BLUE_NOISE_LUT",
             "type": "TEXTURE",
-            "sub_resource_count": 8,
+            "sub_resource_count": 512,
+            "is_of_array_type": true,
             "editable": true,
-            "texture_format": 1
+            "texture_format": 6
         }
     ],
     "resource_state_groups": [

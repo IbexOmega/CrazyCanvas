@@ -16,6 +16,3 @@
 [submodule "Dependencies/rapidjson"]
 	path = Dependencies/rapidjson
 	url = https://github.com/Tencent/rapidjson.git
-[submodule "Dependencies/ordered-map"]
-	path = Dependencies/ordered-map
-	url = https://github.com/Tessil/ordered-map.git

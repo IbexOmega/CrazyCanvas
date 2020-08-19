@@ -63,9 +63,10 @@ void main()
     SPerFrameBuffer perFrameBuffer   	= u_PerFrameBuffer.val;
 
 	//Sample GBuffer
-	vec4 sampledAlbedoAO    = texture(u_AlbedoAO, screenTexCoord);
-	float sampledDepth      = texture(u_DepthStencil, screenTexCoord).r;
-	vec4 sampledRadiance 	= imageLoad(u_Radiance, pixelCoords);
+	vec4 sampledAlbedoAO    		= texture(u_AlbedoAO, screenTexCoord);
+	float sampledDepth      		= texture(u_DepthStencil, screenTexCoord).r;
+	vec4 sampledDirectRadiance 		= imageLoad(u_DirectRadiance, pixelCoords);
+	vec4 sampledIndirectRadiance 	= imageLoad(u_IndirectRadiance, pixelCoords);
 
 	//Unpack GBuffer
 	vec3 albedo         = sampledAlbedoAO.rgb;
@@ -96,12 +97,14 @@ void main()
     uvec3 randomSeedPoint = uvec3(randomSeed, randomSeed >> 10, randomSeed >> 20);
 	ivec3 blueNoiseSize = textureSize(u_BlueNoiseLUT, 0);
 	
-	vec3 L_o 				= sampledRadiance.rgb;
-	float accumulation		= sampledRadiance.a;
+	vec3 L_o_Direct 		= sampledDirectRadiance.rgb;
+	vec3 L_o_Indirect 		= sampledIndirectRadiance.rgb;
+	float accumulation		= sampledDirectRadiance.a;
 
 	if (perFrameBuffer.LastView != perFrameBuffer.View)
 	{
-		L_o					= vec3(0.0f);
+		L_o_Direct			= vec3(0.0f);
+		L_o_Indirect		= vec3(0.0f);
 		accumulation		= 0.0f;
 	}
 
@@ -123,7 +126,9 @@ void main()
 
 	for (int b = 0; b < maxBounces; b++)
 	{
-		int baseB = b * 3;
+		vec3 L 		= vec3(0.0f);
+
+		int baseB 	= b * 3;
 		vec3 u = vec3( 	GenerateSample(baseB + 0, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
 				 		GenerateSample(baseB + 1, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
 				 		GenerateSample(baseB + 2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
@@ -132,14 +137,14 @@ void main()
 		//Emissive Surface
 		if (s_RadiancePayload.Emissive)
 		{
-			L_o 			+= throughput * s_RadiancePayload.Albedo * 10.0f;
+			L 			+= throughput * s_RadiancePayload.Albedo * 10.0f;
 			//accumulation 	+= 1.0f;
 		}
 
 		//Direct Lighting (next event estimation)
 		if (!isSpecular) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
 		{
-			//L_o 			+= SampleLights(w_o, worldToLocal, throughput);
+			//L 			+= SampleLights(w_o, worldToLocal, throughput);
 			//accumulation 	+= 1.0f;
 		}
 
@@ -205,6 +210,16 @@ void main()
 				throughput *= 1.0f / p;
 			}
 		}
+
+		//Write to Direct or Indirect L_o
+		if (b < 2) //b == 0 is no bounce, b == 1 is one bounce (direct lighting)
+		{
+			L_o_Direct 		+= L;
+		}
+		else
+		{
+			L_o_Indirect 	+= L;
+		}
 	}
 
 	accumulation 	+= 1.0f;
@@ -216,5 +231,6 @@ void main()
 	// 	accumulation 	+= 1.0f;
 	// }
 
-	imageStore(u_Radiance, pixelCoords, vec4(L_o, accumulation));
+	imageStore(u_DirectRadiance, 	pixelCoords, vec4(L_o_Direct, 	accumulation));
+	imageStore(u_IndirectRadiance, 	pixelCoords, vec4(L_o_Indirect, 1.0f));
 }

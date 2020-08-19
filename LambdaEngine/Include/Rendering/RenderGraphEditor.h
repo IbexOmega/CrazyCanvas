@@ -11,8 +11,6 @@
 
 #include "Application/API/EventHandler.h"
 
-#include <tsl/ordered_map.h>
-
 namespace LambdaEngine
 {
 	enum class EEditorPinType : uint8
@@ -59,6 +57,12 @@ namespace LambdaEngine
 		TSet<int32>		OutputLinkIndices;
 	};
 
+	struct EditorResourceStateIdent
+	{
+		String	Name			= "";
+		int32	AttributeIndex	= -1;
+	};
+
 	struct EditorRenderStageDesc
 	{
 		String						Name					= "";
@@ -85,19 +89,63 @@ namespace LambdaEngine
 
 		struct
 		{
-			RayTracingShaderNames			Shaders;
+			RayTracingShaderNames		Shaders;
 		} RayTracing;
 
-		tsl::ordered_map<String, int32>		ResourceStates;
+		uint32							Weight					= 0;
 
-		uint32						Weight					= 0;
+		TArray<EditorResourceStateIdent>		ResourceStateIdents;
+
+		TArray<EditorResourceStateIdent>::iterator FindResourceStateIdent(const String& name)
+		{
+			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
+			{
+				if (resourceStateIt->Name == name)
+					return resourceStateIt;
+			}
+
+			return ResourceStateIdents.end();
+		}
+
+		TArray<EditorResourceStateIdent>::const_iterator FindResourceStateIdent(const String& name) const
+		{
+			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
+			{
+				if (resourceStateIt->Name == name)
+					return resourceStateIt;
+			}
+
+			return ResourceStateIdents.end();
+		}
 	};
 
 	struct EditorResourceStateGroup
 	{
 		String								Name			= "";
 		int32								NodeIndex		= 0;
-		tsl::ordered_map<String, int32>		ResourceStates;
+		TArray<EditorResourceStateIdent>	ResourceStateIdents;
+
+		TArray<EditorResourceStateIdent>::iterator FindResourceStateIdent(const String& name)
+		{
+			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
+			{
+				if (resourceStateIt->Name == name)
+					return resourceStateIt;
+			}
+
+			return ResourceStateIdents.end();
+		}
+
+		TArray<EditorResourceStateIdent>::const_iterator FindResourceStateIdent(const String& name) const
+		{
+			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
+			{
+				if (resourceStateIt->Name == name)
+					return resourceStateIt;
+			}
+
+			return ResourceStateIdents.end();
+		}
 	};
 
 	struct EditorFinalOutput
@@ -146,7 +194,8 @@ namespace LambdaEngine
 		void RenderShaderBoxes(EditorRenderStageDesc* pRenderStage);
 		void RenderShaderBoxCommon(String* pTarget, bool* pAdded = nullptr, bool* pRemoved = nullptr);
 
-		int32 CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERenderGraphResourceBindingType bindingType);
+		TArray<EditorResource>::iterator FindResource(const String& name);
+		EditorResourceStateIdent CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERenderGraphResourceBindingType bindingType);
 		bool CheckLinkValid(int32* pSrcAttributeIndex, int32* pDstAttributeIndex);
 
 		void DestroyLink(int32 linkIndex);
@@ -179,7 +228,7 @@ namespace LambdaEngine
 		TArray<EditorResourceStateGroup>					m_ResourceStateGroups;
 		EditorFinalOutput									m_FinalOutput		= {};
 
-		tsl::ordered_map<String, EditorResource>			m_ResourcesByName;
+		TArray<EditorResource>								m_Resources;
 
 		THashTable<int32, String>							m_RenderStageNameByInputAttributeIndex;
 		THashTable<String, EditorRenderStageDesc>			m_RenderStagesByName;

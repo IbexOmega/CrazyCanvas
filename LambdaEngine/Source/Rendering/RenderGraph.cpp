@@ -1077,6 +1077,13 @@ namespace LambdaEngine
 				//RenderPass Attachments
 				else if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT)
 				{
+					if (pResource->SubResourceCount > 1 && pResource->SubResourceCount != m_BackBufferCount)
+					{
+						//Todo: Maybe allow resources to have a subresource count which always equals back buffer count
+						LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but does not have a subresource count equal to 1 or Back buffer Count: %u", pResource->Name.c_str(), pResource->SubResourceCount);
+						return false;
+					}
+
 					bool isColorAttachment = pResource->Texture.Format != EFormat::FORMAT_D24_UNORM_S8_UINT;
 
 					ETextureState initialState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.PrevBindingType, pResource->Texture.Format);
@@ -1986,9 +1993,9 @@ namespace LambdaEngine
 		
 		uint32 textureViewCount = 0;
 		uint32 clearColorCount = 0;
-		for (auto it = pRenderStage->RenderTargetResources.begin(); it != pRenderStage->RenderTargetResources.end(); it++)
+		for (Resource* pResource : pRenderStage->RenderTargetResources)
 		{
-			ppTextureViews[textureViewCount++] = (*it)->Texture.TextureViews.size() > 1 ? (*it)->Texture.TextureViews[m_BackBufferIndex] : (*it)->Texture.TextureViews[0];
+			ppTextureViews[textureViewCount++] = pResource->Texture.TextureViews.size() > 1 ? pResource->Texture.TextureViews[m_BackBufferIndex] : pResource->Texture.TextureViews[0];
 
 			clearColorDescriptions[clearColorCount].Color[0]	= 0.0f;
 			clearColorDescriptions[clearColorCount].Color[1]	= 0.0f;

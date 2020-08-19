@@ -233,7 +233,7 @@ namespace LambdaEngine
 		*/
 		void Update();
 
-		void NewFrame(uint64 frameIndex, uint32 backBufferIndex, Timestamp delta);
+		void NewFrame(uint64 modFrameIndex, uint32 backBufferIndex, Timestamp delta);
 		void PrepareRender(Timestamp delta);
 
 		void Render();
@@ -284,6 +284,7 @@ namespace LambdaEngine
 		float32								m_WindowWidth						= 0.0f;
 		float32								m_WindowHeight						= 0.0f;
 
+		uint64								m_FrameIndex						= 0;
 		uint64								m_ModFrameIndex						= 0;
 		uint32								m_BackBufferIndex					= 0;
 		uint32								m_BackBufferCount					= 0;
