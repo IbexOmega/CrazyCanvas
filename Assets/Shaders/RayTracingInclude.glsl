@@ -94,17 +94,11 @@ SRayHitDescription CalculateHitData(vec3 attribs, int indirectArgIndex, int prim
 
 	vec2 texCoord = (v0.TexCoord.xy * barycentricCoords.x + v1.TexCoord.xy * barycentricCoords.y + v2.TexCoord.xy * barycentricCoords.z);
 
-	mat4 transform;
-	transform[0] = vec4(objectToWorld[0], 0.0f);
-	transform[1] = vec4(objectToWorld[1], 0.0f);
-	transform[2] = vec4(objectToWorld[2], 0.0f);
-	transform[3] = vec4(objectToWorld[3], 1.0f);
-
 	vec3 T = normalize(v0.Tangent.xyz * barycentricCoords.x + v1.Tangent.xyz * barycentricCoords.y + v2.Tangent.xyz * barycentricCoords.z);
 	vec3 N  = normalize(v0.Normal.xyz * barycentricCoords.x + v1.Normal.xyz * barycentricCoords.y + v2.Normal.xyz * barycentricCoords.z);
 
-	T = normalize(vec3(transform * vec4(T, 0.0)));
-	N = normalize(vec3(transform * vec4(N, 0.0)));
+	T = normalize(objectToWorld * vec4(T, 0.0));
+	N = normalize(objectToWorld * vec4(N, 0.0));
 	T = normalize(T - dot(T, N) * N);
 	vec3 B = cross(N, T);
 	mat3 TBN = mat3(T, B, N);

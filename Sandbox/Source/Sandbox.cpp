@@ -721,6 +721,8 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 				{
 					albedoTexture.ResourceName = "G_BUFFER_ALBEDO_AO";
 					ImGui::Image(&albedoTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
 				}
 
 				if (ImGui::BeginTabItem("Normal Metallic Roughness Emissive"))

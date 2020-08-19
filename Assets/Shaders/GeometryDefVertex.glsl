@@ -30,17 +30,12 @@ void main()
     uint meshIndexID                            = (instance.Mask_MeshMaterialIndex) & 0x00FFFFFF;
     SMeshIndexDesc meshIndexDesc                = b_MeshIndices.val[meshIndexID];
 
-    mat4 transform;
-	transform[0] = vec4(instance.Transform[0]);
-	transform[1] = vec4(instance.Transform[1]);
-	transform[2] = vec4(instance.Transform[2]);
-	transform[3] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    transform = transpose(transform);
+    mat4x3 transform = transpose(instance.Transform);
 
-    vec4 worldPosition = transform * vec4(vertex.Position.xyz,  1.0f);
+    vec4 worldPosition = vec4(transform * vec4(vertex.Position.xyz, 1.0f),  1.0f);
 
-    vec3 normal 	= normalize((transform  * vec4(vertex.Normal.xyz, 0.0f)).xyz);
-	vec3 tangent    = normalize((transform  * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
+    vec3 normal 	= normalize(transform * vec4(vertex.Normal.xyz, 0.0f));
+	vec3 tangent    = normalize(transform * vec4(vertex.Tangent.xyz, 0.0f));
 	vec3 bitangent 	= normalize(cross(normal, tangent));
     vec2 texCoord   = vertex.TexCoord.xy;
 
