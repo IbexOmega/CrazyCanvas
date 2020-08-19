@@ -242,16 +242,17 @@ namespace LambdaEngine
 	{
 		m_FilesInShaderDirectory = EnumerateFilesInDirectory("../Assets/Shaders/", true);
 
-		m_FinalOutput.Name				= "FINAL_OUTPUT";
-		m_FinalOutput.NodeIndex			= s_NextNodeID++;
+		m_FinalOutput.Name						= "FINAL_OUTPUT";
+		m_FinalOutput.NodeIndex					= s_NextNodeID++;
 
 		EditorResourceStateGroup externalResourcesGroup = {};
-		externalResourcesGroup.Name			= "EXTERNAL_RESOURCES";
-		externalResourcesGroup.NodeIndex	= s_NextNodeID++;
+		externalResourcesGroup.Name				= "EXTERNAL_RESOURCES";
+		externalResourcesGroup.OutputNodeIndex	= s_NextNodeID++;
 
 		EditorResourceStateGroup temporalResourcesGroup = {};
-		temporalResourcesGroup.Name			= "TEMPORAL_RESOURCES";
-		temporalResourcesGroup.NodeIndex	= s_NextNodeID++;
+		temporalResourcesGroup.Name				= "TEMPORAL_RESOURCES";
+		temporalResourcesGroup.InputNodeIndex	= s_NextNodeID++;
+		temporalResourcesGroup.OutputNodeIndex	= s_NextNodeID++;
 
 		//EditorRenderStage imguiRenderStage = {};
 		//imguiRenderStage.Name					= RENDER_GRAPH_IMGUI_STAGE_NAME;
@@ -1047,14 +1048,14 @@ namespace LambdaEngine
 		ImGui::GetWindowDrawList()->Flags &= ~ImDrawListFlags_AntiAliasedLines; //Disable this since otherwise link thickness does not work
 
 		//Resource State Groups
-		for (auto resourceStateGroupIt = m_ResourceStateGroups.begin(); resourceStateGroupIt != m_ResourceStateGroups.end(); resourceStateGroupIt++)
+		for (uint32 resourceStateGroupIndex = 0; resourceStateGroupIndex < m_ResourceStateGroups.size(); resourceStateGroupIndex++)
 		{
-			EditorResourceStateGroup* pResourceStateGroup = &(*resourceStateGroupIt);
+			EditorResourceStateGroup* pResourceStateGroup = &m_ResourceStateGroups[resourceStateGroupIndex];
 
-			imnodes::BeginNode(pResourceStateGroup->NodeIndex);
+			imnodes::BeginNode(pResourceStateGroup->OutputNodeIndex);
 
 			imnodes::BeginNodeTitleBar();
-			ImGui::TextUnformatted(pResourceStateGroup->Name.c_str());
+			ImGui::TextUnformatted((pResourceStateGroup->Name + "_OUTPUT").c_str());
 			imnodes::EndNodeTitleBar();
 
 			String resourceStateToRemove = "";
@@ -1131,6 +1132,93 @@ namespace LambdaEngine
 
 					m_ResourceStatesByHalfAttributeIndex.erase(primaryAttributeIndex);
 					m_ParsedGraphDirty = true;
+				}
+			}
+
+			//Temporal Resource State Group has Output and Input Stages
+			if (resourceStateGroupIndex == TEMPORAL_RESOURCE_STATE_GROUP_INDEX)
+			{
+				imnodes::BeginNode(pResourceStateGroup->InputNodeIndex);
+
+				imnodes::BeginNodeTitleBar();
+				ImGui::TextUnformatted((pResourceStateGroup->Name + "_INPUT").c_str());
+				imnodes::EndNodeTitleBar();
+
+				String resourceStateToRemove = "";
+
+				for (const EditorResourceStateIdent& resourceStateIdent : pResourceStateGroup->ResourceStateIdents)
+				{
+					uint32 primaryAttributeIndex	= resourceStateIdent.AttributeIndex / 2;
+					uint32 inputAttributeIndex		= resourceStateIdent.AttributeIndex;
+					uint32 outputAttributeIndex		= inputAttributeIndex + 1;
+					EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[primaryAttributeIndex];
+
+					PushPinColorIfNeeded(EEditorPinType::INPUT, nullptr, pResourceState, inputAttributeIndex);
+					imnodes::BeginInputAttribute(inputAttributeIndex);
+					ImGui::Text(pResourceState->ResourceName.c_str());
+					ImGui::SameLine();
+					if (pResourceState->Removable)
+					{
+						if (ImGui::Button("-"))
+						{
+							resourceStateToRemove = pResourceState->ResourceName;
+						}
+					}
+					imnodes::EndInputAttribute();
+					PopPinColorIfNeeded(EEditorPinType::INPUT, nullptr, pResourceState, inputAttributeIndex);
+				}
+
+				ImGui::Button("Drag Resource Here");
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					const ImGuiPayload* pPayload = ImGui::AcceptDragDropPayload("RESOURCE");
+
+					if (pPayload != nullptr)
+					{
+						EditorResource* pResource = *reinterpret_cast<EditorResource**>(pPayload->Data);
+
+						if (pResourceStateGroup->FindResourceStateIdent(pResource->Name) == pResourceStateGroup->ResourceStateIdents.end())
+						{
+							pResourceStateGroup->ResourceStateIdents.push_back(CreateResourceState(pResource->Name, pResourceStateGroup->Name, true, ERenderGraphResourceBindingType::NONE));
+							m_ParsedGraphDirty = true;
+						}
+					}
+
+					ImGui::EndDragDropTarget();
+				}
+
+				imnodes::EndNode();
+
+				//Remove resource if "-" button pressed
+				if (resourceStateToRemove.size() > 0)
+				{
+					auto resourceStateIndexIt = pResourceStateGroup->FindResourceStateIdent(resourceStateToRemove);
+
+					if (resourceStateIndexIt != pResourceStateGroup->ResourceStateIdents.end())
+					{
+						int32 resourceAttributeIndex	= resourceStateIndexIt->AttributeIndex;
+						int32 primaryAttributeIndex		= resourceAttributeIndex / 2;
+						int32 inputAttributeIndex		= resourceAttributeIndex;
+						int32 outputAttributeIndex		= resourceAttributeIndex + 1;
+
+						pResourceStateGroup->ResourceStateIdents.erase(resourceStateIndexIt);
+
+						EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[primaryAttributeIndex];
+
+						DestroyLink(pResourceState->InputLinkIndex);
+
+						//Copy so that DestroyLink wont delete from set we're iterating through
+						TSet<int32> outputLinkIndices = pResourceState->OutputLinkIndices;
+						for (auto outputLinkIt = outputLinkIndices.begin(); outputLinkIt != outputLinkIndices.end(); outputLinkIt++)
+						{
+							int32 linkToBeDestroyedIndex = *outputLinkIt;
+							DestroyLink(linkToBeDestroyedIndex);
+						}
+
+						m_ResourceStatesByHalfAttributeIndex.erase(primaryAttributeIndex);
+						m_ParsedGraphDirty = true;
+					}
 				}
 			}
 		}
@@ -2582,8 +2670,11 @@ namespace LambdaEngine
 						writer.String("name");
 						writer.String(pResourceStateGroup->Name.c_str());
 
-						writer.String("node_index");
-						writer.Int(pResourceStateGroup->NodeIndex);
+						writer.String("input_node_index");
+						writer.Int(pResourceStateGroup->InputNodeIndex);
+
+						writer.String("output_node_index");
+						writer.Int(pResourceStateGroup->OutputNodeIndex);
 
 						writer.String("resource_states");
 						writer.StartArray();
@@ -3044,8 +3135,9 @@ namespace LambdaEngine
 				{
 					GenericObject resourceStateGroupObject = resourceStateGroupsArray[rsg].GetObject();
 					EditorResourceStateGroup resourceStateGroup = {};
-					resourceStateGroup.Name			= resourceStateGroupObject["name"].GetString();
-					resourceStateGroup.NodeIndex	= resourceStateGroupObject["node_index"].GetInt();
+					resourceStateGroup.Name				= resourceStateGroupObject["name"].GetString();
+					resourceStateGroup.InputNodeIndex	= resourceStateGroupObject["input_node_index"].GetInt();
+					resourceStateGroup.OutputNodeIndex	= resourceStateGroupObject["output_node_index"].GetInt();
 
 					GenericArray resourceStateArray = resourceStateGroupObject["resource_states"].GetArray();
 
@@ -3392,8 +3484,8 @@ namespace LambdaEngine
 		{
 			float nodeXSpace = 450.0f;
 
-			imnodes::SetNodeGridSpacePos(m_ResourceStateGroups[TEMPORAL_RESOURCE_STATE_GROUP_INDEX].NodeIndex, ImVec2(0.0f, 0.0f));
-			imnodes::SetNodeGridSpacePos(m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX].NodeIndex, ImVec2(0.0f, 450.0f));
+			imnodes::SetNodeGridSpacePos(m_ResourceStateGroups[TEMPORAL_RESOURCE_STATE_GROUP_INDEX].OutputNodeIndex, ImVec2(0.0f, 0.0f));
+			imnodes::SetNodeGridSpacePos(m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX].OutputNodeIndex, ImVec2(0.0f, 450.0f));
 
 			ImVec2 currentPos = ImVec2(nodeXSpace, 0.0f);
 
@@ -3415,7 +3507,8 @@ namespace LambdaEngine
 				}
 			}
 
-			imnodes::SetNodeGridSpacePos(m_FinalOutput.NodeIndex, currentPos);
+			imnodes::SetNodeGridSpacePos(m_FinalOutput.NodeIndex, ImVec2(currentPos.x, 450.0f));
+			imnodes::SetNodeGridSpacePos(m_ResourceStateGroups[TEMPORAL_RESOURCE_STATE_GROUP_INDEX].InputNodeIndex, ImVec2(currentPos.x, 0.0f));
 		}
 	}
 

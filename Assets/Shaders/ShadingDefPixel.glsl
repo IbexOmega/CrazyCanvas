@@ -18,11 +18,18 @@ layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_DirectRadiance
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_IndirectRadiance;
 
 layout(location = 0) out vec4	out_Color;
+layout(location = 1) out vec4   out_Albedo_AO;
+layout(location = 2) out vec4   out_Normals_Metall_Rough;
 
 void main()
 {
     vec4 sampledAlbedoAO                    = texture(u_AlbedoAO,                   in_TexCoord);
     vec4 sampledNormalMetallicRoughness     = texture(u_NormalMetallicRoughness,    in_TexCoord);
+    float sampledDepth                      = texture(u_DepthStencil,    in_TexCoord).r;
+
+    out_Albedo_AO               = sampledAlbedoAO;
+    out_Normals_Metall_Rough    = sampledNormalMetallicRoughness;
+    gl_FragDepth                = sampledDepth;
 
     //Skybox
 	if (dot(sampledNormalMetallicRoughness, sampledNormalMetallicRoughness) < EPSILON)
@@ -86,5 +93,5 @@ void main()
     vec3 colorHDR   = (sampledDirectRadiance.rgb + sampledIndirectRadiance.rgb) / sampledDirectRadiance.a;
     vec3 colorLDR   = ToneMap(colorHDR, GAMMA);
 
-    out_Color = vec4(colorLDR, 1.0f);
+    out_Color                   = vec4(colorLDR, 1.0f);
 }

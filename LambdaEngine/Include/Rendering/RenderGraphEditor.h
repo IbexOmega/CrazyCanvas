@@ -122,8 +122,9 @@ namespace LambdaEngine
 
 	struct EditorResourceStateGroup
 	{
-		String								Name			= "";
-		int32								NodeIndex		= 0;
+		String								Name				= "";
+		int32								InputNodeIndex		= 0;
+		int32								OutputNodeIndex		= 0;
 		TArray<EditorResourceStateIdent>	ResourceStateIdents;
 
 		TArray<EditorResourceStateIdent>::iterator FindResourceStateIdent(const String& name)
