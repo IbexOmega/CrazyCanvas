@@ -116,7 +116,7 @@ void main()
 	s_RadiancePayload.Distance			= 1.0f;
 	s_RadiancePayload.LocalToWorld 		= localToWorld;
 
-	const int maxBounces 				= 8;
+	const int maxBounces 				= 3;
 	const int russianRouletteStart		= 3;
 	const int numSamplesPerFrame		= maxBounces * 3;
 

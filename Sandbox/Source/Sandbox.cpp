@@ -674,7 +674,9 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 			static ImGuiTexture albedoTexture = {};
 			static ImGuiTexture normalTexture = {};
 			static ImGuiTexture motionTexture = {};
+			static ImGuiTexture linearZTexture = {};
 			static ImGuiTexture depthStencilTexture = {};
+			static ImGuiTexture momentsTexture = {};
 			static ImGuiTexture radianceTexture = {};
 
 			float windowWidth = ImGui::GetWindowWidth();
@@ -841,6 +843,100 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					ImGui::EndTabItem();
 				}
 
+				if (ImGui::BeginTabItem("Linear Z"))
+				{
+					linearZTexture.ResourceName = "G_BUFFER_LINEAR_Z";
+
+					const char* items[] = { "ALL", "Linear Z", "Max Change Z", "Prev Linear Z", "Packed Local Normal" };
+					static int currentItem = 0;
+					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
+
+					if (currentItem == 0)
+					{
+						linearZTexture.ReservedIncludeMask = 0x00008421;
+
+						linearZTexture.ChannelMul[0] = 1.0f;
+						linearZTexture.ChannelMul[1] = 1.0f;
+						linearZTexture.ChannelMul[2] = 1.0f;
+						linearZTexture.ChannelMul[3] = 1.0f;
+
+						linearZTexture.ChannelAdd[0] = 0.0f;
+						linearZTexture.ChannelAdd[1] = 0.0f;
+						linearZTexture.ChannelAdd[2] = 0.0f;
+						linearZTexture.ChannelAdd[3] = 0.0f;
+
+						linearZTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 1)
+					{
+						linearZTexture.ReservedIncludeMask = 0x00008880;
+
+						linearZTexture.ChannelMul[0] = 1.0f;
+						linearZTexture.ChannelMul[1] = 1.0f;
+						linearZTexture.ChannelMul[2] = 1.0f;
+						linearZTexture.ChannelMul[3] = 0.0f;
+
+						linearZTexture.ChannelAdd[0] = 0.0f;
+						linearZTexture.ChannelAdd[1] = 0.0f;
+						linearZTexture.ChannelAdd[2] = 0.0f;
+						linearZTexture.ChannelAdd[3] = 1.0f;
+
+						linearZTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 2)
+					{
+						linearZTexture.ReservedIncludeMask = 0x00004440;
+
+						linearZTexture.ChannelMul[0] = 1.0f;
+						linearZTexture.ChannelMul[1] = 1.0f;
+						linearZTexture.ChannelMul[2] = 1.0f;
+						linearZTexture.ChannelMul[3] = 0.0f;
+
+						linearZTexture.ChannelAdd[0] = 0.0f;
+						linearZTexture.ChannelAdd[1] = 0.0f;
+						linearZTexture.ChannelAdd[2] = 0.0f;
+						linearZTexture.ChannelAdd[3] = 1.0f;
+
+						linearZTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 3)
+					{
+						linearZTexture.ReservedIncludeMask = 0x00002220;
+
+						linearZTexture.ChannelMul[0] = 1.0f;
+						linearZTexture.ChannelMul[1] = 1.0f;
+						linearZTexture.ChannelMul[2] = 1.0f;
+						linearZTexture.ChannelMul[3] = 0.0f;
+
+						linearZTexture.ChannelAdd[0] = 0.0f;
+						linearZTexture.ChannelAdd[1] = 0.0f;
+						linearZTexture.ChannelAdd[2] = 0.0f;
+						linearZTexture.ChannelAdd[3] = 1.0f;
+
+						linearZTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 4)
+					{
+						linearZTexture.ReservedIncludeMask = 0x00001110;
+
+						linearZTexture.ChannelMul[0] = 1.0f;
+						linearZTexture.ChannelMul[1] = 1.0f;
+						linearZTexture.ChannelMul[2] = 1.0f;
+						linearZTexture.ChannelMul[3] = 0.0f;
+
+						linearZTexture.ChannelAdd[0] = 0.0f;
+						linearZTexture.ChannelAdd[1] = 0.0f;
+						linearZTexture.ChannelAdd[2] = 0.0f;
+						linearZTexture.ChannelAdd[3] = 1.0f;
+
+						linearZTexture.PixelShaderGUID = m_ImGuiPixelShaderPackedLocalNormalGUID;
+					}
+
+					ImGui::Image(&linearZTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
 				if (ImGui::BeginTabItem("Depth Stencil"))
 				{
 					depthStencilTexture.ResourceName = "G_BUFFER_DEPTH_STENCIL";
@@ -864,72 +960,127 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					ImGui::EndTabItem();
 				}
 
-				if (RAY_TRACING_ENABLED)
+				if (ImGui::BeginTabItem("Ray Tracing"))
 				{
-					if (ImGui::BeginTabItem("Ray Tracing"))
+					const char* items[] = { "Direct", "Direct Variance", "Indirect", "Indirect Variance", "Accumulation" };
+					static int currentItem = 0;
+					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
+
+					if (currentItem == 0)
 					{
-						const char* items[] = { "Direct", "Indirect", "Accumulation" };
-						static int currentItem = 0;
-						ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
+						radianceTexture.ResourceName		= "DIRECT_RADIANCE";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
 
-						if (currentItem == 0)
-						{
-							radianceTexture.ResourceName		= "DIRECT_RADIANCE";
-							radianceTexture.ReservedIncludeMask = 0x00008420;
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
 
-							radianceTexture.ChannelMul[0] = 1.0f;
-							radianceTexture.ChannelMul[1] = 1.0f;
-							radianceTexture.ChannelMul[2] = 1.0f;
-							radianceTexture.ChannelMul[3] = 0.0f;
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
 
-							radianceTexture.ChannelAdd[0] = 0.0f;
-							radianceTexture.ChannelAdd[1] = 0.0f;
-							radianceTexture.ChannelAdd[2] = 0.0f;
-							radianceTexture.ChannelAdd[3] = 1.0f;
-
-							radianceTexture.PixelShaderGUID = GUID_NONE;
-						}
-						else if (currentItem == 1)
-						{
-							radianceTexture.ResourceName		= "INDIRECT_RADIANCE";
-							radianceTexture.ReservedIncludeMask = 0x00008420;
-
-							radianceTexture.ChannelMul[0] = 1.0f;
-							radianceTexture.ChannelMul[1] = 1.0f;
-							radianceTexture.ChannelMul[2] = 1.0f;
-							radianceTexture.ChannelMul[3] = 0.0f;
-
-							radianceTexture.ChannelAdd[0] = 0.0f;
-							radianceTexture.ChannelAdd[1] = 0.0f;
-							radianceTexture.ChannelAdd[2] = 0.0f;
-							radianceTexture.ChannelAdd[3] = 1.0f;
-
-							radianceTexture.PixelShaderGUID = GUID_NONE;
-						}
-						else if (currentItem == 2)
-						{
-							radianceTexture.ResourceName		= "DIRECT_RADIANCE";
-							radianceTexture.ReservedIncludeMask = 0x00001110;
-
-							constexpr const float maxAccumulationInv = 1.0f / 6.55e4f;
-
-							radianceTexture.ChannelMul[0] = maxAccumulationInv;
-							radianceTexture.ChannelMul[1] = 0.0f;
-							radianceTexture.ChannelMul[2] = 0.0f;
-							radianceTexture.ChannelMul[3] = 0.0f;
-
-							radianceTexture.ChannelAdd[0] = 0.0f;
-							radianceTexture.ChannelAdd[1] = 0.0f;
-							radianceTexture.ChannelAdd[2] = 0.0f;
-							radianceTexture.ChannelAdd[3] = 1.0f;
-
-							radianceTexture.PixelShaderGUID = GUID_NONE;
-						}
-
-						ImGui::Image(&radianceTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
-
-						ImGui::EndTabItem();
+						radianceTexture.PixelShaderGUID = GUID_NONE;
 					}
+					else if (currentItem == 1)
+					{
+						radianceTexture.ResourceName		= "DIRECT_RADIANCE";
+						radianceTexture.ReservedIncludeMask = 0x00001110;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 2)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_RADIANCE";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 3)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_RADIANCE";
+						radianceTexture.ReservedIncludeMask = 0x00001110;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 4)
+					{
+						radianceTexture.ResourceName		= "SVGF_HISTORY";
+						radianceTexture.ReservedIncludeMask = 0x00008000;
+
+						//constexpr const float maxAccumulationInv = 1.0f / 6.55e4f;
+						constexpr const float maxAccumulationInv = 1.0f / 32.0f;
+
+						radianceTexture.ChannelMul[0] = maxAccumulationInv;
+						radianceTexture.ChannelMul[1] = 0.0f;
+						radianceTexture.ChannelMul[2] = 0.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+
+					ImGui::Image(&radianceTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Moments"))
+				{
+					momentsTexture.ResourceName = "MOMENTS";
+
+					momentsTexture.ReservedIncludeMask = 0x00008421;
+
+					momentsTexture.ChannelMul[0] = 1.0f;
+					momentsTexture.ChannelMul[1] = 1.0f;
+					momentsTexture.ChannelMul[2] = 1.0f;
+					momentsTexture.ChannelMul[3] = 0.0f;
+
+					momentsTexture.ChannelAdd[0] = 0.0f;
+					momentsTexture.ChannelAdd[1] = 0.0f;
+					momentsTexture.ChannelAdd[2] = 0.0f;
+					momentsTexture.ChannelAdd[3] = 1.0f;
+
+					momentsTexture.PixelShaderGUID = GUID_NONE;
+
+					ImGui::Image(&momentsTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
 				}
 
 				ImGui::EndTabBar();
@@ -1055,11 +1206,12 @@ bool Sandbox::InitRendererForDeferred()
 
 	//GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("PostProcess.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
 
-	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelNormal.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("ImGuiPixelDepth.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderMetallicGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelMetallic.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelRoughness.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderEmissiveGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelEmissive.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelNormal.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("ImGuiPixelDepth.glsl",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderMetallicGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelMetallic.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelRoughness.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderEmissiveGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelEmissive.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderPackedLocalNormalGUID		= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedLocalNormal.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
 	//ResourceManager::LoadShaderFromFile("ForwardVertex.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
 	//ResourceManager::LoadShaderFromFile("ForwardPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
@@ -1074,7 +1226,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	else if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_NEW_NEW.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_NEW.lrg";
 	}
 	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 	{
@@ -1098,6 +1250,12 @@ bool Sandbox::InitRendererForDeferred()
 
 	clock.Tick();
 	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
+
+	SamplerDesc nearestSamplerDesc		= m_pNearestSampler->GetDesc();
+	SamplerDesc linearSamplerDesc		= m_pLinearSampler->GetDesc();
+
+	SamplerDesc* pNearestSamplerDesc	= &nearestSamplerDesc;
+	SamplerDesc* pLinearSamplerDesc		= &linearSamplerDesc;
 
 	Window* pWindow	= CommonApplication::Get()->GetMainWindow();
 	uint32 renderWidth	= pWindow->GetWidth();
@@ -1238,8 +1396,6 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		
-
 		String blueNoiseLUTFileNames[NUM_BLUE_NOISE_LUTS];
 
 		for (uint32 i = 0; i < NUM_BLUE_NOISE_LUTS; i++)
@@ -1268,7 +1424,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.Name					= "G-Buffer Albedo-AO Texture";
 		textureDesc.Type					= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType				= EMemoryType::MEMORY_GPU;
-		textureDesc.Format					= EFormat::FORMAT_R8G8B8A8_UNORM;
+		textureDesc.Format					= EFormat::FORMAT_R32G32B32A32_SFLOAT;
 		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width					= CommonApplication::Get()->GetMainWindow()->GetWidth();
 		textureDesc.Height					= CommonApplication::Get()->GetMainWindow()->GetHeight();
@@ -1287,8 +1443,6 @@ bool Sandbox::InitRendererForDeferred()
 		textureViewDesc.ArrayCount			= 1;
 		textureViewDesc.Format				= textureDesc.Format;
 
-		SamplerDesc* pSamplerDesc = &m_pNearestSampler->GetDesc();
-
 		{
 			TextureDesc* pTextureDesc			= &textureDesc;
 			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
@@ -1297,7 +1451,7 @@ bool Sandbox::InitRendererForDeferred()
 			resourceUpdateDesc.ResourceName								= "G_BUFFER_ALBEDO_AO";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
 			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 
@@ -1312,7 +1466,7 @@ bool Sandbox::InitRendererForDeferred()
 			resourceUpdateDesc.ResourceName								= "PREV_G_BUFFER_ALBEDO_AO";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
 			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 	}
@@ -1322,7 +1476,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.Name					= "Norm-Met-Rough G-Buffer Texture";
 		textureDesc.Type					= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType				= EMemoryType::MEMORY_GPU;
-		textureDesc.Format					= EFormat::FORMAT_R16G16B16A16_SFLOAT;
+		textureDesc.Format					= EFormat::FORMAT_R32G32B32A32_SFLOAT;
 		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width					= CommonApplication::Get()->GetMainWindow()->GetWidth();
 		textureDesc.Height					= CommonApplication::Get()->GetMainWindow()->GetHeight();
@@ -1341,8 +1495,6 @@ bool Sandbox::InitRendererForDeferred()
 		textureViewDesc.ArrayCount			= 1;
 		textureViewDesc.Format				= textureDesc.Format;
 
-		SamplerDesc* pSamplerDesc = &m_pNearestSampler->GetDesc();
-
 		{
 			TextureDesc* pTextureDesc			= &textureDesc;
 			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
@@ -1351,7 +1503,7 @@ bool Sandbox::InitRendererForDeferred()
 			resourceUpdateDesc.ResourceName								= "G_BUFFER_NORM_MET_ROUGH";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
 			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 
@@ -1366,7 +1518,7 @@ bool Sandbox::InitRendererForDeferred()
 			resourceUpdateDesc.ResourceName								= "PREV_G_BUFFER_NORM_MET_ROUGH";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
 			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 	}
@@ -1376,8 +1528,8 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.Name					= "G-Buffer Motion Texture";
 		textureDesc.Type					= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType				= EMemoryType::MEMORY_GPU;
-		textureDesc.Format					= EFormat::FORMAT_R8G8B8A8_UNORM;
-		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Format					= EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width					= CommonApplication::Get()->GetMainWindow()->GetWidth();
 		textureDesc.Height					= CommonApplication::Get()->GetMainWindow()->GetHeight();
 		textureDesc.Depth					= 1;
@@ -1387,15 +1539,13 @@ bool Sandbox::InitRendererForDeferred()
 
 		TextureViewDesc textureViewDesc		= { };
 		textureViewDesc.Name				= "G-Buffer Motion Texture View";
-		textureViewDesc.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_2D;
 		textureViewDesc.Miplevel			= 0;
 		textureViewDesc.MiplevelCount		= 1;
 		textureViewDesc.ArrayIndex			= 0;
 		textureViewDesc.ArrayCount			= 1;
 		textureViewDesc.Format				= textureDesc.Format;
-
-		SamplerDesc* pSamplerDesc = &m_pNearestSampler->GetDesc();
 
 		{
 			TextureDesc* pTextureDesc			= &textureDesc;
@@ -1405,10 +1555,69 @@ bool Sandbox::InitRendererForDeferred()
 			resourceUpdateDesc.ResourceName								= "G_BUFFER_MOTION";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
 			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 	}
+
+	{
+		TextureDesc textureDesc;
+		textureDesc.Name				= "G-Buffer Linear Z Texture";
+		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.Format				= EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width				= renderWidth;
+		textureDesc.Height				= renderHeight;
+		textureDesc.Depth				= 1;
+		textureDesc.SampleCount			= 1;
+		textureDesc.Miplevels			= 1;
+		textureDesc.ArrayCount			= 1;
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.Name			= "G-Buffer Linear Z Texture View";
+		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Format			= textureDesc.Format;
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "G_BUFFER_LINEAR_Z";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Prev " + textureDesc.Name;
+			tvd.Name	= "Prev " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "PREV_G_BUFFER_LINEAR_Z";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
 
 	{
 		TextureDesc textureDesc = {};
@@ -1434,8 +1643,6 @@ bool Sandbox::InitRendererForDeferred()
 		textureViewDesc.ArrayCount		= 1;
 		textureViewDesc.Format			= textureDesc.Format;
 
-		SamplerDesc* pSamplerDesc = &m_pNearestSampler->GetDesc();
-
 		{
 			TextureDesc* pTextureDesc			= &textureDesc;
 			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
@@ -1444,7 +1651,7 @@ bool Sandbox::InitRendererForDeferred()
 			resourceUpdateDesc.ResourceName								= "G_BUFFER_DEPTH_STENCIL";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
 			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 
@@ -1459,62 +1666,204 @@ bool Sandbox::InitRendererForDeferred()
 			resourceUpdateDesc.ResourceName								= "PREV_G_BUFFER_DEPTH_STENCIL";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
 			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 	}
 
-	if (RAY_TRACING_ENABLED)
 	{
-		std::vector<TextureDesc>		textureDescriptions(BACK_BUFFER_COUNT);
-		std::vector<TextureViewDesc>	textureViewDescriptions(BACK_BUFFER_COUNT);
-		std::vector<SamplerDesc>		samplerDescriptions(BACK_BUFFER_COUNT, m_pNearestSampler->GetDesc());
+		TextureDesc textureDesc;
+		textureDesc.Name				= "Radiance Texture";
+		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.Format				= EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width				= renderWidth;
+		textureDesc.Height				= renderHeight;
+		textureDesc.Depth				= 1;
+		textureDesc.SampleCount			= 1;
+		textureDesc.Miplevels			= 1;
+		textureDesc.ArrayCount			= 1;
 
-		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.Name			= "Radiance Texture View";
+		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Format			= textureDesc.Format;
+
 		{
-			TextureDesc& textureDesc = textureDescriptions[b];
-			textureDesc.Name				= "Direct Radiance Texture " + std::to_string(b);
-			textureDesc.Type				= ETextureType::TEXTURE_2D;
-			textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
-			textureDesc.Format				= EFormat::FORMAT_R16G16B16A16_SFLOAT;
-			textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-			textureDesc.Width				= renderWidth;
-			textureDesc.Height				= renderHeight;
-			textureDesc.Depth				= 1;
-			textureDesc.SampleCount			= 1;
-			textureDesc.Miplevels			= 1;
-			textureDesc.ArrayCount			= 1;
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
 
-			TextureViewDesc& textureViewDesc = textureViewDescriptions[b];
-			textureViewDesc.Name			= "Direct Radiance Texture View " + std::to_string(b);
-			textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
-			textureViewDesc.Miplevel		= 0;
-			textureViewDesc.MiplevelCount	= 1;
-			textureViewDesc.ArrayIndex		= 0;
-			textureViewDesc.ArrayCount		= 1;
-			textureViewDesc.Format			= textureDesc.Format;
+			td.Name		= "Direct " + textureDesc.Name;
+			tvd.Name	= "Direct " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 
-		TextureDesc* pTextureDescriptions			= textureDescriptions.data();
-		TextureViewDesc* pTextureViewDescriptions	= textureViewDescriptions.data();
-		SamplerDesc* pSamplerDescriptions			= samplerDescriptions.data();
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
 
-		ResourceUpdateDesc directRadianceResourceUpdateDesc = {};
-		directRadianceResourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE";
-		directRadianceResourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDescriptions;
-		directRadianceResourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDescriptions;
-		directRadianceResourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDescriptions;
+			td.Name		= "Prev Direct " + textureDesc.Name;
+			tvd.Name	= "Prev Direct " + textureDesc.Name;
 
-		m_pRenderGraph->UpdateResource(directRadianceResourceUpdateDesc);
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
 
-		ResourceUpdateDesc indirectRadianceResourceUpdateDesc = {};
-		indirectRadianceResourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE";
-		indirectRadianceResourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDescriptions;
-		indirectRadianceResourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDescriptions;
-		indirectRadianceResourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDescriptions;
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "PREV_DIRECT_RADIANCE";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
 
-		m_pRenderGraph->UpdateResource(indirectRadianceResourceUpdateDesc);
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Indirect " + textureDesc.Name;
+			tvd.Name	= "Indirect " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Prev Indirect " + textureDesc.Name;
+			tvd.Name	= "Prev Indirect " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "PREV_INDIRECT_RADIANCE";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+	{
+		TextureDesc textureDesc;
+		textureDesc.Name				= "Moments Texture";
+		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.Format				= EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width				= renderWidth;
+		textureDesc.Height				= renderHeight;
+		textureDesc.Depth				= 1;
+		textureDesc.SampleCount			= 1;
+		textureDesc.Miplevels			= 1;
+		textureDesc.ArrayCount			= 1;
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.Name			= "Moments Texture View";
+		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Format			= textureDesc.Format;
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "MOMENTS";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Prev " + textureDesc.Name;
+			tvd.Name	= "Prev " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "PREV_MOMENTS";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+	{
+		TextureDesc textureDesc;
+		textureDesc.Name				= "SVGF History Texture";
+		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.Format				= EFormat::FORMAT_R16_SFLOAT;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width				= renderWidth;
+		textureDesc.Height				= renderHeight;
+		textureDesc.Depth				= 1;
+		textureDesc.SampleCount			= 1;
+		textureDesc.Miplevels			= 1;
+		textureDesc.ArrayCount			= 1;
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.Name			= "SVGF History Texture View";
+		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Format			= textureDesc.Format;
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "SVGF_HISTORY";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
 	}
 
 	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());

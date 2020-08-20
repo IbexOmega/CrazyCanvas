@@ -48,17 +48,17 @@ layout(binding = 5, set = BUFFER_SET_INDEX) buffer MaterialParameters  { SMateri
 layout(binding = 6, set = BUFFER_SET_INDEX) uniform LightsBuffer       { SLightsBuffer val; }          u_LightsBuffer;
 layout(binding = 7, set = BUFFER_SET_INDEX) uniform PerFrameBuffer     { SPerFrameBuffer val; }        u_PerFrameBuffer;
 
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_AlbedoAO;
-layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_NormalMetallicRoughness;
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_DepthStencil;
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneRoughnessMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 8, set = TEXTURE_SET_INDEX) uniform sampler2DArray             u_BlueNoiseLUT;
-layout(binding = 9, set = TEXTURE_SET_INDEX, rgba16f) uniform image2D   		u_DirectRadiance;
-layout(binding = 10, set = TEXTURE_SET_INDEX, rgba16f) uniform image2D   		u_IndirectRadiance;
+layout(binding = 0,     set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_AlbedoAO;
+layout(binding = 1,     set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_NormalMetallicRoughness;
+layout(binding = 2,     set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_DepthStencil;
+layout(binding = 3,     set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 4,     set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 5,     set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 6,     set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 7,     set = TEXTURE_SET_INDEX) uniform sampler2D                  u_SceneRoughnessMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 8,     set = TEXTURE_SET_INDEX) uniform sampler2DArray             u_BlueNoiseLUT;
+layout(binding = 9,     set = TEXTURE_SET_INDEX, rgba32f) uniform image2D   		u_DirectRadiance;
+layout(binding = 10,    set = TEXTURE_SET_INDEX, rgba32f) uniform image2D   		u_IndirectRadiance;
 
 
 SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition, mat4 cameraViewInv)

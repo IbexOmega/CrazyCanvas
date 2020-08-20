@@ -43,7 +43,9 @@ namespace LambdaEngine
 		"R8G8B8A8_SNORM",
 		"R16G16B16A16_SFLOAT",
 		"D24_UNORM_S8_UINT",
-		"R16_UNORM"
+		"R16_UNORM",
+		"R32G32B32A32_SFLOAT",
+		"R16_SFLOAT",
 	};
 
 	constexpr const EFormat TEXTURE_FORMATS[] =
@@ -54,7 +56,9 @@ namespace LambdaEngine
 		EFormat::FORMAT_R8G8B8A8_SNORM,
 		EFormat::FORMAT_R16G16B16A16_SFLOAT,
 		EFormat::FORMAT_D24_UNORM_S8_UINT,
-		EFormat::FORMAT_R16_UNORM
+		EFormat::FORMAT_R16_UNORM,
+		EFormat::FORMAT_R32G32B32A32_SFLOAT,
+		EFormat::FORMAT_R16_SFLOAT,
 	};
 
 	RenderGraphEditor::RenderGraphEditor()
@@ -1658,7 +1662,7 @@ namespace LambdaEngine
 		static const char* dimensionNames[] =
 		{
 			"CONSTANT",
-			"EXTERNAL"
+			"EXTERNAL",
 			"RELATIVE",
 			"RELATIVE_1D",
 		};
@@ -3184,7 +3188,8 @@ namespace LambdaEngine
 
 					loadedResourceStateGroups.push_back(resourceStateGroup);
 
-					if (loadedFinalOutput.NodeIndex > largestNodeID) largestNodeID = loadedFinalOutput.NodeIndex;
+					if (resourceStateGroup.InputNodeIndex > largestNodeID) largestNodeID = resourceStateGroup.InputNodeIndex;
+					if (resourceStateGroup.OutputNodeIndex > largestNodeID) largestNodeID = resourceStateGroup.OutputNodeIndex;
 				}
 			}
 			else
@@ -3400,7 +3405,7 @@ namespace LambdaEngine
 					loadedRenderStagesByName[renderStage.Name] = renderStage;
 					loadedRenderStageNameByInputAttributeIndex[renderStage.InputAttributeIndex] = renderStage.Name;
 
-					if (renderStage.InputAttributeIndex > largestNodeID) largestNodeID = renderStage.InputAttributeIndex;
+					if (renderStage.NodeIndex > largestNodeID) largestNodeID = renderStage.NodeIndex;
 				}
 			}
 			else
@@ -3530,6 +3535,10 @@ namespace LambdaEngine
 	{
 		//Reset to clear state
 		{
+			s_NextNodeID		= 0;
+			s_NextAttributeID	= 0;
+			s_NextLinkID		= 0;
+
 			m_ResourceStateGroups.clear();
 			m_FinalOutput = {};
 

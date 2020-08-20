@@ -17,13 +17,15 @@ namespace LambdaEngine
     enum class EFormat : uint8
     {
         NONE							= 0,
-		FORMAT_R32G32_SFLOAT			= 1,
-        FORMAT_R8G8B8A8_UNORM			= 2,
-        FORMAT_B8G8R8A8_UNORM			= 3,
-        FORMAT_R8G8B8A8_SNORM			= 4,
-        FORMAT_R16G16B16A16_SFLOAT		= 5,
-		FORMAT_D24_UNORM_S8_UINT		= 6,
-		FORMAT_R16_UNORM				= 7,
+		FORMAT_R16_UNORM				= 1,
+		FORMAT_R16_SFLOAT				= 2,
+		FORMAT_R32G32_SFLOAT			= 3,
+        FORMAT_R8G8B8A8_UNORM			= 4,
+        FORMAT_B8G8R8A8_UNORM			= 5,
+        FORMAT_R8G8B8A8_SNORM			= 6,
+        FORMAT_R16G16B16A16_SFLOAT		= 7,
+		FORMAT_R32G32B32A32_SFLOAT		= 8,
+		FORMAT_D24_UNORM_S8_UINT		= 9,
     };
 
 	enum class EIndexType

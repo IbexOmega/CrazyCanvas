@@ -19,10 +19,11 @@ layout(location = 0) out flat uint out_MaterialIndex;
 layout(location = 1) out vec3 out_Normal;
 layout(location = 2) out vec3 out_Tangent;
 layout(location = 3) out vec3 out_Bitangent;
-layout(location = 4) out vec2 out_TexCoord;
-layout(location = 5) out vec4 out_Position;
-layout(location = 6) out vec4 out_ClipPosition;
-layout(location = 7) out vec4 out_PrevClipPosition;
+layout(location = 4) out vec3 out_LocalNormal;
+layout(location = 5) out vec2 out_TexCoord;
+layout(location = 6) out vec4 out_WorldPosition;
+layout(location = 7) out vec4 out_ClipPosition;
+layout(location = 8) out vec4 out_PrevClipPosition;
 
 void main()
 {
@@ -51,8 +52,9 @@ void main()
 	out_Normal 			        = normal;
 	out_Tangent 		        = tangent;
 	out_Bitangent 		        = bitangent;
+    out_LocalNormal             = vertex.Normal.xyz;
 	out_TexCoord 		        = texCoord;
-	out_Position		        = worldPosition;
+	out_WorldPosition		    = worldPosition;
     out_ClipPosition            = perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
     out_PrevClipPosition        = perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
 

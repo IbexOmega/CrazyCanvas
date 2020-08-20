@@ -171,4 +171,31 @@ vec2 Hammersley(uint i, uint N)
     return vec2(float(i) / float(N), RadicalInverse_VdC(i));
 }  
 
+
+// A utility to convert a vec3 to a 2-component octohedral representation packed into one uint
+uint dirToOct(vec3 normal)
+{
+	vec2 p = normal.xy * (1.0f / dot(abs(normal), vec3(1.0f)));
+	vec2 e = normal.z > 0.0f ? p : (1.0f - abs(p.yx)) * (step(0.0f, p) * 2.0f - vec2(1.0f));
+	return packUnorm2x16(e.xy);
+	//return (asuint(f32tof16(e.y)) << 16) + (asuint(f32tof16(e.x)));
+}
+
+vec3 octToDir(uint octo)
+{
+	vec2 e = unpackUnorm2x16(octo) ; 
+	vec3 v = vec3(e, 1.0f - abs(e.x) - abs(e.y));
+	if (v.z < 0.0f)
+		v.xy = (1.0f - abs(v.yx)) * (step(0.0f, v.xy) * 2.0f - vec2(1.0f));
+	return normalize(v);
+}
+
+/** Returns a relative luminance of an input linear RGB color in the ITU-R BT.709 color space
+\param RGBColor linear HDR RGB color in the ITU-R BT.709 color space
+*/
+float luminance(vec3 rgb)
+{
+    return dot(rgb, vec3(0.2126f, 0.7152f, 0.0722f));
+}
+
 #endif

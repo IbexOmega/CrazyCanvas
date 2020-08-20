@@ -9,10 +9,11 @@ layout(location = 0) in flat uint in_MaterialIndex;
 layout(location = 1) in vec3 in_Normal;
 layout(location = 2) in vec3 in_Tangent;
 layout(location = 3) in vec3 in_Bitangent;
-layout(location = 4) in vec2 in_TexCoord;
-layout(location = 5) in vec4 in_Position;
-layout(location = 6) in vec4 in_ClipPosition;
-layout(location = 7) in vec4 in_PrevClipPosition;
+layout(location = 4) in vec3 in_LocalNormal;
+layout(location = 5) in vec2 in_TexCoord;
+layout(location = 6) in vec4 in_WorldPosition;
+layout(location = 7) in vec4 in_ClipPosition;
+layout(location = 8) in vec4 in_PrevClipPosition;
 
 layout(binding = 6, set = BUFFER_SET_INDEX) buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
 
@@ -25,6 +26,7 @@ layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneRougnessMa
 layout(location = 0) out vec4 out_Albedo_AO;
 layout(location = 1) out vec4 out_Normals_Metall_Rough;
 layout(location = 2) out vec4 out_Motion;
+layout(location = 3) out vec4 out_LinearZ;
 
 void main()
 {
@@ -64,9 +66,16 @@ void main()
 
 	vec2 currentNDC 	= in_ClipPosition.xy / in_ClipPosition.w;
 	vec2 prevNDC 		= in_PrevClipPosition.xy / in_PrevClipPosition.w;
-	vec2 screenMotion 	= currentNDC - prevNDC;
+	vec2 screenMotion 	= (currentNDC - prevNDC);//* 0.5f + 0.5f;
+	vec2 posNormFWidth	= vec2(length(fwidth(in_WorldPosition.xyz)), length(fwidth(in_Normal)));
+
+	float linearZ 		= gl_FragCoord.z * gl_FragCoord.w;
+	float maxChangeZ	= max(abs(dFdx(linearZ)), abs(dFdy(linearZ)));
+	float prevLinearZ	= 1.0f / in_PrevClipPosition.z; //Is this correct?
+	float objNorm 		= uintBitsToFloat(dirToOct(normalize(in_LocalNormal)));
 
 	out_Albedo_AO 				= vec4(storedAlbedo, storedAO);
 	out_Normals_Metall_Rough	= vec4(storedNormal, storedMetallic, storedRoughness);
-	out_Motion					= vec4(screenMotion, 0.0f, 0.0f);
+	out_Motion					= vec4(screenMotion, posNormFWidth);
+	out_LinearZ					= vec4(linearZ, maxChangeZ, prevLinearZ, objNorm);
 }

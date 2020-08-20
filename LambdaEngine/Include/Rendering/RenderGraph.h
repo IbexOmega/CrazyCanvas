@@ -163,6 +163,7 @@ namespace LambdaEngine
 
 		struct RenderStage
 		{
+			String					Name							= "";
 			RenderStageParameters	Parameters						= {};
 
 			glm::uvec3				Dimensions						= glm::uvec3(0);
@@ -192,9 +193,10 @@ namespace LambdaEngine
 
 		struct SynchronizationStage
 		{
-			ECommandQueueType					ExecutionQueue			= ECommandQueueType::COMMAND_QUEUE_NONE;
-			FPipelineStageFlags					SrcPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-			FPipelineStageFlags					DstPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			ECommandQueueType					ExecutionQueue					= ECommandQueueType::COMMAND_QUEUE_NONE;
+			FPipelineStageFlags					SrcPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags					SameQueueDstPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags					OtherQueueDstPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			TArray<PipelineBufferBarrierDesc>	BufferBarriers[2];
 			TArray<PipelineTextureBarrierDesc>	TextureBarriers[4];
