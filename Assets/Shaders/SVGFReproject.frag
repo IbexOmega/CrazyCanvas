@@ -199,5 +199,5 @@ void main()
     imageStore(u_IndirectRadiance,  iPos, vec4(mix(historyData.PrevIndirect,    vec4(indirect, 0.0f),   alpha).rgb, variance.g));
     imageStore(u_History,           iPos, vec4(historyData.HistoryLength));
 
-    out_Moments = moments;
+    out_Moments = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 }

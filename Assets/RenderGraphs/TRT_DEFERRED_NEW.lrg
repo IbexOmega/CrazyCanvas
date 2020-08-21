@@ -655,11 +655,11 @@
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
-                "vertex_shader": "GeometryDefVertex.glsl",
+                "vertex_shader": "GeometryDefVertex.vert",
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
-                "pixel_shader": "GeometryDefPixel.glsl"
+                "pixel_shader": "GeometryDefPixel.frag"
             },
             "resource_states": [
                 {
@@ -867,11 +867,11 @@
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
-                "vertex_shader": "FullscreenQuad.glsl",
+                "vertex_shader": "FullscreenQuad.vert",
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
-                "pixel_shader": "SVGFOutput.glsl"
+                "pixel_shader": "SVGFOutput.frag"
             },
             "resource_states": [
                 {
@@ -1049,14 +1049,14 @@
             "y_dim_var": 1.0,
             "z_dim_var": 1.0,
             "shaders": {
-                "raygen_shader": "Raygen.glsl",
+                "raygen_shader": "Raygen.rgen",
                 "miss_shaders": [
-                    "MissRadiance.glsl",
-                    "MissShadow.glsl"
+                    "MissRadiance.rmiss",
+                    "MissShadow.rmiss"
                 ],
                 "closest_hit_shaders": [
-                    "ClosestHitRadiance.glsl",
-                    "ClosestHitShadow.glsl"
+                    "ClosestHitRadiance.rchit",
+                    "ClosestHitShadow.rchit"
                 ]
             },
             "resource_states": [
@@ -1273,11 +1273,11 @@
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
-                "vertex_shader": "FullscreenQuad.glsl",
+                "vertex_shader": "FullscreenQuad.vert",
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
-                "pixel_shader": "SVGFReproject.glsl"
+                "pixel_shader": "SVGFReproject.frag"
             },
             "resource_states": [
                 {
