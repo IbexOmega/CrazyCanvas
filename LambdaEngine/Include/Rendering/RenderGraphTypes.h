@@ -158,6 +158,7 @@ namespace LambdaEngine
 			ERenderStageDrawType		DrawType;
 			String						IndexBufferName;
 			String						IndirectArgsBufferName;
+			bool						DepthTestEnabled;
 		} Graphics;
 
 		struct

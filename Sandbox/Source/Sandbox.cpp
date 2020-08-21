@@ -1226,7 +1226,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	else if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_NEW.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_NEW_NEW.lrg";
 	}
 	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 	{

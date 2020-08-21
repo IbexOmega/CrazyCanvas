@@ -51,6 +51,7 @@ namespace LambdaEngine
 		String						Name						= "";
 		const IRenderPass*			pRenderPass					= nullptr;
 		const IPipelineLayout*		pPipelineLayout				= nullptr;
+		bool						DepthTestEnabled			= false;
 
 		VertexInputBindingDesc		pVertexInputBindings		[MAX_VERTEX_INPUT_ATTACHMENTS];
 		uint32						VertexInputBindingCount		= 0;

@@ -167,6 +167,7 @@ namespace LambdaEngine
 		pDstDesc->Name						= pSrcDesc->Name;
 		pDstDesc->pRenderPass				= pSrcDesc->pRenderPass;
 		pDstDesc->pPipelineLayout			= pSrcDesc->pPipelineLayout;
+		pDstDesc->DepthTestEnabled			= pSrcDesc->DepthTestEnabled;
 		memcpy(pDstDesc->pVertexInputBindings, pSrcDesc->pVertexInputBindings, MAX_VERTEX_INPUT_ATTACHMENTS * sizeof(VertexInputBindingDesc));
 		pDstDesc->VertexInputBindingCount	= pSrcDesc->VertexInputBindingCount;
 		memcpy(pDstDesc->pBlendAttachmentStates, pSrcDesc->pBlendAttachmentStates, MAX_COLOR_ATTACHMENTS * sizeof(BlendAttachmentState));

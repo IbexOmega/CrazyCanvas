@@ -1283,6 +1283,7 @@ namespace LambdaEngine
 					GraphicsManagedPipelineStateDesc pipelineDesc = {};
 					pipelineDesc.Name							= pRenderStageDesc->Name;
 					pipelineDesc.pPipelineLayout				= pRenderStage->pPipelineLayout;
+					pipelineDesc.DepthTestEnabled				= pRenderStageDesc->Graphics.DepthTestEnabled;
 					pipelineDesc.TaskShader						= pRenderStageDesc->Graphics.Shaders.TaskShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.TaskShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER,		EShaderLang::GLSL);
 					pipelineDesc.MeshShader						= pRenderStageDesc->Graphics.Shaders.MeshShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.MeshShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER,		EShaderLang::GLSL);
 					pipelineDesc.VertexShader					= pRenderStageDesc->Graphics.Shaders.VertexShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.VertexShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,		EShaderLang::GLSL);

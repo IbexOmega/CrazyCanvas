@@ -62,7 +62,7 @@ namespace LambdaEngine
 		m_DepthStencilState.sType                   = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		m_DepthStencilState.flags                   = 0;
 		m_DepthStencilState.pNext                   = nullptr;
-		m_DepthStencilState.depthTestEnable         = VK_TRUE;
+		//m_DepthStencilState.depthTestEnable         = VK_FALSE;
 		m_DepthStencilState.depthWriteEnable        = VK_TRUE;
 		m_DepthStencilState.depthCompareOp          = VK_COMPARE_OP_LESS_OR_EQUAL;
 		m_DepthStencilState.depthBoundsTestEnable   = VK_FALSE;
@@ -186,6 +186,8 @@ namespace LambdaEngine
 
 		m_BlendState.pAttachments			= m_pColorBlendAttachmentStates;
 		m_BlendState.attachmentCount		= pDesc->BlendAttachmentStateCount;
+
+		m_DepthStencilState.depthTestEnable = pDesc->DepthTestEnabled ? VK_TRUE : VK_FALSE;
 
         const PipelineLayoutVK* pPipelineLayoutVk  = reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
         const RenderPassVK*     pRenderPassVk      = reinterpret_cast<const RenderPassVK*>(pDesc->pRenderPass);

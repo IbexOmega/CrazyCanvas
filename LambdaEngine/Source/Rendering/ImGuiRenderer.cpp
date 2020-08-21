@@ -1015,6 +1015,7 @@ namespace LambdaEngine
 		pipelineStateDesc.Name							= "ImGui Pipeline State";
 		pipelineStateDesc.pRenderPass					= m_pRenderPass;
 		pipelineStateDesc.pPipelineLayout				= m_pPipelineLayout;
+		pipelineStateDesc.DepthTestEnabled				= false;
 		pipelineStateDesc.pVertexInputBindings[0]		= vertexInputBindingDesc;
 		pipelineStateDesc.VertexInputBindingCount		= 1;
 		pipelineStateDesc.pBlendAttachmentStates[0]		= blendAttachmentState;
