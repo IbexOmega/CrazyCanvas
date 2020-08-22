@@ -46,6 +46,7 @@ namespace LambdaEngine
 		"R16_UNORM",
 		"R32G32B32A32_SFLOAT",
 		"R16_SFLOAT",
+		"R32G32B32A32_UINT",
 	};
 
 	EFormat TextureFormatIndexToFormat(int32 index)
@@ -61,6 +62,7 @@ namespace LambdaEngine
 			case 6: return EFormat::FORMAT_R16_UNORM;
 			case 7: return EFormat::FORMAT_R32G32B32A32_SFLOAT;
 			case 8: return EFormat::FORMAT_R16_SFLOAT;
+			case 9: return EFormat::FORMAT_R32G32B32A32_UINT;
 		}
 
 		return EFormat::NONE;
@@ -79,6 +81,7 @@ namespace LambdaEngine
 			case EFormat::FORMAT_R16_UNORM:				return 6;
 			case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return 7;
 			case EFormat::FORMAT_R16_SFLOAT:			return 8;
+			case EFormat::FORMAT_R32G32B32A32_UINT:		return 9;
 		}
 
 		return -1;
@@ -3797,9 +3800,9 @@ namespace LambdaEngine
 							resourceSynchronization.NextRenderStage = "PRESENT (Not a Render Stage)";
 							resourceSynchronization.PrevBindingType = ERenderGraphResourceBindingType::ATTACHMENT;
 							resourceSynchronization.NextBindingType = ERenderGraphResourceBindingType::PRESENT;
-							resourceSynchronization.PrevQueue = ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
-							resourceSynchronization.NextQueue = ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
-							resourceSynchronization.ResourceName = pFinalResourceState->ResourceName;
+							resourceSynchronization.PrevQueue		= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+							resourceSynchronization.NextQueue		= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+							resourceSynchronization.ResourceName	= pFinalResourceState->ResourceName;
 
 							imguiSynchronizationStage.Synchronizations.push_back(resourceSynchronization);
 

@@ -865,7 +865,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 						linearZTexture.ChannelAdd[2] = 0.0f;
 						linearZTexture.ChannelAdd[3] = 0.0f;
 
-						linearZTexture.PixelShaderGUID = GUID_NONE;
+						linearZTexture.PixelShaderGUID = m_ImGuiPixelLinearZGUID;
 					}
 					else if (currentItem == 1)
 					{
@@ -881,7 +881,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 						linearZTexture.ChannelAdd[2] = 0.0f;
 						linearZTexture.ChannelAdd[3] = 1.0f;
 
-						linearZTexture.PixelShaderGUID = GUID_NONE;
+						linearZTexture.PixelShaderGUID = m_ImGuiPixelLinearZGUID;
 					}
 					else if (currentItem == 2)
 					{
@@ -897,7 +897,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 						linearZTexture.ChannelAdd[2] = 0.0f;
 						linearZTexture.ChannelAdd[3] = 1.0f;
 
-						linearZTexture.PixelShaderGUID = GUID_NONE;
+						linearZTexture.PixelShaderGUID = m_ImGuiPixelLinearZGUID;
 					}
 					else if (currentItem == 3)
 					{
@@ -913,7 +913,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 						linearZTexture.ChannelAdd[2] = 0.0f;
 						linearZTexture.ChannelAdd[3] = 1.0f;
 
-						linearZTexture.PixelShaderGUID = GUID_NONE;
+						linearZTexture.PixelShaderGUID = m_ImGuiPixelLinearZGUID;
 					}
 					else if (currentItem == 4)
 					{
@@ -1212,6 +1212,7 @@ bool Sandbox::InitRendererForDeferred()
 	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelRoughness.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelShaderEmissiveGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelEmissive.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelShaderPackedLocalNormalGUID		= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedLocalNormal.frag",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelLinearZGUID						= ResourceManager::LoadShaderFromFile("ImGuiPixelLinearZ.frag",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
 	//ResourceManager::LoadShaderFromFile("ForwardVertex.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
 	//ResourceManager::LoadShaderFromFile("ForwardPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
@@ -1226,7 +1227,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	else if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_NEW_NEW.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_NEW.lrg";
 	}
 	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 	{
@@ -1565,7 +1566,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.Name				= "G-Buffer Linear Z Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
-		textureDesc.Format				= EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		textureDesc.Format				= EFormat::FORMAT_R32G32B32A32_UINT;
 		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width				= renderWidth;
 		textureDesc.Height				= renderHeight;
@@ -1618,10 +1619,50 @@ bool Sandbox::InitRendererForDeferred()
 		}
 	}
 
+		{
+		TextureDesc textureDesc;
+		textureDesc.Name				= "G-Buffer Compact Norm Depth Texture";
+		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.Format				= EFormat::FORMAT_R32G32B32A32_UINT;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width				= renderWidth;
+		textureDesc.Height				= renderHeight;
+		textureDesc.Depth				= 1;
+		textureDesc.SampleCount			= 1;
+		textureDesc.Miplevels			= 1;
+		textureDesc.ArrayCount			= 1;
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.Name			= "G-Buffer Compact Norm Depth Texture View";
+		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Format			= textureDesc.Format;
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "G_BUFFER_COMPACT_NORM_DEPTH";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
 
 	{
 		TextureDesc textureDesc = {};
-		textureDesc.Name				= "Geometry Pass Depth Stencil Texture";
+		textureDesc.Name				= "G-Buffer Depth Stencil Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_D24_UNORM_S8_UINT;
@@ -1634,7 +1675,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.ArrayCount			= 1;
 
 		TextureViewDesc textureViewDesc = { };
-		textureViewDesc.Name			= "Geometry Pass Depth Stencil Texture View";
+		textureViewDesc.Name			= "G-Buffer Depth Stencil Texture View";
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
 		textureViewDesc.Miplevel		= 0;
@@ -1717,6 +1758,42 @@ bool Sandbox::InitRendererForDeferred()
 			TextureDesc td		= textureDesc;
 			TextureViewDesc tvd = textureViewDesc;
 
+			td.Name		= "Reproj. Direct " + textureDesc.Name;
+			tvd.Name	= "Reproj. Direct " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE_REPROJECTED";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Variance Est. Direct " + textureDesc.Name;
+			tvd.Name	= "Variance Est. Direct " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE_VARIANCE_ESTIMATED";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
 			td.Name		= "Prev Direct " + textureDesc.Name;
 			tvd.Name	= "Prev Direct " + textureDesc.Name;
 
@@ -1743,6 +1820,42 @@ bool Sandbox::InitRendererForDeferred()
 
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Reproj. Indirect " + textureDesc.Name;
+			tvd.Name	= "Reproj. Indirect " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE_REPROJECTED";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Variance Est. Indirect " + textureDesc.Name;
+			tvd.Name	= "Variance Est. Indirect " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE_VARIANCE_ESTIMATED";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
@@ -1859,6 +1972,24 @@ bool Sandbox::InitRendererForDeferred()
 
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName								= "SVGF_HISTORY";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Prev " + td.Name;
+			tvd.Name	= "Prev " + tvd.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "PREV_SVGF_HISTORY";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;

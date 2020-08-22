@@ -277,7 +277,7 @@
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "texture_format": 9
         },
         {
             "name": "PREV_G_BUFFER_LINEAR_Z",
@@ -286,7 +286,7 @@
             "sub_resource_count": 1,
             "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "texture_format": 9
         },
         {
             "name": "SVGF_HISTORY",
@@ -652,7 +652,6 @@
                     "output_link_indices": []
                 }
             },
-            "depth_test_enabled": true,
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
@@ -865,7 +864,6 @@
                     "output_link_indices": []
                 }
             },
-            "depth_test_enabled": false,
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
@@ -1272,7 +1270,6 @@
                     "output_link_indices": []
                 }
             },
-            "depth_test_enabled": false,
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
@@ -1389,19 +1386,14 @@
     ],
     "links": [
         {
-            "link_index": 0,
-            "src_attribute_index": 13,
-            "dst_attribute_index": 38
-        },
-        {
             "link_index": 64,
             "src_attribute_index": 159,
             "dst_attribute_index": 202
         },
         {
-            "link_index": 1,
-            "src_attribute_index": 15,
-            "dst_attribute_index": 40
+            "link_index": 0,
+            "src_attribute_index": 13,
+            "dst_attribute_index": 38
         },
         {
             "link_index": 65,
@@ -1409,9 +1401,9 @@
             "dst_attribute_index": 210
         },
         {
-            "link_index": 2,
-            "src_attribute_index": 17,
-            "dst_attribute_index": 42
+            "link_index": 1,
+            "src_attribute_index": 15,
+            "dst_attribute_index": 40
         },
         {
             "link_index": 66,
@@ -1419,14 +1411,19 @@
             "dst_attribute_index": 212
         },
         {
-            "link_index": 3,
-            "src_attribute_index": 19,
-            "dst_attribute_index": 44
+            "link_index": 2,
+            "src_attribute_index": 17,
+            "dst_attribute_index": 42
         },
         {
             "link_index": 67,
             "src_attribute_index": 215,
             "dst_attribute_index": 206
+        },
+        {
+            "link_index": 3,
+            "src_attribute_index": 19,
+            "dst_attribute_index": 44
         },
         {
             "link_index": 68,

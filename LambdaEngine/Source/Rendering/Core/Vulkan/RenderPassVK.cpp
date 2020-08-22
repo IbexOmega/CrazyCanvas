@@ -21,7 +21,7 @@ namespace LambdaEngine
 	{
 		SubpassData				subpasses[MAX_SUBPASSES];
 		VkSubpassDependency		subpassDependencies[MAX_SUBPASS_DEPENDENCIES];
-		VkAttachmentDescription attachments[MAX_COLOR_ATTACHMENTS];
+		VkAttachmentDescription attachments[MAX_COLOR_ATTACHMENTS + 1];
 
 		CreateAttachmentDescriptions(pDesc, attachments);
 		CreateSubpassDescriptions(pDesc, subpasses);
@@ -88,7 +88,8 @@ namespace LambdaEngine
 
 	void RenderPassVK::CreateAttachmentDescriptions(const RenderPassDesc* pDesc, VkAttachmentDescription* pResultAttachments)
 	{
-		ASSERT(pDesc->AttachmentCount <= MAX_COLOR_ATTACHMENTS);
+		//CreateSubpassDescriptions will discover if there are too many color attachments, we add 1 here to allow for one depth/stencil attachment as well
+		ASSERT(pDesc->AttachmentCount <= MAX_COLOR_ATTACHMENTS + 1);
 
 		for (uint32 i = 0; i < pDesc->AttachmentCount; i++)
 		{

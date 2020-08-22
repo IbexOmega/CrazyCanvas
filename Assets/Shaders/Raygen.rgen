@@ -65,8 +65,8 @@ void main()
 	//Sample GBuffer
 	vec4 sampledAlbedoAO    		= texture(u_AlbedoAO, screenTexCoord);
 	float sampledDepth      		= texture(u_DepthStencil, screenTexCoord).r;
-	vec4 sampledDirectRadiance 		= imageLoad(u_DirectRadiance, pixelCoords);
-	vec4 sampledIndirectRadiance 	= imageLoad(u_IndirectRadiance, pixelCoords);
+	//vec4 sampledDirectRadiance 		= imageLoad(u_DirectRadiance, pixelCoords);
+	//vec4 sampledIndirectRadiance 	= imageLoad(u_IndirectRadiance, pixelCoords);
 
 	//Unpack GBuffer
 	vec3 albedo         = sampledAlbedoAO.rgb;
@@ -97,16 +97,19 @@ void main()
     uvec3 randomSeedPoint = uvec3(randomSeed, randomSeed >> 10, randomSeed >> 20);
 	ivec3 blueNoiseSize = textureSize(u_BlueNoiseLUT, 0);
 	
-	vec3 L_o_Direct 		= sampledDirectRadiance.rgb;
-	vec3 L_o_Indirect 		= sampledIndirectRadiance.rgb;
-	float accumulation		= sampledDirectRadiance.a;
+	// vec3 L_o_Direct 		= sampledDirectRadiance.rgb;
+	// vec3 L_o_Indirect 		= sampledIndirectRadiance.rgb;
+	// float accumulation		= sampledDirectRadiance.a;
 
-	if (perFrameBuffer.PrevView != perFrameBuffer.View)
-	{
-		L_o_Direct			= vec3(0.0f);
-		L_o_Indirect		= vec3(0.0f);
-		accumulation		= 0.0f;
-	}
+	// if (perFrameBuffer.PrevView != perFrameBuffer.View)
+	// {
+	// 	L_o_Direct			= vec3(0.0f);
+	// 	L_o_Indirect		= vec3(0.0f);
+	// 	accumulation		= 0.0f;
+	// }
+
+	vec3 L_o_Direct 		= vec3(0.0f);
+	vec3 L_o_Indirect 		= vec3(0.0f);
 
 	s_RadiancePayload.ScatterPosition	= positions.WorldPos + normal * RAY_NORMAL_OFFSET;
 	s_RadiancePayload.Albedo			= albedo;
@@ -222,7 +225,7 @@ void main()
 		}
 	}
 
-	accumulation 	+= 1.0f;
+	//accumulation 	+= 1.0f;
 
 	//Direct Lighting (next event estimation)
 	// if (s_RadiancePayload.Distance > 0.0f && s_RadiancePayload.Roughness > MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS)
@@ -231,6 +234,6 @@ void main()
 	// 	accumulation 	+= 1.0f;
 	// }
 
-	imageStore(u_DirectRadiance, 	pixelCoords, vec4(L_o_Direct, 	accumulation));
+	imageStore(u_DirectRadiance, 	pixelCoords, vec4(L_o_Direct, 	0.0f));
 	imageStore(u_IndirectRadiance, 	pixelCoords, vec4(L_o_Indirect, 1.0f));
 }

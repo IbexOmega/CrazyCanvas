@@ -2,7 +2,6 @@
 #extension GL_GOOGLE_include_directive : enable
 
 #include "ImGuiHelpers.glsl"
-#include "Helpers.glsl"
 
 layout(location = 0) in struct { vec4 Color; vec2 UV; } In;
 
@@ -23,10 +22,14 @@ void main()
     uint includeMask     = (u_PC.ReservedIncludeMask) & 0x0000FFFF;
     //uint reservedMask      = (u_PC.ReservedIncludeMask >> 16) & 0x0000FFFF;
 
-    uvec4 sampledColor = texture(sTexture, In.UV.st);
-    vec3 normal       = octToDir(sampledColor.w);
+    vec4 sampledColor = vec4(uintBitsToFloat(texture(sTexture, In.UV.st).rgb), 0.0f);
 
-    vec4 finalColor   = vec4(normal, 0.0f) * u_PC.Mult + u_PC.Add;
+    float R = dot(ChannelBitMult(includeMask, 0), sampledColor);
+    float G = dot(ChannelBitMult(includeMask, 1), sampledColor);
+    float B = dot(ChannelBitMult(includeMask, 2), sampledColor);
+    float A = dot(ChannelBitMult(includeMask, 3), sampledColor);
+
+    vec4 finalColor = vec4(R, G, B, A) * u_PC.Mult + u_PC.Add;
 
     fColor = In.Color * finalColor;
 }

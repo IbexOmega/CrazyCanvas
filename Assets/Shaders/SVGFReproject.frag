@@ -17,17 +17,20 @@ struct SHistoryData
 
 layout(location = 0) in vec2	in_TexCoord;
 
-layout(binding = 0, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_Motion;
-layout(binding = 1, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_LinearZ;
-layout(binding = 2, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_PrevDirectRadiance;
-layout(binding = 3, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_PrevIndirectRadiance;
-layout(binding = 4, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_PrevLinearZ;
-layout(binding = 5, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_PrevMoments;
-layout(binding = 6, set = NO_BUFFERS_TEXTURE_SET_INDEX, rgba32f) uniform image2D 	u_DirectRadiance;
-layout(binding = 7, set = NO_BUFFERS_TEXTURE_SET_INDEX, rgba32f) uniform image2D 	u_IndirectRadiance;
-layout(binding = 8, set = NO_BUFFERS_TEXTURE_SET_INDEX, r16f) uniform image2D 	    u_History;
+layout(binding = 0, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_DirectRadiance;
+layout(binding = 1, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_IndirectRadiance;
+layout(binding = 2, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_History;
+layout(binding = 3, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_Motion;
+layout(binding = 4, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform usampler2D 	        u_LinearZ;
+layout(binding = 5, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_PrevDirectRadiance;
+layout(binding = 6, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_PrevIndirectRadiance;
+layout(binding = 7, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform usampler2D 	        u_PrevLinearZ;
+layout(binding = 8, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D 	        u_PrevMoments;
 
-layout(location = 0) out vec4	out_Moments;
+layout(location = 0) out vec4	out_Direct;
+layout(location = 1) out vec4	out_Indirect;
+layout(location = 2) out vec4	out_Moments;
+layout(location = 3) out float	out_History;
 
 bool isReprojectionValid(ivec2 iImageDim, ivec2 coord, float Z, float Zprev, float fwidthZ, vec3 localNormal, vec3 prevLocalNormal, float fwidthNormal)
 {
@@ -44,7 +47,7 @@ bool isReprojectionValid(ivec2 iImageDim, ivec2 coord, float Z, float Zprev, flo
 SHistoryData LoadHistoryData()
 {
     const ivec2 iPos = ivec2(gl_FragCoord.xy);
-    const vec2 imageDim = imageSize(u_DirectRadiance);
+    const vec2 imageDim = textureSize(u_DirectRadiance, 0);
     const ivec2 iImageDim = ivec2(imageDim);
     
     // xy = motion, z = length(fwidth(pos)), w = length(fwidth(normal))
@@ -55,8 +58,9 @@ SHistoryData LoadHistoryData()
     const vec2 posPrev = floor(gl_FragCoord.xy) + motion.xy * imageDim;
 
     //Stores linear_Z, fwidth(linear_Z), Z_Prev, oct_Local_Normal
-    vec4 depth = texelFetch(u_LinearZ, iPos, 0); 
-    vec3 localNormal = octToDir(floatBitsToUint(depth.w));
+    uvec4 sampledDepth = texelFetch(u_LinearZ, iPos, 0); 
+    vec3 depth = uintBitsToFloat(sampledDepth.xyz);
+    vec3 localNormal = octToDir(sampledDepth.w);
     
     SHistoryData historyData;
     historyData.PrevDirect      = vec4(0.0f);
@@ -74,11 +78,12 @@ SHistoryData LoadHistoryData()
     };
 
     // check for all 4 taps of the bilinear filter for validity
-    for (int sampleIndex = 0; sampleIndex < 4; sampleIndex)
+    for (int sampleIndex = 0; sampleIndex < 4; sampleIndex++)
     {
         ivec2 loc = ivec2(posPrev) + offset[sampleIndex];
-        vec4 prevDepth = texelFetch(u_PrevLinearZ, loc, 0);
-        vec3 prevLocalNormal = octToDir(floatBitsToUint(prevDepth.w));
+        uvec4 sampledPrevDepth = texelFetch(u_PrevLinearZ, loc, 0);
+        vec3 prevDepth = uintBitsToFloat(sampledPrevDepth.xyz);
+        vec3 prevLocalNormal = octToDir(sampledPrevDepth.w);
 
         v[sampleIndex] = isReprojectionValid(iImageDim, iPosPrev, depth.z, prevDepth.x, depth.y, localNormal, prevLocalNormal, motion.w);
         historyData.Valid = historyData.Valid || v[sampleIndex];
@@ -102,8 +107,8 @@ SHistoryData LoadHistoryData()
             ivec2 loc = ivec2(posPrev) + offset[sampleIndex];            
             if (v[sampleIndex])
             {
-                historyData.PrevDirect      += w[sampleIndex] * imageLoad(u_DirectRadiance, loc);
-                historyData.PrevIndirect    += w[sampleIndex] * imageLoad(u_IndirectRadiance, loc);
+                historyData.PrevDirect      += w[sampleIndex] * texelFetch(u_DirectRadiance, loc, 0);
+                historyData.PrevIndirect    += w[sampleIndex] * texelFetch(u_IndirectRadiance, loc, 0);
                 historyData.PrevMoments     += w[sampleIndex] * texelFetch(u_PrevMoments, loc, 0);
                 sum_w                       += w[sampleIndex];
             }
@@ -126,13 +131,14 @@ SHistoryData LoadHistoryData()
             for (int xx = -radius; xx <= radius; xx++)
             {
                 ivec2 p = iPosPrev + ivec2(xx, yy);
-                vec4 depthFilter = texelFetch(u_PrevLinearZ, p, 0);
-				vec3 localNormalFilter = octToDir(floatBitsToUint(depthFilter.w));
+                uvec4 sampledDepthFilter = texelFetch(u_PrevLinearZ, p, 0);
+                vec3 depthFilter = uintBitsToFloat(sampledDepthFilter.xyz);
+				vec3 localNormalFilter = octToDir(sampledDepthFilter.w);
 
                 if (isReprojectionValid(iImageDim, iPosPrev, depth.z, depthFilter.x, depth.y, localNormal, localNormalFilter, motion.w))
                 {
-					historyData.PrevDirect   += imageLoad(u_DirectRadiance, p);
-                    historyData.PrevIndirect += imageLoad(u_IndirectRadiance, p);
+					historyData.PrevDirect   += texelFetch(u_DirectRadiance, p, 0);
+                    historyData.PrevIndirect += texelFetch(u_IndirectRadiance, p, 0);
 					historyData.PrevMoments  += texelFetch(u_PrevMoments, p, 0);
                     count += 1.0f;
                 }
@@ -150,7 +156,7 @@ SHistoryData LoadHistoryData()
 
     if (historyData.Valid)
     {
-        historyData.HistoryLength = imageLoad(u_History, iPosPrev).r;
+        historyData.HistoryLength = texelFetch(u_History, iPosPrev, 0).r;
     }
     else
     {
@@ -166,9 +172,10 @@ SHistoryData LoadHistoryData()
 
 void main()
 {
+    
     const ivec2 iPos    = ivec2(gl_FragCoord.xy);
-    vec3 direct         = imageLoad(u_DirectRadiance,   iPos).rgb;
-    vec3 indirect       = imageLoad(u_IndirectRadiance, iPos).rgb;
+    vec3 direct         = texelFetch(u_DirectRadiance,   iPos, 0).rgb;
+    vec3 indirect       = texelFetch(u_IndirectRadiance, iPos, 0).rgb;
 
     SHistoryData historyData = LoadHistoryData();
     historyData.HistoryLength = min(32.0f, historyData.Valid ? historyData.HistoryLength + 1.0f : 1.0f);
@@ -194,10 +201,8 @@ void main()
 
     // temporal integration of direct and indirect illumination
     // variance is propagated through the alpha channel
-    imageStore(u_DirectRadiance,    iPos, vec4(mix(historyData.PrevDirect,      vec4(direct,   0.0f),   alpha).rgb, variance.r));
-    //imageStore(u_DirectRadiance,    iPos, vec4(1.0f, 0.0f, 0.0f, 1.0f));
-    imageStore(u_IndirectRadiance,  iPos, vec4(mix(historyData.PrevIndirect,    vec4(indirect, 0.0f),   alpha).rgb, variance.g));
-    imageStore(u_History,           iPos, vec4(historyData.HistoryLength));
-
-    out_Moments = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    out_Direct      = vec4(mix(historyData.PrevDirect.rgb,      direct,   alpha), variance.r);
+    out_Indirect    = vec4(mix(historyData.PrevIndirect.rgb,    indirect, alpha), variance.g);
+    out_History     = historyData.HistoryLength;
+    out_Moments     = moments;
 }

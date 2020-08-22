@@ -8,12 +8,12 @@
 layout (constant_id = 0) const uint OTHER_TEXTURES_IN_PASS                  = 0;
 layout (constant_id = 1) const uint ALLOWED_TEXTURES_PER_DESCRIPTOR_SET     = 256;
 
-layout(binding = 0, set = BUFFER_SET_INDEX) buffer Vertices            { SVertex val[]; }              b_Vertices;
-layout(binding = 1, set = BUFFER_SET_INDEX) buffer Indices             { uint val[]; }                 b_Indices;
-layout(binding = 2, set = BUFFER_SET_INDEX) buffer PrimaryInstances    { SPrimaryInstance val[]; }     b_PrimaryInstances;
-layout(binding = 3, set = BUFFER_SET_INDEX) buffer SecondaryInstances  { SSecondaryInstance val[]; }   b_SecondaryInstances;
-layout(binding = 4, set = BUFFER_SET_INDEX) buffer MeshIndices         { SMeshIndexDesc val[]; }       b_MeshIndices;
-layout(binding = 5, set = BUFFER_SET_INDEX) uniform PerFrameBuffer     { SPerFrameBuffer val; }        u_PerFrameBuffer;
+layout(binding = 0, set = BUFFER_SET_INDEX) restrict readonly buffer Vertices               { SVertex val[]; }              b_Vertices;
+layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer Indices                { uint val[]; }                 b_Indices;
+layout(binding = 2, set = BUFFER_SET_INDEX) restrict readonly buffer PrimaryInstances       { SPrimaryInstance val[]; }     b_PrimaryInstances;
+layout(binding = 3, set = BUFFER_SET_INDEX) restrict readonly buffer SecondaryInstances     { SSecondaryInstance val[]; }   b_SecondaryInstances;
+layout(binding = 4, set = BUFFER_SET_INDEX) restrict readonly buffer MeshIndices            { SMeshIndexDesc val[]; }       b_MeshIndices;
+layout(binding = 5, set = BUFFER_SET_INDEX) uniform PerFrameBuffer                          { SPerFrameBuffer val; }        u_PerFrameBuffer;
 
 layout(location = 0) out flat uint out_MaterialIndex;
 layout(location = 1) out vec3 out_Normal;

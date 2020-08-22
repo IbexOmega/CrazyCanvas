@@ -90,6 +90,7 @@ private:
 	GUID_Lambda								m_ImGuiPixelShaderRoughnessGUID				= GUID_NONE;
 	GUID_Lambda								m_ImGuiPixelShaderEmissiveGUID				= GUID_NONE;
 	GUID_Lambda								m_ImGuiPixelShaderPackedLocalNormalGUID		= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelLinearZGUID						= GUID_NONE;
 
 	float									m_LightAngle;
 	float									m_LightStrength[4];
