@@ -113,6 +113,23 @@ void Lambertian_f(in vec3 w_o, in vec3 w_h, in vec3 albedo, in float metallic, i
     PDF     = cosTheta * INV_PI;
 }
 
+void Eval_f(vec3 w_o, vec3 w_h, vec3 w_i, vec3 albedo, float metallic, float roughness, float alphaSqrd, inout SReflection reflection)
+{
+    reflection.w_i          = w_i;
+    reflection.CosTheta     = max(0.0f, w_i.z);
+
+    vec3 diffuse_f          = vec3(0.0f);
+    vec3 specular_f         = vec3(0.0f);
+    float diffuse_PDF       = 0.0f;
+    float specular_PDF      = 0.0f;
+
+    Lambertian_f(w_o, w_h, albedo, metallic, reflection.CosTheta, diffuse_f, diffuse_PDF);
+    Microfacet_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, specular_f, specular_PDF);
+    
+    reflection.f    = diffuse_f + specular_f;
+    reflection.PDF  = (diffuse_PDF + specular_PDF) * 0.5f;
+}
+
 /*
     Samples the BRDF with the outgoing direction w_o which is in primitive local space
     w_o             - the outgoing direction in primitive local space
@@ -135,12 +152,10 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
     float alphaSqrd         = max(alpha * alpha, 0.0000001f);
 
     bool sampleDiffuse      = u.z < 0.5f;
-
+    
     vec3 w_h                = sampleDiffuse ? Sample_w_h_CosHemisphere(w_o, u.xy) : Sample_w_h_SimpleSpecular(w_o, alphaSqrd, u.xy);
     vec3 w_i                = -reflect(w_o, w_h); //w_o is pointing out, negate reflect
     //vec3 w_i                = 2.0f * dot(w_o, w_h) * w_h - w_o;
-
-    
 
     if (!IsSameHemisphere(w_o, w_i)) return reflection;
 
@@ -156,19 +171,7 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
             but we would like to evaluate the PDF
     */
 
-    reflection.w_i          = w_i;
-    reflection.CosTheta     = max(0.0f, w_i.z);
-
-    vec3 diffuse_f          = vec3(0.0f);
-    vec3 specular_f         = vec3(0.0f);
-    float diffuse_PDF       = 0.0f;
-    float specular_PDF      = 0.0f;
-    Lambertian_f(w_o, w_h, albedo, metallic, reflection.CosTheta, diffuse_f, diffuse_PDF);
-    Microfacet_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, specular_f, specular_PDF);
-
-    reflection.f    = diffuse_f + specular_f;
-    reflection.PDF  = (diffuse_PDF + specular_PDF) * 0.5f;
-
+    Eval_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, reflection);
     return reflection;
 }
 
@@ -190,24 +193,11 @@ SReflection f(vec3 w_o, vec3 w_i, vec3 albedo, float metallic, float roughness)
 
     if (w_o.z <= 0.0f || !IsSameHemisphere(w_o, w_i)) return reflection;
 
-    //w_i = w_i * SameHemisphere(w_i, w_o);  
-
     float alpha             = roughness * roughness;
     float alphaSqrd         = max(alpha * alpha, 0.0000001f);
     vec3 w_h                = normalize(w_o + w_i);
 
-    reflection.w_i          = w_i;
-    reflection.CosTheta     = max(0.0f, w_i.z);
-
-    vec3 diffuse_f          = vec3(0.0f);
-    vec3 specular_f         = vec3(0.0f);
-    float diffuse_PDF       = 0.0f;
-    float specular_PDF      = 0.0f;
-    Lambertian_f(w_o, w_h, albedo, metallic, reflection.CosTheta, diffuse_f, diffuse_PDF);
-    Microfacet_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, specular_f, specular_PDF);
-    
-    reflection.f    = diffuse_f + specular_f;
-    reflection.PDF  = (diffuse_PDF + specular_PDF) * 0.5f;
-
+    //w_i = w_i * SameHemisphere(w_i, w_o);  
+    Eval_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, reflection);
     return reflection;
 }

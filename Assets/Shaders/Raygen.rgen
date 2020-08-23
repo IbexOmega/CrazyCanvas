@@ -169,12 +169,12 @@ void main()
 			// }
 			else
 			{
-				L				+= throughput * Scatter_f * L_d;
+				L				+= Scatter_f * L_d;
 			}
 		}
 
 		//Write to Direct or Indirect L_o
-		if (b < 1) //b == 0 is no bounce (direct emitted), b == 1 is one bounce (direct lighting)
+		if (b == 0) //b == 0 is is emitted + direct lighting
 		{
 			L_o_Direct 		+= L;
 		}
@@ -244,10 +244,8 @@ void main()
 				{
 					stop = true;
 				}
-				else
-				{
-					throughput *= 1.0f / p;
-				}
+
+				throughput *= 1.0f / p;
 			}
 		}
 
