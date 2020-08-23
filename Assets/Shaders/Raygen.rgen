@@ -10,10 +10,8 @@
 layout(location = 0) rayPayloadEXT SRadiancePayload s_RadiancePayload;
 layout(location = 1) rayPayloadEXT SShadowPayload 	s_ShadowPayload;
 
-vec3 SampleLights(vec3 w_o, mat3 worldToLocal, vec3 throughput)
+void SampleLights(vec3 w_o, mat3 worldToLocal, inout vec3 L_d, inout vec3 Scatter_f)
 {
-	vec3 L_d = vec3(0.0f);
-
 	//Directional Light
 	SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
 
@@ -36,10 +34,9 @@ vec3 SampleLights(vec3 w_o, mat3 worldToLocal, vec3 throughput)
 
 		float shadow 		= step(s_ShadowPayload.Distance, Tmin);
 
-		L_d += throughput * shadow * dirLightSample.L_d;
+		Scatter_f 	= dirLightSample.Scatter_f;
+		L_d 		= shadow * dirLightSample.L_d;
 	}
-
-	return L_d;
 }
 
 void main()
@@ -56,6 +53,10 @@ void main()
     //Skybox
 	if (dot(sampledNormalMetallicRoughness, sampledNormalMetallicRoughness) < EPSILON)
 	{
+		imageStore(u_DirectRadiance, 	pixelCoords, vec4(0.529f, 0.808, 0.922f, 	1.0f));
+		imageStore(u_IndirectRadiance, 	pixelCoords, vec4(0.0f, 0.0f, 0.0f, 1.0f));
+		imageStore(u_DirectAlbedo, 		pixelCoords, vec4(1.0f));
+		imageStore(u_IndirectAlbedo, 	pixelCoords, vec4(1.0f));
 		return;
 	}
 
@@ -110,6 +111,8 @@ void main()
 
 	vec3 L_o_Direct 		= vec3(0.0f);
 	vec3 L_o_Indirect 		= vec3(0.0f);
+	vec3 Albedo_Direct 		= vec3(1.0f);
+	vec3 Albedo_Indirect 	= vec3(1.0f);
 
 	s_RadiancePayload.ScatterPosition	= positions.WorldPos + normal * RAY_NORMAL_OFFSET;
 	s_RadiancePayload.Albedo			= albedo;
@@ -119,9 +122,9 @@ void main()
 	s_RadiancePayload.Distance			= 1.0f;
 	s_RadiancePayload.LocalToWorld 		= localToWorld;
 
-	const int maxBounces 				= 3;
+	const int maxBounces 				= 8; //Includes the first "bounce" (more like surface interaction) on the camera
 	const int russianRouletteStart		= 3;
-	const int numSamplesPerFrame		= maxBounces * 3;
+	const int numSamplesPerFrame		= maxBounces * 4;
 
 	const float MIN_ROUGHNESS_DELTA_DISTRIBUTION = EPSILON * 2.0f;
 
@@ -129,38 +132,67 @@ void main()
 
 	for (int b = 0; b < maxBounces; b++)
 	{
+		bool stop 	= false;
 		vec3 L 		= vec3(0.0f);
 
 		int baseB 	= b * 3;
-		vec3 u = vec3( 	GenerateSample(baseB + 0, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+		vec4 u = vec4( 	GenerateSample(baseB + 0, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
 				 		GenerateSample(baseB + 1, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
-				 		GenerateSample(baseB + 2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+				 		GenerateSample(baseB + 2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+						GenerateSample(baseB + 3, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
 		bool isSpecular = s_RadiancePayload.Roughness < MIN_ROUGHNESS_DELTA_DISTRIBUTION;
 
 		//Emissive Surface
 		if (s_RadiancePayload.Emissive)
 		{
-			L 			+= throughput * s_RadiancePayload.Albedo * 10.0f;
+			//L += s_RadiancePayload.Albedo * 100.0f;
+
 			//accumulation 	+= 1.0f;
 		}
 
 		//Direct Lighting (next event estimation)
 		if (!isSpecular) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
 		{
-			//L 			+= SampleLights(w_o, worldToLocal, throughput);
-			//accumulation 	+= 1.0f;
+			vec3 L_d 		= vec3(0.0f);
+			vec3 Scatter_f 	= vec3(0.0f);
+			SampleLights(w_o, worldToLocal, L_d, Scatter_f);
+
+			if (b == 0)
+			{
+				L				+= L_d;
+				Albedo_Direct 	= Scatter_f;
+			}
+			// else if (b == 1)
+			// {
+			// 	L				+= L_d;
+			// 	Albedo_Indirect = throughput * Scatter_f;
+			// }
+			else
+			{
+				L				+= throughput * Scatter_f * L_d;
+			}
 		}
 
-		//Indirect Lighting
+		//Write to Direct or Indirect L_o
+		if (b < 1) //b == 0 is no bounce (direct emitted), b == 1 is one bounce (direct lighting)
+		{
+			L_o_Direct 		+= L;
+		}
+		else
+		{
+			L_o_Indirect 	+= L;
+		}
+
+		//Prepare Next Surface Interaction (Bounce)
 		{
 			//Sample the BRDF
-			SReflection reflection = Sample_f(w_o, s_RadiancePayload.Albedo,  s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, u.xy);
+			SReflection reflection = Sample_f(w_o, s_RadiancePayload.Albedo,  s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, u.xyz);
 
 			vec3 reflectionDir = s_RadiancePayload.LocalToWorld * reflection.w_i;
 
 			if (reflection.PDF > 0.0f)
 			{
-				throughput  		*= reflection.f * reflection.CosTheta / reflection.PDF;
+				throughput			*= reflection.f * reflection.CosTheta / reflection.PDF;
 				world_w_o			= -reflectionDir;
 
 				//Define Reflection Ray Parameters
@@ -180,7 +212,7 @@ void main()
 		
 				if (s_RadiancePayload.Distance <= Tmin)
 				{
-					break;
+					stop = true;
 				}
 
 				worldToLocal 	= transpose(s_RadiancePayload.LocalToWorld);
@@ -195,7 +227,10 @@ void main()
 				s_RadiancePayload.Distance			= 0.0f;
 				s_RadiancePayload.LocalToWorld 		= mat3(1.0f);
 
-				break;
+				//if (dot(throughput, throughput) < EPSILON)
+					//throughput = reflection.f * reflection.CosTheta;
+
+				stop = true;
 			}
 		}
 
@@ -205,24 +240,18 @@ void main()
 			{
 				float p = max(throughput.r, max(throughput.g, throughput.b));
 
-				if (u.z > p)
+				if (u.w >= p)
 				{
-					break;
+					stop = true;
 				}
-
-				throughput *= 1.0f / p;
+				else
+				{
+					throughput *= 1.0f / p;
+				}
 			}
 		}
 
-		//Write to Direct or Indirect L_o
-		if (b < 2) //b == 0 is no bounce, b == 1 is one bounce (direct lighting)
-		{
-			L_o_Direct 		+= L;
-		}
-		else
-		{
-			L_o_Indirect 	+= L;
-		}
+		if (stop) break;
 	}
 
 	//accumulation 	+= 1.0f;
@@ -234,6 +263,8 @@ void main()
 	// 	accumulation 	+= 1.0f;
 	// }
 
-	imageStore(u_DirectRadiance, 	pixelCoords, vec4(L_o_Direct, 	0.0f));
+	imageStore(u_DirectRadiance, 	pixelCoords, vec4(L_o_Direct, 	1.0f));
 	imageStore(u_IndirectRadiance, 	pixelCoords, vec4(L_o_Indirect, 1.0f));
+	imageStore(u_DirectAlbedo, 		pixelCoords, vec4(Albedo_Direct, 1.0f));
+	imageStore(u_IndirectAlbedo, 	pixelCoords, vec4(Albedo_Indirect, 1.0f));
 }

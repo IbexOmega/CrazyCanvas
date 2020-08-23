@@ -22,10 +22,8 @@ layout(location = 0) out vec4	out_Color;
 layout(location = 1) out vec4   out_Albedo_AO;
 layout(location = 2) out vec4   out_Normals_Metall_Rough;
 layout(location = 3) out uvec4  out_LinearZ;
-layout(location = 4) out vec4   out_Direct_Radiance;
-layout(location = 5) out vec4   out_Indirect_Radiance;
-layout(location = 6) out float  out_History;
-layout(location = 7) out vec4   out_Moments;
+layout(location = 4) out float  out_History;
+layout(location = 5) out vec4   out_Moments;
 
 void main()
 {
@@ -40,10 +38,8 @@ void main()
 
     out_Albedo_AO               = sampledAlbedoAO;
     out_Normals_Metall_Rough    = sampledNormalMetallicRoughness;
-    out_LinearZ                 = sampledLinearZ;
     gl_FragDepth                = sampledDepth;
-    out_Direct_Radiance         = sampledDirectRadiance;
-    out_Indirect_Radiance       = sampledIndirectRadiance;
+    out_LinearZ                 = sampledLinearZ;
     out_History                 = sampledHistory;
     out_Moments                 = sampledMoments;
 
@@ -54,9 +50,7 @@ void main()
 		return;
 	}
 
-    float history = texture(u_History, in_TexCoord).r;
-
-    vec3 colorHDR   = (sampledDirectRadiance.rgb + sampledIndirectRadiance.rgb) / history;
+    vec3 colorHDR   = sampledDirectRadiance.rgb;
     vec3 colorLDR   = ToneMap(colorHDR, GAMMA);
 
     out_Color       = vec4(colorHDR, 1.0f);

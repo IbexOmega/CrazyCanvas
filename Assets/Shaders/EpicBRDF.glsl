@@ -51,7 +51,31 @@ vec3 Sample_w_h_SimpleSpecular(vec3 w_o, float alphaSqrd, vec2 u)
     float sinTheta      = sqrt(1.0f - cosThetaSqrd);
     vec3 w_h            = SphericalToDirection(sinTheta, cosTheta, phi);
 
-    return w_h * SameHemisphere(w_h, w_o);    
+    return w_h * FlipIfNotSameHemisphere(w_h, w_o);    
+}
+
+vec3 Sample_w_h_CosHemisphere(vec3 w_o, vec2 u)
+{
+    u = u * 2.0f - 1.0f;
+    if (dot(u, vec2(1.0f)) == 0.0f) return vec3(0.0f, 0.0f, 1.0f);
+
+    float r     = 0.0f;
+    float theta = 0.0f;
+
+    if (abs(u.x) > abs(u.y))
+    {
+        r = u.x;
+        theta = PI_OVER_FOUR * u.y / u.x;
+    }
+    else
+    {
+        r = u.y;
+        theta = PI_OVER_TWO - PI_OVER_FOUR * u.x / u.y;
+    }
+
+    vec2 d = r * vec2(cos(theta), sin(theta));
+    float z = sqrt(max(0.0f, 1.0f - dot(d, d)));
+    return vec3(d.x, d.y, z);
 }
 
 void Microfacet_f(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in float metallic, in float roughness, in float alphaSqrd, inout vec3 f, inout float PDF)
@@ -59,7 +83,7 @@ void Microfacet_f(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in floa
     vec3 F_0    = vec3(0.04f);
 	F_0	        = mix(F_0, albedo, metallic);
 
-    float NdotO = max(0.0f, w_o.z);
+    float NdotO = max(0.01f, w_o.z);
     float NdotI = max(0.0f, w_i.z);
     float NdotH = max(0.0f, w_h.z);
     float OdotH = max(0.0f, dot(w_o, w_h));
@@ -68,14 +92,25 @@ void Microfacet_f(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in floa
     float   G = G(NdotO, NdotI, roughness);
     vec3    F = F(OdotH, F_0);
 
-    vec3 k_S = F;
-    vec3 k_D = (1.0f - F) * (1.0f - metallic);
-
     vec3 specular_f = D * G * F / (4.0f * NdotO * NdotI);
-    vec3 diffuse_f  = k_D * albedo / PI;
-
-    f       = diffuse_f + specular_f;
+    
+    f       = specular_f;
     PDF     = D * NdotH / (4.0f * OdotH);
+}
+
+void Lambertian_f(in vec3 w_o, in vec3 w_h, in vec3 albedo, in float metallic, in float cosTheta, inout vec3 f, inout float PDF)
+{
+    vec3 F_0        = vec3(0.04f);
+	F_0	            = mix(F_0, albedo, metallic);
+    float OdotH     = max(0.0f, dot(w_o, w_h));
+
+    vec3 F          = F(OdotH, F_0);
+
+    vec3 k_D        = (1.0f - F) * (1.0f - metallic);
+    vec3 diffuse_f  = k_D * albedo;
+
+    f       = diffuse_f * INV_PI;
+    PDF     = cosTheta * INV_PI;
 }
 
 /*
@@ -84,24 +119,32 @@ void Microfacet_f(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in floa
     albedo          - the albedo of the surface
     metallic        - the "metallicness" of the surface
     roughness       - the isotropic roughness of the surface, in the range (0, 1]
-    u               - a 2D sample variate
+    u               - a 3D sample variate
 */
-SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec2 u)
+SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec3 u)
 {
-    float alpha             = roughness * roughness;
-    float alphaSqrd         = max(alpha * alpha, 0.0000001f);
-
-    vec3 w_h                = Sample_w_h_SimpleSpecular(w_o, alphaSqrd, u);
-    vec3 w_i                = -reflect(w_o, w_h); //w_o is pointing out, negate reflect
-    //vec3 w_i                = 2.0f * dot(w_o, w_h) * w_h - w_o;
-
     SReflection reflection;
     reflection.PDF          = 0.0f;
     reflection.f            = vec3(0.0f);
     reflection.w_i          = vec3(0.0f);
     reflection.CosTheta     = 0.0f;
 
-    if (SameHemisphere(w_o, w_i) < 0.0f) return reflection;
+    if (w_o.z <= 0.0f)  return reflection;
+
+    float alpha             = roughness * roughness;
+    float alphaSqrd         = max(alpha * alpha, 0.0000001f);
+
+    bool sampleDiffuse      = u.z < 0.5f;
+
+    vec3 w_h                = sampleDiffuse ? Sample_w_h_CosHemisphere(w_o, u.xy) : Sample_w_h_SimpleSpecular(w_o, alphaSqrd, u.xy);
+    vec3 w_i                = -reflect(w_o, w_h); //w_o is pointing out, negate reflect
+    //vec3 w_i                = 2.0f * dot(w_o, w_h) * w_h - w_o;
+
+    
+
+    if (!IsSameHemisphere(w_o, w_i)) return reflection;
+
+    //w_i = w_i * SameHemisphere(w_i, w_o);  
 
     /*
         Technically, we could save some computations by not returning f and PDF since:
@@ -113,9 +156,18 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
             but we would like to evaluate the PDF
     */
 
-    Microfacet_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, reflection.f, reflection.PDF);
     reflection.w_i          = w_i;
     reflection.CosTheta     = max(0.0f, w_i.z);
+
+    vec3 diffuse_f          = vec3(0.0f);
+    vec3 specular_f         = vec3(0.0f);
+    float diffuse_PDF       = 0.0f;
+    float specular_PDF      = 0.0f;
+    Lambertian_f(w_o, w_h, albedo, metallic, reflection.CosTheta, diffuse_f, diffuse_PDF);
+    Microfacet_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, specular_f, specular_PDF);
+
+    reflection.f    = diffuse_f + specular_f;
+    reflection.PDF  = (diffuse_PDF + specular_PDF) * 0.5f;
 
     return reflection;
 }
@@ -136,15 +188,26 @@ SReflection f(vec3 w_o, vec3 w_i, vec3 albedo, float metallic, float roughness)
     reflection.w_i          = vec3(0.0f);
     reflection.CosTheta     = 0.0f;
 
-    if (SameHemisphere(w_o, w_i) < 0.0f) return reflection;
+    if (w_o.z <= 0.0f || !IsSameHemisphere(w_o, w_i)) return reflection;
+
+    //w_i = w_i * SameHemisphere(w_i, w_o);  
 
     float alpha             = roughness * roughness;
     float alphaSqrd         = max(alpha * alpha, 0.0000001f);
     vec3 w_h                = normalize(w_o + w_i);
 
-    Microfacet_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, reflection.f, reflection.PDF);
     reflection.w_i          = w_i;
     reflection.CosTheta     = max(0.0f, w_i.z);
+
+    vec3 diffuse_f          = vec3(0.0f);
+    vec3 specular_f         = vec3(0.0f);
+    float diffuse_PDF       = 0.0f;
+    float specular_PDF      = 0.0f;
+    Lambertian_f(w_o, w_h, albedo, metallic, reflection.CosTheta, diffuse_f, diffuse_PDF);
+    Microfacet_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, specular_f, specular_PDF);
+    
+    reflection.f    = diffuse_f + specular_f;
+    reflection.PDF  = (diffuse_PDF + specular_PDF) * 0.5f;
 
     return reflection;
 }

@@ -51,7 +51,7 @@ constexpr const bool RENDERING_DEBUG_ENABLED	= false;
 constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_G			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_B			= 1.0f;
-constexpr const float DEFAULT_DIR_LIGHT_STRENGTH	= 0.0f;
+constexpr const float DEFAULT_DIR_LIGHT_STRENGTH	= 50.0f;
 
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
@@ -82,7 +82,7 @@ Sandbox::Sandbox()
 	//Scene
 	{
 		std::vector<GameObject>	sceneGameObjects;
-		ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original.obj", sceneGameObjects);
+		ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Ceiling.obj", sceneGameObjects);
 		//ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
 		//ResourceManager::LoadSceneFromFile("San_Miguel/san-miguel-low-poly.obj", sceneGameObjects);
 
@@ -960,13 +960,44 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					ImGui::EndTabItem();
 				}
 
-				if (ImGui::BeginTabItem("Ray Tracing"))
+				if (ImGui::BeginTabItem("Ray Tracing / SVGF"))
 				{
-					const char* items[] = { "Direct", "Direct Variance", "Indirect", "Indirect Variance", "Accumulation" };
+					const char* items[] = { 
+						"Direct Albedo",
+						"Direct Radiance", 
+						"Direct Radiance Reproj.", 
+						"Direct Radiance Variance Est.",
+						"Direct Radiance Feedback",
+						"Indirect Albedo ",
+						"Indirect Radiance ", 
+						"Indirect Radiance Reproj.", 
+						"Indirect Radiance Variance Est.",
+						"Indirect Radiance Feedback",
+						"Direct Variance", 
+						"Indirect Variance", 
+						"Accumulation" 
+					};
 					static int currentItem = 0;
 					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
 
 					if (currentItem == 0)
+					{
+						radianceTexture.ResourceName = "DIRECT_ALBEDO";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					if (currentItem == 1)
 					{
 						radianceTexture.ResourceName		= "DIRECT_RADIANCE";
 						radianceTexture.ReservedIncludeMask = 0x00008420;
@@ -983,26 +1014,9 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 						radianceTexture.PixelShaderGUID = GUID_NONE;
 					}
-					else if (currentItem == 1)
-					{
-						radianceTexture.ResourceName		= "DIRECT_RADIANCE";
-						radianceTexture.ReservedIncludeMask = 0x00001110;
-
-						radianceTexture.ChannelMul[0] = 1.0f;
-						radianceTexture.ChannelMul[1] = 1.0f;
-						radianceTexture.ChannelMul[2] = 1.0f;
-						radianceTexture.ChannelMul[3] = 0.0f;
-
-						radianceTexture.ChannelAdd[0] = 0.0f;
-						radianceTexture.ChannelAdd[1] = 0.0f;
-						radianceTexture.ChannelAdd[2] = 0.0f;
-						radianceTexture.ChannelAdd[3] = 1.0f;
-
-						radianceTexture.PixelShaderGUID = GUID_NONE;
-					}
 					else if (currentItem == 2)
 					{
-						radianceTexture.ResourceName		= "INDIRECT_RADIANCE";
+						radianceTexture.ResourceName		= "DIRECT_RADIANCE_REPROJECTED";
 						radianceTexture.ReservedIncludeMask = 0x00008420;
 
 						radianceTexture.ChannelMul[0] = 1.0f;
@@ -1019,8 +1033,8 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					}
 					else if (currentItem == 3)
 					{
-						radianceTexture.ResourceName		= "INDIRECT_RADIANCE";
-						radianceTexture.ReservedIncludeMask = 0x00001110;
+						radianceTexture.ResourceName		= "DIRECT_RADIANCE_VARIANCE_ESTIMATED";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
 
 						radianceTexture.ChannelMul[0] = 1.0f;
 						radianceTexture.ChannelMul[1] = 1.0f;
@@ -1036,15 +1050,150 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					}
 					else if (currentItem == 4)
 					{
+						radianceTexture.ResourceName		= "DIRECT_RADIANCE_FEEDBACK";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 5)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_ALBEDO";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 6)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_RADIANCE";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 7)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_RADIANCE_REPROJECTED";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 8)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_RADIANCE_VARIANCE_ESTIMATED";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 9)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_RADIANCE_FEEDBACK";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 10)
+					{
+						radianceTexture.ResourceName		= "DIRECT_RADIANCE_REPROJECTED";
+						radianceTexture.ReservedIncludeMask = 0x00001110;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 11)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_RADIANCE_REPROJECTED";
+						radianceTexture.ReservedIncludeMask = 0x00001110;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 12)
+					{
 						radianceTexture.ResourceName		= "SVGF_HISTORY";
-						radianceTexture.ReservedIncludeMask = 0x00008000;
+						radianceTexture.ReservedIncludeMask = 0x00008880;
 
-						//constexpr const float maxAccumulationInv = 1.0f / 6.55e4f;
-						constexpr const float maxAccumulationInv = 1.0f / 32.0f;
+						const float32 maxHistoryLength = 32.0f;
 
-						radianceTexture.ChannelMul[0] = maxAccumulationInv;
-						radianceTexture.ChannelMul[1] = 0.0f;
-						radianceTexture.ChannelMul[2] = 0.0f;
+						radianceTexture.ChannelMul[0] = 1.0f / maxHistoryLength;
+						radianceTexture.ChannelMul[1] = 1.0f / maxHistoryLength;
+						radianceTexture.ChannelMul[2] = 1.0f / maxHistoryLength;
 						radianceTexture.ChannelMul[3] = 0.0f;
 
 						radianceTexture.ChannelAdd[0] = 0.0f;
@@ -1227,7 +1376,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	else if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_NEW.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_NEW_NEW.lrg";
 	}
 	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 	{
@@ -1794,14 +1943,68 @@ bool Sandbox::InitRendererForDeferred()
 			TextureDesc td		= textureDesc;
 			TextureViewDesc tvd = textureViewDesc;
 
-			td.Name		= "Prev Direct " + textureDesc.Name;
-			tvd.Name	= "Prev Direct " + textureDesc.Name;
+			td.Name		= "Variance Est. Direct " + textureDesc.Name;
+			tvd.Name	= "Variance Est. Direct " + textureDesc.Name;
 
 			TextureDesc* pTextureDesc			= &td;
 			TextureViewDesc* pTextureViewDesc	= &tvd;
 
 			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName								= "PREV_DIRECT_RADIANCE";
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE_VARIANCE_ESTIMATED";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Direct " + textureDesc.Name + " Atrous Ping";
+			tvd.Name	= "Direct " + textureDesc.Name + " Atrous Ping";
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE_ATROUS_PING";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Direct " + textureDesc.Name + " Atrous Pong";
+			tvd.Name	= "Direct " + textureDesc.Name + " Atrous Pong";
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE_ATROUS_PONG";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Direct " + textureDesc.Name + " Feedback";
+			tvd.Name	= "Direct " + textureDesc.Name + " Feedback";
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE_FEEDBACK";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
@@ -1866,14 +2069,111 @@ bool Sandbox::InitRendererForDeferred()
 			TextureDesc td		= textureDesc;
 			TextureViewDesc tvd = textureViewDesc;
 
-			td.Name		= "Prev Indirect " + textureDesc.Name;
-			tvd.Name	= "Prev Indirect " + textureDesc.Name;
+			td.Name		= "Indirect " + textureDesc.Name + " Atrous Ping";
+			tvd.Name	= "Indirect " + textureDesc.Name + " Atrous Ping";
 
 			TextureDesc* pTextureDesc			= &td;
 			TextureViewDesc* pTextureViewDesc	= &tvd;
 
 			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName								= "PREV_INDIRECT_RADIANCE";
+			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE_ATROUS_PING";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Indirect " + textureDesc.Name + " Atrous Pong";
+			tvd.Name	= "Indirect " + textureDesc.Name + " Atrous Pong";
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE_ATROUS_PONG";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Prev Indirect " + textureDesc.Name + " Feedback";
+			tvd.Name	= "Prev Indirect " + textureDesc.Name + " Feedback";
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE_FEEDBACK";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+	{
+		TextureDesc textureDesc;
+		textureDesc.Name				= "Albedo Texture";
+		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.Format				= EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width				= renderWidth;
+		textureDesc.Height				= renderHeight;
+		textureDesc.Depth				= 1;
+		textureDesc.SampleCount			= 1;
+		textureDesc.Miplevels			= 1;
+		textureDesc.ArrayCount			= 1;
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.Name			= "Albedo Texture View";
+		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Format			= textureDesc.Format;
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Direct " + textureDesc.Name;
+			tvd.Name	= "Direct " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_ALBEDO";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Indirect " + textureDesc.Name;
+			tvd.Name	= "Indirect " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_ALBEDO";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
@@ -1945,7 +2245,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.Type				= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R16_SFLOAT;
-		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width				= renderWidth;
 		textureDesc.Height				= renderHeight;
 		textureDesc.Depth				= 1;
@@ -1955,7 +2255,7 @@ bool Sandbox::InitRendererForDeferred()
 
 		TextureViewDesc textureViewDesc;
 		textureViewDesc.Name			= "SVGF History Texture View";
-		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Flags			= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.MiplevelCount	= 1;

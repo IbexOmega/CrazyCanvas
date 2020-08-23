@@ -1,7 +1,7 @@
 #include "Defines.glsl"
 #include "EpicBRDF.glsl"
 
-const float RAY_NORMAL_OFFSET   = 0.025;
+const float RAY_NORMAL_OFFSET   = 0.001f;
 
 struct SRayDirections
 {
@@ -19,6 +19,7 @@ struct SRayHitDescription
 struct SLightSample
 {
     vec3    L_d;
+    vec3    Scatter_f;
     float   PDF;
     vec3    SampleWorldDir;
 };
@@ -59,6 +60,8 @@ layout(binding = 7,     set = TEXTURE_SET_INDEX) uniform sampler2D              
 layout(binding = 8,     set = TEXTURE_SET_INDEX) uniform sampler2DArray                             u_BlueNoiseLUT;
 layout(binding = 9,     set = TEXTURE_SET_INDEX, rgba32f) restrict writeonly uniform image2D   		u_DirectRadiance;
 layout(binding = 10,    set = TEXTURE_SET_INDEX, rgba32f) restrict writeonly uniform image2D   		u_IndirectRadiance;
+layout(binding = 11,    set = TEXTURE_SET_INDEX, rgba32f) restrict writeonly uniform image2D   		u_DirectAlbedo;
+layout(binding = 12,    set = TEXTURE_SET_INDEX, rgba32f) restrict writeonly uniform image2D   		u_IndirectAlbedo;
 
 
 SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition, mat4 cameraViewInv)
@@ -125,6 +128,7 @@ SLightSample EvalDirectionalRadiance(vec3 w_o, vec3 albedo, float metallic, floa
 
     vec3 w_i 		= worldToLocal * sampleData.SampleWorldDir;
 
+    vec3 Scatter_f  = vec3(0.0f);   //How to deal with this when N > 1?
     vec3 SumL_d     = vec3(0.0f); 	//Describes the reflected radiance sum from light samples taken on this light
     float N 	    = 0.0f;			//Describes the amount of samples taken on this light, L_d should be divided with N before adding it to L_o
 
@@ -133,7 +137,8 @@ SLightSample EvalDirectionalRadiance(vec3 w_o, vec3 albedo, float metallic, floa
 
     if (reflection.PDF > 0.0f)
     {
-        SumL_d 	+= reflection.f * u_LightsBuffer.val.EmittedRadiance.rgb; // Since directional lights are described by a delta distribution we do not divide by the PDF (it will be 1) or multiply by the CosWeight
+        Scatter_f   = reflection.f;
+        SumL_d  	+= u_LightsBuffer.val.EmittedRadiance.rgb * reflection.CosTheta; // Since directional lights are described by a delta distribution we do not divide by the PDF (it will be 1) or multiply by the CosWeight
 
         /*
             If this was light was not described by a delta distribution we would include a PDF as divisor above and we would below !!Sample!! the BRDF with MIS to weight the
@@ -143,8 +148,9 @@ SLightSample EvalDirectionalRadiance(vec3 w_o, vec3 albedo, float metallic, floa
     //No matter if the PDF == 0 or if the light is occluded from the pixel this still counts as a sample (obviously)
     N += 1.0f; 
 
-    sampleData.L_d    = SumL_d / N;
-    sampleData.PDF    = reflection.PDF;
+    sampleData.Scatter_f    = Scatter_f;
+    sampleData.L_d          = SumL_d / N;
+    sampleData.PDF          = reflection.PDF;
 
     return sampleData;
 }

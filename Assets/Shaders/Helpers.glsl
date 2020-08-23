@@ -151,9 +151,14 @@ vec3 SphericalToDirection(float sinTheta, float cosTheta, float phi)
                 cosTheta);
 }
 
-float SameHemisphere(vec3 w_0, vec3 w_1)
+float FlipIfNotSameHemisphere(vec3 w_0, vec3 w_1)
 {
     return step(0.0f, w_0.z * w_1.z) * 2.0f - 1.0f;
+}
+
+bool IsSameHemisphere(vec3 w_0, vec3 w_1)
+{
+	return w_0.z * w_1.z > 0.0f;
 }
 
 float RadicalInverse_VdC(uint bits) 

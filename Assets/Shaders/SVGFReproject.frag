@@ -107,8 +107,8 @@ SHistoryData LoadHistoryData()
             ivec2 loc = ivec2(posPrev) + offset[sampleIndex];            
             if (v[sampleIndex])
             {
-                historyData.PrevDirect      += w[sampleIndex] * texelFetch(u_DirectRadiance, loc, 0);
-                historyData.PrevIndirect    += w[sampleIndex] * texelFetch(u_IndirectRadiance, loc, 0);
+                historyData.PrevDirect      += w[sampleIndex] * texelFetch(u_PrevDirectRadiance, loc, 0);
+                historyData.PrevIndirect    += w[sampleIndex] * texelFetch(u_PrevIndirectRadiance, loc, 0);
                 historyData.PrevMoments     += w[sampleIndex] * texelFetch(u_PrevMoments, loc, 0);
                 sum_w                       += w[sampleIndex];
             }
@@ -137,8 +137,8 @@ SHistoryData LoadHistoryData()
 
                 if (isReprojectionValid(iImageDim, iPosPrev, depth.z, depthFilter.x, depth.y, localNormal, localNormalFilter, motion.w))
                 {
-					historyData.PrevDirect   += texelFetch(u_DirectRadiance, p, 0);
-                    historyData.PrevIndirect += texelFetch(u_IndirectRadiance, p, 0);
+					historyData.PrevDirect   += texelFetch(u_PrevDirectRadiance, p, 0);
+                    historyData.PrevIndirect += texelFetch(u_PrevIndirectRadiance, p, 0);
 					historyData.PrevMoments  += texelFetch(u_PrevMoments, p, 0);
                     count += 1.0f;
                 }
@@ -172,7 +172,9 @@ SHistoryData LoadHistoryData()
 
 void main()
 {
-    
+    const float ALPHA           = 0.05f;
+    const float MOMENTS_ALPHA   = 0.2f;
+
     const ivec2 iPos    = ivec2(gl_FragCoord.xy);
     vec3 direct         = texelFetch(u_DirectRadiance,   iPos, 0).rgb;
     vec3 indirect       = texelFetch(u_IndirectRadiance, iPos, 0).rgb;
@@ -182,8 +184,6 @@ void main()
 
     // this adjusts the alpha for the case where insufficient history is available.
     // It boosts the temporal accumulation to give the samples equal weights in the beginning.
-    const float ALPHA = 0.2f;
-    const float MOMENTS_ALPHA = 0.2f;
     const float alpha        = historyData.Valid ? max(ALPHA,           1.0f / historyData.HistoryLength) : 1.0f;
     const float alphaMoments = historyData.Valid ? max(MOMENTS_ALPHA,   1.0f / historyData.HistoryLength) : 1.0f;
 

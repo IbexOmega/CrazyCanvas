@@ -1773,7 +1773,7 @@ namespace LambdaEngine
 						ImGui::Combo("##Render Stage X Option", &selectedXOption, dimensionNames, 3);
 						ImGui::PopItemWidth();
 
-						if (selectedXOption == 0 || selectedXOption == 1)
+						if (selectedXOption == 0 || selectedXOption == 2)
 						{
 							ImGui::SameLine();
 							ImGui::InputFloat("##Render Stage X Variable", &xVariable);
@@ -1785,7 +1785,7 @@ namespace LambdaEngine
 						ImGui::Combo("##Render Stage Y Option", &selectedYOption, dimensionNames, 3);
 						ImGui::PopItemWidth();
 
-						if (selectedYOption == 0 || selectedYOption == 1)
+						if (selectedYOption == 0 || selectedYOption == 2)
 						{
 							ImGui::SameLine();
 							ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
@@ -1804,13 +1804,13 @@ namespace LambdaEngine
 						ImGui::Combo("##Render Stage X Option", &selectedXOption, dimensionNames, 4);
 						ImGui::PopItemWidth();
 
-						if (selectedXOption == 0 || selectedXOption == 1 || selectedXOption == 2)
+						if (selectedXOption == 0 || selectedXOption == 2 || selectedXOption == 3)
 						{
 							ImGui::SameLine();
 							ImGui::InputFloat("##Render Stage X Variable", &xVariable);
 						}
 
-						if (selectedXOption != 2)
+						if (selectedXOption != 3)
 						{
 							ImGui::Text("Y: ");
 							ImGui::SameLine();
@@ -1818,7 +1818,7 @@ namespace LambdaEngine
 							ImGui::Combo("##Render Stage Y Option", &selectedYOption, dimensionNames, 3);
 							ImGui::PopItemWidth();
 
-							if (selectedYOption == 0 || selectedYOption == 1)
+							if (selectedYOption == 0 || selectedYOption == 2)
 							{
 								ImGui::SameLine();
 								ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
@@ -1830,7 +1830,7 @@ namespace LambdaEngine
 							ImGui::Combo("##Render Stage Z Option", &selectedZOption, dimensionNames, 2);
 							ImGui::PopItemWidth();
 
-							if (selectedZOption == 0 || selectedZOption == 1)
+							if (selectedZOption == 0 || selectedZOption == 2)
 							{
 								ImGui::SameLine();
 								ImGui::InputFloat("##Render Stage Z Variable", &zVariable);
@@ -1850,7 +1850,7 @@ namespace LambdaEngine
 						ImGui::Combo("##Render Stage X Option", &selectedXOption, dimensionNames, 3);
 						ImGui::PopItemWidth();
 
-						if (selectedXOption == 0 || selectedXOption == 1)
+						if (selectedXOption == 0 || selectedXOption == 2)
 						{
 							ImGui::SameLine();
 							ImGui::InputFloat("##Render Stage X Variable", &xVariable);
@@ -1862,7 +1862,7 @@ namespace LambdaEngine
 						ImGui::Combo("##Render Stage Y Option", &selectedYOption, dimensionNames, 3);
 						ImGui::PopItemWidth();
 
-						if (selectedYOption == 0 || selectedYOption == 1)
+						if (selectedYOption == 0 || selectedYOption == 2)
 						{
 							ImGui::SameLine();
 							ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
@@ -1874,7 +1874,7 @@ namespace LambdaEngine
 						ImGui::Combo("##Render Stage Z Option", &selectedZOption, dimensionNames, 2);
 						ImGui::PopItemWidth();
 
-						if (selectedZOption == 0 || selectedZOption == 1)
+						if (selectedZOption == 0 || selectedZOption == 2)
 						{
 							ImGui::SameLine();
 							ImGui::InputFloat("##Render Stage Z Variable", &zVariable);
@@ -1952,8 +1952,10 @@ namespace LambdaEngine
 				{
 					ZERO_MEMORY(renderStageNameBuffer, RENDER_STAGE_NAME_BUFFER_LENGTH);
 					customRenderer = false;
-					selectedXOption	= 0;
-					selectedYOption	= 0;
+					selectedXOption	= 0;
+
+					selectedYOption	= 0;
+
 					selectedZOption	= 0;
 					m_CurrentlyAddingRenderStage = EPipelineStateType::NONE;
 					ImGui::CloseCurrentPopup();
@@ -4109,6 +4111,7 @@ namespace LambdaEngine
 
 										orderedSynchronizationStages.erase(orderedSynchronizationStages.begin() + orderedPipelineStages[previousSynchronizationPipelineStageDescIndex].StageIndex);
 										orderedPipelineStages.erase(orderedPipelineStages.begin() + previousSynchronizationPipelineStageDescIndex);
+										p--;
 									}
 								}
 							}

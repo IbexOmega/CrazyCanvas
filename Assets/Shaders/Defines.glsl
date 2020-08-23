@@ -8,10 +8,13 @@
 
 #define MAX_UNIQUE_MATERIALS 32
 
-const float PI 		= 3.14159265359f;
-const float TWO_PI  = 6.28318530718f;
-const float EPSILON = 0.001f;
-const float GAMMA   = 2.2f;
+const float INV_PI 		    = 1.0f / 3.14159265359f;
+const float TWO_PI          = 6.28318530718f;
+const float PI 		        = 3.14159265359f;
+const float PI_OVER_TWO     = 1.57079632679f;
+const float PI_OVER_FOUR    = 0.78539816330f;
+const float EPSILON         = 0.001f;
+const float GAMMA           = 2.2f;
 
 const float MAX_TEMPORAL_FRAMES = 256.0f;
 
