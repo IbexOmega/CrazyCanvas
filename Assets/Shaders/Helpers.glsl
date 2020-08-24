@@ -182,13 +182,13 @@ uint dirToOct(vec3 normal)
 {
 	vec2 p = normal.xy * (1.0f / dot(abs(normal), vec3(1.0f)));
 	vec2 e = normal.z > 0.0f ? p : (1.0f - abs(p.yx)) * (step(0.0f, p) * 2.0f - vec2(1.0f));
-	return packUnorm2x16(e.xy);
+	return packSnorm2x16(e.xy);
 	//return (asuint(f32tof16(e.y)) << 16) + (asuint(f32tof16(e.x)));
 }
 
 vec3 octToDir(uint octo)
 {
-	vec2 e = unpackUnorm2x16(octo) ; 
+	vec2 e = unpackSnorm2x16(octo) ; 
 	vec3 v = vec3(e, 1.0f - abs(e.x) - abs(e.y));
 	if (v.z < 0.0f)
 		v.xy = (1.0f - abs(v.yx)) * (step(0.0f, v.xy) * 2.0f - vec2(1.0f));

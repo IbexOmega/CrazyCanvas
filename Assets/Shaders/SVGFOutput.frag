@@ -50,8 +50,8 @@ void main()
 		return;
 	}
 
-    vec3 colorHDR   = sampledDirectRadiance.rgb;
-    vec3 colorLDR   = ToneMap(colorHDR, GAMMA);
+    // vec3 colorHDR   = sampledDirectRadiance.rgb;
+    // vec3 colorLDR   = ToneMap(colorHDR, GAMMA);
 
-    out_Color       = vec4(colorHDR, 1.0f);
+    out_Color       = vec4(clamp(sampledDirectRadiance.rgb, 0.0f, 1.0f), 1.0f);
 }

@@ -106,8 +106,11 @@ namespace LambdaEngine
 
 	uint32 Scene::AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform)
 	{
+		//Todo: Am I retarded, what is the reason we have to do this?
+		glm::mat4 tranposedTransform = glm::transpose(transform);
+
 		InstancePrimary primaryInstance = {};
-		primaryInstance.Transform						= glm::transpose(transform);
+		primaryInstance.Transform						= tranposedTransform;
 		primaryInstance.MeshMaterialIndex				= 0;
 		primaryInstance.Mask							= 0;
 		primaryInstance.SBTRecordOffset					= 0;
@@ -115,7 +118,7 @@ namespace LambdaEngine
 		primaryInstance.AccelerationStructureAddress	= 0;
 
 		InstanceSecondary secondaryInstance = {};
-		secondaryInstance.PrevTransform					= transform;
+		secondaryInstance.PrevTransform					= tranposedTransform;
 
 		m_PrimaryInstances.push_back(primaryInstance);
 		m_SecondaryInstances.push_back(secondaryInstance);

@@ -169,7 +169,7 @@ void main()
 			// }
 			else
 			{
-				L				+= Scatter_f * L_d;
+				L				+= throughput * Scatter_f * L_d;
 			}
 		}
 

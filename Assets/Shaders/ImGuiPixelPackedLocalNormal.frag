@@ -23,8 +23,10 @@ void main()
     uint includeMask     = (u_PC.ReservedIncludeMask) & 0x0000FFFF;
     //uint reservedMask      = (u_PC.ReservedIncludeMask >> 16) & 0x0000FFFF;
 
-    uvec4 sampledColor = texture(sTexture, In.UV.st);
-    vec3 normal       = octToDir(sampledColor.w);
+    uvec4 sampledColor  = texture(sTexture, In.UV.st);
+    uvec4 mult          = uvec4(ChannelBitMult(includeMask, 0));
+    uint R              = mult.x * sampledColor.x + mult.y * sampledColor.y + mult.z * sampledColor.z + mult.w * sampledColor.w;
+    vec3 normal         = octToDir(R);
 
     vec4 finalColor   = vec4(normal, 0.0f) * u_PC.Mult + u_PC.Add;
 

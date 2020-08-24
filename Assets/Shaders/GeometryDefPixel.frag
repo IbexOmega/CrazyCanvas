@@ -65,14 +65,14 @@ void main()
 		storedRoughness = -storedRoughness;
 	}
 
-	vec2 currentNDC 	= in_ClipPosition.xy / in_ClipPosition.w;
-	vec2 prevNDC 		= in_PrevClipPosition.xy / in_PrevClipPosition.w;
-	vec2 screenMotion 	= (prevNDC - currentNDC);//* 0.5f + 0.5f;
+	vec2 currentNDC 	= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
+	vec2 prevNDC 		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
+	vec2 screenMotion 	= (prevNDC - currentNDC);
 	vec2 posNormFWidth	= vec2(length(fwidth(in_WorldPosition.xyz)), length(fwidth(in_Normal)));
 
-	uint linearZ 		= floatBitsToUint(gl_FragCoord.z / gl_FragCoord.w);
+	uint linearZ 		= floatBitsToUint(in_ClipPosition.z * in_ClipPosition.w);
 	uint maxChangeZ		= floatBitsToUint(max(abs(dFdx(linearZ)), abs(dFdy(linearZ))));
-	uint prevLinearZ	= floatBitsToUint(in_PrevClipPosition.z); //Is this correct?
+	uint prevLinearZ	= floatBitsToUint(in_PrevClipPosition.z * in_PrevClipPosition.w); //Is this correct?
 	uint compObjNorm 	= dirToOct(normalize(in_LocalNormal));
 	uint compWorldNorm	= dirToOct(normalize(worldNormal));		
 

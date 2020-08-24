@@ -86,12 +86,17 @@ Sandbox::Sandbox()
 		//ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
 		//ResourceManager::LoadSceneFromFile("San_Miguel/san-miguel-low-poly.obj", sceneGameObjects);
 
-		float scale = 1.0f;
-		//float scale = 0.01f;
+		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+		glm::vec3 scale(1.0f);
+		//glm::vec3 scale(0.01f);
+
+		glm::mat4 transform(1.0f);
+		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+		transform = glm::scale(transform, scale);
 
 		for (GameObject& gameObject : sceneGameObjects)
 		{
-			m_pScene->AddDynamicGameObject(gameObject, glm::scale(glm::mat4(1.0f), glm::vec3(scale)));
+			m_pScene->AddDynamicGameObject(gameObject, transform);
 		}
 	}
 
@@ -678,6 +683,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 			static ImGuiTexture depthStencilTexture = {};
 			static ImGuiTexture momentsTexture = {};
 			static ImGuiTexture radianceTexture = {};
+			static ImGuiTexture compNormalTexture = {};
 
 			float windowWidth = ImGui::GetWindowWidth();
 
@@ -933,6 +939,36 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					}
 
 					ImGui::Image(&linearZTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Compact Normal"))
+				{
+					compNormalTexture.ResourceName = "G_BUFFER_COMPACT_NORM_DEPTH";
+
+					const char* items[] = { "Packed World Normal" };
+					static int currentItem = 0;
+					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
+
+					if (currentItem == 0)
+					{
+						compNormalTexture.ReservedIncludeMask = 0x00008880;
+
+						compNormalTexture.ChannelMul[0] = 1.0f;
+						compNormalTexture.ChannelMul[1] = 1.0f;
+						compNormalTexture.ChannelMul[2] = 1.0f;
+						compNormalTexture.ChannelMul[3] = 0.0f;
+
+						compNormalTexture.ChannelAdd[0] = 0.0f;
+						compNormalTexture.ChannelAdd[1] = 0.0f;
+						compNormalTexture.ChannelAdd[2] = 0.0f;
+						compNormalTexture.ChannelAdd[3] = 1.0f;
+
+						compNormalTexture.PixelShaderGUID = m_ImGuiPixelShaderPackedLocalNormalGUID;
+					}
+
+					ImGui::Image(&compNormalTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
 
 					ImGui::EndTabItem();
 				}
