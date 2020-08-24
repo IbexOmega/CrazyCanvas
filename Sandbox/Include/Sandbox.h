@@ -5,6 +5,8 @@
 
 #include "Containers/TArray.h"
 
+#include "Math/Math.h"
+
 namespace LambdaEngine
 {
 	struct GameObject;
@@ -92,8 +94,13 @@ private:
 	GUID_Lambda								m_ImGuiPixelShaderPackedLocalNormalGUID		= GUID_NONE;
 	GUID_Lambda								m_ImGuiPixelLinearZGUID						= GUID_NONE;
 
-	float									m_LightAngle;
-	float									m_LightStrength[4];
+	float									m_DirectionalLightAngle;
+	float									m_DirectionalLightStrength[4];
+
+	glm::vec3								m_DiskLightPosition;
+	glm::vec3								m_DiskLightDirection;
+	glm::vec4								m_DiskLightEmission;
+	float									m_DiskLightRadius;
 
 	bool									m_SpawnPlayAts;
 	float									m_GunshotTimer;

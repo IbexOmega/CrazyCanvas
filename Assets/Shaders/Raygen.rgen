@@ -10,32 +10,73 @@
 layout(location = 0) rayPayloadEXT SRadiancePayload s_RadiancePayload;
 layout(location = 1) rayPayloadEXT SShadowPayload 	s_ShadowPayload;
 
-void SampleLights(vec3 w_o, mat3 worldToLocal, inout vec3 L_d, inout vec3 Scatter_f)
+void SampleLights(vec3 w_o, mat3 worldToLocal, inout vec3 L_d, inout vec3 Scatter_f_div_PDF, vec2 u)
 {
+	float directionalLuminance 	= luminance(u_LightsBuffer.val.DirL_EmittedRadiance.rgb);
+	float diskLightLuminance 	= luminance(u_LightsBuffer.val.DiskL_EmittedRadiance.rgb);
+	float probToSampleDirLight 	= directionalLuminance / (directionalLuminance + diskLightLuminance);
+
 	//Directional Light
-	SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
-
-	if (dirLightSample.PDF > 0.0f && dot(dirLightSample.L_d, dirLightSample.L_d) > EPSILON)
+	if (u.x < probToSampleDirLight)
 	{
-		//Define Shadow Ray Parameters
-		const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
-		const vec3 		direction			= dirLightSample.SampleWorldDir;
-		const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
-		const uint 		cullMask           	= 0xFF;
-		const uint 		sbtRecordOffset    	= 1;
-		const uint 		sbtRecordStride    	= 0;
-		const uint 		missIndex          	= 1;
-		const float 	Tmin              	= 0.001f;
-		const float 	Tmax              	= 10000.0f;
-		const int 		payload       		= 1;
+		SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
 
-		//Send Shadow Ray
-		traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+		if (dirLightSample.Scatter_PDF > 0.0f && dot(dirLightSample.L_d, dirLightSample.L_d) > 0.0f)
+		{
+			//Define Shadow Ray Parameters
+			const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
+			const vec3 		direction			= dirLightSample.SampleWorldDir;
+			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+			const uint 		cullMask           	= 0xFF;
+			const uint 		sbtRecordOffset    	= 1;
+			const uint 		sbtRecordStride    	= 0;
+			const uint 		missIndex          	= 1;
+			const float 	Tmin              	= 0.001f;
+			const float 	Tmax              	= 10000.0f;
+			const int 		payload       		= 1;
 
-		float shadow 		= step(s_ShadowPayload.Distance, Tmin);
+			//Send Shadow Ray
+			traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
 
-		Scatter_f 	= dirLightSample.Scatter_f;
-		L_d 		= shadow * dirLightSample.L_d;
+			float shadow 		= step(s_ShadowPayload.Distance, Tmin);
+
+			Scatter_f_div_PDF 	= probToSampleDirLight * dirLightSample.Scatter_f / dirLightSample.Scatter_PDF;
+			L_d 				= shadow * dirLightSample.L_d;
+		}
+	}
+	else
+	{
+		u.x = (u.x - probToSampleDirLight) / (1.0f - probToSampleDirLight); //Stretch u 
+
+		SLightSample diskLightSample = EvalDiskLightRadiance(w_o, s_RadiancePayload.ScatterPosition, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal, u);
+
+		if (diskLightSample.Scatter_PDF > 0.0f && dot(diskLightSample.L_d, diskLightSample.L_d) > 0.0f)
+		{
+			float shadow = 1.0f;
+
+			if (diskLightSample.DistanceToSamplePoint > 0.0f)
+			{
+				//Define Shadow Ray Parameters
+				const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
+				const vec3 		direction			= diskLightSample.SampleWorldDir;
+				const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+				const uint 		cullMask           	= 0xFF;
+				const uint 		sbtRecordOffset    	= 1;
+				const uint 		sbtRecordStride    	= 0;
+				const uint 		missIndex          	= 1;
+				const float 	Tmin              	= 0.001f;
+				const float 	Tmax              	= diskLightSample.DistanceToSamplePoint;
+				const int 		payload       		= 1;
+
+				//Send Shadow Ray
+				traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+
+				shadow 		= step(s_ShadowPayload.Distance, Tmin);
+			}
+
+			Scatter_f_div_PDF 	= (1.0f - probToSampleDirLight) * diskLightSample.Scatter_f / diskLightSample.Scatter_PDF;
+			L_d 				= shadow * diskLightSample.L_d;
+		}
 	}
 }
 
@@ -124,7 +165,8 @@ void main()
 
 	const int maxBounces 				= 4; //Includes the first "bounce" (more like surface interaction) on the camera
 	const int russianRouletteStart		= 3;
-	const int numSamplesPerFrame		= maxBounces * 4;
+	const int numSamplesPerBounce		= 6;
+	const int numSamplesPerFrame		= maxBounces * numSamplesPerBounce;
 
 	const float MIN_ROUGHNESS_DELTA_DISTRIBUTION = EPSILON * 2.0f;
 
@@ -135,11 +177,14 @@ void main()
 		bool stop 	= false;
 		vec3 L 		= vec3(0.0f);
 
-		int baseB 	= b * 3;
-		vec4 u = vec4( 	GenerateSample(baseB + 0, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
-				 		GenerateSample(baseB + 1, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
-				 		GenerateSample(baseB + 2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
-						GenerateSample(baseB + 3, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+		int baseB 	= b * numSamplesPerBounce;
+
+		vec2 u_Light 	= vec2( 	GenerateSample(baseB + 0, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 					GenerateSample(baseB + 1, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+		vec3 u_BRDF 	= vec3( 	GenerateSample(baseB + 2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 					GenerateSample(baseB + 3, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 					GenerateSample(baseB + 4, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+		float u_RussianRoulette	=	GenerateSample(baseB + 5, randomSeedPoint, numSamplesPerFrame, blueNoiseSize);
 		bool isSpecular = s_RadiancePayload.Roughness < MIN_ROUGHNESS_DELTA_DISTRIBUTION;
 
 		//Emissive Surface
@@ -153,14 +198,14 @@ void main()
 		//Direct Lighting (next event estimation)
 		if (!isSpecular) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
 		{
-			vec3 L_d 		= vec3(0.0f);
-			vec3 Scatter_f 	= vec3(0.0f);
-			SampleLights(w_o, worldToLocal, L_d, Scatter_f);
+			vec3 L_d 				= vec3(0.0f);
+			vec3 Scatter_f_div_PDF 	= vec3(0.0f);
+			SampleLights(w_o, worldToLocal, L_d, Scatter_f_div_PDF, u_Light);
 
 			if (b == 0)
 			{
 				L				+= L_d;
-				Albedo_Direct 	= Scatter_f;
+				Albedo_Direct 	= Scatter_f_div_PDF;
 			}
 			// else if (b == 1)
 			// {
@@ -178,12 +223,12 @@ void main()
 			// 	vec3 ggxFinal				= throughput / (difTerm * (1.0f - probToSampleDiffuse));
 			// 	vec3 brdfFinal				= sampleDiffuse ? difFinal : ggxFinal;
 
-			// 	L				+= brdfFinal * Scatter_f * L_d;
+			// 	L				+= brdfFinal * Scatter_f_div_PDF * L_d;
 			// 	Albedo_Indirect =  difTerm;
 			// }
 			else
 			{
-				L				+= throughput * Scatter_f * L_d;
+				L				+= throughput * Scatter_f_div_PDF * L_d;
 			}
 		}
 
@@ -200,7 +245,7 @@ void main()
 		//Prepare Next Surface Interaction (Bounce)
 		{
 			//Sample the BRDF
-			SReflection reflection = Sample_f(w_o, s_RadiancePayload.Albedo,  s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, u.xyz);
+			SReflection reflection = Sample_f(w_o, s_RadiancePayload.Albedo,  s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, u_BRDF);
 
 			vec3 reflectionDir = s_RadiancePayload.LocalToWorld * reflection.w_i;
 
@@ -254,7 +299,7 @@ void main()
 			{
 				float p = max(throughput.r, max(throughput.g, throughput.b));
 
-				if (u.w >= p)
+				if (u_RussianRoulette >= p)
 				{
 					stop = true;
 				}

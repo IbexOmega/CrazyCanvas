@@ -67,11 +67,11 @@ namespace LambdaEngine
 		m_BLASs.clear();
 	}
 
-	void Scene::UpdateDirectionalLight(ICommandList* pCommandList, const glm::vec3& direction, const glm::vec3& emittedRadiance)
+	void Scene::UpdateLights(ICommandList* pCommandList, const DirectionalLight& directionalLight, const DiskLight& diskLight)
 	{
 		LightsBuffer lightsBuffer = {};
-		lightsBuffer.Direction			= glm::vec4(direction, 1.0f);
-		lightsBuffer.EmittedRadiance	= glm::vec4(emittedRadiance, 1.0f);
+		lightsBuffer.DirectionalLight	= directionalLight;
+		lightsBuffer.DiskLight			= diskLight;
 
 		void* pMapped = m_pLightsCopyBuffer->Map();
 		memcpy(pMapped, &lightsBuffer, sizeof(LightsBuffer));

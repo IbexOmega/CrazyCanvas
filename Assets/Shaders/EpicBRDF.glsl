@@ -80,7 +80,7 @@ vec3 Sample_w_h_CosHemisphere(vec3 w_o, vec2 u)
 
 void Microfacet_f(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in vec3 F_0, in float metallic, in float roughness, in float alphaSqrd, inout vec3 f, inout float PDF)
 {
-    float NdotO = max(0.01f, w_o.z);
+    float NdotO = max(0.0f, w_o.z);
     float NdotI = max(0.0f, w_i.z);
     float NdotH = max(0.0f, w_h.z);
     float OdotH = max(0.0f, dot(w_o, w_h));

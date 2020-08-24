@@ -9,6 +9,7 @@
 #define MAX_UNIQUE_MATERIALS 32
 
 const float INV_PI 		    = 1.0f / 3.14159265359f;
+const float FOUR_PI         = 12.5663706144f;
 const float TWO_PI          = 6.28318530718f;
 const float PI 		        = 3.14159265359f;
 const float PI_OVER_TWO     = 1.57079632679f;
@@ -59,8 +60,12 @@ struct SMeshIndexDesc
 
 struct SLightsBuffer
 {
-    vec4    Direction;
-	vec4    EmittedRadiance;
+    vec4    DirL_Direction;
+	vec4    DirL_EmittedRadiance;
+    vec4    DiskL_Position;
+    vec4    DiskL_Direction;
+	vec3    DiskL_EmittedRadiance;
+    float   DiskL_Radius;
 };
 
 struct SPerFrameBuffer
@@ -86,6 +91,13 @@ struct SMaterialParameters
     float   Metallic;
     float   Roughness;
     uint    Reserved_Emissive;
+};
+
+struct SShapeSample
+{
+    vec3    Position;
+    vec3    Normal;
+    float   PDF;
 };
 
 #endif

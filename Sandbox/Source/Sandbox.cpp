@@ -51,7 +51,12 @@ constexpr const bool RENDERING_DEBUG_ENABLED	= false;
 constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_G			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_B			= 1.0f;
-constexpr const float DEFAULT_DIR_LIGHT_STRENGTH	= 50.0f;
+constexpr const float DEFAULT_DIR_LIGHT_STRENGTH	= 0.0f;
+
+const glm::vec3 DEFAULT_DISK_LIGHT_POSITION(0.0f, 2.0f, 0.0f);
+const glm::vec3 DEFAULT_DISK_LIGHT_DIRECTION(0.0f, -1.0f, 0.0f);
+const glm::vec4 DEFAULT_DISK_LIGHT_EMISSION(1.0f, 1.0f, 1.0f, 10.0f);
+const float		DEFAULT_DISK_LIGHT_RADIUS(0.2f);
 
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
@@ -226,12 +231,28 @@ Sandbox::Sandbox()
 
 	m_pScene->UpdatePerFrameBuffer(pGraphicsCopyCommandList, m_pCamera, m_pRenderer->GetFrameIndex());
 
-	m_LightAngle	= glm::half_pi<float>();
-	m_LightStrength[0] = DEFAULT_DIR_LIGHT_R;
-	m_LightStrength[1] = DEFAULT_DIR_LIGHT_G;
-	m_LightStrength[2] = DEFAULT_DIR_LIGHT_B;
-	m_LightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
-	m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
+	m_DirectionalLightAngle	= glm::half_pi<float>();
+	m_DirectionalLightStrength[0] = DEFAULT_DIR_LIGHT_R;
+	m_DirectionalLightStrength[1] = DEFAULT_DIR_LIGHT_G;
+	m_DirectionalLightStrength[2] = DEFAULT_DIR_LIGHT_B;
+	m_DirectionalLightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
+
+	m_DiskLightPosition		= DEFAULT_DISK_LIGHT_POSITION;
+	m_DiskLightDirection	= DEFAULT_DISK_LIGHT_DIRECTION;
+	m_DiskLightEmission		= DEFAULT_DISK_LIGHT_EMISSION;
+	m_DiskLightRadius		= DEFAULT_DISK_LIGHT_RADIUS;
+
+	DirectionalLight directionalLight;
+	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
+	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
+
+	DiskLight diskLight;
+	diskLight.Position			= glm::vec4(m_DiskLightPosition, 1.0f);
+	diskLight.Position			= glm::vec4(m_DiskLightDirection, 1.0f);
+	diskLight.EmittedRadiance	= glm::vec3(m_DiskLightEmission.x, m_DiskLightEmission.y, m_DiskLightEmission.z) * m_DiskLightEmission.w;
+	diskLight.Radius			= m_DiskLightRadius;
+
+	m_pScene->UpdateLights(pComputeCopyCommandList, directionalLight, diskLight);
 
 	if (RENDER_GRAPH_IMGUI_ENABLED)
 	{
@@ -694,33 +715,78 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 			{
 				if (ImGui::BeginTabItem("Scene"))
 				{
-					if (ImGui::SliderFloat("Light Angle", &m_LightAngle, 0.0f, glm::two_pi<float>()))
+					bool lightsChanged = false;
+
+					if (ImGui::SliderFloat("Dir. Light Angle", &m_DirectionalLightAngle, 0.0f, glm::two_pi<float>()))
 					{
-						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
-						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
+						lightsChanged = true;
 					}
 
-					if (ImGui::SliderFloat3("Light Color", m_LightStrength, 0.0f, 1.0f))
+					if (ImGui::SliderFloat3("Dir. Light Color", m_DirectionalLightStrength, 0.0f, 1.0f))
 					{
-						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
-						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
+						lightsChanged = true;
 					}
 
-					if (ImGui::SliderFloat("Light Strength", &m_LightStrength[3], 0.0f, 10000.0f, "%.3f", 10.0f))
+					if (ImGui::SliderFloat("Dir. Light Strength", &m_DirectionalLightStrength[3], 0.0f, 10000.0f, "%.3f", 10.0f))
 					{
-						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
-						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
+						lightsChanged = true;
 					}
 
-					if (ImGui::Button("Reset Light"))
+					if (ImGui::Button("Reset Dir. Light"))
 					{
-						m_LightStrength[0] = DEFAULT_DIR_LIGHT_R;
-						m_LightStrength[1] = DEFAULT_DIR_LIGHT_G;
-						m_LightStrength[2] = DEFAULT_DIR_LIGHT_B;
-						m_LightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
+						m_DirectionalLightStrength[0] = DEFAULT_DIR_LIGHT_R;
+						m_DirectionalLightStrength[1] = DEFAULT_DIR_LIGHT_G;
+						m_DirectionalLightStrength[2] = DEFAULT_DIR_LIGHT_B;
+						m_DirectionalLightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
 
+						lightsChanged = true;
+					}
+
+					if (ImGui::SliderFloat3("Disk Light Position", glm::value_ptr(m_DiskLightPosition), -10.0f, 10.0f))
+					{
+						lightsChanged = true;
+					}
+
+					if (ImGui::SliderFloat3("Disk Light Color", glm::value_ptr(m_DiskLightEmission), 0.0f, 1.0f))
+					{
+						lightsChanged = true;
+					}
+
+					if (ImGui::SliderFloat("Disk Light Strength", &m_DiskLightEmission.w, 0.0f, 10000.0f, "%.3f", 10.0f))
+					{
+						lightsChanged = true;
+					}
+
+					if (ImGui::SliderFloat("Disk Light Radius", &m_DiskLightRadius, 0.0f, 5.0f))
+					{
+						lightsChanged = true;
+					}
+
+					if (ImGui::Button("Reset Disk Light"))
+					{
+						m_DiskLightPosition		= DEFAULT_DISK_LIGHT_POSITION;
+						m_DiskLightDirection	= DEFAULT_DISK_LIGHT_DIRECTION;
+						m_DiskLightEmission		= DEFAULT_DISK_LIGHT_EMISSION;
+						m_DiskLightRadius		= DEFAULT_DISK_LIGHT_RADIUS;
+
+						lightsChanged = true;
+					}
+
+					if (lightsChanged)
+					{
 						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
-						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
+
+						DirectionalLight directionalLight;
+						directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
+						directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
+
+						DiskLight diskLight;
+						diskLight.Position			= glm::vec4(m_DiskLightPosition, 1.0f);
+						diskLight.Direction			= glm::vec4(m_DiskLightDirection, 1.0f);
+						diskLight.EmittedRadiance	= glm::vec3(m_DiskLightEmission.x, m_DiskLightEmission.y, m_DiskLightEmission.z) * m_DiskLightEmission.w;
+						diskLight.Radius			= m_DiskLightRadius;
+
+						m_pScene->UpdateLights(pComputeCopyCommandList, directionalLight, diskLight);
 					}
 
 					ImGui::EndTabItem();
@@ -1412,7 +1478,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	else if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_NEW_NEW.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
 	}
 	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 	{

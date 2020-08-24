@@ -20,8 +20,9 @@ struct SLightSample
 {
     vec3    L_d;
     vec3    Scatter_f;
-    float   PDF;
+    float   Scatter_PDF;
     vec3    SampleWorldDir;
+    float   DistanceToSamplePoint;
 };
 
 struct SRadiancePayload
@@ -120,17 +121,17 @@ SRayHitDescription CalculateHitData(vec3 attribs, int indirectArgIndex, int prim
 
 SLightSample EvalDirectionalRadiance(vec3 w_o, vec3 albedo, float metallic, float roughness, mat3 worldToLocal)
 {
-    //Directional Light
     SLightSample sampleData;
-    sampleData.L_d 	          = vec3(0.0f);
-    sampleData.PDF            = 0.0f;
-    sampleData.SampleWorldDir = u_LightsBuffer.val.Direction.xyz;
+    sampleData.DistanceToSamplePoint    = 0.0f;
+    sampleData.SampleWorldDir           = u_LightsBuffer.val.DirL_Direction.xyz;
+    
 
     vec3 w_i 		= worldToLocal * sampleData.SampleWorldDir;
 
-    vec3 Scatter_f  = vec3(0.0f);   //How to deal with this when N > 1?
-    vec3 SumL_d     = vec3(0.0f); 	//Describes the reflected radiance sum from light samples taken on this light
-    float N 	    = 0.0f;			//Describes the amount of samples taken on this light, L_d should be divided with N before adding it to L_o
+    vec3 Scatter_f       = vec3(0.0f);  //How to deal with this when N > 1?
+    float Scatter_PDF    = 0.0f;
+    vec3 SumL_d          = vec3(0.0f); 	//Describes the reflected radiance sum from light samples taken on this light
+    float N 	         = 0.0f;		//Describes the amount of samples taken on this light, L_d should be divided with N before adding it to L_o
 
     //Evaluate the BRDF in the Light Direction (ofcourse we don't need to sample it since we already know w_i)
     SReflection reflection = f(w_o, w_i, albedo, metallic, roughness);
@@ -138,7 +139,8 @@ SLightSample EvalDirectionalRadiance(vec3 w_o, vec3 albedo, float metallic, floa
     if (reflection.PDF > 0.0f)
     {
         Scatter_f   = reflection.f;
-        SumL_d  	+= u_LightsBuffer.val.EmittedRadiance.rgb * reflection.CosTheta; // Since directional lights are described by a delta distribution we do not divide by the PDF (it will be 1) or multiply by the CosWeight
+        Scatter_PDF = 1.0f; //We set this to 1 since this is a delta distribution
+        SumL_d  	+= u_LightsBuffer.val.DirL_EmittedRadiance.rgb; // Since directional lights are described by a delta distribution we do not divide by the PDF (it will be 1) or multiply by the CosWeight
 
         /*
             If this was light was not described by a delta distribution we would include a PDF as divisor above and we would below !!Sample!! the BRDF with MIS to weight the
@@ -149,11 +151,53 @@ SLightSample EvalDirectionalRadiance(vec3 w_o, vec3 albedo, float metallic, floa
     N += 1.0f; 
 
     sampleData.Scatter_f    = Scatter_f;
+    sampleData.Scatter_PDF  = Scatter_PDF;
     sampleData.L_d          = SumL_d / N;
-    sampleData.PDF          = reflection.PDF;
 
     return sampleData;
 }
+
+SLightSample EvalDiskLightRadiance(vec3 w_o, vec3 worldPosition, vec3 albedo, float metallic, float roughness, mat3 worldToLocal, vec2 u)
+{
+    SShapeSample sphereSample = SampleDisk(u_LightsBuffer.val.DiskL_Position.xyz, u_LightsBuffer.val.DiskL_Direction.xyz, u_LightsBuffer.val.DiskL_Radius, u);
+    vec3 deltaPos = sphereSample.Position - worldPosition;
+
+    SLightSample sampleData;
+    sampleData.DistanceToSamplePoint    = length(deltaPos);
+    sampleData.SampleWorldDir           = sampleData.DistanceToSamplePoint > 0.0f ? deltaPos / sampleData.DistanceToSamplePoint : normalize(u_LightsBuffer.val.DiskL_Position.xyz - worldPosition);
+
+    vec3 Scatter_f       = vec3(0.0f);  //How to deal with this when N > 1?
+    float Scatter_PDF    = 0.0f;
+    vec3 SumL_d          = vec3(0.0f); 	//Describes the reflected radiance sum from light samples taken on this light
+    float N 	         = 0.0f;	    //Describes the amount of samples taken on this light, L_d should be divided with N before adding it to L_o
+
+    //Check if the disk is facing us
+    if (dot(-deltaPos, sphereSample.Normal) > 0.0f)
+    {
+        vec3 w_i 		     = worldToLocal * sampleData.SampleWorldDir;
+
+        //Evaluate the BRDF in the Light Direction (ofcourse we don't need to sample it since we already know w_i)
+        SReflection reflection = f(w_o, w_i, albedo, metallic, roughness);
+
+        if (reflection.PDF > 0.0f)
+        {
+            Scatter_f   = reflection.f;
+            Scatter_PDF = reflection.PDF;
+            SumL_d  	+= u_LightsBuffer.val.DiskL_EmittedRadiance.rgb / (sphereSample.PDF);
+        }
+    }
+
+    //No matter if the PDF == 0 or if the light is occluded from the pixel this still counts as a sample (obviously)
+    N += 1.0f; 
+
+    sampleData.Scatter_f    = Scatter_f;
+    sampleData.Scatter_PDF  = Scatter_PDF;
+    sampleData.L_d          = SumL_d / N;
+
+    return sampleData;
+}
+
+
 
 float GenerateSample(uint index, uvec3 p, uint numSamplesPerFrame, uvec3 blueNoiseSize)
 {

@@ -117,11 +117,9 @@ float GoldNoise(vec3 x, float seed, float min, float max)
 
 void CreateCoordinateSystem(in vec3 N, out vec3 Nt, out vec3 Nb) 
 { 
-    if (abs(N.x) > abs(N.y)) 
-        Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
-    else 
-        Nt = vec3(0, -N.z, N.y) / sqrt(N.y * N.y + N.z * N.z); 
-    Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
+    if (abs(N.x) > abs(N.y))  	Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
+    else 						Nt = vec3(0, -N.z, N.y) / sqrt(N.y * N.y + N.z * N.z); 
+    //Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
     Nb = cross(N, Nt); 
 } 
 
@@ -149,6 +147,13 @@ vec3 SphericalToDirection(float sinTheta, float cosTheta, float phi)
     return vec3(sinTheta * cos(phi), 
                 sinTheta * sin(phi), 
                 cosTheta);
+}
+
+vec3 SphericalToDirection(float sinTheta, float cosTheta, float phi, vec3 x, vec3 y, vec3 z)
+{
+    return 	sinTheta * cos(phi) * x + 
+			sinTheta * sin(phi) * y +
+			cosTheta * z;
 }
 
 float FlipIfNotSameHemisphere(vec3 w_0, vec3 w_1)
@@ -201,6 +206,73 @@ vec3 octToDir(uint octo)
 float luminance(vec3 rgb)
 {
     return dot(rgb, vec3(0.2126f, 0.7152f, 0.0722f));
+}
+
+float SphereSurfaceArea(float radius)
+{
+	return FOUR_PI * radius * radius;
+}
+
+float DiskSurfaceArea(float radius)
+{
+	return PI * radius * radius;
+}
+
+vec2 ConcentricSampleDisk(vec2 u)
+{
+	u = u * 2.0f - 1.0f;
+	if (dot(u, u) == 0.0f) return vec2(0.0f);
+
+	float r     = 0.0f;
+    float theta = 0.0f;
+
+    if (abs(u.x) > abs(u.y))
+    {
+        r = u.x;
+        theta = PI_OVER_FOUR * u.y / u.x;
+    }
+    else
+    {
+        r = u.y;
+        theta = PI_OVER_TWO - PI_OVER_FOUR * u.x / u.y;
+    }
+
+    return r * vec2(cos(theta), sin(theta));
+}
+
+SShapeSample SampleDisk(vec3 position, vec3 direction, float radius, vec2 u)
+{
+	SShapeSample shapeSample;
+
+	vec2 pd = ConcentricSampleDisk(u);
+	shapeSample.Position 	= position + vec3(pd.x * radius, pd.y * radius, 0.0f); //Assume disk thickiness of 0.0f
+	shapeSample.Normal		= vec3(0.0f, -1.0f, 0.0f);
+	shapeSample.PDF			= DiskSurfaceArea(radius);
+
+	return shapeSample;
+}
+
+SShapeSample UniformSampleUnitSphere(vec2 u)
+{
+	SShapeSample shapeSample;
+
+	float z 	= 1.0f - 2.0f * u.x;
+	float r 	= sqrt(max(0.0f, 1.0f - z * z));
+	float phi 	= 2.0f * PI * u.y;
+
+	shapeSample.Position 	= vec3(r * cos(phi), r * sin(phi), z);
+	shapeSample.Normal	 	= normalize(shapeSample.Position);
+	shapeSample.PDF 		= 1.0f / FOUR_PI;
+	return shapeSample;
+}
+
+SShapeSample UniformSampleSphereSurface(vec3 position, float radius, vec2 u)
+{
+	SShapeSample shapeSample = UniformSampleUnitSphere(u);
+	
+	shapeSample.Position	 = position + radius * shapeSample.Normal; //The normal as returned from UniformSampleUnitSphere can be interpreted as a point on the surface
+	shapeSample.PDF 		 /= (radius * radius);
+	return shapeSample;
 }
 
 #endif

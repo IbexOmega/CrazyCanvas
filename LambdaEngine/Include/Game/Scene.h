@@ -66,12 +66,26 @@ namespace LambdaEngine
 		glm::mat4 PrevTransform;
 	};
 
+	struct DirectionalLight
+	{
+		glm::vec4	Direction;
+		glm::vec4	EmittedRadiance;
+	};
+
+	struct DiskLight
+	{
+		glm::vec4	Position;
+		glm::vec4	Direction;
+		glm::vec3	EmittedRadiance;
+		float		Radius;
+	};
+
 	class LAMBDA_API Scene
 	{
 		struct LightsBuffer
 		{
-			glm::vec4 Direction;
-			glm::vec4 EmittedRadiance;
+			DirectionalLight	DirectionalLight;
+			DiskLight			DiskLight;
 		};
 
 		struct PerFrameBuffer
@@ -104,7 +118,7 @@ namespace LambdaEngine
 		bool Init(const SceneDesc& desc);
 		bool Finalize();
 
-		void UpdateDirectionalLight(ICommandList* pCommandList, const glm::vec3& direction, const glm::vec3& spectralIntensity);
+		void UpdateLights(ICommandList* pCommandList, const DirectionalLight& directionalLight, const DiskLight& diskLight);
 		void UpdatePerFrameBuffer(ICommandList* pCommandList, const Camera* pCamera, uint64 frameIndex);
 
 		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
