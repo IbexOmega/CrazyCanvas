@@ -1039,6 +1039,8 @@ namespace LambdaEngine
 		bool openSaveRenderStagePopup = false;
 		bool openLoadRenderStagePopup = false;
 
+		String renderStageToDelete = "";
+
 		if (ImGui::BeginMenuBar())
 		{
 			if (ImGui::BeginMenu("Menu"))
@@ -1310,6 +1312,11 @@ namespace LambdaEngine
 			
 			imnodes::BeginNodeTitleBar();
 			ImGui::Text("%s : [%s]", pRenderStage->Name.c_str(), renderStageType.c_str());
+			ImGui::SameLine();
+			if (ImGui::Button("Delete"))
+			{
+				renderStageToDelete = pRenderStage->Name;
+			}
 			ImGui::TextUnformatted("Enabled: ");
 			ImGui::SameLine();
 			if (ImGui::Checkbox("##Render Stage Enabled Checkbox", &pRenderStage->Enabled)) m_ParsedGraphDirty = true;
@@ -1614,6 +1621,63 @@ namespace LambdaEngine
 		}
 
 		imnodes::EndNodeEditor();
+
+		//Check for newly destroyed Render Stage
+		if (!renderStageToDelete.empty())
+		{
+			auto renderStageByNameIt = m_RenderStagesByName.find(renderStageToDelete);
+
+			EditorRenderStageDesc* pRenderStage = &renderStageByNameIt->second;
+
+			if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
+			{
+				if (pRenderStage->Graphics.IndexBufferAttributeIndex != -1)
+				{
+					EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndexBufferAttributeIndex / 2];
+					DestroyLink(pResourceState->InputLinkIndex);
+
+					m_ResourceStatesByHalfAttributeIndex.erase(pRenderStage->Graphics.IndexBufferAttributeIndex);
+					m_ParsedGraphDirty = true;
+				}
+
+				if (pRenderStage->Graphics.IndexBufferAttributeIndex != -1)
+				{
+					EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2];
+					DestroyLink(pResourceState->InputLinkIndex);
+
+					m_ResourceStatesByHalfAttributeIndex.erase(pRenderStage->Graphics.IndexBufferAttributeIndex);
+					m_ParsedGraphDirty = true;
+				}
+			}
+
+			for (EditorResourceStateIdent& resourceStateIdent : pRenderStage->ResourceStateIdents)
+			{
+				int32 resourceAttributeIndex	= resourceStateIdent.AttributeIndex;
+				int32 primaryAttributeIndex		= resourceAttributeIndex / 2;
+				int32 inputAttributeIndex		= resourceAttributeIndex;
+				int32 outputAttributeIndex		= resourceAttributeIndex + 1;
+
+				EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[primaryAttributeIndex];
+
+				DestroyLink(pResourceState->InputLinkIndex);
+
+				//Copy so that DestroyLink wont delete from set we're iterating through
+				TSet<int32> outputLinkIndices = pResourceState->OutputLinkIndices;
+				for (auto outputLinkIt = outputLinkIndices.begin(); outputLinkIt != outputLinkIndices.end(); outputLinkIt++)
+				{
+					int32 linkToBeDestroyedIndex = *outputLinkIt;
+					DestroyLink(linkToBeDestroyedIndex);
+				}
+
+				m_ResourceStatesByHalfAttributeIndex.erase(primaryAttributeIndex);
+				m_ParsedGraphDirty = true;
+			}
+
+			pRenderStage->ResourceStateIdents.clear();
+
+			m_RenderStageNameByInputAttributeIndex.erase(pRenderStage->InputAttributeIndex);
+			m_RenderStagesByName.erase(renderStageByNameIt);
+		}
 
 		int32 linkStartAttributeID		= -1;
 		

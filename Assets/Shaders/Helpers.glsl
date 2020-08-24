@@ -245,7 +245,7 @@ SShapeSample SampleDisk(vec3 position, vec3 direction, float radius, vec2 u)
 	SShapeSample shapeSample;
 
 	vec2 pd = ConcentricSampleDisk(u);
-	shapeSample.Position 	= position + vec3(pd.x * radius, pd.y * radius, 0.0f); //Assume disk thickiness of 0.0f
+	shapeSample.Position 	= position + vec3(pd.x * radius, 0.0f, pd.y * radius); //Assume disk thickiness of 0.0f
 	shapeSample.Normal		= vec3(0.0f, -1.0f, 0.0f);
 	shapeSample.PDF			= DiskSurfaceArea(radius);
 

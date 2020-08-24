@@ -43,6 +43,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
 constexpr const bool RAY_TRACING_ENABLED		= true;
+constexpr const bool SVGF_ENABLED				= false;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
@@ -53,7 +54,7 @@ constexpr const float DEFAULT_DIR_LIGHT_G			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_B			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_STRENGTH	= 0.0f;
 
-const glm::vec3 DEFAULT_DISK_LIGHT_POSITION(0.0f, 2.0f, 0.0f);
+const glm::vec3 DEFAULT_DISK_LIGHT_POSITION(0.0f, 1.96f, 0.0f);
 const glm::vec3 DEFAULT_DISK_LIGHT_DIRECTION(0.0f, -1.0f, 0.0f);
 const glm::vec4 DEFAULT_DISK_LIGHT_EMISSION(1.0f, 1.0f, 1.0f, 10.0f);
 const float		DEFAULT_DISK_LIGHT_RADIUS(0.2f);
@@ -87,7 +88,8 @@ Sandbox::Sandbox()
 	//Scene
 	{
 		std::vector<GameObject>	sceneGameObjects;
-		ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Ceiling.obj", sceneGameObjects);
+		//ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Ceiling.obj", sceneGameObjects);
+		ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original.obj", sceneGameObjects);
 		//ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
 		//ResourceManager::LoadSceneFromFile("San_Miguel/san-miguel-low-poly.obj", sceneGameObjects);
 
@@ -248,7 +250,7 @@ Sandbox::Sandbox()
 
 	DiskLight diskLight;
 	diskLight.Position			= glm::vec4(m_DiskLightPosition, 1.0f);
-	diskLight.Position			= glm::vec4(m_DiskLightDirection, 1.0f);
+	diskLight.Direction			= glm::vec4(m_DiskLightDirection, 1.0f);
 	diskLight.EmittedRadiance	= glm::vec3(m_DiskLightEmission.x, m_DiskLightEmission.y, m_DiskLightEmission.z) * m_DiskLightEmission.w;
 	diskLight.Radius			= m_DiskLightRadius;
 
@@ -1476,7 +1478,11 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
 	}
-	else if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
+	else if (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+	{
+		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
+	}
+	else if (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
 	{
 		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
 	}
@@ -2343,7 +2349,7 @@ bool Sandbox::InitRendererForDeferred()
 
 	{
 		TextureDesc textureDesc;
-		textureDesc.Name				= "SVGF History Texture";
+		textureDesc.Name				= "History Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_R16_SFLOAT;
@@ -2356,7 +2362,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.ArrayCount			= 1;
 
 		TextureViewDesc textureViewDesc;
-		textureViewDesc.Name			= "SVGF History Texture View";
+		textureViewDesc.Name			= "History Texture View";
 		textureViewDesc.Flags			= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
 		textureViewDesc.Miplevel		= 0;
@@ -2392,6 +2398,21 @@ bool Sandbox::InitRendererForDeferred()
 
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName								= "PREV_SVGF_HISTORY";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "HISTORY";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
