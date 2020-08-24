@@ -78,11 +78,8 @@ vec3 Sample_w_h_CosHemisphere(vec3 w_o, vec2 u)
     return vec3(d.x, d.y, z);
 }
 
-void Microfacet_f(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in float metallic, in float roughness, in float alphaSqrd, inout vec3 f, inout float PDF)
+void Microfacet_f(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in vec3 F_0, in float metallic, in float roughness, in float alphaSqrd, inout vec3 f, inout float PDF)
 {
-    vec3 F_0    = vec3(0.04f);
-	F_0	        = mix(F_0, albedo, metallic);
-
     float NdotO = max(0.01f, w_o.z);
     float NdotI = max(0.0f, w_i.z);
     float NdotH = max(0.0f, w_h.z);
@@ -98,10 +95,8 @@ void Microfacet_f(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in floa
     PDF     = D * NdotH / (4.0f * OdotH);
 }
 
-void Lambertian_f(in vec3 w_o, in vec3 w_h, in vec3 albedo, in float metallic, in float cosTheta, inout vec3 f, inout float PDF)
+void Lambertian_f(in vec3 w_o, in vec3 w_h, in vec3 albedo, in vec3 F_0, in float metallic, in float cosTheta, inout vec3 f, inout float PDF)
 {
-    vec3 F_0        = vec3(0.04f);
-	F_0	            = mix(F_0, albedo, metallic);
     float OdotH     = max(0.0f, dot(w_o, w_h));
 
     vec3 F          = F(OdotH, F_0);
@@ -113,7 +108,7 @@ void Lambertian_f(in vec3 w_o, in vec3 w_h, in vec3 albedo, in float metallic, i
     PDF     = cosTheta * INV_PI;
 }
 
-void Eval_f(vec3 w_o, vec3 w_h, vec3 w_i, vec3 albedo, float metallic, float roughness, float alphaSqrd, inout SReflection reflection)
+void Eval_f(vec3 w_o, vec3 w_h, vec3 w_i, vec3 albedo, vec3 F_0, float metallic, float roughness, float alphaSqrd, float d, inout SReflection reflection)
 {
     reflection.w_i          = w_i;
     reflection.CosTheta     = max(0.0f, w_i.z);
@@ -123,11 +118,11 @@ void Eval_f(vec3 w_o, vec3 w_h, vec3 w_i, vec3 albedo, float metallic, float rou
     float diffuse_PDF       = 0.0f;
     float specular_PDF      = 0.0f;
 
-    Lambertian_f(w_o, w_h, albedo, metallic, reflection.CosTheta, diffuse_f, diffuse_PDF);
-    Microfacet_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, specular_f, specular_PDF);
+    Lambertian_f(w_o, w_h, albedo, F_0, metallic, reflection.CosTheta, diffuse_f, diffuse_PDF);
+    Microfacet_f(w_o, w_h, w_i, albedo, F_0, metallic, roughness, alphaSqrd, specular_f, specular_PDF);
     
     reflection.f    = diffuse_f + specular_f;
-    reflection.PDF  = (diffuse_PDF + specular_PDF) * 0.5f;
+    reflection.PDF  = (d * diffuse_PDF + (1.0f - d) * specular_PDF);
 }
 
 /*
@@ -150,12 +145,18 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
 
     float alpha             = roughness * roughness;
     float alphaSqrd         = max(alpha * alpha, 0.0000001f);
-
-    bool sampleDiffuse      = u.z < 0.5f;
     
-    vec3 w_h                = sampleDiffuse ? Sample_w_h_CosHemisphere(w_o, u.xy) : Sample_w_h_SimpleSpecular(w_o, alphaSqrd, u.xy);
-    vec3 w_i                = -reflect(w_o, w_h); //w_o is pointing out, negate reflect
-    //vec3 w_i                = 2.0f * dot(w_o, w_h) * w_h - w_o;
+    vec3 F_0    = vec3(0.04f);
+	F_0	        = mix(F_0, albedo, metallic);
+
+    float diffuseLuminance      = max(0.01f, luminance(albedo));
+    float specularLuminance     = max(0.01f, luminance(F_0));
+    float probToSampleDiffuse   = diffuseLuminance / (diffuseLuminance + specularLuminance);
+    bool sampleDiffuse          = u.z < probToSampleDiffuse;
+    
+    vec3 w_h                    = sampleDiffuse ? Sample_w_h_CosHemisphere(w_o, u.xy) : Sample_w_h_SimpleSpecular(w_o, alphaSqrd, u.xy);
+    vec3 w_i                    = -reflect(w_o, w_h); //w_o is pointing out, negate reflect
+    //vec3 w_i                  = 2.0f * dot(w_o, w_h) * w_h - w_o;
 
     if (!IsSameHemisphere(w_o, w_i)) return reflection;
 
@@ -171,7 +172,7 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
             but we would like to evaluate the PDF
     */
 
-    Eval_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, reflection);
+    Eval_f(w_o, w_h, w_i, albedo, F_0, metallic, roughness, alphaSqrd, probToSampleDiffuse, reflection);
     return reflection;
 }
 
@@ -197,7 +198,10 @@ SReflection f(vec3 w_o, vec3 w_i, vec3 albedo, float metallic, float roughness)
     float alphaSqrd         = max(alpha * alpha, 0.0000001f);
     vec3 w_h                = normalize(w_o + w_i);
 
+    vec3 F_0    = vec3(0.04f);
+	F_0	        = mix(F_0, albedo, metallic);
+
     //w_i = w_i * SameHemisphere(w_i, w_o);  
-    Eval_f(w_o, w_h, w_i, albedo, metallic, roughness, alphaSqrd, reflection);
+    Eval_f(w_o, w_h, w_i, albedo, F_0, metallic, roughness, alphaSqrd, 0.5f, reflection);
     return reflection;
 }
