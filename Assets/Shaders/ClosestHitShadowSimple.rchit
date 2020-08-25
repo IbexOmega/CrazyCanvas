@@ -9,5 +9,6 @@ layout(location = 1) rayPayloadInEXT SShadowPayload s_ShadowPayload;
 
 void main() 
 {
-    s_ShadowPayload.Distance = gl_HitTEXT;
+    s_ShadowPayload.Distance        = gl_HitTEXT;
+    s_ShadowPayload.InstanceIndex   = gl_InstanceID;
 }

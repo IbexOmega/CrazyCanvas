@@ -27,6 +27,14 @@ namespace LambdaEngine
 
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::EventHandler
 {
+	struct InstanceIndexAndTransform
+	{
+		uint32		InstanceIndex;
+		glm::vec3	Position;
+		glm::vec4	Rotation;
+		glm::vec3	Scale;
+	};
+
 public:
 	Sandbox();
 	~Sandbox();
@@ -93,14 +101,13 @@ private:
 	GUID_Lambda								m_ImGuiPixelShaderEmissiveGUID				= GUID_NONE;
 	GUID_Lambda								m_ImGuiPixelShaderPackedLocalNormalGUID		= GUID_NONE;
 	GUID_Lambda								m_ImGuiPixelLinearZGUID						= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelCompactNormalFloatGUID			= GUID_NONE;
+
+	TArray<InstanceIndexAndTransform>		m_InstanceIndicesAndTransforms;
+	TArray<InstanceIndexAndTransform>		m_LightInstanceIndicesAndTransforms;
 
 	float									m_DirectionalLightAngle;
 	float									m_DirectionalLightStrength[4];
-
-	glm::vec3								m_DiskLightPosition;
-	glm::vec3								m_DiskLightDirection;
-	glm::vec4								m_DiskLightEmission;
-	float									m_DiskLightRadius;
 
 	bool									m_SpawnPlayAts;
 	float									m_GunshotTimer;

@@ -54,11 +54,6 @@ constexpr const float DEFAULT_DIR_LIGHT_G			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_B			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_STRENGTH	= 0.0f;
 
-const glm::vec3 DEFAULT_DISK_LIGHT_POSITION(0.0f, 1.96f, 0.0f);
-const glm::vec3 DEFAULT_DISK_LIGHT_DIRECTION(0.0f, -1.0f, 0.0f);
-const glm::vec4 DEFAULT_DISK_LIGHT_EMISSION(1.0f, 1.0f, 1.0f, 10.0f);
-const float		DEFAULT_DISK_LIGHT_RADIUS(0.2f);
-
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
 Sandbox::Sandbox()
@@ -85,25 +80,69 @@ Sandbox::Sandbox()
 	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
 	m_pScene->Init(sceneDesc);
 
+	m_DirectionalLightAngle	= glm::half_pi<float>();
+	m_DirectionalLightStrength[0] = DEFAULT_DIR_LIGHT_R;
+	m_DirectionalLightStrength[1] = DEFAULT_DIR_LIGHT_G;
+	m_DirectionalLightStrength[2] = DEFAULT_DIR_LIGHT_B;
+	m_DirectionalLightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
+
+	DirectionalLight directionalLight;
+	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
+	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
+
+	{
+		m_pScene->SetDirectionalLight(directionalLight);
+
+		AreaLightObject areaLight;
+		areaLight.Type		= EAreaLightType::QUAD;
+		areaLight.Material	= GUID_MATERIAL_DEFAULT_EMISSIVE;
+
+		glm::vec3 position(0.0f, 1.5f, 0.0f);
+		glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+		glm::vec3 scale(1.0f);
+
+		glm::mat4 transform(1.0f);
+		transform = glm::translate(transform, position);
+		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+		transform = glm::scale(transform, scale);
+
+		InstanceIndexAndTransform instanceIndexAndTransform;
+		instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
+		instanceIndexAndTransform.Position		= position;
+		instanceIndexAndTransform.Rotation		= rotation;
+		instanceIndexAndTransform.Scale			= scale;
+
+		m_LightInstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+	}
+
 	//Scene
 	{
 		std::vector<GameObject>	sceneGameObjects;
 		//ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Ceiling.obj", sceneGameObjects);
-		ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original.obj", sceneGameObjects);
+		//ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Light.obj", sceneGameObjects);
+		ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Plane.obj", sceneGameObjects);
 		//ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
 		//ResourceManager::LoadSceneFromFile("San_Miguel/san-miguel-low-poly.obj", sceneGameObjects);
 
+		glm::vec3 position(0.0f, 0.0f, 0.0f);
 		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
 		glm::vec3 scale(1.0f);
 		//glm::vec3 scale(0.01f);
 
 		glm::mat4 transform(1.0f);
+		transform = glm::translate(transform, position);
 		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
 		transform = glm::scale(transform, scale);
 
 		for (GameObject& gameObject : sceneGameObjects)
 		{
-			m_pScene->AddDynamicGameObject(gameObject, transform);
+			InstanceIndexAndTransform instanceIndexAndTransform;
+			instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+			instanceIndexAndTransform.Position		= position;
+			instanceIndexAndTransform.Rotation		= rotation;
+			instanceIndexAndTransform.Scale			= scale;
+
+			m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
 		}
 	}
 
@@ -231,30 +270,7 @@ Sandbox::Sandbox()
 	ICommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
 	ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
 
-	m_pScene->UpdatePerFrameBuffer(pGraphicsCopyCommandList, m_pCamera, m_pRenderer->GetFrameIndex());
-
-	m_DirectionalLightAngle	= glm::half_pi<float>();
-	m_DirectionalLightStrength[0] = DEFAULT_DIR_LIGHT_R;
-	m_DirectionalLightStrength[1] = DEFAULT_DIR_LIGHT_G;
-	m_DirectionalLightStrength[2] = DEFAULT_DIR_LIGHT_B;
-	m_DirectionalLightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
-
-	m_DiskLightPosition		= DEFAULT_DISK_LIGHT_POSITION;
-	m_DiskLightDirection	= DEFAULT_DISK_LIGHT_DIRECTION;
-	m_DiskLightEmission		= DEFAULT_DISK_LIGHT_EMISSION;
-	m_DiskLightRadius		= DEFAULT_DISK_LIGHT_RADIUS;
-
-	DirectionalLight directionalLight;
-	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
-	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
-
-	DiskLight diskLight;
-	diskLight.Position			= glm::vec4(m_DiskLightPosition, 1.0f);
-	diskLight.Direction			= glm::vec4(m_DiskLightDirection, 1.0f);
-	diskLight.EmittedRadiance	= glm::vec3(m_DiskLightEmission.x, m_DiskLightEmission.y, m_DiskLightEmission.z) * m_DiskLightEmission.w;
-	diskLight.Radius			= m_DiskLightRadius;
-
-	m_pScene->UpdateLights(pComputeCopyCommandList, directionalLight, diskLight);
+	m_pScene->UpdateCamera(m_pCamera);
 
 	if (RENDER_GRAPH_IMGUI_ENABLED)
 	{
@@ -661,6 +677,7 @@ void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
 	}
 
 	m_pCamera->Update();
+	m_pScene->UpdateCamera(m_pCamera);
 
 	AudioListenerDesc listenerDesc = {};
 	listenerDesc.Position = m_pCamera->GetPosition();
@@ -677,8 +694,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 	m_pRenderer->NewFrame(delta);
 
 	ICommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
-
-	m_pScene->UpdatePerFrameBuffer(pGraphicsCopyCommandList, m_pCamera, m_pRenderer->GetFrameIndex());
+	ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
 
 	Window* pWindow = CommonApplication::Get()->GetMainWindow();
 	float32 renderWidth = (float32)pWindow->GetWidth();
@@ -689,7 +705,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 	{
 		m_pRenderGraphEditor->RenderGUI();
 
-		//ImGui::ShowDemoWindow();
+		ImGui::ShowDemoWindow();
 
 		ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
 		if (ImGui::Begin("Debugging Window", NULL))
@@ -701,6 +717,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 			static ImGuiTexture albedoTexture = {};
 			static ImGuiTexture normalTexture = {};
+			static ImGuiTexture compactNormalsTexture = {};
 			static ImGuiTexture motionTexture = {};
 			static ImGuiTexture linearZTexture = {};
 			static ImGuiTexture depthStencilTexture = {};
@@ -717,21 +734,21 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 			{
 				if (ImGui::BeginTabItem("Scene"))
 				{
-					bool lightsChanged = false;
+					bool dirLightChanged = false;
 
 					if (ImGui::SliderFloat("Dir. Light Angle", &m_DirectionalLightAngle, 0.0f, glm::two_pi<float>()))
 					{
-						lightsChanged = true;
+						dirLightChanged = true;
 					}
 
-					if (ImGui::SliderFloat3("Dir. Light Color", m_DirectionalLightStrength, 0.0f, 1.0f))
+					if (ImGui::ColorEdit3("Dir. Light Color", m_DirectionalLightStrength))
 					{
-						lightsChanged = true;
+						dirLightChanged = true;
 					}
 
 					if (ImGui::SliderFloat("Dir. Light Strength", &m_DirectionalLightStrength[3], 0.0f, 10000.0f, "%.3f", 10.0f))
 					{
-						lightsChanged = true;
+						dirLightChanged = true;
 					}
 
 					if (ImGui::Button("Reset Dir. Light"))
@@ -741,55 +758,126 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 						m_DirectionalLightStrength[2] = DEFAULT_DIR_LIGHT_B;
 						m_DirectionalLightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
 
-						lightsChanged = true;
+						dirLightChanged = true;
 					}
 
-					if (ImGui::SliderFloat3("Disk Light Position", glm::value_ptr(m_DiskLightPosition), -10.0f, 10.0f))
+					if (dirLightChanged)
 					{
-						lightsChanged = true;
-					}
-
-					if (ImGui::SliderFloat3("Disk Light Color", glm::value_ptr(m_DiskLightEmission), 0.0f, 1.0f))
-					{
-						lightsChanged = true;
-					}
-
-					if (ImGui::SliderFloat("Disk Light Strength", &m_DiskLightEmission.w, 0.0f, 10000.0f, "%.3f", 10.0f))
-					{
-						lightsChanged = true;
-					}
-
-					if (ImGui::SliderFloat("Disk Light Radius", &m_DiskLightRadius, 0.0f, 5.0f))
-					{
-						lightsChanged = true;
-					}
-
-					if (ImGui::Button("Reset Disk Light"))
-					{
-						m_DiskLightPosition		= DEFAULT_DISK_LIGHT_POSITION;
-						m_DiskLightDirection	= DEFAULT_DISK_LIGHT_DIRECTION;
-						m_DiskLightEmission		= DEFAULT_DISK_LIGHT_EMISSION;
-						m_DiskLightRadius		= DEFAULT_DISK_LIGHT_RADIUS;
-
-						lightsChanged = true;
-					}
-
-					if (lightsChanged)
-					{
-						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
-
 						DirectionalLight directionalLight;
 						directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
 						directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
 
-						DiskLight diskLight;
-						diskLight.Position			= glm::vec4(m_DiskLightPosition, 1.0f);
-						diskLight.Direction			= glm::vec4(m_DiskLightDirection, 1.0f);
-						diskLight.EmittedRadiance	= glm::vec3(m_DiskLightEmission.x, m_DiskLightEmission.y, m_DiskLightEmission.z) * m_DiskLightEmission.w;
-						diskLight.Radius			= m_DiskLightRadius;
-
-						m_pScene->UpdateLights(pComputeCopyCommandList, directionalLight, diskLight);
+						m_pScene->SetDirectionalLight(directionalLight);
 					}
+
+					if (ImGui::CollapsingHeader("Game Objects"))
+					{
+						for (InstanceIndexAndTransform& instanceIndexAndTransform : m_InstanceIndicesAndTransforms)
+						{
+							if (ImGui::TreeNode(("Game Object" + std::to_string(instanceIndexAndTransform.InstanceIndex)).c_str()))
+							{
+								bool updated = false;
+
+								if (ImGui::SliderFloat3("Position", glm::value_ptr(instanceIndexAndTransform.Position), -50.0f, 50.0f))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat4("Rotation", glm::value_ptr(instanceIndexAndTransform.Rotation), -10.0f, 10.0f))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat3("Scale", glm::value_ptr(instanceIndexAndTransform.Scale), -10.0f, 10.0f))
+								{
+									updated = true;
+								}
+
+								if (updated)
+								{
+									glm::mat4 transform(1.0f);
+									transform = glm::translate(transform, instanceIndexAndTransform.Position);
+									transform = glm::rotate(transform, instanceIndexAndTransform.Rotation.w, glm::vec3(instanceIndexAndTransform.Rotation));
+									transform = glm::scale(transform, instanceIndexAndTransform.Scale);
+
+									m_pScene->UpdateTransform(instanceIndexAndTransform.InstanceIndex, transform);
+								}
+
+								ImGui::TreePop();
+							}
+						}
+					}
+
+					if (ImGui::CollapsingHeader("Lights"))
+					{
+						for (InstanceIndexAndTransform& instanceIndexAndTransform : m_LightInstanceIndicesAndTransforms)
+						{
+							if (ImGui::TreeNode(("Light" + std::to_string(instanceIndexAndTransform.InstanceIndex)).c_str()))
+							{
+								bool updated = false;
+
+								if (ImGui::SliderFloat3("Position", glm::value_ptr(instanceIndexAndTransform.Position), -50.0f, 50.0f))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat4("Rotation", glm::value_ptr(instanceIndexAndTransform.Rotation), -10.0f, 10.0f))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat3("Scale", glm::value_ptr(instanceIndexAndTransform.Scale), -10.0f, 10.0f))
+								{
+									updated = true;
+								}
+
+								if (updated)
+								{
+									glm::mat4 transform(1.0f);
+									transform = glm::translate(transform, instanceIndexAndTransform.Position);
+									transform = glm::rotate(transform, instanceIndexAndTransform.Rotation.w, glm::vec3(instanceIndexAndTransform.Rotation));
+									transform = glm::scale(transform, instanceIndexAndTransform.Scale);
+
+									m_pScene->UpdateTransform(instanceIndexAndTransform.InstanceIndex, transform);
+								}
+
+								ImGui::TreePop();
+							}
+						}
+					}
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Testing"))
+				{
+					static float32 uTest[2];
+					ImGui::Text("Concentric Disk Sampling Test");
+					ImGui::SliderFloat2("u", uTest, 0.0f, 1.0f);
+
+					glm::vec2 result;
+					glm::vec2 uOffset = glm::vec2(uTest[0], uTest[1]) * 2.0f - glm::vec2(1.0f);
+					if (glm::dot(uOffset, uOffset) == 0.0f) result = glm::vec2(0.0f);
+					else
+					{
+						float32 r		= 0.0f;
+						float32 theta = 0.0f;
+
+						if (glm::abs(uOffset.x) > glm::abs(uOffset.y))
+						{
+							r = uOffset.x;
+							theta = (glm::half_pi<float32>() / 2.0f) * uOffset.y / uOffset.x;
+						}
+						else
+						{
+							r = uOffset.y;
+							theta = glm::half_pi<float32>() - (glm::half_pi<float32>() / 2.0f) * uOffset.x / uOffset.y;
+						}
+
+						result = r * glm::vec2(cos(theta), sin(theta));
+					}
+
+					ImGui::Text("Result: (%f, %f)", result.x, result.y);
 
 					ImGui::EndTabItem();
 				}
@@ -892,6 +980,52 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					}
 
 					ImGui::Image(&normalTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Compact Normals"))
+				{
+					compactNormalsTexture.ResourceName = "G_BUFFER_COMPACT_NORMALS";
+
+					const char* items[] = { "Shading", "Geometric" };
+					static int currentItem = 0;
+					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
+
+					if (currentItem == 0)
+					{
+						compactNormalsTexture.ReservedIncludeMask = 0x00008880;
+
+						compactNormalsTexture.ChannelMul[0] = 1.0f;
+						compactNormalsTexture.ChannelMul[1] = 1.0f;
+						compactNormalsTexture.ChannelMul[2] = 1.0f;
+						compactNormalsTexture.ChannelMul[3] = 0.0f;
+
+						compactNormalsTexture.ChannelAdd[0] = 0.0f;
+						compactNormalsTexture.ChannelAdd[1] = 0.0f;
+						compactNormalsTexture.ChannelAdd[2] = 0.0f;
+						compactNormalsTexture.ChannelAdd[3] = 1.0f;
+
+						compactNormalsTexture.PixelShaderGUID = m_ImGuiPixelCompactNormalFloatGUID;
+					}
+					else if (currentItem == 1)
+					{
+						compactNormalsTexture.ReservedIncludeMask = 0x00004440;
+
+						compactNormalsTexture.ChannelMul[0] = 1.0f;
+						compactNormalsTexture.ChannelMul[1] = 1.0f;
+						compactNormalsTexture.ChannelMul[2] = 1.0f;
+						compactNormalsTexture.ChannelMul[3] = 0.0f;
+
+						compactNormalsTexture.ChannelAdd[0] = 0.0f;
+						compactNormalsTexture.ChannelAdd[1] = 0.0f;
+						compactNormalsTexture.ChannelAdd[2] = 0.0f;
+						compactNormalsTexture.ChannelAdd[3] = 1.0f;
+
+						compactNormalsTexture.PixelShaderGUID = m_ImGuiPixelCompactNormalFloatGUID;
+					}
+
+					ImGui::Image(&compactNormalsTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
 
 					ImGui::EndTabItem();
 				}
@@ -1342,6 +1476,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 		ImGui::End();
 	}
 
+	m_pScene->PrepareRender(pGraphicsCopyCommandList, pComputeCopyCommandList, m_pRenderer->GetFrameIndex(), delta);
 	m_pRenderer->PrepareRender(delta);
 
 	m_pRenderer->Render();
@@ -1466,6 +1601,7 @@ bool Sandbox::InitRendererForDeferred()
 	m_ImGuiPixelShaderEmissiveGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelEmissive.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelShaderPackedLocalNormalGUID		= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedLocalNormal.frag",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelLinearZGUID						= ResourceManager::LoadShaderFromFile("ImGuiPixelLinearZ.frag",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelCompactNormalFloatGUID			= ResourceManager::LoadShaderFromFile("ImGuiPixelCompactNormalFloat.frag",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
 	//ResourceManager::LoadShaderFromFile("ForwardVertex.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
 	//ResourceManager::LoadShaderFromFile("ForwardPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
@@ -1811,6 +1947,80 @@ bool Sandbox::InitRendererForDeferred()
 
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName								= "G_BUFFER_MOTION";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+	{
+		TextureDesc textureDesc	= {};
+		textureDesc.Name					= "G-Buffer Compact Normals Texture";
+		textureDesc.Type					= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType				= EMemoryType::MEMORY_GPU;
+		textureDesc.Format					= EFormat::FORMAT_R32G32_SFLOAT;
+		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width					= CommonApplication::Get()->GetMainWindow()->GetWidth();
+		textureDesc.Height					= CommonApplication::Get()->GetMainWindow()->GetHeight();
+		textureDesc.Depth					= 1;
+		textureDesc.SampleCount				= 1;
+		textureDesc.Miplevels				= 1;
+		textureDesc.ArrayCount				= 1;
+
+		TextureViewDesc textureViewDesc		= { };
+		textureViewDesc.Name				= "G-Buffer Compact Normals Texture View";
+		textureViewDesc.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel			= 0;
+		textureViewDesc.MiplevelCount		= 1;
+		textureViewDesc.ArrayIndex			= 0;
+		textureViewDesc.ArrayCount			= 1;
+		textureViewDesc.Format				= textureDesc.Format;
+
+		{
+			TextureDesc* pTextureDesc			= &textureDesc;
+			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "G_BUFFER_COMPACT_NORMALS";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+	{
+		TextureDesc textureDesc	= {};
+		textureDesc.Name					= "G-Buffer Emissive Metallic Roughness Texture";
+		textureDesc.Type					= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType				= EMemoryType::MEMORY_GPU;
+		textureDesc.Format					= EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width					= CommonApplication::Get()->GetMainWindow()->GetWidth();
+		textureDesc.Height					= CommonApplication::Get()->GetMainWindow()->GetHeight();
+		textureDesc.Depth					= 1;
+		textureDesc.SampleCount				= 1;
+		textureDesc.Miplevels				= 1;
+		textureDesc.ArrayCount				= 1;
+
+		TextureViewDesc textureViewDesc		= { };
+		textureViewDesc.Name				= "G-Buffer Emissive Metallic Roughness Texture View";
+		textureViewDesc.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel			= 0;
+		textureViewDesc.MiplevelCount		= 1;
+		textureViewDesc.ArrayIndex			= 0;
+		textureViewDesc.ArrayCount			= 1;
+		textureViewDesc.Format				= textureDesc.Format;
+
+		{
+			TextureDesc* pTextureDesc			= &textureDesc;
+			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "G_BUFFER_EMISSIVE_METALLIC_ROUGHNESS";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;

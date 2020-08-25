@@ -14,13 +14,17 @@ namespace LambdaEngine
 	//Meshes
 
 	//Meshes
-	constexpr GUID_Lambda DEFAULT_MATERIAL = 0;
+	constexpr GUID_Lambda GUID_MESH_QUAD					= 0;
+
+	//Material
+	constexpr GUID_Lambda GUID_MATERIAL_DEFAULT				= GUID_MESH_QUAD + 1;
+	constexpr GUID_Lambda GUID_MATERIAL_DEFAULT_EMISSIVE	= GUID_MATERIAL_DEFAULT + 1;
 
 	//Textures
-	constexpr GUID_Lambda DEFAULT_COLOR_MAP = DEFAULT_MATERIAL + 1;
-	constexpr GUID_Lambda DEFAULT_NORMAL_MAP = DEFAULT_COLOR_MAP + 1;
+	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_COLOR_MAP	= GUID_MATERIAL_DEFAULT_EMISSIVE + 1;
+	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_NORMAL_MAP	= GUID_TEXTURE_DEFAULT_COLOR_MAP + 1;
 
-	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID = DEFAULT_NORMAL_MAP + 1;
+	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID			= GUID_TEXTURE_DEFAULT_NORMAL_MAP + 1;
 
 	constexpr const char* SCENE_DIR			= "../Assets/Scenes/";
 	constexpr const char* MESH_DIR			= "../Assets/Meshes/";

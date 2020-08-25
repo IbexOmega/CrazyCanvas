@@ -268,11 +268,11 @@ namespace LambdaEngine
 				pMaterial->Properties.Albedo.x *= material.emission[0];
 				pMaterial->Properties.Albedo.y *= material.emission[1];
 				pMaterial->Properties.Albedo.z *= material.emission[2];
-				pMaterial->Properties.Reserved_Emissive |= 0x1;
+				pMaterial->Properties.EmissionStrength = DEFAULT_EMISSIVE_EMISSION_STRENGTH;
 			}
 			else
 			{
-				pMaterial->Properties.Reserved_Emissive = 0x0;
+				pMaterial->Properties.EmissionStrength = 0.0f;
 			}
 
 			if (material.bump_texname.length() > 0)

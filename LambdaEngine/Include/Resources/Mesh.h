@@ -60,6 +60,12 @@ namespace LambdaEngine
 		uint32  VertexCount		= 0;
 		uint32  IndexCount		= 0;
 	};
+
+	class MeshFactory
+	{
+	public:
+		static Mesh* CreateQuad();
+	};
 }
 
 namespace std

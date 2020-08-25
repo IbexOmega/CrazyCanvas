@@ -20,7 +20,7 @@ namespace LambdaEngine
 	{
 		const char*		pName			= "";
 		bool			Debug			= false;
-		Window*		pWindow			= nullptr;
+		Window*			pWindow			= nullptr;
 		RenderGraph*	pRenderGraph	= nullptr;
 		uint32			BackBufferCount = 3;
 	};

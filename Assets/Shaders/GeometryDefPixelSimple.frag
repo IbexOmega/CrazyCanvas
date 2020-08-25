@@ -24,7 +24,8 @@ layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneMetallicMa
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneRougnessMaps[MAX_UNIQUE_MATERIALS];
 
 layout(location = 0) out vec4 out_Albedo_AO;
-layout(location = 1) out vec4 out_Normals_Metall_Rough;
+layout(location = 1) out vec4 out_Compact_Normals;
+layout(location = 2) out vec4 out_Emission_Metallic_Roughness;
 
 void main()
 {
@@ -41,27 +42,21 @@ void main()
 	float sampledMetallic 	=       texture(u_SceneMetallicMaps[in_MaterialIndex],    texCoord).r;
 	float sampledRoughness  =       texture(u_SceneRougnessMaps[in_MaterialIndex],    texCoord).r;
 	
-	vec3 worldNormal 	   	= normalize((sampledNormal * 2.0f) - 1.0f);
-	worldNormal 			= normalize(TBN * normalize(worldNormal));
+	vec3 shadingNormal 	   	= normalize((sampledNormal * 2.0f) - 1.0f);
+	shadingNormal 			= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialIndex];
 
-	//Store normal in 2 component x^2 + y^2 + z^2 = 1, store the sign with roughness
-    vec3 storedAlbedo       = pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-    float storedAO          = materialParameters.Ambient * sampledAO;
-	vec2 storedNormal 	    = worldNormal.xy;
-    float storedMetallic    = max(materialParameters.Metallic * sampledMetallic, EPSILON);
-	if ((materialParameters.Reserved_Emissive & 0x1) == 0)
-	{
-		storedMetallic = -storedMetallic;
-	}
+    vec2 metallicRoughness              = vec2(materialParameters.Metallic * sampledMetallic, max(materialParameters.Roughness * sampledRoughness,  EPSILON));
 
-	float storedRoughness   = max(materialParameters.Roughness * sampledRoughness, EPSILON);
-	if (worldNormal.z < 0)
-	{
-		storedRoughness = -storedRoughness;
-	}
-
-	out_Albedo_AO 				= vec4(storedAlbedo, storedAO);
-	out_Normals_Metall_Rough	= vec4(storedNormal, storedMetallic, storedRoughness);
+    vec3 storedAlbedo                   = pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
+    float storedAO                      = materialParameters.Ambient * sampledAO;
+	float storedShadingNormal           = uintBitsToFloat(dirToOct(shadingNormal));
+    float storedGeometricNormal         = uintBitsToFloat(dirToOct(in_Normal));
+    vec3 storedEmission                 = storedAlbedo * materialParameters.EmissionStrength;
+    float storedMetallic_Roughness      = uintBitsToFloat(packUnorm2x16(metallicRoughness));
+    
+	out_Albedo_AO 				        = vec4(storedAlbedo, storedAO);
+	out_Compact_Normals	                = vec4(storedShadingNormal, storedGeometricNormal, 0.0f, 0.0f);
+    out_Emission_Metallic_Roughness     = vec4(storedEmission, storedMetallic_Roughness);
 }

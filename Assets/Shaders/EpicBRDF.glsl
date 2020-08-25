@@ -151,7 +151,7 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
 
     float diffuseLuminance      = max(0.01f, luminance(albedo));
     float specularLuminance     = max(0.01f, luminance(F_0));
-    float probToSampleDiffuse   = diffuseLuminance / (diffuseLuminance + specularLuminance);
+    float probToSampleDiffuse   = 0.5f;//diffuseLuminance / (diffuseLuminance + specularLuminance);
     bool sampleDiffuse          = u.z < probToSampleDiffuse;
     
     vec3 w_h                    = sampleDiffuse ? Sample_w_h_CosHemisphere(w_o, u.xy) : Sample_w_h_SimpleSpecular(w_o, alphaSqrd, u.xy);

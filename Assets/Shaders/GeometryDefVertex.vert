@@ -12,7 +12,7 @@ layout(binding = 0, set = BUFFER_SET_INDEX) restrict readonly buffer Vertices   
 layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer Indices                { uint val[]; }                 b_Indices;
 layout(binding = 2, set = BUFFER_SET_INDEX) restrict readonly buffer PrimaryInstances       { SPrimaryInstance val[]; }     b_PrimaryInstances;
 layout(binding = 3, set = BUFFER_SET_INDEX) restrict readonly buffer SecondaryInstances     { SSecondaryInstance val[]; }   b_SecondaryInstances;
-layout(binding = 4, set = BUFFER_SET_INDEX) restrict readonly buffer MeshIndices            { SMeshIndexDesc val[]; }       b_MeshIndices;
+layout(binding = 4, set = BUFFER_SET_INDEX) restrict readonly buffer IndirectArgs           { SIndirectArg val[]; }         b_IndirectArgs;
 layout(binding = 5, set = BUFFER_SET_INDEX) uniform PerFrameBuffer                          { SPerFrameBuffer val; }        u_PerFrameBuffer;
 
 layout(location = 0) out flat uint out_MaterialIndex;
@@ -32,8 +32,8 @@ void main()
     SVertex vertex                              = b_Vertices.val[gl_VertexIndex];
     SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
 
-    uint meshIndexID                            = (primaryInstance.Mask_MeshMaterialIndex) & 0x00FFFFFF;
-    SMeshIndexDesc meshIndexDesc                = b_MeshIndices.val[meshIndexID];
+    uint indirectArgID                          = (primaryInstance.Mask_IndirectArgIndex) & 0x00FFFFFF;
+    SIndirectArg indirectArg                    = b_IndirectArgs.val[indirectArgID];
 
     //Calculate a 4x4 matrix so that we calculate the correct w for worldPosition
     mat4 transform;
@@ -55,7 +55,7 @@ void main()
 
     uint materialsRenderedPerPass = (ALLOWED_TEXTURES_PER_DESCRIPTOR_SET - OTHER_TEXTURES_IN_PASS) / 5;
 
-    out_MaterialIndex           = meshIndexDesc.MaterialIndex % materialsRenderedPerPass;
+    out_MaterialIndex           = indirectArg.MaterialIndex % materialsRenderedPerPass;
 	out_Normal 			        = normal;
 	out_Tangent 		        = tangent;
 	out_Bitangent 		        = bitangent;

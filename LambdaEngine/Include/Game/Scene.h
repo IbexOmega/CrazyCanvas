@@ -4,18 +4,21 @@
 #include "Math/Math.h"
 
 #include "Resources/Mesh.h"
+#include "Resources/Material.h"
 #include "Containers/TArray.h"
 #include "Containers/String.h"
+#include "Containers/TSet.h"
 #include "Camera.h"
+#include "Time/API/Timestamp.h"
 
 #include <map>
 
 namespace LambdaEngine
 {
-	constexpr const uint32 NUM_RANDOM_SEEDS = 8192;
+	constexpr const uint32 MAX_NUM_AREA_LIGHTS	= 4;
+	constexpr const uint32 NUM_RANDOM_SEEDS		= 8192;
 
 	struct Mesh;
-	struct Material;
 
 	class IGraphicsDevice;
 	class IAudioDevice;
@@ -28,6 +31,26 @@ namespace LambdaEngine
 	class IAccelerationStructure;
 	class IDeviceAllocator;
 	
+	enum HitMask : uint8
+	{
+		HIT_MASK_NONE			= 0x00,
+		HIT_MASK_GAME_OBJECT	= 0x01,
+		HIT_MASK_LIGHT			= 0x02,
+		HIT_MASK_ALL			= 0xFF,
+	};
+
+	enum EAreaLightType : uint8
+	{
+		NONE		= 0,
+		QUAD		= 1,
+	};
+
+	struct AreaLightObject
+	{
+		EAreaLightType	Type;
+		GUID_Lambda		Material;
+	};
+
 	struct GameObject
 	{
 		GUID_Lambda Mesh;
@@ -54,7 +77,7 @@ namespace LambdaEngine
 	struct InstancePrimary
 	{
 		glm::mat3x4 Transform;
-		uint32 MeshMaterialIndex : 24;
+		uint32 IndirectArgsIndex : 24;
 		uint32 Mask : 8;
 		uint32 SBTRecordOffset : 24;
 		uint32 Flags : 8;
@@ -72,20 +95,21 @@ namespace LambdaEngine
 		glm::vec4	EmittedRadiance;
 	};
 
-	struct DiskLight
+	struct AreaLight
 	{
-		glm::vec4	Position;
-		glm::vec4	Direction;
-		glm::vec3	EmittedRadiance;
-		float		Radius;
+		uint32		InstanceIndex;
+		uint32		Type;
+		uint32		Padding0;
+		uint32		Padding1;
 	};
 
 	class LAMBDA_API Scene
 	{
-		struct LightsBuffer
+		struct LightSetup
 		{
 			DirectionalLight	DirectionalLight;
-			DiskLight			DiskLight;
+			AreaLight			AreaLights[MAX_NUM_AREA_LIGHTS];
+			uint32				AreaLightCount;
 		};
 
 		struct PerFrameBuffer
@@ -118,11 +142,16 @@ namespace LambdaEngine
 		bool Init(const SceneDesc& desc);
 		bool Finalize();
 
-		void UpdateLights(ICommandList* pCommandList, const DirectionalLight& directionalLight, const DiskLight& diskLight);
-		void UpdatePerFrameBuffer(ICommandList* pCommandList, const Camera* pCamera, uint64 frameIndex);
+		void PrepareRender(ICommandList* pGraphicsCommandList, ICommandList* pComputeCommandList, uint64 frameIndex, Timestamp delta);
 
 		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 		uint32 AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
+		void UpdateTransform(uint32 instanceIndex, const glm::mat4& transform);
+
+		void SetDirectionalLight(const DirectionalLight& directionalLight);
+		uint32 AddAreaLight(const AreaLightObject& lightObject, const glm::mat4& transform = glm::mat4(1.0f));
+
+		void UpdateCamera(const Camera* pCamera);
 
 		uint32 GetIndirectArgumentOffset(uint32 materialIndex) const;
 
@@ -149,6 +178,20 @@ namespace LambdaEngine
 		FORCEINLINE IBuffer*						GetPrimaryInstanceBuffer()		{ return m_pScenePrimaryInstanceBuffer; }
 		FORCEINLINE IBuffer*						GetSecondaryInstanceBuffer()	{ return m_pSceneSecondaryInstanceBuffer; }
 		FORCEINLINE IBuffer*						GetIndirectArgsBuffer()			{ return m_pSceneIndirectArgsBuffer; }	
+
+	private:
+		uint32 InternalAddDynamicObject(GUID_Lambda Mesh, GUID_Lambda Material, const glm::mat4& transform, HitMask hitMask);
+
+		void UpdateLightsBuffer(ICommandList* pCommandList);
+		void UpdatePerFrameBuffer(ICommandList* pCommandList);
+
+		void UpdateMaterialPropertiesBuffers(ICommandList* pCopyCommandList);
+		void UpdateVertexBuffers(ICommandList* pCopyCommandList);
+		void UpdateIndexBuffers(ICommandList* pCopyCommandList);
+		void UpdateInstanceBuffers(ICommandList* pCopyCommandList);
+		void UpdateIndirectArgsBuffers(ICommandList* pCopyCommandList);
+
+		void BuildTLAS(ICommandList* pBuildCommandList, bool update);
 
 	private:
 		const IGraphicsDevice*						m_pGraphicsDevice;
@@ -184,7 +227,12 @@ namespace LambdaEngine
 		IBuffer*									m_pSceneSecondaryInstanceCopyBuffer		= nullptr;
 		IBuffer*									m_pSceneIndirectArgsCopyBuffer			= nullptr;
 
+
+		int32										m_AreaLightIndexToInstanceIndex[MAX_NUM_AREA_LIGHTS];
+		LightSetup									m_LightsLightSetup;
 		IBuffer*									m_pLightsBuffer							= nullptr;
+
+		PerFrameBuffer								m_PerFrameData;
 		IBuffer*									m_pPerFrameBuffer						= nullptr;
 
 		std::vector<ITexture*>						m_SceneAlbedoMaps;
@@ -198,6 +246,8 @@ namespace LambdaEngine
 		std::vector<ITextureView*>					m_SceneAmbientOcclusionMapViews;
 		std::vector<ITextureView*>					m_SceneMetallicMapViews;
 		std::vector<ITextureView*>					m_SceneRoughnessMapViews;
+			
+		std::vector<MaterialProperties>				m_SceneMaterialProperties;
 		
 		IBuffer*									m_pSceneMaterialProperties		= nullptr;		//Indexed with result from IndirectMeshArgument::MaterialIndex, contains Scene Material Properties
 		IBuffer*									m_pSceneVertexBuffer			= nullptr;		//Indexed with result from Scene::m_pBaseVertexIndexBuffer + Scene::m_pSceneIndexBuffer and contains Scene Vertices
@@ -226,9 +276,14 @@ namespace LambdaEngine
 		std::vector<InstanceSecondary>				m_SecondaryInstances;
 		std::vector<InstancePrimary>				m_SortedPrimaryInstances;
 		std::vector<InstanceSecondary>				m_SortedSecondaryInstances;
+		std::vector<uint32>							m_InstanceIndexToSortedInstanceIndex;
+		TSet<uint32>								m_DirtySecondaryInstances;
 
 		bool										m_RayTracingEnabled			= false;
 		IAccelerationStructure*						m_pTLAS						= nullptr;
 		std::vector<IAccelerationStructure*>		m_BLASs;
+
+		bool										m_LightSetupIsDirty			= false;
+		bool										m_InstanceBuffersAreDirty	= false;
 	};
 }

@@ -19,6 +19,9 @@ const float GAMMA           = 2.2f;
 
 const float MAX_TEMPORAL_FRAMES = 256.0f;
 
+#define MAX_NUM_AREA_LIGHTS 4
+#define AREA_LIGHT_TYPE_QUAD 1
+
 struct SPositions
 {
     vec3 WorldPos; 
@@ -36,7 +39,7 @@ struct SVertex
 struct SPrimaryInstance
 {
     mat3x4  Transform;
-    uint    Mask_MeshMaterialIndex;
+    uint    Mask_IndirectArgIndex;
     uint    SBTRecordOffset_Flags;
     uint    AccelerationStructureHandleTop32;
     uint    AccelerationStructureHandleBottom32;
@@ -47,7 +50,7 @@ struct SSecondaryInstance
     mat4    PrevTransform;
 };
 
-struct SMeshIndexDesc
+struct SIndirectArg
 {
     uint	IndexCount;
     uint	InstanceCount;
@@ -58,14 +61,19 @@ struct SMeshIndexDesc
     uint	MaterialIndex;
 };
 
+struct SAreaLight
+{
+    uint    InstanceIndex;
+    uint    Type;
+    uvec2   Padding;
+};
+
 struct SLightsBuffer
 {
-    vec4    DirL_Direction;
-	vec4    DirL_EmittedRadiance;
-    vec4    DiskL_Position;
-    vec4    DiskL_Direction;
-	vec3    DiskL_EmittedRadiance;
-    float   DiskL_Radius;
+    vec4        DirL_Direction;
+	vec4        DirL_EmittedRadiance;
+    SAreaLight  AreaLights[MAX_NUM_AREA_LIGHTS];
+    uint        AreaLightCount;
 };
 
 struct SPerFrameBuffer
@@ -90,7 +98,7 @@ struct SMaterialParameters
     float   Ambient;
     float   Metallic;
     float   Roughness;
-    uint    Reserved_Emissive;
+    float   EmissionStrength;
 };
 
 struct SShapeSample

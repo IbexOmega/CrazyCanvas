@@ -124,7 +124,7 @@ namespace LambdaEngine
 
 			if (sceneLocalGameObjects[g].Material >= materials.size())
 			{
-				result[g].Material = DEFAULT_MATERIAL;
+				result[g].Material = GUID_MATERIAL_DEFAULT;
 				LOG_WARNING("[ResourceManager]: GameObject %u in Scene %s has no Material, default Material assigned", g, filename.c_str());
 			}
 		}
@@ -190,17 +190,17 @@ namespace LambdaEngine
 			s_MaterialNamesToGUIDs[name]	= guid;
 		}
 
-		ITexture* pAlbedoMap						= albedoMap				!= GUID_NONE ? s_Textures[albedoMap]			: s_Textures[DEFAULT_COLOR_MAP];
-		ITexture* pNormalMap						= normalMap				!= GUID_NONE ? s_Textures[normalMap]			: s_Textures[DEFAULT_NORMAL_MAP];
-		ITexture* pAmbientOcclusionMap				= ambientOcclusionMap	!= GUID_NONE ? s_Textures[ambientOcclusionMap]	: s_Textures[DEFAULT_COLOR_MAP];
-		ITexture* pMetallicMap						= metallicMap			!= GUID_NONE ? s_Textures[metallicMap]			: s_Textures[DEFAULT_COLOR_MAP];
-		ITexture* pRoughnessMap						= roughnessMap			!= GUID_NONE ? s_Textures[roughnessMap]			: s_Textures[DEFAULT_COLOR_MAP];
+		ITexture* pAlbedoMap						= albedoMap				!= GUID_NONE ? s_Textures[albedoMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		ITexture* pNormalMap						= normalMap				!= GUID_NONE ? s_Textures[normalMap]			: s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		ITexture* pAmbientOcclusionMap				= ambientOcclusionMap	!= GUID_NONE ? s_Textures[ambientOcclusionMap]	: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		ITexture* pMetallicMap						= metallicMap			!= GUID_NONE ? s_Textures[metallicMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		ITexture* pRoughnessMap						= roughnessMap			!= GUID_NONE ? s_Textures[roughnessMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
-		ITextureView* pAlbedoMapView				= albedoMap				!= GUID_NONE ? s_TextureViews[albedoMap]			: s_TextureViews[DEFAULT_COLOR_MAP];
-		ITextureView* pNormalMapView				= normalMap				!= GUID_NONE ? s_TextureViews[normalMap]			: s_TextureViews[DEFAULT_NORMAL_MAP];
-		ITextureView* pAmbientOcclusionMapView		= ambientOcclusionMap	!= GUID_NONE ? s_TextureViews[ambientOcclusionMap]	: s_TextureViews[DEFAULT_COLOR_MAP];
-		ITextureView* pMetallicMapView				= metallicMap			!= GUID_NONE ? s_TextureViews[metallicMap]			: s_TextureViews[DEFAULT_COLOR_MAP];
-		ITextureView* pRoughnessMapView				= roughnessMap			!= GUID_NONE ? s_TextureViews[roughnessMap]			: s_TextureViews[DEFAULT_COLOR_MAP];
+		ITextureView* pAlbedoMapView				= albedoMap				!= GUID_NONE ? s_TextureViews[albedoMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		ITextureView* pNormalMapView				= normalMap				!= GUID_NONE ? s_TextureViews[normalMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		ITextureView* pAmbientOcclusionMapView		= ambientOcclusionMap	!= GUID_NONE ? s_TextureViews[ambientOcclusionMap]	: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		ITextureView* pMetallicMapView				= metallicMap			!= GUID_NONE ? s_TextureViews[metallicMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		ITextureView* pRoughnessMapView				= roughnessMap			!= GUID_NONE ? s_TextureViews[roughnessMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 		
 		pMappedMaterial->Properties					= properties;
 
@@ -491,17 +491,17 @@ namespace LambdaEngine
 			ppMappedResource = &s_Materials[guid]; //Creates new entry if not existing
 		}
 
-		pResource->pAlbedoMap					= pResource->pAlbedoMap					!= nullptr ? pResource->pAlbedoMap					: s_Textures[DEFAULT_COLOR_MAP];
-		pResource->pNormalMap					= pResource->pNormalMap					!= nullptr ? pResource->pNormalMap					: s_Textures[DEFAULT_NORMAL_MAP];
-		pResource->pAmbientOcclusionMap			= pResource->pAmbientOcclusionMap		!= nullptr ? pResource->pAmbientOcclusionMap		: s_Textures[DEFAULT_COLOR_MAP];
-		pResource->pMetallicMap					= pResource->pMetallicMap				!= nullptr ? pResource->pMetallicMap				: s_Textures[DEFAULT_COLOR_MAP];
-		pResource->pRoughnessMap				= pResource->pRoughnessMap				!= nullptr ? pResource->pRoughnessMap				: s_Textures[DEFAULT_COLOR_MAP];
+		pResource->pAlbedoMap					= pResource->pAlbedoMap					!= nullptr ? pResource->pAlbedoMap					: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		pResource->pNormalMap					= pResource->pNormalMap					!= nullptr ? pResource->pNormalMap					: s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		pResource->pAmbientOcclusionMap			= pResource->pAmbientOcclusionMap		!= nullptr ? pResource->pAmbientOcclusionMap		: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		pResource->pMetallicMap					= pResource->pMetallicMap				!= nullptr ? pResource->pMetallicMap				: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		pResource->pRoughnessMap				= pResource->pRoughnessMap				!= nullptr ? pResource->pRoughnessMap				: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 		
-		pResource->pAlbedoMapView				= pResource->pAlbedoMapView				!= nullptr ? pResource->pAlbedoMapView				: s_TextureViews[DEFAULT_COLOR_MAP];
-		pResource->pNormalMapView				= pResource->pNormalMapView				!= nullptr ? pResource->pNormalMapView				: s_TextureViews[DEFAULT_NORMAL_MAP];
-		pResource->pAmbientOcclusionMapView		= pResource->pAmbientOcclusionMapView	!= nullptr ? pResource->pAmbientOcclusionMapView	: s_TextureViews[DEFAULT_COLOR_MAP];
-		pResource->pMetallicMapView				= pResource->pMetallicMapView			!= nullptr ? pResource->pMetallicMapView			: s_TextureViews[DEFAULT_COLOR_MAP];
-		pResource->pRoughnessMapView			= pResource->pRoughnessMapView			!= nullptr ? pResource->pRoughnessMapView			: s_TextureViews[DEFAULT_COLOR_MAP];
+		pResource->pAlbedoMapView				= pResource->pAlbedoMapView				!= nullptr ? pResource->pAlbedoMapView				: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		pResource->pNormalMapView				= pResource->pNormalMapView				!= nullptr ? pResource->pNormalMapView				: s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		pResource->pAmbientOcclusionMapView		= pResource->pAmbientOcclusionMapView	!= nullptr ? pResource->pAmbientOcclusionMapView	: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		pResource->pMetallicMapView				= pResource->pMetallicMapView			!= nullptr ? pResource->pMetallicMapView			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		pResource->pRoughnessMapView			= pResource->pRoughnessMapView			!= nullptr ? pResource->pRoughnessMapView			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
 		(*ppMappedResource) = pResource;
 
@@ -560,57 +560,83 @@ namespace LambdaEngine
 		s_Meshes[GUID_NONE]					= nullptr;
 		s_Materials[GUID_NONE]				= nullptr;
 		s_Textures[GUID_NONE]				= nullptr;
-        s_Shaders[GUID_NONE]                = nullptr;
+		s_TextureViews[GUID_NONE]			= nullptr;
+        s_Shaders[GUID_NONE]				= nullptr;
+		s_SoundEffects[GUID_NONE]			= nullptr;
 
-		byte defaultColor[4]				= { 255, 255, 255, 255 };
-		byte defaultNormal[4]				= { 127, 127, 255, 0   };
-		void* pDefaultColor					= (void*)defaultColor;
-		void* pDefaultNormal				= (void*)defaultNormal;
-		ITexture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
-		ITexture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
+		s_Meshes[GUID_MESH_QUAD]			= MeshFactory::CreateQuad();
 
-		s_Textures[DEFAULT_COLOR_MAP]		= pDefaultColorMap;
-		s_Textures[DEFAULT_NORMAL_MAP]		= pDefaultNormalMap;
+		{
+			byte defaultColor[4]				= { 255, 255, 255, 255 };
+			byte defaultNormal[4]				= { 127, 127, 255, 0   };
+			void* pDefaultColor					= (void*)defaultColor;
+			void* pDefaultNormal				= (void*)defaultNormal;
+			ITexture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
+			ITexture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
 
-		TextureViewDesc defaultColorMapViewDesc = {};
-		defaultColorMapViewDesc.Name			= "Default Color Map View";
-		defaultColorMapViewDesc.pTexture		= pDefaultColorMap;
-		defaultColorMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		defaultColorMapViewDesc.Format			= pDefaultColorMap->GetDesc().Format;
-		defaultColorMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
-		defaultColorMapViewDesc.MiplevelCount	= pDefaultColorMap->GetDesc().Miplevels;
-		defaultColorMapViewDesc.ArrayCount		= pDefaultColorMap->GetDesc().ArrayCount;
-		defaultColorMapViewDesc.Miplevel		= 0;
-		defaultColorMapViewDesc.ArrayIndex		= 0;
+			s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= pDefaultColorMap;
+			s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= pDefaultNormalMap;
 
-		TextureViewDesc defaultNormalMapViewDesc = {};
-		defaultNormalMapViewDesc.Name			= "Default Normal Map View";
-		defaultNormalMapViewDesc.pTexture		= pDefaultNormalMap;
-		defaultNormalMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		defaultNormalMapViewDesc.Format			= pDefaultNormalMap->GetDesc().Format;
-		defaultNormalMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
-		defaultNormalMapViewDesc.MiplevelCount	= pDefaultNormalMap->GetDesc().Miplevels;
-		defaultNormalMapViewDesc.ArrayCount		= pDefaultNormalMap->GetDesc().ArrayCount;
-		defaultNormalMapViewDesc.Miplevel		= 0;
-		defaultNormalMapViewDesc.ArrayIndex		= 0;
+			TextureViewDesc defaultColorMapViewDesc = {};
+			defaultColorMapViewDesc.Name			= "Default Color Map View";
+			defaultColorMapViewDesc.pTexture		= pDefaultColorMap;
+			defaultColorMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			defaultColorMapViewDesc.Format			= pDefaultColorMap->GetDesc().Format;
+			defaultColorMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+			defaultColorMapViewDesc.MiplevelCount	= pDefaultColorMap->GetDesc().Miplevels;
+			defaultColorMapViewDesc.ArrayCount		= pDefaultColorMap->GetDesc().ArrayCount;
+			defaultColorMapViewDesc.Miplevel		= 0;
+			defaultColorMapViewDesc.ArrayIndex		= 0;
 
-		s_TextureViews[DEFAULT_COLOR_MAP]		= RenderSystem::GetDevice()->CreateTextureView(&defaultColorMapViewDesc);
-		s_TextureViews[DEFAULT_NORMAL_MAP]		= RenderSystem::GetDevice()->CreateTextureView(&defaultNormalMapViewDesc);
+			TextureViewDesc defaultNormalMapViewDesc = {};
+			defaultNormalMapViewDesc.Name			= "Default Normal Map View";
+			defaultNormalMapViewDesc.pTexture		= pDefaultNormalMap;
+			defaultNormalMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			defaultNormalMapViewDesc.Format			= pDefaultNormalMap->GetDesc().Format;
+			defaultNormalMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+			defaultNormalMapViewDesc.MiplevelCount	= pDefaultNormalMap->GetDesc().Miplevels;
+			defaultNormalMapViewDesc.ArrayCount		= pDefaultNormalMap->GetDesc().ArrayCount;
+			defaultNormalMapViewDesc.Miplevel		= 0;
+			defaultNormalMapViewDesc.ArrayIndex		= 0;
 
-		Material* pDefaultMaterial = DBG_NEW Material();
-		pDefaultMaterial->pAlbedoMap				= s_Textures[DEFAULT_COLOR_MAP];
-		pDefaultMaterial->pNormalMap				= s_Textures[DEFAULT_NORMAL_MAP];
-		pDefaultMaterial->pAmbientOcclusionMap		= s_Textures[DEFAULT_COLOR_MAP];
-		pDefaultMaterial->pMetallicMap				= s_Textures[DEFAULT_COLOR_MAP];
-		pDefaultMaterial->pRoughnessMap				= s_Textures[DEFAULT_COLOR_MAP];
+			s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= RenderSystem::GetDevice()->CreateTextureView(&defaultColorMapViewDesc);
+			s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= RenderSystem::GetDevice()->CreateTextureView(&defaultNormalMapViewDesc);
+		}
 
-		pDefaultMaterial->pAlbedoMapView			= s_TextureViews[DEFAULT_COLOR_MAP];
-		pDefaultMaterial->pNormalMapView			= s_TextureViews[DEFAULT_NORMAL_MAP];
-		pDefaultMaterial->pAmbientOcclusionMapView	= s_TextureViews[DEFAULT_COLOR_MAP];
-		pDefaultMaterial->pMetallicMapView			= s_TextureViews[DEFAULT_COLOR_MAP];
-		pDefaultMaterial->pRoughnessMapView			= s_TextureViews[DEFAULT_COLOR_MAP];
+		{
+			Material* pDefaultMaterial = DBG_NEW Material();
+			pDefaultMaterial->pAlbedoMap				= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultMaterial->pNormalMap				= s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+			pDefaultMaterial->pAmbientOcclusionMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultMaterial->pMetallicMap				= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultMaterial->pRoughnessMap				= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
-		s_Materials[DEFAULT_MATERIAL] = pDefaultMaterial;
+			pDefaultMaterial->pAlbedoMapView			= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultMaterial->pNormalMapView			= s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+			pDefaultMaterial->pAmbientOcclusionMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultMaterial->pMetallicMapView			= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultMaterial->pRoughnessMapView			= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
+			s_Materials[GUID_MATERIAL_DEFAULT] = pDefaultMaterial;
+		}
+
+		{
+			Material* pDefaultEmissiveMaterial = DBG_NEW Material();
+			pDefaultEmissiveMaterial->pAlbedoMap					= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultEmissiveMaterial->pNormalMap					= s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+			pDefaultEmissiveMaterial->pAmbientOcclusionMap			= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultEmissiveMaterial->pMetallicMap					= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultEmissiveMaterial->pRoughnessMap					= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+
+			pDefaultEmissiveMaterial->pAlbedoMapView				= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultEmissiveMaterial->pNormalMapView				= s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+			pDefaultEmissiveMaterial->pAmbientOcclusionMapView		= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultEmissiveMaterial->pMetallicMapView				= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultEmissiveMaterial->pRoughnessMapView				= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+
+			pDefaultEmissiveMaterial->Properties.EmissionStrength	= DEFAULT_EMISSIVE_EMISSION_STRENGTH;
+
+			s_Materials[GUID_MATERIAL_DEFAULT_EMISSIVE] = pDefaultEmissiveMaterial;
+		}
 	}
 }

@@ -154,15 +154,6 @@
             "texture_format": 7
         },
         {
-            "name": "G_BUFFER_NORM_MET_ROUGH",
-            "type": "TEXTURE",
-            "back_buffer_bound": false,
-            "sub_resource_count": 1,
-            "is_of_array_type": false,
-            "editable": true,
-            "texture_format": 7
-        },
-        {
             "name": "G_BUFFER_DEPTH_STENCIL",
             "type": "TEXTURE",
             "back_buffer_bound": false,
@@ -206,6 +197,24 @@
             "is_of_array_type": false,
             "editable": true,
             "texture_format": 8
+        },
+        {
+            "name": "G_BUFFER_COMPACT_NORMALS",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "is_of_array_type": false,
+            "editable": true,
+            "texture_format": 0
+        },
+        {
+            "name": "G_BUFFER_EMISSIVE_METALLIC_ROUGHNESS",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "is_of_array_type": false,
+            "editable": true,
+            "texture_format": 1
         }
     ],
     "resource_state_groups": [
@@ -622,14 +631,25 @@
                     ]
                 },
                 {
-                    "name": "G_BUFFER_NORM_MET_ROUGH",
+                    "name": "G_BUFFER_COMPACT_NORMALS",
                     "render_stage_name": "GEOMETRY",
                     "removable": true,
                     "binding_type": "ATTACHMENT",
-                    "attribute_index": 62,
+                    "attribute_index": 386,
                     "input_link_index": -1,
                     "output_link_indices": [
-                        27
+                        128
+                    ]
+                },
+                {
+                    "name": "G_BUFFER_EMISSIVE_METALLIC_ROUGHNESS",
+                    "render_stage_name": "GEOMETRY",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 388,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        129
                     ]
                 },
                 {
@@ -751,12 +771,21 @@
                     "output_link_indices": []
                 },
                 {
-                    "name": "G_BUFFER_NORM_MET_ROUGH",
+                    "name": "G_BUFFER_COMPACT_NORMALS",
                     "render_stage_name": "RAY_TRACING",
                     "removable": true,
                     "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 102,
-                    "input_link_index": 27,
+                    "attribute_index": 390,
+                    "input_link_index": 128,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "G_BUFFER_EMISSIVE_METALLIC_ROUGHNESS",
+                    "render_stage_name": "RAY_TRACING",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 392,
+                    "input_link_index": 129,
                     "output_link_indices": []
                 },
                 {
@@ -947,9 +976,19 @@
     ],
     "links": [
         {
+            "link_index": 128,
+            "src_attribute_index": 387,
+            "dst_attribute_index": 390
+        },
+        {
             "link_index": 0,
             "src_attribute_index": 13,
             "dst_attribute_index": 38
+        },
+        {
+            "link_index": 129,
+            "src_attribute_index": 389,
+            "dst_attribute_index": 392
         },
         {
             "link_index": 1,
@@ -1050,11 +1089,6 @@
             "link_index": 26,
             "src_attribute_index": 61,
             "dst_attribute_index": 100
-        },
-        {
-            "link_index": 27,
-            "src_attribute_index": 63,
-            "dst_attribute_index": 102
         },
         {
             "link_index": 28,

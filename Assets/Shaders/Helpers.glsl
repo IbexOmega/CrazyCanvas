@@ -218,36 +218,78 @@ float DiskSurfaceArea(float radius)
 	return PI * radius * radius;
 }
 
+float QuadSurfaceArea(float radiusX, float radiusY)
+{
+	return 4 * radiusX * radiusY;
+}
+
 vec2 ConcentricSampleDisk(vec2 u)
 {
-	u = u * 2.0f - 1.0f;
-	if (dot(u, u) == 0.0f) return vec2(0.0f);
+	vec2 uOffset = u * 2.0f - 1.0f;
+	if (dot(uOffset, uOffset) == 0.0f) return vec2(0.0f);
 
 	float r     = 0.0f;
     float theta = 0.0f;
 
-    if (abs(u.x) > abs(u.y))
+    if (abs(uOffset.x) > abs(uOffset.y))
     {
-        r = u.x;
-        theta = PI_OVER_FOUR * u.y / u.x;
+        r = uOffset.x;
+        theta = PI_OVER_FOUR * uOffset.y / uOffset.x;
     }
     else
     {
-        r = u.y;
-        theta = PI_OVER_TWO - PI_OVER_FOUR * u.x / u.y;
+        r = uOffset.y;
+        theta = PI_OVER_TWO - PI_OVER_FOUR * uOffset.x / uOffset.y;
     }
 
     return r * vec2(cos(theta), sin(theta));
+}
+
+//This assumes that the untransformed quad lies in the xz-plane with normal pointing in positive y direction and has a radius of 1 (side length of 2)
+SShapeSample SampleQuad(mat4 transform, vec2 u)
+{
+	SShapeSample shapeSample;
+
+	u = u * 2.0f - 1.0f;
+	shapeSample.Position 	= (transform * vec4(u.x, 0.0f, u.y, 1.0f)).xyz; //Assume quad thickiness of 0.0f
+	shapeSample.Normal		= (transform * vec4(0.0f, 1.0f, 0.0f, 0.0f)).xyz;
+	shapeSample.PDF			= 1.0f / QuadSurfaceArea(length(transform[0].xyz), length(transform[2].xyz));
+
+	return shapeSample;
+}
+
+SShapeSample SampleQuad(vec3 position, vec3 direction, float radius, vec2 u)
+{
+	SShapeSample shapeSample;
+
+	direction = normalize(direction);
+
+	vec3 tangent;
+	vec3 bitangent;
+	CreateCoordinateSystem(direction, tangent, bitangent);
+
+	u = u * 2.0f - 1.0f;
+	shapeSample.Position 	= position + radius * (u.x * tangent + u.y * bitangent); //Assume quad thickiness of 0.0f
+	shapeSample.Normal		= direction;
+	shapeSample.PDF			= 1.0f / QuadSurfaceArea(radius, radius);
+
+	return shapeSample;
 }
 
 SShapeSample SampleDisk(vec3 position, vec3 direction, float radius, vec2 u)
 {
 	SShapeSample shapeSample;
 
+	direction = normalize(direction);
+
+	vec3 tangent;
+	vec3 bitangent;
+	CreateCoordinateSystem(direction, tangent, bitangent);
+
 	vec2 pd = ConcentricSampleDisk(u);
-	shapeSample.Position 	= position + vec3(pd.x * radius, 0.0f, pd.y * radius); //Assume disk thickiness of 0.0f
-	shapeSample.Normal		= vec3(0.0f, -1.0f, 0.0f);
-	shapeSample.PDF			= DiskSurfaceArea(radius);
+	shapeSample.Position 	= position + radius * (pd.x * tangent + pd.y * bitangent); //Assume disk thickiness of 0.0f
+	shapeSample.Normal		= direction;
+	shapeSample.PDF			= 1.0f / DiskSurfaceArea(radius);
 
 	return shapeSample;
 }
@@ -273,6 +315,15 @@ SShapeSample UniformSampleSphereSurface(vec3 position, float radius, vec2 u)
 	shapeSample.Position	 = position + radius * shapeSample.Normal; //The normal as returned from UniformSampleUnitSphere can be interpreted as a point on the surface
 	shapeSample.PDF 		 /= (radius * radius);
 	return shapeSample;
+}
+
+float PowerHeuristic(float nf, float fPDF, float ng, float gPDF)
+{
+	float f = nf * fPDF;
+	float fSqrd = f * f;
+	float g = ng * gPDF;
+	
+	return (fSqrd) / (fSqrd + g * g);
 }
 
 #endif
