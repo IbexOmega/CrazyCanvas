@@ -28,6 +28,12 @@ struct SLightSample
     int     InstanceIndex;
 };
 
+struct SLightEval
+{
+    vec3    L_i;
+    float   PDF;
+};
+
 struct SRadiancePayload
 {
     vec3    HitPosition;
@@ -145,7 +151,7 @@ SLightSample EvalDirectionalRadiance(vec3 w_o, vec3 albedo, float metallic, floa
     return sampleData;
 }
 
-SLightSample EvalAreaLightRadiance(vec3 w_o, uint areaLightIndex, vec3 worldPosition, vec3 albedo, float metallic, float roughness, mat3 worldToLocal, vec2 u)
+SLightSample SampleAreaLightRadiance(vec3 w_o, uint areaLightIndex, vec3 worldPosition, vec3 albedo, float metallic, float roughness, mat3 worldToLocal, vec2 u)
 {
     SLightSample sampleData;
     sampleData.DistanceToSamplePoint    = 0.0f;
@@ -179,7 +185,8 @@ SLightSample EvalAreaLightRadiance(vec3 w_o, uint areaLightIndex, vec3 worldPosi
     
     vec3 deltaPos = shapeSample.Position - worldPosition;
 
-    sampleData.DistanceToSamplePoint    = length(deltaPos);
+    float distSqrdToSamplePoint         = dot(deltaPos, deltaPos);
+    sampleData.DistanceToSamplePoint    = sqrt(distSqrdToSamplePoint);
     sampleData.SampleWorldDir           = sampleData.DistanceToSamplePoint > 0.0f ? deltaPos / sampleData.DistanceToSamplePoint : -shapeSample.Normal;
 
     //Check if the disk is facing us
@@ -188,7 +195,7 @@ SLightSample EvalAreaLightRadiance(vec3 w_o, uint areaLightIndex, vec3 worldPosi
         vec3 w_i 		        = worldToLocal * sampleData.SampleWorldDir;
 
         //Evaluate the BRDF in the Light Direction (ofcourse we don't need to sample it since we already know w_i)
-        SReflection reflection  = f(w_o, w_i, albedo, metallic, roughness);
+        SReflection reflection                      = f(w_o, w_i, albedo, metallic, roughness);
 
         uint indirectArgID                          = (primaryInstance.Mask_IndirectArgIndex) & 0x00FFFFFF;
         SIndirectArg indirectArg                    = b_IndirectArgs.val[indirectArgID];
@@ -196,18 +203,53 @@ SLightSample EvalAreaLightRadiance(vec3 w_o, uint areaLightIndex, vec3 worldPosi
 
         SMaterialParameters materialParameters      = b_MaterialParameters.val[materialIndex];
 
-        vec3 L_i                = pow(materialParameters.Albedo.rgb * texture(u_SceneAlbedoMaps[materialIndex], vec2(0.0f)).rgb, vec3(GAMMA)) * materialParameters.EmissionStrength;
-
         sampleData.Scatter_f    = reflection.f;
         sampleData.Scatter_PDF  = reflection.PDF;
-        sampleData.L_i          = L_i;
-        sampleData.Light_PDF    = shapeSample.PDF;
+        sampleData.L_i          = pow(materialParameters.Albedo.rgb * texture(u_SceneAlbedoMaps[materialIndex], vec2(0.0f)).rgb, vec3(GAMMA)) * materialParameters.EmissionStrength;
+        sampleData.Light_PDF    = shapeSample.PDF * distSqrdToSamplePoint / abs(dot(shapeSample.Normal, -sampleData.SampleWorldDir)); //Convert from area measure, as returned by the Sample(Shape)() call above, to solid angle measure.
     }
 
     return sampleData;
 }
 
+SLightEval EvalAreaLightRadience(vec3 w_i_world, float distanceToSamplePoint, uint areaLightIndex)
+{
+    SAreaLight areaLight                = u_LightsBuffer.val.AreaLights[areaLightIndex];
+    SPrimaryInstance primaryInstance    = b_PrimaryInstances.val[areaLight.InstanceIndex];
 
+    mat4 transform;
+	transform[0] = vec4(primaryInstance.Transform[0]);
+	transform[1] = vec4(primaryInstance.Transform[1]);
+	transform[2] = vec4(primaryInstance.Transform[2]);
+	transform[3] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    transform = transpose(transform);
+
+    SLightEval lightEval;
+    lightEval.L_i = vec3(0.0f);
+    lightEval.PDF = 0.0f;
+
+    vec3 lightNormal = vec3(0.0f);
+
+    if (areaLight.Type == AREA_LIGHT_TYPE_QUAD)
+    {
+        lightEval.PDF   = QuadPDF(transform);
+        lightNormal     = QuadNormal(transform);
+    }
+    else
+    {
+        return lightEval;
+    }
+
+    uint indirectArgID                          = (primaryInstance.Mask_IndirectArgIndex) & 0x00FFFFFF;
+    SIndirectArg indirectArg                    = b_IndirectArgs.val[indirectArgID];
+    uint materialIndex                          = indirectArg.MaterialIndex;
+
+    SMaterialParameters materialParameters      = b_MaterialParameters.val[materialIndex];
+    
+    lightEval.L_i           = pow(materialParameters.Albedo.rgb * texture(u_SceneAlbedoMaps[materialIndex], vec2(0.0f)).rgb, vec3(GAMMA)) * materialParameters.EmissionStrength;
+    lightEval.PDF           *= (distanceToSamplePoint * distanceToSamplePoint) / abs(dot(lightNormal, -w_i_world));
+    return lightEval;
+}
 
 float GenerateSample(uint index, uvec3 p, uint numSamplesPerFrame, uvec3 blueNoiseSize)
 {

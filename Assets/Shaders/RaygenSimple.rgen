@@ -10,11 +10,11 @@
 layout(location = 0) rayPayloadEXT SRadiancePayload s_RadiancePayload;
 layout(location = 1) rayPayloadEXT SShadowPayload 	s_ShadowPayload;
 
-void SampleLights(vec3 w_o, mat3 worldToLocal, inout vec3 L_d, vec2 u)
+void SampleLights(vec3 w_o, mat3 worldToLocal, mat3 localToWorld, vec2 u_Light_Light, vec3 u_Light_BRDF, inout vec3 L_d)
 {
 	const float N_Lights 	    = 1.0f + float(u_LightsBuffer.val.AreaLightCount);
     const float N_Lights_PDF    = 1.0f / N_Lights;
-	float chosenLightFloat		= floor(u.x * N_Lights);
+	float chosenLightFloat		= floor(u_Light_Light.x * N_Lights);
 	uint  chosenLight			= uint(chosenLightFloat);
 
 	//Directional Light
@@ -22,13 +22,13 @@ void SampleLights(vec3 w_o, mat3 worldToLocal, inout vec3 L_d, vec2 u)
 	{
 		//We dont need to stretch u here since Directional Light sampling isn't stochastic
 
-		SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
+		SLightSample dirLightEval = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
 
-		if (dirLightSample.Scatter_PDF > 0.0f && dot(dirLightSample.L_i, dirLightSample.L_i) > 0.0f)
+		if (dirLightEval.Scatter_PDF > 0.0f && dot(dirLightEval.L_i, dirLightEval.L_i) > 0.0f)
 		{
 			//Define Shadow Ray Parameters
 			const vec3 		origin 				= s_RadiancePayload.HitPosition + s_RadiancePayload.GeometricNormal * RAY_NORMAL_OFFSET;
-			const vec3 		direction			= dirLightSample.SampleWorldDir;
+			const vec3 		direction			= dirLightEval.SampleWorldDir;
 			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
 			const uint 		cullMask           	= 0xFF;
 			const uint 		sbtRecordOffset    	= 1;
@@ -43,17 +43,18 @@ void SampleLights(vec3 w_o, mat3 worldToLocal, inout vec3 L_d, vec2 u)
 
 			float shadow 		= step(s_ShadowPayload.Distance, Tmin);
 
-            float cosTheta 		= abs(dot(dirLightSample.SampleWorldDir, s_RadiancePayload.ShadingNormal));
-			L_d 				= shadow * dirLightSample.Scatter_f * dirLightSample.L_i * cosTheta / (dirLightSample.Light_PDF * N_Lights_PDF);   //We do not use Scatter_PDF here since this is a delta distribution light
+            float cosTheta 		= abs(dot(dirLightEval.SampleWorldDir, s_RadiancePayload.ShadingNormal));
+			L_d 				= shadow * dirLightEval.Scatter_f * dirLightEval.L_i * cosTheta / (dirLightEval.Light_PDF * N_Lights_PDF);   //We do not use Scatter_PDF here since this is a delta distribution light
 		}
 	}
 	else
 	{
 		uint chosenAreaLight = chosenLight - 1;
-		u.x = (u.x - (chosenLightFloat / N_Lights)) / N_Lights_PDF; //Stretch u 
+		u_Light_Light.x = (u_Light_Light.x - (chosenLightFloat / N_Lights)) / N_Lights_PDF; //Stretch u 
 
-		SLightSample areaLightSample = EvalAreaLightRadiance(w_o, chosenAreaLight, s_RadiancePayload.HitPosition, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal, u);
+		SLightSample areaLightSample = SampleAreaLightRadiance(w_o, chosenAreaLight, s_RadiancePayload.HitPosition, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal, u_Light_Light);
 
+		//Sample Light with MIS
 		if (areaLightSample.Scatter_PDF > 0.0f && dot(areaLightSample.L_i, areaLightSample.L_i) > 0.0f)
 		{
 			float shadow = 1.0f;
@@ -80,7 +81,37 @@ void SampleLights(vec3 w_o, mat3 worldToLocal, inout vec3 L_d, vec2 u)
 
             float cosTheta 		= abs(dot(areaLightSample.SampleWorldDir, s_RadiancePayload.ShadingNormal));
             float weight_MIS    = PowerHeuristic(1.0f, areaLightSample.Light_PDF, 1.0f, areaLightSample.Scatter_PDF);
-			L_d 				= shadow * areaLightSample.Scatter_f * areaLightSample.L_i * weight_MIS * cosTheta / (areaLightSample.Light_PDF * N_Lights_PDF);
+			L_d 				+= shadow * areaLightSample.Scatter_f * areaLightSample.L_i * weight_MIS * cosTheta / (areaLightSample.Light_PDF * N_Lights_PDF);
+		}
+
+		//Sample BRDF with MIS
+		{
+			SReflection reflection = Sample_f(w_o, s_RadiancePayload.Albedo,  s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, u_Light_BRDF);
+			vec3 reflectionDir = localToWorld * reflection.w_i;
+
+			if (reflection.PDF > 0.0f)
+			{
+				//Define Shadow Ray Parameters
+				const vec3 		origin 				= s_RadiancePayload.HitPosition + s_RadiancePayload.GeometricNormal * RAY_NORMAL_OFFSET;
+				const vec3 		direction			= reflectionDir;
+				const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+				const uint 		cullMask           	= 0xFF;
+				const uint 		sbtRecordOffset    	= 1;
+				const uint 		sbtRecordStride    	= 0;
+				const uint 		missIndex          	= 1;
+				const float 	Tmin              	= 0.001f;
+				const float 	Tmax              	= 10000.0f;
+				const int 		payload       		= 1;
+
+				//Send Shadow Ray
+				traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+
+				float shadow 		= float(s_ShadowPayload.InstanceIndex == areaLightSample.InstanceIndex);
+
+				float cosTheta 		= abs(dot(reflectionDir, s_RadiancePayload.ShadingNormal));
+            	float weight_MIS    = PowerHeuristic(1.0f, reflection.PDF, 1.0f, areaLightSample.Light_PDF); //Here we assume that the Light_PDF is constant, otherwise we would need to reevaluate the Light_PDF with reflection.w_i as the direction
+				L_d 				+= shadow * areaLightSample.Scatter_f * areaLightSample.L_i * weight_MIS * cosTheta / (reflection.PDF * N_Lights_PDF); //Here we assume that the Light L_i is constant, otherwise we would need to reevaluate the L_i with reflection.w_i as the direction
+			}
 		}
 	}
 }
@@ -170,7 +201,7 @@ void main()
 
 	const int maxBounces 				= 4; //Includes the first "bounce" (more like surface interaction) on the camera
 	const int russianRouletteStart		= 3;
-	const int numSamplesPerBounce		= 6;
+	const int numSamplesPerBounce		= 9;
 	const int numSamplesPerFrame		= maxBounces * numSamplesPerBounce;
 
 	const float MIN_ROUGHNESS_DELTA_DISTRIBUTION = EPSILON * 2.0f;
@@ -184,12 +215,15 @@ void main()
 
 		int baseB 	= b * numSamplesPerBounce;
 
-		vec2 u_Light 	= vec2( 	GenerateSample(baseB + 0, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
-				 					GenerateSample(baseB + 1, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
-		vec3 u_BRDF 	= vec3( 	GenerateSample(baseB + 2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
-				 					GenerateSample(baseB + 3, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
-				 					GenerateSample(baseB + 4, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
-		float u_RussianRoulette	=	GenerateSample(baseB + 5, randomSeedPoint, numSamplesPerFrame, blueNoiseSize);
+		vec2 u_Light_Light 	= vec2( 	GenerateSample(baseB + 0, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 1, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+		vec3 u_Light_BRDF 	= vec3( 	GenerateSample(baseB + 2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 3, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 4, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+		vec3 u_BRDF 		= vec3(		GenerateSample(baseB + 5, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 6, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 7, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+		float u_RussianRoulette	=		GenerateSample(baseB + 8, randomSeedPoint, numSamplesPerFrame, blueNoiseSize);
 		bool isSpecular = s_RadiancePayload.Roughness < MIN_ROUGHNESS_DELTA_DISTRIBUTION;
 
 		//Emissive Surface
@@ -206,7 +240,7 @@ void main()
 		{
 			vec3 L_d 				= vec3(0.0f);
 			vec3 Scatter_f_div_PDF 	= vec3(0.0f);
-			SampleLights(w_o, worldToLocal, L_d, u_Light);
+			SampleLights(w_o, worldToLocal, localToWorld, u_Light_Light, u_Light_BRDF, L_d);
 
 			L += throughput * L_d;
 		}

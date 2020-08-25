@@ -9,7 +9,7 @@ namespace LambdaEngine
 	class ITextureView;
 	class ISampler;
 
-	constexpr const float DEFAULT_EMISSIVE_EMISSION_STRENGTH = 50.0f;
+	constexpr const float DEFAULT_EMISSIVE_EMISSION_STRENGTH = 25.0f;
 
 	union MaterialProperties
 	{

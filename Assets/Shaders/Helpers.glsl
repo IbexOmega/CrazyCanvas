@@ -245,15 +245,25 @@ vec2 ConcentricSampleDisk(vec2 u)
     return r * vec2(cos(theta), sin(theta));
 }
 
-//This assumes that the untransformed quad lies in the xz-plane with normal pointing in positive y direction and has a radius of 1 (side length of 2)
+//These functions assume that the untransformed quad lies in the xz-plane with normal pointing in positive y direction and has a radius of 1 (side length of 2)
+float QuadPDF(mat4 transform)
+{
+	return 1.0f / QuadSurfaceArea(length(transform[0].xyz), length(transform[2].xyz));
+}
+
+vec3 QuadNormal(mat4 transform)
+{
+	return (transform * vec4(0.0f, 1.0f, 0.0f, 0.0f)).xyz;
+}
+
 SShapeSample SampleQuad(mat4 transform, vec2 u)
 {
 	SShapeSample shapeSample;
 
 	u = u * 2.0f - 1.0f;
 	shapeSample.Position 	= (transform * vec4(u.x, 0.0f, u.y, 1.0f)).xyz; //Assume quad thickiness of 0.0f
-	shapeSample.Normal		= (transform * vec4(0.0f, 1.0f, 0.0f, 0.0f)).xyz;
-	shapeSample.PDF			= 1.0f / QuadSurfaceArea(length(transform[0].xyz), length(transform[2].xyz));
+	shapeSample.Normal		= QuadNormal(transform);
+	shapeSample.PDF			= QuadPDF(transform);
 
 	return shapeSample;
 }
