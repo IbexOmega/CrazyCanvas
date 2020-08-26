@@ -108,7 +108,7 @@ void Lambertian_f(in vec3 w_o, in vec3 w_h, in vec3 albedo, in vec3 F_0, in floa
     PDF     = cosTheta * INV_PI;
 }
 
-void Eval_f(vec3 w_o, vec3 w_h, vec3 w_i, vec3 albedo, vec3 F_0, float metallic, float roughness, float alphaSqrd, float d, inout SReflection reflection)
+void Eval_f(vec3 w_o, vec3 w_h, vec3 w_i, vec3 albedo, vec3 F_0, float metallic, float roughness, float alphaSqrd, inout SReflection reflection)
 {
     reflection.w_i          = w_i;
     reflection.CosTheta     = max(0.0f, w_i.z);
@@ -122,7 +122,7 @@ void Eval_f(vec3 w_o, vec3 w_h, vec3 w_i, vec3 albedo, vec3 F_0, float metallic,
     Microfacet_f(w_o, w_h, w_i, albedo, F_0, metallic, roughness, alphaSqrd, specular_f, specular_PDF);
     
     reflection.f    = diffuse_f + specular_f;
-    reflection.PDF  = (d * diffuse_PDF + (1.0f - d) * specular_PDF);
+    reflection.PDF  = (diffuse_PDF + specular_PDF) * 0.5f;
 }
 
 /*
@@ -149,9 +149,7 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
     vec3 F_0    = vec3(0.04f);
 	F_0	        = mix(F_0, albedo, metallic);
 
-    float diffuseLuminance      = max(0.01f, luminance(albedo));
-    float specularLuminance     = max(0.01f, luminance(F_0));
-    float probToSampleDiffuse   = 0.5f;//diffuseLuminance / (diffuseLuminance + specularLuminance);
+    float probToSampleDiffuse   = 0.5f;
     bool sampleDiffuse          = u.z < probToSampleDiffuse;
     
     vec3 w_h                    = sampleDiffuse ? Sample_w_h_CosHemisphere(w_o, u.xy) : Sample_w_h_SimpleSpecular(w_o, alphaSqrd, u.xy);
@@ -172,7 +170,7 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
             but we would like to evaluate the PDF
     */
 
-    Eval_f(w_o, w_h, w_i, albedo, F_0, metallic, roughness, alphaSqrd, probToSampleDiffuse, reflection);
+    Eval_f(w_o, w_h, w_i, albedo, F_0, metallic, roughness, alphaSqrd, reflection);
     return reflection;
 }
 
@@ -202,6 +200,6 @@ SReflection f(vec3 w_o, vec3 w_i, vec3 albedo, float metallic, float roughness)
 	F_0	        = mix(F_0, albedo, metallic);
 
     //w_i = w_i * SameHemisphere(w_i, w_o);  
-    Eval_f(w_o, w_h, w_i, albedo, F_0, metallic, roughness, alphaSqrd, 0.5f, reflection);
+    Eval_f(w_o, w_h, w_i, albedo, F_0, metallic, roughness, alphaSqrd, reflection);
     return reflection;
 }

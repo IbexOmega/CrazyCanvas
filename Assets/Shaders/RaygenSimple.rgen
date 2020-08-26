@@ -110,7 +110,7 @@ void SampleLights(vec3 w_o, mat3 worldToLocal, mat3 localToWorld, vec2 u_Light_L
 
 				float cosTheta 		= abs(dot(reflectionDir, s_RadiancePayload.ShadingNormal));
             	float weight_MIS    = PowerHeuristic(1.0f, reflection.PDF, 1.0f, areaLightSample.Light_PDF); //Here we assume that the Light_PDF is constant, otherwise we would need to reevaluate the Light_PDF with reflection.w_i as the direction
-				L_d 				+= shadow * areaLightSample.Scatter_f * areaLightSample.L_i * weight_MIS * cosTheta / (reflection.PDF * N_Lights_PDF); //Here we assume that the Light L_i is constant, otherwise we would need to reevaluate the L_i with reflection.w_i as the direction
+				//L_d 				+= shadow * areaLightSample.Scatter_f * areaLightSample.L_i * weight_MIS * cosTheta / (reflection.PDF * N_Lights_PDF); //Here we assume that the Light L_i is constant, otherwise we would need to reevaluate the L_i with reflection.w_i as the direction
 			}
 		}
 	}
@@ -141,7 +141,7 @@ void main()
 
 	//Sample GBuffer
 	vec4 sampledAlbedoAO    		        = texture(u_AlbedoAO, screenTexCoord);
-	vec2 sampledCompactNormals = texture(u_CompactNormals, screenTexCoord).rg;
+	vec2 sampledCompactNormals 				= texture(u_CompactNormals, screenTexCoord).rg;
     vec4 sampledEmissiveMetallicRoughness   = texture(u_EmissiveMetallicRoughness, screenTexCoord);
 	vec4 sampledDirectRadiance 		        = imageLoad(u_DirectRadiance, pixelCoords);
 	vec4 sampledIndirectRadiance 	        = imageLoad(u_IndirectRadiance, pixelCoords);
@@ -156,7 +156,7 @@ void main()
     vec3 emissive		    = sampledEmissiveMetallicRoughness.rgb;
     float ao                = sampledAlbedoAO.a;
     float metallic          = unpackedMetallicRoughness.x;
-    float roughness         = unpackedMetallicRoughness.y;
+    float roughness         = max(0.00001f, unpackedMetallicRoughness.y);
 
 	//Define local Coordinate System
 	vec3 tangent 	= vec3(0.0f);
@@ -199,7 +199,7 @@ void main()
 	s_RadiancePayload.Roughness			= roughness;
 	s_RadiancePayload.Distance			= 1.0f;
 
-	const int maxBounces 				= 4; //Includes the first "bounce" (more like surface interaction) on the camera
+	const int maxBounces 				= 8; //Includes the first "bounce" (more like surface interaction) on the camera
 	const int russianRouletteStart		= 3;
 	const int numSamplesPerBounce		= 9;
 	const int numSamplesPerFrame		= maxBounces * numSamplesPerBounce;

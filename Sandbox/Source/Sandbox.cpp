@@ -119,15 +119,15 @@ Sandbox::Sandbox()
 	{
 		std::vector<GameObject>	sceneGameObjects;
 		//ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Ceiling.obj", sceneGameObjects);
-		ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Light.obj", sceneGameObjects);
+		///ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Light.obj", sceneGameObjects);
 		//ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Plane.obj", sceneGameObjects);
-		//ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
+		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
 		//ResourceManager::LoadSceneFromFile("San_Miguel/san-miguel-low-poly.obj", sceneGameObjects);
 
 		glm::vec3 position(0.0f, 0.0f, 0.0f);
 		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(1.0f);
-		//glm::vec3 scale(0.01f);
+		//glm::vec3 scale(1.0f);
+		glm::vec3 scale(0.01f);
 
 		glm::mat4 transform(1.0f);
 		transform = glm::translate(transform, position);
