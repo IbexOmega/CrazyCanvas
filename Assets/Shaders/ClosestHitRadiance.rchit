@@ -16,14 +16,6 @@ void main()
 
 	vec3 hitPos = gl_WorldRayOriginEXT + normalize(gl_WorldRayDirectionEXT) * gl_HitTEXT;
 
-	//Define local Coordinate System
-	vec3 tangent 	= vec3(0.0f);
-	vec3 bitangent 	= vec3(0.0f);
-	CreateCoordinateSystem(hitDescription.Normal, tangent, bitangent);
-
-	//Create Transformation Matrices
-	mat3 localToWorld = mat3(tangent, bitangent, hitDescription.Normal);
-
 	SMaterialParameters materialParameters = b_MaterialParameters.val[hitDescription.MaterialIndex];
 
 	vec3 sampledAlbedo 		=		texture(u_SceneAlbedoMaps[hitDescription.MaterialIndex],    hitDescription.TexCoord).rgb;
@@ -32,13 +24,15 @@ void main()
 
     vec3 albedo       		= pow(  materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
     float metallic    		= 		materialParameters.Metallic * sampledMetallic;
-	float roughness   		= max(	materialParameters.Roughness * sampledRoughness, EPSILON);
+	float roughness   		= 		materialParameters.Roughness * sampledRoughness;
 
-	s_RadiancePayload.ScatterPosition	= hitPos + hitDescription.Normal * RAY_NORMAL_OFFSET;
+	s_RadiancePayload.HitPosition		= hitPos;
+	s_RadiancePayload.ShadingNormal		= hitDescription.ShadingNormal;
+	s_RadiancePayload.GeometricNormal	= hitDescription.GeometricNormal;
 	s_RadiancePayload.Albedo			= albedo;
+	s_RadiancePayload.Emission			= albedo * materialParameters.EmissionStrength / 10.0f; //Todo: We need to approximate the area of the surface here 
 	s_RadiancePayload.Metallic			= metallic;
 	s_RadiancePayload.Roughness			= roughness;
-	s_RadiancePayload.Emissive			= (materialParameters.Reserved_Emissive & 0x1) == 1;
 	s_RadiancePayload.Distance			= gl_HitTEXT;
-	s_RadiancePayload.LocalToWorld 		= localToWorld;
+	s_RadiancePayload.HitMask			= (b_PrimaryInstances.val[gl_InstanceID].Mask_IndirectArgIndex >> 24);
 }

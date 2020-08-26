@@ -9,5 +9,6 @@ layout(location = 1) rayPayloadInEXT SShadowPayload s_ShadowPayload;
 
 void main() 
 {
-    s_ShadowPayload.Distance = 0.0f;
+    s_ShadowPayload.Distance        = 0.0f;
+    s_ShadowPayload.InstanceIndex   = -1;
 }

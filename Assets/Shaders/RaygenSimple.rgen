@@ -111,7 +111,7 @@ void SampleLights(vec3 w_o, mat3 worldToLocal, mat3 localToWorld, vec2 u_Light_L
 
 				float cosTheta 		= abs(dot(reflectionDir, s_RadiancePayload.ShadingNormal));
             	float weight_MIS    = PowerHeuristic(1.0f, reflection.PDF, 1.0f, areaLightSample.Light_PDF); //Here we assume that the Light_PDF is constant, otherwise we would need to reevaluate the Light_PDF with reflection.w_i as the direction
-				//L_d 				+= shadow * areaLightSample.Scatter_f * areaLightSample.L_i * weight_MIS * cosTheta / (reflection.PDF * N_Lights_PDF); //Here we assume that the Light L_i is constant, otherwise we would need to reevaluate the L_i with reflection.w_i as the direction
+				L_d 				+= shadow * areaLightSample.Scatter_f * areaLightSample.L_i * weight_MIS * cosTheta / (reflection.PDF * N_Lights_PDF); //Here we assume that the Light L_i is constant, otherwise we would need to reevaluate the L_i with reflection.w_i as the direction
 			}
 		}
 	}
