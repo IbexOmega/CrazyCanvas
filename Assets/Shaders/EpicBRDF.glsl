@@ -78,7 +78,7 @@ vec3 Sample_w_h_CosHemisphere(vec3 w_o, vec2 u)
     return vec3(d.x, d.y, z);
 }
 
-void Eval_f_Epic(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in vec3 F_0, in float metallic, in float roughness, in float alphaSqrd, inout vec3 f, inout float PDF)
+void Eval_f_Epic(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in vec3 F_0, in float roughness, in float alphaSqrd, inout vec3 f, inout float PDF)
 {
     float NdotO = max(0.0f, w_o.z);
     float NdotI = max(0.0f, w_i.z);
@@ -89,22 +89,17 @@ void Eval_f_Epic(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in vec3 
     float   G = G(NdotO, NdotI, roughness);
     vec3    F = F(OdotH, F_0);
 
-    vec3 specular_f = D * G * F / (4.0f * NdotO * NdotI);
-    
-    f       = specular_f;
+    f       = D * G * F / (4.0f * NdotO * NdotI);
     PDF     = D * NdotH / (4.0f * OdotH);
 }
 
 void Eval_f_Lambert(in vec3 w_o, in vec3 w_h, in vec3 albedo, in vec3 F_0, in float metallic, in float cosTheta, inout vec3 f, inout float PDF)
 {
     float OdotH     = max(0.0f, dot(w_o, w_h));
-
     vec3 F          = F(OdotH, F_0);
-
     vec3 k_D        = (1.0f - F) * (1.0f - metallic);
-    vec3 diffuse_f  = k_D * albedo;
 
-    f       = diffuse_f * INV_PI;
+    f       = k_D * albedo * INV_PI;
     PDF     = cosTheta * INV_PI;
 }
 
@@ -158,7 +153,7 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
             vec3    epic_f            = vec3(0.0f);
             float   epic_PDF          = 0.0f;
 
-            Eval_f_Epic(w_o, w_h, reflection.w_i, albedo, F_0, metallic, roughness, alphaSqrd, epic_f, epic_PDF);
+            Eval_f_Epic(w_o, w_h, reflection.w_i, albedo, F_0, roughness, alphaSqrd, epic_f, epic_PDF);
 
             reflection.f        = epic_f;
             reflection.PDF      = epic_PDF;
@@ -191,7 +186,7 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
             vec3    lambert_f         = vec3(0.0f);    
             float   lambert_PDF       = 0.0f;
 
-            Eval_f_Epic(w_o, w_h, reflection.w_i, albedo, F_0, metallic, roughness, alphaSqrd, epic_f, epic_PDF);
+            Eval_f_Epic(w_o, w_h, reflection.w_i, albedo, F_0, roughness, alphaSqrd, epic_f, epic_PDF);
             Eval_f_Lambert(w_o, w_h, albedo, F_0, metallic, reflection.CosTheta, lambert_f, lambert_PDF);
 
             reflection.f        = epic_f + lambert_f;
@@ -240,7 +235,7 @@ SReflection f(vec3 w_o, vec3 w_i, vec3 albedo, float metallic, float roughness)
         vec3    epic_f            = vec3(0.0f);
         float   epic_PDF          = 0.0f;
 
-        Eval_f_Epic(w_o, w_h, reflection.w_i, albedo, F_0, metallic, roughness, alphaSqrd, epic_f, epic_PDF);
+        Eval_f_Epic(w_o, w_h, reflection.w_i, albedo, F_0, roughness, alphaSqrd, epic_f, epic_PDF);
 
         reflection.f        = epic_f;
         reflection.PDF      = epic_PDF;
@@ -254,7 +249,7 @@ SReflection f(vec3 w_o, vec3 w_i, vec3 albedo, float metallic, float roughness)
         vec3    lambert_f         = vec3(0.0f);    
         float   lambert_PDF       = 0.0f;
 
-        Eval_f_Epic(w_o, w_h, reflection.w_i, albedo, F_0, metallic, roughness, alphaSqrd, epic_f, epic_PDF);
+        Eval_f_Epic(w_o, w_h, reflection.w_i, albedo, F_0, roughness, alphaSqrd, epic_f, epic_PDF);
         Eval_f_Lambert(w_o, w_h, albedo, F_0, metallic, reflection.CosTheta, lambert_f, lambert_PDF);
 
         reflection.f        = epic_f + lambert_f;

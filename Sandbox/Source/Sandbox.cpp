@@ -189,24 +189,52 @@ Sandbox::Sandbox()
 		m_pScene->AddDynamicGameObject(triangleGameObject, glm::mat4(1.0f));*/
 	}
 
-	//Sphere
+	//Sphere Grid
 	{
-		/*uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/sphere.obj");
+		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		
+		uint32 gridRadius = 5;
 
-		GameObject sphereGameObject = {};
-		sphereGameObject.Mesh = sphereMeshGUID;
-		sphereGameObject.Material = DEFAULT_MATERIAL;
+		for (uint32 y = 0; y < gridRadius; y++)
+		{
+			float32 roughness = y / float32(gridRadius - 1);
 
-		glm::vec3 position(1.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, -glm::half_pi<float>());
-		glm::vec3 scale(1.0f);
+			for (uint32 x = 0; x < gridRadius; x++)
+			{
+				float32 metallic = x / float32(gridRadius - 1);
 
-		glm::mat4 transform(1.0f);
-		transform = glm::translate(transform, position);
-		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-		transform = glm::scale(transform, scale);
+				MaterialProperties materialProperties;
+				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+				materialProperties.Roughness	= roughness;
+				materialProperties.Metallic		= metallic;
 
-		m_pScene->AddDynamicGameObject(sphereGameObject, glm::mat4(1.0f));*/
+				GameObject sphereGameObject = {};
+				sphereGameObject.Mesh		= sphereMeshGUID;
+				sphereGameObject.Material	= ResourceManager::LoadMaterialFromMemory(
+					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					materialProperties);
+
+				glm::vec3 position(-float32(gridRadius) + x, 1.0f + y, 5.0f);
+				glm::vec3 scale(1.0f);
+
+				glm::mat4 transform(1.0f);
+				transform = glm::translate(transform, position);
+				transform = glm::scale(transform, scale);
+
+				InstanceIndexAndTransform instanceIndexAndTransform;
+				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(sphereGameObject, transform);
+				instanceIndexAndTransform.Position		= position;
+				instanceIndexAndTransform.Rotation		= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+				instanceIndexAndTransform.Scale			= scale;
+
+				m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+			}
+		}
 	}
 
 	m_pScene->Finalize();
