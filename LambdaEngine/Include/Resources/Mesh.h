@@ -34,16 +34,26 @@ namespace LambdaEngine
 			glm::vec2 deltaUV2 = v2.TexCoord - this->TexCoord;
 
 			float denom = deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y;
-			float f = 1.0f / denom;
 
-			glm::vec3 tangent;
-			tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
-			tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
-			tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+			if (denom == 0.0f)
+			{
+				//Todo: Find a better solution for this?
+				if (abs(Normal.x) > abs(Normal.y))  this->Tangent = glm::vec3(Normal.z, 0, -Normal.x) / glm::sqrt(Normal.x * Normal.x + Normal.z * Normal.z);
+				else 								this->Tangent = glm::vec3(0, -Normal.z, Normal.y) / glm::sqrt(Normal.y * Normal.y + Normal.z * Normal.z);
+			}
+			else
+			{
+				float f = 1.0f / denom;
 
-			tangent = glm::normalize(tangent);
+				glm::vec3 tangent;
+				tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+				tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+				tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
 
-			this->Tangent = tangent;
+				tangent = glm::normalize(tangent);
+
+				this->Tangent = tangent;
+			}
 		}
 	};
 
