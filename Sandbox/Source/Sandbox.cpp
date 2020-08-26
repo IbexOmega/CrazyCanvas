@@ -783,7 +783,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 									updated = true;
 								}
 
-								if (ImGui::SliderFloat4("Rotation", glm::value_ptr(instanceIndexAndTransform.Rotation), -10.0f, 10.0f))
+								if (ImGui::SliderFloat4("Rotation", glm::value_ptr(instanceIndexAndTransform.Rotation), 0.0f, glm::two_pi<float32>()))
 								{
 									updated = true;
 								}
@@ -821,7 +821,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 									updated = true;
 								}
 
-								if (ImGui::SliderFloat4("Rotation", glm::value_ptr(instanceIndexAndTransform.Rotation), -10.0f, 10.0f))
+								if (ImGui::SliderFloat4("Rotation", glm::value_ptr(instanceIndexAndTransform.Rotation), 0.0f, glm::two_pi<float32>()))
 								{
 									updated = true;
 								}
@@ -839,6 +839,53 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 									transform = glm::scale(transform, instanceIndexAndTransform.Scale);
 
 									m_pScene->UpdateTransform(instanceIndexAndTransform.InstanceIndex, transform);
+								}
+
+								ImGui::TreePop();
+							}
+						}
+					}
+
+					if (ImGui::CollapsingHeader("Materials"))
+					{
+						std::unordered_map<String, GUID_Lambda>& materialNamesMap = ResourceManager::GetMaterialNamesMap();;
+
+						for (auto materialIt = materialNamesMap.begin(); materialIt != materialNamesMap.end(); materialIt++)
+						{
+							if (ImGui::TreeNode(materialIt->first.c_str()))
+							{
+								Material* pMaterial = ResourceManager::GetMaterial(materialIt->second);
+
+								bool updated = false;
+
+								if (ImGui::ColorEdit3("Albedo", glm::value_ptr(pMaterial->Properties.Albedo)))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat("AO", &pMaterial->Properties.Ambient, 0.0f, 1.0f))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat("Metallic", &pMaterial->Properties.Metallic, 0.0f, 1.0f))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat("Roughness", &pMaterial->Properties.Roughness, 0.0f, 1.0f))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat("Emission Strength", &pMaterial->Properties.EmissionStrength, 0.0f, 1000.0f))
+								{
+									updated = true;
+								}
+
+								if (updated)
+								{
+									m_pScene->UpdateMaterialProperties(materialIt->second);
 								}
 
 								ImGui::TreePop();

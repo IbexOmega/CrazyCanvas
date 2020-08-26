@@ -153,6 +153,8 @@ namespace LambdaEngine
 
 		void UpdateCamera(const Camera* pCamera);
 
+		void UpdateMaterialProperties(GUID_Lambda materialGUID);
+
 		uint32 GetIndirectArgumentOffset(uint32 materialIndex) const;
 
 		//Todo: Make these const
@@ -283,7 +285,8 @@ namespace LambdaEngine
 		IAccelerationStructure*						m_pTLAS						= nullptr;
 		std::vector<IAccelerationStructure*>		m_BLASs;
 
-		bool										m_LightSetupIsDirty			= false;
-		bool										m_InstanceBuffersAreDirty	= false;
+		bool										m_LightSetupIsDirty					= false;
+		bool										m_InstanceBuffersAreDirty			= false;
+		bool										m_MaterialPropertiesBuffersAreDirty	= false;
 	};
 }

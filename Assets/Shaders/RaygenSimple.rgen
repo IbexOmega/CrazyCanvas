@@ -227,10 +227,11 @@ void main()
 		bool isSpecular = s_RadiancePayload.Roughness < MIN_ROUGHNESS_DELTA_DISTRIBUTION;
 
 		//Emissive Surface
-		if (b == 0 || isSpecular)
+		if (dot(s_RadiancePayload.Emissive, s_RadiancePayload.Emissive) > 0.0f)
 		{
-			if (dot(s_RadiancePayload.Emissive, s_RadiancePayload.Emissive) > 0.0f)
+			if (b == 0 || isSpecular || (s_RadiancePayload.HitMask & HIT_MASK_GAME_OBJECT) > 0) //Emissive Game Objects are not directly sampled so we include them here
 			{
+			
 				L += 50.0f * throughput * s_RadiancePayload.Emissive;
 			}
 		}

@@ -91,7 +91,7 @@ namespace LambdaEngine
 
 		for (uint32 i = 0; i < meshes.size(); i++)
 		{
-			GUID_Lambda guid = RegisterLoadedMesh(meshes[i]);
+			GUID_Lambda guid = RegisterLoadedMesh("Scene Mesh " + std::to_string(i), meshes[i]);
 
 			for (uint32 g = 0; g < sceneLocalGameObjects.size(); g++)
 			{
@@ -104,7 +104,7 @@ namespace LambdaEngine
 
 		for (uint32 i = 0; i < materials.size(); i++)
 		{
-			GUID_Lambda guid = RegisterLoadedMaterial(materials[i]);
+			GUID_Lambda guid = RegisterLoadedMaterial("Scene Material " + std::to_string(i), materials[i]);
 
 			for (uint32 g = 0; g < sceneLocalGameObjects.size(); g++)
 			{
@@ -464,15 +464,16 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	GUID_Lambda ResourceManager::RegisterLoadedMesh(Mesh* pResource)
+	GUID_Lambda ResourceManager::RegisterLoadedMesh(const String& name, Mesh* pResource)
 	{
 		GUID_Lambda guid = GUID_NONE;
 		Mesh** ppMappedResource = nullptr;
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedResource = &s_Meshes[guid]; //Creates new entry if not existing
+			guid						= s_NextFreeGUID++;
+			ppMappedResource			= &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshNamesToGUIDs[name]	= guid;
 		}
 
 		(*ppMappedResource) = pResource;
@@ -480,15 +481,16 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::RegisterLoadedMaterial(Material* pResource)
+	GUID_Lambda ResourceManager::RegisterLoadedMaterial(const String& name, Material* pResource)
 	{
 		GUID_Lambda guid = GUID_NONE;
 		Material** ppMappedResource = nullptr;
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedResource = &s_Materials[guid]; //Creates new entry if not existing
+			guid							= s_NextFreeGUID++;
+			ppMappedResource				= &s_Materials[guid]; //Creates new entry if not existing
+			s_MaterialNamesToGUIDs[name]	= guid;
 		}
 
 		pResource->pAlbedoMap					= pResource->pAlbedoMap					!= nullptr ? pResource->pAlbedoMap					: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
@@ -564,7 +566,10 @@ namespace LambdaEngine
         s_Shaders[GUID_NONE]				= nullptr;
 		s_SoundEffects[GUID_NONE]			= nullptr;
 
-		s_Meshes[GUID_MESH_QUAD]			= MeshFactory::CreateQuad();
+		{
+			s_MeshNamesToGUIDs["Quad"]			= GUID_MESH_QUAD;
+			s_Meshes[GUID_MESH_QUAD]			= MeshFactory::CreateQuad();
+		}
 
 		{
 			byte defaultColor[4]				= { 255, 255, 255, 255 };
@@ -574,6 +579,8 @@ namespace LambdaEngine
 			ITexture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
 			ITexture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
 
+			s_TextureNamesToGUIDs[pDefaultColorMap->GetDesc().Name]		= GUID_TEXTURE_DEFAULT_COLOR_MAP;
+			s_TextureNamesToGUIDs[pDefaultNormalMap->GetDesc().Name]	= GUID_TEXTURE_DEFAULT_NORMAL_MAP;
 			s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= pDefaultColorMap;
 			s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= pDefaultNormalMap;
 
@@ -617,6 +624,7 @@ namespace LambdaEngine
 			pDefaultMaterial->pMetallicMapView			= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 			pDefaultMaterial->pRoughnessMapView			= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
+			s_MaterialNamesToGUIDs["Default Material"]	= GUID_MATERIAL_DEFAULT;
 			s_Materials[GUID_MATERIAL_DEFAULT] = pDefaultMaterial;
 		}
 
@@ -636,6 +644,7 @@ namespace LambdaEngine
 
 			pDefaultEmissiveMaterial->Properties.EmissionStrength	= DEFAULT_EMISSIVE_EMISSION_STRENGTH;
 
+			s_MaterialNamesToGUIDs["Default Emissive Material"] = GUID_MATERIAL_DEFAULT_EMISSIVE;
 			s_Materials[GUID_MATERIAL_DEFAULT_EMISSIVE] = pDefaultEmissiveMaterial;
 		}
 	}

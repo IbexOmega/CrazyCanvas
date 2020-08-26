@@ -22,6 +22,9 @@ const float MAX_TEMPORAL_FRAMES = 256.0f;
 #define MAX_NUM_AREA_LIGHTS 4
 #define AREA_LIGHT_TYPE_QUAD 1
 
+#define HIT_MASK_GAME_OBJECT    0x01
+#define HIT_MASK_LIGHT          0x02
+
 struct SPositions
 {
     vec3 WorldPos; 

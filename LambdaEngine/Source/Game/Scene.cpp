@@ -537,24 +537,13 @@ namespace LambdaEngine
 
 			m_InstanceBuffersAreDirty = false;
 		}
-	}
 
-	void Scene::UpdateLightsBuffer(ICommandList* pCommandList)
-	{
-		void* pMapped = m_pLightsCopyBuffer->Map();
-		memcpy(pMapped, &m_LightsLightSetup, sizeof(LightSetup));
-		m_pLightsCopyBuffer->Unmap();
+		if (m_MaterialPropertiesBuffersAreDirty)
+		{
+			UpdateMaterialPropertiesBuffers(pGraphicsCommandList);
 
-		pCommandList->CopyBuffer(m_pLightsCopyBuffer, 0, m_pLightsBuffer, 0, sizeof(LightSetup));
-	}
-
-	void Scene::UpdatePerFrameBuffer(ICommandList* pCommandList)
-	{
-		void* pMapped = m_pPerFrameCopyBuffer->Map();
-		memcpy(pMapped, &m_PerFrameData, sizeof(PerFrameBuffer));
-		m_pPerFrameCopyBuffer->Unmap();
-
-		pCommandList->CopyBuffer(m_pPerFrameCopyBuffer, 0, m_pPerFrameBuffer, 0, sizeof(PerFrameBuffer));
+			m_MaterialPropertiesBuffersAreDirty = false;
+		}
 	}
 
 	uint32 Scene::AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform)
@@ -633,6 +622,12 @@ namespace LambdaEngine
 	void Scene::UpdateCamera(const Camera* pCamera)
 	{
 		m_PerFrameData.Camera = pCamera->GetData();
+	}
+
+	void Scene::UpdateMaterialProperties(GUID_Lambda materialGUID)
+	{
+		m_SceneMaterialProperties[m_GUIDToMaterials[materialGUID]] = ResourceManager::GetMaterial(materialGUID)->Properties;
+		m_MaterialPropertiesBuffersAreDirty = true;
 	}
 
 	uint32 Scene::GetIndirectArgumentOffset(uint32 materialIndex) const
@@ -723,6 +718,24 @@ namespace LambdaEngine
 		}
 
 		return instanceIndex;
+	}
+
+	void Scene::UpdateLightsBuffer(ICommandList* pCommandList)
+	{
+		void* pMapped = m_pLightsCopyBuffer->Map();
+		memcpy(pMapped, &m_LightsLightSetup, sizeof(LightSetup));
+		m_pLightsCopyBuffer->Unmap();
+
+		pCommandList->CopyBuffer(m_pLightsCopyBuffer, 0, m_pLightsBuffer, 0, sizeof(LightSetup));
+	}
+
+	void Scene::UpdatePerFrameBuffer(ICommandList* pCommandList)
+	{
+		void* pMapped = m_pPerFrameCopyBuffer->Map();
+		memcpy(pMapped, &m_PerFrameData, sizeof(PerFrameBuffer));
+		m_pPerFrameCopyBuffer->Unmap();
+
+		pCommandList->CopyBuffer(m_pPerFrameCopyBuffer, 0, m_pPerFrameBuffer, 0, sizeof(PerFrameBuffer));
 	}
 
 	void Scene::UpdateMaterialPropertiesBuffers(ICommandList* pCopyCommandList)

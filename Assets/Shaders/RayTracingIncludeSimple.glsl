@@ -44,6 +44,7 @@ struct SRadiancePayload
     float   Metallic;
     float   Roughness;
     float   Distance;
+    uint    HitMask;
 };
 
 struct SShadowPayload

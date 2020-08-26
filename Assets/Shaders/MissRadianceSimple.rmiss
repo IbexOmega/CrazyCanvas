@@ -17,4 +17,5 @@ void main()
     s_RadiancePayload.Metallic			= 0.0f;
     s_RadiancePayload.Roughness			= 0.0f;
     s_RadiancePayload.Distance			= 0.0f;
+    s_RadiancePayload.HitMask           = 0x0;
 }
