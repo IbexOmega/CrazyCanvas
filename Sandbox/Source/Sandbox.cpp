@@ -219,7 +219,7 @@ Sandbox::Sandbox()
 					GUID_TEXTURE_DEFAULT_COLOR_MAP,
 					materialProperties);
 
-				glm::vec3 position(-float32(gridRadius) + x, 1.0f + y, 5.0f);
+				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 1.0f + y, 5.0f);
 				glm::vec3 scale(1.0f);
 
 				glm::mat4 transform(1.0f);

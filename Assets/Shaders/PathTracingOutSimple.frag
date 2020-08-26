@@ -21,7 +21,7 @@ void main()
     float history                           = texture(u_History, in_TexCoord).r;
 
     vec3 colorHDR   = (sampledDirectRadiance.rgb + sampledIndirectRadiance.rgb) / history;
-    vec3 colorLDR   = ToneMap(colorHDR, GAMMA);
+    vec3 colorLDR   = GammaCorrection(colorHDR, GAMMA);
 
     out_Color       = vec4(colorLDR, 1.0f);
 }

@@ -341,6 +341,7 @@ namespace LambdaEngine
 				}
 			}
 
+			//Todo: We should check if a similar material already has been loaded
 			loadedMaterials[m] = pMaterial;
 		}
 

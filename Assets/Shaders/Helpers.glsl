@@ -97,7 +97,7 @@ float GeometryOpt(float NdotV, float NdotL, float roughness)
 	return GeometryGGX(NdotV, roughness) * GeometryGGX(NdotL, roughness);
 }
 
-vec3 ToneMap(vec3 color, float gamma)
+vec3 GammaCorrection(vec3 color, float gamma)
 {
 	vec3 result = color / (color + vec3(1.0f));
 	result = pow(result, vec3(1.0f / gamma));

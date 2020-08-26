@@ -162,8 +162,7 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
         {
             //For non Perfect Specular Reflections we use a Lambertian + Epic combined BRDF with uniform sampling
 
-            float probToSampleDiffuse   = 0.5f;
-            bool sampleDiffuse          = u.z < probToSampleDiffuse;
+            bool sampleDiffuse          = u.z < 0.5f;
             
             vec3 w_h                    = sampleDiffuse ? Sample_w_h_CosHemisphere(w_o, u.xy) : Sample_w_h_GGX(w_o, alphaSqrd, u.xy);
             reflection.w_i              = -reflect(w_o, w_h); //w_o is pointing out, negate 
