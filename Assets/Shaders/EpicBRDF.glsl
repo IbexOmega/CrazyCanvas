@@ -43,7 +43,7 @@ vec3 F(float OdotH, vec3 F_0)
     alphaSqrd       - the isotropic roughness coefficient squared
     u               - a 2D sample variate
 */
-vec3 Sample_w_h_SimpleSpecular(vec3 w_o, float alphaSqrd, vec2 u)
+vec3 Sample_w_h_GGX(vec3 w_o, float alphaSqrd, vec2 u)
 {
     float phi           = u.x * TWO_PI;
     float cosThetaSqrd  = (1.0f - u.y) / (1.0f + (alphaSqrd - 1.0f) * u.y);
@@ -78,7 +78,7 @@ vec3 Sample_w_h_CosHemisphere(vec3 w_o, vec2 u)
     return vec3(d.x, d.y, z);
 }
 
-void Microfacet_f(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in vec3 F_0, in float metallic, in float roughness, in float alphaSqrd, inout vec3 f, inout float PDF)
+void Eval_f_Epic(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in vec3 F_0, in float metallic, in float roughness, in float alphaSqrd, inout vec3 f, inout float PDF)
 {
     float NdotO = max(0.0f, w_o.z);
     float NdotI = max(0.0f, w_i.z);
@@ -95,7 +95,7 @@ void Microfacet_f(in vec3 w_o, in vec3 w_h, in vec3 w_i, in vec3 albedo, in vec3
     PDF     = D * NdotH / (4.0f * OdotH);
 }
 
-void Lambertian_f(in vec3 w_o, in vec3 w_h, in vec3 albedo, in vec3 F_0, in float metallic, in float cosTheta, inout vec3 f, inout float PDF)
+void Eval_f_Lambert(in vec3 w_o, in vec3 w_h, in vec3 albedo, in vec3 F_0, in float metallic, in float cosTheta, inout vec3 f, inout float PDF)
 {
     float OdotH     = max(0.0f, dot(w_o, w_h));
 
@@ -106,23 +106,6 @@ void Lambertian_f(in vec3 w_o, in vec3 w_h, in vec3 albedo, in vec3 F_0, in floa
 
     f       = diffuse_f * INV_PI;
     PDF     = cosTheta * INV_PI;
-}
-
-void Eval_f(vec3 w_o, vec3 w_h, vec3 w_i, vec3 albedo, vec3 F_0, float metallic, float roughness, float alphaSqrd, inout SReflection reflection)
-{
-    reflection.w_i          = w_i;
-    reflection.CosTheta     = max(0.0f, w_i.z);
-
-    vec3 diffuse_f          = vec3(0.0f);
-    vec3 specular_f         = vec3(0.0f);
-    float diffuse_PDF       = 0.0f;
-    float specular_PDF      = 0.0f;
-
-    Lambertian_f(w_o, w_h, albedo, F_0, metallic, reflection.CosTheta, diffuse_f, diffuse_PDF);
-    Microfacet_f(w_o, w_h, w_i, albedo, F_0, metallic, roughness, alphaSqrd, specular_f, specular_PDF);
-    
-    reflection.f    = diffuse_f + specular_f;
-    reflection.PDF  = (diffuse_PDF + specular_PDF) * 0.5f;
 }
 
 /*
@@ -143,35 +126,80 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
 
     if (w_o.z <= 0.0f)  return reflection;
 
-    float alpha             = roughness * roughness;
-    float alphaSqrd         = max(alpha * alpha, 0.0000001f);
-    
-    vec3 F_0    = vec3(0.04f);
-	F_0	        = mix(F_0, albedo, metallic);
+    if (roughness == 0.0f)
+    {
+        //Perfect Specular Reflection
 
-    float probToSampleDiffuse   = 0.5f;
-    bool sampleDiffuse          = u.z < probToSampleDiffuse;
-    
-    vec3 w_h                    = sampleDiffuse ? Sample_w_h_CosHemisphere(w_o, u.xy) : Sample_w_h_SimpleSpecular(w_o, alphaSqrd, u.xy);
-    vec3 w_i                    = -reflect(w_o, w_h); //w_o is pointing out, negate reflect
-    //vec3 w_i                  = 2.0f * dot(w_o, w_h) * w_h - w_o;
+        reflection.w_i          = vec3(-w_o.x, -w_o.y, w_o.z); //Perfect Specular Reflection, just reflect w_o around normal
+        reflection.CosTheta     = max(0.0f, reflection.w_i.z);
+        reflection.f            = vec3(1.0f) / reflection.CosTheta;
+        reflection.PDF          = 1.0f;
+    }
+    else
+    {
+        //For materials with a roughness above 0 we use the Epic Games BRDF Model, and possibly a Lambertian BRDF Model
 
-    if (!IsSameHemisphere(w_o, w_i)) return reflection;
+        vec3 F_0    = vec3(0.04f);
+        F_0	        = mix(F_0, albedo, metallic);
 
-    //w_i = w_i * SameHemisphere(w_i, w_o);  
+        float alpha             = roughness * roughness;
+        float alphaSqrd         = max(alpha * alpha, 0.0000001f);
 
-    /*
-        Technically, we could save some computations by not returning f and PDF since:
-        Incident_Light  = SampleColor * dot(w_i, w_n)
-        f               = D * G * F / (4.0f * dot(w_o, w_n) * dot(w_i, w_n))
-        PDF             = D * dot(w_n, w_h) / (4.0f * dot(w_o, w_h))
-            where w_n   = (0, 0, 1)
-        and thus: Incident_Light * F / PDF = G * F * dot(w_o, w_h) / (dot(w_o, w_n) * dot(w_n, w_h)),
-            but we would like to evaluate the PDF
-    */
+         if (metallic == 1.0f)
+        {
+            //Metallic, no Lambertian, only Epic BRDF
 
-    Eval_f(w_o, w_h, w_i, albedo, F_0, metallic, roughness, alphaSqrd, reflection);
-    return reflection;
+            vec3 w_h                    = Sample_w_h_GGX(w_o, alphaSqrd, u.xy);
+            reflection.w_i              = -reflect(w_o, w_h); //w_o is pointing out, negate 
+            
+            if (!IsSameHemisphere(w_o, reflection.w_i)) return reflection;
+            reflection.CosTheta         = max(0.0f, reflection.w_i.z);
+
+            vec3    epic_f            = vec3(0.0f);
+            float   epic_PDF          = 0.0f;
+
+            Eval_f_Epic(w_o, w_h, reflection.w_i, albedo, F_0, metallic, roughness, alphaSqrd, epic_f, epic_PDF);
+
+            reflection.f        = epic_f;
+            reflection.PDF      = epic_PDF;
+        }
+        else
+        {
+            //For non Perfect Specular Reflections we use a Lambertian + Epic combined BRDF with uniform sampling
+
+            float probToSampleDiffuse   = 0.5f;
+            bool sampleDiffuse          = u.z < probToSampleDiffuse;
+            
+            vec3 w_h                    = sampleDiffuse ? Sample_w_h_CosHemisphere(w_o, u.xy) : Sample_w_h_GGX(w_o, alphaSqrd, u.xy);
+            reflection.w_i              = -reflect(w_o, w_h); //w_o is pointing out, negate 
+            
+            if (!IsSameHemisphere(w_o, reflection.w_i)) return reflection;
+            reflection.CosTheta         = max(0.0f, reflection.w_i.z);
+
+            /*
+                Technically, we could save some computations by not returning f and PDF since:
+                Incident_Light  = SampleColor * dot(w_i, w_n)
+                f               = D * G * F / (4.0f * dot(w_o, w_n) * dot(w_i, w_n))
+                PDF             = D * dot(w_n, w_h) / (4.0f * dot(w_o, w_h))
+                    where w_n   = (0, 0, 1)
+                and thus: Incident_Light * F / PDF = G * F * dot(w_o, w_h) / (dot(w_o, w_n) * dot(w_n, w_h)),
+                    but we would like to evaluate the PDF
+            */
+
+            vec3    epic_f            = vec3(0.0f);
+            float   epic_PDF          = 0.0f;
+            vec3    lambert_f         = vec3(0.0f);    
+            float   lambert_PDF       = 0.0f;
+
+            Eval_f_Epic(w_o, w_h, reflection.w_i, albedo, F_0, metallic, roughness, alphaSqrd, epic_f, epic_PDF);
+            Eval_f_Lambert(w_o, w_h, albedo, F_0, metallic, reflection.CosTheta, lambert_f, lambert_PDF);
+
+            reflection.f        = epic_f + lambert_f;
+            reflection.PDF      = (epic_PDF + lambert_PDF) * 0.5f;
+        }
+    }
+
+    return reflection;    
 }
 
 /*
@@ -185,21 +213,53 @@ SReflection Sample_f(vec3 w_o, vec3 albedo, float metallic, float roughness, vec
 SReflection f(vec3 w_o, vec3 w_i, vec3 albedo, float metallic, float roughness)
 {
     SReflection reflection; 
-    reflection.PDF          = 0.0f;
     reflection.f            = vec3(0.0f);
+    reflection.PDF          = 0.0f;
     reflection.w_i          = vec3(0.0f);
     reflection.CosTheta     = 0.0f;
 
-    if (w_o.z <= 0.0f || !IsSameHemisphere(w_o, w_i)) return reflection;
+    //Perfect Specular are delta distributions -> (mathematically) zero percent chance that w_i gives a value of f > 0 
+    if (roughness == 0.0f || w_o.z <= 0.0f || w_i.z <= 0.0f) return reflection;
+
+    //For materials with a roughness above 0 we use the Epic Games BRDF Model, and possibly a Lambertian BRDF Model
 
     float alpha             = roughness * roughness;
     float alphaSqrd         = max(alpha * alpha, 0.0000001f);
     vec3 w_h                = normalize(w_o + w_i);
 
-    vec3 F_0    = vec3(0.04f);
-	F_0	        = mix(F_0, albedo, metallic);
+    vec3 F_0                = vec3(0.04f);
+    F_0	                    = mix(F_0, albedo, metallic);
 
-    //w_i = w_i * SameHemisphere(w_i, w_o);  
-    Eval_f(w_o, w_h, w_i, albedo, F_0, metallic, roughness, alphaSqrd, reflection);
+    reflection.w_i          = w_i;
+    reflection.CosTheta     = max(0.0f, w_i.z);
+
+    if (metallic == 1.0f)
+    {
+        //Metallic, no Lambertian, only Epic BRDF
+
+        vec3    epic_f            = vec3(0.0f);
+        float   epic_PDF          = 0.0f;
+
+        Eval_f_Epic(w_o, w_h, reflection.w_i, albedo, F_0, metallic, roughness, alphaSqrd, epic_f, epic_PDF);
+
+        reflection.f        = epic_f;
+        reflection.PDF      = epic_PDF;
+    }
+    else
+    {
+        //For non Perfect Specular Reflections we use a Lambertian + Epic combined BRDF with uniform sampling
+
+        vec3    epic_f            = vec3(0.0f);
+        float   epic_PDF          = 0.0f;
+        vec3    lambert_f         = vec3(0.0f);    
+        float   lambert_PDF       = 0.0f;
+
+        Eval_f_Epic(w_o, w_h, reflection.w_i, albedo, F_0, metallic, roughness, alphaSqrd, epic_f, epic_PDF);
+        Eval_f_Lambert(w_o, w_h, albedo, F_0, metallic, reflection.CosTheta, lambert_f, lambert_PDF);
+
+        reflection.f        = epic_f + lambert_f;
+        reflection.PDF      = (epic_PDF + lambert_PDF) * 0.5f;
+    }
+
     return reflection;
 }

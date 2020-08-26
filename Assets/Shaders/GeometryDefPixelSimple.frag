@@ -47,7 +47,7 @@ void main()
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialIndex];
 
-    vec2 metallicRoughness              = vec2(materialParameters.Metallic * sampledMetallic, max(materialParameters.Roughness * sampledRoughness,  EPSILON));
+    vec2 metallicRoughness              = vec2(materialParameters.Metallic * sampledMetallic, materialParameters.Roughness * sampledRoughness);
 
     vec3 storedAlbedo                   = pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
     float storedAO                      = materialParameters.Ambient * sampledAO;

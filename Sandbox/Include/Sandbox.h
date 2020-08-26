@@ -102,6 +102,9 @@ private:
 	GUID_Lambda								m_ImGuiPixelShaderPackedLocalNormalGUID		= GUID_NONE;
 	GUID_Lambda								m_ImGuiPixelLinearZGUID						= GUID_NONE;
 	GUID_Lambda								m_ImGuiPixelCompactNormalFloatGUID			= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelShaderEmissionGUID				= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelPackedMetallicGUID				= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelPackedRoughnessGUID				= GUID_NONE;
 
 	TArray<InstanceIndexAndTransform>		m_InstanceIndicesAndTransforms;
 	TArray<InstanceIndexAndTransform>		m_LightInstanceIndicesAndTransforms;

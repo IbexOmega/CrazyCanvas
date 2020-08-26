@@ -40,7 +40,7 @@ struct SRadiancePayload
     vec3    ShadingNormal;
     vec3    GeometricNormal;
     vec3    Albedo;
-    vec3    Emissive;
+    vec3    Emission;
     float   Metallic;
     float   Roughness;
     float   Distance;
@@ -64,7 +64,7 @@ layout(binding = 7, set = BUFFER_SET_INDEX) uniform PerFrameBuffer              
 
 layout(binding = 0,     set = TEXTURE_SET_INDEX) uniform sampler2D 	                                u_AlbedoAO;
 layout(binding = 1,     set = TEXTURE_SET_INDEX) uniform sampler2D 	                                u_CompactNormals;
-layout(binding = 2,     set = TEXTURE_SET_INDEX) uniform sampler2D 	                                u_EmissiveMetallicRoughness;
+layout(binding = 2,     set = TEXTURE_SET_INDEX) uniform sampler2D 	                                u_EmissionMetallicRoughness;
 layout(binding = 3,     set = TEXTURE_SET_INDEX) uniform sampler2D 	                                u_DepthStencil;
 layout(binding = 4,     set = TEXTURE_SET_INDEX) uniform sampler2D                                  u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 5,     set = TEXTURE_SET_INDEX) uniform sampler2D                                  u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];

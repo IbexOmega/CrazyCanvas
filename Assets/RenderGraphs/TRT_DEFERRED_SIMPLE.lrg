@@ -208,7 +208,7 @@
             "texture_format": 0
         },
         {
-            "name": "G_BUFFER_EMISSIVE_METALLIC_ROUGHNESS",
+            "name": "G_BUFFER_EMISSION_METALLIC_ROUGHNESS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
@@ -642,7 +642,7 @@
                     ]
                 },
                 {
-                    "name": "G_BUFFER_EMISSIVE_METALLIC_ROUGHNESS",
+                    "name": "G_BUFFER_EMISSION_METALLIC_ROUGHNESS",
                     "render_stage_name": "GEOMETRY",
                     "removable": true,
                     "binding_type": "ATTACHMENT",
@@ -780,7 +780,7 @@
                     "output_link_indices": []
                 },
                 {
-                    "name": "G_BUFFER_EMISSIVE_METALLIC_ROUGHNESS",
+                    "name": "G_BUFFER_EMISSION_METALLIC_ROUGHNESS",
                     "render_stage_name": "RAY_TRACING",
                     "removable": true,
                     "binding_type": "COMBINED_SAMPLER",

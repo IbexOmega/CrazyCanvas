@@ -13,7 +13,7 @@ void main()
     s_RadiancePayload.ShadingNormal     = vec3(0.0f);
     s_RadiancePayload.GeometricNormal   = vec3(0.0f);
     s_RadiancePayload.Albedo			= vec3(0.0f);
-    s_RadiancePayload.Emissive			= vec3(0.0f);
+    s_RadiancePayload.Emission			= vec3(0.0f);
     s_RadiancePayload.Metallic			= 0.0f;
     s_RadiancePayload.Roughness			= 0.0f;
     s_RadiancePayload.Distance			= 0.0f;

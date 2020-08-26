@@ -12,9 +12,10 @@ layout(location = 1) rayPayloadEXT SShadowPayload 	s_ShadowPayload;
 
 void SampleLights(vec3 w_o, mat3 worldToLocal, mat3 localToWorld, vec2 u_Light_Light, vec3 u_Light_BRDF, inout vec3 L_d)
 {
-	const float N_Lights 	    = 1.0f + float(u_LightsBuffer.val.AreaLightCount);
+	const float DirLightOn		= step(EPSILON, luminance(u_LightsBuffer.val.DirL_EmittedRadiance.rgb));
+	const float N_Lights 	    = DirLightOn + float(u_LightsBuffer.val.AreaLightCount);
     const float N_Lights_PDF    = 1.0f / N_Lights;
-	float chosenLightFloat		= floor(u_Light_Light.x * N_Lights);
+	float chosenLightFloat		= floor(u_Light_Light.x * N_Lights) + (1.0f - DirLightOn);
 	uint  chosenLight			= uint(chosenLightFloat);
 
 	//Directional Light
@@ -30,7 +31,7 @@ void SampleLights(vec3 w_o, mat3 worldToLocal, mat3 localToWorld, vec2 u_Light_L
 			const vec3 		origin 				= s_RadiancePayload.HitPosition + s_RadiancePayload.GeometricNormal * RAY_NORMAL_OFFSET;
 			const vec3 		direction			= dirLightEval.SampleWorldDir;
 			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
-			const uint 		cullMask           	= 0xFF;
+			const uint 		cullMask           	= ~HIT_MASK_LIGHT; //Lights should not occlude Area Lights
 			const uint 		sbtRecordOffset    	= 1;
 			const uint 		sbtRecordStride    	= 0;
 			const uint 		missIndex          	= 1;
@@ -50,7 +51,7 @@ void SampleLights(vec3 w_o, mat3 worldToLocal, mat3 localToWorld, vec2 u_Light_L
 	else
 	{
 		uint chosenAreaLight = chosenLight - 1;
-		u_Light_Light.x = (u_Light_Light.x - (chosenLightFloat / N_Lights)) / N_Lights_PDF; //Stretch u 
+		u_Light_Light.x = (u_Light_Light.x - ((chosenAreaLight + DirLightOn) / N_Lights)) / N_Lights_PDF; //Stretch u 
 
 		SLightSample areaLightSample = SampleAreaLightRadiance(w_o, chosenAreaLight, s_RadiancePayload.HitPosition, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal, u_Light_Light);
 
@@ -142,21 +143,21 @@ void main()
 	//Sample GBuffer
 	vec4 sampledAlbedoAO    		        = texture(u_AlbedoAO, screenTexCoord);
 	vec2 sampledCompactNormals 				= texture(u_CompactNormals, screenTexCoord).rg;
-    vec4 sampledEmissiveMetallicRoughness   = texture(u_EmissiveMetallicRoughness, screenTexCoord);
+    vec4 sampledEmissionMetallicRoughness   = texture(u_EmissionMetallicRoughness, screenTexCoord);
 	vec4 sampledDirectRadiance 		        = imageLoad(u_DirectRadiance, pixelCoords);
 	vec4 sampledIndirectRadiance 	        = imageLoad(u_IndirectRadiance, pixelCoords);
     float sampledHistory 	                = imageLoad(u_History, pixelCoords).r;
 
-    vec2 unpackedMetallicRoughness          = unpackUnorm2x16(floatBitsToUint(sampledEmissiveMetallicRoughness.w));
+    vec2 unpackedMetallicRoughness          = unpackUnorm2x16(floatBitsToUint(sampledEmissionMetallicRoughness.w));
 
 	//Unpack GBuffer
     vec3 shadingNormal      = normalize(octToDir(floatBitsToUint(sampledCompactNormals.x)));
     vec3 geometricNormal    = normalize(octToDir(floatBitsToUint(sampledCompactNormals.y)));
     vec3 albedo             = sampledAlbedoAO.rgb;
-    vec3 emissive		    = sampledEmissiveMetallicRoughness.rgb;
+    vec3 emission		    = sampledEmissionMetallicRoughness.rgb;
     float ao                = sampledAlbedoAO.a;
     float metallic          = unpackedMetallicRoughness.x;
-    float roughness         = max(0.00001f, unpackedMetallicRoughness.y);
+    float roughness         = unpackedMetallicRoughness.y;
 
 	//Define local Coordinate System
 	vec3 tangent 	= vec3(0.0f);
@@ -194,7 +195,7 @@ void main()
     s_RadiancePayload.ShadingNormal     = shadingNormal;
     s_RadiancePayload.GeometricNormal   = geometricNormal;
 	s_RadiancePayload.Albedo			= albedo;
-    s_RadiancePayload.Emissive			= emissive;
+    s_RadiancePayload.Emission			= emission;
 	s_RadiancePayload.Metallic			= metallic;
 	s_RadiancePayload.Roughness			= roughness;
 	s_RadiancePayload.Distance			= 1.0f;
@@ -207,6 +208,7 @@ void main()
 	const float MIN_ROUGHNESS_DELTA_DISTRIBUTION = EPSILON * 2.0f;
 
 	vec3 throughput  					= vec3(1.0f);
+	bool lastWasSpecular				= true;
 
 	for (int b = 0; b < maxBounces; b++)
 	{
@@ -224,15 +226,16 @@ void main()
 				 						GenerateSample(baseB + 6, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
 				 						GenerateSample(baseB + 7, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
 		float u_RussianRoulette	=		GenerateSample(baseB + 8, randomSeedPoint, numSamplesPerFrame, blueNoiseSize);
+
 		bool isSpecular = s_RadiancePayload.Roughness < MIN_ROUGHNESS_DELTA_DISTRIBUTION;
 
 		//Emissive Surface
-		if (dot(s_RadiancePayload.Emissive, s_RadiancePayload.Emissive) > 0.0f)
+		if (dot(s_RadiancePayload.Emission, s_RadiancePayload.Emission) > 0.0f)
 		{
-			if (b == 0 || isSpecular || (s_RadiancePayload.HitMask & HIT_MASK_GAME_OBJECT) > 0) //Emissive Game Objects are not directly sampled so we include them here
+			if (lastWasSpecular || (s_RadiancePayload.HitMask & HIT_MASK_GAME_OBJECT) > 0) //Emissive Game Objects are not directly sampled so we include them here
 			{
 			
-				L += 50.0f * throughput * s_RadiancePayload.Emissive;
+				L += throughput * s_RadiancePayload.Emission;
 			}
 		}
 
@@ -244,6 +247,11 @@ void main()
 			SampleLights(w_o, worldToLocal, localToWorld, u_Light_Light, u_Light_BRDF, L_d);
 
 			L += throughput * L_d;
+		}
+
+		//Update lastWasSpecular
+		{
+			lastWasSpecular	= isSpecular;
 		}
 
 		//Write to Direct or Indirect L_o
@@ -305,7 +313,7 @@ void main()
                 s_RadiancePayload.ShadingNormal     = vec3(0.0f);
                 s_RadiancePayload.GeometricNormal   = vec3(0.0f);
 				s_RadiancePayload.Albedo			= vec3(0.0f);
-                s_RadiancePayload.Emissive			= vec3(0.0f);
+                s_RadiancePayload.Emission			= vec3(0.0f);
 				s_RadiancePayload.Metallic			= 0.0f;
 				s_RadiancePayload.Roughness			= 0.0f;
 				s_RadiancePayload.Distance			= 0.0f;

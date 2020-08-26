@@ -97,9 +97,9 @@ Sandbox::Sandbox()
 		areaLight.Type		= EAreaLightType::QUAD;
 		areaLight.Material	= GUID_MATERIAL_DEFAULT_EMISSIVE;
 
-		glm::vec3 position(0.0f, 1.95f, 0.0f);
+		glm::vec3 position(0.0f, 6.0f, 0.0f);
 		glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
-		glm::vec3 scale(0.2f);
+		glm::vec3 scale(1.5f);
 
 		glm::mat4 transform(1.0f);
 		transform = glm::translate(transform, position);
@@ -120,14 +120,14 @@ Sandbox::Sandbox()
 		std::vector<GameObject>	sceneGameObjects;
 		//ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Ceiling.obj", sceneGameObjects);
 		///ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Light.obj", sceneGameObjects);
-		//ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Plane.obj", sceneGameObjects);
-		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
+		ResourceManager::LoadSceneFromFile("Testing/Testing.obj", sceneGameObjects);
+		//ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
 		//ResourceManager::LoadSceneFromFile("San_Miguel/san-miguel-low-poly.obj", sceneGameObjects);
 
 		glm::vec3 position(0.0f, 0.0f, 0.0f);
 		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		//glm::vec3 scale(1.0f);
-		glm::vec3 scale(0.01f);
+		glm::vec3 scale(1.0f);
+		//glm::vec3 scale(0.01f);
 
 		glm::mat4 transform(1.0f);
 		transform = glm::translate(transform, position);
@@ -717,6 +717,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 			static ImGuiTexture albedoTexture = {};
 			static ImGuiTexture normalTexture = {};
+			static ImGuiTexture emissiveMetallicRoughness = {};
 			static ImGuiTexture compactNormalsTexture = {};
 			static ImGuiTexture motionTexture = {};
 			static ImGuiTexture linearZTexture = {};
@@ -788,8 +789,17 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 									updated = true;
 								}
 
-								if (ImGui::SliderFloat3("Scale", glm::value_ptr(instanceIndexAndTransform.Scale), -10.0f, 10.0f))
+								if (ImGui::SliderFloat3("Scale", glm::value_ptr(instanceIndexAndTransform.Scale), 0.0f, 10.0f))
 								{
+									updated = true;
+								}
+
+								float lockedScale = instanceIndexAndTransform.Scale.x;
+								if (ImGui::SliderFloat("Locked Scale", &lockedScale, 0.0f, 10.0f))
+								{
+									instanceIndexAndTransform.Scale.x = lockedScale;
+									instanceIndexAndTransform.Scale.y = lockedScale;
+									instanceIndexAndTransform.Scale.z = lockedScale;
 									updated = true;
 								}
 
@@ -826,8 +836,17 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 									updated = true;
 								}
 
-								if (ImGui::SliderFloat3("Scale", glm::value_ptr(instanceIndexAndTransform.Scale), -10.0f, 10.0f))
+								if (ImGui::SliderFloat3("Scale", glm::value_ptr(instanceIndexAndTransform.Scale), 0.0f, 10.0f))
 								{
+									updated = true;
+								}
+
+								float lockedScale = instanceIndexAndTransform.Scale.x;
+								if (ImGui::SliderFloat("Locked Scale",&lockedScale, 0.0f, 10.0f))
+								{
+									instanceIndexAndTransform.Scale.x = lockedScale;
+									instanceIndexAndTransform.Scale.y = lockedScale;
+									instanceIndexAndTransform.Scale.z = lockedScale;
 									updated = true;
 								}
 
@@ -896,43 +915,72 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					ImGui::EndTabItem();
 				}
 
-				if (ImGui::BeginTabItem("Testing"))
-				{
-					static float32 uTest[2];
-					ImGui::Text("Concentric Disk Sampling Test");
-					ImGui::SliderFloat2("u", uTest, 0.0f, 1.0f);
-
-					glm::vec2 result;
-					glm::vec2 uOffset = glm::vec2(uTest[0], uTest[1]) * 2.0f - glm::vec2(1.0f);
-					if (glm::dot(uOffset, uOffset) == 0.0f) result = glm::vec2(0.0f);
-					else
-					{
-						float32 r		= 0.0f;
-						float32 theta = 0.0f;
-
-						if (glm::abs(uOffset.x) > glm::abs(uOffset.y))
-						{
-							r = uOffset.x;
-							theta = (glm::half_pi<float32>() / 2.0f) * uOffset.y / uOffset.x;
-						}
-						else
-						{
-							r = uOffset.y;
-							theta = glm::half_pi<float32>() - (glm::half_pi<float32>() / 2.0f) * uOffset.x / uOffset.y;
-						}
-
-						result = r * glm::vec2(cos(theta), sin(theta));
-					}
-
-					ImGui::Text("Result: (%f, %f)", result.x, result.y);
-
-					ImGui::EndTabItem();
-				}
-
 				if (ImGui::BeginTabItem("Albedo AO"))
 				{
 					albedoTexture.ResourceName = "G_BUFFER_ALBEDO_AO";
 					ImGui::Image(&albedoTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Emission Metallic Roughness"))
+				{
+					emissiveMetallicRoughness.ResourceName = "G_BUFFER_EMISSION_METALLIC_ROUGHNESS";
+
+					const char* items[] = { "Emission", "Metallic", "Roughness" };
+					static int currentItem = 0;
+					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
+
+					if (currentItem == 0)
+					{
+						emissiveMetallicRoughness.ReservedIncludeMask = 0x00008420;
+
+						emissiveMetallicRoughness.ChannelMul[0] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[1] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[2] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[3] = 0.0f;
+
+						emissiveMetallicRoughness.ChannelAdd[0] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[1] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[2] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[3] = 1.0f;
+
+						emissiveMetallicRoughness.PixelShaderGUID = m_ImGuiPixelShaderEmissionGUID;
+					}
+					else if (currentItem == 1)
+					{
+						emissiveMetallicRoughness.ReservedIncludeMask = 0x00001110;
+
+						emissiveMetallicRoughness.ChannelMul[0] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[1] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[2] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[3] = 0.0f;
+
+						emissiveMetallicRoughness.ChannelAdd[0] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[1] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[2] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[3] = 1.0f;
+
+						emissiveMetallicRoughness.PixelShaderGUID = m_ImGuiPixelPackedMetallicGUID;
+					}
+					else if (currentItem == 2)
+					{
+						emissiveMetallicRoughness.ReservedIncludeMask = 0x00001110;
+
+						emissiveMetallicRoughness.ChannelMul[0] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[1] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[2] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[3] = 0.0f;
+
+						emissiveMetallicRoughness.ChannelAdd[0] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[1] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[2] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[3] = 1.0f;
+
+						emissiveMetallicRoughness.PixelShaderGUID = m_ImGuiPixelPackedRoughnessGUID;
+					}
+
+					ImGui::Image(&emissiveMetallicRoughness, ImVec2(windowWidth, windowWidth / renderAspectRatio));
 
 					ImGui::EndTabItem();
 				}
@@ -1649,6 +1697,9 @@ bool Sandbox::InitRendererForDeferred()
 	m_ImGuiPixelShaderPackedLocalNormalGUID		= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedLocalNormal.frag",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelLinearZGUID						= ResourceManager::LoadShaderFromFile("ImGuiPixelLinearZ.frag",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 	m_ImGuiPixelCompactNormalFloatGUID			= ResourceManager::LoadShaderFromFile("ImGuiPixelCompactNormalFloat.frag",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderEmissionGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelEmission.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelPackedMetallicGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedMetallic.frag",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelPackedRoughnessGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedRoughness.frag",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
 	//ResourceManager::LoadShaderFromFile("ForwardVertex.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
 	//ResourceManager::LoadShaderFromFile("ForwardPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
@@ -1787,37 +1838,38 @@ bool Sandbox::InitRendererForDeferred()
 		ITextureView** ppMetallicMapViews			= m_pScene->GetMetallicMapViews();
 		ITextureView** ppRoughnessMapViews			= m_pScene->GetRoughnessMapViews();
 
-		std::vector<ISampler*> samplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
+		std::vector<ISampler*> linearSamplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
+		std::vector<ISampler*> nearestSamplers(MAX_UNIQUE_MATERIALS, m_pNearestSampler);
 
 		ResourceUpdateDesc albedoMapsUpdateDesc = {};
 		albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
 		albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppAlbedoMaps;
 		albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppAlbedoMapViews;
-		albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+		albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
 
 		ResourceUpdateDesc normalMapsUpdateDesc = {};
 		normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
 		normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppNormalMaps;
 		normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppNormalMapViews;
-		normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+		normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
 
 		ResourceUpdateDesc aoMapsUpdateDesc = {};
 		aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
 		aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= ppAmbientOcclusionMaps;
 		aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= ppAmbientOcclusionMapViews;
-		aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= samplers.data();
+		aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= nearestSamplers.data();
 
 		ResourceUpdateDesc metallicMapsUpdateDesc = {};
 		metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
 		metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppMetallicMaps;
 		metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppMetallicMapViews;
-		metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+		metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
 
 		ResourceUpdateDesc roughnessMapsUpdateDesc = {};
 		roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
 		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= ppRoughnessMaps;
 		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= ppRoughnessMapViews;
-		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= samplers.data();
+		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= nearestSamplers.data();
 
 		m_pRenderGraph->UpdateResource(albedoMapsUpdateDesc);
 		m_pRenderGraph->UpdateResource(normalMapsUpdateDesc);
@@ -2067,7 +2119,7 @@ bool Sandbox::InitRendererForDeferred()
 			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
 
 			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName								= "G_BUFFER_EMISSIVE_METALLIC_ROUGHNESS";
+			resourceUpdateDesc.ResourceName								= "G_BUFFER_EMISSION_METALLIC_ROUGHNESS";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
