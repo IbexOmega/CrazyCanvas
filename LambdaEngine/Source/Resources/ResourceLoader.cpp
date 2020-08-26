@@ -313,6 +313,12 @@ namespace LambdaEngine
 				{
 					pMaterial->pMetallicMap = loadedTexture->second;
 				}
+
+				pMaterial->Properties.Metallic = 1.0f;
+			}
+			else
+			{
+				pMaterial->Properties.Metallic = 0.0f;
 			}
 
 			if (material.specular_highlight_texname.length() > 0)

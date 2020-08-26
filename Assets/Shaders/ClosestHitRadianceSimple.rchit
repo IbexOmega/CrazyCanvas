@@ -30,7 +30,7 @@ void main()
 	s_RadiancePayload.ShadingNormal		= hitDescription.ShadingNormal;
 	s_RadiancePayload.GeometricNormal	= hitDescription.GeometricNormal;
 	s_RadiancePayload.Albedo			= albedo;
-	s_RadiancePayload.Emissive			= albedo * materialParameters.EmissionStrength / 1000.0f; //Todo: We need to approximate the area of the surface here 
+	s_RadiancePayload.Emissive			= albedo * materialParameters.EmissionStrength / 100.0f; //Todo: We need to approximate the area of the surface here 
 	s_RadiancePayload.Metallic			= metallic;
 	s_RadiancePayload.Roughness			= roughness;
 	s_RadiancePayload.Distance			= gl_HitTEXT;
