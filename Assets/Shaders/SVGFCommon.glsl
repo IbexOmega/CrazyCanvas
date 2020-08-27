@@ -1,3 +1,7 @@
+
+const float PHI_COLOR    = 10.0f;
+const float PHI_NORMAL   = 128.0f;
+
 float normalDistanceCos(vec3 n1, vec3 n2, float power)
 {
 	//return pow(max(0.0, dot(n1, n2)), 128.0);

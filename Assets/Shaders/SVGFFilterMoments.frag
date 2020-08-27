@@ -20,9 +20,6 @@ layout(location = 1) out vec4	out_Indirect;
 
 void main()
 {
-    const float PHI_COLOR    = 10.0f;
-    const float PHI_NORMAL   = 128.0f;
-
     const ivec2 iPos    = ivec2(gl_FragCoord.xy);
     float h             = max(1.0f, texelFetch(u_History, iPos, 0).r);
     ivec2 screenSize    = textureSize(u_DirectRadiance, 0);
