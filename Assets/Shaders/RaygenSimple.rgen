@@ -137,7 +137,6 @@ void main()
 		return;
 	}
 
-	SLightsBuffer lightsBuffer			= u_LightsBuffer.val;
     SPerFrameBuffer perFrameBuffer   	= u_PerFrameBuffer.val;
 
 	//Sample GBuffer
@@ -205,8 +204,6 @@ void main()
 	const int numSamplesPerBounce		= 9;
 	const int numSamplesPerFrame		= maxBounces * numSamplesPerBounce;
 
-	const float MIN_ROUGHNESS_DELTA_DISTRIBUTION = EPSILON * 2.0f;
-
 	vec3 throughput  					= vec3(1.0f);
 	bool lastWasSpecular				= true;
 
@@ -227,7 +224,7 @@ void main()
 				 						GenerateSample(baseB + 7, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
 		float u_RussianRoulette	=		GenerateSample(baseB + 8, randomSeedPoint, numSamplesPerFrame, blueNoiseSize);
 
-		bool isSpecular = s_RadiancePayload.Roughness < MIN_ROUGHNESS_DELTA_DISTRIBUTION;
+		bool isSpecular = (s_RadiancePayload.Roughness == 0.0f);
 
 		//Emissive Surface
 		if (dot(s_RadiancePayload.Emission, s_RadiancePayload.Emission) > 0.0f)
@@ -243,7 +240,6 @@ void main()
 		if (!isSpecular) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
 		{
 			vec3 L_d 				= vec3(0.0f);
-			vec3 Scatter_f_div_PDF 	= vec3(0.0f);
 			SampleLights(w_o, worldToLocal, localToWorld, u_Light_Light, u_Light_BRDF, L_d);
 
 			L += throughput * L_d;

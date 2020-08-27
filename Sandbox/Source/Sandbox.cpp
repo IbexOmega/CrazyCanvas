@@ -43,7 +43,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
 constexpr const bool RAY_TRACING_ENABLED		= true;
-constexpr const bool SVGF_ENABLED				= false;
+constexpr const bool SVGF_ENABLED				= true;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
@@ -55,6 +55,13 @@ constexpr const float DEFAULT_DIR_LIGHT_B			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_STRENGTH	= 0.0f;
 
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
+
+enum class EScene
+{
+	SPONZA,
+	CORNELL,
+	TESTING
+};
 
 Sandbox::Sandbox()
     : Game()
@@ -90,149 +97,203 @@ Sandbox::Sandbox()
 	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
 	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
 
+	EScene scene = EScene::TESTING;
+
+	m_pScene->SetDirectionalLight(directionalLight);
+
+	AreaLightObject areaLight;
+	areaLight.Type = EAreaLightType::QUAD;
+	areaLight.Material = GUID_MATERIAL_DEFAULT_EMISSIVE;
+
+	if (scene == EScene::SPONZA)
 	{
-		m_pScene->SetDirectionalLight(directionalLight);
-
-		AreaLightObject areaLight;
-		areaLight.Type		= EAreaLightType::QUAD;
-		areaLight.Material	= GUID_MATERIAL_DEFAULT_EMISSIVE;
-
-		glm::vec3 position(0.0f, 6.0f, 0.0f);
-		glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
-		glm::vec3 scale(1.5f);
-
-		glm::mat4 transform(1.0f);
-		transform = glm::translate(transform, position);
-		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-		transform = glm::scale(transform, scale);
-
-		InstanceIndexAndTransform instanceIndexAndTransform;
-		instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
-		instanceIndexAndTransform.Position		= position;
-		instanceIndexAndTransform.Rotation		= rotation;
-		instanceIndexAndTransform.Scale			= scale;
-
-		m_LightInstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
-	}
-
-	//Scene
-	{
-		std::vector<GameObject>	sceneGameObjects;
-		//ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Ceiling.obj", sceneGameObjects);
-		///ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Light.obj", sceneGameObjects);
-		ResourceManager::LoadSceneFromFile("Testing/Testing.obj", sceneGameObjects);
-		//ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
-		//ResourceManager::LoadSceneFromFile("San_Miguel/san-miguel-low-poly.obj", sceneGameObjects);
-
-		glm::vec3 position(0.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(1.0f);
-		//glm::vec3 scale(0.01f);
-
-		glm::mat4 transform(1.0f);
-		transform = glm::translate(transform, position);
-		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-		transform = glm::scale(transform, scale);
-
-		for (GameObject& gameObject : sceneGameObjects)
+		//Lights
 		{
+			glm::vec3 position(0.0f, 6.0f, 0.0f);
+			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+			glm::vec3 scale(1.5f);
+
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
+
 			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
 			instanceIndexAndTransform.Position		= position;
 			instanceIndexAndTransform.Rotation		= rotation;
 			instanceIndexAndTransform.Scale			= scale;
 
-			m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+			m_LightInstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
 		}
-	}
 
-	//Bunny
-	{
-		/*uint32 bunnyMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/bunny.obj");
-
-		GameObject bunnyGameObject = {};
-		bunnyGameObject.Mesh = bunnyMeshGUID;
-		bunnyGameObject.Material = DEFAULT_MATERIAL;
-
-		m_pScene->AddDynamicGameObject(bunnyGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f)));*/
-	}
-
-	//Gun
-	{
-		//uint32 gunMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/gun.obj");
-
-		//GameObject gunGameObject = {};
-		//gunGameObject.Mesh = gunMeshGUID;
-		//gunGameObject.Material = DEFAULT_MATERIAL;
-
-		//m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
-		//m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.5f, 0.0f)));
-	}
-
-	//Triangle
-	{
-		/*uint32 triangleMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/triangle.obj");
-
-		GameObject triangleGameObject = {};
-		triangleGameObject.Mesh = triangleMeshGUID;
-		triangleGameObject.Material = DEFAULT_MATERIAL;
-
-		glm::vec3 position(1.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, -glm::half_pi<float>());
-		glm::vec3 scale(1.0f);
-
-		glm::mat4 transform(1.0f);
-		transform = glm::translate(transform, position);
-		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-		transform = glm::scale(transform, scale);
-
-		m_pScene->AddDynamicGameObject(triangleGameObject, glm::mat4(1.0f));*/
-	}
-
-	//Sphere Grid
-	{
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
-		
-		uint32 gridRadius = 5;
-
-		for (uint32 y = 0; y < gridRadius; y++)
+		//Scene
 		{
-			float32 roughness = y / float32(gridRadius - 1);
+			std::vector<GameObject>	sceneGameObjects;
+			ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
 
-			for (uint32 x = 0; x < gridRadius; x++)
+			glm::vec3 position(0.0f, 0.0f, 0.0f);
+			glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec3 scale(0.01f);
+
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
+
+			for (GameObject& gameObject : sceneGameObjects)
 			{
-				float32 metallic = x / float32(gridRadius - 1);
-
-				MaterialProperties materialProperties;
-				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-				materialProperties.Roughness	= roughness;
-				materialProperties.Metallic		= metallic;
-
-				GameObject sphereGameObject = {};
-				sphereGameObject.Mesh		= sphereMeshGUID;
-				sphereGameObject.Material	= ResourceManager::LoadMaterialFromMemory(
-					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					materialProperties);
-
-				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 1.0f + y, 5.0f);
-				glm::vec3 scale(1.0f);
-
-				glm::mat4 transform(1.0f);
-				transform = glm::translate(transform, position);
-				transform = glm::scale(transform, scale);
-
 				InstanceIndexAndTransform instanceIndexAndTransform;
-				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(sphereGameObject, transform);
-				instanceIndexAndTransform.Position		= position;
-				instanceIndexAndTransform.Rotation		= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-				instanceIndexAndTransform.Scale			= scale;
+				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+				instanceIndexAndTransform.Position = position;
+				instanceIndexAndTransform.Rotation = rotation;
+				instanceIndexAndTransform.Scale = scale;
 
 				m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+			}
+		}
+	}
+	else if (scene == EScene::CORNELL)
+	{
+		//Lights
+		{
+			glm::vec3 position(0.0f, 1.95f, 0.0f);
+			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+			glm::vec3 scale(0.2f);
+
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
+
+			InstanceIndexAndTransform instanceIndexAndTransform;
+			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
+			instanceIndexAndTransform.Position		= position;
+			instanceIndexAndTransform.Rotation		= rotation;
+			instanceIndexAndTransform.Scale			= scale;
+
+			m_LightInstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+		}
+
+		//Scene
+		{
+			std::vector<GameObject>	sceneGameObjects;
+			ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Light.obj", sceneGameObjects);
+
+			glm::vec3 position(0.0f, 0.0f, 0.0f);
+			glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec3 scale(1.0f);
+
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
+
+			for (GameObject& gameObject : sceneGameObjects)
+			{
+				InstanceIndexAndTransform instanceIndexAndTransform;
+				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+				instanceIndexAndTransform.Position = position;
+				instanceIndexAndTransform.Rotation = rotation;
+				instanceIndexAndTransform.Scale = scale;
+
+				m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+			}
+		}
+	}
+	else if (scene == EScene::TESTING)
+	{
+		//Lights
+		{
+			glm::vec3 position(0.0f, 6.0f, 0.0f);
+			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+			glm::vec3 scale(1.5f);
+
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
+
+			InstanceIndexAndTransform instanceIndexAndTransform;
+			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
+			instanceIndexAndTransform.Position		= position;
+			instanceIndexAndTransform.Rotation		= rotation;
+			instanceIndexAndTransform.Scale			= scale;
+
+			m_LightInstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+		}
+
+		//Scene
+		{
+			std::vector<GameObject>	sceneGameObjects;
+			ResourceManager::LoadSceneFromFile("Testing/Testing.obj", sceneGameObjects);
+
+			glm::vec3 position(0.0f, 0.0f, 0.0f);
+			glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec3 scale(1.0f);
+
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
+
+			for (GameObject& gameObject : sceneGameObjects)
+			{
+				InstanceIndexAndTransform instanceIndexAndTransform;
+				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+				instanceIndexAndTransform.Position = position;
+				instanceIndexAndTransform.Rotation = rotation;
+				instanceIndexAndTransform.Scale = scale;
+
+				m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+			}
+		}
+
+		//Sphere Grid
+		{
+			uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		
+			uint32 gridRadius = 5;
+
+			for (uint32 y = 0; y < gridRadius; y++)
+			{
+				float32 roughness = y / float32(gridRadius - 1);
+
+				for (uint32 x = 0; x < gridRadius; x++)
+				{
+					float32 metallic = x / float32(gridRadius - 1);
+
+					MaterialProperties materialProperties;
+					materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+					materialProperties.Roughness	= roughness;
+					materialProperties.Metallic		= metallic;
+
+					GameObject sphereGameObject = {};
+					sphereGameObject.Mesh		= sphereMeshGUID;
+					sphereGameObject.Material	= ResourceManager::LoadMaterialFromMemory(
+						"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
+						GUID_TEXTURE_DEFAULT_COLOR_MAP,
+						GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+						GUID_TEXTURE_DEFAULT_COLOR_MAP,
+						GUID_TEXTURE_DEFAULT_COLOR_MAP,
+						GUID_TEXTURE_DEFAULT_COLOR_MAP,
+						materialProperties);
+
+					glm::vec3 position(-float32(gridRadius) * 0.5f + x, 1.0f + y, 5.0f);
+					glm::vec3 scale(1.0f);
+
+					glm::mat4 transform(1.0f);
+					transform = glm::translate(transform, position);
+					transform = glm::scale(transform, scale);
+
+					InstanceIndexAndTransform instanceIndexAndTransform;
+					instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(sphereGameObject, transform);
+					instanceIndexAndTransform.Position		= position;
+					instanceIndexAndTransform.Rotation		= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+					instanceIndexAndTransform.Scale			= scale;
+
+					m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+				}
 			}
 		}
 	}
@@ -1009,100 +1070,6 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					}
 
 					ImGui::Image(&emissiveMetallicRoughness, ImVec2(windowWidth, windowWidth / renderAspectRatio));
-
-					ImGui::EndTabItem();
-				}
-
-				if (ImGui::BeginTabItem("Normal Metallic Roughness Emissive"))
-				{
-					normalTexture.ResourceName = "G_BUFFER_NORM_MET_ROUGH";
-
-					const char* items[] = { "ALL", "Normal", "Metallic", "Roughness", "Emissive" };
-					static int currentItem = 0;
-					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
-
-					if (currentItem == 0)
-					{
-						normalTexture.ReservedIncludeMask = 0x00008421;
-
-						normalTexture.ChannelMul[0] = 0.5f;
-						normalTexture.ChannelMul[1] = 0.5f;
-						normalTexture.ChannelMul[2] = 0.5f;
-						normalTexture.ChannelMul[3] = 0.5f;
-
-						normalTexture.ChannelAdd[0] = 0.5f;
-						normalTexture.ChannelAdd[1] = 0.5f;
-						normalTexture.ChannelAdd[2] = 0.5f;
-						normalTexture.ChannelAdd[3] = 0.5f;
-
-						normalTexture.PixelShaderGUID = GUID_NONE;
-					}
-					else if (currentItem == 1)
-					{
-						normalTexture.ReservedIncludeMask = 0x00008420;
-
-						normalTexture.ChannelMul[0] = 1.0f;
-						normalTexture.ChannelMul[1] = 1.0f;
-						normalTexture.ChannelMul[2] = 1.0f;
-						normalTexture.ChannelMul[3] = 0.0f;
-
-						normalTexture.ChannelAdd[0] = 0.0f;
-						normalTexture.ChannelAdd[1] = 0.0f;
-						normalTexture.ChannelAdd[2] = 0.0f;
-						normalTexture.ChannelAdd[3] = 1.0f;
-
-						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderNormalGUID;
-					}
-					else if (currentItem == 2)
-					{
-						normalTexture.ReservedIncludeMask = 0x00002220;
-
-						normalTexture.ChannelMul[0] = 1.0f;
-						normalTexture.ChannelMul[1] = 1.0f;
-						normalTexture.ChannelMul[2] = 1.0f;
-						normalTexture.ChannelMul[3] = 0.0f;
-
-						normalTexture.ChannelAdd[0] = 0.0f;
-						normalTexture.ChannelAdd[1] = 0.0f;
-						normalTexture.ChannelAdd[2] = 0.0f;
-						normalTexture.ChannelAdd[3] = 1.0f;
-
-						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderMetallicGUID;
-					}
-					else if (currentItem == 3)
-					{
-						normalTexture.ReservedIncludeMask = 0x00001110;
-
-						normalTexture.ChannelMul[0] = 1.0f;
-						normalTexture.ChannelMul[1] = 1.0f;
-						normalTexture.ChannelMul[2] = 1.0f;
-						normalTexture.ChannelMul[3] = 0.0f;
-
-						normalTexture.ChannelAdd[0] = 0.0f;
-						normalTexture.ChannelAdd[1] = 0.0f;
-						normalTexture.ChannelAdd[2] = 0.0f;
-						normalTexture.ChannelAdd[3] = 1.0f;
-
-						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderRoughnessGUID;
-					}
-					else if (currentItem == 4)
-					{
-						normalTexture.ReservedIncludeMask = 0x00002220;
-
-						normalTexture.ChannelMul[0] = 1.0f;
-						normalTexture.ChannelMul[1] = 1.0f;
-						normalTexture.ChannelMul[2] = 1.0f;
-						normalTexture.ChannelMul[3] = 0.0f;
-
-						normalTexture.ChannelAdd[0] = 0.0f;
-						normalTexture.ChannelAdd[1] = 0.0f;
-						normalTexture.ChannelAdd[2] = 0.0f;
-						normalTexture.ChannelAdd[3] = 1.0f;
-
-						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderEmissiveGUID;
-					}
-
-					ImGui::Image(&normalTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
 
 					ImGui::EndTabItem();
 				}
@@ -1985,58 +1952,6 @@ bool Sandbox::InitRendererForDeferred()
 
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName								= "PREV_G_BUFFER_ALBEDO_AO";
-			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
-			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-		}
-	}
-
-	{
-		TextureDesc textureDesc	= {};
-		textureDesc.Name					= "Norm-Met-Rough G-Buffer Texture";
-		textureDesc.Type					= ETextureType::TEXTURE_2D;
-		textureDesc.MemoryType				= EMemoryType::MEMORY_GPU;
-		textureDesc.Format					= EFormat::FORMAT_R32G32B32A32_SFLOAT;
-		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-		textureDesc.Width					= CommonApplication::Get()->GetMainWindow()->GetWidth();
-		textureDesc.Height					= CommonApplication::Get()->GetMainWindow()->GetHeight();
-		textureDesc.Depth					= 1;
-		textureDesc.SampleCount				= 1;
-		textureDesc.Miplevels				= 1;
-		textureDesc.ArrayCount				= 1;
-
-		TextureViewDesc textureViewDesc		= { };
-		textureViewDesc.Name				= "Norm-Met-Rough G-Buffer Texture View";
-		textureViewDesc.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		textureViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_2D;
-		textureViewDesc.Miplevel			= 0;
-		textureViewDesc.MiplevelCount		= 1;
-		textureViewDesc.ArrayIndex			= 0;
-		textureViewDesc.ArrayCount			= 1;
-		textureViewDesc.Format				= textureDesc.Format;
-
-		{
-			TextureDesc* pTextureDesc			= &textureDesc;
-			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
-
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName								= "G_BUFFER_NORM_MET_ROUGH";
-			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
-			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-		}
-
-		{
-			textureDesc.Name		= "Prev " + textureDesc.Name;
-			textureViewDesc.Name	= "Prev " + textureDesc.Name;
-
-			TextureDesc* pTextureDesc			= &textureDesc;
-			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
-
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName								= "PREV_G_BUFFER_NORM_MET_ROUGH";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;

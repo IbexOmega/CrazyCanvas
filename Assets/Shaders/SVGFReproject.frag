@@ -35,11 +35,11 @@ layout(location = 3) out float	out_History;
 bool isReprojectionValid(ivec2 iImageDim, ivec2 coord, float Z, float Zprev, float fwidthZ, vec3 localNormal, vec3 prevLocalNormal, float fwidthNormal)
 {
     // check whether reprojected pixel is inside of the screen
-    if(any(lessThan(coord, ivec2(1, 1))) || any(greaterThan(coord, iImageDim - ivec2(1, 1)))) return false;
+    if(any(lessThan(coord, ivec2(0, 0))) || any(greaterThan(coord, iImageDim - ivec2(1, 1)))) return false;
     // check if deviation of depths is acceptable
-    if(abs(Zprev - Z) / (fwidthZ + 1e-4) > 2.0f) return false;
+    if((abs(Zprev - Z) / (fwidthZ + 1e-4f)) > 2.0f) return false;
     // check normals for compatibility
-    if(distance(localNormal, prevLocalNormal) / (fwidthNormal + 1e-2) > 16.0f) return false;
+    if((distance(localNormal, prevLocalNormal) / (fwidthNormal + 1e-2)) > 16.0f) return false;
 
     return true;
 }
@@ -85,7 +85,7 @@ SHistoryData LoadHistoryData()
         vec3 prevDepth = uintBitsToFloat(sampledPrevDepth.xyz);
         vec3 prevLocalNormal = octToDir(sampledPrevDepth.w);
 
-        v[sampleIndex] = isReprojectionValid(iImageDim, iPosPrev, depth.z, prevDepth.x, depth.y, localNormal, prevLocalNormal, motion.w);
+        v[sampleIndex] = isReprojectionValid(iImageDim, loc, depth.z, prevDepth.x, depth.y, localNormal, prevLocalNormal, motion.w);
         historyData.Valid = historyData.Valid || v[sampleIndex];
     }
 
@@ -107,20 +107,28 @@ SHistoryData LoadHistoryData()
             ivec2 loc = ivec2(posPrev) + offset[sampleIndex];            
             if (v[sampleIndex])
             {
-                historyData.PrevDirect      += w[sampleIndex] * texelFetch(u_PrevDirectRadiance, loc, 0);
-                historyData.PrevIndirect    += w[sampleIndex] * texelFetch(u_PrevIndirectRadiance, loc, 0);
-                historyData.PrevMoments     += w[sampleIndex] * texelFetch(u_PrevMoments, loc, 0);
+                vec4 prevDirect     = texelFetch(u_PrevDirectRadiance, loc, 0);
+                vec4 prevIndirect   = texelFetch(u_PrevIndirectRadiance, loc, 0);
+                vec4 prevMoments    = texelFetch(u_PrevMoments, loc, 0);
+
+                //historyData.PrevDirect      += w[sampleIndex] * (any(isnan(prevDirect)) ? vec4(1.0f) : prevDirect);
+                //historyData.PrevIndirect    += w[sampleIndex] * (any(isnan(prevIndirect)) ? vec4(1.0f) : prevIndirect);
+                //historyData.PrevMoments     += w[sampleIndex] * (any(isnan(prevMoments)) ? vec4(1.0f) : prevMoments);
+                historyData.PrevDirect      += w[sampleIndex] * prevDirect;
+                historyData.PrevIndirect    += w[sampleIndex] * prevIndirect;
+                historyData.PrevMoments     += w[sampleIndex] * prevMoments;
                 sum_w                       += w[sampleIndex];
             }
         }
 
         // redistribute weights in case not all taps were used
-		historyData.Valid = (sum_w >= 0.01f);
-		historyData.PrevDirect   = historyData.Valid ?  historyData.PrevDirect     / sum_w : vec4(0.0f);
-		historyData.PrevIndirect = historyData.Valid ?  historyData.PrevIndirect   / sum_w : vec4(0.0f);
-		historyData.PrevMoments  = historyData.Valid ?  historyData.PrevMoments    / sum_w : vec4(0.0f);               
+		historyData.Valid           = (sum_w >= 0.01f);
+		historyData.PrevDirect      = historyData.Valid ?  (historyData.PrevDirect     / sum_w) : vec4(0.0f);
+		historyData.PrevIndirect    = historyData.Valid ?  (historyData.PrevIndirect   / sum_w) : vec4(0.0f);
+		historyData.PrevMoments     = historyData.Valid ?  (historyData.PrevMoments    / sum_w) : vec4(0.0f);               
     }
-    else  // perform cross-bilateral filter in the hope to find some suitable samples somewhere
+    
+    if (!historyData.Valid)  // perform cross-bilateral filter in the hope to find some suitable samples somewhere
     {
         float count = 0.0f;
 
@@ -135,7 +143,7 @@ SHistoryData LoadHistoryData()
                 vec3 depthFilter = uintBitsToFloat(sampledDepthFilter.xyz);
 				vec3 localNormalFilter = octToDir(sampledDepthFilter.w);
 
-                if (isReprojectionValid(iImageDim, iPosPrev, depth.z, depthFilter.x, depth.y, localNormal, localNormalFilter, motion.w))
+                if (isReprojectionValid(iImageDim, p, depth.z, depthFilter.x, depth.y, localNormal, localNormalFilter, motion.w))
                 {
 					historyData.PrevDirect   += texelFetch(u_PrevDirectRadiance, p, 0);
                     historyData.PrevIndirect += texelFetch(u_PrevIndirectRadiance, p, 0);
@@ -179,6 +187,9 @@ void main()
     vec3 direct         = texelFetch(u_DirectRadiance,   iPos, 0).rgb;
     vec3 indirect       = texelFetch(u_IndirectRadiance, iPos, 0).rgb;
 
+    //direct      = any(isnan(direct))                 ? vec3(1.0f) : direct;
+    //indirect    = any(isnan(indirect))               ? vec3(1.0f) : indirect;
+
     SHistoryData historyData = LoadHistoryData();
     historyData.HistoryLength = min(32.0f, historyData.Valid ? historyData.HistoryLength + 1.0f : 1.0f);
 
@@ -191,8 +202,8 @@ void main()
     vec4 moments;
     moments.r = luminance(direct);
     moments.b = luminance(indirect);
-    moments.g = moments.r * moments.r;
-    moments.a = moments.b * moments.b;
+    moments.g = moments.r;
+    moments.a = moments.b;
 
     // temporal integration of the moments
     moments = mix(historyData.PrevMoments, moments, alphaMoments);
@@ -201,8 +212,16 @@ void main()
 
     // temporal integration of direct and indirect illumination
     // variance is propagated through the alpha channel
-    out_Direct      = vec4(mix(historyData.PrevDirect.rgb,      direct,   alpha), variance.r);
-    out_Indirect    = vec4(mix(historyData.PrevIndirect.rgb,    indirect, alpha), variance.g);
+    vec4 outDirect      = vec4(mix(historyData.PrevDirect.rgb,      direct,   alpha), variance.r);
+    vec4 outIndirect    = vec4(mix(historyData.PrevIndirect.rgb,    indirect, alpha), variance.g);
+
+    //out_Direct      = any(isnan(outDirect))                 ? vec4(1.0f) : outDirect;
+    //out_Indirect    = any(isnan(outIndirect))               ? vec4(1.0f) : outIndirect;
+    //out_History     = isnan(historyData.HistoryLength)      ? 1.0f : historyData.HistoryLength;
+    //out_Moments     = any(isnan(moments))                   ? vec4(1.0f) : moments;
+
+    out_Direct      = outDirect;
+    out_Indirect    = outIndirect;
     out_History     = historyData.HistoryLength;
     out_Moments     = moments;
 }

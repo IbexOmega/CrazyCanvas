@@ -154,7 +154,7 @@
             "texture_format": 7
         },
         {
-            "name": "G_BUFFER_NORM_MET_ROUGH",
+            "name": "G_BUFFER_EMISSION_METALLIC_ROUGHNESS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
@@ -197,33 +197,6 @@
             "is_of_array_type": false,
             "editable": true,
             "texture_format": 7
-        },
-        {
-            "name": "PREV_G_BUFFER_ALBEDO_AO",
-            "type": "TEXTURE",
-            "back_buffer_bound": false,
-            "sub_resource_count": 1,
-            "is_of_array_type": false,
-            "editable": true,
-            "texture_format": 7
-        },
-        {
-            "name": "PREV_G_BUFFER_NORM_MET_ROUGH",
-            "type": "TEXTURE",
-            "back_buffer_bound": false,
-            "sub_resource_count": 1,
-            "is_of_array_type": false,
-            "editable": true,
-            "texture_format": 7
-        },
-        {
-            "name": "PREV_G_BUFFER_DEPTH_STENCIL",
-            "type": "TEXTURE",
-            "back_buffer_bound": false,
-            "sub_resource_count": 1,
-            "is_of_array_type": false,
-            "editable": true,
-            "texture_format": 5
         },
         {
             "name": "G_BUFFER_MOTION",
@@ -404,6 +377,15 @@
             "is_of_array_type": false,
             "editable": true,
             "texture_format": 7
+        },
+        {
+            "name": "G_BUFFER_COMPACT_NORMALS",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "is_of_array_type": false,
+            "editable": true,
+            "texture_format": 0
         }
     ],
     "resource_state_groups": [
@@ -606,33 +588,6 @@
             "input_node_index": 2,
             "output_node_index": 3,
             "resource_states": [
-                {
-                    "name": "PREV_G_BUFFER_ALBEDO_AO",
-                    "render_stage_name": "TEMPORAL_RESOURCES",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 142,
-                    "input_link_index": 44,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "PREV_G_BUFFER_NORM_MET_ROUGH",
-                    "render_stage_name": "TEMPORAL_RESOURCES",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 144,
-                    "input_link_index": 45,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "PREV_G_BUFFER_DEPTH_STENCIL",
-                    "render_stage_name": "TEMPORAL_RESOURCES",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 146,
-                    "input_link_index": 46,
-                    "output_link_indices": []
-                },
                 {
                     "name": "DIRECT_RADIANCE_FEEDBACK",
                     "render_stage_name": "TEMPORAL_RESOURCES",
@@ -865,19 +820,28 @@
                     "attribute_index": 60,
                     "input_link_index": -1,
                     "output_link_indices": [
-                        15,
                         26
                     ]
                 },
                 {
-                    "name": "G_BUFFER_NORM_MET_ROUGH",
+                    "name": "G_BUFFER_COMPACT_NORMALS",
+                    "render_stage_name": "GEOMETRY",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 366,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        118
+                    ]
+                },
+                {
+                    "name": "G_BUFFER_EMISSION_METALLIC_ROUGHNESS",
                     "render_stage_name": "GEOMETRY",
                     "removable": true,
                     "binding_type": "ATTACHMENT",
                     "attribute_index": 62,
                     "input_link_index": -1,
                     "output_link_indices": [
-                        16,
                         27
                     ]
                 },
@@ -927,8 +891,142 @@
                     "attribute_index": 64,
                     "input_link_index": -1,
                     "output_link_indices": [
-                        17,
                         28
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "SVGF_OUTPUT",
+            "node_index": 5,
+            "input_attribute_index": 66,
+            "type": "GRAPHICS",
+            "custom_renderer": false,
+            "x_dim_type": "RELATIVE",
+            "y_dim_type": "RELATIVE",
+            "z_dim_type": "NONE",
+            "x_dim_var": 1.0,
+            "y_dim_var": 1.0,
+            "z_dim_var": 0.0,
+            "draw_params": {
+                "draw_type": "FULLSCREEN_QUAD",
+                "index_buffer": {
+                    "name": "",
+                    "render_stage_name": "SVGF_OUTPUT",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 68,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                },
+                "indirect_args_buffer": {
+                    "name": "",
+                    "render_stage_name": "SVGF_OUTPUT",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 70,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                }
+            },
+            "depth_test_enabled": false,
+            "shaders": {
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "FullscreenQuad.vert",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": "SVGFOutput.frag"
+            },
+            "resource_states": [
+                {
+                    "name": "G_BUFFER_LINEAR_Z",
+                    "render_stage_name": "SVGF_OUTPUT",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 216,
+                    "input_link_index": 68,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "DIRECT_RADIANCE_ATROUS_PONG",
+                    "render_stage_name": "SVGF_OUTPUT",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 354,
+                    "input_link_index": 113,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "INDIRECT_RADIANCE_ATROUS_PONG",
+                    "render_stage_name": "SVGF_OUTPUT",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 356,
+                    "input_link_index": 114,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SVGF_HISTORY",
+                    "render_stage_name": "SVGF_OUTPUT",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 240,
+                    "input_link_index": 78,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "MOMENTS",
+                    "render_stage_name": "SVGF_OUTPUT",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 192,
+                    "input_link_index": 60,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "BACK_BUFFER_TEXTURE",
+                    "render_stage_name": "SVGF_OUTPUT",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 120,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        35
+                    ]
+                },
+                {
+                    "name": "PREV_G_BUFFER_LINEAR_Z",
+                    "render_stage_name": "SVGF_OUTPUT",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 214,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        67
+                    ]
+                },
+                {
+                    "name": "PREV_SVGF_HISTORY",
+                    "render_stage_name": "SVGF_OUTPUT",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 224,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        79
+                    ]
+                },
+                {
+                    "name": "PREV_MOMENTS",
+                    "render_stage_name": "SVGF_OUTPUT",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 194,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        59
                     ]
                 }
             ]
@@ -1033,201 +1131,6 @@
                     "input_link_index": -1,
                     "output_link_indices": [
                         95
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "SVGF_OUTPUT",
-            "node_index": 5,
-            "input_attribute_index": 66,
-            "type": "GRAPHICS",
-            "custom_renderer": false,
-            "x_dim_type": "RELATIVE",
-            "y_dim_type": "RELATIVE",
-            "z_dim_type": "NONE",
-            "x_dim_var": 1.0,
-            "y_dim_var": 1.0,
-            "z_dim_var": 0.0,
-            "draw_params": {
-                "draw_type": "FULLSCREEN_QUAD",
-                "index_buffer": {
-                    "name": "",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "DRAW_RESOURCE",
-                    "attribute_index": 68,
-                    "input_link_index": -1,
-                    "output_link_indices": []
-                },
-                "indirect_args_buffer": {
-                    "name": "",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "DRAW_RESOURCE",
-                    "attribute_index": 70,
-                    "input_link_index": -1,
-                    "output_link_indices": []
-                }
-            },
-            "depth_test_enabled": false,
-            "shaders": {
-                "task_shader": "",
-                "mesh_shader": "",
-                "vertex_shader": "FullscreenQuad.vert",
-                "geometry_shader": "",
-                "hull_shader": "",
-                "domain_shader": "",
-                "pixel_shader": "SVGFOutput.frag"
-            },
-            "resource_states": [
-                {
-                    "name": "G_BUFFER_ALBEDO_AO",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 76,
-                    "input_link_index": 15,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "G_BUFFER_NORM_MET_ROUGH",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 78,
-                    "input_link_index": 16,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "G_BUFFER_DEPTH_STENCIL",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 80,
-                    "input_link_index": 17,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "G_BUFFER_LINEAR_Z",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 216,
-                    "input_link_index": 68,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "DIRECT_RADIANCE_ATROUS_PONG",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 354,
-                    "input_link_index": 113,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "INDIRECT_RADIANCE_ATROUS_PONG",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 356,
-                    "input_link_index": 114,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "SVGF_HISTORY",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 240,
-                    "input_link_index": 78,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "MOMENTS",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 192,
-                    "input_link_index": 60,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "BACK_BUFFER_TEXTURE",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 120,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        35
-                    ]
-                },
-                {
-                    "name": "PREV_G_BUFFER_ALBEDO_AO",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 148,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        44
-                    ]
-                },
-                {
-                    "name": "PREV_G_BUFFER_NORM_MET_ROUGH",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 150,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        45
-                    ]
-                },
-                {
-                    "name": "PREV_G_BUFFER_LINEAR_Z",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 214,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        67
-                    ]
-                },
-                {
-                    "name": "PREV_G_BUFFER_DEPTH_STENCIL",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 152,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        46
-                    ]
-                },
-                {
-                    "name": "PREV_SVGF_HISTORY",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 224,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        79
-                    ]
-                },
-                {
-                    "name": "PREV_MOMENTS",
-                    "render_stage_name": "SVGF_OUTPUT",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 194,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        59
                     ]
                 }
             ]
@@ -1338,7 +1241,16 @@
                     "output_link_indices": []
                 },
                 {
-                    "name": "G_BUFFER_NORM_MET_ROUGH",
+                    "name": "G_BUFFER_COMPACT_NORMALS",
+                    "render_stage_name": "RAY_TRACING",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 364,
+                    "input_link_index": 118,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "G_BUFFER_EMISSION_METALLIC_ROUGHNESS",
                     "render_stage_name": "RAY_TRACING",
                     "removable": true,
                     "binding_type": "COMBINED_SAMPLER",
@@ -1633,6 +1545,112 @@
             ]
         },
         {
+            "name": "SVGF_ATROUS_1",
+            "node_index": 10,
+            "input_attribute_index": 288,
+            "type": "GRAPHICS",
+            "custom_renderer": false,
+            "x_dim_type": "RELATIVE",
+            "y_dim_type": "RELATIVE",
+            "z_dim_type": "CONSTANT",
+            "x_dim_var": 1.0,
+            "y_dim_var": 1.0,
+            "z_dim_var": 0.0,
+            "draw_params": {
+                "draw_type": "FULLSCREEN_QUAD",
+                "index_buffer": {
+                    "name": "",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 290,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                },
+                "indirect_args_buffer": {
+                    "name": "",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 292,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                }
+            },
+            "depth_test_enabled": false,
+            "shaders": {
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "FullscreenQuad.vert",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": "SVGFAtrous1.frag"
+            },
+            "resource_states": [
+                {
+                    "name": "DIRECT_RADIANCE_ATROUS_PING",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 294,
+                    "input_link_index": 94,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "INDIRECT_RADIANCE_ATROUS_PING",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 296,
+                    "input_link_index": 95,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "G_BUFFER_COMPACT_NORM_DEPTH",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 298,
+                    "input_link_index": 96,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SVGF_HISTORY",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 300,
+                    "input_link_index": 97,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "DIRECT_RADIANCE_FEEDBACK",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 310,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        102,
+                        103
+                    ]
+                },
+                {
+                    "name": "INDIRECT_RADIANCE_FEEDBACK",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 312,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        101,
+                        104
+                    ]
+                }
+            ]
+        },
+        {
             "name": "SVGF_VARIANCE_ESTIMATE",
             "node_index": 8,
             "input_attribute_index": 228,
@@ -1741,112 +1759,6 @@
                     "input_link_index": -1,
                     "output_link_indices": [
                         89
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "SVGF_ATROUS_1",
-            "node_index": 10,
-            "input_attribute_index": 288,
-            "type": "GRAPHICS",
-            "custom_renderer": false,
-            "x_dim_type": "RELATIVE",
-            "y_dim_type": "RELATIVE",
-            "z_dim_type": "CONSTANT",
-            "x_dim_var": 1.0,
-            "y_dim_var": 1.0,
-            "z_dim_var": 0.0,
-            "draw_params": {
-                "draw_type": "FULLSCREEN_QUAD",
-                "index_buffer": {
-                    "name": "",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "DRAW_RESOURCE",
-                    "attribute_index": 290,
-                    "input_link_index": -1,
-                    "output_link_indices": []
-                },
-                "indirect_args_buffer": {
-                    "name": "",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "DRAW_RESOURCE",
-                    "attribute_index": 292,
-                    "input_link_index": -1,
-                    "output_link_indices": []
-                }
-            },
-            "depth_test_enabled": false,
-            "shaders": {
-                "task_shader": "",
-                "mesh_shader": "",
-                "vertex_shader": "FullscreenQuad.vert",
-                "geometry_shader": "",
-                "hull_shader": "",
-                "domain_shader": "",
-                "pixel_shader": "SVGFAtrous1.frag"
-            },
-            "resource_states": [
-                {
-                    "name": "DIRECT_RADIANCE_ATROUS_PING",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 294,
-                    "input_link_index": 94,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "INDIRECT_RADIANCE_ATROUS_PING",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 296,
-                    "input_link_index": 95,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "G_BUFFER_COMPACT_NORM_DEPTH",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 298,
-                    "input_link_index": 96,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "SVGF_HISTORY",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 300,
-                    "input_link_index": 97,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "DIRECT_RADIANCE_FEEDBACK",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 310,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        102,
-                        103
-                    ]
-                },
-                {
-                    "name": "INDIRECT_RADIANCE_FEEDBACK",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 312,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        101,
-                        104
                     ]
                 }
             ]
@@ -2120,14 +2032,14 @@
             "dst_attribute_index": 206
         },
         {
-            "link_index": 4,
-            "src_attribute_index": 7,
-            "dst_attribute_index": 46
-        },
-        {
             "link_index": 68,
             "src_attribute_index": 209,
             "dst_attribute_index": 216
+        },
+        {
+            "link_index": 4,
+            "src_attribute_index": 7,
+            "dst_attribute_index": 46
         },
         {
             "link_index": 5,
@@ -2170,24 +2082,9 @@
             "dst_attribute_index": 36
         },
         {
-            "link_index": 15,
-            "src_attribute_index": 61,
-            "dst_attribute_index": 76
-        },
-        {
             "link_index": 79,
             "src_attribute_index": 225,
             "dst_attribute_index": 220
-        },
-        {
-            "link_index": 16,
-            "src_attribute_index": 63,
-            "dst_attribute_index": 78
-        },
-        {
-            "link_index": 17,
-            "src_attribute_index": 65,
-            "dst_attribute_index": 80
         },
         {
             "link_index": 81,
@@ -2195,19 +2092,14 @@
             "dst_attribute_index": 244
         },
         {
-            "link_index": 19,
-            "src_attribute_index": 21,
-            "dst_attribute_index": 86
-        },
-        {
             "link_index": 83,
             "src_attribute_index": 183,
             "dst_attribute_index": 248
         },
         {
-            "link_index": 20,
-            "src_attribute_index": 13,
-            "dst_attribute_index": 88
+            "link_index": 19,
+            "src_attribute_index": 21,
+            "dst_attribute_index": 86
         },
         {
             "link_index": 84,
@@ -2215,14 +2107,19 @@
             "dst_attribute_index": 250
         },
         {
-            "link_index": 21,
-            "src_attribute_index": 15,
-            "dst_attribute_index": 90
+            "link_index": 20,
+            "src_attribute_index": 13,
+            "dst_attribute_index": 88
         },
         {
             "link_index": 85,
             "src_attribute_index": 227,
             "dst_attribute_index": 252
+        },
+        {
+            "link_index": 21,
+            "src_attribute_index": 15,
+            "dst_attribute_index": 90
         },
         {
             "link_index": 22,
@@ -2240,19 +2137,14 @@
             "dst_attribute_index": 96
         },
         {
-            "link_index": 25,
-            "src_attribute_index": 7,
-            "dst_attribute_index": 98
-        },
-        {
             "link_index": 89,
             "src_attribute_index": 257,
             "dst_attribute_index": 274
         },
         {
-            "link_index": 90,
-            "src_attribute_index": 227,
-            "dst_attribute_index": 276
+            "link_index": 25,
+            "src_attribute_index": 7,
+            "dst_attribute_index": 98
         },
         {
             "link_index": 26,
@@ -2260,14 +2152,19 @@
             "dst_attribute_index": 100
         },
         {
-            "link_index": 91,
-            "src_attribute_index": 239,
-            "dst_attribute_index": 278
+            "link_index": 90,
+            "src_attribute_index": 227,
+            "dst_attribute_index": 276
         },
         {
             "link_index": 27,
             "src_attribute_index": 63,
             "dst_attribute_index": 102
+        },
+        {
+            "link_index": 91,
+            "src_attribute_index": 239,
+            "dst_attribute_index": 278
         },
         {
             "link_index": 28,
@@ -2280,19 +2177,14 @@
             "dst_attribute_index": 106
         },
         {
-            "link_index": 94,
-            "src_attribute_index": 285,
-            "dst_attribute_index": 294
-        },
-        {
             "link_index": 30,
             "src_attribute_index": 25,
             "dst_attribute_index": 108
         },
         {
-            "link_index": 95,
-            "src_attribute_index": 287,
-            "dst_attribute_index": 296
+            "link_index": 94,
+            "src_attribute_index": 285,
+            "dst_attribute_index": 294
         },
         {
             "link_index": 31,
@@ -2300,14 +2192,19 @@
             "dst_attribute_index": 110
         },
         {
-            "link_index": 32,
-            "src_attribute_index": 31,
-            "dst_attribute_index": 112
+            "link_index": 95,
+            "src_attribute_index": 287,
+            "dst_attribute_index": 296
         },
         {
             "link_index": 96,
             "src_attribute_index": 227,
             "dst_attribute_index": 298
+        },
+        {
+            "link_index": 32,
+            "src_attribute_index": 31,
+            "dst_attribute_index": 112
         },
         {
             "link_index": 33,
@@ -2328,21 +2225,6 @@
             "link_index": 38,
             "src_attribute_index": 127,
             "dst_attribute_index": 128
-        },
-        {
-            "link_index": 44,
-            "src_attribute_index": 149,
-            "dst_attribute_index": 142
-        },
-        {
-            "link_index": 45,
-            "src_attribute_index": 151,
-            "dst_attribute_index": 144
-        },
-        {
-            "link_index": 46,
-            "src_attribute_index": 153,
-            "dst_attribute_index": 146
         },
         {
             "link_index": 49,
@@ -2478,6 +2360,11 @@
             "link_index": 117,
             "src_attribute_index": 255,
             "dst_attribute_index": 362
+        },
+        {
+            "link_index": 118,
+            "src_attribute_index": 367,
+            "dst_attribute_index": 364
         }
     ]
 }

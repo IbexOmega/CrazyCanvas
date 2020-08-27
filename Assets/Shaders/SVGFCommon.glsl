@@ -18,7 +18,7 @@ vec2 computeWeight(
 	float luminanceIndirectCenter, float luminanceIndirectP, float phiIndirect)
 {
 	const float wNormal    = normalDistanceCos(normalCenter, normalP, normPower);
-	const float wZ         = (phiDepth == 0) ? 0.0f : abs(depthCenter - depthP) / phiDepth;
+	const float wZ         = (phiDepth == 0.0f) ? 0.0f : abs(depthCenter - depthP) / phiDepth;
 	const float wLdirect   = abs(luminanceDirectCenter - luminanceDirectP) / phiDirect;
 	const float wLindirect = abs(luminanceIndirectCenter - luminanceIndirectP) / phiIndirect;
 

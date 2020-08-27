@@ -10,24 +10,29 @@
 layout(location = 0) rayPayloadEXT SRadiancePayload s_RadiancePayload;
 layout(location = 1) rayPayloadEXT SShadowPayload 	s_ShadowPayload;
 
-void SampleLights(vec3 w_o, mat3 worldToLocal, inout vec3 L_d, inout vec3 Scatter_f_div_PDF, vec2 u)
+void SampleLights(vec3 w_o, mat3 worldToLocal, mat3 localToWorld, vec2 u_Light_Light, vec3 u_Light_BRDF, inout vec3 L_d, inout vec3 f, inout vec3 diffuse_f)
 {
-	float directionalLuminance 	= luminance(u_LightsBuffer.val.DirL_EmittedRadiance.rgb);
-	float diskLightLuminance 	= luminance(u_LightsBuffer.val.DiskL_EmittedRadiance.rgb);
-	float probToSampleDirLight 	= directionalLuminance / (directionalLuminance + diskLightLuminance);
+	const float DirLightOn		= step(EPSILON, luminance(u_LightsBuffer.val.DirL_EmittedRadiance.rgb));
+	const float N_Lights 	    = DirLightOn + float(u_LightsBuffer.val.AreaLightCount);
+    const float N_Lights_PDF    = 1.0f / N_Lights;
+	float chosenLightFloat		= floor(u_Light_Light.x * N_Lights) + (1.0f - DirLightOn);
+	uint  chosenLight			= uint(chosenLightFloat);
 
 	//Directional Light
-	if (u.x < probToSampleDirLight)
+	if (chosenLight == 0)
 	{
-		SLightSample dirLightSample = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
+		//We dont need to stretch u here since Directional Light sampling isn't stochastic
 
-		if (dirLightSample.Scatter_PDF > 0.0f && dot(dirLightSample.L_d, dirLightSample.L_d) > 0.0f)
+		SLightSample dirLightEval	= EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
+		diffuse_f					+= dirLightEval.Scatter_Diffuse_f;
+
+		if (dot(dirLightEval.Scatter_f, dirLightEval.Scatter_f) > 0.0f && dirLightEval.Scatter_PDF > 0.0f && dot(dirLightEval.L_i, dirLightEval.L_i) > 0.0f)
 		{
 			//Define Shadow Ray Parameters
-			const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
-			const vec3 		direction			= dirLightSample.SampleWorldDir;
+			const vec3 		origin 				= s_RadiancePayload.HitPosition + s_RadiancePayload.GeometricNormal * RAY_NORMAL_OFFSET;
+			const vec3 		direction			= dirLightEval.SampleWorldDir;
 			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
-			const uint 		cullMask           	= 0xFF;
+			const uint 		cullMask           	= ~HIT_MASK_LIGHT; //Lights should not occlude Area Lights
 			const uint 		sbtRecordOffset    	= 1;
 			const uint 		sbtRecordStride    	= 0;
 			const uint 		missIndex          	= 1;
@@ -40,42 +45,81 @@ void SampleLights(vec3 w_o, mat3 worldToLocal, inout vec3 L_d, inout vec3 Scatte
 
 			float shadow 		= step(s_ShadowPayload.Distance, Tmin);
 
-			Scatter_f_div_PDF 	= probToSampleDirLight * dirLightSample.Scatter_f / dirLightSample.Scatter_PDF;
-			L_d 				= shadow * dirLightSample.L_d;
+            float cosTheta 		= abs(dot(dirLightEval.SampleWorldDir, s_RadiancePayload.ShadingNormal));
+			L_d 				+= shadow * dirLightEval.L_i * cosTheta;   //We do not use Scatter_PDF here since this is a delta distribution light		
+			f					+= dirLightEval.Scatter_f / (dirLightEval.Light_PDF * N_Lights_PDF);
 		}
 	}
 	else
 	{
-		u.x = (u.x - probToSampleDirLight) / (1.0f - probToSampleDirLight); //Stretch u 
+		uint chosenAreaLight = chosenLight - 1;
+		u_Light_Light.x = (u_Light_Light.x - ((chosenAreaLight + DirLightOn) / N_Lights)) / N_Lights_PDF; //Stretch u 
 
-		SLightSample diskLightSample = EvalDiskLightRadiance(w_o, s_RadiancePayload.ScatterPosition, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal, u);
+		SLightSample areaLightSample 	= SampleAreaLightRadiance(w_o, chosenAreaLight, s_RadiancePayload.HitPosition, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal, u_Light_Light);
+		diffuse_f						+= areaLightSample.Scatter_Diffuse_f / 2.0f;
 
-		if (diskLightSample.Scatter_PDF > 0.0f && dot(diskLightSample.L_d, diskLightSample.L_d) > 0.0f)
+		//Sample Light with MIS
+		if (areaLightSample.Scatter_PDF > 0.0f && dot(areaLightSample.L_i, areaLightSample.L_i) > 0.0f)
 		{
 			float shadow = 1.0f;
 
-			if (diskLightSample.DistanceToSamplePoint > 0.0f)
+			if (dot(areaLightSample.Scatter_f, areaLightSample.Scatter_f) > 0.0f && areaLightSample.DistanceToSamplePoint > 0.0f)
 			{
 				//Define Shadow Ray Parameters
-				const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
-				const vec3 		direction			= diskLightSample.SampleWorldDir;
+				const vec3 		origin 				= s_RadiancePayload.HitPosition + s_RadiancePayload.GeometricNormal * RAY_NORMAL_OFFSET;
+				const vec3 		direction			= areaLightSample.SampleWorldDir;
 				const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
 				const uint 		cullMask           	= 0xFF;
 				const uint 		sbtRecordOffset    	= 1;
 				const uint 		sbtRecordStride    	= 0;
 				const uint 		missIndex          	= 1;
 				const float 	Tmin              	= 0.001f;
-				const float 	Tmax              	= diskLightSample.DistanceToSamplePoint;
+				const float 	Tmax              	= 10000.0f;
 				const int 		payload       		= 1;
 
 				//Send Shadow Ray
 				traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
 
-				shadow 		= step(s_ShadowPayload.Distance, Tmin);
+				shadow 			= float(s_ShadowPayload.InstanceIndex == areaLightSample.InstanceIndex);
 			}
 
-			Scatter_f_div_PDF 	= (1.0f - probToSampleDirLight) * diskLightSample.Scatter_f / diskLightSample.Scatter_PDF;
-			L_d 				= shadow * diskLightSample.L_d;
+            float cosTheta 		= abs(dot(areaLightSample.SampleWorldDir, s_RadiancePayload.ShadingNormal));
+            float weight_MIS    = PowerHeuristicWithPDF(1.0f, areaLightSample.Light_PDF, 1.0f, areaLightSample.Scatter_PDF);
+			L_d 				+= shadow * areaLightSample.L_i * cosTheta;
+			f					+= areaLightSample.Scatter_f * weight_MIS / N_Lights_PDF;
+		}
+
+		//Sample BRDF with MIS
+		{
+			SReflection reflection 	= Sample_f(w_o, s_RadiancePayload.Albedo,  s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, u_Light_BRDF);
+			vec3 reflectionDir 		= localToWorld * reflection.w_i;
+			diffuse_f				+= reflection.Diffuse_f / 2.0f;
+
+			//Importance Sampling the BRDF has a tendency to cause an overflow because of small PDFs, we therefore check if its larger than Epsilon > 0
+			if (dot(reflection.f, reflection.f) > 0.0f && reflection.PDF > 0.0001f)
+			{
+				//Define Shadow Ray Parameters
+				const vec3 		origin 				= s_RadiancePayload.HitPosition + s_RadiancePayload.GeometricNormal * RAY_NORMAL_OFFSET;
+				const vec3 		direction			= reflectionDir;
+				const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+				const uint 		cullMask           	= 0xFF;
+				const uint 		sbtRecordOffset    	= 1;
+				const uint 		sbtRecordStride    	= 0;
+				const uint 		missIndex          	= 1;
+				const float 	Tmin              	= 0.001f;
+				const float 	Tmax              	= 10000.0f;
+				const int 		payload       		= 1;
+
+				//Send Shadow Ray
+				traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+
+				float shadow 		= float(s_ShadowPayload.InstanceIndex == areaLightSample.InstanceIndex);
+
+				float cosTheta 		= abs(dot(reflectionDir, s_RadiancePayload.ShadingNormal));
+            	float weight_MIS    = PowerHeuristicWithPDF(1.0f, reflection.PDF, 1.0f, areaLightSample.Light_PDF); //Here we assume that the Light_PDF is constant, otherwise we would need to reevaluate the Light_PDF with reflection.w_i as the direction
+				L_d 				+= shadow * areaLightSample.L_i * cosTheta;  //Here we assume that the Light L_i is constant, otherwise we would need to reevaluate the L_i with reflection.w_i as the direction
+				f					+= reflection.f * weight_MIS / N_Lights_PDF;
+			}
 		}
 	}
 }
@@ -88,11 +132,11 @@ void main()
 	vec2 screenTexCoord = (pixelCenter / vec2(gl_LaunchSizeEXT.xy));
 	vec2 d = screenTexCoord * 2.0 - 1.0;
 
-	//Sample GBuffer
-	vec4 sampledNormalMetallicRoughness = texture(u_NormalMetallicRoughness, screenTexCoord);
+		//Sample GBuffer
+	float sampledDepth      		        = texture(u_DepthStencil, screenTexCoord).r;
 
     //Skybox
-	if (dot(sampledNormalMetallicRoughness, sampledNormalMetallicRoughness) < EPSILON)
+	if (sampledDepth == 1.0f)
 	{
 		imageStore(u_DirectRadiance, 	pixelCoords, vec4(0.529f, 0.808, 0.922f, 	1.0f));
 		imageStore(u_IndirectRadiance, 	pixelCoords, vec4(0.0f, 0.0f, 0.0f, 1.0f));
@@ -101,38 +145,41 @@ void main()
 		return;
 	}
 
-	SLightsBuffer lightsBuffer			= u_LightsBuffer.val;
     SPerFrameBuffer perFrameBuffer   	= u_PerFrameBuffer.val;
 
 	//Sample GBuffer
-	vec4 sampledAlbedoAO    		= texture(u_AlbedoAO, screenTexCoord);
-	float sampledDepth      		= texture(u_DepthStencil, screenTexCoord).r;
-	//vec4 sampledDirectRadiance 		= imageLoad(u_DirectRadiance, pixelCoords);
-	//vec4 sampledIndirectRadiance 	= imageLoad(u_IndirectRadiance, pixelCoords);
+	vec4 sampledAlbedoAO    		        = texture(u_AlbedoAO, screenTexCoord);
+	vec2 sampledCompactNormals 				= texture(u_CompactNormals, screenTexCoord).rg;
+    vec4 sampledEmissionMetallicRoughness   = texture(u_EmissionMetallicRoughness, screenTexCoord);
+	//vec4 sampledDirectRadiance 		        = imageLoad(u_DirectRadiance, pixelCoords);
+	//vec4 sampledIndirectRadiance 	        = imageLoad(u_IndirectRadiance, pixelCoords);
+
+    vec2 unpackedMetallicRoughness          = unpackUnorm2x16(floatBitsToUint(sampledEmissionMetallicRoughness.w));
 
 	//Unpack GBuffer
-	vec3 albedo         = sampledAlbedoAO.rgb;
-    vec3 normal         = CalculateNormal(sampledNormalMetallicRoughness);
-    float ao            = sampledAlbedoAO.a;
-    float metallic      = abs(sampledNormalMetallicRoughness.b);
-    float roughness     = max(EPSILON, abs(sampledNormalMetallicRoughness.a));
-	bool emissive		= sampledNormalMetallicRoughness.b > 0.0f;
+    vec3 shadingNormal      = normalize(octToDir(floatBitsToUint(sampledCompactNormals.x)));
+    vec3 geometricNormal    = normalize(octToDir(floatBitsToUint(sampledCompactNormals.y)));
+    vec3 albedo             = sampledAlbedoAO.rgb;
+    vec3 emission		    = sampledEmissionMetallicRoughness.rgb;
+    float ao                = sampledAlbedoAO.a;
+    float metallic          = unpackedMetallicRoughness.x;
+    float roughness         = unpackedMetallicRoughness.y;
 
 	//Define local Coordinate System
 	vec3 tangent 	= vec3(0.0f);
 	vec3 bitangent 	= vec3(0.0f);
-	CreateCoordinateSystem(normal, tangent, bitangent);
+	CreateCoordinateSystem(geometricNormal, tangent, bitangent);
 
 	//Create Transformation Matrices
-	mat3 localToWorld = mat3(tangent, bitangent, normal);
+	mat3 localToWorld = mat3(tangent, bitangent, geometricNormal);
 	mat3 worldToLocal = transpose(localToWorld);
 
 	//Define Constants
 	SPositions positions            = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
-    SRayDirections rayDirections   	= CalculateRayDirections(positions.WorldPos, normal, perFrameBuffer.Position.xyz, perFrameBuffer.ViewInv);	
-	float NdotV     				= abs(dot(normal, rayDirections.ViewDir)); //Same as cosTheta
+    SRayDirections rayDirections   	= CalculateRayDirections(positions.WorldPos, geometricNormal, perFrameBuffer.Position.xyz, perFrameBuffer.ViewInv);	
+
 	vec3 world_w_o 					= rayDirections.ViewDir;
-	vec3 w_o						= worldToLocal * world_w_o;
+	vec3 w_o						= normalize(worldToLocal * world_w_o);
 
 	//Define Sample Variables
 	uint randomSeed = perFrameBuffer.RandomSeed + pixelCoords.x * gl_LaunchSizeEXT.x + pixelCoords.y;
@@ -155,22 +202,23 @@ void main()
 	vec3 Albedo_Direct 		= vec3(1.0f);
 	vec3 Albedo_Indirect 	= vec3(1.0f);
 
-	s_RadiancePayload.ScatterPosition	= positions.WorldPos + normal * RAY_NORMAL_OFFSET;
+	s_RadiancePayload.HitPosition	    = positions.WorldPos;
+    s_RadiancePayload.ShadingNormal     = shadingNormal;
+    s_RadiancePayload.GeometricNormal   = geometricNormal;
 	s_RadiancePayload.Albedo			= albedo;
+    s_RadiancePayload.Emission			= emission;
 	s_RadiancePayload.Metallic			= metallic;
 	s_RadiancePayload.Roughness			= roughness;
-	s_RadiancePayload.Emissive			= emissive;
 	s_RadiancePayload.Distance			= 1.0f;
-	s_RadiancePayload.LocalToWorld 		= localToWorld;
 
 	const int maxBounces 				= 4; //Includes the first "bounce" (more like surface interaction) on the camera
 	const int russianRouletteStart		= 3;
 	const int numSamplesPerBounce		= 6;
 	const int numSamplesPerFrame		= maxBounces * numSamplesPerBounce;
 
-	const float MIN_ROUGHNESS_DELTA_DISTRIBUTION = EPSILON * 2.0f;
-
 	vec3 throughput  					= vec3(1.0f);
+	bool lastWasSpecular				= true;
+	vec3 firstBounceDiffuse_f			= vec3(1.0f);
 
 	for (int b = 0; b < maxBounces; b++)
 	{
@@ -179,57 +227,56 @@ void main()
 
 		int baseB 	= b * numSamplesPerBounce;
 
-		vec2 u_Light 	= vec2( 	GenerateSample(baseB + 0, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
-				 					GenerateSample(baseB + 1, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
-		vec3 u_BRDF 	= vec3( 	GenerateSample(baseB + 2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
-				 					GenerateSample(baseB + 3, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
-				 					GenerateSample(baseB + 4, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
-		float u_RussianRoulette	=	GenerateSample(baseB + 5, randomSeedPoint, numSamplesPerFrame, blueNoiseSize);
-		bool isSpecular = s_RadiancePayload.Roughness < MIN_ROUGHNESS_DELTA_DISTRIBUTION;
+		vec2 u_Light_Light 	= vec2( 	GenerateSample(baseB + 0, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 1, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+		vec3 u_Light_BRDF 	= vec3( 	GenerateSample(baseB + 2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 3, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 4, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+		vec3 u_BRDF 		= vec3(		GenerateSample(baseB + 5, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 6, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 7, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+		float u_RussianRoulette	=		GenerateSample(baseB + 8, randomSeedPoint, numSamplesPerFrame, blueNoiseSize);
+
+		bool isSpecular = (s_RadiancePayload.Roughness == 0.0f);
 
 		//Emissive Surface
-		if (s_RadiancePayload.Emissive)
+		if (dot(s_RadiancePayload.Emission, s_RadiancePayload.Emission) > 0.0f)
 		{
-			//L += s_RadiancePayload.Albedo * 100.0f;
-
-			//accumulation 	+= 1.0f;
+			if (lastWasSpecular || (s_RadiancePayload.HitMask & HIT_MASK_GAME_OBJECT) > 0) //Emissive Game Objects are not directly sampled so we include them here
+			{
+				L += throughput * s_RadiancePayload.Emission;
+			}
 		}
 
 		//Direct Lighting (next event estimation)
 		if (!isSpecular) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
 		{
 			vec3 L_d 				= vec3(0.0f);
-			vec3 Scatter_f_div_PDF 	= vec3(0.0f);
-			SampleLights(w_o, worldToLocal, L_d, Scatter_f_div_PDF, u_Light);
+			vec3 f 					= vec3(0.0f);
+			vec3 diffuse_f			= vec3(0.0f);
+			SampleLights(w_o, worldToLocal, localToWorld, u_Light_Light, u_Light_BRDF, L_d, f, diffuse_f);
 
-			if (b == 0)
+			if (b == 0 /*|| (b == 1 && lastWasSpecular)*/)
 			{
-				L				+= L_d;
-				Albedo_Direct 	= Scatter_f_div_PDF;
+				firstBounceDiffuse_f 	= max(vec3(0.01f), diffuse_f);
+				L 						+= f * L_d / firstBounceDiffuse_f;
+				Albedo_Direct			= firstBounceDiffuse_f;
+				Albedo_Indirect			= vec3(1.0f);
 			}
-			// else if (b == 1)
-			// {
-			// 	vec3 difTerm				= max(vec3(5e-3f), albedo * INV_PI);
-
-			// 	vec3 F_0    = vec3(0.04f);
-			// 	F_0	        = mix(F_0, albedo, metallic);
-
-			// 	float diffuseLuminance      = max(0.01f, luminance(albedo));
-			// 	float specularLuminance     = max(0.01f, luminance(F_0));
-			// 	float probToSampleDiffuse   = diffuseLuminance / (diffuseLuminance + specularLuminance);
-			// 	bool sampleDiffuse          = GenerateSample(2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize) < probToSampleDiffuse;
-
-			// 	vec3 difFinal				= vec3(1.0f) / probToSampleDiffuse;
-			// 	vec3 ggxFinal				= throughput / (difTerm * (1.0f - probToSampleDiffuse));
-			// 	vec3 brdfFinal				= sampleDiffuse ? difFinal : ggxFinal;
-
-			// 	L				+= brdfFinal * Scatter_f_div_PDF * L_d;
-			// 	Albedo_Indirect =  difTerm;
-			// }
+			else if (b == 1 /*|| (b == 2 && lastWasSpecular)*/)
+			{
+				
+				L 				+= throughput * f * L_d;
+			}
 			else
 			{
-				L				+= throughput * Scatter_f_div_PDF * L_d;
+				L 				+= throughput * f * L_d;
 			}
+		}
+
+		//Update lastWasSpecular
+		{
+			lastWasSpecular	= isSpecular;
 		}
 
 		//Write to Direct or Indirect L_o
@@ -247,15 +294,16 @@ void main()
 			//Sample the BRDF
 			SReflection reflection = Sample_f(w_o, s_RadiancePayload.Albedo,  s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, u_BRDF);
 
-			vec3 reflectionDir = s_RadiancePayload.LocalToWorld * reflection.w_i;
+			vec3 reflectionDir = normalize(localToWorld * reflection.w_i);
 
 			if (reflection.PDF > 0.0f)
 			{
-				throughput			*= reflection.f * reflection.CosTheta / reflection.PDF;
+                float cosTheta 		= abs(dot(reflectionDir, s_RadiancePayload.ShadingNormal));
+				throughput			*= reflection.f * cosTheta / reflection.PDF;
 				world_w_o			= -reflectionDir;
 
 				//Define Reflection Ray Parameters
-				const vec3 		origin 				= s_RadiancePayload.ScatterPosition;
+				const vec3 		origin 				= s_RadiancePayload.HitPosition + s_RadiancePayload.GeometricNormal * RAY_NORMAL_OFFSET;
 				const vec3 		direction			= reflectionDir;
 				const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
 				const uint 		cullMask           	= 0xFF;
@@ -274,20 +322,26 @@ void main()
 					stop = true;
 				}
 
-				worldToLocal 	= transpose(s_RadiancePayload.LocalToWorld);
-				w_o				= worldToLocal * world_w_o;
+                //Define local Coordinate System
+                vec3 wX 	= vec3(0.0f);
+                vec3 wY 	= vec3(0.0f);
+                CreateCoordinateSystem(s_RadiancePayload.GeometricNormal, wX, wY);
+
+                //Create Transformation Matrices
+                localToWorld    = mat3(wX, wY, s_RadiancePayload.GeometricNormal);
+				worldToLocal 	= transpose(localToWorld);
+				w_o				= normalize(worldToLocal * world_w_o);
 			}
 			else
 			{
-				s_RadiancePayload.ScatterPosition	= vec3(0.0f);
+				s_RadiancePayload.HitPosition	    = vec3(0.0f);
+                s_RadiancePayload.ShadingNormal     = vec3(0.0f);
+                s_RadiancePayload.GeometricNormal   = vec3(0.0f);
 				s_RadiancePayload.Albedo			= vec3(0.0f);
+                s_RadiancePayload.Emission			= vec3(0.0f);
 				s_RadiancePayload.Metallic			= 0.0f;
 				s_RadiancePayload.Roughness			= 0.0f;
 				s_RadiancePayload.Distance			= 0.0f;
-				s_RadiancePayload.LocalToWorld 		= mat3(1.0f);
-
-				//if (dot(throughput, throughput) < EPSILON)
-					//throughput = reflection.f * reflection.CosTheta;
 
 				stop = true;
 			}
@@ -311,17 +365,13 @@ void main()
 		if (stop) break;
 	}
 
-	//accumulation 	+= 1.0f;
-
-	//Direct Lighting (next event estimation)
-	// if (s_RadiancePayload.Distance > 0.0f && s_RadiancePayload.Roughness > MIN_ROUGHNESS_DELTA_DITRIBUTION_LIGHTS)
-	// {
-	// 	L_o 			+= SampleLights(w_o, worldToLocal, throughput);
-	// 	accumulation 	+= 1.0f;
-	// }
-
 	imageStore(u_DirectRadiance, 	pixelCoords, vec4(L_o_Direct, 	1.0f));
 	imageStore(u_IndirectRadiance, 	pixelCoords, vec4(L_o_Indirect, 1.0f));
 	imageStore(u_DirectAlbedo, 		pixelCoords, vec4(Albedo_Direct, 1.0f));
 	imageStore(u_IndirectAlbedo, 	pixelCoords, vec4(Albedo_Indirect, 1.0f));
+
+	//imageStore(u_DirectRadiance, 	pixelCoords, vec4(any(isnan(L_o_Direct))		?	vec3(1.0f) : L_o_Direct, 		1.0f));
+	//imageStore(u_IndirectRadiance, 	pixelCoords, vec4(any(isnan(L_o_Indirect))		?	vec3(1.0f) : L_o_Indirect, 		1.0f));
+	//imageStore(u_DirectAlbedo, 		pixelCoords, vec4(any(isnan(Albedo_Direct))		?	vec3(1.0f) : Albedo_Direct, 	1.0f));
+	//imageStore(u_IndirectAlbedo, 	pixelCoords, vec4(any(isnan(Albedo_Indirect)) 	?	vec3(1.0f) : Albedo_Indirect, 	1.0f));
 }

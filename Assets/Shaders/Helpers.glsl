@@ -336,4 +336,14 @@ float PowerHeuristic(float nf, float fPDF, float ng, float gPDF)
 	return (fSqrd) / (fSqrd + g * g);
 }
 
+//Power Heuristic but implicitly divides with fPDF to avoid floating point errors
+float PowerHeuristicWithPDF(float nf, float fPDF, float ng, float gPDF)
+{
+	float f = nf * fPDF;
+	float fSqrd = f * f;
+	float g = ng * gPDF;
+	
+	return (nf * f) / (fSqrd + g * g);
+}
+
 #endif

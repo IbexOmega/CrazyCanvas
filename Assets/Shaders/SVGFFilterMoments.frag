@@ -24,7 +24,7 @@ void main()
     const float PHI_NORMAL   = 128.0f;
 
     const ivec2 iPos    = ivec2(gl_FragCoord.xy);
-    float h             = texelFetch(u_History, iPos, 0).r;
+    float h             = max(1.0f, texelFetch(u_History, iPos, 0).r);
     ivec2 screenSize    = textureSize(u_DirectRadiance, 0);
 
     const vec4  directCenter        = texelFetch(u_DirectRadiance, iPos, 0);
@@ -53,7 +53,6 @@ void main()
             return;
         }
         
-
         const float phiLDirect   = PHI_COLOR;
         const float phiLIndirect = PHI_COLOR;
         const float phiDepth     = max(zCenter.y, 1e-8f) * 3.0f;
@@ -111,7 +110,7 @@ void main()
 
         sum_Direct   /= sum_w_Direct;
         sum_Indirect /= sum_w_Indirect;
-        sum_Moments  /= vec4(sum_w_Direct.xx, sum_w_Direct.xx);
+        sum_Moments  /= vec4(sum_w_Direct.xx, sum_w_Indirect.xx);
 
         // compute variance for direct and indirect illumination using first and second moments
         vec2 variance = sum_Moments.ga - sum_Moments.rb * sum_Moments.rb;
@@ -119,8 +118,11 @@ void main()
         // give the variance a boost for the first frames
         variance *= 4.0 / h;
 
-        out_Direct     = vec4(sum_Direct,     variance.r);
-        out_Indirect   = vec4(sum_Indirect,   variance.g);
+        //out_Direct     = vec4(sum_Direct,     variance.r);
+        //out_Indirect   = vec4(sum_Indirect,   variance.g);
+
+        out_Direct     = vec4(any(isnan(sum_Direct))    ? vec3(0.0f) : sum_Direct,     isnan(variance.r) ? 0.0f : variance.r);
+        out_Indirect   = vec4(any(isnan(sum_Indirect))  ? vec3(0.0f) : sum_Indirect,   isnan(variance.g) ? 0.0f : variance.g);
     }
     else
     {

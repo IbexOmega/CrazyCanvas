@@ -11,34 +11,47 @@ struct SRayDirections
 
 struct SRayHitDescription
 {
-    vec3    Normal;
+    vec3    ShadingNormal;
+    vec3    GeometricNormal;
     vec2    TexCoord;
     uint    MaterialIndex;
 };
 
 struct SLightSample
 {
-    vec3    L_d;
+    vec3    L_i;
+    float   Light_PDF;
     vec3    Scatter_f;
+    vec3    Scatter_Diffuse_f;
     float   Scatter_PDF;
     vec3    SampleWorldDir;
     float   DistanceToSamplePoint;
+    int     InstanceIndex;
+};
+
+struct SLightEval
+{
+    vec3    L_i;
+    float   PDF;
 };
 
 struct SRadiancePayload
 {
-    vec3    ScatterPosition;
+    vec3    HitPosition;
+    vec3    ShadingNormal;
+    vec3    GeometricNormal;
     vec3    Albedo;
+    vec3    Emission;
     float   Metallic;
     float   Roughness;
-    bool    Emissive;
     float   Distance;
-	mat3    LocalToWorld;
+    uint    HitMask;
 };
 
 struct SShadowPayload
 {
 	float   Distance;
+    int     InstanceIndex;
 };
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform accelerationStructureEXT                                                u_TLAS;
@@ -65,18 +78,7 @@ layout(binding = 11,    set = TEXTURE_SET_INDEX, rgba32f) restrict writeonly uni
 layout(binding = 12,    set = TEXTURE_SET_INDEX, rgba32f) restrict writeonly uniform image2D   		u_DirectAlbedo;
 layout(binding = 13,    set = TEXTURE_SET_INDEX, rgba32f) restrict writeonly uniform image2D   		u_IndirectAlbedo;
 
-
 SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition, mat4 cameraViewInv)
-{
-	vec4 u_CameraOrigin = cameraViewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	vec3 origDirection = normalize(hitPosition - cameraPosition);
-
-    SRayDirections rayDirections;
-	rayDirections.ReflDir = reflect(origDirection, normal);
-	rayDirections.ViewDir = -origDirection;
-    return rayDirections;
-}
-RayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition, mat4 cameraViewInv)
 {
 	vec4 u_CameraOrigin = cameraViewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	vec3 origDirection = normalize(hitPosition - cameraPosition);
@@ -138,15 +140,16 @@ SLightSample EvalDirectionalRadiance(vec3 w_o, vec3 albedo, float metallic, floa
     sampleData.SampleWorldDir           = u_LightsBuffer.val.DirL_Direction.xyz;
     sampleData.InstanceIndex            = -1;
     
-    vec3 w_i 		= worldToLocal * sampleData.SampleWorldDir;
+    vec3 w_i 		                    = normalize(worldToLocal * sampleData.SampleWorldDir);
 
     //Evaluate the BRDF in the Light Direction (ofcourse we don't need to sample it since we already know w_i)
     SReflection reflection = f(w_o, w_i, albedo, metallic, roughness);
 
-    sampleData.Scatter_f    = reflection.f;
-    sampleData.Scatter_PDF  = reflection.PDF;         
-    sampleData.L_i          = u_LightsBuffer.val.DirL_EmittedRadiance.rgb;
-    sampleData.Light_PDF    = 1.0f;
+    sampleData.Scatter_f            = reflection.f;
+    sampleData.Scatter_Diffuse_f    = reflection.Diffuse_f;
+    sampleData.Scatter_PDF          = reflection.PDF;         
+    sampleData.L_i                  = u_LightsBuffer.val.DirL_EmittedRadiance.rgb;
+    sampleData.Light_PDF            = 1.0f;
 
     return sampleData;
 }
@@ -157,6 +160,7 @@ SLightSample SampleAreaLightRadiance(vec3 w_o, uint areaLightIndex, vec3 worldPo
     sampleData.DistanceToSamplePoint    = 0.0f;
     sampleData.SampleWorldDir           = vec3(0.0f);
     sampleData.Scatter_f                = vec3(0.0f);
+    sampleData.Scatter_Diffuse_f        = vec3(0.0f);
     sampleData.Scatter_PDF              = 0.0f;
     sampleData.L_i                      = vec3(0.0f);
     sampleData.Light_PDF                = 0.0f;
@@ -189,10 +193,10 @@ SLightSample SampleAreaLightRadiance(vec3 w_o, uint areaLightIndex, vec3 worldPo
     sampleData.DistanceToSamplePoint    = sqrt(distSqrdToSamplePoint);
     sampleData.SampleWorldDir           = sampleData.DistanceToSamplePoint > 0.0f ? deltaPos / sampleData.DistanceToSamplePoint : -shapeSample.Normal;
 
-    //Check if the disk is facing us
+    //Check if the light is facing us
     if (shapeSample.PDF > 0.0f && dot(-deltaPos, shapeSample.Normal) > 0.0f)
     {
-        vec3 w_i 		        = worldToLocal * sampleData.SampleWorldDir;
+        vec3 w_i 		                            = normalize(worldToLocal * sampleData.SampleWorldDir);
 
         //Evaluate the BRDF in the Light Direction (ofcourse we don't need to sample it since we already know w_i)
         SReflection reflection                      = f(w_o, w_i, albedo, metallic, roughness);
@@ -203,10 +207,11 @@ SLightSample SampleAreaLightRadiance(vec3 w_o, uint areaLightIndex, vec3 worldPo
 
         SMaterialParameters materialParameters      = b_MaterialParameters.val[materialIndex];
 
-        sampleData.Scatter_f    = reflection.f;
-        sampleData.Scatter_PDF  = reflection.PDF;
-        sampleData.L_i          = pow(materialParameters.Albedo.rgb * texture(u_SceneAlbedoMaps[materialIndex], vec2(0.0f)).rgb, vec3(GAMMA)) * materialParameters.EmissionStrength;
-        sampleData.Light_PDF    = shapeSample.PDF * distSqrdToSamplePoint / abs(dot(shapeSample.Normal, -sampleData.SampleWorldDir)); //Convert from area measure, as returned by the Sample(Shape)() call above, to solid angle measure.
+        sampleData.Scatter_PDF          = reflection.PDF;
+        sampleData.L_i                  = pow(materialParameters.Albedo.rgb * texture(u_SceneAlbedoMaps[materialIndex], vec2(0.0f)).rgb, vec3(GAMMA)) * materialParameters.EmissionStrength;
+        sampleData.Light_PDF            = shapeSample.PDF * distSqrdToSamplePoint / abs(dot(shapeSample.Normal, -sampleData.SampleWorldDir)); //Convert from area measure, as returned by the Sample(Shape)() call above, to solid angle measure.
+        sampleData.Scatter_f            = reflection.f;
+        sampleData.Scatter_Diffuse_f    = reflection.Diffuse_f;
     }
 
     return sampleData;
@@ -247,7 +252,7 @@ SLightEval EvalAreaLightRadience(vec3 w_i_world, float distanceToSamplePoint, ui
     SMaterialParameters materialParameters      = b_MaterialParameters.val[materialIndex];
     
     lightEval.L_i           = pow(materialParameters.Albedo.rgb * texture(u_SceneAlbedoMaps[materialIndex], vec2(0.0f)).rgb, vec3(GAMMA)) * materialParameters.EmissionStrength;
-    lightEval.PDF           *= (distanceToSamplePoint * distanceToSamplePoint) / abs(dot(lightNormal, -w_i_world));
+    lightEval.PDF           *= (distanceToSamplePoint * distanceToSamplePoint) / max(0.0f, dot(lightNormal, -w_i_world));
     return lightEval;
 }
 

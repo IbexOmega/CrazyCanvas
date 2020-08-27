@@ -137,9 +137,17 @@ void main()
         }
     }
 
+    sumWDirect      = max(0.001f, sumWDirect);
+    sumWIndirect    = max(0.001f, sumWIndirect);
+
     // renormalization is different for variance, check paper for the formula
     out_Direct   = vec4(sumDirect   / vec4(sumWDirect.xxx,   sumWDirect   * sumWDirect  ));
     out_Indirect = vec4(sumIndirect / vec4(sumWIndirect.xxx, sumWIndirect * sumWIndirect));
+
+    //out_Direct.rgb = any(isnan(out_Direct.rgb)) ? vec3(1.0f) : out_Direct.rgb;
+    //out_Direct.a = isnan(out_Direct.a) ? 1.0f : out_Direct.a;
+    //out_Indirect.rgb = any(isnan(out_Indirect.rgb)) ? vec3(1.0f) : out_Indirect.rgb;
+    //out_Indirect.a = isnan(out_Indirect.a) ? 1.0f : out_Indirect.a;
 
     // do the demodulation in the last iteration to save memory bandwidth
     vec4 directAlbedo   = texelFetch(u_DirectAlbedo, iPos, 0);
