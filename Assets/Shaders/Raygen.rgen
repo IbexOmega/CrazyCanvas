@@ -211,7 +211,7 @@ void main()
 	s_RadiancePayload.Roughness			= roughness;
 	s_RadiancePayload.Distance			= 1.0f;
 
-	const int maxBounces 				= 4; //Includes the first "bounce" (more like surface interaction) on the camera
+	const int maxBounces 				= 3; //Includes the first "bounce" (more like surface interaction) on the camera
 	const int russianRouletteStart		= 3;
 	const int numSamplesPerBounce		= 6;
 	const int numSamplesPerFrame		= maxBounces * numSamplesPerBounce;
@@ -366,13 +366,11 @@ void main()
 		if (stop) break;
 	}
 
-	imageStore(u_DirectRadiance, 	pixelCoords, vec4(L_o_Direct, 	1.0f));
-	imageStore(u_IndirectRadiance, 	pixelCoords, vec4(L_o_Indirect, 1.0f));
+	//Direct and Indirect Radiance can be NaN if we have degenerate triangles -> invalid normals & tangents
+	imageStore(u_DirectRadiance, 	pixelCoords, vec4(any(isnan(L_o_Direct))		?	vec3(0.0f) : L_o_Direct, 		1.0f));
+	imageStore(u_IndirectRadiance, 	pixelCoords, vec4(any(isnan(L_o_Indirect))		?	vec3(0.0f) : L_o_Indirect, 		1.0f));
 	imageStore(u_DirectAlbedo, 		pixelCoords, vec4(Albedo_Direct, 1.0f));
 	imageStore(u_IndirectAlbedo, 	pixelCoords, vec4(Albedo_Indirect, 1.0f));
 
-	//imageStore(u_DirectRadiance, 	pixelCoords, vec4(any(isnan(L_o_Direct))		?	vec3(1.0f) : L_o_Direct, 		1.0f));
-	//imageStore(u_IndirectRadiance, 	pixelCoords, vec4(any(isnan(L_o_Indirect))		?	vec3(1.0f) : L_o_Indirect, 		1.0f));
-	//imageStore(u_DirectAlbedo, 		pixelCoords, vec4(any(isnan(Albedo_Direct))		?	vec3(1.0f) : Albedo_Direct, 	1.0f));
-	//imageStore(u_IndirectAlbedo, 	pixelCoords, vec4(any(isnan(Albedo_Indirect)) 	?	vec3(1.0f) : Albedo_Indirect, 	1.0f));
+	
 }

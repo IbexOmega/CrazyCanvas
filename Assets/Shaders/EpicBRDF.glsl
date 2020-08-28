@@ -47,8 +47,8 @@ vec3 F(float OdotH, vec3 F_0)
 vec3 Sample_w_h_GGX(vec3 w_o, float alphaSqrd, vec2 u)
 {
     float phi           = u.x * TWO_PI;
-    float cosThetaSqrd  = (1.0f - u.y) / max(0.0001f, (1.0f + (alphaSqrd - 1.0f) * u.y));
-    float cosTheta      = sqrt(clamp(cosThetaSqrd, 0.0f, 1.0f));
+    float cosThetaSqrd  = clamp((1.0f - u.y) / max(0.001f, (1.0f + (alphaSqrd - 1.0f) * u.y)), 0.0f, 1.0f); //Dividing by potentially small float, therefore, we clamp it
+    float cosTheta      = sqrt(cosThetaSqrd);
     float sinTheta      = sqrt(1.0f - cosThetaSqrd);
     vec3 w_h            = SphericalToDirection(sinTheta, cosTheta, phi);
 
