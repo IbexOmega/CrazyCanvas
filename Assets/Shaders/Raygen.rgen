@@ -258,16 +258,15 @@ void main()
 
 			if (b == 0 /*|| (b == 1 && lastWasSpecular)*/)
 			{
-				firstBounceDiffuse_f 	= max(vec3(0.01f), diffuse_f);
-				L 						+= f * L_d / firstBounceDiffuse_f;
-				Albedo_Direct			= firstBounceDiffuse_f;
-				Albedo_Indirect			= vec3(1.0f);
+				diffuse_f 				= max(vec3(0.01f), diffuse_f);
+				L 						+= f * L_d / diffuse_f;
+				Albedo_Direct			= diffuse_f;
 			}
-			else if (b == 1 /*|| (b == 2 && lastWasSpecular)*/)
-			{
+			// else if (b == 1)
+			// {
 				
-				L 				+= throughput * f * L_d;
-			}
+			// 	L 				+= throughput * f * L_d;
+			// }
 			else
 			{
 				L 				+= throughput * f * L_d;
@@ -296,12 +295,19 @@ void main()
 
 			vec3 reflectionDir = normalize(localToWorld * reflection.w_i);
 
+			if (b == 0)
+			{
+				vec3 diffuse_f		= max(vec3(0.01f), reflection.Diffuse_f);
+				Albedo_Indirect 	= diffuse_f;
+				reflection.f 		/= diffuse_f;
+			}
+
 			if (reflection.PDF > 0.0f)
 			{
                 float cosTheta 		= abs(dot(reflectionDir, s_RadiancePayload.ShadingNormal));
 				throughput			*= reflection.f * cosTheta / reflection.PDF;
 				world_w_o			= -reflectionDir;
-
+				
 				//Define Reflection Ray Parameters
 				const vec3 		origin 				= s_RadiancePayload.HitPosition + s_RadiancePayload.GeometricNormal * RAY_NORMAL_OFFSET;
 				const vec3 		direction			= reflectionDir;
