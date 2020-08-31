@@ -43,19 +43,49 @@ namespace LambdaEngine
 		"R8G8B8A8_SNORM",
 		"R16G16B16A16_SFLOAT",
 		"D24_UNORM_S8_UINT",
-		"R16_UNORM"
+		"R16_UNORM",
+		"R32G32B32A32_SFLOAT",
+		"R16_SFLOAT",
+		"R32G32B32A32_UINT",
 	};
 
-	constexpr const EFormat TEXTURE_FORMATS[] =
+	EFormat TextureFormatIndexToFormat(int32 index)
 	{
-		EFormat::FORMAT_R32G32_SFLOAT,
-		EFormat::FORMAT_R8G8B8A8_UNORM,
-		EFormat::FORMAT_B8G8R8A8_UNORM,
-		EFormat::FORMAT_R8G8B8A8_SNORM,
-		EFormat::FORMAT_R16G16B16A16_SFLOAT,
-		EFormat::FORMAT_D24_UNORM_S8_UINT,
-		EFormat::FORMAT_R16_UNORM
-	};
+		switch (index)
+		{
+			case 0: return EFormat::FORMAT_R32G32_SFLOAT;
+			case 1: return EFormat::FORMAT_R8G8B8A8_UNORM;
+			case 2: return EFormat::FORMAT_B8G8R8A8_UNORM;
+			case 3: return EFormat::FORMAT_R8G8B8A8_SNORM;
+			case 4: return EFormat::FORMAT_R16G16B16A16_SFLOAT;
+			case 5: return EFormat::FORMAT_D24_UNORM_S8_UINT;
+			case 6: return EFormat::FORMAT_R16_UNORM;
+			case 7: return EFormat::FORMAT_R32G32B32A32_SFLOAT;
+			case 8: return EFormat::FORMAT_R16_SFLOAT;
+			case 9: return EFormat::FORMAT_R32G32B32A32_UINT;
+		}
+
+		return EFormat::NONE;
+	}
+
+	int32 TextureFormatToFormatIndex(EFormat format)
+	{
+		switch (format)
+		{
+			case EFormat::FORMAT_R32G32_SFLOAT:			return 0;
+			case EFormat::FORMAT_R8G8B8A8_UNORM:		return 1;
+			case EFormat::FORMAT_B8G8R8A8_UNORM:		return 2;
+			case EFormat::FORMAT_R8G8B8A8_SNORM:		return 3;
+			case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 4;
+			case EFormat::FORMAT_D24_UNORM_S8_UINT:		return 5;
+			case EFormat::FORMAT_R16_UNORM:				return 6;
+			case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return 7;
+			case EFormat::FORMAT_R16_SFLOAT:			return 8;
+			case EFormat::FORMAT_R32G32B32A32_UINT:		return 9;
+		}
+
+		return -1;
+	}
 
 	RenderGraphEditor::RenderGraphEditor()
 	{
@@ -273,7 +303,7 @@ namespace LambdaEngine
 			resource.Type						= ERenderGraphResourceType::TEXTURE;
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
-			resource.TextureFormat				= 2;
+			resource.TextureFormat				= EFormat::FORMAT_B8G8R8A8_UNORM;
 			m_Resources.push_back(resource);
 
 			m_FinalOutput.BackBufferAttributeIndex					= CreateResourceState(resource.Name, m_FinalOutput.Name, false, ERenderGraphResourceBindingType::NONE).AttributeIndex;
@@ -395,7 +425,7 @@ namespace LambdaEngine
 			resource.Type						= ERenderGraphResourceType::TEXTURE;
 			resource.SubResourceCount			= MAX_UNIQUE_MATERIALS;
 			resource.Editable					= false;
-			resource.TextureFormat				= 1;
+			resource.TextureFormat				= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_Resources.push_back(resource);
 
 			externalResourcesGroup.ResourceStateIdents.push_back(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
@@ -407,7 +437,7 @@ namespace LambdaEngine
 			resource.Type						= ERenderGraphResourceType::TEXTURE;
 			resource.SubResourceCount			= MAX_UNIQUE_MATERIALS;
 			resource.Editable					= false;
-			resource.TextureFormat				= 1;
+			resource.TextureFormat				= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_Resources.push_back(resource);
 
 			externalResourcesGroup.ResourceStateIdents.push_back(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
@@ -419,7 +449,7 @@ namespace LambdaEngine
 			resource.Type						= ERenderGraphResourceType::TEXTURE;
 			resource.SubResourceCount			= MAX_UNIQUE_MATERIALS;
 			resource.Editable					= false;
-			resource.TextureFormat				= 1;
+			resource.TextureFormat				= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_Resources.push_back(resource);
 
 			externalResourcesGroup.ResourceStateIdents.push_back(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
@@ -431,7 +461,7 @@ namespace LambdaEngine
 			resource.Type						= ERenderGraphResourceType::TEXTURE;
 			resource.SubResourceCount			= MAX_UNIQUE_MATERIALS;
 			resource.Editable					= false;
-			resource.TextureFormat				= 1;
+			resource.TextureFormat				= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_Resources.push_back(resource);
 
 			externalResourcesGroup.ResourceStateIdents.push_back(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
@@ -443,7 +473,7 @@ namespace LambdaEngine
 			resource.Type						= ERenderGraphResourceType::TEXTURE;
 			resource.SubResourceCount			= MAX_UNIQUE_MATERIALS;
 			resource.Editable					= false;
-			resource.TextureFormat				= 1;
+			resource.TextureFormat				= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_Resources.push_back(resource);
 
 			externalResourcesGroup.ResourceStateIdents.push_back(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
@@ -455,7 +485,7 @@ namespace LambdaEngine
 			resource.Type						= ERenderGraphResourceType::TEXTURE;
 			resource.SubResourceCount			= MAX_UNIQUE_MATERIALS;
 			resource.Editable					= false;
-			resource.TextureFormat				= 1;
+			resource.TextureFormat				= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_Resources.push_back(resource);
 
 			externalResourcesGroup.ResourceStateIdents.push_back(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
@@ -566,7 +596,16 @@ namespace LambdaEngine
 					ImGui::Text("Is of Array Type: %s", pSelectedResource->IsOfArrayType ? "True" : "False");
 				}
 
-				ImGui::Text("Texture Format: %s", TEXTURE_FORMAT_NAMES[pSelectedResource->TextureFormat]);
+				int32 textureFormatIndex = TextureFormatToFormatIndex(pSelectedResource->TextureFormat);
+
+				if (textureFormatIndex >= 0)
+				{
+					ImGui::Text("Texture Format: %s", TEXTURE_FORMAT_NAMES[textureFormatIndex]);
+				}
+				else
+				{
+					ImGui::Text("Texture Format: INVALID");
+				}
 			}
 		}
 
@@ -741,7 +780,7 @@ namespace LambdaEngine
 							newResource.IsOfArrayType = isOfArrayType;
 						}
 
-						newResource.TextureFormat = selectedFormat;
+						newResource.TextureFormat = TextureFormatIndexToFormat(selectedFormat);
 					}
 
 					newResource.Editable			= true;
@@ -813,7 +852,7 @@ namespace LambdaEngine
 					backBufferBound		= pEditedResource->BackBufferBound;
 					subResourceCount	= pEditedResource->SubResourceCount;
 					isOfArrayType		= pEditedResource->IsOfArrayType;
-					selectedFormat		= pEditedResource->TextureFormat;
+					selectedFormat		= TextureFormatToFormatIndex(pEditedResource->TextureFormat);
 				}
 
 				ImGui::AlignTextToFramePadding();
@@ -935,7 +974,7 @@ namespace LambdaEngine
 							pEditedResource->IsOfArrayType = isOfArrayType;
 						}
 
-						pEditedResource->TextureFormat = selectedFormat;
+						pEditedResource->TextureFormat = TextureFormatIndexToFormat(selectedFormat);
 					}
 
 					done = true;
@@ -978,7 +1017,7 @@ namespace LambdaEngine
 			int32 index = std::distance(m_FilesInShaderDirectory.begin(), fileIt);
 			const String* pFilename = &(*fileIt);
 
-			if (pFilename->find(".glsl") != String::npos)
+			//if (pFilename->find(".glsl") != String::npos)
 			{
 				if (ImGui::Selectable(pFilename->c_str(), selectedResourceIndex == index, ImGuiSeparatorFlags_None, ImVec2(textWidth, textHeight)))
 				{
@@ -999,6 +1038,8 @@ namespace LambdaEngine
 		bool openAddRenderStagePopup = false;
 		bool openSaveRenderStagePopup = false;
 		bool openLoadRenderStagePopup = false;
+
+		String renderStageToDelete = "";
 
 		if (ImGui::BeginMenuBar())
 		{
@@ -1260,6 +1301,7 @@ namespace LambdaEngine
 		for (auto renderStageIt = m_RenderStagesByName.begin(); renderStageIt != m_RenderStagesByName.end(); renderStageIt++)
 		{
 			EditorRenderStageDesc* pRenderStage = &renderStageIt->second;
+			bool hasDepthAttachment = false;
 
 			int32 moveResourceStateAttributeIndex	= -1;
 			int32 moveResourceStateMoveAddition		= 0;
@@ -1270,12 +1312,16 @@ namespace LambdaEngine
 			
 			imnodes::BeginNodeTitleBar();
 			ImGui::Text("%s : [%s]", pRenderStage->Name.c_str(), renderStageType.c_str());
+			ImGui::SameLine();
+			if (ImGui::Button("Delete"))
+			{
+				renderStageToDelete = pRenderStage->Name;
+			}
 			ImGui::TextUnformatted("Enabled: ");
 			ImGui::SameLine();
 			if (ImGui::Checkbox("##Render Stage Enabled Checkbox", &pRenderStage->Enabled)) m_ParsedGraphDirty = true;
 			ImGui::Text("Weight: %d", pRenderStage->Weight);
 			imnodes::EndNodeTitleBar();
-
 
 			String resourceStateToRemove = "";
 
@@ -1287,6 +1333,16 @@ namespace LambdaEngine
 				int32 inputAttributeIndex		= pResourceStateIdent->AttributeIndex;
 				int32 outputAttributeIndex		= inputAttributeIndex + 1;
 				EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[primaryAttributeIndex];
+
+				auto resourceIt = FindResource(pResourceState->ResourceName);
+
+				if (resourceIt == m_Resources.end())
+				{
+					LOG_ERROR("[RenderGraphEditor]: Resource with name \"%s\" could not be found when calculating resource state binding types", pResourceState->ResourceName.c_str());
+					return;
+				}
+
+				EditorResource* pResource = &(*resourceIt);
 
 				PushPinColorIfNeeded(EEditorPinType::INPUT, pRenderStage, pResourceState, inputAttributeIndex);
 				imnodes::BeginInputAttribute(inputAttributeIndex);
@@ -1337,7 +1393,7 @@ namespace LambdaEngine
 
 				TArray<ERenderGraphResourceBindingType> bindingTypes;
 				TArray<const char*> bindingTypeNames;
-				CalculateResourceStateBindingTypes(pRenderStage, pResourceState, bindingTypes, bindingTypeNames);
+				CalculateResourceStateBindingTypes(pRenderStage, pResource, pResourceState, bindingTypes, bindingTypeNames);
 
 				if (bindingTypes.size() > 0)
 				{
@@ -1378,6 +1434,9 @@ namespace LambdaEngine
 						ImGui::EndCombo();
 					}
 				}
+
+				if (pResourceState->BindingType == ERenderGraphResourceBindingType::ATTACHMENT && pResource->Type == ERenderGraphResourceType::TEXTURE && pResource->TextureFormat == EFormat::FORMAT_D24_UNORM_S8_UINT)
+					hasDepthAttachment = true;
 			}
 
 			PushPinColorIfNeeded(EEditorPinType::RENDER_STAGE_INPUT, pRenderStage, nullptr , -1);
@@ -1406,10 +1465,21 @@ namespace LambdaEngine
 				ImGui::EndDragDropTarget();
 			}
 
-			//If Graphics, Render draw type options
+			//If Graphics, Render Draw Type and Render Pass options 
 			if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
 			{
-				TArray<ERenderStageDrawType> drawTypes				= { ERenderStageDrawType::SCENE_INDIRECT, ERenderStageDrawType::FULLSCREEN_QUAD };
+				if (hasDepthAttachment)
+				{
+					ImGui::Text("Depth Testing Enabled:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Depth Testing Enabled", &pRenderStage->Graphics.DepthTestEnabled);
+				}
+				else
+				{
+					pRenderStage->Graphics.DepthTestEnabled = false;
+				}
+
+				TArray<ERenderStageDrawType> drawTypes							= { ERenderStageDrawType::SCENE_INDIRECT, ERenderStageDrawType::FULLSCREEN_QUAD };
 				TArray<const char*> drawTypeNames								= { "SCENE INDIRECT", "FULLSCREEN QUAD" };
 				auto selectedDrawTypeIt											= std::find(drawTypes.begin(), drawTypes.end(), pRenderStage->Graphics.DrawType);
 				int32 selectedDrawType											= 0;
@@ -1552,6 +1622,63 @@ namespace LambdaEngine
 
 		imnodes::EndNodeEditor();
 
+		//Check for newly destroyed Render Stage
+		if (!renderStageToDelete.empty())
+		{
+			auto renderStageByNameIt = m_RenderStagesByName.find(renderStageToDelete);
+
+			EditorRenderStageDesc* pRenderStage = &renderStageByNameIt->second;
+
+			if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
+			{
+				if (pRenderStage->Graphics.IndexBufferAttributeIndex != -1)
+				{
+					EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndexBufferAttributeIndex / 2];
+					DestroyLink(pResourceState->InputLinkIndex);
+
+					m_ResourceStatesByHalfAttributeIndex.erase(pRenderStage->Graphics.IndexBufferAttributeIndex);
+					m_ParsedGraphDirty = true;
+				}
+
+				if (pRenderStage->Graphics.IndexBufferAttributeIndex != -1)
+				{
+					EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2];
+					DestroyLink(pResourceState->InputLinkIndex);
+
+					m_ResourceStatesByHalfAttributeIndex.erase(pRenderStage->Graphics.IndexBufferAttributeIndex);
+					m_ParsedGraphDirty = true;
+				}
+			}
+
+			for (EditorResourceStateIdent& resourceStateIdent : pRenderStage->ResourceStateIdents)
+			{
+				int32 resourceAttributeIndex	= resourceStateIdent.AttributeIndex;
+				int32 primaryAttributeIndex		= resourceAttributeIndex / 2;
+				int32 inputAttributeIndex		= resourceAttributeIndex;
+				int32 outputAttributeIndex		= resourceAttributeIndex + 1;
+
+				EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[primaryAttributeIndex];
+
+				DestroyLink(pResourceState->InputLinkIndex);
+
+				//Copy so that DestroyLink wont delete from set we're iterating through
+				TSet<int32> outputLinkIndices = pResourceState->OutputLinkIndices;
+				for (auto outputLinkIt = outputLinkIndices.begin(); outputLinkIt != outputLinkIndices.end(); outputLinkIt++)
+				{
+					int32 linkToBeDestroyedIndex = *outputLinkIt;
+					DestroyLink(linkToBeDestroyedIndex);
+				}
+
+				m_ResourceStatesByHalfAttributeIndex.erase(primaryAttributeIndex);
+				m_ParsedGraphDirty = true;
+			}
+
+			pRenderStage->ResourceStateIdents.clear();
+
+			m_RenderStageNameByInputAttributeIndex.erase(pRenderStage->InputAttributeIndex);
+			m_RenderStagesByName.erase(renderStageByNameIt);
+		}
+
 		int32 linkStartAttributeID		= -1;
 		
 		if (imnodes::IsLinkStarted(&linkStartAttributeID))
@@ -1658,7 +1785,7 @@ namespace LambdaEngine
 		static const char* dimensionNames[] =
 		{
 			"CONSTANT",
-			"EXTERNAL"
+			"EXTERNAL",
 			"RELATIVE",
 			"RELATIVE_1D",
 		};
@@ -1710,7 +1837,7 @@ namespace LambdaEngine
 						ImGui::Combo("##Render Stage X Option", &selectedXOption, dimensionNames, 3);
 						ImGui::PopItemWidth();
 
-						if (selectedXOption == 0 || selectedXOption == 1)
+						if (selectedXOption == 0 || selectedXOption == 2)
 						{
 							ImGui::SameLine();
 							ImGui::InputFloat("##Render Stage X Variable", &xVariable);
@@ -1722,7 +1849,7 @@ namespace LambdaEngine
 						ImGui::Combo("##Render Stage Y Option", &selectedYOption, dimensionNames, 3);
 						ImGui::PopItemWidth();
 
-						if (selectedYOption == 0 || selectedYOption == 1)
+						if (selectedYOption == 0 || selectedYOption == 2)
 						{
 							ImGui::SameLine();
 							ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
@@ -1741,13 +1868,13 @@ namespace LambdaEngine
 						ImGui::Combo("##Render Stage X Option", &selectedXOption, dimensionNames, 4);
 						ImGui::PopItemWidth();
 
-						if (selectedXOption == 0 || selectedXOption == 1 || selectedXOption == 2)
+						if (selectedXOption == 0 || selectedXOption == 2 || selectedXOption == 3)
 						{
 							ImGui::SameLine();
 							ImGui::InputFloat("##Render Stage X Variable", &xVariable);
 						}
 
-						if (selectedXOption != 2)
+						if (selectedXOption != 3)
 						{
 							ImGui::Text("Y: ");
 							ImGui::SameLine();
@@ -1755,7 +1882,7 @@ namespace LambdaEngine
 							ImGui::Combo("##Render Stage Y Option", &selectedYOption, dimensionNames, 3);
 							ImGui::PopItemWidth();
 
-							if (selectedYOption == 0 || selectedYOption == 1)
+							if (selectedYOption == 0 || selectedYOption == 2)
 							{
 								ImGui::SameLine();
 								ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
@@ -1767,7 +1894,7 @@ namespace LambdaEngine
 							ImGui::Combo("##Render Stage Z Option", &selectedZOption, dimensionNames, 2);
 							ImGui::PopItemWidth();
 
-							if (selectedZOption == 0 || selectedZOption == 1)
+							if (selectedZOption == 0 || selectedZOption == 2)
 							{
 								ImGui::SameLine();
 								ImGui::InputFloat("##Render Stage Z Variable", &zVariable);
@@ -1787,7 +1914,7 @@ namespace LambdaEngine
 						ImGui::Combo("##Render Stage X Option", &selectedXOption, dimensionNames, 3);
 						ImGui::PopItemWidth();
 
-						if (selectedXOption == 0 || selectedXOption == 1)
+						if (selectedXOption == 0 || selectedXOption == 2)
 						{
 							ImGui::SameLine();
 							ImGui::InputFloat("##Render Stage X Variable", &xVariable);
@@ -1799,7 +1926,7 @@ namespace LambdaEngine
 						ImGui::Combo("##Render Stage Y Option", &selectedYOption, dimensionNames, 3);
 						ImGui::PopItemWidth();
 
-						if (selectedYOption == 0 || selectedYOption == 1)
+						if (selectedYOption == 0 || selectedYOption == 2)
 						{
 							ImGui::SameLine();
 							ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
@@ -1811,7 +1938,7 @@ namespace LambdaEngine
 						ImGui::Combo("##Render Stage Z Option", &selectedZOption, dimensionNames, 2);
 						ImGui::PopItemWidth();
 
-						if (selectedZOption == 0 || selectedZOption == 1)
+						if (selectedZOption == 0 || selectedZOption == 2)
 						{
 							ImGui::SameLine();
 							ImGui::InputFloat("##Render Stage Z Variable", &zVariable);
@@ -1889,8 +2016,10 @@ namespace LambdaEngine
 				{
 					ZERO_MEMORY(renderStageNameBuffer, RENDER_STAGE_NAME_BUFFER_LENGTH);
 					customRenderer = false;
-					selectedXOption	= 0;
-					selectedYOption	= 0;
+					selectedXOption	= 0;
+
+					selectedYOption	= 0;
+
 					selectedZOption	= 0;
 					m_CurrentlyAddingRenderStage = EPipelineStateType::NONE;
 					ImGui::CloseCurrentPopup();
@@ -2085,8 +2214,10 @@ namespace LambdaEngine
 
 							if (resourceIt->Type == ERenderGraphResourceType::TEXTURE)
 							{
+								int32 textureFormatIndex = TextureFormatToFormatIndex(resourceIt->TextureFormat);
+
 								textBuffer1 += "\n";
-								textBuffer1 += "Texture Format: " + String(TEXTURE_FORMAT_NAMES[resourceIt->TextureFormat]);
+								textBuffer1 += "Texture Format: " + String(textureFormatIndex >= 0 ? TEXTURE_FORMAT_NAMES[textureFormatIndex] : "INVALID");
 							}
 							ImVec2 textSize = ImGui::CalcTextSize((textBuffer0 + textBuffer1 + "\n\n\n\n").c_str());
 
@@ -2512,20 +2643,12 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void RenderGraphEditor::CalculateResourceStateBindingTypes(const EditorRenderStageDesc* pRenderStage, const EditorRenderGraphResourceState* pResourceState, TArray<ERenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames)
+	void RenderGraphEditor::CalculateResourceStateBindingTypes(const EditorRenderStageDesc* pRenderStage, const EditorResource* pResource, const EditorRenderGraphResourceState* pResourceState, TArray<ERenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames)
 	{
-		auto resourceIt = FindResource(pResourceState->ResourceName);
-
-		if (resourceIt == m_Resources.end())
-		{
-			LOG_ERROR("[RenderGraphEditor]: Resource with name \"%s\" could not be found when calculating resource state binding types", pResourceState->ResourceName.c_str());
-			return;
-		}
-
 		bool read	= pResourceState->InputLinkIndex != -1;
 		bool write	= pResourceState->OutputLinkIndices.size() > 0;
 
-		switch (resourceIt->Type)
+		switch (pResource->Type)
 		{
 			case ERenderGraphResourceType::TEXTURE:
 			{
@@ -2537,7 +2660,7 @@ namespace LambdaEngine
 
 					if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
 					{
-						if (resourceIt->IsOfArrayType == false && (resourceIt->SubResourceCount == 1 || resourceIt->BackBufferBound))
+						if (pResource->IsOfArrayType == false && (pResource->SubResourceCount == 1 || pResource->BackBufferBound))
 						{
 							bindingTypes.push_back(ERenderGraphResourceBindingType::ATTACHMENT);
 							bindingTypeNames.push_back("ATTACHMENT");
@@ -2561,7 +2684,7 @@ namespace LambdaEngine
 
 					if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
 					{
-						if (resourceIt->IsOfArrayType == false && (resourceIt->SubResourceCount == 1 || resourceIt->BackBufferBound))
+						if (pResource->IsOfArrayType == false && (pResource->SubResourceCount == 1 || pResource->BackBufferBound))
 						{
 							bindingTypes.push_back(ERenderGraphResourceBindingType::ATTACHMENT);
 							bindingTypeNames.push_back("ATTACHMENT");
@@ -2662,7 +2785,7 @@ namespace LambdaEngine
 						writer.Bool(resource.Editable);
 
 						writer.String("texture_format");
-						writer.Uint(resource.TextureFormat);
+						writer.Int(TextureFormatToFormatIndex(resource.TextureFormat));
 					}
 					writer.EndObject();
 				}
@@ -2928,6 +3051,9 @@ namespace LambdaEngine
 								}
 							}
 							writer.EndObject();
+
+							writer.String("depth_test_enabled");
+							writer.Bool(pRenderStage->Graphics.DepthTestEnabled);
 						}
 
 						writer.String("shaders");
@@ -3121,7 +3247,7 @@ namespace LambdaEngine
 					resource.BackBufferBound		= resourceObject.HasMember("back_buffer_bound") ? resourceObject["back_buffer_bound"].GetBool() : false;
 					resource.SubResourceCount		= resourceObject["sub_resource_count"].GetUint();
 					resource.IsOfArrayType			= resourceObject.HasMember("is_of_array_type") ? resourceObject["is_of_array_type"].GetBool() : false;
-					resource.TextureFormat			= resourceObject["texture_format"].GetUint();
+					resource.TextureFormat			= TextureFormatIndexToFormat(resourceObject["texture_format"].GetInt());
 					resource.Editable				= resourceObject["editable"].GetBool();
 					loadedResources.push_back(resource);
 				}
@@ -3184,7 +3310,8 @@ namespace LambdaEngine
 
 					loadedResourceStateGroups.push_back(resourceStateGroup);
 
-					if (loadedFinalOutput.NodeIndex > largestNodeID) largestNodeID = loadedFinalOutput.NodeIndex;
+					if (resourceStateGroup.InputNodeIndex > largestNodeID) largestNodeID = resourceStateGroup.InputNodeIndex;
+					if (resourceStateGroup.OutputNodeIndex > largestNodeID) largestNodeID = resourceStateGroup.OutputNodeIndex;
 				}
 			}
 			else
@@ -3335,6 +3462,8 @@ namespace LambdaEngine
 							if (attributeIndex + 1 > largestAttributeID) largestAttributeID = attributeIndex + 1;
 						}
 
+						renderStage.Graphics.DepthTestEnabled			= renderStageObject["depth_test_enabled"].GetBool();
+
 						renderStage.Graphics.Shaders.TaskShaderName		= shadersObject["task_shader"].GetString();
 						renderStage.Graphics.Shaders.MeshShaderName		= shadersObject["mesh_shader"].GetString();
 						renderStage.Graphics.Shaders.VertexShaderName	= shadersObject["vertex_shader"].GetString();
@@ -3400,7 +3529,7 @@ namespace LambdaEngine
 					loadedRenderStagesByName[renderStage.Name] = renderStage;
 					loadedRenderStageNameByInputAttributeIndex[renderStage.InputAttributeIndex] = renderStage.Name;
 
-					if (renderStage.InputAttributeIndex > largestNodeID) largestNodeID = renderStage.InputAttributeIndex;
+					if (renderStage.NodeIndex > largestNodeID) largestNodeID = renderStage.NodeIndex;
 				}
 			}
 			else
@@ -3530,6 +3659,10 @@ namespace LambdaEngine
 	{
 		//Reset to clear state
 		{
+			s_NextNodeID		= 0;
+			s_NextAttributeID	= 0;
+			s_NextLinkID		= 0;
+
 			m_ResourceStateGroups.clear();
 			m_FinalOutput = {};
 
@@ -3733,9 +3866,9 @@ namespace LambdaEngine
 							resourceSynchronization.NextRenderStage = "PRESENT (Not a Render Stage)";
 							resourceSynchronization.PrevBindingType = ERenderGraphResourceBindingType::ATTACHMENT;
 							resourceSynchronization.NextBindingType = ERenderGraphResourceBindingType::PRESENT;
-							resourceSynchronization.PrevQueue = ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
-							resourceSynchronization.NextQueue = ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
-							resourceSynchronization.ResourceName = pFinalResourceState->ResourceName;
+							resourceSynchronization.PrevQueue		= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+							resourceSynchronization.NextQueue		= ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+							resourceSynchronization.ResourceName	= pFinalResourceState->ResourceName;
 
 							imguiSynchronizationStage.Synchronizations.push_back(resourceSynchronization);
 
@@ -4042,6 +4175,7 @@ namespace LambdaEngine
 
 										orderedSynchronizationStages.erase(orderedSynchronizationStages.begin() + orderedPipelineStages[previousSynchronizationPipelineStageDescIndex].StageIndex);
 										orderedPipelineStages.erase(orderedPipelineStages.begin() + previousSynchronizationPipelineStageDescIndex);
+										p--;
 									}
 								}
 							}
@@ -4094,7 +4228,7 @@ namespace LambdaEngine
 			parsedResource.BackBufferBound			= resource.BackBufferBound;
 			parsedResource.SubResourceCount			= resource.SubResourceCount;
 			parsedResource.IsOfArrayType			= resource.IsOfArrayType;
-			parsedResource.TextureFormat			= TEXTURE_FORMATS[resource.TextureFormat];
+			parsedResource.TextureFormat			= resource.TextureFormat;
 			parsedResource.External					= m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX].FindResourceStateIdent(resource.Name) != m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX].ResourceStateIdents.end();
 			parsedResource.Temporal					= m_ResourceStateGroups[TEMPORAL_RESOURCE_STATE_GROUP_INDEX].FindResourceStateIdent(resource.Name) != m_ResourceStateGroups[TEMPORAL_RESOURCE_STATE_GROUP_INDEX].ResourceStateIdents.end();
 
@@ -4344,6 +4478,7 @@ namespace LambdaEngine
 			pDstRenderStage->Graphics.DrawType					= pSrcRenderStage->Graphics.DrawType;
 			pDstRenderStage->Graphics.IndexBufferName			= m_ResourceStatesByHalfAttributeIndex[pSrcRenderStage->Graphics.IndexBufferAttributeIndex / 2].ResourceName;
 			pDstRenderStage->Graphics.IndirectArgsBufferName	= m_ResourceStatesByHalfAttributeIndex[pSrcRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2].ResourceName;
+			pDstRenderStage->Graphics.DepthTestEnabled			= pSrcRenderStage->Graphics.DepthTestEnabled;
 		}
 		else if (pDstRenderStage->Type == EPipelineStateType::COMPUTE)
 		{

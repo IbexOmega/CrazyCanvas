@@ -38,7 +38,7 @@ namespace LambdaEngine
 		bool						IsOfArrayType			= false;
 		bool						Editable				= false;
 
-		uint32						TextureFormat			= 0;
+		EFormat						TextureFormat			= EFormat::NONE;
 	};
 
 	struct EditorRenderGraphResourceLink
@@ -80,7 +80,7 @@ namespace LambdaEngine
 			ERenderStageDrawType		DrawType;
 			int32						IndexBufferAttributeIndex;
 			int32						IndirectArgsBufferAttributeIndex;
-
+			bool						DepthTestEnabled;
 		} Graphics;
 
 		struct
@@ -206,7 +206,7 @@ namespace LambdaEngine
 		void PopPinColorIfNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
 		bool CustomPinColorNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
 
-		void CalculateResourceStateBindingTypes(const EditorRenderStageDesc* pRenderStage, const EditorRenderGraphResourceState* pResourceState, TArray<ERenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames);
+		void CalculateResourceStateBindingTypes(const EditorRenderStageDesc* pRenderStage, const EditorResource* pResource, const EditorRenderGraphResourceState* pResourceState, TArray<ERenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames);
 
 		bool SaveToFile(const String& renderGraphName);
 		bool LoadFromFile(const String& filepath, bool generateImGuiStage);

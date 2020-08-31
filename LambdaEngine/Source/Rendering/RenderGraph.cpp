@@ -921,7 +921,8 @@ namespace LambdaEngine
 			RenderStage* pRenderStage = &m_pRenderStages[renderStageIndex];
 			m_RenderStageMap[pRenderStageDesc->Name] = renderStageIndex;
 
-			pRenderStage->Parameters = pRenderStageDesc->Parameters;
+			pRenderStage->Name			= pRenderStageDesc->Name ;
+			pRenderStage->Parameters	= pRenderStageDesc->Parameters;
 
 			if (pRenderStage->Parameters.XDimType == ERenderStageDimensionType::RELATIVE ||
 				pRenderStage->Parameters.XDimType == ERenderStageDimensionType::RELATIVE_1D ||
@@ -1282,6 +1283,7 @@ namespace LambdaEngine
 					GraphicsManagedPipelineStateDesc pipelineDesc = {};
 					pipelineDesc.Name							= pRenderStageDesc->Name;
 					pipelineDesc.pPipelineLayout				= pRenderStage->pPipelineLayout;
+					pipelineDesc.DepthTestEnabled				= pRenderStageDesc->Graphics.DepthTestEnabled;
 					pipelineDesc.TaskShader						= pRenderStageDesc->Graphics.Shaders.TaskShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.TaskShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER,		EShaderLang::GLSL);
 					pipelineDesc.MeshShader						= pRenderStageDesc->Graphics.Shaders.MeshShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.MeshShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER,		EShaderLang::GLSL);
 					pipelineDesc.VertexShader					= pRenderStageDesc->Graphics.Shaders.VertexShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.VertexShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,		EShaderLang::GLSL);
@@ -1499,6 +1501,7 @@ namespace LambdaEngine
 			const SynchronizationStageDesc* pSynchronizationStageDesc = &synchronizationStageDescriptions[s];
 
 			SynchronizationStage* pSynchronizationStage = &m_pSynchronizationStages[s];
+			ECommandQueueType otherQueue = ECommandQueueType::COMMAND_QUEUE_NONE;
 
 			for (auto synchronizationIt = pSynchronizationStageDesc->Synchronizations.begin(); synchronizationIt != pSynchronizationStageDesc->Synchronizations.end(); synchronizationIt++)
 			{
@@ -1534,9 +1537,6 @@ namespace LambdaEngine
 				const RenderStage* pPrevRenderStage = &m_pRenderStages[prevRenderStageIt->second];
 				const RenderStage* pNextRenderStage = &m_pRenderStages[nextRenderStageIt->second];
 
-				pSynchronizationStage->SrcPipelineStage = FindLastPipelineStage(pSynchronizationStage->SrcPipelineStage | pPrevRenderStage->LastPipelineStage);
-				pSynchronizationStage->DstPipelineStage = FindEarliestPipelineStage(pSynchronizationStage->DstPipelineStage | pNextRenderStage->FirstPipelineStage);
-
 				ECommandQueueType prevQueue 	= pResourceSynchronizationDesc->PrevQueue;
 				ECommandQueueType nextQueue		= pResourceSynchronizationDesc->NextQueue;
 				uint32 srcMemoryAccessFlags		= CalculateResourceAccessFlags(pResourceSynchronizationDesc->PrevBindingType);
@@ -1545,12 +1545,17 @@ namespace LambdaEngine
 				if (pSynchronizationStage->ExecutionQueue == ECommandQueueType::COMMAND_QUEUE_NONE)
 				{
 					pSynchronizationStage->ExecutionQueue = prevQueue;
+					otherQueue = pSynchronizationStage->ExecutionQueue == ECommandQueueType::COMMAND_QUEUE_GRAPHICS ? ECommandQueueType::COMMAND_QUEUE_COMPUTE : ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
 				}
 				else if (pSynchronizationStage->ExecutionQueue != prevQueue)
 				{
 					LOG_ERROR("[RenderGraph]: SynchronizationStage \"%s\" contains synchronizations that have different Previous Queues");
 					return false;
 				}
+
+				pSynchronizationStage->SrcPipelineStage				= FindLastPipelineStage(pSynchronizationStage->SrcPipelineStage | pPrevRenderStage->LastPipelineStage);
+				pSynchronizationStage->SameQueueDstPipelineStage	= FindEarliestCompatiblePipelineStage(pSynchronizationStage->SameQueueDstPipelineStage | pNextRenderStage->FirstPipelineStage, pSynchronizationStage->ExecutionQueue);
+				pSynchronizationStage->OtherQueueDstPipelineStage	= FindEarliestCompatiblePipelineStage(pSynchronizationStage->OtherQueueDstPipelineStage | pNextRenderStage->FirstPipelineStage, otherQueue);
 
 				if (pResource->Type == ERenderGraphResourceType::TEXTURE)
 				{
@@ -1967,26 +1972,26 @@ namespace LambdaEngine
 
 			if (sameQueueBackBufferBarriers.size() > 0)
 			{
-				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, &otherQueueBackBufferBarriers[m_BackBufferIndex], 1);
+				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, &otherQueueBackBufferBarriers[m_BackBufferIndex], 1);
 			}
 
 			if (sameQueueTextureBarriers.size() > 0)
 			{
-				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, sameQueueTextureBarriers.data(), sameQueueTextureBarriers.size());
+				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, sameQueueTextureBarriers.data(), sameQueueTextureBarriers.size());
 			}
 
 			if (otherQueueBackBufferBarriers.size() > 0)
 			{
 				const PipelineTextureBarrierDesc* pTextureBarrier = &otherQueueBackBufferBarriers[m_BackBufferIndex];
-				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, pTextureBarrier, 1);
-				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, pTextureBarrier, 1);
+				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, pTextureBarrier, 1);
+				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, pTextureBarrier, 1);
 				(*ppSecondExecutionStage) = pSecondExecutionCommandList;
 			}
 
 			if (otherQueueTextureBarriers.size() > 0)
 			{
-				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, otherQueueTextureBarriers.data(), otherQueueTextureBarriers.size());
-				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, otherQueueTextureBarriers.data(), otherQueueTextureBarriers.size());
+				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueTextureBarriers.data(), otherQueueTextureBarriers.size());
+				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueTextureBarriers.data(), otherQueueTextureBarriers.size());
 				(*ppSecondExecutionStage) = pSecondExecutionCommandList;
 			}
 		}
@@ -1998,13 +2003,13 @@ namespace LambdaEngine
 
 			if (sameQueueBufferBarriers.size() > 0)
 			{
-				pFirstExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, sameQueueBufferBarriers.data(), sameQueueBufferBarriers.size());
+				pFirstExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, sameQueueBufferBarriers.data(), sameQueueBufferBarriers.size());
 			}
 
 			if (otherQueueBufferBarriers.size() > 0)
 			{
-				pFirstExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, otherQueueBufferBarriers.data(), otherQueueBufferBarriers.size());
-				pSecondExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->DstPipelineStage, otherQueueBufferBarriers.data(), otherQueueBufferBarriers.size());
+				pFirstExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueBufferBarriers.data(), otherQueueBufferBarriers.size());
+				pSecondExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueBufferBarriers.data(), otherQueueBufferBarriers.size());
 				(*ppSecondExecutionStage) = pSecondExecutionCommandList;
 			}
 		}

@@ -43,6 +43,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
 constexpr const bool RAY_TRACING_ENABLED		= true;
+constexpr const bool SVGF_ENABLED				= true;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
@@ -54,6 +55,13 @@ constexpr const float DEFAULT_DIR_LIGHT_B			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_STRENGTH	= 0.0f;
 
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
+
+enum class EScene
+{
+	SPONZA,
+	CORNELL,
+	TESTING
+};
 
 Sandbox::Sandbox()
     : Game()
@@ -79,83 +87,215 @@ Sandbox::Sandbox()
 	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
 	m_pScene->Init(sceneDesc);
 
-	//Scene
+	m_DirectionalLightAngle	= glm::half_pi<float>();
+	m_DirectionalLightStrength[0] = DEFAULT_DIR_LIGHT_R;
+	m_DirectionalLightStrength[1] = DEFAULT_DIR_LIGHT_G;
+	m_DirectionalLightStrength[2] = DEFAULT_DIR_LIGHT_B;
+	m_DirectionalLightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
+
+	DirectionalLight directionalLight;
+	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
+	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
+
+	EScene scene = EScene::TESTING;
+
+	m_pScene->SetDirectionalLight(directionalLight);
+
+	AreaLightObject areaLight;
+	areaLight.Type = EAreaLightType::QUAD;
+	areaLight.Material = GUID_MATERIAL_DEFAULT_EMISSIVE;
+
+	if (scene == EScene::SPONZA)
 	{
-		std::vector<GameObject>	sceneGameObjects;
-		ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original.obj", sceneGameObjects);
-		//ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
-		//ResourceManager::LoadSceneFromFile("San_Miguel/san-miguel-low-poly.obj", sceneGameObjects);
-
-		float scale = 1.0f;
-		//float scale = 0.01f;
-
-		for (GameObject& gameObject : sceneGameObjects)
+		//Lights
 		{
-			m_pScene->AddDynamicGameObject(gameObject, glm::scale(glm::mat4(1.0f), glm::vec3(scale)));
+			glm::vec3 position(0.0f, 6.0f, 0.0f);
+			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+			glm::vec3 scale(1.5f);
+
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
+
+			InstanceIndexAndTransform instanceIndexAndTransform;
+			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
+			instanceIndexAndTransform.Position		= position;
+			instanceIndexAndTransform.Rotation		= rotation;
+			instanceIndexAndTransform.Scale			= scale;
+
+			m_LightInstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+		}
+
+		//Scene
+		{
+			std::vector<GameObject>	sceneGameObjects;
+			ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
+
+			glm::vec3 position(0.0f, 0.0f, 0.0f);
+			glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec3 scale(0.01f);
+
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
+
+			for (GameObject& gameObject : sceneGameObjects)
+			{
+				InstanceIndexAndTransform instanceIndexAndTransform;
+				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+				instanceIndexAndTransform.Position = position;
+				instanceIndexAndTransform.Rotation = rotation;
+				instanceIndexAndTransform.Scale = scale;
+
+				m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+			}
 		}
 	}
-
-	//Bunny
+	else if (scene == EScene::CORNELL)
 	{
-		/*uint32 bunnyMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/bunny.obj");
+		//Lights
+		{
+			glm::vec3 position(0.0f, 1.95f, 0.0f);
+			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+			glm::vec3 scale(0.2f);
 
-		GameObject bunnyGameObject = {};
-		bunnyGameObject.Mesh = bunnyMeshGUID;
-		bunnyGameObject.Material = DEFAULT_MATERIAL;
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
 
-		m_pScene->AddDynamicGameObject(bunnyGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f)));*/
+			InstanceIndexAndTransform instanceIndexAndTransform;
+			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
+			instanceIndexAndTransform.Position		= position;
+			instanceIndexAndTransform.Rotation		= rotation;
+			instanceIndexAndTransform.Scale			= scale;
+
+			m_LightInstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+		}
+
+		//Scene
+		{
+			std::vector<GameObject>	sceneGameObjects;
+			ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Light.obj", sceneGameObjects);
+
+			glm::vec3 position(0.0f, 0.0f, 0.0f);
+			glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec3 scale(1.0f);
+
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
+
+			for (GameObject& gameObject : sceneGameObjects)
+			{
+				InstanceIndexAndTransform instanceIndexAndTransform;
+				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+				instanceIndexAndTransform.Position = position;
+				instanceIndexAndTransform.Rotation = rotation;
+				instanceIndexAndTransform.Scale = scale;
+
+				m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+			}
+		}
 	}
-
-	//Gun
+	else if (scene == EScene::TESTING)
 	{
-		//uint32 gunMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/gun.obj");
+		//Lights
+		{
+			glm::vec3 position(0.0f, 6.0f, 0.0f);
+			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+			glm::vec3 scale(1.5f);
 
-		//GameObject gunGameObject = {};
-		//gunGameObject.Mesh = gunMeshGUID;
-		//gunGameObject.Material = DEFAULT_MATERIAL;
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
 
-		//m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
-		//m_pScene->AddDynamicGameObject(gunGameObject, glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.5f, 0.0f)));
-	}
+			InstanceIndexAndTransform instanceIndexAndTransform;
+			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
+			instanceIndexAndTransform.Position		= position;
+			instanceIndexAndTransform.Rotation		= rotation;
+			instanceIndexAndTransform.Scale			= scale;
 
-	//Triangle
-	{
-		/*uint32 triangleMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/triangle.obj");
+			m_LightInstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+		}
 
-		GameObject triangleGameObject = {};
-		triangleGameObject.Mesh = triangleMeshGUID;
-		triangleGameObject.Material = DEFAULT_MATERIAL;
+		//Scene
+		{
+			std::vector<GameObject>	sceneGameObjects;
+			ResourceManager::LoadSceneFromFile("Testing/Testing.obj", sceneGameObjects);
 
-		glm::vec3 position(1.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, -glm::half_pi<float>());
-		glm::vec3 scale(1.0f);
+			glm::vec3 position(0.0f, 0.0f, 0.0f);
+			glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec3 scale(1.0f);
 
-		glm::mat4 transform(1.0f);
-		transform = glm::translate(transform, position);
-		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-		transform = glm::scale(transform, scale);
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
 
-		m_pScene->AddDynamicGameObject(triangleGameObject, glm::mat4(1.0f));*/
-	}
+			for (GameObject& gameObject : sceneGameObjects)
+			{
+				InstanceIndexAndTransform instanceIndexAndTransform;
+				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+				instanceIndexAndTransform.Position = position;
+				instanceIndexAndTransform.Rotation = rotation;
+				instanceIndexAndTransform.Scale = scale;
 
-	//Sphere
-	{
-		/*uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("../Assets/Meshes/sphere.obj");
+				m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+			}
+		}
 
-		GameObject sphereGameObject = {};
-		sphereGameObject.Mesh = sphereMeshGUID;
-		sphereGameObject.Material = DEFAULT_MATERIAL;
+		//Sphere Grid
+		{
+			uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		
+			uint32 gridRadius = 5;
 
-		glm::vec3 position(1.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, -glm::half_pi<float>());
-		glm::vec3 scale(1.0f);
+			for (uint32 y = 0; y < gridRadius; y++)
+			{
+				float32 roughness = y / float32(gridRadius - 1);
 
-		glm::mat4 transform(1.0f);
-		transform = glm::translate(transform, position);
-		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-		transform = glm::scale(transform, scale);
+				for (uint32 x = 0; x < gridRadius; x++)
+				{
+					float32 metallic = x / float32(gridRadius - 1);
 
-		m_pScene->AddDynamicGameObject(sphereGameObject, glm::mat4(1.0f));*/
+					MaterialProperties materialProperties;
+					materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+					materialProperties.Roughness	= roughness;
+					materialProperties.Metallic		= metallic;
+
+					GameObject sphereGameObject = {};
+					sphereGameObject.Mesh		= sphereMeshGUID;
+					sphereGameObject.Material	= ResourceManager::LoadMaterialFromMemory(
+						"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
+						GUID_TEXTURE_DEFAULT_COLOR_MAP,
+						GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+						GUID_TEXTURE_DEFAULT_COLOR_MAP,
+						GUID_TEXTURE_DEFAULT_COLOR_MAP,
+						GUID_TEXTURE_DEFAULT_COLOR_MAP,
+						materialProperties);
+
+					glm::vec3 position(-float32(gridRadius) * 0.5f + x, 1.0f + y, 5.0f);
+					glm::vec3 scale(1.0f);
+
+					glm::mat4 transform(1.0f);
+					transform = glm::translate(transform, position);
+					transform = glm::scale(transform, scale);
+
+					InstanceIndexAndTransform instanceIndexAndTransform;
+					instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(sphereGameObject, transform);
+					instanceIndexAndTransform.Position		= position;
+					instanceIndexAndTransform.Rotation		= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+					instanceIndexAndTransform.Scale			= scale;
+
+					m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+				}
+			}
+		}
 	}
 
 	m_pScene->Finalize();
@@ -219,14 +359,7 @@ Sandbox::Sandbox()
 	ICommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
 	ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
 
-	m_pScene->UpdatePerFrameBuffer(pGraphicsCopyCommandList, m_pCamera, m_pRenderer->GetFrameIndex());
-
-	m_LightAngle	= glm::half_pi<float>();
-	m_LightStrength[0] = DEFAULT_DIR_LIGHT_R;
-	m_LightStrength[1] = DEFAULT_DIR_LIGHT_G;
-	m_LightStrength[2] = DEFAULT_DIR_LIGHT_B;
-	m_LightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
-	m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
+	m_pScene->UpdateCamera(m_pCamera);
 
 	if (RENDER_GRAPH_IMGUI_ENABLED)
 	{
@@ -633,6 +766,7 @@ void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
 	}
 
 	m_pCamera->Update();
+	m_pScene->UpdateCamera(m_pCamera);
 
 	AudioListenerDesc listenerDesc = {};
 	listenerDesc.Position = m_pCamera->GetPosition();
@@ -649,8 +783,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 	m_pRenderer->NewFrame(delta);
 
 	ICommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
-
-	m_pScene->UpdatePerFrameBuffer(pGraphicsCopyCommandList, m_pCamera, m_pRenderer->GetFrameIndex());
+	ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
 
 	Window* pWindow = CommonApplication::Get()->GetMainWindow();
 	float32 renderWidth = (float32)pWindow->GetWidth();
@@ -661,7 +794,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 	{
 		m_pRenderGraphEditor->RenderGUI();
 
-		//ImGui::ShowDemoWindow();
+		ImGui::ShowDemoWindow();
 
 		ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
 		if (ImGui::Begin("Debugging Window", NULL))
@@ -673,9 +806,14 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 			static ImGuiTexture albedoTexture = {};
 			static ImGuiTexture normalTexture = {};
+			static ImGuiTexture emissiveMetallicRoughness = {};
+			static ImGuiTexture compactNormalsTexture = {};
 			static ImGuiTexture motionTexture = {};
+			static ImGuiTexture linearZTexture = {};
 			static ImGuiTexture depthStencilTexture = {};
+			static ImGuiTexture momentsTexture = {};
 			static ImGuiTexture radianceTexture = {};
+			static ImGuiTexture compNormalTexture = {};
 
 			float windowWidth = ImGui::GetWindowWidth();
 
@@ -686,33 +824,181 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 			{
 				if (ImGui::BeginTabItem("Scene"))
 				{
-					if (ImGui::SliderFloat("Light Angle", &m_LightAngle, 0.0f, glm::two_pi<float>()))
+					bool dirLightChanged = false;
+
+					if (ImGui::SliderFloat("Dir. Light Angle", &m_DirectionalLightAngle, 0.0f, glm::two_pi<float>()))
 					{
-						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
-						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
+						dirLightChanged = true;
 					}
 
-					if (ImGui::SliderFloat3("Light Color", m_LightStrength, 0.0f, 1.0f))
+					if (ImGui::ColorEdit3("Dir. Light Color", m_DirectionalLightStrength))
 					{
-						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
-						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
+						dirLightChanged = true;
 					}
 
-					if (ImGui::SliderFloat("Light Strength", &m_LightStrength[3], 0.0f, 10000.0f, "%.3f", 10.0f))
+					if (ImGui::SliderFloat("Dir. Light Strength", &m_DirectionalLightStrength[3], 0.0f, 10000.0f, "%.3f", 10.0f))
 					{
-						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
-						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
+						dirLightChanged = true;
 					}
 
-					if (ImGui::Button("Reset Light"))
+					if (ImGui::Button("Reset Dir. Light"))
 					{
-						m_LightStrength[0] = DEFAULT_DIR_LIGHT_R;
-						m_LightStrength[1] = DEFAULT_DIR_LIGHT_G;
-						m_LightStrength[2] = DEFAULT_DIR_LIGHT_B;
-						m_LightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
+						m_DirectionalLightStrength[0] = DEFAULT_DIR_LIGHT_R;
+						m_DirectionalLightStrength[1] = DEFAULT_DIR_LIGHT_G;
+						m_DirectionalLightStrength[2] = DEFAULT_DIR_LIGHT_B;
+						m_DirectionalLightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
 
-						ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
-						m_pScene->UpdateDirectionalLight(pComputeCopyCommandList, glm::normalize(glm::vec3(glm::cos(m_LightAngle), glm::sin(m_LightAngle), 0.0f)), glm::vec3(m_LightStrength[0], m_LightStrength[1], m_LightStrength[2]) * m_LightStrength[3]);
+						dirLightChanged = true;
+					}
+
+					if (dirLightChanged)
+					{
+						DirectionalLight directionalLight;
+						directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
+						directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
+
+						m_pScene->SetDirectionalLight(directionalLight);
+					}
+
+					if (ImGui::CollapsingHeader("Game Objects"))
+					{
+						for (InstanceIndexAndTransform& instanceIndexAndTransform : m_InstanceIndicesAndTransforms)
+						{
+							if (ImGui::TreeNode(("Game Object" + std::to_string(instanceIndexAndTransform.InstanceIndex)).c_str()))
+							{
+								bool updated = false;
+
+								if (ImGui::SliderFloat3("Position", glm::value_ptr(instanceIndexAndTransform.Position), -50.0f, 50.0f))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat4("Rotation", glm::value_ptr(instanceIndexAndTransform.Rotation), 0.0f, glm::two_pi<float32>()))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat3("Scale", glm::value_ptr(instanceIndexAndTransform.Scale), 0.0f, 10.0f))
+								{
+									updated = true;
+								}
+
+								float lockedScale = instanceIndexAndTransform.Scale.x;
+								if (ImGui::SliderFloat("Locked Scale", &lockedScale, 0.0f, 10.0f))
+								{
+									instanceIndexAndTransform.Scale.x = lockedScale;
+									instanceIndexAndTransform.Scale.y = lockedScale;
+									instanceIndexAndTransform.Scale.z = lockedScale;
+									updated = true;
+								}
+
+								if (updated)
+								{
+									glm::mat4 transform(1.0f);
+									transform = glm::translate(transform, instanceIndexAndTransform.Position);
+									transform = glm::rotate(transform, instanceIndexAndTransform.Rotation.w, glm::vec3(instanceIndexAndTransform.Rotation));
+									transform = glm::scale(transform, instanceIndexAndTransform.Scale);
+
+									m_pScene->UpdateTransform(instanceIndexAndTransform.InstanceIndex, transform);
+								}
+
+								ImGui::TreePop();
+							}
+						}
+					}
+
+					if (ImGui::CollapsingHeader("Lights"))
+					{
+						for (InstanceIndexAndTransform& instanceIndexAndTransform : m_LightInstanceIndicesAndTransforms)
+						{
+							if (ImGui::TreeNode(("Light" + std::to_string(instanceIndexAndTransform.InstanceIndex)).c_str()))
+							{
+								bool updated = false;
+
+								if (ImGui::SliderFloat3("Position", glm::value_ptr(instanceIndexAndTransform.Position), -50.0f, 50.0f))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat4("Rotation", glm::value_ptr(instanceIndexAndTransform.Rotation), 0.0f, glm::two_pi<float32>()))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat3("Scale", glm::value_ptr(instanceIndexAndTransform.Scale), 0.0f, 10.0f))
+								{
+									updated = true;
+								}
+
+								float lockedScale = instanceIndexAndTransform.Scale.x;
+								if (ImGui::SliderFloat("Locked Scale",&lockedScale, 0.0f, 10.0f))
+								{
+									instanceIndexAndTransform.Scale.x = lockedScale;
+									instanceIndexAndTransform.Scale.y = lockedScale;
+									instanceIndexAndTransform.Scale.z = lockedScale;
+									updated = true;
+								}
+
+								if (updated)
+								{
+									glm::mat4 transform(1.0f);
+									transform = glm::translate(transform, instanceIndexAndTransform.Position);
+									transform = glm::rotate(transform, instanceIndexAndTransform.Rotation.w, glm::vec3(instanceIndexAndTransform.Rotation));
+									transform = glm::scale(transform, instanceIndexAndTransform.Scale);
+
+									m_pScene->UpdateTransform(instanceIndexAndTransform.InstanceIndex, transform);
+								}
+
+								ImGui::TreePop();
+							}
+						}
+					}
+
+					if (ImGui::CollapsingHeader("Materials"))
+					{
+						std::unordered_map<String, GUID_Lambda>& materialNamesMap = ResourceManager::GetMaterialNamesMap();;
+
+						for (auto materialIt = materialNamesMap.begin(); materialIt != materialNamesMap.end(); materialIt++)
+						{
+							if (ImGui::TreeNode(materialIt->first.c_str()))
+							{
+								Material* pMaterial = ResourceManager::GetMaterial(materialIt->second);
+
+								bool updated = false;
+
+								if (ImGui::ColorEdit3("Albedo", glm::value_ptr(pMaterial->Properties.Albedo)))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat("AO", &pMaterial->Properties.Ambient, 0.0f, 1.0f))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat("Metallic", &pMaterial->Properties.Metallic, 0.0f, 1.0f))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat("Roughness", &pMaterial->Properties.Roughness, 0.0f, 1.0f))
+								{
+									updated = true;
+								}
+
+								if (ImGui::SliderFloat("Emission Strength", &pMaterial->Properties.EmissionStrength, 0.0f, 1000.0f))
+								{
+									updated = true;
+								}
+
+								if (updated)
+								{
+									m_pScene->UpdateMaterialProperties(materialIt->second);
+								}
+
+								ImGui::TreePop();
+							}
+						}
 					}
 
 					ImGui::EndTabItem();
@@ -726,96 +1012,110 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					ImGui::EndTabItem();
 				}
 
-				if (ImGui::BeginTabItem("Normal Metallic Roughness Emissive"))
+				if (ImGui::BeginTabItem("Emission Metallic Roughness"))
 				{
-					normalTexture.ResourceName = "G_BUFFER_NORM_MET_ROUGH";
+					emissiveMetallicRoughness.ResourceName = "G_BUFFER_EMISSION_METALLIC_ROUGHNESS";
 
-					const char* items[] = { "ALL", "Normal", "Metallic", "Roughness", "Emissive" };
+					const char* items[] = { "Emission", "Metallic", "Roughness" };
 					static int currentItem = 0;
 					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
 
 					if (currentItem == 0)
 					{
-						normalTexture.ReservedIncludeMask = 0x00008421;
+						emissiveMetallicRoughness.ReservedIncludeMask = 0x00008420;
 
-						normalTexture.ChannelMul[0] = 0.5f;
-						normalTexture.ChannelMul[1] = 0.5f;
-						normalTexture.ChannelMul[2] = 0.5f;
-						normalTexture.ChannelMul[3] = 0.5f;
+						emissiveMetallicRoughness.ChannelMul[0] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[1] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[2] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[3] = 0.0f;
 
-						normalTexture.ChannelAdd[0] = 0.5f;
-						normalTexture.ChannelAdd[1] = 0.5f;
-						normalTexture.ChannelAdd[2] = 0.5f;
-						normalTexture.ChannelAdd[3] = 0.5f;
+						emissiveMetallicRoughness.ChannelAdd[0] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[1] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[2] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[3] = 1.0f;
 
-						normalTexture.PixelShaderGUID = GUID_NONE;
+						emissiveMetallicRoughness.PixelShaderGUID = m_ImGuiPixelShaderEmissionGUID;
 					}
 					else if (currentItem == 1)
 					{
-						normalTexture.ReservedIncludeMask = 0x00008420;
+						emissiveMetallicRoughness.ReservedIncludeMask = 0x00001110;
 
-						normalTexture.ChannelMul[0] = 1.0f;
-						normalTexture.ChannelMul[1] = 1.0f;
-						normalTexture.ChannelMul[2] = 1.0f;
-						normalTexture.ChannelMul[3] = 0.0f;
+						emissiveMetallicRoughness.ChannelMul[0] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[1] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[2] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[3] = 0.0f;
 
-						normalTexture.ChannelAdd[0] = 0.0f;
-						normalTexture.ChannelAdd[1] = 0.0f;
-						normalTexture.ChannelAdd[2] = 0.0f;
-						normalTexture.ChannelAdd[3] = 1.0f;
+						emissiveMetallicRoughness.ChannelAdd[0] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[1] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[2] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[3] = 1.0f;
 
-						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderNormalGUID;
+						emissiveMetallicRoughness.PixelShaderGUID = m_ImGuiPixelPackedMetallicGUID;
 					}
 					else if (currentItem == 2)
 					{
-						normalTexture.ReservedIncludeMask = 0x00002220;
+						emissiveMetallicRoughness.ReservedIncludeMask = 0x00001110;
 
-						normalTexture.ChannelMul[0] = 1.0f;
-						normalTexture.ChannelMul[1] = 1.0f;
-						normalTexture.ChannelMul[2] = 1.0f;
-						normalTexture.ChannelMul[3] = 0.0f;
+						emissiveMetallicRoughness.ChannelMul[0] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[1] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[2] = 1.0f;
+						emissiveMetallicRoughness.ChannelMul[3] = 0.0f;
 
-						normalTexture.ChannelAdd[0] = 0.0f;
-						normalTexture.ChannelAdd[1] = 0.0f;
-						normalTexture.ChannelAdd[2] = 0.0f;
-						normalTexture.ChannelAdd[3] = 1.0f;
+						emissiveMetallicRoughness.ChannelAdd[0] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[1] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[2] = 0.0f;
+						emissiveMetallicRoughness.ChannelAdd[3] = 1.0f;
 
-						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderMetallicGUID;
+						emissiveMetallicRoughness.PixelShaderGUID = m_ImGuiPixelPackedRoughnessGUID;
 					}
-					else if (currentItem == 3)
+
+					ImGui::Image(&emissiveMetallicRoughness, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Compact Normals"))
+				{
+					compactNormalsTexture.ResourceName = "G_BUFFER_COMPACT_NORMALS";
+
+					const char* items[] = { "Shading", "Geometric" };
+					static int currentItem = 0;
+					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
+
+					if (currentItem == 0)
 					{
-						normalTexture.ReservedIncludeMask = 0x00001110;
+						compactNormalsTexture.ReservedIncludeMask = 0x00008880;
 
-						normalTexture.ChannelMul[0] = 1.0f;
-						normalTexture.ChannelMul[1] = 1.0f;
-						normalTexture.ChannelMul[2] = 1.0f;
-						normalTexture.ChannelMul[3] = 0.0f;
+						compactNormalsTexture.ChannelMul[0] = 1.0f;
+						compactNormalsTexture.ChannelMul[1] = 1.0f;
+						compactNormalsTexture.ChannelMul[2] = 1.0f;
+						compactNormalsTexture.ChannelMul[3] = 0.0f;
 
-						normalTexture.ChannelAdd[0] = 0.0f;
-						normalTexture.ChannelAdd[1] = 0.0f;
-						normalTexture.ChannelAdd[2] = 0.0f;
-						normalTexture.ChannelAdd[3] = 1.0f;
+						compactNormalsTexture.ChannelAdd[0] = 0.0f;
+						compactNormalsTexture.ChannelAdd[1] = 0.0f;
+						compactNormalsTexture.ChannelAdd[2] = 0.0f;
+						compactNormalsTexture.ChannelAdd[3] = 1.0f;
 
-						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderRoughnessGUID;
+						compactNormalsTexture.PixelShaderGUID = m_ImGuiPixelCompactNormalFloatGUID;
 					}
-					else if (currentItem == 4)
+					else if (currentItem == 1)
 					{
-						normalTexture.ReservedIncludeMask = 0x00002220;
+						compactNormalsTexture.ReservedIncludeMask = 0x00004440;
 
-						normalTexture.ChannelMul[0] = 1.0f;
-						normalTexture.ChannelMul[1] = 1.0f;
-						normalTexture.ChannelMul[2] = 1.0f;
-						normalTexture.ChannelMul[3] = 0.0f;
+						compactNormalsTexture.ChannelMul[0] = 1.0f;
+						compactNormalsTexture.ChannelMul[1] = 1.0f;
+						compactNormalsTexture.ChannelMul[2] = 1.0f;
+						compactNormalsTexture.ChannelMul[3] = 0.0f;
 
-						normalTexture.ChannelAdd[0] = 0.0f;
-						normalTexture.ChannelAdd[1] = 0.0f;
-						normalTexture.ChannelAdd[2] = 0.0f;
-						normalTexture.ChannelAdd[3] = 1.0f;
+						compactNormalsTexture.ChannelAdd[0] = 0.0f;
+						compactNormalsTexture.ChannelAdd[1] = 0.0f;
+						compactNormalsTexture.ChannelAdd[2] = 0.0f;
+						compactNormalsTexture.ChannelAdd[3] = 1.0f;
 
-						normalTexture.PixelShaderGUID = m_ImGuiPixelShaderEmissiveGUID;
+						compactNormalsTexture.PixelShaderGUID = m_ImGuiPixelCompactNormalFloatGUID;
 					}
 
-					ImGui::Image(&normalTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+					ImGui::Image(&compactNormalsTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
 
 					ImGui::EndTabItem();
 				}
@@ -837,6 +1137,130 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					motionTexture.ChannelAdd[3] = 1.0f;
 
 					ImGui::Image(&motionTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Linear Z"))
+				{
+					linearZTexture.ResourceName = "G_BUFFER_LINEAR_Z";
+
+					const char* items[] = { "ALL", "Linear Z", "Max Change Z", "Prev Linear Z", "Packed Local Normal" };
+					static int currentItem = 0;
+					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
+
+					if (currentItem == 0)
+					{
+						linearZTexture.ReservedIncludeMask = 0x00008421;
+
+						linearZTexture.ChannelMul[0] = 1.0f;
+						linearZTexture.ChannelMul[1] = 1.0f;
+						linearZTexture.ChannelMul[2] = 1.0f;
+						linearZTexture.ChannelMul[3] = 1.0f;
+
+						linearZTexture.ChannelAdd[0] = 0.0f;
+						linearZTexture.ChannelAdd[1] = 0.0f;
+						linearZTexture.ChannelAdd[2] = 0.0f;
+						linearZTexture.ChannelAdd[3] = 0.0f;
+
+						linearZTexture.PixelShaderGUID = m_ImGuiPixelLinearZGUID;
+					}
+					else if (currentItem == 1)
+					{
+						linearZTexture.ReservedIncludeMask = 0x00008880;
+
+						linearZTexture.ChannelMul[0] = 1.0f;
+						linearZTexture.ChannelMul[1] = 1.0f;
+						linearZTexture.ChannelMul[2] = 1.0f;
+						linearZTexture.ChannelMul[3] = 0.0f;
+
+						linearZTexture.ChannelAdd[0] = 0.0f;
+						linearZTexture.ChannelAdd[1] = 0.0f;
+						linearZTexture.ChannelAdd[2] = 0.0f;
+						linearZTexture.ChannelAdd[3] = 1.0f;
+
+						linearZTexture.PixelShaderGUID = m_ImGuiPixelLinearZGUID;
+					}
+					else if (currentItem == 2)
+					{
+						linearZTexture.ReservedIncludeMask = 0x00004440;
+
+						linearZTexture.ChannelMul[0] = 1.0f;
+						linearZTexture.ChannelMul[1] = 1.0f;
+						linearZTexture.ChannelMul[2] = 1.0f;
+						linearZTexture.ChannelMul[3] = 0.0f;
+
+						linearZTexture.ChannelAdd[0] = 0.0f;
+						linearZTexture.ChannelAdd[1] = 0.0f;
+						linearZTexture.ChannelAdd[2] = 0.0f;
+						linearZTexture.ChannelAdd[3] = 1.0f;
+
+						linearZTexture.PixelShaderGUID = m_ImGuiPixelLinearZGUID;
+					}
+					else if (currentItem == 3)
+					{
+						linearZTexture.ReservedIncludeMask = 0x00002220;
+
+						linearZTexture.ChannelMul[0] = 1.0f;
+						linearZTexture.ChannelMul[1] = 1.0f;
+						linearZTexture.ChannelMul[2] = 1.0f;
+						linearZTexture.ChannelMul[3] = 0.0f;
+
+						linearZTexture.ChannelAdd[0] = 0.0f;
+						linearZTexture.ChannelAdd[1] = 0.0f;
+						linearZTexture.ChannelAdd[2] = 0.0f;
+						linearZTexture.ChannelAdd[3] = 1.0f;
+
+						linearZTexture.PixelShaderGUID = m_ImGuiPixelLinearZGUID;
+					}
+					else if (currentItem == 4)
+					{
+						linearZTexture.ReservedIncludeMask = 0x00001110;
+
+						linearZTexture.ChannelMul[0] = 1.0f;
+						linearZTexture.ChannelMul[1] = 1.0f;
+						linearZTexture.ChannelMul[2] = 1.0f;
+						linearZTexture.ChannelMul[3] = 0.0f;
+
+						linearZTexture.ChannelAdd[0] = 0.0f;
+						linearZTexture.ChannelAdd[1] = 0.0f;
+						linearZTexture.ChannelAdd[2] = 0.0f;
+						linearZTexture.ChannelAdd[3] = 1.0f;
+
+						linearZTexture.PixelShaderGUID = m_ImGuiPixelShaderPackedLocalNormalGUID;
+					}
+
+					ImGui::Image(&linearZTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Compact Normal"))
+				{
+					compNormalTexture.ResourceName = "G_BUFFER_COMPACT_NORM_DEPTH";
+
+					const char* items[] = { "Packed World Normal" };
+					static int currentItem = 0;
+					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
+
+					if (currentItem == 0)
+					{
+						compNormalTexture.ReservedIncludeMask = 0x00008880;
+
+						compNormalTexture.ChannelMul[0] = 1.0f;
+						compNormalTexture.ChannelMul[1] = 1.0f;
+						compNormalTexture.ChannelMul[2] = 1.0f;
+						compNormalTexture.ChannelMul[3] = 0.0f;
+
+						compNormalTexture.ChannelAdd[0] = 0.0f;
+						compNormalTexture.ChannelAdd[1] = 0.0f;
+						compNormalTexture.ChannelAdd[2] = 0.0f;
+						compNormalTexture.ChannelAdd[3] = 1.0f;
+
+						compNormalTexture.PixelShaderGUID = m_ImGuiPixelShaderPackedLocalNormalGUID;
+					}
+
+					ImGui::Image(&compNormalTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
 
 					ImGui::EndTabItem();
 				}
@@ -864,72 +1288,276 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 					ImGui::EndTabItem();
 				}
 
-				if (RAY_TRACING_ENABLED)
+				if (ImGui::BeginTabItem("Ray Tracing / SVGF"))
 				{
-					if (ImGui::BeginTabItem("Ray Tracing"))
+					const char* items[] = { 
+						"Direct Albedo",
+						"Direct Radiance", 
+						"Direct Radiance Reproj.", 
+						"Direct Radiance Variance Est.",
+						"Direct Radiance Feedback",
+						"Indirect Albedo ",
+						"Indirect Radiance ", 
+						"Indirect Radiance Reproj.", 
+						"Indirect Radiance Variance Est.",
+						"Indirect Radiance Feedback",
+						"Direct Variance", 
+						"Indirect Variance", 
+						"Accumulation" 
+					};
+					static int currentItem = 0;
+					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
+
+					if (currentItem == 0)
 					{
-						const char* items[] = { "Direct", "Indirect", "Accumulation" };
-						static int currentItem = 0;
-						ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
+						radianceTexture.ResourceName = "DIRECT_ALBEDO";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
 
-						if (currentItem == 0)
-						{
-							radianceTexture.ResourceName		= "DIRECT_RADIANCE";
-							radianceTexture.ReservedIncludeMask = 0x00008420;
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
 
-							radianceTexture.ChannelMul[0] = 1.0f;
-							radianceTexture.ChannelMul[1] = 1.0f;
-							radianceTexture.ChannelMul[2] = 1.0f;
-							radianceTexture.ChannelMul[3] = 0.0f;
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
 
-							radianceTexture.ChannelAdd[0] = 0.0f;
-							radianceTexture.ChannelAdd[1] = 0.0f;
-							radianceTexture.ChannelAdd[2] = 0.0f;
-							radianceTexture.ChannelAdd[3] = 1.0f;
-
-							radianceTexture.PixelShaderGUID = GUID_NONE;
-						}
-						else if (currentItem == 1)
-						{
-							radianceTexture.ResourceName		= "INDIRECT_RADIANCE";
-							radianceTexture.ReservedIncludeMask = 0x00008420;
-
-							radianceTexture.ChannelMul[0] = 1.0f;
-							radianceTexture.ChannelMul[1] = 1.0f;
-							radianceTexture.ChannelMul[2] = 1.0f;
-							radianceTexture.ChannelMul[3] = 0.0f;
-
-							radianceTexture.ChannelAdd[0] = 0.0f;
-							radianceTexture.ChannelAdd[1] = 0.0f;
-							radianceTexture.ChannelAdd[2] = 0.0f;
-							radianceTexture.ChannelAdd[3] = 1.0f;
-
-							radianceTexture.PixelShaderGUID = GUID_NONE;
-						}
-						else if (currentItem == 2)
-						{
-							radianceTexture.ResourceName		= "DIRECT_RADIANCE";
-							radianceTexture.ReservedIncludeMask = 0x00001110;
-
-							constexpr const float maxAccumulationInv = 1.0f / 6.55e4f;
-
-							radianceTexture.ChannelMul[0] = maxAccumulationInv;
-							radianceTexture.ChannelMul[1] = 0.0f;
-							radianceTexture.ChannelMul[2] = 0.0f;
-							radianceTexture.ChannelMul[3] = 0.0f;
-
-							radianceTexture.ChannelAdd[0] = 0.0f;
-							radianceTexture.ChannelAdd[1] = 0.0f;
-							radianceTexture.ChannelAdd[2] = 0.0f;
-							radianceTexture.ChannelAdd[3] = 1.0f;
-
-							radianceTexture.PixelShaderGUID = GUID_NONE;
-						}
-
-						ImGui::Image(&radianceTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
-
-						ImGui::EndTabItem();
+						radianceTexture.PixelShaderGUID = GUID_NONE;
 					}
+					if (currentItem == 1)
+					{
+						radianceTexture.ResourceName		= "DIRECT_RADIANCE";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 2)
+					{
+						radianceTexture.ResourceName		= "DIRECT_RADIANCE_REPROJECTED";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 3)
+					{
+						radianceTexture.ResourceName		= "DIRECT_RADIANCE_VARIANCE_ESTIMATED";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 4)
+					{
+						radianceTexture.ResourceName		= "DIRECT_RADIANCE_FEEDBACK";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 5)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_ALBEDO";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 6)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_RADIANCE";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 7)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_RADIANCE_REPROJECTED";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 8)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_RADIANCE_VARIANCE_ESTIMATED";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 9)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_RADIANCE_FEEDBACK";
+						radianceTexture.ReservedIncludeMask = 0x00008420;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 10)
+					{
+						radianceTexture.ResourceName		= "DIRECT_RADIANCE_REPROJECTED";
+						radianceTexture.ReservedIncludeMask = 0x00001110;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 11)
+					{
+						radianceTexture.ResourceName		= "INDIRECT_RADIANCE_REPROJECTED";
+						radianceTexture.ReservedIncludeMask = 0x00001110;
+
+						radianceTexture.ChannelMul[0] = 1.0f;
+						radianceTexture.ChannelMul[1] = 1.0f;
+						radianceTexture.ChannelMul[2] = 1.0f;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+					else if (currentItem == 12)
+					{
+						radianceTexture.ResourceName		= "SVGF_HISTORY";
+						radianceTexture.ReservedIncludeMask = 0x00008880;
+
+						const float32 maxHistoryLength = 32.0f;
+
+						radianceTexture.ChannelMul[0] = 1.0f / maxHistoryLength;
+						radianceTexture.ChannelMul[1] = 1.0f / maxHistoryLength;
+						radianceTexture.ChannelMul[2] = 1.0f / maxHistoryLength;
+						radianceTexture.ChannelMul[3] = 0.0f;
+
+						radianceTexture.ChannelAdd[0] = 0.0f;
+						radianceTexture.ChannelAdd[1] = 0.0f;
+						radianceTexture.ChannelAdd[2] = 0.0f;
+						radianceTexture.ChannelAdd[3] = 1.0f;
+
+						radianceTexture.PixelShaderGUID = GUID_NONE;
+					}
+
+					ImGui::Image(&radianceTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Moments"))
+				{
+					momentsTexture.ResourceName = "MOMENTS";
+
+					momentsTexture.ReservedIncludeMask = 0x00008421;
+
+					momentsTexture.ChannelMul[0] = 1.0f;
+					momentsTexture.ChannelMul[1] = 1.0f;
+					momentsTexture.ChannelMul[2] = 1.0f;
+					momentsTexture.ChannelMul[3] = 0.0f;
+
+					momentsTexture.ChannelAdd[0] = 0.0f;
+					momentsTexture.ChannelAdd[1] = 0.0f;
+					momentsTexture.ChannelAdd[2] = 0.0f;
+					momentsTexture.ChannelAdd[3] = 1.0f;
+
+					momentsTexture.PixelShaderGUID = GUID_NONE;
+
+					ImGui::Image(&momentsTexture, ImVec2(windowWidth, windowWidth / renderAspectRatio));
+
+					ImGui::EndTabItem();
 				}
 
 				ImGui::EndTabBar();
@@ -938,6 +1566,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 		ImGui::End();
 	}
 
+	m_pScene->PrepareRender(pGraphicsCopyCommandList, pComputeCopyCommandList, m_pRenderer->GetFrameIndex(), delta);
 	m_pRenderer->PrepareRender(delta);
 
 	m_pRenderer->Render();
@@ -1055,11 +1684,17 @@ bool Sandbox::InitRendererForDeferred()
 
 	//GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("PostProcess.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
 
-	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelNormal.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("ImGuiPixelDepth.glsl",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderMetallicGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelMetallic.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelRoughness.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderEmissiveGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelEmissive.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelNormal.frag",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("ImGuiPixelDepth.frag",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderMetallicGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelMetallic.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelRoughness.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderEmissiveGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelEmissive.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderPackedLocalNormalGUID		= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedLocalNormal.frag",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelLinearZGUID						= ResourceManager::LoadShaderFromFile("ImGuiPixelLinearZ.frag",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelCompactNormalFloatGUID			= ResourceManager::LoadShaderFromFile("ImGuiPixelCompactNormalFloat.frag",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderEmissionGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelEmission.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelPackedMetallicGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedMetallic.frag",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelPackedRoughnessGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedRoughness.frag",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
 
 	//ResourceManager::LoadShaderFromFile("ForwardVertex.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
 	//ResourceManager::LoadShaderFromFile("ForwardPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
@@ -1072,9 +1707,13 @@ bool Sandbox::InitRendererForDeferred()
 	{
 		renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
 	}
-	else if (RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
+	else if (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_NEW_NEW.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
+	}
+	else if (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+	{
+		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
 	}
 	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 	{
@@ -1098,6 +1737,12 @@ bool Sandbox::InitRendererForDeferred()
 
 	clock.Tick();
 	LOG_INFO("Render Graph Build Time: %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
+
+	SamplerDesc nearestSamplerDesc		= m_pNearestSampler->GetDesc();
+	SamplerDesc linearSamplerDesc		= m_pLinearSampler->GetDesc();
+
+	SamplerDesc* pNearestSamplerDesc	= &nearestSamplerDesc;
+	SamplerDesc* pLinearSamplerDesc		= &linearSamplerDesc;
 
 	Window* pWindow	= CommonApplication::Get()->GetMainWindow();
 	uint32 renderWidth	= pWindow->GetWidth();
@@ -1188,37 +1833,38 @@ bool Sandbox::InitRendererForDeferred()
 		ITextureView** ppMetallicMapViews			= m_pScene->GetMetallicMapViews();
 		ITextureView** ppRoughnessMapViews			= m_pScene->GetRoughnessMapViews();
 
-		std::vector<ISampler*> samplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
+		std::vector<ISampler*> linearSamplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
+		std::vector<ISampler*> nearestSamplers(MAX_UNIQUE_MATERIALS, m_pNearestSampler);
 
 		ResourceUpdateDesc albedoMapsUpdateDesc = {};
 		albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
 		albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppAlbedoMaps;
 		albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppAlbedoMapViews;
-		albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+		albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
 
 		ResourceUpdateDesc normalMapsUpdateDesc = {};
 		normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
 		normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppNormalMaps;
 		normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppNormalMapViews;
-		normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+		normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
 
 		ResourceUpdateDesc aoMapsUpdateDesc = {};
 		aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
 		aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= ppAmbientOcclusionMaps;
 		aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= ppAmbientOcclusionMapViews;
-		aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= samplers.data();
+		aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= nearestSamplers.data();
 
 		ResourceUpdateDesc metallicMapsUpdateDesc = {};
 		metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
 		metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= ppMetallicMaps;
 		metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= ppMetallicMapViews;
-		metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= samplers.data();
+		metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
 
 		ResourceUpdateDesc roughnessMapsUpdateDesc = {};
 		roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
 		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= ppRoughnessMaps;
 		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= ppRoughnessMapViews;
-		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= samplers.data();
+		roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= nearestSamplers.data();
 
 		m_pRenderGraph->UpdateResource(albedoMapsUpdateDesc);
 		m_pRenderGraph->UpdateResource(normalMapsUpdateDesc);
@@ -1238,8 +1884,6 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		
-
 		String blueNoiseLUTFileNames[NUM_BLUE_NOISE_LUTS];
 
 		for (uint32 i = 0; i < NUM_BLUE_NOISE_LUTS; i++)
@@ -1268,7 +1912,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.Name					= "G-Buffer Albedo-AO Texture";
 		textureDesc.Type					= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType				= EMemoryType::MEMORY_GPU;
-		textureDesc.Format					= EFormat::FORMAT_R8G8B8A8_UNORM;
+		textureDesc.Format					= EFormat::FORMAT_R32G32B32A32_SFLOAT;
 		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width					= CommonApplication::Get()->GetMainWindow()->GetWidth();
 		textureDesc.Height					= CommonApplication::Get()->GetMainWindow()->GetHeight();
@@ -1287,8 +1931,6 @@ bool Sandbox::InitRendererForDeferred()
 		textureViewDesc.ArrayCount			= 1;
 		textureViewDesc.Format				= textureDesc.Format;
 
-		SamplerDesc* pSamplerDesc = &m_pNearestSampler->GetDesc();
-
 		{
 			TextureDesc* pTextureDesc			= &textureDesc;
 			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
@@ -1297,7 +1939,7 @@ bool Sandbox::InitRendererForDeferred()
 			resourceUpdateDesc.ResourceName								= "G_BUFFER_ALBEDO_AO";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
 			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 
@@ -1312,61 +1954,7 @@ bool Sandbox::InitRendererForDeferred()
 			resourceUpdateDesc.ResourceName								= "PREV_G_BUFFER_ALBEDO_AO";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
-			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-		}
-	}
-
-	{
-		TextureDesc textureDesc	= {};
-		textureDesc.Name					= "Norm-Met-Rough G-Buffer Texture";
-		textureDesc.Type					= ETextureType::TEXTURE_2D;
-		textureDesc.MemoryType				= EMemoryType::MEMORY_GPU;
-		textureDesc.Format					= EFormat::FORMAT_R16G16B16A16_SFLOAT;
-		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-		textureDesc.Width					= CommonApplication::Get()->GetMainWindow()->GetWidth();
-		textureDesc.Height					= CommonApplication::Get()->GetMainWindow()->GetHeight();
-		textureDesc.Depth					= 1;
-		textureDesc.SampleCount				= 1;
-		textureDesc.Miplevels				= 1;
-		textureDesc.ArrayCount				= 1;
-
-		TextureViewDesc textureViewDesc		= { };
-		textureViewDesc.Name				= "Norm-Met-Rough G-Buffer Texture View";
-		textureViewDesc.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		textureViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_2D;
-		textureViewDesc.Miplevel			= 0;
-		textureViewDesc.MiplevelCount		= 1;
-		textureViewDesc.ArrayIndex			= 0;
-		textureViewDesc.ArrayCount			= 1;
-		textureViewDesc.Format				= textureDesc.Format;
-
-		SamplerDesc* pSamplerDesc = &m_pNearestSampler->GetDesc();
-
-		{
-			TextureDesc* pTextureDesc			= &textureDesc;
-			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
-
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName								= "G_BUFFER_NORM_MET_ROUGH";
-			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
-			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-		}
-
-		{
-			textureDesc.Name		= "Prev " + textureDesc.Name;
-			textureViewDesc.Name	= "Prev " + textureDesc.Name;
-
-			TextureDesc* pTextureDesc			= &textureDesc;
-			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
-
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName								= "PREV_G_BUFFER_NORM_MET_ROUGH";
-			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
 			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 	}
@@ -1376,8 +1964,8 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.Name					= "G-Buffer Motion Texture";
 		textureDesc.Type					= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType				= EMemoryType::MEMORY_GPU;
-		textureDesc.Format					= EFormat::FORMAT_R8G8B8A8_UNORM;
-		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Format					= EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureDesc.Width					= CommonApplication::Get()->GetMainWindow()->GetWidth();
 		textureDesc.Height					= CommonApplication::Get()->GetMainWindow()->GetHeight();
 		textureDesc.Depth					= 1;
@@ -1387,15 +1975,13 @@ bool Sandbox::InitRendererForDeferred()
 
 		TextureViewDesc textureViewDesc		= { };
 		textureViewDesc.Name				= "G-Buffer Motion Texture View";
-		textureViewDesc.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_2D;
 		textureViewDesc.Miplevel			= 0;
 		textureViewDesc.MiplevelCount		= 1;
 		textureViewDesc.ArrayIndex			= 0;
 		textureViewDesc.ArrayCount			= 1;
 		textureViewDesc.Format				= textureDesc.Format;
-
-		SamplerDesc* pSamplerDesc = &m_pNearestSampler->GetDesc();
 
 		{
 			TextureDesc* pTextureDesc			= &textureDesc;
@@ -1405,14 +1991,187 @@ bool Sandbox::InitRendererForDeferred()
 			resourceUpdateDesc.ResourceName								= "G_BUFFER_MOTION";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
 			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 	}
 
 	{
+		TextureDesc textureDesc	= {};
+		textureDesc.Name					= "G-Buffer Compact Normals Texture";
+		textureDesc.Type					= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType				= EMemoryType::MEMORY_GPU;
+		textureDesc.Format					= EFormat::FORMAT_R32G32_SFLOAT;
+		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width					= CommonApplication::Get()->GetMainWindow()->GetWidth();
+		textureDesc.Height					= CommonApplication::Get()->GetMainWindow()->GetHeight();
+		textureDesc.Depth					= 1;
+		textureDesc.SampleCount				= 1;
+		textureDesc.Miplevels				= 1;
+		textureDesc.ArrayCount				= 1;
+
+		TextureViewDesc textureViewDesc		= { };
+		textureViewDesc.Name				= "G-Buffer Compact Normals Texture View";
+		textureViewDesc.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel			= 0;
+		textureViewDesc.MiplevelCount		= 1;
+		textureViewDesc.ArrayIndex			= 0;
+		textureViewDesc.ArrayCount			= 1;
+		textureViewDesc.Format				= textureDesc.Format;
+
+		{
+			TextureDesc* pTextureDesc			= &textureDesc;
+			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "G_BUFFER_COMPACT_NORMALS";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+	{
+		TextureDesc textureDesc	= {};
+		textureDesc.Name					= "G-Buffer Emissive Metallic Roughness Texture";
+		textureDesc.Type					= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType				= EMemoryType::MEMORY_GPU;
+		textureDesc.Format					= EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		textureDesc.Flags					= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width					= CommonApplication::Get()->GetMainWindow()->GetWidth();
+		textureDesc.Height					= CommonApplication::Get()->GetMainWindow()->GetHeight();
+		textureDesc.Depth					= 1;
+		textureDesc.SampleCount				= 1;
+		textureDesc.Miplevels				= 1;
+		textureDesc.ArrayCount				= 1;
+
+		TextureViewDesc textureViewDesc		= { };
+		textureViewDesc.Name				= "G-Buffer Emissive Metallic Roughness Texture View";
+		textureViewDesc.Flags				= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel			= 0;
+		textureViewDesc.MiplevelCount		= 1;
+		textureViewDesc.ArrayIndex			= 0;
+		textureViewDesc.ArrayCount			= 1;
+		textureViewDesc.Format				= textureDesc.Format;
+
+		{
+			TextureDesc* pTextureDesc			= &textureDesc;
+			TextureViewDesc* pTextureViewDesc	= &textureViewDesc;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "G_BUFFER_EMISSION_METALLIC_ROUGHNESS";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+	{
+		TextureDesc textureDesc;
+		textureDesc.Name				= "G-Buffer Linear Z Texture";
+		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.Format				= EFormat::FORMAT_R32G32B32A32_UINT;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width				= renderWidth;
+		textureDesc.Height				= renderHeight;
+		textureDesc.Depth				= 1;
+		textureDesc.SampleCount			= 1;
+		textureDesc.Miplevels			= 1;
+		textureDesc.ArrayCount			= 1;
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.Name			= "G-Buffer Linear Z Texture View";
+		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Format			= textureDesc.Format;
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "G_BUFFER_LINEAR_Z";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Prev " + textureDesc.Name;
+			tvd.Name	= "Prev " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "PREV_G_BUFFER_LINEAR_Z";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+		{
+		TextureDesc textureDesc;
+		textureDesc.Name				= "G-Buffer Compact Norm Depth Texture";
+		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.Format				= EFormat::FORMAT_R32G32B32A32_UINT;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width				= renderWidth;
+		textureDesc.Height				= renderHeight;
+		textureDesc.Depth				= 1;
+		textureDesc.SampleCount			= 1;
+		textureDesc.Miplevels			= 1;
+		textureDesc.ArrayCount			= 1;
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.Name			= "G-Buffer Compact Norm Depth Texture View";
+		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Format			= textureDesc.Format;
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "G_BUFFER_COMPACT_NORM_DEPTH";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+
+	{
 		TextureDesc textureDesc = {};
-		textureDesc.Name				= "Geometry Pass Depth Stencil Texture";
+		textureDesc.Name				= "G-Buffer Depth Stencil Texture";
 		textureDesc.Type				= ETextureType::TEXTURE_2D;
 		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
 		textureDesc.Format				= EFormat::FORMAT_D24_UNORM_S8_UINT;
@@ -1425,7 +2184,7 @@ bool Sandbox::InitRendererForDeferred()
 		textureDesc.ArrayCount			= 1;
 
 		TextureViewDesc textureViewDesc = { };
-		textureViewDesc.Name			= "Geometry Pass Depth Stencil Texture View";
+		textureViewDesc.Name			= "G-Buffer Depth Stencil Texture View";
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
 		textureViewDesc.Miplevel		= 0;
@@ -1433,8 +2192,6 @@ bool Sandbox::InitRendererForDeferred()
 		textureViewDesc.ArrayIndex		= 0;
 		textureViewDesc.ArrayCount		= 1;
 		textureViewDesc.Format			= textureDesc.Format;
-
-		SamplerDesc* pSamplerDesc = &m_pNearestSampler->GetDesc();
 
 		{
 			TextureDesc* pTextureDesc			= &textureDesc;
@@ -1444,7 +2201,7 @@ bool Sandbox::InitRendererForDeferred()
 			resourceUpdateDesc.ResourceName								= "G_BUFFER_DEPTH_STENCIL";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
 			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 
@@ -1459,62 +2216,460 @@ bool Sandbox::InitRendererForDeferred()
 			resourceUpdateDesc.ResourceName								= "PREV_G_BUFFER_DEPTH_STENCIL";
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
 			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
-			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
 			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 	}
 
-	if (RAY_TRACING_ENABLED)
 	{
-		std::vector<TextureDesc>		textureDescriptions(BACK_BUFFER_COUNT);
-		std::vector<TextureViewDesc>	textureViewDescriptions(BACK_BUFFER_COUNT);
-		std::vector<SamplerDesc>		samplerDescriptions(BACK_BUFFER_COUNT, m_pNearestSampler->GetDesc());
+		TextureDesc textureDesc;
+		textureDesc.Name				= "Radiance Texture";
+		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.Format				= EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width				= renderWidth;
+		textureDesc.Height				= renderHeight;
+		textureDesc.Depth				= 1;
+		textureDesc.SampleCount			= 1;
+		textureDesc.Miplevels			= 1;
+		textureDesc.ArrayCount			= 1;
 
-		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.Name			= "Radiance Texture View";
+		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Format			= textureDesc.Format;
+
 		{
-			TextureDesc& textureDesc = textureDescriptions[b];
-			textureDesc.Name				= "Direct Radiance Texture " + std::to_string(b);
-			textureDesc.Type				= ETextureType::TEXTURE_2D;
-			textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
-			textureDesc.Format				= EFormat::FORMAT_R16G16B16A16_SFLOAT;
-			textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
-			textureDesc.Width				= renderWidth;
-			textureDesc.Height				= renderHeight;
-			textureDesc.Depth				= 1;
-			textureDesc.SampleCount			= 1;
-			textureDesc.Miplevels			= 1;
-			textureDesc.ArrayCount			= 1;
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
 
-			TextureViewDesc& textureViewDesc = textureViewDescriptions[b];
-			textureViewDesc.Name			= "Direct Radiance Texture View " + std::to_string(b);
-			textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
-			textureViewDesc.Miplevel		= 0;
-			textureViewDesc.MiplevelCount	= 1;
-			textureViewDesc.ArrayIndex		= 0;
-			textureViewDesc.ArrayCount		= 1;
-			textureViewDesc.Format			= textureDesc.Format;
+			td.Name		= "Direct " + textureDesc.Name;
+			tvd.Name	= "Direct " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
 
-		TextureDesc* pTextureDescriptions			= textureDescriptions.data();
-		TextureViewDesc* pTextureViewDescriptions	= textureViewDescriptions.data();
-		SamplerDesc* pSamplerDescriptions			= samplerDescriptions.data();
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
 
-		ResourceUpdateDesc directRadianceResourceUpdateDesc = {};
-		directRadianceResourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE";
-		directRadianceResourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDescriptions;
-		directRadianceResourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDescriptions;
-		directRadianceResourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDescriptions;
+			td.Name		= "Reproj. Direct " + textureDesc.Name;
+			tvd.Name	= "Reproj. Direct " + textureDesc.Name;
 
-		m_pRenderGraph->UpdateResource(directRadianceResourceUpdateDesc);
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
 
-		ResourceUpdateDesc indirectRadianceResourceUpdateDesc = {};
-		indirectRadianceResourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE";
-		indirectRadianceResourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDescriptions;
-		indirectRadianceResourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDescriptions;
-		indirectRadianceResourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pSamplerDescriptions;
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE_REPROJECTED";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
 
-		m_pRenderGraph->UpdateResource(indirectRadianceResourceUpdateDesc);
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Variance Est. Direct " + textureDesc.Name;
+			tvd.Name	= "Variance Est. Direct " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE_VARIANCE_ESTIMATED";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Variance Est. Direct " + textureDesc.Name;
+			tvd.Name	= "Variance Est. Direct " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE_VARIANCE_ESTIMATED";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Direct " + textureDesc.Name + " Atrous Ping";
+			tvd.Name	= "Direct " + textureDesc.Name + " Atrous Ping";
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE_ATROUS_PING";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Direct " + textureDesc.Name + " Atrous Pong";
+			tvd.Name	= "Direct " + textureDesc.Name + " Atrous Pong";
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE_ATROUS_PONG";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Direct " + textureDesc.Name + " Feedback";
+			tvd.Name	= "Direct " + textureDesc.Name + " Feedback";
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_RADIANCE_FEEDBACK";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Indirect " + textureDesc.Name;
+			tvd.Name	= "Indirect " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Reproj. Indirect " + textureDesc.Name;
+			tvd.Name	= "Reproj. Indirect " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE_REPROJECTED";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Variance Est. Indirect " + textureDesc.Name;
+			tvd.Name	= "Variance Est. Indirect " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE_VARIANCE_ESTIMATED";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Indirect " + textureDesc.Name + " Atrous Ping";
+			tvd.Name	= "Indirect " + textureDesc.Name + " Atrous Ping";
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE_ATROUS_PING";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Indirect " + textureDesc.Name + " Atrous Pong";
+			tvd.Name	= "Indirect " + textureDesc.Name + " Atrous Pong";
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE_ATROUS_PONG";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Prev Indirect " + textureDesc.Name + " Feedback";
+			tvd.Name	= "Prev Indirect " + textureDesc.Name + " Feedback";
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_RADIANCE_FEEDBACK";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+	{
+		TextureDesc textureDesc;
+		textureDesc.Name				= "Albedo Texture";
+		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.Format				= EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width				= renderWidth;
+		textureDesc.Height				= renderHeight;
+		textureDesc.Depth				= 1;
+		textureDesc.SampleCount			= 1;
+		textureDesc.Miplevels			= 1;
+		textureDesc.ArrayCount			= 1;
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.Name			= "Albedo Texture View";
+		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Format			= textureDesc.Format;
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Direct " + textureDesc.Name;
+			tvd.Name	= "Direct " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "DIRECT_ALBEDO";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Indirect " + textureDesc.Name;
+			tvd.Name	= "Indirect " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "INDIRECT_ALBEDO";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+	{
+		TextureDesc textureDesc;
+		textureDesc.Name				= "Moments Texture";
+		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.Format				= EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width				= renderWidth;
+		textureDesc.Height				= renderHeight;
+		textureDesc.Depth				= 1;
+		textureDesc.SampleCount			= 1;
+		textureDesc.Miplevels			= 1;
+		textureDesc.ArrayCount			= 1;
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.Name			= "Moments Texture View";
+		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Format			= textureDesc.Format;
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "MOMENTS";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Prev " + textureDesc.Name;
+			tvd.Name	= "Prev " + textureDesc.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "PREV_MOMENTS";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+	}
+
+	{
+		TextureDesc textureDesc;
+		textureDesc.Name				= "History Texture";
+		textureDesc.Type				= ETextureType::TEXTURE_2D;
+		textureDesc.MemoryType			= EMemoryType::MEMORY_GPU;
+		textureDesc.Format				= EFormat::FORMAT_R16_SFLOAT;
+		textureDesc.Flags				= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width				= renderWidth;
+		textureDesc.Height				= renderHeight;
+		textureDesc.Depth				= 1;
+		textureDesc.SampleCount			= 1;
+		textureDesc.Miplevels			= 1;
+		textureDesc.ArrayCount			= 1;
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.Name			= "History Texture View";
+		textureViewDesc.Flags			= FTextureFlags::TEXTURE_FLAG_RENDER_TARGET | FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS | FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Format			= textureDesc.Format;
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "SVGF_HISTORY";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			td.Name		= "Prev " + td.Name;
+			tvd.Name	= "Prev " + tvd.Name;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "PREV_SVGF_HISTORY";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
+
+		{
+			TextureDesc td		= textureDesc;
+			TextureViewDesc tvd = textureViewDesc;
+
+			TextureDesc* pTextureDesc			= &td;
+			TextureViewDesc* pTextureViewDesc	= &tvd;
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName								= "HISTORY";
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureDesc		= &pTextureDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppTextureViewDesc	= &pTextureViewDesc;
+			resourceUpdateDesc.InternalTextureUpdate.ppSamplerDesc		= &pNearestSamplerDesc;
+			m_pRenderGraph->UpdateResource(resourceUpdateDesc);
+		}
 	}
 
 	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());

@@ -5,6 +5,8 @@
 
 #include "Containers/TArray.h"
 
+#include "Math/Math.h"
+
 namespace LambdaEngine
 {
 	struct GameObject;
@@ -25,6 +27,14 @@ namespace LambdaEngine
 
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::EventHandler
 {
+	struct InstanceIndexAndTransform
+	{
+		uint32		InstanceIndex;
+		glm::vec3	Position;
+		glm::vec4	Rotation;
+		glm::vec3	Scale;
+	};
+
 public:
 	Sandbox();
 	~Sandbox();
@@ -84,14 +94,23 @@ private:
 
 	LambdaEngine::RenderGraphEditor*		m_pRenderGraphEditor	= nullptr;
 
-	GUID_Lambda								m_ImGuiPixelShaderNormalGUID		= GUID_NONE;
-	GUID_Lambda								m_ImGuiPixelShaderDepthGUID			= GUID_NONE;
-	GUID_Lambda								m_ImGuiPixelShaderMetallicGUID		= GUID_NONE;
-	GUID_Lambda								m_ImGuiPixelShaderRoughnessGUID		= GUID_NONE;
-	GUID_Lambda								m_ImGuiPixelShaderEmissiveGUID		= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelShaderNormalGUID				= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelShaderDepthGUID					= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelShaderMetallicGUID				= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelShaderRoughnessGUID				= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelShaderEmissiveGUID				= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelShaderPackedLocalNormalGUID		= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelLinearZGUID						= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelCompactNormalFloatGUID			= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelShaderEmissionGUID				= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelPackedMetallicGUID				= GUID_NONE;
+	GUID_Lambda								m_ImGuiPixelPackedRoughnessGUID				= GUID_NONE;
 
-	float									m_LightAngle;
-	float									m_LightStrength[4];
+	TArray<InstanceIndexAndTransform>		m_InstanceIndicesAndTransforms;
+	TArray<InstanceIndexAndTransform>		m_LightInstanceIndicesAndTransforms;
+
+	float									m_DirectionalLightAngle;
+	float									m_DirectionalLightStrength[4];
 
 	bool									m_SpawnPlayAts;
 	float									m_GunshotTimer;

@@ -97,7 +97,7 @@ float GeometryOpt(float NdotV, float NdotL, float roughness)
 	return GeometryGGX(NdotV, roughness) * GeometryGGX(NdotL, roughness);
 }
 
-vec3 ToneMap(vec3 color, float gamma)
+vec3 GammaCorrection(vec3 color, float gamma)
 {
 	vec3 result = color / (color + vec3(1.0f));
 	result = pow(result, vec3(1.0f / gamma));
@@ -117,11 +117,9 @@ float GoldNoise(vec3 x, float seed, float min, float max)
 
 void CreateCoordinateSystem(in vec3 N, out vec3 Nt, out vec3 Nb) 
 { 
-    if (abs(N.x) > abs(N.y)) 
-        Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
-    else 
-        Nt = vec3(0, -N.z, N.y) / sqrt(N.y * N.y + N.z * N.z); 
-    Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
+    if (abs(N.x) > abs(N.y))  	Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
+    else 						Nt = vec3(0, -N.z, N.y) / sqrt(N.y * N.y + N.z * N.z); 
+    //Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
     Nb = cross(N, Nt); 
 } 
 
@@ -151,9 +149,21 @@ vec3 SphericalToDirection(float sinTheta, float cosTheta, float phi)
                 cosTheta);
 }
 
-float SameHemisphere(vec3 w_0, vec3 w_1)
+vec3 SphericalToDirection(float sinTheta, float cosTheta, float phi, vec3 x, vec3 y, vec3 z)
+{
+    return 	sinTheta * cos(phi) * x + 
+			sinTheta * sin(phi) * y +
+			cosTheta * z;
+}
+
+float FlipIfNotSameHemisphere(vec3 w_0, vec3 w_1)
 {
     return step(0.0f, w_0.z * w_1.z) * 2.0f - 1.0f;
+}
+
+bool IsSameHemisphere(vec3 w_0, vec3 w_1)
+{
+	return w_0.z * w_1.z > 0.0f;
 }
 
 float RadicalInverse_VdC(uint bits) 
@@ -170,5 +180,170 @@ vec2 Hammersley(uint i, uint N)
 {
     return vec2(float(i) / float(N), RadicalInverse_VdC(i));
 }  
+
+
+// A utility to convert a vec3 to a 2-component octohedral representation packed into one uint
+uint dirToOct(vec3 normal)
+{
+	vec2 p = normal.xy * (1.0f / dot(abs(normal), vec3(1.0f)));
+	vec2 e = normal.z > 0.0f ? p : (1.0f - abs(p.yx)) * (step(0.0f, p) * 2.0f - vec2(1.0f));
+	return packSnorm2x16(e.xy);
+	//return (asuint(f32tof16(e.y)) << 16) + (asuint(f32tof16(e.x)));
+}
+
+vec3 octToDir(uint octo)
+{
+	vec2 e = unpackSnorm2x16(octo) ; 
+	vec3 v = vec3(e, 1.0f - abs(e.x) - abs(e.y));
+	if (v.z < 0.0f)
+		v.xy = (1.0f - abs(v.yx)) * (step(0.0f, v.xy) * 2.0f - vec2(1.0f));
+	return normalize(v);
+}
+
+/** Returns a relative luminance of an input linear RGB color in the ITU-R BT.709 color space
+\param RGBColor linear HDR RGB color in the ITU-R BT.709 color space
+*/
+float luminance(vec3 rgb)
+{
+    return dot(rgb, vec3(0.2126f, 0.7152f, 0.0722f));
+}
+
+float SphereSurfaceArea(float radius)
+{
+	return FOUR_PI * radius * radius;
+}
+
+float DiskSurfaceArea(float radius)
+{
+	return PI * radius * radius;
+}
+
+float QuadSurfaceArea(float radiusX, float radiusY)
+{
+	return 4 * radiusX * radiusY;
+}
+
+vec2 ConcentricSampleDisk(vec2 u)
+{
+	vec2 uOffset = u * 2.0f - 1.0f;
+	if (dot(uOffset, uOffset) == 0.0f) return vec2(0.0f);
+
+	float r     = 0.0f;
+    float theta = 0.0f;
+
+    if (abs(uOffset.x) > abs(uOffset.y))
+    {
+        r = uOffset.x;
+        theta = PI_OVER_FOUR * uOffset.y / uOffset.x;
+    }
+    else
+    {
+        r = uOffset.y;
+        theta = PI_OVER_TWO - PI_OVER_FOUR * uOffset.x / uOffset.y;
+    }
+
+    return r * vec2(cos(theta), sin(theta));
+}
+
+//These functions assume that the untransformed quad lies in the xz-plane with normal pointing in positive y direction and has a radius of 1 (side length of 2)
+float QuadPDF(mat4 transform)
+{
+	return 1.0f / QuadSurfaceArea(length(transform[0].xyz), length(transform[2].xyz));
+}
+
+vec3 QuadNormal(mat4 transform)
+{
+	return (transform * vec4(0.0f, 1.0f, 0.0f, 0.0f)).xyz;
+}
+
+SShapeSample SampleQuad(mat4 transform, vec2 u)
+{
+	SShapeSample shapeSample;
+
+	u = u * 2.0f - 1.0f;
+	shapeSample.Position 	= (transform * vec4(u.x, 0.0f, u.y, 1.0f)).xyz; //Assume quad thickiness of 0.0f
+	shapeSample.Normal		= QuadNormal(transform);
+	shapeSample.PDF			= QuadPDF(transform);
+
+	return shapeSample;
+}
+
+SShapeSample SampleQuad(vec3 position, vec3 direction, float radius, vec2 u)
+{
+	SShapeSample shapeSample;
+
+	direction = normalize(direction);
+
+	vec3 tangent;
+	vec3 bitangent;
+	CreateCoordinateSystem(direction, tangent, bitangent);
+
+	u = u * 2.0f - 1.0f;
+	shapeSample.Position 	= position + radius * (u.x * tangent + u.y * bitangent); //Assume quad thickiness of 0.0f
+	shapeSample.Normal		= direction;
+	shapeSample.PDF			= 1.0f / QuadSurfaceArea(radius, radius);
+
+	return shapeSample;
+}
+
+SShapeSample SampleDisk(vec3 position, vec3 direction, float radius, vec2 u)
+{
+	SShapeSample shapeSample;
+
+	direction = normalize(direction);
+
+	vec3 tangent;
+	vec3 bitangent;
+	CreateCoordinateSystem(direction, tangent, bitangent);
+
+	vec2 pd = ConcentricSampleDisk(u);
+	shapeSample.Position 	= position + radius * (pd.x * tangent + pd.y * bitangent); //Assume disk thickiness of 0.0f
+	shapeSample.Normal		= direction;
+	shapeSample.PDF			= 1.0f / DiskSurfaceArea(radius);
+
+	return shapeSample;
+}
+
+SShapeSample UniformSampleUnitSphere(vec2 u)
+{
+	SShapeSample shapeSample;
+
+	float z 	= 1.0f - 2.0f * u.x;
+	float r 	= sqrt(max(0.0f, 1.0f - z * z));
+	float phi 	= 2.0f * PI * u.y;
+
+	shapeSample.Position 	= vec3(r * cos(phi), r * sin(phi), z);
+	shapeSample.Normal	 	= normalize(shapeSample.Position);
+	shapeSample.PDF 		= 1.0f / FOUR_PI;
+	return shapeSample;
+}
+
+SShapeSample UniformSampleSphereSurface(vec3 position, float radius, vec2 u)
+{
+	SShapeSample shapeSample = UniformSampleUnitSphere(u);
+	
+	shapeSample.Position	 = position + radius * shapeSample.Normal; //The normal as returned from UniformSampleUnitSphere can be interpreted as a point on the surface
+	shapeSample.PDF 		 /= (radius * radius);
+	return shapeSample;
+}
+
+float PowerHeuristic(float nf, float fPDF, float ng, float gPDF)
+{
+	float f = nf * fPDF;
+	float fSqrd = f * f;
+	float g = ng * gPDF;
+	
+	return (fSqrd) / (fSqrd + g * g);
+}
+
+//Power Heuristic but implicitly divides with fPDF to avoid floating point errors
+float PowerHeuristicWithPDF(float nf, float fPDF, float ng, float gPDF)
+{
+	float f = nf * fPDF;
+	float fSqrd = f * f;
+	float g = ng * gPDF;
+	
+	return (nf * f) / (fSqrd + g * g);
+}
 
 #endif

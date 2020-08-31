@@ -14,13 +14,17 @@ namespace LambdaEngine
 	//Meshes
 
 	//Meshes
-	constexpr GUID_Lambda DEFAULT_MATERIAL = 0;
+	constexpr GUID_Lambda GUID_MESH_QUAD					= 0;
+
+	//Material
+	constexpr GUID_Lambda GUID_MATERIAL_DEFAULT				= GUID_MESH_QUAD + 1;
+	constexpr GUID_Lambda GUID_MATERIAL_DEFAULT_EMISSIVE	= GUID_MATERIAL_DEFAULT + 1;
 
 	//Textures
-	constexpr GUID_Lambda DEFAULT_COLOR_MAP = DEFAULT_MATERIAL + 1;
-	constexpr GUID_Lambda DEFAULT_NORMAL_MAP = DEFAULT_COLOR_MAP + 1;
+	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_COLOR_MAP	= GUID_MATERIAL_DEFAULT_EMISSIVE + 1;
+	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_NORMAL_MAP	= GUID_TEXTURE_DEFAULT_COLOR_MAP + 1;
 
-	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID = DEFAULT_NORMAL_MAP + 1;
+	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID			= GUID_TEXTURE_DEFAULT_NORMAL_MAP + 1;
 
 	constexpr const char* SCENE_DIR			= "../Assets/Scenes/";
 	constexpr const char* MESH_DIR			= "../Assets/Meshes/";
@@ -133,22 +137,35 @@ namespace LambdaEngine
 
 		static void ReloadAllShaders();
 
-		static GUID_Lambda				GetMeshGUID(const String& name);
-		static GUID_Lambda				GetMaterialGUID(const String& name);
-		static GUID_Lambda				GetTextureGUID(const String& name);
-		static GUID_Lambda				GetShaderGUID(const String& name);
-		static GUID_Lambda				GetSoundEffectGUID(const String& name);
+		static GUID_Lambda								GetMeshGUID(const String& name);
+		static GUID_Lambda								GetMaterialGUID(const String& name);
+		static GUID_Lambda								GetTextureGUID(const String& name);
+		static GUID_Lambda								GetShaderGUID(const String& name);
+		static GUID_Lambda								GetSoundEffectGUID(const String& name);
 
-		static Mesh*					GetMesh(GUID_Lambda guid);
-		static Material*				GetMaterial(GUID_Lambda guid);
-		static ITexture*				GetTexture(GUID_Lambda guid);
-		static ITextureView*			GetTextureView(GUID_Lambda guid);
-		static IShader*					GetShader(GUID_Lambda guid);
-		static ISoundEffect3D*			GetSoundEffect(GUID_Lambda guid);
+		static Mesh*									GetMesh(GUID_Lambda guid);
+		static Material*								GetMaterial(GUID_Lambda guid);
+		static ITexture*								GetTexture(GUID_Lambda guid);
+		static ITextureView*							GetTextureView(GUID_Lambda guid);
+		static IShader*									GetShader(GUID_Lambda guid);
+		static ISoundEffect3D*							GetSoundEffect(GUID_Lambda guid);
+
+		FORCEINLINE static std::unordered_map<String, GUID_Lambda>&				GetMeshNamesMap()			{ return s_MaterialNamesToGUIDs; }
+		FORCEINLINE static std::unordered_map<String, GUID_Lambda>&				GetMaterialNamesMap()		{ return s_MaterialNamesToGUIDs; }
+		FORCEINLINE static std::unordered_map<String, GUID_Lambda>&				GetTextureNamesMap()		{ return s_TextureNamesToGUIDs; }
+		FORCEINLINE static std::unordered_map<String, GUID_Lambda>&				GetShaderNamesMap()			{ return s_ShaderNamesToGUIDs; }
+		FORCEINLINE static std::unordered_map<String, GUID_Lambda>&				GetSoundEffectNamesMap()	{ return s_SoundEffectNamesToGUIDs; }
+
+		FORCEINLINE static std::unordered_map<GUID_Lambda, Mesh*>&				GetMeshGUIDMap()			{ return s_Meshes; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, Material*>&			GetMaterialGUIDMap()		{ return s_Materials; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, ITexture*>&			GetTextureGUIDMap()			{ return s_Textures; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, ITextureView*>&		GetTextureViewGUIDMap()		{ return s_TextureViews; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, IShader*>&			GetShaderGUIDMap()			{ return s_Shaders; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, ISoundEffect3D*>&	GetSoundEffectGUIDMap()		{ return s_SoundEffects; }
 
 	private:
-		static GUID_Lambda RegisterLoadedMesh(Mesh* pMesh);
-		static GUID_Lambda RegisterLoadedMaterial(Material* pMaterial);
+		static GUID_Lambda RegisterLoadedMesh(const String& name, Mesh* pMesh);
+		static GUID_Lambda RegisterLoadedMaterial(const String& name, Material* pMaterial);
 		static GUID_Lambda RegisterLoadedTexture(ITexture* pTexture);
 
 		static GUID_Lambda GetGUID(const std::unordered_map<String, GUID_Lambda>& namesToGUIDs, const String& name);

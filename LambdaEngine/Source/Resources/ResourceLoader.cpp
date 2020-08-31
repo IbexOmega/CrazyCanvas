@@ -249,7 +249,7 @@ namespace LambdaEngine
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureArrayFromFile(material.diffuse_texname, dirpath, &material.diffuse_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
+					ITexture* pTexture = LoadTextureArrayFromFile(material.diffuse_texname, dirpath, &material.diffuse_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pAlbedoMap			= pTexture;
 
@@ -268,11 +268,11 @@ namespace LambdaEngine
 				pMaterial->Properties.Albedo.x *= material.emission[0];
 				pMaterial->Properties.Albedo.y *= material.emission[1];
 				pMaterial->Properties.Albedo.z *= material.emission[2];
-				pMaterial->Properties.Reserved_Emissive |= 0x1;
+				pMaterial->Properties.EmissionStrength = DEFAULT_EMISSIVE_EMISSION_STRENGTH;
 			}
 			else
 			{
-				pMaterial->Properties.Reserved_Emissive = 0x0;
+				pMaterial->Properties.EmissionStrength = 0.0f;
 			}
 
 			if (material.bump_texname.length() > 0)
@@ -283,7 +283,7 @@ namespace LambdaEngine
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureArrayFromFile(material.bump_texname, dirpath, &material.bump_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
+					ITexture* pTexture = LoadTextureArrayFromFile(material.bump_texname, dirpath, &material.bump_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pNormalMap			= pTexture;
 
@@ -295,15 +295,15 @@ namespace LambdaEngine
 				}
 			}
 
-			if (material.ambient_texname.length() > 0)
+			if (material.reflection_texname.length() > 0)
 			{
-				std::string texturePath = dirpath + material.ambient_texname;
+				std::string texturePath = dirpath + material.reflection_texname;
                 ConvertBackslashes(texturePath);
                 
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureArrayFromFile(material.ambient_texname, dirpath, &material.ambient_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
+					ITexture* pTexture = LoadTextureArrayFromFile(material.reflection_texname, dirpath, &material.reflection_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pMetallicMap			= pTexture;
 
@@ -313,6 +313,12 @@ namespace LambdaEngine
 				{
 					pMaterial->pMetallicMap = loadedTexture->second;
 				}
+
+				pMaterial->Properties.Metallic = 1.0f;
+			}
+			else
+			{
+				pMaterial->Properties.Metallic = 0.0f;
 			}
 
 			if (material.specular_highlight_texname.length() > 0)
@@ -323,7 +329,7 @@ namespace LambdaEngine
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureArrayFromFile(material.specular_highlight_texname, dirpath, &material.specular_highlight_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
+					ITexture* pTexture = LoadTextureArrayFromFile(material.specular_highlight_texname, dirpath, &material.specular_highlight_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pRoughnessMap		= pTexture;
 
@@ -335,6 +341,7 @@ namespace LambdaEngine
 				}
 			}
 
+			//Todo: We should check if a similar material already has been loaded
 			loadedMaterials[m] = pMaterial;
 		}
 
