@@ -43,7 +43,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
 constexpr const bool RAY_TRACING_ENABLED		= true;
-constexpr const bool SVGF_ENABLED				= true;
+constexpr const bool SVGF_ENABLED				= false;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
@@ -97,7 +97,7 @@ Sandbox::Sandbox()
 	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
 	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
 
-	EScene scene = EScene::TESTING;
+	EScene scene = EScene::SPONZA;
 
 	m_pScene->SetDirectionalLight(directionalLight);
 
@@ -1703,22 +1703,24 @@ bool Sandbox::InitRendererForDeferred()
 
 	String renderGraphFile = "";
 
-	if (!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
-	{
-		renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
-	}
-	else if (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
-	{
-		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
-	}
-	else if (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
-	{
-		renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
-	}
-	else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
-	{
-		renderGraphFile = "../Assets/RenderGraphs/TRT_PP_DEFERRED.lrg";
-	}
+	//if (!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
+	//{
+	//	renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
+	//}
+	//else if (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+	//{
+	//	renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
+	//}
+	//else if (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+	//{
+	//	renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
+	//}
+	//else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
+	//{
+	//	renderGraphFile = "../Assets/RenderGraphs/TRT_PP_DEFERRED.lrg";
+	//}
+
+	renderGraphFile = "../Assets/RenderGraphs/DEMO.lrg";
 
 	RenderGraphStructureDesc renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
 

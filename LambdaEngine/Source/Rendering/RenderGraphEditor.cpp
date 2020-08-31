@@ -479,18 +479,6 @@ namespace LambdaEngine
 			externalResourcesGroup.ResourceStateIdents.push_back(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
 
-		{
-			EditorResource resource = {};
-			resource.Name						= SCENE_METALLIC_MAPS;
-			resource.Type						= ERenderGraphResourceType::TEXTURE;
-			resource.SubResourceCount			= MAX_UNIQUE_MATERIALS;
-			resource.Editable					= false;
-			resource.TextureFormat				= EFormat::FORMAT_R8G8B8A8_UNORM;
-			m_Resources.push_back(resource);
-
-			externalResourcesGroup.ResourceStateIdents.push_back(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
-		}
-
 		m_ResourceStateGroups.resize(NUM_RESOURCE_STATE_GROUPS);
 		m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX] = externalResourcesGroup;
 		m_ResourceStateGroups[TEMPORAL_RESOURCE_STATE_GROUP_INDEX] = temporalResourcesGroup;
@@ -1988,8 +1976,8 @@ namespace LambdaEngine
 					newRenderStage.Parameters.ZDimType		= dimensionTypes[selectedZOption];
 
 					newRenderStage.Parameters.XDimVariable	= xVariable;
-					newRenderStage.Parameters.XDimVariable	= yVariable;
-					newRenderStage.Parameters.XDimVariable	= zVariable;
+					newRenderStage.Parameters.YDimVariable	= yVariable;
+					newRenderStage.Parameters.ZDimVariable	= zVariable;
 
 					s_NextAttributeID += 2;
 
@@ -2017,10 +2005,11 @@ namespace LambdaEngine
 					ZERO_MEMORY(renderStageNameBuffer, RENDER_STAGE_NAME_BUFFER_LENGTH);
 					customRenderer = false;
 					selectedXOption	= 0;
-
 					selectedYOption	= 0;
-
 					selectedZOption	= 0;
+					xVariable		= 0;
+					yVariable		= 0;
+					zVariable		= 0;
 					m_CurrentlyAddingRenderStage = EPipelineStateType::NONE;
 					ImGui::CloseCurrentPopup();
 				}
@@ -2655,9 +2644,6 @@ namespace LambdaEngine
 				if (read && write)
 				{
 					//READ && WRITE TEXTURE
-					bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
-					bindingTypeNames.push_back("UNORDERED ACCESS RW");
-
 					if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
 					{
 						if (pResource->IsOfArrayType == false && (pResource->SubResourceCount == 1 || pResource->BackBufferBound))
@@ -2666,10 +2652,27 @@ namespace LambdaEngine
 							bindingTypeNames.push_back("ATTACHMENT");
 						}
 					}
+
+					bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
+					bindingTypeNames.push_back("UNORDERED ACCESS RW");
 				}
 				else if (read)
 				{
 					//READ TEXTURE
+
+					//If the texture is of Depth/Stencil format we allow Attachment as binding type even if it is discovered as in read mode
+					if (pResource->TextureFormat == EFormat::FORMAT_D24_UNORM_S8_UINT)
+					{
+						if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
+						{
+							if (pResource->IsOfArrayType == false && (pResource->SubResourceCount == 1 || pResource->BackBufferBound))
+							{
+								bindingTypes.push_back(ERenderGraphResourceBindingType::ATTACHMENT);
+								bindingTypeNames.push_back("ATTACHMENT");
+							}
+						}
+					}
+
 					bindingTypes.push_back(ERenderGraphResourceBindingType::COMBINED_SAMPLER);
 					bindingTypeNames.push_back("COMBINED SAMPLER");
 
@@ -2679,8 +2682,22 @@ namespace LambdaEngine
 				else if (write)
 				{
 					//WRITE TEXTURE
+
+					if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
+					{
+						if (pResource->IsOfArrayType == false && (pResource->SubResourceCount == 1 || pResource->BackBufferBound))
+						{
+							bindingTypes.push_back(ERenderGraphResourceBindingType::ATTACHMENT);
+							bindingTypeNames.push_back("ATTACHMENT");
+						}
+					}
+
 					bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
 					bindingTypeNames.push_back("UNORDERED ACCESS W");
+				}
+				else if (pResource->TextureFormat == EFormat::FORMAT_D24_UNORM_S8_UINT)
+				{
+					//If the texture is of Depth/Stencil format we allow Attachment as binding type even if it is discovered as in read mode
 
 					if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
 					{
