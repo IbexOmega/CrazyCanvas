@@ -347,23 +347,26 @@ namespace LambdaEngine
 			{
 				for (Resource* pResource : m_DirtyDescriptorSetAccelerationStructures)
 				{
-					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[0]; //Assume only one acceleration structure
-					RenderStage* pRenderStage = pResourceBinding->pRenderStage;
+					if (!pResource->ResourceBindings.empty())
+					{
+						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[0]; //Assume only one acceleration structure
+						RenderStage* pRenderStage = pResourceBinding->pRenderStage;
 
-					if (pRenderStage->UsesCustomRenderer)
-					{
-						pRenderStage->pCustomRenderer->UpdateAccelerationStructureResource(
-							pResource->Name,
-							pResource->AccelerationStructure.pTLAS);
-					}
-					else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_UNKNOWN)
-					{
-						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						if (pRenderStage->UsesCustomRenderer)
 						{
-							pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteAccelerationStructureDescriptors(
-								&pResource->AccelerationStructure.pTLAS,
-								pResourceBinding->Binding,
-								1);
+							pRenderStage->pCustomRenderer->UpdateAccelerationStructureResource(
+								pResource->Name,
+								pResource->AccelerationStructure.pTLAS);
+						}
+						else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_UNKNOWN)
+						{
+							for (uint32 b = 0; b < m_BackBufferCount; b++)
+							{
+								pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteAccelerationStructureDescriptors(
+									&pResource->AccelerationStructure.pTLAS,
+									pResourceBinding->Binding,
+									1);
+							}
 						}
 					}
 				}
