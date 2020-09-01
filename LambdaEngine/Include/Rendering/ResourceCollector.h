@@ -28,6 +28,6 @@ namespace LambdaEngine
 		void Reset();
 
 	private:
-		TArray<Ref<DeviceChild>> m_Objects;
+		TArray<TSharedRef<DeviceChild>> m_Objects;
 	};
 }

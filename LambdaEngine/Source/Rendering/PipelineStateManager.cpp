@@ -10,7 +10,7 @@
 namespace LambdaEngine
 {
 	uint64													PipelineStateManager::s_CurrentPipelineIndex = 0;
-	THashTable<uint64, Ref<PipelineState>>					PipelineStateManager::s_PipelineStates;
+	THashTable<uint64, TSharedRef<PipelineState>>					PipelineStateManager::s_PipelineStates;
 	THashTable<uint64, ManagedGraphicsPipelineStateDesc>	PipelineStateManager::s_GraphicsPipelineStateDescriptions;
 	THashTable<uint64, ManagedComputePipelineStateDesc>		PipelineStateManager::s_ComputePipelineStateDescriptions;
 	THashTable<uint64, ManagedRayTracingPipelineStateDesc>	PipelineStateManager::s_RayTracingPipelineStateDescriptions;
@@ -87,14 +87,14 @@ namespace LambdaEngine
 		desc.RaygenShader		= RaygenShader;
 		desc.pPipelineLayout	= PipelineLayout.Get();
 		
-		desc.MissShaders.resize(MissShaders.size());
-		for (uint32 i = 0; i < MissShaders.size(); i++)
+		desc.MissShaders.Resize(MissShaders.GetSize());
+		for (uint32 i = 0; i < MissShaders.GetSize(); i++)
 		{
 			desc.MissShaders[i] = MissShaders[i];
 		}
 
-		desc.ClosestHitShaders.resize(ClosestHitShaders.size());
-		for (uint32 i = 0; i < ClosestHitShaders.size(); i++)
+		desc.ClosestHitShaders.Resize(ClosestHitShaders.GetSize());
+		for (uint32 i = 0; i < ClosestHitShaders.GetSize(); i++)
 		{
 			desc.ClosestHitShaders[i] = ClosestHitShaders[i];
 		}

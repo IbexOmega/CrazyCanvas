@@ -38,7 +38,7 @@ namespace LambdaEngine
 		}
 
 	private:
-		Ref<DeviceAllocatorVK>	m_Allocator	= nullptr;
+		TSharedRef<DeviceAllocatorVK>	m_Allocator	= nullptr;
 		VkImage					m_Image		= VK_NULL_HANDLE;
 		VkDeviceMemory			m_Memory	= VK_NULL_HANDLE;
 		AllocationVK			m_Allocation;

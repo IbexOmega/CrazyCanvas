@@ -94,7 +94,7 @@ namespace LambdaEngine
 		static bool ReadDataFromFile(const char* pFilepath, const char* pMode, byte** ppData, uint32* pDataSize);
         static void ConvertBackslashes(std::string& string);
 
-		static bool CompileGLSLToSPIRV(const char* pFilepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>& sourceSPIRV);
+		static bool CompileGLSLToSPIRV(const char* pFilepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, TArray<uint32>& sourceSPIRV);
 
 	private:
 		static DeviceAllocator*		s_pAllocator;

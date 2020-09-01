@@ -43,9 +43,9 @@ namespace LambdaEngine
 
 		// Shader Constants
 		VkSpecializationInfo specializationInfo = { };
-		if (!pDesc->Shader.ShaderConstants.empty())
+		if (!pDesc->Shader.ShaderConstants.IsEmpty())
 		{
-			const uint32 constantCount = static_cast<uint32>(pDesc->Shader.ShaderConstants.size());
+			const uint32 constantCount = static_cast<uint32>(pDesc->Shader.ShaderConstants.GetSize());
 			
 			TArray<VkSpecializationMapEntry> specializationEntires(constantCount);
 			for (uint32 i = 0; i < constantCount; i++)
@@ -54,13 +54,13 @@ namespace LambdaEngine
 				specializationEntry.constantID	= i;
 				specializationEntry.offset		= i * sizeof(ShaderConstant);
 				specializationEntry.size		= sizeof(ShaderConstant);
-				specializationEntires.emplace_back(specializationEntry);
+				specializationEntires.EmplaceBack(specializationEntry);
 			}
 
-			specializationInfo.mapEntryCount = static_cast<uint32>(specializationEntires.size());
-			specializationInfo.pMapEntries	 = specializationEntires.data();
+			specializationInfo.mapEntryCount = static_cast<uint32>(specializationEntires.GetSize());
+			specializationInfo.pMapEntries	 = specializationEntires.GetData();
 			specializationInfo.dataSize		 = constantCount * sizeof(ShaderConstant);
-			specializationInfo.pData		 = pDesc->Shader.ShaderConstants.data();
+			specializationInfo.pData		 = pDesc->Shader.ShaderConstants.GetData();
 
 			shaderCreateInfo.pSpecializationInfo = &specializationInfo;
 		}

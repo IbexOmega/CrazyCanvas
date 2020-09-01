@@ -50,11 +50,11 @@ namespace LambdaEngine
 		VkMemoryRequirements GetMemoryRequirements(VkAccelerationStructureMemoryRequirementsTypeKHR type);
 
 	private:
-		Ref<DeviceAllocatorVK>		m_Allocator								= nullptr;
+		TSharedRef<DeviceAllocatorVK>		m_Allocator								= nullptr;
 		VkAccelerationStructureKHR	m_AccelerationStructure					= VK_NULL_HANDLE;
 		VkDeviceMemory				m_AccelerationStructureMemory			= VK_NULL_HANDLE;
 		VkDeviceAddress				m_AccelerationStructureDeviceAddress	= 0;
-		Ref<BufferVK>				m_ScratchBuffer							= nullptr;
+		TSharedRef<BufferVK>				m_ScratchBuffer							= nullptr;
 		AllocationVK				m_Allocation;
 	};
 }

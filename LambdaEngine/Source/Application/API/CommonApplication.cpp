@@ -74,7 +74,7 @@ namespace LambdaEngine
 	void CommonApplication::AddEventHandler(EventHandler* pEventHandler)
 	{
 		// Check first so that this handler is not already added
-		const uint32 count = uint32(m_EventHandlers.size());
+		const uint32 count = uint32(m_EventHandlers.GetSize());
 		for (uint32 i = 0; i < count; i++)
 		{
 			if (pEventHandler == m_EventHandlers[i])
@@ -84,17 +84,17 @@ namespace LambdaEngine
 		}
 
 		// Add new handler
-		m_EventHandlers.emplace_back(pEventHandler);
+		m_EventHandlers.EmplaceBack(pEventHandler);
 	}
 
 	void CommonApplication::RemoveEventHandler(EventHandler* pEventHandler)
 	{
-		const uint32 count = uint32(m_EventHandlers.size());
+		const uint32 count = uint32(m_EventHandlers.GetSize());
 		for (uint32 i = 0; i < count; i++)
 		{
 			if (pEventHandler == m_EventHandlers[i])
 			{
-				m_EventHandlers.erase(m_EventHandlers.begin() + i);
+				m_EventHandlers.Erase(m_EventHandlers.Begin() + i);
 				break;
 			}
 		}

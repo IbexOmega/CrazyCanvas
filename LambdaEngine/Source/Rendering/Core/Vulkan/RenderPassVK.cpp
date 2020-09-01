@@ -27,7 +27,7 @@ namespace LambdaEngine
 		CreateSubpassDependencies(pDesc, subpassDependencies);
 
 		VkSubpassDescription subpassDescriptions[MAX_SUBPASSES];
-		for (uint32 i = 0; i < pDesc->Subpasses.size(); i++)
+		for (uint32 i = 0; i < pDesc->Subpasses.GetSize(); i++)
 		{
 			subpassDescriptions[i] = subpasses[i].Subpass;
 		}
@@ -36,11 +36,11 @@ namespace LambdaEngine
 		renderPassCreateInfo.sType				= VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassCreateInfo.pNext				= nullptr;
 		renderPassCreateInfo.flags				= NULL;
-		renderPassCreateInfo.attachmentCount	= static_cast<uint32>(pDesc->Attachments.size());
+		renderPassCreateInfo.attachmentCount	= static_cast<uint32>(pDesc->Attachments.GetSize());
 		renderPassCreateInfo.pAttachments		= attachments;
-		renderPassCreateInfo.subpassCount		= static_cast<uint32>(pDesc->Subpasses.size());
+		renderPassCreateInfo.subpassCount		= static_cast<uint32>(pDesc->Subpasses.GetSize());
 		renderPassCreateInfo.pSubpasses			= subpassDescriptions;
-		renderPassCreateInfo.dependencyCount	= static_cast<uint32>(pDesc->SubpassDependencies.size());
+		renderPassCreateInfo.dependencyCount	= static_cast<uint32>(pDesc->SubpassDependencies.GetSize());
 		renderPassCreateInfo.pDependencies		= subpassDependencies;
 
 		VkResult result = vkCreateRenderPass(m_pDevice->Device, &renderPassCreateInfo, nullptr, &m_RenderPass);
@@ -83,9 +83,9 @@ namespace LambdaEngine
 
 	void RenderPassVK::CreateAttachmentDescriptions(const RenderPassDesc* pDesc, VkAttachmentDescription* pResultAttachments)
 	{
-		VALIDATE(pDesc->Attachments.size() <= MAX_COLOR_ATTACHMENTS);
+		VALIDATE(pDesc->Attachments.GetSize() <= MAX_COLOR_ATTACHMENTS);
 
-		for (uint32 i = 0; i < pDesc->Attachments.size(); i++)
+		for (uint32 i = 0; i < pDesc->Attachments.GetSize(); i++)
 		{
 			const RenderPassAttachmentDesc& attachment		= pDesc->Attachments[i];
 			VkAttachmentDescription&		vkAttachment	= pResultAttachments[i];
@@ -104,22 +104,22 @@ namespace LambdaEngine
 
 	void RenderPassVK::CreateSubpassDescriptions(const RenderPassDesc* pDesc, SubpassData* pResultSubpasses)
 	{
-		VALIDATE(pDesc->Subpasses.size() <= MAX_SUBPASSES);
+		VALIDATE(pDesc->Subpasses.GetSize() <= MAX_SUBPASSES);
 
-		for (uint32 i = 0; i < pDesc->Subpasses.size(); i++)
+		for (uint32 i = 0; i < pDesc->Subpasses.GetSize(); i++)
 		{
 			VkSubpassDescription&			vkSubpass	= pResultSubpasses[i].Subpass;
 			const RenderPassSubpassDesc&	subpass		= pDesc->Subpasses[i];
 
-			VALIDATE(subpass.InputAttachmentStates.size()	<= MAX_COLOR_ATTACHMENTS);
-			VALIDATE(subpass.RenderTargetStates.size()		<= MAX_COLOR_ATTACHMENTS);
+			VALIDATE(subpass.InputAttachmentStates.GetSize()	<= MAX_COLOR_ATTACHMENTS);
+			VALIDATE(subpass.RenderTargetStates.GetSize()		<= MAX_COLOR_ATTACHMENTS);
 			
 			vkSubpass.flags					= 0;
 			vkSubpass.pipelineBindPoint		= VK_PIPELINE_BIND_POINT_GRAPHICS;
-			vkSubpass.inputAttachmentCount	= static_cast<uint32>(subpass.InputAttachmentStates.size());
+			vkSubpass.inputAttachmentCount	= static_cast<uint32>(subpass.InputAttachmentStates.GetSize());
 			
 			// Input attachments
-			for (uint32 attachment = 0; attachment < static_cast<uint32>(subpass.InputAttachmentStates.size()); attachment++)
+			for (uint32 attachment = 0; attachment < static_cast<uint32>(subpass.InputAttachmentStates.GetSize()); attachment++)
 			{
 				ETextureState			inputAttachmentState	= subpass.InputAttachmentStates[attachment];
 				VkAttachmentReference&	inputAttachment			= pResultSubpasses[i].InputAttachments[attachment];
@@ -138,7 +138,7 @@ namespace LambdaEngine
 				}
 			}
 
-			for (uint32 attachment = 0; attachment < subpass.RenderTargetStates.size(); attachment++)
+			for (uint32 attachment = 0; attachment < subpass.RenderTargetStates.GetSize(); attachment++)
 			{
 				// Color Attachment
 				{
@@ -160,7 +160,7 @@ namespace LambdaEngine
 				}
 
 				// Resolve Attachment
-				if (!subpass.ResolveAttachmentStates.empty())
+				if (!subpass.ResolveAttachmentStates.IsEmpty())
 				{
 					ETextureState			resolveAttachmentState	= subpass.ResolveAttachmentStates[attachment];
 					VkAttachmentReference&	resolveAttachment		= pResultSubpasses[i].ResolveAttachments[attachment];
@@ -183,7 +183,7 @@ namespace LambdaEngine
 			// DepthStencil
 			if (subpass.DepthStencilAttachmentState != ETextureState::TEXTURE_STATE_UNKNOWN && subpass.DepthStencilAttachmentState != ETextureState::TEXTURE_STATE_DONT_CARE)
 			{
-				pResultSubpasses[i].DepthStencil.attachment = static_cast<uint32>(subpass.RenderTargetStates.size());
+				pResultSubpasses[i].DepthStencil.attachment = static_cast<uint32>(subpass.RenderTargetStates.GetSize());
 				pResultSubpasses[i].DepthStencil.layout		= ConvertTextureState(subpass.DepthStencilAttachmentState);
 
 				vkSubpass.pDepthStencilAttachment	= &pResultSubpasses[i].DepthStencil;
@@ -193,9 +193,9 @@ namespace LambdaEngine
 				vkSubpass.pDepthStencilAttachment = nullptr;
 			}
 
-			vkSubpass.inputAttachmentCount		= static_cast<uint32>(subpass.InputAttachmentStates.size());
+			vkSubpass.inputAttachmentCount		= static_cast<uint32>(subpass.InputAttachmentStates.GetSize());
 			vkSubpass.pInputAttachments			= pResultSubpasses[i].InputAttachments;
-			vkSubpass.colorAttachmentCount		= static_cast<uint32>(subpass.RenderTargetStates.size());
+			vkSubpass.colorAttachmentCount		= static_cast<uint32>(subpass.RenderTargetStates.GetSize());
 			vkSubpass.pColorAttachments			= pResultSubpasses[i].ColorAttachments;
 			vkSubpass.pResolveAttachments		= pResultSubpasses[i].ResolveAttachments;
 			vkSubpass.preserveAttachmentCount	= 0;
@@ -205,9 +205,9 @@ namespace LambdaEngine
 
 	void RenderPassVK::CreateSubpassDependencies(const RenderPassDesc* pDesc, VkSubpassDependency* pResultSubpassDependencies)
 	{
-		VALIDATE(pDesc->SubpassDependencies.size() <= MAX_SUBPASS_DEPENDENCIES);
+		VALIDATE(pDesc->SubpassDependencies.GetSize() <= MAX_SUBPASS_DEPENDENCIES);
 
-		for (uint32 i = 0; i < pDesc->SubpassDependencies.size(); i++)
+		for (uint32 i = 0; i < pDesc->SubpassDependencies.GetSize(); i++)
 		{
 			VkSubpassDependency&					vkSubpassDependency = pResultSubpassDependencies[i];
 			const RenderPassSubpassDependencyDesc&	subpassDependency	= pDesc->SubpassDependencies[i];

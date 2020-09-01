@@ -60,7 +60,7 @@ namespace LambdaEngine
 			m_SwapChain = VK_NULL_HANDLE;
 		}
 
-		const uint32 bufferCount = uint32(m_Buffers.size());
+		const uint32 bufferCount = uint32(m_Buffers.GetSize());
 		for (uint32 i = 0; i < bufferCount; i++)
 		{
 #ifdef LAMBDA_DEVELOPMENT
@@ -75,7 +75,7 @@ namespace LambdaEngine
 #endif
 			m_Buffers[i] = nullptr;
 		}
-		m_Buffers.clear();
+		m_Buffers.Clear();
 	}
 
 	bool SwapChainVK::Init(const SwapChainDesc* pDesc)
@@ -141,8 +141,8 @@ namespace LambdaEngine
 		semaphoreInfo.flags = 0;
 
 		// Create semaphores
-		m_ImageSemaphores.resize(pDesc->BufferCount);
-		m_RenderSemaphores.resize(pDesc->BufferCount);
+		m_ImageSemaphores.Resize(pDesc->BufferCount);
+		m_RenderSemaphores.Resize(pDesc->BufferCount);
 		for (uint32 i = 0; i < pDesc->BufferCount; i++)
 		{
 			VkResult result = vkCreateSemaphore(m_pDevice->Device, &semaphoreInfo, nullptr, &m_ImageSemaphores[i]);
@@ -362,7 +362,7 @@ namespace LambdaEngine
 
 			TextureVK* pTexture = DBG_NEW TextureVK(m_pDevice);
 			pTexture->InitWithImage(textures[i], &desc);
-			m_Buffers.emplace_back(pTexture);
+			m_Buffers.EmplaceBack(pTexture);
 		}
 
 		result = AquireNextImage();
@@ -454,7 +454,7 @@ namespace LambdaEngine
 
 	Texture* SwapChainVK::GetBuffer(uint32 bufferIndex)
 	{
-		ASSERT(bufferIndex < uint32(m_Buffers.size()));
+		VALIDATE(bufferIndex < uint32(m_Buffers.GetSize()));
 
 		TextureVK* pBuffer = m_Buffers[bufferIndex];
 		pBuffer->AddRef();
@@ -463,7 +463,7 @@ namespace LambdaEngine
 
 	const Texture* SwapChainVK::GetBuffer(uint32 bufferIndex) const
 	{
-		ASSERT(bufferIndex < uint32(m_Buffers.size()));
+		VALIDATE(bufferIndex < uint32(m_Buffers.GetSize()));
 
 		TextureVK* pBuffer = m_Buffers[bufferIndex];
 		pBuffer->AddRef();

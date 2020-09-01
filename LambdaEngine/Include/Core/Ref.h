@@ -3,23 +3,23 @@
 
 namespace LambdaEngine
 {
-	template<typename InterfaceType>
-	class Ref
+	template<typename TRefCountedObject>
+	class TSharedRef
 	{
 	public:
-		inline Ref(InterfaceType* pRefObject = nullptr)
+		inline TSharedRef(TRefCountedObject* pRefObject = nullptr)
 			: m_pRefObject(pRefObject)
 		{
 		}
 
 		// No except since move should not throw
-		inline Ref(Ref&& other) noexcept
+		inline TSharedRef(TSharedRef&& other) noexcept
 			: m_pRefObject(other.m_pRefObject)
 		{
 			other.m_pRefObject = nullptr;
 		}
 
-		inline Ref(const Ref& other)
+		inline TSharedRef(const TSharedRef& other)
 			: m_pRefObject(other.m_pRefObject)
 		{
 			if (m_pRefObject)
@@ -28,7 +28,7 @@ namespace LambdaEngine
 			}
 		}
 
-		inline ~Ref()
+		inline ~TSharedRef()
 		{
 			Reset();
 		}
@@ -38,7 +38,7 @@ namespace LambdaEngine
 			SAFERELEASE(m_pRefObject);
 		}
 
-		inline void Assign(InterfaceType* pPtr)
+		inline void Assign(TRefCountedObject* pPtr)
 		{
 			if (m_pRefObject)
 			{
@@ -52,28 +52,28 @@ namespace LambdaEngine
 			}
 		}
 
-		inline InterfaceType** GetAddress()
+		inline TRefCountedObject** GetAddress()
 		{
 			return &m_pRefObject;
 		}
 
-		inline const InterfaceType* const * GetAddress() const
+		inline const TRefCountedObject* const * GetAddress() const
 		{
 			return &m_pRefObject;
 		}
 
-		inline InterfaceType* GetAndAddRef()
+		inline TRefCountedObject* GetAndAddRef()
 		{
 			m_pRefObject->AddRef();
 			return m_pRefObject;
 		}
 
-		inline InterfaceType* Get()
+		inline TRefCountedObject* Get()
 		{
 			return m_pRefObject;
 		}
 
-		inline const InterfaceType* Get() const
+		inline const TRefCountedObject* Get() const
 		{
 			return m_pRefObject;
 		}
@@ -90,7 +90,7 @@ namespace LambdaEngine
 			return reinterpret_cast<const CastType*>(m_pRefObject);
 		}
 
-		inline Ref& operator=(InterfaceType* pPtr)
+		inline TSharedRef& operator=(TRefCountedObject* pPtr)
 		{
 			if (m_pRefObject != pPtr)
 			{
@@ -100,7 +100,7 @@ namespace LambdaEngine
 			return *this;
 		}
 
-		inline Ref& operator=(Ref&& other)
+		inline TSharedRef& operator=(TSharedRef&& other)
 		{
 			if (this != other)
 			{
@@ -116,7 +116,7 @@ namespace LambdaEngine
 			return *this;
 		}
 
-		inline Ref& operator=(const Ref& other)
+		inline TSharedRef& operator=(const TSharedRef& other)
 		{
 			if (this != &other)
 			{
@@ -126,12 +126,12 @@ namespace LambdaEngine
 			return *this;
 		}
 
-		inline bool operator==(const Ref& other) const
+		inline bool operator==(const TSharedRef& other) const
 		{
 			return (m_pRefObject == other.m_pRefObject);
 		}
 
-		inline bool operator==(InterfaceType* pOther) const
+		inline bool operator==(TRefCountedObject* pOther) const
 		{
 			return (m_pRefObject == pOther);
 		}
@@ -141,12 +141,12 @@ namespace LambdaEngine
 			return (m_pRefObject == null);
 		}
 
-		inline bool operator!=(const Ref& other) const
+		inline bool operator!=(const TSharedRef& other) const
 		{
 			return (m_pRefObject != other.m_pRefObject);
 		}
 
-		inline bool operator!=(InterfaceType* pOther) const
+		inline bool operator!=(TRefCountedObject* pOther) const
 		{
 			return (m_pRefObject != pOther);
 		}
@@ -156,17 +156,17 @@ namespace LambdaEngine
 			return (m_pRefObject != null);
 		}
 
-		inline InterfaceType* operator->()
+		inline TRefCountedObject* operator->()
 		{
 			return Get();
 		}
 
-		inline const InterfaceType* operator->() const
+		inline const TRefCountedObject* operator->() const
 		{
 			return Get();
 		}
 
-		inline InterfaceType** operator&()
+		inline TRefCountedObject** operator&()
 		{
 			return GetAddress();
 		}
@@ -177,6 +177,6 @@ namespace LambdaEngine
 		}
 
 	private:
-		InterfaceType* m_pRefObject = nullptr;
+		TRefCountedObject* m_pRefObject = nullptr;
 	};
 }

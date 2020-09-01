@@ -34,8 +34,8 @@ namespace LambdaEngine
 
 	public:
 		String						DebugName			= "";
-		Ref<RenderPass>				RenderPass			= nullptr;
-		Ref<PipelineLayout>			PipelineLayout		= nullptr;
+		TSharedRef<RenderPass>				RenderPass			= nullptr;
+		TSharedRef<PipelineLayout>			PipelineLayout		= nullptr;
 		// Pipeline
 		TArray<InputElementDesc>	InputLayout			= { };
 		InputAssemblyDesc			InputAssembly		= { };
@@ -67,7 +67,7 @@ namespace LambdaEngine
 
 	public:
 		String 				DebugName		= "";
-		Ref<PipelineLayout>	PipelineLayout	= nullptr;
+		TSharedRef<PipelineLayout>	PipelineLayout	= nullptr;
 		ManagedShaderModule	Shader;
 	};
 
@@ -81,7 +81,7 @@ namespace LambdaEngine
 
 	public:
 		String				DebugName			= "";
-		Ref<PipelineLayout>	PipelineLayout		= nullptr;
+		TSharedRef<PipelineLayout>	PipelineLayout		= nullptr;
 		uint32				MaxRecursionDepth	= 1;
 		// Shaders
 		ManagedShaderModule			RaygenShader;
@@ -109,7 +109,7 @@ namespace LambdaEngine
 
 	private:
 		static uint64													s_CurrentPipelineIndex;
-		static THashTable<uint64, Ref<PipelineState>>					s_PipelineStates;
+		static THashTable<uint64, TSharedRef<PipelineState>>					s_PipelineStates;
 		static THashTable<uint64, ManagedGraphicsPipelineStateDesc>		s_GraphicsPipelineStateDescriptions;
 		static THashTable<uint64, ManagedComputePipelineStateDesc>		s_ComputePipelineStateDescriptions;
 		static THashTable<uint64, ManagedRayTracingPipelineStateDesc>	s_RayTracingPipelineStateDescriptions;

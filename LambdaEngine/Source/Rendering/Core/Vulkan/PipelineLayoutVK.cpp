@@ -43,7 +43,7 @@ namespace LambdaEngine
 			constantRangeVk.offset		= constantRange.OffsetInBytes;
 			constantRangeVk.size		= constantRange.SizeInBytes;
 			constantRangeVk.stageFlags	= ConvertShaderStageMask(constantRange.ShaderStageFlags);
-			pushConstants.emplace_back(constantRangeVk);
+			pushConstants.EmplaceBack(constantRangeVk);
 		}
 
 		// DescriptorSetLayouts
@@ -60,14 +60,14 @@ namespace LambdaEngine
 				VkDescriptorSetLayoutBinding	bindingVk = { };
 
 				// Immutable Samplers for each binding
-				if (!binding.ImmutableSamplers.empty())
+				if (!binding.ImmutableSamplers.IsEmpty())
 				{
 					for (uint32 samplerIndex = 0; samplerIndex < binding.DescriptorCount; samplerIndex++)
 					{
 						// Store samplers to make sure that they are NOT released before we destroy the pipelinelayout
 						const SamplerVK* pSamplerVk = reinterpret_cast<const SamplerVK*>(binding.ImmutableSamplers[samplerIndex].Get());
-						m_ImmutableSamplers.emplace_back(binding.ImmutableSamplers[samplerIndex]);
-						immutableSamplers.emplace_back(pSamplerVk->GetSampler());
+						m_ImmutableSamplers.EmplaceBack(binding.ImmutableSamplers[samplerIndex]);
+						immutableSamplers.EmplaceBack(pSamplerVk->GetSampler());
 					}
 				}
 
@@ -103,21 +103,21 @@ namespace LambdaEngine
 				bindingVk.descriptorType		= ConvertDescriptorType(binding.DescriptorType);
 				bindingVk.binding				= binding.Binding;
 				bindingVk.descriptorCount		= binding.DescriptorCount;
-				bindingVk.pImmutableSamplers	= binding.ImmutableSamplers.empty() ? nullptr : immutableSamplers.data();
+				bindingVk.pImmutableSamplers	= binding.ImmutableSamplers.IsEmpty() ? nullptr : immutableSamplers.GetData();
 				bindingVk.stageFlags			= ConvertShaderStageMask(binding.ShaderStageMask);
 				
-				layoutBindings.emplace_back(bindingVk);
-				m_DescriptorCounts.emplace_back(heapInfo);
+				layoutBindings.EmplaceBack(bindingVk);
+				m_DescriptorCounts.EmplaceBack(heapInfo);
 			}
 
-			m_DescriptorSetBindings.push_back({ descriptorSetLayout.DescriptorBindings });
+			m_DescriptorSetBindings.PushBack({ descriptorSetLayout.DescriptorBindings });
 
 			VkDescriptorSetLayoutCreateInfo createInfo = { };
 			createInfo.sType		= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 			createInfo.pNext		= nullptr;
 			createInfo.flags		= 0;
-			createInfo.pBindings	= layoutBindings.data();
-			createInfo.bindingCount	= static_cast<uint32>(layoutBindings.size());
+			createInfo.pBindings	= layoutBindings.GetData();
+			createInfo.bindingCount	= static_cast<uint32>(layoutBindings.GetSize());
 
 			VkResult result = vkCreateDescriptorSetLayout(m_pDevice->Device, &createInfo, nullptr, &layout);
 			if (result != VK_SUCCESS)
@@ -129,8 +129,8 @@ namespace LambdaEngine
 			{
 				D_LOG_MESSAGE("[PipelineLayoutVK]: Created DescriptorSetLayout");
 				
-				m_DescriptorSetLayouts.emplace_back(layout);
-				layoutBindings.clear();
+				m_DescriptorSetLayouts.EmplaceBack(layout);
+				layoutBindings.Clear();
 			}
 		}
 		
@@ -158,10 +158,10 @@ namespace LambdaEngine
 		pipelineLayoutCreateInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutCreateInfo.pNext					= nullptr;
 		pipelineLayoutCreateInfo.flags					= 0;
-		pipelineLayoutCreateInfo.pSetLayouts			= m_DescriptorSetLayouts.data();
-		pipelineLayoutCreateInfo.setLayoutCount			= static_cast<uint32>(m_DescriptorSetLayouts.size());
-		pipelineLayoutCreateInfo.pPushConstantRanges	= pushConstants.data();
-		pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32>(pushConstants.size());
+		pipelineLayoutCreateInfo.pSetLayouts			= m_DescriptorSetLayouts.GetData();
+		pipelineLayoutCreateInfo.setLayoutCount			= static_cast<uint32>(m_DescriptorSetLayouts.GetSize());
+		pipelineLayoutCreateInfo.pPushConstantRanges	= pushConstants.GetData();
+		pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32>(pushConstants.GetSize());
 
 		VkResult result = vkCreatePipelineLayout(m_pDevice->Device, &pipelineLayoutCreateInfo, nullptr, &m_PipelineLayout);
 		if (result != VK_SUCCESS)

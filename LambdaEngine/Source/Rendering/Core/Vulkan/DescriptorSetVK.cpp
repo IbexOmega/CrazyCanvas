@@ -88,8 +88,8 @@ namespace LambdaEngine
 		descriptorImageWrite.dstArrayElement	= 0;
 		descriptorImageWrite.descriptorType		= descriptorTypeVk;
 		descriptorImageWrite.pBufferInfo		= nullptr;
-		descriptorImageWrite.descriptorCount	= uint32_t(imageInfos.size());
-		descriptorImageWrite.pImageInfo			= imageInfos.data();
+		descriptorImageWrite.descriptorCount	= uint32_t(imageInfos.GetSize());
+		descriptorImageWrite.pImageInfo			= imageInfos.GetData();
 		descriptorImageWrite.pTexelBufferView	= nullptr;
 
 		vkUpdateDescriptorSets(m_pDevice->Device, 1, &descriptorImageWrite, 0, nullptr);
@@ -121,8 +121,8 @@ namespace LambdaEngine
 		descriptorImageWrite.dstBinding			= firstBinding;
 		descriptorImageWrite.dstArrayElement	= 0;
 		descriptorImageWrite.descriptorType		= descriptorTypeVk;
-		descriptorImageWrite.descriptorCount	= uint32_t(bufferInfos.size());
-		descriptorImageWrite.pBufferInfo		= bufferInfos.data();
+		descriptorImageWrite.descriptorCount	= uint32_t(bufferInfos.GetSize());
+		descriptorImageWrite.pBufferInfo		= bufferInfos.GetData();
 		descriptorImageWrite.pImageInfo			= nullptr;
 		descriptorImageWrite.pTexelBufferView	= nullptr;
 
@@ -145,7 +145,7 @@ namespace LambdaEngine
 		VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo = {};
 		descriptorAccelerationStructureInfo.sType                       = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 		descriptorAccelerationStructureInfo.accelerationStructureCount  = descriptorCount;
-		descriptorAccelerationStructureInfo.pAccelerationStructures     = accelerationStructures.data();
+		descriptorAccelerationStructureInfo.pAccelerationStructures     = accelerationStructures.GetData();
 
 		VkWriteDescriptorSet accelerationStructureWrite = {};
 		accelerationStructureWrite.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

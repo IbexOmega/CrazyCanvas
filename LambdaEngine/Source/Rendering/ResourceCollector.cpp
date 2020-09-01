@@ -15,16 +15,16 @@ namespace LambdaEngine
 	void ResourceCollector::DisposeResource(DeviceChild* pObject)
 	{
 		VALIDATE(pObject != nullptr);
-		m_Objects.emplace_back(pObject);
+		m_Objects.EmplaceBack(pObject);
 	}
 
 	void ResourceCollector::Reset()
 	{
-		for (Ref<DeviceChild>& object : m_Objects)
+		for (TSharedRef<DeviceChild>& object : m_Objects)
 		{
 			object.Reset();
 		}
 
-		m_Objects.clear();
+		m_Objects.Clear();
 	}
 }

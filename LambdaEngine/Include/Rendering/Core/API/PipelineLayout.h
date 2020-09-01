@@ -21,7 +21,7 @@ namespace LambdaEngine
 		uint32					DescriptorCount		= 0;
 		uint32					Binding				= 0;
 		uint32					ShaderStageMask		= 0;
-		TArray<Ref<Sampler>>	ImmutableSamplers;
+		TArray<TSharedRef<Sampler>>	ImmutableSamplers;
 	};
 
 	struct DescriptorSetLayoutDesc

@@ -470,7 +470,7 @@ namespace LambdaEngine
 			return nullptr;
 		}
 		
-		VALIDATE(queueFamilyIndex < int32(m_QueueFamilyProperties.size()));
+		VALIDATE(queueFamilyIndex < int32(m_QueueFamilyProperties.GetSize()));
 		VALIDATE(index            < m_QueueFamilyProperties[queueFamilyIndex].queueCount);
 
 		CommandQueueVK* pQueue = DBG_NEW CommandQueueVK(this);
@@ -808,8 +808,8 @@ namespace LambdaEngine
 		instanceCreateInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		instanceCreateInfo.flags					= 0;
 		instanceCreateInfo.pApplicationInfo         = &appInfo;
-		instanceCreateInfo.enabledExtensionCount    = (uint32_t)m_EnabledInstanceExtensions.size();
-		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
+		instanceCreateInfo.enabledExtensionCount    = (uint32_t)m_EnabledInstanceExtensions.GetSize();
+		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.GetData();
 
 		VkValidationFeaturesEXT validationFeatures	= {};
 		validationFeatures.sType					= VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
@@ -930,8 +930,8 @@ namespace LambdaEngine
 		uint32_t queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, nullptr);
 
-		m_QueueFamilyProperties.resize(queueFamilyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, m_QueueFamilyProperties.data());
+		m_QueueFamilyProperties.Resize(queueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, m_QueueFamilyProperties.GetData());
 		
 		// Save device's limits
 		VkPhysicalDeviceProperties deviceProperties = GetPhysicalDeviceProperties();
@@ -1023,13 +1023,13 @@ namespace LambdaEngine
 		createInfo.flags					= 0;
 		createInfo.queueCreateInfoCount		= (uint32)queueCreateInfos.size();
 		createInfo.pQueueCreateInfos		= queueCreateInfos.data();
-		createInfo.enabledExtensionCount    = (uint32)m_EnabledDeviceExtensions.size();
-		createInfo.ppEnabledExtensionNames  = m_EnabledDeviceExtensions.data();
+		createInfo.enabledExtensionCount    = (uint32)m_EnabledDeviceExtensions.GetSize();
+		createInfo.ppEnabledExtensionNames  = m_EnabledDeviceExtensions.GetData();
 
 		if (pDesc->Debug)
 		{
-			createInfo.enabledLayerCount    = (uint32)m_EnabledValidationLayers.size();
-			createInfo.ppEnabledLayerNames  = m_EnabledValidationLayers.data();
+			createInfo.enabledLayerCount    = (uint32)m_EnabledValidationLayers.GetSize();
+			createInfo.ppEnabledLayerNames  = m_EnabledValidationLayers.GetData();
 		}
 		else
 		{
@@ -1067,7 +1067,7 @@ namespace LambdaEngine
 			{
 				if (availableValidationLayerHash == requiredValidationLayer->Hash)
 				{
-					m_EnabledValidationLayers.push_back(requiredValidationLayer->Name);
+					m_EnabledValidationLayers.PushBack(requiredValidationLayer->Name);
 					requiredValidationLayers.erase(requiredValidationLayer);
 					break;
 				}
@@ -1077,7 +1077,7 @@ namespace LambdaEngine
 			{
 				if (availableValidationLayerHash == optionalValidationLayer->Hash)
 				{
-					m_EnabledValidationLayers.push_back(optionalValidationLayer->Name);
+					m_EnabledValidationLayers.PushBack(optionalValidationLayer->Name);
 					optionalValidationLayers.erase(optionalValidationLayer);
 					break;
 				}
@@ -1123,7 +1123,7 @@ namespace LambdaEngine
 			{
 				if (requiredInstanceExtension->Hash == availableInstanceExtensionHash)
 				{
-					m_EnabledInstanceExtensions.push_back(requiredInstanceExtension->Name);
+					m_EnabledInstanceExtensions.PushBack(requiredInstanceExtension->Name);
 					requiredInstanceExtensions.erase(requiredInstanceExtension);
 					break;
 				}
@@ -1133,7 +1133,7 @@ namespace LambdaEngine
 			{
 				if (optionalInstanceExtension->Hash == availableInstanceExtensionHash)
 				{
-					m_EnabledInstanceExtensions.push_back(optionalInstanceExtension->Name);
+					m_EnabledInstanceExtensions.PushBack(optionalInstanceExtension->Name);
 					optionalInstanceExtensions.erase(optionalInstanceExtension);
 					break;
 				}
@@ -1298,7 +1298,7 @@ namespace LambdaEngine
 		//We know all requried device extensions are supported
 		for (uint32 i = 1; i < ARR_SIZE(REQUIRED_DEVICE_EXTENSIONS); i++)
 		{
-			m_EnabledDeviceExtensions.push_back(REQUIRED_DEVICE_EXTENSIONS[i].Name);
+			m_EnabledDeviceExtensions.EmplaceBack(REQUIRED_DEVICE_EXTENSIONS[i].Name);
 		}
 
 		uint32_t extensionCount = 0;
@@ -1315,7 +1315,7 @@ namespace LambdaEngine
 			{
 				if (optionalDeviceExtension->Hash == availableDeviceExtensionHash)
 				{
-					m_EnabledDeviceExtensions.push_back(optionalDeviceExtension->Name);
+					m_EnabledDeviceExtensions.EmplaceBack(optionalDeviceExtension->Name);
 					optionalDeviceExtensions.erase(optionalDeviceExtension);
 					break;
 				}

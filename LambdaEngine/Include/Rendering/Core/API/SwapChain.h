@@ -13,8 +13,8 @@ namespace LambdaEngine
 	struct SwapChainDesc
 	{
 		String				DebugName		= "";
-		Ref<Window>			Window			= nullptr;
-		Ref<CommandQueue>	Queue			= nullptr;
+		TSharedRef<Window>			Window			= nullptr;
+		TSharedRef<CommandQueue>	Queue			= nullptr;
 		EFormat				Format			= EFormat::FORMAT_NONE;
 		uint32				Width			= 0;
 		uint32				Height			= 0;

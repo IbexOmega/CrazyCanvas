@@ -736,12 +736,12 @@ namespace LambdaEngine
 			pRenderStage->MaterialsRenderedPerPass = (m_MaxTexturesPerDescriptorSet - totalNumberOfNonMaterialTextures) / 5; //5 textures per material
 			pRenderStage->TextureSubDescriptorSetCount = (uint32)glm::ceil((float)totalNumberOfTextures / float(pRenderStage->MaterialsRenderedPerPass * 5));
 
-			std::vector<DescriptorBindingDesc> textureDescriptorSetDescriptions;
-			textureDescriptorSetDescriptions.reserve(pRenderStageDesc->AttachmentCount);
+			TArray<DescriptorBindingDesc> textureDescriptorSetDescriptions;
+			textureDescriptorSetDescriptions.Reserve(pRenderStageDesc->AttachmentCount);
 			uint32 textureDescriptorBindingIndex = 0;
 
-			std::vector<DescriptorBindingDesc> bufferDescriptorSetDescriptions;
-			bufferDescriptorSetDescriptions.reserve(pRenderStageDesc->AttachmentCount);
+			TArray<DescriptorBindingDesc> bufferDescriptorSetDescriptions;
+			bufferDescriptorSetDescriptions.Reserve(pRenderStageDesc->AttachmentCount);
 			uint32 bufferDescriptorBindingIndex = 0;
 
 			ConstantRangeDesc constantRangeDesc = {};
@@ -749,20 +749,20 @@ namespace LambdaEngine
 			constantRangeDesc.ShaderStageFlags		= CreateShaderStageMask(pRenderStageDesc);
 			constantRangeDesc.SizeInBytes			= pRenderStageDesc->PushConstants.DataSize;
 
-			std::vector<RenderPassAttachmentDesc>	renderPassAttachmentDescriptions;
+			TArray<RenderPassAttachmentDesc>	renderPassAttachmentDescriptions;
 			RenderPassAttachmentDesc				renderPassDepthStencilDescription;
-			std::vector<ETextureState>				renderPassRenderTargetStates;
-			std::vector<BlendAttachmentStateDesc>		renderPassBlendAttachmentStates;
-			std::vector<Resource*>					renderTargets;
+			TArray<ETextureState>				renderPassRenderTargetStates;
+			TArray<BlendAttachmentStateDesc>		renderPassBlendAttachmentStates;
+			TArray<Resource*>					renderTargets;
 			Resource*								pDepthStencilResource = nullptr;
-			std::vector<std::tuple<Resource*, ETextureState, EDescriptorType>>	textureDescriptorSetResources;
-			std::vector<std::tuple<Resource*, ETextureState, EDescriptorType>>	bufferDescriptorSetResources;
-			renderPassAttachmentDescriptions.reserve(pRenderStageDesc->AttachmentCount);
-			renderPassRenderTargetStates.reserve(pRenderStageDesc->AttachmentCount);
-			renderPassBlendAttachmentStates.reserve(pRenderStageDesc->AttachmentCount);
-			renderTargets.reserve(pRenderStageDesc->AttachmentCount);
-			textureDescriptorSetResources.reserve(pRenderStageDesc->AttachmentCount);
-			bufferDescriptorSetResources.reserve(pRenderStageDesc->AttachmentCount);
+			TArray<std::tuple<Resource*, ETextureState, EDescriptorType>>	textureDescriptorSetResources;
+			TArray<std::tuple<Resource*, ETextureState, EDescriptorType>>	bufferDescriptorSetResources;
+			renderPassAttachmentDescriptions.Reserve(pRenderStageDesc->AttachmentCount);
+			renderPassRenderTargetStates.Reserve(pRenderStageDesc->AttachmentCount);
+			renderPassBlendAttachmentStates.Reserve(pRenderStageDesc->AttachmentCount);
+			renderTargets.Reserve(pRenderStageDesc->AttachmentCount);
+			textureDescriptorSetResources.Reserve(pRenderStageDesc->AttachmentCount);
+			bufferDescriptorSetResources.Reserve(pRenderStageDesc->AttachmentCount);
 
 			//Create Descriptors and RenderPass Attachments from RenderStage Attachments
 			for (uint32 a = 0; a < pRenderStageDesc->AttachmentCount; a++)
@@ -797,16 +797,16 @@ namespace LambdaEngine
 							descriptorBinding.DescriptorCount	= accessType == EAttachmentAccessType::EXTERNAL_INPUT ? (pAttachment->SubResourceCount / pRenderStage->TextureSubDescriptorSetCount) : 1;
 							descriptorBinding.Binding			= textureDescriptorBindingIndex++;
 
-							textureDescriptorSetDescriptions.push_back(descriptorBinding);
-							textureDescriptorSetResources.push_back(std::make_tuple(pResource, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
+							textureDescriptorSetDescriptions.PushBack(descriptorBinding);
+							textureDescriptorSetResources.PushBack(std::make_tuple(pResource, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
 						}
 						else
 						{
 							descriptorBinding.DescriptorCount	= accessType == EAttachmentAccessType::EXTERNAL_INPUT ? pAttachment->SubResourceCount : 1;
 							descriptorBinding.Binding			= bufferDescriptorBindingIndex++;
 
-							bufferDescriptorSetDescriptions.push_back(descriptorBinding);
-							bufferDescriptorSetResources.push_back(std::make_tuple(pResource, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
+							bufferDescriptorSetDescriptions.PushBack(descriptorBinding);
+							bufferDescriptorSetResources.PushBack(std::make_tuple(pResource, ConvertAttachmentTypeToTextureState(pAttachment->Type), descriptorType));
 						}
 							
 					}
@@ -827,16 +827,16 @@ namespace LambdaEngine
 							renderPassAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_DONT_CARE;
 							renderPassAttachmentDesc.FinalState		= isBackBufferAttachment ? ETextureState::TEXTURE_STATE_PRESENT : ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
-							renderPassAttachmentDescriptions.push_back(renderPassAttachmentDesc);
+							renderPassAttachmentDescriptions.PushBack(renderPassAttachmentDesc);
 
-							renderPassRenderTargetStates.push_back(ETextureState::TEXTURE_STATE_RENDER_TARGET);
+							renderPassRenderTargetStates.PushBack(ETextureState::TEXTURE_STATE_RENDER_TARGET);
 
 							BlendAttachmentStateDesc blendAttachmentState = {};
 							blendAttachmentState.BlendEnabled			= false;
 							blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
 
-							renderPassBlendAttachmentStates.push_back(blendAttachmentState);
-							renderTargets.push_back(pResource);
+							renderPassBlendAttachmentStates.PushBack(blendAttachmentState);
+							renderTargets.PushBack(pResource);
 						}
 						else if (pAttachment->Type == EAttachmentType::OUTPUT_DEPTH_STENCIL)
 						{
@@ -859,21 +859,21 @@ namespace LambdaEngine
 
 			//Create Pipeline Layout
 			{
-				std::vector<DescriptorSetLayoutDesc> descriptorSetLayouts;
-				descriptorSetLayouts.reserve(2);
+				TArray<DescriptorSetLayoutDesc> descriptorSetLayouts;
+				descriptorSetLayouts.Reserve(2);
 
-				if (textureDescriptorSetDescriptions.size() > 0)
+				if (textureDescriptorSetDescriptions.GetSize() > 0)
 				{
 					DescriptorSetLayoutDesc descriptorSetLayout = {};
 					descriptorSetLayout.DescriptorBindings		= textureDescriptorSetDescriptions;
-					descriptorSetLayouts.push_back(descriptorSetLayout);
+					descriptorSetLayouts.PushBack(descriptorSetLayout);
 				}
 
-				if (bufferDescriptorSetDescriptions.size() > 0)
+				if (bufferDescriptorSetDescriptions.GetSize() > 0)
 				{
 					DescriptorSetLayoutDesc descriptorSetLayout = {};
 					descriptorSetLayout.DescriptorBindings		= bufferDescriptorSetDescriptions;
-					descriptorSetLayouts.push_back(descriptorSetLayout);
+					descriptorSetLayouts.PushBack(descriptorSetLayout);
 				}
 
 				PipelineLayoutDesc pipelineLayoutDesc = {};
@@ -889,7 +889,7 @@ namespace LambdaEngine
 
 			//Create Descriptor Set
 			{
-				if (textureDescriptorSetDescriptions.size() > 0)
+				if (textureDescriptorSetDescriptions.GetSize() > 0)
 				{
 					uint32 textureDescriptorSetCount = m_BackBufferCount * pRenderStage->TextureSubDescriptorSetCount;
 					pRenderStage->ppTextureDescriptorSets = DBG_NEW DescriptorSet*[textureDescriptorSetCount];
@@ -901,7 +901,7 @@ namespace LambdaEngine
 					}
 				}
 
-				if (bufferDescriptorSetDescriptions.size() > 0)
+				if (bufferDescriptorSetDescriptions.GetSize() > 0)
 				{
 					pRenderStage->ppBufferDescriptorSets = DBG_NEW DescriptorSet*[m_BackBufferCount];
 
@@ -936,7 +936,7 @@ namespace LambdaEngine
 					renderPassSubpassDependencyDesc.DstStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
 					if (renderPassDepthStencilDescription.Format != EFormat::FORMAT_NONE) 
-						renderPassAttachmentDescriptions.push_back(renderPassDepthStencilDescription);
+						renderPassAttachmentDescriptions.PushBack(renderPassDepthStencilDescription);
 
 					RenderPassDesc renderPassDesc = {};
 					renderPassDesc.DebugName				= "";
@@ -1000,9 +1000,9 @@ namespace LambdaEngine
 				pRenderStage->PipelineStateID = PipelineStateManager::CreateRayTracingPipelineState(&pipelineDesc);
 			}
 
-			//Link Attachment Resources to Render Stage (Descriptor Set)
+			// Link Attachment Resources to Render Stage (Descriptor Set)
 			{
-				for (uint32 r = 0; r < textureDescriptorSetResources.size(); r++)
+				for (uint32 r = 0; r < textureDescriptorSetResources.GetSize(); r++)
 				{
 					auto& resourceTuple = textureDescriptorSetResources[r];
 					Resource* pResource = std::get<0>(resourceTuple);
@@ -1016,7 +1016,7 @@ namespace LambdaEngine
 					pResource->ResourceBindings.push_back(resourceBinding);
 				}
 
-				for (uint32 r = 0; r < bufferDescriptorSetResources.size(); r++)
+				for (uint32 r = 0; r < bufferDescriptorSetResources.GetSize(); r++)
 				{
 					auto& resourceTuple = bufferDescriptorSetResources[r];
 					Resource* pResource = std::get<0>(resourceTuple);
@@ -1048,7 +1048,7 @@ namespace LambdaEngine
 			}
 
 			//Link RenderPass to RenderPass Attachments
-			if (renderTargets.size() > 0)
+			if (renderTargets.GetSize() > 0)
 			{
 				if (pRenderStageDesc->PipelineType != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 				{
@@ -1056,7 +1056,7 @@ namespace LambdaEngine
 					return false;
 				}
 
-				for (uint32 r = 0; r < renderTargets.size(); r++)
+				for (uint32 r = 0; r < renderTargets.GetSize(); r++)
 				{
 					Resource* pResource = renderTargets[r];
 

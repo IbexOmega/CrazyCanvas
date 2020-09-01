@@ -35,7 +35,7 @@ namespace LambdaEngine
 
 		FORCEINLINE uint32 GetDescriptorBindingDescCount() const
 		{
-			return static_cast<uint32>(m_Bindings.size());
+			return m_Bindings.GetSize();
 		}
 
 	public:
@@ -56,7 +56,7 @@ namespace LambdaEngine
 
 	private:
 		VkDescriptorSet					m_DescriptorSet		= VK_NULL_HANDLE;
-		Ref<DescriptorHeapVK>			m_DescriptorHeap	= nullptr;
+		TSharedRef<DescriptorHeapVK>	m_DescriptorHeap	= nullptr;
 		TArray<DescriptorBindingDesc>	m_Bindings;
 	};
 }

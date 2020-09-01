@@ -397,7 +397,7 @@ namespace LambdaEngine
 		
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
-		if (!m_Pages.empty())
+		if (!m_Pages.IsEmpty())
 		{
 			for (DeviceMemoryPageVK* pMemoryPage : m_Pages)
 			{
@@ -414,7 +414,7 @@ namespace LambdaEngine
 			}
 		}
 		
-		DeviceMemoryPageVK* pNewMemoryPage = DBG_NEW DeviceMemoryPageVK(m_pDevice, uint32(m_Pages.size()), memoryIndex);
+		DeviceMemoryPageVK* pNewMemoryPage = DBG_NEW DeviceMemoryPageVK(m_pDevice, uint32(m_Pages.GetSize()), memoryIndex);
 		if (!pNewMemoryPage->Init(m_Desc.PageSizeInBytes))
 		{
 			SAFEDELETE(pNewMemoryPage);
@@ -425,7 +425,7 @@ namespace LambdaEngine
 			SetPageName(pNewMemoryPage);
 		}
 		
-		m_Pages.emplace_back(pNewMemoryPage);
+		m_Pages.EmplaceBack(pNewMemoryPage);
 		return pNewMemoryPage->Allocate(pAllocation, sizeInBytes, alignment, m_DeviceProperties.limits.bufferImageGranularity);
 	}
 

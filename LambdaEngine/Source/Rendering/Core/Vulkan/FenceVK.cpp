@@ -54,8 +54,8 @@ namespace LambdaEngine
 		fenceInfo.flags = 0;
 		
 		constexpr uint32 PRIMITIVE_START_COUNT = 4;
-		m_Fences.resize(PRIMITIVE_START_COUNT);
-		m_Semaphores.resize(PRIMITIVE_START_COUNT);
+		m_Fences.Resize(PRIMITIVE_START_COUNT);
+		m_Semaphores.Resize(PRIMITIVE_START_COUNT);
 		
 		for (uint32 i = 0; i < PRIMITIVE_START_COUNT; i++)
 		{
@@ -96,19 +96,19 @@ namespace LambdaEngine
 	
 	void FenceVK::SetName(const String& debugName)
 	{
-		VALIDATE(!m_Fences.empty());
-		VALIDATE(!m_Semaphores.empty());
+		VALIDATE(!m_Fences.IsEmpty());
+		VALIDATE(!m_Semaphores.IsEmpty());
 			
 		m_Desc.DebugName = debugName;
 		
 		String name;
-		for (uint32 i = 0; i < m_Fences.size(); i++)
+		for (uint32 i = 0; i < m_Fences.GetSize(); i++)
 		{
 			name = m_Desc.DebugName + ":Fence[" + std::to_string(i) + "]";
 			m_pDevice->SetVulkanObjectName(name.c_str(), reinterpret_cast<uint64>(m_Fences[i]), VK_OBJECT_TYPE_FENCE);
 		}
 			
-		for (uint32 i = 0; i < m_Semaphores.size(); i++)
+		for (uint32 i = 0; i < m_Semaphores.GetSize(); i++)
 		{
 			name = m_Desc.DebugName + ":Semaphore[" + std::to_string(i) + "]";
 			m_pDevice->SetVulkanObjectName(name.c_str(), reinterpret_cast<uint64>(m_Semaphores[i]), VK_OBJECT_TYPE_SEMAPHORE);
@@ -117,7 +117,7 @@ namespace LambdaEngine
 
 	VkFence FenceVK::GetSignalFence(uint64 value) const
 	{
-		if (!m_PendingValues.empty())
+		if (!m_PendingValues.IsEmpty())
 		{
 			for (FenceValueVk& fenceValue : m_PendingValues)
 			{
@@ -139,7 +139,7 @@ namespace LambdaEngine
 		FlushWaitSemaphores(queue);
 		
 		VkSemaphore waitSemaphore   = VK_NULL_HANDLE;
-		for (TArray<FenceValueVk>::iterator it = m_PendingValues.begin(); it != m_PendingValues.end();)
+		for (TArray<FenceValueVk>::Iterator it = m_PendingValues.Begin(); it != m_PendingValues.End();)
 		{
 			if (it->Value > waitValue)
 			{
@@ -176,7 +176,7 @@ namespace LambdaEngine
 					DisposeFence(it->Fence);
 					DisposeSemaphore(it->Semaphore);
 					
-					it = m_PendingValues.erase(m_PendingValues.begin());
+					it = m_PendingValues.Erase(m_PendingValues.Begin());
 					continue;
 				}
 			}
@@ -203,7 +203,7 @@ namespace LambdaEngine
 			fenceValue.SemaphoreState   = ESemaphoreState::SEMAPHORE_STATE_SIGNALED;
 			fenceValue.Value            = signalValue;
 			
-			m_PendingValues.push_back(fenceValue);
+			m_PendingValues.PushBack(fenceValue);
 			return fenceValue.Semaphore;
 		}
 		else
@@ -216,9 +216,9 @@ namespace LambdaEngine
 	{
 		FENCE_LOG_STATE("[FenceVK]: CPU Wait. waitValue=%llu, timeOut=%llu", waitValue, timeOut);
 		
-		while (!m_PendingValues.empty())
+		while (!m_PendingValues.IsEmpty())
 		{
-			FenceValueVk& fenceValue = m_PendingValues.front();
+			FenceValueVk& fenceValue = m_PendingValues.GetFront();
 			if (fenceValue.Value > waitValue)
 			{
 				break;
@@ -257,7 +257,7 @@ namespace LambdaEngine
 					AddWaitSemaphore(fenceValue.Semaphore, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
 				}
 				
-				m_PendingValues.erase(m_PendingValues.begin());
+				m_PendingValues.Erase(m_PendingValues.Begin());
 			}
 		}
 	}
@@ -271,10 +271,10 @@ namespace LambdaEngine
 	VkFence FenceVK::QueryFence() const
 	{
 		VkFence fence = VK_NULL_HANDLE;
-		if (!m_Fences.empty())
+		if (!m_Fences.IsEmpty())
 		{
-			fence = m_Fences.back();
-			m_Fences.pop_back();
+			fence = m_Fences.GetBack();
+			m_Fences.PopBack();
 			return fence;
 		}
 		else
@@ -301,10 +301,10 @@ namespace LambdaEngine
 	VkSemaphore FenceVK::QuerySemaphore() const
 	{
 		VkSemaphore semaphore = VK_NULL_HANDLE;
-		if (!m_Semaphores.empty())
+		if (!m_Semaphores.IsEmpty())
 		{
-			semaphore = m_Semaphores.back();
-			m_Semaphores.pop_back();
+			semaphore = m_Semaphores.GetBack();
+			m_Semaphores.PopBack();
 			return semaphore;
 		}
 		else
@@ -342,22 +342,22 @@ namespace LambdaEngine
 		}
 		else
 		{
-			m_Fences.insert(m_Fences.begin(), fence);
+			m_Fences.Insert(m_Fences.begin(), fence);
 		}
 	}
 
 	void FenceVK::DisposeSemaphore(VkSemaphore semaphore) const
 	{
 		VALIDATE(semaphore != VK_NULL_HANDLE);
-		m_Semaphores.insert(m_Semaphores.begin(), semaphore);
+		m_Semaphores.Insert(m_Semaphores.begin(), semaphore);
 	}
 
 	void FenceVK::AddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags waitStage) const
 	{
 		VALIDATE(semaphore != VK_NULL_HANDLE);
 		
-		m_WaitSemaphores.push_back(semaphore);
-		m_WaitStages.push_back(waitStage);
+		m_WaitSemaphores.PushBack(semaphore);
+		m_WaitStages.PushBack(waitStage);
 	}
 
 	void FenceVK::FlushWaitSemaphores(VkQueue queue) const
@@ -365,7 +365,7 @@ namespace LambdaEngine
 		VALIDATE(queue != VK_NULL_HANDLE);
 		
 		// Wait for semaphores for values that were removed during CPU-wait
-		if (!m_WaitSemaphores.empty())
+		if (!m_WaitSemaphores.IsEmpty())
 		{
 			FENCE_LOG_STATE("[FenceVK]: Flushing waitsemaphores");
 			
@@ -376,9 +376,9 @@ namespace LambdaEngine
 			submitInfo.pCommandBuffers      = nullptr;
 			submitInfo.signalSemaphoreCount = 0;
 			submitInfo.pSignalSemaphores    = nullptr;
-			submitInfo.waitSemaphoreCount   = uint32(m_WaitSemaphores.size());
-			submitInfo.pWaitSemaphores      = m_WaitSemaphores.data();
-			submitInfo.pWaitDstStageMask    = m_WaitStages.data();
+			submitInfo.waitSemaphoreCount   = uint32(m_WaitSemaphores.GetSize());
+			submitInfo.pWaitSemaphores      = m_WaitSemaphores.GetData();
+			submitInfo.pWaitDstStageMask    = m_WaitStages.GetData();
 
 			VkResult result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
 			if (result != VK_SUCCESS)
@@ -388,11 +388,11 @@ namespace LambdaEngine
 			else
 			{
 				// Append semaphores to the pool
-				m_Semaphores.insert(m_Semaphores.end(), m_WaitSemaphores.begin(), m_WaitSemaphores.end());
+				m_Semaphores.Insert(m_Semaphores.End(), m_WaitSemaphores.Begin(), m_WaitSemaphores.End());
 				
 				// Clear
-				m_WaitSemaphores.clear();
-				m_WaitStages.clear();
+				m_WaitSemaphores.Clear();
+				m_WaitStages.Clear();
 			}
 		}
 	}

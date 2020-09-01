@@ -44,7 +44,7 @@ namespace LambdaEngine
 			shaderGroupCreateInfo.intersectionShader	= VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.anyHitShader			= VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.closestHitShader		= VK_SHADER_UNUSED_NV;
-			shaderGroups.emplace_back(shaderGroupCreateInfo);
+			shaderGroups.EmplaceBack(shaderGroupCreateInfo);
 		}
 
 		// Closest-Hit Shaders
@@ -58,8 +58,8 @@ namespace LambdaEngine
 			shaderGroupCreateInfo.generalShader			= VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.intersectionShader	= VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.anyHitShader			= VK_SHADER_UNUSED_NV;
-			shaderGroupCreateInfo.closestHitShader		= static_cast<uint32>(shaderStagesInfos.size() - 1);
-			shaderGroups.emplace_back(shaderGroupCreateInfo);
+			shaderGroupCreateInfo.closestHitShader		= static_cast<uint32>(shaderStagesInfos.GetSize() - 1);
+			shaderGroups.EmplaceBack(shaderGroupCreateInfo);
 		}
 
 		// Miss Shaders
@@ -70,11 +70,11 @@ namespace LambdaEngine
 			VkRayTracingShaderGroupCreateInfoKHR shaderGroupCreateInfo = {};
 			shaderGroupCreateInfo.sType					= VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
 			shaderGroupCreateInfo.type					= VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-			shaderGroupCreateInfo.generalShader			= static_cast<uint32>(shaderStagesInfos.size() - 1);
+			shaderGroupCreateInfo.generalShader			= static_cast<uint32>(shaderStagesInfos.GetSize() - 1);
 			shaderGroupCreateInfo.intersectionShader	= VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.anyHitShader			= VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.closestHitShader		= VK_SHADER_UNUSED_NV;
-			shaderGroups.emplace_back(shaderGroupCreateInfo);
+			shaderGroups.EmplaceBack(shaderGroupCreateInfo);
 		}
 
 		VkPipelineLibraryCreateInfoKHR rayTracingPipelineLibrariesInfo = {};
@@ -87,10 +87,10 @@ namespace LambdaEngine
 		VkRayTracingPipelineCreateInfoKHR rayTracingPipelineInfo = {};
 		rayTracingPipelineInfo.sType			 = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
 		rayTracingPipelineInfo.flags			 = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
-		rayTracingPipelineInfo.stageCount		 = static_cast<uint32>(shaderStagesInfos.size());
-		rayTracingPipelineInfo.pStages			 = shaderStagesInfos.data();
-		rayTracingPipelineInfo.groupCount		 = static_cast<uint32>(shaderGroups.size());
-		rayTracingPipelineInfo.pGroups			 = shaderGroups.data();
+		rayTracingPipelineInfo.stageCount		 = static_cast<uint32>(shaderStagesInfos.GetSize());
+		rayTracingPipelineInfo.pStages			 = shaderStagesInfos.GetData();
+		rayTracingPipelineInfo.groupCount		 = static_cast<uint32>(shaderGroups.GetSize());
+		rayTracingPipelineInfo.pGroups			 = shaderGroups.GetData();
 		rayTracingPipelineInfo.maxRecursionDepth = pDesc->MaxRecursionDepth;
 		rayTracingPipelineInfo.layout			 = pPipelineLayoutVk->GetPipelineLayout();
 		rayTracingPipelineInfo.libraries		 = rayTracingPipelineLibrariesInfo;
@@ -111,7 +111,7 @@ namespace LambdaEngine
 		}
 
 		const uint32 shaderGroupHandleSize	= m_pDevice->RayTracingProperties.shaderGroupHandleSize;
-		const uint32 sbtSize				= shaderGroupHandleSize * static_cast<uint32>(shaderGroups.size());
+		const uint32 sbtSize				= shaderGroupHandleSize * static_cast<uint32>(shaderGroups.GetSize());
 
 		BufferDesc shaderHandleStorageDesc = {};
 		shaderHandleStorageDesc.DebugName	= "Shader Handle Storage";
@@ -122,7 +122,7 @@ namespace LambdaEngine
 		m_ShaderHandleStorageBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&shaderHandleStorageDesc, nullptr));
 
 		void* pMapped = m_ShaderHandleStorageBuffer->Map();
-		result = m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, static_cast<uint32>(shaderGroups.size()), sbtSize, pMapped);
+		result = m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, static_cast<uint32>(shaderGroups.GetSize()), sbtSize, pMapped);
 		if (result!= VK_SUCCESS)
 		{
 			if (!pDesc->DebugName.empty())
@@ -169,10 +169,10 @@ namespace LambdaEngine
 		m_BindingSizeRaygenShaderGroup		= m_BindingStride;
 		
 		m_BindingOffsetHitShaderGroup		= m_BindingOffsetRaygenShaderGroup + m_BindingSizeRaygenShaderGroup;
-		m_BindingSizeHitShaderGroup			= m_BindingStride * static_cast<uint32>(pDesc->ClosestHitShaders.size());
+		m_BindingSizeHitShaderGroup			= m_BindingStride * static_cast<uint32>(pDesc->ClosestHitShaders.GetSize());
 		
 		m_BindingOffsetMissShaderGroup		= m_BindingOffsetHitShaderGroup + m_BindingSizeHitShaderGroup;
-		m_BindingSizeMissShaderGroup		= m_BindingStride * static_cast<uint32>(pDesc->MissShaders.size());
+		m_BindingSizeMissShaderGroup		= m_BindingStride * static_cast<uint32>(pDesc->MissShaders.GetSize());
 
 		SetName(pDesc->DebugName);
 		if (!pDesc->DebugName.empty())
@@ -211,34 +211,34 @@ namespace LambdaEngine
 		shaderCreateInfo.pName	= pShader->GetEntryPoint().c_str();
 
 		// Shader Constants
-		if (!pShaderModule->ShaderConstants.empty())
+		if (!pShaderModule->ShaderConstants.IsEmpty())
 		{
-			TArray<VkSpecializationMapEntry> specializationEntires(pShaderModule->ShaderConstants.size());
-			for (uint32 i = 0; i < pShaderModule->ShaderConstants.size(); i++)
+			TArray<VkSpecializationMapEntry> specializationEntires(pShaderModule->ShaderConstants.GetSize());
+			for (uint32 i = 0; i < pShaderModule->ShaderConstants.GetSize(); i++)
 			{
 				VkSpecializationMapEntry specializationEntry = {};
 				specializationEntry.constantID = i;
 				specializationEntry.offset = i * sizeof(ShaderConstant);
 				specializationEntry.size = sizeof(ShaderConstant);
-				specializationEntires.emplace_back(specializationEntry);
+				specializationEntires.EmplaceBack(specializationEntry);
 			}
 
-			shaderStagesSpecializationMaps.emplace_back(specializationEntires);
+			shaderStagesSpecializationMaps.EmplaceBack(specializationEntires);
 
 			VkSpecializationInfo specializationInfo = { };
-			specializationInfo.mapEntryCount = static_cast<uint32>(specializationEntires.size());
-			specializationInfo.pMapEntries = specializationEntires.data();
-			specializationInfo.dataSize = static_cast<uint32>(pShaderModule->ShaderConstants.size()) * sizeof(ShaderConstant);
-			specializationInfo.pData = pShaderModule->ShaderConstants.data();
-			shaderStagesSpecializationInfos.emplace_back(specializationInfo);
+			specializationInfo.mapEntryCount = static_cast<uint32>(specializationEntires.GetSize());
+			specializationInfo.pMapEntries = specializationEntires.GetData();
+			specializationInfo.dataSize = static_cast<uint32>(pShaderModule->ShaderConstants.GetSize()) * sizeof(ShaderConstant);
+			specializationInfo.pData = pShaderModule->ShaderConstants.GetData();
+			shaderStagesSpecializationInfos.EmplaceBack(specializationInfo);
 
-			shaderCreateInfo.pSpecializationInfo = &shaderStagesSpecializationInfos.back();
+			shaderCreateInfo.pSpecializationInfo = &shaderStagesSpecializationInfos.GetBack();
 		}
 		else
 		{
 			shaderCreateInfo.pSpecializationInfo = nullptr;
 		}
 
-		shaderStagesInfos.emplace_back(shaderCreateInfo);
+		shaderStagesInfos.EmplaceBack(shaderCreateInfo);
 	}
 }

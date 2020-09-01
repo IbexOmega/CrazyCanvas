@@ -690,14 +690,14 @@ namespace LambdaEngine
 				return nullptr;
 			}
 			
-			sourceSPIRV.resize(static_cast<uint32>(glm::ceil(static_cast<float32>(shaderRawSourceSize) / sizeof(uint32))));
+			sourceSPIRV.Resize(static_cast<uint32>(glm::ceil(static_cast<float32>(shaderRawSourceSize) / sizeof(uint32))));
 		}
 
-		const uint32 sourceSize = static_cast<uint32>(sourceSPIRV.size()) * sizeof(uint32);
+		const uint32 sourceSize = static_cast<uint32>(sourceSPIRV.GetSize()) * sizeof(uint32);
 
 		ShaderDesc shaderDesc = {};
 		shaderDesc.DebugName			= pFilepath;
-		shaderDesc.Source				= TArray<byte>(reinterpret_cast<byte*>(sourceSPIRV.data()), reinterpret_cast<byte*>(sourceSPIRV.data()) + sourceSize);
+		shaderDesc.Source				= TArray<byte>(reinterpret_cast<byte*>(sourceSPIRV.GetData()), reinterpret_cast<byte*>(sourceSPIRV.GetData()) + sourceSize);
 		shaderDesc.EntryPoint			= pEntryPoint;
 		shaderDesc.Stage				= stage;
 		shaderDesc.Lang					= lang;
@@ -770,7 +770,7 @@ namespace LambdaEngine
         }
     }
 
-	bool ResourceLoader::CompileGLSLToSPIRV(const char* pFilepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>& sourceSPIRV)
+	bool ResourceLoader::CompileGLSLToSPIRV(const char* pFilepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, TArray<uint32>& sourceSPIRV)
 	{
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
 		glslang::TShader shader(shaderType);
@@ -829,9 +829,12 @@ namespace LambdaEngine
 		}
 
 		spv::SpvBuildLogger logger;
+
+		std::vector<uint32> std_sourceSPIRV;
 		glslang::SpvOptions spvOptions;
-		glslang::GlslangToSpv(*program.getIntermediate(shaderType), sourceSPIRV, &logger, &spvOptions);
-        
+		glslang::GlslangToSpv(*program.getIntermediate(shaderType), std_sourceSPIRV, &logger, &spvOptions);
+
+		sourceSPIRV.Assign(std_sourceSPIRV.data(), std_sourceSPIRV.data() + std_sourceSPIRV.size());
         return true;
 	}
 }

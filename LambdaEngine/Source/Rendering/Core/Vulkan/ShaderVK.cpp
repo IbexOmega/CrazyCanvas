@@ -28,8 +28,8 @@ namespace LambdaEngine
 		createInfo.sType	= VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		createInfo.pNext	= nullptr;
 		createInfo.flags	= 0;
-		createInfo.codeSize	= pDesc->Source.size();
-		createInfo.pCode	= reinterpret_cast<const uint32_t*>(pDesc->Source.data());
+		createInfo.codeSize	= pDesc->Source.GetSize();
+		createInfo.pCode	= reinterpret_cast<const uint32_t*>(pDesc->Source.GetData());
 
 		VkResult result = vkCreateShaderModule(m_pDevice->Device, &createInfo, nullptr, &m_Module);
 		if (result != VK_SUCCESS)

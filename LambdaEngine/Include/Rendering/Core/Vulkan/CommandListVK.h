@@ -94,8 +94,8 @@ namespace LambdaEngine
 
 	private:
 		VkCommandBuffer					m_CommandList				= VK_NULL_HANDLE;
-		Ref<CommandAllocatorVK>			m_Allocator					= nullptr;
-		Ref<RayTracingPipelineStateVK>	m_CurrentRayTracingPipeline	= nullptr;
+		TSharedRef<CommandAllocatorVK>			m_Allocator					= nullptr;
+		TSharedRef<RayTracingPipelineStateVK>	m_CurrentRayTracingPipeline	= nullptr;
 		
 		VkImageMemoryBarrier    m_ImageBarriers[MAX_IMAGE_BARRIERS];
 		VkBufferMemoryBarrier   m_BufferBarriers[MAX_BUFFER_BARRIERS];

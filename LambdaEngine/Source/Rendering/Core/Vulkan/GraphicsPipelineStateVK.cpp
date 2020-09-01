@@ -94,7 +94,7 @@ namespace LambdaEngine
 		multisamplingState.pSampleMask	= &sampleMask;
 
 		// BlendState
-		const uint32 blendAttachmentCount = static_cast<uint32>(pDesc->BlendState.BlendAttachmentStates.size());
+		const uint32 blendAttachmentCount = static_cast<uint32>(pDesc->BlendState.BlendAttachmentStates.GetSize());
 		TArray<VkPipelineColorBlendAttachmentState> blendAttachments(blendAttachmentCount);
 		for (uint32 i = 0; i < blendAttachmentCount; i++)
 		{
@@ -117,7 +117,7 @@ namespace LambdaEngine
 		blendState.pNext				= nullptr;
 		blendState.logicOp				= ConvertLogicOp(pDesc->BlendState.LogicOp);
 		blendState.logicOpEnable		= (pDesc->BlendState.LogicOpEnable) ? VK_TRUE : VK_FALSE;
-		blendState.pAttachments			= blendAttachments.data();
+		blendState.pAttachments			= blendAttachments.GetData();
 		blendState.attachmentCount		= blendAttachmentCount;
 		memcpy(blendState.blendConstants, pDesc->BlendState.BlendConstants, sizeof(float) * 4);
 
@@ -143,9 +143,9 @@ namespace LambdaEngine
 
 		TArray<VkVertexInputBindingDescription>		bindingDescriptors;
 		TArray<VkVertexInputAttributeDescription>	attributeDescriptors;
-		bindingDescriptors.reserve(pDesc->InputLayout.size());
+		bindingDescriptors.Reserve(pDesc->InputLayout.GetSize());
 
-		if (!pDesc->InputLayout.empty())
+		if (!pDesc->InputLayout.IsEmpty())
 		{
 			for (const InputElementDesc& inputElement : pDesc->InputLayout)
 			{
@@ -154,19 +154,19 @@ namespace LambdaEngine
 				vkInputAttributeDesc.binding	= inputElement.Binding;
 				vkInputAttributeDesc.format		= ConvertFormat(inputElement.Format);
 				vkInputAttributeDesc.offset		= inputElement.Offset;
-				attributeDescriptors.emplace_back(vkInputAttributeDesc);
+				attributeDescriptors.EmplaceBack(vkInputAttributeDesc);
 
 				VkVertexInputBindingDescription vkInputBindingDesc = {};
 				vkInputBindingDesc.binding	 = inputElement.Binding;
 				vkInputBindingDesc.stride	 = inputElement.Stride;
 				vkInputBindingDesc.inputRate = ConvertVertexInputRate(inputElement.InputRate);
-				bindingDescriptors.emplace_back(vkInputBindingDesc);
+				bindingDescriptors.EmplaceBack(vkInputBindingDesc);
 			}
 
-			vertexInputInfo.vertexAttributeDescriptionCount	= static_cast<uint32>(attributeDescriptors.size());
-			vertexInputInfo.pVertexAttributeDescriptions	= attributeDescriptors.data();
-			vertexInputInfo.vertexBindingDescriptionCount	= static_cast<uint32>(bindingDescriptors.size());
-			vertexInputInfo.pVertexBindingDescriptions		= bindingDescriptors.data();
+			vertexInputInfo.vertexAttributeDescriptionCount	= static_cast<uint32>(attributeDescriptors.GetSize());
+			vertexInputInfo.pVertexAttributeDescriptions	= attributeDescriptors.GetData();
+			vertexInputInfo.vertexBindingDescriptionCount	= static_cast<uint32>(bindingDescriptors.GetSize());
+			vertexInputInfo.pVertexBindingDescriptions		= bindingDescriptors.GetData();
 		}
 		else
 		{
@@ -206,8 +206,8 @@ namespace LambdaEngine
 		pipelineInfo.sType					= VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		pipelineInfo.pNext					= nullptr;
 		pipelineInfo.flags					= 0;
-		pipelineInfo.stageCount				= uint32_t(shaderStagesInfos.size());
-		pipelineInfo.pStages				= shaderStagesInfos.data();
+		pipelineInfo.stageCount				= uint32_t(shaderStagesInfos.GetSize());
+		pipelineInfo.pStages				= shaderStagesInfos.GetData();
 		pipelineInfo.pVertexInputState		= &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState	= &inputAssembly;
 		pipelineInfo.pViewportState			= &viewportState;
@@ -278,34 +278,34 @@ namespace LambdaEngine
 		shaderCreateInfo.pName	= pShader->GetEntryPoint().c_str();
 
 		// Shader Constants
-		if (!pShaderModule->ShaderConstants.empty())
+		if (!pShaderModule->ShaderConstants.IsEmpty())
 		{
-			TArray<VkSpecializationMapEntry> specializationEntires(pShaderModule->ShaderConstants.size());
-			for (uint32 i = 0; i < pShaderModule->ShaderConstants.size(); i++)
+			TArray<VkSpecializationMapEntry> specializationEntires(pShaderModule->ShaderConstants.GetSize());
+			for (uint32 i = 0; i < pShaderModule->ShaderConstants.GetSize(); i++)
 			{
-				VkSpecializationMapEntry specializationEntry = {};
+				VkSpecializationMapEntry specializationEntry = { };
 				specializationEntry.constantID	= i;
 				specializationEntry.offset		= i * sizeof(ShaderConstant);
 				specializationEntry.size		= sizeof(ShaderConstant);
-				specializationEntires.emplace_back(specializationEntry);
+				specializationEntires.EmplaceBack(specializationEntry);
 			}
 
-			shaderStagesSpecializationMaps.emplace_back(specializationEntires);
+			shaderStagesSpecializationMaps.EmplaceBack(specializationEntires);
 
 			VkSpecializationInfo specializationInfo = { };
-			specializationInfo.mapEntryCount	= static_cast<uint32>(specializationEntires.size());
-			specializationInfo.pMapEntries		= specializationEntires.data();
-			specializationInfo.dataSize			= static_cast<uint32>(pShaderModule->ShaderConstants.size()) * sizeof(ShaderConstant);
-			specializationInfo.pData			= pShaderModule->ShaderConstants.data();
-			shaderStagesSpecializationInfos.emplace_back(specializationInfo);
+			specializationInfo.mapEntryCount	= static_cast<uint32>(specializationEntires.GetSize());
+			specializationInfo.pMapEntries		= specializationEntires.GetData();
+			specializationInfo.dataSize			= static_cast<uint32>(pShaderModule->ShaderConstants.GetSize()) * sizeof(ShaderConstant);
+			specializationInfo.pData			= pShaderModule->ShaderConstants.GetData();
+			shaderStagesSpecializationInfos.EmplaceBack(specializationInfo);
 
-			shaderCreateInfo.pSpecializationInfo = &shaderStagesSpecializationInfos.back();
+			shaderCreateInfo.pSpecializationInfo = &shaderStagesSpecializationInfos.GetBack();
 		}
 		else
 		{
 			shaderCreateInfo.pSpecializationInfo = nullptr;
 		}
 
-		shaderStagesInfos.emplace_back(shaderCreateInfo);
+		shaderStagesInfos.EmplaceBack(shaderCreateInfo);
 	}
 }

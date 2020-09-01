@@ -63,6 +63,6 @@ namespace LambdaEngine
 		TArray<VkDescriptorSetLayout>		m_DescriptorSetLayouts;
 		TArray<DescriptorHeapInfo>			m_DescriptorCounts;
 		TArray<DescriptorSetBindingsDesc>	m_DescriptorSetBindings;
-		TArray<Ref<Sampler>>				m_ImmutableSamplers;
+		TArray<TSharedRef<Sampler>>				m_ImmutableSamplers;
 	};
 }

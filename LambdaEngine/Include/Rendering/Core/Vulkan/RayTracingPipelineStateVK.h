@@ -90,8 +90,8 @@ namespace LambdaEngine
 
 	private:
 		VkPipeline		m_Pipeline						= VK_NULL_HANDLE;
-		Ref<BufferVK>	m_ShaderHandleStorageBuffer		= nullptr;
-		Ref<BufferVK>	m_ShaderBindingTable			= nullptr;
+		TSharedRef<BufferVK>	m_ShaderHandleStorageBuffer		= nullptr;
+		TSharedRef<BufferVK>	m_ShaderBindingTable			= nullptr;
 
 		VkDeviceSize m_BindingOffsetRaygenShaderGroup	= 0;
 		VkDeviceSize m_BindingOffsetHitShaderGroup		= 0;
