@@ -42,8 +42,9 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
+constexpr const bool SHOW_DEMO					= false;
 constexpr const bool RAY_TRACING_ENABLED		= true;
-constexpr const bool SVGF_ENABLED				= false;
+constexpr const bool SVGF_ENABLED				= true;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
@@ -1703,24 +1704,29 @@ bool Sandbox::InitRendererForDeferred()
 
 	String renderGraphFile = "";
 
-	//if (!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
-	//{
-	//	renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
-	//}
-	//else if (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
-	//{
-	//	renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
-	//}
-	//else if (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
-	//{
-	//	renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
-	//}
-	//else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
-	//{
-	//	renderGraphFile = "../Assets/RenderGraphs/TRT_PP_DEFERRED.lrg";
-	//}
-
-	renderGraphFile = "../Assets/RenderGraphs/DEMO.lrg";
+	if (SHOW_DEMO)
+	{
+		renderGraphFile = "../Assets/RenderGraphs/DEMO.lrg";
+	}
+	else
+	{
+		if (!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
+		{
+			renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
+		}
+		else if (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+		{
+			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
+		}
+		else if (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+		{
+			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
+		}
+		else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
+		{
+			renderGraphFile = "../Assets/RenderGraphs/TRT_PP_DEFERRED.lrg";
+		}
+	}
 
 	RenderGraphStructureDesc renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
 
