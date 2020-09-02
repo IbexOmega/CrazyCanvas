@@ -695,7 +695,7 @@ namespace LambdaEngine
 
 		const uint32 sourceSize = static_cast<uint32>(sourceSPIRV.GetSize()) * sizeof(uint32);
 
-		ShaderDesc shaderDesc = {};
+		ShaderDesc shaderDesc = { };
 		shaderDesc.DebugName			= pFilepath;
 		shaderDesc.Source				= TArray<byte>(reinterpret_cast<byte*>(sourceSPIRV.GetData()), reinterpret_cast<byte*>(sourceSPIRV.GetData()) + sourceSize);
 		shaderDesc.EntryPoint			= pEntryPoint;
