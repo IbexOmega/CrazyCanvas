@@ -181,15 +181,13 @@ namespace LambdaEngine
 		scratchBufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_RAY_TRACING;
 		scratchBufferDesc.SizeInBytes	= scratchMemoryRequirements.size;
 
-		m_pScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&scratchBufferDesc, pAllocator));
-		if (m_pScratchBuffer)
-		{
-			return true;
-		}
-		else
+		m_ScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&scratchBufferDesc, pAllocator));
+		if (!m_ScratchBuffer)
 		{
 			return false;
 		}
+
+		return true;
 	}
 
 	void AccelerationStructureVK::SetName(const String& name)

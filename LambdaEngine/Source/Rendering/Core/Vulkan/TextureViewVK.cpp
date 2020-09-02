@@ -26,19 +26,19 @@ namespace LambdaEngine
 		VALIDATE(pDesc->Format == textureDesc.Format);
 		
 		VkImageViewCreateInfo createInfo = {};
-		createInfo.sType                            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.pNext                            = nullptr;
-		createInfo.flags                            = 0;
-		createInfo.format                           = ConvertFormat(pDesc->Format);
-		createInfo.image                            = pTextureVk->GetImage();
-		createInfo.components.r                     = VK_COMPONENT_SWIZZLE_R;
-		createInfo.components.g                     = VK_COMPONENT_SWIZZLE_G;
-		createInfo.components.b                     = VK_COMPONENT_SWIZZLE_B;
-		createInfo.components.a                     = VK_COMPONENT_SWIZZLE_A;
-		createInfo.subresourceRange.baseArrayLayer  = pDesc->ArrayIndex;
-		createInfo.subresourceRange.layerCount      = pDesc->ArrayCount;
-		createInfo.subresourceRange.baseMipLevel    = pDesc->Miplevel;
-		createInfo.subresourceRange.levelCount      = pDesc->MiplevelCount;
+		createInfo.sType							= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createInfo.pNext							= nullptr;
+		createInfo.flags							= 0;
+		createInfo.format							= ConvertFormat(pDesc->Format);
+		createInfo.image							= pTextureVk->GetImage();
+		createInfo.components.r						= VK_COMPONENT_SWIZZLE_R;
+		createInfo.components.g						= VK_COMPONENT_SWIZZLE_G;
+		createInfo.components.b						= VK_COMPONENT_SWIZZLE_B;
+		createInfo.components.a						= VK_COMPONENT_SWIZZLE_A;
+		createInfo.subresourceRange.baseArrayLayer	= pDesc->ArrayIndex;
+		createInfo.subresourceRange.layerCount		= pDesc->ArrayCount;
+		createInfo.subresourceRange.baseMipLevel	= pDesc->Miplevel;
+		createInfo.subresourceRange.levelCount		= pDesc->MiplevelCount;
 		
 		if (pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL)
 		{
@@ -48,39 +48,39 @@ namespace LambdaEngine
 			(pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET)   ||
 			(pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE) ||
 			(pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS))
-        {
-            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        }
-        
-        if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_1D)
-        {
-            createInfo.viewType = VK_IMAGE_VIEW_TYPE_1D;
-        }
-        else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_2D)
-        {
-            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        }
-		else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_2D_ARRAY)
+		{
+			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		}
+		
+		if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_TYPE_1D)
+		{
+			createInfo.viewType = VK_IMAGE_VIEW_TYPE_1D;
+		}
+		else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_TYPE_2D)
+		{
+			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		}
+		else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY)
 		{
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 		}
-        else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_3D)
-        {
-            createInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
-        }
-        else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_CUBE)
-        {
-            createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-        }
-        
-        VkResult result = vkCreateImageView(m_pDevice->Device, &createInfo, nullptr, &m_ImageView);
-        if (result != VK_SUCCESS)
-        {
-            LOG_VULKAN_ERROR(result, "[TextureViewVK]: Failed to create view");
-            return false;
-        }
-        else
-        {
+		else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_TYPE_3D)
+		{
+			createInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
+		}
+		else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_TYPE_CUBE)
+		{
+			createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+		}
+		
+		VkResult result = vkCreateImageView(m_pDevice->Device, &createInfo, nullptr, &m_ImageView);
+		if (result != VK_SUCCESS)
+		{
+			LOG_VULKAN_ERROR(result, "[TextureViewVK]: Failed to create view");
+			return false;
+		}
+		else
+		{
 			m_Desc = *pDesc;
 			SetName(pDesc->DebugName);
 		

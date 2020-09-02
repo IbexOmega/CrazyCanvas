@@ -41,8 +41,8 @@ namespace LambdaEngine
 
 		void Render();
 
-		ICommandList* AcquireGraphicsCopyCommandList();
-		ICommandList* AcquireComputeCopyCommandList();
+		CommandList* AcquireGraphicsCopyCommandList();
+		CommandList* AcquireComputeCopyCommandList();
 
 		FORCEINLINE uint64 GetFrameIndex()		{ return m_FrameIndex; }
 		FORCEINLINE uint64 GetModFrameIndex()	{ return m_ModFrameIndex; }

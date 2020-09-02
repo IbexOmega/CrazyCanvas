@@ -16,7 +16,7 @@ namespace LambdaEngine
 		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(filepath))
 		{
 			if ((skipDirectories && !entry.is_directory()) || !skipDirectories)
-				result.push_back(entry.path().filename().string());
+				result.PushBack(entry.path().filename().string());
 		}
 
 		return result;

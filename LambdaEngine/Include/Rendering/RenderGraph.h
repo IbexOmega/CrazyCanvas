@@ -89,7 +89,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				AccelerationStructure* pTLAS;
+				const AccelerationStructure* pTLAS;
 			} ExternalAccelerationStructure;
 		};
 	};
@@ -135,12 +135,12 @@ namespace LambdaEngine
 			bool						BackBufferBound		= false;
 			uint32						SubResourceCount	= 0;
 
-			std::vector<ResourceBinding>	ResourceBindings;
+			TArray<ResourceBinding>	ResourceBindings;
 
 			struct
 			{
 				bool								IsOfArrayType	= false;
-				EFormat								Format			= EFormat::NONE;
+				EFormat								Format			= EFormat::FORMAT_NONE;
 				TArray<ResourceBarrierInfo>			BarriersPerSynchronizationStage; //Divided into #SubResourceCount Barriers per Synchronization Stage
 				TArray<Texture*>					Textures;
 				TArray<TextureView*>				TextureViews;
@@ -157,7 +157,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				AccelerationStructure* pTLAS;
+				const AccelerationStructure* pTLAS;
 			} AccelerationStructure;
 		};
 
@@ -193,7 +193,7 @@ namespace LambdaEngine
 
 		struct SynchronizationStage
 		{
-			ECommandQueueType					ExecutionQueue					= ECommandQueueType::COMMAND_QUEUE_NONE;
+			ECommandQueueType					ExecutionQueue					= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 			FPipelineStageFlags					SrcPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 			FPipelineStageFlags					SameQueueDstPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 			FPipelineStageFlags					OtherQueueDstPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;

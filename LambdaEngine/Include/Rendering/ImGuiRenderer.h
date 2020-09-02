@@ -106,7 +106,7 @@ namespace LambdaEngine
 		const GraphicsDevice*	m_pGraphicsDevice			= nullptr;
 
 		uint32					m_BackBufferCount			= 0;
-		ITextureView**			m_ppBackBuffers				= nullptr;
+		TextureView**			m_ppBackBuffers				= nullptr;
 
 		CommandAllocator*		m_pCopyCommandAllocator		= nullptr;
 		CommandList*			m_pCopyCommandList			= nullptr;
@@ -114,19 +114,19 @@ namespace LambdaEngine
 		DeviceAllocator*		m_pAllocator				= nullptr;
 
 		uint64					m_PipelineStateID			= 0;
-		PipelineLayout*		m_pPipelineLayout			= nullptr;
-		DescriptorHeap*		m_pDescriptorHeap			= nullptr;
+		PipelineLayout*			m_pPipelineLayout			= nullptr;
+		DescriptorHeap*			m_pDescriptorHeap			= nullptr;
 		DescriptorSet*			m_pDescriptorSet			= nullptr;
 
 		GUID_Lambda				m_VertexShaderGUID			= 0;
 		GUID_Lambda				m_PixelShaderGUID			= 0;
 
-		RenderPass*			m_pRenderPass				= nullptr;
+		RenderPass*				m_pRenderPass				= nullptr;
 
 		Buffer**				m_ppVertexCopyBuffers		= nullptr;
 		Buffer**				m_ppIndexCopyBuffers		= nullptr;
-		Buffer*				m_pVertexBuffer				= nullptr;
-		Buffer*				m_pIndexBuffer				= nullptr;
+		Buffer*					m_pVertexBuffer				= nullptr;
+		Buffer*					m_pIndexBuffer				= nullptr;
 
 		Texture*				m_pFontTexture				= nullptr;
 		TextureView*			m_pFontTextureView			= nullptr;

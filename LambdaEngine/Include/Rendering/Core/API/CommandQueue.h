@@ -14,7 +14,7 @@ namespace LambdaEngine
 
 		/*
 		* Dispatches a commandlist to the device for execution
-		*	ppCommandLists 	- An array ICommandList* to be executed
+		*	ppCommandLists 	- An array CommandList* to be executed
 		*	numCommandLists	- Number of CommandLists in ppCommandLists
 		*	waitStage		- The stage were the wait should happend
 		*	pWaitFence		- Fence to wait for, before executing the commandlists

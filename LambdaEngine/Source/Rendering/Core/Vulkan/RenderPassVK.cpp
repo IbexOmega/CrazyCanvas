@@ -84,7 +84,7 @@ namespace LambdaEngine
 	void RenderPassVK::CreateAttachmentDescriptions(const RenderPassDesc* pDesc, VkAttachmentDescription* pResultAttachments)
 	{
 		//CreateSubpassDescriptions will discover if there are too many color attachments, we add 1 here to allow for one depth/stencil attachment as well
-		VALIDATE(pDesc->AttachmentCount <= MAX_COLOR_ATTACHMENTS + 1);
+		VALIDATE(pDesc->Attachments.GetSize() <= MAX_COLOR_ATTACHMENTS + 1);
 
 		for (uint32 i = 0; i < pDesc->Attachments.GetSize(); i++)
 		{

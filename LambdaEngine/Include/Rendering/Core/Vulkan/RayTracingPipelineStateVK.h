@@ -24,45 +24,20 @@ namespace LambdaEngine
 
 		bool Init(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc);
 
-		FORCEINLINE VkDeviceSize GetBindingOffsetRaygenGroup() const 
-		{ 
-			return m_BindingOffsetRaygenShaderGroup; 
-		}
-		
-		FORCEINLINE VkDeviceSize GetBindingOffsetHitGroup() const 
-		{ 
-			return m_BindingOffsetHitShaderGroup; 
-		}
-		
-		FORCEINLINE VkDeviceSize GetBindingOffsetMissGroup() const 
-		{ 
-			return m_BindingOffsetMissShaderGroup; 
-		}
-		
-		FORCEINLINE VkDeviceSize GetBindingSizeRaygenGroup() const 
-		{ 
-			return m_BindingSizeRaygenShaderGroup;
-		}
-
-		FORCEINLINE VkDeviceSize GetBindingSizeHitGroup() const 
-		{ 
-			return m_BindingSizeHitShaderGroup; 
-		}
-
 		FORCEINLINE VkPipeline GetPipeline() const
-        {
-            return m_Pipeline;
-        }
-
-		FORCEINLINE BufferVK* GetSBT() const
 		{
-			return m_pSBT.Get();
+			return m_Pipeline;
 		}
-        
-        FORCEINLINE const VkStridedBufferRegionKHR* GetRaygenBufferRegion() const
-        {
-            return &m_RaygenBufferRegion;
-        }
+
+		FORCEINLINE BufferVK* GetSBT()
+		{
+			return m_SBT.Get();
+		}
+		
+		FORCEINLINE const VkStridedBufferRegionKHR* GetRaygenBufferRegion() const
+		{
+			return &m_RaygenBufferRegion;
+		}
 
 		FORCEINLINE const VkStridedBufferRegionKHR* GetHitBufferRegion() const
 		{
@@ -78,7 +53,7 @@ namespace LambdaEngine
 		{
 			return &m_CallableBufferRegion;
 		}
-        
+		
 		//DeviceChild interface
 		virtual void SetName(const String& name) override final;
 
@@ -102,9 +77,9 @@ namespace LambdaEngine
 		TSharedRef<BufferVK>	m_ShaderHandleStorageBuffer		= nullptr;
 		TSharedRef<BufferVK>	m_SBT							= nullptr;
 		
-		VkStridedBufferRegionKHR	m_RaygenBufferRegion	= {};
-		VkStridedBufferRegionKHR	m_HitBufferRegion		= {};
-		VkStridedBufferRegionKHR	m_MissBufferRegion		= {};
-		VkStridedBufferRegionKHR	m_CallableBufferRegion	= {};
+		VkStridedBufferRegionKHR m_RaygenBufferRegion	= {};
+		VkStridedBufferRegionKHR m_HitBufferRegion		= {};
+		VkStridedBufferRegionKHR m_MissBufferRegion		= {};
+		VkStridedBufferRegionKHR m_CallableBufferRegion	= {};
 	};
 }

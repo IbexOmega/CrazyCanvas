@@ -206,7 +206,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceLoader::LoadSceneFromFile(const String& filepath, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures)
+	bool ResourceLoader::LoadSceneFromFile(const String& filepath, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<Texture*>& loadedTextures)
 	{
 		size_t lastPathDivisor = filepath.find_last_of("/\\");
 
@@ -249,7 +249,7 @@ namespace LambdaEngine
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureArrayFromFile(material.diffuse_texname, dirpath, &material.diffuse_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
+					Texture* pTexture = LoadTextureArrayFromFile(material.diffuse_texname, dirpath, &material.diffuse_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pAlbedoMap			= pTexture;
 
@@ -283,7 +283,7 @@ namespace LambdaEngine
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureArrayFromFile(material.bump_texname, dirpath, &material.bump_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
+					Texture* pTexture = LoadTextureArrayFromFile(material.bump_texname, dirpath, &material.bump_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pNormalMap			= pTexture;
 
@@ -329,7 +329,7 @@ namespace LambdaEngine
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureArrayFromFile(material.specular_highlight_texname, dirpath, &material.specular_highlight_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
+					Texture* pTexture = LoadTextureArrayFromFile(material.specular_highlight_texname, dirpath, &material.specular_highlight_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pRoughnessMap		= pTexture;
 
@@ -538,7 +538,7 @@ namespace LambdaEngine
 		return pMesh;
 	}
 
-	ITexture* ResourceLoader::LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
+	Texture* ResourceLoader::LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
 	{
 		int texWidth = 0;
 		int texHeight = 0;
@@ -576,11 +576,11 @@ namespace LambdaEngine
 			D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
 		}
 
-		ITexture* pTexture = nullptr;
+		Texture* pTexture = nullptr;
 
 		if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
 		{
-			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.data(), stbi_pixels.size(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
+			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.GetData(), stbi_pixels.GetSize(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
 		}
 		else if (format == EFormat::FORMAT_R16_UNORM)
 		{
@@ -610,9 +610,9 @@ namespace LambdaEngine
 				pixels[4 * i + 3] = pPixelsA;
 			}
 
-			pTexture = LoadTextureArrayFromMemory(name, pixels.data(), pixels.size(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
+			pTexture = LoadTextureArrayFromMemory(name, pixels.GetData(), pixels.GetSize(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
 
-			for (uint32 i = 0; i < pixels.size(); i++)
+			for (uint32 i = 0; i < pixels.GetSize(); i++)
 			{
 				uint16* pPixels = reinterpret_cast<uint16*>(pixels[i]);
 				SAFEDELETE_ARRAY(pPixels);
@@ -627,7 +627,7 @@ namespace LambdaEngine
 		return pTexture;
 	}
 
-	ITexture* ResourceLoader::LoadTextureArrayFromMemory(const String& name, const void* const * ppData, uint32 arrayCount, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips)
+	Texture* ResourceLoader::LoadTextureArrayFromMemory(const String& name, const void* const * ppData, uint32 arrayCount, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips)
 	{
 		uint32_t miplevels = 1u;
 
@@ -637,7 +637,7 @@ namespace LambdaEngine
 		}
 
 		TextureDesc textureDesc = {};
-		textureDesc.DebugName	= pName;
+		textureDesc.DebugName	= name;
 		textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format		= format;
 		textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
@@ -798,7 +798,7 @@ namespace LambdaEngine
 		const uint32 sourceSize = static_cast<uint32>(sourceSPIRV.GetSize()) * sizeof(uint32);
 
 		ShaderDesc shaderDesc = { };
-		shaderDesc.DebugName			= pFilepath;
+		shaderDesc.DebugName			= filepath;
 		shaderDesc.Source				= TArray<byte>(reinterpret_cast<byte*>(sourceSPIRV.GetData()), reinterpret_cast<byte*>(sourceSPIRV.GetData()) + sourceSize);
 		shaderDesc.EntryPoint			= pEntryPoint;
 		shaderDesc.Stage				= stage;
@@ -872,7 +872,7 @@ namespace LambdaEngine
         }
     }
 
-	bool ResourceLoader::CompileGLSLToSPIRV(const char* pFilepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, TArray<uint32>& sourceSPIRV)
+	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, TArray<uint32>& sourceSPIRV)
 	{
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
 		glslang::TShader shader(shaderType);

@@ -82,7 +82,7 @@ namespace LambdaEngine
 			textureViewDesc.Texture			= pBackBuffer;
 			textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
 			textureViewDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
-			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 			textureViewDesc.MiplevelCount	= 1;
 			textureViewDesc.ArrayCount		= 1;
 			textureViewDesc.Miplevel		= 0;

@@ -22,6 +22,11 @@ namespace LambdaEngine
 		virtual DescriptorHeap*	GetHeap()			= 0;
 		virtual uint64			GetHandle() const	= 0;
 
+		FORCEINLINE const String& GetName() const
+		{
+			return m_DebugName;
+		}
+
 	protected:
 		String m_DebugName;
 	};

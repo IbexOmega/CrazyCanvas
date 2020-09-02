@@ -252,7 +252,7 @@ namespace LambdaEngine
 		textureViewDesc.Texture			= pTexture;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= format;
-		textureViewDesc.Type			= textureDesc.ArrayCount > 1 ? ETextureViewType::TEXTURE_VIEW_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Type			= textureDesc.ArrayCount > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 		textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
 		textureViewDesc.ArrayCount		= textureDesc.ArrayCount;
 		textureViewDesc.Miplevel		= 0;
@@ -295,7 +295,7 @@ namespace LambdaEngine
 		textureViewDesc.Texture			= pTexture;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= format;
-		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 		textureViewDesc.MiplevelCount	= pTexture->GetDesc().Miplevels;
 		textureViewDesc.ArrayCount		= pTexture->GetDesc().ArrayCount;
 		textureViewDesc.Miplevel		= 0;
@@ -525,7 +525,7 @@ namespace LambdaEngine
 			guid												= s_NextFreeGUID++;
 			ppMappedTexture										= &s_Textures[guid]; //Creates new entry if not existing
 			ppMappedTextureView									= &s_TextureViews[guid]; //Creates new entry if not existing
-			s_TextureNamesToGUIDs[pResource->GetDesc().Name]	= guid;
+			s_TextureNamesToGUIDs[pResource->GetDesc().DebugName]	= guid;
 		}
 
 		(*ppMappedTexture) = pResource;
@@ -533,11 +533,11 @@ namespace LambdaEngine
         ASSERT(pResource != nullptr);
         
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.DebugName		= pResource->GetDesc().Name + " Texture View";
+		textureViewDesc.DebugName		= pResource->GetDesc().DebugName + " Texture View";
 		textureViewDesc.Texture			= pResource;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= pResource->GetDesc().Format;
-		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 		textureViewDesc.MiplevelCount	= pResource->GetDesc().Miplevels;
 		textureViewDesc.ArrayCount		= pResource->GetDesc().ArrayCount;
 		textureViewDesc.Miplevel		= 0;
@@ -583,28 +583,28 @@ namespace LambdaEngine
 			Texture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
 			Texture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
 
-			s_TextureNamesToGUIDs[pDefaultColorMap->GetDesc().Name]		= GUID_TEXTURE_DEFAULT_COLOR_MAP;
-			s_TextureNamesToGUIDs[pDefaultNormalMap->GetDesc().Name]	= GUID_TEXTURE_DEFAULT_NORMAL_MAP;
+			s_TextureNamesToGUIDs[pDefaultColorMap->GetDesc().DebugName]		= GUID_TEXTURE_DEFAULT_COLOR_MAP;
+			s_TextureNamesToGUIDs[pDefaultNormalMap->GetDesc().DebugName]	= GUID_TEXTURE_DEFAULT_NORMAL_MAP;
 			s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= pDefaultColorMap;
 			s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= pDefaultNormalMap;
 
 			TextureViewDesc defaultColorMapViewDesc = {};
-			defaultColorMapViewDesc.Name			= "Default Color Map View";
-			defaultColorMapViewDesc.pTexture		= pDefaultColorMap;
+			defaultColorMapViewDesc.DebugName		= "Default Color Map View";
+			defaultColorMapViewDesc.Texture			= pDefaultColorMap;
 			defaultColorMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 			defaultColorMapViewDesc.Format			= pDefaultColorMap->GetDesc().Format;
-			defaultColorMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+			defaultColorMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 			defaultColorMapViewDesc.MiplevelCount	= pDefaultColorMap->GetDesc().Miplevels;
 			defaultColorMapViewDesc.ArrayCount		= pDefaultColorMap->GetDesc().ArrayCount;
 			defaultColorMapViewDesc.Miplevel		= 0;
 			defaultColorMapViewDesc.ArrayIndex		= 0;
 
 			TextureViewDesc defaultNormalMapViewDesc = {};
-			defaultNormalMapViewDesc.Name			= "Default Normal Map View";
-			defaultNormalMapViewDesc.pTexture		= pDefaultNormalMap;
+			defaultNormalMapViewDesc.DebugName		= "Default Normal Map View";
+			defaultNormalMapViewDesc.Texture		= pDefaultNormalMap;
 			defaultNormalMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 			defaultNormalMapViewDesc.Format			= pDefaultNormalMap->GetDesc().Format;
-			defaultNormalMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+			defaultNormalMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 			defaultNormalMapViewDesc.MiplevelCount	= pDefaultNormalMap->GetDesc().Miplevels;
 			defaultNormalMapViewDesc.ArrayCount		= pDefaultNormalMap->GetDesc().ArrayCount;
 			defaultNormalMapViewDesc.Miplevel		= 0;

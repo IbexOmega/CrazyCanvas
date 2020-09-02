@@ -358,6 +358,10 @@ namespace LambdaEngine
 		VALIDATE(pSrc != nullptr);
 		VALIDATE(pDst != nullptr);
 
+		UNREFERENCED_VARIABLE(srcState);
+		UNREFERENCED_VARIABLE(dstState);
+		UNREFERENCED_VARIABLE(filter);
+
 		/*const TextureVK*	pVkSrc	= reinterpret_cast<const TextureVK*>(pSrc);
 		TextureVK*			pVkDst	= reinterpret_cast<TextureVK*>(pDst);
 
@@ -472,7 +476,7 @@ namespace LambdaEngine
 		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, bufferMemoryCount, m_MemoryBarriers, 0, nullptr, 0, nullptr);
 	}
 
-	void CommandListVK::GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter)
+	void CommandListVK::GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter)
 	{
 		VALIDATE(pTexture != nullptr);
 
@@ -681,10 +685,10 @@ namespace LambdaEngine
 		CHECK_COMPUTE(m_Allocator);
 		VALIDATE(m_pDevice->vkCmdTraceRaysKHR);
 
-        const VkStridedBufferRegionKHR* pRaygen		= m_pCurrentRayTracingPipeline->GetRaygenBufferRegion();
-        const VkStridedBufferRegionKHR* pMiss		= m_pCurrentRayTracingPipeline->GetMissBufferRegion();
-        const VkStridedBufferRegionKHR* pHit		= m_pCurrentRayTracingPipeline->GetHitBufferRegion();
-        const VkStridedBufferRegionKHR* pCallable	= m_pCurrentRayTracingPipeline->GetCallableBufferRegion();
+        const VkStridedBufferRegionKHR* pRaygen		= m_CurrentRayTracingPipeline->GetRaygenBufferRegion();
+        const VkStridedBufferRegionKHR* pMiss		= m_CurrentRayTracingPipeline->GetMissBufferRegion();
+        const VkStridedBufferRegionKHR* pHit		= m_CurrentRayTracingPipeline->GetHitBufferRegion();
+        const VkStridedBufferRegionKHR* pCallable	= m_CurrentRayTracingPipeline->GetCallableBufferRegion();
             
         m_pDevice->vkCmdTraceRaysKHR(m_CommandList, pRaygen, pMiss, pHit, pCallable, width, height, depth);
 	}

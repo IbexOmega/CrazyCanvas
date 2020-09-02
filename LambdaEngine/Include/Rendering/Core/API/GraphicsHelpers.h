@@ -167,19 +167,19 @@ namespace LambdaEngine
 		else if (string == "R32G32B32A32_UINT")		return EFormat::FORMAT_R32G32B32A32_UINT;
 		else if	(string == "D24_UNORM_S8_UINT")		return EFormat::FORMAT_D24_UNORM_S8_UINT;
 
-		return EFormat::NONE;
+		return EFormat::FORMAT_NONE;
 	}
 
 	FORCEINLINE String CommandQueueToString(ECommandQueueType commandQueue)
 	{
 		switch (commandQueue)
 		{
-		case ECommandQueueType::COMMAND_QUEUE_GRAPHICS:		return "GRAPHICS";
-		case ECommandQueueType::COMMAND_QUEUE_COMPUTE:		return "COMPUTE";
-		case ECommandQueueType::COMMAND_QUEUE_COPY:			return "COPY";
-		case ECommandQueueType::COMMAND_QUEUE_UNKNOWN:		return "UNKNOWN";
-		case ECommandQueueType::COMMAND_QUEUE_NONE:
-		default:											return "NONE";
+		case ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS:	return "GRAPHICS QUEUE";
+		case ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE:		return "COMPUTE QUEUE";
+		case ECommandQueueType::COMMAND_QUEUE_TYPE_COPY:		return "COPY QUEUE";
+		case ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN:		return "UNKNOWN QUEUE";
+		case ECommandQueueType::COMMAND_QUEUE_TYPE_NONE:
+		default:												return "NONE";
 		}
 	}
 }

@@ -62,7 +62,7 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetAlignmentRequirement() const = 0;
 		
-		virtual BufferDesc GetDesc() const
+		FORCEINLINE const BufferDesc& GetDesc() const
 		{
 			return m_Desc;
 		}

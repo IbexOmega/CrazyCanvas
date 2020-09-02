@@ -6,49 +6,47 @@ namespace LambdaEngine
 	/*
 	* Constants
 	*/
-
 	constexpr const uint32 MAX_COLOR_ATTACHMENTS		= 8;
 	constexpr const uint32 MAX_SUBPASSES				= 16;
 	constexpr const uint32 MAX_SUBPASS_DEPENDENCIES		= 16;
 	constexpr const uint32 MAX_VERTEX_INPUT_ATTACHMENTS	= 8;
 	constexpr const uint32 MAX_ATTRIBUTES_PER_VERTEX	= 8;
 	constexpr const uint32 MAX_IMAGE_BARRIERS			= 16;
+	constexpr const uint32 MAX_MEMORY_BARRIERS			= 16;
 	constexpr const uint32 MAX_BUFFER_BARRIERS			= 16;
 	constexpr const uint32 MAX_VIEWPORTS				= 8;
 	constexpr const uint32 MAX_VERTEX_BUFFERS			= 32;
-	//constexpr const uint32 MAX_DESCRIPTOR_BINDINGS		= 32;
-	//constexpr const uint32 MAX_CONSTANT_RANGES			= 16;
-	//constexpr const uint32 MAX_IMMUTABLE_SAMPLERS		= 32;
-	//constexpr const uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
-	//constexpr const uint32 MAX_MISS_SHADER_COUNT		= 8;
-
-	constexpr const uint32 EXTERNAL_SUBPASS	= 0xFFFFFFFF;
+	constexpr const uint32 MAX_DESCRIPTOR_BINDINGS		= 32;
+	constexpr const uint32 MAX_CONSTANT_RANGES			= 16;
+	constexpr const uint32 MAX_IMMUTABLE_SAMPLERS		= 32;
+	constexpr const uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
+	constexpr const uint32 MAX_MISS_SHADER_COUNT		= 8;
+	constexpr const uint32 EXTERNAL_SUBPASS				= 0xFFFFFFFF;
 
 	/*
 	* Enums
 	*/
+	enum class EMemoryType : uint8
+	{
+		MEMORY_TYPE_NONE			= 0,
+		MEMORY_TYPE_CPU_VISIBLE		= 1,
+		MEMORY_TYPE_GPU				= 2,
+	};
 
-    enum class EMemoryType : uint8
-    {
-        NONE				= 0,
-        MEMORY_CPU_VISIBLE  = 1,
-        MEMORY_GPU			= 2,
-    };
-
-    enum class EFormat : uint8
-    {
-        NONE							= 0,
+	enum class EFormat : uint8
+	{
+		FORMAT_NONE						= 0,
 		FORMAT_R16_UNORM				= 1,
 		FORMAT_R16_SFLOAT				= 2,
 		FORMAT_R32G32_SFLOAT			= 3,
-        FORMAT_R8G8B8A8_UNORM			= 4,
-        FORMAT_B8G8R8A8_UNORM			= 5,
-        FORMAT_R8G8B8A8_SNORM			= 6,
-        FORMAT_R16G16B16A16_SFLOAT		= 7,
+		FORMAT_R8G8B8A8_UNORM			= 4,
+		FORMAT_B8G8R8A8_UNORM			= 5,
+		FORMAT_R8G8B8A8_SNORM			= 6,
+		FORMAT_R16G16B16A16_SFLOAT		= 7,
 		FORMAT_R32G32B32A32_SFLOAT		= 8,
 		FORMAT_R32G32B32A32_UINT		= 9,
 		FORMAT_D24_UNORM_S8_UINT		= 10,
-    };
+	};
 
 	enum class EIndexType
 	{

@@ -56,11 +56,6 @@ namespace LambdaEngine
 			return reinterpret_cast<uint64>(m_DescriptorSet);
 		}
 
-		FORCEINLINE virtual const String& GetName() const override final
-		{
-			return m_Name;
-		}
-
 	private:
 		VkDescriptorSet					m_DescriptorSet		= VK_NULL_HANDLE;
 		TSharedRef<DescriptorHeapVK>	m_DescriptorHeap	= nullptr;

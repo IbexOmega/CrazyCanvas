@@ -242,7 +242,7 @@ namespace LambdaEngine
 		commandListDesc.Flags           = FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
 		
-		ICommandList* pGraphicsCommandList = s_pGraphicsDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
+		CommandList* pGraphicsCommandList = s_pGraphicsDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
 		pGraphicsCommandList->Begin(nullptr);
 		
 		uint32 backBufferIndex = pSwapChain->GetCurrentBackBufferIndex();

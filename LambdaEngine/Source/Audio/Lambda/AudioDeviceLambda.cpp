@@ -104,6 +104,7 @@ namespace LambdaEngine
 
 	IMusic* AudioDeviceLambda::CreateMusic(const MusicDesc* pDesc)
 	{
+		UNREFERENCED_VARIABLE(pDesc);
 		return nullptr;
 	}
 

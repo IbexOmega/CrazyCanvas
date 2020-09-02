@@ -142,7 +142,7 @@ namespace LambdaEngine
 		bool Init(const SceneDesc& desc);
 		bool Finalize();
 
-		void PrepareRender(ICommandList* pGraphicsCommandList, ICommandList* pComputeCommandList, uint64 frameIndex, Timestamp delta);
+		void PrepareRender(CommandList* pGraphicsCommandList, CommandList* pComputeCommandList, uint64 frameIndex, Timestamp delta);
 
 		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 		uint32 AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
@@ -184,16 +184,16 @@ namespace LambdaEngine
 	private:
 		uint32 InternalAddDynamicObject(GUID_Lambda Mesh, GUID_Lambda Material, const glm::mat4& transform, HitMask hitMask);
 
-		void UpdateLightsBuffer(ICommandList* pCommandList);
-		void UpdatePerFrameBuffer(ICommandList* pCommandList);
+		void UpdateLightsBuffer(CommandList* pCommandList);
+		void UpdatePerFrameBuffer(CommandList* pCommandList);
 
-		void UpdateMaterialPropertiesBuffers(ICommandList* pCopyCommandList);
-		void UpdateVertexBuffers(ICommandList* pCopyCommandList);
-		void UpdateIndexBuffers(ICommandList* pCopyCommandList);
-		void UpdateInstanceBuffers(ICommandList* pCopyCommandList);
-		void UpdateIndirectArgsBuffers(ICommandList* pCopyCommandList);
+		void UpdateMaterialPropertiesBuffers(CommandList* pCopyCommandList);
+		void UpdateVertexBuffers(CommandList* pCopyCommandList);
+		void UpdateIndexBuffers(CommandList* pCopyCommandList);
+		void UpdateInstanceBuffers(CommandList* pCopyCommandList);
+		void UpdateIndirectArgsBuffers(CommandList* pCopyCommandList);
 
-		void BuildTLAS(ICommandList* pBuildCommandList, bool update);
+		void BuildTLAS(CommandList* pBuildCommandList, bool update);
 
 	private:
 		const GraphicsDevice*						m_pGraphicsDevice;

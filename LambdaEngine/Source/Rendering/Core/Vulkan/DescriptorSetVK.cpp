@@ -31,7 +31,7 @@ namespace LambdaEngine
 
 	bool DescriptorSetVK::Init(const String& debugName, const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, DescriptorHeap* pDescriptorHeap)
 	{
-		m_Name = name;
+		m_DebugName = debugName;
 
 		DescriptorHeapVK* pVkDescriptorHeap = reinterpret_cast<DescriptorHeapVK*>(pDescriptorHeap);
 		m_DescriptorSet = pVkDescriptorHeap->AllocateDescriptorSet(pPipelineLayout, descriptorLayoutIndex);

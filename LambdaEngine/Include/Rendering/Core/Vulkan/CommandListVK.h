@@ -94,16 +94,17 @@ namespace LambdaEngine
 		void BindDescriptorSet(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex, VkPipelineBindPoint bindPoint);
 
 	private:
-		VkCommandBuffer					m_CommandList				= VK_NULL_HANDLE;
+		VkCommandBuffer							m_CommandList				= VK_NULL_HANDLE;
 		TSharedRef<CommandAllocatorVK>			m_Allocator					= nullptr;
 		TSharedRef<RayTracingPipelineStateVK>	m_CurrentRayTracingPipeline	= nullptr;
 		
-		VkImageMemoryBarrier    m_ImageBarriers[MAX_IMAGE_BARRIERS];
-		VkBufferMemoryBarrier   m_BufferBarriers[MAX_BUFFER_BARRIERS];
-		VkViewport              m_Viewports[MAX_VIEWPORTS];
-		VkRect2D                m_ScissorRects[MAX_VIEWPORTS];
-		VkBuffer                m_VertexBuffers[MAX_VERTEX_BUFFERS];
-		VkDeviceSize            m_VertexBufferOffsets[MAX_VERTEX_BUFFERS];
+		VkMemoryBarrier			m_MemoryBarriers[MAX_MEMORY_BARRIERS];
+		VkImageMemoryBarrier	m_ImageBarriers[MAX_IMAGE_BARRIERS];
+		VkBufferMemoryBarrier	m_BufferBarriers[MAX_BUFFER_BARRIERS];
+		VkViewport				m_Viewports[MAX_VIEWPORTS];
+		VkRect2D				m_ScissorRects[MAX_VIEWPORTS];
+		VkBuffer				m_VertexBuffers[MAX_VERTEX_BUFFERS];
+		VkDeviceSize			m_VertexBufferOffsets[MAX_VERTEX_BUFFERS];
 		VkClearValue			m_ClearValues[MAX_COLOR_ATTACHMENTS+1];
 	};
 }

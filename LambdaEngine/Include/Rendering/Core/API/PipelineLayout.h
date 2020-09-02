@@ -17,10 +17,10 @@ namespace LambdaEngine
 
 	struct DescriptorBindingDesc
 	{
-		EDescriptorType			DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
-		uint32					DescriptorCount		= 0;
-		uint32					Binding				= 0;
-		uint32					ShaderStageMask		= 0;
+		EDescriptorType				DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
+		uint32						DescriptorCount		= 0;
+		uint32						Binding				= 0;
+		uint32						ShaderStageMask		= 0;
 		TArray<TSharedRef<Sampler>>	ImmutableSamplers;
 	};
 
