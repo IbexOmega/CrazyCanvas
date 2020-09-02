@@ -31,6 +31,8 @@ namespace LambdaEngine
 
 	bool DescriptorSetVK::Init(const String& debugName, const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, DescriptorHeap* pDescriptorHeap)
 	{
+		m_Name = name;
+
 		DescriptorHeapVK* pVkDescriptorHeap = reinterpret_cast<DescriptorHeapVK*>(pDescriptorHeap);
 		m_DescriptorSet = pVkDescriptorHeap->AllocateDescriptorSet(pPipelineLayout, descriptorLayoutIndex);
 		if (m_DescriptorSet == VK_NULL_HANDLE)
@@ -108,7 +110,7 @@ namespace LambdaEngine
 		for (uint32_t i = 0; i < descriptorCount; i++)
 		{
 			VkDescriptorBufferInfo& bufferInfo = bufferInfos[i];
-			bufferInfo.offset	= pOffsets[i];
+			bufferInfo.offset		= pOffsets[i];
 			bufferInfo.range		= pSizes[i];
 
 			VALIDATE(ppVkBuffers[i] != nullptr);

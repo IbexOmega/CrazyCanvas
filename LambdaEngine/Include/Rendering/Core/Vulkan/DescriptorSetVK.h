@@ -5,6 +5,8 @@
 #include "Rendering/Core/API/PipelineLayout.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
+#include "Containers/String.h"
+
 #include "Vulkan.h"
 
 namespace LambdaEngine
@@ -52,6 +54,11 @@ namespace LambdaEngine
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
 			return reinterpret_cast<uint64>(m_DescriptorSet);
+		}
+
+		FORCEINLINE virtual const String& GetName() const override final
+		{
+			return m_Name;
 		}
 
 	private:

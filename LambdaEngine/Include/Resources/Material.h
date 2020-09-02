@@ -6,7 +6,10 @@
 namespace LambdaEngine
 {
 	class Texture;
+	class TextureView;
 	class Sampler;
+
+	constexpr const float DEFAULT_EMISSIVE_EMISSION_STRENGTH = 250.0f;
 
 	union MaterialProperties
 	{
@@ -18,10 +21,10 @@ namespace LambdaEngine
 			float Metallic;
 			float Roughness;
 
-			float Unreserved;
+			float EmissionStrength;
 		};
 
-		float Properties[8] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
+		float Properties[8] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f };
 	};
 
 	struct Material

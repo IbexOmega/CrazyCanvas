@@ -83,12 +83,28 @@ typedef unsigned int GUID_Lambda;
 	#define FLT32_MIN 1.175494351e-38f
 #endif
 
+#ifndef FLT32_CONS_MAX_FLT
+	#define FLT32_CONS_MAX_FLT 2.0e+24f //This value represents the maximum consecutive integer float32 can represent in, floating point format
+#endif
+
+#ifndef FLT32_CONS_MAX_UINT32
+	#define FLT32_CONS_MAX_UINT32 16777216 //This value represents the maximum consecutive integer float32 can represent, in uint32 format
+#endif
+
 #ifndef FLT64_MAX
 	#define FLT64_MAX 1.7976931348623158e+308
 #endif
 
 #ifndef FLT64_MIN
 	#define FLT64_MIN 2.2250738585072014e-308
+#endif
+
+#ifndef FLT64_CONS_MAX_FLT
+	#define FLT64_CONS_MAX_FLT 2.0e+53 //This value represents the maximum consecutive integer float64 can represent, in float64 format
+#endif
+
+#ifndef FLT64_CONS_MAX_UINT64
+	#define FLT64_CONS_MAX_UINT64 9007199254740992 //This value represents the maximum consecutive integer float32 can represent, in uint64 format
 #endif
 
 constexpr uint32 MAX_UNIQUE_MATERIALS = 32;

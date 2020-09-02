@@ -24,16 +24,16 @@ namespace LambdaEngine
 	{
 		VALIDATE(pDesc);
 
-		m_pName = pDesc->pFilepath;
+		m_Name = pDesc->Filepath;
 
 		FMOD_MODE mode = FMOD_3D | FMOD_CREATESAMPLE | FMOD_LOOP_OFF;
 
 		FMOD_CREATESOUNDEXINFO soundCreateInfo = {};
 		soundCreateInfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
 
-		if (FMOD_System_CreateSound(m_pAudioDevice->pSystem, pDesc->pFilepath, mode, &soundCreateInfo, &m_pHandle) != FMOD_OK)
+		if (FMOD_System_CreateSound(m_pAudioDevice->pSystem, pDesc->Filepath.c_str(), mode, &soundCreateInfo, &m_pHandle) != FMOD_OK)
 		{
-			LOG_ERROR("[Sound]: Sound \"%s\" could not be initialized", m_pName);
+			LOG_ERROR("[Sound]: Sound \"%s\" could not be initialized", m_Name.c_str());
 			return false;
 		}
 

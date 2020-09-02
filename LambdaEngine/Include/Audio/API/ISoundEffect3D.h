@@ -3,11 +3,13 @@
 #include "LambdaEngine.h"
 #include "Math/Math.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 	struct SoundEffect3DDesc
 	{
-		const char* pFilepath	= "";
+		String Filepath	= "";
 	};
 	
 	class ISoundEffect3D

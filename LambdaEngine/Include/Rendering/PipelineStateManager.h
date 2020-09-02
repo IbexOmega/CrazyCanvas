@@ -34,8 +34,8 @@ namespace LambdaEngine
 
 	public:
 		String						DebugName			= "";
-		TSharedRef<RenderPass>				RenderPass			= nullptr;
-		TSharedRef<PipelineLayout>			PipelineLayout		= nullptr;
+		TSharedRef<RenderPass>		RenderPass			= nullptr;
+		TSharedRef<PipelineLayout>	PipelineLayout		= nullptr;
 		// Pipeline
 		TArray<InputElementDesc>	InputLayout			= { };
 		InputAssemblyDesc			InputAssembly		= { };
@@ -45,6 +45,7 @@ namespace LambdaEngine
 		uint32						SampleMask			= 0;
 		uint32						SampleCount			= 1;
 		uint32						Subpass				= 0;
+		bool						DepthTestEnabled			= false;
 		// Mesh-Shader pipeline
 		ManagedShaderModule MeshShader;
 		ManagedShaderModule TaskShader;

@@ -22,17 +22,17 @@ namespace LambdaEngine
 	{
         VALIDATE(pDesc);
 
-		int32 result = WavLibLoadFileFloat32(pDesc->pFilepath, &m_pWaveForm, &m_Header, WAV_LIB_FLAG_MONO);
+		int32 result = WavLibLoadFileFloat32(pDesc->Filepath.c_str(), &m_pWaveForm, &m_Header, WAV_LIB_FLAG_MONO);
 		if (result != WAVE_SUCCESS)
 		{
 			const char* pError = WavLibGetError(result);
 
-			LOG_ERROR("[SoundEffect3DLambda]: Failed to load file '%s'. Error: %s", pDesc->pFilepath, pError);
+			LOG_ERROR("[SoundEffect3DLambda]: Failed to load file '%s'. Error: %s", pDesc->Filepath.c_str(), pError);
 			return false;
 		}
 		else
 		{
-			D_LOG_MESSAGE("[SoundEffect3DLambda]: Loaded file '%s'", pDesc->pFilepath);
+			D_LOG_MESSAGE("[SoundEffect3DLambda]: Loaded file '%s'", pDesc->Filepath.c_str());
 			return true;
 		}
 	}

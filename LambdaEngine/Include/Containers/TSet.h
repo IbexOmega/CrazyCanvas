@@ -8,6 +8,7 @@
 
 namespace LambdaEngine
 {
-	template<typename T>
-	using TSet = std::set<T>;
+	template <typename Key, typename Compare = std::less<Key>, typename Allocator = std::allocator<Key>>
+	using TSet = std::set<Key, Compare, Allocator>;
 }
+

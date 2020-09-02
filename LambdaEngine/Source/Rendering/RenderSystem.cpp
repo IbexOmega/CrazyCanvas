@@ -279,6 +279,8 @@ namespace LambdaEngine
 	bool RenderSystem::Release()
 	{
 		s_pGraphicsQueue->Flush();
+		s_pComputeQueue->Flush();
+		s_pCopyQueue->Flush();
 
 		SAFERELEASE(s_pGraphicsQueue);
 		SAFERELEASE(s_pComputeQueue);

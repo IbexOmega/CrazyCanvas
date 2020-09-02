@@ -19,7 +19,8 @@ namespace LambdaEngine
 		m_Forward(0.0f, 0.0f, 1.0f),
 		m_Right(0.0f),
 		m_Up(0.0f),
-		m_IsDirty(true)
+		m_IsDirty(true),
+		m_LastIsDirty(true)
 	{
 	}
 
@@ -38,13 +39,15 @@ namespace LambdaEngine
 		m_Forward = glm::normalize(direction);
 		CalculateVectors();
 
-		m_IsDirty = true;
+		m_IsDirty		= true;
+		m_LastIsDirty	= true;
 	}
 
 	void Camera::SetPosition(const glm::vec3& position)
 	{
-		m_Position = position;
-		m_IsDirty = true;
+		m_Position		= position;
+		m_IsDirty		= true;
+		m_LastIsDirty	= true;
 	}
 
 	void Camera::SetRotation(const glm::vec3& rotation)
@@ -57,7 +60,8 @@ namespace LambdaEngine
 
 		CalculateVectors();
 
-		m_IsDirty = true;
+		m_IsDirty		= true;
+		m_LastIsDirty	= true;
 	}
 
 	void Camera::Rotate(const glm::vec3& rotation)
@@ -67,8 +71,9 @@ namespace LambdaEngine
 
 	void Camera::Translate(const glm::vec3& translation)
 	{
-		m_Position += (m_Right * translation.x) + (m_Up * translation.y) + (m_Forward * translation.z);
-		m_IsDirty = true;
+		m_Position		+= (m_Right * translation.x) + (m_Up * translation.y) + (m_Forward * translation.z);
+		m_IsDirty		= true;
+		m_LastIsDirty	= true;
 	}
 
 	void Camera::Update()
@@ -79,8 +84,8 @@ namespace LambdaEngine
 			m_View = glm::lookAt(m_Position, m_Position + m_Forward, m_Up);
 			m_ViewInv = glm::inverse(m_View);
 
-			m_Data.LastProjection	= m_Data.Projection;
-			m_Data.LastView			= m_Data.View;
+			m_Data.PrevProjection	= m_Data.Projection;
+			m_Data.PrevView			= m_Data.View;
 			m_Data.Projection		= m_Projection;
 			m_Data.View				= m_View;
 			m_Data.ViewInv			= m_ViewInv;
@@ -90,6 +95,13 @@ namespace LambdaEngine
 			m_Data.Up				= glm::vec4(m_Up, 0.0f);
 
 			m_IsDirty = false;
+		}
+		else if (m_LastIsDirty)
+		{
+			m_Data.PrevProjection	= m_Data.Projection;
+			m_Data.PrevView			= m_Data.View;
+
+			m_LastIsDirty = false;
 		}
 	}
 

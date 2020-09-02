@@ -18,7 +18,6 @@
 
 #include <glslangStandAlone/DirStackFileIncluder.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
-#include <glslang/Public/ShaderLang.h>
 
 #include <tiny_obj_loader.h>
 #include <cstdio>
@@ -207,9 +206,17 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceLoader::LoadSceneFromFile(const char* pDir, const char* pFilename, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<Texture*>& loadedTextures)
+	bool ResourceLoader::LoadSceneFromFile(const String& filepath, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures)
 	{
-		std::string filepath = std::string(pDir) + std::string(pFilename);
+		size_t lastPathDivisor = filepath.find_last_of("/\\");
+
+		if (lastPathDivisor == String::npos)
+		{
+			LOG_WARNING("[ResourceLoader]: Failed to load scene '%s'. No parent directory found...", filepath.c_str());
+			return false;
+		}
+
+		std::string dirpath = filepath.substr(0, lastPathDivisor + 1);
 
 		tinyobj::attrib_t attributes;
 		std::vector<tinyobj::shape_t> shapes;
@@ -217,9 +224,9 @@ namespace LambdaEngine
 		std::string warn;
 		std::string err;
 
-		if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, filepath.c_str(), pDir, true, false))
+		if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, filepath.c_str(), dirpath.c_str(), true, false))
 		{
-            LOG_WARNING("[ResourceDevice]: Failed to load scene '%s'. Warning: %s Error: %s", filepath.c_str(), warn.c_str(), err.c_str());
+            LOG_WARNING("[ResourceLoader]: Failed to load scene '%s'. Warning: %s Error: %s", filepath.c_str(), warn.c_str(), err.c_str());
 			return false;
 		}
 
@@ -236,13 +243,13 @@ namespace LambdaEngine
 
 			if (material.diffuse_texname.length() > 0)
 			{
-				std::string texturePath = pDir + material.diffuse_texname;
+				std::string texturePath = dirpath + material.diffuse_texname;
                 ConvertBackslashes(texturePath);
 
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					Texture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
+					ITexture* pTexture = LoadTextureArrayFromFile(material.diffuse_texname, dirpath, &material.diffuse_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pAlbedoMap			= pTexture;
 
@@ -254,15 +261,29 @@ namespace LambdaEngine
 				}
 			}
 
+			pMaterial->Properties.Albedo = glm::vec4(material.diffuse[0], material.diffuse[1], material.diffuse[2], 1.0f);
+
+			if (material.emission[0] > 0.0f || material.emission[1] > 0.0f || material.emission[2] > 0.0f)
+			{
+				pMaterial->Properties.Albedo.x *= material.emission[0];
+				pMaterial->Properties.Albedo.y *= material.emission[1];
+				pMaterial->Properties.Albedo.z *= material.emission[2];
+				pMaterial->Properties.EmissionStrength = DEFAULT_EMISSIVE_EMISSION_STRENGTH;
+			}
+			else
+			{
+				pMaterial->Properties.EmissionStrength = 0.0f;
+			}
+
 			if (material.bump_texname.length() > 0)
 			{
-				std::string texturePath = pDir + material.bump_texname;
+				std::string texturePath = dirpath + material.bump_texname;
                 ConvertBackslashes(texturePath);
                 
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					Texture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
+					ITexture* pTexture = LoadTextureArrayFromFile(material.bump_texname, dirpath, &material.bump_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pNormalMap			= pTexture;
 
@@ -274,15 +295,15 @@ namespace LambdaEngine
 				}
 			}
 
-			if (material.ambient_texname.length() > 0)
+			if (material.reflection_texname.length() > 0)
 			{
-				std::string texturePath = pDir + material.ambient_texname;
+				std::string texturePath = dirpath + material.reflection_texname;
                 ConvertBackslashes(texturePath);
                 
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					Texture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
+					Texture* pTexture = LoadTextureArrayFromFile(material.reflection_texname, dirpath, &material.reflection_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pMetallicMap			= pTexture;
 
@@ -292,17 +313,23 @@ namespace LambdaEngine
 				{
 					pMaterial->pMetallicMap = loadedTexture->second;
 				}
+
+				pMaterial->Properties.Metallic = 1.0f;
+			}
+			else
+			{
+				pMaterial->Properties.Metallic = 0.0f;
 			}
 
 			if (material.specular_highlight_texname.length() > 0)
 			{
-				std::string texturePath = pDir + material.specular_highlight_texname;
+				std::string texturePath = dirpath + material.specular_highlight_texname;
                 ConvertBackslashes(texturePath);
                 
                 auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					Texture* pTexture = LoadTextureFromFile(texturePath.c_str(), EFormat::FORMAT_R8G8B8A8_UNORM, true);
+					ITexture* pTexture = LoadTextureArrayFromFile(material.specular_highlight_texname, dirpath, &material.specular_highlight_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pRoughnessMap		= pTexture;
 
@@ -314,8 +341,12 @@ namespace LambdaEngine
 				}
 			}
 
+			//Todo: We should check if a similar material already has been loaded
 			loadedMaterials[m] = pMaterial;
 		}
+
+		bool hasNormals = false;
+		bool hasTexCoords = false;
 
 		for (uint32 s = 0; s < shapes.size(); s++)
 		{
@@ -341,6 +372,9 @@ namespace LambdaEngine
 
 				if (index.normal_index >= 0)
 				{
+					//Assume that if one shape has normals, all have normals
+					hasNormals = true; 
+
 					vertex.Normal =
 					{
 						attributes.normals[3 * (size_t)index.normal_index + 0],
@@ -351,6 +385,9 @@ namespace LambdaEngine
 
 				if (index.texcoord_index >= 0)
 				{
+					//Assume that if one shape has tex coords, all have tex coords
+					hasTexCoords = true;
+
 					vertex.TexCoord =
 					{
 						attributes.texcoords[2 * (size_t)index.texcoord_index + 0],
@@ -367,22 +404,25 @@ namespace LambdaEngine
 				indices.push_back(uniqueVertices[vertex]);
 			}
 
-			//Calculate tangents
-			for (uint32 index = 0; index < indices.size(); index += 3)
+			//Calculate Tangents if Tex Coords exist
+			if (hasNormals && hasTexCoords)
 			{
-				Vertex& v0 = vertices[indices[(size_t)index + 0]];
-				Vertex& v1 = vertices[indices[(size_t)index + 1]];
-				Vertex& v2 = vertices[indices[(size_t)index + 2]];
+				for (uint32 index = 0; index < indices.size(); index += 3)
+				{
+					Vertex& v0 = vertices[indices[(size_t)index + 0]];
+					Vertex& v1 = vertices[indices[(size_t)index + 1]];
+					Vertex& v2 = vertices[indices[(size_t)index + 2]];
 
-				v0.CalculateTangent(v1, v2);
-				v1.CalculateTangent(v2, v0);
-				v2.CalculateTangent(v0, v1);
+					v0.CalculateTangent(v1, v2);
+					v1.CalculateTangent(v2, v0);
+					v2.CalculateTangent(v0, v1);
+				}
 			}
 
 			Mesh* pMesh = LoadMeshFromMemory(vertices.data(), uint32(vertices.size()), indices.data(), uint32(indices.size()));
 			loadedMeshes[s] = pMesh;
 
-			D_LOG_MESSAGE("[ResourceDevice]: Loaded Mesh \"%s\" \t for scene : \"%s\"", shape.name.c_str(), pFilename);
+			D_LOG_MESSAGE("[ResourceLoader]: Loaded Mesh \"%s\" \t for scene : \"%s\"", shape.name.c_str(), filepath.c_str());
 
 			uint32 m = shape.mesh.material_ids[0];
 
@@ -393,12 +433,12 @@ namespace LambdaEngine
 			loadedGameObjects.push_back(gameObject);
 		}
 
-		D_LOG_MESSAGE("[ResourceDevice]: Loaded Scene \"%s\"", pFilename);
+		D_LOG_MESSAGE("[ResourceLoader]: Loaded Scene \"%s\"", filepath.c_str());
 
 		return true;
 	}
 
-	Mesh* ResourceLoader::LoadMeshFromFile(const char* pFilepath)
+	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath)
 	{
 		//Start New Thread
 
@@ -407,9 +447,9 @@ namespace LambdaEngine
 		std::vector<tinyobj::material_t> materials;
 		std::string warn, err;
 
-		if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, pFilepath, nullptr, true, false))
+		if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, filepath.c_str(), nullptr, true, false))
 		{
-			LOG_WARNING("[ResourceDevice]: Failed to load mesh '%s'. Warning: %s Error: %s", pFilepath, warn.c_str(), err.c_str());
+			LOG_WARNING("[ResourceLoader]: Failed to load mesh '%s'. Warning: %s Error: %s", filepath.c_str(), warn.c_str(), err.c_str());
 			return nullptr;
 		}
 
@@ -476,7 +516,7 @@ namespace LambdaEngine
 
 		Mesh* pMesh = LoadMeshFromMemory(vertices.data(), uint32(vertices.size()), indices.data(), uint32(indices.size()));
 
-		D_LOG_MESSAGE("[ResourceDevice]: Loaded Mesh \"%s\"", pFilepath);
+		D_LOG_MESSAGE("[ResourceLoader]: Loaded Mesh \"%s\"", filepath.c_str());
 
 		return pMesh;
 	}
@@ -498,43 +538,96 @@ namespace LambdaEngine
 		return pMesh;
 	}
 
-	Texture* ResourceLoader::LoadTextureFromFile(const char* pFilepath, EFormat format, bool generateMips)
+	ITexture* ResourceLoader::LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
 	{
 		int texWidth = 0;
 		int texHeight = 0;
 		int bpp = 0;
 
-		void* pPixels = nullptr;
+		TArray<void*> stbi_pixels(count);
+
+		for (uint32 i = 0; i < count; i++)
+		{
+			String filepath = dir + pFilenames[i];
+
+			void* pPixels = nullptr;
+
+			if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
+			{
+				pPixels = (void*)stbi_load(filepath.c_str(), &texWidth, &texHeight, &bpp, STBI_rgb_alpha);
+			}
+			else if (format == EFormat::FORMAT_R16_UNORM)
+			{
+				pPixels = (void*)stbi_load_16(filepath.c_str(), &texWidth, &texHeight, &bpp, STBI_rgb_alpha);
+			}
+			else
+			{
+				LOG_ERROR("[ResourceLoader]: Texture format not supported for \"%s\"", filepath.c_str());
+				return nullptr;
+			}
+
+			if (pPixels == nullptr)
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to load texture file: \"%s\"", filepath.c_str());
+				return nullptr;
+			}
+
+			stbi_pixels[i] = pPixels;
+			D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
+		}
+
+		ITexture* pTexture = nullptr;
 
 		if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
 		{
-			pPixels = (void*)stbi_load(pFilepath, &texWidth, &texHeight, &bpp, STBI_rgb_alpha);
+			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.data(), stbi_pixels.size(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
 		}
-		/*else if (format == EFormat::FORMAT_R32G32B32A32_FLOAT)
+		else if (format == EFormat::FORMAT_R16_UNORM)
 		{
-			pPixels = (void*)stbi_loadf(filename.c_str(), &texWidth, &texHeight, &bpp, STBI_rgb_alpha);
-		}*/
-		else
-		{
-			LOG_ERROR("[ResourceLoader]: Texture format not supported for \"%s\"", pFilepath);
-			return nullptr;
+			TArray<void*> pixels(count * 4);
+
+			for (uint32 i = 0; i < count; i++)
+			{
+				uint32 numPixels = texWidth * texHeight;
+				uint16* pPixelsR = new uint16[numPixels];
+				uint16* pPixelsG = new uint16[numPixels];
+				uint16* pPixelsB = new uint16[numPixels];
+				uint16* pPixelsA = new uint16[numPixels];
+
+				uint16* pSTBIPixels = reinterpret_cast<uint16*>(stbi_pixels[i]);
+
+				for (uint32 p = 0; p < numPixels; p++)
+				{
+					pPixelsR[p] = pSTBIPixels[4 * p + 0];
+					pPixelsG[p] = pSTBIPixels[4 * p + 1];
+					pPixelsB[p] = pSTBIPixels[4 * p + 2];
+					pPixelsA[p] = pSTBIPixels[4 * p + 3];
+				}
+
+				pixels[4 * i + 0] = pPixelsR;
+				pixels[4 * i + 1] = pPixelsG;
+				pixels[4 * i + 2] = pPixelsB;
+				pixels[4 * i + 3] = pPixelsA;
+			}
+
+			pTexture = LoadTextureArrayFromMemory(name, pixels.data(), pixels.size(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
+
+			for (uint32 i = 0; i < pixels.size(); i++)
+			{
+				uint16* pPixels = reinterpret_cast<uint16*>(pixels[i]);
+				SAFEDELETE_ARRAY(pPixels);
+			}
 		}
 
-		if (pPixels == nullptr)
+		for (uint32 i = 0; i < count; i++)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to load texture file: \"%s\"", pFilepath);
-			return nullptr;
+			stbi_image_free(stbi_pixels[i]);
 		}
-
-		D_LOG_MESSAGE("[ResourceDevice]: Loaded Texture \"%s\"", pFilepath);
-
-		Texture* pTexture = LoadTextureFromMemory(pFilepath, pPixels, texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
-		stbi_image_free(pPixels);
 
 		return pTexture;
 	}
 
-	Texture* ResourceLoader::LoadTextureFromMemory(const char* pName, const void* pData, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips)
+	ITexture* ResourceLoader::LoadTextureArrayFromMemory(const String& name, const void* const * ppData, uint32 arrayCount, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips)
 	{
 		uint32_t miplevels = 1u;
 
@@ -552,7 +645,7 @@ namespace LambdaEngine
 		textureDesc.Width		= width;
 		textureDesc.Height		= height;
 		textureDesc.Depth		= 1;
-		textureDesc.ArrayCount	= 1;
+		textureDesc.ArrayCount	= arrayCount;
 		textureDesc.Miplevels	= miplevels;
 		textureDesc.SampleCount = 1;
 
@@ -560,7 +653,7 @@ namespace LambdaEngine
 
 		if (pTexture == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to create texture for \"%s\"", pName);
+			LOG_ERROR("[ResourceLoader]: Failed to create texture for \"%s\"", name.c_str());
 			return nullptr;
 		}
 
@@ -570,37 +663,21 @@ namespace LambdaEngine
 		bufferDesc.DebugName	= "Texture Copy Buffer";
 		bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
-		bufferDesc.SizeInBytes	= pixelDataSize;
+		bufferDesc.SizeInBytes	= uint64(arrayCount * pixelDataSize);
 
 		Buffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, s_pAllocator);
 
 		if (pTextureData == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to create copy buffer for \"%s\"", pName);
+			LOG_ERROR("[ResourceLoader]: Failed to create copy buffer for \"%s\"", name.c_str());
 			return nullptr;
 		}
-
-		void* pTextureDataDst = pTextureData->Map();
-		memcpy(pTextureDataDst, pData, pixelDataSize);
-		pTextureData->Unmap();
 
 		const uint64 waitValue = s_SignalValue - 1;
 		s_pCopyFence->Wait(waitValue, UINT64_MAX);
 
 		s_pCopyCommandAllocator->Reset();
 		s_pCopyCommandList->Begin(nullptr);
-
-		CopyTextureFromBufferDesc copyDesc = {};
-		copyDesc.SrcOffset		= 0;
-		copyDesc.SrcRowPitch	= 0;
-		copyDesc.SrcHeight		= 0;
-		copyDesc.Width			= width;
-		copyDesc.Height			= height;
-		copyDesc.Depth			= 1;
-		copyDesc.Miplevel		= 0;
-		copyDesc.MiplevelCount  = miplevels;
-		copyDesc.ArrayIndex		= 0;
-		copyDesc.ArrayCount		= 1;
 
 		PipelineTextureBarrierDesc transitionToCopyDstBarrier = {};
 		transitionToCopyDstBarrier.pTexture					= pTexture;
@@ -618,7 +695,30 @@ namespace LambdaEngine
 
 		s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
 
-		s_pCopyCommandList->CopyTextureFromBuffer(pTextureData, pTexture, copyDesc);
+		for (uint32 i = 0; i < arrayCount; i++)
+		{
+			uint64 bufferOffset = uint64(i) * pixelDataSize;
+
+			void* pTextureDataDst = pTextureData->Map();
+			const void* pTextureDataSrc = ppData[i];
+			memcpy((void*)(uint64(pTextureDataDst) + bufferOffset), pTextureDataSrc, pixelDataSize);
+			pTextureData->Unmap();
+
+			CopyTextureFromBufferDesc copyDesc = {};
+			copyDesc.SrcOffset		= bufferOffset;
+			copyDesc.SrcRowPitch	= 0;
+			copyDesc.SrcHeight		= 0;
+			copyDesc.Width			= width;
+			copyDesc.Height			= height;
+			copyDesc.Depth			= 1;
+			copyDesc.Miplevel		= 0;
+			copyDesc.MiplevelCount  = miplevels;
+			copyDesc.ArrayIndex		= i;
+			copyDesc.ArrayCount		= 1;
+
+			s_pCopyCommandList->CopyTextureFromBuffer(pTextureData, pTexture, copyDesc);
+		}
+
 		if (generateMips)
 		{
 			s_pCopyCommandList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_COPY_DST, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
@@ -646,8 +746,9 @@ namespace LambdaEngine
 
 		if (!RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&s_pCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, nullptr, 0, s_pCopyFence, s_SignalValue))
 		{
-			LOG_ERROR("[ResourceLoader]: Texture could not be created as command list could not be executed for \"%s\"", pName);
+			LOG_ERROR("[ResourceLoader]: Texture could not be created as command list could not be executed for \"%s\"", name.c_str());
 			SAFERELEASE(pTextureData);
+
 			return nullptr;
 		}
 		else
@@ -657,12 +758,13 @@ namespace LambdaEngine
 
 		//Todo: Remove this wait after garbage collection works
 		RenderSystem::GetGraphicsQueue()->Flush();
+
 		SAFERELEASE(pTextureData);
 
 		return pTexture;
 	}
 
-	Shader* ResourceLoader::LoadShaderFromFile(const char* pFilepath, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint)
+	Shader* ResourceLoader::LoadShaderFromFile(const String& filepath, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint)
 	{
 		byte* pShaderRawSource = nullptr;
 		uint32 shaderRawSourceSize = 0;
@@ -670,23 +772,23 @@ namespace LambdaEngine
 		TArray<uint32> sourceSPIRV;
 		if (lang == EShaderLang::SHADER_LANG_GLSL)
 		{
-			if (!ReadDataFromFile(pFilepath, "r", &pShaderRawSource, &shaderRawSourceSize))
+			if (!ReadDataFromFile(filepath, "r", &pShaderRawSource, &shaderRawSourceSize))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", pFilepath);
+				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", filepath.c_str());
 				return nullptr;
 			}
 			
-			if (!CompileGLSLToSPIRV(pFilepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, sourceSPIRV))
+			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, sourceSPIRV))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", pFilepath);
+				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", filepath.c_str());
 				return nullptr;
 			}
 		}
 		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
 		{
-			if (!ReadDataFromFile(pFilepath, "rb", &pShaderRawSource, &shaderRawSourceSize))
+			if (!ReadDataFromFile(filepath, "rb", &pShaderRawSource, &shaderRawSourceSize))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", pFilepath);
+				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", filepath.c_str());
 				return nullptr;
 			}
 			
@@ -708,30 +810,30 @@ namespace LambdaEngine
 		return pShader;
 	}
 
-	ISoundEffect3D* ResourceLoader::LoadSoundEffectFromFile(const char* pFilepath)
+	ISoundEffect3D* ResourceLoader::LoadSoundEffectFromFile(const String& filepath)
 	{
 		SoundEffect3DDesc soundDesc = {};
-		soundDesc.pFilepath = pFilepath;
+		soundDesc.Filepath = filepath;
 
 		ISoundEffect3D* pSound = AudioSystem::GetDevice()->CreateSoundEffect(&soundDesc);
 
 		if (pSound == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to initialize sound \"%s\"", pFilepath);
+			LOG_ERROR("[ResourceLoader]: Failed to initialize sound \"%s\"", filepath.c_str());
 			return nullptr;
 		}
 
-		D_LOG_MESSAGE("[ResourceLoader]: Loaded Sound \"%s\"", pFilepath);
+		D_LOG_MESSAGE("[ResourceLoader]: Loaded Sound \"%s\"", filepath.c_str());
 
 		return pSound;
 	}
 
-	bool ResourceLoader::ReadDataFromFile(const char* pFilepath, const char* pMode, byte** ppData, uint32* pDataSize)
+	bool ResourceLoader::ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize)
 	{
-		FILE* pFile = fopen(pFilepath, pMode);
+		FILE* pFile = fopen(filepath.c_str(), pMode);
 		if (pFile == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to load file \"%s\"", pFilepath);
+			LOG_ERROR("[ResourceLoader]: Failed to load file \"%s\"", filepath.c_str());
 			return false;
 		}
 
@@ -745,7 +847,7 @@ namespace LambdaEngine
 		int32 read = fread(pData, 1, length, pFile);
 		if (read == 0)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to read file \"%s\"", pFilepath);
+			LOG_ERROR("[ResourceLoader]: Failed to read file \"%s\"", filepath.c_str());
 			return false;
 		}
 		else
@@ -782,9 +884,9 @@ namespace LambdaEngine
 		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
 
 		//Todo: Fetch this
-		int32 clientInputSemanticsVersion							    = 110;
-		glslang::EShTargetClientVersion vulkanClientVersion				= glslang::EShTargetVulkan_1_0;
-		glslang::EShTargetLanguageVersion targetVersion					= glslang::EShTargetSpv_1_0;
+		int32 clientInputSemanticsVersion							    = 100;
+		glslang::EShTargetClientVersion vulkanClientVersion				= glslang::EShTargetVulkan_1_2;
+		glslang::EShTargetLanguageVersion targetVersion					= glslang::EShTargetSpv_1_5;
 
 		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
 		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
@@ -792,30 +894,29 @@ namespace LambdaEngine
 
 		const TBuiltInResource* pResources	= GetDefaultBuiltInResources();
 		EShMessages messages				= static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
-		const int defaultVersion			= 100;
+		const int defaultVersion			= 110;
 
-		std::string preprocessedGLSL;
 		DirStackFileIncluder includer;
 
 		//Get Directory Path of File
-		std::string filepath		= std::string(pFilepath);
 		size_t found				= filepath.find_last_of("/\\");
 		std::string directoryPath	= filepath.substr(0, found);
 
 		includer.pushExternalLocalDirectory(directoryPath);
 
-		if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
-		{
-			LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", pFilepath, shader.getInfoLog(), shader.getInfoDebugLog());
-			return false;
-		}
+		//std::string preprocessedGLSL;
+		//if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
+		//{
+		//	LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
+		//	return false;
+		//}
 
-		const char* pPreprocessedGLSL = preprocessedGLSL.c_str();
-		shader.setStrings(&pPreprocessedGLSL, 1);
+		//const char* pPreprocessedGLSL = preprocessedGLSL.c_str();
+		//shader.setStrings(&pPreprocessedGLSL, 1);
 
-		if (!shader.parse(pResources, defaultVersion, false, messages))
+		if (!shader.parse(pResources, defaultVersion, false, messages, includer))
 		{
-			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", pFilepath, shader.getInfoLog(), shader.getInfoDebugLog());
+			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
 			return false;
 		}
 
@@ -824,7 +925,7 @@ namespace LambdaEngine
 
 		if (!program.link(messages))
 		{
-			LOG_ERROR("[ResourceLoader]: GLSL Linking failed for: \"%s\"\n%s\n%s", pFilepath, shader.getInfoLog(), shader.getInfoDebugLog());
+			LOG_ERROR("[ResourceLoader]: GLSL Linking failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
 			return false;
 		}
 

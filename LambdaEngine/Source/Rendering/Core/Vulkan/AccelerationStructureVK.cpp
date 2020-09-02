@@ -4,6 +4,7 @@
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/Vulkan.h"
 
 namespace LambdaEngine
 {
@@ -44,7 +45,6 @@ namespace LambdaEngine
 	{
 		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
 		accelerationStructureCreateInfo.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-		accelerationStructureCreateInfo.pNext				= nullptr;
 		accelerationStructureCreateInfo.compactedSize		= 0;
 		accelerationStructureCreateInfo.maxGeometryCount	= 1;
 		accelerationStructureCreateInfo.deviceAddress		= VK_NULL_HANDLE;
@@ -65,6 +65,7 @@ namespace LambdaEngine
 			
 			geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_INSTANCES_KHR;
 			geometryTypeInfo.maxPrimitiveCount	= pDesc->InstanceCount;
+			geometryTypeInfo.allowsTransforms	= VK_FALSE;
 		}
 		else
 		{
@@ -77,6 +78,8 @@ namespace LambdaEngine
 			geometryTypeInfo.vertexFormat		= VK_FORMAT_R32G32B32_SFLOAT;
 			geometryTypeInfo.allowsTransforms	= pDesc->AllowsTransform ? VK_TRUE : VK_FALSE;
 		}
+
+		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
 
 		VALIDATE(m_pDevice->vkCreateAccelerationStructureKHR != nullptr);
 
@@ -105,7 +108,6 @@ namespace LambdaEngine
 
 		VkBindAccelerationStructureMemoryInfoKHR accelerationStructureMemoryInfo = {};
 		accelerationStructureMemoryInfo.sType					= VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_KHR;
-		accelerationStructureMemoryInfo.pNext					= nullptr;
 		accelerationStructureMemoryInfo.deviceIndexCount		= 0;
 		accelerationStructureMemoryInfo.pDeviceIndices			= nullptr;
 		accelerationStructureMemoryInfo.accelerationStructure	= m_AccelerationStructure;
@@ -157,7 +159,6 @@ namespace LambdaEngine
 
 		VkAccelerationStructureDeviceAddressInfoKHR accelerationStructureDeviceAddressInfo = {};
 		accelerationStructureDeviceAddressInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-		accelerationStructureDeviceAddressInfo.pNext					= nullptr;
 		accelerationStructureDeviceAddressInfo.accelerationStructure	= m_AccelerationStructure;
 
 		VALIDATE(m_pDevice->vkGetAccelerationStructureDeviceAddressKHR != nullptr);
@@ -180,13 +181,15 @@ namespace LambdaEngine
 		scratchBufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_RAY_TRACING;
 		scratchBufferDesc.SizeInBytes	= scratchMemoryRequirements.size;
 
-		m_ScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&scratchBufferDesc, pAllocator));
-		if (!m_ScratchBuffer)
+		m_pScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&scratchBufferDesc, pAllocator));
+		if (m_pScratchBuffer)
+		{
+			return true;
+		}
+		else
 		{
 			return false;
 		}
-
-		return true;
 	}
 
 	void AccelerationStructureVK::SetName(const String& name)

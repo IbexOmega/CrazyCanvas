@@ -9,31 +9,35 @@
 
 namespace LambdaEngine
 {
-	inline uint32 FindMemoryType(VkPhysicalDevice physicalDevice, uint32 typeFilter, VkMemoryPropertyFlags properties)
-	{
-		VkPhysicalDeviceMemoryProperties memProperties = {};
-		vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+    inline uint32 FindMemoryType(VkPhysicalDevice physicalDevice, uint32 typeFilter, VkMemoryPropertyFlags properties)
+    {
+        VkPhysicalDeviceMemoryProperties memProperties = {};
+        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
-		for (uint32 i = 0; i < memProperties.memoryTypeCount; i++)
-		{
-			if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
-			{
-				return i;
-			}
-		}
+        for (uint32 i = 0; i < memProperties.memoryTypeCount; i++)
+        {
+            if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            {
+                return i;
+            }
+        }
 
-		return UINT32_MAX;
-	}
+        return UINT32_MAX;
+    }
 
-	inline VkFormat ConvertFormat(EFormat format)
-	{
-		switch (format)
-		{
+    inline VkFormat ConvertFormat(EFormat format)
+    {
+        switch (format)
+        {
+		case EFormat::FORMAT_R16_UNORM:				return VK_FORMAT_R16_UNORM;
+		case EFormat::FORMAT_R16_SFLOAT:			return VK_FORMAT_R16_SFLOAT;
 		case EFormat::FORMAT_R32G32_SFLOAT:			return VK_FORMAT_R32G32_SFLOAT;
-		case EFormat::FORMAT_R8G8B8A8_UNORM:		return VK_FORMAT_R8G8B8A8_UNORM;
-		case EFormat::FORMAT_B8G8R8A8_UNORM:		return VK_FORMAT_B8G8R8A8_UNORM;
-		case EFormat::FORMAT_R8G8B8A8_SNORM:		return VK_FORMAT_R8G8B8A8_SNORM;
-		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return VK_FORMAT_R16G16B16A16_SFLOAT;
+        case EFormat::FORMAT_R8G8B8A8_UNORM:		return VK_FORMAT_R8G8B8A8_UNORM;
+        case EFormat::FORMAT_B8G8R8A8_UNORM:		return VK_FORMAT_B8G8R8A8_UNORM;
+        case EFormat::FORMAT_R8G8B8A8_SNORM:		return VK_FORMAT_R8G8B8A8_SNORM;
+        case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return VK_FORMAT_R16G16B16A16_SFLOAT;
+		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return VK_FORMAT_R32G32B32A32_SFLOAT;
+		case EFormat::FORMAT_R32G32B32A32_UINT:		return VK_FORMAT_R32G32B32A32_UINT;
 		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return VK_FORMAT_D24_UNORM_S8_UINT;
 		default:									return VK_FORMAT_UNDEFINED;
 		}

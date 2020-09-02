@@ -2,10 +2,9 @@
 
 #include "LambdaEngine.h"
 #include "Application/API/EventHandler.h"
-
-#include "Time/API/Timestamp.h"
-
 #include "Containers/THashTable.h"
+#include "Containers/String.h"
+#include "ICustomRenderer.h"
 
 struct ImGuiContext;
 
@@ -30,7 +29,6 @@ namespace LambdaEngine
 
 	struct ImGuiRendererDesc
 	{
-		Window*	pWindow				= nullptr;
 		uint32		BackBufferCount		= 0;
 		uint32		VertexBufferSize	= 0;
 		uint32		IndexBufferSize		= 0;
@@ -38,15 +36,15 @@ namespace LambdaEngine
 
 	struct ImGuiTexture
 	{
-		TextureView*	pTextureView		= nullptr;
-		float32			ChannelMult[4]		= { 1.0f, 1.0f, 1.0f, 1.0f };
+		String			ResourceName		= "No Name";
+		float32			ChannelMul[4]		= { 1.0f, 1.0f, 1.0f, 1.0f };
 		float32			ChannelAdd[4]		= { 0.0f, 0.0f, 0.0f, 0.0f };
 		uint32			ReservedIncludeMask = 0x00008421; //0000 0000 0000 0000 1000 0100 0010 0001
 		GUID_Lambda		VertexShaderGUID	= GUID_NONE;
 		GUID_Lambda		PixelShaderGUID		= GUID_NONE;
 	};
 
-	class LAMBDA_API ImGuiRenderer : public EventHandler
+	class LAMBDA_API ImGuiRenderer : public ICustomRenderer, EventHandler
 	{
 	public:
 		DECL_REMOVE_COPY(ImGuiRenderer);
@@ -57,34 +55,49 @@ namespace LambdaEngine
 
 		bool Init(const ImGuiRendererDesc* pDesc);
 
-		void Begin(Timestamp delta, uint32 windowWidth, uint32 windowHeight, float32 scaleX, float32 scaleY);
-		void End();
+		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 
-		void Render(CommandList* pCommandList, TextureView* pRenderTarget, uint32 modFrameIndex, uint32 backBufferIndex);
+		virtual void PreBuffersDescriptorSetWrite()		override final;
+		virtual void PreTexturesDescriptorSetWrite()	override final;
 
-		// EventHandler interface
-		virtual void OnMouseMoved(int32 x, int32 y)														override final;
-		virtual void OnButtonPressed(EMouseButton button, uint32 modifierMask)							override final;
-		virtual void OnButtonReleased(EMouseButton button)												override final;
-		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)										override final;
-		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)							override final;
-		virtual void OnKeyReleased(EKey key)															override final;
-		virtual void OnKeyTyped(uint32 character)														override final;
+		//virtual void UpdateParameters(void* pData)		override final;
+
+		//virtual void UpdatePushConstants(void* pData, uint32 dataSize)	override final;
+
+		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound) override final;
+		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
+		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
+
+		virtual void NewFrame(Timestamp delta)		override final;
+		virtual void PrepareRender(Timestamp delta)		override final;
+
+		virtual void Render(CommandAllocator* pCommandAllocator, CommandList* pCommandList, uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppExecutionStage)		override final;
+
+		FORCEINLINE virtual FPipelineStageFlags GetFirstPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
+		FORCEINLINE virtual FPipelineStageFlags GetLastPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
+
+		virtual void OnMouseMoved(int32 x, int32 y)										override final;
+		virtual void OnButtonPressed(EMouseButton button, uint32 modifierMask)			override final;
+		virtual void OnButtonReleased(EMouseButton button)								override final;
+		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)						override final;
+		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)			override final;
+		virtual void OnKeyReleased(EKey key)											override final;
+		virtual void OnKeyTyped(uint32 character)										override final;
 
 	public:
 		static ImGuiContext* GetImguiContext();
 
 	private:
-		bool InitImGui(Window* pWindow);
+		bool InitImGui();
 		bool CreateCopyCommandList();
 		bool CreateAllocator(uint32 pageSize);
 		bool CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize);
 		bool CreateTextures();
 		bool CreateSamplers();
-		bool CreateRenderPass();
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSet();
 		bool CreateShaders();
+		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 		bool CreatePipelineState();
 
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);
@@ -93,6 +106,7 @@ namespace LambdaEngine
 		const GraphicsDevice*	m_pGraphicsDevice			= nullptr;
 
 		uint32					m_BackBufferCount			= 0;
+		ITextureView**			m_ppBackBuffers				= nullptr;
 
 		CommandAllocator*		m_pCopyCommandAllocator		= nullptr;
 		CommandList*			m_pCopyCommandList			= nullptr;
@@ -109,17 +123,17 @@ namespace LambdaEngine
 
 		RenderPass*			m_pRenderPass				= nullptr;
 
-		Buffer*				m_pVertexCopyBuffer			= nullptr;
-		Buffer*				m_pIndexCopyBuffer			= nullptr;
-		Buffer**				m_ppVertexBuffers			= nullptr;
-		Buffer**				m_ppIndexBuffers			= nullptr;
+		Buffer**				m_ppVertexCopyBuffers		= nullptr;
+		Buffer**				m_ppIndexCopyBuffers		= nullptr;
+		Buffer*				m_pVertexBuffer				= nullptr;
+		Buffer*				m_pIndexBuffer				= nullptr;
 
 		Texture*				m_pFontTexture				= nullptr;
 		TextureView*			m_pFontTextureView			= nullptr;
 
 		Sampler*				m_pSampler					= nullptr;
 
-		THashTable<TextureView*, DescriptorSet*>					m_TextureDescriptorSetMap;
+		THashTable<String, TArray<DescriptorSet*>>					m_TextureResourceNameDescriptorSetsMap;
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 	};
 }

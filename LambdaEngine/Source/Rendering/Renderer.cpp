@@ -30,18 +30,13 @@ namespace LambdaEngine
 			{
 				SAFERELEASE(m_ppBackBuffers[i]);
 				SAFERELEASE(m_ppBackBufferViews[i]);
-				SAFERELEASE(m_ppImGuiCommandLists[i]);
-				SAFERELEASE(m_ppImGuiCommandAllocators[i]);
 			}
 
 			SAFEDELETE_ARRAY(m_ppBackBuffers);
 			SAFEDELETE_ARRAY(m_ppBackBufferViews);
-			SAFEDELETE_ARRAY(m_ppImGuiCommandLists);
-			SAFEDELETE_ARRAY(m_ppImGuiCommandAllocators);
 		}
 
 		SAFERELEASE(m_pSwapChain);
-		SAFEDELETE(m_pImGuiRenderer);
 	}
 
 	bool Renderer::Init(const RendererDesc* pDesc)
@@ -105,89 +100,44 @@ namespace LambdaEngine
 		}
 		
 		ResourceUpdateDesc resourceUpdateDesc = {};
-		resourceUpdateDesc.pResourceName						= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+		resourceUpdateDesc.ResourceName							= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
 		resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppBackBuffers;
 		resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppBackBufferViews;
 
 		m_pRenderGraph->UpdateResource(resourceUpdateDesc);
-		
-		if (pDesc->Debug)
-		{
-			//ImGui Renderer
-			m_pImGuiRenderer = DBG_NEW ImGuiRenderer(RenderSystem::GetDevice());
-
-			ImGuiRendererDesc guiRendererDesc = {};
-			guiRendererDesc.pWindow				= pDesc->pWindow;
-			guiRendererDesc.BackBufferCount		= m_BackBufferCount;
-			guiRendererDesc.VertexBufferSize	= MEGA_BYTE(8);
-			guiRendererDesc.IndexBufferSize		= MEGA_BYTE(8);
-
-			m_pImGuiRenderer->Init(&guiRendererDesc);
-
-			m_ppImGuiCommandAllocators	= DBG_NEW CommandAllocator*[backBufferCount];
-			m_ppImGuiCommandLists		= DBG_NEW CommandList*[backBufferCount];
-
-			CommandListDesc commandListDesc = {};
-			commandListDesc.DebugName		= "ImGui Copy Command List";
-			commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-			commandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-
-			for (uint32 b = 0; b < backBufferCount; b++)
-			{
-				CommandAllocator* pCommandAllocator	= m_pGraphicsDevice->CreateCommandAllocator("ImGui Rendering Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
-				
-				m_ppImGuiCommandAllocators[b]	= pCommandAllocator;
-				m_ppImGuiCommandLists[b]		= m_pGraphicsDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
-			}
-		}
 
 		return true;
 	}
 
-	void Renderer::Begin(Timestamp delta)
+	void Renderer::NewFrame(Timestamp delta)
+	{
+		m_pRenderGraph->NewFrame(m_ModFrameIndex, m_BackBufferIndex, delta);
+	}
+
+	void Renderer::PrepareRender(Timestamp delta)
+	{
+		m_pRenderGraph->PrepareRender(delta);
+	}
+	
+	void Renderer::Render()
 	{
 		m_BackBufferIndex = m_pSwapChain->GetCurrentBackBufferIndex();
 
-		if (m_pImGuiRenderer != nullptr)
-		{
-			Window* pWindow = CommonApplication::Get()->GetMainWindow();
-			m_pImGuiRenderer->Begin(delta, pWindow->GetWidth(), pWindow->GetHeight(), 1.0f, 1.0f);
-		}
-	}
-
-	void Renderer::End(Timestamp delta)
-	{
-		UNREFERENCED_VARIABLE(delta);
+		m_pRenderGraph->Render();
 
 		m_pSwapChain->Present();
 
 		m_FrameIndex++;
-		m_ModFrameIndex = m_FrameIndex % m_BackBufferCount;
+		m_ModFrameIndex = m_FrameIndex % uint64(m_BackBufferCount);
 	}
-	
-	void Renderer::Render(Timestamp delta)
+
+	CommandList* Renderer::AcquireGraphicsCopyCommandList()
 	{
-		UNREFERENCED_VARIABLE(delta);
+		return m_pRenderGraph->AcquireGraphicsCopyCommandList();
+	}
 
-		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
-
-		if (m_pImGuiRenderer != nullptr)
-		{
-			m_pImGuiRenderer->End();
-
-			CommandAllocator* pCommandAllocator = m_ppImGuiCommandAllocators[m_ModFrameIndex];
-			CommandList* pCommandList = m_ppImGuiCommandLists[m_ModFrameIndex];
-
-			pCommandAllocator->Reset();
-			pCommandList->Begin(nullptr);
-			m_pImGuiRenderer->Render(pCommandList, m_ppBackBufferViews[m_BackBufferIndex], m_ModFrameIndex, m_BackBufferIndex);
-			pCommandList->End();
-
-			Fence* pFence;
-			uint64 signalValue;
-
-			m_pRenderGraph->GetAndIncrementFence(&pFence, &signalValue);
-			RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, pFence, signalValue - 1, pFence, signalValue);
-		}
+	CommandList* Renderer::AcquireComputeCopyCommandList()
+	{
+		return m_pRenderGraph->AcquireComputeCopyCommandList();
 	}
 }

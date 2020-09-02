@@ -49,27 +49,36 @@ namespace LambdaEngine
 			return m_BindingSizeHitShaderGroup; 
 		}
 
-		FORCEINLINE VkDeviceSize GetBindingSizeMissGroup() const 
-		{ 
-			return m_BindingSizeMissShaderGroup;
-		}
-
-		FORCEINLINE VkDeviceSize GetBindingStride() const
-		{ 
-			return m_BindingStride;
-		}
-
 		FORCEINLINE VkPipeline GetPipeline() const
+        {
+            return m_Pipeline;
+        }
+
+		FORCEINLINE BufferVK* GetSBT() const
 		{
-			return m_Pipeline;
+			return m_pSBT.Get();
 		}
-		
-		FORCEINLINE const BufferVK* GetShaderBindingTable() const
+        
+        FORCEINLINE const VkStridedBufferRegionKHR* GetRaygenBufferRegion() const
+        {
+            return &m_RaygenBufferRegion;
+        }
+
+		FORCEINLINE const VkStridedBufferRegionKHR* GetHitBufferRegion() const
 		{
-			return m_ShaderBindingTable.Get();
+			return &m_HitBufferRegion;
 		}
-		
-	public:
+
+		FORCEINLINE const VkStridedBufferRegionKHR* GetMissBufferRegion() const
+		{
+			return &m_MissBufferRegion;
+		}
+
+		FORCEINLINE const VkStridedBufferRegionKHR* GetCallableBufferRegion() const
+		{
+			return &m_CallableBufferRegion;
+		}
+        
 		//DeviceChild interface
 		virtual void SetName(const String& name) override final;
 
@@ -89,16 +98,13 @@ namespace LambdaEngine
 			TArray<VkSpecializationInfo>& shaderStagesSpecializationInfos, TArray<TArray<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps);
 
 	private:
-		VkPipeline		m_Pipeline						= VK_NULL_HANDLE;
+		VkPipeline				m_Pipeline						= VK_NULL_HANDLE;
 		TSharedRef<BufferVK>	m_ShaderHandleStorageBuffer		= nullptr;
-		TSharedRef<BufferVK>	m_ShaderBindingTable			= nullptr;
-
-		VkDeviceSize m_BindingOffsetRaygenShaderGroup	= 0;
-		VkDeviceSize m_BindingOffsetHitShaderGroup		= 0;
-		VkDeviceSize m_BindingOffsetMissShaderGroup		= 0;
-		VkDeviceSize m_BindingSizeRaygenShaderGroup		= 0;
-		VkDeviceSize m_BindingSizeHitShaderGroup		= 0;
-		VkDeviceSize m_BindingSizeMissShaderGroup		= 0;
-		VkDeviceSize m_BindingStride					= 0;
+		TSharedRef<BufferVK>	m_SBT							= nullptr;
+		
+		VkStridedBufferRegionKHR	m_RaygenBufferRegion	= {};
+		VkStridedBufferRegionKHR	m_HitBufferRegion		= {};
+		VkStridedBufferRegionKHR	m_MissBufferRegion		= {};
+		VkStridedBufferRegionKHR	m_CallableBufferRegion	= {};
 	};
 }

@@ -41,7 +41,7 @@ namespace LambdaEngine
 	{
 		ValidationLayer("REQ_V_L_BASE"),
 		ValidationLayer("VK_LAYER_KHRONOS_validation"),
-		// ValidationLayer("VK_LAYER_RENDERDOC_Capture")
+		ValidationLayer("VK_LAYER_RENDERDOC_Capture")
 	};
 
 	constexpr ValidationLayer OPTIONAL_VALIDATION_LAYERS[]
@@ -86,7 +86,7 @@ namespace LambdaEngine
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
 		Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
-		Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
+		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
 	/*
@@ -817,7 +817,7 @@ namespace LambdaEngine
 		VkValidationFeatureEnableEXT enabledValidationFeatures[] =
 		{
 			VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
-			//VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
+			VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
 		};
 
 		if (pDesc->Debug)
@@ -859,6 +859,8 @@ namespace LambdaEngine
 		{
 			VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
 			PopulateDebugMessengerCreateInfo(createInfo);
+
+			createInfo.pNext = &validationFeatures;
 
 			result = vkCreateDebugUtilsMessengerEXT(Instance, &createInfo, nullptr, &m_DebugMessenger);
 			if (result != VK_SUCCESS)
@@ -989,6 +991,7 @@ namespace LambdaEngine
 			supportedDeviceFeatures10 = deviceFeatures2.features;
 		}
 
+
 		VkPhysicalDeviceRayTracingFeaturesKHR enabledRayTracingFeatures = {};
 		enabledRayTracingFeatures.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
 
@@ -1006,6 +1009,7 @@ namespace LambdaEngine
 
 		enabledDeviceFeatures12.bufferDeviceAddress					= supportedDeviceFeatures12.bufferDeviceAddress;
 		enabledDeviceFeatures12.timelineSemaphore					= supportedDeviceFeatures12.timelineSemaphore;
+		enabledDeviceFeatures12.descriptorIndexing					= supportedDeviceFeatures12.descriptorIndexing;
 
 		enabledDeviceFeatures10.fillModeNonSolid					= supportedDeviceFeatures10.fillModeNonSolid;
 		enabledDeviceFeatures10.vertexPipelineStoresAndAtomics		= supportedDeviceFeatures10.vertexPipelineStoresAndAtomics;
@@ -1164,7 +1168,7 @@ namespace LambdaEngine
 	void GraphicsDeviceVK::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 	{
 		createInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		createInfo.messageSeverity	= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT /*| VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT*/ | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		createInfo.messageSeverity	= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 		createInfo.messageType		= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 		createInfo.pfnUserCallback	= DebugCallback;
 		createInfo.pUserData		= nullptr;
@@ -1390,6 +1394,8 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkCreateRayTracingPipelinesKHR);
 			GET_DEVICE_PROC_ADDR(Device, vkGetRayTracingShaderGroupHandlesKHR);
 			GET_DEVICE_PROC_ADDR(Device, vkCmdTraceRaysKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCopyAccelerationStructureToMemoryKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdCopyAccelerationStructureToMemoryKHR);
 
 			//Query Ray Tracing properties
 			RayTracingProperties = {};

@@ -230,7 +230,7 @@ bool Client::InitRendererForEmpty()
 
 	m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
 
-	m_pRenderGraph->Init(renderGraphDesc);
+	m_pRenderGraph->Init(&renderGraphDesc);
 
 	Window* pWindow = CommonApplication::Get()->GetMainWindow();
 	uint32 renderWidth = pWindow->GetWidth();

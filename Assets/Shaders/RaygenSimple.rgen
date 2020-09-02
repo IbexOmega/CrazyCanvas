@@ -1,0 +1,344 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_ray_tracing : enable
+//#extension GL_EXT_debug_printf : enable
+
+#include "Helpers.glsl"
+#include "Defines.glsl"
+#include "RayTracingIncludeSimple.glsl"
+
+layout(location = 0) rayPayloadEXT SRadiancePayload s_RadiancePayload;
+layout(location = 1) rayPayloadEXT SShadowPayload 	s_ShadowPayload;
+
+void SampleLights(vec3 w_o, mat3 worldToLocal, mat3 localToWorld, vec2 u_Light_Light, vec3 u_Light_BRDF, inout vec3 L_d)
+{
+	const float DirLightOn		= step(EPSILON, luminance(u_LightsBuffer.val.DirL_EmittedRadiance.rgb));
+	const float N_Lights 	    = DirLightOn + float(u_LightsBuffer.val.AreaLightCount);
+    const float N_Lights_PDF    = 1.0f / N_Lights;
+	float chosenLightFloat		= floor(u_Light_Light.x * N_Lights) + (1.0f - DirLightOn);
+	uint  chosenLight			= uint(chosenLightFloat);
+
+	//Directional Light
+	if (chosenLight == 0)
+	{
+		//We dont need to stretch u here since Directional Light sampling isn't stochastic
+
+		SLightSample dirLightEval = EvalDirectionalRadiance(w_o, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal);
+
+		if (dirLightEval.Scatter_PDF > 0.0f && dot(dirLightEval.L_i, dirLightEval.L_i) > 0.0f)
+		{
+			//Define Shadow Ray Parameters
+			const vec3 		origin 				= s_RadiancePayload.HitPosition + s_RadiancePayload.GeometricNormal * RAY_NORMAL_OFFSET;
+			const vec3 		direction			= dirLightEval.SampleWorldDir;
+			const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+			const uint 		cullMask           	= ~HIT_MASK_LIGHT; //Lights should not occlude Area Lights
+			const uint 		sbtRecordOffset    	= 1;
+			const uint 		sbtRecordStride    	= 0;
+			const uint 		missIndex          	= 1;
+			const float 	Tmin              	= 0.001f;
+			const float 	Tmax              	= 10000.0f;
+			const int 		payload       		= 1;
+
+			//Send Shadow Ray
+			traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+
+			float shadow 		= step(s_ShadowPayload.Distance, Tmin);
+
+            float cosTheta 		= abs(dot(dirLightEval.SampleWorldDir, s_RadiancePayload.ShadingNormal));
+			L_d 				= shadow * N_Lights * dirLightEval.Scatter_f * dirLightEval.L_i * cosTheta / dirLightEval.Light_PDF;   //We do not use Scatter_PDF here since this is a delta distribution light
+		}
+	}
+	else
+	{
+		uint chosenAreaLight = chosenLight - 1;
+		u_Light_Light.x = (u_Light_Light.x - ((chosenAreaLight + DirLightOn) / N_Lights)) / N_Lights_PDF; //Stretch u 
+
+		SLightSample areaLightSample = SampleAreaLightRadiance(w_o, chosenAreaLight, s_RadiancePayload.HitPosition, s_RadiancePayload.Albedo, s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, worldToLocal, u_Light_Light);
+
+		//Sample Light with MIS
+		if (areaLightSample.Scatter_PDF > 0.0f && dot(areaLightSample.L_i, areaLightSample.L_i) > 0.0f)
+		{
+			float shadow = 1.0f;
+
+			if (areaLightSample.DistanceToSamplePoint > 0.0f)
+			{
+				//Define Shadow Ray Parameters
+				const vec3 		origin 				= s_RadiancePayload.HitPosition + s_RadiancePayload.GeometricNormal * RAY_NORMAL_OFFSET;
+				const vec3 		direction			= areaLightSample.SampleWorldDir;
+				const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+				const uint 		cullMask           	= 0xFF;
+				const uint 		sbtRecordOffset    	= 1;
+				const uint 		sbtRecordStride    	= 0;
+				const uint 		missIndex          	= 1;
+				const float 	Tmin              	= 0.001f;
+				const float 	Tmax              	= 10000.0f;
+				const int 		payload       		= 1;
+
+				//Send Shadow Ray
+				traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+
+				shadow 			= float(s_ShadowPayload.InstanceIndex == areaLightSample.InstanceIndex);
+			}
+
+            float cosTheta 		= abs(dot(areaLightSample.SampleWorldDir, s_RadiancePayload.ShadingNormal));
+            float weight_MIS    = PowerHeuristic(1.0f, areaLightSample.Light_PDF, 1.0f, areaLightSample.Scatter_PDF);
+			L_d 				+= shadow * N_Lights * areaLightSample.Scatter_f * areaLightSample.L_i * weight_MIS * cosTheta / areaLightSample.Light_PDF;
+		}
+
+		//Sample BRDF with MIS
+		{
+			SReflection reflection = Sample_f(w_o, s_RadiancePayload.Albedo,  s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, u_Light_BRDF);
+			vec3 reflectionDir = localToWorld * reflection.w_i;
+
+			if (reflection.PDF > 0.0f)
+			{
+				//Define Shadow Ray Parameters
+				const vec3 		origin 				= s_RadiancePayload.HitPosition + s_RadiancePayload.GeometricNormal * RAY_NORMAL_OFFSET;
+				const vec3 		direction			= reflectionDir;
+				const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+				const uint 		cullMask           	= 0xFF;
+				const uint 		sbtRecordOffset    	= 1;
+				const uint 		sbtRecordStride    	= 0;
+				const uint 		missIndex          	= 1;
+				const float 	Tmin              	= 0.001f;
+				const float 	Tmax              	= 10000.0f;
+				const int 		payload       		= 1;
+
+				//Send Shadow Ray
+				traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+
+				float shadow 		= float(s_ShadowPayload.InstanceIndex == areaLightSample.InstanceIndex);
+
+				float cosTheta 		= abs(dot(reflectionDir, s_RadiancePayload.ShadingNormal));
+            	float weight_MIS    = PowerHeuristic(1.0f, reflection.PDF, 1.0f, areaLightSample.Light_PDF); //Here we assume that the Light_PDF is constant, otherwise we would need to reevaluate the Light_PDF with reflection.w_i as the direction
+				L_d 				+= shadow * N_Lights * areaLightSample.Scatter_f * areaLightSample.L_i * weight_MIS * cosTheta / reflection.PDF; //Here we assume that the Light L_i is constant, otherwise we would need to reevaluate the L_i with reflection.w_i as the direction
+			}
+		}
+	}
+}
+
+void main()
+{
+    //Calculate Screen Coords
+	const ivec2 pixelCoords = ivec2(gl_LaunchIDEXT.xy);
+	const vec2 pixelCenter = vec2(pixelCoords) + vec2(0.5f);
+	vec2 screenTexCoord = (pixelCenter / vec2(gl_LaunchSizeEXT.xy));
+	vec2 d = screenTexCoord * 2.0 - 1.0;
+
+	//Sample GBuffer
+	float sampledDepth      		        = texture(u_DepthStencil, screenTexCoord).r;
+
+    //Skybox
+	if (sampledDepth == 1.0f)
+	{
+		imageStore(u_DirectRadiance, 	pixelCoords, vec4(0.0f, 0.0f, 0.0f,	1.0f));
+		imageStore(u_IndirectRadiance, 	pixelCoords, vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        imageStore(u_History, 	        pixelCoords, vec4(1.0f));
+		return;
+	}
+
+    SPerFrameBuffer perFrameBuffer   	= u_PerFrameBuffer.val;
+
+	//Sample GBuffer
+	vec4 sampledAlbedoAO    		        = texture(u_AlbedoAO, screenTexCoord);
+	vec2 sampledCompactNormals 				= texture(u_CompactNormals, screenTexCoord).rg;
+    vec4 sampledEmissionMetallicRoughness   = texture(u_EmissionMetallicRoughness, screenTexCoord);
+	vec4 sampledDirectRadiance 		        = imageLoad(u_DirectRadiance, pixelCoords);
+	vec4 sampledIndirectRadiance 	        = imageLoad(u_IndirectRadiance, pixelCoords);
+    float sampledHistory 	                = imageLoad(u_History, pixelCoords).r;
+
+    vec2 unpackedMetallicRoughness          = unpackUnorm2x16(floatBitsToUint(sampledEmissionMetallicRoughness.w));
+
+	//Unpack GBuffer
+    vec3 shadingNormal      = normalize(octToDir(floatBitsToUint(sampledCompactNormals.x)));
+    vec3 geometricNormal    = normalize(octToDir(floatBitsToUint(sampledCompactNormals.y)));
+    vec3 albedo             = sampledAlbedoAO.rgb;
+    vec3 emission		    = sampledEmissionMetallicRoughness.rgb;
+    float ao                = sampledAlbedoAO.a;
+    float metallic          = unpackedMetallicRoughness.x;
+    float roughness         = unpackedMetallicRoughness.y;
+
+	//Define local Coordinate System
+	vec3 tangent 	= vec3(0.0f);
+	vec3 bitangent 	= vec3(0.0f);
+	CreateCoordinateSystem(geometricNormal, tangent, bitangent);
+
+	//Create Transformation Matrices
+	mat3 localToWorld = mat3(tangent, bitangent, geometricNormal);
+	mat3 worldToLocal = transpose(localToWorld);
+
+	//Define Constants
+	SPositions positions            = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
+    SRayDirections rayDirections   	= CalculateRayDirections(positions.WorldPos, geometricNormal, perFrameBuffer.Position.xyz, perFrameBuffer.ViewInv);	
+
+	vec3 world_w_o 					= rayDirections.ViewDir;
+	vec3 w_o						= worldToLocal * world_w_o;
+
+	//Define Sample Variables
+	uint randomSeed = perFrameBuffer.RandomSeed + pixelCoords.x * gl_LaunchSizeEXT.x + pixelCoords.y;
+    uvec3 randomSeedPoint = uvec3(randomSeed, randomSeed >> 10, randomSeed >> 20);
+	ivec3 blueNoiseSize = textureSize(u_BlueNoiseLUT, 0);
+	
+	vec3 L_o_Direct 		= sampledDirectRadiance.rgb;
+	vec3 L_o_Indirect 		= sampledIndirectRadiance.rgb;
+	float accumulation		= sampledHistory;
+
+	if (perFrameBuffer.PrevView != perFrameBuffer.View)
+	{
+		L_o_Direct			= vec3(0.0f);
+		L_o_Indirect		= vec3(0.0f);
+		accumulation		= 0.0f;
+	}
+
+	s_RadiancePayload.HitPosition	    = positions.WorldPos;
+    s_RadiancePayload.ShadingNormal     = shadingNormal;
+    s_RadiancePayload.GeometricNormal   = geometricNormal;
+	s_RadiancePayload.Albedo			= albedo;
+    s_RadiancePayload.Emission			= emission;
+	s_RadiancePayload.Metallic			= metallic;
+	s_RadiancePayload.Roughness			= roughness;
+	s_RadiancePayload.Distance			= 1.0f;
+
+	const int maxBounces 				= 2; //Includes the first "bounce" (more like surface interaction) on the camera
+	const int russianRouletteStart		= 3;
+	const int numSamplesPerBounce		= 9;
+	const int numSamplesPerFrame		= maxBounces * numSamplesPerBounce;
+
+	vec3 throughput  					= vec3(1.0f);
+	bool lastWasSpecular				= true;
+
+	for (int b = 0; b < maxBounces; b++)
+	{
+		bool stop 	= false;
+		vec3 L 		= vec3(0.0f);
+
+		int baseB 	= b * numSamplesPerBounce;
+
+		vec2 u_Light_Light 	= vec2( 	GenerateSample(baseB + 0, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 1, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+		vec3 u_Light_BRDF 	= vec3( 	GenerateSample(baseB + 2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 3, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 4, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+		vec3 u_BRDF 		= vec3(		GenerateSample(baseB + 5, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 6, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
+				 						GenerateSample(baseB + 7, randomSeedPoint, numSamplesPerFrame, blueNoiseSize));
+		float u_RussianRoulette	=		GenerateSample(baseB + 8, randomSeedPoint, numSamplesPerFrame, blueNoiseSize);
+
+		bool isSpecular = (s_RadiancePayload.Roughness == 0.0f);
+
+		//Emissive Surface
+		if (dot(s_RadiancePayload.Emission, s_RadiancePayload.Emission) > 0.0f)
+		{
+			if (lastWasSpecular || (s_RadiancePayload.HitMask & HIT_MASK_GAME_OBJECT) > 0) //Emissive Game Objects are not directly sampled so we include them here
+			{
+			
+				L += throughput * s_RadiancePayload.Emission;
+			}
+		}
+
+		//Direct Lighting (next event estimation)
+		if (!isSpecular) //Since specular distributions are described by a delta distribution, lights have 0 probability of contributing to this reflection
+		{
+			vec3 L_d 				= vec3(0.0f);
+			SampleLights(w_o, worldToLocal, localToWorld, u_Light_Light, u_Light_BRDF, L_d);
+
+			L += throughput * L_d;
+		}
+
+		//Update lastWasSpecular
+		{
+			lastWasSpecular	= isSpecular;
+		}
+
+		//Write to Direct or Indirect L_o
+		if (b == 0) //b == 0 is is emitted + direct lighting
+		{
+			L_o_Direct 		+= L;
+		}
+		else
+		{
+			L_o_Indirect 	+= L;
+		}
+
+		//Prepare Next Surface Interaction (Bounce)
+		{
+			//Sample the BRDF
+			SReflection reflection = Sample_f(w_o, s_RadiancePayload.Albedo,  s_RadiancePayload.Metallic, s_RadiancePayload.Roughness, u_BRDF);
+
+			vec3 reflectionDir = localToWorld * reflection.w_i;
+
+			if (reflection.PDF > 0.0f)
+			{
+                float cosTheta 		= abs(dot(reflectionDir, s_RadiancePayload.ShadingNormal));
+				throughput			*= reflection.f * cosTheta / reflection.PDF;
+				world_w_o			= -reflectionDir;
+
+				//Define Reflection Ray Parameters
+				const vec3 		origin 				= s_RadiancePayload.HitPosition + s_RadiancePayload.GeometricNormal * RAY_NORMAL_OFFSET;
+				const vec3 		direction			= reflectionDir;
+				const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+				const uint 		cullMask           	= 0xFF;
+				const uint 		sbtRecordOffset    	= 0;
+				const uint 		sbtRecordStride    	= 0;
+				const uint 		missIndex          	= 0;
+				const float 	Tmin              	= 0.001f;
+				const float 	Tmax              	= 10000.0f;
+				const int 		payload       		= 0;
+				
+				//Send Reflection Ray
+				traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin.xyz, Tmin, direction.xyz, Tmax, payload);
+		
+				if (s_RadiancePayload.Distance <= Tmin)
+				{
+					stop = true;
+				}
+
+                //Define local Coordinate System
+                vec3 wX 	= vec3(0.0f);
+                vec3 wY 	= vec3(0.0f);
+                CreateCoordinateSystem(s_RadiancePayload.GeometricNormal, wX, wY);
+
+                //Create Transformation Matrices
+                localToWorld    = mat3(wX, wY, s_RadiancePayload.GeometricNormal);
+				worldToLocal 	= transpose(localToWorld);
+				w_o				= worldToLocal * world_w_o;
+			}
+			else
+			{
+				s_RadiancePayload.HitPosition	    = vec3(0.0f);
+                s_RadiancePayload.ShadingNormal     = vec3(0.0f);
+                s_RadiancePayload.GeometricNormal   = vec3(0.0f);
+				s_RadiancePayload.Albedo			= vec3(0.0f);
+                s_RadiancePayload.Emission			= vec3(0.0f);
+				s_RadiancePayload.Metallic			= 0.0f;
+				s_RadiancePayload.Roughness			= 0.0f;
+				s_RadiancePayload.Distance			= 0.0f;
+
+				stop = true;
+			}
+		}
+
+		//Russian Roulette
+		{
+			if (b > russianRouletteStart)
+			{
+				float p = max(throughput.r, max(throughput.g, throughput.b));
+
+				if (u_RussianRoulette >= p)
+				{
+					stop = true;
+				}
+
+				throughput *= 1.0f / p;
+			}
+		}
+
+		if (stop) break;
+	}
+
+	accumulation 	+= 1.0f;
+
+	imageStore(u_DirectRadiance, 	pixelCoords, vec4(L_o_Direct, 	1.0f));
+	imageStore(u_IndirectRadiance, 	pixelCoords, vec4(L_o_Indirect, 1.0f));
+	imageStore(u_History, 		    pixelCoords, vec4(accumulation));
+}

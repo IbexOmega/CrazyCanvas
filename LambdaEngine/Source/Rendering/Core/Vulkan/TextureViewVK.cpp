@@ -48,35 +48,39 @@ namespace LambdaEngine
 			(pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET)   ||
 			(pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE) ||
 			(pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS))
+        {
+            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        }
+        
+        if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_1D)
+        {
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_1D;
+        }
+        else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_2D)
+        {
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        }
+		else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_2D_ARRAY)
 		{
-			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 		}
-		
-		if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_1D)
-		{
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_1D;
-		}
-		else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_2D)
-		{
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		}
-		else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_3D)
-		{
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
-		}
-		else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_CUBE)
-		{
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-		}
-		
-		VkResult result = vkCreateImageView(m_pDevice->Device, &createInfo, nullptr, &m_ImageView);
-		if (result != VK_SUCCESS)
-		{
-			LOG_VULKAN_ERROR(result, "[TextureViewVK]: Failed to create view");
-			return false;
-		}
-		else
-		{
+        else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_3D)
+        {
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
+        }
+        else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_CUBE)
+        {
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+        }
+        
+        VkResult result = vkCreateImageView(m_pDevice->Device, &createInfo, nullptr, &m_ImageView);
+        if (result != VK_SUCCESS)
+        {
+            LOG_VULKAN_ERROR(result, "[TextureViewVK]: Failed to create view");
+            return false;
+        }
+        else
+        {
 			m_Desc = *pDesc;
 			SetName(pDesc->DebugName);
 		

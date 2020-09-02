@@ -29,49 +29,49 @@ namespace LambdaEngine
 
 		if (pDesc->DescriptorCount.UnorderedAccessBufferDescriptorCount > 0)
 		{
-			poolSizes[poolCount].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-			poolSizes[poolCount].descriptorCount = pDesc->DescriptorCount.UnorderedAccessBufferDescriptorCount;
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.UnorderedAccessBufferDescriptorCount;
 			poolCount++;
 		}
 
 		if (pDesc->DescriptorCount.UnorderedAccessTextureDescriptorCount > 0)
 		{
-			poolSizes[poolCount].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-			poolSizes[poolCount].descriptorCount = pDesc->DescriptorCount.UnorderedAccessTextureDescriptorCount;
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.UnorderedAccessTextureDescriptorCount;
 			poolCount++;
 		}
 
 		if (pDesc->DescriptorCount.ConstantBufferDescriptorCount > 0)
 		{
-			poolSizes[poolCount].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			poolSizes[poolCount].descriptorCount = pDesc->DescriptorCount.ConstantBufferDescriptorCount;
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.ConstantBufferDescriptorCount;
 		}
 
 		if (pDesc->DescriptorCount.TextureCombinedSamplerDescriptorCount > 0)
 		{
-			poolSizes[poolCount].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			poolSizes[poolCount].descriptorCount = pDesc->DescriptorCount.TextureCombinedSamplerDescriptorCount;
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.TextureCombinedSamplerDescriptorCount;
 			poolCount++;
 		}
 
 		if (pDesc->DescriptorCount.TextureDescriptorCount > 0)
 		{
-			poolSizes[poolCount].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			poolSizes[poolCount].descriptorCount = pDesc->DescriptorCount.TextureDescriptorCount;
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.TextureDescriptorCount;
 			poolCount++;
 		}
 
 		if (pDesc->DescriptorCount.AccelerationStructureDescriptorCount > 0)
 		{
-			poolSizes[poolCount].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-			poolSizes[poolCount].descriptorCount = pDesc->DescriptorCount.AccelerationStructureDescriptorCount;
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.AccelerationStructureDescriptorCount;
 			poolCount++;
 		}
 
 		if (pDesc->DescriptorCount.SamplerDescriptorCount > 0)
 		{
-			poolSizes[poolCount].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-			poolSizes[poolCount].descriptorCount = pDesc->DescriptorCount.SamplerDescriptorCount;
+			poolSizes[poolCount].type				= VK_DESCRIPTOR_TYPE_SAMPLER;
+			poolSizes[poolCount].descriptorCount	= pDesc->DescriptorCount.SamplerDescriptorCount;
 			poolCount++;
 		}
 

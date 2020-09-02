@@ -9,6 +9,8 @@
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 
+#include "Math/MathUtilities.h"
+
 namespace LambdaEngine
 {
 	RayTracingPipelineStateVK::RayTracingPipelineStateVK(const GraphicsDeviceVK* pDevice)
@@ -23,10 +25,35 @@ namespace LambdaEngine
 			vkDestroyPipeline(m_pDevice->Device, m_Pipeline, nullptr);
 			m_Pipeline = VK_NULL_HANDLE;
 		}
+
+		m_RaygenBufferRegion	= {};
+		m_HitBufferRegion		= {};
+		m_MissBufferRegion		= {};
+		m_CallableBufferRegion	= {};
 	}
 
 	bool RayTracingPipelineStateVK::Init(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc)
 	{
+		VALIDATE(pDesc != nullptr);
+		
+		if (pDesc->pRaygenShader == nullptr)
+		{
+			LOG_ERROR("[RayTracingPipelineStateVK]: pRaygenShader cannot be nullptr!");
+			return false;
+		}
+
+		if (pDesc->ClosestHitShaderCount == 0)
+		{
+			LOG_ERROR("[RayTracingPipelineStateVK]: ClosestHitShaderCount cannot be zero!");
+			return false;
+		}
+
+		if (pDesc->MissShaderCount == 0)
+		{
+			LOG_ERROR("[RayTracingPipelineStateVK]: MissShaderCount cannot be zero!");
+			return false;
+		}
+
 		// Define shader stage create infos
 		TArray<VkPipelineShaderStageCreateInfo>			shaderStagesInfos;
 		TArray<VkSpecializationInfo>					shaderStagesSpecializationInfos;
@@ -110,19 +137,37 @@ namespace LambdaEngine
 			return false;
 		}
 
-		const uint32 shaderGroupHandleSize	= m_pDevice->RayTracingProperties.shaderGroupHandleSize;
-		const uint32 sbtSize				= shaderGroupHandleSize * static_cast<uint32>(shaderGroups.GetSize());
+		uint64 shaderGroupBaseAlignment = m_pDevice->RayTracingProperties.shaderGroupBaseAlignment;
+		uint64 shaderGroupHandleSize	= m_pDevice->RayTracingProperties.shaderGroupHandleSize;
+
+		VkDeviceSize raygenUnalignedOffset	= 0;
+		VkDeviceSize raygenAlignedOffset	= 0;
+		VkDeviceSize raygenSize				= shaderGroupHandleSize;
+		VkDeviceSize raygenStride			= shaderGroupHandleSize;
+
+		VkDeviceSize hitUnalignedOffset		= raygenUnalignedOffset + raygenSize;
+		VkDeviceSize hitAlignedOffset		= AlignUp(raygenAlignedOffset + raygenSize, shaderGroupBaseAlignment);
+		VkDeviceSize hitSize				= VkDeviceSize(pDesc->ClosestHitShaderCount) * VkDeviceSize(shaderGroupHandleSize);
+		VkDeviceSize hitStride				= shaderGroupHandleSize;
+
+		VkDeviceSize missUnalignedOffset	= hitUnalignedOffset + hitSize;
+		VkDeviceSize missAlignedOffset		= AlignUp(hitAlignedOffset + hitSize, shaderGroupBaseAlignment);
+		VkDeviceSize missSize				= VkDeviceSize(pDesc->MissShaderCount) * VkDeviceSize(shaderGroupHandleSize);
+		VkDeviceSize missStride				= shaderGroupHandleSize;
+		
+		uint32 shaderHandleStorageSize		= missUnalignedOffset + missSize;
+		uint32 sbtSize						= missAlignedOffset + missSize;
 
 		BufferDesc shaderHandleStorageDesc = {};
-		shaderHandleStorageDesc.DebugName	= "Shader Handle Storage";
-		shaderHandleStorageDesc.Flags		= BUFFER_FLAG_COPY_SRC;
-		shaderHandleStorageDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-		shaderHandleStorageDesc.SizeInBytes	= sbtSize;
+		shaderHandleStorageDesc.pName			= "Shader Handle Storage";
+		shaderHandleStorageDesc.Flags			= BUFFER_FLAG_COPY_SRC;
+		shaderHandleStorageDesc.MemoryType		= EMemoryType::MEMORY_CPU_VISIBLE;
+		shaderHandleStorageDesc.SizeInBytes		= shaderHandleStorageSize;
 
 		m_ShaderHandleStorageBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&shaderHandleStorageDesc, nullptr));
 
 		void* pMapped = m_ShaderHandleStorageBuffer->Map();
-		result = m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, static_cast<uint32>(shaderGroups.GetSize()), sbtSize, pMapped);
+		result = m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, static_cast<uint32>(shaderGroups.GetSize()), shaderHandleStorageSize, pMapped);
 		if (result!= VK_SUCCESS)
 		{
 			if (!pDesc->DebugName.empty())
@@ -158,21 +203,29 @@ namespace LambdaEngine
 		pCommandAllocator->Reset();
 
 		pCommandList->Begin(nullptr);
-		pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), 0, m_ShaderBindingTable.Get(), 0, sbtSize);
+		pCommandList->CopyBuffer(m_pShaderHandleStorageBuffer, raygenUnalignedOffset, m_pSBT, raygenAlignedOffset,	raygenSize);
+		pCommandList->CopyBuffer(m_pShaderHandleStorageBuffer, hitUnalignedOffset,	m_pSBT, hitAlignedOffset,		hitSize);
+		pCommandList->CopyBuffer(m_pShaderHandleStorageBuffer, missUnalignedOffset,	m_pSBT, missAlignedOffset,		missSize);
 		pCommandList->End();
 
 		pCommandQueue->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN , nullptr, 0, nullptr, 0);
 
-		m_BindingStride						= shaderGroupHandleSize;
-		
-		m_BindingOffsetRaygenShaderGroup	= 0;
-		m_BindingSizeRaygenShaderGroup		= m_BindingStride;
-		
-		m_BindingOffsetHitShaderGroup		= m_BindingOffsetRaygenShaderGroup + m_BindingSizeRaygenShaderGroup;
-		m_BindingSizeHitShaderGroup			= m_BindingStride * static_cast<uint32>(pDesc->ClosestHitShaders.GetSize());
-		
-		m_BindingOffsetMissShaderGroup		= m_BindingOffsetHitShaderGroup + m_BindingSizeHitShaderGroup;
-		m_BindingSizeMissShaderGroup		= m_BindingStride * static_cast<uint32>(pDesc->MissShaders.GetSize());
+		VkBuffer sbtBuffer				= m_pSBT->GetBuffer();
+
+		m_RaygenBufferRegion.buffer		= sbtBuffer;
+		m_RaygenBufferRegion.offset		= raygenAlignedOffset;
+		m_RaygenBufferRegion.size		= raygenSize;
+		m_RaygenBufferRegion.stride		= raygenStride;
+
+		m_HitBufferRegion.buffer		= sbtBuffer;
+		m_HitBufferRegion.offset		= hitAlignedOffset;
+		m_HitBufferRegion.size			= hitSize;
+		m_HitBufferRegion.stride		= hitStride;
+
+		m_MissBufferRegion.buffer		= sbtBuffer;
+		m_MissBufferRegion.offset		= missAlignedOffset;
+		m_MissBufferRegion.size			= missSize;
+		m_MissBufferRegion.stride		= missStride;
 
 		SetName(pDesc->DebugName);
 		if (!pDesc->DebugName.empty())
