@@ -60,7 +60,7 @@ namespace LambdaEngine
 		return headerSize + bufferSize;
 	}
 
-	bool PacketTranscoder::DecodePackets(const char* buffer, uint16 bufferSize, PacketPool* pPacketPool, std::vector<NetworkPacket*>& packetsDecoded, Header* pHeader)
+	bool PacketTranscoder::DecodePackets(const char* buffer, uint16 bufferSize, PacketPool* pPacketPool, TArray<NetworkPacket*>& packetsDecoded, Header* pHeader)
 	{
 		uint16 offset = sizeof(Header);
 

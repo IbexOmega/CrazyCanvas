@@ -123,13 +123,13 @@ namespace LambdaEngine
 		struct MappedMaterial
 		{
 			uint32 MaterialIndex = 0;  //Index to Scene::m_Materials
-			std::vector<uint32> InstanceIndices;  //Indices to Scene::m_Instances
+			TArray<uint32> InstanceIndices;  //Indices to Scene::m_Instances
 		};
 
 		struct MappedMesh
 		{
 			std::map<GUID_Lambda, uint32>	GUIDToMappedMaterials; //Mapping from GUID to Indices for MappedMesh::MappedMaterials
-			std::vector<MappedMaterial>		MappedMaterials;
+			TArray<MappedMaterial>			MappedMaterials;
 			uint64							AccelerationStructureHandle;
 		};
 		
@@ -162,17 +162,17 @@ namespace LambdaEngine
 
 		FORCEINLINE Buffer*						GetLightsBuffer()				{ return m_pLightsBuffer; }
 		FORCEINLINE Buffer*						GetPerFrameBuffer()				{ return m_pPerFrameBuffer; }
-		FORCEINLINE Texture**						GetAlbedoMaps()					{ return m_SceneAlbedoMaps.data(); }
-		FORCEINLINE Texture**						GetNormalMaps()					{ return m_SceneNormalMaps.data(); }
-		FORCEINLINE Texture**						GetAmbientOcclusionMaps()		{ return m_SceneAmbientOcclusionMaps.data(); }
-		FORCEINLINE Texture**						GetMetallicMaps()				{ return m_SceneMetallicMaps.data(); }
-		FORCEINLINE Texture**						GetRoughnessMaps()				{ return m_SceneRoughnessMaps.data(); }
+		FORCEINLINE Texture**					GetAlbedoMaps()					{ return m_SceneAlbedoMaps.GetData(); }
+		FORCEINLINE Texture**					GetNormalMaps()					{ return m_SceneNormalMaps.GetData(); }
+		FORCEINLINE Texture**					GetAmbientOcclusionMaps()		{ return m_SceneAmbientOcclusionMaps.GetData(); }
+		FORCEINLINE Texture**					GetMetallicMaps()				{ return m_SceneMetallicMaps.GetData(); }
+		FORCEINLINE Texture**					GetRoughnessMaps()				{ return m_SceneRoughnessMaps.GetData(); }
 
-		FORCEINLINE TextureView**					GetAlbedoMapViews()				{ return m_SceneAlbedoMapViews.data(); }
-		FORCEINLINE TextureView**					GetNormalMapViews()				{ return m_SceneNormalMapViews.data(); }
-		FORCEINLINE TextureView**					GetAmbientOcclusionMapViews()	{ return m_SceneAmbientOcclusionMapViews.data(); }
-		FORCEINLINE TextureView**					GetMetallicMapViews()			{ return m_SceneMetallicMapViews.data(); }
-		FORCEINLINE TextureView**					GetRoughnessMapViews()			{ return m_SceneRoughnessMapViews.data(); }
+		FORCEINLINE TextureView**				GetAlbedoMapViews()				{ return m_SceneAlbedoMapViews.GetData(); }
+		FORCEINLINE TextureView**				GetNormalMapViews()				{ return m_SceneNormalMapViews.GetData(); }
+		FORCEINLINE TextureView**				GetAmbientOcclusionMapViews()	{ return m_SceneAmbientOcclusionMapViews.GetData(); }
+		FORCEINLINE TextureView**				GetMetallicMapViews()			{ return m_SceneMetallicMapViews.GetData(); }
+		FORCEINLINE TextureView**				GetRoughnessMapViews()			{ return m_SceneRoughnessMapViews.GetData(); }
 
 		FORCEINLINE Buffer*						GetMaterialProperties()			{ return m_pSceneMaterialProperties; }	
 		FORCEINLINE Buffer*						GetVertexBuffer()				{ return m_pSceneVertexBuffer; }		
@@ -217,7 +217,7 @@ namespace LambdaEngine
 		Fence*										m_pASFence								= nullptr;
 
 		std::map<uint32, uint32>					m_MaterialIndexToIndirectArgOffsetMap;
-		std::vector<IndexedIndirectMeshArgument>	m_IndirectArgs;
+		TArray<IndexedIndirectMeshArgument>		m_IndirectArgs;
 
 		Buffer*									m_pLightsCopyBuffer						= nullptr;
 		Buffer*									m_pPerFrameCopyBuffer					= nullptr;
@@ -232,24 +232,24 @@ namespace LambdaEngine
 
 		int32										m_AreaLightIndexToInstanceIndex[MAX_NUM_AREA_LIGHTS];
 		LightSetup									m_LightsLightSetup;
-		Buffer*									m_pLightsBuffer							= nullptr;
+		Buffer*										m_pLightsBuffer							= nullptr;
 
 		PerFrameBuffer								m_PerFrameData;
-		Buffer*									m_pPerFrameBuffer						= nullptr;
+		Buffer*										m_pPerFrameBuffer						= nullptr;
 
-		std::vector<Texture*>						m_SceneAlbedoMaps;
-		std::vector<Texture*>						m_SceneNormalMaps;
-		std::vector<Texture*>						m_SceneAmbientOcclusionMaps;
-		std::vector<Texture*>						m_SceneMetallicMaps;
-		std::vector<Texture*>						m_SceneRoughnessMaps;
+		TArray<Texture*>						m_SceneAlbedoMaps;
+		TArray<Texture*>						m_SceneNormalMaps;
+		TArray<Texture*>						m_SceneAmbientOcclusionMaps;
+		TArray<Texture*>						m_SceneMetallicMaps;
+		TArray<Texture*>						m_SceneRoughnessMaps;
 
-		std::vector<TextureView*>					m_SceneAlbedoMapViews;
-		std::vector<TextureView*>					m_SceneNormalMapViews;
-		std::vector<TextureView*>					m_SceneAmbientOcclusionMapViews;
-		std::vector<TextureView*>					m_SceneMetallicMapViews;
-		std::vector<TextureView*>					m_SceneRoughnessMapViews;
+		TArray<TextureView*>					m_SceneAlbedoMapViews;
+		TArray<TextureView*>					m_SceneNormalMapViews;
+		TArray<TextureView*>					m_SceneAmbientOcclusionMapViews;
+		TArray<TextureView*>					m_SceneMetallicMapViews;
+		TArray<TextureView*>					m_SceneRoughnessMapViews;
 			
-		std::vector<MaterialProperties>				m_SceneMaterialProperties;
+		TArray<MaterialProperties>				m_SceneMaterialProperties;
 		
 		Buffer*									m_pSceneMaterialProperties		= nullptr;		//Indexed with result from IndirectMeshArgument::MaterialIndex, contains Scene Material Properties
 		Buffer*									m_pSceneVertexBuffer			= nullptr;		//Indexed with result from Scene::m_pBaseVertexIndexBuffer + Scene::m_pSceneIndexBuffer and contains Scene Vertices
@@ -265,25 +265,25 @@ namespace LambdaEngine
 																										IndexedIndirectMeshArgument::MaterialIndex		will be used as MaterialIndex to MaterialBuffers,
 																										IndexedIndirectMeshArgument::BaseInstanceIndex will be used as BaseIndex to m_pSceneInstanceBuffer*/
 
-		std::map<GUID_Lambda, uint32>				m_GUIDToMappedMeshes;
-		std::vector<MappedMesh>						m_MappedMeshes;
-		std::vector<const Mesh*>					m_Meshes;
-		std::vector<Vertex>							m_SceneVertexArray;
-		std::vector<uint32>							m_SceneIndexArray;
+		std::map<GUID_Lambda, uint32>			m_GUIDToMappedMeshes;
+		TArray<MappedMesh>						m_MappedMeshes;
+		TArray<const Mesh*>						m_Meshes;
+		TArray<Vertex>							m_SceneVertexArray;
+		TArray<uint32>							m_SceneIndexArray;
 
 		std::map<GUID_Lambda, uint32>				m_GUIDToMaterials;
-		std::vector<const Material*>				m_Materials;
+		TArray<const Material*>						m_Materials;
 
-		std::vector<InstancePrimary>				m_PrimaryInstances;
-		std::vector<InstanceSecondary>				m_SecondaryInstances;
-		std::vector<InstancePrimary>				m_SortedPrimaryInstances;
-		std::vector<InstanceSecondary>				m_SortedSecondaryInstances;
-		std::vector<uint32>							m_InstanceIndexToSortedInstanceIndex;
+		TArray<InstancePrimary>						m_PrimaryInstances;
+		TArray<InstanceSecondary>					m_SecondaryInstances;
+		TArray<InstancePrimary>						m_SortedPrimaryInstances;
+		TArray<InstanceSecondary>					m_SortedSecondaryInstances;
+		TArray<uint32>								m_InstanceIndexToSortedInstanceIndex;
 		TSet<uint32>								m_DirtySecondaryInstances;
 
 		bool										m_RayTracingEnabled			= false;
 		AccelerationStructure*						m_pTLAS						= nullptr;
-		std::vector<AccelerationStructure*>			m_BLASs;
+		TArray<AccelerationStructure*>				m_BLASs;
 
 		bool										m_LightSetupIsDirty					= false;
 		bool										m_InstanceBuffersAreDirty			= false;

@@ -119,7 +119,7 @@ namespace LambdaEngine
 		void				CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32_t& numOfOptionalExtensionsSupported);
 		QueueFamilyIndices	FindQueueFamilies(VkPhysicalDevice physicalDevice);
 		
-		uint32	GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const std::vector<VkQueueFamilyProperties>& queueFamilies);
+		uint32	GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const TArray<VkQueueFamilyProperties>& queueFamilies);
 		void	SetEnabledDeviceExtensions();
 
 		void RegisterInstanceExtensionData();

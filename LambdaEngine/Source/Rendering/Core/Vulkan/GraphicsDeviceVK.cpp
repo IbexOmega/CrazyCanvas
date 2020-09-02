@@ -649,8 +649,8 @@ namespace LambdaEngine
 		copyDescriptorSet.srcArrayElement    = 0;
 		copyDescriptorSet.dstArrayElement    = 0;
 
-		std::vector<VkCopyDescriptorSet> descriptorSetCopies;
-		descriptorSetCopies.reserve(bindingCount);
+		TArray<VkCopyDescriptorSet> descriptorSetCopies;
+		descriptorSetCopies.Reserve(bindingCount);
 		for (uint32 i = 0; i < bindingCount; i++)
 		{
 			DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
@@ -659,10 +659,10 @@ namespace LambdaEngine
 			copyDescriptorSet.srcBinding        = binding.Binding;
 			copyDescriptorSet.dstBinding        = copyDescriptorSet.srcBinding;
 			
-			descriptorSetCopies.push_back(copyDescriptorSet);
+			descriptorSetCopies.PushBack(copyDescriptorSet);
 		}
 
-		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
+		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.GetSize()), descriptorSetCopies.GetData());
 	}
 
 	void GraphicsDeviceVK::CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount) const
@@ -678,18 +678,18 @@ namespace LambdaEngine
 		copyDescriptorSet.srcArrayElement    = 0;
 		copyDescriptorSet.dstArrayElement    = 0;
 
-		std::vector<VkCopyDescriptorSet> descriptorSetCopies;
-		descriptorSetCopies.reserve(copyBindingCount);
+		TArray<VkCopyDescriptorSet> descriptorSetCopies;
+		descriptorSetCopies.Reserve(copyBindingCount);
 		for (uint32 i = 0; i < copyBindingCount; i++)
 		{
 			copyDescriptorSet.descriptorCount    = pCopyBindings[i].DescriptorCount;
 			copyDescriptorSet.dstBinding        = pCopyBindings[i].DstBinding;
 			copyDescriptorSet.srcBinding        = pCopyBindings[i].SrcBinding;
 
-			descriptorSetCopies.push_back(copyDescriptorSet);
+			descriptorSetCopies.PushBack(copyDescriptorSet);
 		}
 		
-		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
+		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.GetSize()), descriptorSetCopies.GetData());
 	}
 
 	/*
@@ -907,8 +907,8 @@ namespace LambdaEngine
 			return false;
 		}
 
-		std::vector<VkPhysicalDevice> physicalDevices(deviceCount);
-		vkEnumeratePhysicalDevices(Instance, &deviceCount, physicalDevices.data());
+		TArray<VkPhysicalDevice> physicalDevices(deviceCount);
+		vkEnumeratePhysicalDevices(Instance, &deviceCount, physicalDevices.GetData());
 
 		std::multimap<int32, VkPhysicalDevice> physicalDeviceCandidates;
 		for (VkPhysicalDevice physicalDevice : physicalDevices)
@@ -949,7 +949,7 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::InitLogicalDevice(const GraphicsDeviceDesc* pDesc)
 	{
-		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+		TArray<VkDeviceQueueCreateInfo> queueCreateInfos;
 		std::set<int32> uniqueQueueFamilies =
 		{
 			m_DeviceQueueFamilyIndices.GraphicsFamily,
@@ -965,7 +965,7 @@ namespace LambdaEngine
 			queueCreateInfo.queueFamilyIndex    = uint32(queueFamily);
 			queueCreateInfo.queueCount          = 1;
 			queueCreateInfo.pQueuePriorities    = &queuePriority;
-			queueCreateInfos.push_back(queueCreateInfo);
+			queueCreateInfos.PushBack(queueCreateInfo);
 		}
 
 		VkPhysicalDeviceRayTracingFeaturesKHR	supportedRayTracingFeatures		= {};
@@ -1025,8 +1025,8 @@ namespace LambdaEngine
 		createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		createInfo.pNext					= &enabledDeviceFeatures2;
 		createInfo.flags					= 0;
-		createInfo.queueCreateInfoCount		= (uint32)queueCreateInfos.size();
-		createInfo.pQueueCreateInfos		= queueCreateInfos.data();
+		createInfo.queueCreateInfoCount		= (uint32)queueCreateInfos.GetSize();
+		createInfo.pQueueCreateInfos		= queueCreateInfos.GetData();
 		createInfo.enabledExtensionCount    = (uint32)m_EnabledDeviceExtensions.GetSize();
 		createInfo.ppEnabledExtensionNames  = m_EnabledDeviceExtensions.GetData();
 
@@ -1058,11 +1058,11 @@ namespace LambdaEngine
 		uint32_t layerCount = 0;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
-		std::vector<VkLayerProperties> availableValidationLayers(layerCount);
-		vkEnumerateInstanceLayerProperties(&layerCount, availableValidationLayers.data());
+		TArray<VkLayerProperties> availableValidationLayers(layerCount);
+		vkEnumerateInstanceLayerProperties(&layerCount, availableValidationLayers.GetData());
 
-		std::vector<ValidationLayer> requiredValidationLayers(REQUIRED_VALIDATION_LAYERS + 1, REQUIRED_VALIDATION_LAYERS + sizeof(REQUIRED_VALIDATION_LAYERS) / sizeof(ValidationLayer));
-		std::vector<ValidationLayer> optionalValidationLayers(OPTIONAL_VALIDATION_LAYERS + 1, OPTIONAL_VALIDATION_LAYERS + sizeof(OPTIONAL_VALIDATION_LAYERS) / sizeof(ValidationLayer));
+		TArray<ValidationLayer> requiredValidationLayers(REQUIRED_VALIDATION_LAYERS + 1, REQUIRED_VALIDATION_LAYERS + sizeof(REQUIRED_VALIDATION_LAYERS) / sizeof(ValidationLayer));
+		TArray<ValidationLayer> optionalValidationLayers(OPTIONAL_VALIDATION_LAYERS + 1, OPTIONAL_VALIDATION_LAYERS + sizeof(OPTIONAL_VALIDATION_LAYERS) / sizeof(ValidationLayer));
 
 		for (const VkLayerProperties& availableValidationLayerProperties : availableValidationLayers)
 		{
@@ -1072,7 +1072,7 @@ namespace LambdaEngine
 				if (availableValidationLayerHash == requiredValidationLayer->Hash)
 				{
 					m_EnabledValidationLayers.PushBack(requiredValidationLayer->Name);
-					requiredValidationLayers.erase(requiredValidationLayer);
+					requiredValidationLayers.Erase(requiredValidationLayer);
 					break;
 				}
 			}
@@ -1082,13 +1082,13 @@ namespace LambdaEngine
 				if (availableValidationLayerHash == optionalValidationLayer->Hash)
 				{
 					m_EnabledValidationLayers.PushBack(optionalValidationLayer->Name);
-					optionalValidationLayers.erase(optionalValidationLayer);
+					optionalValidationLayers.Erase(optionalValidationLayer);
 					break;
 				}
 			}
 		}
 
-		if (requiredValidationLayers.size() > 0)
+		if (requiredValidationLayers.GetSize() > 0)
 		{
 			for (const ValidationLayer& requiredValidationLayer : requiredValidationLayers)
 			{
@@ -1098,7 +1098,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (optionalValidationLayers.size() > 0)
+		if (optionalValidationLayers.GetSize() > 0)
 		{
 			for (const ValidationLayer& optionalValidationLayer : optionalValidationLayers)
 			{
@@ -1114,11 +1114,11 @@ namespace LambdaEngine
 		uint32_t extensionCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
-		std::vector<VkExtensionProperties> availableInstanceExtensions(extensionCount);
-		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableInstanceExtensions.data());
+		TArray<VkExtensionProperties> availableInstanceExtensions(extensionCount);
+		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableInstanceExtensions.GetData());
 
-		std::vector<Extension> requiredInstanceExtensions(REQUIRED_INSTANCE_EXTENSIONS + 1, REQUIRED_INSTANCE_EXTENSIONS + sizeof(REQUIRED_INSTANCE_EXTENSIONS) / sizeof(Extension));
-		std::vector<Extension> optionalInstanceExtensions(OPTIONAL_INSTANCE_EXTENSIONS + 1, OPTIONAL_INSTANCE_EXTENSIONS + sizeof(OPTIONAL_INSTANCE_EXTENSIONS) / sizeof(Extension));
+		TArray<Extension> requiredInstanceExtensions(REQUIRED_INSTANCE_EXTENSIONS + 1, REQUIRED_INSTANCE_EXTENSIONS + sizeof(REQUIRED_INSTANCE_EXTENSIONS) / sizeof(Extension));
+		TArray<Extension> optionalInstanceExtensions(OPTIONAL_INSTANCE_EXTENSIONS + 1, OPTIONAL_INSTANCE_EXTENSIONS + sizeof(OPTIONAL_INSTANCE_EXTENSIONS) / sizeof(Extension));
 
 		for (const VkExtensionProperties& extension : availableInstanceExtensions)
 		{
@@ -1128,7 +1128,7 @@ namespace LambdaEngine
 				if (requiredInstanceExtension->Hash == availableInstanceExtensionHash)
 				{
 					m_EnabledInstanceExtensions.PushBack(requiredInstanceExtension->Name);
-					requiredInstanceExtensions.erase(requiredInstanceExtension);
+					requiredInstanceExtensions.Erase(requiredInstanceExtension);
 					break;
 				}
 			}
@@ -1138,13 +1138,13 @@ namespace LambdaEngine
 				if (optionalInstanceExtension->Hash == availableInstanceExtensionHash)
 				{
 					m_EnabledInstanceExtensions.PushBack(optionalInstanceExtension->Name);
-					optionalInstanceExtensions.erase(optionalInstanceExtension);
+					optionalInstanceExtensions.Erase(optionalInstanceExtension);
 					break;
 				}
 			}
 		}
 
-		if (requiredInstanceExtensions.size() > 0)
+		if (requiredInstanceExtensions.GetSize() > 0)
 		{
 			for (const Extension& requiredInstanceExtension : requiredInstanceExtensions)
 			{
@@ -1154,7 +1154,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (optionalInstanceExtensions.size() > 0)
+		if (optionalInstanceExtensions.GetSize() > 0)
 		{
 			for (const Extension& optionalInstanceExtension : optionalInstanceExtensions)
 			{
@@ -1213,11 +1213,11 @@ namespace LambdaEngine
 		uint32_t extensionCount = 0;
 		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
 
-		std::vector<VkExtensionProperties> availableDeviceExtensions(extensionCount);
-		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableDeviceExtensions.data());
+		TArray<VkExtensionProperties> availableDeviceExtensions(extensionCount);
+		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableDeviceExtensions.GetData());
 
-		std::vector<Extension> requiredDeviceExtensions(REQUIRED_DEVICE_EXTENSIONS + 1, REQUIRED_DEVICE_EXTENSIONS + sizeof(REQUIRED_DEVICE_EXTENSIONS) / sizeof(Extension));
-		std::vector<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS + 1, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
+		TArray<Extension> requiredDeviceExtensions(REQUIRED_DEVICE_EXTENSIONS + 1, REQUIRED_DEVICE_EXTENSIONS + sizeof(REQUIRED_DEVICE_EXTENSIONS) / sizeof(Extension));
+		TArray<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS + 1, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
 
 		for (const VkExtensionProperties& extension : availableDeviceExtensions)
 		{
@@ -1226,7 +1226,7 @@ namespace LambdaEngine
 			{
 				if (requiredDeviceExtension->Hash == availableDeviceExtensionHash)
 				{
-					requiredDeviceExtensions.erase(requiredDeviceExtension);
+					requiredDeviceExtensions.Erase(requiredDeviceExtension);
 					break;
 				}
 			}
@@ -1235,14 +1235,14 @@ namespace LambdaEngine
 			{
 				if (optionalDeviceExtension->Hash == availableDeviceExtensionHash)
 				{
-					optionalDeviceExtensions.erase(optionalDeviceExtension);
+					optionalDeviceExtensions.Erase(optionalDeviceExtension);
 					break;
 				}
 			}
 		}
 
-		requiredExtensionsSupported			= requiredDeviceExtensions.empty();
-		numOfOptionalExtensionsSupported	= ARR_SIZE(OPTIONAL_DEVICE_EXTENSIONS) - (uint32)optionalDeviceExtensions.size();
+		requiredExtensionsSupported			= requiredDeviceExtensions.IsEmpty();
+		numOfOptionalExtensionsSupported	= ARR_SIZE(OPTIONAL_DEVICE_EXTENSIONS) - (uint32)optionalDeviceExtensions.GetSize();
 	}
 
 	QueueFamilyIndices GraphicsDeviceVK::FindQueueFamilies(VkPhysicalDevice physicalDevice)
@@ -1252,8 +1252,8 @@ namespace LambdaEngine
 		uint32_t queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
-		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+		TArray<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.GetData());
 
 		indices.GraphicsFamily  = GetQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT, queueFamilies);
 		indices.ComputeFamily   = GetQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT, queueFamilies);
@@ -1262,11 +1262,11 @@ namespace LambdaEngine
 		return indices;
 	}
 
-	uint32 GraphicsDeviceVK::GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const std::vector<VkQueueFamilyProperties>& queueFamilies)
+	uint32 GraphicsDeviceVK::GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const TArray<VkQueueFamilyProperties>& queueFamilies)
 	{
 		if (queueFlags & VK_QUEUE_COMPUTE_BIT)
 		{
-			for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++)
+			for (uint32_t i = 0; i < uint32_t(queueFamilies.GetSize()); i++)
 			{
 				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
 				{
@@ -1277,7 +1277,7 @@ namespace LambdaEngine
 
 		if (queueFlags & VK_QUEUE_TRANSFER_BIT)
 		{
-			for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++)
+			for (uint32_t i = 0; i < uint32_t(queueFamilies.GetSize()); i++)
 			{
 				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
 				{
@@ -1286,7 +1286,7 @@ namespace LambdaEngine
 			}
 		}
 
-		for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++)
+		for (uint32_t i = 0; i < uint32_t(queueFamilies.GetSize()); i++)
 		{
 			if (queueFamilies[i].queueFlags & queueFlags)
 			{
@@ -1308,10 +1308,10 @@ namespace LambdaEngine
 		uint32_t extensionCount = 0;
 		vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &extensionCount, nullptr);
 
-		std::vector<VkExtensionProperties> availableDeviceExtensions(extensionCount);
-		vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &extensionCount, availableDeviceExtensions.data());
+		TArray<VkExtensionProperties> availableDeviceExtensions(extensionCount);
+		vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &extensionCount, availableDeviceExtensions.GetData());
 
-		std::vector<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS + 1, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
+		TArray<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS + 1, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
 		for (const VkExtensionProperties& extension : availableDeviceExtensions)
 		{
 			uint32 availableDeviceExtensionHash = HashString<const char*>(extension.extensionName);
@@ -1320,13 +1320,13 @@ namespace LambdaEngine
 				if (optionalDeviceExtension->Hash == availableDeviceExtensionHash)
 				{
 					m_EnabledDeviceExtensions.EmplaceBack(optionalDeviceExtension->Name);
-					optionalDeviceExtensions.erase(optionalDeviceExtension);
+					optionalDeviceExtensions.Erase(optionalDeviceExtension);
 					break;
 				}
 			}
 		}
 
-		if (optionalDeviceExtensions.size() > 0)
+		if (optionalDeviceExtensions.GetSize() > 0)
 		{
 			for (const Extension& optionalDeviceExtension : optionalDeviceExtensions)
 			{

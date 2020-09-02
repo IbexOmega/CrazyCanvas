@@ -56,7 +56,7 @@ namespace LambdaEngine
 		*	result - A vector where all loaded GameObject(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const String& filename, std::vector<GameObject>& result);
+		static bool LoadSceneFromFile(const String& filename, TArray<GameObject>& result);
 
 		/*
 		* Load a mesh from file
@@ -137,18 +137,18 @@ namespace LambdaEngine
 
 		static void ReloadAllShaders();
 
-		static GUID_Lambda								GetMeshGUID(const String& name);
-		static GUID_Lambda								GetMaterialGUID(const String& name);
-		static GUID_Lambda								GetTextureGUID(const String& name);
-		static GUID_Lambda								GetShaderGUID(const String& name);
-		static GUID_Lambda								GetSoundEffectGUID(const String& name);
+		static GUID_Lambda					GetMeshGUID(const String& name);
+		static GUID_Lambda					GetMaterialGUID(const String& name);
+		static GUID_Lambda					GetTextureGUID(const String& name);
+		static GUID_Lambda					GetShaderGUID(const String& name);
+		static GUID_Lambda					GetSoundEffectGUID(const String& name);
 
-		static Mesh*									GetMesh(GUID_Lambda guid);
-		static Material*								GetMaterial(GUID_Lambda guid);
-		static Texture*								GetTexture(GUID_Lambda guid);
-		static TextureView*							GetTextureView(GUID_Lambda guid);
-		static Shader*									GetShader(GUID_Lambda guid);
-		static ISoundEffect3D*							GetSoundEffect(GUID_Lambda guid);
+		static Mesh*						GetMesh(GUID_Lambda guid);
+		static Material*					GetMaterial(GUID_Lambda guid);
+		static Texture*						GetTexture(GUID_Lambda guid);
+		static TextureView*					GetTextureView(GUID_Lambda guid);
+		static Shader*						GetShader(GUID_Lambda guid);
+		static ISoundEffect3D*				GetSoundEffect(GUID_Lambda guid);
 
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>&				GetMeshNamesMap()			{ return s_MaterialNamesToGUIDs; }
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>&				GetMaterialNamesMap()		{ return s_MaterialNamesToGUIDs; }

@@ -29,7 +29,7 @@ namespace LambdaEngine
 		DECL_STATIC_CLASS(PacketTranscoder);
 
 		static bool EncodePackets(char* buffer, uint16 bufferSize, PacketPool* pPacketPool, std::queue<NetworkPacket*>& packetsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader);
-		static bool DecodePackets(const char* buffer, uint16 bufferSize, PacketPool* pPacketPool, std::vector<NetworkPacket*>& packetsDecoded, Header* pHeader);
+		static bool DecodePackets(const char* buffer, uint16 bufferSize, PacketPool* pPacketPool, TArray<NetworkPacket*>& packetsDecoded, Header* pHeader);
 
 	private:
 		static uint16 WritePacket(char* buffer, NetworkPacket* pPacket);

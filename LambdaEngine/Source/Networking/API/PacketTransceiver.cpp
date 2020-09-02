@@ -76,7 +76,7 @@ namespace LambdaEngine
 		return m_BytesReceived > 0;
 	}
 
-	bool PacketTransceiver::ReceiveEnd(PacketPool* pPacketPool, std::vector<NetworkPacket*>& packets, std::vector<uint32>& newAcks, NetworkStatistics* pStatistics)
+	bool PacketTransceiver::ReceiveEnd(PacketPool* pPacketPool, TArray<NetworkPacket*>& packets, TArray<uint32>& newAcks, NetworkStatistics* pStatistics)
 	{
 		PacketTranscoder::Header header;
 		if (!PacketTranscoder::DecodePackets(m_pReceiveBuffer, (uint16)m_BytesReceived, pPacketPool, packets, &header))
@@ -88,7 +88,7 @@ namespace LambdaEngine
 		ProcessSequence(header.Sequence, pStatistics);
 		ProcessAcks(header.Ack, header.AckBits, pStatistics, newAcks);
 
-		pStatistics->RegisterPacketReceived((uint32)packets.size(), m_BytesReceived);
+		pStatistics->RegisterPacketReceived((uint32)packets.GetSize(), m_BytesReceived);
 
 		return true;
 	}
