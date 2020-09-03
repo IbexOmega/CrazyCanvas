@@ -1706,7 +1706,8 @@ bool Sandbox::InitRendererForDeferred()
 
 	if (SHOW_DEMO)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/DEMO.lrg";
+		//renderGraphFile = "../Assets/RenderGraphs/DEMO.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/SIMPLE_RASTERIZER_PBR.lrg";
 	}
 	else
 	{
@@ -1728,8 +1729,6 @@ bool Sandbox::InitRendererForDeferred()
 		}
 	}
 	
-	renderGraphFile = "../Assets/RenderGraphs/SIMPLE_RASTERIZER_PBR.lrg"; 
-
 	RenderGraphStructureDesc renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
 
 	RenderGraphDesc renderGraphDesc = {};
