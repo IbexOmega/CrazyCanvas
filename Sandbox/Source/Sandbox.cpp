@@ -837,7 +837,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 						dirLightChanged = true;
 					}
 
-					if (ImGui::SliderFloat("Dir. Light Strength", &m_DirectionalLightStrength[3], 0.0f, 10000.0f, "%.3f", 10.0f))
+					if (ImGui::SliderFloat("Dir. Light Strength", &m_DirectionalLightStrength[3], 0.0f, 10000.0f, "%.3f", ImGuiSliderFlags_Logarithmic))
 					{
 						dirLightChanged = true;
 					}
