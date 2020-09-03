@@ -1,0 +1,5 @@
+# Default line-ending
+* text=CRLF
+
+# Exclude vendored files from language statistics
+Dependencies/* linguist-vendored
