@@ -2,9 +2,12 @@
 
 #include "LambdaEngine.h"
 #include "Math/Math.h"
+#include "Time/API/Timestamp.h"
 
 namespace LambdaEngine
 {
+	class CommonApplication;
+
 	struct CameraData
 	{
 		glm::mat4 Projection		= glm::mat4(1.0f);
@@ -35,7 +38,7 @@ namespace LambdaEngine
 		Camera();
 		~Camera() = default;
 
-		void Init(const CameraDesc& desc);
+		void Init(CommonApplication* commonApplication, const CameraDesc& desc);
 
 		void SetDirection(const glm::vec3& direction);
 		void SetPosition(const glm::vec3& position);
@@ -45,6 +48,7 @@ namespace LambdaEngine
 		void Translate(const glm::vec3& translation);
 
 		void Update();
+		void HandleInput(Timestamp delta);
 
 		FORCEINLINE const CameraData& GetData()					const	{ return m_Data;			}
 		FORCEINLINE const glm::mat4& GetProjectionMat()			const	{ return m_Projection;		}
@@ -61,6 +65,7 @@ namespace LambdaEngine
 		void CalculateVectors();
 
 	private:
+		CommonApplication* m_CommonApplication;
 		CameraData m_Data;
 
 		glm::mat4 m_Projection;
