@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Ref.h"
+#include "Core/TSharedRef.h"
 
 #include "Rendering/Core/API/Texture.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"

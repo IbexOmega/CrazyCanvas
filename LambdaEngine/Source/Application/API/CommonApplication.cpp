@@ -7,7 +7,8 @@ namespace LambdaEngine
 	CommonApplication* CommonApplication::s_pCommonApplication = nullptr;
 
 	CommonApplication::CommonApplication()
-		: m_EventHandlers()
+		: EventHandler()
+		, m_EventHandlers()
 	{
 		VALIDATE(s_pCommonApplication == nullptr);
 		s_pCommonApplication = this;
@@ -23,7 +24,7 @@ namespace LambdaEngine
 
 	bool CommonApplication::Create()
 	{
-		// Create platform applciation
+		// Create platform application
 		m_pPlatformApplication = PlatformApplication::CreateApplication();
 		if (m_pPlatformApplication->Create())
 		{
@@ -58,9 +59,6 @@ namespace LambdaEngine
 		if (m_pPlatformApplication->SupportsRawInput())
 		{
 			//m_pPlatformApplication->SetInputMode(EInputMode::INPUT_MODE_RAW);
-		}
-		else
-		{
 		}
 
 		return true;

@@ -96,6 +96,7 @@ namespace LambdaEngine
 		String					DebugName		= "";
 		const RenderPass*		pRenderPass		= nullptr;
 		const PipelineLayout*	pPipelineLayout	= nullptr;
+		
 		// Pipeline
 		TArray<InputElementDesc>	InputLayout			= { };
 		InputAssemblyDesc			InputAssembly		= { };
@@ -105,14 +106,17 @@ namespace LambdaEngine
 		uint32						SampleMask			= 0;
 		uint32						SampleCount			= 1;
 		uint32						Subpass				= 0;
+		
 		// Mesh-Shader pipeline
 		ShaderModuleDesc MeshShader;
 		ShaderModuleDesc TaskShader;
+		
 		// Vertex-Shader pipeline
 		ShaderModuleDesc VertexShader;
 		ShaderModuleDesc HullShader;
 		ShaderModuleDesc DomainShader;
 		ShaderModuleDesc GeometryShader;
+		
 		// Common
 		ShaderModuleDesc PixelShader;
 	};

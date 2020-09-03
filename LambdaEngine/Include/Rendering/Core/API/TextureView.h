@@ -1,7 +1,7 @@
 #pragma once
 #include "Texture.h"
 
-#include "Core/Ref.h"
+#include "Core/TSharedRef.h"
 
 namespace LambdaEngine
 {

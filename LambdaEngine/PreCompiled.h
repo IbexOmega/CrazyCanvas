@@ -13,5 +13,5 @@
 #include "Math/MathUtilities.h"
 
 // Core
-#include "Core/Ref.h"
+#include "Core/TSharedRef.h"
 #include "Core/RefCountedObject.h"

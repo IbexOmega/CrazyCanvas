@@ -1,7 +1,7 @@
 #pragma once
 #include "LambdaEngine.h"
 
-#include "Core/Ref.h"
+#include "Core/TSharedRef.h"
 
 #include "Resources/ResourceManager.h"
 
@@ -45,7 +45,6 @@ namespace LambdaEngine
 		uint32						SampleMask			= 0;
 		uint32						SampleCount			= 1;
 		uint32						Subpass				= 0;
-		bool						DepthTestEnabled	= false;
 		// Mesh-Shader pipeline
 		ManagedShaderModule MeshShader;
 		ManagedShaderModule TaskShader;

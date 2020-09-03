@@ -10,7 +10,7 @@
 namespace LambdaEngine
 {
 	uint64													PipelineStateManager::s_CurrentPipelineIndex = 0;
-	THashTable<uint64, TSharedRef<PipelineState>>					PipelineStateManager::s_PipelineStates;
+	THashTable<uint64, TSharedRef<PipelineState>>			PipelineStateManager::s_PipelineStates;
 	THashTable<uint64, ManagedGraphicsPipelineStateDesc>	PipelineStateManager::s_GraphicsPipelineStateDescriptions;
 	THashTable<uint64, ManagedComputePipelineStateDesc>		PipelineStateManager::s_ComputePipelineStateDescriptions;
 	THashTable<uint64, ManagedRayTracingPipelineStateDesc>	PipelineStateManager::s_RayTracingPipelineStateDescriptions;

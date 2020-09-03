@@ -1281,7 +1281,7 @@ namespace LambdaEngine
 					ManagedGraphicsPipelineStateDesc pipelineDesc = {};
 					pipelineDesc.DebugName							= pRenderStageDesc->Name;
 					pipelineDesc.PipelineLayout						= pRenderStage->pPipelineLayout;
-					pipelineDesc.DepthTestEnabled					= pRenderStageDesc->Graphics.DepthTestEnabled;
+					pipelineDesc.DepthStencilState.DepthTestEnable	= pRenderStageDesc->Graphics.DepthTestEnabled;
 					pipelineDesc.TaskShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.TaskShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.TaskShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER,		EShaderLang::SHADER_LANG_GLSL);
 					pipelineDesc.MeshShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.MeshShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.MeshShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER,		EShaderLang::SHADER_LANG_GLSL);
 					pipelineDesc.VertexShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.VertexShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.VertexShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,		EShaderLang::SHADER_LANG_GLSL);
@@ -2047,7 +2047,6 @@ namespace LambdaEngine
 			clearColorCount++;
 		}
 		
-		
 		BeginRenderPassDesc beginRenderPassDesc = {};
 		beginRenderPassDesc.pRenderPass			= pRenderStage->pRenderPass;
 		beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
@@ -2084,7 +2083,6 @@ namespace LambdaEngine
 		pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
 
 		uint32 textureDescriptorSetBindingIndex = 0;
-
 		if (pRenderStage->ppBufferDescriptorSets != nullptr)
 		{
 			pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, 0);
@@ -2095,16 +2093,16 @@ namespace LambdaEngine
 		{
 			pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::INDEX_TYPE_UINT32);
 
-			Buffer* pDrawBuffer		= pRenderStage->pIndirectArgsBufferResource->Buffer.Buffers[0];
+			Buffer* pDrawBuffer			= pRenderStage->pIndirectArgsBufferResource->Buffer.Buffers[0];
 			uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
 			uint32 indirectArgStride	= sizeof(IndexedIndirectMeshArgument);
 
 			uint32 drawOffset = 0;
 			for (uint32 i = 0; i < pRenderStage->TextureSubDescriptorSetCount; i++)
 			{
-				uint32 newBaseMaterialIndex		= (i + 1) * pRenderStage->MaterialsRenderedPerPass;
-				uint32 newDrawOffset			= m_pScene->GetIndirectArgumentOffset(newBaseMaterialIndex);
-				uint32 drawCount				= newDrawOffset - drawOffset;
+				uint32 newBaseMaterialIndex	= (i + 1) * pRenderStage->MaterialsRenderedPerPass;
+				uint32 newDrawOffset		= m_pScene->GetIndirectArgumentOffset(newBaseMaterialIndex);
+				uint32 drawCount			= newDrawOffset - drawOffset;
 
 				if (pRenderStage->ppTextureDescriptorSets != nullptr)
 					pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex * pRenderStage->TextureSubDescriptorSetCount + i], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);

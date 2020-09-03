@@ -3,23 +3,26 @@
 
 namespace LambdaEngine
 {
+	/*
+	* TSharedRef
+	*/
 	template<typename TRefCountedObject>
 	class TSharedRef
 	{
 	public:
-		inline TSharedRef(TRefCountedObject* pRefObject = nullptr)
+		FORCEINLINE TSharedRef(TRefCountedObject* pRefObject = nullptr)
 			: m_pRefObject(pRefObject)
 		{
 		}
 
 		// No except since move should not throw
-		inline TSharedRef(TSharedRef&& other) noexcept
+		FORCEINLINE TSharedRef(TSharedRef&& other) noexcept
 			: m_pRefObject(other.m_pRefObject)
 		{
 			other.m_pRefObject = nullptr;
 		}
 
-		inline TSharedRef(const TSharedRef& other)
+		FORCEINLINE TSharedRef(const TSharedRef& other)
 			: m_pRefObject(other.m_pRefObject)
 		{
 			if (m_pRefObject)
@@ -28,17 +31,17 @@ namespace LambdaEngine
 			}
 		}
 
-		inline ~TSharedRef()
+		FORCEINLINE ~TSharedRef()
 		{
 			Reset();
 		}
 
-		inline void Reset()
+		FORCEINLINE void Reset()
 		{
 			SAFERELEASE(m_pRefObject);
 		}
 
-		inline void Assign(TRefCountedObject* pPtr)
+		FORCEINLINE void Assign(TRefCountedObject* pPtr)
 		{
 			if (m_pRefObject)
 			{
@@ -52,45 +55,45 @@ namespace LambdaEngine
 			}
 		}
 
-		inline TRefCountedObject** GetAddress()
+		FORCEINLINE TRefCountedObject** GetAddress()
 		{
 			return &m_pRefObject;
 		}
 
-		inline const TRefCountedObject* const * GetAddress() const
+		FORCEINLINE const TRefCountedObject* const * GetAddress() const
 		{
 			return &m_pRefObject;
 		}
 
-		inline TRefCountedObject* GetAndAddRef()
+		FORCEINLINE TRefCountedObject* GetAndAddRef()
 		{
 			m_pRefObject->AddRef();
 			return m_pRefObject;
 		}
 
-		inline TRefCountedObject* Get()
+		FORCEINLINE TRefCountedObject* Get()
 		{
 			return m_pRefObject;
 		}
 
-		inline const TRefCountedObject* Get() const
+		FORCEINLINE const TRefCountedObject* Get() const
 		{
 			return m_pRefObject;
 		}
 
 		template<typename CastType>
-		inline CastType* GetAs()
+		FORCEINLINE CastType* GetAs()
 		{
 			return reinterpret_cast<CastType*>(m_pRefObject);
 		}
 
 		template<typename CastType>
-		inline const CastType* GetAs() const
+		FORCEINLINE const CastType* GetAs() const
 		{
 			return reinterpret_cast<const CastType*>(m_pRefObject);
 		}
 
-		inline TSharedRef& operator=(TRefCountedObject* pPtr)
+		FORCEINLINE TSharedRef& operator=(TRefCountedObject* pPtr)
 		{
 			if (m_pRefObject != pPtr)
 			{
@@ -100,7 +103,7 @@ namespace LambdaEngine
 			return *this;
 		}
 
-		inline TSharedRef& operator=(TSharedRef&& other)
+		FORCEINLINE TSharedRef& operator=(TSharedRef&& other)
 		{
 			if (this != other)
 			{
@@ -116,7 +119,7 @@ namespace LambdaEngine
 			return *this;
 		}
 
-		inline TSharedRef& operator=(const TSharedRef& other)
+		FORCEINLINE TSharedRef& operator=(const TSharedRef& other)
 		{
 			if (this != &other)
 			{
@@ -126,52 +129,52 @@ namespace LambdaEngine
 			return *this;
 		}
 
-		inline bool operator==(const TSharedRef& other) const
+		FORCEINLINE bool operator==(const TSharedRef& other) const
 		{
 			return (m_pRefObject == other.m_pRefObject);
 		}
 
-		inline bool operator==(TRefCountedObject* pOther) const
+		FORCEINLINE bool operator==(TRefCountedObject* pOther) const
 		{
 			return (m_pRefObject == pOther);
 		}
 
-		inline bool operator==(std::nullptr_t null) const
+		FORCEINLINE bool operator==(std::nullptr_t null) const
 		{
 			return (m_pRefObject == null);
 		}
 
-		inline bool operator!=(const TSharedRef& other) const
+		FORCEINLINE bool operator!=(const TSharedRef& other) const
 		{
 			return (m_pRefObject != other.m_pRefObject);
 		}
 
-		inline bool operator!=(TRefCountedObject* pOther) const
+		FORCEINLINE bool operator!=(TRefCountedObject* pOther) const
 		{
 			return (m_pRefObject != pOther);
 		}
 
-		inline bool operator!=(std::nullptr_t null) const
+		FORCEINLINE bool operator!=(std::nullptr_t null) const
 		{
 			return (m_pRefObject != null);
 		}
 
-		inline TRefCountedObject* operator->()
+		FORCEINLINE TRefCountedObject* operator->()
 		{
 			return Get();
 		}
 
-		inline const TRefCountedObject* operator->() const
+		FORCEINLINE const TRefCountedObject* operator->() const
 		{
 			return Get();
 		}
 
-		inline TRefCountedObject** operator&()
+		FORCEINLINE TRefCountedObject** operator&()
 		{
 			return GetAddress();
 		}
 
-		inline operator bool() const
+		FORCEINLINE operator bool() const
 		{
 			return (m_pRefObject != nullptr);
 		}

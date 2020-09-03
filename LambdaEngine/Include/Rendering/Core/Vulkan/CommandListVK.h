@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Ref.h"
+#include "Core/TSharedRef.h"
 
 #include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/RenderPass.h"

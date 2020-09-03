@@ -2,7 +2,7 @@
 #include "Sampler.h"
 #include "GraphicsTypes.h"
 
-#include "Core/Ref.h"
+#include "Core/TSharedRef.h"
 
 #include "Containers/TArray.h"
 
