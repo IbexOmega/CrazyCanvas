@@ -199,7 +199,7 @@ void main()
 	s_RadiancePayload.Roughness			= roughness;
 	s_RadiancePayload.Distance			= 1.0f;
 
-	const int maxBounces 				= 2; //Includes the first "bounce" (more like surface interaction) on the camera
+	const int maxBounces 				= 3; //Includes the first "bounce" (more like surface interaction) on the camera
 	const int russianRouletteStart		= 3;
 	const int numSamplesPerBounce		= 9;
 	const int numSamplesPerFrame		= maxBounces * numSamplesPerBounce;
@@ -338,7 +338,7 @@ void main()
 
 	accumulation 	+= 1.0f;
 
-	imageStore(u_DirectRadiance, 	pixelCoords, vec4(L_o_Direct, 	1.0f));
-	imageStore(u_IndirectRadiance, 	pixelCoords, vec4(L_o_Indirect, 1.0f));
+	imageStore(u_DirectRadiance, 	pixelCoords, vec4(any(isnan(L_o_Direct))		?	vec3(0.0f) : L_o_Direct, 		1.0f));
+	imageStore(u_IndirectRadiance, 	pixelCoords, vec4(any(isnan(L_o_Indirect))		?	vec3(0.0f) : L_o_Indirect, 		1.0f));
 	imageStore(u_History, 		    pixelCoords, vec4(accumulation));
 }
