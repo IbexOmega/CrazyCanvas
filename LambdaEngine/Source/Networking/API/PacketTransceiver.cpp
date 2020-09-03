@@ -165,7 +165,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void PacketTransceiver::ProcessAcks(uint32 ack, uint32 ackBits, NetworkStatistics* pStatistics, std::vector<uint32>& newAcks)
+	void PacketTransceiver::ProcessAcks(uint32 ack, uint32 ackBits, NetworkStatistics* pStatistics, TArray<uint32>& newAcks)
 	{
 		uint32 lastReceivedAck = pStatistics->GetLastReceivedAckNr();
 		uint32 currentAckBits = pStatistics->GetReceivedAckBits();
@@ -204,12 +204,12 @@ namespace LambdaEngine
 		{
 			if (acks >> (sizeof(uint32) * 8 - 1) & 1)
 			{
-				newAcks.push_back(ack - i);
+				newAcks.PushBack(ack - i);
 			}
 			acks <<= 1;
 		}
 		
 		if (ack > lastReceivedAck)
-			newAcks.push_back(ack);
+			newAcks.PushBack(ack);
 	}
 }

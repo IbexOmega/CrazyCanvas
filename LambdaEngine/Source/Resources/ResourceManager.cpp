@@ -49,28 +49,28 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceManager::LoadSceneFromFile(const String& filename, std::vector<GameObject>& result)
+	bool ResourceManager::LoadSceneFromFile(const String& filename, TArray<GameObject>& result)
 	{
-		std::vector<GameObject> sceneLocalGameObjects;
-		std::vector<Mesh*> meshes;
-		std::vector<Material*> materials;
-		std::vector<Texture*> textures;
+		TArray<GameObject> sceneLocalGameObjects;
+		TArray<Mesh*> meshes;
+		TArray<Material*> materials;
+		TArray<Texture*> textures;
 
 		if (!ResourceLoader::LoadSceneFromFile(SCENE_DIR + filename, sceneLocalGameObjects, meshes, materials, textures))
 		{
 			return false;
 		}
 
-		result = std::vector<GameObject>(sceneLocalGameObjects.begin(), sceneLocalGameObjects.end());
+		result = TArray<GameObject>(sceneLocalGameObjects.begin(), sceneLocalGameObjects.end());
 
-		for (uint32 i = 0; i < textures.size(); i++)
+		for (uint32 i = 0; i < textures.GetSize(); i++)
 		{
 			Texture* pTexture = textures[i];
 
 			GUID_Lambda guid = RegisterLoadedTexture(pTexture);
 
 			//RegisterLoadedTexture will create a TextureView for the texture, this needs to be registered in the correct materials
-			for (uint32 j = 0; j < materials.size(); j++)
+			for (uint32 j = 0; j < materials.GetSize(); j++)
 			{
 				Material* pMaterial = materials[j];
 
@@ -91,11 +91,11 @@ namespace LambdaEngine
 			}
 		}
 
-		for (uint32 i = 0; i < meshes.size(); i++)
+		for (uint32 i = 0; i < meshes.GetSize(); i++)
 		{
 			GUID_Lambda guid = RegisterLoadedMesh("Scene Mesh " + std::to_string(i), meshes[i]);
 
-			for (uint32 g = 0; g < sceneLocalGameObjects.size(); g++)
+			for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
 			{
 				if (sceneLocalGameObjects[g].Mesh == i)
 				{
@@ -104,11 +104,11 @@ namespace LambdaEngine
 			}
 		}
 
-		for (uint32 i = 0; i < materials.size(); i++)
+		for (uint32 i = 0; i < materials.GetSize(); i++)
 		{
 			GUID_Lambda guid = RegisterLoadedMaterial("Scene Material " + std::to_string(i), materials[i]);
 
-			for (uint32 g = 0; g < sceneLocalGameObjects.size(); g++)
+			for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
 			{
 				if (sceneLocalGameObjects[g].Material == i)
 				{
@@ -117,14 +117,14 @@ namespace LambdaEngine
 			}
 		}
 
-		for (uint32 g = 0; g < sceneLocalGameObjects.size(); g++)
+		for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
 		{
-			if (sceneLocalGameObjects[g].Mesh >= meshes.size())
+			if (sceneLocalGameObjects[g].Mesh >= meshes.GetSize())
 			{
 				LOG_ERROR("[ResourceManager]: GameObject %u in Scene %s has no Mesh", g, filename.c_str());
 			}
 
-			if (sceneLocalGameObjects[g].Material >= materials.size())
+			if (sceneLocalGameObjects[g].Material >= materials.GetSize())
 			{
 				result[g].Material = GUID_MATERIAL_DEFAULT;
 				LOG_WARNING("[ResourceManager]: GameObject %u in Scene %s has no Material, default Material assigned", g, filename.c_str());

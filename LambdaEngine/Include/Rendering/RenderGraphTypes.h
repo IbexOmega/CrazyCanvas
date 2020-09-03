@@ -381,7 +381,9 @@ namespace LambdaEngine
 			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD;
 		}
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM)						return FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM;
+		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM;
+
+		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
 	FORCEINLINE FPipelineStageFlags FindEarliestPipelineStage(uint32 pipelineStageMask)
@@ -417,6 +419,8 @@ namespace LambdaEngine
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
 
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM)						return FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM;
+
+		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
 	FORCEINLINE FPipelineStageFlags FindLastPipelineStage(uint32 pipelineStageMask)
@@ -452,6 +456,8 @@ namespace LambdaEngine
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT;
 
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP;
+
+		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
 	FORCEINLINE FPipelineStageFlags FindLastPipelineStage(const RenderStageDesc* pRenderStageDesc)
@@ -482,16 +488,18 @@ namespace LambdaEngine
 	{
 		switch (bindingType)
 		{
-			case ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return true;
+			case ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE:		return true;
 			case ERenderGraphResourceBindingType::CONSTANT_BUFFER:				return true;
 			case ERenderGraphResourceBindingType::COMBINED_SAMPLER:				return true;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return true;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return false;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:		return true;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:		return false;
 			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return false;
-			case ERenderGraphResourceBindingType::ATTACHMENT:						return false;
+			case ERenderGraphResourceBindingType::ATTACHMENT:					return false;
 			case ERenderGraphResourceBindingType::PRESENT:						return true;
-			case ERenderGraphResourceBindingType::DRAW_RESOURCE:					return true;
+			case ERenderGraphResourceBindingType::DRAW_RESOURCE:				return true;
 		}
+
+		return false;
 	}
 
 	FORCEINLINE String RenderStageDrawTypeToString(ERenderStageDrawType drawType)

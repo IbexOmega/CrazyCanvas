@@ -4,6 +4,8 @@
 
 #include "Log/Log.h"
 
+#include "Containers/TSharedPtr.h"
+
 #include "Input/API/Input.h"
 
 #include "Resources/ResourceManager.h"
@@ -65,23 +67,17 @@ enum class EScene
 };
 
 Sandbox::Sandbox()
-    : Game()
+	: Game()
 {
 	using namespace LambdaEngine;
 
 	CommonApplication::Get()->AddEventHandler(this);
 
-	const uint32 size = 128;
-	byte* pMem = DBG_NEW byte[size];
-	
-	for (uint32 i = 0; i < size; i++)
-	{
-		pMem[i] = 'a';
-	}
-	
-	SAFEDELETE_ARRAY(pMem);
+	TArray<int> ints = { 5, 6, 7, 8, 9 };
+	TSharedPtr<int> pInt = MakeShared<int>(5);
 	
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
+
 
 	SceneDesc sceneDesc = {};
 	sceneDesc.Name				= "Test Scene";
@@ -130,7 +126,7 @@ Sandbox::Sandbox()
 
 		//Scene
 		{
-			std::vector<GameObject>	sceneGameObjects;
+			TArray<GameObject>	sceneGameObjects;
 			ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
 
 			glm::vec3 position(0.0f, 0.0f, 0.0f);
@@ -178,7 +174,7 @@ Sandbox::Sandbox()
 
 		//Scene
 		{
-			std::vector<GameObject>	sceneGameObjects;
+			TArray<GameObject>	sceneGameObjects;
 			ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Light.obj", sceneGameObjects);
 
 			glm::vec3 position(0.0f, 0.0f, 0.0f);
@@ -226,7 +222,7 @@ Sandbox::Sandbox()
 
 		//Scene
 		{
-			std::vector<GameObject>	sceneGameObjects;
+			TArray<GameObject> sceneGameObjects;
 			ResourceManager::LoadSceneFromFile("Testing/Testing.obj", sceneGameObjects);
 
 			glm::vec3 position(0.0f, 0.0f, 0.0f);
@@ -357,8 +353,8 @@ Sandbox::Sandbox()
 
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 
-	CommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
-	CommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
+	//CommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
+	//CommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
 
 	m_pScene->UpdateCamera(m_pCamera);
 
@@ -372,8 +368,8 @@ Sandbox::Sandbox()
 
 Sandbox::~Sandbox()
 {
-    LambdaEngine::CommonApplication::Get()->RemoveEventHandler(this);
-    
+	LambdaEngine::CommonApplication::Get()->RemoveEventHandler(this);
+	
 	SAFEDELETE(m_pAudioGeometry);
 
 	SAFEDELETE(m_pScene);
@@ -481,23 +477,27 @@ void Sandbox::InitTestAudio()
 
 void Sandbox::OnFocusChanged(LambdaEngine::Window* pWindow, bool hasFocus)
 {
+	UNREFERENCED_VARIABLE(hasFocus);
 	UNREFERENCED_VARIABLE(pWindow);
 	
-    //LOG_MESSAGE("Window Moved: hasFocus=%s", hasFocus ? "true" : "false");
+	//LOG_MESSAGE("Window Moved: hasFocus=%s", hasFocus ? "true" : "false");
 }
 
 void Sandbox::OnWindowMoved(LambdaEngine::Window* pWindow, int16 x, int16 y)
 {
+	UNREFERENCED_VARIABLE(x);
+	UNREFERENCED_VARIABLE(y);
 	UNREFERENCED_VARIABLE(pWindow);
 	
-    //LOG_MESSAGE("Window Moved: x=%d, y=%d", x, y);
+	//LOG_MESSAGE("Window Moved: x=%d, y=%d", x, y);
 }
 
 void Sandbox::OnWindowResized(LambdaEngine::Window* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)
 {
 	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(type);
 	
-    //LOG_MESSAGE("Window Resized: width=%u, height=%u, type=%u", width, height, uint32(type));
+	//LOG_MESSAGE("Window Resized: width=%u, height=%u, type=%u", width, height, uint32(type));
 }
 
 void Sandbox::OnWindowClosed(LambdaEngine::Window* pWindow)
@@ -511,50 +511,50 @@ void Sandbox::OnMouseEntered(LambdaEngine::Window* pWindow)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
-    //LOG_MESSAGE("Mouse Entered");
+	//LOG_MESSAGE("Mouse Entered");
 }
 
 void Sandbox::OnMouseLeft(LambdaEngine::Window* pWindow)
 {
 	UNREFERENCED_VARIABLE(pWindow);
 	
-    //LOG_MESSAGE("Mouse Left");
+	//LOG_MESSAGE("Mouse Left");
 }
 
 void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	UNREFERENCED_VARIABLE(modifierMask);
 	
-    using namespace LambdaEngine;
-    
+	using namespace LambdaEngine;
+	
 	//LOG_MESSAGE("Key Pressed: %s, isRepeat=%s", KeyToString(key), isRepeat ? "true" : "false");
 
-    if (isRepeat)
-    {
-        return;
-    }
-    
+	if (isRepeat)
+	{
+		return;
+	}
+	
 	Window* pMainWindow = CommonApplication::Get()->GetMainWindow();
-    if (key == EKey::KEY_ESCAPE)
-    {
+	if (key == EKey::KEY_ESCAPE)
+	{
 		pMainWindow->Close();
-    }
-    if (key == EKey::KEY_1)
-    {
+	}
+	if (key == EKey::KEY_1)
+	{
 		pMainWindow->Minimize();
-    }
-    if (key == EKey::KEY_2)
-    {
+	}
+	if (key == EKey::KEY_2)
+	{
 		pMainWindow->Maximize();
-    }
-    if (key == EKey::KEY_3)
-    {
+	}
+	if (key == EKey::KEY_3)
+	{
 		pMainWindow->Restore();
-    }
-    if (key == EKey::KEY_4)
-    {
+	}
+	if (key == EKey::KEY_4)
+	{
 		pMainWindow->ToggleFullscreen();
-    }
+	}
 	if (key == EKey::KEY_5)
 	{
 		if (CommonApplication::Get()->GetInputMode(pMainWindow) == EInputMode::INPUT_MODE_STANDARD)
@@ -570,7 +570,7 @@ void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isR
 	{
 		pMainWindow->SetPosition(0, 0);
 	}
-    
+	
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
 
@@ -627,8 +627,8 @@ void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isR
 
 void Sandbox::OnKeyReleased(LambdaEngine::EKey key)
 {
-    using namespace LambdaEngine;
-    
+	using namespace LambdaEngine;
+	
 	UNREFERENCED_VARIABLE(key);
 	
 	//LOG_MESSAGE("Key Released: %s", KeyToString(key));
@@ -636,10 +636,10 @@ void Sandbox::OnKeyReleased(LambdaEngine::EKey key)
 
 void Sandbox::OnKeyTyped(uint32 character)
 {
-    using namespace LambdaEngine;
-    
-    UNREFERENCED_VARIABLE(character);
-    
+	using namespace LambdaEngine;
+	
+	UNREFERENCED_VARIABLE(character);
+	
 	//LOG_MESSAGE("Key Text: %c", char(character));
 }
 
@@ -647,7 +647,7 @@ void Sandbox::OnMouseMoved(int32 x, int32 y)
 {
 	UNREFERENCED_VARIABLE(x);
 	UNREFERENCED_VARIABLE(y);
-    
+	
 	//LOG_MESSAGE("Mouse Moved: x=%d, y=%d", x, y);
 }
 
@@ -655,15 +655,15 @@ void Sandbox::OnMouseMovedRaw(int32 deltaX, int32 deltaY)
 {
 	UNREFERENCED_VARIABLE(deltaX);
 	UNREFERENCED_VARIABLE(deltaY);
-    
+	
 	//LOG_MESSAGE("Mouse Delta: x=%d, y=%d", deltaX, deltaY);
 }
 
 void Sandbox::OnButtonPressed(LambdaEngine::EMouseButton button, uint32 modifierMask)
 {
 	UNREFERENCED_VARIABLE(button);
-    UNREFERENCED_VARIABLE(modifierMask);
-    
+	UNREFERENCED_VARIABLE(modifierMask);
+	
 	//LOG_MESSAGE("Mouse Button Pressed: %d", button);
 }
 
@@ -676,8 +676,8 @@ void Sandbox::OnButtonReleased(LambdaEngine::EMouseButton button)
 void Sandbox::OnMouseScrolled(int32 deltaX, int32 deltaY)
 {
 	UNREFERENCED_VARIABLE(deltaX);
-    UNREFERENCED_VARIABLE(deltaY);
-    
+	UNREFERENCED_VARIABLE(deltaY);
+	
 	//LOG_MESSAGE("Mouse Scrolled: x=%d, y=%d", deltaX, deltaY);
 }
 
@@ -1575,11 +1575,11 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 namespace LambdaEngine
 {
-    Game* CreateGame()
-    {
-        Sandbox* pSandbox = DBG_NEW Sandbox();        
-        return pSandbox;
-    }
+	Game* CreateGame()
+	{
+		Sandbox* pSandbox = DBG_NEW Sandbox();        
+		return pSandbox;
+	}
 }
 
 bool Sandbox::InitRendererForEmpty()
@@ -1710,19 +1710,19 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	else
 	{
-		if (!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
+		if constexpr(!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
 		}
-		else if (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+		else if constexpr (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
 		}
-		else if (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+		else if constexpr (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
 		}
-		else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
+		else if constexpr (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_PP_DEFERRED.lrg";
 		}

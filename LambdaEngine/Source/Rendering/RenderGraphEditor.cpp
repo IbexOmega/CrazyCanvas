@@ -1002,6 +1002,8 @@ namespace LambdaEngine
 		
 		for (auto fileIt = m_FilesInShaderDirectory.begin(); fileIt != m_FilesInShaderDirectory.end(); fileIt++)
 		{
+			std::iterator_traits<TArray<std::string>::Iterator>::difference_type v;
+
 			int32 index = std::distance(m_FilesInShaderDirectory.begin(), fileIt);
 			const String* pFilename = &(*fileIt);
 

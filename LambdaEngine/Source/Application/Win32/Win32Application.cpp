@@ -96,7 +96,7 @@ namespace LambdaEngine
 
 	bool Win32Application::ProcessStoredEvents()
 	{
-		TArray<Win32Message> messagesToProcess = TArray<Win32Message>(m_StoredMessages);
+		TArray<Win32Message> messagesToProcess = m_StoredMessages;
 		m_StoredMessages.Clear();
 
 		bool shouldRun = true;

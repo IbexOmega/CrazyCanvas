@@ -99,7 +99,7 @@ namespace LambdaEngine
 		static CommonApplication* Get();
 		
 	private:
-		TSharedRef<Window>				m_MainWindow			= nullptr;
+		TSharedRef<Window>		m_MainWindow			= nullptr;
 		Application*			m_pPlatformApplication	= nullptr;
 		TArray<EventHandler*> 	m_EventHandlers;
 

@@ -206,7 +206,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceLoader::LoadSceneFromFile(const String& filepath, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<Texture*>& loadedTextures)
+	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<GameObject>& loadedGameObjects, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures)
 	{
 		size_t lastPathDivisor = filepath.find_last_of("/\\");
 
@@ -226,12 +226,12 @@ namespace LambdaEngine
 
 		if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, filepath.c_str(), dirpath.c_str(), true, false))
 		{
-            LOG_WARNING("[ResourceLoader]: Failed to load scene '%s'. Warning: %s Error: %s", filepath.c_str(), warn.c_str(), err.c_str());
+			LOG_WARNING("[ResourceLoader]: Failed to load scene '%s'. Warning: %s Error: %s", filepath.c_str(), warn.c_str(), err.c_str());
 			return false;
 		}
 
-		loadedMeshes.resize(shapes.size());
-		loadedMaterials.resize(materials.size());
+		loadedMeshes.Resize(shapes.size());
+		loadedMaterials.Resize(materials.size());
 
 		std::unordered_map<std::string, Texture*> loadedTexturesMap;
 
@@ -244,16 +244,16 @@ namespace LambdaEngine
 			if (material.diffuse_texname.length() > 0)
 			{
 				std::string texturePath = dirpath + material.diffuse_texname;
-                ConvertBackslashes(texturePath);
+				ConvertBackslashes(texturePath);
 
-                auto loadedTexture = loadedTexturesMap.find(texturePath);
+				auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
 					Texture* pTexture = LoadTextureArrayFromFile(material.diffuse_texname, dirpath, &material.diffuse_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pAlbedoMap			= pTexture;
 
-					loadedTextures.push_back(pTexture);
+					loadedTextures.PushBack(pTexture);
 				}
 				else
 				{
@@ -278,16 +278,16 @@ namespace LambdaEngine
 			if (material.bump_texname.length() > 0)
 			{
 				std::string texturePath = dirpath + material.bump_texname;
-                ConvertBackslashes(texturePath);
-                
-                auto loadedTexture = loadedTexturesMap.find(texturePath);
+				ConvertBackslashes(texturePath);
+				
+				auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
 					Texture* pTexture = LoadTextureArrayFromFile(material.bump_texname, dirpath, &material.bump_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pNormalMap			= pTexture;
 
-					loadedTextures.push_back(pTexture);
+					loadedTextures.PushBack(pTexture);
 				}
 				else
 				{
@@ -298,16 +298,16 @@ namespace LambdaEngine
 			if (material.reflection_texname.length() > 0)
 			{
 				std::string texturePath = dirpath + material.reflection_texname;
-                ConvertBackslashes(texturePath);
-                
-                auto loadedTexture = loadedTexturesMap.find(texturePath);
+				ConvertBackslashes(texturePath);
+				
+				auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
 					Texture* pTexture = LoadTextureArrayFromFile(material.reflection_texname, dirpath, &material.reflection_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pMetallicMap			= pTexture;
 
-					loadedTextures.push_back(pTexture);
+					loadedTextures.PushBack(pTexture);
 				}
 				else
 				{
@@ -324,16 +324,16 @@ namespace LambdaEngine
 			if (material.specular_highlight_texname.length() > 0)
 			{
 				std::string texturePath = dirpath + material.specular_highlight_texname;
-                ConvertBackslashes(texturePath);
-                
-                auto loadedTexture = loadedTexturesMap.find(texturePath);
+				ConvertBackslashes(texturePath);
+				
+				auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
 					Texture* pTexture = LoadTextureArrayFromFile(material.specular_highlight_texname, dirpath, &material.specular_highlight_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pRoughnessMap		= pTexture;
 
-					loadedTextures.push_back(pTexture);
+					loadedTextures.PushBack(pTexture);
 				}
 				else
 				{
@@ -352,8 +352,8 @@ namespace LambdaEngine
 		{
 			tinyobj::shape_t& shape = shapes[s];
 
-			std::vector<Vertex> vertices = {};
-			std::vector<uint32> indices = {};
+			TArray<Vertex> vertices = {};
+			TArray<uint32> indices = {};
 			std::unordered_map<Vertex, uint32> uniqueVertices = {};
 
 			for (const tinyobj::index_t& index : shape.mesh.indices)
@@ -397,17 +397,17 @@ namespace LambdaEngine
 
 				if (uniqueVertices.count(vertex) == 0)
 				{
-					uniqueVertices[vertex] = static_cast<uint32>(vertices.size());
-					vertices.push_back(vertex);
+					uniqueVertices[vertex] = static_cast<uint32>(vertices.GetSize());
+					vertices.PushBack(vertex);
 				}
 
-				indices.push_back(uniqueVertices[vertex]);
+				indices.PushBack(uniqueVertices[vertex]);
 			}
 
 			//Calculate Tangents if Tex Coords exist
 			if (hasNormals && hasTexCoords)
 			{
-				for (uint32 index = 0; index < indices.size(); index += 3)
+				for (uint32 index = 0; index < indices.GetSize(); index += 3)
 				{
 					Vertex& v0 = vertices[indices[(size_t)index + 0]];
 					Vertex& v1 = vertices[indices[(size_t)index + 1]];
@@ -419,7 +419,7 @@ namespace LambdaEngine
 				}
 			}
 
-			Mesh* pMesh = LoadMeshFromMemory(vertices.data(), uint32(vertices.size()), indices.data(), uint32(indices.size()));
+			Mesh* pMesh = LoadMeshFromMemory(vertices.GetData(), uint32(vertices.GetSize()), indices.GetData(), uint32(indices.GetSize()));
 			loadedMeshes[s] = pMesh;
 
 			D_LOG_MESSAGE("[ResourceLoader]: Loaded Mesh \"%s\" \t for scene : \"%s\"", shape.name.c_str(), filepath.c_str());
@@ -430,7 +430,7 @@ namespace LambdaEngine
 			gameObject.Mesh			= s;
 			gameObject.Material		= m;
 
-			loadedGameObjects.push_back(gameObject);
+			loadedGameObjects.PushBack(gameObject);
 		}
 
 		D_LOG_MESSAGE("[ResourceLoader]: Loaded Scene \"%s\"", filepath.c_str());
@@ -862,15 +862,15 @@ namespace LambdaEngine
 		return true;
 	}
 
-    void ResourceLoader::ConvertBackslashes(std::string& string)
-    {
-        size_t pos = string.find_first_of('\\');
-        while (pos != std::string::npos)
-        {
-            string.replace(pos, 1, 1, '/');
-            pos = string.find_first_of('\\', pos + 1);
-        }
-    }
+	void ResourceLoader::ConvertBackslashes(std::string& string)
+	{
+		size_t pos = string.find_first_of('\\');
+		while (pos != std::string::npos)
+		{
+			string.replace(pos, 1, 1, '/');
+			pos = string.find_first_of('\\', pos + 1);
+		}
+	}
 
 	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, TArray<uint32>& sourceSPIRV)
 	{
@@ -936,6 +936,6 @@ namespace LambdaEngine
 		glslang::GlslangToSpv(*program.getIntermediate(shaderType), std_sourceSPIRV, &logger, &spvOptions);
 
 		sourceSPIRV.Assign(std_sourceSPIRV.data(), std_sourceSPIRV.data() + std_sourceSPIRV.size());
-        return true;
+		return true;
 	}
 }

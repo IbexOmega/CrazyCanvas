@@ -683,11 +683,23 @@ namespace LambdaEngine
 		vertexBufferDesc.Flags = FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
 		vertexBufferDesc.SizeInBytes = vertexBufferSize;
 
+		m_pVertexBuffer = m_pGraphicsDevice->CreateBuffer(&vertexBufferDesc, m_pAllocator);
+		if (!m_pVertexBuffer)
+		{
+			return false;
+		}
+
 		BufferDesc indexBufferDesc = {};
 		indexBufferDesc.DebugName = "ImGui Index Buffer";
 		indexBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
 		indexBufferDesc.Flags = FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
 		indexBufferDesc.SizeInBytes = vertexBufferSize;
+		
+		m_pIndexBuffer = m_pGraphicsDevice->CreateBuffer(&indexBufferDesc, m_pAllocator);
+		if (!m_pIndexBuffer)
+		{
+			return false;
+		}
 
 		BufferDesc vertexCopyBufferDesc = {};
 		vertexCopyBufferDesc.DebugName = "ImGui Vertex Copy Buffer";
@@ -700,8 +712,6 @@ namespace LambdaEngine
 		indexCopyBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		indexCopyBufferDesc.Flags = FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		indexCopyBufferDesc.SizeInBytes = indexBufferSize;
-
-		m_pIndexBuffer = m_pGraphicsDevice->CreateBuffer(&indexBufferDesc, m_pAllocator);
 
 		m_ppVertexCopyBuffers = DBG_NEW Buffer * [m_BackBufferCount];
 		m_ppIndexCopyBuffers = DBG_NEW Buffer * [m_BackBufferCount];
@@ -722,16 +732,25 @@ namespace LambdaEngine
 			}
 		}
 
-		return m_pVertexBuffer != nullptr && m_pIndexBuffer != nullptr;
+		return true;
 	}
 
 	bool ImGuiRenderer::CreateTextures()
 	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		uint8* pPixels = nullptr;
+		int32 width = 0;
+		int32 height = 0;
+		io.Fonts->GetTexDataAsRGBA32(&pPixels, &width, &height);
+
+		int64 textureSize = 4 * width * height;
+
 		BufferDesc fontBufferDesc = {};
-		fontBufferDesc.DebugName			= "ImGui Font Buffer";
-		fontBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-		fontBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_COPY_SRC;
-		fontBufferDesc.SizeInBytes			= textureSize;
+		fontBufferDesc.DebugName	= "ImGui Font Buffer";
+		fontBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+		fontBufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+		fontBufferDesc.SizeInBytes	= textureSize;
 
 		Buffer* pFontBuffer = m_pGraphicsDevice->CreateBuffer(&fontBufferDesc, m_pAllocator);
 
@@ -971,39 +990,22 @@ namespace LambdaEngine
 
 	uint64 ImGuiRenderer::InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader)
 	{
-		VertexInputAttributeDesc pVertexAttributeDesc[3] = {};
-		pVertexAttributeDesc[0].Location	= 0;
-		pVertexAttributeDesc[0].Offset		= IM_OFFSETOF(ImDrawVert, pos);
-		pVertexAttributeDesc[0].Format		= EFormat::FORMAT_R32G32_SFLOAT;
-		pVertexAttributeDesc[1].Location	= 1;
-		pVertexAttributeDesc[1].Offset		= IM_OFFSETOF(ImDrawVert, uv);
-		pVertexAttributeDesc[1].Format		= EFormat::FORMAT_R32G32_SFLOAT;
-		pVertexAttributeDesc[2].Location	= 2;
-		pVertexAttributeDesc[2].Offset		= IM_OFFSETOF(ImDrawVert, col);
-		pVertexAttributeDesc[2].Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
-
-		VertexInputBindingDesc vertexInputBindingDesc = {};
-		vertexInputBindingDesc.Binding			= 0;
-		vertexInputBindingDesc.Stride			= sizeof(ImDrawVert);
-		vertexInputBindingDesc.InputRate		= EVertexInputRate::PER_VERTEX;
-		memcpy(vertexInputBindingDesc.pAttributes, pVertexAttributeDesc, 3 * sizeof(VertexInputAttributeDesc));
-		vertexInputBindingDesc.AttributeCount	= 3;
-
-		BlendAttachmentState blendAttachmentState = {};
-		blendAttachmentState.BlendEnabled			= true;
-		blendAttachmentState.ColorComponentsMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
-
 		ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
-		pipelineStateDesc.DebugName							= "ImGui Pipeline State";
-		pipelineStateDesc.RenderPass					= m_pRenderPass;
-		pipelineStateDesc.PipelineLayout				= m_pPipelineLayout;
-		pipelineStateDesc.DepthTestEnabled				= false;
-		pipelineStateDesc.pVertexInputBindings[0]		= vertexInputBindingDesc;
-		pipelineStateDesc.VertexInputBindingCount		= 1;
-		pipelineStateDesc.pBlendAttachmentStates[0]		= blendAttachmentState;
-		pipelineStateDesc.BlendAttachmentStateCount		= 1;
-		pipelineStateDesc.VertexShader					= vertexShader;
-		pipelineStateDesc.PixelShader					= pixelShader;
+		pipelineStateDesc.DebugName			= "ImGui Pipeline State";
+		pipelineStateDesc.RenderPass		= m_pRenderPass;
+		pipelineStateDesc.PipelineLayout	= m_pPipelineLayout;
+		pipelineStateDesc.DepthTestEnabled	= false;
+		pipelineStateDesc.BlendState.BlendAttachmentStates.Resize(1);
+		pipelineStateDesc.BlendState.BlendAttachmentStates[0].BlendEnabled = true;
+		pipelineStateDesc.BlendState.BlendAttachmentStates[0].RenderTargetComponentMask = COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+		pipelineStateDesc.InputLayout =
+		{
+			{ "POSITION",	0, sizeof(ImDrawVert), EVertexInputRate::VERTEX_INPUT_PER_VERTEX, 0, IM_OFFSETOF(ImDrawVert, pos), EFormat::FORMAT_R32G32_SFLOAT },
+			{ "TEXCOORD",	0, sizeof(ImDrawVert), EVertexInputRate::VERTEX_INPUT_PER_VERTEX, 1, IM_OFFSETOF(ImDrawVert, uv), EFormat::FORMAT_R32G32_SFLOAT },
+			{ "COLOR",		0, sizeof(ImDrawVert), EVertexInputRate::VERTEX_INPUT_PER_VERTEX, 2, IM_OFFSETOF(ImDrawVert, col), EFormat::FORMAT_R8G8B8A8_UNORM },
+		};
+		pipelineStateDesc.VertexShader.ShaderGUID	= vertexShader;
+		pipelineStateDesc.PixelShader.ShaderGUID	= pixelShader;
 
 		return PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
 	}

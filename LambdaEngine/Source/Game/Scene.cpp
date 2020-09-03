@@ -64,7 +64,7 @@ namespace LambdaEngine
 		{
 			SAFERELEASE(pBLAS);
 		}
-		m_BLASs.clear();
+		m_BLASs.Clear();
 	}
 
 	bool Scene::Init(const SceneDesc& desc)
@@ -184,8 +184,8 @@ namespace LambdaEngine
 		clock.Tick();
 
 		/*------------Ray Tracing Section Begin-------------*/
-		std::vector<BuildBottomLevelAccelerationStructureDesc> blasBuildDescriptions;
-		blasBuildDescriptions.reserve(m_Meshes.size());
+		TArray<BuildBottomLevelAccelerationStructureDesc> blasBuildDescriptions;
+		blasBuildDescriptions.Reserve(m_Meshes.GetSize());
 
 		if (m_RayTracingEnabled)
 		{
@@ -193,11 +193,11 @@ namespace LambdaEngine
 			tlasDesc.DebugName		= "TLAS";
 			tlasDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
 			tlasDesc.Flags			= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-			tlasDesc.InstanceCount	= m_PrimaryInstances.size();
+			tlasDesc.InstanceCount	= m_PrimaryInstances.GetSize();
 
 			m_pTLAS = m_pGraphicsDevice->CreateAccelerationStructure(&tlasDesc, m_pDeviceAllocator);
 
-			m_BLASs.reserve(m_Meshes.size());
+			m_BLASs.Reserve(m_Meshes.GetSize());
 		}
 		/*-------------Ray Tracing Section End--------------*/
 
@@ -207,7 +207,7 @@ namespace LambdaEngine
 		std::multimap<uint32, std::pair<MappedMaterial, IndexedIndirectMeshArgument>> materialIndexToMeshIndex;
 		uint32 indirectArgCount = 0;
 
-		for (uint32 meshIndex = 0; meshIndex < m_Meshes.size(); meshIndex++)
+		for (uint32 meshIndex = 0; meshIndex < m_Meshes.GetSize(); meshIndex++)
 		{
 			MappedMesh& mappedMesh = m_MappedMeshes[meshIndex];
 			const Mesh* pMesh = m_Meshes[meshIndex];
@@ -230,7 +230,7 @@ namespace LambdaEngine
 
 				AccelerationStructure* pBLAS = m_pGraphicsDevice->CreateAccelerationStructure(&blasDesc, m_pDeviceAllocator);
 				accelerationStructureDeviceAddress = pBLAS->GetDeviceAdress();
-				m_BLASs.push_back(pBLAS);
+				m_BLASs.PushBack(pBLAS);
 
 				BuildBottomLevelAccelerationStructureDesc blasBuildDesc = {};
 				blasBuildDesc.pAccelerationStructure		= pBLAS;
@@ -241,11 +241,11 @@ namespace LambdaEngine
 				blasBuildDesc.TriangleCount					= pMesh->IndexCount / 3;
 				blasBuildDesc.Update						= false;
 
-				blasBuildDescriptions.push_back(blasBuildDesc);
+				blasBuildDescriptions.PushBack(blasBuildDesc);
 			}
 			/*-------------Ray Tracing Section End--------------*/
 
-			for (uint32 materialIndex = 0; materialIndex < mappedMesh.MappedMaterials.size(); materialIndex++)
+			for (uint32 materialIndex = 0; materialIndex < mappedMesh.MappedMaterials.GetSize(); materialIndex++)
 			{
 				MappedMaterial& mappedMaterial = mappedMesh.MappedMaterials[materialIndex];
 
@@ -270,16 +270,16 @@ namespace LambdaEngine
 			currentNumSceneIndices = newNumSceneIndices;
 		}
 
-		m_IndirectArgs.clear();
-		m_IndirectArgs.reserve(indirectArgCount);
+		m_IndirectArgs.Clear();
+		m_IndirectArgs.Reserve(indirectArgCount);
 
-		m_SortedPrimaryInstances.clear();
-		m_SortedPrimaryInstances.reserve(m_PrimaryInstances.size());
+		m_SortedPrimaryInstances.Clear();
+		m_SortedPrimaryInstances.Reserve(m_PrimaryInstances.GetSize());
 
-		m_SortedSecondaryInstances.clear();
-		m_SortedSecondaryInstances.reserve(m_SecondaryInstances.size());
+		m_SortedSecondaryInstances.Clear();
+		m_SortedSecondaryInstances.Reserve(m_SecondaryInstances.GetSize());
 
-		m_InstanceIndexToSortedInstanceIndex.resize(m_PrimaryInstances.size());
+		m_InstanceIndexToSortedInstanceIndex.Resize(m_PrimaryInstances.GetSize());
 
 		// Extra Loop to sort Indirect Args by Material
 		uint32 prevMaterialIndex = UINT32_MAX;
@@ -289,8 +289,8 @@ namespace LambdaEngine
 			MappedMaterial& mappedMaterial = it->second.first;
 			IndexedIndirectMeshArgument& indirectArg = it->second.second;
 
-			uint32 instanceCount = (uint32)mappedMaterial.InstanceIndices.size();
-			uint32 baseInstanceIndex = (uint32)m_SortedPrimaryInstances.size();
+			uint32 instanceCount = (uint32)mappedMaterial.InstanceIndices.GetSize();
+			uint32 baseInstanceIndex = (uint32)m_SortedPrimaryInstances.GetSize();
 
 			/*------------Ray Tracing Section Begin-------------*/
 			uint64 accelerationStructureDeviceAddress = ((((uint64)indirectArg.InstanceCount) << 32) & 0xFFFFFFFF00000000) | (((uint64)indirectArg.FirstInstance) & 0x00000000FFFFFFFF);
@@ -305,15 +305,15 @@ namespace LambdaEngine
 				{
 					if (m_AreaLightIndexToInstanceIndex[l] == mappedInstanceIndex)
 					{
-						m_LightsLightSetup.AreaLights[l].InstanceIndex = m_SortedPrimaryInstances.size();
+						m_LightsLightSetup.AreaLights[l].InstanceIndex = m_SortedPrimaryInstances.GetSize();
 					}
 				}
 
-				m_InstanceIndexToSortedInstanceIndex[mappedInstanceIndex] = m_SortedPrimaryInstances.size();
+				m_InstanceIndexToSortedInstanceIndex[mappedInstanceIndex] = m_SortedPrimaryInstances.GetSize();
 
 				InstancePrimary primaryInstance					= m_PrimaryInstances[mappedInstanceIndex];
 				InstanceSecondary secondaryInstance				= m_SecondaryInstances[mappedInstanceIndex];
-				primaryInstance.IndirectArgsIndex				= (uint32)m_IndirectArgs.size();
+				primaryInstance.IndirectArgsIndex				= (uint32)m_IndirectArgs.GetSize();
 
 				/*------------Ray Tracing Section Begin-------------*/
 				primaryInstance.AccelerationStructureAddress	= accelerationStructureDeviceAddress;
@@ -321,27 +321,27 @@ namespace LambdaEngine
 				primaryInstance.Flags							= 0x00000001; //Culling Disabled
 				/*-------------Ray Tracing Section End--------------*/
 
-				m_SortedPrimaryInstances.push_back(primaryInstance);
-				m_SortedSecondaryInstances.push_back(secondaryInstance);
+				m_SortedPrimaryInstances.PushBack(primaryInstance);
+				m_SortedSecondaryInstances.PushBack(secondaryInstance);
 			}
 
 			if (prevMaterialIndex != currentMaterialIndex)
 			{
 				prevMaterialIndex = currentMaterialIndex;
-				m_MaterialIndexToIndirectArgOffsetMap[currentMaterialIndex] = m_IndirectArgs.size();
+				m_MaterialIndexToIndirectArgOffsetMap[currentMaterialIndex] = m_IndirectArgs.GetSize();
 			}
 
 			indirectArg.InstanceCount = instanceCount;
 			indirectArg.FirstInstance = baseInstanceIndex;
 			indirectArg.MaterialIndex = mappedMaterial.MaterialIndex;
 
-			m_IndirectArgs.push_back(indirectArg);
+			m_IndirectArgs.PushBack(indirectArg);
 		}
 
 		//// Create InstanceBuffers
 		//{
-		//	uint32 scenePrimaryInstanceBufferSize = uint32(m_SortedInstances.size() * sizeof(InstancePrimary));
-		//	uint32 sceneSecondaryInstanceBufferSize = uint32(m_SortedInstances.size() * sizeof(InstanceSecondary));
+		//	uint32 scenePrimaryInstanceBufferSize = uint32(m_SortedInstances.GetSize() * sizeof(InstancePrimary));
+		//	uint32 sceneSecondaryInstanceBufferSize = uint32(m_SortedInstances.GetSize() * sizeof(InstanceSecondary));
 
 		//	if (m_pScenePrimaryInstanceBuffer == nullptr || scenePrimaryInstanceBufferSize > m_pScenePrimaryInstanceBuffer->GetDesc().SizeInBytes)
 		//	{
@@ -370,23 +370,23 @@ namespace LambdaEngine
 		//	}
 		//}
 
-		m_SceneAlbedoMaps.resize(MAX_UNIQUE_MATERIALS);
-		m_SceneNormalMaps.resize(MAX_UNIQUE_MATERIALS);
-		m_SceneAmbientOcclusionMaps.resize(MAX_UNIQUE_MATERIALS);
-		m_SceneMetallicMaps.resize(MAX_UNIQUE_MATERIALS);
-		m_SceneRoughnessMaps.resize(MAX_UNIQUE_MATERIALS);
+		m_SceneAlbedoMaps.Resize(MAX_UNIQUE_MATERIALS);
+		m_SceneNormalMaps.Resize(MAX_UNIQUE_MATERIALS);
+		m_SceneAmbientOcclusionMaps.Resize(MAX_UNIQUE_MATERIALS);
+		m_SceneMetallicMaps.Resize(MAX_UNIQUE_MATERIALS);
+		m_SceneRoughnessMaps.Resize(MAX_UNIQUE_MATERIALS);
 
-		m_SceneAlbedoMapViews.resize(MAX_UNIQUE_MATERIALS);
-		m_SceneNormalMapViews.resize(MAX_UNIQUE_MATERIALS);
-		m_SceneAmbientOcclusionMapViews.resize(MAX_UNIQUE_MATERIALS);
-		m_SceneMetallicMapViews.resize(MAX_UNIQUE_MATERIALS);
-		m_SceneRoughnessMapViews.resize(MAX_UNIQUE_MATERIALS);
+		m_SceneAlbedoMapViews.Resize(MAX_UNIQUE_MATERIALS);
+		m_SceneNormalMapViews.Resize(MAX_UNIQUE_MATERIALS);
+		m_SceneAmbientOcclusionMapViews.Resize(MAX_UNIQUE_MATERIALS);
+		m_SceneMetallicMapViews.Resize(MAX_UNIQUE_MATERIALS);
+		m_SceneRoughnessMapViews.Resize(MAX_UNIQUE_MATERIALS);
 
-		m_SceneMaterialProperties.resize(MAX_UNIQUE_MATERIALS);
+		m_SceneMaterialProperties.Resize(MAX_UNIQUE_MATERIALS);
 
 		for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
 		{
-			if (i < m_Materials.size())
+			if (i < m_Materials.GetSize())
 			{
 				const Material* pMaterial = m_Materials[i];
 
@@ -449,7 +449,7 @@ namespace LambdaEngine
 				m_pBLASBuildCommandAllocator->Reset();
 				m_pBLASBuildCommandList->Begin(nullptr);
 
-				for (uint32 i = 0; i < blasBuildDescriptions.size(); i++)
+				for (uint32 i = 0; i < blasBuildDescriptions.GetSize(); i++)
 				{
 					BuildBottomLevelAccelerationStructureDesc* pBlasBuildDesc = &blasBuildDescriptions[i];
 					pBlasBuildDesc->pVertexBuffer			= m_pSceneVertexBuffer;
@@ -656,29 +656,29 @@ namespace LambdaEngine
 		InstanceSecondary secondaryInstance = {};
 		secondaryInstance.PrevTransform					= tranposedTransform;
 
-		m_PrimaryInstances.push_back(primaryInstance);
-		m_SecondaryInstances.push_back(secondaryInstance);
+		m_PrimaryInstances.PushBack(primaryInstance);
+		m_SecondaryInstances.PushBack(secondaryInstance);
 
-		uint32 instanceIndex = uint32(m_PrimaryInstances.size() - 1);
+		uint32 instanceIndex = uint32(m_PrimaryInstances.GetSize() - 1);
 		uint32 meshIndex = 0;
 
 		if (m_GUIDToMappedMeshes.count(meshGUID) == 0)
 		{
 			const Mesh* pMesh = ResourceManager::GetMesh(meshGUID);
 
-			uint32 currentNumSceneVertices = (uint32)m_SceneVertexArray.size();
-			m_SceneVertexArray.resize(uint64(currentNumSceneVertices + pMesh->VertexCount));
+			uint32 currentNumSceneVertices = (uint32)m_SceneVertexArray.GetSize();
+			m_SceneVertexArray.Resize(uint64(currentNumSceneVertices + pMesh->VertexCount));
 			memcpy(&m_SceneVertexArray[currentNumSceneVertices], pMesh->pVertexArray, pMesh->VertexCount * sizeof(Vertex));
 
-			uint32 currentNumSceneIndices = (uint32)m_SceneIndexArray.size();
-			m_SceneIndexArray.resize(uint64(currentNumSceneIndices + pMesh->IndexCount));
+			uint32 currentNumSceneIndices = (uint32)m_SceneIndexArray.GetSize();
+			m_SceneIndexArray.Resize(uint64(currentNumSceneIndices + pMesh->IndexCount));
 			memcpy(&m_SceneIndexArray[currentNumSceneIndices], pMesh->pIndexArray, pMesh->IndexCount * sizeof(uint32));
 
-			m_Meshes.push_back(pMesh);
-			meshIndex = uint32(m_Meshes.size() - 1);
+			m_Meshes.PushBack(pMesh);
+			meshIndex = uint32(m_Meshes.GetSize() - 1);
 
 			MappedMesh newMappedMesh = {};
-			m_MappedMeshes.push_back(newMappedMesh);
+			m_MappedMeshes.PushBack(newMappedMesh);
 
 			m_GUIDToMappedMeshes[meshGUID] = meshIndex;
 		}
@@ -692,8 +692,8 @@ namespace LambdaEngine
 
 		if (m_GUIDToMaterials.count(materialGUID) == 0)
 		{
-			m_Materials.push_back(ResourceManager::GetMaterial(materialGUID));
-			globalMaterialIndex = uint32(m_Materials.size() - 1);
+			m_Materials.PushBack(ResourceManager::GetMaterial(materialGUID));
+			globalMaterialIndex = uint32(m_Materials.GetSize() - 1);
 
 			m_GUIDToMaterials[materialGUID] = globalMaterialIndex;
 		}
@@ -707,14 +707,14 @@ namespace LambdaEngine
 			MappedMaterial newMappedMaterial = {};
 			newMappedMaterial.MaterialIndex = globalMaterialIndex;
 
-			newMappedMaterial.InstanceIndices.push_back(instanceIndex);
+			newMappedMaterial.InstanceIndices.PushBack(instanceIndex);
 
-			mappedMesh.MappedMaterials.push_back(newMappedMaterial);
-			mappedMesh.GUIDToMappedMaterials[materialGUID] = GUID_Lambda(mappedMesh.MappedMaterials.size() - 1);
+			mappedMesh.MappedMaterials.PushBack(newMappedMaterial);
+			mappedMesh.GUIDToMappedMaterials[materialGUID] = GUID_Lambda(mappedMesh.MappedMaterials.GetSize() - 1);
 		}
 		else
 		{
-			mappedMesh.MappedMaterials[mappedMesh.GUIDToMappedMaterials[materialGUID]].InstanceIndices.push_back(instanceIndex);
+			mappedMesh.MappedMaterials[mappedMesh.GUIDToMappedMaterials[materialGUID]].InstanceIndices.PushBack(instanceIndex);
 		}
 
 		return instanceIndex;
@@ -740,7 +740,7 @@ namespace LambdaEngine
 
 	void Scene::UpdateMaterialPropertiesBuffers(CommandList* pCopyCommandList)
 	{
-		uint32 sceneMaterialPropertiesSize = uint32(m_SceneMaterialProperties.size() * sizeof(MaterialProperties));
+		uint32 sceneMaterialPropertiesSize = uint32(m_SceneMaterialProperties.GetSize() * sizeof(MaterialProperties));
 
 		if (m_pSceneMaterialPropertiesCopyBuffer == nullptr || sceneMaterialPropertiesSize > m_pSceneMaterialPropertiesCopyBuffer->GetDesc().SizeInBytes)
 		{
@@ -756,7 +756,7 @@ namespace LambdaEngine
 		}
 
 		void* pMapped = m_pSceneMaterialPropertiesCopyBuffer->Map();
-		memcpy(pMapped, m_SceneMaterialProperties.data(), sceneMaterialPropertiesSize);
+		memcpy(pMapped, m_SceneMaterialProperties.GetData(), sceneMaterialPropertiesSize);
 		m_pSceneMaterialPropertiesCopyBuffer->Unmap();
 
 		if (m_pSceneMaterialProperties == nullptr || sceneMaterialPropertiesSize > m_pSceneMaterialProperties->GetDesc().SizeInBytes)
@@ -777,7 +777,7 @@ namespace LambdaEngine
 
 	void Scene::UpdateVertexBuffers(CommandList* pCopyCommandList)
 	{
-		uint32 sceneVertexBufferSize = uint32(m_SceneVertexArray.size() * sizeof(Vertex));
+		uint32 sceneVertexBufferSize = uint32(m_SceneVertexArray.GetSize() * sizeof(Vertex));
 
 		if (m_pSceneVertexCopyBuffer == nullptr || sceneVertexBufferSize > m_pSceneVertexCopyBuffer->GetDesc().SizeInBytes)
 		{
@@ -793,7 +793,7 @@ namespace LambdaEngine
 		}
 
 		void* pMapped = m_pSceneVertexCopyBuffer->Map();
-		memcpy(pMapped, m_SceneVertexArray.data(), sceneVertexBufferSize);
+		memcpy(pMapped, m_SceneVertexArray.GetData(), sceneVertexBufferSize);
 		m_pSceneVertexCopyBuffer->Unmap();
 
 		if (m_pSceneVertexBuffer == nullptr || sceneVertexBufferSize > m_pSceneVertexBuffer->GetDesc().SizeInBytes)
@@ -814,7 +814,7 @@ namespace LambdaEngine
 
 	void Scene::UpdateIndexBuffers(CommandList* pCopyCommandList)
 	{
-		uint32 sceneIndexBufferSize = uint32(m_SceneIndexArray.size() * sizeof(uint32));
+		uint32 sceneIndexBufferSize = uint32(m_SceneIndexArray.GetSize() * sizeof(uint32));
 
 		if (m_pSceneIndexCopyBuffer == nullptr || sceneIndexBufferSize > m_pSceneIndexCopyBuffer->GetDesc().SizeInBytes)
 		{
@@ -830,7 +830,7 @@ namespace LambdaEngine
 		}
 
 		void* pMapped = m_pSceneIndexCopyBuffer->Map();
-		memcpy(pMapped, m_SceneIndexArray.data(), sceneIndexBufferSize);
+		memcpy(pMapped, m_SceneIndexArray.GetData(), sceneIndexBufferSize);
 		m_pSceneIndexCopyBuffer->Unmap();
 
 		if (m_pSceneIndexBuffer == nullptr || sceneIndexBufferSize > m_pSceneIndexBuffer->GetDesc().SizeInBytes)
@@ -851,8 +851,8 @@ namespace LambdaEngine
 
 	void Scene::UpdateInstanceBuffers(CommandList* pCopyCommandList)
 	{
-		uint32 scenePrimaryInstanceBufferSize = uint32(m_SortedPrimaryInstances.size() * sizeof(InstancePrimary));
-		uint32 sceneSecondaryInstanceBufferSize = uint32(m_SortedSecondaryInstances.size() * sizeof(InstanceSecondary));
+		uint32 scenePrimaryInstanceBufferSize = uint32(m_SortedPrimaryInstances.GetSize() * sizeof(InstancePrimary));
+		uint32 sceneSecondaryInstanceBufferSize = uint32(m_SortedSecondaryInstances.GetSize() * sizeof(InstanceSecondary));
 
 		if (m_pScenePrimaryInstanceCopyBuffer == nullptr || scenePrimaryInstanceBufferSize > m_pScenePrimaryInstanceCopyBuffer->GetDesc().SizeInBytes)
 		{
@@ -881,11 +881,11 @@ namespace LambdaEngine
 		}
 
 		void* pPrimaryMapped = m_pScenePrimaryInstanceCopyBuffer->Map();
-		memcpy(pPrimaryMapped, m_SortedPrimaryInstances.data(), scenePrimaryInstanceBufferSize);
+		memcpy(pPrimaryMapped, m_SortedPrimaryInstances.GetData(), scenePrimaryInstanceBufferSize);
 		m_pScenePrimaryInstanceCopyBuffer->Unmap();
 
 		void* pSecondaryMapped = m_pSceneSecondaryInstanceCopyBuffer->Map();
-		memcpy(pSecondaryMapped, m_SortedSecondaryInstances.data(), sceneSecondaryInstanceBufferSize);
+		memcpy(pSecondaryMapped, m_SortedSecondaryInstances.GetData(), sceneSecondaryInstanceBufferSize);
 		m_pSceneSecondaryInstanceCopyBuffer->Unmap();
 
 		if (m_pScenePrimaryInstanceBuffer == nullptr || scenePrimaryInstanceBufferSize > m_pScenePrimaryInstanceBuffer->GetDesc().SizeInBytes)
@@ -920,7 +920,7 @@ namespace LambdaEngine
 
 	void Scene::UpdateIndirectArgsBuffers(CommandList* pCopyCommandList)
 	{
-		uint32 sceneMeshIndexBufferSize = uint32(m_IndirectArgs.size() * sizeof(IndexedIndirectMeshArgument));
+		uint32 sceneMeshIndexBufferSize = uint32(m_IndirectArgs.GetSize() * sizeof(IndexedIndirectMeshArgument));
 
 		if (m_pSceneIndirectArgsCopyBuffer == nullptr || sceneMeshIndexBufferSize > m_pSceneIndirectArgsCopyBuffer->GetDesc().SizeInBytes)
 		{
@@ -936,7 +936,7 @@ namespace LambdaEngine
 		}
 
 		void* pMapped = m_pSceneIndirectArgsCopyBuffer->Map();
-		memcpy(pMapped, m_IndirectArgs.data(), sceneMeshIndexBufferSize);
+		memcpy(pMapped, m_IndirectArgs.GetData(), sceneMeshIndexBufferSize);
 		m_pSceneIndirectArgsCopyBuffer->Unmap();
 
 		if (m_pSceneIndirectArgsBuffer == nullptr || sceneMeshIndexBufferSize > m_pSceneIndirectArgsBuffer->GetDesc().SizeInBytes)
@@ -961,7 +961,7 @@ namespace LambdaEngine
 		tlasBuildDesc.pAccelerationStructure	= m_pTLAS;
 		tlasBuildDesc.Flags						= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
 		tlasBuildDesc.pInstanceBuffer			= m_pScenePrimaryInstanceBuffer;
-		tlasBuildDesc.InstanceCount				= m_PrimaryInstances.size();
+		tlasBuildDesc.InstanceCount				= m_PrimaryInstances.GetSize();
 		tlasBuildDesc.Update					= update;
 
 		pBuildCommandList->BuildTopLevelAccelerationStructure(&tlasBuildDesc);

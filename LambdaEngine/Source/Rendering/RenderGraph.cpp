@@ -1033,7 +1033,7 @@ namespace LambdaEngine
 			TArray<RenderPassAttachmentDesc>								renderPassAttachmentDescriptions;
 			RenderPassAttachmentDesc										renderPassDepthStencilDescription;
 			TArray<ETextureState>											renderPassRenderTargetStates;
-			TArray<BlendAttachmentState>									renderPassBlendAttachmentStates;
+			TArray<BlendAttachmentStateDesc>								renderPassBlendAttachmentStates;
 			TArray<std::pair<Resource*, ETextureState>>						renderStageRenderTargets;
 			Resource*														pDepthStencilResource = nullptr;
 			TArray<std::tuple<Resource*, ETextureState, EDescriptorType>>	renderStageTextureResources;
@@ -1135,9 +1135,9 @@ namespace LambdaEngine
 
 						renderPassRenderTargetStates.PushBack(ETextureState::TEXTURE_STATE_RENDER_TARGET);
 
-						BlendAttachmentState blendAttachmentState = {};
+						BlendAttachmentStateDesc blendAttachmentState = {};
 						blendAttachmentState.BlendEnabled			= false;
-						blendAttachmentState.ColorComponentsMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+						blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
 
 						renderPassBlendAttachmentStates.PushBack(blendAttachmentState);
 						renderStageRenderTargets.PushBack(std::make_pair(pResource, finalState));
@@ -1230,22 +1230,19 @@ namespace LambdaEngine
 					if (bufferDescriptorSetDescriptions.GetSize() > 0)
 					{
 						DescriptorSetLayoutDesc descriptorSetLayout = {};
-						descriptorSetLayout.pDescriptorBindings		= bufferDescriptorSetDescriptions.GetData();
-						descriptorSetLayout.DescriptorBindingCount	= (uint32)bufferDescriptorSetDescriptions.GetSize();
+						descriptorSetLayout.DescriptorBindings		= bufferDescriptorSetDescriptions;
 						descriptorSetLayouts.PushBack(descriptorSetLayout);
 					}
 
 					if (textureDescriptorSetDescriptions.GetSize() > 0)
 					{
 						DescriptorSetLayoutDesc descriptorSetLayout = {};
-						descriptorSetLayout.pDescriptorBindings		= textureDescriptorSetDescriptions.GetData();
-						descriptorSetLayout.DescriptorBindingCount	= (uint32)textureDescriptorSetDescriptions.GetSize();
+						descriptorSetLayout.DescriptorBindings		= textureDescriptorSetDescriptions;
 						descriptorSetLayouts.PushBack(descriptorSetLayout);
 					}
 
 					PipelineLayoutDesc pipelineLayoutDesc = {};
-					pipelineLayoutDesc.pDescriptorSetLayouts	= descriptorSetLayouts.GetData();
-					pipelineLayoutDesc.DescriptorSetLayoutCount = (uint32)descriptorSetLayouts.GetData();
+					pipelineLayoutDesc.DescriptorSetLayouts	= descriptorSetLayouts;
 					//pipelineLayoutDesc.pConstantRanges			= &constantRangeDesc;
 					//pipelineLayoutDesc.ConstantRangeCount		= constantRangeDesc.SizeInBytes > 0 ? 1 : 0;
 
@@ -1282,28 +1279,22 @@ namespace LambdaEngine
 				if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 				{
 					ManagedGraphicsPipelineStateDesc pipelineDesc = {};
-					pipelineDesc.DebugName			= pRenderStageDesc->Name;
-					pipelineDesc.PipelineLayout		= pRenderStage->pPipelineLayout;
-					pipelineDesc.DepthTestEnabled	= pRenderStageDesc->Graphics.DepthTestEnabled;
-					pipelineDesc.TaskShader			= pRenderStageDesc->Graphics.Shaders.TaskShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.TaskShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER,		EShaderLang::SHADER_LANG_GLSL);
-					pipelineDesc.MeshShader			= pRenderStageDesc->Graphics.Shaders.MeshShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.MeshShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER,		EShaderLang::SHADER_LANG_GLSL);
-					pipelineDesc.VertexShader		= pRenderStageDesc->Graphics.Shaders.VertexShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.VertexShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,		EShaderLang::SHADER_LANG_GLSL);
-					pipelineDesc.GeometryShader		= pRenderStageDesc->Graphics.Shaders.GeometryShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.GeometryShaderName,	FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER,	EShaderLang::SHADER_LANG_GLSL);
-					pipelineDesc.HullShader			= pRenderStageDesc->Graphics.Shaders.HullShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.HullShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER,		EShaderLang::SHADER_LANG_GLSL);
-					pipelineDesc.DomainShader		= pRenderStageDesc->Graphics.Shaders.DomainShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.DomainShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER,		EShaderLang::SHADER_LANG_GLSL);
-					pipelineDesc.PixelShader		= pRenderStageDesc->Graphics.Shaders.PixelShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.PixelShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,		EShaderLang::SHADER_LANG_GLSL);
-
-					memcpy(pipelineDesc.pBlendAttachmentStates, renderPassBlendAttachmentStates.GetData(), renderPassBlendAttachmentStates.GetSize() * sizeof(BlendAttachmentState));
-					pipelineDesc.BlendAttachmentStateCount		= (uint32)renderPassBlendAttachmentStates.GetSize();
+					pipelineDesc.DebugName							= pRenderStageDesc->Name;
+					pipelineDesc.PipelineLayout						= pRenderStage->pPipelineLayout;
+					pipelineDesc.DepthTestEnabled					= pRenderStageDesc->Graphics.DepthTestEnabled;
+					pipelineDesc.TaskShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.TaskShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.TaskShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER,		EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.MeshShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.MeshShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.MeshShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER,		EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.VertexShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.VertexShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.VertexShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,		EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.GeometryShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.GeometryShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.GeometryShaderName,	FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER,	EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.HullShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.HullShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.HullShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER,		EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.DomainShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.DomainShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.DomainShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER,		EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.PixelShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.PixelShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.PixelShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,		EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.BlendState.BlendAttachmentStates	= renderPassBlendAttachmentStates;
 
 					//Create RenderPass
 					{
-						RenderPassSubpassDesc renderPassSubpassDesc = {};
-						renderPassSubpassDesc.pInputAttachmentStates		= nullptr;
-						renderPassSubpassDesc.InputAttachmentCount			= 0;
-						renderPassSubpassDesc.pResolveAttachmentStates		= nullptr;
-						renderPassSubpassDesc.pRenderTargetStates			= renderPassRenderTargetStates.GetData();
-						renderPassSubpassDesc.RenderTargetCount				= (uint32)renderPassRenderTargetStates.GetSize();
+						RenderPassSubpassDesc renderPassSubpassDesc = { };
+						renderPassSubpassDesc.RenderTargetStates			= renderPassRenderTargetStates;
 						renderPassSubpassDesc.DepthStencilAttachmentState	= pDepthStencilResource != nullptr ? ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT : ETextureState::TEXTURE_STATE_DONT_CARE;
 
 						RenderPassSubpassDependencyDesc renderPassSubpassDependencyDesc = {};
@@ -1318,13 +1309,10 @@ namespace LambdaEngine
 							renderPassAttachmentDescriptions.PushBack(renderPassDepthStencilDescription);
 
 						RenderPassDesc renderPassDesc = {};
-						renderPassDesc.DebugName					= "";
-						renderPassDesc.pAttachments				= renderPassAttachmentDescriptions.GetData();
-						renderPassDesc.AttachmentCount			= (uint32)renderPassAttachmentDescriptions.GetSize();
-						renderPassDesc.pSubpasses				= &renderPassSubpassDesc;
-						renderPassDesc.SubpassCount				= 1;
-						renderPassDesc.pSubpassDependencies		= &renderPassSubpassDependencyDesc;
-						renderPassDesc.SubpassDependencyCount	= 1;
+						renderPassDesc.DebugName			= "";
+						renderPassDesc.Attachments			= renderPassAttachmentDescriptions;
+						renderPassDesc.Subpasses			= { renderPassSubpassDesc };
+						renderPassDesc.SubpassDependencies	= { renderPassSubpassDependencyDesc };
 
 						RenderPass* pRenderPass		= m_pGraphicsDevice->CreateRenderPass(&renderPassDesc);
 						pipelineDesc.RenderPass		= pRenderPass;
@@ -1367,28 +1355,30 @@ namespace LambdaEngine
 				}
 				else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 				{
-					ManagedComputePipelineStateDesc pipelineDesc = {};
+					ManagedComputePipelineStateDesc pipelineDesc = { };
 					pipelineDesc.DebugName		= pRenderStageDesc->Name;
 					pipelineDesc.PipelineLayout	= pRenderStage->pPipelineLayout;
-					pipelineDesc.Shader			= pRenderStageDesc->Compute.ShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Compute.ShaderName, FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.Shader.ShaderGUID = pRenderStageDesc->Compute.ShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Compute.ShaderName, FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
 				}
 				else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 				{
 					ManagedRayTracingPipelineStateDesc pipelineDesc = {};
-					pipelineDesc.PipelineLayout		= pRenderStage->pPipelineLayout;
-					pipelineDesc.MaxRecursionDepth	= 1;
-					pipelineDesc.RaygenShader		= pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName, FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL );
+					pipelineDesc.PipelineLayout			= pRenderStage->pPipelineLayout;
+					pipelineDesc.MaxRecursionDepth		= 1;
+					pipelineDesc.RaygenShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName, FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL );
 
+					pipelineDesc.ClosestHitShaders.Resize(pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount);
 					for (uint32 ch = 0; ch < pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount; ch++)
 					{
-						pipelineDesc.ClosestHitShaders[ch] = pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch], FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, EShaderLang::SHADER_LANG_GLSL );
+						pipelineDesc.ClosestHitShaders[ch].ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch], FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, EShaderLang::SHADER_LANG_GLSL );
 					}
 
+					pipelineDesc.MissShaders.Resize(pRenderStageDesc->RayTracing.Shaders.MissShaderCount);
 					for (uint32 m = 0; m < pRenderStageDesc->RayTracing.Shaders.MissShaderCount; m++)
 					{
-						pipelineDesc.MissShaders[m] = pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m], FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER, EShaderLang::SHADER_LANG_GLSL );
+						pipelineDesc.MissShaders[m].ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m], FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER, EShaderLang::SHADER_LANG_GLSL );
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateRayTracingPipelineState(&pipelineDesc);

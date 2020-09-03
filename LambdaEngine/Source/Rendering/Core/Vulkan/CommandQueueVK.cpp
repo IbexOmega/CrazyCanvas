@@ -92,7 +92,7 @@ namespace LambdaEngine
 			// If we function passes the "assertion" lock and execute commandbuffers
 			std::scoped_lock<SpinLock> lock(m_SpinLock);
 
-			if (numCommandLists < m_CommandBuffersToSubmit.GetSize())
+			if (numCommandLists >= m_CommandBuffersToSubmit.GetSize())
 			{
 				m_CommandBuffersToSubmit.Resize(numCommandLists);
 			}

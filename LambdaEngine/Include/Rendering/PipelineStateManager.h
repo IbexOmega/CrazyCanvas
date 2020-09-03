@@ -45,7 +45,7 @@ namespace LambdaEngine
 		uint32						SampleMask			= 0;
 		uint32						SampleCount			= 1;
 		uint32						Subpass				= 0;
-		bool						DepthTestEnabled			= false;
+		bool						DepthTestEnabled	= false;
 		// Mesh-Shader pipeline
 		ManagedShaderModule MeshShader;
 		ManagedShaderModule TaskShader;
@@ -67,9 +67,9 @@ namespace LambdaEngine
 		ComputePipelineStateDesc GetDesc() const noexcept;
 
 	public:
-		String 				DebugName		= "";
+		String 						DebugName		= "";
 		TSharedRef<PipelineLayout>	PipelineLayout	= nullptr;
-		ManagedShaderModule	Shader;
+		ManagedShaderModule			Shader;
 	};
 
 	/*

@@ -13,30 +13,30 @@ namespace LambdaEngine
 		template<typename TOther>
 		friend class TUniquePtr;
 
-		TUniquePtr(const TUniquePtr& Other) = delete;
-		TUniquePtr& operator=(const TUniquePtr& Other) noexcept = delete;
+		TUniquePtr(const TUniquePtr& other) = delete;
+		TUniquePtr& operator=(const TUniquePtr& other) noexcept = delete;
 
 		FORCEINLINE TUniquePtr() noexcept
-			: m_Ptr(nullptr)
+			: m_pPtr(nullptr)
 		{
 		}
 
-		FORCEINLINE TUniquePtr(T* InPtr) noexcept
-			: m_Ptr(InPtr)
+		FORCEINLINE TUniquePtr(T* pPtr) noexcept
+			: m_pPtr(pPtr)
 		{
 		}
 
-		FORCEINLINE TUniquePtr(TUniquePtr&& Other) noexcept
-			: m_Ptr(Other.m_Ptr)
+		FORCEINLINE TUniquePtr(TUniquePtr&& other) noexcept
+			: m_pPtr(other.m_pPtr)
 		{
-			Other.m_Ptr = nullptr;
+			other.m_pPtr = nullptr;
 		}
 
 		template<typename TOther>
-		FORCEINLINE TUniquePtr(TUniquePtr<TOther>&& Other) noexcept
-			: m_Ptr(Other.m_Ptr)
+		FORCEINLINE TUniquePtr(TUniquePtr<TOther>&& other) noexcept
+			: m_pPtr(other.m_pPtr)
 		{
-			Other.m_Ptr = nullptr;
+			other.m_pPtr = nullptr;
 		}
 
 		FORCEINLINE ~TUniquePtr()
@@ -46,32 +46,32 @@ namespace LambdaEngine
 
 		FORCEINLINE T* Release() noexcept
 		{
-			T* WeakPtr = m_Ptr;
-			m_Ptr = nullptr;
+			T* WeakPtr = m_pPtr;
+			m_pPtr = nullptr;
 			return WeakPtr;
 		}
 
 		FORCEINLINE void Reset() noexcept
 		{
 			InternalRelease();
-			m_Ptr = nullptr;
+			m_pPtr = nullptr;
 		}
 
-		FORCEINLINE void Swap(TUniquePtr& Other) noexcept
+		FORCEINLINE void Swap(TUniquePtr& other) noexcept
 		{
-			T* TempPtr = m_Ptr;
-			m_Ptr = Other.m_Ptr;
-			Other.m_Ptr = TempPtr;
+			T* TempPtr = m_pPtr;
+			m_pPtr = other.m_pPtr;
+			other.m_pPtr = TempPtr;
 		}
 
 		FORCEINLINE T* Get() const noexcept
 		{
-			return m_Ptr;
+			return m_pPtr;
 		}
 
 		FORCEINLINE T* const* GetAddressOf() const noexcept
 		{
-			return &m_Ptr;
+			return &m_pPtr;
 		}
 
 		FORCEINLINE T* operator->() const noexcept
@@ -81,7 +81,7 @@ namespace LambdaEngine
 
 		FORCEINLINE T& operator*() const noexcept
 		{
-			return (*m_Ptr);
+			return (*m_pPtr);
 		}
 
 		FORCEINLINE T* const* operator&() const noexcept
@@ -89,43 +89,43 @@ namespace LambdaEngine
 			return GetAddressOf();
 		}
 
-		FORCEINLINE T& operator[](Uint32 Index) noexcept
+		FORCEINLINE T& operator[](uint32 index) noexcept
 		{
-			VALIDATE(m_Ptr != nullptr);
-			return m_Ptr[Index];
+			VALIDATE(m_pPtr != nullptr);
+			return m_pPtr[index];
 		}
 
-		FORCEINLINE TUniquePtr& operator=(T* InPtr) noexcept
+		FORCEINLINE TUniquePtr& operator=(T* pPtr) noexcept
 		{
-			if (m_Ptr != InPtr)
+			if (m_pPtr != pPtr)
 			{
 				Reset();
-				m_Ptr = InPtr;
+				m_pPtr = pPtr;
 			}
 
 			return *this;
 		}
 
-		FORCEINLINE TUniquePtr& operator=(TUniquePtr&& Other) noexcept
+		FORCEINLINE TUniquePtr& operator=(TUniquePtr&& other) noexcept
 		{
-			if (this != std::addressof(Other))
+			if (this != std::addressof(other))
 			{
 				Reset();
-				m_Ptr = Other.m_Ptr;
-				Other.m_Ptr = nullptr;
+				m_pPtr = other.m_pPtr;
+				other.m_pPtr = nullptr;
 			}
 
 			return *this;
 		}
 
 		template<typename TOther>
-		FORCEINLINE TUniquePtr& operator=(TUniquePtr<TOther>&& Other) noexcept
+		FORCEINLINE TUniquePtr& operator=(TUniquePtr<TOther>&& other) noexcept
 		{
-			if (this != std::addressof(Other))
+			if (this != std::addressof(other))
 			{
 				Reset();
-				m_Ptr = Other.m_Ptr;
-				Other.m_Ptr = nullptr;
+				m_pPtr = other.m_pPtr;
+				other.m_pPtr = nullptr;
 			}
 
 			return *this;
@@ -137,41 +137,41 @@ namespace LambdaEngine
 			return *this;
 		}
 
-		FORCEINLINE bool operator==(const TUniquePtr& Other) const noexcept
+		FORCEINLINE bool operator==(const TUniquePtr& other) const noexcept
 		{
-			return (m_Ptr == Other.m_Ptr);
+			return (m_pPtr == other.m_pPtr);
 		}
 
-		FORCEINLINE bool operator==(T* InPtr) const noexcept
+		FORCEINLINE bool operator==(T* pPtr) const noexcept
 		{
-			return (m_Ptr == InPtr);
+			return (m_pPtr == pPtr);
 		}
 
 		FORCEINLINE operator bool() const noexcept
 		{
-			return (m_Ptr != nullptr);
+			return (m_pPtr != nullptr);
 		}
 
 	private:
 		FORCEINLINE void InternalRelease() noexcept
 		{
-			if (m_Ptr)
+			if (m_pPtr)
 			{
-				delete m_Ptr;
-				m_Ptr = nullptr;
+				delete m_pPtr;
+				m_pPtr = nullptr;
 			}
 		}
 
-		T* m_Ptr;
+		T* m_pPtr;
 	};
 
 	/*
 	* Creates a new object together with a UniquePtr
 	*/
 	template<typename T, typename... TArgs>
-	TUniquePtr<T> MakeUnique(TArgs&&... Args) noexcept
+	TUniquePtr<T> MakeUnique(TArgs&&... args) noexcept
 	{
-		T* UniquePtr = new T(Forward<TArgs>(Args)...);
+		T* UniquePtr = new T(Forward<TArgs>(args)...);
 		return Move(TUniquePtr<T>(UniquePtr));
 	}
 }

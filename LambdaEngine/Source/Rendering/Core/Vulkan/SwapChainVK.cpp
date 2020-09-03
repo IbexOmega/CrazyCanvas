@@ -177,8 +177,8 @@ namespace LambdaEngine
 			return false;
 		}
 
-		std::vector<VkSurfaceFormatKHR> formats(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, formats.data());
+		TArray<VkSurfaceFormatKHR> formats(formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, formats.GetData());
 
 		// Find the swapchain format we want
 		VkFormat lookingFor = ConvertFormat(pDesc->Format);
@@ -216,8 +216,8 @@ namespace LambdaEngine
 			return false;
 		}
 
-		std::vector<VkPresentModeKHR> presentModes(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(m_pDevice->PhysicalDevice, m_Surface, &presentModeCount, presentModes.data());
+		TArray<VkPresentModeKHR> presentModes(presentModeCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(m_pDevice->PhysicalDevice, m_Surface, &presentModeCount, presentModes.GetData());
 
 		m_PresentationMode = VK_PRESENT_MODE_FIFO_KHR;
 		if (!pDesc->VerticalSync)
@@ -337,8 +337,8 @@ namespace LambdaEngine
 		vkGetSwapchainImagesKHR(m_pDevice->Device, m_SwapChain, &imageCount, nullptr);
 		m_Desc.BufferCount = imageCount;
 
-		std::vector<VkImage> textures(imageCount);
-		result = vkGetSwapchainImagesKHR(m_pDevice->Device, m_SwapChain, &imageCount, textures.data());
+		TArray<VkImage> textures(imageCount);
+		result = vkGetSwapchainImagesKHR(m_pDevice->Device, m_SwapChain, &imageCount, textures.GetData());
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to retrive SwapChain-Images");

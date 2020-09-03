@@ -291,14 +291,14 @@ namespace LambdaEngine
 		Timestamp maxAllowedTime = m_Statistics.GetPing() * 100;
 		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
 
-		std::vector<uint32> bundlesToDelete;
+		TArray<uint32> bundlesToDelete;
 
 		std::scoped_lock<SpinLock> lock(m_LockBundles);
 		for (auto& pair : m_Bundles)
 		{
 			if (currentTime - pair.second.Timestamp > maxAllowedTime)
 			{
-				bundlesToDelete.push_back(pair.first);
+				bundlesToDelete.PushBack(pair.first);
 				m_Statistics.RegisterPacketLoss();
 			}
 		}
@@ -348,7 +348,7 @@ namespace LambdaEngine
 		}
 		
 		TArray<NetworkPacket*> packetsToFree;
-		packetsToFree.Reserve(messagesToDelete.size());
+		packetsToFree.Reserve(messagesToDelete.GetSize());
 
 		for (auto& pair : messagesToDelete)
 		{

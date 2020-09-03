@@ -1,6 +1,8 @@
 #pragma once
 #include "TUtilities.h"
 
+#include <iterator>
+
 // Disable the DLL- linkage warning for now
 #ifdef LAMBDA_VISUAL_STUDIO
 	#pragma warning(disable : 4251)
@@ -26,10 +28,16 @@ namespace LambdaEngine
 			friend class TArray;
 
 		public:
+			using iterator_category = std::bidirectional_iterator_tag;
+			using difference_type	= SizeType;
+			using value_type		= TIteratorType;
+			using pointer			= TIteratorType*;
+			using reference			= TIteratorType&;
+
 			~IteratorBase() = default;
 
-			FORCEINLINE IteratorBase(TIteratorType* Ptr = nullptr)
-				: m_Ptr(Ptr)
+			FORCEINLINE IteratorBase(TIteratorType* ptr = nullptr)
+				: m_Ptr(ptr)
 			{
 			}
 
@@ -141,8 +149,8 @@ namespace LambdaEngine
 		public:
 			~ReverseIteratorBase() = default;
 
-			FORCEINLINE ReverseIteratorBase(TIteratorType* Ptr = nullptr)
-				: m_Ptr(Ptr)
+			FORCEINLINE ReverseIteratorBase(TIteratorType* ptr = nullptr)
+				: m_Ptr(ptr)
 			{
 			}
 
@@ -228,14 +236,14 @@ namespace LambdaEngine
 	*/
 	public:
 		FORCEINLINE TArray() noexcept
-			: m_Data(nullptr)
+			: m_pData(nullptr)
 			, m_Size(0)
 			, m_Capacity(0)
 		{
 		}
 
 		FORCEINLINE explicit TArray(SizeType size) noexcept
-			: m_Data(nullptr)
+			: m_pData(nullptr)
 			, m_Size(0)
 			, m_Capacity(0)
 		{
@@ -243,23 +251,16 @@ namespace LambdaEngine
 		}
 
 		FORCEINLINE explicit TArray(SizeType size, const T& value) noexcept
-			: m_Data(nullptr)
+			: m_pData(nullptr)
 			, m_Size(0)
 			, m_Capacity(0)
 		{
 			InternalConstruct(size, value);
 		}
 
-		FORCEINLINE explicit TArray(Iterator begin, Iterator end) noexcept
-			: m_Data(nullptr)
-			, m_Size(0)
-			, m_Capacity(0)
-		{
-			InternalConstruct(ConstIterator(begin.m_Ptr), ConstIterator(end.m_Ptr));
-		}
-
-		FORCEINLINE explicit TArray(ConstIterator begin, ConstIterator end) noexcept
-			: m_Data(nullptr)
+		template<typename TInputIt>
+		FORCEINLINE explicit TArray(TInputIt begin, TInputIt end) noexcept
+			: m_pData(nullptr)
 			, m_Size(0)
 			, m_Capacity(0)
 		{
@@ -267,16 +268,15 @@ namespace LambdaEngine
 		}
 
 		FORCEINLINE TArray(std::initializer_list<T> iList) noexcept
-			: m_Data(nullptr)
+			: m_pData(nullptr)
 			, m_Size(0)
 			, m_Capacity(0)
 		{
-			// TODO: Get rid of const_cast
-			InternalConstruct(const_cast<T*>(iList.begin()), const_cast<T*>(iList.end()));
+			InternalConstruct(iList.begin(), iList.end());
 		}
 
 		FORCEINLINE TArray(const TArray& other) noexcept
-			: m_Data(nullptr)
+			: m_pData(nullptr)
 			, m_Size(0)
 			, m_Capacity(0)
 		{
@@ -284,7 +284,7 @@ namespace LambdaEngine
 		}
 
 		FORCEINLINE TArray(TArray&& other) noexcept
-			: m_Data(nullptr)
+			: m_pData(nullptr)
 			, m_Size(0)
 			, m_Capacity(0)
 		{
@@ -298,12 +298,12 @@ namespace LambdaEngine
 			InternalReleaseData();
 
 			m_Capacity = 0;
-			m_Data = nullptr;
+			m_pData = nullptr;
 		}
 
 		FORCEINLINE void Clear() noexcept
 		{
-			InternalDestructRange(m_Data, m_Data + m_Size);
+			InternalDestructRange(m_pData, m_pData + m_Size);
 			m_Size = 0;
 		}
 
@@ -319,12 +319,8 @@ namespace LambdaEngine
 			InternalConstruct(size, value);
 		}
 
-		FORCEINLINE void Assign(Iterator begin, Iterator end) noexcept
-		{
-			Assign(ConstIterator(begin.m_Ptr), ConstIterator(end.m_Ptr));
-		}
-
-		FORCEINLINE void Assign(ConstIterator begin, ConstIterator end) noexcept
+		template<typename TInputIt>
+		FORCEINLINE void Assign(TInputIt begin, TInputIt end) noexcept
 		{
 			Clear();
 			InternalConstruct(begin, end);
@@ -333,9 +329,7 @@ namespace LambdaEngine
 		FORCEINLINE void Assign(std::initializer_list<T> iList) noexcept
 		{
 			Clear();
-
-			// TODO: Get rid of const_cast
-			InternalConstruct(const_cast<T*>(iList.begin()), const_cast<T*>(iList.end()));
+			InternalConstruct(iList.begin(), iList.end());
 		}
 
 		FORCEINLINE void Resize(SizeType size) noexcept
@@ -348,11 +342,11 @@ namespace LambdaEngine
 					InternalRealloc(newCapacity);
 				}
 
-				InternalDefaultConstructRange(m_Data + m_Size, m_Data + size);
+				InternalDefaultConstructRange(m_pData + m_Size, m_pData + size);
 			}
 			else if (size < m_Size)
 			{
-				InternalDestructRange(m_Data + size, m_Data + m_Size);
+				InternalDestructRange(m_pData + size, m_pData + m_Size);
 			}
 
 			m_Size = size;
@@ -368,11 +362,11 @@ namespace LambdaEngine
 					InternalRealloc(newCapacity);
 				}
 
-				InternalCopyEmplace(size - m_Size, value, m_Data + m_Size);
+				InternalCopyEmplace(size - m_Size, value, m_pData + m_Size);
 			}
 			else if (size < m_Size)
 			{
-				InternalDestructRange(m_Data + size, m_Data + m_Size);
+				InternalDestructRange(m_pData + size, m_pData + m_Size);
 			}
 
 			m_Size = size;
@@ -389,11 +383,11 @@ namespace LambdaEngine
 				}
 
 				T* tempData = InternalAllocateElements(inCapacity);
-				InternalMoveEmplace(m_Data, m_Data + m_Size, tempData);
-				InternalDestructRange(m_Data, m_Data + oldSize);
+				InternalMoveEmplace(m_pData, m_pData + m_Size, tempData);
+				InternalDestructRange(m_pData, m_pData + oldSize);
 				InternalReleaseData();
 
-				m_Data = tempData;
+				m_pData = tempData;
 				m_Capacity = inCapacity;
 			}
 		}
@@ -407,7 +401,7 @@ namespace LambdaEngine
 				InternalRealloc(newCapacity);
 			}
 
-			T* dataEnd = m_Data + m_Size;
+			T* dataEnd = m_pData + m_Size;
 			new(reinterpret_cast<void*>(dataEnd)) T(Forward<TArgs>(args)...);
 			m_Size++;
 			return (*dataEnd);
@@ -424,12 +418,6 @@ namespace LambdaEngine
 		}
 
 		template<typename... TArgs>
-		FORCEINLINE Iterator Emplace(Iterator pos, TArgs&&... args) noexcept
-		{
-			return Emplace(ConstIterator(pos.m_Ptr), Forward<TArgs>(args)...);
-		}
-
-		template<typename... TArgs>
 		FORCEINLINE Iterator Emplace(ConstIterator pos, TArgs&&... args) noexcept
 		{
 			// Emplace back
@@ -437,22 +425,22 @@ namespace LambdaEngine
 			{
 				const SizeType oldSize = m_Size;
 				EmplaceBack(Forward<TArgs>(args)...);
-				return Iterator(m_Data + oldSize);
+				return Iterator(m_pData + oldSize);
 			}
 
 			// Emplace
 			const SizeType index = InternalIndex(pos);
-			T* dataBegin = m_Data + index;
+			T* dataBegin = m_pData + index;
 			if (m_Size >= m_Capacity)
 			{
 				const SizeType newCapacity = InternalGetResizeFactor();
 				InternalEmplaceRealloc(newCapacity, dataBegin, 1);
-				dataBegin = m_Data + index;
+				dataBegin = m_pData + index;
 			}
 			else
 			{
 				// Construct the range so that we can move to it
-				T* dataEnd = m_Data + m_Size;
+				T* dataEnd = m_pData + m_Size;
 				InternalDefaultConstructRange(dataEnd, dataEnd + 1);
 				InternalMemmoveForward(dataBegin, dataEnd, dataEnd);
 				InternalDestruct(dataBegin);
@@ -499,7 +487,7 @@ namespace LambdaEngine
 					EmplaceBack(Move(value));
 				}
 
-				return Iterator(m_Data + oldSize);
+				return Iterator(m_pData + oldSize);
 			}
 
 			// Insert
@@ -507,18 +495,18 @@ namespace LambdaEngine
 			const SizeType newSize	= m_Size + listSize;
 			const SizeType index	= InternalIndex(pos);
 
-			T* rangeBegin = m_Data + index;
+			T* rangeBegin = m_pData + index;
 			if (newSize >= m_Capacity)
 			{
 				const SizeType newCapacity = InternalGetResizeFactor(newSize);
 				InternalEmplaceRealloc(newCapacity, rangeBegin, listSize);
-				rangeBegin = m_Data + index;
+				rangeBegin = m_pData + index;
 			}
 			else
 			{
 				// Construct the range so that we can move to it
-				T* dataEnd		= m_Data + m_Size;
-				T* newDataEnd	= m_Data + m_Size + listSize;
+				T* dataEnd		= m_pData + m_Size;
+				T* newDataEnd	= m_pData + m_Size + listSize;
 				T* rangeEnd		= rangeBegin + listSize;
 				InternalDefaultConstructRange(dataEnd, newDataEnd);
 				InternalMemmoveForward(rangeBegin, dataEnd, newDataEnd - 1);
@@ -531,23 +519,25 @@ namespace LambdaEngine
 			return Iterator(rangeBegin);
 		}
 
-		FORCEINLINE Iterator Insert(Iterator pos, Iterator begin, Iterator end) noexcept
+		template<typename TInputIt>
+		FORCEINLINE Iterator Insert(Iterator pos, TInputIt begin, TInputIt end) noexcept
 		{
-			return Insert(ConstIterator(pos.m_Ptr), ConstIterator(begin.m_Ptr), ConstIterator(end.m_Ptr));
+			return Insert(ConstIterator(pos.m_Ptr), begin, end);
 		}
 
-		FORCEINLINE Iterator Insert(ConstIterator pos, ConstIterator begin, ConstIterator end) noexcept
+		template<typename TInputIt>
+		FORCEINLINE Iterator Insert(ConstIterator pos, TInputIt begin, TInputIt end) noexcept
 		{
 			// Insert at end
 			if (pos == ConstEnd())
 			{
 				const SizeType oldSize = m_Size;
-				for (ConstIterator it = begin; it != end; it++)
+				for (TInputIt it = begin; it != end; it++)
 				{
 					EmplaceBack(*it);
 				}
 
-				return Iterator(m_Data + oldSize);
+				return Iterator(m_pData + oldSize);
 			}
 
 			// Insert
@@ -555,18 +545,18 @@ namespace LambdaEngine
 			const SizeType newSize		= m_Size + rangeSize;
 			const SizeType index		= InternalIndex(pos);
 
-			T* rangeBegin = m_Data + index;
+			T* rangeBegin = m_pData + index;
 			if (newSize >= m_Capacity)
 			{
 				const SizeType newCapacity = InternalGetResizeFactor(newSize);
 				InternalEmplaceRealloc(newCapacity, rangeBegin, rangeSize);
-				rangeBegin = m_Data + index;
+				rangeBegin = m_pData + index;
 			}
 			else
 			{
 				// Construct the range so that we can move to it
-				T* dataEnd		= m_Data + m_Size;
-				T* newDataEnd	= m_Data + m_Size + rangeSize;
+				T* dataEnd		= m_pData + m_Size;
+				T* newDataEnd	= m_pData + m_Size + rangeSize;
 				T* rangeEnd		= rangeBegin + rangeSize;
 				InternalDefaultConstructRange(dataEnd, newDataEnd);
 				InternalMemmoveForward(rangeBegin, dataEnd, newDataEnd - 1);
@@ -582,7 +572,7 @@ namespace LambdaEngine
 		{
 			if (m_Size > 0)
 			{
-				InternalDestruct(m_Data + (--m_Size));
+				InternalDestruct(m_pData + (--m_Size));
 			}
 		}
 
@@ -603,9 +593,10 @@ namespace LambdaEngine
 			}
 
 			// Erase
-			const SizeType index = InternalDistance(m_Data, pos.m_Ptr);
-			T* dataBegin	= m_Data + index;
-			T* dataEnd		= m_Data + m_Size;
+			const T* constData = m_pData;
+			const SizeType index = InternalDistance(constData, pos.m_Ptr);
+			T* dataBegin	= m_pData + index;
+			T* dataEnd		= m_pData + m_Size;
 			InternalMemmoveBackwards(dataBegin + 1, dataEnd, dataBegin);
 			InternalDestruct(dataEnd - 1);
 
@@ -623,8 +614,8 @@ namespace LambdaEngine
 			VALIDATE(begin < end);
 			VALIDATE(InternalIsRangeOwner(begin, end));
 
-			T* dataBegin	= m_Data + InternalIndex(begin);
-			T* dataEnd		= m_Data + InternalIndex(end);
+			T* dataBegin	= m_pData + InternalIndex(begin);
+			T* dataEnd		= m_pData + InternalIndex(end);
 			
 			const SizeType elementCount = InternalDistance(dataBegin, dataEnd);
 			if (end >= ConstEnd())
@@ -633,7 +624,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				T* realEnd = m_Data + m_Size;
+				T* realEnd = m_pData + m_Size;
 				InternalMemmoveBackwards(dataEnd, realEnd, dataBegin);
 				InternalDestructRange(realEnd - elementCount, realEnd);
 			}
@@ -646,15 +637,15 @@ namespace LambdaEngine
 		{
 			if (this != std::addressof(other))
 			{
-				T* tempPtr = m_Data;
+				T* tempPtr = m_pData;
 				SizeType tempSize = m_Size;
 				SizeType tempCapacity = m_Capacity;
 
-				m_Data = other.m_Data;
+				m_pData = other.m_pData;
 				m_Size = other.m_Size;
 				m_Capacity = other.m_Capacity;
 
-				other.m_Data = tempPtr;
+				other.m_pData = tempPtr;
 				other.m_Size = tempSize;
 				other.m_Capacity = tempCapacity;
 			}
@@ -675,96 +666,96 @@ namespace LambdaEngine
 
 		FORCEINLINE Iterator Begin() noexcept
 		{
-			return Iterator(m_Data);
+			return Iterator(m_pData);
 		}
 
 		FORCEINLINE Iterator End() noexcept
 		{
-			return Iterator(m_Data + m_Size);
+			return Iterator(m_pData + m_Size);
 		}
 
 		FORCEINLINE ConstIterator Begin() const noexcept
 		{
-			return ConstIterator(m_Data);
+			return ConstIterator(m_pData);
 		}
 
 		FORCEINLINE ConstIterator End() const noexcept
 		{
-			return ConstIterator(m_Data + m_Size);
+			return ConstIterator(m_pData + m_Size);
 		}
 
 		FORCEINLINE ConstIterator ConstBegin() const noexcept
 		{
-			return ConstIterator(m_Data);
+			return ConstIterator(m_pData);
 		}
 
 		FORCEINLINE ConstIterator ConstEnd() const noexcept
 		{
-			return ConstIterator(m_Data + m_Size);
+			return ConstIterator(m_pData + m_Size);
 		}
 
 		FORCEINLINE ReverseIterator ReverseBegin() noexcept
 		{
-			return ReverseIterator(m_Data + m_Size);
+			return ReverseIterator(m_pData + m_Size);
 		}
 
 		FORCEINLINE ReverseIterator ReverseEnd() noexcept
 		{
-			return ReverseIterator(m_Data);
+			return ReverseIterator(m_pData);
 		}
 
 		FORCEINLINE ReverseConstIterator ReverseBegin() const noexcept
 		{
-			return ReverseConstIterator(m_Data + m_Size);
+			return ReverseConstIterator(m_pData + m_Size);
 		}
 
 		FORCEINLINE ReverseConstIterator ReverseEnd() const noexcept
 		{
-			return ReverseConstIterator(m_Data);
+			return ReverseConstIterator(m_pData);
 		}
 
 		FORCEINLINE ReverseConstIterator ConstReverseBegin() const noexcept
 		{
-			return ReverseConstIterator(m_Data + m_Size);
+			return ReverseConstIterator(m_pData + m_Size);
 		}
 
 		FORCEINLINE ReverseConstIterator ConstReverseEnd() const noexcept
 		{
-			return ReverseConstIterator(m_Data);
+			return ReverseConstIterator(m_pData);
 		}
 
 		FORCEINLINE T& GetFront() noexcept
 		{
 			VALIDATE(m_Size > 0);
-			return m_Data[0];
+			return m_pData[0];
 		}
 
 		FORCEINLINE const T& GetFront() const noexcept
 		{
 			VALIDATE(m_Size > 0);
-			return m_Data[0];
+			return m_pData[0];
 		}
 
 		FORCEINLINE T& GetBack() noexcept
 		{
 			VALIDATE(m_Size > 0);
-			return m_Data[m_Size - 1];
+			return m_pData[m_Size - 1];
 		}
 
 		FORCEINLINE const T& GetBack() const noexcept
 		{
 			VALIDATE(m_Size > 0);
-			return m_Data[m_Size - 1];
+			return m_pData[m_Size - 1];
 		}
 
 		FORCEINLINE T* GetData() noexcept
 		{
-			return m_Data;
+			return m_pData;
 		}
 
 		FORCEINLINE const T* GetData() const noexcept
 		{
-			return m_Data;
+			return m_pData;
 		}
 
 		FORCEINLINE SizeType GetSize() const noexcept
@@ -780,13 +771,13 @@ namespace LambdaEngine
 		FORCEINLINE T& GetElementAt(SizeType index) noexcept
 		{
 			VALIDATE(index < m_Size);
-			return m_Data[index];
+			return m_pData[index];
 		}
 
 		FORCEINLINE const T& GetElementAt(SizeType index) const noexcept
 		{
 			VALIDATE(index < m_Size);
-			return m_Data[index];
+			return m_pData[index];
 		}
 
 		FORCEINLINE TArray& operator=(const TArray& other) noexcept
@@ -834,62 +825,62 @@ namespace LambdaEngine
 	public:
 		FORCEINLINE Iterator begin() noexcept
 		{
-			return Iterator(m_Data);
+			return Iterator(m_pData);
 		}
 
 		FORCEINLINE Iterator end() noexcept
 		{
-			return Iterator(m_Data + m_Size);
+			return Iterator(m_pData + m_Size);
 		}
 
 		FORCEINLINE ConstIterator begin() const noexcept
 		{
-			return ConstIterator(m_Data);
+			return ConstIterator(m_pData);
 		}
 
 		FORCEINLINE ConstIterator end() const noexcept
 		{
-			return ConstIterator(m_Data + m_Size);
+			return ConstIterator(m_pData + m_Size);
 		}
 
 		FORCEINLINE ConstIterator cbegin() const noexcept
 		{
-			return ConstIterator(m_Data);
+			return ConstIterator(m_pData);
 		}
 
 		FORCEINLINE ConstIterator cend() const noexcept
 		{
-			return ConstIterator(m_Data + m_Size);
+			return ConstIterator(m_pData + m_Size);
 		}
 
 		FORCEINLINE ReverseIterator rbegin() noexcept
 		{
-			return ReverseIterator(m_Data);
+			return ReverseIterator(m_pData);
 		}
 
 		FORCEINLINE ReverseIterator rend() noexcept
 		{
-			return ReverseIterator(m_Data + m_Size);
+			return ReverseIterator(m_pData + m_Size);
 		}
 
 		FORCEINLINE ReverseConstIterator rbegin() const noexcept
 		{
-			return ReverseConstIterator(m_Data);
+			return ReverseConstIterator(m_pData);
 		}
 
 		FORCEINLINE ReverseConstIterator rend() const noexcept
 		{
-			return ReverseConstIterator(m_Data + m_Size);
+			return ReverseConstIterator(m_pData + m_Size);
 		}
 
 		FORCEINLINE ReverseConstIterator crbegin() const noexcept
 		{
-			return ReverseConstIterator(m_Data);
+			return ReverseConstIterator(m_pData);
 		}
 
 		FORCEINLINE ReverseConstIterator crend() const noexcept
 		{
-			return ReverseConstIterator(m_Data + m_Size);
+			return ReverseConstIterator(m_pData + m_Size);
 		}
 
 	private:
@@ -905,34 +896,43 @@ namespace LambdaEngine
 		}
 
 		// Helpers
-		FORCEINLINE SizeType InternalDistance(Iterator begin, Iterator end)
+		template<typename TInputIt>
+		FORCEINLINE T* InternalUnwrap(TInputIt it)
 		{
-			return InternalDistance(begin.m_Ptr, end.m_Ptr);
+			if constexpr (std::is_pointer<TInputIt>())
+			{
+				return it;
+			}
+			else
+			{
+				return it.m_Ptr;
+			}
 		}
 
-		FORCEINLINE SizeType InternalDistance(ConstIterator begin, ConstIterator end)
+		template<typename TInputIt>
+		FORCEINLINE const T* InternalUnwrapConst(TInputIt it)
 		{
-			return InternalDistance(begin.m_Ptr, end.m_Ptr);
+			if constexpr (std::is_pointer<TInputIt>())
+			{
+				return it;
+			}
+			else
+			{
+				return it.m_Ptr;
+			}
 		}
 
-		FORCEINLINE SizeType InternalDistance(const T* begin, const T* end)
+		template<typename TInputIt>
+		FORCEINLINE SizeType InternalDistance(TInputIt begin, TInputIt end)
 		{
-			return static_cast<SizeType>(end - begin);
+			return static_cast<SizeType>(InternalUnwrapConst(end) - InternalUnwrapConst(begin));
 		}
 
-		FORCEINLINE SizeType InternalIndex(Iterator pos)
+		template<typename TInputIt>
+		FORCEINLINE SizeType InternalIndex(TInputIt pos)
 		{
-			return InternalIndex(pos.m_Ptr);
-		}
-
-		FORCEINLINE SizeType InternalIndex(ConstIterator pos)
-		{
-			return InternalIndex(pos.m_Ptr);
-		}
-
-		FORCEINLINE SizeType InternalIndex(const T* pos)
-		{
-			return static_cast<SizeType>(pos - m_Data);
+			const T* constData = m_pData;
+			return static_cast<SizeType>(InternalUnwrapConst(pos) - constData);
 		}
 
 		FORCEINLINE SizeType InternalGetResizeFactor() const
@@ -953,9 +953,9 @@ namespace LambdaEngine
 
 		FORCEINLINE void InternalReleaseData()
 		{
-			if (m_Data)
+			if (m_pData)
 			{
-				free(m_Data);
+				free(m_pData);
 			}
 		}
 
@@ -965,7 +965,7 @@ namespace LambdaEngine
 			{
 				InternalReleaseData();
 
-				m_Data = InternalAllocateElements(inCapacity);
+				m_pData = InternalAllocateElements(inCapacity);
 				m_Capacity = inCapacity;
 			}
 		}
@@ -973,11 +973,11 @@ namespace LambdaEngine
 		FORCEINLINE void InternalRealloc(SizeType inCapacity)
 		{
 			T* tempData = InternalAllocateElements(inCapacity);
-			InternalMoveEmplace(m_Data, m_Data + m_Size, tempData);
-			InternalDestructRange(m_Data, m_Data + m_Size);
+			InternalMoveEmplace(m_pData, m_pData + m_Size, tempData);
+			InternalDestructRange(m_pData, m_pData + m_Size);
 			InternalReleaseData();
 
-			m_Data = tempData;
+			m_pData = tempData;
 			m_Capacity = inCapacity;
 		}
 
@@ -987,16 +987,16 @@ namespace LambdaEngine
 
 			const SizeType index = InternalIndex(EmplacePos);
 			T* tempData = InternalAllocateElements(inCapacity);
-			InternalMoveEmplace(m_Data, EmplacePos, tempData);
-			if (EmplacePos != m_Data + m_Size)
+			InternalMoveEmplace(m_pData, EmplacePos, tempData);
+			if (EmplacePos != m_pData + m_Size)
 			{
-				InternalMoveEmplace(EmplacePos, m_Data + m_Size, tempData + index + count);
+				InternalMoveEmplace(EmplacePos, m_pData + m_Size, tempData + index + count);
 			}
 
-			InternalDestructRange(m_Data, m_Data + m_Size);
+			InternalDestructRange(m_pData, m_pData + m_Size);
 			InternalReleaseData();
 
-			m_Data = tempData;
+			m_pData = tempData;
 			m_Capacity = inCapacity;
 		}
 
@@ -1007,7 +1007,7 @@ namespace LambdaEngine
 			{
 				InternalAllocData(size);
 				m_Size = size;
-				InternalDefaultConstructRange(m_Data, m_Data + m_Size);
+				InternalDefaultConstructRange(m_pData, m_pData + m_Size);
 			}
 		}
 
@@ -1016,53 +1016,44 @@ namespace LambdaEngine
 			if (size > 0)
 			{
 				InternalAllocData(size);
-				InternalCopyEmplace(size, value, m_Data);
+				InternalCopyEmplace(size, value, m_pData);
 				m_Size = size;
 			}
 		}
 
-		FORCEINLINE void InternalConstruct(ConstIterator begin, ConstIterator end)
+		template<typename TInputIt>
+		FORCEINLINE void InternalConstruct(TInputIt begin, TInputIt end)
 		{
 			const SizeType distance = InternalDistance(begin, end);
 			if (distance > 0)
 			{
 				InternalAllocData(distance);
-				InternalCopyEmplace(begin.m_Ptr, end.m_Ptr, m_Data);
-				m_Size = distance;
-			}
-		}
-
-		FORCEINLINE void InternalConstruct(T* begin, T* end)
-		{
-			const SizeType distance = InternalDistance(begin, end);
-			if (distance > 0)
-			{
-				InternalAllocData(distance);
-				InternalMoveEmplace(begin, end, m_Data);
+				InternalCopyEmplace(begin, end, m_pData);
 				m_Size = distance;
 			}
 		}
 
 		FORCEINLINE void InternalMove(TArray&& other)
 		{
-			m_Data = other.m_Data;
+			m_pData = other.m_pData;
 			m_Size = other.m_Size;
 			m_Capacity = other.m_Capacity;
 
-			other.m_Data = nullptr;
+			other.m_pData = nullptr;
 			other.m_Size = 0;
 			other.m_Capacity = 0;
 		}
 
 		// Emplace
-		FORCEINLINE void InternalCopyEmplace(const T* begin, const T* end, T* dest)
+		template<typename TInputIt>
+		FORCEINLINE void InternalCopyEmplace(TInputIt begin, TInputIt end, T* dest)
 		{
 			// This function assumes that there is no overlap
 			if constexpr (std::is_trivially_copy_constructible<T>())
 			{
 				const SizeType count = InternalDistance(begin, end);
 				const SizeType cpySize = count * sizeof(T);
-				memcpy(dest, begin, cpySize);
+				memcpy(dest, InternalUnwrapConst(begin), cpySize);
 			}
 			else
 			{
@@ -1113,7 +1104,7 @@ namespace LambdaEngine
 				return;
 			}
 
-			VALIDATE(end <= m_Data + m_Capacity);
+			VALIDATE(end <= m_pData + m_Capacity);
 
 			// Move each object in the range to the destination
 			const SizeType count = InternalDistance(begin, end);
@@ -1212,7 +1203,7 @@ namespace LambdaEngine
 		}
 
 	private:
-		T* m_Data;
+		T* m_pData;
 		SizeType m_Size;
 		SizeType m_Capacity;
 	};

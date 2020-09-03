@@ -93,9 +93,9 @@ namespace LambdaEngine
 	*/
 	struct GraphicsPipelineStateDesc
 	{
-		String						DebugName		= "";
-		const RenderPass*			pRenderPass		= nullptr;
-		const PipelineLayout*		pPipelineLayout	= nullptr;
+		String					DebugName		= "";
+		const RenderPass*		pRenderPass		= nullptr;
+		const PipelineLayout*	pPipelineLayout	= nullptr;
 		// Pipeline
 		TArray<InputElementDesc>	InputLayout			= { };
 		InputAssemblyDesc			InputAssembly		= { };

@@ -58,22 +58,22 @@ namespace LambdaEngine
 
 		FORCEINLINE T* Get() const noexcept
 		{
-			return m_Ptr;
+			return m_pPtr;
 		}
 
 		FORCEINLINE T* const* GetAddressOf() const noexcept
 		{
-			return &m_Ptr;
+			return &m_pPtr;
 		}
 
-		FORCEINLINE Uint32 GetStrongReferences() const noexcept
+		FORCEINLINE uint32 GetStrongReferences() const noexcept
 		{
-			return m_Counter ? m_Counter->GetStrongReferences() : 0;
+			return m_pCounter ? m_pCounter->GetStrongReferences() : 0;
 		}
 
-		FORCEINLINE Uint32 GetWeakReferences() const noexcept
+		FORCEINLINE uint32 GetWeakReferences() const noexcept
 		{
-			return m_Counter ? m_Counter->GetWeakReferences() : 0;
+			return m_pCounter ? m_pCounter->GetWeakReferences() : 0;
 		}
 
 		FORCEINLINE T* const* operator&() const noexcept
@@ -88,70 +88,70 @@ namespace LambdaEngine
 
 		FORCEINLINE T& operator*() const noexcept
 		{
-			return (*m_Ptr);
+			return (*m_pPtr);
 		}
 
-		FORCEINLINE T& operator[](Uint32 Index) const noexcept
+		FORCEINLINE T& operator[](uint32 Index) const noexcept
 		{
-			VALIDATE(m_Ptr != nullptr);
-			return m_Ptr[Index];
+			VALIDATE(m_pPtr != nullptr);
+			return m_pPtr[Index];
 		}
 
-		FORCEINLINE bool operator==(T* InPtr) const noexcept
+		FORCEINLINE bool operator==(T* pPtr) const noexcept
 		{
-			return (m_Ptr == InPtr);
+			return (m_pPtr == pPtr);
 		}
 
-		FORCEINLINE bool operator!=(T* InPtr) const noexcept
+		FORCEINLINE bool operator!=(T* pPtr) const noexcept
 		{
-			return (m_Ptr != InPtr);
+			return (m_pPtr != pPtr);
 		}
 
 		FORCEINLINE operator bool() const noexcept
 		{
-			return (m_Ptr != nullptr);
+			return (m_pPtr != nullptr);
 		}
 
 	protected:
 		FORCEINLINE TPtrBase() noexcept
-			: m_Ptr(nullptr)
-			, m_Counter(nullptr)
+			: m_pPtr(nullptr)
+			, m_pCounter(nullptr)
 		{
 		}
 
 		FORCEINLINE void InternalAddStrongRef() noexcept
 		{
 			// If the object has a Ptr there must be a Counter or something went wrong
-			if (m_Ptr)
+			if (m_pPtr)
 			{
-				VALIDATE(m_Counter != nullptr);
-				m_Counter->AddStrongRef();
+				VALIDATE(m_pCounter != nullptr);
+				m_pCounter->AddStrongRef();
 			}
 		}
 
 		FORCEINLINE void InternalAddWeakRef() noexcept
 		{
 			// If the object has a Ptr there must be a Counter or something went wrong
-			if (m_Ptr)
+			if (m_pPtr)
 			{
-				VALIDATE(m_Counter != nullptr);
-				m_Counter->AddWeakRef();
+				VALIDATE(m_pCounter != nullptr);
+				m_pCounter->AddWeakRef();
 			}
 		}
 
 		FORCEINLINE void InternalReleaseStrongRef() noexcept
 		{
 			// If the object has a Ptr there must be a Counter or something went wrong
-			if (m_Ptr)
+			if (m_pPtr)
 			{
-				VALIDATE(m_Counter != nullptr);
-				m_Counter->ReleaseStrongRef();
+				VALIDATE(m_pCounter != nullptr);
+				m_pCounter->ReleaseStrongRef();
 
 				// When releasing the last strong reference we can destroy the pointer and counter
-				if (m_Counter->GetStrongReferences() <= 0)
+				if (m_pCounter->GetStrongReferences() <= 0)
 				{
-					delete m_Ptr;
-					delete m_Counter;
+					delete m_pPtr;
+					delete m_pCounter;
 					InternalClear();
 				}
 			}
@@ -160,111 +160,111 @@ namespace LambdaEngine
 		FORCEINLINE void InternalReleaseWeakRef() noexcept
 		{
 			// If the object has a Ptr there must be a Counter or something went wrong
-			if (m_Ptr)
+			if (m_pPtr)
 			{
-				VALIDATE(m_Counter != nullptr);
-				m_Counter->ReleaseWeakRef();
+				VALIDATE(m_pCounter != nullptr);
+				m_pCounter->ReleaseWeakRef();
 			}
 		}
 
-		FORCEINLINE void InternalSwap(TPtrBase& Other) noexcept
+		FORCEINLINE void InternalSwap(TPtrBase& other) noexcept
 		{
-			T* TempPtr = m_Ptr;
-			PtrControlBlock* TempBlock = m_Counter;
+			T* pTempPtr = m_pPtr;
+			PtrControlBlock* pTempBlock = m_pCounter;
 
-			m_Ptr = Other.m_Ptr;
-			m_Counter = Other.m_Counter;
+			m_pPtr = other.m_pPtr;
+			m_pCounter = other.m_pCounter;
 
-			Other.m_Ptr = TempPtr;
-			Other.m_Counter = TempBlock;
+			other.m_pPtr = pTempPtr;
+			other.m_pCounter = pTempBlock;
 		}
 
-		FORCEINLINE void InternalMove(TPtrBase&& Other) noexcept
+		FORCEINLINE void InternalMove(TPtrBase&& other) noexcept
 		{
-			m_Ptr = Other.m_Ptr;
-			m_Counter = Other.m_Counter;
+			m_pPtr = other.m_pPtr;
+			m_pCounter = other.m_pCounter;
 
-			Other.m_Ptr = nullptr;
-			Other.m_Counter = nullptr;
-		}
-
-		template<typename TOther>
-		FORCEINLINE void InternalMove(TPtrBase<TOther>&& Other) noexcept
-		{
-			static_assert(std::is_convertible<TOther, T>());
-
-			m_Ptr = static_cast<TOther*>(Other.m_Ptr);
-			m_Counter = Other.m_Counter;
-
-			Other.m_Ptr = nullptr;
-			Other.m_Counter = nullptr;
-		}
-
-		FORCEINLINE void InternalConstructStrong(T* InPtr)
-		{
-			m_Ptr = InPtr;
-			m_Counter = new PtrControlBlock();
-			InternalAddStrongRef();
+			other.m_pPtr = nullptr;
+			other.m_pCounter = nullptr;
 		}
 
 		template<typename TOther>
-		FORCEINLINE void InternalConstructStrong(TOther* InPtr)
+		FORCEINLINE void InternalMove(TPtrBase<TOther>&& other) noexcept
 		{
 			static_assert(std::is_convertible<TOther, T>());
 
-			m_Ptr = static_cast<T*>(InPtr);
-			m_Counter = new PtrControlBlock();
-			InternalAddStrongRef();
+			m_pPtr = static_cast<TOther*>(other.m_pPtr);
+			m_pCounter = other.m_pCounter;
+
+			other.m_pPtr = nullptr;
+			other.m_pCounter = nullptr;
 		}
 
-		FORCEINLINE void InternalConstructStrong(const TPtrBase& Other)
+		FORCEINLINE void InternalConstructStrong(T* pPtr)
 		{
-			m_Ptr = Other.m_Ptr;
-			m_Counter = Other.m_Counter;
+			m_pPtr = pPtr;
+			m_pCounter = new PtrControlBlock();
 			InternalAddStrongRef();
 		}
 
 		template<typename TOther>
-		FORCEINLINE void InternalConstructStrong(const TPtrBase<TOther>& Other)
+		FORCEINLINE void InternalConstructStrong(TOther* pPtr)
 		{
 			static_assert(std::is_convertible<TOther, T>());
 
-			m_Ptr = static_cast<T*>(Other.m_Ptr);
-			m_Counter = Other.m_Counter;
+			m_pPtr = static_cast<T*>(pPtr);
+			m_pCounter = new PtrControlBlock();
 			InternalAddStrongRef();
 		}
 
-		FORCEINLINE void InternalConstructWeak(T* InPtr)
+		FORCEINLINE void InternalConstructStrong(const TPtrBase& other)
 		{
-			m_Ptr = InPtr;
-			m_Counter = new PtrControlBlock();
+			m_pPtr = other.m_pPtr;
+			m_pCounter = other.m_pCounter;
+			InternalAddStrongRef();
+		}
+
+		template<typename TOther>
+		FORCEINLINE void InternalConstructStrong(const TPtrBase<TOther>& other)
+		{
+			static_assert(std::is_convertible<TOther, T>());
+
+			m_pPtr = static_cast<T*>(other.m_pPtr);
+			m_pCounter = other.m_pCounter;
+			InternalAddStrongRef();
+		}
+
+		FORCEINLINE void InternalConstructWeak(T* pPtr)
+		{
+			m_pPtr = pPtr;
+			m_pCounter = new PtrControlBlock();
 			InternalAddWeakRef();
 		}
 
 		template<typename TOther>
-		FORCEINLINE void InternalConstructWeak(TOther* InPtr)
+		FORCEINLINE void InternalConstructWeak(TOther* pPtr)
 		{
 			static_assert(std::is_convertible<TOther, T>());
 
-			m_Ptr = static_cast<T*>(InPtr);
-			m_Counter = new PtrControlBlock();
+			m_pPtr = static_cast<T*>(pPtr);
+			m_pCounter = new PtrControlBlock();
 			InternalAddWeakRef();
 		}
 
-		FORCEINLINE void InternalConstructWeak(const TPtrBase& Other)
+		FORCEINLINE void InternalConstructWeak(const TPtrBase& other)
 		{
-			m_Ptr = Other.m_Ptr;
-			m_Counter = Other.m_Counter;
+			m_pPtr = other.m_pPtr;
+			m_pCounter = other.m_pCounter;
 			InternalAddWeakRef();
 		}
 
 		template<typename TOther>
-		FORCEINLINE void InternalConstructWeak(const TPtrBase<TOther>& Other)
+		FORCEINLINE void InternalConstructWeak(const TPtrBase<TOther>& other)
 		{
 			static_assert(std::is_convertible<TOther, T>());
 
-			m_Ptr = static_cast<T*>(Other.m_Ptr);
-			m_Counter = Other.m_Counter;
+			m_pPtr = static_cast<T*>(other.m_pPtr);
+			m_pCounter = other.m_pCounter;
 			InternalAddWeakRef();
 		}
 
@@ -282,12 +282,12 @@ namespace LambdaEngine
 
 		FORCEINLINE void InternalClear() noexcept
 		{
-			m_Ptr = nullptr;
-			m_Counter = nullptr;
+			m_pPtr = nullptr;
+			m_pCounter = nullptr;
 		}
 
-		T* m_Ptr;
-		PtrControlBlock* m_Counter;
+		T* m_pPtr;
+		PtrControlBlock* m_pCounter;
 	};
 
 	/*
@@ -315,54 +315,54 @@ namespace LambdaEngine
 		{
 		}
 
-		FORCEINLINE explicit TSharedPtr(T* InPtr) noexcept
+		FORCEINLINE explicit TSharedPtr(T* pPtr) noexcept
 			: TBase()
 		{
-			TBase::InternalConstructStrong(InPtr);
+			TBase::InternalConstructStrong(pPtr);
 		}
 
-		FORCEINLINE TSharedPtr(const TSharedPtr& Other) noexcept
+		FORCEINLINE TSharedPtr(const TSharedPtr& other) noexcept
 			: TBase()
 		{
-			TBase::InternalConstructStrong(Other);
+			TBase::InternalConstructStrong(other);
 		}
 
-		FORCEINLINE TSharedPtr(TSharedPtr&& Other) noexcept
+		FORCEINLINE TSharedPtr(TSharedPtr&& other) noexcept
 			: TBase()
 		{
-			TBase::InternalMove(Move(Other));
-		}
-
-		template<typename TOther>
-		FORCEINLINE TSharedPtr(const TSharedPtr<TOther>& Other) noexcept
-			: TBase()
-		{
-			static_assert(std::is_convertible<TOther, T>());
-			TBase::template InternalConstructStrong<TOther>(Other);
+			TBase::InternalMove(Move(other));
 		}
 
 		template<typename TOther>
-		FORCEINLINE TSharedPtr(TSharedPtr<TOther>&& Other) noexcept
+		FORCEINLINE TSharedPtr(const TSharedPtr<TOther>& other) noexcept
 			: TBase()
 		{
 			static_assert(std::is_convertible<TOther, T>());
-			TBase::template InternalMove<TOther>(Move(Other));
+			TBase::template InternalConstructStrong<TOther>(other);
 		}
 
 		template<typename TOther>
-		FORCEINLINE explicit TSharedPtr(const TWeakPtr<TOther>& Other) noexcept
+		FORCEINLINE TSharedPtr(TSharedPtr<TOther>&& other) noexcept
 			: TBase()
 		{
 			static_assert(std::is_convertible<TOther, T>());
-			TBase::template InternalConstructStrong<TOther>(Other);
+			TBase::template InternalMove<TOther>(Move(other));
 		}
 
 		template<typename TOther>
-		FORCEINLINE TSharedPtr(TUniquePtr<TOther>&& Other) noexcept
+		FORCEINLINE explicit TSharedPtr(const TWeakPtr<TOther>& other) noexcept
 			: TBase()
 		{
 			static_assert(std::is_convertible<TOther, T>());
-			TBase::template InternalConstructStrong<TOther>(Other.Release());
+			TBase::template InternalConstructStrong<TOther>(other);
+		}
+
+		template<typename TOther>
+		FORCEINLINE TSharedPtr(TUniquePtr<TOther>&& other) noexcept
+			: TBase()
+		{
+			static_assert(std::is_convertible<TOther, T>());
+			TBase::template InternalConstructStrong<TOther>(other.Release());
 		}
 
 		FORCEINLINE ~TSharedPtr()
@@ -375,9 +375,9 @@ namespace LambdaEngine
 			TBase::InternalDestructStrong();
 		}
 
-		FORCEINLINE void Swap(TSharedPtr& Other) noexcept
+		FORCEINLINE void Swap(TSharedPtr& other) noexcept
 		{
-			TBase::InternalSwap(Other);
+			TBase::InternalSwap(other);
 		}
 
 		FORCEINLINE bool IsUnique() const noexcept
@@ -385,62 +385,62 @@ namespace LambdaEngine
 			return (TBase::GetStrongReferences() == 1);
 		}
 
-		FORCEINLINE TSharedPtr& operator=(const TSharedPtr& Other) noexcept
+		FORCEINLINE TSharedPtr& operator=(const TSharedPtr& other) noexcept
 		{
-			if (this != std::addressof(Other))
+			if (this != std::addressof(other))
 			{
 				Reset();
-				TBase::InternalConstructStrong(Other);
+				TBase::InternalConstructStrong(other);
 			}
 
 			return *this;
 		}
 
-		FORCEINLINE TSharedPtr& operator=(TSharedPtr&& Other) noexcept
+		FORCEINLINE TSharedPtr& operator=(TSharedPtr&& other) noexcept
 		{
-			if (this != std::addressof(Other))
+			if (this != std::addressof(other))
 			{
 				Reset();
-				TBase::InternalMove(Move(Other));
-			}
-
-			return *this;
-		}
-
-		template<typename TOther>
-		FORCEINLINE TSharedPtr& operator=(const TSharedPtr<TOther>& Other) noexcept
-		{
-			static_assert(std::is_convertible<TOther, T>());
-
-			if (this != std::addressof(Other))
-			{
-				Reset();
-				TBase::template InternalConstructStrong<TOther>(Other);
+				TBase::InternalMove(Move(other));
 			}
 
 			return *this;
 		}
 
 		template<typename TOther>
-		FORCEINLINE TSharedPtr& operator=(TSharedPtr<TOther>&& Other) noexcept
+		FORCEINLINE TSharedPtr& operator=(const TSharedPtr<TOther>& other) noexcept
 		{
 			static_assert(std::is_convertible<TOther, T>());
 
-			if (this != std::addressof(Other))
+			if (this != std::addressof(other))
 			{
 				Reset();
-				TBase::template InternalMove<TOther>(Move(Other));
+				TBase::template InternalConstructStrong<TOther>(other);
 			}
 
 			return *this;
 		}
 
-		FORCEINLINE TSharedPtr& operator=(T* InPtr) noexcept
+		template<typename TOther>
+		FORCEINLINE TSharedPtr& operator=(TSharedPtr<TOther>&& other) noexcept
 		{
-			if (this->m_Ptr != InPtr)
+			static_assert(std::is_convertible<TOther, T>());
+
+			if (this != std::addressof(other))
 			{
 				Reset();
-				TBase::InternalConstructStrong(InPtr);
+				TBase::template InternalMove<TOther>(Move(other));
+			}
+
+			return *this;
+		}
+
+		FORCEINLINE TSharedPtr& operator=(T* pPtr) noexcept
+		{
+			if (this->m_pPtr != pPtr)
+			{
+				Reset();
+				TBase::InternalConstructStrong(pPtr);
 			}
 
 			return *this;
@@ -452,24 +452,24 @@ namespace LambdaEngine
 			return *this;
 		}
 
-		FORCEINLINE bool operator==(const TSharedPtr& Other) const noexcept
+		FORCEINLINE bool operator==(const TSharedPtr& other) const noexcept
 		{
-			return (TBase::m_Ptr == Other.m_Ptr);
+			return (TBase::m_pPtr == other.m_pPtr);
 		}
 
-		FORCEINLINE bool operator!=(const TSharedPtr& Other) const noexcept
+		FORCEINLINE bool operator!=(const TSharedPtr& other) const noexcept
 		{
-			return (TBase::m_Ptr != Other.m_Ptr);
+			return (TBase::m_pPtr != other.m_pPtr);
 		}
 
-		FORCEINLINE bool operator==(TSharedPtr&& Other) const noexcept
+		FORCEINLINE bool operator==(TSharedPtr&& other) const noexcept
 		{
-			return (TBase::m_Ptr == Other.m_Ptr);
+			return (TBase::m_pPtr == other.m_pPtr);
 		}
 
-		FORCEINLINE bool operator!=(TSharedPtr&& Other) const noexcept
+		FORCEINLINE bool operator!=(TSharedPtr&& other) const noexcept
 		{
-			return (TBase::m_Ptr != Other.m_Ptr);
+			return (TBase::m_pPtr != other.m_pPtr);
 		}
 	};
 
@@ -487,46 +487,46 @@ namespace LambdaEngine
 		{
 		}
 
-		FORCEINLINE TWeakPtr(const TSharedPtr<T>& InPtr) noexcept
+		FORCEINLINE TWeakPtr(const TSharedPtr<T>& pPtr) noexcept
 			: TBase()
 		{
-			TBase::InternalConstructWeak(InPtr);
+			TBase::InternalConstructWeak(pPtr);
 		}
 
 		template<typename TOther>
-		FORCEINLINE TWeakPtr(const TSharedPtr<TOther>& InPtr) noexcept
+		FORCEINLINE TWeakPtr(const TSharedPtr<TOther>& pPtr) noexcept
 			: TBase()
 		{
 			static_assert(std::is_convertible<TOther, T>(), "TWeakPtr: Trying to convert non-convertable types");
-			TBase::template InternalConstructWeak<TOther>(InPtr);
+			TBase::template InternalConstructWeak<TOther>(pPtr);
 		}
 
-		FORCEINLINE TWeakPtr(const TWeakPtr& Other) noexcept
+		FORCEINLINE TWeakPtr(const TWeakPtr& other) noexcept
 			: TBase()
 		{
-			TBase::InternalConstructWeak(Other);
+			TBase::InternalConstructWeak(other);
 		}
 
-		FORCEINLINE TWeakPtr(TWeakPtr&& Other) noexcept
+		FORCEINLINE TWeakPtr(TWeakPtr&& other) noexcept
 			: TBase()
 		{
-			TBase::InternalMove(Move(Other));
+			TBase::InternalMove(Move(other));
 		}
 
 		template<typename TOther>
-		FORCEINLINE TWeakPtr(const TWeakPtr<TOther>& Other) noexcept
+		FORCEINLINE TWeakPtr(const TWeakPtr<TOther>& other) noexcept
 			: TBase()
 		{
 			static_assert(std::is_convertible<TOther, T>(), "TWeakPtr: Trying to convert non-convertable types");
-			TBase::template InternalConstructWeak<TOther>(Other);
+			TBase::template InternalConstructWeak<TOther>(other);
 		}
 
 		template<typename TOther>
-		FORCEINLINE TWeakPtr(TWeakPtr<TOther>&& Other) noexcept
+		FORCEINLINE TWeakPtr(TWeakPtr<TOther>&& other) noexcept
 			: TBase()
 		{
 			static_assert(std::is_convertible<TOther, T>(), "TWeakPtr: Trying to convert non-convertable types");
-			TBase::template InternalMove<TOther>(Move(Other));
+			TBase::template InternalMove<TOther>(Move(other));
 		}
 
 		FORCEINLINE ~TWeakPtr()
@@ -539,9 +539,9 @@ namespace LambdaEngine
 			TBase::InternalDestructWeak();
 		}
 
-		FORCEINLINE void Swap(TWeakPtr& Other) noexcept
+		FORCEINLINE void Swap(TWeakPtr& other) noexcept
 		{
-			TBase::InternalSwap(Other);
+			TBase::InternalSwap(other);
 		}
 
 		FORCEINLINE bool IsExpired() const noexcept
@@ -555,62 +555,62 @@ namespace LambdaEngine
 			return Move(TSharedPtr<T>(This));
 		}
 
-		FORCEINLINE TWeakPtr& operator=(const TWeakPtr& Other) noexcept
+		FORCEINLINE TWeakPtr& operator=(const TWeakPtr& other) noexcept
 		{
-			if (this != std::addressof(Other))
+			if (this != std::addressof(other))
 			{
 				Reset();
-				TBase::InternalConstructWeak(Other);
+				TBase::InternalConstructWeak(other);
 			}
 
 			return *this;
 		}
 
-		FORCEINLINE TWeakPtr& operator=(TWeakPtr&& Other) noexcept
+		FORCEINLINE TWeakPtr& operator=(TWeakPtr&& other) noexcept
 		{
-			if (this != std::addressof(Other))
+			if (this != std::addressof(other))
 			{
 				Reset();
-				TBase::InternalMove(Move(Other));
-			}
-
-			return *this;
-		}
-
-		template<typename TOther>
-		FORCEINLINE TWeakPtr& operator=(const TWeakPtr<TOther>& Other) noexcept
-		{
-			static_assert(std::is_convertible<TOther, T>(), "TWeakPtr: Trying to convert non-convertable types");
-
-			if (this != std::addressof(Other))
-			{
-				Reset();
-				TBase::template InternalConstructWeak<TOther>(Other);
+				TBase::InternalMove(Move(other));
 			}
 
 			return *this;
 		}
 
 		template<typename TOther>
-		FORCEINLINE TWeakPtr& operator=(TWeakPtr<TOther>&& Other) noexcept
+		FORCEINLINE TWeakPtr& operator=(const TWeakPtr<TOther>& other) noexcept
 		{
 			static_assert(std::is_convertible<TOther, T>(), "TWeakPtr: Trying to convert non-convertable types");
 
-			if (this != std::addressof(Other))
+			if (this != std::addressof(other))
 			{
 				Reset();
-				TBase::InternalMove(Move(Other));
+				TBase::template InternalConstructWeak<TOther>(other);
 			}
 
 			return *this;
 		}
 
-		FORCEINLINE TWeakPtr& operator=(T* InPtr) noexcept
+		template<typename TOther>
+		FORCEINLINE TWeakPtr& operator=(TWeakPtr<TOther>&& other) noexcept
 		{
-			if (TBase::m_Ptr != InPtr)
+			static_assert(std::is_convertible<TOther, T>(), "TWeakPtr: Trying to convert non-convertable types");
+
+			if (this != std::addressof(other))
 			{
 				Reset();
-				TBase::InternalConstructWeak(InPtr);
+				TBase::InternalMove(Move(other));
+			}
+
+			return *this;
+		}
+
+		FORCEINLINE TWeakPtr& operator=(T* pPtr) noexcept
+		{
+			if (TBase::m_pPtr != pPtr)
+			{
+				Reset();
+				TBase::InternalConstructWeak(pPtr);
 			}
 
 			return *this;
@@ -622,24 +622,24 @@ namespace LambdaEngine
 			return *this;
 		}
 
-		FORCEINLINE bool operator==(const TWeakPtr& Other) const noexcept
+		FORCEINLINE bool operator==(const TWeakPtr& other) const noexcept
 		{
-			return (TBase::m_Ptr == Other.m_Ptr);
+			return (TBase::m_pPtr == other.m_pPtr);
 		}
 
-		FORCEINLINE bool operator!=(const TWeakPtr& Other) const noexcept
+		FORCEINLINE bool operator!=(const TWeakPtr& other) const noexcept
 		{
-			return (TBase::m_Ptr != Other.m_Ptr);
+			return (TBase::m_pPtr != other.m_pPtr);
 		}
 
-		FORCEINLINE bool operator==(TWeakPtr&& Other) const noexcept
+		FORCEINLINE bool operator==(TWeakPtr&& other) const noexcept
 		{
-			return (TBase::m_Ptr == Other.m_Ptr);
+			return (TBase::m_pPtr == other.m_pPtr);
 		}
 
-		FORCEINLINE bool operator!=(TWeakPtr&& Other) const noexcept
+		FORCEINLINE bool operator!=(TWeakPtr&& other) const noexcept
 		{
-			return (TBase::m_Ptr != Other.m_Ptr);
+			return (TBase::m_pPtr != other.m_pPtr);
 		}
 	};
 
@@ -647,9 +647,9 @@ namespace LambdaEngine
 	* Creates a new object together with a SharedPtr
 	*/
 	template<typename T, typename... TArgs>
-	TSharedPtr<T> MakeShared(TArgs&&... Args) noexcept
+	TSharedPtr<T> MakeShared(TArgs&&... args) noexcept
 	{
-		T* RefCountedPtr = new T(Forward<TArgs>(Args)...);
-		return Move(TSharedPtr<T>(RefCountedPtr));
+		T* pRefCountedPtr = new T(Forward<TArgs>(args)...);
+		return Move(TSharedPtr<T>(pRefCountedPtr));
 	}
 }

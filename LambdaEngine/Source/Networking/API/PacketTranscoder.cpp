@@ -13,7 +13,7 @@ namespace LambdaEngine
 
 		bytesWritten = 0;
 
-		std::vector<NetworkPacket*> packetsToFree;
+		TArray<NetworkPacket*> packetsToFree;
 
 		while (!packetsToEncode.empty())
 		{
@@ -31,7 +31,7 @@ namespace LambdaEngine
 				if (packet->IsReliable())
 					reliableUIDsSent.insert(packet->GetReliableUID());
 				else
-					packetsToFree.push_back(packet);
+					packetsToFree.PushBack(packet);
 			}
 			else
 			{
