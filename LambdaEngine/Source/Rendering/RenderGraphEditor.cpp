@@ -23,16 +23,16 @@
 
 namespace LambdaEngine
 {
-	int32		RenderGraphEditor::s_NextNodeID				= 0;
-	int32		RenderGraphEditor::s_NextAttributeID		= 0;
-	int32		RenderGraphEditor::s_NextLinkID				= 0;
+	int32		RenderGraphEditor::s_NextNodeID = 0;
+	int32		RenderGraphEditor::s_NextAttributeID = 0;
+	int32		RenderGraphEditor::s_NextLinkID = 0;
 
-	constexpr const uint32 HOVERED_COLOR	= IM_COL32(232, 27, 86, 255);
-	constexpr const uint32 SELECTED_COLOR	= IM_COL32(162, 19, 60, 255);
+	constexpr const uint32 HOVERED_COLOR = IM_COL32(232, 27, 86, 255);
+	constexpr const uint32 SELECTED_COLOR = IM_COL32(162, 19, 60, 255);
 
-	constexpr const uint32 EXTERNAL_RESOURCE_STATE_GROUP_INDEX	= 0;
-	constexpr const uint32 TEMPORAL_RESOURCE_STATE_GROUP_INDEX	= 1;
-	constexpr const uint32 NUM_RESOURCE_STATE_GROUPS			= 2;
+	constexpr const uint32 EXTERNAL_RESOURCE_STATE_GROUP_INDEX = 0;
+	constexpr const uint32 TEMPORAL_RESOURCE_STATE_GROUP_INDEX = 1;
+	constexpr const uint32 NUM_RESOURCE_STATE_GROUPS = 2;
 
 	constexpr const char* TEXTURE_FORMAT_NAMES[] =
 	{
@@ -52,16 +52,16 @@ namespace LambdaEngine
 	{
 		switch (index)
 		{
-			case 0: return EFormat::FORMAT_R32G32_SFLOAT;
-			case 1: return EFormat::FORMAT_R8G8B8A8_UNORM;
-			case 2: return EFormat::FORMAT_B8G8R8A8_UNORM;
-			case 3: return EFormat::FORMAT_R8G8B8A8_SNORM;
-			case 4: return EFormat::FORMAT_R16G16B16A16_SFLOAT;
-			case 5: return EFormat::FORMAT_D24_UNORM_S8_UINT;
-			case 6: return EFormat::FORMAT_R16_UNORM;
-			case 7: return EFormat::FORMAT_R32G32B32A32_SFLOAT;
-			case 8: return EFormat::FORMAT_R16_SFLOAT;
-			case 9: return EFormat::FORMAT_R32G32B32A32_UINT;
+		case 0: return EFormat::FORMAT_R32G32_SFLOAT;
+		case 1: return EFormat::FORMAT_R8G8B8A8_UNORM;
+		case 2: return EFormat::FORMAT_B8G8R8A8_UNORM;
+		case 3: return EFormat::FORMAT_R8G8B8A8_SNORM;
+		case 4: return EFormat::FORMAT_R16G16B16A16_SFLOAT;
+		case 5: return EFormat::FORMAT_D24_UNORM_S8_UINT;
+		case 6: return EFormat::FORMAT_R16_UNORM;
+		case 7: return EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		case 8: return EFormat::FORMAT_R16_SFLOAT;
+		case 9: return EFormat::FORMAT_R32G32B32A32_UINT;
 		}
 
 		return EFormat::NONE;
@@ -71,16 +71,16 @@ namespace LambdaEngine
 	{
 		switch (format)
 		{
-			case EFormat::FORMAT_R32G32_SFLOAT:			return 0;
-			case EFormat::FORMAT_R8G8B8A8_UNORM:		return 1;
-			case EFormat::FORMAT_B8G8R8A8_UNORM:		return 2;
-			case EFormat::FORMAT_R8G8B8A8_SNORM:		return 3;
-			case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 4;
-			case EFormat::FORMAT_D24_UNORM_S8_UINT:		return 5;
-			case EFormat::FORMAT_R16_UNORM:				return 6;
-			case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return 7;
-			case EFormat::FORMAT_R16_SFLOAT:			return 8;
-			case EFormat::FORMAT_R32G32B32A32_UINT:		return 9;
+		case EFormat::FORMAT_R32G32_SFLOAT:			return 0;
+		case EFormat::FORMAT_R8G8B8A8_UNORM:		return 1;
+		case EFormat::FORMAT_B8G8R8A8_UNORM:		return 2;
+		case EFormat::FORMAT_R8G8B8A8_SNORM:		return 3;
+		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 4;
+		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return 5;
+		case EFormat::FORMAT_R16_UNORM:				return 6;
+		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return 7;
+		case EFormat::FORMAT_R16_SFLOAT:			return 8;
+		case EFormat::FORMAT_R32G32B32A32_UINT:		return 9;
 		}
 
 		return -1;
@@ -119,8 +119,8 @@ namespace LambdaEngine
 			ImVec2 contentRegionMin = ImGui::GetWindowContentRegionMin();
 			ImVec2 contentRegionMax = ImGui::GetWindowContentRegionMax();
 
-			float contentRegionWidth	= contentRegionMax.x - contentRegionMin.x;
-			float contentRegionHeight	= contentRegionMax.y - contentRegionMin.y;
+			float contentRegionWidth = contentRegionMax.x - contentRegionMin.x;
+			float contentRegionHeight = contentRegionMax.y - contentRegionMin.y;
 
 			float maxResourcesViewTextWidth = 0.0f;
 			float textHeight = ImGui::CalcTextSize("I").y + 5.0f;
@@ -144,15 +144,22 @@ namespace LambdaEngine
 			float removeButtonWidth = 120.0f;
 			ImVec2 resourceViewSize(maxResourcesViewTextWidth + editButtonWidth + removeButtonWidth, contentRegionHeight);
 
+			ImGuiContext& g = *GImGui;
+			ImGuiWindow* window = g.CurrentWindow;
+			
 			static ImVec2 childSize0 = resourceViewSize;
 			static ImVec2 childSize1 = ImVec2(contentRegionWidth - resourceViewSize.x, 0.0f);
-			DrawSplitter(false, 10.0f, &childSize0.x, &childSize1.x, 200.f, 500.f);
+			
+			ImRect bb;
+			bb.Min = ImVec2(window->DC.CursorPos.x + childSize0.x, window->DC.CursorPos.y);
+			bb.Max = ImVec2(+window->DC.CursorPos.x + childSize0.x + 10.f, window->DC.CursorPos.y + contentRegionHeight);
+			ImGui::SplitterBehavior(bb, ImGui::GetID("Render Graph Editor"), ImGuiAxis_X, &childSize0.x, &childSize1.x, 200.f, 500.f);
 
 			if (ImGui::BeginChild("##Graph Resources View", childSize0))
 			{
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Resources");
 				ImGui::NewLine();
-				
+
 				if (ImGui::BeginChild("##Resource View", ImVec2(0.0f, contentRegionHeight * 0.5f - textHeight * 5.0f), true, ImGuiWindowFlags_MenuBar))
 				{
 					RenderResourceView(maxResourcesViewTextWidth, textHeight);
@@ -160,7 +167,7 @@ namespace LambdaEngine
 					RenderEditResourceView();
 				}
 				ImGui::EndChild();
-				
+
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Shaders");
 				ImGui::NewLine();
 
@@ -176,7 +183,7 @@ namespace LambdaEngine
 				}
 			}
 			ImGui::EndChild();
-			
+
 			ImGui::SameLine();
 
 			if (ImGui::BeginChild("##Graph Views", childSize1))
@@ -227,40 +234,6 @@ namespace LambdaEngine
 			m_ParsedGraphDirty = false;
 			m_ParsedGraphRenderDirty = true;
 		}
-	}
-
-
-	void RenderGraphEditor::DrawSplitter(int split_vertically, float thickness, float* size0, float* size1, float min_size0, float min_size1)
-	{
-		ImVec2 backup_pos = ImGui::GetCursorPos();
-		if (split_vertically)
-			ImGui::SetCursorPosY(backup_pos.y + *size0);
-		else
-			ImGui::SetCursorPosX(backup_pos.x + *size0);
-
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));          // We don't draw while active/pressed because as we move the panes the splitter button will be 1 frame late
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.6f, 0.6f, 0.10f));
-		ImGui::Button("##Splitter", ImVec2(!split_vertically ? thickness : -1.0f, split_vertically ? thickness : -1.0f));
-		ImGui::PopStyleColor(3);
-
-		ImGui::SetItemAllowOverlap(); // This is to allow having other buttons OVER our splitter. 
-
-		if (ImGui::IsItemActive())
-		{
-			float mouse_delta = split_vertically ? ImGui::GetIO().MouseDelta.y : ImGui::GetIO().MouseDelta.x;
-
-			// Minimum pane size
-			if (mouse_delta < min_size0 - *size0)
-				mouse_delta = min_size0 - *size0;
-			if (mouse_delta > * size1 - min_size1)
-				mouse_delta = *size1 - min_size1;
-
-			// Apply resize
-			*size0 += mouse_delta;
-			*size1 -= mouse_delta;
-		}
-		ImGui::SetCursorPos(backup_pos);
 	}
 
 	RenderGraphStructureDesc RenderGraphEditor::CreateRenderGraphStructure(const String& filepath, bool imGuiEnabled)
@@ -552,8 +525,7 @@ namespace LambdaEngine
 			}
 			ImGui::EndMenuBar();
 		}
-
-		ImGui::Columns(1);
+		//ImGui::Columns(2);
 
 		static int32 selectedResourceIndex			= -1;
 		static EditorResource* pSelectedResource	= nullptr;
@@ -563,11 +535,56 @@ namespace LambdaEngine
 		for (uint32 i = 0; i < m_Resources.size(); i++)
 		{
 			EditorResource* pResource = &m_Resources[i];
-
 			if (ImGui::Selectable(pResource->Name.c_str(), selectedResourceIndex == i, ImGuiSeparatorFlags_None, ImVec2(textWidth, textHeight)))
 			{
 				selectedResourceIndex	= i;
 				pSelectedResource		= pResource;
+			}
+
+			if (ImGui::IsItemHovered())
+			{
+				//ImGui::NextColumn();
+				pSelectedResource = pResource;
+	
+				String tooltip;
+
+				String resourceType = RenderGraphResourceTypeToString(pSelectedResource->Type);
+				tooltip.append("Type" + resourceType + "\n");
+
+				String subResourceCount;
+
+				if (pSelectedResource->BackBufferBound)
+				{
+					subResourceCount = "Back Buffer Bound";
+				}
+				else
+				{
+					subResourceCount = std::to_string(pSelectedResource->SubResourceCount);
+				}
+
+				tooltip.append("Sub Resource Count: " + subResourceCount + "\n");
+
+				if (pSelectedResource->Type == ERenderGraphResourceType::TEXTURE)
+				{
+					if (pSelectedResource->SubResourceCount > 1)
+					{
+						String temp = pSelectedResource->IsOfArrayType ? "True" : "False";
+						tooltip.append("Is of Array Type: " + temp + "\n");
+					}
+
+					int32 textureFormatIndex = TextureFormatToFormatIndex(pSelectedResource->TextureFormat);
+
+					if (textureFormatIndex >= 0)
+					{
+						tooltip.append("Texture Format: " + String(TEXTURE_FORMAT_NAMES[textureFormatIndex]) + "\n");
+					}
+					else
+					{
+						tooltip.append("Texture Format: INVALID\n");
+					}
+				}
+
+				ImGui::SetTooltip(tooltip.c_str());
 			}
 
 			if (ImGui::BeginDragDropSource())
@@ -594,9 +611,10 @@ namespace LambdaEngine
 			}
 		}
 
-		if (pSelectedResource != nullptr)
+		/*if (pSelectedResource != nullptr)
 		{
 			ImGui::NextColumn();
+
 
 			String resourceType = RenderGraphResourceTypeToString(pSelectedResource->Type);
 			ImGui::Text("Type: %s", resourceType.c_str());
@@ -632,7 +650,7 @@ namespace LambdaEngine
 					ImGui::Text("Texture Format: INVALID");
 				}
 			}
-		}
+		}*/
 
 		if (pRemovedResource != nullptr)
 		{
