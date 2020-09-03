@@ -24,6 +24,7 @@
 
 #include "Resources/ResourceManager.h"
 
+#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
 #include <imnodes.h>
 

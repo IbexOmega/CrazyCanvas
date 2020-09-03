@@ -1,9 +1,11 @@
 #pragma once
-
 #include "LambdaEngine.h"
+
 #include "Application/API/EventHandler.h"
+
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
+
 #include "ICustomRenderer.h"
 
 struct ImGuiContext;

@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?> 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
-  <Type Name="LambdaEngine::TSharedPtr&lt;*&gt;">
-    <DisplayString>{{ strongreferences={m_pCounter->m_StrongReferences} weakreferences={m_pCounter->m_WeakReferences} }}</DisplayString>
-    <Expand>
-      <Item Name="[ptr]">m_pPtr</Item>
-    </Expand>
-  </Type>
+	<Type Name="LambdaEngine::TSharedPtr&lt;*&gt;">
+		<DisplayString>{{ strongreferences={m_pCounter->m_StrongReferences} weakreferences={m_pCounter->m_WeakReferences} }}</DisplayString>
+		<Expand>
+			<Item Name="[strongreferences]">m_pCounter->m_StrongReferences</Item>
+			<Item Name="[weakreferences]">m_pCounter->m_WeakReferences</Item>
+			<Item Name="[ptr]">m_pPtr</Item>
+		</Expand>
+	</Type>
 
-  <Type Name="LambdaEngine::TWeakPtr&lt;*&gt;">
-    <DisplayString>{{ strongreferences={m_pCounter->m_StrongReferences} weakreferences={m_pCounter->m_WeakReferences} }}</DisplayString>
-    <Expand>
-      <Item Name="[ptr]">m_pPtr</Item>
-    </Expand>
-  </Type>
+	<Type Name="LambdaEngine::TWeakPtr&lt;*&gt;">
+		<DisplayString>{{ strongreferences={m_pCounter->m_StrongReferences} weakreferences={m_pCounter->m_WeakReferences} }}</DisplayString>
+		<Expand>
+			<Item Name="[strongreferences]">m_pCounter->m_StrongReferences</Item>
+			<Item Name="[weakreferences]">m_pCounter->m_WeakReferences</Item>
+			<Item Name="[ptr]">m_pPtr</Item>
+		</Expand>
+	</Type>
 </AutoVisualizer>
