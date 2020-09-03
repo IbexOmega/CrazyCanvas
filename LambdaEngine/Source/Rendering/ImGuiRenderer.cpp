@@ -750,7 +750,6 @@ namespace LambdaEngine
 		fontBufferDesc.SizeInBytes	= textureSize;
 
 		Buffer* pFontBuffer = m_pGraphicsDevice->CreateBuffer(&fontBufferDesc, m_pAllocator);
-
 		if (pFontBuffer == nullptr)
 		{
 			return false;
@@ -774,7 +773,6 @@ namespace LambdaEngine
 		fontTextureDesc.SampleCount = 1;
 
 		m_pFontTexture = m_pGraphicsDevice->CreateTexture(&fontTextureDesc, m_pAllocator);
-
 		if (m_pFontTexture == nullptr)
 		{
 			return false;
@@ -796,35 +794,35 @@ namespace LambdaEngine
 		m_pCopyCommandList->Begin(nullptr);
 
 		PipelineTextureBarrierDesc transitionToCopyDstBarrier = {};
-		transitionToCopyDstBarrier.pTexture					= m_pFontTexture;
-		transitionToCopyDstBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
-		transitionToCopyDstBarrier.StateAfter				= ETextureState::TEXTURE_STATE_COPY_DST;
-		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
-		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
-		transitionToCopyDstBarrier.SrcMemoryAccessFlags		= 0;
-		transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-		transitionToCopyDstBarrier.TextureFlags				= fontTextureDesc.Flags;
-		transitionToCopyDstBarrier.Miplevel					= 0;
-		transitionToCopyDstBarrier.MiplevelCount			= fontTextureDesc.Miplevels;
-		transitionToCopyDstBarrier.ArrayIndex				= 0;
-		transitionToCopyDstBarrier.ArrayCount				= fontTextureDesc.ArrayCount;
+		transitionToCopyDstBarrier.pTexture				= m_pFontTexture;
+		transitionToCopyDstBarrier.StateBefore			= ETextureState::TEXTURE_STATE_UNKNOWN;
+		transitionToCopyDstBarrier.StateAfter			= ETextureState::TEXTURE_STATE_COPY_DST;
+		transitionToCopyDstBarrier.QueueBefore			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		transitionToCopyDstBarrier.QueueAfter			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		transitionToCopyDstBarrier.SrcMemoryAccessFlags	= 0;
+		transitionToCopyDstBarrier.DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		transitionToCopyDstBarrier.TextureFlags			= fontTextureDesc.Flags;
+		transitionToCopyDstBarrier.Miplevel				= 0;
+		transitionToCopyDstBarrier.MiplevelCount		= fontTextureDesc.Miplevels;
+		transitionToCopyDstBarrier.ArrayIndex			= 0;
+		transitionToCopyDstBarrier.ArrayCount			= fontTextureDesc.ArrayCount;
 
 		m_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
 		m_pCopyCommandList->CopyTextureFromBuffer(pFontBuffer, m_pFontTexture, copyDesc);
 		
 		PipelineTextureBarrierDesc transitionToShaderReadBarrier = {};
-		transitionToShaderReadBarrier.pTexture					= m_pFontTexture;
-		transitionToShaderReadBarrier.StateBefore				= ETextureState::TEXTURE_STATE_COPY_DST;
-		transitionToShaderReadBarrier.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-		transitionToShaderReadBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
-		transitionToShaderReadBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
-		transitionToShaderReadBarrier.SrcMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-		transitionToShaderReadBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
-		transitionToShaderReadBarrier.TextureFlags				= fontTextureDesc.Flags;
-		transitionToShaderReadBarrier.Miplevel					= 0;
-		transitionToShaderReadBarrier.MiplevelCount				= fontTextureDesc.Miplevels;
-		transitionToShaderReadBarrier.ArrayIndex				= 0;
-		transitionToShaderReadBarrier.ArrayCount				= fontTextureDesc.ArrayCount;
+		transitionToShaderReadBarrier.pTexture				= m_pFontTexture;
+		transitionToShaderReadBarrier.StateBefore			= ETextureState::TEXTURE_STATE_COPY_DST;
+		transitionToShaderReadBarrier.StateAfter			= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+		transitionToShaderReadBarrier.QueueBefore			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		transitionToShaderReadBarrier.QueueAfter			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		transitionToShaderReadBarrier.SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		transitionToShaderReadBarrier.DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+		transitionToShaderReadBarrier.TextureFlags			= fontTextureDesc.Flags;
+		transitionToShaderReadBarrier.Miplevel				= 0;
+		transitionToShaderReadBarrier.MiplevelCount			= fontTextureDesc.Miplevels;
+		transitionToShaderReadBarrier.ArrayIndex			= 0;
+		transitionToShaderReadBarrier.ArrayCount			= fontTextureDesc.ArrayCount;
 
 		m_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &transitionToShaderReadBarrier, 1);
 
@@ -847,8 +845,12 @@ namespace LambdaEngine
 		fontTextureViewDesc.ArrayIndex		= 0;
 
 		m_pFontTextureView = m_pGraphicsDevice->CreateTextureView(&fontTextureViewDesc);
+		if (!m_pFontTextureView)
+		{
+			return false;
+		}
 
-		return m_pFontTextureView != nullptr;
+		return true;
 	}
 
 	bool ImGuiRenderer::CreateSamplers()
@@ -884,21 +886,21 @@ namespace LambdaEngine
 		descriptorSetLayoutDesc.DescriptorBindings		= { descriptorBindingDesc };
 
 		ConstantRangeDesc constantRangeVertexDesc = { };
-		constantRangeVertexDesc.ShaderStageFlags		= FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
-		constantRangeVertexDesc.SizeInBytes				= 4 * sizeof(float32);
-		constantRangeVertexDesc.OffsetInBytes			= 0;
+		constantRangeVertexDesc.ShaderStageFlags	= FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		constantRangeVertexDesc.SizeInBytes			= 4 * sizeof(float32);
+		constantRangeVertexDesc.OffsetInBytes		= 0;
 
 		ConstantRangeDesc constantRangePixelDesc = { };
-		constantRangePixelDesc.ShaderStageFlags			= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
-		constantRangePixelDesc.SizeInBytes				= 8 * sizeof(float32) + sizeof(uint32);
-		constantRangePixelDesc.OffsetInBytes			= constantRangeVertexDesc.SizeInBytes;
+		constantRangePixelDesc.ShaderStageFlags	= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		constantRangePixelDesc.SizeInBytes		= 8 * sizeof(float32) + sizeof(uint32);
+		constantRangePixelDesc.OffsetInBytes	= constantRangeVertexDesc.SizeInBytes;
 
 		ConstantRangeDesc pConstantRanges[2] = { constantRangeVertexDesc, constantRangePixelDesc };
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
-		pipelineLayoutDesc.DebugName				= "ImGui Pipeline Layout";
-		pipelineLayoutDesc.DescriptorSetLayouts		= { descriptorSetLayoutDesc };
-		pipelineLayoutDesc.ConstantRanges			= { pConstantRanges[0], pConstantRanges[1] };
+		pipelineLayoutDesc.DebugName			= "ImGui Pipeline Layout";
+		pipelineLayoutDesc.DescriptorSetLayouts	= { descriptorSetLayoutDesc };
+		pipelineLayoutDesc.ConstantRanges		= { pConstantRanges[0], pConstantRanges[1] };
 
 		m_pPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 
@@ -991,6 +993,7 @@ namespace LambdaEngine
 		pipelineStateDesc.RenderPass		= m_pRenderPass;
 		pipelineStateDesc.PipelineLayout	= m_pPipelineLayout;
 
+		pipelineStateDesc.DepthStencilState.CompareOp			= ECompareOp::COMPARE_OP_NEVER;
 		pipelineStateDesc.DepthStencilState.DepthTestEnable		= false;
 		pipelineStateDesc.DepthStencilState.DepthWriteEnable	= false;
 
@@ -998,11 +1001,11 @@ namespace LambdaEngine
 		{
 			{
 				EBlendOp::BLEND_OP_ADD,
-				EBlendFactor::BLEND_FACTOR_ONE,
-				EBlendFactor::BLEND_FACTOR_ZERO,
+				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
 				EBlendOp::BLEND_OP_ADD,
-				EBlendFactor::BLEND_FACTOR_ONE,
-				EBlendFactor::BLEND_FACTOR_ZERO,
+				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
 				COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
 				true
 			}

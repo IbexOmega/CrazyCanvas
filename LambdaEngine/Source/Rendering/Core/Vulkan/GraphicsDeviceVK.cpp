@@ -808,7 +808,7 @@ namespace LambdaEngine
 		instanceCreateInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		instanceCreateInfo.flags					= 0;
 		instanceCreateInfo.pApplicationInfo         = &appInfo;
-		instanceCreateInfo.enabledExtensionCount    = (uint32_t)m_EnabledInstanceExtensions.GetSize();
+		instanceCreateInfo.enabledExtensionCount    = (uint32)m_EnabledInstanceExtensions.GetSize();
 		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.GetData();
 
 		VkValidationFeaturesEXT validationFeatures	= {};
@@ -899,7 +899,7 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::InitPhysicalDevice()
 	{
-		uint32_t deviceCount = 0;
+		uint32 deviceCount = 0;
 		vkEnumeratePhysicalDevices(Instance, &deviceCount, nullptr);
 		if (deviceCount == 0)
 		{
@@ -929,7 +929,7 @@ namespace LambdaEngine
 		m_DeviceQueueFamilyIndices = FindQueueFamilies(PhysicalDevice);
 
 		// Store the properties of each queuefamily
-		uint32_t queueFamilyCount = 0;
+		uint32 queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, nullptr);
 
 		m_QueueFamilyProperties.Resize(queueFamilyCount);
@@ -1055,7 +1055,7 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::SetEnabledValidationLayers()
 	{
-		uint32_t layerCount = 0;
+		uint32 layerCount = 0;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
 		TArray<VkLayerProperties> availableValidationLayers(layerCount);
@@ -1111,7 +1111,7 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::SetEnabledInstanceExtensions()
 	{
-		uint32_t extensionCount = 0;
+		uint32 extensionCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
 		TArray<VkExtensionProperties> availableInstanceExtensions(extensionCount);
@@ -1182,8 +1182,8 @@ namespace LambdaEngine
 		VkPhysicalDeviceFeatures deviceFeatures;
 		vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
 
-		bool        requiredExtensionsSupported			= false;
-		uint32_t    numOfOptionalExtensionsSupported	= 0;
+		bool		requiredExtensionsSupported			= false;
+		uint32	numOfOptionalExtensionsSupported	= 0;
 		CheckDeviceExtensionsSupport(physicalDevice, requiredExtensionsSupported, numOfOptionalExtensionsSupported);
 
 		if (!requiredExtensionsSupported)
@@ -1192,14 +1192,12 @@ namespace LambdaEngine
 		}
 
 		QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
-
 		if (!indices.IsComplete())
 		{
 			return 0;
 		}
 
-		int score = 1 + numOfOptionalExtensionsSupported;
-
+		int32 score = 1 + numOfOptionalExtensionsSupported;
 		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 		{
 			score += 1000;
@@ -1208,9 +1206,9 @@ namespace LambdaEngine
 		return score;
 	}
 
-	void GraphicsDeviceVK::CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32_t& numOfOptionalExtensionsSupported)
+	void GraphicsDeviceVK::CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32& numOfOptionalExtensionsSupported)
 	{
-		uint32_t extensionCount = 0;
+		uint32 extensionCount = 0;
 		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
 
 		TArray<VkExtensionProperties> availableDeviceExtensions(extensionCount);
@@ -1249,7 +1247,7 @@ namespace LambdaEngine
 	{
 		QueueFamilyIndices indices = {};
 
-		uint32_t queueFamilyCount = 0;
+		uint32 queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
 		TArray<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
@@ -1266,7 +1264,7 @@ namespace LambdaEngine
 	{
 		if (queueFlags & VK_QUEUE_COMPUTE_BIT)
 		{
-			for (uint32_t i = 0; i < uint32_t(queueFamilies.GetSize()); i++)
+			for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
 			{
 				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
 				{
@@ -1277,7 +1275,7 @@ namespace LambdaEngine
 
 		if (queueFlags & VK_QUEUE_TRANSFER_BIT)
 		{
-			for (uint32_t i = 0; i < uint32_t(queueFamilies.GetSize()); i++)
+			for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
 			{
 				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
 				{
@@ -1286,7 +1284,7 @@ namespace LambdaEngine
 			}
 		}
 
-		for (uint32_t i = 0; i < uint32_t(queueFamilies.GetSize()); i++)
+		for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
 		{
 			if (queueFamilies[i].queueFlags & queueFlags)
 			{
@@ -1305,7 +1303,7 @@ namespace LambdaEngine
 			m_EnabledDeviceExtensions.EmplaceBack(REQUIRED_DEVICE_EXTENSIONS[i].Name);
 		}
 
-		uint32_t extensionCount = 0;
+		uint32 extensionCount = 0;
 		vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &extensionCount, nullptr);
 
 		TArray<VkExtensionProperties> availableDeviceExtensions(extensionCount);

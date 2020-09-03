@@ -30,7 +30,7 @@ namespace LambdaEngine
 	struct RasterizerStateDesc
 	{
 		EPolygonMode	PolygonMode					= EPolygonMode::POLYGON_MODE_FILL;
-		ECullMode		CullMode					= ECullMode::CULL_MODE_NONE;
+		ECullMode		CullMode					= ECullMode::CULL_MODE_BACK;
 		float32			LineWidth					= 1.0f;
 		float32			DepthBiasClamp				= 0.0f;
 		float32			DepthBiasConstantFactor		= 0.0f;
@@ -71,8 +71,8 @@ namespace LambdaEngine
 	{
 		TArray<BlendAttachmentStateDesc>	BlendAttachmentStates;
 		float32								BlendConstants[4];
-		ELogicOp							LogicOp					= ELogicOp::LOGIC_OP_NO_OP;
-		bool								AlphaToCoverageEnable	= true;
+		ELogicOp							LogicOp					= ELogicOp::LOGIC_OP_COPY;
+		bool								AlphaToCoverageEnable	= false;
 		bool								AlphaToOneEnable		= false;
 		bool								LogicOpEnable			= false;
 	};
