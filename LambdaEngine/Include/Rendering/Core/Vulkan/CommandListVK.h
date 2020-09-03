@@ -13,6 +13,23 @@ namespace LambdaEngine
 	class CommandAllocatorVK;
 	class RayTracingPipelineStateVK;
 
+	struct DeferredImageBarrier
+	{
+	public:
+		inline bool HasCompatableStages(const DeferredImageBarrier& other) const
+		{
+			return (SrcStages == other.SrcStages) && (DestStages == other.DestStages);
+		}
+
+	public:
+		VkPipelineStageFlags SrcStages	= 0;
+		VkPipelineStageFlags DestStages	= 0;
+		TArray<VkImageMemoryBarrier> Barriers;
+	};
+
+	/*
+	* CommandListVK 
+	*/
 	class CommandListVK : public TDeviceChildBase<GraphicsDeviceVK, CommandList>
 	{
 		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, CommandList>;
@@ -46,6 +63,9 @@ namespace LambdaEngine
 		virtual void CopyTextureFromBuffer(const Buffer* pSrc, Texture* pDst, const CopyTextureFromBufferDesc& desc)					override final;
 		
 		virtual void BlitTexture(const Texture* pSrc, ETextureState srcState, Texture* pDst, ETextureState dstState, EFilterType filter)	override final;
+
+		virtual void TransitionBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ETextureState beforeState, ETextureState afterState) override final;
+		virtual void TransitionBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, uint32 arrayIndex, uint32 arrayCount, ETextureState beforeState, ETextureState afterState) override final;
 
 		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)	override final;
 		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)		override final;
@@ -83,6 +103,8 @@ namespace LambdaEngine
 
 		virtual void ExecuteSecondary(const CommandList* pSecondary) override final;
 
+		virtual void FlushDeferredBarriers() override final;
+
 		virtual CommandAllocator* GetAllocator() override final;
 
 		FORCEINLINE virtual uint64 GetHandle() const override final
@@ -98,6 +120,8 @@ namespace LambdaEngine
 		TSharedRef<CommandAllocatorVK>			m_Allocator					= nullptr;
 		TSharedRef<RayTracingPipelineStateVK>	m_CurrentRayTracingPipeline	= nullptr;
 		
+		TArray<DeferredImageBarrier> m_DeferredBarriers;
+
 		VkMemoryBarrier			m_MemoryBarriers[MAX_MEMORY_BARRIERS];
 		VkImageMemoryBarrier	m_ImageBarriers[MAX_IMAGE_BARRIERS];
 		VkBufferMemoryBarrier	m_BufferBarriers[MAX_BUFFER_BARRIERS];
