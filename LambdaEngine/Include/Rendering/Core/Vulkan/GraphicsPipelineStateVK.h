@@ -18,19 +18,19 @@ namespace LambdaEngine
 
 		bool Init(const GraphicsPipelineStateDesc* pDesc);
 
-        FORCEINLINE VkPipeline GetPipeline() const
-        {
-            return m_Pipeline;
-        }
-        
-        // IDeviceChild interface
+		FORCEINLINE VkPipeline GetPipeline() const
+		{
+			return m_Pipeline;
+		}
+		
+		// IDeviceChild interface
 		virtual void SetName(const char* pName) override final;
 
-        // IPipelineState interface
+		// IPipelineState interface
 		FORCEINLINE virtual EPipelineStateType GetType() const override final
-        {
-            return EPipelineStateType::GRAPHICS;
-        }
+		{
+			return EPipelineStateType::GRAPHICS;
+		}
 
 	private:
 		bool CreateShaderData(std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,

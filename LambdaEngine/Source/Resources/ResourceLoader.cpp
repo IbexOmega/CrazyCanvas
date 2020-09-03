@@ -18,6 +18,7 @@
 
 #include <glslangStandAlone/DirStackFileIncluder.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
+#include <MachineIndependent/reflection.h>
 
 #include <tiny_obj_loader.h>
 #include <cstdio>
@@ -780,7 +781,7 @@ namespace LambdaEngine
 				return nullptr;
 			}
 			
-			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, sourceSPIRV))
+			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, &sourceSPIRV, nullptr))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", filepath.c_str());
 				return nullptr;
@@ -816,6 +817,39 @@ namespace LambdaEngine
 		Malloc::Free(pShaderRawSource);
 
 		return pShader;
+	}
+
+	bool ResourceLoader::CreateShaderReflection(const String& filepath, FShaderStageFlags stage, EShaderLang lang, ShaderReflection* pReflection)
+	{
+		byte* pShaderRawSource = nullptr;
+		uint32 shaderRawSourceSize = 0;
+
+		std::vector<uint32> sourceSPIRV;
+		uint32 sourceSPIRVSize = 0;
+
+		if (lang == EShaderLang::GLSL)
+		{
+			if (!ReadDataFromFile(filepath, "r", &pShaderRawSource, &shaderRawSourceSize))
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", filepath.c_str());
+				return false;
+			}
+
+			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, nullptr, pReflection))
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", filepath.c_str());
+				return false;
+			}
+
+			sourceSPIRVSize = sourceSPIRV.size() * sizeof(uint32);
+		}
+		else if (lang == EShaderLang::SPIRV)
+		{
+			LOG_ERROR("[ResourceLoader]: CreateShaderReflection currently not supported for SPIRV source language");
+			return false;
+		}
+
+		return true;
 	}
 
 	ISoundEffect3D* ResourceLoader::LoadSoundEffectFromFile(const String& filepath)
@@ -870,17 +904,17 @@ namespace LambdaEngine
 		return true;
 	}
 
-    void ResourceLoader::ConvertBackslashes(std::string& string)
-    {
-        size_t pos = string.find_first_of('\\');
-        while (pos != std::string::npos)
-        {
-            string.replace(pos, 1, 1, '/');
-            pos = string.find_first_of('\\', pos + 1);
-        }
-    }
+	void ResourceLoader::ConvertBackslashes(std::string& string)
+	{
+		size_t pos = string.find_first_of('\\');
+		while (pos != std::string::npos)
+		{
+			string.replace(pos, 1, 1, '/');
+			pos = string.find_first_of('\\', pos + 1);
+		}
+	}
 
-	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>& sourceSPIRV)
+	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
 	{
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
 		glslang::TShader shader(shaderType);
@@ -936,11 +970,42 @@ namespace LambdaEngine
 			LOG_ERROR("[ResourceLoader]: GLSL Linking failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
 			return false;
 		}
+		
+		glslang::TIntermediate* pIntermediate = program.getIntermediate(shaderType);
 
-		spv::SpvBuildLogger logger;
-		glslang::SpvOptions spvOptions;
-		glslang::GlslangToSpv(*program.getIntermediate(shaderType), sourceSPIRV, &logger, &spvOptions);
-        
-        return true;
+		if (pSourceSPIRV != nullptr)
+		{
+			spv::SpvBuildLogger logger;
+			glslang::SpvOptions spvOptions;
+			glslang::GlslangToSpv(*pIntermediate, *pSourceSPIRV, &logger, &spvOptions);
+		}
+
+		if (pReflection != nullptr)
+		{
+			if (!CreateShaderReflection(pIntermediate, stage, pReflection))
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to Create Shader Reflection");
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool ResourceLoader::CreateShaderReflection(glslang::TIntermediate* pIntermediate, FShaderStageFlags stage, ShaderReflection* pReflection)
+	{
+		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
+		glslang::TReflection glslangReflection(EShReflectionOptions::EShReflectionAllIOVariables, shaderType, shaderType);
+		glslangReflection.addStage(shaderType, *pIntermediate);
+
+		pReflection->NumAtomicCounters		= glslangReflection.getNumAtomicCounters();
+		pReflection->NumBufferVariables		= glslangReflection.getNumBufferVariables();
+		pReflection->NumPipeInputs			= glslangReflection.getNumPipeInputs();
+		pReflection->NumPipeOutputs			= glslangReflection.getNumPipeOutputs();
+		pReflection->NumStorageBuffers		= glslangReflection.getNumStorageBuffers();
+		pReflection->NumUniformBlocks		= glslangReflection.getNumUniformBlocks();
+		pReflection->NumUniforms			= glslangReflection.getNumUniforms();
+
+		return true;
 	}
 }
