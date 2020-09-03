@@ -21,7 +21,7 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetHandle() const = 0;
 		
-		virtual ECommandQueueType GetType() const
+		FORCEINLINE const ECommandQueueType& GetType() const
 		{
 			return m_Type;
 		}

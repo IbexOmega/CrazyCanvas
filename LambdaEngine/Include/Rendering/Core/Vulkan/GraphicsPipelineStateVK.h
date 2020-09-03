@@ -33,7 +33,7 @@ namespace LambdaEngine
 			return reinterpret_cast<uint64>(m_Pipeline);
 		}
 
-		FORCEINLINE virtual EPipelineStateType GetType() const override final
+		virtual EPipelineStateType GetType() const override final
 		{
 			return EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 		}

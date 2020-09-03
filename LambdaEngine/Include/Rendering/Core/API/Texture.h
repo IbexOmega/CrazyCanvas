@@ -38,7 +38,7 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetHandle() const = 0;
 		
-		virtual TextureDesc GetDesc() const
+		FORCEINLINE const TextureDesc& GetDesc() const
 		{
 			return m_Desc;
 		}

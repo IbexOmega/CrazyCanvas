@@ -20,12 +20,12 @@ namespace LambdaEngine
 	public:
 		DECL_DEVICE_INTERFACE(DeviceAllocator);
 
-		virtual DeviceAllocatorStatistics GetStatistics() const
+		FORCEINLINE const DeviceAllocatorStatistics& GetStatistics() const
 		{
 			return m_Statistics;
 		}
 
-		virtual DeviceAllocatorDesc GetDesc() const
+		FORCEINLINE const DeviceAllocatorDesc& GetDesc() const
 		{
 			return m_Desc;
 		}

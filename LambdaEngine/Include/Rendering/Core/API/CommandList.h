@@ -210,12 +210,12 @@ namespace LambdaEngine
 
 		virtual uint64 GetHandle() const = 0;
 		
-		virtual CommandListDesc GetDesc() const
+		FORCEINLINE const CommandListDesc& GetDesc() const
 		{
 			return m_Desc;
 		}
 
-		virtual ECommandQueueType GetType()	const
+		FORCEINLINE ECommandQueueType GetType()	const
 		{
 			return m_QueueType;
 		}

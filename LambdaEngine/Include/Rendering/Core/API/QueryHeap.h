@@ -31,7 +31,7 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetHandle() const = 0;
 		
-		virtual QueryHeapDesc GetDesc() const
+		FORCEINLINE const QueryHeapDesc& GetDesc() const
 		{
 			return m_Desc;
 		}

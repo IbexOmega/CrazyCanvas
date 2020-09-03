@@ -43,7 +43,7 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetHandle() const = 0;
 		
-		virtual AccelerationStructureDesc GetDesc() const
+		FORCEINLINE const AccelerationStructureDesc& GetDesc() const
 		{
 			return m_Desc;
 		}

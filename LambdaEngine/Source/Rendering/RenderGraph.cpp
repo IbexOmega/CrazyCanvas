@@ -508,7 +508,6 @@ namespace LambdaEngine
 					if (pRenderStage->UsesCustomRenderer)
 					{
 						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
-
 						switch (stateType)
 						{
 						case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		pCustomRenderer->Render(pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],m_ModFrameIndex, m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
@@ -2019,7 +2018,7 @@ namespace LambdaEngine
 		uint32 flags = FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_INLINE;
 
 		TextureView* ppTextureViews[MAX_COLOR_ATTACHMENTS];
-		TextureView* pDeptchStencilTextureView = nullptr;
+		TextureView* pDepthStencilTextureView = nullptr;
 		ClearColorDesc clearColorDescriptions[MAX_COLOR_ATTACHMENTS + 1];
 		
 		uint32 textureViewCount = 0;
@@ -2039,7 +2038,7 @@ namespace LambdaEngine
 
 		if (pRenderStage->pDepthStencilAttachment != nullptr)
 		{
-			pDeptchStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.TextureViews.GetSize() > 1 ? pRenderStage->pDepthStencilAttachment->Texture.TextureViews[m_BackBufferIndex] : pRenderStage->pDepthStencilAttachment->Texture.TextureViews[0];
+			pDepthStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.TextureViews.GetSize() > 1 ? pRenderStage->pDepthStencilAttachment->Texture.TextureViews[m_BackBufferIndex] : pRenderStage->pDepthStencilAttachment->Texture.TextureViews[0];
 
 			clearColorDescriptions[clearColorCount].Depth		= 1.0f;
 			clearColorDescriptions[clearColorCount].Stencil		= 0;
@@ -2047,11 +2046,11 @@ namespace LambdaEngine
 			clearColorCount++;
 		}
 		
-		BeginRenderPassDesc beginRenderPassDesc = {};
+		BeginRenderPassDesc beginRenderPassDesc = { };
 		beginRenderPassDesc.pRenderPass			= pRenderStage->pRenderPass;
 		beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
 		beginRenderPassDesc.RenderTargetCount	= textureViewCount;
-		beginRenderPassDesc.pDepthStencil		= pDeptchStencilTextureView;
+		beginRenderPassDesc.pDepthStencil		= pDepthStencilTextureView;
 		beginRenderPassDesc.Width				= pRenderStage->Dimensions.x;
 		beginRenderPassDesc.Height				= pRenderStage->Dimensions.y;
 		beginRenderPassDesc.Flags				= flags;
@@ -2062,7 +2061,7 @@ namespace LambdaEngine
 
 		pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
 
-		Viewport viewport = {};
+		Viewport viewport = { };
 		viewport.MinDepth	= 0.0f;
 		viewport.MaxDepth	= 1.0f;
 		viewport.Width		= (float)pRenderStage->Dimensions.x;
@@ -2072,7 +2071,7 @@ namespace LambdaEngine
 
 		pGraphicsCommandList->SetViewports(&viewport, 0, 1);
 
-		ScissorRect scissorRect = {};
+		ScissorRect scissorRect = { };
 		scissorRect.Width	= pRenderStage->Dimensions.x;
 		scissorRect.Height	= pRenderStage->Dimensions.y;
 		scissorRect.x		= 0;

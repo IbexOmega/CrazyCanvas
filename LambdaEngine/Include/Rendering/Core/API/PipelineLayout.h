@@ -47,7 +47,7 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetHandle() const = 0;
 
-		virtual PipelineLayoutDesc GetDesc() const
+		FORCEINLINE const PipelineLayoutDesc& GetDesc() const
 		{
 			return m_Desc;
 		}

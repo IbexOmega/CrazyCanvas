@@ -24,12 +24,12 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetHandle() const = 0;
 
-		virtual const String& GetEntryPoint() const
+		FORCEINLINE const String& GetEntryPoint() const
 		{
 			return m_Desc.EntryPoint;
 		}
 
-		virtual ShaderDesc GetDesc() const
+		FORCEINLINE const ShaderDesc& GetDesc() const
 		{
 			return m_Desc;
 		}

@@ -118,7 +118,7 @@ namespace LambdaEngine
 		*/
 		virtual void Release() = 0;
 
-		virtual GraphicsDeviceDesc GetDesc() const
+		FORCEINLINE const GraphicsDeviceDesc& GetDesc() const
 		{
 			return m_Desc;
 		}

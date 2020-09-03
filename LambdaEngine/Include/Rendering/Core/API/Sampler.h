@@ -31,7 +31,7 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetHandle()	const = 0;
 
-		virtual SamplerDesc GetDesc() const
+		FORCEINLINE const SamplerDesc& GetDesc() const
 		{
 			return m_Desc;
 		}

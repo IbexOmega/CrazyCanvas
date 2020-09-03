@@ -9,8 +9,8 @@
 namespace LambdaEngine
 {
 	ComputePipelineStateVK::ComputePipelineStateVK(const GraphicsDeviceVK* pDevice) 
-		: TDeviceChild(pDevice),
-		m_Pipeline(VK_NULL_HANDLE)
+		: TDeviceChild(pDevice)
+		, m_Pipeline(VK_NULL_HANDLE)
 	{
 	}
 

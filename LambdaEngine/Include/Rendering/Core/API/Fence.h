@@ -34,7 +34,7 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetValue() const = 0;
 
-		virtual FenceDesc GetDesc() const
+		FORCEINLINE const FenceDesc& GetDesc() const
 		{
 			return m_Desc;
 		}

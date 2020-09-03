@@ -159,13 +159,9 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetHandle() const = 0;
 
-		virtual EPipelineStateType GetType() const
-		{
-			return m_Type;
-		}
+		virtual EPipelineStateType GetType() const = 0;
 
 	protected:
-		EPipelineStateType	m_Type;
-		String				m_DebugName;
+		String m_DebugName;
 	};
 }

@@ -78,7 +78,7 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetCurrentBackBufferIndex() const = 0;
 
-		virtual SwapChainDesc GetDesc() const
+		FORCEINLINE const SwapChainDesc& GetDesc() const
 		{
 			return m_Desc;
 		}

@@ -53,7 +53,7 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetHandle() const = 0;
 
-		virtual RenderPassDesc GetDesc() const
+		FORCEINLINE const RenderPassDesc& GetDesc() const
 		{
 			return m_Desc;
 		}

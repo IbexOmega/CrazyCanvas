@@ -30,12 +30,12 @@ namespace LambdaEngine
 		* Returns the count of descriptors left in the heap
 		*	return - Returns a structure with the count of descriptors and descriptor sets left in the heap
 		*/
-		virtual DescriptorHeapInfo GetHeapStatus() const
+		FORCEINLINE const DescriptorHeapInfo& GetHeapStatus() const
 		{
 			return m_HeapStatus;
 		}
 
-		virtual DescriptorHeapDesc GetDesc() const
+		FORCEINLINE const DescriptorHeapDesc& GetDesc() const
 		{
 			return m_Desc;
 		}
