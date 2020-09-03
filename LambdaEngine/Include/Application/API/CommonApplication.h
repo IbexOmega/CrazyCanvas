@@ -67,6 +67,9 @@ namespace LambdaEngine
 			return m_pPlatformApplication->GetActiveWindow();
 		}
 
+		void SetMouseVisibility(bool visible);
+		void SetMousePosition(int x, int y);
+
 	public:
 		// EventHandler Interface
 		virtual void OnFocusChanged(Window* pWindow, bool hasFocus)										override final;

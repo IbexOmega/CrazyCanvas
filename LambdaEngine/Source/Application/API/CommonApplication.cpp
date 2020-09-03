@@ -126,6 +126,16 @@ namespace LambdaEngine
 		m_pPlatformApplication->SetActiveWindow(pWindow);
 	}
 
+	void CommonApplication::SetMouseVisibility(bool visible)
+	{
+		m_pPlatformApplication->SetMouseVisibility(visible);
+	}
+
+	void CommonApplication::SetMousePosition(int x, int y)
+	{
+		m_pPlatformApplication->SetMousePosition(x, y);
+	}
+
 	void CommonApplication::OnFocusChanged(Window* pWindow, bool hasFocus)
 	{
 		for (EventHandler* pEventHandler : m_EventHandlers)
