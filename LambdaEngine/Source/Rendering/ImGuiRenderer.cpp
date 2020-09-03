@@ -1000,9 +1000,9 @@ namespace LambdaEngine
 		pipelineStateDesc.BlendState.BlendAttachmentStates[0].RenderTargetComponentMask = COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
 		pipelineStateDesc.InputLayout =
 		{
-			{ "POSITION",	0, sizeof(ImDrawVert), EVertexInputRate::VERTEX_INPUT_PER_VERTEX, 0, IM_OFFSETOF(ImDrawVert, pos), EFormat::FORMAT_R32G32_SFLOAT },
-			{ "TEXCOORD",	0, sizeof(ImDrawVert), EVertexInputRate::VERTEX_INPUT_PER_VERTEX, 1, IM_OFFSETOF(ImDrawVert, uv), EFormat::FORMAT_R32G32_SFLOAT },
-			{ "COLOR",		0, sizeof(ImDrawVert), EVertexInputRate::VERTEX_INPUT_PER_VERTEX, 2, IM_OFFSETOF(ImDrawVert, col), EFormat::FORMAT_R8G8B8A8_UNORM },
+			{ "POSITION",	0, sizeof(ImDrawVert), EVertexInputRate::VERTEX_INPUT_PER_VERTEX, 0, IM_OFFSETOF(ImDrawVert, pos),	EFormat::FORMAT_R32G32_SFLOAT },
+			{ "TEXCOORD",	0, sizeof(ImDrawVert), EVertexInputRate::VERTEX_INPUT_PER_VERTEX, 1, IM_OFFSETOF(ImDrawVert, uv),	EFormat::FORMAT_R32G32_SFLOAT },
+			{ "COLOR",		0, sizeof(ImDrawVert), EVertexInputRate::VERTEX_INPUT_PER_VERTEX, 2, IM_OFFSETOF(ImDrawVert, col),	EFormat::FORMAT_R8G8B8A8_UNORM },
 		};
 		pipelineStateDesc.VertexShader.ShaderGUID	= vertexShader;
 		pipelineStateDesc.PixelShader.ShaderGUID	= pixelShader;

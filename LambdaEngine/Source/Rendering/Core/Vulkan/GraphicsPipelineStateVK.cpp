@@ -143,7 +143,7 @@ namespace LambdaEngine
 
 		TArray<VkVertexInputBindingDescription>		bindingDescriptors;
 		TArray<VkVertexInputAttributeDescription>	attributeDescriptors;
-		bindingDescriptors.Reserve(pDesc->InputLayout.GetSize());
+		attributeDescriptors.Reserve(pDesc->InputLayout.GetSize());
 
 		if (!pDesc->InputLayout.IsEmpty())
 		{
@@ -160,7 +160,23 @@ namespace LambdaEngine
 				vkInputBindingDesc.binding	 = inputElement.Binding;
 				vkInputBindingDesc.stride	 = inputElement.Stride;
 				vkInputBindingDesc.inputRate = ConvertVertexInputRate(inputElement.InputRate);
-				bindingDescriptors.EmplaceBack(vkInputBindingDesc);
+
+				if (!bindingDescriptors.IsEmpty())
+				{
+					for (auto it = bindingDescriptors.Begin(); it != bindingDescriptors.End(); it++)
+					{
+						if ((*it).binding	!= vkInputBindingDesc.binding	|| 
+							(*it).inputRate	!= vkInputBindingDesc.inputRate	||
+							(*it).stride	!= vkInputBindingDesc.stride)
+						{
+							bindingDescriptors.EmplaceBack(vkInputBindingDesc);
+						}
+					}
+				}
+				else
+				{
+					bindingDescriptors.EmplaceBack(vkInputBindingDesc);
+				}
 			}
 
 			vertexInputInfo.vertexAttributeDescriptionCount	= static_cast<uint32>(attributeDescriptors.GetSize());

@@ -73,7 +73,7 @@ namespace LambdaEngine
 		float32								BlendConstants[4];
 		ELogicOp							LogicOp					= ELogicOp::LOGIC_OP_NO_OP;
 		bool								AlphaToCoverageEnable	= true;
-		bool								AlphaToOneEnable		= true;
+		bool								AlphaToOneEnable		= false;
 		bool								LogicOpEnable			= false;
 	};
 

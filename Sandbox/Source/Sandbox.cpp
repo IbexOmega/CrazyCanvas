@@ -75,7 +75,8 @@ Sandbox::Sandbox()
 
 	TArray<int> ints = { 5, 6, 7, 8, 9 };
 	TSharedPtr<int> pInt = MakeShared<int>(5);
-	
+	TWeakPtr<int> WeakINt = pInt;
+
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
 
