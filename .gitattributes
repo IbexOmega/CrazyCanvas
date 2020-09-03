@@ -1,5 +1,5 @@
-# Default line-ending is LF
-* text=LF
+# Default line-ending
+* text=CRLF
 
 # Exclude vendored files from language statistics
-vendor/* linguist-vendored
+Dependencies/* linguist-vendored
