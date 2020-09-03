@@ -782,6 +782,9 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
+	m_pRenderer->Render();
+	return;
+
 	m_pRenderer->NewFrame(delta);
 
 	CommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
@@ -2684,7 +2687,7 @@ bool Sandbox::InitRendererForDeferred()
 	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
 
 	RendererDesc rendererDesc = {};
-	rendererDesc.pName				= "Renderer";
+	rendererDesc.Name				= "Renderer";
 	rendererDesc.Debug				= RENDERING_DEBUG_ENABLED;
 	rendererDesc.pRenderGraph		= m_pRenderGraph;
 	rendererDesc.pWindow			= CommonApplication::Get()->GetMainWindow();

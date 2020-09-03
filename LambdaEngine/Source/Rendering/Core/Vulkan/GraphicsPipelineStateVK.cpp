@@ -86,7 +86,7 @@ namespace LambdaEngine
 		multisamplingState.pNext					= nullptr;
 		multisamplingState.alphaToCoverageEnable	= (pDesc->BlendState.AlphaToCoverageEnable) ? VK_TRUE : VK_FALSE;
 		multisamplingState.alphaToOneEnable			= (pDesc->BlendState.AlphaToOneEnable)		? VK_TRUE : VK_FALSE;
-		multisamplingState.minSampleShading			= 0.0f;
+		multisamplingState.minSampleShading			= 1.0f;
 		multisamplingState.sampleShadingEnable		= (pDesc->RasterizerState.MultisampleEnable) ? VK_TRUE : VK_FALSE;
 		multisamplingState.rasterizationSamples		= ConvertSampleCount(pDesc->SampleCount);
 
@@ -136,7 +136,7 @@ namespace LambdaEngine
 		depthStencilState.front					= ConvertStencilOpState(pDesc->DepthStencilState.FrontFace);
 		depthStencilState.back					= ConvertStencilOpState(pDesc->DepthStencilState.BackFace);
 
-		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo = { };
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputInfo.flags = 0;
 		vertexInputInfo.pNext = nullptr;

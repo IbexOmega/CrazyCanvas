@@ -1,14 +1,22 @@
 #pragma once
-
 #include "LambdaEngine.h"
 
+#include "Core/TSharedRef.h"
+
 #include "Time/API/Timestamp.h"
+
+#include "Rendering/Core/API/SwapChain.h"
+#include "Rendering/Core/API/CommandAllocator.h"
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/Fence.h"
+#include "Rendering/Core/API/PipelineState.h"
+#include "Rendering/Core/API/RenderPass.h"
+#include "Rendering/Core/API/PipelineLayout.h"
 
 namespace LambdaEngine
 {
 	class Window;
 	class Texture;
-	class SwapChain;
 	class RenderGraph;
 	class CommandList;
 	class TextureView;
@@ -18,7 +26,7 @@ namespace LambdaEngine
 	
 	struct RendererDesc
 	{
-		const char*		pName			= "";
+		String 			Name			= "";
 		bool			Debug			= false;
 		Window*			pWindow			= nullptr;
 		RenderGraph*	pRenderGraph	= nullptr;
@@ -49,19 +57,28 @@ namespace LambdaEngine
 		FORCEINLINE uint32 GetBufferIndex()		{ return m_BackBufferIndex; }
 
 	private:
-		const char*				m_pName;
+		bool InitDebugRender();
+
+	private:
+		String					m_Name;
 		const GraphicsDevice*	m_pGraphicsDevice;
 
-		SwapChain*				m_pSwapChain					= nullptr;
-		RenderGraph*			m_pRenderGraph					= nullptr;
-		Texture**				m_ppBackBuffers					= nullptr;
-		TextureView**			m_ppBackBufferViews				= nullptr;
+		TSharedRef<SwapChain>	m_SwapChain				= nullptr;
+		Texture**				m_ppBackBuffers			= nullptr;
+		TextureView**			m_ppBackBufferViews		= nullptr;
+		RenderGraph*			m_pRenderGraph			= nullptr;
 
-		uint32					m_BackBufferCount				= 0;
+		uint32					m_BackBufferCount		= 0;
 
-		uint64					m_FrameIndex					= 0;
-		uint64					m_ModFrameIndex					= 0;
-		uint32					m_BackBufferIndex				= 0;
+		uint64					m_FrameIndex			= 0;
+		uint64					m_ModFrameIndex			= 0;
+		uint32					m_BackBufferIndex		= 0;
 
+		TSharedRef<CommandAllocator>	m_CommandAllocators[3];
+		TSharedRef<CommandList>			m_CommandLists[3];
+		TSharedRef<RenderPass>			m_RenderPass;
+		TSharedRef<PipelineState>		m_PipelineState;
+		TSharedRef<PipelineLayout>		m_PiplineLayout;
+		TSharedRef<Fence>				m_Fence;
 	};
 }

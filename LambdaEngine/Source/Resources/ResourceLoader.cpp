@@ -726,18 +726,18 @@ namespace LambdaEngine
 		else
 		{
 			PipelineTextureBarrierDesc transitionToShaderReadBarrier = {};
-			transitionToShaderReadBarrier.pTexture					= pTexture;
-			transitionToShaderReadBarrier.StateBefore				= ETextureState::TEXTURE_STATE_COPY_DST;
-			transitionToShaderReadBarrier.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-			transitionToShaderReadBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
-			transitionToShaderReadBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
-			transitionToShaderReadBarrier.SrcMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			transitionToShaderReadBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
-			transitionToShaderReadBarrier.TextureFlags				= textureDesc.Flags;
-			transitionToShaderReadBarrier.Miplevel					= 0;
-			transitionToShaderReadBarrier.MiplevelCount				= textureDesc.Miplevels;
-			transitionToShaderReadBarrier.ArrayIndex				= 0;
-			transitionToShaderReadBarrier.ArrayCount				= textureDesc.ArrayCount;
+			transitionToShaderReadBarrier.pTexture				= pTexture;
+			transitionToShaderReadBarrier.StateBefore			= ETextureState::TEXTURE_STATE_COPY_DST;
+			transitionToShaderReadBarrier.StateAfter			= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+			transitionToShaderReadBarrier.QueueBefore			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+			transitionToShaderReadBarrier.QueueAfter			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+			transitionToShaderReadBarrier.SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			transitionToShaderReadBarrier.DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			transitionToShaderReadBarrier.TextureFlags			= textureDesc.Flags;
+			transitionToShaderReadBarrier.Miplevel				= 0;
+			transitionToShaderReadBarrier.MiplevelCount			= textureDesc.Miplevels;
+			transitionToShaderReadBarrier.ArrayIndex			= 0;
+			transitionToShaderReadBarrier.ArrayCount			= textureDesc.ArrayCount;
 
 			s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &transitionToShaderReadBarrier, 1);
 		}
@@ -764,7 +764,7 @@ namespace LambdaEngine
 		return pTexture;
 	}
 
-	Shader* ResourceLoader::LoadShaderFromFile(const String& filepath, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint)
+	Shader* ResourceLoader::LoadShaderFromFile(const String& filepath, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint)
 	{
 		byte* pShaderRawSource = nullptr;
 		uint32 shaderRawSourceSize = 0;
@@ -793,16 +793,52 @@ namespace LambdaEngine
 			}
 			
 			sourceSPIRV.Resize(static_cast<uint32>(glm::ceil(static_cast<float32>(shaderRawSourceSize) / sizeof(uint32))));
+			memcpy(sourceSPIRV.GetData(), pShaderRawSource, shaderRawSourceSize);
 		}
 
 		const uint32 sourceSize = static_cast<uint32>(sourceSPIRV.GetSize()) * sizeof(uint32);
 
 		ShaderDesc shaderDesc = { };
-		shaderDesc.DebugName			= filepath;
-		shaderDesc.Source				= TArray<byte>(reinterpret_cast<byte*>(sourceSPIRV.GetData()), reinterpret_cast<byte*>(sourceSPIRV.GetData()) + sourceSize);
-		shaderDesc.EntryPoint			= pEntryPoint;
-		shaderDesc.Stage				= stage;
-		shaderDesc.Lang					= lang;
+		shaderDesc.DebugName	= filepath;
+		shaderDesc.Source		= TArray<byte>(reinterpret_cast<byte*>(sourceSPIRV.GetData()), reinterpret_cast<byte*>(sourceSPIRV.GetData()) + sourceSize);
+		shaderDesc.EntryPoint	= entryPoint;
+		shaderDesc.Stage		= stage;
+		shaderDesc.Lang			= lang;
+
+		Shader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
+		Malloc::Free(pShaderRawSource);
+
+		return pShader;
+	}
+
+	Shader* ResourceLoader::LoadShaderFromMemory(const String& source, const String& name, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint)
+	{
+		byte* pShaderRawSource = nullptr;
+		uint32 shaderRawSourceSize = 0;
+
+		TArray<uint32> sourceSPIRV;
+		if (lang == EShaderLang::SHADER_LANG_GLSL)
+		{
+			if (!CompileGLSLToSPIRV("", source.c_str(), shaderRawSourceSize, stage, sourceSPIRV))
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV");
+				return nullptr;
+			}
+		}
+		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
+		{
+			sourceSPIRV.Resize(static_cast<uint32>(glm::ceil(static_cast<float32>(shaderRawSourceSize) / sizeof(uint32))));
+			memcpy(sourceSPIRV.GetData(), pShaderRawSource, shaderRawSourceSize);
+		}
+
+		const uint32 sourceSize = static_cast<uint32>(sourceSPIRV.GetSize()) * sizeof(uint32);
+
+		ShaderDesc shaderDesc = { };
+		shaderDesc.DebugName	= name;
+		shaderDesc.Source		= TArray<byte>(reinterpret_cast<byte*>(sourceSPIRV.GetData()), reinterpret_cast<byte*>(sourceSPIRV.GetData()) + sourceSize);
+		shaderDesc.EntryPoint	= entryPoint;
+		shaderDesc.Stage		= stage;
+		shaderDesc.Lang			= lang;
 
 		Shader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
 		Malloc::Free(pShaderRawSource);
@@ -816,7 +852,6 @@ namespace LambdaEngine
 		soundDesc.Filepath = filepath;
 
 		ISoundEffect3D* pSound = AudioSystem::GetDevice()->CreateSoundEffect(&soundDesc);
-
 		if (pSound == nullptr)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to initialize sound \"%s\"", filepath.c_str());

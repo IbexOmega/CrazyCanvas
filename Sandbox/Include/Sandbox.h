@@ -41,13 +41,13 @@ public:
 
 	void InitTestAudio();
 
-    // Inherited via IEventHandler
-    virtual void OnFocusChanged(LambdaEngine::Window* pWindow, bool hasFocus)                                                 override;
-    virtual void OnWindowMoved(LambdaEngine::Window* pWindow, int16 x, int16 y)                                               override;
-    virtual void OnWindowResized(LambdaEngine::Window* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)  override;
-    virtual void OnWindowClosed(LambdaEngine::Window* pWindow)                                                                override;
-    virtual void OnMouseEntered(LambdaEngine::Window* pWindow)                                                                override;
-    virtual void OnMouseLeft(LambdaEngine::Window* pWindow)                                                                   override;
+	// Inherited via IEventHandler
+	virtual void OnFocusChanged(LambdaEngine::Window* pWindow, bool hasFocus)                                                 override;
+	virtual void OnWindowMoved(LambdaEngine::Window* pWindow, int16 x, int16 y)                                               override;
+	virtual void OnWindowResized(LambdaEngine::Window* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)  override;
+	virtual void OnWindowClosed(LambdaEngine::Window* pWindow)                                                                override;
+	virtual void OnMouseEntered(LambdaEngine::Window* pWindow)                                                                override;
+	virtual void OnMouseLeft(LambdaEngine::Window* pWindow)                                                                   override;
 
 	virtual void OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)     override;
 	virtual void OnKeyReleased(LambdaEngine::EKey key)                                        override;
@@ -57,11 +57,11 @@ public:
 	virtual void OnMouseMovedRaw(int32 deltaX, int32 deltaY)                                  override;
 	virtual void OnButtonPressed(LambdaEngine::EMouseButton button, uint32 modifierMask)      override;
 	virtual void OnButtonReleased(LambdaEngine::EMouseButton button)                          override;
-    virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)                                  override;
-    
+	virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)                                  override;
+	
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
-    virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
+	virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
 	void Render(LambdaEngine::Timestamp delta);
 

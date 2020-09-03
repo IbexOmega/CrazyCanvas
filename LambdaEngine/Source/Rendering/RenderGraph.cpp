@@ -2028,10 +2028,10 @@ namespace LambdaEngine
 			//Assume resource is Back Buffer Bound if there is more than 1 Texture View
 			ppTextureViews[textureViewCount++] = pResource->Texture.TextureViews.GetSize() > 1 ? pResource->Texture.TextureViews[m_BackBufferIndex] : pResource->Texture.TextureViews[0];
 
-			clearColorDescriptions[clearColorCount].Color[0]	= 0.0f;
-			clearColorDescriptions[clearColorCount].Color[1]	= 0.0f;
-			clearColorDescriptions[clearColorCount].Color[2]	= 0.0f;
-			clearColorDescriptions[clearColorCount].Color[3]	= 0.0f;
+			clearColorDescriptions[clearColorCount].Color[0]	= 1.0f;
+			clearColorDescriptions[clearColorCount].Color[1]	= 1.0f;
+			clearColorDescriptions[clearColorCount].Color[2]	= 1.0f;
+			clearColorDescriptions[clearColorCount].Color[3]	= 1.0f;
 
 			clearColorCount++;
 		}

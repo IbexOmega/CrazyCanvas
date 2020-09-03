@@ -52,8 +52,8 @@ namespace LambdaEngine
 		void InternalAddSignalSemaphore(VkSemaphore semaphore);
 
 	private:
-		VkQueue		m_Queue = VK_NULL_HANDLE;
-		SpinLock	m_SpinLock;
+		VkQueue m_Queue = VK_NULL_HANDLE;
+		SpinLock m_SpinLock;
 		
 		TArray<VkCommandBuffer>			m_CommandBuffersToSubmit;
 		TArray<VkSemaphore>				m_SignalSemaphores;
