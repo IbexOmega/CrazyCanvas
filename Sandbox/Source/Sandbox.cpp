@@ -1623,7 +1623,7 @@ bool Sandbox::InitRendererForDeferred()
 
 	if (SHOW_DEMO)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/DEMO_NEW.lrg";
+		renderGraphFile = "../Assets/RenderGraphs/DEMO.lrg";
 	}
 	else
 	{
@@ -1633,11 +1633,11 @@ bool Sandbox::InitRendererForDeferred()
 		}
 		else if (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
 		{
-			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE_NEW.lrg";
+			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
 		}
 		else if (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
 		{
-			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF_NEW.lrg";
+			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
 		}
 		else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 		{

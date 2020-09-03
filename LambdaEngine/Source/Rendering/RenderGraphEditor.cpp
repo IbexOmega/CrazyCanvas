@@ -1224,7 +1224,7 @@ namespace LambdaEngine
 			imnodes::BeginNode(pResourceStateGroup->OutputNodeIndex);
 
 			imnodes::BeginNodeTitleBar();
-			ImGui::TextUnformatted((pResourceStateGroup->Name + "_OUTPUT").c_str());
+			ImGui::Text((pResourceStateGroup->Name + "_OUTPUT").c_str());
 			imnodes::EndNodeTitleBar();
 
 			String resourceStateToRemove = "";
@@ -1288,7 +1288,7 @@ namespace LambdaEngine
 				imnodes::BeginNode(pResourceStateGroup->InputNodeIndex);
 
 				imnodes::BeginNodeTitleBar();
-				ImGui::TextUnformatted((pResourceStateGroup->Name + "_INPUT").c_str());
+				ImGui::Text((pResourceStateGroup->Name + "_INPUT").c_str());
 				imnodes::EndNodeTitleBar();
 
 				String resourceStateToRemove = "";
@@ -1350,7 +1350,7 @@ namespace LambdaEngine
 			imnodes::BeginNode(m_FinalOutput.NodeIndex);
 
 			imnodes::BeginNodeTitleBar();
-			ImGui::TextUnformatted("FINAL_OUTPUT");
+			ImGui::Text("FINAL_OUTPUT");
 			imnodes::EndNodeTitleBar();
 
 			uint32 primaryAttributeIndex	= m_FinalOutput.BackBufferAttributeIndex / 2;
@@ -1387,7 +1387,7 @@ namespace LambdaEngine
 			{
 				renderStageToDelete = pRenderStage->Name;
 			}
-			ImGui::TextUnformatted("Enabled: ");
+			ImGui::Text("Enabled: ");
 			ImGui::SameLine();
 			if (ImGui::Checkbox("##Render Stage Enabled Checkbox", &pRenderStage->Enabled)) m_ParsedGraphDirty = true;
 			ImGui::Text("Weight: %d", pRenderStage->Weight);
