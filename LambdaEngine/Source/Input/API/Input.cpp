@@ -13,7 +13,7 @@ namespace LambdaEngine
 	void Input::OnButtonPressed(EMouseButton button, uint32 modifierMask)
 	{
 		UNREFERENCED_VARIABLE(modifierMask);
-		m_MouseState.ButtonStates[button] = true;
+		m_MouseState.ButtonStates[button] = m_InputEnabled;
 	}
 
 	void Input::OnButtonReleased(EMouseButton button)
@@ -23,24 +23,26 @@ namespace LambdaEngine
 
 	void Input::OnMouseMoved(int32 x, int32 y)
 	{
-		m_MouseState.x = x;
-		m_MouseState.y = y;
+		if (m_InputEnabled)
+		{
+			m_MouseState.x = x;
+			m_MouseState.y = y;
+		}
 	}
 
 	void Input::OnMouseScrolled(int32 deltaX, int32 deltaY)
 	{
-		m_MouseState.ScrollX = deltaX;
-		m_MouseState.ScrollY = deltaY;
+		if (m_InputEnabled)
+		{
+			m_MouseState.ScrollX = deltaX;
+			m_MouseState.ScrollY = deltaY;
+		}
 	}
 
 	void Input::OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
 	{
 		UNREFERENCED_VARIABLE(modifierMask);
-
-		if (!isRepeat)
-		{
-			m_KeyboardState.KeyStates[key] = true;
-		}
+		m_KeyboardState.KeyStates[key] = m_InputEnabled && !isRepeat;
 	}
 
 	void Input::OnKeyReleased(EKey key)
@@ -68,5 +70,12 @@ namespace LambdaEngine
 
 	void Input::Tick()
 	{
+	}
+
+	void Input::Disable()
+	{
+		s_pInstance->m_InputEnabled = false;
+		std::fill_n(s_pInstance->m_KeyboardState.KeyStates, EKey::KEY_LAST, false);
+		std::fill_n(s_pInstance->m_MouseState.ButtonStates, EMouseButton::MOUSE_BUTTON_COUNT, false);
 	}
 }
