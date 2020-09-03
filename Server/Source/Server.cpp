@@ -28,7 +28,13 @@ Server::Server()
 	using namespace LambdaEngine;
 	CommonApplication::Get()->AddEventHandler(this);
 
-	m_pServer = ServerUDP::Create(this, 100, 1024, 10);
+	ServerUDPDesc desc = {};
+	desc.Handler	= this;
+	desc.MaxRetries = 10;
+	desc.MaxClients = 10;
+	desc.PoolSize	= 512;
+
+	m_pServer = ServerUDP::Create(desc);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
 	//m_pServer->SetSimulateReceivingPacketLoss(0.1f);
 }
