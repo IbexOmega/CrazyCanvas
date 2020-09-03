@@ -196,4 +196,22 @@ namespace LambdaEngine
 		default:											return "NONE";
 		}
 	}
+
+	FORCEINLINE String MemoryTypeToString(EMemoryType memoryType)
+	{
+		switch (memoryType)
+		{
+		case EMemoryType::MEMORY_CPU_VISIBLE:		return "MEMORY_CPU_VISIBLE";
+		case EMemoryType::MEMORY_GPU:				return "MEMORY_GPU";
+		default:									return "NONE";
+		}
+	}
+
+	FORCEINLINE EMemoryType MemoryTypeFromString(const String string)
+	{
+		if (string == "MEMORY_CPU_VISIBLE")			return EMemoryType::MEMORY_CPU_VISIBLE;
+		if (string == "MEMORY_GPU")					return EMemoryType::MEMORY_GPU;
+
+		return EMemoryType::NONE;
+	}
 }

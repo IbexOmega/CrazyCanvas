@@ -28,19 +28,6 @@ namespace LambdaEngine
 		String		LinkStartedOnResource	= "";
 	};
 
-	struct EditorResource 
-	{
-		String						Name					= "";
-		
-		ERenderGraphResourceType	Type					= ERenderGraphResourceType::NONE;
-		bool						BackBufferBound			= false;
-		uint32						SubResourceCount		= 1;
-		bool						IsOfArrayType			= false;
-		bool						Editable				= false;
-
-		EFormat						TextureFormat			= EFormat::NONE;
-	};
-
 	struct EditorRenderGraphResourceLink
 	{
 		int32		LinkIndex				= 0;
@@ -50,12 +37,12 @@ namespace LambdaEngine
 
 	struct EditorRenderGraphResourceState
 	{
-		String			ResourceName		= "";
-		String			RenderStageName		= "";
-		bool			Removable			= true;
-		ERenderGraphResourceBindingType BindingType = ERenderGraphResourceBindingType::NONE;
-		int32			InputLinkIndex		= -1;
-		TSet<int32>		OutputLinkIndices;
+		String							ResourceName					= "";
+		String							RenderStageName					= "";
+		bool							Removable						= true;
+		ERenderGraphResourceBindingType BindingType						= ERenderGraphResourceBindingType::NONE;
+		int32							InputLinkIndex					= -1;
+		TSet<int32>						OutputLinkIndices;
 	};
 
 	struct EditorResourceStateIdent
@@ -66,13 +53,14 @@ namespace LambdaEngine
 
 	struct EditorRenderStageDesc
 	{
-		String						Name					= "";
-		int32						NodeIndex				= 0;
-		int32						InputAttributeIndex		= 0;
-		EPipelineStateType			Type					= EPipelineStateType::NONE;
-		bool						CustomRenderer			= false;
-		bool						Enabled					= true;
-		RenderStageParameters		Parameters				= {};
+		String						Name							= "";
+		int32						NodeIndex						= 0;
+		int32						InputAttributeIndex				= 0;
+		EPipelineStateType			Type							= EPipelineStateType::NONE;
+		bool						OverrideRecommendedBindingType	= false;
+		bool						CustomRenderer					= false;
+		bool						Enabled							= true;
+		RenderStageParameters		Parameters						= {};
 
 		struct
 		{
@@ -159,7 +147,7 @@ namespace LambdaEngine
 
 	class RenderGraph;
 
-	class RenderGraphEditor : public EventHandler
+	class LAMBDA_API RenderGraphEditor : public EventHandler
 	{
 	public:
 		DECL_REMOVE_COPY(RenderGraphEditor);
@@ -183,6 +171,7 @@ namespace LambdaEngine
 		void RenderResourceView(float textWidth, float textHeight);
 		void RenderAddResourceView();
 		void RenderEditResourceView();
+		void InternalRenderEditResourceView(RenderGraphResourceDesc* pResource, char* pNameBuffer, int32 nameBufferLength);
 
 		void RenderShaderView(float textWidth, float textHeight);
 
@@ -196,17 +185,19 @@ namespace LambdaEngine
 		void RenderShaderBoxes(EditorRenderStageDesc* pRenderStage);
 		void RenderShaderBoxCommon(String* pTarget, bool* pAdded = nullptr, bool* pRemoved = nullptr);
 
-		TArray<EditorResource>::iterator FindResource(const String& name);
+		TArray<RenderGraphResourceDesc>::iterator FindResource(const String& name);
 		EditorResourceStateIdent CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERenderGraphResourceBindingType bindingType);
 		bool CheckLinkValid(int32* pSrcAttributeIndex, int32* pDstAttributeIndex);
 
+		void RemoveResourceStateFrom(const String& name, EditorResourceStateGroup* pResourceStateGroup);
+		void RemoveResourceStateFrom(const String& name, EditorRenderStageDesc* pRenderStageDesc);
 		void DestroyLink(int32 linkIndex);
 
 		void PushPinColorIfNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
 		void PopPinColorIfNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
 		bool CustomPinColorNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
 
-		void CalculateResourceStateBindingTypes(const EditorRenderStageDesc* pRenderStage, const EditorResource* pResource, const EditorRenderGraphResourceState* pResourceState, TArray<ERenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames);
+		void CalculateResourceStateBindingTypes(const EditorRenderStageDesc* pRenderStage, const RenderGraphResourceDesc* pResource, const EditorRenderGraphResourceState* pResourceState, TArray<ERenderGraphResourceBindingType>& bindingTypes, TArray<const char*>& bindingTypeNames);
 
 		bool SaveToFile(const String& renderGraphName);
 		bool LoadFromFile(const String& filepath, bool generateImGuiStage);
@@ -216,7 +207,7 @@ namespace LambdaEngine
 		bool ParseStructure(bool generateImGuiStage);
 		bool RecursivelyWeightParentRenderStages(EditorRenderStageDesc* pChildRenderStage);
 		bool IsRenderStage(const String& name);
-		bool CapturedByImGui(const EditorResource* pResource);
+		bool CapturedByImGui(const RenderGraphResourceDesc* pResource);
 		bool FindAndCreateSynchronization(bool generateImGuiStage,
 			const std::multimap<uint32, EditorRenderStageDesc*>::reverse_iterator& currentOrderedRenderStageIt, 
 			const std::multimap<uint32, EditorRenderStageDesc*>& orderedMappedRenderStages, 
@@ -230,7 +221,7 @@ namespace LambdaEngine
 		TArray<EditorResourceStateGroup>					m_ResourceStateGroups;
 		EditorFinalOutput									m_FinalOutput		= {};
 
-		TArray<EditorResource>								m_Resources;
+		TArray<RenderGraphResourceDesc>						m_Resources;
 
 		THashTable<int32, String>							m_RenderStageNameByInputAttributeIndex;
 		THashTable<String, EditorRenderStageDesc>			m_RenderStagesByName;

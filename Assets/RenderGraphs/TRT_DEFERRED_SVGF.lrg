@@ -5,387 +5,694 @@
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 2
+            "external": false,
+            "type_params": {
+                "texture_format": "B8G8R8A8_UNORM",
+                "is_of_array_type": false
+            }
         },
         {
             "name": "FULLSCREEN_QUAD_VERTEX_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 0
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "PER_FRAME_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 0
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_LIGHTS_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 0
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_MAT_PARAM_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 0
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_VERTEX_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 0
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_INDEX_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 0
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_PRIMARY_INSTANCE_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 0
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_SECONDARY_INSTANCE_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 0
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_INDIRECT_ARGS_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 0
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_TLAS",
             "type": "ACCELERATION_STRUCTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 0
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_ALBEDO_MAPS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 32,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 1
+            "external": true,
+            "type_params": {
+                "texture_format": "R8G8B8A8_UNORM",
+                "is_of_array_type": false
+            }
         },
         {
             "name": "SCENE_NORMAL_MAPS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 32,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 1
+            "external": true,
+            "type_params": {
+                "texture_format": "R8G8B8A8_UNORM",
+                "is_of_array_type": false
+            }
         },
         {
             "name": "SCENE_AO_MAPS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 32,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 1
+            "external": true,
+            "type_params": {
+                "texture_format": "R8G8B8A8_UNORM",
+                "is_of_array_type": false
+            }
         },
         {
             "name": "SCENE_ROUGHNESS_MAPS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 32,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 1
+            "external": true,
+            "type_params": {
+                "texture_format": "R8G8B8A8_UNORM",
+                "is_of_array_type": false
+            }
         },
         {
             "name": "SCENE_METALLIC_MAPS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 32,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 1
+            "external": true,
+            "type_params": {
+                "texture_format": "R8G8B8A8_UNORM",
+                "is_of_array_type": false
+            }
         },
         {
             "name": "G_BUFFER_ALBEDO_AO",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "G_BUFFER_EMISSION_METALLIC_ROUGHNESS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "G_BUFFER_DEPTH_STENCIL",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 5
+            "external": false,
+            "type_params": {
+                "texture_format": "D24_UNORM_S8_UINT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "DIRECT_RADIANCE",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "BLUE_NOISE_LUT",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 512,
-            "is_of_array_type": true,
             "editable": true,
-            "texture_format": 6
+            "external": true,
+            "type_params": {
+                "texture_format": "R16_UNORM",
+                "is_of_array_type": true
+            }
         },
         {
             "name": "INDIRECT_RADIANCE",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "G_BUFFER_MOTION",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "DIRECT_RADIANCE_FEEDBACK",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "INDIRECT_RADIANCE_FEEDBACK",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "MOMENTS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "PREV_MOMENTS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "G_BUFFER_LINEAR_Z",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 9
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_UINT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "PREV_G_BUFFER_LINEAR_Z",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 9
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_UINT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "PREV_SVGF_HISTORY",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 8
+            "external": false,
+            "type_params": {
+                "texture_format": "R16_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "G_BUFFER_COMPACT_NORM_DEPTH",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 9
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_UINT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "DIRECT_RADIANCE_REPROJECTED",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "INDIRECT_RADIANCE_REPROJECTED",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "SVGF_HISTORY",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 8
+            "external": false,
+            "type_params": {
+                "texture_format": "R16_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "DIRECT_RADIANCE_VARIANCE_ESTIMATED",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "INDIRECT_RADIANCE_VARIANCE_ESTIMATED",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "DIRECT_ALBEDO",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "INDIRECT_ALBEDO",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "DIRECT_RADIANCE_ATROUS_PING",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "DIRECT_RADIANCE_ATROUS_PONG",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "INDIRECT_RADIANCE_ATROUS_PING",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "INDIRECT_RADIANCE_ATROUS_PONG",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 7
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         },
         {
             "name": "G_BUFFER_COMPACT_NORMALS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 0
+            "external": false,
+            "type_params": {
+                "texture_format": "R32G32_SFLOAT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         }
     ],
     "resource_state_groups": [
@@ -897,6 +1204,110 @@
             ]
         },
         {
+            "name": "SVGF_ATROUS_0",
+            "node_index": 9,
+            "input_attribute_index": 266,
+            "type": "GRAPHICS",
+            "custom_renderer": false,
+            "x_dim_type": "RELATIVE",
+            "y_dim_type": "RELATIVE",
+            "z_dim_type": "CONSTANT",
+            "x_dim_var": 1.0,
+            "y_dim_var": 1.0,
+            "z_dim_var": 0.0,
+            "draw_params": {
+                "draw_type": "FULLSCREEN_QUAD",
+                "index_buffer": {
+                    "name": "",
+                    "render_stage_name": "SVGF_ATROUS_0",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 268,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                },
+                "indirect_args_buffer": {
+                    "name": "",
+                    "render_stage_name": "SVGF_ATROUS_0",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 270,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                }
+            },
+            "depth_test_enabled": false,
+            "shaders": {
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "FullscreenQuad.vert",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": "SVGFAtrous0.frag"
+            },
+            "resource_states": [
+                {
+                    "name": "DIRECT_RADIANCE_VARIANCE_ESTIMATED",
+                    "render_stage_name": "SVGF_ATROUS_0",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 362,
+                    "input_link_index": 117,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "INDIRECT_RADIANCE_VARIANCE_ESTIMATED",
+                    "render_stage_name": "SVGF_ATROUS_0",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 274,
+                    "input_link_index": 89,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "G_BUFFER_COMPACT_NORM_DEPTH",
+                    "render_stage_name": "SVGF_ATROUS_0",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 276,
+                    "input_link_index": 90,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SVGF_HISTORY",
+                    "render_stage_name": "SVGF_ATROUS_0",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 278,
+                    "input_link_index": 91,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "DIRECT_RADIANCE_ATROUS_PING",
+                    "render_stage_name": "SVGF_ATROUS_0",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 284,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        94
+                    ]
+                },
+                {
+                    "name": "INDIRECT_RADIANCE_ATROUS_PING",
+                    "render_stage_name": "SVGF_ATROUS_0",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 286,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        95
+                    ]
+                }
+            ]
+        },
+        {
             "name": "SVGF_OUTPUT",
             "node_index": 5,
             "input_attribute_index": 66,
@@ -1027,110 +1438,6 @@
                     "input_link_index": -1,
                     "output_link_indices": [
                         59
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "SVGF_ATROUS_0",
-            "node_index": 9,
-            "input_attribute_index": 266,
-            "type": "GRAPHICS",
-            "custom_renderer": false,
-            "x_dim_type": "RELATIVE",
-            "y_dim_type": "RELATIVE",
-            "z_dim_type": "CONSTANT",
-            "x_dim_var": 1.0,
-            "y_dim_var": 1.0,
-            "z_dim_var": 0.0,
-            "draw_params": {
-                "draw_type": "FULLSCREEN_QUAD",
-                "index_buffer": {
-                    "name": "",
-                    "render_stage_name": "SVGF_ATROUS_0",
-                    "removable": true,
-                    "binding_type": "DRAW_RESOURCE",
-                    "attribute_index": 268,
-                    "input_link_index": -1,
-                    "output_link_indices": []
-                },
-                "indirect_args_buffer": {
-                    "name": "",
-                    "render_stage_name": "SVGF_ATROUS_0",
-                    "removable": true,
-                    "binding_type": "DRAW_RESOURCE",
-                    "attribute_index": 270,
-                    "input_link_index": -1,
-                    "output_link_indices": []
-                }
-            },
-            "depth_test_enabled": false,
-            "shaders": {
-                "task_shader": "",
-                "mesh_shader": "",
-                "vertex_shader": "FullscreenQuad.vert",
-                "geometry_shader": "",
-                "hull_shader": "",
-                "domain_shader": "",
-                "pixel_shader": "SVGFAtrous0.frag"
-            },
-            "resource_states": [
-                {
-                    "name": "DIRECT_RADIANCE_VARIANCE_ESTIMATED",
-                    "render_stage_name": "SVGF_ATROUS_0",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 362,
-                    "input_link_index": 117,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "INDIRECT_RADIANCE_VARIANCE_ESTIMATED",
-                    "render_stage_name": "SVGF_ATROUS_0",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 274,
-                    "input_link_index": 89,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "G_BUFFER_COMPACT_NORM_DEPTH",
-                    "render_stage_name": "SVGF_ATROUS_0",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 276,
-                    "input_link_index": 90,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "SVGF_HISTORY",
-                    "render_stage_name": "SVGF_ATROUS_0",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 278,
-                    "input_link_index": 91,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "DIRECT_RADIANCE_ATROUS_PING",
-                    "render_stage_name": "SVGF_ATROUS_0",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 284,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        94
-                    ]
-                },
-                {
-                    "name": "INDIRECT_RADIANCE_ATROUS_PING",
-                    "render_stage_name": "SVGF_ATROUS_0",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 286,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        95
                     ]
                 }
             ]
@@ -1545,112 +1852,6 @@
             ]
         },
         {
-            "name": "SVGF_ATROUS_1",
-            "node_index": 10,
-            "input_attribute_index": 288,
-            "type": "GRAPHICS",
-            "custom_renderer": false,
-            "x_dim_type": "RELATIVE",
-            "y_dim_type": "RELATIVE",
-            "z_dim_type": "CONSTANT",
-            "x_dim_var": 1.0,
-            "y_dim_var": 1.0,
-            "z_dim_var": 0.0,
-            "draw_params": {
-                "draw_type": "FULLSCREEN_QUAD",
-                "index_buffer": {
-                    "name": "",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "DRAW_RESOURCE",
-                    "attribute_index": 290,
-                    "input_link_index": -1,
-                    "output_link_indices": []
-                },
-                "indirect_args_buffer": {
-                    "name": "",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "DRAW_RESOURCE",
-                    "attribute_index": 292,
-                    "input_link_index": -1,
-                    "output_link_indices": []
-                }
-            },
-            "depth_test_enabled": false,
-            "shaders": {
-                "task_shader": "",
-                "mesh_shader": "",
-                "vertex_shader": "FullscreenQuad.vert",
-                "geometry_shader": "",
-                "hull_shader": "",
-                "domain_shader": "",
-                "pixel_shader": "SVGFAtrous1.frag"
-            },
-            "resource_states": [
-                {
-                    "name": "DIRECT_RADIANCE_ATROUS_PING",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 294,
-                    "input_link_index": 94,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "INDIRECT_RADIANCE_ATROUS_PING",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 296,
-                    "input_link_index": 95,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "G_BUFFER_COMPACT_NORM_DEPTH",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 298,
-                    "input_link_index": 96,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "SVGF_HISTORY",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "attribute_index": 300,
-                    "input_link_index": 97,
-                    "output_link_indices": []
-                },
-                {
-                    "name": "DIRECT_RADIANCE_FEEDBACK",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 310,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        102,
-                        103
-                    ]
-                },
-                {
-                    "name": "INDIRECT_RADIANCE_FEEDBACK",
-                    "render_stage_name": "SVGF_ATROUS_1",
-                    "removable": true,
-                    "binding_type": "ATTACHMENT",
-                    "attribute_index": 312,
-                    "input_link_index": -1,
-                    "output_link_indices": [
-                        101,
-                        104
-                    ]
-                }
-            ]
-        },
-        {
             "name": "SVGF_VARIANCE_ESTIMATE",
             "node_index": 8,
             "input_attribute_index": 228,
@@ -1759,6 +1960,112 @@
                     "input_link_index": -1,
                     "output_link_indices": [
                         89
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "SVGF_ATROUS_1",
+            "node_index": 10,
+            "input_attribute_index": 288,
+            "type": "GRAPHICS",
+            "custom_renderer": false,
+            "x_dim_type": "RELATIVE",
+            "y_dim_type": "RELATIVE",
+            "z_dim_type": "CONSTANT",
+            "x_dim_var": 1.0,
+            "y_dim_var": 1.0,
+            "z_dim_var": 0.0,
+            "draw_params": {
+                "draw_type": "FULLSCREEN_QUAD",
+                "index_buffer": {
+                    "name": "",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 290,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                },
+                "indirect_args_buffer": {
+                    "name": "",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "attribute_index": 292,
+                    "input_link_index": -1,
+                    "output_link_indices": []
+                }
+            },
+            "depth_test_enabled": false,
+            "shaders": {
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "FullscreenQuad.vert",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": "SVGFAtrous1.frag"
+            },
+            "resource_states": [
+                {
+                    "name": "DIRECT_RADIANCE_ATROUS_PING",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 294,
+                    "input_link_index": 94,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "INDIRECT_RADIANCE_ATROUS_PING",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 296,
+                    "input_link_index": 95,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "G_BUFFER_COMPACT_NORM_DEPTH",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 298,
+                    "input_link_index": 96,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "SVGF_HISTORY",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "attribute_index": 300,
+                    "input_link_index": 97,
+                    "output_link_indices": []
+                },
+                {
+                    "name": "DIRECT_RADIANCE_FEEDBACK",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 310,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        102,
+                        103
+                    ]
+                },
+                {
+                    "name": "INDIRECT_RADIANCE_FEEDBACK",
+                    "render_stage_name": "SVGF_ATROUS_1",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "attribute_index": 312,
+                    "input_link_index": -1,
+                    "output_link_indices": [
+                        101,
+                        104
                     ]
                 }
             ]
@@ -2032,14 +2339,14 @@
             "dst_attribute_index": 206
         },
         {
-            "link_index": 68,
-            "src_attribute_index": 209,
-            "dst_attribute_index": 216
-        },
-        {
             "link_index": 4,
             "src_attribute_index": 7,
             "dst_attribute_index": 46
+        },
+        {
+            "link_index": 68,
+            "src_attribute_index": 209,
+            "dst_attribute_index": 216
         },
         {
             "link_index": 5,
@@ -2092,19 +2399,14 @@
             "dst_attribute_index": 244
         },
         {
-            "link_index": 83,
-            "src_attribute_index": 183,
-            "dst_attribute_index": 248
-        },
-        {
             "link_index": 19,
             "src_attribute_index": 21,
             "dst_attribute_index": 86
         },
         {
-            "link_index": 84,
-            "src_attribute_index": 239,
-            "dst_attribute_index": 250
+            "link_index": 83,
+            "src_attribute_index": 183,
+            "dst_attribute_index": 248
         },
         {
             "link_index": 20,
@@ -2112,14 +2414,19 @@
             "dst_attribute_index": 88
         },
         {
-            "link_index": 85,
-            "src_attribute_index": 227,
-            "dst_attribute_index": 252
+            "link_index": 84,
+            "src_attribute_index": 239,
+            "dst_attribute_index": 250
         },
         {
             "link_index": 21,
             "src_attribute_index": 15,
             "dst_attribute_index": 90
+        },
+        {
+            "link_index": 85,
+            "src_attribute_index": 227,
+            "dst_attribute_index": 252
         },
         {
             "link_index": 22,
@@ -2137,19 +2444,14 @@
             "dst_attribute_index": 96
         },
         {
-            "link_index": 89,
-            "src_attribute_index": 257,
-            "dst_attribute_index": 274
-        },
-        {
             "link_index": 25,
             "src_attribute_index": 7,
             "dst_attribute_index": 98
         },
         {
-            "link_index": 26,
-            "src_attribute_index": 61,
-            "dst_attribute_index": 100
+            "link_index": 89,
+            "src_attribute_index": 257,
+            "dst_attribute_index": 274
         },
         {
             "link_index": 90,
@@ -2157,14 +2459,19 @@
             "dst_attribute_index": 276
         },
         {
-            "link_index": 27,
-            "src_attribute_index": 63,
-            "dst_attribute_index": 102
+            "link_index": 26,
+            "src_attribute_index": 61,
+            "dst_attribute_index": 100
         },
         {
             "link_index": 91,
             "src_attribute_index": 239,
             "dst_attribute_index": 278
+        },
+        {
+            "link_index": 27,
+            "src_attribute_index": 63,
+            "dst_attribute_index": 102
         },
         {
             "link_index": 28,
@@ -2177,19 +2484,14 @@
             "dst_attribute_index": 106
         },
         {
-            "link_index": 30,
-            "src_attribute_index": 25,
-            "dst_attribute_index": 108
-        },
-        {
             "link_index": 94,
             "src_attribute_index": 285,
             "dst_attribute_index": 294
         },
         {
-            "link_index": 31,
-            "src_attribute_index": 27,
-            "dst_attribute_index": 110
+            "link_index": 30,
+            "src_attribute_index": 25,
+            "dst_attribute_index": 108
         },
         {
             "link_index": 95,
@@ -2197,14 +2499,24 @@
             "dst_attribute_index": 296
         },
         {
-            "link_index": 96,
-            "src_attribute_index": 227,
-            "dst_attribute_index": 298
+            "link_index": 31,
+            "src_attribute_index": 27,
+            "dst_attribute_index": 110
         },
         {
             "link_index": 32,
             "src_attribute_index": 31,
             "dst_attribute_index": 112
+        },
+        {
+            "link_index": 96,
+            "src_attribute_index": 227,
+            "dst_attribute_index": 298
+        },
+        {
+            "link_index": 97,
+            "src_attribute_index": 239,
+            "dst_attribute_index": 300
         },
         {
             "link_index": 33,
@@ -2217,9 +2529,19 @@
             "dst_attribute_index": 2
         },
         {
+            "link_index": 101,
+            "src_attribute_index": 313,
+            "dst_attribute_index": 174
+        },
+        {
             "link_index": 37,
             "src_attribute_index": 9,
             "dst_attribute_index": 124
+        },
+        {
+            "link_index": 102,
+            "src_attribute_index": 311,
+            "dst_attribute_index": 172
         },
         {
             "link_index": 38,
@@ -2280,21 +2602,6 @@
             "link_index": 82,
             "src_attribute_index": 237,
             "dst_attribute_index": 246
-        },
-        {
-            "link_index": 97,
-            "src_attribute_index": 239,
-            "dst_attribute_index": 300
-        },
-        {
-            "link_index": 101,
-            "src_attribute_index": 313,
-            "dst_attribute_index": 174
-        },
-        {
-            "link_index": 102,
-            "src_attribute_index": 311,
-            "dst_attribute_index": 172
         },
         {
             "link_index": 103,

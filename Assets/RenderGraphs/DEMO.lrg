@@ -5,153 +5,182 @@
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 2
+            "external": false,
+            "type_params": {
+                "texture_format": "B8G8R8A8_UNORM",
+                "is_of_array_type": false
+            }
         },
         {
             "name": "FULLSCREEN_QUAD_VERTEX_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": -1
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "PER_FRAME_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": -1
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_LIGHTS_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": -1
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_MAT_PARAM_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": -1
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_VERTEX_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": -1
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_INDEX_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": -1
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_PRIMARY_INSTANCE_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": -1
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_SECONDARY_INSTANCE_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": -1
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_INDIRECT_ARGS_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": -1
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_TLAS",
             "type": "ACCELERATION_STRUCTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": -1
+            "external": true,
+            "type_params": {}
         },
         {
             "name": "SCENE_ALBEDO_MAPS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 32,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 1
+            "external": true,
+            "type_params": {
+                "texture_format": "R8G8B8A8_UNORM",
+                "is_of_array_type": false
+            }
         },
         {
             "name": "SCENE_NORMAL_MAPS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 32,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 1
+            "external": true,
+            "type_params": {
+                "texture_format": "R8G8B8A8_UNORM",
+                "is_of_array_type": false
+            }
         },
         {
             "name": "SCENE_AO_MAPS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 32,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 1
+            "external": true,
+            "type_params": {
+                "texture_format": "R8G8B8A8_UNORM",
+                "is_of_array_type": false
+            }
         },
         {
             "name": "SCENE_ROUGHNESS_MAPS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 32,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 1
+            "external": true,
+            "type_params": {
+                "texture_format": "R8G8B8A8_UNORM",
+                "is_of_array_type": false
+            }
         },
         {
             "name": "SCENE_METALLIC_MAPS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 32,
-            "is_of_array_type": false,
             "editable": false,
-            "texture_format": 1
+            "external": true,
+            "type_params": {
+                "texture_format": "R8G8B8A8_UNORM",
+                "is_of_array_type": false
+            }
         },
         {
             "name": "G_BUFFER_DEPTH_STENCIL",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "is_of_array_type": false,
             "editable": true,
-            "texture_format": 5
+            "external": false,
+            "type_params": {
+                "texture_format": "D24_UNORM_S8_UINT",
+                "is_of_array_type": false,
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_GPU"
+            }
         }
     ],
     "resource_state_groups": [
