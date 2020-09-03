@@ -1,5 +1,5 @@
 #pragma once
-#include "Rendering/Core/API/IRenderPass.h"
+#include "Rendering/Core/API/RenderPass.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
@@ -8,9 +8,9 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
-	class RenderPassVK : public TDeviceChildBase<GraphicsDeviceVK, IRenderPass>
+	class RenderPassVK : public TDeviceChildBase<GraphicsDeviceVK, RenderPass>
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IRenderPass>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, RenderPass>;
 
 		struct SubpassData
 		{
@@ -32,18 +32,14 @@ namespace LambdaEngine
 			return m_RenderPass;
 		}
 
-		// Inherited via IDeviceChild
-		virtual void SetName(const char* pName) override final;
+	public:
+		// DeviceChild Interface
+		virtual void SetName(const String& name) override final;
 
-		// Inherited via IRenderPass
+		// RenderPass Interface
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
-			return (uint64)m_RenderPass;
-		}
-
-		FORCEINLINE virtual RenderPassDesc GetDesc() const override final
-		{
-			return m_Desc;
+			return reinterpret_cast<uint64>(m_RenderPass);
 		}
 
 	private:
@@ -52,7 +48,6 @@ namespace LambdaEngine
 		void CreateSubpassDependencies(const RenderPassDesc* pDesc, VkSubpassDependency* pResultSubpassDependencies);
 
 	private:
-		VkRenderPass	m_RenderPass = VK_NULL_HANDLE;
-		RenderPassDesc	m_Desc;
+		VkRenderPass m_RenderPass = VK_NULL_HANDLE;
 	};
 }

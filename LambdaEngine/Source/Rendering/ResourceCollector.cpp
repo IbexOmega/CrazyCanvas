@@ -12,19 +12,19 @@ namespace LambdaEngine
 		Reset();
 	}
 
-	void ResourceCollector::DisposeResource(IDeviceChild* pObject)
+	void ResourceCollector::DisposeResource(DeviceChild* pObject)
 	{
 		VALIDATE(pObject != nullptr);
-		m_Objects.push_back(pObject);
+		m_Objects.EmplaceBack(pObject);
 	}
 
 	void ResourceCollector::Reset()
 	{
-		for (IDeviceChild* pObject : m_Objects)
+		for (TSharedRef<DeviceChild>& object : m_Objects)
 		{
-			pObject->Release();
+			object.Reset();
 		}
 
-		m_Objects.clear();
+		m_Objects.Clear();
 	}
 }

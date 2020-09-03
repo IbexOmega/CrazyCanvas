@@ -10,15 +10,12 @@ namespace LambdaEngine
 {
 	AccelerationStructureVK::AccelerationStructureVK(const GraphicsDeviceVK* pDevice) 
 		: TDeviceChild(pDevice),
-		m_Allocation(),
-		m_Desc()
+		m_Allocation()
 	{
 	}
 
 	AccelerationStructureVK::~AccelerationStructureVK()
 	{
-		SAFERELEASE(m_pScratchBuffer);
-
 		if (m_AccelerationStructure != VK_NULL_HANDLE)
 		{
 			VALIDATE(m_pDevice->vkDestroyAccelerationStructureKHR != nullptr);
@@ -29,12 +26,10 @@ namespace LambdaEngine
 			m_AccelerationStructureDeviceAddress = 0;
 		}
 
-		if (m_pAllocator)
+		if (m_Allocator)
 		{
-			m_pAllocator->Free(&m_Allocation);
+			m_Allocator->Free(&m_Allocation);
 			memset(&m_Allocation, 0, sizeof(m_Allocation));
-
-			RELEASE(m_pAllocator);
 		}
 		else
 		{
@@ -46,7 +41,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool AccelerationStructureVK::Init(const AccelerationStructureDesc* pDesc, IDeviceAllocator* pAllocator)
+	bool AccelerationStructureVK::Init(const AccelerationStructureDesc* pDesc, DeviceAllocator* pAllocator)
 	{
 		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
 		accelerationStructureCreateInfo.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -63,7 +58,8 @@ namespace LambdaEngine
 		geometryTypeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
 		geometryTypeInfo.pNext = nullptr;
 		
-		if (pDesc->Type == EAccelerationStructureType::ACCELERATION_STRUCTURE_TOP)
+		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
+		if (pDesc->Type == EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP)
 		{
 			accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 			
@@ -90,9 +86,9 @@ namespace LambdaEngine
 		VkResult result = m_pDevice->vkCreateAccelerationStructureKHR(m_pDevice->Device, &accelerationStructureCreateInfo, nullptr, &m_AccelerationStructure);
 		if (result != VK_SUCCESS)
 		{
-			if (pDesc->pName)
+			if (!pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: vkCreateAccelerationStructureKHR failed for \"%s\"", pDesc->pName);
+				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: vkCreateAccelerationStructureKHR failed for \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
@@ -103,8 +99,8 @@ namespace LambdaEngine
 		}
 		else
 		{
-            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
-			SetName(pDesc->pName);
+			m_Desc = *pDesc;
+			SetName(m_Desc.DebugName);
 		}
 
 		VkMemoryRequirements	memoryRequirements	= GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR);
@@ -125,8 +121,8 @@ namespace LambdaEngine
 				return false;
 			}
 
-			pAllocatorVk->AddRef();
-			m_pAllocator = pAllocatorVk;
+			// Save a reference to allocator
+			m_Allocator = pAllocatorVk;
 
 			accelerationStructureMemoryInfo.memoryOffset	= m_Allocation.Offset;
 			accelerationStructureMemoryInfo.memory			= m_Allocation.Memory;
@@ -149,9 +145,9 @@ namespace LambdaEngine
 		result = m_pDevice->vkBindAccelerationStructureMemoryKHR(m_pDevice->Device, 1, &accelerationStructureMemoryInfo);
 		if (result != VK_SUCCESS)
 		{
-			if (m_Desc.pName)
+			if (m_Desc.DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: vkBindAccelerationStructureMemoryKHR failed for \"%s\"", m_Desc.pName);
+				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: vkBindAccelerationStructureMemoryKHR failed for \"%s\"", m_Desc.DebugName.c_str());
 			}
 			else
 			{
@@ -168,9 +164,9 @@ namespace LambdaEngine
 		VALIDATE(m_pDevice->vkGetAccelerationStructureDeviceAddressKHR != nullptr);
 		m_AccelerationStructureDeviceAddress = m_pDevice->vkGetAccelerationStructureDeviceAddressKHR(m_pDevice->Device, &accelerationStructureDeviceAddressInfo);
 
-		if (m_Desc.pName)
+		if (!m_Desc.DebugName.empty())
 		{
-			D_LOG_MESSAGE("[AccelerationStructureVK]: Acceleration Structure \"%s\" created with size of %u bytes", m_Desc.pName, memoryRequirements.size);
+			D_LOG_MESSAGE("[AccelerationStructureVK]: Acceleration Structure \"%s\" created with size of %u bytes", m_Desc.DebugName.c_str(), memoryRequirements.size);
 		}
 		else
 		{
@@ -180,31 +176,24 @@ namespace LambdaEngine
 		VkMemoryRequirements scratchMemoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR);
 
 		BufferDesc scratchBufferDesc = {};
-		scratchBufferDesc.pName			= "Acceleration Structure Scratch Buffer";
-		scratchBufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+		scratchBufferDesc.DebugName		= "Acceleration Structure Scratch Buffer";
+		scratchBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		scratchBufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_RAY_TRACING;
 		scratchBufferDesc.SizeInBytes	= scratchMemoryRequirements.size;
 
-		m_pScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&scratchBufferDesc, pAllocator));
-		if (m_pScratchBuffer)
-		{
-			return true;
-		}
-		else
+		m_ScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&scratchBufferDesc, pAllocator));
+		if (!m_ScratchBuffer)
 		{
 			return false;
 		}
+
+		return true;
 	}
 
-	void AccelerationStructureVK::SetName(const char* pName)
+	void AccelerationStructureVK::SetName(const String& name)
 	{
-		if (pName)
-		{
-			TDeviceChild::SetName(pName);
-			m_pDevice->SetVulkanObjectName(pName, (uint64)m_AccelerationStructure, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR);
-
-			m_Desc.pName = m_pDebugName;
-		}
+		m_pDevice->SetVulkanObjectName(name, reinterpret_cast<uint64>(m_AccelerationStructure), VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR);
+		m_Desc.DebugName = name;
 	}
 
 	VkMemoryRequirements AccelerationStructureVK::GetMemoryRequirements(VkAccelerationStructureMemoryRequirementsTypeKHR type)

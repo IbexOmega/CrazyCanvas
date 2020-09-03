@@ -1,9 +1,9 @@
 #pragma once
-
 #include "LambdaEngine.h"
-#include "Core/API/GraphicsTypes.h"
-#include "Core/API/IPipelineState.h"
 #include "PipelineStateManager.h"
+
+#include "Core/API/PipelineState.h"
+#include "Core/API/GraphicsTypes.h"
 
 #include "Containers/String.h"
 
@@ -87,7 +87,7 @@ namespace LambdaEngine
 		bool							BackBufferBound			= false;
 		uint32							SubResourceCount		= 1;
 		bool							IsOfArrayType			= false;
-		EFormat							TextureFormat			= EFormat::NONE;
+		EFormat							TextureFormat			= EFormat::FORMAT_NONE;
 
 		bool							External				= false;
 		bool							Temporal				= false;
@@ -144,7 +144,7 @@ namespace LambdaEngine
 	struct RenderStageDesc
 	{
 		String						Name				= "";
-		EPipelineStateType			Type				= EPipelineStateType::NONE;
+		EPipelineStateType			Type				= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 		bool						CustomRenderer		= false;
 		bool						Enabled				= true;
 		uint32						Weight				= 0;
@@ -179,8 +179,8 @@ namespace LambdaEngine
 		String							PrevRenderStage		= "";
 		String							NextRenderStage		= "";
 		String							ResourceName		= "";
-		ECommandQueueType				PrevQueue			= ECommandQueueType::COMMAND_QUEUE_NONE;
-		ECommandQueueType				NextQueue			= ECommandQueueType::COMMAND_QUEUE_NONE;
+		ECommandQueueType				PrevQueue			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		ECommandQueueType				NextQueue			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		ERenderGraphResourceBindingType	PrevBindingType		= ERenderGraphResourceBindingType::NONE;
 		ERenderGraphResourceBindingType	NextBindingType		= ERenderGraphResourceBindingType::NONE;
 	};
@@ -230,7 +230,7 @@ namespace LambdaEngine
 	{
 		uint32 mask = 0;
 
-		if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
+		if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
 			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER;
@@ -240,11 +240,11 @@ namespace LambdaEngine
 			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		}
-		else if (pRenderStageDesc->Type == EPipelineStateType::COMPUTE)
+		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{
 			if (pRenderStageDesc->Compute.ShaderName.size()						> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 		}
-		else if (pRenderStageDesc->Type == EPipelineStateType::RAY_TRACING)
+		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 		{
 			if (pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.size()	> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER;
 			if (pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;
@@ -260,34 +260,34 @@ namespace LambdaEngine
 		{
 			switch (bindingType)
 			{
-			case ERenderGraphResourceBindingType::COMBINED_SAMPLER:				return EDescriptorType::DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_TEXTURE;
+			case ERenderGraphResourceBindingType::COMBINED_SAMPLER:					return EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:		return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
 			}
 		}
 		else if (resourceType == ERenderGraphResourceType::BUFFER)
 		{
 			switch (bindingType)
 			{
-			case ERenderGraphResourceBindingType::CONSTANT_BUFFER:				return EDescriptorType::DESCRIPTOR_CONSTANT_BUFFER;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
+			case ERenderGraphResourceBindingType::CONSTANT_BUFFER:					return EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:		return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 			}
 		}
 		else if (resourceType == ERenderGraphResourceType::ACCELERATION_STRUCTURE)
 		{
 			switch (bindingType)
 			{
-			case ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return EDescriptorType::DESCRIPTOR_ACCELERATION_STRUCTURE;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return EDescriptorType::DESCRIPTOR_UNORDERED_ACCESS_BUFFER;
+			case ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return EDescriptorType::DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:		return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 			}
 		}
 
-		return EDescriptorType::DESCRIPTOR_UNKNOWN;
+		return EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
 	}
 
 	FORCEINLINE ETextureState CalculateResourceTextureState(ERenderGraphResourceType resourceType, ERenderGraphResourceBindingType bindingType, EFormat format)
@@ -328,9 +328,7 @@ namespace LambdaEngine
 
 	FORCEINLINE FPipelineStageFlags FindEarliestPipelineStage(const RenderStageDesc* pRenderStageDesc)
 	{
-		uint32 shaderStageMask = 0;
-
-		if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
+		if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
 			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
@@ -340,11 +338,11 @@ namespace LambdaEngine
 			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
 		}
-		else if (pRenderStageDesc->Type == EPipelineStateType::COMPUTE)
+		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{
 			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
 		}
-		else if (pRenderStageDesc->Type == EPipelineStateType::RAY_TRACING)
+		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 		{
 			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 		}
@@ -356,7 +354,7 @@ namespace LambdaEngine
 	{
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP)								return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP;
 
-		if (commandQueueType == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+		if (commandQueueType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 		{
 			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT;
 			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
@@ -376,14 +374,16 @@ namespace LambdaEngine
 			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
 			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
 		}
-		else if (commandQueueType == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+		else if (commandQueueType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 		{
 			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER)				return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
 			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD;
 		}
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM)						return FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM;
+		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM;
+
+		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
 	FORCEINLINE FPipelineStageFlags FindEarliestPipelineStage(uint32 pipelineStageMask)
@@ -419,6 +419,8 @@ namespace LambdaEngine
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
 
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM)						return FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM;
+
+		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
 	FORCEINLINE FPipelineStageFlags FindLastPipelineStage(uint32 pipelineStageMask)
@@ -454,13 +456,13 @@ namespace LambdaEngine
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT;
 
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP;
+
+		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
 	FORCEINLINE FPipelineStageFlags FindLastPipelineStage(const RenderStageDesc* pRenderStageDesc)
 	{
-		uint32 shaderStageMask = 0;
-
-		if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
+		if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
 			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
@@ -470,11 +472,11 @@ namespace LambdaEngine
 			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
 		}
-		else if (pRenderStageDesc->Type == EPipelineStateType::COMPUTE)
+		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{
 			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
 		}
-		else if (pRenderStageDesc->Type == EPipelineStateType::RAY_TRACING)
+		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 		{
 			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 		}
@@ -486,16 +488,18 @@ namespace LambdaEngine
 	{
 		switch (bindingType)
 		{
-			case ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return true;
+			case ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE:		return true;
 			case ERenderGraphResourceBindingType::CONSTANT_BUFFER:				return true;
 			case ERenderGraphResourceBindingType::COMBINED_SAMPLER:				return true;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return true;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return false;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:		return true;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:		return false;
 			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return false;
-			case ERenderGraphResourceBindingType::ATTACHMENT:						return false;
+			case ERenderGraphResourceBindingType::ATTACHMENT:					return false;
 			case ERenderGraphResourceBindingType::PRESENT:						return true;
-			case ERenderGraphResourceBindingType::DRAW_RESOURCE:					return true;
+			case ERenderGraphResourceBindingType::DRAW_RESOURCE:				return true;
 		}
+
+		return false;
 	}
 
 	FORCEINLINE String RenderStageDrawTypeToString(ERenderStageDrawType drawType)
@@ -570,20 +574,20 @@ namespace LambdaEngine
 	{
 		switch (type)
 		{
-		case EPipelineStateType::GRAPHICS:						return "GRAPHICS";
-		case EPipelineStateType::COMPUTE:						return "COMPUTE";
-		case EPipelineStateType::RAY_TRACING:					return "RAY_TRACING";
+		case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:						return "GRAPHICS";
+		case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:						return "COMPUTE";
+		case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:					return "RAY_TRACING";
 		default:												return "NONE";
 		}
 	}
 
 	FORCEINLINE EPipelineStateType RenderStageTypeFromString(const String& string)
 	{
-		if		(string == "GRAPHICS")		return EPipelineStateType::GRAPHICS;
-		else if (string == "COMPUTE")		return EPipelineStateType::COMPUTE;
-		else if (string == "RAY_TRACING")	return EPipelineStateType::RAY_TRACING;
+		if		(string == "GRAPHICS")		return EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
+		else if (string == "COMPUTE")		return EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE;
+		else if (string == "RAY_TRACING")	return EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING;
 
-		return EPipelineStateType::NONE;
+		return EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 	}
 
 	FORCEINLINE String RenderGraphResourceTypeToString(ERenderGraphResourceType type)

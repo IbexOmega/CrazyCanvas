@@ -1,40 +1,43 @@
 #pragma once
-#include "Rendering/Core/API/IPipelineState.h"
-#include "Rendering/Core/API/TDeviceChildBase.h"
+#include "Core/TSharedRef.h"
+
+#include "Rendering/Core/API/PipelineState.h"
+
+#include "Containers/TArray.h"
+
+#include "BufferVK.h"
 
 #include "Vulkan.h"
 
 namespace LambdaEngine
 {
-	class ICommandAllocator;
+	class CommandQueue;
 	class GraphicsDeviceVK;
-	class ICommandList;
-	class BufferVK;
 
-	class RayTracingPipelineStateVK : public TDeviceChildBase<GraphicsDeviceVK, IPipelineState>
+	class RayTracingPipelineStateVK : public TDeviceChildBase<GraphicsDeviceVK, PipelineState>
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IPipelineState>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, PipelineState>;
 
 	public:
 		RayTracingPipelineStateVK(const GraphicsDeviceVK* pDevice);
 		~RayTracingPipelineStateVK();
 
-		bool Init(const RayTracingPipelineStateDesc* pDesc);
+		bool Init(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc);
 
 		FORCEINLINE VkPipeline GetPipeline() const
-        {
-            return m_Pipeline;
-        }
-
-		FORCEINLINE BufferVK* GetSBT() const
 		{
-			return m_pSBT;
+			return m_Pipeline;
 		}
-        
-        FORCEINLINE const VkStridedBufferRegionKHR* GetRaygenBufferRegion() const
-        {
-            return &m_RaygenBufferRegion;
-        }
+
+		FORCEINLINE BufferVK* GetSBT()
+		{
+			return m_SBT.Get();
+		}
+		
+		FORCEINLINE const VkStridedBufferRegionKHR* GetRaygenBufferRegion() const
+		{
+			return &m_RaygenBufferRegion;
+		}
 
 		FORCEINLINE const VkStridedBufferRegionKHR* GetHitBufferRegion() const
 		{
@@ -50,34 +53,33 @@ namespace LambdaEngine
 		{
 			return &m_CallableBufferRegion;
 		}
-        
-        //IDeviceChild interface
-		virtual void SetName(const char* pName) override final;
+		
+		//DeviceChild interface
+		virtual void SetName(const String& name) override final;
 
-        //IPipelineState interface
-		FORCEINLINE virtual EPipelineStateType GetType() const override final
-        {
-            return EPipelineStateType::RAY_TRACING;
-        }
+		//IPipelineState interface
+		virtual uint64 GetHandle() const override final
+		{
+			return reinterpret_cast<uint64>(m_Pipeline);
+		}
 
-	private:
-		bool CreateShaderData(std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,
-			std::vector<VkSpecializationInfo>& shaderStagesSpecializationInfos,
-			std::vector<std::vector<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps,
-			std::vector<VkRayTracingShaderGroupCreateInfoKHR>& shaderGroups,
-			const RayTracingPipelineStateDesc* pDesc);
+		virtual EPipelineStateType GetType() const override final
+		{
+			return EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING;
+		}
 
 	private:
-		VkPipeline	m_Pipeline								= VK_NULL_HANDLE;
-		BufferVK*	m_pShaderHandleStorageBuffer			= nullptr;
-        BufferVK*	m_pSBT									= nullptr;
+		void CreateShaderStageInfo(const ShaderModuleDesc* pShaderModule, TArray<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,
+			TArray<VkSpecializationInfo>& shaderStagesSpecializationInfos, TArray<TArray<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps);
 
-		ICommandAllocator*	m_pCommandAllocator				= nullptr;
-		ICommandList*		m_pCommandList					= nullptr;
-
-		VkStridedBufferRegionKHR	m_RaygenBufferRegion	= {};
-		VkStridedBufferRegionKHR	m_HitBufferRegion		= {};
-		VkStridedBufferRegionKHR	m_MissBufferRegion		= {};
-		VkStridedBufferRegionKHR	m_CallableBufferRegion	= {};
+	private:
+		VkPipeline				m_Pipeline						= VK_NULL_HANDLE;
+		TSharedRef<BufferVK>	m_ShaderHandleStorageBuffer		= nullptr;
+		TSharedRef<BufferVK>	m_SBT							= nullptr;
+		
+		VkStridedBufferRegionKHR m_RaygenBufferRegion	= {};
+		VkStridedBufferRegionKHR m_HitBufferRegion		= {};
+		VkStridedBufferRegionKHR m_MissBufferRegion		= {};
+		VkStridedBufferRegionKHR m_CallableBufferRegion	= {};
 	};
 }

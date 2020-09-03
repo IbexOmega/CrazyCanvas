@@ -2,6 +2,8 @@
 #include "Application.h"
 #include "EventHandler.h"
 
+#include "Core/TSharedRef.h"
+
 #include "Containers/TArray.h"
 
 namespace LambdaEngine
@@ -36,9 +38,9 @@ namespace LambdaEngine
 		*/
 		void MakeMainWindow(Window* pMainWindow);
 		
-		FORCEINLINE Window* GetMainWindow()	const
+		FORCEINLINE Window* GetMainWindow()
 		{ 
-			return m_pMainWindow; 
+			return m_MainWindow.Get(); 
 		}
 
 		bool SupportsRawInput() const;
@@ -97,7 +99,7 @@ namespace LambdaEngine
 		static CommonApplication* Get();
 		
 	private:
-		Window*					m_pMainWindow			= nullptr;
+		TSharedRef<Window>		m_MainWindow			= nullptr;
 		Application*			m_pPlatformApplication	= nullptr;
 		TArray<EventHandler*> 	m_EventHandlers;
 

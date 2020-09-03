@@ -9,8 +9,8 @@ workspace "LambdaEngine"
     -- Platform
 	platforms
 	{
-		"x64_SharedLib",
 		"x64_StaticLib",
+		"x64_SharedLib",
     }
 
     filter "platforms:x64_SharedLib"
@@ -177,6 +177,15 @@ workspace "LambdaEngine"
         systemversion "latest"
         location "LambdaEngine"
         
+		-- Pre-Compiled Headers
+		pchheader "PreCompiled.h"
+		pchsource "%{prj.name}/PreCompiled.cpp"
+
+		forceincludes  
+		{ 
+			"PreCompiled.h"
+		}
+
         -- Platform
 		filter "platforms:x64_SharedLib"
             kind "SharedLib"
@@ -263,6 +272,7 @@ workspace "LambdaEngine"
         -- Includes
 		includedirs
 		{
+			"%{prj.name}",
 			"%{prj.name}/Include",
         }
 		

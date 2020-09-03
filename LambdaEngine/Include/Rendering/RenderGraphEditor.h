@@ -38,7 +38,7 @@ namespace LambdaEngine
 		bool						IsOfArrayType			= false;
 		bool						Editable				= false;
 
-		EFormat						TextureFormat			= EFormat::NONE;
+		EFormat						TextureFormat			= EFormat::FORMAT_NONE;
 	};
 
 	struct EditorRenderGraphResourceLink
@@ -69,7 +69,7 @@ namespace LambdaEngine
 		String						Name					= "";
 		int32						NodeIndex				= 0;
 		int32						InputAttributeIndex		= 0;
-		EPipelineStateType			Type					= EPipelineStateType::NONE;
+		EPipelineStateType			Type					= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 		bool						CustomRenderer			= false;
 		bool						Enabled					= true;
 		RenderStageParameters		Parameters				= {};
@@ -97,7 +97,7 @@ namespace LambdaEngine
 
 		TArray<EditorResourceStateIdent>		ResourceStateIdents;
 
-		TArray<EditorResourceStateIdent>::iterator FindResourceStateIdent(const String& name)
+		TArray<EditorResourceStateIdent>::Iterator FindResourceStateIdent(const String& name)
 		{
 			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
 			{
@@ -108,7 +108,7 @@ namespace LambdaEngine
 			return ResourceStateIdents.end();
 		}
 
-		TArray<EditorResourceStateIdent>::const_iterator FindResourceStateIdent(const String& name) const
+		TArray<EditorResourceStateIdent>::ConstIterator FindResourceStateIdent(const String& name) const
 		{
 			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
 			{
@@ -127,7 +127,7 @@ namespace LambdaEngine
 		int32								OutputNodeIndex		= 0;
 		TArray<EditorResourceStateIdent>	ResourceStateIdents;
 
-		TArray<EditorResourceStateIdent>::iterator FindResourceStateIdent(const String& name)
+		TArray<EditorResourceStateIdent>::Iterator FindResourceStateIdent(const String& name)
 		{
 			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
 			{
@@ -138,7 +138,7 @@ namespace LambdaEngine
 			return ResourceStateIdents.end();
 		}
 
-		TArray<EditorResourceStateIdent>::const_iterator FindResourceStateIdent(const String& name) const
+		TArray<EditorResourceStateIdent>::ConstIterator FindResourceStateIdent(const String& name) const
 		{
 			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
 			{
@@ -196,7 +196,7 @@ namespace LambdaEngine
 		void RenderShaderBoxes(EditorRenderStageDesc* pRenderStage);
 		void RenderShaderBoxCommon(String* pTarget, bool* pAdded = nullptr, bool* pRemoved = nullptr);
 
-		TArray<EditorResource>::iterator FindResource(const String& name);
+		TArray<EditorResource>::Iterator FindResource(const String& name);
 		EditorResourceStateIdent CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERenderGraphResourceBindingType bindingType);
 		bool CheckLinkValid(int32* pSrcAttributeIndex, int32* pDstAttributeIndex);
 
@@ -237,7 +237,7 @@ namespace LambdaEngine
 		THashTable<int32, EditorRenderGraphResourceState>	m_ResourceStatesByHalfAttributeIndex;
 		THashTable<int32, EditorRenderGraphResourceLink>	m_ResourceStateLinksByLinkIndex;
 
-		EPipelineStateType									m_CurrentlyAddingRenderStage	= EPipelineStateType::NONE;
+		EPipelineStateType									m_CurrentlyAddingRenderStage	= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 		ERenderGraphResourceType							m_CurrentlyAddingResource		= ERenderGraphResourceType::NONE;
 		String												m_CurrentlyEditingResource		= "";
 

@@ -15,9 +15,9 @@ namespace LambdaEngine
 	// Different input devices that can be created
 	enum class EInputMode
 	{
-		INPUT_MODE_NONE      = 0, 
-		INPUT_MODE_RAW       = 1, // Raw input on supported platforms (Mouse movement)
-		INPUT_MODE_STANDARD  = 2, // Standard input from the applications event-loop
+		INPUT_MODE_NONE		= 0, 
+		INPUT_MODE_RAW		= 1, // Raw input on supported platforms (Mouse movement)
+		INPUT_MODE_STANDARD	= 2, // Standard input from the applications event-loop
 	};
 
 	class LAMBDA_API Application

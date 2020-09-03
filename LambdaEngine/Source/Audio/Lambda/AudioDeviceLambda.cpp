@@ -66,7 +66,7 @@ namespace LambdaEngine
 		{
 			SoundInstance3DLambda* pSoundInstance = *it;
 
-			pSoundInstance->UpdateVolume(m_MasterVolume, m_AudioListeners.data(), m_AudioListeners.size());
+			pSoundInstance->UpdateVolume(m_MasterVolume, m_AudioListeners.GetData(), m_AudioListeners.GetSize());
 		}
 	}
 
@@ -95,15 +95,16 @@ namespace LambdaEngine
 		uint32 index = m_NumAudioListeners++;
 
 		AudioListenerDesc audioListener = {};
-		m_AudioListeners.push_back(audioListener);
+		m_AudioListeners.PushBack(audioListener);
 
-		m_AudioListenerMap[index] = m_AudioListeners.size() - 1;
+		m_AudioListenerMap[index] = m_AudioListeners.GetSize() - 1;
 
 		return index;
 	}
 
 	IMusic* AudioDeviceLambda::CreateMusic(const MusicDesc* pDesc)
 	{
+		UNREFERENCED_VARIABLE(pDesc);
 		return nullptr;
 	}
 

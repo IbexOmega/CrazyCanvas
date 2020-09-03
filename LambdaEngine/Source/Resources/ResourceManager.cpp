@@ -1,5 +1,7 @@
 #include "Resources/ResourceManager.h"
-#include "Rendering/Core/API/ITextureView.h"
+
+#include "Rendering/Core/API/TextureView.h"
+
 #include "Log/Log.h"
 
 #include "Rendering/RenderSystem.h"
@@ -21,9 +23,9 @@ namespace LambdaEngine
 
 	std::unordered_map<GUID_Lambda, Mesh*>					ResourceManager::s_Meshes;
 	std::unordered_map<GUID_Lambda, Material*>				ResourceManager::s_Materials;
-	std::unordered_map<GUID_Lambda, ITexture*>				ResourceManager::s_Textures;
-	std::unordered_map<GUID_Lambda, ITextureView*>			ResourceManager::s_TextureViews;
-	std::unordered_map<GUID_Lambda, IShader*>				ResourceManager::s_Shaders;
+	std::unordered_map<GUID_Lambda, Texture*>				ResourceManager::s_Textures;
+	std::unordered_map<GUID_Lambda, TextureView*>			ResourceManager::s_TextureViews;
+	std::unordered_map<GUID_Lambda, Shader*>				ResourceManager::s_Shaders;
 	std::unordered_map<GUID_Lambda, ISoundEffect3D*>		ResourceManager::s_SoundEffects;
 
 	std::unordered_map<GUID_Lambda, ResourceManager::ShaderLoadDesc>		ResourceManager::s_ShaderLoadConfigurations;
@@ -47,28 +49,28 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceManager::LoadSceneFromFile(const String& filename, std::vector<GameObject>& result)
+	bool ResourceManager::LoadSceneFromFile(const String& filename, TArray<GameObject>& result)
 	{
-		std::vector<GameObject> sceneLocalGameObjects;
-		std::vector<Mesh*> meshes;
-		std::vector<Material*> materials;
-		std::vector<ITexture*> textures;
+		TArray<GameObject> sceneLocalGameObjects;
+		TArray<Mesh*> meshes;
+		TArray<Material*> materials;
+		TArray<Texture*> textures;
 
 		if (!ResourceLoader::LoadSceneFromFile(SCENE_DIR + filename, sceneLocalGameObjects, meshes, materials, textures))
 		{
 			return false;
 		}
 
-		result = std::vector<GameObject>(sceneLocalGameObjects.begin(), sceneLocalGameObjects.end());
+		result = TArray<GameObject>(sceneLocalGameObjects.begin(), sceneLocalGameObjects.end());
 
-		for (uint32 i = 0; i < textures.size(); i++)
+		for (uint32 i = 0; i < textures.GetSize(); i++)
 		{
-			ITexture* pTexture = textures[i];
+			Texture* pTexture = textures[i];
 
 			GUID_Lambda guid = RegisterLoadedTexture(pTexture);
 
 			//RegisterLoadedTexture will create a TextureView for the texture, this needs to be registered in the correct materials
-			for (uint32 j = 0; j < materials.size(); j++)
+			for (uint32 j = 0; j < materials.GetSize(); j++)
 			{
 				Material* pMaterial = materials[j];
 
@@ -89,11 +91,11 @@ namespace LambdaEngine
 			}
 		}
 
-		for (uint32 i = 0; i < meshes.size(); i++)
+		for (uint32 i = 0; i < meshes.GetSize(); i++)
 		{
 			GUID_Lambda guid = RegisterLoadedMesh("Scene Mesh " + std::to_string(i), meshes[i]);
 
-			for (uint32 g = 0; g < sceneLocalGameObjects.size(); g++)
+			for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
 			{
 				if (sceneLocalGameObjects[g].Mesh == i)
 				{
@@ -102,11 +104,11 @@ namespace LambdaEngine
 			}
 		}
 
-		for (uint32 i = 0; i < materials.size(); i++)
+		for (uint32 i = 0; i < materials.GetSize(); i++)
 		{
 			GUID_Lambda guid = RegisterLoadedMaterial("Scene Material " + std::to_string(i), materials[i]);
 
-			for (uint32 g = 0; g < sceneLocalGameObjects.size(); g++)
+			for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
 			{
 				if (sceneLocalGameObjects[g].Material == i)
 				{
@@ -115,14 +117,14 @@ namespace LambdaEngine
 			}
 		}
 
-		for (uint32 g = 0; g < sceneLocalGameObjects.size(); g++)
+		for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
 		{
-			if (sceneLocalGameObjects[g].Mesh >= meshes.size())
+			if (sceneLocalGameObjects[g].Mesh >= meshes.GetSize())
 			{
 				LOG_ERROR("[ResourceManager]: GameObject %u in Scene %s has no Mesh", g, filename.c_str());
 			}
 
-			if (sceneLocalGameObjects[g].Material >= materials.size())
+			if (sceneLocalGameObjects[g].Material >= materials.GetSize())
 			{
 				result[g].Material = GUID_MATERIAL_DEFAULT;
 				LOG_WARNING("[ResourceManager]: GameObject %u in Scene %s has no Material, default Material assigned", g, filename.c_str());
@@ -192,17 +194,17 @@ namespace LambdaEngine
 
 		(*ppMappedMaterial) = DBG_NEW Material();
 
-		ITexture* pAlbedoMap						= albedoMap				!= GUID_NONE ? s_Textures[albedoMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		ITexture* pNormalMap						= normalMap				!= GUID_NONE ? s_Textures[normalMap]			: s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-		ITexture* pAmbientOcclusionMap				= ambientOcclusionMap	!= GUID_NONE ? s_Textures[ambientOcclusionMap]	: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		ITexture* pMetallicMap						= metallicMap			!= GUID_NONE ? s_Textures[metallicMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		ITexture* pRoughnessMap						= roughnessMap			!= GUID_NONE ? s_Textures[roughnessMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pAlbedoMap							= albedoMap				!= GUID_NONE ? s_Textures[albedoMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pNormalMap							= normalMap				!= GUID_NONE ? s_Textures[normalMap]			: s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		Texture* pAmbientOcclusionMap				= ambientOcclusionMap	!= GUID_NONE ? s_Textures[ambientOcclusionMap]	: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pMetallicMap						= metallicMap			!= GUID_NONE ? s_Textures[metallicMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pRoughnessMap						= roughnessMap			!= GUID_NONE ? s_Textures[roughnessMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
-		ITextureView* pAlbedoMapView				= albedoMap				!= GUID_NONE ? s_TextureViews[albedoMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		ITextureView* pNormalMapView				= normalMap				!= GUID_NONE ? s_TextureViews[normalMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-		ITextureView* pAmbientOcclusionMapView		= ambientOcclusionMap	!= GUID_NONE ? s_TextureViews[ambientOcclusionMap]	: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		ITextureView* pMetallicMapView				= metallicMap			!= GUID_NONE ? s_TextureViews[metallicMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		ITextureView* pRoughnessMapView				= roughnessMap			!= GUID_NONE ? s_TextureViews[roughnessMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pAlbedoMapView					= albedoMap				!= GUID_NONE ? s_TextureViews[albedoMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pNormalMapView					= normalMap				!= GUID_NONE ? s_TextureViews[normalMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		TextureView* pAmbientOcclusionMapView		= ambientOcclusionMap	!= GUID_NONE ? s_TextureViews[ambientOcclusionMap]	: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pMetallicMapView				= metallicMap			!= GUID_NONE ? s_TextureViews[metallicMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pRoughnessMapView				= roughnessMap			!= GUID_NONE ? s_TextureViews[roughnessMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 		
 		(*ppMappedMaterial)->Properties					= properties;
 
@@ -228,8 +230,8 @@ namespace LambdaEngine
 			return loadedTextureGUID->second;
 
 		GUID_Lambda guid = GUID_NONE;
-		ITexture** ppMappedTexture = nullptr;
-		ITextureView** ppMappedTextureView = nullptr;
+		Texture** ppMappedTexture = nullptr;
+		TextureView** ppMappedTextureView = nullptr;
 
 		//Spinlock
 		{
@@ -239,18 +241,18 @@ namespace LambdaEngine
 			s_TextureNamesToGUIDs[name]		= guid;
 		}
 
-		ITexture* pTexture = ResourceLoader::LoadTextureArrayFromFile(name, TEXTURE_DIR, pFilenames, count, format, generateMips);
+		Texture* pTexture = ResourceLoader::LoadTextureArrayFromFile(name, TEXTURE_DIR, pFilenames, count, format, generateMips);
 
 		(*ppMappedTexture) = pTexture;
 
 		TextureDesc textureDesc = pTexture->GetDesc();
 
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.Name			= name + " Texture View";
-		textureViewDesc.pTexture		= pTexture;
+		textureViewDesc.DebugName		= name + " Texture View";
+		textureViewDesc.Texture			= pTexture;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= format;
-		textureViewDesc.Type			= textureDesc.ArrayCount > 1 ? ETextureViewType::TEXTURE_VIEW_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Type			= textureDesc.ArrayCount > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 		textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
 		textureViewDesc.ArrayCount		= textureDesc.ArrayCount;
 		textureViewDesc.Miplevel		= 0;
@@ -273,8 +275,8 @@ namespace LambdaEngine
 			return loadedTextureGUID->second;
 
 		GUID_Lambda guid = GUID_NONE;
-		ITexture** ppMappedTexture = nullptr;
-		ITextureView** ppMappedTextureView = nullptr;
+		Texture** ppMappedTexture = nullptr;
+		TextureView** ppMappedTextureView = nullptr;
 
 		//Spinlock
 		{
@@ -284,16 +286,16 @@ namespace LambdaEngine
 			s_TextureNamesToGUIDs[name]		= guid;
 		}
 
-		ITexture* pTexture = ResourceLoader::LoadTextureArrayFromMemory(name, &pData, 1, width, height, format, usageFlags, generateMips);
+		Texture* pTexture = ResourceLoader::LoadTextureArrayFromMemory(name, &pData, 1, width, height, format, usageFlags, generateMips);
 
 		(*ppMappedTexture) = pTexture;
 
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.Name			= name + " Texture View";
-		textureViewDesc.pTexture		= pTexture;
+		textureViewDesc.DebugName		= name + " Texture View";
+		textureViewDesc.Texture			= pTexture;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= format;
-		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 		textureViewDesc.MiplevelCount	= pTexture->GetDesc().Miplevels;
 		textureViewDesc.ArrayCount		= pTexture->GetDesc().ArrayCount;
 		textureViewDesc.Miplevel		= 0;
@@ -311,7 +313,7 @@ namespace LambdaEngine
 			return loadedShaderGUID->second;
 
 		GUID_Lambda guid = GUID_NONE;
-		IShader** ppMappedShader = nullptr;
+		Shader** ppMappedShader = nullptr;
 
 		//Spinlock
 		{
@@ -364,7 +366,7 @@ namespace LambdaEngine
 			{
 				ShaderLoadDesc loadDesc = s_ShaderLoadConfigurations[it->first];
 
-				IShader* pShader = ResourceLoader::LoadShaderFromFile(loadDesc.Filepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
+				Shader* pShader = ResourceLoader::LoadShaderFromFile(loadDesc.Filepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
 
 				if (pShader != nullptr)
 				{
@@ -422,7 +424,7 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	ITexture* ResourceManager::GetTexture(GUID_Lambda guid)
+	Texture* ResourceManager::GetTexture(GUID_Lambda guid)
 	{
 		auto it = s_Textures.find(guid);
 
@@ -433,7 +435,7 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	ITextureView* ResourceManager::GetTextureView(GUID_Lambda guid)
+	TextureView* ResourceManager::GetTextureView(GUID_Lambda guid)
 	{
 		auto it = s_TextureViews.find(guid);
 
@@ -444,7 +446,7 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	IShader* ResourceManager::GetShader(GUID_Lambda guid)
+	Shader* ResourceManager::GetShader(GUID_Lambda guid)
 	{
 		auto it = s_Shaders.find(guid);
 
@@ -512,18 +514,18 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::RegisterLoadedTexture(ITexture* pResource)
+	GUID_Lambda ResourceManager::RegisterLoadedTexture(Texture* pResource)
 	{
 		GUID_Lambda guid = GUID_NONE;
-		ITexture** ppMappedTexture = nullptr;
-		ITextureView** ppMappedTextureView = nullptr;
+		Texture** ppMappedTexture = nullptr;
+		TextureView** ppMappedTextureView = nullptr;
 
 		//Spinlock
 		{
 			guid												= s_NextFreeGUID++;
 			ppMappedTexture										= &s_Textures[guid]; //Creates new entry if not existing
 			ppMappedTextureView									= &s_TextureViews[guid]; //Creates new entry if not existing
-			s_TextureNamesToGUIDs[pResource->GetDesc().Name]	= guid;
+			s_TextureNamesToGUIDs[pResource->GetDesc().DebugName]	= guid;
 		}
 
 		(*ppMappedTexture) = pResource;
@@ -531,11 +533,11 @@ namespace LambdaEngine
         ASSERT(pResource != nullptr);
         
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.Name			= pResource->GetDesc().Name + " Texture View";
-		textureViewDesc.pTexture		= pResource;
+		textureViewDesc.DebugName		= pResource->GetDesc().DebugName + " Texture View";
+		textureViewDesc.Texture			= pResource;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= pResource->GetDesc().Format;
-		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 		textureViewDesc.MiplevelCount	= pResource->GetDesc().Miplevels;
 		textureViewDesc.ArrayCount		= pResource->GetDesc().ArrayCount;
 		textureViewDesc.Miplevel		= 0;
@@ -578,31 +580,31 @@ namespace LambdaEngine
 			byte defaultNormal[4]				= { 127, 127, 255, 0   };
 			void* pDefaultColor					= (void*)defaultColor;
 			void* pDefaultNormal				= (void*)defaultNormal;
-			ITexture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
-			ITexture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
+			Texture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
+			Texture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
 
-			s_TextureNamesToGUIDs[pDefaultColorMap->GetDesc().Name]		= GUID_TEXTURE_DEFAULT_COLOR_MAP;
-			s_TextureNamesToGUIDs[pDefaultNormalMap->GetDesc().Name]	= GUID_TEXTURE_DEFAULT_NORMAL_MAP;
+			s_TextureNamesToGUIDs[pDefaultColorMap->GetDesc().DebugName]		= GUID_TEXTURE_DEFAULT_COLOR_MAP;
+			s_TextureNamesToGUIDs[pDefaultNormalMap->GetDesc().DebugName]	= GUID_TEXTURE_DEFAULT_NORMAL_MAP;
 			s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= pDefaultColorMap;
 			s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= pDefaultNormalMap;
 
 			TextureViewDesc defaultColorMapViewDesc = {};
-			defaultColorMapViewDesc.Name			= "Default Color Map View";
-			defaultColorMapViewDesc.pTexture		= pDefaultColorMap;
+			defaultColorMapViewDesc.DebugName		= "Default Color Map View";
+			defaultColorMapViewDesc.Texture			= pDefaultColorMap;
 			defaultColorMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 			defaultColorMapViewDesc.Format			= pDefaultColorMap->GetDesc().Format;
-			defaultColorMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+			defaultColorMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 			defaultColorMapViewDesc.MiplevelCount	= pDefaultColorMap->GetDesc().Miplevels;
 			defaultColorMapViewDesc.ArrayCount		= pDefaultColorMap->GetDesc().ArrayCount;
 			defaultColorMapViewDesc.Miplevel		= 0;
 			defaultColorMapViewDesc.ArrayIndex		= 0;
 
 			TextureViewDesc defaultNormalMapViewDesc = {};
-			defaultNormalMapViewDesc.Name			= "Default Normal Map View";
-			defaultNormalMapViewDesc.pTexture		= pDefaultNormalMap;
+			defaultNormalMapViewDesc.DebugName		= "Default Normal Map View";
+			defaultNormalMapViewDesc.Texture		= pDefaultNormalMap;
 			defaultNormalMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 			defaultNormalMapViewDesc.Format			= pDefaultNormalMap->GetDesc().Format;
-			defaultNormalMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+			defaultNormalMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 			defaultNormalMapViewDesc.MiplevelCount	= pDefaultNormalMap->GetDesc().Miplevels;
 			defaultNormalMapViewDesc.ArrayCount		= pDefaultNormalMap->GetDesc().ArrayCount;
 			defaultNormalMapViewDesc.Miplevel		= 0;

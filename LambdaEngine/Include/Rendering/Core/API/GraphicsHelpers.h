@@ -1,6 +1,5 @@
 #pragma once
 #include "GraphicsTypes.h"
-#include "IPipelineState.h"
 
 #include "Containers/String.h"
 
@@ -10,11 +9,11 @@ namespace LambdaEngine
 	{
 		switch (pipelineStateType)
 		{
-		case EPipelineStateType::GRAPHICS:		return ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
-		case EPipelineStateType::COMPUTE:		return ECommandQueueType::COMMAND_QUEUE_COMPUTE;
-		case EPipelineStateType::RAY_TRACING:	return ECommandQueueType::COMMAND_QUEUE_COMPUTE;
-		case EPipelineStateType::NONE:			
-		default:								return ECommandQueueType::COMMAND_QUEUE_NONE;
+		case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		return ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
+		case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		return ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE;
+		case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	return ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE;
+		case EPipelineStateType::PIPELINE_STATE_TYPE_NONE:			
+		default:													return ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		}
 	}
 
@@ -119,19 +118,6 @@ namespace LambdaEngine
 		return lastStage;
 	}
 
-	FORCEINLINE bool CheckValidDescriptorCount(const DescriptorCountDesc& count)
-	{
-		return
-			(count.DescriptorSetCount						>= 0) &&
-			(count.AccelerationStructureDescriptorCount		>= 0) &&
-			(count.ConstantBufferDescriptorCount			>= 0) &&
-			(count.SamplerDescriptorCount					>= 0) &&
-			(count.TextureCombinedSamplerDescriptorCount	>= 0) &&
-			(count.TextureDescriptorCount					>= 0) &&
-			(count.UnorderedAccessBufferDescriptorCount		>= 0) &&
-			(count.UnorderedAccessTextureDescriptorCount	>= 0);
-	}
-
 	FORCEINLINE uint32 TextureFormatStride(EFormat format)
 	{
 		switch (format)
@@ -181,19 +167,19 @@ namespace LambdaEngine
 		else if (string == "R32G32B32A32_UINT")		return EFormat::FORMAT_R32G32B32A32_UINT;
 		else if	(string == "D24_UNORM_S8_UINT")		return EFormat::FORMAT_D24_UNORM_S8_UINT;
 
-		return EFormat::NONE;
+		return EFormat::FORMAT_NONE;
 	}
 
 	FORCEINLINE String CommandQueueToString(ECommandQueueType commandQueue)
 	{
 		switch (commandQueue)
 		{
-		case ECommandQueueType::COMMAND_QUEUE_GRAPHICS:		return "GRAPHICS";
-		case ECommandQueueType::COMMAND_QUEUE_COMPUTE:		return "COMPUTE";
-		case ECommandQueueType::COMMAND_QUEUE_COPY:			return "COPY";
-		case ECommandQueueType::COMMAND_QUEUE_UNKNOWN:		return "UNKNOWN";
-		case ECommandQueueType::COMMAND_QUEUE_NONE:
-		default:											return "NONE";
+		case ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS:	return "GRAPHICS QUEUE";
+		case ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE:		return "COMPUTE QUEUE";
+		case ECommandQueueType::COMMAND_QUEUE_TYPE_COPY:		return "COPY QUEUE";
+		case ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN:		return "UNKNOWN QUEUE";
+		case ECommandQueueType::COMMAND_QUEUE_TYPE_NONE:
+		default:												return "NONE";
 		}
 	}
 }

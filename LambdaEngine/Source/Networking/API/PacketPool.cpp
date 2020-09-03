@@ -7,33 +7,33 @@ namespace LambdaEngine
 {
 	PacketPool::PacketPool(uint16 size)
 	{
-		m_Packets.reserve(size);
-		m_PacketsFree.reserve(size);
+		m_Packets.Reserve(size);
+		m_PacketsFree.Reserve(size);
 
 		for (uint16 i = 0; i < size; i++)
 		{
 			NetworkPacket* pPacket = new NetworkPacket();
-			m_Packets.push_back(pPacket);
-			m_PacketsFree.push_back(pPacket);
+			m_Packets.PushBack(pPacket);
+			m_PacketsFree.PushBack(pPacket);
 		}		
 	}
 
 	PacketPool::~PacketPool()
 	{
-		for (uint16 i = 0; i < m_Packets.size(); i++)
+		for (uint16 i = 0; i < m_Packets.GetSize(); i++)
 			delete m_Packets[i];
 
-		m_Packets.clear();
+		m_Packets.Clear();
 	}
 
 	NetworkPacket* PacketPool::RequestFreePacket()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		NetworkPacket* pPacket = nullptr;
-		if (!m_PacketsFree.empty())
+		if (!m_PacketsFree.IsEmpty())
 		{
-			pPacket = m_PacketsFree[m_PacketsFree.size() - 1];
-			m_PacketsFree.pop_back();
+			pPacket = m_PacketsFree[m_PacketsFree.GetSize() - 1];
+			m_PacketsFree.PopBack();
 
 #ifndef LAMBDA_CONFIG_PRODUCTION
 			Request(pPacket);
@@ -46,11 +46,11 @@ namespace LambdaEngine
 		return pPacket;
 	}
 
-	bool PacketPool::RequestFreePackets(uint16 nrOfPackets, std::vector<NetworkPacket*>& packetsReturned)
+	bool PacketPool::RequestFreePackets(uint16 nrOfPackets, TArray<NetworkPacket*>& packetsReturned)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
-		int32 delta = (int32)m_PacketsFree.size() - nrOfPackets;
+		int32 delta = (int32)m_PacketsFree.GetSize() - nrOfPackets;
 
 		if (delta < 0)
 		{
@@ -58,8 +58,8 @@ namespace LambdaEngine
 			return false;
 		}
 
-		packetsReturned = std::vector<NetworkPacket*>(m_PacketsFree.begin() + delta, m_PacketsFree.end());
-		m_PacketsFree = std::vector<NetworkPacket*>(m_PacketsFree.begin(), m_PacketsFree.begin() + delta);
+		packetsReturned = TArray<NetworkPacket*>(m_PacketsFree.begin() + delta, m_PacketsFree.end());
+		m_PacketsFree = TArray<NetworkPacket*>(m_PacketsFree.begin(), m_PacketsFree.begin() + delta);
 
 #ifndef LAMBDA_CONFIG_PRODUCTION
 		for (int32 i = 0; i < nrOfPackets; i++)
@@ -77,14 +77,14 @@ namespace LambdaEngine
 		Free(pPacket);
 	}
 
-	void PacketPool::FreePackets(std::vector<NetworkPacket*>& packets)
+	void PacketPool::FreePackets(TArray<NetworkPacket*>& packets)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		for (NetworkPacket* pPacket : packets)
 		{
 			Free(pPacket);
 		}
-		packets.clear();
+		packets.Clear();
 	}
 
 	void PacketPool::Request(NetworkPacket* pPacket)
@@ -115,14 +115,14 @@ namespace LambdaEngine
 #endif
 
 		pPacket->m_SizeOfBuffer = 0;
-		m_PacketsFree.push_back(pPacket);
+		m_PacketsFree.PushBack(pPacket);
 	}
 
 	void PacketPool::Reset()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
-		m_PacketsFree.clear();
-		m_PacketsFree.reserve(m_Packets.size());
+		m_PacketsFree.Clear();
+		m_PacketsFree.Reserve(m_Packets.GetSize());
 
 		for (NetworkPacket* pPacket : m_Packets)
 		{
@@ -130,17 +130,17 @@ namespace LambdaEngine
 			pPacket->m_IsBorrowed = false;
 #endif
 			pPacket->m_SizeOfBuffer = 0;
-			m_PacketsFree.push_back(pPacket);
+			m_PacketsFree.PushBack(pPacket);
 		}
 	}
 
 	uint16 PacketPool::GetSize() const
 	{
-		return (uint16)m_Packets.size();
+		return (uint16)m_Packets.GetSize();
 	}
 
 	uint16 PacketPool::GetFreePackets() const
 	{
-		return (uint16)m_PacketsFree.size();
+		return (uint16)m_PacketsFree.GetSize();
 	}
 }

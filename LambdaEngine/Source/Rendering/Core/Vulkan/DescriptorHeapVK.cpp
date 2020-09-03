@@ -8,9 +8,7 @@
 namespace LambdaEngine
 {
 	DescriptorHeapVK::DescriptorHeapVK(const GraphicsDeviceVK* pDevice)
-		: TDeviceChild(pDevice),
-		m_HeapStatus(),
-		m_Desc()
+		: TDeviceChild(pDevice)
 	{
 	}
 	
@@ -83,14 +81,14 @@ namespace LambdaEngine
 		poolInfo.flags			= VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 		poolInfo.poolSizeCount	= poolCount;
 		poolInfo.pPoolSizes		= poolSizes;
-		poolInfo.maxSets		= pDesc->DescriptorCount.DescriptorSetCount;
+		poolInfo.maxSets		= pDesc->DescriptorSetCount;
 		
 		VkResult result = vkCreateDescriptorPool(m_pDevice->Device, &poolInfo, nullptr, &m_DescriptorHeap);
 		if (result != VK_SUCCESS)
 		{
-			if (pDesc->pName)
+			if (pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[DescriptorHeapVK]: Failed to create DescriptorHeap \"%s\"", pDesc->pName);
+				LOG_VULKAN_ERROR(result, "[DescriptorHeapVK]: Failed to create DescriptorHeap \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
@@ -101,13 +99,13 @@ namespace LambdaEngine
 		}
 		else
 		{
-            memcpy(&m_Desc, pDesc, sizeof(m_Desc));
+			m_Desc			= *pDesc;
 			m_HeapStatus	= pDesc->DescriptorCount;
+			SetName(pDesc->DebugName);
 		
-			SetName(pDesc->pName);
-			if (pDesc->pName)
+			if (pDesc->DebugName.empty())
 			{
-				D_LOG_MESSAGE("[DescriptorHeapVK]: Created DescriptorHeap \"%s\"", pDesc->pName);
+				D_LOG_MESSAGE("[DescriptorHeapVK]: Created DescriptorHeap \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
@@ -118,24 +116,18 @@ namespace LambdaEngine
 		}
 	}
 
-	VkDescriptorSet DescriptorHeapVK::AllocateDescriptorSet(const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex)
+	VkDescriptorSet DescriptorHeapVK::AllocateDescriptorSet(const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex)
 	{
+		VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+
 		const PipelineLayoutVK* pPipelineLayoutVk	= reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
 		VkDescriptorSetLayout	descriptorSetLayout = pPipelineLayoutVk->GetDescriptorSetLayout(descriptorLayoutIndex);
 
-		DescriptorCountDesc count		= pPipelineLayoutVk->GetDescriptorCount(descriptorLayoutIndex);
-		DescriptorCountDesc newStatus	= m_HeapStatus;
-		newStatus.DescriptorSetCount--;
-		newStatus.ConstantBufferDescriptorCount			-= count.ConstantBufferDescriptorCount;
-		newStatus.AccelerationStructureDescriptorCount	-= count.AccelerationStructureDescriptorCount;
-		newStatus.SamplerDescriptorCount				-= count.SamplerDescriptorCount;
-		newStatus.TextureCombinedSamplerDescriptorCount -= count.TextureCombinedSamplerDescriptorCount;
-		newStatus.TextureDescriptorCount				-= count.TextureDescriptorCount;
-		newStatus.UnorderedAccessBufferDescriptorCount	-= count.UnorderedAccessBufferDescriptorCount;
-		newStatus.UnorderedAccessTextureDescriptorCount	-= count.UnorderedAccessTextureDescriptorCount;
+		DescriptorHeapInfo info			= pPipelineLayoutVk->GetDescriptorHeapInfo(descriptorLayoutIndex);
+		DescriptorHeapInfo newStatus	= m_HeapStatus - info;
 
 #ifndef LAMBDA_PRODUCTION
-		if (!CheckValidDescriptorCount(newStatus))
+		if (!newStatus.IsValid())
 		{
 			LOG_ERROR("[DescriptorHeapVK]: Not enough descriptors in DescriptorHeap for allocation");
 			return VK_NULL_HANDLE;
@@ -149,7 +141,6 @@ namespace LambdaEngine
 		allocate.descriptorSetCount = 1;
 		allocate.descriptorPool		= m_DescriptorHeap;
 
-		VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 		VkResult result = vkAllocateDescriptorSets(m_pDevice->Device, &allocate, &descriptorSet);
 		if (result != VK_SUCCESS)
 		{
@@ -172,12 +163,9 @@ namespace LambdaEngine
 		}
 	}
 
-	void DescriptorHeapVK::SetName(const char* pName)
+	void DescriptorHeapVK::SetName(const String& debugName)
 	{
-		if (pName)
-		{
-			TDeviceChild::SetName(pName);
-			m_pDevice->SetVulkanObjectName(pName, (uint64)m_DescriptorHeap, VK_OBJECT_TYPE_DESCRIPTOR_POOL);
-		}
+		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_DescriptorHeap), VK_OBJECT_TYPE_DESCRIPTOR_POOL);
+		m_Desc.DebugName = debugName;
 	}
 }

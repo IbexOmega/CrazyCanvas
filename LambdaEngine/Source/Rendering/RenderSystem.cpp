@@ -2,21 +2,21 @@
 
 #include "Rendering/RenderSystem.h"
 
-#include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/IBuffer.h"
-#include "Rendering/Core/API/ITexture.h"
-#include "Rendering/Core/API/IFence.h"
-#include "Rendering/Core/API/ISwapChain.h"
-#include "Rendering/Core/API/ICommandAllocator.h"
-#include "Rendering/Core/API/ICommandList.h"
-#include "Rendering/Core/API/ITextureView.h"
-#include "Rendering/Core/API/IRenderPass.h"
-#include "Rendering/Core/API/IPipelineLayout.h"
-#include "Rendering/Core/API/IDescriptorHeap.h"
-#include "Rendering/Core/API/IDescriptorSet.h"
-#include "Rendering/Core/API/IAccelerationStructure.h"
-#include "Rendering/Core/API/IDeviceAllocator.h"
+#include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/GraphicsDevice.h"
+#include "Rendering/Core/API/Buffer.h"
+#include "Rendering/Core/API/Texture.h"
+#include "Rendering/Core/API/Fence.h"
+#include "Rendering/Core/API/SwapChain.h"
+#include "Rendering/Core/API/CommandAllocator.h"
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/TextureView.h"
+#include "Rendering/Core/API/RenderPass.h"
+#include "Rendering/Core/API/PipelineLayout.h"
+#include "Rendering/Core/API/DescriptorHeap.h"
+#include "Rendering/Core/API/DescriptorSet.h"
+#include "Rendering/Core/API/AccelerationStructure.h"
+#include "Rendering/Core/API/DeviceAllocator.h"
 
 #include "Rendering/ResourceCollector.h"
 
@@ -24,10 +24,10 @@
 
 namespace LambdaEngine
 {
-	IGraphicsDevice*	RenderSystem::s_pGraphicsDevice = nullptr;
-	ICommandQueue*		RenderSystem::s_pGraphicsQueue	= nullptr;
-	ICommandQueue*		RenderSystem::s_pComputeQueue	= nullptr;
-	ICommandQueue*		RenderSystem::s_pCopyQueue		= nullptr;
+	GraphicsDevice*		RenderSystem::s_pGraphicsDevice = nullptr;
+	CommandQueue*		RenderSystem::s_pGraphicsQueue	= nullptr;
+	CommandQueue*		RenderSystem::s_pComputeQueue	= nullptr;
+	CommandQueue*		RenderSystem::s_pCopyQueue		= nullptr;
 
 	bool RenderSystem::Init()
 	{
@@ -44,30 +44,30 @@ namespace LambdaEngine
 			return false;
 		}
 
-		s_pGraphicsQueue = s_pGraphicsDevice->CreateCommandQueue("Graphics Queue", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+		s_pGraphicsQueue = s_pGraphicsDevice->CreateCommandQueue("Graphics Queue", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 		if (!s_pGraphicsQueue)
 		{
 			return false;
 		}
 
-		s_pComputeQueue	= s_pGraphicsDevice->CreateCommandQueue("Compute Queue", ECommandQueueType::COMMAND_QUEUE_COMPUTE);
+		s_pComputeQueue	= s_pGraphicsDevice->CreateCommandQueue("Compute Queue", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 		if (!s_pComputeQueue)
 		{
 			return false;
 		}
 
-		s_pCopyQueue = s_pGraphicsDevice->CreateCommandQueue("Copy Queue", ECommandQueueType::COMMAND_QUEUE_COPY);
+		s_pCopyQueue = s_pGraphicsDevice->CreateCommandQueue("Copy Queue", ECommandQueueType::COMMAND_QUEUE_TYPE_COPY);
 		if (!s_pCopyQueue)
 		{
 			return false;
 		}
 
-        /*DeviceAllocatorDesc allocatorDesc = { };
-        allocatorDesc.pName             = "Main Allocator";
-        allocatorDesc.PageSizeInBytes   = MEGA_BYTE(64);
-        
-        IDeviceAllocator* pAllocator = s_pGraphicsDevice->CreateDeviceAllocator(&allocatorDesc);
-        
+		/*DeviceAllocatorDesc allocatorDesc = { };
+		allocatorDesc.pName             = "Main Allocator";
+		allocatorDesc.PageSizeInBytes   = MEGA_BYTE(64);
+		
+		IDeviceAllocator* pAllocator = s_pGraphicsDevice->CreateDeviceAllocator(&allocatorDesc);
+		
 		ResourceCollector collector;
 
 		BufferDesc bufferDesc = { };
@@ -213,36 +213,36 @@ namespace LambdaEngine
 
 		IDescriptorSet* pDescriptorSet = s_pGraphicsDevice->CreateDescriptorSet("", pPipelineLayout, 0, pDescriptorHeap);
 
-        const char* textureViewNames[] =
-        {
-            "BackBuffer View [0]",
-            "BackBuffer View [1]",
-            "BackBuffer View [2]",
-        };
-        
-        TextureViewDesc textureViewDesc = { };
-        textureViewDesc.Flags           = FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
-        textureViewDesc.Type            = ETextureViewType::TEXTURE_VIEW_2D;
-        textureViewDesc.Miplevel        = 0;
-        textureViewDesc.MiplevelCount   = 1;
-        textureViewDesc.ArrayIndex      = 0;
-        textureViewDesc.ArrayCount      = 1;
-        textureViewDesc.Format          = swapChainDesc.Format;
+		const char* textureViewNames[] =
+		{
+			"BackBuffer View [0]",
+			"BackBuffer View [1]",
+			"BackBuffer View [2]",
+		};
+		
+		TextureViewDesc textureViewDesc = { };
+		textureViewDesc.Flags           = FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+		textureViewDesc.Type            = ETextureViewType::TEXTURE_VIEW_2D;
+		textureViewDesc.Miplevel        = 0;
+		textureViewDesc.MiplevelCount   = 1;
+		textureViewDesc.ArrayIndex      = 0;
+		textureViewDesc.ArrayCount      = 1;
+		textureViewDesc.Format          = swapChainDesc.Format;
    
-        FenceDesc fenceDesc = { };
-        fenceDesc.pName         = "Main Fence";
-        fenceDesc.InitalValue   = 0;
-        
+		FenceDesc fenceDesc = { };
+		fenceDesc.pName         = "Main Fence";
+		fenceDesc.InitalValue   = 0;
+		
 		IFence* pFence = s_pGraphicsDevice->CreateFence(&fenceDesc);
 
 		ICommandAllocator* pCommandAllocator = s_pGraphicsDevice->CreateCommandAllocator("Graphics Command Allocator", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
-        
-        CommandListDesc commandListDesc = { };
-        commandListDesc.pName           = "Primary CommandList";
-        commandListDesc.Flags           = FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-        commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
-        
-        ICommandList* pGraphicsCommandList = s_pGraphicsDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
+		
+		CommandListDesc commandListDesc = { };
+		commandListDesc.pName           = "Primary CommandList";
+		commandListDesc.Flags           = FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
+		
+		CommandList* pGraphicsCommandList = s_pGraphicsDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
 		pGraphicsCommandList->Begin(nullptr);
 		
 		uint32 backBufferIndex = pSwapChain->GetCurrentBackBufferIndex();
@@ -267,7 +267,7 @@ namespace LambdaEngine
 		SAFERELEASE(pDescriptorHeap);
 		SAFERELEASE(pRenderPass);
 		SAFERELEASE(pPipelineLayout);
-        SAFERELEASE(pGraphicsCommandList);
+		SAFERELEASE(pGraphicsCommandList);
 		SAFERELEASE(pCommandAllocator);
 		SAFERELEASE(pFence);
 		SAFERELEASE(pSwapChain);

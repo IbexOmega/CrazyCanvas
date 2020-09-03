@@ -1,67 +1,92 @@
 #pragma once
-
 #include "LambdaEngine.h"
 
-#include "Rendering/Core/API/IPipelineState.h"
+#include "Core/TSharedRef.h"
+
 #include "Resources/ResourceManager.h"
 
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
 
+#include "Rendering/Core/API/PipelineState.h"
+#include "Rendering/Core/API/PipelineLayout.h"
+#include "Rendering/Core/API/RenderPass.h"
+
 namespace LambdaEngine
 {
-	struct BlendAttachmentState;
-
-	class IPipelineState;
-	class IRenderPass;
-	class IPipelineLayout;
-
-	struct GraphicsManagedPipelineStateDesc
+	struct ManagedShaderModule
 	{
-		String						Name						= "";
-		const IRenderPass*			pRenderPass					= nullptr;
-		const IPipelineLayout*		pPipelineLayout				= nullptr;
-		bool						DepthTestEnabled			= false;
+	public:
+		operator ShaderModuleDesc() const noexcept;
 
-		VertexInputBindingDesc		pVertexInputBindings		[MAX_VERTEX_INPUT_ATTACHMENTS];
-		uint32						VertexInputBindingCount		= 0;
-
-		BlendAttachmentState		pBlendAttachmentStates		[MAX_COLOR_ATTACHMENTS];
-		uint32						BlendAttachmentStateCount	= 0;
-
-		//New Style
-		GUID_Lambda					TaskShader					= GUID_NONE;
-		GUID_Lambda					MeshShader					= GUID_NONE;
-
-		//Old Style
-		GUID_Lambda					VertexShader				= GUID_NONE;
-		GUID_Lambda					GeometryShader				= GUID_NONE;
-		GUID_Lambda					HullShader					= GUID_NONE;
-		GUID_Lambda					DomainShader				= GUID_NONE;
-
-		//Both
-		GUID_Lambda					PixelShader					= GUID_NONE;
+	public:
+		GUID_Lambda				ShaderGUID = GUID_NONE;
+		TArray<ShaderConstant>	ShaderConstants;
 	};
 
-	struct ComputeManagedPipelineStateDesc
+	/*
+	* Graphics
+	*/
+	struct ManagedGraphicsPipelineStateDesc
 	{
-		String					Name						= "";
-		const IPipelineLayout*	pPipelineLayout				= nullptr;
-		GUID_Lambda				Shader						= GUID_NONE;
+	public:
+		GraphicsPipelineStateDesc GetDesc() const noexcept;
+
+	public:
+		String						DebugName			= "";
+		TSharedRef<RenderPass>		RenderPass			= nullptr;
+		TSharedRef<PipelineLayout>	PipelineLayout		= nullptr;
+		// Pipeline
+		TArray<InputElementDesc>	InputLayout			= { };
+		InputAssemblyDesc			InputAssembly		= { };
+		DepthStencilStateDesc		DepthStencilState	= { };
+		BlendStateDesc				BlendState			= { };
+		RasterizerStateDesc			RasterizerState		= { };
+		uint32						SampleMask			= 0;
+		uint32						SampleCount			= 1;
+		uint32						Subpass				= 0;
+		// Mesh-Shader pipeline
+		ManagedShaderModule MeshShader;
+		ManagedShaderModule TaskShader;
+		// Vertex-Shader pipeline
+		ManagedShaderModule VertexShader;
+		ManagedShaderModule HullShader;
+		ManagedShaderModule DomainShader;
+		ManagedShaderModule GeometryShader;
+		// Common
+		ManagedShaderModule PixelShader;
 	};
 
-	struct RayTracingManagedPipelineStateDesc
+	/*
+	* Compute
+	*/
+	struct ManagedComputePipelineStateDesc
 	{
-		String					Name						= "";
-		const IPipelineLayout*	pPipelineLayout				= nullptr;
-		uint32					MaxRecursionDepth			= 1;	
+	public:
+		ComputePipelineStateDesc GetDesc() const noexcept;
 
-		GUID_Lambda				RaygenShader				= GUID_NONE;
-		GUID_Lambda				pMissShaders[MAX_MISS_SHADER_COUNT];
-		GUID_Lambda				pClosestHitShaders[MAX_CLOSEST_HIT_SHADER_COUNT];
+	public:
+		String 						DebugName		= "";
+		TSharedRef<PipelineLayout>	PipelineLayout	= nullptr;
+		ManagedShaderModule			Shader;
+	};
 
-		uint32					MissShaderCount				= 0;
-		uint32					ClosestHitShaderCount		= 0;
+	/*
+	* Ray-Tracing
+	*/
+	struct ManagedRayTracingPipelineStateDesc
+	{
+	public:
+		RayTracingPipelineStateDesc GetDesc() const noexcept;
+
+	public:
+		String				DebugName			= "";
+		TSharedRef<PipelineLayout>	PipelineLayout		= nullptr;
+		uint32				MaxRecursionDepth	= 1;
+		// Shaders
+		ManagedShaderModule			RaygenShader;
+		TArray<ManagedShaderModule> MissShaders;
+		TArray<ManagedShaderModule> ClosestHitShaders;
 	};
 
 	class LAMBDA_API PipelineStateManager
@@ -72,26 +97,21 @@ namespace LambdaEngine
 		static bool Init();
 		static bool Release();
 
-		static uint64 CreateGraphicsPipelineState(const GraphicsManagedPipelineStateDesc* pDesc);
-		static uint64 CreateComputePipelineState(const ComputeManagedPipelineStateDesc* pDesc);
-		static uint64 CreateRayTracingPipelineState(const RayTracingManagedPipelineStateDesc* pDesc);
+		static uint64 CreateGraphicsPipelineState(const ManagedGraphicsPipelineStateDesc* pDesc);
+		static uint64 CreateComputePipelineState(const ManagedComputePipelineStateDesc* pDesc);
+		static uint64 CreateRayTracingPipelineState(const ManagedRayTracingPipelineStateDesc* pDesc);
 
 		static void ReleasePipelineState(uint64 id);
 
-		static IPipelineState* GetPipelineState(uint64 id);
+		static PipelineState* GetPipelineState(uint64 id);
 
 		static void ReloadPipelineStates();
 
 	private:
-		static void FillGraphicsPipelineStateDesc(GraphicsPipelineStateDesc* pDstDesc, const GraphicsManagedPipelineStateDesc* pSrcDesc);
-		static void FillComputePipelineStateDesc(ComputePipelineStateDesc* pDstDesc, const ComputeManagedPipelineStateDesc* pSrcDesc);
-		static void FillRayTracingPipelineStateDesc(RayTracingPipelineStateDesc* pDstDesc, const RayTracingManagedPipelineStateDesc* pSrcDesc);
-
-	private:
-		static uint64															s_CurrentPipelineIndex;
-		static std::unordered_map<uint64, IPipelineState*>						s_PipelineStates;
-		static std::unordered_map<uint64, GraphicsManagedPipelineStateDesc>		s_GraphicsPipelineStateDescriptions;
-		static std::unordered_map<uint64, ComputeManagedPipelineStateDesc>		s_ComputePipelineStateDescriptions;
-		static std::unordered_map<uint64, RayTracingManagedPipelineStateDesc>	s_RayTracingPipelineStateDescriptions;
+		static uint64													s_CurrentPipelineIndex;
+		static THashTable<uint64, TSharedRef<PipelineState>>					s_PipelineStates;
+		static THashTable<uint64, ManagedGraphicsPipelineStateDesc>		s_GraphicsPipelineStateDescriptions;
+		static THashTable<uint64, ManagedComputePipelineStateDesc>		s_ComputePipelineStateDescriptions;
+		static THashTable<uint64, ManagedRayTracingPipelineStateDesc>	s_RayTracingPipelineStateDescriptions;
 	};
 }
