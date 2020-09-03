@@ -18,6 +18,13 @@ namespace LambdaEngine
 	class IPacketListener;
 	class PacketTransceiver;
 
+	struct PacketManagerDesc
+	{
+		uint16 PoolSize = 10;
+		int32 MaxRetries = 10;
+		float32 ResendRTTMultiplier = 2.0f;
+	};
+
 	class LAMBDA_API PacketManager
 	{
 	public:
@@ -36,7 +43,7 @@ namespace LambdaEngine
 		};
 
 	public:
-		PacketManager(uint16 poolSize, int32 maxRetries, float32 resendRTTMultiplier = 2.0f);
+		PacketManager(const PacketManagerDesc& desc);
 		~PacketManager();
 
 		uint32 EnqueuePacketReliable(NetworkPacket* pPacket, IPacketListener* pListener = nullptr);

@@ -83,8 +83,8 @@ namespace LambdaEngine
 {
     Game* CreateGame()
     {
-		Server* pSandbox = DBG_NEW Server();
+		Server* pServer = DBG_NEW Server();
         
-        return pSandbox;
+        return pServer;
     }
 }
