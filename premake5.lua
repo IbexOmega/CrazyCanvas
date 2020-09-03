@@ -417,6 +417,12 @@ workspace "LambdaEngine"
 				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		-- LambdaEngine
         filter { "system:windows", "platforms:x64_SharedLib" }
@@ -424,7 +430,7 @@ workspace "LambdaEngine"
 			{
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
                 ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Client/\""),
-                ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\""),
+                ("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		-- Portaudio
 		filter { "system:windows", "configurations:Debug"}
@@ -432,14 +438,14 @@ workspace "LambdaEngine"
 			{
 				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		filter { "system:windows", "configurations:Release or Production"}
 			postbuildcommands
 			{
 				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		filter {}
     project "*"
