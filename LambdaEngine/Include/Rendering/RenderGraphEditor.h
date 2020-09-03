@@ -202,6 +202,8 @@ namespace LambdaEngine
 
 		void DestroyLink(int32 linkIndex);
 
+		void DrawSplitter(int split_vertically, float thickness, float* size0, float* size1, float min_size0, float min_size1);
+
 		void PushPinColorIfNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
 		void PopPinColorIfNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);
 		bool CustomPinColorNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex);

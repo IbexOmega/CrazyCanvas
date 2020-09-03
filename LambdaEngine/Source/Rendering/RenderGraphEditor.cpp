@@ -34,7 +34,6 @@ namespace LambdaEngine
 	constexpr const uint32 TEMPORAL_RESOURCE_STATE_GROUP_INDEX	= 1;
 	constexpr const uint32 NUM_RESOURCE_STATE_GROUPS			= 2;
 
-
 	constexpr const char* TEXTURE_FORMAT_NAMES[] =
 	{
 		"R32G32_SFLOAT",
@@ -143,13 +142,17 @@ namespace LambdaEngine
 
 			float editButtonWidth = 120.0f;
 			float removeButtonWidth = 120.0f;
-			ImVec2 resourceViewSize(2.0f * maxResourcesViewTextWidth + editButtonWidth + removeButtonWidth, contentRegionHeight);
+			ImVec2 resourceViewSize(maxResourcesViewTextWidth + editButtonWidth + removeButtonWidth, contentRegionHeight);
 
-			if (ImGui::BeginChild("##Graph Resources View", resourceViewSize))
+			static ImVec2 childSize0 = resourceViewSize;
+			static ImVec2 childSize1 = ImVec2(contentRegionWidth - resourceViewSize.x, 0.0f);
+			DrawSplitter(false, 10.0f, &childSize0.x, &childSize1.x, 200.f, 500.f);
+
+			if (ImGui::BeginChild("##Graph Resources View", childSize0))
 			{
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Resources");
 				ImGui::NewLine();
-
+				
 				if (ImGui::BeginChild("##Resource View", ImVec2(0.0f, contentRegionHeight * 0.5f - textHeight * 5.0f), true, ImGuiWindowFlags_MenuBar))
 				{
 					RenderResourceView(maxResourcesViewTextWidth, textHeight);
@@ -157,7 +160,7 @@ namespace LambdaEngine
 					RenderEditResourceView();
 				}
 				ImGui::EndChild();
-
+				
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Shaders");
 				ImGui::NewLine();
 
@@ -173,10 +176,10 @@ namespace LambdaEngine
 				}
 			}
 			ImGui::EndChild();
-
+			
 			ImGui::SameLine();
 
-			if (ImGui::BeginChild("##Graph Views", ImVec2(contentRegionWidth - resourceViewSize.x, 0.0f)))
+			if (ImGui::BeginChild("##Graph Views", childSize1))
 			{
 				if (ImGui::BeginTabBar("##Render Graph Editor Tabs"))
 				{
@@ -224,6 +227,40 @@ namespace LambdaEngine
 			m_ParsedGraphDirty = false;
 			m_ParsedGraphRenderDirty = true;
 		}
+	}
+
+
+	void RenderGraphEditor::DrawSplitter(int split_vertically, float thickness, float* size0, float* size1, float min_size0, float min_size1)
+	{
+		ImVec2 backup_pos = ImGui::GetCursorPos();
+		if (split_vertically)
+			ImGui::SetCursorPosY(backup_pos.y + *size0);
+		else
+			ImGui::SetCursorPosX(backup_pos.x + *size0);
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));          // We don't draw while active/pressed because as we move the panes the splitter button will be 1 frame late
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.6f, 0.6f, 0.10f));
+		ImGui::Button("##Splitter", ImVec2(!split_vertically ? thickness : -1.0f, split_vertically ? thickness : -1.0f));
+		ImGui::PopStyleColor(3);
+
+		ImGui::SetItemAllowOverlap(); // This is to allow having other buttons OVER our splitter. 
+
+		if (ImGui::IsItemActive())
+		{
+			float mouse_delta = split_vertically ? ImGui::GetIO().MouseDelta.y : ImGui::GetIO().MouseDelta.x;
+
+			// Minimum pane size
+			if (mouse_delta < min_size0 - *size0)
+				mouse_delta = min_size0 - *size0;
+			if (mouse_delta > * size1 - min_size1)
+				mouse_delta = *size1 - min_size1;
+
+			// Apply resize
+			*size0 += mouse_delta;
+			*size1 -= mouse_delta;
+		}
+		ImGui::SetCursorPos(backup_pos);
 	}
 
 	RenderGraphStructureDesc RenderGraphEditor::CreateRenderGraphStructure(const String& filepath, bool imGuiEnabled)
@@ -516,7 +553,7 @@ namespace LambdaEngine
 			ImGui::EndMenuBar();
 		}
 
-		ImGui::Columns(2);
+		ImGui::Columns(1);
 
 		static int32 selectedResourceIndex			= -1;
 		static EditorResource* pSelectedResource	= nullptr;
