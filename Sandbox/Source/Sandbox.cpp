@@ -782,9 +782,6 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-	m_pRenderer->Render();
-	return;
-
 	m_pRenderer->NewFrame(delta);
 
 	CommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();

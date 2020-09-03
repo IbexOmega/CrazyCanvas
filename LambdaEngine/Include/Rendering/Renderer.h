@@ -57,9 +57,6 @@ namespace LambdaEngine
 		FORCEINLINE uint32 GetBufferIndex()		{ return m_BackBufferIndex; }
 
 	private:
-		bool InitDebugRender();
-
-	private:
 		String					m_Name;
 		const GraphicsDevice*	m_pGraphicsDevice;
 
@@ -73,12 +70,5 @@ namespace LambdaEngine
 		uint64					m_FrameIndex			= 0;
 		uint64					m_ModFrameIndex			= 0;
 		uint32					m_BackBufferIndex		= 0;
-
-		TSharedRef<CommandAllocator>	m_CommandAllocators[3];
-		TSharedRef<CommandList>			m_CommandLists[3];
-		TSharedRef<RenderPass>			m_RenderPass;
-		TSharedRef<PipelineState>		m_PipelineState;
-		TSharedRef<PipelineLayout>		m_PiplineLayout;
-		TSharedRef<Fence>				m_Fence;
 	};
 }

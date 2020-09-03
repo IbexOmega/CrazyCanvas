@@ -55,7 +55,7 @@ namespace LambdaEngine
 		// Pixel-Shader
 		CreateShaderStageInfo(&pDesc->PixelShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
 
-		// Default InputAssembly
+		// InputAssembly
 		VkPipelineInputAssemblyStateCreateInfo inputAssembly = { };
 		inputAssembly.sType						= VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		inputAssembly.pNext						= nullptr;
@@ -63,7 +63,7 @@ namespace LambdaEngine
 		inputAssembly.topology					= ConvertPrimitiveToplogy(pDesc->InputAssembly.PrimitiveTopology);
 		inputAssembly.primitiveRestartEnable	= (pDesc->InputAssembly.PrimitiveRestartEnable) ? VK_TRUE : VK_FALSE;
 
-		// Default RasterizerState
+		// RasterizerState
 		VkPipelineRasterizationStateCreateInfo rasterizerState = { };
 		rasterizerState.sType					= VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 		rasterizerState.flags					= 0;
@@ -90,8 +90,15 @@ namespace LambdaEngine
 		multisamplingState.sampleShadingEnable		= (pDesc->RasterizerState.MultisampleEnable) ? VK_TRUE : VK_FALSE;
 		multisamplingState.rasterizationSamples		= ConvertSampleCount(pDesc->SampleCount);
 
-		VkSampleMask sampleMask			= pDesc->SampleMask;
-		multisamplingState.pSampleMask	= &sampleMask;
+		VkSampleMask sampleMask	= pDesc->SampleMask;
+		if (pDesc->SampleCount > 1)
+		{
+			multisamplingState.pSampleMask = &sampleMask;
+		}
+		else
+		{
+			multisamplingState.pSampleMask = nullptr;
+		}
 
 		// BlendState
 		const uint32 blendAttachmentCount = static_cast<uint32>(pDesc->BlendState.BlendAttachmentStates.GetSize());
@@ -136,6 +143,7 @@ namespace LambdaEngine
 		depthStencilState.front					= ConvertStencilOpState(pDesc->DepthStencilState.FrontFace);
 		depthStencilState.back					= ConvertStencilOpState(pDesc->DepthStencilState.BackFace);
 
+		// InputLayout
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo = { };
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputInfo.flags = 0;
@@ -149,14 +157,14 @@ namespace LambdaEngine
 		{
 			for (const InputElementDesc& inputElement : pDesc->InputLayout)
 			{
-				VkVertexInputAttributeDescription vkInputAttributeDesc = {};
+				VkVertexInputAttributeDescription vkInputAttributeDesc = { };
 				vkInputAttributeDesc.location	= inputElement.Location;
 				vkInputAttributeDesc.binding	= inputElement.Binding;
 				vkInputAttributeDesc.format		= ConvertFormat(inputElement.Format);
 				vkInputAttributeDesc.offset		= inputElement.Offset;
 				attributeDescriptors.EmplaceBack(vkInputAttributeDesc);
 
-				VkVertexInputBindingDescription vkInputBindingDesc = {};
+				VkVertexInputBindingDescription vkInputBindingDesc = { };
 				vkInputBindingDesc.binding	 = inputElement.Binding;
 				vkInputBindingDesc.stride	 = inputElement.Stride;
 				vkInputBindingDesc.inputRate = ConvertVertexInputRate(inputElement.InputRate);
