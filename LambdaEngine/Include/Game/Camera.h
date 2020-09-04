@@ -68,6 +68,8 @@ namespace LambdaEngine
 		CommonApplication* m_CommonApplication;
 		CameraData m_Data;
 
+		float m_SpeedFactor = 0.05f;
+
 		glm::mat4 m_Projection;
 		glm::mat4 m_ProjectionInv;
 		glm::mat4 m_View;

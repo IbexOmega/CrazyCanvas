@@ -117,32 +117,52 @@ namespace LambdaEngine
 		constexpr float CAMERA_ROTATION_SPEED = 45.0f;
 		constexpr float CAMERA_MOUSE_SPEED = 10.0f;
 
+		glm::vec3 translation(0.0f, 0.0f, 0.0f);
+
 		// Translation
 		if (Input::IsKeyDown(EKey::KEY_W) && Input::IsKeyUp(EKey::KEY_S))
 		{
-			Translate(glm::vec3(0.0f, 0.0f, CAMERA_MOVEMENT_SPEED * delta.AsSeconds()));
+			//Translate(glm::vec3(0.0f, 0.0f, CAMERA_MOVEMENT_SPEED * delta.AsSeconds()));
+			translation.z += delta.AsSeconds();
 		}
 		else if (Input::IsKeyDown(EKey::KEY_S) && Input::IsKeyUp(EKey::KEY_W))
 		{
-			Translate(glm::vec3(0.0f, 0.0f, -CAMERA_MOVEMENT_SPEED * delta.AsSeconds()));
+			//Translate(glm::vec3(0.0f, 0.0f, -CAMERA_MOVEMENT_SPEED * delta.AsSeconds()));
+			translation.z -= delta.AsSeconds();
 		}
 
 		if (Input::IsKeyDown(EKey::KEY_A) && Input::IsKeyUp(EKey::KEY_D))
 		{
-			Translate(glm::vec3(-CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
+			//Translate(glm::vec3(-CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
+			translation.x -= delta.AsSeconds();
 		}
 		else if (Input::IsKeyDown(EKey::KEY_D) && Input::IsKeyUp(EKey::KEY_A))
 		{
-			Translate(glm::vec3(CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
+			//Translate(glm::vec3(CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
+			translation.x += delta.AsSeconds();
 		}
 
 		if (Input::IsKeyDown(EKey::KEY_Q) && Input::IsKeyUp(EKey::KEY_E))
 		{
-			Translate(glm::vec3(0.0f, CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f));
+			//Translate(glm::vec3(0.0f, CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f));
+			translation.y += delta.AsSeconds();
 		}
 		else if (Input::IsKeyDown(EKey::KEY_E) && Input::IsKeyUp(EKey::KEY_Q))
 		{
-			Translate(glm::vec3(0.0f, -CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f));
+			//Translate(glm::vec3(0.0f, -CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f));
+			translation.y -= delta.AsSeconds();
+		}
+
+		float shiftSpeedFactor = 1.0f;
+		if (Input::IsKeyDown(EKey::KEY_LEFT_SHIFT))
+		{
+			shiftSpeedFactor = 2.f;
+		}
+
+		if (glm::length2(translation) > glm::epsilon<float>())
+		{
+			translation = glm::normalize(translation) * m_SpeedFactor * shiftSpeedFactor;
+			Translate(translation);
 		}
 
 		// Rotation
