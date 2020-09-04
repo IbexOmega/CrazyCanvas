@@ -2,6 +2,8 @@
 #include "Application.h"
 #include "EventHandler.h"
 
+#include "Window.h"
+
 #include "Containers/TArray.h"
 
 namespace LambdaEngine
@@ -13,7 +15,7 @@ namespace LambdaEngine
 
 		bool 	Create();
 		Window* CreateWindow(const WindowDesc* pDesc);
-		
+
 		void RemoveEventHandler(EventHandler* pEventHandler);
 		void AddEventHandler(EventHandler* pEventHandler);
 
@@ -35,10 +37,10 @@ namespace LambdaEngine
 		*   pMainWindow - New main window
 		*/
 		void MakeMainWindow(Window* pMainWindow);
-		
+
 		FORCEINLINE Window* GetMainWindow()	const
-		{ 
-			return m_pMainWindow; 
+		{
+			return m_pMainWindow;
 		}
 
 		bool SupportsRawInput() const;
@@ -47,23 +49,23 @@ namespace LambdaEngine
 		* Sets the input mode for the selected window
 		*/
 		void SetInputMode(Window* pWindow, EInputMode inputMode);
-		
+
 		FORCEINLINE EInputMode GetInputMode(Window* pWindow)
-		{ 
-			return m_pPlatformApplication->GetInputMode(pWindow); 
+		{
+			return m_pPlatformApplication->GetInputMode(pWindow);
 		}
 
 		void SetCapture(Window* pWindow);
-		
+
 		FORCEINLINE Window* GetCapture() const
-		{ 
+		{
 			return m_pPlatformApplication->GetCapture();
 		}
-		
+
 		void SetActiveWindow(Window* pWindow);
-		
-		FORCEINLINE Window* GetActiveWindow() const 
-		{ 
+
+		FORCEINLINE Window* GetActiveWindow() const
+		{
 			return m_pPlatformApplication->GetActiveWindow();
 		}
 
@@ -88,7 +90,7 @@ namespace LambdaEngine
 		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)	override final;
 		virtual void OnKeyReleased(EKey key)									override final;
 		virtual void OnKeyTyped(uint32 character)								override final;
-		
+
 	private:
 		CommonApplication();
 		~CommonApplication();
@@ -98,7 +100,7 @@ namespace LambdaEngine
 		static bool PostRelease();
 
 		static CommonApplication* Get();
-		
+
 	private:
 		Window*					m_pMainWindow			= nullptr;
 		Application*			m_pPlatformApplication	= nullptr;
