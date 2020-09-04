@@ -182,30 +182,34 @@ namespace LambdaEngine
 
 		virtual void GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter) = 0;
 
-		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)           = 0;
-		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)    = 0;
+		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)			= 0;
+		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)	= 0;
 		
 		virtual void SetConstantRange(const PipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) = 0;
 
 		virtual void BindIndexBuffer(const Buffer* pIndexBuffer, uint64 offset, EIndexType indexType) = 0;
 		virtual void BindVertexBuffers(const Buffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) = 0;
 
-		virtual void BindDescriptorSetGraphics(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex)	= 0;
+		virtual void BindDescriptorSetGraphics(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex)		= 0;
 		virtual void BindDescriptorSetCompute(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex)		= 0;
 		virtual void BindDescriptorSetRayTracing(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex)	= 0;
 
-		virtual void BindGraphicsPipeline(const PipelineState* pPipeline)		= 0;
-		virtual void BindComputePipeline(const PipelineState* pPipeline)		= 0;
-		virtual void BindRayTracingPipeline(PipelineState* pPipeline)			= 0;
+		virtual void BindGraphicsPipeline(const PipelineState* pPipeline)	= 0;
+		virtual void BindComputePipeline(const PipelineState* pPipeline)	= 0;
+		virtual void BindRayTracingPipeline(PipelineState* pPipeline)		= 0;
 
-		virtual void TraceRays(uint32 width, uint32 height, uint32 depth)								= 0;
-		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ)	= 0;
+		virtual void TraceRays(uint32 width, uint32 height, uint32 depth) = 0;
+		
+		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ) = 0;
+
+		virtual void DispatchMesh(uint32 taskCount, uint32 firstTask)													= 0;
+		virtual void DispatchMeshIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)	= 0;
 
 		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)							= 0;
 		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)	= 0;
-		virtual void DrawIndexedIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)							= 0;
+		virtual void DrawIndexedIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)								= 0;
 
-		virtual void BeginQuery(QueryHeap* pQueryHeap, uint32 queryIndex)											= 0;
+		virtual void BeginQuery(QueryHeap* pQueryHeap, uint32 queryIndex)										= 0;
 		virtual void Timestamp(QueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)	= 0;
 		virtual void EndQuery(QueryHeap* pQueryHeap, uint32 queryIndex)											= 0;
 

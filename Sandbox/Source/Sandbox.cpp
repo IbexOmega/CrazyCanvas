@@ -73,12 +73,7 @@ Sandbox::Sandbox()
 
 	CommonApplication::Get()->AddEventHandler(this);
 
-	TArray<int> ints = { 5, 6, 7, 8, 9 };
-	TSharedPtr<int> pInt = MakeShared<int>(5);
-	TWeakPtr<int> WeakINt = pInt;
-
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
-
 
 	SceneDesc sceneDesc = {};
 	sceneDesc.Name				= "Test Scene";
@@ -95,7 +90,7 @@ Sandbox::Sandbox()
 	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
 	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
 
-	EScene scene = EScene::TESTING;
+	EScene scene = EScene::SPONZA;
 
 	m_pScene->SetDirectionalLight(directionalLight);
 

@@ -13,6 +13,9 @@ namespace LambdaEngine
 	class CommandAllocatorVK;
 	class RayTracingPipelineStateVK;
 
+	/*
+	* DeferredImageBarrier
+	*/
 	struct DeferredImageBarrier
 	{
 	public:
@@ -92,6 +95,9 @@ namespace LambdaEngine
 		virtual void TraceRays(uint32 width, uint32 height, uint32 depth) override final;
 
 		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ) override final;
+
+		virtual void DispatchMesh(uint32 taskCount, uint32 firstTask)													override final;
+		virtual void DispatchMeshIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)	override final;
 
 		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)							override final;
 		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)	override final;

@@ -145,17 +145,17 @@ namespace LambdaEngine
 		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
 		PFN_vkCreateDebugUtilsMessengerEXT	vkCreateDebugUtilsMessengerEXT	= nullptr;
 
-		PFN_vkCreateAccelerationStructureKHR					vkCreateAccelerationStructureKHR				= nullptr;
-		PFN_vkDestroyAccelerationStructureKHR					vkDestroyAccelerationStructureKHR				= nullptr;
-		PFN_vkBindAccelerationStructureMemoryKHR				vkBindAccelerationStructureMemoryKHR			= nullptr;
-		PFN_vkGetAccelerationStructureDeviceAddressKHR			vkGetAccelerationStructureDeviceAddressKHR		= nullptr;
-		PFN_vkGetAccelerationStructureMemoryRequirementsKHR		vkGetAccelerationStructureMemoryRequirementsKHR = nullptr;
-		PFN_vkCmdBuildAccelerationStructureKHR					vkCmdBuildAccelerationStructureKHR				= nullptr;
-		PFN_vkCreateRayTracingPipelinesKHR						vkCreateRayTracingPipelinesKHR					= nullptr;
-		PFN_vkGetRayTracingShaderGroupHandlesKHR				vkGetRayTracingShaderGroupHandlesKHR			= nullptr;
-		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR								= nullptr;
-		PFN_vkCopyAccelerationStructureToMemoryKHR				vkCopyAccelerationStructureToMemoryKHR			= nullptr;
-		PFN_vkCmdCopyAccelerationStructureToMemoryKHR			vkCmdCopyAccelerationStructureToMemoryKHR		= nullptr;
+		PFN_vkCreateAccelerationStructureKHR				vkCreateAccelerationStructureKHR				= nullptr;
+		PFN_vkDestroyAccelerationStructureKHR				vkDestroyAccelerationStructureKHR				= nullptr;
+		PFN_vkBindAccelerationStructureMemoryKHR			vkBindAccelerationStructureMemoryKHR			= nullptr;
+		PFN_vkGetAccelerationStructureDeviceAddressKHR		vkGetAccelerationStructureDeviceAddressKHR		= nullptr;
+		PFN_vkGetAccelerationStructureMemoryRequirementsKHR	vkGetAccelerationStructureMemoryRequirementsKHR = nullptr;
+		PFN_vkCmdBuildAccelerationStructureKHR				vkCmdBuildAccelerationStructureKHR				= nullptr;
+		PFN_vkCreateRayTracingPipelinesKHR					vkCreateRayTracingPipelinesKHR					= nullptr;
+		PFN_vkGetRayTracingShaderGroupHandlesKHR			vkGetRayTracingShaderGroupHandlesKHR			= nullptr;
+		PFN_vkCmdTraceRaysKHR								vkCmdTraceRaysKHR								= nullptr;
+		PFN_vkCopyAccelerationStructureToMemoryKHR			vkCopyAccelerationStructureToMemoryKHR			= nullptr;
+		PFN_vkCmdCopyAccelerationStructureToMemoryKHR		vkCmdCopyAccelerationStructureToMemoryKHR		= nullptr;
 
 		// Buffer Addresses
 		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
@@ -164,15 +164,20 @@ namespace LambdaEngine
 		PFN_vkWaitSemaphores			vkWaitSemaphores			= nullptr;
 		PFN_vkSignalSemaphore			vkSignalSemaphore			= nullptr;
 		PFN_vkGetSemaphoreCounterValue	vkGetSemaphoreCounterValue	= nullptr;
-	
+
+		// Mesh Shaders
+		PFN_vkCmdDrawMeshTasksNV				vkCmdDrawMeshTasksNV				= nullptr;
+		PFN_vkCmdDrawMeshTasksIndirectNV		vkCmdDrawMeshTasksIndirectNV		= nullptr;
+		PFN_vkCmdDrawMeshTasksIndirectCountNV	vkCmdDrawMeshTasksIndirectCountNV	= nullptr;
+
 	private:
 		VkDebugUtilsMessengerEXT	m_DebugMessenger	= VK_NULL_HANDLE;
 		FrameBufferCacheVK*			m_pFrameBufferCache	= nullptr;
 
-		GraphicsDeviceFeatureDesc		m_DeviceFeatures;
-		QueueFamilyIndices				m_DeviceQueueFamilyIndices;
-		VkPhysicalDeviceLimits			m_DeviceLimits;
-		VkPhysicalDeviceFeatures		m_DeviceFeaturesVk;
+		GraphicsDeviceFeatureDesc	m_DeviceFeatures;
+		QueueFamilyIndices			m_DeviceQueueFamilyIndices;
+		VkPhysicalDeviceLimits		m_DeviceLimits;
+		VkPhysicalDeviceFeatures	m_DeviceFeaturesVk;
 	   
 		TArray<VkQueueFamilyProperties> m_QueueFamilyProperties;
 		mutable uint32 m_NextGraphicsQueue	= 0;

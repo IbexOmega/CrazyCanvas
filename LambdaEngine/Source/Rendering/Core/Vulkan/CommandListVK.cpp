@@ -783,6 +783,30 @@ namespace LambdaEngine
 		vkCmdDispatch(m_CommandList, workGroupCountX, workGroupCountY, workGroupCountZ);
 	}
 
+	void CommandListVK::DispatchMesh(uint32 taskCount, uint32 firstTask)
+	{
+		CHECK_GRAPHICS(m_Allocator);
+
+		// Start by flushing barriers
+		FlushDeferredBarriers();
+
+		VALIDATE(m_pDevice->vkCmdDrawMeshTasksNV != nullptr);
+		m_pDevice->vkCmdDrawMeshTasksNV(m_CommandList, taskCount, firstTask);
+	}
+
+	void CommandListVK::DispatchMeshIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)
+	{
+		CHECK_GRAPHICS(m_Allocator);
+
+		// Start by flushing barriers
+		FlushDeferredBarriers();
+
+		VALIDATE(m_pDevice->vkCmdDrawMeshTasksIndirectNV != nullptr);
+
+		const BufferVK* pDrawBufferVk = reinterpret_cast<const BufferVK*>(pDrawBuffer);
+		m_pDevice->vkCmdDrawMeshTasksIndirectNV(m_CommandList, pDrawBufferVk->GetBuffer(), offset, drawCount, stride);
+	}
+
 	void CommandListVK::DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)
 	{
 		CHECK_GRAPHICS(m_Allocator);
@@ -805,6 +829,8 @@ namespace LambdaEngine
 
 	void CommandListVK::DrawIndexedIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)
 	{
+		CHECK_GRAPHICS(m_Allocator);
+
 		// Start by flushing barriers
 		FlushDeferredBarriers();
 

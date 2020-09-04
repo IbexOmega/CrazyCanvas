@@ -667,24 +667,24 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount) const
 	{
-		DescriptorSetVK*        pDstVk = reinterpret_cast<DescriptorSetVK*>(pDst);
-		const DescriptorSetVK*    pSrcVk = reinterpret_cast<const DescriptorSetVK*>(pSrc);
+		DescriptorSetVK*		pDstVk = reinterpret_cast<DescriptorSetVK*>(pDst);
+		const DescriptorSetVK*	pSrcVk = reinterpret_cast<const DescriptorSetVK*>(pSrc);
 
 		VkCopyDescriptorSet copyDescriptorSet = {};
-		copyDescriptorSet.sType                = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-		copyDescriptorSet.pNext                = nullptr;
-		copyDescriptorSet.dstSet            = pDstVk->GetDescriptorSet();
-		copyDescriptorSet.srcSet            = pSrcVk->GetDescriptorSet();
-		copyDescriptorSet.srcArrayElement    = 0;
-		copyDescriptorSet.dstArrayElement    = 0;
+		copyDescriptorSet.sType				= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+		copyDescriptorSet.pNext				= nullptr;
+		copyDescriptorSet.dstSet			= pDstVk->GetDescriptorSet();
+		copyDescriptorSet.srcSet			= pSrcVk->GetDescriptorSet();
+		copyDescriptorSet.srcArrayElement	= 0;
+		copyDescriptorSet.dstArrayElement	= 0;
 
 		TArray<VkCopyDescriptorSet> descriptorSetCopies;
 		descriptorSetCopies.Reserve(copyBindingCount);
 		for (uint32 i = 0; i < copyBindingCount; i++)
 		{
-			copyDescriptorSet.descriptorCount    = pCopyBindings[i].DescriptorCount;
-			copyDescriptorSet.dstBinding        = pCopyBindings[i].DstBinding;
-			copyDescriptorSet.srcBinding        = pCopyBindings[i].SrcBinding;
+			copyDescriptorSet.descriptorCount	= pCopyBindings[i].DescriptorCount;
+			copyDescriptorSet.dstBinding		= pCopyBindings[i].DstBinding;
+			copyDescriptorSet.srcBinding		= pCopyBindings[i].SrcBinding;
 
 			descriptorSetCopies.PushBack(copyDescriptorSet);
 		}
@@ -794,22 +794,22 @@ namespace LambdaEngine
 
 		// USE API VERSION 1.2 for now, maybe change to 1.0 later
 		VkApplicationInfo appInfo = {};
-		appInfo.sType               = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		appInfo.pNext               = nullptr;
-		appInfo.pApplicationName    = "Lambda Engine";
-		appInfo.applicationVersion  = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.pEngineName         = "Lambda Engine";
-		appInfo.engineVersion       = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion          = VK_API_VERSION_1_2;
+		appInfo.sType				= VK_STRUCTURE_TYPE_APPLICATION_INFO;
+		appInfo.pNext				= nullptr;
+		appInfo.pApplicationName	= "Lambda Engine";
+		appInfo.applicationVersion	= VK_MAKE_VERSION(1, 0, 0);
+		appInfo.pEngineName			= "Lambda Engine";
+		appInfo.engineVersion		= VK_MAKE_VERSION(1, 0, 0);
+		appInfo.apiVersion			= VK_API_VERSION_1_2;
 
 		LOG_MESSAGE("[GraphicsDeviceVK]: Requsted API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(appInfo.apiVersion), VK_VERSION_MINOR(appInfo.apiVersion), VK_VERSION_PATCH(appInfo.apiVersion), appInfo.apiVersion);
 
 		VkInstanceCreateInfo instanceCreateInfo = {};
-		instanceCreateInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+		instanceCreateInfo.sType					= VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		instanceCreateInfo.flags					= 0;
-		instanceCreateInfo.pApplicationInfo         = &appInfo;
-		instanceCreateInfo.enabledExtensionCount    = (uint32)m_EnabledInstanceExtensions.GetSize();
-		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.GetData();
+		instanceCreateInfo.pApplicationInfo			= &appInfo;
+		instanceCreateInfo.enabledExtensionCount	= (uint32)m_EnabledInstanceExtensions.GetSize();
+		instanceCreateInfo.ppEnabledExtensionNames	= m_EnabledInstanceExtensions.GetData();
 
 		VkValidationFeaturesEXT validationFeatures	= {};
 		validationFeatures.sType					= VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
@@ -835,15 +835,15 @@ namespace LambdaEngine
 
 			debugCreateInfo.pNext = &validationFeatures;
 
-			instanceCreateInfo.enabledLayerCount    = 1;
-			instanceCreateInfo.ppEnabledLayerNames  = &pKhronosValidationLayerName;
-			instanceCreateInfo.pNext                = &debugCreateInfo;
+			instanceCreateInfo.enabledLayerCount	= 1;
+			instanceCreateInfo.ppEnabledLayerNames	= &pKhronosValidationLayerName;
+			instanceCreateInfo.pNext				= &debugCreateInfo;
 		}
 		else
 		{
-			instanceCreateInfo.enabledLayerCount    = 0;
+			instanceCreateInfo.enabledLayerCount	= 0;
 			instanceCreateInfo.ppEnabledLayerNames	= nullptr;
-			instanceCreateInfo.pNext                = nullptr;
+			instanceCreateInfo.pNext				= nullptr;
 		}
 
 		VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &Instance);
@@ -1380,7 +1380,7 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::RegisterDeviceExtensionData()
 	{
-		//RayTracing
+		// RayTracing
 		if (IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME))
 		{
 			GET_DEVICE_PROC_ADDR(Device, vkCreateAccelerationStructureKHR);
@@ -1395,18 +1395,18 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkCopyAccelerationStructureToMemoryKHR);
 			GET_DEVICE_PROC_ADDR(Device, vkCmdCopyAccelerationStructureToMemoryKHR);
 
-			//Query Ray Tracing properties
-			RayTracingProperties = {};
-			RayTracingProperties.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
-			
+			// Query Ray Tracing properties
+			RayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
+			RayTracingProperties.pNext = nullptr;
+
 			VkPhysicalDeviceProperties2 deviceProps2 = {};
-			deviceProps2.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-			deviceProps2.pNext	= &RayTracingProperties;
+			deviceProps2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+			deviceProps2.pNext = &RayTracingProperties;
 
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
 		}
 
-		//Timeline semaphores
+		// Timeline semaphores
 		if (IsDeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
 		{
 			GET_DEVICE_PROC_ADDR(Device, vkWaitSemaphores);
@@ -1414,12 +1414,19 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkGetSemaphoreCounterValue);
 		}
 
-		//Buffer Address
+		// Buffer Address
 		if (IsDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
 		{
 			GET_DEVICE_PROC_ADDR(Device, vkGetBufferDeviceAddress);
 		}
 
+		// Mesh Shaders
+		if (IsDeviceExtensionEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME))
+		{
+			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksNV);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksIndirectNV);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksIndirectCountNV);
+		}
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsDeviceVK::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
