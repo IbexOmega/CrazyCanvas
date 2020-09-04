@@ -313,7 +313,6 @@ Sandbox::Sandbox()
 	cameraDesc.FarPlane		= 1000.0f;
 
 	m_pCamera->Init(CommonApplication::Get(), cameraDesc);
-	m_pCamera->Update();
 
 	SamplerDesc samplerLinearDesc = {};
 	samplerLinearDesc.Name					= "Linear Sampler";

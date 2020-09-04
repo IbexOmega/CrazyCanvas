@@ -122,34 +122,28 @@ namespace LambdaEngine
 		// Translation
 		if (Input::IsKeyDown(EKey::KEY_W) && Input::IsKeyUp(EKey::KEY_S))
 		{
-			//Translate(glm::vec3(0.0f, 0.0f, CAMERA_MOVEMENT_SPEED * delta.AsSeconds()));
 			translation.z += delta.AsSeconds();
 		}
 		else if (Input::IsKeyDown(EKey::KEY_S) && Input::IsKeyUp(EKey::KEY_W))
 		{
-			//Translate(glm::vec3(0.0f, 0.0f, -CAMERA_MOVEMENT_SPEED * delta.AsSeconds()));
 			translation.z -= delta.AsSeconds();
 		}
 
 		if (Input::IsKeyDown(EKey::KEY_A) && Input::IsKeyUp(EKey::KEY_D))
 		{
-			//Translate(glm::vec3(-CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
 			translation.x -= delta.AsSeconds();
 		}
 		else if (Input::IsKeyDown(EKey::KEY_D) && Input::IsKeyUp(EKey::KEY_A))
 		{
-			//Translate(glm::vec3(CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
 			translation.x += delta.AsSeconds();
 		}
 
 		if (Input::IsKeyDown(EKey::KEY_Q) && Input::IsKeyUp(EKey::KEY_E))
 		{
-			//Translate(glm::vec3(0.0f, CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f));
 			translation.y += delta.AsSeconds();
 		}
 		else if (Input::IsKeyDown(EKey::KEY_E) && Input::IsKeyUp(EKey::KEY_Q))
 		{
-			//Translate(glm::vec3(0.0f, -CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f));
 			translation.y -= delta.AsSeconds();
 		}
 
@@ -197,8 +191,8 @@ namespace LambdaEngine
 
 			if (glm::length(mouseDelta) > glm::epsilon<float>())
 			{
-				Rotate(glm::vec3(0.0f, CAMERA_MOUSE_SPEED * mouseDelta.x * delta.AsSeconds(), 0.0f));
-				Rotate(glm::vec3(CAMERA_MOUSE_SPEED * mouseDelta.y * delta.AsSeconds(), 0.0f, 0.0f));
+				Rotate(glm::vec3(0.0f, CAMERA_MOUSE_SPEED * (float)mouseDelta.x * delta.AsSeconds(), 0.0f));
+				Rotate(glm::vec3(CAMERA_MOUSE_SPEED * (float)mouseDelta.y * delta.AsSeconds(), 0.0f, 0.0f));
 			}
 		}
 		else
