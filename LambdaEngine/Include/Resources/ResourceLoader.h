@@ -13,6 +13,11 @@
 #include "Material.h"
 #include "Mesh.h"
 
+namespace glslang
+{
+	class TIntermediate;
+}
+
 namespace LambdaEngine
 {
 	class LAMBDA_API ResourceLoader
@@ -86,6 +91,8 @@ namespace LambdaEngine
 		*/
 		static Shader* LoadShaderFromFile(const String& filepath, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint = "main");
 
+		static bool CreateShaderReflection(const String& filepath, FShaderStageFlags stage, EShaderLang lang, ShaderReflection* pReflection);
+
 		/*
 		* Load sound from a source string
 		*	source		- Shader source
@@ -106,9 +113,10 @@ namespace LambdaEngine
 
 	private:
 		static bool ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize);
-        static void ConvertBackslashes(std::string& string);
+		static void ConvertBackslashes(std::string& string);
 
-		static bool CompileGLSLToSPIRV(const String& filepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, TArray<uint32>& sourceSPIRV);
+		static bool CompileGLSLToSPIRV(const String& filepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection);
+		static bool CreateShaderReflection(glslang::TIntermediate* pIntermediate, FShaderStageFlags stage, ShaderReflection* pReflection);
 
 	private:
 		static DeviceAllocator*		s_pAllocator;

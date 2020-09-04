@@ -19,18 +19,6 @@ namespace LambdaEngine
 	};
 
 	/*
-	* FTextureViewFlags
-	*/
-	enum FTextureViewFlags : uint32
-	{
-		TEXTURE_VIEW_FLAG_NONE				= 0,
-		TEXTURE_VIEW_FLAG_RENDER_TARGET		= FLAG(1),
-		TEXTURE_VIEW_FLAG_DEPTH_STENCIL		= FLAG(2),
-		TEXTURE_VIEW_FLAG_UNORDERED_ACCESS	= FLAG(3),
-		TEXTURE_VIEW_FLAG_SHADER_RESOURCE	= FLAG(4),
-	};
-	
-	/*
 	* TextureViewDesc
 	*/
 	struct TextureViewDesc

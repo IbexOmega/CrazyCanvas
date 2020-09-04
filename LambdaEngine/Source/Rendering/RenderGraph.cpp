@@ -158,12 +158,6 @@ namespace LambdaEngine
 		m_BackBufferCount				= pDesc->BackBufferCount;
 		m_MaxTexturesPerDescriptorSet	= pDesc->MaxTexturesPerDescriptorSet;
 
-		/*if (!RenderGraphDescriptionParser::Parse(pDesc, renderStageDescriptions, synchronizationStageDescriptions, pipelineStageDescriptions, resourceDescriptions))
-		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" could not be parsed", pDesc->DebugName);
-			return false;
-		}*/
-
 		if (!CreateFence())
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Fence", pDesc->Name.c_str());
@@ -244,13 +238,50 @@ namespace LambdaEngine
 		{
 			RenderStage* pRenderStage = &m_pRenderStages[it->second];
 
-			if (pRenderStage->Parameters.XDimType == ERenderStageDimensionType::EXTERNAL) pRenderStage->Dimensions.x = x;
-			if (pRenderStage->Parameters.YDimType == ERenderStageDimensionType::EXTERNAL) pRenderStage->Dimensions.y = y;
-			if (pRenderStage->Parameters.ZDimType == ERenderStageDimensionType::EXTERNAL) pRenderStage->Dimensions.z = z;
+			if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::EXTERNAL) pRenderStage->Dimensions.x = x;
+			if (pRenderStage->Parameters.YDimType == ERenderGraphDimensionType::EXTERNAL) pRenderStage->Dimensions.y = y;
+			if (pRenderStage->Parameters.ZDimType == ERenderGraphDimensionType::EXTERNAL) pRenderStage->Dimensions.z = z;
 		}
 		else
 		{
 			LOG_WARNING("[RenderGraph]: UpdateRenderStageParameters failed, render stage with name \"%s\" could not be found", renderStageName.c_str());
+			return;
+		}
+	}
+
+	void RenderGraph::UpdateResourceDimensions(const String& resourceName, uint32 x, uint32 y)
+	{
+		auto resourceDescIt = m_InternalResourceUpdateDescriptions.find(resourceName);
+
+		if (resourceDescIt != m_InternalResourceUpdateDescriptions.end())
+		{
+			InternalResourceUpdateDesc* pResourceUpdateDesc = &resourceDescIt->second;
+
+			switch (pResourceUpdateDesc->Type)
+			{
+				case ERenderGraphResourceType::TEXTURE:
+				{
+					if (pResourceUpdateDesc->TextureUpdate.XDimType == ERenderGraphDimensionType::EXTERNAL) pResourceUpdateDesc->TextureUpdate.TextureDesc.Width = x;
+					if (pResourceUpdateDesc->TextureUpdate.YDimType == ERenderGraphDimensionType::EXTERNAL) pResourceUpdateDesc->TextureUpdate.TextureDesc.Height = y;
+					m_DirtyInternalResources.insert(resourceName);
+					break;
+				}
+				case ERenderGraphResourceType::BUFFER:
+				{
+					if (pResourceUpdateDesc->BufferUpdate.SizeType == ERenderGraphDimensionType::EXTERNAL) pResourceUpdateDesc->BufferUpdate.BufferDesc.SizeInBytes = x;
+					m_DirtyInternalResources.insert(resourceName);
+					break;
+				}
+				default:
+				{
+					LOG_WARNING("[RenderGraph]: UpdateResourceDimensions failed, resource \"%s\" has an unsupported type", resourceName.c_str());
+					break;
+				}
+			}
+		}
+		else
+		{
+			LOG_WARNING("[RenderGraph]: UpdateResourceDimensions failed, resource with name \"%s\" could not be found", resourceName.c_str());
 			return;
 		}
 	}
@@ -263,6 +294,16 @@ namespace LambdaEngine
 
 	void RenderGraph::Update()
 	{
+		if (m_DirtyInternalResources.size() > 0)
+		{
+			for (const String& dirtyInternalResourceDescName : m_DirtyInternalResources)
+			{
+				UpdateInternalResource(m_InternalResourceUpdateDescriptions[dirtyInternalResourceDescName]);
+			}
+
+			m_DirtyInternalResources.clear();
+		}
+
 		if (m_DirtyDescriptorSetBuffers.size()					> 0 || 
 			m_DirtyDescriptorSetAccelerationStructures.size()	> 0)
 		{
@@ -714,11 +755,18 @@ namespace LambdaEngine
 		m_WindowWidth	= (float32)width;
 		m_WindowHeight	= (float32)height;
 
-		for (auto relativeRenderStageIt = m_WindowRelativeRenderStages.begin(); relativeRenderStageIt != m_WindowRelativeRenderStages.end(); relativeRenderStageIt++)
+		for (uint32 renderStageIndex : m_WindowRelativeRenderStages)
 		{
-			RenderStage* pRenderStage = &m_pRenderStages[*relativeRenderStageIt];
+			RenderStage* pRenderStage = &m_pRenderStages[renderStageIndex];
 
 			UpdateRelativeRenderStageDimensions(pRenderStage);
+		}
+
+		for (const String& resourceName : m_WindowRelativeResources)
+		{
+			InternalResourceUpdateDesc* pInternalResourceUpdateDesc = &m_InternalResourceUpdateDescriptions[resourceName];
+
+			UpdateRelativeResourceDimensions(pInternalResourceUpdateDesc);
 		}
 	}
 
@@ -849,13 +897,77 @@ namespace LambdaEngine
 				{
 					pResource->Type						= ERenderGraphResourceType::TEXTURE;
 					pResource->OwnershipType			= pResource->IsBackBuffer ? EResourceOwnershipType::EXTERNAL : EResourceOwnershipType::INTERNAL;
-					pResource->Texture.IsOfArrayType	= pResourceDesc->IsOfArrayType;
-					pResource->Texture.Format			= pResourceDesc->TextureFormat; 
+					pResource->Texture.IsOfArrayType	= pResourceDesc->TextureParams.IsOfArrayType;
+					pResource->Texture.Format			= pResourceDesc->TextureParams.TextureFormat;
 
-					uint32 actualSubResourceCount = pResourceDesc->IsOfArrayType ? 1 : pResource->SubResourceCount;
+					uint32 actualSubResourceCount = pResourceDesc->TextureParams.IsOfArrayType ? 1 : pResource->SubResourceCount;
 					pResource->Texture.Textures.Resize(actualSubResourceCount);
 					pResource->Texture.TextureViews.Resize(actualSubResourceCount);
 					pResource->Texture.Samplers.Resize(actualSubResourceCount);
+
+					if (!pResource->IsBackBuffer)
+					{
+						uint32 arrayCount = pResourceDesc->TextureParams.IsOfArrayType ? pResource->SubResourceCount : 1;
+
+						TextureDesc		textureDesc		= {};
+						TextureViewDesc textureViewDesc = {};
+						SamplerDesc		samplerDesc		= {};
+
+						textureDesc.DebugName			= pResourceDesc->Name + " Texture";
+						textureDesc.MemoryType			= pResourceDesc->MemoryType;
+						textureDesc.Format				= pResourceDesc->TextureParams.TextureFormat;
+						textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
+						textureDesc.Flags				= pResourceDesc->TextureParams.TextureFlags;
+						textureDesc.Width				= pResourceDesc->TextureParams.XDimVariable;
+						textureDesc.Height				= pResourceDesc->TextureParams.YDimVariable;
+						textureDesc.Depth				= 1;
+						textureDesc.ArrayCount			= arrayCount;
+						textureDesc.Miplevels			= pResourceDesc->TextureParams.MiplevelCount;
+						textureDesc.SampleCount			= pResourceDesc->TextureParams.SampleCount;
+
+						textureViewDesc.DebugName		= pResourceDesc->Name + " Texture View";
+						textureViewDesc.Texture			= nullptr;
+						textureViewDesc.Flags			= pResourceDesc->TextureParams.TextureViewFlags;
+						textureViewDesc.Format			= pResourceDesc->TextureParams.TextureFormat;
+						textureViewDesc.Type			= pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+						textureViewDesc.MiplevelCount	= pResourceDesc->TextureParams.MiplevelCount;
+						textureViewDesc.ArrayCount		= arrayCount;
+						textureViewDesc.Miplevel		= 0;
+						textureViewDesc.ArrayIndex		= 0;
+
+						samplerDesc.DebugName			= pResourceDesc->Name + " Sampler";
+						samplerDesc.MinFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
+						samplerDesc.MagFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
+						samplerDesc.MipmapMode			= RenderGraphSamplerToMipmapMode(pResourceDesc->TextureParams.SamplerType);
+						samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+						samplerDesc.AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+						samplerDesc.AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+						samplerDesc.MipLODBias			= 0.0f;
+						samplerDesc.AnisotropyEnabled	= false;
+						samplerDesc.MaxAnisotropy		= 16;
+						samplerDesc.MinLOD				= 0.0f;
+						samplerDesc.MaxLOD				= 1.0f;
+
+						InternalResourceUpdateDesc internalResourceUpdateDesc = {};
+						internalResourceUpdateDesc.ResourceName						= pResourceDesc->Name;
+						internalResourceUpdateDesc.Type								= ERenderGraphResourceType::TEXTURE;
+						internalResourceUpdateDesc.TextureUpdate.XDimType			= pResourceDesc->TextureParams.XDimType;
+						internalResourceUpdateDesc.TextureUpdate.YDimType			= pResourceDesc->TextureParams.YDimType;
+						internalResourceUpdateDesc.TextureUpdate.XDimVariable		= pResourceDesc->TextureParams.XDimVariable;
+						internalResourceUpdateDesc.TextureUpdate.YDimVariable		= pResourceDesc->TextureParams.YDimVariable;
+						internalResourceUpdateDesc.TextureUpdate.TextureDesc		= textureDesc;
+						internalResourceUpdateDesc.TextureUpdate.TextureViewDesc	= textureViewDesc;
+						internalResourceUpdateDesc.TextureUpdate.SamplerDesc		= samplerDesc;
+
+						m_InternalResourceUpdateDescriptions[pResourceDesc->Name]	= internalResourceUpdateDesc;
+						m_DirtyInternalResources.insert(pResourceDesc->Name);
+
+						if (pResourceDesc->TextureParams.XDimType == ERenderGraphDimensionType::RELATIVE ||
+							pResourceDesc->TextureParams.YDimType == ERenderGraphDimensionType::RELATIVE)
+						{
+							m_WindowRelativeResources.PushBack(pResourceDesc->Name);
+						}
+					}
 				}
 				else if (pResourceDesc->Type == ERenderGraphResourceType::BUFFER)
 				{
@@ -864,6 +976,26 @@ namespace LambdaEngine
 					pResource->Buffer.Buffers.Resize(pResource->SubResourceCount);
 					pResource->Buffer.Offsets.Resize(pResource->SubResourceCount);
 					pResource->Buffer.SizesInBytes.Resize(pResource->SubResourceCount);
+
+					BufferDesc bufferDesc = {};
+					//bufferDesc.pName		
+					bufferDesc.MemoryType		= pResourceDesc->MemoryType;
+					bufferDesc.Flags			= pResourceDesc->BufferParams.BufferFlags;
+					bufferDesc.SizeInBytes		= pResourceDesc->BufferParams.Size;
+
+					InternalResourceUpdateDesc internalResourceUpdateDesc = {};
+					internalResourceUpdateDesc.ResourceName						= pResourceDesc->Name;
+					internalResourceUpdateDesc.Type								= ERenderGraphResourceType::BUFFER;
+					internalResourceUpdateDesc.BufferUpdate.SizeType			= pResourceDesc->BufferParams.SizeType;
+					internalResourceUpdateDesc.BufferUpdate.BufferDesc			= bufferDesc;
+
+					m_InternalResourceUpdateDescriptions[pResourceDesc->Name]	= internalResourceUpdateDesc;
+					m_DirtyInternalResources.insert(pResourceDesc->Name);
+
+					if (pResourceDesc->BufferParams.SizeType == ERenderGraphDimensionType::RELATIVE)
+					{
+						m_WindowRelativeResources.PushBack(pResourceDesc->Name);
+					}
 				}
 				else
 				{
@@ -878,10 +1010,10 @@ namespace LambdaEngine
 				{
 					pResource->Type						= ERenderGraphResourceType::TEXTURE;
 					pResource->OwnershipType			= EResourceOwnershipType::EXTERNAL;
-					pResource->Texture.IsOfArrayType	= pResourceDesc->IsOfArrayType;
-					pResource->Texture.Format			= pResourceDesc->TextureFormat; 
+					pResource->Texture.IsOfArrayType	= pResourceDesc->TextureParams.IsOfArrayType;
+					pResource->Texture.Format			= pResourceDesc->TextureParams.TextureFormat;
 
-					uint32 actualSubResourceCount = pResourceDesc->IsOfArrayType ? 1 : pResource->SubResourceCount;
+					uint32 actualSubResourceCount = pResourceDesc->TextureParams.IsOfArrayType ? 1 : pResource->SubResourceCount;
 					pResource->Texture.Textures.Resize(actualSubResourceCount);
 					pResource->Texture.TextureViews.Resize(actualSubResourceCount);
 					pResource->Texture.Samplers.Resize(actualSubResourceCount);
@@ -926,26 +1058,26 @@ namespace LambdaEngine
 			pRenderStage->Name			= pRenderStageDesc->Name ;
 			pRenderStage->Parameters	= pRenderStageDesc->Parameters;
 
-			if (pRenderStage->Parameters.XDimType == ERenderStageDimensionType::RELATIVE ||
-				pRenderStage->Parameters.XDimType == ERenderStageDimensionType::RELATIVE_1D ||
-				pRenderStage->Parameters.YDimType == ERenderStageDimensionType::RELATIVE)
+			if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::RELATIVE ||
+				pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::RELATIVE_1D ||
+				pRenderStage->Parameters.YDimType == ERenderGraphDimensionType::RELATIVE)
 			{
 				m_WindowRelativeRenderStages.insert(renderStageIndex);
 
 				UpdateRelativeRenderStageDimensions(pRenderStage);
 			}
 
-			if (pRenderStage->Parameters.XDimType == ERenderStageDimensionType::CONSTANT)
+			if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::CONSTANT)
 			{
 				pRenderStage->Dimensions.x = pRenderStageDesc->Parameters.XDimVariable;
 			}
 
-			if (pRenderStage->Parameters.YDimType == ERenderStageDimensionType::CONSTANT)
+			if (pRenderStage->Parameters.YDimType == ERenderGraphDimensionType::CONSTANT)
 			{
 				pRenderStage->Dimensions.y = pRenderStageDesc->Parameters.YDimVariable;
 			}
 
-			if (pRenderStage->Parameters.ZDimType == ERenderStageDimensionType::CONSTANT)
+			if (pRenderStage->Parameters.ZDimType == ERenderGraphDimensionType::CONSTANT)
 			{
 				pRenderStage->Dimensions.z = pRenderStageDesc->Parameters.ZDimVariable;
 			}
@@ -1494,7 +1626,7 @@ namespace LambdaEngine
 			{
 				const RenderGraphResourceSynchronizationDesc* pResourceSynchronizationDesc = &(*synchronizationIt);
 
-				//En massa skit kommer nog behöva göras om här, nu när Parsern tar hand om Back Buffer States korrekt.
+				//En massa skit kommer nog behï¿½va gï¿½ras om hï¿½r, nu nï¿½r Parsern tar hand om Back Buffer States korrekt.
 
 				auto it = m_ResourceMap.find(pResourceSynchronizationDesc->ResourceName);
 
@@ -1681,6 +1813,46 @@ namespace LambdaEngine
 		return true;
 	}
 
+	void RenderGraph::UpdateInternalResource(InternalResourceUpdateDesc& desc)
+	{
+		auto it = m_ResourceMap.find(desc.ResourceName);
+
+		if (it != m_ResourceMap.end())
+		{
+			Resource* pResource = &it->second;
+			ResourceUpdateDesc resourceUpdateDesc;
+			resourceUpdateDesc.ResourceName = desc.ResourceName;
+
+			switch (desc.Type)
+			{
+				case ERenderGraphResourceType::TEXTURE:					
+				{
+					resourceUpdateDesc.InternalTextureUpdate.pTextureDesc		= &desc.TextureUpdate.TextureDesc;
+					resourceUpdateDesc.InternalTextureUpdate.pTextureViewDesc	= &desc.TextureUpdate.TextureViewDesc;
+					resourceUpdateDesc.InternalTextureUpdate.pSamplerDesc		= &desc.TextureUpdate.SamplerDesc;
+					UpdateResourceTexture(pResource, resourceUpdateDesc);
+					break;
+				}
+				case ERenderGraphResourceType::BUFFER:					
+				{
+					resourceUpdateDesc.InternalBufferUpdate.pBufferDesc			= &desc.BufferUpdate.BufferDesc;
+					UpdateResourceBuffer(pResource, resourceUpdateDesc);
+					break;
+				}
+				default:
+				{
+					LOG_WARNING("[RenderGraph]: Resource \"%s\" in Render Graph has unsupported Type", desc.ResourceName.c_str());
+					return;
+				}
+			}
+		}
+		else
+		{
+			LOG_WARNING("[RenderGraph]: Resource \"%s\" in Render Graph could not be found in Resource Map", desc.ResourceName.c_str());
+			return;
+		}
+	}
+
 	void RenderGraph::UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc& desc)
 	{
 		uint32 actualSubResourceCount = 0;
@@ -1711,24 +1883,22 @@ namespace LambdaEngine
 
 			if (pResource->OwnershipType == EResourceOwnershipType::INTERNAL)
 			{
-				const TextureDesc& textureDesc	= *desc.InternalTextureUpdate.ppTextureDesc[sr];
-				TextureViewDesc textureViewDesc = *desc.InternalTextureUpdate.ppTextureViewDesc[sr];
+				const TextureDesc* pTextureDesc	= desc.InternalTextureUpdate.pTextureDesc;
+				TextureViewDesc textureViewDesc = *desc.InternalTextureUpdate.pTextureViewDesc; //Make a copy so we can change TextureViewDesc::pTexture
 				
 				SAFERELEASE(*ppTexture);
 				SAFERELEASE(*ppTextureView);
 
-				pTexture			= m_pGraphicsDevice->CreateTexture(&textureDesc, nullptr);
+				pTexture			= m_pGraphicsDevice->CreateTexture(pTextureDesc, nullptr);
 
 				textureViewDesc.Texture = pTexture;
 				pTextureView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 				//Update Sampler
-				if (desc.InternalTextureUpdate.ppSamplerDesc != nullptr)
+				if (desc.InternalTextureUpdate.pSamplerDesc != nullptr)
 				{
-					const SamplerDesc& samplerDesc = *desc.InternalTextureUpdate.ppSamplerDesc[sr];
-
 					SAFERELEASE(*ppSampler);
-					pSampler = m_pGraphicsDevice->CreateSampler(&samplerDesc);
+					pSampler = m_pGraphicsDevice->CreateSampler(desc.InternalTextureUpdate.pSamplerDesc);
 				}
 			}
 			else if (pResource->OwnershipType == EResourceOwnershipType::EXTERNAL)
@@ -1848,8 +2018,6 @@ namespace LambdaEngine
 		//Update Buffer
 		for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
 		{
-			const BufferDesc& bufferDesc = *desc.InternalBufferUpdate.ppBufferDesc[sr];
-
 			Buffer** ppBuffer		= &pResource->Buffer.Buffers[sr];
 			uint64* pOffset			= &pResource->Buffer.Offsets[sr];
 			uint64* pSizeInBytes	= &pResource->Buffer.SizesInBytes[sr];
@@ -1859,7 +2027,7 @@ namespace LambdaEngine
 			if (pResource->OwnershipType == EResourceOwnershipType::INTERNAL)
 			{
 				SAFERELEASE(*ppBuffer);
-				pBuffer = m_pGraphicsDevice->CreateBuffer(desc.InternalBufferUpdate.ppBufferDesc[sr], nullptr);
+				pBuffer = m_pGraphicsDevice->CreateBuffer(desc.InternalBufferUpdate.pBufferDesc, nullptr);
 			}
 			else if (pResource->OwnershipType == EResourceOwnershipType::EXTERNAL)
 			{
@@ -1904,18 +2072,47 @@ namespace LambdaEngine
 
 	void RenderGraph::UpdateRelativeRenderStageDimensions(RenderStage* pRenderStage)
 	{
-		if (pRenderStage->Parameters.XDimType == ERenderStageDimensionType::RELATIVE_1D)
+		if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::RELATIVE_1D)
 		{
 			pRenderStage->Dimensions.x = uint32(pRenderStage->Parameters.XDimVariable * m_WindowWidth * m_WindowHeight);
 		}
-		else if (pRenderStage->Parameters.XDimType == ERenderStageDimensionType::RELATIVE)
+		else
 		{
-			pRenderStage->Dimensions.x = uint32(pRenderStage->Parameters.XDimVariable * m_WindowWidth);
-		}
+			if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::RELATIVE)
+			{
+				pRenderStage->Dimensions.x = uint32(pRenderStage->Parameters.XDimVariable * m_WindowWidth);
+			}
 
-		if (pRenderStage->Parameters.YDimType == ERenderStageDimensionType::RELATIVE)
+			if (pRenderStage->Parameters.YDimType == ERenderGraphDimensionType::RELATIVE)
+			{
+				pRenderStage->Dimensions.y = uint32(pRenderStage->Parameters.YDimVariable * m_WindowHeight);
+			}
+		}
+	}
+
+	void RenderGraph::UpdateRelativeResourceDimensions(InternalResourceUpdateDesc* pResourceUpdateDesc)
+	{
+		switch (pResourceUpdateDesc->Type)
 		{
-			pRenderStage->Dimensions.y = uint32(pRenderStage->Parameters.YDimVariable * m_WindowHeight);
+			case ERenderGraphResourceType::TEXTURE:
+			{
+				if (pResourceUpdateDesc->TextureUpdate.XDimType == ERenderGraphDimensionType::RELATIVE)
+				{
+					pResourceUpdateDesc->TextureUpdate.TextureDesc.Width = uint32(pResourceUpdateDesc->TextureUpdate.XDimVariable * m_WindowWidth);
+					m_DirtyInternalResources.insert(pResourceUpdateDesc->ResourceName);
+				}
+
+				if (pResourceUpdateDesc->TextureUpdate.YDimType == ERenderGraphDimensionType::RELATIVE)
+				{
+					pResourceUpdateDesc->TextureUpdate.TextureDesc.Height = uint32(pResourceUpdateDesc->TextureUpdate.YDimVariable * m_WindowHeight);
+					m_DirtyInternalResources.insert(pResourceUpdateDesc->ResourceName);
+				}
+			}
+			default:
+			{
+				LOG_WARNING("[RenderGraph]: Resource \"%s\" in Render Graph has unsupported Type for relative dimensions", pResourceUpdateDesc->ResourceName.c_str());
+				return;
+			}
 		}
 	}
 

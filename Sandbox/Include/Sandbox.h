@@ -66,9 +66,7 @@ public:
 	void Render(LambdaEngine::Timestamp delta);
 
 private:
-	bool InitRendererForEmpty();
 	bool InitRendererForDeferred();
-	bool InitRendererForVisBuf();
 
 private:
 	uint32									m_AudioListenerIndex	= 0;

@@ -4,6 +4,10 @@
 
 #include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/GraphicsTypes.h"
+#include "Rendering/Core/API/Texture.h"
+#include "Rendering/Core/API/TextureView.h"
+#include "Rendering/Core/API/Sampler.h"
+#include "Rendering/Core/API/Buffer.h"
 
 #include "Containers/THashTable.h"
 #include "Containers/TArray.h"
@@ -21,10 +25,6 @@ namespace LambdaEngine
 {
 	struct PipelineTextureBarrierDesc;
 	struct PipelineBufferBarrierDesc;
-	struct TextureViewDesc;
-	struct TextureDesc;
-	struct SamplerDesc;
-	struct BufferDesc;
 
 	class AccelerationStructure;
 	class CommandAllocator;
@@ -65,14 +65,14 @@ namespace LambdaEngine
 
 			struct
 			{
-				TextureDesc**		ppTextureDesc;
-				TextureViewDesc**	ppTextureViewDesc;
-				SamplerDesc**		ppSamplerDesc;
+				TextureDesc*		pTextureDesc;
+				TextureViewDesc*	pTextureViewDesc;
+				SamplerDesc*		pSamplerDesc;
 			} InternalTextureUpdate;
 
 			struct
 			{
-				BufferDesc**		ppBufferDesc;
+				BufferDesc*			pBufferDesc;
 			} InternalBufferUpdate;
 
 			struct
@@ -116,7 +116,7 @@ namespace LambdaEngine
 			EDescriptorType DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
 			uint32			Binding			= 0;
 
-			ETextureState TextureState		= ETextureState::TEXTURE_STATE_UNKNOWN;
+			ETextureState	TextureState		= ETextureState::TEXTURE_STATE_UNKNOWN;
 		};
 
 		struct ResourceBarrierInfo
@@ -124,6 +124,31 @@ namespace LambdaEngine
 			uint32	SynchronizationStageIndex	= 0;
 			uint32	SynchronizationTypeIndex	= 0;
 			uint32	BarrierIndex				= 0;
+		};
+
+		struct InternalResourceUpdateDesc
+		{
+			String						ResourceName	= "No Resource Name";
+			ERenderGraphResourceType	Type			= ERenderGraphResourceType::NONE;
+
+			struct
+			{
+				ERenderGraphDimensionType	XDimType;
+				ERenderGraphDimensionType	YDimType;
+				float32						XDimVariable;
+				float32						YDimVariable;
+
+				TextureDesc					TextureDesc;
+				TextureViewDesc				TextureViewDesc;
+				SamplerDesc					SamplerDesc;
+			} TextureUpdate;
+
+			struct
+			{
+				ERenderGraphDimensionType	SizeType;
+
+				BufferDesc		BufferDesc;
+			} BufferUpdate;
 		};
 
 		struct Resource
@@ -227,7 +252,8 @@ namespace LambdaEngine
 		*	desc - The ResourceUpdateDesc, only the Update Parameters for the given update type should be set
 		*/
 		void UpdateResource(const ResourceUpdateDesc& desc);
-		void UpdateRenderStageDimensions(const String& renderStageName, uint32 x, uint32 y, uint32 z = 0.0f);
+		void UpdateRenderStageDimensions(const String& renderStageName, uint32 x, uint32 y, uint32 z = 0);
+		void UpdateResourceDimensions(const String& resourceName, uint32 x, uint32 y = 0);
 
 		void GetAndIncrementFence(Fence** ppFence, uint64* pSignalValue);
 
@@ -260,10 +286,13 @@ namespace LambdaEngine
 		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
 
+		void UpdateInternalResource(InternalResourceUpdateDesc& desc);
+
 		void UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc& desc);
 		void UpdateResourceBuffer(Resource* pResource, const ResourceUpdateDesc& desc);
 		void UpdateResourceAccelerationStructure(Resource* pResource, const ResourceUpdateDesc& desc);
 		void UpdateRelativeRenderStageDimensions(RenderStage* pRenderStage);
+		void UpdateRelativeResourceDimensions(InternalResourceUpdateDesc* pResourceUpdateDesc);
 
 		void ExecuteSynchronizationStage(
 			SynchronizationStage* pSynchronizationStage, 
@@ -280,24 +309,24 @@ namespace LambdaEngine
 	private:
 		const GraphicsDevice*				m_pGraphicsDevice;
 
-		const Scene*						m_pScene							= nullptr;
+		const Scene*									m_pScene							= nullptr;
 
 		DescriptorHeap*					m_pDescriptorHeap					= nullptr;
 
-		float32								m_WindowWidth						= 0.0f;
-		float32								m_WindowHeight						= 0.0f;
+		float32											m_WindowWidth						= 0.0f;
+		float32											m_WindowHeight						= 0.0f;
 
-		uint64								m_FrameIndex						= 0;
-		uint64								m_ModFrameIndex						= 0;
-		uint32								m_BackBufferIndex					= 0;
-		uint32								m_BackBufferCount					= 0;
-		uint32								m_MaxTexturesPerDescriptorSet		= 0;
+		uint64											m_FrameIndex						= 0;
+		uint64											m_ModFrameIndex						= 0;
+		uint32											m_BackBufferIndex					= 0;
+		uint32											m_BackBufferCount					= 0;
+		uint32											m_MaxTexturesPerDescriptorSet		= 0;
 
 		Fence*								m_pFence							= nullptr;
 		uint64								m_SignalValue						= 1;
 
-		TArray<ICustomRenderer*>			m_CustomRenderers;
-		TArray<ICustomRenderer*>			m_DebugRenderers;
+		TArray<ICustomRenderer*>						m_CustomRenderers;
+		TArray<ICustomRenderer*>						m_DebugRenderers;
 
 		CommandAllocator**					m_ppGraphicsCopyCommandAllocators	= nullptr;
 		CommandList**						m_ppGraphicsCopyCommandLists		= nullptr;
@@ -310,20 +339,24 @@ namespace LambdaEngine
 		CommandList**						m_ppExecutionStages					= nullptr;
 		uint32								m_ExecutionStageCount				= 0;
 
-		PipelineStage*						m_pPipelineStages					= nullptr;
-		uint32								m_PipelineStageCount				= 0;
+		PipelineStage*									m_pPipelineStages					= nullptr;
+		uint32											m_PipelineStageCount				= 0;
 
-		THashTable<String, uint32>			m_RenderStageMap;
-		RenderStage*						m_pRenderStages						= nullptr;
-		uint32								m_RenderStageCount					= 0;
-		TSet<uint32>						m_WindowRelativeRenderStages;		// Contains Render Stage Indices that have Dimension Variables that depend on the current Window Size
+		THashTable<String, uint32>						m_RenderStageMap;
+		RenderStage*									m_pRenderStages						= nullptr;
+		uint32											m_RenderStageCount					= 0;
+		TSet<uint32>									m_WindowRelativeRenderStages;		// Contains Render Stage Indices that have Dimension Variables that depend on the current Window Size
 
-		SynchronizationStage*				m_pSynchronizationStages			= nullptr;
-		uint32								m_SynchronizationStageCount			= 0;
+		SynchronizationStage*							m_pSynchronizationStages			= nullptr;
+		uint32											m_SynchronizationStageCount			= 0;
 
-		THashTable<String, Resource>		m_ResourceMap;
-		TSet<Resource*>						m_DirtyDescriptorSetTextures;
-		TSet<Resource*>						m_DirtyDescriptorSetBuffers;
-		TSet<Resource*>						m_DirtyDescriptorSetAccelerationStructures;
+		THashTable<String, Resource>					m_ResourceMap;
+		THashTable<String, InternalResourceUpdateDesc>	m_InternalResourceUpdateDescriptions;
+		TArray<String>									m_WindowRelativeResources;
+		TSet<String>									m_DirtyInternalResources;
+
+		TSet<Resource*>									m_DirtyDescriptorSetTextures;
+		TSet<Resource*>									m_DirtyDescriptorSetBuffers;
+		TSet<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
 	};
 }
