@@ -461,6 +461,16 @@ namespace LambdaEngine
 		return false;
 	}
 
+	void MacApplication::SetMouseVisibility(bool visible)
+	{
+		// TODO: Implement mac specific mouse setting
+	}
+
+	void MacApplication::SetMousePosition(int x, int y)
+	{
+		// TODO: Implement mac specific mouse setting
+	}
+
 	void MacApplication::SetInputMode(Window* pWindow, EInputMode inputMode)
 	{
 		UNREFERENCED_VARIABLE(pWindow);
