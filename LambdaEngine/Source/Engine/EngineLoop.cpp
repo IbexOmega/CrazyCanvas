@@ -24,6 +24,8 @@
 
 #include "Rendering/RenderSystem.h"
 
+#include "Utilities/RuntimeStats.h"
+
 namespace LambdaEngine
 {
 	static Clock g_Clock;
@@ -33,25 +35,25 @@ namespace LambdaEngine
 		Clock			fixedClock;
 		const Timestamp timestep	= Timestamp::Seconds(1.0 / 60.0);
 		Timestamp		accumulator = Timestamp(0);
-		
+
 		g_Clock.Reset();
-		
+
 		bool isRunning = true;
 		while (isRunning)
 		{
 			g_Clock.Tick();
-			
+
 			// Update
 			Timestamp delta = g_Clock.GetDeltaTime();
 			isRunning = Tick(delta);
-			
+
 			// Fixed update
 			accumulator += delta;
 			while (accumulator >= timestep)
 			{
 				fixedClock.Tick();
 				FixedTick(fixedClock.GetDeltaTime());
-				
+
 				accumulator -= timestep;
 			}
 		}
@@ -59,10 +61,11 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
+		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
 		Input::Tick();
 
 		Thread::Join();
-		
+
 		PlatformNetworkUtils::Tick(delta);
 
 		if (!CommonApplication::Get()->Tick())
@@ -74,7 +77,7 @@ namespace LambdaEngine
 
 		// Tick game
 		Game::Get()->Tick(delta);
-		
+
 		return true;
 	}
 
@@ -82,7 +85,7 @@ namespace LambdaEngine
 	{
 		// Tick game
 		Game::Get()->FixedTick(delta);
-		
+
 		NetworkUtils::FixedTick(delta);
 	}
 
@@ -102,12 +105,12 @@ namespace LambdaEngine
 		}
 
 		PlatformTime::PreInit();
-			  
+
 		Random::PreInit();
 
 		return true;
 	}
-	
+
 	bool EngineLoop::Init()
 	{
 		Thread::Init();
@@ -144,7 +147,7 @@ namespace LambdaEngine
 
 		return true;
 	}
-	
+
 	bool EngineLoop::Release()
 	{
 		Input::Release();
@@ -171,13 +174,13 @@ namespace LambdaEngine
 
 		return true;
 	}
-	
+
 	bool EngineLoop::PostRelease()
 	{
 		Thread::Release();
-		
+
 		PlatformNetworkUtils::Release();
-		
+
 		if (!CommonApplication::PostRelease())
 		{
 			return false;

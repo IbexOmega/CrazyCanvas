@@ -53,6 +53,8 @@ private:
 	bool InitRendererForDeferred();
 	bool InitRendererForVisBuf();
 
+	static void PrintBenchmarkResults();
+
 private:
 	CameraTrack m_CameraTrack;
 

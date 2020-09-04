@@ -557,6 +557,7 @@ workspace "LambdaEngine"
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
+			"Dependencies/rapidjson/include",
 		}
 
 		-- Files

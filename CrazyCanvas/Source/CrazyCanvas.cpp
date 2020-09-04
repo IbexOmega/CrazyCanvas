@@ -33,6 +33,14 @@
 
 #include "Threading/API/Thread.h"
 
+#include "Utilities/RuntimeStats.h"
+
+#include <rapidjson/document.h>
+#include <rapidjson/filewritestream.h>
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/rapidjson.h>
+#include <rapidjson/writer.h>
+
 constexpr const uint32 BACK_BUFFER_COUNT = 3;
 #ifdef LAMBDA_PLATFORM_MACOS
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
@@ -64,7 +72,7 @@ CrazyCanvas::CrazyCanvas()
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
 	SceneDesc sceneDesc = {};
-	sceneDesc.Name				= "Test Scene";
+	sceneDesc.Name				= "Benchmark Scene";
 	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
 	m_pScene->Init(sceneDesc);
 
@@ -234,6 +242,13 @@ void CrazyCanvas::InitTestAudio()
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 {
+	if (m_CameraTrack.hasReachedEnd())
+	{
+		PrintBenchmarkResults();
+		LambdaEngine::CommonApplication::Get()->Terminate();
+		return;
+	}
+
 	Render(delta);
 }
 
@@ -345,8 +360,7 @@ namespace LambdaEngine
 {
 	Game* CreateGame()
 	{
-		CrazyCanvas* pSandbox = DBG_NEW CrazyCanvas();
-		return pSandbox;
+		return DBG_NEW CrazyCanvas();
 	}
 }
 
@@ -1346,4 +1360,29 @@ bool CrazyCanvas::InitRendererForDeferred()
 	m_pRenderGraph->Update();
 
 	return true;
+}
+
+void CrazyCanvas::PrintBenchmarkResults()
+{
+	constexpr const float MB = 1000000.0f;
+
+	rapidjson::StringBuffer jsonStringBuffer;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(jsonStringBuffer);
+
+	writer.StartObject();
+
+	writer.String("AverageFPS");
+	writer.Double(1.0f / RuntimeStats::GetAverageFrametime());
+	writer.String("PeakMemoryUsage");
+	writer.Double(RuntimeStats::GetPeakMemoryUsage() / MB);
+
+	writer.EndObject();
+
+	FILE* pFile = fopen("benchmark_results.json", "w");
+
+	if (pFile)
+	{
+		fputs(jsonStringBuffer.GetString(), pFile);
+		fclose(pFile);
+	}
 }

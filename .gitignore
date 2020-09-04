@@ -30,3 +30,6 @@ Dependencies/bin-int/
 #Ignore files for settings
 *.ini
 *.ini
+
+# Ignore files created by the game/engine
+benchmark_results*.json
