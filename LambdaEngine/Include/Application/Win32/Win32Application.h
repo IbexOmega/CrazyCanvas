@@ -68,6 +68,8 @@ namespace LambdaEngine
 
 		virtual bool SupportsRawInput() const override final;
 
+		virtual void		SetMouseVisibility(bool visible)					override final;
+		virtual void		SetMousePosition(int x, int y)						override final;
 		virtual void 		SetInputMode(Window* pWindow, EInputMode inputMode) override final;
 		virtual EInputMode	GetInputMode(Window* pWindow) const					override final;
 
