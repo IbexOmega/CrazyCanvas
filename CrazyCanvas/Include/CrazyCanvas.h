@@ -2,6 +2,7 @@
 #include "Game/Game.h"
 
 #include "Application/API/EventHandler.h"
+#include "CameraTrack.h"
 
 #include "Containers/TArray.h"
 
@@ -53,6 +54,8 @@ private:
 	bool InitRendererForVisBuf();
 
 private:
+	CameraTrack m_CameraTrack;
+
 	uint32									m_AudioListenerIndex	= 0;
 
 	GUID_Lambda								m_ToneSoundEffectGUID;

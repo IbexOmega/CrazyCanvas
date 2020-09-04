@@ -58,6 +58,7 @@ CrazyCanvas::CrazyCanvas()
 {
 	using namespace LambdaEngine;
 
+	Input::Disable();
 	CommonApplication::Get()->AddEventHandler(this);
 
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
@@ -144,6 +145,19 @@ CrazyCanvas::CrazyCanvas()
 
 	m_pCamera->Init(cameraDesc);
 	m_pCamera->Update();
+
+	std::vector<glm::vec3> cameraTrack = {
+        {-2.0f, 1.6f, 1.0f},
+        {9.8f, 1.6f, 0.8f},
+		{9.4f, 1.6f, -3.8f},
+        {-9.8f, 1.6f, -3.9f},
+        {-11.6f, 1.6f, -1.1f},
+        {9.8f, 6.1f, -0.8f},
+        {9.4f, 6.1f, 3.8f},
+        {-9.8f, 6.1f, 3.9f}
+    };
+
+	m_CameraTrack.Init(m_pCamera, cameraTrack);
 
 	SamplerDesc samplerLinearDesc = {};
 	samplerLinearDesc.Name					= "Linear Sampler";
@@ -301,6 +315,7 @@ void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 	}
 
 	m_pCamera->Update();
+	m_CameraTrack.Tick(dt);
 	m_pScene->UpdateCamera(m_pCamera);
 
 	AudioListenerDesc listenerDesc = {};
