@@ -73,14 +73,14 @@ Sandbox::Sandbox()
 
 	const uint32 size = 128;
 	byte* pMem = DBG_NEW byte[size];
-	
+
 	for (uint32 i = 0; i < size; i++)
 	{
 		pMem[i] = 'a';
 	}
-	
+
 	SAFEDELETE_ARRAY(pMem);
-	
+
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
 	SceneDesc sceneDesc = {};
@@ -253,7 +253,7 @@ Sandbox::Sandbox()
 		//Sphere Grid
 		{
 			uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
-		
+
 			uint32 gridRadius = 5;
 
 			for (uint32 y = 0; y < gridRadius; y++)
@@ -373,7 +373,7 @@ Sandbox::Sandbox()
 Sandbox::~Sandbox()
 {
     LambdaEngine::CommonApplication::Get()->RemoveEventHandler(this);
-    
+
 	SAFEDELETE(m_pAudioGeometry);
 
 	SAFEDELETE(m_pScene);
@@ -482,58 +482,58 @@ void Sandbox::InitTestAudio()
 void Sandbox::OnFocusChanged(LambdaEngine::Window* pWindow, bool hasFocus)
 {
 	UNREFERENCED_VARIABLE(pWindow);
-	
+
     //LOG_MESSAGE("Window Moved: hasFocus=%s", hasFocus ? "true" : "false");
 }
 
 void Sandbox::OnWindowMoved(LambdaEngine::Window* pWindow, int16 x, int16 y)
 {
 	UNREFERENCED_VARIABLE(pWindow);
-	
+
     //LOG_MESSAGE("Window Moved: x=%d, y=%d", x, y);
 }
 
 void Sandbox::OnWindowResized(LambdaEngine::Window* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)
 {
 	UNREFERENCED_VARIABLE(pWindow);
-	
+
     //LOG_MESSAGE("Window Resized: width=%u, height=%u, type=%u", width, height, uint32(type));
 }
 
 void Sandbox::OnWindowClosed(LambdaEngine::Window* pWindow)
 {
 	UNREFERENCED_VARIABLE(pWindow);
-	
+
    // LOG_MESSAGE("Window closed");
 }
 
 void Sandbox::OnMouseEntered(LambdaEngine::Window* pWindow)
 {
 	UNREFERENCED_VARIABLE(pWindow);
-	
+
     //LOG_MESSAGE("Mouse Entered");
 }
 
 void Sandbox::OnMouseLeft(LambdaEngine::Window* pWindow)
 {
 	UNREFERENCED_VARIABLE(pWindow);
-	
+
     //LOG_MESSAGE("Mouse Left");
 }
 
 void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	UNREFERENCED_VARIABLE(modifierMask);
-	
+
     using namespace LambdaEngine;
-    
+
 	//LOG_MESSAGE("Key Pressed: %s, isRepeat=%s", KeyToString(key), isRepeat ? "true" : "false");
 
     if (isRepeat)
     {
         return;
     }
-    
+
 	Window* pMainWindow = CommonApplication::Get()->GetMainWindow();
     if (key == EKey::KEY_ESCAPE)
     {
@@ -570,7 +570,7 @@ void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isR
 	{
 		pMainWindow->SetPosition(0, 0);
 	}
-    
+
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
 
@@ -628,18 +628,18 @@ void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isR
 void Sandbox::OnKeyReleased(LambdaEngine::EKey key)
 {
     using namespace LambdaEngine;
-    
+
 	UNREFERENCED_VARIABLE(key);
-	
+
 	//LOG_MESSAGE("Key Released: %s", KeyToString(key));
 }
 
 void Sandbox::OnKeyTyped(uint32 character)
 {
     using namespace LambdaEngine;
-    
+
     UNREFERENCED_VARIABLE(character);
-    
+
 	//LOG_MESSAGE("Key Text: %c", char(character));
 }
 
@@ -647,7 +647,7 @@ void Sandbox::OnMouseMoved(int32 x, int32 y)
 {
 	UNREFERENCED_VARIABLE(x);
 	UNREFERENCED_VARIABLE(y);
-    
+
 	//LOG_MESSAGE("Mouse Moved: x=%d, y=%d", x, y);
 }
 
@@ -655,7 +655,7 @@ void Sandbox::OnMouseMovedRaw(int32 deltaX, int32 deltaY)
 {
 	UNREFERENCED_VARIABLE(deltaX);
 	UNREFERENCED_VARIABLE(deltaY);
-    
+
 	//LOG_MESSAGE("Mouse Delta: x=%d, y=%d", deltaX, deltaY);
 }
 
@@ -663,7 +663,7 @@ void Sandbox::OnButtonPressed(LambdaEngine::EMouseButton button, uint32 modifier
 {
 	UNREFERENCED_VARIABLE(button);
     UNREFERENCED_VARIABLE(modifierMask);
-    
+
 	//LOG_MESSAGE("Mouse Button Pressed: %d", button);
 }
 
@@ -677,7 +677,7 @@ void Sandbox::OnMouseScrolled(int32 deltaX, int32 deltaY)
 {
 	UNREFERENCED_VARIABLE(deltaX);
     UNREFERENCED_VARIABLE(deltaY);
-    
+
 	//LOG_MESSAGE("Mouse Scrolled: x=%d, y=%d", deltaX, deltaY);
 }
 
@@ -1291,20 +1291,20 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 				if (ImGui::BeginTabItem("Ray Tracing / SVGF"))
 				{
-					const char* items[] = { 
+					const char* items[] = {
 						"Direct Albedo",
-						"Direct Radiance", 
-						"Direct Radiance Reproj.", 
+						"Direct Radiance",
+						"Direct Radiance Reproj.",
 						"Direct Radiance Variance Est.",
 						"Direct Radiance Feedback",
 						"Indirect Albedo ",
-						"Indirect Radiance ", 
-						"Indirect Radiance Reproj.", 
+						"Indirect Radiance ",
+						"Indirect Radiance Reproj.",
 						"Indirect Radiance Variance Est.",
 						"Indirect Radiance Feedback",
-						"Direct Variance", 
-						"Indirect Variance", 
-						"Accumulation" 
+						"Direct Variance",
+						"Indirect Variance",
+						"Accumulation"
 					};
 					static int currentItem = 0;
 					ImGui::ListBox("", &currentItem, items, IM_ARRAYSIZE(items), IM_ARRAYSIZE(items));
@@ -1577,7 +1577,7 @@ namespace LambdaEngine
 {
     Game* CreateGame()
     {
-        Sandbox* pSandbox = DBG_NEW Sandbox();        
+        Sandbox* pSandbox = DBG_NEW Sandbox();
         return pSandbox;
     }
 }
@@ -2689,7 +2689,7 @@ bool Sandbox::InitRendererForDeferred()
 	rendererDesc.pRenderGraph		= m_pRenderGraph;
 	rendererDesc.pWindow			= CommonApplication::Get()->GetMainWindow();
 	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
-	
+
 	m_pRenderer->Init(&rendererDesc);
 
 	if (RENDERING_DEBUG_ENABLED)

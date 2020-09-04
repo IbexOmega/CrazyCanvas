@@ -436,12 +436,19 @@ workspace "LambdaEngine"
 		filter { "system:windows"}
 			postbuildcommands
 			{
+				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
 				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+				("{COPY} \"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
+				("{COPY} \"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} \"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} \"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
 				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
+				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
 				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
@@ -450,6 +457,7 @@ workspace "LambdaEngine"
 		filter { "system:windows", "platforms:x64_SharedLib" }
 			postbuildcommands
 			{
+				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
 				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\""),
@@ -458,6 +466,7 @@ workspace "LambdaEngine"
 		filter { "system:windows", "configurations:Debug"}
 			postbuildcommands
 			{
+				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
 				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
@@ -465,6 +474,7 @@ workspace "LambdaEngine"
 		filter { "system:windows", "configurations:Release or Production"}
 			postbuildcommands
 			{
+				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
 				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
@@ -479,6 +489,57 @@ workspace "LambdaEngine"
 		cppdialect "C++17"
 		systemversion "latest"
 		location "Sandbox"
+
+		-- Targets
+		targetdir ("Build/bin/" .. outputdir .. "/%{prj.name}")
+		objdir ("Build/bin-int/" .. outputdir .. "/%{prj.name}")
+
+		--Includes
+		includedirs
+		{
+			"LambdaEngine/Include",
+			"%{prj.name}/Include",
+		}
+
+		sysincludedirs
+		{
+			"Dependencies/glm",
+			"Dependencies/imgui",
+			"Dependencies/ordered-map/include",
+		}
+
+		-- Files
+		files
+		{
+			"LambdaEngine/Source/Launch/**",
+			"%{prj.name}/**.hpp",
+			"%{prj.name}/**.h",
+			"%{prj.name}/**.inl",
+			"%{prj.name}/**.cpp",
+			"%{prj.name}/**.c",
+			"%{prj.name}/**.hlsl",
+		}
+		-- We do not want to compile HLSL files
+		excludes
+		{
+			"**.hlsl",
+		}
+		-- Linking
+		links
+		{
+			"LambdaEngine",
+			"ImGui",
+		}
+
+	project "*"
+
+	-- CrazyCanvas Project
+	project "CrazyCanvas"
+		kind "WindowedApp"
+		language "C++"
+		cppdialect "C++17"
+		systemversion "latest"
+		location "CrazyCanvas"
 
 		-- Targets
 		targetdir ("Build/bin/" .. outputdir .. "/%{prj.name}")

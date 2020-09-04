@@ -108,6 +108,7 @@ namespace LambdaEngine
 		imnodes::PushColorStyle(imnodes::ColorStyle_LinkSelected, SELECTED_COLOR);
 
 		m_GUIInitialized = true;
+		ImGui::GetIO().FontAllowUserScaling = true;
 
 		SetInitialNodePositions();
 	}
