@@ -42,7 +42,10 @@ namespace LambdaEngine
 	void Input::OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
 	{
 		UNREFERENCED_VARIABLE(modifierMask);
-		m_KeyboardState.KeyStates[key] = m_InputEnabled && !isRepeat;
+		if (!isRepeat)
+		{
+			m_KeyboardState.KeyStates[key] = m_InputEnabled;
+		}
 	}
 
 	void Input::OnKeyReleased(EKey key)
