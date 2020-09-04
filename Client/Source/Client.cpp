@@ -35,11 +35,11 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 constexpr const uint32 BACK_BUFFER_COUNT = 3;
 constexpr const bool RENDERING_DEBUG_ENABLED = true;
 
-Client::Client() : 
+Client::Client() :
     m_pClient(nullptr)
 {
 	using namespace LambdaEngine;
-	
+
     CommonApplication::Get()->AddEventHandler(this);
     CommonApplication::Get()->GetMainWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");

@@ -27,12 +27,15 @@ namespace LambdaEngine
 		static void Release();
 
 		static void Tick();
-        
+
+        static void Enable() { s_pInstance->m_InputEnabled = true; };
+        static void Disable();
+
         FORCEINLINE static bool IsKeyDown(EKey key)
         {
             return s_pInstance->m_KeyboardState.IsKeyDown(key);
         }
-        
+
         FORCEINLINE static bool IsKeyUp(EKey key)
         {
             return s_pInstance->m_KeyboardState.IsKeyUp(key);
@@ -42,7 +45,7 @@ namespace LambdaEngine
         {
             return s_pInstance->m_KeyboardState;
         }
-        
+
 		FORCEINLINE static const MouseState& GetMouseState()
         {
             return s_pInstance->m_MouseState;
@@ -51,7 +54,8 @@ namespace LambdaEngine
     private:
         KeyboardState	m_KeyboardState = { };
 		MouseState		m_MouseState    = { };
-	
+        bool m_InputEnabled = true;
+
     private:
 		static Input* s_pInstance;
 	};
