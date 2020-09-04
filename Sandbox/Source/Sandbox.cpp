@@ -44,9 +44,9 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
-constexpr const bool SHOW_DEMO					= false;
-constexpr const bool RAY_TRACING_ENABLED		= true;
-constexpr const bool SVGF_ENABLED				= true;
+constexpr const bool SHOW_DEMO					= true;
+constexpr const bool RAY_TRACING_ENABLED		= false;
+constexpr const bool SVGF_ENABLED				= false;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
@@ -78,7 +78,7 @@ Sandbox::Sandbox()
 	
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
-	SceneDesc sceneDesc = {};
+	SceneDesc sceneDesc = { };
 	sceneDesc.Name				= "Test Scene";
 	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
 	m_pScene->Init(sceneDesc);
