@@ -6,6 +6,7 @@
 
 #include "Engine/EngineLoop.h"
 
+#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
 
 namespace LambdaEngine

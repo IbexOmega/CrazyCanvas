@@ -1,58 +1,53 @@
 #pragma once
-#include "Rendering/Core/API/IBuffer.h"
+#include "Core/TSharedRef.h"
+
+#include "Rendering/Core/API/Buffer.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Rendering/Core/Vulkan/DeviceAllocatorVK.h"
 
 namespace LambdaEngine
 {
-    class GraphicsDeviceVK;
+	class GraphicsDeviceVK;
 
-    class BufferVK : public TDeviceChildBase<GraphicsDeviceVK, IBuffer>
-    {
-		friend class RayTracingTestVK;
+	class BufferVK : public TDeviceChildBase<GraphicsDeviceVK, Buffer>
+	{
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, Buffer>;
 
-        using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IBuffer>;
+	public:
+		BufferVK(const GraphicsDeviceVK* pDevice);
+		~BufferVK();
+		
+		bool Init(const BufferDesc* pDesc, DeviceAllocator* pAllocator);
+		
+		FORCEINLINE VkBuffer GetBuffer() const
+		{
+			return m_Buffer;
+		}
 
-    public:
-        BufferVK(const GraphicsDeviceVK* pDevice);
-        ~BufferVK();
-        
-        bool Init(const BufferDesc* pDesc, IDeviceAllocator* pAllocator);
-        
-        FORCEINLINE VkBuffer GetBuffer() const
-        {
-            return m_Buffer;
-        }
+	public:
+		// DeviceChild interface
+		virtual void SetName(const String& name) override final;
 
-        //IDeviceChild interface
-        virtual void SetName(const char* pName) override final;
+		// Buffer interface
+		virtual void*	Map()	override final;
+		virtual void	Unmap()	override final;
+		
+		virtual uint64 GetDeviceAdress()			const override final;
+		virtual uint64 GetAlignmentRequirement()	const override final;
 
-        //IBuffer interface
-        virtual void*   Map()   override final;
-        virtual void    Unmap() override final;
-        
-        virtual uint64 GetDeviceAdress()            const override final;
-        virtual uint64 GetAlignmentRequirement()    const override final;
+		FORCEINLINE virtual uint64 GetHandle() const override final
+		{
+			return reinterpret_cast<uint64>(m_Buffer);
+		}
 
-        FORCEINLINE virtual BufferDesc GetDesc() const override final
-        {
-            return m_Desc;
-        }
-
-        FORCEINLINE virtual uint64 GetHandle() const override final
-        {
-            return (uint64)m_Buffer;
-        }
-
-    private:
-        DeviceAllocatorVK*  m_pAllocator            = nullptr;
-        VkBuffer            m_Buffer                = VK_NULL_HANDLE;
-        VkDeviceMemory      m_Memory                = VK_NULL_HANDLE;
-        VkDeviceAddress     m_DeviceAddress         = 0;
-        VkDeviceAddress     m_AlignementRequirement = 0;
-        bool                m_IsMapped              = false;
-        AllocationVK        m_Allocation;
-        BufferDesc          m_Desc;
-    };
+	private:
+		TSharedRef<DeviceAllocatorVK>  m_Allocator					= nullptr;
+		VkBuffer				m_Buffer					= VK_NULL_HANDLE;
+		VkDeviceMemory			m_Memory					= VK_NULL_HANDLE;
+		VkDeviceAddress			m_DeviceAddress				= 0;
+		VkDeviceAddress			m_AlignementRequirement		= 0;
+		bool					m_IsMapped					= false;
+		AllocationVK			m_Allocation;
+	};
 }

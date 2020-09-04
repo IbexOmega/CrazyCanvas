@@ -1,9 +1,9 @@
 #include "Resources/ResourceLoader.h"
 
-#include "Rendering/Core/API/ICommandAllocator.h"
-#include "Rendering/Core/API/ICommandList.h"
-#include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/IFence.h"
+#include "Rendering/Core/API/CommandAllocator.h"
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/Fence.h"
 #include "Rendering/Core/API/GraphicsHelpers.h"
 
 #include "Rendering/RenderSystem.h"
@@ -25,10 +25,10 @@
 
 namespace LambdaEngine
 {
-	IDeviceAllocator*		ResourceLoader::s_pAllocator				= nullptr;
-	ICommandAllocator*		ResourceLoader::s_pCopyCommandAllocator		= nullptr;
-	ICommandList*			ResourceLoader::s_pCopyCommandList			= nullptr;
-	IFence*					ResourceLoader::s_pCopyFence				= nullptr;
+	DeviceAllocator*		ResourceLoader::s_pAllocator				= nullptr;
+	CommandAllocator*		ResourceLoader::s_pCopyCommandAllocator		= nullptr;
+	CommandList*			ResourceLoader::s_pCopyCommandList			= nullptr;
+	Fence*					ResourceLoader::s_pCopyFence				= nullptr;
 	uint64					ResourceLoader::s_SignalValue				= 1;
 
 	/*
@@ -165,7 +165,7 @@ namespace LambdaEngine
 
 	bool ResourceLoader::Init()
 	{
-		s_pCopyCommandAllocator = RenderSystem::GetDevice()->CreateCommandAllocator("Resource Loader Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_GRAPHICS);
+		s_pCopyCommandAllocator = RenderSystem::GetDevice()->CreateCommandAllocator("Resource Loader Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
 		if (s_pCopyCommandAllocator == nullptr)
 		{
@@ -174,19 +174,19 @@ namespace LambdaEngine
 		}
 
 		CommandListDesc commandListDesc = {};
-		commandListDesc.pName			= "Resource Loader Copy Command List";
-		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_PRIMARY;
+		commandListDesc.DebugName		= "Resource Loader Copy Command List";
+		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 		commandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 		s_pCopyCommandList = RenderSystem::GetDevice()->CreateCommandList(s_pCopyCommandAllocator, &commandListDesc);
 
 		FenceDesc fenceDesc = {};
-		fenceDesc.pName			= "Resource Loader Copy Fence";
+		fenceDesc.DebugName		= "Resource Loader Copy Fence";
 		fenceDesc.InitalValue	= 0;
 		s_pCopyFence = RenderSystem::GetDevice()->CreateFence(&fenceDesc);
 
 		DeviceAllocatorDesc allocatorDesc = {};
-		allocatorDesc.pName				= "Resource Allocator";
+		allocatorDesc.DebugName			= "Resource Allocator";
 		allocatorDesc.PageSizeInBytes	= MEGA_BYTE(64);
 		s_pAllocator = RenderSystem::GetDevice()->CreateDeviceAllocator(&allocatorDesc);
 
@@ -207,7 +207,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceLoader::LoadSceneFromFile(const String& filepath, std::vector<GameObject>& loadedGameObjects, std::vector<Mesh*>& loadedMeshes, std::vector<Material*>& loadedMaterials, std::vector<ITexture*>& loadedTextures)
+	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<GameObject>& loadedGameObjects, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures)
 	{
 		size_t lastPathDivisor = filepath.find_last_of("/\\");
 
@@ -227,14 +227,14 @@ namespace LambdaEngine
 
 		if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, filepath.c_str(), dirpath.c_str(), true, false))
 		{
-            LOG_WARNING("[ResourceLoader]: Failed to load scene '%s'. Warning: %s Error: %s", filepath.c_str(), warn.c_str(), err.c_str());
+			LOG_WARNING("[ResourceLoader]: Failed to load scene '%s'. Warning: %s Error: %s", filepath.c_str(), warn.c_str(), err.c_str());
 			return false;
 		}
 
-		loadedMeshes.resize(shapes.size());
-		loadedMaterials.resize(materials.size());
+		loadedMeshes.Resize(shapes.size());
+		loadedMaterials.Resize(materials.size());
 
-		std::unordered_map<std::string, ITexture*> loadedTexturesMap;
+		std::unordered_map<std::string, Texture*> loadedTexturesMap;
 
 		for (uint32 m = 0; m < materials.size(); m++)
 		{
@@ -245,16 +245,16 @@ namespace LambdaEngine
 			if (material.diffuse_texname.length() > 0)
 			{
 				std::string texturePath = dirpath + material.diffuse_texname;
-                ConvertBackslashes(texturePath);
+				ConvertBackslashes(texturePath);
 
-                auto loadedTexture = loadedTexturesMap.find(texturePath);
+				auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureArrayFromFile(material.diffuse_texname, dirpath, &material.diffuse_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
+					Texture* pTexture = LoadTextureArrayFromFile(material.diffuse_texname, dirpath, &material.diffuse_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pAlbedoMap			= pTexture;
 
-					loadedTextures.push_back(pTexture);
+					loadedTextures.PushBack(pTexture);
 				}
 				else
 				{
@@ -279,16 +279,16 @@ namespace LambdaEngine
 			if (material.bump_texname.length() > 0)
 			{
 				std::string texturePath = dirpath + material.bump_texname;
-                ConvertBackslashes(texturePath);
-                
-                auto loadedTexture = loadedTexturesMap.find(texturePath);
+				ConvertBackslashes(texturePath);
+				
+				auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureArrayFromFile(material.bump_texname, dirpath, &material.bump_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
+					Texture* pTexture = LoadTextureArrayFromFile(material.bump_texname, dirpath, &material.bump_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pNormalMap			= pTexture;
 
-					loadedTextures.push_back(pTexture);
+					loadedTextures.PushBack(pTexture);
 				}
 				else
 				{
@@ -299,16 +299,16 @@ namespace LambdaEngine
 			if (material.reflection_texname.length() > 0)
 			{
 				std::string texturePath = dirpath + material.reflection_texname;
-                ConvertBackslashes(texturePath);
-                
-                auto loadedTexture = loadedTexturesMap.find(texturePath);
+				ConvertBackslashes(texturePath);
+				
+				auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureArrayFromFile(material.reflection_texname, dirpath, &material.reflection_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
+					Texture* pTexture = LoadTextureArrayFromFile(material.reflection_texname, dirpath, &material.reflection_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pMetallicMap			= pTexture;
 
-					loadedTextures.push_back(pTexture);
+					loadedTextures.PushBack(pTexture);
 				}
 				else
 				{
@@ -325,16 +325,16 @@ namespace LambdaEngine
 			if (material.specular_highlight_texname.length() > 0)
 			{
 				std::string texturePath = dirpath + material.specular_highlight_texname;
-                ConvertBackslashes(texturePath);
-                
-                auto loadedTexture = loadedTexturesMap.find(texturePath);
+				ConvertBackslashes(texturePath);
+				
+				auto loadedTexture = loadedTexturesMap.find(texturePath);
 				if (loadedTexture == loadedTexturesMap.end())
 				{
-					ITexture* pTexture = LoadTextureArrayFromFile(material.specular_highlight_texname, dirpath, &material.specular_highlight_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
+					Texture* pTexture = LoadTextureArrayFromFile(material.specular_highlight_texname, dirpath, &material.specular_highlight_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 					loadedTexturesMap[texturePath]	= pTexture;
 					pMaterial->pRoughnessMap		= pTexture;
 
-					loadedTextures.push_back(pTexture);
+					loadedTextures.PushBack(pTexture);
 				}
 				else
 				{
@@ -353,8 +353,8 @@ namespace LambdaEngine
 		{
 			tinyobj::shape_t& shape = shapes[s];
 
-			std::vector<Vertex> vertices = {};
-			std::vector<uint32> indices = {};
+			TArray<Vertex> vertices = {};
+			TArray<uint32> indices = {};
 			std::unordered_map<Vertex, uint32> uniqueVertices = {};
 
 			for (const tinyobj::index_t& index : shape.mesh.indices)
@@ -398,17 +398,17 @@ namespace LambdaEngine
 
 				if (uniqueVertices.count(vertex) == 0)
 				{
-					uniqueVertices[vertex] = static_cast<uint32>(vertices.size());
-					vertices.push_back(vertex);
+					uniqueVertices[vertex] = static_cast<uint32>(vertices.GetSize());
+					vertices.PushBack(vertex);
 				}
 
-				indices.push_back(uniqueVertices[vertex]);
+				indices.PushBack(uniqueVertices[vertex]);
 			}
 
 			//Calculate Tangents if Tex Coords exist
 			if (hasNormals && hasTexCoords)
 			{
-				for (uint32 index = 0; index < indices.size(); index += 3)
+				for (uint32 index = 0; index < indices.GetSize(); index += 3)
 				{
 					Vertex& v0 = vertices[indices[(size_t)index + 0]];
 					Vertex& v1 = vertices[indices[(size_t)index + 1]];
@@ -420,7 +420,7 @@ namespace LambdaEngine
 				}
 			}
 
-			Mesh* pMesh = LoadMeshFromMemory(vertices.data(), uint32(vertices.size()), indices.data(), uint32(indices.size()));
+			Mesh* pMesh = LoadMeshFromMemory(vertices.GetData(), uint32(vertices.GetSize()), indices.GetData(), uint32(indices.GetSize()));
 			loadedMeshes[s] = pMesh;
 
 			D_LOG_MESSAGE("[ResourceLoader]: Loaded Mesh \"%s\" \t for scene : \"%s\"", shape.name.c_str(), filepath.c_str());
@@ -431,7 +431,7 @@ namespace LambdaEngine
 			gameObject.Mesh			= s;
 			gameObject.Material		= m;
 
-			loadedGameObjects.push_back(gameObject);
+			loadedGameObjects.PushBack(gameObject);
 		}
 
 		D_LOG_MESSAGE("[ResourceLoader]: Loaded Scene \"%s\"", filepath.c_str());
@@ -539,7 +539,7 @@ namespace LambdaEngine
 		return pMesh;
 	}
 
-	ITexture* ResourceLoader::LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
+	Texture* ResourceLoader::LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
 	{
 		int texWidth = 0;
 		int texHeight = 0;
@@ -577,11 +577,11 @@ namespace LambdaEngine
 			D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
 		}
 
-		ITexture* pTexture = nullptr;
+		Texture* pTexture = nullptr;
 
 		if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
 		{
-			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.data(), stbi_pixels.size(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
+			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.GetData(), stbi_pixels.GetSize(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
 		}
 		else if (format == EFormat::FORMAT_R16_UNORM)
 		{
@@ -611,9 +611,9 @@ namespace LambdaEngine
 				pixels[4 * i + 3] = pPixelsA;
 			}
 
-			pTexture = LoadTextureArrayFromMemory(name, pixels.data(), pixels.size(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
+			pTexture = LoadTextureArrayFromMemory(name, pixels.GetData(), pixels.GetSize(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
 
-			for (uint32 i = 0; i < pixels.size(); i++)
+			for (uint32 i = 0; i < pixels.GetSize(); i++)
 			{
 				uint16* pPixels = reinterpret_cast<uint16*>(pixels[i]);
 				SAFEDELETE_ARRAY(pPixels);
@@ -628,7 +628,7 @@ namespace LambdaEngine
 		return pTexture;
 	}
 
-	ITexture* ResourceLoader::LoadTextureArrayFromMemory(const String& name, const void* const * ppData, uint32 arrayCount, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips)
+	Texture* ResourceLoader::LoadTextureArrayFromMemory(const String& name, const void* const * ppData, uint32 arrayCount, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips)
 	{
 		uint32_t miplevels = 1u;
 
@@ -638,10 +638,10 @@ namespace LambdaEngine
 		}
 
 		TextureDesc textureDesc = {};
-		textureDesc.Name		= name;
-		textureDesc.MemoryType	= EMemoryType::MEMORY_GPU;
+		textureDesc.DebugName	= name;
+		textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format		= format;
-		textureDesc.Type		= ETextureType::TEXTURE_2D;
+		textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.Flags		= FTextureFlags::TEXTURE_FLAG_COPY_SRC | FTextureFlags::TEXTURE_FLAG_COPY_DST | usageFlags;
 		textureDesc.Width		= width;
 		textureDesc.Height		= height;
@@ -650,7 +650,7 @@ namespace LambdaEngine
 		textureDesc.Miplevels	= miplevels;
 		textureDesc.SampleCount = 1;
 
-		ITexture* pTexture = RenderSystem::GetDevice()->CreateTexture(&textureDesc, s_pAllocator);
+		Texture* pTexture = RenderSystem::GetDevice()->CreateTexture(&textureDesc, s_pAllocator);
 
 		if (pTexture == nullptr)
 		{
@@ -661,12 +661,12 @@ namespace LambdaEngine
 		uint32 pixelDataSize = width * height * TextureFormatStride(format);
 
 		BufferDesc bufferDesc	= {};
-		bufferDesc.pName		= "Texture Copy Buffer";
-		bufferDesc.MemoryType	= EMemoryType::MEMORY_CPU_VISIBLE;
+		bufferDesc.DebugName	= "Texture Copy Buffer";
+		bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
 		bufferDesc.SizeInBytes	= uint64(arrayCount * pixelDataSize);
 
-		IBuffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, s_pAllocator);
+		Buffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, s_pAllocator);
 
 		if (pTextureData == nullptr)
 		{
@@ -684,8 +684,8 @@ namespace LambdaEngine
 		transitionToCopyDstBarrier.pTexture					= pTexture;
 		transitionToCopyDstBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
 		transitionToCopyDstBarrier.StateAfter				= ETextureState::TEXTURE_STATE_COPY_DST;
-		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
-		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
+		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		transitionToCopyDstBarrier.SrcMemoryAccessFlags		= 0;
 		transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 		transitionToCopyDstBarrier.TextureFlags				= textureDesc.Flags;
@@ -727,18 +727,18 @@ namespace LambdaEngine
 		else
 		{
 			PipelineTextureBarrierDesc transitionToShaderReadBarrier = {};
-			transitionToShaderReadBarrier.pTexture					= pTexture;
-			transitionToShaderReadBarrier.StateBefore				= ETextureState::TEXTURE_STATE_COPY_DST;
-			transitionToShaderReadBarrier.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-			transitionToShaderReadBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_NONE;
-			transitionToShaderReadBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_NONE;
-			transitionToShaderReadBarrier.SrcMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			transitionToShaderReadBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
-			transitionToShaderReadBarrier.TextureFlags				= textureDesc.Flags;
-			transitionToShaderReadBarrier.Miplevel					= 0;
-			transitionToShaderReadBarrier.MiplevelCount				= textureDesc.Miplevels;
-			transitionToShaderReadBarrier.ArrayIndex				= 0;
-			transitionToShaderReadBarrier.ArrayCount				= textureDesc.ArrayCount;
+			transitionToShaderReadBarrier.pTexture				= pTexture;
+			transitionToShaderReadBarrier.StateBefore			= ETextureState::TEXTURE_STATE_COPY_DST;
+			transitionToShaderReadBarrier.StateAfter			= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+			transitionToShaderReadBarrier.QueueBefore			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+			transitionToShaderReadBarrier.QueueAfter			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+			transitionToShaderReadBarrier.SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			transitionToShaderReadBarrier.DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			transitionToShaderReadBarrier.TextureFlags			= textureDesc.Flags;
+			transitionToShaderReadBarrier.Miplevel				= 0;
+			transitionToShaderReadBarrier.MiplevelCount			= textureDesc.Miplevels;
+			transitionToShaderReadBarrier.ArrayIndex			= 0;
+			transitionToShaderReadBarrier.ArrayCount			= textureDesc.ArrayCount;
 
 			s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &transitionToShaderReadBarrier, 1);
 		}
@@ -765,15 +765,13 @@ namespace LambdaEngine
 		return pTexture;
 	}
 
-	IShader* ResourceLoader::LoadShaderFromFile(const String& filepath, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint)
+	Shader* ResourceLoader::LoadShaderFromFile(const String& filepath, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint)
 	{
 		byte* pShaderRawSource = nullptr;
 		uint32 shaderRawSourceSize = 0;
 
-		std::vector<uint32> sourceSPIRV;
-		uint32 sourceSPIRVSize = 0;
-
-		if (lang == EShaderLang::GLSL)
+		TArray<uint32> sourceSPIRV;
+		if (lang == EShaderLang::SHADER_LANG_GLSL)
 		{
 			if (!ReadDataFromFile(filepath, "r", &pShaderRawSource, &shaderRawSourceSize))
 			{
@@ -786,10 +784,8 @@ namespace LambdaEngine
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", filepath.c_str());
 				return nullptr;
 			}
-
-			sourceSPIRVSize = sourceSPIRV.size() * sizeof(uint32);
 		}
-		else if (lang == EShaderLang::SPIRV)
+		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
 		{
 			if (!ReadDataFromFile(filepath, "rb", &pShaderRawSource, &shaderRawSourceSize))
 			{
@@ -797,23 +793,55 @@ namespace LambdaEngine
 				return nullptr;
 			}
 			
-			sourceSPIRV.resize((uint32)glm::ceil((float)shaderRawSourceSize / sizeof(uint32)));
-			memcpy(sourceSPIRV.data(), pShaderRawSource, shaderRawSourceSize);
-
-			sourceSPIRVSize = shaderRawSourceSize;
+			sourceSPIRV.Resize(static_cast<uint32>(glm::ceil(static_cast<float32>(shaderRawSourceSize) / sizeof(uint32))));
+			memcpy(sourceSPIRV.GetData(), pShaderRawSource, shaderRawSourceSize);
 		}
 
-		ShaderDesc shaderDesc = {};
-		shaderDesc.Name					= filepath;
-		shaderDesc.pSource				= reinterpret_cast<char*>(sourceSPIRV.data());
-		shaderDesc.SourceSize			= sourceSPIRVSize;
-		shaderDesc.pEntryPoint			= pEntryPoint;
-		shaderDesc.Stage				= stage;
-		shaderDesc.Lang					= lang;
-		shaderDesc.pConstants			= nullptr;
-		shaderDesc.ShaderConstantCount	= 0;
+		const uint32 sourceSize = static_cast<uint32>(sourceSPIRV.GetSize()) * sizeof(uint32);
 
-		IShader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
+		ShaderDesc shaderDesc = { };
+		shaderDesc.DebugName	= filepath;
+		shaderDesc.Source		= TArray<byte>(reinterpret_cast<byte*>(sourceSPIRV.GetData()), reinterpret_cast<byte*>(sourceSPIRV.GetData()) + sourceSize);
+		shaderDesc.EntryPoint	= entryPoint;
+		shaderDesc.Stage		= stage;
+		shaderDesc.Lang			= lang;
+
+		Shader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
+		Malloc::Free(pShaderRawSource);
+
+		return pShader;
+	}
+
+	Shader* ResourceLoader::LoadShaderFromMemory(const String& source, const String& name, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint)
+	{
+		byte* pShaderRawSource = nullptr;
+		uint32 shaderRawSourceSize = 0;
+
+		TArray<uint32> sourceSPIRV;
+		if (lang == EShaderLang::SHADER_LANG_GLSL)
+		{
+			if (!CompileGLSLToSPIRV("", source.c_str(), shaderRawSourceSize, stage, sourceSPIRV))
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV");
+				return nullptr;
+			}
+		}
+		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
+		{
+			sourceSPIRV.Resize(static_cast<uint32>(glm::ceil(static_cast<float32>(shaderRawSourceSize) / sizeof(uint32))));
+			memcpy(sourceSPIRV.GetData(), pShaderRawSource, shaderRawSourceSize);
+		}
+
+		const uint32 sourceSize = static_cast<uint32>(sourceSPIRV.GetSize()) * sizeof(uint32);
+
+		ShaderDesc shaderDesc = { };
+		shaderDesc.DebugName	= name;
+		shaderDesc.Source		= TArray<byte>(reinterpret_cast<byte*>(sourceSPIRV.GetData()), reinterpret_cast<byte*>(sourceSPIRV.GetData()) + sourceSize);
+		shaderDesc.EntryPoint	= entryPoint;
+		shaderDesc.Stage		= stage;
+		shaderDesc.Lang			= lang;
+
+		Shader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
 		Malloc::Free(pShaderRawSource);
 
 		return pShader;
@@ -858,7 +886,6 @@ namespace LambdaEngine
 		soundDesc.Filepath = filepath;
 
 		ISoundEffect3D* pSound = AudioSystem::GetDevice()->CreateSoundEffect(&soundDesc);
-
 		if (pSound == nullptr)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to initialize sound \"%s\"", filepath.c_str());
@@ -977,7 +1004,9 @@ namespace LambdaEngine
 		{
 			spv::SpvBuildLogger logger;
 			glslang::SpvOptions spvOptions;
-			glslang::GlslangToSpv(*pIntermediate, *pSourceSPIRV, &logger, &spvOptions);
+            std::vector<uint32> std_sourceSPIRV;
+			glslang::GlslangToSpv(*pIntermediate, *std_sourceSPIRV, &logger, &spvOptions);
+            sourceSPIRV->Assign(std_sourceSPIRV.data(), std_sourceSPIRV.data() + std_sourceSPIRV.size());
 		}
 
 		if (pReflection != nullptr)

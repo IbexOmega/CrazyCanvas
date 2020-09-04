@@ -23,18 +23,15 @@ namespace LambdaEngine
 
 	DescriptorSetVK::~DescriptorSetVK()
 	{
-		if (m_pDescriptorHeap)
+		if (m_DescriptorHeap)
 		{
-			m_pDescriptorHeap->FreeDescriptorSet(m_DescriptorSet);
-			RELEASE(m_pDescriptorHeap);
+			m_DescriptorHeap->FreeDescriptorSet(m_DescriptorSet);
 		}
-
-		m_pDescriptorHeap = VK_NULL_HANDLE;
 	}
 
-	bool DescriptorSetVK::Init(const String& name, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap)
+	bool DescriptorSetVK::Init(const String& debugName, const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, DescriptorHeap* pDescriptorHeap)
 	{
-		m_Name = name;
+		m_DebugName = debugName;
 
 		DescriptorHeapVK* pVkDescriptorHeap = reinterpret_cast<DescriptorHeapVK*>(pDescriptorHeap);
 		m_DescriptorSet = pVkDescriptorHeap->AllocateDescriptorSet(pPipelineLayout, descriptorLayoutIndex);
@@ -44,30 +41,21 @@ namespace LambdaEngine
 		}
 		else
 		{
-			SetName(name.c_str());
+			SetName(debugName);
 
-			const PipelineLayoutVK*		pPipelineLayoutVk	= reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
-			DescriptorSetBindingsDesc	bindings			= pPipelineLayoutVk->GetDescriptorBindings(descriptorLayoutIndex);
-			
-			m_BindingCount = bindings.BindingCount;
-			memcpy(m_Bindings, bindings.Bindings, sizeof(DescriptorBindingDesc) * m_BindingCount);
-
-			pVkDescriptorHeap->AddRef();
-			m_pDescriptorHeap = pVkDescriptorHeap;
+			const PipelineLayoutVK* pPipelineLayoutVk = reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
+			m_Bindings			= pPipelineLayoutVk->GetDescriptorBindings(descriptorLayoutIndex);
+			m_DescriptorHeap	= pVkDescriptorHeap;
 			return true;
 		}
 	}
 
-	void DescriptorSetVK::SetName(const char* pName)
+	void DescriptorSetVK::SetName(const String& debugName)
 	{
-		if (pName)
-		{
-			TDeviceChild::SetName(pName);
-			m_pDevice->SetVulkanObjectName(pName, (uint64)m_DescriptorSet, VK_OBJECT_TYPE_DESCRIPTOR_SET);
-		}
+		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_DescriptorSet), VK_OBJECT_TYPE_DESCRIPTOR_SET);
 	}
 
-	void DescriptorSetVK::WriteTextureDescriptors(const ITextureView* const* ppTextures, const ISampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	void DescriptorSetVK::WriteTextureDescriptors(const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
 	{
 		VALIDATE(ppTextures != nullptr);
 
@@ -102,14 +90,14 @@ namespace LambdaEngine
 		descriptorImageWrite.dstArrayElement	= 0;
 		descriptorImageWrite.descriptorType		= descriptorTypeVk;
 		descriptorImageWrite.pBufferInfo		= nullptr;
-		descriptorImageWrite.descriptorCount	= uint32_t(imageInfos.size());
-		descriptorImageWrite.pImageInfo			= imageInfos.data();
+		descriptorImageWrite.descriptorCount	= uint32_t(imageInfos.GetSize());
+		descriptorImageWrite.pImageInfo			= imageInfos.GetData();
 		descriptorImageWrite.pTexelBufferView	= nullptr;
 
 		vkUpdateDescriptorSets(m_pDevice->Device, 1, &descriptorImageWrite, 0, nullptr);
 	}
 
-	void DescriptorSetVK::WriteBufferDescriptors(const IBuffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	void DescriptorSetVK::WriteBufferDescriptors(const Buffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
 	{
 		VALIDATE(ppBuffers	!= nullptr);
 		VALIDATE(pOffsets	!= nullptr);
@@ -135,49 +123,48 @@ namespace LambdaEngine
 		descriptorImageWrite.dstBinding			= firstBinding;
 		descriptorImageWrite.dstArrayElement	= 0;
 		descriptorImageWrite.descriptorType		= descriptorTypeVk;
-		descriptorImageWrite.descriptorCount	= uint32_t(bufferInfos.size());
-		descriptorImageWrite.pBufferInfo		= bufferInfos.data();
+		descriptorImageWrite.descriptorCount	= uint32_t(bufferInfos.GetSize());
+		descriptorImageWrite.pBufferInfo		= bufferInfos.GetData();
 		descriptorImageWrite.pImageInfo			= nullptr;
 		descriptorImageWrite.pTexelBufferView	= nullptr;
 
 		vkUpdateDescriptorSets(m_pDevice->Device, 1, &descriptorImageWrite, 0, nullptr);
 	}
 
-	void DescriptorSetVK::WriteAccelerationStructureDescriptors(const IAccelerationStructure* const * ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount)
+	void DescriptorSetVK::WriteAccelerationStructureDescriptors(const AccelerationStructure* const * ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount)
 	{
-        VALIDATE(ppAccelerationStructures != nullptr);
-        
-        TArray<VkAccelerationStructureKHR> accelerationStructures(descriptorCount);
-        for (uint32_t i = 0; i < descriptorCount; i++)
-        {
-            const AccelerationStructureVK* pAccelerationStructureVk = reinterpret_cast<const AccelerationStructureVK*>(ppAccelerationStructures[i]);
+		VALIDATE(ppAccelerationStructures != nullptr);
+		
+		TArray<VkAccelerationStructureKHR> accelerationStructures(descriptorCount);
+		for (uint32_t i = 0; i < descriptorCount; i++)
+		{
+			const AccelerationStructureVK* pAccelerationStructureVk = reinterpret_cast<const AccelerationStructureVK*>(ppAccelerationStructures[i]);
 
-            VALIDATE(pAccelerationStructureVk != nullptr);
-            accelerationStructures[i] = pAccelerationStructureVk->GetAccelerationStructure();
-        }
-        
-        VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo = {};
-        descriptorAccelerationStructureInfo.sType                       = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-        descriptorAccelerationStructureInfo.accelerationStructureCount  = descriptorCount;
-        descriptorAccelerationStructureInfo.pAccelerationStructures     = accelerationStructures.data();
+			VALIDATE(pAccelerationStructureVk != nullptr);
+			accelerationStructures[i] = pAccelerationStructureVk->GetAccelerationStructure();
+		}
+		
+		VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo = {};
+		descriptorAccelerationStructureInfo.sType                       = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+		descriptorAccelerationStructureInfo.accelerationStructureCount  = descriptorCount;
+		descriptorAccelerationStructureInfo.pAccelerationStructures     = accelerationStructures.GetData();
 
-        VkWriteDescriptorSet accelerationStructureWrite = {};
-        accelerationStructureWrite.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        accelerationStructureWrite.pNext            = &descriptorAccelerationStructureInfo;
-        accelerationStructureWrite.dstSet           = m_DescriptorSet;
-        accelerationStructureWrite.dstBinding       = firstBinding;
-        accelerationStructureWrite.descriptorCount  = 1;
-        accelerationStructureWrite.descriptorType   = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-        accelerationStructureWrite.pBufferInfo      = nullptr;
-        accelerationStructureWrite.pImageInfo       = nullptr;
-        accelerationStructureWrite.pTexelBufferView = nullptr;
+		VkWriteDescriptorSet accelerationStructureWrite = {};
+		accelerationStructureWrite.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		accelerationStructureWrite.pNext            = &descriptorAccelerationStructureInfo;
+		accelerationStructureWrite.dstSet           = m_DescriptorSet;
+		accelerationStructureWrite.dstBinding       = firstBinding;
+		accelerationStructureWrite.descriptorCount  = 1;
+		accelerationStructureWrite.descriptorType   = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		accelerationStructureWrite.pBufferInfo      = nullptr;
+		accelerationStructureWrite.pImageInfo       = nullptr;
+		accelerationStructureWrite.pTexelBufferView = nullptr;
 
-        vkUpdateDescriptorSets(m_pDevice->Device, 1, &accelerationStructureWrite, 0, nullptr);
+		vkUpdateDescriptorSets(m_pDevice->Device, 1, &accelerationStructureWrite, 0, nullptr);
 	}
 
-	IDescriptorHeap* DescriptorSetVK::GetHeap()
+	DescriptorHeap* DescriptorSetVK::GetHeap()
 	{
-		m_pDescriptorHeap->AddRef();
-		return m_pDescriptorHeap;
+		return m_DescriptorHeap.GetAndAddRef();
 	}
 }

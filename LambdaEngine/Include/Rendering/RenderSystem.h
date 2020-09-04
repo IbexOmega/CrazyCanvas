@@ -3,8 +3,8 @@
 
 namespace LambdaEngine
 {
-	class ICommandQueue;
-	class IGraphicsDevice;
+	class CommandQueue;
+	class GraphicsDevice;
 
 	class LAMBDA_API RenderSystem
 	{
@@ -16,30 +16,30 @@ namespace LambdaEngine
 
 		static void Tick();
 
-		FORCEINLINE static IGraphicsDevice* GetDevice()
+		FORCEINLINE static GraphicsDevice* GetDevice()
 		{
 			return s_pGraphicsDevice;
 		}
 
-		FORCEINLINE static ICommandQueue* GetGraphicsQueue()
+		FORCEINLINE static CommandQueue* GetGraphicsQueue()
 		{
 			return s_pGraphicsQueue;
 		}
 
-		FORCEINLINE static ICommandQueue* GetComputeQueue()
+		FORCEINLINE static CommandQueue* GetComputeQueue()
 		{
 			return s_pComputeQueue;
 		}
 
-		FORCEINLINE static ICommandQueue* GetCopyQueue()
+		FORCEINLINE static CommandQueue* GetCopyQueue()
 		{
 			return s_pCopyQueue;
 		}
 
 	private:
-		static IGraphicsDevice* s_pGraphicsDevice;
-		static ICommandQueue*	s_pGraphicsQueue;
-		static ICommandQueue*	s_pComputeQueue;
-		static ICommandQueue*	s_pCopyQueue;
+		static GraphicsDevice* s_pGraphicsDevice;
+		static CommandQueue*	s_pGraphicsQueue;
+		static CommandQueue*	s_pComputeQueue;
+		static CommandQueue*	s_pCopyQueue;
 	};
 }

@@ -4,6 +4,8 @@
 
 #include "Log/Log.h"
 
+#include "Containers/TSharedPtr.h"
+
 #include "Input/API/Input.h"
 
 #include "Resources/ResourceManager.h"
@@ -14,9 +16,9 @@
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraphEditor.h"
 #include "Rendering/RenderGraph.h"
-#include "Rendering/Core/API/ITextureView.h"
-#include "Rendering/Core/API/ISampler.h"
-#include "Rendering/Core/API/ICommandQueue.h"
+#include "Rendering/Core/API/TextureView.h"
+#include "Rendering/Core/API/Sampler.h"
+#include "Rendering/Core/API/CommandQueue.h"
 
 #include "Audio/AudioSystem.h"
 #include "Audio/API/ISoundEffect3D.h"
@@ -76,6 +78,7 @@ Sandbox::Sandbox()
 	
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
+
 	SceneDesc sceneDesc = {};
 	sceneDesc.Name				= "Test Scene";
 	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
@@ -118,12 +121,12 @@ Sandbox::Sandbox()
 			instanceIndexAndTransform.Rotation		= rotation;
 			instanceIndexAndTransform.Scale			= scale;
 
-			m_LightInstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+			m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 		}
 
 		//Scene
 		{
-			std::vector<GameObject>	sceneGameObjects;
+			TArray<GameObject>	sceneGameObjects;
 			ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
 
 			glm::vec3 position(0.0f, 0.0f, 0.0f);
@@ -143,7 +146,7 @@ Sandbox::Sandbox()
 				instanceIndexAndTransform.Rotation = rotation;
 				instanceIndexAndTransform.Scale = scale;
 
-				m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+				m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 			}
 		}
 	}
@@ -166,12 +169,12 @@ Sandbox::Sandbox()
 			instanceIndexAndTransform.Rotation		= rotation;
 			instanceIndexAndTransform.Scale			= scale;
 
-			m_LightInstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+			m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 		}
 
 		//Scene
 		{
-			std::vector<GameObject>	sceneGameObjects;
+			TArray<GameObject>	sceneGameObjects;
 			ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Light.obj", sceneGameObjects);
 
 			glm::vec3 position(0.0f, 0.0f, 0.0f);
@@ -191,7 +194,7 @@ Sandbox::Sandbox()
 				instanceIndexAndTransform.Rotation = rotation;
 				instanceIndexAndTransform.Scale = scale;
 
-				m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+				m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 			}
 		}
 	}
@@ -214,12 +217,12 @@ Sandbox::Sandbox()
 			instanceIndexAndTransform.Rotation		= rotation;
 			instanceIndexAndTransform.Scale			= scale;
 
-			m_LightInstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+			m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 		}
 
 		//Scene
 		{
-			std::vector<GameObject>	sceneGameObjects;
+			TArray<GameObject> sceneGameObjects;
 			ResourceManager::LoadSceneFromFile("Testing/Testing.obj", sceneGameObjects);
 
 			glm::vec3 position(0.0f, 0.0f, 0.0f);
@@ -239,7 +242,7 @@ Sandbox::Sandbox()
 				instanceIndexAndTransform.Rotation = rotation;
 				instanceIndexAndTransform.Scale = scale;
 
-				m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+				m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 			}
 		}
 
@@ -286,7 +289,7 @@ Sandbox::Sandbox()
 					instanceIndexAndTransform.Rotation		= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
 					instanceIndexAndTransform.Scale			= scale;
 
-					m_InstanceIndicesAndTransforms.push_back(instanceIndexAndTransform);
+					m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 				}
 			}
 		}
@@ -309,13 +312,13 @@ Sandbox::Sandbox()
 	m_pCamera->Update();
 
 	SamplerDesc samplerLinearDesc = {};
-	samplerLinearDesc.Name					= "Linear Sampler";
-	samplerLinearDesc.MinFilter				= EFilter::LINEAR;
-	samplerLinearDesc.MagFilter				= EFilter::LINEAR;
-	samplerLinearDesc.MipmapMode			= EMipmapMode::LINEAR;
-	samplerLinearDesc.AddressModeU			= EAddressMode::REPEAT;
-	samplerLinearDesc.AddressModeV			= EAddressMode::REPEAT;
-	samplerLinearDesc.AddressModeW			= EAddressMode::REPEAT;
+	samplerLinearDesc.DebugName				= "Linear Sampler";
+	samplerLinearDesc.MinFilter				= EFilterType::FILTER_TYPE_LINEAR;
+	samplerLinearDesc.MagFilter				= EFilterType::FILTER_TYPE_LINEAR;
+	samplerLinearDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_LINEAR;
+	samplerLinearDesc.AddressModeU			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerLinearDesc.AddressModeV			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerLinearDesc.AddressModeW			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 	samplerLinearDesc.MipLODBias			= 0.0f;
 	samplerLinearDesc.AnisotropyEnabled		= false;
 	samplerLinearDesc.MaxAnisotropy			= 16;
@@ -325,13 +328,13 @@ Sandbox::Sandbox()
 	m_pLinearSampler = RenderSystem::GetDevice()->CreateSampler(&samplerLinearDesc);
 
 	SamplerDesc samplerNearestDesc = {};
-	samplerNearestDesc.Name					= "Nearest Sampler";
-	samplerNearestDesc.MinFilter			= EFilter::NEAREST;
-	samplerNearestDesc.MagFilter			= EFilter::NEAREST;
-	samplerNearestDesc.MipmapMode			= EMipmapMode::NEAREST;
-	samplerNearestDesc.AddressModeU			= EAddressMode::REPEAT;
-	samplerNearestDesc.AddressModeV			= EAddressMode::REPEAT;
-	samplerNearestDesc.AddressModeW			= EAddressMode::REPEAT;
+	samplerNearestDesc.DebugName			= "Nearest Sampler";
+	samplerNearestDesc.MinFilter			= EFilterType::FILTER_TYPE_NEAREST;
+	samplerNearestDesc.MagFilter			= EFilterType::FILTER_TYPE_NEAREST;
+	samplerNearestDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_NEAREST;
+	samplerNearestDesc.AddressModeU			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerNearestDesc.AddressModeV			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerNearestDesc.AddressModeW			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 	samplerNearestDesc.MipLODBias			= 0.0f;
 	samplerNearestDesc.AnisotropyEnabled	= false;
 	samplerNearestDesc.MaxAnisotropy		= 16;
@@ -350,8 +353,8 @@ Sandbox::Sandbox()
 
 	//InitRendererForVisBuf(BACK_BUFFER_COUNT, MAX_TEXTURES_PER_DESCRIPTOR_SET);
 
-	ICommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
-	ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
+	//CommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
+	//CommandList* pComputeCopyCommandList = m_pRenderer->AcquireComputeCopyCommandList();
 
 	m_pScene->UpdateCamera(m_pCamera);
 
@@ -474,6 +477,7 @@ void Sandbox::InitTestAudio()
 
 void Sandbox::OnFocusChanged(LambdaEngine::Window* pWindow, bool hasFocus)
 {
+	UNREFERENCED_VARIABLE(hasFocus);
 	UNREFERENCED_VARIABLE(pWindow);
 	
 	//LOG_MESSAGE("Window Moved: hasFocus=%s", hasFocus ? "true" : "false");
@@ -481,6 +485,8 @@ void Sandbox::OnFocusChanged(LambdaEngine::Window* pWindow, bool hasFocus)
 
 void Sandbox::OnWindowMoved(LambdaEngine::Window* pWindow, int16 x, int16 y)
 {
+	UNREFERENCED_VARIABLE(x);
+	UNREFERENCED_VARIABLE(y);
 	UNREFERENCED_VARIABLE(pWindow);
 	
 	//LOG_MESSAGE("Window Moved: x=%d, y=%d", x, y);
@@ -489,6 +495,7 @@ void Sandbox::OnWindowMoved(LambdaEngine::Window* pWindow, int16 x, int16 y)
 void Sandbox::OnWindowResized(LambdaEngine::Window* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)
 {
 	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(type);
 	
 	//LOG_MESSAGE("Window Resized: width=%u, height=%u, type=%u", width, height, uint32(type));
 }
@@ -778,8 +785,8 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 	m_pRenderer->NewFrame(delta);
 
-	ICommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
-	ICommandList* pComputeCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
+	CommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
+	CommandList* pComputeCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
 
 	Window* pWindow = CommonApplication::Get()->GetMainWindow();
 	float32 renderWidth = (float32)pWindow->GetWidth();
@@ -797,7 +804,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 		{
 			uint32 modFrameIndex = m_pRenderer->GetModFrameIndex();
 
-			ITextureView* const* ppTextureViews = nullptr;
+			TextureView* const* ppTextureViews = nullptr;
 			uint32			textureViewCount = 0;
 
 			static ImGuiTexture albedoTexture = {};
@@ -832,7 +839,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 						dirLightChanged = true;
 					}
 
-					if (ImGui::SliderFloat("Dir. Light Strength", &m_DirectionalLightStrength[3], 0.0f, 10000.0f, "%.3f", 10.0f))
+					if (ImGui::SliderFloat("Dir. Light Strength", &m_DirectionalLightStrength[3], 0.0f, 10000.0f, "%.3f", ImGuiSliderFlags_Logarithmic))
 					{
 						dirLightChanged = true;
 					}
@@ -1595,17 +1602,17 @@ bool Sandbox::InitRendererForDeferred()
 
 	//GUID_Lambda postProcessShaderGUID			= ResourceManager::LoadShaderFromFile("PostProcess.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER,		EShaderLang::GLSL);
 
-	m_ImGuiPixelShaderNormalGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelNormal.frag",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderDepthGUID					= ResourceManager::LoadShaderFromFile("ImGuiPixelDepth.frag",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderMetallicGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelMetallic.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderRoughnessGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelRoughness.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderEmissiveGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelEmissive.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderPackedLocalNormalGUID		= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedLocalNormal.frag",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelLinearZGUID						= ResourceManager::LoadShaderFromFile("ImGuiPixelLinearZ.frag",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelCompactNormalFloatGUID			= ResourceManager::LoadShaderFromFile("ImGuiPixelCompactNormalFloat.frag",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelShaderEmissionGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelEmission.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelPackedMetallicGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedMetallic.frag",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
-	m_ImGuiPixelPackedRoughnessGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedRoughness.frag",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,			EShaderLang::GLSL);
+	m_ImGuiPixelShaderNormalGUID			= ResourceManager::LoadShaderFromFile("ImGuiPixelNormal.frag",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	m_ImGuiPixelShaderDepthGUID				= ResourceManager::LoadShaderFromFile("ImGuiPixelDepth.frag",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	m_ImGuiPixelShaderMetallicGUID			= ResourceManager::LoadShaderFromFile("ImGuiPixelMetallic.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	m_ImGuiPixelShaderRoughnessGUID			= ResourceManager::LoadShaderFromFile("ImGuiPixelRoughness.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	m_ImGuiPixelShaderEmissiveGUID			= ResourceManager::LoadShaderFromFile("ImGuiPixelEmissive.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	m_ImGuiPixelShaderPackedLocalNormalGUID	= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedLocalNormal.frag",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	m_ImGuiPixelLinearZGUID					= ResourceManager::LoadShaderFromFile("ImGuiPixelLinearZ.frag",				FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	m_ImGuiPixelCompactNormalFloatGUID		= ResourceManager::LoadShaderFromFile("ImGuiPixelCompactNormalFloat.frag",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	m_ImGuiPixelShaderEmissionGUID			= ResourceManager::LoadShaderFromFile("ImGuiPixelEmission.frag",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	m_ImGuiPixelPackedMetallicGUID			= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedMetallic.frag",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	m_ImGuiPixelPackedRoughnessGUID			= ResourceManager::LoadShaderFromFile("ImGuiPixelPackedRoughness.frag",		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
 
 	//ResourceManager::LoadShaderFromFile("ForwardVertex.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
 	//ResourceManager::LoadShaderFromFile("ForwardPixel.glsl",			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
@@ -1620,19 +1627,19 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	else
 	{
-		if (!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
+		if constexpr(!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
 		}
-		else if (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+		else if constexpr (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
 		}
-		else if (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+		else if constexpr (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
 		}
-		else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
+		else if constexpr (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_PP_DEFERRED.lrg";
 		}
@@ -1667,7 +1674,7 @@ bool Sandbox::InitRendererForDeferred()
 	uint32 renderHeight = pWindow->GetHeight();
 
 	{
-		IBuffer* pBuffer = m_pScene->GetLightsBuffer();
+		Buffer* pBuffer = m_pScene->GetLightsBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1676,7 +1683,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetPerFrameBuffer();
+		Buffer* pBuffer = m_pScene->GetPerFrameBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1685,7 +1692,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetMaterialProperties();
+		Buffer* pBuffer = m_pScene->GetMaterialProperties();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1694,7 +1701,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetVertexBuffer();
+		Buffer* pBuffer = m_pScene->GetVertexBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.ResourceName						= SCENE_VERTEX_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1703,7 +1710,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetIndexBuffer();
+		Buffer* pBuffer = m_pScene->GetIndexBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.ResourceName						= SCENE_INDEX_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1712,7 +1719,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetPrimaryInstanceBuffer();
+		Buffer* pBuffer = m_pScene->GetPrimaryInstanceBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.ResourceName						= SCENE_PRIMARY_INSTANCE_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1721,7 +1728,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetSecondaryInstanceBuffer();
+		Buffer* pBuffer = m_pScene->GetSecondaryInstanceBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.ResourceName						= SCENE_SECONDARY_INSTANCE_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1730,7 +1737,7 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		IBuffer* pBuffer = m_pScene->GetIndirectArgsBuffer();
+		Buffer* pBuffer = m_pScene->GetIndirectArgsBuffer();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.ResourceName						= SCENE_INDIRECT_ARGS_BUFFER;
 		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
@@ -1739,20 +1746,20 @@ bool Sandbox::InitRendererForDeferred()
 	}
 
 	{
-		ITexture** ppAlbedoMaps						= m_pScene->GetAlbedoMaps();
-		ITexture** ppNormalMaps						= m_pScene->GetNormalMaps();
-		ITexture** ppAmbientOcclusionMaps			= m_pScene->GetAmbientOcclusionMaps();
-		ITexture** ppMetallicMaps					= m_pScene->GetMetallicMaps();
-		ITexture** ppRoughnessMaps					= m_pScene->GetRoughnessMaps();
+		Texture** ppAlbedoMaps						= m_pScene->GetAlbedoMaps();
+		Texture** ppNormalMaps						= m_pScene->GetNormalMaps();
+		Texture** ppAmbientOcclusionMaps			= m_pScene->GetAmbientOcclusionMaps();
+		Texture** ppMetallicMaps					= m_pScene->GetMetallicMaps();
+		Texture** ppRoughnessMaps					= m_pScene->GetRoughnessMaps();
 
-		ITextureView** ppAlbedoMapViews				= m_pScene->GetAlbedoMapViews();
-		ITextureView** ppNormalMapViews				= m_pScene->GetNormalMapViews();
-		ITextureView** ppAmbientOcclusionMapViews	= m_pScene->GetAmbientOcclusionMapViews();
-		ITextureView** ppMetallicMapViews			= m_pScene->GetMetallicMapViews();
-		ITextureView** ppRoughnessMapViews			= m_pScene->GetRoughnessMapViews();
+		TextureView** ppAlbedoMapViews				= m_pScene->GetAlbedoMapViews();
+		TextureView** ppNormalMapViews				= m_pScene->GetNormalMapViews();
+		TextureView** ppAmbientOcclusionMapViews	= m_pScene->GetAmbientOcclusionMapViews();
+		TextureView** ppMetallicMapViews			= m_pScene->GetMetallicMapViews();
+		TextureView** ppRoughnessMapViews			= m_pScene->GetRoughnessMapViews();
 
-		std::vector<ISampler*> linearSamplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
-		std::vector<ISampler*> nearestSamplers(MAX_UNIQUE_MATERIALS, m_pNearestSampler);
+		std::vector<Sampler*> linearSamplers(MAX_UNIQUE_MATERIALS, m_pLinearSampler);
+		std::vector<Sampler*> nearestSamplers(MAX_UNIQUE_MATERIALS, m_pNearestSampler);
 
 		ResourceUpdateDesc albedoMapsUpdateDesc = {};
 		albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
@@ -1793,7 +1800,7 @@ bool Sandbox::InitRendererForDeferred()
 
 	if (RAY_TRACING_ENABLED)
 	{
-		const IAccelerationStructure* pTLAS = m_pScene->GetTLAS();
+		const AccelerationStructure* pTLAS = m_pScene->GetTLAS();
 		ResourceUpdateDesc resourceUpdateDesc					= {};
 		resourceUpdateDesc.ResourceName							= SCENE_TLAS;
 		resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= pTLAS;
@@ -1813,8 +1820,8 @@ bool Sandbox::InitRendererForDeferred()
 
 		GUID_Lambda blueNoiseID = ResourceManager::LoadTextureArrayFromFile("Blue Noise Texture", blueNoiseLUTFileNames, NUM_BLUE_NOISE_LUTS, EFormat::FORMAT_R16_UNORM, false);
 
-		ITexture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
-		ITextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
+		Texture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
+		TextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
 
 		ResourceUpdateDesc blueNoiseUpdateDesc = {};
 		blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";
@@ -1828,7 +1835,7 @@ bool Sandbox::InitRendererForDeferred()
 	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
 
 	RendererDesc rendererDesc = {};
-	rendererDesc.pName				= "Renderer";
+	rendererDesc.Name				= "Renderer";
 	rendererDesc.Debug				= RENDERING_DEBUG_ENABLED;
 	rendererDesc.pRenderGraph		= m_pRenderGraph;
 	rendererDesc.pWindow			= CommonApplication::Get()->GetMainWindow();

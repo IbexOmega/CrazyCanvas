@@ -85,7 +85,7 @@ namespace LambdaEngine
 
 		TArray<EditorResourceStateIdent>		ResourceStateIdents;
 
-		TArray<EditorResourceStateIdent>::iterator FindResourceStateIdent(const String& name)
+		TArray<EditorResourceStateIdent>::Iterator FindResourceStateIdent(const String& name)
 		{
 			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
 			{
@@ -96,7 +96,7 @@ namespace LambdaEngine
 			return ResourceStateIdents.end();
 		}
 
-		TArray<EditorResourceStateIdent>::const_iterator FindResourceStateIdent(const String& name) const
+		TArray<EditorResourceStateIdent>::ConstIterator FindResourceStateIdent(const String& name) const
 		{
 			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
 			{
@@ -115,7 +115,7 @@ namespace LambdaEngine
 		int32								OutputNodeIndex		= 0;
 		TArray<EditorResourceStateIdent>	ResourceStateIdents;
 
-		TArray<EditorResourceStateIdent>::iterator FindResourceStateIdent(const String& name)
+		TArray<EditorResourceStateIdent>::Iterator FindResourceStateIdent(const String& name)
 		{
 			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
 			{
@@ -126,7 +126,7 @@ namespace LambdaEngine
 			return ResourceStateIdents.end();
 		}
 
-		TArray<EditorResourceStateIdent>::const_iterator FindResourceStateIdent(const String& name) const
+		TArray<EditorResourceStateIdent>::ConstIterator FindResourceStateIdent(const String& name) const
 		{
 			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
 			{
@@ -228,7 +228,7 @@ namespace LambdaEngine
 		THashTable<int32, EditorRenderGraphResourceState>	m_ResourceStatesByHalfAttributeIndex;
 		THashTable<int32, EditorRenderGraphResourceLink>	m_ResourceStateLinksByLinkIndex;
 
-		EPipelineStateType									m_CurrentlyAddingRenderStage	= EPipelineStateType::NONE;
+		EPipelineStateType									m_CurrentlyAddingRenderStage	= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 		ERenderGraphResourceType							m_CurrentlyAddingResource		= ERenderGraphResourceType::NONE;
 		String												m_CurrentlyEditingResource		= "";
 

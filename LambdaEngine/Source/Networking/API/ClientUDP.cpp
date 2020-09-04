@@ -172,7 +172,7 @@ namespace LambdaEngine
 			if (!m_Transciver.ReceiveBegin(sender))
 				continue;
 
-			std::vector<NetworkPacket*> packets;
+			TArray<NetworkPacket*> packets;
 			m_PacketManager.QueryBegin(&m_Transciver, packets);
 			for (NetworkPacket* pPacket : packets)
 			{

@@ -1,101 +1,141 @@
 #pragma once
 #include "LambdaEngine.h"
 
-#include "Containers/TArray.h"
-
 namespace LambdaEngine
 {
-	class ISampler;
+	/*
+	* Constants
+	*/
+	constexpr const uint32 MAX_COLOR_ATTACHMENTS		= 8;
+	constexpr const uint32 MAX_SUBPASSES				= 16;
+	constexpr const uint32 MAX_SUBPASS_DEPENDENCIES		= 16;
+	constexpr const uint32 MAX_VERTEX_INPUT_ATTACHMENTS	= 8;
+	constexpr const uint32 MAX_ATTRIBUTES_PER_VERTEX	= 8;
+	constexpr const uint32 MAX_IMAGE_BARRIERS			= 16;
+	constexpr const uint32 MAX_MEMORY_BARRIERS			= 16;
+	constexpr const uint32 MAX_BUFFER_BARRIERS			= 16;
+	constexpr const uint32 MAX_VIEWPORTS				= 8;
+	constexpr const uint32 MAX_VERTEX_BUFFERS			= 32;
+	constexpr const uint32 MAX_DESCRIPTOR_BINDINGS		= 32;
+	constexpr const uint32 MAX_CONSTANT_RANGES			= 16;
+	constexpr const uint32 MAX_IMMUTABLE_SAMPLERS		= 32;
+	constexpr const uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
+	constexpr const uint32 MAX_MISS_SHADER_COUNT		= 8;
+	constexpr const uint32 EXTERNAL_SUBPASS				= 0xFFFFFFFF;
 
-    enum class EMemoryType : uint8
-    {
-        NONE				= 0,
-        MEMORY_CPU_VISIBLE  = 1,
-        MEMORY_GPU			= 2,
-    };
+	/*
+	* Enums
+	*/
+	enum class EMemoryType : uint8
+	{
+		MEMORY_TYPE_NONE			= 0,
+		MEMORY_TYPE_CPU_VISIBLE		= 1,
+		MEMORY_TYPE_GPU				= 2,
+	};
 
-    enum class EFormat : uint8
-    {
-        NONE							= 0,
+	enum class EFormat : uint8
+	{
+		FORMAT_NONE						= 0,
 		FORMAT_R16_UNORM				= 1,
 		FORMAT_R16_SFLOAT				= 2,
 		FORMAT_R32G32_SFLOAT			= 3,
-        FORMAT_R8G8B8A8_UNORM			= 4,
-        FORMAT_B8G8R8A8_UNORM			= 5,
-        FORMAT_R8G8B8A8_SNORM			= 6,
-        FORMAT_R16G16B16A16_SFLOAT		= 7,
+		FORMAT_R8G8B8A8_UNORM			= 4,
+		FORMAT_B8G8R8A8_UNORM			= 5,
+		FORMAT_R8G8B8A8_SNORM			= 6,
+		FORMAT_R16G16B16A16_SFLOAT		= 7,
 		FORMAT_R32G32B32A32_SFLOAT		= 8,
 		FORMAT_R32G32B32A32_UINT		= 9,
 		FORMAT_D24_UNORM_S8_UINT		= 10,
-    };
+	};
 
 	enum class EIndexType
 	{
-		NONE					= 0,
-		UINT16					= 1,
-		UINT32					= 2,
+		INDEX_TYPE_NONE		= 0,
+		INDEX_TYPE_UINT16	= 1,
+		INDEX_TYPE_UINT32	= 2,
 	};
 
 	enum class ECommandQueueType : uint8
 	{
-		COMMAND_QUEUE_UNKNOWN	= 0,
-		COMMAND_QUEUE_NONE		= 1,
-		COMMAND_QUEUE_COMPUTE	= 2,
-		COMMAND_QUEUE_GRAPHICS	= 3,
-		COMMAND_QUEUE_COPY		= 4,
+		COMMAND_QUEUE_TYPE_UNKNOWN	= 0,
+		COMMAND_QUEUE_TYPE_NONE		= 1,
+		COMMAND_QUEUE_TYPE_COMPUTE	= 2,
+		COMMAND_QUEUE_TYPE_GRAPHICS	= 3,
+		COMMAND_QUEUE_TYPE_COPY		= 4,
 	};
 
 	enum class ECommandListType : uint8
 	{
-		COMMAND_LIST_UNKNOWN		= 0,
-		COMMAND_LIST_PRIMARY		= 1,
-		COMMAND_LIST_SECONDARY		= 2
+		COMMAND_LIST_TYPE_UNKNOWN		= 0,
+		COMMAND_LIST_TYPE_PRIMARY		= 1,
+		COMMAND_LIST_TYPE_SECONDARY		= 2
+	};
+
+	enum class EPrimitiveTopology : uint16
+	{
+		PRIMITIVE_TOPOLOGY_NONE				= 0,
+		PRIMITIVE_TOPOLOGY_TRIANGLE_LIST	= 1,
+	};
+
+	enum class EPolygonMode : uint8
+	{
+		POLYGON_MODE_NONE	= 0,
+		POLYGON_MODE_FILL	= 1,
+		POLYGON_MODE_LINE	= 2,
+		POLYGON_MODE_POINT	= 3
+	};
+
+	enum class ECullMode : uint8
+	{
+		CULL_MODE_NONE	= 0,
+		CULL_MODE_BACK	= 1,
+		CULL_MODE_FRONT	= 2,
 	};
 
 	enum class EShaderLang : uint32
 	{
-		NONE	= 0,
-		SPIRV	= 1,
-		GLSL	= 2,
+		SHADER_LANG_NONE	= 0,
+		SHADER_LANG_SPIRV	= 1,
+		SHADER_LANG_GLSL	= 2,
 	};
 
 	enum class ELoadOp : uint8
 	{
-		NONE		= 0,
-		LOAD		= 1,
-		CLEAR		= 2,
-		DONT_CARE	= 3,
+		LOAD_OP_NONE		= 0,
+		LOAD_OP_LOAD		= 1,
+		LOAD_OP_CLEAR		= 2,
+		LOAD_OP_DONT_CARE	= 3,
 	};
 
 	enum class EStoreOp : uint8
 	{
-		NONE		= 0,
-		STORE		= 1,
-		DONT_CARE	= 2,
+		STORE_OP_NONE		= 0,
+		STORE_OP_STORE		= 1,
+		STORE_OP_DONT_CARE	= 2,
 	};
 
-	enum class EFilter : uint8
+	enum class EFilterType : uint8
 	{
-		NONE		= 0,
-		NEAREST		= 1,
-		LINEAR		= 2,
+		FILTER_TYPE_NONE		= 0,
+		FILTER_TYPE_NEAREST		= 1,
+		FILTER_TYPE_LINEAR		= 2,
 	};
 
 	enum class EMipmapMode : uint8
 	{
-		NONE		= 0,
-		NEAREST		= 1,
-		LINEAR		= 2,
+		MIPMAP_MODE_NONE		= 0,
+		MIPMAP_MODE_NEAREST		= 1,
+		MIPMAP_MODE_LINEAR		= 2,
 	};
 
-	enum class EAddressMode : uint8
+	enum class ESamplerAddressMode : uint8
 	{
-		NONE					= 0,
-		REPEAT					= 1,
-		MIRRORED_REPEAT			= 2,
-		CLAMP_TO_EDGE			= 3,
-		CLAMP_TO_BORDER			= 4,
-		MIRRORED_CLAMP_TO_EDGE	= 5,
+		SAMPLER_ADDRESS_MODE_NONE					= 0,
+		SAMPLER_ADDRESS_MODE_REPEAT					= 1,
+		SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT		= 2,
+		SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE			= 3,
+		SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER		= 4,
+		SAMPLER_ADDRESS_MODE_MIRRORED_CLAMP_TO_EDGE	= 5,
 	};
 
 	enum class ETextureState : uint32
@@ -122,14 +162,109 @@ namespace LambdaEngine
 
 	enum class EDescriptorType : uint32
 	{
-		DESCRIPTOR_UNKNOWN							= 0,
-		DESCRIPTOR_SHADER_RESOURCE_TEXTURE			= 1,
-		DESCRIPTOR_SHADER_RESOURCE_COMBINED_SAMPLER	= 3,
-		DESCRIPTOR_UNORDERED_ACCESS_TEXTURE			= 2,
-		DESCRIPTOR_CONSTANT_BUFFER					= 4,
-		DESCRIPTOR_UNORDERED_ACCESS_BUFFER			= 5,
-		DESCRIPTOR_ACCELERATION_STRUCTURE			= 6,
-		DESCRIPTOR_SAMPLER							= 7,
+		DESCRIPTOR_TYPE_UNKNOWN								= 0,
+		DESCRIPTOR_TYPE_SHADER_RESOURCE_TEXTURE				= 1,
+		DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER	= 3,
+		DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE			= 2,
+		DESCRIPTOR_TYPE_CONSTANT_BUFFER						= 4,
+		DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER				= 5,
+		DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE				= 6,
+		DESCRIPTOR_TYPE_SAMPLER								= 7,
+	};
+
+	enum class EQueryType : uint8
+	{
+		QUERY_TYPE_NONE					= 0,
+		QUERY_TYPE_TIMESTAMP			= 1,
+		QUERY_TYPE_OCCLUSION			= 2,
+		QUERY_TYPE_PIPELINE_STATISTICS	= 3,
+	};
+
+	enum class EBlendOp : uint8
+	{
+		BLEND_OP_NONE		= 0,
+		BLEND_OP_ADD		= 1,
+		BLEND_OP_SUB		= 2,
+		BLEND_OP_REV_SUB	= 3,
+		BLEND_OP_MIN		= 4,
+		BLEND_OP_MAX		= 5,
+	};
+
+	enum class ELogicOp : int8
+	{
+		LOGIC_OP_NONE			= 0,
+		LOGIC_OP_CLEAR			= 1,
+		LOGIC_OP_AND			= 2,
+		LOGIC_OP_AND_REVERSE	= 3,
+		LOGIC_OP_COPY			= 4,
+		LOGIC_OP_AND_INVERTED	= 5,
+		LOGIC_OP_NO_OP			= 6,
+		LOGIC_OP_XOR			= 7,
+		LOGIC_OP_OR				= 8,
+		LOGIC_OP_NOR			= 9,
+		LOGIC_OP_EQUIVALENT		= 10,
+		LOGIC_OP_INVERT			= 11,
+		LOGIC_OP_OR_REVERSE		= 12,
+		LOGIC_OP_COPY_INVERTED	= 13,
+		LOGIC_OP_OR_INVERTED	= 14,
+		LOGIC_OP_NAND			= 15,
+		LOGIC_OP_SET			= 16,
+	};
+
+	enum class EBlendFactor : uint8
+	{
+		BLEND_FACTOR_NONE				= 0,
+		BLEND_FACTOR_ZERO				= 1,
+		BLEND_FACTOR_ONE				= 2,
+		BLEND_FACTOR_SRC_COLOR			= 3,
+		BLEND_FACTOR_INV_SRC_COLOR		= 4,
+		BLEND_FACTOR_DST_COLOR			= 5,
+		BLEND_FACTOR_INV_DST_COLOR		= 6,
+		BLEND_FACTOR_SRC_ALPHA			= 7,
+		BLEND_FACTOR_INV_SRC_ALPHA		= 8,
+		BLEND_FACTOR_DST_ALPHA			= 9,
+		BLEND_FACTOR_INV_DST_ALPHA		= 10,
+		BLEND_FACTOR_CONSTANT_COLOR		= 11,
+		BLEND_FACTOR_INV_CONSTANT_COLOR	= 12,
+		BLEND_FACTOR_CONSTANT_ALPHA		= 13,
+		BLEND_FACTOR_INV_CONSTANT_ALPHA	= 14,
+		BLEND_FACTOR_SRC_ALPHA_SATURATE	= 15,
+		BLEND_FACTOR_SRC1_COLOR			= 16,
+		BLEND_FACTOR_INV_SRC1_COLOR		= 17,
+		BLEND_FACTOR_SRC1_ALPHA			= 18,
+		BLEND_FACTOR_INV_SRC1_ALPHA		= 19,
+	};
+
+	enum class ECompareOp
+	{
+		COMPARE_OP_NEVER			= 0,
+		COMPARE_OP_LESS				= 1,
+		COMPARE_OP_EQUAL			= 2,
+		COMPARE_OP_LESS_OR_EQUAL	= 3,
+		COMPARE_OP_GREATER			= 4,
+		COMPARE_OP_NOT_EQUAL		= 5,
+		COMPARE_OP_GREATER_OR_EQUAL	= 6,
+		COMPARE_OP_ALWAYS			= 7,
+	};
+
+	enum class EStencilOp
+	{
+		STENCIL_OP_KEEP					= 0,
+		STENCIL_OP_ZERO					= 1,
+		STENCIL_OP_REPLACE				= 2,
+		STENCIL_OP_INCREMENT_AND_CLAMP	= 3,
+		STENCIL_OP_DECREMENT_AND_CLAMP	= 4,
+		STENCIL_OP_INVERT				= 5,
+		STENCIL_OP_INCREMENT_AND_WRAP	= 6,
+		STENCIL_OP_DECREMENT_AND_WRAP	= 7,
+	};
+
+	enum class EPipelineStateType : uint8
+	{
+		PIPELINE_STATE_TYPE_NONE			= 0,
+		PIPELINE_STATE_TYPE_GRAPHICS		= 1,
+		PIPELINE_STATE_TYPE_COMPUTE			= 2,
+		PIPELINE_STATE_TYPE_RAY_TRACING		= 3,
 	};
 
 	enum FShaderStageFlags : uint32
@@ -246,24 +381,16 @@ namespace LambdaEngine
 	enum FColorComponentFlags : uint8
 	{
 		COLOR_COMPONENT_FLAG_NONE	= 0,
-		COLOR_COMPONENT_FLAG_R		= FLAG(1),
-		COLOR_COMPONENT_FLAG_G		= FLAG(2),
-		COLOR_COMPONENT_FLAG_B		= FLAG(3),
-		COLOR_COMPONENT_FLAG_A		= FLAG(4),
+		COLOR_COMPONENT_FLAG_R		= FLAG(0),
+		COLOR_COMPONENT_FLAG_G		= FLAG(1),
+		COLOR_COMPONENT_FLAG_B		= FLAG(2),
+		COLOR_COMPONENT_FLAG_A		= FLAG(3),
 	};
 
 	enum FAccelerationStructureFlags : uint16
 	{
 		ACCELERATION_STRUCTURE_FLAG_NONE			= 0,
 		ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE	= FLAG(1),
-	};
-
-	enum class EQueryType : uint8
-	{
-		NONE							= 0,
-		QUERY_TYPE_TIMESTAMP			= 1,
-		QUERY_TYPE_OCCLUSION			= 2,
-		QUERY_TYPE_PIPELINE_STATISTICS	= 3,
 	};
 
 	enum FQueryPipelineStatisticsFlag : uint32
@@ -284,38 +411,41 @@ namespace LambdaEngine
 
 	enum class EVertexInputRate : uint8
 	{
-		NONE			= 0,
-		PER_VERTEX		= 1,
-		PER_INSTANCE	= 2,
+		VERTEX_INPUT_NONE			= 0,
+		VERTEX_INPUT_PER_VERTEX		= 1,
+		VERTEX_INPUT_PER_INSTANCE	= 2,
 	};
 
-	struct DescriptorCountDesc
-	{
-		uint32 DescriptorSetCount						= 0;
-		uint32 SamplerDescriptorCount					= 0;
-		uint32 TextureDescriptorCount					= 0;
-		uint32 TextureCombinedSamplerDescriptorCount	= 0;
-		uint32 ConstantBufferDescriptorCount			= 0;
-		uint32 UnorderedAccessBufferDescriptorCount		= 0;
-		uint32 UnorderedAccessTextureDescriptorCount	= 0;
-		uint32 AccelerationStructureDescriptorCount		= 0;
-	};
+	/*
+	* Structs
+	*/
 
 	struct Viewport
 	{
-		float MinDepth	= 0.0f;
-		float MaxDepth	= 0.0f;
-		float Width		= 0.0f;
-		float Height	= 0.0f;
-		float x		    = 0.0f;
-		float y		    = 0.0f;
+		float32 MinDepth	= 0.0f;
+		float32 MaxDepth	= 1.0f;
+		float32 Width		= 0.0f;
+		float32 Height		= 0.0f;
+		float32 x			= 0.0f;
+		float32 y			= 0.0f;
 	};
 
 	struct ScissorRect
 	{
 		uint32 Width	= 0;
 		uint32 Height	= 0;
-		int32 x		    = 0;
-		int32 y		    = 0;
+		int32 x			= 0;
+		int32 y			= 0;
+	};
+
+	struct StencilOpStateDesc
+	{
+		EStencilOp	FailOp			= EStencilOp::STENCIL_OP_ZERO;
+		EStencilOp	PassOp			= EStencilOp::STENCIL_OP_ZERO;
+		EStencilOp	DepthFailOp		= EStencilOp::STENCIL_OP_ZERO;
+		ECompareOp	CompareOp		= ECompareOp::COMPARE_OP_LESS_OR_EQUAL;
+		uint32		CompareMask		= 0x00000000;
+		uint32		WriteMask		= 0x00000000;
+		uint32		Reference		= 0x00000000;
 	};
 }

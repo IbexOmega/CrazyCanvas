@@ -53,7 +53,7 @@ namespace LambdaEngine
 	void Win32Application::AddWin32MessageHandler(IWin32MessageHandler* pHandler)
 	{
 		// Check first so that this handler is not already added
-		const uint32 count = uint32(m_MessageHandlers.size());
+		const uint32 count = uint32(m_MessageHandlers.GetSize());
 		for (uint32 i = 0; i < count; i++)
 		{
 			if (pHandler == m_MessageHandlers[i])
@@ -63,17 +63,17 @@ namespace LambdaEngine
 		}
 
 		// Add new handler
-		m_MessageHandlers.emplace_back(pHandler);
+		m_MessageHandlers.EmplaceBack(pHandler);
 	}
 
 	void Win32Application::RemoveWin32MessageHandler(IWin32MessageHandler* pHandler)
 	{
-		const uint32 count = uint32(m_MessageHandlers.size());
+		const uint32 count = uint32(m_MessageHandlers.GetSize());
 		for (uint32 i = 0; i < count; i++)
 		{
 			if (pHandler == m_MessageHandlers[i])
 			{
-				m_MessageHandlers.erase(m_MessageHandlers.begin() + i);
+				m_MessageHandlers.Erase(m_MessageHandlers.begin() + i);
 				break;
 			}
 		}
@@ -96,8 +96,8 @@ namespace LambdaEngine
 
 	bool Win32Application::ProcessStoredEvents()
 	{
-		TArray<Win32Message> messagesToProcess = TArray<Win32Message>(m_StoredMessages);
-		m_StoredMessages.clear();
+		TArray<Win32Message> messagesToProcess = m_StoredMessages;
+		m_StoredMessages.Clear();
 
 		bool shouldRun = true;
 		for (Win32Message& message : messagesToProcess)
@@ -355,18 +355,18 @@ namespace LambdaEngine
 	{
 		UINT dwSize = 0;
 		::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
-		if (dwSize > m_RawInputBuffer.size())
+		if (dwSize > m_RawInputBuffer.GetSize())
 		{
-			m_RawInputBuffer.resize(dwSize);
+			m_RawInputBuffer.Resize(dwSize);
 		}
 
-		if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, m_RawInputBuffer.data(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
+		if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, m_RawInputBuffer.GetData(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
 		{
 			LOG_ERROR("[Win32Application]: GetRawInputData did not return correct size");
 			return 0;
 		}
 
-		RAWINPUT* pRaw = (RAWINPUT*)m_RawInputBuffer.data();
+		RAWINPUT* pRaw = reinterpret_cast<RAWINPUT*>(m_RawInputBuffer.GetData());
 		if (pRaw->header.dwType == RIM_TYPEMOUSE)
 		{
 			const int32 deltaX = pRaw->data.mouse.lLastX;
@@ -448,7 +448,7 @@ namespace LambdaEngine
 
 	void Win32Application::AddWindow(Win32Window* pWindow)
 	{
-		m_Windows.emplace_back(pWindow);
+		m_Windows.EmplaceBack(pWindow);
 	}
 
 	void Win32Application::PeekEvents()
@@ -643,7 +643,7 @@ namespace LambdaEngine
 
 	void Win32Application::StoreMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam, int32 mouseDeltaX, int32 mouseDeltaY)
 	{
-		m_StoredMessages.push_back({ hWnd, uMessage, wParam, lParam, mouseDeltaX, mouseDeltaY });
+		m_StoredMessages.PushBack({ hWnd, uMessage, wParam, lParam, mouseDeltaX, mouseDeltaY });
 	}
 }
 

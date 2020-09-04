@@ -7,7 +7,8 @@ namespace LambdaEngine
 	CommonApplication* CommonApplication::s_pCommonApplication = nullptr;
 
 	CommonApplication::CommonApplication()
-		: m_EventHandlers()
+		: EventHandler()
+		, m_EventHandlers()
 	{
 		VALIDATE(s_pCommonApplication == nullptr);
 		s_pCommonApplication = this;
@@ -23,7 +24,7 @@ namespace LambdaEngine
 
 	bool CommonApplication::Create()
 	{
-		// Create platform applciation
+		// Create platform application
 		m_pPlatformApplication = PlatformApplication::CreateApplication();
 		if (m_pPlatformApplication->Create())
 		{
@@ -59,9 +60,6 @@ namespace LambdaEngine
 		{
 			//m_pPlatformApplication->SetInputMode(EInputMode::INPUT_MODE_RAW);
 		}
-		else
-		{
-		}
 
 		return true;
 	}
@@ -74,7 +72,7 @@ namespace LambdaEngine
 	void CommonApplication::AddEventHandler(EventHandler* pEventHandler)
 	{
 		// Check first so that this handler is not already added
-		const uint32 count = uint32(m_EventHandlers.size());
+		const uint32 count = uint32(m_EventHandlers.GetSize());
 		for (uint32 i = 0; i < count; i++)
 		{
 			if (pEventHandler == m_EventHandlers[i])
@@ -84,17 +82,17 @@ namespace LambdaEngine
 		}
 
 		// Add new handler
-		m_EventHandlers.emplace_back(pEventHandler);
+		m_EventHandlers.EmplaceBack(pEventHandler);
 	}
 
 	void CommonApplication::RemoveEventHandler(EventHandler* pEventHandler)
 	{
-		const uint32 count = uint32(m_EventHandlers.size());
+		const uint32 count = uint32(m_EventHandlers.GetSize());
 		for (uint32 i = 0; i < count; i++)
 		{
 			if (pEventHandler == m_EventHandlers[i])
 			{
-				m_EventHandlers.erase(m_EventHandlers.begin() + i);
+				m_EventHandlers.Erase(m_EventHandlers.Begin() + i);
 				break;
 			}
 		}
@@ -103,7 +101,7 @@ namespace LambdaEngine
 	void CommonApplication::MakeMainWindow(Window* pMainWindow)
 	{
 		VALIDATE(pMainWindow != nullptr);
-		m_pMainWindow = pMainWindow;
+		m_MainWindow = pMainWindow;
 	}
 
 	bool CommonApplication::SupportsRawInput() const
@@ -152,7 +150,7 @@ namespace LambdaEngine
 
 	void CommonApplication::OnWindowClosed(Window* pWindow)
 	{
-		if (pWindow == m_pMainWindow)
+		if (pWindow == m_MainWindow.Get())
 		{
 			Terminate();
 		}

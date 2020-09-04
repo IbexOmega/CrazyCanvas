@@ -17,7 +17,7 @@ namespace LambdaEngine
 
 	class Window;
 
-	class EventHandler
+	class LAMBDA_API EventHandler
 	{
 	public:
 		DECL_INTERFACE(EventHandler);

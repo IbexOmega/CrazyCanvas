@@ -122,6 +122,9 @@ namespace LambdaEngine
 
 	void SoundInstance3DLambda::UpdateVolume(float masterVolume, const AudioListenerDesc* pAudioListeners, uint32 count)
 	{
+		UNREFERENCED_VARIABLE(masterVolume);
+		UNREFERENCED_VARIABLE(pAudioListeners);
+		UNREFERENCED_VARIABLE(count);
 	}
 
 	int32 SoundInstance3DLambda::LocalAudioCallback(float* pOutputBuffer, unsigned long framesPerBuffer)

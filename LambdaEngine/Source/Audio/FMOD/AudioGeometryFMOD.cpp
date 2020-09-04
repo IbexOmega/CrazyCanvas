@@ -38,7 +38,7 @@ namespace LambdaEngine
 		m_pName = pDesc->pName;
 
 		uint32 numVertices = 0;
-		std::vector<FMODInitPolygon> polygons;
+		TArray<FMODInitPolygon> polygons;
 
 		for (uint32 m = 0; m < pDesc->NumMeshes; m++)
 		{
@@ -57,7 +57,7 @@ namespace LambdaEngine
 				FMOD_VECTOR fmodV1 = { v1Pos.x, v1Pos.y, v1Pos.z };
 				FMOD_VECTOR fmodV2 = { v2Pos.x, v2Pos.y, v2Pos.z };
 
-                polygons.push_back({ {fmodV0, fmodV1, fmodV2}, m });
+                polygons.PushBack({ {fmodV0, fmodV1, fmodV2}, m });
 			}
 		}
 
@@ -67,7 +67,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		for (uint32 t = 0; t < polygons.size(); t++)
+		for (uint32 t = 0; t < polygons.GetSize(); t++)
 		{
 			FMODInitPolygon& polygon = polygons[t];
 			FMOD_VECTOR* pTriangle = polygon.Triangle;
