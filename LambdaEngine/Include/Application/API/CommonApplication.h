@@ -13,7 +13,7 @@ namespace LambdaEngine
 	public:
 		DECL_UNIQUE_CLASS(CommonApplication);
 
-		bool 	Create();
+		bool	Create();
 		Window* CreateWindow(const WindowDesc* pDesc);
 		
 		void RemoveEventHandler(EventHandler* pEventHandler);
@@ -21,7 +21,7 @@ namespace LambdaEngine
 
 		/*
 		* Application ticks one frame, processes OS- events and then processes the buffered events
-		*   return - Returns false if the OS- sent a quit message. Happens when terminate is called.
+		*	return - Returns false if the OS- sent a quit message. Happens when terminate is called.
 		*/
 		bool Tick();
 
@@ -34,13 +34,13 @@ namespace LambdaEngine
 		/*
 		* Sets the window to be the current main window, this is not the same as the window that has
 		* currently has input focus, that would be the active window.
-		*   pMainWindow - New main window
+		*	pMainWindow - New main window
 		*/
 		void MakeMainWindow(Window* pMainWindow);
 		
 		FORCEINLINE Window* GetMainWindow()
-		{ 
-			return m_MainWindow.Get(); 
+		{
+			return m_MainWindow.Get();
 		}
 
 		bool SupportsRawInput() const;
@@ -51,21 +51,21 @@ namespace LambdaEngine
 		void SetInputMode(Window* pWindow, EInputMode inputMode);
 		
 		FORCEINLINE EInputMode GetInputMode(Window* pWindow)
-		{ 
+		{
 			return m_pPlatformApplication->GetInputMode(pWindow); 
 		}
 
 		void SetCapture(Window* pWindow);
 		
 		FORCEINLINE Window* GetCapture() const
-		{ 
+		{
 			return m_pPlatformApplication->GetCapture();
 		}
 		
 		void SetActiveWindow(Window* pWindow);
 		
-		FORCEINLINE Window* GetActiveWindow() const 
-		{ 
+		FORCEINLINE Window* GetActiveWindow() const
+		{
 			return m_pPlatformApplication->GetActiveWindow();
 		}
 
