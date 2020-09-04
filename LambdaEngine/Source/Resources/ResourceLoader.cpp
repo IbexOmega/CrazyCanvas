@@ -18,7 +18,7 @@
 
 #include <glslangStandAlone/DirStackFileIncluder.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
-#include <MachineIndependent/reflection.h>
+#include <glslang/MachineIndependent/reflection.h>
 
 #include <tiny_obj_loader.h>
 #include <cstdio>

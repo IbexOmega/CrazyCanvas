@@ -44,9 +44,9 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
-constexpr const bool SHOW_DEMO					= true;
-constexpr const bool RAY_TRACING_ENABLED		= false;
-constexpr const bool SVGF_ENABLED				= false;
+constexpr const bool SHOW_DEMO					= false;
+constexpr const bool RAY_TRACING_ENABLED		= true;
+constexpr const bool SVGF_ENABLED				= true;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
@@ -1619,7 +1619,6 @@ bool Sandbox::InitRendererForDeferred()
 	//ResourceManager::LoadShaderFromFile("ShadingSimpleDefPixel.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
 
 	String renderGraphFile = "";
-
 	if (SHOW_DEMO)
 	{
 		renderGraphFile = "../Assets/RenderGraphs/DEMO.lrg";
