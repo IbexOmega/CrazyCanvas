@@ -286,7 +286,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::GetAndIncrementFence(IFence** ppFence, uint64* pSignalValue)
+	void RenderGraph::GetAndIncrementFence(Fence** ppFence, uint64* pSignalValue)
 	{
 		(*pSignalValue) = m_SignalValue++;
 		(*ppFence) = m_pFence;
@@ -901,9 +901,9 @@ namespace LambdaEngine
 					pResource->Texture.Format			= pResourceDesc->TextureParams.TextureFormat;
 
 					uint32 actualSubResourceCount = pResourceDesc->TextureParams.IsOfArrayType ? 1 : pResource->SubResourceCount;
-					pResource->Texture.Textures.resize(actualSubResourceCount);
-					pResource->Texture.TextureViews.resize(actualSubResourceCount);
-					pResource->Texture.Samplers.resize(actualSubResourceCount);
+					pResource->Texture.Textures.Resize(actualSubResourceCount);
+					pResource->Texture.TextureViews.Resize(actualSubResourceCount);
+					pResource->Texture.Samplers.Resize(actualSubResourceCount);
 
 					if (!pResource->IsBackBuffer)
 					{
@@ -913,10 +913,10 @@ namespace LambdaEngine
 						TextureViewDesc textureViewDesc = {};
 						SamplerDesc		samplerDesc		= {};
 
-						textureDesc.Name				= pResourceDesc->Name + " Texture";
+						textureDesc.DebugName			= pResourceDesc->Name + " Texture";
 						textureDesc.MemoryType			= pResourceDesc->MemoryType;
 						textureDesc.Format				= pResourceDesc->TextureParams.TextureFormat;
-						textureDesc.Type				= ETextureType::TEXTURE_2D;
+						textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 						textureDesc.Flags				= pResourceDesc->TextureParams.TextureFlags;
 						textureDesc.Width				= pResourceDesc->TextureParams.XDimVariable;
 						textureDesc.Height				= pResourceDesc->TextureParams.YDimVariable;
@@ -925,23 +925,23 @@ namespace LambdaEngine
 						textureDesc.Miplevels			= pResourceDesc->TextureParams.MiplevelCount;
 						textureDesc.SampleCount			= pResourceDesc->TextureParams.SampleCount;
 
-						textureViewDesc.Name			= pResourceDesc->Name + " Texture View";
-						textureViewDesc.pTexture		= nullptr;
+						textureViewDesc.DebugName		= pResourceDesc->Name + " Texture View";
+						textureViewDesc.Texture			= nullptr;
 						textureViewDesc.Flags			= pResourceDesc->TextureParams.TextureViewFlags;
 						textureViewDesc.Format			= pResourceDesc->TextureParams.TextureFormat;
-						textureViewDesc.Type			= pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_2D;
+						textureViewDesc.Type			= pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 						textureViewDesc.MiplevelCount	= pResourceDesc->TextureParams.MiplevelCount;
 						textureViewDesc.ArrayCount		= arrayCount;
 						textureViewDesc.Miplevel		= 0;
 						textureViewDesc.ArrayIndex		= 0;
 
-						samplerDesc.Name				= pResourceDesc->Name + " Sampler";
+						samplerDesc.DebugName			= pResourceDesc->Name + " Sampler";
 						samplerDesc.MinFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
 						samplerDesc.MagFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
 						samplerDesc.MipmapMode			= RenderGraphSamplerToMipmapMode(pResourceDesc->TextureParams.SamplerType);
-						samplerDesc.AddressModeU		= EAddressMode::REPEAT;
-						samplerDesc.AddressModeV		= EAddressMode::REPEAT;
-						samplerDesc.AddressModeW		= EAddressMode::REPEAT;
+						samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+						samplerDesc.AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+						samplerDesc.AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 						samplerDesc.MipLODBias			= 0.0f;
 						samplerDesc.AnisotropyEnabled	= false;
 						samplerDesc.MaxAnisotropy		= 16;
@@ -965,7 +965,7 @@ namespace LambdaEngine
 						if (pResourceDesc->TextureParams.XDimType == ERenderGraphDimensionType::RELATIVE ||
 							pResourceDesc->TextureParams.YDimType == ERenderGraphDimensionType::RELATIVE)
 						{
-							m_WindowRelativeResources.push_back(pResourceDesc->Name);
+							m_WindowRelativeResources.PushBack(pResourceDesc->Name);
 						}
 					}
 				}
@@ -973,9 +973,9 @@ namespace LambdaEngine
 				{
 					pResource->Type				= ERenderGraphResourceType::BUFFER;
 					pResource->OwnershipType	= EResourceOwnershipType::INTERNAL;
-					pResource->Buffer.Buffers.resize(pResource->SubResourceCount);
-					pResource->Buffer.Offsets.resize(pResource->SubResourceCount);
-					pResource->Buffer.SizesInBytes.resize(pResource->SubResourceCount);
+					pResource->Buffer.Buffers.Resize(pResource->SubResourceCount);
+					pResource->Buffer.Offsets.Resize(pResource->SubResourceCount);
+					pResource->Buffer.SizesInBytes.Resize(pResource->SubResourceCount);
 
 					BufferDesc bufferDesc = {};
 					//bufferDesc.pName		
@@ -994,7 +994,7 @@ namespace LambdaEngine
 
 					if (pResourceDesc->BufferParams.SizeType == ERenderGraphDimensionType::RELATIVE)
 					{
-						m_WindowRelativeResources.push_back(pResourceDesc->Name);
+						m_WindowRelativeResources.PushBack(pResourceDesc->Name);
 					}
 				}
 				else
@@ -1014,9 +1014,9 @@ namespace LambdaEngine
 					pResource->Texture.Format			= pResourceDesc->TextureParams.TextureFormat;
 
 					uint32 actualSubResourceCount = pResourceDesc->TextureParams.IsOfArrayType ? 1 : pResource->SubResourceCount;
-					pResource->Texture.Textures.resize(actualSubResourceCount);
-					pResource->Texture.TextureViews.resize(actualSubResourceCount);
-					pResource->Texture.Samplers.resize(actualSubResourceCount);
+					pResource->Texture.Textures.Resize(actualSubResourceCount);
+					pResource->Texture.TextureViews.Resize(actualSubResourceCount);
+					pResource->Texture.Samplers.Resize(actualSubResourceCount);
 				}
 				else if (pResourceDesc->Type == ERenderGraphResourceType::BUFFER)
 				{
@@ -2018,7 +2018,7 @@ namespace LambdaEngine
 		//Update Buffer
 		for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
 		{
-			IBuffer** ppBuffer		= &pResource->Buffer.Buffers[sr];
+			Buffer** ppBuffer		= &pResource->Buffer.Buffers[sr];
 			uint64* pOffset			= &pResource->Buffer.Offsets[sr];
 			uint64* pSizeInBytes	= &pResource->Buffer.SizesInBytes[sr];
 

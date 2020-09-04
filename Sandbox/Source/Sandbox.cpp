@@ -74,7 +74,7 @@ Sandbox::Sandbox()
 	CommonApplication::Get()->AddEventHandler(this);
 
 	ShaderReflection shaderReflection;
-	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::GLSL, &shaderReflection);
+	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
 	
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
@@ -839,7 +839,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 						dirLightChanged = true;
 					}
 
-					if (ImGui::SliderFloat("Dir. Light Strength", &m_DirectionalLightStrength[3], 0.0f, 10000.0f, "%.3f", ImGuiSliderFlags_Logarithmic))
+					if (ImGui::SliderFloat("Dir. Light Strength", &m_DirectionalLightStrength[3], 0.0f, 10000.0f, "%.3f"))
 					{
 						dirLightChanged = true;
 					}

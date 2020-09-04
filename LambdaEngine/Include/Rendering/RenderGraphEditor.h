@@ -56,7 +56,7 @@ namespace LambdaEngine
 		String						Name							= "";
 		int32						NodeIndex						= 0;
 		int32						InputAttributeIndex				= 0;
-		EPipelineStateType			Type							= EPipelineStateType::NONE;
+		EPipelineStateType			Type							= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 		bool						OverrideRecommendedBindingType	= false;
 		bool						CustomRenderer					= false;
 		bool						Enabled							= true;
@@ -185,7 +185,7 @@ namespace LambdaEngine
 		void RenderShaderBoxes(EditorRenderStageDesc* pRenderStage);
 		void RenderShaderBoxCommon(String* pTarget, bool* pAdded = nullptr, bool* pRemoved = nullptr);
 
-		TArray<RenderGraphResourceDesc>::iterator FindResource(const String& name);
+		TArray<RenderGraphResourceDesc>::Iterator FindResource(const String& name);
 		EditorResourceStateIdent CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERenderGraphResourceBindingType bindingType);
 		bool CheckLinkValid(int32* pSrcAttributeIndex, int32* pDstAttributeIndex);
 

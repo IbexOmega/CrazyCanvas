@@ -13,6 +13,17 @@ namespace LambdaEngine
 		EShaderLang			Lang		= EShaderLang::SHADER_LANG_NONE;
 	};
 
+	struct ShaderReflection
+	{
+		uint32 NumAtomicCounters	= 0;
+		uint32 NumBufferVariables	= 0;
+		uint32 NumPipeInputs		= 0;
+		uint32 NumPipeOutputs		= 0;
+		uint32 NumStorageBuffers	= 0;
+		uint32 NumUniformBlocks		= 0;
+		uint32 NumUniforms			= 0;
+	};
+
 	class Shader : public DeviceChild
 	{
 	public:

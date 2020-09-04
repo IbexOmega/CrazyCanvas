@@ -820,7 +820,7 @@ namespace LambdaEngine
 		TArray<uint32> sourceSPIRV;
 		if (lang == EShaderLang::SHADER_LANG_GLSL)
 		{
-			if (!CompileGLSLToSPIRV("", source.c_str(), shaderRawSourceSize, stage, sourceSPIRV))
+			if (!CompileGLSLToSPIRV("", source.c_str(), shaderRawSourceSize, stage, &sourceSPIRV, nullptr))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV");
 				return nullptr;
@@ -855,7 +855,7 @@ namespace LambdaEngine
 		std::vector<uint32> sourceSPIRV;
 		uint32 sourceSPIRVSize = 0;
 
-		if (lang == EShaderLang::GLSL)
+		if (lang == EShaderLang::SHADER_LANG_GLSL)
 		{
 			if (!ReadDataFromFile(filepath, "r", &pShaderRawSource, &shaderRawSourceSize))
 			{
@@ -871,7 +871,7 @@ namespace LambdaEngine
 
 			sourceSPIRVSize = sourceSPIRV.size() * sizeof(uint32);
 		}
-		else if (lang == EShaderLang::SPIRV)
+		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
 		{
 			LOG_ERROR("[ResourceLoader]: CreateShaderReflection currently not supported for SPIRV source language");
 			return false;
@@ -941,7 +941,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, std::vector<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
+	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
 	{
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
 		glslang::TShader shader(shaderType);
@@ -1004,9 +1004,9 @@ namespace LambdaEngine
 		{
 			spv::SpvBuildLogger logger;
 			glslang::SpvOptions spvOptions;
-            std::vector<uint32> std_sourceSPIRV;
-			glslang::GlslangToSpv(*pIntermediate, *std_sourceSPIRV, &logger, &spvOptions);
-            sourceSPIRV->Assign(std_sourceSPIRV.data(), std_sourceSPIRV.data() + std_sourceSPIRV.size());
+			std::vector<uint32> std_sourceSPIRV;
+			glslang::GlslangToSpv(*pIntermediate, std_sourceSPIRV, &logger, &spvOptions);
+			pSourceSPIRV->Assign(std_sourceSPIRV.data(), std_sourceSPIRV.data() + std_sourceSPIRV.size());
 		}
 
 		if (pReflection != nullptr)

@@ -94,7 +94,7 @@ namespace LambdaEngine
 		bool						BackBufferBound			= false;
 		int32						SubResourceCount		= 1;
 		bool						External				= false;
-		EMemoryType					MemoryType				= EMemoryType::MEMORY_GPU;
+		EMemoryType					MemoryType				= EMemoryType::MEMORY_TYPE_GPU;
 
 		//Editor Specific
 		bool						Editable				= false;
@@ -102,7 +102,7 @@ namespace LambdaEngine
 		//Texture Specific
 		struct
 		{
-			EFormat						TextureFormat			= EFormat::NONE;
+			EFormat						TextureFormat			= EFormat::FORMAT_NONE;
 			bool						IsOfArrayType			= false;
 			ERenderGraphDimensionType	XDimType				= ERenderGraphDimensionType::RELATIVE;
 			ERenderGraphDimensionType	YDimType				= ERenderGraphDimensionType::RELATIVE;
@@ -683,25 +683,25 @@ namespace LambdaEngine
 		return ERenderGraphSamplerType::NONE;
 	}
 
-	FORCEINLINE EFilter RenderGraphSamplerToFilter(ERenderGraphSamplerType samplerType)
+	FORCEINLINE EFilterType RenderGraphSamplerToFilter(ERenderGraphSamplerType samplerType)
 	{
 		switch (samplerType)
 		{
-		case ERenderGraphSamplerType::LINEAR:	return EFilter::LINEAR;
-		case ERenderGraphSamplerType::NEAREST:	return EFilter::NEAREST;
+		case ERenderGraphSamplerType::LINEAR:	return EFilterType::FILTER_TYPE_LINEAR;
+		case ERenderGraphSamplerType::NEAREST:	return EFilterType::FILTER_TYPE_NEAREST;
 		}
 
-		return EFilter::NONE;
+		return EFilterType::FILTER_TYPE_NONE;
 	}
 
 	FORCEINLINE EMipmapMode RenderGraphSamplerToMipmapMode(ERenderGraphSamplerType samplerType)
 	{
 		switch (samplerType)
 		{
-		case ERenderGraphSamplerType::LINEAR:	return EMipmapMode::LINEAR;
-		case ERenderGraphSamplerType::NEAREST:	return EMipmapMode::NEAREST;
+		case ERenderGraphSamplerType::LINEAR:	return EMipmapMode::MIPMAP_MODE_LINEAR;
+		case ERenderGraphSamplerType::NEAREST:	return EMipmapMode::MIPMAP_MODE_NEAREST;
 		}
 
-		return EMipmapMode::NONE;
+		return EMipmapMode::MIPMAP_MODE_NONE;
 	}
 }

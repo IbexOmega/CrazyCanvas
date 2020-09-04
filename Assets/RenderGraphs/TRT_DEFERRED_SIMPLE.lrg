@@ -179,7 +179,7 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
-                "memory_type": "MEMORY_GPU"
+                "memory_type": "MEMORY_TYPE_GPU"
             }
         },
         {
@@ -199,7 +199,7 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
-                "memory_type": "MEMORY_GPU"
+                "memory_type": "MEMORY_TYPE_GPU"
             }
         },
         {
@@ -219,7 +219,7 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
-                "memory_type": "MEMORY_GPU"
+                "memory_type": "MEMORY_TYPE_GPU"
             }
         },
         {
@@ -251,7 +251,7 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
-                "memory_type": "MEMORY_GPU"
+                "memory_type": "MEMORY_TYPE_GPU"
             }
         },
         {
@@ -271,7 +271,7 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
-                "memory_type": "MEMORY_GPU"
+                "memory_type": "MEMORY_TYPE_GPU"
             }
         },
         {
@@ -291,7 +291,7 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
-                "memory_type": "MEMORY_GPU"
+                "memory_type": "MEMORY_TYPE_GPU"
             }
         },
         {
@@ -311,7 +311,7 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
-                "memory_type": "MEMORY_GPU"
+                "memory_type": "MEMORY_TYPE_GPU"
             }
         }
     ],

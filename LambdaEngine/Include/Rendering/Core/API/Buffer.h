@@ -4,19 +4,6 @@
 
 namespace LambdaEngine
 {
-	enum FBufferFlags
-	{
-		BUFFER_FLAG_NONE					= 0,
-		BUFFER_FLAG_VERTEX_BUFFER			= FLAG(1),
-		BUFFER_FLAG_INDEX_BUFFER			= FLAG(2),
-		BUFFER_FLAG_UNORDERED_ACCESS_BUFFER	= FLAG(3),
-		BUFFER_FLAG_CONSTANT_BUFFER			= FLAG(4),
-		BUFFER_FLAG_COPY_DST				= FLAG(5),
-		BUFFER_FLAG_COPY_SRC				= FLAG(5),
-		BUFFER_FLAG_RAY_TRACING				= FLAG(6),
-		BUFFER_FLAG_INDIRECT_BUFFER			= FLAG(7),
-	};
-
 	struct BufferDesc
 	{
 		String		DebugName	= "";

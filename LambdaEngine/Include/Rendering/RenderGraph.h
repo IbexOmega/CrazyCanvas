@@ -4,10 +4,10 @@
 
 #include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/GraphicsTypes.h"
-#include "Rendering/Core/API/ITexture.h"
-#include "Rendering/Core/API/ITextureView.h"
-#include "Rendering/Core/API/ISampler.h"
-#include "Rendering/Core/API/IBuffer.h"
+#include "Rendering/Core/API/Texture.h"
+#include "Rendering/Core/API/TextureView.h"
+#include "Rendering/Core/API/Sampler.h"
+#include "Rendering/Core/API/Buffer.h"
 
 #include "Containers/THashTable.h"
 #include "Containers/TArray.h"

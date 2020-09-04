@@ -153,27 +153,27 @@ namespace LambdaEngine
 
 	constexpr const char* MEMORY_TYPE_NAMES[] =
 	{
-		"MEMORY_CPU_VISIBLE",
-		"MEMORY_GPU",
+		"MEMORY_TYPE_CPU_VISIBLE",
+		"MEMORY_TYPE_GPU",
 	};
 
 	EMemoryType MemoryTypeIndexToMemoryType(int32 index)
 	{
 		switch (index)
 		{
-		case 0: return EMemoryType::MEMORY_CPU_VISIBLE;
-		case 1: return EMemoryType::MEMORY_GPU;
+		case 0: return EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+		case 1: return EMemoryType::MEMORY_TYPE_GPU;
 		}
 
-		return EMemoryType::NONE;
+		return EMemoryType::MEMORY_TYPE_NONE;
 	}
 
 	int32 MemoryTypeToMemoryTypeIndex(EMemoryType memoryType)
 	{
 		switch (memoryType)
 		{
-		case EMemoryType::MEMORY_CPU_VISIBLE:	return 0;
-		case EMemoryType::MEMORY_GPU:			return 1;
+		case EMemoryType::MEMORY_TYPE_CPU_VISIBLE:	return 0;
+		case EMemoryType::MEMORY_TYPE_GPU:			return 1;
 		}
 
 		return -1;
@@ -397,7 +397,7 @@ namespace LambdaEngine
 			resource.Editable						= false;
 			resource.External						= false;
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_B8G8R8A8_UNORM;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			m_FinalOutput.BackBufferAttributeIndex					= CreateResourceState(resource.Name, m_FinalOutput.Name, false, ERenderGraphResourceBindingType::NONE).AttributeIndex;
 		}
@@ -409,7 +409,7 @@ namespace LambdaEngine
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
 			resource.External					= true;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -421,7 +421,7 @@ namespace LambdaEngine
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
 			resource.External					= true;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -433,7 +433,7 @@ namespace LambdaEngine
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
 			resource.External					= true;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -445,7 +445,7 @@ namespace LambdaEngine
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
 			resource.External					= true;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -457,7 +457,7 @@ namespace LambdaEngine
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
 			resource.External					= true;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -469,7 +469,7 @@ namespace LambdaEngine
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
 			resource.External					= true;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -481,7 +481,7 @@ namespace LambdaEngine
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
 			resource.External					= true;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -493,7 +493,7 @@ namespace LambdaEngine
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
 			resource.External					= true;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -505,7 +505,7 @@ namespace LambdaEngine
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
 			resource.External					= true;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -517,7 +517,7 @@ namespace LambdaEngine
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
 			resource.External					= true;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -530,7 +530,7 @@ namespace LambdaEngine
 			resource.Editable						= false;
 			resource.External						= true;
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -543,7 +543,7 @@ namespace LambdaEngine
 			resource.Editable						= false;
 			resource.External						= true;
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -556,7 +556,7 @@ namespace LambdaEngine
 			resource.Editable						= false;
 			resource.External						= true;
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -569,7 +569,7 @@ namespace LambdaEngine
 			resource.Editable						= false;
 			resource.External						= true;
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -582,7 +582,7 @@ namespace LambdaEngine
 			resource.Editable						= false;
 			resource.External						= true;
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
-			m_Resources.push_back(resource);
+			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
@@ -787,12 +787,12 @@ namespace LambdaEngine
 					addingResource.Type			= m_CurrentlyAddingResource;
 					addingResource.Editable		= true;
 
-					m_Resources.push_back(addingResource);
+					m_Resources.PushBack(addingResource);
 
 					if (addingResource.External)
 					{
 						EditorResourceStateGroup& externalResourcesGroup = m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX];
-						externalResourcesGroup.ResourceStateIdents.push_back(CreateResourceState(addingResource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+						externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(addingResource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 					}
 
 					done = true;
@@ -826,7 +826,7 @@ namespace LambdaEngine
 	{
 		static char resourceNameBuffer[MAX_RESOURCE_NAME_LENGTH];
 		static RenderGraphResourceDesc editedResourceCopy;
-		static TArray<RenderGraphResourceDesc>::iterator editedResourceIt;
+		static TArray<RenderGraphResourceDesc>::Iterator editedResourceIt;
 		static bool initialized = false;
 
 		ImGui::SetNextWindowSize(ImVec2(460, 700));
@@ -897,7 +897,7 @@ namespace LambdaEngine
 					else if (!editedResourceIt->External && editedResourceCopy.External)
 					{
 						EditorResourceStateGroup* pExternalResourcesGroup = &m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX];
-						pExternalResourcesGroup->ResourceStateIdents.push_back(CreateResourceState(resourceNameBuffer, pExternalResourcesGroup->Name, false, ERenderGraphResourceBindingType::NONE));
+						pExternalResourcesGroup->ResourceStateIdents.PushBack(CreateResourceState(resourceNameBuffer, pExternalResourcesGroup->Name, false, ERenderGraphResourceBindingType::NONE));
 					}
 
 					if (editedResourceCopy.Name != resourceNameBuffer)
@@ -1268,7 +1268,7 @@ namespace LambdaEngine
 
 						if (pResourceStateGroup->FindResourceStateIdent(pResource->Name) == pResourceStateGroup->ResourceStateIdents.end())
 						{
-							pResourceStateGroup->ResourceStateIdents.push_back(CreateResourceState(pResource->Name, pResourceStateGroup->Name, true, ERenderGraphResourceBindingType::NONE));
+							pResourceStateGroup->ResourceStateIdents.PushBack(CreateResourceState(pResource->Name, pResourceStateGroup->Name, true, ERenderGraphResourceBindingType::NONE));
 							m_ParsedGraphDirty = true;
 						}
 					}
@@ -2059,7 +2059,7 @@ namespace LambdaEngine
 					xVariable = 1.0f;
 					yVariable = 1.0f;
 					zVariable = 1.0f;
-					m_CurrentlyAddingRenderStage = EPipelineStateType::NONE;
+					m_CurrentlyAddingRenderStage = EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 					ImGui::CloseCurrentPopup();
 				}
 			}
@@ -2534,15 +2534,15 @@ namespace LambdaEngine
 		}
 	}
 
-	TArray<RenderGraphResourceDesc>::iterator RenderGraphEditor::FindResource(const String& name)
+	TArray<RenderGraphResourceDesc>::Iterator RenderGraphEditor::FindResource(const String& name)
 	{
-		for (auto resourceIt = m_Resources.begin(); resourceIt != m_Resources.end(); resourceIt++)
+		for (auto resourceIt = m_Resources.Begin(); resourceIt != m_Resources.End(); resourceIt++)
 		{
 			if (resourceIt->Name == name)
 				return resourceIt;
 		}
 
-		return m_Resources.end();
+		return m_Resources.End();
 	}
 
 	EditorResourceStateIdent RenderGraphEditor::CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERenderGraphResourceBindingType bindingType)
@@ -2551,7 +2551,7 @@ namespace LambdaEngine
 		{
 			auto resourceIt = FindResource(resourceName);
 
-			if (resourceIt != m_Resources.end())
+			if (resourceIt != m_Resources.End())
 			{
 				switch (resourceIt->Type)
 				{
@@ -2633,7 +2633,7 @@ namespace LambdaEngine
 			}
 
 			m_ResourceStatesByHalfAttributeIndex.erase(resourceStateIt);
-			pResourceStateGroup->ResourceStateIdents.erase(resourceStateIndexIt);
+			pResourceStateGroup->ResourceStateIdents.Erase(resourceStateIndexIt);
 		}
 	}
 
@@ -2658,7 +2658,7 @@ namespace LambdaEngine
 			}
 
 			m_ResourceStatesByHalfAttributeIndex.erase(resourceStateIt);
-			pRenderStageDesc->ResourceStateIdents.erase(resourceStateIndexIt);
+			pRenderStageDesc->ResourceStateIdents.Erase(resourceStateIndexIt);
 		}
 	}
 
@@ -2742,7 +2742,7 @@ namespace LambdaEngine
 			{
 				if (pRenderStage->OverrideRecommendedBindingType)
 				{
-					if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
+					if (pRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 					{
 						if (pResource->TextureParams.IsOfArrayType == false && (pResource->SubResourceCount == 1 || pResource->BackBufferBound))
 						{
@@ -2751,24 +2751,24 @@ namespace LambdaEngine
 						}
 					}
 
-					bindingTypes.push_back(ERenderGraphResourceBindingType::COMBINED_SAMPLER);
-					bindingTypeNames.push_back("COMBINED SAMPLER");
+					bindingTypes.PushBack(ERenderGraphResourceBindingType::COMBINED_SAMPLER);
+					bindingTypeNames.PushBack("COMBINED SAMPLER");
 					
-					bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
-					bindingTypeNames.push_back("UNORDERED ACCESS R");
+					bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
+					bindingTypeNames.PushBack("UNORDERED ACCESS R");
 
-					bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
-					bindingTypeNames.push_back("UNORDERED ACCESS W");
+					bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
+					bindingTypeNames.PushBack("UNORDERED ACCESS W");
 
-					bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
-					bindingTypeNames.push_back("UNORDERED ACCESS RW");
+					bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
+					bindingTypeNames.PushBack("UNORDERED ACCESS RW");
 				}
 				else
 				{
 					if (read && write)
 					{
 						//READ && WRITE TEXTURE
-						if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
+						if (pRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 						{
 							if (pResource->TextureParams.IsOfArrayType == false && (pResource->SubResourceCount == 1 || pResource->BackBufferBound))
 							{
@@ -2777,8 +2777,8 @@ namespace LambdaEngine
 							}
 						}
 
-						bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
-						bindingTypeNames.push_back("UNORDERED ACCESS RW");
+						bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
+						bindingTypeNames.PushBack("UNORDERED ACCESS RW");
 					}
 					else if (read)
 					{
@@ -2787,48 +2787,48 @@ namespace LambdaEngine
 						//If the texture is of Depth/Stencil format we allow Attachment as binding type even if it is discovered as in read mode
 						if (pResource->TextureParams.TextureFormat == EFormat::FORMAT_D24_UNORM_S8_UINT)
 						{
-							if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
+							if (pRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 							{
 								if (pResource->TextureParams.IsOfArrayType == false && (pResource->SubResourceCount == 1 || pResource->BackBufferBound))
 								{
-									bindingTypes.push_back(ERenderGraphResourceBindingType::ATTACHMENT);
-									bindingTypeNames.push_back("ATTACHMENT");
+									bindingTypes.PushBack(ERenderGraphResourceBindingType::ATTACHMENT);
+									bindingTypeNames.PushBack("ATTACHMENT");
 								}
 							}
 						}
 
-						bindingTypes.push_back(ERenderGraphResourceBindingType::COMBINED_SAMPLER);
-						bindingTypeNames.push_back("COMBINED SAMPLER");
+						bindingTypes.PushBack(ERenderGraphResourceBindingType::COMBINED_SAMPLER);
+						bindingTypeNames.PushBack("COMBINED SAMPLER");
 
-						bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
-						bindingTypeNames.push_back("UNORDERED ACCESS R");
+						bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
+						bindingTypeNames.PushBack("UNORDERED ACCESS R");
 					}
 					else if (write)
 					{
 						//WRITE TEXTURE
 
-						if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
+						if (pRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 						{
 							if (pResource->TextureParams.IsOfArrayType == false && (pResource->SubResourceCount == 1 || pResource->BackBufferBound))
 							{
-								bindingTypes.push_back(ERenderGraphResourceBindingType::ATTACHMENT);
-								bindingTypeNames.push_back("ATTACHMENT");
+								bindingTypes.PushBack(ERenderGraphResourceBindingType::ATTACHMENT);
+								bindingTypeNames.PushBack("ATTACHMENT");
 							}
 						}
 
-						bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
-						bindingTypeNames.push_back("UNORDERED ACCESS W");
+						bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
+						bindingTypeNames.PushBack("UNORDERED ACCESS W");
 					}
 					else if (pResource->TextureParams.TextureFormat == EFormat::FORMAT_D24_UNORM_S8_UINT)
 					{
 						//If the texture is of Depth/Stencil format we allow Attachment as binding type even if it is discovered as in read mode
 
-						if (pRenderStage->Type == EPipelineStateType::GRAPHICS)
+						if (pRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 						{
 							if (pResource->TextureParams.IsOfArrayType == false && (pResource->SubResourceCount == 1 || pResource->BackBufferBound))
 							{
-								bindingTypes.push_back(ERenderGraphResourceBindingType::ATTACHMENT);
-								bindingTypeNames.push_back("ATTACHMENT");
+								bindingTypes.PushBack(ERenderGraphResourceBindingType::ATTACHMENT);
+								bindingTypeNames.PushBack("ATTACHMENT");
 							}
 						}
 					}
@@ -2839,40 +2839,40 @@ namespace LambdaEngine
 			{
 				if (pRenderStage->OverrideRecommendedBindingType)
 				{
-					bindingTypes.push_back(ERenderGraphResourceBindingType::CONSTANT_BUFFER);
-					bindingTypeNames.push_back("CONSTANT BUFFER");
+					bindingTypes.PushBack(ERenderGraphResourceBindingType::CONSTANT_BUFFER);
+					bindingTypeNames.PushBack("CONSTANT BUFFER");
 
-					bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
-					bindingTypeNames.push_back("UNORDERED ACCESS R");
+					bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
+					bindingTypeNames.PushBack("UNORDERED ACCESS R");
 
-					bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
-					bindingTypeNames.push_back("UNORDERED ACCESS W");
+					bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
+					bindingTypeNames.PushBack("UNORDERED ACCESS W");
 
-					bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
-					bindingTypeNames.push_back("UNORDERED ACCESS RW");
+					bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
+					bindingTypeNames.PushBack("UNORDERED ACCESS RW");
 				}
 				else
 				{
 					if (read && write)
 					{
 						//READ && WRITE BUFFER
-						bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
-						bindingTypeNames.push_back("UNORDERED ACCESS RW");
+						bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
+						bindingTypeNames.PushBack("UNORDERED ACCESS RW");
 					}
 					else if (read)
 					{
 						//READ BUFFER
-						bindingTypes.push_back(ERenderGraphResourceBindingType::CONSTANT_BUFFER);
-						bindingTypeNames.push_back("CONSTANT BUFFER");
+						bindingTypes.PushBack(ERenderGraphResourceBindingType::CONSTANT_BUFFER);
+						bindingTypeNames.PushBack("CONSTANT BUFFER");
 
-						bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
-						bindingTypeNames.push_back("UNORDERED ACCESS R");
+						bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
+						bindingTypeNames.PushBack("UNORDERED ACCESS R");
 					}
 					else if (write)
 					{
 						//WRITE BUFFER
-						bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
-						bindingTypeNames.push_back("UNORDERED ACCESS W");
+						bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
+						bindingTypeNames.PushBack("UNORDERED ACCESS W");
 					}
 				}
 
@@ -2882,40 +2882,40 @@ namespace LambdaEngine
 			{
 				if (pRenderStage->OverrideRecommendedBindingType)
 				{
-					bindingTypes.push_back(ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE);
-					bindingTypeNames.push_back("ACCELERATION STRUCTURE");
+					bindingTypes.PushBack(ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE);
+					bindingTypeNames.PushBack("ACCELERATION STRUCTURE");
 
-					bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
-					bindingTypeNames.push_back("UNORDERED ACCESS R");
+					bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
+					bindingTypeNames.PushBack("UNORDERED ACCESS R");
 
-					bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
-					bindingTypeNames.push_back("UNORDERED ACCESS W");
+					bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
+					bindingTypeNames.PushBack("UNORDERED ACCESS W");
 
-					bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
-					bindingTypeNames.push_back("UNORDERED ACCESS RW");
+					bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
+					bindingTypeNames.PushBack("UNORDERED ACCESS RW");
 				}
 				else
 				{
 					if (read && write)
 					{
 						//READ && WRITE ACCELERATION_STRUCTURE
-						bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
-						bindingTypeNames.push_back("UNORDERED ACCESS RW");
+						bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE);
+						bindingTypeNames.PushBack("UNORDERED ACCESS RW");
 					}
 					else if (read)
 					{
 						//READ ACCELERATION_STRUCTURE
-						bindingTypes.push_back(ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE);
-						bindingTypeNames.push_back("ACCELERATION STRUCTURE");
+						bindingTypes.PushBack(ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE);
+						bindingTypeNames.PushBack("ACCELERATION STRUCTURE");
 
-						bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
-						bindingTypeNames.push_back("UNORDERED ACCESS R");
+						bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
+						bindingTypeNames.PushBack("UNORDERED ACCESS R");
 					}
 					else if (write)
 					{
 						//WRITE ACCELERATION_STRUCTURE
-						bindingTypes.push_back(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
-						bindingTypeNames.push_back("UNORDERED ACCESS W");
+						bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE);
+						bindingTypeNames.PushBack("UNORDERED ACCESS W");
 					}
 				}
 
@@ -3531,7 +3531,7 @@ namespace LambdaEngine
 						}
 					}
 					
-					loadedResources.push_back(resource);
+					loadedResources.PushBack(resource);
 				}
 			}
 			else
@@ -4251,7 +4251,7 @@ namespace LambdaEngine
 		}
 
 		//Do a pass to convert Barriers synchronizations to Render Pass transitions, where applicable
-		for (uint32 p = 0; p < orderedPipelineStages.size(); p++)
+		for (uint32 p = 0; p < orderedPipelineStages.GetSize(); p++)
 		{
 			const PipelineStageDesc* pPipelineStageDesc = &orderedPipelineStages[p];
 
@@ -4500,11 +4500,11 @@ namespace LambdaEngine
 		}
 
 		//Do another pass over all Render Stages to set Resource Flags
-		for (uint32 r = 0; r < orderedRenderStages.size(); r++)
+		for (uint32 r = 0; r < orderedRenderStages.GetSize(); r++)
 		{
 			RenderStageDesc* pRenderStageDesc = &orderedRenderStages[r];
 
-			for (uint32 rs = 0; rs < pRenderStageDesc->ResourceStates.size(); rs++)
+			for (uint32 rs = 0; rs < pRenderStageDesc->ResourceStates.GetSize(); rs++)
 			{
 				RenderGraphResourceState* pResourceState = &pRenderStageDesc->ResourceStates[rs];
 
@@ -4564,7 +4564,7 @@ namespace LambdaEngine
 			}
 
 			//Draw Resources
-			if (pRenderStageDesc->Type == EPipelineStateType::GRAPHICS)
+			if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 			{
 				if (pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 				{
