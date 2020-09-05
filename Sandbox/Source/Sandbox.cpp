@@ -44,8 +44,8 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
-constexpr const bool SHOW_DEMO					= true;
-constexpr const bool RAY_TRACING_ENABLED		= false;
+constexpr const bool SHOW_DEMO					= false;
+constexpr const bool RAY_TRACING_ENABLED		= true;
 constexpr const bool SVGF_ENABLED				= false;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
@@ -474,48 +474,48 @@ void Sandbox::InitTestAudio()
 	m_pAudioGeometry->Init(audioGeometryDesc);*/
 }
 
-void Sandbox::OnFocusChanged(LambdaEngine::Window* pWindow, bool hasFocus)
+void Sandbox::OnFocusChanged(LambdaEngine::TSharedRef<LambdaEngine::Window> window, bool hasFocus)
 {
 	UNREFERENCED_VARIABLE(hasFocus);
-	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(window);
 	
 	//LOG_MESSAGE("Window Moved: hasFocus=%s", hasFocus ? "true" : "false");
 }
 
-void Sandbox::OnWindowMoved(LambdaEngine::Window* pWindow, int16 x, int16 y)
+void Sandbox::OnWindowMoved(LambdaEngine::TSharedRef<LambdaEngine::Window> window, int16 x, int16 y)
 {
 	UNREFERENCED_VARIABLE(x);
 	UNREFERENCED_VARIABLE(y);
-	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(window);
 	
 	//LOG_MESSAGE("Window Moved: x=%d, y=%d", x, y);
 }
 
-void Sandbox::OnWindowResized(LambdaEngine::Window* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)
+void Sandbox::OnWindowResized(LambdaEngine::TSharedRef<LambdaEngine::Window> window, uint16 width, uint16 height, LambdaEngine::EResizeType type)
 {
-	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(window);
 	UNREFERENCED_VARIABLE(type);
 	
 	//LOG_MESSAGE("Window Resized: width=%u, height=%u, type=%u", width, height, uint32(type));
 }
 
-void Sandbox::OnWindowClosed(LambdaEngine::Window* pWindow)
+void Sandbox::OnWindowClosed(LambdaEngine::TSharedRef<LambdaEngine::Window> window)
 {
-	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(window);
 	
    // LOG_MESSAGE("Window closed");
 }
 
-void Sandbox::OnMouseEntered(LambdaEngine::Window* pWindow)
+void Sandbox::OnMouseEntered(LambdaEngine::TSharedRef<LambdaEngine::Window> window)
 {
-	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(window);
 	
 	//LOG_MESSAGE("Mouse Entered");
 }
 
-void Sandbox::OnMouseLeft(LambdaEngine::Window* pWindow)
+void Sandbox::OnMouseLeft(LambdaEngine::TSharedRef<LambdaEngine::Window> window)
 {
-	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(window);
 	
 	//LOG_MESSAGE("Mouse Left");
 }

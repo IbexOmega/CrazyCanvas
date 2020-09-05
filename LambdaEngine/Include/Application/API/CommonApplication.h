@@ -71,12 +71,12 @@ namespace LambdaEngine
 
 	public:
 		// EventHandler Interface
-		virtual void OnFocusChanged(Window* pWindow, bool hasFocus)										override final;
-		virtual void OnWindowMoved(Window* pWindow, int16 x, int16 y)									override final;
-		virtual void OnWindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type)	override final;
-		virtual void OnWindowClosed(Window* pWindow)													override final;
-		virtual void OnMouseEntered(Window* pWindow)													override final;
-		virtual void OnMouseLeft(Window* pWindow)														override final;
+		virtual void OnFocusChanged(TSharedRef<Window> window, bool hasFocus)									override final;
+		virtual void OnWindowMoved(TSharedRef<Window> window, int16 x, int16 y)									override final;
+		virtual void OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)	override final;
+		virtual void OnWindowClosed(TSharedRef<Window> window)													override final;
+		virtual void OnMouseEntered(TSharedRef<Window> window)													override final;
+		virtual void OnMouseLeft(TSharedRef<Window> window)														override final;
 
 		virtual void OnMouseMoved(int32 x, int32 y)								override final;
 		virtual void OnMouseMovedRaw(int32 deltaX, int32 deltaY)				override final;

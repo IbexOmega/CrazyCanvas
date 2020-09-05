@@ -275,7 +275,7 @@ namespace LambdaEngine
 		bool GetResourceBuffers(const char* pResourceName, Buffer* const ** pppBuffers, uint32* pBufferCount)							const;
 		bool GetResourceAccelerationStructure(const char* pResourceName, const AccelerationStructure** ppAccelerationStructure)		const;
 
-		virtual void OnWindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type) override;
+		virtual void OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type) override;
 
 	private:
 		bool CreateFence();

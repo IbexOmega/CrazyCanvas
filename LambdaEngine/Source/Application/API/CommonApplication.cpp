@@ -127,56 +127,56 @@ namespace LambdaEngine
 		m_pPlatformApplication->SetActiveWindow(window);
 	}
 
-	void CommonApplication::OnFocusChanged(Window* pWindow, bool hasFocus)
+	void CommonApplication::OnFocusChanged(TSharedRef<Window> window, bool hasFocus)
 	{
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnFocusChanged(pWindow, hasFocus);
+			pEventHandler->OnFocusChanged(window, hasFocus);
 		}
 	}
 
-	void CommonApplication::OnWindowMoved(Window* pWindow, int16 x, int16 y)
+	void CommonApplication::OnWindowMoved(TSharedRef<Window> window, int16 x, int16 y)
 	{
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnWindowMoved(pWindow, x, y);
+			pEventHandler->OnWindowMoved(window, x, y);
 		}
 	}
 
-	void CommonApplication::OnWindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type)
+	void CommonApplication::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)
 	{
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnWindowResized(pWindow, width, height, type);
+			pEventHandler->OnWindowResized(window, width, height, type);
 		}
 	}
 
-	void CommonApplication::OnWindowClosed(Window* pWindow)
+	void CommonApplication::OnWindowClosed(TSharedRef<Window> window)
 	{
-		if (pWindow == m_MainWindow.Get())
+		if (window == m_MainWindow.Get())
 		{
 			Terminate();
 		}
 
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnWindowClosed(pWindow);
+			pEventHandler->OnWindowClosed(window);
 		}
 	}
 
-	void CommonApplication::OnMouseEntered(Window* pWindow)
+	void CommonApplication::OnMouseEntered(TSharedRef<Window> window)
 	{
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnMouseEntered(pWindow);
+			pEventHandler->OnMouseEntered(window);
 		}
 	}
 
-	void CommonApplication::OnMouseLeft(Window* pWindow)
+	void CommonApplication::OnMouseLeft(TSharedRef<Window> window)
 	{
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnMouseLeft(pWindow);
+			pEventHandler->OnMouseLeft(window);
 		}
 	}
 
