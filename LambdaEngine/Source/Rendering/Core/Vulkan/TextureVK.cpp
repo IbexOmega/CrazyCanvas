@@ -7,8 +7,8 @@
 namespace LambdaEngine
 {
 	TextureVK::TextureVK(const GraphicsDeviceVK* pDevice)
-		: TDeviceChild(pDevice),
-		m_Allocation()
+		: TDeviceChild(pDevice)
+		, m_Allocation()
 	{
 	}
 

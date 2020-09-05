@@ -10,8 +10,8 @@
 namespace LambdaEngine
 {
 	FrameBufferCacheVK::FrameBufferCacheVK(const GraphicsDeviceVK* pDevice)
-		: m_pDevice(pDevice),
-		m_FrameBufferMap()
+		: m_pDevice(pDevice)
+		, m_FrameBufferMap()
 	{
 	}
 

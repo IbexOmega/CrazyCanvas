@@ -213,9 +213,12 @@ namespace LambdaEngine
 		virtual void Timestamp(QueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)	= 0;
 		virtual void EndQuery(QueryHeap* pQueryHeap, uint32 queryIndex)											= 0;
 
+		virtual void DeferrDestruction(DeviceChild* pResource) = 0;
+
 		virtual void ExecuteSecondary(const CommandList* pSecondary) = 0;
 
-		virtual void FlushDeferredBarriers() = 0;
+		virtual void FlushDeferredBarriers()	= 0;
+		virtual void FlushDeferredResources()	= 0;
 
 		virtual uint64 GetHandle() const = 0;
 		

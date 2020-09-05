@@ -9,8 +9,8 @@
 namespace LambdaEngine
 {
 	BufferVK::BufferVK(const GraphicsDeviceVK* pDevice)
-		: TDeviceChild(pDevice),
-		m_Allocation()
+		: TDeviceChild(pDevice)
+		, m_Allocation()
 	{
 	}
 

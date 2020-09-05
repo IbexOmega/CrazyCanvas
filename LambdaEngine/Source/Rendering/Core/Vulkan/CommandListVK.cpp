@@ -34,12 +34,12 @@
 namespace LambdaEngine
 {
 	CommandListVK::CommandListVK(const GraphicsDeviceVK* pDevice)
-		: TDeviceChild(pDevice),
-		m_ImageBarriers(),
-		m_Viewports(),
-		m_ScissorRects(),
-		m_VertexBuffers(),
-		m_VertexBufferOffsets()
+		: TDeviceChild(pDevice)
+		, m_ImageBarriers()
+		, m_Viewports()
+		, m_ScissorRects()
+		, m_VertexBuffers()
+		, m_VertexBufferOffsets()
 	{
 	}
 
@@ -89,6 +89,10 @@ namespace LambdaEngine
 
 	bool CommandListVK::Begin(const SecondaryCommandListBeginDesc* pBeginDesc)
 	{
+		//Destroy all deferred resources before beginning
+		FlushDeferredResources();
+
+		// Begin CommandList
 		VkCommandBufferBeginInfo beginInfo = {};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.pNext = nullptr;
@@ -135,8 +139,10 @@ namespace LambdaEngine
 
 	bool CommandListVK::End()
 	{
+		// Make sure that all deferred barriers gets subited to the commanslist before ending
 		FlushDeferredBarriers();
 
+		// End CommandBuffer
 		VkResult result = vkEndCommandBuffer(m_CommandList); 
 		if (result != VK_SUCCESS)
 		{
@@ -871,6 +877,11 @@ namespace LambdaEngine
 		vkCmdExecuteCommands(m_CommandList, 1, &pVkSecondary->m_CommandList);
 	}
 
+	void CommandListVK::DeferrDestruction(DeviceChild* pResource)
+	{
+		m_ResourcesToDestroy.EmplaceBack(TSharedRef<DeviceChild>(pResource));
+	}
+
 	void CommandListVK::FlushDeferredBarriers()
 	{
 		if (!m_DeferredBarriers.IsEmpty())
@@ -882,6 +893,11 @@ namespace LambdaEngine
 			
 			m_DeferredBarriers.Clear();
 		}
+	}
+
+	void CommandListVK::FlushDeferredResources()
+	{
+		m_ResourcesToDestroy.Clear();
 	}
 	
 	CommandAllocator* CommandListVK::GetAllocator()

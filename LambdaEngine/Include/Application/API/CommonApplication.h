@@ -2,8 +2,6 @@
 #include "Application.h"
 #include "EventHandler.h"
 
-#include "Core/TSharedRef.h"
-
 #include "Containers/TArray.h"
 
 namespace LambdaEngine
@@ -11,10 +9,12 @@ namespace LambdaEngine
 	class LAMBDA_API CommonApplication : public EventHandler
 	{
 	public:
+		~CommonApplication();
+		
 		DECL_UNIQUE_CLASS(CommonApplication);
 
-		bool	Create();
-		Window* CreateWindow(const WindowDesc* pDesc);
+		bool Create();
+		TSharedRef<Window> CreateWindow(const WindowDesc* pDesc);
 		
 		void RemoveEventHandler(EventHandler* pEventHandler);
 		void AddEventHandler(EventHandler* pEventHandler);
@@ -36,11 +36,11 @@ namespace LambdaEngine
 		* currently has input focus, that would be the active window.
 		*	pMainWindow - New main window
 		*/
-		void MakeMainWindow(Window* pMainWindow);
+		void MakeMainWindow(TSharedRef<Window> window);
 		
-		FORCEINLINE Window* GetMainWindow()
+		FORCEINLINE TSharedRef<Window> GetMainWindow()
 		{
-			return m_MainWindow.Get();
+			return m_MainWindow;
 		}
 
 		bool SupportsRawInput() const;
@@ -48,23 +48,23 @@ namespace LambdaEngine
 		/*
 		* Sets the input mode for the selected window
 		*/
-		void SetInputMode(Window* pWindow, EInputMode inputMode);
+		void SetInputMode(TSharedRef<Window> pWindow, EInputMode inputMode);
 		
-		FORCEINLINE EInputMode GetInputMode(Window* pWindow)
+		FORCEINLINE EInputMode GetInputMode(TSharedRef<Window> window)
 		{
-			return m_pPlatformApplication->GetInputMode(pWindow); 
+			return m_pPlatformApplication->GetInputMode(window); 
 		}
 
-		void SetCapture(Window* pWindow);
+		void SetCapture(TSharedRef<Window> window);
 		
-		FORCEINLINE Window* GetCapture() const
+		FORCEINLINE TSharedRef<Window> GetCapture() const
 		{
 			return m_pPlatformApplication->GetCapture();
 		}
 		
-		void SetActiveWindow(Window* pWindow);
+		void SetActiveWindow(TSharedRef<Window> window);
 		
-		FORCEINLINE Window* GetActiveWindow() const
+		FORCEINLINE TSharedRef<Window> GetActiveWindow() const
 		{
 			return m_pPlatformApplication->GetActiveWindow();
 		}
@@ -90,7 +90,6 @@ namespace LambdaEngine
 		
 	private:
 		CommonApplication();
-		~CommonApplication();
 
 	public:
 		static bool PreInit();
@@ -104,6 +103,6 @@ namespace LambdaEngine
 		TArray<EventHandler*> 	m_EventHandlers;
 
 	private:
-		static CommonApplication* s_pCommonApplication;
+		static TSharedPtr<CommonApplication> s_CommonApplication;
 	};
 }

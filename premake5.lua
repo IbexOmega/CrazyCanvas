@@ -220,6 +220,10 @@ workspace "LambdaEngine"
         
         -- Remove files not available for windows builds
 		filter "system:windows"
+		    files
+            {
+                "%{prj.name}/**.natvis",
+            }
             removefiles
             {
                 "%{prj.name}/Include/Application/Mac/**",

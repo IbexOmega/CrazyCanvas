@@ -42,9 +42,9 @@ namespace LambdaEngine
 		DECL_UNIQUE_CLASS(DeviceMemoryPageVK);
 		
 		DeviceMemoryPageVK(const GraphicsDeviceVK* pDevice, const uint32 id, const uint32 memoryIndex)
-			: m_pDevice(pDevice),
-			m_MemoryIndex(memoryIndex),
-			m_ID(id)
+			: m_pDevice(pDevice)
+			, m_MemoryIndex(memoryIndex)
+			, m_ID(id)
 		{
 		}
 		

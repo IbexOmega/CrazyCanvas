@@ -17,11 +17,14 @@ namespace LambdaEngine
 {
 	Win32Application* Win32Application::s_pApplication = nullptr;
 
+	/*
+	* Win32Application
+	*/
 	Win32Application::Win32Application(HINSTANCE hInstance)
-		: m_hInstance(hInstance),
-		m_Windows(),
-		m_StoredMessages(),
-		m_MessageHandlers()
+		: m_hInstance(hInstance)
+		, m_Windows()
+		, m_StoredMessages()
+		, m_MessageHandlers()
 	{
 		VALIDATE_MSG(s_pApplication == nullptr, "[Win32Application]: An instance of application already exists");
 		s_pApplication = this;
@@ -31,12 +34,6 @@ namespace LambdaEngine
 
 	Win32Application::~Win32Application()
 	{
-		// Destroy all windows
-		for (Win32Window* pWindow : m_Windows)
-		{
-			SAFERELEASE(pWindow);
-		}
-
 		// Unregister window class after destroying all windows
 		if (!::UnregisterClass(WINDOW_CLASS, m_hInstance))
 		{
@@ -120,9 +117,9 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void Win32Application::SetInputMode(Window* pWindow, EInputMode inputMode)
+	void Win32Application::SetInputMode(TSharedRef<Window> window, EInputMode inputMode)
 	{
-		VALIDATE(pWindow != nullptr);
+		VALIDATE(window != nullptr);
 
 		if (inputMode == m_InputMode || inputMode == EInputMode::INPUT_MODE_NONE)
 		{
@@ -131,7 +128,7 @@ namespace LambdaEngine
 
 		if (inputMode == EInputMode::INPUT_MODE_RAW)
 		{
-			HWND hWnd = (HWND)pWindow->GetHandle();
+			HWND hWnd = (HWND)window->GetHandle();
 			RegisterRawInputDevices(hWnd);
 		}
 		else if (inputMode == EInputMode::INPUT_MODE_STANDARD)
@@ -145,9 +142,9 @@ namespace LambdaEngine
 		m_InputMode = inputMode;
 	}
 
-	EInputMode Win32Application::GetInputMode(Window* pWindow) const
+	EInputMode Win32Application::GetInputMode(TSharedRef<Window> window) const
 	{
-		UNREFERENCED_VARIABLE(pWindow);
+		UNREFERENCED_VARIABLE(window);
 
 		// TODO: Return proper inputmode based on window
 		return m_InputMode;
@@ -159,7 +156,7 @@ namespace LambdaEngine
 		constexpr uint32 REPEAT_KEY_MASK	= 0x40000000;
 		constexpr uint16 BACK_BUTTON_MASK	= 0x0001;
 
-		Win32Window* pMessageWindow = GetWindowFromHandle(hWnd);
+		TSharedRef<Win32Window> messageWindow = GetWindowFromHandle(hWnd);
 		switch (uMessage)
 		{
 			case WM_KEYDOWN:
@@ -170,7 +167,7 @@ namespace LambdaEngine
 				EKey			keyCode			= Win32InputCodeTable::GetKeyFromScanCode(scancode);
 				bool			isRepeat		= (lParam & REPEAT_KEY_MASK);
 
-				m_pEventHandler->OnKeyPressed(keyCode, modifierMask, isRepeat);
+				m_EventHandler->OnKeyPressed(keyCode, modifierMask, isRepeat);
 				break;
 			}
 
@@ -180,7 +177,7 @@ namespace LambdaEngine
 				const uint16	scancode	= HIWORD(lParam) & SCAN_CODE_MASK;
 				EKey			keyCode		= Win32InputCodeTable::GetKeyFromScanCode(scancode);
 
-				m_pEventHandler->OnKeyReleased(keyCode);
+				m_EventHandler->OnKeyReleased(keyCode);
 				break;
 			}
 
@@ -188,7 +185,7 @@ namespace LambdaEngine
 			case WM_SYSCHAR:
 			{
 				const uint32 character = uint32(wParam);
-				m_pEventHandler->OnKeyTyped(character);
+				m_EventHandler->OnKeyTyped(character);
 				break;
 			}
 
@@ -198,7 +195,7 @@ namespace LambdaEngine
 				const int32 x = GET_X_LPARAM(lParam);
 				const int32 y = GET_Y_LPARAM(lParam);
 
-				m_pEventHandler->OnMouseMoved(x, y);
+				m_EventHandler->OnMouseMoved(x, y);
 
 				// Mouse must have entered the window
 				if (!m_IsTrackingMouse)
@@ -210,7 +207,7 @@ namespace LambdaEngine
 					tme.hwndTrack	= hWnd;
 					TrackMouseEvent(&tme);
 
-					m_pEventHandler->OnMouseEntered(pMessageWindow);
+					m_EventHandler->OnMouseEntered(messageWindow.Get());
 				}
 
 				break;
@@ -244,7 +241,7 @@ namespace LambdaEngine
 				}
 
 				const uint32 modifierMask = Win32InputCodeTable::GetModifierMask();
-				m_pEventHandler->OnButtonPressed(button, modifierMask);
+				m_EventHandler->OnButtonPressed(button, modifierMask);
 				break;
 			}
 
@@ -275,14 +272,14 @@ namespace LambdaEngine
 					button = EMouseButton::MOUSE_BUTTON_FORWARD;
 				}
 
-				m_pEventHandler->OnButtonReleased(button);
+				m_EventHandler->OnButtonReleased(button);
 				break;
 			}
 
 			case WM_MOUSEWHEEL:
 			{
 				const int32 scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-				m_pEventHandler->OnMouseScrolled(0, scrollDelta);
+				m_EventHandler->OnMouseScrolled(0, scrollDelta);
 
 				break;
 			}
@@ -290,7 +287,7 @@ namespace LambdaEngine
 			case WM_MOUSEHWHEEL:
 			{
 				const int32 scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-				m_pEventHandler->OnMouseScrolled(scrollDelta, 0);
+				m_EventHandler->OnMouseScrolled(scrollDelta, 0);
 				break;
 			}
 
@@ -299,13 +296,13 @@ namespace LambdaEngine
 				const int16 x = (int16)LOWORD(lParam);
 				const int16 y = (int16)HIWORD(lParam);
 
-				m_pEventHandler->OnWindowMoved(pMessageWindow, x, y);
+				m_EventHandler->OnWindowMoved(messageWindow.Get(), x, y);
 				break;
 			}
 
 			case WM_INPUT:
 			{
-				m_pEventHandler->OnMouseMovedRaw(mouseDeltaX, mouseDeltaY);
+				m_EventHandler->OnMouseMovedRaw(mouseDeltaX, mouseDeltaY);
 				break;
 			}
 
@@ -324,20 +321,20 @@ namespace LambdaEngine
 				const uint16 width	= (uint16)LOWORD(lParam);
 				const uint16 height = (uint16)HIWORD(lParam);
 
-				m_pEventHandler->OnWindowResized(pMessageWindow, width, height, resizeType);
+				m_EventHandler->OnWindowResized(messageWindow.Get(), width, height, resizeType);
 				break;
 			}
 
 			case WM_MOUSELEAVE:
 			{
-				m_pEventHandler->OnMouseLeft(pMessageWindow);
+				m_EventHandler->OnMouseLeft(messageWindow.Get());
 				m_IsTrackingMouse = false;
 				break;
 			}
 
 			case WM_DESTROY:
 			{
-				m_pEventHandler->OnWindowClosed(pMessageWindow);
+				m_EventHandler->OnWindowClosed(messageWindow.Get());
 				break;
 			}
 
@@ -345,7 +342,7 @@ namespace LambdaEngine
 			case WM_KILLFOCUS:
 			{
 				bool hasFocus = (uMessage == WM_SETFOCUS);
-				m_pEventHandler->OnFocusChanged(pMessageWindow, hasFocus);
+				m_EventHandler->OnFocusChanged(messageWindow.Get(), hasFocus);
 				break;
 			}
 		}
@@ -385,14 +382,14 @@ namespace LambdaEngine
 		}
 	}
 
-	Win32Window* Win32Application::GetWindowFromHandle(HWND hWnd) const
+	TSharedRef<Win32Window> Win32Application::GetWindowFromHandle(HWND hWnd) const
 	{
-		for (Win32Window* pWindow : m_Windows)
+		for (const TSharedRef<Win32Window>& window : m_Windows)
 		{
-			HWND handle = (HWND)pWindow->GetHandle();
+			HWND handle = (HWND)window->GetHandle();
 			if (handle == hWnd)
 			{
-				return pWindow;
+				return window;
 			}
 		}
 
@@ -404,56 +401,67 @@ namespace LambdaEngine
 		return m_hInstance;
 	}
 
-	void Win32Application::SetActiveWindow(Window* pWindow)
+	void Win32Application::SetActiveWindow(TSharedRef<Window> window)
 	{
-		HWND hActiveWindow = static_cast<HWND>(pWindow->GetHandle());
-		BOOL bResult = ::SetForegroundWindow(hActiveWindow);
+		::HWND hActiveWindow = static_cast<HWND>(window->GetHandle());
+		::BOOL bResult = ::SetForegroundWindow(hActiveWindow);
 		if (!bResult)
 		{
 			LOG_ERROR("[Win32Application]: Failed to set active window");
 		}
 	}
 
-	Window* Win32Application::GetActiveWindow() const
+	TSharedRef<Window> Win32Application::GetActiveWindow() const
 	{
-		HWND hForegroundWindow = ::GetActiveWindow();
+		::HWND hForegroundWindow = ::GetActiveWindow();
 		if (hForegroundWindow)
 		{
+			constexpr bool b = std::is_convertible<Win32Window*, Window*>::value;
 			return GetWindowFromHandle(hForegroundWindow);
 		}
 		else
 		{
-			return nullptr;
+			return TSharedRef<Window>();
 		}
 	}
 
-	void Win32Application::SetCapture(Window* pWindow)
+	void Win32Application::SetCapture(TSharedRef<Window> window)
 	{
-		HWND hCaptureWindow = static_cast<HWND>(pWindow->GetHandle());
-		::SetCapture(hCaptureWindow);
+		if (window)
+		{
+			::HWND hCaptureWindow = static_cast<HWND>(window->GetHandle());
+			if (::IsWindow(hCaptureWindow))
+			{
+				::SetCapture(hCaptureWindow);
+			}
+		}
+		else
+		{
+			::ReleaseCapture();
+		}
 	}
 
-	Window* Win32Application::GetCapture() const
+	TSharedRef<Window> Win32Application::GetCapture() const
 	{
-		HWND hCaptureWindow = ::GetCapture();
+		::HWND hCaptureWindow = ::GetCapture();
 		if (hCaptureWindow)
 		{
 			return GetWindowFromHandle(hCaptureWindow);
 		}
 		else
 		{
-			return nullptr;
+			return TSharedRef<Window>();
 		}
 	}
 
-	void Win32Application::AddWindow(Win32Window* pWindow)
+	void Win32Application::AddWindow(TSharedRef<Win32Window> window)
 	{
-		m_Windows.EmplaceBack(pWindow);
+		m_Windows.EmplaceBack(window);
 	}
 
 	void Win32Application::PeekEvents()
 	{
-		MSG msg = { };
+		::MSG msg = { };
 		while (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			::TranslateMessage(&msg);
@@ -463,8 +471,8 @@ namespace LambdaEngine
 
 	bool Win32Application::RegisterWindowClass()
 	{
-		WNDCLASS wc = { };
-		ZERO_MEMORY(&wc, sizeof(WNDCLASS));
+		::WNDCLASS wc = { };
+		ZERO_MEMORY(&wc, sizeof(::WNDCLASS));
 
 		wc.hInstance		= Win32Application::Get()->GetInstanceHandle();
 		wc.lpszClassName	= WINDOW_CLASS;
@@ -487,7 +495,7 @@ namespace LambdaEngine
 	bool Win32Application::RegisterRawInputDevices(HWND hWnd)
 	{
 		constexpr uint32 DEVICE_COUNT = 1;
-		RAWINPUTDEVICE devices[DEVICE_COUNT];
+		::RAWINPUTDEVICE devices[DEVICE_COUNT];
 		ZERO_MEMORY(devices, sizeof(RAWINPUTDEVICE) * DEVICE_COUNT);
 
 		// Mouse
@@ -512,7 +520,7 @@ namespace LambdaEngine
 	bool Win32Application::UnregisterRawInputDevices()
 	{
 		constexpr uint32 DEVICE_COUNT = 1;
-		RAWINPUTDEVICE devices[DEVICE_COUNT];
+		::RAWINPUTDEVICE devices[DEVICE_COUNT];
 		ZERO_MEMORY(devices, sizeof(RAWINPUTDEVICE) * DEVICE_COUNT);
 
 		// Mouse
@@ -534,18 +542,17 @@ namespace LambdaEngine
 		}
 	}
 
-	Window* Win32Application::CreateWindow(const WindowDesc* pDesc)
+	TSharedRef<Window> Win32Application::CreateWindow(const WindowDesc* pDesc)
 	{
-		Win32Window* pWindow = DBG_NEW Win32Window();
-		if (!pWindow->Init(pDesc))
+		TSharedRef<Win32Window> window = DBG_NEW Win32Window();
+		if (window->Init(pDesc))
 		{
-			SAFEDELETE(pWindow);
-			return nullptr;
+			AddWindow(window);
+			return window;
 		}
 		else
 		{
-			AddWindow(pWindow);
-			return pWindow;
+			return nullptr;
 		}
 	}
 
@@ -556,7 +563,7 @@ namespace LambdaEngine
 
 	Application* Win32Application::CreateApplication()
 	{
-		HINSTANCE hInstance = static_cast<HINSTANCE>(GetModuleHandle(0));
+		HINSTANCE hInstance = static_cast<::HINSTANCE>(GetModuleHandle(0));
 		return DBG_NEW Win32Application(hInstance);
 	}
 
@@ -583,7 +590,7 @@ namespace LambdaEngine
 	{
 		// Let other modules handle messages
 		bool	messageHandled	= false;
-		LRESULT result			= 0;
+		::LRESULT result			= 0;
 		for (IWin32MessageHandler* pMessageHandler : m_MessageHandlers)
 		{
 			result = pMessageHandler->ProcessMessage(hWnd, uMessage, wParam, lParam);
