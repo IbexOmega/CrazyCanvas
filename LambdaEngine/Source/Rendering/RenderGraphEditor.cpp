@@ -3049,12 +3049,6 @@ namespace LambdaEngine
 						writer.String("name");
 						writer.String(pResourceStateGroup->Name.c_str());
 
-						writer.String("input_node_index");
-						writer.Int(pResourceStateGroup->InputNodeIndex);
-
-						writer.String("output_node_index");
-						writer.Int(pResourceStateGroup->OutputNodeIndex);
-
 						writer.String("resource_states");
 						writer.StartArray();
 						{
@@ -3068,32 +3062,18 @@ namespace LambdaEngine
 									writer.String("name");
 									writer.String(pResourceState->ResourceName.c_str());
 
-									writer.String("render_stage_name");
-									writer.String(pResourceState->RenderStageName.c_str());
-
 									writer.String("removable");
 									writer.Bool(pResourceState->Removable);
 
 									writer.String("binding_type");
 									writer.String(BindingTypeToString(pResourceState->BindingType).c_str());
 
-									writer.String("attribute_index");
-									writer.Int(attributeIndex);
+									writer.String("src_stage");
 
-									writer.String("input_link_index");
-									writer.Int(pResourceState->InputLinkIndex);
-
-									writer.String("output_link_indices");
-									writer.StartArray();
-									{
-										for (auto outputLinkIt = pResourceState->OutputLinkIndices.begin(); outputLinkIt != pResourceState->OutputLinkIndices.end(); outputLinkIt++)
-										{
-											int32 outputLinkIndex = *outputLinkIt;
-
-											writer.Int(outputLinkIndex);
-										}
-									}
-									writer.EndArray();
+									if (pResourceState->InputLinkIndex >= 0)
+										writer.String(m_ResourceStatesByHalfAttributeIndex[m_ResourceStateLinksByLinkIndex[pResourceState->InputLinkIndex].SrcAttributeIndex / 2].RenderStageName.c_str());
+									else
+										writer.String("");
 								}
 								writer.EndObject();
 							}
@@ -3114,9 +3094,6 @@ namespace LambdaEngine
 				writer.String("name");
 				writer.String(m_FinalOutput.Name.c_str());
 
-				writer.String("node_index");
-				writer.Int(m_FinalOutput.NodeIndex);
-
 				writer.String("back_buffer_state");
 				writer.StartObject();
 				{
@@ -3126,32 +3103,18 @@ namespace LambdaEngine
 					writer.String("name");
 					writer.String(pResourceState->ResourceName.c_str());
 
-					writer.String("render_stage_name");
-					writer.String(pResourceState->RenderStageName.c_str());
-
 					writer.String("removable");
 					writer.Bool(pResourceState->Removable);
 
 					writer.String("binding_type");
 					writer.String(BindingTypeToString(pResourceState->BindingType).c_str());
 
-					writer.String("attribute_index");
-					writer.Int(attributeIndex);
+					writer.String("src_stage");
 
-					writer.String("input_link_index");
-					writer.Int(pResourceState->InputLinkIndex);
-
-					writer.String("output_link_indices");
-					writer.StartArray();
-					{
-						for (auto outputLinkIt = pResourceState->OutputLinkIndices.begin(); outputLinkIt != pResourceState->OutputLinkIndices.end(); outputLinkIt++)
-						{
-							int32 outputLinkIndex = *outputLinkIt;
-
-							writer.Int(outputLinkIndex);
-						}
-					}
-					writer.EndArray();
+					if (pResourceState->InputLinkIndex >= 0)
+						writer.String(m_ResourceStatesByHalfAttributeIndex[m_ResourceStateLinksByLinkIndex[pResourceState->InputLinkIndex].SrcAttributeIndex / 2].RenderStageName.c_str());
+					else
+						writer.String("");
 				}
 				writer.EndObject();
 			}
@@ -3171,12 +3134,6 @@ namespace LambdaEngine
 					{
 						writer.String("name");
 						writer.String(pRenderStage->Name.c_str());
-
-						writer.String("node_index");
-						writer.Int(pRenderStage->NodeIndex);
-
-						writer.String("input_attribute_index");
-						writer.Int(pRenderStage->InputAttributeIndex);
 
 						writer.String("type");
 						writer.String(RenderStageTypeToString(pRenderStage->Type).c_str());
@@ -3210,86 +3167,61 @@ namespace LambdaEngine
 								writer.String("draw_type");
 								writer.String(RenderStageDrawTypeToString(pRenderStage->Graphics.DrawType).c_str());
 
-								//Index Buffer Draw Resource
+								if (pRenderStage->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 								{
-									int32 attributeIndex = pRenderStage->Graphics.IndexBufferAttributeIndex;
-									EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[attributeIndex / 2];
-
-									writer.String("index_buffer");
-									writer.StartObject();
+									//Index Buffer Draw Resource
 									{
-										writer.String("name");
-										writer.String(pResourceState->ResourceName.c_str());
+										int32 attributeIndex = pRenderStage->Graphics.IndexBufferAttributeIndex;
+										EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[attributeIndex / 2];
 
-										writer.String("render_stage_name");
-										writer.String(pResourceState->RenderStageName.c_str());
-
-										writer.String("removable");
-										writer.Bool(pResourceState->Removable);
-
-										writer.String("binding_type");
-										writer.String(BindingTypeToString(pResourceState->BindingType).c_str());
-
-										writer.String("attribute_index");
-										writer.Int(attributeIndex);
-
-										writer.String("input_link_index");
-										writer.Int(pResourceState->InputLinkIndex);
-
-										writer.String("output_link_indices");
-										writer.StartArray();
+										writer.String("index_buffer");
+										writer.StartObject();
 										{
-											for (auto outputLinkIt = pResourceState->OutputLinkIndices.begin(); outputLinkIt != pResourceState->OutputLinkIndices.end(); outputLinkIt++)
-											{
-												int32 outputLinkIndex = *outputLinkIt;
+											writer.String("name");
+											writer.String(pResourceState->ResourceName.c_str());
 
-												writer.Int(outputLinkIndex);
-											}
+											writer.String("removable");
+											writer.Bool(pResourceState->Removable);
+
+											writer.String("binding_type");
+											writer.String(BindingTypeToString(pResourceState->BindingType).c_str());
+
+											writer.String("src_stage");
+
+											if (pResourceState->InputLinkIndex >= 0)
+												writer.String(m_ResourceStatesByHalfAttributeIndex[m_ResourceStateLinksByLinkIndex[pResourceState->InputLinkIndex].SrcAttributeIndex / 2].RenderStageName.c_str());
+											else
+												writer.String("");
 										}
-										writer.EndArray();
+										writer.EndObject();
 									}
-									writer.EndObject();
-								}
 
-								//Indirect Args Buffer Draw Resource
-								{
-									int32 attributeIndex = pRenderStage->Graphics.IndirectArgsBufferAttributeIndex;
-									EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[attributeIndex / 2];
-
-									writer.String("indirect_args_buffer");
-									writer.StartObject();
+									//Indirect Args Buffer Draw Resource
 									{
-										writer.String("name");
-										writer.String(pResourceState->ResourceName.c_str());
+										int32 attributeIndex = pRenderStage->Graphics.IndirectArgsBufferAttributeIndex;
+										EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[attributeIndex / 2];
 
-										writer.String("render_stage_name");
-										writer.String(pResourceState->RenderStageName.c_str());
-
-										writer.String("removable");
-										writer.Bool(pResourceState->Removable);
-
-										writer.String("binding_type");
-										writer.String(BindingTypeToString(pResourceState->BindingType).c_str());
-
-										writer.String("attribute_index");
-										writer.Int(attributeIndex);
-
-										writer.String("input_link_index");
-										writer.Int(pResourceState->InputLinkIndex);
-
-										writer.String("output_link_indices");
-										writer.StartArray();
+										writer.String("indirect_args_buffer");
+										writer.StartObject();
 										{
-											for (auto outputLinkIt = pResourceState->OutputLinkIndices.begin(); outputLinkIt != pResourceState->OutputLinkIndices.end(); outputLinkIt++)
-											{
-												int32 outputLinkIndex = *outputLinkIt;
+											writer.String("name");
+											writer.String(pResourceState->ResourceName.c_str());
 
-												writer.Int(outputLinkIndex);
-											}
+											writer.String("removable");
+											writer.Bool(pResourceState->Removable);
+
+											writer.String("binding_type");
+											writer.String(BindingTypeToString(pResourceState->BindingType).c_str());
+
+											writer.String("src_stage");
+
+											if (pResourceState->InputLinkIndex >= 0)
+												writer.String(m_ResourceStatesByHalfAttributeIndex[m_ResourceStateLinksByLinkIndex[pResourceState->InputLinkIndex].SrcAttributeIndex / 2].RenderStageName.c_str());
+											else
+												writer.String("");
 										}
-										writer.EndArray();
+										writer.EndObject();
 									}
-									writer.EndObject();
 								}
 							}
 							writer.EndObject();
@@ -3366,64 +3298,23 @@ namespace LambdaEngine
 									writer.String("name");
 									writer.String(pResourceState->ResourceName.c_str());
 
-									writer.String("render_stage_name");
-									writer.String(pResourceState->RenderStageName.c_str());
-
 									writer.String("removable");
 									writer.Bool(pResourceState->Removable);
 
 									writer.String("binding_type");
 									writer.String(BindingTypeToString(pResourceState->BindingType).c_str());
 
-									writer.String("attribute_index");
-									writer.Int(attributeIndex);
+									writer.String("src_stage");
 
-									writer.String("input_link_index");
-									writer.Int(pResourceState->InputLinkIndex);
-
-									writer.String("output_link_indices");
-									writer.StartArray();
-									{
-										for (auto outputLinkIt = pResourceState->OutputLinkIndices.begin(); outputLinkIt != pResourceState->OutputLinkIndices.end(); outputLinkIt++)
-										{
-											int32 outputLinkIndex = *outputLinkIt;
-
-											writer.Int(outputLinkIndex);
-										}
-									}
-									writer.EndArray();
+									if (pResourceState->InputLinkIndex >= 0)
+										writer.String(m_ResourceStatesByHalfAttributeIndex[m_ResourceStateLinksByLinkIndex[pResourceState->InputLinkIndex].SrcAttributeIndex / 2].RenderStageName.c_str());
+									else
+										writer.String("");
 								}
 								writer.EndObject();
 							}
 						}
 						writer.EndArray();
-					}
-					writer.EndObject();
-				}
-			}
-			writer.EndArray();
-		}
-
-
-		//Links
-		{
-			writer.String("links");
-			writer.StartArray();
-			{
-				for (auto linkIt = m_ResourceStateLinksByLinkIndex.begin(); linkIt != m_ResourceStateLinksByLinkIndex.end(); linkIt++)
-				{
-					EditorRenderGraphResourceLink* pLink = &linkIt->second;
-
-					writer.StartObject();
-					{
-						writer.String("link_index");
-						writer.Int(pLink->LinkIndex);
-
-						writer.String("src_attribute_index");
-						writer.Int(pLink->SrcAttributeIndex);
-
-						writer.String("dst_attribute_index");
-						writer.Int(pLink->DstAttributeIndex);
 					}
 					writer.EndObject();
 				}
@@ -3460,9 +3351,26 @@ namespace LambdaEngine
 		Document d;
 		d.ParseStream(inputStream);
 
-		int32 largestNodeID			= 0;
-		int32 largestAttributeID	= 0;
-		int32 largestLinkID			= 0;
+		//Reset to Clear state
+		{
+			s_NextNodeID		= 0;
+			s_NextAttributeID	= 0;
+			s_NextLinkID		= 0;
+
+			m_ResourceStateGroups.Clear();
+			m_FinalOutput		= {};
+
+			m_Resources.Clear();
+			m_RenderStageNameByInputAttributeIndex.clear();
+			m_RenderStagesByName.clear();
+			m_ResourceStatesByHalfAttributeIndex.clear();
+			m_ResourceStateLinksByLinkIndex.clear();
+
+			m_CurrentlyAddingRenderStage	= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
+			m_CurrentlyAddingResource		= ERenderGraphResourceType::NONE;
+
+			m_StartedLinkInfo				= {};
+		}
 
 		TArray<EditorResourceStateGroup>					loadedResourceStateGroups;
 		EditorFinalOutput									loadedFinalOutput		= {};
@@ -3472,6 +3380,7 @@ namespace LambdaEngine
 		THashTable<String, EditorRenderStageDesc>			loadedRenderStagesByName;
 		THashTable<int32, EditorRenderGraphResourceState>	loadedResourceStatesByHalfAttributeIndex;
 		THashTable<int32, EditorRenderGraphResourceLink>	loadedResourceStateLinks;
+		THashTable<String, TArray<int32>>					unfinishedLinks; //The key is the Resource State Group / Render Stage name, the value is the resource states awaiting linking
 
 		//Load Resources
 		if (d.HasMember("resources"))
@@ -3558,8 +3467,10 @@ namespace LambdaEngine
 					GenericObject resourceStateGroupObject = resourceStateGroupsArray[rsg].GetObject();
 					EditorResourceStateGroup resourceStateGroup = {};
 					resourceStateGroup.Name				= resourceStateGroupObject["name"].GetString();
-					resourceStateGroup.InputNodeIndex	= resourceStateGroupObject["input_node_index"].GetInt();
-					resourceStateGroup.OutputNodeIndex	= resourceStateGroupObject["output_node_index"].GetInt();
+					resourceStateGroup.InputNodeIndex	= s_NextNodeID++;
+					resourceStateGroup.OutputNodeIndex	= s_NextNodeID++;
+
+					auto unfinishedLinkIt = unfinishedLinks.find(resourceStateGroup.Name);
 
 					GenericArray resourceStateArray = resourceStateGroupObject["resource_states"].GetArray();
 
@@ -3568,32 +3479,53 @@ namespace LambdaEngine
 						GenericObject resourceStateObject = resourceStateArray[r].GetObject();
 
 						String resourceName		= resourceStateObject["name"].GetString();
-						int32 attributeIndex	= resourceStateObject["attribute_index"].GetInt();
 
-						EditorRenderGraphResourceState resourceState = {};
-						resourceState.ResourceName		= resourceName;
-						resourceState.RenderStageName	= resourceStateObject["render_stage_name"].GetString();
-						resourceState.Removable			= resourceStateObject["removable"].GetBool();
-						resourceState.BindingType		= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
-						resourceState.InputLinkIndex	= resourceStateObject["input_link_index"].GetInt();
+						int32 attributeIndex = s_NextAttributeID;
+						s_NextAttributeID += 2;
 
-						GenericArray outputLinkIndicesArray = resourceStateObject["output_link_indices"].GetArray();
+						EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+						pResourceState->ResourceName		= resourceName;
+						pResourceState->RenderStageName		= resourceStateGroup.Name;
+						pResourceState->Removable			= resourceStateObject["removable"].GetBool();
+						pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
 
-						for (uint32 ol = 0; ol < outputLinkIndicesArray.Size(); ol++)
-						{
-							resourceState.OutputLinkIndices.insert(outputLinkIndicesArray[ol].GetInt());
-						}
-
-						loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2] = resourceState;
 						resourceStateGroup.ResourceStateIdents.PushBack({ resourceName, attributeIndex });
 
-						if (attributeIndex + 1 > largestAttributeID) largestAttributeID = attributeIndex + 1;
+						//Check if there are resource states that are awaiting linking to this resource state group
+						if (unfinishedLinkIt != unfinishedLinks.end())
+						{
+							if (FixLinkForPreviouslyLoadedResourceState(
+								pResourceState,
+								attributeIndex,
+								loadedResourceStatesByHalfAttributeIndex,
+								loadedResourceStateLinks,
+								unfinishedLinkIt->second))
+							{
+								if (unfinishedLinkIt->second.IsEmpty())
+								{
+									unfinishedLinks.erase(unfinishedLinkIt);
+									unfinishedLinkIt = unfinishedLinks.end();
+								}
+							}
+						}
+
+						//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
+						{
+							String srcStageName = resourceStateObject["src_stage"].GetString();
+
+							CreateLinkForLoadedResourceState(
+								pResourceState,
+								attributeIndex,
+								srcStageName,
+								loadedResourceStateGroups,
+								loadedRenderStagesByName,
+								loadedResourceStatesByHalfAttributeIndex,
+								loadedResourceStateLinks,
+								unfinishedLinks);
+						}
 					}
 
 					loadedResourceStateGroups.PushBack(resourceStateGroup);
-
-					if (resourceStateGroup.InputNodeIndex > largestNodeID) largestNodeID = resourceStateGroup.InputNodeIndex;
-					if (resourceStateGroup.OutputNodeIndex > largestNodeID) largestNodeID = resourceStateGroup.OutputNodeIndex;
 				}
 			}
 			else
@@ -3616,33 +3548,37 @@ namespace LambdaEngine
 				GenericObject finalOutputStageObject = d["final_output_stage"].GetObject();
 
 				loadedFinalOutput.Name		= finalOutputStageObject["name"].GetString();
-				loadedFinalOutput.NodeIndex = finalOutputStageObject["node_index"].GetInt();
+				loadedFinalOutput.NodeIndex = s_NextNodeID++;
 
 				GenericObject resourceStateObject = finalOutputStageObject["back_buffer_state"].GetObject();
 
 				String resourceName		= resourceStateObject["name"].GetString();
-				int32 attributeIndex	= resourceStateObject["attribute_index"].GetInt();
 
-				EditorRenderGraphResourceState resourceState = {};
-				resourceState.ResourceName		= resourceName;
-				resourceState.RenderStageName	= resourceStateObject["render_stage_name"].GetString();
-				resourceState.Removable			= resourceStateObject["removable"].GetBool();
-				resourceState.BindingType		= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
-				resourceState.InputLinkIndex	= resourceStateObject["input_link_index"].GetInt();
+				int32 attributeIndex = s_NextAttributeID;
+				s_NextAttributeID += 2;
 
-				GenericArray outputLinkIndicesArray = resourceStateObject["output_link_indices"].GetArray();
+				EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+				pResourceState->ResourceName		= resourceName;
+				pResourceState->RenderStageName		= loadedFinalOutput.Name;
+				pResourceState->Removable			= resourceStateObject["removable"].GetBool();
+				pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
 
-				for (uint32 ol = 0; ol < outputLinkIndicesArray.Size(); ol++)
-				{
-					resourceState.OutputLinkIndices.insert(outputLinkIndicesArray[ol].GetInt());
-				}
-
-				loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2] = resourceState;
 				loadedFinalOutput.BackBufferAttributeIndex = attributeIndex;
 
-				if (attributeIndex + 1 > largestAttributeID) largestAttributeID = attributeIndex + 1;
+				//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
+				{
+					String srcStageName = resourceStateObject["src_stage"].GetString();
 
-				if (loadedFinalOutput.NodeIndex > largestNodeID) largestNodeID = loadedFinalOutput.NodeIndex;
+					CreateLinkForLoadedResourceState(
+						pResourceState,
+						attributeIndex,
+						srcStageName,
+						loadedResourceStateGroups,
+						loadedRenderStagesByName,
+						loadedResourceStatesByHalfAttributeIndex,
+						loadedResourceStateLinks,
+						unfinishedLinks);
+				}
 			}
 			else
 			{
@@ -3668,8 +3604,9 @@ namespace LambdaEngine
 					GenericObject renderStageObject = renderStageArray[rs].GetObject();
 					EditorRenderStageDesc renderStage = {};
 					renderStage.Name				= renderStageObject["name"].GetString();
-					renderStage.NodeIndex			= renderStageObject["node_index"].GetInt();
-					renderStage.InputAttributeIndex = renderStageObject["input_attribute_index"].GetInt();
+					renderStage.NodeIndex			= s_NextNodeID++;
+					renderStage.InputAttributeIndex = s_NextAttributeID;
+					s_NextAttributeID				+= 2;
 					renderStage.Type				= RenderStageTypeFromString(renderStageObject["type"].GetString());
 					renderStage.CustomRenderer		= renderStageObject["custom_renderer"].GetBool();
 
@@ -3681,6 +3618,8 @@ namespace LambdaEngine
 					renderStage.Parameters.YDimVariable		= renderStageObject["y_dim_var"].GetDouble();
 					renderStage.Parameters.ZDimVariable		= renderStageObject["z_dim_var"].GetDouble();
 
+					auto unfinishedLinkIt = unfinishedLinks.find(renderStage.Name);
+
 					GenericObject shadersObject		= renderStageObject["shaders"].GetObject();
 					GenericArray resourceStateArray = renderStageObject["resource_states"].GetArray();
 
@@ -3690,58 +3629,109 @@ namespace LambdaEngine
 
 						renderStage.Graphics.DrawType = RenderStageDrawTypeFromString(drawParamsObject["draw_type"].GetString());
 
-						//Index Buffer
+						if (renderStage.Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 						{
-							GenericObject resourceStateObject = drawParamsObject["index_buffer"].GetObject();
-
-							String resourceName		= resourceStateObject["name"].GetString();
-							int32 attributeIndex	= resourceStateObject["attribute_index"].GetInt();
-
-							EditorRenderGraphResourceState resourceState = {};
-							resourceState.ResourceName		= resourceName;
-							resourceState.RenderStageName	= resourceStateObject["render_stage_name"].GetString();
-							resourceState.Removable			= resourceStateObject["removable"].GetBool();
-							resourceState.BindingType		= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
-							resourceState.InputLinkIndex	= resourceStateObject["input_link_index"].GetInt();
-						
-							GenericArray outputLinkIndicesArray = resourceStateObject["output_link_indices"].GetArray();
-
-							for (uint32 ol = 0; ol < outputLinkIndicesArray.Size(); ol++)
+							//Index Buffer
 							{
-								resourceState.OutputLinkIndices.insert(outputLinkIndicesArray[ol].GetInt());
+								GenericObject resourceStateObject = drawParamsObject["index_buffer"].GetObject();
+
+								String resourceName		= resourceStateObject["name"].GetString();
+
+								int32 attributeIndex = s_NextAttributeID;
+								s_NextAttributeID += 2;
+
+								EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+								pResourceState->ResourceName		= resourceName;
+								pResourceState->RenderStageName		= renderStage.Name;
+								pResourceState->Removable			= resourceStateObject["removable"].GetBool();
+								pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
+
+								renderStage.Graphics.IndexBufferAttributeIndex = attributeIndex;
+
+								//Check if there are resource states that are awaiting linking to this resource state group
+								if (unfinishedLinkIt != unfinishedLinks.end())
+								{
+									if (FixLinkForPreviouslyLoadedResourceState(
+										pResourceState,
+										attributeIndex,
+										loadedResourceStatesByHalfAttributeIndex,
+										loadedResourceStateLinks,
+										unfinishedLinkIt->second))
+									{
+										if (unfinishedLinkIt->second.IsEmpty())
+										{
+											unfinishedLinks.erase(unfinishedLinkIt);
+											unfinishedLinkIt = unfinishedLinks.end();
+										}
+									}
+								}
+
+								//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
+								{
+									String srcStageName = resourceStateObject["src_stage"].GetString();
+
+									CreateLinkForLoadedResourceState(
+										pResourceState,
+										attributeIndex,
+										srcStageName,
+										loadedResourceStateGroups,
+										loadedRenderStagesByName,
+										loadedResourceStatesByHalfAttributeIndex,
+										loadedResourceStateLinks,
+										unfinishedLinks);
+								}
 							}
 
-							loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2] = resourceState;
-							renderStage.Graphics.IndexBufferAttributeIndex = attributeIndex;
-
-							if (attributeIndex + 1 > largestAttributeID) largestAttributeID = attributeIndex + 1;
-						}
-
-						//Indirect Args Buffer
-						{
-							GenericObject resourceStateObject = drawParamsObject["indirect_args_buffer"].GetObject();
-
-							String resourceName		= resourceStateObject["name"].GetString();
-							int32 attributeIndex	= resourceStateObject["attribute_index"].GetInt();
-
-							EditorRenderGraphResourceState resourceState = {};
-							resourceState.ResourceName		= resourceName;
-							resourceState.RenderStageName	= resourceStateObject["render_stage_name"].GetString();
-							resourceState.Removable			= resourceStateObject["removable"].GetBool();
-							resourceState.BindingType		= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
-							resourceState.InputLinkIndex	= resourceStateObject["input_link_index"].GetInt();
-						
-							GenericArray outputLinkIndicesArray = resourceStateObject["output_link_indices"].GetArray();
-
-							for (uint32 ol = 0; ol < outputLinkIndicesArray.Size(); ol++)
+							//Indirect Args Buffer
 							{
-								resourceState.OutputLinkIndices.insert(outputLinkIndicesArray[ol].GetInt());
+								GenericObject resourceStateObject = drawParamsObject["indirect_args_buffer"].GetObject();
+
+								String resourceName		= resourceStateObject["name"].GetString();
+
+								int32 attributeIndex = s_NextAttributeID;
+								s_NextAttributeID += 2;
+
+								EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+								pResourceState->ResourceName		= resourceName;
+								pResourceState->RenderStageName		= renderStage.Name;
+								pResourceState->Removable			= resourceStateObject["removable"].GetBool();
+								pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
+
+								renderStage.Graphics.IndirectArgsBufferAttributeIndex = attributeIndex;
+
+								//Check if there are resource states that are awaiting linking to this resource state group
+								if (unfinishedLinkIt != unfinishedLinks.end())
+								{
+									if (FixLinkForPreviouslyLoadedResourceState(
+										pResourceState,
+										attributeIndex,
+										loadedResourceStatesByHalfAttributeIndex,
+										loadedResourceStateLinks,
+										unfinishedLinkIt->second))
+									{
+										if (unfinishedLinkIt->second.IsEmpty())
+										{
+											unfinishedLinks.erase(unfinishedLinkIt);
+											unfinishedLinkIt = unfinishedLinks.end();
+										}
+									}
+								}
+
+								//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
+								{
+									String srcStageName = resourceStateObject["src_stage"].GetString();
+
+									CreateLinkForLoadedResourceState(
+										pResourceState,
+										attributeIndex,
+										srcStageName,
+										loadedResourceStateGroups,
+										loadedRenderStagesByName,
+										loadedResourceStatesByHalfAttributeIndex,
+										loadedResourceStateLinks,
+										unfinishedLinks);
+								}
 							}
-
-							loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2] = resourceState;
-							renderStage.Graphics.IndirectArgsBufferAttributeIndex = attributeIndex;
-
-							if (attributeIndex + 1 > largestAttributeID) largestAttributeID = attributeIndex + 1;
 						}
 
 						renderStage.Graphics.DepthTestEnabled			= renderStageObject["depth_test_enabled"].GetBool();
@@ -3786,32 +3776,54 @@ namespace LambdaEngine
 						GenericObject resourceStateObject = resourceStateArray[r].GetObject();
 
 						String resourceName		= resourceStateObject["name"].GetString();
-						int32 attributeIndex	= resourceStateObject["attribute_index"].GetInt();
 
-						EditorRenderGraphResourceState resourceState = {};
-						resourceState.ResourceName		= resourceName;
-						resourceState.RenderStageName	= resourceStateObject["render_stage_name"].GetString();
-						resourceState.Removable			= resourceStateObject["removable"].GetBool();
-						resourceState.BindingType		= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
-						resourceState.InputLinkIndex	= resourceStateObject["input_link_index"].GetInt();
-						
-						GenericArray outputLinkIndicesArray = resourceStateObject["output_link_indices"].GetArray();
+						int32 attributeIndex = s_NextAttributeID;
+						s_NextAttributeID += 2;
 
-						for (uint32 ol = 0; ol < outputLinkIndicesArray.Size(); ol++)
-						{
-							resourceState.OutputLinkIndices.insert(outputLinkIndicesArray[ol].GetInt());
-						}
+						EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+						pResourceState->ResourceName		= resourceName;
+						pResourceState->RenderStageName		= renderStage.Name;
+						pResourceState->Removable			= resourceStateObject["removable"].GetBool();
+						pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
 
-						loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2] = resourceState;
 						renderStage.ResourceStateIdents.PushBack({ resourceName, attributeIndex });
 
-						if (attributeIndex + 1 > largestAttributeID) largestAttributeID = attributeIndex + 1;
+						//Check if there are resource states that are awaiting linking to this resource state group
+						if (unfinishedLinkIt != unfinishedLinks.end())
+						{
+							if (FixLinkForPreviouslyLoadedResourceState(
+								pResourceState,
+								attributeIndex,
+								loadedResourceStatesByHalfAttributeIndex,
+								loadedResourceStateLinks,
+								unfinishedLinkIt->second))
+							{
+								if (unfinishedLinkIt->second.IsEmpty())
+								{
+									unfinishedLinks.erase(unfinishedLinkIt);
+									unfinishedLinkIt = unfinishedLinks.end();
+								}
+							}
+						}
+
+						//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
+						{
+							String srcStageName = resourceStateObject["src_stage"].GetString();
+
+							CreateLinkForLoadedResourceState(
+								pResourceState,
+								attributeIndex,
+								srcStageName,
+								loadedResourceStateGroups,
+								loadedRenderStagesByName,
+								loadedResourceStatesByHalfAttributeIndex,
+								loadedResourceStateLinks,
+								unfinishedLinks);
+						}
 					}
 
 					loadedRenderStagesByName[renderStage.Name] = renderStage;
 					loadedRenderStageNameByInputAttributeIndex[renderStage.InputAttributeIndex] = renderStage.Name;
-
-					if (renderStage.NodeIndex > largestNodeID) largestNodeID = renderStage.NodeIndex;
 				}
 			}
 			else
@@ -3826,64 +3838,28 @@ namespace LambdaEngine
 			return false;
 		}
 
-		//Load Resouce State Links
-		if (d.HasMember("links"))
-		{
-			if (d["links"].IsArray())
-			{
-				GenericArray linkArray = d["links"].GetArray();
-
-				for (uint32 l = 0; l < linkArray.Size(); l++)
-				{
-					GenericObject linkObject = linkArray[l].GetObject();
-					EditorRenderGraphResourceLink link = {};
-
-					link.LinkIndex			= linkObject["link_index"].GetInt();
-					link.SrcAttributeIndex	= linkObject["src_attribute_index"].GetInt();
-					link.DstAttributeIndex	= linkObject["dst_attribute_index"].GetInt();
-
-					loadedResourceStateLinks[link.LinkIndex] = link;
-
-					if (link.LinkIndex > largestLinkID) largestLinkID = link.LinkIndex;
-				}
-			}
-			else
-			{
-				LOG_ERROR("[RenderGraphEditor]: \"links\" member wrong type!");
-				return false;
-			}
-		}
-		else
-		{
-			LOG_ERROR("[RenderGraphEditor]: \"links\" member could not be found!");
-			return false;
-		}
-
 		fclose(pFile);
 
-		//Reset to Clear state
+		if (!unfinishedLinks.empty())
 		{
-			m_ResourceStateGroups.Clear();
-			m_FinalOutput		= {};
+			LOG_ERROR("[RenderGraphEditor]: The following Resource States did not successfully link:");
 
-			m_Resources.Clear();
-			m_RenderStageNameByInputAttributeIndex.clear();
-			m_RenderStagesByName.clear();
-			m_ResourceStatesByHalfAttributeIndex.clear();
-			m_ResourceStateLinksByLinkIndex.clear();
+			for (auto unfinishedLinkIt = unfinishedLinks.begin(); unfinishedLinkIt != unfinishedLinks.end(); unfinishedLinkIt++)
+			{
+				LOG_ERROR("\t--%s--", unfinishedLinkIt->first.c_str());
 
-			m_CurrentlyAddingRenderStage	= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
-			m_CurrentlyAddingResource		= ERenderGraphResourceType::NONE;
+				for (int32 attributeIndex : unfinishedLinkIt->second)
+				{
+					EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+					LOG_ERROR("\t\t%s", pResourceState->ResourceName.c_str());
+				}
+			}
 
-			m_StartedLinkInfo				= {};
+			return false;
 		}
 
 		//Set Loaded State
 		{
-			s_NextNodeID		= largestNodeID + 1;
-			s_NextAttributeID	= largestAttributeID + 1;
-			s_NextLinkID		= largestLinkID + 1;
-
 			m_ResourceStateGroups	= loadedResourceStateGroups;
 			m_FinalOutput			= loadedFinalOutput;
 
@@ -3895,12 +3871,139 @@ namespace LambdaEngine
 		}
 
 		//Parse the Loaded State
-		ParseStructure(generateImGuiStage);
+		if (!ParseStructure(generateImGuiStage))
+		{
+			LOG_ERROR("Parsing Error: %s", m_ParsingError.c_str());
+			m_ParsingError = "";
+		}
 
 		//Set Node Positions
 		SetInitialNodePositions();
 
 		return true;
+	}
+
+	bool RenderGraphEditor::FixLinkForPreviouslyLoadedResourceState(
+		EditorRenderGraphResourceState* pResourceState,
+		int32 attributeIndex,
+		THashTable<int32, EditorRenderGraphResourceState>& loadedResourceStatesByHalfAttributeIndex, 
+		THashTable<int32, EditorRenderGraphResourceLink>& loadedResourceStateLinks, 
+		TArray<int32>& unfinishedLinksAwaitingStage)
+	{
+		bool linkedAtLeastOne = false;
+
+		for (auto linkAwaitingResourceStateIt = unfinishedLinksAwaitingStage.begin(); linkAwaitingResourceStateIt != unfinishedLinksAwaitingStage.end();)
+		{
+			EditorRenderGraphResourceState* pLinkAwaitingResourceState = &loadedResourceStatesByHalfAttributeIndex[*linkAwaitingResourceStateIt / 2];
+
+			if (pLinkAwaitingResourceState->ResourceName == pResourceState->ResourceName)
+			{
+				//Create Link
+				EditorRenderGraphResourceLink* pLink = &loadedResourceStateLinks[s_NextLinkID];
+				pLink->SrcAttributeIndex	= attributeIndex + 1;
+				pLink->DstAttributeIndex	= (*linkAwaitingResourceStateIt);
+				pLink->LinkIndex			= s_NextLinkID;
+				s_NextLinkID++;
+
+				//Update Current Resource State
+				pResourceState->OutputLinkIndices.insert(pLink->LinkIndex);
+
+				//Update Awaiting Resource State
+				pLinkAwaitingResourceState->InputLinkIndex = pLink->LinkIndex;
+
+				linkAwaitingResourceStateIt = unfinishedLinksAwaitingStage.Erase(linkAwaitingResourceStateIt);
+				linkedAtLeastOne = true;
+			}
+			else
+			{
+				linkAwaitingResourceStateIt++;
+			}
+		}
+
+		return linkedAtLeastOne;
+	}
+
+	void RenderGraphEditor::CreateLinkForLoadedResourceState(
+		EditorRenderGraphResourceState* pResourceState,
+		int32 attributeIndex,
+		String& srcStageName,
+		TArray<EditorResourceStateGroup>& loadedResourceStateGroups,
+		THashTable<String, EditorRenderStageDesc>& loadedRenderStagesByName,
+		THashTable<int32, EditorRenderGraphResourceState>& loadedResourceStatesByHalfAttributeIndex,
+		THashTable<int32, EditorRenderGraphResourceLink>& loadedResourceStateLinks,
+		THashTable<String, TArray<int32>>& unfinishedLinks)
+	{
+		if (!srcStageName.empty())
+		{
+			auto renderStageIt			= loadedRenderStagesByName.find(srcStageName);
+			bool foundSrcStage			= false;
+
+			if (renderStageIt != loadedRenderStagesByName.end())
+			{
+				EditorRenderStageDesc* pRenderStageDesc = &renderStageIt->second;
+
+				auto srcResourceStateIdentIt = pRenderStageDesc->FindResourceStateIdent(pResourceState->ResourceName);
+
+				if (srcResourceStateIdentIt != pRenderStageDesc->ResourceStateIdents.end())
+				{
+					EditorRenderGraphResourceState* pSrcResourceStat = &loadedResourceStatesByHalfAttributeIndex[srcResourceStateIdentIt->AttributeIndex / 2];
+
+					//Create Link
+					EditorRenderGraphResourceLink* pLink = &loadedResourceStateLinks[s_NextLinkID];
+					pLink->SrcAttributeIndex	= srcResourceStateIdentIt->AttributeIndex + 1;
+					pLink->DstAttributeIndex	= attributeIndex;
+					pLink->LinkIndex			= s_NextLinkID;
+					s_NextLinkID++;
+
+					//Update Current Resource State
+					pResourceState->InputLinkIndex = pLink->LinkIndex;
+
+					//Update Awaiting Resource State
+					pSrcResourceStat->OutputLinkIndices.insert(pLink->LinkIndex);
+
+					foundSrcStage = true;
+				}
+			}
+			else
+			{
+				//Loop through resource state groups and check them
+				for (EditorResourceStateGroup& resourceStateGroup : loadedResourceStateGroups)
+				{
+					if (resourceStateGroup.Name == srcStageName)
+					{
+						auto srcResourceStateIdentIt = resourceStateGroup.FindResourceStateIdent(pResourceState->ResourceName);
+
+						if (srcResourceStateIdentIt != resourceStateGroup.ResourceStateIdents.end())
+						{
+							EditorRenderGraphResourceState* pSrcResourceStat = &loadedResourceStatesByHalfAttributeIndex[srcResourceStateIdentIt->AttributeIndex / 2];
+
+							//Create Link
+							EditorRenderGraphResourceLink* pLink = &loadedResourceStateLinks[s_NextLinkID];
+							pLink->SrcAttributeIndex	= srcResourceStateIdentIt->AttributeIndex + 1;
+							pLink->DstAttributeIndex	= attributeIndex;
+							pLink->LinkIndex			= s_NextLinkID;
+							s_NextLinkID++;
+
+							//Update Current Resource State
+							pResourceState->InputLinkIndex = pLink->LinkIndex;
+
+							//Update Awaiting Resource State
+							pSrcResourceStat->OutputLinkIndices.insert(pLink->LinkIndex);
+
+							foundSrcStage = true;
+						}
+					}
+				}
+
+				//Final output cant be used as a source stage
+			}
+
+			//Add this resource state to unfinishedLinks
+			if (!foundSrcStage)
+			{
+				unfinishedLinks[srcStageName].PushBack(attributeIndex);
+			}
+		}
 	}
 
 	void RenderGraphEditor::SetInitialNodePositions()

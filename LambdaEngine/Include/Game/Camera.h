@@ -57,7 +57,7 @@ namespace LambdaEngine
 		FORCEINLINE const glm::vec3&	GetForwardVec()				const	{ return m_Forward;			}
 		FORCEINLINE const glm::vec3&	GetRightVec()				const	{ return m_Right;			}
 		FORCEINLINE const glm::vec3&	GetUpVec()					const	{ return m_Up;				}
-		FORCEINLINE const float			GetFOV()					const	{ return m_FOV;				}
+		FORCEINLINE const float			GetFOVDegrees()				const	{ return m_FOVDegrees;		}
 		FORCEINLINE const float			GetWidth()					const	{ return m_Width;			}
 		FORCEINLINE const float			GetHeight()					const	{ return m_Height;			}
 		FORCEINLINE const float			GetNearPlane()				const	{ return m_NearPlane;		}
@@ -81,7 +81,7 @@ namespace LambdaEngine
 		glm::vec3 m_Right;
 		glm::vec3 m_Up;
 
-		float m_FOV;
+		float m_FOVDegrees;
 		float m_Width;
 		float m_Height;
 		float m_NearPlane;

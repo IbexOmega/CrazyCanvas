@@ -201,6 +201,21 @@ namespace LambdaEngine
 
 		bool SaveToFile(const String& renderGraphName);
 		bool LoadFromFile(const String& filepath, bool generateImGuiStage);
+		bool FixLinkForPreviouslyLoadedResourceState(
+			EditorRenderGraphResourceState* pResourceState,
+			int32 attributeIndex,
+			THashTable<int32, EditorRenderGraphResourceState>& loadedResourceStatesByHalfAttributeIndex,
+			THashTable<int32, EditorRenderGraphResourceLink>& loadedResourceStateLinks,
+			TArray<int32>& unfinishedLinksAwaitingStage);
+		void CreateLinkForLoadedResourceState(
+			EditorRenderGraphResourceState* pResourceState,
+			int32 attributeIndex,
+			String& srcStageName,
+			TArray<EditorResourceStateGroup>& loadedResourceStateGroups,
+			THashTable<String, EditorRenderStageDesc>& loadedRenderStagesByName,
+			THashTable<int32, EditorRenderGraphResourceState>& loadedResourceStatesByHalfAttributeIndex,
+			THashTable<int32, EditorRenderGraphResourceLink>& loadedResourceStateLinks,
+			THashTable<String, TArray<int32>>& unfinishedLinks);
 		void SetInitialNodePositions();
 		void ResetState();
 

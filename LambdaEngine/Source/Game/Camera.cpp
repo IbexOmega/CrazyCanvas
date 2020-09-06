@@ -29,6 +29,12 @@ namespace LambdaEngine
 		m_Projection		= glm::perspective(glm::radians(desc.FOVDegrees), desc.Width / desc.Height, desc.NearPlane, desc.FarPlane);
 		m_ProjectionInv		= glm::inverse(m_Projection);
 
+		m_FOVDegrees		= desc.FOVDegrees;
+		m_Width				= desc.Width;
+		m_Height			= desc.Height;
+		m_NearPlane			= desc.NearPlane;
+		m_FarPlane			= desc.FarPlane;
+
 		SetPosition(desc.Position);
 		SetDirection(desc.Direction);
 		Update();

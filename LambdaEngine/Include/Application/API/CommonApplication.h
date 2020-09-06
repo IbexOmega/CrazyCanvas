@@ -40,6 +40,7 @@ namespace LambdaEngine
 		
 		FORCEINLINE TSharedRef<Window> GetMainWindow()
 		{
+			VALIDATE(m_MainWindow != nullptr);
 			return m_MainWindow;
 		}
 
