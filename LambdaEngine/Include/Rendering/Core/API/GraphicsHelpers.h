@@ -140,32 +140,32 @@ namespace LambdaEngine
 	{
 		switch (format)
 		{
-		case EFormat::FORMAT_R16_UNORM:				return "R16_UNORM";
-		case EFormat::FORMAT_R16_SFLOAT:			return "R16_SFLOAT";
-		case EFormat::FORMAT_R8G8B8A8_UNORM:		return "R8G8B8A8_UNORM";
-		case EFormat::FORMAT_B8G8R8A8_UNORM:		return "B8G8R8A8_UNORM";
-		case EFormat::FORMAT_R8G8B8A8_SNORM:		return "R8G8B8A8_SNORM";
-		case EFormat::FORMAT_R32G32_SFLOAT:			return "R32G32_SFLOAT";
-		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return "R16G16B16A16_SFLOAT";
-		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return "R32G32B32A32_SFLOAT";
-		case EFormat::FORMAT_R32G32B32A32_UINT:		return "R32G32B32A32_UINT";
-		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return "D24_UNORM_S8_UINT";
-		default:                                    return "NONE";
+		case EFormat::FORMAT_R16_UNORM:				return "FORMAT_R16_UNORM";
+		case EFormat::FORMAT_R16_SFLOAT:			return "FORMAT_R16_SFLOAT";
+		case EFormat::FORMAT_R8G8B8A8_UNORM:		return "FORMAT_R8G8B8A8_UNORM";
+		case EFormat::FORMAT_B8G8R8A8_UNORM:		return "FORMAT_B8G8R8A8_UNORM";
+		case EFormat::FORMAT_R8G8B8A8_SNORM:		return "FORMAT_R8G8B8A8_SNORM";
+		case EFormat::FORMAT_R32G32_SFLOAT:			return "FORMAT_R32G32_SFLOAT";
+		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return "FORMAT_R16G16B16A16_SFLOAT";
+		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return "FORMAT_R32G32B32A32_SFLOAT";
+		case EFormat::FORMAT_R32G32B32A32_UINT:		return "FORMAT_R32G32B32A32_UINT";
+		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return "FORMAT_D24_UNORM_S8_UINT";
+		default:                                    return "FORMAT_NONE";
 		}
 	}
 
 	FORCEINLINE EFormat TextureFormatFromString(const String& string)
 	{
-		if (string == "R16_UNORM")					return EFormat::FORMAT_R16_UNORM;
-		if (string == "R16_SFLOAT")					return EFormat::FORMAT_R16_SFLOAT;
-		else if (string == "R8G8B8A8_UNORM")		return EFormat::FORMAT_R8G8B8A8_UNORM;
-		else if (string == "B8G8R8A8_UNORM")		return EFormat::FORMAT_B8G8R8A8_UNORM;
-		else if (string == "R8G8B8A8_SNORM")		return EFormat::FORMAT_R8G8B8A8_SNORM;
-		else if (string == "R32G32_SFLOAT")			return EFormat::FORMAT_R32G32_SFLOAT;
-		else if (string == "R16G16B16A16_SFLOAT")	return EFormat::FORMAT_R16G16B16A16_SFLOAT;
-		else if (string == "R32G32B32A32_SFLOAT")	return EFormat::FORMAT_R32G32B32A32_SFLOAT;
-		else if (string == "R32G32B32A32_UINT")		return EFormat::FORMAT_R32G32B32A32_UINT;
-		else if	(string == "D24_UNORM_S8_UINT")		return EFormat::FORMAT_D24_UNORM_S8_UINT;
+		if		(string == "FORMAT_R16_UNORM")				return EFormat::FORMAT_R16_UNORM;
+		else if (string == "FORMAT_R16_SFLOAT")				return EFormat::FORMAT_R16_SFLOAT;
+		else if (string == "FORMAT_R8G8B8A8_UNORM")			return EFormat::FORMAT_R8G8B8A8_UNORM;
+		else if (string == "FORMAT_B8G8R8A8_UNORM")			return EFormat::FORMAT_B8G8R8A8_UNORM;
+		else if (string == "FORMAT_R8G8B8A8_SNORM")			return EFormat::FORMAT_R8G8B8A8_SNORM;
+		else if (string == "FORMAT_R32G32_SFLOAT")			return EFormat::FORMAT_R32G32_SFLOAT;
+		else if (string == "FORMAT_R16G16B16A16_SFLOAT")	return EFormat::FORMAT_R16G16B16A16_SFLOAT;
+		else if (string == "FORMAT_R32G32B32A32_SFLOAT")	return EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		else if (string == "FORMAT_R32G32B32A32_UINT")		return EFormat::FORMAT_R32G32B32A32_UINT;
+		else if	(string == "FORMAT_D24_UNORM_S8_UINT")		return EFormat::FORMAT_D24_UNORM_S8_UINT;
 
 		return EFormat::FORMAT_NONE;
 	}

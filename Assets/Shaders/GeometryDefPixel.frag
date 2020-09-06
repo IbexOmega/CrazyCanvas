@@ -14,6 +14,7 @@ layout(location = 5) in vec2 in_TexCoord;
 layout(location = 6) in vec4 in_WorldPosition;
 layout(location = 7) in vec4 in_ClipPosition;
 layout(location = 8) in vec4 in_PrevClipPosition;
+layout(location = 9) in flat vec2 in_CameraJitter;
 
 layout(binding = 6, set = BUFFER_SET_INDEX) restrict readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
 
@@ -61,7 +62,7 @@ void main()
 
 	vec2 currentNDC 	= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC 		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
-	vec2 screenMotion 	= (prevNDC - currentNDC);
+	vec2 screenMotion 	= (prevNDC - currentNDC) + in_CameraJitter;
 	vec2 posNormFWidth	= vec2(length(fwidth(in_WorldPosition.xyz)), length(fwidth(in_Normal)));
 
 	uint linearZ 		= floatBitsToUint(in_ClipPosition.z * in_ClipPosition.w);

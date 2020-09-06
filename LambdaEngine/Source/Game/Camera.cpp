@@ -78,6 +78,8 @@ namespace LambdaEngine
 
 	void Camera::Update()
 	{
+		m_Data.Jitter = glm::vec2((Random::Float32() - 0.5f) / m_Width, (Random::Float32() - 0.5f) / m_Height);
+
 		if (m_IsDirty)
 		{
 			//Update view

@@ -8,7 +8,7 @@
             "editable": false,
             "external": false,
             "type_params": {
-                "texture_format": "B8G8R8A8_UNORM",
+                "texture_format": "FORMAT_B8G8R8A8_UNORM",
                 "is_of_array_type": false
             }
         },
@@ -110,7 +110,7 @@
             "editable": false,
             "external": true,
             "type_params": {
-                "texture_format": "R8G8B8A8_UNORM",
+                "texture_format": "FORMAT_FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false
             }
         },
@@ -122,7 +122,7 @@
             "editable": false,
             "external": true,
             "type_params": {
-                "texture_format": "R8G8B8A8_UNORM",
+                "texture_format": "FORMAT_FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false
             }
         },
@@ -134,7 +134,7 @@
             "editable": false,
             "external": true,
             "type_params": {
-                "texture_format": "R8G8B8A8_UNORM",
+                "texture_format": "FORMAT_FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false
             }
         },
@@ -146,7 +146,7 @@
             "editable": false,
             "external": true,
             "type_params": {
-                "texture_format": "R8G8B8A8_UNORM",
+                "texture_format": "FORMAT_FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false
             }
         },
@@ -158,7 +158,7 @@
             "editable": false,
             "external": true,
             "type_params": {
-                "texture_format": "R8G8B8A8_UNORM",
+                "texture_format": "FORMAT_FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false
             }
         },
@@ -170,7 +170,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -190,7 +190,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -210,7 +210,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "D24_UNORM_S8_UINT",
+                "texture_format": "FORMAT_D24_UNORM_S8_UINT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -230,7 +230,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -250,7 +250,7 @@
             "editable": true,
             "external": true,
             "type_params": {
-                "texture_format": "R16_UNORM",
+                "texture_format": "FORMAT_R16_UNORM",
                 "is_of_array_type": true
             }
         },
@@ -262,7 +262,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -282,7 +282,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -302,7 +302,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -322,7 +322,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -342,7 +342,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -362,7 +362,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -382,7 +382,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_UINT",
+                "texture_format": "FORMAT_R32G32B32A32_UINT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -402,7 +402,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_UINT",
+                "texture_format": "FORMAT_R32G32B32A32_UINT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -422,7 +422,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R16_SFLOAT",
+                "texture_format": "FORMAT_R16_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -442,7 +442,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_UINT",
+                "texture_format": "FORMAT_R32G32B32A32_UINT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -462,7 +462,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -482,7 +482,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -502,7 +502,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R16_SFLOAT",
+                "texture_format": "FORMAT_R16_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -522,7 +522,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -542,7 +542,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -562,7 +562,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -582,7 +582,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -602,7 +602,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -622,7 +622,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -642,7 +642,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -662,7 +662,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -682,7 +682,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "R32G32_SFLOAT",
+                "texture_format": "FORMAT_R32G32_SFLOAT",
                 "is_of_array_type": false,
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",

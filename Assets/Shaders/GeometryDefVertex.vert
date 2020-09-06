@@ -24,6 +24,7 @@ layout(location = 5) out vec2 out_TexCoord;
 layout(location = 6) out vec4 out_WorldPosition;
 layout(location = 7) out vec4 out_ClipPosition;
 layout(location = 8) out vec4 out_PrevClipPosition;
+layout(location = 9) out flat vec2 out_CameraJitter;
 
 void main()
 {
@@ -64,6 +65,7 @@ void main()
 	out_WorldPosition		    = worldPosition;
     out_ClipPosition            = perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
     out_PrevClipPosition        = perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
+    out_CameraJitter            = perFrameBuffer.Jitter;
 
     gl_Position = out_ClipPosition;
 }

@@ -16,6 +16,7 @@ namespace LambdaEngine
 		glm::vec4 Position			= glm::vec4(0.0f);
 		glm::vec4 Right				= glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
 		glm::vec4 Up				= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+		glm::vec2 Jitter			= glm::vec2(0.0f);
 	};
 
 	struct CameraDesc
@@ -46,16 +47,21 @@ namespace LambdaEngine
 
 		void Update();
 
-		FORCEINLINE const CameraData& GetData()					const	{ return m_Data;			}
-		FORCEINLINE const glm::mat4& GetProjectionMat()			const	{ return m_Projection;		}
-		FORCEINLINE const glm::mat4& GetProjectionInvMat()		const	{ return m_ProjectionInv;	}
-		FORCEINLINE const glm::mat4& GetViewMat()				const	{ return m_View;			}
-		FORCEINLINE const glm::mat4& GetViewInvMat()			const	{ return m_ViewInv;			}
-		FORCEINLINE const glm::vec3& GetPosition()				const	{ return m_Position;		}
-		FORCEINLINE const glm::vec3& GetRotation()				const	{ return m_Rotation;		}
-		FORCEINLINE const glm::vec3& GetForwardVec()			const	{ return m_Forward;			}
-		FORCEINLINE const glm::vec3& GetRightVec()				const	{ return m_Right;			}
-		FORCEINLINE const glm::vec3& GetUpVec()					const	{ return m_Up;				}
+		FORCEINLINE const CameraData&	GetData()					const	{ return m_Data;			}
+		FORCEINLINE const glm::mat4&	GetProjectionMat()			const	{ return m_Projection;		}
+		FORCEINLINE const glm::mat4&	GetProjectionInvMat()		const	{ return m_ProjectionInv;	}
+		FORCEINLINE const glm::mat4&	GetViewMat()				const	{ return m_View;			}
+		FORCEINLINE const glm::mat4&	GetViewInvMat()				const	{ return m_ViewInv;			}
+		FORCEINLINE const glm::vec3&	GetPosition()				const	{ return m_Position;		}
+		FORCEINLINE const glm::vec3&	GetRotation()				const	{ return m_Rotation;		}
+		FORCEINLINE const glm::vec3&	GetForwardVec()				const	{ return m_Forward;			}
+		FORCEINLINE const glm::vec3&	GetRightVec()				const	{ return m_Right;			}
+		FORCEINLINE const glm::vec3&	GetUpVec()					const	{ return m_Up;				}
+		FORCEINLINE const float			GetFOV()					const	{ return m_FOV;				}
+		FORCEINLINE const float			GetWidth()					const	{ return m_Width;			}
+		FORCEINLINE const float			GetHeight()					const	{ return m_Height;			}
+		FORCEINLINE const float			GetNearPlane()				const	{ return m_NearPlane;		}
+		FORCEINLINE const float			GetFarPlane()				const	{ return m_FarPlane;		}
 
 	private:
 		void CalculateVectors();
@@ -74,6 +80,12 @@ namespace LambdaEngine
 		glm::vec3 m_Forward;
 		glm::vec3 m_Right;
 		glm::vec3 m_Up;
+
+		float m_FOV;
+		float m_Width;
+		float m_Height;
+		float m_NearPlane;
+		float m_FarPlane;
 
 		bool m_IsDirty;
 		bool m_LastIsDirty;
