@@ -750,7 +750,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void RenderGraph::OnWindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type)
+	void RenderGraph::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)
 	{
 		m_WindowWidth	= (float32)width;
 		m_WindowHeight	= (float32)height;

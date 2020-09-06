@@ -8,8 +8,8 @@
 namespace LambdaEngine
 {
 	PipelineLayoutVK::PipelineLayoutVK(const GraphicsDeviceVK* pDevice)
-		: TDeviceChild(pDevice),
-		m_DescriptorCounts()
+		: TDeviceChild(pDevice)
+		, m_DescriptorCounts()
 	{
 	}
 

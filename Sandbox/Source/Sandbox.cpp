@@ -300,12 +300,12 @@ Sandbox::Sandbox()
 
 	m_pCamera = DBG_NEW Camera();
 
-	Window* pWindow = CommonApplication::Get()->GetMainWindow();
+	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
 	CameraDesc cameraDesc = {};
 	cameraDesc.FOVDegrees	= 90.0f;
-	cameraDesc.Width		= pWindow->GetWidth();
-	cameraDesc.Height		= pWindow->GetHeight();
+	cameraDesc.Width		= window->GetWidth();
+	cameraDesc.Height		= window->GetHeight();
 	cameraDesc.NearPlane	= 0.001f;
 	cameraDesc.FarPlane		= 1000.0f;
 
@@ -476,48 +476,48 @@ void Sandbox::InitTestAudio()
 	m_pAudioGeometry->Init(audioGeometryDesc);*/
 }
 
-void Sandbox::OnFocusChanged(LambdaEngine::Window* pWindow, bool hasFocus)
+void Sandbox::OnFocusChanged(LambdaEngine::TSharedRef<LambdaEngine::Window> window, bool hasFocus)
 {
 	UNREFERENCED_VARIABLE(hasFocus);
-	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(window);
 	
 	//LOG_MESSAGE("Window Moved: hasFocus=%s", hasFocus ? "true" : "false");
 }
 
-void Sandbox::OnWindowMoved(LambdaEngine::Window* pWindow, int16 x, int16 y)
+void Sandbox::OnWindowMoved(LambdaEngine::TSharedRef<LambdaEngine::Window> window, int16 x, int16 y)
 {
 	UNREFERENCED_VARIABLE(x);
 	UNREFERENCED_VARIABLE(y);
-	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(window);
 	
 	//LOG_MESSAGE("Window Moved: x=%d, y=%d", x, y);
 }
 
-void Sandbox::OnWindowResized(LambdaEngine::Window* pWindow, uint16 width, uint16 height, LambdaEngine::EResizeType type)
+void Sandbox::OnWindowResized(LambdaEngine::TSharedRef<LambdaEngine::Window> window, uint16 width, uint16 height, LambdaEngine::EResizeType type)
 {
-	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(window);
 	UNREFERENCED_VARIABLE(type);
 	
 	//LOG_MESSAGE("Window Resized: width=%u, height=%u, type=%u", width, height, uint32(type));
 }
 
-void Sandbox::OnWindowClosed(LambdaEngine::Window* pWindow)
+void Sandbox::OnWindowClosed(LambdaEngine::TSharedRef<LambdaEngine::Window> window)
 {
-	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(window);
 	
    // LOG_MESSAGE("Window closed");
 }
 
-void Sandbox::OnMouseEntered(LambdaEngine::Window* pWindow)
+void Sandbox::OnMouseEntered(LambdaEngine::TSharedRef<LambdaEngine::Window> window)
 {
-	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(window);
 	
 	//LOG_MESSAGE("Mouse Entered");
 }
 
-void Sandbox::OnMouseLeft(LambdaEngine::Window* pWindow)
+void Sandbox::OnMouseLeft(LambdaEngine::TSharedRef<LambdaEngine::Window> window)
 {
-	UNREFERENCED_VARIABLE(pWindow);
+	UNREFERENCED_VARIABLE(window);
 	
 	//LOG_MESSAGE("Mouse Left");
 }
@@ -535,41 +535,41 @@ void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isR
 		return;
 	}
 	
-	Window* pMainWindow = CommonApplication::Get()->GetMainWindow();
+	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
 	if (key == EKey::KEY_ESCAPE)
 	{
-		pMainWindow->Close();
+		mainWindow->Close();
 	}
 	if (key == EKey::KEY_1)
 	{
-		pMainWindow->Minimize();
+		mainWindow->Minimize();
 	}
 	if (key == EKey::KEY_2)
 	{
-		pMainWindow->Maximize();
+		mainWindow->Maximize();
 	}
 	if (key == EKey::KEY_3)
 	{
-		pMainWindow->Restore();
+		mainWindow->Restore();
 	}
 	if (key == EKey::KEY_4)
 	{
-		pMainWindow->ToggleFullscreen();
+		mainWindow->ToggleFullscreen();
 	}
 	if (key == EKey::KEY_5)
 	{
-		if (CommonApplication::Get()->GetInputMode(pMainWindow) == EInputMode::INPUT_MODE_STANDARD)
+		if (CommonApplication::Get()->GetInputMode(mainWindow) == EInputMode::INPUT_MODE_STANDARD)
 		{
-			CommonApplication::Get()->SetInputMode(pMainWindow, EInputMode::INPUT_MODE_RAW);
+			CommonApplication::Get()->SetInputMode(mainWindow, EInputMode::INPUT_MODE_RAW);
 		}
 		else
 		{
-			CommonApplication::Get()->SetInputMode(pMainWindow, EInputMode::INPUT_MODE_STANDARD);
+			CommonApplication::Get()->SetInputMode(mainWindow, EInputMode::INPUT_MODE_STANDARD);
 		}
 	}
 	if (key == EKey::KEY_6)
 	{
-		pMainWindow->SetPosition(0, 0);
+		mainWindow->SetPosition(0, 0);
 	}
 	
 	static bool geometryAudioActive = true;
@@ -789,9 +789,9 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 	CommandList* pGraphicsCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
 	CommandList* pComputeCopyCommandList = m_pRenderer->AcquireGraphicsCopyCommandList();
 
-	Window* pWindow = CommonApplication::Get()->GetMainWindow();
-	float32 renderWidth = (float32)pWindow->GetWidth();
-	float32 renderHeight = (float32)pWindow->GetHeight();
+	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+	float32 renderWidth		= (float32)mainWindow->GetWidth();
+	float32 renderHeight	= (float32)mainWindow->GetHeight();
 	float32 renderAspectRatio = renderWidth / renderHeight;
 
 	if (RENDER_GRAPH_IMGUI_ENABLED)
@@ -1669,9 +1669,9 @@ bool Sandbox::InitRendererForDeferred()
 	SamplerDesc* pNearestSamplerDesc	= &nearestSamplerDesc;
 	SamplerDesc* pLinearSamplerDesc		= &linearSamplerDesc;
 
-	Window* pWindow	= CommonApplication::Get()->GetMainWindow();
-	uint32 renderWidth	= pWindow->GetWidth();
-	uint32 renderHeight = pWindow->GetHeight();
+	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+	uint32 renderWidth	= mainWindow->GetWidth();
+	uint32 renderHeight = mainWindow->GetHeight();
 
 	{
 		Buffer* pBuffer = m_pScene->GetLightsBuffer();
@@ -1838,7 +1838,7 @@ bool Sandbox::InitRendererForDeferred()
 	rendererDesc.Name				= "Renderer";
 	rendererDesc.Debug				= RENDERING_DEBUG_ENABLED;
 	rendererDesc.pRenderGraph		= m_pRenderGraph;
-	rendererDesc.pWindow			= CommonApplication::Get()->GetMainWindow();
+	rendererDesc.pWindow			= CommonApplication::Get()->GetMainWindow().Get();
 	rendererDesc.BackBufferCount	= BACK_BUFFER_COUNT;
 	
 	m_pRenderer->Init(&rendererDesc);

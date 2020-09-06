@@ -6,9 +6,9 @@
 
 namespace LambdaEngine
 {
-	SamplerVK::SamplerVK(const GraphicsDeviceVK* pDevice) :
-		TDeviceChild(pDevice),
-		m_Sampler(VK_NULL_HANDLE)
+	SamplerVK::SamplerVK(const GraphicsDeviceVK* pDevice)
+		: TDeviceChild(pDevice)
+		, m_Sampler(VK_NULL_HANDLE)
 	{
 	}
 

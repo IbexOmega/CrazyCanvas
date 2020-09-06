@@ -2,8 +2,6 @@
 #include "Application.h"
 #include "EventHandler.h"
 
-#include "Core/TSharedRef.h"
-
 #include "Containers/TArray.h"
 
 namespace LambdaEngine
@@ -11,17 +9,19 @@ namespace LambdaEngine
 	class LAMBDA_API CommonApplication : public EventHandler
 	{
 	public:
+		~CommonApplication();
+		
 		DECL_UNIQUE_CLASS(CommonApplication);
 
-		bool 	Create();
-		Window* CreateWindow(const WindowDesc* pDesc);
+		bool Create();
+		TSharedRef<Window> CreateWindow(const WindowDesc* pDesc);
 		
 		void RemoveEventHandler(EventHandler* pEventHandler);
 		void AddEventHandler(EventHandler* pEventHandler);
 
 		/*
 		* Application ticks one frame, processes OS- events and then processes the buffered events
-		*   return - Returns false if the OS- sent a quit message. Happens when terminate is called.
+		*	return - Returns false if the OS- sent a quit message. Happens when terminate is called.
 		*/
 		bool Tick();
 
@@ -34,13 +34,13 @@ namespace LambdaEngine
 		/*
 		* Sets the window to be the current main window, this is not the same as the window that has
 		* currently has input focus, that would be the active window.
-		*   pMainWindow - New main window
+		*	pMainWindow - New main window
 		*/
-		void MakeMainWindow(Window* pMainWindow);
+		void MakeMainWindow(TSharedRef<Window> window);
 		
-		FORCEINLINE Window* GetMainWindow()
-		{ 
-			return m_MainWindow.Get(); 
+		FORCEINLINE TSharedRef<Window> GetMainWindow()
+		{
+			return m_MainWindow;
 		}
 
 		bool SupportsRawInput() const;
@@ -48,35 +48,35 @@ namespace LambdaEngine
 		/*
 		* Sets the input mode for the selected window
 		*/
-		void SetInputMode(Window* pWindow, EInputMode inputMode);
+		void SetInputMode(TSharedRef<Window> pWindow, EInputMode inputMode);
 		
-		FORCEINLINE EInputMode GetInputMode(Window* pWindow)
-		{ 
-			return m_pPlatformApplication->GetInputMode(pWindow); 
+		FORCEINLINE EInputMode GetInputMode(TSharedRef<Window> window)
+		{
+			return m_pPlatformApplication->GetInputMode(window); 
 		}
 
-		void SetCapture(Window* pWindow);
+		void SetCapture(TSharedRef<Window> window);
 		
-		FORCEINLINE Window* GetCapture() const
-		{ 
+		FORCEINLINE TSharedRef<Window> GetCapture() const
+		{
 			return m_pPlatformApplication->GetCapture();
 		}
 		
-		void SetActiveWindow(Window* pWindow);
+		void SetActiveWindow(TSharedRef<Window> window);
 		
-		FORCEINLINE Window* GetActiveWindow() const 
-		{ 
+		FORCEINLINE TSharedRef<Window> GetActiveWindow() const
+		{
 			return m_pPlatformApplication->GetActiveWindow();
 		}
 
 	public:
 		// EventHandler Interface
-		virtual void OnFocusChanged(Window* pWindow, bool hasFocus)										override final;
-		virtual void OnWindowMoved(Window* pWindow, int16 x, int16 y)									override final;
-		virtual void OnWindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type)	override final;
-		virtual void OnWindowClosed(Window* pWindow)													override final;
-		virtual void OnMouseEntered(Window* pWindow)													override final;
-		virtual void OnMouseLeft(Window* pWindow)														override final;
+		virtual void OnFocusChanged(TSharedRef<Window> window, bool hasFocus)									override final;
+		virtual void OnWindowMoved(TSharedRef<Window> window, int16 x, int16 y)									override final;
+		virtual void OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)	override final;
+		virtual void OnWindowClosed(TSharedRef<Window> window)													override final;
+		virtual void OnMouseEntered(TSharedRef<Window> window)													override final;
+		virtual void OnMouseLeft(TSharedRef<Window> window)														override final;
 
 		virtual void OnMouseMoved(int32 x, int32 y)								override final;
 		virtual void OnMouseMovedRaw(int32 deltaX, int32 deltaY)				override final;
@@ -90,7 +90,6 @@ namespace LambdaEngine
 		
 	private:
 		CommonApplication();
-		~CommonApplication();
 
 	public:
 		static bool PreInit();
@@ -104,6 +103,6 @@ namespace LambdaEngine
 		TArray<EventHandler*> 	m_EventHandlers;
 
 	private:
-		static CommonApplication* s_pCommonApplication;
+		static TSharedPtr<CommonApplication> s_CommonApplication;
 	};
 }

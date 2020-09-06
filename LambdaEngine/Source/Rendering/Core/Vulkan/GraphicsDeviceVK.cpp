@@ -94,14 +94,14 @@ namespace LambdaEngine
 	 */
 
 	GraphicsDeviceVK::GraphicsDeviceVK()
-		: GraphicsDevice(),
-		RayTracingProperties(),
-		m_DeviceQueueFamilyIndices(),
-		m_DeviceLimits(),
-		m_QueueFamilyProperties(),
-		m_EnabledValidationLayers(),
-		m_EnabledInstanceExtensions(),
-		m_EnabledDeviceExtensions()
+		: GraphicsDevice()
+		, RayTracingProperties()
+		, m_DeviceQueueFamilyIndices()
+		, m_DeviceLimits()
+		, m_QueueFamilyProperties()
+		, m_EnabledValidationLayers()
+		, m_EnabledInstanceExtensions()
+		, m_EnabledDeviceExtensions()
 	{
 	}
 

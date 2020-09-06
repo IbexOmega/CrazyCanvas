@@ -9,8 +9,8 @@
 namespace LambdaEngine
 {
 	AccelerationStructureVK::AccelerationStructureVK(const GraphicsDeviceVK* pDevice) 
-		: TDeviceChild(pDevice),
-		m_Allocation()
+		: TDeviceChild(pDevice)
+		, m_Allocation()
 	{
 	}
 

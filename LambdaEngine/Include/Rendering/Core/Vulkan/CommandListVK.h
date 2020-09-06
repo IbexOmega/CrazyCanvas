@@ -109,7 +109,10 @@ namespace LambdaEngine
 
 		virtual void ExecuteSecondary(const CommandList* pSecondary) override final;
 
-		virtual void FlushDeferredBarriers() override final;
+		virtual void DeferrDestruction(DeviceChild* pResource) override final;
+
+		virtual void FlushDeferredBarriers()	override final;
+		virtual void FlushDeferredResources()	override final;
 
 		virtual CommandAllocator* GetAllocator() override final;
 
@@ -127,6 +130,7 @@ namespace LambdaEngine
 		TSharedRef<RayTracingPipelineStateVK>	m_CurrentRayTracingPipeline	= nullptr;
 		
 		TArray<DeferredImageBarrier> m_DeferredBarriers;
+		TArray<TSharedRef<DeviceChild>> m_ResourcesToDestroy;
 
 		VkMemoryBarrier			m_MemoryBarriers[MAX_MEMORY_BARRIERS];
 		VkImageMemoryBarrier	m_ImageBarriers[MAX_IMAGE_BARRIERS];

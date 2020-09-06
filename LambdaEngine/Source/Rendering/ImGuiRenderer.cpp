@@ -282,9 +282,9 @@ namespace LambdaEngine
 
 	void ImGuiRenderer::NewFrame(Timestamp delta)
 	{
-		Window* pWindow	= CommonApplication::Get()->GetMainWindow();
-		uint32 windowWidth	= pWindow->GetWidth();
-		uint32 windowHeight = pWindow->GetHeight();
+		TSharedRef<Window> window	= CommonApplication::Get()->GetMainWindow();
+		uint32 windowWidth	= window->GetWidth();
+		uint32 windowHeight = window->GetHeight();
 
 		ImGuiIO& io = ImGui::GetIO();
 		io.DeltaTime = float32(delta.AsSeconds());
@@ -622,8 +622,8 @@ namespace LambdaEngine
 		io.KeyMap[ImGuiKey_Z]			= EKey::KEY_Z;
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
-		Window* pWindow = CommonApplication::Get()->GetMainWindow();
-		io.ImeWindowHandle = pWindow->GetHandle();
+		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+		io.ImeWindowHandle = window->GetHandle();
 #endif
 
 		//Todo: Implement clipboard handling

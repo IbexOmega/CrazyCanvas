@@ -1,6 +1,8 @@
 #pragma once
 #include "LambdaEngine.h"
 
+#include "Core/TSharedRef.h"
+
 namespace LambdaEngine
 {
 	class CommandQueue;
@@ -23,23 +25,23 @@ namespace LambdaEngine
 
 		FORCEINLINE static CommandQueue* GetGraphicsQueue()
 		{
-			return s_pGraphicsQueue;
+			return s_GraphicsQueue.Get();
 		}
 
 		FORCEINLINE static CommandQueue* GetComputeQueue()
 		{
-			return s_pComputeQueue;
+			return s_ComputeQueue.Get();
 		}
 
 		FORCEINLINE static CommandQueue* GetCopyQueue()
 		{
-			return s_pCopyQueue;
+			return s_CopyQueue.Get();
 		}
 
 	private:
 		static GraphicsDevice* s_pGraphicsDevice;
-		static CommandQueue*	s_pGraphicsQueue;
-		static CommandQueue*	s_pComputeQueue;
-		static CommandQueue*	s_pCopyQueue;
+		static TSharedRef<CommandQueue>	s_GraphicsQueue;
+		static TSharedRef<CommandQueue>	s_ComputeQueue;
+		static TSharedRef<CommandQueue>	s_CopyQueue;
 	};
 }

@@ -3,6 +3,8 @@
 
 #include "Containers/String.h"
 
+#include "Application/API/Window.h"
+
 namespace LambdaEngine
 {
 	struct FenceDesc;
@@ -23,7 +25,6 @@ namespace LambdaEngine
 	struct AccelerationStructureDesc;
 	struct RayTracingPipelineStateDesc;
 
-	class Window;
 	class Fence;
 	class Fence;
 	class Shader;
@@ -44,11 +45,17 @@ namespace LambdaEngine
 	class CommandAllocator;
 	class AccelerationStructure;
 
+	/*
+	* EGraphicsAPI
+	*/
 	enum class EGraphicsAPI
 	{
 		VULKAN = 0,
 	};
 
+	/*
+	* CopyDescriptorBindingDesc
+	*/
 	struct CopyDescriptorBindingDesc
 	{
 		uint32 SrcBinding		= 0;
@@ -56,6 +63,9 @@ namespace LambdaEngine
 		uint32 DescriptorCount	= 0;
 	};
 
+	/*
+	* GraphicsDeviceFeatureDesc
+	*/
 	struct GraphicsDeviceFeatureDesc
 	{
 		uint32	MaxComputeWorkGroupSize[3];
@@ -64,12 +74,18 @@ namespace LambdaEngine
 		bool	GeometryShaders;
 	};
 
+	/*
+	* GraphicsDeviceDesc
+	*/
 	struct GraphicsDeviceDesc
 	{
 		String	DebugName	= "";
 		bool	Debug		= false;
 	};
 
+	/*
+	* GraphicsDevice
+	*/
 	class GraphicsDevice
 	{
 	public:
