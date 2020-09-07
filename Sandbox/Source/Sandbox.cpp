@@ -46,8 +46,7 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
 constexpr const bool SHOW_DEMO					= false;
 constexpr const bool RAY_TRACING_ENABLED		= true;
-constexpr const bool SVGF_ENABLED				= true;
-constexpr const bool POST_PROCESSING_ENABLED	= false;
+constexpr const bool SVGF_ENABLED				= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
 constexpr const bool RENDERING_DEBUG_ENABLED	= false;
@@ -1627,21 +1626,13 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	else
 	{
-		if constexpr(!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
-		{
-			renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
-		}
-		else if constexpr (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+		 if constexpr (RAY_TRACING_ENABLED && !SVGF_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
 		}
-		else if constexpr (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+		else if constexpr (RAY_TRACING_ENABLED && SVGF_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
-		}
-		else if constexpr (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
-		{
-			renderGraphFile = "../Assets/RenderGraphs/TRT_PP_DEFERRED.lrg";
 		}
 	}
 

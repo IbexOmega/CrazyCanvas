@@ -390,16 +390,9 @@ namespace LambdaEngine
 		s_NextAttributeID += 2;
 
 		{
-			RenderGraphResourceDesc resource = {};
-			resource.Name							= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
-			resource.Type							= ERenderGraphResourceType::TEXTURE;
-			resource.SubResourceCount				= 1;
-			resource.Editable						= false;
-			resource.External						= false;
-			resource.TextureParams.TextureFormat	= EFormat::FORMAT_B8G8R8A8_UNORM;
+			RenderGraphResourceDesc resource = CreateBackBufferResource();
 			m_Resources.PushBack(resource);
-
-			m_FinalOutput.BackBufferAttributeIndex					= CreateResourceState(resource.Name, m_FinalOutput.Name, false, ERenderGraphResourceBindingType::NONE).AttributeIndex;
+			m_FinalOutput.BackBufferAttributeIndex = CreateResourceState(resource.Name, m_FinalOutput.Name, false, ERenderGraphResourceBindingType::NONE).AttributeIndex;
 		}
 
 		{
@@ -2666,16 +2659,27 @@ namespace LambdaEngine
 	{
 		if (linkIndex >= 0)
 		{
-			EditorRenderGraphResourceLink* pLinkToBeDestroyed = &m_ResourceStateLinksByLinkIndex[linkIndex];
+			auto linkToBeDestroyedIt = m_ResourceStateLinksByLinkIndex.find(linkIndex);
 
-			EditorRenderGraphResourceState* pSrcResource = &m_ResourceStatesByHalfAttributeIndex[pLinkToBeDestroyed->SrcAttributeIndex / 2];
-			EditorRenderGraphResourceState* pDstResource = &m_ResourceStatesByHalfAttributeIndex[pLinkToBeDestroyed->DstAttributeIndex / 2];
+			if (linkToBeDestroyedIt != m_ResourceStateLinksByLinkIndex.end())
+			{
+				EditorRenderGraphResourceState* pSrcResource = &m_ResourceStatesByHalfAttributeIndex[linkToBeDestroyedIt->second.SrcAttributeIndex / 2];
+				EditorRenderGraphResourceState* pDstResource = &m_ResourceStatesByHalfAttributeIndex[linkToBeDestroyedIt->second.DstAttributeIndex / 2];
 
-			m_ResourceStateLinksByLinkIndex.erase(linkIndex);
+				m_ResourceStateLinksByLinkIndex.erase(linkIndex);
 
-			pDstResource->InputLinkIndex = -1;
-			pSrcResource->OutputLinkIndices.erase(linkIndex);
-			m_ParsedGraphDirty = true;
+				pDstResource->InputLinkIndex = -1;
+				pSrcResource->OutputLinkIndices.erase(linkIndex);
+				m_ParsedGraphDirty = true;
+			}
+			else
+			{
+				LOG_ERROR("[RenderGraphEditor]: DestroyLink called for linkIndex %d which does not exist", linkIndex);
+			}
+		}
+		else
+		{
+			LOG_ERROR("[RenderGraphEditor]: DestroyLink called for invalid linkIndex %d", linkIndex);
 		}
 	}
 
@@ -3340,17 +3344,6 @@ namespace LambdaEngine
 	{
 		using namespace rapidjson;
 
-		FILE* pFile = fopen(filepath.c_str(), "r");
-
-		if (pFile == nullptr)
-			return false;
-
-		char readBuffer[65536];
-		FileReadStream inputStream(pFile, readBuffer, sizeof(readBuffer));
-
-		Document d;
-		d.ParseStream(inputStream);
-
 		//Reset to Clear state
 		{
 			s_NextNodeID		= 0;
@@ -3382,480 +3375,494 @@ namespace LambdaEngine
 		THashTable<int32, EditorRenderGraphResourceLink>	loadedResourceStateLinks;
 		THashTable<String, TArray<int32>>					unfinishedLinks; //The key is the Resource State Group / Render Stage name, the value is the resource states awaiting linking
 
-		//Load Resources
-		if (d.HasMember("resources"))
+		if (!filepath.empty())
 		{
-			if (d["resources"].IsArray())
-			{
-				GenericArray resourceArray = d["resources"].GetArray();
+			FILE* pFile = fopen(filepath.c_str(), "r");
 
-				for (uint32 r = 0; r < resourceArray.Size(); r++)
+			if (pFile == nullptr)
+				return false;
+
+			char readBuffer[65536];
+			FileReadStream inputStream(pFile, readBuffer, sizeof(readBuffer));
+
+			Document d;
+			d.ParseStream(inputStream);
+
+			//Load Resources
+			if (d.HasMember("resources"))
+			{
+				if (d["resources"].IsArray())
 				{
-					GenericObject resourceObject = resourceArray[r].GetObject();
-					RenderGraphResourceDesc resource = {};
-					resource.Name							= resourceObject["name"].GetString();
-					resource.Type							= RenderGraphResourceTypeFromString(resourceObject["type"].GetString());
-					resource.BackBufferBound				= resourceObject.HasMember("back_buffer_bound") ? resourceObject["back_buffer_bound"].GetBool() : false;
-					resource.SubResourceCount				= resourceObject["sub_resource_count"].GetUint();
+					GenericArray resourceArray = d["resources"].GetArray();
+
+					for (uint32 r = 0; r < resourceArray.Size(); r++)
+					{
+						GenericObject resourceObject = resourceArray[r].GetObject();
+						RenderGraphResourceDesc resource = {};
+						resource.Name							= resourceObject["name"].GetString();
+						resource.Type							= RenderGraphResourceTypeFromString(resourceObject["type"].GetString());
+						resource.BackBufferBound				= resourceObject.HasMember("back_buffer_bound") ? resourceObject["back_buffer_bound"].GetBool() : false;
+						resource.SubResourceCount				= resourceObject["sub_resource_count"].GetUint();
 					
-					resource.Editable						= resourceObject["editable"].GetBool();
-					resource.External						= resourceObject["external"].GetBool();
+						resource.Editable						= resourceObject["editable"].GetBool();
+						resource.External						= resourceObject["external"].GetBool();
 
-					GenericObject resourceTypeParamsObject = resourceObject["type_params"].GetObject();
-					{
-						switch (resource.Type)
+						GenericObject resourceTypeParamsObject = resourceObject["type_params"].GetObject();
 						{
-							case ERenderGraphResourceType::TEXTURE:
+							switch (resource.Type)
 							{
-								resource.TextureParams.TextureFormat	= TextureFormatFromString(resourceTypeParamsObject["texture_format"].GetString());
-								resource.TextureParams.IsOfArrayType	= resourceTypeParamsObject["is_of_array_type"].GetBool();
-
-								if (!resource.External && resource.Name != RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
+								case ERenderGraphResourceType::TEXTURE:
 								{
-									resource.TextureParams.XDimType			= RenderGraphDimensionTypeFromString(resourceTypeParamsObject["x_dim_type"].GetString());
-									resource.TextureParams.YDimType			= RenderGraphDimensionTypeFromString(resourceTypeParamsObject["y_dim_type"].GetString());
-									resource.TextureParams.XDimVariable		= resourceTypeParamsObject["x_dim_var"].GetFloat();
-									resource.TextureParams.YDimVariable		= resourceTypeParamsObject["y_dim_var"].GetFloat();
-									resource.TextureParams.SampleCount		= resourceTypeParamsObject["sample_count"].GetInt();
-									resource.TextureParams.MiplevelCount	= resourceTypeParamsObject["miplevel_count"].GetInt();
-									resource.TextureParams.SamplerType		= RenderGraphSamplerTypeFromString(resourceTypeParamsObject["sampler_type"].GetString());
-									resource.MemoryType						= MemoryTypeFromString(resourceTypeParamsObject["memory_type"].GetString());
-								}
-								break;
-							}
-							case ERenderGraphResourceType::BUFFER:
-							{
-								if (!resource.External)
-								{
-									resource.BufferParams.SizeType			= RenderGraphDimensionTypeFromString(resourceTypeParamsObject["size_type"].GetString());
-									resource.BufferParams.Size				= resourceTypeParamsObject["size"].GetInt();
-									resource.MemoryType						= MemoryTypeFromString(resourceTypeParamsObject["memory_type"].GetString());
-								}
-								break;
-							}
-							case ERenderGraphResourceType::ACCELERATION_STRUCTURE:
-							{
-								break;
-							}
-						}
-					}
-					
-					loadedResources.PushBack(resource);
-				}
-			}
-			else
-			{
-				LOG_ERROR("[RenderGraphEditor]: \"resources\" member wrong type!");
-				return false;
-			}
-		}
-		else
-		{
-			LOG_ERROR("[RenderGraphEditor]: \"resources\" member could not be found!");
-			return false;
-		}
+									resource.TextureParams.TextureFormat	= TextureFormatFromString(resourceTypeParamsObject["texture_format"].GetString());
+									resource.TextureParams.IsOfArrayType	= resourceTypeParamsObject["is_of_array_type"].GetBool();
 
-		//Load Resource State Groups
-		if (d.HasMember("resource_state_groups"))
-		{
-			if (d["resource_state_groups"].IsArray())
-			{
-				GenericArray resourceStateGroupsArray = d["resource_state_groups"].GetArray();
-
-				for (uint32 rsg = 0; rsg < resourceStateGroupsArray.Size(); rsg++)
-				{
-					GenericObject resourceStateGroupObject = resourceStateGroupsArray[rsg].GetObject();
-					EditorResourceStateGroup resourceStateGroup = {};
-					resourceStateGroup.Name				= resourceStateGroupObject["name"].GetString();
-					resourceStateGroup.InputNodeIndex	= s_NextNodeID++;
-					resourceStateGroup.OutputNodeIndex	= s_NextNodeID++;
-
-					auto unfinishedLinkIt = unfinishedLinks.find(resourceStateGroup.Name);
-
-					GenericArray resourceStateArray = resourceStateGroupObject["resource_states"].GetArray();
-
-					for (uint32 r = 0; r < resourceStateArray.Size(); r++)
-					{
-						GenericObject resourceStateObject = resourceStateArray[r].GetObject();
-
-						String resourceName		= resourceStateObject["name"].GetString();
-
-						int32 attributeIndex = s_NextAttributeID;
-						s_NextAttributeID += 2;
-
-						EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
-						pResourceState->ResourceName		= resourceName;
-						pResourceState->RenderStageName		= resourceStateGroup.Name;
-						pResourceState->Removable			= resourceStateObject["removable"].GetBool();
-						pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
-
-						resourceStateGroup.ResourceStateIdents.PushBack({ resourceName, attributeIndex });
-
-						//Check if there are resource states that are awaiting linking to this resource state group
-						if (unfinishedLinkIt != unfinishedLinks.end())
-						{
-							if (FixLinkForPreviouslyLoadedResourceState(
-								pResourceState,
-								attributeIndex,
-								loadedResourceStatesByHalfAttributeIndex,
-								loadedResourceStateLinks,
-								unfinishedLinkIt->second))
-							{
-								if (unfinishedLinkIt->second.IsEmpty())
-								{
-									unfinishedLinks.erase(unfinishedLinkIt);
-									unfinishedLinkIt = unfinishedLinks.end();
-								}
-							}
-						}
-
-						//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
-						{
-							String srcStageName = resourceStateObject["src_stage"].GetString();
-
-							CreateLinkForLoadedResourceState(
-								pResourceState,
-								attributeIndex,
-								srcStageName,
-								loadedResourceStateGroups,
-								loadedRenderStagesByName,
-								loadedResourceStatesByHalfAttributeIndex,
-								loadedResourceStateLinks,
-								unfinishedLinks);
-						}
-					}
-
-					loadedResourceStateGroups.PushBack(resourceStateGroup);
-				}
-			}
-			else
-			{
-				LOG_ERROR("[RenderGraphEditor]: \"external_resources_stage\" member wrong type!");
-				return false;
-			}
-		}
-		else
-		{
-			LOG_ERROR("[RenderGraphEditor]: \"external_resources_stage\" member could not be found!");
-			return false;
-		}
-
-		//Load Final Output Stage
-		if (d.HasMember("final_output_stage"))
-		{
-			if (d["final_output_stage"].IsObject())
-			{
-				GenericObject finalOutputStageObject = d["final_output_stage"].GetObject();
-
-				loadedFinalOutput.Name		= finalOutputStageObject["name"].GetString();
-				loadedFinalOutput.NodeIndex = s_NextNodeID++;
-
-				GenericObject resourceStateObject = finalOutputStageObject["back_buffer_state"].GetObject();
-
-				String resourceName		= resourceStateObject["name"].GetString();
-
-				int32 attributeIndex = s_NextAttributeID;
-				s_NextAttributeID += 2;
-
-				EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
-				pResourceState->ResourceName		= resourceName;
-				pResourceState->RenderStageName		= loadedFinalOutput.Name;
-				pResourceState->Removable			= resourceStateObject["removable"].GetBool();
-				pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
-
-				loadedFinalOutput.BackBufferAttributeIndex = attributeIndex;
-
-				//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
-				{
-					String srcStageName = resourceStateObject["src_stage"].GetString();
-
-					CreateLinkForLoadedResourceState(
-						pResourceState,
-						attributeIndex,
-						srcStageName,
-						loadedResourceStateGroups,
-						loadedRenderStagesByName,
-						loadedResourceStatesByHalfAttributeIndex,
-						loadedResourceStateLinks,
-						unfinishedLinks);
-				}
-			}
-			else
-			{
-				LOG_ERROR("[RenderGraphEditor]: \"external_resources_stage\" member wrong type!");
-				return false;
-			}
-		}
-		else
-		{
-			LOG_ERROR("[RenderGraphEditor]: \"external_resources_stage\" member could not be found!");
-			return false;
-		}
-
-		//Load Render Stages and Render Stage Resource States
-		if (d.HasMember("render_stages"))
-		{
-			if (d["render_stages"].IsArray())
-			{
-				GenericArray renderStageArray = d["render_stages"].GetArray();
-
-				for (uint32 rs = 0; rs < renderStageArray.Size(); rs++)
-				{
-					GenericObject renderStageObject = renderStageArray[rs].GetObject();
-					EditorRenderStageDesc renderStage = {};
-					renderStage.Name				= renderStageObject["name"].GetString();
-					renderStage.NodeIndex			= s_NextNodeID++;
-					renderStage.InputAttributeIndex = s_NextAttributeID;
-					s_NextAttributeID				+= 2;
-					renderStage.Type				= RenderStageTypeFromString(renderStageObject["type"].GetString());
-					renderStage.CustomRenderer		= renderStageObject["custom_renderer"].GetBool();
-
-					renderStage.Parameters.XDimType			= RenderGraphDimensionTypeFromString(renderStageObject["x_dim_type"].GetString());
-					renderStage.Parameters.YDimType			= RenderGraphDimensionTypeFromString(renderStageObject["y_dim_type"].GetString());
-					renderStage.Parameters.ZDimType			= RenderGraphDimensionTypeFromString(renderStageObject["z_dim_type"].GetString());
-
-					renderStage.Parameters.XDimVariable		= renderStageObject["x_dim_var"].GetDouble();
-					renderStage.Parameters.YDimVariable		= renderStageObject["y_dim_var"].GetDouble();
-					renderStage.Parameters.ZDimVariable		= renderStageObject["z_dim_var"].GetDouble();
-
-					auto unfinishedLinkIt = unfinishedLinks.find(renderStage.Name);
-
-					GenericObject shadersObject		= renderStageObject["shaders"].GetObject();
-					GenericArray resourceStateArray = renderStageObject["resource_states"].GetArray();
-
-					if (renderStage.Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
-					{
-						GenericObject drawParamsObject	= renderStageObject["draw_params"].GetObject();
-
-						renderStage.Graphics.DrawType = RenderStageDrawTypeFromString(drawParamsObject["draw_type"].GetString());
-
-						if (renderStage.Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
-						{
-							//Index Buffer
-							{
-								GenericObject resourceStateObject = drawParamsObject["index_buffer"].GetObject();
-
-								String resourceName		= resourceStateObject["name"].GetString();
-
-								int32 attributeIndex = s_NextAttributeID;
-								s_NextAttributeID += 2;
-
-								EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
-								pResourceState->ResourceName		= resourceName;
-								pResourceState->RenderStageName		= renderStage.Name;
-								pResourceState->Removable			= resourceStateObject["removable"].GetBool();
-								pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
-
-								renderStage.Graphics.IndexBufferAttributeIndex = attributeIndex;
-
-								//Check if there are resource states that are awaiting linking to this resource state group
-								if (unfinishedLinkIt != unfinishedLinks.end())
-								{
-									if (FixLinkForPreviouslyLoadedResourceState(
-										pResourceState,
-										attributeIndex,
-										loadedResourceStatesByHalfAttributeIndex,
-										loadedResourceStateLinks,
-										unfinishedLinkIt->second))
+									if (!resource.External && resource.Name != RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 									{
-										if (unfinishedLinkIt->second.IsEmpty())
-										{
-											unfinishedLinks.erase(unfinishedLinkIt);
-											unfinishedLinkIt = unfinishedLinks.end();
-										}
+										resource.TextureParams.XDimType			= RenderGraphDimensionTypeFromString(resourceTypeParamsObject["x_dim_type"].GetString());
+										resource.TextureParams.YDimType			= RenderGraphDimensionTypeFromString(resourceTypeParamsObject["y_dim_type"].GetString());
+										resource.TextureParams.XDimVariable		= resourceTypeParamsObject["x_dim_var"].GetFloat();
+										resource.TextureParams.YDimVariable		= resourceTypeParamsObject["y_dim_var"].GetFloat();
+										resource.TextureParams.SampleCount		= resourceTypeParamsObject["sample_count"].GetInt();
+										resource.TextureParams.MiplevelCount	= resourceTypeParamsObject["miplevel_count"].GetInt();
+										resource.TextureParams.SamplerType		= RenderGraphSamplerTypeFromString(resourceTypeParamsObject["sampler_type"].GetString());
+										resource.MemoryType						= MemoryTypeFromString(resourceTypeParamsObject["memory_type"].GetString());
+									}
+									break;
+								}
+								case ERenderGraphResourceType::BUFFER:
+								{
+									if (!resource.External)
+									{
+										resource.BufferParams.SizeType			= RenderGraphDimensionTypeFromString(resourceTypeParamsObject["size_type"].GetString());
+										resource.BufferParams.Size				= resourceTypeParamsObject["size"].GetInt();
+										resource.MemoryType						= MemoryTypeFromString(resourceTypeParamsObject["memory_type"].GetString());
+									}
+									break;
+								}
+								case ERenderGraphResourceType::ACCELERATION_STRUCTURE:
+								{
+									break;
+								}
+							}
+						}
+					
+						loadedResources.PushBack(resource);
+					}
+				}
+				else
+				{
+					LOG_ERROR("[RenderGraphEditor]: \"resources\" member wrong type!");
+					return false;
+				}
+			}
+			else
+			{
+				LOG_ERROR("[RenderGraphEditor]: \"resources\" member could not be found!");
+				return false;
+			}
+
+			//Load Resource State Groups
+			if (d.HasMember("resource_state_groups"))
+			{
+				if (d["resource_state_groups"].IsArray())
+				{
+					GenericArray resourceStateGroupsArray = d["resource_state_groups"].GetArray();
+
+					for (uint32 rsg = 0; rsg < resourceStateGroupsArray.Size(); rsg++)
+					{
+						GenericObject resourceStateGroupObject = resourceStateGroupsArray[rsg].GetObject();
+						EditorResourceStateGroup resourceStateGroup = {};
+						resourceStateGroup.Name				= resourceStateGroupObject["name"].GetString();
+						resourceStateGroup.InputNodeIndex	= s_NextNodeID++;
+						resourceStateGroup.OutputNodeIndex	= s_NextNodeID++;
+
+						auto unfinishedLinkIt = unfinishedLinks.find(resourceStateGroup.Name);
+
+						GenericArray resourceStateArray = resourceStateGroupObject["resource_states"].GetArray();
+
+						for (uint32 r = 0; r < resourceStateArray.Size(); r++)
+						{
+							GenericObject resourceStateObject = resourceStateArray[r].GetObject();
+
+							String resourceName		= resourceStateObject["name"].GetString();
+
+							int32 attributeIndex = s_NextAttributeID;
+							s_NextAttributeID += 2;
+
+							EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+							pResourceState->ResourceName		= resourceName;
+							pResourceState->RenderStageName		= resourceStateGroup.Name;
+							pResourceState->Removable			= resourceStateObject["removable"].GetBool();
+							pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
+
+							resourceStateGroup.ResourceStateIdents.PushBack({ resourceName, attributeIndex });
+
+							//Check if there are resource states that are awaiting linking to this resource state group
+							if (unfinishedLinkIt != unfinishedLinks.end())
+							{
+								if (FixLinkForPreviouslyLoadedResourceState(
+									pResourceState,
+									attributeIndex,
+									loadedResourceStatesByHalfAttributeIndex,
+									loadedResourceStateLinks,
+									unfinishedLinkIt->second))
+								{
+									if (unfinishedLinkIt->second.IsEmpty())
+									{
+										unfinishedLinks.erase(unfinishedLinkIt);
+										unfinishedLinkIt = unfinishedLinks.end();
 									}
 								}
-
-								//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
-								{
-									String srcStageName = resourceStateObject["src_stage"].GetString();
-
-									CreateLinkForLoadedResourceState(
-										pResourceState,
-										attributeIndex,
-										srcStageName,
-										loadedResourceStateGroups,
-										loadedRenderStagesByName,
-										loadedResourceStatesByHalfAttributeIndex,
-										loadedResourceStateLinks,
-										unfinishedLinks);
-								}
 							}
 
-							//Indirect Args Buffer
+							//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
 							{
-								GenericObject resourceStateObject = drawParamsObject["indirect_args_buffer"].GetObject();
+								String srcStageName = resourceStateObject["src_stage"].GetString();
 
-								String resourceName		= resourceStateObject["name"].GetString();
-
-								int32 attributeIndex = s_NextAttributeID;
-								s_NextAttributeID += 2;
-
-								EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
-								pResourceState->ResourceName		= resourceName;
-								pResourceState->RenderStageName		= renderStage.Name;
-								pResourceState->Removable			= resourceStateObject["removable"].GetBool();
-								pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
-
-								renderStage.Graphics.IndirectArgsBufferAttributeIndex = attributeIndex;
-
-								//Check if there are resource states that are awaiting linking to this resource state group
-								if (unfinishedLinkIt != unfinishedLinks.end())
-								{
-									if (FixLinkForPreviouslyLoadedResourceState(
-										pResourceState,
-										attributeIndex,
-										loadedResourceStatesByHalfAttributeIndex,
-										loadedResourceStateLinks,
-										unfinishedLinkIt->second))
-									{
-										if (unfinishedLinkIt->second.IsEmpty())
-										{
-											unfinishedLinks.erase(unfinishedLinkIt);
-											unfinishedLinkIt = unfinishedLinks.end();
-										}
-									}
-								}
-
-								//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
-								{
-									String srcStageName = resourceStateObject["src_stage"].GetString();
-
-									CreateLinkForLoadedResourceState(
-										pResourceState,
-										attributeIndex,
-										srcStageName,
-										loadedResourceStateGroups,
-										loadedRenderStagesByName,
-										loadedResourceStatesByHalfAttributeIndex,
-										loadedResourceStateLinks,
-										unfinishedLinks);
-								}
+								CreateLinkForLoadedResourceState(
+									pResourceState,
+									attributeIndex,
+									srcStageName,
+									loadedResourceStateGroups,
+									loadedRenderStagesByName,
+									loadedResourceStatesByHalfAttributeIndex,
+									loadedResourceStateLinks,
+									unfinishedLinks);
 							}
 						}
 
-						renderStage.Graphics.DepthTestEnabled			= renderStageObject["depth_test_enabled"].GetBool();
-
-						renderStage.Graphics.Shaders.TaskShaderName		= shadersObject["task_shader"].GetString();
-						renderStage.Graphics.Shaders.MeshShaderName		= shadersObject["mesh_shader"].GetString();
-						renderStage.Graphics.Shaders.VertexShaderName	= shadersObject["vertex_shader"].GetString();
-						renderStage.Graphics.Shaders.GeometryShaderName	= shadersObject["geometry_shader"].GetString();
-						renderStage.Graphics.Shaders.HullShaderName		= shadersObject["hull_shader"].GetString();
-						renderStage.Graphics.Shaders.DomainShaderName	= shadersObject["domain_shader"].GetString();
-						renderStage.Graphics.Shaders.PixelShaderName	= shadersObject["pixel_shader"].GetString();
+						loadedResourceStateGroups.PushBack(resourceStateGroup);
 					}
-					else if (renderStage.Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
-					{
-						renderStage.Compute.ShaderName			= shadersObject["shader"].GetString();
-					}
-					else if (renderStage.Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
-					{
-						renderStage.RayTracing.Shaders.RaygenShaderName	= shadersObject["raygen_shader"].GetString();
-
-						GenericArray missShadersArray = shadersObject["miss_shaders"].GetArray();
-
-						for (uint32 m = 0; m < missShadersArray.Size(); m++)
-						{
-							renderStage.RayTracing.Shaders.pMissShaderNames[m] = missShadersArray[m].GetString();
-						}
-
-						renderStage.RayTracing.Shaders.MissShaderCount = missShadersArray.Size();
-
-						GenericArray closestHitShadersArray = shadersObject["closest_hit_shaders"].GetArray();
-
-						for (uint32 ch = 0; ch < closestHitShadersArray.Size(); ch++)
-						{
-							renderStage.RayTracing.Shaders.pClosestHitShaderNames[ch] = closestHitShadersArray[ch].GetString();
-						}
-
-						renderStage.RayTracing.Shaders.ClosestHitShaderCount = closestHitShadersArray.Size();
-					}
-
-					for (uint32 r = 0; r < resourceStateArray.Size(); r++)
-					{
-						GenericObject resourceStateObject = resourceStateArray[r].GetObject();
-
-						String resourceName		= resourceStateObject["name"].GetString();
-
-						int32 attributeIndex = s_NextAttributeID;
-						s_NextAttributeID += 2;
-
-						EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
-						pResourceState->ResourceName		= resourceName;
-						pResourceState->RenderStageName		= renderStage.Name;
-						pResourceState->Removable			= resourceStateObject["removable"].GetBool();
-						pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
-
-						renderStage.ResourceStateIdents.PushBack({ resourceName, attributeIndex });
-
-						//Check if there are resource states that are awaiting linking to this resource state group
-						if (unfinishedLinkIt != unfinishedLinks.end())
-						{
-							if (FixLinkForPreviouslyLoadedResourceState(
-								pResourceState,
-								attributeIndex,
-								loadedResourceStatesByHalfAttributeIndex,
-								loadedResourceStateLinks,
-								unfinishedLinkIt->second))
-							{
-								if (unfinishedLinkIt->second.IsEmpty())
-								{
-									unfinishedLinks.erase(unfinishedLinkIt);
-									unfinishedLinkIt = unfinishedLinks.end();
-								}
-							}
-						}
-
-						//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
-						{
-							String srcStageName = resourceStateObject["src_stage"].GetString();
-
-							CreateLinkForLoadedResourceState(
-								pResourceState,
-								attributeIndex,
-								srcStageName,
-								loadedResourceStateGroups,
-								loadedRenderStagesByName,
-								loadedResourceStatesByHalfAttributeIndex,
-								loadedResourceStateLinks,
-								unfinishedLinks);
-						}
-					}
-
-					loadedRenderStagesByName[renderStage.Name] = renderStage;
-					loadedRenderStageNameByInputAttributeIndex[renderStage.InputAttributeIndex] = renderStage.Name;
+				}
+				else
+				{
+					LOG_ERROR("[RenderGraphEditor]: \"external_resources_stage\" member wrong type!");
+					return false;
 				}
 			}
 			else
 			{
-				LOG_ERROR("[RenderGraphEditor]: \"render_stages\" member wrong type!");
+				LOG_ERROR("[RenderGraphEditor]: \"external_resources_stage\" member could not be found!");
 				return false;
 			}
-		}
-		else
-		{
-			LOG_ERROR("[RenderGraphEditor]: \"render_stages\" member could not be found!");
-			return false;
-		}
 
-		fclose(pFile);
-
-		if (!unfinishedLinks.empty())
-		{
-			LOG_ERROR("[RenderGraphEditor]: The following Resource States did not successfully link:");
-
-			for (auto unfinishedLinkIt = unfinishedLinks.begin(); unfinishedLinkIt != unfinishedLinks.end(); unfinishedLinkIt++)
+			//Load Final Output Stage
+			if (d.HasMember("final_output_stage"))
 			{
-				LOG_ERROR("\t--%s--", unfinishedLinkIt->first.c_str());
-
-				for (int32 attributeIndex : unfinishedLinkIt->second)
+				if (d["final_output_stage"].IsObject())
 				{
+					GenericObject finalOutputStageObject = d["final_output_stage"].GetObject();
+
+					loadedFinalOutput.Name		= finalOutputStageObject["name"].GetString();
+					loadedFinalOutput.NodeIndex = s_NextNodeID++;
+
+					GenericObject resourceStateObject = finalOutputStageObject["back_buffer_state"].GetObject();
+
+					String resourceName		= resourceStateObject["name"].GetString();
+
+					int32 attributeIndex = s_NextAttributeID;
+					s_NextAttributeID += 2;
+
 					EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
-					LOG_ERROR("\t\t%s", pResourceState->ResourceName.c_str());
+					pResourceState->ResourceName		= resourceName;
+					pResourceState->RenderStageName		= loadedFinalOutput.Name;
+					pResourceState->Removable			= resourceStateObject["removable"].GetBool();
+					pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
+
+					loadedFinalOutput.BackBufferAttributeIndex = attributeIndex;
+
+					//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
+					{
+						String srcStageName = resourceStateObject["src_stage"].GetString();
+
+						CreateLinkForLoadedResourceState(
+							pResourceState,
+							attributeIndex,
+							srcStageName,
+							loadedResourceStateGroups,
+							loadedRenderStagesByName,
+							loadedResourceStatesByHalfAttributeIndex,
+							loadedResourceStateLinks,
+							unfinishedLinks);
+					}
+				}
+				else
+				{
+					LOG_ERROR("[RenderGraphEditor]: \"external_resources_stage\" member wrong type!");
+					return false;
 				}
 			}
+			else
+			{
+				LOG_ERROR("[RenderGraphEditor]: \"external_resources_stage\" member could not be found!");
+				return false;
+			}
 
-			return false;
+			//Load Render Stages and Render Stage Resource States
+			if (d.HasMember("render_stages"))
+			{
+				if (d["render_stages"].IsArray())
+				{
+					GenericArray renderStageArray = d["render_stages"].GetArray();
+
+					for (uint32 rs = 0; rs < renderStageArray.Size(); rs++)
+					{
+						GenericObject renderStageObject = renderStageArray[rs].GetObject();
+						EditorRenderStageDesc renderStage = {};
+						renderStage.Name				= renderStageObject["name"].GetString();
+						renderStage.NodeIndex			= s_NextNodeID++;
+						renderStage.InputAttributeIndex = s_NextAttributeID;
+						s_NextAttributeID				+= 2;
+						renderStage.Type				= RenderStageTypeFromString(renderStageObject["type"].GetString());
+						renderStage.CustomRenderer		= renderStageObject["custom_renderer"].GetBool();
+
+						renderStage.Parameters.XDimType			= RenderGraphDimensionTypeFromString(renderStageObject["x_dim_type"].GetString());
+						renderStage.Parameters.YDimType			= RenderGraphDimensionTypeFromString(renderStageObject["y_dim_type"].GetString());
+						renderStage.Parameters.ZDimType			= RenderGraphDimensionTypeFromString(renderStageObject["z_dim_type"].GetString());
+
+						renderStage.Parameters.XDimVariable		= renderStageObject["x_dim_var"].GetDouble();
+						renderStage.Parameters.YDimVariable		= renderStageObject["y_dim_var"].GetDouble();
+						renderStage.Parameters.ZDimVariable		= renderStageObject["z_dim_var"].GetDouble();
+
+						auto unfinishedLinkIt = unfinishedLinks.find(renderStage.Name);
+
+						GenericObject shadersObject		= renderStageObject["shaders"].GetObject();
+						GenericArray resourceStateArray = renderStageObject["resource_states"].GetArray();
+
+						if (renderStage.Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
+						{
+							GenericObject drawParamsObject	= renderStageObject["draw_params"].GetObject();
+
+							renderStage.Graphics.DrawType = RenderStageDrawTypeFromString(drawParamsObject["draw_type"].GetString());
+
+							if (renderStage.Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+							{
+								//Index Buffer
+								{
+									GenericObject resourceStateObject = drawParamsObject["index_buffer"].GetObject();
+
+									String resourceName		= resourceStateObject["name"].GetString();
+
+									int32 attributeIndex = s_NextAttributeID;
+									s_NextAttributeID += 2;
+
+									EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+									pResourceState->ResourceName		= resourceName;
+									pResourceState->RenderStageName		= renderStage.Name;
+									pResourceState->Removable			= resourceStateObject["removable"].GetBool();
+									pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
+
+									renderStage.Graphics.IndexBufferAttributeIndex = attributeIndex;
+
+									//Check if there are resource states that are awaiting linking to this resource state group
+									if (unfinishedLinkIt != unfinishedLinks.end())
+									{
+										if (FixLinkForPreviouslyLoadedResourceState(
+											pResourceState,
+											attributeIndex,
+											loadedResourceStatesByHalfAttributeIndex,
+											loadedResourceStateLinks,
+											unfinishedLinkIt->second))
+										{
+											if (unfinishedLinkIt->second.IsEmpty())
+											{
+												unfinishedLinks.erase(unfinishedLinkIt);
+												unfinishedLinkIt = unfinishedLinks.end();
+											}
+										}
+									}
+
+									//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
+									{
+										String srcStageName = resourceStateObject["src_stage"].GetString();
+
+										CreateLinkForLoadedResourceState(
+											pResourceState,
+											attributeIndex,
+											srcStageName,
+											loadedResourceStateGroups,
+											loadedRenderStagesByName,
+											loadedResourceStatesByHalfAttributeIndex,
+											loadedResourceStateLinks,
+											unfinishedLinks);
+									}
+								}
+
+								//Indirect Args Buffer
+								{
+									GenericObject resourceStateObject = drawParamsObject["indirect_args_buffer"].GetObject();
+
+									String resourceName		= resourceStateObject["name"].GetString();
+
+									int32 attributeIndex = s_NextAttributeID;
+									s_NextAttributeID += 2;
+
+									EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+									pResourceState->ResourceName		= resourceName;
+									pResourceState->RenderStageName		= renderStage.Name;
+									pResourceState->Removable			= resourceStateObject["removable"].GetBool();
+									pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
+
+									renderStage.Graphics.IndirectArgsBufferAttributeIndex = attributeIndex;
+
+									//Check if there are resource states that are awaiting linking to this resource state group
+									if (unfinishedLinkIt != unfinishedLinks.end())
+									{
+										if (FixLinkForPreviouslyLoadedResourceState(
+											pResourceState,
+											attributeIndex,
+											loadedResourceStatesByHalfAttributeIndex,
+											loadedResourceStateLinks,
+											unfinishedLinkIt->second))
+										{
+											if (unfinishedLinkIt->second.IsEmpty())
+											{
+												unfinishedLinks.erase(unfinishedLinkIt);
+												unfinishedLinkIt = unfinishedLinks.end();
+											}
+										}
+									}
+
+									//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
+									{
+										String srcStageName = resourceStateObject["src_stage"].GetString();
+
+										CreateLinkForLoadedResourceState(
+											pResourceState,
+											attributeIndex,
+											srcStageName,
+											loadedResourceStateGroups,
+											loadedRenderStagesByName,
+											loadedResourceStatesByHalfAttributeIndex,
+											loadedResourceStateLinks,
+											unfinishedLinks);
+									}
+								}
+							}
+
+							renderStage.Graphics.DepthTestEnabled			= renderStageObject["depth_test_enabled"].GetBool();
+
+							renderStage.Graphics.Shaders.TaskShaderName		= shadersObject["task_shader"].GetString();
+							renderStage.Graphics.Shaders.MeshShaderName		= shadersObject["mesh_shader"].GetString();
+							renderStage.Graphics.Shaders.VertexShaderName	= shadersObject["vertex_shader"].GetString();
+							renderStage.Graphics.Shaders.GeometryShaderName	= shadersObject["geometry_shader"].GetString();
+							renderStage.Graphics.Shaders.HullShaderName		= shadersObject["hull_shader"].GetString();
+							renderStage.Graphics.Shaders.DomainShaderName	= shadersObject["domain_shader"].GetString();
+							renderStage.Graphics.Shaders.PixelShaderName	= shadersObject["pixel_shader"].GetString();
+						}
+						else if (renderStage.Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
+						{
+							renderStage.Compute.ShaderName			= shadersObject["shader"].GetString();
+						}
+						else if (renderStage.Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
+						{
+							renderStage.RayTracing.Shaders.RaygenShaderName	= shadersObject["raygen_shader"].GetString();
+
+							GenericArray missShadersArray = shadersObject["miss_shaders"].GetArray();
+
+							for (uint32 m = 0; m < missShadersArray.Size(); m++)
+							{
+								renderStage.RayTracing.Shaders.pMissShaderNames[m] = missShadersArray[m].GetString();
+							}
+
+							renderStage.RayTracing.Shaders.MissShaderCount = missShadersArray.Size();
+
+							GenericArray closestHitShadersArray = shadersObject["closest_hit_shaders"].GetArray();
+
+							for (uint32 ch = 0; ch < closestHitShadersArray.Size(); ch++)
+							{
+								renderStage.RayTracing.Shaders.pClosestHitShaderNames[ch] = closestHitShadersArray[ch].GetString();
+							}
+
+							renderStage.RayTracing.Shaders.ClosestHitShaderCount = closestHitShadersArray.Size();
+						}
+
+						for (uint32 r = 0; r < resourceStateArray.Size(); r++)
+						{
+							GenericObject resourceStateObject = resourceStateArray[r].GetObject();
+
+							String resourceName		= resourceStateObject["name"].GetString();
+
+							int32 attributeIndex = s_NextAttributeID;
+							s_NextAttributeID += 2;
+
+							EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+							pResourceState->ResourceName		= resourceName;
+							pResourceState->RenderStageName		= renderStage.Name;
+							pResourceState->Removable			= resourceStateObject["removable"].GetBool();
+							pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
+
+							renderStage.ResourceStateIdents.PushBack({ resourceName, attributeIndex });
+
+							//Check if there are resource states that are awaiting linking to this resource state group
+							if (unfinishedLinkIt != unfinishedLinks.end())
+							{
+								if (FixLinkForPreviouslyLoadedResourceState(
+									pResourceState,
+									attributeIndex,
+									loadedResourceStatesByHalfAttributeIndex,
+									loadedResourceStateLinks,
+									unfinishedLinkIt->second))
+								{
+									if (unfinishedLinkIt->second.IsEmpty())
+									{
+										unfinishedLinks.erase(unfinishedLinkIt);
+										unfinishedLinkIt = unfinishedLinks.end();
+									}
+								}
+							}
+
+							//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
+							{
+								String srcStageName = resourceStateObject["src_stage"].GetString();
+
+								CreateLinkForLoadedResourceState(
+									pResourceState,
+									attributeIndex,
+									srcStageName,
+									loadedResourceStateGroups,
+									loadedRenderStagesByName,
+									loadedResourceStatesByHalfAttributeIndex,
+									loadedResourceStateLinks,
+									unfinishedLinks);
+							}
+						}
+
+						loadedRenderStagesByName[renderStage.Name] = renderStage;
+						loadedRenderStageNameByInputAttributeIndex[renderStage.InputAttributeIndex] = renderStage.Name;
+					}
+				}
+				else
+				{
+					LOG_ERROR("[RenderGraphEditor]: \"render_stages\" member wrong type!");
+					return false;
+				}
+			}
+			else
+			{
+				LOG_ERROR("[RenderGraphEditor]: \"render_stages\" member could not be found!");
+				return false;
+			}
+
+			fclose(pFile);
+
+			if (!unfinishedLinks.empty())
+			{
+				LOG_ERROR("[RenderGraphEditor]: The following Resource States did not successfully link:");
+
+				for (auto unfinishedLinkIt = unfinishedLinks.begin(); unfinishedLinkIt != unfinishedLinks.end(); unfinishedLinkIt++)
+				{
+					LOG_ERROR("\t--%s--", unfinishedLinkIt->first.c_str());
+
+					for (int32 attributeIndex : unfinishedLinkIt->second)
+					{
+						EditorRenderGraphResourceState* pResourceState = &loadedResourceStatesByHalfAttributeIndex[attributeIndex / 2];
+						LOG_ERROR("\t\t%s", pResourceState->ResourceName.c_str());
+					}
+				}
+
+				return false;
+			}
 		}
 
 		//Set Loaded State
@@ -4072,20 +4079,23 @@ namespace LambdaEngine
 	{
 		const EditorRenderGraphResourceState* pBackBufferFinalState = &m_ResourceStatesByHalfAttributeIndex[m_FinalOutput.BackBufferAttributeIndex / 2];
 
-		if (pBackBufferFinalState->InputLinkIndex == -1)
-		{
-			m_ParsingError = "No link connected to Final Output";
-			return false;
-		}
+		if (!generateImGuiStage)
+			{
+			if (pBackBufferFinalState->InputLinkIndex == -1)
+			{
+				m_ParsingError = "No link connected to Final Output";
+				return false;
+			}
 
-		//Get the Render Stage connected to the Final Output Stage
-		const String& lastRenderStageName = m_ResourceStatesByHalfAttributeIndex[m_ResourceStateLinksByLinkIndex[pBackBufferFinalState->InputLinkIndex].SrcAttributeIndex / 2].RenderStageName;
+			//Get the Render Stage connected to the Final Output Stage
+			const String& lastRenderStageName = m_ResourceStatesByHalfAttributeIndex[m_ResourceStateLinksByLinkIndex[pBackBufferFinalState->InputLinkIndex].SrcAttributeIndex / 2].RenderStageName;
 
-		//Check if the final Render Stage actually is a Render Stage and not a Resource State Group
-		if (!IsRenderStage(lastRenderStageName))
-		{
-			m_ParsingError = "A valid render stage must be linked to " + m_FinalOutput.Name;
-			return false;
+			//Check if the final Render Stage actually is a Render Stage and not a Resource State Group
+			if (!IsRenderStage(lastRenderStageName))
+			{
+				m_ParsingError = "A valid render stage must be linked to " + m_FinalOutput.Name;
+				return false;
+			}
 		}
 
 		//Reset Render Stage Weight
@@ -4239,28 +4249,12 @@ namespace LambdaEngine
 					if (CapturedByImGui(&(*finalResourceIt)))
 					{
 						//Todo: What if SubResourceCount > 1
-
-						RenderGraphResourceState resourceState = {};
-						resourceState.ResourceName = pFinalResourceState->ResourceName;
-
-						if (pFinalResourceState->ResourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
+						//The Back Buffer is manually added below
+						if (pFinalResourceState->ResourceName != RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 						{
-							//This is just a dummy as it will be removed in a later stage
-							RenderGraphResourceSynchronizationDesc resourceSynchronization = {};
-							resourceSynchronization.PrevRenderStage = RENDER_GRAPH_IMGUI_STAGE_NAME;
-							resourceSynchronization.NextRenderStage = "PRESENT (Not a Render Stage)";
-							resourceSynchronization.PrevBindingType = ERenderGraphResourceBindingType::ATTACHMENT;
-							resourceSynchronization.NextBindingType = ERenderGraphResourceBindingType::PRESENT;
-							resourceSynchronization.PrevQueue		= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
-							resourceSynchronization.NextQueue		= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
-							resourceSynchronization.ResourceName	= pFinalResourceState->ResourceName;
+							RenderGraphResourceState resourceState = {};
+							resourceState.ResourceName = pFinalResourceState->ResourceName;
 
-							imguiSynchronizationStage.Synchronizations.PushBack(resourceSynchronization);
-
-							resourceState.BindingType = ERenderGraphResourceBindingType::ATTACHMENT;
-						}
-						else
-						{
 							//If this resource is not the Back Buffer, we need to check if the following frame needs to have the resource transitioned to some initial state
 							for (auto orderedRenderStageIt = orderedMappedRenderStages.rbegin(); orderedRenderStageIt != orderedMappedRenderStages.rend(); orderedRenderStageIt++)
 							{
@@ -4293,9 +4287,8 @@ namespace LambdaEngine
 							}
 
 							resourceState.BindingType = ERenderGraphResourceBindingType::COMBINED_SAMPLER;
-						}
-
-						imguiRenderStage.ResourceStates.PushBack(resourceState);
+							imguiRenderStage.ResourceStates.PushBack(resourceState);
+						}	
 					}
 				}
 				else
@@ -4303,6 +4296,27 @@ namespace LambdaEngine
 					LOG_ERROR("[RenderGraphEditor]: Final Resource State with name \"%s\" could not be found among resources", pFinalResourceState->ResourceName);
 					return false;
 				}
+			}
+
+			//Forcefully add the Back Buffer as a Render Pass Attachment
+			{
+				//This is just a dummy as it will be removed in a later stage
+				RenderGraphResourceSynchronizationDesc resourceSynchronization = {};
+				resourceSynchronization.PrevRenderStage = RENDER_GRAPH_IMGUI_STAGE_NAME;
+				resourceSynchronization.NextRenderStage = "PRESENT (Not a Render Stage)";
+				resourceSynchronization.PrevBindingType = ERenderGraphResourceBindingType::ATTACHMENT;
+				resourceSynchronization.NextBindingType = ERenderGraphResourceBindingType::PRESENT;
+				resourceSynchronization.PrevQueue		= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
+				resourceSynchronization.NextQueue		= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
+				resourceSynchronization.ResourceName	= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+
+				imguiSynchronizationStage.Synchronizations.PushBack(resourceSynchronization);
+
+				RenderGraphResourceState resourceState = {};
+				resourceState.ResourceName	= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+				resourceState.BindingType	= ERenderGraphResourceBindingType::ATTACHMENT;
+
+				imguiRenderStage.ResourceStates.PushBack(resourceState);
 			}
 
 			orderedRenderStages.PushBack(imguiRenderStage);
@@ -4694,6 +4708,13 @@ namespace LambdaEngine
 			}
 		}
 
+		auto backBufferResource = FindResource(RENDER_GRAPH_BACK_BUFFER_ATTACHMENT);
+
+		if (backBufferResource == m_Resources.end())
+		{
+			m_Resources.PushBack(CreateBackBufferResource());
+		}
+
 		m_ParsedRenderGraphStructure.ResourceDescriptions				= m_Resources;
 		m_ParsedRenderGraphStructure.RenderStageDescriptions			= orderedRenderStages;
 		m_ParsedRenderGraphStructure.SynchronizationStageDescriptions	= orderedSynchronizationStages;
@@ -4948,6 +4969,18 @@ namespace LambdaEngine
 		{
 			pDstRenderStage->RayTracing.Shaders					= pSrcRenderStage->RayTracing.Shaders;
 		}
+	}
+
+	RenderGraphResourceDesc RenderGraphEditor::CreateBackBufferResource()
+	{
+		RenderGraphResourceDesc resource = {};
+		resource.Name							= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+		resource.Type							= ERenderGraphResourceType::TEXTURE;
+		resource.SubResourceCount				= 1;
+		resource.Editable						= false;
+		resource.External						= false;
+		resource.TextureParams.TextureFormat	= EFormat::FORMAT_B8G8R8A8_UNORM;
+		return resource;
 	}
 
 }

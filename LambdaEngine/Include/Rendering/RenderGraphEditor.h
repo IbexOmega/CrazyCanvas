@@ -230,6 +230,8 @@ namespace LambdaEngine
 			SynchronizationStageDesc* pSynchronizationStage);
 		void CreateParsedRenderStage(RenderStageDesc* pDstRenderStage, const EditorRenderStageDesc* pSrcRenderStage);
 
+		RenderGraphResourceDesc CreateBackBufferResource();
+
 	private:
 		bool												m_GUIInitialized = false;
 
