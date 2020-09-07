@@ -1,5 +1,5 @@
 #pragma once
-#include "Rendering/Core/API/ISampler.h"
+#include "Rendering/Core/API/Sampler.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
@@ -8,9 +8,9 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
-	class SamplerVK : public TDeviceChildBase<GraphicsDeviceVK, ISampler>
+	class SamplerVK : public TDeviceChildBase<GraphicsDeviceVK, Sampler>
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, ISampler>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, Sampler>;
 
 	public:
 		SamplerVK(const GraphicsDeviceVK* pDevice);
@@ -23,22 +23,17 @@ namespace LambdaEngine
 			return m_Sampler;
 		}
 
-		// IDeviceChild Interface
-		virtual void SetName(const char* pName) override final;
+	public:
+		// DeviceChild Interface
+		virtual void SetName(const String& name) override final;
 
-		// ISampler Interface
+		// Sampler Interface
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
-			return (uint64)m_Sampler;
+			return reinterpret_cast<uint64>(m_Sampler);
 		}
-        
-        FORCEINLINE virtual SamplerDesc GetDesc() const override final
-        {
-            return m_Desc;
-        }
 
 	private:
-		VkSampler   m_Sampler;
-        SamplerDesc m_Desc;
+		VkSampler m_Sampler = VK_NULL_HANDLE;
 	};
 }

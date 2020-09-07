@@ -13,6 +13,7 @@
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
 
+#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
 
 #include "Application/API/PlatformMisc.h"

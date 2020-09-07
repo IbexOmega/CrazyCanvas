@@ -25,7 +25,6 @@
 /*
 * Custom memory handler
 */
-
 namespace LambdaEngine
 {
 	enum FMemoryDebugFlags : uint16

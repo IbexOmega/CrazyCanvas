@@ -3,7 +3,7 @@
 
 namespace LambdaEngine
 {
-	std::vector<Thread*>* Thread::s_ThreadsToJoin;
+	TArray<Thread*>* Thread::s_ThreadsToJoin;
 	std::set<Thread*>* Thread::s_Threads;
 	SpinLock* Thread::s_Lock;
 
@@ -51,19 +51,19 @@ namespace LambdaEngine
 	{
 		m_Func();
 		std::scoped_lock<SpinLock> lock(*s_Lock);
-		s_ThreadsToJoin->push_back(this);
+		s_ThreadsToJoin->PushBack(this);
 	}
 
 	void Thread::Init()
 	{
 		s_Lock = DBG_NEW SpinLock();
 		s_Threads = DBG_NEW std::set<Thread*>();
-		s_ThreadsToJoin = DBG_NEW std::vector<Thread*>();
+		s_ThreadsToJoin = DBG_NEW TArray<Thread*>();
 	}
 
 	void Thread::Join()
 	{
-		if (!s_ThreadsToJoin->empty())
+		if (!s_ThreadsToJoin->IsEmpty())
 		{
 			std::scoped_lock<SpinLock> lock(*s_Lock);
 			for (Thread* thread : *s_ThreadsToJoin)
@@ -73,7 +73,7 @@ namespace LambdaEngine
 				s_Threads->erase(thread);
 				delete thread;
 			}
-			s_ThreadsToJoin->clear();
+			s_ThreadsToJoin->Clear();
 		}
 	}
 

@@ -33,9 +33,9 @@ workspace "LambdaEngine"
 	-- Platform
 	platforms
 	{
-		"x64_SharedLib",
 		"x64_StaticLib",
-	}
+		"x64_SharedLib",
+    }
 
 	filter "platforms:x64_SharedLib"
 		defines
@@ -194,14 +194,23 @@ workspace "LambdaEngine"
 			}
 	group ""
 
-	-- Engine Project
-	project "LambdaEngine"
-		language "C++"
-		cppdialect "C++17"
-		systemversion "latest"
-		location "LambdaEngine"
+    -- Engine Project
+    project "LambdaEngine"
+        language "C++"
+        cppdialect "C++17"
+        systemversion "latest"
+        location "LambdaEngine"
+        
+		-- Pre-Compiled Headers
+		pchheader "PreCompiled.h"
+		pchsource "%{prj.name}/PreCompiled.cpp"
 
-		-- Platform
+		forceincludes  
+		{ 
+			"PreCompiled.h"
+		}
+
+        -- Platform
 		filter "platforms:x64_SharedLib"
 			kind "SharedLib"
 		filter "platforms:x64_StaticLib"
@@ -235,10 +244,14 @@ workspace "LambdaEngine"
 
 		-- Remove files not available for windows builds
 		filter "system:windows"
-			removefiles
-			{
-				"%{prj.name}/Include/Application/Mac/**",
-				"%{prj.name}/Source/Application/Mac/**",
+		    files
+            {
+                "%{prj.name}/**.natvis",
+            }
+            removefiles
+            {
+                "%{prj.name}/Include/Application/Mac/**",
+                "%{prj.name}/Source/Application/Mac/**",
 
 				"%{prj.name}/Include/Input/Mac/**",
 				"%{prj.name}/Source/Input/Mac/**",
@@ -287,6 +300,7 @@ workspace "LambdaEngine"
 		-- Includes
 		includedirs
 		{
+			"%{prj.name}",
 			"%{prj.name}/Include",
 		}
 

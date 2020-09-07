@@ -36,7 +36,7 @@ namespace LambdaEngine
 
 		/*
 		* Returns true if this is the current active window, that is the window that currently has input focus
-		*   return - Returns true if the window is the current active window
+		*	return - Returns true if the window is the current active window
 		*/
 		virtual bool IsActiveWindow() const = 0;
 
@@ -48,15 +48,15 @@ namespace LambdaEngine
 		virtual void ToggleFullscreen() = 0;
 
 		virtual void SetTitle(const String& title) = 0;
-
-		virtual void SetPosition(int32 x, int32 y)                  = 0;
-		virtual void GetPosition(int32* pPosX, int32* pPosY) const  = 0;
+		
+		virtual void SetPosition(int32 x, int32 y)					= 0;
+		virtual void GetPosition(int32* pPosX, int32* pPosY) const	= 0;
 
 		/*
 		* Retrive the native handle
-		*   return - Return the native handle of the window.
-		*               Win32:  HWND
-		*               Mac:    NSWindow*
+		*	return - Return the native handle of the window. 
+		*				Win32:	HWND
+		*				Mac:	NSWindow*
 		*/
 		virtual void* GetHandle() const
 		{
@@ -65,9 +65,9 @@ namespace LambdaEngine
 
 		/*
 		* Return a handle to the client area of the window. May be nullptr on some platforms
-		*   return - Returns a handle to the client-area of the window
-		*               Win32:  nullptr
-		*               Mac:    NSView*
+		*	return - Returns a handle to the client-area of the window
+		*		Win32:	nullptr
+		*		Mac:	NSView*
 		*/
 		virtual const void* GetView() const
 		{

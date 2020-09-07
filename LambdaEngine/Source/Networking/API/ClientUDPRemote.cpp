@@ -54,7 +54,7 @@ namespace LambdaEngine
 
 	void ClientUDPRemote::OnDataReceived(PacketTransceiver* pTransciver)
 	{
-		std::vector<NetworkPacket*> packets;
+		TArray<NetworkPacket*> packets;
 		m_PacketManager.QueryBegin(pTransciver, packets);
 		for (NetworkPacket* pPacket : packets)
 		{

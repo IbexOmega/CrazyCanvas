@@ -14,6 +14,9 @@ namespace LambdaEngine
 
 	HANDLE Win32Console::s_OutputHandle = 0;
 
+	/*
+	* Win32Console
+	*/
 	void Win32Console::Show()
 	{
 		std::scoped_lock<SpinLock> lock(g_ConsoleLock);

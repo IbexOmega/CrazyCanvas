@@ -47,7 +47,7 @@ namespace LambdaEngine
 
 	private:
 		static SpinLock* s_Lock;
-		static std::vector<Thread*>* s_ThreadsToJoin;
+		static TArray<Thread*>* s_ThreadsToJoin;
 		static std::set<Thread*>* s_Threads;
 	};
 }

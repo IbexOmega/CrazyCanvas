@@ -9,8 +9,8 @@
 namespace LambdaEngine
 {
 	ComputePipelineStateVK::ComputePipelineStateVK(const GraphicsDeviceVK* pDevice) 
-		: TDeviceChild(pDevice),
-		m_Pipeline(VK_NULL_HANDLE)
+		: TDeviceChild(pDevice)
+		, m_Pipeline(VK_NULL_HANDLE)
 	{
 	}
 
@@ -25,15 +25,49 @@ namespace LambdaEngine
 
 	bool ComputePipelineStateVK::Init(const ComputePipelineStateDesc* pDesc)
 	{
-		const ShaderVK*         pShader             = reinterpret_cast<const ShaderVK*>(pDesc->pShader);
-        const PipelineLayoutVK* pPipelineLayoutVk   = reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
+		VALIDATE(pDesc != nullptr);
 
-        VkPipelineShaderStageCreateInfo shaderCreateInfo;
-        VkSpecializationInfo shaderSpecializationInfo;
-        std::vector<VkSpecializationMapEntry> shaderSpecializationMapEntries;
+		const ShaderVK*			pShader				= reinterpret_cast<const ShaderVK*>(pDesc->Shader.pShader);
+		const PipelineLayoutVK* pPipelineLayoutVk	= reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
+		VALIDATE(pShader			!= nullptr);
+		VALIDATE(pPipelineLayoutVk	!= nullptr);
 
-        pShader->FillSpecializationInfo(shaderSpecializationInfo, shaderSpecializationMapEntries);
-        pShader->FillShaderStageInfo(shaderCreateInfo, &shaderSpecializationInfo);
+		// ShaderStageInfo
+		VkPipelineShaderStageCreateInfo shaderCreateInfo = { };
+		shaderCreateInfo.sType	= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderCreateInfo.pNext	= nullptr;
+		shaderCreateInfo.flags	= 0;
+		shaderCreateInfo.stage	= VK_SHADER_STAGE_COMPUTE_BIT;
+		shaderCreateInfo.module	= pShader->GetShaderModule();
+		shaderCreateInfo.pName	= pShader->GetEntryPoint().c_str();
+
+		// Shader Constants
+		VkSpecializationInfo specializationInfo = { };
+		if (!pDesc->Shader.ShaderConstants.IsEmpty())
+		{
+			const uint32 constantCount = static_cast<uint32>(pDesc->Shader.ShaderConstants.GetSize());
+			
+			TArray<VkSpecializationMapEntry> specializationEntires(constantCount);
+			for (uint32 i = 0; i < constantCount; i++)
+			{
+				VkSpecializationMapEntry specializationEntry = {};
+				specializationEntry.constantID	= i;
+				specializationEntry.offset		= i * sizeof(ShaderConstant);
+				specializationEntry.size		= sizeof(ShaderConstant);
+				specializationEntires.EmplaceBack(specializationEntry);
+			}
+
+			specializationInfo.mapEntryCount = static_cast<uint32>(specializationEntires.GetSize());
+			specializationInfo.pMapEntries	 = specializationEntires.GetData();
+			specializationInfo.dataSize		 = constantCount * sizeof(ShaderConstant);
+			specializationInfo.pData		 = pDesc->Shader.ShaderConstants.GetData();
+
+			shaderCreateInfo.pSpecializationInfo = &specializationInfo;
+		}
+		else
+		{
+			shaderCreateInfo.pSpecializationInfo = nullptr;
+		}
 
 		VkComputePipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType					= VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -44,29 +78,39 @@ namespace LambdaEngine
 		pipelineInfo.basePipelineIndex		= -1;
 		pipelineInfo.stage					= shaderCreateInfo;
 
-        VkResult result = vkCreateComputePipelines(m_pDevice->Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
+		VkResult result = vkCreateComputePipelines(m_pDevice->Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
 		if (result != VK_SUCCESS)
 		{
-            LOG_VULKAN_ERROR(result, "[ComputePipelineStateVK]: vkCreateComputePipelines failed for %s", pDesc->Name.c_str());
-            
+			if (!pDesc->DebugName.empty())
+			{
+				LOG_VULKAN_ERROR(result, "[ComputePipelineStateVK]: vkCreateComputePipelines failed for %s", pDesc->DebugName.c_str());
+			}
+			else
+			{
+				LOG_VULKAN_ERROR(result, "[ComputePipelineStateVK]: vkCreateComputePipelines failed");
+			}
+			
 			return false;
 		}
-        else
-        {
-            SetName(pDesc->Name.c_str());
-
-            D_LOG_MESSAGE("[ComputePipelineStateVK]: Created Pipeline for %s", pDesc->Name.c_str());
-            
-            return true;
-        }
+		else
+		{
+			SetName(pDesc->DebugName);
+			if (!pDesc->DebugName.empty())
+			{
+				D_LOG_MESSAGE("[ComputePipelineStateVK]: Created Pipeline for %s", pDesc->DebugName.c_str());
+			}
+			else
+			{
+				D_LOG_MESSAGE("[ComputePipelineStateVK]: Created Pipeline");
+			}
+			
+			return true;
+		}
 	}
 
-	void ComputePipelineStateVK::SetName(const char* pName)
+	void ComputePipelineStateVK::SetName(const String& debugName)
 	{
-		if (pName)
-		{
-			TDeviceChild::SetName(pName);
-			m_pDevice->SetVulkanObjectName(pName, (uint64)m_Pipeline, VK_OBJECT_TYPE_PIPELINE);
-		}
+		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_Pipeline), VK_OBJECT_TYPE_PIPELINE);
+		m_DebugName = debugName;
 	}
 }

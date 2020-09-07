@@ -18,10 +18,10 @@ namespace LambdaEngine
 		~PacketPool();
 
 		NetworkPacket* RequestFreePacket();
-		bool RequestFreePackets(uint16 nrOfPackets, std::vector<NetworkPacket*>& packetsReturned);
+		bool RequestFreePackets(uint16 nrOfPackets, TArray<NetworkPacket*>& packetsReturned);
 
 		void FreePacket(NetworkPacket* pPacket);
-		void FreePackets(std::vector<NetworkPacket*>& packets);
+		void FreePackets(TArray<NetworkPacket*>& packets);
 	
 		void Reset();
 
@@ -33,8 +33,8 @@ namespace LambdaEngine
 		void Free(NetworkPacket* pPacket);
 
 	private:
-		std::vector<NetworkPacket*> m_Packets;
-		std::vector<NetworkPacket*> m_PacketsFree;
+		TArray<NetworkPacket*> m_Packets;
+		TArray<NetworkPacket*> m_PacketsFree;
 		SpinLock m_Lock;
 	};
 }
