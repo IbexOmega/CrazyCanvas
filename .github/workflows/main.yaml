@@ -8,7 +8,7 @@ on:
 
 jobs:
   Build-Debug-x64:
-    runs-on: windows-latest
+    runs-on: [self-hosted, Windows, X64]
 
     steps:
     - uses: actions/checkout@v2
@@ -25,7 +25,7 @@ jobs:
       run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration=Debug -p:Platform=x64
 
   Build-Release-x64:
-    runs-on: windows-latest
+    runs-on: [self-hosted, Windows, X64]
 
     steps:
     - uses: actions/checkout@v2
