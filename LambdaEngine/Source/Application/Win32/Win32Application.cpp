@@ -207,7 +207,7 @@ namespace LambdaEngine
 					tme.hwndTrack	= hWnd;
 					TrackMouseEvent(&tme);
 
-					m_EventHandler->OnMouseEntered(messageWindow.Get());
+					m_EventHandler->OnMouseEntered(messageWindow);
 				}
 
 				break;
@@ -296,7 +296,7 @@ namespace LambdaEngine
 				const int16 x = (int16)LOWORD(lParam);
 				const int16 y = (int16)HIWORD(lParam);
 
-				m_EventHandler->OnWindowMoved(messageWindow.Get(), x, y);
+				m_EventHandler->OnWindowMoved(messageWindow, x, y);
 				break;
 			}
 
@@ -321,20 +321,20 @@ namespace LambdaEngine
 				const uint16 width	= (uint16)LOWORD(lParam);
 				const uint16 height = (uint16)HIWORD(lParam);
 
-				m_EventHandler->OnWindowResized(messageWindow.Get(), width, height, resizeType);
+				m_EventHandler->OnWindowResized(messageWindow, width, height, resizeType);
 				break;
 			}
 
 			case WM_MOUSELEAVE:
 			{
-				m_EventHandler->OnMouseLeft(messageWindow.Get());
+				m_EventHandler->OnMouseLeft(messageWindow);
 				m_IsTrackingMouse = false;
 				break;
 			}
 
 			case WM_DESTROY:
 			{
-				m_EventHandler->OnWindowClosed(messageWindow.Get());
+				m_EventHandler->OnWindowClosed(messageWindow);
 				break;
 			}
 
@@ -342,7 +342,7 @@ namespace LambdaEngine
 			case WM_KILLFOCUS:
 			{
 				bool hasFocus = (uMessage == WM_SETFOCUS);
-				m_EventHandler->OnFocusChanged(messageWindow.Get(), hasFocus);
+				m_EventHandler->OnFocusChanged(messageWindow, hasFocus);
 				break;
 			}
 		}
