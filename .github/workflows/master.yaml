@@ -1,0 +1,32 @@
+name: Benchmark
+on:
+  push:
+      branches:
+        # - master
+        - benchmarks
+
+jobs:
+  benchmark:
+    runs-on: [self-hosted, Windows, X64]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build Release x64
+        run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration=Production -p:Platform=x64_StaticLib
+
+      - name: Benchmark
+        run: python .github/workflows/benchmark.py --bin .\Build\bin\Production-windows-x86_64-x64_StaticLib\CrazyCanvas\CrazyCanvas.exe
+
+      - name: Update Charts
+        run: python .github/workflows/update-charts.py
+        env:
+          PAT: ${{ secrets.DOCS_PAT }}
