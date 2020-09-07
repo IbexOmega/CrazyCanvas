@@ -27,6 +27,8 @@
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Engine/EngineConfig.h"
+
 #include "Game/Scene.h"
 
 #include "Time/API/Clock.h"
@@ -48,7 +50,6 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
 constexpr const bool SHOW_DEMO					= true;
-constexpr const bool RAY_TRACING_ENABLED		= false;
 constexpr const bool SVGF_ENABLED				= true;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
@@ -73,7 +74,7 @@ CrazyCanvas::CrazyCanvas()
 
 	SceneDesc sceneDesc = {};
 	sceneDesc.Name				= "Benchmark Scene";
-	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
+	sceneDesc.RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
 	m_pScene->Init(sceneDesc);
 
 	m_DirectionalLightAngle	= glm::half_pi<float>();
@@ -155,15 +156,15 @@ CrazyCanvas::CrazyCanvas()
 	m_pCamera->Update();
 
 	std::vector<glm::vec3> cameraTrack = {
-        {-2.0f, 1.6f, 1.0f},
-        {9.8f, 1.6f, 0.8f},
+		{-2.0f, 1.6f, 1.0f},
+		{9.8f, 1.6f, 0.8f},
 		{9.4f, 1.6f, -3.8f},
-        {-9.8f, 1.6f, -3.9f},
-        {-11.6f, 1.6f, -1.1f},
-        {9.8f, 6.1f, -0.8f},
-        {9.4f, 6.1f, 3.8f},
-        {-9.8f, 6.1f, 3.9f}
-    };
+		{-9.8f, 1.6f, -3.9f},
+		{-11.6f, 1.6f, -1.1f},
+		{9.8f, 6.1f, -0.8f},
+		{9.4f, 6.1f, 3.8f},
+		{-9.8f, 6.1f, 3.9f}
+	};
 
 	m_CameraTrack.Init(m_pCamera, cameraTrack);
 
@@ -368,6 +369,7 @@ bool CrazyCanvas::InitRendererForDeferred()
 {
 	using namespace LambdaEngine;
 
+	const bool rayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
 	String renderGraphFile = "";
 
 	if (SHOW_DEMO)
@@ -376,19 +378,19 @@ bool CrazyCanvas::InitRendererForDeferred()
 	}
 	else
 	{
-		if (!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
+		if (!rayTracingEnabled && !POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
 		}
-		else if (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+		else if (rayTracingEnabled && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
 		}
-		else if (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+		else if (rayTracingEnabled && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
 		}
-		else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
+		else if (rayTracingEnabled && POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_PP_DEFERRED.lrg";
 		}
@@ -547,7 +549,7 @@ bool CrazyCanvas::InitRendererForDeferred()
 		m_pRenderGraph->UpdateResource(roughnessMapsUpdateDesc);
 	}
 
-	if (RAY_TRACING_ENABLED)
+	if (rayTracingEnabled)
 	{
 		const IAccelerationStructure* pTLAS = m_pScene->GetTLAS();
 		ResourceUpdateDesc resourceUpdateDesc					= {};
@@ -1364,10 +1366,13 @@ bool CrazyCanvas::InitRendererForDeferred()
 
 void CrazyCanvas::PrintBenchmarkResults()
 {
+	using namespace rapidjson;
+	using namespace LambdaEngine;
+
 	constexpr const float MB = 1000000.0f;
 
-	rapidjson::StringBuffer jsonStringBuffer;
-	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(jsonStringBuffer);
+	StringBuffer jsonStringBuffer;
+	PrettyWriter<StringBuffer> writer(jsonStringBuffer);
 
 	writer.StartObject();
 

@@ -28,6 +28,8 @@
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Engine/EngineConfig.h"
+
 #include "Game/Scene.h"
 
 #include "Time/API/Clock.h"
@@ -43,7 +45,6 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
 constexpr const bool SHOW_DEMO					= true;
-constexpr const bool RAY_TRACING_ENABLED		= false;
 constexpr const bool SVGF_ENABLED				= false;
 constexpr const bool POST_PROCESSING_ENABLED	= false;
 
@@ -85,7 +86,7 @@ Sandbox::Sandbox()
 
 	SceneDesc sceneDesc = {};
 	sceneDesc.Name				= "Test Scene";
-	sceneDesc.RayTracingEnabled = RAY_TRACING_ENABLED;
+	sceneDesc.RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
 	m_pScene->Init(sceneDesc);
 
 	m_DirectionalLightAngle	= glm::half_pi<float>();
@@ -1702,6 +1703,7 @@ bool Sandbox::InitRendererForDeferred()
 
 	//ResourceManager::LoadShaderFromFile("ShadingSimpleDefPixel.glsl",	FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,	EShaderLang::GLSL);
 
+	const bool rayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
 	String renderGraphFile = "";
 
 	if (SHOW_DEMO)
@@ -1711,24 +1713,24 @@ bool Sandbox::InitRendererForDeferred()
 	}
 	else
 	{
-		if (!RAY_TRACING_ENABLED && !POST_PROCESSING_ENABLED)
+		if (!rayTracingEnabled && !POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/DEFERRED.lrg";
 		}
-		else if (RAY_TRACING_ENABLED && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+		else if (rayTracingEnabled && !SVGF_ENABLED && !POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
 		}
-		else if (RAY_TRACING_ENABLED && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
+		else if (rayTracingEnabled && SVGF_ENABLED && !POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
 		}
-		else if (RAY_TRACING_ENABLED && POST_PROCESSING_ENABLED)
+		else if (rayTracingEnabled && POST_PROCESSING_ENABLED)
 		{
 			renderGraphFile = "../Assets/RenderGraphs/TRT_PP_DEFERRED.lrg";
 		}
 	}
-	
+
 	RenderGraphStructureDesc renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
 
 	RenderGraphDesc renderGraphDesc = {};
@@ -1882,7 +1884,7 @@ bool Sandbox::InitRendererForDeferred()
 		m_pRenderGraph->UpdateResource(roughnessMapsUpdateDesc);
 	}
 
-	if (RAY_TRACING_ENABLED)
+	if (rayTracingEnabled)
 	{
 		const IAccelerationStructure* pTLAS = m_pScene->GetTLAS();
 		ResourceUpdateDesc resourceUpdateDesc					= {};

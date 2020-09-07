@@ -11,6 +11,8 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Engine/EngineConfig.h"
+
 #include "Input/API/Input.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
@@ -98,6 +100,11 @@ namespace LambdaEngine
 
 		Malloc::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
 #endif
+
+		if (!EngineConfig::LoadFromFile())
+		{
+			return false;
+		}
 
 		if (!CommonApplication::PreInit())
 		{
