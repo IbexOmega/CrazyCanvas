@@ -133,7 +133,7 @@ namespace LambdaEngine
 	void Win32Application::SetMousePosition(int x, int y)
 	{
 		// Sets mouse position relative to the window
-		Window* window = GetActiveWindow();
+		TSharedRef<Window> window = GetActiveWindow();
 		POINT point = {};
 		point.x = x;
 		point.y = y;

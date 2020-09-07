@@ -672,11 +672,11 @@ namespace LambdaEngine
 				{
 					if (pSelectedResource->SubResourceCount > 1)
 					{
-						String temp = pSelectedResource->IsOfArrayType ? "True" : "False";
+						String temp = pSelectedResource->TextureParams.IsOfArrayType ? "True" : "False";
 						tooltip.append("Is of Array Type: " + temp + "\n");
 					}
 
-					int32 textureFormatIndex = TextureFormatToFormatIndex(pSelectedResource->TextureFormat);
+					int32 textureFormatIndex = TextureFormatToFormatIndex(pSelectedResource->TextureParams.TextureFormat);
 
 					if (textureFormatIndex >= 0)
 					{

@@ -33,8 +33,8 @@ workspace "LambdaEngine"
 	-- Platform
 	platforms
 	{
-		"x64_StaticLib",
 		"x64_SharedLib",
+		"x64_StaticLib",
     }
 
 	filter "platforms:x64_SharedLib"
