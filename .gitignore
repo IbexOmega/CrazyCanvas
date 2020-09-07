@@ -26,6 +26,7 @@ Dependencies/bin-int/
 
 #Other ignored files
 *.dot
+cppcheck_report
 
 #Ignore files for settings
 *.ini
