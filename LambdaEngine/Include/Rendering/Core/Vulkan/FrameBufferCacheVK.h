@@ -1,11 +1,11 @@
 #pragma once
-#include "Rendering/Core/API/IRenderPass.h"
-
 #include "Containers/THashTable.h"
 
 #include "Utilities/HashUtilities.h"
 
 #include "Threading/API/Spinlock.h"
+
+#include "Rendering/Core/API/RenderPass.h"
 
 #include "Vulkan.h"
 
@@ -93,10 +93,10 @@ namespace LambdaEngine
 		using FrameBufferMapEntry	= std::pair<const FrameBufferCacheKey, VkFramebuffer>;
 
 	public:
-        DECL_UNIQUE_CLASS(FrameBufferCacheVK);
+		DECL_UNIQUE_CLASS(FrameBufferCacheVK);
 
-        FrameBufferCacheVK(const GraphicsDeviceVK* pDevice);
-        ~FrameBufferCacheVK();        
+		FrameBufferCacheVK(const GraphicsDeviceVK* pDevice);
+		~FrameBufferCacheVK();
 
 		void DestroyRenderPass(VkRenderPass renderPass) const;
 		void DestroyImageView(VkImageView imageView) const;

@@ -1,5 +1,5 @@
 #pragma once
-#include "Rendering/Core/API/IPipelineState.h"
+#include "Rendering/Core/API/PipelineState.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
@@ -8,9 +8,9 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
-	class GraphicsPipelineStateVK : public TDeviceChildBase<GraphicsDeviceVK, IPipelineState>
+	class GraphicsPipelineStateVK : public TDeviceChildBase<GraphicsDeviceVK, PipelineState>
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IPipelineState>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, PipelineState>;
 
 	public:
 		GraphicsPipelineStateVK(const GraphicsDeviceVK* pDevice);
@@ -18,35 +18,31 @@ namespace LambdaEngine
 
 		bool Init(const GraphicsPipelineStateDesc* pDesc);
 
-        FORCEINLINE VkPipeline GetPipeline() const
-        {
-            return m_Pipeline;
-        }
-        
-        // IDeviceChild interface
-		virtual void SetName(const char* pName) override final;
+		FORCEINLINE VkPipeline GetPipeline() const
+		{
+			return m_Pipeline;
+		}
+		
+	public:
+		// DeviceChild interface
+		virtual void SetName(const String& name) override final;
 
-        // IPipelineState interface
-		FORCEINLINE virtual EPipelineStateType GetType() const override final
-        {
-            return EPipelineStateType::GRAPHICS;
-        }
+		// PipelineState interface
+		virtual uint64 GetHandle() const override final
+		{
+			return reinterpret_cast<uint64>(m_Pipeline);
+		}
+
+		virtual EPipelineStateType GetType() const override final
+		{
+			return EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
+		}
 
 	private:
-		bool CreateShaderData(std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,
-			std::vector<VkSpecializationInfo>& shaderStagesSpecializationInfos,
-			std::vector<std::vector<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps,
-			const GraphicsPipelineStateDesc* pDesc);
+		void CreateShaderStageInfo(const ShaderModuleDesc* pShaderModule, TArray<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,
+			TArray<VkSpecializationInfo>& shaderStagesSpecializationInfos, TArray<TArray<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps);
 
 	private:
 		VkPipeline m_Pipeline = VK_NULL_HANDLE;
-
-		VkPipelineInputAssemblyStateCreateInfo	m_InputAssembly;
-		VkPipelineRasterizationStateCreateInfo	m_RasterizerState;
-		VkPipelineMultisampleStateCreateInfo	m_MultisamplingState;
-		VkPipelineColorBlendStateCreateInfo		m_BlendState;
-		VkPipelineDepthStencilStateCreateInfo	m_DepthStencilState;
-
-		VkPipelineColorBlendAttachmentState*	m_pColorBlendAttachmentStates = nullptr;
 	};
 }

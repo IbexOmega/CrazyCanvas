@@ -20,7 +20,7 @@ namespace LambdaEngine
 		}
 	}
 	
-	bool CommandAllocatorVK::Init(const char* pName, ECommandQueueType queueType)
+	bool CommandAllocatorVK::Init(const String& debugname, ECommandQueueType queueType)
 	{
 		VkCommandPoolCreateInfo createInfo = {};
 		createInfo.sType			= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -31,9 +31,9 @@ namespace LambdaEngine
 		VkResult result = vkCreateCommandPool(m_pDevice->Device, &createInfo, nullptr, &m_CommandPool);
 		if (result != VK_SUCCESS)
 		{
-			if (pName)
+			if (!debugname.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[CommandAllocatorVK]: Failed to create commandpool \"%s\"", pName);
+				LOG_VULKAN_ERROR(result, "[CommandAllocatorVK]: Failed to create commandpool \"%s\"", debugname.c_str());
 			}
 			else
 			{
@@ -45,11 +45,10 @@ namespace LambdaEngine
 		else
 		{
 			m_Type = queueType;
-
-			if (pName)
+			if (!debugname.empty())
 			{
-				LOG_MESSAGE("[CommandAllocatorVK]: Created commandpool \"%s\"", pName);
-				SetName(pName);
+				LOG_MESSAGE("[CommandAllocatorVK]: Created commandpool \"%s\"", debugname.c_str());
+				SetName(debugname);
 			}
 			else
 			{
@@ -62,14 +61,14 @@ namespace LambdaEngine
 
 	VkCommandBuffer CommandAllocatorVK::AllocateCommandBuffer(VkCommandBufferLevel level)
 	{
-        VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-        
-        VkCommandBufferAllocateInfo allocateInfo = { };
-        allocateInfo.sType                = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocateInfo.pNext                = nullptr;
-        allocateInfo.level                = level;
-        allocateInfo.commandPool        = m_CommandPool;
-        allocateInfo.commandBufferCount = 1;
+		VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+		
+		VkCommandBufferAllocateInfo allocateInfo = { };
+		allocateInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocateInfo.pNext					= nullptr;
+		allocateInfo.level					= level;
+		allocateInfo.commandPool			= m_CommandPool;
+		allocateInfo.commandBufferCount		= 1;
 
 		VkResult result = vkAllocateCommandBuffers(m_pDevice->Device, &allocateInfo, &commandBuffer);
 		if (result != VK_SUCCESS)
@@ -77,10 +76,10 @@ namespace LambdaEngine
 			LOG_VULKAN_ERROR(result, "[CommandAllocatorVK]: Failed to allocate commandbuffer");
 			return VK_NULL_HANDLE;
 		}
-        else
-        {
-            return commandBuffer;
-        }
+		else
+		{
+			return commandBuffer;
+		}
 	}
 
 	void CommandAllocatorVK::FreeCommandBuffer(VkCommandBuffer commandBuffer)
@@ -100,12 +99,9 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void CommandAllocatorVK::SetName(const char* pName)
+	void CommandAllocatorVK::SetName(const String& debugname)
 	{
-		if (pName)
-		{
-			TDeviceChild::SetName(pName);
-			m_pDevice->SetVulkanObjectName(pName, (uint64)m_CommandPool, VK_OBJECT_TYPE_COMMAND_POOL);
-		}
+		m_pDevice->SetVulkanObjectName(debugname, reinterpret_cast<uint64>(m_CommandPool), VK_OBJECT_TYPE_COMMAND_POOL);
+		m_DebugName = debugname;
 	}
 }

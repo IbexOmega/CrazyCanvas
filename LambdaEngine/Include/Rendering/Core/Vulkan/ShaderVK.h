@@ -1,5 +1,5 @@
 #pragma once
-#include "Rendering/Core/API/IShader.h"
+#include "Rendering/Core/API/Shader.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
@@ -8,9 +8,9 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
-	class ShaderVK : public TDeviceChildBase<GraphicsDeviceVK, IShader>
+	class ShaderVK : public TDeviceChildBase<GraphicsDeviceVK, Shader>
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IShader>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, Shader>;
 
 	public:
 		ShaderVK(const GraphicsDeviceVK* pDevice);
@@ -18,30 +18,22 @@ namespace LambdaEngine
 
 		bool Init(const ShaderDesc* pDesc);
 
-        void FillSpecializationInfo(VkSpecializationInfo& specializationInfo, std::vector<VkSpecializationMapEntry>& specializationEntries) const;
-        void FillShaderStageInfo(VkPipelineShaderStageCreateInfo& shaderStageInfo, const VkSpecializationInfo* pSpecializationInfo)			const;
-
-        FORCEINLINE VkShaderModule GetShaderModule() const
-        {
-            return m_Module;
-        }
-
-        // IDeviceChild interface
-        virtual void SetName(const char* pName) override final;
-
-        // IShader interface
-		FORCEINLINE virtual ShaderDesc GetDesc() const override final
+		FORCEINLINE VkShaderModule GetShaderModule() const
 		{
-			return m_Desc;
+			return m_Module;
 		}
 
+	public:
+		// DeviceChild interface
+		virtual void SetName(const String& name) override final;
+
+		// Shader interface
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
-			return (uint64)m_Module;
+			return reinterpret_cast<uint64>(m_Module);
 		}		
 
 	private:
-		VkShaderModule	m_Module	= VK_NULL_HANDLE;
-		ShaderDesc		m_Desc;
+		VkShaderModule m_Module = VK_NULL_HANDLE;
 	};
 }

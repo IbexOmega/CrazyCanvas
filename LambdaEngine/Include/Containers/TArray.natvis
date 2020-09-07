@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name="LambdaEngine::TArray&lt;*&gt;">
+		<DisplayString>{{ size={m_Size} capacity={m_Capacity} }}</DisplayString>
+		<Expand>
+			<Item Name="[size]">m_Size</Item>
+			<Item Name="[capacity]">m_Capacity</Item>
+			<ArrayItems>
+				<Size>m_Size</Size>
+				<ValuePointer>m_pData</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+</AutoVisualizer>

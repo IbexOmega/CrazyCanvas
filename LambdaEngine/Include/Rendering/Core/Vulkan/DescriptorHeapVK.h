@@ -1,5 +1,5 @@
 #pragma once
-#include "Rendering/Core/API/IDescriptorHeap.h"
+#include "Rendering/Core/API/DescriptorHeap.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
@@ -8,9 +8,9 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
-	class DescriptorHeapVK : public TDeviceChildBase<GraphicsDeviceVK, IDescriptorHeap>
+	class DescriptorHeapVK : public TDeviceChildBase<GraphicsDeviceVK, DescriptorHeap>
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IDescriptorHeap>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, DescriptorHeap>;
 
 	public:
 		DescriptorHeapVK(const GraphicsDeviceVK* pDevice);
@@ -18,26 +18,21 @@ namespace LambdaEngine
 
 		bool Init(const DescriptorHeapDesc* pDesc);
 
-		VkDescriptorSet AllocateDescriptorSet(const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex);
+		VkDescriptorSet AllocateDescriptorSet(const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex);
 		void			FreeDescriptorSet(VkDescriptorSet descriptorSet);
 
-		// IDeviceChild interface
-		virtual void SetName(const char* pName) override final;
-
-		// IDescriptorHeap interface
-		FORCEINLINE virtual DescriptorCountDesc GetHeapStatus() const override final
+	public:
+		// DescriptorHeap Interface
+		virtual uint64 GetHandle() const override final
 		{
-			return m_HeapStatus;
+			return reinterpret_cast<uint64>(m_DescriptorHeap);
 		}
 
-		FORCEINLINE virtual DescriptorHeapDesc GetDesc() const override final
-		{
-			return m_Desc;
-		}
+	public:
+		// DeviceChild interface
+		virtual void SetName(const String& name) override final;
 
 	private:
-		VkDescriptorPool	m_DescriptorHeap;
-		DescriptorCountDesc m_HeapStatus;
-		DescriptorHeapDesc	m_Desc;
+		VkDescriptorPool m_DescriptorHeap;
 	};
 }

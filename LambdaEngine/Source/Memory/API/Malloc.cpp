@@ -15,6 +15,7 @@
 	#define DISABLE_MEM_DEBUG
 #endif
 
+//#define DISABLE_MEM_DEBUG
 #ifdef DISABLE_MEM_DEBUG
 	#define MEM_DEBUG_ENABLED 0
 #else
@@ -28,7 +29,7 @@
 #elif defined(LAMBDA_PLATFORM_MACOS)
 	#define aligned_malloc(sizeInBytes, alignment) 				aligned_alloc(sizeInBytes, alignment)
 
-	#define debug_malloc(sizeInBytes, pFileName, lineNumber)	 malloc(sizeInBytes); (void)pFileName; (void)lineNumber
+	#define debug_malloc(sizeInBytes, pFileName, lineNumber)	malloc(sizeInBytes); (void)pFileName; (void)lineNumber
 #endif
 
 #define ALLOCATION_HEADER_SIZE __STDCPP_DEFAULT_NEW_ALIGNMENT__

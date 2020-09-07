@@ -6,5 +6,8 @@
 	#pragma warning(disable : 4251)
 #endif
 
-template <typename Key, typename Type, typename Hasher = std::hash<Key>>
-using THashTable = std::unordered_map<Key, Type, Hasher>;
+namespace LambdaEngine
+{
+	template <typename Key, typename Type, typename Hasher = std::hash<Key>>
+	using THashTable = std::unordered_map<Key, Type, Hasher>;
+}

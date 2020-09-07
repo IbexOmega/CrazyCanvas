@@ -90,6 +90,7 @@ struct SPerFrameBuffer
 	vec4 Position;
 	vec4 Right;
 	vec4 Up;
+    vec2 Jitter;
 
     uint FrameIndex;
     uint RandomSeed;
