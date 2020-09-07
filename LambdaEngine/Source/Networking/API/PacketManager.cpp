@@ -8,11 +8,11 @@
 
 namespace LambdaEngine
 {
-	PacketManager::PacketManager(uint16 poolSize, int32 maxRetries, float32 resendRTTMultiplier) :
-		m_PacketPool(poolSize),
+	PacketManager::PacketManager(const PacketManagerDesc& desc) :
+		m_PacketPool(desc.PoolSize),
 		m_QueueIndex(0),
-		m_MaxRetries(maxRetries),
-		m_ResendRTTMultiplier(resendRTTMultiplier)
+		m_MaxRetries(desc.MaxRetries),
+		m_ResendRTTMultiplier(desc.ResendRTTMultiplier)
 	{
 
 	}
@@ -81,6 +81,8 @@ namespace LambdaEngine
 
 		HandleAcks(acks);
 		FindPacketsToReturn(packets, packetsReturned);
+
+		LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 	}
 
 	void PacketManager::QueryEnd(std::vector<NetworkPacket*>& packetsReceived)
@@ -139,7 +141,7 @@ namespace LambdaEngine
 
 	void PacketManager::FindPacketsToReturn(const std::vector<NetworkPacket*>& packetsReceived, std::vector<NetworkPacket*>& packetsReturned)
 	{
-		bool reliableMessagesInserted = false;
+		bool runUntangler = false;
 		bool hasReliableMessage = false;
 
 		std::vector<NetworkPacket*> packetsToFree;
@@ -162,11 +164,12 @@ namespace LambdaEngine
 				{
 					packetsReturned.push_back(pPacket);
 					m_Statistics.RegisterReliableMessageReceived();
+					runUntangler = true;
 				}
 				else if (pPacket->GetReliableUID() > m_Statistics.GetLastReceivedReliableUID())		//Reliable Packet in incorrect order
 				{
 					m_ReliableMessagesReceived.insert(pPacket);
-					reliableMessagesInserted = true;
+					runUntangler = true;
 				}
 				else																				//Reliable Packet already received before
 				{
@@ -177,7 +180,7 @@ namespace LambdaEngine
 
 		m_PacketPool.FreePackets(packetsToFree);
 
-		if (reliableMessagesInserted)
+		if (runUntangler)
 			UntangleReliablePackets(packetsReturned);
 
 		if (hasReliableMessage && m_MessagesToSend[m_QueueIndex].empty())
@@ -281,7 +284,7 @@ namespace LambdaEngine
 
 	void PacketManager::RegisterRTT(Timestamp rtt)
 	{
-		static const double scalar1 = 1.0f / 10.0f;
+		static const double scalar1 = 1.0f / 5.0f;
 		static const double scalar2 = 1.0f - scalar1;
 		m_Statistics.m_Ping = (uint64)((rtt.AsNanoSeconds() * scalar1) + (m_Statistics.GetPing().AsNanoSeconds() * scalar2));
 	}
@@ -310,7 +313,8 @@ namespace LambdaEngine
 	void PacketManager::ResendOrDeleteMessages()
 	{
 		static Timestamp minTime = Timestamp::MilliSeconds(5);
-		Timestamp maxAllowedTime = (uint64)((float64)m_Statistics.GetPing().AsNanoSeconds() * m_ResendRTTMultiplier);
+		uint64 pingNanos = m_Statistics.GetPing().AsNanoSeconds();
+		Timestamp maxAllowedTime = Timestamp(pingNanos * m_ResendRTTMultiplier);
 		if (maxAllowedTime < minTime)
 			maxAllowedTime = minTime;
 

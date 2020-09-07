@@ -3,7 +3,7 @@
 #include "Networking/API/NetWorker.h"
 #include "Networking/API/IServer.h"
 #include "Networking/API/PacketTransceiver.h"
-
+#include "Networking/API/PacketManager.h"
 #include "Containers/THashTable.h"
 
 namespace LambdaEngine
@@ -12,6 +12,12 @@ namespace LambdaEngine
 	class ClientUDPRemote;
 	class IServerUDPHandler;
 	class IClientUDPRemoteHandler;
+
+	struct ServerUDPDesc : public PacketManagerDesc
+	{
+		IServerUDPHandler* Handler	= nullptr;
+		uint8 MaxClients			= 1;
+	};
 
 	class LAMBDA_API ServerUDP : public NetWorker, public IServer
 	{
@@ -33,7 +39,7 @@ namespace LambdaEngine
 		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
 
 	protected:
-		ServerUDP(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPerClient, uint8 maximumTries);
+		ServerUDP(const ServerUDPDesc& desc);
 
 		virtual bool OnThreadsStarted() override;
 		virtual void RunTranmitter() override;
@@ -53,7 +59,7 @@ namespace LambdaEngine
 		void Tick(Timestamp delta);
 
 	public:
-		static ServerUDP* Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPoolSize, uint8 maximumTries);
+		static ServerUDP* Create(const ServerUDPDesc& desc);
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);
@@ -64,12 +70,9 @@ namespace LambdaEngine
 		PacketTransceiver m_Transciver;
 		SpinLock m_Lock;
 		SpinLock m_LockClients;
-		uint16 m_PacketsPerClient;
-		uint8 m_MaxClients;
-		uint8 m_MaxTries;
+		ServerUDPDesc m_Desc;
 		float m_PacketLoss;
 		std::atomic_bool m_Accepting;
-		IServerUDPHandler* m_pHandler;
 		std::unordered_map<IPEndPoint, ClientUDPRemote*, IPEndPointHasher> m_Clients;
 
 	private:

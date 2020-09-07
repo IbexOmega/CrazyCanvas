@@ -12,7 +12,6 @@
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
-#include "Rendering/RenderGraphDescriptionParser.h"
 
 #include <imgui.h>
 
@@ -47,7 +46,15 @@ Client::Client() :
 
 	InitRendererForEmpty();
 
-    m_pClient = ClientUDP::Create(this, 1024, 100);
+
+
+	ClientUDPDesc desc = {};
+	desc.PoolSize				= 512;
+	desc.MaxRetries				= 10;
+	desc.ResendRTTMultiplier	= 2.0F;
+	desc.Handler				= this;
+
+    m_pClient = ClientUDP::Create(desc);
 
     if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
     {
@@ -76,13 +83,19 @@ void Client::OnConnectedUDP(LambdaEngine::IClientUDP* pClient)
 
     LOG_MESSAGE("OnConnectedUDP()");
 
-    for (int i = 0; i < 1; i++)
+    /*for (int i = 0; i < 1; i++)
     {
         NetworkPacket* pPacket = m_pClient->GetFreePacket(1);
         BinaryEncoder encoder(pPacket);
         encoder.WriteInt32(i);
         m_pClient->SendReliable(pPacket, this);
-    }
+    }*/
+
+
+	NetworkPacket* pPacket = m_pClient->GetFreePacket(1);
+	BinaryEncoder encoder(pPacket);
+	encoder.WriteString("Christoffer");
+	m_pClient->SendReliable(pPacket, this);
 }
 
 void Client::OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient)
@@ -156,7 +169,7 @@ void Client::Tick(LambdaEngine::Timestamp delta)
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(delta);
 
-	m_pRenderer->Begin(delta);
+	/*m_pRenderer->Begin(delta);
 
 	ImGui::ShowDemoWindow();
 
@@ -164,7 +177,7 @@ void Client::Tick(LambdaEngine::Timestamp delta)
 
 	m_pRenderer->Render(delta);
 
-	m_pRenderer->End(delta);
+	m_pRenderer->End(delta);*/
 }
 
 void Client::FixedTick(LambdaEngine::Timestamp delta)
@@ -177,7 +190,7 @@ void Client::FixedTick(LambdaEngine::Timestamp delta)
 
 bool Client::InitRendererForEmpty()
 {
-	using namespace LambdaEngine;
+	/*using namespace LambdaEngine;
 
 	GUID_Lambda fullscreenQuadShaderGUID = ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
 	GUID_Lambda shadingPixelShaderGUID = ResourceManager::LoadShaderFromFile("../Assets/Shaders/StaticPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
@@ -260,7 +273,7 @@ bool Client::InitRendererForEmpty()
 	{
 		ImGui::SetCurrentContext(ImGuiRenderer::GetImguiContext());
 	}
-
+	*/
 	return true;
 }
 
@@ -268,8 +281,8 @@ namespace LambdaEngine
 {
     Game* CreateGame()
     {
-		Client* pSandbox = DBG_NEW Client();
-
-        return pSandbox;
+		Client* pClient = DBG_NEW Client();
+        
+        return pClient;
     }
 }

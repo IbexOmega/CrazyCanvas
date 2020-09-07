@@ -16,10 +16,10 @@ namespace LambdaEngine
 	std::set<ClientUDP*> ClientUDP::s_Clients;
 	SpinLock ClientUDP::s_Lock;
 
-	ClientUDP::ClientUDP(IClientUDPHandler* pHandler, uint16 packetPoolSize, uint8 maximumTries) :
+	ClientUDP::ClientUDP(const ClientUDPDesc& desc) :
 		m_pSocket(nullptr),
-		m_PacketManager(packetPoolSize, maximumTries),
-		m_pHandler(pHandler), 
+		m_PacketManager(desc),
+		m_pHandler(desc.Handler),
 		m_State(STATE_DISCONNECTED),
 		m_pSendBuffer()
 	{
@@ -233,7 +233,6 @@ namespace LambdaEngine
 
 	void ClientUDP::HandleReceivedPacket(NetworkPacket* pPacket)
 	{
-		LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 		uint16 packetType = pPacket->GetType();
 
 		if (packetType == NetworkPacket::TYPE_CHALLENGE)
@@ -288,9 +287,9 @@ namespace LambdaEngine
 		Flush();
 	}
 
-	ClientUDP* ClientUDP::Create(IClientUDPHandler* pHandler, uint16 packetPoolSize, uint8 maximumTries)
+	ClientUDP* ClientUDP::Create(const ClientUDPDesc& desc)
 	{
-		return DBG_NEW ClientUDP(pHandler, packetPoolSize, maximumTries);
+		return DBG_NEW ClientUDP(desc);
 	}
 
 	void ClientUDP::FixedTickStatic(Timestamp timestamp)
