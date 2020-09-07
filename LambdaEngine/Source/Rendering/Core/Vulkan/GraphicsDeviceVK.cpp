@@ -36,7 +36,6 @@ namespace LambdaEngine
 	/*
 	 * ValidationLayers and Extensions
 	 */
-
 	constexpr ValidationLayer REQUIRED_VALIDATION_LAYERS[]
 	{
 		ValidationLayer("REQ_V_L_BASE"),
@@ -92,7 +91,6 @@ namespace LambdaEngine
 	/*
 	 * GraphicsDeviceVK
 	 */
-
 	GraphicsDeviceVK::GraphicsDeviceVK()
 		: GraphicsDevice()
 		, RayTracingProperties()
