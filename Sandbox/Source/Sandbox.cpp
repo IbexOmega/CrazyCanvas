@@ -312,8 +312,7 @@ Sandbox::Sandbox()
 	cameraDesc.NearPlane	= 0.001f;
 	cameraDesc.FarPlane		= 1000.0f;
 
-	m_pCamera->Init(cameraDesc);
-	m_pCamera->Update();
+	m_pCamera->Init(CommonApplication::Get(), cameraDesc);
 
 	SamplerDesc samplerLinearDesc = {};
 	samplerLinearDesc.Name					= "Linear Sampler";
@@ -718,54 +717,7 @@ void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
 		m_pToneSoundInstance->SetPosition(tonePosition);
 	}
 
-	constexpr float CAMERA_MOVEMENT_SPEED = 1.4f;
-	constexpr float CAMERA_ROTATION_SPEED = 45.0f;
-
-	if (Input::IsKeyDown(EKey::KEY_W) && Input::IsKeyUp(EKey::KEY_S))
-	{
-		m_pCamera->Translate(glm::vec3(0.0f, 0.0f, CAMERA_MOVEMENT_SPEED * delta.AsSeconds()));
-	}
-	else if (Input::IsKeyDown(EKey::KEY_S) && Input::IsKeyUp(EKey::KEY_W))
-	{
-		m_pCamera->Translate(glm::vec3(0.0f, 0.0f, -CAMERA_MOVEMENT_SPEED * delta.AsSeconds()));
-	}
-
-	if (Input::IsKeyDown(EKey::KEY_A) && Input::IsKeyUp(EKey::KEY_D))
-	{
-		m_pCamera->Translate(glm::vec3(-CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
-	}
-	else if (Input::IsKeyDown(EKey::KEY_D) && Input::IsKeyUp(EKey::KEY_A))
-	{
-		m_pCamera->Translate(glm::vec3(CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
-	}
-
-	if (Input::IsKeyDown(EKey::KEY_Q) && Input::IsKeyUp(EKey::KEY_E))
-	{
-		m_pCamera->Translate(glm::vec3(0.0f, CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f));
-	}
-	else if (Input::IsKeyDown(EKey::KEY_E) && Input::IsKeyUp(EKey::KEY_Q))
-	{
-		m_pCamera->Translate(glm::vec3(0.0f, -CAMERA_MOVEMENT_SPEED * delta.AsSeconds(), 0.0f));
-	}
-
-	if (Input::IsKeyDown(EKey::KEY_UP) && Input::IsKeyUp(EKey::KEY_DOWN))
-	{
-		m_pCamera->Rotate(glm::vec3(-CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
-	}
-	else if (Input::IsKeyDown(EKey::KEY_DOWN) && Input::IsKeyUp(EKey::KEY_UP))
-	{
-		m_pCamera->Rotate(glm::vec3(CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
-	}
-
-	if (Input::IsKeyDown(EKey::KEY_LEFT) && Input::IsKeyUp(EKey::KEY_RIGHT))
-	{
-		m_pCamera->Rotate(glm::vec3(0.0f, -CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f));
-	}
-	else if (Input::IsKeyDown(EKey::KEY_RIGHT) && Input::IsKeyUp(EKey::KEY_LEFT))
-	{
-		m_pCamera->Rotate(glm::vec3(0.0f, CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f));
-	}
-
+	m_pCamera->HandleInput(delta);
 	m_pCamera->Update();
 	m_pScene->UpdateCamera(m_pCamera);
 
@@ -837,7 +789,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 						dirLightChanged = true;
 					}
 
-					if (ImGui::SliderFloat("Dir. Light Strength", &m_DirectionalLightStrength[3], 0.0f, 10000.0f, "%.3f", 10.0f))
+					if (ImGui::SliderFloat("Dir. Light Strength", &m_DirectionalLightStrength[3], 0.0f, 10000.0f, "%.3f", ImGuiSliderFlags_Logarithmic))
 					{
 						dirLightChanged = true;
 					}

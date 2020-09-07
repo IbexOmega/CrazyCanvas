@@ -120,6 +120,34 @@ namespace LambdaEngine
 		return true;
 	}
 
+	void Win32Application::SetMouseVisibility(bool visible)
+	{
+		int level = ShowCursor(visible);
+		if (visible && level > 1)
+		{
+			ShowCursor(FALSE);
+		}
+		else if (!visible && level < -1)
+		{
+			ShowCursor(TRUE);
+		}
+	}
+
+	void Win32Application::SetMousePosition(int x, int y)
+	{
+		// Sets mouse position relative to the window
+		Window* window = GetActiveWindow();
+		POINT point = {};
+		point.x = x;
+		point.y = y;
+		ClientToScreen((HWND)window->GetHandle(), &point);
+		BOOL bResult = SetCursorPos(point.x, point.y);
+		if (!bResult)
+		{
+			LOG_ERROR("[Win32Application]: Failed to set mouse position!");
+		}
+	}
+
 	void Win32Application::SetInputMode(Window* pWindow, EInputMode inputMode)
 	{
 		VALIDATE(pWindow != nullptr);
