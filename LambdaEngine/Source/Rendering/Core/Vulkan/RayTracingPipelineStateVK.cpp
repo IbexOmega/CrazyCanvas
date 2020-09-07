@@ -203,32 +203,16 @@ namespace LambdaEngine
 		sbtDesc.SizeInBytes	= sbtSize;
 
 		m_SBT = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&sbtDesc, nullptr));
+		pCommandAllocator->Reset();
 
-		if (raygenUnalignedOffset	== raygenAlignedOffset	&&
-			hitUnalignedOffset		== hitAlignedOffset		&&
-			missUnalignedOffset		== missAlignedOffset)
-		{
-			pCommandAllocator->Reset();
+		pCommandList->Begin(nullptr);
+		pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), raygenUnalignedOffset,	m_SBT.Get(), raygenAlignedOffset,	raygenSize);
+		pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), hitUnalignedOffset,		m_SBT.Get(), hitAlignedOffset,		hitSize);
+		pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), missUnalignedOffset,	m_SBT.Get(), missAlignedOffset,		missSize);
+		pCommandList->End();
 
-			pCommandList->Begin(nullptr);
-			if (raygenUnalignedOffset != raygenAlignedOffset)
-			{
-				pCommandList->CopyBuffer(m_SBT.Get(), raygenUnalignedOffset,	m_SBT.Get(), raygenAlignedOffset,	raygenSize);
-			}
+		pCommandQueue->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN , nullptr, 0, nullptr, 0);
 
-			if (hitUnalignedOffset != hitAlignedOffset)
-			{
-				pCommandList->CopyBuffer(m_SBT.Get(), hitUnalignedOffset, m_SBT.Get(), hitAlignedOffset, hitSize);
-			}
-
-			if (missUnalignedOffset != missAlignedOffset)
-			{
-				pCommandList->CopyBuffer(m_SBT.Get(), missUnalignedOffset, m_SBT.Get(), missAlignedOffset, missSize);
-			}
-			pCommandList->End();
-
-			pCommandQueue->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN , nullptr, 0, nullptr, 0);
-		}
 
 		VkBuffer sbtBuffer = m_SBT->GetBuffer();
 		m_RaygenBufferRegion.buffer		= sbtBuffer;

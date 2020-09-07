@@ -29,6 +29,12 @@ namespace LambdaEngine
 		m_Projection		= glm::perspective(glm::radians(desc.FOVDegrees), desc.Width / desc.Height, desc.NearPlane, desc.FarPlane);
 		m_ProjectionInv		= glm::inverse(m_Projection);
 
+		m_FOVDegrees		= desc.FOVDegrees;
+		m_Width				= desc.Width;
+		m_Height			= desc.Height;
+		m_NearPlane			= desc.NearPlane;
+		m_FarPlane			= desc.FarPlane;
+
 		SetPosition(desc.Position);
 		SetDirection(desc.Direction);
 		Update();
@@ -78,6 +84,8 @@ namespace LambdaEngine
 
 	void Camera::Update()
 	{
+		m_Data.Jitter = glm::vec2((Random::Float32() - 0.5f) / m_Width, (Random::Float32() - 0.5f) / m_Height);
+
 		if (m_IsDirty)
 		{
 			//Update view

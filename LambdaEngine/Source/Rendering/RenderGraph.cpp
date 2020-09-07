@@ -2107,6 +2107,8 @@ namespace LambdaEngine
 					pResourceUpdateDesc->TextureUpdate.TextureDesc.Height = uint32(pResourceUpdateDesc->TextureUpdate.YDimVariable * m_WindowHeight);
 					m_DirtyInternalResources.insert(pResourceUpdateDesc->ResourceName);
 				}
+
+				break;
 			}
 			default:
 			{

@@ -429,6 +429,8 @@ namespace LambdaEngine
 	{
 		if (window)
 		{
+			VALIDATE(window != nullptr);
+
 			::HWND hCaptureWindow = static_cast<HWND>(window->GetHandle());
 			if (::IsWindow(hCaptureWindow))
 			{
@@ -446,7 +448,9 @@ namespace LambdaEngine
 		::HWND hCaptureWindow = ::GetCapture();
 		if (hCaptureWindow)
 		{
-			return GetWindowFromHandle(hCaptureWindow);
+			TSharedRef<Window> window = GetWindowFromHandle(hCaptureWindow);
+			VALIDATE(window != nullptr);
+			return window;
 		}
 		else
 		{
