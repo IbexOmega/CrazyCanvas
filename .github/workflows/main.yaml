@@ -22,7 +22,7 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.1
 
     - name: Build Debug x64
-      run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration=Debug -p:Platform=x64
+      run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration=Debug -p:Platform=x64_StaticLib
 
   Build-Release-x64:
     runs-on: [self-hosted, Windows, X64]
