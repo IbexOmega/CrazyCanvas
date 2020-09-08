@@ -48,15 +48,15 @@ namespace LambdaEngine
 		SAFERELEASE(m_pSceneSecondaryInstanceCopyBuffer);
 		SAFERELEASE(m_pSceneIndirectArgsCopyBuffer);
 		SAFERELEASE(m_pLightsBuffer);
+		SAFERELEASE(m_pLightsCopyBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
+		SAFERELEASE(m_pPerFrameCopyBuffer);
 		SAFERELEASE(m_pSceneMaterialProperties);
 		SAFERELEASE(m_pSceneVertexBuffer);
 		SAFERELEASE(m_pSceneIndexBuffer);
 		SAFERELEASE(m_pScenePrimaryInstanceBuffer);
 		SAFERELEASE(m_pSceneSecondaryInstanceBuffer);
 		SAFERELEASE(m_pSceneIndirectArgsBuffer);
-
-		SAFERELEASE(m_pDeviceAllocator);
 
 		SAFERELEASE(m_pTLAS);
 
@@ -65,6 +65,8 @@ namespace LambdaEngine
 			SAFERELEASE(pBLAS);
 		}
 		m_BLASs.Clear();
+
+		SAFERELEASE(m_pDeviceAllocator);
 	}
 
 	bool Scene::Init(const SceneDesc& desc)

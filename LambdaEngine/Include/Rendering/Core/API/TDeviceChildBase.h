@@ -13,8 +13,6 @@ namespace LambdaEngine
 			: Base(),
 			m_pDevice(pDevice)
 		{
-			// Base needs to inherit DeviceChild
-			Base::AddRef();
 		}
 
 		~TDeviceChildBase() = default;

@@ -294,11 +294,8 @@ namespace LambdaEngine
 		FORCEINLINE ~TArray()
 		{
 			Clear();
-
 			InternalReleaseData();
-
 			m_Capacity = 0;
-			m_pData = nullptr;
 		}
 
 		FORCEINLINE void Clear() noexcept
@@ -382,12 +379,13 @@ namespace LambdaEngine
 					m_Size = inCapacity;
 				}
 
-				T* tempData = InternalAllocateElements(inCapacity);
-				InternalMoveEmplace(m_pData, m_pData + m_Size, tempData);
+				T* pTempData = InternalAllocateElements(inCapacity);
+				InternalMoveEmplace(m_pData, m_pData + m_Size, pTempData);
 				InternalDestructRange(m_pData, m_pData + oldSize);
-				InternalReleaseData();
 
-				m_pData = tempData;
+				InternalReleaseData();
+				m_pData = pTempData;
+
 				m_Capacity = inCapacity;
 			}
 		}
@@ -796,7 +794,6 @@ namespace LambdaEngine
 			if (this != std::addressof(other))
 			{
 				Clear();
-				InternalReleaseData();
 				InternalMove(Move(other));
 			}
 
@@ -948,7 +945,8 @@ namespace LambdaEngine
 		FORCEINLINE T* InternalAllocateElements(SizeType inCapacity)
 		{
 			constexpr SizeType elementByteSize = sizeof(T);
-			return reinterpret_cast<T*>(malloc(static_cast<size_t>(elementByteSize) * inCapacity));
+			const SizeType sizeInBytes = elementByteSize * inCapacity;
+			return reinterpret_cast<T*>(malloc(static_cast<size_t>(sizeInBytes)));
 		}
 
 		FORCEINLINE void InternalReleaseData()
@@ -956,6 +954,7 @@ namespace LambdaEngine
 			if (m_pData)
 			{
 				free(m_pData);
+				m_pData = nullptr;
 			}
 		}
 
@@ -964,7 +963,6 @@ namespace LambdaEngine
 			if (inCapacity > m_Capacity)
 			{
 				InternalReleaseData();
-
 				m_pData = InternalAllocateElements(inCapacity);
 				m_Capacity = inCapacity;
 			}
@@ -972,12 +970,13 @@ namespace LambdaEngine
 
 		FORCEINLINE void InternalRealloc(SizeType inCapacity)
 		{
-			T* tempData = InternalAllocateElements(inCapacity);
-			InternalMoveEmplace(m_pData, m_pData + m_Size, tempData);
+			T* pTempData = InternalAllocateElements(inCapacity);
+			InternalMoveEmplace(m_pData, m_pData + m_Size, pTempData);
 			InternalDestructRange(m_pData, m_pData + m_Size);
-			InternalReleaseData();
 
-			m_pData = tempData;
+			InternalReleaseData();
+			m_pData = pTempData;
+
 			m_Capacity = inCapacity;
 		}
 
@@ -986,17 +985,18 @@ namespace LambdaEngine
 			VALIDATE(inCapacity >= m_Size + count);
 
 			const SizeType index = InternalIndex(EmplacePos);
-			T* tempData = InternalAllocateElements(inCapacity);
-			InternalMoveEmplace(m_pData, EmplacePos, tempData);
+			T* pTempData = InternalAllocateElements(inCapacity);
+			InternalMoveEmplace(m_pData, EmplacePos, pTempData);
 			if (EmplacePos != m_pData + m_Size)
 			{
-				InternalMoveEmplace(EmplacePos, m_pData + m_Size, tempData + index + count);
+				InternalMoveEmplace(EmplacePos, m_pData + m_Size, pTempData + index + count);
 			}
 
 			InternalDestructRange(m_pData, m_pData + m_Size);
-			InternalReleaseData();
 
-			m_pData = tempData;
+			InternalReleaseData();
+			m_pData = pTempData;
+			
 			m_Capacity = inCapacity;
 		}
 
@@ -1035,6 +1035,8 @@ namespace LambdaEngine
 
 		FORCEINLINE void InternalMove(TArray&& other)
 		{
+			InternalReleaseData();
+
 			m_pData = other.m_pData;
 			m_Size = other.m_Size;
 			m_Capacity = other.m_Capacity;
@@ -1068,8 +1070,8 @@ namespace LambdaEngine
 
 		FORCEINLINE void InternalCopyEmplace(SizeType size, const T& value, T* dest)
 		{
-			T* ItEnd = dest + size;
-			while (dest != ItEnd)
+			T* pItEnd = dest + size;
+			while (dest != pItEnd)
 			{
 				new(reinterpret_cast<void*>(dest)) T(value);
 				dest++;

@@ -614,8 +614,8 @@ namespace LambdaEngine
 	SwapChain* GraphicsDeviceVK::CreateSwapChain(const SwapChainDesc* pDesc) const
 	{
 		VALIDATE(pDesc			!= nullptr);
-		VALIDATE(pDesc->Window	!= nullptr);
-		VALIDATE(pDesc->Queue	!= nullptr);
+		VALIDATE(pDesc->pWindow	!= nullptr);
+		VALIDATE(pDesc->pQueue	!= nullptr);
 		
 		SwapChainVK* pSwapChain = DBG_NEW SwapChainVK(this);
 		if (!pSwapChain->Init(pDesc))

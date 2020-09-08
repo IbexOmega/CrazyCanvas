@@ -48,7 +48,6 @@ namespace LambdaEngine
 		RenderGraphStructureDesc* pRenderGraphStructureDesc	= nullptr;
 		uint32 BackBufferCount								= 3;
 		uint32 MaxTexturesPerDescriptorSet					= 1;
-		const Scene* pScene									= nullptr;
 	};
 
 	struct ResourceUpdateDesc
@@ -204,12 +203,12 @@ namespace LambdaEngine
 			Resource*				pIndirectArgsBufferResource		= nullptr;
 
 			uint64					PipelineStateID					= 0;
-			PipelineLayout*		pPipelineLayout					= nullptr;
+			PipelineLayout*			pPipelineLayout					= nullptr;
 			uint32					TextureSubDescriptorSetCount	= 1;
 			uint32					MaterialsRenderedPerPass		= 1;
-			DescriptorSet**		ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
-			DescriptorSet**		ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
-			RenderPass*			pRenderPass						= nullptr;
+			DescriptorSet**			ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
+			DescriptorSet**			ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
+			RenderPass*				pRenderPass						= nullptr;
 
 			Resource*				pPushConstantsResource			= nullptr;
 			TArray<Resource*>		RenderTargetResources;
@@ -246,6 +245,9 @@ namespace LambdaEngine
 		~RenderGraph();
 
 		bool Init(const RenderGraphDesc* pDesc);
+
+		//This needs a better solution, only used to be able to get Indirect Arg Offsets
+		void SetScene(Scene* pScene);
 
 		/*
 		* Updates a resource in the Render Graph, can be called at any time
@@ -358,5 +360,7 @@ namespace LambdaEngine
 		TSet<Resource*>									m_DirtyDescriptorSetTextures;
 		TSet<Resource*>									m_DirtyDescriptorSetBuffers;
 		TSet<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
+
+		TArray<DescriptorSet*>*							m_pDescriptorSetsToDestroy;
 	};
 }

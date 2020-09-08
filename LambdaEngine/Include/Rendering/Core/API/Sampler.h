@@ -22,6 +22,8 @@ namespace LambdaEngine
 
 	class Sampler : public DeviceChild
 	{
+		friend class RenderSystem;
+
 	public:
 		DECL_DEVICE_INTERFACE(Sampler);
 
@@ -36,7 +38,19 @@ namespace LambdaEngine
 			return m_Desc;
 		}
 
+	public:
+		FORCEINLINE static Sampler* GetLinearSampler()	{ return s_pLinearSampler; }
+		FORCEINLINE static Sampler* GetNearestSampler() { return s_pNearestSampler; }
+
+	private:
+		static bool InitDefaults();
+		static void ReleaseDefaults();
+
 	protected:
 		SamplerDesc m_Desc;
+
+	private:
+		static Sampler* s_pLinearSampler;
+		static Sampler* s_pNearestSampler;
 	};
 }

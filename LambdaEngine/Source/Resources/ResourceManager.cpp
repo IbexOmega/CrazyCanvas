@@ -249,7 +249,7 @@ namespace LambdaEngine
 
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= name + " Texture View";
-		textureViewDesc.Texture			= pTexture;
+		textureViewDesc.pTexture		= pTexture;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= format;
 		textureViewDesc.Type			= textureDesc.ArrayCount > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
@@ -292,7 +292,7 @@ namespace LambdaEngine
 
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= name + " Texture View";
-		textureViewDesc.Texture			= pTexture;
+		textureViewDesc.pTexture		= pTexture;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= format;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
@@ -534,7 +534,7 @@ namespace LambdaEngine
         
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= pResource->GetDesc().DebugName + " Texture View";
-		textureViewDesc.Texture			= pResource;
+		textureViewDesc.pTexture		= pResource;
 		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= pResource->GetDesc().Format;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
@@ -590,7 +590,7 @@ namespace LambdaEngine
 
 			TextureViewDesc defaultColorMapViewDesc = {};
 			defaultColorMapViewDesc.DebugName		= "Default Color Map View";
-			defaultColorMapViewDesc.Texture			= pDefaultColorMap;
+			defaultColorMapViewDesc.pTexture		= pDefaultColorMap;
 			defaultColorMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 			defaultColorMapViewDesc.Format			= pDefaultColorMap->GetDesc().Format;
 			defaultColorMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
@@ -601,7 +601,7 @@ namespace LambdaEngine
 
 			TextureViewDesc defaultNormalMapViewDesc = {};
 			defaultNormalMapViewDesc.DebugName		= "Default Normal Map View";
-			defaultNormalMapViewDesc.Texture		= pDefaultNormalMap;
+			defaultNormalMapViewDesc.pTexture		= pDefaultNormalMap;
 			defaultNormalMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 			defaultNormalMapViewDesc.Format			= pDefaultNormalMap->GetDesc().Format;
 			defaultNormalMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
