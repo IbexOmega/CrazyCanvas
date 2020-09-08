@@ -9,14 +9,49 @@
 
 namespace LambdaEngine
 {
+	struct LambdaDirectory
+	{
+		String							Name;
+		bool							isDirectory = false;
+
+		LambdaDirectory*				pParent = nullptr;
+		std::vector<LambdaDirectory>	Children;
+	};
+
 	FORCEINLINE TArray<String> EnumerateFilesInDirectory(const String& filepath, bool skipDirectories)
 	{
 		TArray<String> result;
 
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(filepath))
+		for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(filepath))
 		{
 			if ((skipDirectories && !entry.is_directory()) || !skipDirectories)
 				result.PushBack(entry.path().filename().string());
+		}
+
+		return result;
+	}
+
+	FORCEINLINE LambdaDirectory ExtractDirectory(const String& filepath)
+	{
+		LambdaDirectory result;
+		auto& rootPath = std::filesystem::path(filepath);
+
+		result.Name = rootPath.stem().string();
+		result.isDirectory = true;
+
+		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(rootPath))
+		{
+			if (entry.is_directory())
+			{
+				LambdaDirectory childDir = ExtractDirectory(entry.path().string());
+				result.Children.push_back(childDir);
+			}
+			else
+			{
+				LambdaDirectory childDir;
+				childDir.Name = entry.path().filename().string();
+				result.Children.push_back(childDir);
+			}
 		}
 
 		return result;

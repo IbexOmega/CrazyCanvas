@@ -6,7 +6,7 @@
 
 #include "Log/Log.h"
 
-#include "Utilities/IOUtilities.h"
+
 
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
@@ -375,6 +375,7 @@ namespace LambdaEngine
 	void RenderGraphEditor::InitDefaultResources()
 	{
 		m_FilesInShaderDirectory = EnumerateFilesInDirectory("../Assets/Shaders/", true);
+		m_FilesInShaderMap = ExtractDirectory("../Assets/Shaders");
 
 		m_FinalOutput.Name						= "FINAL_OUTPUT";
 		m_FinalOutput.NodeIndex					= s_NextNodeID++;
@@ -606,10 +607,24 @@ namespace LambdaEngine
 		{
 			if (ImGui::BeginMenu("Menu"))
 			{
-				if (ImGui::MenuItem("Add Texture", NULL, nullptr))
+				if (ImGui::BeginMenu("Add Texture"))
 				{
-					openAddResourcePopup = true;
-					m_CurrentlyAddingResource = ERenderGraphResourceType::TEXTURE;
+					if (ImGui::MenuItem("2D Texture", NULL, nullptr))
+					{
+						openAddResourcePopup = true;
+						m_CurrentlyAddingResource = ERenderGraphResourceType::TEXTURE;
+						m_CurrentlyAddingTextureType = ERenderGraphTextureType::TEXTURE_2D;
+
+					}
+
+					if (ImGui::MenuItem("Cube Texture", NULL, nullptr))
+					{
+						openAddResourcePopup = true;
+						m_CurrentlyAddingResource = ERenderGraphResourceType::TEXTURE;
+						m_CurrentlyAddingTextureType = ERenderGraphTextureType::TEXTURE_CUBE;
+					}
+
+					ImGui::EndMenu();
 				}
 
 				if (ImGui::MenuItem("Add Buffer", NULL, nullptr))
@@ -837,6 +852,7 @@ namespace LambdaEngine
 					addingResource.Name			= resourceNameBuffer;
 					addingResource.Type			= m_CurrentlyAddingResource;
 					addingResource.Editable		= true;
+					addingResource.TextureParams.TextureType = m_CurrentlyAddingTextureType;
 
 					m_Resources.PushBack(addingResource);
 
@@ -1026,19 +1042,31 @@ namespace LambdaEngine
 		ImGui::SameLine();
 		ImGui::Checkbox("##Back Buffer Bound", &pResource->BackBufferBound);
 
-		ImGui::Text("Sub Resource Count: ");
-		ImGui::SameLine();
-
-		if (pResource->BackBufferBound)
+		if (m_CurrentlyAddingTextureType != ERenderGraphTextureType::TEXTURE_CUBE)
 		{
-			pResource->SubResourceCount = 1;
-			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+			ImGui::Text("Sub Resource Count: ");
+			ImGui::SameLine();
+
+			if (pResource->BackBufferBound)
+			{
+				pResource->SubResourceCount = 1;
+				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+			}
+
+			if (ImGui::InputInt("##Sub Resource Count", &pResource->SubResourceCount, 1, 100))
+			{
+				pResource->SubResourceCount = glm::clamp<int32>(pResource->SubResourceCount, 1, 1024);
+			}
 		}
-
-		if (ImGui::InputInt("##Sub Resource Count", &pResource->SubResourceCount, 1, 100))
+		else 
 		{
-			pResource->SubResourceCount = glm::clamp<int32>(pResource->SubResourceCount, 1, 1024);
+			if (pResource->BackBufferBound)
+			{
+				pResource->SubResourceCount = 1;
+				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+			}
 		}
 
 		if (pResource->BackBufferBound)
@@ -1075,34 +1103,55 @@ namespace LambdaEngine
 					int32 textureDimensionTypeX = DimensionTypeToDimensionTypeIndex(pResource->TextureParams.XDimType);
 					int32 textureDimensionTypeY = DimensionTypeToDimensionTypeIndex(pResource->TextureParams.YDimType);
 
-					ImGui::Text("Width: ");
-					ImGui::SameLine();
-					ImGui::PushItemWidth(maxOptionTextSize);
-					if (ImGui::Combo("##Texture X Option", &textureDimensionTypeX, DIMENSION_NAMES, 3))
+					if (m_CurrentlyAddingTextureType != ERenderGraphTextureType::TEXTURE_CUBE)
 					{
-						pResource->TextureParams.XDimType = DimensionTypeIndexToDimensionType(textureDimensionTypeX);
-					}
-					ImGui::PopItemWidth();
-
-					if (pResource->TextureParams.XDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.XDimType == ERenderGraphDimensionType::RELATIVE)
-					{
+						ImGui::Text("Width: ");
 						ImGui::SameLine();
-						ImGui::InputFloat("##Texture X Variable", &pResource->TextureParams.XDimVariable);
-					}
+						ImGui::PushItemWidth(maxOptionTextSize);
+						if (ImGui::Combo("##Texture X Option", &textureDimensionTypeX, DIMENSION_NAMES, 3))
+						{
+							pResource->TextureParams.XDimType = DimensionTypeIndexToDimensionType(textureDimensionTypeX);
+						}
+						ImGui::PopItemWidth();
 
-					ImGui::Text("Height: ");
-					ImGui::SameLine();
-					ImGui::PushItemWidth(maxOptionTextSize);
-					if (ImGui::Combo("##Texture Y Option", &textureDimensionTypeY, DIMENSION_NAMES, 3))
-					{
-						pResource->TextureParams.YDimType = DimensionTypeIndexToDimensionType(textureDimensionTypeY);
-					}
-					ImGui::PopItemWidth();
+						if (pResource->TextureParams.XDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.XDimType == ERenderGraphDimensionType::RELATIVE)
+						{
+							ImGui::SameLine();
+							ImGui::InputFloat("##Texture X Variable", &pResource->TextureParams.XDimVariable);
+						}
 
-					if (pResource->TextureParams.YDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.YDimType == ERenderGraphDimensionType::RELATIVE)
-					{
+						ImGui::Text("Height: ");
 						ImGui::SameLine();
-						ImGui::InputFloat("##Texture Y Variable", &pResource->TextureParams.YDimVariable);
+						ImGui::PushItemWidth(maxOptionTextSize);
+						if (ImGui::Combo("##Texture Y Option", &textureDimensionTypeY, DIMENSION_NAMES, 3))
+						{
+							pResource->TextureParams.YDimType = DimensionTypeIndexToDimensionType(textureDimensionTypeY);
+						}
+						ImGui::PopItemWidth();
+
+						if (pResource->TextureParams.YDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.YDimType == ERenderGraphDimensionType::RELATIVE)
+						{
+							ImGui::SameLine();
+							ImGui::InputFloat("##Texture Y Variable", &pResource->TextureParams.YDimVariable);
+						}
+					}
+					else 
+					{
+						ImGui::Text("Width & Height: ");
+						ImGui::SameLine();
+						ImGui::PushItemWidth(maxOptionTextSize);
+						if (ImGui::Combo("##Texture X Option", &textureDimensionTypeX, DIMENSION_NAMES, 3))
+						{
+							pResource->TextureParams.XDimType = DimensionTypeIndexToDimensionType(textureDimensionTypeX);
+						}
+						ImGui::PopItemWidth();
+
+						if (pResource->TextureParams.XDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.XDimType == ERenderGraphDimensionType::RELATIVE)
+						{
+							ImGui::SameLine();
+							ImGui::InputFloat("##Texture X Variable", &pResource->TextureParams.XDimVariable);
+							pResource->TextureParams.YDimVariable = pResource->TextureParams.XDimVariable;
+						}
 					}
 
 					ImGui::Text("Sample Count: ");
@@ -1178,29 +1227,66 @@ namespace LambdaEngine
 	void RenderGraphEditor::RenderShaderView(float textWidth, float textHeight)
 	{
 		UNREFERENCED_VARIABLE(textHeight);
-
 		static int32 selectedResourceIndex = -1;
+
+		//for (auto fileIt = m_FilesInShaderDirectory.begin(); fileIt != m_FilesInShaderDirectory.end(); fileIt++)
+		//{
+		//	std::iterator_traits<TArray<std::string>::Iterator>::difference_type v;
+
+		//	int32 index = std::distance(m_FilesInShaderDirectory.begin(), fileIt);
+		//	const String* pFilename = &(*fileIt);
+
+		//	//if (pFilename->find(".glsl") != String::npos)
+		//	{
+		//		if (ImGui::Selectable(pFilename->c_str(), selectedResourceIndex == index, ImGuiSeparatorFlags_None, ImVec2(textWidth, textHeight)))
+		//		{
+		//			selectedResourceIndex = index;
+		//		}
+
+		//		if (ImGui::BeginDragDropSource())
+		//		{
+		//			ImGui::SetDragDropPayload("SHADER", &pFilename, sizeof(const String*));
+		//			ImGui::EndDragDropSource();
+		//		}
+		//	}
+		//}
+
+		RenderShaderTreeView(m_FilesInShaderMap, textWidth, textHeight, selectedResourceIndex);
+
 		
-		for (auto fileIt = m_FilesInShaderDirectory.begin(); fileIt != m_FilesInShaderDirectory.end(); fileIt++)
+	}
+
+	void RenderGraphEditor::RenderShaderTreeView(const LambdaDirectory& dir, float textWidth, float textHeight, int32& selectedIndex)
+	{
+		if (ImGui::TreeNode(dir.Name.c_str()))
 		{
-			std::iterator_traits<TArray<std::string>::Iterator>::difference_type v;
-
-			int32 index = std::distance(m_FilesInShaderDirectory.begin(), fileIt);
-			const String* pFilename = &(*fileIt);
-
-			//if (pFilename->find(".glsl") != String::npos)
+			for (auto entry = dir.Children.begin(); entry != dir.Children.end(); entry++)
 			{
-				if (ImGui::Selectable(pFilename->c_str(), selectedResourceIndex == index, ImGuiSeparatorFlags_None, ImVec2(textWidth, textHeight)))
-				{
-					selectedResourceIndex = index;
-				}
+				std::iterator_traits<TArray<std::string>::Iterator>::difference_type v;
 
-				if (ImGui::BeginDragDropSource())
+				int32 index = std::distance(dir.Children.begin(), entry);
+				const String* pFilename = &(entry->Name);
+			
+				if (entry->isDirectory)
 				{
-					ImGui::SetDragDropPayload("SHADER", &pFilename, sizeof(const String*));
-					ImGui::EndDragDropSource();
+					RenderShaderTreeView(*entry, textWidth, textHeight, selectedIndex);
+				}
+				else
+				{
+					ImGui::Bullet();
+					if (ImGui::Selectable(pFilename->c_str(), selectedIndex == index, ImGuiSeparatorFlags_None, ImVec2(textWidth, textHeight)))
+					{
+						selectedIndex = index;
+					}
+
+					if (ImGui::BeginDragDropSource())
+					{
+						ImGui::SetDragDropPayload("SHADER", &pFilename, sizeof(const String*));
+						ImGui::EndDragDropSource();
+					}
 				}
 			}
+			ImGui::TreePop();
 		}
 	}
 
@@ -4124,6 +4210,7 @@ namespace LambdaEngine
 
 			m_CurrentlyAddingRenderStage = EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 			m_CurrentlyAddingResource = ERenderGraphResourceType::NONE;
+			m_CurrentlyAddingTextureType = ERenderGraphTextureType::TEXTURE_2D;
 
 			m_StartedLinkInfo = {};
 
