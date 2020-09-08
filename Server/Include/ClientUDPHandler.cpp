@@ -1,7 +1,7 @@
 #include "ClientUDPHandler.h"
 
 #include "Networking/API/IClientUDP.h"
-#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryDecoder.h"
 
 #include "Log/Log.h"

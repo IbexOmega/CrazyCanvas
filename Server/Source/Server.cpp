@@ -14,7 +14,7 @@
 #include "Threading/API/Thread.h"
 
 #include "Networking/API/IPAddress.h"
-#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
 
