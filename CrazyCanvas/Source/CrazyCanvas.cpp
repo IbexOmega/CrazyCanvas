@@ -12,6 +12,7 @@
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraphEditor.h"
+#include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/RenderGraph.h"
 #include "Rendering/Core/API/TextureView.h"
 #include "Rendering/Core/API/Sampler.h"
@@ -377,22 +378,27 @@ bool CrazyCanvas::InitRendererForDeferred()
 	String renderGraphFile = "";
 	if (SHOW_DEMO)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/DEMO.lrg";
+		renderGraphFile = "DEMO.lrg";
 		//renderGraphFile = "../Assets/RenderGraphs/SIMPLE_RASTERIZER_PBR.lrg";
 	}
 	else
 	{
 		if (rayTracingEnabled && !SVGF_ENABLED)
 		{
-			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
+			renderGraphFile = "TRT_DEFERRED_SIMPLE.lrg";
 		}
 		else if (rayTracingEnabled && SVGF_ENABLED)
 		{
-			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
+			renderGraphFile = "TRT_DEFERRED_SVGF.lrg";
 		}
 	}
 
-	RenderGraphStructureDesc renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
+	RenderGraphStructureDesc renderGraphStructure = {};
+
+	if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED))
+	{
+		return false;
+	}
 
 	RenderGraphDesc renderGraphDesc = {};
 	renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;

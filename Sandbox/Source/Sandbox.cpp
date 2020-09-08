@@ -15,6 +15,7 @@
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraphEditor.h"
+#include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/RenderGraph.h"
 #include "Rendering/Core/API/TextureView.h"
 #include "Rendering/Core/API/Sampler.h"
@@ -46,7 +47,8 @@ constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
-constexpr const bool SHOW_DEMO					= true;
+
+constexpr const bool SHOW_DEMO					= false;
 constexpr const bool SVGF_ENABLED				= false;
 
 constexpr const bool RENDER_GRAPH_IMGUI_ENABLED	= true;
@@ -1576,22 +1578,27 @@ bool Sandbox::InitRendererForDeferred()
 	String renderGraphFile = "";
 	if (SHOW_DEMO)
 	{
-		renderGraphFile = "../Assets/RenderGraphs/DEMO.lrg";
+		renderGraphFile = "DEMO.lrg";
 		//renderGraphFile = "../Assets/RenderGraphs/SIMPLE_RASTERIZER_PBR.lrg";
 	}
 	else
 	{
 		 if (rayTracingEnabled && !SVGF_ENABLED)
 		{
-			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SIMPLE.lrg";
+			renderGraphFile = "TRT_DEFERRED_SIMPLE.lrg";
 		}
 		else if (rayTracingEnabled && SVGF_ENABLED)
 		{
-			renderGraphFile = "../Assets/RenderGraphs/TRT_DEFERRED_SVGF.lrg";
+			renderGraphFile = "TRT_DEFERRED_SVGF.lrg";
 		}
 	}
 
-	RenderGraphStructureDesc renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure(renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED);
+	RenderGraphStructureDesc renderGraphStructure = {};
+
+	if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphFile, RENDER_GRAPH_IMGUI_ENABLED))
+	{
+		return false;
+	}
 
 	RenderGraphDesc renderGraphDesc = {};
 	renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
