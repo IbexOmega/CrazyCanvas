@@ -1,5 +1,39 @@
-# Default line-ending
-* text eol=crlf
+# Sources
+*.c     text eol=crlf
+*.cc    text eol=crlf
+*.cxx   text eol=crlf
+*.cpp   text eol=crlf
+*.c++   text eol=crlf
+*.hpp   text eol=crlf
+*.h     text eol=crlf
+*.h++   text eol=crlf
+*.hh    text eol=crlf
+
+# Compiled Object files
+*.slo   binary
+*.lo    binary
+*.o     binary
+*.obj   binary
+
+# Precompiled Headers
+*.gch   binary
+*.pch   binary
+
+# Compiled Dynamic libraries
+*.so    binary
+*.dylib binary
+*.dll   binary
+
+# Compiled Static libraries
+*.lai   binary
+*.la    binary
+*.a     binary
+*.lib   binary
+
+# Executables
+*.exe   binary
+*.out   binary
+*.app   binary
 
 # Exclude vendored files from language statistics
 Dependencies/* linguist-vendored
