@@ -1,9 +1,5 @@
 name: Välfärden
-# on: pull_request
-on:
-  push:
-      branches:
-        - benchmarks
+on: pull_request
 
 jobs:
   Pre-Build:

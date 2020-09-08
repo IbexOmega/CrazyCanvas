@@ -85,13 +85,13 @@ namespace LambdaEngine
 		{
 			constexpr uint32 BUFFER_SIZE = 2048;
 			static char buffer[BUFFER_SIZE];
-			
+
 			int numChars = vsprintf_s(buffer, BUFFER_SIZE - 2, pMessage, args);
 			if (numChars > 0)
 			{
 				buffer[numChars]		= '\n';
 				buffer[numChars + 1]	= 0;
-				
+
 				::WriteConsoleA(s_OutputHandle, buffer, numChars + 1, 0, NULL);
 			}
 		}

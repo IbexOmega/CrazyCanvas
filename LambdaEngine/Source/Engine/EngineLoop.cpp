@@ -93,13 +93,13 @@ namespace LambdaEngine
 
 	bool EngineLoop::PreInit()
 	{
-#ifdef LAMBDA_DEVELOPMENT
+// #ifdef LAMBDA_DEVELOPMENT
 		PlatformConsole::Show();
 
 		Log::SetDebuggerOutputEnabled(true);
 
 		Malloc::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
-#endif
+// #endif
 
 		if (!EngineConfig::LoadFromFile())
 		{

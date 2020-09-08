@@ -31,7 +31,7 @@ def run_benchmark(bin_path, ray_tracing_enabled):
 	print('Benchmarking with ray tracing {}... '.format('enabled' if ray_tracing_enabled else 'disabled'), end='', flush=True)
 	completed_process = subprocess.run([bin_path], capture_output=True)
 	if completed_process.returncode != 0:
-		print(f'Failed:\n{completed_process.stdout}\n\n{completed_process.stderr}')
+		print(f'Failed:\n{str(completed_process.stdout)}\n\n{str(completed_process.stderr)}')
 		sys.exit(1)
 
 	print(' Success')

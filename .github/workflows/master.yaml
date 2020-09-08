@@ -2,7 +2,8 @@ name: Benchmark
 on:
   push:
       branches:
-        - master
+        - benchmarks
+        # - master
 
 jobs:
   benchmark:
@@ -19,7 +20,7 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.1
 
-      - name: Build Release x64
+      - name: Build Production x64
         run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Production x64_StaticLib" -p:Platform=x64
 
       - name: Benchmark

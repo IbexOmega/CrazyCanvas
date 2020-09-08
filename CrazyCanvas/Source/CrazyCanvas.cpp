@@ -562,7 +562,7 @@ bool CrazyCanvas::InitRendererForDeferred()
 		{
 			char str[5];
 			snprintf(str, 5, "%04d", i);
-			blueNoiseLUTFileNames[i] = "LUTs/BlueNoise/256_256/HDR_RGBA_" + std::string(str) + ".png";
+			blueNoiseLUTFileNames[i] = "LUTs\\BlueNoise\\256_256\\HDR_RGBA_" + std::string(str) + ".png";
 		}
 
 		GUID_Lambda blueNoiseID = ResourceManager::LoadTextureArrayFromFile("Blue Noise Texture", blueNoiseLUTFileNames, NUM_BLUE_NOISE_LUTS, EFormat::FORMAT_R16_UNORM, false);
