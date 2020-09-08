@@ -828,12 +828,12 @@ namespace LambdaEngine
 					return false;
 				}
 
-				CommandListDesc graphicsCopyCommandListDesc = {};
-				graphicsCopyCommandListDesc.DebugName				= "Render Graph Graphics Copy Command List";
+				CommandListDesc graphicsCopyCommandListDesc		= {};
+				graphicsCopyCommandListDesc.DebugName			= "Render Graph Graphics Copy Command List";
 				graphicsCopyCommandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 				graphicsCopyCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
-				m_ppGraphicsCopyCommandLists[b]			= m_pGraphicsDevice->CreateCommandList(m_ppGraphicsCopyCommandAllocators[b], &graphicsCopyCommandListDesc);
+				m_ppGraphicsCopyCommandLists[b] = m_pGraphicsDevice->CreateCommandList(m_ppGraphicsCopyCommandAllocators[b], &graphicsCopyCommandListDesc);
 
 				if (m_ppGraphicsCopyCommandLists[b] == nullptr)
 				{
@@ -850,8 +850,8 @@ namespace LambdaEngine
 					return false;
 				}
 
-				CommandListDesc computeCopyCommandListDesc = {};
-				computeCopyCommandListDesc.DebugName				= "Render Graph Compute Copy Command List";
+				CommandListDesc computeCopyCommandListDesc		= {};
+				computeCopyCommandListDesc.DebugName			= "Render Graph Compute Copy Command List";
 				computeCopyCommandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 				computeCopyCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 

@@ -4446,14 +4446,14 @@ namespace LambdaEngine
 						//Check if this Resource State has a binding type of ATTACHMENT, if it does, we need to modify the surrounding barriers and the internal Previous- and Next States of the Resource State
 						if (pResourceState->BindingType == ERenderGraphResourceBindingType::ATTACHMENT)
 						{
-							bool													prevSameFrame									= true;
-							RenderGraphResourceState*								pPreviousResourceStateDesc						= nullptr;
-							int32													previousSynchronizationPipelineStageDescIndex	= -1;
+							bool														prevSameFrame									= true;
+							RenderGraphResourceState*									pPreviousResourceStateDesc						= nullptr;
+							int32														previousSynchronizationPipelineStageDescIndex	= -1;
 							TArray<RenderGraphResourceSynchronizationDesc>::Iterator	previousSynchronizationDescIt;
 
-							RenderGraphResourceState*								pNextResourceStateDesc							= nullptr;
-							int32													nextSynchronizationPipelineStageDescIndex		= -1;
-							TArray<RenderGraphResourceSynchronizationDesc>::Iterator nextSynchronizationDescIt;
+							RenderGraphResourceState*									pNextResourceStateDesc							= nullptr;
+							int32														nextSynchronizationPipelineStageDescIndex		= -1;
+							TArray<RenderGraphResourceSynchronizationDesc>::Iterator	nextSynchronizationDescIt;
 
 							//Find Previous Synchronization Stage that contains a Synchronization for this resource
 							for (int32 pp = p - 1; pp != p; pp--)
@@ -4594,8 +4594,17 @@ namespace LambdaEngine
 								}
 								else
 								{
-									LOG_ERROR("[RenderGraphEditor]: Resource \"%s\" is used as an attachment in Render Stage \"%s\" but is not used in later stages", pResourceState->ResourceName.c_str(), pRenderStageDesc->Name.c_str());
-									pResourceState->AttachmentSynchronizations.NextBindingType = ERenderGraphResourceBindingType::NONE;
+									auto resourceIt = FindResource(pResourceState->ResourceName);
+
+									if (resourceIt != m_Resources.end() && resourceIt->TextureParams.TextureFormat == EFormat::FORMAT_D24_UNORM_S8_UINT)
+									{
+										pResourceState->AttachmentSynchronizations.NextBindingType = ERenderGraphResourceBindingType::ATTACHMENT;
+									}
+									else
+									{
+										LOG_ERROR("[RenderGraphEditor]: Resource \"%s\" is used as an attachment in Render Stage \"%s\" but is not used in later stages", pResourceState->ResourceName.c_str(), pRenderStageDesc->Name.c_str());
+										pResourceState->AttachmentSynchronizations.NextBindingType = ERenderGraphResourceBindingType::NONE;
+									}
 								}
 							}
 

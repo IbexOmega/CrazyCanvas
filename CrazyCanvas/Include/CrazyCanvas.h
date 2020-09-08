@@ -21,7 +21,7 @@ namespace LambdaEngine
 	class IReverbSphere;
 	class Scene;
 	class Camera;
-	class ISampler;
+	class Sampler;
 
 	class RenderGraphEditor;
 }
@@ -49,9 +49,7 @@ public:
 	void Render(LambdaEngine::Timestamp delta);
 
 private:
-	bool InitRendererForEmpty();
 	bool InitRendererForDeferred();
-	bool InitRendererForVisBuf();
 
 private:
 	CameraTrack m_CameraTrack;
@@ -70,16 +68,16 @@ private:
 
 	LambdaEngine::Scene*					m_pScene				= nullptr;
 	LambdaEngine::Camera*					m_pCamera				= nullptr;
-	LambdaEngine::ISampler*					m_pLinearSampler		= nullptr;
-	LambdaEngine::ISampler*					m_pNearestSampler		= nullptr;
+	LambdaEngine::Sampler*					m_pLinearSampler		= nullptr;
+	LambdaEngine::Sampler*					m_pNearestSampler		= nullptr;
 
 	LambdaEngine::RenderGraph*				m_pRenderGraph			= nullptr;
 	LambdaEngine::Renderer*					m_pRenderer				= nullptr;
 
 	LambdaEngine::RenderGraphEditor*		m_pRenderGraphEditor	= nullptr;
 
-	TArray<InstanceIndexAndTransform>		m_InstanceIndicesAndTransforms;
-	TArray<InstanceIndexAndTransform>		m_LightInstanceIndicesAndTransforms;
+	LambdaEngine::TArray<InstanceIndexAndTransform>		m_InstanceIndicesAndTransforms;
+	LambdaEngine::TArray<InstanceIndexAndTransform>		m_LightInstanceIndicesAndTransforms;
 
 	float									m_DirectionalLightAngle;
 	float									m_DirectionalLightStrength[4];
