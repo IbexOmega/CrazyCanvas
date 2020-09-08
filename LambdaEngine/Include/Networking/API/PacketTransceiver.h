@@ -22,7 +22,7 @@ namespace LambdaEngine
 
 		int32 Transmit(PacketPool* pPacketPool, std::queue<NetworkPacket*>& packets, std::set<uint32>& reliableUIDsSent, const IPEndPoint& ipEndPoint, NetworkStatistics* pStatistics);
 		bool ReceiveBegin(IPEndPoint& sender);
-		bool ReceiveEnd(PacketPool* pPacketPool, std::vector<NetworkPacket*>& packets, std::vector<uint32>& newAcks, NetworkStatistics* pStatistics);
+		bool ReceiveEnd(PacketPool* pPacketPool, TArray<NetworkPacket*>& packets, TArray<uint32>& newAcks, NetworkStatistics* pStatistics);
 
 		void SetSocket(ISocketUDP* pSocket);
 
@@ -32,7 +32,7 @@ namespace LambdaEngine
 	private:
 		static bool ValidateHeaderSalt(PacketTranscoder::Header* header, NetworkStatistics* pStatistics);
 		static void ProcessSequence(uint32 sequence, NetworkStatistics* pStatistics);
-		static void ProcessAcks(uint32 ack, uint32 ackBits, NetworkStatistics* pStatistics, std::vector<uint32>& newAcks);
+		static void ProcessAcks(uint32 ack, uint32 ackBits, NetworkStatistics* pStatistics, TArray<uint32>& newAcks);
 
 	private:
 		ISocketUDP* m_pSocket;

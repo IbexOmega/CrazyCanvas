@@ -1,6 +1,8 @@
 #pragma once
-#include "Rendering/Core/API/IDescriptorSet.h"
-#include "Rendering/Core/API/IPipelineLayout.h"
+#include "Core/TSharedRef.h"
+
+#include "Rendering/Core/API/DescriptorSet.h"
+#include "Rendering/Core/API/PipelineLayout.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Containers/String.h"
@@ -9,19 +11,19 @@
 
 namespace LambdaEngine
 {
-	class IPipelineLayout;
+	class PipelineLayout;
 	class GraphicsDeviceVK;
 	class DescriptorHeapVK;
 
-	class DescriptorSetVK : public TDeviceChildBase<GraphicsDeviceVK, IDescriptorSet>
+	class DescriptorSetVK : public TDeviceChildBase<GraphicsDeviceVK, DescriptorSet>
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IDescriptorSet>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, DescriptorSet>;
 
 	public:
 		DescriptorSetVK(const GraphicsDeviceVK* pDevice);
 		~DescriptorSetVK();
 
-		bool Init(const String& name, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap);
+		bool Init(const String& name, const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, DescriptorHeap* pDescriptorHeap);
 
 		FORCEINLINE VkDescriptorSet GetDescriptorSet() const
 		{
@@ -35,36 +37,28 @@ namespace LambdaEngine
 
 		FORCEINLINE uint32 GetDescriptorBindingDescCount() const
 		{
-			return m_BindingCount;
+			return m_Bindings.GetSize();
 		}
 
-		// IDeviceChild Interface
-		virtual void SetName(const char* pName) override final;
+	public:
+		// DeviceChild Interface
+		virtual void SetName(const String& name) override final;
 
-		// IDesciptorSet Interface
-		virtual void WriteTextureDescriptors(const ITextureView* const* ppTextures, const ISampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType type) override final;
-		virtual void WriteBufferDescriptors(const IBuffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType type)	override final;
-		virtual void WriteAccelerationStructureDescriptors(const IAccelerationStructure* const * ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount) override final;
+		// DesciptorSet Interface
+		virtual void WriteTextureDescriptors(const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType type) override final;
+		virtual void WriteBufferDescriptors(const Buffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType type)	override final;
+		virtual void WriteAccelerationStructureDescriptors(const AccelerationStructure* const * ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount) override final;
 
-		virtual IDescriptorHeap* GetHeap() override final;
+		virtual DescriptorHeap* GetHeap() override final;
 		
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
-			return (uint64)m_pDescriptorHeap;
-		}
-
-		FORCEINLINE virtual const String& GetName() const override final
-		{
-			return m_Name;
+			return reinterpret_cast<uint64>(m_DescriptorSet);
 		}
 
 	private:
-		VkDescriptorSet			m_DescriptorSet		= VK_NULL_HANDLE;
-		DescriptorHeapVK*		m_pDescriptorHeap	= nullptr;
-		
-		DescriptorBindingDesc	m_Bindings[MAX_DESCRIPTOR_BINDINGS];
-		uint32					m_BindingCount	= 0;
-
-		String					m_Name; 
+		VkDescriptorSet					m_DescriptorSet		= VK_NULL_HANDLE;
+		TSharedRef<DescriptorHeapVK>	m_DescriptorHeap	= nullptr;
+		TArray<DescriptorBindingDesc>	m_Bindings;
 	};
 }

@@ -14,7 +14,7 @@ namespace LambdaEngine
 {
 	ClientUDPRemote::ClientUDPRemote(uint16 packetPoolSize, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer) :
 		m_pServer(pServer),
-		m_PacketManager(packetPoolSize, maximumTries),
+		m_PacketManager({ packetPoolSize, maximumTries }),
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
 		m_Release(false),
@@ -54,7 +54,7 @@ namespace LambdaEngine
 
 	void ClientUDPRemote::OnDataReceived(PacketTransceiver* pTransciver)
 	{
-		std::vector<NetworkPacket*> packets;
+		TArray<NetworkPacket*> packets;
 		m_PacketManager.QueryBegin(pTransciver, packets);
 		for (NetworkPacket* pPacket : packets)
 		{
@@ -71,7 +71,6 @@ namespace LambdaEngine
 
 	bool ClientUDPRemote::HandleReceivedPacket(NetworkPacket* pPacket)
 	{
-		LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 		uint16 packetType = pPacket->GetType();
 
 		LOG_MESSAGE("ClientUDPRemote::OnPacketReceivedUDP(%s)", pPacket->ToString().c_str());

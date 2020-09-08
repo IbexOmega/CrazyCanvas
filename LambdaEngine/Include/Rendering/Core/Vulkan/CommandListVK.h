@@ -1,6 +1,8 @@
 #pragma once
-#include "Rendering/Core/API/ICommandList.h"
-#include "Rendering/Core/API/IRenderPass.h"
+#include "Core/TSharedRef.h"
+
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/RenderPass.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
@@ -9,29 +11,50 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 	class CommandAllocatorVK;
-    class RayTracingPipelineStateVK;
+	class RayTracingPipelineStateVK;
 
-	class CommandListVK : public TDeviceChildBase<GraphicsDeviceVK, ICommandList>
+	/*
+	* DeferredImageBarrier
+	*/
+	struct DeferredImageBarrier
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, ICommandList>;
+	public:
+		inline bool HasCompatableStages(const DeferredImageBarrier& other) const
+		{
+			return (SrcStages == other.SrcStages) && (DestStages == other.DestStages);
+		}
+
+	public:
+		VkPipelineStageFlags SrcStages	= 0;
+		VkPipelineStageFlags DestStages	= 0;
+		TArray<VkImageMemoryBarrier> Barriers;
+	};
+
+	/*
+	* CommandListVK 
+	*/
+	class CommandListVK : public TDeviceChildBase<GraphicsDeviceVK, CommandList>
+	{
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, CommandList>;
 
 	public:
 		CommandListVK(const GraphicsDeviceVK* pDevice);
 		~CommandListVK();
 
-		bool Init(ICommandAllocator* pAllocator, const CommandListDesc* pDesc);
+		bool Init(CommandAllocator* pAllocator, const CommandListDesc* pDesc);
 
 		FORCEINLINE VkCommandBuffer GetCommandBuffer() const
 		{
 			return m_CommandList;
 		}
 
-		//IDeviceChild interface
-		virtual void SetName(const char* pName) override;
+	public:
+		// DeviceChild interface
+		virtual void SetName(const String& name) override;
 
-		//ICommandList interface
+		// CommandList interface
 		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc)	override final;
-        virtual bool End()                                                  override final;
+		virtual bool End()													override final;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) override final;
 		virtual void EndRenderPass() override final;
@@ -39,83 +62,83 @@ namespace LambdaEngine
 		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)		override final;
 		virtual void BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)	override final;
 
-		virtual void CopyBuffer(const IBuffer* pSrc, uint64 srcOffset, IBuffer* pDst, uint64 dstOffset, uint64 sizeInBytes)				override final;
-		virtual void CopyTextureFromBuffer(const IBuffer* pSrc, ITexture* pDst, const CopyTextureFromBufferDesc& desc)					override final;
-		virtual void BlitTexture(const ITexture* pSrc, ETextureState srcState, ITexture* pDst, ETextureState dstState, EFilter filter)	override final;
+		virtual void CopyBuffer(const Buffer* pSrc, uint64 srcOffset, Buffer* pDst, uint64 dstOffset, uint64 sizeInBytes)				override final;
+		virtual void CopyTextureFromBuffer(const Buffer* pSrc, Texture* pDst, const CopyTextureFromBufferDesc& desc)					override final;
+		
+		virtual void BlitTexture(const Texture* pSrc, ETextureState srcState, Texture* pDst, ETextureState dstState, EFilterType filter)	override final;
+
+		virtual void TransitionBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ETextureState beforeState, ETextureState afterState) override final;
+		virtual void TransitionBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, uint32 arrayIndex, uint32 arrayCount, ETextureState beforeState, ETextureState afterState) override final;
 
 		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)	override final;
 		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)		override final;
 		virtual void PipelineMemoryBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineMemoryBarrierDesc* pMemoryBarriers, uint32 bufferMemoryCount)			override final;
 
-		virtual void GenerateMiplevels(ITexture* pTexture, ETextureState stateBefore, ETextureState stateAfter) override final;
+		virtual void GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter) override final;
 
-		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)           override final;
-		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)    override final;
+		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)			override final;
+		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)	override final;
 
-		virtual void SetConstantRange(const IPipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) override final;
+		virtual void SetConstantRange(const PipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) override final;
 
-		virtual void BindIndexBuffer(const IBuffer* pIndexBuffer, uint64 offset, EIndexType indexType) override;
-		virtual void BindVertexBuffers(const IBuffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) override final;
+		virtual void BindIndexBuffer(const Buffer* pIndexBuffer, uint64 offset, EIndexType indexType) override;
+		virtual void BindVertexBuffers(const Buffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) override final;
 
-		virtual void BindDescriptorSetGraphics(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex) override final;
-		virtual void BindDescriptorSetCompute(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex) override final;
-		virtual void BindDescriptorSetRayTracing(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex) override final;
+		virtual void BindDescriptorSetGraphics(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex) override final;
+		virtual void BindDescriptorSetCompute(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex) override final;
+		virtual void BindDescriptorSetRayTracing(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex) override final;
 
-		virtual void BindGraphicsPipeline(const IPipelineState* pPipeline)		override final;
-		virtual void BindComputePipeline(const IPipelineState* pPipeline)		override final;
-		virtual void BindRayTracingPipeline(const IPipelineState* pPipeline)	override final;
+		virtual void BindGraphicsPipeline(const PipelineState* pPipeline)	override final;
+		virtual void BindComputePipeline(const PipelineState* pPipeline)	override final;
+		virtual void BindRayTracingPipeline(PipelineState* pPipeline)		override final;
 
 		virtual void TraceRays(uint32 width, uint32 height, uint32 depth) override final;
 
 		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ) override final;
 
-		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)                          override final;
-		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)  override final;
-		virtual void DrawIndexedIndirect(const IBuffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)							override final;
+		virtual void DispatchMesh(uint32 taskCount, uint32 firstTask)													override final;
+		virtual void DispatchMeshIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)	override final;
 
-		virtual void BeginQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)											override final;
-		virtual void Timestamp(IQueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)	override final;
-		virtual void EndQuery(IQueryHeap* pQueryHeap, uint32 queryIndex)											override final;
+		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)							override final;
+		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)	override final;
+		virtual void DrawIndexedIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)								override final;
 
-		virtual void ExecuteSecondary(const ICommandList* pSecondary) override final;
+		virtual void BeginQuery(QueryHeap* pQueryHeap, uint32 queryIndex)										override final;
+		virtual void Timestamp(QueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)	override final;
+		virtual void EndQuery(QueryHeap* pQueryHeap, uint32 queryIndex)											override final;
 
-		virtual ICommandAllocator* GetAllocator() const override final;
+		virtual void ExecuteSecondary(const CommandList* pSecondary) override final;
 
-		FORCEINLINE virtual CommandListDesc GetDesc() const override final
-		{
-			return m_Desc;
-		}
+		virtual void DeferrDestruction(DeviceChild* pResource) override final;
+
+		virtual void FlushDeferredBarriers()	override final;
+		virtual void FlushDeferredResources()	override final;
+
+		virtual CommandAllocator* GetAllocator() override final;
 
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
-			return (uint64)m_CommandList;
-		}
-
-		
-		FORCEINLINE virtual ECommandQueueType GetType()	const override final
-		{
-			return m_Type;
+			return reinterpret_cast<uint64>(m_CommandList);
 		}
 	
+	private:
+		void BindDescriptorSet(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex, VkPipelineBindPoint bindPoint);
 
 	private:
-		void BindDescriptorSet(const IDescriptorSet* pDescriptorSet, const IPipelineLayout* pPipelineLayout, uint32 setIndex, VkPipelineBindPoint bindPoint);
+		VkCommandBuffer							m_CommandList				= VK_NULL_HANDLE;
+		TSharedRef<CommandAllocatorVK>			m_Allocator					= nullptr;
+		TSharedRef<RayTracingPipelineStateVK>	m_CurrentRayTracingPipeline	= nullptr;
+		
+		TArray<DeferredImageBarrier> m_DeferredBarriers;
+		TArray<TSharedRef<DeviceChild>> m_ResourcesToDestroy;
 
-	private:
-		VkCommandBuffer						m_CommandList					= VK_NULL_HANDLE;
-		CommandAllocatorVK*                 m_pAllocator	                = nullptr;
-        const RayTracingPipelineStateVK*    m_pCurrentRayTracingPipeline    = nullptr;
-        
-        VkImageMemoryBarrier    m_ImageBarriers[MAX_IMAGE_BARRIERS];
-		VkBufferMemoryBarrier   m_BufferBarriers[MAX_BUFFER_BARRIERS];
 		VkMemoryBarrier			m_MemoryBarriers[MAX_MEMORY_BARRIERS];
-        VkViewport              m_Viewports[MAX_VIEWPORTS];
-        VkRect2D                m_ScissorRects[MAX_VIEWPORTS];
-        VkBuffer                m_VertexBuffers[MAX_VERTEX_BUFFERS];
-        VkDeviceSize            m_VertexBufferOffsets[MAX_VERTEX_BUFFERS];
+		VkImageMemoryBarrier	m_ImageBarriers[MAX_IMAGE_BARRIERS];
+		VkBufferMemoryBarrier	m_BufferBarriers[MAX_BUFFER_BARRIERS];
+		VkViewport				m_Viewports[MAX_VIEWPORTS];
+		VkRect2D				m_ScissorRects[MAX_VIEWPORTS];
+		VkBuffer				m_VertexBuffers[MAX_VERTEX_BUFFERS];
+		VkDeviceSize			m_VertexBufferOffsets[MAX_VERTEX_BUFFERS];
 		VkClearValue			m_ClearValues[MAX_COLOR_ATTACHMENTS+1];
-        
-        CommandListDesc			m_Desc;
-		ECommandQueueType		m_Type;
 	};
 }

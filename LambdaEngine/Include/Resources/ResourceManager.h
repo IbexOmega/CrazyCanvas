@@ -8,7 +8,7 @@ namespace LambdaEngine
 {
 	union ShaderConstant;
 
-	class IGraphicsDevice;
+	class GraphicsDevice;
 	class IAudioDevice;
 
 	//Meshes
@@ -36,10 +36,10 @@ namespace LambdaEngine
 	{
 		struct ShaderLoadDesc
 		{
-			String				Filepath				= "";
-			FShaderStageFlags	Stage					= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
-			EShaderLang			Lang					= EShaderLang::NONE;
-			const char*			pEntryPoint				= nullptr;
+			String				Filepath	= "";
+			FShaderStageFlags	Stage		= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			EShaderLang			Lang		= EShaderLang::SHADER_LANG_NONE;
+			const char*			pEntryPoint	= nullptr;
 		};
 
 	public:
@@ -56,7 +56,7 @@ namespace LambdaEngine
 		*	result - A vector where all loaded GameObject(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const String& filename, std::vector<GameObject>& result);
+		static bool LoadSceneFromFile(const String& filename, TArray<GameObject>& result);
 
 		/*
 		* Load a mesh from file
@@ -79,7 +79,7 @@ namespace LambdaEngine
 		/*
 		* Load a material from memory
 		*	name - A name given to the material
-		*	albedoMap, normalMap, ambientOcclusionMap, metallicMap, roughnessMap - The GUID of a valid ITexture loaded with this ResourceManager, or GUID_NONE to use default maps
+		*	albedoMap, normalMap, ambientOcclusionMap, metallicMap, roughnessMap - The GUID of a valid Texture loaded with this ResourceManager, or GUID_NONE to use default maps
 		*	properties - Material Properties which are to be used for this material
 		* return - a valid GUID if the materials was loaded, otherwise returns GUID_NONE
 		*/
@@ -137,18 +137,18 @@ namespace LambdaEngine
 
 		static void ReloadAllShaders();
 
-		static GUID_Lambda								GetMeshGUID(const String& name);
-		static GUID_Lambda								GetMaterialGUID(const String& name);
-		static GUID_Lambda								GetTextureGUID(const String& name);
-		static GUID_Lambda								GetShaderGUID(const String& name);
-		static GUID_Lambda								GetSoundEffectGUID(const String& name);
+		static GUID_Lambda					GetMeshGUID(const String& name);
+		static GUID_Lambda					GetMaterialGUID(const String& name);
+		static GUID_Lambda					GetTextureGUID(const String& name);
+		static GUID_Lambda					GetShaderGUID(const String& name);
+		static GUID_Lambda					GetSoundEffectGUID(const String& name);
 
-		static Mesh*									GetMesh(GUID_Lambda guid);
-		static Material*								GetMaterial(GUID_Lambda guid);
-		static ITexture*								GetTexture(GUID_Lambda guid);
-		static ITextureView*							GetTextureView(GUID_Lambda guid);
-		static IShader*									GetShader(GUID_Lambda guid);
-		static ISoundEffect3D*							GetSoundEffect(GUID_Lambda guid);
+		static Mesh*						GetMesh(GUID_Lambda guid);
+		static Material*					GetMaterial(GUID_Lambda guid);
+		static Texture*						GetTexture(GUID_Lambda guid);
+		static TextureView*					GetTextureView(GUID_Lambda guid);
+		static Shader*						GetShader(GUID_Lambda guid);
+		static ISoundEffect3D*				GetSoundEffect(GUID_Lambda guid);
 
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>&				GetMeshNamesMap()			{ return s_MaterialNamesToGUIDs; }
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>&				GetMaterialNamesMap()		{ return s_MaterialNamesToGUIDs; }
@@ -158,36 +158,36 @@ namespace LambdaEngine
 
 		FORCEINLINE static std::unordered_map<GUID_Lambda, Mesh*>&				GetMeshGUIDMap()			{ return s_Meshes; }
 		FORCEINLINE static std::unordered_map<GUID_Lambda, Material*>&			GetMaterialGUIDMap()		{ return s_Materials; }
-		FORCEINLINE static std::unordered_map<GUID_Lambda, ITexture*>&			GetTextureGUIDMap()			{ return s_Textures; }
-		FORCEINLINE static std::unordered_map<GUID_Lambda, ITextureView*>&		GetTextureViewGUIDMap()		{ return s_TextureViews; }
-		FORCEINLINE static std::unordered_map<GUID_Lambda, IShader*>&			GetShaderGUIDMap()			{ return s_Shaders; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, Texture*>&			GetTextureGUIDMap()			{ return s_Textures; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, TextureView*>&		GetTextureViewGUIDMap()		{ return s_TextureViews; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, Shader*>&			GetShaderGUIDMap()			{ return s_Shaders; }
 		FORCEINLINE static std::unordered_map<GUID_Lambda, ISoundEffect3D*>&	GetSoundEffectGUIDMap()		{ return s_SoundEffects; }
 
 	private:
 		static GUID_Lambda RegisterLoadedMesh(const String& name, Mesh* pMesh);
 		static GUID_Lambda RegisterLoadedMaterial(const String& name, Material* pMaterial);
-		static GUID_Lambda RegisterLoadedTexture(ITexture* pTexture);
+		static GUID_Lambda RegisterLoadedTexture(Texture* pTexture);
 
 		static GUID_Lambda GetGUID(const std::unordered_map<String, GUID_Lambda>& namesToGUIDs, const String& name);
 
 		static void InitDefaultResources();
 
 	private:
-		static GUID_Lambda											s_NextFreeGUID;
+		static GUID_Lambda										s_NextFreeGUID;
 
-		static std::unordered_map<String, GUID_Lambda>				s_MeshNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda>				s_MaterialNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda>				s_TextureNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda>				s_ShaderNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda>				s_SoundEffectNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>			s_MeshNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>			s_MaterialNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>			s_TextureNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>			s_ShaderNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>			s_SoundEffectNamesToGUIDs;
 
-		static std::unordered_map<GUID_Lambda, Mesh*>				s_Meshes;
-		static std::unordered_map<GUID_Lambda, Material*>			s_Materials;
-		static std::unordered_map<GUID_Lambda, ITexture*>			s_Textures;
-		static std::unordered_map<GUID_Lambda, ITextureView*>		s_TextureViews;
-		static std::unordered_map<GUID_Lambda, IShader*>			s_Shaders;
-		static std::unordered_map<GUID_Lambda, ISoundEffect3D*>		s_SoundEffects;
+		static std::unordered_map<GUID_Lambda, Mesh*>			s_Meshes;
+		static std::unordered_map<GUID_Lambda, Material*>		s_Materials;
+		static std::unordered_map<GUID_Lambda, Texture*>		s_Textures;
+		static std::unordered_map<GUID_Lambda, TextureView*>	s_TextureViews;
+		static std::unordered_map<GUID_Lambda, Shader*>			s_Shaders;
+		static std::unordered_map<GUID_Lambda, ISoundEffect3D*>	s_SoundEffects;
 
-		static std::unordered_map<GUID_Lambda, ShaderLoadDesc>		s_ShaderLoadConfigurations;
+		static std::unordered_map<GUID_Lambda, ShaderLoadDesc>	s_ShaderLoadConfigurations;
 	};
 }

@@ -52,13 +52,13 @@ namespace LambdaEngine
 		*	return	- An instance of the Win32Window that has the 'hWnd' -handle. 
 		*				Returns nullptr if handle is invalid
 		*/
-		Win32Window* 	GetWindowFromHandle(HWND hWnd) const;
-		HINSTANCE 		GetInstanceHandle();
+		TSharedRef<Win32Window> GetWindowFromHandle(HWND hWnd) const;
+		HINSTANCE GetInstanceHandle();
 
 	public:
 		// Application interface
-		virtual bool 	Create()								override final;
-		virtual Window* CreateWindow(const WindowDesc* pDesc)	override final;
+		virtual bool Create() override final;
+		virtual TSharedRef<Window> CreateWindow(const WindowDesc* pDesc) override final;
 
 		virtual bool Tick() override final;
 
@@ -70,30 +70,30 @@ namespace LambdaEngine
 
 		virtual void		SetMouseVisibility(bool visible)					override final;
 		virtual void		SetMousePosition(int x, int y)						override final;
-		virtual void 		SetInputMode(Window* pWindow, EInputMode inputMode) override final;
-		virtual EInputMode	GetInputMode(Window* pWindow) const					override final;
+		virtual void SetInputMode(TSharedRef<Window> window, EInputMode inputMode) override final;
+		virtual EInputMode GetInputMode(TSharedRef<Window> window) const override final;
 
-		virtual void	SetActiveWindow(Window* pWindow)	override final;
-		virtual Window* GetActiveWindow() const				override final;
+		virtual void SetActiveWindow(TSharedRef<Window> window)	override final;
+		virtual TSharedRef<Window> GetActiveWindow() const override final;
 
-		virtual void	SetCapture(Window* pWindow)	override final; 
-		virtual Window* GetCapture() const			override final;
+		virtual void SetCapture(TSharedRef<Window> window) override final;
+		virtual TSharedRef<Window> GetCapture() const override final;
 
 	private:
 		Win32Application(HINSTANCE hInstance);
 		~Win32Application();
 
-		void AddWindow(Win32Window* pWindow);
+		void AddWindow(TSharedRef<Win32Window> window);
 
-		void	ProcessStoredMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam, int32 mouseDeltaX, int32 mouseDeltaY);
+		void ProcessStoredMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam, int32 mouseDeltaX, int32 mouseDeltaY);
 		LRESULT ProcessMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 		LRESULT ProcessRawInput(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 
 	public:
 		static void PeekEvents();
 		
-		static Application*			CreateApplication();
-		static Win32Application*	Get();
+		static Application* CreateApplication();
+		static Win32Application* Get();
 
 	private:
 		static bool RegisterWindowClass();
@@ -109,7 +109,7 @@ namespace LambdaEngine
 		bool		m_IsTrackingMouse	= false;
 
 		TArray<byte>					m_RawInputBuffer;
-		TArray<Win32Window*>			m_Windows;
+		TArray<TSharedRef<Win32Window>>	m_Windows;
 		TArray<Win32Message> 			m_StoredMessages;
 		TArray<IWin32MessageHandler*>	m_MessageHandlers;
 

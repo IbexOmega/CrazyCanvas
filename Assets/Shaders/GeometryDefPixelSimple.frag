@@ -14,6 +14,7 @@ layout(location = 5) in vec2 in_TexCoord;
 layout(location = 6) in vec4 in_WorldPosition;
 layout(location = 7) in vec4 in_ClipPosition;
 layout(location = 8) in vec4 in_PrevClipPosition;
+layout(location = 9) in flat vec2 in_CameraJitter;
 
 layout(binding = 6, set = BUFFER_SET_INDEX) restrict readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
 

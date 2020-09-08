@@ -8,6 +8,9 @@
 
 namespace LambdaEngine
 {
+	/*
+	* Win32Window
+	*/
 	Win32Window::~Win32Window()
 	{
 		::DestroyWindow(m_hWnd);

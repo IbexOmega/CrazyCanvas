@@ -1,11 +1,11 @@
 #include "Rendering/Renderer.h"
-#include "Rendering/Core/API/IGraphicsDevice.h"
-#include "Rendering/Core/API/ICommandAllocator.h"
-#include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/ICommandList.h"
-#include "Rendering/Core/API/ISwapChain.h"
-#include "Rendering/Core/API/ITexture.h"
-#include "Rendering/Core/API/ITextureView.h"
+#include "Rendering/Core/API/GraphicsDevice.h"
+#include "Rendering/Core/API/CommandAllocator.h"
+#include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/SwapChain.h"
+#include "Rendering/Core/API/Texture.h"
+#include "Rendering/Core/API/TextureView.h"
 #include "Rendering/RenderSystem.h"
 #include "Rendering/RenderGraph.h"
 #include "Rendering/ImGuiRenderer.h"
@@ -17,14 +17,15 @@
 
 namespace LambdaEngine
 {
-	Renderer::Renderer(const IGraphicsDevice* pGraphicsDevice) :
-		m_pGraphicsDevice(pGraphicsDevice)
+	Renderer::Renderer(const GraphicsDevice* pGraphicsDevice) 
+		: m_Name()
+		, m_pGraphicsDevice(pGraphicsDevice)
 	{
 	}
 
 	Renderer::~Renderer()
 	{
-		if (m_pSwapChain != nullptr)
+		if (m_SwapChain)
 		{
 			for (uint32 i = 0; i < m_BackBufferCount; i++)
 			{
@@ -35,8 +36,6 @@ namespace LambdaEngine
 			SAFEDELETE_ARRAY(m_ppBackBuffers);
 			SAFEDELETE_ARRAY(m_ppBackBufferViews);
 		}
-
-		SAFERELEASE(m_pSwapChain);
 	}
 
 	bool Renderer::Init(const RendererDesc* pDesc)
@@ -45,12 +44,14 @@ namespace LambdaEngine
 		VALIDATE(pDesc->pWindow);
 		VALIDATE(pDesc->pRenderGraph);
 
-		m_pName				= pDesc->pName;
+		m_Name				= pDesc->Name;
 		m_pRenderGraph		= pDesc->pRenderGraph;
 		m_BackBufferCount	= pDesc->BackBufferCount;
 
 		SwapChainDesc swapChainDesc = {};
-		swapChainDesc.pName			= "Renderer Swap Chain";
+		swapChainDesc.DebugName		= "Renderer Swap Chain";
+		swapChainDesc.Window		= pDesc->pWindow;
+		swapChainDesc.Queue			= RenderSystem::GetGraphicsQueue();
 		swapChainDesc.Format		= EFormat::FORMAT_B8G8R8A8_UNORM;
 		swapChainDesc.Width			= 0;
 		swapChainDesc.Height		= 0;
@@ -58,43 +59,41 @@ namespace LambdaEngine
 		swapChainDesc.SampleCount	= 1;
 		swapChainDesc.VerticalSync	= false;
 		
-		m_pSwapChain = m_pGraphicsDevice->CreateSwapChain(pDesc->pWindow, RenderSystem::GetGraphicsQueue(), &swapChainDesc);
-
-		if (m_pSwapChain == nullptr)
+		m_SwapChain = m_pGraphicsDevice->CreateSwapChain(&swapChainDesc);
+		if (!m_SwapChain)
 		{
-			LOG_ERROR("[Renderer]: SwapChain is nullptr after initializaiton for \"%s\"", m_pName);
+			LOG_ERROR("[Renderer]: SwapChain is nullptr after initializaiton for \"%s\"", m_Name.c_str());
 			return false;
 		}
 
-		uint32 backBufferCount	= m_pSwapChain->GetDesc().BufferCount;
-		m_ppBackBuffers			= DBG_NEW ITexture*[backBufferCount];
-		m_ppBackBufferViews		= DBG_NEW ITextureView*[backBufferCount];
+		uint32 backBufferCount	= m_SwapChain->GetDesc().BufferCount;
+		m_ppBackBuffers			= DBG_NEW Texture*[backBufferCount];
+		m_ppBackBufferViews		= DBG_NEW TextureView*[backBufferCount];
 
 		for (uint32 v = 0; v < backBufferCount; v++)
 		{
-			ITexture* pBackBuffer	= m_pSwapChain->GetBuffer(v);
+			Texture* pBackBuffer	= m_SwapChain->GetBuffer(v);
 			m_ppBackBuffers[v]		= pBackBuffer;
 
 			TextureViewDesc textureViewDesc = {};
-			textureViewDesc.Name			= "Renderer Back Buffer Texture View " + v;
-			textureViewDesc.pTexture		= pBackBuffer;
+			textureViewDesc.DebugName		= "Renderer Back Buffer Texture View";
+			textureViewDesc.Texture			= pBackBuffer;
 			textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
 			textureViewDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
-			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_2D;
+			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 			textureViewDesc.MiplevelCount	= 1;
 			textureViewDesc.ArrayCount		= 1;
 			textureViewDesc.Miplevel		= 0;
 			textureViewDesc.ArrayIndex		= 0;
 			
-			ITextureView* pBackBufferView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
-
+			TextureView* pBackBufferView = m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 			if (pBackBufferView == nullptr)
 			{
-				LOG_ERROR("[Renderer]: Could not create Back Buffer View of Back Buffer Index %u in Renderer \"%s\"", v, m_pName);
+				LOG_ERROR("[Renderer]: Could not create Back Buffer View of Back Buffer Index %u in Renderer \"%s\"", v, m_Name.c_str());
 				return false;
 			}
 			
-			m_ppBackBufferViews[v]			= pBackBufferView;
+			m_ppBackBufferViews[v] = pBackBufferView;
 		}
 		
 		ResourceUpdateDesc resourceUpdateDesc = {};
@@ -119,22 +118,22 @@ namespace LambdaEngine
 	
 	void Renderer::Render()
 	{
-		m_BackBufferIndex = m_pSwapChain->GetCurrentBackBufferIndex();
+		m_BackBufferIndex = m_SwapChain->GetCurrentBackBufferIndex();
 
 		m_pRenderGraph->Render();
 
-		m_pSwapChain->Present();
-
+		m_SwapChain->Present();
+		
 		m_FrameIndex++;
 		m_ModFrameIndex = m_FrameIndex % uint64(m_BackBufferCount);
 	}
 
-	ICommandList* Renderer::AcquireGraphicsCopyCommandList()
+	CommandList* Renderer::AcquireGraphicsCopyCommandList()
 	{
 		return m_pRenderGraph->AcquireGraphicsCopyCommandList();
 	}
 
-	ICommandList* Renderer::AcquireComputeCopyCommandList()
+	CommandList* Renderer::AcquireComputeCopyCommandList()
 	{
 		return m_pRenderGraph->AcquireComputeCopyCommandList();
 	}

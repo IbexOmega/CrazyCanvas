@@ -33,10 +33,9 @@
 
 namespace LambdaEngine
 {
-    /*
-     * ValidationLayers and Extensions
-     */
-
+	/*
+	 * ValidationLayers and Extensions
+	 */
 	constexpr ValidationLayer REQUIRED_VALIDATION_LAYERS[]
 	{
 		ValidationLayer("REQ_V_L_BASE"),
@@ -55,11 +54,11 @@ namespace LambdaEngine
 		Extension(VK_KHR_SURFACE_EXTENSION_NAME),
 		Extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME),
 #if defined(LAMBDA_PLATFORM_MACOS)
-        Extension(VK_MVK_MACOS_SURFACE_EXTENSION_NAME),
+		Extension(VK_MVK_MACOS_SURFACE_EXTENSION_NAME),
 #elif defined(LAMBDA_PLATFORM_WINDOWS)
 		Extension(VK_KHR_WIN32_SURFACE_EXTENSION_NAME),
 #endif
-    };
+	};
 
 	constexpr Extension OPTIONAL_INSTANCE_EXTENSIONS[]
 	{
@@ -84,24 +83,23 @@ namespace LambdaEngine
 		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME),
 		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
-        Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
+		Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
 		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
-    /*
-     * GraphicsDeviceVK
-     */
-
+	/*
+	 * GraphicsDeviceVK
+	 */
 	GraphicsDeviceVK::GraphicsDeviceVK()
-        : IGraphicsDevice(),
-        RayTracingProperties(),
-        m_DeviceQueueFamilyIndices(),
-        m_DeviceLimits(),
-        m_QueueFamilyProperties(),
-        m_EnabledValidationLayers(),
-        m_EnabledInstanceExtensions(),
-        m_EnabledDeviceExtensions()
+		: GraphicsDevice()
+		, RayTracingProperties()
+		, m_DeviceQueueFamilyIndices()
+		, m_DeviceLimits()
+		, m_QueueFamilyProperties()
+		, m_EnabledValidationLayers()
+		, m_EnabledInstanceExtensions()
+		, m_EnabledDeviceExtensions()
 	{
 	}
 
@@ -130,7 +128,7 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::Init(const GraphicsDeviceDesc* pDesc)
 	{
-        VALIDATE(pDesc != nullptr);
+		VALIDATE(pDesc != nullptr);
 
 		if (!InitInstance(pDesc))
 		{
@@ -157,116 +155,116 @@ namespace LambdaEngine
 		return true;
 	}
 
-    VkResult GraphicsDeviceVK::AllocateMemory(VkDeviceMemory* pDeviceMemory, VkDeviceSize sizeInBytes, int32 memoryIndex) const
-    {
-        VALIDATE(pDeviceMemory      !=  nullptr);
-        VALIDATE(m_UsedAllocations  <   m_DeviceLimits.maxMemoryAllocationCount);
+	VkResult GraphicsDeviceVK::AllocateMemory(VkDeviceMemory* pDeviceMemory, VkDeviceSize sizeInBytes, int32 memoryIndex) const
+	{
+		VALIDATE(pDeviceMemory      !=  nullptr);
+		VALIDATE(m_UsedAllocations  <   m_DeviceLimits.maxMemoryAllocationCount);
 
-        VkMemoryAllocateFlagsInfo allocateFlagsInfo = {};
-        allocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
-        allocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+		VkMemoryAllocateFlagsInfo allocateFlagsInfo = {};
+		allocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+		allocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
 
-        VkMemoryAllocateInfo allocateInfo = { };
-        allocateInfo.sType              = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocateInfo.pNext              = &allocateFlagsInfo;
-        allocateInfo.memoryTypeIndex    = memoryIndex;
-        allocateInfo.allocationSize     = sizeInBytes;
+		VkMemoryAllocateInfo allocateInfo = { };
+		allocateInfo.sType              = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocateInfo.pNext              = &allocateFlagsInfo;
+		allocateInfo.memoryTypeIndex    = memoryIndex;
+		allocateInfo.allocationSize     = sizeInBytes;
 
-        VkResult result = vkAllocateMemory(Device, &allocateInfo, nullptr, pDeviceMemory);
-        if (result != VK_SUCCESS)
-        {
-            LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to allocate memory");
-        }
-        else
-        {
-            m_UsedAllocations++;
-            D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
-        }
-        
-        return result;
-    }
+		VkResult result = vkAllocateMemory(Device, &allocateInfo, nullptr, pDeviceMemory);
+		if (result != VK_SUCCESS)
+		{
+			LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to allocate memory");
+		}
+		else
+		{
+			m_UsedAllocations++;
+			D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+		}
+		
+		return result;
+	}
 
-    void GraphicsDeviceVK::FreeMemory(VkDeviceMemory deviceMemory) const
-    {
-        VALIDATE(deviceMemory != VK_NULL_HANDLE);
-        vkFreeMemory(Device, deviceMemory, nullptr);
-        m_UsedAllocations--;
-    }
+	void GraphicsDeviceVK::FreeMemory(VkDeviceMemory deviceMemory) const
+	{
+		VALIDATE(deviceMemory != VK_NULL_HANDLE);
+		vkFreeMemory(Device, deviceMemory, nullptr);
+		m_UsedAllocations--;
+	}
 
-    void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
-    {
-        VALIDATE(m_pFrameBufferCache != nullptr);
-        
-        if (*pRenderPass != VK_NULL_HANDLE)
-        {
-            m_pFrameBufferCache->DestroyRenderPass(*pRenderPass);
-            
-            vkDestroyRenderPass(Device, *pRenderPass, nullptr);
-            *pRenderPass = VK_NULL_HANDLE;
-        }
-    }
+	void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
+	{
+		VALIDATE(m_pFrameBufferCache != nullptr);
+		
+		if (*pRenderPass != VK_NULL_HANDLE)
+		{
+			m_pFrameBufferCache->DestroyRenderPass(*pRenderPass);
+			
+			vkDestroyRenderPass(Device, *pRenderPass, nullptr);
+			*pRenderPass = VK_NULL_HANDLE;
+		}
+	}
 
-    void GraphicsDeviceVK::DestroyImageView(VkImageView* pImageView) const
-    {
-        VALIDATE(m_pFrameBufferCache != nullptr);
-        
-        if (*pImageView != VK_NULL_HANDLE)
-        {
-            m_pFrameBufferCache->DestroyImageView(*pImageView);
-            
-            vkDestroyImageView(Device, *pImageView, nullptr);
-            *pImageView = VK_NULL_HANDLE;
-        }
-    }
+	void GraphicsDeviceVK::DestroyImageView(VkImageView* pImageView) const
+	{
+		VALIDATE(m_pFrameBufferCache != nullptr);
+		
+		if (*pImageView != VK_NULL_HANDLE)
+		{
+			m_pFrameBufferCache->DestroyImageView(*pImageView);
+			
+			vkDestroyImageView(Device, *pImageView, nullptr);
+			*pImageView = VK_NULL_HANDLE;
+		}
+	}
 
-	VkFramebuffer GraphicsDeviceVK::GetFrameBuffer(const IRenderPass* pRenderPass, const ITextureView* const* ppRenderTargets, uint32 renderTargetCount, const ITextureView* pDepthStencil, uint32 width, uint32 height) const
+	VkFramebuffer GraphicsDeviceVK::GetFrameBuffer(const RenderPass* pRenderPass, const TextureView* const* ppRenderTargets, uint32 renderTargetCount, const TextureView* pDepthStencil, uint32 width, uint32 height) const
 	{
 		FrameBufferCacheKey key = { };
 		for (uint32 i = 0; i < renderTargetCount; i++)
 		{
-            const TextureViewVK* pRenderTargetVk = reinterpret_cast<const TextureViewVK*>(ppRenderTargets[i]);
+			const TextureViewVK* pRenderTargetVk = reinterpret_cast<const TextureViewVK*>(ppRenderTargets[i]);
 			key.ColorAttachmentsViews[i] = pRenderTargetVk->GetImageView();
 		}
 
 		key.ColorAttachmentViewCount	= renderTargetCount;
-        
-        if (pDepthStencil)
-        {
-            const TextureViewVK* pDepthStencilVk = reinterpret_cast<const TextureViewVK*>(pDepthStencil);
-            key.DepthStencilView = pDepthStencilVk->GetImageView();
-        }
-        else
-        {
-            key.DepthStencilView = VK_NULL_HANDLE;
-        }
-        
-        VALIDATE(pRenderPass != nullptr);
-        
-        const RenderPassVK* pRenderPassVk = reinterpret_cast<const RenderPassVK*>(pRenderPass);
-        key.RenderPass = pRenderPassVk->GetRenderPass();
+		
+		if (pDepthStencil)
+		{
+			const TextureViewVK* pDepthStencilVk = reinterpret_cast<const TextureViewVK*>(pDepthStencil);
+			key.DepthStencilView = pDepthStencilVk->GetImageView();
+		}
+		else
+		{
+			key.DepthStencilView = VK_NULL_HANDLE;
+		}
+		
+		VALIDATE(pRenderPass != nullptr);
+		
+		const RenderPassVK* pRenderPassVk = reinterpret_cast<const RenderPassVK*>(pRenderPass);
+		key.RenderPass = pRenderPassVk->GetRenderPass();
 		
 		return m_pFrameBufferCache->GetFrameBuffer(key, width, height);
 	}
 
-    /*
-     * Release
-     */
+	/*
+	 * Release
+	 */
 
 	void GraphicsDeviceVK::Release()
 	{
 		delete this;
 	}
 
-    /*
-     * Create functions
-     */
+	/*
+	 * Create functions
+	 */
 
 	void GraphicsDeviceVK::QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const
 	{
 		memcpy(pFeatures, &m_DeviceFeatures, sizeof(m_DeviceFeatures));
 	}
 
-	IQueryHeap* GraphicsDeviceVK::CreateQueryHeap(const QueryHeapDesc* pDesc) const
+	QueryHeap* GraphicsDeviceVK::CreateQueryHeap(const QueryHeapDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
 
@@ -282,10 +280,10 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineLayout* GraphicsDeviceVK::CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const
+	PipelineLayout* GraphicsDeviceVK::CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
+		VALIDATE(pDesc != nullptr);
+		
 		PipelineLayoutVK* pPipelineLayout = DBG_NEW PipelineLayoutVK(this);
 		if (!pPipelineLayout->Init(pDesc))
 		{
@@ -298,10 +296,10 @@ namespace LambdaEngine
 		}
 	}
 
-	IDescriptorHeap* GraphicsDeviceVK::CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const
+	DescriptorHeap* GraphicsDeviceVK::CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
+		VALIDATE(pDesc != nullptr);
+		
 		DescriptorHeapVK* pDescriptorHeap = DBG_NEW DescriptorHeapVK(this);
 		if (!pDescriptorHeap->Init(pDesc))
 		{
@@ -314,13 +312,13 @@ namespace LambdaEngine
 		}
 	}
 
-	IDescriptorSet* GraphicsDeviceVK::CreateDescriptorSet(const String& name, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const
+	DescriptorSet* GraphicsDeviceVK::CreateDescriptorSet(const String& debugname, const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, DescriptorHeap* pDescriptorHeap) const
 	{
-        VALIDATE(pPipelineLayout != nullptr);
-        VALIDATE(pDescriptorHeap != nullptr);
-        
+		VALIDATE(pPipelineLayout != nullptr);
+		VALIDATE(pDescriptorHeap != nullptr);
+		
 		DescriptorSetVK* pDescriptorSet = DBG_NEW DescriptorSetVK(this);
-		if (!pDescriptorSet->Init(name, pPipelineLayout, descriptorLayoutIndex, pDescriptorHeap))
+		if (!pDescriptorSet->Init(debugname, pPipelineLayout, descriptorLayoutIndex, pDescriptorHeap))
 		{
 			pDescriptorSet->Release();
 			return nullptr;
@@ -331,11 +329,11 @@ namespace LambdaEngine
 		}
 	}
 
-	IRenderPass* GraphicsDeviceVK::CreateRenderPass(const RenderPassDesc* pDesc) const
+	RenderPass* GraphicsDeviceVK::CreateRenderPass(const RenderPassDesc* pDesc) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
- 		RenderPassVK* pRenderPass = DBG_NEW RenderPassVK(this);
+		VALIDATE(pDesc != nullptr);
+		
+		RenderPassVK* pRenderPass = DBG_NEW RenderPassVK(this);
 		if (!pRenderPass->Init(pDesc))
 		{
 			pRenderPass->Release();
@@ -347,10 +345,10 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) const
+	PipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
+		VALIDATE(pDesc != nullptr);
+		
 		GraphicsPipelineStateVK* pPipelineState = DBG_NEW GraphicsPipelineStateVK(this);
 		if (!pPipelineState->Init(pDesc))
 		{
@@ -363,10 +361,10 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) const
+	PipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
+		VALIDATE(pDesc != nullptr);
+		
 		ComputePipelineStateVK* pPipelineState = DBG_NEW ComputePipelineStateVK(this);
 		if (!pPipelineState->Init(pDesc))
 		{
@@ -379,12 +377,12 @@ namespace LambdaEngine
 		}
 	}
 
-	IPipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const
+	PipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
+		VALIDATE(pDesc != nullptr);
+		
 		RayTracingPipelineStateVK* pPipelineState = DBG_NEW RayTracingPipelineStateVK(this);
-		if (!pPipelineState->Init(pDesc))
+		if (!pPipelineState->Init(pCommandQueue, pDesc))
 		{
 			pPipelineState->Release();
 			return nullptr;
@@ -395,10 +393,10 @@ namespace LambdaEngine
 		}
 	}
 
-	IAccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, IDeviceAllocator* pAllocator) const
+	AccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, DeviceAllocator* pAllocator) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
+		VALIDATE(pDesc != nullptr);
+		
 		if (!m_DeviceFeatures.RayTracing)
 		{
 			return nullptr;
@@ -416,26 +414,26 @@ namespace LambdaEngine
 		}
 	}
 
-	ICommandList* GraphicsDeviceVK::CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc* pDesc) const
+	CommandList* GraphicsDeviceVK::CreateCommandList(CommandAllocator* pAllocator, const CommandListDesc* pDesc) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
-        CommandListVK* pCommandListVK = DBG_NEW CommandListVK(this);
-        if (!pCommandListVK->Init(pAllocator, pDesc))
-        {
-            pCommandListVK->Release();
-            return nullptr;
-        }
+		VALIDATE(pDesc != nullptr);
+		
+		CommandListVK* pCommandListVK = DBG_NEW CommandListVK(this);
+		if (!pCommandListVK->Init(pAllocator, pDesc))
+		{
+			pCommandListVK->Release();
+			return nullptr;
+		}
 		else
 		{
 			return pCommandListVK;
 		}
 	}
 
-	ICommandAllocator* GraphicsDeviceVK::CreateCommandAllocator(const char* pName, ECommandQueueType queueType) const
+	CommandAllocator* GraphicsDeviceVK::CreateCommandAllocator(const String& debugname, ECommandQueueType queueType) const
 	{
 		CommandAllocatorVK* pCommandAllocator = DBG_NEW CommandAllocatorVK(this);
-		if (!pCommandAllocator->Init(pName, queueType))
+		if (!pCommandAllocator->Init(debugname, queueType))
 		{
 			pCommandAllocator->Release();
 			return nullptr;
@@ -446,35 +444,35 @@ namespace LambdaEngine
 		}
 	}
 
-	ICommandQueue* GraphicsDeviceVK::CreateCommandQueue(const char* pName, ECommandQueueType queueType) const
+	CommandQueue* GraphicsDeviceVK::CreateCommandQueue(const String& debugname, ECommandQueueType queueType) const
 	{
-        uint32  index               = 0;
+		uint32  index               = 0;
 		int32   queueFamilyIndex    = 0;
-		if (queueType == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+		if (queueType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 		{
 			queueFamilyIndex    = m_DeviceQueueFamilyIndices.GraphicsFamily;
-            index               = m_NextGraphicsQueue++;
+			index               = m_NextGraphicsQueue++;
 		}
-		else if (queueType == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+		else if (queueType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 		{
 			queueFamilyIndex    = m_DeviceQueueFamilyIndices.ComputeFamily;
-            index               = m_NextComputeQueue++;
+			index               = m_NextComputeQueue++;
 		}
-		else if (queueType == ECommandQueueType::COMMAND_QUEUE_COPY)
+		else if (queueType == ECommandQueueType::COMMAND_QUEUE_TYPE_COPY)
 		{
 			queueFamilyIndex    = m_DeviceQueueFamilyIndices.TransferFamily;
-            index               = m_NextTransferQueue++;
+			index               = m_NextTransferQueue++;
 		}
 		else
 		{
 			return nullptr;
 		}
-        
-        VALIDATE(queueFamilyIndex < int32(m_QueueFamilyProperties.size()));
-        VALIDATE(index            < m_QueueFamilyProperties[queueFamilyIndex].queueCount);
+		
+		VALIDATE(queueFamilyIndex < int32(m_QueueFamilyProperties.GetSize()));
+		VALIDATE(index            < m_QueueFamilyProperties[queueFamilyIndex].queueCount);
 
 		CommandQueueVK* pQueue = DBG_NEW CommandQueueVK(this);
-		if (!pQueue->Init(pName, queueFamilyIndex, index))
+		if (!pQueue->Init(debugname, queueFamilyIndex, index))
 		{
 			pQueue->Release();
 			return nullptr;
@@ -485,10 +483,10 @@ namespace LambdaEngine
 		}
 	}
 
-	IFence* GraphicsDeviceVK::CreateFence(const FenceDesc* pDesc) const
+	Fence* GraphicsDeviceVK::CreateFence(const FenceDesc* pDesc) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
+		VALIDATE(pDesc != nullptr);
+		
 		if (UseTimelineFences())
 		{
 			FenceTimelineVK* pFenceTimelineVk = DBG_NEW FenceTimelineVK(this);
@@ -517,30 +515,30 @@ namespace LambdaEngine
 		}
 	}
 
-    IDeviceAllocator* GraphicsDeviceVK::CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const
-    {
-        VALIDATE(pDesc != nullptr);
-        
-        DeviceAllocatorVK* pAllocator = DBG_NEW DeviceAllocatorVK(this);
-        if (!pAllocator->Init(pDesc))
-        {
-            pAllocator->Release();
-            return nullptr;
-        }
-        else
-        {
-            return pAllocator;
-        }
-    }
-
-	IBuffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc* pDesc, IDeviceAllocator* pAllocator) const
+	DeviceAllocator* GraphicsDeviceVK::CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
+		VALIDATE(pDesc != nullptr);
+		
+		DeviceAllocatorVK* pAllocator = DBG_NEW DeviceAllocatorVK(this);
+		if (!pAllocator->Init(pDesc))
+		{
+			pAllocator->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pAllocator;
+		}
+	}
+
+	Buffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc* pDesc, DeviceAllocator* pAllocator) const
+	{
+		VALIDATE(pDesc != nullptr);
+		
 		BufferVK* pBuffer = DBG_NEW BufferVK(this);
 		if (!pBuffer->Init(pDesc, pAllocator))
 		{
-            pBuffer->Release();
+			pBuffer->Release();
 			return nullptr;
 		}
 		else
@@ -549,14 +547,14 @@ namespace LambdaEngine
 		}
 	}
 
-	ITexture* GraphicsDeviceVK::CreateTexture(const TextureDesc* pDesc, IDeviceAllocator* pAllocator) const
+	Texture* GraphicsDeviceVK::CreateTexture(const TextureDesc* pDesc, DeviceAllocator* pAllocator) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
+		VALIDATE(pDesc != nullptr);
+		
 		TextureVK* pTexture = DBG_NEW TextureVK(this);
 		if (!pTexture->Init(pDesc, pAllocator))
 		{
-            pTexture->Release();
+			pTexture->Release();
 			return nullptr;
 		}
 		else
@@ -565,10 +563,10 @@ namespace LambdaEngine
 		}
 	}
 
-	ISampler* GraphicsDeviceVK::CreateSampler(const SamplerDesc* pDesc) const
+	Sampler* GraphicsDeviceVK::CreateSampler(const SamplerDesc* pDesc) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
+		VALIDATE(pDesc != nullptr);
+		
 		SamplerVK* pSampler = DBG_NEW SamplerVK(this);
 		if (!pSampler->Init(pDesc))
 		{
@@ -581,26 +579,26 @@ namespace LambdaEngine
 		}
 	}
 
-	ITextureView* GraphicsDeviceVK::CreateTextureView(const TextureViewDesc* pDesc) const
+	TextureView* GraphicsDeviceVK::CreateTextureView(const TextureViewDesc* pDesc) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
-        TextureViewVK* pTextureView = DBG_NEW TextureViewVK(this);
-        if (!pTextureView->Init(pDesc))
-        {
-            pTextureView->Release();
-            return nullptr;
-        }
+		VALIDATE(pDesc != nullptr);
+		
+		TextureViewVK* pTextureView = DBG_NEW TextureViewVK(this);
+		if (!pTextureView->Init(pDesc))
+		{
+			pTextureView->Release();
+			return nullptr;
+		}
 		else
 		{
 			return pTextureView;
 		}
 	}
 
-	IShader* GraphicsDeviceVK::CreateShader(const ShaderDesc* pDesc) const
+	Shader* GraphicsDeviceVK::CreateShader(const ShaderDesc* pDesc) const
 	{
-        VALIDATE(pDesc != nullptr);
-        
+		VALIDATE(pDesc != nullptr);
+		
 		ShaderVK* pShader = DBG_NEW ShaderVK(this);
 		if (!pShader->Init(pDesc))
 		{
@@ -613,92 +611,92 @@ namespace LambdaEngine
 		}
 	}
 
-    ISwapChain* GraphicsDeviceVK::CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc) const
-    {
-        VALIDATE(pDesc          != nullptr);
-        VALIDATE(pWindow        != nullptr);
-        VALIDATE(pCommandQueue  != nullptr);
-        
-        SwapChainVK* pSwapChain = DBG_NEW SwapChainVK(this);
-        if (!pSwapChain->Init(pWindow, pCommandQueue, pDesc))
-        {
-            pSwapChain->Release();
-            return nullptr;
-        }
+	SwapChain* GraphicsDeviceVK::CreateSwapChain(const SwapChainDesc* pDesc) const
+	{
+		VALIDATE(pDesc			!= nullptr);
+		VALIDATE(pDesc->Window	!= nullptr);
+		VALIDATE(pDesc->Queue	!= nullptr);
+		
+		SwapChainVK* pSwapChain = DBG_NEW SwapChainVK(this);
+		if (!pSwapChain->Init(pDesc))
+		{
+			pSwapChain->Release();
+			return nullptr;
+		}
 		else
 		{
 			return pSwapChain;
 		}
-    }
+	}
 
-    /*
-     * Copy Descriptor sets
-     */
+	/*
+	 * Copy Descriptor sets
+	 */
 
-    void GraphicsDeviceVK::CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst) const
-    {
-        DescriptorSetVK*        pDstVk            = reinterpret_cast<DescriptorSetVK*>(pDst);
-        const DescriptorSetVK*    pSrcVk            = reinterpret_cast<const DescriptorSetVK*>(pSrc);
-        uint32                    bindingCount    = pSrcVk->GetDescriptorBindingDescCount();
-
-        VkCopyDescriptorSet copyDescriptorSet = {};
-        copyDescriptorSet.sType					= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-        copyDescriptorSet.pNext					= nullptr;
-        copyDescriptorSet.dstSet				= pDstVk->GetDescriptorSet();
-        copyDescriptorSet.srcSet				= pSrcVk->GetDescriptorSet();
-        copyDescriptorSet.srcArrayElement		= 0;
-        copyDescriptorSet.dstArrayElement		= 0;
-
-        std::vector<VkCopyDescriptorSet> descriptorSetCopies;
-        descriptorSetCopies.reserve(bindingCount);
-        for (uint32 i = 0; i < bindingCount; i++)
-        {
-            DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
-
-            copyDescriptorSet.descriptorCount		= binding.DescriptorCount;
-            copyDescriptorSet.srcBinding			= binding.Binding;
-            copyDescriptorSet.dstBinding			= copyDescriptorSet.srcBinding;
-            
-            descriptorSetCopies.push_back(copyDescriptorSet);
-        }
-
-        vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
-    }
-
-    void GraphicsDeviceVK::CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount) const
-    {
-        DescriptorSetVK*        pDstVk = reinterpret_cast<DescriptorSetVK*>(pDst);
-        const DescriptorSetVK*    pSrcVk = reinterpret_cast<const DescriptorSetVK*>(pSrc);
-
-        VkCopyDescriptorSet copyDescriptorSet = {};
-        copyDescriptorSet.sType					= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-        copyDescriptorSet.pNext					= nullptr;
-        copyDescriptorSet.dstSet				= pDstVk->GetDescriptorSet();
-        copyDescriptorSet.srcSet				= pSrcVk->GetDescriptorSet();
-        copyDescriptorSet.srcArrayElement		= 0;
-        copyDescriptorSet.dstArrayElement		= 0;
-
-        std::vector<VkCopyDescriptorSet> descriptorSetCopies;
-        descriptorSetCopies.reserve(copyBindingCount);
-        for (uint32 i = 0; i < copyBindingCount; i++)
-        {
-            copyDescriptorSet.descriptorCount		= pCopyBindings[i].DescriptorCount;
-            copyDescriptorSet.dstBinding			= pCopyBindings[i].DstBinding;
-            copyDescriptorSet.srcBinding			= pCopyBindings[i].SrcBinding;
-
-            descriptorSetCopies.push_back(copyDescriptorSet);
-        }
-        
-        vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.size()), descriptorSetCopies.data());
-    }
-
-    /*
-     * Helpers
-     */
-
-	void GraphicsDeviceVK::SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type) const
+	void GraphicsDeviceVK::CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst) const
 	{
-		if (pName)
+		DescriptorSetVK*        pDstVk            = reinterpret_cast<DescriptorSetVK*>(pDst);
+		const DescriptorSetVK*    pSrcVk            = reinterpret_cast<const DescriptorSetVK*>(pSrc);
+		uint32                    bindingCount    = pSrcVk->GetDescriptorBindingDescCount();
+
+		VkCopyDescriptorSet copyDescriptorSet = {};
+		copyDescriptorSet.sType                = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+		copyDescriptorSet.pNext                = nullptr;
+		copyDescriptorSet.dstSet            = pDstVk->GetDescriptorSet();
+		copyDescriptorSet.srcSet            = pSrcVk->GetDescriptorSet();
+		copyDescriptorSet.srcArrayElement    = 0;
+		copyDescriptorSet.dstArrayElement    = 0;
+
+		TArray<VkCopyDescriptorSet> descriptorSetCopies;
+		descriptorSetCopies.Reserve(bindingCount);
+		for (uint32 i = 0; i < bindingCount; i++)
+		{
+			DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
+
+			copyDescriptorSet.descriptorCount    = binding.DescriptorCount;
+			copyDescriptorSet.srcBinding        = binding.Binding;
+			copyDescriptorSet.dstBinding        = copyDescriptorSet.srcBinding;
+			
+			descriptorSetCopies.PushBack(copyDescriptorSet);
+		}
+
+		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.GetSize()), descriptorSetCopies.GetData());
+	}
+
+	void GraphicsDeviceVK::CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount) const
+	{
+		DescriptorSetVK*		pDstVk = reinterpret_cast<DescriptorSetVK*>(pDst);
+		const DescriptorSetVK*	pSrcVk = reinterpret_cast<const DescriptorSetVK*>(pSrc);
+
+		VkCopyDescriptorSet copyDescriptorSet = {};
+		copyDescriptorSet.sType				= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+		copyDescriptorSet.pNext				= nullptr;
+		copyDescriptorSet.dstSet			= pDstVk->GetDescriptorSet();
+		copyDescriptorSet.srcSet			= pSrcVk->GetDescriptorSet();
+		copyDescriptorSet.srcArrayElement	= 0;
+		copyDescriptorSet.dstArrayElement	= 0;
+
+		TArray<VkCopyDescriptorSet> descriptorSetCopies;
+		descriptorSetCopies.Reserve(copyBindingCount);
+		for (uint32 i = 0; i < copyBindingCount; i++)
+		{
+			copyDescriptorSet.descriptorCount	= pCopyBindings[i].DescriptorCount;
+			copyDescriptorSet.dstBinding		= pCopyBindings[i].DstBinding;
+			copyDescriptorSet.srcBinding		= pCopyBindings[i].SrcBinding;
+
+			descriptorSetCopies.PushBack(copyDescriptorSet);
+		}
+		
+		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.GetSize()), descriptorSetCopies.GetData());
+	}
+
+	/*
+	 * Helpers
+	 */
+
+	void GraphicsDeviceVK::SetVulkanObjectName(const String& debugname, uint64 objectHandle, VkObjectType type) const
+	{
+		if (!debugname.empty())
 		{
 			if (vkSetDebugUtilsObjectNameEXT)
 			{
@@ -707,7 +705,7 @@ namespace LambdaEngine
 				info.pNext			= nullptr;
 				info.objectType		= type;
 				info.objectHandle	= objectHandle;
-				info.pObjectName	= pName;
+				info.pObjectName	= debugname.c_str();
 				vkSetDebugUtilsObjectNameEXT(Device, &info);
 			}
 		}
@@ -715,19 +713,19 @@ namespace LambdaEngine
 
 	uint32 GraphicsDeviceVK::GetQueueFamilyIndexFromQueueType(ECommandQueueType type) const
 	{
-		if (type == ECommandQueueType::COMMAND_QUEUE_GRAPHICS)
+		if (type == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 		{
 			return m_DeviceQueueFamilyIndices.GraphicsFamily;
 		}
-		else if (type == ECommandQueueType::COMMAND_QUEUE_COMPUTE)
+		else if (type == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 		{
 			return m_DeviceQueueFamilyIndices.ComputeFamily;
 		}
-		else if (type == ECommandQueueType::COMMAND_QUEUE_COPY)
+		else if (type == ECommandQueueType::COMMAND_QUEUE_TYPE_COPY)
 		{
 			return m_DeviceQueueFamilyIndices.TransferFamily;
 		}
-		else if (type == ECommandQueueType::COMMAND_QUEUE_NONE)
+		else if (type == ECommandQueueType::COMMAND_QUEUE_TYPE_NONE)
 		{
 			return VK_QUEUE_FAMILY_IGNORED;
 		}
@@ -741,18 +739,18 @@ namespace LambdaEngine
 	{
 		if (queueFamilyIndex == uint32(m_DeviceQueueFamilyIndices.GraphicsFamily))
 		{
-			return ECommandQueueType::COMMAND_QUEUE_GRAPHICS;
+			return ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
 		}
 		else if (queueFamilyIndex == uint32(m_DeviceQueueFamilyIndices.ComputeFamily))
 		{
-			return ECommandQueueType::COMMAND_QUEUE_COMPUTE;
+			return ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE;
 		}
 		else if (queueFamilyIndex == uint32(m_DeviceQueueFamilyIndices.TransferFamily))
 		{
-			return ECommandQueueType::COMMAND_QUEUE_COPY;
+			return ECommandQueueType::COMMAND_QUEUE_TYPE_COPY;
 		}
 
-		return ECommandQueueType::COMMAND_QUEUE_UNKNOWN;
+		return ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
 	}
 
 	VkFormatProperties GraphicsDeviceVK::GetFormatProperties(VkFormat format) const
@@ -771,9 +769,9 @@ namespace LambdaEngine
 		return physicalDeviceProperties;
 	}
 
-    /*
-     * Init GraphicsDevice
-     */
+	/*
+	 * Init GraphicsDevice
+	 */
 
 	bool GraphicsDeviceVK::InitInstance(const GraphicsDeviceDesc* pDesc)
 	{
@@ -794,22 +792,22 @@ namespace LambdaEngine
 
 		// USE API VERSION 1.2 for now, maybe change to 1.0 later
 		VkApplicationInfo appInfo = {};
-		appInfo.sType               = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		appInfo.pNext               = nullptr;
-		appInfo.pApplicationName    = "Lambda Engine";
-		appInfo.applicationVersion  = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.pEngineName         = "Lambda Engine";
-		appInfo.engineVersion       = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion          = VK_API_VERSION_1_2;
+		appInfo.sType				= VK_STRUCTURE_TYPE_APPLICATION_INFO;
+		appInfo.pNext				= nullptr;
+		appInfo.pApplicationName	= "Lambda Engine";
+		appInfo.applicationVersion	= VK_MAKE_VERSION(1, 0, 0);
+		appInfo.pEngineName			= "Lambda Engine";
+		appInfo.engineVersion		= VK_MAKE_VERSION(1, 0, 0);
+		appInfo.apiVersion			= VK_API_VERSION_1_2;
 
 		LOG_MESSAGE("[GraphicsDeviceVK]: Requsted API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(appInfo.apiVersion), VK_VERSION_MINOR(appInfo.apiVersion), VK_VERSION_PATCH(appInfo.apiVersion), appInfo.apiVersion);
 
 		VkInstanceCreateInfo instanceCreateInfo = {};
-		instanceCreateInfo.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+		instanceCreateInfo.sType					= VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		instanceCreateInfo.flags					= 0;
-		instanceCreateInfo.pApplicationInfo         = &appInfo;
-		instanceCreateInfo.enabledExtensionCount    = (uint32_t)m_EnabledInstanceExtensions.size();
-		instanceCreateInfo.ppEnabledExtensionNames  = m_EnabledInstanceExtensions.data();
+		instanceCreateInfo.pApplicationInfo			= &appInfo;
+		instanceCreateInfo.enabledExtensionCount	= (uint32)m_EnabledInstanceExtensions.GetSize();
+		instanceCreateInfo.ppEnabledExtensionNames	= m_EnabledInstanceExtensions.GetData();
 
 		VkValidationFeaturesEXT validationFeatures	= {};
 		validationFeatures.sType					= VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
@@ -827,23 +825,23 @@ namespace LambdaEngine
 		}
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
-        const char* pKhronosValidationLayerName = "VK_LAYER_KHRONOS_validation";
+		const char* pKhronosValidationLayerName = "VK_LAYER_KHRONOS_validation";
 
-        if (pDesc->Debug)
-        {
-            PopulateDebugMessengerCreateInfo(debugCreateInfo);
+		if (pDesc->Debug)
+		{
+			PopulateDebugMessengerCreateInfo(debugCreateInfo);
 
 			debugCreateInfo.pNext = &validationFeatures;
 
-			instanceCreateInfo.enabledLayerCount    = 1;
-			instanceCreateInfo.ppEnabledLayerNames  = &pKhronosValidationLayerName;
-			instanceCreateInfo.pNext                = &debugCreateInfo;
+			instanceCreateInfo.enabledLayerCount	= 1;
+			instanceCreateInfo.ppEnabledLayerNames	= &pKhronosValidationLayerName;
+			instanceCreateInfo.pNext				= &debugCreateInfo;
 		}
 		else
 		{
-			instanceCreateInfo.enabledLayerCount    = 0;
+			instanceCreateInfo.enabledLayerCount	= 0;
 			instanceCreateInfo.ppEnabledLayerNames	= nullptr;
-			instanceCreateInfo.pNext                = nullptr;
+			instanceCreateInfo.pNext				= nullptr;
 		}
 
 		VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &Instance);
@@ -899,7 +897,7 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::InitPhysicalDevice()
 	{
-		uint32_t deviceCount = 0;
+		uint32 deviceCount = 0;
 		vkEnumeratePhysicalDevices(Instance, &deviceCount, nullptr);
 		if (deviceCount == 0)
 		{
@@ -907,8 +905,8 @@ namespace LambdaEngine
 			return false;
 		}
 
-		std::vector<VkPhysicalDevice> physicalDevices(deviceCount);
-		vkEnumeratePhysicalDevices(Instance, &deviceCount, physicalDevices.data());
+		TArray<VkPhysicalDevice> physicalDevices(deviceCount);
+		vkEnumeratePhysicalDevices(Instance, &deviceCount, physicalDevices.GetData());
 
 		std::multimap<int32, VkPhysicalDevice> physicalDeviceCandidates;
 		for (VkPhysicalDevice physicalDevice : physicalDevices)
@@ -928,13 +926,13 @@ namespace LambdaEngine
 		SetEnabledDeviceExtensions();
 		m_DeviceQueueFamilyIndices = FindQueueFamilies(PhysicalDevice);
 
-        // Store the properties of each queuefamily
-        uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, nullptr);
+		// Store the properties of each queuefamily
+		uint32 queueFamilyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, nullptr);
 
-        m_QueueFamilyProperties.resize(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, m_QueueFamilyProperties.data());
-        
+		m_QueueFamilyProperties.Resize(queueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, m_QueueFamilyProperties.GetData());
+		
 		// Save device's limits
 		VkPhysicalDeviceProperties deviceProperties = GetPhysicalDeviceProperties();
 		m_DeviceLimits = deviceProperties.limits;
@@ -949,7 +947,7 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::InitLogicalDevice(const GraphicsDeviceDesc* pDesc)
 	{
-		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+		TArray<VkDeviceQueueCreateInfo> queueCreateInfos;
 		std::set<int32> uniqueQueueFamilies =
 		{
 			m_DeviceQueueFamilyIndices.GraphicsFamily,
@@ -965,7 +963,7 @@ namespace LambdaEngine
 			queueCreateInfo.queueFamilyIndex    = uint32(queueFamily);
 			queueCreateInfo.queueCount          = 1;
 			queueCreateInfo.pQueuePriorities    = &queuePriority;
-			queueCreateInfos.push_back(queueCreateInfo);
+			queueCreateInfos.PushBack(queueCreateInfo);
 		}
 
 		VkPhysicalDeviceRayTracingFeaturesKHR	supportedRayTracingFeatures		= {};
@@ -1025,15 +1023,15 @@ namespace LambdaEngine
 		createInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		createInfo.pNext					= &enabledDeviceFeatures2;
 		createInfo.flags					= 0;
-		createInfo.queueCreateInfoCount		= (uint32)queueCreateInfos.size();
-		createInfo.pQueueCreateInfos		= queueCreateInfos.data();
-		createInfo.enabledExtensionCount    = (uint32)m_EnabledDeviceExtensions.size();
-		createInfo.ppEnabledExtensionNames  = m_EnabledDeviceExtensions.data();
+		createInfo.queueCreateInfoCount		= (uint32)queueCreateInfos.GetSize();
+		createInfo.pQueueCreateInfos		= queueCreateInfos.GetData();
+		createInfo.enabledExtensionCount    = (uint32)m_EnabledDeviceExtensions.GetSize();
+		createInfo.ppEnabledExtensionNames  = m_EnabledDeviceExtensions.GetData();
 
 		if (pDesc->Debug)
 		{
-			createInfo.enabledLayerCount    = (uint32)m_EnabledValidationLayers.size();
-			createInfo.ppEnabledLayerNames  = m_EnabledValidationLayers.data();
+			createInfo.enabledLayerCount    = (uint32)m_EnabledValidationLayers.GetSize();
+			createInfo.ppEnabledLayerNames  = m_EnabledValidationLayers.GetData();
 		}
 		else
 		{
@@ -1046,23 +1044,23 @@ namespace LambdaEngine
 			LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to create logical device!");
 			return false;
 		}
-        else
-        {
-            D_LOG_MESSAGE("[GraphicsDeviceVK]: Created Device");
-            return true;
-        }
+		else
+		{
+			D_LOG_MESSAGE("[GraphicsDeviceVK]: Created Device");
+			return true;
+		}
 	}
 
 	bool GraphicsDeviceVK::SetEnabledValidationLayers()
 	{
-		uint32_t layerCount = 0;
+		uint32 layerCount = 0;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
-		std::vector<VkLayerProperties> availableValidationLayers(layerCount);
-		vkEnumerateInstanceLayerProperties(&layerCount, availableValidationLayers.data());
+		TArray<VkLayerProperties> availableValidationLayers(layerCount);
+		vkEnumerateInstanceLayerProperties(&layerCount, availableValidationLayers.GetData());
 
-		std::vector<ValidationLayer> requiredValidationLayers(REQUIRED_VALIDATION_LAYERS + 1, REQUIRED_VALIDATION_LAYERS + sizeof(REQUIRED_VALIDATION_LAYERS) / sizeof(ValidationLayer));
-		std::vector<ValidationLayer> optionalValidationLayers(OPTIONAL_VALIDATION_LAYERS + 1, OPTIONAL_VALIDATION_LAYERS + sizeof(OPTIONAL_VALIDATION_LAYERS) / sizeof(ValidationLayer));
+		TArray<ValidationLayer> requiredValidationLayers(REQUIRED_VALIDATION_LAYERS + 1, REQUIRED_VALIDATION_LAYERS + sizeof(REQUIRED_VALIDATION_LAYERS) / sizeof(ValidationLayer));
+		TArray<ValidationLayer> optionalValidationLayers(OPTIONAL_VALIDATION_LAYERS + 1, OPTIONAL_VALIDATION_LAYERS + sizeof(OPTIONAL_VALIDATION_LAYERS) / sizeof(ValidationLayer));
 
 		for (const VkLayerProperties& availableValidationLayerProperties : availableValidationLayers)
 		{
@@ -1071,8 +1069,8 @@ namespace LambdaEngine
 			{
 				if (availableValidationLayerHash == requiredValidationLayer->Hash)
 				{
-					m_EnabledValidationLayers.push_back(requiredValidationLayer->Name);
-					requiredValidationLayers.erase(requiredValidationLayer);
+					m_EnabledValidationLayers.PushBack(requiredValidationLayer->Name);
+					requiredValidationLayers.Erase(requiredValidationLayer);
 					break;
 				}
 			}
@@ -1081,14 +1079,14 @@ namespace LambdaEngine
 			{
 				if (availableValidationLayerHash == optionalValidationLayer->Hash)
 				{
-					m_EnabledValidationLayers.push_back(optionalValidationLayer->Name);
-					optionalValidationLayers.erase(optionalValidationLayer);
+					m_EnabledValidationLayers.PushBack(optionalValidationLayer->Name);
+					optionalValidationLayers.Erase(optionalValidationLayer);
 					break;
 				}
 			}
 		}
 
-		if (requiredValidationLayers.size() > 0)
+		if (requiredValidationLayers.GetSize() > 0)
 		{
 			for (const ValidationLayer& requiredValidationLayer : requiredValidationLayers)
 			{
@@ -1098,7 +1096,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (optionalValidationLayers.size() > 0)
+		if (optionalValidationLayers.GetSize() > 0)
 		{
 			for (const ValidationLayer& optionalValidationLayer : optionalValidationLayers)
 			{
@@ -1111,14 +1109,14 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::SetEnabledInstanceExtensions()
 	{
-		uint32_t extensionCount = 0;
+		uint32 extensionCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
-		std::vector<VkExtensionProperties> availableInstanceExtensions(extensionCount);
-		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableInstanceExtensions.data());
+		TArray<VkExtensionProperties> availableInstanceExtensions(extensionCount);
+		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableInstanceExtensions.GetData());
 
-		std::vector<Extension> requiredInstanceExtensions(REQUIRED_INSTANCE_EXTENSIONS + 1, REQUIRED_INSTANCE_EXTENSIONS + sizeof(REQUIRED_INSTANCE_EXTENSIONS) / sizeof(Extension));
-		std::vector<Extension> optionalInstanceExtensions(OPTIONAL_INSTANCE_EXTENSIONS + 1, OPTIONAL_INSTANCE_EXTENSIONS + sizeof(OPTIONAL_INSTANCE_EXTENSIONS) / sizeof(Extension));
+		TArray<Extension> requiredInstanceExtensions(REQUIRED_INSTANCE_EXTENSIONS + 1, REQUIRED_INSTANCE_EXTENSIONS + sizeof(REQUIRED_INSTANCE_EXTENSIONS) / sizeof(Extension));
+		TArray<Extension> optionalInstanceExtensions(OPTIONAL_INSTANCE_EXTENSIONS + 1, OPTIONAL_INSTANCE_EXTENSIONS + sizeof(OPTIONAL_INSTANCE_EXTENSIONS) / sizeof(Extension));
 
 		for (const VkExtensionProperties& extension : availableInstanceExtensions)
 		{
@@ -1127,8 +1125,8 @@ namespace LambdaEngine
 			{
 				if (requiredInstanceExtension->Hash == availableInstanceExtensionHash)
 				{
-					m_EnabledInstanceExtensions.push_back(requiredInstanceExtension->Name);
-					requiredInstanceExtensions.erase(requiredInstanceExtension);
+					m_EnabledInstanceExtensions.PushBack(requiredInstanceExtension->Name);
+					requiredInstanceExtensions.Erase(requiredInstanceExtension);
 					break;
 				}
 			}
@@ -1137,14 +1135,14 @@ namespace LambdaEngine
 			{
 				if (optionalInstanceExtension->Hash == availableInstanceExtensionHash)
 				{
-					m_EnabledInstanceExtensions.push_back(optionalInstanceExtension->Name);
-					optionalInstanceExtensions.erase(optionalInstanceExtension);
+					m_EnabledInstanceExtensions.PushBack(optionalInstanceExtension->Name);
+					optionalInstanceExtensions.Erase(optionalInstanceExtension);
 					break;
 				}
 			}
 		}
 
-		if (requiredInstanceExtensions.size() > 0)
+		if (requiredInstanceExtensions.GetSize() > 0)
 		{
 			for (const Extension& requiredInstanceExtension : requiredInstanceExtensions)
 			{
@@ -1154,7 +1152,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (optionalInstanceExtensions.size() > 0)
+		if (optionalInstanceExtensions.GetSize() > 0)
 		{
 			for (const Extension& optionalInstanceExtension : optionalInstanceExtensions)
 			{
@@ -1182,42 +1180,40 @@ namespace LambdaEngine
 		VkPhysicalDeviceFeatures deviceFeatures;
 		vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
 
-		bool        requiredExtensionsSupported			= false;
-		uint32_t    numOfOptionalExtensionsSupported	= 0;
+		bool		requiredExtensionsSupported			= false;
+		uint32	numOfOptionalExtensionsSupported	= 0;
 		CheckDeviceExtensionsSupport(physicalDevice, requiredExtensionsSupported, numOfOptionalExtensionsSupported);
 
 		if (!requiredExtensionsSupported)
-        {
-            return 0;
-        }
+		{
+			return 0;
+		}
 
 		QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
-
 		if (!indices.IsComplete())
-        {
-            return 0;
-        }
+		{
+			return 0;
+		}
 
-		int score = 1 + numOfOptionalExtensionsSupported;
-
+		int32 score = 1 + numOfOptionalExtensionsSupported;
 		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-        {
-            score += 1000;
-        }
+		{
+			score += 1000;
+		}
 
 		return score;
 	}
 
-	void GraphicsDeviceVK::CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32_t& numOfOptionalExtensionsSupported)
+	void GraphicsDeviceVK::CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32& numOfOptionalExtensionsSupported)
 	{
-		uint32_t extensionCount = 0;
+		uint32 extensionCount = 0;
 		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
 
-		std::vector<VkExtensionProperties> availableDeviceExtensions(extensionCount);
-		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableDeviceExtensions.data());
+		TArray<VkExtensionProperties> availableDeviceExtensions(extensionCount);
+		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableDeviceExtensions.GetData());
 
-		std::vector<Extension> requiredDeviceExtensions(REQUIRED_DEVICE_EXTENSIONS + 1, REQUIRED_DEVICE_EXTENSIONS + sizeof(REQUIRED_DEVICE_EXTENSIONS) / sizeof(Extension));
-		std::vector<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS + 1, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
+		TArray<Extension> requiredDeviceExtensions(REQUIRED_DEVICE_EXTENSIONS + 1, REQUIRED_DEVICE_EXTENSIONS + sizeof(REQUIRED_DEVICE_EXTENSIONS) / sizeof(Extension));
+		TArray<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS + 1, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
 
 		for (const VkExtensionProperties& extension : availableDeviceExtensions)
 		{
@@ -1226,7 +1222,7 @@ namespace LambdaEngine
 			{
 				if (requiredDeviceExtension->Hash == availableDeviceExtensionHash)
 				{
-					requiredDeviceExtensions.erase(requiredDeviceExtension);
+					requiredDeviceExtensions.Erase(requiredDeviceExtension);
 					break;
 				}
 			}
@@ -1235,25 +1231,25 @@ namespace LambdaEngine
 			{
 				if (optionalDeviceExtension->Hash == availableDeviceExtensionHash)
 				{
-					optionalDeviceExtensions.erase(optionalDeviceExtension);
+					optionalDeviceExtensions.Erase(optionalDeviceExtension);
 					break;
 				}
 			}
 		}
 
-		requiredExtensionsSupported			= requiredDeviceExtensions.empty();
-		numOfOptionalExtensionsSupported	= ARR_SIZE(OPTIONAL_DEVICE_EXTENSIONS) - (uint32)optionalDeviceExtensions.size();
+		requiredExtensionsSupported			= requiredDeviceExtensions.IsEmpty();
+		numOfOptionalExtensionsSupported	= ARR_SIZE(OPTIONAL_DEVICE_EXTENSIONS) - (uint32)optionalDeviceExtensions.GetSize();
 	}
 
 	QueueFamilyIndices GraphicsDeviceVK::FindQueueFamilies(VkPhysicalDevice physicalDevice)
 	{
 		QueueFamilyIndices indices = {};
 
-		uint32_t queueFamilyCount = 0;
+		uint32 queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
-		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+		TArray<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.GetData());
 
 		indices.GraphicsFamily  = GetQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT, queueFamilies);
 		indices.ComputeFamily   = GetQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT, queueFamilies);
@@ -1262,36 +1258,36 @@ namespace LambdaEngine
 		return indices;
 	}
 
-	uint32 GraphicsDeviceVK::GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const std::vector<VkQueueFamilyProperties>& queueFamilies)
+	uint32 GraphicsDeviceVK::GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const TArray<VkQueueFamilyProperties>& queueFamilies)
 	{
 		if (queueFlags & VK_QUEUE_COMPUTE_BIT)
 		{
-			for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++)
+			for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
 			{
 				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
-                {
-                    return i;
-                }
+				{
+					return i;
+				}
 			}
 		}
 
 		if (queueFlags & VK_QUEUE_TRANSFER_BIT)
 		{
-			for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++)
+			for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
 			{
 				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
-                {
-                    return i;
-                }
+				{
+					return i;
+				}
 			}
 		}
 
-		for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++)
+		for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
 		{
 			if (queueFamilies[i].queueFlags & queueFlags)
-            {
-                return i;
-            }
+			{
+				return i;
+			}
 		}
 
 		return UINT32_MAX;
@@ -1302,16 +1298,16 @@ namespace LambdaEngine
 		//We know all requried device extensions are supported
 		for (uint32 i = 1; i < ARR_SIZE(REQUIRED_DEVICE_EXTENSIONS); i++)
 		{
-			m_EnabledDeviceExtensions.push_back(REQUIRED_DEVICE_EXTENSIONS[i].Name);
+			m_EnabledDeviceExtensions.EmplaceBack(REQUIRED_DEVICE_EXTENSIONS[i].Name);
 		}
 
-		uint32_t extensionCount = 0;
+		uint32 extensionCount = 0;
 		vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &extensionCount, nullptr);
 
-		std::vector<VkExtensionProperties> availableDeviceExtensions(extensionCount);
-		vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &extensionCount, availableDeviceExtensions.data());
+		TArray<VkExtensionProperties> availableDeviceExtensions(extensionCount);
+		vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &extensionCount, availableDeviceExtensions.GetData());
 
-		std::vector<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS + 1, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
+		TArray<Extension> optionalDeviceExtensions(OPTIONAL_DEVICE_EXTENSIONS + 1, OPTIONAL_DEVICE_EXTENSIONS + sizeof(OPTIONAL_DEVICE_EXTENSIONS) / sizeof(Extension));
 		for (const VkExtensionProperties& extension : availableDeviceExtensions)
 		{
 			uint32 availableDeviceExtensionHash = HashString<const char*>(extension.extensionName);
@@ -1319,14 +1315,14 @@ namespace LambdaEngine
 			{
 				if (optionalDeviceExtension->Hash == availableDeviceExtensionHash)
 				{
-					m_EnabledDeviceExtensions.push_back(optionalDeviceExtension->Name);
-					optionalDeviceExtensions.erase(optionalDeviceExtension);
+					m_EnabledDeviceExtensions.EmplaceBack(optionalDeviceExtension->Name);
+					optionalDeviceExtensions.Erase(optionalDeviceExtension);
 					break;
 				}
 			}
 		}
 
-		if (optionalDeviceExtensions.size() > 0)
+		if (optionalDeviceExtensions.GetSize() > 0)
 		{
 			for (const Extension& optionalDeviceExtension : optionalDeviceExtensions)
 			{
@@ -1382,7 +1378,7 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::RegisterDeviceExtensionData()
 	{
-		//RayTracing
+		// RayTracing
 		if (IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME))
 		{
 			GET_DEVICE_PROC_ADDR(Device, vkCreateAccelerationStructureKHR);
@@ -1397,18 +1393,18 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkCopyAccelerationStructureToMemoryKHR);
 			GET_DEVICE_PROC_ADDR(Device, vkCmdCopyAccelerationStructureToMemoryKHR);
 
-			//Query Ray Tracing properties
-			RayTracingProperties = {};
-			RayTracingProperties.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
-			
+			// Query Ray Tracing properties
+			RayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
+			RayTracingProperties.pNext = nullptr;
+
 			VkPhysicalDeviceProperties2 deviceProps2 = {};
-			deviceProps2.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-			deviceProps2.pNext	= &RayTracingProperties;
+			deviceProps2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+			deviceProps2.pNext = &RayTracingProperties;
 
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
 		}
 
-		//Timeline semaphores
+		// Timeline semaphores
 		if (IsDeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
 		{
 			GET_DEVICE_PROC_ADDR(Device, vkWaitSemaphores);
@@ -1416,12 +1412,19 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkGetSemaphoreCounterValue);
 		}
 
-        //Buffer Address
-        if (IsDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
-        {
-            GET_DEVICE_PROC_ADDR(Device, vkGetBufferDeviceAddress);
-        }
+		// Buffer Address
+		if (IsDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
+		{
+			GET_DEVICE_PROC_ADDR(Device, vkGetBufferDeviceAddress);
+		}
 
+		// Mesh Shaders
+		if (IsDeviceExtensionEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME))
+		{
+			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksNV);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksIndirectNV);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksIndirectCountNV);
+		}
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsDeviceVK::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)

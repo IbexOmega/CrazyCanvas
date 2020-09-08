@@ -1,5 +1,7 @@
 #pragma once
-#include "Rendering/Core/API/IAccelerationStructure.h"
+#include "Core/TSharedRef.h"
+
+#include "Rendering/Core/API/AccelerationStructure.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Rendering/Core/Vulkan/DeviceAllocatorVK.h"
@@ -9,15 +11,15 @@ namespace LambdaEngine
 	class BufferVK;
 	class GraphicsDeviceVK;
 
-	class AccelerationStructureVK : public TDeviceChildBase<GraphicsDeviceVK, IAccelerationStructure>
+	class AccelerationStructureVK : public TDeviceChildBase<GraphicsDeviceVK, AccelerationStructure>
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, IAccelerationStructure>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, AccelerationStructure>;
 
 	public:
 		AccelerationStructureVK(const GraphicsDeviceVK* pDevice);
 		~AccelerationStructureVK();
 
-		bool Init(const AccelerationStructureDesc* pDesc, IDeviceAllocator* pAllocator);
+		bool Init(const AccelerationStructureDesc* pDesc, DeviceAllocator* pAllocator);
 
 		FORCEINLINE VkAccelerationStructureKHR GetAccelerationStructure() const
 		{
@@ -26,38 +28,33 @@ namespace LambdaEngine
 
 		FORCEINLINE BufferVK* GetScratchBuffer()
 		{
-			return m_pScratchBuffer;
+			return m_ScratchBuffer.Get();
 		}
 
-		// IDeviceChild interface
-		virtual void SetName(const char* pName) override final;
+	public:
+		// DeviceChild interface
+		virtual void SetName(const String& name) override final;
 
+		// AccelerationStructure interface
 		FORCEINLINE virtual uint64 GetDeviceAdress() const override final
 		{
-			return uint64(m_AccelerationStructureDeviceAddress);
+			return m_AccelerationStructureDeviceAddress;
 		}
 
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
-			return uint64(m_AccelerationStructure);
-		}
-
-		FORCEINLINE virtual AccelerationStructureDesc GetDesc() const override final
-		{
-			return m_Desc;
+			return reinterpret_cast<uint64>(m_AccelerationStructure);
 		}
 
 	private:
 		VkMemoryRequirements GetMemoryRequirements(VkAccelerationStructureMemoryRequirementsTypeKHR type);
 
 	private:
-		DeviceAllocatorVK*			m_pAllocator							= nullptr;
+		TSharedRef<DeviceAllocatorVK>		m_Allocator								= nullptr;
 		VkAccelerationStructureKHR	m_AccelerationStructure					= VK_NULL_HANDLE;
 		VkDeviceMemory				m_AccelerationStructureMemory			= VK_NULL_HANDLE;
 		VkDeviceAddress				m_AccelerationStructureDeviceAddress	= 0;
-		BufferVK*					m_pScratchBuffer						= nullptr;
-
+		TSharedRef<BufferVK>				m_ScratchBuffer							= nullptr;
 		AllocationVK				m_Allocation;
-		AccelerationStructureDesc	m_Desc;
 	};
 }

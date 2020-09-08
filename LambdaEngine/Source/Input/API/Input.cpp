@@ -9,7 +9,6 @@ namespace LambdaEngine
 	/*
 	* Instance
 	*/
-
 	void Input::OnButtonPressed(EMouseButton button, uint32 modifierMask)
 	{
 		UNREFERENCED_VARIABLE(modifierMask);
@@ -56,13 +55,12 @@ namespace LambdaEngine
 	/*
 	* Static
 	*/
-
 	bool Input::Init()
 	{
 		s_pInstance = DBG_NEW Input();
 		CommonApplication::Get()->AddEventHandler(s_pInstance);
 
-        return (s_pInstance != nullptr);
+		return (s_pInstance != nullptr);
 	}
 
 	void Input::Release()

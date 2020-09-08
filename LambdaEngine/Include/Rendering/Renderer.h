@@ -1,24 +1,32 @@
 #pragma once
-
 #include "LambdaEngine.h"
 
+#include "Core/TSharedRef.h"
+
 #include "Time/API/Timestamp.h"
+
+#include "Rendering/Core/API/SwapChain.h"
+#include "Rendering/Core/API/CommandAllocator.h"
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/Fence.h"
+#include "Rendering/Core/API/PipelineState.h"
+#include "Rendering/Core/API/RenderPass.h"
+#include "Rendering/Core/API/PipelineLayout.h"
 
 namespace LambdaEngine
 {
 	class Window;
-	class ITexture;
-	class ISwapChain;
+	class Texture;
 	class RenderGraph;
-	class ICommandList;
-	class ITextureView;
+	class CommandList;
+	class TextureView;
 	class ImGuiRenderer;
-	class IGraphicsDevice;
-	class ICommandAllocator;
+	class GraphicsDevice;
+	class CommandAllocator;
 	
 	struct RendererDesc
 	{
-		const char*		pName			= "";
+		String 			Name			= "";
 		bool			Debug			= false;
 		Window*			pWindow			= nullptr;
 		RenderGraph*	pRenderGraph	= nullptr;
@@ -31,7 +39,7 @@ namespace LambdaEngine
 		DECL_REMOVE_COPY(Renderer);
 		DECL_REMOVE_MOVE(Renderer);
 
-		Renderer(const IGraphicsDevice* pGraphicsDevice);
+		Renderer(const GraphicsDevice* pGraphicsDevice);
 		~Renderer();
 
 		bool Init(const RendererDesc* pDesc);
@@ -41,27 +49,26 @@ namespace LambdaEngine
 
 		void Render();
 
-		ICommandList* AcquireGraphicsCopyCommandList();
-		ICommandList* AcquireComputeCopyCommandList();
+		CommandList* AcquireGraphicsCopyCommandList();
+		CommandList* AcquireComputeCopyCommandList();
 
 		FORCEINLINE uint64 GetFrameIndex()		{ return m_FrameIndex; }
 		FORCEINLINE uint64 GetModFrameIndex()	{ return m_ModFrameIndex; }
 		FORCEINLINE uint32 GetBufferIndex()		{ return m_BackBufferIndex; }
 
 	private:
-		const char*				m_pName;
-		const IGraphicsDevice*	m_pGraphicsDevice;
+		String					m_Name;
+		const GraphicsDevice*	m_pGraphicsDevice;
 
-		ISwapChain*				m_pSwapChain					= nullptr;
-		RenderGraph*			m_pRenderGraph					= nullptr;
-		ITexture**				m_ppBackBuffers					= nullptr;
-		ITextureView**			m_ppBackBufferViews				= nullptr;
+		TSharedRef<SwapChain>	m_SwapChain				= nullptr;
+		Texture**				m_ppBackBuffers			= nullptr;
+		TextureView**			m_ppBackBufferViews		= nullptr;
+		RenderGraph*			m_pRenderGraph			= nullptr;
 
-		uint32					m_BackBufferCount				= 0;
+		uint32					m_BackBufferCount		= 0;
 
-		uint64					m_FrameIndex					= 0;
-		uint64					m_ModFrameIndex					= 0;
-		uint32					m_BackBufferIndex				= 0;
-
+		uint64					m_FrameIndex			= 0;
+		uint64					m_ModFrameIndex			= 0;
+		uint32					m_BackBufferIndex		= 0;
 	};
 }

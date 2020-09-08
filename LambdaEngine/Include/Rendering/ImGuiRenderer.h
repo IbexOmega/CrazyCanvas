@@ -1,30 +1,33 @@
 #pragma once
-
 #include "LambdaEngine.h"
+
 #include "Application/API/EventHandler.h"
+
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
+
 #include "ICustomRenderer.h"
 
 struct ImGuiContext;
 
 namespace LambdaEngine
 {
-	class ICommandAllocator;
-	class IDeviceAllocator;
-	class IGraphicsDevice;
-	class IPipelineLayout;
-	class IDescriptorHeap;
-	class IDescriptorSet;
-	class IPipelineState;
-	class ICommandList;
-	class ITextureView;
-	class ICommandList;
-	class IRenderPass;
-	class ITexture;
-	class ISampler;
-	class IShader;
-	class IBuffer;
+	class CommandAllocator;
+	class DeviceAllocator;
+	class GraphicsDevice;
+	class PipelineLayout;
+	class DescriptorHeap;
+	class DescriptorSet;
+	class PipelineState;
+	class CommandList;
+	class TextureView;
+	class CommandList;
+	class RenderPass;
+	class Texture;
+	class Sampler;
+	class Shader;
+	class Buffer;
+	class Window;
 
 	struct ImGuiRendererDesc
 	{
@@ -49,7 +52,7 @@ namespace LambdaEngine
 		DECL_REMOVE_COPY(ImGuiRenderer);
 		DECL_REMOVE_MOVE(ImGuiRenderer);
 
-		ImGuiRenderer(const IGraphicsDevice* pGraphicsDevice);
+		ImGuiRenderer(const GraphicsDevice* pGraphicsDevice);
 		~ImGuiRenderer();
 
 		bool Init(const ImGuiRendererDesc* pDesc);
@@ -63,14 +66,14 @@ namespace LambdaEngine
 
 		//virtual void UpdatePushConstants(void* pData, uint32 dataSize)	override final;
 
-		virtual void UpdateTextureResource(const String& resourceName, const ITextureView* const* ppTextureViews, uint32 count, bool backBufferBound) override final;
-		virtual void UpdateBufferResource(const String& resourceName, const IBuffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
-		virtual void UpdateAccelerationStructureResource(const String& resourceName, const IAccelerationStructure* pAccelerationStructure) override final;
+		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound) override final;
+		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
+		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
 
 		virtual void NewFrame(Timestamp delta)		override final;
 		virtual void PrepareRender(Timestamp delta)		override final;
 
-		virtual void Render(ICommandAllocator* pCommandAllocator, ICommandList* pCommandList, uint32 modFrameIndex, uint32 backBufferIndex, ICommandList** ppExecutionStage)		override final;
+		virtual void Render(CommandAllocator* pCommandAllocator, CommandList* pCommandList, uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppExecutionStage)		override final;
 
 		FORCEINLINE virtual FPipelineStageFlags GetFirstPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
 		FORCEINLINE virtual FPipelineStageFlags GetLastPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
@@ -102,37 +105,37 @@ namespace LambdaEngine
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);
 
 	private:
-		const IGraphicsDevice*	m_pGraphicsDevice			= nullptr;
+		const GraphicsDevice*	m_pGraphicsDevice			= nullptr;
 
 		uint32					m_BackBufferCount			= 0;
-		ITextureView**			m_ppBackBuffers				= nullptr;
+		TextureView**			m_ppBackBuffers				= nullptr;
 
-		ICommandAllocator*		m_pCopyCommandAllocator		= nullptr;
-		ICommandList*			m_pCopyCommandList			= nullptr;
+		CommandAllocator*		m_pCopyCommandAllocator		= nullptr;
+		CommandList*			m_pCopyCommandList			= nullptr;
 
-		IDeviceAllocator*		m_pAllocator				= nullptr;
+		DeviceAllocator*		m_pAllocator				= nullptr;
 
 		uint64					m_PipelineStateID			= 0;
-		IPipelineLayout*		m_pPipelineLayout			= nullptr;
-		IDescriptorHeap*		m_pDescriptorHeap			= nullptr;
-		IDescriptorSet*			m_pDescriptorSet			= nullptr;
+		PipelineLayout*			m_pPipelineLayout			= nullptr;
+		DescriptorHeap*			m_pDescriptorHeap			= nullptr;
+		DescriptorSet*			m_pDescriptorSet			= nullptr;
 
 		GUID_Lambda				m_VertexShaderGUID			= 0;
 		GUID_Lambda				m_PixelShaderGUID			= 0;
 
-		IRenderPass*			m_pRenderPass				= nullptr;
+		RenderPass*				m_pRenderPass				= nullptr;
 
-		IBuffer**				m_ppVertexCopyBuffers		= nullptr;
-		IBuffer**				m_ppIndexCopyBuffers		= nullptr;
-		IBuffer*				m_pVertexBuffer				= nullptr;
-		IBuffer*				m_pIndexBuffer				= nullptr;
+		Buffer**				m_ppVertexCopyBuffers		= nullptr;
+		Buffer**				m_ppIndexCopyBuffers		= nullptr;
+		Buffer*					m_pVertexBuffer				= nullptr;
+		Buffer*					m_pIndexBuffer				= nullptr;
 
-		ITexture*				m_pFontTexture				= nullptr;
-		ITextureView*			m_pFontTextureView			= nullptr;
+		Texture*				m_pFontTexture				= nullptr;
+		TextureView*			m_pFontTextureView			= nullptr;
 
-		ISampler*				m_pSampler					= nullptr;
+		Sampler*				m_pSampler					= nullptr;
 
-		THashTable<String, TArray<IDescriptorSet*>>					m_TextureResourceNameDescriptorSetsMap;
+		THashTable<String, TArray<DescriptorSet*>>					m_TextureResourceNameDescriptorSetsMap;
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 	};
 }
