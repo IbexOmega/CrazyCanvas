@@ -3,9 +3,6 @@
 
 #include <imgui.h>
 
-LambdaEngine::TArray<LambdaEngine::GameConsole::Item> LambdaEngine::GameConsole::m_Items;
-bool LambdaEngine::GameConsole::m_ScrollToBottom = false;
-
 bool LambdaEngine::GameConsole::Init()
 {
 	return true;
@@ -68,7 +65,7 @@ void LambdaEngine::GameConsole::Render()
 		if (ImGui::InputText("Input", s_Buf, 256, input_text_flags))
 		{
 			if (s_Buf[0])
-				ExecCommand(s_Buf);
+				ExecCommand(std::string(s_Buf));
 			strcpy(s_Buf, "");
 			hasFocus = true;
 		}
@@ -83,8 +80,38 @@ void LambdaEngine::GameConsole::Render()
 	ImGui::End();
 }
 
-int LambdaEngine::GameConsole::ExecCommand(char* data)
+void LambdaEngine::GameConsole::BindCommand(ConsoleCommand cmd, std::function<void(TArray<Arg>& arguments)> callback)
 {
+	m_CommandMap[cmd.GetName()] = std::pair<ConsoleCommand, std::function<void(TArray<Arg>& arguments)>>(cmd, callback);
+}
+
+LambdaEngine::GameConsole& LambdaEngine::GameConsole::Get()
+{
+	static GameConsole console;
+	return console;
+}
+
+LambdaEngine::GameConsole::GameConsole()
+{
+}
+
+LambdaEngine::GameConsole::~GameConsole()
+{
+}
+
+int LambdaEngine::GameConsole::ExecCommand(std::string& data)
+{
+	/*std::string key;
+	size_t pos = data.find(" ");
+	if (pos == std::string::npos)
+		key = data;
+	else
+	{
+		pos = data.find_first_of(" ");
+		key = data.
+	}*/
+	auto it = m_CommandMap.find(data);
+
 	Item item = {};
 	item.str = data;
 	item.color = glm::vec4(1.f, 1.f, 1.f, 1.f);

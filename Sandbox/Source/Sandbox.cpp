@@ -363,7 +363,7 @@ Sandbox::Sandbox()
 		m_pRenderGraphEditor->InitGUI();	//Must Be called after Renderer is initialized
 	}
 
-	GameConsole::Init();
+	GameConsole::Get().Init();
 
 	return;
 }
@@ -384,7 +384,7 @@ Sandbox::~Sandbox()
 
 	SAFEDELETE(m_pRenderGraphEditor);
 
-	LambdaEngine::GameConsole::Release();
+	LambdaEngine::GameConsole::Get().Release();
 }
 
 void Sandbox::InitTestAudio()
@@ -1526,7 +1526,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 		ImGui::End();
 	}
 
-	GameConsole::Render();
+	GameConsole::Get().Render();
 
 	m_pScene->PrepareRender(pGraphicsCopyCommandList, pComputeCopyCommandList, m_pRenderer->GetFrameIndex(), delta);
 	m_pRenderer->PrepareRender(delta);
