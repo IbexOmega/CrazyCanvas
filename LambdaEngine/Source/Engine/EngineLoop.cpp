@@ -24,8 +24,6 @@
 
 #include "Rendering/RenderSystem.h"
 
-#include "Game/GameConsole.h"
-
 namespace LambdaEngine
 {
 	static Clock g_Clock;

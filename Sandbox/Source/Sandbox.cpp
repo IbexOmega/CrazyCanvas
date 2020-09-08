@@ -31,6 +31,7 @@
 #include "Application/API/CommonApplication.h"
 
 #include "Game/Scene.h"
+#include "Game/GameConsole.h"
 
 #include "Time/API/Clock.h"
 
@@ -362,6 +363,8 @@ Sandbox::Sandbox()
 		m_pRenderGraphEditor->InitGUI();	//Must Be called after Renderer is initialized
 	}
 
+	GameConsole::Init();
+
 	return;
 }
 
@@ -380,6 +383,8 @@ Sandbox::~Sandbox()
 	SAFEDELETE(m_pRenderer);
 
 	SAFEDELETE(m_pRenderGraphEditor);
+
+	LambdaEngine::GameConsole::Release();
 }
 
 void Sandbox::InitTestAudio()
@@ -1520,6 +1525,8 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 		}
 		ImGui::End();
 	}
+
+	GameConsole::Render();
 
 	m_pScene->PrepareRender(pGraphicsCopyCommandList, pComputeCopyCommandList, m_pRenderer->GetFrameIndex(), delta);
 	m_pRenderer->PrepareRender(delta);

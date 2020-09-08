@@ -2,6 +2,7 @@
 
 #include "LambdaEngine.h"
 
+struct ImGuiInputTextCallbackData;
 
 
 namespace LambdaEngine
@@ -17,13 +18,17 @@ namespace LambdaEngine
 		DECL_REMOVE_COPY(GameConsole);
 		DECL_REMOVE_MOVE(GameConsole);
 
-		static void Render();
 
+		static bool Init();
+		static bool Release();
+
+		static void Render();
+		
+	private:
+		static int ParseText(const char* data);
 
 
 	private:
-		static char buf[32];
-		TArray<Command> commands;
-
+		static TArray<char*> m_Items;
 	};
 }
