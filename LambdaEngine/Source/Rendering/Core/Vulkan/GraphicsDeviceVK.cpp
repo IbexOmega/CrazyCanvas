@@ -889,6 +889,7 @@ namespace LambdaEngine
 		m_DeviceFeatures.MeshShaders		= IsDeviceExtensionEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME);
 		m_DeviceFeatures.RayTracing			= IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME);
 		m_DeviceFeatures.GeometryShaders	= m_DeviceFeaturesVk.geometryShader;
+		m_DeviceFeatures.TimestampPeriod	= m_DeviceLimits.timestampPeriod;
 		memcpy(&m_DeviceFeatures.MaxComputeWorkGroupSize, m_DeviceLimits.maxComputeWorkGroupSize, sizeof(uint32) * 3);
 
 		RegisterDeviceExtensionData();

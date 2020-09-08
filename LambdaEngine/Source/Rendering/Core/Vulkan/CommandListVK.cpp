@@ -866,6 +866,12 @@ namespace LambdaEngine
 		vkCmdEndQuery(m_CommandList, pQueryHeapVk->GetQueryPool(), queryIndex);
 	}
 
+	void CommandListVK::ResetQuery(QueryHeap* pQueryHeap, uint32 firstQuery, uint32 queryCount)
+	{
+		QueryHeapVK* pQueryHeapVk = reinterpret_cast<QueryHeapVK*>(pQueryHeap);
+		vkCmdResetQueryPool(m_CommandList, pQueryHeapVk->GetQueryPool(), firstQuery, queryCount);
+	}
+
 	void CommandListVK::ExecuteSecondary(const CommandList* pSecondary)
 	{
 		VALIDATE(m_Desc.CommandListType == ECommandListType::COMMAND_LIST_TYPE_PRIMARY);

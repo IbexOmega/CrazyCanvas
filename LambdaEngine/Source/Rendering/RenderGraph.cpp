@@ -27,6 +27,8 @@
 
 #include "Application/API/CommonApplication.h"
 
+#include "Debug/GPUProfiler.h"
+
 namespace LambdaEngine
 {
 	constexpr const uint32 SAME_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX	= 0;
@@ -1771,6 +1773,9 @@ namespace LambdaEngine
 		m_PipelineStageCount = (uint32)pipelineStageDescriptions.GetSize();
 		m_pPipelineStages = DBG_NEW PipelineStage[m_PipelineStageCount];
 
+		GPUProfiler::Get()->Init(GPUProfiler::TimeUnit::NANO);
+		GPUProfiler::Get()->CreateTimestamps(m_PipelineStageCount * m_BackBufferCount);
+
 		for (uint32 i = 0; i < m_PipelineStageCount; i++)
 		{
 			const PipelineStageDesc* pPipelineStageDesc = &pipelineStageDescriptions[i];
@@ -1798,6 +1803,20 @@ namespace LambdaEngine
 				graphicsCommandListDesc.Flags					= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 				pPipelineStage->ppGraphicsCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppGraphicsCommandAllocators[f], &graphicsCommandListDesc);
+
+				GPUProfiler::Get()->AddTimestamp(pPipelineStage->ppGraphicsCommandLists[f]);
+				pPipelineStage->ppGraphicsCommandLists[f]->Begin(nullptr);
+				GPUProfiler::Get()->ResetTimestamp(pPipelineStage->ppGraphicsCommandLists[f]);
+				pPipelineStage->ppGraphicsCommandLists[f]->End();
+
+				VkCommandBuffer commandBuffer = reinterpret_cast<VkCommandBuffer>(pPipelineStage->ppGraphicsCommandLists[f]->GetHandle());
+				VkSubmitInfo submitInfo = {};
+				submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+				submitInfo.commandBufferCount = 1;
+				submitInfo.pCommandBuffers = &commandBuffer;
+
+				vkQueueSubmit(reinterpret_cast<VkQueue>(RenderSystem::GetGraphicsQueue()->GetHandle()), 1, &submitInfo, VK_NULL_HANDLE);
+				vkQueueWaitIdle(reinterpret_cast<VkQueue>(RenderSystem::GetGraphicsQueue()->GetHandle()));
 
 				CommandListDesc computeCommandListDesc = {};
 				computeCommandListDesc.DebugName					= "Render Graph Compute Command List";
@@ -2211,8 +2230,11 @@ namespace LambdaEngine
 		CommandList*		pGraphicsCommandList, 
 		CommandList**		ppExecutionStage)
 	{
+		GPUProfiler::Get()->GetTimestamp(pGraphicsCommandList);
 		pGraphicsCommandAllocator->Reset();
 		pGraphicsCommandList->Begin(nullptr);
+		GPUProfiler::Get()->ResetTimestamp(pGraphicsCommandList);
+		GPUProfiler::Get()->StartTimestamp(pGraphicsCommandList);
 
 		uint32 flags = FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_INLINE;
 
@@ -2325,6 +2347,7 @@ namespace LambdaEngine
 			pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
 		}
 
+		GPUProfiler::Get()->EndTimestamp(pGraphicsCommandList);
 		pGraphicsCommandList->EndRenderPass();
 		pGraphicsCommandList->End();
 
