@@ -2,6 +2,8 @@
 
 #include "Defines.h"
 
+#include <stdint.h>
+
 namespace LambdaEngine
 {
 	class LAMBDA_API RuntimeStats
