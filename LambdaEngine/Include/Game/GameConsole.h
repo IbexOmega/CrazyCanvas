@@ -1,17 +1,10 @@
 #pragma once
 
 #include "LambdaEngine.h"
-
-struct ImGuiInputTextCallbackData;
-
+#include "Math/Math.h"
 
 namespace LambdaEngine
 {
-	struct Command
-	{
-		char* text;
-	};
-
 	class LAMBDA_API GameConsole
 	{
 	public:
@@ -25,10 +18,17 @@ namespace LambdaEngine
 		static void Render();
 		
 	private:
-		static int ParseText(const char* data);
+		struct Item
+		{
+			std::string str;
+			glm::vec4 color;
+		};
+
+		static int ExecCommand(char* data);
 
 
 	private:
-		static TArray<char*> m_Items;
+		static TArray<Item> m_Items;
+		static bool m_ScrollToBottom;
 	};
 }

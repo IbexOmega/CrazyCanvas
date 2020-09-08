@@ -1,8 +1,10 @@
 #include "Game/GameConsole.h"
+#include "Input/API/Input.h"
 
 #include <imgui.h>
 
-LambdaEngine::TArray<char*> LambdaEngine::GameConsole::m_Items;
+LambdaEngine::TArray<LambdaEngine::GameConsole::Item> LambdaEngine::GameConsole::m_Items;
+bool LambdaEngine::GameConsole::m_ScrollToBottom = false;
 
 bool LambdaEngine::GameConsole::Init()
 {
@@ -16,39 +18,79 @@ bool LambdaEngine::GameConsole::Release()
 
 void LambdaEngine::GameConsole::Render()
 {
-	if (ImGui::Begin("Console"))
+	// Toggle console when pressing § (Button beneath Escape)
+	static bool s_Active = false;
+	static bool s_Toggle = false;
+	if (Input::IsKeyDown(EKey::KEY_GRAVE_ACCENT) & !s_Active)
 	{
-		static char s_Buf[256];
-		bool reclaimFocus = false;
-		ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue;
+		s_Active = true;
+		s_Toggle ^= 1;
+		LOG_INFO("TILDE!");
+	}
+	else if (Input::IsKeyUp(EKey::KEY_GRAVE_ACCENT))
+		s_Active = false;
+
+	// Do not draw if not active.
+	if (!s_Toggle)
+		return;
+
+	// Draw a console window at the top right of the viewport.
+	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("Console", (bool*)0, ImGuiWindowFlags_NoMove))
+	{
+		bool hasFocus = false;
+
+		// History
 		const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 		ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-		ImGui::EndChild();
-
-		ImGui::Separator();
-
-		if (ImGui::InputText("Input", s_Buf, 256, input_text_flags))
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
+		for (int i = 0; i < m_Items.GetSize(); i++)
 		{
-			m_Items.PushBack(s_Buf);
-			ParseText(s_Buf);
-			char* s = s_Buf;
-			strcpy(s, "");
-			reclaimFocus = true;
+			Item& item = m_Items[i];
+			const char* str = item.str.c_str();
+			ImVec4 color = ImVec4(item.color.r, item.color.g, item.color.b, item.color.a);
+			ImGui::PushStyleColor(ImGuiCol_Text, color);
+			ImGui::TextUnformatted(str);
+			ImGui::PopStyleColor();
 		}
 
-		ImGui::SetItemDefaultFocus();
-		if (reclaimFocus)
-			ImGui::SetKeyboardFocusHere(-1);
+		if (m_ScrollToBottom | (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+			ImGui::SetScrollHereY(1.0f);
+		m_ScrollToBottom = false;
 
+		ImGui::PopStyleVar();
+		ImGui::EndChild();
+		ImGui::Separator();
 
-		ImGui::End();
+		// Command line
+		static char s_Buf[256];
+		ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue;
+		if (ImGui::InputText("Input", s_Buf, 256, input_text_flags))
+		{
+			if (s_Buf[0])
+				ExecCommand(s_Buf);
+			strcpy(s_Buf, "");
+			hasFocus = true;
+		}
+
+		if (s_Active || hasFocus)
+		{
+			ImGui::SetItemDefaultFocus();
+			ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
+		}
+
 	}
+	ImGui::End();
 }
 
-int LambdaEngine::GameConsole::ParseText(const char* data)
+int LambdaEngine::GameConsole::ExecCommand(char* data)
 {
-	LOG_INFO("Hej");
+	Item item = {};
+	item.str = data;
+	item.color = glm::vec4(1.f, 1.f, 1.f, 1.f);
+	m_Items.PushBack(item);
+
+	m_ScrollToBottom = true;
 
 	return 0;
 }
