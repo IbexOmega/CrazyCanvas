@@ -531,8 +531,8 @@ namespace LambdaEngine
 
 		uint32 currentExecutionStage = 0;
 
-		if (m_SignalValue > 3)
-			m_pFence->Wait(m_SignalValue - 3, UINT64_MAX);
+		if (m_SignalValue > m_BackBufferCount)
+			m_pFence->Wait(m_SignalValue - m_BackBufferCount, UINT64_MAX);
 
 		for (uint32 p = 0; p < m_PipelineStageCount; p++)
 		{
@@ -812,10 +812,10 @@ namespace LambdaEngine
 
 	bool RenderGraph::CreateCopyCommandLists()
 	{
-		m_ppGraphicsCopyCommandAllocators		= DBG_NEW CommandAllocator*[m_BackBufferCount];
-		m_ppGraphicsCopyCommandLists			= DBG_NEW CommandList*[m_BackBufferCount];
-		m_ppComputeCopyCommandAllocators		= DBG_NEW CommandAllocator*[m_BackBufferCount];
-		m_ppComputeCopyCommandLists				= DBG_NEW CommandList *[m_BackBufferCount];
+		m_ppGraphicsCopyCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
+		m_ppGraphicsCopyCommandLists		= DBG_NEW CommandList*[m_BackBufferCount];
+		m_ppComputeCopyCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
+		m_ppComputeCopyCommandLists			= DBG_NEW CommandList *[m_BackBufferCount];
 
 		for (uint32 b = 0; b < m_BackBufferCount; b++)
 		{
@@ -828,12 +828,12 @@ namespace LambdaEngine
 					return false;
 				}
 
-				CommandListDesc graphicsCopyCommandListDesc = {};
-				graphicsCopyCommandListDesc.DebugName				= "Render Graph Graphics Copy Command List";
+				CommandListDesc graphicsCopyCommandListDesc		= {};
+				graphicsCopyCommandListDesc.DebugName			= "Render Graph Graphics Copy Command List";
 				graphicsCopyCommandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 				graphicsCopyCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
-				m_ppGraphicsCopyCommandLists[b]			= m_pGraphicsDevice->CreateCommandList(m_ppGraphicsCopyCommandAllocators[b], &graphicsCopyCommandListDesc);
+				m_ppGraphicsCopyCommandLists[b] = m_pGraphicsDevice->CreateCommandList(m_ppGraphicsCopyCommandAllocators[b], &graphicsCopyCommandListDesc);
 
 				if (m_ppGraphicsCopyCommandLists[b] == nullptr)
 				{
@@ -850,8 +850,8 @@ namespace LambdaEngine
 					return false;
 				}
 
-				CommandListDesc computeCopyCommandListDesc = {};
-				computeCopyCommandListDesc.DebugName				= "Render Graph Compute Copy Command List";
+				CommandListDesc computeCopyCommandListDesc		= {};
+				computeCopyCommandListDesc.DebugName			= "Render Graph Compute Copy Command List";
 				computeCopyCommandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 				computeCopyCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
@@ -1869,7 +1869,6 @@ namespace LambdaEngine
 		{
 			actualSubResourceCount = pResource->SubResourceCount;
 		}
-
 
 		for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
 		{

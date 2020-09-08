@@ -2,6 +2,8 @@
 
 #include "Game/Camera.h"
 
+#include <algorithm>
+
 bool CameraTrack::Init(LambdaEngine::Camera* pCamera, const std::vector<glm::vec3>& track)
 {
 	m_pCamera = pCamera;

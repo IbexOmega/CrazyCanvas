@@ -44,6 +44,8 @@ namespace LambdaEngine
 
 		bool Init(const RendererDesc* pDesc);
 
+		//void SetScene(Scene* pScene);
+
 		void NewFrame(Timestamp delta);
 		void PrepareRender(Timestamp delta);
 
