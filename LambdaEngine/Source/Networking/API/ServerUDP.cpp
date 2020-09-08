@@ -227,19 +227,19 @@ namespace LambdaEngine
 
 	void ServerUDP::SendDisconnect(ClientUDPRemote* client)
 	{
-		client->m_PacketManager.EnqueuePacketUnreliable(client->GetFreePacket(NetworkPacket::TYPE_DISCONNECT));
+		client->m_PacketManager.EnqueueSegmentUnreliable(client->GetFreePacket(NetworkSegment::TYPE_DISCONNECT));
 		client->SendPackets(&m_Transciver);
 	}
 
 	void ServerUDP::SendServerFull(ClientUDPRemote* client)
 	{
-		client->m_PacketManager.EnqueuePacketUnreliable(client->GetFreePacket(NetworkPacket::TYPE_SERVER_FULL));
+		client->m_PacketManager.EnqueueSegmentUnreliable(client->GetFreePacket(NetworkSegment::TYPE_SERVER_FULL));
 		client->SendPackets(&m_Transciver);
 	}
 
 	void ServerUDP::SendServerNotAccepting(ClientUDPRemote* client)
 	{
-		client->m_PacketManager.EnqueuePacketUnreliable(client->GetFreePacket(NetworkPacket::TYPE_SERVER_NOT_ACCEPTING));
+		client->m_PacketManager.EnqueueSegmentUnreliable(client->GetFreePacket(NetworkSegment::TYPE_SERVER_NOT_ACCEPTING));
 		client->SendPackets(&m_Transciver);
 	}
 

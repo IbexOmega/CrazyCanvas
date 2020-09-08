@@ -1,6 +1,6 @@
 #include "Networking/API/PacketManager.h"
 
-#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/NetworkSegment.h"
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/PacketTransceiver.h"
 
@@ -9,7 +9,7 @@
 namespace LambdaEngine
 {
 	PacketManager::PacketManager(const PacketManagerDesc& desc) :
-		m_PacketPool(desc.PoolSize),
+		m_SegmentPool(desc.PoolSize),
 		m_QueueIndex(0),
 		m_MaxRetries(desc.MaxRetries),
 		m_ResendRTTMultiplier(desc.ResendRTTMultiplier)
@@ -22,40 +22,40 @@ namespace LambdaEngine
 
 	}
 
-	uint32 PacketManager::EnqueuePacketReliable(NetworkPacket* pPacket, IPacketListener* pListener)
+	uint32 PacketManager::EnqueueSegmentReliable(NetworkSegment* pSegment, IPacketListener* pListener)
 	{
-		std::scoped_lock<SpinLock> lock(m_LockMessagesToSend);
-		uint32 UID = EnqueuePacket(pPacket, m_Statistics.RegisterReliableMessageSent());
-		m_MessagesWaitingForAck.insert({ UID, MessageInfo{ pPacket, pListener, EngineLoop::GetTimeSinceStart()} });
+		std::scoped_lock<SpinLock> lock(m_LockSegmentsToSend);
+		uint32 UID = EnqueueSegment(pSegment, m_Statistics.RegisterReliableSegmentSent());
+		m_SegmentsWaitingForAck.insert({ UID, SegmentInfo{ pSegment, pListener, EngineLoop::GetTimeSinceStart()} });
 		return UID;
 	}
 
-	uint32 PacketManager::EnqueuePacketUnreliable(NetworkPacket* pPacket)
+	uint32 PacketManager::EnqueueSegmentUnreliable(NetworkSegment* pSegment)
 	{
-		std::scoped_lock<SpinLock> lock(m_LockMessagesToSend);
-		return EnqueuePacket(pPacket, 0);
+		std::scoped_lock<SpinLock> lock(m_LockSegmentsToSend);
+		return EnqueueSegment(pSegment, 0);
 	}
 
-	uint32 PacketManager::EnqueuePacket(NetworkPacket* pPacket, uint32 reliableUID)
+	uint32 PacketManager::EnqueueSegment(NetworkSegment* pSegment, uint32 reliableUID)
 	{
-		pPacket->GetHeader().UID = m_Statistics.RegisterMessageSent();
-		pPacket->GetHeader().ReliableUID = reliableUID;
-		m_MessagesToSend[m_QueueIndex].push(pPacket);
-		return pPacket->GetHeader().UID;
+		pSegment->GetHeader().UID = m_Statistics.RegisterSegmentSent();
+		pSegment->GetHeader().ReliableUID = reliableUID;
+		m_SegmentsToSend[m_QueueIndex].push(pSegment);
+		return pSegment->GetHeader().UID;
 	}
 
 	void PacketManager::Flush(PacketTransceiver* pTransceiver)
 	{
 		int32 indexToUse = m_QueueIndex;
 		m_QueueIndex = (m_QueueIndex + 1) % 2;
-		std::queue<NetworkPacket*>& packets = m_MessagesToSend[indexToUse];
+		std::queue<NetworkSegment*>& packets = m_SegmentsToSend[indexToUse];
 
 		Timestamp timestamp = EngineLoop::GetTimeSinceStart();
 
 		while (!packets.empty())
 		{
 			Bundle bundle;
-			uint32 bundleUID = pTransceiver->Transmit(&m_PacketPool, packets, bundle.ReliableUIDs, m_IPEndPoint, &m_Statistics);
+			uint32 bundleUID = pTransceiver->Transmit(&m_SegmentPool, packets, bundle.ReliableUIDs, m_IPEndPoint, &m_Statistics);
 
 			if (!bundle.ReliableUIDs.empty())
 			{
@@ -67,27 +67,27 @@ namespace LambdaEngine
 		}
 	}
 
-	void PacketManager::QueryBegin(PacketTransceiver* pTransceiver, TArray<NetworkPacket*>& packetsReturned)
+	void PacketManager::QueryBegin(PacketTransceiver* pTransceiver, TArray<NetworkSegment*>& segmentsReturned)
 	{
-		TArray<NetworkPacket*> packets;
+		TArray<NetworkSegment*> packets;
 		IPEndPoint ipEndPoint;
 		TArray<uint32> acks;
 
-		if (!pTransceiver->ReceiveEnd(&m_PacketPool, packets, acks, &m_Statistics))
+		if (!pTransceiver->ReceiveEnd(&m_SegmentPool, packets, acks, &m_Statistics))
 			return;
 
-		packetsReturned.Clear();
-		packetsReturned.Reserve(packets.GetSize());
+		segmentsReturned.Clear();
+		segmentsReturned.Reserve(packets.GetSize());
 
 		HandleAcks(acks);
-		FindPacketsToReturn(packets, packetsReturned);
+		FindSegmentsToReturn(packets, segmentsReturned);
 
 		LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 	}
 
-	void PacketManager::QueryEnd(TArray<NetworkPacket*>& packetsReceived)
+	void PacketManager::QueryEnd(TArray<NetworkSegment*>& segmentsReceived)
 	{
-		m_PacketPool.FreePackets(packetsReceived);
+		m_SegmentPool.FreeSegments(segmentsReceived);
 	}
 
 	void PacketManager::Tick(Timestamp delta)
@@ -101,12 +101,12 @@ namespace LambdaEngine
 			DeleteOldBundles();
 		}
 
-		ResendOrDeleteMessages();
+		ResendOrDeleteSegments();
 	}
 
-	PacketPool* PacketManager::GetPacketPool()
+	SegmentPool* PacketManager::GetSegmentPool()
 	{
-		return &m_PacketPool;
+		return &m_SegmentPool;
 	}
 
 	const NetworkStatistics* PacketManager::GetStatistics() const
@@ -126,35 +126,35 @@ namespace LambdaEngine
 
 	void PacketManager::Reset()
 	{
-		std::scoped_lock<SpinLock> lock1(m_LockMessagesToSend);
+		std::scoped_lock<SpinLock> lock1(m_LockSegmentsToSend);
 		std::scoped_lock<SpinLock> lock2(m_LockBundles);
-		m_MessagesToSend[0] = {};
-		m_MessagesToSend[1] = {};
-		m_MessagesWaitingForAck.clear();
-		m_ReliableMessagesReceived.clear();
+		m_SegmentsToSend[0] = {};
+		m_SegmentsToSend[1] = {};
+		m_SegmentsWaitingForAck.clear();
+		m_ReliableSegmentsReceived.clear();
 		m_Bundles.clear();
 
-		m_PacketPool.Reset();
+		m_SegmentPool.Reset();
 		m_Statistics.Reset();
 		m_QueueIndex = 0;
 	}
 
-	void PacketManager::FindPacketsToReturn(const TArray<NetworkPacket*>& packetsReceived, TArray<NetworkPacket*>& packetsReturned)
+	void PacketManager::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned)
 	{
 		bool runUntangler = false;
 		bool hasReliableMessage = false;
 
-		TArray<NetworkPacket*> packetsToFree;
+		TArray<NetworkSegment*> packetsToFree;
 		packetsToFree.Reserve(32);
 
-		for (NetworkPacket* pPacket : packetsReceived)
+		for (NetworkSegment* pPacket : segmentsReceived)
 		{
 			if (!pPacket->IsReliable())																//Unreliable Packet
 			{
-				if (pPacket->GetType() == NetworkPacket::TYPE_NETWORK_ACK)
+				if (pPacket->GetType() == NetworkSegment::TYPE_NETWORK_ACK)
 					packetsToFree.PushBack(pPacket);
 				else
-					packetsReturned.PushBack(pPacket);
+					segmentsReturned.PushBack(pPacket);
 			}
 			else
 			{
@@ -162,13 +162,13 @@ namespace LambdaEngine
 
 				if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)		//Reliable Packet in correct order
 				{
-					packetsReturned.PushBack(pPacket);
-					m_Statistics.RegisterReliableMessageReceived();
+					segmentsReturned.PushBack(pPacket);
+					m_Statistics.RegisterReliableSegmentReceived();
 					runUntangler = true;
 				}
 				else if (pPacket->GetReliableUID() > m_Statistics.GetLastReceivedReliableUID())		//Reliable Packet in incorrect order
 				{
-					m_ReliableMessagesReceived.insert(pPacket);
+					m_ReliableSegmentsReceived.insert(pPacket);
 					runUntangler = true;
 				}
 				else																				//Reliable Packet already received before
@@ -177,27 +177,27 @@ namespace LambdaEngine
 				}
 			}
 		}
-
-		m_PacketPool.FreePackets(packetsToFree);
+		
+		m_SegmentPool.FreeSegments(packetsToFree);
 
 		if (runUntangler)
-			UntangleReliablePackets(packetsReturned);
+			UntangleReliableSegments(segmentsReturned);
 
-		if (hasReliableMessage && m_MessagesToSend[m_QueueIndex].empty())
-			EnqueuePacketUnreliable(m_PacketPool.RequestFreePacket()->SetType(NetworkPacket::TYPE_NETWORK_ACK));
+		if (hasReliableMessage && m_SegmentsToSend[m_QueueIndex].empty())
+			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment()->SetType(NetworkSegment::TYPE_NETWORK_ACK));
 	}
 
-	void PacketManager::UntangleReliablePackets(TArray<NetworkPacket*>& packetsReturned)
+	void PacketManager::UntangleReliableSegments(TArray<NetworkSegment*>& segmentsReturned)
 	{
-		TArray<NetworkPacket*> packetsToErase;
+		TArray<NetworkSegment*> packetsToErase;
 
-		for (NetworkPacket* pPacket : m_ReliableMessagesReceived)
+		for (NetworkSegment* pPacket : m_ReliableSegmentsReceived)
 		{
 			if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)
 			{
-				packetsReturned.PushBack(pPacket);
+				segmentsReturned.PushBack(pPacket);
 				packetsToErase.PushBack(pPacket);
-				m_Statistics.RegisterReliableMessageReceived();
+				m_Statistics.RegisterReliableSegmentReceived();
 			}
 			else
 			{
@@ -205,9 +205,9 @@ namespace LambdaEngine
 			}
 		}
 
-		for (NetworkPacket* pPacket : packetsToErase)
+		for (NetworkSegment* pPacket : packetsToErase)
 		{
-			m_ReliableMessagesReceived.erase(pPacket);
+			m_ReliableSegmentsReceived.erase(pPacket);
 		}
 	}
 
@@ -221,13 +221,13 @@ namespace LambdaEngine
 		TArray<uint32> ackedReliableUIDs;
 		GetReliableUIDsFromAcks(acks, ackedReliableUIDs);
 
-		TArray<MessageInfo> messagesAcked;
-		GetReliableMessageInfosFromUIDs(ackedReliableUIDs, messagesAcked);
+		TArray<SegmentInfo> messagesAcked;
+		GetReliableSegmentInfosFromUIDs(ackedReliableUIDs, messagesAcked);
 
-		TArray<NetworkPacket*> packetsToFree;
+		TArray<NetworkSegment*> packetsToFree;
 		packetsToFree.Reserve(messagesAcked.GetSize());
 
-		for (MessageInfo& messageInfo : messagesAcked)
+		for (SegmentInfo& messageInfo : messagesAcked)
 		{
 			if (messageInfo.Listener)
 			{
@@ -236,7 +236,7 @@ namespace LambdaEngine
 			packetsToFree.PushBack(messageInfo.Packet);
 		}
 
-		m_PacketPool.FreePackets(packetsToFree);
+		m_SegmentPool.FreeSegments(packetsToFree);
 	}
 
 	void PacketManager::GetReliableUIDsFromAcks(const TArray<uint32>& acks, TArray<uint32>& ackedReliableUIDs)
@@ -266,18 +266,18 @@ namespace LambdaEngine
 		}
 	}
 
-	void PacketManager::GetReliableMessageInfosFromUIDs(const TArray<uint32>& ackedReliableUIDs, TArray<MessageInfo>& ackedReliableMessages)
+	void PacketManager::GetReliableSegmentInfosFromUIDs(const TArray<uint32>& ackedReliableUIDs, TArray<SegmentInfo>& ackedReliableSegments)
 	{
-		ackedReliableMessages.Reserve(128);
-		std::scoped_lock<SpinLock> lock(m_LockMessagesToSend);
+		ackedReliableSegments.Reserve(128);
+		std::scoped_lock<SpinLock> lock(m_LockSegmentsToSend);
 
 		for (uint32 UID : ackedReliableUIDs)
 		{
-			auto iterator = m_MessagesWaitingForAck.find(UID);
-			if (iterator != m_MessagesWaitingForAck.end())
+			auto iterator = m_SegmentsWaitingForAck.find(UID);
+			if (iterator != m_SegmentsWaitingForAck.end())
 			{
-				ackedReliableMessages.PushBack(iterator->second);
-				m_MessagesWaitingForAck.erase(iterator);
+				ackedReliableSegments.PushBack(iterator->second);
+				m_SegmentsWaitingForAck.erase(iterator);
 			}
 		}
 	}
@@ -310,7 +310,7 @@ namespace LambdaEngine
 			m_Bundles.erase(UID);
 	}
 
-	void PacketManager::ResendOrDeleteMessages()
+	void PacketManager::ResendOrDeleteSegments()
 	{
 		static Timestamp minTime = Timestamp::MilliSeconds(5);
 		uint64 pingNanos = m_Statistics.GetPing().AsNanoSeconds();
@@ -320,21 +320,21 @@ namespace LambdaEngine
 
 		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
 
-		TArray<std::pair<const uint32, MessageInfo>> messagesToDelete;
+		TArray<std::pair<const uint32, SegmentInfo>> messagesToDelete;
 
 		{
-			std::scoped_lock<SpinLock> lock(m_LockMessagesToSend);
+			std::scoped_lock<SpinLock> lock(m_LockSegmentsToSend);
 
-			for (auto& pair : m_MessagesWaitingForAck)
+			for (auto& pair : m_SegmentsWaitingForAck)
 			{
-				MessageInfo& messageInfo = pair.second;
+				SegmentInfo& messageInfo = pair.second;
 				if (currentTime - messageInfo.LastSent > maxAllowedTime)
 				{
 					messageInfo.Retries++;
 
 					if (messageInfo.Retries < m_MaxRetries)
 					{
-						m_MessagesToSend[m_QueueIndex].push(messageInfo.Packet);
+						m_SegmentsToSend[m_QueueIndex].push(messageInfo.Packet);
 						messageInfo.LastSent = currentTime;
 
 						if (messageInfo.Listener)
@@ -348,20 +348,20 @@ namespace LambdaEngine
 			}
 
 			for (auto& pair : messagesToDelete)
-				m_MessagesWaitingForAck.erase(pair.first);
+				m_SegmentsWaitingForAck.erase(pair.first);
 		}
 		
-		TArray<NetworkPacket*> packetsToFree;
+		TArray<NetworkSegment*> packetsToFree;
 		packetsToFree.Reserve(messagesToDelete.GetSize());
 
 		for (auto& pair : messagesToDelete)
 		{
-			MessageInfo& messageInfo = pair.second;
+			SegmentInfo& messageInfo = pair.second;
 			packetsToFree.PushBack(messageInfo.Packet);
 			if (messageInfo.Listener)
 				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Packet, messageInfo.Retries);
 		}
 
-		m_PacketPool.FreePackets(packetsToFree);
+		m_SegmentPool.FreeSegments(packetsToFree);
 	}
 }

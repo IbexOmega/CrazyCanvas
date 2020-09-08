@@ -23,10 +23,10 @@ namespace LambdaEngine
 		virtual void Disconnect() override;
 		virtual void Release() override;
 		virtual bool IsConnected() override;
-		virtual bool SendUnreliable(NetworkPacket* packet) override;
-		virtual bool SendReliable(NetworkPacket* packet, IPacketListener* listener = nullptr) override;
+		virtual bool SendUnreliable(NetworkSegment* packet) override;
+		virtual bool SendReliable(NetworkSegment* packet, IPacketListener* listener = nullptr) override;
 		virtual const IPEndPoint& GetEndPoint() const override;
-		virtual NetworkPacket* GetFreePacket(uint16 packetType) override;
+		virtual NetworkSegment* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
 		virtual const NetworkStatistics* GetStatistics() const override;
 
@@ -35,14 +35,14 @@ namespace LambdaEngine
 
 		virtual PacketManager* GetPacketManager() override;
 
-		virtual void OnPacketDelivered(NetworkPacket* pPacket) override;
-		virtual void OnPacketResent(NetworkPacket* pPacket, uint8 tries) override;
-		virtual void OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries) override;
+		virtual void OnPacketDelivered(NetworkSegment* pPacket) override;
+		virtual void OnPacketResent(NetworkSegment* pPacket, uint8 tries) override;
+		virtual void OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries) override;
 
 	private:
 		void OnDataReceived(PacketTransceiver* pTransciver);
 		void SendPackets(PacketTransceiver* pTransciver);
-		bool HandleReceivedPacket(NetworkPacket* pPacket);
+		bool HandleReceivedPacket(NetworkSegment* pPacket);
 		void Tick(Timestamp delta);
 
 	private:

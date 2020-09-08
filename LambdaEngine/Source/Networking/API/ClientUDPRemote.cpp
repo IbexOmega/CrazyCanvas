@@ -31,17 +31,17 @@ namespace LambdaEngine
 			LOG_INFO("[ClientUDPRemote]: Released");
 	}
 
-	void ClientUDPRemote::OnPacketDelivered(NetworkPacket* pPacket)
+	void ClientUDPRemote::OnPacketDelivered(NetworkSegment* pPacket)
 	{
 		LOG_INFO("ClientUDPRemote::OnPacketDelivered() | %s", pPacket->ToString().c_str());
 	}
 
-	void ClientUDPRemote::OnPacketResent(NetworkPacket* pPacket, uint8 tries)
+	void ClientUDPRemote::OnPacketResent(NetworkSegment* pPacket, uint8 tries)
 	{
 		LOG_INFO("ClientUDPRemote::OnPacketResent(%d) | %s", tries, pPacket->ToString().c_str());
 	}
 
-	void ClientUDPRemote::OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries)
+	void ClientUDPRemote::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 	{
 		LOG_INFO("ClientUDPRemote::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
 		Disconnect();
@@ -54,9 +54,9 @@ namespace LambdaEngine
 
 	void ClientUDPRemote::OnDataReceived(PacketTransceiver* pTransciver)
 	{
-		TArray<NetworkPacket*> packets;
+		TArray<NetworkSegment*> packets;
 		m_PacketManager.QueryBegin(pTransciver, packets);
-		for (NetworkPacket* pPacket : packets)
+		for (NetworkSegment* pPacket : packets)
 		{
 			if (!HandleReceivedPacket(pPacket))
 				return;
@@ -69,15 +69,15 @@ namespace LambdaEngine
 		m_PacketManager.Flush(pTransciver);
 	}
 
-	bool ClientUDPRemote::HandleReceivedPacket(NetworkPacket* pPacket)
+	bool ClientUDPRemote::HandleReceivedPacket(NetworkSegment* pPacket)
 	{
 		uint16 packetType = pPacket->GetType();
 
 		LOG_MESSAGE("ClientUDPRemote::OnPacketReceivedUDP(%s)", pPacket->ToString().c_str());
 
-		if (packetType == NetworkPacket::TYPE_CONNNECT)
+		if (packetType == NetworkSegment::TYPE_CONNNECT)
 		{
-			m_PacketManager.EnqueuePacketUnreliable(GetFreePacket(NetworkPacket::TYPE_CHALLENGE));
+			m_PacketManager.EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_CHALLENGE));
 
 			if (!m_pHandler)
 			{
@@ -85,14 +85,14 @@ namespace LambdaEngine
 				m_pHandler->OnConnectingUDP(this);
 			}
 		}
-		else if (packetType == NetworkPacket::TYPE_CHALLENGE)
+		else if (packetType == NetworkSegment::TYPE_CHALLENGE)
 		{
 			uint64 expectedAnswer = NetworkChallenge::Compute(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
 			BinaryDecoder decoder(pPacket);
 			uint64 answer = decoder.ReadUInt64();
 			if (answer == expectedAnswer)
 			{
-				m_PacketManager.EnqueuePacketUnreliable(GetFreePacket(NetworkPacket::TYPE_ACCEPTED));
+				m_PacketManager.EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_ACCEPTED));
 
 				if (m_State == STATE_CONNECTING)
 				{
@@ -105,7 +105,7 @@ namespace LambdaEngine
 				LOG_ERROR("[ClientUDPRemote]: Client responded with %lu, expected %lu, is it a fake client? [%s]", answer, expectedAnswer, GetEndPoint().ToString().c_str());
 			}	
 		}
-		else if (packetType == NetworkPacket::TYPE_DISCONNECT)
+		else if (packetType == NetworkSegment::TYPE_DISCONNECT)
 		{
 			m_DisconnectedByRemote = true;
 			Disconnect();
@@ -153,7 +153,7 @@ namespace LambdaEngine
 		return m_State == STATE_CONNECTED;
 	}
 
-	bool ClientUDPRemote::SendUnreliable(NetworkPacket* packet)
+	bool ClientUDPRemote::SendUnreliable(NetworkSegment* packet)
 	{
 		if (!IsConnected())
 		{
@@ -161,11 +161,11 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_PacketManager.EnqueuePacketUnreliable(packet);
+		m_PacketManager.EnqueueSegmentUnreliable(packet);
 		return true;
 	}
 
-	bool ClientUDPRemote::SendReliable(NetworkPacket* packet, IPacketListener* listener)
+	bool ClientUDPRemote::SendReliable(NetworkSegment* packet, IPacketListener* listener)
 	{
 		if (!IsConnected())
 		{
@@ -173,7 +173,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_PacketManager.EnqueuePacketReliable(packet, listener);
+		m_PacketManager.EnqueueSegmentReliable(packet, listener);
 		return true;
 	}
 
@@ -182,9 +182,9 @@ namespace LambdaEngine
 		return m_PacketManager.GetEndPoint();
 	}
 
-	NetworkPacket* ClientUDPRemote::GetFreePacket(uint16 packetType)
+	NetworkSegment* ClientUDPRemote::GetFreePacket(uint16 packetType)
 	{
-		return m_PacketManager.GetPacketPool()->RequestFreePacket()->SetType(packetType);
+		return m_PacketManager.GetSegmentPool()->RequestFreeSegment()->SetType(packetType);
 	}
 
 	EClientState ClientUDPRemote::GetState() const

@@ -4,13 +4,13 @@
 #include "Containers/TQueue.h"
 #include "Containers/TArray.h"
 #include "Containers/TSet.h"
-#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/NetworkSegment.h"
 #include "Networking/API/IPEndPoint.h"
 #include "Networking/API/PacketTranscoder.h"
 
 namespace LambdaEngine
 {
-	class NetworkPacket;
+	class NetworkSegment;
 	class NetworkStatistics;
 	class ISocketUDP;
 
@@ -20,9 +20,9 @@ namespace LambdaEngine
 		PacketTransceiver();
 		~PacketTransceiver();
 
-		int32 Transmit(PacketPool* pPacketPool, std::queue<NetworkPacket*>& packets, std::set<uint32>& reliableUIDsSent, const IPEndPoint& ipEndPoint, NetworkStatistics* pStatistics);
+		int32 Transmit(SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& packets, std::set<uint32>& reliableUIDsSent, const IPEndPoint& ipEndPoint, NetworkStatistics* pStatistics);
 		bool ReceiveBegin(IPEndPoint& sender);
-		bool ReceiveEnd(PacketPool* pPacketPool, TArray<NetworkPacket*>& packets, TArray<uint32>& newAcks, NetworkStatistics* pStatistics);
+		bool ReceiveEnd(SegmentPool* pSegmentPool, TArray<NetworkSegment*>& packets, TArray<uint32>& newAcks, NetworkStatistics* pStatistics);
 
 		void SetSocket(ISocketUDP* pSocket);
 

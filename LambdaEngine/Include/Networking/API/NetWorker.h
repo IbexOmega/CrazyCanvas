@@ -4,7 +4,7 @@
 
 #include "Threading/API/SpinLock.h"
 
-#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/NetworkSegment.h"
 
 #include <atomic>
 

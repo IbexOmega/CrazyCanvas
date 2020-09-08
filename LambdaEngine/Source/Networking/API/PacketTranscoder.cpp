@@ -1,37 +1,37 @@
 #include "Networking/API/PacketTranscoder.h"
-#include "Networking/API/NetworkPacket.h"
-#include "Networking/API/PacketPool.h"
+#include "Networking/API/NetworkSegment.h"
+#include "Networking/API/SegmentPool.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	bool PacketTranscoder::EncodePackets(char* buffer, uint16 bufferSize, PacketPool* pPacketPool, std::queue<NetworkPacket*>& packetsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader)
+	bool PacketTranscoder::EncodeSegments(char* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& segmentsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader)
 	{
 		pHeader->Size = sizeof(Header);
-		pHeader->Packets = 0;
+		pHeader->Segments = 0;
 
 		bytesWritten = 0;
 
-		TArray<NetworkPacket*> packetsToFree;
+		TArray<NetworkSegment*> segmentsToFree;
 
-		while (!packetsToEncode.empty())
+		while (!segmentsToEncode.empty())
 		{
-			NetworkPacket* packet = packetsToEncode.front();
+			NetworkSegment* segment = segmentsToEncode.front();
 
 			//Make sure the packet is not bigger than the max size
-			ASSERT(packet->GetTotalSize() + sizeof(Header) <= bufferSize);
+			ASSERT(segment->GetTotalSize() + sizeof(Header) <= bufferSize);
 
-			if (packet->GetTotalSize() + pHeader->Size <= bufferSize)
+			if (segment->GetTotalSize() + pHeader->Size <= bufferSize)
 			{
-				packetsToEncode.pop();
-				pHeader->Size += WritePacket(buffer + pHeader->Size, packet);
-				pHeader->Packets++;
+				segmentsToEncode.pop();
+				pHeader->Size += WriteSegment(buffer + pHeader->Size, segment);
+				pHeader->Segments++;
 
-				if (packet->IsReliable())
-					reliableUIDsSent.insert(packet->GetReliableUID());
+				if (segment->IsReliable())
+					reliableUIDsSent.insert(segment->GetReliableUID());
 				else
-					packetsToFree.PushBack(packet);
+					segmentsToFree.PushBack(segment);
 			}
 			else
 			{
@@ -39,28 +39,28 @@ namespace LambdaEngine
 			}
 		}
 
-		pPacketPool->FreePackets(packetsToFree);
+		pSegmentPool->FreeSegments(segmentsToFree);
 
 		memcpy(buffer, pHeader, sizeof(Header));
 
 		bytesWritten = pHeader->Size;
-		return packetsToEncode.empty();
+		return segmentsToEncode.empty();
 	}
 
-	uint16 PacketTranscoder::WritePacket(char* buffer, NetworkPacket* pPacket)
+	uint16 PacketTranscoder::WriteSegment(char* buffer, NetworkSegment* pSegment)
 	{
-		uint16 headerSize = pPacket->GetHeaderSize();
-		uint16 bufferSize = pPacket->GetBufferSize();
+		uint16 headerSize = pSegment->GetHeaderSize();
+		uint16 bufferSize = pSegment->GetBufferSize();
 
-		pPacket->GetHeader().Size = pPacket->GetTotalSize();
+		pSegment->GetHeader().Size = pSegment->GetTotalSize();
 
-		memcpy(buffer, &pPacket->GetHeader(), headerSize);
-		memcpy(buffer + headerSize, pPacket->GetBufferReadOnly(), bufferSize);
+		memcpy(buffer, &pSegment->GetHeader(), headerSize);
+		memcpy(buffer + headerSize, pSegment->GetBufferReadOnly(), bufferSize);
 
 		return headerSize + bufferSize;
 	}
 
-	bool PacketTranscoder::DecodePackets(const char* buffer, uint16 bufferSize, PacketPool* pPacketPool, TArray<NetworkPacket*>& packetsDecoded, Header* pHeader)
+	bool PacketTranscoder::DecodeSegments(const char* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, TArray<NetworkSegment*>& segmentsDecoded, Header* pHeader)
 	{
 		uint16 offset = sizeof(Header);
 
@@ -72,30 +72,30 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!pPacketPool->RequestFreePackets(pHeader->Packets, packetsDecoded))
+		if (!pSegmentPool->RequestFreeSegments(pHeader->Segments, segmentsDecoded))
 			return false;
 
-		for (int i = 0; i < pHeader->Packets; i++)
+		for (int i = 0; i < pHeader->Segments; i++)
 		{
-			NetworkPacket* pPacket = packetsDecoded[i];
-			offset += ReadPacket(buffer + offset, pPacket);
+			NetworkSegment* pPacket = segmentsDecoded[i];
+			offset += ReadSegment(buffer + offset, pPacket);
 			pPacket->m_Salt = pHeader->Salt;
 		}
 
 		return true;
 	}
 
-	uint16 PacketTranscoder::ReadPacket(const char* buffer, NetworkPacket* pPacket)
+	uint16 PacketTranscoder::ReadSegment(const char* buffer, NetworkSegment* pSegment)
 	{
-		NetworkPacket::Header& messageHeader = pPacket->GetHeader();
-		uint8 messageHeaderSize = pPacket->GetHeaderSize();
+		NetworkSegment::Header& messageHeader = pSegment->GetHeader();
+		uint8 messageHeaderSize = pSegment->GetHeaderSize();
 
 		memcpy(&messageHeader, buffer, messageHeaderSize);
-		memcpy(pPacket->GetBuffer(), buffer + messageHeaderSize, messageHeader.Size - messageHeaderSize);
-		pPacket->m_SizeOfBuffer = messageHeader.Size - sizeof(NetworkPacket::Header);
+		memcpy(pSegment->GetBuffer(), buffer + messageHeaderSize, messageHeader.Size - messageHeaderSize);
+		pSegment->m_SizeOfBuffer = messageHeader.Size - sizeof(NetworkSegment::Header);
 
 #ifndef LAMBDA_CONFIG_PRODUCTION
-		pPacket->SetType(messageHeader.Type); //Only for debugging, to create a string with the type name
+		pSegment->SetType(messageHeader.Type); //Only for debugging, to create a string with the type name
 #endif
 
 		return messageHeader.Size;

@@ -40,7 +40,7 @@ void ClientUDPHandler::OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient)
 	delete this;
 }
 
-void ClientUDPHandler::OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket)
+void ClientUDPHandler::OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkSegment* pPacket)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	UNREFERENCED_VARIABLE(pPacket);

@@ -12,6 +12,8 @@
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
+#include "Rendering/RenderGraphTypes.h"
+#include "Rendering/RenderGraph.h"
 
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
@@ -21,9 +23,11 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/Window.h"
 
+#include "Audio/AudioSystem.h"
+
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IPAddress.h"
-#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/NetworkDebugger.h"
@@ -93,7 +97,7 @@ void Client::OnConnectedUDP(LambdaEngine::IClientUDP* pClient)
     }*/
 
 
-	NetworkPacket* pPacket = m_pClient->GetFreePacket(1);
+	NetworkSegment* pPacket = m_pClient->GetFreePacket(1);
 	BinaryEncoder encoder(pPacket);
 	encoder.WriteString("Christoffer");
 	m_pClient->SendReliable(pPacket, this);
@@ -111,7 +115,7 @@ void Client::OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient)
     LOG_MESSAGE("OnDisconnectedUDP()");
 }
 
-void Client::OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket)
+void Client::OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkSegment* pPacket)
 {
     UNREFERENCED_VARIABLE(pClient);
     UNREFERENCED_VARIABLE(pPacket);
@@ -124,19 +128,19 @@ void Client::OnServerFullUDP(LambdaEngine::IClientUDP* pClient)
     LOG_ERROR("OnServerFullUDP()");
 }
 
-void Client::OnPacketDelivered(LambdaEngine::NetworkPacket* pPacket)
+void Client::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)
 {
     UNREFERENCED_VARIABLE(pPacket);
     LOG_INFO("OnPacketDelivered(%s)", pPacket->ToString().c_str());
 }
 
-void Client::OnPacketResent(LambdaEngine::NetworkPacket* pPacket, uint8 tries)
+void Client::OnPacketResent(LambdaEngine::NetworkSegment* pPacket, uint8 tries)
 {
     UNREFERENCED_VARIABLE(pPacket);
     LOG_INFO("OnPacketResent(%d)", tries);
 }
 
-void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8 tries)
+void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint8 tries)
 {
     UNREFERENCED_VARIABLE(pPacket);
     LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
@@ -158,7 +162,7 @@ void Client::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRe
     else
     {
         uint16 packetType = 0;
-        NetworkPacket* packet = m_pClient->GetFreePacket(packetType);
+        NetworkSegment* packet = m_pClient->GetFreePacket(packetType);
         BinaryEncoder encoder(packet);
         encoder.WriteString("Test Message");
         m_pClient->SendReliable(packet, this);
@@ -170,15 +174,19 @@ void Client::Tick(LambdaEngine::Timestamp delta)
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(delta);
 
-	/*m_pRenderer->Begin(delta);
+    m_pRenderGraph->Update();
+
+    m_pRenderer->NewFrame(delta);
+
+    m_pRenderGraphEditor->RenderGUI();
 
 	ImGui::ShowDemoWindow();
 
 	NetworkDebugger::RenderStatisticsWithImGUI(m_pClient);
 
-	m_pRenderer->Render(delta);
+    m_pRenderer->PrepareRender(delta);
 
-	m_pRenderer->End(delta);*/
+    m_pRenderer->Render();
 }
 
 void Client::FixedTick(LambdaEngine::Timestamp delta)
@@ -191,91 +199,48 @@ void Client::FixedTick(LambdaEngine::Timestamp delta)
 
 bool Client::InitRendererForEmpty()
 {
-	/*using namespace LambdaEngine;
+	using namespace LambdaEngine;
 
-	GUID_Lambda fullscreenQuadShaderGUID = ResourceManager::LoadShaderFromFile("../Assets/Shaders/FullscreenQuad.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::GLSL);
-	GUID_Lambda shadingPixelShaderGUID = ResourceManager::LoadShaderFromFile("../Assets/Shaders/StaticPixel.glsl", FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::GLSL);
 
-	std::vector<RenderStageDesc> renderStages;
+    m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
-	const char* pShadingRenderStageName = "Shading Render Stage";
-	GraphicsManagedPipelineStateDesc			shadingPipelineStateDesc = {};
-	std::vector<RenderStageAttachment>			shadingRenderStageAttachments;
+    SceneDesc sceneDesc = { };
+    sceneDesc.Name = "Test Scene";
+    sceneDesc.RayTracingEnabled = false;
+    m_pScene->Init(sceneDesc);
 
-	{
-		shadingRenderStageAttachments.push_back({
-			RENDER_GRAPH_BACK_BUFFER_ATTACHMENT,
-			EAttachmentType::OUTPUT_COLOR,
-			FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,
-			BACK_BUFFER_COUNT, EFormat::FORMAT_B8G8R8A8_UNORM
-		});
 
-		RenderStagePushConstants pushConstants = {};
-		pushConstants.pName = "Shading Pass Push Constants";
-		pushConstants.DataSize = sizeof(int32) * 2;
+    m_pRenderGraphEditor = DBG_NEW RenderGraphEditor();
 
-		RenderStageDesc renderStage = {};
-		renderStage.pName = pShadingRenderStageName;
-		renderStage.pAttachments = shadingRenderStageAttachments.data();
-		renderStage.AttachmentCount = (uint32)shadingRenderStageAttachments.size();
+    RenderGraphStructureDesc renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure("", true);
 
-		shadingPipelineStateDesc.pName = "Shading Pass Pipeline State";
-		shadingPipelineStateDesc.VertexShader = fullscreenQuadShaderGUID;
-		shadingPipelineStateDesc.PixelShader = shadingPixelShaderGUID;
+    RenderGraphDesc renderGraphDesc = {};
+    renderGraphDesc.pRenderGraphStructureDesc = &renderGraphStructure;
+    renderGraphDesc.BackBufferCount = BACK_BUFFER_COUNT;
+    renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
+    renderGraphDesc.pScene = m_pScene;
 
-		renderStage.PipelineType = EPipelineStateType::GRAPHICS;
+    m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
+    m_pRenderGraph->Init(&renderGraphDesc);
 
-		renderStage.GraphicsPipeline.DrawType = ERenderStageDrawType::FULLSCREEN_QUAD;
-		renderStage.GraphicsPipeline.pIndexBufferName = nullptr;
-		renderStage.GraphicsPipeline.pMeshIndexBufferName = nullptr;
-		renderStage.GraphicsPipeline.pGraphicsDesc = &shadingPipelineStateDesc;
 
-		renderStages.push_back(renderStage);
-	}
 
-	RenderGraphDesc renderGraphDesc = {};
-	renderGraphDesc.pName = "Render Graph";
-	renderGraphDesc.CreateDebugGraph = RENDERING_DEBUG_ENABLED;
-	renderGraphDesc.pRenderStages = renderStages.data();
-	renderGraphDesc.RenderStageCount = (uint32)renderStages.size();
-	renderGraphDesc.BackBufferCount = BACK_BUFFER_COUNT;
-	renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
-	renderGraphDesc.pScene = nullptr;
+    m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
 
-	m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
+    RendererDesc rendererDesc = {};
+    rendererDesc.Name = "Renderer";
+    rendererDesc.Debug = RENDERING_DEBUG_ENABLED;
+    rendererDesc.pRenderGraph = m_pRenderGraph;
+    rendererDesc.pWindow = CommonApplication::Get()->GetMainWindow().Get();
+    rendererDesc.BackBufferCount = BACK_BUFFER_COUNT;
 
-	m_pRenderGraph->Init(&renderGraphDesc);
+    m_pRenderer->Init(&rendererDesc);
 
-	Window* pWindow = CommonApplication::Get()->GetMainWindow();
-	uint32 renderWidth = pWindow->GetWidth();
-	uint32 renderHeight = pWindow->GetHeight();
-
-	{
-		RenderStageParameters shadingRenderStageParameters = {};
-		shadingRenderStageParameters.pRenderStageName = pShadingRenderStageName;
-		shadingRenderStageParameters.Graphics.Width = renderWidth;
-		shadingRenderStageParameters.Graphics.Height = renderHeight;
-
-		m_pRenderGraph->UpdateRenderStageParameters(shadingRenderStageParameters);
-	}
-
-	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
-
-	RendererDesc rendererDesc = {};
-	rendererDesc.pName = "Renderer";
-	rendererDesc.Debug = RENDERING_DEBUG_ENABLED;
-	rendererDesc.pRenderGraph = m_pRenderGraph;
-	rendererDesc.pWindow = CommonApplication::Get()->GetMainWindow();
-	rendererDesc.BackBufferCount = BACK_BUFFER_COUNT;
-
-	m_pRenderer->Init(&rendererDesc);
-
-	if (RENDERING_DEBUG_ENABLED)
-	{
-		ImGui::SetCurrentContext(ImGuiRenderer::GetImguiContext());
-	}
-	*/
-	return true;
+    if (RENDERING_DEBUG_ENABLED)
+    {
+        ImGui::SetCurrentContext(ImGuiRenderer::GetImguiContext());
+    }
+    return true;
 }
 
 namespace LambdaEngine

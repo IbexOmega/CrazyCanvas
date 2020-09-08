@@ -2,7 +2,7 @@
 #include "Networking/API/NetworkStatistics.h"
 #include "Networking/API/PacketManager.h"
 #include "Networking/API/IClientUDP.h"
-#include "Networking/API/PacketPool.h"
+#include "Networking/API/SegmentPool.h"
 
 #include "Engine/EngineLoop.h"
 
@@ -14,17 +14,17 @@ namespace LambdaEngine
 	void NetworkDebugger::RenderStatisticsWithImGUI(IClientUDP* pClient)
 	{
 		PacketManager* pManager = pClient->GetPacketManager();
-		PacketPool* pPacketPool = pManager->GetPacketPool();
+		SegmentPool* pSegmentPool = pManager->GetSegmentPool();
 		const NetworkStatistics* pStatistics = pManager->GetStatistics();
 
 		ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
 		if (ImGui::Begin("Network Statistics", NULL))
 		{
 			ImGui::Text("Packets Sent           %d", pStatistics->GetPacketsSent());
-			ImGui::Text("Messages Sent          %d", pStatistics->GetMessagesSent());
-			ImGui::Text("Reliable Messages Sent %d", pStatistics->GetReliableMessagesSent());
+			ImGui::Text("Segments Sent          %d", pStatistics->GetSegmentsSent());
+			ImGui::Text("Reliable Segments Sent %d", pStatistics->GetReliableSegmentsSent());
 			ImGui::Text("Packets Received       %d", pStatistics->GetPacketsReceived());
-			ImGui::Text("Messages Received      %d", pStatistics->GetMessagesReceived());
+			ImGui::Text("Segments Received      %d", pStatistics->GetSegmentsReceived());
 			ImGui::Text("Packets Lost           %d", pStatistics->GetPacketsLost());
 			ImGui::Text("Packet Loss Rate       %.1f%%", pStatistics->GetPacketLossRate() * 100.0f);
 			ImGui::Text("Bytes Sent             %d", pStatistics->GetBytesSent());
@@ -37,8 +37,8 @@ namespace LambdaEngine
 
 			ImGui::NewLine();
 
-			ImGui::Text("Total Packets           %d", pPacketPool->GetSize());
-			ImGui::Text("Free Packets            %d", pPacketPool->GetFreePackets());
+			ImGui::Text("Total Segments         %d", pSegmentPool->GetSize());
+			ImGui::Text("Free Segments          %d", pSegmentPool->GetFreeSegments());
 
 			ImGui::End();
 		}

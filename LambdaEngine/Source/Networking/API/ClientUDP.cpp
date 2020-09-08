@@ -6,7 +6,7 @@
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/NetworkStatistics.h"
-#include "Networking/API/PacketPool.h"
+#include "Networking/API/SegmentPool.h"
 #include "Networking/API/NetworkChallenge.h"
 
 #include "Log/Log.h"
@@ -34,17 +34,17 @@ namespace LambdaEngine
 		LOG_INFO("[ClientUDP]: Released");
 	}
 
-	void ClientUDP::OnPacketDelivered(NetworkPacket* pPacket)
+	void ClientUDP::OnPacketDelivered(NetworkSegment* pPacket)
 	{
 		LOG_INFO("ClientUDP::OnPacketDelivered() | %s", pPacket->ToString().c_str());
 	}
 
-	void ClientUDP::OnPacketResent(NetworkPacket* pPacket, uint8 tries)
+	void ClientUDP::OnPacketResent(NetworkSegment* pPacket, uint8 tries)
 	{
 		LOG_INFO("ClientUDP::OnPacketResent(%d) | %s", tries, pPacket->ToString().c_str());
 	}
 
-	void ClientUDP::OnPacketMaxTriesReached(NetworkPacket* pPacket, uint8 tries)
+	void ClientUDP::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 	{
 		LOG_INFO("ClientUDP::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
 		Disconnect();
@@ -93,7 +93,7 @@ namespace LambdaEngine
 		return m_State == STATE_CONNECTED;
 	}
 
-	bool ClientUDP::SendUnreliable(NetworkPacket* packet)
+	bool ClientUDP::SendUnreliable(NetworkSegment* packet)
 	{
 		if (!IsConnected())
 		{
@@ -101,11 +101,11 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_PacketManager.EnqueuePacketUnreliable(packet);
+		m_PacketManager.EnqueueSegmentUnreliable(packet);
 		return true;
 	}
 
-	bool ClientUDP::SendReliable(NetworkPacket* packet, IPacketListener* listener)
+	bool ClientUDP::SendReliable(NetworkSegment* packet, IPacketListener* listener)
 	{
 		if (!IsConnected())
 		{
@@ -113,7 +113,7 @@ namespace LambdaEngine
 			return false;
 		}
 			
-		m_PacketManager.EnqueuePacketReliable(packet, listener);
+		m_PacketManager.EnqueueSegmentReliable(packet, listener);
 		return true;
 	}
 
@@ -122,9 +122,9 @@ namespace LambdaEngine
 		return m_PacketManager.GetEndPoint();
 	}
 
-	NetworkPacket* ClientUDP::GetFreePacket(uint16 packetType)
+	NetworkSegment* ClientUDP::GetFreePacket(uint16 packetType)
 	{
-		return m_PacketManager.GetPacketPool()->RequestFreePacket()->SetType(packetType);
+		return m_PacketManager.GetSegmentPool()->RequestFreeSegment()->SetType(packetType);
 	}
 
 	EClientState ClientUDP::GetState() const
@@ -172,9 +172,9 @@ namespace LambdaEngine
 			if (!m_Transciver.ReceiveBegin(sender))
 				continue;
 
-			TArray<NetworkPacket*> packets;
+			TArray<NetworkSegment*> packets;
 			m_PacketManager.QueryBegin(&m_Transciver, packets);
-			for (NetworkPacket* pPacket : packets)
+			for (NetworkSegment* pPacket : packets)
 			{
 				HandleReceivedPacket(pPacket);
 			}
@@ -221,31 +221,31 @@ namespace LambdaEngine
 
 	void ClientUDP::SendConnectRequest()
 	{
-		m_PacketManager.EnqueuePacketReliable(GetFreePacket(NetworkPacket::TYPE_CONNNECT), this);
+		m_PacketManager.EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_CONNNECT), this);
 		TransmitPackets();
 	}
 
 	void ClientUDP::SendDisconnectRequest()
 	{
-		m_PacketManager.EnqueuePacketReliable(GetFreePacket(NetworkPacket::TYPE_DISCONNECT), this);
+		m_PacketManager.EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT), this);
 		TransmitPackets();
 	}
 
-	void ClientUDP::HandleReceivedPacket(NetworkPacket* pPacket)
+	void ClientUDP::HandleReceivedPacket(NetworkSegment* pPacket)
 	{
 		uint16 packetType = pPacket->GetType();
 
-		if (packetType == NetworkPacket::TYPE_CHALLENGE)
+		if (packetType == NetworkSegment::TYPE_CHALLENGE)
 		{
 			uint64 answer = NetworkChallenge::Compute(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
 			ASSERT(answer != 0);
 
-			NetworkPacket* pResponse = GetFreePacket(NetworkPacket::TYPE_CHALLENGE);
+			NetworkSegment* pResponse = GetFreePacket(NetworkSegment::TYPE_CHALLENGE);
 			BinaryEncoder encoder(pResponse);
 			encoder.WriteUInt64(answer);
-			m_PacketManager.EnqueuePacketReliable(pResponse, this);
+			m_PacketManager.EnqueueSegmentReliable(pResponse, this);
 		}
-		else if (packetType == NetworkPacket::TYPE_ACCEPTED)
+		else if (packetType == NetworkSegment::TYPE_ACCEPTED)
 		{
 			if (m_State == STATE_CONNECTING)
 			{
@@ -254,12 +254,12 @@ namespace LambdaEngine
 				m_pHandler->OnConnectedUDP(this);
 			}
 		}
-		else if (packetType == NetworkPacket::TYPE_DISCONNECT)
+		else if (packetType == NetworkSegment::TYPE_DISCONNECT)
 		{
 			m_SendDisconnectPacket = false;
 			Disconnect();
 		}
-		else if (packetType == NetworkPacket::TYPE_SERVER_FULL)
+		else if (packetType == NetworkSegment::TYPE_SERVER_FULL)
 		{
 			m_SendDisconnectPacket = false;
 			m_pHandler->OnServerFullUDP(this);

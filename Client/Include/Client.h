@@ -2,6 +2,10 @@
 
 #include "Game/Game.h"
 
+#include "Rendering/RenderGraphTypes.h"
+#include "Rendering/RenderGraph.h"
+#include "Rendering/RenderGraphEditor.h"
+
 #include "Application/API/EventHandler.h"
 
 #include "Networking/API/IPacketListener.h"
@@ -28,13 +32,13 @@ public:
 	virtual void OnConnectedUDP(LambdaEngine::IClientUDP* pClient) override;
 	virtual void OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient) override;
 	virtual void OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient) override;
-	virtual void OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket) override;
+	virtual void OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkSegment* pPacket) override;
 	virtual void OnServerFullUDP(LambdaEngine::IClientUDP* pClient) override;
 
 
-	virtual void OnPacketDelivered(LambdaEngine::NetworkPacket* pPacket) override;
-	virtual void OnPacketResent(LambdaEngine::NetworkPacket* pPacket, uint8 tries) override;
-	virtual void OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8 tries) override;
+	virtual void OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket) override;
+	virtual void OnPacketResent(LambdaEngine::NetworkSegment* pPacket, uint8 tries) override;
+	virtual void OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint8 tries) override;
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
@@ -48,9 +52,8 @@ private:
 private:
 	LambdaEngine::ClientUDP* m_pClient;
 
-
+	LambdaEngine::RenderGraphEditor* m_pRenderGraphEditor = nullptr;
 	LambdaEngine::RenderGraph* m_pRenderGraph = nullptr;
 	LambdaEngine::Renderer* m_pRenderer = nullptr;
-	GUID_Lambda	m_ImGuiPixelShaderNormalGUID = GUID_NONE;
-	GUID_Lambda	m_ImGuiPixelShaderDepthUID = GUID_NONE;
+	LambdaEngine::Scene* m_pScene = nullptr;
 };

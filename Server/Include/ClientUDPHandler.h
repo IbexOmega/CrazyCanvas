@@ -6,7 +6,7 @@
 
 namespace LambdaEngine
 {
-	class NetworkPacket;
+	class NetworkSegment;
 	class IClientUDP;
 }
 
@@ -20,7 +20,7 @@ public:
 	virtual void OnConnectedUDP(LambdaEngine::IClientUDP* pClient) override;
 	virtual void OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient) override;
 	virtual void OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient) override;
-	virtual void OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket) override;
+	virtual void OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkSegment* pPacket) override;
 
 private:
 	int counter = 0;

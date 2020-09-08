@@ -7,14 +7,14 @@
 #include "Containers/THashTable.h"
 
 #include "Networking/API/NetworkStatistics.h"
-#include "Networking/API/PacketPool.h"
+#include "Networking/API/SegmentPool.h"
 #include "Networking/API/IPEndPoint.h"
 
 #include "Threading/API/SpinLock.h"
 
 namespace LambdaEngine
 {
-	class NetworkPacket;
+	class NetworkSegment;
 	class IPacketListener;
 	class PacketTransceiver;
 
@@ -28,9 +28,9 @@ namespace LambdaEngine
 	class LAMBDA_API PacketManager
 	{
 	public:
-		struct MessageInfo
+		struct SegmentInfo
 		{
-			NetworkPacket* Packet		= nullptr;
+			NetworkSegment* Packet		= nullptr;
 			IPacketListener* Listener	= nullptr;
 			Timestamp LastSent			= 0;
 			uint8 Retries				= 0;
@@ -46,16 +46,16 @@ namespace LambdaEngine
 		PacketManager(const PacketManagerDesc& desc);
 		~PacketManager();
 
-		uint32 EnqueuePacketReliable(NetworkPacket* pPacket, IPacketListener* pListener = nullptr);
-		uint32 EnqueuePacketUnreliable(NetworkPacket* pPacket);
+		uint32 EnqueueSegmentReliable(NetworkSegment* pPacket, IPacketListener* pListener = nullptr);
+		uint32 EnqueueSegmentUnreliable(NetworkSegment* pPacket);
 
 		void Flush(PacketTransceiver* pTransceiver);
-		void QueryBegin(PacketTransceiver* pTransceiver, TArray<NetworkPacket*>& packetsReturned);
-		void QueryEnd(TArray<NetworkPacket*>& packetsReceived);
+		void QueryBegin(PacketTransceiver* pTransceiver, TArray<NetworkSegment*>& packetsReturned);
+		void QueryEnd(TArray<NetworkSegment*>& packetsReceived);
 
 		void Tick(Timestamp delta);
 
-		PacketPool* GetPacketPool();
+		SegmentPool* GetSegmentPool();
 		const NetworkStatistics* GetStatistics() const;
 		const IPEndPoint& GetEndPoint() const;
 
@@ -64,29 +64,29 @@ namespace LambdaEngine
 		void Reset();
 
 	private:
-		uint32 EnqueuePacket(NetworkPacket* pPacket, uint32 reliableUID);
-		void FindPacketsToReturn(const TArray<NetworkPacket*>& packetsReceived, TArray<NetworkPacket*>& packetsReturned);
-		void UntangleReliablePackets(TArray<NetworkPacket*>& packetsReturned);
+		uint32 EnqueueSegment(NetworkSegment* pSegment, uint32 reliableUID);
+		void FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned);
+		void UntangleReliableSegments(TArray<NetworkSegment*>& segmentsReturned);
 		void HandleAcks(const TArray<uint32>& acks);
 		void GetReliableUIDsFromAcks(const TArray<uint32>& acks, TArray<uint32>& ackedReliableUIDs);
-		void GetReliableMessageInfosFromUIDs(const TArray<uint32>& ackedReliableUIDs, TArray<MessageInfo>& ackedReliableMessages);
+		void GetReliableSegmentInfosFromUIDs(const TArray<uint32>& ackedReliableUIDs, TArray<SegmentInfo>& ackedReliableSegments);
 		void RegisterRTT(Timestamp rtt);
 		void DeleteOldBundles();
-		void ResendOrDeleteMessages();
+		void ResendOrDeleteSegments();
 
 	private:
 		NetworkStatistics m_Statistics;
-		PacketPool m_PacketPool;
+		SegmentPool m_SegmentPool;
 		IPEndPoint m_IPEndPoint;
-		std::queue<NetworkPacket*> m_MessagesToSend[2];
-		std::unordered_map<uint32, MessageInfo> m_MessagesWaitingForAck;
-		std::set<NetworkPacket*> m_ReliableMessagesReceived;
+		std::queue<NetworkSegment*> m_SegmentsToSend[2];
+		std::unordered_map<uint32, SegmentInfo> m_SegmentsWaitingForAck;
+		std::set<NetworkSegment*> m_ReliableSegmentsReceived;
 		std::unordered_map<uint32, Bundle> m_Bundles;
 		std::atomic_int m_QueueIndex;
 		Timestamp m_Timer;
 		float32 m_ResendRTTMultiplier;
 		int32 m_MaxRetries;
-		SpinLock m_LockMessagesToSend;
+		SpinLock m_LockSegmentsToSend;
 		SpinLock m_LockBundles;
 	};
 }

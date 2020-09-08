@@ -7,10 +7,10 @@
 
 namespace LambdaEngine
 {
-	class LAMBDA_API NetworkPacket
+	class LAMBDA_API NetworkSegment
 	{
 		friend class PacketTranscoder;
-		friend class PacketPool;
+		friend class SegmentPool;
 		friend class PacketManager;
 		friend class PacketManager2;
 
@@ -40,9 +40,9 @@ namespace LambdaEngine
 		};
 
 	public:
-		~NetworkPacket();
+		~NetworkSegment();
 
-		NetworkPacket* SetType(uint16 type);
+		NetworkSegment* SetType(uint16 type);
 		uint16 GetType() const;
 
 		char* GetBuffer();
@@ -54,7 +54,7 @@ namespace LambdaEngine
 
 		uint16 GetTotalSize() const;
 
-		NetworkPacket* AppendBytes(uint16 bytes);
+		NetworkSegment* AppendBytes(uint16 bytes);
 
 		uint64 GetRemoteSalt() const;
 
@@ -64,7 +64,7 @@ namespace LambdaEngine
 		std::string ToString() const;
 
 	private:
-		NetworkPacket();
+		NetworkSegment();
 
 	private:
 		static void PacketTypeToString(uint16 type, std::string& str);

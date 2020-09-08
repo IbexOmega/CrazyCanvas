@@ -24,7 +24,7 @@ namespace LambdaEngine
 
 	}
 
-	int32 PacketTransceiver::Transmit(PacketPool* pPacketPool, std::queue<NetworkPacket*>& packets, std::set<uint32>& reliableUIDsSent, const IPEndPoint& ipEndPoint, NetworkStatistics* pStatistics)
+	int32 PacketTransceiver::Transmit(SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& packets, std::set<uint32>& reliableUIDsSent, const IPEndPoint& ipEndPoint, NetworkStatistics* pStatistics)
 	{
 		if (packets.empty())
 			return 0;
@@ -38,7 +38,7 @@ namespace LambdaEngine
 		header.Ack		= pStatistics->GetLastReceivedSequenceNr();
 		header.AckBits	= pStatistics->GetReceivedSequenceBits();
 
-		PacketTranscoder::EncodePackets(m_pSendBuffer, MAXIMUM_PACKET_SIZE + sizeof(PacketTranscoder::Header), pPacketPool, packets, reliableUIDsSent, bytesWritten, &header);
+		PacketTranscoder::EncodeSegments(m_pSendBuffer, MAXIMUM_PACKET_SIZE + sizeof(PacketTranscoder::Header), pSegmentPool, packets, reliableUIDsSent, bytesWritten, &header);
 
 		pStatistics->RegisterBytesSent(bytesWritten);
 
@@ -76,10 +76,10 @@ namespace LambdaEngine
 		return m_BytesReceived > 0;
 	}
 
-	bool PacketTransceiver::ReceiveEnd(PacketPool* pPacketPool, TArray<NetworkPacket*>& packets, TArray<uint32>& newAcks, NetworkStatistics* pStatistics)
+	bool PacketTransceiver::ReceiveEnd(SegmentPool* pSegmentPool, TArray<NetworkSegment*>& packets, TArray<uint32>& newAcks, NetworkStatistics* pStatistics)
 	{
 		PacketTranscoder::Header header;
-		if (!PacketTranscoder::DecodePackets(m_pReceiveBuffer, (uint16)m_BytesReceived, pPacketPool, packets, &header))
+		if (!PacketTranscoder::DecodeSegments(m_pReceiveBuffer, (uint16)m_BytesReceived, pSegmentPool, packets, &header))
 			return false;
 
 		if (!ValidateHeaderSalt(&header, pStatistics))
