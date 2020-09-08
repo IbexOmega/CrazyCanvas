@@ -75,6 +75,8 @@ namespace LambdaEngine
 		CameraData m_Data;
 
 		float m_SpeedFactor = 0.05f;
+		bool m_Toggle = false;
+		bool m_IsKeyPressed = false;
 
 		glm::mat4 m_Projection;
 		glm::mat4 m_ProjectionInv;

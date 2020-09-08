@@ -186,9 +186,20 @@ namespace LambdaEngine
 			Rotate(glm::vec3(0.0f, CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f));
 		}
 
-		MouseState mouseState = Input::GetMouseState();
-		if (mouseState.IsButtonPressed(EMouseButton::MOUSE_BUTTON_RIGHT))
+		if (Input::IsKeyDown(EKey::KEY_C))
 		{
+			if (!m_IsKeyPressed)
+				m_Toggle = !m_Toggle;
+			m_IsKeyPressed = true;
+		}
+		else if (Input::IsKeyUp(EKey::KEY_C))
+		{
+			m_IsKeyPressed = false;
+		}
+
+		if (m_Toggle)
+		{
+			MouseState mouseState = Input::GetMouseState();
 			m_CommonApplication->SetMouseVisibility(false);
 
 			uint16 width	= m_CommonApplication->GetActiveWindow()->GetWidth();
