@@ -200,13 +200,13 @@ workspace "LambdaEngine"
         cppdialect "C++17"
         systemversion "latest"
         location "LambdaEngine"
-        
+
 		-- Pre-Compiled Headers
 		pchheader "PreCompiled.h"
 		pchsource "%{prj.name}/PreCompiled.cpp"
 
-		forceincludes  
-		{ 
+		forceincludes
+		{
 			"PreCompiled.h"
 		}
 
@@ -311,7 +311,6 @@ workspace "LambdaEngine"
 			"Dependencies/WavLib",
 			"Dependencies/imgui",
 			"Dependencies/stb",
-			"Dependencies/portaudio/include",
 			"Dependencies/glslang/include",
 			"Dependencies/imnodes",
 			"Dependencies/rapidjson/include",
@@ -345,9 +344,6 @@ workspace "LambdaEngine"
 				"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64",
 				"D:/FMOD Studio API Windows/api/core/lib/x64",
 
-				-- PortAudio
-				"Dependencies/portaudio/lib",
-
 				-- imgui-node-editor
 				"Dependencies/imgui-node-editor/lib",
 			}
@@ -366,9 +362,6 @@ workspace "LambdaEngine"
 		filter { "system:windows", "configurations:Debug" }
 			links
 			{
-				-- Audio
-				"portaudio_x64_d.lib",
-
 				-- Shader Compilation
 				"glslangd.lib",
 				"MachineIndependentd.lib",
@@ -383,9 +376,6 @@ workspace "LambdaEngine"
 		filter { "system:windows", "configurations:Release or Production" }
 			links
 			{
-				-- Audio
-				"portaudio_x64.lib",
-
 				-- Shader Compilation
 				"glslang.lib",
 				"MachineIndependent.lib",
@@ -418,7 +408,6 @@ workspace "LambdaEngine"
 				"vulkan.1.2.135",
 
 				-- Audio
-				"portaudio",
 				"fmodL",
 
 				-- Shader Compilation
@@ -475,23 +464,6 @@ workspace "LambdaEngine"
 				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\""),
-			}
-		-- Portaudio
-		filter { "system:windows", "configurations:Debug"}
-			postbuildcommands
-			{
-				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
-			}
-		filter { "system:windows", "configurations:Release or Production"}
-			postbuildcommands
-			{
-				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		filter {}
 	project "*"

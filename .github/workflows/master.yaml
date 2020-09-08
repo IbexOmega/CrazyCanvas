@@ -21,7 +21,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
 
       - name: Build Release x64
-        run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration=Production -p:Platform=x64_StaticLib
+        run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Production x64_StaticLib" -p:Platform=x64
 
       - name: Benchmark
         run: python .github/workflows/benchmark.py --bin .\Build\bin\Production-windows-x86_64-x64_StaticLib\CrazyCanvas\CrazyCanvas.exe
