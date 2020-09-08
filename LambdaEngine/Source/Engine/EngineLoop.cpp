@@ -24,6 +24,8 @@
 
 #include "Rendering/RenderSystem.h"
 
+#include <assimp/Importer.hpp>
+
 namespace LambdaEngine
 {
 	static Clock g_Clock;

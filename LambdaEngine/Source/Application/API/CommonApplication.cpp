@@ -43,7 +43,12 @@ namespace LambdaEngine
 		windowDesc.Title 	= "Lambda Engine";
 		windowDesc.Width 	= 1920;
 		windowDesc.Height 	= 1080;
-		windowDesc.Style	= WINDOW_STYLE_FLAG_TITLED | WINDOW_STYLE_FLAG_CLOSABLE;
+		windowDesc.Style	= 
+			WINDOW_STYLE_FLAG_TITLED		| 
+			//WINDOW_STYLE_FLAG_MINIMIZABLE	|
+			//WINDOW_STYLE_FLAG_MAXIMIZABLE	|
+			//WINDOW_STYLE_FLAG_RESIZEABLE	|
+			WINDOW_STYLE_FLAG_CLOSABLE;
 
 		TSharedRef<Window> window = CreateWindow(&windowDesc);
 		if (window)
