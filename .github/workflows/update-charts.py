@@ -1,8 +1,8 @@
 import json, os, subprocess, sys, getopt
 
-PAGES_REPO_OWNER   = 'TheoBerlin'
-PAGES_REPO_NAME    = 'SoloGamePages'
-REPO_DIR     = 'docs'
+PAGES_REPO_OWNER    = 'IbexOmega'
+PAGES_REPO_NAME     = 'CrazyCanvasPages'
+REPO_DIR            = 'docs'
 
 BENCHMARK_RESULTS_PATH_RT_ON    = 'CrazyCanvas/benchmark_results_rt_on.json'
 BENCHMARK_RESULTS_PATH_RT_OFF   = 'CrazyCanvas/benchmark_results_rt_off.json'
