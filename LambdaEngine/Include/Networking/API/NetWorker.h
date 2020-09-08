@@ -22,7 +22,7 @@ namespace LambdaEngine
 
 	protected:
 		virtual bool OnThreadsStarted() = 0;
-		virtual void RunTranmitter() = 0;
+		virtual void RunTransmitter() = 0;
 		virtual void RunReceiver() = 0;
 		virtual void OnThreadsTerminated() = 0;
 		virtual void OnTerminationRequested() = 0;

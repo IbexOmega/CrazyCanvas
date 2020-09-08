@@ -110,7 +110,7 @@ namespace LambdaEngine
 
 		m_Initiated = true;
 
-		RunTranmitter();
+		RunTransmitter();
 
 		while (!m_ReceiverStopped);
 	}

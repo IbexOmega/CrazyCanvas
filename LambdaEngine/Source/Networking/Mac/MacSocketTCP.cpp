@@ -62,9 +62,9 @@ namespace LambdaEngine
         return DBG_NEW MacSocketTCP(socket, address, port);
     }
 
-    bool MacSocketTCP::Send(const char* pBuffer, uint32 bytesToSend, int32& bytesSent)
+    bool MacSocketTCP::Send(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent)
     {
-        bytesSent = send(m_Socket, pBuffer, bytesToSend, 0);
+        bytesSent = send(m_Socket, (const char*)pBuffer, bytesToSend, 0);
 		if (bytesSent == SOCKET_ERROR)
 		{
             int32 error = errno;
@@ -75,9 +75,9 @@ namespace LambdaEngine
 		return true;
     }
 
-    bool MacSocketTCP::Receive(char* pBuffer, uint32 size, int32& bytesReceived)
+    bool MacSocketTCP::Receive(uint8* pBuffer, uint32 size, int32& bytesReceived)
     {
-		bytesReceived = recv(m_Socket, pBuffer, size, 0);
+		bytesReceived = recv(m_Socket, (char*)pBuffer, size, 0);
 		if (bytesReceived == SOCKET_ERROR)
 		{
             int32 error = errno;

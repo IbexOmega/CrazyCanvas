@@ -23,12 +23,12 @@ namespace LambdaEngine
 		}
 	}
 
-	bool MacSocketUDP::SendTo(const char* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& pIPEndPoint)
+	bool MacSocketUDP::SendTo(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& pIPEndPoint)
 	{
         struct sockaddr_in socketAddress;
         IPEndPointToSocketAddress(&pIPEndPoint, &socketAddress);
 
-		bytesSent = sendto(m_Socket, pBuffer, bytesToSend, 0, (struct sockaddr*)&socketAddress, sizeof(struct sockaddr_in));
+		bytesSent = sendto(m_Socket, (const char*)pBuffer, bytesToSend, 0, (struct sockaddr*)&socketAddress, sizeof(struct sockaddr_in));
 		if (bytesSent == SOCKET_ERROR)
 		{
             int32 error = errno;
@@ -39,12 +39,12 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool MacSocketUDP::ReceiveFrom(char* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint)
+	bool MacSocketUDP::ReceiveFrom(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint)
 	{
 		struct sockaddr_in socketAddress;
 		socklen_t socketAddressSize = sizeof(struct sockaddr_in);
 
-		bytesReceived = recvfrom(m_Socket, pBuffer, size, 0, (struct sockaddr*)&socketAddress, &socketAddressSize);
+		bytesReceived = recvfrom(m_Socket, (char*)pBuffer, size, 0, (struct sockaddr*)&socketAddress, &socketAddressSize);
 		if (bytesReceived == SOCKET_ERROR)
 		{
 			int32 error = errno;

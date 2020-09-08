@@ -10,7 +10,7 @@
 
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/ClientUDP.h"
-#include "Networking/API/IClientUDPHandler.h"
+#include "Networking/API/IClientHandler.h"
 
 namespace LambdaEngine
 {
@@ -22,18 +22,18 @@ class Client :
 	public LambdaEngine::Game,
 	public LambdaEngine::EventHandler,
 	public LambdaEngine::IPacketListener,
-	public LambdaEngine::IClientUDPHandler
+	public LambdaEngine::IClientHandler
 {
 public:
 	Client();
 	~Client();
 
-	virtual void OnConnectingUDP(LambdaEngine::IClientUDP* pClient) override;
-	virtual void OnConnectedUDP(LambdaEngine::IClientUDP* pClient) override;
-	virtual void OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient) override;
-	virtual void OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient) override;
-	virtual void OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkSegment* pPacket) override;
-	virtual void OnServerFullUDP(LambdaEngine::IClientUDP* pClient) override;
+	virtual void OnConnecting(LambdaEngine::IClient* pClient) override;
+	virtual void OnConnected(LambdaEngine::IClient* pClient) override;
+	virtual void OnDisconnecting(LambdaEngine::IClient* pClient) override;
+	virtual void OnDisconnected(LambdaEngine::IClient* pClient) override;
+	virtual void OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngine::NetworkSegment* pPacket) override;
+	virtual void OnServerFull(LambdaEngine::IClient* pClient) override;
 
 
 	virtual void OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket) override;

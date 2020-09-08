@@ -1,9 +1,11 @@
 #pragma once
 
 #include "LambdaEngine.h"
+
 #include "Containers/TQueue.h"
 #include "Containers/TArray.h"
 #include "Containers/TSet.h"
+
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/IPEndPoint.h"
 #include "Networking/API/PacketTranscoder.h"
@@ -12,34 +14,36 @@ namespace LambdaEngine
 {
 	class NetworkSegment;
 	class NetworkStatistics;
-	class ISocketUDP;
+	class ISocket;
 
-	class LAMBDA_API PacketTransceiver
+	class LAMBDA_API PacketTransceiverBase
 	{
 	public:
-		PacketTransceiver();
-		~PacketTransceiver();
+		DECL_ABSTRACT_CLASS_NO_DEFAULT(PacketTransceiverBase);
 
 		int32 Transmit(SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& packets, std::set<uint32>& reliableUIDsSent, const IPEndPoint& ipEndPoint, NetworkStatistics* pStatistics);
 		bool ReceiveBegin(IPEndPoint& sender);
 		bool ReceiveEnd(SegmentPool* pSegmentPool, TArray<NetworkSegment*>& packets, TArray<uint32>& newAcks, NetworkStatistics* pStatistics);
 
-		void SetSocket(ISocketUDP* pSocket);
-
 		void SetSimulateReceivingPacketLoss(float32 lossRatio);
 		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
 
-	private:
-		static bool ValidateHeaderSalt(PacketTranscoder::Header* header, NetworkStatistics* pStatistics);
-		static void ProcessSequence(uint32 sequence, NetworkStatistics* pStatistics);
-		static void ProcessAcks(uint32 ack, uint32 ackBits, NetworkStatistics* pStatistics, TArray<uint32>& newAcks);
+		virtual void SetSocket(ISocket* pSocket) = 0;
+
+	protected:
+		virtual bool Transmit(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& ipEndPoint) = 0;
+		virtual bool Receive(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint) = 0;
+		virtual void OnReceiveEnd(const PacketTranscoder::Header& header, TArray<uint32>& newAcks, NetworkStatistics* pStatistics) = 0;
 
 	private:
-		ISocketUDP* m_pSocket;
+		static bool ValidateHeaderSalt(PacketTranscoder::Header* header, NetworkStatistics* pStatistics);
+
+
+	private:
 		int32 m_BytesReceived;
 		float32 m_ReceivingLossRatio;
 		float32 m_TransmittingLossRatio;
-		char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
-		char m_pReceiveBuffer[UINT16_MAX];
+		uint8 m_pSendBuffer[MAXIMUM_PACKET_SIZE];
+		uint8 m_pReceiveBuffer[UINT16_MAX];
 	};
 }

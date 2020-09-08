@@ -1,7 +1,7 @@
 #include "Networking/API/PlatformNetworkUtils.h"
-#include "Networking/API/ServerUDP.h"
-#include "Networking/API/ISocketUDP.h"
-#include "Networking/API/ClientUDPRemote.h"
+#include "Networking/API/ServerTCP.h"
+#include "Networking/API/ISocketTCP.h"
+#include "Networking/API/ClientTCPRemote.h"
 #include "Networking/API/IServerHandler.h"
 #include "Networking/API/BinaryEncoder.h"
 
@@ -11,10 +11,10 @@
 
 namespace LambdaEngine
 {
-	std::set<ServerUDP*> ServerUDP::s_Servers;
-	SpinLock ServerUDP::s_Lock;
+	std::set<ServerTCP*> ServerTCP::s_Servers;
+	SpinLock ServerTCP::s_Lock;
 
-	ServerUDP::ServerUDP(const ServerUDPDesc& desc) :
+	ServerTCP::ServerTCP(const ServerTCPDesc& desc) :
 		m_Desc(desc),
 		m_pSocket(nullptr),
 		m_Accepting(true),
@@ -24,7 +24,7 @@ namespace LambdaEngine
 		s_Servers.insert(this);
 	}
 
-	ServerUDP::~ServerUDP()
+	ServerTCP::~ServerTCP()
 	{
 		for (auto& pair : m_Clients)
 		{
@@ -35,24 +35,24 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Servers.erase(this);
 
-		LOG_INFO("[ServerUDP]: Released");
+		LOG_INFO("[ServerTCP]: Released");
 	}
 
-	bool ServerUDP::Start(const IPEndPoint& ipEndPoint)
+	bool ServerTCP::Start(const IPEndPoint& ipEndPoint)
 	{
 		if (!ThreadsAreRunning())
 		{
 			if (StartThreads())
 			{
 				m_IPEndPoint = ipEndPoint;
-				LOG_WARNING("[ServerUDP]: Starting...");
+				LOG_WARNING("[ServerTCP]: Starting...");
 				return true;
 			}
 		}
 		return false;
 	}
 
-	void ServerUDP::Stop()
+	void ServerTCP::Stop()
 	{
 		TerminateThreads();
 
@@ -61,57 +61,57 @@ namespace LambdaEngine
 			m_pSocket->Close();
 	}
 
-	void ServerUDP::Release()
+	void ServerTCP::Release()
 	{
 		NetWorker::TerminateAndRelease();
 	}
 
-	bool ServerUDP::IsRunning()
+	bool ServerTCP::IsRunning()
 	{
 		return ThreadsAreRunning() && !ShouldTerminate();
 	}
 
-	const IPEndPoint& ServerUDP::GetEndPoint() const
+	const IPEndPoint& ServerTCP::GetEndPoint() const
 	{
 		return m_IPEndPoint;
 	}
 
-	void ServerUDP::SetAcceptingConnections(bool accepting)
+	void ServerTCP::SetAcceptingConnections(bool accepting)
 	{
 		m_Accepting = accepting;
 	}
 
-	bool ServerUDP::IsAcceptingConnections()
+	bool ServerTCP::IsAcceptingConnections()
 	{
 		return m_Accepting;
 	}
 
-	void ServerUDP::SetSimulateReceivingPacketLoss(float32 lossRatio)
+	void ServerTCP::SetSimulateReceivingPacketLoss(float32 lossRatio)
 	{
 		m_Transciver.SetSimulateReceivingPacketLoss(lossRatio);
 	}
 
-	void ServerUDP::SetSimulateTransmittingPacketLoss(float32 lossRatio)
+	void ServerTCP::SetSimulateTransmittingPacketLoss(float32 lossRatio)
 	{
 		m_Transciver.SetSimulateTransmittingPacketLoss(lossRatio);
 	}
 
-	bool ServerUDP::OnThreadsStarted()
+	bool ServerTCP::OnThreadsStarted()
 	{
-		m_pSocket = PlatformNetworkUtils::CreateSocketUDP();
+		m_pSocket = PlatformNetworkUtils::CreateSocketTCP();
 		if (m_pSocket)
 		{
 			if (m_pSocket->Bind(m_IPEndPoint))
 			{
 				m_Transciver.SetSocket(m_pSocket);
-				LOG_INFO("[ServerUDP]: Started %s", m_IPEndPoint.ToString().c_str());
+				LOG_INFO("[ServerTCP]: Started %s", m_IPEndPoint.ToString().c_str());
 				return true;
 			}
 		}
 		return false;
 	}
 
-	void ServerUDP::RunReceiver()
+	void ServerTCP::RunReceiver()
 	{
 		IPEndPoint sender;
 
@@ -121,7 +121,7 @@ namespace LambdaEngine
 				continue;
 
 			bool newConnection = false;
-			ClientUDPRemote* pClient = GetOrCreateClient(sender, newConnection);
+			ClientTCPRemote* pClient = GetOrCreateClient(sender, newConnection);
 
 			if (newConnection)
 			{
@@ -147,7 +147,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void ServerUDP::RunTransmitter()
+	void ServerTCP::RunTransmitter()
 	{
 		while (!ShouldTerminate())
 		{
@@ -162,31 +162,31 @@ namespace LambdaEngine
 		}
 	}
 	
-	void ServerUDP::OnThreadsTerminated()
+	void ServerTCP::OnThreadsTerminated()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		m_pSocket->Close();
 		delete m_pSocket;
 		m_pSocket = nullptr;
-		LOG_INFO("[ServerUDP]: Stopped");
+		LOG_INFO("[ServerTCP]: Stopped");
 	}
 
-	void ServerUDP::OnTerminationRequested()
+	void ServerTCP::OnTerminationRequested()
 	{
-		LOG_WARNING("[ServerUDP]: Stopping...");
+		LOG_WARNING("[ServerTCP]: Stopping...");
 	}
 
-	void ServerUDP::OnReleaseRequested()
+	void ServerTCP::OnReleaseRequested()
 	{
 		Stop();
 	}
 
-	IClientRemoteHandler* ServerUDP::CreateClientHandler()
+	IClientRemoteHandler* ServerTCP::CreateClientHandler()
 	{
 		return m_Desc.Handler->CreateClientHandler();
 	}
 
-	ClientUDPRemote* ServerUDP::GetOrCreateClient(const IPEndPoint& sender, bool& newConnection)
+	ClientTCPRemote* ServerTCP::GetOrCreateClient(const IPEndPoint& sender, bool& newConnection)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockClients);
 		auto pIterator = m_Clients.find(sender);
@@ -198,11 +198,11 @@ namespace LambdaEngine
 		else
 		{
 			newConnection = true;
-			return DBG_NEW ClientUDPRemote(m_Desc.PoolSize, m_Desc.MaxRetries, sender, this);
+			return DBG_NEW ClientTCPRemote(m_Desc.PoolSize, m_Desc.MaxRetries, sender, this);
 		}
 	}
 
-	void ServerUDP::OnClientDisconnected(ClientUDPRemote* client, bool sendDisconnectPacket)
+	void ServerTCP::OnClientDisconnected(ClientTCPRemote* client, bool sendDisconnectPacket)
 	{
 		if(sendDisconnectPacket)
 			SendDisconnect(client);
@@ -211,25 +211,25 @@ namespace LambdaEngine
 		m_Clients.erase(client->GetEndPoint());
 	}
 
-	void ServerUDP::SendDisconnect(ClientUDPRemote* client)
+	void ServerTCP::SendDisconnect(ClientTCPRemote* client)
 	{
 		client->m_PacketManager.EnqueueSegmentUnreliable(client->GetFreePacket(NetworkSegment::TYPE_DISCONNECT));
 		client->SendPackets(&m_Transciver);
 	}
 
-	void ServerUDP::SendServerFull(ClientUDPRemote* client)
+	void ServerTCP::SendServerFull(ClientTCPRemote* client)
 	{
 		client->m_PacketManager.EnqueueSegmentUnreliable(client->GetFreePacket(NetworkSegment::TYPE_SERVER_FULL));
 		client->SendPackets(&m_Transciver);
 	}
 
-	void ServerUDP::SendServerNotAccepting(ClientUDPRemote* client)
+	void ServerTCP::SendServerNotAccepting(ClientTCPRemote* client)
 	{
 		client->m_PacketManager.EnqueueSegmentUnreliable(client->GetFreePacket(NetworkSegment::TYPE_SERVER_NOT_ACCEPTING));
 		client->SendPackets(&m_Transciver);
 	}
 
-	void ServerUDP::Tick(Timestamp delta)
+	void ServerTCP::Tick(Timestamp delta)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockClients);
 		for (auto& pair : m_Clients)
@@ -239,19 +239,19 @@ namespace LambdaEngine
 		Flush();
 	}
 
-	ServerUDP* ServerUDP::Create(const ServerUDPDesc& desc)
+	ServerTCP* ServerTCP::Create(const ServerTCPDesc& desc)
 	{
-		return DBG_NEW ServerUDP(desc);
+		return DBG_NEW ServerTCP(desc);
 	}
 
-	void ServerUDP::FixedTickStatic(Timestamp timestamp)
+	void ServerTCP::FixedTickStatic(Timestamp timestamp)
 	{
 		UNREFERENCED_VARIABLE(timestamp);
 
 		if (!s_Servers.empty())
 		{
 			std::scoped_lock<SpinLock> lock(s_Lock);
-			for (ServerUDP* server : s_Servers)
+			for (ServerTCP* server : s_Servers)
 			{
 				server->Tick(timestamp);
 			}

@@ -1,4 +1,4 @@
-#include "Networking/API/ClientUDP.h"
+#include "Networking/API/ClientTCP.h"
 #include "Networking/API/IPAddress.h"
 #include "Networking/API/ISocketUDP.h"
 #include "Networking/API/PlatformNetworkUtils.h"
@@ -13,10 +13,10 @@
 
 namespace LambdaEngine
 {
-	std::set<ClientUDP*> ClientUDP::s_Clients;
-	SpinLock ClientUDP::s_Lock;
+	std::set<ClientTCP*> ClientTCP::s_Clients;
+	SpinLock ClientTCP::s_Lock;
 
-	ClientUDP::ClientUDP(const ClientUDPDesc& desc) :
+	ClientTCP::ClientTCP(const ClientTCPDesc& desc) :
 		m_pSocket(nullptr),
 		m_PacketManager(desc),
 		m_pHandler(desc.Handler),
@@ -27,36 +27,36 @@ namespace LambdaEngine
 		s_Clients.insert(this);
 	}
 
-	ClientUDP::~ClientUDP()
+	ClientTCP::~ClientTCP()
 	{
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Clients.erase(this);
-		LOG_INFO("[ClientUDP]: Released");
+		LOG_INFO("[ClientTCP]: Released");
 	}
 
-	void ClientUDP::OnPacketDelivered(NetworkSegment* pPacket)
+	void ClientTCP::OnPacketDelivered(NetworkSegment* pPacket)
 	{
-		LOG_INFO("ClientUDP::OnPacketDelivered() | %s", pPacket->ToString().c_str());
+		LOG_INFO("ClientTCP::OnPacketDelivered() | %s", pPacket->ToString().c_str());
 	}
 
-	void ClientUDP::OnPacketResent(NetworkSegment* pPacket, uint8 tries)
+	void ClientTCP::OnPacketResent(NetworkSegment* pPacket, uint8 tries)
 	{
-		LOG_INFO("ClientUDP::OnPacketResent(%d) | %s", tries, pPacket->ToString().c_str());
+		LOG_INFO("ClientTCP::OnPacketResent(%d) | %s", tries, pPacket->ToString().c_str());
 	}
 
-	void ClientUDP::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
+	void ClientTCP::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 	{
-		LOG_INFO("ClientUDP::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
+		LOG_INFO("ClientTCP::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
 		Disconnect();
 	}
 
-	bool ClientUDP::Connect(const IPEndPoint& ipEndPoint)
+	bool ClientTCP::Connect(const IPEndPoint& ipEndPoint)
 	{
 		if (!ThreadsAreRunning())
 		{
 			if (StartThreads())
 			{
-				LOG_WARNING("[ClientUDP]: Connecting...");
+				LOG_WARNING("[ClientTCP]: Connecting...");
 				m_PacketManager.SetEndPoint(ipEndPoint);
 				return true;
 			}
@@ -64,17 +64,17 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void ClientUDP::SetSimulateReceivingPacketLoss(float32 lossRatio)
+	void ClientTCP::SetSimulateReceivingPacketLoss(float32 lossRatio)
 	{
 		m_Transciver.SetSimulateReceivingPacketLoss(lossRatio);
 	}
 
-	void ClientUDP::SetSimulateTransmittingPacketLoss(float32 lossRatio)
+	void ClientTCP::SetSimulateTransmittingPacketLoss(float32 lossRatio)
 	{
 		m_Transciver.SetSimulateTransmittingPacketLoss(lossRatio);
 	}
 
-	void ClientUDP::Disconnect()
+	void ClientTCP::Disconnect()
 	{
 		TerminateThreads();
 
@@ -83,21 +83,21 @@ namespace LambdaEngine
 			m_pSocket->Close();
 	}
 
-	void ClientUDP::Release()
+	void ClientTCP::Release()
 	{
 		NetWorker::TerminateAndRelease();
 	}
 
-	bool ClientUDP::IsConnected()
+	bool ClientTCP::IsConnected()
 	{
 		return m_State == STATE_CONNECTED;
 	}
 
-	bool ClientUDP::SendUnreliable(NetworkSegment* packet)
+	bool ClientTCP::SendUnreliable(NetworkSegment* packet)
 	{
 		if (!IsConnected())
 		{
-			LOG_WARNING("[ClientUDP]: Can not send packet before a connection has been established");
+			LOG_WARNING("[ClientTCP]: Can not send packet before a connection has been established");
 			return false;
 		}
 
@@ -105,11 +105,11 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ClientUDP::SendReliable(NetworkSegment* packet, IPacketListener* listener)
+	bool ClientTCP::SendReliable(NetworkSegment* packet, IPacketListener* listener)
 	{
 		if (!IsConnected())
 		{
-			LOG_WARNING("[ClientUDP]: Can not send packet before a connection has been established");
+			LOG_WARNING("[ClientTCP]: Can not send packet before a connection has been established");
 			return false;
 		}
 			
@@ -117,32 +117,32 @@ namespace LambdaEngine
 		return true;
 	}
 
-	const IPEndPoint& ClientUDP::GetEndPoint() const
+	const IPEndPoint& ClientTCP::GetEndPoint() const
 	{
 		return m_PacketManager.GetEndPoint();
 	}
 
-	NetworkSegment* ClientUDP::GetFreePacket(uint16 packetType)
+	NetworkSegment* ClientTCP::GetFreePacket(uint16 packetType)
 	{
 		return m_PacketManager.GetSegmentPool()->RequestFreeSegment()->SetType(packetType);
 	}
 
-	EClientState ClientUDP::GetState() const
+	EClientState ClientTCP::GetState() const
 	{
 		return m_State;
 	}
 
-	const NetworkStatistics* ClientUDP::GetStatistics() const
+	const NetworkStatistics* ClientTCP::GetStatistics() const
 	{
 		return m_PacketManager.GetStatistics();
 	}
 
-	PacketManagerBase* ClientUDP::GetPacketManager()
+	PacketManagerUDP* ClientTCP::GetPacketManager()
 	{
 		return &m_PacketManager;
 	}
 
-	bool ClientUDP::OnThreadsStarted()
+	bool ClientTCP::OnThreadsStarted()
 	{
 		m_pSocket = PlatformNetworkUtils::CreateSocketUDP();
 		if (m_pSocket)
@@ -157,14 +157,14 @@ namespace LambdaEngine
 				SendConnectRequest();
 				return true;
 			}
-			LOG_ERROR("[ClientUDP]: Failed To Bind socket");
+			LOG_ERROR("[ClientTCP]: Failed To Bind socket");
 			return false;
 		}
-		LOG_ERROR("[ClientUDP]: Failed To Create socket");
+		LOG_ERROR("[ClientTCP]: Failed To Create socket");
 		return false;
 	}
 
-	void ClientUDP::RunReceiver()
+	void ClientTCP::RunReceiver()
 	{
 		IPEndPoint sender;
 		while (!ShouldTerminate())
@@ -182,7 +182,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void ClientUDP::RunTransmitter()
+	void ClientTCP::RunTransmitter()
 	{
 		while (!ShouldTerminate())
 		{
@@ -191,21 +191,21 @@ namespace LambdaEngine
 		}
 	}
 
-	void ClientUDP::OnThreadsTerminated()
+	void ClientTCP::OnThreadsTerminated()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		m_pSocket->Close();
 		delete m_pSocket;
 		m_pSocket = nullptr;
-		LOG_INFO("[ClientUDP]: Disconnected");
+		LOG_INFO("[ClientTCP]: Disconnected");
 		m_State = STATE_DISCONNECTED;
 		if(m_pHandler)
 			m_pHandler->OnDisconnected(this);
 	}
 
-	void ClientUDP::OnTerminationRequested()
+	void ClientTCP::OnTerminationRequested()
 	{
-		LOG_WARNING("[ClientUDP]: Disconnecting...");
+		LOG_WARNING("[ClientTCP]: Disconnecting...");
 		m_State = STATE_DISCONNECTING;
 		m_pHandler->OnDisconnecting(this);
 
@@ -213,25 +213,25 @@ namespace LambdaEngine
 			SendDisconnectRequest();
 	}
 
-	void ClientUDP::OnReleaseRequested()
+	void ClientTCP::OnReleaseRequested()
 	{
 		Disconnect();
 		m_pHandler = nullptr;
 	}
 
-	void ClientUDP::SendConnectRequest()
+	void ClientTCP::SendConnectRequest()
 	{
 		m_PacketManager.EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_CONNNECT), this);
 		TransmitPackets();
 	}
 
-	void ClientUDP::SendDisconnectRequest()
+	void ClientTCP::SendDisconnectRequest()
 	{
 		m_PacketManager.EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT), this);
 		TransmitPackets();
 	}
 
-	void ClientUDP::HandleReceivedPacket(NetworkSegment* pPacket)
+	void ClientTCP::HandleReceivedPacket(NetworkSegment* pPacket)
 	{
 		uint16 packetType = pPacket->GetType();
 
@@ -249,7 +249,7 @@ namespace LambdaEngine
 		{
 			if (m_State == STATE_CONNECTING)
 			{
-				LOG_INFO("[ClientUDP]: Connected");
+				LOG_INFO("[ClientTCP]: Connected");
 				m_State = STATE_CONNECTED;
 				m_pHandler->OnConnected(this);
 			}
@@ -271,13 +271,13 @@ namespace LambdaEngine
 		}
 	}
 
-	void ClientUDP::TransmitPackets()
+	void ClientTCP::TransmitPackets()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		m_PacketManager.Flush(&m_Transciver);
 	}
 
-	void ClientUDP::Tick(Timestamp delta)
+	void ClientTCP::Tick(Timestamp delta)
 	{
 		if (m_State != STATE_DISCONNECTED)
 		{
@@ -287,19 +287,19 @@ namespace LambdaEngine
 		Flush();
 	}
 
-	ClientUDP* ClientUDP::Create(const ClientUDPDesc& desc)
+	ClientTCP* ClientTCP::Create(const ClientTCPDesc& desc)
 	{
-		return DBG_NEW ClientUDP(desc);
+		return DBG_NEW ClientTCP(desc);
 	}
 
-	void ClientUDP::FixedTickStatic(Timestamp timestamp)
+	void ClientTCP::FixedTickStatic(Timestamp timestamp)
 	{
 		UNREFERENCED_VARIABLE(timestamp);
 
 		if (!s_Clients.empty())
 		{
 			std::scoped_lock<SpinLock> lock(s_Lock);
-			for (ClientUDP* client : s_Clients)
+			for (ClientTCP* client : s_Clients)
 			{
 				client->Tick(timestamp);
 			}

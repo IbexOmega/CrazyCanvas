@@ -1,7 +1,7 @@
 #include "Networking/API/NetworkDebugger.h"
 #include "Networking/API/NetworkStatistics.h"
-#include "Networking/API/PacketManager.h"
-#include "Networking/API/IClientUDP.h"
+#include "Networking/API/PacketManagerUDP.h"
+#include "Networking/API/IClient.h"
 #include "Networking/API/SegmentPool.h"
 
 #include "Engine/EngineLoop.h"
@@ -11,9 +11,9 @@
 
 namespace LambdaEngine
 {
-	void NetworkDebugger::RenderStatisticsWithImGUI(IClientUDP* pClient)
+	void NetworkDebugger::RenderStatisticsWithImGUI(IClient* pClient)
 	{
-		PacketManager* pManager = pClient->GetPacketManager();
+		PacketManagerBase* pManager = pClient->GetPacketManager();
 		SegmentPool* pSegmentPool = pManager->GetSegmentPool();
 		const NetworkStatistics* pStatistics = pManager->GetStatistics();
 

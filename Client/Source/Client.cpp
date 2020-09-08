@@ -75,13 +75,13 @@ Client::~Client()
 	SAFEDELETE(m_pRenderer);
 }
 
-void Client::OnConnectingUDP(LambdaEngine::IClientUDP* pClient)
+void Client::OnConnecting(LambdaEngine::IClient* pClient)
 {
     UNREFERENCED_VARIABLE(pClient);
     LOG_MESSAGE("OnConnectingUDP()");
 }
 
-void Client::OnConnectedUDP(LambdaEngine::IClientUDP* pClient)
+void Client::OnConnected(LambdaEngine::IClient* pClient)
 {
     UNREFERENCED_VARIABLE(pClient);
     using namespace LambdaEngine;
@@ -103,26 +103,26 @@ void Client::OnConnectedUDP(LambdaEngine::IClientUDP* pClient)
 	m_pClient->SendReliable(pPacket, this);
 }
 
-void Client::OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient)
+void Client::OnDisconnecting(LambdaEngine::IClient* pClient)
 {
     UNREFERENCED_VARIABLE(pClient);
     LOG_MESSAGE("OnDisconnectingUDP()");
 }
 
-void Client::OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient)
+void Client::OnDisconnected(LambdaEngine::IClient* pClient)
 {
     UNREFERENCED_VARIABLE(pClient);
     LOG_MESSAGE("OnDisconnectedUDP()");
 }
 
-void Client::OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkSegment* pPacket)
+void Client::OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngine::NetworkSegment* pPacket)
 {
     UNREFERENCED_VARIABLE(pClient);
     UNREFERENCED_VARIABLE(pPacket);
     LOG_MESSAGE("OnPacketReceivedUDP(%s)", pPacket->ToString().c_str());
 }
 
-void Client::OnServerFullUDP(LambdaEngine::IClientUDP* pClient)
+void Client::OnServerFull(LambdaEngine::IClient* pClient)
 {
     UNREFERENCED_VARIABLE(pClient);
     LOG_ERROR("OnServerFullUDP()");

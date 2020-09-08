@@ -3,22 +3,22 @@
 #include "Networking/API/NetWorker.h"
 #include "Networking/API/IClient.h"
 #include "Networking/API/IPacketListener.h"
-#include "Networking/API/PacketManagerUDP.h"
+#include "Networking/API/PacketManagerTCP.h"
 
 namespace LambdaEngine
 {
-	class ServerUDP;
+	class ServerTCP;
 	class IClientRemoteHandler;
 	class PacketTransceiverUDP;
 
-	class LAMBDA_API ClientUDPRemote : 
+	class LAMBDA_API ClientTCPRemote : 
 		public IClient,
 		protected IPacketListener
 	{
-		friend class ServerUDP;
+		friend class ServerTCP;
 		
 	public:
-		~ClientUDPRemote();
+		~ClientTCPRemote();
 
 		virtual void Disconnect() override;
 		virtual void Release() override;
@@ -31,7 +31,7 @@ namespace LambdaEngine
 		virtual const NetworkStatistics* GetStatistics() const override;
 
 	protected:
-		ClientUDPRemote(uint16 packetPoolSize, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
+		ClientTCPRemote(uint16 packetPoolSize, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerTCP* pServer);
 
 		virtual PacketManagerBase* GetPacketManager() override;
 
@@ -46,8 +46,8 @@ namespace LambdaEngine
 		void Tick(Timestamp delta);
 
 	private:
-		ServerUDP* m_pServer;
-		PacketManagerUDP m_PacketManager;
+		ServerTCP* m_pServer;
+		PacketManagerTCP m_PacketManager;
 		SpinLock m_Lock;
 		IClientRemoteHandler* m_pHandler;
 		EClientState m_State;

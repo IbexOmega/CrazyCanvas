@@ -17,12 +17,12 @@ namespace LambdaEngine
 		}
 	}
 
-	bool Win32SocketUDP::SendTo(const char* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& pIPEndPoint)
+	bool Win32SocketUDP::SendTo(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& pIPEndPoint)
 	{
 		struct sockaddr_in socketAddress;
 		IPEndPointToSocketAddress(&pIPEndPoint, &socketAddress);
 
-		bytesSent = sendto(m_Socket, pBuffer, bytesToSend, 0, (struct sockaddr*)&socketAddress, sizeof(struct sockaddr_in));
+		bytesSent = sendto(m_Socket, (const char*)pBuffer, bytesToSend, 0, (struct sockaddr*)&socketAddress, sizeof(struct sockaddr_in));
 		if (bytesSent == SOCKET_ERROR)
 		{
 			LOG_ERROR_CRIT("Failed to send datagram packet to %s", pIPEndPoint.ToString().c_str());
@@ -32,12 +32,12 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool Win32SocketUDP::ReceiveFrom(char* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint)
+	bool Win32SocketUDP::ReceiveFrom(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint)
 	{
 		struct sockaddr_in socketAddress;
 		int32 socketAddressSize = sizeof(struct sockaddr_in);
 
-		bytesReceived = recvfrom(m_Socket, pBuffer, size, 0, (struct sockaddr*)&socketAddress, &socketAddressSize);
+		bytesReceived = recvfrom(m_Socket, (char*)pBuffer, size, 0, (struct sockaddr*)&socketAddress, &socketAddressSize);
 		if (bytesReceived == SOCKET_ERROR)
 		{
 			if (IsClosed() && !IsNonBlocking())

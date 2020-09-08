@@ -28,11 +28,11 @@ namespace LambdaEngine
 	public:
 		DECL_STATIC_CLASS(PacketTranscoder);
 
-		static bool EncodeSegments(char* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& segmentsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader);
-		static bool DecodeSegments(const char* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, TArray<NetworkSegment*>& segmentsDecoded, Header* pHeader);
+		static bool EncodeSegments(uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& segmentsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader);
+		static bool DecodeSegments(const uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, TArray<NetworkSegment*>& segmentsDecoded, Header* pHeader);
 
 	private:
-		static uint16 WriteSegment(char* buffer, NetworkSegment* pSegment);
-		static uint16 ReadSegment(const char* buffer, NetworkSegment* pSegment);
+		static uint16 WriteSegment(uint8* buffer, NetworkSegment* pSegment);
+		static uint16 ReadSegment(const uint8* buffer, NetworkSegment* pSegment);
 	};
 }

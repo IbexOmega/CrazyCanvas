@@ -18,7 +18,7 @@
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
 
-#include "ClientUDPHandler.h"
+#include "ClientHandler.h"
 
 #include "Math/Random.h"
 
@@ -44,14 +44,14 @@ Server::~Server()
 	m_pServer->Release();
 }
 
-void Server::OnClientConnected(LambdaEngine::IClientUDP* pClient)
+void Server::OnClientConnected(LambdaEngine::IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 }
 
-LambdaEngine::IClientUDPRemoteHandler* Server::CreateClientUDPHandler()
+LambdaEngine::IClientRemoteHandler* Server::CreateClientHandler()
 {
-	return DBG_NEW ClientUDPHandler();
+	return DBG_NEW ClientHandler();
 }
 
 void Server::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)

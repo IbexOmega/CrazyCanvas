@@ -54,9 +54,9 @@ namespace LambdaEngine
 		return DBG_NEW Win32SocketTCP(socket, endPoint);
 	}
 
-	bool Win32SocketTCP::Send(const char* pBuffer, uint32 bytesToSend, int32& bytesSent)
+	bool Win32SocketTCP::Send(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent)
 	{
-		bytesSent = send(m_Socket, pBuffer, bytesToSend, 0);
+		bytesSent = send(m_Socket, (const char*)pBuffer, bytesToSend, 0);
 		if (bytesSent == SOCKET_ERROR)
 		{
 			LOG_ERROR_CRIT("Failed to send data");
@@ -66,9 +66,9 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool Win32SocketTCP::Receive(char* pBuffer, uint32 size, int32& bytesReceived)
+	bool Win32SocketTCP::Receive(uint8* pBuffer, uint32 size, int32& bytesReceived)
 	{
-		bytesReceived = recv(m_Socket, pBuffer, size, 0);
+		bytesReceived = recv(m_Socket, (char*)pBuffer, size, 0);
 		if (bytesReceived == SOCKET_ERROR)
 		{
 			if (IsClosed() && !IsNonBlocking())

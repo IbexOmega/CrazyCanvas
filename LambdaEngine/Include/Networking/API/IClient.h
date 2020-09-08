@@ -3,6 +3,7 @@
 #include "LambdaEngine.h"
 
 #include "Networking/API/IPEndPoint.h"
+#include "Networking/API/PacketManagerBase.h"
 
 namespace LambdaEngine
 {
@@ -20,7 +21,7 @@ namespace LambdaEngine
 
 	class LAMBDA_API IClient
 	{
-	public:
+		friend class NetworkDebugger;
 
 	public:
 		DECL_INTERFACE(IClient);
@@ -34,5 +35,6 @@ namespace LambdaEngine
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) = 0;
 		virtual EClientState GetState() const = 0;
 		virtual const NetworkStatistics* GetStatistics() const = 0;
+		virtual PacketManagerBase* GetPacketManager() = 0;
 	};
 }

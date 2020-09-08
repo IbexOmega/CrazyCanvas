@@ -11,12 +11,12 @@ namespace LambdaEngine
 	class IClientHandler;
 	class ISocketUDP;
 
-	struct ClientUDPDesc : public PacketManagerDesc
+	struct ClientTCPDesc : public PacketManagerDesc
 	{
 		IClientHandler* Handler = nullptr;
 	};
 
-	class LAMBDA_API ClientUDP :
+	class LAMBDA_API ClientTCP :
 		public NetWorker,
 		public IClient,
 		protected IPacketListener
@@ -24,7 +24,7 @@ namespace LambdaEngine
 		friend class NetworkUtils;
 
 	public:
-		~ClientUDP();
+		~ClientTCP();
 
 		virtual void Disconnect() override;
 		virtual void Release() override;
@@ -42,9 +42,9 @@ namespace LambdaEngine
 		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
 
 	protected:
-		ClientUDP(const ClientUDPDesc& desc);
+		ClientTCP(const ClientTCPDesc& desc);
 
-		virtual PacketManagerBase* GetPacketManager() override;
+		virtual PacketManagerUDP* GetPacketManager() override;
 
 		virtual void OnPacketDelivered(NetworkSegment* pPacket) override;
 		virtual void OnPacketResent(NetworkSegment* pPacket, uint8 tries) override;
@@ -65,7 +65,7 @@ namespace LambdaEngine
 		void Tick(Timestamp delta);
 
 	public:
-		static ClientUDP* Create(const ClientUDPDesc& desc);
+		static ClientTCP* Create(const ClientTCPDesc& desc);
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);
@@ -81,7 +81,7 @@ namespace LambdaEngine
 		char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
 
 	private:
-		static std::set<ClientUDP*> s_Clients;
+		static std::set<ClientTCP*> s_Clients;
 		static SpinLock s_Lock;
 	};
 }

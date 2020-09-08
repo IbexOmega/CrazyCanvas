@@ -19,7 +19,7 @@ namespace LambdaEngine
 		*
 		* return	  - False if an error occured, otherwise true.
 		*/
-		virtual bool SendTo(const char* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& ipEndPoint) = 0;
+		virtual bool SendTo(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& ipEndPoint) = 0;
 
 		/*
 		* Receives a buffer of data.
@@ -31,7 +31,7 @@ namespace LambdaEngine
 		*
 		* return	  - False if an error occured, otherwise true.
 		*/
-		virtual bool ReceiveFrom(char* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& ipEndPoint) = 0;
+		virtual bool ReceiveFrom(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& ipEndPoint) = 0;
 
 		/*
 		* Enables or disables the broadcast functionality

@@ -10,8 +10,11 @@ namespace LambdaEngine
 {
 	class LAMBDA_API NetworkStatistics
 	{
-		friend class PacketTransceiver;
-		friend class PacketManager;
+		friend class PacketTransceiverBase;
+		friend class PacketTransceiverUDP;
+		friend class PacketTransceiverTCP;
+		friend class PacketManagerUDP;
+		friend class PacketManagerBase;
 
 	public:
 		NetworkStatistics();

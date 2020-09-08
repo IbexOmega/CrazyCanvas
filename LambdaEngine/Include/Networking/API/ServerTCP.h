@@ -8,24 +8,24 @@
 
 namespace LambdaEngine
 {
-	class ISocketUDP;
-	class ClientUDPRemote;
+	class ISocketTCP;
+	class ClientTCPRemote;
 	class IServerHandler;
 	class IClientRemoteHandler;
 
-	struct ServerUDPDesc : public PacketManagerDesc
+	struct ServerTCPDesc : public PacketManagerDesc
 	{
 		IServerHandler* Handler	= nullptr;
 		uint8 MaxClients			= 1;
 	};
 
-	class LAMBDA_API ServerUDP : public NetWorker, public IServer
+	class LAMBDA_API ServerTCP : public NetWorker, public IServer
 	{
-		friend class ClientUDPRemote;
+		friend class ClientTCPRemote;
 		friend class NetworkUtils;
 
 	public:
-		~ServerUDP();
+		~ServerTCP();
 
 		virtual bool Start(const IPEndPoint& ipEndPoint) override;
 		virtual void Stop() override;
@@ -39,7 +39,7 @@ namespace LambdaEngine
 		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
 
 	protected:
-		ServerUDP(const ServerUDPDesc& desc);
+		ServerTCP(const ServerTCPDesc& desc);
 
 		virtual bool OnThreadsStarted() override;
 		virtual void RunTransmitter() override;
@@ -50,32 +50,32 @@ namespace LambdaEngine
 
 	private:
 		IClientRemoteHandler* CreateClientHandler();
-		ClientUDPRemote* GetOrCreateClient(const IPEndPoint& sender, bool& newConnection);
-		void OnClientDisconnected(ClientUDPRemote* client, bool sendDisconnectPacket);
-		void SendDisconnect(ClientUDPRemote* client);
-		void SendServerFull(ClientUDPRemote* client);
-		void SendServerNotAccepting(ClientUDPRemote* client);
+		ClientTCPRemote* GetOrCreateClient(const IPEndPoint& sender, bool& newConnection);
+		void OnClientDisconnected(ClientTCPRemote* client, bool sendDisconnectPacket);
+		void SendDisconnect(ClientTCPRemote* client);
+		void SendServerFull(ClientTCPRemote* client);
+		void SendServerNotAccepting(ClientTCPRemote* client);
 		void Tick(Timestamp delta);
 
 	public:
-		static ServerUDP* Create(const ServerUDPDesc& desc);
+		static ServerTCP* Create(const ServerTCPDesc& desc);
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);
 
 	private:
-		ISocketUDP* m_pSocket;
+		ISocketTCP* m_pSocket;
 		IPEndPoint m_IPEndPoint;
 		PacketTransceiverUDP m_Transciver;
 		SpinLock m_Lock;
 		SpinLock m_LockClients;
-		ServerUDPDesc m_Desc;
+		ServerTCPDesc m_Desc;
 		float m_PacketLoss;
 		std::atomic_bool m_Accepting;
-		std::unordered_map<IPEndPoint, ClientUDPRemote*, IPEndPointHasher> m_Clients;
+		std::unordered_map<IPEndPoint, ClientTCPRemote*, IPEndPointHasher> m_Clients;
 
 	private:
-		static std::set<ServerUDP*> s_Servers;
+		static std::set<ServerTCP*> s_Servers;
 		static SpinLock s_Lock;
 	};
 }
