@@ -11,7 +11,6 @@
 namespace LambdaEngine
 {
 	bool Log::s_DebuggerOutputEnabled = false;
-	std::ofstream Log::s_LogFile;
 
 	/*
 	* Log
@@ -52,7 +51,6 @@ namespace LambdaEngine
 
 			vsnprintf(buffer, BUFFER_SIZE - 1, pFormat, args);
 			PlatformConsole::PrintLine(buffer);
-			s_LogFile << buffer << std::endl;
 
 			if (s_DebuggerOutputEnabled)
 			{

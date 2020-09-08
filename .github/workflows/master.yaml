@@ -2,8 +2,7 @@ name: Benchmark
 on:
   push:
       branches:
-        - benchmarks
-        # - master
+        - master
 
 jobs:
   benchmark:

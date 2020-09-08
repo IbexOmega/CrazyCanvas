@@ -12,7 +12,6 @@ namespace LambdaEngine
 
     bool EngineConfig::LoadFromFile()
     {
-        // Should paths be relative to the source file or the binary?
         const char* pEngineConfigPath = "../engine_config.json";
 
         using namespace rapidjson;

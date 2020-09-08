@@ -1,7 +1,6 @@
 #pragma once
 #include "LambdaEngine.h"
 
-#include <fstream>
 #include <stdarg.h>
 
 #ifdef LAMBDA_VISUAL_STUDIO
@@ -85,12 +84,10 @@ namespace LambdaEngine
 		*/
 		FORCEINLINE static void SetDebuggerOutputEnabled(bool enable)
 		{
-			s_LogFile.open("log.txt");
 			s_DebuggerOutputEnabled = enable;
 		}
 
 	private:
 		static bool s_DebuggerOutputEnabled;
-		static std::ofstream s_LogFile;
 	};
 }
