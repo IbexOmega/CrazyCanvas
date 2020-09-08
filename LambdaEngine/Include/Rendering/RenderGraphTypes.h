@@ -187,7 +187,6 @@ namespace LambdaEngine
 		EPipelineStateType			Type				= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 		bool						CustomRenderer		= false;
 		bool						Enabled				= true;
-		uint32						Weight				= 0;
 		RenderStageParameters		Parameters			= {};
 
 		TArray<RenderGraphResourceState> ResourceStates;
@@ -238,7 +237,137 @@ namespace LambdaEngine
 		uint32 StageIndex		= 0;
 	};
 
-	/*-----------------------------------------------------------------Pipeline Stage Structs End-----------------------------------------------------------------*/
+	/*-----------------------------------------------------------------Pipeline Stage Structs End / Render Graph Editor Begin-----------------------------------------------------------------*/
+
+	enum class EEditorPinType : uint8
+	{
+		INPUT					= 0,
+		OUTPUT					= 1,
+		RENDER_STAGE_INPUT		= 2,
+	};
+
+	struct EditorStartedLinkInfo
+	{
+		bool		LinkStarted				= false;
+		int32		LinkStartAttributeID	= -1;
+		bool		LinkStartedOnInputPin	= false;
+		String		LinkStartedOnResource	= "";
+	};
+
+	struct EditorRenderGraphResourceLink
+	{
+		int32		LinkIndex				= 0;
+		int32		SrcAttributeIndex		= 0;
+		int32		DstAttributeIndex		= 0;
+	};
+
+	struct EditorRenderGraphResourceState
+	{
+		String							ResourceName					= "";
+		String							RenderStageName					= "";
+		bool							Removable						= true;
+		ERenderGraphResourceBindingType BindingType						= ERenderGraphResourceBindingType::NONE;
+		int32							InputLinkIndex					= -1;
+		TSet<int32>						OutputLinkIndices;
+	};
+
+	struct EditorResourceStateIdent
+	{
+		String	Name			= "";
+		int32	AttributeIndex	= -1;
+	};
+
+	struct EditorRenderStageDesc
+	{
+		String						Name							= "";
+		int32						NodeIndex						= 0;
+		int32						InputAttributeIndex				= 0;
+		EPipelineStateType			Type							= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
+		bool						OverrideRecommendedBindingType	= false;
+		bool						CustomRenderer					= false;
+		bool						Enabled							= true;
+		RenderStageParameters		Parameters						= {};
+
+		struct
+		{
+			GraphicsShaderNames			Shaders;
+			ERenderStageDrawType		DrawType;
+			int32						IndexBufferAttributeIndex;
+			int32						IndirectArgsBufferAttributeIndex;
+			bool						DepthTestEnabled;
+		} Graphics;
+
+		struct
+		{
+			String						ShaderName = "";
+		} Compute;
+
+		struct
+		{
+			RayTracingShaderNames		Shaders;
+		} RayTracing;
+
+		TArray<EditorResourceStateIdent>		ResourceStateIdents;
+
+		TArray<EditorResourceStateIdent>::Iterator FindResourceStateIdent(const String& name)
+		{
+			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
+			{
+				if (resourceStateIt->Name == name)
+					return resourceStateIt;
+			}
+
+			return ResourceStateIdents.end();
+		}
+
+		TArray<EditorResourceStateIdent>::ConstIterator FindResourceStateIdent(const String& name) const
+		{
+			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
+			{
+				if (resourceStateIt->Name == name)
+					return resourceStateIt;
+			}
+
+			return ResourceStateIdents.end();
+		}
+	};
+
+	struct EditorResourceStateGroup
+	{
+		String								Name				= "";
+		int32								InputNodeIndex		= 0;
+		int32								OutputNodeIndex		= 0;
+		TArray<EditorResourceStateIdent>	ResourceStateIdents;
+
+		TArray<EditorResourceStateIdent>::Iterator FindResourceStateIdent(const String& name)
+		{
+			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
+			{
+				if (resourceStateIt->Name == name)
+					return resourceStateIt;
+			}
+
+			return ResourceStateIdents.end();
+		}
+
+		TArray<EditorResourceStateIdent>::ConstIterator FindResourceStateIdent(const String& name) const
+		{
+			for (auto resourceStateIt = ResourceStateIdents.begin(); resourceStateIt != ResourceStateIdents.end(); resourceStateIt++)
+			{
+				if (resourceStateIt->Name == name)
+					return resourceStateIt;
+			}
+
+			return ResourceStateIdents.end();
+		}
+	};
+
+	struct EditorFinalOutput
+	{
+		String		Name						= "";
+		int32		NodeIndex					= 0;
+		int32		BackBufferAttributeIndex	= 0;
+	};
 
 	struct RenderGraphStructureDesc
 	{
@@ -247,6 +376,8 @@ namespace LambdaEngine
 		TArray<SynchronizationStageDesc>	SynchronizationStageDescriptions;
 		TArray<PipelineStageDesc>			PipelineStageDescriptions;
 	};
+
+	/*-----------------------------------------------------------------Render Graph Editor End-----------------------------------------------------------------*/
 
 	FORCEINLINE bool ResourceStateNeedsDescriptor(ERenderGraphResourceBindingType bindingType)
 	{
