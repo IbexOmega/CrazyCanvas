@@ -23,7 +23,7 @@ namespace LambdaEngine
 		virtual void Close() 	override final;
 
 		virtual void Minimize() override final;
-        virtual void Maximize() override final;
+		virtual void Maximize() override final;
 
 		virtual bool IsActiveWindow() const override final;
 

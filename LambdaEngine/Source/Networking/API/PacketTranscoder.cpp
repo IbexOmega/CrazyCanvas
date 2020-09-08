@@ -13,7 +13,7 @@ namespace LambdaEngine
 
 		bytesWritten = 0;
 
-		std::vector<NetworkPacket*> packetsToFree;
+		TArray<NetworkPacket*> packetsToFree;
 
 		while (!packetsToEncode.empty())
 		{
@@ -31,7 +31,7 @@ namespace LambdaEngine
 				if (packet->IsReliable())
 					reliableUIDsSent.insert(packet->GetReliableUID());
 				else
-					packetsToFree.push_back(packet);
+					packetsToFree.PushBack(packet);
 			}
 			else
 			{
@@ -60,7 +60,7 @@ namespace LambdaEngine
 		return headerSize + bufferSize;
 	}
 
-	bool PacketTranscoder::DecodePackets(const char* buffer, uint16 bufferSize, PacketPool* pPacketPool, std::vector<NetworkPacket*>& packetsDecoded, Header* pHeader)
+	bool PacketTranscoder::DecodePackets(const char* buffer, uint16 bufferSize, PacketPool* pPacketPool, TArray<NetworkPacket*>& packetsDecoded, Header* pHeader)
 	{
 		uint16 offset = sizeof(Header);
 

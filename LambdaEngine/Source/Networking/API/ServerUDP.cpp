@@ -15,14 +15,11 @@ namespace LambdaEngine
 	std::set<ServerUDP*> ServerUDP::s_Servers;
 	SpinLock ServerUDP::s_Lock;
 
-	ServerUDP::ServerUDP(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPerClient, uint8 maximumTries) :
-		m_pHandler(pHandler),
-		m_MaxClients(maxClients),
-		m_PacketsPerClient(packetPerClient),
+	ServerUDP::ServerUDP(const ServerUDPDesc& desc) :
+		m_Desc(desc),
 		m_pSocket(nullptr),
 		m_Accepting(true),
-		m_PacketLoss(0.0f),
-		m_MaxTries(maximumTries)
+		m_PacketLoss(0.0f)
 	{
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Servers.insert(this);
@@ -135,7 +132,7 @@ namespace LambdaEngine
 					pClient->Release();
 					continue;
 				}
-				else if (m_Clients.size() >= m_MaxClients)
+				else if (m_Clients.size() >= m_Desc.MaxClients)
 				{
 					SendServerFull(pClient);
 					pClient->Release();
@@ -200,7 +197,7 @@ namespace LambdaEngine
 
 	IClientUDPRemoteHandler* ServerUDP::CreateClientUDPHandler()
 	{
-		return m_pHandler->CreateClientUDPHandler();
+		return m_Desc.Handler->CreateClientUDPHandler();
 	}
 
 	ClientUDPRemote* ServerUDP::GetOrCreateClient(const IPEndPoint& sender, bool& newConnection)
@@ -215,7 +212,7 @@ namespace LambdaEngine
 		else
 		{
 			newConnection = true;
-			return DBG_NEW ClientUDPRemote(m_PacketsPerClient, m_MaxTries, sender, this);
+			return DBG_NEW ClientUDPRemote(m_Desc.PoolSize, m_Desc.MaxRetries, sender, this);
 		}
 	}
 
@@ -256,9 +253,9 @@ namespace LambdaEngine
 		Flush();
 	}
 
-	ServerUDP* ServerUDP::Create(IServerUDPHandler* pHandler, uint8 maxClients, uint16 packetPoolSize, uint8 maximumTries)
+	ServerUDP* ServerUDP::Create(const ServerUDPDesc& desc)
 	{
-		return DBG_NEW ServerUDP(pHandler, maxClients, packetPoolSize, maximumTries);
+		return DBG_NEW ServerUDP(desc);
 	}
 
 	void ServerUDP::FixedTickStatic(Timestamp timestamp)

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name="LambdaEngine::TSharedRef&lt;*&gt;">
+		<DisplayString>{{ references={m_pPtr->m_StrongReferences} }}</DisplayString>
+		<Expand>
+			<Item Name="[references]">m_pPtr->m_StrongReferences</Item>
+			<Item Name="[ptr]">m_pPtr</Item>
+		</Expand>
+	</Type>
+</AutoVisualizer>

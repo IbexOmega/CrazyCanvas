@@ -1,6 +1,10 @@
 #include "Game/Camera.h"
 
 #include <glm/gtx/euler_angles.hpp>
+#include "Input/API/Input.h"
+#include "Log/Log.h"
+#include "Application/API/CommonApplication.h"
+#include "Application/API/Window.h"
 
 //The up vector is inverted because of vulkans inverted y-axis
 const glm::vec3 UP_VECTOR = glm::vec3(0.0f, -1.0f, 0.0f);
@@ -20,14 +24,22 @@ namespace LambdaEngine
 		m_Right(0.0f),
 		m_Up(0.0f),
 		m_IsDirty(true),
-		m_LastIsDirty(true)
+		m_LastIsDirty(true),
+		m_CommonApplication(nullptr)
 	{
 	}
 
-	void Camera::Init(const CameraDesc& desc)
+	void Camera::Init(CommonApplication* commonApplication, const CameraDesc& desc)
 	{
+		m_CommonApplication = commonApplication;
 		m_Projection		= glm::perspective(glm::radians(desc.FOVDegrees), desc.Width / desc.Height, desc.NearPlane, desc.FarPlane);
 		m_ProjectionInv		= glm::inverse(m_Projection);
+
+		m_FOVDegrees		= desc.FOVDegrees;
+		m_Width				= desc.Width;
+		m_Height			= desc.Height;
+		m_NearPlane			= desc.NearPlane;
+		m_FarPlane			= desc.FarPlane;
 
 		SetPosition(desc.Position);
 		SetDirection(desc.Direction);
@@ -78,6 +90,8 @@ namespace LambdaEngine
 
 	void Camera::Update()
 	{
+		m_Data.Jitter = glm::vec2((Random::Float32() - 0.5f) / m_Width, (Random::Float32() - 0.5f) / m_Height);
+
 		if (m_IsDirty)
 		{
 			//Update view
@@ -102,6 +116,97 @@ namespace LambdaEngine
 			m_Data.PrevView			= m_Data.View;
 
 			m_LastIsDirty = false;
+		}
+	}
+
+	void Camera::HandleInput(Timestamp delta)
+	{
+		constexpr float CAMERA_MOVEMENT_SPEED = 1.4f;
+		constexpr float CAMERA_ROTATION_SPEED = 45.0f;
+		constexpr float CAMERA_MOUSE_SPEED = 10.0f;
+
+		glm::vec3 translation(0.0f, 0.0f, 0.0f);
+
+		// Translation
+		if (Input::IsKeyDown(EKey::KEY_W) && Input::IsKeyUp(EKey::KEY_S))
+		{
+			translation.z += delta.AsSeconds();
+		}
+		else if (Input::IsKeyDown(EKey::KEY_S) && Input::IsKeyUp(EKey::KEY_W))
+		{
+			translation.z -= delta.AsSeconds();
+		}
+
+		if (Input::IsKeyDown(EKey::KEY_A) && Input::IsKeyUp(EKey::KEY_D))
+		{
+			translation.x -= delta.AsSeconds();
+		}
+		else if (Input::IsKeyDown(EKey::KEY_D) && Input::IsKeyUp(EKey::KEY_A))
+		{
+			translation.x += delta.AsSeconds();
+		}
+
+		if (Input::IsKeyDown(EKey::KEY_Q) && Input::IsKeyUp(EKey::KEY_E))
+		{
+			translation.y += delta.AsSeconds();
+		}
+		else if (Input::IsKeyDown(EKey::KEY_E) && Input::IsKeyUp(EKey::KEY_Q))
+		{
+			translation.y -= delta.AsSeconds();
+		}
+
+		float shiftSpeedFactor = 1.0f;
+		if (Input::IsKeyDown(EKey::KEY_LEFT_SHIFT))
+		{
+			shiftSpeedFactor = 2.f;
+		}
+
+		if (glm::length2(translation) > glm::epsilon<float>())
+		{
+			translation = glm::normalize(translation) * m_SpeedFactor * shiftSpeedFactor;
+			Translate(translation);
+		}
+
+		// Rotation
+		if (Input::IsKeyDown(EKey::KEY_UP) && Input::IsKeyUp(EKey::KEY_DOWN))
+		{
+			Rotate(glm::vec3(-CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
+		}
+		else if (Input::IsKeyDown(EKey::KEY_DOWN) && Input::IsKeyUp(EKey::KEY_UP))
+		{
+			Rotate(glm::vec3(CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f, 0.0f));
+		}
+
+		if (Input::IsKeyDown(EKey::KEY_LEFT) && Input::IsKeyUp(EKey::KEY_RIGHT))
+		{
+			Rotate(glm::vec3(0.0f, -CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f));
+		}
+		else if (Input::IsKeyDown(EKey::KEY_RIGHT) && Input::IsKeyUp(EKey::KEY_LEFT))
+		{
+			Rotate(glm::vec3(0.0f, CAMERA_ROTATION_SPEED * delta.AsSeconds(), 0.0f));
+		}
+
+		MouseState mouseState = Input::GetMouseState();
+		if (mouseState.IsButtonPressed(EMouseButton::MOUSE_BUTTON_RIGHT))
+		{
+			m_CommonApplication->SetMouseVisibility(false);
+
+			uint16 width	= m_CommonApplication->GetActiveWindow()->GetWidth();
+			uint16 height	= m_CommonApplication->GetActiveWindow()->GetHeight();
+
+			glm::vec2 mouseDelta(mouseState.x - (int)(width * 0.5), mouseState.y - (int)(height * 0.5));
+			m_CommonApplication->SetMousePosition((int)(width * 0.5), (int)(height * 0.5));
+
+			if (glm::length(mouseDelta) > glm::epsilon<float>())
+			{
+				Rotate(glm::vec3(0.0f, CAMERA_MOUSE_SPEED * (float)mouseDelta.x * delta.AsSeconds(), 0.0f));
+				Rotate(glm::vec3(CAMERA_MOUSE_SPEED * (float)mouseDelta.y * delta.AsSeconds(), 0.0f, 0.0f));
+			}
+		}
+		else
+		{
+			// Should probably not be called every frame
+			m_CommonApplication->SetMouseVisibility(true);
 		}
 	}
 

@@ -49,9 +49,7 @@ void ClientUDPHandler::OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, La
 
 	LOG_MESSAGE("OnPacketReceivedUDP()");
 
-	/*BinaryDecoder decoder(pPacket);
-	int value = decoder.ReadInt32();
-	ASSERT(counter == value);
-	counter++;
-	LOG_MESSAGE("%d", value);*/
+	LambdaEngine::BinaryDecoder decoder(pPacket);
+	std::string name = decoder.ReadString();
+	LOG_MESSAGE(name.c_str());
 }

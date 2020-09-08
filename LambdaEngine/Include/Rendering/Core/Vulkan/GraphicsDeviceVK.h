@@ -3,8 +3,8 @@
 
 #include "Utilities/StringHash.h"
 
-#include "Rendering/Core/API/ICommandQueue.h"
-#include "Rendering/Core/API/IGraphicsDevice.h"
+#include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/GraphicsDevice.h"
 
 #include "Vulkan.h"
 
@@ -28,7 +28,7 @@ namespace LambdaEngine
 		}
 	};
 
-	class GraphicsDeviceVK final : public IGraphicsDevice
+	class GraphicsDeviceVK final : public GraphicsDevice
 	{
 	public:
 		GraphicsDeviceVK();
@@ -36,69 +36,70 @@ namespace LambdaEngine
 
 		bool Init(const GraphicsDeviceDesc* pDesc);
 
-        VkResult    AllocateMemory(VkDeviceMemory* pDeviceMemory, VkDeviceSize sizeInBytes, int32 memoryIndex)  const;
-        void        FreeMemory(VkDeviceMemory deviceMemory)                                                     const;
-        
-        void DestroyRenderPass(VkRenderPass* pRenderPass)   const;
-        void DestroyImageView(VkImageView* pImageView)      const;
+		VkResult	AllocateMemory(VkDeviceMemory* pDeviceMemory, VkDeviceSize sizeInBytes, int32 memoryIndex)	const;
+		void		FreeMemory(VkDeviceMemory deviceMemory)														const;
+		
+		void DestroyRenderPass(VkRenderPass* pRenderPass)	const;
+		void DestroyImageView(VkImageView* pImageView)		const;
 		
 		bool IsInstanceExtensionEnabled(const char* pExtensionName) const;
 		bool IsDeviceExtensionEnabled(const char* pExtensionName)	const;
 		bool UseTimelineFences() const;
 
-		void SetVulkanObjectName(const char* pName, uint64 objectHandle, VkObjectType type)	const;
+		void SetVulkanObjectName(const String& debugname, uint64 objectHandle, VkObjectType type)	const;
 		
-        VkFramebuffer GetFrameBuffer(const IRenderPass* pRenderPass, const ITextureView* const* ppRenderTargets, uint32 renderTargetCount, const ITextureView* pDepthStencil, uint32 width, uint32 height) const;
-        
+		VkFramebuffer GetFrameBuffer(const RenderPass* pRenderPass, const TextureView* const* ppRenderTargets, uint32 renderTargetCount, const TextureView* pDepthStencil, uint32 width, uint32 height) const;
+		
 		uint32						GetQueueFamilyIndexFromQueueType(ECommandQueueType type)	const;
 		ECommandQueueType			GetCommandQueueTypeFromQueueIndex(uint32 queueFamilyIndex)	const;
 		VkFormatProperties			GetFormatProperties(VkFormat format)						const;
 		VkPhysicalDeviceProperties	GetPhysicalDeviceProperties()								const;
-        
-        FORCEINLINE VkPhysicalDeviceLimits GetDeviceLimits() const
-        {
-            return m_DeviceLimits;
-        }
+		
+		FORCEINLINE VkPhysicalDeviceLimits GetDeviceLimits() const
+		{
+			return m_DeviceLimits;
+		}
 
 		FORCEINLINE QueueFamilyIndices GetQueueFamilyIndices() const
 		{
 			return m_DeviceQueueFamilyIndices;
 		}
 
-		// IGraphicsDevice Interface
-		virtual IQueryHeap* CreateQueryHeap(const QueryHeapDesc* pDesc) const override final;
+	public:
+		// GraphicsDevice Interface
+		virtual QueryHeap* CreateQueryHeap(const QueryHeapDesc* pDesc) const override final;
 
-		virtual IPipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const override final;
-		virtual IDescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const override final;
+		virtual PipelineLayout* CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const override final;
+		virtual DescriptorHeap* CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const override final;
 
-		virtual IDescriptorSet* CreateDescriptorSet(const String& name, const IPipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, IDescriptorHeap* pDescriptorHeap) const override final;
+		virtual DescriptorSet* CreateDescriptorSet(const String& debugName, const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, DescriptorHeap* pDescriptorHeap) const override final;
 
-		virtual IRenderPass*	CreateRenderPass(const RenderPassDesc* pDesc)	const override final;
-		virtual ITextureView*	CreateTextureView(const TextureViewDesc* pDesc)	const override final;
+		virtual RenderPass*		CreateRenderPass(const RenderPassDesc* pDesc)	const override final;
+		virtual TextureView*	CreateTextureView(const TextureViewDesc* pDesc)	const override final;
 
-		virtual IShader*	CreateShader(const ShaderDesc* pDesc)	const override final;
+		virtual Shader*	CreateShader(const ShaderDesc* pDesc)	const override final;
 
-		virtual IBuffer*	CreateBuffer(const BufferDesc* pDesc, IDeviceAllocator* pAllocator)	    const override final;
-		virtual ITexture*	CreateTexture(const TextureDesc* pDesc, IDeviceAllocator* pAllocator)	const override final;
-		virtual ISampler*	CreateSampler(const SamplerDesc* pDesc)	                                const override final;
+		virtual Buffer*		CreateBuffer(const BufferDesc* pDesc, DeviceAllocator* pAllocator)		const override final;
+		virtual Texture*	CreateTexture(const TextureDesc* pDesc, DeviceAllocator* pAllocator)	const override final;
+		virtual Sampler*	CreateSampler(const SamplerDesc* pDesc)									const override final;
 
-		virtual ISwapChain* CreateSwapChain(const Window* pWindow, ICommandQueue* pCommandQueue, const SwapChainDesc* pDesc)	const override final;
+		virtual SwapChain* CreateSwapChain(const SwapChainDesc* pDesc)	const override final;
 
-		virtual IPipelineState* CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) 	  const override final;
-		virtual IPipelineState* CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 	  const override final;
-		virtual IPipelineState* CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const override final;
+		virtual PipelineState* CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) 	  const override final;
+		virtual PipelineState* CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 	  const override final;
+		virtual PipelineState* CreateRayTracingPipelineState(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc) const override final;
 
-		virtual IAccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, IDeviceAllocator* pAllocator) const override final;
+		virtual AccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, DeviceAllocator* pAllocator) const override final;
 
-		virtual ICommandQueue*		CreateCommandQueue(const char* pName, ECommandQueueType queueType)				const override final;
-		virtual ICommandAllocator*	CreateCommandAllocator(const char* pName, ECommandQueueType queueType)			const override final;
-		virtual ICommandList*		CreateCommandList(ICommandAllocator* pAllocator, const CommandListDesc* pDesc)	const override final;
-		virtual IFence*				CreateFence(const FenceDesc* pDesc)												const override final;
+		virtual CommandQueue*		CreateCommandQueue(const String& debugname, ECommandQueueType queueType)		const override final;
+		virtual CommandAllocator*	CreateCommandAllocator(const String& debugname, ECommandQueueType queueType)	const override final;
+		virtual CommandList*		CreateCommandList(CommandAllocator* pAllocator, const CommandListDesc* pDesc)	const override final;
+		virtual Fence*				CreateFence(const FenceDesc* pDesc)												const override final;
 
-        virtual IDeviceAllocator* CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const override final;
-        
-		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst)																			const override final;
-		virtual void CopyDescriptorSet(const IDescriptorSet* pSrc, IDescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const override final;
+		virtual DeviceAllocator* CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const override final;
+		
+		virtual void CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst)																			const override final;
+		virtual void CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const override final;
 
 		virtual void QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const override final;
 
@@ -118,7 +119,7 @@ namespace LambdaEngine
 		void				CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32_t& numOfOptionalExtensionsSupported);
 		QueueFamilyIndices	FindQueueFamilies(VkPhysicalDevice physicalDevice);
 		
-		uint32	GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const std::vector<VkQueueFamilyProperties>& queueFamilies);
+		uint32	GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const TArray<VkQueueFamilyProperties>& queueFamilies);
 		void	SetEnabledDeviceExtensions();
 
 		void RegisterInstanceExtensionData();
@@ -132,51 +133,60 @@ namespace LambdaEngine
 		VkPhysicalDevice	PhysicalDevice	= VK_NULL_HANDLE;
 		VkDevice			Device			= VK_NULL_HANDLE;
 
-		// Extension Data
+	public:
+		/*
+		* Extension Data
+		*/
+
+		// Ray-Tracing
 		VkPhysicalDeviceRayTracingPropertiesKHR	RayTracingProperties;
 
 		PFN_vkSetDebugUtilsObjectNameEXT	vkSetDebugUtilsObjectNameEXT	= nullptr;
 		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
 		PFN_vkCreateDebugUtilsMessengerEXT	vkCreateDebugUtilsMessengerEXT	= nullptr;
 
-		PFN_vkCreateAccelerationStructureKHR					vkCreateAccelerationStructureKHR				= nullptr;
-		PFN_vkDestroyAccelerationStructureKHR					vkDestroyAccelerationStructureKHR				= nullptr;
-		PFN_vkBindAccelerationStructureMemoryKHR				vkBindAccelerationStructureMemoryKHR			= nullptr;
-		PFN_vkGetAccelerationStructureDeviceAddressKHR			vkGetAccelerationStructureDeviceAddressKHR		= nullptr;
-		PFN_vkGetAccelerationStructureMemoryRequirementsKHR		vkGetAccelerationStructureMemoryRequirementsKHR = nullptr;
-		PFN_vkCmdBuildAccelerationStructureKHR					vkCmdBuildAccelerationStructureKHR				= nullptr;
-		PFN_vkCreateRayTracingPipelinesKHR						vkCreateRayTracingPipelinesKHR					= nullptr;
-		PFN_vkGetRayTracingShaderGroupHandlesKHR				vkGetRayTracingShaderGroupHandlesKHR			= nullptr;
-		PFN_vkCmdTraceRaysKHR									vkCmdTraceRaysKHR								= nullptr;
-		PFN_vkCopyAccelerationStructureToMemoryKHR				vkCopyAccelerationStructureToMemoryKHR			= nullptr;
-		PFN_vkCmdCopyAccelerationStructureToMemoryKHR			vkCmdCopyAccelerationStructureToMemoryKHR		= nullptr;
+		PFN_vkCreateAccelerationStructureKHR				vkCreateAccelerationStructureKHR				= nullptr;
+		PFN_vkDestroyAccelerationStructureKHR				vkDestroyAccelerationStructureKHR				= nullptr;
+		PFN_vkBindAccelerationStructureMemoryKHR			vkBindAccelerationStructureMemoryKHR			= nullptr;
+		PFN_vkGetAccelerationStructureDeviceAddressKHR		vkGetAccelerationStructureDeviceAddressKHR		= nullptr;
+		PFN_vkGetAccelerationStructureMemoryRequirementsKHR	vkGetAccelerationStructureMemoryRequirementsKHR = nullptr;
+		PFN_vkCmdBuildAccelerationStructureKHR				vkCmdBuildAccelerationStructureKHR				= nullptr;
+		PFN_vkCreateRayTracingPipelinesKHR					vkCreateRayTracingPipelinesKHR					= nullptr;
+		PFN_vkGetRayTracingShaderGroupHandlesKHR			vkGetRayTracingShaderGroupHandlesKHR			= nullptr;
+		PFN_vkCmdTraceRaysKHR								vkCmdTraceRaysKHR								= nullptr;
+		PFN_vkCopyAccelerationStructureToMemoryKHR			vkCopyAccelerationStructureToMemoryKHR			= nullptr;
+		PFN_vkCmdCopyAccelerationStructureToMemoryKHR		vkCmdCopyAccelerationStructureToMemoryKHR		= nullptr;
 
-		// BufferAddresses
+		// Buffer Addresses
 		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
 
 		// Timeline-Semaphores
 		PFN_vkWaitSemaphores			vkWaitSemaphores			= nullptr;
 		PFN_vkSignalSemaphore			vkSignalSemaphore			= nullptr;
 		PFN_vkGetSemaphoreCounterValue	vkGetSemaphoreCounterValue	= nullptr;
-	
+
+		// Mesh Shaders
+		PFN_vkCmdDrawMeshTasksNV				vkCmdDrawMeshTasksNV				= nullptr;
+		PFN_vkCmdDrawMeshTasksIndirectNV		vkCmdDrawMeshTasksIndirectNV		= nullptr;
+		PFN_vkCmdDrawMeshTasksIndirectCountNV	vkCmdDrawMeshTasksIndirectCountNV	= nullptr;
+
 	private:
 		VkDebugUtilsMessengerEXT	m_DebugMessenger	= VK_NULL_HANDLE;
 		FrameBufferCacheVK*			m_pFrameBufferCache	= nullptr;
 
-		GraphicsDeviceFeatureDesc		m_DeviceFeatures;
-        QueueFamilyIndices				m_DeviceQueueFamilyIndices;
-        VkPhysicalDeviceLimits			m_DeviceLimits;
-		VkPhysicalDeviceFeatures		m_DeviceFeaturesVk;
-       
-        std::vector<VkQueueFamilyProperties> m_QueueFamilyProperties;
-        mutable uint32 m_NextGraphicsQueue  = 0;
-        mutable uint32 m_NextComputeQueue   = 0;
-        mutable uint32 m_NextTransferQueue  = 0;
-        
-        mutable uint32 m_UsedAllocations = 0;
-        
-		std::vector<const char*>	m_EnabledValidationLayers;
-		std::vector<const char*>	m_EnabledInstanceExtensions;
-		std::vector<const char*>	m_EnabledDeviceExtensions;
+		GraphicsDeviceFeatureDesc	m_DeviceFeatures;
+		QueueFamilyIndices			m_DeviceQueueFamilyIndices;
+		VkPhysicalDeviceLimits		m_DeviceLimits;
+		VkPhysicalDeviceFeatures	m_DeviceFeaturesVk;
+	   
+		TArray<VkQueueFamilyProperties> m_QueueFamilyProperties;
+		mutable uint32 m_NextGraphicsQueue	= 0;
+		mutable uint32 m_NextComputeQueue	= 0;
+		mutable uint32 m_NextTransferQueue	= 0;
+		mutable uint32 m_UsedAllocations	= 0;
+		
+		TArray<const char*>	m_EnabledValidationLayers;
+		TArray<const char*>	m_EnabledInstanceExtensions;
+		TArray<const char*>	m_EnabledDeviceExtensions;
 	};
 }

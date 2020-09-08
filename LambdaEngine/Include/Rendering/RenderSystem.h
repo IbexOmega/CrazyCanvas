@@ -1,10 +1,12 @@
 #pragma once
 #include "LambdaEngine.h"
 
+#include "Core/TSharedRef.h"
+
 namespace LambdaEngine
 {
-	class ICommandQueue;
-	class IGraphicsDevice;
+	class CommandQueue;
+	class GraphicsDevice;
 
 	class LAMBDA_API RenderSystem
 	{
@@ -16,30 +18,30 @@ namespace LambdaEngine
 
 		static void Tick();
 
-		FORCEINLINE static IGraphicsDevice* GetDevice()
+		FORCEINLINE static GraphicsDevice* GetDevice()
 		{
 			return s_pGraphicsDevice;
 		}
 
-		FORCEINLINE static ICommandQueue* GetGraphicsQueue()
+		FORCEINLINE static CommandQueue* GetGraphicsQueue()
 		{
-			return s_pGraphicsQueue;
+			return s_GraphicsQueue.Get();
 		}
 
-		FORCEINLINE static ICommandQueue* GetComputeQueue()
+		FORCEINLINE static CommandQueue* GetComputeQueue()
 		{
-			return s_pComputeQueue;
+			return s_ComputeQueue.Get();
 		}
 
-		FORCEINLINE static ICommandQueue* GetCopyQueue()
+		FORCEINLINE static CommandQueue* GetCopyQueue()
 		{
-			return s_pCopyQueue;
+			return s_CopyQueue.Get();
 		}
 
 	private:
-		static IGraphicsDevice* s_pGraphicsDevice;
-		static ICommandQueue*	s_pGraphicsQueue;
-		static ICommandQueue*	s_pComputeQueue;
-		static ICommandQueue*	s_pCopyQueue;
+		static GraphicsDevice* s_pGraphicsDevice;
+		static TSharedRef<CommandQueue>	s_GraphicsQueue;
+		static TSharedRef<CommandQueue>	s_ComputeQueue;
+		static TSharedRef<CommandQueue>	s_CopyQueue;
 	};
 }

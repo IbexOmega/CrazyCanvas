@@ -18,6 +18,13 @@ namespace LambdaEngine
 	class IPacketListener;
 	class PacketTransceiver;
 
+	struct PacketManagerDesc
+	{
+		uint16 PoolSize = 10;
+		int32 MaxRetries = 10;
+		float32 ResendRTTMultiplier = 2.0f;
+	};
+
 	class LAMBDA_API PacketManager
 	{
 	public:
@@ -36,15 +43,15 @@ namespace LambdaEngine
 		};
 
 	public:
-		PacketManager(uint16 poolSize, int32 maxRetries, float32 resendRTTMultiplier = 2.0f);
+		PacketManager(const PacketManagerDesc& desc);
 		~PacketManager();
 
 		uint32 EnqueuePacketReliable(NetworkPacket* pPacket, IPacketListener* pListener = nullptr);
 		uint32 EnqueuePacketUnreliable(NetworkPacket* pPacket);
 
 		void Flush(PacketTransceiver* pTransceiver);
-		void QueryBegin(PacketTransceiver* pTransceiver, std::vector<NetworkPacket*>& packetsReturned);
-		void QueryEnd(std::vector<NetworkPacket*>& packetsReceived);
+		void QueryBegin(PacketTransceiver* pTransceiver, TArray<NetworkPacket*>& packetsReturned);
+		void QueryEnd(TArray<NetworkPacket*>& packetsReceived);
 
 		void Tick(Timestamp delta);
 
@@ -58,11 +65,11 @@ namespace LambdaEngine
 
 	private:
 		uint32 EnqueuePacket(NetworkPacket* pPacket, uint32 reliableUID);
-		void FindPacketsToReturn(const std::vector<NetworkPacket*>& packetsReceived, std::vector<NetworkPacket*>& packetsReturned);
-		void UntangleReliablePackets(std::vector<NetworkPacket*>& packetsReturned);
-		void HandleAcks(const std::vector<uint32>& acks);
-		void GetReliableUIDsFromAcks(const std::vector<uint32>& acks, std::vector<uint32>& ackedReliableUIDs);
-		void GetReliableMessageInfosFromUIDs(const std::vector<uint32>& ackedReliableUIDs, std::vector<MessageInfo>& ackedReliableMessages);
+		void FindPacketsToReturn(const TArray<NetworkPacket*>& packetsReceived, TArray<NetworkPacket*>& packetsReturned);
+		void UntangleReliablePackets(TArray<NetworkPacket*>& packetsReturned);
+		void HandleAcks(const TArray<uint32>& acks);
+		void GetReliableUIDsFromAcks(const TArray<uint32>& acks, TArray<uint32>& ackedReliableUIDs);
+		void GetReliableMessageInfosFromUIDs(const TArray<uint32>& ackedReliableUIDs, TArray<MessageInfo>& ackedReliableMessages);
 		void RegisterRTT(Timestamp rtt);
 		void DeleteOldBundles();
 		void ResendOrDeleteMessages();

@@ -7,8 +7,7 @@
 namespace LambdaEngine
 {
 	QueryHeapVK::QueryHeapVK(const GraphicsDeviceVK* pDevice)
-		: TDeviceChild(pDevice),
-		m_Desc()
+		: TDeviceChild(pDevice)
 	{
 	}
 
@@ -39,28 +38,24 @@ namespace LambdaEngine
 		}
 		else
 		{
-			memcpy(&m_Desc, pDesc, sizeof(QueryHeapDesc));
-			SetName(pDesc->pName);
-			m_Desc.pName = m_pDebugName;
+			m_Desc = *pDesc;
+			SetName(pDesc->DebugName);
 
 			D_LOG_MESSAGE("[QueryHeapVK]: Created QueryPool");
 			return true;
 		}
 	}
 
-	void QueryHeapVK::SetName(const char* pName)
+	void QueryHeapVK::SetName(const String& debugName)
 	{
-		if (pName)
-		{
-			TDeviceChild::SetName(pName);
-			m_pDevice->SetVulkanObjectName(pName, (uint64)m_QueryPool, VK_OBJECT_TYPE_QUERY_POOL);
-		}
+		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_QueryPool), VK_OBJECT_TYPE_QUERY_POOL);
+		m_Desc.DebugName = debugName;
 	}
 	
 	bool QueryHeapVK::GetResults(uint32 firstQuery, uint32 queryCount, uint64* pData) const
 	{
 		const uint64 dataSize = queryCount * sizeof(uint64);
-		VkResult result = vkGetQueryPoolResults(m_pDevice->Device, m_QueryPool, firstQuery, queryCount, dataSize, (void*)pData, sizeof(uint64), VK_QUERY_RESULT_64_BIT);
+		VkResult result = vkGetQueryPoolResults(m_pDevice->Device, m_QueryPool, firstQuery, queryCount, dataSize, reinterpret_cast<void*>(pData), sizeof(uint64), VK_QUERY_RESULT_64_BIT);
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[QueryHeapVK]: Failed to retrive query results");

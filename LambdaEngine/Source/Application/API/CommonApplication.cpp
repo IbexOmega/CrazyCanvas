@@ -4,30 +4,34 @@
 
 namespace LambdaEngine
 {
-	CommonApplication* CommonApplication::s_pCommonApplication = nullptr;
+	TSharedPtr<CommonApplication> CommonApplication::s_CommonApplication = nullptr;
 
+	/*
+	* CommonApplication
+	*/
 	CommonApplication::CommonApplication()
-		: m_EventHandlers()
+		: EventHandler()
+		, m_EventHandlers()
 	{
-		VALIDATE(s_pCommonApplication == nullptr);
-		s_pCommonApplication = this;
+		VALIDATE(s_CommonApplication == nullptr);
+		s_CommonApplication = this;
 	}
 
 	CommonApplication::~CommonApplication()
 	{
-		VALIDATE(s_pCommonApplication != nullptr);
-		s_pCommonApplication = nullptr;
+		VALIDATE(s_CommonApplication != nullptr);
+		s_CommonApplication = nullptr;
 
 		SAFEDELETE(m_pPlatformApplication);
 	}
 
 	bool CommonApplication::Create()
 	{
-		// Create platform applciation
+		// Create platform application
 		m_pPlatformApplication = PlatformApplication::CreateApplication();
 		if (m_pPlatformApplication->Create())
 		{
-			m_pPlatformApplication->SetEventHandler(this);
+			m_pPlatformApplication->SetEventHandler(s_CommonApplication);
 		}
 		else
 		{
@@ -41,13 +45,13 @@ namespace LambdaEngine
 		windowDesc.Height 	= 1080;
 		windowDesc.Style	= WINDOW_STYLE_FLAG_TITLED | WINDOW_STYLE_FLAG_CLOSABLE;
 
-		Window* pWindow = CreateWindow(&windowDesc);
-		if (pWindow)
+		TSharedRef<Window> window = CreateWindow(&windowDesc);
+		if (window)
 		{
-			MakeMainWindow(pWindow);
-			SetInputMode(pWindow, EInputMode::INPUT_MODE_STANDARD);
+			MakeMainWindow(window);
+			SetInputMode(window, EInputMode::INPUT_MODE_STANDARD);
 			
-			pWindow->Show();
+			window->Show();
 		}
 		else
 		{
@@ -59,14 +63,11 @@ namespace LambdaEngine
 		{
 			//m_pPlatformApplication->SetInputMode(EInputMode::INPUT_MODE_RAW);
 		}
-		else
-		{
-		}
 
 		return true;
 	}
 
-	Window* CommonApplication::CreateWindow(const WindowDesc* pDesc)
+	TSharedRef<Window> CommonApplication::CreateWindow(const WindowDesc* pDesc)
 	{
 		return m_pPlatformApplication->CreateWindow(pDesc);
 	}
@@ -74,7 +75,7 @@ namespace LambdaEngine
 	void CommonApplication::AddEventHandler(EventHandler* pEventHandler)
 	{
 		// Check first so that this handler is not already added
-		const uint32 count = uint32(m_EventHandlers.size());
+		const uint32 count = uint32(m_EventHandlers.GetSize());
 		for (uint32 i = 0; i < count; i++)
 		{
 			if (pEventHandler == m_EventHandlers[i])
@@ -84,26 +85,26 @@ namespace LambdaEngine
 		}
 
 		// Add new handler
-		m_EventHandlers.emplace_back(pEventHandler);
+		m_EventHandlers.EmplaceBack(pEventHandler);
 	}
 
 	void CommonApplication::RemoveEventHandler(EventHandler* pEventHandler)
 	{
-		const uint32 count = uint32(m_EventHandlers.size());
+		const uint32 count = uint32(m_EventHandlers.GetSize());
 		for (uint32 i = 0; i < count; i++)
 		{
 			if (pEventHandler == m_EventHandlers[i])
 			{
-				m_EventHandlers.erase(m_EventHandlers.begin() + i);
+				m_EventHandlers.Erase(m_EventHandlers.Begin() + i);
 				break;
 			}
 		}
 	}
 
-	void CommonApplication::MakeMainWindow(Window* pMainWindow)
+	void CommonApplication::MakeMainWindow(TSharedRef<Window> window)
 	{
-		VALIDATE(pMainWindow != nullptr);
-		m_pMainWindow = pMainWindow;
+		VALIDATE(window != nullptr);
+		m_MainWindow = window;
 	}
 
 	bool CommonApplication::SupportsRawInput() const
@@ -111,71 +112,81 @@ namespace LambdaEngine
 		return m_pPlatformApplication->SupportsRawInput();
 	}
 
-	void CommonApplication::SetInputMode(Window* pWindow, EInputMode inputMode)
+	void CommonApplication::SetInputMode(TSharedRef<Window> window, EInputMode inputMode)
 	{
-		m_pPlatformApplication->SetInputMode(pWindow, inputMode);
+		m_pPlatformApplication->SetInputMode(window, inputMode);
 	}
 
-	void CommonApplication::SetCapture(Window* pWindow)
+	void CommonApplication::SetCapture(TSharedRef<Window> window)
 	{
-		m_pPlatformApplication->SetCapture(pWindow);
+		m_pPlatformApplication->SetCapture(window);
 	}
 
-	void CommonApplication::SetActiveWindow(Window* pWindow)
+	void CommonApplication::SetActiveWindow(TSharedRef<Window> window)
 	{
-		m_pPlatformApplication->SetActiveWindow(pWindow);
+		m_pPlatformApplication->SetActiveWindow(window);
 	}
 
-	void CommonApplication::OnFocusChanged(Window* pWindow, bool hasFocus)
+	void CommonApplication::SetMouseVisibility(bool visible)
+	{
+		m_pPlatformApplication->SetMouseVisibility(visible);
+	}
+
+	void CommonApplication::SetMousePosition(int x, int y)
+	{
+		m_pPlatformApplication->SetMousePosition(x, y);
+	}
+
+	void CommonApplication::OnFocusChanged(TSharedRef<Window> window, bool hasFocus)
 	{
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnFocusChanged(pWindow, hasFocus);
+			pEventHandler->OnFocusChanged(window, hasFocus);
 		}
 	}
 
-	void CommonApplication::OnWindowMoved(Window* pWindow, int16 x, int16 y)
+	void CommonApplication::OnWindowMoved(TSharedRef<Window> window, int16 x, int16 y)
 	{
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnWindowMoved(pWindow, x, y);
+			pEventHandler->OnWindowMoved(window, x, y);
 		}
 	}
 
-	void CommonApplication::OnWindowResized(Window* pWindow, uint16 width, uint16 height, EResizeType type)
+	void CommonApplication::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)
 	{
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnWindowResized(pWindow, width, height, type);
+			pEventHandler->OnWindowResized(window, width, height, type);
 		}
 	}
 
-	void CommonApplication::OnWindowClosed(Window* pWindow)
+	void CommonApplication::OnWindowClosed(TSharedRef<Window> window)
 	{
-		if (pWindow == m_pMainWindow)
+		if (window == m_MainWindow.Get())
 		{
 			Terminate();
 		}
 
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnWindowClosed(pWindow);
+			pEventHandler->OnWindowClosed(window);
 		}
 	}
 
-	void CommonApplication::OnMouseEntered(Window* pWindow)
+	void CommonApplication::OnMouseEntered(TSharedRef<Window> window)
 	{
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnMouseEntered(pWindow);
+			pEventHandler->OnMouseEntered(window);
 		}
 	}
 
-	void CommonApplication::OnMouseLeft(Window* pWindow)
+	void CommonApplication::OnMouseLeft(TSharedRef<Window> window)
 	{
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnMouseLeft(pWindow);
+			pEventHandler->OnMouseLeft(window);
 		}
 	}
 
@@ -197,6 +208,13 @@ namespace LambdaEngine
 
 	void CommonApplication::OnButtonPressed(EMouseButton button, uint32 modifierMask)
 	{
+		TSharedRef<Window> CaptureWindow = GetCapture();
+		if (!CaptureWindow)
+		{
+			TSharedRef<Window> ActiveWindow = GetActiveWindow();
+			SetCapture(ActiveWindow);
+		}
+
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnButtonPressed(button, modifierMask);
@@ -205,6 +223,12 @@ namespace LambdaEngine
 
 	void CommonApplication::OnButtonReleased(EMouseButton button)
 	{
+		TSharedRef<Window> CaptureWindow = GetCapture();
+		if (CaptureWindow)
+		{
+			SetCapture(nullptr);
+		}
+
 		for (EventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnButtonReleased(button);
@@ -269,13 +293,13 @@ namespace LambdaEngine
 
 	CommonApplication* CommonApplication::Get()
 	{
-		VALIDATE(s_pCommonApplication != nullptr);
-		return s_pCommonApplication;
+		VALIDATE(s_CommonApplication != nullptr);
+		return s_CommonApplication.Get();
 	}
 
 	bool CommonApplication::PostRelease()
 	{
-		SAFEDELETE(s_pCommonApplication);
+		s_CommonApplication.Reset();
 		return true;
 	}
 }

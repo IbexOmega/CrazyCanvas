@@ -11,6 +11,11 @@ namespace LambdaEngine
 	class IClientUDPHandler;
 	class ISocketUDP;
 
+	struct ClientUDPDesc : public PacketManagerDesc
+	{
+		IClientUDPHandler* Handler = nullptr;
+	};
+
 	class LAMBDA_API ClientUDP :
 		public NetWorker,
 		public IClientUDP,
@@ -37,7 +42,7 @@ namespace LambdaEngine
 		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
 
 	protected:
-		ClientUDP(IClientUDPHandler* pHandler, uint16 packetPoolSize, uint8 maximumTries);
+		ClientUDP(const ClientUDPDesc& desc);
 
 		virtual PacketManager* GetPacketManager() override;
 
@@ -60,7 +65,7 @@ namespace LambdaEngine
 		void Tick(Timestamp delta);
 
 	public:
-		static ClientUDP* Create(IClientUDPHandler* pHandler, uint16 packets, uint8 maximumTries);
+		static ClientUDP* Create(const ClientUDPDesc& desc);
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);

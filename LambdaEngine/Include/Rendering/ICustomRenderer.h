@@ -9,11 +9,11 @@ namespace LambdaEngine
 {
 	struct RenderPassAttachmentDesc;
 
-	class ICommandAllocator;
-	class ICommandList;
-	class ITextureView;
-	class IBuffer;
-	class IAccelerationStructure;
+	class CommandAllocator;
+	class CommandList;
+	class TextureView;
+	class Buffer;
+	class AccelerationStructure;
 
 	struct CustomRendererRenderGraphInitDesc
 	{
@@ -55,7 +55,7 @@ namespace LambdaEngine
 		*	count - Size of ppTextureViews
 		*	backBufferBound - Describes if subresources are bound in array or 1 / Back buffer
 		*/
-		virtual void UpdateTextureResource(const String& resourceName, const ITextureView* const * ppTextureViews, uint32 count, bool backBufferBound)	= 0;
+		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const * ppTextureViews, uint32 count, bool backBufferBound)	= 0;
 		/*
 		* Called when a ResourceUpdate is scheduled in the RenderGraph for the given buffer
 		*	resourceName - Name of the resource being updated
@@ -65,13 +65,13 @@ namespace LambdaEngine
 		*	count - size of ppBuffers, pOffsets and pSizesInBytes
 		*	backBufferBound - Describes if subresources are bound in array or 1 / Back buffer
 		*/
-		virtual void UpdateBufferResource(const String& resourceName, const IBuffer* const * ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)	= 0;
+		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const * ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)	= 0;
 		/*
 		* Called when a ResourceUpdate is scheduled in the RenderGraph for the given acceleration structure
 		*	resourceName - Name of the resource being updated
 		*	pAccelerationStructure - The acceleration structure that represent the update data
 		*/
-		virtual void UpdateAccelerationStructureResource(const String& resourceName, const IAccelerationStructure* pAccelerationStructure)	= 0;
+		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)	= 0;
 
 		/*
 		* Called when beginning a new frame to allow for initial setup
@@ -95,7 +95,7 @@ namespace LambdaEngine
 		*		if (executeRecording)	(*ppExecutionStage) = pCommandList;
 		*		else					(*ppExecutionStage) = nullptr;
 		*/
-		virtual void Render(ICommandAllocator* pCommandAllocator, ICommandList* pCommandList, uint32 modFrameIndex, uint32 backBufferIndex, ICommandList** ppExecutionStage)		= 0;
+		virtual void Render(CommandAllocator* pCommandAllocator, CommandList* pCommandList, uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppExecutionStage)		= 0;
 
 		virtual FPipelineStageFlags GetFirstPipelineStage()	= 0;
 		virtual FPipelineStageFlags GetLastPipelineStage()	= 0;
