@@ -1,6 +1,5 @@
 name: Välfärden
-#on: pull_request
-# Debugging:
+# on: pull_request
 on:
   push:
       branches:
@@ -43,7 +42,8 @@ jobs:
       run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
 
   Lint:
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: [self-hosted, Windows, X64]
 
     steps:
       - uses: actions/checkout@v2

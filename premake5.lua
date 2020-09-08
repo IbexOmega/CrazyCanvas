@@ -29,8 +29,7 @@ function get_fmod_dll_path()
 
 	for _, path in ipairs(potentialPaths) do
 		for _, driveLetter in ipairs(driveLetters) do
-			fullPath = driveLetter .. path
-			print(fullPath)
+			local fullPath = driveLetter .. path
 			if os.isfile(fullPath) then
 				return "\"" .. fullPath .. "\""
 			end
