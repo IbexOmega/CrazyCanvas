@@ -22,7 +22,7 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.1
 
     - name: Build Debug x64
-      run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Debug x64_SharedLib" -p:Platform=x64
+      run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Debug x64_StaticLib" -p:Platform=x64
 
   Build-Release-x64:
     runs-on: [self-hosted, Windows, X64]
@@ -40,7 +40,7 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.1
 
     - name: Build Release x64
-      run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Release x64_SharedLib" -p:Platform=x64_StaticLib
+      run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
 
   Lint:
     runs-on: ubuntu-latest
