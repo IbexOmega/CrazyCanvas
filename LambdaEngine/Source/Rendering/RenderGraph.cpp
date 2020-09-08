@@ -531,8 +531,8 @@ namespace LambdaEngine
 
 		uint32 currentExecutionStage = 0;
 
-		if (m_SignalValue > 3)
-			m_pFence->Wait(m_SignalValue - 3, UINT64_MAX);
+		if (m_SignalValue > m_BackBufferCount)
+			m_pFence->Wait(m_SignalValue - m_BackBufferCount, UINT64_MAX);
 
 		for (uint32 p = 0; p < m_PipelineStageCount; p++)
 		{
@@ -812,10 +812,10 @@ namespace LambdaEngine
 
 	bool RenderGraph::CreateCopyCommandLists()
 	{
-		m_ppGraphicsCopyCommandAllocators		= DBG_NEW CommandAllocator*[m_BackBufferCount];
-		m_ppGraphicsCopyCommandLists			= DBG_NEW CommandList*[m_BackBufferCount];
-		m_ppComputeCopyCommandAllocators		= DBG_NEW CommandAllocator*[m_BackBufferCount];
-		m_ppComputeCopyCommandLists				= DBG_NEW CommandList *[m_BackBufferCount];
+		m_ppGraphicsCopyCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
+		m_ppGraphicsCopyCommandLists		= DBG_NEW CommandList*[m_BackBufferCount];
+		m_ppComputeCopyCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
+		m_ppComputeCopyCommandLists			= DBG_NEW CommandList *[m_BackBufferCount];
 
 		for (uint32 b = 0; b < m_BackBufferCount; b++)
 		{
@@ -1869,7 +1869,6 @@ namespace LambdaEngine
 		{
 			actualSubResourceCount = pResource->SubResourceCount;
 		}
-
 
 		for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
 		{
