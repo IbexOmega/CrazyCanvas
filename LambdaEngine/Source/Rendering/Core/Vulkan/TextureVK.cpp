@@ -80,6 +80,10 @@ namespace LambdaEngine
 		{
 			info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 		}
+		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_CUBE_COMPATIBLE)
+		{
+			info.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+		}
 
 		if (pDesc->Type == ETextureType::TEXTURE_TYPE_1D)
 		{
