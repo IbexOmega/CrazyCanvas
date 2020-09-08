@@ -20,7 +20,28 @@ function get_vk_sdk_path()
 	return ""
 end
 
-VK_SDK_PATH = get_vk_sdk_path()
+function get_fmod_dll_path()
+	local driveLetters = {"C", "D"}
+	local potentialPaths = {
+		":/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll",
+		":/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll"
+	}
+
+	for _, path in ipairs(potentialPaths) do
+		for _, driveLetter in ipairs(driveLetters) do
+			fullPath = driveLetter .. path
+			print(fullPath)
+			if os.isfile(fullPath) then
+				return "\"" .. fullPath .. "\""
+			end
+		end
+	end
+
+	print('fmodL.dll was not found, ensure that FMOD engine is installed or modify premake5.lua')
+end
+
+VK_SDK_PATH		= get_vk_sdk_path()
+FMOD_DLL_PATH	= get_fmod_dll_path()
 
 workspace "LambdaEngine"
 	startproject "Sandbox"
@@ -439,22 +460,10 @@ workspace "LambdaEngine"
 		filter { "system:windows"}
 			postbuildcommands
 			{
-				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
-				("{COPY} \"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} \"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
-				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
-				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
+				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
+				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		-- LambdaEngine
 		filter { "system:windows", "platforms:x64_SharedLib" }
