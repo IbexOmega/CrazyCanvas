@@ -1,4 +1,4 @@
-import json, re, sys, getopt
+import json, os, re, sys, getopt
 
 # Regexes that will catch messages to be suppressed
 SUPPRESSED_REGEXES = [
@@ -73,6 +73,7 @@ def getFilesToLint(modifiedFilesPath, addedFilesPath):
     return modifiedFiles + addedFiles
 
 def main(argv):
+    print(os.listdir())
     inputFile = ""
     modifiedFilesPath = ""
     addedFilesPath = ""

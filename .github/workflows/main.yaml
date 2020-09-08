@@ -46,9 +46,9 @@ jobs:
       - name: Generate Lint Report
         uses: deep5050/cppcheck-action@master
         with:
-          exclude_check: vendor
+          github_token: ${{ secrets.GITHUB_TOKEN}}
+          exclude_check: Dependencies
           platform: win64
-          output_file: ./cppcheck_report
 
       - name: Get file changes
         id: get_file_changes
@@ -57,5 +57,5 @@ jobs:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Read Lint Report
-        run: python3 ./.github/workflows/read-lint-report.py --report ./cppcheck_report
+        run: python3 ./.github/workflows/read-lint-report.py --report ./cppcheck_report.txt
           --modified-files $HOME/files_modified.json --added-files $HOME/files_added.json
