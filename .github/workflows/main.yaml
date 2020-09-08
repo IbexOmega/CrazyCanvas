@@ -6,44 +6,41 @@ on:
         - benchmarks
 
 jobs:
-  Build-Debug-x64:
+  Pre-Build:
     runs-on: [self-hosted, Windows, X64]
 
     steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
 
-    - name: Execute Premake
-      run: .\premake5.exe vs2019
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
 
-    - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.1
+  Build-Debug-x64:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Pre-Build
 
-    - name: Build Debug x64
-      run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Debug x64_StaticLib" -p:Platform=x64
+    steps:
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build Debug x64
+        run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Debug x64_StaticLib" -p:Platform=x64
 
   Build-Release-x64:
     runs-on: [self-hosted, Windows, X64]
+    needs: Pre-Build
 
     steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-        ref: master
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
 
-    - name: Execute Premake
-      run: .\premake5.exe vs2019
-
-    - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.1
-
-    - name: Build Release x64
-      run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+      - name: Build Release x64
+        run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
 
   Lint:
-    # runs-on: ubuntu-latest
-    runs-on: [self-hosted, Windows, X64]
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
