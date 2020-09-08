@@ -307,6 +307,7 @@ namespace LambdaEngine
 		TEXTURE_FLAG_DEPTH_STENCIL		= FLAG(4),
 		TEXTURE_FLAG_COPY_SRC			= FLAG(5),
 		TEXTURE_FLAG_COPY_DST			= FLAG(6),
+		TEXTURE_FLAG_CUBE_COMPATIBLE	= FLAG(7)
 	};
 
 	enum FTextureViewFlags : uint32

@@ -895,6 +895,7 @@ namespace LambdaEngine
 				//Internal
 				if (pResourceDesc->Type == ERenderGraphResourceType::TEXTURE)
 				{
+					pResource->Texture.textureType		= pResourceDesc->TextureParams.TextureType;
 					pResource->Type						= ERenderGraphResourceType::TEXTURE;
 					pResource->OwnershipType			= pResource->IsBackBuffer ? EResourceOwnershipType::EXTERNAL : EResourceOwnershipType::INTERNAL;
 					pResource->Texture.IsOfArrayType	= pResourceDesc->TextureParams.IsOfArrayType;
@@ -904,14 +905,16 @@ namespace LambdaEngine
 					pResource->Texture.Textures.Resize(actualSubResourceCount);
 					pResource->Texture.TextureViews.Resize(actualSubResourceCount);
 					pResource->Texture.Samplers.Resize(actualSubResourceCount);
+					pResource->Texture.CubeMapView = nullptr;
 
 					if (!pResource->IsBackBuffer)
 					{
 						uint32 arrayCount = pResourceDesc->TextureParams.IsOfArrayType ? pResource->SubResourceCount : 1;
 
-						TextureDesc		textureDesc		= {};
-						TextureViewDesc textureViewDesc = {};
-						SamplerDesc		samplerDesc		= {};
+						TextureDesc		textureDesc			= {};
+						TextureViewDesc textureViewDesc		= {};
+						SamplerDesc		samplerDesc			= {};
+						TextureViewDesc textureCubeViewDesc = {};
 
 						textureDesc.DebugName			= pResourceDesc->Name + " Texture";
 						textureDesc.MemoryType			= pResourceDesc->MemoryType;
@@ -947,6 +950,19 @@ namespace LambdaEngine
 						samplerDesc.MaxAnisotropy		= 16;
 						samplerDesc.MinLOD				= 0.0f;
 						samplerDesc.MaxLOD				= 1.0f;
+
+						if (pResource->Texture.textureType == ERenderGraphTextureType::TEXTURE_CUBE)
+						{
+							textureViewDesc.DebugName = pResourceDesc->Name + " Texture Cube View";
+							textureViewDesc.Texture = nullptr;
+							textureViewDesc.Flags = pResourceDesc->TextureParams.TextureViewFlags;
+							textureViewDesc.Format = pResourceDesc->TextureParams.TextureFormat;
+							textureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+							textureViewDesc.MiplevelCount = pResourceDesc->TextureParams.MiplevelCount;
+							textureViewDesc.ArrayCount = arrayCount;
+							textureViewDesc.Miplevel = 0;
+							textureViewDesc.ArrayIndex = 0;
+						}
 
 						InternalResourceUpdateDesc internalResourceUpdateDesc = {};
 						internalResourceUpdateDesc.ResourceName						= pResourceDesc->Name;

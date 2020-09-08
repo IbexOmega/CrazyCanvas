@@ -84,6 +84,12 @@ namespace LambdaEngine
 		NEAREST					= 2,
 	};
 
+	enum class ERenderGraphTextureType : uint8
+	{
+		TEXTURE_2D				= 0,
+		TEXTURE_CUBE			= 1
+	};
+
 	/*-----------------------------------------------------------------Resource Structs Begin-----------------------------------------------------------------*/
 
 	struct RenderGraphResourceDesc 
@@ -102,6 +108,7 @@ namespace LambdaEngine
 		//Texture Specific
 		struct
 		{
+			ERenderGraphTextureType		TextureType				= ERenderGraphTextureType::TEXTURE_2D;
 			EFormat						TextureFormat			= EFormat::FORMAT_NONE;
 			bool						IsOfArrayType			= false;
 			ERenderGraphDimensionType	XDimType				= ERenderGraphDimensionType::RELATIVE;

@@ -164,12 +164,14 @@ namespace LambdaEngine
 
 			struct
 			{
+				ERenderGraphTextureType				textureType = ERenderGraphTextureType::TEXTURE_2D;
 				bool								IsOfArrayType	= false;
 				EFormat								Format			= EFormat::FORMAT_NONE;
 				TArray<ResourceBarrierInfo>			BarriersPerSynchronizationStage; //Divided into #SubResourceCount Barriers per Synchronization Stage
 				TArray<Texture*>					Textures;
 				TArray<TextureView*>				TextureViews;
 				TArray<Sampler*>					Samplers;
+				TextureView*						CubeMapView;
 			} Texture;
 
 			struct
