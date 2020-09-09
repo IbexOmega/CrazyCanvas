@@ -23,6 +23,7 @@ Build/
 # Ignore all dependency build files
 Dependencies/bin/
 Dependencies/bin-int/
+Dependencies/assimp/bin/
 
 #Other ignored files
 *.dot
