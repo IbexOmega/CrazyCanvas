@@ -18,8 +18,9 @@ public:
     bool Init(LambdaEngine::Camera* pCamera, const std::vector<glm::vec3>& track);
     void Tick(float dt);
 
-private:
     bool hasReachedEnd() const { return m_CurrentTrackIndex == m_Track.size() - 1; }
+
+private:
     glm::vec3 getCurrentGradient(const glm::uvec4& splineIndices) const;
     glm::uvec4 getCurrentSplineIndices() const;
 

@@ -76,6 +76,11 @@ namespace LambdaEngine
 		void SetMousePosition(int x, int y);
 
 		ModifierKeyState GetModifierKeyState() const;
+		
+		FORCEINLINE bool IsExiting() const
+		{
+			return m_IsExiting;
+		}
 
 	public:
 		// EventHandler Interface
@@ -108,9 +113,11 @@ namespace LambdaEngine
 		static CommonApplication* Get();
 
 	private:
-		TSharedRef<Window>		m_MainWindow			= nullptr;
-		Application*			m_pPlatformApplication	= nullptr;
-		TArray<ApplicationEventHandler*> 	m_EventHandlers;
+		TSharedRef<Window> m_MainWindow	= nullptr;
+		TArray<ApplicationEventHandler*> m_EventHandlers;
+		Application* m_pPlatformApplication	= nullptr;
+
+		bool m_IsExiting = false;
 
 	private:
 		static TSharedPtr<CommonApplication> s_CommonApplication;

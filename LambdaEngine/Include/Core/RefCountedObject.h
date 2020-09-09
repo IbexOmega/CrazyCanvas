@@ -3,6 +3,9 @@
 
 namespace LambdaEngine
 {
+	/*
+	* RefCountedObject
+	*/
 	class RefCountedObject
 	{
 	public:
@@ -15,13 +18,13 @@ namespace LambdaEngine
 		* Decrements the referencecounter for the object
 		*	return - Returns the new referencecount for the object
 		*/
-		virtual uint64 AddRef();
+		virtual uint64 AddRef() const;
 
 		/*
 		* Increases the referencecounter for the object
 		*	return - Returns the new referencecount for the object
 		*/
-		virtual uint64 Release();
+		virtual uint64 Release() const;
 		
 		FORCEINLINE uint64 GetRefCount() const
 		{
@@ -29,7 +32,7 @@ namespace LambdaEngine
 		}
 		
 	private:
-		uint64		m_StrongReferences = 0;
-		SpinLock	m_Lock;
+		mutable uint64 m_StrongReferences = 0;
+		mutable SpinLock m_Lock;
 	};
 }

@@ -106,7 +106,7 @@ namespace LambdaEngine
 	GraphicsDeviceVK::~GraphicsDeviceVK()
 	{
 		SAFEDELETE(m_pFrameBufferCache);
-		
+
 		if (Device != VK_NULL_HANDLE)
 		{
 			vkDestroyDevice(Device, nullptr);
@@ -180,7 +180,7 @@ namespace LambdaEngine
 			m_UsedAllocations++;
 			D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
 		}
-		
+
 		return result;
 	}
 
@@ -195,11 +195,11 @@ namespace LambdaEngine
 	void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
 	{
 		VALIDATE(m_pFrameBufferCache != nullptr);
-		
+
 		if (*pRenderPass != VK_NULL_HANDLE)
 		{
 			m_pFrameBufferCache->DestroyRenderPass(*pRenderPass);
-			
+
 			vkDestroyRenderPass(Device, *pRenderPass, nullptr);
 			*pRenderPass = VK_NULL_HANDLE;
 		}
@@ -208,11 +208,11 @@ namespace LambdaEngine
 	void GraphicsDeviceVK::DestroyImageView(VkImageView* pImageView) const
 	{
 		VALIDATE(m_pFrameBufferCache != nullptr);
-		
+
 		if (*pImageView != VK_NULL_HANDLE)
 		{
 			m_pFrameBufferCache->DestroyImageView(*pImageView);
-			
+
 			vkDestroyImageView(Device, *pImageView, nullptr);
 			*pImageView = VK_NULL_HANDLE;
 		}
@@ -228,7 +228,7 @@ namespace LambdaEngine
 		}
 
 		key.ColorAttachmentViewCount	= renderTargetCount;
-		
+
 		if (pDepthStencil)
 		{
 			const TextureViewVK* pDepthStencilVk = reinterpret_cast<const TextureViewVK*>(pDepthStencil);
@@ -238,12 +238,12 @@ namespace LambdaEngine
 		{
 			key.DepthStencilView = VK_NULL_HANDLE;
 		}
-		
+
 		VALIDATE(pRenderPass != nullptr);
-		
+
 		const RenderPassVK* pRenderPassVk = reinterpret_cast<const RenderPassVK*>(pRenderPass);
 		key.RenderPass = pRenderPassVk->GetRenderPass();
-		
+
 		return m_pFrameBufferCache->GetFrameBuffer(key, width, height);
 	}
 
@@ -284,7 +284,7 @@ namespace LambdaEngine
 	PipelineLayout* GraphicsDeviceVK::CreatePipelineLayout(const PipelineLayoutDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		PipelineLayoutVK* pPipelineLayout = DBG_NEW PipelineLayoutVK(this);
 		if (!pPipelineLayout->Init(pDesc))
 		{
@@ -300,7 +300,7 @@ namespace LambdaEngine
 	DescriptorHeap* GraphicsDeviceVK::CreateDescriptorHeap(const DescriptorHeapDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		DescriptorHeapVK* pDescriptorHeap = DBG_NEW DescriptorHeapVK(this);
 		if (!pDescriptorHeap->Init(pDesc))
 		{
@@ -317,7 +317,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(pPipelineLayout != nullptr);
 		VALIDATE(pDescriptorHeap != nullptr);
-		
+
 		DescriptorSetVK* pDescriptorSet = DBG_NEW DescriptorSetVK(this);
 		if (!pDescriptorSet->Init(debugname, pPipelineLayout, descriptorLayoutIndex, pDescriptorHeap))
 		{
@@ -333,7 +333,7 @@ namespace LambdaEngine
 	RenderPass* GraphicsDeviceVK::CreateRenderPass(const RenderPassDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		RenderPassVK* pRenderPass = DBG_NEW RenderPassVK(this);
 		if (!pRenderPass->Init(pDesc))
 		{
@@ -349,7 +349,7 @@ namespace LambdaEngine
 	PipelineState* GraphicsDeviceVK::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		GraphicsPipelineStateVK* pPipelineState = DBG_NEW GraphicsPipelineStateVK(this);
 		if (!pPipelineState->Init(pDesc))
 		{
@@ -365,7 +365,7 @@ namespace LambdaEngine
 	PipelineState* GraphicsDeviceVK::CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		ComputePipelineStateVK* pPipelineState = DBG_NEW ComputePipelineStateVK(this);
 		if (!pPipelineState->Init(pDesc))
 		{
@@ -381,7 +381,7 @@ namespace LambdaEngine
 	PipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		RayTracingPipelineStateVK* pPipelineState = DBG_NEW RayTracingPipelineStateVK(this);
 		if (!pPipelineState->Init(pCommandQueue, pDesc))
 		{
@@ -397,7 +397,7 @@ namespace LambdaEngine
 	AccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, DeviceAllocator* pAllocator) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		if (!m_DeviceFeatures.RayTracing)
 		{
 			return nullptr;
@@ -418,7 +418,7 @@ namespace LambdaEngine
 	CommandList* GraphicsDeviceVK::CreateCommandList(CommandAllocator* pAllocator, const CommandListDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		CommandListVK* pCommandListVK = DBG_NEW CommandListVK(this);
 		if (!pCommandListVK->Init(pAllocator, pDesc))
 		{
@@ -468,7 +468,7 @@ namespace LambdaEngine
 		{
 			return nullptr;
 		}
-		
+
 		VALIDATE(queueFamilyIndex < int32(m_QueueFamilyProperties.GetSize()));
 		VALIDATE(index            < m_QueueFamilyProperties[queueFamilyIndex].queueCount);
 
@@ -487,7 +487,7 @@ namespace LambdaEngine
 	Fence* GraphicsDeviceVK::CreateFence(const FenceDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		if (UseTimelineFences())
 		{
 			FenceTimelineVK* pFenceTimelineVk = DBG_NEW FenceTimelineVK(this);
@@ -519,7 +519,7 @@ namespace LambdaEngine
 	DeviceAllocator* GraphicsDeviceVK::CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		DeviceAllocatorVK* pAllocator = DBG_NEW DeviceAllocatorVK(this);
 		if (!pAllocator->Init(pDesc))
 		{
@@ -535,7 +535,7 @@ namespace LambdaEngine
 	Buffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc* pDesc, DeviceAllocator* pAllocator) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		BufferVK* pBuffer = DBG_NEW BufferVK(this);
 		if (!pBuffer->Init(pDesc, pAllocator))
 		{
@@ -551,7 +551,7 @@ namespace LambdaEngine
 	Texture* GraphicsDeviceVK::CreateTexture(const TextureDesc* pDesc, DeviceAllocator* pAllocator) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		TextureVK* pTexture = DBG_NEW TextureVK(this);
 		if (!pTexture->Init(pDesc, pAllocator))
 		{
@@ -567,7 +567,7 @@ namespace LambdaEngine
 	Sampler* GraphicsDeviceVK::CreateSampler(const SamplerDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		SamplerVK* pSampler = DBG_NEW SamplerVK(this);
 		if (!pSampler->Init(pDesc))
 		{
@@ -583,7 +583,7 @@ namespace LambdaEngine
 	TextureView* GraphicsDeviceVK::CreateTextureView(const TextureViewDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		TextureViewVK* pTextureView = DBG_NEW TextureViewVK(this);
 		if (!pTextureView->Init(pDesc))
 		{
@@ -599,7 +599,7 @@ namespace LambdaEngine
 	Shader* GraphicsDeviceVK::CreateShader(const ShaderDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		ShaderVK* pShader = DBG_NEW ShaderVK(this);
 		if (!pShader->Init(pDesc))
 		{
@@ -617,7 +617,7 @@ namespace LambdaEngine
 		VALIDATE(pDesc			!= nullptr);
 		VALIDATE(pDesc->pWindow	!= nullptr);
 		VALIDATE(pDesc->pQueue	!= nullptr);
-		
+
 		SwapChainVK* pSwapChain = DBG_NEW SwapChainVK(this);
 		if (!pSwapChain->Init(pDesc))
 		{
@@ -657,7 +657,7 @@ namespace LambdaEngine
 			copyDescriptorSet.descriptorCount    = binding.DescriptorCount;
 			copyDescriptorSet.srcBinding        = binding.Binding;
 			copyDescriptorSet.dstBinding        = copyDescriptorSet.srcBinding;
-			
+
 			descriptorSetCopies.PushBack(copyDescriptorSet);
 		}
 
@@ -687,7 +687,7 @@ namespace LambdaEngine
 
 			descriptorSetCopies.PushBack(copyDescriptorSet);
 		}
-		
+
 		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.GetSize()), descriptorSetCopies.GetData());
 	}
 
@@ -766,7 +766,7 @@ namespace LambdaEngine
 	{
 		VkPhysicalDeviceProperties physicalDeviceProperties = {};
 		vkGetPhysicalDeviceProperties(PhysicalDevice, &physicalDeviceProperties);
-		
+
 		return physicalDeviceProperties;
 	}
 
@@ -933,7 +933,7 @@ namespace LambdaEngine
 
 		m_QueueFamilyProperties.Resize(queueFamilyCount);
 		vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &queueFamilyCount, m_QueueFamilyProperties.GetData());
-		
+
 		// Save device's limits
 		VkPhysicalDeviceProperties deviceProperties = GetPhysicalDeviceProperties();
 		m_DeviceLimits = deviceProperties.limits;

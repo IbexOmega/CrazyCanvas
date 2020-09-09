@@ -299,7 +299,14 @@ namespace LambdaEngine
 	bool CommonApplication::Tick()
 	{
 		PlatformApplication::PeekEvents();
-		return m_pPlatformApplication->Tick();
+		
+		bool shouldExit = m_pPlatformApplication->Tick();
+		if (shouldExit)
+		{
+			m_IsExiting = true;
+		}
+
+		return shouldExit;
 	}
 
 	void CommonApplication::Terminate()
