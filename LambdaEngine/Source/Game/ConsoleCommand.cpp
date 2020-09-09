@@ -25,9 +25,25 @@ void LambdaEngine::ConsoleCommand::AddFlag(const std::string& name, Arg::EType t
 	m_Flags[name] = flag;
 }
 
+void LambdaEngine::ConsoleCommand::AddDescription(const std::string& mainDescription)
+{
+	m_Description.mainDesc = mainDescription;
+}
+
+void LambdaEngine::ConsoleCommand::AddDescription(const std::string& mainDescription, std::unordered_map<std::string, std::string> flagDescriptions)
+{
+	m_Description.mainDesc = mainDescription;
+	m_Description.flagDescs = flagDescriptions;
+}
+
 std::string LambdaEngine::ConsoleCommand::GetName() const
 {
 	return m_Name;
+}
+
+LambdaEngine::ConsoleCommand::Description LambdaEngine::ConsoleCommand::GetDescription() const
+{
+	return m_Description;
 }
 
 bool LambdaEngine::ConsoleCommand::IsDebug() const

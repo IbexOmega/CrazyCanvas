@@ -6,10 +6,18 @@
 
 #include "ConsoleCommand.h"
 
+struct ImGuiInputTextCallbackData;
 namespace LambdaEngine
 {
 	class LAMBDA_API GameConsole
 	{
+	public:
+		struct CallbackInput
+		{
+			TArray<Arg> arguments;
+			std::unordered_map<std::string, Flag> flags;
+		};
+
 	public:
 		DECL_REMOVE_COPY(GameConsole);
 		DECL_REMOVE_MOVE(GameConsole);
@@ -19,7 +27,7 @@ namespace LambdaEngine
 
 		void Render();
 		
-		void BindCommand(ConsoleCommand cmd, std::function<void(TArray<Arg>& arguments, std::unordered_map<std::string, Flag>& flags)> callback);
+		void BindCommand(ConsoleCommand cmd, std::function<void(CallbackInput&)> callback);
 
 		static GameConsole& Get();
 
@@ -40,38 +48,15 @@ namespace LambdaEngine
 		bool AddArg(uint32 index, Arg arg, ConsoleCommand& cmd);
 
 		void PushError(const std::string& msg);
+		void PushInfo(const std::string& msg);
+
+		int TextEditCallback(ImGuiInputTextCallbackData* data);
 
 	private:
 		TArray<Item> m_Items;
-		bool m_ScrollToBottom;
-		std::unordered_map<std::string, std::pair<ConsoleCommand, std::function<void(TArray<Arg>& arguments, std::unordered_map<std::string, Flag>& flags)>>> m_CommandMap;
+		TArray<std::string> m_History;
+		int32 m_HistoryIndex { -1 };
+		bool m_ScrollToBottom { false };
+		std::unordered_map<std::string, std::pair<ConsoleCommand, std::function<void(CallbackInput&)>>> m_CommandMap;
 	};
-
-	/*
-	
-	 struct LAMBDA_API Arg
-	{
-		enum EType { FLOAT, BOOL, INT, STRING };
-
-		EType type;
-		union Value
-		{
-			float f;
-			bool b;
-			int i;
-			char str[64];
-		} value;
-	};
-
-	Command cmd;
-	cmd.name = "name";
-	cmd.addArg(STRING);
-	cmd.addArg(INT);
-	GameConsole::BindCommand(cmd, [](TArray<Arg> args){});
-
-	/setPosition 2 4 5
-	/light activate 
-	/name ol 3
-	
-	*/
 }

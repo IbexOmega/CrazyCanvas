@@ -5,6 +5,34 @@
 
 bool LambdaEngine::GameConsole::Init()
 {
+	ConsoleCommand cmdHelp;
+	cmdHelp.Init("help", false);
+	cmdHelp.AddFlag("d", Arg::EMPTY);
+	cmdHelp.AddDescription("Shows all commands descriptions.", { {"d", "Used to show debug commands also."} });
+	BindCommand(cmdHelp, [this](CallbackInput& input)->void {
+		for (auto i : m_CommandMap)
+		{
+			ConsoleCommand& cCmd = i.second.first;
+			if (!cCmd.IsDebug() || (input.flags.find("d") != input.flags.end()))
+			{
+				ConsoleCommand::Description desc = cCmd.GetDescription();
+				PushInfo(i.first + ":");
+				PushInfo("\t" + desc.mainDesc);
+				for (auto flagDesc : desc.flagDescs)
+					PushInfo("\t\t-" + flagDesc.first + ": " + flagDesc.second);
+			}
+		}
+		
+	});
+
+	ConsoleCommand cmdClear;
+	cmdClear.Init("clear", false);
+	cmdClear.AddFlag("h", Arg::EMPTY);
+	cmdClear.AddDescription("Clears the visible text in the console.", { {"h", "Clears the history."} });
+	BindCommand(cmdClear, [this](CallbackInput& input)->void {
+		m_Items.Clear();
+	});
+
 	return true;
 }
 
@@ -23,7 +51,6 @@ void LambdaEngine::GameConsole::Render()
 	{
 		s_Active = true;
 		s_Toggle ^= 1;
-		LOG_INFO("TILDE!");
 	}
 	else if (Input::IsKeyUp(EKey::KEY_GRAVE_ACCENT))
 		s_Active = false;
@@ -42,15 +69,19 @@ void LambdaEngine::GameConsole::Render()
 		const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 		ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
-		for (int i = 0; i < m_Items.GetSize(); i++)
-		{
-			Item& item = m_Items[i];
-			const char* str = item.str.c_str();
-			ImVec4 color = ImVec4(item.color.r, item.color.g, item.color.b, item.color.a);
-			ImGui::PushStyleColor(ImGuiCol_Text, color);
-			ImGui::TextUnformatted(str);
-			ImGui::PopStyleColor();
-		}
+		
+		// Only display visible text to see history.
+		ImGuiListClipper clipper(m_Items.GetSize());
+		while (clipper.Step())
+			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+			{
+				Item& item = m_Items[i];
+				const char* str = item.str.c_str();
+				ImVec4 color = ImVec4(item.color.r, item.color.g, item.color.b, item.color.a);
+				ImGui::PushStyleColor(ImGuiCol_Text, color);
+				ImGui::TextUnformatted(str);
+				ImGui::PopStyleColor();
+			}
 
 		if (m_ScrollToBottom | (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
 			ImGui::SetScrollHereY(1.0f);
@@ -62,8 +93,11 @@ void LambdaEngine::GameConsole::Render()
 
 		// Command line
 		static char s_Buf[256];
-		ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue;
-		if (ImGui::InputText("Input", s_Buf, 256, input_text_flags))
+		ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;;
+		if (ImGui::InputText("Input", s_Buf, 256, input_text_flags, [](ImGuiInputTextCallbackData* data)->int {
+			GameConsole* console = (GameConsole*)data->UserData;
+			return console->TextEditCallback(data);
+		}, (void*)this))
 		{
 			if (s_Buf[0])
 				ExecCommand(std::string(s_Buf));
@@ -81,9 +115,9 @@ void LambdaEngine::GameConsole::Render()
 	ImGui::End();
 }
 
-void LambdaEngine::GameConsole::BindCommand(ConsoleCommand cmd, std::function<void(TArray<Arg>& arguments, std::unordered_map<std::string, Flag>& flags)> callback)
+void LambdaEngine::GameConsole::BindCommand(ConsoleCommand cmd, std::function<void(CallbackInput&)> callback)
 {
-	m_CommandMap[cmd.GetName()] = std::pair<ConsoleCommand, std::function<void(TArray<Arg>& arguments, std::unordered_map<std::string, Flag>& flags)>>(cmd, callback);
+	m_CommandMap[cmd.GetName()] = std::pair<ConsoleCommand, std::function<void(CallbackInput&)>>(cmd, callback);
 }
 
 LambdaEngine::GameConsole& LambdaEngine::GameConsole::Get()
@@ -102,18 +136,22 @@ LambdaEngine::GameConsole::~GameConsole()
 
 int LambdaEngine::GameConsole::ExecCommand(std::string& data)
 {
-	size_t pos = 0;
-	std::string token;
 	std::string command = data;
+	m_History.PushBack(command);
+
 	Item item = {};
+	item.str = data;
+	item.color = glm::vec4(1.f, 1.f, 1.f, 1.f);
+	m_Items.PushBack(item);
+
 	m_ScrollToBottom = true;
 
-	pos = command.find(" ");
-	token = command.substr(0, pos);
+	size_t cmdPos = command.find(" ");
+	size_t pos = cmdPos != std::string::npos ? cmdPos : command.length();
+	std::string token = command.substr(0, pos);
 	command.erase(0, pos + std::string(" ").length());
 	
 	auto it = m_CommandMap.find(token);
-
 	if (it == m_CommandMap.end())
 	{
 		PushError("Command '" + token + "' not found.");
@@ -121,12 +159,11 @@ int LambdaEngine::GameConsole::ExecCommand(std::string& data)
 	}
 
 	ConsoleCommand& cmd = it->second.first;
-
 	Flag* preFlag = nullptr;
 	std::unordered_map<std::string, Flag> flags;
 	
 	bool wasFlag = false;
-	uint32 index = 0;
+	uint32 argIndex = 0;
 	while (((pos = command.find(" ")) != std::string::npos) || ((pos = command.length()) > 0))
 	{
 		Arg arg;
@@ -157,17 +194,17 @@ int LambdaEngine::GameConsole::ExecCommand(std::string& data)
 				}
 				else
 				{
-					bool res = AddArg(index, arg, cmd);
+					bool res = AddArg(argIndex, arg, cmd);
 					if (!res) return 0;
-					index++;
+					argIndex++;
 				}
 				wasFlag = false;
 			}
 			else
 			{
-				bool res = AddArg(index, arg, cmd);
+				bool res = AddArg(argIndex, arg, cmd);
 				if (!res) return 0;
-				index++;
+				argIndex++;
 			}
 		}
 		
@@ -178,18 +215,17 @@ int LambdaEngine::GameConsole::ExecCommand(std::string& data)
 	}
 
 	uint32 size = cmd.GetArguments().GetSize();
-	if (index != size) // Error too few arguments!
+	if (argIndex != size) // Error too few arguments!
 	{
 		PushError("Too few arguments!");
 		return 0;
 	}
 
-	item.str = data;
-	item.color = glm::vec4(1.f, 1.f, 1.f, 1.f);
-	m_Items.PushBack(item);
-
 	// Call function
-	it->second.second(cmd.GetArguments(), flags);
+	CallbackInput input;
+	input.arguments = cmd.GetArguments();
+	input.flags = flags;
+	it->second.second(input);
 
 	return 0;
 }
@@ -250,4 +286,122 @@ void LambdaEngine::GameConsole::PushError(const std::string& msg)
 	item.str = "Error:" + msg;
 	item.color = glm::vec4(1.f, 0.f, 0.f, 1.f);
 	m_Items.PushBack(item);
+	m_ScrollToBottom = true;
+}
+
+void LambdaEngine::GameConsole::PushInfo(const std::string& msg)
+{
+	Item item = {};
+	item.str = msg;
+	item.color = glm::vec4(1.f, 1.f, 0.f, 1.f);
+	m_Items.PushBack(item);
+	m_ScrollToBottom = true;
+}
+
+int LambdaEngine::GameConsole::TextEditCallback(ImGuiInputTextCallbackData* data)
+{
+	switch (data->EventFlag)
+	{
+	case ImGuiInputTextFlags_CallbackCompletion:
+	{
+		// Locate beginning of current word
+		const char* word_end = data->Buf + data->CursorPos;
+		const char* word_start = word_end;
+		while (word_start > data->Buf)
+		{
+			const char c = word_start[-1];
+			if (c == ' ' || c == '\t' || c == ',' || c == ';')
+				break;
+			word_start--;
+		}
+
+		// Build a list of candidates
+		TArray<const char*> candidates;
+		for (auto& cmd : m_CommandMap)
+		{
+			const char* command = cmd.first.c_str();
+			int32 d = 0; 
+			int32 n = (int32)(word_end - word_start);
+			const char* s1 = command;
+			const char* s2 = word_start;
+			while (n > 0 && (d = toupper(*s2) - toupper(*s1)) == 0 && *s1) 
+			{ 
+				s1++;
+				s2++;
+				n--; 
+			}
+			if (d == 0)
+			{
+				candidates.PushBack(command);
+			}
+		}
+
+		if (candidates.GetSize() == 0)
+		{
+			// No match
+		}
+		else if (candidates.GetSize() == 1)
+		{
+			// Single match. Delete the beginning of the word and replace it entirely so we've got nice casing.
+			data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
+			data->InsertChars(data->CursorPos, candidates[0]);
+			data->InsertChars(data->CursorPos, " ");
+		}
+		else
+		{
+			// Multiple matches. Complete as much as it can.
+			int match_len = (int)(word_end - word_start);
+			for (;;)
+			{
+				int c = 0;
+				bool all_candidates_matches = true;
+				for (int i = 0; i < candidates.GetSize() && all_candidates_matches; i++)
+					if (i == 0)
+						c = toupper(candidates[i][match_len]);
+					else if (c == 0 || c != toupper(candidates[i][match_len]))
+						all_candidates_matches = false;
+				if (!all_candidates_matches)
+					break;
+				match_len++;
+			}
+
+			if (match_len > 0)
+			{
+				data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
+				data->InsertChars(data->CursorPos, candidates[0], candidates[0] + match_len);
+			}
+
+			// List matches
+			PushInfo("Possible matches:\n");
+			for (int i = 0; i < candidates.GetSize(); i++)
+				PushInfo("-" + std::string(candidates[i]));
+		}
+		break;
+	}
+	case ImGuiInputTextFlags_CallbackHistory:
+	{
+		const int prevHistoryIndex = m_HistoryIndex;
+		if (data->EventKey == ImGuiKey_UpArrow)
+		{
+			if (m_HistoryIndex == -1)
+				m_HistoryIndex = m_History.GetSize() - 1;
+			else if (m_HistoryIndex > 0)
+				m_HistoryIndex--;
+		}
+		else if (data->EventKey == ImGuiKey_DownArrow)
+		{
+			if (m_HistoryIndex != -1)
+				if (++m_HistoryIndex >= m_History.GetSize())
+					m_HistoryIndex = -1;
+		}
+
+		if (prevHistoryIndex != m_HistoryIndex)
+		{
+			const char* historyStr = (m_HistoryIndex >= 0) ? m_History[m_HistoryIndex].c_str() : "";
+			data->DeleteChars(0, data->BufTextLen);
+			data->InsertChars(0, historyStr);
+		}
+	}
+	}
+	return 0;
 }
