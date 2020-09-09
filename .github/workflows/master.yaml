@@ -5,7 +5,7 @@ on:
         - master
 
 jobs:
-  benchmark:
+  Pre-Build:
     runs-on: [self-hosted, Windows, X64]
 
     steps:
@@ -13,6 +13,20 @@ jobs:
         with:
           submodules: true
 
+      - name: Read LFS Cache
+        run: cp -r ../../.git/lfs/* .git/lfs/
+
+      # - name: Pull From LFS
+      #   run: git lfs pull
+
+      - name: Update LFS Cache
+        run: cp -r .git/lfs/* ../../.git/lfs/
+
+  benchmark:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Pre-Build
+
+    steps:
       - name: Execute Premake
         run: .\premake5.exe vs2019
 

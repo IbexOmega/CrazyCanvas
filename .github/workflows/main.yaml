@@ -2,7 +2,7 @@ name: Välfärden
 on: pull_request
 
 jobs:
-  Build-Debug-x64:
+  Pre-Build:
     runs-on: [self-hosted, Windows, X64]
 
     steps:
@@ -10,6 +10,20 @@ jobs:
         with:
           submodules: true
 
+      - name: Read LFS Cache
+        run: cp -r -Force ../../.git/lfs .git/
+
+      # - name: Pull From LFS
+      #   run: git lfs pull
+
+      - name: Update LFS Cache
+        run: cp -r -Force .git/lfs ../../.git/
+
+  Build-Debug-x64:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Pre-Build
+
+    steps:
       - name: Execute Premake
         run: .\premake5.exe vs2019
 
@@ -21,12 +35,9 @@ jobs:
 
   Build-Release-x64:
     runs-on: [self-hosted, Windows, X64]
+    needs: Pre-Build
 
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-
       - name: Execute Premake
         run: .\premake5.exe vs2019
 
