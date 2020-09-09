@@ -187,6 +187,7 @@ namespace LambdaEngine
 	void GraphicsDeviceVK::FreeMemory(VkDeviceMemory deviceMemory) const
 	{
 		VALIDATE(deviceMemory != VK_NULL_HANDLE);
+
 		vkFreeMemory(Device, deviceMemory, nullptr);
 		m_UsedAllocations--;
 	}
