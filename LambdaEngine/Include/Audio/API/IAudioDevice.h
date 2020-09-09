@@ -16,13 +16,12 @@ namespace LambdaEngine
 	class ISoundInstance3D;
 	class IAudioGeometry;
 	class IReverbSphere;
-	
+
 	enum class EAudioAPI
 	{
-		FMOD,
-		LAMBDA
+		FMOD
 	};
-	
+
 	struct AudioDeviceDesc
 	{
 		const char*		pName					= "Audio Device";
@@ -31,7 +30,7 @@ namespace LambdaEngine
 		uint32			MaxNumAudioListeners	= 1;
 		float			MaxWorldSize			= 100.0f;
 	};
-	
+
 	struct AudioListenerDesc
 	{
 		glm::vec3	Position					= glm::vec3(0.0f);
@@ -44,7 +43,7 @@ namespace LambdaEngine
 	{
 	public:
 		DECL_INTERFACE(IAudioDevice);
-		
+
 		/*
 		* Initialize this AudioDeviceFMOD
 		*	pDesc - A description of initialization parameters

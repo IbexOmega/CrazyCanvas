@@ -29,13 +29,23 @@
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Engine/EngineConfig.h"
+
 #include "Game/Scene.h"
 
 #include "Time/API/Clock.h"
 
 #include "Threading/API/Thread.h"
 
+#include "Utilities/RuntimeStats.h"
+
 #include <imgui.h>
+#include <rapidjson/document.h>
+#include <rapidjson/filewritestream.h>
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/rapidjson.h>
+#include <rapidjson/writer.h>
+
 
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
@@ -53,7 +63,7 @@ CrazyCanvas::CrazyCanvas()
 
 	SceneDesc sceneDesc = { };
 	sceneDesc.Name				= "Test Scene";
-	sceneDesc.RayTracingEnabled = deviceFeatures.RayTracing;
+	sceneDesc.RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
 	m_pScene->Init(sceneDesc);
 
 	DirectionalLight directionalLight;
@@ -144,6 +154,13 @@ CrazyCanvas::~CrazyCanvas()
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 {
+	if (m_CameraTrack.hasReachedEnd())
+	{
+		PrintBenchmarkResults();
+		LambdaEngine::CommonApplication::Get()->Terminate();
+		return;
+	}
+
 	Render(delta);
 }
 
@@ -171,8 +188,7 @@ namespace LambdaEngine
 {
 	Game* CreateGame()
 	{
-		CrazyCanvas* pSandbox = DBG_NEW CrazyCanvas();
-		return pSandbox;
+		return DBG_NEW CrazyCanvas();
 	}
 }
 
@@ -207,4 +223,32 @@ bool CrazyCanvas::LoadRendererResources()
 	}
 
 	return true;
+}
+
+void CrazyCanvas::PrintBenchmarkResults()
+{
+	using namespace rapidjson;
+	using namespace LambdaEngine;
+
+	constexpr const float MB = 1000000.0f;
+
+	StringBuffer jsonStringBuffer;
+	PrettyWriter<StringBuffer> writer(jsonStringBuffer);
+
+	writer.StartObject();
+
+	writer.String("AverageFPS");
+	writer.Double(1.0f / RuntimeStats::GetAverageFrametime());
+	writer.String("PeakMemoryUsage");
+	writer.Double(RuntimeStats::GetPeakMemoryUsage() / MB);
+
+	writer.EndObject();
+
+	FILE* pFile = fopen("benchmark_results.json", "w");
+
+	if (pFile)
+	{
+		fputs(jsonStringBuffer.GetString(), pFile);
+		fclose(pFile);
+	}
 }

@@ -19,7 +19,7 @@ namespace LambdaEngine
 	{
 		va_list args;
 		va_start(args, pFormat);
-		
+
 		PrintV(severity, pFormat, args);
 
 		va_end(args);
@@ -51,7 +51,7 @@ namespace LambdaEngine
 
 			vsnprintf(buffer, BUFFER_SIZE - 1, pFormat, args);
 			PlatformConsole::PrintLine(buffer);
-		
+
 			if (s_DebuggerOutputEnabled)
 			{
 				PlatformMisc::OutputDebugString(buffer);
@@ -70,7 +70,7 @@ namespace LambdaEngine
 		va_start(args, pFormat);
 
 		PrintTraceErrorV(pFunction, pFormat, args);
-		
+
 		va_end(args);
 	}
 
