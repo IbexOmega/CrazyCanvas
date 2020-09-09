@@ -102,6 +102,7 @@ namespace LambdaEngine
 
 	private:
 		bool InitImGui();
+
 		bool CreateCopyCommandList();
 		bool CreateAllocator(uint32 pageSize);
 		bool CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize);
@@ -146,6 +147,7 @@ namespace LambdaEngine
 		TSharedRef<Sampler> m_Sampler = nullptr;
 
 		TArray<ImGuiDrawFunc> m_DeferredDrawCalls;
+		SpinLock m_DrawCallsLock;
 
 		THashTable<String, TArray<TSharedRef<DescriptorSet>>>		m_TextureResourceNameDescriptorSetsMap;
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;

@@ -124,6 +124,7 @@ namespace LambdaEngine
 
 	void ImGuiRenderer::DrawUI(ImGuiDrawFunc drawFunc)
 	{
+		std::scoped_lock<SpinLock> lock(m_DrawCallsLock);
 		m_DeferredDrawCalls.EmplaceBack(drawFunc);
 	}
 
@@ -287,11 +288,14 @@ namespace LambdaEngine
 		// Render all ImGui calls
 		ImGui::NewFrame();
 
-		for (ImGuiDrawFunc& func : m_DeferredDrawCalls)
 		{
-			func();
+			std::scoped_lock<SpinLock> lock(m_DrawCallsLock);
+			for (ImGuiDrawFunc& func : m_DeferredDrawCalls)
+			{
+				func();
+			}
+			m_DeferredDrawCalls.Clear();
 		}
-		m_DeferredDrawCalls.Clear();
 
 		ImGui::EndFrame();
 		ImGui::Render();

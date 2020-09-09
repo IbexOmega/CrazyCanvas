@@ -51,6 +51,9 @@ namespace LambdaEngine
 		*/
 		static bool PostRelease();
 
+		static void SetFixedTimestep(Timestamp timestep);
+		static Timestamp GetFixedTimestep();
+
 		static Timestamp GetDeltaTime();
 		static Timestamp GetTimeSinceStart();
 		
