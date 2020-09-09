@@ -12,7 +12,6 @@ namespace LambdaEngine
 	class LAMBDA_API RenderGraphSerializer
 	{
 	public:
-
 		static bool SaveRenderGraphToFile(
 			const String& renderGraphName,
 			const TArray<RenderGraphResourceDesc>& resources,

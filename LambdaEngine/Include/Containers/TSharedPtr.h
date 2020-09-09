@@ -649,7 +649,7 @@ namespace LambdaEngine
 	template<typename T, typename... TArgs>
 	TSharedPtr<T> MakeShared(TArgs&&... args) noexcept
 	{
-		T* pRefCountedPtr = new T(Forward<TArgs>(args)...);
+		T* pRefCountedPtr = DBG_NEW T(Forward<TArgs>(args)...);
 		return Move(TSharedPtr<T>(pRefCountedPtr));
 	}
 }

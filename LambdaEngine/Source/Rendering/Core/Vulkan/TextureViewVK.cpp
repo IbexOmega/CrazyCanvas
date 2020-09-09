@@ -15,12 +15,13 @@ namespace LambdaEngine
 
 	TextureViewVK::~TextureViewVK()
 	{
+		SAFERELEASE(m_Desc.pTexture);
 		m_pDevice->DestroyImageView(&m_ImageView);
 	}
 
 	bool TextureViewVK::Init(const TextureViewDesc* pDesc)
 	{
-		const TextureVK*	pTextureVk  = pDesc->Texture.GetAs<TextureVK>();
+		const TextureVK*	pTextureVk  = reinterpret_cast<const TextureVK*>(pDesc->pTexture);
 		TextureDesc			textureDesc = pTextureVk->GetDesc();
 		
 		VALIDATE(pDesc->Format == textureDesc.Format);
@@ -82,6 +83,7 @@ namespace LambdaEngine
 		else
 		{
 			m_Desc = *pDesc;
+			m_Desc.pTexture->AddRef();
 			SetName(pDesc->DebugName);
 		
 			D_LOG_MESSAGE("[TextureViewVK]: Created ImageView");
@@ -98,6 +100,6 @@ namespace LambdaEngine
 
 	Texture* TextureViewVK::GetTexture()
 	{
-		return m_Desc.Texture.GetAndAddRef();
+		return m_Desc.pTexture;
 	}
 }

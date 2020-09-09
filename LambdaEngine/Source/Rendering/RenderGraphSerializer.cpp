@@ -596,7 +596,7 @@ namespace LambdaEngine
 		}
 
 		constexpr uint32 READ_BUFFER_SIZE = 65536;
-		char* pReadBuffer = new char[READ_BUFFER_SIZE];
+		char* pReadBuffer = DBG_NEW char[READ_BUFFER_SIZE]; //We allocate this on the heap, otherwise Visual Studio gives warning because its large
 		FileReadStream inputStream(pFile, pReadBuffer, READ_BUFFER_SIZE);
 
 		Document d;

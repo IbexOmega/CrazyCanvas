@@ -138,6 +138,7 @@ namespace LambdaEngine
 
 			// Save reference to allocator
 			m_Allocator = pAllocatorVk;
+			m_Allocator->AddRef();
 			
 			result = vkBindBufferMemory(m_pDevice->Device, m_Buffer, m_Allocation.Memory, m_Allocation.Offset);
 			if (result != VK_SUCCESS)

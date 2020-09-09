@@ -14,9 +14,6 @@ namespace LambdaEngine
 			m_pDevice(pDevice)
 		{
 			static_assert(std::is_base_of<DeviceChild, TBase>());
-
-			// Base needs to inherit DeviceChild
-			TBase::AddRef();
 		}
 
 		~TDeviceChildBase() = default;

@@ -35,18 +35,19 @@ namespace LambdaEngine
 
 		DescriptorHeapVK* pVkDescriptorHeap = reinterpret_cast<DescriptorHeapVK*>(pDescriptorHeap);
 		m_DescriptorSet = pVkDescriptorHeap->AllocateDescriptorSet(pPipelineLayout, descriptorLayoutIndex);
-		if (m_DescriptorSet == VK_NULL_HANDLE)
-		{
-			return false;
-		}
-		else
+		if (m_DescriptorSet != VK_NULL_HANDLE)
 		{
 			SetName(debugName);
 
 			const PipelineLayoutVK* pPipelineLayoutVk = reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
-			m_Bindings			= pPipelineLayoutVk->GetDescriptorBindings(descriptorLayoutIndex);
-			m_DescriptorHeap	= pVkDescriptorHeap;
+			m_Bindings = pPipelineLayoutVk->GetDescriptorBindings(descriptorLayoutIndex);
+			m_DescriptorHeap = pVkDescriptorHeap;
+			m_DescriptorHeap->AddRef();
 			return true;
+		}
+		else
+		{
+			return false;
 		}
 	}
 

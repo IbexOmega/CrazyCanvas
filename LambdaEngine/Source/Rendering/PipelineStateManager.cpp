@@ -113,6 +113,9 @@ namespace LambdaEngine
 
 	bool PipelineStateManager::Release()
 	{
+		s_GraphicsPipelineStateDescriptions.clear();
+		s_ComputePipelineStateDescriptions.clear();
+		s_RayTracingPipelineStateDescriptions.clear();
 		s_PipelineStates.clear();
 		return true;
 	}

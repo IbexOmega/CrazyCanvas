@@ -58,6 +58,11 @@ namespace LambdaEngine
 
 			SAFERELEASE(m_ppComputeCopyCommandAllocators[b]);
 			SAFERELEASE(m_ppComputeCopyCommandLists[b]);
+
+			for (DescriptorSet* pDescriptorSet : m_pDescriptorSetsToDestroy[b])
+			{
+				SAFERELEASE(pDescriptorSet);
+			}
 		}
 
 		SAFEDELETE_ARRAY(m_ppGraphicsCopyCommandAllocators);
@@ -65,6 +70,8 @@ namespace LambdaEngine
 
 		SAFEDELETE_ARRAY(m_ppComputeCopyCommandAllocators);
 		SAFEDELETE_ARRAY(m_ppComputeCopyCommandLists);
+
+		SAFEDELETE_ARRAY(m_pDescriptorSetsToDestroy);
 
 		for (auto it = m_ResourceMap.begin(); it != m_ResourceMap.end(); it++)
 		{
@@ -154,9 +161,9 @@ namespace LambdaEngine
 
 	bool RenderGraph::Init(const RenderGraphDesc* pDesc)
 	{
-		m_pScene						= pDesc->pScene;
 		m_BackBufferCount				= pDesc->BackBufferCount;
 		m_MaxTexturesPerDescriptorSet	= pDesc->MaxTexturesPerDescriptorSet;
+		m_pDescriptorSetsToDestroy = DBG_NEW TArray<DescriptorSet*>[m_BackBufferCount];
 
 		if (!CreateFence())
 		{
@@ -201,6 +208,11 @@ namespace LambdaEngine
 		}
 
 		return true;
+	}
+
+	void RenderGraph::SetScene(Scene* pScene)
+	{
+		m_pScene = pScene;
 	}
 
 	void RenderGraph::UpdateResource(const ResourceUpdateDesc& desc)
@@ -294,6 +306,18 @@ namespace LambdaEngine
 
 	void RenderGraph::Update()
 	{
+		TArray<DescriptorSet*>& descriptorSetsToDestroy = m_pDescriptorSetsToDestroy[m_ModFrameIndex];
+
+		if (!descriptorSetsToDestroy.IsEmpty())
+		{
+			for (DescriptorSet* pDescriptorSet : descriptorSetsToDestroy)
+			{
+				SAFERELEASE(pDescriptorSet);
+			}
+
+			descriptorSetsToDestroy.Clear();
+		}
+
 		if (m_DirtyInternalResources.size() > 0)
 		{
 			for (const String& dirtyInternalResourceDescName : m_DirtyInternalResources)
@@ -319,7 +343,7 @@ namespace LambdaEngine
 						DescriptorSet* pSrcDescriptorSet	= pRenderStage->ppBufferDescriptorSets[b];
 						DescriptorSet* pDescriptorSet		= m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
 						m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
-						SAFERELEASE(pSrcDescriptorSet);
+						m_pDescriptorSetsToDestroy[b].PushBack(pSrcDescriptorSet);						
 						pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
 					}
 				}
@@ -427,6 +451,8 @@ namespace LambdaEngine
 				{
 					for (uint32 b = 0; b < m_BackBufferCount; b++)
 					{
+						TArray<DescriptorSet*>& descriptorSetsToDestroy = m_pDescriptorSetsToDestroy[b];
+
 						for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
 						{
 							uint32 descriptorSetIndex = b * pRenderStage->TextureSubDescriptorSetCount + s;
@@ -434,7 +460,7 @@ namespace LambdaEngine
 							DescriptorSet* pSrcDescriptorSet	= pRenderStage->ppTextureDescriptorSets[descriptorSetIndex];
 							DescriptorSet* pDescriptorSet		= m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->ppBufferDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
 							m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
-							SAFERELEASE(pSrcDescriptorSet);
+							descriptorSetsToDestroy.PushBack(pSrcDescriptorSet);
 							pRenderStage->ppTextureDescriptorSets[descriptorSetIndex] = pDescriptorSet;
 						}
 					}
@@ -926,7 +952,7 @@ namespace LambdaEngine
 						textureDesc.SampleCount			= pResourceDesc->TextureParams.SampleCount;
 
 						textureViewDesc.DebugName		= pResourceDesc->Name + " Texture View";
-						textureViewDesc.Texture			= nullptr;
+						textureViewDesc.pTexture		= nullptr;
 						textureViewDesc.Flags			= pResourceDesc->TextureParams.TextureViewFlags;
 						textureViewDesc.Format			= pResourceDesc->TextureParams.TextureFormat;
 						textureViewDesc.Type			= pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
@@ -1411,7 +1437,7 @@ namespace LambdaEngine
 				{
 					ManagedGraphicsPipelineStateDesc pipelineDesc = {};
 					pipelineDesc.DebugName							= pRenderStageDesc->Name;
-					pipelineDesc.PipelineLayout						= pRenderStage->pPipelineLayout;
+					pipelineDesc.PipelineLayout						= MakeSharedRef(pRenderStage->pPipelineLayout);
 					pipelineDesc.DepthStencilState.DepthTestEnable	= pRenderStageDesc->Graphics.DepthTestEnabled;
 					pipelineDesc.TaskShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.TaskShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.TaskShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER,		EShaderLang::SHADER_LANG_GLSL);
 					pipelineDesc.MeshShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.MeshShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.MeshShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER,		EShaderLang::SHADER_LANG_GLSL);
@@ -1446,7 +1472,7 @@ namespace LambdaEngine
 						renderPassDesc.SubpassDependencies	= { renderPassSubpassDependencyDesc };
 
 						RenderPass* pRenderPass		= m_pGraphicsDevice->CreateRenderPass(&renderPassDesc);
-						pipelineDesc.RenderPass		= pRenderPass;
+						pipelineDesc.RenderPass		= MakeSharedRef(pRenderPass);
 
 						pRenderStage->pRenderPass		= pRenderPass;
 					}
@@ -1488,7 +1514,7 @@ namespace LambdaEngine
 				{
 					ManagedComputePipelineStateDesc pipelineDesc = { };
 					pipelineDesc.DebugName		= pRenderStageDesc->Name;
-					pipelineDesc.PipelineLayout	= pRenderStage->pPipelineLayout;
+					pipelineDesc.PipelineLayout	= MakeSharedRef(pRenderStage->pPipelineLayout);
 					pipelineDesc.Shader.ShaderGUID = pRenderStageDesc->Compute.ShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Compute.ShaderName, FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
@@ -1496,7 +1522,7 @@ namespace LambdaEngine
 				else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 				{
 					ManagedRayTracingPipelineStateDesc pipelineDesc = {};
-					pipelineDesc.PipelineLayout			= pRenderStage->pPipelineLayout;
+					pipelineDesc.PipelineLayout			= MakeSharedRef(pRenderStage->pPipelineLayout);
 					pipelineDesc.MaxRecursionDepth		= 1;
 					pipelineDesc.RaygenShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName, FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL );
 
@@ -1890,7 +1916,7 @@ namespace LambdaEngine
 
 				pTexture			= m_pGraphicsDevice->CreateTexture(pTextureDesc, nullptr);
 
-				textureViewDesc.Texture = pTexture;
+				textureViewDesc.pTexture = pTexture;
 				pTextureView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 				//Update Sampler

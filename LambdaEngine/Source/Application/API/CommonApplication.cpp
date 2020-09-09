@@ -17,6 +17,12 @@ namespace LambdaEngine
 		s_CommonApplication = this;
 	}
 
+	void CommonApplication::ReleasePlatform()
+	{
+		// HACK: For now
+		SAFEDELETE(m_pPlatformApplication);
+	}
+
 	CommonApplication::~CommonApplication()
 	{
 		VALIDATE(s_CommonApplication != nullptr);
@@ -304,6 +310,7 @@ namespace LambdaEngine
 
 	bool CommonApplication::PostRelease()
 	{
+		s_CommonApplication->ReleasePlatform();
 		s_CommonApplication.Reset();
 		return true;
 	}
