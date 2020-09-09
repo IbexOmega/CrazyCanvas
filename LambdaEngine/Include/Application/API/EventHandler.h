@@ -2,6 +2,7 @@
 #include "Input/API/InputCodes.h"
 
 #include "Core/TSharedRef.h"
+#include "Window.h"
 
 #ifdef LAMBDA_VISUAL_STUDIO
 	#pragma warning(push)
@@ -19,8 +20,6 @@ namespace LambdaEngine
 		RESIZE_TYPE_MAXIMIZE	= 1,
 		RESIZE_TYPE_MINIMIZE	= 2,
 	};
-
-	class Window;
 
 	/*
 	* EventHandler
