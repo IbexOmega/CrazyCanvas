@@ -1,7 +1,7 @@
 #pragma once
 #include "InputState.h"
 
-#include "Application/API/EventHandler.h"
+#include "Application/API/ApplicationEventHandler.h"
 
 namespace LambdaEngine
 {

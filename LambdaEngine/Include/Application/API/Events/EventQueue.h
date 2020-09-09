@@ -1,5 +1,5 @@
 #pragma once
-#include "LambdaEngine.h"
+#include "EventHandler.h"
 
 namespace LambdaEngine
 {
@@ -9,8 +9,8 @@ namespace LambdaEngine
 	class EventQueue
 	{
 	public:
-		static void RegisterEventHandler();
-		static void UnregisterEventHandler();
+		static void RegisterEventHandler(const EventHandlerProxy& eventHandler);
+		static void UnregisterEventHandler(const EventHandlerProxy& eventHandler);
 
 		static bool SendEvent(const Event& event);
 	};

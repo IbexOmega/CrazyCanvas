@@ -1,7 +1,7 @@
 #pragma once
 #include "LambdaEngine.h"
 #include "Window.h"
-#include "EventHandler.h"
+#include "ApplicationEventHandler.h"
 
 #include "Core/TSharedRef.h"
 

@@ -307,4 +307,17 @@ namespace LambdaEngine
 			default:					return "UNKNOWN";
 		}
 	}
+
+	inline const char* ButtonToString(EMouseButton Button)
+	{
+		switch (Button)
+		{
+		case MOUSE_BUTTON_LEFT:		return "LEFT";
+		case MOUSE_BUTTON_RIGHT:	return "RIGHT";
+		case MOUSE_BUTTON_MIDDLE:	return "MIDDLE";
+		case MOUSE_BUTTON_BACK:		return "BACK";
+		case MOUSE_BUTTON_FORWARD:	return "FORWARD";
+		default:					return "UNKNOWN";
+		}
+	}
 }

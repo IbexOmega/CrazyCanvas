@@ -2,6 +2,10 @@
 #include "Application/API/PlatformApplication.h"
 #include "Application/API/Window.h"
 
+#include "Application/API/Events/EventQueue.h"
+#include "Application/API/Events/MouseEvents.h"
+#include "Application/API/Events/KeyEvents.h"
+
 namespace LambdaEngine
 {
 	TSharedPtr<CommonApplication> CommonApplication::s_CommonApplication = nullptr;
@@ -212,6 +216,9 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnMouseMoved(x, y);
 		}
+
+		MouseMovedEvent event(x, y);
+		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnMouseMovedRaw(int32 deltaX, int32 deltaY)
@@ -220,6 +227,9 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnMouseMovedRaw(deltaX, deltaY);
 		}
+
+		RawMouseMovedEvent event(deltaX, deltaY);
+		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)
@@ -235,6 +245,9 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnButtonPressed(button, modifierState);
 		}
+
+		MouseClickedEvent event(button, modifierState);
+		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnButtonReleased(EMouseButton button)
@@ -249,6 +262,9 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnButtonReleased(button);
 		}
+
+		MouseReleasedEvent event(button);
+		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnMouseScrolled(int32 deltaX, int32 deltaY)
@@ -257,6 +273,9 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnMouseScrolled(deltaX, deltaY);
 		}
+
+		MouseScrolledEvent event(deltaX, deltaY);
+		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)
@@ -265,6 +284,9 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnKeyPressed(key, modifierState, isRepeat);
 		}
+
+		KeyPressedEvent event(key, modifierState, isRepeat);
+		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnKeyReleased(EKey key)
@@ -273,6 +295,9 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnKeyReleased(key);
 		}
+
+		KeyReleasedEvent event(key);
+		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnKeyTyped(uint32 character)
@@ -281,6 +306,9 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnKeyTyped(character);
 		}
+
+		KeyTypedEvent event(character);
+		EventQueue::SendEvent(event);
 	}
 
 	bool CommonApplication::PreInit()

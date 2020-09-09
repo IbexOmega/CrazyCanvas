@@ -1,6 +1,8 @@
 #pragma once
 #include "LambdaEngine.h"
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 	/*
@@ -18,6 +20,25 @@ namespace LambdaEngine
 	typedef uint32 FEventFlags;
 
 	/*
+	* Define for declaring events
+	*/
+#define DECLARE_EVENT_TYPE(Type) \
+	public: \
+		inline static uint32 GetStaticType() \
+		{ \
+			return 1; \
+		} \
+	public: \
+		inline virtual uint32 GetType() const override \
+		{ \
+			return GetStaticType(); \
+		} \
+		inline virtual const char* GetName() const override \
+		{ \
+			return #Type; \
+		} \
+
+	/*
 	* Base for all events
 	*/
 	struct Event
@@ -28,9 +49,34 @@ namespace LambdaEngine
 		{
 		}
 
+		virtual const char* GetName() const = 0;
+
+		inline virtual uint32 GetType() const
+		{
+			return GetStaticType();
+		}
+
+		inline virtual String ToString() const
+		{
+			return GetName();
+		}
+
 		inline bool HasEventFlags(FEventFlags flags) const
 		{
 			return ((EventFlags & flags) != 0);
+		}
+
+		inline FEventFlags GetEventFlags() const
+		{
+			return EventFlags;
+		}
+
+		
+
+	public:
+		inline static uint32 GetStaticType()
+		{
+			return 0;
 		}
 
 	public:

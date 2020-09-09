@@ -343,9 +343,9 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraphEditor::OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
+	void RenderGraphEditor::OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)
 	{
-		UNREFERENCED_VARIABLE(modifierMask);
+		UNREFERENCED_VARIABLE(modifierState);
 
 		if (key == EKey::KEY_LEFT_SHIFT && !isRepeat)
 		{

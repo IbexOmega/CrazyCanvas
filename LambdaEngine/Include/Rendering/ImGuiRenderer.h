@@ -1,7 +1,7 @@
 #pragma once
 #include "LambdaEngine.h"
 
-#include "Application/API/EventHandler.h"
+#include "Application/API/ApplicationEventHandler.h"
 
 #include "Containers/THashTable.h"
 #include "Containers/String.h"

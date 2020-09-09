@@ -17,6 +17,8 @@ namespace LambdaEngine
 		{
 		}
 
+		DECLARE_EVENT_TYPE(MouseEvent);
+
 	public:
 		EMouseButton Button;
 	};
@@ -27,10 +29,21 @@ namespace LambdaEngine
 	struct MouseClickedEvent : public MouseEvent
 	{
 	public:
-		inline explicit MouseClickedEvent(EMouseButton button)
+		inline explicit MouseClickedEvent(EMouseButton button, ModifierKeyState modiferState)
 			: MouseEvent(button)
+			, ModiferState(modiferState)
 		{
 		}
+
+		DECLARE_EVENT_TYPE(MouseClickedEvent);
+
+		inline virtual String ToString() const
+		{
+			return String("MouseClickedEvent=[=") + ButtonToString(Button);
+		}
+
+	public:
+		ModifierKeyState ModiferState;
 	};
 
 	/*
@@ -43,6 +56,13 @@ namespace LambdaEngine
 			: MouseEvent(button)
 		{
 		}
+
+		DECLARE_EVENT_TYPE(MouseReleasedEvent);
+
+		inline virtual String ToString() const
+		{
+			return String("MouseReleasedEvent=[=") + ButtonToString(Button);
+		}
 	};
 
 	/*
@@ -51,16 +71,23 @@ namespace LambdaEngine
 	struct MouseScrolledEvent : public Event
 	{
 	public:
-		inline explicit MouseScrolledEvent(float32 horizontal, float32 vertical)
+		inline explicit MouseScrolledEvent(float32 deltaX, float32 deltaY)
 			: Event(EVENT_FLAG_MOUSE)
-			, Horizontal(horizontal)
-			, Vertical(vertical)
+			, DeltaX(deltaX)
+			, DeltaY(deltaY)
 		{
 		}
 
+		DECLARE_EVENT_TYPE(MouseScrolledEvent);
+
+		inline virtual String ToString() const
+		{
+			return String("MouseScrolledEvent=[Horizontal=") + std::to_string(DeltaX) + ", Vertical=" + std::to_string(DeltaY) + "]";
+		}
+
 	public:
-		float32 Horizontal;
-		float32 Vertical;
+		float32 DeltaX;
+		float32 DeltaY;
 	};
 
 	/*
@@ -69,5 +96,47 @@ namespace LambdaEngine
 	struct MouseMovedEvent : public Event
 	{
 	public:
+		inline explicit MouseMovedEvent(int32 x, int32 y)
+			: Event(EVENT_FLAG_MOUSE)
+			, X(x)
+			, Y(y)
+		{
+		}
+
+		DECLARE_EVENT_TYPE(MouseMovedEvent);
+
+		inline virtual String ToString() const
+		{
+			return String("MouseMovedEvent=[") + std::to_string(X) + ", " + std::to_string(Y) + "]";
+		}
+
+	public:
+		int32 X;
+		int32 Y;
+	};
+
+	/*
+	* RawMouseMovedEvent
+	*/
+	struct RawMouseMovedEvent : public Event
+	{
+	public:
+		inline explicit RawMouseMovedEvent(int32 deltaX, int32 deltaY)
+			: Event(EVENT_FLAG_MOUSE)
+			, DeltaX(deltaX)
+			, DeltaY(deltaY)
+		{
+		}
+
+		DECLARE_EVENT_TYPE(RawMouseMovedEvent);
+
+		inline virtual String ToString() const
+		{
+			return String("RawMouseMovedEvent=[") + std::to_string(DeltaX) + ", " + std::to_string(DeltaY) + "]";
+		}
+
+	public:
+		int32 DeltaX;
+		int32 DeltaY;
 	};
 }

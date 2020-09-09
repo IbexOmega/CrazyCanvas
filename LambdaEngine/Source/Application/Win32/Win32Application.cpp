@@ -3,7 +3,7 @@
 
 #include "Log/Log.h"
 
-#include "Application/API/EventHandler.h"
+#include "Application/API/ApplicationEventHandler.h"
 
 #include "Application/Win32/Win32Application.h"
 #include "Application/Win32/Win32Window.h"

@@ -31,6 +31,8 @@
 
 #include "Utilities/RuntimeStats.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 namespace LambdaEngine
 {
 	/*
@@ -38,6 +40,22 @@ namespace LambdaEngine
 	*/
 	static Clock g_Clock;
 	static Timestamp g_FixedTimestep = Timestamp::Seconds(1.0 / 60.0);
+
+	class A
+	{
+	public:
+		bool HandleEvent(const Event& event)
+		{
+			LOG_INFO("Member: %s", event.ToString().c_str());
+			return false;
+		}
+	};
+
+	static bool HandleEvent(const Event& event)
+	{
+		LOG_INFO("Func: %s", event.ToString().c_str());
+		return false;
+	}
 
 	/*
 	* EngineLoop
@@ -48,6 +66,10 @@ namespace LambdaEngine
 		Timestamp accumulator = Timestamp(0);
 
 		g_Clock.Reset();
+
+		A a;
+		EventQueue::RegisterEventHandler(EventHandlerProxy(&a, &A::HandleEvent));
+		EventQueue::RegisterEventHandler(EventHandlerProxy(&HandleEvent));
 
 		bool isRunning = true;
 		while (isRunning)

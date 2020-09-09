@@ -9,7 +9,7 @@
 #include "Containers/THashTable.h"
 #include "Containers/TSet.h"
 
-#include "Application/API/EventHandler.h"
+#include "Application/API/ApplicationEventHandler.h"
 
 namespace LambdaEngine
 {
