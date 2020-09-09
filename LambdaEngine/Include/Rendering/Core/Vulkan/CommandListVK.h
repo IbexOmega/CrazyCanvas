@@ -110,7 +110,7 @@ namespace LambdaEngine
 
 		virtual void ExecuteSecondary(const CommandList* pSecondary) override final;
 
-		virtual void DeferrDestruction(DeviceChild* pResource) override final;
+		virtual void DeferDestruction(DeviceChild* pResource) override final;
 
 		virtual void FlushDeferredBarriers()	override final;
 		virtual void FlushDeferredResources()	override final;

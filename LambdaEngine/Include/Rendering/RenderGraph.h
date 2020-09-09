@@ -48,7 +48,6 @@ namespace LambdaEngine
 		RenderGraphStructureDesc* pRenderGraphStructureDesc	= nullptr;
 		uint32 BackBufferCount								= 3;
 		uint32 MaxTexturesPerDescriptorSet					= 1;
-		const Scene* pScene									= nullptr;
 	};
 
 	struct ResourceUpdateDesc
@@ -175,7 +174,7 @@ namespace LambdaEngine
 			struct
 			{
 				TArray<ResourceBarrierInfo>			BarriersPerSynchronizationStage;
-				TArray<Buffer*>					Buffers;
+				TArray<Buffer*>						Buffers;
 				TArray<uint64>						Offsets;
 				TArray<uint64>						SizesInBytes;
 			} Buffer;
@@ -204,12 +203,12 @@ namespace LambdaEngine
 			Resource*				pIndirectArgsBufferResource		= nullptr;
 
 			uint64					PipelineStateID					= 0;
-			PipelineLayout*		pPipelineLayout					= nullptr;
+			PipelineLayout*			pPipelineLayout					= nullptr;
 			uint32					TextureSubDescriptorSetCount	= 1;
 			uint32					MaterialsRenderedPerPass		= 1;
-			DescriptorSet**		ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
-			DescriptorSet**		ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
-			RenderPass*			pRenderPass						= nullptr;
+			DescriptorSet**			ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
+			DescriptorSet**			ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
+			RenderPass*				pRenderPass						= nullptr;
 
 			Resource*				pPushConstantsResource			= nullptr;
 			TArray<Resource*>		RenderTargetResources;
@@ -247,6 +246,9 @@ namespace LambdaEngine
 
 		bool Init(const RenderGraphDesc* pDesc);
 
+		//This needs a better solution, only used to be able to get Indirect Arg Offsets
+		void SetScene(Scene* pScene);
+
 		/*
 		* Updates a resource in the Render Graph, can be called at any time
 		*	desc - The ResourceUpdateDesc, only the Update Parameters for the given update type should be set
@@ -271,8 +273,8 @@ namespace LambdaEngine
 		CommandList* AcquireComputeCopyCommandList();
 
 		bool GetResourceTextures(const char* pResourceName, Texture* const ** pppTexture, uint32* pTextureView)						const;
-		bool GetResourceTextureViews(const char* pResourceName, TextureView* const ** pppTextureViews, uint32* pTextureViewCount)		const;
-		bool GetResourceBuffers(const char* pResourceName, Buffer* const ** pppBuffers, uint32* pBufferCount)							const;
+		bool GetResourceTextureViews(const char* pResourceName, TextureView* const ** pppTextureViews, uint32* pTextureViewCount)	const;
+		bool GetResourceBuffers(const char* pResourceName, Buffer* const ** pppBuffers, uint32* pBufferCount)						const;
 		bool GetResourceAccelerationStructure(const char* pResourceName, const AccelerationStructure** ppAccelerationStructure)		const;
 
 		virtual void OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type) override;
@@ -307,11 +309,11 @@ namespace LambdaEngine
 		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, PipelineState* pPipelineState, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
 
 	private:
-		const GraphicsDevice*				m_pGraphicsDevice;
+		const GraphicsDevice*							m_pGraphicsDevice;
 
 		const Scene*									m_pScene							= nullptr;
 
-		DescriptorHeap*					m_pDescriptorHeap					= nullptr;
+		DescriptorHeap*									m_pDescriptorHeap					= nullptr;
 
 		float32											m_WindowWidth						= 0.0f;
 		float32											m_WindowHeight						= 0.0f;
@@ -322,22 +324,22 @@ namespace LambdaEngine
 		uint32											m_BackBufferCount					= 0;
 		uint32											m_MaxTexturesPerDescriptorSet		= 0;
 
-		Fence*								m_pFence							= nullptr;
-		uint64								m_SignalValue						= 1;
+		Fence*											m_pFence							= nullptr;
+		uint64											m_SignalValue						= 1;
 
 		TArray<ICustomRenderer*>						m_CustomRenderers;
 		TArray<ICustomRenderer*>						m_DebugRenderers;
 
-		CommandAllocator**					m_ppGraphicsCopyCommandAllocators	= nullptr;
-		CommandList**						m_ppGraphicsCopyCommandLists		= nullptr;
-		bool								m_ExecuteGraphicsCopy				= false;
+		CommandAllocator**								m_ppGraphicsCopyCommandAllocators	= nullptr;
+		CommandList**									m_ppGraphicsCopyCommandLists		= nullptr;
+		bool											m_ExecuteGraphicsCopy				= false;
 
-		CommandAllocator**					m_ppComputeCopyCommandAllocators	= nullptr;
-		CommandList**						m_ppComputeCopyCommandLists			= nullptr;
-		bool								m_ExecuteComputeCopy				= false;
+		CommandAllocator**								m_ppComputeCopyCommandAllocators	= nullptr;
+		CommandList**									m_ppComputeCopyCommandLists			= nullptr;
+		bool											m_ExecuteComputeCopy				= false;
 
-		CommandList**						m_ppExecutionStages					= nullptr;
-		uint32								m_ExecutionStageCount				= 0;
+		CommandList**									m_ppExecutionStages					= nullptr;
+		uint32											m_ExecutionStageCount				= 0;
 
 		PipelineStage*									m_pPipelineStages					= nullptr;
 		uint32											m_PipelineStageCount				= 0;
@@ -358,5 +360,7 @@ namespace LambdaEngine
 		TSet<Resource*>									m_DirtyDescriptorSetTextures;
 		TSet<Resource*>									m_DirtyDescriptorSetBuffers;
 		TSet<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
+
+		TArray<DescriptorSet*>*							m_pDescriptorSetsToDestroy;
 	};
 }

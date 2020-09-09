@@ -2,6 +2,8 @@
 
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 
+#include <unordered_map>
+
 namespace LambdaEngine
 {
 	GraphicsDevice* CreateGraphicsDevice(EGraphicsAPI api, const GraphicsDeviceDesc* pDesc)

@@ -18,13 +18,13 @@ namespace LambdaEngine
 
 		/*
 		* Initializes modules that are needed in EngineLoop::Init()
-		*	return - Returns true if successfull
+		*	return - Returns true if successful
 		*/
 		static bool PreInit();
 
 		/*
 		* Initializes all engine modules
-		*	return - Returns true if successfull
+		*	return - Returns true if successful
 		*/
 		static bool Init();
 
@@ -34,8 +34,14 @@ namespace LambdaEngine
 		static void Run();
 
 		/*
+		* Stops/Waits for all execution to stop
+		*	return - Returns true if successful
+		*/
+		static bool PreRelease();
+
+		/*
 		* Releases all engine modules
-		*	return - Returns true if successfull
+		*	return - Returns true if successful
 		*/
 		static bool Release();
 

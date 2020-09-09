@@ -97,6 +97,8 @@ namespace LambdaEngine
 	private:
 		CommonApplication();
 
+		void ReleasePlatform();
+
 	public:
 		static bool PreInit();
 		static bool PostRelease();

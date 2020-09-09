@@ -15,6 +15,7 @@
 
 namespace LambdaEngine
 {
+	class Scene;
 	class Window;
 	class Texture;
 	class RenderGraph;
@@ -24,51 +25,37 @@ namespace LambdaEngine
 	class GraphicsDevice;
 	class CommandAllocator;
 	
-	struct RendererDesc
-	{
-		String 			Name			= "";
-		bool			Debug			= false;
-		Window*			pWindow			= nullptr;
-		RenderGraph*	pRenderGraph	= nullptr;
-		uint32			BackBufferCount = 3;
-	};
-	
 	class LAMBDA_API Renderer
 	{
 	public:
 		DECL_REMOVE_COPY(Renderer);
 		DECL_REMOVE_MOVE(Renderer);
 
-		Renderer(const GraphicsDevice* pGraphicsDevice);
-		~Renderer();
+		static bool Init();
+		static bool Release();
 
-		bool Init(const RendererDesc* pDesc);
+		static void SetScene(Scene* pScene);
 
-		void NewFrame(Timestamp delta);
-		void PrepareRender(Timestamp delta);
+		static void NewFrame(Timestamp delta);
+		static void PrepareRender(Timestamp delta);
+		static void Render();
 
-		void Render();
+		static CommandList* AcquireGraphicsCopyCommandList();
+		static CommandList* AcquireComputeCopyCommandList();
 
-		CommandList* AcquireGraphicsCopyCommandList();
-		CommandList* AcquireComputeCopyCommandList();
-
-		FORCEINLINE uint64 GetFrameIndex()		{ return m_FrameIndex; }
-		FORCEINLINE uint64 GetModFrameIndex()	{ return m_ModFrameIndex; }
-		FORCEINLINE uint32 GetBufferIndex()		{ return m_BackBufferIndex; }
+		FORCEINLINE static RenderGraph*		GetRenderGraph()		{ return s_pRenderGraph; }
+		FORCEINLINE static uint64			GetFrameIndex()			{ return s_FrameIndex; }
+		FORCEINLINE static uint64			GetModFrameIndex()		{ return s_ModFrameIndex; }
+		FORCEINLINE static uint32			GetBufferIndex()		{ return s_BackBufferIndex; }
 
 	private:
-		String					m_Name;
-		const GraphicsDevice*	m_pGraphicsDevice;
-
-		TSharedRef<SwapChain>	m_SwapChain				= nullptr;
-		Texture**				m_ppBackBuffers			= nullptr;
-		TextureView**			m_ppBackBufferViews		= nullptr;
-		RenderGraph*			m_pRenderGraph			= nullptr;
-
-		uint32					m_BackBufferCount		= 0;
-
-		uint64					m_FrameIndex			= 0;
-		uint64					m_ModFrameIndex			= 0;
-		uint32					m_BackBufferIndex		= 0;
+		static TSharedRef<SwapChain>	s_SwapChain;
+		static Texture**				s_ppBackBuffers;
+		static TextureView**			s_ppBackBufferViews;
+		static RenderGraph*				s_pRenderGraph;
+		static Scene*					s_pScene;
+		static uint64					s_FrameIndex;
+		static uint64					s_ModFrameIndex;
+		static uint32					s_BackBufferIndex;
 	};
 }
