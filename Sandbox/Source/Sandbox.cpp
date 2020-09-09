@@ -1576,7 +1576,7 @@ bool Sandbox::InitRendererForDeferred()
 	String renderGraphFile = "";
 	if (SHOW_DEMO)
 	{
-		renderGraphFile = "DEMO.lrg";
+		renderGraphFile = "RASTERIZED_PBR.lrg";
 		//renderGraphFile = "../Assets/RenderGraphs/SIMPLE_RASTERIZER_PBR.lrg";
 	}
 	else
@@ -1781,6 +1781,11 @@ bool Sandbox::InitRendererForDeferred()
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &m_pNearestSampler;
 
 		m_pRenderGraph->UpdateResource(blueNoiseUpdateDesc);
+	}
+
+	// Cubemap test
+	{
+
 	}
 
 	m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
