@@ -28,6 +28,10 @@
 #include "Application/API/CommonApplication.h"
 
 #include "Debug/GPUProfiler.h"
+#include "Debug/Profiler.h"
+
+// Needed to reset GPUProfiler timestamps -- should be changed
+#include <vulkan/vulkan.h>
 
 namespace LambdaEngine
 {
@@ -1799,8 +1803,9 @@ namespace LambdaEngine
 		m_PipelineStageCount = (uint32)pipelineStageDescriptions.GetSize();
 		m_pPipelineStages = DBG_NEW PipelineStage[m_PipelineStageCount];
 
-		GPUProfiler::Get()->Init(GPUProfiler::TimeUnit::NANO);
-		GPUProfiler::Get()->CreateTimestamps(m_PipelineStageCount * m_BackBufferCount);
+		Profiler::GetGPUProfiler()->Init(GPUProfiler::TimeUnit::MICRO);
+		Profiler::GetGPUProfiler()->CreateTimestamps(m_PipelineStageCount * m_BackBufferCount);
+		Profiler::GetGPUProfiler()->CreateGraphicsPipelineStats();
 
 		for (uint32 i = 0; i < m_PipelineStageCount; i++)
 		{
@@ -1830,9 +1835,10 @@ namespace LambdaEngine
 
 				pPipelineStage->ppGraphicsCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppGraphicsCommandAllocators[f], &graphicsCommandListDesc);
 
-				GPUProfiler::Get()->AddTimestamp(pPipelineStage->ppGraphicsCommandLists[f]);
+				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppGraphicsCommandLists[f]);
 				pPipelineStage->ppGraphicsCommandLists[f]->Begin(nullptr);
-				GPUProfiler::Get()->ResetTimestamp(pPipelineStage->ppGraphicsCommandLists[f]);
+				Profiler::GetGPUProfiler()->ResetTimestamp(pPipelineStage->ppGraphicsCommandLists[f]);
+				//GPUProfiler::Get()->ResetGraphicsPipelineStat(pPipelineStage->ppGraphicsCommandLists[f]);
 				pPipelineStage->ppGraphicsCommandLists[f]->End();
 
 				VkCommandBuffer commandBuffer = reinterpret_cast<VkCommandBuffer>(pPipelineStage->ppGraphicsCommandLists[f]->GetHandle());
@@ -2255,11 +2261,14 @@ namespace LambdaEngine
 		CommandList*		pGraphicsCommandList, 
 		CommandList**		ppExecutionStage)
 	{
-		GPUProfiler::Get()->GetTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->GetGraphicsPipelineStat();
 		pGraphicsCommandAllocator->Reset();
 		pGraphicsCommandList->Begin(nullptr);
-		GPUProfiler::Get()->ResetTimestamp(pGraphicsCommandList);
-		GPUProfiler::Get()->StartTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->ResetGraphicsPipelineStat(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->StartGraphicsPipelineStat(pGraphicsCommandList);
 
 		uint32 flags = FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_INLINE;
 
@@ -2372,7 +2381,8 @@ namespace LambdaEngine
 			pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
 		}
 
-		GPUProfiler::Get()->EndTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->EndGraphicsPipelineStat(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
 		pGraphicsCommandList->EndRenderPass();
 		pGraphicsCommandList->End();
 
