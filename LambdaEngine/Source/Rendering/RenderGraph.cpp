@@ -306,16 +306,16 @@ namespace LambdaEngine
 
 	void RenderGraph::Update()
 	{
-		TArray<DescriptorSet*>& descriptorSetsToDestroy = m_pDescriptorSetsToDestroy[m_ModFrameIndex];
+		TArray<DescriptorSet*>& currentFrameDescriptorSetsToDestroy = m_pDescriptorSetsToDestroy[m_ModFrameIndex];
 
-		if (!descriptorSetsToDestroy.IsEmpty())
+		if (!currentFrameDescriptorSetsToDestroy.IsEmpty())
 		{
-			for (DescriptorSet* pDescriptorSet : descriptorSetsToDestroy)
+			for (DescriptorSet* pDescriptorSet : currentFrameDescriptorSetsToDestroy)
 			{
 				SAFERELEASE(pDescriptorSet);
 			}
 
-			descriptorSetsToDestroy.Clear();
+			currentFrameDescriptorSetsToDestroy.Clear();
 		}
 
 		if (m_DirtyInternalResources.size() > 0)
@@ -577,9 +577,9 @@ namespace LambdaEngine
 						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 						switch (stateType)
 						{
-						case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		pCustomRenderer->Render(pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],m_ModFrameIndex, m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
-						case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],	m_ModFrameIndex, m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
-						case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],	m_ModFrameIndex, m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
+						case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		pCustomRenderer->Render(pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],	uint32(m_ModFrameIndex), m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
+						case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		uint32(m_ModFrameIndex), m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
+						case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		uint32(m_ModFrameIndex), m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
 						}
 					}
 					else
@@ -777,6 +777,8 @@ namespace LambdaEngine
 
 	void RenderGraph::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)
 	{
+		UNREFERENCED_VARIABLE(type);
+
 		m_WindowWidth	= (float32)width;
 		m_WindowHeight	= (float32)height;
 
@@ -943,8 +945,8 @@ namespace LambdaEngine
 						textureDesc.Format				= pResourceDesc->TextureParams.TextureFormat;
 						textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 						textureDesc.Flags				= pResourceDesc->TextureParams.TextureFlags;
-						textureDesc.Width				= pResourceDesc->TextureParams.XDimVariable;
-						textureDesc.Height				= pResourceDesc->TextureParams.YDimVariable;
+						textureDesc.Width				= uint32(pResourceDesc->TextureParams.XDimVariable);
+						textureDesc.Height				= uint32(pResourceDesc->TextureParams.YDimVariable);
 						textureDesc.Depth				= 1;
 						textureDesc.ArrayCount			= arrayCount;
 						textureDesc.Miplevels			= pResourceDesc->TextureParams.MiplevelCount;
@@ -1094,17 +1096,17 @@ namespace LambdaEngine
 
 			if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::CONSTANT)
 			{
-				pRenderStage->Dimensions.x = pRenderStageDesc->Parameters.XDimVariable;
+				pRenderStage->Dimensions.x = uint32(pRenderStageDesc->Parameters.XDimVariable);
 			}
 
 			if (pRenderStage->Parameters.YDimType == ERenderGraphDimensionType::CONSTANT)
 			{
-				pRenderStage->Dimensions.y = pRenderStageDesc->Parameters.YDimVariable;
+				pRenderStage->Dimensions.y = uint32(pRenderStageDesc->Parameters.YDimVariable);
 			}
 
 			if (pRenderStage->Parameters.ZDimType == ERenderGraphDimensionType::CONSTANT)
 			{
-				pRenderStage->Dimensions.z = pRenderStageDesc->Parameters.ZDimVariable;
+				pRenderStage->Dimensions.z = uint32(pRenderStageDesc->Parameters.ZDimVariable);
 			}
 
 			pRenderStage->Dimensions.x = glm::max<uint32>(1, pRenderStage->Dimensions.x);
@@ -1637,8 +1639,6 @@ namespace LambdaEngine
 	bool RenderGraph::CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions)
 	{
 		m_pSynchronizationStages = DBG_NEW SynchronizationStage[synchronizationStageDescriptions.GetSize()];
-
-		bool firstTimeEnvounteringBackBuffer = false;
 
 		for (uint32 s = 0; s < synchronizationStageDescriptions.GetSize(); s++)
 		{

@@ -149,18 +149,18 @@ namespace LambdaEngine
 		VkDeviceSize raygenSize				= shaderGroupHandleSize;
 		VkDeviceSize raygenStride			= shaderGroupHandleSize;
 
-		VkDeviceSize hitUnalignedOffset	= raygenUnalignedOffset + raygenSize;
-		VkDeviceSize hitAlignedOffset	= AlignUp(raygenAlignedOffset + raygenSize, shaderGroupBaseAlignment);
-		VkDeviceSize hitSize			= VkDeviceSize(pDesc->ClosestHitShaders.GetSize()) * VkDeviceSize(shaderGroupHandleSize);
-		VkDeviceSize hitStride			= shaderGroupHandleSize;
+		VkDeviceSize hitUnalignedOffset		= raygenUnalignedOffset + raygenSize;
+		VkDeviceSize hitAlignedOffset		= AlignUp(raygenAlignedOffset + raygenSize, shaderGroupBaseAlignment);
+		VkDeviceSize hitSize				= VkDeviceSize(pDesc->ClosestHitShaders.GetSize()) * VkDeviceSize(shaderGroupHandleSize);
+		VkDeviceSize hitStride				= shaderGroupHandleSize;
 
 		VkDeviceSize missUnalignedOffset	= hitUnalignedOffset + hitSize;
 		VkDeviceSize missAlignedOffset		= AlignUp(hitAlignedOffset + hitSize, shaderGroupBaseAlignment);
 		VkDeviceSize missSize				= VkDeviceSize(pDesc->MissShaders.GetSize()) * VkDeviceSize(shaderGroupHandleSize);
 		VkDeviceSize missStride				= shaderGroupHandleSize;
 		
-		uint32 shaderHandleStorageSize		= missUnalignedOffset + missSize;
-		uint32 sbtSize						= missAlignedOffset + missSize;
+		uint64 shaderHandleStorageSize		= missUnalignedOffset + missSize;
+		uint64 sbtSize						= missAlignedOffset + missSize;
 
 		BufferDesc shaderHandleStorageDesc = {};
 		shaderHandleStorageDesc.DebugName		= "Shader Handle Storage";

@@ -125,32 +125,34 @@ namespace LambdaEngine
 
 		glm::vec3 translation(0.0f, 0.0f, 0.0f);
 
+		float32 dt = float32(delta.AsSeconds());
+
 		// Translation
 		if (Input::IsKeyDown(EKey::KEY_W) && Input::IsKeyUp(EKey::KEY_S))
 		{
-			translation.z += delta.AsSeconds();
+			translation.z += dt;
 		}
 		else if (Input::IsKeyDown(EKey::KEY_S) && Input::IsKeyUp(EKey::KEY_W))
 		{
-			translation.z -= delta.AsSeconds();
+			translation.z -= dt;
 		}
 
 		if (Input::IsKeyDown(EKey::KEY_A) && Input::IsKeyUp(EKey::KEY_D))
 		{
-			translation.x -= delta.AsSeconds();
+			translation.x -= dt;
 		}
 		else if (Input::IsKeyDown(EKey::KEY_D) && Input::IsKeyUp(EKey::KEY_A))
 		{
-			translation.x += delta.AsSeconds();
+			translation.x += dt;
 		}
 
 		if (Input::IsKeyDown(EKey::KEY_Q) && Input::IsKeyUp(EKey::KEY_E))
 		{
-			translation.y += delta.AsSeconds();
+			translation.y += dt;
 		}
 		else if (Input::IsKeyDown(EKey::KEY_E) && Input::IsKeyUp(EKey::KEY_Q))
 		{
-			translation.y -= delta.AsSeconds();
+			translation.y -= dt;
 		}
 
 		float shiftSpeedFactor = 1.0f;
