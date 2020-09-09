@@ -32,7 +32,13 @@ def lint(cppcheck_path, report_path, ignore_path):
 
 	# Use stdout as the report
 	with open(report_path, 'w') as report:
+		print('Linting... ', flush=True, end='')
 		subprocess.run(args, stderr=report)
+		print('Finished', flush=True)
+		report.close()
+
+	with open(report_path, 'r') as report:
+		print(report.read())
 		report.close()
 
 def main(argv):
