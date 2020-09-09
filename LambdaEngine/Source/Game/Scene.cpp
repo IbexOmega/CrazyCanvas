@@ -426,9 +426,6 @@ namespace LambdaEngine
 			}
 		}
 
-		clock.Tick();
-		LOG_INFO("Scene Build took %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
-
 		m_pCopyCommandAllocator->Reset();
 		m_pCopyCommandList->Begin(nullptr);
 
@@ -481,16 +478,17 @@ namespace LambdaEngine
 		}
 		/*-------------Ray Tracing Section End--------------*/
 
+		clock.Tick();
+		LOG_INFO("Scene Build took %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
+
 		D_LOG_MESSAGE("[Scene]: Successfully finalized \"%s\"! ", m_Name.c_str());
 
 		m_InstanceBuffersAreDirty = false;
 		return true;
 	}
 
-	void Scene::PrepareRender(CommandList* pGraphicsCommandList, CommandList* pComputeCommandList, uint64 frameIndex, Timestamp delta)
+	void Scene::PrepareRender(CommandList* pGraphicsCommandList, CommandList* pComputeCommandList, uint64 frameIndex)
 	{
-		UNREFERENCED_VARIABLE(delta);
-
 		for (uint32 instanceIndex : m_DirtySecondaryInstances)
 		{
 			uint32 sortedInstanceIndex = m_InstanceIndexToSortedInstanceIndex[instanceIndex];

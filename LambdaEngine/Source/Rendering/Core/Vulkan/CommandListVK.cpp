@@ -134,6 +134,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			m_IsBegin = true;
 			return true;
 		}
 	}
@@ -152,6 +153,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			m_IsBegin = false;
 			return true;
 		}
 	}
@@ -780,6 +782,7 @@ namespace LambdaEngine
 		FlushDeferredBarriers();
 
 		m_pDevice->vkCmdTraceRaysKHR(m_CommandList, pRaygen, pMiss, pHit, pCallable, width, height, depth);
+		m_CurrentRayTracingPipeline.Reset();
 	}
 
 	void CommandListVK::Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ)
