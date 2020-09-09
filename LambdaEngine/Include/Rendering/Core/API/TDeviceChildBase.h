@@ -10,7 +10,7 @@ namespace LambdaEngine
 		DECL_UNIQUE_CLASS(TDeviceChildBase);
 
 		TDeviceChildBase(const TGraphicsDevice* pDevice)
-			: Base(),
+			: TBase(),
 			m_pDevice(pDevice)
 		{
 			static_assert(std::is_base_of<DeviceChild, TBase>());
