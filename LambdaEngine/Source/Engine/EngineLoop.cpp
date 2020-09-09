@@ -32,6 +32,7 @@
 #include "Utilities/RuntimeStats.h"
 
 #include "Application/API/Events/EventQueue.h"
+#include "Application/API/Events/KeyEvents.h"
 
 namespace LambdaEngine
 {
@@ -46,15 +47,25 @@ namespace LambdaEngine
 	public:
 		bool HandleEvent(const Event& event)
 		{
-			LOG_INFO("Member: %s", event.ToString().c_str());
-			return false;
+			return DispatchEvent<KeyReleasedEvent>(event, &A::HandleKey, this);
+		}
+
+		bool HandleKey(const KeyReleasedEvent& event)
+		{
+			LOG_INFO("Member Key event: %s", event.ToString().c_str());
+			return true;
 		}
 	};
 
+	static bool HandleKey(const KeyReleasedEvent& event)
+	{
+		LOG_INFO("Func Key event: %s", event.ToString().c_str());
+		return true;
+	}
+
 	static bool HandleEvent(const Event& event)
 	{
-		LOG_INFO("Func: %s", event.ToString().c_str());
-		return false;
+		return DispatchEvent<KeyReleasedEvent>(event, HandleKey);
 	}
 
 	/*

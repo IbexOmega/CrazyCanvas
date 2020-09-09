@@ -5,6 +5,7 @@
 #include "Application/API/Events/EventQueue.h"
 #include "Application/API/Events/MouseEvents.h"
 #include "Application/API/Events/KeyEvents.h"
+#include "Application/API/Events/WindowEvents.h"
 
 namespace LambdaEngine
 {
@@ -147,7 +148,7 @@ namespace LambdaEngine
 		m_pPlatformApplication->SetMouseVisibility(visible);
 	}
 
-	void CommonApplication::SetMousePosition(int x, int y)
+	void CommonApplication::SetMousePosition(int32 x, int32 y)
 	{
 		m_pPlatformApplication->SetMousePosition(x, y);
 	}
@@ -163,6 +164,9 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnFocusChanged(window, hasFocus);
 		}
+
+		FocusChangedEvent event(window, hasFocus);
+		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnWindowMoved(TSharedRef<Window> window, int16 x, int16 y)
@@ -171,14 +175,20 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnWindowMoved(window, x, y);
 		}
+
+		WindowMovedEvent event(window, x, y);
+		EventQueue::SendEvent(event);
 	}
 
-	void CommonApplication::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)
+	void CommonApplication::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType resizeType)
 	{
 		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnWindowResized(window, width, height, type);
+			pEventHandler->OnWindowResized(window, width, height, resizeType);
 		}
+
+		WindowResizedEvent event(window, width, height, resizeType);
+		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnWindowClosed(TSharedRef<Window> window)
@@ -192,6 +202,9 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnWindowClosed(window);
 		}
+
+		WindowClosedEvent event(window);
+		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnMouseEntered(TSharedRef<Window> window)
@@ -200,6 +213,9 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnMouseEntered(window);
 		}
+
+		WindowMouseEnteredEvent event(window);
+		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnMouseLeft(TSharedRef<Window> window)
@@ -208,6 +224,9 @@ namespace LambdaEngine
 		{
 			pEventHandler->OnMouseLeft(window);
 		}
+
+		WindowMouseLeftEvent event(window);
+		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnMouseMoved(int32 x, int32 y)

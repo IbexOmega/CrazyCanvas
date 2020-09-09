@@ -12,7 +12,7 @@ namespace LambdaEngine
 	struct KeyEvent : public Event
 	{
 	public:
-		inline explicit KeyEvent(EKey key)
+		KeyEvent(EKey key)
 			: Event(EVENT_FLAG_KEYBOARD)
 			, Key(key)
 		{
@@ -30,7 +30,7 @@ namespace LambdaEngine
 	struct KeyPressedEvent : public KeyEvent
 	{
 	public:
-		inline explicit KeyPressedEvent(EKey key, ModifierKeyState modiferState, bool isRepeat)
+		KeyPressedEvent(EKey key, ModifierKeyState modiferState, bool isRepeat)
 			: KeyEvent(key)
 			, ModiferState(modiferState)
 			, IsRepeat(isRepeat)
@@ -39,7 +39,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(KeyPressedEvent);
 
-		inline virtual String ToString() const
+		virtual String ToString() const
 		{
 			return String("KeyDown=") + KeyToString(Key);
 		}
@@ -55,14 +55,14 @@ namespace LambdaEngine
 	struct KeyReleasedEvent : public KeyEvent
 	{
 	public:
-		inline explicit KeyReleasedEvent(EKey key)
+		KeyReleasedEvent(EKey key)
 			: KeyEvent(key)
 		{
 		}
 
 		DECLARE_EVENT_TYPE(KeyReleasedEvent);
 
-		inline virtual String ToString() const
+		virtual String ToString() const
 		{
 			return String("KeyUp=") + KeyToString(Key);
 		}
@@ -74,7 +74,7 @@ namespace LambdaEngine
 	struct KeyTypedEvent : public Event
 	{
 	public:
-		inline explicit KeyTypedEvent(uint32 character)
+		KeyTypedEvent(uint32 character)
 			: Event(EVENT_FLAG_KEYBOARD)
 			, Character(Character)
 		{
@@ -82,12 +82,12 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(KeyTypedEvent);
 
-		inline virtual String ToString() const
+		virtual String ToString() const
 		{
 			return String("KeyTypedEvent=") + GetPrintableChar();
 		}
 
-		inline char GetPrintableChar() const
+		char GetPrintableChar() const
 		{
 			return static_cast<char>(Character);
 		}

@@ -3,6 +3,8 @@
 
 #include "Containers/String.h"
 
+#include "Utilities/StringHash.h"
+
 namespace LambdaEngine
 {
 	/*
@@ -15,6 +17,9 @@ namespace LambdaEngine
 		EVENT_FLAG_MOUSE	= FLAG(1),
 		EVENT_FLAG_KEYBOARD	= FLAG(2),
 		EVENT_FLAG_INPUT	= EVENT_FLAG_MOUSE | EVENT_FLAG_KEYBOARD,
+
+		EVENT_FLAG_WINDOW	= FLAG(3),
+		EVENT_FLAG_OTHER	= FLAG(4),
 	};
 
 	typedef uint32 FEventFlags;
@@ -24,16 +29,17 @@ namespace LambdaEngine
 	*/
 #define DECLARE_EVENT_TYPE(Type) \
 	public: \
-		inline static uint32 GetStaticType() \
+		inline static constexpr uint32 GetStaticType() \
 		{ \
-			return 1; \
+			constexpr uint32 TYPE_HASH = HashString(#Type); \
+			return TYPE_HASH; \
 		} \
 	public: \
-		inline virtual uint32 GetType() const override \
+		virtual uint32 GetType() const override \
 		{ \
 			return GetStaticType(); \
 		} \
-		inline virtual const char* GetName() const override \
+		virtual const char* GetName() const override \
 		{ \
 			return #Type; \
 		} \
@@ -44,42 +50,75 @@ namespace LambdaEngine
 	struct Event
 	{
 	public:
-		inline explicit Event(FEventFlags eventFlags)
+		Event(FEventFlags eventFlags)
 			: EventFlags(eventFlags)
+			, IsConsumed(false)
 		{
 		}
 
+		virtual String ToString() const = 0;
+		virtual uint32 GetType() const = 0;
 		virtual const char* GetName() const = 0;
 
-		inline virtual uint32 GetType() const
-		{
-			return GetStaticType();
-		}
-
-		inline virtual String ToString() const
-		{
-			return GetName();
-		}
-
-		inline bool HasEventFlags(FEventFlags flags) const
+		FORCEINLINE bool HasEventFlags(FEventFlags flags) const
 		{
 			return ((EventFlags & flags) != 0);
 		}
 
-		inline FEventFlags GetEventFlags() const
-		{
-			return EventFlags;
-		}
-
-		
+	public:
+		FEventFlags EventFlags;
+		bool IsConsumed;
 
 	public:
-		inline static uint32 GetStaticType()
+		FORCEINLINE static constexpr uint32 GetStaticType()
 		{
 			return 0;
 		}
-
-	public:
-		FEventFlags EventFlags;
 	};
+
+	/*
+	* Event cast
+	*/
+	template<typename TEvent>
+	inline bool IsEventOfType(const Event& event)
+	{
+		static_assert(std::is_base_of<Event, TEvent>());
+		return event.GetType() == TEvent::GetStaticType();
+	}
+
+	template<typename TEvent>
+	inline TEvent& EventCast(Event& event)
+	{
+		static_assert(std::is_base_of<Event, TEvent>());
+		return static_cast<TEvent&>(event);
+	}
+
+	template<typename TEvent>
+	inline const TEvent& EventCast(const Event& event)
+	{
+		static_assert(std::is_base_of<Event, TEvent>());
+		return static_cast<const TEvent&>(event);
+	}
+
+	template<typename TEvent>
+	inline bool DispatchEvent(const Event& event, bool(*function)(const TEvent&))
+	{
+		if (IsEventOfType<TEvent>(event))
+		{
+			return function(EventCast<TEvent>(event));
+		}
+
+		return false;
+	}
+
+	template<typename TEvent, typename T>
+	inline bool DispatchEvent(const Event& event, bool(T::*function)(const TEvent&), T* pObject)
+	{
+		if (IsEventOfType<TEvent>(event))
+		{
+			return ((*pObject).*(function))(EventCast<TEvent>(event));
+		}
+
+		return false;
+	}
 }

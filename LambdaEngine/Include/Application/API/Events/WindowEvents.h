@@ -1,6 +1,8 @@
 #pragma once
 #include "Event.h"
 
+#include "Core/TSharedRef.h"
+
 #include "Application/API/Window.h"
 
 namespace LambdaEngine
@@ -11,16 +13,16 @@ namespace LambdaEngine
 	struct WindowEvent : public Event
 	{
 	public:
-		inline explicit WindowEvent(TSharedRef<Window> window)
+		WindowEvent(TSharedRef<Window> window)
 			: Event(0)
-			, Window(window)
+			, EventWindow(window)
 		{
 		}
 
 		DECLARE_EVENT_TYPE(WindowEvent);
 
 	public:
-		TSharedRef<Window> Window;
+		TSharedRef<Window> EventWindow;
 	};
 
 	/*
@@ -29,7 +31,7 @@ namespace LambdaEngine
 	struct FocusChangedEvent : public WindowEvent
 	{
 	public:
-		inline explicit FocusChangedEvent(TSharedRef<Window> window, bool hasFocus)
+		FocusChangedEvent(TSharedRef<Window> window, bool hasFocus)
 			: WindowEvent(window)
 			, HasFocus(hasFocus)
 		{
@@ -37,7 +39,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(FocusChangedEvent);
 
-		inline virtual String ToString() const
+		virtual String ToString() const
 		{
 			return String("FocusChangedEvent=") + std::to_string(HasFocus);
 		}
@@ -52,7 +54,7 @@ namespace LambdaEngine
 	struct WindowMovedEvent : public WindowEvent
 	{
 	public:
-		inline explicit WindowMovedEvent(TSharedRef<Window> window, int32 x, int32 y)
+		WindowMovedEvent(TSharedRef<Window> window, int32 x, int32 y)
 			: WindowEvent(window)
 			, Position({ x, y })
 		{
@@ -60,7 +62,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(WindowMovedEvent);
 
-		inline virtual String ToString() const
+		virtual String ToString() const
 		{
 			return String("WindowMovedEvent=[x, ") + std::to_string(Position.x) + ", y=" + std::to_string(Position.y) + "]";
 		}
@@ -79,16 +81,17 @@ namespace LambdaEngine
 	struct WindowResizedEvent : public WindowEvent
 	{
 	public:
-		inline explicit WindowResizedEvent(TSharedRef<Window> window, uint32 width, uint32 height)
+		WindowResizedEvent(TSharedRef<Window> window, uint32 width, uint32 height, EResizeType resizeType)
 			: WindowEvent(window)
 			, Width(width)
 			, Height(height)
+			, ResizeType(resizeType)
 		{
 		}
 
 		DECLARE_EVENT_TYPE(WindowResizedEvent);
 
-		inline virtual String ToString() const
+		virtual String ToString() const
 		{
 			return String("WindowResizedEvent=[Width, ") + std::to_string(Width) + ", Height=" + std::to_string(Height) + "]";
 		}
@@ -96,6 +99,7 @@ namespace LambdaEngine
 	public:
 		uint32 Width;
 		uint32 Height;
+		EResizeType ResizeType;
 	};
 
 	/*
@@ -104,14 +108,14 @@ namespace LambdaEngine
 	struct WindowMouseLeftEvent : public WindowEvent
 	{
 	public:
-		inline explicit WindowMouseLeftEvent(TSharedRef<Window> window)
+		WindowMouseLeftEvent(TSharedRef<Window> window)
 			: WindowEvent(window)
 		{
 		}
 
 		DECLARE_EVENT_TYPE(WindowMouseLeftEvent);
 
-		inline virtual String ToString() const
+		virtual String ToString() const
 		{
 			return "WindowMouseLeftEvent";
 		}
@@ -123,14 +127,14 @@ namespace LambdaEngine
 	struct WindowMouseEnteredEvent : public WindowEvent
 	{
 	public:
-		inline explicit WindowMouseEnteredEvent(TSharedRef<Window> window)
+		WindowMouseEnteredEvent(TSharedRef<Window> window)
 			: WindowEvent(window)
 		{
 		}
 
 		DECLARE_EVENT_TYPE(WindowMouseEnteredEvent);
 
-		inline virtual String ToString() const
+		virtual String ToString() const
 		{
 			return "WindowMouseEnteredEvent";
 		}
@@ -142,14 +146,14 @@ namespace LambdaEngine
 	struct WindowClosedEvent : public WindowEvent
 	{
 	public:
-		inline explicit WindowClosedEvent(TSharedRef<Window> window)
+		WindowClosedEvent(TSharedRef<Window> window)
 			: WindowEvent(window)
 		{
 		}
 
 		DECLARE_EVENT_TYPE(WindowClosedEvent);
 
-		inline virtual String ToString() const
+		virtual String ToString() const
 		{
 			return "WindowClosedEvent";
 		}
