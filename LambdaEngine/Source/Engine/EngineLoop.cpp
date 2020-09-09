@@ -32,8 +32,8 @@ namespace LambdaEngine
 	/*
 	* Global clock variables
 	*/
-	static Clock		g_Clock;
-	static Timestamp	g_FixedTimestep = Timestamp::Seconds(1.0 / 60.0);
+	static Clock g_Clock;
+	static Timestamp g_FixedTimestep = Timestamp::Seconds(1.0 / 60.0);
 
 	/*
 	* EngineLoop
