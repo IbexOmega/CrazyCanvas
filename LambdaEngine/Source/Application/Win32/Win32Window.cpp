@@ -13,7 +13,10 @@ namespace LambdaEngine
 	*/
 	Win32Window::~Win32Window()
 	{
-		::DestroyWindow(m_hWnd);
+		if (::IsWindow(m_hWnd))
+		{
+			::DestroyWindow(m_hWnd);
+		}
 	}
 
 	bool Win32Window::Init(const WindowDesc* pDesc)
@@ -94,7 +97,11 @@ namespace LambdaEngine
 	void Win32Window::Show()
 	{
 		VALIDATE(m_hWnd != 0);
-		::ShowWindow(m_hWnd, SW_NORMAL);
+
+		if (::IsWindow(m_hWnd))
+		{
+			::ShowWindow(m_hWnd, SW_NORMAL);
+		}
 	}
 
 	void Win32Window::Close()
@@ -102,7 +109,11 @@ namespace LambdaEngine
 		if (m_Desc.Style & WINDOW_STYLE_FLAG_CLOSABLE)
 		{
 			VALIDATE(m_hWnd != 0);
-			::DestroyWindow(m_hWnd);
+
+			if (::IsWindow(m_hWnd))
+			{
+				::DestroyWindow(m_hWnd);
+			}
 		}
 	}
 
@@ -111,7 +122,11 @@ namespace LambdaEngine
 		if (m_Desc.Style & WINDOW_STYLE_FLAG_MINIMIZABLE)
 		{
 			VALIDATE(m_hWnd != 0);
-			::ShowWindow(m_hWnd, SW_MINIMIZE);
+
+			if (::IsWindow(m_hWnd))
+			{
+				::ShowWindow(m_hWnd, SW_MINIMIZE);
+			}
 		}
 	}
 
@@ -120,7 +135,11 @@ namespace LambdaEngine
 		if (m_Desc.Style & WINDOW_STYLE_FLAG_MAXIMIZABLE)
 		{
 			VALIDATE(m_hWnd != 0);
-			::ShowWindow(m_hWnd, SW_MAXIMIZE);
+
+			if (::IsWindow(m_hWnd))
+			{
+				::ShowWindow(m_hWnd, SW_MAXIMIZE);
+			}
 		}
 	}
 
@@ -134,10 +153,13 @@ namespace LambdaEngine
 	{
 		VALIDATE(m_hWnd != 0);
 
-		BOOL result = ::IsIconic(m_hWnd);
-		if (result)
+		if (::IsWindow(m_hWnd))
 		{
-			::ShowWindow(m_hWnd, SW_RESTORE);
+			BOOL result = ::IsIconic(m_hWnd);
+			if (result)
+			{
+				::ShowWindow(m_hWnd, SW_RESTORE);
+			}
 		}
 	}
 
@@ -150,35 +172,62 @@ namespace LambdaEngine
 	{
 		VALIDATE(m_hWnd != 0);
 
-		RECT rect = { };
-		::GetClientRect(m_hWnd, &rect);
-		return uint16(rect.right - rect.left);
+		if (::IsWindow(m_hWnd))
+		{
+			RECT rect = { };
+			::GetClientRect(m_hWnd, &rect);
+			return uint16(rect.right - rect.left);
+		}
+		else
+		{
+			return 0;
+		}
 	}
 
 	uint16 Win32Window::GetHeight() const
 	{
 		VALIDATE(m_hWnd != 0);
 
-		RECT rect = { };
-		::GetClientRect(m_hWnd, &rect);
-		return uint16(rect.bottom - rect.top);
+		if (::IsWindow(m_hWnd))
+		{
+			RECT rect = { };
+			::GetClientRect(m_hWnd, &rect);
+			return uint16(rect.bottom - rect.top);
+		}
+		else
+		{
+			return 0;
+		}
 	}
 
 	void* Win32Window::GetHandle() const
 	{
-		return (void*)m_hWnd;
+		return reinterpret_cast<void*>(m_hWnd);
+	}
+
+	bool Win32Window::IsValid() const
+	{
+		return ::IsWindow(m_hWnd);
 	}
 
 	void Win32Window::SetTitle(const String& title)
 	{
 		VALIDATE(m_hWnd != 0);
-		::SetWindowTextA(m_hWnd, title.c_str());
+
+		if (::IsWindow(m_hWnd))
+		{
+			::SetWindowTextA(m_hWnd, title.c_str());
+		}
 	}
 	
 	void Win32Window::SetPosition(int32 x, int32 y)
 	{
 		VALIDATE(m_hWnd != 0);
-		::SetWindowPos(m_hWnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+
+		if (::IsWindow(m_hWnd))
+		{
+			::SetWindowPos(m_hWnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+		}
 	}
 	
 	void Win32Window::GetPosition(int32* pPosX, int32* pPosY) const
@@ -187,20 +236,32 @@ namespace LambdaEngine
 		VALIDATE(pPosX	!= nullptr);
 		VALIDATE(pPosY	!= nullptr);
 
-		WINDOWPLACEMENT placement = { };
-		placement.length = sizeof(WINDOWPLACEMENT);
-
-		if (::GetWindowPlacement(m_hWnd, &placement))
+		if (::IsWindow(m_hWnd))
 		{
-			(*pPosX) = placement.rcNormalPosition.left;
-			(*pPosY) = placement.rcNormalPosition.bottom;
+			WINDOWPLACEMENT placement = { };
+			placement.length = sizeof(WINDOWPLACEMENT);
+
+			if (::GetWindowPlacement(m_hWnd, &placement))
+			{
+				(*pPosX) = placement.rcNormalPosition.left;
+				(*pPosY) = placement.rcNormalPosition.bottom;
+			}
+		}
+		else
+		{
+			(*pPosX) = 0;
+			(*pPosY) = 0;
 		}
 	}
 	
 	void Win32Window::SetSize(uint16 width, uint16 height)
 	{
 		VALIDATE(m_hWnd != 0);
-		::SetWindowPos(m_hWnd, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+
+		if (::IsWindow(m_hWnd))
+		{
+			::SetWindowPos(m_hWnd, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+		}
 	}
 }
 

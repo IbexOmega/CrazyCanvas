@@ -113,6 +113,8 @@ namespace LambdaEngine
 
 	bool Renderer::Release()
 	{
+		SAFEDELETE(s_pRenderGraph);
+
 		if (s_SwapChain)
 		{
 			for (uint32 i = 0; i < BACK_BUFFER_COUNT; i++)
@@ -125,9 +127,6 @@ namespace LambdaEngine
 			SAFEDELETE_ARRAY(s_ppBackBufferViews);
 			s_SwapChain.Reset();
 		}
-
-		SAFEDELETE(s_pRenderGraph);
-
 
 		return true;
 	}

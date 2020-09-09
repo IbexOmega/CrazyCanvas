@@ -85,7 +85,7 @@ Sandbox::Sandbox()
 	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
 	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
 
-	EScene scene = EScene::SPONZA;
+	EScene scene = EScene::TESTING;
 
 	m_pScene->SetDirectionalLight(directionalLight);
 
@@ -300,7 +300,7 @@ Sandbox::Sandbox()
 	cameraDesc.NearPlane	= 0.001f;
 	cameraDesc.FarPlane		= 1000.0f;
 
-	m_pCamera->Init(CommonApplication::Get(), cameraDesc);
+	m_pCamera->Init(cameraDesc);
 
 	LoadRendererResources();
 
@@ -412,23 +412,26 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 	Renderer::NewFrame(delta);
 
 	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-	float32 renderWidth		= (float32)mainWindow->GetWidth();
-	float32 renderHeight	= (float32)mainWindow->GetHeight();
+	float32 renderWidth = (float32)mainWindow->GetWidth();
+	float32 renderHeight = (float32)mainWindow->GetHeight();
 	float32 renderAspectRatio = renderWidth / renderHeight;
 
 	if (IMGUI_ENABLED)
 	{
-		m_pRenderGraphEditor->RenderGUI();
-
-		ImGui::ShowDemoWindow();
-
-		ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
-		if (ImGui::Begin("Debugging Window", NULL))
+		ImGuiRenderer::Get().DrawUI([&]()
 		{
-			ImGui::Text("FPS: %f", 1.0f / delta.AsSeconds());
-			ImGui::Text("Frametime (ms): %f", delta.AsMilliSeconds());
-		}
-		ImGui::End();
+			m_pRenderGraphEditor->RenderGUI();
+
+			ImGui::ShowDemoWindow();
+
+			ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
+			if (ImGui::Begin("Debugging Window", NULL))
+			{
+				ImGui::Text("FPS: %f", 1.0f / delta.AsSeconds());
+				ImGui::Text("Frametime (ms): %f", delta.AsMilliSeconds());
+			}
+			ImGui::End();
+		});
 	}
 
 	Renderer::PrepareRender(delta);

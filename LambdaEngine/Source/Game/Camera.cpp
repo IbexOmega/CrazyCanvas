@@ -24,14 +24,12 @@ namespace LambdaEngine
 		m_Right(0.0f),
 		m_Up(0.0f),
 		m_IsDirty(true),
-		m_LastIsDirty(true),
-		m_CommonApplication(nullptr)
+		m_LastIsDirty(true)
 	{
 	}
 
-	void Camera::Init(CommonApplication* commonApplication, const CameraDesc& desc)
+	void Camera::Init(const CameraDesc& desc)
 	{
-		m_CommonApplication = commonApplication;
 		m_Projection		= glm::perspective(glm::radians(desc.FOVDegrees), desc.Width / desc.Height, desc.NearPlane, desc.FarPlane);
 		m_ProjectionInv		= glm::inverse(m_Projection);
 
@@ -200,13 +198,14 @@ namespace LambdaEngine
 		if (m_Toggle)
 		{
 			MouseState mouseState = Input::GetMouseState();
-			m_CommonApplication->SetMouseVisibility(false);
+			CommonApplication::Get()->SetMouseVisibility(false);
 
-			uint16 width	= m_CommonApplication->GetActiveWindow()->GetWidth();
-			uint16 height	= m_CommonApplication->GetActiveWindow()->GetHeight();
+			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+			uint16 width = window->GetWidth();
+			uint16 height = window->GetHeight();
 
 			glm::vec2 mouseDelta(mouseState.x - (int)(width * 0.5), mouseState.y - (int)(height * 0.5));
-			m_CommonApplication->SetMousePosition((int)(width * 0.5), (int)(height * 0.5));
+			CommonApplication::Get()->SetMousePosition((int)(width * 0.5), (int)(height * 0.5));
 
 			if (glm::length(mouseDelta) > glm::epsilon<float>())
 			{
@@ -217,7 +216,7 @@ namespace LambdaEngine
 		else
 		{
 			// Should probably not be called every frame
-			m_CommonApplication->SetMouseVisibility(true);
+			CommonApplication::Get()->SetMouseVisibility(true);
 		}
 	}
 

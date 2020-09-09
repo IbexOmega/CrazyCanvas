@@ -51,8 +51,9 @@ namespace LambdaEngine
 		*/
 		static bool PostRelease();
 
-        static Timestamp GetTimeSinceStart();
-        
+		static Timestamp GetDeltaTime();
+		static Timestamp GetTimeSinceStart();
+		
 	private:
 		/*
 		* Engine tick, advances the whole engine one frame. Should only be called from run
@@ -60,12 +61,12 @@ namespace LambdaEngine
 		*	return	- Returns true if the engine should perform next tick
 		*/
 		static bool Tick(Timestamp delta);
-        
-        /*
-        * Fixed engine tick, advances the whole engine one frame at a fixed framerate (Current every 16ms).
-        * Should only be called from run
-        *	delta - The time between this frame and the last frame
-        */
-        static void FixedTick(Timestamp delta);
+		
+		/*
+		* Fixed engine tick, advances the whole engine one frame at a fixed framerate (Current every 16ms).
+		* Should only be called from run
+		*	delta - The time between this frame and the last frame
+		*/
+		static void FixedTick(Timestamp delta);
 	};
 }

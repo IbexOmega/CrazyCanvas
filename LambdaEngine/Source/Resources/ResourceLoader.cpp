@@ -327,7 +327,9 @@ namespace LambdaEngine
 				auto mat = context.MaterialIndices.find(pMesh->mMaterialIndex);
 				if (mat == context.MaterialIndices.end())
 				{
-					aiMaterial* pAiMaterial = pScene->mMaterials[pMesh->mMaterialIndex];
+					Material*	pMaterial	= DBG_NEW Material();
+					aiMaterial* pAiMaterial	= pScene->mMaterials[pMesh->mMaterialIndex];
+#if 0
 					for (uint32 t = 0; t < aiTextureType_UNKNOWN; t++)
 					{
 						uint32 count = pAiMaterial->GetTextureCount(aiTextureType(t));
@@ -343,9 +345,24 @@ namespace LambdaEngine
 							}
 						}
 					}
-
+#endif
 					// Albedo
-					Material* pMaterial = DBG_NEW Material();
+					aiColor4D diffuse;
+					if (aiGetMaterialColor(pAiMaterial, AI_MATKEY_COLOR_DIFFUSE, &diffuse) == AI_SUCCESS)
+					{
+						pMaterial->Properties.Albedo.r = diffuse.r;
+						pMaterial->Properties.Albedo.g = diffuse.g;
+						pMaterial->Properties.Albedo.b = diffuse.b;
+						pMaterial->Properties.Albedo.a = diffuse.a;
+					}
+					else
+					{
+						pMaterial->Properties.Albedo.r = 1.0f;
+						pMaterial->Properties.Albedo.g = 1.0f;
+						pMaterial->Properties.Albedo.b = 1.0f;
+						pMaterial->Properties.Albedo.a = 1.0f;
+					}
+
 					pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_BASE_COLOR, 0);
 					if (!pMaterial->pAlbedoMap)
 					{
@@ -378,6 +395,16 @@ namespace LambdaEngine
 					}
 
 					// Roughness
+					ai_real roughness = 1.0f;
+					if(aiGetMaterialFloat(pAiMaterial, AI_MATKEY_SHININESS, &roughness) == AI_SUCCESS)
+					{
+						pMaterial->Properties.Roughness = roughness;
+					}
+					else
+					{
+						pMaterial->Properties.Roughness = 1.0f;
+					}
+
 					pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE_ROUGHNESS, 0);
 					if (!pMaterial->pRoughnessMap)
 					{
@@ -419,9 +446,8 @@ namespace LambdaEngine
 
 		int32 assimpFlags =
 			aiProcess_FlipUVs					|
-			aiProcess_FixInfacingNormals		|
 			aiProcess_CalcTangentSpace			| 
-			aiProcess_FindInstances				|
+			aiProcess_FindInstances				| 
 			aiProcess_GenSmoothNormals			| 
 			aiProcess_JoinIdenticalVertices		| 
 			aiProcess_ImproveCacheLocality		| 
@@ -461,7 +487,6 @@ namespace LambdaEngine
 	{
 		int32 assimpFlags =
 			aiProcess_FlipUVs					|
-			aiProcess_FixInfacingNormals		|
 			aiProcess_CalcTangentSpace			|
 			aiProcess_FindInstances				|
 			aiProcess_GenSmoothNormals			|

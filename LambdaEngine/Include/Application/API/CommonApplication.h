@@ -75,6 +75,11 @@ namespace LambdaEngine
 		void SetMouseVisibility(bool visible);
 		void SetMousePosition(int x, int y);
 
+		FORCEINLINE bool IsExiting() const
+		{
+			return m_IsExiting;
+		}
+
 	public:
 		// EventHandler Interface
 		virtual void OnFocusChanged(TSharedRef<Window> window, bool hasFocus)									override final;
@@ -107,8 +112,10 @@ namespace LambdaEngine
 
 	private:
 		TSharedRef<Window>		m_MainWindow			= nullptr;
-		Application*			m_pPlatformApplication	= nullptr;
 		TArray<EventHandler*> 	m_EventHandlers;
+		Application* m_pPlatformApplication	= nullptr;
+
+		bool m_IsExiting = false;
 
 	private:
 		static TSharedPtr<CommonApplication> s_CommonApplication;

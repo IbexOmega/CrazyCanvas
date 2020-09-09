@@ -31,6 +31,9 @@ namespace LambdaEngine
 {
 	static Clock g_Clock;
 
+	/*
+	* EngineLoop
+	*/
 	void EngineLoop::Run()
 	{
 		Clock			fixedClock;
@@ -209,6 +212,11 @@ namespace LambdaEngine
 		PlatformConsole::Close();
 #endif
 		return true;
+	}
+
+	Timestamp EngineLoop::GetDeltaTime()
+	{
+		return g_Clock.GetDeltaTime();
 	}
 
 	Timestamp EngineLoop::GetTimeSinceStart()

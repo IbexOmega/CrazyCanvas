@@ -33,5 +33,9 @@
 		#ifdef UNREFERENCED_PARAMETER
 			#undef UNREFERENCED_PARAMETER
 		#endif
+
+		#ifdef RELATIVE
+			#undef RELATIVE
+		#endif
 	#endif
 #endif
