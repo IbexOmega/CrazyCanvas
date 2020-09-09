@@ -48,15 +48,15 @@ namespace LambdaEngine
 		SAFERELEASE(m_pSceneSecondaryInstanceCopyBuffer);
 		SAFERELEASE(m_pSceneIndirectArgsCopyBuffer);
 		SAFERELEASE(m_pLightsBuffer);
+		SAFERELEASE(m_pLightsCopyBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
+		SAFERELEASE(m_pPerFrameCopyBuffer);
 		SAFERELEASE(m_pSceneMaterialProperties);
 		SAFERELEASE(m_pSceneVertexBuffer);
 		SAFERELEASE(m_pSceneIndexBuffer);
 		SAFERELEASE(m_pScenePrimaryInstanceBuffer);
 		SAFERELEASE(m_pSceneSecondaryInstanceBuffer);
 		SAFERELEASE(m_pSceneIndirectArgsBuffer);
-
-		SAFERELEASE(m_pDeviceAllocator);
 
 		SAFERELEASE(m_pTLAS);
 
@@ -65,6 +65,8 @@ namespace LambdaEngine
 			SAFERELEASE(pBLAS);
 		}
 		m_BLASs.Clear();
+
+		SAFERELEASE(m_pDeviceAllocator);
 	}
 
 	bool Scene::Init(const SceneDesc& desc)
@@ -83,7 +85,7 @@ namespace LambdaEngine
 			m_AreaLightIndexToInstanceIndex[l] = -1;
 
 			AreaLight* pAreaLight = &m_LightsLightSetup.AreaLights[l];
-			pAreaLight->InstanceIndex	= -1;
+			pAreaLight->InstanceIndex	= UINT32_MAX;
 			pAreaLight->Type			= EAreaLightType::NONE;
 		}
 
@@ -303,7 +305,7 @@ namespace LambdaEngine
 				//Check if this instance belongs to an area light
 				for (uint32 l = 0; l < MAX_NUM_AREA_LIGHTS; l++)
 				{
-					if (m_AreaLightIndexToInstanceIndex[l] == mappedInstanceIndex)
+					if (m_AreaLightIndexToInstanceIndex[l] == int32(mappedInstanceIndex))
 					{
 						m_LightsLightSetup.AreaLights[l].InstanceIndex = m_SortedPrimaryInstances.GetSize();
 					}
@@ -487,6 +489,8 @@ namespace LambdaEngine
 
 	void Scene::PrepareRender(CommandList* pGraphicsCommandList, CommandList* pComputeCommandList, uint64 frameIndex, Timestamp delta)
 	{
+		UNREFERENCED_VARIABLE(delta);
+
 		for (uint32 instanceIndex : m_DirtySecondaryInstances)
 		{
 			uint32 sortedInstanceIndex = m_InstanceIndexToSortedInstanceIndex[instanceIndex];
@@ -616,7 +620,7 @@ namespace LambdaEngine
 		}
 
 		//Todo: Change return type or add failure defines
-		return -1;
+		return UINT32_MAX;
 	}
 
 	void Scene::UpdateCamera(const Camera* pCamera)
@@ -637,7 +641,7 @@ namespace LambdaEngine
 		if (it != m_MaterialIndexToIndirectArgOffsetMap.end())
 			return it->second;
 
-		return m_pSceneIndirectArgsBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument);
+		return uint32(m_pSceneIndirectArgsBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
 	}
 
 	uint32 Scene::InternalAddDynamicObject(GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, HitMask hitMask)

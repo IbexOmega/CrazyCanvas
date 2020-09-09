@@ -107,6 +107,4 @@ typedef unsigned int GUID_Lambda;
 	#define FLT64_CONS_MAX_UINT64 9007199254740992 //This value represents the maximum consecutive integer float32 can represent, in uint64 format
 #endif
 
-constexpr uint32 MAX_UNIQUE_MATERIALS = 32;
-
 constexpr GUID_Lambda GUID_NONE = UINT32_MAX;

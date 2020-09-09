@@ -13,7 +13,6 @@ namespace LambdaEngine
 	bool RenderGraphSerializer::SaveRenderGraphToFile(
 		const String& renderGraphName, 
 		const TArray<RenderGraphResourceDesc>& resources, 
-		const THashTable<int32, String>& renderStageNameByInputAttributeIndex, 
 		const THashTable<String, EditorRenderStageDesc>& renderStagesByName, 
 		const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex, 
 		const THashTable<int32, EditorRenderGraphResourceLink>& resourceStateLinksByLinkIndex, 
@@ -314,7 +313,7 @@ namespace LambdaEngine
 
 										if (resourceStateIt == resourceStatesByHalfAttributeIndex.end())
 										{
-											LOG_ERROR("[RenderGraphSerializer]: Index Buffer for Render Stage %s could not be found", renderStageIt->second.Name);
+											LOG_ERROR("[RenderGraphSerializer]: Index Buffer for Render Stage %s could not be found", renderStageIt->second.Name.c_str());
 											return false;
 										}
 
@@ -365,7 +364,7 @@ namespace LambdaEngine
 
 										if (resourceStateIt == resourceStatesByHalfAttributeIndex.end())
 										{
-											LOG_ERROR("[RenderGraphSerializer]: Index Buffer for Render Stage %s could not be found", renderStageIt->second.Name);
+											LOG_ERROR("[RenderGraphSerializer]: Index Buffer for Render Stage %s could not be found", renderStageIt->second.Name.c_str());
 											return false;
 										}
 
@@ -596,7 +595,7 @@ namespace LambdaEngine
 		}
 
 		constexpr uint32 READ_BUFFER_SIZE = 65536;
-		char* pReadBuffer = new char[READ_BUFFER_SIZE];
+		char* pReadBuffer = DBG_NEW char[READ_BUFFER_SIZE]; //We allocate this on the heap, otherwise Visual Studio gives warning because its large
 		FileReadStream inputStream(pFile, pReadBuffer, READ_BUFFER_SIZE);
 
 		Document d;
@@ -837,9 +836,9 @@ namespace LambdaEngine
 					renderStage.Parameters.YDimType			= RenderGraphDimensionTypeFromString(renderStageObject["y_dim_type"].GetString());
 					renderStage.Parameters.ZDimType			= RenderGraphDimensionTypeFromString(renderStageObject["z_dim_type"].GetString());
 
-					renderStage.Parameters.XDimVariable		= renderStageObject["x_dim_var"].GetDouble();
-					renderStage.Parameters.YDimVariable		= renderStageObject["y_dim_var"].GetDouble();
-					renderStage.Parameters.ZDimVariable		= renderStageObject["z_dim_var"].GetDouble();
+					renderStage.Parameters.XDimVariable		= renderStageObject["x_dim_var"].GetFloat();
+					renderStage.Parameters.YDimVariable		= renderStageObject["y_dim_var"].GetFloat();
+					renderStage.Parameters.ZDimVariable		= renderStageObject["z_dim_var"].GetFloat();
 
 					auto unfinishedLinkIt = unfinishedLinks.find(renderStage.Name);
 
@@ -1127,11 +1126,9 @@ namespace LambdaEngine
 		if (!RenderGraphParser::ParseRenderGraph(
 			pRenderGraphStructureDesc,
 			resources,
-			renderStageNameByInputAttributeIndex,
 			renderStagesByName,
 			resourceStatesByHalfAttributeIndex,
 			resourceStateLinksByLinkIndex,
-			resourceStateGroups,
 			finalOutput,
 			imGuiEnabled))
 		{

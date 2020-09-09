@@ -317,11 +317,9 @@ namespace LambdaEngine
 			if (!RenderGraphParser::ParseRenderGraph(
 				&m_ParsedRenderGraphStructure,
 				m_Resources,
-				m_RenderStageNameByInputAttributeIndex,
 				m_RenderStagesByName,
 				m_ResourceStatesByHalfAttributeIndex,
 				m_ResourceStateLinksByLinkIndex,
-				m_ResourceStateGroups,
 				m_FinalOutput,
 				true))
 			{
@@ -347,6 +345,8 @@ namespace LambdaEngine
 
 	void RenderGraphEditor::OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
 	{
+		UNREFERENCED_VARIABLE(modifierMask);
+
 		if (key == EKey::KEY_LEFT_SHIFT && !isRepeat)
 		{
 			imnodes::PushAttributeFlag(imnodes::AttributeFlags_EnableLinkDetachWithDragClick);
@@ -639,7 +639,7 @@ namespace LambdaEngine
 		static int32 removedResourceIndex			= -1;
 		static RenderGraphResourceDesc* pRemovedResource		= nullptr;
 
-		for (uint32 i = 0; i < m_Resources.GetSize(); i++)
+		for (int32 i = 0; i < int32(m_Resources.GetSize()); i++)
 		{
 			RenderGraphResourceDesc* pResource = &m_Resources[i];
 
@@ -1364,7 +1364,7 @@ namespace LambdaEngine
 				uint32 outputAttributeIndex		= inputAttributeIndex + 1;
 				EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[primaryAttributeIndex];
 
-				PushPinColorIfNeeded(EEditorPinType::OUTPUT, nullptr, pResourceState, inputAttributeIndex);
+				PushPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, inputAttributeIndex);
 				imnodes::BeginOutputAttribute(outputAttributeIndex);
 				ImGui::Text(pResourceState->ResourceName.c_str());
 				ImGui::SameLine();
@@ -1376,7 +1376,7 @@ namespace LambdaEngine
 					}
 				}
 				imnodes::EndOutputAttribute();
-				PopPinColorIfNeeded(EEditorPinType::OUTPUT, nullptr, pResourceState, inputAttributeIndex);
+				PopPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, inputAttributeIndex);
 			}
 
 			if (resourceStateGroupIndex != EXTERNAL_RESOURCE_STATE_GROUP_INDEX)
@@ -1419,16 +1419,13 @@ namespace LambdaEngine
 				ImGui::Text((pResourceStateGroup->Name + "_INPUT").c_str());
 				imnodes::EndNodeTitleBar();
 
-				String resourceStateToRemove = "";
-
 				for (const EditorResourceStateIdent& resourceStateIdent : pResourceStateGroup->ResourceStateIdents)
 				{
 					uint32 primaryAttributeIndex	= resourceStateIdent.AttributeIndex / 2;
 					uint32 inputAttributeIndex		= resourceStateIdent.AttributeIndex;
-					uint32 outputAttributeIndex		= inputAttributeIndex + 1;
 					EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[primaryAttributeIndex];
 
-					PushPinColorIfNeeded(EEditorPinType::INPUT, nullptr, pResourceState, inputAttributeIndex);
+					PushPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, inputAttributeIndex);
 					imnodes::BeginInputAttribute(inputAttributeIndex);
 					ImGui::Text(pResourceState->ResourceName.c_str());
 					ImGui::SameLine();
@@ -1440,7 +1437,7 @@ namespace LambdaEngine
 						}
 					}
 					imnodes::EndInputAttribute();
-					PopPinColorIfNeeded(EEditorPinType::INPUT, nullptr, pResourceState, inputAttributeIndex);
+					PopPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, inputAttributeIndex);
 				}
 
 				ImGui::Button("Drag Resource Here");
@@ -1483,14 +1480,13 @@ namespace LambdaEngine
 
 			uint32 primaryAttributeIndex	= m_FinalOutput.BackBufferAttributeIndex / 2;
 			uint32 inputAttributeIndex		= m_FinalOutput.BackBufferAttributeIndex;
-			uint32 outputAttributeIndex		= inputAttributeIndex + 1;
 			EditorRenderGraphResourceState* pResource = &m_ResourceStatesByHalfAttributeIndex[primaryAttributeIndex];
 
-			PushPinColorIfNeeded(EEditorPinType::INPUT, nullptr, pResource, inputAttributeIndex);
+			PushPinColorIfNeeded(EEditorPinType::INPUT, pResource, inputAttributeIndex);
 			imnodes::BeginInputAttribute(inputAttributeIndex);
 			ImGui::Text(pResource->ResourceName.c_str());
 			imnodes::EndInputAttribute();
-			PopPinColorIfNeeded(EEditorPinType::INPUT, nullptr, pResource, inputAttributeIndex);
+			PopPinColorIfNeeded(EEditorPinType::INPUT, pResource, inputAttributeIndex);
 
 			imnodes::EndNode();
 		}
@@ -1546,15 +1542,15 @@ namespace LambdaEngine
 
 				RenderGraphResourceDesc* pResource = &(*resourceIt);
 
-				PushPinColorIfNeeded(EEditorPinType::INPUT, pRenderStage, pResourceState, inputAttributeIndex);
+				PushPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, inputAttributeIndex);
 				imnodes::BeginInputAttribute(inputAttributeIndex);
 				ImGui::Text(pResourceState->ResourceName.c_str());
 				imnodes::EndInputAttribute();
-				PopPinColorIfNeeded(EEditorPinType::INPUT, pRenderStage, pResourceState, inputAttributeIndex);
+				PopPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, inputAttributeIndex);
 
 				ImGui::SameLine();
 
-				PushPinColorIfNeeded(EEditorPinType::OUTPUT, pRenderStage, pResourceState, outputAttributeIndex);
+				PushPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
 				imnodes::BeginOutputAttribute(outputAttributeIndex);
 				if (pResourceState->Removable)
 				{
@@ -1591,7 +1587,7 @@ namespace LambdaEngine
 				}
 
 				imnodes::EndOutputAttribute();
-				PopPinColorIfNeeded(EEditorPinType::OUTPUT, pRenderStage, pResourceState, outputAttributeIndex);
+				PopPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
 
 				TArray<ERenderGraphResourceBindingType> bindingTypes;
 				TArray<const char*> bindingTypeNames;
@@ -1620,7 +1616,7 @@ namespace LambdaEngine
 					ImGui::SetNextItemWidth(ImGui::CalcTextSize("COMBINED SAMPLER").x + ImGui::GetFrameHeight() + 4.0f); //Max Length String to be displayed + Arrow Size + Some extra
 					if (ImGui::BeginCombo(("##Binding List" + pResourceState->ResourceName).c_str(), bindingTypeNames[selectedItem]))
 					{
-						for (uint32 bt = 0; bt < bindingTypeNames.GetSize(); bt++)
+						for (int32 bt = 0; bt < int32(bindingTypeNames.GetSize()); bt++)
 						{
 							const bool is_selected = (selectedItem == bt);
 							if (ImGui::Selectable(bindingTypeNames[bt], is_selected))
@@ -1641,11 +1637,11 @@ namespace LambdaEngine
 					hasDepthAttachment = true;
 			}
 
-			PushPinColorIfNeeded(EEditorPinType::RENDER_STAGE_INPUT, pRenderStage, nullptr , -1);
+			PushPinColorIfNeeded(EEditorPinType::RENDER_STAGE_INPUT, nullptr , -1);
 			imnodes::BeginInputAttribute(pRenderStage->InputAttributeIndex);
 			ImGui::Text("New Input");
 			imnodes::EndInputAttribute();
-			PopPinColorIfNeeded(EEditorPinType::RENDER_STAGE_INPUT, pRenderStage, nullptr, -1);
+			PopPinColorIfNeeded(EEditorPinType::RENDER_STAGE_INPUT, nullptr, -1);
 
 			ImGui::Button("Drag Resource Here");
 
@@ -1692,7 +1688,7 @@ namespace LambdaEngine
 				ImGui::SetNextItemWidth(ImGui::CalcTextSize("FULLSCREEN QUAD").x + ImGui::GetFrameHeight() + 4.0f); //Max Length String to be displayed + Arrow Size + Some extra
 				if (ImGui::BeginCombo(("##Draw Type" + pRenderStage->Name).c_str(), drawTypeNames[selectedDrawType]))
 				{
-					for (uint32 dt = 0; dt < drawTypeNames.GetSize(); dt++)
+					for (int32 dt = 0; dt < int32(drawTypeNames.GetSize()); dt++)
 					{
 						const bool is_selected = (selectedDrawType == dt);
 						if (ImGui::Selectable(drawTypeNames[dt], is_selected))
@@ -1714,7 +1710,7 @@ namespace LambdaEngine
 					{
 						EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndexBufferAttributeIndex / 2];
 
-						PushPinColorIfNeeded(EEditorPinType::INPUT, pRenderStage, pResourceState, -1);
+						PushPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, -1);
 						imnodes::BeginInputAttribute(pRenderStage->Graphics.IndexBufferAttributeIndex);
 						ImGui::Text("Index Buffer");
 
@@ -1733,14 +1729,14 @@ namespace LambdaEngine
 							}
 						}
 						imnodes::EndInputAttribute();
-						PopPinColorIfNeeded(EEditorPinType::INPUT, pRenderStage, pResourceState, -1);
+						PopPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, -1);
 					}
 					
 					//Indirect Args Buffer
 					{
 						EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2];
 
-						PushPinColorIfNeeded(EEditorPinType::INPUT, pRenderStage, pResourceState, -1);
+						PushPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, -1);
 						imnodes::BeginInputAttribute(pRenderStage->Graphics.IndirectArgsBufferAttributeIndex);
 						ImGui::Text("Indirect Args Buffer");
 
@@ -1759,7 +1755,7 @@ namespace LambdaEngine
 							}
 						}
 						imnodes::EndInputAttribute();
-						PopPinColorIfNeeded(EEditorPinType::INPUT, pRenderStage, pResourceState, -1);
+						PopPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, -1);
 					}
 				}
 			}
@@ -1831,8 +1827,6 @@ namespace LambdaEngine
 			{
 				int32 resourceAttributeIndex	= resourceStateIdent.AttributeIndex;
 				int32 primaryAttributeIndex		= resourceAttributeIndex / 2;
-				int32 inputAttributeIndex		= resourceAttributeIndex;
-				int32 outputAttributeIndex		= resourceAttributeIndex + 1;
 
 				EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[primaryAttributeIndex];
 
@@ -2234,7 +2228,6 @@ namespace LambdaEngine
 				if (!RenderGraphSerializer::SaveRenderGraphToFile(
 					renderGraphNameBuffer,
 					m_Resources,
-					m_RenderStageNameByInputAttributeIndex,
 					m_RenderStagesByName,
 					m_ResourceStatesByHalfAttributeIndex,
 					m_ResourceStateLinksByLinkIndex,
@@ -2284,7 +2277,7 @@ namespace LambdaEngine
 			static int32 selectedIndex = 0;
 			static bool loadSucceded = true;
 
-			if (selectedIndex >= renderGraphFilesInDirectory.GetSize()) selectedIndex = renderGraphFilesInDirectory.GetSize() - 1;
+			if (selectedIndex >= int32(renderGraphFilesInDirectory.GetSize())) selectedIndex = renderGraphFilesInDirectory.GetSize() - 1;
 			ImGui::ListBox("##Render Graph Files", &selectedIndex, renderGraphFilesInDirectory.GetData(), (int32)renderGraphFilesInDirectory.GetSize());
 
 			bool done = false;
@@ -2837,25 +2830,25 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraphEditor::PushPinColorIfNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex)
+	void RenderGraphEditor::PushPinColorIfNeeded(EEditorPinType pinType, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex)
 	{
-		if (CustomPinColorNeeded(pinType, pRenderStage, pResourceState, targetAttributeIndex))
+		if (CustomPinColorNeeded(pinType, pResourceState, targetAttributeIndex))
 		{
 			imnodes::PushColorStyle(imnodes::ColorStyle_Pin,		HOVERED_COLOR);
 			imnodes::PushColorStyle(imnodes::ColorStyle_PinHovered, HOVERED_COLOR);
 		}
 	}
 
-	void RenderGraphEditor::PopPinColorIfNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex)
+	void RenderGraphEditor::PopPinColorIfNeeded(EEditorPinType pinType, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex)
 	{
-		if (CustomPinColorNeeded(pinType, pRenderStage, pResourceState, targetAttributeIndex))
+		if (CustomPinColorNeeded(pinType, pResourceState, targetAttributeIndex))
 		{
 			imnodes::PopColorStyle();
 			imnodes::PopColorStyle();
 		}
 	}
 
-	bool RenderGraphEditor::CustomPinColorNeeded(EEditorPinType pinType, EditorRenderStageDesc* pRenderStage, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex)
+	bool RenderGraphEditor::CustomPinColorNeeded(EEditorPinType pinType, EditorRenderGraphResourceState* pResourceState, int32 targetAttributeIndex)
 	{
 		if (m_StartedLinkInfo.LinkStarted)
 		{
@@ -3113,11 +3106,9 @@ namespace LambdaEngine
 		if (!RenderGraphParser::ParseRenderGraph(
 			&m_ParsedRenderGraphStructure,
 			m_Resources,
-			m_RenderStageNameByInputAttributeIndex,
 			m_RenderStagesByName,
 			m_ResourceStatesByHalfAttributeIndex,
 			m_ResourceStateLinksByLinkIndex,
-			m_ResourceStateGroups,
 			m_FinalOutput,
 			true))
 		{

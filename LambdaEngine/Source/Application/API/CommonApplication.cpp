@@ -17,6 +17,12 @@ namespace LambdaEngine
 		s_CommonApplication = this;
 	}
 
+	void CommonApplication::ReleasePlatform()
+	{
+		// HACK: For now
+		SAFEDELETE(m_pPlatformApplication);
+	}
+
 	CommonApplication::~CommonApplication()
 	{
 		VALIDATE(s_CommonApplication != nullptr);
@@ -43,7 +49,12 @@ namespace LambdaEngine
 		windowDesc.Title 	= "Lambda Engine";
 		windowDesc.Width 	= 1920;
 		windowDesc.Height 	= 1080;
-		windowDesc.Style	= WINDOW_STYLE_FLAG_TITLED | WINDOW_STYLE_FLAG_CLOSABLE;
+		windowDesc.Style	= 
+			WINDOW_STYLE_FLAG_TITLED		| 
+			//WINDOW_STYLE_FLAG_MINIMIZABLE	|
+			//WINDOW_STYLE_FLAG_MAXIMIZABLE	|
+			//WINDOW_STYLE_FLAG_RESIZEABLE	|
+			WINDOW_STYLE_FLAG_CLOSABLE;
 
 		TSharedRef<Window> window = CreateWindow(&windowDesc);
 		if (window)
@@ -299,6 +310,7 @@ namespace LambdaEngine
 
 	bool CommonApplication::PostRelease()
 	{
+		s_CommonApplication->ReleasePlatform();
 		s_CommonApplication.Reset();
 		return true;
 	}

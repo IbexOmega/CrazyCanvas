@@ -136,6 +136,7 @@ namespace LambdaEngine
 			}
 
 			m_Allocator = pAllocatorVk;
+			m_Allocator->AddRef();
 
 			result = vkBindImageMemory(m_pDevice->Device, m_Image, m_Allocation.Memory, m_Allocation.Offset);
 			if (result != VK_SUCCESS)

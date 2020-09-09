@@ -20,8 +20,11 @@
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <glslang/MachineIndependent/reflection.h>
 
-#include <tiny_obj_loader.h>
 #include <cstdio>
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 namespace LambdaEngine
 {
@@ -163,6 +166,22 @@ namespace LambdaEngine
 	*  --------------------------glslang Helpers End---------------------------------
 	*/
 
+	/*
+	* Helpers
+	*/
+	static void ConvertBackslashes(std::string& string)
+	{
+		size_t pos = string.find_first_of('\\');
+		while (pos != std::string::npos)
+		{
+			string.replace(pos, 1, 1, '/');
+			pos = string.find_first_of('\\', pos + 1);
+		}
+	}
+	
+	/*
+	* ResourceLoader
+	*/
 	bool ResourceLoader::Init()
 	{
 		s_pCopyCommandAllocator = RenderSystem::GetDevice()->CreateCommandAllocator("Resource Loader Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
@@ -207,319 +226,274 @@ namespace LambdaEngine
 		return true;
 	}
 
+	/*
+	* SceneLoadingContext
+	*/
+	struct SceneLoadingContext
+	{
+		String Filepath;
+		String DirectoryPath;
+		TArray<Mesh*>		Meshes;
+		TArray<Material*>	Materials;
+		TArray<Texture*>	Textures;
+		TArray<GameObject>	LoadedGameObjects;
+		THashTable<String, Texture*> LoadedTextures;
+		THashTable<uint32, uint32> MaterialIndices;
+	};
+
+	/*
+	* Assimp Parsing
+	*/
+	static Texture* LoadAssimpTexture(SceneLoadingContext& context, const aiMaterial* pMaterial, aiTextureType type, uint32 index)
+	{
+		if (pMaterial->GetTextureCount(type) > index)
+		{
+			aiString str;
+			pMaterial->GetTexture(type, index, &str);
+
+			String name = str.C_Str();
+			ConvertBackslashes(name);
+
+			auto loadedTexture = context.LoadedTextures.find(name);
+			if (loadedTexture == context.LoadedTextures.end())
+			{
+				Texture* pTexture = ResourceLoader::LoadTextureArrayFromFile(name, context.DirectoryPath, &name, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
+				context.LoadedTextures[name] = pTexture;
+				return context.Textures.PushBack(pTexture);
+			}
+			else
+			{
+				return loadedTexture->second;
+			}
+		}
+
+		return nullptr;
+	}
+
+	static void ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene)
+	{
+		for (uint32 i = 0; i < pNode->mNumMeshes; i++)
+		{
+			aiMesh* pMesh = pScene->mMeshes[pNode->mMeshes[i]];
+
+			TArray<Vertex> vertices;
+			for (uint32 j = 0; j < pMesh->mNumVertices; j++)
+			{
+				Vertex vertex;
+				vertex.Position.x = pMesh->mVertices[j].x;
+				vertex.Position.y = pMesh->mVertices[j].y;
+				vertex.Position.z = pMesh->mVertices[j].z;
+
+				if (pMesh->HasNormals())
+				{
+					vertex.Normal.x = pMesh->mNormals[j].x;
+					vertex.Normal.y = pMesh->mNormals[j].y;
+					vertex.Normal.z = pMesh->mNormals[j].z;
+				}
+
+				if (pMesh->HasTangentsAndBitangents())
+				{
+					vertex.Tangent.x = pMesh->mTangents[j].x;
+					vertex.Tangent.y = pMesh->mTangents[j].y;
+					vertex.Tangent.z = pMesh->mTangents[j].z;
+				}
+
+				if (pMesh->HasTextureCoords(0))
+				{
+					vertex.TexCoord.x = pMesh->mTextureCoords[0][j].x;
+					vertex.TexCoord.y = pMesh->mTextureCoords[0][j].y;
+				}
+
+				vertices.PushBack(vertex);
+			}
+
+			VALIDATE(pMesh->HasFaces());
+
+			TArray<uint32> indices;
+			for (uint32 f = 0; f < pMesh->mNumFaces; f++)
+			{
+				aiFace face = pMesh->mFaces[f];
+				for (uint32 j = 0; j < face.mNumIndices; j++)
+				{
+					indices.EmplaceBack(face.mIndices[j]);
+				}
+			}
+
+			vertices.ShrinkToFit();
+			indices.ShrinkToFit();
+
+			if (pMesh->mMaterialIndex >= 0)
+			{
+				auto mat = context.MaterialIndices.find(pMesh->mMaterialIndex);
+				if (mat == context.MaterialIndices.end())
+				{
+					aiMaterial* pAiMaterial = pScene->mMaterials[pMesh->mMaterialIndex];
+					for (uint32 t = 0; t < aiTextureType_UNKNOWN; t++)
+					{
+						uint32 count = pAiMaterial->GetTextureCount(aiTextureType(t));
+						if (count > 0)
+						{
+							LOG_WARNING("Material %d has %d textures of type: %d", pMesh->mMaterialIndex, count, t);
+							for (uint32 m = 0; m < count; m++)
+							{
+								aiString str;
+								pAiMaterial->GetTexture(aiTextureType(t), m, &str);
+
+								LOG_WARNING("#%d path=%s", m, str.C_Str());
+							}
+						}
+					}
+
+					// Albedo
+					Material* pMaterial = DBG_NEW Material();
+					pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_BASE_COLOR, 0);
+					if (!pMaterial->pAlbedoMap)
+					{
+						pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE, 0);
+					}
+
+					// Normal
+					pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_NORMAL_CAMERA, 0);
+					if (!pMaterial->pNormalMap)
+					{
+						pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_NORMALS, 0);
+					}
+					if (!pMaterial->pNormalMap)
+					{
+						pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_HEIGHT, 0);
+					}
+				
+					// AO
+					pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_AMBIENT_OCCLUSION, 0);
+					if (!pMaterial->pAmbientOcclusionMap)
+					{
+						pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_AMBIENT, 0);
+					}
+
+					// Metallic
+					pMaterial->pMetallicMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_METALNESS, 0);
+					if (!pMaterial->pMetallicMap)
+					{
+						pMaterial->pMetallicMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_REFLECTION, 0);
+					}
+
+					// Roughness
+					pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE_ROUGHNESS, 0);
+					if (!pMaterial->pRoughnessMap)
+					{
+						pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_SHININESS, 0);
+					}
+
+					context.Materials.EmplaceBack(pMaterial);
+					context.MaterialIndices[pMesh->mMaterialIndex] = context.Materials.GetSize() - 1;
+				}
+			}
+
+			Mesh* pNewMesh = ResourceLoader::LoadMeshFromMemory(vertices.GetData(), vertices.GetSize(), indices.GetData(), indices.GetSize());
+			if (pNewMesh)
+			{
+				context.Meshes.EmplaceBack(pNewMesh);
+
+				GameObject NewGameObject;
+				NewGameObject.Mesh		= context.Meshes.GetSize() - 1;
+				NewGameObject.Material	= context.MaterialIndices[pMesh->mMaterialIndex];
+				context.LoadedGameObjects.PushBack(NewGameObject);
+			}
+
+		}
+
+		for (uint32 i = 0; i < pNode->mNumChildren; i++)
+		{
+			ProcessAssimpNode(context, pNode->mChildren[i], pScene);
+		}
+	}
+
 	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<GameObject>& loadedGameObjects, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures)
 	{
 		size_t lastPathDivisor = filepath.find_last_of("/\\");
-
 		if (lastPathDivisor == String::npos)
 		{
 			LOG_WARNING("[ResourceLoader]: Failed to load scene '%s'. No parent directory found...", filepath.c_str());
 			return false;
 		}
 
-		std::string dirpath = filepath.substr(0, lastPathDivisor + 1);
+		int32 assimpFlags =
+			aiProcess_FlipUVs					|
+			aiProcess_FixInfacingNormals		|
+			aiProcess_CalcTangentSpace			| 
+			aiProcess_FindInstances				|
+			aiProcess_GenSmoothNormals			| 
+			aiProcess_JoinIdenticalVertices		| 
+			aiProcess_ImproveCacheLocality		| 
+			aiProcess_LimitBoneWeights			| 
+			aiProcess_RemoveRedundantMaterials	| 
+			aiProcess_SplitLargeMeshes			| 
+			aiProcess_Triangulate				| 
+			aiProcess_GenUVCoords				| 
+			aiProcess_SortByPType				| 
+			aiProcess_FindDegenerates			| 
+			aiProcess_FindInvalidData;
 
-		tinyobj::attrib_t attributes;
-		std::vector<tinyobj::shape_t> shapes;
-		std::vector<tinyobj::material_t> materials;
-		std::string warn;
-		std::string err;
-
-		if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, filepath.c_str(), dirpath.c_str(), true, false))
+		Assimp::Importer importer;
+		const aiScene* pScene = importer.ReadFile(filepath, assimpFlags);
+		if (!pScene || pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pScene->mRootNode)
 		{
-			LOG_WARNING("[ResourceLoader]: Failed to load scene '%s'. Warning: %s Error: %s", filepath.c_str(), warn.c_str(), err.c_str());
+			LOG_ERROR("[ResourceLoader]: Failed to load scene '%s'. Error: %s", filepath.c_str(), importer.GetErrorString());
 			return false;
 		}
 
-		loadedMeshes.Resize(shapes.size());
-		loadedMaterials.Resize(materials.size());
+		VALIDATE(pScene != nullptr);
 
-		std::unordered_map<std::string, Texture*> loadedTexturesMap;
+		SceneLoadingContext context;
+		context.Filepath		= filepath;
+		context.DirectoryPath	= filepath.substr(0, lastPathDivisor + 1);
+		ProcessAssimpNode(context, pScene->mRootNode, pScene);
 
-		for (uint32 m = 0; m < materials.size(); m++)
-		{
-			tinyobj::material_t& material = materials[m];
-
-			Material* pMaterial = DBG_NEW Material();
-
-			if (material.diffuse_texname.length() > 0)
-			{
-				std::string texturePath = dirpath + material.diffuse_texname;
-				ConvertBackslashes(texturePath);
-
-				auto loadedTexture = loadedTexturesMap.find(texturePath);
-				if (loadedTexture == loadedTexturesMap.end())
-				{
-					Texture* pTexture = LoadTextureArrayFromFile(material.diffuse_texname, dirpath, &material.diffuse_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
-					loadedTexturesMap[texturePath]	= pTexture;
-					pMaterial->pAlbedoMap			= pTexture;
-
-					loadedTextures.PushBack(pTexture);
-				}
-				else
-				{
-					pMaterial->pAlbedoMap = loadedTexture->second;
-				}
-			}
-
-			pMaterial->Properties.Albedo = glm::vec4(material.diffuse[0], material.diffuse[1], material.diffuse[2], 1.0f);
-
-			if (material.emission[0] > 0.0f || material.emission[1] > 0.0f || material.emission[2] > 0.0f)
-			{
-				pMaterial->Properties.Albedo.x *= material.emission[0];
-				pMaterial->Properties.Albedo.y *= material.emission[1];
-				pMaterial->Properties.Albedo.z *= material.emission[2];
-				pMaterial->Properties.EmissionStrength = DEFAULT_EMISSIVE_EMISSION_STRENGTH;
-			}
-			else
-			{
-				pMaterial->Properties.EmissionStrength = 0.0f;
-			}
-
-			if (material.bump_texname.length() > 0)
-			{
-				std::string texturePath = dirpath + material.bump_texname;
-				ConvertBackslashes(texturePath);
-				
-				auto loadedTexture = loadedTexturesMap.find(texturePath);
-				if (loadedTexture == loadedTexturesMap.end())
-				{
-					Texture* pTexture = LoadTextureArrayFromFile(material.bump_texname, dirpath, &material.bump_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
-					loadedTexturesMap[texturePath]	= pTexture;
-					pMaterial->pNormalMap			= pTexture;
-
-					loadedTextures.PushBack(pTexture);
-				}
-				else
-				{
-					pMaterial->pNormalMap = loadedTexture->second;
-				}
-			}
-
-			if (material.reflection_texname.length() > 0)
-			{
-				std::string texturePath = dirpath + material.reflection_texname;
-				ConvertBackslashes(texturePath);
-				
-				auto loadedTexture = loadedTexturesMap.find(texturePath);
-				if (loadedTexture == loadedTexturesMap.end())
-				{
-					Texture* pTexture = LoadTextureArrayFromFile(material.reflection_texname, dirpath, &material.reflection_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
-					loadedTexturesMap[texturePath]	= pTexture;
-					pMaterial->pMetallicMap			= pTexture;
-
-					loadedTextures.PushBack(pTexture);
-				}
-				else
-				{
-					pMaterial->pMetallicMap = loadedTexture->second;
-				}
-
-				pMaterial->Properties.Metallic = 1.0f;
-			}
-			else
-			{
-				pMaterial->Properties.Metallic = 0.0f;
-			}
-
-			if (material.specular_highlight_texname.length() > 0)
-			{
-				std::string texturePath = dirpath + material.specular_highlight_texname;
-				ConvertBackslashes(texturePath);
-				
-				auto loadedTexture = loadedTexturesMap.find(texturePath);
-				if (loadedTexture == loadedTexturesMap.end())
-				{
-					Texture* pTexture = LoadTextureArrayFromFile(material.specular_highlight_texname, dirpath, &material.specular_highlight_texname, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
-					loadedTexturesMap[texturePath]	= pTexture;
-					pMaterial->pRoughnessMap		= pTexture;
-
-					loadedTextures.PushBack(pTexture);
-				}
-				else
-				{
-					pMaterial->pRoughnessMap = loadedTexture->second;
-				}
-			}
-
-			//Todo: We should check if a similar material already has been loaded
-			loadedMaterials[m] = pMaterial;
-		}
-
-		bool hasNormals = false;
-		bool hasTexCoords = false;
-
-		for (uint32 s = 0; s < shapes.size(); s++)
-		{
-			tinyobj::shape_t& shape = shapes[s];
-
-			TArray<Vertex> vertices = {};
-			TArray<uint32> indices = {};
-			std::unordered_map<Vertex, uint32> uniqueVertices = {};
-
-			for (const tinyobj::index_t& index : shape.mesh.indices)
-			{
-				Vertex vertex = {};
-
-				//Normals and texcoords are optional, while positions are required
-				ASSERT(index.vertex_index >= 0);
-
-				vertex.Position =
-				{
-					attributes.vertices[3 * (size_t)index.vertex_index + 0],
-					attributes.vertices[3 * (size_t)index.vertex_index + 1],
-					attributes.vertices[3 * (size_t)index.vertex_index + 2]
-				};
-
-				if (index.normal_index >= 0)
-				{
-					//Assume that if one shape has normals, all have normals
-					hasNormals = true; 
-
-					vertex.Normal =
-					{
-						attributes.normals[3 * (size_t)index.normal_index + 0],
-						attributes.normals[3 * (size_t)index.normal_index + 1],
-						attributes.normals[3 * (size_t)index.normal_index + 2]
-					};
-				}
-
-				if (index.texcoord_index >= 0)
-				{
-					//Assume that if one shape has tex coords, all have tex coords
-					hasTexCoords = true;
-
-					vertex.TexCoord =
-					{
-						attributes.texcoords[2 * (size_t)index.texcoord_index + 0],
-						1.0f - attributes.texcoords[2 * (size_t)index.texcoord_index + 1]
-					};
-				}
-
-				if (uniqueVertices.count(vertex) == 0)
-				{
-					uniqueVertices[vertex] = static_cast<uint32>(vertices.GetSize());
-					vertices.PushBack(vertex);
-				}
-
-				indices.PushBack(uniqueVertices[vertex]);
-			}
-
-			//Calculate Tangents if Tex Coords exist
-			if (hasNormals && hasTexCoords)
-			{
-				for (uint32 index = 0; index < indices.GetSize(); index += 3)
-				{
-					Vertex& v0 = vertices[indices[(size_t)index + 0]];
-					Vertex& v1 = vertices[indices[(size_t)index + 1]];
-					Vertex& v2 = vertices[indices[(size_t)index + 2]];
-
-					v0.CalculateTangent(v1, v2);
-					v1.CalculateTangent(v2, v0);
-					v2.CalculateTangent(v0, v1);
-				}
-			}
-
-			Mesh* pMesh = LoadMeshFromMemory(vertices.GetData(), uint32(vertices.GetSize()), indices.GetData(), uint32(indices.GetSize()));
-			loadedMeshes[s] = pMesh;
-
-			D_LOG_MESSAGE("[ResourceLoader]: Loaded Mesh \"%s\" \t for scene : \"%s\"", shape.name.c_str(), filepath.c_str());
-
-			uint32 m = shape.mesh.material_ids[0];
-
-			GameObject gameObject	= {};
-			gameObject.Mesh			= s;
-			gameObject.Material		= m;
-
-			loadedGameObjects.PushBack(gameObject);
-		}
-
-		D_LOG_MESSAGE("[ResourceLoader]: Loaded Scene \"%s\"", filepath.c_str());
+		loadedMaterials		= Move(context.Materials);
+		loadedTextures		= Move(context.Textures);
+		loadedGameObjects	= Move(context.LoadedGameObjects);
+		loadedMeshes		= Move(context.Meshes);
 
 		return true;
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath)
 	{
-		//Start New Thread
+		int32 assimpFlags =
+			aiProcess_FlipUVs					|
+			aiProcess_FixInfacingNormals		|
+			aiProcess_CalcTangentSpace			|
+			aiProcess_FindInstances				|
+			aiProcess_GenSmoothNormals			|
+			aiProcess_JoinIdenticalVertices		|
+			aiProcess_ImproveCacheLocality		|
+			aiProcess_LimitBoneWeights			|
+			aiProcess_RemoveRedundantMaterials	|
+			aiProcess_SplitLargeMeshes			|
+			aiProcess_Triangulate				|
+			aiProcess_GenUVCoords				|
+			aiProcess_SortByPType				|
+			aiProcess_FindDegenerates			|
+			aiProcess_OptimizeMeshes			|
+			aiProcess_OptimizeGraph				|
+			aiProcess_FindInvalidData;
 
-		tinyobj::attrib_t attributes;
-		std::vector<tinyobj::shape_t> shapes;
-		std::vector<tinyobj::material_t> materials;
-		std::string warn, err;
-
-		if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, filepath.c_str(), nullptr, true, false))
+		Assimp::Importer importer;
+		const aiScene* pScene = importer.ReadFile(filepath, assimpFlags);
+		if (!pScene || pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pScene->mRootNode)
 		{
-			LOG_WARNING("[ResourceLoader]: Failed to load mesh '%s'. Warning: %s Error: %s", filepath.c_str(), warn.c_str(), err.c_str());
-			return nullptr;
+			LOG_ERROR("[ResourceLoader]: Failed to load scene '%s'. Error: %s", filepath.c_str(), importer.GetErrorString());
+			return false;
 		}
 
-		std::vector<Vertex> vertices = {};
-		std::vector<uint32> indices = {};
-		std::unordered_map<Vertex, uint32> uniqueVertices = {};
+		VALIDATE(pScene != nullptr);
 
-		for (const tinyobj::shape_t& shape : shapes)
-		{
-			for (const tinyobj::index_t& index : shape.mesh.indices)
-			{
-				Vertex vertex = {};
-
-				//Normals and texcoords are optional, while positions are required
-				ASSERT(index.vertex_index >= 0);
-
-				vertex.Position =
-				{
-					attributes.vertices[3 * index.vertex_index + 0],
-					attributes.vertices[3 * index.vertex_index + 1],
-					attributes.vertices[3 * index.vertex_index + 2]
-				};
-
-				if (index.normal_index >= 0)
-				{
-					vertex.Normal =
-					{
-						attributes.normals[3 * index.normal_index + 0],
-						attributes.normals[3 * index.normal_index + 1],
-						attributes.normals[3 * index.normal_index + 2]
-					};
-				}
-
-				if (index.texcoord_index >= 0)
-				{
-					vertex.TexCoord =
-					{
-						attributes.texcoords[2 * index.texcoord_index + 0],
-						1.0f - attributes.texcoords[2 * index.texcoord_index + 1]
-					};
-				}
-
-				if (uniqueVertices.count(vertex) == 0)
-				{
-					uniqueVertices[vertex] = static_cast<uint32>(vertices.size());
-					vertices.push_back(vertex);
-				}
-
-				indices.push_back(uniqueVertices[vertex]);
-			}
-		}
-
-		//Calculate tangents
-		for (uint32 index = 0; index < indices.size(); index += 3)
-		{
-			Vertex& v0 = vertices[indices[index + 0]];
-			Vertex& v1 = vertices[indices[index + 1]];
-			Vertex& v2 = vertices[indices[index + 2]];
-
-			v0.CalculateTangent(v1, v2);
-			v1.CalculateTangent(v2, v0);
-			v2.CalculateTangent(v0, v1);
-		}
-
-		Mesh* pMesh = LoadMeshFromMemory(vertices.data(), uint32(vertices.size()), indices.data(), uint32(indices.size()));
+		SceneLoadingContext context;
+		context.Filepath = filepath;
+		ProcessAssimpNode(context, pScene->mRootNode, pScene);
 
 		D_LOG_MESSAGE("[ResourceLoader]: Loaded Mesh \"%s\"", filepath.c_str());
-
-		return pMesh;
+		return context.Meshes.GetFront();
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
@@ -779,7 +753,7 @@ namespace LambdaEngine
 				return nullptr;
 			}
 			
-			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, &sourceSPIRV, nullptr))
+			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", filepath.c_str());
 				return nullptr;
@@ -814,13 +788,10 @@ namespace LambdaEngine
 
 	Shader* ResourceLoader::LoadShaderFromMemory(const String& source, const String& name, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint)
 	{
-		byte* pShaderRawSource = nullptr;
-		uint32 shaderRawSourceSize = 0;
-
 		TArray<uint32> sourceSPIRV;
 		if (lang == EShaderLang::SHADER_LANG_GLSL)
 		{
-			if (!CompileGLSLToSPIRV("", source.c_str(), shaderRawSourceSize, stage, &sourceSPIRV, nullptr))
+			if (!CompileGLSLToSPIRV("", source.c_str(), stage, &sourceSPIRV, nullptr))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV");
 				return nullptr;
@@ -828,8 +799,8 @@ namespace LambdaEngine
 		}
 		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
 		{
-			sourceSPIRV.Resize(static_cast<uint32>(glm::ceil(static_cast<float32>(shaderRawSourceSize) / sizeof(uint32))));
-			memcpy(sourceSPIRV.GetData(), pShaderRawSource, shaderRawSourceSize);
+			sourceSPIRV.Resize(static_cast<uint32>(glm::ceil(static_cast<float32>(source.size()) / sizeof(uint32))));
+			memcpy(sourceSPIRV.GetData(), source.data(), source.size());
 		}
 
 		const uint32 sourceSize = static_cast<uint32>(sourceSPIRV.GetSize()) * sizeof(uint32);
@@ -842,7 +813,6 @@ namespace LambdaEngine
 		shaderDesc.Lang			= lang;
 
 		Shader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
-		Malloc::Free(pShaderRawSource);
 
 		return pShader;
 	}
@@ -863,13 +833,13 @@ namespace LambdaEngine
 				return false;
 			}
 
-			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, nullptr, pReflection))
+			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, nullptr, pReflection))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", filepath.c_str());
 				return false;
 			}
 
-			sourceSPIRVSize = sourceSPIRV.size() * sizeof(uint32);
+			sourceSPIRVSize = uint32(sourceSPIRV.size() * sizeof(uint32));
 		}
 		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
 		{
@@ -913,7 +883,7 @@ namespace LambdaEngine
 		byte* pData = reinterpret_cast<byte*>(Malloc::Allocate(length * sizeof(byte)));
 		ZERO_MEMORY(pData, length * sizeof(byte));
 
-		int32 read = fread(pData, 1, length, pFile);
+		int32 read = int32(fread(pData, 1, length, pFile));
 		if (read == 0)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to read file \"%s\"", filepath.c_str());
@@ -931,23 +901,13 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void ResourceLoader::ConvertBackslashes(std::string& string)
-	{
-		size_t pos = string.find_first_of('\\');
-		while (pos != std::string::npos)
-		{
-			string.replace(pos, 1, 1, '/');
-			pos = string.find_first_of('\\', pos + 1);
-		}
-	}
-
-	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
+	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
 	{
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
 		glslang::TShader shader(shaderType);
 
 		std::string source			= std::string(pSource);
-		int32 foundBracket			= source.find_last_of('}') + 1;
+		int32 foundBracket			= int32(source.find_last_of('}') + 1);
 		source[foundBracket]		= '\0';
 		const char* pFinalSource	= source.c_str();
 		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
