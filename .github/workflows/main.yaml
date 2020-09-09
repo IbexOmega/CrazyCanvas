@@ -1,0 +1,70 @@
+name: Välfärden
+on: pull_request
+
+jobs:
+  Pre-Build:
+    runs-on: [self-hosted, Windows, X64]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Read LFS Cache
+        run: cp -r -Force ../../.git/lfs .git/
+
+      # Fetches changes and replaces LFS pointers with their actual contents
+      - name: Pull From LFS
+        run: git lfs pull
+
+      - name: Update LFS Cache
+        run: cp -r -Force .git/lfs ../../.git/
+
+  Build-CrazyCanvas-Debug:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Pre-Build
+
+    steps:
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build
+        run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Debug x64_StaticLib" -p:Platform=x64
+
+  Build-CrazyCanvas-Release:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Pre-Build
+
+    steps:
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build
+        run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+
+  Lint:
+    runs-on: [self-hosted, Windows, X64]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Generate Lint Report
+        run: python .github/workflows/generate-lint-report.py -o cppcheck_report.txt -i Dependencies/*
+
+      - name: Get file changes
+        id: get_file_changes
+        uses: trilom/file-changes-action@v1.2.3
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read Lint Report
+        run: python ./.github/workflows/read-lint-report.py --report ./cppcheck_report.txt
+          --modified-files $HOME/files_modified.json --added-files $HOME/files_added.json
