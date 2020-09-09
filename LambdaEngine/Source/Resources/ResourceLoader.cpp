@@ -231,8 +231,8 @@ namespace LambdaEngine
 			return false;
 		}
 
-		loadedMeshes.Resize(shapes.size());
-		loadedMaterials.Resize(materials.size());
+		loadedMeshes.Resize(uint32(shapes.size()));
+		loadedMaterials.Resize(uint32(materials.size()));
 
 		std::unordered_map<std::string, Texture*> loadedTexturesMap;
 
@@ -779,7 +779,7 @@ namespace LambdaEngine
 				return nullptr;
 			}
 			
-			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, &sourceSPIRV, nullptr))
+			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", filepath.c_str());
 				return nullptr;
@@ -814,13 +814,10 @@ namespace LambdaEngine
 
 	Shader* ResourceLoader::LoadShaderFromMemory(const String& source, const String& name, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint)
 	{
-		byte* pShaderRawSource = nullptr;
-		uint32 shaderRawSourceSize = 0;
-
 		TArray<uint32> sourceSPIRV;
 		if (lang == EShaderLang::SHADER_LANG_GLSL)
 		{
-			if (!CompileGLSLToSPIRV("", source.c_str(), shaderRawSourceSize, stage, &sourceSPIRV, nullptr))
+			if (!CompileGLSLToSPIRV("", source.c_str(), stage, &sourceSPIRV, nullptr))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV");
 				return nullptr;
@@ -828,8 +825,8 @@ namespace LambdaEngine
 		}
 		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
 		{
-			sourceSPIRV.Resize(static_cast<uint32>(glm::ceil(static_cast<float32>(shaderRawSourceSize) / sizeof(uint32))));
-			memcpy(sourceSPIRV.GetData(), pShaderRawSource, shaderRawSourceSize);
+			sourceSPIRV.Resize(static_cast<uint32>(glm::ceil(static_cast<float32>(source.size()) / sizeof(uint32))));
+			memcpy(sourceSPIRV.GetData(), source.data(), source.size());
 		}
 
 		const uint32 sourceSize = static_cast<uint32>(sourceSPIRV.GetSize()) * sizeof(uint32);
@@ -842,7 +839,6 @@ namespace LambdaEngine
 		shaderDesc.Lang			= lang;
 
 		Shader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
-		Malloc::Free(pShaderRawSource);
 
 		return pShader;
 	}
@@ -863,13 +859,13 @@ namespace LambdaEngine
 				return false;
 			}
 
-			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), shaderRawSourceSize, stage, nullptr, pReflection))
+			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, nullptr, pReflection))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", filepath.c_str());
 				return false;
 			}
 
-			sourceSPIRVSize = sourceSPIRV.size() * sizeof(uint32);
+			sourceSPIRVSize = uint32(sourceSPIRV.size() * sizeof(uint32));
 		}
 		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
 		{
@@ -913,7 +909,7 @@ namespace LambdaEngine
 		byte* pData = reinterpret_cast<byte*>(Malloc::Allocate(length * sizeof(byte)));
 		ZERO_MEMORY(pData, length * sizeof(byte));
 
-		int32 read = fread(pData, 1, length, pFile);
+		int32 read = int32(fread(pData, 1, length, pFile));
 		if (read == 0)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to read file \"%s\"", filepath.c_str());
@@ -941,13 +937,13 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, int32 sourceSize, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
+	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
 	{
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
 		glslang::TShader shader(shaderType);
 
 		std::string source			= std::string(pSource);
-		int32 foundBracket			= source.find_last_of('}') + 1;
+		int32 foundBracket			= int32(source.find_last_of('}') + 1);
 		source[foundBracket]		= '\0';
 		const char* pFinalSource	= source.c_str();
 		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);

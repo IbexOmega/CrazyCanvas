@@ -291,7 +291,7 @@ namespace LambdaEngine
 	
 	void Renderer::Render()
 	{
-		s_BackBufferIndex = s_SwapChain->GetCurrentBackBufferIndex();
+		s_BackBufferIndex = uint32(s_SwapChain->GetCurrentBackBufferIndex());
 
 		s_pRenderGraph->Render();
 

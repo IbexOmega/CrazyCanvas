@@ -204,6 +204,7 @@ namespace LambdaEngine
 
 	void AudioDeviceFMOD::SetMasterVolume(float volume)
 	{
+		UNREFERENCED_VARIABLE(volume);
 		LOG_WARNING("[AudioDeviceFMOD]: SetMasterVolume called but not implemented!");
 	}
 

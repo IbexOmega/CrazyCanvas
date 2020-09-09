@@ -6,11 +6,9 @@ namespace LambdaEngine
 	bool RenderGraphParser::ParseRenderGraph(
 		RenderGraphStructureDesc* pParsedStructure, 
 		const TArray<RenderGraphResourceDesc>& resources, 
-		const THashTable<int32, String>& renderStageNameByInputAttributeIndex, 
 		const THashTable<String, EditorRenderStageDesc>& renderStagesByName,
 		const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex, 
 		const THashTable<int32, EditorRenderGraphResourceLink>& resourceStateLinksByLinkIndex, 
-		const TArray<EditorResourceStateGroup>& resourceStateGroups, 
 		const EditorFinalOutput& finalOutput, 
 		bool generateImGuiStage)
 	{
@@ -105,9 +103,9 @@ namespace LambdaEngine
 		TArray<SynchronizationStageDesc>	orderedSynchronizationStages;
 		TArray<PipelineStageDesc>			orderedPipelineStages;
 
-		orderedRenderStages.Reserve(orderedMappedRenderStages.size());
-		orderedSynchronizationStages.Reserve(orderedMappedRenderStages.size());
-		orderedPipelineStages.Reserve(2 * orderedMappedRenderStages.size());
+		orderedRenderStages.Reserve(uint32(orderedMappedRenderStages.size()));
+		orderedSynchronizationStages.Reserve(uint32(orderedMappedRenderStages.size()));
+		orderedPipelineStages.Reserve(uint32(2 * orderedMappedRenderStages.size()));
 
 		THashTable<String, const EditorRenderGraphResourceState*> finalStateOfResources;
 
@@ -274,7 +272,7 @@ namespace LambdaEngine
 				}
 				else
 				{
-					LOG_ERROR("[RenderGraphEditor]: Final Resource State with name \"%s\" could not be found among resources", pFinalResourceState->ResourceName);
+					LOG_ERROR("[RenderGraphEditor]: Final Resource State with name \"%s\" could not be found among resources", pFinalResourceState->ResourceName.c_str());
 					return false;
 				}
 			}
@@ -349,7 +347,7 @@ namespace LambdaEngine
 		}
 
 		//Do a pass to convert Barriers synchronizations to Render Pass transitions, where applicable
-		for (uint32 p = 0; p < orderedPipelineStages.GetSize(); p++)
+		for (int32 p = 0; p < int32(orderedPipelineStages.GetSize()); p++)
 		{
 			const PipelineStageDesc* pPipelineStageDesc = &orderedPipelineStages[p];
 
@@ -441,7 +439,7 @@ namespace LambdaEngine
 							for (int32 np = p + 1; np != p; np++)
 							{
 								//Loop around if needed
-								if (np >= orderedPipelineStages.GetSize())
+								if (np >= int32(orderedPipelineStages.GetSize()))
 								{
 									//Back buffer is not allowed to loop around
 									if (isBackBuffer)
@@ -547,7 +545,7 @@ namespace LambdaEngine
 									if (pPreviousSynchronizationStage->Synchronizations.IsEmpty())
 									{
 										//If we remove a synchronization stage, the following Pipeline Stages that are Synchronization Stages will need to have their index updateds
-										for (int32 up = previousSynchronizationPipelineStageDescIndex + 1; up < orderedPipelineStages.GetSize(); up++)
+										for (int32 up = previousSynchronizationPipelineStageDescIndex + 1; up < int32(orderedPipelineStages.GetSize()); up++)
 										{
 											PipelineStageDesc* pUpdatePipelineStageDesc = &orderedPipelineStages[up];
 
@@ -585,7 +583,7 @@ namespace LambdaEngine
 									if (pNextSynchronizationStage->Synchronizations.IsEmpty())
 									{
 										//If we remove a synchronization stage, the following Pipeline Stages that are Synchronization Stages will need to have their index updateds
-										for (int32 up = nextSynchronizationPipelineStageDescIndex + 1; up < orderedPipelineStages.GetSize(); up++)
+										for (int32 up = nextSynchronizationPipelineStageDescIndex + 1; up < int32(orderedPipelineStages.GetSize()); up++)
 										{
 											PipelineStageDesc* pUpdatePipelineStageDesc = &orderedPipelineStages[up];
 
