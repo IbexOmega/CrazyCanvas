@@ -33,13 +33,19 @@
 
 namespace LambdaEngine
 {
+	/*
+	* Global clock variables
+	*/
 	static Clock g_Clock;
+	static Timestamp g_FixedTimestep = Timestamp::Seconds(1.0 / 60.0);
 
+	/*
+	* EngineLoop
+	*/
 	void EngineLoop::Run()
 	{
-		Clock			fixedClock;
-		const Timestamp timestep	= Timestamp::Seconds(1.0 / 60.0);
-		Timestamp		accumulator = Timestamp(0);
+		Clock fixedClock;
+		Timestamp accumulator = Timestamp(0);
 
 		g_Clock.Reset();
 
@@ -54,12 +60,12 @@ namespace LambdaEngine
 
 			// Fixed update
 			accumulator += delta;
-			while (accumulator >= timestep)
+			while (accumulator >= g_FixedTimestep)
 			{
 				fixedClock.Tick();
 				FixedTick(fixedClock.GetDeltaTime());
-
-				accumulator -= timestep;
+				
+				accumulator -= g_FixedTimestep;
 			}
 		}
 	}
@@ -81,16 +87,16 @@ namespace LambdaEngine
 		AudioSystem::Tick();
 
 		// Tick game
-		Game::Get()->Tick(delta);
-
+		Game::Get().Tick(delta);
+		
 		return true;
 	}
 
 	void EngineLoop::FixedTick(Timestamp delta)
 	{
 		// Tick game
-		Game::Get()->FixedTick(delta);
-
+		Game::Get().FixedTick(delta);
+		
 		NetworkUtils::FixedTick(delta);
 	}
 
@@ -219,6 +225,21 @@ namespace LambdaEngine
 		PlatformConsole::Close();
 #endif
 		return true;
+	}
+
+	void EngineLoop::SetFixedTimestep(Timestamp timestep)
+	{
+		g_FixedTimestep = timestep;
+	}
+
+	Timestamp EngineLoop::GetFixedTimestep()
+	{
+		return g_FixedTimestep;
+	}
+
+	Timestamp EngineLoop::GetDeltaTime()
+	{
+		return g_Clock.GetDeltaTime();
 	}
 
 	Timestamp EngineLoop::GetTimeSinceStart()

@@ -648,7 +648,6 @@ namespace LambdaEngine
 			for (uint32 e = 0; e < m_ExecutionStageCount; e++)
 			{
 				CommandList* pCommandList = m_ppExecutionStages[e];
-
 				if (pCommandList != nullptr)
 				{
 					ECommandQueueType currentType = pCommandList->GetType();
