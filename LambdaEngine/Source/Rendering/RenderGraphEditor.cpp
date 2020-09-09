@@ -1218,6 +1218,8 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(textHeight);
 		static int32 selectedResourceIndex = -1;
 
+		RenderShaderTreeView(m_FilesInShaderMap, textWidth, textHeight, selectedResourceIndex);
+
 		//for (auto fileIt = m_FilesInShaderDirectory.begin(); fileIt != m_FilesInShaderDirectory.end(); fileIt++)
 		//{
 		//	std::iterator_traits<TArray<std::string>::Iterator>::difference_type v;
@@ -1239,8 +1241,6 @@ namespace LambdaEngine
 		//		}
 		//	}
 		//}
-
-		RenderShaderTreeView(m_FilesInShaderMap, textWidth, textHeight, selectedResourceIndex);
 	}
 
 	void RenderGraphEditor::RenderShaderTreeView(const LambdaDirectory& dir, float textWidth, float textHeight, int32& selectedIndex)
