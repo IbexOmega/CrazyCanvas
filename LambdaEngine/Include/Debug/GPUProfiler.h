@@ -1,6 +1,7 @@
 #pragma once
-#include "PreCompiled.h"
-#include <vulkan/vulkan.h>
+#include "Containers/TArray.h"
+#include "Containers/THashTable.h"
+#include "Time/API/Timestamp.h"
 
 namespace LambdaEngine
 {
@@ -12,11 +13,12 @@ namespace LambdaEngine
 	public:
 		struct Timestamp
 		{
-			Timestamp() : start(0), end(0), pCommandList(nullptr) {};
-			Timestamp(uint64_t start, uint64_t end, CommandList* pCommandList = nullptr) : start(start), end(end), pCommandList(pCommandList) {};
+			Timestamp() : start(0), end(0), pCommandList(nullptr), duration(0.0f) {};
+			Timestamp(uint64_t start, uint64_t end, CommandList* pCommandList = nullptr) : start(start), end(end), pCommandList(pCommandList), duration(0.0f) {};
 
 			uint64_t start;
 			uint64_t end;
+			float duration;
 			CommandList* pCommandList;
 		};
 
@@ -30,16 +32,17 @@ namespace LambdaEngine
 
 	public:
 		GPUProfiler();
-		~GPUProfiler() = default;
+		~GPUProfiler();
 		GPUProfiler(GPUProfiler& other) = delete;
 		GPUProfiler operator=(GPUProfiler& other) = delete;
 
 		void Init(TimeUnit timeUnit);
+		void Render(LambdaEngine::Timestamp delta);
 		void Cleanup();
 
 		// Create timestamps per command list
 		void CreateTimestamps(uint32_t listCount);
-		// CreateGraphicsPipelineStats();
+		void CreateGraphicsPipelineStats();
 		// CreateComputePipelineStats();
 
 		// Timestamps are buffer bound
@@ -49,21 +52,39 @@ namespace LambdaEngine
 		void GetTimestamp(CommandList* pCommandList);
 		void ResetTimestamp(CommandList* pCommandList);
 
+		void StartGraphicsPipelineStat(CommandList* pCommandList);
+		void EndGraphicsPipelineStat(CommandList* pCommandList);
+		void GetGraphicsPipelineStat();
+		void ResetGraphicsPipelineStat(CommandList* pCommandList);
+
 	public:
 		static GPUProfiler* Get();
 
 	private:
-		QueryHeap* m_pTimestampHeap = nullptr;
-		uint32_t m_TimestampCount = 0;
-		TimeUnit m_TimeUnit;
-		THashTable<CommandList*, Timestamp> m_Timestamps;
-		uint32_t m_NextIndex = 0;
-		float m_TimestampPeriod = 0.f;
-		uint32_t m_TimestampValidBits = 0;
-
-		THashTable<CommandList*, float> m_Results;
+		void SaveResults();
+		std::string GetTimeUnitName();
 
 	private:
-		static GPUProfiler* s_pInstance;
+		// Timestamps
+		QueryHeap* m_pTimestampHeap = nullptr;
+		TimeUnit m_TimeUnit;
+		THashTable<CommandList*, Timestamp> m_Timestamps;
+		uint32_t m_TimestampCount		= 0;
+		uint32_t m_NextIndex			= 0;
+		uint32_t m_TimestampValidBits	= 0;
+		float m_TimestampPeriod			= 0.f;
+		uint64_t m_StartTimestamp		= 0;
+
+		THashTable<CommandList*, Timestamp> m_Results;
+		TArray<float> m_PlotResults;
+		uint32_t m_PlotResultsStart		= 0;
+		size_t m_PlotDataSize;
+		float m_CurrentMaxDuration		= 0.0f;
+		float m_TimeSinceUpdate			= 0.0f;
+		float m_UpdateFreq;
+
+		// Pipeline statistics
+		QueryHeap* m_pPipelineStatHeap = nullptr;
+		TArray<uint64_t> m_GraphicsStats;
 	};
 }
