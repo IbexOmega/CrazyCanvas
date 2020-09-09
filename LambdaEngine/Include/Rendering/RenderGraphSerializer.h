@@ -15,7 +15,6 @@ namespace LambdaEngine
 		static bool SaveRenderGraphToFile(
 			const String& renderGraphName,
 			const TArray<RenderGraphResourceDesc>& resources,
-			const THashTable<int32, String>& renderStageNameByInputAttributeIndex,
 			const THashTable<String, EditorRenderStageDesc>& renderStagesByName,
 			const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex,
 			const THashTable<int32, EditorRenderGraphResourceLink>& resourceStateLinksByLinkIndex,

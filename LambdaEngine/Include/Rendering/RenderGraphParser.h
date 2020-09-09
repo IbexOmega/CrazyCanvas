@@ -16,11 +16,9 @@ namespace LambdaEngine
 		static bool ParseRenderGraph(
 			RenderGraphStructureDesc* pParsedStructure,
 			const TArray<RenderGraphResourceDesc>& resources,
-			const THashTable<int32, String>& renderStageNameByInputAttributeIndex,
 			const THashTable<String, EditorRenderStageDesc>& renderStagesByName,
 			const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex,
 			const THashTable<int32, EditorRenderGraphResourceLink>& resourceStateLinksByLinkIndex,
-			const TArray<EditorResourceStateGroup>& resourceStateGroups,
 			const EditorFinalOutput& finalOutput,
 			bool generateImGuiStage);
 
