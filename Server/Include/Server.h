@@ -14,7 +14,7 @@
 
 class Server : 
 	public LambdaEngine::Game,
-	public LambdaEngine::EventHandler,
+	public LambdaEngine::ApplicationEventHandler,
 	public LambdaEngine::IServerUDPHandler
 {
 public:

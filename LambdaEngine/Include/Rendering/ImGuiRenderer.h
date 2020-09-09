@@ -46,7 +46,7 @@ namespace LambdaEngine
 		GUID_Lambda		PixelShaderGUID		= GUID_NONE;
 	};
 
-	class LAMBDA_API ImGuiRenderer : public ICustomRenderer, EventHandler
+	class LAMBDA_API ImGuiRenderer : public ICustomRenderer, ApplicationEventHandler
 	{
 	public:
 		DECL_REMOVE_COPY(ImGuiRenderer);
@@ -78,13 +78,13 @@ namespace LambdaEngine
 		FORCEINLINE virtual FPipelineStageFlags GetFirstPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
 		FORCEINLINE virtual FPipelineStageFlags GetLastPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 
-		virtual void OnMouseMoved(int32 x, int32 y)										override final;
-		virtual void OnButtonPressed(EMouseButton button, uint32 modifierMask)			override final;
-		virtual void OnButtonReleased(EMouseButton button)								override final;
-		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)						override final;
-		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)			override final;
-		virtual void OnKeyReleased(EKey key)											override final;
-		virtual void OnKeyTyped(uint32 character)										override final;
+		virtual void OnMouseMoved(int32 x, int32 y)											override final;
+		virtual void OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)	override final;
+		virtual void OnButtonReleased(EMouseButton button)									override final;
+		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)							override final;
+		virtual void OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)	override final;
+		virtual void OnKeyReleased(EKey key)												override final;
+		virtual void OnKeyTyped(uint32 character)											override final;
 
 	public:
 		static ImGuiContext* GetImguiContext();

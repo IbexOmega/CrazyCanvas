@@ -327,9 +327,9 @@ Sandbox::~Sandbox()
 	SAFEDELETE(m_pRenderGraphEditor);
 }
 
-void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
+void Sandbox::OnKeyPressed(LambdaEngine::EKey key, LambdaEngine::ModifierKeyState modiferState, bool isRepeat)
 {
-	UNREFERENCED_VARIABLE(modifierMask);
+	UNREFERENCED_VARIABLE(modiferState);
 	
 	using namespace LambdaEngine;
 	

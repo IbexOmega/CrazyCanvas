@@ -36,7 +36,7 @@ namespace LambdaEngine
 		m_SampleCount		= pSoundEffect->GetSampleCount();
 		m_ChannelCount		= pSoundEffect->GetChannelCount();
 		m_TotalSampleCount	= m_SampleCount * m_ChannelCount;
-		m_pWaveForm			= new float32[m_TotalSampleCount];
+		m_pWaveForm			= DBG_NEW float32[m_TotalSampleCount];
 		memcpy(m_pWaveForm, pSoundEffect->GetWaveform(), sizeof(float32) * m_TotalSampleCount);
 
 		PaError result;

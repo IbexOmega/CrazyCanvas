@@ -5,20 +5,20 @@
 
 namespace LambdaEngine
 {
-	class LAMBDA_API Input : public EventHandler
+	class LAMBDA_API Input : public ApplicationEventHandler
 	{
 	private:
-		Input()		= default;
-		~Input()	= default;
+		Input() = default;
+		~Input() = default;
 
 	public:
-		virtual void OnButtonPressed(EMouseButton button, uint32 modifierMask)	override;
-		virtual void OnButtonReleased(EMouseButton button)						override;
-		virtual void OnMouseMoved(int32 x, int32 y)								override;
-		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)				override;
+		virtual void OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)	override;
+		virtual void OnButtonReleased(EMouseButton button)									override;
+		virtual void OnMouseMoved(int32 x, int32 y)											override;
+		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)							override;
 
-		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)	override;
-		virtual void OnKeyReleased(EKey key)									override;
+		virtual void OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)	override;
+		virtual void OnKeyReleased(EKey key)												override;
 
 	public:
 		DECL_UNIQUE_CLASS(Input);
@@ -28,35 +28,39 @@ namespace LambdaEngine
 
 		static void Tick();
 
-        static void Enable() { s_pInstance->m_InputEnabled = true; };
-        static void Disable();
+		static void Enable() 
+		{
+			s_pInstance->m_InputEnabled = true; 
+		}
 
-        FORCEINLINE static bool IsKeyDown(EKey key)
-        {
-            return s_pInstance->m_KeyboardState.IsKeyDown(key);
-        }
+		static void Disable();
 
-        FORCEINLINE static bool IsKeyUp(EKey key)
-        {
-            return s_pInstance->m_KeyboardState.IsKeyUp(key);
-        }
+		FORCEINLINE static bool IsKeyDown(EKey key)
+		{
+			return s_pInstance->m_KeyboardState.IsKeyDown(key);
+		}
+
+		FORCEINLINE static bool IsKeyUp(EKey key)
+		{
+			return s_pInstance->m_KeyboardState.IsKeyUp(key);
+		}
 
 		FORCEINLINE static const KeyboardState& GetKeyboardState()
-        {
-            return s_pInstance->m_KeyboardState;
-        }
+		{
+			return s_pInstance->m_KeyboardState;
+		}
 
 		FORCEINLINE static const MouseState& GetMouseState()
 		{
 			return s_pInstance->m_MouseState;
 		}
 
-    private:
-        KeyboardState	m_KeyboardState = { };
-		MouseState		m_MouseState    = { };
-        bool m_InputEnabled = true;
+	private:
+		KeyboardState m_KeyboardState;
+		MouseState m_MouseState;
+		bool m_InputEnabled = true;
 
-    private:
+	private:
 		static Input* s_pInstance;
 	};
 }

@@ -16,7 +16,7 @@ namespace LambdaEngine
 
 class Client :
 	public LambdaEngine::Game,
-	public LambdaEngine::EventHandler,
+	public LambdaEngine::ApplicationEventHandler,
 	public LambdaEngine::IPacketListener,
 	public LambdaEngine::IClientUDPHandler
 {

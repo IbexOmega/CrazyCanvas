@@ -532,9 +532,9 @@ namespace LambdaEngine
 		io.MousePos = ImVec2(float32(x), float32(y));
 	}
 
-	void ImGuiRenderer::OnButtonPressed(EMouseButton button, uint32 modifierMask)
+	void ImGuiRenderer::OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)
 	{
-		UNREFERENCED_VARIABLE(modifierMask);
+		UNREFERENCED_VARIABLE(modifierState);
 
 		ImGuiIO& io = ImGui::GetIO();
 		io.MouseDown[button - 1] = true;
@@ -553,10 +553,10 @@ namespace LambdaEngine
 		io.MouseWheel	+= (float32)deltaY;
 	}
 
-	void ImGuiRenderer::OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
+	void ImGuiRenderer::OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)
 	{
 		UNREFERENCED_VARIABLE(isRepeat);
-		UNREFERENCED_VARIABLE(modifierMask);
+		UNREFERENCED_VARIABLE(modifierState);
 
 		ImGuiIO& io = ImGui::GetIO();
 		io.KeysDown[key] = true;

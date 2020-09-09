@@ -10,7 +10,7 @@ namespace LambdaEngine
 	* CommonApplication
 	*/
 	CommonApplication::CommonApplication()
-		: EventHandler()
+		: ApplicationEventHandler()
 		, m_EventHandlers()
 	{
 		VALIDATE(s_CommonApplication == nullptr);
@@ -19,7 +19,7 @@ namespace LambdaEngine
 
 	void CommonApplication::ReleasePlatform()
 	{
-		// HACK: For now
+		// HACK: For now to relase the cycle between the commonapplication and platformapplication
 		SAFEDELETE(m_pPlatformApplication);
 	}
 
@@ -83,7 +83,7 @@ namespace LambdaEngine
 		return m_pPlatformApplication->CreateWindow(pDesc);
 	}
 
-	void CommonApplication::AddEventHandler(EventHandler* pEventHandler)
+	void CommonApplication::AddEventHandler(ApplicationEventHandler* pEventHandler)
 	{
 		// Check first so that this handler is not already added
 		const uint32 count = uint32(m_EventHandlers.GetSize());
@@ -99,7 +99,7 @@ namespace LambdaEngine
 		m_EventHandlers.EmplaceBack(pEventHandler);
 	}
 
-	void CommonApplication::RemoveEventHandler(EventHandler* pEventHandler)
+	void CommonApplication::RemoveEventHandler(ApplicationEventHandler* pEventHandler)
 	{
 		const uint32 count = uint32(m_EventHandlers.GetSize());
 		for (uint32 i = 0; i < count; i++)
@@ -148,9 +148,14 @@ namespace LambdaEngine
 		m_pPlatformApplication->SetMousePosition(x, y);
 	}
 
+	ModifierKeyState CommonApplication::GetModifierKeyState() const
+	{
+		return m_pPlatformApplication->GetModiferKeyState();
+	}
+
 	void CommonApplication::OnFocusChanged(TSharedRef<Window> window, bool hasFocus)
 	{
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnFocusChanged(window, hasFocus);
 		}
@@ -158,7 +163,7 @@ namespace LambdaEngine
 
 	void CommonApplication::OnWindowMoved(TSharedRef<Window> window, int16 x, int16 y)
 	{
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnWindowMoved(window, x, y);
 		}
@@ -166,7 +171,7 @@ namespace LambdaEngine
 
 	void CommonApplication::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)
 	{
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnWindowResized(window, width, height, type);
 		}
@@ -179,7 +184,7 @@ namespace LambdaEngine
 			Terminate();
 		}
 
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnWindowClosed(window);
 		}
@@ -187,7 +192,7 @@ namespace LambdaEngine
 
 	void CommonApplication::OnMouseEntered(TSharedRef<Window> window)
 	{
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnMouseEntered(window);
 		}
@@ -195,7 +200,7 @@ namespace LambdaEngine
 
 	void CommonApplication::OnMouseLeft(TSharedRef<Window> window)
 	{
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnMouseLeft(window);
 		}
@@ -203,7 +208,7 @@ namespace LambdaEngine
 
 	void CommonApplication::OnMouseMoved(int32 x, int32 y)
 	{
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnMouseMoved(x, y);
 		}
@@ -211,13 +216,13 @@ namespace LambdaEngine
 
 	void CommonApplication::OnMouseMovedRaw(int32 deltaX, int32 deltaY)
 	{
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnMouseMovedRaw(deltaX, deltaY);
 		}
 	}
 
-	void CommonApplication::OnButtonPressed(EMouseButton button, uint32 modifierMask)
+	void CommonApplication::OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)
 	{
 		TSharedRef<Window> CaptureWindow = GetCapture();
 		if (!CaptureWindow)
@@ -226,9 +231,9 @@ namespace LambdaEngine
 			SetCapture(ActiveWindow);
 		}
 
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnButtonPressed(button, modifierMask);
+			pEventHandler->OnButtonPressed(button, modifierState);
 		}
 	}
 
@@ -240,7 +245,7 @@ namespace LambdaEngine
 			SetCapture(nullptr);
 		}
 
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnButtonReleased(button);
 		}
@@ -248,23 +253,23 @@ namespace LambdaEngine
 
 	void CommonApplication::OnMouseScrolled(int32 deltaX, int32 deltaY)
 	{
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnMouseScrolled(deltaX, deltaY);
 		}
 	}
 
-	void CommonApplication::OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
+	void CommonApplication::OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)
 	{
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
-			pEventHandler->OnKeyPressed(key, modifierMask, isRepeat);
+			pEventHandler->OnKeyPressed(key, modifierState, isRepeat);
 		}
 	}
 
 	void CommonApplication::OnKeyReleased(EKey key)
 	{
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnKeyReleased(key);
 		}
@@ -272,7 +277,7 @@ namespace LambdaEngine
 
 	void CommonApplication::OnKeyTyped(uint32 character)
 	{
-		for (EventHandler* pEventHandler : m_EventHandlers)
+		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
 		{
 			pEventHandler->OnKeyTyped(character);
 		}

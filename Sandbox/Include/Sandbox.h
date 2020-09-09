@@ -25,7 +25,7 @@ namespace LambdaEngine
 	class RenderGraphEditor;
 }
 
-class Sandbox : public LambdaEngine::Game, public LambdaEngine::EventHandler
+class Sandbox : public LambdaEngine::Game, public LambdaEngine::ApplicationEventHandler
 {
 	struct InstanceIndexAndTransform
 	{
@@ -39,11 +39,11 @@ public:
 	Sandbox();
 	~Sandbox();
 
-	virtual void OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)	override;
+	virtual void OnKeyPressed(LambdaEngine::EKey key, LambdaEngine::ModifierKeyState modifierState, bool isRepeat) override;
 	
 	// Inherited via Game
-	virtual void Tick(LambdaEngine::Timestamp delta)        override;
-	virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
+	virtual void Tick(LambdaEngine::Timestamp delta) override;
+	virtual void FixedTick(LambdaEngine::Timestamp delta) override;
 
 	void Render(LambdaEngine::Timestamp delta);
 

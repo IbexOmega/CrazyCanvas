@@ -98,7 +98,7 @@ namespace LambdaEngine
 		uint32	Stride;
 	};
 
-	class LAMBDA_API RenderGraph : public EventHandler
+	class LAMBDA_API RenderGraph : public ApplicationEventHandler
 	{
 		enum class EResourceOwnershipType
 		{

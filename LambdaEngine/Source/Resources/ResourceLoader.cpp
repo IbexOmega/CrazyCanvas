@@ -564,10 +564,10 @@ namespace LambdaEngine
 			for (uint32 i = 0; i < count; i++)
 			{
 				uint32 numPixels = texWidth * texHeight;
-				uint16* pPixelsR = new uint16[numPixels];
-				uint16* pPixelsG = new uint16[numPixels];
-				uint16* pPixelsB = new uint16[numPixels];
-				uint16* pPixelsA = new uint16[numPixels];
+				uint16* pPixelsR = DBG_NEW uint16[numPixels];
+				uint16* pPixelsG = DBG_NEW uint16[numPixels];
+				uint16* pPixelsB = DBG_NEW uint16[numPixels];
+				uint16* pPixelsA = DBG_NEW uint16[numPixels];
 
 				uint16* pSTBIPixels = reinterpret_cast<uint16*>(stbi_pixels[i]);
 

@@ -68,8 +68,8 @@ namespace LambdaEngine
 
 		virtual bool SupportsRawInput() const override final;
 
-		virtual void		SetMouseVisibility(bool visible)					override final;
-		virtual void		SetMousePosition(int x, int y)						override final;
+		virtual void SetMouseVisibility(bool visible) override final;
+		virtual void SetMousePosition(int x, int y) override final;
 		virtual void SetInputMode(TSharedRef<Window> window, EInputMode inputMode) override final;
 		virtual EInputMode GetInputMode(TSharedRef<Window> window) const override final;
 
@@ -78,6 +78,8 @@ namespace LambdaEngine
 
 		virtual void SetCapture(TSharedRef<Window> window) override final;
 		virtual TSharedRef<Window> GetCapture() const override final;
+
+		virtual ModifierKeyState GetModiferKeyState() const override final;
 
 	private:
 		Win32Application(HINSTANCE hInstance);
@@ -93,7 +95,7 @@ namespace LambdaEngine
 		static void PeekEvents();
 		
 		static Application* CreateApplication();
-		static Win32Application* Get();
+		static Win32Application& Get();
 
 	private:
 		static bool RegisterWindowClass();

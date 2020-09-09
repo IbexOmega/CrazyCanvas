@@ -39,13 +39,13 @@ namespace LambdaEngine
 		virtual bool Create() = 0;
 		virtual TSharedRef<Window> CreateWindow(const WindowDesc* pDesc)	= 0;
 		
-		virtual void SetEventHandler(TSharedPtr<EventHandler> eventHandler) 
+		virtual void SetEventHandler(TSharedPtr<ApplicationEventHandler> eventHandler) 
 		{ 
 			VALIDATE(eventHandler != nullptr);
 			m_EventHandler = eventHandler; 
 		}
 
-		virtual TSharedPtr<EventHandler> GetEventHandler() const
+		virtual TSharedPtr<ApplicationEventHandler> GetEventHandler() const
 		{ 
 			return m_EventHandler; 
 		}
@@ -58,8 +58,8 @@ namespace LambdaEngine
 		
 		virtual bool SupportsRawInput() const = 0;
 
-		virtual void		SetMouseVisibility(bool)							= 0;
-		virtual void		SetMousePosition(int x, int y)						= 0;
+		virtual void SetMouseVisibility(bool)							= 0;
+		virtual void SetMousePosition(int x, int y)						= 0;
 		virtual void SetInputMode(TSharedRef<Window> window, EInputMode inputMode) = 0;
 		virtual EInputMode GetInputMode(TSharedRef<Window> window) const = 0;
 
@@ -80,6 +80,11 @@ namespace LambdaEngine
 		{ 
 			return nullptr;
 		}
+
+		virtual ModifierKeyState GetModiferKeyState() const
+		{
+			return ModifierKeyState(0);
+		}
 		
 	protected:
 		Application() = default;
@@ -98,7 +103,7 @@ namespace LambdaEngine
 		}
 		
 	protected:
-		TSharedPtr<EventHandler> m_EventHandler = nullptr;
+		TSharedPtr<ApplicationEventHandler> m_EventHandler = nullptr;
 	};
 }
 

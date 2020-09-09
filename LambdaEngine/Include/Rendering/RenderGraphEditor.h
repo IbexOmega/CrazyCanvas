@@ -15,7 +15,7 @@ namespace LambdaEngine
 {
 	class RenderGraph;
 
-	class LAMBDA_API RenderGraphEditor : public EventHandler
+	class LAMBDA_API RenderGraphEditor : public ApplicationEventHandler
 	{
 	public:
 		DECL_REMOVE_COPY(RenderGraphEditor);
@@ -28,7 +28,7 @@ namespace LambdaEngine
 		void RenderGUI();
 
 		virtual void OnButtonReleased(EMouseButton button)						override final;
-		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat) override final;
+		virtual void OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat) override final;
 		virtual void OnKeyReleased(EKey key)									override final;
 
 	private:

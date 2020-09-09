@@ -8,7 +8,7 @@
 
 namespace LambdaEngine
 {
-	class LAMBDA_API CommonApplication : public EventHandler
+	class LAMBDA_API CommonApplication : public ApplicationEventHandler
 	{
 	public:
 		~CommonApplication();
@@ -18,8 +18,8 @@ namespace LambdaEngine
 		bool Create();
 		TSharedRef<Window> CreateWindow(const WindowDesc* pDesc);
 		
-		void RemoveEventHandler(EventHandler* pEventHandler);
-		void AddEventHandler(EventHandler* pEventHandler);
+		void RemoveEventHandler(ApplicationEventHandler* pEventHandler);
+		void AddEventHandler(ApplicationEventHandler* pEventHandler);
 
 		/*
 		* Application ticks one frame, processes OS- events and then processes the buffered events
@@ -75,6 +75,8 @@ namespace LambdaEngine
 		void SetMouseVisibility(bool visible);
 		void SetMousePosition(int x, int y);
 
+		ModifierKeyState GetModifierKeyState() const;
+
 	public:
 		// EventHandler Interface
 		virtual void OnFocusChanged(TSharedRef<Window> window, bool hasFocus)									override final;
@@ -84,15 +86,15 @@ namespace LambdaEngine
 		virtual void OnMouseEntered(TSharedRef<Window> window)													override final;
 		virtual void OnMouseLeft(TSharedRef<Window> window)														override final;
 
-		virtual void OnMouseMoved(int32 x, int32 y)								override final;
-		virtual void OnMouseMovedRaw(int32 deltaX, int32 deltaY)				override final;
-		virtual void OnButtonPressed(EMouseButton button, uint32 modifierMask)	override final;
-		virtual void OnButtonReleased(EMouseButton button)						override final;
-		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)				override final;
+		virtual void OnMouseMoved(int32 x, int32 y)											override final;
+		virtual void OnMouseMovedRaw(int32 deltaX, int32 deltaY)							override final;
+		virtual void OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)	override final;
+		virtual void OnButtonReleased(EMouseButton button)									override final;
+		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)							override final;
 
-		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)	override final;
-		virtual void OnKeyReleased(EKey key)									override final;
-		virtual void OnKeyTyped(uint32 character)								override final;
+		virtual void OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)	override final;
+		virtual void OnKeyReleased(EKey key)												override final;
+		virtual void OnKeyTyped(uint32 character)											override final;
 
 	private:
 		CommonApplication();
@@ -108,7 +110,7 @@ namespace LambdaEngine
 	private:
 		TSharedRef<Window>		m_MainWindow			= nullptr;
 		Application*			m_pPlatformApplication	= nullptr;
-		TArray<EventHandler*> 	m_EventHandlers;
+		TArray<ApplicationEventHandler*> 	m_EventHandlers;
 
 	private:
 		static TSharedPtr<CommonApplication> s_CommonApplication;

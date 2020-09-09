@@ -26,7 +26,7 @@ namespace LambdaEngine
 	class RenderGraphEditor;
 }
 
-class CrazyCanvas : public LambdaEngine::Game, public LambdaEngine::EventHandler
+class CrazyCanvas : public LambdaEngine::Game, public LambdaEngine::ApplicationEventHandler
 {
 public:
 	CrazyCanvas();

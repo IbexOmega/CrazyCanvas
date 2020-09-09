@@ -12,6 +12,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imnodes.h>
+
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderSystem.h"
 #include "Rendering/RenderGraphParser.h"
@@ -343,9 +344,9 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraphEditor::OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
+	void RenderGraphEditor::OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)
 	{
-		UNREFERENCED_VARIABLE(modifierMask);
+		UNREFERENCED_VARIABLE(modifierState);
 
 		if (key == EKey::KEY_LEFT_SHIFT && !isRepeat)
 		{

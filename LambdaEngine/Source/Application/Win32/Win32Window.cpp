@@ -65,7 +65,7 @@ namespace LambdaEngine
 			title[charsWritten] = L'\0';
 		}
 
-		HINSTANCE hInstance = PlatformApplication::Get()->GetInstanceHandle();
+		HINSTANCE hInstance = PlatformApplication::Get().GetInstanceHandle();
 		m_hWnd = ::CreateWindowEx(0, WINDOW_CLASS, title, dwStyle, CW_USEDEFAULT, CW_USEDEFAULT, nWidth, nHeight, NULL, NULL, hInstance, NULL);
 		if (m_hWnd == NULL)
 		{

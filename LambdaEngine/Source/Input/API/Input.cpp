@@ -9,9 +9,9 @@ namespace LambdaEngine
 	/*
 	* Instance
 	*/
-	void Input::OnButtonPressed(EMouseButton button, uint32 modifierMask)
+	void Input::OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)
 	{
-		UNREFERENCED_VARIABLE(modifierMask);
+		UNREFERENCED_VARIABLE(modifierState);
 		m_MouseState.ButtonStates[button] = m_InputEnabled;
 	}
 
@@ -38,9 +38,9 @@ namespace LambdaEngine
 		}
 	}
 
-	void Input::OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
+	void Input::OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)
 	{
-		UNREFERENCED_VARIABLE(modifierMask);
+		UNREFERENCED_VARIABLE(modifierState);
 		if (!isRepeat)
 		{
 			m_KeyboardState.KeyStates[key] = m_InputEnabled;
