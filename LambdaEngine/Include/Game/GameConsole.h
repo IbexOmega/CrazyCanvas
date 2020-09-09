@@ -43,24 +43,19 @@ namespace LambdaEngine
 
 	/*
 	
-	struct Arg
+	 struct LAMBDA_API Arg
 	{
+		enum EType { FLOAT, BOOL, INT, STRING };
+
+		EType type;
 		union Value
 		{
 			float f;
 			bool b;
 			int i;
 			char str[64];
-		}
-
-		Enum EType
-		{
-			FLOAT, BOOL, INT
-		}
-
-		EType type;
-		Value value;
-	}
+		} value;
+	};
 
 	Command cmd;
 	cmd.name = "name";
@@ -69,7 +64,7 @@ namespace LambdaEngine
 	GameConsole::BindCommand(cmd, [](TArray<Arg> args){});
 
 	/setPosition 2 4 5
-	/activate light
+	/light activate 
 	/name ol 3
 	
 	*/

@@ -1,6 +1,6 @@
 #include "Game/GameConsole.h"
 #include "Input/API/Input.h"
-
+#include <regex>
 #include <imgui.h>
 
 bool LambdaEngine::GameConsole::Init()
@@ -18,6 +18,7 @@ void LambdaEngine::GameConsole::Render()
 	// Toggle console when pressing § (Button beneath Escape)
 	static bool s_Active = false;
 	static bool s_Toggle = false;
+
 	if (Input::IsKeyDown(EKey::KEY_GRAVE_ACCENT) & !s_Active)
 	{
 		s_Active = true;
@@ -101,23 +102,47 @@ LambdaEngine::GameConsole::~GameConsole()
 
 int LambdaEngine::GameConsole::ExecCommand(std::string& data)
 {
-	/*std::string key;
-	size_t pos = data.find(" ");
-	if (pos == std::string::npos)
-		key = data;
-	else
-	{
-		pos = data.find_first_of(" ");
-		key = data.
-	}*/
-	auto it = m_CommandMap.find(data);
-
+	size_t pos = 0;
+	std::string token;
+	std::string command = data;
 	Item item = {};
+	m_ScrollToBottom = true;
+
+	pos = command.find(" ");
+	token = command.substr(0, pos);
+	LOG_INFO(token.c_str());
+	command.erase(0, pos + std::string(" ").length());
+	
+	auto it = m_CommandMap.find(token);
+
+	if (it == m_CommandMap.end())
+	{
+		item.str = "Error: Command '" + token + "' not found.";
+		item.color = glm::vec4(1.f, 0.f, 0.f, 1.f);
+		m_Items.PushBack(item);
+		return 0;
+	}
+
+	while (((pos = command.find(" ")) != std::string::npos) || ((pos = command.length()) > 0))
+	{
+		LOG_INFO("pos: %d", pos);
+		LOG_INFO("npos: %d", command.find(" ") == std::string::npos);
+		token = command.substr(0, pos);
+		if (std::regex_match(token, std::regex("-[[:w:]].*")))
+			LOG_INFO("FLAG FOUND");
+		if (std::regex_match(token, std::regex("-[0-9]+")))
+			LOG_INFO("NUMBER FOUND");
+		
+		LOG_INFO(token.c_str());
+		if (std::string::npos != command.find(" "))
+			command.erase(0, pos + std::string(" ").length());
+		else
+			command.erase(0, pos);
+	}
+
 	item.str = data;
 	item.color = glm::vec4(1.f, 1.f, 1.f, 1.f);
 	m_Items.PushBack(item);
-
-	m_ScrollToBottom = true;
 
 	return 0;
 }
