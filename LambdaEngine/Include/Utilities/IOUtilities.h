@@ -11,10 +11,10 @@ namespace LambdaEngine
 {
 	struct LambdaDirectory
 	{
-		String							Name;
+	public:
+		std::filesystem::path			RelativePath;
 		bool							isDirectory = false;
 
-		LambdaDirectory*				pParent = nullptr;
 		std::vector<LambdaDirectory>	Children;
 	};
 
@@ -31,25 +31,25 @@ namespace LambdaEngine
 		return result;
 	}
 
-	FORCEINLINE LambdaDirectory ExtractDirectory(const String& filepath)
+	FORCEINLINE LambdaDirectory ExtractDirectory(const String& filepath, const std::filesystem::path& relativePath, bool ignoreRootPath = true)
 	{
 		LambdaDirectory result;
 		auto& rootPath = std::filesystem::path(filepath);
 
-		result.Name = rootPath.stem().string();
+		result.RelativePath /= ignoreRootPath ? relativePath : relativePath / rootPath.stem().string();
 		result.isDirectory = true;
 
 		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(rootPath))
 		{
 			if (entry.is_directory())
 			{
-				LambdaDirectory childDir = ExtractDirectory(entry.path().string());
+				LambdaDirectory childDir = ExtractDirectory(entry.path().string(), result.RelativePath, false);
 				result.Children.push_back(childDir);
 			}
 			else
 			{
 				LambdaDirectory childDir;
-				childDir.Name = entry.path().filename().string();
+				childDir.RelativePath = result.RelativePath / entry.path().filename();
 				result.Children.push_back(childDir);
 			}
 		}
