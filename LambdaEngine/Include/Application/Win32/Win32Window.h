@@ -9,6 +9,9 @@
 
 namespace LambdaEngine
 {
+	/*
+	* Win32Window
+	*/
 	class Win32Window : public Window
 	{
 	public:
@@ -38,9 +41,11 @@ namespace LambdaEngine
 
 		virtual void SetSize(uint16 width, uint16 height) override final;
 
-		virtual uint16	GetWidth()	const override final;
-		virtual uint16	GetHeight()	const override final;
-		virtual void* 	GetHandle()	const override final;
+		virtual uint16 GetWidth() const override final;
+		virtual uint16 GetHeight() const override final;
+		virtual void* GetHandle() const override final;
+
+		virtual bool IsValid() const override final;
 
 	private:
 		HWND m_hWnd = 0;

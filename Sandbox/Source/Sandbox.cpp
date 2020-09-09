@@ -304,7 +304,7 @@ Sandbox::Sandbox()
 	cameraDesc.NearPlane	= 0.001f;
 	cameraDesc.FarPlane		= 1000.0f;
 
-	m_pCamera->Init(CommonApplication::Get(), cameraDesc);
+	m_pCamera->Init(cameraDesc);
 
 	LoadRendererResources();
 
@@ -415,17 +415,20 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 	Renderer::NewFrame(delta);
 
 	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-	float32 renderWidth		= (float32)mainWindow->GetWidth();
-	float32 renderHeight	= (float32)mainWindow->GetHeight();
+	float32 renderWidth = (float32)mainWindow->GetWidth();
+	float32 renderHeight = (float32)mainWindow->GetHeight();
 	float32 renderAspectRatio = renderWidth / renderHeight;
 
 	if (IMGUI_ENABLED)
 	{
-		m_pRenderGraphEditor->RenderGUI();
+		ImGuiRenderer::Get().DrawUI([&]()
+			{
+				m_pRenderGraphEditor->RenderGUI();
 
-		Profiler::Render(delta);
+				Profiler::Render(delta);
 
-		ImGui::ShowDemoWindow();
+				ImGui::ShowDemoWindow();
+			});
 	}
 
 	Renderer::PrepareRender(delta);

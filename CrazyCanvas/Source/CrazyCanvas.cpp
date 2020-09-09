@@ -124,7 +124,7 @@ CrazyCanvas::CrazyCanvas()
 	cameraDesc.NearPlane	= 0.001f;
 	cameraDesc.FarPlane		= 1000.0f;
 
-	m_pCamera->Init(CommonApplication::Get(), cameraDesc);
+	m_pCamera->Init(cameraDesc);
 	m_pCamera->Update();
 
 	std::vector<glm::vec3> cameraTrack = {
