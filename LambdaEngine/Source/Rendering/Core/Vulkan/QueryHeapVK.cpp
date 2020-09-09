@@ -28,7 +28,7 @@ namespace LambdaEngine
 		createInfo.flags				= 0;
 		createInfo.queryType			= ConvertQueryType(pDesc->Type);
 		createInfo.queryCount			= pDesc->QueryCount;
-		createInfo.pipelineStatistics	= ConvertPipelineStageMask(pDesc->PipelineStatisticsFlags);
+		createInfo.pipelineStatistics	= ConvertQueryPipelineStatisticsMask(pDesc->PipelineStatisticsFlags);
 
 		VkResult result = vkCreateQueryPool(m_pDevice->Device, &createInfo, nullptr, &m_QueryPool);
 		if (result != VK_SUCCESS)
@@ -52,9 +52,8 @@ namespace LambdaEngine
 		m_Desc.DebugName = debugName;
 	}
 	
-	bool QueryHeapVK::GetResults(uint32 firstQuery, uint32 queryCount, uint64* pData) const
+	bool QueryHeapVK::GetResults(uint32 firstQuery, uint32 queryCount, uint64 dataSize, uint64* pData) const
 	{
-		const uint64 dataSize = queryCount * sizeof(uint64);
 		VkResult result = vkGetQueryPoolResults(m_pDevice->Device, m_QueryPool, firstQuery, queryCount, dataSize, reinterpret_cast<void*>(pData), sizeof(uint64), VK_QUERY_RESULT_64_BIT);
 		if (result != VK_SUCCESS)
 		{
