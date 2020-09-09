@@ -13,8 +13,8 @@ jobs:
       - name: Read LFS Cache
         run: cp -r -Force ../../.git/lfs .git/
 
-      # - name: Pull From LFS
-      #   run: git lfs pull
+      - name: Pull From LFS
+        run: git lfs pull
 
       - name: Update LFS Cache
         run: cp -r -Force .git/lfs ../../.git/

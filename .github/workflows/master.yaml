@@ -14,13 +14,13 @@ jobs:
           submodules: true
 
       - name: Read LFS Cache
-        run: cp -r ../../.git/lfs/* .git/lfs/
+        run: cp -r -Force ../../.git/lfs .git/
 
-      # - name: Pull From LFS
-      #   run: git lfs pull
+      - name: Pull From LFS
+        run: git lfs pull
 
       - name: Update LFS Cache
-        run: cp -r .git/lfs/* ../../.git/lfs/
+        run: cp -r -Force .git/lfs ../../.git/
 
   benchmark:
     runs-on: [self-hosted, Windows, X64]
