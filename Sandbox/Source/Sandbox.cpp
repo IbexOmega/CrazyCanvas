@@ -37,6 +37,8 @@
 
 #include "Threading/API/Thread.h"
 
+#include "Debug/Profiler.h"
+
 #include <imgui.h>
 
 constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
@@ -85,7 +87,7 @@ Sandbox::Sandbox()
 	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
 	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
 
-	EScene scene = EScene::SPONZA;
+	EScene scene = EScene::TESTING;
 
 	m_pScene->SetDirectionalLight(directionalLight);
 
@@ -420,15 +422,9 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 	{
 		m_pRenderGraphEditor->RenderGUI();
 
-		ImGui::ShowDemoWindow();
+		Profiler::Render(delta);
 
-		ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
-		if (ImGui::Begin("Debugging Window", NULL))
-		{
-			ImGui::Text("FPS: %f", 1.0f / delta.AsSeconds());
-			ImGui::Text("Frametime (ms): %f", delta.AsMilliSeconds());
-		}
-		ImGui::End();
+		ImGui::ShowDemoWindow();
 	}
 
 	Renderer::PrepareRender(delta);
