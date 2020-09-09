@@ -982,7 +982,7 @@ namespace LambdaEngine
 						if (pResource->Texture.textureType == ERenderGraphTextureType::TEXTURE_CUBE)
 						{
 							textureViewDesc.DebugName = pResourceDesc->Name + " Texture Cube View";
-							textureViewDesc.Texture = nullptr;
+							textureViewDesc.pTexture = nullptr;
 							textureViewDesc.Flags = pResourceDesc->TextureParams.TextureViewFlags;
 							textureViewDesc.Format = pResourceDesc->TextureParams.TextureFormat;
 							textureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
