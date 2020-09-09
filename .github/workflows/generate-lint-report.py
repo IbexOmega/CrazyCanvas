@@ -37,10 +37,6 @@ def lint(cppcheck_path, report_path, ignore_path):
 		print('Finished', flush=True)
 		report.close()
 
-	with open(report_path, 'r') as report:
-		print(report.read())
-		report.close()
-
 def main(argv):
 	report_path = None
 	ignore_path = None
