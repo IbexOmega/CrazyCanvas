@@ -123,6 +123,7 @@ namespace LambdaEngine
 
 			// Save a reference to allocator
 			m_Allocator = pAllocatorVk;
+			m_Allocator->AddRef();
 
 			accelerationStructureMemoryInfo.memoryOffset	= m_Allocation.Offset;
 			accelerationStructureMemoryInfo.memory			= m_Allocation.Memory;

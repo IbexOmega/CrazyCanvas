@@ -25,6 +25,9 @@
 #include "Audio/AudioSystem.h"
 
 #include "Rendering/RenderSystem.h"
+#include "Rendering/Renderer.h"
+
+#include <assimp/Importer.hpp>
 
 #include "Utilities/RuntimeStats.h"
 
@@ -152,12 +155,31 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!Renderer::Init())
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	bool EngineLoop::PreRelease()
+	{
+		RenderSystem::GetGraphicsQueue()->Flush();
+		RenderSystem::GetComputeQueue()->Flush();
+		RenderSystem::GetCopyQueue()->Flush();
+
 		return true;
 	}
 
 	bool EngineLoop::Release()
 	{
 		Input::Release();
+
+		if (!Renderer::Release())
+		{
+			return false;
+		}
 
 		if (!ResourceManager::Release())
 		{

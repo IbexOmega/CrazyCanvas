@@ -23,13 +23,13 @@ Build/
 # Ignore all dependency build files
 Dependencies/bin/
 Dependencies/bin-int/
+Dependencies/assimp/bin/
 
 #Other ignored files
 *.dot
 cppcheck_report*
 
 #Ignore files for settings
-*.ini
 *.ini
 
 # Ignore files created by the game/engine

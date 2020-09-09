@@ -24,7 +24,7 @@ namespace LambdaEngine
 	struct TextureViewDesc
 	{
 		String				DebugName		= "";
-		TSharedRef<Texture>	Texture			= nullptr;
+		Texture*			pTexture		= nullptr;
 		uint32				Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_NONE;
 		EFormat				Format			= EFormat::FORMAT_NONE;
 		ETextureViewType	Type			= ETextureViewType::TEXTURE_VIEW_TYPE_NONE;

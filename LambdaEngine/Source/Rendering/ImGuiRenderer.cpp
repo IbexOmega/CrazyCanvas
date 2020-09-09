@@ -42,7 +42,6 @@ namespace LambdaEngine
 
 		SAFERELEASE(m_pCopyCommandAllocator);
 		SAFERELEASE(m_pCopyCommandList);
-		SAFERELEASE(m_pAllocator);
 		SAFERELEASE(m_pPipelineLayout);
 		SAFERELEASE(m_pDescriptorHeap);
 		SAFERELEASE(m_pDescriptorSet);
@@ -72,6 +71,8 @@ namespace LambdaEngine
 		SAFERELEASE(m_pSampler);
 
 		SAFEDELETE_ARRAY(m_ppBackBuffers);
+
+		SAFERELEASE(m_pAllocator);
 	}
 
 	bool ImGuiRenderer::Init(const ImGuiRendererDesc* pDesc)
@@ -311,8 +312,8 @@ namespace LambdaEngine
 		//Start drawing
 		ImDrawData* pDrawData = ImGui::GetDrawData();
 		TextureView* pBackBuffer = m_ppBackBuffers[backBufferIndex];
-		uint32 width	= pBackBuffer->GetDesc().Texture->GetDesc().Width;
-		uint32 height	= pBackBuffer->GetDesc().Texture->GetDesc().Height;
+		uint32 width	= pBackBuffer->GetDesc().pTexture->GetDesc().Width;
+		uint32 height	= pBackBuffer->GetDesc().pTexture->GetDesc().Height;
 
 		BeginRenderPassDesc beginRenderPassDesc = {};
 		beginRenderPassDesc.pRenderPass			= m_pRenderPass;
@@ -835,7 +836,7 @@ namespace LambdaEngine
 
 		TextureViewDesc fontTextureViewDesc = {};
 		fontTextureViewDesc.DebugName		= "ImGui Font Texture View";
-		fontTextureViewDesc.Texture			= m_pFontTexture;
+		fontTextureViewDesc.pTexture		= m_pFontTexture;
 		fontTextureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		fontTextureViewDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
 		fontTextureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
@@ -990,8 +991,8 @@ namespace LambdaEngine
 	{
 		ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
 		pipelineStateDesc.DebugName			= "ImGui Pipeline State";
-		pipelineStateDesc.RenderPass		= m_pRenderPass;
-		pipelineStateDesc.PipelineLayout	= m_pPipelineLayout;
+		pipelineStateDesc.RenderPass		= MakeSharedRef(m_pRenderPass);
+		pipelineStateDesc.PipelineLayout	= MakeSharedRef(m_pPipelineLayout);
 
 		pipelineStateDesc.DepthStencilState.CompareOp			= ECompareOp::COMPARE_OP_NEVER;
 		pipelineStateDesc.DepthStencilState.DepthTestEnable		= false;

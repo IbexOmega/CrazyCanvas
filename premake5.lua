@@ -146,37 +146,6 @@ workspace "LambdaEngine"
 		include "Dependencies/WavLib"
 		include "Dependencies/imgui"
 
-		-- tinyobjloader Project
-		project "tinyobjloader"
-			kind "StaticLib"
-			language "C++"
-			cppdialect "C++17"
-			systemversion "latest"
-			location "Dependencies/projectfiles/tinyobjloader"
-
-			filter "configurations:Debug or Release"
-				symbols "on"
-				runtime "Release"
-				optimize "Full"
-			filter{}
-
-			filter "configurations:Production"
-				symbols "off"
-				runtime "Release"
-				optimize "Full"
-			filter{}
-
-			-- Targets
-			targetdir ("Dependencies/bin/tinyobjloader/" .. outputdir)
-			objdir ("Dependencies/bin-int/tinyobjloader/" .. outputdir)
-
-			-- Files
-			files
-			{
-				"Dependencies/tinyobjloader/tiny_obj_loader.h",
-				"Dependencies/tinyobjloader/tiny_obj_loader.cc",
-			}
-
 		-- imnodes Project
 		project "imnodes"
 			kind "StaticLib"
@@ -231,10 +200,10 @@ workspace "LambdaEngine"
 		}
 
         -- Platform
-		filter "platforms:x64_SharedLib"
-			kind "SharedLib"
 		filter "platforms:x64_StaticLib"
 			kind "StaticLib"
+		filter "platforms:x64_SharedLib"
+			kind "SharedLib"
 		filter {}
 
 		-- Targets
@@ -327,7 +296,7 @@ workspace "LambdaEngine"
 		sysincludedirs
 		{
 			"Dependencies/glm",
-			"Dependencies/tinyobjloader",
+			"Dependencies/assimp/include",
 			"Dependencies/WavLib",
 			"Dependencies/imgui",
 			"Dependencies/stb",
@@ -339,7 +308,6 @@ workspace "LambdaEngine"
 
 		links
 		{
-			"tinyobjloader",
 			"WavLib",
 			"ImGui",
 			"imnodes",
@@ -366,6 +334,9 @@ workspace "LambdaEngine"
 
 				-- imgui-node-editor
 				"Dependencies/imgui-node-editor/lib",
+
+				-- Assimp
+				"Dependencies/assimp/bin"
 			}
 
 			sysincludedirs
@@ -392,6 +363,11 @@ workspace "LambdaEngine"
 				"OSDependentd.lib",
 				"OGLCompilerd.lib",
 				"HLSLd.lib",
+
+				-- Assimp
+				"/debug/assimp-vc142-mtd.lib",
+				"/debug/IrrXMLd.lib",
+				"/debug/zlibstaticd.lib",
 			}
 		filter { "system:windows", "configurations:Release or Production" }
 			links
@@ -406,6 +382,11 @@ workspace "LambdaEngine"
 				"OSDependent.lib",
 				"OGLCompiler.lib",
 				"HLSL.lib",
+
+				-- Assimp
+				"/release/assimp-vc142-mt.lib",
+				"/release/IrrXML.lib",
+				"/release/zlibstatic.lib",
 			}
 		-- Mac
 		filter { "system:macosx" }
