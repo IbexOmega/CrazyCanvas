@@ -81,9 +81,9 @@ void LambdaEngine::GameConsole::Render()
 	ImGui::End();
 }
 
-void LambdaEngine::GameConsole::BindCommand(ConsoleCommand cmd, std::function<void(TArray<Arg>& arguments)> callback)
+void LambdaEngine::GameConsole::BindCommand(ConsoleCommand cmd, std::function<void(TArray<Arg>& arguments, std::unordered_map<std::string, Flag>& flags)> callback)
 {
-	m_CommandMap[cmd.GetName()] = std::pair<ConsoleCommand, std::function<void(TArray<Arg>& arguments)>>(cmd, callback);
+	m_CommandMap[cmd.GetName()] = std::pair<ConsoleCommand, std::function<void(TArray<Arg>& arguments, std::unordered_map<std::string, Flag>& flags)>>(cmd, callback);
 }
 
 LambdaEngine::GameConsole& LambdaEngine::GameConsole::Get()
@@ -110,39 +110,144 @@ int LambdaEngine::GameConsole::ExecCommand(std::string& data)
 
 	pos = command.find(" ");
 	token = command.substr(0, pos);
-	LOG_INFO(token.c_str());
 	command.erase(0, pos + std::string(" ").length());
 	
 	auto it = m_CommandMap.find(token);
 
 	if (it == m_CommandMap.end())
 	{
-		item.str = "Error: Command '" + token + "' not found.";
-		item.color = glm::vec4(1.f, 0.f, 0.f, 1.f);
-		m_Items.PushBack(item);
+		PushError("Command '" + token + "' not found.");
 		return 0;
 	}
 
+	ConsoleCommand& cmd = it->second.first;
+
+	Flag* preFlag = nullptr;
+	std::unordered_map<std::string, Flag> flags;
+	
+	bool wasFlag = false;
+	uint32 index = 0;
 	while (((pos = command.find(" ")) != std::string::npos) || ((pos = command.length()) > 0))
 	{
-		LOG_INFO("pos: %d", pos);
-		LOG_INFO("npos: %d", command.find(" ") == std::string::npos);
+		Arg arg;
 		token = command.substr(0, pos);
-		if (std::regex_match(token, std::regex("-[[:w:]].*")))
-			LOG_INFO("FLAG FOUND");
-		if (std::regex_match(token, std::regex("-[0-9]+")))
-			LOG_INFO("NUMBER FOUND");
+		if (std::regex_match(token, std::regex("-[[:alpha:]].*")))
+		{
+			wasFlag = true;
+			Flag flag;
+			flag.name = token.substr(1);
+
+			if (cmd.GetFlags().find(flag.name) == cmd.GetFlags().end())
+			{
+				PushError("'" + token + "' is an invalid flag!");
+				return 0;
+			}
+
+			flags[flag.name] = flag;
+			preFlag = &flags[flag.name];
+		}
+		else
+		{
+			FillArg(arg, token);
+			if (wasFlag)
+			{
+				if (cmd.GetFlags()[preFlag->name].arg.type != Arg::EMPTY)
+				{
+					preFlag->arg = arg;
+				}
+				else
+				{
+					bool res = AddArg(index, arg, cmd);
+					if (!res) return 0;
+					index++;
+				}
+				wasFlag = false;
+			}
+			else
+			{
+				bool res = AddArg(index, arg, cmd);
+				if (!res) return 0;
+				index++;
+			}
+		}
 		
-		LOG_INFO(token.c_str());
 		if (std::string::npos != command.find(" "))
 			command.erase(0, pos + std::string(" ").length());
 		else
 			command.erase(0, pos);
 	}
 
+	uint32 size = cmd.GetArguments().GetSize();
+	if (index != size) // Error too few arguments!
+	{
+		PushError("Too few arguments!");
+		return 0;
+	}
+
 	item.str = data;
 	item.color = glm::vec4(1.f, 1.f, 1.f, 1.f);
 	m_Items.PushBack(item);
 
+	// Call function
+	it->second.second(cmd.GetArguments(), flags);
+
 	return 0;
+}
+
+void LambdaEngine::GameConsole::FillArg(Arg& arg, std::string token)
+{
+	arg.type = Arg::STRING;
+	strcpy(arg.value.str, token.c_str());
+
+	if (std::regex_match(token, std::regex("-[0-9]+")))
+	{
+		arg.type = Arg::INT;
+		arg.value.i = std::stoi(token);
+	}
+	else if (std::regex_match(token, std::regex("[0-9]+")))
+	{
+		arg.type = Arg::INT;
+		arg.value.i = std::stoi(token);
+	}
+	else if (std::regex_match(token, std::regex("(-[0-9]*\.[0-9]+)|(-[0-9]+\.[0-9]*)")))
+	{
+		arg.type = Arg::FLOAT;
+		arg.value.f = std::stof(token);
+	}
+	else if (std::regex_match(token, std::regex("([0-9]*\.[0-9]+)|([0-9]+\.[0-9]*)")))
+	{
+		arg.type = Arg::FLOAT;
+		arg.value.f = std::stof(token);
+	}
+	std::for_each(token.begin(), token.end(), [](char& c) { c = std::tolower(c); });
+	if (std::regex_match(token, std::regex("(false)|(true)")))
+	{
+		arg.type = Arg::BOOL;
+		arg.value.b = token == "false" ? false : true;
+	}
+}
+
+bool LambdaEngine::GameConsole::AddArg(uint32 index, Arg arg, ConsoleCommand& cmd)
+{
+	uint32 size = cmd.GetArguments().GetSize();
+	if (index >= size) // Error too many arguments
+	{
+		PushError("Too many arguments!");
+		return false;
+	}
+	if (cmd.GetArguments()[index].type != arg.type) // Error wrong type
+	{
+		PushError("Wrong argument type!");
+		return false;
+	}
+	cmd.GetArguments()[index].value = arg.value;
+	return true;
+}
+
+void LambdaEngine::GameConsole::PushError(const std::string& msg)
+{
+	Item item = {};
+	item.str = "Error:" + msg;
+	item.color = glm::vec4(1.f, 0.f, 0.f, 1.f);
+	m_Items.PushBack(item);
 }

@@ -364,6 +364,20 @@ Sandbox::Sandbox()
 	}
 
 	GameConsole::Get().Init();
+	ConsoleCommand cmd;
+	cmd.Init("foo", true);
+	cmd.AddArg(Arg::STRING);
+	cmd.AddFlag("l", Arg::INT);
+	cmd.AddFlag("i", Arg::EMPTY);
+	GameConsole::Get().BindCommand(cmd, [](TArray<Arg>& arguments, std::unordered_map<std::string, Flag>& flags)->void {
+		std::string s1 = arguments.GetFront().value.str;
+		std::string s2 = flags.find("i") == flags.end() ? "no set" : "set";
+		std::string s3 = "no set";
+		auto it = flags.find("l");
+		if (it != flags.end())
+			s3 = "set with a value of " + std::to_string(it->second.arg.value.i);
+		LOG_INFO("Command Called with argument '%s' and flag i was %s and flag l was %s.", s1.c_str(), s2.c_str(), s3.c_str());
+	});
 
 	return;
 }

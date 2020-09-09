@@ -20,7 +20,7 @@ namespace LambdaEngine
 
 	struct LAMBDA_API Flag
 	{
-		Arg value;
+		Arg arg;
 		std::string name;
 	};
 
@@ -31,18 +31,18 @@ namespace LambdaEngine
 		~ConsoleCommand() = default;
 
 		void Init(std::string name, bool isDebug);
-		void AddArg(Arg& arg);
-		void AddFlag(Flag& flag);
+		void AddArg(Arg::EType type);
+		void AddFlag(const std::string& name, Arg::EType type);
 
 		std::string GetName() const;
 		bool IsDebug() const;
-		const TArray<Arg>& GetArguments() const;
-		const TArray<Flag>& GetFlags() const;
+		TArray<Arg>& GetArguments();
+		std::unordered_map<std::string, Flag>& GetFlags();
 
 	private:
 		std::string m_Name;
 		bool m_IsDebug;
 		TArray<Arg> m_Arguments;
-		TArray<Flag> m_Flags;
+		std::unordered_map<std::string, Flag> m_Flags;
 	};
 }

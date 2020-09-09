@@ -19,7 +19,7 @@ namespace LambdaEngine
 
 		void Render();
 		
-		void BindCommand(ConsoleCommand cmd, std::function<void(TArray<Arg>& arguments)> callback);
+		void BindCommand(ConsoleCommand cmd, std::function<void(TArray<Arg>& arguments, std::unordered_map<std::string, Flag>& flags)> callback);
 
 		static GameConsole& Get();
 
@@ -35,10 +35,16 @@ namespace LambdaEngine
 
 		int ExecCommand(std::string& data);
 
+		void FillArg(Arg& arg, std::string token);
+
+		bool AddArg(uint32 index, Arg arg, ConsoleCommand& cmd);
+
+		void PushError(const std::string& msg);
+
 	private:
 		TArray<Item> m_Items;
 		bool m_ScrollToBottom;
-		std::unordered_map<std::string, std::pair<ConsoleCommand, std::function<void(TArray<Arg>& arguments)>>> m_CommandMap;
+		std::unordered_map<std::string, std::pair<ConsoleCommand, std::function<void(TArray<Arg>& arguments, std::unordered_map<std::string, Flag>& flags)>>> m_CommandMap;
 	};
 
 	/*

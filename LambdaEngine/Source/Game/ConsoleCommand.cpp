@@ -10,14 +10,19 @@ void LambdaEngine::ConsoleCommand::Init(std::string name, bool isDebug)
 	m_IsDebug = isDebug;
 }
 
-void LambdaEngine::ConsoleCommand::AddArg(Arg& arg)
+void LambdaEngine::ConsoleCommand::AddArg(Arg::EType type)
 {
+	Arg arg;
+	arg.type = type;
 	m_Arguments.PushBack(arg);
 }
 
-void LambdaEngine::ConsoleCommand::AddFlag(Flag& flag)
+void LambdaEngine::ConsoleCommand::AddFlag(const std::string& name, Arg::EType type)
 {
-	m_Flags.PushBack(flag);
+	Flag flag;
+	flag.name = name;
+	flag.arg.type = type;
+	m_Flags[name] = flag;
 }
 
 std::string LambdaEngine::ConsoleCommand::GetName() const
@@ -30,12 +35,12 @@ bool LambdaEngine::ConsoleCommand::IsDebug() const
 	return m_IsDebug;
 }
 
-const LambdaEngine::TArray<LambdaEngine::Arg>& LambdaEngine::ConsoleCommand::GetArguments() const
+LambdaEngine::TArray<LambdaEngine::Arg>& LambdaEngine::ConsoleCommand::GetArguments()
 {
 	return m_Arguments;
 }
 
-const LambdaEngine::TArray<LambdaEngine::Flag>& LambdaEngine::ConsoleCommand::GetFlags() const
+std::unordered_map<std::string, LambdaEngine::Flag>& LambdaEngine::ConsoleCommand::GetFlags()
 {
 	return m_Flags;
 }
