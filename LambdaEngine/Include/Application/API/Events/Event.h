@@ -29,13 +29,13 @@ namespace LambdaEngine
 	*/
 #define DECLARE_EVENT_TYPE(Type) \
 	public: \
-		inline static constexpr uint32 GetStaticType() \
+		inline static constexpr uint64 GetStaticType() \
 		{ \
-			constexpr uint32 TYPE_HASH = HashString(#Type); \
+			constexpr uint64 TYPE_HASH = HashString(#Type); \
 			return TYPE_HASH; \
 		} \
 	public: \
-		virtual uint32 GetType() const override \
+		virtual uint64 GetType() const override \
 		{ \
 			return GetStaticType(); \
 		} \
@@ -57,7 +57,7 @@ namespace LambdaEngine
 		}
 
 		virtual String ToString() const = 0;
-		virtual uint32 GetType() const = 0;
+		virtual uint64 GetType() const = 0;
 		virtual const char* GetName() const = 0;
 
 		FORCEINLINE bool HasEventFlags(FEventFlags flags) const
@@ -70,7 +70,7 @@ namespace LambdaEngine
 		bool IsConsumed;
 
 	public:
-		FORCEINLINE static constexpr uint32 GetStaticType()
+		FORCEINLINE static constexpr uint64 GetStaticType()
 		{
 			return 0;
 		}
