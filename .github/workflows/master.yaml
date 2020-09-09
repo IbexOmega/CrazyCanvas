@@ -16,6 +16,7 @@ jobs:
       - name: Read LFS Cache
         run: cp -r -Force ../../.git/lfs .git/
 
+      # Fetches changes and replaces LFS pointers with their actual contents
       - name: Pull From LFS
         run: git lfs pull
 
@@ -33,7 +34,7 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.1
 
-      - name: Build Production x64
+      - name: Build CrazyCanvas Production
         run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Production x64_StaticLib" -p:Platform=x64
 
       - name: Benchmark

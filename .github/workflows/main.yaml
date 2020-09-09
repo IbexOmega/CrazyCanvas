@@ -13,13 +13,14 @@ jobs:
       - name: Read LFS Cache
         run: cp -r -Force ../../.git/lfs .git/
 
+      # Fetches changes and replaces LFS pointers with their actual contents
       - name: Pull From LFS
         run: git lfs pull
 
       - name: Update LFS Cache
         run: cp -r -Force .git/lfs ../../.git/
 
-  Build-Debug-x64:
+  Build-CrazyCanvas-Debug:
     runs-on: [self-hosted, Windows, X64]
     needs: Pre-Build
 
@@ -30,10 +31,10 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.1
 
-      - name: Build Debug x64
+      - name: Build
         run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Debug x64_StaticLib" -p:Platform=x64
 
-  Build-Release-x64:
+  Build-CrazyCanvas-Release:
     runs-on: [self-hosted, Windows, X64]
     needs: Pre-Build
 
@@ -44,7 +45,7 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.1
 
-      - name: Build Release x64
+      - name: Build
         run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
 
   Lint:
