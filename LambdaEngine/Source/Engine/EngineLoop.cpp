@@ -11,6 +11,8 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Engine/EngineConfig.h"
+
 #include "Input/API/Input.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
@@ -27,6 +29,8 @@
 
 #include <assimp/Importer.hpp>
 
+#include "Utilities/RuntimeStats.h"
+
 namespace LambdaEngine
 {
 	/*
@@ -42,18 +46,18 @@ namespace LambdaEngine
 	{
 		Clock fixedClock;
 		Timestamp accumulator = Timestamp(0);
-		
+
 		g_Clock.Reset();
-		
+
 		bool isRunning = true;
 		while (isRunning)
 		{
 			g_Clock.Tick();
-			
+
 			// Update
 			Timestamp delta = g_Clock.GetDeltaTime();
 			isRunning = Tick(delta);
-			
+
 			// Fixed update
 			accumulator += delta;
 			while (accumulator >= g_FixedTimestep)
@@ -68,10 +72,11 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
+		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
 		Input::Tick();
 
 		Thread::Join();
-		
+
 		PlatformNetworkUtils::Tick(delta);
 
 		if (!CommonApplication::Get()->Tick())
@@ -105,18 +110,23 @@ namespace LambdaEngine
 		Malloc::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
 #endif
 
+		if (!EngineConfig::LoadFromFile())
+		{
+			return false;
+		}
+
 		if (!CommonApplication::PreInit())
 		{
 			return false;
 		}
 
 		PlatformTime::PreInit();
-			  
+
 		Random::PreInit();
 
 		return true;
 	}
-	
+
 	bool EngineLoop::Init()
 	{
 		Thread::Init();
@@ -158,7 +168,7 @@ namespace LambdaEngine
 
 		return true;
 	}
-	
+
 	bool EngineLoop::PreRelease()
 	{
 		RenderSystem::GetGraphicsQueue()->Flush();
@@ -199,13 +209,13 @@ namespace LambdaEngine
 
 		return true;
 	}
-	
+
 	bool EngineLoop::PostRelease()
 	{
 		Thread::Release();
-		
+
 		PlatformNetworkUtils::Release();
-		
+
 		if (!CommonApplication::PostRelease())
 		{
 			return false;

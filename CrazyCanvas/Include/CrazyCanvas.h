@@ -41,6 +41,8 @@ public:
 private:
 	bool LoadRendererResources();
 
+	static void PrintBenchmarkResults();
+
 private:
 	CameraTrack m_CameraTrack;
 

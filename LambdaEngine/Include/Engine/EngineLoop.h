@@ -9,7 +9,7 @@ namespace LambdaEngine
 {
 	/*
 	* This class controls the game-loop and makes sure that all engine
-	* submodules gets runned atleast once per frame
+	* submodules run at least once per frame
 	*/
 	class LAMBDA_API EngineLoop
 	{
@@ -56,7 +56,7 @@ namespace LambdaEngine
 
 		static Timestamp GetDeltaTime();
 		static Timestamp GetTimeSinceStart();
-		
+
 	private:
 		/*
 		* Engine tick, advances the whole engine one frame. Should only be called from run
@@ -65,11 +65,11 @@ namespace LambdaEngine
 		*/
 		static bool Tick(Timestamp delta);
 		
-		/*
-		* Fixed engine tick, advances the whole engine one frame at a fixed framerate (Current every 16ms).
-		* Should only be called from run
-		*	delta - The time between this frame and the last frame
-		*/
-		static void FixedTick(Timestamp delta);
+        /*
+        * Fixed engine tick, advances the whole engine one frame at a fixed framerate (Current every 16ms).
+        * Should only be called from run
+        *	delta - The time between this frame and the last frame
+        */
+        static void FixedTick(Timestamp delta);
 	};
 }
