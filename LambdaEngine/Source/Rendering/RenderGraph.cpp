@@ -43,7 +43,7 @@ namespace LambdaEngine
 	constexpr const uint32 SAME_QUEUE_BUFFER_SYNCHRONIZATION_INDEX			= 0;
 	constexpr const uint32 OTHER_QUEUE_BUFFER_SYNCHRONIZATION_INDEX			= 1;
 
-	RenderGraph::RenderGraph(const GraphicsDevice* pGraphicsDevice) 
+	RenderGraph::RenderGraph(const GraphicsDevice* pGraphicsDevice)
 		: m_pGraphicsDevice(pGraphicsDevice)
 	{
 		CommonApplication::Get()->AddEventHandler(this);
@@ -138,7 +138,7 @@ namespace LambdaEngine
 					if (pRenderStage->ppBufferDescriptorSets != nullptr)
 						SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
 				}
-				
+
 				SAFEDELETE_ARRAY(pRenderStage->ppTextureDescriptorSets);
 				SAFEDELETE_ARRAY(pRenderStage->ppBufferDescriptorSets);
 				SAFERELEASE(pRenderStage->pPipelineLayout);
@@ -190,7 +190,7 @@ namespace LambdaEngine
 		}
 
 		if (!CreateResources(pDesc->pRenderGraphStructureDesc->ResourceDescriptions))
-		{ 
+		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Resources", pDesc->Name.c_str());
 			return false;
 		}
@@ -312,16 +312,16 @@ namespace LambdaEngine
 
 	void RenderGraph::Update()
 	{
-		TArray<DescriptorSet*>& descriptorSetsToDestroy = m_pDescriptorSetsToDestroy[m_ModFrameIndex];
+		TArray<DescriptorSet*>& currentFrameDescriptorSetsToDestroy = m_pDescriptorSetsToDestroy[m_ModFrameIndex];
 
-		if (!descriptorSetsToDestroy.IsEmpty())
+		if (!currentFrameDescriptorSetsToDestroy.IsEmpty())
 		{
-			for (DescriptorSet* pDescriptorSet : descriptorSetsToDestroy)
+			for (DescriptorSet* pDescriptorSet : currentFrameDescriptorSetsToDestroy)
 			{
 				SAFERELEASE(pDescriptorSet);
 			}
 
-			descriptorSetsToDestroy.Clear();
+			currentFrameDescriptorSetsToDestroy.Clear();
 		}
 
 		if (m_DirtyInternalResources.size() > 0)
@@ -334,7 +334,7 @@ namespace LambdaEngine
 			m_DirtyInternalResources.clear();
 		}
 
-		if (m_DirtyDescriptorSetBuffers.size()					> 0 || 
+		if (m_DirtyDescriptorSetBuffers.size()					> 0 ||
 			m_DirtyDescriptorSetAccelerationStructures.size()	> 0)
 		{
 			//Copy old descriptor set and replace old with copy, then write into the new copy
@@ -349,7 +349,7 @@ namespace LambdaEngine
 						DescriptorSet* pSrcDescriptorSet	= pRenderStage->ppBufferDescriptorSets[b];
 						DescriptorSet* pDescriptorSet		= m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
 						m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
-						m_pDescriptorSetsToDestroy[b].PushBack(pSrcDescriptorSet);						
+						m_pDescriptorSetsToDestroy[b].PushBack(pSrcDescriptorSet);
 						pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
 					}
 				}
@@ -583,9 +583,9 @@ namespace LambdaEngine
 						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 						switch (stateType)
 						{
-						case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		pCustomRenderer->Render(pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],m_ModFrameIndex, m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
-						case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],	m_ModFrameIndex, m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
-						case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],	m_ModFrameIndex, m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
+						case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		pCustomRenderer->Render(pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],	uint32(m_ModFrameIndex), m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
+						case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		uint32(m_ModFrameIndex), m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
+						case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	pCustomRenderer->Render(pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		uint32(m_ModFrameIndex), m_BackBufferIndex, &m_ppExecutionStages[currentExecutionStage]); break;
 						}
 					}
 					else
@@ -784,6 +784,8 @@ namespace LambdaEngine
 
 	void RenderGraph::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)
 	{
+		UNREFERENCED_VARIABLE(type);
+
 		m_WindowWidth	= (float32)width;
 		m_WindowHeight	= (float32)height;
 
@@ -921,7 +923,7 @@ namespace LambdaEngine
 			{
 				pResource->SubResourceCount = pResourceDesc->SubResourceCount;
 			}
-					
+
 			if (!pResourceDesc->External)
 			{
 				//Internal
@@ -950,8 +952,8 @@ namespace LambdaEngine
 						textureDesc.Format				= pResourceDesc->TextureParams.TextureFormat;
 						textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
 						textureDesc.Flags				= pResourceDesc->TextureParams.TextureFlags;
-						textureDesc.Width				= pResourceDesc->TextureParams.XDimVariable;
-						textureDesc.Height				= pResourceDesc->TextureParams.YDimVariable;
+						textureDesc.Width				= uint32(pResourceDesc->TextureParams.XDimVariable);
+						textureDesc.Height				= uint32(pResourceDesc->TextureParams.YDimVariable);
 						textureDesc.Depth				= 1;
 						textureDesc.ArrayCount			= arrayCount;
 						textureDesc.Miplevels			= pResourceDesc->TextureParams.MiplevelCount;
@@ -1010,7 +1012,7 @@ namespace LambdaEngine
 					pResource->Buffer.SizesInBytes.Resize(pResource->SubResourceCount);
 
 					BufferDesc bufferDesc = {};
-					//bufferDesc.pName		
+					//bufferDesc.pName
 					bufferDesc.MemoryType		= pResourceDesc->MemoryType;
 					bufferDesc.Flags			= pResourceDesc->BufferParams.BufferFlags;
 					bufferDesc.SizeInBytes		= pResourceDesc->BufferParams.Size;
@@ -1059,7 +1061,7 @@ namespace LambdaEngine
 					pResource->Buffer.SizesInBytes.Resize(pResource->SubResourceCount);
 				}
 				else if (pResourceDesc->Type == ERenderGraphResourceType::ACCELERATION_STRUCTURE)
-				{ 
+				{
 					pResource->Type				= ERenderGraphResourceType::ACCELERATION_STRUCTURE;
 					pResource->OwnershipType	= EResourceOwnershipType::EXTERNAL;
 				}
@@ -1101,17 +1103,17 @@ namespace LambdaEngine
 
 			if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::CONSTANT)
 			{
-				pRenderStage->Dimensions.x = pRenderStageDesc->Parameters.XDimVariable;
+				pRenderStage->Dimensions.x = uint32(pRenderStageDesc->Parameters.XDimVariable);
 			}
 
 			if (pRenderStage->Parameters.YDimType == ERenderGraphDimensionType::CONSTANT)
 			{
-				pRenderStage->Dimensions.y = pRenderStageDesc->Parameters.YDimVariable;
+				pRenderStage->Dimensions.y = uint32(pRenderStageDesc->Parameters.YDimVariable);
 			}
 
 			if (pRenderStage->Parameters.ZDimType == ERenderGraphDimensionType::CONSTANT)
 			{
-				pRenderStage->Dimensions.z = pRenderStageDesc->Parameters.ZDimVariable;
+				pRenderStage->Dimensions.z = uint32(pRenderStageDesc->Parameters.ZDimVariable);
 			}
 
 			pRenderStage->Dimensions.x = glm::max<uint32>(1, pRenderStage->Dimensions.x);
@@ -1146,7 +1148,7 @@ namespace LambdaEngine
 					if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::COMBINED_SAMPLER)
 					{
 						//Samplers which are of array type only take up one slot, same for back buffer bound resources
-						uint32 actualResourceSubResourceCount = (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount; 
+						uint32 actualResourceSubResourceCount = (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount;
 
 						if (textureSubResourceCount > 0 && actualResourceSubResourceCount != textureSubResourceCount)
 							textureSubResourceCountSame = false;
@@ -1468,7 +1470,7 @@ namespace LambdaEngine
 						renderPassSubpassDependencyDesc.SrcStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 						renderPassSubpassDependencyDesc.DstStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
-						if (renderPassDepthStencilDescription.Format != EFormat::FORMAT_NONE) 
+						if (renderPassDepthStencilDescription.Format != EFormat::FORMAT_NONE)
 							renderPassAttachmentDescriptions.PushBack(renderPassDepthStencilDescription);
 
 						RenderPassDesc renderPassDesc = {};
@@ -1645,8 +1647,6 @@ namespace LambdaEngine
 	{
 		m_pSynchronizationStages = DBG_NEW SynchronizationStage[synchronizationStageDescriptions.GetSize()];
 
-		bool firstTimeEnvounteringBackBuffer = false;
-
 		for (uint32 s = 0; s < synchronizationStageDescriptions.GetSize(); s++)
 		{
 			const SynchronizationStageDesc* pSynchronizationStageDesc = &synchronizationStageDescriptions[s];
@@ -1822,7 +1822,7 @@ namespace LambdaEngine
 			pPipelineStage->ppComputeCommandAllocators		= DBG_NEW CommandAllocator*[m_BackBufferCount];
 			pPipelineStage->ppGraphicsCommandLists			= DBG_NEW CommandList*[m_BackBufferCount];
 			pPipelineStage->ppComputeCommandLists			= DBG_NEW CommandList*[m_BackBufferCount];
-			
+
 			for (uint32 f = 0; f < m_BackBufferCount; f++)
 			{
 				pPipelineStage->ppGraphicsCommandAllocators[f]	= m_pGraphicsDevice->CreateCommandAllocator("Render Graph Graphics Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
@@ -1876,7 +1876,7 @@ namespace LambdaEngine
 
 			switch (desc.Type)
 			{
-				case ERenderGraphResourceType::TEXTURE:					
+				case ERenderGraphResourceType::TEXTURE:
 				{
 					resourceUpdateDesc.InternalTextureUpdate.pTextureDesc		= &desc.TextureUpdate.TextureDesc;
 					resourceUpdateDesc.InternalTextureUpdate.pTextureViewDesc	= &desc.TextureUpdate.TextureViewDesc;
@@ -1884,7 +1884,7 @@ namespace LambdaEngine
 					UpdateResourceTexture(pResource, resourceUpdateDesc);
 					break;
 				}
-				case ERenderGraphResourceType::BUFFER:					
+				case ERenderGraphResourceType::BUFFER:
 				{
 					resourceUpdateDesc.InternalBufferUpdate.pBufferDesc			= &desc.BufferUpdate.BufferDesc;
 					UpdateResourceBuffer(pResource, resourceUpdateDesc);
@@ -1935,7 +1935,7 @@ namespace LambdaEngine
 			{
 				const TextureDesc* pTextureDesc	= desc.InternalTextureUpdate.pTextureDesc;
 				TextureViewDesc textureViewDesc = *desc.InternalTextureUpdate.pTextureViewDesc; //Make a copy so we can change TextureViewDesc::pTexture
-				
+
 				SAFERELEASE(*ppTexture);
 				SAFERELEASE(*ppTextureView);
 
@@ -2032,7 +2032,7 @@ namespace LambdaEngine
 						if (!m_ExecuteGraphicsCopy)
 						{
 							m_ExecuteGraphicsCopy = true;
-								
+
 							m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
 							pCommandList->Begin(nullptr);
 						}
@@ -2169,10 +2169,10 @@ namespace LambdaEngine
 	}
 
 	void RenderGraph::ExecuteSynchronizationStage(
-		SynchronizationStage*	pSynchronizationStage, 
-		CommandAllocator*		pGraphicsCommandAllocator, 
-		CommandList*			pGraphicsCommandList, 
-		CommandAllocator*		pComputeCommandAllocator, 
+		SynchronizationStage*	pSynchronizationStage,
+		CommandAllocator*		pGraphicsCommandAllocator,
+		CommandList*			pGraphicsCommandList,
+		CommandAllocator*		pComputeCommandAllocator,
 		CommandList*			pComputeCommandList,
 		CommandList**			ppFirstExecutionStage,
 		CommandList**			ppSecondExecutionStage)
@@ -2255,10 +2255,10 @@ namespace LambdaEngine
 	}
 
 	void RenderGraph::ExecuteGraphicsRenderStage(
-		RenderStage*		pRenderStage, 
+		RenderStage*		pRenderStage,
 		PipelineState*		pPipelineState,
-		CommandAllocator*	pGraphicsCommandAllocator, 
-		CommandList*		pGraphicsCommandList, 
+		CommandAllocator*	pGraphicsCommandAllocator,
+		CommandList*		pGraphicsCommandList,
 		CommandList**		ppExecutionStage)
 	{
 		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
@@ -2275,7 +2275,7 @@ namespace LambdaEngine
 		TextureView* ppTextureViews[MAX_COLOR_ATTACHMENTS];
 		TextureView* pDepthStencilTextureView = nullptr;
 		ClearColorDesc clearColorDescriptions[MAX_COLOR_ATTACHMENTS + 1];
-		
+
 		uint32 textureViewCount = 0;
 		uint32 clearColorCount = 0;
 		for (Resource* pResource : pRenderStage->RenderTargetResources)
@@ -2300,7 +2300,7 @@ namespace LambdaEngine
 
 			clearColorCount++;
 		}
-		
+
 		BeginRenderPassDesc beginRenderPassDesc = { };
 		beginRenderPassDesc.pRenderPass			= pRenderStage->pRenderPass;
 		beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
@@ -2390,7 +2390,7 @@ namespace LambdaEngine
 	}
 
 	void RenderGraph::ExecuteComputeRenderStage(
-		RenderStage*		pRenderStage, 
+		RenderStage*		pRenderStage,
 		PipelineState*		pPipelineState,
 		CommandAllocator*	pComputeCommandAllocator,
 		CommandList*		pComputeCommandList,
@@ -2425,7 +2425,7 @@ namespace LambdaEngine
 	}
 
 	void RenderGraph::ExecuteRayTracingRenderStage(
-		RenderStage*		pRenderStage, 
+		RenderStage*		pRenderStage,
 		PipelineState*		pPipelineState,
 		CommandAllocator*	pComputeCommandAllocator,
 		CommandList*		pComputeCommandList,

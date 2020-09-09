@@ -31,6 +31,8 @@
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Engine/EngineConfig.h"
+
 #include "Game/Scene.h"
 
 #include "Time/API/Clock.h"
@@ -66,7 +68,7 @@ Sandbox::Sandbox()
 
 	ShaderReflection shaderReflection;
 	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
-	
+
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
@@ -74,7 +76,7 @@ Sandbox::Sandbox()
 
 	SceneDesc sceneDesc = { };
 	sceneDesc.Name				= "Test Scene";
-	sceneDesc.RayTracingEnabled = deviceFeatures.RayTracing;
+	sceneDesc.RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
 	m_pScene->Init(sceneDesc);
 
 	m_DirectionalLightAngle	= glm::half_pi<float>();
@@ -322,7 +324,6 @@ Sandbox::Sandbox()
 Sandbox::~Sandbox()
 {
 	LambdaEngine::CommonApplication::Get()->RemoveEventHandler(this);
-	
 	SAFEDELETE(m_pScene);
 	SAFEDELETE(m_pCamera);
 
@@ -332,16 +333,16 @@ Sandbox::~Sandbox()
 void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	UNREFERENCED_VARIABLE(modifierMask);
-	
+
 	using namespace LambdaEngine;
-	
+
 	//LOG_MESSAGE("Key Pressed: %s, isRepeat=%s", KeyToString(key), isRepeat ? "true" : "false");
 
 	if (isRepeat)
 	{
 		return;
 	}
-	
+
 	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
 	if (key == EKey::KEY_ESCAPE)
 	{
@@ -378,7 +379,7 @@ void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isR
 	{
 		mainWindow->SetPosition(0, 0);
 	}
-	
+
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
 
