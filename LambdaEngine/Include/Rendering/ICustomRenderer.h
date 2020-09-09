@@ -74,17 +74,6 @@ namespace LambdaEngine
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)	= 0;
 
 		/*
-		* Called when beginning a new frame to allow for initial setup
-		*	delta - The frame deltatime
-		*/
-		virtual void NewFrame(Timestamp delta)		= 0;
-		/*
-		* Called when just before rendering the frame to allow for final setup
-		*	delta - The frame deltatime
-		*/
-		virtual void PrepareRender(Timestamp delta)		= 0;
-
-		/*
 		* Called at rendertime to allow recording device commands
 		*	pGraphicsCommandAllocator - The graphics command allocator to be reset
 		*	pGraphicsCommandList - The graphics command list corresponding to pCommandAllocator and which to record device commands to
@@ -110,6 +99,8 @@ namespace LambdaEngine
 
 		virtual FPipelineStageFlags GetFirstPipelineStage()	= 0;
 		virtual FPipelineStageFlags GetLastPipelineStage()	= 0;
+
+		virtual const String& GetName() const = 0;
 	};
 }
 

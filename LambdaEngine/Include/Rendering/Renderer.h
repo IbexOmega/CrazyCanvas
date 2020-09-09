@@ -39,8 +39,6 @@ namespace LambdaEngine
 		static void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
 		static void SetScene(Scene* pScene);
 
-		static void NewFrame(Timestamp delta);
-		static void PrepareRender(Timestamp delta);
 		static void Render();
 
 		static CommandList* AcquireGraphicsCopyCommandList();

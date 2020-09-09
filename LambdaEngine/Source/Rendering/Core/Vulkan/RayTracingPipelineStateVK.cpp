@@ -36,12 +36,19 @@ namespace LambdaEngine
 		m_HitBufferRegion		= {};
 		m_MissBufferRegion		= {};
 		m_CallableBufferRegion	= {};
+
+		SAFERELEASE(m_pAllocator);
 	}
 
 	bool RayTracingPipelineStateVK::Init(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc)
 	{
 		VALIDATE(pDesc != nullptr);
 		
+		DeviceAllocatorDesc allocatorDesc = {};
+		allocatorDesc.DebugName			= "Ray Tracing Pipeline Allocator";
+		allocatorDesc.PageSizeInBytes	= MEGA_BYTE(64);
+		m_pAllocator = RenderSystem::GetDevice()->CreateDeviceAllocator(&allocatorDesc);
+
 		if (pDesc->RaygenShader.pShader == nullptr)
 		{
 			LOG_ERROR("[RayTracingPipelineStateVK]: pRaygenShader cannot be nullptr!");
@@ -170,7 +177,7 @@ namespace LambdaEngine
 		shaderHandleStorageDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		shaderHandleStorageDesc.SizeInBytes		= shaderHandleStorageSize;
 
-		m_ShaderHandleStorageBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&shaderHandleStorageDesc, nullptr));
+		m_ShaderHandleStorageBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&shaderHandleStorageDesc, m_pAllocator));
 
 		void* pMapped = m_ShaderHandleStorageBuffer->Map();
 		result = m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, static_cast<uint32>(shaderGroups.GetSize()), shaderHandleStorageSize, pMapped);
@@ -204,7 +211,7 @@ namespace LambdaEngine
 		sbtDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		sbtDesc.SizeInBytes	= sbtSize;
 
-		m_SBT = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&sbtDesc, nullptr));
+		m_SBT = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&sbtDesc, m_pAllocator));
 		pCommandAllocator->Reset();
 
 		pCommandList->Begin(nullptr);

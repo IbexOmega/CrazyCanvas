@@ -487,10 +487,8 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void Scene::PrepareRender(CommandList* pGraphicsCommandList, CommandList* pComputeCommandList, uint64 frameIndex, Timestamp delta)
+	void Scene::PrepareRender(CommandList* pGraphicsCommandList, CommandList* pComputeCommandList, uint64 frameIndex)
 	{
-		UNREFERENCED_VARIABLE(delta);
-
 		for (uint32 instanceIndex : m_DirtySecondaryInstances)
 		{
 			uint32 sortedInstanceIndex = m_InstanceIndexToSortedInstanceIndex[instanceIndex];

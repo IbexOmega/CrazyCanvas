@@ -411,8 +411,6 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-	Renderer::NewFrame(delta);
-
 	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
 	float32 renderWidth = (float32)mainWindow->GetWidth();
 	float32 renderHeight = (float32)mainWindow->GetHeight();
@@ -436,7 +434,6 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 		});
 	}
 
-	Renderer::PrepareRender(delta);
 	Renderer::Render();
 }
 

@@ -264,15 +264,6 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
 
-	void ImGuiRenderer::NewFrame(Timestamp delta)
-	{
-	}
-
-	void ImGuiRenderer::PrepareRender(Timestamp delta)
-	{
-		UNREFERENCED_VARIABLE(delta);
-	}
-
 	void ImGuiRenderer::Render(
 		CommandAllocator* pGraphicsCommandAllocator,
 		CommandList* pGraphicsCommandList,
@@ -483,7 +474,7 @@ namespace LambdaEngine
 
 						pGraphicsCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelMul,			4 * sizeof(float32),	4 * sizeof(float32));
 						pGraphicsCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelAdd,			4 * sizeof(float32),	8 * sizeof(float32));
-						GraphicspCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, &pImGuiTexture->ReservedIncludeMask,	sizeof(uint32),		12 * sizeof(float32));
+						pGraphicsCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, &pImGuiTexture->ReservedIncludeMask,	sizeof(uint32),		12 * sizeof(float32));
 
 						const TArray<TSharedRef<DescriptorSet>>& descriptorSets = textureIt->second;
 						//Todo: Allow other sizes than 1

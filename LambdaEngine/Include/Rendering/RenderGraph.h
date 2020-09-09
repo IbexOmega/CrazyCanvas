@@ -160,13 +160,16 @@ namespace LambdaEngine
 			bool						BackBufferBound		= false;
 			uint32						SubResourceCount	= 0;
 
-			TArray<ResourceBinding>	ResourceBindings;
+			TArray<ResourceBinding>		ResourceBindings;
+			TArray<ResourceBarrierInfo>	BarriersPerSynchronizationStage; //Divided into #SubResourceCount Barriers per Synchronization Stage
+
+			FPipelineStageFlags			LastPipelineStageOfFirstRenderStage = FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			struct
 			{
 				bool								IsOfArrayType	= false;
 				EFormat								Format			= EFormat::FORMAT_NONE;
-				TArray<ResourceBarrierInfo>			BarriersPerSynchronizationStage; //Divided into #SubResourceCount Barriers per Synchronization Stage
+				TArray<PipelineTextureBarrierDesc>	InititalTransitionBarriers;
 				TArray<Texture*>					Textures;
 				TArray<TextureView*>				TextureViews;
 				TArray<Sampler*>					Samplers;
@@ -174,7 +177,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				TArray<ResourceBarrierInfo>			BarriersPerSynchronizationStage;
+				TArray<PipelineBufferBarrierDesc>	InititalTransitionBarriers;
 				TArray<Buffer*>						Buffers;
 				TArray<uint64>						Offsets;
 				TArray<uint64>						SizesInBytes;
@@ -267,10 +270,7 @@ namespace LambdaEngine
 		*/
 		void Update();
 
-		void NewFrame(uint64 modFrameIndex, uint32 backBufferIndex, Timestamp delta);
-		void PrepareRender(Timestamp delta);
-
-		void Render();
+		void Render(uint64 modFrameIndex, uint32 backBufferIndex);
 
 		CommandList* AcquireGraphicsCopyCommandList();
 		CommandList* AcquireComputeCopyCommandList();
@@ -285,6 +285,7 @@ namespace LambdaEngine
 	private:
 		void ReleasePipelineStages();
 
+		bool CreateAllocator();
 		bool CreateFence();
 		bool CreateDescriptorHeap();
 		bool CreateCopyCommandLists();
@@ -316,6 +317,7 @@ namespace LambdaEngine
 
 	private:
 		const GraphicsDevice*							m_pGraphicsDevice;
+		DeviceAllocator*								m_pDeviceAllocator					= nullptr;
 
 		const Scene*									m_pScene							= nullptr;
 

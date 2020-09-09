@@ -322,7 +322,7 @@ namespace LambdaEngine
 			vertices.ShrinkToFit();
 			indices.ShrinkToFit();
 
-			if (pMesh->mMaterialIndex >= 0)
+			if (createMaterials && pMesh->mMaterialIndex >= 0)
 			{
 				auto mat = context.MaterialIndices.find(pMesh->mMaterialIndex);
 				if (mat == context.MaterialIndices.end())
@@ -363,51 +363,47 @@ namespace LambdaEngine
 						pMaterial->Properties.Albedo.a = 1.0f;
 					}
 
-					if (createMaterials)
+					// Albedo
+					pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_BASE_COLOR, 0);
+					if (!pMaterial->pAlbedoMap)
 					{
-						// Albedo
-						Material* pMaterial = DBG_NEW Material();
-						pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_BASE_COLOR, 0);
-						if (!pMaterial->pAlbedoMap)
-						{
-							pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE, 0);
-						}
-
-						// Normal
-						pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_NORMAL_CAMERA, 0);
-						if (!pMaterial->pNormalMap)
-						{
-							pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_NORMALS, 0);
-						}
-						if (!pMaterial->pNormalMap)
-						{
-							pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_HEIGHT, 0);
-						}
-
-						// AO
-						pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_AMBIENT_OCCLUSION, 0);
-						if (!pMaterial->pAmbientOcclusionMap)
-						{
-							pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_AMBIENT, 0);
-						}
-
-						// Metallic
-						pMaterial->pMetallicMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_METALNESS, 0);
-						if (!pMaterial->pMetallicMap)
-						{
-							pMaterial->pMetallicMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_REFLECTION, 0);
-						}
-
-						// Roughness
-						pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE_ROUGHNESS, 0);
-						if (!pMaterial->pRoughnessMap)
-						{
-							pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_SHININESS, 0);
-						}
-
-						context.Materials.EmplaceBack(pMaterial);
-						context.MaterialIndices[pMesh->mMaterialIndex] = context.Materials.GetSize() - 1;
+						pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE, 0);
 					}
+
+					// Normal
+					pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_NORMAL_CAMERA, 0);
+					if (!pMaterial->pNormalMap)
+					{
+						pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_NORMALS, 0);
+					}
+					if (!pMaterial->pNormalMap)
+					{
+						pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_HEIGHT, 0);
+					}
+
+					// AO
+					pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_AMBIENT_OCCLUSION, 0);
+					if (!pMaterial->pAmbientOcclusionMap)
+					{
+						pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_AMBIENT, 0);
+					}
+
+					// Metallic
+					pMaterial->pMetallicMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_METALNESS, 0);
+					if (!pMaterial->pMetallicMap)
+					{
+						pMaterial->pMetallicMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_REFLECTION, 0);
+					}
+
+					// Roughness
+					pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE_ROUGHNESS, 0);
+					if (!pMaterial->pRoughnessMap)
+					{
+						pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_SHININESS, 0);
+					}
+
+					context.Materials.EmplaceBack(pMaterial);
+					context.MaterialIndices[pMesh->mMaterialIndex] = context.Materials.GetSize() - 1;
 				}
 			}
 
