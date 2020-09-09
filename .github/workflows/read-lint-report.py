@@ -6,7 +6,7 @@ SUPPRESSED_REGEXES = [
     "Consider using std::transform",
     "The function '.*' is never used",
     "Class '.*' does not have a .* which is recommended since it has dynamic memory",
-    r"^\(information\)"
+    r"^: \(information\)"
 ]
 
 def isSuppressed(line):
@@ -73,7 +73,6 @@ def getFilesToLint(modifiedFilesPath, addedFilesPath):
     return modifiedFiles + addedFiles
 
 def main(argv):
-    print(os.listdir())
     inputFile = ""
     modifiedFilesPath = ""
     addedFilesPath = ""
