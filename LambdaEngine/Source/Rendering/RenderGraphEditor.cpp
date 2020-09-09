@@ -246,10 +246,10 @@ namespace LambdaEngine
 
 			ImGuiContext& g = *GImGui;
 			ImGuiWindow* window = g.CurrentWindow;
-			
+
 			static ImVec2 childSize0 = resourceViewSize;
 			static ImVec2 childSize1 = ImVec2(contentRegionWidth - resourceViewSize.x, 0.0f);
-			
+
 			ImRect bb;
 			bb.Min = ImVec2(window->DC.CursorPos.x + childSize0.x, window->DC.CursorPos.y);
 			bb.Max = ImVec2(+window->DC.CursorPos.x + childSize0.x + 10.f, window->DC.CursorPos.y + contentRegionHeight);
@@ -649,7 +649,7 @@ namespace LambdaEngine
 			{
 				//ImGui::NextColumn();
 				pSelectedResource = pResource;
-	
+
 				String tooltip;
 
 				String resourceType = RenderGraphResourceTypeToString(pSelectedResource->Type);
@@ -761,7 +761,7 @@ namespace LambdaEngine
 			//Update Resource State Groups and Resource States
 			for (auto resourceStateGroupIt = m_ResourceStateGroups.begin(); resourceStateGroupIt != m_ResourceStateGroups.end(); resourceStateGroupIt++)
 			{
-				EditorResourceStateGroup* pResourceStateGroup = &(*resourceStateGroupIt);		
+				EditorResourceStateGroup* pResourceStateGroup = &(*resourceStateGroupIt);
 				RemoveResourceStateFrom(pRemovedResource->Name, pResourceStateGroup);
 			}
 
@@ -1180,7 +1180,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(textHeight);
 
 		static int32 selectedResourceIndex = -1;
-		
+
 		for (auto fileIt = m_FilesInShaderDirectory.begin(); fileIt != m_FilesInShaderDirectory.end(); fileIt++)
 		{
 			int32 index = std::distance(m_FilesInShaderDirectory.begin(), fileIt);
@@ -1422,7 +1422,7 @@ namespace LambdaEngine
 			imnodes::BeginNode(pRenderStage->NodeIndex);
 
 			String renderStageType = RenderStageTypeToString(pRenderStage->Type);
-			
+
 			imnodes::BeginNodeTitleBar();
 			ImGui::Text("%s : [%s]", pRenderStage->Name.c_str(), renderStageType.c_str());
 			ImGui::SameLine();
@@ -1584,7 +1584,7 @@ namespace LambdaEngine
 				ImGui::EndDragDropTarget();
 			}
 
-			//If Graphics, Render Draw Type and Render Pass options 
+			//If Graphics, Render Draw Type and Render Pass options
 			if (pRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 			{
 				if (hasDepthAttachment)
@@ -1652,7 +1652,7 @@ namespace LambdaEngine
 						imnodes::EndInputAttribute();
 						PopPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, -1);
 					}
-					
+
 					//Indirect Args Buffer
 					{
 						EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2];
@@ -1772,7 +1772,7 @@ namespace LambdaEngine
 		}
 
 		int32 linkStartAttributeID		= -1;
-		
+
 		if (imnodes::IsLinkStarted(&linkStartAttributeID))
 		{
 			m_StartedLinkInfo.LinkStarted				= true;
@@ -2188,7 +2188,7 @@ namespace LambdaEngine
 			for (auto fileIt = filesInDirectory.begin(); fileIt != filesInDirectory.end(); fileIt++)
 			{
 				const String& filename = *fileIt;
-				
+
 				if (filename.find(".lrg") != String::npos)
 				{
 					renderGraphFilesInDirectory.PushBack(filename.c_str());
@@ -2451,7 +2451,7 @@ namespace LambdaEngine
 				ImGui::Button(pRenderStage->Graphics.Shaders.TaskShaderName.empty() ? "Task Shader" : pRenderStage->Graphics.Shaders.TaskShaderName.c_str());
 				RenderShaderBoxCommon(&pRenderStage->Graphics.Shaders.TaskShaderName);
 				ImGui::PopID();
-				
+
 				ImGui::PushID("##Mesh Shader ID");
 				ImGui::Button(pRenderStage->Graphics.Shaders.MeshShaderName.empty() ? "Mesh Shader" : pRenderStage->Graphics.Shaders.MeshShaderName.c_str());
 				RenderShaderBoxCommon(&pRenderStage->Graphics.Shaders.MeshShaderName);
@@ -2465,7 +2465,7 @@ namespace LambdaEngine
 				ImGui::Button(pRenderStage->Graphics.Shaders.VertexShaderName.empty() ? "Vertex Shader" : pRenderStage->Graphics.Shaders.VertexShaderName.c_str());
 				RenderShaderBoxCommon(&pRenderStage->Graphics.Shaders.VertexShaderName);
 				ImGui::PopID();
-				
+
 				ImGui::PushID("##Geometry Shader ID");
 				ImGui::Button(pRenderStage->Graphics.Shaders.GeometryShaderName.empty() ? "Geometry Shader" : pRenderStage->Graphics.Shaders.GeometryShaderName.c_str());
 				RenderShaderBoxCommon(&pRenderStage->Graphics.Shaders.GeometryShaderName);
@@ -2512,7 +2512,7 @@ namespace LambdaEngine
 				RenderShaderBoxCommon(&(pRenderStage->RayTracing.Shaders.pMissShaderNames[m]), &added, &removed);
 				ImGui::PopID();
 
-				if (added) 
+				if (added)
 					pRenderStage->RayTracing.Shaders.MissShaderCount++;
 
 				if (removed)
@@ -2640,12 +2640,12 @@ namespace LambdaEngine
 	{
 		int32 src = *pSrcAttributeIndex;
 		int32 dst = *pDstAttributeIndex;
-		
+
 		if (src % 2 == 1 && dst % 2 == 0)
 		{
 			if (dst + 1 == src)
 				return false;
-			
+
 			return true;
 		}
 		else if (src % 2 == 0 && dst % 2 == 1)
@@ -2813,7 +2813,7 @@ namespace LambdaEngine
 
 					bindingTypes.PushBack(ERenderGraphResourceBindingType::COMBINED_SAMPLER);
 					bindingTypeNames.PushBack("COMBINED SAMPLER");
-					
+
 					bindingTypes.PushBack(ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ);
 					bindingTypeNames.PushBack("UNORDERED ACCESS R");
 

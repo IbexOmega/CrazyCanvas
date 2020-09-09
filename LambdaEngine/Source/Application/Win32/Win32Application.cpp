@@ -130,18 +130,27 @@ namespace LambdaEngine
 		}
 	}
 
-	void Win32Application::SetMousePosition(int x, int y)
+	void Win32Application::SetMousePosition(int32 x, int32 y)
 	{
-		// Sets mouse position relative to the window
+		// Sets mouse position relative to the active window, if there are no active window this function does nothing
 		TSharedRef<Window> window = GetActiveWindow();
-		POINT point = {};
-		point.x = x;
-		point.y = y;
-		ClientToScreen((HWND)window->GetHandle(), &point);
-		BOOL bResult = SetCursorPos(point.x, point.y);
-		if (!bResult)
+		if (window)
 		{
-			LOG_ERROR("[Win32Application]: Failed to set mouse position!");
+			HWND hWnd = static_cast<HWND>(window->GetHandle());
+			if (::IsWindow(hWnd))
+			{
+				POINT point = { };
+				point.x = x;
+				point.y = y;
+
+				ClientToScreen(hWnd, &point);
+				
+				BOOL bResult = SetCursorPos(point.x, point.y);
+				if (!bResult)
+				{
+					LOG_ERROR("[Win32Application]: Failed to set mouse position!");
+				}
+			}
 		}
 	}
 
@@ -444,7 +453,6 @@ namespace LambdaEngine
 		::HWND hForegroundWindow = ::GetActiveWindow();
 		if (hForegroundWindow)
 		{
-			constexpr bool b = std::is_convertible<Win32Window*, Window*>::value;
 			return GetWindowFromHandle(hForegroundWindow);
 		}
 		else

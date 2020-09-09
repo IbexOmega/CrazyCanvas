@@ -327,7 +327,9 @@ namespace LambdaEngine
 				auto mat = context.MaterialIndices.find(pMesh->mMaterialIndex);
 				if (mat == context.MaterialIndices.end())
 				{
-					aiMaterial* pAiMaterial = pScene->mMaterials[pMesh->mMaterialIndex];
+					Material*	pMaterial	= DBG_NEW Material();
+					aiMaterial* pAiMaterial	= pScene->mMaterials[pMesh->mMaterialIndex];
+#if 0
 					for (uint32 t = 0; t < aiTextureType_UNKNOWN; t++)
 					{
 						uint32 count = pAiMaterial->GetTextureCount(aiTextureType(t));
@@ -342,6 +344,23 @@ namespace LambdaEngine
 								LOG_WARNING("#%d path=%s", m, str.C_Str());
 							}
 						}
+					}
+#endif
+					// Albedo
+					aiColor4D diffuse;
+					if (aiGetMaterialColor(pAiMaterial, AI_MATKEY_COLOR_DIFFUSE, &diffuse) == AI_SUCCESS)
+					{
+						pMaterial->Properties.Albedo.r = diffuse.r;
+						pMaterial->Properties.Albedo.g = diffuse.g;
+						pMaterial->Properties.Albedo.b = diffuse.b;
+						pMaterial->Properties.Albedo.a = diffuse.a;
+					}
+					else
+					{
+						pMaterial->Properties.Albedo.r = 1.0f;
+						pMaterial->Properties.Albedo.g = 1.0f;
+						pMaterial->Properties.Albedo.b = 1.0f;
+						pMaterial->Properties.Albedo.a = 1.0f;
 					}
 
 					if (createMaterials)
@@ -422,9 +441,8 @@ namespace LambdaEngine
 
 		int32 assimpFlags =
 			aiProcess_FlipUVs					|
-			aiProcess_FixInfacingNormals		|
 			aiProcess_CalcTangentSpace			| 
-			aiProcess_FindInstances				|
+			aiProcess_FindInstances				| 
 			aiProcess_GenSmoothNormals			| 
 			aiProcess_JoinIdenticalVertices		| 
 			aiProcess_ImproveCacheLocality		| 
@@ -464,7 +482,6 @@ namespace LambdaEngine
 	{
 		int32 assimpFlags =
 			aiProcess_FlipUVs					|
-			aiProcess_FixInfacingNormals		|
 			aiProcess_CalcTangentSpace			|
 			aiProcess_FindInstances				|
 			aiProcess_GenSmoothNormals			|
