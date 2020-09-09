@@ -8,32 +8,27 @@
 *.h     text eol=crlf
 *.h++   text eol=crlf
 *.hh    text eol=crlf
-
 # Compiled Object files
 *.slo   binary
 *.lo    binary
 *.o     binary
 *.obj   binary
-
 # Precompiled Headers
 *.gch   binary
 *.pch   binary
-
 # Compiled Dynamic libraries
 *.so    binary
 *.dylib binary
 *.dll   binary
-
 # Compiled Static libraries
 *.lai   binary
 *.la    binary
 *.a     binary
-*.lib   binary
-
+*.lib filter=lfs diff=lfs merge=lfs -text
 # Executables
 *.exe   binary
 *.out   binary
 *.app   binary
-
 # Exclude vendored files from language statistics
 Dependencies/* linguist-vendored
+*.exp filter=lfs diff=lfs merge=lfs -text
