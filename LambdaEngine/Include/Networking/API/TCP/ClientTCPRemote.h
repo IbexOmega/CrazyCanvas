@@ -1,18 +1,21 @@
 #pragma once
 
 #include "Networking/API/NetWorker.h"
-#include "Networking/API/IClient.h"
+#include "Networking/API/ClientRemoteBase.h"
 #include "Networking/API/IPacketListener.h"
-#include "Networking/API/PacketManagerTCP.h"
+
+#include "Networking/API/TCP/PacketManagerTCP.h"
+#include "Networking/API/TCP/PacketTransceiverTCP.h"
 
 namespace LambdaEngine
 {
 	class ServerTCP;
+	class ISocketTCP;
 	class IClientRemoteHandler;
 	class PacketTransceiverUDP;
 
 	class LAMBDA_API ClientTCPRemote : 
-		public IClient,
+		public ClientRemoteBase,
 		protected IPacketListener
 	{
 		friend class ServerTCP;
@@ -29,30 +32,30 @@ namespace LambdaEngine
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
 		virtual const NetworkStatistics* GetStatistics() const override;
+		virtual PacketManagerBase* GetPacketManager() override;
 
 	protected:
-		ClientTCPRemote(uint16 packetPoolSize, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerTCP* pServer);
-
-		virtual PacketManagerBase* GetPacketManager() override;
+		ClientTCPRemote(uint16 packetPoolSize, ISocketTCP* pSocket, ServerTCP* pServer);
 
 		virtual void OnPacketDelivered(NetworkSegment* pPacket) override;
 		virtual void OnPacketResent(NetworkSegment* pPacket, uint8 tries) override;
 		virtual void OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries) override;
+		virtual void Tick(Timestamp delta) override;
 
 	private:
-		void OnDataReceived(PacketTransceiverUDP* pTransciver);
-		void SendPackets(PacketTransceiverUDP* pTransciver);
+		void OnDataReceived(PacketTransceiverBase* pTransciver);
+		void SendPackets();
 		bool HandleReceivedPacket(NetworkSegment* pPacket);
-		void Tick(Timestamp delta);
+
+		void RunReceiver();
+		void OnThreadReceiverTerminated();
 
 	private:
 		ServerTCP* m_pServer;
 		PacketManagerTCP m_PacketManager;
-		SpinLock m_Lock;
-		IClientRemoteHandler* m_pHandler;
-		EClientState m_State;
-		std::atomic_bool m_Release;
-		bool m_DisconnectedByRemote;
+		PacketTransceiverTCP m_Transceiver;
+		Thread* m_pThreadReceiver;
+		ISocketTCP* m_pSocket;
 		char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
 	};
 }

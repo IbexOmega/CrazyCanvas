@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Networking/API/NetWorker.h"
-#include "Networking/API/IClient.h"
+#include "Networking/API/ClientRemoteBase.h"
 #include "Networking/API/IPacketListener.h"
-#include "Networking/API/PacketManagerUDP.h"
+
+#include "Networking/API/UDP/PacketManagerUDP.h"
 
 namespace LambdaEngine
 {
@@ -12,7 +13,7 @@ namespace LambdaEngine
 	class PacketTransceiverUDP;
 
 	class LAMBDA_API ClientUDPRemote : 
-		public IClient,
+		public ClientRemoteBase,
 		protected IPacketListener
 	{
 		friend class ServerUDP;
@@ -38,21 +39,17 @@ namespace LambdaEngine
 		virtual void OnPacketDelivered(NetworkSegment* pPacket) override;
 		virtual void OnPacketResent(NetworkSegment* pPacket, uint8 tries) override;
 		virtual void OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries) override;
+		virtual void Tick(Timestamp delta) override;
 
 	private:
-		void OnDataReceived(PacketTransceiverUDP* pTransciver);
-		void SendPackets(PacketTransceiverUDP* pTransciver);
+		void OnDataReceived(PacketTransceiverBase* pTransciver);
+		void SendPackets(PacketTransceiverBase* pTransciver);
 		bool HandleReceivedPacket(NetworkSegment* pPacket);
-		void Tick(Timestamp delta);
 
 	private:
 		ServerUDP* m_pServer;
 		PacketManagerUDP m_PacketManager;
-		SpinLock m_Lock;
-		IClientRemoteHandler* m_pHandler;
-		EClientState m_State;
-		std::atomic_bool m_Release;
-		bool m_DisconnectedByRemote;
+
 		char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
 	};
 }

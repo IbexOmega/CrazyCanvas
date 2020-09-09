@@ -1,11 +1,10 @@
 #pragma once
 #include "Defines.h"
 
-#include "ISocketTCP.h"
+#include "Networking/API/TCP/ISocketTCP.h"
+#include "Networking/API/UDP/ISocketUDP.h"
 
-#include "ISocketUDP.h"
-
-#include "IPAddress.h"
+#include "Networking/API/IPAddress.h"
 
 #include "Time/API/Timestamp.h"
 

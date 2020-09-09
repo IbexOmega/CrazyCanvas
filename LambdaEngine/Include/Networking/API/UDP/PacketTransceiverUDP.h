@@ -16,6 +16,9 @@ namespace LambdaEngine
 
 		virtual void SetSocket(ISocket* pSocket) override;
 
+		void SetSimulateReceivingPacketLoss(float32 lossRatio);
+		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
+
 	protected:
 		virtual bool Transmit(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& ipEndPoint) override;
 		virtual bool Receive(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint) override;
@@ -27,5 +30,7 @@ namespace LambdaEngine
 
 	private:
 		ISocketUDP* m_pSocket;
+		float32 m_ReceivingLossRatio;
+		float32 m_TransmittingLossRatio;
 	};
 }

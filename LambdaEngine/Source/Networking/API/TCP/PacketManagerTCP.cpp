@@ -1,8 +1,9 @@
-#include "Networking/API/PacketManagerTCP.h"
+#include "Networking/API/TCP/PacketManagerTCP.h"
 
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/PacketTransceiverBase.h"
+
 
 #include "Engine/EngineLoop.h"
 
@@ -24,14 +25,18 @@ namespace LambdaEngine
 		TArray<NetworkSegment*> packetsToFree;
 		packetsToFree.Reserve(32);
 
-		for (NetworkSegment* pPacket : segmentsReceived)
+		for (NetworkSegment* pSegment : segmentsReceived)
 		{
-			if (!pPacket->IsReliable())
+			if (!pSegment->IsReliable())
 			{
-				if (pPacket->GetType() == NetworkSegment::TYPE_NETWORK_ACK)
-					packetsToFree.PushBack(pPacket);
+				if (pSegment->GetType() == NetworkSegment::TYPE_NETWORK_ACK)
+					packetsToFree.PushBack(pSegment);
 				else
-					segmentsReturned.PushBack(pPacket);
+					segmentsReturned.PushBack(pSegment);
+			}
+			else
+			{
+				segmentsReturned.PushBack(pSegment);
 			}
 		}
 

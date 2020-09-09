@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ISocket.h"
+#include "Networking/API/ISocket.h"
 
 namespace LambdaEngine
 {

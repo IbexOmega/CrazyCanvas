@@ -1,6 +1,7 @@
-#include "Networking/API/PacketTransceiverUDP.h"
-#include "Networking/API/ISocketUDP.h"
 #include "Networking/API/NetworkStatistics.h"
+
+#include "Networking/API/UDP/ISocketUDP.h"
+#include "Networking/API/UDP/PacketTransceiverUDP.h"
 
 #include "Math/Random.h"
 
@@ -9,7 +10,9 @@
 namespace LambdaEngine
 {
 	PacketTransceiverUDP::PacketTransceiverUDP() :
-		m_pSocket(nullptr)
+		m_pSocket(nullptr),
+		m_ReceivingLossRatio(0.0f),
+		m_TransmittingLossRatio(0.0f)
 	{
 
 	}
@@ -21,12 +24,31 @@ namespace LambdaEngine
 
 	bool PacketTransceiverUDP::Transmit(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& ipEndPoint)
 	{
+		#ifndef LAMBDA_CONFIG_PRODUCTION
+		if (m_TransmittingLossRatio > 0.0f && Random::Float32() <= m_TransmittingLossRatio)
+		{
+			LOG_WARNING("[PacketTransceiverBase]: Simulated Transmitting Packetloss");
+			bytesSent = bytesToSend;
+			return true;
+		}
+		#endif
+
 		return m_pSocket->SendTo(pBuffer, bytesToSend, bytesSent, ipEndPoint);
 	}
 
 	bool PacketTransceiverUDP::Receive(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint)
 	{
-		return m_pSocket->ReceiveFrom(pBuffer, size, bytesReceived, pIPEndPoint);
+		if (!m_pSocket->ReceiveFrom(pBuffer, size, bytesReceived, pIPEndPoint))
+			return false;
+
+#ifndef LAMBDA_CONFIG_PRODUCTION
+		if (m_ReceivingLossRatio > 0.0f && Random::Float32() <= m_ReceivingLossRatio)
+		{
+			LOG_WARNING("[PacketTransceiverBase]: Simulated Receiving Packetloss");
+			return false;
+		}
+#endif
+		return true;
 	}
 
 	void PacketTransceiverUDP::OnReceiveEnd(const PacketTranscoder::Header& header, TArray<uint32>& newAcks, NetworkStatistics* pStatistics)
@@ -38,6 +60,16 @@ namespace LambdaEngine
 	void PacketTransceiverUDP::SetSocket(ISocket* pSocket)
 	{
 		m_pSocket = (ISocketUDP*)pSocket;
+	}
+
+	void PacketTransceiverUDP::SetSimulateReceivingPacketLoss(float32 lossRatio)
+	{
+		m_ReceivingLossRatio = lossRatio;
+	}
+
+	void PacketTransceiverUDP::SetSimulateTransmittingPacketLoss(float32 lossRatio)
+	{
+		m_TransmittingLossRatio = lossRatio;
 	}
 
 	/*

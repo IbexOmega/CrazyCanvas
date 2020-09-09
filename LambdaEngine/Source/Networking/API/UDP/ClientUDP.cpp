@@ -1,6 +1,4 @@
-#include "Networking/API/ClientUDP.h"
 #include "Networking/API/IPAddress.h"
-#include "Networking/API/ISocketUDP.h"
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IClientHandler.h"
 #include "Networking/API/BinaryEncoder.h"
@@ -9,13 +7,13 @@
 #include "Networking/API/SegmentPool.h"
 #include "Networking/API/NetworkChallenge.h"
 
+#include "Networking/API/UDP/ISocketUDP.h"
+#include "Networking/API/UDP/ClientUDP.h"
+
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	std::set<ClientUDP*> ClientUDP::s_Clients;
-	SpinLock ClientUDP::s_Lock;
-
 	ClientUDP::ClientUDP(const ClientUDPDesc& desc) :
 		m_pSocket(nullptr),
 		m_PacketManager(desc),
@@ -23,14 +21,11 @@ namespace LambdaEngine
 		m_State(STATE_DISCONNECTED),
 		m_pSendBuffer()
 	{
-		std::scoped_lock<SpinLock> lock(s_Lock);
-		s_Clients.insert(this);
+		
 	}
 
 	ClientUDP::~ClientUDP()
 	{
-		std::scoped_lock<SpinLock> lock(s_Lock);
-		s_Clients.erase(this);
 		LOG_INFO("[ClientUDP]: Released");
 	}
 
@@ -290,19 +285,5 @@ namespace LambdaEngine
 	ClientUDP* ClientUDP::Create(const ClientUDPDesc& desc)
 	{
 		return DBG_NEW ClientUDP(desc);
-	}
-
-	void ClientUDP::FixedTickStatic(Timestamp timestamp)
-	{
-		UNREFERENCED_VARIABLE(timestamp);
-
-		if (!s_Clients.empty())
-		{
-			std::scoped_lock<SpinLock> lock(s_Lock);
-			for (ClientUDP* client : s_Clients)
-			{
-				client->Tick(timestamp);
-			}
-		}
 	}
 }

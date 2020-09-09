@@ -1,10 +1,11 @@
 #include "Networking/API/NetworkUtils.h"
-#include "Networking/API/ISocketUDP.h"
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IPAddress.h"
 #include "Networking/API/IPEndPoint.h"
-#include "Networking/API/ServerUDP.h"
-#include "Networking/API/ClientUDP.h"
+#include "Networking/API/ServerBase.h"
+#include "Networking/API/ClientBase.h"
+
+#include "Networking/API/UDP/ISocketUDP.h"
 
 namespace LambdaEngine
 {
@@ -21,8 +22,8 @@ namespace LambdaEngine
 
 	void NetworkUtils::FixedTick(Timestamp dt)
 	{
-		ServerUDP::FixedTickStatic(dt);
-		ClientUDP::FixedTickStatic(dt);
+		ServerBase::FixedTickStatic(dt);
+		ClientBase::FixedTickStatic(dt);
 	}
 
 	void NetworkUtils::Release()

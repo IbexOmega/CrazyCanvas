@@ -1,6 +1,7 @@
 #include "Networking/API/PacketTransceiverBase.h"
-#include "Networking/API/ISocketUDP.h"
 #include "Networking/API/NetworkStatistics.h"
+
+#include "Networking/API/UDP/ISocketUDP.h"
 
 #include "Math/Random.h"
 
@@ -10,8 +11,6 @@ namespace LambdaEngine
 {
 	PacketTransceiverBase::PacketTransceiverBase() :
 		m_BytesReceived(0),
-		m_ReceivingLossRatio(0.0f),
-		m_TransmittingLossRatio(0.0f),
 		m_pSendBuffer(),
 		m_pReceiveBuffer()
 	{
@@ -36,14 +35,6 @@ namespace LambdaEngine
 
 		pStatistics->RegisterBytesSent(bytesWritten);
 
-#ifndef LAMBDA_CONFIG_PRODUCTION
-		if (m_TransmittingLossRatio > 0.0f && Random::Float32() <= m_TransmittingLossRatio)
-		{
-			LOG_WARNING("[PacketTransceiverBase]: Simulated Transmitting Packetloss");
-			return header.Sequence;
-		}
-#endif
-
 		if (!Transmit(m_pSendBuffer, bytesWritten, bytesTransmitted, ipEndPoint))
 			return -1;
 		else if (bytesWritten != bytesTransmitted)
@@ -58,14 +49,6 @@ namespace LambdaEngine
 
 		if (!Receive(m_pReceiveBuffer, UINT16_MAX, m_BytesReceived, sender))
 			return false;
-
-#ifndef LAMBDA_CONFIG_PRODUCTION
-		if (m_ReceivingLossRatio > 0.0f && Random::Float32() <= m_ReceivingLossRatio)
-		{
-			LOG_WARNING("[PacketTransceiverBase]: Simulated Receiving Packetloss");
-			return false;
-		}
-#endif
 
 		return m_BytesReceived > 0;
 	}
@@ -84,16 +67,6 @@ namespace LambdaEngine
 		pStatistics->RegisterPacketReceived((uint32)segments.GetSize(), m_BytesReceived);
 
 		return true;
-	}
-
-	void PacketTransceiverBase::SetSimulateReceivingPacketLoss(float32 lossRatio)
-	{
-		m_ReceivingLossRatio = lossRatio;
-	}
-
-	void PacketTransceiverBase::SetSimulateTransmittingPacketLoss(float32 lossRatio)
-	{
-		m_TransmittingLossRatio = lossRatio;
 	}
 
 	bool PacketTransceiverBase::ValidateHeaderSalt(PacketTranscoder::Header* header, NetworkStatistics* pStatistics)

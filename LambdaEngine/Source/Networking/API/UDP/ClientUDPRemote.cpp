@@ -1,58 +1,54 @@
-#include "Networking/API/ClientTCPRemote.h"
+#include "Networking/API/ClientUDPRemote.h"
 #include "Networking/API/IPAddress.h"
-#include "Networking/API/ISocketTCP.h"
+#include "Networking/API/ISocketUDP.h"
 #include "Networking/API/PlatformNetworkUtils.h"
-#include "Networking/API/ServerTCP.h"
+#include "Networking/API/ServerUDP.h"
 #include "Networking/API/IClientRemoteHandler.h"
 #include "Networking/API/BinaryDecoder.h"
-#include "Networking/API/PacketTransceiverTCP.h"
+#include "Networking/API/PacketTransceiverUDP.h"
 #include "Networking/API/NetworkChallenge.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	ClientTCPRemote::ClientTCPRemote(uint16 packetPoolSize, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerTCP* pServer) :
+	ClientUDPRemote::ClientUDPRemote(uint16 packetPoolSize, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer) :
 		m_pServer(pServer),
-		m_PacketManager({ packetPoolSize, maximumTries }),
-		m_pHandler(nullptr),
-		m_State(STATE_CONNECTING),
-		m_Release(false),
-		m_DisconnectedByRemote(false)
+		m_PacketManager({ packetPoolSize, maximumTries })
 	{
 		m_PacketManager.SetEndPoint(ipEndPoint);
 	}
 
-	ClientTCPRemote::~ClientTCPRemote()
+	ClientUDPRemote::~ClientUDPRemote()
 	{
 		if(!m_Release)
-			LOG_ERROR("[ClientTCPRemote]: Do not use delete on a ClientTCPRemote object. Use the Release() function!");
+			LOG_ERROR("[ClientUDPRemote]: Do not use delete on a ClientUDPRemote object. Use the Release() function!");
 		else
-			LOG_INFO("[ClientTCPRemote]: Released");
+			LOG_INFO("[ClientUDPRemote]: Released");
 	}
 
-	void ClientTCPRemote::OnPacketDelivered(NetworkSegment* pPacket)
+	void ClientUDPRemote::OnPacketDelivered(NetworkSegment* pPacket)
 	{
-		LOG_INFO("ClientTCPRemote::OnPacketDelivered() | %s", pPacket->ToString().c_str());
+		LOG_INFO("ClientUDPRemote::OnPacketDelivered() | %s", pPacket->ToString().c_str());
 	}
 
-	void ClientTCPRemote::OnPacketResent(NetworkSegment* pPacket, uint8 tries)
+	void ClientUDPRemote::OnPacketResent(NetworkSegment* pPacket, uint8 tries)
 	{
-		LOG_INFO("ClientTCPRemote::OnPacketResent(%d) | %s", tries, pPacket->ToString().c_str());
+		LOG_INFO("ClientUDPRemote::OnPacketResent(%d) | %s", tries, pPacket->ToString().c_str());
 	}
 
-	void ClientTCPRemote::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
+	void ClientUDPRemote::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 	{
-		LOG_INFO("ClientTCPRemote::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
+		LOG_INFO("ClientUDPRemote::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
 		Disconnect();
 	}
 
-	PacketManagerBase* ClientTCPRemote::GetPacketManager()
+	PacketManagerBase* ClientUDPRemote::GetPacketManager()
 	{
 		return &m_PacketManager;
 	}
 
-	void ClientTCPRemote::OnDataReceived(PacketTransceiverUDP* pTransciver)
+	void ClientUDPRemote::OnDataReceived(PacketTransceiverBase* pTransciver)
 	{
 		TArray<NetworkSegment*> packets;
 		m_PacketManager.QueryBegin(pTransciver, packets);
@@ -64,16 +60,16 @@ namespace LambdaEngine
 		m_PacketManager.QueryEnd(packets);
 	}
 
-	void ClientTCPRemote::SendPackets(PacketTransceiverUDP* pTransciver)
+	void ClientUDPRemote::SendPackets(PacketTransceiverBase* pTransciver)
 	{
 		m_PacketManager.Flush(pTransciver);
 	}
 
-	bool ClientTCPRemote::HandleReceivedPacket(NetworkSegment* pPacket)
+	bool ClientUDPRemote::HandleReceivedPacket(NetworkSegment* pPacket)
 	{
 		uint16 packetType = pPacket->GetType();
 
-		LOG_MESSAGE("ClientTCPRemote::OnPacketReceivedUDP(%s)", pPacket->ToString().c_str());
+		LOG_MESSAGE("ClientUDPRemote::HandleReceivedPacket(%s)", pPacket->ToString().c_str());
 
 		if (packetType == NetworkSegment::TYPE_CONNNECT)
 		{
@@ -102,7 +98,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ClientTCPRemote]: Client responded with %lu, expected %lu, is it a fake client? [%s]", answer, expectedAnswer, GetEndPoint().ToString().c_str());
+				LOG_ERROR("[ClientUDPRemote]: Client responded with %lu, expected %lu, is it a fake client? [%s]", answer, expectedAnswer, GetEndPoint().ToString().c_str());
 			}	
 		}
 		else if (packetType == NetworkSegment::TYPE_DISCONNECT)
@@ -118,12 +114,12 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void ClientTCPRemote::Tick(Timestamp delta)
+	void ClientUDPRemote::Tick(Timestamp delta)
 	{
 		m_PacketManager.Tick(delta);
 	}
 
-	void ClientTCPRemote::Disconnect()
+	void ClientUDPRemote::Disconnect()
 	{
 		bool enterCritical = false;
 		{
@@ -148,16 +144,16 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ClientTCPRemote::IsConnected()
+	bool ClientUDPRemote::IsConnected()
 	{
 		return m_State == STATE_CONNECTED;
 	}
 
-	bool ClientTCPRemote::SendUnreliable(NetworkSegment* packet)
+	bool ClientUDPRemote::SendUnreliable(NetworkSegment* packet)
 	{
 		if (!IsConnected())
 		{
-			LOG_WARNING("[ClientTCPRemote]: Can not send packet before a connection has been established");
+			LOG_WARNING("[ClientUDPRemote]: Can not send packet before a connection has been established");
 			return false;
 		}
 
@@ -165,11 +161,11 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ClientTCPRemote::SendReliable(NetworkSegment* packet, IPacketListener* listener)
+	bool ClientUDPRemote::SendReliable(NetworkSegment* packet, IPacketListener* listener)
 	{
 		if (!IsConnected())
 		{
-			LOG_WARNING("[ClientTCPRemote]: Can not send packet before a connection has been established");
+			LOG_WARNING("[ClientUDPRemote]: Can not send packet before a connection has been established");
 			return false;
 		}
 
@@ -177,27 +173,27 @@ namespace LambdaEngine
 		return true;
 	}
 
-	const IPEndPoint& ClientTCPRemote::GetEndPoint() const
+	const IPEndPoint& ClientUDPRemote::GetEndPoint() const
 	{
 		return m_PacketManager.GetEndPoint();
 	}
 
-	NetworkSegment* ClientTCPRemote::GetFreePacket(uint16 packetType)
+	NetworkSegment* ClientUDPRemote::GetFreePacket(uint16 packetType)
 	{
 		return m_PacketManager.GetSegmentPool()->RequestFreeSegment()->SetType(packetType);
 	}
 
-	EClientState ClientTCPRemote::GetState() const
+	EClientState ClientUDPRemote::GetState() const
 	{
 		return m_State;
 	}
 
-	const NetworkStatistics* ClientTCPRemote::GetStatistics() const
+	const NetworkStatistics* ClientUDPRemote::GetStatistics() const
 	{
 		return m_PacketManager.GetStatistics();
 	}
 
-	void ClientTCPRemote::Release()
+	void ClientUDPRemote::Release()
 	{
 		bool doRelease = false;
 		{

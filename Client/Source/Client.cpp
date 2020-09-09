@@ -32,6 +32,8 @@
 #include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/NetworkDebugger.h"
 
+#include "Networking/API/TCP/ClientTCP.h"
+
 #ifdef LAMBDA_PLATFORM_MACOS
 constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
 #else
@@ -53,13 +55,26 @@ Client::Client() :
 
 
 
-	ClientUDPDesc desc = {};
+	/*ClientUDPDesc desc = {};
 	desc.PoolSize				= 512;
 	desc.MaxRetries				= 10;
 	desc.ResendRTTMultiplier	= 2.0F;
 	desc.Handler				= this;
 
     m_pClient = ClientUDP::Create(desc);
+
+    if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
+    {
+        LOG_ERROR("Failed to connect!");
+    }*/
+
+    ClientTCPDesc desc = {};
+    desc.PoolSize = 512;
+    desc.MaxRetries = 10;
+    desc.ResendRTTMultiplier = 2.0F;
+    desc.Handler = this;
+
+    m_pClient = ClientTCP::Create(desc);
 
     if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
     {
@@ -78,7 +93,7 @@ Client::~Client()
 void Client::OnConnecting(LambdaEngine::IClient* pClient)
 {
     UNREFERENCED_VARIABLE(pClient);
-    LOG_MESSAGE("OnConnectingUDP()");
+    LOG_MESSAGE("OnConnecting()");
 }
 
 void Client::OnConnected(LambdaEngine::IClient* pClient)
@@ -86,7 +101,7 @@ void Client::OnConnected(LambdaEngine::IClient* pClient)
     UNREFERENCED_VARIABLE(pClient);
     using namespace LambdaEngine;
 
-    LOG_MESSAGE("OnConnectedUDP()");
+    LOG_MESSAGE("OnConnected()");
 
     /*for (int i = 0; i < 1; i++)
     {
@@ -106,26 +121,26 @@ void Client::OnConnected(LambdaEngine::IClient* pClient)
 void Client::OnDisconnecting(LambdaEngine::IClient* pClient)
 {
     UNREFERENCED_VARIABLE(pClient);
-    LOG_MESSAGE("OnDisconnectingUDP()");
+    LOG_MESSAGE("OnDisconnecting()");
 }
 
 void Client::OnDisconnected(LambdaEngine::IClient* pClient)
 {
     UNREFERENCED_VARIABLE(pClient);
-    LOG_MESSAGE("OnDisconnectedUDP()");
+    LOG_MESSAGE("OnDisconnected()");
 }
 
 void Client::OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngine::NetworkSegment* pPacket)
 {
     UNREFERENCED_VARIABLE(pClient);
     UNREFERENCED_VARIABLE(pPacket);
-    LOG_MESSAGE("OnPacketReceivedUDP(%s)", pPacket->ToString().c_str());
+    LOG_MESSAGE("OnPacketReceived(%s)", pPacket->ToString().c_str());
 }
 
 void Client::OnServerFull(LambdaEngine::IClient* pClient)
 {
     UNREFERENCED_VARIABLE(pClient);
-    LOG_ERROR("OnServerFullUDP()");
+    LOG_ERROR("OnServerFull()");
 }
 
 void Client::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)

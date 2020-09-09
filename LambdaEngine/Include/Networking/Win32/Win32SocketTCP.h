@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Win32SocketBase.h"
-#include "Networking/API/ISocketTCP.h"
+#include "Networking/API/TCP/ISocketTCP.h"
 
 namespace LambdaEngine
 {

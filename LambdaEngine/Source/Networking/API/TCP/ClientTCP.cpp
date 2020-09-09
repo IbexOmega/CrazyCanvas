@@ -1,6 +1,4 @@
-#include "Networking/API/ClientTCP.h"
 #include "Networking/API/IPAddress.h"
-#include "Networking/API/ISocketUDP.h"
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IClientHandler.h"
 #include "Networking/API/BinaryEncoder.h"
@@ -9,13 +7,13 @@
 #include "Networking/API/SegmentPool.h"
 #include "Networking/API/NetworkChallenge.h"
 
+#include "Networking/API/TCP/ISocketTCP.h"
+#include "Networking/API/TCP/ClientTCP.h"
+
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	std::set<ClientTCP*> ClientTCP::s_Clients;
-	SpinLock ClientTCP::s_Lock;
-
 	ClientTCP::ClientTCP(const ClientTCPDesc& desc) :
 		m_pSocket(nullptr),
 		m_PacketManager(desc),
@@ -23,14 +21,11 @@ namespace LambdaEngine
 		m_State(STATE_DISCONNECTED),
 		m_pSendBuffer()
 	{
-		std::scoped_lock<SpinLock> lock(s_Lock);
-		s_Clients.insert(this);
+		
 	}
 
 	ClientTCP::~ClientTCP()
 	{
-		std::scoped_lock<SpinLock> lock(s_Lock);
-		s_Clients.erase(this);
 		LOG_INFO("[ClientTCP]: Released");
 	}
 
@@ -62,16 +57,6 @@ namespace LambdaEngine
 			}
 		}
 		return false;
-	}
-
-	void ClientTCP::SetSimulateReceivingPacketLoss(float32 lossRatio)
-	{
-		m_Transciver.SetSimulateReceivingPacketLoss(lossRatio);
-	}
-
-	void ClientTCP::SetSimulateTransmittingPacketLoss(float32 lossRatio)
-	{
-		m_Transciver.SetSimulateTransmittingPacketLoss(lossRatio);
 	}
 
 	void ClientTCP::Disconnect()
@@ -137,27 +122,28 @@ namespace LambdaEngine
 		return m_PacketManager.GetStatistics();
 	}
 
-	PacketManagerUDP* ClientTCP::GetPacketManager()
+	PacketManagerTCP* ClientTCP::GetPacketManager()
 	{
 		return &m_PacketManager;
 	}
 
 	bool ClientTCP::OnThreadsStarted()
 	{
-		m_pSocket = PlatformNetworkUtils::CreateSocketUDP();
+		m_pSocket = PlatformNetworkUtils::CreateSocketTCP();
 		if (m_pSocket)
 		{
-			if (m_pSocket->Bind(IPEndPoint(IPAddress::ANY, 0)))
+			if (m_pSocket->Connect(GetEndPoint()))
 			{
 				m_Transciver.SetSocket(m_pSocket);
 				m_PacketManager.Reset();
 				m_State = STATE_CONNECTING;
 				m_pHandler->OnConnecting(this);
 				m_SendDisconnectPacket = true;
+				LOG_INFO("[ClientTCP]: Socket Connected!");
 				SendConnectRequest();
 				return true;
 			}
-			LOG_ERROR("[ClientTCP]: Failed To Bind socket");
+			LOG_ERROR("[ClientTCP]: Failed To Connect socket");
 			return false;
 		}
 		LOG_ERROR("[ClientTCP]: Failed To Create socket");
@@ -166,10 +152,10 @@ namespace LambdaEngine
 
 	void ClientTCP::RunReceiver()
 	{
-		IPEndPoint sender;
+		IPEndPoint dummy;
 		while (!ShouldTerminate())
 		{
-			if (!m_Transciver.ReceiveBegin(sender))
+			if (!m_Transciver.ReceiveBegin(dummy))
 				continue;
 
 			TArray<NetworkSegment*> packets;
@@ -235,6 +221,8 @@ namespace LambdaEngine
 	{
 		uint16 packetType = pPacket->GetType();
 
+		LOG_MESSAGE("ClientTCP::HandleReceivedPacket(%s)", pPacket->ToString().c_str());
+
 		if (packetType == NetworkSegment::TYPE_CHALLENGE)
 		{
 			uint64 answer = NetworkChallenge::Compute(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
@@ -290,19 +278,5 @@ namespace LambdaEngine
 	ClientTCP* ClientTCP::Create(const ClientTCPDesc& desc)
 	{
 		return DBG_NEW ClientTCP(desc);
-	}
-
-	void ClientTCP::FixedTickStatic(Timestamp timestamp)
-	{
-		UNREFERENCED_VARIABLE(timestamp);
-
-		if (!s_Clients.empty())
-		{
-			std::scoped_lock<SpinLock> lock(s_Lock);
-			for (ClientTCP* client : s_Clients)
-			{
-				client->Tick(timestamp);
-			}
-		}
 	}
 }

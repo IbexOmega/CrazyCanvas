@@ -150,55 +150,6 @@ namespace LambdaEngine
 		LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 	}
 
-	/*void PacketManagerBase::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned)
-	{
-		bool runUntangler = false;
-		bool hasReliableMessage = false;
-
-		TArray<NetworkSegment*> packetsToFree;
-		packetsToFree.Reserve(32);
-
-		for (NetworkSegment* pPacket : segmentsReceived)
-		{
-			if (!pPacket->IsReliable())																//Unreliable Packet
-			{
-				if (pPacket->GetType() == NetworkSegment::TYPE_NETWORK_ACK)
-					packetsToFree.PushBack(pPacket);
-				else
-					segmentsReturned.PushBack(pPacket);
-			}
-			else
-			{
-				hasReliableMessage = true;
-
-				if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)		//Reliable Packet in correct order
-				{
-					segmentsReturned.PushBack(pPacket);
-					m_Statistics.RegisterReliableSegmentReceived();
-					runUntangler = true;
-				}
-				else if (pPacket->GetReliableUID() > m_Statistics.GetLastReceivedReliableUID())		//Reliable Packet in incorrect order
-				{
-					m_ReliableSegmentsReceived.insert(pPacket);
-					runUntangler = true;
-				}
-				else																				//Reliable Packet already received before
-				{
-					packetsToFree.PushBack(pPacket);
-				}
-			}
-		}
-
-		m_SegmentPool.FreeSegments(packetsToFree);
-
-		if (runUntangler)
-			UntangleReliableSegments(segmentsReturned);
-
-		if (hasReliableMessage && m_SegmentsToSend[m_QueueIndex].empty())
-			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment()->SetType(NetworkSegment::TYPE_NETWORK_ACK));
-	}*/
-
-
 	/*
 	* Finds packets that have been sent erlier and are now acked.
 	* Notifies the listener that the packet was succesfully delivered.

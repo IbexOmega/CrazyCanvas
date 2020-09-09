@@ -1,9 +1,11 @@
 #pragma once
 
 #include "Networking/API/NetWorker.h"
-#include "Networking/API/IServer.h"
-#include "Networking/API/PacketTransceiverUDP.h"
-#include "Networking/API/PacketManagerUDP.h"
+#include "Networking/API/ServerBase.h"
+
+#include "Networking/API/UDP/PacketManagerUDP.h"
+#include "Networking/API/UDP/PacketTransceiverUDP.h"
+
 #include "Containers/THashTable.h"
 
 namespace LambdaEngine
@@ -19,21 +21,12 @@ namespace LambdaEngine
 		uint8 MaxClients			= 1;
 	};
 
-	class LAMBDA_API ServerUDP : public NetWorker, public IServer
+	class LAMBDA_API ServerUDP : public ServerBase
 	{
 		friend class ClientUDPRemote;
-		friend class NetworkUtils;
 
 	public:
 		~ServerUDP();
-
-		virtual bool Start(const IPEndPoint& ipEndPoint) override;
-		virtual void Stop() override;
-		virtual void Release() override;
-		virtual bool IsRunning() override;
-		virtual const IPEndPoint& GetEndPoint() const override;
-		virtual void SetAcceptingConnections(bool accepting) override;
-		virtual bool IsAcceptingConnections() override;
 
 		void SetSimulateReceivingPacketLoss(float32 lossRatio);
 		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
@@ -41,12 +34,9 @@ namespace LambdaEngine
 	protected:
 		ServerUDP(const ServerUDPDesc& desc);
 
-		virtual bool OnThreadsStarted() override;
-		virtual void RunTransmitter() override;
+		virtual ISocket* SetupSocket() override;
 		virtual void RunReceiver() override;
-		virtual void OnThreadsTerminated() override;
-		virtual void OnTerminationRequested() override;
-		virtual void OnReleaseRequested() override;
+		virtual void TransmitPacketsForClient(ClientRemoteBase* pClient) override;
 
 	private:
 		IClientRemoteHandler* CreateClientHandler();
@@ -55,27 +45,16 @@ namespace LambdaEngine
 		void SendDisconnect(ClientUDPRemote* client);
 		void SendServerFull(ClientUDPRemote* client);
 		void SendServerNotAccepting(ClientUDPRemote* client);
-		void Tick(Timestamp delta);
 
 	public:
 		static ServerUDP* Create(const ServerUDPDesc& desc);
 
 	private:
-		static void FixedTickStatic(Timestamp timestamp);
-
-	private:
 		ISocketUDP* m_pSocket;
-		IPEndPoint m_IPEndPoint;
 		PacketTransceiverUDP m_Transciver;
 		SpinLock m_Lock;
 		SpinLock m_LockClients;
 		ServerUDPDesc m_Desc;
 		float m_PacketLoss;
-		std::atomic_bool m_Accepting;
-		std::unordered_map<IPEndPoint, ClientUDPRemote*, IPEndPointHasher> m_Clients;
-
-	private:
-		static std::set<ServerUDP*> s_Servers;
-		static SpinLock s_Lock;
 	};
 }

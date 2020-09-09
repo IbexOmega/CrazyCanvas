@@ -25,9 +25,6 @@ namespace LambdaEngine
 		bool ReceiveBegin(IPEndPoint& sender);
 		bool ReceiveEnd(SegmentPool* pSegmentPool, TArray<NetworkSegment*>& packets, TArray<uint32>& newAcks, NetworkStatistics* pStatistics);
 
-		void SetSimulateReceivingPacketLoss(float32 lossRatio);
-		void SetSimulateTransmittingPacketLoss(float32 lossRatio);
-
 		virtual void SetSocket(ISocket* pSocket) = 0;
 
 	protected:
@@ -41,8 +38,6 @@ namespace LambdaEngine
 
 	private:
 		int32 m_BytesReceived;
-		float32 m_ReceivingLossRatio;
-		float32 m_TransmittingLossRatio;
 		uint8 m_pSendBuffer[MAXIMUM_PACKET_SIZE];
 		uint8 m_pReceiveBuffer[UINT16_MAX];
 	};

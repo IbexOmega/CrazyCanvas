@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Networking/API/NetWorker.h"
-#include "Networking/API/IClient.h"
-#include "Networking/API/PacketManagerUDP.h"
+#include "Networking/API/ClientBase.h"
 #include "Networking/API/IPacketListener.h"
-#include "Networking/API/PacketTransceiverUDP.h"
+
+#include "Networking/API/UDP/PacketManagerUDP.h"
+#include "Networking/API/UDP/PacketTransceiverUDP.h"
 
 namespace LambdaEngine
 {
@@ -16,10 +17,7 @@ namespace LambdaEngine
 		IClientHandler* Handler = nullptr;
 	};
 
-	class LAMBDA_API ClientUDP :
-		public NetWorker,
-		public IClient,
-		protected IPacketListener
+	class LAMBDA_API ClientUDP : public ClientBase
 	{
 		friend class NetworkUtils;
 
@@ -57,18 +55,16 @@ namespace LambdaEngine
 		virtual void OnTerminationRequested() override;
 		virtual void OnReleaseRequested() override;
 
+		virtual void Tick(Timestamp delta) override;
+
 	private:
 		void SendConnectRequest();
 		void SendDisconnectRequest();
 		void HandleReceivedPacket(NetworkSegment* pPacket);
 		void TransmitPackets();
-		void Tick(Timestamp delta);
 
 	public:
 		static ClientUDP* Create(const ClientUDPDesc& desc);
-
-	private:
-		static void FixedTickStatic(Timestamp timestamp);
 
 	private:
 		ISocketUDP* m_pSocket;
@@ -79,9 +75,5 @@ namespace LambdaEngine
 		EClientState m_State;
 		std::atomic_bool m_SendDisconnectPacket;
 		char m_pSendBuffer[MAXIMUM_PACKET_SIZE];
-
-	private:
-		static std::set<ClientUDP*> s_Clients;
-		static SpinLock s_Lock;
 	};
 }

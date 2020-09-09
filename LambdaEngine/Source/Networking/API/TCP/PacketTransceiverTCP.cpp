@@ -1,6 +1,7 @@
-#include "Networking/API/PacketTransceiverTCP.h"
-#include "Networking/API/ISocketTCP.h"
 #include "Networking/API/NetworkStatistics.h"
+
+#include "Networking/API/TCP/ISocketTCP.h"
+#include "Networking/API/TCP/PacketTransceiverTCP.h"
 
 #include "Math/Random.h"
 

@@ -4,13 +4,11 @@
 
 #include "Application/API/EventHandler.h"
 
-#include "Networking/API/ServerUDP.h"
+
 #include "Networking/API/IServerHandler.h"
 #include "Networking/API/IClient.h"
-
+#include "Networking/API/ServerBase.h"
 #include "Networking/API/IClientRemoteHandler.h"
-
-#include <set>
 
 class Server : 
 	public LambdaEngine::Game,
@@ -34,5 +32,5 @@ private:
 	void UpdateTitle();
 
 private:
-	LambdaEngine::ServerUDP* m_pServer;
+	LambdaEngine::ServerBase* m_pServer;
 };
