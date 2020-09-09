@@ -73,7 +73,6 @@ def getFilesToLint(modifiedFilesPath, addedFilesPath):
     return modifiedFiles + addedFiles
 
 def main(argv):
-    print(os.listdir())
     inputFile = ""
     modifiedFilesPath = ""
     addedFilesPath = ""

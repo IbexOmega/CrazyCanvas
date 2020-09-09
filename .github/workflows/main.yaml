@@ -1,8 +1,8 @@
 name: Välfärden
-on: pull_request
+on: push
 
 jobs:
-  Pre-Build:
+  Build-Debug-x64:
     runs-on: [self-hosted, Windows, X64]
 
     steps:
@@ -13,11 +13,6 @@ jobs:
       - name: Execute Premake
         run: .\premake5.exe vs2019
 
-  Build-Debug-x64:
-    runs-on: [self-hosted, Windows, X64]
-    needs: Pre-Build
-
-    steps:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.1
 
@@ -26,9 +21,15 @@ jobs:
 
   Build-Release-x64:
     runs-on: [self-hosted, Windows, X64]
-    needs: Pre-Build
 
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.1
 
@@ -36,7 +37,7 @@ jobs:
         run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
 
   Lint:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Windows, X64]
 
     steps:
       - uses: actions/checkout@v2
@@ -44,11 +45,7 @@ jobs:
           submodules: true
 
       - name: Generate Lint Report
-        uses: deep5050/cppcheck-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN}}
-          exclude_check: Dependencies
-          platform: win64
+        run: python .github/workflows/generate-lint-report.py -o cppcheck_report.txt -i Dependencies/*
 
       - name: Get file changes
         id: get_file_changes
@@ -57,5 +54,5 @@ jobs:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Read Lint Report
-        run: python3 ./.github/workflows/read-lint-report.py --report ./cppcheck_report.txt
+        run: python ./.github/workflows/read-lint-report.py --report ./cppcheck_report.txt
           --modified-files $HOME/files_modified.json --added-files $HOME/files_added.json
