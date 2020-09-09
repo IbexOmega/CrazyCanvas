@@ -426,9 +426,6 @@ namespace LambdaEngine
 			}
 		}
 
-		clock.Tick();
-		LOG_INFO("Scene Build took %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
-
 		m_pCopyCommandAllocator->Reset();
 		m_pCopyCommandList->Begin(nullptr);
 
@@ -480,6 +477,9 @@ namespace LambdaEngine
 			//RayTracingTestVK::Debug(m_pGraphicsDevice, blasBuildDescriptions[0].pAccelerationStructure, m_pTLAS);
 		}
 		/*-------------Ray Tracing Section End--------------*/
+
+		clock.Tick();
+		LOG_INFO("Scene Build took %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
 
 		D_LOG_MESSAGE("[Scene]: Successfully finalized \"%s\"! ", m_Name.c_str());
 

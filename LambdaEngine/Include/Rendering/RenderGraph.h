@@ -26,6 +26,7 @@ namespace LambdaEngine
 	struct PipelineTextureBarrierDesc;
 	struct PipelineBufferBarrierDesc;
 
+	class IRenderGraphCreateHandler;
 	class AccelerationStructure;
 	class CommandAllocator;
 	class GraphicsDevice;
@@ -245,7 +246,9 @@ namespace LambdaEngine
 		~RenderGraph();
 
 		bool Init(const RenderGraphDesc* pDesc);
+		bool Recreate(const RenderGraphDesc* pDesc);
 
+		void AddCreateHandler(IRenderGraphCreateHandler* pCreateHandler);
 		//This needs a better solution, only used to be able to get Indirect Arg Offsets
 		void SetScene(Scene* pScene);
 
@@ -280,6 +283,8 @@ namespace LambdaEngine
 		virtual void OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type) override;
 
 	private:
+		void ReleasePipelineStages();
+
 		bool CreateFence();
 		bool CreateDescriptorHeap();
 		bool CreateCopyCommandLists();
@@ -288,6 +293,7 @@ namespace LambdaEngine
 		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
 
+		void UpdateRelativeParameters();
 		void UpdateInternalResource(InternalResourceUpdateDesc& desc);
 
 		void UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc& desc);
@@ -332,11 +338,9 @@ namespace LambdaEngine
 
 		CommandAllocator**								m_ppGraphicsCopyCommandAllocators	= nullptr;
 		CommandList**									m_ppGraphicsCopyCommandLists		= nullptr;
-		bool											m_ExecuteGraphicsCopy				= false;
 
 		CommandAllocator**								m_ppComputeCopyCommandAllocators	= nullptr;
 		CommandList**									m_ppComputeCopyCommandLists			= nullptr;
-		bool											m_ExecuteComputeCopy				= false;
 
 		CommandList**									m_ppExecutionStages					= nullptr;
 		uint32											m_ExecutionStageCount				= 0;
@@ -362,5 +366,7 @@ namespace LambdaEngine
 		TSet<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
 
 		TArray<DescriptorSet*>*							m_pDescriptorSetsToDestroy;
+
+		TArray<IRenderGraphCreateHandler*>				m_CreateHandlers;
 	};
 }

@@ -73,7 +73,15 @@ namespace LambdaEngine
 		virtual void NewFrame(Timestamp delta)		override final;
 		virtual void PrepareRender(Timestamp delta)		override final;
 
-		virtual void Render(CommandAllocator* pCommandAllocator, CommandList* pCommandList, uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppExecutionStage)		override final;
+		virtual void Render(
+			CommandAllocator* pGraphicsCommandAllocator,
+			CommandList* pGraphicsCommandList,
+			CommandAllocator* pComputeCommandAllocator,
+			CommandList* pComputeCommandList,
+			uint32 modFrameIndex,
+			uint32 backBufferIndex,
+			CommandList** ppPrimaryExecutionStage,
+			CommandList** ppSecondaryExecutionStage)	override final;
 
 		FORCEINLINE virtual FPipelineStageFlags GetFirstPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
 		FORCEINLINE virtual FPipelineStageFlags GetLastPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }

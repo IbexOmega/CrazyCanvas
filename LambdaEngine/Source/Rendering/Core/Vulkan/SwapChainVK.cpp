@@ -28,6 +28,7 @@ namespace LambdaEngine
 		VALIDATE(m_Desc.pQueue != nullptr);
 		reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue)->FlushBarriers();
 		m_Desc.pQueue->Release();
+		m_Desc.pWindow->Release();
 		
 		// Destroy semaphores
 		for (uint32 i = 0; i < m_Desc.BufferCount; i++)

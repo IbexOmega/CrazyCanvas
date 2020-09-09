@@ -304,10 +304,18 @@ namespace LambdaEngine
 		ImGui::Render();
 	}
 
-	void ImGuiRenderer::Render(CommandAllocator* pCommandAllocator, CommandList* pCommandList, uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppExecutionStage)
+	void ImGuiRenderer::Render(
+		CommandAllocator* pGraphicsCommandAllocator,
+		CommandList* pGraphicsCommandList,
+		CommandAllocator* pComputeCommandAllocator,
+		CommandList* pComputeCommandList,
+		uint32 modFrameIndex,
+		uint32 backBufferIndex,
+		CommandList** ppPrimaryExecutionStage,
+		CommandList** ppSecondaryExecutionStage)
 	{
-		pCommandAllocator->Reset();
-		pCommandList->Begin(nullptr);
+		pGraphicsCommandAllocator->Reset();
+		pGraphicsCommandList->Begin(nullptr);
 
 		//Start drawing
 		ImDrawData* pDrawData = ImGui::GetDrawData();
@@ -331,12 +339,12 @@ namespace LambdaEngine
 		if (pDrawData == nullptr || pDrawData->CmdListsCount == 0)
 		{
 			//Begin and End RenderPass to transition Texture State (Lazy)
-			pCommandList->BeginRenderPass(&beginRenderPassDesc);
-			pCommandList->EndRenderPass();
+			pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
+			pGraphicsCommandList->EndRenderPass();
 
-			pCommandList->End();
+			pGraphicsCommandList->End();
 
-			(*ppExecutionStage) = pCommandList;
+			(*ppPrimaryExecutionStage) = pGraphicsCommandList;
 			return;
 		}
 
@@ -363,11 +371,11 @@ namespace LambdaEngine
 			pVertexCopyBuffer->Unmap();
 			pIndexCopyBuffer->Unmap();
 
-			pCommandList->CopyBuffer(pVertexCopyBuffer, 0, m_pVertexBuffer, 0, vertexBufferSize);
-			pCommandList->CopyBuffer(pIndexCopyBuffer, 0, m_pIndexBuffer, 0, indexBufferSize);
+			pGraphicsCommandList->CopyBuffer(pVertexCopyBuffer, 0, m_pVertexBuffer, 0, vertexBufferSize);
+			pGraphicsCommandList->CopyBuffer(pIndexCopyBuffer, 0, m_pIndexBuffer, 0, indexBufferSize);
 		}
 
-		pCommandList->BeginRenderPass(&beginRenderPassDesc);
+		pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
 	
 		Viewport viewport = {};
 		viewport.MinDepth	= 0.0f;
@@ -377,11 +385,11 @@ namespace LambdaEngine
 		viewport.x			= 0.0f;
 		viewport.y			= 0.0f;
 
-		pCommandList->SetViewports(&viewport, 0, 1);
+		pGraphicsCommandList->SetViewports(&viewport, 0, 1);
 
 		uint64 offset = 0;
-		pCommandList->BindVertexBuffers(&m_pVertexBuffer, 0, &offset, 1);
-		pCommandList->BindIndexBuffer(m_pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT16);
+		pGraphicsCommandList->BindVertexBuffers(&m_pVertexBuffer, 0, &offset, 1);
+		pGraphicsCommandList->BindIndexBuffer(m_pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT16);
 
 		// Setup scale and translation:
 		// Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
@@ -393,8 +401,8 @@ namespace LambdaEngine
 			pTranslate[0] = -1.0f - pDrawData->DisplayPos.x * pScale[0];
 			pTranslate[1] = -1.0f - pDrawData->DisplayPos.y * pScale[1];
 
-			pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, pScale,		2 * sizeof(float32), 0 * sizeof(float32));
-			pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, pTranslate,	2 * sizeof(float32), 2 * sizeof(float32));
+			pGraphicsCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, pScale,		2 * sizeof(float32), 0 * sizeof(float32));
+			pGraphicsCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER, pTranslate,	2 * sizeof(float32), 2 * sizeof(float32));
 		}
 
 		// Will project scissor/clipping rectangles into framebuffer space
@@ -434,7 +442,7 @@ namespace LambdaEngine
 					scissorRect.Width			= uint32(clipRect.z - clipRect.x);
 					scissorRect.Height			= uint32(clipRect.w - clipRect.y);
 
-					pCommandList->SetScissorRects(&scissorRect, 0, 1);
+					pGraphicsCommandList->SetScissorRects(&scissorRect, 0, 1);
 
 					if (pCmd->TextureId)
 					{
@@ -455,7 +463,7 @@ namespace LambdaEngine
 							if (pixelShaderIt != vertexShaderIt->second.end())
 							{
 								PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pixelShaderIt->second);
-								pCommandList->BindGraphicsPipeline(pPipelineState);
+								pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
 							}
 							else
 							{
@@ -464,7 +472,7 @@ namespace LambdaEngine
 								vertexShaderIt->second.insert({ pixelShaderGUID, pipelineGUID });
 
 								PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pipelineGUID);
-								pCommandList->BindGraphicsPipeline(pPipelineState);
+								pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
 							}
 						}
 						else
@@ -476,23 +484,23 @@ namespace LambdaEngine
 							m_ShadersIDToPipelineStateIDMap.insert({ vertexShaderGUID, pixelShaderToPipelineStateMap });
 
 							PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pipelineGUID);
-							pCommandList->BindGraphicsPipeline(pPipelineState);
+							pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
 						}
 
-						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelMul,				4 * sizeof(float32),	4 * sizeof(float32));
-						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelAdd,				4 * sizeof(float32),	8 * sizeof(float32));
-						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, &pImGuiTexture->ReservedIncludeMask,		sizeof(uint32),		12 * sizeof(float32));
+						pGraphicsCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelMul,				4 * sizeof(float32),	4 * sizeof(float32));
+						pGraphicsCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelAdd,				4 * sizeof(float32),	8 * sizeof(float32));
+						pGraphicsCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, &pImGuiTexture->ReservedIncludeMask,		sizeof(uint32),		12 * sizeof(float32));
 
 						const TArray<DescriptorSet*>& descriptorSets = textureIt->second;
 
 						//Todo: Allow other sizes than 1
 						if (descriptorSets.GetSize() == 1)
 						{
-							pCommandList->BindDescriptorSetGraphics(descriptorSets[0], m_pPipelineLayout, 0);
+							pGraphicsCommandList->BindDescriptorSetGraphics(descriptorSets[0], m_pPipelineLayout, 0);
 						}
 						else
 						{
-							pCommandList->BindDescriptorSetGraphics(descriptorSets[backBufferIndex], m_pPipelineLayout, 0);
+							pGraphicsCommandList->BindDescriptorSetGraphics(descriptorSets[backBufferIndex], m_pPipelineLayout, 0);
 						}
 					}
 					else
@@ -502,17 +510,17 @@ namespace LambdaEngine
 						constexpr const uint32 DEFAULT_CHANNEL_RESERVED_INCLUDE_MASK	= 0x00008421;  //0000 0000 0000 0000 1000 0100 0010 0001
 
 						PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_PipelineStateID);
-						pCommandList->BindGraphicsPipeline(pPipelineState);
+						pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
 
-						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_MUL,						4 * sizeof(float32),	4 * sizeof(float32));
-						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_ADD,						4 * sizeof(float32),	8 * sizeof(float32));
-						pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, &DEFAULT_CHANNEL_RESERVED_INCLUDE_MASK,		sizeof(uint32),		12 * sizeof(float32));
+						pGraphicsCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_MUL,						4 * sizeof(float32),	4 * sizeof(float32));
+						pGraphicsCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_ADD,						4 * sizeof(float32),	8 * sizeof(float32));
+						pGraphicsCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER, &DEFAULT_CHANNEL_RESERVED_INCLUDE_MASK,		sizeof(uint32),		12 * sizeof(float32));
 
-						pCommandList->BindDescriptorSetGraphics(m_pDescriptorSet, m_pPipelineLayout, 0);
+						pGraphicsCommandList->BindDescriptorSetGraphics(m_pDescriptorSet, m_pPipelineLayout, 0);
 					}
 
 					// Draw
-					pCommandList->DrawIndexInstanced(pCmd->ElemCount, 1, pCmd->IdxOffset + globalIndexOffset, pCmd->VtxOffset + globalVertexOffset, 0);
+					pGraphicsCommandList->DrawIndexInstanced(pCmd->ElemCount, 1, pCmd->IdxOffset + globalIndexOffset, pCmd->VtxOffset + globalVertexOffset, 0);
 				}
 			}
 
@@ -520,10 +528,10 @@ namespace LambdaEngine
 			globalVertexOffset	+= pCmdList->VtxBuffer.Size;
 		}
 
-		pCommandList->EndRenderPass();
-		pCommandList->End();
+		pGraphicsCommandList->EndRenderPass();
+		pGraphicsCommandList->End();
 
-		(*ppExecutionStage) = pCommandList;
+		(*ppPrimaryExecutionStage) = pGraphicsCommandList;
 	}
 
 	void ImGuiRenderer::OnMouseMoved(int32 x, int32 y)
@@ -954,6 +962,7 @@ namespace LambdaEngine
 		colorAttachmentDesc.FinalState		= pBackBufferAttachmentDesc->FinalState;
 
 		RenderPassSubpassDesc subpassDesc = {};
+		subpassDesc.RenderTargetStates.Reserve(512);
 		subpassDesc.RenderTargetStates			= { ETextureState::TEXTURE_STATE_RENDER_TARGET };
 		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DONT_CARE;
 
@@ -967,6 +976,7 @@ namespace LambdaEngine
 
 		RenderPassDesc renderPassDesc = {};
 		renderPassDesc.DebugName			= "ImGui Render Pass";
+		renderPassDesc.Attachments.Reserve(256);
 		renderPassDesc.Attachments			= { colorAttachmentDesc };
 		renderPassDesc.Subpasses			= { subpassDesc };
 		renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };

@@ -9,6 +9,8 @@
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 
+#include "Rendering/RenderSystem.h"
+
 #include "Math/MathUtilities.h"
 
 namespace LambdaEngine
@@ -213,7 +215,6 @@ namespace LambdaEngine
 
 		pCommandQueue->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN , nullptr, 0, nullptr, 0);
 
-
 		VkBuffer sbtBuffer = m_SBT->GetBuffer();
 		m_RaygenBufferRegion.buffer		= sbtBuffer;
 		m_RaygenBufferRegion.offset		= raygenAlignedOffset;
@@ -240,6 +241,7 @@ namespace LambdaEngine
 			D_LOG_MESSAGE("[RayTracingPipelineStateVK]: Created Pipeline");
 		}
 
+		RenderSystem::GetComputeQueue()->Flush();
 		SAFERELEASE(pCommandAllocator);
 		SAFERELEASE(pCommandList);
 

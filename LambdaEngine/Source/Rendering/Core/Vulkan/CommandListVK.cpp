@@ -134,6 +134,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			m_IsBegin = true;
 			return true;
 		}
 	}
@@ -152,6 +153,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			m_IsBegin = false;
 			return true;
 		}
 	}

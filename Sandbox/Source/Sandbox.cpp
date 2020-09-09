@@ -85,7 +85,7 @@ Sandbox::Sandbox()
 	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
 	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
 
-	EScene scene = EScene::SPONZA;
+	EScene scene = EScene::TESTING;
 
 	m_pScene->SetDirectionalLight(directionalLight);
 
@@ -393,6 +393,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
+	m_pRenderGraphEditor->Update();
 	Render(delta);
 }
 
@@ -435,6 +436,25 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 	Renderer::Render();
 }
 
+void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
+{
+	using namespace LambdaEngine;
+
+	GUID_Lambda blueNoiseID = ResourceManager::GetTextureGUID("Blue Noise Texture");
+
+	Texture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
+	TextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
+	Sampler* pNearestSampler				= Sampler::GetNearestSampler();
+
+	ResourceUpdateDesc blueNoiseUpdateDesc = {};
+	blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextures			= &pBlueNoiseTexture;
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
+
+	Renderer::GetRenderGraph()->UpdateResource(blueNoiseUpdateDesc);
+}
+
 namespace LambdaEngine
 {
 	Game* CreateGame()
@@ -462,8 +482,7 @@ bool Sandbox::LoadRendererResources()
 
 		Texture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
 		TextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
-
-		Sampler* pNearestSampler = Sampler::GetNearestSampler();
+		Sampler* pNearestSampler				= Sampler::GetNearestSampler();
 
 		ResourceUpdateDesc blueNoiseUpdateDesc = {};
 		blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";
@@ -473,6 +492,8 @@ bool Sandbox::LoadRendererResources()
 
 		Renderer::GetRenderGraph()->UpdateResource(blueNoiseUpdateDesc);
 	}
+
+	Renderer::GetRenderGraph()->AddCreateHandler(this);
 
 	return true;
 }

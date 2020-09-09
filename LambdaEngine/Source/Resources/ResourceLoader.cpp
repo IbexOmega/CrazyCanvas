@@ -270,7 +270,7 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	static void ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene)
+	static void ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene, bool createMaterials)
 	{
 		for (uint32 i = 0; i < pNode->mNumMeshes; i++)
 		{
@@ -344,48 +344,51 @@ namespace LambdaEngine
 						}
 					}
 
-					// Albedo
-					Material* pMaterial = DBG_NEW Material();
-					pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_BASE_COLOR, 0);
-					if (!pMaterial->pAlbedoMap)
+					if (createMaterials)
 					{
-						pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE, 0);
-					}
+						// Albedo
+						Material* pMaterial = DBG_NEW Material();
+						pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_BASE_COLOR, 0);
+						if (!pMaterial->pAlbedoMap)
+						{
+							pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE, 0);
+						}
 
-					// Normal
-					pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_NORMAL_CAMERA, 0);
-					if (!pMaterial->pNormalMap)
-					{
-						pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_NORMALS, 0);
-					}
-					if (!pMaterial->pNormalMap)
-					{
-						pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_HEIGHT, 0);
-					}
-				
-					// AO
-					pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_AMBIENT_OCCLUSION, 0);
-					if (!pMaterial->pAmbientOcclusionMap)
-					{
-						pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_AMBIENT, 0);
-					}
+						// Normal
+						pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_NORMAL_CAMERA, 0);
+						if (!pMaterial->pNormalMap)
+						{
+							pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_NORMALS, 0);
+						}
+						if (!pMaterial->pNormalMap)
+						{
+							pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_HEIGHT, 0);
+						}
 
-					// Metallic
-					pMaterial->pMetallicMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_METALNESS, 0);
-					if (!pMaterial->pMetallicMap)
-					{
-						pMaterial->pMetallicMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_REFLECTION, 0);
-					}
+						// AO
+						pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_AMBIENT_OCCLUSION, 0);
+						if (!pMaterial->pAmbientOcclusionMap)
+						{
+							pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_AMBIENT, 0);
+						}
 
-					// Roughness
-					pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE_ROUGHNESS, 0);
-					if (!pMaterial->pRoughnessMap)
-					{
-						pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_SHININESS, 0);
-					}
+						// Metallic
+						pMaterial->pMetallicMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_METALNESS, 0);
+						if (!pMaterial->pMetallicMap)
+						{
+							pMaterial->pMetallicMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_REFLECTION, 0);
+						}
 
-					context.Materials.EmplaceBack(pMaterial);
-					context.MaterialIndices[pMesh->mMaterialIndex] = context.Materials.GetSize() - 1;
+						// Roughness
+						pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE_ROUGHNESS, 0);
+						if (!pMaterial->pRoughnessMap)
+						{
+							pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_SHININESS, 0);
+						}
+
+						context.Materials.EmplaceBack(pMaterial);
+						context.MaterialIndices[pMesh->mMaterialIndex] = context.Materials.GetSize() - 1;
+					}
 				}
 			}
 
@@ -404,7 +407,7 @@ namespace LambdaEngine
 
 		for (uint32 i = 0; i < pNode->mNumChildren; i++)
 		{
-			ProcessAssimpNode(context, pNode->mChildren[i], pScene);
+			ProcessAssimpNode(context, pNode->mChildren[i], pScene, createMaterials);
 		}
 	}
 
@@ -447,7 +450,7 @@ namespace LambdaEngine
 		SceneLoadingContext context;
 		context.Filepath		= filepath;
 		context.DirectoryPath	= filepath.substr(0, lastPathDivisor + 1);
-		ProcessAssimpNode(context, pScene->mRootNode, pScene);
+		ProcessAssimpNode(context, pScene->mRootNode, pScene, true);
 
 		loadedMaterials		= Move(context.Materials);
 		loadedTextures		= Move(context.Textures);
@@ -490,7 +493,7 @@ namespace LambdaEngine
 
 		SceneLoadingContext context;
 		context.Filepath = filepath;
-		ProcessAssimpNode(context, pScene->mRootNode, pScene);
+		ProcessAssimpNode(context, pScene->mRootNode, pScene, false);
 
 		D_LOG_MESSAGE("[ResourceLoader]: Loaded Mesh \"%s\"", filepath.c_str());
 		return context.Meshes.GetFront();
@@ -564,10 +567,10 @@ namespace LambdaEngine
 			for (uint32 i = 0; i < count; i++)
 			{
 				uint32 numPixels = texWidth * texHeight;
-				uint16* pPixelsR = new uint16[numPixels];
-				uint16* pPixelsG = new uint16[numPixels];
-				uint16* pPixelsB = new uint16[numPixels];
-				uint16* pPixelsA = new uint16[numPixels];
+				uint16* pPixelsR = DBG_NEW uint16[numPixels];
+				uint16* pPixelsG = DBG_NEW uint16[numPixels];
+				uint16* pPixelsB = DBG_NEW uint16[numPixels];
+				uint16* pPixelsA = DBG_NEW uint16[numPixels];
 
 				uint16* pSTBIPixels = reinterpret_cast<uint16*>(stbi_pixels[i]);
 
@@ -846,6 +849,8 @@ namespace LambdaEngine
 			LOG_ERROR("[ResourceLoader]: CreateShaderReflection currently not supported for SPIRV source language");
 			return false;
 		}
+
+		Malloc::Free(pShaderRawSource);
 
 		return true;
 	}
