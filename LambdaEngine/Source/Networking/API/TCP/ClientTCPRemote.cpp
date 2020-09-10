@@ -24,6 +24,8 @@ namespace LambdaEngine
 		m_PacketManager.SetEndPoint(pSocket->GetEndPoint());
 		m_Transceiver.SetSocket(pSocket);
 
+		pSocket->EnableNaglesAlgorithm(false);
+
 		m_pThreadReceiver = Thread::Create(
 			std::bind(&ClientTCPRemote::RunReceiver, this),
 			std::bind(&ClientTCPRemote::OnThreadReceiverTerminated, this)

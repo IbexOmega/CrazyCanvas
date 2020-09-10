@@ -47,6 +47,7 @@ namespace LambdaEngine
 		ISocketTCP* pSocket = PlatformNetworkUtils::CreateSocketTCP();
 		if (pSocket)
 		{
+			pSocket->EnableNaglesAlgorithm(false);
 			if (pSocket->Connect(GetEndPoint()))
 			{
 				return pSocket;
