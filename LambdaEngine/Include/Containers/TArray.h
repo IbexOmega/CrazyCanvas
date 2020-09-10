@@ -29,10 +29,10 @@ namespace LambdaEngine
 
 		public:
 			using iterator_category = std::bidirectional_iterator_tag;
-			using difference_type	= SizeType;
-			using value_type		= TIteratorType;
-			using pointer			= TIteratorType*;
-			using reference			= TIteratorType&;
+			using difference_type = SizeType;
+			using value_type = TIteratorType;
+			using pointer = TIteratorType*;
+			using reference = TIteratorType&;
 
 			~IteratorBase() = default;
 
@@ -231,9 +231,9 @@ namespace LambdaEngine
 		typedef ReverseIteratorBase<T>			ReverseIterator;
 		typedef ReverseIteratorBase<const T>	ReverseConstIterator;
 
-	/*
-	* TArray API
-	*/
+		/*
+		* TArray API
+		*/
 	public:
 		FORCEINLINE TArray() noexcept
 			: m_pData(nullptr)
@@ -489,9 +489,9 @@ namespace LambdaEngine
 			}
 
 			// Insert
-			const SizeType listSize	= static_cast<SizeType>(iList.size());
-			const SizeType newSize	= m_Size + listSize;
-			const SizeType index	= InternalIndex(pos);
+			const SizeType listSize = static_cast<SizeType>(iList.size());
+			const SizeType newSize = m_Size + listSize;
+			const SizeType index = InternalIndex(pos);
 
 			T* rangeBegin = m_pData + index;
 			if (newSize >= m_Capacity)
@@ -503,9 +503,9 @@ namespace LambdaEngine
 			else
 			{
 				// Construct the range so that we can move to it
-				T* dataEnd		= m_pData + m_Size;
-				T* newDataEnd	= m_pData + m_Size + listSize;
-				T* rangeEnd		= rangeBegin + listSize;
+				T* dataEnd = m_pData + m_Size;
+				T* newDataEnd = m_pData + m_Size + listSize;
+				T* rangeEnd = rangeBegin + listSize;
 				InternalDefaultConstructRange(dataEnd, newDataEnd);
 				InternalMemmoveForward(rangeBegin, dataEnd, newDataEnd - 1);
 				InternalDestructRange(rangeBegin, rangeEnd);
@@ -539,9 +539,9 @@ namespace LambdaEngine
 			}
 
 			// Insert
-			const SizeType rangeSize	= InternalDistance(begin, end);
-			const SizeType newSize		= m_Size + rangeSize;
-			const SizeType index		= InternalIndex(pos);
+			const SizeType rangeSize = InternalDistance(begin, end);
+			const SizeType newSize = m_Size + rangeSize;
+			const SizeType index = InternalIndex(pos);
 
 			T* rangeBegin = m_pData + index;
 			if (newSize >= m_Capacity)
@@ -553,9 +553,9 @@ namespace LambdaEngine
 			else
 			{
 				// Construct the range so that we can move to it
-				T* dataEnd		= m_pData + m_Size;
-				T* newDataEnd	= m_pData + m_Size + rangeSize;
-				T* rangeEnd		= rangeBegin + rangeSize;
+				T* dataEnd = m_pData + m_Size;
+				T* newDataEnd = m_pData + m_Size + rangeSize;
+				T* rangeEnd = rangeBegin + rangeSize;
 				InternalDefaultConstructRange(dataEnd, newDataEnd);
 				InternalMemmoveForward(rangeBegin, dataEnd, newDataEnd - 1);
 				InternalDestructRange(rangeBegin, rangeEnd);
@@ -592,8 +592,8 @@ namespace LambdaEngine
 
 			// Erase
 			const SizeType index = InternalDistance(ConstBegin(), pos);
-			T* dataBegin	= m_pData + index;
-			T* dataEnd		= m_pData + m_Size;
+			T* dataBegin = m_pData + index;
+			T* dataEnd = m_pData + m_Size;
 			InternalMemmoveBackwards(dataBegin + 1, dataEnd, dataBegin);
 			InternalDestruct(dataEnd - 1);
 
@@ -611,9 +611,9 @@ namespace LambdaEngine
 			VALIDATE(begin < end);
 			VALIDATE(InternalIsRangeOwner(begin, end));
 
-			T* dataBegin	= m_pData + InternalIndex(begin);
-			T* dataEnd		= m_pData + InternalIndex(end);
-			
+			T* dataBegin = m_pData + InternalIndex(begin);
+			T* dataEnd = m_pData + InternalIndex(end);
+
 			const SizeType elementCount = InternalDistance(dataBegin, dataEnd);
 			if (end >= ConstEnd())
 			{
@@ -815,9 +815,9 @@ namespace LambdaEngine
 			return GetElementAt(index);
 		}
 
-	/*
-	* STL iterator functions, Only here so that you can use Range for-loops
-	*/
+		/*
+		* STL iterator functions, Only here so that you can use Range for-loops
+		*/
 	public:
 		FORCEINLINE Iterator begin() noexcept
 		{
@@ -1006,7 +1006,7 @@ namespace LambdaEngine
 
 			InternalReleaseData();
 			m_pData = pTempData;
-			
+
 			m_Capacity = inCapacity;
 		}
 

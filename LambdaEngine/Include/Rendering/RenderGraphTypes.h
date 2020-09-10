@@ -186,21 +186,24 @@ namespace LambdaEngine
 
 		struct
 		{
-			GraphicsShaderNames			Shaders;
-			ERenderStageDrawType		DrawType;
-			String						IndexBufferName;
-			String						IndirectArgsBufferName;
-			bool						DepthTestEnabled;
+			GraphicsShaderNames		Shaders;
+			ERenderStageDrawType	DrawType				= ERenderStageDrawType::NONE;
+			String					IndexBufferName			= "";
+			String					IndirectArgsBufferName	= "";
+			bool					DepthTestEnabled		= true;
+			ECullMode				CullMode				= ECullMode::CULL_MODE_BACK;
+			EPolygonMode			PolygonMode				= EPolygonMode::POLYGON_MODE_FILL;
+			EPrimitiveTopology		PrimitiveTopology		= EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		} Graphics;
 
 		struct
-		{	
-			String						ShaderName	= "";
+		{
+			String					ShaderName	= "";
 		} Compute;
 
 		struct
 		{
-			RayTracingShaderNames		Shaders;
+			RayTracingShaderNames	Shaders;
 		} RayTracing;
 	};
 
@@ -283,21 +286,24 @@ namespace LambdaEngine
 
 		struct
 		{
-			GraphicsShaderNames			Shaders;
-			ERenderStageDrawType		DrawType;
-			int32						IndexBufferAttributeIndex;
-			int32						IndirectArgsBufferAttributeIndex;
-			bool						DepthTestEnabled;
+			GraphicsShaderNames		Shaders;
+			ERenderStageDrawType	DrawType							= ERenderStageDrawType::NONE;
+			int32					IndexBufferAttributeIndex			= -1;
+			int32					IndirectArgsBufferAttributeIndex	= -1;
+			bool					DepthTestEnabled					= true;
+			ECullMode				CullMode							= ECullMode::CULL_MODE_BACK;
+			EPolygonMode			PolygonMode							= EPolygonMode::POLYGON_MODE_FILL;
+			EPrimitiveTopology		PrimitiveTopology					= EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		} Graphics;
 
 		struct
 		{
-			String						ShaderName = "";
+			String					ShaderName = "";
 		} Compute;
 
 		struct
 		{
-			RayTracingShaderNames		Shaders;
+			RayTracingShaderNames	Shaders;
 		} RayTracing;
 
 		TArray<EditorResourceStateIdent>		ResourceStateIdents;

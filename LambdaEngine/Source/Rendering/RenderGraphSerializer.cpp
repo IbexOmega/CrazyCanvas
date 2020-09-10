@@ -413,6 +413,15 @@ namespace LambdaEngine
 
 							writer.String("depth_test_enabled");
 							writer.Bool(renderStageIt->second.Graphics.DepthTestEnabled);
+
+							writer.String("cull_mode");
+							writer.String(CullModeToString(renderStageIt->second.Graphics.CullMode).c_str());
+
+							writer.String("polygon_mode");
+							writer.String(PolygonModeToString(renderStageIt->second.Graphics.PolygonMode).c_str());
+
+							writer.String("primitive_topology");
+							writer.String(PrimitiveTopologyToString(renderStageIt->second.Graphics.PrimitiveTopology).c_str());					
 						}
 
 						writer.String("shaders");
@@ -960,7 +969,10 @@ namespace LambdaEngine
 							}
 						}
 
-						renderStage.Graphics.DepthTestEnabled			= renderStageObject["depth_test_enabled"].GetBool();
+						renderStage.Graphics.DepthTestEnabled					= renderStageObject["depth_test_enabled"].GetBool();
+						if (renderStageObject.HasMember("cull_mode"))			renderStage.Graphics.CullMode			= CullModeFromString(renderStageObject["cull_mode"].GetString());
+						if (renderStageObject.HasMember("polygon_mode"))		renderStage.Graphics.PolygonMode		= PolygonModeFromString(renderStageObject["polygon_mode"].GetString());
+						if (renderStageObject.HasMember("primitive_topology"))	renderStage.Graphics.PrimitiveTopology	= PrimitiveTopologyFromString(renderStageObject["primitive_topology"].GetString());
 
 						renderStage.Graphics.Shaders.TaskShaderName		= shadersObject["task_shader"].GetString();
 						renderStage.Graphics.Shaders.MeshShaderName		= shadersObject["mesh_shader"].GetString();
