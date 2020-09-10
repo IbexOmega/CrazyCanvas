@@ -2,7 +2,7 @@
 #include "Networking/API/IServerHandler.h"
 #include "Networking/API/BinaryEncoder.h"
 
-#include "Networking/API/TCP/ClientTCPRemote.h"
+#include "Networking/API/TCP/ClientRemoteTCP.h"
 #include "Networking/API/TCP/ISocketTCP.h"
 #include "Networking/API/TCP/ServerTCP.h"
 
@@ -12,9 +12,7 @@
 
 namespace LambdaEngine
 {
-	ServerTCP::ServerTCP(const ServerTCPDesc& desc) :
-		m_Desc(desc),
-		m_PacketLoss(0.0f)
+	ServerTCP::ServerTCP(const ServerDesc& desc) : ServerBase(desc)
 	{
 		
 	}
@@ -36,8 +34,13 @@ namespace LambdaEngine
 					LOG_INFO("[ServerTCP]: Started %s", GetEndPoint().ToString().c_str());
 					return pSocket;
 				}
+				LOG_ERROR("[ServerTCP]: Failed To Listen To Socket");
+				return nullptr;
 			}
+			LOG_ERROR("[ServerTCP]: Failed To Bind Socket");
+			return nullptr;
 		}
+		LOG_ERROR("[ServerTCP]: Failed To Create Socket");
 		return nullptr;
 	}
 
@@ -49,71 +52,14 @@ namespace LambdaEngine
 			if (!socket)
 				continue;
 
-			ClientTCPRemote* pClient = CreateClient(socket);
+			ClientRemoteTCP* pClient = CreateClient(socket);
 
-			if (!IsAcceptingConnections())
-			{
-				SendServerNotAccepting(pClient);
-				pClient->Release();
-				continue;
-			}
-			else if (GetClientCount() >= m_Desc.MaxClients)
-			{
-				SendServerFull(pClient);
-				pClient->Release();
-				continue;
-			}
-			else
-			{
-				RegisterClient(pClient);
-			}
+			HandleNewConnection(pClient);
 		}
 	}
 
-	void ServerTCP::TransmitPacketsForClient(ClientRemoteBase* pClient)
+	ClientRemoteTCP* ServerTCP::CreateClient(ISocketTCP* socket)
 	{
-		ClientTCPRemote* client = (ClientTCPRemote*)pClient;
-		client->SendPackets();
-	}
-
-	IClientRemoteHandler* ServerTCP::CreateClientHandler()
-	{
-		return m_Desc.Handler->CreateClientHandler();
-	}
-
-	ClientTCPRemote* ServerTCP::CreateClient(ISocketTCP* socket)
-	{
-		return DBG_NEW ClientTCPRemote(m_Desc.PoolSize, socket, this);
-	}
-
-	void ServerTCP::OnClientDisconnected(ClientTCPRemote* pClient, bool sendDisconnectPacket)
-	{
-		if(sendDisconnectPacket)
-			SendDisconnect(pClient);
-
-		UnRegisterClient(pClient);
-	}
-
-	void ServerTCP::SendDisconnect(ClientTCPRemote* client)
-	{
-		client->m_PacketManager.EnqueueSegmentUnreliable(client->GetFreePacket(NetworkSegment::TYPE_DISCONNECT));
-		client->SendPackets();
-	}
-
-	void ServerTCP::SendServerFull(ClientTCPRemote* client)
-	{
-		client->m_PacketManager.EnqueueSegmentUnreliable(client->GetFreePacket(NetworkSegment::TYPE_SERVER_FULL));
-		client->SendPackets();
-	}
-
-	void ServerTCP::SendServerNotAccepting(ClientTCPRemote* client)
-	{
-		client->m_PacketManager.EnqueueSegmentUnreliable(client->GetFreePacket(NetworkSegment::TYPE_SERVER_NOT_ACCEPTING));
-		client->SendPackets();
-	}
-
-	ServerTCP* ServerTCP::Create(const ServerTCPDesc& desc)
-	{
-		return DBG_NEW ServerTCP(desc);
+		return DBG_NEW ClientRemoteTCP(GetDescription().PoolSize, socket, this);
 	}
 }

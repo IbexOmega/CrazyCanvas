@@ -241,6 +241,7 @@ namespace LambdaEngine
 	void ClientBase::OnReleaseRequested()
 	{
 		Disconnect();
+		m_pHandler->OnClientReleased(this);
 		m_pHandler = nullptr;
 	}
 

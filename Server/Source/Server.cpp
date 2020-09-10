@@ -13,8 +13,7 @@
 
 #include "Threading/API/Thread.h"
 
-#include "Networking/API/UDP/ServerUDP.h"
-#include "Networking/API/TCP/ServerTCP.h"
+#include "Networking/API/NetworkUtils.h"
 #include "Networking/API/IPAddress.h"
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryEncoder.h"
@@ -30,24 +29,18 @@ Server::Server()
 	using namespace LambdaEngine;
 	CommonApplication::Get()->AddEventHandler(this);
 
-	/*ServerUDPDesc desc = {};
-	desc.Handler	= this;
-	desc.MaxRetries = 10;
-	desc.MaxClients = 10;
-	desc.PoolSize	= 512;
 
-	m_pServer = ServerUDP::Create(desc);
+	ServerDesc desc = {};
+	desc.Handler		= this;
+	desc.MaxRetries		= 10;
+	desc.MaxClients		= 10;
+	desc.PoolSize		= 512;
+	desc.Protocol		= EProtocol::UDP;
+
+	m_pServer = NetworkUtils::CreateServer(desc);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
-	//m_pServer->SetSimulateReceivingPacketLoss(0.1f);*/
 
-	ServerTCPDesc desc = {};
-	desc.Handler = this;
-	desc.MaxRetries = 10;
-	desc.MaxClients = 10;
-	desc.PoolSize = 512;
-
-	m_pServer = ServerTCP::Create(desc);
-	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
+	//m_pServer->SetSimulateReceivingPacketLoss(0.1f);
 }
 
 Server::~Server()

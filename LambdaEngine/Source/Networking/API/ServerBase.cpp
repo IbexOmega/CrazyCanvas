@@ -1,13 +1,15 @@
 #include "Networking/API/ServerBase.h"
 #include "Networking/API/ISocket.h"
 #include "Networking/API/ClientRemoteBase.h"
+#include "Networking/API/IServerHandler.h"
 
 namespace LambdaEngine
 {
 	std::set<ServerBase*> ServerBase::s_Servers;
 	SpinLock ServerBase::s_Lock;
 
-	ServerBase::ServerBase() : 
+	ServerBase::ServerBase(const ServerDesc& desc) :
+		m_Description(desc),
 		m_pSocket(nullptr),
 		m_Accepting(true)
 	{
@@ -82,6 +84,16 @@ namespace LambdaEngine
 		return m_Clients.size();
 	}
 
+	const ServerDesc& ServerBase::GetDescription() const
+	{
+		return m_Description;
+	}
+
+	void ServerBase::OnClientDisconnected(ClientRemoteBase* pClient)
+	{
+		UnRegisterClient(pClient);
+	}
+
 	ClientRemoteBase* ServerBase::GetClient(const IPEndPoint& endPoint)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockClients);
@@ -91,6 +103,24 @@ namespace LambdaEngine
 			return pIterator->second;
 		}
 		return nullptr;
+	}
+
+	void ServerBase::HandleNewConnection(ClientRemoteBase* pClient)
+	{
+		if (!IsAcceptingConnections())
+		{
+			pClient->SendServerNotAccepting();
+			pClient->Release();
+		}
+		else if (GetClientCount() >= GetDescription().MaxClients)
+		{
+			pClient->SendServerFull();
+			pClient->Release();
+		}
+		else
+		{
+			RegisterClient(pClient);
+		}
 	}
 
 	bool ServerBase::OnThreadsStarted()
@@ -151,10 +181,15 @@ namespace LambdaEngine
 				std::scoped_lock<SpinLock> lock(m_LockClients);
 				for (auto& tuple : m_Clients)
 				{
-					TransmitPacketsForClient(tuple.second);
+					tuple.second->TransmitPackets();
 				}
 			}
 		}
+	}
+
+	IClientRemoteHandler* ServerBase::CreateClientHandler() const
+	{
+		return GetDescription().Handler->CreateClientHandler();
 	}
 
 	void ServerBase::FixedTickStatic(Timestamp delta)

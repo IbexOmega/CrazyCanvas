@@ -8,10 +8,12 @@
 
 ClientHandler::ClientHandler()
 {
+
 }
 
 ClientHandler::~ClientHandler()
 {
+
 }
 
 void ClientHandler::OnConnecting(LambdaEngine::IClient* pClient)
@@ -36,8 +38,6 @@ void ClientHandler::OnDisconnected(LambdaEngine::IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_MESSAGE("OnDisconnected()");
-	pClient->Release();
-	delete this;
 }
 
 void ClientHandler::OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngine::NetworkSegment* pPacket)
@@ -52,4 +52,10 @@ void ClientHandler::OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngin
 	LambdaEngine::BinaryDecoder decoder(pPacket);
 	std::string name = decoder.ReadString();
 	LOG_MESSAGE(name.c_str());
+}
+
+void ClientHandler::OnClientReleased(LambdaEngine::IClient* pClient)
+{
+	UNREFERENCED_VARIABLE(pClient);
+	delete this;
 }

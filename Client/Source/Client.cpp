@@ -49,7 +49,7 @@ Client::Client() :
     desc.MaxRetries             = 10;
     desc.ResendRTTMultiplier    = 2.0F;
     desc.Handler                = this;
-    desc.Protocol               = EProtocol::TCP;
+    desc.Protocol               = EProtocol::UDP;
 
     m_pClient = NetworkUtils::CreateClient(desc);
 
@@ -118,6 +118,11 @@ void Client::OnServerFull(LambdaEngine::IClient* pClient)
 {
     UNREFERENCED_VARIABLE(pClient);
     LOG_ERROR("OnServerFull()");
+}
+
+void Client::OnClientReleased(LambdaEngine::IClient* pClient)
+{
+
 }
 
 void Client::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)

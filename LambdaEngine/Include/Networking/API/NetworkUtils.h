@@ -5,6 +5,8 @@
 #include "Networking/API/UDP/ISocketUDP.h"
 #include "Networking/API/TCP/ClientTCP.h"
 #include "Networking/API/UDP/ClientUDP.h"
+#include "Networking/API/TCP/ServerTCP.h"
+#include "Networking/API/UDP/ServerUDP.h"
 #include "Networking/API/IPAddress.h"
 
 #include "Time/API/Timestamp.h"
@@ -36,6 +38,7 @@ namespace LambdaEngine
 		static ISocketUDP* CreateSocketUDP();
 
 		static ClientBase* CreateClient(const ClientDesc& desc);
+		static ServerBase* CreateServer(const ServerDesc& desc);
 
 		/*
 		* Finds the local network address. Usally 192.168.0.X

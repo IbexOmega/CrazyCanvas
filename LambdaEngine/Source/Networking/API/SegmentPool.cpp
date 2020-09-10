@@ -12,7 +12,7 @@ namespace LambdaEngine
 
 		for (uint16 i = 0; i < size; i++)
 		{
-			NetworkSegment* pSegment = new NetworkSegment();
+			NetworkSegment* pSegment = DBG_NEW NetworkSegment();
 			m_Segments.PushBack(pSegment);
 			m_SegmentsFree.PushBack(pSegment);
 		}		

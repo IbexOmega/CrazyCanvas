@@ -34,6 +34,7 @@ public:
 	virtual void OnDisconnected(LambdaEngine::IClient* pClient) override;
 	virtual void OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngine::NetworkSegment* pPacket) override;
 	virtual void OnServerFull(LambdaEngine::IClient* pClient) override;
+	virtual void OnClientReleased(LambdaEngine::IClient* pClient) override;
 
 
 	virtual void OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket) override;

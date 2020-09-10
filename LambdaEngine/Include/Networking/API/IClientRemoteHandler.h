@@ -17,5 +17,6 @@ namespace LambdaEngine
 		virtual void OnDisconnecting(IClient* pClient) = 0;
 		virtual void OnDisconnected(IClient* pClient) = 0;
 		virtual void OnPacketReceived(IClient* pClient, NetworkSegment* pPacket) = 0;
+		virtual void OnClientReleased(IClient* pClient) = 0;
 	};
 }
