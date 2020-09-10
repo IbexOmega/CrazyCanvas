@@ -1,5 +1,6 @@
 #include "Game/GameConsole.h"
 #include "Input/API/Input.h"
+#include "Rendering/ImGuiRenderer.h"
 #include <regex>
 #include <imgui.h>
 
@@ -59,60 +60,63 @@ void LambdaEngine::GameConsole::Render()
 	if (!s_Toggle)
 		return;
 
-	// Draw a console window at the top right of the viewport.
-	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
-	if (ImGui::Begin("Console", (bool*)0, ImGuiWindowFlags_NoMove))
+	ImGuiRenderer::Get().DrawUI([&]()
 	{
-		bool hasFocus = false;
+		// Draw a console window at the top right of the viewport.
+		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
+		if (ImGui::Begin("Console", (bool*)0, ImGuiWindowFlags_NoMove))
+		{
+			bool hasFocus = false;
 
-		// History
-		const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-		ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
-		
-		// Only display visible text to see history.
-		ImGuiListClipper clipper(m_Items.GetSize());
-		while (clipper.Step())
-			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+			// History
+			const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
+
+			// Only display visible text to see history.
+			ImGuiListClipper clipper(m_Items.GetSize());
+			while (clipper.Step())
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+				{
+					Item& item = m_Items[i];
+					const char* str = item.str.c_str();
+					ImVec4 color = ImVec4(item.color.r, item.color.g, item.color.b, item.color.a);
+					ImGui::PushStyleColor(ImGuiCol_Text, color);
+					ImGui::TextUnformatted(str);
+					ImGui::PopStyleColor();
+				}
+
+			if (m_ScrollToBottom | (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+				ImGui::SetScrollHereY(1.0f);
+			m_ScrollToBottom = false;
+
+			ImGui::PopStyleVar();
+			ImGui::EndChild();
+			ImGui::Separator();
+
+			// Command line
+			static char s_Buf[256];
+			ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;;
+			if (ImGui::InputText("Input", s_Buf, 256, input_text_flags, [](ImGuiInputTextCallbackData* data)->int {
+				GameConsole* console = (GameConsole*)data->UserData;
+				return console->TextEditCallback(data);
+				}, (void*)this))
 			{
-				Item& item = m_Items[i];
-				const char* str = item.str.c_str();
-				ImVec4 color = ImVec4(item.color.r, item.color.g, item.color.b, item.color.a);
-				ImGui::PushStyleColor(ImGuiCol_Text, color);
-				ImGui::TextUnformatted(str);
-				ImGui::PopStyleColor();
+				if (s_Buf[0])
+					ExecCommand(std::string(s_Buf));
+				strcpy(s_Buf, "");
+				hasFocus = true;
 			}
 
-		if (m_ScrollToBottom | (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
-			ImGui::SetScrollHereY(1.0f);
-		m_ScrollToBottom = false;
+				if (s_Active || hasFocus)
+				{
+					ImGui::SetItemDefaultFocus();
+					ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
+				}
 
-		ImGui::PopStyleVar();
-		ImGui::EndChild();
-		ImGui::Separator();
-
-		// Command line
-		static char s_Buf[256];
-		ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;;
-		if (ImGui::InputText("Input", s_Buf, 256, input_text_flags, [](ImGuiInputTextCallbackData* data)->int {
-			GameConsole* console = (GameConsole*)data->UserData;
-			return console->TextEditCallback(data);
-		}, (void*)this))
-		{
-			if (s_Buf[0])
-				ExecCommand(std::string(s_Buf));
-			strcpy(s_Buf, "");
-			hasFocus = true;
 		}
-
-		if (s_Active || hasFocus)
-		{
-			ImGui::SetItemDefaultFocus();
-			ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
-		}
-
-	}
-	ImGui::End();
+		ImGui::End();
+	});
 }
 
 void LambdaEngine::GameConsole::BindCommand(ConsoleCommand cmd, std::function<void(CallbackInput&)> callback)
