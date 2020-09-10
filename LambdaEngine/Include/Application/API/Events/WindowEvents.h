@@ -8,31 +8,14 @@
 namespace LambdaEngine
 {
 	/*
-	* WindowEvent
-	*/
-	struct WindowEvent : public Event
-	{
-	public:
-		inline WindowEvent(TSharedRef<Window> window)
-			: Event(0)
-			, EventWindow(window)
-		{
-		}
-
-		DECLARE_EVENT_TYPE(WindowEvent);
-
-	public:
-		TSharedRef<Window> EventWindow;
-	};
-
-	/*
 	* FocusChangedEvent
 	*/
-	struct FocusChangedEvent : public WindowEvent
+	struct FocusChangedEvent : public Event
 	{
 	public:
 		inline FocusChangedEvent(TSharedRef<Window> window, bool hasFocus)
-			: WindowEvent(window)
+			: Event()
+			, EventWindow(window)
 			, HasFocus(hasFocus)
 		{
 		}
@@ -45,17 +28,19 @@ namespace LambdaEngine
 		}
 
 	public:
+		TSharedRef<Window> EventWindow;
 		bool HasFocus;
 	};
 
 	/*
 	* WindowMovedEvent
 	*/
-	struct WindowMovedEvent : public WindowEvent
+	struct WindowMovedEvent : public Event
 	{
 	public:
 		inline WindowMovedEvent(TSharedRef<Window> window, int32 x, int32 y)
-			: WindowEvent(window)
+			: Event()
+			, EventWindow(window)
 			, Position({ x, y })
 		{
 		}
@@ -68,6 +53,7 @@ namespace LambdaEngine
 		}
 
 	public:
+		TSharedRef<Window> EventWindow;
 		struct
 		{
 			int32 x;
@@ -78,11 +64,12 @@ namespace LambdaEngine
 	/*
 	* WindowResizedEvent
 	*/
-	struct WindowResizedEvent : public WindowEvent
+	struct WindowResizedEvent : public Event
 	{
 	public:
 		inline WindowResizedEvent(TSharedRef<Window> window, uint32 width, uint32 height, EResizeType resizeType)
-			: WindowEvent(window)
+			: Event()
+			, EventWindow(window)
 			, Width(width)
 			, Height(height)
 			, ResizeType(resizeType)
@@ -97,6 +84,7 @@ namespace LambdaEngine
 		}
 
 	public:
+		TSharedRef<Window> EventWindow;
 		uint32 Width;
 		uint32 Height;
 		EResizeType ResizeType;
@@ -105,11 +93,12 @@ namespace LambdaEngine
 	/*
 	* WindowMouseLeftEvent
 	*/
-	struct WindowMouseLeftEvent : public WindowEvent
+	struct WindowMouseLeftEvent : public Event
 	{
 	public:
 		inline WindowMouseLeftEvent(TSharedRef<Window> window)
-			: WindowEvent(window)
+			: Event()
+			, EventWindow(window)
 		{
 		}
 
@@ -119,16 +108,20 @@ namespace LambdaEngine
 		{
 			return "WindowMouseLeftEvent";
 		}
+
+	public:
+		TSharedRef<Window> EventWindow;
 	};
 
 	/*
 	* WindowMouseEnteredEvent
 	*/
-	struct WindowMouseEnteredEvent : public WindowEvent
+	struct WindowMouseEnteredEvent : public Event
 	{
 	public:
 		inline WindowMouseEnteredEvent(TSharedRef<Window> window)
-			: WindowEvent(window)
+			: Event()
+			, EventWindow(window)
 		{
 		}
 
@@ -138,16 +131,20 @@ namespace LambdaEngine
 		{
 			return "WindowMouseEnteredEvent";
 		}
+
+	public:
+		TSharedRef<Window> EventWindow;
 	};
 
 	/*
 	* WindowClosedEvent
 	*/
-	struct WindowClosedEvent : public WindowEvent
+	struct WindowClosedEvent : public Event
 	{
 	public:
 		inline WindowClosedEvent(TSharedRef<Window> window)
-			: WindowEvent(window)
+			: Event()
+			, EventWindow(window)
 		{
 		}
 
@@ -157,5 +154,8 @@ namespace LambdaEngine
 		{
 			return "WindowClosedEvent";
 		}
+
+	public:
+		TSharedRef<Window> EventWindow;
 	};
 }

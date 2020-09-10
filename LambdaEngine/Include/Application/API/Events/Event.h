@@ -8,41 +8,67 @@
 namespace LambdaEngine
 {
 	/*
-	* EventFlags
+	* EventType
 	*/
-	enum FEventFlag : uint32
+	struct EventType
 	{
-		EVENT_FLAG_NONE		= 0,
+		using EventTypeID = uint64;
 
-		EVENT_FLAG_MOUSE	= FLAG(1),
-		EVENT_FLAG_KEYBOARD	= FLAG(2),
-		EVENT_FLAG_INPUT	= EVENT_FLAG_MOUSE | EVENT_FLAG_KEYBOARD,
+		constexpr EventType(EventTypeID id, const char* pInName)
+			: ID(id)
+			, pName(pInName)
+		{
+		}
 
-		EVENT_FLAG_WINDOW	= FLAG(3),
-		EVENT_FLAG_OTHER	= FLAG(4),
+		FORCEINLINE size_t GetHash() const
+		{
+			return std::hash<EventTypeID>()(ID);
+		}
+
+		FORCEINLINE bool operator==(const EventType& other) const
+		{
+			return (ID == other.ID);
+		}
+
+		FORCEINLINE bool operator!=(const EventType& other) const
+		{
+			return (ID == other.ID);
+		}
+
+		const EventTypeID ID;
+		const char* pName;
 	};
 
-	typedef uint32 FEventFlags;
+	struct EventTypeHasher
+	{
+		size_t operator()(const EventType& type) const
+		{
+			return type.GetHash();
+		}
+	};
 
 	/*
 	* Define for declaring events
 	*/
-#define DECLARE_EVENT_TYPE(Type) \
-	public: \
-		FORCEINLINE static constexpr uint64 GetStaticType() \
-		{ \
-			constexpr uint64 TYPE_HASH = HashString(#Type); \
-			return TYPE_HASH; \
-		} \
-	public: \
-		virtual uint64 GetType() const override \
-		{ \
-			return GetStaticType(); \
-		} \
-		virtual const char* GetName() const override \
-		{ \
-			return #Type; \
-		} \
+	#define DECLATE_STATIC_EVENT_TYPE(Type) \
+		public: \
+			FORCEINLINE static constexpr EventType GetStaticType() \
+			{ \
+				constexpr EventType type(HashString(#Type), #Type); \
+				return type; \
+			} \
+
+	#define DECLARE_EVENT_TYPE(Type) \
+		DECLATE_STATIC_EVENT_TYPE(Type); \
+		public: \
+			virtual EventType GetType() const override \
+			{ \
+				return GetStaticType(); \
+			} \
+			virtual const char* GetName() const override \
+			{ \
+				return #Type; \
+			} \
 
 	/*
 	* Base for all events
@@ -50,30 +76,19 @@ namespace LambdaEngine
 	struct Event
 	{
 	public:
-		inline Event(FEventFlags eventFlags)
-			: EventFlags(eventFlags)
-			, IsConsumed(false)
+		inline Event()
+			: IsConsumed(false)
 		{
 		}
+
+		DECLATE_STATIC_EVENT_TYPE(Event);
 
 		virtual String ToString() const = 0;
-		virtual uint64 GetType() const = 0;
+		virtual EventType GetType() const = 0;
 		virtual const char* GetName() const = 0;
 
-		FORCEINLINE bool HasEventFlags(FEventFlags flags) const
-		{
-			return ((EventFlags & flags) != 0);
-		}
-
 	public:
-		FEventFlags EventFlags;
 		bool IsConsumed;
-
-	public:
-		FORCEINLINE static constexpr uint64 GetStaticType()
-		{
-			return 0;
-		}
 	};
 
 	/*

@@ -70,12 +70,30 @@ namespace LambdaEngine
 	*/
 	bool Input::Init()
 	{
-		return EventQueue::RegisterEventHandler(EventHandler(FEventFlag::EVENT_FLAG_INPUT, Input::HandleEvent));
+		EventHandler eventHandler(Input::HandleEvent);
+
+		bool result = true;
+		result = result && EventQueue::RegisterEventHandler<KeyPressedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<KeyReleasedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseClickedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseReleasedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseMovedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseScrolledEvent>(eventHandler);
+		return result;
 	}
 
 	bool Input::Release()
 	{
-		return EventQueue::UnregisterEventHandler(EventHandler(FEventFlag::EVENT_FLAG_INPUT, Input::HandleEvent));
+		EventHandler eventHandler(Input::HandleEvent);
+
+		bool result = true;
+		result = result && EventQueue::UnregisterEventHandler<KeyPressedEvent>(eventHandler);
+		result = result && EventQueue::UnregisterEventHandler<KeyReleasedEvent>(eventHandler);
+		result = result && EventQueue::UnregisterEventHandler<MouseClickedEvent>(eventHandler);
+		result = result && EventQueue::UnregisterEventHandler<MouseReleasedEvent>(eventHandler);
+		result = result && EventQueue::UnregisterEventHandler<MouseMovedEvent>(eventHandler);
+		result = result && EventQueue::UnregisterEventHandler<MouseScrolledEvent>(eventHandler);
+		return result;
 	}
 
 	void Input::Tick()

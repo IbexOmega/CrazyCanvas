@@ -6,33 +6,15 @@
 namespace LambdaEngine
 {
 	/*
-	* Base class for mouseevents
-	*/
-	struct MouseEvent : public Event
-	{
-	public:
-		inline MouseEvent(EMouseButton button, ModifierKeyState modiferState)
-			: Event(EVENT_FLAG_MOUSE)
-			, Button(button)
-			, ModiferState(modiferState)
-		{
-		}
-
-		DECLARE_EVENT_TYPE(MouseEvent);
-
-	public:
-		EMouseButton Button;
-		ModifierKeyState ModiferState;
-	};
-
-	/*
 	* MouseClickedEvent
 	*/
-	struct MouseClickedEvent : public MouseEvent
+	struct MouseClickedEvent : public Event
 	{
 	public:
 		inline MouseClickedEvent(EMouseButton button, ModifierKeyState modiferState)
-			: MouseEvent(button, modiferState)
+			: Event()
+			, Button(button)
+			, ModiferState(modiferState)
 		{
 		}
 
@@ -42,16 +24,22 @@ namespace LambdaEngine
 		{
 			return String("MouseClickedEvent=[=") + ButtonToString(Button);
 		}
+
+	public:
+		EMouseButton Button;
+		ModifierKeyState ModiferState;
 	};
 
 	/*
 	* MouseReleasedEvent
 	*/
-	struct MouseReleasedEvent : public MouseEvent
+	struct MouseReleasedEvent : public Event
 	{
 	public:
 		inline MouseReleasedEvent(EMouseButton button, ModifierKeyState modiferState)
-			: MouseEvent(button, modiferState)
+			: Event()
+			, Button(button)
+			, ModiferState(modiferState)
 		{
 		}
 
@@ -61,6 +49,10 @@ namespace LambdaEngine
 		{
 			return String("MouseReleasedEvent=[=") + ButtonToString(Button);
 		}
+
+	public:
+		EMouseButton Button;
+		ModifierKeyState ModiferState;
 	};
 
 	/*
@@ -70,7 +62,7 @@ namespace LambdaEngine
 	{
 	public:
 		inline MouseScrolledEvent(int32 deltaX, int32 deltaY)
-			: Event(EVENT_FLAG_MOUSE)
+			: Event()
 			, DeltaX(deltaX)
 			, DeltaY(deltaY)
 		{
@@ -95,7 +87,7 @@ namespace LambdaEngine
 	{
 	public:
 		inline MouseMovedEvent(int32 x, int32 y)
-			: Event(EVENT_FLAG_MOUSE)
+			: Event()
 			, Position({ x, y })
 		{
 		}
@@ -122,7 +114,7 @@ namespace LambdaEngine
 	{
 	public:
 		inline RawMouseMovedEvent(int32 deltaX, int32 deltaY)
-			: Event(EVENT_FLAG_MOUSE)
+			: Event()
 			, DeltaX(deltaX)
 			, DeltaY(deltaY)
 		{

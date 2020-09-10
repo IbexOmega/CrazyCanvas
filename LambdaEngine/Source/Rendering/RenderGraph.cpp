@@ -44,12 +44,12 @@ namespace LambdaEngine
 	RenderGraph::RenderGraph(const GraphicsDevice* pGraphicsDevice)
 		: m_pGraphicsDevice(pGraphicsDevice)
 	{
-		EventQueue::RegisterEventHandler(EventHandler(FEventFlag::EVENT_FLAG_WINDOW, this, &RenderGraph::OnWindowResized));
+		EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &RenderGraph::OnWindowResized);
 	}
 
 	RenderGraph::~RenderGraph()
 	{
-		EventQueue::UnregisterEventHandler(EventHandler(FEventFlag::EVENT_FLAG_WINDOW, this, &RenderGraph::OnWindowResized));
+		EventQueue::UnregisterEventHandler(this, &RenderGraph::OnWindowResized);
 
 		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
 		SAFERELEASE(m_pFence);

@@ -39,13 +39,18 @@ namespace LambdaEngine
 
 	RenderGraphEditor::RenderGraphEditor()
 	{
-		EventQueue::RegisterEventHandler(EventHandler(this, &RenderGraphEditor::OnEvent));
+		EventQueue::RegisterEventHandler<MouseReleasedEvent>(this, &RenderGraphEditor::OnButtonReleased);
+		EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &RenderGraphEditor::OnKeyPressed);
+		EventQueue::RegisterEventHandler<KeyReleasedEvent>(this, &RenderGraphEditor::OnKeyReleased);
+
 		InitDefaultResources();
 	}
 
 	RenderGraphEditor::~RenderGraphEditor()
 	{
-		EventQueue::UnregisterEventHandler(EventHandler(this, &RenderGraphEditor::OnEvent));
+		EventQueue::UnregisterEventHandler<MouseReleasedEvent>(this, &RenderGraphEditor::OnButtonReleased);
+		EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &RenderGraphEditor::OnKeyPressed);
+		EventQueue::UnregisterEventHandler<KeyReleasedEvent>(this, &RenderGraphEditor::OnKeyReleased);
 	}
 
 	void RenderGraphEditor::InitGUI()
@@ -207,14 +212,6 @@ namespace LambdaEngine
 			m_ParsedGraphDirty = false;
 			m_ParsedGraphRenderDirty = true;
 		}
-	}
-
-	bool RenderGraphEditor::OnEvent(const Event& event)
-	{
-		bool result = DispatchEvent<MouseReleasedEvent>(event, &RenderGraphEditor::OnButtonReleased, this);
-		result = result || DispatchEvent<KeyPressedEvent>(event, &RenderGraphEditor::OnKeyPressed, this);
-		result = result || DispatchEvent<KeyReleasedEvent>(event, &RenderGraphEditor::OnKeyReleased, this);
-		return result;
 	}
 
 	bool RenderGraphEditor::OnButtonReleased(const MouseReleasedEvent& event)

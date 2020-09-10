@@ -52,7 +52,14 @@ namespace LambdaEngine
 		VALIDATE(s_pRendererInstance != nullptr);
 		s_pRendererInstance = nullptr;
 
-		EventQueue::UnregisterEventHandler(EventHandler(FEventFlag::EVENT_FLAG_INPUT, this, &ImGuiRenderer::OnEvent));
+		EventHandler eventHandler(this, &ImGuiRenderer::OnEvent);
+		EventQueue::UnregisterEventHandler<MouseMovedEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<MouseScrolledEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<MouseReleasedEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<MouseClickedEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<KeyPressedEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<KeyReleasedEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<KeyTypedEvent>(eventHandler);
 
 		imnodes::Shutdown();
 		ImGui::DestroyContext();
@@ -122,7 +129,17 @@ namespace LambdaEngine
 
 		m_DescriptorSet->WriteTextureDescriptors(&m_FontTextureView, &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 
-		return EventQueue::RegisterEventHandler(EventHandler(FEventFlag::EVENT_FLAG_INPUT, this, &ImGuiRenderer::OnEvent));
+		EventHandler eventHandler(this, &ImGuiRenderer::OnEvent);
+
+		bool result = true;
+		result = result && EventQueue::RegisterEventHandler<MouseMovedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseScrolledEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseReleasedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseClickedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<KeyPressedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<KeyReleasedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<KeyTypedEvent>(eventHandler);
+		return result;
 	}
 
 	void ImGuiRenderer::DrawUI(ImGuiDrawFunc drawFunc)
