@@ -2196,6 +2196,7 @@ namespace LambdaEngine
 				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppComputeCommandLists[f], pipelineStageName);
 			}
 
+			// Reset all timestamps and pipeline statistics before first use of them
 			for (uint32 f = 0; f < m_BackBufferCount; f++)
 			{
 				pPipelineStage->ppGraphicsCommandLists[f]->Begin(nullptr);

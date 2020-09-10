@@ -172,6 +172,18 @@ namespace LambdaEngine
 	void GPUProfiler::GetTimestamp(CommandList* pCommandList)
 	{
 #ifdef LAMBDA_DEBUG
+		// Don't get the first time to make sure the timestamps are on the GPU and are ready
+		if (m_ShouldGetTimestamps.find(pCommandList) == m_ShouldGetTimestamps.end())
+		{
+			m_ShouldGetTimestamps[pCommandList] = false;
+			return;
+		}
+		else if (!m_ShouldGetTimestamps[pCommandList])
+		{
+			m_ShouldGetTimestamps[pCommandList] = true;
+			return;
+		}
+
 		size_t timestampCount = 2;
 		TArray<uint64_t> results(timestampCount);
 		bool res = m_pTimestampHeap->GetResults(m_Timestamps[pCommandList].Start, timestampCount, timestampCount * sizeof(uint64), results.GetData());
@@ -234,7 +246,7 @@ namespace LambdaEngine
 	void GPUProfiler::GetGraphicsPipelineStat()
 	{
 #ifdef LAMBDA_DEBUG
-		m_pPipelineStatHeap->GetResults(0, 1, m_GraphicsStats.GetSize() * sizeof(uint64), m_GraphicsStats.GetData());
+			m_pPipelineStatHeap->GetResults(0, 1, m_GraphicsStats.GetSize() * sizeof(uint64), m_GraphicsStats.GetData());
 #endif
 	}
 

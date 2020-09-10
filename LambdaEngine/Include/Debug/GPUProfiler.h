@@ -87,6 +87,8 @@ namespace LambdaEngine
 		float m_UpdateFreq;
 		bool m_EnableGraph				= true;
 
+		THashTable<CommandList*, bool> m_ShouldGetTimestamps;
+
 		// Pipeline statistics
 		QueryHeap* m_pPipelineStatHeap = nullptr;
 		TArray<uint64_t> m_GraphicsStats;
