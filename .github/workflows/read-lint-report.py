@@ -68,6 +68,12 @@ def readReport(fileName, filesToLint):
 def getFilesToLint(modifiedFilesPath, addedFilesPath):
     modifiedFiles = json.load(open(modifiedFilesPath, 'r')) if modifiedFilesPath != "" else []
     addedFiles = json.load(open(addedFilesPath, 'r')) if addedFilesPath != "" else []
+
+    # Replace forward slashes with backward slashes
+    for file_list in [modifiedFiles, addedFiles]:
+        for file_idx, file in enumerate(file_list):
+            file_list[file_idx] = file.replace('/', os.sep)
+
     print(modifiedFiles)
     print(addedFiles)
     return modifiedFiles + addedFiles
