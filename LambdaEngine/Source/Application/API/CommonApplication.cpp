@@ -310,7 +310,7 @@ namespace LambdaEngine
 	bool CommonApplication::PostRelease()
 	{
 		Application* pPlatformApplcation = s_CommonApplication->GetPlatformApplication();
-		pPlatformApplcation->SetEventHandler(nullptr);
+		pPlatformApplication->SetEventHandler(nullptr);
 		
 		s_CommonApplication.Reset();
 
