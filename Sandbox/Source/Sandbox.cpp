@@ -542,11 +542,12 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 {
 	using namespace LambdaEngine;
 
+	Sampler* pNearestSampler				= Sampler::GetNearestSampler();
+
 	GUID_Lambda blueNoiseID = ResourceManager::GetTextureGUID("Blue Noise Texture");
 
 	Texture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
 	TextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
-	Sampler* pNearestSampler				= Sampler::GetNearestSampler();
 
 	ResourceUpdateDesc blueNoiseUpdateDesc = {};
 	blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";
@@ -555,6 +556,19 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
 
 	Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
+
+	GUID_Lambda cubemapTexID = ResourceManager::GetTextureGUID("Cubemap Texture");
+
+	Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
+	TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
+
+	ResourceUpdateDesc cubeTextureUpdateDesc = {};
+	cubeTextureUpdateDesc.ResourceName = "CUBEMAP";
+	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
+	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
+	cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
+
+	Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 }
 
 namespace LambdaEngine
@@ -609,16 +623,15 @@ bool Sandbox::LoadRendererResources()
 
 		GUID_Lambda cubemapTexID = ResourceManager::LoadCubeTexturesArrayFromFile("Cubemap Texture", skybox, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
 
-		Texture* pCubeTexture = ResourceManager::GetTexture(cubemapTexID);
-		TextureView* pCubeTextureView = ResourceManager::GetTextureView(cubemapTexID);
-
-		Sampler* pNearestSampler = Sampler::GetNearestSampler();
+		Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
+		TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
+		Sampler* pNearestSampler		= Sampler::GetNearestSampler();
 
 		ResourceUpdateDesc cubeTextureUpdateDesc = {};
 		cubeTextureUpdateDesc.ResourceName = "CUBEMAP";
-		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures = &pCubeTexture;
-		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews = &pCubeTextureView;
-		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers = &pNearestSampler;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
 
 		Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}

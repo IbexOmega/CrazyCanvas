@@ -338,6 +338,9 @@
                 }
             },
             "depth_test_enabled": true,
+            "cull_mode": "CULL_MODE_BACK",
+            "polygon_mode": "POLYGON_MODE_FILL",
+            "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
@@ -376,7 +379,7 @@
                     "name": "CUBEMAP",
                     "removable": true,
                     "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": ""
+                    "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "BACK_BUFFER_TEXTURE",

@@ -273,10 +273,10 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
-			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
-			s_TextureNamesToGUIDs[name] = guid;
+			guid							= s_NextFreeGUID++;
+			ppMappedTexture					= &s_Textures[guid]; //Creates new entry if not existing
+			ppMappedTextureView				= &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureNamesToGUIDs[name]		= guid;
 		}
 
 		Texture* pTexture = ResourceLoader::LoadCubeTexturesArrayFromFile(name, TEXTURE_DIR, pFilenames, textureCount, format, generateMips);
@@ -286,15 +286,15 @@ namespace LambdaEngine
 		TextureDesc textureDesc = pTexture->GetDesc();
 
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.DebugName = name + " Texture View";
-		textureViewDesc.pTexture = pTexture;
-		textureViewDesc.Flags = FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		textureViewDesc.Format = format;
-		textureViewDesc.Type = count > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
-		textureViewDesc.MiplevelCount = textureDesc.Miplevels;
-		textureViewDesc.ArrayCount = textureDesc.ArrayCount;
-		textureViewDesc.Miplevel = 0;
-		textureViewDesc.ArrayIndex = 0;
+		textureViewDesc.DebugName		= name + " Texture View";
+		textureViewDesc.pTexture		= pTexture;
+		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Format			= format;
+		textureViewDesc.Type			= count > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+		textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
+		textureViewDesc.ArrayCount		= textureDesc.ArrayCount;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.ArrayIndex		= 0;
 
 		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
 
