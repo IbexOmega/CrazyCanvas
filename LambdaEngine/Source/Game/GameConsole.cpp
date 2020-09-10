@@ -88,7 +88,7 @@ namespace LambdaEngine
 						}
 
 					if (m_ScrollToBottom | (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
-						ImGui::SetScrollHereY(1.0f);
+						ImGui::SetScrollHereY(0.0f);
 					m_ScrollToBottom = false;
 
 					ImGui::PopStyleVar();
