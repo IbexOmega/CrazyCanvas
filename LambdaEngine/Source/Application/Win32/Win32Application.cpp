@@ -198,11 +198,6 @@ namespace LambdaEngine
 		constexpr uint32 REPEAT_KEY_MASK	= 0x40000000;
 		constexpr uint16 BACK_BUTTON_MASK	= 0x0001;
 
-		//if (!m_EventHandler)
-		//{
-		//	return;
-		//}
-
 		TSharedRef<Win32Window> messageWindow = GetWindowFromHandle(hWnd);
 		switch (uMessage)
 		{
