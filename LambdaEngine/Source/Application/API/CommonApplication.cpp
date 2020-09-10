@@ -17,32 +17,17 @@ namespace LambdaEngine
 		s_CommonApplication = this;
 	}
 
-	void CommonApplication::ReleasePlatform()
-	{
-		// HACK: For now
-		SAFEDELETE(m_pPlatformApplication);
-	}
-
 	CommonApplication::~CommonApplication()
 	{
 		VALIDATE(s_CommonApplication != nullptr);
 		s_CommonApplication = nullptr;
-
-		SAFEDELETE(m_pPlatformApplication);
 	}
 
-	bool CommonApplication::Create()
+	bool CommonApplication::Create(Application* pApplication)
 	{
 		// Create platform application
-		m_pPlatformApplication = PlatformApplication::CreateApplication();
-		if (m_pPlatformApplication->Create())
-		{
-			m_pPlatformApplication->SetEventHandler(s_CommonApplication);
-		}
-		else
-		{
-			return false;
-		}
+		m_pPlatformApplication = pApplication;
+		m_pPlatformApplication->SetEventHandler(s_CommonApplication);
 
 		// Create mainwindow
 		WindowDesc windowDesc = { };
@@ -280,9 +265,16 @@ namespace LambdaEngine
 
 	bool CommonApplication::PreInit()
 	{
+		// Create platform application
+		Application* pPlatformApplication = PlatformApplication::CreateApplication();
+		if (!pPlatformApplication->Create())
+		{
+			return false;
+		}
+
 		// Create application
 		CommonApplication* pApplication = DBG_NEW CommonApplication();
-		if (!pApplication->Create())
+		if (!pApplication->Create(pPlatformApplication))
 		{
 			DELETE_OBJECT(pApplication);
 			return false;
@@ -294,7 +286,14 @@ namespace LambdaEngine
 	bool CommonApplication::Tick()
 	{
 		PlatformApplication::PeekEvents();
-		return m_pPlatformApplication->Tick();
+		
+		bool shouldExit = m_pPlatformApplication->Tick();
+		if (shouldExit)
+		{
+			m_IsExiting = true;
+		}
+
+		return shouldExit;
 	}
 
 	void CommonApplication::Terminate()
@@ -310,8 +309,12 @@ namespace LambdaEngine
 
 	bool CommonApplication::PostRelease()
 	{
-		s_CommonApplication->ReleasePlatform();
+		Application* pPlatformApplication = s_CommonApplication->GetPlatformApplication();
+		pPlatformApplication->SetEventHandler(nullptr);
+		
 		s_CommonApplication.Reset();
+
+		SAFEDELETE(pPlatformApplication);
 		return true;
 	}
 }

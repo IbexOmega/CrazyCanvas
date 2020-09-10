@@ -68,8 +68,8 @@ namespace LambdaEngine
 
 		virtual bool SupportsRawInput() const override final;
 
-		virtual void		SetMouseVisibility(bool visible)					override final;
-		virtual void		SetMousePosition(int x, int y)						override final;
+		virtual void SetMouseVisibility(bool visible) override final;
+		virtual void SetMousePosition(int32 x, int32 y) override final;
 		virtual void SetInputMode(TSharedRef<Window> window, EInputMode inputMode) override final;
 		virtual EInputMode GetInputMode(TSharedRef<Window> window) const override final;
 
@@ -84,6 +84,7 @@ namespace LambdaEngine
 		~Win32Application();
 
 		void AddWindow(TSharedRef<Win32Window> window);
+		void DestroyWindow(TSharedRef<Win32Window> window);
 
 		void ProcessStoredMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam, int32 mouseDeltaX, int32 mouseDeltaY);
 		LRESULT ProcessMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);

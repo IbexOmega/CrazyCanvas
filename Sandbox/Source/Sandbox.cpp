@@ -31,7 +31,10 @@
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Engine/EngineConfig.h"
+
 #include "Game/Scene.h"
+#include "Game/GameConsole.h"
 
 #include "Time/API/Clock.h"
 
@@ -61,11 +64,15 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
+	m_RenderGraphWindow = false;
+	m_ShowDemoWindow = false;
+	m_DebuggingWindow = false;
+
 	CommonApplication::Get()->AddEventHandler(this);
 
 	ShaderReflection shaderReflection;
 	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
-	
+
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
@@ -73,7 +80,7 @@ Sandbox::Sandbox()
 
 	SceneDesc sceneDesc = { };
 	sceneDesc.Name				= "Test Scene";
-	sceneDesc.RayTracingEnabled = deviceFeatures.RayTracing;
+	sceneDesc.RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
 	m_pScene->Init(sceneDesc);
 
 	m_DirectionalLightAngle	= glm::half_pi<float>();
@@ -344,7 +351,7 @@ Sandbox::Sandbox()
 	cameraDesc.NearPlane	= 0.001f;
 	cameraDesc.FarPlane		= 1000.0f;
 
-	m_pCamera->Init(CommonApplication::Get(), cameraDesc);
+	m_pCamera->Init(cameraDesc);
 
 	LoadRendererResources();
 
@@ -358,32 +365,75 @@ Sandbox::Sandbox()
 		m_pRenderGraphEditor->InitGUI();	//Must Be called after Renderer is initialized
 	}
 
+	GameConsole::Get().Init();
+	ConsoleCommand cmd;
+	cmd.Init("clo", true);
+	cmd.AddArg(Arg::EType::STRING);
+	cmd.AddFlag("l", Arg::EType::INT);
+	cmd.AddFlag("i", Arg::EType::EMPTY);
+	cmd.AddDescription("Does blah and do bar.");
+	GameConsole::Get().BindCommand(cmd, [](GameConsole::CallbackInput& input)->void {
+		std::string s1 = input.Arguments.GetFront().Value.Str;
+		std::string s2 = input.Flags.find("i") == input.Flags.end() ? "no set" : "set";
+		std::string s3 = "no set";
+		auto it = input.Flags.find("l");
+		if (it != input.Flags.end())
+			s3 = "set with a value of " + std::to_string(it->second.Arg.Value.I);
+		LOG_INFO("Command Called with argument '%s' and flag i was %s and flag l was %s.", s1.c_str(), s2.c_str(), s3.c_str());
+	});
+
+	ConsoleCommand cmd1;
+	cmd1.Init("render_graph", true);
+	cmd1.AddArg(Arg::EType::BOOL);
+	cmd1.AddDescription("Activate/Deactivate rendergraph window.\n\t'render_graph true'");
+	GameConsole::Get().BindCommand(cmd1, [&, this](GameConsole::CallbackInput& input)->void {
+		m_RenderGraphWindow = input.Arguments.GetFront().Value.B;
+		});
+
+	ConsoleCommand cmd2;
+	cmd2.Init("imgui_demo", true);
+	cmd2.AddArg(Arg::EType::BOOL);
+	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'show_demo true'");
+	GameConsole::Get().BindCommand(cmd2, [&, this](GameConsole::CallbackInput& input)->void {
+		m_ShowDemoWindow = input.Arguments.GetFront().Value.B;
+		});
+
+	ConsoleCommand cmd3;
+	cmd3.Init("debugging", true);
+	cmd3.AddArg(Arg::EType::BOOL);
+	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'debugging true'");
+	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
+		m_DebuggingWindow = input.Arguments.GetFront().Value.B;
+		});
+
+
 	return;
 }
 
 Sandbox::~Sandbox()
 {
 	LambdaEngine::CommonApplication::Get()->RemoveEventHandler(this);
-	
 	SAFEDELETE(m_pScene);
 	SAFEDELETE(m_pCamera);
 
 	SAFEDELETE(m_pRenderGraphEditor);
+
+	LambdaEngine::GameConsole::Get().Release();
 }
 
 void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
 {
 	UNREFERENCED_VARIABLE(modifierMask);
-	
+
 	using namespace LambdaEngine;
-	
+
 	//LOG_MESSAGE("Key Pressed: %s, isRepeat=%s", KeyToString(key), isRepeat ? "true" : "false");
 
 	if (isRepeat)
 	{
 		return;
 	}
-	
+
 	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
 	if (key == EKey::KEY_ESCAPE)
 	{
@@ -420,7 +470,7 @@ void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isR
 	{
 		mainWindow->SetPosition(0, 0);
 	}
-	
+
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
 
@@ -437,6 +487,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
+	m_pRenderGraphEditor->Update();
 	Render(delta);
 }
 
@@ -453,30 +504,57 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-	Renderer::NewFrame(delta);
-
 	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-	float32 renderWidth		= (float32)mainWindow->GetWidth();
-	float32 renderHeight	= (float32)mainWindow->GetHeight();
+	float32 renderWidth = (float32)mainWindow->GetWidth();
+	float32 renderHeight = (float32)mainWindow->GetHeight();
 	float32 renderAspectRatio = renderWidth / renderHeight;
 
 	if (IMGUI_ENABLED)
 	{
-		m_pRenderGraphEditor->RenderGUI();
-
-		ImGui::ShowDemoWindow();
-
-		ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
-		if (ImGui::Begin("Debugging Window", NULL))
+		ImGuiRenderer::Get().DrawUI([&]()
 		{
-			ImGui::Text("FPS: %f", 1.0f / delta.AsSeconds());
-			ImGui::Text("Frametime (ms): %f", delta.AsMilliSeconds());
-		}
-		ImGui::End();
+			if (m_RenderGraphWindow)
+				m_pRenderGraphEditor->RenderGUI();
+
+			if (m_ShowDemoWindow)
+				ImGui::ShowDemoWindow();
+
+			if (m_DebuggingWindow)
+			{
+				ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
+				if (ImGui::Begin("Debugging Window", NULL))
+				{
+					ImGui::Text("FPS: %f", 1.0f / delta.AsSeconds());
+					ImGui::Text("Frametime (ms): %f", delta.AsMilliSeconds());
+				}
+				ImGui::End();
+			}
+			
+		});
+
+		GameConsole::Get().Render();
 	}
 
-	Renderer::PrepareRender(delta);
 	Renderer::Render();
+}
+
+void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
+{
+	using namespace LambdaEngine;
+
+	GUID_Lambda blueNoiseID = ResourceManager::GetTextureGUID("Blue Noise Texture");
+
+	Texture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
+	TextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
+	Sampler* pNearestSampler				= Sampler::GetNearestSampler();
+
+	ResourceUpdateDesc blueNoiseUpdateDesc = {};
+	blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextures			= &pBlueNoiseTexture;
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
+
+	Renderer::GetRenderGraph()->UpdateResource(blueNoiseUpdateDesc);
 }
 
 namespace LambdaEngine
@@ -506,8 +584,7 @@ bool Sandbox::LoadRendererResources()
 
 		Texture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
 		TextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
-
-		Sampler* pNearestSampler = Sampler::GetNearestSampler();
+		Sampler* pNearestSampler				= Sampler::GetNearestSampler();
 
 		ResourceUpdateDesc blueNoiseUpdateDesc = {};
 		blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";

@@ -5,6 +5,9 @@
 
 namespace LambdaEngine
 {
+	/*
+	* FWindowStyleFlags
+	*/
 	enum FWindowStyleFlags : uint32
 	{
 		WINDOW_STYLE_FLAG_NONE 			= 0,
@@ -15,6 +18,9 @@ namespace LambdaEngine
 		WINDOW_STYLE_FLAG_RESIZEABLE 	= FLAG(5),
 	};
 
+	/*
+	* WindowDesc
+	*/
 	struct WindowDesc
 	{
 		String Title	= "";
@@ -23,6 +29,9 @@ namespace LambdaEngine
 		uint32 Style	= 0;
 	};
 
+	/*
+	* Window
+	*/
 	class Window : public RefCountedObject
 	{
 	public:
@@ -61,6 +70,11 @@ namespace LambdaEngine
 		virtual void* GetHandle() const
 		{
 			return nullptr;
+		}
+
+		virtual bool IsValid() const
+		{
+			return false;
 		}
 
 		/*

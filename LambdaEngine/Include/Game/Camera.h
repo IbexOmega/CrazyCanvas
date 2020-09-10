@@ -39,7 +39,7 @@ namespace LambdaEngine
 		Camera();
 		~Camera() = default;
 
-		void Init(CommonApplication* commonApplication, const CameraDesc& desc);
+		void Init(const CameraDesc& desc);
 
 		void SetDirection(const glm::vec3& direction);
 		void SetPosition(const glm::vec3& position);
@@ -71,7 +71,6 @@ namespace LambdaEngine
 		void CalculateVectors();
 
 	private:
-		CommonApplication* m_CommonApplication;
 		CameraData m_Data;
 
 		float m_SpeedFactor = 0.05f;

@@ -24,6 +24,8 @@ namespace LambdaEngine
 	class ImGuiRenderer;
 	class GraphicsDevice;
 	class CommandAllocator;
+
+	struct RenderGraphStructureDesc;
 	
 	class LAMBDA_API Renderer
 	{
@@ -34,10 +36,9 @@ namespace LambdaEngine
 		static bool Init();
 		static bool Release();
 
+		static void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
 		static void SetScene(Scene* pScene);
 
-		static void NewFrame(Timestamp delta);
-		static void PrepareRender(Timestamp delta);
 		static void Render();
 
 		static CommandList* AcquireGraphicsCopyCommandList();
@@ -47,6 +48,9 @@ namespace LambdaEngine
 		FORCEINLINE static uint64			GetFrameIndex()			{ return s_FrameIndex; }
 		FORCEINLINE static uint64			GetModFrameIndex()		{ return s_ModFrameIndex; }
 		FORCEINLINE static uint32			GetBufferIndex()		{ return s_BackBufferIndex; }
+
+	private:
+		static void UpdateRenderGraphFromScene();
 
 	private:
 		static TSharedRef<SwapChain>	s_SwapChain;

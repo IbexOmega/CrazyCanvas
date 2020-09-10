@@ -11,11 +11,14 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Engine/EngineConfig.h"
+
 #include "Input/API/Input.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 
 #include "Threading/API/Thread.h"
+#include "Threading/API/ThreadPool.h"
 
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
@@ -27,45 +30,54 @@
 
 #include <assimp/Importer.hpp>
 
+#include "Utilities/RuntimeStats.h"
+
 namespace LambdaEngine
 {
+	/*
+	* Global clock variables
+	*/
 	static Clock g_Clock;
+	static Timestamp g_FixedTimestep = Timestamp::Seconds(1.0 / 60.0);
 
+	/*
+	* EngineLoop
+	*/
 	void EngineLoop::Run()
 	{
-		Clock			fixedClock;
-		const Timestamp timestep	= Timestamp::Seconds(1.0 / 60.0);
-		Timestamp		accumulator = Timestamp(0);
-		
+		Clock fixedClock;
+		Timestamp accumulator = Timestamp(0);
+
 		g_Clock.Reset();
-		
+
 		bool isRunning = true;
 		while (isRunning)
 		{
 			g_Clock.Tick();
-			
+
 			// Update
 			Timestamp delta = g_Clock.GetDeltaTime();
 			isRunning = Tick(delta);
-			
+
 			// Fixed update
 			accumulator += delta;
-			while (accumulator >= timestep)
+			while (accumulator >= g_FixedTimestep)
 			{
 				fixedClock.Tick();
 				FixedTick(fixedClock.GetDeltaTime());
-				
-				accumulator -= timestep;
+
+				accumulator -= g_FixedTimestep;
 			}
 		}
 	}
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
+		RuntimeStats::SetFrameTime((float32)delta.AsSeconds());
 		Input::Tick();
 
 		Thread::Join();
-		
+
 		PlatformNetworkUtils::Tick(delta);
 
 		if (!CommonApplication::Get()->Tick())
@@ -76,16 +88,16 @@ namespace LambdaEngine
 		AudioSystem::Tick();
 
 		// Tick game
-		Game::Get()->Tick(delta);
-		
+		Game::Get().Tick(delta);
+
 		return true;
 	}
 
 	void EngineLoop::FixedTick(Timestamp delta)
 	{
 		// Tick game
-		Game::Get()->FixedTick(delta);
-		
+		Game::Get().FixedTick(delta);
+
 		NetworkUtils::FixedTick(delta);
 	}
 
@@ -99,18 +111,28 @@ namespace LambdaEngine
 		Malloc::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
 #endif
 
+		if (!EngineConfig::LoadFromFile())
+		{
+			return false;
+		}
+
+		if (!ThreadPool::Init())
+		{
+			return false;
+		}
+
 		if (!CommonApplication::PreInit())
 		{
 			return false;
 		}
 
 		PlatformTime::PreInit();
-			  
+
 		Random::PreInit();
 
 		return true;
 	}
-	
+
 	bool EngineLoop::Init()
 	{
 		Thread::Init();
@@ -152,7 +174,7 @@ namespace LambdaEngine
 
 		return true;
 	}
-	
+
 	bool EngineLoop::PreRelease()
 	{
 		RenderSystem::GetGraphicsQueue()->Flush();
@@ -191,15 +213,15 @@ namespace LambdaEngine
 			return false;
 		}
 
-		return true;
+		return ThreadPool::Release();
 	}
-	
+
 	bool EngineLoop::PostRelease()
 	{
 		Thread::Release();
-		
+
 		PlatformNetworkUtils::Release();
-		
+
 		if (!CommonApplication::PostRelease())
 		{
 			return false;
@@ -209,6 +231,21 @@ namespace LambdaEngine
 		PlatformConsole::Close();
 #endif
 		return true;
+	}
+
+	void EngineLoop::SetFixedTimestep(Timestamp timestep)
+	{
+		g_FixedTimestep = timestep;
+	}
+
+	Timestamp EngineLoop::GetFixedTimestep()
+	{
+		return g_FixedTimestep;
+	}
+
+	Timestamp EngineLoop::GetDeltaTime()
+	{
+		return g_Clock.GetDeltaTime();
 	}
 
 	Timestamp EngineLoop::GetTimeSinceStart()

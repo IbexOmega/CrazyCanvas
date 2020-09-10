@@ -41,7 +41,6 @@ namespace LambdaEngine
 		
 		virtual void SetEventHandler(TSharedPtr<EventHandler> eventHandler) 
 		{ 
-			VALIDATE(eventHandler != nullptr);
 			m_EventHandler = eventHandler; 
 		}
 
@@ -58,8 +57,8 @@ namespace LambdaEngine
 		
 		virtual bool SupportsRawInput() const = 0;
 
-		virtual void		SetMouseVisibility(bool)							= 0;
-		virtual void		SetMousePosition(int x, int y)						= 0;
+		virtual void SetMouseVisibility(bool) = 0;
+		virtual void SetMousePosition(int32 x, int32 y) = 0;
 		virtual void SetInputMode(TSharedRef<Window> window, EInputMode inputMode) = 0;
 		virtual EInputMode GetInputMode(TSharedRef<Window> window) const = 0;
 

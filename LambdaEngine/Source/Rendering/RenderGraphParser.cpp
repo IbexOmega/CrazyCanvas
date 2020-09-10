@@ -606,6 +606,7 @@ namespace LambdaEngine
 
 		//Copy Resources so that we can modify them
 		pParsedStructure->ResourceDescriptions = resources;
+		TSet<String> resourceNamesActuallyUsed;
 
 		//Do another pass over all Render Stages to set Resource Flags
 		for (uint32 r = 0; r < orderedRenderStages.GetSize(); r++)
@@ -615,6 +616,7 @@ namespace LambdaEngine
 			for (uint32 rs = 0; rs < pRenderStageDesc->ResourceStates.GetSize(); rs++)
 			{
 				RenderGraphResourceState* pResourceState = &pRenderStageDesc->ResourceStates[rs];
+				resourceNamesActuallyUsed.insert(pResourceState->ResourceName);
 
 				auto resourceIt = std::find_if(pParsedStructure->ResourceDescriptions.Begin(), pParsedStructure->ResourceDescriptions.End(), [pResourceState](const RenderGraphResourceDesc& resourceDesc) { return pResourceState->ResourceName == resourceDesc.Name; });
 
@@ -696,6 +698,21 @@ namespace LambdaEngine
 						}
 					}
 				}
+			}
+		}
+
+		//Remove Resources not ever used
+		for (auto resourceIt = pParsedStructure->ResourceDescriptions.Begin(); resourceIt != pParsedStructure->ResourceDescriptions.End();)
+		{
+			bool resourceIsUsed = std::find_if(resourceNamesActuallyUsed.begin(), resourceNamesActuallyUsed.end(), [resourceIt](const String& resourceName) { return resourceName == resourceIt->Name; }) != resourceNamesActuallyUsed.end();
+
+			if (!resourceIsUsed)
+			{
+				resourceIt = pParsedStructure->ResourceDescriptions.Erase(resourceIt);
+			}
+			else
+			{
+				resourceIt++;
 			}
 		}
 
@@ -1033,9 +1050,16 @@ namespace LambdaEngine
 
 			pDstRenderStage->Graphics.Shaders					= pSrcRenderStage->Graphics.Shaders;
 			pDstRenderStage->Graphics.DrawType					= pSrcRenderStage->Graphics.DrawType;
-			pDstRenderStage->Graphics.IndexBufferName			= indexBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end()		? indexBufferResourceStateIt->second.ResourceName			: "";
-			pDstRenderStage->Graphics.IndirectArgsBufferName	= indirectArgsBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() ? indirectArgsBufferResourceStateIt->second.ResourceName	: "";
 			pDstRenderStage->Graphics.DepthTestEnabled			= pSrcRenderStage->Graphics.DepthTestEnabled;
+			pDstRenderStage->Graphics.CullMode					= pSrcRenderStage->Graphics.CullMode;
+			pDstRenderStage->Graphics.PolygonMode				= pSrcRenderStage->Graphics.PolygonMode;
+			pDstRenderStage->Graphics.PrimitiveTopology			= pSrcRenderStage->Graphics.PrimitiveTopology;
+
+			if (pDstRenderStage->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+			{
+				pDstRenderStage->Graphics.IndexBufferName			= indexBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end()		? indexBufferResourceStateIt->second.ResourceName			: "";
+				pDstRenderStage->Graphics.IndirectArgsBufferName	= indirectArgsBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() ? indirectArgsBufferResourceStateIt->second.ResourceName	: "";
+			}
 		}
 		else if (pDstRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{

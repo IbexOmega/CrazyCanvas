@@ -27,6 +27,7 @@ namespace LambdaEngine
 		~RenderGraphEditor();
 
 		void InitGUI();
+		void Update();
 		void RenderGUI();
 
 		virtual void OnButtonReleased(EMouseButton button)						override final;
@@ -37,6 +38,7 @@ namespace LambdaEngine
 		void InitDefaultResources();
 
 		void RenderResourceView(float textWidth, float textHeight);
+		void RenderNewRenderGraphConfirmationView();
 		void RenderAddResourceView();
 		void RenderEditResourceView();
 		void InternalRenderEditResourceView(RenderGraphResourceDesc* pResource, char* pNameBuffer, int32 nameBufferLength);
@@ -96,8 +98,10 @@ namespace LambdaEngine
 		LambdaDirectory										m_FilesInShaderMap;
 
 		RenderGraphStructureDesc							m_ParsedRenderGraphStructure	= {};
+		bool												m_ParsedGraphValid				= true;
 		bool												m_ParsedGraphDirty				= true;
 		bool												m_ParsedGraphRenderDirty		= true;
+		bool												m_ApplyRenderGraph				= false;
 
 	private:
 		static int32					s_NextNodeID;

@@ -20,7 +20,27 @@ function get_vk_sdk_path()
 	return ""
 end
 
-VK_SDK_PATH = get_vk_sdk_path()
+function get_fmod_dll_path()
+	local driveLetters = {"C", "D"}
+	local potentialPaths = {
+		":/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll",
+		":/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll"
+	}
+
+	for _, path in ipairs(potentialPaths) do
+		for _, driveLetter in ipairs(driveLetters) do
+			local fullPath = driveLetter .. path
+			if os.isfile(fullPath) then
+				return "\"" .. fullPath .. "\""
+			end
+		end
+	end
+
+	print('fmodL.dll was not found, ensure that FMOD engine is installed or modify premake5.lua')
+end
+
+VK_SDK_PATH		= get_vk_sdk_path()
+FMOD_DLL_PATH	= get_fmod_dll_path()
 
 workspace "LambdaEngine"
 	startproject "Sandbox"
@@ -169,13 +189,13 @@ workspace "LambdaEngine"
         cppdialect "C++17"
         systemversion "latest"
         location "LambdaEngine"
-        
+
 		-- Pre-Compiled Headers
 		pchheader "PreCompiled.h"
 		pchsource "%{prj.name}/PreCompiled.cpp"
 
-		forceincludes  
-		{ 
+		forceincludes
+		{
 			"PreCompiled.h"
 		}
 
@@ -280,7 +300,6 @@ workspace "LambdaEngine"
 			"Dependencies/WavLib",
 			"Dependencies/imgui",
 			"Dependencies/stb",
-			"Dependencies/portaudio/include",
 			"Dependencies/glslang/include",
 			"Dependencies/imnodes",
 			"Dependencies/rapidjson/include",
@@ -313,12 +332,9 @@ workspace "LambdaEngine"
 				"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64",
 				"D:/FMOD Studio API Windows/api/core/lib/x64",
 
-				-- PortAudio
-				"Dependencies/portaudio/lib",
-
 				-- imgui-node-editor
 				"Dependencies/imgui-node-editor/lib",
-				
+
 				-- Assimp
 				"Dependencies/assimp/bin"
 			}
@@ -337,9 +353,6 @@ workspace "LambdaEngine"
 		filter { "system:windows", "configurations:Debug" }
 			links
 			{
-				-- Audio
-				"portaudio_x64_d.lib",
-
 				-- Shader Compilation
 				"glslangd.lib",
 				"MachineIndependentd.lib",
@@ -350,18 +363,15 @@ workspace "LambdaEngine"
 				"OSDependentd.lib",
 				"OGLCompilerd.lib",
 				"HLSLd.lib",
-				
+
 				-- Assimp
 				"/debug/assimp-vc142-mtd.lib",
 				"/debug/IrrXMLd.lib",
-				"/debug/zlibstaticd.lib",			
+				"/debug/zlibstaticd.lib",
 			}
 		filter { "system:windows", "configurations:Release or Production" }
 			links
 			{
-				-- Audio
-				"portaudio_x64.lib",
-
 				-- Shader Compilation
 				"glslang.lib",
 				"MachineIndependent.lib",
@@ -372,11 +382,11 @@ workspace "LambdaEngine"
 				"OSDependent.lib",
 				"OGLCompiler.lib",
 				"HLSL.lib",
-				
+
 				-- Assimp
 				"/release/assimp-vc142-mt.lib",
 				"/release/IrrXML.lib",
-				"/release/zlibstatic.lib",	
+				"/release/zlibstatic.lib",
 			}
 		-- Mac
 		filter { "system:macosx" }
@@ -399,7 +409,6 @@ workspace "LambdaEngine"
 				"vulkan.1.2.135",
 
 				-- Audio
-				"portaudio",
 				"fmodL",
 
 				-- Shader Compilation
@@ -431,22 +440,10 @@ workspace "LambdaEngine"
 		filter { "system:windows"}
 			postbuildcommands
 			{
-				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"D:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
-				("{COPY} \"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} \"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
-				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\""),
-				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"C:/FMOD Studio API Windows/api/core/lib/x64/fmodL.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
+				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
+				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		-- LambdaEngine
 		filter { "system:windows", "platforms:x64_SharedLib" }
@@ -456,23 +453,6 @@ workspace "LambdaEngine"
 				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\""),
-			}
-		-- Portaudio
-		filter { "system:windows", "configurations:Debug"}
-			postbuildcommands
-			{
-				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/debug/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
-			}
-		filter { "system:windows", "configurations:Release or Production"}
-			postbuildcommands
-			{
-				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} \"../Dependencies/portaudio/dll/release/portaudio_x64.dll\" \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		filter {}
 	project "*"
@@ -501,6 +481,7 @@ workspace "LambdaEngine"
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
+			"Dependencies/rapidjson/include",
 		}
 
 		-- Files
@@ -552,6 +533,7 @@ workspace "LambdaEngine"
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
+			"Dependencies/rapidjson/include",
 		}
 
 		-- Files

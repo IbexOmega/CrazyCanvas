@@ -10,13 +10,13 @@ namespace LambdaEngine
 		AddRef();
 	}
 
-	uint64 RefCountedObject::AddRef()
+	uint64 RefCountedObject::AddRef() const
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		return ++m_StrongReferences;
 	}
 
-	uint64 RefCountedObject::Release()
+	uint64 RefCountedObject::Release() const
 	{
 		uint64 references = 0;
 		{
