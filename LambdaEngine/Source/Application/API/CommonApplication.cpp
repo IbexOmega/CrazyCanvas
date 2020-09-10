@@ -27,6 +27,7 @@ namespace LambdaEngine
 	{
 		// Create platform application
 		m_pPlatformApplication = pApplication;
+		m_pPlatformApplication->SetEventHandler(s_CommonApplication);
 
 		// Create mainwindow
 		WindowDesc windowDesc = { };
@@ -266,11 +267,7 @@ namespace LambdaEngine
 	{
 		// Create platform application
 		Application* pPlatformApplcation = PlatformApplication::CreateApplication();
-		if (pPlatformApplcation->Create())
-		{
-			pPlatformApplcation->SetEventHandler(s_CommonApplication);
-		}
-		else
+		if (!pPlatformApplcation->Create())
 		{
 			return false;
 		}

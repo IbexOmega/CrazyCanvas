@@ -198,10 +198,10 @@ namespace LambdaEngine
 		constexpr uint32 REPEAT_KEY_MASK	= 0x40000000;
 		constexpr uint16 BACK_BUTTON_MASK	= 0x0001;
 
-		if (!m_EventHandler)
-		{
-			return;
-		}
+		//if (!m_EventHandler)
+		//{
+		//	return;
+		//}
 
 		TSharedRef<Win32Window> messageWindow = GetWindowFromHandle(hWnd);
 		switch (uMessage)
@@ -382,6 +382,7 @@ namespace LambdaEngine
 			case WM_DESTROY:
 			{
 				m_EventHandler->OnWindowClosed(messageWindow);
+				DestroyWindow(messageWindow);
 				break;
 			}
 
@@ -509,9 +510,23 @@ namespace LambdaEngine
 		m_Windows.EmplaceBack(window);
 	}
 
+	void Win32Application::DestroyWindow(TSharedRef<Win32Window> window)
+	{
+		HWND hWindow = static_cast<HWND>(window->GetHandle());
+		for (auto it = m_Windows.Begin(); it != m_Windows.End(); it++)
+		{
+			HWND hWnd = static_cast<HWND>((*it)->GetHandle());
+			if (hWindow == hWnd)
+			{
+				m_Windows.Erase(it);
+				break;
+			}
+		}
+	}
+
 	void Win32Application::PeekEvents()
 	{
-		::MSG msg = { };
+		MSG msg = { };
 		while (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			::TranslateMessage(&msg);
@@ -658,6 +673,12 @@ namespace LambdaEngine
 				return ProcessRawInput(hWnd, uMessage, wParam, lParam);
 			}
 
+			case WM_DESTROY:
+			{
+				StoreMessage(hWnd, uMessage, wParam, lParam, 0, 0);
+				return 0;
+			}
+
 			case WM_MOUSEMOVE:
 			case WM_KEYDOWN:
 			case WM_SYSKEYDOWN:
@@ -678,7 +699,6 @@ namespace LambdaEngine
 			case WM_MOVE:
 			case WM_SIZE:
 			case WM_MOUSELEAVE:
-			case WM_DESTROY:
 			case WM_SETFOCUS:
 			case WM_KILLFOCUS:
 			{

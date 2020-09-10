@@ -46,7 +46,6 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
 
-
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
 CrazyCanvas::CrazyCanvas()
@@ -154,7 +153,7 @@ CrazyCanvas::~CrazyCanvas()
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 {
-	if (m_CameraTrack.hasReachedEnd())
+	if (m_CameraTrack.HasReachedEnd())
 	{
 		PrintBenchmarkResults();
 		LambdaEngine::CommonApplication::Get()->Terminate();
