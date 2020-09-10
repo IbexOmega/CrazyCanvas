@@ -180,13 +180,13 @@ namespace LambdaEngine
 
 	RenderGraphEditor::RenderGraphEditor()
 	{
-		EventQueue::RegisterEventHandler(EventHandlerProxy(this, &RenderGraphEditor::OnEvent));
+		EventQueue::RegisterEventHandler(EventHandler(this, &RenderGraphEditor::OnEvent));
 		InitDefaultResources();
 	}
 
 	RenderGraphEditor::~RenderGraphEditor()
 	{
-		EventQueue::UnregisterEventHandler(EventHandlerProxy(this, &RenderGraphEditor::OnEvent));
+		EventQueue::UnregisterEventHandler(EventHandler(this, &RenderGraphEditor::OnEvent));
 	}
 
 	void RenderGraphEditor::InitGUI()

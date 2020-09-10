@@ -27,7 +27,7 @@ namespace LambdaEngine
 		{
 		}
 
-		inline virtual bool Execute(const Event& event) override final
+		virtual bool Execute(const Event& event) override final
 		{
 			return m_pFunc(static_cast<const TEvent&>(event));
 		}
@@ -52,7 +52,7 @@ namespace LambdaEngine
 		{
 		}
 
-		inline virtual bool Execute(const Event& event) override final
+		virtual bool Execute(const Event& event) override final
 		{
 			VALIDATE(m_pThis != nullptr);
 			return ((*m_pThis).*(m_pFunc))(static_cast<const TEvent&>(event));
@@ -66,13 +66,14 @@ namespace LambdaEngine
 	/*
 	* EventHandlerProxy
 	*/
-	class EventHandlerProxy
+	class EventHandler
 	{
 	public:
 		template<typename TEvent>
-		inline EventHandlerProxy(bool(*pFunc)(const TEvent&)) noexcept
+		inline EventHandler(FEventFlags eventTypeFlags, bool(*pFunc)(const TEvent&)) noexcept
 			: m_StackBuffer()
 			, m_pEventHandler(nullptr)
+			, m_EventFlags(eventTypeFlags)
 		{
 			// Placement new is needed to fully initialize vtable
 			new(reinterpret_cast<void*>(m_StackBuffer)) FunctionEventHandler<TEvent>(pFunc);
@@ -80,16 +81,17 @@ namespace LambdaEngine
 		}
 
 		template<typename T, typename TEvent>
-		inline EventHandlerProxy(T* pThis, bool(T::*pMemberFunc)(const TEvent&)) noexcept
+		inline EventHandler(FEventFlags eventTypeFlags, T* pThis, bool(T::*pMemberFunc)(const TEvent&)) noexcept
 			: m_StackBuffer()
 			, m_pEventHandler(nullptr)
+			, m_EventFlags(eventTypeFlags)
 		{
 			// Placement new is needed to fully initialize vtable
 			new(reinterpret_cast<void*>(m_StackBuffer)) MemberEventHandler<T, TEvent>(pThis, pMemberFunc);
 			m_pEventHandler = reinterpret_cast<IEventHandler*>(m_StackBuffer);
 		}
 
-		inline EventHandlerProxy(const EventHandlerProxy& other) noexcept
+		inline EventHandler(const EventHandler& other) noexcept
 			: m_StackBuffer()
 			, m_pEventHandler(nullptr)
 		{
@@ -100,20 +102,16 @@ namespace LambdaEngine
 			*/ 
 			memcpy(m_StackBuffer, other.m_StackBuffer, sizeof(m_StackBuffer));
 			m_pEventHandler = reinterpret_cast<IEventHandler*>(m_StackBuffer);
+			m_EventFlags = other.m_EventFlags;
 		}
 
-		inline bool Call(const Event& event) const
+		FORCEINLINE bool Call(const Event& event) const
 		{
 			VALIDATE(m_pEventHandler != nullptr);
 			return m_pEventHandler->Execute(event);
 		}
 
-		inline bool operator()(const Event& event) const
-		{
-			return Call(event);
-		}
-
-		EventHandlerProxy& operator=(const EventHandlerProxy& other)
+		FORCEINLINE EventHandler& operator=(const EventHandler& other)
 		{
 			if (this != std::addressof(other))
 			{
@@ -124,6 +122,21 @@ namespace LambdaEngine
 			return *this;
 		}
 
+		FORCEINLINE bool operator()(const Event& event) const
+		{
+			return Call(event);
+		}
+
+		FORCEINLINE bool operator==(const EventHandler& other) const
+		{
+			return (memcmp(m_StackBuffer, other.m_StackBuffer, sizeof(m_StackBuffer)) == 0) && (m_EventFlags == other.m_EventFlags);
+		}
+
+		FORCEINLINE FEventFlags GetEventFlags() const
+		{
+			return m_EventFlags;
+		}
+
 	private:
 		// Size of three pointers, this is incase we use the memberfunctionhandler
 		//		1 ptr - vtable
@@ -131,5 +144,6 @@ namespace LambdaEngine
 		//		1 ptr - this (for memberfunctionhandler)
 		byte m_StackBuffer[sizeof(void*) * 3];
 		IEventHandler* m_pEventHandler;
+		FEventFlags m_EventFlags;
 	};
 }

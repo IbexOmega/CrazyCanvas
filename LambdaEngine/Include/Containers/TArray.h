@@ -539,7 +539,7 @@ namespace LambdaEngine
 			}
 
 			// Insert
-			const SizeType rangeSize	= InternalDistance(begin.m_Ptr, end.m_Ptr);
+			const SizeType rangeSize	= InternalDistance(begin, end);
 			const SizeType newSize		= m_Size + rangeSize;
 			const SizeType index		= InternalIndex(pos);
 
@@ -591,8 +591,7 @@ namespace LambdaEngine
 			}
 
 			// Erase
-			const T* constData = m_pData;
-			const SizeType index = InternalDistance(constData, pos.m_Ptr);
+			const SizeType index = InternalDistance(ConstBegin(), pos);
 			T* dataBegin	= m_pData + index;
 			T* dataEnd		= m_pData + m_Size;
 			InternalMemmoveBackwards(dataBegin + 1, dataEnd, dataBegin);
@@ -922,7 +921,18 @@ namespace LambdaEngine
 		template<typename TInputIt>
 		FORCEINLINE SizeType InternalDistance(TInputIt begin, TInputIt end)
 		{
-			return static_cast<SizeType>(InternalUnwrapConst(end) - InternalUnwrapConst(begin));
+			constexpr bool isPointer		= std::is_pointer<TInputIt>();
+			constexpr bool isCustomIterator	= std::is_same<TInputIt, Iterator>() || std::is_same<TInputIt, ConstIterator>();
+
+			// Handle outside pointers
+			if constexpr (isPointer && isCustomIterator)
+			{
+				return static_cast<SizeType>(InternalUnwrapConst(end) - InternalUnwrapConst(begin));
+			}
+			else
+			{
+				return static_cast<SizeType>(std::distance(begin, end));
+			}
 		}
 
 		template<typename TInputIt>
@@ -1051,7 +1061,11 @@ namespace LambdaEngine
 		FORCEINLINE void InternalCopyEmplace(TInputIt begin, TInputIt end, T* dest)
 		{
 			// This function assumes that there is no overlap
-			if constexpr (std::is_trivially_copy_constructible<T>())
+			constexpr bool isTrivial = std::is_trivially_copy_constructible<T>();
+			constexpr bool isPointer = std::is_pointer<TInputIt>();
+			constexpr bool isCustomIterator = std::is_same<TInputIt, Iterator>() || std::is_same<TInputIt, ConstIterator>();
+
+			if constexpr (isTrivial && (isPointer || isCustomIterator))
 			{
 				const SizeType count = InternalDistance(begin, end);
 				const SizeType cpySize = count * sizeof(T);

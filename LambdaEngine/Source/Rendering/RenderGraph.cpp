@@ -44,12 +44,12 @@ namespace LambdaEngine
 	RenderGraph::RenderGraph(const GraphicsDevice* pGraphicsDevice)
 		: m_pGraphicsDevice(pGraphicsDevice)
 	{
-		EventQueue::RegisterEventHandler(EventHandlerProxy(this, &RenderGraph::OnWindowResized));
+		EventQueue::RegisterEventHandler(EventHandler(FEventFlag::EVENT_FLAG_WINDOW, this, &RenderGraph::OnWindowResized));
 	}
 
 	RenderGraph::~RenderGraph()
 	{
-		EventQueue::UnregisterEventHandler(EventHandlerProxy(this, &RenderGraph::OnWindowResized));
+		EventQueue::UnregisterEventHandler(EventHandler(FEventFlag::EVENT_FLAG_WINDOW, this, &RenderGraph::OnWindowResized));
 
 		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
 		SAFERELEASE(m_pFence);
@@ -804,12 +804,19 @@ namespace LambdaEngine
 
 	bool RenderGraph::OnWindowResized(const WindowResizedEvent& windowEvent)
 	{
-		m_WindowWidth	= (float32)windowEvent.Width;
-		m_WindowHeight	= (float32)windowEvent.Height;
+		if (IsEventOfType<WindowResizedEvent>(windowEvent))
+		{
+			m_WindowWidth	= (float32)windowEvent.Width;
+			m_WindowHeight	= (float32)windowEvent.Height;
 
-		UpdateRelativeParameters();
+			UpdateRelativeParameters();
 
-		return true;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	void RenderGraph::ReleasePipelineStages()

@@ -52,7 +52,7 @@ namespace LambdaEngine
 		VALIDATE(s_pRendererInstance != nullptr);
 		s_pRendererInstance = nullptr;
 
-		EventQueue::UnregisterEventHandler(EventHandlerProxy(this, &ImGuiRenderer::OnEvent));
+		EventQueue::UnregisterEventHandler(EventHandler(FEventFlag::EVENT_FLAG_INPUT, this, &ImGuiRenderer::OnEvent));
 
 		imnodes::Shutdown();
 		ImGui::DestroyContext();
@@ -122,7 +122,7 @@ namespace LambdaEngine
 
 		m_DescriptorSet->WriteTextureDescriptors(&m_FontTextureView, &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 
-		return EventQueue::RegisterEventHandler(EventHandlerProxy(this, &ImGuiRenderer::OnEvent));
+		return EventQueue::RegisterEventHandler(EventHandler(FEventFlag::EVENT_FLAG_INPUT, this, &ImGuiRenderer::OnEvent));
 	}
 
 	void ImGuiRenderer::DrawUI(ImGuiDrawFunc drawFunc)

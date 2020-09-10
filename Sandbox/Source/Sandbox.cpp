@@ -31,6 +31,8 @@
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include "Engine/EngineConfig.h"
 
 #include "Game/Scene.h"
@@ -67,7 +69,7 @@ Sandbox::Sandbox()
 	m_ShowDemoWindow = false;
 	m_DebuggingWindow = false;
 
-	CommonApplication::Get()->AddEventHandler(this);
+	EventQueue::RegisterEventHandler(EventHandler(this, &Sandbox::OnKeyPressed));
 
 	ShaderReflection shaderReflection;
 	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
@@ -368,50 +370,54 @@ Sandbox::Sandbox()
 
 Sandbox::~Sandbox()
 {
-	LambdaEngine::CommonApplication::Get()->RemoveEventHandler(this);
+	using namespace LambdaEngine;
+
+	EventQueue::UnregisterEventHandler(EventHandler(this, &Sandbox::OnKeyPressed));
+
 	SAFEDELETE(m_pScene);
 	SAFEDELETE(m_pCamera);
 
 	SAFEDELETE(m_pRenderGraphEditor);
 
-	LambdaEngine::GameConsole::Get().Release();
+	GameConsole::Get().Release();
 }
 
-void Sandbox::OnKeyPressed(LambdaEngine::EKey key, LambdaEngine::ModifierKeyState modiferState, bool isRepeat)
+bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 {
-	UNREFERENCED_VARIABLE(modiferState);
-	
 	using namespace LambdaEngine;
 
-	//LOG_MESSAGE("Key Pressed: %s, isRepeat=%s", KeyToString(key), isRepeat ? "true" : "false");
-
-	if (isRepeat)
+	if (!IsEventOfType<KeyPressedEvent>(event))
 	{
-		return;
+		return false;
+	}
+
+	if (event.IsRepeat)
+	{
+		return false;
 	}
 
 	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-	if (key == EKey::KEY_ESCAPE)
+	if (event.Key == EKey::KEY_ESCAPE)
 	{
 		mainWindow->Close();
 	}
-	if (key == EKey::KEY_1)
+	if (event.Key == EKey::KEY_1)
 	{
 		mainWindow->Minimize();
 	}
-	if (key == EKey::KEY_2)
+	if (event.Key == EKey::KEY_2)
 	{
 		mainWindow->Maximize();
 	}
-	if (key == EKey::KEY_3)
+	if (event.Key == EKey::KEY_3)
 	{
 		mainWindow->Restore();
 	}
-	if (key == EKey::KEY_4)
+	if (event.Key == EKey::KEY_4)
 	{
 		mainWindow->ToggleFullscreen();
 	}
-	if (key == EKey::KEY_5)
+	if (event.Key == EKey::KEY_5)
 	{
 		if (CommonApplication::Get()->GetInputMode(mainWindow) == EInputMode::INPUT_MODE_STANDARD)
 		{
@@ -422,7 +428,7 @@ void Sandbox::OnKeyPressed(LambdaEngine::EKey key, LambdaEngine::ModifierKeyStat
 			CommonApplication::Get()->SetInputMode(mainWindow, EInputMode::INPUT_MODE_STANDARD);
 		}
 	}
-	if (key == EKey::KEY_6)
+	if (event.Key == EKey::KEY_6)
 	{
 		mainWindow->SetPosition(0, 0);
 	}
@@ -430,13 +436,15 @@ void Sandbox::OnKeyPressed(LambdaEngine::EKey key, LambdaEngine::ModifierKeyStat
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
 
-	if (key == EKey::KEY_KEYPAD_5)
+	if (event.Key == EKey::KEY_KEYPAD_5)
 	{
 		RenderSystem::GetGraphicsQueue()->Flush();
 		RenderSystem::GetComputeQueue()->Flush();
 		ResourceManager::ReloadAllShaders();
 		PipelineStateManager::ReloadPipelineStates();
 	}
+
+	return true;
 }
 
 void Sandbox::Tick(LambdaEngine::Timestamp delta)

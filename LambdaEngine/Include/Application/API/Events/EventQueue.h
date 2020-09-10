@@ -9,8 +9,8 @@ namespace LambdaEngine
 	class EventQueue
 	{
 	public:
-		static bool RegisterEventHandler(const EventHandlerProxy& eventHandler);
-		static bool UnregisterEventHandler(const EventHandlerProxy& eventHandler);
+		static bool RegisterEventHandler(const EventHandler& eventHandler);
+		static bool UnregisterEventHandler(const EventHandler& eventHandler);
 
 		static bool SendEvent(Event& event);
 	};

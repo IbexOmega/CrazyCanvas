@@ -18,7 +18,7 @@ namespace LambdaEngine
 		if (IsEventOfType<KeyPressedEvent>(event))
 		{
 			const KeyPressedEvent& keyEvent = EventCast<KeyPressedEvent>(event);
-			s_KeyboardState.KeyStates[keyEvent.Key] = false;
+			s_KeyboardState.KeyStates[keyEvent.Key] = true;
 
 			return true;
 		}
@@ -70,12 +70,12 @@ namespace LambdaEngine
 	*/
 	bool Input::Init()
 	{
-		return EventQueue::RegisterEventHandler(EventHandlerProxy(Input::HandleEvent));
+		return EventQueue::RegisterEventHandler(EventHandler(FEventFlag::EVENT_FLAG_INPUT, Input::HandleEvent));
 	}
 
 	bool Input::Release()
 	{
-		return EventQueue::UnregisterEventHandler(EventHandlerProxy(Input::HandleEvent));
+		return EventQueue::UnregisterEventHandler(EventHandler(FEventFlag::EVENT_FLAG_INPUT, Input::HandleEvent));
 	}
 
 	void Input::Tick()

@@ -1,5 +1,8 @@
 #include "Engine/EngineLoop.h"
 
+#include "Application/API/Events/EventQueue.h"
+
+
 namespace LambdaEngine
 {
 	extern Game* CreateGame();
