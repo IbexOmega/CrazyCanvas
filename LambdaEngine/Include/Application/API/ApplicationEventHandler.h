@@ -117,7 +117,7 @@ namespace LambdaEngine
 		* Will be called when a mouse button released event occurs
 		*	button - Which button was released
 		*/
-		virtual void OnButtonReleased(EMouseButton button)
+		virtual void OnButtonReleased(EMouseButton button, ModifierKeyState modifierState)
 		{
 		}
 
@@ -145,7 +145,7 @@ namespace LambdaEngine
 		 * Will be called when a key released event occurs
 		 *	key - Which key was released
 		 */
-		virtual void OnKeyReleased(EKey key)
+		virtual void OnKeyReleased(EKey key, ModifierKeyState modifierState)
 		{
 		}
 

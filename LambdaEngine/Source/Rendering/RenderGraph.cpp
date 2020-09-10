@@ -29,6 +29,8 @@
 
 #include "Application/API/CommonApplication.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 namespace LambdaEngine
 {
 	constexpr const uint32 SAME_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX	= 0;
@@ -42,15 +44,17 @@ namespace LambdaEngine
 	RenderGraph::RenderGraph(const GraphicsDevice* pGraphicsDevice)
 		: m_pGraphicsDevice(pGraphicsDevice)
 	{
-		CommonApplication::Get()->AddEventHandler(this);
+		EventQueue::RegisterEventHandler(EventHandlerProxy(this, &RenderGraph::OnWindowResized));
 	}
 
 	RenderGraph::~RenderGraph()
 	{
-        m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
-        SAFERELEASE(m_pFence);
+		EventQueue::UnregisterEventHandler(EventHandlerProxy(this, &RenderGraph::OnWindowResized));
 
-        SAFERELEASE(m_pDescriptorHeap);
+		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
+		SAFERELEASE(m_pFence);
+
+		SAFERELEASE(m_pDescriptorHeap);
 
 		for (uint32 b = 0; b < m_BackBufferCount; b++)
 		{
@@ -798,14 +802,14 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void RenderGraph::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)
+	bool RenderGraph::OnWindowResized(const WindowResizedEvent& windowEvent)
 	{
-		UNREFERENCED_VARIABLE(type);
-
-		m_WindowWidth	= (float32)width;
-		m_WindowHeight	= (float32)height;
+		m_WindowWidth	= (float32)windowEvent.Width;
+		m_WindowHeight	= (float32)windowEvent.Height;
 
 		UpdateRelativeParameters();
+
+		return true;
 	}
 
 	void RenderGraph::ReleasePipelineStages()
@@ -2274,10 +2278,10 @@ namespace LambdaEngine
 				SAFERELEASE(*ppTexture);
 				SAFERELEASE(*ppTextureView);
 
-				pTexture		= m_pGraphicsDevice->CreateTexture(pTextureDesc, m_pDeviceAllocator);
+				pTexture = m_pGraphicsDevice->CreateTexture(pTextureDesc, m_pDeviceAllocator);
 
 				textureViewDesc.pTexture = pTexture;
-				pTextureView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
+				pTextureView = m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 				//Update Sampler
 				if (desc.InternalTextureUpdate.pSamplerDesc != nullptr)

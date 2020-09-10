@@ -21,12 +21,12 @@ namespace LambdaEngine
 
 	bool TextureViewVK::Init(const TextureViewDesc* pDesc)
 	{
-		const TextureVK*	pTextureVk  = reinterpret_cast<const TextureVK*>(pDesc->pTexture);
-		TextureDesc			textureDesc = pTextureVk->GetDesc();
+		const TextureVK* pTextureVk = reinterpret_cast<const TextureVK*>(pDesc->pTexture);
+		TextureDesc textureDesc = pTextureVk->GetDesc();
 		
 		VALIDATE(pDesc->Format == textureDesc.Format);
 		
-		VkImageViewCreateInfo createInfo = {};
+		VkImageViewCreateInfo createInfo = { };
 		createInfo.sType							= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		createInfo.pNext							= nullptr;
 		createInfo.flags							= 0;

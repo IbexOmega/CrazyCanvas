@@ -40,8 +40,8 @@ namespace LambdaEngine
 	/*
 	* ImGuiRenderer
 	*/
-	ImGuiRenderer::ImGuiRenderer(const GraphicsDevice* pGraphicsDevice) :
-		m_pGraphicsDevice(pGraphicsDevice)
+	ImGuiRenderer::ImGuiRenderer(const GraphicsDevice* pGraphicsDevice) 
+		: m_pGraphicsDevice(pGraphicsDevice)
 	{
 		VALIDATE(s_pRendererInstance == nullptr);
 		s_pRendererInstance = this;
@@ -51,6 +51,8 @@ namespace LambdaEngine
 	{
 		VALIDATE(s_pRendererInstance != nullptr);
 		s_pRendererInstance = nullptr;
+
+		EventQueue::UnregisterEventHandler(EventHandlerProxy(this, &ImGuiRenderer::OnEvent));
 
 		imnodes::Shutdown();
 		ImGui::DestroyContext();
@@ -521,68 +523,67 @@ namespace LambdaEngine
 
 	bool ImGuiRenderer::OnEvent(const Event& event)
 	{
+		ImGuiIO& io = ImGui::GetIO();
 		if (IsEventOfType<MouseMovedEvent>(event))
 		{
+			MouseMovedEvent mouseEvent = EventCast<MouseMovedEvent>(event);
+			io.MousePos = ImVec2(float32(mouseEvent.Position.x), float32(mouseEvent.Position.y));
 
+			return true;
+		}
+		else if (IsEventOfType<MouseClickedEvent>(event))
+		{
+			MouseClickedEvent mouseEvent = EventCast<MouseClickedEvent>(event);
+			io.MouseDown[mouseEvent.Button - 1] = true;
+			
+			return true;
+		}
+		else if (IsEventOfType<MouseReleasedEvent>(event))
+		{
+			MouseReleasedEvent mouseEvent = EventCast<MouseReleasedEvent>(event);
+			io.MouseDown[mouseEvent.Button - 1] = false;
+			
+			return true;
+		}
+		else if (IsEventOfType<MouseScrolledEvent>(event))
+		{
+			MouseScrolledEvent mouseEvent = EventCast<MouseScrolledEvent>(event);
+			io.MouseWheelH	+= static_cast<float32>(mouseEvent.DeltaX);
+			io.MouseWheel	+= static_cast<float32>(mouseEvent.DeltaY);
+			
+			return true;
+		}
+		else if (IsEventOfType<KeyPressedEvent>(event))
+		{
+			KeyPressedEvent keyEvent = EventCast<KeyPressedEvent>(event);
+			io.KeysDown[keyEvent.Key] = true;
+			io.KeyCtrl	= keyEvent.ModiferState.IsCtrlDown();
+			io.KeyShift = keyEvent.ModiferState.IsShiftDown();
+			io.KeyAlt	= keyEvent.ModiferState.IsAltDown();
+			io.KeySuper	= keyEvent.ModiferState.IsSuperDown();
+			
+			return true;
+		}
+		else if (IsEventOfType<KeyReleasedEvent>(event))
+		{
+			KeyReleasedEvent keyEvent = EventCast<KeyReleasedEvent>(event);
+			io.KeysDown[keyEvent.Key] = false;
+			io.KeyCtrl	= keyEvent.ModiferState.IsCtrlDown();
+			io.KeyShift = keyEvent.ModiferState.IsShiftDown();
+			io.KeyAlt	= keyEvent.ModiferState.IsAltDown();
+			io.KeySuper	= keyEvent.ModiferState.IsSuperDown();
+			
+			return true;
+		}
+		else if (IsEventOfType<KeyTypedEvent>(event))
+		{
+			KeyTypedEvent keyEvent = EventCast<KeyTypedEvent>(event);
+			io.AddInputCharacter(keyEvent.Character);
+			
+			return true;
 		}
 
 		return false;
-	}
-
-	void ImGuiRenderer::OnMouseMoved(int32 x, int32 y)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.MousePos = ImVec2(float32(x), float32(y));
-	}
-
-	void ImGuiRenderer::OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)
-	{
-		UNREFERENCED_VARIABLE(modifierState);
-
-		ImGuiIO& io = ImGui::GetIO();
-		io.MouseDown[button - 1] = true;
-	}
-
-	void ImGuiRenderer::OnButtonReleased(EMouseButton button)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.MouseDown[button - 1] = false;
-	}
-
-	void ImGuiRenderer::OnMouseScrolled(int32 deltaX, int32 deltaY)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.MouseWheelH	+= (float32)deltaX;
-		io.MouseWheel	+= (float32)deltaY;
-	}
-
-	void ImGuiRenderer::OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)
-	{
-		UNREFERENCED_VARIABLE(isRepeat);
-		UNREFERENCED_VARIABLE(modifierState);
-
-		ImGuiIO& io = ImGui::GetIO();
-		io.KeysDown[key] = true;
-		io.KeyCtrl	= io.KeysDown[EKey::KEY_LEFT_CONTROL]	|| io.KeysDown[EKey::KEY_RIGHT_CONTROL];
-		io.KeyShift	= io.KeysDown[EKey::KEY_LEFT_SHIFT]		|| io.KeysDown[EKey::KEY_RIGHT_SHIFT];
-		io.KeyAlt	= io.KeysDown[EKey::KEY_LEFT_ALT]		|| io.KeysDown[EKey::KEY_RIGHT_ALT];
-		io.KeySuper	= io.KeysDown[EKey::KEY_LEFT_SUPER]		|| io.KeysDown[EKey::KEY_RIGHT_SUPER];
-	}
-
-	void ImGuiRenderer::OnKeyReleased(EKey key)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.KeysDown[key] = false;
-		io.KeyCtrl	= io.KeysDown[EKey::KEY_LEFT_CONTROL]	|| io.KeysDown[EKey::KEY_RIGHT_CONTROL];
-		io.KeyShift	= io.KeysDown[EKey::KEY_LEFT_SHIFT]		|| io.KeysDown[EKey::KEY_RIGHT_SHIFT];
-		io.KeyAlt	= io.KeysDown[EKey::KEY_LEFT_ALT]		|| io.KeysDown[EKey::KEY_RIGHT_ALT];
-		io.KeySuper	= io.KeysDown[EKey::KEY_LEFT_SUPER]		|| io.KeysDown[EKey::KEY_RIGHT_SUPER];
-	}
-
-	void ImGuiRenderer::OnKeyTyped(uint32 character)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.AddInputCharacter(character);
 	}
 
 	ImGuiContext* ImGuiRenderer::GetImguiContext()

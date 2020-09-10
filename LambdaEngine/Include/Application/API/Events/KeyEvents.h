@@ -12,9 +12,10 @@ namespace LambdaEngine
 	struct KeyEvent : public Event
 	{
 	public:
-		inline KeyEvent(EKey key)
+		inline KeyEvent(EKey key, ModifierKeyState modiferState)
 			: Event(EVENT_FLAG_KEYBOARD)
 			, Key(key)
+			, ModiferState(modiferState)
 		{
 		}
 
@@ -22,6 +23,7 @@ namespace LambdaEngine
 
 	public:
 		EKey Key;
+		ModifierKeyState ModiferState;
 	};
 
 	/*
@@ -31,8 +33,7 @@ namespace LambdaEngine
 	{
 	public:
 		inline KeyPressedEvent(EKey key, ModifierKeyState modiferState, bool isRepeat)
-			: KeyEvent(key)
-			, ModiferState(modiferState)
+			: KeyEvent(key, modiferState)
 			, IsRepeat(isRepeat)
 		{
 		}
@@ -45,7 +46,6 @@ namespace LambdaEngine
 		}
 
 	public:
-		ModifierKeyState ModiferState;
 		bool IsRepeat;
 	};
 
@@ -55,8 +55,8 @@ namespace LambdaEngine
 	struct KeyReleasedEvent : public KeyEvent
 	{
 	public:
-		inline KeyReleasedEvent(EKey key)
-			: KeyEvent(key)
+		inline KeyReleasedEvent(EKey key, ModifierKeyState modiferState)
+			: KeyEvent(key, modiferState)
 		{
 		}
 

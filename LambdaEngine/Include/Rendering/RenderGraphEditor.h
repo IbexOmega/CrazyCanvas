@@ -11,11 +11,14 @@
 
 #include "Application/API/ApplicationEventHandler.h"
 
+#include "Application/API/Events/MouseEvents.h"
+#include "Application/API/Events/KeyEvents.h"
+
 namespace LambdaEngine
 {
 	class RenderGraph;
 
-	class LAMBDA_API RenderGraphEditor : public ApplicationEventHandler
+	class LAMBDA_API RenderGraphEditor
 	{
 	public:
 		DECL_REMOVE_COPY(RenderGraphEditor);
@@ -28,9 +31,10 @@ namespace LambdaEngine
 		void Update();
 		void RenderGUI();
 
-		virtual void OnButtonReleased(EMouseButton button)						override final;
-		virtual void OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat) override final;
-		virtual void OnKeyReleased(EKey key)									override final;
+		bool OnEvent(const Event& event);
+		bool OnButtonReleased(const MouseReleasedEvent& event);
+		bool OnKeyPressed(const KeyPressedEvent& event);
+		bool OnKeyReleased(const KeyReleasedEvent& event);
 
 	private:
 		void InitDefaultResources();

@@ -2,6 +2,8 @@
 
 #include "Application/API/CommonApplication.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include "Rendering/Core/API/GraphicsHelpers.h"
 
 #include "Log/Log.h"
@@ -178,13 +180,13 @@ namespace LambdaEngine
 
 	RenderGraphEditor::RenderGraphEditor()
 	{
-		CommonApplication::Get()->AddEventHandler(this);
-
+		EventQueue::RegisterEventHandler(EventHandlerProxy(this, &RenderGraphEditor::OnEvent));
 		InitDefaultResources();
 	}
 
 	RenderGraphEditor::~RenderGraphEditor()
 	{
+		EventQueue::UnregisterEventHandler(EventHandlerProxy(this, &RenderGraphEditor::OnEvent));
 	}
 
 	void RenderGraphEditor::InitGUI()
@@ -342,34 +344,46 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraphEditor::OnButtonReleased(EMouseButton button)
+	bool RenderGraphEditor::OnEvent(const Event& event)
+	{
+		bool result = DispatchEvent<MouseReleasedEvent>(event, &RenderGraphEditor::OnButtonReleased, this);
+		result = result || DispatchEvent<KeyPressedEvent>(event, &RenderGraphEditor::OnKeyPressed, this);
+		result = result || DispatchEvent<KeyReleasedEvent>(event, &RenderGraphEditor::OnKeyReleased, this);
+		return result;
+	}
+
+	bool RenderGraphEditor::OnButtonReleased(const MouseReleasedEvent& event)
 	{
 		//imnodes seems to be bugged when releasing a link directly after starting creation, so we check this here
-		if (button == EMouseButton::MOUSE_BUTTON_LEFT)
+		if (event.Button == EMouseButton::MOUSE_BUTTON_LEFT)
 		{
 			if (m_StartedLinkInfo.LinkStarted)
 			{
 				m_StartedLinkInfo = {};
 			}
 		}
+
+		return true;
 	}
 
-	void RenderGraphEditor::OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)
+	bool RenderGraphEditor::OnKeyPressed(const KeyPressedEvent& event)
 	{
-		UNREFERENCED_VARIABLE(modifierState);
-
-		if (key == EKey::KEY_LEFT_SHIFT && !isRepeat)
+		if (event.Key == EKey::KEY_LEFT_SHIFT && !event.IsRepeat)
 		{
 			imnodes::PushAttributeFlag(imnodes::AttributeFlags_EnableLinkDetachWithDragClick);
 		}
+
+		return true;
 	}
 
-	void RenderGraphEditor::OnKeyReleased(EKey key)
+	bool RenderGraphEditor::OnKeyReleased(const KeyReleasedEvent& event)
 	{
-		if (key == EKey::KEY_LEFT_SHIFT)
+		if (event.Key == EKey::KEY_LEFT_SHIFT)
 		{
 			imnodes::PopAttributeFlag();
 		}
+
+		return true;
 	}
 
 	void RenderGraphEditor::InitDefaultResources()

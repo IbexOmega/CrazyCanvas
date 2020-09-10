@@ -216,10 +216,11 @@ namespace LambdaEngine
 			case WM_KEYUP:
 			case WM_SYSKEYUP:
 			{
-				const uint16	scancode	= HIWORD(lParam) & SCAN_CODE_MASK;
-				EKey			keyCode		= Win32InputCodeTable::GetKeyFromScanCode(scancode);
+				const ModifierKeyState modifierState = ModifierKeyState(Win32InputCodeTable::GetModifierMask());
+				const uint16 scancode = HIWORD(lParam) & SCAN_CODE_MASK;
+				EKey keyCode = Win32InputCodeTable::GetKeyFromScanCode(scancode);
 
-				m_EventHandler->OnKeyReleased(keyCode);
+				m_EventHandler->OnKeyReleased(keyCode, modifierState);
 				break;
 			}
 
@@ -314,7 +315,8 @@ namespace LambdaEngine
 					button = EMouseButton::MOUSE_BUTTON_FORWARD;
 				}
 
-				m_EventHandler->OnButtonReleased(button);
+				const ModifierKeyState modifierState = ModifierKeyState(Win32InputCodeTable::GetModifierMask());
+				m_EventHandler->OnButtonReleased(button, modifierState);
 				break;
 			}
 

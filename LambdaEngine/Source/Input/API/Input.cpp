@@ -6,6 +6,10 @@
 
 namespace LambdaEngine
 {
+	KeyboardState	Input::s_KeyboardState;
+	MouseState		Input::s_MouseState;
+	bool			Input::s_InputEnabled = true;
+
 	/*
 	* Input
 	*/
@@ -15,26 +19,36 @@ namespace LambdaEngine
 		{
 			const KeyPressedEvent& keyEvent = EventCast<KeyPressedEvent>(event);
 			s_KeyboardState.KeyStates[keyEvent.Key] = false;
+
+			return true;
 		}
 		else if (IsEventOfType<KeyReleasedEvent>(event))
 		{
 			const KeyReleasedEvent& keyEvent = EventCast<KeyReleasedEvent>(event);
 			s_KeyboardState.KeyStates[keyEvent.Key] = false;
+
+			return true;
 		}
 		else if (IsEventOfType<MouseClickedEvent>(event))
 		{
 			const MouseClickedEvent& mouseEvent = EventCast<MouseClickedEvent>(event);
 			s_MouseState.ButtonStates[mouseEvent.Button] = s_InputEnabled;
+
+			return true;
 		}
 		else if (IsEventOfType<MouseReleasedEvent>(event))
 		{
 			const MouseReleasedEvent& mouseEvent = EventCast<MouseReleasedEvent>(event);
 			s_MouseState.ButtonStates[mouseEvent.Button] = false;
+
+			return true;
 		}
 		else if (IsEventOfType<MouseMovedEvent>(event))
 		{
 			const MouseMovedEvent& mouseEvent = EventCast<MouseMovedEvent>(event);
 			s_MouseState.Position = { mouseEvent.Position.x, mouseEvent.Position.y };
+
+			return true;
 		}
 		else if (IsEventOfType<MouseScrolledEvent>(event))
 		{
@@ -44,7 +58,11 @@ namespace LambdaEngine
 				s_MouseState.ScrollX = mouseEvent.DeltaX;
 				s_MouseState.ScrollY = mouseEvent.DeltaY;
 			}
+
+			return true;
 		}
+
+		return false;
 	}
 
 	/*

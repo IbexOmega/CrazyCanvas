@@ -179,7 +179,7 @@ namespace LambdaEngine
 		EventQueue::SendEvent(event);
 	}
 
-	void CommonApplication::OnButtonReleased(EMouseButton button)
+	void CommonApplication::OnButtonReleased(EMouseButton button, ModifierKeyState modifierState)
 	{
 		TSharedRef<Window> CaptureWindow = GetCapture();
 		if (CaptureWindow)
@@ -187,7 +187,7 @@ namespace LambdaEngine
 			SetCapture(nullptr);
 		}
 
-		MouseReleasedEvent event(button);
+		MouseReleasedEvent event(button, modifierState);
 		EventQueue::SendEvent(event);
 	}
 
@@ -203,9 +203,9 @@ namespace LambdaEngine
 		EventQueue::SendEvent(event);
 	}
 
-	void CommonApplication::OnKeyReleased(EKey key)
+	void CommonApplication::OnKeyReleased(EKey key, ModifierKeyState modifierState)
 	{
-		KeyReleasedEvent event(key);
+		KeyReleasedEvent event(key, modifierState);
 		EventQueue::SendEvent(event);
 	}
 

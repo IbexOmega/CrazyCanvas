@@ -11,9 +11,10 @@ namespace LambdaEngine
 	struct MouseEvent : public Event
 	{
 	public:
-		inline MouseEvent(EMouseButton button)
+		inline MouseEvent(EMouseButton button, ModifierKeyState modiferState)
 			: Event(EVENT_FLAG_MOUSE)
 			, Button(button)
+			, ModiferState(modiferState)
 		{
 		}
 
@@ -21,6 +22,7 @@ namespace LambdaEngine
 
 	public:
 		EMouseButton Button;
+		ModifierKeyState ModiferState;
 	};
 
 	/*
@@ -30,8 +32,7 @@ namespace LambdaEngine
 	{
 	public:
 		inline MouseClickedEvent(EMouseButton button, ModifierKeyState modiferState)
-			: MouseEvent(button)
-			, ModiferState(modiferState)
+			: MouseEvent(button, modiferState)
 		{
 		}
 
@@ -41,9 +42,6 @@ namespace LambdaEngine
 		{
 			return String("MouseClickedEvent=[=") + ButtonToString(Button);
 		}
-
-	public:
-		ModifierKeyState ModiferState;
 	};
 
 	/*
@@ -52,8 +50,8 @@ namespace LambdaEngine
 	struct MouseReleasedEvent : public MouseEvent
 	{
 	public:
-		inline MouseReleasedEvent(EMouseButton button)
-			: MouseEvent(button)
+		inline MouseReleasedEvent(EMouseButton button, ModifierKeyState modiferState)
+			: MouseEvent(button, modiferState)
 		{
 		}
 

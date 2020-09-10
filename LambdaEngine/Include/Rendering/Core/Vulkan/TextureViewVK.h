@@ -9,6 +9,9 @@ namespace LambdaEngine
 	class TextureVK;
 	class GraphicsDeviceVK;
 
+	/*
+	* TextureViewVK
+	*/
 	class TextureViewVK : public TDeviceChildBase<GraphicsDeviceVK, TextureView>
 	{
 		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, TextureView>;
