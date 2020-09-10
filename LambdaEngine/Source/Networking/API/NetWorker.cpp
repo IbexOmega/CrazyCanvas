@@ -41,8 +41,8 @@ namespace LambdaEngine
 		if (!m_Release)
 		{
 			m_Release = true;
-			TerminateThreads();
 			OnReleaseRequested();
+			TerminateThreads();
 		}
 
 		if (m_ThreadsTerminated)

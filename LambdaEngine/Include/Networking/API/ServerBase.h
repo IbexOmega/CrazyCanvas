@@ -56,7 +56,6 @@ namespace LambdaEngine
 
         virtual void Tick(Timestamp delta);
         void RegisterClient(ClientRemoteBase* pClient);
-        void UnRegisterClient(ClientRemoteBase* pClient);
         ClientRemoteBase* GetClient(const IPEndPoint& endPoint);
         void HandleNewConnection(ClientRemoteBase* pClient);
 

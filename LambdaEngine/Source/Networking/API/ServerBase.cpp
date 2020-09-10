@@ -19,11 +19,7 @@ namespace LambdaEngine
 
 	ServerBase::~ServerBase()
 	{
-		for (auto& pair : m_Clients)
-		{
-			delete pair.second;
-		}
-		m_Clients.clear();
+		assert(m_Clients.empty());
 
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Servers.erase(this);
@@ -33,11 +29,11 @@ namespace LambdaEngine
 
 	bool ServerBase::Start(const IPEndPoint& ipEndPoint)
 	{
-		if (!ThreadsAreRunning())
+		if (!ThreadsAreRunning() && ThreadsHasTerminated())
 		{
+			m_IPEndPoint = ipEndPoint;
 			if (StartThreads())
 			{
-				m_IPEndPoint = ipEndPoint;
 				LOG_WARNING("[ServerBase]: Starting...");
 				return true;
 			}
@@ -47,6 +43,15 @@ namespace LambdaEngine
 
 	void ServerBase::Stop()
 	{
+		{
+			std::scoped_lock<SpinLock> lock(m_LockClients);
+			for (auto& pair : m_Clients)
+			{
+				pair.second->ReleaseByServer();
+			}
+			m_Clients.clear();
+		}
+
 		TerminateThreads();
 
 		std::scoped_lock<SpinLock> lock(m_Lock);
@@ -56,7 +61,7 @@ namespace LambdaEngine
 
 	void ServerBase::Release()
 	{
-		NetWorker::TerminateAndRelease();
+		TerminateAndRelease();
 	}
 
 	bool ServerBase::IsRunning()
@@ -91,7 +96,8 @@ namespace LambdaEngine
 
 	void ServerBase::OnClientDisconnected(ClientRemoteBase* pClient)
 	{
-		UnRegisterClient(pClient);
+		std::scoped_lock<SpinLock> lock(m_LockClients);
+		m_Clients.erase(pClient->GetEndPoint());
 	}
 
 	ClientRemoteBase* ServerBase::GetClient(const IPEndPoint& endPoint)
@@ -163,13 +169,6 @@ namespace LambdaEngine
 		LOG_INFO("[ServerBase]: Client Registered");
 		std::scoped_lock<SpinLock> lock(m_LockClients);
 		m_Clients.insert({ pClient->GetEndPoint(), pClient });
-	}
-
-	void ServerBase::UnRegisterClient(ClientRemoteBase* pClient)
-	{
-		LOG_INFO("[ServerBase]: Client UnRegistered");
-		std::scoped_lock<SpinLock> lock(m_LockClients);
-		m_Clients.erase(pClient->GetEndPoint());
 	}
 
 	void ServerBase::RunTransmitter()

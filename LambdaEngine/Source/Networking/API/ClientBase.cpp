@@ -222,7 +222,7 @@ namespace LambdaEngine
 			m_pSocket = nullptr;
 		}
 		
-		LOG_INFO("[ClientTCP]: Disconnected");
+		LOG_INFO("[ClientBase]: Disconnected");
 		m_State = STATE_DISCONNECTED;
 		if (m_pHandler)
 			m_pHandler->OnDisconnected(this);
@@ -230,7 +230,7 @@ namespace LambdaEngine
 
 	void ClientBase::OnTerminationRequested()
 	{
-		LOG_WARNING("[ClientTCP]: Disconnecting...");
+		LOG_WARNING("[ClientBase]: Disconnecting...");
 		m_State = STATE_DISCONNECTING;
 		m_pHandler->OnDisconnecting(this);
 

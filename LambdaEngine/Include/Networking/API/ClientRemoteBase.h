@@ -43,6 +43,7 @@ namespace LambdaEngine
 		virtual PacketTransceiverBase* GetTransceiver() = 0;
 
 	private:
+		void ReleaseByServer();
 		void Tick(Timestamp delta);
 		bool HandleReceivedPacket(NetworkSegment* pPacket);
 		void SendDisconnect();
@@ -55,6 +56,7 @@ namespace LambdaEngine
 		ServerBase* m_pServer;
 		SpinLock m_Lock;
 		std::atomic_bool m_Release;
+		std::atomic_bool m_ReleasedByServer;
 		bool m_DisconnectedByRemote;
 	};
 }

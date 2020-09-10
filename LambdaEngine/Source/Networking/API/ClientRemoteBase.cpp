@@ -12,6 +12,7 @@ namespace LambdaEngine
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
 		m_Release(false),
+		m_ReleasedByServer(false),
 		m_DisconnectedByRemote(false)
     {
 
@@ -45,7 +46,9 @@ namespace LambdaEngine
 			if (!m_DisconnectedByRemote)
 				SendDisconnect();
 
-			m_pServer->OnClientDisconnected(this);
+			if(!m_ReleasedByServer)
+				m_pServer->OnClientDisconnected(this);
+
 			m_State = STATE_DISCONNECTED;
 
 			if (m_pHandler)
@@ -78,11 +81,17 @@ namespace LambdaEngine
 		}
 	}
 
+	void ClientRemoteBase::ReleaseByServer()
+	{
+		m_ReleasedByServer = true;
+		Release();
+	}
+
 	bool ClientRemoteBase::SendUnreliable(NetworkSegment* packet)
 	{
 		if (!IsConnected())
 		{
-			LOG_WARNING("[ClientRemoteUDP]: Can not send packet before a connection has been established");
+			LOG_WARNING("[ClientRemoteBase]: Can not send packet before a connection has been established");
 			return false;
 		}
 
@@ -94,7 +103,7 @@ namespace LambdaEngine
 	{
 		if (!IsConnected())
 		{
-			LOG_WARNING("[ClientRemoteUDP]: Can not send packet before a connection has been established");
+			LOG_WARNING("[ClientRemoteBase]: Can not send packet before a connection has been established");
 			return false;
 		}
 
@@ -149,7 +158,7 @@ namespace LambdaEngine
 	{
 		uint16 packetType = pPacket->GetType();
 
-		LOG_MESSAGE("ClientRemoteUDP::HandleReceivedPacket(%s)", pPacket->ToString().c_str());
+		LOG_MESSAGE("ClientRemoteBase::HandleReceivedPacket(%s)", pPacket->ToString().c_str());
 
 		if (packetType == NetworkSegment::TYPE_CONNNECT)
 		{
@@ -178,7 +187,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ClientRemoteUDP]: Client responded with %lu, expected %lu, is it a fake client? [%s]", answer, expectedAnswer, GetEndPoint().ToString().c_str());
+				LOG_ERROR("[ClientRemoteBase]: Client responded with %lu, expected %lu, is it a fake client? [%s]", answer, expectedAnswer, GetEndPoint().ToString().c_str());
 			}
 		}
 		else if (packetType == NetworkSegment::TYPE_DISCONNECT)
