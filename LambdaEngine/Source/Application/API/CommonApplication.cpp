@@ -274,7 +274,7 @@ namespace LambdaEngine
 
 		// Create application
 		CommonApplication* pApplication = DBG_NEW CommonApplication();
-		if (!pApplication->Create(pPlatformApplcation))
+		if (!pApplication->Create(pPlatformApplication))
 		{
 			DELETE_OBJECT(pApplication);
 			return false;
