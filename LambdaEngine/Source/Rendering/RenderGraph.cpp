@@ -2182,17 +2182,10 @@ namespace LambdaEngine
 				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppGraphicsCommandLists[f]);
 				pPipelineStage->ppGraphicsCommandLists[f]->Begin(nullptr);
 				Profiler::GetGPUProfiler()->ResetTimestamp(pPipelineStage->ppGraphicsCommandLists[f]);
-				//GPUProfiler::Get()->ResetGraphicsPipelineStat(pPipelineStage->ppGraphicsCommandLists[f]);
 				pPipelineStage->ppGraphicsCommandLists[f]->End();
 
-				VkCommandBuffer commandBuffer = reinterpret_cast<VkCommandBuffer>(pPipelineStage->ppGraphicsCommandLists[f]->GetHandle());
-				VkSubmitInfo submitInfo = {};
-				submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-				submitInfo.commandBufferCount = 1;
-				submitInfo.pCommandBuffers = &commandBuffer;
-
-				vkQueueSubmit(reinterpret_cast<VkQueue>(RenderSystem::GetGraphicsQueue()->GetHandle()), 1, &submitInfo, VK_NULL_HANDLE);
-				vkQueueWaitIdle(reinterpret_cast<VkQueue>(RenderSystem::GetGraphicsQueue()->GetHandle()));
+				RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pPipelineStage->ppGraphicsCommandLists[f], 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+				RenderSystem::GetGraphicsQueue()->Flush();
 
 				CommandListDesc computeCommandListDesc = {};
 				computeCommandListDesc.DebugName				= "Render Graph Compute Command List";
