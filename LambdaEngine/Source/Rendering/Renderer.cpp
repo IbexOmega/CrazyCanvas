@@ -109,7 +109,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= s_ppBackBuffers;
 			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews	= s_ppBackBufferViews;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		return true;
@@ -195,7 +195,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -204,7 +204,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -213,7 +213,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -222,7 +222,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_VERTEX_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -231,7 +231,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_INDEX_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -240,7 +240,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_PRIMARY_INSTANCE_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -249,7 +249,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_SECONDARY_INSTANCE_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -258,7 +258,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_INDIRECT_ARGS_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -306,11 +306,11 @@ namespace LambdaEngine
 			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= ppRoughnessMapViews;
 			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= nearestSamplers.data();
 
-			s_pRenderGraph->UpdateResource(albedoMapsUpdateDesc);
-			s_pRenderGraph->UpdateResource(normalMapsUpdateDesc);
-			s_pRenderGraph->UpdateResource(aoMapsUpdateDesc);
-			s_pRenderGraph->UpdateResource(metallicMapsUpdateDesc);
-			s_pRenderGraph->UpdateResource(roughnessMapsUpdateDesc);
+			s_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
+			s_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
+			s_pRenderGraph->UpdateResource(&aoMapsUpdateDesc);
+			s_pRenderGraph->UpdateResource(&metallicMapsUpdateDesc);
+			s_pRenderGraph->UpdateResource(&roughnessMapsUpdateDesc);
 		}
 
 		if (s_pScene->IsRayTracingEnabled())
@@ -320,7 +320,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName							= SCENE_TLAS;
 			resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= pTLAS;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 	}
 }

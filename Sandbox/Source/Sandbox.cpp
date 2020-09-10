@@ -554,7 +554,7 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
 
-	Renderer::GetRenderGraph()->UpdateResource(blueNoiseUpdateDesc);
+	Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
 }
 
 namespace LambdaEngine
@@ -592,7 +592,7 @@ bool Sandbox::LoadRendererResources()
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
 
-		Renderer::GetRenderGraph()->UpdateResource(blueNoiseUpdateDesc);
+		Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
 	}
 
 	// For Skybox scene
