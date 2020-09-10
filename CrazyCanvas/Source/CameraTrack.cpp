@@ -11,23 +11,23 @@ bool CameraTrack::Init(LambdaEngine::Camera* pCamera, const std::vector<glm::vec
 	return pCamera;
 }
 
-void CameraTrack::Tick(float dt)
+void CameraTrack::Tick(float32 dt)
 {
-	if (hasReachedEnd())
+	if (HasReachedEnd())
 	{
 		return;
 	}
 
 	constexpr const float cameraSpeed = 1.4f;
-	glm::uvec4 splineIndices = getCurrentSplineIndices();
-	const float tPerSecond = cameraSpeed / glm::length(getCurrentGradient(splineIndices));
+	glm::uvec4 splineIndices = GetCurrentSplineIndices();
+	const float tPerSecond = cameraSpeed / glm::length(GetCurrentGradient(splineIndices));
 
-	m_CurrentTrackT     += dt * tPerSecond;
+	m_CurrentTrackT += dt * tPerSecond;
 	m_CurrentTrackIndex += (size_t)m_CurrentTrackT;
-	splineIndices       = getCurrentSplineIndices();
-	m_CurrentTrackT     = std::modf(m_CurrentTrackT, &m_CurrentTrackT); // Remove integer part
+	splineIndices = GetCurrentSplineIndices();
+	m_CurrentTrackT = std::modf(m_CurrentTrackT, &m_CurrentTrackT); // Remove integer part
 
-	if (hasReachedEnd())
+	if (HasReachedEnd())
 	{
 		return;
 	}
@@ -40,10 +40,10 @@ void CameraTrack::Tick(float dt)
 		m_Track[splineIndices.w],
 		m_CurrentTrackT));
 
-	m_pCamera->SetDirection(glm::normalize(getCurrentGradient(splineIndices)));
+	m_pCamera->SetDirection(glm::normalize(GetCurrentGradient(splineIndices)));
 }
 
-glm::vec3 CameraTrack::getCurrentGradient(const glm::uvec4& splineIndices) const
+glm::vec3 CameraTrack::GetCurrentGradient(const glm::uvec4& splineIndices) const
 {
 	const float tt = m_CurrentTrackT * m_CurrentTrackT;
 	const float ttt = tt * m_CurrentTrackT;
@@ -56,7 +56,7 @@ glm::vec3 CameraTrack::getCurrentGradient(const glm::uvec4& splineIndices) const
 	return 0.5f * (m_Track[splineIndices[0]] * weight1 + m_Track[splineIndices[1]] * weight2 + m_Track[splineIndices[2]] * weight3 + m_Track[splineIndices[3]] * weight4);
 }
 
-glm::uvec4 CameraTrack::getCurrentSplineIndices() const
+glm::uvec4 CameraTrack::GetCurrentSplineIndices() const
 {
 	return {
 		std::max(0, (int)m_CurrentTrackIndex - 1),
