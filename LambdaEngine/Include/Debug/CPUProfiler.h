@@ -14,8 +14,8 @@
 #define LAMBDA_PROFILER_SCOPE(name) LambdaEngine::InstrumentationTimer instrumentationTimer##__LINE__(name)
 #define LAMBDA_PROFILER_FUNCTION() LAMBDA_PROFILER_SCOPE(__FUNCTION__ )
 
-#define LAMBDA_PROFILER_SAMPLE_BEGIN_SESSION(name, fileName) {if(!LambdaEngine::CPUProfiler::g_RunProfilingSample) { LambdaEngine::CPUProfiler::Get()->BeginSession(name, fileName); LambdaEngine::CPUProfiler::g_RunProfilingSample = true; }}
-#define LAMBDA_PROFILER_SAMPLE_END_SESSION() {if(LambdaEngine::CPUProfiler::g_RunProfilingSample) { LambdaEngine::CPUProfiler::Get()->EndSession(); LambdaEngine::CPUProfiler::g_RunProfilingSample = false; } }
+#define LAMBDA_PROFILER_SAMPLE_BEGIN_SESSION(name, fileName) { if(!LambdaEngine::CPUProfiler::g_RunProfilingSample) { LambdaEngine::CPUProfiler::Get()->BeginSession(name, fileName); LambdaEngine::CPUProfiler::g_RunProfilingSample = true; }}
+#define LAMBDA_PROFILER_SAMPLE_END_SESSION() { if(LambdaEngine::CPUProfiler::g_RunProfilingSample) { LambdaEngine::CPUProfiler::Get()->EndSession(); LambdaEngine::CPUProfiler::g_RunProfilingSample = false; }}
 #define LAMBDA_PROFILER_SAMPLE_SCOPE(name) LambdaEngine::InstrumentationTimer instrumentationTimerRendering##__LINE__(name, LambdaEngine::CPUProfiler::g_RunProfilingSample)
 #define LAMBDA_PROFILER_SAMPLE_FUNCTION() LAMBDA_PROFILER_SAMPLE_SCOPE(__FUNCTION__ )
 
