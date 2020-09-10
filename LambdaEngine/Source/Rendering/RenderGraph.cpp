@@ -288,7 +288,17 @@ namespace LambdaEngine
 
 		if (renderStageIt != m_RenderStageMap.end())
 		{
+			RenderStage* pRenderStage = &m_pRenderStages[renderStageIt->second];
 
+			if (pDesc->DataSize <= pRenderStage->ExternalPushConstants.MaxDataSize)
+			{
+				memcpy(pRenderStage->ExternalPushConstants.pData, pDesc->pData, pDesc->DataSize);
+				pRenderStage->ExternalPushConstants.DataSize = pDesc->DataSize;
+			}
+			else
+			{
+				LOG_ERROR("[RenderGraph]: Render Stage \"%s\" has a Max External Push Constant size of %d but Update Desc has a size of %d", pDesc->RenderStageName.c_str(), pRenderStage->ExternalPushConstants.MaxDataSize, pDesc->DataSize);
+			}
 		}
 		else
 		{
@@ -858,6 +868,13 @@ namespace LambdaEngine
 						}
 					}
 
+					for (uint32 ipc = 0; ipc < NUM_INTERNAL_PUSH_CONSTANTS_TYPES; ipc++)
+					{
+						SAFEDELETE_ARRAY(pRenderStage->pInternalPushConstants[ipc].pData);
+					}
+
+					SAFEDELETE_ARRAY(pRenderStage->ExternalPushConstants.pData);
+
 					if (pRenderStage->ppBufferDescriptorSets != nullptr)
 						SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
 				}
@@ -1408,7 +1425,12 @@ namespace LambdaEngine
 			renderStageTextureResources.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			renderStageBufferResources.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 
-			FPipelineStageFlags lastPipelineStageFlags = FindLastPipelineStage(pRenderStageDesc);
+			//Special Types of Render Stage Variable
+			bool hasTextureCubeAsAttachment = false;
+
+			//Create PipelineStageMask here, to be used for InitialBarriers Creation
+			uint32 pipelineStageMask = CreateShaderStageMask(pRenderStageDesc);
+			FPipelineStageFlags lastPipelineStageFlags = FindLastPipelineStage(pipelineStageMask);
 
 			//Create Descriptors and RenderPass Attachments from RenderStage Resource States
 			for (uint32 rs = 0; rs < pRenderStageDesc->ResourceStates.GetSize(); rs++)
@@ -1592,6 +1614,11 @@ namespace LambdaEngine
 						renderPassDepthStencilDescription = renderPassAttachmentDesc;
 						pDepthStencilResource = pResource;
 					}
+
+					//if (pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
+					{
+						hasTextureCubeAsAttachment = true;
+					}
 				}
 				else if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::DRAW_RESOURCE)
 				{
@@ -1689,14 +1716,34 @@ namespace LambdaEngine
 			}
 			else
 			{
-				pRenderStage->FirstPipelineStage	= FindEarliestPipelineStage(pRenderStageDesc);
-				pRenderStage->LastPipelineStage		= FindLastPipelineStage(pRenderStageDesc);
+				pRenderStage->PipelineStageMask		= pipelineStageMask;
+				pRenderStage->FirstPipelineStage	= FindEarliestPipelineStage(pipelineStageMask);
+				pRenderStage->LastPipelineStage		= lastPipelineStageFlags;
 
-				//Todo: Implement Constant Range
-				//ConstantRangeDesc constantRangeDesc = {};
-				//constantRangeDesc.OffsetInBytes			= 0;
-				//constantRangeDesc.ShaderStageFlags		= CreateShaderStageMask(pRenderStageDesc);
-				//constantRangeDesc.SizeInBytes			= pRenderStageDesc->PushConstants.DataSize;
+				//Create Push Constants
+				{
+					uint32 externalMaxSize = MAX_PUSH_CONSTANT_SIZE;
+
+					if (hasTextureCubeAsAttachment)
+					{
+						externalMaxSize -= TEXTURE_CUBE_PUSH_CONSTANTS_SIZE;
+
+						PushConstants* pPushConstants = &pRenderStage->pInternalPushConstants[TEXTURE_CUBE_PUSH_CONSTANTS_INDEX];
+						pPushConstants->pData		= DBG_NEW byte[TEXTURE_CUBE_PUSH_CONSTANTS_SIZE];
+						pPushConstants->DataSize	= 0;
+						pPushConstants->Offset		= MAX_PUSH_CONSTANT_SIZE - externalMaxSize;
+						pPushConstants->MaxDataSize = TEXTURE_CUBE_PUSH_CONSTANTS_SIZE;
+					}
+
+					//External Push Constants
+					{
+						PushConstants* pPushConstants = &pRenderStage->ExternalPushConstants;
+						pPushConstants->pData		= DBG_NEW byte[externalMaxSize];
+						pPushConstants->DataSize	= 0;
+						pPushConstants->Offset		= MAX_PUSH_CONSTANT_SIZE - externalMaxSize;
+						pPushConstants->MaxDataSize = externalMaxSize;
+					}
+				}
 
 				//Create Pipeline Layout
 				{
@@ -2706,6 +2753,9 @@ namespace LambdaEngine
 		pGraphicsCommandList->SetScissorRects(&scissorRect, 0, 1);
 
 		pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
+
+		if (pRenderStage->ExternalPushConstants.DataSize > 0)
+			pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->);
 
 		uint32 textureDescriptorSetBindingIndex = 0;
 		if (pRenderStage->ppBufferDescriptorSets != nullptr)

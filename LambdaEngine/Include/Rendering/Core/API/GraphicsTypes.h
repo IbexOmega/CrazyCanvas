@@ -21,6 +21,7 @@ namespace LambdaEngine
 	constexpr const uint32 MAX_IMMUTABLE_SAMPLERS		= 32;
 	constexpr const uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
 	constexpr const uint32 MAX_MISS_SHADER_COUNT		= 8;
+	constexpr const uint32 MAX_PUSH_CONSTANT_SIZE		= 128;
 	constexpr const uint32 EXTERNAL_SUBPASS				= 0xFFFFFFFF;
 	constexpr const uint32 MAX_UNIQUE_MATERIALS			= 32;
 	constexpr const uint32 BACK_BUFFER_COUNT			= 3;

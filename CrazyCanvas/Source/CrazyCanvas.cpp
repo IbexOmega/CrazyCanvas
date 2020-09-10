@@ -216,7 +216,7 @@ bool CrazyCanvas::LoadRendererResources()
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews = &pBlueNoiseTextureView;
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers = &pNearestSampler;
 
-		Renderer::GetRenderGraph()->UpdateResource(blueNoiseUpdateDesc);
+		Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
 	}
 
 	return true;

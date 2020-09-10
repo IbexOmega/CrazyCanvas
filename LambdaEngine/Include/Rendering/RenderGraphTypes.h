@@ -32,6 +32,11 @@ namespace LambdaEngine
 	constexpr const char* SCENE_ROUGHNESS_MAPS				    = "SCENE_ROUGHNESS_MAPS";
 	constexpr const char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";
 
+	constexpr const uint32 TEXTURE_CUBE_PUSH_CONSTANTS_SIZE		= 4; 
+
+	constexpr const uint32 TEXTURE_CUBE_PUSH_CONSTANTS_INDEX	= 0; 
+	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES	= TEXTURE_CUBE_PUSH_CONSTANTS_INDEX + 1;
+
 	enum class ERenderGraphPipelineStageType : uint8
 	{
 		NONE			= 0,
@@ -630,25 +635,27 @@ namespace LambdaEngine
 		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
-	FORCEINLINE FPipelineStageFlags FindLastPipelineStage(const RenderStageDesc* pRenderStageDesc)
+	FORCEINLINE uint32 CreatePipelineStageMask(const RenderStageDesc* pRenderStageDesc)
 	{
+		uint32 pipelineStageMask = FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+
 		if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
-			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size() > 0)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
-			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size() > 0)	pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
 		}
 		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{
-			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+			pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
 		}
 		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 		{
-			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+			pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 		}
 
 		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;

@@ -154,9 +154,10 @@ namespace LambdaEngine
 
 		struct PushConstants
 		{
-			void*	pData		= nullptr;
-			uint32	Offset		= 0;
+			byte*	pData		= nullptr;
 			uint32	DataSize	= 0;
+			uint32	Offset		= 0;
+			uint32	MaxDataSize	= 0;
 		};
 
 		struct Resource
@@ -209,6 +210,7 @@ namespace LambdaEngine
 
 			FPipelineStageFlags		FirstPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 			FPipelineStageFlags		LastPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			uint32					PipelineStageMask				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			ERenderStageDrawType	DrawType						= ERenderStageDrawType::NONE;
 			Resource*				pIndexBufferResource			= nullptr;
@@ -222,7 +224,7 @@ namespace LambdaEngine
 			DescriptorSet**			ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
 			RenderPass*				pRenderPass						= nullptr;
 
-			PushConstants			InternalPushConstants			= {};
+			PushConstants			pInternalPushConstants[NUM_INTERNAL_PUSH_CONSTANTS_TYPES];
 			PushConstants			ExternalPushConstants			= {};
 			TArray<Resource*>		RenderTargetResources;
 			Resource*				pDepthStencilAttachment			= nullptr;
