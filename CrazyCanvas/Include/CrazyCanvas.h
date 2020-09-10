@@ -33,8 +33,8 @@ public:
 	~CrazyCanvas();
 
 	// Inherited via Game
-	virtual void Tick(LambdaEngine::Timestamp delta)        override;
-	virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
+	virtual void Tick(LambdaEngine::Timestamp delta) override;
+	virtual void FixedTick(LambdaEngine::Timestamp delta) override;
 
 	void Render(LambdaEngine::Timestamp delta);
 

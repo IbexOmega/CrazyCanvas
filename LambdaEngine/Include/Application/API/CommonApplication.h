@@ -15,7 +15,7 @@ namespace LambdaEngine
 		
 		DECL_UNIQUE_CLASS(CommonApplication);
 
-		bool Create();
+		bool Create(Application* pApplication);
 		TSharedRef<Window> CreateWindow(const WindowDesc* pDesc);
 
 		/*
@@ -29,6 +29,11 @@ namespace LambdaEngine
 		* sequence the next tick-iteration.
 		*/
 		void Terminate();
+
+		FORCEINLINE bool IsExiting() const
+		{
+			return m_IsExiting;
+		}
 
 		/*
 		* Sets the window to be the current main window, this is not the same as the window that has
@@ -74,9 +79,9 @@ namespace LambdaEngine
 
 		ModifierKeyState GetModifierKeyState() const;
 		
-		FORCEINLINE bool IsExiting() const
+		FORCEINLINE Application* GetPlatformApplication() const
 		{
-			return m_IsExiting;
+			return m_pPlatformApplication;
 		}
 
 	public:
@@ -100,8 +105,6 @@ namespace LambdaEngine
 
 	private:
 		CommonApplication();
-
-		void ReleasePlatform();
 
 	public:
 		static bool PreInit();

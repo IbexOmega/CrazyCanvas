@@ -41,7 +41,6 @@ namespace LambdaEngine
 		
 		virtual void SetEventHandler(TSharedPtr<ApplicationEventHandler> eventHandler) 
 		{ 
-			VALIDATE(eventHandler != nullptr);
 			m_EventHandler = eventHandler; 
 		}
 

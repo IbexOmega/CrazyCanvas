@@ -34,10 +34,15 @@ namespace LambdaEngine
 
 	Win32Application::~Win32Application()
 	{
+		// Clear windows before unregister class
+		m_Windows.Clear();
+
 		// Unregister window class after destroying all windows
-		if (!::UnregisterClass(WINDOW_CLASS, m_hInstance))
+		BOOL result = ::UnregisterClass(WINDOW_CLASS, m_hInstance);
+		if (!result)
 		{
-			LOG_ERROR("[Win32Application]: Failed to unregister windowclass");
+			DWORD dwError = ::GetLastError();
+			LOG_ERROR("[Win32Application]: Failed to unregister windowclass. Error=%d", dwError);
 		}
 
 		// Destroy application
@@ -372,6 +377,7 @@ namespace LambdaEngine
 			case WM_DESTROY:
 			{
 				m_EventHandler->OnWindowClosed(messageWindow);
+				DestroyWindow(messageWindow);
 				break;
 			}
 
@@ -504,9 +510,23 @@ namespace LambdaEngine
 		m_Windows.EmplaceBack(window);
 	}
 
+	void Win32Application::DestroyWindow(TSharedRef<Win32Window> window)
+	{
+		HWND hWindow = static_cast<HWND>(window->GetHandle());
+		for (auto it = m_Windows.Begin(); it != m_Windows.End(); it++)
+		{
+			HWND hWnd = static_cast<HWND>((*it)->GetHandle());
+			if (hWindow == hWnd)
+			{
+				m_Windows.Erase(it);
+				break;
+			}
+		}
+	}
+
 	void Win32Application::PeekEvents()
 	{
-		::MSG msg = { };
+		MSG msg = { };
 		while (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			::TranslateMessage(&msg);
@@ -653,6 +673,12 @@ namespace LambdaEngine
 				return ProcessRawInput(hWnd, uMessage, wParam, lParam);
 			}
 
+			case WM_DESTROY:
+			{
+				StoreMessage(hWnd, uMessage, wParam, lParam, 0, 0);
+				return 0;
+			}
+
 			case WM_MOUSEMOVE:
 			case WM_KEYDOWN:
 			case WM_SYSKEYDOWN:
@@ -673,7 +699,6 @@ namespace LambdaEngine
 			case WM_MOVE:
 			case WM_SIZE:
 			case WM_MOUSELEAVE:
-			case WM_DESTROY:
 			case WM_SETFOCUS:
 			case WM_KILLFOCUS:
 			{

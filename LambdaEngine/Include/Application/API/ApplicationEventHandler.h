@@ -2,6 +2,7 @@
 #include "Input/API/InputCodes.h"
 #include "Input/API/InputState.h"
 
+#include "Application/API/Window.h"
 #include "Core/TSharedRef.h"
 
 #include "Window.h"

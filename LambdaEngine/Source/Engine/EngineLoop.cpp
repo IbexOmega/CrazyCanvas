@@ -18,6 +18,7 @@
 #include "Networking/API/PlatformNetworkUtils.h"
 
 #include "Threading/API/Thread.h"
+#include "Threading/API/ThreadPool.h"
 
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
@@ -97,7 +98,7 @@ namespace LambdaEngine
 			{
 				fixedClock.Tick();
 				FixedTick(fixedClock.GetDeltaTime());
-				
+
 				accumulator -= g_FixedTimestep;
 			}
 		}
@@ -105,7 +106,7 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
-		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
+		RuntimeStats::SetFrameTime((float32)delta.AsSeconds());
 		Input::Tick();
 
 		Thread::Join();
@@ -121,7 +122,7 @@ namespace LambdaEngine
 
 		// Tick game
 		Game::Get().Tick(delta);
-		
+
 		return true;
 	}
 
@@ -129,7 +130,7 @@ namespace LambdaEngine
 	{
 		// Tick game
 		Game::Get().FixedTick(delta);
-		
+
 		NetworkUtils::FixedTick(delta);
 	}
 
@@ -144,6 +145,11 @@ namespace LambdaEngine
 #endif
 
 		if (!EngineConfig::LoadFromFile())
+		{
+			return false;
+		}
+
+		if (!ThreadPool::Init())
 		{
 			return false;
 		}
@@ -240,7 +246,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		return true;
+		return ThreadPool::Release();
 	}
 
 	bool EngineLoop::PostRelease()
