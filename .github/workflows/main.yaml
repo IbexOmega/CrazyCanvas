@@ -20,9 +20,37 @@ jobs:
       - name: Update LFS Cache
         run: cp -r -Force .git/lfs ../../.git/
 
-  Build-CrazyCanvas-Debug:
+  Build-LambdaEngine-Debug:
     runs-on: [self-hosted, Windows, X64]
     needs: Pre-Build
+
+    steps:
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build
+        run: msbuild LambdaEngine/LambdaEngine.vcxproj -p:Configuration="Debug x64_StaticLib" -p:Platform=x64
+
+  Build-LambdaEngine-Release:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Pre-Build
+
+    steps:
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build
+        run: msbuild LambdaEngine/LambdaEngine.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+
+  Build-CrazyCanvas-Debug:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Build-LambdaEngine-Debug
 
     steps:
       - name: Execute Premake
@@ -36,7 +64,7 @@ jobs:
 
   Build-CrazyCanvas-Release:
     runs-on: [self-hosted, Windows, X64]
-    needs: Pre-Build
+    needs: Build-LambdaEngine-Release
 
     steps:
       - name: Execute Premake
@@ -47,6 +75,90 @@ jobs:
 
       - name: Build
         run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+
+  Build-Sandbox-Debug:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Build-LambdaEngine-Debug
+
+    steps:
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build
+        run: msbuild Sandbox/Sandbox.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+
+  Build-Sandbox-Release:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Build-LambdaEngine-Release
+
+    steps:
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build
+        run: msbuild Sandbox/Sandbox.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+
+  Build-Client-Debug:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Build-LambdaEngine-Debug
+
+    steps:
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build
+        run: msbuild Client/Client.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+
+  Build-Client-Release:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Build-LambdaEngine-Release
+
+    steps:
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build
+        run: msbuild Client/Client.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+
+  Build-Server-Debug:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Build-LambdaEngine-Debug
+
+    steps:
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build
+        run: msbuild Server/Server.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+
+  Build-Server-Release:
+    runs-on: [self-hosted, Windows, X64]
+    needs: Build-LambdaEngine-Release
+
+    steps:
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build
+        run: msbuild Server/Server.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
 
   Lint:
     runs-on: [self-hosted, Windows, X64]

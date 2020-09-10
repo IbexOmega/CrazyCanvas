@@ -233,6 +233,8 @@ namespace LambdaEngine
 			return m_QueueType;
 		}
 
+		FORCEINLINE bool IsBegin() const { return m_IsBegin; }
+
 		/*
 		* Returns a pointer to the allocator used to allocate this commandlist. Caller should call Release on 
 		* the returned pointer
@@ -243,5 +245,6 @@ namespace LambdaEngine
 	protected:
 		ECommandQueueType	m_QueueType = ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
 		CommandListDesc		m_Desc;
+		bool				m_IsBegin = false;
 	};
 }

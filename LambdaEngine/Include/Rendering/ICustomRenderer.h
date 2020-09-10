@@ -74,31 +74,33 @@ namespace LambdaEngine
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)	= 0;
 
 		/*
-		* Called when beginning a new frame to allow for initial setup
-		*	delta - The frame deltatime
-		*/
-		virtual void NewFrame(Timestamp delta)		= 0;
-		/*
-		* Called when just before rendering the frame to allow for final setup
-		*	delta - The frame deltatime
-		*/
-		virtual void PrepareRender(Timestamp delta)		= 0;
-
-		/*
 		* Called at rendertime to allow recording device commands
-		*	pCommandAllocator - The command allocator to be reset
-		*	pCommandList - The command list corresponding to pCommandAllocator and which to record device commands to
+		*	pGraphicsCommandAllocator - The graphics command allocator to be reset
+		*	pGraphicsCommandList - The graphics command list corresponding to pCommandAllocator and which to record device commands to
+		*	pComputeCommandAllocator - The compute command allocator to be reset
+		*	pComputeCommandList - The compute command list corresponding to pCommandAllocator and which to record device commands to
 		*	modFrameIndex - The current Frame Index % #BackBufferImages
 		*	backBufferIndex - The current Back Buffer index
-		*	ppExecutionStage - A pointer to a variable which should contain the recorded command buffer if this rendering should be executed.
+		*	ppFirstExecutionStage - A pointer to a variable which should contain the recorded command buffer which will be executed first, if this rendering should be executed.
+		*	ppSecondaryExecutionStage - A pointer to a variable which should contain the recorded command buffer which will be executed secondary, if this rendering should be executed.
 		*		Example:	
 		*		if (executeRecording)	(*ppExecutionStage) = pCommandList;
 		*		else					(*ppExecutionStage) = nullptr;
 		*/
-		virtual void Render(CommandAllocator* pCommandAllocator, CommandList* pCommandList, uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppExecutionStage)		= 0;
+		virtual void Render(
+			CommandAllocator* pGraphicsCommandAllocator, 
+			CommandList* pGraphicsCommandList, 
+			CommandAllocator* pComputeCommandAllocator, 
+			CommandList* pComputeCommandList, 
+			uint32 modFrameIndex, 
+			uint32 backBufferIndex, 
+			CommandList** ppPrimaryExecutionStage, 
+			CommandList** ppSecondaryExecutionStage)		= 0;
 
 		virtual FPipelineStageFlags GetFirstPipelineStage()	= 0;
 		virtual FPipelineStageFlags GetLastPipelineStage()	= 0;
+
+		virtual const String& GetName() const = 0;
 	};
 }
 

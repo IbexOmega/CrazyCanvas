@@ -52,6 +52,9 @@ namespace LambdaEngine
 
 			s_ppBackBuffers			= DBG_NEW Texture*[BACK_BUFFER_COUNT];
 			s_ppBackBufferViews		= DBG_NEW TextureView*[BACK_BUFFER_COUNT];
+			
+			s_FrameIndex++;
+			s_ModFrameIndex = s_FrameIndex % uint64(BACK_BUFFER_COUNT);
 		}
 
 		//Create RenderGraph
@@ -64,6 +67,7 @@ namespace LambdaEngine
 			}
 
 			RenderGraphDesc renderGraphDesc = {};
+			renderGraphDesc.Name							= "Default Rendergraph";
 			renderGraphDesc.pRenderGraphStructureDesc		= &renderGraphStructure;
 			renderGraphDesc.BackBufferCount					= BACK_BUFFER_COUNT;
 			renderGraphDesc.MaxTexturesPerDescriptorSet		= MAX_TEXTURES_PER_DESCRIPTOR_SET;
@@ -131,12 +135,60 @@ namespace LambdaEngine
 		return true;
 	}
 
+	void Renderer::SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc)
+	{
+		RenderGraphDesc renderGraphDesc = {};
+		renderGraphDesc.Name							= name;
+		renderGraphDesc.pRenderGraphStructureDesc		= pRenderGraphStructureDesc;
+		renderGraphDesc.BackBufferCount					= BACK_BUFFER_COUNT;
+		renderGraphDesc.MaxTexturesPerDescriptorSet		= MAX_TEXTURES_PER_DESCRIPTOR_SET;
+
+		if (!s_pRenderGraph->Recreate(&renderGraphDesc))
+		{
+			LOG_ERROR("[Renderer]: Failed to set new RenderGraph %s", name.c_str());
+		}
+
+		UpdateRenderGraphFromScene();
+	}
+
 	void Renderer::SetScene(Scene* pScene)
 	{
 		s_pScene = pScene;
-
 		s_pRenderGraph->SetScene(s_pScene);
+		UpdateRenderGraphFromScene();
+	}
 
+	void Renderer::Render()
+	{
+		s_BackBufferIndex = uint32(s_SwapChain->GetCurrentBackBufferIndex());
+
+		s_pRenderGraph->Update();
+
+		CommandList* pGraphicsCopyCommandList = s_pRenderGraph->AcquireGraphicsCopyCommandList();
+		CommandList* pComputeCopyCommandList = s_pRenderGraph->AcquireComputeCopyCommandList();
+
+		s_pScene->PrepareRender(pGraphicsCopyCommandList, pComputeCopyCommandList, s_FrameIndex);
+
+		s_pRenderGraph->Render(s_ModFrameIndex, s_BackBufferIndex);
+
+		s_SwapChain->Present();
+
+		s_FrameIndex++;
+		s_ModFrameIndex = s_FrameIndex % uint64(BACK_BUFFER_COUNT);
+	}
+
+	CommandList* Renderer::AcquireGraphicsCopyCommandList()
+	{
+		return s_pRenderGraph->AcquireGraphicsCopyCommandList();
+	}
+
+	CommandList* Renderer::AcquireComputeCopyCommandList()
+	{
+		return s_pRenderGraph->AcquireComputeCopyCommandList();
+	}
+
+	void Renderer::UpdateRenderGraphFromScene()
+	{
 		{
 			Buffer* pBuffer = s_pScene->GetLightsBuffer();
 			ResourceUpdateDesc resourceUpdateDesc				= {};
@@ -270,43 +322,5 @@ namespace LambdaEngine
 
 			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
 		}
-	}
-
-	void Renderer::NewFrame(Timestamp delta)
-	{
-		s_pRenderGraph->Update();
-		s_pRenderGraph->NewFrame(s_ModFrameIndex, s_BackBufferIndex, delta);
-	}
-
-	void Renderer::PrepareRender(Timestamp delta)
-	{
-		CommandList* pGraphicsCopyCommandList	= s_pRenderGraph->AcquireGraphicsCopyCommandList();
-		CommandList* pComputeCopyCommandList	= s_pRenderGraph->AcquireGraphicsCopyCommandList();
-
-		s_pScene->PrepareRender(pGraphicsCopyCommandList, pComputeCopyCommandList, s_FrameIndex, delta);
-
-		s_pRenderGraph->PrepareRender(delta);
-	}
-	
-	void Renderer::Render()
-	{
-		s_BackBufferIndex = uint32(s_SwapChain->GetCurrentBackBufferIndex());
-
-		s_pRenderGraph->Render();
-
-		s_SwapChain->Present();
-		
-		s_FrameIndex++;
-		s_ModFrameIndex = s_FrameIndex % uint64(BACK_BUFFER_COUNT);
-	}
-
-	CommandList* Renderer::AcquireGraphicsCopyCommandList()
-	{
-		return s_pRenderGraph->AcquireGraphicsCopyCommandList();
-	}
-
-	CommandList* Renderer::AcquireComputeCopyCommandList()
-	{
-		return s_pRenderGraph->AcquireComputeCopyCommandList();
 	}
 }
