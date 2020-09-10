@@ -73,6 +73,10 @@ namespace LambdaEngine
 		{
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
 		}
+		else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY)
+		{
+			createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+		}
 		
 		VkResult result = vkCreateImageView(m_pDevice->Device, &createInfo, nullptr, &m_ImageView);
 		if (result != VK_SUCCESS)
