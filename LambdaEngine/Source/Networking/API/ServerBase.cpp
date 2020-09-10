@@ -81,7 +81,7 @@ namespace LambdaEngine
 
 	uint8 ServerBase::GetClientCount()
 	{
-		return m_Clients.size();
+		return (uint8)m_Clients.size();
 	}
 
 	const ServerDesc& ServerBase::GetDescription() const

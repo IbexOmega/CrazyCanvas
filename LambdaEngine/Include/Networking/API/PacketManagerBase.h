@@ -21,7 +21,7 @@ namespace LambdaEngine
 	struct PacketManagerDesc
 	{
 		uint16 PoolSize = 10;
-		int32 MaxRetries = 10;
+		uint8 MaxRetries = 10;
 		float32 ResendRTTMultiplier = 2.0f;
 	};
 

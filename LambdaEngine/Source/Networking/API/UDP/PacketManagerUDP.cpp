@@ -108,8 +108,8 @@ namespace LambdaEngine
 	void PacketManagerUDP::ResendOrDeleteSegments()
 	{
 		static Timestamp minTime = Timestamp::MilliSeconds(5);
-		uint64 pingNanos = m_Statistics.GetPing().AsNanoSeconds();
-		Timestamp maxAllowedTime = Timestamp(pingNanos * m_ResendRTTMultiplier);
+		float64 pingNanos = (float32)m_Statistics.GetPing().AsNanoSeconds();
+		Timestamp maxAllowedTime = Timestamp((uint64)(pingNanos * (float64)m_ResendRTTMultiplier));
 		if (maxAllowedTime < minTime)
 			maxAllowedTime = minTime;
 

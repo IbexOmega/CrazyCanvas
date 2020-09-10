@@ -20,13 +20,15 @@ namespace LambdaEngine
 
 	}
 
-	bool PacketTransceiverTCP::Transmit(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& ipEndPoint)
+	bool PacketTransceiverTCP::Transmit(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& endPoint)
 	{
+		UNREFERENCED_VARIABLE(endPoint);
 		return m_pSocket->Send(pBuffer, bytesToSend, bytesSent);
 	}
 
-	bool PacketTransceiverTCP::Receive(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint)
+	bool PacketTransceiverTCP::Receive(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& endPoint)
 	{
+		UNREFERENCED_VARIABLE(endPoint);
 		return m_pSocket->Receive(pBuffer, size, bytesReceived);
 	}
 
