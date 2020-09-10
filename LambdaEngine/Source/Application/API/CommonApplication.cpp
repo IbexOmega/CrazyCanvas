@@ -266,8 +266,8 @@ namespace LambdaEngine
 	bool CommonApplication::PreInit()
 	{
 		// Create platform application
-		Application* pPlatformApplcation = PlatformApplication::CreateApplication();
-		if (!pPlatformApplcation->Create())
+		Application* pPlatformApplication = PlatformApplication::CreateApplication();
+		if (!pPlatformApplication->Create())
 		{
 			return false;
 		}
