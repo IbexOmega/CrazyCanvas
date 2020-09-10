@@ -44,10 +44,7 @@ public:
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
     virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
-	virtual void OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)     override;
-
-private:
-	bool InitRendererForEmpty();
+	virtual void OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat) override;
 
 private:
 	LambdaEngine::ClientBase* m_pClient;

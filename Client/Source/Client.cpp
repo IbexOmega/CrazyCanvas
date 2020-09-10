@@ -34,14 +34,6 @@
 
 #include "Networking/API/TCP/ClientTCP.h"
 
-#ifdef LAMBDA_PLATFORM_MACOS
-constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
-#else
-constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
-#endif
-constexpr const uint32 BACK_BUFFER_COUNT = 3;
-constexpr const bool RENDERING_DEBUG_ENABLED = true;
-
 Client::Client() :
     m_pClient(nullptr)
 {
@@ -50,8 +42,6 @@ Client::Client() :
     CommonApplication::Get()->AddEventHandler(this);
     CommonApplication::Get()->GetMainWindow()->SetTitle("Client");
     PlatformConsole::SetTitle("Client Console");
-
-	InitRendererForEmpty();
 
 
     ClientDesc desc = {};
@@ -176,73 +166,15 @@ void Client::Tick(LambdaEngine::Timestamp delta)
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(delta);
 
-    m_pRenderGraph->Update();
-
-    m_pRenderer->NewFrame(delta);
-
-    m_pRenderGraphEditor->RenderGUI();
-
-	ImGui::ShowDemoWindow();
-
 	NetworkDebugger::RenderStatisticsWithImGUI(m_pClient);
 
-    m_pRenderer->PrepareRender(delta);
-
-    m_pRenderer->Render();
+    Renderer::Render();
 }
 
 void Client::FixedTick(LambdaEngine::Timestamp delta)
 {
     using namespace LambdaEngine;
     UNREFERENCED_VARIABLE(delta);
-
-    //m_pClient->Flush();
-}
-
-bool Client::InitRendererForEmpty()
-{
-	using namespace LambdaEngine;
-
-
-    m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
-
-    SceneDesc sceneDesc = { };
-    sceneDesc.Name = "Test Scene";
-    sceneDesc.RayTracingEnabled = false;
-    m_pScene->Init(sceneDesc);
-
-
-    m_pRenderGraphEditor = DBG_NEW RenderGraphEditor();
-
-    RenderGraphStructureDesc renderGraphStructure = m_pRenderGraphEditor->CreateRenderGraphStructure("", true);
-
-    RenderGraphDesc renderGraphDesc = {};
-    renderGraphDesc.pRenderGraphStructureDesc = &renderGraphStructure;
-    renderGraphDesc.BackBufferCount = BACK_BUFFER_COUNT;
-    renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
-    renderGraphDesc.pScene = m_pScene;
-
-    m_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
-    m_pRenderGraph->Init(&renderGraphDesc);
-
-
-
-    m_pRenderer = DBG_NEW Renderer(RenderSystem::GetDevice());
-
-    RendererDesc rendererDesc = {};
-    rendererDesc.Name = "Renderer";
-    rendererDesc.Debug = RENDERING_DEBUG_ENABLED;
-    rendererDesc.pRenderGraph = m_pRenderGraph;
-    rendererDesc.pWindow = CommonApplication::Get()->GetMainWindow().Get();
-    rendererDesc.BackBufferCount = BACK_BUFFER_COUNT;
-
-    m_pRenderer->Init(&rendererDesc);
-
-    if (RENDERING_DEBUG_ENABLED)
-    {
-        ImGui::SetCurrentContext(ImGuiRenderer::GetImguiContext());
-    }
-    return true;
 }
 
 namespace LambdaEngine
