@@ -31,6 +31,8 @@
 
 #include "Utilities/RuntimeStats.h"
 
+#include "Game/GameConsole.h"
+
 namespace LambdaEngine
 {
 	/*
@@ -74,6 +76,8 @@ namespace LambdaEngine
 	{
 		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
 		Input::Tick();
+
+		GameConsole::Get().Tick();
 
 		Thread::Join();
 
@@ -136,6 +140,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!GameConsole::Get().Init())
+		{
+			return false;
+		}
+
 		if (!PlatformNetworkUtils::Init())
 		{
 			return false;
@@ -181,6 +190,11 @@ namespace LambdaEngine
 	bool EngineLoop::Release()
 	{
 		Input::Release();
+
+		if (!GameConsole::Get().Release())
+		{
+			return false;
+		}
 
 		if (!Renderer::Release())
 		{
