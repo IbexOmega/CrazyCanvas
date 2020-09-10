@@ -798,6 +798,25 @@ namespace LambdaEngine
 		return EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 	}
 
+	FORCEINLINE String ResourceTextureTypeToString(ERenderGraphTextureType type)
+	{
+		switch (type)
+		{
+		case ERenderGraphTextureType::TEXTURE_2D:		return "TEXTURE_2D";
+		case ERenderGraphTextureType::TEXTURE_CUBE:		return "TEXTURE_CUBE";
+		default:										return "TEXTURE_2D";
+		}
+	}
+
+	FORCEINLINE ERenderGraphTextureType ResourceTextureTypeFromString(const String& string)
+	{
+		if (string == "TEXTURE_2D")						return ERenderGraphTextureType::TEXTURE_2D;
+		else if (string == "TEXTURE_CUBE")				return ERenderGraphTextureType::TEXTURE_CUBE;
+
+		return ERenderGraphTextureType::TEXTURE_2D;
+	}
+
+
 	FORCEINLINE String RenderGraphResourceTypeToString(ERenderGraphResourceType type)
 	{
 		switch (type)

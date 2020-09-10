@@ -9,7 +9,8 @@
             "external": false,
             "type_params": {
                 "texture_format": "FORMAT_B8G8R8A8_UNORM",
-                "is_of_array_type": false
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
             }
         },
         {
@@ -111,7 +112,8 @@
             "external": true,
             "type_params": {
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
-                "is_of_array_type": false
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
             }
         },
         {
@@ -123,7 +125,8 @@
             "external": true,
             "type_params": {
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
-                "is_of_array_type": false
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
             }
         },
         {
@@ -135,7 +138,8 @@
             "external": true,
             "type_params": {
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
-                "is_of_array_type": false
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
             }
         },
         {
@@ -147,7 +151,8 @@
             "external": true,
             "type_params": {
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
-                "is_of_array_type": false
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
             }
         },
         {
@@ -159,7 +164,8 @@
             "external": true,
             "type_params": {
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
-                "is_of_array_type": false
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
             }
         },
         {
@@ -172,6 +178,7 @@
             "type_params": {
                 "texture_format": "FORMAT_D24_UNORM_S8_UINT",
                 "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
                 "x_dim_var": 1.0,
@@ -191,7 +198,8 @@
             "external": true,
             "type_params": {
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
-                "is_of_array_type": false
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_CUBE"
             }
         }
     ],
@@ -338,7 +346,7 @@
                 }
             },
             "depth_test_enabled": true,
-            "cull_mode": "CULL_MODE_BACK",
+            "cull_mode": "CULL_MODE_FRONT",
             "polygon_mode": "POLYGON_MODE_FILL",
             "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
             "shaders": {
