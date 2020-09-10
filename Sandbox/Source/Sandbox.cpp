@@ -52,7 +52,8 @@ enum class EScene
 {
 	SPONZA,
 	CORNELL,
-	TESTING
+	TESTING,
+	CUBEMAP
 };
 
 Sandbox::Sandbox()
@@ -85,7 +86,7 @@ Sandbox::Sandbox()
 	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
 	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
 
-	EScene scene = EScene::SPONZA;
+	EScene scene = EScene::CUBEMAP;
 
 	m_pScene->SetDirectionalLight(directionalLight);
 
@@ -285,6 +286,49 @@ Sandbox::Sandbox()
 			}
 		}
 	}
+	else if (scene == EScene::CUBEMAP)
+	{
+		//Cube
+		{
+			TArray<GameObject> sceneGameObjects;
+			uint32 cubeMeshGUID = ResourceManager::LoadMeshFromFile("cube.obj");
+
+			glm::vec3 position(0.0f, 0.0f, 0.0f);
+			glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec3 scale(1.0f);
+
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
+
+			MaterialProperties materialProperties;
+			materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+			materialProperties.Roughness = 0.1f;
+			materialProperties.Metallic = 0.1f;
+
+			GameObject sphereGameObject = {};
+			sphereGameObject.Mesh = cubeMeshGUID;
+			sphereGameObject.Material = ResourceManager::LoadMaterialFromMemory(
+				"Default r: " + std::to_string(0.1f) + " m: " + std::to_string(0.1f),
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				materialProperties);
+
+
+			InstanceIndexAndTransform instanceIndexAndTransform;
+			instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(sphereGameObject, transform);
+			instanceIndexAndTransform.Position = position;
+			instanceIndexAndTransform.Rotation = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+			instanceIndexAndTransform.Scale = scale;
+
+			m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
+		}
+	}
+	
 
 	m_pScene->Finalize();
 	Renderer::SetScene(m_pScene);
@@ -472,6 +516,34 @@ bool Sandbox::LoadRendererResources()
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
 
 		Renderer::GetRenderGraph()->UpdateResource(blueNoiseUpdateDesc);
+	}
+
+	// For Skybox scene
+	{
+		String skybox[]
+		{
+			"Skybox/right.png",
+			"Skybox/left.png",
+			"Skybox/top.png",
+			"Skybox/bottom.png",
+			"Skybox/front.png",
+			"Skybox/back.png"
+		};
+
+		GUID_Lambda cubemapTexID = ResourceManager::LoadCubeTexturesArrayFromFile("Cubemap Texture", skybox, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
+
+		Texture* pCubeTexture = ResourceManager::GetTexture(cubemapTexID);
+		TextureView* pCubeTextureView = ResourceManager::GetTextureView(cubemapTexID);
+
+		Sampler* pNearestSampler = Sampler::GetNearestSampler();
+
+		ResourceUpdateDesc cubeTextureUpdateDesc = {};
+		cubeTextureUpdateDesc.ResourceName = "CUBEMAP";
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures = &pCubeTexture;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews = &pCubeTextureView;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers = &pNearestSampler;
+
+		Renderer::GetRenderGraph()->UpdateResource(cubeTextureUpdateDesc);
 	}
 
 	return true;
