@@ -76,7 +76,7 @@ namespace LambdaEngine
 	public:
 		inline KeyTypedEvent(uint32 character)
 			: Event(EVENT_FLAG_KEYBOARD)
-			, Character(Character)
+			, Character(character)
 		{
 		}
 

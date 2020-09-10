@@ -71,7 +71,7 @@ namespace LambdaEngine
 	struct MouseScrolledEvent : public Event
 	{
 	public:
-		inline MouseScrolledEvent(float32 deltaX, float32 deltaY)
+		inline MouseScrolledEvent(int32 deltaX, int32 deltaY)
 			: Event(EVENT_FLAG_MOUSE)
 			, DeltaX(deltaX)
 			, DeltaY(deltaY)
@@ -86,8 +86,8 @@ namespace LambdaEngine
 		}
 
 	public:
-		float32 DeltaX;
-		float32 DeltaY;
+		int32 DeltaX;
+		int32 DeltaY;
 	};
 
 	/*
