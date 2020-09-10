@@ -6,6 +6,7 @@
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
 
+#include "RenderGraphTypes.h"
 #include "ICustomRenderer.h"
 
 struct ImGuiContext;
@@ -77,10 +78,15 @@ namespace LambdaEngine
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
 
-		virtual void NewFrame(Timestamp delta) override final;
-		virtual void PrepareRender(Timestamp delta) override final;
-
-		virtual void Render(CommandAllocator* pCommandAllocator, CommandList* pCommandList, uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppExecutionStage) override final;
+		virtual void Render(
+			CommandAllocator* pGraphicsCommandAllocator,
+			CommandList* pGraphicsCommandList,
+			CommandAllocator* pComputeCommandAllocator,
+			CommandList* pComputeCommandList,
+			uint32 modFrameIndex,
+			uint32 backBufferIndex,
+			CommandList** ppPrimaryExecutionStage,
+			CommandList** ppSecondaryExecutionStage)	override final;
 
 		FORCEINLINE virtual FPipelineStageFlags GetFirstPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
 		FORCEINLINE virtual FPipelineStageFlags GetLastPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
@@ -92,6 +98,12 @@ namespace LambdaEngine
 		virtual void OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)	override final;
 		virtual void OnKeyReleased(EKey key)												override final;
 		virtual void OnKeyTyped(uint32 character)											override final;
+		
+		FORCEINLINE virtual const String& GetName() const 
+		{
+			static String name = RENDER_GRAPH_IMGUI_STAGE_NAME;
+			return name;
+		}
 
 	public:
 		static ImGuiContext* GetImguiContext();

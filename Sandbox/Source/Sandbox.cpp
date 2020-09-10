@@ -394,6 +394,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
+	m_pRenderGraphEditor->Update();
 	Render(delta);
 }
 
@@ -409,8 +410,6 @@ void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
 void Sandbox::Render(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
-
-	Renderer::NewFrame(delta);
 
 	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
 	float32 renderWidth = (float32)mainWindow->GetWidth();
@@ -435,8 +434,26 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 		});
 	}
 
-	Renderer::PrepareRender(delta);
 	Renderer::Render();
+}
+
+void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
+{
+	using namespace LambdaEngine;
+
+	GUID_Lambda blueNoiseID = ResourceManager::GetTextureGUID("Blue Noise Texture");
+
+	Texture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
+	TextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
+	Sampler* pNearestSampler				= Sampler::GetNearestSampler();
+
+	ResourceUpdateDesc blueNoiseUpdateDesc = {};
+	blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextures			= &pBlueNoiseTexture;
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
+
+	Renderer::GetRenderGraph()->UpdateResource(blueNoiseUpdateDesc);
 }
 
 namespace LambdaEngine
@@ -466,8 +483,7 @@ bool Sandbox::LoadRendererResources()
 
 		Texture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
 		TextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
-
-		Sampler* pNearestSampler = Sampler::GetNearestSampler();
+		Sampler* pNearestSampler				= Sampler::GetNearestSampler();
 
 		ResourceUpdateDesc blueNoiseUpdateDesc = {};
 		blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";
@@ -477,6 +493,8 @@ bool Sandbox::LoadRendererResources()
 
 		Renderer::GetRenderGraph()->UpdateResource(blueNoiseUpdateDesc);
 	}
+
+	Renderer::GetRenderGraph()->AddCreateHandler(this);
 
 	return true;
 }

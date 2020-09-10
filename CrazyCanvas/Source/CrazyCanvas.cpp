@@ -179,8 +179,6 @@ void CrazyCanvas::Render(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-	Renderer::NewFrame(delta);
-	Renderer::PrepareRender(delta);
 	Renderer::Render();
 }
 

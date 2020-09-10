@@ -2,6 +2,7 @@
 #include "Game/Game.h"
 
 #include "Application/API/EventHandler.h"
+#include "Rendering/IRenderGraphCreateHandler.h"
 
 #include "Containers/TArray.h"
 
@@ -25,7 +26,7 @@ namespace LambdaEngine
 	class RenderGraphEditor;
 }
 
-class Sandbox : public LambdaEngine::Game, public LambdaEngine::ApplicationEventHandler
+class Sandbox : public LambdaEngine::Game, public LambdaEngine::ApplicationEventHandler, public LambdaEngine::IRenderGraphCreateHandler
 {
 	struct InstanceIndexAndTransform
 	{
@@ -46,6 +47,8 @@ public:
 	virtual void FixedTick(LambdaEngine::Timestamp delta) override;
 
 	void Render(LambdaEngine::Timestamp delta);
+
+	virtual void OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph) override;
 
 private:
 	bool LoadRendererResources();

@@ -25,6 +25,7 @@ namespace LambdaEngine
 		~RenderGraphEditor();
 
 		void InitGUI();
+		void Update();
 		void RenderGUI();
 
 		virtual void OnButtonReleased(EMouseButton button)						override final;
@@ -93,6 +94,7 @@ namespace LambdaEngine
 		RenderGraphStructureDesc							m_ParsedRenderGraphStructure	= {};
 		bool												m_ParsedGraphDirty				= true;
 		bool												m_ParsedGraphRenderDirty		= true;
+		bool												m_ApplyRenderGraph				= false;
 
 	private:
 		static int32					s_NextNodeID;

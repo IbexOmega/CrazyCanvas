@@ -7,11 +7,13 @@
 #include "Log/Log.h"
 
 #include "Utilities/IOUtilities.h"
+#include "Time/API/Clock.h"
 
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imnodes.h>
+#include "Rendering/Renderer.h"
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderSystem.h"
 #include "Rendering/RenderGraphParser.h"
@@ -201,6 +203,15 @@ namespace LambdaEngine
 		SetInitialNodePositions();
 	}
 
+	void RenderGraphEditor::Update()
+	{
+		if (m_ApplyRenderGraph)
+		{
+			Renderer::SetRenderGraph("Dynamically Applied RenderGraph", &m_ParsedRenderGraphStructure);
+			m_ApplyRenderGraph = false;
+		}
+	}
+
 	void RenderGraphEditor::RenderGUI()
 	{
 		if (ImGui::Begin("Render Graph Editor"))
@@ -323,7 +334,7 @@ namespace LambdaEngine
 				m_FinalOutput,
 				true))
 			{
-				LOG_ERROR("[RenderGraphSerializer]: Failed to parse RenderGraph");
+				LOG_ERROR("[RenderGraphEditor]: Failed to parse RenderGraph");
 			}
 
 			m_ParsedGraphDirty = false;
@@ -1213,18 +1224,12 @@ namespace LambdaEngine
 					openLoadRenderStagePopup = true;
 				}
 
-				/*ImGui::NewLine();
+				ImGui::NewLine();
 
 				if (ImGui::MenuItem("Apply", NULL, nullptr))
 				{
-					RefactoredRenderGraph* pTest = DBG_NEW RefactoredRenderGraph(RenderSystem::GetDevice());
-
-					RenderGraphDesc renderGraphDesc = {};
-					renderGraphDesc.MaxTexturesPerDescriptorSet = 256;
-					renderGraphDesc.pParsedRenderGraphStructure = &m_ParsedRenderGraphStructure;
-
-					pTest->Init(&renderGraphDesc);
-				}*/
+					m_ApplyRenderGraph = true;
+				}
 
 				ImGui::EndMenu();
 			}
@@ -1250,6 +1255,7 @@ namespace LambdaEngine
 				}
 				ImGui::EndMenu();
 			}
+
 			ImGui::EndMenuBar();
 		}
 
@@ -1502,8 +1508,10 @@ namespace LambdaEngine
 				imnodes::EndOutputAttribute();
 				PopPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
 
-				TArray<ERenderGraphResourceBindingType> bindingTypes;
-				TArray<const char*> bindingTypeNames;
+				static TArray<ERenderGraphResourceBindingType> bindingTypes;
+				static TArray<const char*> bindingTypeNames;
+				bindingTypes.Clear();
+				bindingTypeNames.Clear();
 				CalculateResourceStateBindingTypes(pRenderStage, pResource, pResourceState, bindingTypes, bindingTypeNames);
 
 				if (bindingTypes.GetSize() > 0)
@@ -2999,7 +3007,7 @@ namespace LambdaEngine
 			s_NextAttributeID,
 			s_NextLinkID))
 		{
-			LOG_ERROR("[RenderGraphSerializer]: Failed to load RenderGraph %s from file", renderGraphFileName.c_str());
+			LOG_ERROR("[RenderGraphEditor]: Failed to load RenderGraph %s from file", renderGraphFileName.c_str());
 			return false;
 		}
 
@@ -3013,7 +3021,7 @@ namespace LambdaEngine
 			m_FinalOutput,
 			true))
 		{
-			LOG_ERROR("[RenderGraphSerializer]: Failed to parse RenderGraph %s", renderGraphFileName.c_str());
+			LOG_ERROR("[RenderGraphEditor]: Failed to parse RenderGraph %s", renderGraphFileName.c_str());
 			return false;
 		}
 
