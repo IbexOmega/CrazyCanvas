@@ -84,6 +84,7 @@ namespace LambdaEngine
 		~Win32Application();
 
 		void AddWindow(TSharedRef<Win32Window> window);
+		void DestroyWindow(TSharedRef<Win32Window> window);
 
 		void ProcessStoredMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam, int32 mouseDeltaX, int32 mouseDeltaY);
 		LRESULT ProcessMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
