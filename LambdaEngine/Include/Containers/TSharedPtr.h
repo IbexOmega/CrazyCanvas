@@ -150,11 +150,16 @@ namespace LambdaEngine
 				// When releasing the last strong reference we can destroy the pointer and counter
 				if (m_pCounter->GetStrongReferences() <= 0)
 				{
+					if (m_pCounter->GetWeakReferences() <= 0)
+					{
+						delete m_pCounter;
+					}
+
 					delete m_pPtr;
-					delete m_pCounter;
-					InternalClear();
 				}
 			}
+
+			InternalClear();
 		}
 
 		FORCEINLINE void InternalReleaseWeakRef() noexcept
@@ -163,8 +168,18 @@ namespace LambdaEngine
 			if (m_pPtr)
 			{
 				VALIDATE(m_pCounter != nullptr);
+
 				m_pCounter->ReleaseWeakRef();
+				if (m_pCounter->GetWeakReferences() <= 0)
+				{
+					if (m_pCounter->GetStrongReferences() <= 0)
+					{
+						delete m_pCounter;
+					}
+				}
 			}
+
+			InternalClear();
 		}
 
 		FORCEINLINE void InternalSwap(TPtrBase& other) noexcept
@@ -203,7 +218,7 @@ namespace LambdaEngine
 		FORCEINLINE void InternalConstructStrong(T* pPtr)
 		{
 			m_pPtr = pPtr;
-			m_pCounter = new PtrControlBlock();
+			m_pCounter = DBG_NEW PtrControlBlock();
 			InternalAddStrongRef();
 		}
 
@@ -213,7 +228,7 @@ namespace LambdaEngine
 			static_assert(std::is_convertible<TOther*, T*>());
 
 			m_pPtr = static_cast<T*>(pPtr);
-			m_pCounter = new PtrControlBlock();
+			m_pCounter = DBG_NEW PtrControlBlock();
 			InternalAddStrongRef();
 		}
 
@@ -237,7 +252,7 @@ namespace LambdaEngine
 		FORCEINLINE void InternalConstructWeak(T* pPtr)
 		{
 			m_pPtr = pPtr;
-			m_pCounter = new PtrControlBlock();
+			m_pCounter = DBG_NEW PtrControlBlock();
 			InternalAddWeakRef();
 		}
 
@@ -247,7 +262,7 @@ namespace LambdaEngine
 			static_assert(std::is_convertible<TOther*, T*>());
 
 			m_pPtr = static_cast<T*>(pPtr);
-			m_pCounter = new PtrControlBlock();
+			m_pCounter = DBG_NEW PtrControlBlock();
 			InternalAddWeakRef();
 		}
 
@@ -286,6 +301,7 @@ namespace LambdaEngine
 			m_pCounter = nullptr;
 		}
 
+	protected:
 		T* m_pPtr;
 		PtrControlBlock* m_pCounter;
 	};
@@ -649,7 +665,7 @@ namespace LambdaEngine
 	template<typename T, typename... TArgs>
 	TSharedPtr<T> MakeShared(TArgs&&... args) noexcept
 	{
-		T* pRefCountedPtr = new T(Forward<TArgs>(args)...);
+		T* pRefCountedPtr = DBG_NEW T(Forward<TArgs>(args)...);
 		return Move(TSharedPtr<T>(pRefCountedPtr));
 	}
 }

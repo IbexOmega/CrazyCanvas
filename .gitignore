@@ -26,7 +26,10 @@ Dependencies/bin-int/
 
 #Other ignored files
 *.dot
+cppcheck_report*
 
 #Ignore files for settings
 *.ini
-*.ini
+
+# Ignore files created by the game/engine
+benchmark_results*.json

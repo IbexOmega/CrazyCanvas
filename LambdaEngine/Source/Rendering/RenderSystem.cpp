@@ -1,6 +1,8 @@
 #include "Log/Log.h"
 
 #include "Rendering/RenderSystem.h"
+#include "Rendering/Renderer.h"
+#include "Rendering/PipelineStateManager.h"
 
 #include "Rendering/Core/API/CommandQueue.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
@@ -18,11 +20,11 @@
 #include "Rendering/Core/API/AccelerationStructure.h"
 #include "Rendering/Core/API/DeviceAllocator.h"
 
-#include "Application/API/PlatformApplication.h"
+#include "Application/API/CommonApplication.h"
 
 namespace LambdaEngine
 {
-	GraphicsDevice*		RenderSystem::s_pGraphicsDevice = nullptr;
+	GraphicsDevice*				RenderSystem::s_pGraphicsDevice = nullptr;
 	
 	TSharedRef<CommandQueue>	RenderSystem::s_GraphicsQueue	= nullptr;
 	TSharedRef<CommandQueue>	RenderSystem::s_ComputeQueue	= nullptr;
@@ -64,6 +66,16 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!Sampler::InitDefaults())
+		{
+			return false;
+		}
+
+		if (!PipelineStateManager::Init())
+		{
+			return false;
+		}
+
 		return true;
 	}
 
@@ -72,6 +84,9 @@ namespace LambdaEngine
 		s_GraphicsQueue->Flush();
 		s_ComputeQueue->Flush();
 		s_CopyQueue->Flush();
+
+		Sampler::ReleaseDefaults();
+		PipelineStateManager::Release();
 
 		SAFERELEASE(s_pGraphicsDevice);
 		return true;

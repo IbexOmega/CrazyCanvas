@@ -193,11 +193,70 @@ namespace LambdaEngine
 		}
 	}
 
-	FORCEINLINE EMemoryType MemoryTypeFromString(const String string)
+	FORCEINLINE EMemoryType MemoryTypeFromString(const String& string)
 	{
 		if (string == "MEMORY_TYPE_CPU_VISIBLE")		return EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		if (string == "MEMORY_TYPE_GPU")				return EMemoryType::MEMORY_TYPE_GPU;
 
 		return EMemoryType::MEMORY_TYPE_NONE;
+	}
+
+	FORCEINLINE String PrimitiveTopologyToString(EPrimitiveTopology primitiveTopology)
+	{
+		switch (primitiveTopology)
+		{
+		case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:	return "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST";
+		case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_LINE_LIST:		return "PRIMITIVE_TOPOLOGY_LINE_LIST";
+		case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_POINT_LIST:		return "PRIMITIVE_TOPOLOGY_POINT_LIST";
+		default:													return "NONE";
+		}
+	}
+
+	FORCEINLINE EPrimitiveTopology PrimitiveTopologyFromString(const String& string)
+	{
+		if (string == "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST")	return EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		if (string == "PRIMITIVE_TOPOLOGY_LINE_LIST")		return EPrimitiveTopology::PRIMITIVE_TOPOLOGY_LINE_LIST;
+		if (string == "PRIMITIVE_TOPOLOGY_POINT_LIST")		return EPrimitiveTopology::PRIMITIVE_TOPOLOGY_POINT_LIST;
+
+		return EPrimitiveTopology::PRIMITIVE_TOPOLOGY_NONE;
+	}
+
+	FORCEINLINE String PolygonModeToString(EPolygonMode polygonMode)
+	{
+		switch (polygonMode)
+		{
+		case EPolygonMode::POLYGON_MODE_FILL:	return "POLYGON_MODE_FILL";
+		case EPolygonMode::POLYGON_MODE_LINE:	return "POLYGON_MODE_LINE";
+		case EPolygonMode::POLYGON_MODE_POINT:	return "POLYGON_MODE_POINT";
+		default:								return "NONE";
+		}
+	}
+
+	FORCEINLINE EPolygonMode PolygonModeFromString(const String& string)
+	{
+		if (string == "POLYGON_MODE_FILL")		return EPolygonMode::POLYGON_MODE_FILL;
+		if (string == "POLYGON_MODE_LINE")		return EPolygonMode::POLYGON_MODE_LINE;
+		if (string == "POLYGON_MODE_POINT")		return EPolygonMode::POLYGON_MODE_POINT;
+
+		return EPolygonMode::POLYGON_MODE_NONE;
+	}
+
+	FORCEINLINE String CullModeToString(ECullMode cullMode)
+	{
+		switch (cullMode)
+		{
+		case ECullMode::CULL_MODE_NONE:		return "CULL_MODE_NONE";
+		case ECullMode::CULL_MODE_BACK:		return "CULL_MODE_BACK";
+		case ECullMode::CULL_MODE_FRONT:	return "CULL_MODE_FRONT";
+		default:							return "NONE";
+		}
+	}
+
+	FORCEINLINE ECullMode CullModeFromString(const String& string)
+	{
+		if (string == "CULL_MODE_NONE")		return ECullMode::CULL_MODE_NONE;
+		if (string == "CULL_MODE_BACK")		return ECullMode::CULL_MODE_BACK;
+		if (string == "CULL_MODE_FRONT")	return ECullMode::CULL_MODE_FRONT;
+		return ECullMode::CULL_MODE_NONE;
 	}
 }

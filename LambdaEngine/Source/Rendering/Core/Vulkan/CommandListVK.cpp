@@ -66,18 +66,19 @@ namespace LambdaEngine
 
 		CommandAllocatorVK*	pVkCommandAllocator = (CommandAllocatorVK*)pAllocator;
 		m_CommandList = pVkCommandAllocator->AllocateCommandBuffer(level);
-		if (m_CommandList == VK_NULL_HANDLE)
-		{
-			return false;
-		}
-		else
+		if (m_CommandList != VK_NULL_HANDLE)
 		{
 			m_Desc		= *pDesc;
 			m_QueueType = pAllocator->GetType();
 			m_Allocator = pVkCommandAllocator;
+			m_Allocator->AddRef();
 			SetName(pDesc->DebugName);
-			
+
 			return true;
+		}
+		else
+		{
+			return false;
 		}
 	}
 
@@ -133,6 +134,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			m_IsBegin = true;
 			return true;
 		}
 	}
@@ -151,6 +153,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			m_IsBegin = false;
 			return true;
 		}
 	}
@@ -779,6 +782,7 @@ namespace LambdaEngine
 		FlushDeferredBarriers();
 
 		m_pDevice->vkCmdTraceRaysKHR(m_CommandList, pRaygen, pMiss, pHit, pCallable, width, height, depth);
+		m_CurrentRayTracingPipeline.Reset();
 	}
 
 	void CommandListVK::Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ)
@@ -879,8 +883,9 @@ namespace LambdaEngine
 		vkCmdExecuteCommands(m_CommandList, 1, &pVkSecondary->m_CommandList);
 	}
 
-	void CommandListVK::DeferrDestruction(DeviceChild* pResource)
+	void CommandListVK::DeferDestruction(DeviceChild* pResource)
 	{
+		pResource->AddRef();
 		m_ResourcesToDestroy.EmplaceBack(TSharedRef<DeviceChild>(pResource));
 	}
 

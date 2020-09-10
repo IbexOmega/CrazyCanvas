@@ -22,6 +22,13 @@ namespace LambdaEngine
 	constexpr const uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
 	constexpr const uint32 MAX_MISS_SHADER_COUNT		= 8;
 	constexpr const uint32 EXTERNAL_SUBPASS				= 0xFFFFFFFF;
+	constexpr const uint32 MAX_UNIQUE_MATERIALS			= 32;
+	constexpr const uint32 BACK_BUFFER_COUNT			= 3;
+#ifdef LAMBDA_PLATFORM_MACOS
+	constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
+#else
+	constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
+#endif
 
 	/*
 	* Enums
@@ -75,6 +82,8 @@ namespace LambdaEngine
 	{
 		PRIMITIVE_TOPOLOGY_NONE				= 0,
 		PRIMITIVE_TOPOLOGY_TRIANGLE_LIST	= 1,
+		PRIMITIVE_TOPOLOGY_LINE_LIST		= 2,
+		PRIMITIVE_TOPOLOGY_POINT_LIST		= 3,
 	};
 
 	enum class EPolygonMode : uint8

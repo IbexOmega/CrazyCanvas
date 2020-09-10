@@ -15,7 +15,7 @@ namespace LambdaEngine
 		
 		DECL_UNIQUE_CLASS(CommonApplication);
 
-		bool Create();
+		bool Create(Application* pApplication);
 		TSharedRef<Window> CreateWindow(const WindowDesc* pDesc);
 		
 		void RemoveEventHandler(EventHandler* pEventHandler);
@@ -32,6 +32,11 @@ namespace LambdaEngine
 		* sequence the next tick-iteration.
 		*/
 		void Terminate();
+
+		FORCEINLINE bool IsExiting() const
+		{
+			return m_IsExiting;
+		}
 
 		/*
 		* Sets the window to be the current main window, this is not the same as the window that has
@@ -75,6 +80,11 @@ namespace LambdaEngine
 		void SetMouseVisibility(bool visible);
 		void SetMousePosition(int x, int y);
 
+		FORCEINLINE Application* GetPlatformApplication() const
+		{
+			return m_pPlatformApplication;
+		}
+
 	public:
 		// EventHandler Interface
 		virtual void OnFocusChanged(TSharedRef<Window> window, bool hasFocus)									override final;
@@ -104,9 +114,11 @@ namespace LambdaEngine
 		static CommonApplication* Get();
 
 	private:
-		TSharedRef<Window>		m_MainWindow			= nullptr;
-		Application*			m_pPlatformApplication	= nullptr;
+		TSharedRef<Window>		m_MainWindow = nullptr;
 		TArray<EventHandler*> 	m_EventHandlers;
+		Application* m_pPlatformApplication	= nullptr;
+
+		bool m_IsExiting = false;
 
 	private:
 		static TSharedPtr<CommonApplication> s_CommonApplication;

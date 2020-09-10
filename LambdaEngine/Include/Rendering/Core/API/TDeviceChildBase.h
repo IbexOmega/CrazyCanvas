@@ -3,18 +3,17 @@
 
 namespace LambdaEngine
 {
-	template <typename TGraphicsDevice, typename Base>
-	class TDeviceChildBase : public Base
+	template <typename TGraphicsDevice, typename TBase>
+	class TDeviceChildBase : public TBase
 	{
 	public:
 		DECL_UNIQUE_CLASS(TDeviceChildBase);
 
 		TDeviceChildBase(const TGraphicsDevice* pDevice)
-			: Base(),
+			: TBase(),
 			m_pDevice(pDevice)
 		{
-			// Base needs to inherit DeviceChild
-			Base::AddRef();
+			static_assert(std::is_base_of<DeviceChild, TBase>());
 		}
 
 		~TDeviceChildBase() = default;

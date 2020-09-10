@@ -25,8 +25,10 @@ namespace LambdaEngine
 	{
 		ReleaseResources();
 
-		VALIDATE(m_Desc.Queue != nullptr);
-		m_Desc.Queue.GetAs<CommandQueueVK>()->FlushBarriers();
+		VALIDATE(m_Desc.pQueue != nullptr);
+		reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue)->FlushBarriers();
+		m_Desc.pQueue->Release();
+		m_Desc.pWindow->Release();
 		
 		// Destroy semaphores
 		for (uint32 i = 0; i < m_Desc.BufferCount; i++)
@@ -80,8 +82,8 @@ namespace LambdaEngine
 
 	bool SwapChainVK::Init(const SwapChainDesc* pDesc)
 	{
-		VALIDATE(pDesc->Window	!= nullptr);
-		VALIDATE(pDesc->Queue	!= nullptr);
+		VALIDATE(pDesc->pWindow	!= nullptr);
+		VALIDATE(pDesc->pQueue	!= nullptr);
 		VALIDATE(pDesc			!= nullptr);
 
 		// Create platform specific surface
@@ -105,7 +107,7 @@ namespace LambdaEngine
 			info.sType		= VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 			info.pNext		= nullptr;
 			info.flags		= 0;
-			info.hwnd		= reinterpret_cast<HWND>(pDesc->Window->GetHandle());
+			info.hwnd		= reinterpret_cast<HWND>(pDesc->pWindow->GetHandle());
 			info.hinstance	= PlatformApplication::Get()->GetInstanceHandle();
 			if (vkCreateWin32SurfaceKHR(m_pDevice->Instance, &info, nullptr, &m_Surface) != VK_SUCCESS)
 			{
@@ -126,7 +128,7 @@ namespace LambdaEngine
 		
 		// Check for presentationsupport
 		VkBool32    presentSupport      = false;
-		uint32      queueFamilyIndex    = m_pDevice->GetQueueFamilyIndexFromQueueType(pDesc->Queue->GetType());
+		uint32      queueFamilyIndex    = m_pDevice->GetQueueFamilyIndexFromQueueType(pDesc->pQueue->GetType());
 		vkGetPhysicalDeviceSurfaceSupportKHR(m_pDevice->PhysicalDevice, queueFamilyIndex, m_Surface, &presentSupport);
 		if (!presentSupport)
 		{
@@ -264,6 +266,8 @@ namespace LambdaEngine
 
 		D_LOG_MESSAGE("[SwapChainVK]: Number of buffers in SwapChain '%u'", pDesc->BufferCount);
 		m_Desc = *pDesc;
+		m_Desc.pWindow->AddRef();
+		m_Desc.pQueue->AddRef();
 
 		return InitSwapChain(pDesc->Width, pDesc->Height);
 	}
@@ -382,7 +386,7 @@ namespace LambdaEngine
 		VkResult result = vkAcquireNextImageKHR(m_pDevice->Device, m_SwapChain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_BackBufferIndex);
 		if (result == VK_SUCCESS)
 		{
-			m_Desc.Queue.GetAs<CommandQueueVK>()->AddWaitSemaphore(semaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+			reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue)->AddWaitSemaphore(semaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 		}
 		else
 		{
@@ -408,7 +412,7 @@ namespace LambdaEngine
 		submitInfo.pWaitSemaphores      = nullptr;
 		submitInfo.pWaitDstStageMask    = nullptr;
 
-		VkResult result = vkQueueSubmit(m_Desc.Queue.GetAs<CommandQueueVK>()->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+		VkResult result = vkQueueSubmit(reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue)->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE);
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Submit failed");
@@ -425,7 +429,7 @@ namespace LambdaEngine
 		presentInfo.pResults			= nullptr;
 		presentInfo.pImageIndices		= &m_BackBufferIndex;
 
-		result = vkQueuePresentKHR(m_Desc.Queue.GetAs<CommandQueueVK>()->GetQueue(), &presentInfo);
+		result = vkQueuePresentKHR(reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue)->GetQueue(), &presentInfo);
 		if (result == VK_SUCCESS)
 		{
 			m_SemaphoreIndex = (m_SemaphoreIndex + 1) % m_Desc.BufferCount;
