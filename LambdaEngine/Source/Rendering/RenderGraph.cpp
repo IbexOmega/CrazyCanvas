@@ -255,9 +255,9 @@ namespace LambdaEngine
 		m_pScene = pScene;
 	}
 
-	void RenderGraph::UpdateResource(const ResourceUpdateDesc& desc)
+	void RenderGraph::UpdateResource(const ResourceUpdateDesc* pDesc)
 	{
-		auto it = m_ResourceMap.find(desc.ResourceName);
+		auto it = m_ResourceMap.find(pDesc->ResourceName);
 
 		if (it != m_ResourceMap.end())
 		{
@@ -265,19 +265,34 @@ namespace LambdaEngine
 
 			switch (pResource->Type)
 			{
-				case ERenderGraphResourceType::TEXTURE:					UpdateResourceTexture(pResource, desc);					break;
-				case ERenderGraphResourceType::BUFFER:					UpdateResourceBuffer(pResource, desc);					break;
-				case ERenderGraphResourceType::ACCELERATION_STRUCTURE:	UpdateResourceAccelerationStructure(pResource, desc);	break;
+				case ERenderGraphResourceType::TEXTURE:					UpdateResourceTexture(pResource, pDesc);					break;
+				case ERenderGraphResourceType::BUFFER:					UpdateResourceBuffer(pResource, pDesc);					break;
+				case ERenderGraphResourceType::ACCELERATION_STRUCTURE:	UpdateResourceAccelerationStructure(pResource, pDesc);	break;
 				default:
 				{
-					LOG_WARNING("[RenderGraph]: Resource \"%s\" in Render Graph has unsupported Type", desc.ResourceName.c_str());
+					LOG_WARNING("[RenderGraph]: Resource \"%s\" in Render Graph has unsupported Type", pDesc->ResourceName.c_str());
 					return;
 				}
 			}
 		}
 		else
 		{
-			LOG_WARNING("[RenderGraph]: Resource \"%s\" in Render Graph could not be found in Resource Map", desc.ResourceName.c_str());
+			LOG_WARNING("[RenderGraph]: Resource \"%s\" in Render Graph could not be found in Resource Map", pDesc->ResourceName.c_str());
+			return;
+		}
+	}
+
+	void RenderGraph::UpdatePushConstants(const PushConstantsUpdate* pDesc)
+	{
+		auto renderStageIt = m_RenderStageMap.find(pDesc->RenderStageName);
+
+		if (renderStageIt != m_RenderStageMap.end())
+		{
+
+		}
+		else
+		{
+			LOG_WARNING("[RenderGraph]: Render Stage \"%s\" in Render Graph could not be found in Render Stage Map", pDesc->RenderStageName.c_str());
 			return;
 		}
 	}
@@ -2210,13 +2225,13 @@ namespace LambdaEngine
 					resourceUpdateDesc.InternalTextureUpdate.pTextureDesc		= &desc.TextureUpdate.TextureDesc;
 					resourceUpdateDesc.InternalTextureUpdate.pTextureViewDesc	= &desc.TextureUpdate.TextureViewDesc;
 					resourceUpdateDesc.InternalTextureUpdate.pSamplerDesc		= &desc.TextureUpdate.SamplerDesc;
-					UpdateResourceTexture(pResource, resourceUpdateDesc);
+					UpdateResourceTexture(pResource, &resourceUpdateDesc);
 					break;
 				}
 				case ERenderGraphResourceType::BUFFER:
 				{
 					resourceUpdateDesc.InternalBufferUpdate.pBufferDesc			= &desc.BufferUpdate.BufferDesc;
-					UpdateResourceBuffer(pResource, resourceUpdateDesc);
+					UpdateResourceBuffer(pResource, &resourceUpdateDesc);
 					break;
 				}
 				default:
@@ -2233,7 +2248,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc& desc)
+	void RenderGraph::UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc* pDesc)
 	{
 		uint32 actualSubResourceCount = 0;
 
@@ -2262,8 +2277,8 @@ namespace LambdaEngine
 
 			if (pResource->OwnershipType == EResourceOwnershipType::INTERNAL)
 			{
-				const TextureDesc* pTextureDesc	= desc.InternalTextureUpdate.pTextureDesc;
-				TextureViewDesc textureViewDesc = *desc.InternalTextureUpdate.pTextureViewDesc; //Make a copy so we can change TextureViewDesc::pTexture
+				const TextureDesc* pTextureDesc	= pDesc->InternalTextureUpdate.pTextureDesc;
+				TextureViewDesc textureViewDesc = *pDesc->InternalTextureUpdate.pTextureViewDesc; //Make a copy so we can change TextureViewDesc::pTexture
 
 				SAFERELEASE(*ppTexture);
 				SAFERELEASE(*ppTextureView);
@@ -2274,21 +2289,21 @@ namespace LambdaEngine
 				pTextureView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 				//Update Sampler
-				if (desc.InternalTextureUpdate.pSamplerDesc != nullptr)
+				if (pDesc->InternalTextureUpdate.pSamplerDesc != nullptr)
 				{
 					SAFERELEASE(*ppSampler);
-					pSampler = m_pGraphicsDevice->CreateSampler(desc.InternalTextureUpdate.pSamplerDesc);
+					pSampler = m_pGraphicsDevice->CreateSampler(pDesc->InternalTextureUpdate.pSamplerDesc);
 				}
 			}
 			else if (pResource->OwnershipType == EResourceOwnershipType::EXTERNAL)
 			{
-				pTexture			= desc.ExternalTextureUpdate.ppTextures[sr];
-				pTextureView		= desc.ExternalTextureUpdate.ppTextureViews[sr];
+				pTexture			= pDesc->ExternalTextureUpdate.ppTextures[sr];
+				pTextureView		= pDesc->ExternalTextureUpdate.ppTextureViews[sr];
 
 				//Update Sampler
-				if (desc.ExternalTextureUpdate.ppSamplers != nullptr)
+				if (pDesc->ExternalTextureUpdate.ppSamplers != nullptr)
 				{
-					pSampler = desc.ExternalTextureUpdate.ppSamplers[sr];
+					pSampler = pDesc->ExternalTextureUpdate.ppSamplers[sr];
 				}
 			}
 			else
@@ -2374,7 +2389,7 @@ namespace LambdaEngine
 			m_DirtyDescriptorSetTextures.insert(pResource);
 	}
 
-	void RenderGraph::UpdateResourceBuffer(Resource* pResource, const ResourceUpdateDesc& desc)
+	void RenderGraph::UpdateResourceBuffer(Resource* pResource, const ResourceUpdateDesc* pDesc)
 	{
 		uint32 actualSubResourceCount = 0;
 		if (pResource->BackBufferBound)
@@ -2398,11 +2413,11 @@ namespace LambdaEngine
 			if (pResource->OwnershipType == EResourceOwnershipType::INTERNAL)
 			{
 				SAFERELEASE(*ppBuffer);
-				pBuffer = m_pGraphicsDevice->CreateBuffer(desc.InternalBufferUpdate.pBufferDesc, m_pDeviceAllocator);
+				pBuffer = m_pGraphicsDevice->CreateBuffer(pDesc->InternalBufferUpdate.pBufferDesc, m_pDeviceAllocator);
 			}
 			else if (pResource->OwnershipType == EResourceOwnershipType::EXTERNAL)
 			{
-				pBuffer = desc.ExternalBufferUpdate.ppBuffer[sr];
+				pBuffer = pDesc->ExternalBufferUpdate.ppBuffer[sr];
 			}
 			else
 			{
@@ -2474,10 +2489,10 @@ namespace LambdaEngine
 			m_DirtyDescriptorSetBuffers.insert(pResource);
 	}
 
-	void RenderGraph::UpdateResourceAccelerationStructure(Resource* pResource, const ResourceUpdateDesc& desc)
+	void RenderGraph::UpdateResourceAccelerationStructure(Resource* pResource, const ResourceUpdateDesc* pDesc)
 	{
 		//Update Acceleration Structure
-		pResource->AccelerationStructure.pTLAS = desc.ExternalAccelerationStructure.pTLAS;
+		pResource->AccelerationStructure.pTLAS = pDesc->ExternalAccelerationStructure.pTLAS;
 
 		m_DirtyDescriptorSetAccelerationStructures.insert(pResource);
 	}
