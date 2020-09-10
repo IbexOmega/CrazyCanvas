@@ -34,6 +34,7 @@
 #include "Engine/EngineConfig.h"
 
 #include "Game/Scene.h"
+#include "Game/GameConsole.h"
 
 #include "Time/API/Clock.h"
 
@@ -61,6 +62,10 @@ Sandbox::Sandbox()
 	: Game()
 {
 	using namespace LambdaEngine;
+
+	m_RenderGraphWindow = false;
+	m_ShowDemoWindow = false;
+	m_DebuggingWindow = false;
 
 	CommonApplication::Get()->AddEventHandler(this);
 
@@ -316,6 +321,48 @@ Sandbox::Sandbox()
 		m_pRenderGraphEditor->InitGUI();	//Must Be called after Renderer is initialized
 	}
 
+	GameConsole::Get().Init();
+	ConsoleCommand cmd;
+	cmd.Init("clo", true);
+	cmd.AddArg(Arg::EType::STRING);
+	cmd.AddFlag("l", Arg::EType::INT);
+	cmd.AddFlag("i", Arg::EType::EMPTY);
+	cmd.AddDescription("Does blah and do bar.");
+	GameConsole::Get().BindCommand(cmd, [](GameConsole::CallbackInput& input)->void {
+		std::string s1 = input.Arguments.GetFront().Value.Str;
+		std::string s2 = input.Flags.find("i") == input.Flags.end() ? "no set" : "set";
+		std::string s3 = "no set";
+		auto it = input.Flags.find("l");
+		if (it != input.Flags.end())
+			s3 = "set with a value of " + std::to_string(it->second.Arg.Value.I);
+		LOG_INFO("Command Called with argument '%s' and flag i was %s and flag l was %s.", s1.c_str(), s2.c_str(), s3.c_str());
+	});
+
+	ConsoleCommand cmd1;
+	cmd1.Init("render_graph", true);
+	cmd1.AddArg(Arg::EType::BOOL);
+	cmd1.AddDescription("Activate/Deactivate rendergraph window.\n\t'render_graph true'");
+	GameConsole::Get().BindCommand(cmd1, [&, this](GameConsole::CallbackInput& input)->void {
+		m_RenderGraphWindow = input.Arguments.GetFront().Value.B;
+		});
+
+	ConsoleCommand cmd2;
+	cmd2.Init("imgui_demo", true);
+	cmd2.AddArg(Arg::EType::BOOL);
+	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'show_demo true'");
+	GameConsole::Get().BindCommand(cmd2, [&, this](GameConsole::CallbackInput& input)->void {
+		m_ShowDemoWindow = input.Arguments.GetFront().Value.B;
+		});
+
+	ConsoleCommand cmd3;
+	cmd3.Init("debugging", true);
+	cmd3.AddArg(Arg::EType::BOOL);
+	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'debugging true'");
+	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
+		m_DebuggingWindow = input.Arguments.GetFront().Value.B;
+		});
+
+
 	return;
 }
 
@@ -326,6 +373,8 @@ Sandbox::~Sandbox()
 	SAFEDELETE(m_pCamera);
 
 	SAFEDELETE(m_pRenderGraphEditor);
+
+	LambdaEngine::GameConsole::Get().Release();
 }
 
 void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
@@ -420,18 +469,26 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 	{
 		ImGuiRenderer::Get().DrawUI([&]()
 		{
-			m_pRenderGraphEditor->RenderGUI();
+			if (m_RenderGraphWindow)
+				m_pRenderGraphEditor->RenderGUI();
 
-			ImGui::ShowDemoWindow();
+			if (m_ShowDemoWindow)
+				ImGui::ShowDemoWindow();
 
-			ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
-			if (ImGui::Begin("Debugging Window", NULL))
+			if (m_DebuggingWindow)
 			{
-				ImGui::Text("FPS: %f", 1.0f / delta.AsSeconds());
-				ImGui::Text("Frametime (ms): %f", delta.AsMilliSeconds());
+				ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
+				if (ImGui::Begin("Debugging Window", NULL))
+				{
+					ImGui::Text("FPS: %f", 1.0f / delta.AsSeconds());
+					ImGui::Text("Frametime (ms): %f", delta.AsMilliSeconds());
+				}
+				ImGui::End();
 			}
-			ImGui::End();
+			
 		});
+
+		GameConsole::Get().Render();
 	}
 
 	Renderer::Render();
