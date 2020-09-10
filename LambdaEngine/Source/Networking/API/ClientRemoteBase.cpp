@@ -193,7 +193,7 @@ namespace LambdaEngine
 		else if (packetType == NetworkSegment::TYPE_DISCONNECT)
 		{
 			m_DisconnectedByRemote = true;
-			Disconnect();
+			Release();
 			return false;
 		}
 		else if (IsConnected())
