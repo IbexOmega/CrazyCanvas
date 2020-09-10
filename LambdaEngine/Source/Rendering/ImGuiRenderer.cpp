@@ -26,6 +26,8 @@
 
 #include "Resources/ResourceManager.h"
 
+#include "Debug/Profiler.h"
+
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
 #include <imnodes.h>
@@ -300,8 +302,11 @@ namespace LambdaEngine
 		ImGui::Render();
 
 		// Render to screen
+		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
 		pGraphicsCommandAllocator->Reset();
 		pGraphicsCommandList->Begin(nullptr);
+		Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
 
 		//Start drawing
 		ImDrawData* pDrawData = ImGui::GetDrawData();
@@ -512,6 +517,7 @@ namespace LambdaEngine
 			globalVertexOffset	+= pCmdList->VtxBuffer.Size;
 		}
 
+		Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
 		pGraphicsCommandList->EndRenderPass();
 		pGraphicsCommandList->End();
 

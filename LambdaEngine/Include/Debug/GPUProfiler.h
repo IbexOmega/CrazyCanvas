@@ -53,6 +53,7 @@ namespace LambdaEngine
 		void EndTimestamp(CommandList* pCommandList);
 		void GetTimestamp(CommandList* pCommandList);
 		void ResetTimestamp(CommandList* pCommandList);
+		void ResetAllTimestamps(CommandList* pCommandList);
 
 		void StartGraphicsPipelineStat(CommandList* pCommandList);
 		void EndGraphicsPipelineStat(CommandList* pCommandList);
@@ -81,7 +82,7 @@ namespace LambdaEngine
 		THashTable<String, TArray<float>> m_PlotResults;
 		uint32_t m_PlotResultsStart		= 0;
 		size_t m_PlotDataSize;
-		float m_CurrentMaxDuration		= 0.0f;
+		THashTable<String, float> m_CurrentMaxDuration;
 		float m_TimeSinceUpdate			= 0.0f;
 		float m_UpdateFreq;
 		bool m_EnableGraph				= true;

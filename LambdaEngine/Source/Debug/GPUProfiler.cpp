@@ -65,7 +65,7 @@ namespace LambdaEngine
 				overlay << "Average: " << std::fixed << average << GetTimeUnitName();
 
 				ImGui::Text(stage.first.c_str());
-				ImGui::PlotLines("", stage.second.GetData(), (int)m_PlotDataSize, m_PlotResultsStart, overlay.str().c_str(), 0.f, m_CurrentMaxDuration, { 0, 80 });
+				ImGui::PlotLines("", stage.second.GetData(), (int)m_PlotDataSize, m_PlotResultsStart, overlay.str().c_str(), 0.f, m_CurrentMaxDuration[stage.first], { 0, 80 });
 			}
 		}
 
@@ -190,8 +190,8 @@ namespace LambdaEngine
 			float duration = ((end - start) * m_TimestampPeriod) / (uint64_t)m_TimeUnit;
 			m_Results[name].Duration = duration;
 
-			if (duration > m_CurrentMaxDuration)
-				m_CurrentMaxDuration = duration;
+			if (duration > m_CurrentMaxDuration[name])
+				m_CurrentMaxDuration[name] = duration;
 
 			if (m_EnableGraph)
 			{
@@ -207,6 +207,13 @@ namespace LambdaEngine
 #ifdef LAMBDA_DEBUG
 		uint32_t firstQuery = m_Timestamps[pCommandList].Start;
 		pCommandList->ResetQuery(m_pTimestampHeap, firstQuery, 2);
+#endif
+	}
+
+	void GPUProfiler::ResetAllTimestamps(CommandList* pCommandList)
+	{
+#ifdef LAMBDA_DEBUG
+		pCommandList->ResetQuery(m_pTimestampHeap, 0, m_TimestampCount);
 #endif
 	}
 
