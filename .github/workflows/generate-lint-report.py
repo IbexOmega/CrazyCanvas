@@ -20,11 +20,8 @@ def lint(cppcheck_path, report_path, ignore_path):
 		'--template={callstack}: ({severity}) {message}',
 		'--inconclusive',
 		'-q',
-		'LambdaEngine/*',
-		'Sandbox/*',
-		'Client/*',
-		'Server/*',
-		'CrazyCanvas/*'
+		'--project=LambdaEngine.sln',
+		'\"--project-configuration=Release x64_StaticLib|x64\"'
 	]
 
 	if ignore_path:
