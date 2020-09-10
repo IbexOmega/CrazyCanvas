@@ -16,18 +16,10 @@ namespace LambdaEngine
 {
 	GPUProfiler::GPUProfiler() : m_TimeUnit(TimeUnit::MILLI), m_PlotDataSize(100), m_UpdateFreq(1.0f)
 	{
-#ifdef LAMBDA_DEBUG
-		m_PlotResults.Resize(m_PlotDataSize);
-		for (size_t i = 0; i < m_PlotDataSize; i++)
-			m_PlotResults[i] = 0.0f;
-#endif
 	}
 
 	GPUProfiler::~GPUProfiler()
 	{
-#ifdef LAMBDA_DEBUG
-		//SaveResults();
-#endif
 	}
 
 	void GPUProfiler::Init(TimeUnit timeUnit)
@@ -53,26 +45,28 @@ namespace LambdaEngine
 		if (m_TimestampCount != 0 && ImGui::CollapsingHeader("Timestamps") && m_TimeSinceUpdate > 1 / m_UpdateFreq)
 		{
 			// Enable/disable graph update
-			ImGui::Checkbox("Update graph", &m_EnableGraph);
-
-			// Plot lines
-			m_TimeSinceUpdate = 0.0f;
-			float average = 0.0f;
-
-			uint32_t index = m_PlotResultsStart;
-			for (size_t i = 0; i < m_PlotDataSize; i++)
+			ImGui::Checkbox("Update graphs", &m_EnableGraph);
+			for (auto& stage : m_PlotResults)
 			{
-				average += m_PlotResults[i];
+
+				// Plot lines
+				m_TimeSinceUpdate = 0.0f;
+				float average = 0.0f;
+
+				uint32_t index = m_PlotResultsStart;
+				for (size_t i = 0; i < m_PlotDataSize; i++)
+				{
+					average += stage.second[i];
+				}
+				average /= m_PlotDataSize;
+
+				std::ostringstream overlay;
+				overlay.precision(2);
+				overlay << "Average: " << std::fixed << average << GetTimeUnitName();
+
+				ImGui::Text(stage.first.c_str());
+				ImGui::PlotLines("", stage.second.GetData(), (int)m_PlotDataSize, m_PlotResultsStart, overlay.str().c_str(), 0.f, m_CurrentMaxDuration, { 0, 80 });
 			}
-			average /= m_PlotDataSize;
-
-			std::ostringstream overlay;
-			overlay.precision(2);
-			overlay << "Average: " << std::fixed << average << GetTimeUnitName();
-
-			std::string s = "GPU Timestamp Timings";
-			ImGui::Text(s.c_str());
-			ImGui::PlotLines("", m_PlotResults.GetData(), (int)m_PlotDataSize, m_PlotResultsStart, overlay.str().c_str(), 0.f, m_CurrentMaxDuration, { 0, 80 });
 		}
 
 		if (m_pPipelineStatHeap != nullptr && ImGui::CollapsingHeader("Pipeline Stats"))
@@ -140,14 +134,22 @@ namespace LambdaEngine
 #endif
 	}
 
-	void GPUProfiler::AddTimestamp(CommandList* pCommandList)
+	void GPUProfiler::AddTimestamp(CommandList* pCommandList, String name)
 	{
 #ifdef LAMBDA_DEBUG
 		if (m_Timestamps.find(pCommandList) == m_Timestamps.end())
 		{
 			m_Timestamps[pCommandList].pCommandList = pCommandList;
-			m_Timestamps[pCommandList].Start = m_NextIndex++;
-			m_Timestamps[pCommandList].End = m_NextIndex++;
+			m_Timestamps[pCommandList].Start		= m_NextIndex++;
+			m_Timestamps[pCommandList].End			= m_NextIndex++;
+			m_Timestamps[pCommandList].Name			= name;
+
+			if (m_PlotResults.find(name) == m_PlotResults.end())
+			{
+				m_PlotResults[name].Resize(m_PlotDataSize);
+					for (size_t i = 0; i < m_PlotDataSize; i++)
+						m_PlotResults[name][i] = 0.0f;
+			}
 		}
 #endif
 	}
@@ -182,17 +184,18 @@ namespace LambdaEngine
 			if (m_StartTimestamp == 0)
 				m_StartTimestamp = start;
 
-			m_Results[pCommandList].Start = start;
-			m_Results[pCommandList].End = end;
+			String name = m_Timestamps[pCommandList].Name;
+			m_Results[name].Start = start;
+			m_Results[name].End = end;
 			float duration = ((end - start) * m_TimestampPeriod) / (uint64_t)m_TimeUnit;
-			m_Results[pCommandList].Duration = duration;
+			m_Results[name].Duration = duration;
 
 			if (duration > m_CurrentMaxDuration)
 				m_CurrentMaxDuration = duration;
 
 			if (m_EnableGraph)
 			{
-				m_PlotResults[m_PlotResultsStart] = duration;
+				m_PlotResults[name][m_PlotResultsStart] = duration;
 				m_PlotResultsStart = (m_PlotResultsStart + 1) % m_PlotDataSize;
 			}
 		}
@@ -243,6 +246,12 @@ namespace LambdaEngine
 
 	void GPUProfiler::SaveResults()
 	{
+		/*
+			GPU Timestamps are not optimal to represent in a serial fashion that
+			chrome://tracing does.
+			This feature is therefore possible unnecessary
+		*/
+
 #ifdef LAMBDA_DEBUG
 		const char* filePath = "GPUResults.txt";
 

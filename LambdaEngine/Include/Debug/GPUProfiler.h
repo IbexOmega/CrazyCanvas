@@ -1,6 +1,7 @@
 #pragma once
 #include "Containers/TArray.h"
 #include "Containers/THashTable.h"
+#include "Containers/String.h"
 #include "Time/API/Timestamp.h"
 
 namespace LambdaEngine
@@ -13,13 +14,14 @@ namespace LambdaEngine
 	public:
 		struct Timestamp
 		{
-			Timestamp() : Start(0), End(0), pCommandList(nullptr), Duration(0.0f) {};
-			Timestamp(uint64_t start, uint64_t end, CommandList* pCommandList = nullptr) : Start(start), End(end), pCommandList(pCommandList), Duration(0.0f) {};
+			Timestamp() : Start(0), End(0), pCommandList(nullptr), Duration(0.0f), Name("") {};
+			Timestamp(uint64_t start, uint64_t end, CommandList* pCommandList = nullptr) : Start(start), End(end), pCommandList(pCommandList), Duration(0.0f), Name("") {};
 
 			uint64_t Start;
 			uint64_t End;
 			float Duration;
 			CommandList* pCommandList;
+			String Name;
 		};
 
 		enum class TimeUnit
@@ -46,7 +48,7 @@ namespace LambdaEngine
 		// CreateComputePipelineStats();
 
 		// Timestamps are buffer bound
-		void AddTimestamp(CommandList* pCommandList);
+		void AddTimestamp(CommandList* pCommandList, String name);
 		void StartTimestamp(CommandList* pCommandList);
 		void EndTimestamp(CommandList* pCommandList);
 		void GetTimestamp(CommandList* pCommandList);
@@ -75,8 +77,8 @@ namespace LambdaEngine
 		float m_TimestampPeriod			= 0.f;
 		uint64_t m_StartTimestamp		= 0;
 
-		THashTable<CommandList*, Timestamp> m_Results;
-		TArray<float> m_PlotResults;
+		THashTable<String, Timestamp> m_Results;
+		THashTable<String, TArray<float>> m_PlotResults;
 		uint32_t m_PlotResultsStart		= 0;
 		size_t m_PlotDataSize;
 		float m_CurrentMaxDuration		= 0.0f;
