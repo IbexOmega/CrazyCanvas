@@ -347,7 +347,7 @@ Sandbox::Sandbox()
 		});
 
 	ConsoleCommand cmd2;
-	cmd2.Init("show_demo", true);
+	cmd2.Init("imgui_demo", true);
 	cmd2.AddArg(Arg::EType::BOOL);
 	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'show_demo true'");
 	GameConsole::Get().BindCommand(cmd2, [&, this](GameConsole::CallbackInput& input)->void {
