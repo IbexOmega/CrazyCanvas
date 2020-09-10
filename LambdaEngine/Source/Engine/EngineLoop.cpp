@@ -73,7 +73,7 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
-		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
+		RuntimeStats::SetFrameTime((float32)delta.AsSeconds());
 		Input::Tick();
 
 		Thread::Join();

@@ -45,5 +45,5 @@ LAMBDA_API void HandleAssertWithMessage(const char* pFile, int line, const char*
 	#define ASSERT_MSG(condition, ...)
 #endif
 
-#define VALIDATE(condition)             ASSERT(condition)
-#define VALIDATE_MSG(condition, ...)    ASSERT_MSG(condition, __VA_ARGS__)
+#define VALIDATE(condition)				ASSERT(condition)
+#define VALIDATE_MSG(condition, ...)	ASSERT_MSG(condition, __VA_ARGS__)
