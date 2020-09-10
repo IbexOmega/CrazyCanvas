@@ -57,6 +57,8 @@ namespace LambdaEngine
 
         SAFERELEASE(m_pDescriptorHeap);
 
+		Profiler::GetGPUProfiler()->Release();
+
 		for (uint32 b = 0; b < m_BackBufferCount; b++)
 		{
 			SAFERELEASE(m_ppGraphicsCopyCommandAllocators[b]);

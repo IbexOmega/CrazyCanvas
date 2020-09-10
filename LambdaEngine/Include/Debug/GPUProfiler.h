@@ -38,7 +38,7 @@ namespace LambdaEngine
 
 		void Init(TimeUnit timeUnit);
 		void Render(LambdaEngine::Timestamp delta);
-		void Cleanup();
+		void Release();
 
 		// Create timestamps per command list
 		void CreateTimestamps(uint32_t listCount);

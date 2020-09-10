@@ -25,7 +25,9 @@ namespace LambdaEngine
 
 	GPUProfiler::~GPUProfiler()
 	{
+#ifdef LAMBDA_DEBUG
 		//SaveResults();
+#endif
 	}
 
 	void GPUProfiler::Init(TimeUnit timeUnit)
@@ -93,8 +95,12 @@ namespace LambdaEngine
 #endif
 	}
 
-	void GPUProfiler::Cleanup()
+	void GPUProfiler::Release()
 	{
+#ifdef LAMBDA_DEBUG
+		m_pTimestampHeap->Release();
+		m_pPipelineStatHeap->Release();
+#endif
 	}
 
 	void GPUProfiler::CreateTimestamps(uint32_t listCount)
