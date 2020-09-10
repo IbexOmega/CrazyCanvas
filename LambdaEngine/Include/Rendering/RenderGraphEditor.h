@@ -36,6 +36,7 @@ namespace LambdaEngine
 		void InitDefaultResources();
 
 		void RenderResourceView(float textWidth, float textHeight);
+		void RenderNewRenderGraphConfirmationView();
 		void RenderAddResourceView();
 		void RenderEditResourceView();
 		void InternalRenderEditResourceView(RenderGraphResourceDesc* pResource, char* pNameBuffer, int32 nameBufferLength);
@@ -92,6 +93,7 @@ namespace LambdaEngine
 		TArray<String>										m_FilesInShaderDirectory;
 
 		RenderGraphStructureDesc							m_ParsedRenderGraphStructure	= {};
+		bool												m_ParsedGraphValid				= true;
 		bool												m_ParsedGraphDirty				= true;
 		bool												m_ParsedGraphRenderDirty		= true;
 		bool												m_ApplyRenderGraph				= false;

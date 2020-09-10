@@ -82,6 +82,8 @@ namespace LambdaEngine
 	{
 		PRIMITIVE_TOPOLOGY_NONE				= 0,
 		PRIMITIVE_TOPOLOGY_TRIANGLE_LIST	= 1,
+		PRIMITIVE_TOPOLOGY_LINE_LIST		= 2,
+		PRIMITIVE_TOPOLOGY_POINT_LIST		= 3,
 	};
 
 	enum class EPolygonMode : uint8

@@ -948,7 +948,6 @@ namespace LambdaEngine
 		colorAttachmentDesc.FinalState		= pBackBufferAttachmentDesc->FinalState;
 
 		RenderPassSubpassDesc subpassDesc = {};
-		subpassDesc.RenderTargetStates.Reserve(512);
 		subpassDesc.RenderTargetStates			= { ETextureState::TEXTURE_STATE_RENDER_TARGET };
 		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DONT_CARE;
 
@@ -962,7 +961,6 @@ namespace LambdaEngine
 
 		RenderPassDesc renderPassDesc = {};
 		renderPassDesc.DebugName			= "ImGui Render Pass";
-		renderPassDesc.Attachments.Reserve(256);
 		renderPassDesc.Attachments			= { colorAttachmentDesc };
 		renderPassDesc.Subpasses			= { subpassDesc };
 		renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
