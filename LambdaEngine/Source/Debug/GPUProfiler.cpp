@@ -45,16 +45,17 @@ namespace LambdaEngine
 
 		if (m_TimestampCount != 0 && ImGui::CollapsingHeader("Timestamps") && m_TimeSinceUpdate > 1 / m_UpdateFreq)
 		{
+			// Enable/disable graph update
+			ImGui::Checkbox("Update graph", &m_EnableGraph);
+
+			// Plot lines
 			m_TimeSinceUpdate = 0.0f;
 			float average = 0.0f;
 
-			TArray<float> plotData(m_PlotDataSize);
 			uint32_t index = m_PlotResultsStart;
 			for (size_t i = 0; i < m_PlotDataSize; i++)
 			{
 				average += m_PlotResults[i];
-				plotData[i] = m_PlotResults[index];
-				index = (index + 1) % m_PlotDataSize;
 			}
 			average /= m_PlotDataSize;
 
@@ -64,11 +65,12 @@ namespace LambdaEngine
 
 			std::string s = "GPU Timestamp Timings";
 			ImGui::Text(s.c_str());
-			ImGui::PlotLines("", plotData.GetData(), (int)m_PlotDataSize, 0, overlay.str().c_str(), 0.f, m_CurrentMaxDuration, { 0, 80 });
+			ImGui::PlotLines("", m_PlotResults.GetData(), (int)m_PlotDataSize, m_PlotResultsStart, overlay.str().c_str(), 0.f, m_CurrentMaxDuration, { 0, 80 });
 		}
 
 		if (m_pPipelineStatHeap != nullptr && ImGui::CollapsingHeader("Pipeline Stats"))
 		{
+			// Graphics Pipeline Statistics
 			const TArray<std::string> statNames = {
 				"Input assembly vertex count        ",
 				"Input assembly primitives count    ",
@@ -165,8 +167,11 @@ namespace LambdaEngine
 			if (duration > m_CurrentMaxDuration)
 				m_CurrentMaxDuration = duration;
 
-			m_PlotResults[m_PlotResultsStart] = duration;
-			m_PlotResultsStart = (m_PlotResultsStart + 1) % m_PlotDataSize;
+			if (m_EnableGraph)
+			{
+				m_PlotResults[m_PlotResultsStart] = duration;
+				m_PlotResultsStart = (m_PlotResultsStart + 1) % m_PlotDataSize;
+			}
 		}
 	}
 

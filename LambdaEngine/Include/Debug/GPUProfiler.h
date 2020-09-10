@@ -82,6 +82,7 @@ namespace LambdaEngine
 		float m_CurrentMaxDuration		= 0.0f;
 		float m_TimeSinceUpdate			= 0.0f;
 		float m_UpdateFreq;
+		bool m_EnableGraph				= true;
 
 		// Pipeline statistics
 		QueryHeap* m_pPipelineStatHeap = nullptr;
