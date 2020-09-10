@@ -477,6 +477,9 @@
                 }
             },
             "depth_test_enabled": true,
+            "cull_mode": "CULL_MODE_BACK",
+            "polygon_mode": "POLYGON_MODE_FILL",
+            "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
@@ -749,6 +752,9 @@
                 "draw_type": "FULLSCREEN_QUAD"
             },
             "depth_test_enabled": false,
+            "cull_mode": "CULL_MODE_BACK",
+            "polygon_mode": "POLYGON_MODE_FILL",
+            "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
