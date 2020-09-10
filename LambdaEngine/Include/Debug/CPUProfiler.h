@@ -9,25 +9,24 @@
 #include <mutex>
 
 #ifdef LAMBDA_DEBUG
-#define LAMBDA_PROFILER_BEGIN_SESSION(name, fileName) Instrumentation::get().beginSession(name, fileName)
-#define LAMBDA_PROFILER_END_SESSION() Instrumentation::get().endSession()
-#define LAMBDA_PROFILER_SCOPE(name) InstrumentationTimer instrumentationTimer##__LINE__(name)
+#define LAMBDA_PROFILER_BEGIN_SESSION(name, fileName) LambdaEngine::CPUProfiler::Get()->BeginSession(name, fileName)
+#define LAMBDA_PROFILER_END_SESSION() LambdaEngine::CPUProfiler::Get()->EndSession()
+#define LAMBDA_PROFILER_SCOPE(name) LambdaEngine::InstrumentationTimer instrumentationTimer##__LINE__(name)
 #define LAMBDA_PROFILER_FUNCTION() LAMBDA_PROFILER_SCOPE(__FUNCTION__ )
 
-#define LAMBDA_PROFILER_SAMPLE_BEGIN_SESSION(name, fileName) {if(!Instrumentation::g_runProfilingSample) { Instrumentation::get().beginSession(name, fileName); Instrumentation::g_runProfilingSample = true; }}
-#define LAMBDA_PROFILER_SAMPLE_END_SESSION() {if(Instrumentation::g_runProfilingSample) { Instrumentation::get().endSession(); Instrumentation::g_runProfilingSample = false; } }
-#define LAMBDA_PROFILER_SAMPLE_SCOPE(name) InstrumentationTimer instrumentationTimerRendering##__LINE__(name, Instrumentation::g_runProfilingSample)
+#define LAMBDA_PROFILER_SAMPLE_BEGIN_SESSION(name, fileName) {if(!LambdaEngine::CPUProfiler::g_RunProfilingSample) { LambdaEngine::CPUProfiler::Get()->BeginSession(name, fileName); LambdaEngine::CPUProfiler::g_RunProfilingSample = true; }}
+#define LAMBDA_PROFILER_SAMPLE_END_SESSION() {if(LambdaEngine::CPUProfiler::g_RunProfilingSample) { LambdaEngine::CPUProfiler::Get()->EndSession(); LambdaEngine::CPUProfiler::g_RunProfilingSample = false; } }
+#define LAMBDA_PROFILER_SAMPLE_SCOPE(name) LambdaEngine::InstrumentationTimer instrumentationTimerRendering##__LINE__(name, LambdaEngine::CPUProfiler::g_RunProfilingSample)
 #define LAMBDA_PROFILER_SAMPLE_FUNCTION() LAMBDA_PROFILER_SAMPLE_SCOPE(__FUNCTION__ )
 
-#define LAMBDA_PROFILER_TOGGLE_SAMPLE(key, frameCount) Instrumentation::get().toggleSample(key, frameCount)
-#define LAMBDA_PROFILER_TOGGLE_SAMPLE_POOL(pool, key, frameCount) Instrumentation::get().toggleSample(pool, key, frameCount)
-#define LAMBDA_PROFILER_WRITE_VULKAN_DATA() Instrumentation::get().writeVulkanData()
+#define LAMBDA_PROFILER_TOGGLE_SAMPLE(key, frameCount) CPUProfiler::Get().ToggleSample(key, frameCount)
+#define LAMBDA_PROFILER_TOGGLE_SAMPLE_POOL(pool, key, frameCount) CPUProfiler::Get().ToggleSample(pool, key, frameCount)
 
 #else
-#define LAMBDRA_PROFILER_BEGIN_SESSION(name, fileName)
-#define LAMBDRA_PROFILER_END_SESSION()
-#define LAMBDRA_PROFILER_SCOPE(name)
-#define LAMBDRA_PROFILER_FUNCTION()
+#define LAMBDA_PROFILER_BEGIN_SESSION(name, fileName)
+#define LAMBDA_PROFILER_END_SESSION()
+#define LAMBDA_PROFILER_SCOPE(name)
+#define LAMBDA_PROFILER_FUNCTION()
 
 #define LAMBDA_PROFILER_SAMPLE_BEGIN_SESSION(name, fileName)
 #define LAMBDA_PROFILER_SAMPLE_END_SESSION()
