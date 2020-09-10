@@ -16,9 +16,11 @@ namespace LambdaEngine
 {
 	GPUProfiler::GPUProfiler() : m_TimeUnit(TimeUnit::MILLI), m_PlotDataSize(100), m_UpdateFreq(1.0f)
 	{
+#ifdef LAMBDA_DEBUG
 		m_PlotResults.Resize(m_PlotDataSize);
 		for (size_t i = 0; i < m_PlotDataSize; i++)
 			m_PlotResults[i] = 0.0f;
+#endif
 	}
 
 	GPUProfiler::~GPUProfiler()
@@ -28,6 +30,7 @@ namespace LambdaEngine
 
 	void GPUProfiler::Init(TimeUnit timeUnit)
 	{
+#ifdef LAMBDA_DEBUG
 		GraphicsDeviceFeatureDesc desc = {};
 		RenderSystem::GetDevice()->QueryDeviceFeatures(&desc);
 		m_TimestampPeriod = desc.TimestampPeriod;
@@ -37,10 +40,12 @@ namespace LambdaEngine
 		m_TimestampValidBits = prop.TimestampValidBits;
 
 		m_TimeUnit = timeUnit;
+#endif
 	}
 
 	void GPUProfiler::Render(LambdaEngine::Timestamp delta)
 	{
+#ifdef LAMBDA_DEBUG
 		m_TimeSinceUpdate += delta.AsMilliSeconds();
 
 		if (m_TimestampCount != 0 && ImGui::CollapsingHeader("Timestamps") && m_TimeSinceUpdate > 1 / m_UpdateFreq)
@@ -85,6 +90,7 @@ namespace LambdaEngine
 				ImGui::BulletText(caption.c_str(), m_GraphicsStats[i]);
 			}
 		}
+#endif
 	}
 
 	void GPUProfiler::Cleanup()
@@ -93,6 +99,7 @@ namespace LambdaEngine
 
 	void GPUProfiler::CreateTimestamps(uint32_t listCount)
 	{
+#ifdef LAMBDA_DEBUG
 		// Need two timestamps per list
 		m_TimestampCount = listCount * 2;
 
@@ -103,10 +110,12 @@ namespace LambdaEngine
 		createInfo.Type = EQueryType::QUERY_TYPE_TIMESTAMP;
 
 		m_pTimestampHeap = RenderSystem::GetDevice()->CreateQueryHeap(&createInfo);
+#endif
 	}
 
 	void GPUProfiler::CreateGraphicsPipelineStats()
 	{
+#ifdef LAMBDA_DEBUG
 		QueryHeapDesc createInfo = {};
 		createInfo.DebugName = "VulkanProfiler Graphics Pipeline Statistics Heap";
 		createInfo.PipelineStatisticsFlags =
@@ -122,31 +131,39 @@ namespace LambdaEngine
 		m_pPipelineStatHeap = RenderSystem::GetDevice()->CreateQueryHeap(&createInfo);
 
 		m_GraphicsStats.Resize(createInfo.QueryCount);
+#endif
 	}
 
 	void GPUProfiler::AddTimestamp(CommandList* pCommandList)
 	{
+#ifdef LAMBDA_DEBUG
 		if (m_Timestamps.find(pCommandList) == m_Timestamps.end())
 		{
 			m_Timestamps[pCommandList].pCommandList = pCommandList;
 			m_Timestamps[pCommandList].Start = m_NextIndex++;
 			m_Timestamps[pCommandList].End = m_NextIndex++;
 		}
+#endif
 	}
 
 	void GPUProfiler::StartTimestamp(CommandList* pCommandList)
 	{
+#ifdef LAMBDA_DEBUG
 		// Assume VK_PIPELINE_STAGE_TOP_OF_PIPE or VK_PIPELINE_STAGE_BOTTOM_OF_PIPE;
 		pCommandList->Timestamp(m_pTimestampHeap, m_Timestamps[pCommandList].Start, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM);
+#endif
 	}
 
 	void GPUProfiler::EndTimestamp(CommandList* pCommandList)
 	{
+#ifdef LAMBDA_DEBUG
 		pCommandList->Timestamp(m_pTimestampHeap, m_Timestamps[pCommandList].End, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM);
+#endif
 	}
 
 	void GPUProfiler::GetTimestamp(CommandList* pCommandList)
 	{
+#ifdef LAMBDA_DEBUG
 		size_t timestampCount = 2;
 		TArray<uint64_t> results(timestampCount);
 		bool res = m_pTimestampHeap->GetResults(m_Timestamps[pCommandList].Start, timestampCount, timestampCount * sizeof(uint64), results.GetData());
@@ -173,32 +190,43 @@ namespace LambdaEngine
 				m_PlotResultsStart = (m_PlotResultsStart + 1) % m_PlotDataSize;
 			}
 		}
+#endif
 	}
 
 	void GPUProfiler::ResetTimestamp(CommandList* pCommandList)
 	{
+#ifdef LAMBDA_DEBUG
 		uint32_t firstQuery = m_Timestamps[pCommandList].Start;
 		pCommandList->ResetQuery(m_pTimestampHeap, firstQuery, 2);
+#endif
 	}
 
 	void GPUProfiler::StartGraphicsPipelineStat(CommandList* pCommandList)
 	{
+#ifdef LAMBDA_DEBUG
 		pCommandList->BeginQuery(m_pPipelineStatHeap, 0);
+#endif
 	}
 
 	void GPUProfiler::EndGraphicsPipelineStat(CommandList* pCommandList)
 	{
+#ifdef LAMBDA_DEBUG
 		pCommandList->EndQuery(m_pPipelineStatHeap, 0);
+#endif
 	}
 
 	void GPUProfiler::GetGraphicsPipelineStat()
 	{
+#ifdef LAMBDA_DEBUG
 		m_pPipelineStatHeap->GetResults(0, 1, m_GraphicsStats.GetSize() * sizeof(uint64), m_GraphicsStats.GetData());
+#endif
 	}
 
 	void GPUProfiler::ResetGraphicsPipelineStat(CommandList* pCommandList)
 	{
+#ifdef LAMBDA_DEBUG
 		pCommandList->ResetQuery(m_pPipelineStatHeap, 0, 6);
+#endif
 	}
 
 	GPUProfiler* GPUProfiler::Get()
@@ -209,6 +237,7 @@ namespace LambdaEngine
 
 	void GPUProfiler::SaveResults()
 	{
+#ifdef LAMBDA_DEBUG
 		const char* filePath = "GPUResults.txt";
 
 		std::ofstream file;
@@ -242,6 +271,7 @@ namespace LambdaEngine
 		file << "]" << std::endl << "}";
 		file.flush();
 		file.close();
+#endif
 	}
 
 	std::string GPUProfiler::GetTimeUnitName()
