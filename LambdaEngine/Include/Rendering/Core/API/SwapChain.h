@@ -13,8 +13,8 @@ namespace LambdaEngine
 	struct SwapChainDesc
 	{
 		String				DebugName		= "";
-		TSharedRef<Window>			Window			= nullptr;
-		TSharedRef<CommandQueue>	Queue			= nullptr;
+		Window*				pWindow			= nullptr;
+		CommandQueue*		pQueue			= nullptr;
 		EFormat				Format			= EFormat::FORMAT_NONE;
 		uint32				Width			= 0;
 		uint32				Height			= 0;
@@ -50,7 +50,7 @@ namespace LambdaEngine
 		*/
 		virtual const Window* GetWindow() const
 		{
-			return m_Desc.Window.Get();
+			return m_Desc.pWindow;
 		}
 
 		/*
@@ -69,7 +69,7 @@ namespace LambdaEngine
 		*/
 		virtual CommandQueue* GetCommandQueue()
 		{
-			return m_Desc.Queue.GetAndAddRef();
+			return m_Desc.pQueue;
 		}
 
 		/*

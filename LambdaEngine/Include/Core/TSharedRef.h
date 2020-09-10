@@ -313,4 +313,11 @@ namespace LambdaEngine
 	private:
 		TRefCountedObject* m_pPtr;
 	};
+
+	template<typename TRefCountedObject>
+	TSharedRef<TRefCountedObject> MakeSharedRef(TRefCountedObject* pSharedRef)
+	{
+		pSharedRef->AddRef();
+		return Move(TSharedRef<TRefCountedObject>(pSharedRef));
+	}
 }

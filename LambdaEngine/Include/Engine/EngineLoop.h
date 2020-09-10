@@ -9,7 +9,7 @@ namespace LambdaEngine
 {
 	/*
 	* This class controls the game-loop and makes sure that all engine
-	* submodules gets runned atleast once per frame
+	* submodules run at least once per frame
 	*/
 	class LAMBDA_API EngineLoop
 	{
@@ -18,13 +18,13 @@ namespace LambdaEngine
 
 		/*
 		* Initializes modules that are needed in EngineLoop::Init()
-		*	return - Returns true if successfull
+		*	return - Returns true if successful
 		*/
 		static bool PreInit();
 
 		/*
 		* Initializes all engine modules
-		*	return - Returns true if successfull
+		*	return - Returns true if successful
 		*/
 		static bool Init();
 
@@ -34,8 +34,14 @@ namespace LambdaEngine
 		static void Run();
 
 		/*
+		* Stops/Waits for all execution to stop
+		*	return - Returns true if successful
+		*/
+		static bool PreRelease();
+
+		/*
 		* Releases all engine modules
-		*	return - Returns true if successfull
+		*	return - Returns true if successful
 		*/
 		static bool Release();
 
@@ -45,8 +51,12 @@ namespace LambdaEngine
 		*/
 		static bool PostRelease();
 
-        static Timestamp GetTimeSinceStart();
-        
+		static void SetFixedTimestep(Timestamp timestep);
+		static Timestamp GetFixedTimestep();
+
+		static Timestamp GetDeltaTime();
+		static Timestamp GetTimeSinceStart();
+
 	private:
 		/*
 		* Engine tick, advances the whole engine one frame. Should only be called from run
@@ -54,7 +64,7 @@ namespace LambdaEngine
 		*	return	- Returns true if the engine should perform next tick
 		*/
 		static bool Tick(Timestamp delta);
-        
+		
         /*
         * Fixed engine tick, advances the whole engine one frame at a fixed framerate (Current every 16ms).
         * Should only be called from run

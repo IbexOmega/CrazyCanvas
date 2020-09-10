@@ -26,6 +26,11 @@ int main(int, const char*[])
 	Game* pGame = CreateGame();	
 	EngineLoop::Run();
 
+	if (!EngineLoop::PreRelease())
+	{
+		return -1;
+	}
+
 	SAFEDELETE(pGame);
 
 	if (!EngineLoop::Release())

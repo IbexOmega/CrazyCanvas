@@ -171,7 +171,7 @@ namespace LambdaEngine
 	template<typename T, typename... TArgs>
 	TUniquePtr<T> MakeUnique(TArgs&&... args) noexcept
 	{
-		T* UniquePtr = new T(Forward<TArgs>(args)...);
+		T* UniquePtr = DBG_NEW T(Forward<TArgs>(args)...);
 		return Move(TUniquePtr<T>(UniquePtr));
 	}
 }

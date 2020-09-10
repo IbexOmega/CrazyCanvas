@@ -3,8 +3,12 @@
 
 #include "Core/TSharedRef.h"
 
+
 namespace LambdaEngine
 {
+	constexpr const bool IMGUI_ENABLED = true;
+
+	class Renderer;
 	class CommandQueue;
 	class GraphicsDevice;
 
