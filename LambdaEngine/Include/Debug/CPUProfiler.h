@@ -51,9 +51,9 @@ namespace LambdaEngine
 		void Stop();
 
 	private:
-		int64_t startTime;
-		std::string name;
-		bool active;
+		int64_t m_StartTime;
+		std::string m_Name;
+		bool m_Active;
 	};
 
 	class CPUProfiler
@@ -61,10 +61,10 @@ namespace LambdaEngine
 	public:
 		struct ProfileData
 		{
-			std::string name;
-			uint64_t start, end;
-			size_t tid = 0;
-			size_t pid = 0;
+			std::string Name;
+			uint64_t Start, End;
+			size_t TID = 0;
+			size_t PID = 0;
 		};
 		CPUProfiler();
 		~CPUProfiler();
@@ -84,12 +84,12 @@ namespace LambdaEngine
 		void Render(Timestamp delta);
 
 
-		static bool g_runProfilingSample;
+		static bool g_RunProfilingSample;
 
 	private:
-		std::mutex mutex;
-		std::ofstream file;
-		unsigned long long counter;
-		uint64_t startTime = 0;
+		std::mutex m_Mutex;
+		std::ofstream m_File;
+		unsigned long long m_Counter;
+		uint64_t m_StartTime = 0;
 	};
 }

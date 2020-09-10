@@ -13,12 +13,12 @@ namespace LambdaEngine
 	public:
 		struct Timestamp
 		{
-			Timestamp() : start(0), end(0), pCommandList(nullptr), duration(0.0f) {};
-			Timestamp(uint64_t start, uint64_t end, CommandList* pCommandList = nullptr) : start(start), end(end), pCommandList(pCommandList), duration(0.0f) {};
+			Timestamp() : Start(0), End(0), pCommandList(nullptr), Duration(0.0f) {};
+			Timestamp(uint64_t start, uint64_t end, CommandList* pCommandList = nullptr) : Start(start), End(end), pCommandList(pCommandList), Duration(0.0f) {};
 
-			uint64_t start;
-			uint64_t end;
-			float duration;
+			uint64_t Start;
+			uint64_t End;
+			float Duration;
 			CommandList* pCommandList;
 		};
 

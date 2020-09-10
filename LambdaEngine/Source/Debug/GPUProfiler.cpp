@@ -127,27 +127,27 @@ namespace LambdaEngine
 		if (m_Timestamps.find(pCommandList) == m_Timestamps.end())
 		{
 			m_Timestamps[pCommandList].pCommandList = pCommandList;
-			m_Timestamps[pCommandList].start = m_NextIndex++;
-			m_Timestamps[pCommandList].end = m_NextIndex++;
+			m_Timestamps[pCommandList].Start = m_NextIndex++;
+			m_Timestamps[pCommandList].End = m_NextIndex++;
 		}
 	}
 
 	void GPUProfiler::StartTimestamp(CommandList* pCommandList)
 	{
 		// Assume VK_PIPELINE_STAGE_TOP_OF_PIPE or VK_PIPELINE_STAGE_BOTTOM_OF_PIPE;
-		pCommandList->Timestamp(m_pTimestampHeap, m_Timestamps[pCommandList].start, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM);
+		pCommandList->Timestamp(m_pTimestampHeap, m_Timestamps[pCommandList].Start, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM);
 	}
 
 	void GPUProfiler::EndTimestamp(CommandList* pCommandList)
 	{
-		pCommandList->Timestamp(m_pTimestampHeap, m_Timestamps[pCommandList].end, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM);
+		pCommandList->Timestamp(m_pTimestampHeap, m_Timestamps[pCommandList].End, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM);
 	}
 
 	void GPUProfiler::GetTimestamp(CommandList* pCommandList)
 	{
 		size_t timestampCount = 2;
 		TArray<uint64_t> results(timestampCount);
-		bool res = m_pTimestampHeap->GetResults(m_Timestamps[pCommandList].start, timestampCount, timestampCount * sizeof(uint64), results.GetData());
+		bool res = m_pTimestampHeap->GetResults(m_Timestamps[pCommandList].Start, timestampCount, timestampCount * sizeof(uint64), results.GetData());
 
 		if (res)
 		{
@@ -157,10 +157,10 @@ namespace LambdaEngine
 			if (m_StartTimestamp == 0)
 				m_StartTimestamp = start;
 
-			m_Results[pCommandList].start = start;
-			m_Results[pCommandList].end = end;
+			m_Results[pCommandList].Start = start;
+			m_Results[pCommandList].End = end;
 			float duration = ((end - start) * m_TimestampPeriod) / (uint64_t)m_TimeUnit;
-			m_Results[pCommandList].duration = duration;
+			m_Results[pCommandList].Duration = duration;
 
 			if (duration > m_CurrentMaxDuration)
 				m_CurrentMaxDuration = duration;
@@ -172,7 +172,7 @@ namespace LambdaEngine
 
 	void GPUProfiler::ResetTimestamp(CommandList* pCommandList)
 	{
-		uint32_t firstQuery = m_Timestamps[pCommandList].start;
+		uint32_t firstQuery = m_Timestamps[pCommandList].Start;
 		pCommandList->ResetQuery(m_pTimestampHeap, firstQuery, 2);
 	}
 
@@ -227,8 +227,8 @@ namespace LambdaEngine
 				file << "\"ph\": \"X\",";
 				file << "\"pid\": " << 1 << ",";
 				file << "\"tid\": " << 0 << ",";
-				file << "\"ts\": " << (((res.second.start - m_StartTimestamp) * m_TimestampPeriod) / (uint64_t)m_TimeUnit) << ",";
-				file << "\"dur\": " << res.second.duration;
+				file << "\"ts\": " << (((res.second.Start - m_StartTimestamp) * m_TimestampPeriod) / (uint64_t)m_TimeUnit) << ",";
+				file << "\"dur\": " << res.second.Duration;
 				file << "}";
 				j++;
 			//}
