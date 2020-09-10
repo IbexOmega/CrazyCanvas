@@ -15,6 +15,9 @@ namespace LambdaEngine
 	{
 		friend class ServerTCP;
 
+	public:
+		virtual void Release() override;
+
 	protected:
 		ClientRemoteTCP(uint16 packetPoolSize, ISocketTCP* pSocket, ServerTCP* pServer);
 
@@ -24,7 +27,6 @@ namespace LambdaEngine
 
 	private:
 		void RunReceiver();
-		void OnThreadReceiverTerminated();
 
 	private:
 		PacketManagerTCP m_PacketManager;

@@ -23,10 +23,7 @@ namespace LambdaEngine
 
 		pSocket->EnableNaglesAlgorithm(false);
 
-		m_pThreadReceiver = Thread::Create(
-			std::bind(&ClientRemoteTCP::RunReceiver, this),
-			std::bind(&ClientRemoteTCP::OnThreadReceiverTerminated, this)
-		);
+		m_pThreadReceiver = Thread::Create(std::bind(&ClientRemoteTCP::RunReceiver, this), nullptr);
 	}
 
 	void ClientRemoteTCP::RunReceiver()
@@ -44,9 +41,14 @@ namespace LambdaEngine
 		LOG_INFO("[ClientTCPRemote]: Thread Ended");
 	}
 
-	void ClientRemoteTCP::OnThreadReceiverTerminated()
+	void ClientRemoteTCP::Release()
 	{
-		m_pThreadReceiver = nullptr;
+		if (m_pSocket)
+		{
+			m_pSocket->Close();
+			m_pSocket = nullptr;
+		}
+		ClientRemoteBase::Release();
 	}
 
 	PacketManagerBase* ClientRemoteTCP::GetPacketManager()

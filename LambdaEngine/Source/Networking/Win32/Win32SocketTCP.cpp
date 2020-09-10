@@ -42,8 +42,12 @@ namespace LambdaEngine
 
 		if (socket == INVALID_SOCKET)
 		{
-			LOG_ERROR_CRIT("Failed to accept Socket");
-			PrintLastError();
+			int32 error = WSAGetLastError();
+			if (error != WSAEINTR)
+			{
+				LOG_ERROR_CRIT("Failed to accept Socket");
+				PrintLastError();
+			}
 			return nullptr;
 		}
 
