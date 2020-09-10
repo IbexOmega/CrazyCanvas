@@ -340,26 +340,26 @@ Sandbox::Sandbox()
 
 	ConsoleCommand cmd1;
 	cmd1.Init("render_graph", true);
-	cmd1.AddArg(Arg::BOOL);
+	cmd1.AddArg(Arg::EType::BOOL);
 	cmd1.AddDescription("Activate/Deactivate rendergraph window.\n\t'render_graph true'");
 	GameConsole::Get().BindCommand(cmd1, [&, this](GameConsole::CallbackInput& input)->void {
-		m_RenderGraphWindow = input.arguments.GetFront().value.b;
+		m_RenderGraphWindow = input.Arguments.GetFront().Value.B;
 		});
 
 	ConsoleCommand cmd2;
 	cmd2.Init("show_demo", true);
-	cmd2.AddArg(Arg::BOOL);
+	cmd2.AddArg(Arg::EType::BOOL);
 	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'show_demo true'");
 	GameConsole::Get().BindCommand(cmd2, [&, this](GameConsole::CallbackInput& input)->void {
-		m_ShowDemoWindow = input.arguments.GetFront().value.b;
+		m_ShowDemoWindow = input.Arguments.GetFront().Value.B;
 		});
 
 	ConsoleCommand cmd3;
 	cmd3.Init("debugging", true);
-	cmd3.AddArg(Arg::BOOL);
+	cmd3.AddArg(Arg::EType::BOOL);
 	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'debugging true'");
 	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
-		m_DebuggingWindow = input.arguments.GetFront().value.b;
+		m_DebuggingWindow = input.Arguments.GetFront().Value.B;
 		});
 
 
