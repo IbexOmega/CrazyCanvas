@@ -2,26 +2,24 @@
 
 namespace LambdaEngine
 {
-	
-
 	struct LAMBDA_API Arg
 	{
-		enum EType { FLOAT, BOOL, INT, STRING, EMPTY };
+		enum class EType { FLOAT, BOOL, INT, STRING, EMPTY };
 
-		EType type;
+		EType Type;
 		union Value
 		{
-			float f;
-			bool b;
-			int i;
-			char str[64];
-		} value;
+			float F;
+			bool B;
+			int I;
+			char Str[64];
+		} Value;
 	};
 
 	struct LAMBDA_API Flag
 	{
-		Arg arg;
-		std::string name;
+		Arg Arg;
+		std::string Name;
 	};
 
 	class LAMBDA_API ConsoleCommand
@@ -29,8 +27,8 @@ namespace LambdaEngine
 	private:
 		struct Description
 		{
-			std::string mainDesc;
-			std::unordered_map<std::string, std::string> flagDescs;
+			std::string MainDesc;
+			std::unordered_map<std::string, std::string> FlagDescs;
 		};
 
 	public:
