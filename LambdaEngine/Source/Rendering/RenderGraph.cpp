@@ -923,7 +923,7 @@ namespace LambdaEngine
 				//Internal
 				if (pResourceDesc->Type == ERenderGraphResourceType::TEXTURE)
 				{
-					pResource->Texture.textureType		= pResourceDesc->TextureParams.TextureType;
+					pResource->Texture.TextureType		= pResourceDesc->TextureParams.TextureType;
 					pResource->Type						= ERenderGraphResourceType::TEXTURE;
 					pResource->OwnershipType			= pResource->IsBackBuffer ? EResourceOwnershipType::EXTERNAL : EResourceOwnershipType::INTERNAL;
 					pResource->Texture.IsOfArrayType	= pResourceDesc->TextureParams.IsOfArrayType;
@@ -979,7 +979,7 @@ namespace LambdaEngine
 						samplerDesc.MinLOD				= 0.0f;
 						samplerDesc.MaxLOD				= 1.0f;
 
-						if (pResource->Texture.textureType == ERenderGraphTextureType::TEXTURE_CUBE)
+						if (pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
 						{
 							textureViewDesc.DebugName = pResourceDesc->Name + " Texture Cube View";
 							textureViewDesc.pTexture = nullptr;
