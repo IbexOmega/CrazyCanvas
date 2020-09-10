@@ -1,11 +1,12 @@
-#include "Networking/API/ClientUDPRemote.h"
+#include "Networking/API/UDP/ClientUDPRemote.h"
+#include "Networking/API/UDP/PacketTransceiverUDP.h"
+#include "Networking/API/UDP/ServerUDP.h"
+#include "Networking/API/UDP/ISocketUDP.h"
+
 #include "Networking/API/IPAddress.h"
-#include "Networking/API/ISocketUDP.h"
 #include "Networking/API/PlatformNetworkUtils.h"
-#include "Networking/API/ServerUDP.h"
 #include "Networking/API/IClientRemoteHandler.h"
 #include "Networking/API/BinaryDecoder.h"
-#include "Networking/API/PacketTransceiverUDP.h"
 #include "Networking/API/NetworkChallenge.h"
 
 #include "Log/Log.h"
@@ -44,6 +45,11 @@ namespace LambdaEngine
 	}
 
 	PacketManagerBase* ClientUDPRemote::GetPacketManager()
+	{
+		return &m_PacketManager;
+	}
+
+	const PacketManagerBase* ClientUDPRemote::GetPacketManager() const
 	{
 		return &m_PacketManager;
 	}

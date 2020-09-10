@@ -221,7 +221,12 @@ namespace LambdaEngine
 
 	PacketManagerBase* ClientTCPRemote::GetPacketManager()
 	{
-		return nullptr;
+		return &m_PacketManager;
+	}
+
+	const PacketManagerBase* ClientTCPRemote::GetPacketManager() const
+	{
+		return &m_PacketManager;
 	}
 
 	void ClientTCPRemote::Release()

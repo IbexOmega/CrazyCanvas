@@ -15,6 +15,7 @@ namespace LambdaEngine
 	class LAMBDA_API NetWorker
 	{
 	public:
+		DECL_UNIQUE_CLASS(NetWorker);
 		NetWorker();
 		virtual ~NetWorker();
 
@@ -31,6 +32,7 @@ namespace LambdaEngine
 		bool StartThreads();
 		void TerminateThreads();
 		bool ThreadsAreRunning() const;
+		bool ThreadsHasTerminated() const;
 		bool ShouldTerminate() const;
 		void YieldTransmitter();
 		void TerminateAndRelease();

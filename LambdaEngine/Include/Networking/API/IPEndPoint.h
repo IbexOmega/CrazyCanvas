@@ -30,6 +30,7 @@ namespace LambdaEngine
 		uint64 GetHash() const;
 
 		bool operator==(const IPEndPoint& other) const;
+		bool operator!=(const IPEndPoint& other) const;
 
 	private:
 		void UpdateHash();

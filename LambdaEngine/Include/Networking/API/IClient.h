@@ -36,5 +36,6 @@ namespace LambdaEngine
 		virtual EClientState GetState() const = 0;
 		virtual const NetworkStatistics* GetStatistics() const = 0;
 		virtual PacketManagerBase* GetPacketManager() = 0;
+		virtual const PacketManagerBase* GetPacketManager() const = 0;
 	};
 }

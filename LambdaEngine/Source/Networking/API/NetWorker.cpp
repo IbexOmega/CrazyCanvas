@@ -66,6 +66,11 @@ namespace LambdaEngine
 		return m_pThreadReceiver != nullptr && m_pThreadTransmitter != nullptr;
 	}
 
+	bool NetWorker::ThreadsHasTerminated() const
+	{
+		return m_ThreadsTerminated;
+	}
+
 	bool NetWorker::ShouldTerminate() const
 	{
 		return !m_Run;

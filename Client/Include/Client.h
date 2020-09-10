@@ -10,7 +10,7 @@
 
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/IClientHandler.h"
-#include "Networking/API/TCP/ClientTCP.h"
+#include "Networking/API/ClientBase.h"
 
 namespace LambdaEngine
 {
@@ -50,7 +50,7 @@ private:
 	bool InitRendererForEmpty();
 
 private:
-	LambdaEngine::ClientTCP* m_pClient;
+	LambdaEngine::ClientBase* m_pClient;
 
 	LambdaEngine::RenderGraphEditor* m_pRenderGraphEditor = nullptr;
 	LambdaEngine::RenderGraph* m_pRenderGraph = nullptr;

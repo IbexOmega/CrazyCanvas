@@ -66,4 +66,15 @@ namespace LambdaEngine
 	{
 		return nullptr;
 	}
+
+	ClientBase* NetworkUtils::CreateClient(const ClientDesc& desc)
+	{
+		if(desc.Protocol == EProtocol::TCP)
+			return new ClientTCP(desc);
+		else if (desc.Protocol == EProtocol::UDP)
+			return new ClientUDP(desc);
+
+		LOG_ERROR_CRIT("What kind of protocol is this ?");
+		return nullptr;
+	}
 }

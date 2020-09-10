@@ -32,10 +32,12 @@ namespace LambdaEngine
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
 		virtual const NetworkStatistics* GetStatistics() const override;
-		virtual PacketManagerBase* GetPacketManager() override;
 
 	protected:
 		ClientTCPRemote(uint16 packetPoolSize, ISocketTCP* pSocket, ServerTCP* pServer);
+
+		virtual PacketManagerBase* GetPacketManager() override;
+		virtual const PacketManagerBase* GetPacketManager() const override;
 
 		virtual void OnPacketDelivered(NetworkSegment* pPacket) override;
 		virtual void OnPacketResent(NetworkSegment* pPacket, uint8 tries) override;

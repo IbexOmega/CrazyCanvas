@@ -54,27 +54,14 @@ Client::Client() :
 	InitRendererForEmpty();
 
 
+    ClientDesc desc = {};
+    desc.PoolSize               = 512;
+    desc.MaxRetries             = 10;
+    desc.ResendRTTMultiplier    = 2.0F;
+    desc.Handler                = this;
+    desc.Protocol               = EProtocol::UDP;
 
-	/*ClientUDPDesc desc = {};
-	desc.PoolSize				= 512;
-	desc.MaxRetries				= 10;
-	desc.ResendRTTMultiplier	= 2.0F;
-	desc.Handler				= this;
-
-    m_pClient = ClientUDP::Create(desc);
-
-    if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
-    {
-        LOG_ERROR("Failed to connect!");
-    }*/
-
-    ClientTCPDesc desc = {};
-    desc.PoolSize = 512;
-    desc.MaxRetries = 10;
-    desc.ResendRTTMultiplier = 2.0F;
-    desc.Handler = this;
-
-    m_pClient = ClientTCP::Create(desc);
+    m_pClient = NetworkUtils::CreateClient(desc);
 
     if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
     {

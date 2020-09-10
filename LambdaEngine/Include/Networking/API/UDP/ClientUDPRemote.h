@@ -35,6 +35,7 @@ namespace LambdaEngine
 		ClientUDPRemote(uint16 packetPoolSize, uint8 maximumTries, const IPEndPoint& ipEndPoint, ServerUDP* pServer);
 
 		virtual PacketManagerBase* GetPacketManager() override;
+		virtual const PacketManagerBase* GetPacketManager() const override;
 
 		virtual void OnPacketDelivered(NetworkSegment* pPacket) override;
 		virtual void OnPacketResent(NetworkSegment* pPacket, uint8 tries) override;
