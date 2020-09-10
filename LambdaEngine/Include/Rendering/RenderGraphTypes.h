@@ -570,6 +570,8 @@ namespace LambdaEngine
 
 	FORCEINLINE FPipelineStageFlags FindEarliestPipelineStage(uint32 pipelineStageMask)
 	{
+		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP;
+
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT;
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
@@ -598,7 +600,6 @@ namespace LambdaEngine
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP;
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM)						return FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM;
 
 		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
@@ -606,6 +607,8 @@ namespace LambdaEngine
 
 	FORCEINLINE FPipelineStageFlags FindLastPipelineStage(uint32 pipelineStageMask)
 	{
+		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM)						return FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM;
+
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
 
@@ -634,8 +637,31 @@ namespace LambdaEngine
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM)						return FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM;
 		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP;
+
+		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+	}
+
+	FORCEINLINE FPipelineStageFlags FindLastPipelineStage(const RenderStageDesc* pRenderStageDesc)
+	{
+		if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
+		{
+			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size() > 0)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
+		}
+		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
+		{
+			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+		}
+		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
+		{
+			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+		}
 
 		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}

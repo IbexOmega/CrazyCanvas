@@ -1431,7 +1431,7 @@ namespace LambdaEngine
 
 			//Create PipelineStageMask here, to be used for InitialBarriers Creation
 			uint32 pipelineStageMask = CreateShaderStageMask(pRenderStageDesc);
-			FPipelineStageFlags lastPipelineStageFlags = FindLastPipelineStage(pipelineStageMask);
+			FPipelineStageFlags lastPipelineStageFlags = FindLastPipelineStage(pRenderStageDesc);
 
 			//Create Descriptors and RenderPass Attachments from RenderStage Resource States
 			for (uint32 rs = 0; rs < pRenderStageDesc->ResourceStates.GetSize(); rs++)
@@ -1718,7 +1718,7 @@ namespace LambdaEngine
 			else
 			{
 				pRenderStage->PipelineStageMask		= pipelineStageMask;
-				pRenderStage->FirstPipelineStage	= FindEarliestPipelineStage(pipelineStageMask);
+				pRenderStage->FirstPipelineStage	= FindEarliestPipelineStage(pRenderStageDesc);
 				pRenderStage->LastPipelineStage		= lastPipelineStageFlags;
 
 				//Create Push Constants
