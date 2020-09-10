@@ -2757,8 +2757,8 @@ namespace LambdaEngine
 
 		pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
 
-		if (pRenderStage->ExternalPushConstants.DataSize > 0)
-			pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->);
+		//if (pRenderStage->ExternalPushConstants.DataSize > 0)
+			//pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->);
 
 		uint32 textureDescriptorSetBindingIndex = 0;
 		if (pRenderStage->ppBufferDescriptorSets != nullptr)

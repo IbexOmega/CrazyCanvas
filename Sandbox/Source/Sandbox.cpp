@@ -620,7 +620,7 @@ bool Sandbox::LoadRendererResources()
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews = &pCubeTextureView;
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers = &pNearestSampler;
 
-		Renderer::GetRenderGraph()->UpdateResource(cubeTextureUpdateDesc);
+		Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
 
 	return true;
