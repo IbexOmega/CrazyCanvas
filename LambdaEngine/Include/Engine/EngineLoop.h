@@ -65,11 +65,11 @@ namespace LambdaEngine
 		*/
 		static bool Tick(Timestamp delta);
 		
-        /*
-        * Fixed engine tick, advances the whole engine one frame at a fixed framerate (Current every 16ms).
-        * Should only be called from run
-        *	delta - The time between this frame and the last frame
-        */
-        static void FixedTick(Timestamp delta);
+		/*
+		* Fixed engine tick, advances the whole engine one frame at a fixed framerate (Current every 16ms).
+		* Should only be called from run
+		*	delta - The time between this frame and the last frame
+		*/
+		static void FixedTick(Timestamp delta);
 	};
 }
