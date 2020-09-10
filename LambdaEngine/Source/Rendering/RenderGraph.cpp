@@ -1092,8 +1092,6 @@ namespace LambdaEngine
 						samplerDesc.MinLOD				= 0.0f;
 						samplerDesc.MaxLOD				= 1.0f;
 
-
-						InternalResourceUpdateDesc internalResourceUpdateDesc = {};
 						internalResourceUpdateDesc.ResourceName						= pResourceDesc->Name;
 						internalResourceUpdateDesc.Type								= ERenderGraphResourceType::TEXTURE;
 						internalResourceUpdateDesc.TextureUpdate.XDimType			= pResourceDesc->TextureParams.XDimType;

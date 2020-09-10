@@ -93,7 +93,7 @@ Sandbox::Sandbox()
 	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
 	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
 
-	EScene scene = EScene::CUBEMAP;
+	EScene scene = EScene::TESTING;
 
 	m_pScene->SetDirectionalLight(directionalLight);
 
@@ -622,6 +622,8 @@ bool Sandbox::LoadRendererResources()
 
 		Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
+
+	Renderer::GetRenderGraph()->AddCreateHandler(this);
 
 	return true;
 }
