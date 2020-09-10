@@ -2,15 +2,15 @@
 
 #include "Time/API/Timestamp.h"
 
+#include "Debug/CPUProfiler.h"
+#include "Debug/GPUProfiler.h"
+
 /*
 	Profiler for both CPU and GPU
 */
 
 namespace LambdaEngine
 {
-	class GPUProfiler;
-	class CPUProfiler;
-
 	class Profiler
 	{
 	public:

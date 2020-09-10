@@ -27,7 +27,6 @@
 
 #include "Application/API/CommonApplication.h"
 
-#include "Debug/GPUProfiler.h"
 #include "Debug/Profiler.h"
 
 // Needed to reset GPUProfiler timestamps -- should be changed
