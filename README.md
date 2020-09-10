@@ -1,4 +1,6 @@
 # Lambda Game Engine
+![Benchmark](https://github.com/IbexOmega/CrazyCanvas/workflows/Benchmark/badge.svg?branch=master)
+
 Lambda Game Engine
 
 A game engine that supports Win32 and MacOS
