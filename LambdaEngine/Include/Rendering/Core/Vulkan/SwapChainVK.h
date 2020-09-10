@@ -4,15 +4,18 @@
 #include "Rendering/Core/API/SwapChain.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
+#include "Application/API/EventHandler.h"
+
 #include "Vulkan.h"
 
 namespace LambdaEngine
 {
 	class TextureVK;
+	class TextureViewVK;
 	class CommandQueueVK;
 	class GraphicsDeviceVK;
 
-	class SwapChainVK : public TDeviceChildBase<GraphicsDeviceVK, SwapChain>
+	class SwapChainVK : public TDeviceChildBase<GraphicsDeviceVK, SwapChain>, public EventHandler
 	{
 		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, SwapChain>;
 		
@@ -31,19 +34,27 @@ namespace LambdaEngine
 		
 		virtual bool Present() override final;
 		
-		virtual Texture*		GetBuffer(uint32 bufferIndex)		override final;
-		virtual const Texture*	GetBuffer(uint32 bufferIndex) const	override final;
+		virtual Texture* GetBuffer(uint32 bufferIndex)		override final;
+		virtual const Texture* GetBuffer(uint32 bufferIndex) const	override final;
+
+		virtual TextureView* GetBufferView(uint32 bufferIndex)		override final;
+		virtual const TextureView* GetBufferView(uint32 bufferIndex) const override final;
 	
 		FORCEINLINE virtual uint64 GetCurrentBackBufferIndex() const override final
 		{
 			return static_cast<uint64>(m_BackBufferIndex);
 		}
+
+		virtual void OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type) override final;
 		
 	private:
-		bool InitSwapChain(uint32 width, uint32 height);
+		bool InitInternal();
+		bool InitSurface();
+		void ReleaseInternal();
+		void ReleaseSurface();
 		
-		VkResult	AquireNextImage();
-		void		ReleaseResources();
+		VkExtent2D GetSizeFromSurface(uint32 width, uint32 height);
+		VkResult AquireNextImage();
 		
 	private:
 		VkSurfaceKHR	m_Surface	= VK_NULL_HANDLE;
@@ -55,8 +66,9 @@ namespace LambdaEngine
 		VkPresentModeKHR	m_PresentationMode;
 		VkSurfaceFormatKHR	m_VkFormat;
 		
-		TArray<TextureVK*>	m_Buffers;
-		TArray<VkSemaphore>	m_ImageSemaphores;
-		TArray<VkSemaphore>	m_RenderSemaphores;
+		TArray<TextureVK*>		m_Buffers;
+		TArray<TextureViewVK*>	m_BufferViews;
+		TArray<VkSemaphore>		m_ImageSemaphores;
+		TArray<VkSemaphore>		m_RenderSemaphores;
 	};
 }

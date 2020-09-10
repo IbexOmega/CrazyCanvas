@@ -18,6 +18,7 @@ namespace LambdaEngine
 		~TextureViewVK();
 		
 		bool Init(const TextureViewDesc* pDesc);
+		bool Reinit(const TextureViewDesc* pDesc);
 		
 		FORCEINLINE VkImageView GetImageView() const
 		{
@@ -25,6 +26,8 @@ namespace LambdaEngine
 		}
 		
 	public:
+		void InternalRelease();
+
 		// DeviceChild interface
 		virtual void SetName(const String& name) override final;
 		

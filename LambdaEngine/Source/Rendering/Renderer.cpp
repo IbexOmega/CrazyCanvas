@@ -80,28 +80,8 @@ namespace LambdaEngine
 		{
 			for (uint32 v = 0; v < BACK_BUFFER_COUNT; v++)
 			{
-				Texture* pBackBuffer	= s_SwapChain->GetBuffer(v);
-				s_ppBackBuffers[v]		= pBackBuffer;
-
-				TextureViewDesc textureViewDesc = {};
-				textureViewDesc.DebugName		= "Renderer Back Buffer Texture View";
-				textureViewDesc.pTexture		= pBackBuffer;
-				textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
-				textureViewDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
-				textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-				textureViewDesc.MiplevelCount	= 1;
-				textureViewDesc.ArrayCount		= 1;
-				textureViewDesc.Miplevel		= 0;
-				textureViewDesc.ArrayIndex		= 0;
-			
-				TextureView* pBackBufferView = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
-				if (pBackBufferView == nullptr)
-				{
-					LOG_ERROR("[Renderer]: Could not create Back Buffer View of Back Buffer Index %u in Renderer", v);
-					return false;
-				}
-			
-				s_ppBackBufferViews[v] = pBackBufferView;
+				s_ppBackBuffers[v]		= s_SwapChain->GetBuffer(v);
+				s_ppBackBufferViews[v]	= s_SwapChain->GetBufferView(v);
 			}
 		
 			ResourceUpdateDesc resourceUpdateDesc = {};
