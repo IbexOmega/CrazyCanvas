@@ -65,7 +65,10 @@ namespace LambdaEngine
 		while (!ShouldTerminate())
 		{
 			if (!m_Transciver.ReceiveBegin(dummy))
-				continue;
+			{
+				Disconnect();
+				return;
+			}
 
 			DecodeReceivedPackets();
 		}

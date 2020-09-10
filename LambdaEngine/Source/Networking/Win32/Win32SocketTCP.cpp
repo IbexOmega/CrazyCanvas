@@ -63,6 +63,10 @@ namespace LambdaEngine
 		bytesSent = send(m_Socket, (const char*)pBuffer, bytesToSend, 0);
 		if (bytesSent == SOCKET_ERROR)
 		{
+			int32 error = WSAGetLastError();
+			if (error == WSAECONNRESET)
+				return false;
+
 			LOG_ERROR_CRIT("Failed to send data");
 			PrintLastError();
 			return false;
@@ -84,6 +88,8 @@ namespace LambdaEngine
 				return true;
 			else if (error == WSAEWOULDBLOCK && IsNonBlocking())
 				return true;
+			else if (error == WSAECONNRESET)
+				return false;
 
 			LOG_ERROR_CRIT("Failed to receive data");
 			PrintLastError();

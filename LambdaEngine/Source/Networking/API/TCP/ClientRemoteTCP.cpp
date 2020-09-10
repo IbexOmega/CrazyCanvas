@@ -23,6 +23,8 @@ namespace LambdaEngine
 
 		pSocket->EnableNaglesAlgorithm(false);
 
+		m_DisconnectedByRemote = true;
+
 		m_pThreadReceiver = Thread::Create(std::bind(&ClientRemoteTCP::RunReceiver, this), nullptr);
 	}
 
@@ -30,7 +32,7 @@ namespace LambdaEngine
 	{
 		IPEndPoint dummy;
 
-		while (m_State != STATE_DISCONNECTED)
+		while (!m_pSocket->IsClosed())
 		{
 			if (!m_Transceiver.ReceiveBegin(dummy))
 				continue;
@@ -38,17 +40,18 @@ namespace LambdaEngine
 			DecodeReceivedPackets();
 		}
 
+		delete m_pSocket;
+		m_pSocket = nullptr;
+
+		ClientRemoteBase::Release();
+
 		LOG_INFO("[ClientTCPRemote]: Thread Ended");
 	}
 
 	void ClientRemoteTCP::Release()
 	{
 		if (m_pSocket)
-		{
 			m_pSocket->Close();
-			m_pSocket = nullptr;
-		}
-		ClientRemoteBase::Release();
 	}
 
 	PacketManagerBase* ClientRemoteTCP::GetPacketManager()
