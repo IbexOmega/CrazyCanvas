@@ -939,31 +939,21 @@ namespace LambdaEngine
 		ImGui::SameLine();
 		ImGui::Checkbox("##Back Buffer Bound", &pResource->BackBufferBound);
 
-		if (m_CurrentlyAddingTextureType != ERenderGraphTextureType::TEXTURE_CUBE)
+		pResource->TextureParams.TextureType = m_CurrentlyAddingTextureType;
+		
+		ImGui::Text("Sub Resource Count: ");
+		ImGui::SameLine();
+
+		if (pResource->BackBufferBound)
 		{
-			ImGui::Text("Sub Resource Count: ");
-			ImGui::SameLine();
-
-			if (pResource->BackBufferBound)
-			{
-				pResource->SubResourceCount = 1;
-				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-			}
-
-			if (ImGui::InputInt("##Sub Resource Count", &pResource->SubResourceCount, 1, 100))
-			{
-				pResource->SubResourceCount = glm::clamp<int32>(pResource->SubResourceCount, 1, 1024);
-			}
+			pResource->SubResourceCount = 1;
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
 		}
-		else 
+
+		if (ImGui::InputInt("##Sub Resource Count", &pResource->SubResourceCount, 1, 100))
 		{
-			if (pResource->BackBufferBound)
-			{
-				pResource->SubResourceCount = 1;
-				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-			}
+			pResource->SubResourceCount = glm::clamp<int32>(pResource->SubResourceCount, 1, 1024);
 		}
 
 		if (pResource->BackBufferBound)
@@ -1160,7 +1150,7 @@ namespace LambdaEngine
 				std::iterator_traits<TArray<std::string>::Iterator>::difference_type v;
 
 				int32 index = std::distance(dir.Children.begin(), entry);
-				auto* pFilename = &(entry->RelativePath);
+				auto* pPath = &(entry->RelativePath);
 
 				if (entry->isDirectory)
 				{
@@ -1169,7 +1159,7 @@ namespace LambdaEngine
 				else
 				{
 					ImGui::Bullet();
-					if (ImGui::Selectable(pFilename->filename().string().c_str(), selectedIndex == index, ImGuiSeparatorFlags_None, ImVec2(textWidth, textHeight)))
+					if (ImGui::Selectable(pPath->filename().string().c_str(), selectedIndex == index, ImGuiSeparatorFlags_None, ImVec2(textWidth, textHeight)))
 					{
 						selectedIndex = index;
 					}
@@ -1177,7 +1167,7 @@ namespace LambdaEngine
 					if (ImGui::BeginDragDropSource())
 					{
 						
-						ImGui::SetDragDropPayload("SHADER", &pFilename, sizeof(const std::filesystem::path*));
+						ImGui::SetDragDropPayload("SHADER", &pPath, sizeof(const std::filesystem::path*));
 						ImGui::EndDragDropSource();
 					}
 				}
@@ -2020,7 +2010,7 @@ namespace LambdaEngine
 						ImGuiStyle& style = ImGui::GetStyle();
 						static float maxOptionTextSize = style.ItemInnerSpacing.x + ImGui::CalcTextSize(DIMENSION_NAMES[0]).x + ImGui::GetFrameHeight() + 10;
 
-						ImGui::Text("Wdith: ");
+						ImGui::Text("Width: ");
 						ImGui::SameLine();
 						ImGui::PushItemWidth(maxOptionTextSize);
 						ImGui::Combo("##Render Stage X Option", &selectedXOption, DIMENSION_NAMES, 3);

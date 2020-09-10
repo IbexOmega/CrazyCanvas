@@ -1043,21 +1043,45 @@ namespace LambdaEngine
 					newResource.Texture.IsOfArrayType		= pResourceDesc->TextureParams.IsOfArrayType;
 					newResource.Texture.Format				= pResourceDesc->TextureParams.TextureFormat;
 
+					bool isCubeTexure = newResource.Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
+
 					uint32 actualSubResourceCount = pResourceDesc->TextureParams.IsOfArrayType ? 1 : newResource.SubResourceCount;
-					newResource.Texture.Textures.Resize(actualSubResourceCount);
-					newResource.Texture.TextureViews.Resize(actualSubResourceCount);
-					newResource.Texture.Samplers.Resize(actualSubResourceCount);
+					if (!isCubeTexure)
+					{
+						newResource.Texture.Textures.Resize(actualSubResourceCount);
+						newResource.Texture.TextureViews.Resize(actualSubResourceCount);
+						newResource.Texture.Samplers.Resize(actualSubResourceCount);
+					}
+					else
+					{
+						newResource.Texture.Textures.Resize(actualSubResourceCount * 6);
+						newResource.Texture.TextureViews.Resize(actualSubResourceCount * 6);
+						newResource.Texture.CubeTextureView.Resize(actualSubResourceCount);
+						newResource.Texture.Samplers.Resize(actualSubResourceCount);
+					}
 
 					if (!newResource.IsBackBuffer)
 					{
-						uint32 arrayCount = pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount : 1;
+						uint32 arrayCount;
+						ETextureViewType textureViewType;
+
+						if (!isCubeTexure)
+						{
+							arrayCount = pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount : 1;
+							textureViewType = pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+
+						}
+						else
+						{
+							arrayCount = pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount * 6 : 6;
+							textureViewType = pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+						}
 
 						TextureDesc		textureDesc			= {};
 						TextureViewDesc textureViewDesc		= {};
 						SamplerDesc		samplerDesc			= {};
-						TextureViewDesc textureCubeViewDesc = {};
 
-						textureDesc.DebugName			= pResourceDesc->Name + " Texture";
+						textureDesc.DebugName			= !isCubeTexure ? pResourceDesc->Name + " Texture" : pResourceDesc->Name + " Texture Cube View";
 						textureDesc.MemoryType			= pResourceDesc->MemoryType;
 						textureDesc.Format				= pResourceDesc->TextureParams.TextureFormat;
 						textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
@@ -1069,11 +1093,11 @@ namespace LambdaEngine
 						textureDesc.Miplevels			= pResourceDesc->TextureParams.MiplevelCount;
 						textureDesc.SampleCount			= pResourceDesc->TextureParams.SampleCount;
 
-						textureViewDesc.DebugName		= pResourceDesc->Name + " Texture View";
+						textureViewDesc.DebugName		= !isCubeTexure ? pResourceDesc->Name + " Texture View" : pResourceDesc->Name + " Texture Cube View";
 						textureViewDesc.pTexture		= nullptr;
 						textureViewDesc.Flags			= pResourceDesc->TextureParams.TextureViewFlags;
 						textureViewDesc.Format			= pResourceDesc->TextureParams.TextureFormat;
-						textureViewDesc.Type			= pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+						textureViewDesc.Type			= textureViewType;
 						textureViewDesc.MiplevelCount	= pResourceDesc->TextureParams.MiplevelCount;
 						textureViewDesc.ArrayCount		= arrayCount;
 						textureViewDesc.Miplevel		= 0;

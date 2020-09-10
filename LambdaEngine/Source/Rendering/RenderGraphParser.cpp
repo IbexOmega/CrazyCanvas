@@ -654,6 +654,10 @@ namespace LambdaEngine
 							break;
 						}
 						}
+
+						if (resourceIt->TextureParams.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
+							resourceIt->TextureParams.TextureFlags |= FTextureFlags::TEXTURE_FLAG_CUBE_COMPATIBLE;
+
 						break;
 					}
 					case ERenderGraphResourceType::BUFFER:
