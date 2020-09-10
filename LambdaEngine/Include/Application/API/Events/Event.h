@@ -29,7 +29,7 @@ namespace LambdaEngine
 	*/
 #define DECLARE_EVENT_TYPE(Type) \
 	public: \
-		inline static constexpr uint64 GetStaticType() \
+		FORCEINLINE static constexpr uint64 GetStaticType() \
 		{ \
 			constexpr uint64 TYPE_HASH = HashString(#Type); \
 			return TYPE_HASH; \
@@ -50,7 +50,7 @@ namespace LambdaEngine
 	struct Event
 	{
 	public:
-		Event(FEventFlags eventFlags)
+		inline Event(FEventFlags eventFlags)
 			: EventFlags(eventFlags)
 			, IsConsumed(false)
 		{

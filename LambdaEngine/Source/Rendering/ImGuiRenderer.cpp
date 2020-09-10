@@ -26,6 +26,9 @@
 
 #include "Resources/ResourceManager.h"
 
+#include "Application/API/Events/KeyEvents.h"
+#include "Application/API/Events/MouseEvents.h"
+
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
 #include <imnodes.h>
@@ -117,9 +120,7 @@ namespace LambdaEngine
 
 		m_DescriptorSet->WriteTextureDescriptors(&m_FontTextureView, &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 
-		CommonApplication::Get()->AddEventHandler(this);
-
-		return true;
+		return EventQueue::RegisterEventHandler(EventHandlerProxy(this, &ImGuiRenderer::OnEvent));
 	}
 
 	void ImGuiRenderer::DrawUI(ImGuiDrawFunc drawFunc)
@@ -516,6 +517,16 @@ namespace LambdaEngine
 		pGraphicsCommandList->End();
 
 		(*ppPrimaryExecutionStage) = pGraphicsCommandList;
+	}
+
+	bool ImGuiRenderer::OnEvent(const Event& event)
+	{
+		if (IsEventOfType<MouseMovedEvent>(event))
+		{
+
+		}
+
+		return false;
 	}
 
 	void ImGuiRenderer::OnMouseMoved(int32 x, int32 y)

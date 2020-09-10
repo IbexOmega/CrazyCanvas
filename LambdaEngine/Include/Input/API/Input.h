@@ -1,66 +1,56 @@
 #pragma once
 #include "InputState.h"
 
-#include "Application/API/ApplicationEventHandler.h"
+#include "Application/API/Events/Event.h"
 
 namespace LambdaEngine
 {
-	class LAMBDA_API Input : public ApplicationEventHandler
+	/*
+	* Input
+	*/
+	class LAMBDA_API Input
 	{
-	private:
-		Input() = default;
-		~Input() = default;
-
 	public:
-		virtual void OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)	override;
-		virtual void OnButtonReleased(EMouseButton button)									override;
-		virtual void OnMouseMoved(int32 x, int32 y)											override;
-		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)							override;
-
-		virtual void OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)	override;
-		virtual void OnKeyReleased(EKey key)												override;
-
-	public:
-		DECL_UNIQUE_CLASS(Input);
+		DECL_STATIC_CLASS(Input);
 
 		static bool Init();
-		static void Release();
+		static bool Release();
 
 		static void Tick();
 
-		static void Enable() 
+		FORCEINLINE static void Enable()
 		{
-			s_pInstance->m_InputEnabled = true; 
+			s_InputEnabled = true; 
 		}
 
 		static void Disable();
 
 		FORCEINLINE static bool IsKeyDown(EKey key)
 		{
-			return s_pInstance->m_KeyboardState.IsKeyDown(key);
+			return s_KeyboardState.IsKeyDown(key);
 		}
 
 		FORCEINLINE static bool IsKeyUp(EKey key)
 		{
-			return s_pInstance->m_KeyboardState.IsKeyUp(key);
+			return s_KeyboardState.IsKeyUp(key);
 		}
 
 		FORCEINLINE static const KeyboardState& GetKeyboardState()
 		{
-			return s_pInstance->m_KeyboardState;
+			return s_KeyboardState;
 		}
 
 		FORCEINLINE static const MouseState& GetMouseState()
 		{
-			return s_pInstance->m_MouseState;
+			return s_MouseState;
 		}
 
 	private:
-		KeyboardState m_KeyboardState;
-		MouseState m_MouseState;
-		bool m_InputEnabled = true;
+		static bool HandleEvent(const Event& event);
 
 	private:
-		static Input* s_pInstance;
+		static KeyboardState s_KeyboardState;
+		static MouseState s_MouseState;
+		static bool s_InputEnabled;
 	};
 }

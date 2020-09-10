@@ -634,7 +634,7 @@ namespace LambdaEngine
 	LRESULT Win32Application::ProcessMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
 		// Let other modules handle messages
-		bool	messageHandled	= false;
+		bool messageHandled = false;
 		::LRESULT result			= 0;
 		for (IWin32MessageHandler* pMessageHandler : m_MessageHandlers)
 		{

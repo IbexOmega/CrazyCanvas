@@ -1,13 +1,13 @@
 #pragma once
 #include "LambdaEngine.h"
 
-#include "Application/API/ApplicationEventHandler.h"
-
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
 
 #include "RenderGraphTypes.h"
 #include "ICustomRenderer.h"
+
+#include "Application/API/Events/EventQueue.h"
 
 struct ImGuiContext;
 
@@ -53,7 +53,7 @@ namespace LambdaEngine
 		GUID_Lambda	PixelShaderGUID		= GUID_NONE;
 	};
 
-	class LAMBDA_API ImGuiRenderer : public ICustomRenderer, ApplicationEventHandler
+	class LAMBDA_API ImGuiRenderer : public ICustomRenderer
 	{
 		using ImGuiDrawFunc = std::function<void()>;
 
@@ -91,13 +91,7 @@ namespace LambdaEngine
 		FORCEINLINE virtual FPipelineStageFlags GetFirstPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
 		FORCEINLINE virtual FPipelineStageFlags GetLastPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 
-		virtual void OnMouseMoved(int32 x, int32 y)											override final;
-		virtual void OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)	override final;
-		virtual void OnButtonReleased(EMouseButton button)									override final;
-		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)							override final;
-		virtual void OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)	override final;
-		virtual void OnKeyReleased(EKey key)												override final;
-		virtual void OnKeyTyped(uint32 character)											override final;
+		bool OnEvent(const Event& event);
 		
 		FORCEINLINE virtual const String& GetName() const 
 		{

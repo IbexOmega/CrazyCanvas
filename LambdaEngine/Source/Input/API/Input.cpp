@@ -1,55 +1,50 @@
 #include "Input/API/Input.h"
 
-#include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
+#include "Application/API/Events/KeyEvents.h"
+#include "Application/API/Events/MouseEvents.h"
 
 namespace LambdaEngine
 {
-	Input* Input::s_pInstance = nullptr;
-
 	/*
-	* Instance
+	* Input
 	*/
-	void Input::OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)
+	bool Input::HandleEvent(const Event& event)
 	{
-		UNREFERENCED_VARIABLE(modifierState);
-		m_MouseState.ButtonStates[button] = m_InputEnabled;
-	}
-
-	void Input::OnButtonReleased(EMouseButton button)
-	{
-		m_MouseState.ButtonStates[button] = false;
-	}
-
-	void Input::OnMouseMoved(int32 x, int32 y)
-	{
-		if (m_InputEnabled)
+		if (IsEventOfType<KeyPressedEvent>(event))
 		{
-			m_MouseState.x = x;
-			m_MouseState.y = y;
+			const KeyPressedEvent& keyEvent = EventCast<KeyPressedEvent>(event);
+			s_KeyboardState.KeyStates[keyEvent.Key] = false;
 		}
-	}
-
-	void Input::OnMouseScrolled(int32 deltaX, int32 deltaY)
-	{
-		if (m_InputEnabled)
+		else if (IsEventOfType<KeyReleasedEvent>(event))
 		{
-			m_MouseState.ScrollX = deltaX;
-			m_MouseState.ScrollY = deltaY;
+			const KeyReleasedEvent& keyEvent = EventCast<KeyReleasedEvent>(event);
+			s_KeyboardState.KeyStates[keyEvent.Key] = false;
 		}
-	}
-
-	void Input::OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)
-	{
-		UNREFERENCED_VARIABLE(modifierState);
-		if (!isRepeat)
+		else if (IsEventOfType<MouseClickedEvent>(event))
 		{
-			m_KeyboardState.KeyStates[key] = m_InputEnabled;
+			const MouseClickedEvent& mouseEvent = EventCast<MouseClickedEvent>(event);
+			s_MouseState.ButtonStates[mouseEvent.Button] = s_InputEnabled;
 		}
-	}
-
-	void Input::OnKeyReleased(EKey key)
-	{
-		m_KeyboardState.KeyStates[key] = false;
+		else if (IsEventOfType<MouseReleasedEvent>(event))
+		{
+			const MouseReleasedEvent& mouseEvent = EventCast<MouseReleasedEvent>(event);
+			s_MouseState.ButtonStates[mouseEvent.Button] = false;
+		}
+		else if (IsEventOfType<MouseMovedEvent>(event))
+		{
+			const MouseMovedEvent& mouseEvent = EventCast<MouseMovedEvent>(event);
+			s_MouseState.Position = { mouseEvent.Position.x, mouseEvent.Position.y };
+		}
+		else if (IsEventOfType<MouseScrolledEvent>(event))
+		{
+			if (s_InputEnabled)
+			{
+				const MouseScrolledEvent& mouseEvent = EventCast<MouseScrolledEvent>(event);
+				s_MouseState.ScrollX = mouseEvent.DeltaX;
+				s_MouseState.ScrollY = mouseEvent.DeltaY;
+			}
+		}
 	}
 
 	/*
@@ -57,16 +52,12 @@ namespace LambdaEngine
 	*/
 	bool Input::Init()
 	{
-		s_pInstance = DBG_NEW Input();
-		CommonApplication::Get()->AddEventHandler(s_pInstance);
-
-		return (s_pInstance != nullptr);
+		return EventQueue::RegisterEventHandler(EventHandlerProxy(Input::HandleEvent));
 	}
 
-	void Input::Release()
+	bool Input::Release()
 	{
-		CommonApplication::Get()->RemoveEventHandler(s_pInstance);
-		SAFEDELETE(s_pInstance);
+		return EventQueue::UnregisterEventHandler(EventHandlerProxy(Input::HandleEvent));
 	}
 
 	void Input::Tick()
@@ -75,8 +66,9 @@ namespace LambdaEngine
 
 	void Input::Disable()
 	{
-		s_pInstance->m_InputEnabled = false;
-		std::fill_n(s_pInstance->m_KeyboardState.KeyStates, EKey::KEY_LAST, false);
-		std::fill_n(s_pInstance->m_MouseState.ButtonStates, EMouseButton::MOUSE_BUTTON_COUNT, false);
+		s_InputEnabled = false;
+
+		std::fill_n(s_KeyboardState.KeyStates, EKey::KEY_LAST, false);
+		std::fill_n(s_MouseState.ButtonStates, EMouseButton::MOUSE_BUTTON_COUNT, false);
 	}
 }

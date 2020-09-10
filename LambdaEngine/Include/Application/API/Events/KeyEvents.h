@@ -12,7 +12,7 @@ namespace LambdaEngine
 	struct KeyEvent : public Event
 	{
 	public:
-		KeyEvent(EKey key)
+		inline KeyEvent(EKey key)
 			: Event(EVENT_FLAG_KEYBOARD)
 			, Key(key)
 		{
@@ -30,7 +30,7 @@ namespace LambdaEngine
 	struct KeyPressedEvent : public KeyEvent
 	{
 	public:
-		KeyPressedEvent(EKey key, ModifierKeyState modiferState, bool isRepeat)
+		inline KeyPressedEvent(EKey key, ModifierKeyState modiferState, bool isRepeat)
 			: KeyEvent(key)
 			, ModiferState(modiferState)
 			, IsRepeat(isRepeat)
@@ -55,7 +55,7 @@ namespace LambdaEngine
 	struct KeyReleasedEvent : public KeyEvent
 	{
 	public:
-		KeyReleasedEvent(EKey key)
+		inline KeyReleasedEvent(EKey key)
 			: KeyEvent(key)
 		{
 		}
@@ -74,7 +74,7 @@ namespace LambdaEngine
 	struct KeyTypedEvent : public Event
 	{
 	public:
-		KeyTypedEvent(uint32 character)
+		inline KeyTypedEvent(uint32 character)
 			: Event(EVENT_FLAG_KEYBOARD)
 			, Character(Character)
 		{
@@ -87,7 +87,7 @@ namespace LambdaEngine
 			return String("KeyTypedEvent=") + GetPrintableChar();
 		}
 
-		char GetPrintableChar() const
+		FORCEINLINE char GetPrintableChar() const
 		{
 			return static_cast<char>(Character);
 		}

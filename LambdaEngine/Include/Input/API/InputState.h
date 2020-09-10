@@ -90,8 +90,12 @@ namespace LambdaEngine
 		}
 		
 	public:
-		int32 x;
-		int32 y;
+		struct
+		{
+			int32 x;
+			int32 y;
+		} Position;
+
 		int32 ScrollX;
 		int32 ScrollY;
 		

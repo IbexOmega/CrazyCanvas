@@ -11,7 +11,7 @@ namespace LambdaEngine
 	struct MouseEvent : public Event
 	{
 	public:
-		MouseEvent(EMouseButton button)
+		inline MouseEvent(EMouseButton button)
 			: Event(EVENT_FLAG_MOUSE)
 			, Button(button)
 		{
@@ -29,7 +29,7 @@ namespace LambdaEngine
 	struct MouseClickedEvent : public MouseEvent
 	{
 	public:
-		MouseClickedEvent(EMouseButton button, ModifierKeyState modiferState)
+		inline MouseClickedEvent(EMouseButton button, ModifierKeyState modiferState)
 			: MouseEvent(button)
 			, ModiferState(modiferState)
 		{
@@ -52,7 +52,7 @@ namespace LambdaEngine
 	struct MouseReleasedEvent : public MouseEvent
 	{
 	public:
-		MouseReleasedEvent(EMouseButton button)
+		inline MouseReleasedEvent(EMouseButton button)
 			: MouseEvent(button)
 		{
 		}
@@ -71,7 +71,7 @@ namespace LambdaEngine
 	struct MouseScrolledEvent : public Event
 	{
 	public:
-		MouseScrolledEvent(float32 deltaX, float32 deltaY)
+		inline MouseScrolledEvent(float32 deltaX, float32 deltaY)
 			: Event(EVENT_FLAG_MOUSE)
 			, DeltaX(deltaX)
 			, DeltaY(deltaY)
@@ -96,7 +96,7 @@ namespace LambdaEngine
 	struct MouseMovedEvent : public Event
 	{
 	public:
-		MouseMovedEvent(int32 x, int32 y)
+		inline MouseMovedEvent(int32 x, int32 y)
 			: Event(EVENT_FLAG_MOUSE)
 			, Position({ x, y })
 		{
@@ -123,7 +123,7 @@ namespace LambdaEngine
 	struct RawMouseMovedEvent : public Event
 	{
 	public:
-		RawMouseMovedEvent(int32 deltaX, int32 deltaY)
+		inline RawMouseMovedEvent(int32 deltaX, int32 deltaY)
 			: Event(EVENT_FLAG_MOUSE)
 			, DeltaX(deltaX)
 			, DeltaY(deltaY)

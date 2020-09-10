@@ -16,7 +16,6 @@ namespace LambdaEngine
 	*/
 	CommonApplication::CommonApplication()
 		: ApplicationEventHandler()
-		, m_EventHandlers()
 	{
 		VALIDATE(s_CommonApplication == nullptr);
 		s_CommonApplication = this;
@@ -88,35 +87,6 @@ namespace LambdaEngine
 		return m_pPlatformApplication->CreateWindow(pDesc);
 	}
 
-	void CommonApplication::AddEventHandler(ApplicationEventHandler* pEventHandler)
-	{
-		// Check first so that this handler is not already added
-		const uint32 count = uint32(m_EventHandlers.GetSize());
-		for (uint32 i = 0; i < count; i++)
-		{
-			if (pEventHandler == m_EventHandlers[i])
-			{
-				return;
-			}
-		}
-
-		// Add new handler
-		m_EventHandlers.EmplaceBack(pEventHandler);
-	}
-
-	void CommonApplication::RemoveEventHandler(ApplicationEventHandler* pEventHandler)
-	{
-		const uint32 count = uint32(m_EventHandlers.GetSize());
-		for (uint32 i = 0; i < count; i++)
-		{
-			if (pEventHandler == m_EventHandlers[i])
-			{
-				m_EventHandlers.Erase(m_EventHandlers.Begin() + i);
-				break;
-			}
-		}
-	}
-
 	void CommonApplication::MakeMainWindow(TSharedRef<Window> window)
 	{
 		VALIDATE(window != nullptr);
@@ -160,33 +130,18 @@ namespace LambdaEngine
 
 	void CommonApplication::OnFocusChanged(TSharedRef<Window> window, bool hasFocus)
 	{
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnFocusChanged(window, hasFocus);
-		}
-
 		FocusChangedEvent event(window, hasFocus);
 		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnWindowMoved(TSharedRef<Window> window, int16 x, int16 y)
 	{
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnWindowMoved(window, x, y);
-		}
-
 		WindowMovedEvent event(window, x, y);
 		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType resizeType)
 	{
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnWindowResized(window, width, height, resizeType);
-		}
-
 		WindowResizedEvent event(window, width, height, resizeType);
 		EventQueue::SendEvent(event);
 	}
@@ -198,55 +153,30 @@ namespace LambdaEngine
 			Terminate();
 		}
 
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnWindowClosed(window);
-		}
-
 		WindowClosedEvent event(window);
 		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnMouseEntered(TSharedRef<Window> window)
 	{
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnMouseEntered(window);
-		}
-
 		WindowMouseEnteredEvent event(window);
 		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnMouseLeft(TSharedRef<Window> window)
 	{
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnMouseLeft(window);
-		}
-
 		WindowMouseLeftEvent event(window);
 		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnMouseMoved(int32 x, int32 y)
 	{
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnMouseMoved(x, y);
-		}
-
 		MouseMovedEvent event(x, y);
 		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnMouseMovedRaw(int32 deltaX, int32 deltaY)
 	{
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnMouseMovedRaw(deltaX, deltaY);
-		}
-
 		RawMouseMovedEvent event(deltaX, deltaY);
 		EventQueue::SendEvent(event);
 	}
@@ -258,11 +188,6 @@ namespace LambdaEngine
 		{
 			TSharedRef<Window> ActiveWindow = GetActiveWindow();
 			SetCapture(ActiveWindow);
-		}
-
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnButtonPressed(button, modifierState);
 		}
 
 		MouseClickedEvent event(button, modifierState);
@@ -277,55 +202,30 @@ namespace LambdaEngine
 			SetCapture(nullptr);
 		}
 
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnButtonReleased(button);
-		}
-
 		MouseReleasedEvent event(button);
 		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnMouseScrolled(int32 deltaX, int32 deltaY)
 	{
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnMouseScrolled(deltaX, deltaY);
-		}
-
 		MouseScrolledEvent event(deltaX, deltaY);
 		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)
 	{
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnKeyPressed(key, modifierState, isRepeat);
-		}
-
 		KeyPressedEvent event(key, modifierState, isRepeat);
 		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnKeyReleased(EKey key)
 	{
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnKeyReleased(key);
-		}
-
 		KeyReleasedEvent event(key);
 		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnKeyTyped(uint32 character)
 	{
-		for (ApplicationEventHandler* pEventHandler : m_EventHandlers)
-		{
-			pEventHandler->OnKeyTyped(character);
-		}
-
 		KeyTypedEvent event(character);
 		EventQueue::SendEvent(event);
 	}

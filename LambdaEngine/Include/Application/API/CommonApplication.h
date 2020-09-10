@@ -17,9 +17,6 @@ namespace LambdaEngine
 
 		bool Create();
 		TSharedRef<Window> CreateWindow(const WindowDesc* pDesc);
-		
-		void RemoveEventHandler(ApplicationEventHandler* pEventHandler);
-		void AddEventHandler(ApplicationEventHandler* pEventHandler);
 
 		/*
 		* Application ticks one frame, processes OS- events and then processes the buffered events
@@ -114,7 +111,6 @@ namespace LambdaEngine
 
 	private:
 		TSharedRef<Window> m_MainWindow	= nullptr;
-		TArray<ApplicationEventHandler*> m_EventHandlers;
 		Application* m_pPlatformApplication	= nullptr;
 
 		bool m_IsExiting = false;

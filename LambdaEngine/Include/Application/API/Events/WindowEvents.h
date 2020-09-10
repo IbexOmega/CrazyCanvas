@@ -13,7 +13,7 @@ namespace LambdaEngine
 	struct WindowEvent : public Event
 	{
 	public:
-		WindowEvent(TSharedRef<Window> window)
+		inline WindowEvent(TSharedRef<Window> window)
 			: Event(0)
 			, EventWindow(window)
 		{
@@ -31,7 +31,7 @@ namespace LambdaEngine
 	struct FocusChangedEvent : public WindowEvent
 	{
 	public:
-		FocusChangedEvent(TSharedRef<Window> window, bool hasFocus)
+		inline FocusChangedEvent(TSharedRef<Window> window, bool hasFocus)
 			: WindowEvent(window)
 			, HasFocus(hasFocus)
 		{
@@ -54,7 +54,7 @@ namespace LambdaEngine
 	struct WindowMovedEvent : public WindowEvent
 	{
 	public:
-		WindowMovedEvent(TSharedRef<Window> window, int32 x, int32 y)
+		inline WindowMovedEvent(TSharedRef<Window> window, int32 x, int32 y)
 			: WindowEvent(window)
 			, Position({ x, y })
 		{
@@ -81,7 +81,7 @@ namespace LambdaEngine
 	struct WindowResizedEvent : public WindowEvent
 	{
 	public:
-		WindowResizedEvent(TSharedRef<Window> window, uint32 width, uint32 height, EResizeType resizeType)
+		inline WindowResizedEvent(TSharedRef<Window> window, uint32 width, uint32 height, EResizeType resizeType)
 			: WindowEvent(window)
 			, Width(width)
 			, Height(height)
@@ -108,7 +108,7 @@ namespace LambdaEngine
 	struct WindowMouseLeftEvent : public WindowEvent
 	{
 	public:
-		WindowMouseLeftEvent(TSharedRef<Window> window)
+		inline WindowMouseLeftEvent(TSharedRef<Window> window)
 			: WindowEvent(window)
 		{
 		}
@@ -127,7 +127,7 @@ namespace LambdaEngine
 	struct WindowMouseEnteredEvent : public WindowEvent
 	{
 	public:
-		WindowMouseEnteredEvent(TSharedRef<Window> window)
+		inline WindowMouseEnteredEvent(TSharedRef<Window> window)
 			: WindowEvent(window)
 		{
 		}
@@ -146,7 +146,7 @@ namespace LambdaEngine
 	struct WindowClosedEvent : public WindowEvent
 	{
 	public:
-		WindowClosedEvent(TSharedRef<Window> window)
+		inline WindowClosedEvent(TSharedRef<Window> window)
 			: WindowEvent(window)
 		{
 		}
