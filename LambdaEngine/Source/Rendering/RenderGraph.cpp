@@ -1060,18 +1060,6 @@ namespace LambdaEngine
 						samplerDesc.MinLOD				= 0.0f;
 						samplerDesc.MaxLOD				= 1.0f;
 
-						if (pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
-						{
-							textureViewDesc.DebugName = pResourceDesc->Name + " Texture Cube View";
-							textureViewDesc.pTexture = nullptr;
-							textureViewDesc.Flags = pResourceDesc->TextureParams.TextureViewFlags;
-							textureViewDesc.Format = pResourceDesc->TextureParams.TextureFormat;
-							textureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
-							textureViewDesc.MiplevelCount = pResourceDesc->TextureParams.MiplevelCount;
-							textureViewDesc.ArrayCount = arrayCount;
-							textureViewDesc.Miplevel = 0;
-							textureViewDesc.ArrayIndex = 0;
-						}
 
 						InternalResourceUpdateDesc internalResourceUpdateDesc = {};
 						internalResourceUpdateDesc.ResourceName						= pResourceDesc->Name;
