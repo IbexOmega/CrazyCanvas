@@ -1,13 +1,13 @@
 # Sources
-*.c     text eol=crlf
-*.cc    text eol=crlf
-*.cxx   text eol=crlf
-*.cpp   text eol=crlf
-*.c++   text eol=crlf
-*.hpp   text eol=crlf
-*.h     text eol=crlf
-*.h++   text eol=crlf
-*.hh    text eol=crlf
+*.c     text eol=lf
+*.cc    text eol=lf
+*.cxx   text eol=lf
+*.cpp   text eol=lf
+*.c++   text eol=lf
+*.hpp   text eol=lf
+*.h     text eol=lf
+*.h++   text eol=lf
+*.hh    text eol=lf
 # Compiled Object files
 *.slo   binary
 *.lo    binary
