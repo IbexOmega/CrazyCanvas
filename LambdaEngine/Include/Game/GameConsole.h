@@ -14,8 +14,8 @@ namespace LambdaEngine
 	public:
 		struct CallbackInput
 		{
-			TArray<Arg> arguments;
-			std::unordered_map<std::string, Flag> flags;
+			TArray<Arg> Arguments;
+			std::unordered_map<std::string, Flag> Flags;
 		};
 
 	public:
@@ -37,8 +37,8 @@ namespace LambdaEngine
 		
 		struct Item
 		{
-			std::string str;
-			glm::vec4 color;
+			std::string Str;
+			glm::vec4 Color;
 		};
 
 		int ExecCommand(std::string& data);
