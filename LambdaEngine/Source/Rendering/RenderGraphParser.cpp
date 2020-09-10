@@ -159,10 +159,10 @@ namespace LambdaEngine
 						if (indexBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indexBufferResourceStateIt->second.ResourceName.size() > 0)
 						{
 							auto resourceStateIdentIt = pCurrentRenderStage->FindResourceStateIdent(indexBufferResourceStateIt->second.ResourceName);
+							resourceNamesActuallyUsed.insert(indexBufferResourceStateIt->second.ResourceName);
 
 							if (resourceStateIdentIt != pCurrentRenderStage->ResourceStateIdents.end())
 							{
-								resourceNamesActuallyUsed.insert(resourceStateIdentIt->Name);
 								auto indexBufferDescriptorResourceStateIt = resourceStatesByHalfAttributeIndex.find(resourceStateIdentIt->AttributeIndex / 2);
 
 								if (indexBufferDescriptorResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indexBufferDescriptorResourceStateIt->second.OutputLinkIndices.size() > 0)
@@ -180,10 +180,10 @@ namespace LambdaEngine
 						if (indirectArgsBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indirectArgsBufferResourceStateIt->second.ResourceName.size() > 0)
 						{
 							auto resourceStateIdentIt = pCurrentRenderStage->FindResourceStateIdent(indirectArgsBufferResourceStateIt->second.ResourceName);
+							resourceNamesActuallyUsed.insert(indirectArgsBufferResourceStateIt->second.ResourceName);
 
 							if (resourceStateIdentIt != pCurrentRenderStage->ResourceStateIdents.end())
 							{
-								resourceNamesActuallyUsed.insert(resourceStateIdentIt->Name);
 								auto indirectArgsBufferDescriptorResourceStateIt = resourceStatesByHalfAttributeIndex.find(resourceStateIdentIt->AttributeIndex / 2);
 
 								if (indirectArgsBufferDescriptorResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indirectArgsBufferDescriptorResourceStateIt->second.OutputLinkIndices.size() > 0)
