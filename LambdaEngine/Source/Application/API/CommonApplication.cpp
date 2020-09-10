@@ -314,7 +314,7 @@ namespace LambdaEngine
 		
 		s_CommonApplication.Reset();
 
-		SAFEDELETE(pPlatformApplcation);
+		SAFEDELETE(pPlatformApplication);
 		return true;
 	}
 }
