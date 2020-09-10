@@ -34,10 +34,15 @@ namespace LambdaEngine
 
 	Win32Application::~Win32Application()
 	{
+		// Clear windows before unregister class
+		m_Windows.Clear();
+
 		// Unregister window class after destroying all windows
-		if (!::UnregisterClass(WINDOW_CLASS, m_hInstance))
+		BOOL result = ::UnregisterClass(WINDOW_CLASS, m_hInstance);
+		if (!result)
 		{
-			LOG_ERROR("[Win32Application]: Failed to unregister windowclass");
+			DWORD dwError = ::GetLastError();
+			LOG_ERROR("[Win32Application]: Failed to unregister windowclass. Error=%d", dwError);
 		}
 
 		// Destroy application
@@ -192,6 +197,11 @@ namespace LambdaEngine
 		constexpr uint16 SCAN_CODE_MASK		= 0x01ff;
 		constexpr uint32 REPEAT_KEY_MASK	= 0x40000000;
 		constexpr uint16 BACK_BUTTON_MASK	= 0x0001;
+
+		if (!m_EventHandler)
+		{
+			return;
+		}
 
 		TSharedRef<Win32Window> messageWindow = GetWindowFromHandle(hWnd);
 		switch (uMessage)

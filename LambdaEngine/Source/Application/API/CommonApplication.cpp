@@ -17,32 +17,16 @@ namespace LambdaEngine
 		s_CommonApplication = this;
 	}
 
-	void CommonApplication::ReleasePlatform()
-	{
-		// HACK: For now
-		SAFEDELETE(m_pPlatformApplication);
-	}
-
 	CommonApplication::~CommonApplication()
 	{
 		VALIDATE(s_CommonApplication != nullptr);
 		s_CommonApplication = nullptr;
-
-		SAFEDELETE(m_pPlatformApplication);
 	}
 
-	bool CommonApplication::Create()
+	bool CommonApplication::Create(Application* pApplication)
 	{
 		// Create platform application
-		m_pPlatformApplication = PlatformApplication::CreateApplication();
-		if (m_pPlatformApplication->Create())
-		{
-			m_pPlatformApplication->SetEventHandler(s_CommonApplication);
-		}
-		else
-		{
-			return false;
-		}
+		m_pPlatformApplication = pApplication;
 
 		// Create mainwindow
 		WindowDesc windowDesc = { };
@@ -280,9 +264,20 @@ namespace LambdaEngine
 
 	bool CommonApplication::PreInit()
 	{
+		// Create platform application
+		Application* pPlatformApplcation = PlatformApplication::CreateApplication();
+		if (pPlatformApplcation->Create())
+		{
+			pPlatformApplcation->SetEventHandler(s_CommonApplication);
+		}
+		else
+		{
+			return false;
+		}
+
 		// Create application
 		CommonApplication* pApplication = DBG_NEW CommonApplication();
-		if (!pApplication->Create())
+		if (!pApplication->Create(pPlatformApplcation))
 		{
 			DELETE_OBJECT(pApplication);
 			return false;
@@ -317,8 +312,12 @@ namespace LambdaEngine
 
 	bool CommonApplication::PostRelease()
 	{
-		s_CommonApplication->ReleasePlatform();
+		Application* pPlatformApplcation = s_CommonApplication->GetPlatformApplication();
+		pPlatformApplcation->SetEventHandler(nullptr);
+		
 		s_CommonApplication.Reset();
+
+		SAFEDELETE(pPlatformApplcation);
 		return true;
 	}
 }
