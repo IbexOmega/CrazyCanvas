@@ -31,6 +31,7 @@ void main()
     vec4 worldPosition      = transform * vec4(out_VertexPos, 1.0f);
 
     mat4 rotationMatrix = perFrameBuffer.View;
+    rotationMatrix[3] = vec4(0.f, 0.f, 0.f, 1.0f);
 
     gl_Position = perFrameBuffer.Projection * rotationMatrix * worldPosition;
 }
