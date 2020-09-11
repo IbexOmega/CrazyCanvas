@@ -1,8 +1,46 @@
 #pragma once
 #include "EventHandler.h"
 
+#include "Containers/TUniquePtr.h"
+
 namespace LambdaEngine
 {
+	/*
+	* TEventContainer
+	*/
+	struct EventContainer
+	{
+	public:
+		virtual void Push(const Event& event) = 0;
+		virtual const Event& Get(int32 index) = 0;
+		virtual void Clear() = 0;
+
+	public:
+		EventType EventType;
+	};
+
+	/*
+	* TEventContainer
+	*/
+	template<typename TEvent>
+	struct TEventContainer : public EventContainer
+	{
+	public:
+		virtual void Push(const Event& event) override final
+		{
+			VALIDATE(TEvent::GetStaticType() == event.GetType());
+			Events.EmplaceBack(static_cast<TEvent>(event));
+		}
+
+		virtual void Clear() override final
+		{
+			Events.Clear();
+		}
+
+	public:
+		TArray<TEvent> Events;
+	};
+
 	/*
 	* EventQueue
 	*/
@@ -38,7 +76,7 @@ namespace LambdaEngine
 		}
 
 		template<typename TEvent, typename T>
-		inline static bool RegisterEventHandler(T* pThis, bool(T::*memberFunc)(const TEvent&))
+		inline static bool RegisterEventHandler(T* pThis, bool(T::* memberFunc)(const TEvent&))
 		{
 			static_assert(std::is_base_of<Event, TEvent>());
 			return RegisterEventHandler(TEvent::GetStaticType(), EventHandler(pThis, memberFunc));
@@ -56,6 +94,12 @@ namespace LambdaEngine
 
 		static void UnregisterAll();
 
-		static bool SendEvent(Event& event);
+		static void SendEvent(const Event& event);
+		static bool SendEventImmediate(Event& event);
+
+		static void Tick();
+
+	private:
+		static std::unordered_map<EventType, EventContainer*, EventTypeHasher> s_DeferredEvents;
 	};
 }

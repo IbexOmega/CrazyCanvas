@@ -39,7 +39,7 @@ namespace LambdaEngine
 
 	RenderGraphEditor::RenderGraphEditor()
 	{
-		EventQueue::RegisterEventHandler<MouseReleasedEvent>(this, &RenderGraphEditor::OnButtonReleased);
+		EventQueue::RegisterEventHandler<MouseButtonReleasedEvent>(this, &RenderGraphEditor::OnButtonReleased);
 		EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &RenderGraphEditor::OnKeyPressed);
 		EventQueue::RegisterEventHandler<KeyReleasedEvent>(this, &RenderGraphEditor::OnKeyReleased);
 
@@ -48,7 +48,7 @@ namespace LambdaEngine
 
 	RenderGraphEditor::~RenderGraphEditor()
 	{
-		EventQueue::UnregisterEventHandler<MouseReleasedEvent>(this, &RenderGraphEditor::OnButtonReleased);
+		EventQueue::UnregisterEventHandler<MouseButtonReleasedEvent>(this, &RenderGraphEditor::OnButtonReleased);
 		EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &RenderGraphEditor::OnKeyPressed);
 		EventQueue::UnregisterEventHandler<KeyReleasedEvent>(this, &RenderGraphEditor::OnKeyReleased);
 	}
@@ -214,7 +214,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool RenderGraphEditor::OnButtonReleased(const MouseReleasedEvent& event)
+	bool RenderGraphEditor::OnButtonReleased(const MouseButtonReleasedEvent& event)
 	{
 		//imnodes seems to be bugged when releasing a link directly after starting creation, so we check this here
 		if (event.Button == EMouseButton::MOUSE_BUTTON_LEFT)

@@ -29,16 +29,16 @@ namespace LambdaEngine
 
 			return true;
 		}
-		else if (IsEventOfType<MouseClickedEvent>(event))
+		else if (IsEventOfType<MouseButtonClickedEvent>(event))
 		{
-			const MouseClickedEvent& mouseEvent = EventCast<MouseClickedEvent>(event);
+			const MouseButtonClickedEvent& mouseEvent = EventCast<MouseButtonClickedEvent>(event);
 			s_MouseState.ButtonStates[mouseEvent.Button] = s_InputEnabled;
 
 			return true;
 		}
-		else if (IsEventOfType<MouseReleasedEvent>(event))
+		else if (IsEventOfType<MouseButtonReleasedEvent>(event))
 		{
-			const MouseReleasedEvent& mouseEvent = EventCast<MouseReleasedEvent>(event);
+			const MouseButtonReleasedEvent& mouseEvent = EventCast<MouseButtonReleasedEvent>(event);
 			s_MouseState.ButtonStates[mouseEvent.Button] = false;
 
 			return true;
@@ -75,8 +75,8 @@ namespace LambdaEngine
 		bool result = true;
 		result = result && EventQueue::RegisterEventHandler<KeyPressedEvent>(eventHandler);
 		result = result && EventQueue::RegisterEventHandler<KeyReleasedEvent>(eventHandler);
-		result = result && EventQueue::RegisterEventHandler<MouseClickedEvent>(eventHandler);
-		result = result && EventQueue::RegisterEventHandler<MouseReleasedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseButtonReleasedEvent>(eventHandler);
 		result = result && EventQueue::RegisterEventHandler<MouseMovedEvent>(eventHandler);
 		result = result && EventQueue::RegisterEventHandler<MouseScrolledEvent>(eventHandler);
 		return result;
@@ -89,8 +89,8 @@ namespace LambdaEngine
 		bool result = true;
 		result = result && EventQueue::UnregisterEventHandler<KeyPressedEvent>(eventHandler);
 		result = result && EventQueue::UnregisterEventHandler<KeyReleasedEvent>(eventHandler);
-		result = result && EventQueue::UnregisterEventHandler<MouseClickedEvent>(eventHandler);
-		result = result && EventQueue::UnregisterEventHandler<MouseReleasedEvent>(eventHandler);
+		result = result && EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(eventHandler);
+		result = result && EventQueue::UnregisterEventHandler<MouseButtonReleasedEvent>(eventHandler);
 		result = result && EventQueue::UnregisterEventHandler<MouseMovedEvent>(eventHandler);
 		result = result && EventQueue::UnregisterEventHandler<MouseScrolledEvent>(eventHandler);
 		return result;

@@ -115,7 +115,7 @@ namespace LambdaEngine
 
 	void CommonApplication::OnFocusChanged(TSharedRef<Window> window, bool hasFocus)
 	{
-		FocusChangedEvent event(window, hasFocus);
+		WindowFocusChangedEvent event(window, hasFocus);
 		EventQueue::SendEvent(event);
 	}
 
@@ -144,13 +144,13 @@ namespace LambdaEngine
 
 	void CommonApplication::OnMouseEntered(TSharedRef<Window> window)
 	{
-		WindowMouseEnteredEvent event(window);
+		MouseEnteredWindowEvent event(window);
 		EventQueue::SendEvent(event);
 	}
 
 	void CommonApplication::OnMouseLeft(TSharedRef<Window> window)
 	{
-		WindowMouseLeftEvent event(window);
+		MouseLeftWindowEvent event(window);
 		EventQueue::SendEvent(event);
 	}
 
@@ -175,7 +175,7 @@ namespace LambdaEngine
 			SetCapture(ActiveWindow);
 		}
 
-		MouseClickedEvent event(button, modifierState);
+		MouseButtonClickedEvent event(button, modifierState);
 		EventQueue::SendEvent(event);
 	}
 
@@ -187,7 +187,7 @@ namespace LambdaEngine
 			SetCapture(nullptr);
 		}
 
-		MouseReleasedEvent event(button, modifierState);
+		MouseButtonReleasedEvent event(button, modifierState);
 		EventQueue::SendEvent(event);
 	}
 

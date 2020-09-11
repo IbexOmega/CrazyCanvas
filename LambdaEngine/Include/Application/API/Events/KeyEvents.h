@@ -24,7 +24,7 @@ namespace LambdaEngine
 
 		virtual String ToString() const
 		{
-			return String("KeyDown=") + KeyToString(Key);
+			return String("KeyPressedEvent=") + KeyToString(Key);
 		}
 
 	public:
@@ -50,7 +50,7 @@ namespace LambdaEngine
 
 		virtual String ToString() const
 		{
-			return String("KeyUp=") + KeyToString(Key);
+			return String("KeyReleasedEvent=") + KeyToString(Key);
 		}
 
 	public:

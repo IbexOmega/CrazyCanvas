@@ -31,7 +31,7 @@ namespace LambdaEngine
 		void Update();
 		void RenderGUI();
 
-		bool OnButtonReleased(const MouseReleasedEvent& event);
+		bool OnButtonReleased(const MouseButtonReleasedEvent& event);
 		bool OnKeyPressed(const KeyPressedEvent& event);
 		bool OnKeyReleased(const KeyReleasedEvent& event);
 

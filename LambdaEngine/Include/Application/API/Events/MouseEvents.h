@@ -6,23 +6,23 @@
 namespace LambdaEngine
 {
 	/*
-	* MouseClickedEvent
+	* MouseButtonClickedEvent
 	*/
-	struct MouseClickedEvent : public Event
+	struct MouseButtonClickedEvent : public Event
 	{
 	public:
-		inline MouseClickedEvent(EMouseButton button, ModifierKeyState modiferState)
+		inline MouseButtonClickedEvent(EMouseButton button, ModifierKeyState modiferState)
 			: Event()
 			, Button(button)
 			, ModiferState(modiferState)
 		{
 		}
 
-		DECLARE_EVENT_TYPE(MouseClickedEvent);
+		DECLARE_EVENT_TYPE(MouseButtonClickedEvent);
 
 		virtual String ToString() const
 		{
-			return String("MouseClickedEvent=[=") + ButtonToString(Button);
+			return String("MouseButtonClickedEvent=[=") + ButtonToString(Button);
 		}
 
 	public:
@@ -31,23 +31,23 @@ namespace LambdaEngine
 	};
 
 	/*
-	* MouseReleasedEvent
+	* MouseButtonReleasedEvent
 	*/
-	struct MouseReleasedEvent : public Event
+	struct MouseButtonReleasedEvent : public Event
 	{
 	public:
-		inline MouseReleasedEvent(EMouseButton button, ModifierKeyState modiferState)
+		inline MouseButtonReleasedEvent(EMouseButton button, ModifierKeyState modiferState)
 			: Event()
 			, Button(button)
 			, ModiferState(modiferState)
 		{
 		}
 
-		DECLARE_EVENT_TYPE(MouseReleasedEvent);
+		DECLARE_EVENT_TYPE(MouseButtonReleasedEvent);
 
 		virtual String ToString() const
 		{
-			return String("MouseReleasedEvent=[=") + ButtonToString(Button);
+			return String("MouseButtonReleasedEvent=[=") + ButtonToString(Button);
 		}
 
 	public:

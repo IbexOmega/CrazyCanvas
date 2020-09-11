@@ -55,8 +55,8 @@ namespace LambdaEngine
 		EventHandler eventHandler(this, &ImGuiRenderer::OnEvent);
 		EventQueue::UnregisterEventHandler<MouseMovedEvent>(eventHandler);
 		EventQueue::UnregisterEventHandler<MouseScrolledEvent>(eventHandler);
-		EventQueue::UnregisterEventHandler<MouseReleasedEvent>(eventHandler);
-		EventQueue::UnregisterEventHandler<MouseClickedEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<MouseButtonReleasedEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(eventHandler);
 		EventQueue::UnregisterEventHandler<KeyPressedEvent>(eventHandler);
 		EventQueue::UnregisterEventHandler<KeyReleasedEvent>(eventHandler);
 		EventQueue::UnregisterEventHandler<KeyTypedEvent>(eventHandler);
@@ -134,8 +134,8 @@ namespace LambdaEngine
 		bool result = true;
 		result = result && EventQueue::RegisterEventHandler<MouseMovedEvent>(eventHandler);
 		result = result && EventQueue::RegisterEventHandler<MouseScrolledEvent>(eventHandler);
-		result = result && EventQueue::RegisterEventHandler<MouseReleasedEvent>(eventHandler);
-		result = result && EventQueue::RegisterEventHandler<MouseClickedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseButtonReleasedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(eventHandler);
 		result = result && EventQueue::RegisterEventHandler<KeyPressedEvent>(eventHandler);
 		result = result && EventQueue::RegisterEventHandler<KeyReleasedEvent>(eventHandler);
 		result = result && EventQueue::RegisterEventHandler<KeyTypedEvent>(eventHandler);
@@ -548,16 +548,16 @@ namespace LambdaEngine
 
 			return true;
 		}
-		else if (IsEventOfType<MouseClickedEvent>(event))
+		else if (IsEventOfType<MouseButtonClickedEvent>(event))
 		{
-			MouseClickedEvent mouseEvent = EventCast<MouseClickedEvent>(event);
+			MouseButtonClickedEvent mouseEvent = EventCast<MouseButtonClickedEvent>(event);
 			io.MouseDown[mouseEvent.Button - 1] = true;
 			
 			return true;
 		}
-		else if (IsEventOfType<MouseReleasedEvent>(event))
+		else if (IsEventOfType<MouseButtonReleasedEvent>(event))
 		{
-			MouseReleasedEvent mouseEvent = EventCast<MouseReleasedEvent>(event);
+			MouseButtonReleasedEvent mouseEvent = EventCast<MouseButtonReleasedEvent>(event);
 			io.MouseDown[mouseEvent.Button - 1] = false;
 			
 			return true;

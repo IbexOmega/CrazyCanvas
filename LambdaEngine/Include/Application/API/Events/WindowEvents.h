@@ -8,23 +8,23 @@
 namespace LambdaEngine
 {
 	/*
-	* FocusChangedEvent
+	* WindowFocusChangedEvent
 	*/
-	struct FocusChangedEvent : public Event
+	struct WindowFocusChangedEvent : public Event
 	{
 	public:
-		inline FocusChangedEvent(TSharedRef<Window> window, bool hasFocus)
+		inline WindowFocusChangedEvent(TSharedRef<Window> window, bool hasFocus)
 			: Event()
 			, EventWindow(window)
 			, HasFocus(hasFocus)
 		{
 		}
 
-		DECLARE_EVENT_TYPE(FocusChangedEvent);
+		DECLARE_EVENT_TYPE(WindowFocusChangedEvent);
 
 		virtual String ToString() const
 		{
-			return String("FocusChangedEvent=") + std::to_string(HasFocus);
+			return String("WindowFocusChangedEvent=") + std::to_string(HasFocus);
 		}
 
 	public:
@@ -91,22 +91,22 @@ namespace LambdaEngine
 	};
 
 	/*
-	* WindowMouseLeftEvent
+	* MouseLeftWindowEvent
 	*/
-	struct WindowMouseLeftEvent : public Event
+	struct MouseLeftWindowEvent : public Event
 	{
 	public:
-		inline WindowMouseLeftEvent(TSharedRef<Window> window)
+		inline MouseLeftWindowEvent(TSharedRef<Window> window)
 			: Event()
 			, EventWindow(window)
 		{
 		}
 
-		DECLARE_EVENT_TYPE(WindowMouseLeftEvent);
+		DECLARE_EVENT_TYPE(MouseLeftWindowEvent);
 
 		virtual String ToString() const
 		{
-			return "WindowMouseLeftEvent";
+			return "MouseLeftWindowEvent";
 		}
 
 	public:
@@ -114,22 +114,22 @@ namespace LambdaEngine
 	};
 
 	/*
-	* WindowMouseEnteredEvent
+	* MouseEnteredWindowEvent
 	*/
-	struct WindowMouseEnteredEvent : public Event
+	struct MouseEnteredWindowEvent : public Event
 	{
 	public:
-		inline WindowMouseEnteredEvent(TSharedRef<Window> window)
+		inline MouseEnteredWindowEvent(TSharedRef<Window> window)
 			: Event()
 			, EventWindow(window)
 		{
 		}
 
-		DECLARE_EVENT_TYPE(WindowMouseEnteredEvent);
+		DECLARE_EVENT_TYPE(MouseEnteredWindowEvent);
 
 		virtual String ToString() const
 		{
-			return "WindowMouseEnteredEvent";
+			return "MouseEnteredWindowEvent";
 		}
 
 	public:
