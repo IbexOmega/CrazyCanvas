@@ -2365,7 +2365,7 @@ namespace LambdaEngine
 			else if (pPipelineStageDesc->Type == ERenderGraphPipelineStageType::SYNCHRONIZATION)
 			{
 				m_ExecutionStageCount += 2;
-				pipelineStageName = "Synchronization Stage " + std::to_string(pPipelineStage->StageIndex);
+				pipelineStageName = "Synchronization Stage " + std::to_string(pPipelineStageDesc->StageIndex);
 			}			
 
 			pPipelineStage->Type		= pPipelineStageDesc->Type;
@@ -2390,7 +2390,7 @@ namespace LambdaEngine
 				pPipelineStage->ppGraphicsCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppGraphicsCommandAllocators[f], &graphicsCommandListDesc);
 
 				// Add graphics timestamps
-				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppGraphicsCommandLists[f], pipelineStageName);
+				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppGraphicsCommandLists[f], pipelineStageName + " GRAPHICS");
 
 				CommandListDesc computeCommandListDesc = {};
 				computeCommandListDesc.DebugName				= "Render Graph Compute Command List";
@@ -2400,7 +2400,7 @@ namespace LambdaEngine
 				pPipelineStage->ppComputeCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppComputeCommandAllocators[f], &computeCommandListDesc);
 
 				// Add compute timestamps
-				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppComputeCommandLists[f], pipelineStageName);
+				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppComputeCommandLists[f], pipelineStageName + " COMPUTE");
 			}
 
 			// Reset all timestamps and pipeline statistics before first use of them
@@ -2821,11 +2821,17 @@ namespace LambdaEngine
 		CommandList**			ppFirstExecutionStage,
 		CommandList**			ppSecondExecutionStage)
 	{
+		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
 		pGraphicsCommandAllocator->Reset();
 		pGraphicsCommandList->Begin(nullptr);
+		Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
 
+		Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
 		pComputeCommandAllocator->Reset();
 		pComputeCommandList->Begin(nullptr);
+		Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
+		Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
 
 		CommandList* pFirstExecutionCommandList = nullptr;
 		CommandList* pSecondExecutionCommandList = nullptr;
@@ -2894,7 +2900,10 @@ namespace LambdaEngine
 			}
 		}
 
+		Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
 		pGraphicsCommandList->End();
+
+		Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
 		pComputeCommandList->End();
 	}
 
@@ -3221,8 +3230,11 @@ namespace LambdaEngine
 		CommandList*		pComputeCommandList,
 		CommandList**		ppExecutionStage)
 	{
+		Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
 		pComputeCommandAllocator->Reset();
 		pComputeCommandList->Begin(nullptr);
+		Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
+		Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
 
 		pComputeCommandList->BindRayTracingPipeline(pPipelineState);
 
@@ -3244,6 +3256,7 @@ namespace LambdaEngine
 
 		pComputeCommandList->TraceRays(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
 
+		Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
 		pComputeCommandList->End();
 
 		(*ppExecutionStage) = pComputeCommandList;

@@ -24,6 +24,12 @@ namespace LambdaEngine
 			String Name;
 		};
 
+		struct PlotResult
+		{
+			String			Name;
+			TArray<float>	Results;
+		};
+
 		enum class TimeUnit
 		{
 			NANO = 1,
@@ -48,7 +54,7 @@ namespace LambdaEngine
 		// CreateComputePipelineStats();
 
 		// Timestamps are buffer bound
-		void AddTimestamp(CommandList* pCommandList, String name);
+		void AddTimestamp(CommandList* pCommandList, const String& name);
 		void StartTimestamp(CommandList* pCommandList);
 		void EndTimestamp(CommandList* pCommandList);
 		void GetTimestamp(CommandList* pCommandList);
@@ -78,8 +84,8 @@ namespace LambdaEngine
 		float m_TimestampPeriod			= 0.f;
 		uint64_t m_StartTimestamp		= 0;
 
-		THashTable<String, Timestamp> m_Results;
-		THashTable<String, TArray<float>> m_PlotResults;
+		THashTable<String, Timestamp>	m_Results;
+		TArray<PlotResult>				m_PlotResults;
 		uint32_t m_PlotResultsStart		= 0;
 		size_t m_PlotDataSize;
 		THashTable<String, float> m_CurrentMaxDuration;
