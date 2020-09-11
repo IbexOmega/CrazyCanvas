@@ -35,6 +35,23 @@ namespace LambdaEngine
 			m_Items.Clear();
 		});
 
+		// Test Command
+		ConsoleCommand cmd;
+		cmd.Init("clo", true);
+		cmd.AddArg(Arg::EType::STRING);
+		cmd.AddFlag("l", Arg::EType::INT);
+		cmd.AddFlag("i", Arg::EType::EMPTY);
+		cmd.AddDescription("Does blah and do bar.");
+		GameConsole::Get().BindCommand(cmd, [](GameConsole::CallbackInput& input)->void {
+			std::string s1 = input.Arguments.GetFront().Value.Str;
+			std::string s2 = input.Flags.find("i") == input.Flags.end() ? "no set" : "set";
+			std::string s3 = "no set";
+			auto it = input.Flags.find("l");
+			if (it != input.Flags.end())
+				s3 = "set with a value of " + std::to_string(it->second.Arg.Value.I);
+			LOG_INFO("Command Called with argument '%s' and flag i was %s and flag l was %s.", s1.c_str(), s2.c_str(), s3.c_str());
+			});
+
 		return true;
 	}
 
@@ -43,7 +60,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void GameConsole::Render()
+	void GameConsole::Tick()
 	{
 		// Toggle console when pressing § (Button beneath Escape)
 		static bool s_Active = false;
@@ -113,11 +130,11 @@ namespace LambdaEngine
 						hasFocus = true;
 					}
 
-						if (s_Active || hasFocus)
-						{
-							ImGui::SetItemDefaultFocus();
-							ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
-						}
+					if (s_Active || hasFocus)
+					{
+						ImGui::SetItemDefaultFocus();
+						ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
+					}
 
 				}
 				ImGui::End();
