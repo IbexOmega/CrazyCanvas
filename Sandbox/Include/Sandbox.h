@@ -1,7 +1,8 @@
 #pragma once
 #include "Game/Game.h"
 
-#include "Application/API/EventHandler.h"
+#include "Application/API/Events/KeyEvents.h"
+
 #include "Rendering/IRenderGraphCreateHandler.h"
 
 #include "Containers/TArray.h"
@@ -26,7 +27,7 @@ namespace LambdaEngine
 	class RenderGraphEditor;
 }
 
-class Sandbox : public LambdaEngine::Game, public LambdaEngine::EventHandler, public LambdaEngine::IRenderGraphCreateHandler
+class Sandbox : public LambdaEngine::Game, public LambdaEngine::IRenderGraphCreateHandler
 {
 	struct InstanceIndexAndTransform
 	{
@@ -40,11 +41,11 @@ public:
 	Sandbox();
 	~Sandbox();
 
-	virtual void OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)	override;
+	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 	
 	// Inherited via Game
-	virtual void Tick(LambdaEngine::Timestamp delta)        override;
-	virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
+	virtual void Tick(LambdaEngine::Timestamp delta) override;
+	virtual void FixedTick(LambdaEngine::Timestamp delta) override;
 
 	void Render(LambdaEngine::Timestamp delta);
 

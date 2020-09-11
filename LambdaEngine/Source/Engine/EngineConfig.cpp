@@ -8,32 +8,32 @@
 
 namespace LambdaEngine
 {
-    rapidjson::Document EngineConfig::s_ConfigDocument = {};
+	rapidjson::Document EngineConfig::s_ConfigDocument = {};
 
-    bool EngineConfig::LoadFromFile()
-    {
-        const char* pEngineConfigPath = "../engine_config.json";
+	bool EngineConfig::LoadFromFile()
+	{
+		const char* pEngineConfigPath = "../engine_config.json";
 
-        using namespace rapidjson;
-        FILE* pFile = fopen(pEngineConfigPath, "r");
-        if (!pFile)
-        {
-            LOG_WARNING("Engine config could not be opened: %s", pEngineConfigPath);
-            return false;
-        }
+		using namespace rapidjson;
+		FILE* pFile = fopen(pEngineConfigPath, "r");
+		if (!pFile)
+		{
+			LOG_WARNING("Engine config could not be opened: %s", pEngineConfigPath);
+			return false;
+		}
 
-        char readBuffer[2048];
-        FileReadStream inputStream(pFile, readBuffer, sizeof(readBuffer));
+		char readBuffer[2048];
+		FileReadStream inputStream(pFile, readBuffer, sizeof(readBuffer));
 
-        s_ConfigDocument.ParseStream(inputStream);
+		s_ConfigDocument.ParseStream(inputStream);
 
-        fclose(pFile);
+		fclose(pFile);
 
-        return true;
-    }
+		return true;
+	}
 
-    bool EngineConfig::GetBoolProperty(const String& propertyName)
-    {
-        return s_ConfigDocument[propertyName.c_str()].GetBool();
-    }
+	bool EngineConfig::GetBoolProperty(const String& propertyName)
+	{
+		return s_ConfigDocument[propertyName.c_str()].GetBool();
+	}
 }

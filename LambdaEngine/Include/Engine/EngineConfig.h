@@ -7,16 +7,16 @@
 
 namespace LambdaEngine
 {
-    class LAMBDA_API EngineConfig
-    {
-    public:
-        DECL_STATIC_CLASS(EngineConfig);
+	class LAMBDA_API EngineConfig
+	{
+	public:
+		DECL_STATIC_CLASS(EngineConfig);
 
-        static bool LoadFromFile();
+		static bool LoadFromFile();
 
-        static bool GetBoolProperty(const String& propertyName);
+		static bool GetBoolProperty(const String& propertyName);
 
-    private:
-        static rapidjson::Document s_ConfigDocument;
-    };
+	private:
+		static rapidjson::Document s_ConfigDocument;
+	};
 }

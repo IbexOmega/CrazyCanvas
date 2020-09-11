@@ -61,7 +61,7 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "TRT_DEFERRED_SIMPLE_SKYBOX.lrg", IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "DEMO_SKYBOX.lrg", IMGUI_ENABLED))
 			{
 				return false;
 			}

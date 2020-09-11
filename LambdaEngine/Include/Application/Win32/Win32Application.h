@@ -79,6 +79,8 @@ namespace LambdaEngine
 		virtual void SetCapture(TSharedRef<Window> window) override final;
 		virtual TSharedRef<Window> GetCapture() const override final;
 
+		virtual ModifierKeyState GetModiferKeyState() const override final;
+
 	private:
 		Win32Application(HINSTANCE hInstance);
 		~Win32Application();
@@ -94,7 +96,7 @@ namespace LambdaEngine
 		static void PeekEvents();
 		
 		static Application* CreateApplication();
-		static Win32Application* Get();
+		static Win32Application& Get();
 
 	private:
 		static bool RegisterWindowClass();

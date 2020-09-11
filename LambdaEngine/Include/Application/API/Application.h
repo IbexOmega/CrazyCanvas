@@ -1,7 +1,7 @@
 #pragma once
 #include "LambdaEngine.h"
 #include "Window.h"
-#include "EventHandler.h"
+#include "ApplicationEventHandler.h"
 
 #include "Core/TSharedRef.h"
 
@@ -39,12 +39,12 @@ namespace LambdaEngine
 		virtual bool Create() = 0;
 		virtual TSharedRef<Window> CreateWindow(const WindowDesc* pDesc)	= 0;
 		
-		virtual void SetEventHandler(TSharedPtr<EventHandler> eventHandler) 
+		virtual void SetEventHandler(TSharedPtr<ApplicationEventHandler> eventHandler) 
 		{ 
 			m_EventHandler = eventHandler; 
 		}
 
-		virtual TSharedPtr<EventHandler> GetEventHandler() const
+		virtual TSharedPtr<ApplicationEventHandler> GetEventHandler() const
 		{ 
 			return m_EventHandler; 
 		}
@@ -79,6 +79,11 @@ namespace LambdaEngine
 		{ 
 			return nullptr;
 		}
+
+		virtual ModifierKeyState GetModiferKeyState() const
+		{
+			return ModifierKeyState(0);
+		}
 		
 	protected:
 		Application() = default;
@@ -97,7 +102,7 @@ namespace LambdaEngine
 		}
 		
 	protected:
-		TSharedPtr<EventHandler> m_EventHandler = nullptr;
+		TSharedPtr<ApplicationEventHandler> m_EventHandler = nullptr;
 	};
 }
 

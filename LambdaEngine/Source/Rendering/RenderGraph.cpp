@@ -28,11 +28,9 @@
 #include "Log/Log.h"
 
 #include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
 
 #include "Debug/Profiler.h"
-
-// Needed to reset GPUProfiler timestamps -- should be changed
-#include <vulkan/vulkan.h>
 
 namespace LambdaEngine
 {
@@ -47,15 +45,17 @@ namespace LambdaEngine
 	RenderGraph::RenderGraph(const GraphicsDevice* pGraphicsDevice)
 		: m_pGraphicsDevice(pGraphicsDevice)
 	{
-		CommonApplication::Get()->AddEventHandler(this);
+		EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &RenderGraph::OnWindowResized);
 	}
 
 	RenderGraph::~RenderGraph()
 	{
-        m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
-        SAFERELEASE(m_pFence);
+		EventQueue::UnregisterEventHandler(this, &RenderGraph::OnWindowResized);
 
-        SAFERELEASE(m_pDescriptorHeap);
+		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
+		SAFERELEASE(m_pFence);
+
+		SAFERELEASE(m_pDescriptorHeap);
 
 		Profiler::GetGPUProfiler()->Release();
 
@@ -856,14 +856,21 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void RenderGraph::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)
+	bool RenderGraph::OnWindowResized(const WindowResizedEvent& windowEvent)
 	{
-		UNREFERENCED_VARIABLE(type);
+		if (IsEventOfType<WindowResizedEvent>(windowEvent))
+		{
+			m_WindowWidth	= (float32)windowEvent.Width;
+			m_WindowHeight	= (float32)windowEvent.Height;
 
-		m_WindowWidth	= (float32)width;
-		m_WindowHeight	= (float32)height;
+			UpdateRelativeParameters();
 
-		UpdateRelativeParameters();
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	void RenderGraph::ReleasePipelineStages()
@@ -2365,7 +2372,7 @@ namespace LambdaEngine
 			else if (pPipelineStageDesc->Type == ERenderGraphPipelineStageType::SYNCHRONIZATION)
 			{
 				m_ExecutionStageCount += 2;
-				pipelineStageName = "Synchronization Stage " + std::to_string(pPipelineStage->StageIndex);
+				pipelineStageName = "Synchronization Stage " + std::to_string(pPipelineStageDesc->StageIndex);
 			}			
 
 			pPipelineStage->Type		= pPipelineStageDesc->Type;
@@ -2390,7 +2397,7 @@ namespace LambdaEngine
 				pPipelineStage->ppGraphicsCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppGraphicsCommandAllocators[f], &graphicsCommandListDesc);
 
 				// Add graphics timestamps
-				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppGraphicsCommandLists[f], pipelineStageName);
+				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppGraphicsCommandLists[f], pipelineStageName + " GRAPHICS");
 
 				CommandListDesc computeCommandListDesc = {};
 				computeCommandListDesc.DebugName				= "Render Graph Compute Command List";
@@ -2400,7 +2407,7 @@ namespace LambdaEngine
 				pPipelineStage->ppComputeCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppComputeCommandAllocators[f], &computeCommandListDesc);
 
 				// Add compute timestamps
-				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppComputeCommandLists[f], pipelineStageName);
+				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppComputeCommandLists[f], pipelineStageName + " COMPUTE");
 			}
 
 			// Reset all timestamps and pipeline statistics before first use of them
@@ -2525,10 +2532,10 @@ namespace LambdaEngine
 				SAFERELEASE(*ppTexture);
 				SAFERELEASE(*ppTextureView);
 
-				pTexture		= m_pGraphicsDevice->CreateTexture(pTextureDesc, m_pDeviceAllocator);
+				pTexture = m_pGraphicsDevice->CreateTexture(pTextureDesc, m_pDeviceAllocator);
 
 				textureViewDesc.pTexture = pTexture;
-				pTextureView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
+				pTextureView = m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 				// Create texture views for cubeTextures faces as render targets
 				constexpr uint32 CUBE_FACE_COUNT = 6;
@@ -2821,11 +2828,17 @@ namespace LambdaEngine
 		CommandList**			ppFirstExecutionStage,
 		CommandList**			ppSecondExecutionStage)
 	{
+		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
 		pGraphicsCommandAllocator->Reset();
 		pGraphicsCommandList->Begin(nullptr);
+		Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
 
+		Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
 		pComputeCommandAllocator->Reset();
 		pComputeCommandList->Begin(nullptr);
+		Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
+		Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
 
 		CommandList* pFirstExecutionCommandList = nullptr;
 		CommandList* pSecondExecutionCommandList = nullptr;
@@ -2894,7 +2907,10 @@ namespace LambdaEngine
 			}
 		}
 
+		Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
 		pGraphicsCommandList->End();
+
+		Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
 		pComputeCommandList->End();
 	}
 
@@ -3221,8 +3237,11 @@ namespace LambdaEngine
 		CommandList*		pComputeCommandList,
 		CommandList**		ppExecutionStage)
 	{
+		Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
 		pComputeCommandAllocator->Reset();
 		pComputeCommandList->Begin(nullptr);
+		Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
+		Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
 
 		pComputeCommandList->BindRayTracingPipeline(pPipelineState);
 
@@ -3244,6 +3263,7 @@ namespace LambdaEngine
 
 		pComputeCommandList->TraceRays(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
 
+		Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
 		pComputeCommandList->End();
 
 		(*ppExecutionStage) = pComputeCommandList;

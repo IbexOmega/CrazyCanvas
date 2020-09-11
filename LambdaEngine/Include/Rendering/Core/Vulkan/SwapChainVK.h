@@ -4,7 +4,7 @@
 #include "Rendering/Core/API/SwapChain.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
-#include "Application/API/EventHandler.h"
+#include "Application/API/Events/WindowEvents.h"
 
 #include "Vulkan.h"
 
@@ -15,7 +15,7 @@ namespace LambdaEngine
 	class CommandQueueVK;
 	class GraphicsDeviceVK;
 
-	class SwapChainVK : public TDeviceChildBase<GraphicsDeviceVK, SwapChain>, public EventHandler
+	class SwapChainVK : public TDeviceChildBase<GraphicsDeviceVK, SwapChain>
 	{
 		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, SwapChain>;
 		
@@ -45,7 +45,7 @@ namespace LambdaEngine
 			return static_cast<uint64>(m_BackBufferIndex);
 		}
 
-		virtual void OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type) override final;
+		bool OnWindowResized(const WindowResizedEvent& event);
 		
 	private:
 		bool InitInternal();

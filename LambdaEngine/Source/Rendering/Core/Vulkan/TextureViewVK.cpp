@@ -27,7 +27,7 @@ namespace LambdaEngine
 		
 		VALIDATE(pDesc->Format == textureDesc.Format);
 		
-		VkImageViewCreateInfo createInfo = {};
+		VkImageViewCreateInfo createInfo = { };
 		createInfo.sType							= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		createInfo.pNext							= nullptr;
 		createInfo.flags							= 0;

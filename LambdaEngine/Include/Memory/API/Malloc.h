@@ -53,9 +53,9 @@ namespace LambdaEngine
 		static void* AllocateProtected(uint64 sizeInBytes);
 		static void* AlignAddress(void* pAddress, uint64 alignment);
 
-		static void		SetAllocationFlags(void* pAllocation, uint16 padding);
-		static uint16	GetAllocationFlags(void* pAllocation);
-		static uint16	GetAllocationPadding(void* pAllocation);
+		static void SetAllocationFlags(void* pAllocation, uint16 padding);
+		static uint16 GetAllocationFlags(void* pAllocation);
+		static uint16 GetAllocationPadding(void* pAllocation);
 
 	private:
 		static uint16 s_DebugFlags;

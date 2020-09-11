@@ -21,6 +21,8 @@
 
 #include "Time/API/Timestamp.h"
 
+#include "Application/API/Events/WindowEvents.h"
+
 namespace LambdaEngine
 {
 	struct PipelineTextureBarrierDesc;
@@ -100,7 +102,7 @@ namespace LambdaEngine
 		uint32	Stride;
 	};
 
-	class LAMBDA_API RenderGraph : public EventHandler
+	class LAMBDA_API RenderGraph
 	{
 		enum class EResourceOwnershipType
 		{
@@ -297,7 +299,7 @@ namespace LambdaEngine
 		bool GetResourceBuffers(const char* pResourceName, Buffer* const ** pppBuffers, uint32* pBufferCount)						const;
 		bool GetResourceAccelerationStructure(const char* pResourceName, const AccelerationStructure** ppAccelerationStructure)		const;
 
-		virtual void OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type) override;
+		bool OnWindowResized(const WindowResizedEvent& windowEvent);
 
 	private:
 		void ReleasePipelineStages();
