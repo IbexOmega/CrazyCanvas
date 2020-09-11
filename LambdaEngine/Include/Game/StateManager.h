@@ -29,6 +29,7 @@ namespace LambdaEngine
 
         // The enqueued transition happens at the end of StateManager::Tick
         void EnqueueStateTransition(State* pNewState, STATE_TRANSITION transitionSetting);
+        void EnqueueStatePop() { EnqueueStateTransition(nullptr, STATE_TRANSITION::POP); }
 
         void Tick(float dt);
 

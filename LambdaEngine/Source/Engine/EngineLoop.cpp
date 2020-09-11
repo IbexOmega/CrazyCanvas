@@ -183,6 +183,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!StateManager::GetInstance()->Init(ECSCore::GetInstance()))
+		{
+			return false;
+		}
+
 		return true;
 	}
 
