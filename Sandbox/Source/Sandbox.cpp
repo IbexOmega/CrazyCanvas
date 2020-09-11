@@ -41,6 +41,7 @@
 #include "Threading/API/Thread.h"
 
 #include "Math/Random.h"
+#include "Debug/Profiler.h"
 
 #include <imgui.h>
 
@@ -367,23 +368,6 @@ Sandbox::Sandbox()
 		m_pRenderGraphEditor->InitGUI();	//Must Be called after Renderer is initialized
 	}
 
-	GameConsole::Get().Init();
-	ConsoleCommand cmd;
-	cmd.Init("clo", true);
-	cmd.AddArg(Arg::EType::STRING);
-	cmd.AddFlag("l", Arg::EType::INT);
-	cmd.AddFlag("i", Arg::EType::EMPTY);
-	cmd.AddDescription("Does blah and do bar.");
-	GameConsole::Get().BindCommand(cmd, [](GameConsole::CallbackInput& input)->void {
-		std::string s1 = input.Arguments.GetFront().Value.Str;
-		std::string s2 = input.Flags.find("i") == input.Flags.end() ? "no set" : "set";
-		std::string s3 = "no set";
-		auto it = input.Flags.find("l");
-		if (it != input.Flags.end())
-			s3 = "set with a value of " + std::to_string(it->second.Arg.Value.I);
-		LOG_INFO("Command Called with argument '%s' and flag i was %s and flag l was %s.", s1.c_str(), s2.c_str(), s3.c_str());
-	});
-
 	ConsoleCommand cmd1;
 	cmd1.Init("render_graph", true);
 	cmd1.AddArg(Arg::EType::BOOL);
@@ -401,13 +385,12 @@ Sandbox::Sandbox()
 		});
 
 	ConsoleCommand cmd3;
-	cmd3.Init("debugging", true);
+	cmd3.Init("show_debug_window", true);
 	cmd3.AddArg(Arg::EType::BOOL);
 	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'debugging true'");
 	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
 		m_DebuggingWindow = input.Arguments.GetFront().Value.B;
 		});
-
 
 	return;
 }
@@ -419,8 +402,6 @@ Sandbox::~Sandbox()
 	SAFEDELETE(m_pCamera);
 
 	SAFEDELETE(m_pRenderGraphEditor);
-
-	LambdaEngine::GameConsole::Get().Release();
 }
 
 void Sandbox::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
@@ -523,18 +504,10 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 			if (m_DebuggingWindow)
 			{
-				ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
-				if (ImGui::Begin("Debugging Window", NULL))
-				{
-					ImGui::Text("FPS: %f", 1.0f / delta.AsSeconds());
-					ImGui::Text("Frametime (ms): %f", delta.AsMilliSeconds());
-				}
-				ImGui::End();
+				Profiler::Render(delta);
 			}
 			
 		});
-
-		GameConsole::Get().Render();
 	}
 
 	//float32 test = Random::Float32();

@@ -11,6 +11,7 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/CommonApplication.h"
 
+#include "ECS/ECSCore.h"
 #include "Engine/EngineConfig.h"
 
 #include "Input/API/Input.h"
@@ -20,17 +21,18 @@
 #include "Threading/API/Thread.h"
 #include "Threading/API/ThreadPool.h"
 
+#include "Rendering/RenderSystem.h"
+#include "Rendering/Renderer.h"
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
 
 #include "Audio/AudioSystem.h"
 
-#include "Rendering/RenderSystem.h"
-#include "Rendering/Renderer.h"
-
 #include <assimp/Importer.hpp>
 
 #include "Utilities/RuntimeStats.h"
+
+#include "Game/GameConsole.h"
 
 namespace LambdaEngine
 {
@@ -76,6 +78,8 @@ namespace LambdaEngine
 		RuntimeStats::SetFrameTime((float32)delta.AsSeconds());
 		Input::Tick();
 
+		GameConsole::Get().Tick();
+
 		Thread::Join();
 
 		PlatformNetworkUtils::Tick(delta);
@@ -87,7 +91,7 @@ namespace LambdaEngine
 
 		AudioSystem::Tick();
 
-		// Tick game
+		ECSCore::GetInstance()->Tick((float32)delta.AsSeconds());
 		Game::Get().Tick(delta);
 
 		return true;
@@ -95,7 +99,6 @@ namespace LambdaEngine
 
 	void EngineLoop::FixedTick(Timestamp delta)
 	{
-		// Tick game
 		Game::Get().FixedTick(delta);
 
 		NetworkUtils::FixedTick(delta);
@@ -138,6 +141,11 @@ namespace LambdaEngine
 		Thread::Init();
 
 		if (!Input::Init())
+		{
+			return false;
+		}
+
+		if (!GameConsole::Get().Init())
 		{
 			return false;
 		}
@@ -187,6 +195,11 @@ namespace LambdaEngine
 	bool EngineLoop::Release()
 	{
 		Input::Release();
+
+		if (!GameConsole::Get().Release())
+		{
+			return false;
+		}
 
 		if (!Renderer::Release())
 		{

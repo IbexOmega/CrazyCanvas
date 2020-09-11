@@ -56,6 +56,12 @@
 	Typename() = default; \
 	virtual ~Typename() = default
 
+#define DECL_ABSTRACT_CLASS_NO_DEFAULT(Typename) \
+	DECL_REMOVE_COPY(Typename); \
+	DECL_REMOVE_MOVE(Typename); \
+	Typename(); \
+	virtual ~Typename() = default
+
 #define DECL_UNIQUE_CLASS(Typename) \
 	DECL_REMOVE_COPY(Typename); \
 	DECL_REMOVE_MOVE(Typename); \
@@ -105,3 +111,8 @@
  * Helpers for size
  */
 #define MEGA_BYTE(megabytes) (megabytes) * 1024 * 1024
+
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma warning(error : 4456) 
+	#pragma warning(error : 4239) 
+#endif

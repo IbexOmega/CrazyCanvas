@@ -48,6 +48,9 @@ namespace LambdaEngine
 			D_LOG_MESSAGE("[CommandQueueVK]: Created commandqueue from queuefamily=%u with index=%u", queueFamilyIndex, index);
 
 			m_Type = m_pDevice->GetCommandQueueTypeFromQueueIndex(queueFamilyIndex);
+
+			m_QueueProperties.TimestampValidBits = properties[queueFamilyIndex].timestampValidBits;
+
 			return true;
 		}
 	}
@@ -218,6 +221,11 @@ namespace LambdaEngine
 		//Flush all pending barriers (Semaphores) and then wait for queue to become idle
 		InternalFlushBarriers();
 		vkQueueWaitIdle(m_Queue);
+	}
+
+	void CommandQueueVK::QueryQueueProperties(CommandQueueProperties* pFeatures) const
+	{
+		memcpy(pFeatures, &m_QueueProperties, sizeof(m_QueueProperties));
 	}
 
 	VkResult CommandQueueVK::InternalFlushBarriers()
