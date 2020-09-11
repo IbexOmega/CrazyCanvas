@@ -82,7 +82,7 @@ Sandbox::Sandbox()
 
 	SceneDesc sceneDesc = { };
 	sceneDesc.Name				= "Test Scene";
-	sceneDesc.RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled") && false;
+	sceneDesc.RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
 	m_pScene->Init(sceneDesc);
 
 	m_DirectionalLightAngle	= glm::half_pi<float>();
@@ -567,18 +567,18 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 
 	Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
 
-	/*GUID_Lambda cubemapTexID = ResourceManager::GetTextureGUID("Cubemap Texture");
+	GUID_Lambda cubemapTexID = ResourceManager::GetTextureGUID("Cubemap Texture");
 
 	Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
 	TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
 
 	ResourceUpdateDesc cubeTextureUpdateDesc = {};
-	cubeTextureUpdateDesc.ResourceName = "CUBEMAP";
+	cubeTextureUpdateDesc.ResourceName = "SKYBOX";
 	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
 	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
 	cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
 
-	Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);*/
+	Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 }
 
 namespace LambdaEngine
@@ -638,7 +638,7 @@ bool Sandbox::LoadRendererResources()
 		Sampler* pNearestSampler		= Sampler::GetNearestSampler();
 
 		ResourceUpdateDesc cubeTextureUpdateDesc = {};
-		cubeTextureUpdateDesc.ResourceName = "CUBEMAP";
+		cubeTextureUpdateDesc.ResourceName = "SKYBOX";
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;

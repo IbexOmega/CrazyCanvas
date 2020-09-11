@@ -71,6 +71,7 @@ namespace LambdaEngine
 		NONE					= 0,
 		SCENE_INDIRECT			= 1,
 		FULLSCREEN_QUAD			= 2,
+		CUBE					= 3,
 	};
 
 	enum class ERenderGraphDimensionType : uint8
@@ -716,6 +717,7 @@ namespace LambdaEngine
 		{
 		case ERenderStageDrawType::SCENE_INDIRECT:		return "SCENE_INDIRECT";
 		case ERenderStageDrawType::FULLSCREEN_QUAD:		return "FULLSCREEN_QUAD";
+		case ERenderStageDrawType::CUBE:				return "CUBE";
 		default:													return "NONE";
 		}
 	}
@@ -724,6 +726,7 @@ namespace LambdaEngine
 	{
 		if (string == "SCENE_INDIRECT")		return ERenderStageDrawType::SCENE_INDIRECT;
 		if (string == "FULLSCREEN_QUAD")	return ERenderStageDrawType::FULLSCREEN_QUAD;
+		if (string == "CUBE")				return ERenderStageDrawType::CUBE;
 		return ERenderStageDrawType::NONE;
 	}
 

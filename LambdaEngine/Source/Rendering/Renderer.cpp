@@ -61,7 +61,7 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "DEMO.lrg", IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "CUBETEXTURE_RENDER.lrg", IMGUI_ENABLED))
 			{
 				return false;
 			}

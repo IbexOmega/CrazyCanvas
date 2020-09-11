@@ -3098,6 +3098,18 @@ namespace LambdaEngine
 
 				pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
 			}
+			else if (pRenderStage->DrawType == ERenderStageDrawType::CUBE)
+			{
+				if (pRenderStage->TextureSubDescriptorSetCount > 1)
+				{
+					LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
+				}
+
+				if (pRenderStage->ppTextureDescriptorSets != nullptr)
+					pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+
+				pGraphicsCommandList->DrawInstanced(36, 1, 0, 0);
+			}
 
 			pGraphicsCommandList->EndRenderPass();
 		}

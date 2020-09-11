@@ -1623,8 +1623,8 @@ namespace LambdaEngine
 					pRenderStage->Graphics.PrimitiveTopology = PrimitiveTopologyIndexToPrimitiveTopology(selectedPrimitiveTopology);
 				}
 
-				TArray<ERenderStageDrawType> drawTypes							= { ERenderStageDrawType::SCENE_INDIRECT, ERenderStageDrawType::FULLSCREEN_QUAD };
-				TArray<const char*> drawTypeNames								= { "SCENE INDIRECT", "FULLSCREEN QUAD" };
+				TArray<ERenderStageDrawType> drawTypes							= { ERenderStageDrawType::SCENE_INDIRECT, ERenderStageDrawType::FULLSCREEN_QUAD, ERenderStageDrawType::CUBE };
+				TArray<const char*> drawTypeNames								= { "SCENE INDIRECT", "FULLSCREEN QUAD", "CUBE" };
 				auto selectedDrawTypeIt											= std::find(drawTypes.begin(), drawTypes.end(), pRenderStage->Graphics.DrawType);
 				int32 selectedDrawType											= 0;
 				if (selectedDrawTypeIt != drawTypes.end()) selectedDrawType		= std::distance(drawTypes.begin(), selectedDrawTypeIt);
