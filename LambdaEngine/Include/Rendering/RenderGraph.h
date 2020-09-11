@@ -182,7 +182,7 @@ namespace LambdaEngine
 				TArray<PipelineTextureBarrierDesc>	InititalTransitionBarriers;
 				TArray<Texture*>					Textures;
 				TArray<TextureView*>				TextureViews;
-				TArray<TextureView*>				CubeTextureView;
+				TArray<TextureView*>				CubeFaceTextureViews;
 				TArray<Sampler*>					Samplers;
 			} Texture;
 

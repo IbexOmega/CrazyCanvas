@@ -1055,9 +1055,9 @@ namespace LambdaEngine
 					}
 					else
 					{
-						newResource.Texture.Textures.Resize(actualSubResourceCount * 6);
-						newResource.Texture.TextureViews.Resize(actualSubResourceCount * 6);
-						newResource.Texture.CubeTextureView.Resize(actualSubResourceCount);
+						newResource.Texture.Textures.Resize(actualSubResourceCount);
+						newResource.Texture.TextureViews.Resize(actualSubResourceCount);
+						newResource.Texture.CubeFaceTextureViews.Resize(actualSubResourceCount * 6);
 						newResource.Texture.Samplers.Resize(actualSubResourceCount);
 					}
 
