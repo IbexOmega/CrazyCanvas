@@ -3,6 +3,7 @@
 
 #include "Application/API/Window.h"
 #include "Core/TSharedRef.h"
+#include "Window.h"
 
 #ifdef LAMBDA_VISUAL_STUDIO
 	#pragma warning(push)

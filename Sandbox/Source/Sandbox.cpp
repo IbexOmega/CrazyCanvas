@@ -40,6 +40,8 @@
 
 #include "Threading/API/Thread.h"
 
+#include "Debug/Profiler.h"
+
 #include <imgui.h>
 
 constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
@@ -338,7 +340,7 @@ Sandbox::Sandbox()
 		});
 
 	ConsoleCommand cmd3;
-	cmd3.Init("debugging", true);
+	cmd3.Init("show_debug_window", true);
 	cmd3.AddArg(Arg::EType::BOOL);
 	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'debugging true'");
 	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
@@ -457,13 +459,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 			if (m_DebuggingWindow)
 			{
-				ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
-				if (ImGui::Begin("Debugging Window", NULL))
-				{
-					ImGui::Text("FPS: %f", 1.0f / delta.AsSeconds());
-					ImGui::Text("Frametime (ms): %f", delta.AsMilliSeconds());
-				}
-				ImGui::End();
+				Profiler::Render(delta);
 			}
 			
 		});

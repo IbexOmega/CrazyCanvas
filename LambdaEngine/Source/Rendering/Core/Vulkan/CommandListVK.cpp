@@ -853,7 +853,7 @@ namespace LambdaEngine
 	void CommandListVK::BeginQuery(QueryHeap* pQueryHeap, uint32 queryIndex)
 	{
 		QueryHeapVK*		pQueryHeapVk	= reinterpret_cast<QueryHeapVK*>(pQueryHeap);
-		VkQueryControlFlags controlFlagsVk	= VK_QUERY_CONTROL_PRECISE_BIT;
+		VkQueryControlFlags controlFlagsVk	= 0; //VK_QUERY_CONTROL_PRECISE_BIT;
 		vkCmdBeginQuery(m_CommandList, pQueryHeapVk->GetQueryPool(), queryIndex, controlFlagsVk);
 	}
 
@@ -868,6 +868,12 @@ namespace LambdaEngine
 	{
 		QueryHeapVK* pQueryHeapVk = reinterpret_cast<QueryHeapVK*>(pQueryHeap);
 		vkCmdEndQuery(m_CommandList, pQueryHeapVk->GetQueryPool(), queryIndex);
+	}
+
+	void CommandListVK::ResetQuery(QueryHeap* pQueryHeap, uint32 firstQuery, uint32 queryCount)
+	{
+		QueryHeapVK* pQueryHeapVk = reinterpret_cast<QueryHeapVK*>(pQueryHeap);
+		vkCmdResetQueryPool(m_CommandList, pQueryHeapVk->GetQueryPool(), firstQuery, queryCount);
 	}
 
 	void CommandListVK::ExecuteSecondary(const CommandList* pSecondary)

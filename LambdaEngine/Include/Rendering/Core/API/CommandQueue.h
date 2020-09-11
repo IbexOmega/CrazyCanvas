@@ -7,6 +7,14 @@ namespace LambdaEngine
 	class Fence;
 	class CommandList;
 
+	/*
+	* CommandQueueProperties
+	*/
+	struct CommandQueueProperties
+	{
+		uint32_t TimestampValidBits;
+	};
+
 	class CommandQueue : public DeviceChild
 	{
 	public:
@@ -39,6 +47,8 @@ namespace LambdaEngine
 		{
 			return m_Type;
 		}
+
+		virtual void QueryQueueProperties(CommandQueueProperties* pFeatures) const = 0;
 
 	protected:
 		ECommandQueueType	m_Type;

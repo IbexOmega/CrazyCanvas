@@ -28,7 +28,7 @@ namespace LambdaEngine
 		virtual void SetName(const String& name) override final;
 
 		// QueryHeap interface
-		virtual bool GetResults(uint32 firstQuery, uint32 queryCount, uint64* pData) const override final;
+		virtual bool GetResults(uint32 firstQuery, uint32 queryCount, uint64 dataSize, uint64* pData) const override final;
 
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
