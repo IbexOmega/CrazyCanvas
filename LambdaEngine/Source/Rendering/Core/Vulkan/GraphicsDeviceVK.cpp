@@ -39,8 +39,8 @@ namespace LambdaEngine
 	constexpr ValidationLayer REQUIRED_VALIDATION_LAYERS[]
 	{
 		ValidationLayer("REQ_V_L_BASE"),
-		ValidationLayer("VK_LAYER_KHRONOS_validation"),
-		ValidationLayer("VK_LAYER_RENDERDOC_Capture")
+		ValidationLayer("VK_LAYER_KHRONOS_validation")
+		//ValidationLayer("VK_LAYER_RENDERDOC_Capture")
 	};
 
 	constexpr ValidationLayer OPTIONAL_VALIDATION_LAYERS[]
