@@ -4,7 +4,7 @@
 
 #include <rapidjson/filereadstream.h>
 #include <rapidjson/filewritestream.h>
-#include <rapidjson/writer.h>
+#include <rapidjson/prettywriter.h>
 
 #include <fstream>
 
@@ -38,7 +38,7 @@ namespace LambdaEngine
     {
         const char* pEngineConfigPath = "../engine_config.json";
 
-        FILE* pFile = fopen(pEngineConfigPath, "wb");
+        FILE* pFile = fopen(pEngineConfigPath, "w");
         if (!pFile)
         {
             LOG_WARNING("Engine config could not be opened: %s", pEngineConfigPath);
@@ -48,8 +48,10 @@ namespace LambdaEngine
         char writeBuffer[2048];
         FileWriteStream outputStream(pFile, writeBuffer, sizeof(writeBuffer));
 
-        Writer<FileWriteStream> writer(outputStream);
+        PrettyWriter<FileWriteStream> writer(outputStream);
         s_ConfigDocument.Accept(writer);
+
+        fclose(pFile);
 
         return true;
     }
@@ -67,37 +69,61 @@ namespace LambdaEngine
         return s_ConfigDocument[propertyName.c_str()].GetInt();
     }
 
+    String EngineConfig::GetStringProperty(const String& propertyName)
+    {
+        return s_ConfigDocument[propertyName.c_str()].GetString();
+    }
+
     TArray<int> EngineConfig::GetArrayProperty(const String& propertyName)
     {
         const Value& arr = s_ConfigDocument[propertyName.c_str()];
         TArray<int> tArr;
         for (auto& itr : arr.GetArray())
             tArr.PushBack(itr.GetInt());
+
         return tArr;
     }
 
-    bool EngineConfig::SetBoolProperty(const String& propertyName, bool value)
+    bool EngineConfig::SetBoolProperty(const String& propertyName, const bool& value)
     {
         s_ConfigDocument[propertyName.c_str()].SetBool(value);
+
         return true;
     }
 
-    bool EngineConfig::SetFloatProperty(const String& propertyName, float value)
+    bool EngineConfig::SetFloatProperty(const String& propertyName, const float& value)
     {
         s_ConfigDocument[propertyName.c_str()].SetFloat(value);
+
         return true;
     }
 
-    bool EngineConfig::SetIntProperty(const String& propertyName, int value)
+    bool EngineConfig::SetIntProperty(const String& propertyName, const int& value)
     {
         s_ConfigDocument[propertyName.c_str()].SetFloat(value);
+
         return true;
     }
 
-    bool EngineConfig::SetArrProperty(const String& propertName, int* arr)
+    bool EngineConfig::SetStringProperty(const String& propertyName, const String& string)
     {
+        s_ConfigDocument[propertyName.c_str()].SetString(string.c_str(), static_cast<SizeType>(strlen(string.c_str())), s_ConfigDocument.GetAllocator());
+
+        return true;
+    }
+
+    bool EngineConfig::SetArrayProperty(const String& propertyName, const TArray<int>& arr)
+    {
+        Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
+        s_ConfigDocument[propertyName.c_str()].SetArray().Clear();
         
-        s_ConfigDocument[propertName.c_str()].SetArray(arr);
+        for (auto& itr : arr)
+            s_ConfigDocument[propertyName.c_str()].PushBack(Value().SetInt(itr), allocator);
+        
+        StringBuffer strBuf;
+        PrettyWriter<StringBuffer> writer(strBuf);
+        s_ConfigDocument.Accept(writer);
+
         return true;
     }
 
