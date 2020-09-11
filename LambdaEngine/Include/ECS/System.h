@@ -38,7 +38,7 @@ namespace LambdaEngine
         void SetSystemID(uint32 systemID)   { m_SystemID = systemID; }
 
     protected:
-        void EnqueueRegistration(const SystemRegistration& sysReg);
+        void EnqueueRegistration(const SystemRegistration& systemRegistration);
 
         ComponentHandler* GetComponentHandler(const std::type_index& handlerType);
 

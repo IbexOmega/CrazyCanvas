@@ -166,7 +166,7 @@ namespace LambdaEngine
         }
 
         // Use the subscriptions to find and delete component subscriptions
-        TArray<EntitySubscription>& subscriptions = m_SubscriptionStorage.IndexID(subscriptionID);
+        const TArray<EntitySubscription>& subscriptions = m_SubscriptionStorage.IndexID(subscriptionID);
 
         for (const EntitySubscription& subscription : subscriptions)
         {

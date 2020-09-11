@@ -53,7 +53,7 @@ namespace LambdaEngine
         void ComponentDeleted(Entity entity, std::type_index componentType);
 
         EntityPublisher* GetEntityPublisher()   { return &m_EntityPublisher; }
-        float GetDeltaTime()                    { return m_DeltaTime; }
+        float GetDeltaTime() const              { return m_DeltaTime; }
 
     public:
         static ECSCore* GetInstance() { return &s_Instance; }

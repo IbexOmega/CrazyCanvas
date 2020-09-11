@@ -49,7 +49,8 @@ namespace LambdaEngine
     {
         for (const ComponentAccess& componentUpdateReg : componentAccesses)
         {
-            if (componentUpdateReg.Permissions == NDA) {
+            if (componentUpdateReg.Permissions == NDA)
+            {
                 continue;
             }
 

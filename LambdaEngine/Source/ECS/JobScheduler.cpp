@@ -111,7 +111,7 @@ namespace LambdaEngine
 
     const Job* JobScheduler::FindExecutableJob()
     {
-        TArray<Job>& scheduledJobs = m_Jobs[m_CurrentPhase];
+        const TArray<Job>& scheduledJobs = m_Jobs[m_CurrentPhase];
         TArray<uint32>& jobIndices = m_JobIndices[m_CurrentPhase];
 
         for (uint32& jobIndex : jobIndices)

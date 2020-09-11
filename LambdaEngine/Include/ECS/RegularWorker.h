@@ -18,7 +18,7 @@ namespace LambdaEngine
 
     protected:
         // GetUniqueComponentAccesses serializes all unique component accesses in an entity subscriber registration
-        TArray<ComponentAccess> GetUniqueComponentAccesses(const EntitySubscriberRegistration& subscriberRegistration);
+        static TArray<ComponentAccess> GetUniqueComponentAccesses(const EntitySubscriberRegistration& subscriberRegistration);
 
     private:
         static void MapComponentAccesses(const TArray<ComponentAccess>& componentAccesses, THashTable<std::type_index, ComponentPermissions>& uniqueRegs);
