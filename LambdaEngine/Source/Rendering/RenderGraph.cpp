@@ -1080,13 +1080,14 @@ namespace LambdaEngine
 
 						if (!isCubeTexure)
 						{
-							arrayCount = pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount : 1;
+							arrayCount = pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount : 1U;
 							textureViewType = pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 
 						}
 						else
 						{
-							arrayCount = pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount * 6 : 6;
+							constexpr uint32 CUBE_FACE_COUNT = 6U;
+							arrayCount = pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount * CUBE_FACE_COUNT : CUBE_FACE_COUNT;
 							textureViewType = pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
 						}
 
@@ -1101,7 +1102,7 @@ namespace LambdaEngine
 						textureDesc.Flags				= pResourceDesc->TextureParams.TextureFlags;
 						textureDesc.Width				= uint32(pResourceDesc->TextureParams.XDimVariable);
 						textureDesc.Height				= uint32(pResourceDesc->TextureParams.YDimVariable);
-						textureDesc.Depth				= 1;
+						textureDesc.Depth				= 1U;
 						textureDesc.ArrayCount			= arrayCount;
 						textureDesc.Miplevels			= pResourceDesc->TextureParams.MiplevelCount;
 						textureDesc.SampleCount			= pResourceDesc->TextureParams.SampleCount;
@@ -1113,8 +1114,8 @@ namespace LambdaEngine
 						textureViewDesc.Type			= textureViewType;
 						textureViewDesc.MiplevelCount	= pResourceDesc->TextureParams.MiplevelCount;
 						textureViewDesc.ArrayCount		= arrayCount;
-						textureViewDesc.Miplevel		= 0;
-						textureViewDesc.ArrayIndex		= 0;
+						textureViewDesc.Miplevel		= 0U;
+						textureViewDesc.ArrayIndex		= 0U;
 
 						samplerDesc.DebugName			= pResourceDesc->Name + " Sampler";
 						samplerDesc.MinFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
@@ -2385,16 +2386,16 @@ namespace LambdaEngine
 				{
 					TextureView** ppCubeFaceTextureView = &pResource->Texture.CubeFaceTextureViews[sr * CUBE_FACE_COUNT];
 
-					TextureViewDesc textureViewDesc = {};
-					textureViewDesc.DebugName = pResource->Name + " Texture Cube Face View";
-					textureViewDesc.pTexture = pTexture;
-					textureViewDesc.Flags = textureViewDesc.Flags | FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
-					textureViewDesc.Format = pResource->Texture.Format;
-					textureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-					textureViewDesc.Miplevel = textureViewDesc.Miplevel;
-					textureViewDesc.MiplevelCount = textureViewDesc.MiplevelCount;
-					textureViewDesc.ArrayCount = 1;
-					textureViewDesc.Miplevel = 0;
+					TextureViewDesc cubeFaceTextureViewDesc = {};
+					cubeFaceTextureViewDesc.DebugName = pResource->Name + " Texture Cube Face View";
+					cubeFaceTextureViewDesc.pTexture = pTexture;
+					cubeFaceTextureViewDesc.Flags = textureViewDesc.Flags | FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+					cubeFaceTextureViewDesc.Format = pResource->Texture.Format;
+					cubeFaceTextureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+					cubeFaceTextureViewDesc.Miplevel = textureViewDesc.Miplevel;
+					cubeFaceTextureViewDesc.MiplevelCount = textureViewDesc.MiplevelCount;
+					cubeFaceTextureViewDesc.ArrayCount = 1;
+					cubeFaceTextureViewDesc.Miplevel = 0;
 
 					for (uint32 f = 0; f < CUBE_FACE_COUNT; f++)
 					{

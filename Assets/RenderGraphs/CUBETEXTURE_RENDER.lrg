@@ -200,6 +200,27 @@
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false,
                 "texture_type": "TEXTURE_CUBE",
+                "x_dim_type": "CONSTANT",
+                "y_dim_type": "CONSTANT",
+                "x_dim_var": 256.0,
+                "y_dim_var": 256.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "LINEAR",
+                "memory_type": "MEMORY_TYPE_GPU"
+            }
+        },
+        {
+            "name": "DEPTH_STENCIL2",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": false,
+            "type_params": {
+                "texture_format": "FORMAT_D24_UNORM_S8_UINT",
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
                 "x_dim_var": 1.0,
@@ -475,7 +496,7 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
-                    "name": "DEPTH_STENCIL",
+                    "name": "DEPTH_STENCIL2",
                     "removable": true,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
