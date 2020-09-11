@@ -9,6 +9,7 @@ namespace LambdaEngine
 	class IEventHandler
 	{
 	public:
+		virtual ~IEventHandler() = default;
 		virtual bool Execute(const Event& event) = 0;
 	};
 
@@ -100,6 +101,14 @@ namespace LambdaEngine
 			*/ 
 			memcpy(m_StackBuffer, other.m_StackBuffer, sizeof(m_StackBuffer));
 			m_pEventHandler = reinterpret_cast<IEventHandler*>(m_StackBuffer);
+		}
+
+		inline ~EventHandler()
+		{
+			if (m_pEventHandler)
+			{
+				m_pEventHandler->~IEventHandler();
+			}
 		}
 
 		FORCEINLINE bool Call(const Event& event) const

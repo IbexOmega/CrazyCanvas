@@ -34,12 +34,12 @@ namespace LambdaEngine
 
 		FORCEINLINE bool operator==(const EventType& other) const
 		{
-			return (ID == other.ID);
+			return (ID == other.ID) && (pName == other.pName);
 		}
 
 		FORCEINLINE bool operator!=(const EventType& other) const
 		{
-			return (ID == other.ID);
+			return (ID != other.ID) && (pName != other.pName);
 		}
 
 		FORCEINLINE EventType& operator=(const EventType& other)

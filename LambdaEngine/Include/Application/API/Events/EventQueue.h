@@ -12,6 +12,8 @@ namespace LambdaEngine
 	struct EventContainer
 	{
 	public:
+		virtual ~EventContainer() = default;
+
 		inline EventContainer(EventType eventType)
 			: ContainerEventType(eventType)
 		{
@@ -41,8 +43,9 @@ namespace LambdaEngine
 	public:
 		inline TEventContainer(uint32 size = 1)
 			: EventContainer(TEvent::GetStaticType())
-			, Events(size)
+			, Events()
 		{
+			Events.Reserve(size);
 		}
 
 		inline TEventContainer(const TEventContainer& other)
@@ -112,20 +115,45 @@ namespace LambdaEngine
 			, m_pContainer(nullptr)
 		{
 			ZERO_MEMORY(m_StackBuffer, sizeof(m_StackBuffer));
+			m_pContainer = nullptr;
 		}
 
 		inline EventContainerProxy(const EventContainerProxy& other)
 			: m_StackBuffer()
 			, m_pContainer(nullptr)
 		{
-			m_pContainer = other.m_pContainer->Copy(reinterpret_cast<void*>(m_StackBuffer));
+			if (!other.m_pContainer)
+			{
+				ZERO_MEMORY(m_StackBuffer, sizeof(m_StackBuffer));
+				m_pContainer = nullptr;
+			}
+			else
+			{
+				m_pContainer = other.m_pContainer->Copy(reinterpret_cast<void*>(m_StackBuffer));
+			}
 		}
 
 		inline EventContainerProxy(EventContainerProxy&& other)
 			: m_StackBuffer()
 			, m_pContainer(nullptr)
 		{
-			m_pContainer = other.m_pContainer->Move(reinterpret_cast<void*>(m_StackBuffer));
+			if (!other.m_pContainer)
+			{
+				ZERO_MEMORY(m_StackBuffer, sizeof(m_StackBuffer));
+				m_pContainer = nullptr;
+			}
+			else
+			{
+				m_pContainer = other.m_pContainer->Move(reinterpret_cast<void*>(m_StackBuffer));
+			}
+		}
+
+		inline ~EventContainerProxy()
+		{
+			if (m_pContainer)
+			{
+				m_pContainer->~EventContainer();
+			}
 		}
 
 		FORCEINLINE void Push(const Event& event)
@@ -167,7 +195,15 @@ namespace LambdaEngine
 		{
 			if (this != &other)
 			{
-				m_pContainer = other.m_pContainer->Copy(reinterpret_cast<void*>(m_StackBuffer));
+				if (!other.m_pContainer)
+				{
+					ZERO_MEMORY(m_StackBuffer, sizeof(m_StackBuffer));
+					m_pContainer = nullptr;
+				}
+				else
+				{
+					m_pContainer = other.m_pContainer->Copy(reinterpret_cast<void*>(m_StackBuffer));
+				}
 			}
 
 			return *this;
@@ -177,19 +213,35 @@ namespace LambdaEngine
 		{
 			if (this != &other)
 			{
-				m_pContainer = other.m_pContainer->Move(reinterpret_cast<void*>(m_StackBuffer));
+				if (!other.m_pContainer)
+				{
+					ZERO_MEMORY(m_StackBuffer, sizeof(m_StackBuffer));
+					m_pContainer = nullptr;
+				}
+				else
+				{
+					m_pContainer = other.m_pContainer->Move(reinterpret_cast<void*>(m_StackBuffer));
+				}
 			}
 
 			return *this;
 		}
 
+		FORCEINLINE bool operator==(const EventContainerProxy& other) const
+		{
+			return (memcmp(m_StackBuffer, other.m_StackBuffer, sizeof(m_StackBuffer)) == 0);
+		}
+
 	public:
 		template<typename TEvent>
-		inline static EventContainerProxy&& Create(uint32 count)
+		inline static EventContainerProxy Create(uint32 count)
 		{
 			EventContainerProxy container;
+			static_assert(sizeof(TEventContainer<TEvent>) <= sizeof(container.m_StackBuffer));
+
 			new(reinterpret_cast<void*>(container.m_StackBuffer)) TEventContainer<TEvent>(count);
 			container.m_pContainer = reinterpret_cast<EventContainer*>(container.m_StackBuffer);
+
 			return std::move(container);
 		}
 
