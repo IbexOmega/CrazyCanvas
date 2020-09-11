@@ -95,6 +95,11 @@ namespace LambdaEngine
 						SAFERELEASE(pResource->Texture.TextureViews[sr]);
 						SAFERELEASE(pResource->Texture.Samplers[sr]);
 					}
+
+					for (TextureView* pCubeTextureView : pResource->Texture.CubeFaceTextureViews)
+					{
+						SAFERELEASE(pCubeTextureView);
+					}
 				}
 			}
 		}
@@ -1080,13 +1085,12 @@ namespace LambdaEngine
 
 						if (!isCubeTexure)
 						{
-							arrayCount = pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount : 1;
+							arrayCount		= pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount : 1;
 							textureViewType = pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-
 						}
 						else
 						{
-							arrayCount = pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount * 6 : 6;
+							arrayCount		= pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount * 6 : 6;
 							textureViewType = pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
 						}
 
@@ -1250,6 +1254,11 @@ namespace LambdaEngine
 							SAFERELEASE(previousResource.Texture.TextureViews[sr]);
 							SAFERELEASE(previousResource.Texture.Samplers[sr]);
 						}
+
+						for (TextureView* pCubeTextureView : previousResource.Texture.CubeFaceTextureViews)
+						{
+							SAFERELEASE(pCubeTextureView);
+						}
 					}
 				}
 				else if (newResource.Type == ERenderGraphResourceType::BUFFER)
@@ -1306,6 +1315,11 @@ namespace LambdaEngine
 							SAFERELEASE(pResource->Texture.Textures[sr]);
 							SAFERELEASE(pResource->Texture.TextureViews[sr]);
 							SAFERELEASE(pResource->Texture.Samplers[sr]);
+						}
+
+						for (TextureView* pCubeTextureView : pResource->Texture.CubeFaceTextureViews)
+						{
+							SAFERELEASE(pCubeTextureView);
 						}
 					}
 					else if (pResource->Type == ERenderGraphResourceType::BUFFER)
@@ -1439,7 +1453,7 @@ namespace LambdaEngine
 				return false;
 			}
 			pRenderStage->MaterialsRenderedPerPass = (m_MaxTexturesPerDescriptorSet - totalNumberOfNonMaterialTextures) / 5; //5 textures per material
-			pRenderStage->TextureSubDescriptorSetCount = (uint32)glm::ceil((float)totalNumberOfTextures / float(pRenderStage->MaterialsRenderedPerPass * 5));
+			pRenderStage->TextureSubDescriptorSetCount = (uint32)glm::ceil(glm::max<uint32>((float)totalNumberOfTextures / float(pRenderStage->MaterialsRenderedPerPass * 5), 1));
 
 			TArray<DescriptorBindingDesc> textureDescriptorSetDescriptions;
 			textureDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
@@ -1463,6 +1477,11 @@ namespace LambdaEngine
 			renderStageRenderTargets.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			renderStageTextureResources.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			renderStageBufferResources.Reserve(pRenderStageDesc->ResourceStates.GetSize());
+
+			float32						renderPassAttachmentsWidth			= 0;
+			float32						renderPassAttachmentsHeight			= 0;
+			ERenderGraphDimensionType	renderPassAttachmentDimensionTypeX	= ERenderGraphDimensionType::NONE;
+			ERenderGraphDimensionType	renderPassAttachmentDimensionTypeY	= ERenderGraphDimensionType::NONE;
 
 			//Special Types of Render Stage Variable
 			bool hasTextureCubeAsAttachment = false;
@@ -1597,8 +1616,95 @@ namespace LambdaEngine
 				{
 					if (pResource->SubResourceCount > 1 && pResource->SubResourceCount != m_BackBufferCount)
 					{
-						LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but does not have a subresource count equal to 1 or Back buffer Count: %u", pResource->Name.c_str(), pResource->SubResourceCount);
+						LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but does not have a subresource count equal to 1 or Back buffer Count: %u", pResourceStateDesc->ResourceName.c_str(), pResource->SubResourceCount);
 						return false;
+					}
+
+					if (pResource->OwnershipType != EResourceOwnershipType::INTERNAL && !pResource->IsBackBuffer)
+					{
+						//This may be okay, but we then need to do the check below, where we check that all attachment are of the same size, somewhere else because we don't know the size att RenderGraph Init Time.
+						LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but is not INTERNAL", pResourceStateDesc->ResourceName.c_str());
+						return false;
+					}
+
+					float32						xDimVariable;
+					float32						yDimVariable;
+					ERenderGraphDimensionType	xDimType;
+					ERenderGraphDimensionType	yDimType;
+
+					if (!pResource->IsBackBuffer)
+					{
+						auto resourceUpdateDescIt = m_InternalResourceUpdateDescriptions.find(pResourceStateDesc->ResourceName);
+
+						if (resourceUpdateDescIt == m_InternalResourceUpdateDescriptions.end())
+						{
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" has no accompanying InternalResourceUpdateDesc", pResourceStateDesc->ResourceName.c_str());
+							return false;
+						}
+
+						xDimVariable	= resourceUpdateDescIt->second.TextureUpdate.XDimVariable;
+						yDimVariable	= resourceUpdateDescIt->second.TextureUpdate.YDimVariable;
+						xDimType		= resourceUpdateDescIt->second.TextureUpdate.XDimType;
+						yDimType		= resourceUpdateDescIt->second.TextureUpdate.YDimType;
+					}
+					else
+					{
+						xDimVariable	= 1.0f;
+						yDimVariable	= 1.0f;
+						xDimType		= ERenderGraphDimensionType::RELATIVE;
+						yDimType		= ERenderGraphDimensionType::RELATIVE;
+					}
+
+					//Just use the width to check if its ever been set
+					if (renderPassAttachmentsWidth == 0)
+					{
+						renderPassAttachmentsWidth			= xDimVariable;
+						renderPassAttachmentsHeight			= yDimVariable;
+						renderPassAttachmentDimensionTypeX	= xDimType;
+						renderPassAttachmentDimensionTypeY	= yDimType;
+					}
+					else
+					{
+						bool success = true;
+
+						if (renderPassAttachmentsWidth != xDimVariable)
+						{
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d", 
+								pResourceStateDesc->ResourceName.c_str(), 
+								xDimVariable,
+								renderPassAttachmentsWidth);
+							success = false;
+						}
+
+						if (renderPassAttachmentsHeight != yDimVariable)
+						{
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same height %d, as previous attachments %d",
+								pResourceStateDesc->ResourceName.c_str(),
+								yDimVariable,
+								renderPassAttachmentsHeight);
+							success = false;
+						}
+
+						if (renderPassAttachmentDimensionTypeX != xDimType)
+						{
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
+								pResourceStateDesc->ResourceName.c_str(),
+								RenderGraphDimensionTypeToString(xDimType).c_str(),
+								RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeX).c_str());
+							success = false;
+						}
+
+						if (renderPassAttachmentDimensionTypeY != yDimType)
+						{
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
+								pResourceStateDesc->ResourceName.c_str(),
+								RenderGraphDimensionTypeToString(yDimType).c_str(),
+								RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeY).c_str());
+							success = false;
+						}
+
+						if (!success)
+							return false;
 					}
 
 					bool isColorAttachment = pResource->Texture.Format != EFormat::FORMAT_D24_UNORM_S8_UINT;
@@ -1653,6 +1759,8 @@ namespace LambdaEngine
 						renderPassDepthStencilDescription = renderPassAttachmentDesc;
 						pDepthStencilResource = pResource;
 					}
+					
+					
 
 					if (pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
 					{
@@ -1760,7 +1868,7 @@ namespace LambdaEngine
 				pRenderStage->LastPipelineStage				= lastPipelineStageFlags;
 				pRenderStage->HasTextureCubeAsAttachment	= hasTextureCubeAsAttachment;
 
-				TArray<ConstantRangeDesc> pushConstantRanges;
+				ConstantRangeDesc pushConstantRange = {};
 
 				//Create Push Constants
 				{
@@ -1776,11 +1884,7 @@ namespace LambdaEngine
 						pPushConstants->Offset		= MAX_PUSH_CONSTANT_SIZE - externalMaxSize;
 						pPushConstants->MaxDataSize = TEXTURE_CUBE_PUSH_CONSTANTS_SIZE;	
 
-						ConstantRangeDesc constantRangeDesc = {};
-						constantRangeDesc.ShaderStageFlags	= pipelineStageMask;
-						constantRangeDesc.SizeInBytes		= pPushConstants->MaxDataSize;
-						constantRangeDesc.OffsetInBytes		= pPushConstants->Offset;
-						pushConstantRanges.PushBack(constantRangeDesc);
+						
 					}
 
 					//External Push Constants
@@ -1790,13 +1894,11 @@ namespace LambdaEngine
 						pPushConstants->DataSize	= 0;
 						pPushConstants->Offset		= MAX_PUSH_CONSTANT_SIZE - externalMaxSize;
 						pPushConstants->MaxDataSize = externalMaxSize;
-
-						ConstantRangeDesc constantRangeDesc = {};
-						constantRangeDesc.ShaderStageFlags	= pipelineStageMask;
-						constantRangeDesc.SizeInBytes		= pPushConstants->MaxDataSize;
-						constantRangeDesc.OffsetInBytes		= pPushConstants->Offset;
-						pushConstantRanges.PushBack(constantRangeDesc);
 					}
+
+					pushConstantRange.ShaderStageFlags	= pipelineStageMask;
+					pushConstantRange.SizeInBytes		= MAX_PUSH_CONSTANT_SIZE;
+					pushConstantRange.OffsetInBytes		= 0;
 				}
 
 				//Create Pipeline Layout
@@ -1820,7 +1922,7 @@ namespace LambdaEngine
 
 					PipelineLayoutDesc pipelineLayoutDesc = {};
 					pipelineLayoutDesc.DescriptorSetLayouts	= descriptorSetLayouts;
-					pipelineLayoutDesc.ConstantRanges		= pushConstantRanges;
+					pipelineLayoutDesc.ConstantRanges		= { pushConstantRange };
 
 					pRenderStage->pPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 				}
@@ -2116,7 +2218,6 @@ namespace LambdaEngine
 					textureBarrier.StateBefore			= CalculateResourceTextureState(pResource->Type, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
 					textureBarrier.StateAfter			= CalculateResourceTextureState(pResource->Type, pResourceSynchronizationDesc->NextBindingType, pResource->Texture.Format);
 					textureBarrier.TextureFlags			= pResource->Texture.Format == EFormat::FORMAT_D24_UNORM_S8_UINT ? FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL : 0;
-					textureBarrier.ArrayCount			= 1;
 
 					uint32 targetSynchronizationIndex = 0;
 
@@ -2144,19 +2245,21 @@ namespace LambdaEngine
 					}
 
 					uint32 actualSubResourceCount = 0;
+					bool isTextureCube = pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
 					if (pResource->BackBufferBound)
 					{
 						actualSubResourceCount = m_BackBufferCount;
+						textureBarrier.ArrayCount = isTextureCube ? 6 : 1;
 					}
 					else if (pResource->Texture.IsOfArrayType)
 					{
 						actualSubResourceCount = 1;
-
-						textureBarrier.ArrayCount = pResource->SubResourceCount;
+						textureBarrier.ArrayCount = isTextureCube ? 6 * pResource->SubResourceCount : pResource->SubResourceCount;
 					}
 					else
 					{
 						actualSubResourceCount = pResource->SubResourceCount;
+						textureBarrier.ArrayCount = isTextureCube ? 6 : 1;
 					}
 
 					for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
@@ -2385,21 +2488,21 @@ namespace LambdaEngine
 				{
 					TextureView** ppCubeFaceTextureView = &pResource->Texture.CubeFaceTextureViews[sr * CUBE_FACE_COUNT];
 
-					TextureViewDesc textureViewDesc = {};
-					textureViewDesc.DebugName = pResource->Name + " Texture Cube Face View";
-					textureViewDesc.pTexture = pTexture;
-					textureViewDesc.Flags = textureViewDesc.Flags | FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
-					textureViewDesc.Format = pResource->Texture.Format;
-					textureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-					textureViewDesc.Miplevel = textureViewDesc.Miplevel;
-					textureViewDesc.MiplevelCount = textureViewDesc.MiplevelCount;
-					textureViewDesc.ArrayCount = 1;
-					textureViewDesc.Miplevel = 0;
+					TextureViewDesc textureCubeFaceViewDesc = {};
+					textureCubeFaceViewDesc.pTexture		= pTexture;
+					textureCubeFaceViewDesc.Flags			= textureViewDesc.Flags | FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+					textureCubeFaceViewDesc.Format			= pResource->Texture.Format;
+					textureCubeFaceViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+					textureCubeFaceViewDesc.Miplevel		= textureViewDesc.Miplevel;
+					textureCubeFaceViewDesc.MiplevelCount	= textureViewDesc.MiplevelCount;
+					textureCubeFaceViewDesc.ArrayCount		= 1;
+					textureCubeFaceViewDesc.Miplevel		= 0;
 
 					for (uint32 f = 0; f < CUBE_FACE_COUNT; f++)
 					{
-						textureViewDesc.ArrayIndex = f;
-						(*ppCubeFaceTextureView) = m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
+						textureCubeFaceViewDesc.DebugName	= pResource->Name + " Texture Cube Face View " + std::to_string(f);
+						textureCubeFaceViewDesc.ArrayIndex	= f;
+						(*ppCubeFaceTextureView)	= m_pGraphicsDevice->CreateTextureView(&textureCubeFaceViewDesc);
 						(ppCubeFaceTextureView)++;
 					}
 				}
@@ -2796,9 +2899,11 @@ namespace LambdaEngine
 			repeats = 6;
 		}
 
+		uint32 frameBufferWidth		= 0;
+		uint32 frameBufferHeight	= 0;
+
 		for (uint32 r = 0; r < repeats; r++)
 		{
-			
 			TextureView* ppTextureViews[MAX_COLOR_ATTACHMENTS];
 			TextureView* pDepthStencilTextureView = nullptr;
 			ClearColorDesc clearColorDescriptions[MAX_COLOR_ATTACHMENTS + 1];
@@ -2807,6 +2912,8 @@ namespace LambdaEngine
 			uint32 clearColorCount = 0;
 			for (Resource* pResource : pRenderStage->RenderTargetResources)
 			{
+				TextureView* pRenderTarget = nullptr;
+
 				bool isCubeTexture = pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
 				if (!isCubeTexture) 
 				{
@@ -2825,11 +2932,11 @@ namespace LambdaEngine
 							return;
 						}
 
-						ppTextureViews[textureViewCount++] = pResource->Texture.TextureViews[m_BackBufferIndex];
+						pRenderTarget = pResource->Texture.TextureViews[m_BackBufferIndex];
 					}
 					else
 					{
-						ppTextureViews[textureViewCount++] = pResource->Texture.TextureViews[0];
+						pRenderTarget = pResource->Texture.TextureViews[0];
 					}
 
 				}
@@ -2850,10 +2957,19 @@ namespace LambdaEngine
 							return;
 						}
 
-						ppTextureViews[textureViewCount++] = pResource->Texture.CubeFaceTextureViews[m_BackBufferIndex * CUBE_FACE_COUNT + r];
+						pRenderTarget = pResource->Texture.CubeFaceTextureViews[m_BackBufferIndex * CUBE_FACE_COUNT + r];
 					}
-					ppTextureViews[textureViewCount++] = pResource->Texture.CubeFaceTextureViews[r];
+					else
+					{ 
+						pRenderTarget = pResource->Texture.CubeFaceTextureViews[r];
+					}
 				}
+
+				const TextureDesc& renderTargetDesc = pRenderTarget->GetTexture()->GetDesc();
+				frameBufferWidth	= renderTargetDesc.Width;
+				frameBufferHeight	= renderTargetDesc.Height;
+
+				ppTextureViews[textureViewCount++] = pRenderTarget;
 
 				clearColorDescriptions[clearColorCount].Color[0] = 0.0f;
 				clearColorDescriptions[clearColorCount].Color[1] = 0.0f;
@@ -2912,6 +3028,10 @@ namespace LambdaEngine
 					pDepthStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.CubeFaceTextureViews[r];
 				}
 
+				const TextureDesc& depthStencilDesc = pDepthStencilTextureView->GetTexture()->GetDesc();
+				frameBufferWidth	= depthStencilDesc.Width;
+				frameBufferHeight	= depthStencilDesc.Height;
+
 				clearColorDescriptions[clearColorCount].Depth		= 1.0f;
 				clearColorDescriptions[clearColorCount].Stencil		= 0;
 
@@ -2923,8 +3043,8 @@ namespace LambdaEngine
 			beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
 			beginRenderPassDesc.RenderTargetCount	= textureViewCount;
 			beginRenderPassDesc.pDepthStencil		= pDepthStencilTextureView;
-			beginRenderPassDesc.Width				= pRenderStage->Dimensions.x;
-			beginRenderPassDesc.Height				= pRenderStage->Dimensions.y;
+			beginRenderPassDesc.Width				= frameBufferWidth;
+			beginRenderPassDesc.Height				= frameBufferHeight;
 			beginRenderPassDesc.Flags				= flags;
 			beginRenderPassDesc.pClearColors		= clearColorDescriptions;
 			beginRenderPassDesc.ClearColorCount		= clearColorCount;
@@ -2932,7 +3052,6 @@ namespace LambdaEngine
 			beginRenderPassDesc.Offset.y			= 0;
 
 			pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
-
 
 			PushConstants* pDrawIterationPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
 
