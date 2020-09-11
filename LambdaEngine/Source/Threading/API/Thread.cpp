@@ -69,7 +69,8 @@ namespace LambdaEngine
 			for (Thread* thread : *s_ThreadsToJoin)
 			{
 				thread->m_Thread.join();
-				thread->m_FuncOnFinished();
+				if(thread->m_FuncOnFinished)
+					thread->m_FuncOnFinished();
 				s_Threads->erase(thread);
 				delete thread;
 			}

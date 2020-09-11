@@ -13,12 +13,13 @@
 
 #include "Threading/API/Thread.h"
 
+#include "Networking/API/NetworkUtils.h"
 #include "Networking/API/IPAddress.h"
-#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
 
-#include "ClientUDPHandler.h"
+#include "ClientHandler.h"
 
 #include "Math/Random.h"
 
@@ -28,14 +29,17 @@ Server::Server()
 	using namespace LambdaEngine;
 	CommonApplication::Get()->AddEventHandler(this);
 
-	ServerUDPDesc desc = {};
-	desc.Handler	= this;
-	desc.MaxRetries = 10;
-	desc.MaxClients = 10;
-	desc.PoolSize	= 512;
 
-	m_pServer = ServerUDP::Create(desc);
+	ServerDesc desc = {};
+	desc.Handler		= this;
+	desc.MaxRetries		= 10;
+	desc.MaxClients		= 10;
+	desc.PoolSize		= 512;
+	desc.Protocol		= EProtocol::TCP;
+
+	m_pServer = NetworkUtils::CreateServer(desc);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
+
 	//m_pServer->SetSimulateReceivingPacketLoss(0.1f);
 }
 
@@ -44,14 +48,14 @@ Server::~Server()
 	m_pServer->Release();
 }
 
-void Server::OnClientConnected(LambdaEngine::IClientUDP* pClient)
+void Server::OnClientConnected(LambdaEngine::IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 }
 
-LambdaEngine::IClientUDPRemoteHandler* Server::CreateClientUDPHandler()
+LambdaEngine::IClientRemoteHandler* Server::CreateClientHandler()
 {
-	return DBG_NEW ClientUDPHandler();
+	return DBG_NEW ClientHandler();
 }
 
 void Server::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)

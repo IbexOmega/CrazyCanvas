@@ -61,7 +61,7 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "DEMO.lrg", IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", IMGUI_ENABLED))
 			{
 				return false;
 			}
@@ -148,7 +148,10 @@ namespace LambdaEngine
 			LOG_ERROR("[Renderer]: Failed to set new RenderGraph %s", name.c_str());
 		}
 
-		UpdateRenderGraphFromScene();
+		if (s_pScene != nullptr)
+		{
+			UpdateRenderGraphFromScene();
+		}
 	}
 
 	void Renderer::SetScene(Scene* pScene)
@@ -167,7 +170,10 @@ namespace LambdaEngine
 		CommandList* pGraphicsCopyCommandList = s_pRenderGraph->AcquireGraphicsCopyCommandList();
 		CommandList* pComputeCopyCommandList = s_pRenderGraph->AcquireComputeCopyCommandList();
 
-		s_pScene->PrepareRender(pGraphicsCopyCommandList, pComputeCopyCommandList, s_FrameIndex);
+		if (s_pScene != nullptr)
+		{
+			s_pScene->PrepareRender(pGraphicsCopyCommandList, pComputeCopyCommandList, s_FrameIndex);
+		}
 
 		s_pRenderGraph->Render(s_ModFrameIndex, s_BackBufferIndex);
 

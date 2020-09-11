@@ -4,7 +4,7 @@
 
 #include "Threading/API/SpinLock.h"
 
-#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/NetworkSegment.h"
 
 #include <atomic>
 
@@ -15,6 +15,7 @@ namespace LambdaEngine
 	class LAMBDA_API NetWorker
 	{
 	public:
+		DECL_UNIQUE_CLASS(NetWorker);
 		NetWorker();
 		virtual ~NetWorker();
 
@@ -22,7 +23,7 @@ namespace LambdaEngine
 
 	protected:
 		virtual bool OnThreadsStarted() = 0;
-		virtual void RunTranmitter() = 0;
+		virtual void RunTransmitter() = 0;
 		virtual void RunReceiver() = 0;
 		virtual void OnThreadsTerminated() = 0;
 		virtual void OnTerminationRequested() = 0;
@@ -31,6 +32,7 @@ namespace LambdaEngine
 		bool StartThreads();
 		void TerminateThreads();
 		bool ThreadsAreRunning() const;
+		bool ThreadsHasTerminated() const;
 		bool ShouldTerminate() const;
 		void YieldTransmitter();
 		void TerminateAndRelease();
