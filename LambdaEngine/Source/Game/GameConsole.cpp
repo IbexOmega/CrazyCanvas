@@ -1,6 +1,11 @@
 #include "Game/GameConsole.h"
+
 #include "Input/API/Input.h"
+
 #include "Rendering/ImGuiRenderer.h"
+
+#include "Application/API/CommonApplication.h"
+
 #include <regex>
 #include <imgui.h>
 
@@ -35,6 +40,14 @@ namespace LambdaEngine
 		BindCommand(cmdClear, [this](CallbackInput& input)->void 
 		{
 			m_Items.Clear();
+		});
+
+		ConsoleCommand cmdExit;
+		cmdExit.Init("exit", false);
+		cmdExit.AddDescription("Terminate the application");
+		BindCommand(cmdExit, [this](CallbackInput& input)->void
+		{
+			CommonApplication::Get()->Terminate();
 		});
 
 		// Test Command
@@ -86,20 +99,40 @@ namespace LambdaEngine
 
 		ImGuiRenderer::Get().DrawUI([&]()
 			{
+				ImGuiWindowFlags flags = 
+					ImGuiWindowFlags_NoMove | 
+					ImGuiWindowFlags_NoTitleBar;
+
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				uint32 width = mainWindow->GetWidth();
+				uint32 height = mainWindow->GetHeight();
+				const uint32 standardHeight = 200;
+
 				// Draw a console window at the top right of the viewport.
-				ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
-				if (ImGui::Begin("Console", (bool*)0, ImGuiWindowFlags_NoMove))
+				ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver); // Standard position
+				ImGui::SetNextWindowSize(ImVec2(width, standardHeight), ImGuiCond_FirstUseEver); // Standard size
+				ImGui::SetNextWindowSizeConstraints(ImVec2(width, 0), ImVec2(width, height)); // Window constraints
+				
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f); // Make more transparent
+				ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); // Remove grip, resize works anyway
+				ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); // Remove grip, resize works anyway
+				ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); // Remove grip, resize works anyway
+
+				if (ImGui::Begin("Console", (bool*)0, flags))
 				{
 					bool hasFocus = false;
 
 					// History
 					const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 					ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
+					
+					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
 					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
 
 					// Only display visible text to see history.
 					ImGuiListClipper clipper(m_Items.GetSize());
 					while (clipper.Step())
+					{
 						for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 						{
 							Item& item = m_Items[i];
@@ -109,19 +142,32 @@ namespace LambdaEngine
 							ImGui::TextUnformatted(str);
 							ImGui::PopStyleColor();
 						}
+					}
 
 					if (m_ScrollToBottom | (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+					{
 						ImGui::SetScrollHereY(0.0f);
+					}
+
 					m_ScrollToBottom = false;
 
 					ImGui::PopStyleVar();
+					ImGui::PopStyleVar();
+
 					ImGui::EndChild();
 					ImGui::Separator();
 
+					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
+
 					// Command line
 					static char s_Buf[256];
+					
+					ImGui::PushItemWidth(width);
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
+
 					ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;;
-					if (ImGui::InputText("Input", s_Buf, 256, input_text_flags, [](ImGuiInputTextCallbackData* data)->int {
+					if (ImGui::InputText("###Input", s_Buf, 256, input_text_flags, 
+						[](ImGuiInputTextCallbackData* data)->int {
 						GameConsole* console = (GameConsole*)data->UserData;
 						return console->TextEditCallback(data);
 						}, (void*)this))
@@ -136,6 +182,10 @@ namespace LambdaEngine
 						hasFocus = true;
 					}
 
+					ImGui::PopStyleColor();
+					ImGui::PopItemWidth();
+					ImGui::PopStyleVar();
+
 					if (s_Active || hasFocus)
 					{
 						ImGui::SetItemDefaultFocus();
@@ -144,6 +194,11 @@ namespace LambdaEngine
 
 				}
 				ImGui::End();
+
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopStyleVar();
 			});
 	}
 
