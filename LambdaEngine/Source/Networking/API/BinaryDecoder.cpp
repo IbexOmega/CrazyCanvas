@@ -1,10 +1,10 @@
 #include "Networking/API/BinaryDecoder.h"
 
-#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/NetworkSegment.h"
 
 namespace LambdaEngine
 {
-	BinaryDecoder::BinaryDecoder(const NetworkPacket* packet) :
+	BinaryDecoder::BinaryDecoder(const NetworkSegment* packet) :
 		m_pNetworkPacket(packet),
 		m_ReadHead(0)
 	{

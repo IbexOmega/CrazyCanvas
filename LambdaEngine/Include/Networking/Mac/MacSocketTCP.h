@@ -37,7 +37,7 @@ namespace LambdaEngine
 		*
 		* return	  - False if an error occured, otherwise true.
 		*/
-		virtual bool Send(const char* pBuffer, uint32 bytesToSend, int32& bytesSent) override;
+		virtual bool Send(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent) override;
 
 		/*
 		* Receives a buffer of data.
@@ -48,7 +48,7 @@ namespace LambdaEngine
 		*
 		* return	  - False if an error occured, otherwise true.
 		*/
-		virtual bool Receive(char* pBuffer, uint32 bytesToRead, int32& bytesRead) override;
+		virtual bool Receive(uint8* pBuffer, uint32 bytesToRead, int32& bytesRead) override;
 
 		/*
 		* Enables or Disables Nagle's Algorithm, commonly known as TCP_NODELAY

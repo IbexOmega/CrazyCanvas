@@ -1051,6 +1051,10 @@ namespace LambdaEngine
 			pDstRenderStage->Graphics.Shaders					= pSrcRenderStage->Graphics.Shaders;
 			pDstRenderStage->Graphics.DrawType					= pSrcRenderStage->Graphics.DrawType;
 			pDstRenderStage->Graphics.DepthTestEnabled			= pSrcRenderStage->Graphics.DepthTestEnabled;
+			pDstRenderStage->Graphics.CullMode					= pSrcRenderStage->Graphics.CullMode;
+			pDstRenderStage->Graphics.PolygonMode				= pSrcRenderStage->Graphics.PolygonMode;
+			pDstRenderStage->Graphics.PrimitiveTopology			= pSrcRenderStage->Graphics.PrimitiveTopology;
+
 			if (pDstRenderStage->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 			{
 				pDstRenderStage->Graphics.IndexBufferName			= indexBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end()		? indexBufferResourceStateIt->second.ResourceName			: "";

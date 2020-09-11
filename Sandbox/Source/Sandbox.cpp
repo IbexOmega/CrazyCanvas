@@ -34,6 +34,7 @@
 #include "Engine/EngineConfig.h"
 
 #include "Game/Scene.h"
+#include "Game/GameConsole.h"
 
 #include "Time/API/Clock.h"
 
@@ -63,6 +64,10 @@ Sandbox::Sandbox()
 	: Game()
 {
 	using namespace LambdaEngine;
+
+	m_RenderGraphWindow = false;
+	m_ShowDemoWindow = false;
+	m_DebuggingWindow = false;
 
 	CommonApplication::Get()->AddEventHandler(this);
 
@@ -318,6 +323,30 @@ Sandbox::Sandbox()
 		m_pRenderGraphEditor->InitGUI();	//Must Be called after Renderer is initialized
 	}
 
+	ConsoleCommand cmd1;
+	cmd1.Init("render_graph", true);
+	cmd1.AddArg(Arg::EType::BOOL);
+	cmd1.AddDescription("Activate/Deactivate rendergraph window.\n\t'render_graph true'");
+	GameConsole::Get().BindCommand(cmd1, [&, this](GameConsole::CallbackInput& input)->void {
+		m_RenderGraphWindow = input.Arguments.GetFront().Value.B;
+		});
+
+	ConsoleCommand cmd2;
+	cmd2.Init("imgui_demo", true);
+	cmd2.AddArg(Arg::EType::BOOL);
+	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'show_demo true'");
+	GameConsole::Get().BindCommand(cmd2, [&, this](GameConsole::CallbackInput& input)->void {
+		m_ShowDemoWindow = input.Arguments.GetFront().Value.B;
+		});
+
+	ConsoleCommand cmd3;
+	cmd3.Init("debugging", true);
+	cmd3.AddArg(Arg::EType::BOOL);
+	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'debugging true'");
+	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
+		m_DebuggingWindow = input.Arguments.GetFront().Value.B;
+		});
+
 	return;
 }
 
@@ -421,13 +450,25 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 	if (IMGUI_ENABLED)
 	{
 		ImGuiRenderer::Get().DrawUI([&]()
-			{
+		{
+			if (m_RenderGraphWindow)
 				m_pRenderGraphEditor->RenderGUI();
 
-				Profiler::Render(delta);
-
+			if (m_ShowDemoWindow)
 				ImGui::ShowDemoWindow();
-			});
+
+			if (m_DebuggingWindow)
+			{
+				ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
+				if (ImGui::Begin("Debugging Window", NULL))
+				{
+					ImGui::Text("FPS: %f", 1.0f / delta.AsSeconds());
+					ImGui::Text("Frametime (ms): %f", delta.AsMilliSeconds());
+				}
+				ImGui::End();
+			}
+			
+		});
 	}
 
 	Renderer::Render();

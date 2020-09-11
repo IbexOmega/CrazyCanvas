@@ -11,6 +11,7 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/CommonApplication.h"
 
+#include "ECS/ECSCore.h"
 #include "Engine/EngineConfig.h"
 
 #include "Input/API/Input.h"
@@ -18,18 +19,20 @@
 #include "Networking/API/PlatformNetworkUtils.h"
 
 #include "Threading/API/Thread.h"
+#include "Threading/API/ThreadPool.h"
 
+#include "Rendering/RenderSystem.h"
+#include "Rendering/Renderer.h"
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
 
 #include "Audio/AudioSystem.h"
 
-#include "Rendering/RenderSystem.h"
-#include "Rendering/Renderer.h"
-
 #include <assimp/Importer.hpp>
 
 #include "Utilities/RuntimeStats.h"
+
+#include "Game/GameConsole.h"
 
 namespace LambdaEngine
 {
@@ -64,7 +67,7 @@ namespace LambdaEngine
 			{
 				fixedClock.Tick();
 				FixedTick(fixedClock.GetDeltaTime());
-				
+
 				accumulator -= g_FixedTimestep;
 			}
 		}
@@ -72,8 +75,10 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
-		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
+		RuntimeStats::SetFrameTime((float32)delta.AsSeconds());
 		Input::Tick();
+
+		GameConsole::Get().Tick();
 
 		Thread::Join();
 
@@ -86,17 +91,16 @@ namespace LambdaEngine
 
 		AudioSystem::Tick();
 
-		// Tick game
+		ECSCore::GetInstance()->Tick((float32)delta.AsSeconds());
 		Game::Get().Tick(delta);
-		
+
 		return true;
 	}
 
 	void EngineLoop::FixedTick(Timestamp delta)
 	{
-		// Tick game
 		Game::Get().FixedTick(delta);
-		
+
 		NetworkUtils::FixedTick(delta);
 	}
 
@@ -111,6 +115,11 @@ namespace LambdaEngine
 #endif
 
 		if (!EngineConfig::LoadFromFile())
+		{
+			return false;
+		}
+
+		if (!ThreadPool::Init())
 		{
 			return false;
 		}
@@ -132,6 +141,11 @@ namespace LambdaEngine
 		Thread::Init();
 
 		if (!Input::Init())
+		{
+			return false;
+		}
+
+		if (!GameConsole::Get().Init())
 		{
 			return false;
 		}
@@ -182,6 +196,11 @@ namespace LambdaEngine
 	{
 		Input::Release();
 
+		if (!GameConsole::Get().Release())
+		{
+			return false;
+		}
+
 		if (!Renderer::Release())
 		{
 			return false;
@@ -207,7 +226,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		return true;
+		return ThreadPool::Release();
 	}
 
 	bool EngineLoop::PostRelease()

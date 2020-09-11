@@ -1,6 +1,7 @@
 #pragma once
 #include "Input/API/InputCodes.h"
 
+#include "Application/API/Window.h"
 #include "Core/TSharedRef.h"
 #include "Window.h"
 

@@ -1,10 +1,11 @@
 #include "Networking/API/NetworkUtils.h"
-#include "Networking/API/ISocketUDP.h"
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IPAddress.h"
 #include "Networking/API/IPEndPoint.h"
-#include "Networking/API/ServerUDP.h"
-#include "Networking/API/ClientUDP.h"
+#include "Networking/API/ServerBase.h"
+#include "Networking/API/ClientBase.h"
+
+#include "Networking/API/UDP/ISocketUDP.h"
 
 namespace LambdaEngine
 {
@@ -21,8 +22,8 @@ namespace LambdaEngine
 
 	void NetworkUtils::FixedTick(Timestamp dt)
 	{
-		ServerUDP::FixedTickStatic(dt);
-		ClientUDP::FixedTickStatic(dt);
+		ServerBase::FixedTickStatic(dt);
+		ClientBase::FixedTickStatic(dt);
 	}
 
 	void NetworkUtils::Release()
@@ -63,6 +64,28 @@ namespace LambdaEngine
 
 	ISocketUDP* NetworkUtils::CreateSocketUDP()
 	{
+		return nullptr;
+	}
+
+	ClientBase* NetworkUtils::CreateClient(const ClientDesc& desc)
+	{
+		if(desc.Protocol == EProtocol::TCP)
+			return DBG_NEW ClientTCP(desc);
+		else if (desc.Protocol == EProtocol::UDP)
+			return DBG_NEW ClientUDP(desc);
+
+		LOG_ERROR_CRIT("What kind of protocol is this ?");
+		return nullptr;
+	}
+
+	ServerBase* NetworkUtils::CreateServer(const ServerDesc& desc)
+	{
+		if (desc.Protocol == EProtocol::TCP)
+			return DBG_NEW ServerTCP(desc);
+		else if (desc.Protocol == EProtocol::UDP)
+			return DBG_NEW ServerUDP(desc);
+
+		LOG_ERROR_CRIT("What kind of protocol is this ?");
 		return nullptr;
 	}
 }

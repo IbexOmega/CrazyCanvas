@@ -1417,11 +1417,9 @@ namespace LambdaEngine
 
 				Resource* pResource = &resourceIt->second;
 
-				//Create Initital Transition Barrier and Params
-				if (!isImGuiStage)
+				//Create Initital Transition Barrier and Params, we don't want to create them for the ImGui stage because it "backtransitions" unless it is the only stage
+				if (!isImGuiStage || m_RenderStageCount == 1)
 				{
-					
-
 					if (pResource->Type == ERenderGraphResourceType::TEXTURE && !pResource->IsBackBuffer)
 					{
 						uint32 numInitialBarriers = 0;
@@ -1596,7 +1594,6 @@ namespace LambdaEngine
 			if (pRenderStageDesc->CustomRenderer)
 			{
 				ICustomRenderer* pCustomRenderer = nullptr;
-				bool initializeCustomRenderer = true;
 
 				if (isImGuiStage)
 				{
@@ -1625,7 +1622,6 @@ namespace LambdaEngine
 					else
 					{
 						pCustomRenderer = *imGuiRenderStageIt;
-						initializeCustomRenderer = false;
 					}
 				}
 				else
@@ -1635,18 +1631,15 @@ namespace LambdaEngine
 					m_CustomRenderers.PushBack(pRenderStageDesc->CustomRenderer.pCustomRenderer);*/
 				}
 
-				if (initializeCustomRenderer)
-				{
-					CustomRendererRenderGraphInitDesc customRendererInitDesc = {};
-					customRendererInitDesc.pColorAttachmentDesc			= renderPassAttachmentDescriptions.GetData();
-					customRendererInitDesc.ColorAttachmentCount			= (uint32)renderPassAttachmentDescriptions.GetSize();
-					customRendererInitDesc.pDepthStencilAttachmentDesc	= renderPassDepthStencilDescription.Format != EFormat::FORMAT_NONE ? &renderPassDepthStencilDescription : nullptr;
+				CustomRendererRenderGraphInitDesc customRendererInitDesc = {};
+				customRendererInitDesc.pColorAttachmentDesc			= renderPassAttachmentDescriptions.GetData();
+				customRendererInitDesc.ColorAttachmentCount			= (uint32)renderPassAttachmentDescriptions.GetSize();
+				customRendererInitDesc.pDepthStencilAttachmentDesc	= renderPassDepthStencilDescription.Format != EFormat::FORMAT_NONE ? &renderPassDepthStencilDescription : nullptr;
 
-					if (!pCustomRenderer->RenderGraphInit(&customRendererInitDesc))
-					{
-						LOG_ERROR("[RenderGraph] Could not initialize Custom Renderer");
-						return false;
-					}
+				if (!pCustomRenderer->RenderGraphInit(&customRendererInitDesc))
+				{
+					LOG_ERROR("[RenderGraph] Could not initialize Custom Renderer");
+					return false;
 				}
 
 				pRenderStage->UsesCustomRenderer	= true;
@@ -1765,11 +1758,13 @@ namespace LambdaEngine
 					pipelineDesc.DomainShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.DomainShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.DomainShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER,		EShaderLang::SHADER_LANG_GLSL);
 					pipelineDesc.PixelShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.PixelShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.PixelShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,		EShaderLang::SHADER_LANG_GLSL);
 					pipelineDesc.BlendState.BlendAttachmentStates	= renderPassBlendAttachmentStates;
+					pipelineDesc.RasterizerState.CullMode			= pRenderStageDesc->Graphics.CullMode;
+					pipelineDesc.RasterizerState.PolygonMode		= pRenderStageDesc->Graphics.PolygonMode;
+					pipelineDesc.InputAssembly.PrimitiveTopology	= pRenderStageDesc->Graphics.PrimitiveTopology;
 
 					//Create RenderPass
 					{
 						RenderPassSubpassDesc renderPassSubpassDesc = { };
-						renderPassSubpassDesc.RenderTargetStates.Reserve(64);
 						renderPassSubpassDesc.RenderTargetStates			= renderPassRenderTargetStates;
 						renderPassSubpassDesc.DepthStencilAttachmentState	= pDepthStencilResource != nullptr ? ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT : ETextureState::TEXTURE_STATE_DONT_CARE;
 
@@ -1786,7 +1781,6 @@ namespace LambdaEngine
 
 						RenderPassDesc renderPassDesc = {};
 						renderPassDesc.DebugName			= "";
-						renderPassDesc.Attachments.Reserve(128);
 						renderPassDesc.Attachments			= renderPassAttachmentDescriptions;
 						renderPassDesc.Subpasses			= { renderPassSubpassDesc };
 						renderPassDesc.SubpassDependencies	= { renderPassSubpassDependencyDesc };

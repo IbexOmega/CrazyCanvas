@@ -1,8 +1,7 @@
 #pragma once
 
-#include "ISocketTCP.h"
-
-#include "ISocketUDP.h"
+#include "Networking/API/TCP/ISocketTCP.h"
+#include "Networking/API/UDP/ISocketUDP.h"
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
 	#include "Networking/Win32/Win32NetworkUtils.h"

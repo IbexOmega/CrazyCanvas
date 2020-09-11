@@ -56,6 +56,12 @@
 	Typename() = default; \
 	virtual ~Typename() = default
 
+#define DECL_ABSTRACT_CLASS_NO_DEFAULT(Typename) \
+	DECL_REMOVE_COPY(Typename); \
+	DECL_REMOVE_MOVE(Typename); \
+	Typename(); \
+	virtual ~Typename() = default
+
 #define DECL_UNIQUE_CLASS(Typename) \
 	DECL_REMOVE_COPY(Typename); \
 	DECL_REMOVE_MOVE(Typename); \
