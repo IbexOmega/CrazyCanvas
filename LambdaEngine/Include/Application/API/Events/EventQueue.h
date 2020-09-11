@@ -302,6 +302,8 @@ namespace LambdaEngine
 		static bool RegisterEventHandler(EventType eventType, const EventHandler& eventHandler);
 		static bool UnregisterEventHandler(EventType eventType, const EventHandler& eventHandler);
 
+		static bool UnregisterEventHandlerForAllTypes(const EventHandler& eventHandler);
+
 		static void UnregisterAll();
 
 		template<typename TEvent>

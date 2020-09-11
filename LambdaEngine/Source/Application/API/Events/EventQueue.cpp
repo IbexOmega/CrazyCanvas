@@ -54,6 +54,26 @@ namespace LambdaEngine
 		return false;
 	}
 
+	bool EventQueue::UnregisterEventHandlerForAllTypes(const EventHandler& eventHandler)
+	{
+		std::scoped_lock<SpinLock> lock(g_EventHandlersSpinlock);
+
+		for (auto& handlerPair : g_EventHandlers)
+		{
+			TArray<EventHandler>& eventHandlers = handlerPair.second;
+			for (auto it = eventHandlers.Begin(); it != eventHandlers.End(); it++)
+			{
+				if ((*it) == eventHandler)
+				{
+					eventHandlers.Erase(it);
+				}
+			}
+		}
+
+		LOG_INFO("Unregister eventhandler from all types");
+		return true;
+	}
+
 	void EventQueue::UnregisterAll()
 	{
 		std::scoped_lock<SpinLock> lock(g_EventHandlersSpinlock);
