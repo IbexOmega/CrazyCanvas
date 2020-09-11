@@ -121,7 +121,11 @@ namespace LambdaEngine
 						}, (void*)this))
 					{
 						if (s_Buf[0])
-							ExecCommand(std::string(s_Buf));
+						{
+							std::string buff = std::string(s_Buf);
+							ExecCommand(buff);
+						}
+
 						strcpy(s_Buf, "");
 						hasFocus = true;
 					}
