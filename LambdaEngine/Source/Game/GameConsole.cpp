@@ -78,6 +78,9 @@ namespace LambdaEngine
 		if (!s_Toggle)
 			return;
 
+		ImVec2 popupPos;
+		ImVec2 popupSize;
+
 		ImGuiRenderer::Get().DrawUI([&]()
 			{
 				// Draw a console window at the top right of the viewport.
@@ -114,19 +117,29 @@ namespace LambdaEngine
 
 					// Command line
 					static char s_Buf[256];
-					ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;;
+					ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackEdit;
 					if (ImGui::InputText("Input", s_Buf, 256, input_text_flags, [](ImGuiInputTextCallbackData* data)->int {
 						GameConsole* console = (GameConsole*)data->UserData;
 						return console->TextEditCallback(data);
 						}, (void*)this))
 					{
-						if (s_Buf[0])
+						if (m_ActivePopupIndex != -1)
 						{
-							std::string buff = std::string(s_Buf);
-							ExecCommand(buff);
+							strcpy(s_Buf, m_PopupSelectedText.c_str());
+							m_ActivePopupIndex = -1;
+							m_Candidates.Clear();
+							m_PopupSelectedText = "";
 						}
+						else
+						{
+							if (s_Buf[0])
+							{
+								std::string buff = std::string(s_Buf);
+								ExecCommand(buff);
+							}
 
-						strcpy(s_Buf, "");
+							strcpy(s_Buf, "");
+						}
 						hasFocus = true;
 					}
 
@@ -136,8 +149,68 @@ namespace LambdaEngine
 						ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
 					}
 
+					if (ImGui::IsWindowFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+					{
+						ImGui::SetKeyboardFocusHere(-1);
+					}
+
+					popupSize = ImVec2(ImGui::GetItemRectSize().x - 60, ImGui::GetTextLineHeightWithSpacing() * 2);
+					popupPos = ImGui::GetItemRectMin();
+					popupPos.y += ImGui::GetItemRectSize().y;
 				}
 				ImGui::End();
+
+				// Draw popup autocomplete window
+				if (m_Candidates.GetSize() > 0)
+				{
+					bool isActiveIndex = false;
+					bool popupOpen = true;
+					ImGuiWindowFlags popupFlags =
+						ImGuiWindowFlags_NoTitleBar |
+						ImGuiWindowFlags_NoResize |
+						ImGuiWindowFlags_NoMove |
+						ImGuiWindowFlags_HorizontalScrollbar |
+						ImGuiWindowFlags_NoSavedSettings |
+						ImGuiWindowFlags_NoFocusOnAppearing;
+
+					if (m_Candidates.GetSize() < 10)
+					{
+						popupFlags |= ImGuiWindowFlags_NoScrollbar;
+						popupSize.y = (ImGui::GetTextLineHeight() + 8) * m_Candidates.GetSize();
+					}
+					else
+					{
+						popupSize.y = (ImGui::GetTextLineHeight() + 8) * 10;
+					}
+
+					ImGui::SetNextWindowPos(popupPos);
+					ImGui::SetNextWindowSize(popupSize);
+					ImGui::Begin("candidates_popup", &popupOpen, popupFlags);
+					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
+					ImGui::PushAllowKeyboardFocus(false);
+
+					for (uint32 i = 0; i < m_Candidates.GetSize(); i++)
+					{
+						isActiveIndex = m_ActivePopupIndex == i;
+						ImGui::PushID(i);
+						if (ImGui::Selectable(m_Candidates[i].c_str(), &isActiveIndex))
+						{
+							PushError("Test");
+						}
+						ImGui::PopID();
+
+						if (isActiveIndex && m_PopupSelectionChanged)
+						{
+							ImGui::SetScrollHere();
+							m_PopupSelectedText = m_Candidates[i];
+							m_PopupSelectionChanged = false;
+						}
+					}
+
+					ImGui::PopAllowKeyboardFocus();
+					ImGui::PopStyleVar();
+					ImGui::End();
+				}
 			});
 	}
 
@@ -328,6 +401,41 @@ namespace LambdaEngine
 	{
 		switch (data->EventFlag)
 		{
+		case ImGuiInputTextFlags_CallbackEdit:
+		{
+			// Locate beginning of current word
+			const char* word_end = data->Buf + data->CursorPos;
+			const char* word_start = word_end;
+			while (word_start > data->Buf)
+			{
+				const char c = word_start[-1];
+				if (c == ' ' || c == '\t' || c == ',' || c == ';')
+					break;
+				word_start--;
+			}
+
+			m_Candidates.Clear();
+			for (auto& cmd : m_CommandMap)
+			{
+				const char* command = cmd.first.c_str();
+				int32 d = -1;
+				int32 n = (int32)(word_end - word_start);
+				const char* s1 = command;
+				const char* s2 = word_start;
+				while (n > 0 && (d = toupper(*s2) - toupper(*s1)) == 0 && *s1)
+				{
+					s1++;
+					s2++;
+					n--;
+				}
+				if (d == 0)
+				{
+					m_Candidates.PushBack(command);
+				}
+			}
+
+			break;
+		}
 		case ImGuiInputTextFlags_CallbackCompletion:
 		{
 			// Locate beginning of current word
@@ -343,6 +451,7 @@ namespace LambdaEngine
 
 			// Build a list of candidates
 			TArray<const char*> candidates;
+			//m_Candidates.Clear();
 			for (auto& cmd : m_CommandMap)
 			{
 				const char* command = cmd.first.c_str();
@@ -365,6 +474,7 @@ namespace LambdaEngine
 			if (candidates.GetSize() == 0)
 			{
 				// No match
+				m_ActivePopupIndex = -1;
 			}
 			else if (candidates.GetSize() == 1)
 			{
@@ -373,60 +483,59 @@ namespace LambdaEngine
 				data->InsertChars(data->CursorPos, candidates[0]);
 				data->InsertChars(data->CursorPos, " ");
 			}
-			else
+			else if (m_ActivePopupIndex != -1)
 			{
-				// Multiple matches. Complete as much as it can.
-				int match_len = (int)(word_end - word_start);
-				for (;;)
-				{
-					int c = 0;
-					bool all_candidates_matches = true;
-					for (int i = 0; i < candidates.GetSize() && all_candidates_matches; i++)
-						if (i == 0)
-							c = toupper(candidates[i][match_len]);
-						else if (c == 0 || c != toupper(candidates[i][match_len]))
-							all_candidates_matches = false;
-					if (!all_candidates_matches)
-						break;
-					match_len++;
-				}
-
-				if (match_len > 0)
-				{
-					data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
-					data->InsertChars(data->CursorPos, candidates[0], candidates[0] + match_len);
-				}
-
-				// List matches
-				PushInfo("Possible matches:\n");
-				for (int i = 0; i < candidates.GetSize(); i++)
-					PushInfo("-" + std::string(candidates[i]));
+				data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
+				data->InsertChars(data->CursorPos, m_PopupSelectedText.c_str());
+				data->InsertChars(data->CursorPos, " ");
+				m_ActivePopupIndex = -1;
+				m_PopupSelectedText = "";
+				m_Candidates.Clear();
 			}
 			break;
 		}
 		case ImGuiInputTextFlags_CallbackHistory:
 		{
-			const int prevHistoryIndex = m_HistoryIndex;
-			if (data->EventKey == ImGuiKey_UpArrow)
+			if (m_Candidates.GetSize() == 0)
 			{
-				if (m_HistoryIndex == -1)
-					m_HistoryIndex = m_History.GetSize() - 1;
-				else if (m_HistoryIndex > 0)
-					m_HistoryIndex--;
-			}
-			else if (data->EventKey == ImGuiKey_DownArrow)
-			{
-				if (m_HistoryIndex != -1)
-					if (++m_HistoryIndex >= m_History.GetSize())
-						m_HistoryIndex = -1;
-			}
+				// Show history when nothing is typed (no candidates)
+				const int prevHistoryIndex = m_HistoryIndex;
+				if (data->EventKey == ImGuiKey_UpArrow)
+				{
+					if (m_HistoryIndex == -1)
+						m_HistoryIndex = m_History.GetSize() - 1;
+					else if (m_HistoryIndex > 0)
+						m_HistoryIndex--;
+				}
+				else if (data->EventKey == ImGuiKey_DownArrow)
+				{
+					if (m_HistoryIndex != -1)
+						if (++m_HistoryIndex >= m_History.GetSize())
+							m_HistoryIndex = -1;
+				}
 
-			if (prevHistoryIndex != m_HistoryIndex)
-			{
-				const char* historyStr = (m_HistoryIndex >= 0) ? m_History[m_HistoryIndex].c_str() : "";
-				data->DeleteChars(0, data->BufTextLen);
-				data->InsertChars(0, historyStr);
+				if (prevHistoryIndex != m_HistoryIndex)
+				{
+					const char* historyStr = (m_HistoryIndex >= 0) ? m_History[m_HistoryIndex].c_str() : "";
+					data->DeleteChars(0, data->BufTextLen);
+					data->InsertChars(0, historyStr);
+				}
 			}
+			else
+			{
+				// Navigate candidates list
+				if (data->EventKey == ImGuiKey_UpArrow && m_ActivePopupIndex > 0)
+				{
+					m_ActivePopupIndex--;
+					m_PopupSelectionChanged = true;
+				}
+				else if (data->EventKey == ImGuiKey_DownArrow && m_ActivePopupIndex < ((int32)(m_Candidates.GetSize()) - 1))
+				{
+					m_ActivePopupIndex++;
+					m_PopupSelectionChanged = true;
+				}
+			}
+			break;
 		}
 		}
 		return 0;

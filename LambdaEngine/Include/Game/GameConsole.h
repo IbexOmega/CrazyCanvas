@@ -53,10 +53,14 @@ namespace LambdaEngine
 		int TextEditCallback(ImGuiInputTextCallbackData* data);
 
 	private:
+		TArray<std::string> m_Candidates;
 		TArray<Item> m_Items;
 		TArray<std::string> m_History;
 		int32 m_HistoryIndex { -1 };
 		bool m_ScrollToBottom { false };
+		int32 m_ActivePopupIndex = 0;
+		bool m_PopupSelectionChanged = false;
+		std::string m_PopupSelectedText = "";
 		std::unordered_map<std::string, std::pair<ConsoleCommand, std::function<void(CallbackInput&)>>> m_CommandMap;
 	};
 }
