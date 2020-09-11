@@ -111,3 +111,8 @@
  * Helpers for size
  */
 #define MEGA_BYTE(megabytes) (megabytes) * 1024 * 1024
+
+#ifdef LAMBDA_VISUAL_STUDIO
+	#pragma warning(error : 4456) 
+	#pragma warning(error : 4239) 
+#endif

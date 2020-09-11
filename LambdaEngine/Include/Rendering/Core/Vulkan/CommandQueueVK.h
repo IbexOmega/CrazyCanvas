@@ -44,6 +44,8 @@ namespace LambdaEngine
 		{
 			return reinterpret_cast<uint64>(m_Queue);
 		}
+
+		virtual void QueryQueueProperties(CommandQueueProperties* pFeatures) const override final;
 		
 	private:
 		VkResult InternalFlushBarriers();
@@ -59,5 +61,7 @@ namespace LambdaEngine
 		TArray<VkSemaphore>				m_SignalSemaphores;
 		TArray<VkSemaphore>				m_WaitSemaphores;
 		TArray<VkPipelineStageFlags>	m_WaitStages;
+
+		CommandQueueProperties m_QueueProperties;
 	};
 }

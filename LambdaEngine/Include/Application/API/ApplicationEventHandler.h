@@ -4,6 +4,7 @@
 
 #include "Application/API/Window.h"
 #include "Core/TSharedRef.h"
+#include "Window.h"
 
 #include "Window.h"
 
