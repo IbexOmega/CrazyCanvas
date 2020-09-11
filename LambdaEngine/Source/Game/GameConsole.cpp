@@ -111,7 +111,7 @@ namespace LambdaEngine
 				// Draw a console window at the top right of the viewport.
 				ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver); // Standard position
 				ImGui::SetNextWindowSize(ImVec2(width, standardHeight), ImGuiCond_FirstUseEver); // Standard size
-				ImGui::SetNextWindowSizeConstraints(ImVec2(width, 0), ImVec2(width, height)); // Window constraints
+				ImGui::SetNextWindowSizeConstraints(ImVec2(width, 70), ImVec2(width, height)); // Window constraints
 				
 				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f); // Make more transparent
 				ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); // Remove grip, resize works anyway
