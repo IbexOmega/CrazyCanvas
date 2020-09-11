@@ -34,7 +34,7 @@ namespace LambdaEngine
 	FORCEINLINE LambdaDirectory ExtractDirectory(const String& filepath, const std::filesystem::path& relativePath, bool ignoreRootPath = true)
 	{
 		LambdaDirectory result;
-		auto& rootPath = std::filesystem::path(filepath);
+		std::filesystem::path rootPath(filepath);
 
 		result.RelativePath /= ignoreRootPath ? relativePath : relativePath / rootPath.stem().string();
 		result.isDirectory = true;
