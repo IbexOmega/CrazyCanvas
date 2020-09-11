@@ -18,8 +18,9 @@ namespace LambdaEngine
 	uint32 PacketManagerBase::EnqueueSegmentReliable(NetworkSegment* pSegment, IPacketListener* pListener)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockSegmentsToSend);
-		uint32 UID = EnqueueSegment(pSegment, m_Statistics.RegisterReliableSegmentSent());
-		m_SegmentsWaitingForAck.insert({ UID, SegmentInfo{ pSegment, pListener, EngineLoop::GetTimeSinceStart()} });
+		uint32 reliableUID = m_Statistics.RegisterReliableSegmentSent();
+		uint32 UID = EnqueueSegment(pSegment, reliableUID);
+		m_SegmentsWaitingForAck.insert({ reliableUID, SegmentInfo{ pSegment, pListener, EngineLoop::GetTimeSinceStart()} });
 		return UID;
 	}
 
@@ -170,29 +171,31 @@ namespace LambdaEngine
 		{
 			if (messageInfo.Listener)
 			{
-				messageInfo.Listener->OnPacketDelivered(messageInfo.Packet);
+				messageInfo.Listener->OnPacketDelivered(messageInfo.Segment);
 			}
-			packetsToFree.PushBack(messageInfo.Packet);
+			packetsToFree.PushBack(messageInfo.Segment);
 		}
 
 		m_SegmentPool.FreeSegments(packetsToFree);
 	}
 
+	/*
+	* Finds all Reliable Segment UIDs corresponding to the acks from physical packets
+	*/
 	void PacketManagerBase::GetReliableUIDsFromAcks(const TArray<uint32>& acks, TArray<uint32>& ackedReliableUIDs)
 	{
 		ackedReliableUIDs.Reserve(128);
 		std::scoped_lock<SpinLock> lock(m_LockBundles);
 
 		Timestamp timestamp = 0;
-
 		for (uint32 ack : acks)
 		{
 			auto iterator = m_Bundles.find(ack);
 			if (iterator != m_Bundles.end())
 			{
 				Bundle& bundle = iterator->second;
-				for (uint32 UID : bundle.ReliableUIDs)
-					ackedReliableUIDs.PushBack(UID);
+				for (uint32 reliableUID : bundle.ReliableUIDs)
+					ackedReliableUIDs.PushBack(reliableUID);
 
 				timestamp = bundle.Timestamp;
 				m_Bundles.erase(iterator);
@@ -210,9 +213,9 @@ namespace LambdaEngine
 		ackedReliableSegments.Reserve(128);
 		std::scoped_lock<SpinLock> lock(m_LockSegmentsToSend);
 
-		for (uint32 UID : ackedReliableUIDs)
+		for (uint32 reliableUID : ackedReliableUIDs)
 		{
-			auto iterator = m_SegmentsWaitingForAck.find(UID);
+			auto iterator = m_SegmentsWaitingForAck.find(reliableUID);
 			if (iterator != m_SegmentsWaitingForAck.end())
 			{
 				ackedReliableSegments.PushBack(iterator->second);

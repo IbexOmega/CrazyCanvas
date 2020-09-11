@@ -129,11 +129,10 @@ namespace LambdaEngine
 
 					if (messageInfo.Retries < m_MaxRetries)
 					{
-						m_SegmentsToSend[m_QueueIndex].push(messageInfo.Packet);
+						m_SegmentsToSend[m_QueueIndex].push(messageInfo.Segment);
 						messageInfo.LastSent = currentTime;
-
 						if (messageInfo.Listener)
-							messageInfo.Listener->OnPacketResent(messageInfo.Packet, messageInfo.Retries);
+							messageInfo.Listener->OnPacketResent(messageInfo.Segment, messageInfo.Retries);
 					}
 					else
 					{
@@ -152,9 +151,9 @@ namespace LambdaEngine
 		for (auto& pair : messagesToDelete)
 		{
 			SegmentInfo& messageInfo = pair.second;
-			packetsToFree.PushBack(messageInfo.Packet);
+			packetsToFree.PushBack(messageInfo.Segment);
 			if (messageInfo.Listener)
-				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Packet, messageInfo.Retries);
+				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Segment, messageInfo.Retries);
 		}
 
 		m_SegmentPool.FreeSegments(packetsToFree);

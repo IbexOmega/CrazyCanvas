@@ -5,6 +5,8 @@
 #include "Networking/API/NetworkChallenge.h"
 #include "Networking/API/ServerBase.h"
 
+#include "Engine/EngineLoop.h"
+
 namespace LambdaEngine
 {
     ClientRemoteBase::ClientRemoteBase(ServerBase* pServer) :
@@ -152,6 +154,18 @@ namespace LambdaEngine
 	void ClientRemoteBase::Tick(Timestamp delta)
 	{
 		GetPacketManager()->Tick(delta);
+
+		Timestamp timeSinceLastPacketSent = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastSent();
+		if (timeSinceLastPacketSent >= Timestamp::Seconds(1))
+		{
+			SendReliable(GetFreePacket(NetworkSegment::TYPE_PING));
+		}
+
+		Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastReceived();
+		if (timeSinceLastPacketReceived >= Timestamp::Seconds(5))
+		{
+			Release();
+		}
 	}
 
 	bool ClientRemoteBase::HandleReceivedPacket(NetworkSegment* pPacket)
@@ -205,8 +219,8 @@ namespace LambdaEngine
 
 	void ClientRemoteBase::SendDisconnect()
 	{
-		GetPacketManager()->EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT));
-		TransmitPackets();
+		/*GetPacketManager()->EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT));
+		TransmitPackets();*/
 	}
 
 	void ClientRemoteBase::SendServerFull()

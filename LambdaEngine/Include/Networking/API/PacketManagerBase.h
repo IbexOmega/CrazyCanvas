@@ -32,7 +32,7 @@ namespace LambdaEngine
 
 		struct SegmentInfo
 		{
-			NetworkSegment* Packet = nullptr;
+			NetworkSegment* Segment = nullptr;
 			IPacketListener* Listener = nullptr;
 			Timestamp LastSent = 0;
 			uint8 Retries = 0;

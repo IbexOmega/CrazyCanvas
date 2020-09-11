@@ -51,12 +51,14 @@ namespace LambdaEngine
 		void SendServerNotAccepting();
 
 	protected:
+		bool m_DisconnectedByRemote;
+
+	private:
 		IClientRemoteHandler* m_pHandler;
 		EClientState m_State;
 		ServerBase* m_pServer;
 		SpinLock m_Lock;
 		std::atomic_bool m_Release;
 		std::atomic_bool m_ReleasedByServer;
-		bool m_DisconnectedByRemote;
 	};
 }

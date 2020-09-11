@@ -75,9 +75,12 @@ namespace LambdaEngine
         IPEndPoint m_IPEndPoint;
         SpinLock m_Lock;
         SpinLock m_LockClients;
+        SpinLock m_LockClientVectors;
         ServerDesc m_Description;
         std::atomic_bool m_Accepting;
         std::unordered_map<IPEndPoint, ClientRemoteBase*, IPEndPointHasher> m_Clients;
+        TArray<ClientRemoteBase*> m_ClientsToAdd;
+        TArray<IPEndPoint> m_ClientsToRemove;
 
     private:
         static std::set<ServerBase*> s_Servers;

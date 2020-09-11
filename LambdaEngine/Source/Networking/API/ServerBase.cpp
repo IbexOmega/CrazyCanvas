@@ -11,7 +11,8 @@ namespace LambdaEngine
 	ServerBase::ServerBase(const ServerDesc& desc) :
 		m_Description(desc),
 		m_pSocket(nullptr),
-		m_Accepting(true)
+		m_Accepting(true),
+		m_LockClientVectors()
 	{
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Servers.insert(this);
@@ -50,6 +51,12 @@ namespace LambdaEngine
 				pair.second->ReleaseByServer();
 			}
 			m_Clients.clear();
+		}
+
+		{
+			std::scoped_lock<SpinLock> lock(m_LockClientVectors);
+			m_ClientsToAdd.Clear();
+			m_ClientsToRemove.Clear();
 		}
 
 		TerminateThreads();
@@ -96,8 +103,8 @@ namespace LambdaEngine
 
 	void ServerBase::OnClientDisconnected(ClientRemoteBase* pClient)
 	{
-		std::scoped_lock<SpinLock> lock(m_LockClients);
-		m_Clients.erase(pClient->GetEndPoint());
+		std::scoped_lock<SpinLock> lock(m_LockClientVectors);
+		m_ClientsToRemove.PushBack(pClient->GetEndPoint());
 	}
 
 	ClientRemoteBase* ServerBase::GetClient(const IPEndPoint& endPoint)
@@ -161,14 +168,33 @@ namespace LambdaEngine
 		{
 			pair.second->Tick(delta);
 		}
+
+		if (!m_ClientsToAdd.IsEmpty() || !m_ClientsToRemove.IsEmpty())
+		{
+			for (int i = 0; i < m_ClientsToAdd.GetSize(); i++)
+			{
+				LOG_INFO("[ServerBase]: Client Registered");
+				m_Clients.insert({ m_ClientsToAdd[i]->GetEndPoint(), m_ClientsToAdd[i] });
+			}
+
+			for (int i = 0; i < m_ClientsToRemove.GetSize(); i++)
+			{
+				LOG_INFO("[ServerBase]: Client Unregistered");
+				m_Clients.erase(m_ClientsToRemove[i]);
+			}
+
+			std::scoped_lock<SpinLock> lock(m_LockClientVectors);
+			m_ClientsToAdd.Clear();
+			m_ClientsToRemove.Clear();
+		}
+
 		Flush();
 	}
 
 	void ServerBase::RegisterClient(ClientRemoteBase* pClient)
 	{
-		LOG_INFO("[ServerBase]: Client Registered");
-		std::scoped_lock<SpinLock> lock(m_LockClients);
-		m_Clients.insert({ pClient->GetEndPoint(), pClient });
+		std::scoped_lock<SpinLock> lock(m_LockClientVectors);
+		m_ClientsToAdd.PushBack(pClient);
 	}
 
 	void ServerBase::RunTransmitter()
@@ -178,9 +204,9 @@ namespace LambdaEngine
 			YieldTransmitter();
 			{
 				std::scoped_lock<SpinLock> lock(m_LockClients);
-				for (auto& tuple : m_Clients)
+				for (auto& pair : m_Clients)
 				{
-					tuple.second->TransmitPackets();
+					pair.second->TransmitPackets();
 				}
 			}
 		}

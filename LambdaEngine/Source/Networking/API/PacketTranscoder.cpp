@@ -77,9 +77,11 @@ namespace LambdaEngine
 
 		for (int i = 0; i < pHeader->Segments; i++)
 		{
-			NetworkSegment* pPacket = segmentsDecoded[i];
-			offset += ReadSegment(buffer + offset, pPacket);
-			pPacket->m_Salt = pHeader->Salt;
+			NetworkSegment* pSegment = segmentsDecoded[i];
+			offset += ReadSegment(buffer + offset, pSegment);
+			pSegment->m_Salt = pHeader->Salt;
+
+			LOG_MESSAGE("PacketTranscoder::DecodeSegments(%s)", pSegment->ToString().c_str());
 		}
 
 		return true;

@@ -112,8 +112,8 @@ namespace LambdaEngine
 
 	void ClientBase::SendDisconnectRequest()
 	{
-		GetPacketManager()->EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT), this);
-		TransmitPackets();
+		/*GetPacketManager()->EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT), this);
+		TransmitPackets();*/
 	}
 
 
@@ -180,6 +180,10 @@ namespace LambdaEngine
 			m_SendDisconnectPacket = false;
 			m_pHandler->OnServerFull(this);
 			Disconnect();
+		}
+		else if (packetType == NetworkSegment::TYPE_PING)
+		{
+			
 		}
 		else
 		{
