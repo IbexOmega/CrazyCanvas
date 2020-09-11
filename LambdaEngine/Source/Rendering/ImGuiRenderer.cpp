@@ -301,12 +301,6 @@ namespace LambdaEngine
 		ImGui::EndFrame();
 		ImGui::Render();
 
-		// Render to screen
-		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
-		pGraphicsCommandAllocator->Reset();
-		pGraphicsCommandList->Begin(nullptr);
-		Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
-		Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
 
 		//Start drawing
 		ImDrawData* pDrawData = ImGui::GetDrawData();
@@ -326,6 +320,19 @@ namespace LambdaEngine
 		beginRenderPassDesc.ClearColorCount		= 0;
 		beginRenderPassDesc.Offset.x			= 0;
 		beginRenderPassDesc.Offset.y			= 0;
+
+		// Render to screen
+		if (pDrawData != nullptr && pDrawData->CmdListsCount != 0)
+			Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
+
+		pGraphicsCommandAllocator->Reset();
+		pGraphicsCommandList->Begin(nullptr);
+
+		if (pDrawData != nullptr && pDrawData->CmdListsCount != 0)
+		{
+			Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
+			Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
+		}
 
 		if (pDrawData == nullptr || pDrawData->CmdListsCount == 0)
 		{
@@ -517,7 +524,9 @@ namespace LambdaEngine
 			globalVertexOffset	+= pCmdList->VtxBuffer.Size;
 		}
 
-		Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
+		if (pDrawData != nullptr && pDrawData->CmdListsCount != 0)
+			Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
+
 		pGraphicsCommandList->EndRenderPass();
 		pGraphicsCommandList->End();
 
