@@ -12,11 +12,18 @@ namespace LambdaEngine
 	*/
 	struct EventType
 	{
+	public:
 		using EventTypeID = uint64;
 
-		constexpr EventType(EventTypeID id, const char* pInName)
+		inline constexpr EventType(EventTypeID id, const char* pInName)
 			: ID(id)
 			, pName(pInName)
+		{
+		}
+
+		inline EventType(const EventType& other)
+			: ID(other.ID)
+			, pName(other.pName)
 		{
 		}
 
@@ -35,7 +42,19 @@ namespace LambdaEngine
 			return (ID == other.ID);
 		}
 
-		const EventTypeID ID;
+		FORCEINLINE EventType& operator=(const EventType& other)
+		{
+			if (this != &other)
+			{
+				ID = other.ID;
+				pName = other.pName;
+			}
+
+			return *this;
+		}
+
+	public:
+		EventTypeID ID;
 		const char* pName;
 	};
 
@@ -52,7 +71,7 @@ namespace LambdaEngine
 	*/
 	#define DECLATE_STATIC_EVENT_TYPE(Type) \
 		public: \
-			FORCEINLINE static constexpr EventType GetStaticType() \
+			FORCEINLINE static EventType GetStaticType() \
 			{ \
 				constexpr EventType type(HashString(#Type), #Type); \
 				return type; \

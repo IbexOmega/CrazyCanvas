@@ -11,6 +11,8 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include "ECS/ECSCore.h"
 #include "Engine/EngineConfig.h"
 
@@ -89,6 +91,8 @@ namespace LambdaEngine
 		{
 			return false;
 		}
+
+		EventQueue::Tick();
 
 		AudioSystem::Tick();
 
