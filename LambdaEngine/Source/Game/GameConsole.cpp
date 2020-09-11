@@ -12,7 +12,8 @@ namespace LambdaEngine
 		cmdHelp.Init("help", false);
 		cmdHelp.AddFlag("d", Arg::EType::EMPTY);
 		cmdHelp.AddDescription("Shows all commands descriptions.", { {"d", "Used to show debug commands also."} });
-		BindCommand(cmdHelp, [this](CallbackInput& input)->void {
+		BindCommand(cmdHelp, [this](CallbackInput& input)->void 
+		{
 			for (auto i : m_CommandMap)
 			{
 				ConsoleCommand& cCmd = i.second.first;
@@ -31,7 +32,8 @@ namespace LambdaEngine
 		cmdClear.Init("clear", false);
 		cmdClear.AddFlag("h", Arg::EType::EMPTY);
 		cmdClear.AddDescription("Clears the visible text in the console.", { {"h", "Clears the history."} });
-		BindCommand(cmdClear, [this](CallbackInput& input)->void {
+		BindCommand(cmdClear, [this](CallbackInput& input)->void 
+		{
 			m_Items.Clear();
 		});
 
@@ -42,7 +44,9 @@ namespace LambdaEngine
 		cmd.AddFlag("l", Arg::EType::INT);
 		cmd.AddFlag("i", Arg::EType::EMPTY);
 		cmd.AddDescription("Does blah and do bar.");
-		GameConsole::Get().BindCommand(cmd, [](GameConsole::CallbackInput& input)->void {
+
+		GameConsole::Get().BindCommand(cmd, [](GameConsole::CallbackInput& input)->void 
+		{
 			std::string s1 = input.Arguments.GetFront().Value.Str;
 			std::string s2 = input.Flags.find("i") == input.Flags.end() ? "no set" : "set";
 			std::string s3 = "no set";
@@ -50,7 +54,7 @@ namespace LambdaEngine
 			if (it != input.Flags.end())
 				s3 = "set with a value of " + std::to_string(it->second.Arg.Value.I);
 			LOG_INFO("Command Called with argument '%s' and flag i was %s and flag l was %s.", s1.c_str(), s2.c_str(), s3.c_str());
-			});
+		});
 
 		return true;
 	}
@@ -72,7 +76,9 @@ namespace LambdaEngine
 			s_Toggle ^= 1;
 		}
 		else if (Input::IsKeyUp(EKey::KEY_GRAVE_ACCENT))
+		{
 			s_Active = false;
+		}
 
 		// Do not draw if not active.
 		if (!s_Toggle)

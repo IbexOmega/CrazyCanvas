@@ -6,7 +6,7 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphEditor.h"
 
-#include "Application/API/EventHandler.h"
+#include "Application/API/Events/KeyEvents.h"
 
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/IClientHandler.h"
@@ -43,9 +43,9 @@ public:
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
-    virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
+	virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
-	virtual void OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat) override;
+	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 
 private:
 	LambdaEngine::ClientBase* m_pClient;

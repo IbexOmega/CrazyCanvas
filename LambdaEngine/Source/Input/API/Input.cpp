@@ -17,17 +17,23 @@ namespace LambdaEngine
 	{
 		if (IsEventOfType<KeyPressedEvent>(event))
 		{
-			const KeyPressedEvent& keyEvent = EventCast<KeyPressedEvent>(event);
-			s_KeyboardState.KeyStates[keyEvent.Key] = true;
+			if (s_InputEnabled)
+			{
+				const KeyPressedEvent& keyEvent = EventCast<KeyPressedEvent>(event);
+				s_KeyboardState.KeyStates[keyEvent.Key] = true;
 
-			return true;
+				return true;
+			}
 		}
 		else if (IsEventOfType<KeyReleasedEvent>(event))
 		{
-			const KeyReleasedEvent& keyEvent = EventCast<KeyReleasedEvent>(event);
-			s_KeyboardState.KeyStates[keyEvent.Key] = false;
-
-			return true;
+			if (s_InputEnabled)
+			{
+				const KeyReleasedEvent& keyEvent = EventCast<KeyReleasedEvent>(event);
+				s_KeyboardState.KeyStates[keyEvent.Key] = false;
+				
+				return true;
+			}
 		}
 		else if (IsEventOfType<MouseButtonClickedEvent>(event))
 		{
@@ -57,9 +63,9 @@ namespace LambdaEngine
 				const MouseScrolledEvent& mouseEvent = EventCast<MouseScrolledEvent>(event);
 				s_MouseState.ScrollX = mouseEvent.DeltaX;
 				s_MouseState.ScrollY = mouseEvent.DeltaY;
+				
+				return true;
 			}
-
-			return true;
 		}
 
 		return false;

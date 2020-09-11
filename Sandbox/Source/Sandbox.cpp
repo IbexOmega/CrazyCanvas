@@ -71,7 +71,7 @@ Sandbox::Sandbox()
 	m_ShowDemoWindow = false;
 	m_DebuggingWindow = false;
 
-	EventQueue::RegisterEventHandler(EventHandler(this, &Sandbox::OnKeyPressed));
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
 	ShaderReflection shaderReflection;
 	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
@@ -336,7 +336,7 @@ Sandbox::Sandbox()
 	ConsoleCommand cmd2;
 	cmd2.Init("imgui_demo", true);
 	cmd2.AddArg(Arg::EType::BOOL);
-	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'show_demo true'");
+	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'imgui_demo true'");
 	GameConsole::Get().BindCommand(cmd2, [&, this](GameConsole::CallbackInput& input)->void {
 		m_ShowDemoWindow = input.Arguments.GetFront().Value.B;
 		});
@@ -344,7 +344,7 @@ Sandbox::Sandbox()
 	ConsoleCommand cmd3;
 	cmd3.Init("show_debug_window", true);
 	cmd3.AddArg(Arg::EType::BOOL);
-	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'debugging true'");
+	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'show_debug_window true'");
 	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
 		m_DebuggingWindow = input.Arguments.GetFront().Value.B;
 		});
@@ -356,7 +356,7 @@ Sandbox::~Sandbox()
 {
 	using namespace LambdaEngine;
 
-	EventQueue::UnregisterEventHandler(EventHandler(this, &Sandbox::OnKeyPressed));
+	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
 	SAFEDELETE(m_pScene);
 	SAFEDELETE(m_pCamera);
