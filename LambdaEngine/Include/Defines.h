@@ -113,6 +113,7 @@
 #define MEGA_BYTE(megabytes) (megabytes) * 1024 * 1024
 
 #ifdef LAMBDA_VISUAL_STUDIO
-	#pragma warning(error : 4456) 
-	#pragma warning(error : 4239) 
+	#pragma warning(error : 4456) // variable hides a already existing variable
+	#pragma warning(error : 4239) // setting references to rvalues
+	#pragma warning(error : 4715) // not all paths return a value 
 #endif

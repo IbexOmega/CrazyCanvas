@@ -53,7 +53,6 @@ CrazyCanvas::CrazyCanvas()
 	using namespace LambdaEngine;
 
 	Input::Disable();
-	CommonApplication::Get()->AddEventHandler(this);
 
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
@@ -145,8 +144,6 @@ CrazyCanvas::CrazyCanvas()
 
 CrazyCanvas::~CrazyCanvas()
 {
-	LambdaEngine::CommonApplication::Get()->RemoveEventHandler(this);
-
 	SAFEDELETE(m_pScene);
 	SAFEDELETE(m_pCamera);
 }

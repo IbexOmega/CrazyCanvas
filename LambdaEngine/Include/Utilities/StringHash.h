@@ -3,9 +3,12 @@
 
 namespace LambdaEngine
 {
-	constexpr uint64 PRIME_MULTIPLE = 16777619ull;
-	constexpr uint32 INITIAL_HASH	= 2166136261u;
+	constexpr uint64 PRIME_MULTIPLE = 16777619ULL;
+	constexpr uint32 INITIAL_HASH	= 2166136261U;
 
+	/*
+	* Compile-time hash
+	*/
 	template <size_t INDEX>
 	class Hash
 	{
@@ -65,6 +68,9 @@ namespace LambdaEngine
 		}
 	};
 
+	/*
+	* ConstString
+	*/
 	template <class Type>
 	constexpr uint32 HashString(const Type& str)
 	{

@@ -568,8 +568,8 @@ namespace LambdaEngine
 
 		(*ppMappedTexture) = pResource;
 
-        ASSERT(pResource != nullptr);
-        
+		ASSERT(pResource != nullptr);
+		
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= pResource->GetDesc().DebugName + " Texture View";
 		textureViewDesc.pTexture		= pResource;
@@ -605,7 +605,7 @@ namespace LambdaEngine
 		s_Materials[GUID_NONE]				= nullptr;
 		s_Textures[GUID_NONE]				= nullptr;
 		s_TextureViews[GUID_NONE]			= nullptr;
-        s_Shaders[GUID_NONE]				= nullptr;
+		s_Shaders[GUID_NONE]				= nullptr;
 		s_SoundEffects[GUID_NONE]			= nullptr;
 
 		{

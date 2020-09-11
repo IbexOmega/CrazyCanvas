@@ -299,11 +299,11 @@ namespace LambdaEngine
 		// Create a surface for windows
 		{
 			VkWin32SurfaceCreateInfoKHR info = {};
-			info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-			info.pNext = nullptr;
-			info.flags = 0;
-			info.hwnd = reinterpret_cast<HWND>(m_Desc.pWindow->GetHandle());
-			info.hinstance = PlatformApplication::Get()->GetInstanceHandle();
+			info.sType		= VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+			info.pNext		= nullptr;
+			info.flags		= 0;
+			info.hwnd		= reinterpret_cast<HWND>(pDesc->pWindow->GetHandle());
+			info.hinstance	= PlatformApplication::Get().GetInstanceHandle();
 			if (vkCreateWin32SurfaceKHR(m_pDevice->Instance, &info, nullptr, &m_Surface) != VK_SUCCESS)
 			{
 				m_Surface = VK_NULL_HANDLE;

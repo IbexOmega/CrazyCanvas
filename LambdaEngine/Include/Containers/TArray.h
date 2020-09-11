@@ -921,8 +921,8 @@ namespace LambdaEngine
 		template<typename TInputIt>
 		FORCEINLINE SizeType InternalDistance(TInputIt begin, TInputIt end)
 		{
-			constexpr bool isPointer = std::is_pointer<TInputIt>();
-			constexpr bool isCustomIterator = std::is_same<TInputIt, Iterator>() || std::is_same<TInputIt, ConstIterator>();
+			constexpr bool isPointer		= std::is_pointer<TInputIt>();
+			constexpr bool isCustomIterator	= std::is_same<TInputIt, Iterator>() || std::is_same<TInputIt, ConstIterator>();
 
 			// Handle outside pointers
 			if constexpr (isPointer && isCustomIterator)

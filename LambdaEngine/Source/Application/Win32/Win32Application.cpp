@@ -3,7 +3,7 @@
 
 #include "Log/Log.h"
 
-#include "Application/API/EventHandler.h"
+#include "Application/API/ApplicationEventHandler.h"
 
 #include "Application/Win32/Win32Application.h"
 #include "Application/Win32/Win32Window.h"
@@ -204,22 +204,23 @@ namespace LambdaEngine
 			case WM_KEYDOWN:
 			case WM_SYSKEYDOWN:
 			{
-				const uint32	modifierMask	= Win32InputCodeTable::GetModifierMask();
-				const uint16	scancode		= HIWORD(lParam) & SCAN_CODE_MASK;
-				EKey			keyCode			= Win32InputCodeTable::GetKeyFromScanCode(scancode);
-				bool			isRepeat		= (lParam & REPEAT_KEY_MASK);
+				const ModifierKeyState modifierState = ModifierKeyState(Win32InputCodeTable::GetModifierMask());
+				const uint16 scancode = HIWORD(lParam) & SCAN_CODE_MASK;
+				EKey keyCode = Win32InputCodeTable::GetKeyFromScanCode(scancode);
+				bool isRepeat = (lParam & REPEAT_KEY_MASK);
 
-				m_EventHandler->OnKeyPressed(keyCode, modifierMask, isRepeat);
+				m_EventHandler->OnKeyPressed(keyCode, modifierState, isRepeat);
 				break;
 			}
 
 			case WM_KEYUP:
 			case WM_SYSKEYUP:
 			{
-				const uint16	scancode	= HIWORD(lParam) & SCAN_CODE_MASK;
-				EKey			keyCode		= Win32InputCodeTable::GetKeyFromScanCode(scancode);
+				const ModifierKeyState modifierState = ModifierKeyState(Win32InputCodeTable::GetModifierMask());
+				const uint16 scancode = HIWORD(lParam) & SCAN_CODE_MASK;
+				EKey keyCode = Win32InputCodeTable::GetKeyFromScanCode(scancode);
 
-				m_EventHandler->OnKeyReleased(keyCode);
+				m_EventHandler->OnKeyReleased(keyCode, modifierState);
 				break;
 			}
 
@@ -282,8 +283,8 @@ namespace LambdaEngine
 					button = EMouseButton::MOUSE_BUTTON_FORWARD;
 				}
 
-				const uint32 modifierMask = Win32InputCodeTable::GetModifierMask();
-				m_EventHandler->OnButtonPressed(button, modifierMask);
+				const ModifierKeyState modifierState = ModifierKeyState(Win32InputCodeTable::GetModifierMask());
+				m_EventHandler->OnButtonPressed(button, modifierState);
 				break;
 			}
 
@@ -314,7 +315,8 @@ namespace LambdaEngine
 					button = EMouseButton::MOUSE_BUTTON_FORWARD;
 				}
 
-				m_EventHandler->OnButtonReleased(button);
+				const ModifierKeyState modifierState = ModifierKeyState(Win32InputCodeTable::GetModifierMask());
+				m_EventHandler->OnButtonReleased(button, modifierState);
 				break;
 			}
 
@@ -500,6 +502,11 @@ namespace LambdaEngine
 		}
 	}
 
+	ModifierKeyState Win32Application::GetModiferKeyState() const
+	{
+		return ModifierKeyState();
+	}
+
 	void Win32Application::AddWindow(TSharedRef<Win32Window> window)
 	{
 		m_Windows.EmplaceBack(window);
@@ -534,7 +541,7 @@ namespace LambdaEngine
 		::WNDCLASS wc = { };
 		ZERO_MEMORY(&wc, sizeof(::WNDCLASS));
 
-		wc.hInstance		= Win32Application::Get()->GetInstanceHandle();
+		wc.hInstance		= Win32Application::Get().GetInstanceHandle();
 		wc.lpszClassName	= WINDOW_CLASS;
 		wc.hbrBackground	= (HBRUSH)::GetStockObject(BLACK_BRUSH);
 		wc.hCursor			= LoadCursor(NULL, IDC_ARROW);
@@ -635,21 +642,21 @@ namespace LambdaEngine
 		StoreMessage(0, WM_QUIT, 0, 0, 0, 0);
 	}
 
-	Win32Application* Win32Application::Get()
+	Win32Application& Win32Application::Get()
 	{
 		VALIDATE(s_pApplication != nullptr);
-		return s_pApplication;
+		return *s_pApplication;
 	}
 
 	LRESULT Win32Application::WindowProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
-		return Win32Application::Get()->ProcessMessage(hWnd, uMessage, wParam, lParam);
+		return Win32Application::Get().ProcessMessage(hWnd, uMessage, wParam, lParam);
 	}
 
 	LRESULT Win32Application::ProcessMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 	{
 		// Let other modules handle messages
-		bool	messageHandled	= false;
+		bool messageHandled = false;
 		::LRESULT result			= 0;
 		for (IWin32MessageHandler* pMessageHandler : m_MessageHandlers)
 		{

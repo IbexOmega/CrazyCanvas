@@ -3,42 +3,102 @@
 
 namespace LambdaEngine
 {
-    struct KeyboardState
+	/*
+	* KeyboardState
+	*/
+	struct KeyboardState
 	{
-    public:
-        bool IsKeyDown(EKey key) const
-        {
-            return KeyStates[key];
-        }
+	public:
+		FORCEINLINE bool IsKeyDown(EKey key) const
+		{
+			return KeyStates[key];
+		}
 
-        bool IsKeyUp(EKey key) const
-        {
-            return !KeyStates[key];
-        }
-        
-    public:
-        bool KeyStates[EKey::KEY_LAST];
+		FORCEINLINE bool IsKeyUp(EKey key) const
+		{
+			return !KeyStates[key];
+		}
+		
+	public:
+		bool KeyStates[EKey::KEY_LAST];
 	};
 
+	/*
+	* ModiferKeyState
+	*/
+	struct ModifierKeyState
+	{
+	public:
+		FORCEINLINE ModifierKeyState()
+			: ModiferMask(0)
+		{
+		}
+
+		FORCEINLINE explicit ModifierKeyState(uint32 modiferMask)
+			: ModiferMask(modiferMask)
+		{
+		}
+
+		FORCEINLINE bool IsShiftDown() const
+		{
+			return (ModiferMask & FModifierFlag::MODIFIER_FLAG_SHIFT);
+		}
+
+		FORCEINLINE bool IsAltDown() const
+		{
+			return (ModiferMask & FModifierFlag::MODIFIER_FLAG_ALT);
+		}
+
+		FORCEINLINE bool IsCtrlDown() const
+		{
+			return (ModiferMask & FModifierFlag::MODIFIER_FLAG_CTRL);
+		}
+
+		FORCEINLINE bool IsSuperDown() const
+		{
+			return (ModiferMask & FModifierFlag::MODIFIER_FLAG_SUPER);
+		}
+
+		FORCEINLINE bool IsCapsLockDown() const
+		{
+			return (ModiferMask & FModifierFlag::MODIFIER_FLAG_CAPS_LOCK);
+		}
+
+		FORCEINLINE bool IsNumLockDown() const
+		{
+			return (ModiferMask & FModifierFlag::MODIFIER_FLAG_NUM_LOCK);
+		}
+
+	public:
+		uint32 ModiferMask;
+	};
+
+	/*
+	* MouseState
+	*/
 	struct MouseState
 	{
-    public:
-        bool IsButtonPressed(EMouseButton button) const
-        {
-            return ButtonStates[button];
-        }
+	public:
+		FORCEINLINE bool IsButtonPressed(EMouseButton button) const
+		{
+			return ButtonStates[button];
+		}
 
-        bool IsButtonReleased(EMouseButton button) const
-        {
-            return !ButtonStates[button];
-        }
-        
-    public:
-        int32 x;
-        int32 y;
-        int32 ScrollX;
-        int32 ScrollY;
-        
-        bool ButtonStates[EMouseButton::MOUSE_BUTTON_COUNT];
+		FORCEINLINE bool IsButtonReleased(EMouseButton button) const
+		{
+			return !ButtonStates[button];
+		}
+		
+	public:
+		struct
+		{
+			int32 x;
+			int32 y;
+		} Position;
+
+		int32 ScrollX;
+		int32 ScrollY;
+		
+		bool ButtonStates[EMouseButton::MOUSE_BUTTON_COUNT];
 	};
 }
