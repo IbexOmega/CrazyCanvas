@@ -1105,7 +1105,7 @@ namespace LambdaEngine
 						textureDesc.Flags				= pResourceDesc->TextureParams.TextureFlags;
 						textureDesc.Width				= uint32(pResourceDesc->TextureParams.XDimVariable);
 						textureDesc.Height				= uint32(pResourceDesc->TextureParams.YDimVariable);
-						textureDesc.Depth				= 1;
+						textureDesc.Depth				= 1U;
 						textureDesc.ArrayCount			= arrayCount;
 						textureDesc.Miplevels			= pResourceDesc->TextureParams.MiplevelCount;
 						textureDesc.SampleCount			= pResourceDesc->TextureParams.SampleCount;
@@ -1117,8 +1117,8 @@ namespace LambdaEngine
 						textureViewDesc.Type			= textureViewType;
 						textureViewDesc.MiplevelCount	= pResourceDesc->TextureParams.MiplevelCount;
 						textureViewDesc.ArrayCount		= arrayCount;
-						textureViewDesc.Miplevel		= 0;
-						textureViewDesc.ArrayIndex		= 0;
+						textureViewDesc.Miplevel		= 0U;
+						textureViewDesc.ArrayIndex		= 0U;
 
 						samplerDesc.DebugName			= pResourceDesc->Name + " Sampler";
 						samplerDesc.MinFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
