@@ -231,6 +231,8 @@ namespace LambdaEngine
 			return false;
 		}
 
+		EventQueue::UnregisterAll();
+
 		return ThreadPool::Release();
 	}
 
