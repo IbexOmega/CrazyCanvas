@@ -84,47 +84,40 @@ namespace LambdaEngine
         return tArr;
     }
 
-    bool EngineConfig::SetBoolProperty(const String& propertyName, const bool& value)
+    void EngineConfig::SetBoolProperty(const String& propertyName, const bool& value)
     {
         s_ConfigDocument[propertyName.c_str()].SetBool(value);
-
-        return true;
     }
 
-    bool EngineConfig::SetFloatProperty(const String& propertyName, const float& value)
+    void EngineConfig::SetFloatProperty(const String& propertyName, const float& value)
     {
         s_ConfigDocument[propertyName.c_str()].SetFloat(value);
-
-        return true;
     }
 
-    bool EngineConfig::SetIntProperty(const String& propertyName, const int& value)
+    void EngineConfig::SetIntProperty(const String& propertyName, const int& value)
     {
         s_ConfigDocument[propertyName.c_str()].SetFloat(value);
-
-        return true;
     }
 
-    bool EngineConfig::SetStringProperty(const String& propertyName, const String& string)
+    void EngineConfig::SetStringProperty(const String& propertyName, const String& string)
     {
         s_ConfigDocument[propertyName.c_str()].SetString(string.c_str(), static_cast<SizeType>(strlen(string.c_str())), s_ConfigDocument.GetAllocator());
-
-        return true;
     }
 
-    bool EngineConfig::SetArrayProperty(const String& propertyName, const TArray<int>& arr)
+    void EngineConfig::SetArrayProperty(const String& propertyName, const TArray<int>& arr)
     {
         Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
-        s_ConfigDocument[propertyName.c_str()].SetArray().Clear();
         
+        auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
+
+        newArr.Reserve(arr.GetSize(), allocator);
+
         for (auto& itr : arr)
-            s_ConfigDocument[propertyName.c_str()].PushBack(Value().SetInt(itr), allocator);
-        
+            newArr.PushBack(Value().SetInt(itr), allocator);
+
         StringBuffer strBuf;
         PrettyWriter<StringBuffer> writer(strBuf);
         s_ConfigDocument.Accept(writer);
-
-        return true;
     }
 
 

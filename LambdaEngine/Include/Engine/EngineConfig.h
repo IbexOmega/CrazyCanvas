@@ -21,11 +21,11 @@ namespace LambdaEngine
         static String GetStringProperty(const String& propertyName);
         static TArray<int> GetArrayProperty(const String& propertyName);
 
-        static bool SetBoolProperty(const String& propertyName, const bool& value);
-        static bool SetFloatProperty(const String& propertyName, const float& value);
-        static bool SetIntProperty(const String& propertyName, const int& value);
-        static bool SetStringProperty(const String& propertyName, const String& string);
-        static bool SetArrayProperty(const String& propertyName, const TArray<int>& arr);
+        static void SetBoolProperty(const String& propertyName, const bool& value);
+        static void SetFloatProperty(const String& propertyName, const float& value);
+        static void SetIntProperty(const String& propertyName, const int& value);
+        static void SetStringProperty(const String& propertyName, const String& string);
+        static void SetArrayProperty(const String& propertyName, const TArray<int>& arr);
 
     private:
         static rapidjson::Document s_ConfigDocument;
