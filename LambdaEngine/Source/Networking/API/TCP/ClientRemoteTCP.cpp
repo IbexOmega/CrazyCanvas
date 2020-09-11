@@ -35,7 +35,10 @@ namespace LambdaEngine
 		while (!m_pSocket->IsClosed())
 		{
 			if (!m_Transceiver.ReceiveBegin(dummy))
-				continue;
+			{
+				Disconnect();
+				break;
+			}
 
 			DecodeReceivedPackets();
 		}

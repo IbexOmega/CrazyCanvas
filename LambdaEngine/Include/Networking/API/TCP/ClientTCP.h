@@ -27,7 +27,7 @@ namespace LambdaEngine
 		virtual void OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries) override;
 
 	private:
-		PacketTransceiverTCP m_Transciver;
+		PacketTransceiverTCP m_Transceiver;
 		PacketManagerTCP m_PacketManager;
 	};
 }

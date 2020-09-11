@@ -16,7 +16,7 @@ namespace LambdaEngine
 {
 	ClientTCP::ClientTCP(const ClientDesc& desc) :
 		ClientBase(desc),
-		m_Transciver(),
+		m_Transceiver(),
 		m_PacketManager(desc)
 	{
 		
@@ -39,7 +39,7 @@ namespace LambdaEngine
 
 	PacketTransceiverBase* ClientTCP::GetTransceiver()
 	{
-		return &m_Transciver;
+		return &m_Transceiver;
 	}
 
 	ISocket* ClientTCP::SetupSocket()
@@ -64,7 +64,7 @@ namespace LambdaEngine
 		IPEndPoint dummy;
 		while (!ShouldTerminate())
 		{
-			if (!m_Transciver.ReceiveBegin(dummy))
+			if (!m_Transceiver.ReceiveBegin(dummy))
 			{
 				Disconnect();
 				return;
