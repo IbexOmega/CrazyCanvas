@@ -1056,6 +1056,7 @@ namespace LambdaEngine
 					newResource.Texture.TextureType			= pResourceDesc->TextureParams.TextureType;
 
 					bool isCubeTexure = newResource.Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
+					constexpr uint32 CUBE_FACE_COUNT = 6;
 
 					uint32 actualSubResourceCount = pResourceDesc->TextureParams.IsOfArrayType ? 1 : newResource.SubResourceCount;
 					if (!isCubeTexure)
@@ -1068,7 +1069,7 @@ namespace LambdaEngine
 					{
 						newResource.Texture.Textures.Resize(actualSubResourceCount);
 						newResource.Texture.TextureViews.Resize(actualSubResourceCount);
-						newResource.Texture.CubeFaceTextureViews.Resize(actualSubResourceCount * 6);
+						newResource.Texture.CubeFaceTextureViews.Resize(actualSubResourceCount * CUBE_FACE_COUNT);
 						newResource.Texture.Samplers.Resize(actualSubResourceCount);
 					}
 
@@ -2115,6 +2116,7 @@ namespace LambdaEngine
 					textureBarrier.StateBefore			= CalculateResourceTextureState(pResource->Type, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
 					textureBarrier.StateAfter			= CalculateResourceTextureState(pResource->Type, pResourceSynchronizationDesc->NextBindingType, pResource->Texture.Format);
 					textureBarrier.TextureFlags			= pResource->Texture.Format == EFormat::FORMAT_D24_UNORM_S8_UINT ? FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL : 0;
+					textureBarrier.ArrayCount			= 1;
 
 					uint32 targetSynchronizationIndex = 0;
 
@@ -2149,6 +2151,8 @@ namespace LambdaEngine
 					else if (pResource->Texture.IsOfArrayType)
 					{
 						actualSubResourceCount = 1;
+
+						textureBarrier.ArrayCount = pResource->SubResourceCount;
 					}
 					else
 					{
@@ -2354,13 +2358,13 @@ namespace LambdaEngine
 
 		for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
 		{
-			Texture** ppTexture = &pResource->Texture.Textures[sr];
-			TextureView** ppTextureView = &pResource->Texture.TextureViews[sr];
-			Sampler** ppSampler = &pResource->Texture.Samplers[sr];
+			Texture** ppTexture =					&pResource->Texture.Textures[sr];
+			TextureView** ppTextureView =			&pResource->Texture.TextureViews[sr];
+			Sampler** ppSampler =					&pResource->Texture.Samplers[sr];
 
-			Texture* pTexture			= nullptr;
-			TextureView* pTextureView	= nullptr;
-			Sampler* pSampler			= nullptr;
+			Texture* pTexture						= nullptr;
+			TextureView* pTextureView				= nullptr;
+			Sampler* pSampler						= nullptr;
 
 			if (pResource->OwnershipType == EResourceOwnershipType::INTERNAL)
 			{
@@ -2374,6 +2378,31 @@ namespace LambdaEngine
 
 				textureViewDesc.pTexture = pTexture;
 				pTextureView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
+
+				// Create texture views for cubeTextures faces as render targets
+				constexpr uint32 CUBE_FACE_COUNT = 6;
+				if (pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
+				{
+					TextureView** ppCubeFaceTextureView = &pResource->Texture.CubeFaceTextureViews[sr * CUBE_FACE_COUNT];
+
+					TextureViewDesc textureViewDesc = {};
+					textureViewDesc.DebugName = pResource->Name + " Texture Cube Face View";
+					textureViewDesc.pTexture = pTexture;
+					textureViewDesc.Flags = textureViewDesc.Flags | FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+					textureViewDesc.Format = pResource->Texture.Format;
+					textureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+					textureViewDesc.Miplevel = textureViewDesc.Miplevel;
+					textureViewDesc.MiplevelCount = textureViewDesc.MiplevelCount;
+					textureViewDesc.ArrayCount = 1;
+					textureViewDesc.Miplevel = 0;
+
+					for (uint32 f = 0; f < CUBE_FACE_COUNT; f++)
+					{
+						textureViewDesc.ArrayIndex = f;
+						(*ppCubeFaceTextureView) = m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
+						(ppCubeFaceTextureView)++;
+					}
+				}
 
 				//Update Sampler
 				if (pDesc->InternalTextureUpdate.pSamplerDesc != nullptr)
@@ -2730,50 +2759,6 @@ namespace LambdaEngine
 
 		uint32 flags = FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_INLINE;
 
-		TextureView* ppTextureViews[MAX_COLOR_ATTACHMENTS];
-		TextureView* pDepthStencilTextureView = nullptr;
-		ClearColorDesc clearColorDescriptions[MAX_COLOR_ATTACHMENTS + 1];
-
-		uint32 textureViewCount = 0;
-		uint32 clearColorCount = 0;
-		for (Resource* pResource : pRenderStage->RenderTargetResources)
-		{
-			//Assume resource is Back Buffer Bound if there is more than 1 Texture View
-			ppTextureViews[textureViewCount++] = pResource->Texture.TextureViews.GetSize() > 1 ? pResource->Texture.TextureViews[m_BackBufferIndex] : pResource->Texture.TextureViews[0];
-
-			clearColorDescriptions[clearColorCount].Color[0] = 0.0f;
-			clearColorDescriptions[clearColorCount].Color[1] = 0.0f;
-			clearColorDescriptions[clearColorCount].Color[2] = 0.0f;
-			clearColorDescriptions[clearColorCount].Color[3] = 0.0f;
-
-			clearColorCount++;
-		}
-
-		if (pRenderStage->pDepthStencilAttachment != nullptr)
-		{
-			pDepthStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.TextureViews.GetSize() > 1 ? pRenderStage->pDepthStencilAttachment->Texture.TextureViews[m_BackBufferIndex] : pRenderStage->pDepthStencilAttachment->Texture.TextureViews[0];
-
-			clearColorDescriptions[clearColorCount].Depth		= 1.0f;
-			clearColorDescriptions[clearColorCount].Stencil		= 0;
-
-			clearColorCount++;
-		}
-
-		BeginRenderPassDesc beginRenderPassDesc = { };
-		beginRenderPassDesc.pRenderPass			= pRenderStage->pRenderPass;
-		beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
-		beginRenderPassDesc.RenderTargetCount	= textureViewCount;
-		beginRenderPassDesc.pDepthStencil		= pDepthStencilTextureView;
-		beginRenderPassDesc.Width				= pRenderStage->Dimensions.x;
-		beginRenderPassDesc.Height				= pRenderStage->Dimensions.y;
-		beginRenderPassDesc.Flags				= flags;
-		beginRenderPassDesc.pClearColors		= clearColorDescriptions;
-		beginRenderPassDesc.ClearColorCount		= clearColorCount;
-		beginRenderPassDesc.Offset.x			= 0;
-		beginRenderPassDesc.Offset.y			= 0;
-
-		pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
-
 		Viewport viewport = { };
 		viewport.MinDepth	= 0.0f;
 		viewport.MaxDepth	= 1.0f;
@@ -2813,6 +2798,142 @@ namespace LambdaEngine
 
 		for (uint32 r = 0; r < repeats; r++)
 		{
+			
+			TextureView* ppTextureViews[MAX_COLOR_ATTACHMENTS];
+			TextureView* pDepthStencilTextureView = nullptr;
+			ClearColorDesc clearColorDescriptions[MAX_COLOR_ATTACHMENTS + 1];
+
+			uint32 textureViewCount = 0;
+			uint32 clearColorCount = 0;
+			for (Resource* pResource : pRenderStage->RenderTargetResources)
+			{
+				bool isCubeTexture = pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
+				if (!isCubeTexture) 
+				{
+					//Assume resource is Back Buffer Bound if there is more than 1 Texture View
+					if (pResource->Texture.IsOfArrayType)
+					{
+						LOG_ERROR("Texture Array is not valid to bind as render target.");
+						return;
+					}
+
+					if (pResource->Texture.TextureViews.GetSize() > 1 )
+					{
+						if (!pResource->BackBufferBound)
+						{
+							LOG_ERROR("Resources with more than one texture view must be backbufferbound, if used as render target!");
+							return;
+						}
+
+						ppTextureViews[textureViewCount++] = pResource->Texture.TextureViews[m_BackBufferIndex];
+					}
+					else
+					{
+						ppTextureViews[textureViewCount++] = pResource->Texture.TextureViews[0];
+					}
+
+				}
+				else
+				{
+					constexpr uint32 CUBE_FACE_COUNT = 6;
+					if (pResource->Texture.IsOfArrayType)
+					{
+						LOG_ERROR("Cube Texture Array is not valid to bind as render target");
+						return;
+					}
+
+					if (pResource->Texture.CubeFaceTextureViews.GetSize() > CUBE_FACE_COUNT)
+					{
+						if (!pResource->BackBufferBound)
+						{
+							LOG_ERROR("Resources with more than one texture view must be backbufferbound, if used as render target!");
+							return;
+						}
+
+						ppTextureViews[textureViewCount++] = pResource->Texture.CubeFaceTextureViews[m_BackBufferIndex * CUBE_FACE_COUNT + r];
+					}
+					ppTextureViews[textureViewCount++] = pResource->Texture.CubeFaceTextureViews[r];
+				}
+
+				clearColorDescriptions[clearColorCount].Color[0] = 0.0f;
+				clearColorDescriptions[clearColorCount].Color[1] = 0.0f;
+				clearColorDescriptions[clearColorCount].Color[2] = 0.0f;
+				clearColorDescriptions[clearColorCount].Color[3] = 0.0f;
+
+				clearColorCount++;
+			}
+
+			if (pRenderStage->pDepthStencilAttachment != nullptr)
+			{
+				bool isCubeTexture = pRenderStage->pDepthStencilAttachment->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
+				if (!isCubeTexture)
+				{
+					//Assume resource is Back Buffer Bound if there is more than 1 Texture View
+					if (pRenderStage->pDepthStencilAttachment->Texture.IsOfArrayType)
+					{
+						LOG_ERROR("Texture Array is not valid to bind as render target.");
+						return;
+					}
+
+					if (pRenderStage->pDepthStencilAttachment->Texture.TextureViews.GetSize() > 1)
+					{
+						if (!pRenderStage->pDepthStencilAttachment->BackBufferBound)
+						{
+							LOG_ERROR("Resources with more than one texture view must be backbufferbound, if used as render target!");
+							return;
+						}
+
+						pDepthStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.TextureViews[m_BackBufferIndex];
+					}
+					else
+					{
+						pDepthStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.TextureViews[0];
+					}
+				}
+				else
+				{
+					constexpr uint32 CUBE_FACE_COUNT = 6;
+					if (pRenderStage->pDepthStencilAttachment->Texture.IsOfArrayType)
+					{
+						LOG_ERROR("Cube Texture Array is not valid to bind as render target");
+						return;
+					}
+
+					if (pRenderStage->pDepthStencilAttachment->Texture.CubeFaceTextureViews.GetSize() > CUBE_FACE_COUNT)
+					{
+						if (!pRenderStage->pDepthStencilAttachment->BackBufferBound)
+						{
+							LOG_ERROR("Resources with more than one texture view must be backbufferbound, if used as render target!");
+							return;
+						}
+
+						pDepthStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.CubeFaceTextureViews[m_BackBufferIndex * CUBE_FACE_COUNT + r];
+					}
+					pDepthStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.CubeFaceTextureViews[r];
+				}
+
+				clearColorDescriptions[clearColorCount].Depth		= 1.0f;
+				clearColorDescriptions[clearColorCount].Stencil		= 0;
+
+				clearColorCount++;
+			}
+
+			BeginRenderPassDesc beginRenderPassDesc = { };
+			beginRenderPassDesc.pRenderPass			= pRenderStage->pRenderPass;
+			beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
+			beginRenderPassDesc.RenderTargetCount	= textureViewCount;
+			beginRenderPassDesc.pDepthStencil		= pDepthStencilTextureView;
+			beginRenderPassDesc.Width				= pRenderStage->Dimensions.x;
+			beginRenderPassDesc.Height				= pRenderStage->Dimensions.y;
+			beginRenderPassDesc.Flags				= flags;
+			beginRenderPassDesc.pClearColors		= clearColorDescriptions;
+			beginRenderPassDesc.ClearColorCount		= clearColorCount;
+			beginRenderPassDesc.Offset.x			= 0;
+			beginRenderPassDesc.Offset.y			= 0;
+
+			pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
+
+
 			PushConstants* pDrawIterationPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
 
 			if (pDrawIterationPushConstants->DataSize == sizeof(uint32))
@@ -2858,9 +2979,10 @@ namespace LambdaEngine
 
 				pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
 			}
+
+			pGraphicsCommandList->EndRenderPass();
 		}
 
-		pGraphicsCommandList->EndRenderPass();
 		pGraphicsCommandList->End();
 
 		(*ppExecutionStage) = pGraphicsCommandList;
