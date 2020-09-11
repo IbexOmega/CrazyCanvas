@@ -14,8 +14,10 @@
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
 #include "Rendering/Core/Vulkan/CommandQueueVK.h"
 
-#include "Application/API/CommonApplication.h"
 #include "Rendering/RenderSystem.h"
+
+#include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
 
 namespace LambdaEngine
 {
@@ -99,7 +101,7 @@ namespace LambdaEngine
 		VALIDATE(pDesc->pWindow	!= nullptr);
 		VALIDATE(pDesc->pQueue	!= nullptr);
 
-		CommonApplication::Get()->AddEventHandler(this);
+		EventQueue::RegisterEventHandler(this, &SwapChainVK::OnWindowResized);
 
 		// Setup semaphore structure
 		VkSemaphoreCreateInfo semaphoreInfo = {};
@@ -147,9 +149,10 @@ namespace LambdaEngine
 		return InitInternal();
 	}
 
-	void SwapChainVK::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)
+	bool SwapChainVK::OnWindowResized(const WindowResizedEvent& event)
 	{
-		ResizeBuffers(width, height);
+		ResizeBuffers(event.Width, event.Height);
+		return true;
 	}
 
 	bool SwapChainVK::InitInternal()
@@ -302,7 +305,7 @@ namespace LambdaEngine
 			info.sType		= VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 			info.pNext		= nullptr;
 			info.flags		= 0;
-			info.hwnd		= reinterpret_cast<HWND>(pDesc->pWindow->GetHandle());
+			info.hwnd		= reinterpret_cast<HWND>(m_Desc.pWindow->GetHandle());
 			info.hinstance	= PlatformApplication::Get().GetInstanceHandle();
 			if (vkCreateWin32SurfaceKHR(m_pDevice->Instance, &info, nullptr, &m_Surface) != VK_SUCCESS)
 			{
