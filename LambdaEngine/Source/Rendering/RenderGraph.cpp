@@ -1042,6 +1042,7 @@ namespace LambdaEngine
 					newResource.OwnershipType				= newResource.IsBackBuffer ? EResourceOwnershipType::EXTERNAL : EResourceOwnershipType::INTERNAL;
 					newResource.Texture.IsOfArrayType		= pResourceDesc->TextureParams.IsOfArrayType;
 					newResource.Texture.Format				= pResourceDesc->TextureParams.TextureFormat;
+					newResource.Texture.TextureType			= pResourceDesc->TextureParams.TextureType;
 
 					bool isCubeTexure = newResource.Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
 
@@ -1172,6 +1173,7 @@ namespace LambdaEngine
 					newResource.OwnershipType			= EResourceOwnershipType::EXTERNAL;
 					newResource.Texture.IsOfArrayType	= pResourceDesc->TextureParams.IsOfArrayType;
 					newResource.Texture.Format			= pResourceDesc->TextureParams.TextureFormat;
+					newResource.Texture.TextureType		= pResourceDesc->TextureParams.TextureType;
 
 					uint32 actualSubResourceCount = pResourceDesc->TextureParams.IsOfArrayType ? 1 : newResource.SubResourceCount;
 					newResource.Texture.Textures.Resize(actualSubResourceCount);
@@ -1640,7 +1642,7 @@ namespace LambdaEngine
 						pDepthStencilResource = pResource;
 					}
 
-					//if (pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
+					if (pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
 					{
 						hasTextureCubeAsAttachment = true;
 					}
@@ -1741,9 +1743,10 @@ namespace LambdaEngine
 			}
 			else
 			{
-				pRenderStage->PipelineStageMask		= pipelineStageMask;
-				pRenderStage->FirstPipelineStage	= FindEarliestPipelineStage(pRenderStageDesc);
-				pRenderStage->LastPipelineStage		= lastPipelineStageFlags;
+				pRenderStage->PipelineStageMask				= pipelineStageMask;
+				pRenderStage->FirstPipelineStage			= FindEarliestPipelineStage(pRenderStageDesc);
+				pRenderStage->LastPipelineStage				= lastPipelineStageFlags;
+				pRenderStage->HasTextureCubeAsAttachment	= hasTextureCubeAsAttachment;
 
 				//Create Push Constants
 				{
@@ -1757,7 +1760,7 @@ namespace LambdaEngine
 						pPushConstants->pData		= DBG_NEW byte[TEXTURE_CUBE_PUSH_CONSTANTS_SIZE];
 						pPushConstants->DataSize	= 0;
 						pPushConstants->Offset		= MAX_PUSH_CONSTANT_SIZE - externalMaxSize;
-						pPushConstants->MaxDataSize = TEXTURE_CUBE_PUSH_CONSTANTS_SIZE;
+						pPushConstants->MaxDataSize = TEXTURE_CUBE_PUSH_CONSTANTS_SIZE;						
 					}
 
 					//External Push Constants
@@ -2008,22 +2011,6 @@ namespace LambdaEngine
 					pResource->ResourceBindings.PushBack(resourceBinding);
 				}
 			}
-
-			//Link Render Stage to Push Constant Resource
-			/*if (pRenderStageDesc->PushConstants.DataSize > 0)
-			{
-				auto it = m_ResourceMap.find(pRenderStageDesc->PushConstants.DebugName);
-
-				if (it != m_ResourceMap.end())
-				{
-					pRenderStage->pPushConstantsResource = &it->second;
-				}
-				else
-				{
-					LOG_ERROR("[RenderGraph]: Push Constants resource found in Render Stage but not in Resource Map \"%s\"", pRenderStageDesc->PushConstants.DebugName);
-					return false;
-				}
-			}*/
 		}
 
 		return true;
@@ -2265,6 +2252,10 @@ namespace LambdaEngine
 
 	void RenderGraph::UpdateRelativeParameters()
 	{
+		RenderSystem::GetGraphicsQueue()->Flush();
+		RenderSystem::GetComputeQueue()->Flush();
+		RenderSystem::GetCopyQueue()->Flush();
+
 		for (uint32 renderStageIndex : m_WindowRelativeRenderStages)
 		{
 			RenderStage* pRenderStage = &m_pRenderStages[renderStageIndex];
@@ -2779,8 +2770,18 @@ namespace LambdaEngine
 
 		pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
 
-		//if (pRenderStage->ExternalPushConstants.DataSize > 0)
-			//pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->);
+		if (pRenderStage->ExternalPushConstants.DataSize > 0)
+			pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pRenderStage->ExternalPushConstants.pData, pRenderStage->ExternalPushConstants.DataSize, pRenderStage->ExternalPushConstants.Offset);
+
+		for (uint32 ipc = 0; ipc < NUM_INTERNAL_PUSH_CONSTANTS_TYPES; ipc++)
+		{
+			PushConstants* pPushConstants = &pRenderStage->pInternalPushConstants[ipc];
+
+			if (pPushConstants->DataSize > 0)
+			{
+				pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pPushConstants->pData, pPushConstants->DataSize, pPushConstants->Offset);
+			}
+		}
 
 		uint32 textureDescriptorSetBindingIndex = 0;
 		if (pRenderStage->ppBufferDescriptorSets != nullptr)

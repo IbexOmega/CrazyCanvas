@@ -11,7 +11,11 @@
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/TextureVK.h"
+#include "Rendering/Core/Vulkan/TextureViewVK.h"
 #include "Rendering/Core/Vulkan/CommandQueueVK.h"
+
+#include "Application/API/CommonApplication.h"
+#include "Rendering/RenderSystem.h"
 
 namespace LambdaEngine
 {
@@ -23,7 +27,29 @@ namespace LambdaEngine
 
 	SwapChainVK::~SwapChainVK()
 	{
-		ReleaseResources();
+		ReleaseInternal();
+		ReleaseSurface();
+
+		const uint32 bufferCount = uint32(m_Buffers.GetSize());
+		for (uint32 i = 0; i < bufferCount; i++)
+		{
+#ifdef LAMBDA_DEVELOPMENT
+			uint64 bufferViewRefCount	= m_BufferViews[i]->Release();
+			uint64 bufferRefCount		= m_Buffers[i]->Release();
+			if (bufferRefCount > 0 || bufferViewRefCount > 0)
+			{
+				LOG_ERROR("[SwapChainVK]: All external references to all buffers must be released before calling Release or ResizeBuffers");
+				DEBUGBREAK();
+			}
+#else
+			m_Buffers[i]->Release();
+			m_BufferViews[i]->Release();
+#endif
+			m_Buffers[i]		= nullptr;
+			m_BufferViews[i]	= nullptr;
+		}
+		m_Buffers.Clear();
+		m_BufferViews.Clear();
 
 		VALIDATE(m_Desc.pQueue != nullptr);
 		reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue)->FlushBarriers();
@@ -45,7 +71,20 @@ namespace LambdaEngine
 				m_RenderSemaphores[i] = VK_NULL_HANDLE;
 			}
 		}
-		
+	}
+
+	void SwapChainVK::ReleaseInternal()
+	{
+		// Destroy SwapChain
+		if (m_SwapChain != VK_NULL_HANDLE)
+		{
+			vkDestroySwapchainKHR(m_pDevice->Device, m_SwapChain, nullptr);
+			m_SwapChain = VK_NULL_HANDLE;
+		}
+	}
+
+	void SwapChainVK::ReleaseSurface()
+	{
 		// Destroy surface
 		if (m_Surface != VK_NULL_HANDLE)
 		{
@@ -54,87 +93,13 @@ namespace LambdaEngine
 		}
 	}
 
-	void SwapChainVK::ReleaseResources()
-	{
-		if (m_SwapChain != VK_NULL_HANDLE)
-		{
-			vkDestroySwapchainKHR(m_pDevice->Device, m_SwapChain, nullptr);
-			m_SwapChain = VK_NULL_HANDLE;
-		}
-
-		const uint32 bufferCount = uint32(m_Buffers.GetSize());
-		for (uint32 i = 0; i < bufferCount; i++)
-		{
-#ifdef LAMBDA_DEVELOPMENT
-			uint64 refCount = m_Buffers[i]->Release();
-			if (refCount > 0)
-			{
-				LOG_ERROR("[SwapChainVK]: All external references to all buffers must be released before calling Release or ResizeBuffers");
-				DEBUGBREAK();
-			}
-#else
-			m_Buffers[i]->Release();
-#endif
-			m_Buffers[i] = nullptr;
-		}
-		m_Buffers.Clear();
-	}
-
 	bool SwapChainVK::Init(const SwapChainDesc* pDesc)
 	{
+		VALIDATE(pDesc			!= nullptr);
 		VALIDATE(pDesc->pWindow	!= nullptr);
 		VALIDATE(pDesc->pQueue	!= nullptr);
-		VALIDATE(pDesc			!= nullptr);
 
-		// Create platform specific surface
-#if defined(LAMBDA_PLATFORM_MACOS)
-		// Create surface for macOS
-		{
-			VkMacOSSurfaceCreateInfoMVK info = {};
-			info.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
-			info.pNext = nullptr;
-			info.flags = 0;
-			info.pView = pDesc->Window->GetView();
-			if (vkCreateMacOSSurfaceMVK(m_pDevice->Instance, &info, nullptr, &m_Surface))
-			{
-				m_Surface = VK_NULL_HANDLE;
-			}
-		}
-#elif defined(LAMBDA_PLATFORM_WINDOWS)
-		// Create a surface for windows
-		{
-			VkWin32SurfaceCreateInfoKHR info = {};
-			info.sType		= VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-			info.pNext		= nullptr;
-			info.flags		= 0;
-			info.hwnd		= reinterpret_cast<HWND>(pDesc->pWindow->GetHandle());
-			info.hinstance	= PlatformApplication::Get()->GetInstanceHandle();
-			if (vkCreateWin32SurfaceKHR(m_pDevice->Instance, &info, nullptr, &m_Surface) != VK_SUCCESS)
-			{
-				m_Surface = VK_NULL_HANDLE;
-			}
-		}
-#endif
-
-		if (m_Surface == VK_NULL_HANDLE)
-		{
-			LOG_ERROR("[SwapChainVK]: Failed to create surface for SwapChain");
-			return false;
-		}
-		else
-		{
-			D_LOG_MESSAGE("[SwapChainVK]: Created Surface");
-		}
-		
-		// Check for presentationsupport
-		VkBool32    presentSupport      = false;
-		uint32      queueFamilyIndex    = m_pDevice->GetQueueFamilyIndexFromQueueType(pDesc->pQueue->GetType());
-		vkGetPhysicalDeviceSurfaceSupportKHR(m_pDevice->PhysicalDevice, queueFamilyIndex, m_Surface, &presentSupport);
-		if (!presentSupport)
-		{
-			LOG_ERROR("[SwapChainVK]: Queue does not support presentation");
-			return false;
-		}
+		CommonApplication::Get()->AddEventHandler(this);
 
 		// Setup semaphore structure
 		VkSemaphoreCreateInfo semaphoreInfo = {};
@@ -170,110 +135,31 @@ namespace LambdaEngine
 			D_LOG_MESSAGE("[SwapChainVK]: Created Semaphore %p", m_RenderSemaphores[i]);
 		}
 
-		// Get supported surface formats
-		uint32 formatCount = 0;
-		VkResult result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, nullptr);
-		if (result != VK_SUCCESS)
-		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface capabilities");
-			return false;
-		}
-
-		TArray<VkSurfaceFormatKHR> formats(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, formats.GetData());
-
-		// Find the swapchain format we want
-		VkFormat lookingFor = ConvertFormat(pDesc->Format);
-		m_VkFormat = { VK_FORMAT_UNDEFINED, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
-		for (const VkSurfaceFormatKHR& availableFormat : formats)
-		{
-			if (availableFormat.format == lookingFor && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-			{
-				m_VkFormat = availableFormat;
-				break;
-			}
-		}
-
-		if (m_VkFormat.format != VK_FORMAT_UNDEFINED)
-		{
-			D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain format '%s'", VkFormatToString(m_VkFormat.format));
-		}
-		else
-		{
-			LOG_ERROR("Vulkan: Format %s is not supported on. Following formats is supported for Creating a SwapChain", VkFormatToString(lookingFor));
-			for (const VkSurfaceFormatKHR& availableFormat : formats)
-			{
-				LOG_ERROR("    %s", VkFormatToString(availableFormat.format));
-			}
-
-			return false;
-		}
-
-		// Get presentation modes
-		uint32 presentModeCount = 0;
-		result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_pDevice->PhysicalDevice, m_Surface, &presentModeCount, nullptr);
-		if (result != VK_SUCCESS)
-		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface presentation modes");
-			return false;
-		}
-
-		TArray<VkPresentModeKHR> presentModes(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(m_pDevice->PhysicalDevice, m_Surface, &presentModeCount, presentModes.GetData());
-
-		m_PresentationMode = VK_PRESENT_MODE_FIFO_KHR;
-		if (!pDesc->VerticalSync)
-		{
-			// Search for the mailbox mode
-			for (const VkPresentModeKHR& availablePresentMode : presentModes)
-			{
-				if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-				{
-					m_PresentationMode = availablePresentMode;
-					break;
-				}
-			}
-
-			// If mailbox is not available we choose immediete
-			if (m_PresentationMode == VK_PRESENT_MODE_FIFO_KHR)
-			{
-				for (const VkPresentModeKHR& availablePresentMode : presentModes)
-				{
-					if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
-					{
-						m_PresentationMode = availablePresentMode;
-						break;
-					}
-				}
-			}
-		}
-
-		D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain PresentationMode '%s'", VkPresentatModeToString(m_PresentationMode));
-
-		VkSurfaceCapabilitiesKHR capabilities = { };
-		result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_pDevice->PhysicalDevice, m_Surface, &capabilities);
-		if (result != VK_SUCCESS)
-		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface capabilities");
-			return false;
-		}
-
-		if (pDesc->BufferCount < capabilities.minImageCount || pDesc->BufferCount > capabilities.maxImageCount)
-		{
-			LOG_ERROR("[SwapChainVK]: Number of buffers(=%u) is not supported. MinBuffers=%u MaxBuffers=%u", pDesc->BufferCount, capabilities.minImageCount, capabilities.maxImageCount);
-			return false;
-		}
-
-		D_LOG_MESSAGE("[SwapChainVK]: Number of buffers in SwapChain '%u'", pDesc->BufferCount);
 		m_Desc = *pDesc;
 		m_Desc.pWindow->AddRef();
 		m_Desc.pQueue->AddRef();
 
-		return InitSwapChain(pDesc->Width, pDesc->Height);
+		if (!InitSurface())
+		{
+			return false;
+		}
+
+		return InitInternal();
 	}
 
-	bool SwapChainVK::InitSwapChain(uint32 width, uint32 height)
+	void SwapChainVK::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)
 	{
+		ResizeBuffers(width, height);
+	}
+
+	bool SwapChainVK::InitInternal()
+	{
+		VkExtent2D newSize = GetSizeFromSurface(m_Desc.Width, m_Desc.Height);
+		m_Desc.Width = newSize.width;
+		m_Desc.Height = newSize.height;
+
+		D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain size w: %u h: %u", newSize.width, newSize.height);
+
 		VkSurfaceCapabilitiesKHR capabilities = { };
 		VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_pDevice->PhysicalDevice, m_Surface, &capabilities);
 		if (result != VK_SUCCESS)
@@ -282,45 +168,33 @@ namespace LambdaEngine
 			return false;
 		}
 
-		// Choose swapchain extent (Size)
-		VkExtent2D newExtent = {};
-		if (capabilities.currentExtent.width    != UINT32_MAX ||
-			capabilities.currentExtent.height   != UINT32_MAX ||
-			width == 0 || height == 0)
+		if (m_Desc.BufferCount < capabilities.minImageCount || m_Desc.BufferCount > capabilities.maxImageCount)
 		{
-			newExtent = capabilities.currentExtent;
+			LOG_ERROR("[SwapChainVK]: Number of buffers(=%u) is not supported. MinBuffers=%u MaxBuffers=%u", m_Desc.BufferCount, capabilities.minImageCount, capabilities.maxImageCount);
+			return false;
 		}
-		else
-		{
-			newExtent.width     = std::max(capabilities.minImageExtent.width,   std::min(capabilities.maxImageExtent.width,     width));
-			newExtent.height    = std::max(capabilities.minImageExtent.height,  std::min(capabilities.maxImageExtent.height,    height));
-		}
-		newExtent.width     = std::max(newExtent.width, 1u);
-		newExtent.height    = std::max(newExtent.height, 1u);
-		m_Desc.Width    = newExtent.width;
-		m_Desc.Height   = newExtent.height;
 
-		D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain size w: %u h: %u", newExtent.width, newExtent.height);
+		D_LOG_MESSAGE("[SwapChainVK]: Number of buffers in SwapChain '%u'", m_Desc.BufferCount);
 
 		// Create swapchain
-		VkSwapchainCreateInfoKHR info = {};
-		info.sType                  = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		info.pNext                  = nullptr;
-		info.surface                = m_Surface;
-		info.minImageCount          = m_Desc.BufferCount;
-		info.imageFormat            = m_VkFormat.format;
-		info.imageColorSpace        = m_VkFormat.colorSpace;
-		info.imageExtent            = newExtent;
-		info.imageArrayLayers       = 1;
-		info.imageSharingMode       = VK_SHARING_MODE_EXCLUSIVE;
-		info.queueFamilyIndexCount  = 0;
-		info.pQueueFamilyIndices    = nullptr;
-		info.imageUsage             = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
-		info.preTransform           = capabilities.currentTransform;
-		info.compositeAlpha         = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		info.presentMode            = m_PresentationMode;
-		info.clipped                = VK_TRUE;
-		info.oldSwapchain           = VK_NULL_HANDLE;
+		VkSwapchainCreateInfoKHR info = { };
+		info.sType					= VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+		info.pNext					= nullptr;
+		info.surface				= m_Surface;
+		info.minImageCount			= m_Desc.BufferCount;
+		info.imageFormat			= m_VkFormat.format;
+		info.imageColorSpace		= m_VkFormat.colorSpace;
+		info.imageExtent			= newSize;
+		info.imageArrayLayers		= 1;
+		info.imageSharingMode		= VK_SHARING_MODE_EXCLUSIVE;
+		info.queueFamilyIndexCount	= 0;
+		info.pQueueFamilyIndices	= nullptr;
+		info.imageUsage				= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+		info.preTransform			= capabilities.currentTransform;
+		info.compositeAlpha			= VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		info.presentMode			= m_PresentationMode;
+		info.clipped				= VK_TRUE;
+		info.oldSwapchain			= VK_NULL_HANDLE;
 
 		result = vkCreateSwapchainKHR(m_pDevice->Device, &info, nullptr, &m_SwapChain);
 		if (result != VK_SUCCESS)
@@ -348,25 +222,48 @@ namespace LambdaEngine
 			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to retrive SwapChain-Images");
 			return false;
 		}
-	
+
+		m_Buffers.Resize(imageCount);
+		m_BufferViews.Resize(imageCount);
 		for (uint32 i = 0; i < imageCount; i++)
 		{
-			TextureDesc desc = { };
-			desc.DebugName		= m_Desc.DebugName + std::to_string(i);
-			desc.Type			= ETextureType::TEXTURE_TYPE_2D;
-			desc.Flags			= TEXTURE_FLAG_RENDER_TARGET;
-			desc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-			desc.Format			= m_Desc.Format;
-			desc.Width			= m_Desc.Width;
-			desc.Height			= m_Desc.Height;
-			desc.Depth			= 1;
-			desc.ArrayCount		= 1;
-			desc.Miplevels		= 1;
-			desc.SampleCount	= 1;
+			TextureDesc textureDesc = { };
+			textureDesc.DebugName		= m_Desc.DebugName + " Texture " + std::to_string(i);
+			textureDesc.Type			= ETextureType::TEXTURE_TYPE_2D;
+			textureDesc.Flags			= TEXTURE_FLAG_RENDER_TARGET;
+			textureDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+			textureDesc.Format			= m_Desc.Format;
+			textureDesc.Width			= m_Desc.Width;
+			textureDesc.Height			= m_Desc.Height;
+			textureDesc.Depth			= 1;
+			textureDesc.ArrayCount		= 1;
+			textureDesc.Miplevels		= 1;
+			textureDesc.SampleCount		= 1;
 
-			TextureVK* pTexture = DBG_NEW TextureVK(m_pDevice);
-			pTexture->InitWithImage(textures[i], &desc);
-			m_Buffers.EmplaceBack(pTexture);
+			if (!m_Buffers[i])
+			{
+				m_Buffers[i] = DBG_NEW TextureVK(m_pDevice);
+			}
+
+			m_Buffers[i]->InitWithImage(textures[i], &textureDesc);
+
+			TextureViewDesc textureViewDesc = {};
+			textureViewDesc.DebugName		= m_Desc.DebugName + " Texture View " + std::to_string(i);
+			textureViewDesc.pTexture		= m_Buffers[i];
+			textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+			textureViewDesc.Format			= m_Desc.Format;
+			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+			textureViewDesc.MiplevelCount	= 1;
+			textureViewDesc.ArrayCount		= 1;
+			textureViewDesc.Miplevel		= 0;
+			textureViewDesc.ArrayIndex		= 0;
+			
+			if (!m_BufferViews[i])
+			{
+				m_BufferViews[i] = DBG_NEW TextureViewVK(m_pDevice);
+			}
+
+			m_BufferViews[i]->Init(&textureViewDesc);
 		}
 
 		result = AquireNextImage();
@@ -378,6 +275,176 @@ namespace LambdaEngine
 		{
 			return true;
 		}
+	}
+
+	bool SwapChainVK::InitSurface()
+	{
+		ReleaseSurface();
+
+		// Create platform specific surface
+#if defined(LAMBDA_PLATFORM_MACOS)
+		// Create surface for macOS
+		{
+			VkMacOSSurfaceCreateInfoMVK info = {};
+			info.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
+			info.pNext = nullptr;
+			info.flags = 0;
+			info.pView = m_Desc.Window->GetView();
+			if (vkCreateMacOSSurfaceMVK(m_pDevice->Instance, &info, nullptr, &m_Surface))
+			{
+				m_Surface = VK_NULL_HANDLE;
+			}
+		}
+#elif defined(LAMBDA_PLATFORM_WINDOWS)
+		// Create a surface for windows
+		{
+			VkWin32SurfaceCreateInfoKHR info = {};
+			info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+			info.pNext = nullptr;
+			info.flags = 0;
+			info.hwnd = reinterpret_cast<HWND>(m_Desc.pWindow->GetHandle());
+			info.hinstance = PlatformApplication::Get()->GetInstanceHandle();
+			if (vkCreateWin32SurfaceKHR(m_pDevice->Instance, &info, nullptr, &m_Surface) != VK_SUCCESS)
+			{
+				m_Surface = VK_NULL_HANDLE;
+			}
+		}
+#endif
+
+		if (m_Surface == VK_NULL_HANDLE)
+		{
+			LOG_ERROR("[SwapChainVK]: Failed to create surface for SwapChain");
+			return false;
+		}
+		else
+		{
+			D_LOG_MESSAGE("[SwapChainVK]: Created Surface");
+		}
+
+		// Check for presentationsupport
+		VkBool32 presentSupport = false;
+		uint32 queueFamilyIndex = m_pDevice->GetQueueFamilyIndexFromQueueType(m_Desc.pQueue->GetType());
+		vkGetPhysicalDeviceSurfaceSupportKHR(m_pDevice->PhysicalDevice, queueFamilyIndex, m_Surface, &presentSupport);
+		if (!presentSupport)
+		{
+			LOG_ERROR("[SwapChainVK]: Queue does not support presentation");
+			return false;
+		}
+
+		// Get supported surface formats
+		uint32 formatCount = 0;
+		VkResult result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, nullptr);
+		if (result != VK_SUCCESS)
+		{
+			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface capabilities");
+			return false;
+		}
+
+		TArray<VkSurfaceFormatKHR> formats(formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, formats.GetData());
+
+		// Find the swapchain format we want
+		VkFormat lookingFor = ConvertFormat(m_Desc.Format);
+		m_VkFormat = { VK_FORMAT_UNDEFINED, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+		for (const VkSurfaceFormatKHR& availableFormat : formats)
+		{
+			if (availableFormat.format == lookingFor && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+			{
+				m_VkFormat = availableFormat;
+				break;
+			}
+		}
+
+		if (m_VkFormat.format != VK_FORMAT_UNDEFINED)
+		{
+			D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain format '%s'", VkFormatToString(m_VkFormat.format));
+		}
+		else
+		{
+			LOG_ERROR("Vulkan: Format %s is not supported on. The following formats are supported for Creating a SwapChain", VkFormatToString(lookingFor));
+			for (const VkSurfaceFormatKHR& availableFormat : formats)
+			{
+				LOG_ERROR("    %s", VkFormatToString(availableFormat.format));
+			}
+
+			return false;
+		}
+
+		// Get presentation modes
+		uint32 presentModeCount = 0;
+		result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_pDevice->PhysicalDevice, m_Surface, &presentModeCount, nullptr);
+		if (result != VK_SUCCESS)
+		{
+			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface presentation modes");
+			return false;
+		}
+
+		TArray<VkPresentModeKHR> presentModes(presentModeCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(m_pDevice->PhysicalDevice, m_Surface, &presentModeCount, presentModes.GetData());
+
+		m_PresentationMode = VK_PRESENT_MODE_FIFO_KHR;
+		if (!m_Desc.VerticalSync)
+		{
+			// Search for the mailbox mode
+			for (const VkPresentModeKHR& availablePresentMode : presentModes)
+			{
+				if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+				{
+					m_PresentationMode = availablePresentMode;
+					break;
+				}
+			}
+
+			// If mailbox is not available we choose immediete
+			if (m_PresentationMode == VK_PRESENT_MODE_FIFO_KHR)
+			{
+				for (const VkPresentModeKHR& availablePresentMode : presentModes)
+				{
+					if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
+					{
+						m_PresentationMode = availablePresentMode;
+						break;
+					}
+				}
+			}
+		}
+
+		D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain PresentationMode '%s'", VkPresentatModeToString(m_PresentationMode));
+
+		return true;
+	}
+
+	VkExtent2D SwapChainVK::GetSizeFromSurface(uint32 width, uint32 height)
+	{
+		VkExtent2D extent = { 0, 0 };
+
+		VkSurfaceCapabilitiesKHR capabilities = { };
+		VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_pDevice->PhysicalDevice, m_Surface, &capabilities);
+		if (result != VK_SUCCESS)
+		{
+			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface capabilities");
+			return extent;
+		}
+
+		// Choose swapchain extent (Size)
+		VkExtent2D newExtent = {};
+		if (capabilities.currentExtent.width != UINT32_MAX ||
+			capabilities.currentExtent.height != UINT32_MAX ||
+			width == 0 || height == 0)
+		{
+			newExtent = capabilities.currentExtent;
+		}
+		else
+		{
+			newExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, width));
+			newExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, height));
+		}
+		newExtent.width = std::max(newExtent.width, 1u);
+		newExtent.height = std::max(newExtent.height, 1u);
+		extent.width = newExtent.width;
+		extent.height = newExtent.height;
+
+		return extent;
 	}
 
 	VkResult SwapChainVK::AquireNextImage()
@@ -402,20 +469,25 @@ namespace LambdaEngine
 		
 		// Perform empty submit on queue for signaling the semaphore
 		VkSubmitInfo submitInfo = { };
-		submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.pNext                = nullptr;
-		submitInfo.commandBufferCount   = 0;
-		submitInfo.pCommandBuffers      = nullptr;
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores    = waitSemaphores;
-		submitInfo.waitSemaphoreCount   = 0;
-		submitInfo.pWaitSemaphores      = nullptr;
-		submitInfo.pWaitDstStageMask    = nullptr;
+		submitInfo.sType				= VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pNext				= nullptr;
+		submitInfo.commandBufferCount	= 0;
+		submitInfo.pCommandBuffers		= nullptr;
+		submitInfo.signalSemaphoreCount	= 1;
+		submitInfo.pSignalSemaphores	= waitSemaphores;
+		submitInfo.waitSemaphoreCount	= 0;
+		submitInfo.pWaitSemaphores		= nullptr;
+		submitInfo.pWaitDstStageMask	= nullptr;
 
 		VkResult result = vkQueueSubmit(reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue)->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE);
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Submit failed");
+			return false;
+		}
+
+		if (!m_Desc.pWindow->IsValid())
+		{
 			return false;
 		}
 
@@ -452,8 +524,21 @@ namespace LambdaEngine
 			return false;
 		}
 
-		ReleaseResources();
-		return InitSwapChain(width, height);
+		VkExtent2D newExtent = GetSizeFromSurface(width, height);
+		if (newExtent.width == m_Desc.Width && newExtent.height == m_Desc.Height)
+		{
+			return false;
+		}
+
+		m_Desc.Width	= width;
+		m_Desc.Height	= height;
+
+		RenderSystem::GetGraphicsQueue()->Flush();
+		RenderSystem::GetComputeQueue()->Flush();
+		RenderSystem::GetCopyQueue()->Flush();
+
+		ReleaseInternal();
+		return InitInternal();
 	}
 
 	Texture* SwapChainVK::GetBuffer(uint32 bufferIndex)
@@ -472,6 +557,24 @@ namespace LambdaEngine
 		TextureVK* pBuffer = m_Buffers[bufferIndex];
 		pBuffer->AddRef();
 		return pBuffer;
+	}
+
+	TextureView* SwapChainVK::GetBufferView(uint32 bufferIndex)
+	{
+		VALIDATE(bufferIndex < uint32(m_BufferViews.GetSize()));
+
+		TextureViewVK* pBufferView = m_BufferViews[bufferIndex];
+		pBufferView->AddRef();
+		return pBufferView;
+	}
+
+	const TextureView* SwapChainVK::GetBufferView(uint32 bufferIndex) const
+	{
+		VALIDATE(bufferIndex < uint32(m_BufferViews.GetSize()));
+
+		TextureViewVK* pBufferView = m_BufferViews[bufferIndex];
+		pBufferView->AddRef();
+		return pBufferView;
 	}
 
 	void SwapChainVK::SetName(const String& debugName)

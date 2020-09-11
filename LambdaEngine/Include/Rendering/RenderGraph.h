@@ -205,6 +205,9 @@ namespace LambdaEngine
 			String					Name							= "";
 			RenderStageParameters	Parameters						= {};
 
+			//Special Draw Params
+			bool					HasTextureCubeAsAttachment		= false;
+
 			glm::uvec3				Dimensions						= glm::uvec3(0);
 
 			bool					UsesCustomRenderer				= false;
