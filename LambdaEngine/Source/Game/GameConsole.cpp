@@ -8,30 +8,51 @@ namespace LambdaEngine
 {
 	bool GameConsole::Init()
 	{
-		ConsoleCommand cmdHelp;
-		cmdHelp.Init("help", false);
-		cmdHelp.AddFlag("d", Arg::EType::EMPTY);
-		cmdHelp.AddDescription("Shows all commands descriptions.", { {"d", "Used to show debug commands also."} });
-		BindCommand(cmdHelp, [this](CallbackInput& input)->void {
-			for (auto i : m_CommandMap)
-			{
-				ConsoleCommand& cCmd = i.second.first;
-				if (!cCmd.IsDebug() || (input.Flags.find("d") != input.Flags.end()))
+		#ifdef LAMBDA_DEBUG
+			ConsoleCommand cmdHelp;
+			cmdHelp.Init("help", false);
+			cmdHelp.AddFlag("d", Arg::EType::EMPTY);
+			cmdHelp.AddDescription("Shows all commands descriptions.", { {"d", "Used to show debug commands also."} });
+			BindCommand(cmdHelp, [this](CallbackInput& input)->void {
+				for (auto i : m_CommandMap)
 				{
-					ConsoleCommand::Description desc = cCmd.GetDescription();
-					PushInfo(i.first + ":");
-					PushInfo("\t" + desc.MainDesc);
-					for (auto flagDesc : desc.FlagDescs)
-						PushInfo("\t\t-" + flagDesc.first + ": " + flagDesc.second);
+					ConsoleCommand& cCmd = i.second.first;
+					if (!cCmd.IsDebug() || (input.Flags.find("d") != input.Flags.end()))
+					{
+						std::string type = cCmd.IsDebug() ? " [DEBUG]" : "";
+						ConsoleCommand::Description desc = cCmd.GetDescription();
+						PushInfo(i.first + type + ":");
+						PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+						for (auto flagDesc : desc.FlagDescs)
+							PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+					}
 				}
-			}
-		});
-
+			});
+		#else
+			ConsoleCommand cmdHelp;
+			cmdHelp.Init("help", false);
+			cmdHelp.AddDescription("Shows all commands descriptions.");
+			BindCommand(cmdHelp, [this](CallbackInput& input)->void {
+				for (auto i : m_CommandMap)
+				{
+					ConsoleCommand& cCmd = i.second.first;
+					if (!cCmd.IsDebug())
+					{
+						ConsoleCommand::Description desc = cCmd.GetDescription();
+						PushInfo(i.first + ":");
+						PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+						for (auto flagDesc : desc.FlagDescs)
+							PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+					}
+				}
+			});
+		#endif
+		
 		ConsoleCommand cmdClear;
 		cmdClear.Init("clear", false);
 		cmdClear.AddFlag("h", Arg::EType::EMPTY);
 		cmdClear.AddDescription("Clears the visible text in the console.", { {"h", "Clears the history."} });
-		BindCommand(cmdClear, [this](CallbackInput& input)->void {
+		BindCommand(cmdClear, [this](CallbackInput&)->void {
 			m_Items.Clear();
 		});
 
@@ -176,7 +197,7 @@ namespace LambdaEngine
 		size_t pos = cmdPos != std::string::npos ? cmdPos : command.length();
 		std::string token = command.substr(0, pos);
 		command.erase(0, pos + std::string(" ").length());
-
+		
 		auto it = m_CommandMap.find(token);
 		if (it == m_CommandMap.end())
 		{
@@ -185,6 +206,13 @@ namespace LambdaEngine
 		}
 
 		ConsoleCommand& cmd = it->second.first;
+		#ifndef LAMBDA_DEBUG
+			if (cmd.IsDebug())
+			{
+				PushError("Command '" + token + "' not found.");
+				return 0;
+			}
+		#endif
 		Flag* preFlag = nullptr;
 		std::unordered_map<std::string, Flag> flags;
 
@@ -271,17 +299,17 @@ namespace LambdaEngine
 			arg.Type = Arg::EType::INT;
 			arg.Value.I = std::stoi(token);
 		}
-		else if (std::regex_match(token, std::regex("(-[0-9]*\.[0-9]+)|(-[0-9]+\.[0-9]*)")))
+		else if (std::regex_match(token, std::regex("(-[0-9]*\\.[0-9]+)|(-[0-9]+\\.[0-9]*)")))
 		{
 			arg.Type = Arg::EType::FLOAT;
 			arg.Value.F = std::stof(token);
 		}
-		else if (std::regex_match(token, std::regex("([0-9]*\.[0-9]+)|([0-9]+\.[0-9]*)")))
+		else if (std::regex_match(token, std::regex("([0-9]*\\.[0-9]+)|([0-9]+\\.[0-9]*)")))
 		{
 			arg.Type = Arg::EType::FLOAT;
 			arg.Value.F = std::stof(token);
 		}
-		std::for_each(token.begin(), token.end(), [](char& c) { c = std::tolower(c); });
+		std::for_each(token.begin(), token.end(), [](char& c) { c = (char)std::tolower(c); });
 		if (std::regex_match(token, std::regex("(false)|(true)")))
 		{
 			arg.Type = Arg::EType::BOOL;
@@ -308,18 +336,19 @@ namespace LambdaEngine
 
 	void GameConsole::PushError(const std::string& msg)
 	{
-		Item item = {};
-		item.Str = "Error:" + msg;
-		item.Color = glm::vec4(1.f, 0.f, 0.f, 1.f);
-		m_Items.PushBack(item);
-		m_ScrollToBottom = true;
+		PushMsg("Error:" + msg, glm::vec4(1.f, 0.f, 0.f, 1.f));
 	}
 
 	void GameConsole::PushInfo(const std::string& msg)
 	{
+		PushMsg(msg, glm::vec4(1.f, 1.f, 0.f, 1.f));
+	}
+
+	void GameConsole::PushMsg(const std::string& line, glm::vec4 color)
+	{
 		Item item = {};
-		item.Str = msg;
-		item.Color = glm::vec4(1.f, 1.f, 0.f, 1.f);
+		item.Str = line;
+		item.Color = color;
 		m_Items.PushBack(item);
 		m_ScrollToBottom = true;
 	}
@@ -381,7 +410,7 @@ namespace LambdaEngine
 				{
 					int c = 0;
 					bool all_candidates_matches = true;
-					for (int i = 0; i < candidates.GetSize() && all_candidates_matches; i++)
+					for (uint32 i = 0; i < candidates.GetSize() && all_candidates_matches; i++)
 						if (i == 0)
 							c = toupper(candidates[i][match_len]);
 						else if (c == 0 || c != toupper(candidates[i][match_len]))
@@ -399,7 +428,7 @@ namespace LambdaEngine
 
 				// List matches
 				PushInfo("Possible matches:\n");
-				for (int i = 0; i < candidates.GetSize(); i++)
+				for (uint32 i = 0; i < candidates.GetSize(); i++)
 					PushInfo("-" + std::string(candidates[i]));
 			}
 			break;
@@ -417,7 +446,7 @@ namespace LambdaEngine
 			else if (data->EventKey == ImGuiKey_DownArrow)
 			{
 				if (m_HistoryIndex != -1)
-					if (++m_HistoryIndex >= m_History.GetSize())
+					if (++m_HistoryIndex >= (int32)m_History.GetSize())
 						m_HistoryIndex = -1;
 			}
 
