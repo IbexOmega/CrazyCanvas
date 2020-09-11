@@ -8,7 +8,5 @@ namespace LambdaEngine
 	{
 	public:
 		DECL_DEVICE_INTERFACE(SBT);
-
-		virtual void 
 	};
 }
