@@ -1876,15 +1876,13 @@ namespace LambdaEngine
 
 					if (hasTextureCubeAsAttachment)
 					{
-						externalMaxSize -= TEXTURE_CUBE_PUSH_CONSTANTS_SIZE;
-
 						PushConstants* pPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
-						pPushConstants->pData		= DBG_NEW byte[TEXTURE_CUBE_PUSH_CONSTANTS_SIZE];
-						pPushConstants->DataSize	= 0;
+						pPushConstants->pData		= DBG_NEW byte[DRAW_ITERATION_PUSH_CONSTANTS_SIZE];
+						pPushConstants->DataSize	= DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
 						pPushConstants->Offset		= MAX_PUSH_CONSTANT_SIZE - externalMaxSize;
-						pPushConstants->MaxDataSize = TEXTURE_CUBE_PUSH_CONSTANTS_SIZE;	
+						pPushConstants->MaxDataSize = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;	
 
-						
+						externalMaxSize -= DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
 					}
 
 					//External Push Constants
@@ -3055,7 +3053,7 @@ namespace LambdaEngine
 
 			PushConstants* pDrawIterationPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
 
-			if (pDrawIterationPushConstants->DataSize == sizeof(uint32))
+			if (pDrawIterationPushConstants->MaxDataSize == sizeof(uint32))
 			{
 				memcpy(pDrawIterationPushConstants->pData, &r, sizeof(uint32));
 				pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pDrawIterationPushConstants->pData, pDrawIterationPushConstants->DataSize, pDrawIterationPushConstants->Offset);
