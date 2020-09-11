@@ -11,11 +11,11 @@ namespace LambdaEngine
 {
 	constexpr const char* RENDER_GRAPH_IMGUI_STAGE_NAME			= "RENDER_STAGE_IMGUI";
 
-	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT   = "BACK_BUFFER_TEXTURE";
+	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT	= "BACK_BUFFER_TEXTURE";
 
-	constexpr const char* FULLSCREEN_QUAD_VERTEX_BUFFER		    = "FULLSCREEN_QUAD_VERTEX_BUFFER";
+	constexpr const char* FULLSCREEN_QUAD_VERTEX_BUFFER			= "FULLSCREEN_QUAD_VERTEX_BUFFER";
 
-	constexpr const char* PER_FRAME_BUFFER					    = "PER_FRAME_BUFFER";
+	constexpr const char* PER_FRAME_BUFFER						= "PER_FRAME_BUFFER";
 	constexpr const char* SCENE_LIGHTS_BUFFER					= "SCENE_LIGHTS_BUFFER";
 
 	constexpr const char* SCENE_MAT_PARAM_BUFFER				= "SCENE_MAT_PARAM_BUFFER";
@@ -26,10 +26,10 @@ namespace LambdaEngine
 	constexpr const char* SCENE_INDIRECT_ARGS_BUFFER			= "SCENE_INDIRECT_ARGS_BUFFER";
 	constexpr const char* SCENE_TLAS							= "SCENE_TLAS";
 
-	constexpr const char* SCENE_ALBEDO_MAPS					    = "SCENE_ALBEDO_MAPS";
-	constexpr const char* SCENE_NORMAL_MAPS					    = "SCENE_NORMAL_MAPS";
-	constexpr const char* SCENE_AO_MAPS						    = "SCENE_AO_MAPS";
-	constexpr const char* SCENE_ROUGHNESS_MAPS				    = "SCENE_ROUGHNESS_MAPS";
+	constexpr const char* SCENE_ALBEDO_MAPS						= "SCENE_ALBEDO_MAPS";
+	constexpr const char* SCENE_NORMAL_MAPS						= "SCENE_NORMAL_MAPS";
+	constexpr const char* SCENE_AO_MAPS							= "SCENE_AO_MAPS";
+	constexpr const char* SCENE_ROUGHNESS_MAPS					= "SCENE_ROUGHNESS_MAPS";
 	constexpr const char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";
 
 	enum class ERenderGraphPipelineStageType : uint8

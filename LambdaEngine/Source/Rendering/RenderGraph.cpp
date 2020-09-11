@@ -28,11 +28,9 @@
 #include "Log/Log.h"
 
 #include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
 
 #include "Debug/Profiler.h"
-
-// Needed to reset GPUProfiler timestamps -- should be changed
-#include <vulkan/vulkan.h>
 
 namespace LambdaEngine
 {
@@ -47,15 +45,17 @@ namespace LambdaEngine
 	RenderGraph::RenderGraph(const GraphicsDevice* pGraphicsDevice)
 		: m_pGraphicsDevice(pGraphicsDevice)
 	{
-		CommonApplication::Get()->AddEventHandler(this);
+		EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &RenderGraph::OnWindowResized);
 	}
 
 	RenderGraph::~RenderGraph()
 	{
-        m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
-        SAFERELEASE(m_pFence);
+		EventQueue::UnregisterEventHandler(this, &RenderGraph::OnWindowResized);
 
-        SAFERELEASE(m_pDescriptorHeap);
+		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
+		SAFERELEASE(m_pFence);
+
+		SAFERELEASE(m_pDescriptorHeap);
 
 		Profiler::GetGPUProfiler()->Release();
 
@@ -805,14 +805,21 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void RenderGraph::OnWindowResized(TSharedRef<Window> window, uint16 width, uint16 height, EResizeType type)
+	bool RenderGraph::OnWindowResized(const WindowResizedEvent& windowEvent)
 	{
-		UNREFERENCED_VARIABLE(type);
+		if (IsEventOfType<WindowResizedEvent>(windowEvent))
+		{
+			m_WindowWidth	= (float32)windowEvent.Width;
+			m_WindowHeight	= (float32)windowEvent.Height;
 
-		m_WindowWidth	= (float32)width;
-		m_WindowHeight	= (float32)height;
+			UpdateRelativeParameters();
 
-		UpdateRelativeParameters();
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	void RenderGraph::ReleasePipelineStages()
@@ -2308,10 +2315,10 @@ namespace LambdaEngine
 				SAFERELEASE(*ppTexture);
 				SAFERELEASE(*ppTextureView);
 
-				pTexture		= m_pGraphicsDevice->CreateTexture(pTextureDesc, m_pDeviceAllocator);
+				pTexture = m_pGraphicsDevice->CreateTexture(pTextureDesc, m_pDeviceAllocator);
 
 				textureViewDesc.pTexture = pTexture;
-				pTextureView	= m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
+				pTextureView = m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
 				//Update Sampler
 				if (desc.InternalTextureUpdate.pSamplerDesc != nullptr)

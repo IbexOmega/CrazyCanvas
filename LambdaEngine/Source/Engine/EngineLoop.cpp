@@ -11,6 +11,8 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include "ECS/ECSCore.h"
 #include "Engine/EngineConfig.h"
 
@@ -28,7 +30,8 @@
 
 #include "Audio/AudioSystem.h"
 
-#include <assimp/Importer.hpp>
+#include "Rendering/RenderSystem.h"
+#include "Rendering/Renderer.h"
 
 #include "Utilities/RuntimeStats.h"
 
@@ -88,6 +91,8 @@ namespace LambdaEngine
 		{
 			return false;
 		}
+
+		EventQueue::Tick();
 
 		AudioSystem::Tick();
 
@@ -225,6 +230,8 @@ namespace LambdaEngine
 		{
 			return false;
 		}
+
+		EventQueue::UnregisterAll();
 
 		return ThreadPool::Release();
 	}

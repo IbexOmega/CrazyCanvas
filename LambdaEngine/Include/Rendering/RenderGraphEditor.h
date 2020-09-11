@@ -9,13 +9,16 @@
 #include "Containers/THashTable.h"
 #include "Containers/TSet.h"
 
-#include "Application/API/EventHandler.h"
+#include "Application/API/ApplicationEventHandler.h"
+
+#include "Application/API/Events/MouseEvents.h"
+#include "Application/API/Events/KeyEvents.h"
 
 namespace LambdaEngine
 {
 	class RenderGraph;
 
-	class LAMBDA_API RenderGraphEditor : public EventHandler
+	class LAMBDA_API RenderGraphEditor
 	{
 	public:
 		DECL_REMOVE_COPY(RenderGraphEditor);
@@ -28,9 +31,9 @@ namespace LambdaEngine
 		void Update();
 		void RenderGUI();
 
-		virtual void OnButtonReleased(EMouseButton button)						override final;
-		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat) override final;
-		virtual void OnKeyReleased(EKey key)									override final;
+		bool OnButtonReleased(const MouseButtonReleasedEvent& event);
+		bool OnKeyPressed(const KeyPressedEvent& event);
+		bool OnKeyReleased(const KeyReleasedEvent& event);
 
 	private:
 		void InitDefaultResources();
