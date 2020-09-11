@@ -8,53 +8,53 @@ namespace LambdaEngine
 {
 	bool GameConsole::Init()
 	{
-		#ifdef LAMBDA_DEBUG
-			ConsoleCommand cmdHelp;
-			cmdHelp.Init("help", false);
-			cmdHelp.AddFlag("d", Arg::EType::EMPTY);
-			cmdHelp.AddDescription("Shows all commands descriptions.", { {"d", "Used to show debug commands also."} });
-			BindCommand(cmdHelp, [this](CallbackInput& input)->void {
-				for (auto i : m_CommandMap)
+#ifdef LAMBDA_DEBUG
+		ConsoleCommand cmdHelp;
+		cmdHelp.Init("help", false);
+		cmdHelp.AddFlag("d", Arg::EType::EMPTY);
+		cmdHelp.AddDescription("Shows all commands descriptions.", { {"d", "Used to show debug commands also."} });
+		BindCommand(cmdHelp, [this](CallbackInput& input)->void {
+			for (auto i : m_CommandMap)
+			{
+				ConsoleCommand& cCmd = i.second.first;
+				if (!cCmd.IsDebug() || (input.Flags.find("d") != input.Flags.end()))
 				{
-					ConsoleCommand& cCmd = i.second.first;
-					if (!cCmd.IsDebug() || (input.Flags.find("d") != input.Flags.end()))
-					{
-						std::string type = cCmd.IsDebug() ? " [DEBUG]" : "";
-						ConsoleCommand::Description desc = cCmd.GetDescription();
-						PushInfo(i.first + type + ":");
-						PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-						for (auto flagDesc : desc.FlagDescs)
-							PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-					}
+					std::string type = cCmd.IsDebug() ? " [DEBUG]" : "";
+					ConsoleCommand::Description desc = cCmd.GetDescription();
+					PushInfo(i.first + type + ":");
+					PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+					for (auto flagDesc : desc.FlagDescs)
+						PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
 				}
+			}
 			});
-		#else
-			ConsoleCommand cmdHelp;
-			cmdHelp.Init("help", false);
-			cmdHelp.AddDescription("Shows all commands descriptions.");
-			BindCommand(cmdHelp, [this](CallbackInput& input)->void {
-				for (auto i : m_CommandMap)
+#else
+		ConsoleCommand cmdHelp;
+		cmdHelp.Init("help", false);
+		cmdHelp.AddDescription("Shows all commands descriptions.");
+		BindCommand(cmdHelp, [this](CallbackInput& input)->void {
+			for (auto i : m_CommandMap)
+			{
+				ConsoleCommand& cCmd = i.second.first;
+				if (!cCmd.IsDebug())
 				{
-					ConsoleCommand& cCmd = i.second.first;
-					if (!cCmd.IsDebug())
-					{
-						ConsoleCommand::Description desc = cCmd.GetDescription();
-						PushInfo(i.first + ":");
-						PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-						for (auto flagDesc : desc.FlagDescs)
-							PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-					}
+					ConsoleCommand::Description desc = cCmd.GetDescription();
+					PushInfo(i.first + ":");
+					PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+					for (auto flagDesc : desc.FlagDescs)
+						PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
 				}
+			}
 			});
-		#endif
-		
+#endif
+
 		ConsoleCommand cmdClear;
 		cmdClear.Init("clear", false);
 		cmdClear.AddFlag("h", Arg::EType::EMPTY);
 		cmdClear.AddDescription("Clears the visible text in the console.", { {"h", "Clears the history."} });
 		BindCommand(cmdClear, [this](CallbackInput&)->void {
 			m_Items.Clear();
-		});
+			});
 
 		// Test Command
 		ConsoleCommand cmd;
@@ -164,20 +164,20 @@ namespace LambdaEngine
 						hasFocus = true;
 					}
 
-					if (s_Active || hasFocus)
-					{
-						ImGui::SetItemDefaultFocus();
-						ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
-					}
+						if (s_Active || hasFocus)
+						{
+							ImGui::SetItemDefaultFocus();
+							ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
+						}
 
-					if (ImGui::IsWindowFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
-					{
-						ImGui::SetKeyboardFocusHere(-1);
-					}
+						if (ImGui::IsWindowFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+						{
+							ImGui::SetKeyboardFocusHere(-1);
+						}
 
-					popupSize = ImVec2(ImGui::GetItemRectSize().x - 60, ImGui::GetTextLineHeightWithSpacing() * 2);
-					popupPos = ImGui::GetItemRectMin();
-					popupPos.y += ImGui::GetItemRectSize().y;
+						popupSize = ImVec2(ImGui::GetItemRectSize().x - 60, ImGui::GetTextLineHeightWithSpacing() * 2);
+						popupPos = ImGui::GetItemRectMin();
+						popupPos.y += ImGui::GetItemRectSize().y;
 				}
 				ImGui::End();
 
@@ -270,7 +270,7 @@ namespace LambdaEngine
 		size_t pos = cmdPos != std::string::npos ? cmdPos : command.length();
 		std::string token = command.substr(0, pos);
 		command.erase(0, pos + std::string(" ").length());
-		
+
 		auto it = m_CommandMap.find(token);
 		if (it == m_CommandMap.end())
 		{
@@ -279,13 +279,13 @@ namespace LambdaEngine
 		}
 
 		ConsoleCommand& cmd = it->second.first;
-		#ifndef LAMBDA_DEBUG
-			if (cmd.IsDebug())
-			{
-				PushError("Command '" + token + "' not found.");
-				return 0;
-			}
-		#endif
+#ifndef LAMBDA_DEBUG
+		if (cmd.IsDebug())
+		{
+			PushError("Command '" + token + "' not found.");
+			return 0;
+		}
+#endif
 		Flag* preFlag = nullptr;
 		std::unordered_map<std::string, Flag> flags;
 
@@ -566,7 +566,7 @@ namespace LambdaEngine
 			}
 			break;
 		}
-		}
 		return 0;
+		}
 	}
 }
