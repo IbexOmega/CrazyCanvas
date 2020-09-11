@@ -423,43 +423,6 @@ bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		return false;
 	}
 
-	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-	if (event.Key == EKey::KEY_ESCAPE)
-	{
-		mainWindow->Close();
-	}
-	if (event.Key == EKey::KEY_1)
-	{
-		mainWindow->Minimize();
-	}
-	if (event.Key == EKey::KEY_2)
-	{
-		mainWindow->Maximize();
-	}
-	if (event.Key == EKey::KEY_3)
-	{
-		mainWindow->Restore();
-	}
-	if (event.Key == EKey::KEY_4)
-	{
-		mainWindow->ToggleFullscreen();
-	}
-	if (event.Key == EKey::KEY_5)
-	{
-		if (CommonApplication::Get()->GetInputMode(mainWindow) == EInputMode::INPUT_MODE_STANDARD)
-		{
-			CommonApplication::Get()->SetInputMode(mainWindow, EInputMode::INPUT_MODE_RAW);
-		}
-		else
-		{
-			CommonApplication::Get()->SetInputMode(mainWindow, EInputMode::INPUT_MODE_STANDARD);
-		}
-	}
-	if (event.Key == EKey::KEY_6)
-	{
-		mainWindow->SetPosition(0, 0);
-	}
-
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
 
