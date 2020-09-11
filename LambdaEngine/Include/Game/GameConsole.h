@@ -23,7 +23,7 @@ namespace LambdaEngine
 		DECL_REMOVE_MOVE(GameConsole);
 
 		bool Init();
-		bool Release();
+		static bool Release();
 
 		void Tick();
 		
@@ -41,9 +41,9 @@ namespace LambdaEngine
 			glm::vec4 Color;
 		};
 
-		int ExecCommand(std::string& data);
+		int ExecCommand(const std::string& data);
 
-		void FillArg(Arg& arg, std::string token);
+		static void FillArg(Arg& arg, std::string token);
 
 		bool AddArg(uint32 index, Arg arg, ConsoleCommand& cmd);
 

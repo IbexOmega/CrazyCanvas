@@ -87,7 +87,7 @@ namespace LambdaEngine
 		static bool s_Active = false;
 		static bool s_Toggle = false;
 
-		if (Input::IsKeyDown(EKey::KEY_GRAVE_ACCENT) & !s_Active)
+		if (Input::IsKeyDown(EKey::KEY_GRAVE_ACCENT) && !s_Active)
 		{
 			s_Active = true;
 			s_Toggle ^= 1;
@@ -128,7 +128,7 @@ namespace LambdaEngine
 							ImGui::PopStyleColor();
 						}
 
-					if (m_ScrollToBottom | (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+					if (m_ScrollToBottom || (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
 						ImGui::SetScrollHereY(0.0f);
 					m_ScrollToBottom = false;
 
@@ -254,7 +254,7 @@ namespace LambdaEngine
 	{
 	}
 
-	int GameConsole::ExecCommand(std::string& data)
+	int GameConsole::ExecCommand(const std::string& data)
 	{
 		std::string command = data;
 		m_History.PushBack(command);
