@@ -40,6 +40,8 @@
 
 #include "Threading/API/Thread.h"
 
+#include "Math/Random.h"
+
 #include <imgui.h>
 
 constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
@@ -93,7 +95,7 @@ Sandbox::Sandbox()
 	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
 	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
 
-	EScene scene = EScene::TESTING;
+	EScene scene = EScene::CUBEMAP;
 
 	m_pScene->SetDirectionalLight(directionalLight);
 
@@ -534,6 +536,14 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 		GameConsole::Get().Render();
 	}
+
+	//float32 test = Random::Float32();
+
+	//PushConstantsUpdate pushConstantsUpdateTest = {};
+	//pushConstantsUpdateTest.RenderStageName		= "DEMO";
+	//pushConstantsUpdateTest.pData				= &test;
+	//pushConstantsUpdateTest.DataSize			= sizeof(float32);
+	//Renderer::GetRenderGraph()->UpdatePushConstants(&pushConstantsUpdateTest);
 
 	Renderer::Render();
 }

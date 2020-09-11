@@ -15,9 +15,9 @@ layout(location = 6) in vec4 in_WorldPosition;
 layout(location = 7) in vec4 in_ClipPosition;
 layout(location = 8) in vec4 in_PrevClipPosition;
 
-layout( push_constant ) uniform ColorBlock {
-  vec4 Color;
-} PushConstant;
+layout( push_constant ) uniform TestBlock {
+  float Test;
+} pc_PushConstant;
 
 layout(binding = 5, set = BUFFER_SET_INDEX) uniform PerFrameBuffer                          { SPerFrameBuffer val; }        u_PerFrameBuffer;
 layout(binding = 6, set = BUFFER_SET_INDEX) restrict readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;

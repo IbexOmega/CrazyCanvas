@@ -284,26 +284,37 @@ namespace LambdaEngine
 
 	void RenderGraph::UpdatePushConstants(const PushConstantsUpdate* pDesc)
 	{
-		auto renderStageIt = m_RenderStageMap.find(pDesc->RenderStageName);
-
-		if (renderStageIt != m_RenderStageMap.end())
+		if (pDesc->pData != nullptr)
 		{
-			RenderStage* pRenderStage = &m_pRenderStages[renderStageIt->second];
+			auto renderStageIt = m_RenderStageMap.find(pDesc->RenderStageName);
 
-			if (pDesc->DataSize <= pRenderStage->ExternalPushConstants.MaxDataSize)
+			if (renderStageIt != m_RenderStageMap.end())
 			{
-				memcpy(pRenderStage->ExternalPushConstants.pData, pDesc->pData, pDesc->DataSize);
-				pRenderStage->ExternalPushConstants.DataSize = pDesc->DataSize;
+				RenderStage* pRenderStage = &m_pRenderStages[renderStageIt->second];
+
+				if (pDesc->DataSize <= pRenderStage->ExternalPushConstants.MaxDataSize)
+				{
+					if (pRenderStage->ExternalPushConstants.pData == nullptr)
+					{
+						pRenderStage->ExternalPushConstants.pData = DBG_NEW byte[pRenderStage->ExternalPushConstants.MaxDataSize];
+					}
+
+					memcpy(pRenderStage->ExternalPushConstants.pData, pDesc->pData, pDesc->DataSize);
+					pRenderStage->ExternalPushConstants.DataSize = pDesc->DataSize;
+				}
+				else
+				{
+					LOG_ERROR("[RenderGraph]: Render Stage \"%s\" has a Max External Push Constant size of %d but Update Desc has a size of %d", pDesc->RenderStageName.c_str(), pRenderStage->ExternalPushConstants.MaxDataSize, pDesc->DataSize);
+				}
 			}
 			else
 			{
-				LOG_ERROR("[RenderGraph]: Render Stage \"%s\" has a Max External Push Constant size of %d but Update Desc has a size of %d", pDesc->RenderStageName.c_str(), pRenderStage->ExternalPushConstants.MaxDataSize, pDesc->DataSize);
+				LOG_WARNING("[RenderGraph]: Render Stage \"%s\" in Render Graph could not be found in Render Stage Map", pDesc->RenderStageName.c_str());
 			}
 		}
 		else
 		{
-			LOG_WARNING("[RenderGraph]: Render Stage \"%s\" in Render Graph could not be found in Render Stage Map", pDesc->RenderStageName.c_str());
-			return;
+			LOG_ERROR("[RenderGraph]: PushConstantsUpdate::pData can not be nullptr!");
 		}
 	}
 
@@ -1748,6 +1759,8 @@ namespace LambdaEngine
 				pRenderStage->LastPipelineStage				= lastPipelineStageFlags;
 				pRenderStage->HasTextureCubeAsAttachment	= hasTextureCubeAsAttachment;
 
+				TArray<ConstantRangeDesc> pushConstantRanges;
+
 				//Create Push Constants
 				{
 					uint32 externalMaxSize = MAX_PUSH_CONSTANT_SIZE;
@@ -1760,16 +1773,28 @@ namespace LambdaEngine
 						pPushConstants->pData		= DBG_NEW byte[TEXTURE_CUBE_PUSH_CONSTANTS_SIZE];
 						pPushConstants->DataSize	= 0;
 						pPushConstants->Offset		= MAX_PUSH_CONSTANT_SIZE - externalMaxSize;
-						pPushConstants->MaxDataSize = TEXTURE_CUBE_PUSH_CONSTANTS_SIZE;						
+						pPushConstants->MaxDataSize = TEXTURE_CUBE_PUSH_CONSTANTS_SIZE;	
+
+						ConstantRangeDesc constantRangeDesc = {};
+						constantRangeDesc.ShaderStageFlags	= pipelineStageMask;
+						constantRangeDesc.SizeInBytes		= pPushConstants->MaxDataSize;
+						constantRangeDesc.OffsetInBytes		= pPushConstants->Offset;
+						pushConstantRanges.PushBack(constantRangeDesc);
 					}
 
 					//External Push Constants
 					{
 						PushConstants* pPushConstants = &pRenderStage->ExternalPushConstants;
-						pPushConstants->pData		= DBG_NEW byte[externalMaxSize];
+						pPushConstants->pData		= nullptr; //This doesn't get allocated until UpdatePushConstants is called
 						pPushConstants->DataSize	= 0;
 						pPushConstants->Offset		= MAX_PUSH_CONSTANT_SIZE - externalMaxSize;
 						pPushConstants->MaxDataSize = externalMaxSize;
+
+						ConstantRangeDesc constantRangeDesc = {};
+						constantRangeDesc.ShaderStageFlags	= pipelineStageMask;
+						constantRangeDesc.SizeInBytes		= pPushConstants->MaxDataSize;
+						constantRangeDesc.OffsetInBytes		= pPushConstants->Offset;
+						pushConstantRanges.PushBack(constantRangeDesc);
 					}
 				}
 
@@ -1794,8 +1819,7 @@ namespace LambdaEngine
 
 					PipelineLayoutDesc pipelineLayoutDesc = {};
 					pipelineLayoutDesc.DescriptorSetLayouts	= descriptorSetLayouts;
-					//pipelineLayoutDesc.pConstantRanges			= &constantRangeDesc;
-					//pipelineLayoutDesc.ConstantRangeCount		= constantRangeDesc.SizeInBytes > 0 ? 1 : 0;
+					pipelineLayoutDesc.ConstantRanges		= pushConstantRanges;
 
 					pRenderStage->pPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 				}
