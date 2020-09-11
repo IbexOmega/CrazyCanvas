@@ -16,9 +16,13 @@ layout(location = 0) out vec4	out_Color;
 
 void main()
 {
+    float history                           = texture(u_History, in_TexCoord).r;
+
+    if (history == 0.0f)
+        discard;
+
     vec4 sampledDirectRadiance              = texture(u_DirectRadiance,   in_TexCoord);
     vec4 sampledIndirectRadiance            = texture(u_IndirectRadiance, in_TexCoord);
-    float history                           = texture(u_History, in_TexCoord).r;
 
     vec3 colorHDR   = (sampledDirectRadiance.rgb + sampledIndirectRadiance.rgb) / history;
     vec3 colorLDR   = GammaCorrection(colorHDR, GAMMA);

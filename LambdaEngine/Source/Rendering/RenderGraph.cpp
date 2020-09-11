@@ -406,6 +406,67 @@ namespace LambdaEngine
 			currentFrameDescriptorSetsToDestroy.Clear();
 		}
 
+		//We need to copy descriptor sets here since they may become invalidated after recreating internal resources
+		{
+			if (m_DirtyDescriptorSetTextures.size() > 0)
+			{
+				//Copy old descriptor set and replace old with copy, then write into the new copy
+				for (uint32 r = 0; r < m_RenderStageCount; r++)
+				{
+					RenderStage* pRenderStage = &m_pRenderStages[r];
+
+					if (pRenderStage->ppTextureDescriptorSets != nullptr)
+					{
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						{
+							TArray<DescriptorSet*>& descriptorSetsToDestroy = m_pDescriptorSetsToDestroy[b];
+
+							for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
+							{
+								uint32 descriptorSetIndex = b * pRenderStage->TextureSubDescriptorSetCount + s;
+
+								DescriptorSet* pSrcDescriptorSet = pRenderStage->ppTextureDescriptorSets[descriptorSetIndex];
+								DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->ppBufferDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
+								m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
+								descriptorSetsToDestroy.PushBack(pSrcDescriptorSet);
+								pRenderStage->ppTextureDescriptorSets[descriptorSetIndex] = pDescriptorSet;
+							}
+						}
+					}
+					else if (pRenderStage->UsesCustomRenderer)
+					{
+						pRenderStage->pCustomRenderer->PreTexturesDescriptorSetWrite();
+					}
+				}
+			}
+
+			if (m_DirtyDescriptorSetBuffers.size() > 0 ||
+				m_DirtyDescriptorSetAccelerationStructures.size() > 0)
+			{
+				//Copy old descriptor set and replace old with copy, then write into the new copy
+				for (uint32 r = 0; r < m_RenderStageCount; r++)
+				{
+					RenderStage* pRenderStage = &m_pRenderStages[r];
+
+					if (pRenderStage->ppBufferDescriptorSets != nullptr)
+					{
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						{
+							DescriptorSet* pSrcDescriptorSet = pRenderStage->ppBufferDescriptorSets[b];
+							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+							m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
+							m_pDescriptorSetsToDestroy[b].PushBack(pSrcDescriptorSet);
+							pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
+						}
+					}
+					else if (pRenderStage->UsesCustomRenderer)
+					{
+						pRenderStage->pCustomRenderer->PreBuffersDescriptorSetWrite();
+					}
+				}
+			}
+		}
+
 		if (m_DirtyInternalResources.size() > 0)
 		{
 			for (const String& dirtyInternalResourceDescName : m_DirtyInternalResources)
@@ -419,28 +480,6 @@ namespace LambdaEngine
 		if (m_DirtyDescriptorSetBuffers.size()					> 0 ||
 			m_DirtyDescriptorSetAccelerationStructures.size()	> 0)
 		{
-			//Copy old descriptor set and replace old with copy, then write into the new copy
-			for (uint32 r = 0; r < m_RenderStageCount; r++)
-			{
-				RenderStage* pRenderStage		= &m_pRenderStages[r];
-
-				if (pRenderStage->ppBufferDescriptorSets != nullptr)
-				{
-					for (uint32 b = 0; b < m_BackBufferCount; b++)
-					{
-						DescriptorSet* pSrcDescriptorSet	= pRenderStage->ppBufferDescriptorSets[b];
-						DescriptorSet* pDescriptorSet		= m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
-						m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
-						m_pDescriptorSetsToDestroy[b].PushBack(pSrcDescriptorSet);
-						pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
-					}
-				}
-				else if (pRenderStage->UsesCustomRenderer)
-				{
-					pRenderStage->pCustomRenderer->PreBuffersDescriptorSetWrite();
-				}
-			}
-
 			if (m_DirtyDescriptorSetBuffers.size() > 0)
 			{
 				for (Resource* pResource : m_DirtyDescriptorSetBuffers)
@@ -530,35 +569,6 @@ namespace LambdaEngine
 
 		if (m_DirtyDescriptorSetTextures.size() > 0)
 		{
-			//Copy old descriptor set and replace old with copy, then write into the new copy
-			for (uint32 r = 0; r < m_RenderStageCount; r++)
-			{
-				RenderStage* pRenderStage = &m_pRenderStages[r];
-
-				if (pRenderStage->ppTextureDescriptorSets != nullptr)
-				{
-					for (uint32 b = 0; b < m_BackBufferCount; b++)
-					{
-						TArray<DescriptorSet*>& descriptorSetsToDestroy = m_pDescriptorSetsToDestroy[b];
-
-						for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
-						{
-							uint32 descriptorSetIndex = b * pRenderStage->TextureSubDescriptorSetCount + s;
-
-							DescriptorSet* pSrcDescriptorSet	= pRenderStage->ppTextureDescriptorSets[descriptorSetIndex];
-							DescriptorSet* pDescriptorSet		= m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->ppBufferDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
-							m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
-							descriptorSetsToDestroy.PushBack(pSrcDescriptorSet);
-							pRenderStage->ppTextureDescriptorSets[descriptorSetIndex] = pDescriptorSet;
-						}
-					}
-				}
-				else if (pRenderStage->UsesCustomRenderer)
-				{
-					pRenderStage->pCustomRenderer->PreTexturesDescriptorSetWrite();
-				}
-			}
-
 			for (Resource* pResource : m_DirtyDescriptorSetTextures)
 			{
 				for (uint32 rb = 0; rb < pResource->ResourceBindings.GetSize(); rb++)

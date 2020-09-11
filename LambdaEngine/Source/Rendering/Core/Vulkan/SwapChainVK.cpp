@@ -465,6 +465,11 @@ namespace LambdaEngine
 
 	bool SwapChainVK::Present()
 	{
+		if (!m_Desc.pWindow->IsValid())
+		{
+			return false;
+		}
+
 		VkSemaphore waitSemaphores[] = { m_RenderSemaphores[m_SemaphoreIndex] };
 		
 		// Perform empty submit on queue for signaling the semaphore
@@ -483,11 +488,6 @@ namespace LambdaEngine
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Submit failed");
-			return false;
-		}
-
-		if (!m_Desc.pWindow->IsValid())
-		{
 			return false;
 		}
 
