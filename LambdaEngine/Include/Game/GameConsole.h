@@ -49,6 +49,7 @@ namespace LambdaEngine
 
 		void PushError(const std::string& msg);
 		void PushInfo(const std::string& msg);
+		void PushMsg(const std::string& line, glm::vec4 color);
 
 		int TextEditCallback(ImGuiInputTextCallbackData* data);
 

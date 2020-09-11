@@ -1,4 +1,5 @@
 #include "Engine/EngineLoop.h"
+#include "Debug/Profiler.h"
 
 namespace LambdaEngine
 {
@@ -13,6 +14,7 @@ int main(int, const char*[])
 {
 	using namespace LambdaEngine;
 
+	LAMBDA_PROFILER_BEGIN_SESSION("Startup", "LambdaProfile-Startup.json");
 	if (!EngineLoop::PreInit())
 	{
 		return -1;
@@ -22,10 +24,14 @@ int main(int, const char*[])
 	{
 		return -1;
 	}
+	LAMBDA_PROFILER_END_SESSION();
 
+	LAMBDA_PROFILER_BEGIN_SESSION("Runtime", "LambdaProfile-Runtime.json");
 	Game* pGame = CreateGame();	
 	EngineLoop::Run();
+	LAMBDA_PROFILER_END_SESSION();
 
+	LAMBDA_PROFILER_BEGIN_SESSION("Shutdown", "LambdaProfile-Shutdown.json");
 	if (!EngineLoop::PreRelease())
 	{
 		return -1;
@@ -42,6 +48,7 @@ int main(int, const char*[])
 	{
 		return -1;
 	}
+	LAMBDA_PROFILER_END_SESSION();
 
 	return 0;
 }
