@@ -5,9 +5,10 @@
 
 namespace LambdaEngine
 {
-    StateManager::StateManager(ECSCore* pECS)
-        :m_pECS(pECS),
-        m_pEnqueuedState(nullptr),
+    StateManager StateManager::s_Instance;
+
+    StateManager::StateManager()
+        :m_pEnqueuedState(nullptr),
         m_EnqueuedTransitionAction(STATE_TRANSITION::PUSH)
     {}
 
@@ -24,6 +25,12 @@ namespace LambdaEngine
             delete m_States.top();
             m_States.pop();
         }
+    }
+
+    bool StateManager::Init(ECSCore* pECS)
+    {
+        m_pECS = pECS;
+        return m_pECS;
     }
 
     void StateManager::EnqueueStateTransition(State* pNewState, STATE_TRANSITION transitionSetting)

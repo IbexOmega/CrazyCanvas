@@ -33,6 +33,7 @@
 #include "Utilities/RuntimeStats.h"
 
 #include "Game/GameConsole.h"
+#include "Game/StateManager.h"
 
 namespace LambdaEngine
 {
@@ -75,7 +76,8 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
-		RuntimeStats::SetFrameTime((float32)delta.AsSeconds());
+		float32 dt = (float32)delta.AsSeconds();
+		RuntimeStats::SetFrameTime(dt);
 		Input::Tick();
 
 		GameConsole::Get().Tick();
@@ -91,7 +93,8 @@ namespace LambdaEngine
 
 		AudioSystem::Tick();
 
-		ECSCore::GetInstance()->Tick((float32)delta.AsSeconds());
+		ECSCore::GetInstance()->Tick(dt);
+		StateManager::GetInstance()->Tick(dt);
 		Game::Get().Tick(delta);
 
 		return true;

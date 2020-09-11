@@ -19,21 +19,27 @@ namespace LambdaEngine
         POP_AND_PUSH
     };
 
-    class StateManager
+    class LAMBDA_API StateManager
     {
     public:
-        StateManager(ECSCore* pECS);
+        StateManager();
         ~StateManager();
+
+        bool Init(ECSCore* pECS);
 
         // The enqueued transition happens at the end of StateManager::Tick
         void EnqueueStateTransition(State* pNewState, STATE_TRANSITION transitionSetting);
 
         void Tick(float dt);
 
+        static StateManager* GetInstance() { return &s_Instance; }
+
     private:
         void TransitionState();
 
     private:
+        static StateManager s_Instance;
+
         // Stack of game states with vector as storage class to allow for contiguous element storage
         std::stack<State*, std::vector<State*>> m_States;
         // Old states can't be deleted during transitions because their resources might be needed by the new states. They are instead enqueued for deletion.
