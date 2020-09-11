@@ -34,8 +34,8 @@ namespace LambdaEngine
 
 	constexpr const uint32 TEXTURE_CUBE_PUSH_CONSTANTS_SIZE		= 4; 
 
-	constexpr const uint32 TEXTURE_CUBE_PUSH_CONSTANTS_INDEX	= 0; 
-	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES	= TEXTURE_CUBE_PUSH_CONSTANTS_INDEX + 1;
+	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0; 
+	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES	= DRAW_ITERATION_PUSH_CONSTANTS_INDEX + 1;
 
 	enum class ERenderGraphPipelineStageType : uint8
 	{

@@ -1756,7 +1756,7 @@ namespace LambdaEngine
 					{
 						externalMaxSize -= TEXTURE_CUBE_PUSH_CONSTANTS_SIZE;
 
-						PushConstants* pPushConstants = &pRenderStage->pInternalPushConstants[TEXTURE_CUBE_PUSH_CONSTANTS_INDEX];
+						PushConstants* pPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
 						pPushConstants->pData		= DBG_NEW byte[TEXTURE_CUBE_PUSH_CONSTANTS_SIZE];
 						pPushConstants->DataSize	= 0;
 						pPushConstants->Offset		= MAX_PUSH_CONSTANT_SIZE - externalMaxSize;
@@ -2773,16 +2773,6 @@ namespace LambdaEngine
 		if (pRenderStage->ExternalPushConstants.DataSize > 0)
 			pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pRenderStage->ExternalPushConstants.pData, pRenderStage->ExternalPushConstants.DataSize, pRenderStage->ExternalPushConstants.Offset);
 
-		for (uint32 ipc = 0; ipc < NUM_INTERNAL_PUSH_CONSTANTS_TYPES; ipc++)
-		{
-			PushConstants* pPushConstants = &pRenderStage->pInternalPushConstants[ipc];
-
-			if (pPushConstants->DataSize > 0)
-			{
-				pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pPushConstants->pData, pPushConstants->DataSize, pPushConstants->Offset);
-			}
-		}
-
 		uint32 textureDescriptorSetBindingIndex = 0;
 		if (pRenderStage->ppBufferDescriptorSets != nullptr)
 		{
@@ -2790,42 +2780,60 @@ namespace LambdaEngine
 			textureDescriptorSetBindingIndex = 1;
 		}
 
-		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+		//Find how many times we want to repeat the drawing
+		uint32 repeats = 1;
+		if (pRenderStage->HasTextureCubeAsAttachment)
 		{
-			pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::INDEX_TYPE_UINT32);
+			repeats = 6;
+		}
 
-			Buffer* pDrawBuffer			= pRenderStage->pIndirectArgsBufferResource->Buffer.Buffers[0];
-			uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
-			uint32 indirectArgStride	= sizeof(IndexedIndirectMeshArgument);
+		for (uint32 r = 0; r < repeats; r++)
+		{
+			PushConstants* pDrawIterationPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
 
-			uint32 drawOffset = 0;
-			for (uint32 i = 0; i < pRenderStage->TextureSubDescriptorSetCount; i++)
+			if (pDrawIterationPushConstants->DataSize == sizeof(uint32))
 			{
-				uint32 newBaseMaterialIndex	= (i + 1) * pRenderStage->MaterialsRenderedPerPass;
-				uint32 newDrawOffset		= m_pScene->GetIndirectArgumentOffset(newBaseMaterialIndex);
-				uint32 drawCount			= newDrawOffset - drawOffset;
+				memcpy(pDrawIterationPushConstants->pData, &r, sizeof(uint32));
+				pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pDrawIterationPushConstants->pData, pDrawIterationPushConstants->DataSize, pDrawIterationPushConstants->Offset);
+			}
+
+			if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+			{
+				pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::INDEX_TYPE_UINT32);
+
+				Buffer* pDrawBuffer			= pRenderStage->pIndirectArgsBufferResource->Buffer.Buffers[0];
+				uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
+				uint32 indirectArgStride	= sizeof(IndexedIndirectMeshArgument);
+
+				uint32 drawOffset = 0;
+				for (uint32 i = 0; i < pRenderStage->TextureSubDescriptorSetCount; i++)
+				{
+					uint32 newBaseMaterialIndex	= (i + 1) * pRenderStage->MaterialsRenderedPerPass;
+					uint32 newDrawOffset		= m_pScene->GetIndirectArgumentOffset(newBaseMaterialIndex);
+					uint32 drawCount			= newDrawOffset - drawOffset;
+
+					if (pRenderStage->ppTextureDescriptorSets != nullptr)
+						pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex * pRenderStage->TextureSubDescriptorSetCount + i], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+
+					pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, drawOffset * indirectArgStride, drawCount, indirectArgStride);
+					drawOffset = newDrawOffset;
+
+					if (newDrawOffset >= totalDrawCount)
+						break;
+				}
+			}
+			else if (pRenderStage->DrawType == ERenderStageDrawType::FULLSCREEN_QUAD)
+			{
+				if (pRenderStage->TextureSubDescriptorSetCount > 1)
+				{
+					LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
+				}
 
 				if (pRenderStage->ppTextureDescriptorSets != nullptr)
-					pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex * pRenderStage->TextureSubDescriptorSetCount + i], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+					pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
 
-				pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, drawOffset * indirectArgStride, drawCount, indirectArgStride);
-				drawOffset = newDrawOffset;
-
-				if (newDrawOffset >= totalDrawCount)
-					break;
+				pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
 			}
-		}
-		else if (pRenderStage->DrawType == ERenderStageDrawType::FULLSCREEN_QUAD)
-		{
-			if (pRenderStage->TextureSubDescriptorSetCount > 1)
-			{
-				LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
-			}
-
-			if (pRenderStage->ppTextureDescriptorSets != nullptr)
-				pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
-
-			pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
 		}
 
 		pGraphicsCommandList->EndRenderPass();
