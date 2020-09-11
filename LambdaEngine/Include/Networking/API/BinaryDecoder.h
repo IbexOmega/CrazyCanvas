@@ -5,12 +5,12 @@
 
 namespace LambdaEngine
 {
-	class NetworkPacket;
+	class NetworkSegment;
 
 	class LAMBDA_API BinaryDecoder
 	{
 	public:
-		BinaryDecoder(const NetworkPacket* packet);
+		BinaryDecoder(const NetworkSegment* packet);
 		~BinaryDecoder();
 
 		void ReadInt8(int8& value);
@@ -41,7 +41,7 @@ namespace LambdaEngine
 		std::string ReadString();
 
 	private:
-		const NetworkPacket* m_pNetworkPacket;
+		const NetworkSegment* m_pNetworkPacket;
 		uint16 m_ReadHead;
 	};
 }

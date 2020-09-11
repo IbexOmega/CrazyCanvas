@@ -4,25 +4,23 @@
 
 #include "Application/API/EventHandler.h"
 
-#include "Networking/API/ServerUDP.h"
-#include "Networking/API/IServerUDPHandler.h"
-#include "Networking/API/IClientUDP.h"
 
-#include "Networking/API/IClientUDPRemoteHandler.h"
-
-#include <set>
+#include "Networking/API/IServerHandler.h"
+#include "Networking/API/IClient.h"
+#include "Networking/API/ServerBase.h"
+#include "Networking/API/IClientRemoteHandler.h"
 
 class Server : 
 	public LambdaEngine::Game,
-	public LambdaEngine::ApplicationEventHandler,
-	public LambdaEngine::IServerUDPHandler
+	public LambdaEngine::EventHandler,
+	public LambdaEngine::IServerHandler
 {
 public:
 	Server();
 	~Server();
 
-	virtual void OnClientConnected(LambdaEngine::IClientUDP* pClient) override;
-	virtual LambdaEngine::IClientUDPRemoteHandler* CreateClientUDPHandler() override;
+	virtual void OnClientConnected(LambdaEngine::IClient* pClient) override;
+	virtual LambdaEngine::IClientRemoteHandler* CreateClientHandler() override;
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
@@ -34,5 +32,5 @@ private:
 	void UpdateTitle();
 
 private:
-	LambdaEngine::ServerUDP* m_pServer;
+	LambdaEngine::ServerBase* m_pServer;
 };

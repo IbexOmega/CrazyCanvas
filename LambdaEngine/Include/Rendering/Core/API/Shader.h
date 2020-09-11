@@ -1,6 +1,7 @@
 #pragma once
 #include "DeviceChild.h"
 #include "GraphicsTypes.h"
+#include "Containers/TArray.h"
 
 namespace LambdaEngine
 {

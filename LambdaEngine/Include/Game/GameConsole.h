@@ -25,7 +25,7 @@ namespace LambdaEngine
 		bool Init();
 		bool Release();
 
-		void Render();
+		void Tick();
 		
 		void BindCommand(ConsoleCommand cmd, std::function<void(CallbackInput&)> callback);
 

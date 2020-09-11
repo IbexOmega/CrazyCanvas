@@ -21,14 +21,14 @@ namespace LambdaEngine
 		return m_PacketsSent;
 	}
 
-	uint32 NetworkStatistics::GetMessagesSent() const
+	uint32 NetworkStatistics::GetSegmentsSent() const
 	{
-		return m_MessagesSent;
+		return m_SegmentsSent;
 	}
 
-	uint32 NetworkStatistics::GetReliableMessagesSent() const
+	uint32 NetworkStatistics::GetReliableSegmentsSent() const
 	{
-		return m_ReliableMessagesSent;
+		return m_ReliableSegmentsSent;
 	}
 
 	uint32 NetworkStatistics::GetPacketsReceived() const
@@ -36,9 +36,9 @@ namespace LambdaEngine
 		return m_PacketsReceived;
 	}
 
-	uint32 NetworkStatistics::GetMessagesReceived() const
+	uint32 NetworkStatistics::GetSegmentsReceived() const
 	{
-		return m_MessagesReceived;
+		return m_SegmentsReceived;
 	}
 
 	uint32 NetworkStatistics::GetPacketsLost() const
@@ -117,10 +117,10 @@ namespace LambdaEngine
 		m_SaltRemote				= 0;
 		m_Ping						= Timestamp::MilliSeconds(10.0f);
 		m_PacketsSent				= 0;
-		m_MessagesSent				= 0;
-		m_ReliableMessagesSent		= 0;
+		m_SegmentsSent				= 0;
+		m_ReliableSegmentsSent		= 0;
 		m_PacketsReceived			= 0;
-		m_MessagesReceived			= 0;
+		m_SegmentsReceived			= 0;
 		m_PacketsLost				= 0;
 		m_BytesSent					= 0;
 		m_BytesReceived				= 0;
@@ -139,25 +139,25 @@ namespace LambdaEngine
 		return ++m_PacketsSent;
 	}
 
-	uint32 NetworkStatistics::RegisterMessageSent()
+	uint32 NetworkStatistics::RegisterSegmentSent()
 	{
-		return ++m_MessagesSent;
+		return ++m_SegmentsSent;
 	}
 
-	uint32 NetworkStatistics::RegisterReliableMessageSent()
+	uint32 NetworkStatistics::RegisterReliableSegmentSent()
 	{
-		return ++m_ReliableMessagesSent;
+		return ++m_ReliableSegmentsSent;
 	}
 
 	void NetworkStatistics::RegisterPacketReceived(uint32 messages, uint32 bytes)
 	{
 		m_PacketsReceived++;
-		m_MessagesReceived += messages,
+		m_SegmentsReceived += messages,
 		m_BytesReceived += bytes;
 		m_TimestampLastReceived = EngineLoop::GetTimeSinceStart();
 	}
 
-	void NetworkStatistics::RegisterReliableMessageReceived()
+	void NetworkStatistics::RegisterReliableSegmentReceived()
 	{
 		m_LastReceivedReliableUID++;
 	}

@@ -80,7 +80,12 @@ namespace LambdaEngine
 
 	bool IPEndPoint::operator==(const IPEndPoint& other) const
 	{
-		return other.GetAddress()->GetHash() == GetAddress()->GetHash() && other.GetPort() == GetPort();
+		return m_Hash == other.m_Hash/*other.GetAddress()->GetHash() == GetAddress()->GetHash() && other.GetPort() == GetPort()*/;
+	}
+
+	bool IPEndPoint::operator!=(const IPEndPoint& other) const
+	{
+		return m_Hash != other.m_Hash;
 	}
 
 	void IPEndPoint::UpdateHash()

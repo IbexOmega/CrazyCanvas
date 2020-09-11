@@ -41,8 +41,8 @@ namespace LambdaEngine
 		if (!m_Release)
 		{
 			m_Release = true;
-			TerminateThreads();
 			OnReleaseRequested();
+			TerminateThreads();
 		}
 
 		if (m_ThreadsTerminated)
@@ -64,6 +64,11 @@ namespace LambdaEngine
 	bool NetWorker::ThreadsAreRunning() const
 	{
 		return m_pThreadReceiver != nullptr && m_pThreadTransmitter != nullptr;
+	}
+
+	bool NetWorker::ThreadsHasTerminated() const
+	{
+		return m_ThreadsTerminated;
 	}
 
 	bool NetWorker::ShouldTerminate() const
@@ -110,7 +115,7 @@ namespace LambdaEngine
 
 		m_Initiated = true;
 
-		RunTranmitter();
+		RunTransmitter();
 
 		while (!m_ReceiverStopped);
 	}

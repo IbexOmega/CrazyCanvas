@@ -13,8 +13,13 @@ def print_help(helpString, args):
     print(f'Used flags: {str(args)}')
 
 def pull_pages_repo(repo_URL):
-    print(f'Cloning pages repo into {REPO_DIR}/')
-    subprocess.run(f'git clone {repo_URL} {REPO_DIR}', shell=True, check=True)
+    if not os.path.exists(REPO_DIR):
+        print(f'Cloning pages repo into {REPO_DIR}/')
+        subprocess.run(f'git clone {repo_URL} {REPO_DIR}', shell=True, check=True)
+    else:
+        print(f'Pages repo already cloned, pulling latest changes')
+        # -C Changes git's working directory
+        subprocess.run(f'git -C {REPO_DIR} pull {repo_URL} {REPO_DIR}', shell=True, check=True)
 
 # Gets information regarding a commit in the game repository
 def get_commit_info(commit_ID):
