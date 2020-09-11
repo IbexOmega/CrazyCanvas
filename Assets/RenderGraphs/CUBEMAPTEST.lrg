@@ -190,7 +190,7 @@
             }
         },
         {
-            "name": "CUBEMAP",
+            "name": "SKYBOX",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
@@ -298,7 +298,7 @@
                     "src_stage": ""
                 },
                 {
-                    "name": "CUBEMAP",
+                    "name": "SKYBOX",
                     "removable": false,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": ""
@@ -384,7 +384,7 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
-                    "name": "CUBEMAP",
+                    "name": "SKYBOX",
                     "removable": true,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
