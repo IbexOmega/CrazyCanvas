@@ -69,6 +69,11 @@ namespace LambdaEngine
         return s_ConfigDocument[propertyName.c_str()].GetInt();
     }
 
+    double EngineConfig::GetDoubleProperty(const String& propertyName)
+    {
+        return s_ConfigDocument[propertyName.c_str()].GetDouble();
+    }
+
     String EngineConfig::GetStringProperty(const String& propertyName)
     {
         return s_ConfigDocument[propertyName.c_str()].GetString();
@@ -97,6 +102,11 @@ namespace LambdaEngine
     void EngineConfig::SetIntProperty(const String& propertyName, const int& value)
     {
         s_ConfigDocument[propertyName.c_str()].SetFloat(value);
+    }
+
+    void EngineConfig::SetDoubleProperty(const String& propertyName, const double& value)
+    {
+        s_ConfigDocument[propertyName.c_str()].SetDouble(value);
     }
 
     void EngineConfig::SetStringProperty(const String& propertyName, const String& string)
