@@ -219,6 +219,33 @@ bool CrazyCanvas::LoadRendererResources()
 		Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
 	}
 
+	// For Skybox RenderGraph
+	{
+		String skybox[]
+		{
+			"Skybox/right.png",
+			"Skybox/left.png",
+			"Skybox/top.png",
+			"Skybox/bottom.png",
+			"Skybox/front.png",
+			"Skybox/back.png"
+		};
+
+		GUID_Lambda cubemapTexID = ResourceManager::LoadCubeTexturesArrayFromFile("Cubemap Texture", skybox, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
+
+		Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
+		TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
+		Sampler* pNearestSampler		= Sampler::GetNearestSampler();
+
+		ResourceUpdateDesc cubeTextureUpdateDesc = {};
+		cubeTextureUpdateDesc.ResourceName = "SKYBOX";
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
+
+		Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
+	}
+
 	return true;
 }
 

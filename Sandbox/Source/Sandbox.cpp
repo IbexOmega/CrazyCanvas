@@ -619,7 +619,7 @@ bool Sandbox::LoadRendererResources()
 		Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
 	}
 
-	// For Skybox scene
+	// For Skybox RenderGraph
 	{
 		String skybox[]
 		{
