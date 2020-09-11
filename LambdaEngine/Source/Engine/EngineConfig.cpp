@@ -89,22 +89,22 @@ namespace LambdaEngine
         return tArr;
     }
 
-    void EngineConfig::SetBoolProperty(const String& propertyName, const bool& value)
+    void EngineConfig::SetBoolProperty(const String& propertyName, const bool value)
     {
         s_ConfigDocument[propertyName.c_str()].SetBool(value);
     }
 
-    void EngineConfig::SetFloatProperty(const String& propertyName, const float& value)
+    void EngineConfig::SetFloatProperty(const String& propertyName, const float value)
     {
         s_ConfigDocument[propertyName.c_str()].SetFloat(value);
     }
 
-    void EngineConfig::SetIntProperty(const String& propertyName, const int& value)
+    void EngineConfig::SetIntProperty(const String& propertyName, const int value)
     {
         s_ConfigDocument[propertyName.c_str()].SetFloat(value);
     }
 
-    void EngineConfig::SetDoubleProperty(const String& propertyName, const double& value)
+    void EngineConfig::SetDoubleProperty(const String& propertyName, const double value)
     {
         s_ConfigDocument[propertyName.c_str()].SetDouble(value);
     }
@@ -114,12 +114,11 @@ namespace LambdaEngine
         s_ConfigDocument[propertyName.c_str()].SetString(string.c_str(), static_cast<SizeType>(strlen(string.c_str())), s_ConfigDocument.GetAllocator());
     }
 
-    void EngineConfig::SetArrayProperty(const String& propertyName, const TArray<int>& arr)
+    void EngineConfig::SetArrayProperty(const String& propertyName, const TArray<int> arr)
     {
         Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
         
         auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
-
         newArr.Reserve(arr.GetSize(), allocator);
 
         for (auto& itr : arr)

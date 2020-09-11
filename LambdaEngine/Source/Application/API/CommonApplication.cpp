@@ -1,6 +1,7 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformApplication.h"
 #include "Application/API/Window.h"
+#include "Engine/EngineConfig.h"
 
 namespace LambdaEngine
 {
@@ -28,12 +29,12 @@ namespace LambdaEngine
 		// Create platform application
 		m_pPlatformApplication = pApplication;
 		m_pPlatformApplication->SetEventHandler(s_CommonApplication);
-
+		
 		// Create mainwindow
 		WindowDesc windowDesc = { };
 		windowDesc.Title 	= "Lambda Engine";
-		windowDesc.Width 	= 1920;
-		windowDesc.Height 	= 1080;
+		windowDesc.Width 	= EngineConfig::GetArrayProperty("WindowSize").GetFront();
+		windowDesc.Height 	= EngineConfig::GetArrayProperty("WindowSize").GetBack();
 		windowDesc.Style	= 
 			WINDOW_STYLE_FLAG_TITLED		| 
 			//WINDOW_STYLE_FLAG_MINIMIZABLE	|
