@@ -375,7 +375,7 @@ Sandbox::Sandbox()
 	cmd1.AddArg(Arg::EType::BOOL);
 	cmd1.AddDescription("Activate/Deactivate rendergraph window.\n\t'render_graph true'");
 	GameConsole::Get().BindCommand(cmd1, [&, this](GameConsole::CallbackInput& input)->void {
-		m_RenderGraphWindow = input.Arguments.GetFront().Value.B;
+		m_RenderGraphWindow = input.Arguments.GetFront().Value.Boolean;
 		});
 
 	ConsoleCommand cmd2;
@@ -383,7 +383,7 @@ Sandbox::Sandbox()
 	cmd2.AddArg(Arg::EType::BOOL);
 	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'imgui_demo true'");
 	GameConsole::Get().BindCommand(cmd2, [&, this](GameConsole::CallbackInput& input)->void {
-		m_ShowDemoWindow = input.Arguments.GetFront().Value.B;
+		m_ShowDemoWindow = input.Arguments.GetFront().Value.Boolean;
 		});
 
 	ConsoleCommand cmd3;
@@ -391,7 +391,7 @@ Sandbox::Sandbox()
 	cmd3.AddArg(Arg::EType::BOOL);
 	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'show_debug_window true'");
 	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
-		m_DebuggingWindow = input.Arguments.GetFront().Value.B;
+		m_DebuggingWindow = input.Arguments.GetFront().Value.Boolean;
 		});
 
 	return;
