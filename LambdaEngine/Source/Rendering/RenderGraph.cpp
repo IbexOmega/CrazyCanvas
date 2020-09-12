@@ -57,8 +57,6 @@ namespace LambdaEngine
 
 		SAFERELEASE(m_pDescriptorHeap);
 
-		Profiler::GetGPUProfiler()->Release();
-
 		for (uint32 b = 0; b < m_BackBufferCount; b++)
 		{
 			SAFERELEASE(m_ppGraphicsCopyCommandAllocators[b]);
@@ -936,6 +934,8 @@ namespace LambdaEngine
 		SAFEDELETE_ARRAY(m_pRenderStages);
 		SAFEDELETE_ARRAY(m_pSynchronizationStages);
 		SAFEDELETE_ARRAY(m_pPipelineStages);
+
+		Profiler::GetGPUProfiler()->Release();
 	}
 
 	bool RenderGraph::CreateAllocator()
