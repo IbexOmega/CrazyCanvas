@@ -30,26 +30,26 @@ namespace LambdaEngine
 
 	constexpr const uint32 NODE_TITLE_COLOR[4] =
 	{
-		IM_COL32(41, 74, 122, 255),		// ImGui Blue
+		IM_COL32(69, 159, 59, 255),		// Forest Green
 		IM_COL32(230, 149, 55, 255),	// Orange
 		IM_COL32(171, 21, 209, 255),	// Purple
-		IM_COL32(69, 159, 59, 255),		// Forest Green
+		IM_COL32(41, 74, 122, 255),		// ImGui Blue
 	};
 
 	constexpr const uint32 HOVERED_COLOR[4] =
 	{
-		IM_COL32(33, 60, 100, 255),		// Dark ImGui Blue
+		IM_COL32(46, 104, 40, 255),		// Dark Forest Green
 		IM_COL32(186, 122, 48, 255),	// Dark Orange
 		IM_COL32(106, 13, 129, 255),	// Dark Purple
-		IM_COL32(46, 104, 40, 255),		// Dark Forest Green
+		IM_COL32(33, 60, 100, 255),		// Dark ImGui Blue
 	};
 
 	constexpr const uint32 SELECTED_COLOR[4] =
 	{
-		IM_COL32(65, 122, 206, 255),	// Light ImGui Blue
+		IM_COL32(124, 222, 40, 113),	// Light Forest Green
 		IM_COL32(245, 175, 96, 255),	// Light Orange
 		IM_COL32(207, 93, 236, 255),	// Light Purple
-		IM_COL32(124, 222, 40, 113),	// Light Forest Green
+		IM_COL32(65, 122, 206, 255),	// Light ImGui Blue
 	};
 
 	constexpr const uint32 EXTERNAL_RESOURCE_STATE_GROUP_INDEX = 0;
@@ -1302,7 +1302,9 @@ namespace LambdaEngine
 			EditorResourceStateGroup* pResourceStateGroup = &m_ResourceStateGroups[resourceStateGroupIndex];
 
 
-			imnodes::PushColorStyle(imnodes::ColorStyle_TitleBar, NODE_TITLE_COLOR[0]);
+			imnodes::PushColorStyle(imnodes::ColorStyle_TitleBar, NODE_TITLE_COLOR[3U]);
+			imnodes::PushColorStyle(imnodes::ColorStyle_TitleBarHovered, HOVERED_COLOR[3U]);
+			imnodes::PushColorStyle(imnodes::ColorStyle_TitleBarSelected, SELECTED_COLOR[3U]);
 			imnodes::BeginNode(pResourceStateGroup->OutputNodeIndex);
 
 			imnodes::BeginNodeTitleBar();
