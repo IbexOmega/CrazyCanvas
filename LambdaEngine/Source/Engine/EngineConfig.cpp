@@ -128,6 +128,4 @@ namespace LambdaEngine
         PrettyWriter<StringBuffer> writer(strBuf);
         s_ConfigDocument.Accept(writer);
     }
-
-
 }
