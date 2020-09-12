@@ -925,7 +925,7 @@ namespace LambdaEngine
 			constexpr bool isCustomIterator	= std::is_same<TInputIt, Iterator>() || std::is_same<TInputIt, ConstIterator>();
 
 			// Handle outside pointers
-			if constexpr (isPointer && isCustomIterator)
+			if constexpr (isPointer || isCustomIterator)
 			{
 				return static_cast<SizeType>(InternalUnwrapConst(end) - InternalUnwrapConst(begin));
 			}
