@@ -1442,9 +1442,28 @@ namespace LambdaEngine
 			{
 				renderStageToDelete = pRenderStage->Name;
 			}
-			ImGui::Text("Enabled: ");
+
+			int32 selectedTriggerType = TriggerTypeToTriggerTypeIndex(pRenderStage->TriggerType);
+			ImGui::Text("Trigger Type: ");
 			ImGui::SameLine();
-			if (ImGui::Checkbox("##Render Stage Enabled Checkbox", &pRenderStage->Enabled)) m_ParsedGraphDirty = true;
+			ImGui::SetNextItemWidth(ImGui::CalcTextSize(TRIGGER_TYPE_NAMES[2]).x + ImGui::GetFrameHeight() + 4.0f); //Max Length String to be displayed + Arrow Size + Some extra
+			if (ImGui::Combo("##Render Stage Trigger Type", &selectedTriggerType, TRIGGER_TYPE_NAMES, 3))
+			{
+				pRenderStage->TriggerType = TriggerTypeIndexToTriggerType(selectedTriggerType);
+			}
+
+			if (pRenderStage->TriggerType == ERenderStageExecutionTrigger::EVERY)
+			{
+				ImGui::Text("Frame Delay: ");
+				ImGui::SameLine();
+				ImGui::SetNextItemWidth(ImGui::CalcTextSize("   ").x);
+				ImGui::InputInt(" ##Render Stage Frame Delay", &pRenderStage->FrameDelay, 0, 360);
+
+				ImGui::Text("Frame Offset: ");
+				ImGui::SameLine();
+				ImGui::SetNextItemWidth(ImGui::CalcTextSize("   ").x);
+				ImGui::InputInt("##Render Stage Frame Offset", &pRenderStage->FrameOffset, 0, pRenderStage->FrameDelay - 1);
+			}
 
 			ImGui::Text("Allow Overriding of Binding Types:");
 			ImGui::SameLine();
@@ -2094,7 +2113,6 @@ namespace LambdaEngine
 					newRenderStage.InputAttributeIndex	= s_NextAttributeID;
 					newRenderStage.Type					= m_CurrentlyAddingRenderStage;
 					newRenderStage.CustomRenderer		= customRenderer;
-					newRenderStage.Enabled				= true;
 
 					newRenderStage.Parameters.XDimType		= DimensionTypeIndexToDimensionType(selectedXOption);
 					newRenderStage.Parameters.YDimType		= DimensionTypeIndexToDimensionType(selectedYOption);
