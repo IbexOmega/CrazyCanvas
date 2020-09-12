@@ -60,10 +60,12 @@ namespace LambdaEngine
     {
         return s_ConfigDocument[propertyName.c_str()].GetBool();
     }
+
     float EngineConfig::GetFloatProperty(const String& propertyName)
     {
         return s_ConfigDocument[propertyName.c_str()].GetFloat();
     }
+
     int EngineConfig::GetIntProperty(const String& propertyName)
     {
         return s_ConfigDocument[propertyName.c_str()].GetInt();
