@@ -49,7 +49,7 @@ Client::Client() :
     desc.MaxRetries             = 10;
     desc.ResendRTTMultiplier    = 2.0F;
     desc.Handler                = this;
-    desc.Protocol               = EProtocol::TCP;
+    desc.Protocol               = EProtocol::UDP;
 
     m_pClient = NetworkUtils::CreateClient(desc);
 

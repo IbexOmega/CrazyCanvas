@@ -9,20 +9,23 @@
 
 namespace LambdaEngine
 {
-    ClientRemoteBase::ClientRemoteBase(ServerBase* pServer) :
-		m_pServer(pServer),
+	ClientRemoteBase::ClientRemoteBase(const ClientRemoteDesc& desc) :
+		m_pServer(desc.Server),
+		m_PingInterval(desc.PingInterval),
+		m_PingTimeout(desc.PingTimeout),
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
-		m_Release(false),
 		m_ReleasedByServer(false),
-		m_DisconnectedByRemote(false)
+		m_DisconnectedByRemote(false),
+		m_TerminationRequested(false),
+		m_TerminationApproved(false)
     {
 
     }
 
 	ClientRemoteBase::~ClientRemoteBase()
 	{
-		if (!m_Release)
+		if (!m_TerminationApproved)
 			LOG_ERROR("[ClientRemoteBase]: Do not use delete on a ClientRemoteBase object. Use the Release() function!");
 		else
 			LOG_INFO("[ClientRemoteBase]: Released");
@@ -30,32 +33,7 @@ namespace LambdaEngine
 
 	void ClientRemoteBase::Disconnect()
 	{
-		bool enterCritical = false;
-		{
-			std::scoped_lock<SpinLock> lock(m_Lock);
-			if (m_State == STATE_CONNECTING || m_State == STATE_CONNECTED)
-			{
-				m_State = STATE_DISCONNECTING;
-				enterCritical = true;
-			}
-		}
-
-		if (enterCritical)
-		{
-			if (m_pHandler)
-				m_pHandler->OnDisconnecting(this);
-
-			if (!m_DisconnectedByRemote)
-				SendDisconnect();
-
-			if(!m_ReleasedByServer)
-				m_pServer->OnClientDisconnected(this);
-
-			m_State = STATE_DISCONNECTED;
-
-			if (m_pHandler)
-				m_pHandler->OnDisconnected(this);
-		}
+		RequestTermination();
 	}
 
 	bool ClientRemoteBase::IsConnected()
@@ -65,28 +43,78 @@ namespace LambdaEngine
 
 	void ClientRemoteBase::Release()
 	{
-		bool doRelease = false;
-		{
-			std::scoped_lock<SpinLock> lock(m_Lock);
-			if (!m_Release)
-			{
-				m_Release = true;
-				doRelease = true;
-			}
-		}
-
-		if (doRelease)
-		{
-			Disconnect();
-			m_pHandler->OnClientReleased(this);
-			delete this;
-		}
+		RequestTermination();
 	}
 
 	void ClientRemoteBase::ReleaseByServer()
 	{
 		m_ReleasedByServer = true;
 		Release();
+		OnTerminationApproved();
+	}
+
+	void ClientRemoteBase::RequestTermination()
+	{
+		bool doRelease = false;
+		bool enterCritical = false;
+		{
+			std::scoped_lock<SpinLock> lock(m_Lock);
+			if (!m_TerminationRequested)
+			{
+				m_TerminationRequested = true;
+				doRelease = true;
+				enterCritical = OnTerminationRequested();
+			}
+		}
+
+		if (doRelease)
+		{
+			if (enterCritical)
+			{
+				if (m_pHandler)
+					m_pHandler->OnDisconnecting(this);
+
+				if (!m_DisconnectedByRemote)
+					SendDisconnect();
+
+				if (!m_ReleasedByServer)
+					m_pServer->OnClientAskForTermination(this);
+
+				m_State = STATE_DISCONNECTED;
+
+				if (m_pHandler)
+					m_pHandler->OnDisconnected(this);
+			}
+			m_pHandler->OnClientReleased(this);
+			//LOG_INFO("[ClientTCPRemote]: Releasing ClientTCPRemote");
+		}
+	}
+
+	bool ClientRemoteBase::OnTerminationRequested()
+	{
+		if (m_State == STATE_CONNECTING || m_State == STATE_CONNECTED)
+		{
+			m_State = STATE_DISCONNECTING;
+			return true;
+		}
+		return false;
+	}
+
+	void ClientRemoteBase::OnTerminationApproved()
+	{
+		m_TerminationApproved = true;
+		DeleteThis();
+	}
+
+	void ClientRemoteBase::DeleteThis()
+	{
+		if(CanDeleteNow())
+			delete this;
+	}
+
+	bool ClientRemoteBase::CanDeleteNow()
+	{
+		return m_TerminationApproved;
 	}
 
 	bool ClientRemoteBase::SendUnreliable(NetworkSegment* packet)
@@ -156,13 +184,13 @@ namespace LambdaEngine
 		GetPacketManager()->Tick(delta);
 
 		Timestamp timeSinceLastPacketSent = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastSent();
-		if (timeSinceLastPacketSent >= Timestamp::Seconds(1))
+		if (timeSinceLastPacketSent >= m_PingInterval)
 		{
 			SendReliable(GetFreePacket(NetworkSegment::TYPE_PING));
 		}
 
 		Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastReceived();
-		if (timeSinceLastPacketReceived >= Timestamp::Seconds(5))
+		if (timeSinceLastPacketReceived >= m_PingTimeout)
 		{
 			Release();
 		}

@@ -22,8 +22,10 @@ namespace LambdaEngine
     struct ServerDesc : public PacketManagerDesc
     {
         IServerHandler* Handler = nullptr;
-        uint8 MaxClients = 1;
-        EProtocol Protocol = EProtocol::UDP;
+        uint8 MaxClients        = 1;
+        EProtocol Protocol      = EProtocol::UDP;
+        Timestamp PingInterval  = Timestamp::Seconds(1);
+        Timestamp PingTimeout   = Timestamp::Seconds(2);
     };
 
     class LAMBDA_API ServerBase : public NetWorker
@@ -63,7 +65,7 @@ namespace LambdaEngine
 
     private:
         IClientRemoteHandler* CreateClientHandler() const;
-        void OnClientDisconnected(ClientRemoteBase* client);
+        void OnClientAskForTermination(ClientRemoteBase* client);
 
     private:
         static void FixedTickStatic(Timestamp timestamp);
@@ -80,7 +82,7 @@ namespace LambdaEngine
         std::atomic_bool m_Accepting;
         std::unordered_map<IPEndPoint, ClientRemoteBase*, IPEndPointHasher> m_Clients;
         TArray<ClientRemoteBase*> m_ClientsToAdd;
-        TArray<IPEndPoint> m_ClientsToRemove;
+        TArray<ClientRemoteBase*> m_ClientsToRemove;
 
     private:
         static std::set<ServerBase*> s_Servers;

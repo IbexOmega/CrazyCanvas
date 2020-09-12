@@ -101,10 +101,11 @@ namespace LambdaEngine
 		return m_Description;
 	}
 
-	void ServerBase::OnClientDisconnected(ClientRemoteBase* pClient)
+	void ServerBase::OnClientAskForTermination(ClientRemoteBase* pClient)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockClientVectors);
-		m_ClientsToRemove.PushBack(pClient->GetEndPoint());
+		LOG_INFO("[ServerBase]: Client Added to Remove Queue");
+		m_ClientsToRemove.PushBack(pClient);
 	}
 
 	ClientRemoteBase* ServerBase::GetClient(const IPEndPoint& endPoint)
@@ -180,7 +181,8 @@ namespace LambdaEngine
 			for (int i = 0; i < m_ClientsToRemove.GetSize(); i++)
 			{
 				LOG_INFO("[ServerBase]: Client Unregistered");
-				m_Clients.erase(m_ClientsToRemove[i]);
+				m_Clients.erase(m_ClientsToRemove[i]->GetEndPoint());
+				m_ClientsToRemove[i]->OnTerminationApproved();
 			}
 
 			std::scoped_lock<SpinLock> lock(m_LockClientVectors);

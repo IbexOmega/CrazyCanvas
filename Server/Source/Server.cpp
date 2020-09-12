@@ -35,7 +35,9 @@ Server::Server()
 	desc.MaxRetries		= 10;
 	desc.MaxClients		= 10;
 	desc.PoolSize		= 512;
-	desc.Protocol		= EProtocol::TCP;
+	desc.Protocol		= EProtocol::UDP;
+	desc.PingInterval	= Timestamp::Seconds(1);
+	desc.PingTimeout	= Timestamp::Seconds(3);
 
 	m_pServer = NetworkUtils::CreateServer(desc);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));

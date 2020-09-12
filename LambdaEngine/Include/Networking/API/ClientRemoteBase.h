@@ -2,6 +2,7 @@
 
 #include "Networking/API/IClient.h"
 #include "Networking/API/IPacketListener.h"
+#include "Networking/API/ServerBase.h"
 
 #include "Time/API/Timestamp.h"
 
@@ -9,6 +10,11 @@ namespace LambdaEngine
 {
 	class IClientRemoteHandler;
 	class ServerBase;
+
+	struct ClientRemoteDesc : public ServerDesc
+	{
+		ServerBase* Server = nullptr;
+	};
 
 	class LAMBDA_API ClientRemoteBase :
 		public IClient,
@@ -31,7 +37,7 @@ namespace LambdaEngine
 		virtual const NetworkStatistics* GetStatistics() const override;
 
 	protected:		
-		ClientRemoteBase(ServerBase* pServer);
+		ClientRemoteBase(const ClientRemoteDesc& desc);
 
 		void TransmitPackets();
 		void DecodeReceivedPackets();
@@ -41,6 +47,10 @@ namespace LambdaEngine
 		virtual void OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries) override;
 
 		virtual PacketTransceiverBase* GetTransceiver() = 0;
+		
+		void DeleteThis();
+		virtual bool CanDeleteNow();
+		virtual bool OnTerminationRequested();
 
 	private:
 		void ReleaseByServer();
@@ -50,6 +60,9 @@ namespace LambdaEngine
 		void SendServerFull();
 		void SendServerNotAccepting();
 
+		void RequestTermination();
+		void OnTerminationApproved();
+
 	protected:
 		bool m_DisconnectedByRemote;
 
@@ -58,7 +71,10 @@ namespace LambdaEngine
 		EClientState m_State;
 		ServerBase* m_pServer;
 		SpinLock m_Lock;
-		std::atomic_bool m_Release;
+		Timestamp m_PingInterval;
+		Timestamp m_PingTimeout;
+		std::atomic_bool m_TerminationRequested;
+		std::atomic_bool m_TerminationApproved;
 		std::atomic_bool m_ReleasedByServer;
 	};
 }

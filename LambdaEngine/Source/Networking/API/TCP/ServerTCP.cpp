@@ -60,6 +60,10 @@ namespace LambdaEngine
 
 	ClientRemoteTCP* ServerTCP::CreateClient(ISocketTCP* socket)
 	{
-		return DBG_NEW ClientRemoteTCP(GetDescription().PoolSize, socket, this);
+		ClientRemoteDesc desc = {};
+		memcpy(&desc, &GetDescription(), sizeof(ServerDesc));
+		desc.Server = this;
+
+		return DBG_NEW ClientRemoteTCP(desc, socket);
 	}
 }

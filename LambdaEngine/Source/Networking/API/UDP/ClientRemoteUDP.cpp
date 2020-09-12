@@ -11,10 +11,10 @@
 
 namespace LambdaEngine
 {
-	ClientRemoteUDP::ClientRemoteUDP(uint16 packetPoolSize, uint8 maximumTries, const IPEndPoint& ipEndPoint, PacketTransceiverUDP* pTransceiver, ServerUDP* pServer) :
-		ClientRemoteBase(pServer),
+	ClientRemoteUDP::ClientRemoteUDP(const ClientRemoteDesc& desc, const IPEndPoint& ipEndPoint, PacketTransceiverUDP* pTransceiver) :
+		ClientRemoteBase(desc),
 		m_pTransceiver(pTransceiver),
-		m_PacketManager({ packetPoolSize, maximumTries })
+		m_PacketManager(desc)
 	{
 		m_PacketManager.SetEndPoint(ipEndPoint);
 	}

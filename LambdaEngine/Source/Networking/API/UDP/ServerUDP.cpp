@@ -85,7 +85,12 @@ namespace LambdaEngine
 		else
 		{
 			newConnection = true;
-			return DBG_NEW ClientRemoteUDP(GetDescription().PoolSize, GetDescription().MaxRetries, sender, &m_Transciver, this);
+
+			ClientRemoteDesc desc = {};
+			memcpy(&desc, &GetDescription(), sizeof(ServerDesc));
+			desc.Server = this;
+
+			return DBG_NEW ClientRemoteUDP(desc, sender, &m_Transciver);
 		}
 	}
 }
