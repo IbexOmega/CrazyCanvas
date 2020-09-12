@@ -129,7 +129,7 @@ void Client::OnServerFull(LambdaEngine::IClient* pClient)
 
 void Client::OnClientReleased(LambdaEngine::IClient* pClient)
 {
-
+	UNREFERENCED_VARIABLE(pClient);
 }
 
 void Client::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)

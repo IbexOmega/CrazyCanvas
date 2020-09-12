@@ -172,20 +172,20 @@ namespace LambdaEngine
 
 		if (!m_ClientsToAdd.IsEmpty() || !m_ClientsToRemove.IsEmpty())
 		{
-			for (int i = 0; i < m_ClientsToAdd.GetSize(); i++)
+			for (uint32 i = 0; i < m_ClientsToAdd.GetSize(); i++)
 			{
 				LOG_INFO("[ServerBase]: Client Registered");
 				m_Clients.insert({ m_ClientsToAdd[i]->GetEndPoint(), m_ClientsToAdd[i] });
 			}
 
-			for (int i = 0; i < m_ClientsToRemove.GetSize(); i++)
+			for (uint32 i = 0; i < m_ClientsToRemove.GetSize(); i++)
 			{
 				LOG_INFO("[ServerBase]: Client Unregistered");
 				m_Clients.erase(m_ClientsToRemove[i]->GetEndPoint());
 				m_ClientsToRemove[i]->OnTerminationApproved();
 			}
 
-			std::scoped_lock<SpinLock> lock(m_LockClientVectors);
+			std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
 			m_ClientsToAdd.Clear();
 			m_ClientsToRemove.Clear();
 		}

@@ -36,8 +36,8 @@ namespace LambdaEngine
 		// Create mainwindow
 		WindowDesc windowDesc = { };
 		windowDesc.Title 	= "Lambda Engine";
-		windowDesc.Width 	= 1280;
-		windowDesc.Height 	= 720;
+		windowDesc.Width 	= 300;
+		windowDesc.Height 	= 150;
 		windowDesc.Style	= 
 			WINDOW_STYLE_FLAG_TITLED		| 
 			WINDOW_STYLE_FLAG_MINIMIZABLE	|
