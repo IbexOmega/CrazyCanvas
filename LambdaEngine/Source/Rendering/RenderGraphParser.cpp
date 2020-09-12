@@ -120,6 +120,7 @@ namespace LambdaEngine
 		}
 
 		//Loop Through each Render Stage in Order and create synchronization stages
+		TSet<String> resourceNamesActuallyUsed;
 		for (auto orderedRenderStageIt = orderedMappedRenderStages.rbegin(); orderedRenderStageIt != orderedMappedRenderStages.rend(); orderedRenderStageIt++)
 		{
 			const EditorRenderStageDesc* pCurrentRenderStage = orderedRenderStageIt->second;
@@ -135,6 +136,7 @@ namespace LambdaEngine
 
 					if (currentResourceStateIt != resourceStatesByHalfAttributeIndex.end())
 					{
+						resourceNamesActuallyUsed.insert(resourceStateIdent.Name);
 						if (FindAndCreateSynchronization(resources, resourceStatesByHalfAttributeIndex, orderedRenderStageIt, orderedMappedRenderStages, currentResourceStateIt, &synchronizationStage, generateImGuiStage))
 						{
 							finalStateOfResources[currentResourceStateIt->second.ResourceName] = &currentResourceStateIt->second;
@@ -157,6 +159,7 @@ namespace LambdaEngine
 						if (indexBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indexBufferResourceStateIt->second.ResourceName.size() > 0)
 						{
 							auto resourceStateIdentIt = pCurrentRenderStage->FindResourceStateIdent(indexBufferResourceStateIt->second.ResourceName);
+							resourceNamesActuallyUsed.insert(indexBufferResourceStateIt->second.ResourceName);
 
 							if (resourceStateIdentIt != pCurrentRenderStage->ResourceStateIdents.end())
 							{
@@ -177,6 +180,7 @@ namespace LambdaEngine
 						if (indirectArgsBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indirectArgsBufferResourceStateIt->second.ResourceName.size() > 0)
 						{
 							auto resourceStateIdentIt = pCurrentRenderStage->FindResourceStateIdent(indirectArgsBufferResourceStateIt->second.ResourceName);
+							resourceNamesActuallyUsed.insert(indirectArgsBufferResourceStateIt->second.ResourceName);
 
 							if (resourceStateIdentIt != pCurrentRenderStage->ResourceStateIdents.end())
 							{
@@ -606,7 +610,6 @@ namespace LambdaEngine
 
 		//Copy Resources so that we can modify them
 		pParsedStructure->ResourceDescriptions = resources;
-		TSet<String> resourceNamesActuallyUsed;
 
 		//Do another pass over all Render Stages to set Resource Flags
 		for (uint32 r = 0; r < orderedRenderStages.GetSize(); r++)
@@ -616,7 +619,6 @@ namespace LambdaEngine
 			for (uint32 rs = 0; rs < pRenderStageDesc->ResourceStates.GetSize(); rs++)
 			{
 				RenderGraphResourceState* pResourceState = &pRenderStageDesc->ResourceStates[rs];
-				resourceNamesActuallyUsed.insert(pResourceState->ResourceName);
 
 				auto resourceIt = std::find_if(pParsedStructure->ResourceDescriptions.Begin(), pParsedStructure->ResourceDescriptions.End(), [pResourceState](const RenderGraphResourceDesc& resourceDesc) { return pResourceState->ResourceName == resourceDesc.Name; });
 
@@ -652,6 +654,10 @@ namespace LambdaEngine
 							break;
 						}
 						}
+
+						if (resourceIt->TextureParams.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
+							resourceIt->TextureParams.TextureFlags |= FTextureFlags::TEXTURE_FLAG_CUBE_COMPATIBLE;
+
 						break;
 					}
 					case ERenderGraphResourceType::BUFFER:

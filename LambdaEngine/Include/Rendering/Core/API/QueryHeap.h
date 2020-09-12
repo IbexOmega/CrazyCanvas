@@ -23,7 +23,7 @@ namespace LambdaEngine
 		*	 queryCount	- Number of queries to get results from
 		*	 pData		- Array of type uint64 that the results will be written to, must have size of queryCount
 		*/
-		virtual bool GetResults(uint32 firstQuery, uint32 queryCount, uint64* pData) const = 0;
+		virtual bool GetResults(uint32 firstQuery, uint32 queryCount, uint64 dataSize, uint64* pData) const = 0;
 
 		/*
 		* Returns the API-specific handle to the underlaying QueryHeap-resource

@@ -72,6 +72,7 @@ namespace LambdaEngine
 		bool	RayTracing;
 		bool	MeshShaders;
 		bool	GeometryShaders;
+		float	TimestampPeriod;
 	};
 
 	/*

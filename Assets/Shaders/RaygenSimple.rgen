@@ -133,7 +133,7 @@ void main()
 	{
 		imageStore(u_DirectRadiance, 	pixelCoords, vec4(0.0f, 0.0f, 0.0f,	1.0f));
 		imageStore(u_IndirectRadiance, 	pixelCoords, vec4(0.0f, 0.0f, 0.0f, 1.0f));
-        imageStore(u_History, 	        pixelCoords, vec4(1.0f));
+        imageStore(u_History, 	        pixelCoords, vec4(0.0f));
 		return;
 	}
 
@@ -290,6 +290,7 @@ void main()
 		
 				if (s_RadiancePayload.Distance <= Tmin)
 				{
+					L_o_Indirect += throughput * s_RadiancePayload.Albedo * 10.0f;
 					stop = true;
 				}
 

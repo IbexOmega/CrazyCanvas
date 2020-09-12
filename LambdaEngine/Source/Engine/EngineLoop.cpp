@@ -11,6 +11,9 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Application/API/Events/EventQueue.h"
+
+#include "ECS/ECSCore.h"
 #include "Engine/EngineConfig.h"
 
 #include "Input/API/Input.h"
@@ -20,6 +23,8 @@
 #include "Threading/API/Thread.h"
 #include "Threading/API/ThreadPool.h"
 
+#include "Rendering/RenderSystem.h"
+#include "Rendering/Renderer.h"
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
 
@@ -27,8 +32,6 @@
 
 #include "Rendering/RenderSystem.h"
 #include "Rendering/Renderer.h"
-
-#include <assimp/Importer.hpp>
 
 #include "Utilities/RuntimeStats.h"
 
@@ -89,9 +92,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		EventQueue::Tick();
+
 		AudioSystem::Tick();
 
-		// Tick game
+		ECSCore::GetInstance()->Tick((float32)delta.AsSeconds());
 		Game::Get().Tick(delta);
 
 		return true;
@@ -99,7 +104,6 @@ namespace LambdaEngine
 
 	void EngineLoop::FixedTick(Timestamp delta)
 	{
-		// Tick game
 		Game::Get().FixedTick(delta);
 
 		NetworkUtils::FixedTick(delta);
@@ -226,6 +230,8 @@ namespace LambdaEngine
 		{
 			return false;
 		}
+
+		EventQueue::UnregisterAll();
 
 		return ThreadPool::Release();
 	}

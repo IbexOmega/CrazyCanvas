@@ -26,6 +26,11 @@
 
 #include "Resources/ResourceManager.h"
 
+#include "Application/API/Events/KeyEvents.h"
+#include "Application/API/Events/MouseEvents.h"
+
+#include "Debug/Profiler.h"
+
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
 #include <imnodes.h>
@@ -37,8 +42,8 @@ namespace LambdaEngine
 	/*
 	* ImGuiRenderer
 	*/
-	ImGuiRenderer::ImGuiRenderer(const GraphicsDevice* pGraphicsDevice) :
-		m_pGraphicsDevice(pGraphicsDevice)
+	ImGuiRenderer::ImGuiRenderer(const GraphicsDevice* pGraphicsDevice) 
+		: m_pGraphicsDevice(pGraphicsDevice)
 	{
 		VALIDATE(s_pRendererInstance == nullptr);
 		s_pRendererInstance = this;
@@ -48,6 +53,15 @@ namespace LambdaEngine
 	{
 		VALIDATE(s_pRendererInstance != nullptr);
 		s_pRendererInstance = nullptr;
+
+		EventHandler eventHandler(this, &ImGuiRenderer::OnEvent);
+		EventQueue::UnregisterEventHandler<MouseMovedEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<MouseScrolledEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<MouseButtonReleasedEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<KeyPressedEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<KeyReleasedEvent>(eventHandler);
+		EventQueue::UnregisterEventHandler<KeyTypedEvent>(eventHandler);
 
 		imnodes::Shutdown();
 		ImGui::DestroyContext();
@@ -117,9 +131,17 @@ namespace LambdaEngine
 
 		m_DescriptorSet->WriteTextureDescriptors(&m_FontTextureView, &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 
-		CommonApplication::Get()->AddEventHandler(this);
+		EventHandler eventHandler(this, &ImGuiRenderer::OnEvent);
 
-		return true;
+		bool result = true;
+		result = result && EventQueue::RegisterEventHandler<MouseMovedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseScrolledEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseButtonReleasedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<KeyPressedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<KeyReleasedEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<KeyTypedEvent>(eventHandler);
+		return result;
 	}
 
 	void ImGuiRenderer::DrawUI(ImGuiDrawFunc drawFunc)
@@ -299,9 +321,6 @@ namespace LambdaEngine
 		ImGui::EndFrame();
 		ImGui::Render();
 
-		// Render to screen
-		pGraphicsCommandAllocator->Reset();
-		pGraphicsCommandList->Begin(nullptr);
 
 		//Start drawing
 		ImDrawData* pDrawData = ImGui::GetDrawData();
@@ -321,6 +340,19 @@ namespace LambdaEngine
 		beginRenderPassDesc.ClearColorCount		= 0;
 		beginRenderPassDesc.Offset.x			= 0;
 		beginRenderPassDesc.Offset.y			= 0;
+
+		// Render to screen
+		if (pDrawData != nullptr && pDrawData->CmdListsCount != 0)
+			Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
+
+		pGraphicsCommandAllocator->Reset();
+		pGraphicsCommandList->Begin(nullptr);
+
+		if (pDrawData != nullptr && pDrawData->CmdListsCount != 0)
+		{
+			Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
+			Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
+		}
 
 		if (pDrawData == nullptr || pDrawData->CmdListsCount == 0)
 		{
@@ -512,66 +544,78 @@ namespace LambdaEngine
 			globalVertexOffset	+= pCmdList->VtxBuffer.Size;
 		}
 
+		if (pDrawData != nullptr && pDrawData->CmdListsCount != 0)
+			Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
+
 		pGraphicsCommandList->EndRenderPass();
 		pGraphicsCommandList->End();
 
 		(*ppPrimaryExecutionStage) = pGraphicsCommandList;
 	}
 
-	void ImGuiRenderer::OnMouseMoved(int32 x, int32 y)
+	bool ImGuiRenderer::OnEvent(const Event& event)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		io.MousePos = ImVec2(float32(x), float32(y));
-	}
+		if (IsEventOfType<MouseMovedEvent>(event))
+		{
+			MouseMovedEvent mouseEvent = EventCast<MouseMovedEvent>(event);
+			io.MousePos = ImVec2(float32(mouseEvent.Position.x), float32(mouseEvent.Position.y));
 
-	void ImGuiRenderer::OnButtonPressed(EMouseButton button, uint32 modifierMask)
-	{
-		UNREFERENCED_VARIABLE(modifierMask);
+			return true;
+		}
+		else if (IsEventOfType<MouseButtonClickedEvent>(event))
+		{
+			MouseButtonClickedEvent mouseEvent = EventCast<MouseButtonClickedEvent>(event);
+			io.MouseDown[mouseEvent.Button - 1] = true;
+			
+			return true;
+		}
+		else if (IsEventOfType<MouseButtonReleasedEvent>(event))
+		{
+			MouseButtonReleasedEvent mouseEvent = EventCast<MouseButtonReleasedEvent>(event);
+			io.MouseDown[mouseEvent.Button - 1] = false;
+			
+			return true;
+		}
+		else if (IsEventOfType<MouseScrolledEvent>(event))
+		{
+			MouseScrolledEvent mouseEvent = EventCast<MouseScrolledEvent>(event);
+			io.MouseWheelH	+= static_cast<float32>(mouseEvent.DeltaX);
+			io.MouseWheel	+= static_cast<float32>(mouseEvent.DeltaY);
+			
+			return true;
+		}
+		else if (IsEventOfType<KeyPressedEvent>(event))
+		{
+			KeyPressedEvent keyEvent = EventCast<KeyPressedEvent>(event);
+			io.KeysDown[keyEvent.Key] = true;
+			io.KeyCtrl	= keyEvent.ModiferState.IsCtrlDown();
+			io.KeyShift = keyEvent.ModiferState.IsShiftDown();
+			io.KeyAlt	= keyEvent.ModiferState.IsAltDown();
+			io.KeySuper	= keyEvent.ModiferState.IsSuperDown();
+			
+			return true;
+		}
+		else if (IsEventOfType<KeyReleasedEvent>(event))
+		{
+			KeyReleasedEvent keyEvent = EventCast<KeyReleasedEvent>(event);
+			io.KeysDown[keyEvent.Key] = false;
+			io.KeyCtrl	= keyEvent.ModiferState.IsCtrlDown();
+			io.KeyShift = keyEvent.ModiferState.IsShiftDown();
+			io.KeyAlt	= keyEvent.ModiferState.IsAltDown();
+			io.KeySuper	= keyEvent.ModiferState.IsSuperDown();
+			
+			return true;
+		}
+		else if (IsEventOfType<KeyTypedEvent>(event))
+		{
+			KeyTypedEvent keyEvent = EventCast<KeyTypedEvent>(event);
+			io.AddInputCharacter(keyEvent.Character);
+			
+			return true;
+		}
 
-		ImGuiIO& io = ImGui::GetIO();
-		io.MouseDown[button - 1] = true;
-	}
-
-	void ImGuiRenderer::OnButtonReleased(EMouseButton button)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.MouseDown[button - 1] = false;
-	}
-
-	void ImGuiRenderer::OnMouseScrolled(int32 deltaX, int32 deltaY)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.MouseWheelH	+= (float32)deltaX;
-		io.MouseWheel	+= (float32)deltaY;
-	}
-
-	void ImGuiRenderer::OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
-	{
-		UNREFERENCED_VARIABLE(isRepeat);
-		UNREFERENCED_VARIABLE(modifierMask);
-
-		ImGuiIO& io = ImGui::GetIO();
-		io.KeysDown[key] = true;
-		io.KeyCtrl	= io.KeysDown[EKey::KEY_LEFT_CONTROL]	|| io.KeysDown[EKey::KEY_RIGHT_CONTROL];
-		io.KeyShift	= io.KeysDown[EKey::KEY_LEFT_SHIFT]		|| io.KeysDown[EKey::KEY_RIGHT_SHIFT];
-		io.KeyAlt	= io.KeysDown[EKey::KEY_LEFT_ALT]		|| io.KeysDown[EKey::KEY_RIGHT_ALT];
-		io.KeySuper	= io.KeysDown[EKey::KEY_LEFT_SUPER]		|| io.KeysDown[EKey::KEY_RIGHT_SUPER];
-	}
-
-	void ImGuiRenderer::OnKeyReleased(EKey key)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.KeysDown[key] = false;
-		io.KeyCtrl	= io.KeysDown[EKey::KEY_LEFT_CONTROL]	|| io.KeysDown[EKey::KEY_RIGHT_CONTROL];
-		io.KeyShift	= io.KeysDown[EKey::KEY_LEFT_SHIFT]		|| io.KeysDown[EKey::KEY_RIGHT_SHIFT];
-		io.KeyAlt	= io.KeysDown[EKey::KEY_LEFT_ALT]		|| io.KeysDown[EKey::KEY_RIGHT_ALT];
-		io.KeySuper	= io.KeysDown[EKey::KEY_LEFT_SUPER]		|| io.KeysDown[EKey::KEY_RIGHT_SUPER];
-	}
-
-	void ImGuiRenderer::OnKeyTyped(uint32 character)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		io.AddInputCharacter(character);
+		return false;
 	}
 
 	ImGuiContext* ImGuiRenderer::GetImguiContext()
