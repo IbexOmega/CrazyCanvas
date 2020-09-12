@@ -364,7 +364,6 @@ namespace LambdaEngine
 						//Check if this Resource State has a binding type of ATTACHMENT, if it does, we need to modify the surrounding barriers and the internal Previous- and Next States of the Resource State
 						if (pResourceState->BindingType == ERenderGraphResourceBindingType::ATTACHMENT)
 						{
-							bool														prevSameFrame = true;
 							RenderGraphResourceState* pPreviousResourceStateDesc = nullptr;
 							int32														previousSynchronizationPipelineStageDescIndex = -1;
 							TArray<RenderGraphResourceSynchronizationDesc>::Iterator	previousSynchronizationDescIt;
@@ -387,7 +386,6 @@ namespace LambdaEngine
 									else
 									{
 										pp = orderedPipelineStages.GetSize() - 1;
-										prevSameFrame = false;
 
 										if (pp == p)
 											break;
@@ -493,7 +491,6 @@ namespace LambdaEngine
 							if (pPreviousResourceStateDesc != nullptr)
 							{
 								pResourceState->AttachmentSynchronizations.PrevBindingType	= pPreviousResourceStateDesc->BindingType;
-								pResourceState->AttachmentSynchronizations.PrevSameFrame	= prevSameFrame;
 							}
 							else
 							{
@@ -1032,8 +1029,9 @@ namespace LambdaEngine
 			if (resourceStateIt != resourceStatesByHalfAttributeIndex.end())
 			{
 				RenderGraphResourceState resourceState = {};
-				resourceState.ResourceName	= resourceStateIt->second.ResourceName;
-				resourceState.BindingType	= resourceStateIt->second.BindingType;
+				resourceState.ResourceName								= resourceStateIt->second.ResourceName;
+				resourceState.BindingType								= resourceStateIt->second.BindingType;
+				resourceState.AttachmentSynchronizations.PrevSameFrame	= resourceStateIt->second.InputLinkIndex != -1;
 
 				pDstRenderStage->ResourceStates.PushBack(resourceState);
 			}
