@@ -14,7 +14,8 @@ namespace LambdaEngine
 	struct ClientDesc : public PacketManagerDesc
 	{
 		IClientHandler* Handler = nullptr;
-		EProtocol Protocol = EProtocol::UDP;
+		EProtocol Protocol		= EProtocol::UDP;
+		Timestamp PingTimeout	= Timestamp::Seconds(2);
 	};
 
 	class LAMBDA_API ClientBase :
@@ -65,6 +66,7 @@ namespace LambdaEngine
 		IClientHandler* m_pHandler;
 		EClientState m_State;
 		SpinLock m_Lock;
+		Timestamp m_PingTimeout;
 		std::atomic_bool m_SendDisconnectPacket;
 
 	private:

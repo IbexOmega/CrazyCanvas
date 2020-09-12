@@ -6,6 +6,8 @@
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/NetworkChallenge.h"
 
+#include "Engine/EngineLoop.h"
+
 namespace LambdaEngine
 {
 	std::set<ClientBase*> ClientBase::s_Clients;
@@ -14,6 +16,7 @@ namespace LambdaEngine
 	ClientBase::ClientBase(const ClientDesc& desc) :
 		m_pSocket(nullptr),
 		m_pHandler(desc.Handler),
+		m_PingTimeout(desc.PingTimeout),
 		m_State(STATE_DISCONNECTED),
 		m_SendDisconnectPacket(false)
 	{
@@ -116,7 +119,6 @@ namespace LambdaEngine
 		TransmitPackets();*/
 	}
 
-
 	void ClientBase::Tick(Timestamp delta)
 	{
 		if (m_State != STATE_DISCONNECTED)
@@ -125,6 +127,13 @@ namespace LambdaEngine
 		}
 
 		Flush();
+
+		Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastReceived();
+		if (timeSinceLastPacketReceived >= m_PingTimeout)
+		{
+			m_SendDisconnectPacket = false;
+			Disconnect();
+		}
 	}
 
 	void ClientBase::TransmitPackets()

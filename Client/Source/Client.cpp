@@ -53,6 +53,7 @@ Client::Client() :
     desc.ResendRTTMultiplier    = 2.0F;
     desc.Handler                = this;
     desc.Protocol               = EProtocol::UDP;
+	desc.PingTimeout			= Timestamp::Seconds(3);
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
