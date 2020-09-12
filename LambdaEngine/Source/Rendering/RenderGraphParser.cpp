@@ -99,7 +99,7 @@ namespace LambdaEngine
 			}
 		}
 
-		TArray<RenderStageDesc>			orderedRenderStages;
+		TArray<RenderStageDesc>				orderedRenderStages;
 		TArray<SynchronizationStageDesc>	orderedSynchronizationStages;
 		TArray<PipelineStageDesc>			orderedPipelineStages;
 
@@ -113,10 +113,10 @@ namespace LambdaEngine
 
 		if (generateImGuiStage)
 		{
-			imguiRenderStage.Name = RENDER_GRAPH_IMGUI_STAGE_NAME;
-			imguiRenderStage.Type = EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
+			imguiRenderStage.Name			= RENDER_GRAPH_IMGUI_STAGE_NAME;
+			imguiRenderStage.Type			= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
 			imguiRenderStage.CustomRenderer = true;
-			imguiRenderStage.Enabled = true;
+			imguiRenderStage.Enabled		= true;
 		}
 
 		//Loop Through each Render Stage in Order and create synchronization stages
@@ -758,6 +758,8 @@ namespace LambdaEngine
 		TSet<String> parentRenderStageNames;
 		bool result = true;
 
+		//Todo: Implement Index Buffer & Indirect Args Buffer 
+
 		//Iterate through all resource states in the current Render Stages
 		for (const EditorResourceStateIdent& resourceStateIdent : childRenderStageIt->second.ResourceStateIdents)
 		{
@@ -903,8 +905,8 @@ namespace LambdaEngine
 		{
 			if (pNextResourceState != nullptr)
 			{
-				//If the ResourceState is Readonly and the current and next Binding Types are the same we dont want a synchronization, no matter what queue type
-				if (!IsReadOnly(currentResourceStateIt->second.BindingType) || currentResourceStateIt->second.BindingType != pNextResourceState->BindingType)
+				//If the ResourceState is not Readonly or the current and next Binding Types are not the same we do want a synchronization, no matter what queue type
+				if (IsReadOnly(currentResourceStateIt->second.BindingType) && currentResourceStateIt->second.BindingType == pNextResourceState->BindingType)
 				{
 					//Check if pNextResourceState belongs to a Render Stage, otherwise we need to check if it belongs to Final Output
 					if (pNextRenderStage != nullptr)
