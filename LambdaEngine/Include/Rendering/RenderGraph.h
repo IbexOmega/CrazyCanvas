@@ -53,18 +53,19 @@ namespace LambdaEngine
 		uint32 MaxTexturesPerDescriptorSet					= 1;
 	};
 
+	struct PushConstantsUpdate
+	{
+		String	RenderStageName = "";
+		void*	pData			= nullptr;
+		uint32	DataSize		= 0;
+	};
+
 	struct ResourceUpdateDesc
 	{
 		String ResourceName	= "No Resource Name";
 
 		union
 		{
-			struct
-			{
-				void*				pData;
-				uint32				DataSize;
-			} PushConstantUpdate;
-
 			struct
 			{
 				TextureDesc*		pTextureDesc;
@@ -153,6 +154,14 @@ namespace LambdaEngine
 			} BufferUpdate;
 		};
 
+		struct PushConstants
+		{
+			byte*	pData		= nullptr;
+			uint32	DataSize	= 0;
+			uint32	Offset		= 0;
+			uint32	MaxDataSize	= 0;
+		};
+
 		struct Resource
 		{
 			String						Name				= "";
@@ -169,11 +178,13 @@ namespace LambdaEngine
 
 			struct
 			{
+				ERenderGraphTextureType				TextureType = ERenderGraphTextureType::TEXTURE_2D;
 				bool								IsOfArrayType	= false;
 				EFormat								Format			= EFormat::FORMAT_NONE;
 				TArray<PipelineTextureBarrierDesc>	InititalTransitionBarriers;
 				TArray<Texture*>					Textures;
 				TArray<TextureView*>				TextureViews;
+				TArray<TextureView*>				CubeFaceTextureViews;
 				TArray<Sampler*>					Samplers;
 			} Texture;
 
@@ -196,6 +207,9 @@ namespace LambdaEngine
 			String					Name							= "";
 			RenderStageParameters	Parameters						= {};
 
+			//Special Draw Params
+			bool					HasTextureCubeAsAttachment		= false;
+
 			glm::uvec3				Dimensions						= glm::uvec3(0);
 
 			bool					UsesCustomRenderer				= false;
@@ -203,6 +217,7 @@ namespace LambdaEngine
 
 			FPipelineStageFlags		FirstPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 			FPipelineStageFlags		LastPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			uint32					PipelineStageMask				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			ERenderStageDrawType	DrawType						= ERenderStageDrawType::NONE;
 			Resource*				pIndexBufferResource			= nullptr;
@@ -216,7 +231,8 @@ namespace LambdaEngine
 			DescriptorSet**			ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
 			RenderPass*				pRenderPass						= nullptr;
 
-			Resource*				pPushConstantsResource			= nullptr;
+			PushConstants			pInternalPushConstants[NUM_INTERNAL_PUSH_CONSTANTS_TYPES];
+			PushConstants			ExternalPushConstants			= {};
 			TArray<Resource*>		RenderTargetResources;
 			Resource*				pDepthStencilAttachment			= nullptr;
 		};
@@ -261,7 +277,8 @@ namespace LambdaEngine
 		* Updates a resource in the Render Graph, can be called at any time
 		*	desc - The ResourceUpdateDesc, only the Update Parameters for the given update type should be set
 		*/
-		void UpdateResource(const ResourceUpdateDesc& desc);
+		void UpdateResource(const ResourceUpdateDesc* pDesc);
+		void UpdatePushConstants(const PushConstantsUpdate* pDesc);
 		void UpdateRenderStageDimensions(const String& renderStageName, uint32 x, uint32 y, uint32 z = 0);
 		void UpdateResourceDimensions(const String& resourceName, uint32 x, uint32 y = 0);
 
@@ -299,9 +316,9 @@ namespace LambdaEngine
 		void UpdateRelativeParameters();
 		void UpdateInternalResource(InternalResourceUpdateDesc& desc);
 
-		void UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceBuffer(Resource* pResource, const ResourceUpdateDesc& desc);
-		void UpdateResourceAccelerationStructure(Resource* pResource, const ResourceUpdateDesc& desc);
+		void UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc* pDesc);
+		void UpdateResourceBuffer(Resource* pResource, const ResourceUpdateDesc* pDesc);
+		void UpdateResourceAccelerationStructure(Resource* pResource, const ResourceUpdateDesc* pDesc);
 		void UpdateRelativeRenderStageDimensions(RenderStage* pRenderStage);
 		void UpdateRelativeResourceDimensions(InternalResourceUpdateDesc* pResourceUpdateDesc);
 

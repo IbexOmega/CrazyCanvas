@@ -42,6 +42,7 @@
 
 #include "Threading/API/Thread.h"
 
+#include "Math/Random.h"
 #include "Debug/Profiler.h"
 
 #include <imgui.h>
@@ -59,7 +60,8 @@ enum class EScene
 {
 	SPONZA,
 	CORNELL,
-	TESTING
+	TESTING,
+	CUBEMAP
 };
 
 Sandbox::Sandbox()
@@ -296,6 +298,49 @@ Sandbox::Sandbox()
 			}
 		}
 	}
+	else if (scene == EScene::CUBEMAP)
+	{
+		//Cube
+		{
+			TArray<GameObject> sceneGameObjects;
+			uint32 cubeMeshGUID = ResourceManager::LoadMeshFromFile("cube.obj");
+
+			glm::vec3 position(0.0f, 0.0f, 0.0f);
+			glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec3 scale(1.0f);
+
+			glm::mat4 transform(1.0f);
+			transform = glm::translate(transform, position);
+			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			transform = glm::scale(transform, scale);
+
+			MaterialProperties materialProperties;
+			materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+			materialProperties.Roughness = 0.1f;
+			materialProperties.Metallic = 0.1f;
+
+			GameObject sphereGameObject = {};
+			sphereGameObject.Mesh = cubeMeshGUID;
+			sphereGameObject.Material = ResourceManager::LoadMaterialFromMemory(
+				"Default r: " + std::to_string(0.1f) + " m: " + std::to_string(0.1f),
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				materialProperties);
+
+
+			InstanceIndexAndTransform instanceIndexAndTransform;
+			instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(sphereGameObject, transform);
+			instanceIndexAndTransform.Position = position;
+			instanceIndexAndTransform.Rotation = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+			instanceIndexAndTransform.Scale = scale;
+
+			m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
+		}
+	}
+	
 
 	m_pScene->Finalize();
 	Renderer::SetScene(m_pScene);
@@ -436,6 +481,14 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 		});
 	}
 
+	//float32 test = Random::Float32();
+
+	//PushConstantsUpdate pushConstantsUpdateTest = {};
+	//pushConstantsUpdateTest.RenderStageName		= "DEMO";
+	//pushConstantsUpdateTest.pData				= &test;
+	//pushConstantsUpdateTest.DataSize			= sizeof(float32);
+	//Renderer::GetRenderGraph()->UpdatePushConstants(&pushConstantsUpdateTest);
+
 	Renderer::Render();
 }
 
@@ -443,11 +496,12 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 {
 	using namespace LambdaEngine;
 
+	Sampler* pNearestSampler				= Sampler::GetNearestSampler();
+
 	GUID_Lambda blueNoiseID = ResourceManager::GetTextureGUID("Blue Noise Texture");
 
 	Texture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
 	TextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
-	Sampler* pNearestSampler				= Sampler::GetNearestSampler();
 
 	ResourceUpdateDesc blueNoiseUpdateDesc = {};
 	blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";
@@ -455,7 +509,20 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
 
-	Renderer::GetRenderGraph()->UpdateResource(blueNoiseUpdateDesc);
+	Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
+
+	GUID_Lambda cubemapTexID = ResourceManager::GetTextureGUID("Cubemap Texture");
+
+	Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
+	TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
+
+	ResourceUpdateDesc cubeTextureUpdateDesc = {};
+	cubeTextureUpdateDesc.ResourceName = "SKYBOX";
+	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
+	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
+	cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
+
+	Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 }
 
 namespace LambdaEngine
@@ -493,7 +560,34 @@ bool Sandbox::LoadRendererResources()
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
 
-		Renderer::GetRenderGraph()->UpdateResource(blueNoiseUpdateDesc);
+		Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
+	}
+
+	// For Skybox RenderGraph
+	{
+		String skybox[]
+		{
+			"Skybox/right.png",
+			"Skybox/left.png",
+			"Skybox/top.png",
+			"Skybox/bottom.png",
+			"Skybox/front.png",
+			"Skybox/back.png"
+		};
+
+		GUID_Lambda cubemapTexID = ResourceManager::LoadCubeTexturesArrayFromFile("Cubemap Texture", skybox, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
+
+		Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
+		TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
+		Sampler* pNearestSampler		= Sampler::GetNearestSampler();
+
+		ResourceUpdateDesc cubeTextureUpdateDesc = {};
+		cubeTextureUpdateDesc.ResourceName = "SKYBOX";
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
+
+		Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
 
 	Renderer::GetRenderGraph()->AddCreateHandler(this);

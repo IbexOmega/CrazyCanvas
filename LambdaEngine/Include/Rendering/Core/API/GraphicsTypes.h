@@ -21,6 +21,7 @@ namespace LambdaEngine
 	constexpr const uint32 MAX_IMMUTABLE_SAMPLERS		= 32;
 	constexpr const uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
 	constexpr const uint32 MAX_MISS_SHADER_COUNT		= 8;
+	constexpr const uint32 MAX_PUSH_CONSTANT_SIZE		= 128;
 	constexpr const uint32 EXTERNAL_SUBPASS				= 0xFFFFFFFF;
 	constexpr const uint32 MAX_UNIQUE_MATERIALS			= 32;
 	constexpr const uint32 BACK_BUFFER_COUNT			= 3;
@@ -316,6 +317,7 @@ namespace LambdaEngine
 		TEXTURE_FLAG_DEPTH_STENCIL		= FLAG(4),
 		TEXTURE_FLAG_COPY_SRC			= FLAG(5),
 		TEXTURE_FLAG_COPY_DST			= FLAG(6),
+		TEXTURE_FLAG_CUBE_COMPATIBLE	= FLAG(7)
 	};
 
 	enum FTextureViewFlags : uint32

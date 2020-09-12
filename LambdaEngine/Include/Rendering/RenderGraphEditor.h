@@ -14,6 +14,8 @@
 #include "Application/API/Events/MouseEvents.h"
 #include "Application/API/Events/KeyEvents.h"
 
+#include "Utilities/IOUtilities.h"
+
 namespace LambdaEngine
 {
 	class RenderGraph;
@@ -45,6 +47,7 @@ namespace LambdaEngine
 		void InternalRenderEditResourceView(RenderGraphResourceDesc* pResource, char* pNameBuffer, int32 nameBufferLength);
 
 		void RenderShaderView(float textWidth, float textHeight);
+		void RenderShaderTreeView(const LambdaDirectory& dir, float textWidth, float textHeight, int32& selectedIndex);
 
 		void RenderGraphView();
 		void RenderAddRenderStageView();
@@ -89,11 +92,13 @@ namespace LambdaEngine
 
 		EPipelineStateType									m_CurrentlyAddingRenderStage	= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 		ERenderGraphResourceType							m_CurrentlyAddingResource		= ERenderGraphResourceType::NONE;
+		ERenderGraphTextureType								m_CurrentlyAddingTextureType	= ERenderGraphTextureType::TEXTURE_2D;
 		String												m_CurrentlyEditingResource		= "";
 
 		EditorStartedLinkInfo								m_StartedLinkInfo				= {};
 
 		TArray<String>										m_FilesInShaderDirectory;
+		LambdaDirectory										m_FilesInShaderMap;
 
 		RenderGraphStructureDesc							m_ParsedRenderGraphStructure	= {};
 		bool												m_ParsedGraphValid				= true;

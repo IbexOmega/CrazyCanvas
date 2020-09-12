@@ -15,14 +15,15 @@ namespace LambdaEngine
 
 	TextureViewVK::~TextureViewVK()
 	{
-		SAFERELEASE(m_Desc.pTexture);
-		m_pDevice->DestroyImageView(&m_ImageView);
+		InternalRelease();
 	}
 
 	bool TextureViewVK::Init(const TextureViewDesc* pDesc)
 	{
-		const TextureVK* pTextureVk = reinterpret_cast<const TextureVK*>(pDesc->pTexture);
-		TextureDesc textureDesc = pTextureVk->GetDesc();
+		InternalRelease();
+
+		const TextureVK*	pTextureVk  = reinterpret_cast<const TextureVK*>(pDesc->pTexture);
+		TextureDesc			textureDesc = pTextureVk->GetDesc();
 		
 		VALIDATE(pDesc->Format == textureDesc.Format);
 		
@@ -73,6 +74,10 @@ namespace LambdaEngine
 		{
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
 		}
+		else if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY)
+		{
+			createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+		}
 		
 		VkResult result = vkCreateImageView(m_pDevice->Device, &createInfo, nullptr, &m_ImageView);
 		if (result != VK_SUCCESS)
@@ -89,6 +94,15 @@ namespace LambdaEngine
 			D_LOG_MESSAGE("[TextureViewVK]: Created ImageView");
 
 			return true;
+		}
+	}
+
+	void TextureViewVK::InternalRelease()
+	{
+		if (m_ImageView != VK_NULL_HANDLE)
+		{
+			SAFERELEASE(m_Desc.pTexture);
+			m_pDevice->DestroyImageView(&m_ImageView);
 		}
 	}
 
