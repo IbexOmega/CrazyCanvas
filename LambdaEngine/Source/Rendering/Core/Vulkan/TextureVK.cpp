@@ -14,27 +14,7 @@ namespace LambdaEngine
 
 	TextureVK::~TextureVK()
 	{
-		if (m_Memory != VK_NULL_HANDLE || m_Allocator != nullptr)
-		{
-			if (m_Image != VK_NULL_HANDLE)
-			{
-				vkDestroyImage(m_pDevice->Device, m_Image, nullptr);
-				m_Image = VK_NULL_HANDLE;
-			}
-		}
-
-		if (m_Allocator)
-		{
-			m_Allocator->Free(&m_Allocation);
-		}
-		else
-		{
-			if (m_Memory != VK_NULL_HANDLE)
-			{
-				vkFreeMemory(m_pDevice->Device, m_Memory, nullptr);
-				m_Memory = VK_NULL_HANDLE;
-			}
-		}
+		InternalRelease();
 	}
 
 	bool TextureVK::Init(const TextureDesc* pDesc, DeviceAllocator* pAllocator)
@@ -79,6 +59,10 @@ namespace LambdaEngine
 		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_COPY_SRC)
 		{
 			info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+		}
+		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_CUBE_COMPATIBLE)
+		{
+			info.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 		}
 
 		if (pDesc->Type == ETextureType::TEXTURE_TYPE_1D)
@@ -166,6 +150,8 @@ namespace LambdaEngine
 		VALIDATE(image != VK_NULL_HANDLE);
 		VALIDATE(pDesc != nullptr);
 		
+		InternalRelease();
+
 		m_Image = image;
 		m_Desc = *pDesc;
 		
@@ -174,6 +160,31 @@ namespace LambdaEngine
 		D_LOG_MESSAGE("[TextureVK]: Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
 	}
 	
+	void TextureVK::InternalRelease()
+	{
+		if (m_Memory != VK_NULL_HANDLE || m_Allocator != nullptr)
+		{
+			if (m_Image != VK_NULL_HANDLE)
+			{
+				vkDestroyImage(m_pDevice->Device, m_Image, nullptr);
+				m_Image = VK_NULL_HANDLE;
+			}
+		}
+
+		if (m_Allocator)
+		{
+			m_Allocator->Free(&m_Allocation);
+		}
+		else
+		{
+			if (m_Memory != VK_NULL_HANDLE)
+			{
+				vkFreeMemory(m_pDevice->Device, m_Memory, nullptr);
+				m_Memory = VK_NULL_HANDLE;
+			}
+		}
+	}
+
 	void TextureVK::SetName(const String& debugName)
 	{
 		m_pDevice->SetVulkanObjectName(debugName,reinterpret_cast<uint64>(m_Image), VK_OBJECT_TYPE_IMAGE);

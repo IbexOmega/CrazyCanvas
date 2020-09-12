@@ -9,6 +9,9 @@
 
 namespace LambdaEngine
 {
+	/*
+	* Win32Misc
+	*/
 	void Win32Misc::MessageBox(const char* pCaption, const char* pText)
 	{
 		::MessageBoxA(0, pText, pCaption, MB_ICONERROR | MB_OK);
@@ -32,7 +35,7 @@ namespace LambdaEngine
 		constexpr uint32 BUFFER_SIZE = 2048;
 		static char buffer[BUFFER_SIZE];
 
-		int written = vsprintf_s(buffer, BUFFER_SIZE - 2, pFormat, args);
+		int32 written = vsprintf_s(buffer, BUFFER_SIZE - 2, pFormat, args);
 		if (written > 0)
 		{
 			buffer[written]		= '\n';

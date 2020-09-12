@@ -53,7 +53,6 @@ CrazyCanvas::CrazyCanvas()
 	using namespace LambdaEngine;
 
 	Input::Disable();
-	CommonApplication::Get()->AddEventHandler(this);
 
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
@@ -145,8 +144,6 @@ CrazyCanvas::CrazyCanvas()
 
 CrazyCanvas::~CrazyCanvas()
 {
-	LambdaEngine::CommonApplication::Get()->RemoveEventHandler(this);
-
 	SAFEDELETE(m_pScene);
 	SAFEDELETE(m_pCamera);
 }
@@ -216,7 +213,34 @@ bool CrazyCanvas::LoadRendererResources()
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews = &pBlueNoiseTextureView;
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers = &pNearestSampler;
 
-		Renderer::GetRenderGraph()->UpdateResource(blueNoiseUpdateDesc);
+		Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
+	}
+
+	// For Skybox RenderGraph
+	{
+		String skybox[]
+		{
+			"Skybox/right.png",
+			"Skybox/left.png",
+			"Skybox/top.png",
+			"Skybox/bottom.png",
+			"Skybox/front.png",
+			"Skybox/back.png"
+		};
+
+		GUID_Lambda cubemapTexID = ResourceManager::LoadCubeTexturesArrayFromFile("Cubemap Texture", skybox, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
+
+		Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
+		TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
+		Sampler* pNearestSampler		= Sampler::GetNearestSampler();
+
+		ResourceUpdateDesc cubeTextureUpdateDesc = {};
+		cubeTextureUpdateDesc.ResourceName							= "SKYBOX";
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
+
+		Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
 
 	return true;

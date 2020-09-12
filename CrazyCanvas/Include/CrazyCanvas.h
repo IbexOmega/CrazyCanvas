@@ -1,7 +1,7 @@
 #pragma once
 #include "Game/Game.h"
 
-#include "Application/API/EventHandler.h"
+#include "Application/API/ApplicationEventHandler.h"
 #include "CameraTrack.h"
 
 #include "Containers/TArray.h"
@@ -26,7 +26,7 @@ namespace LambdaEngine
 	class RenderGraphEditor;
 }
 
-class CrazyCanvas : public LambdaEngine::Game, public LambdaEngine::EventHandler
+class CrazyCanvas : public LambdaEngine::Game, public LambdaEngine::ApplicationEventHandler
 {
 public:
 	CrazyCanvas();

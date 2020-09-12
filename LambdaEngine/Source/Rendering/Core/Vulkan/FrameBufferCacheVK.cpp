@@ -49,19 +49,22 @@ namespace LambdaEngine
 	void FrameBufferCacheVK::DestroyImageView(VkImageView imageView) const
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
-		
-		for (FrameBufferMap::iterator it = m_FrameBufferMap.begin(); it != m_FrameBufferMap.end();)
-		{
-			if (it->first.Contains(imageView))
-			{
-				vkDestroyFramebuffer(m_pDevice->Device, it->second, nullptr);
-				it->second = VK_NULL_HANDLE;
 
-				it = m_FrameBufferMap.erase(it);
-			}
-			else
+		if (!m_FrameBufferMap.empty())
+		{
+			for (FrameBufferMap::iterator it = m_FrameBufferMap.begin(); it != m_FrameBufferMap.end();)
 			{
-				it++;
+				if (it->first.Contains(imageView))
+				{
+					vkDestroyFramebuffer(m_pDevice->Device, it->second, nullptr);
+					it->second = VK_NULL_HANDLE;
+
+					it = m_FrameBufferMap.erase(it);
+				}
+				else
+				{
+					it++;
+				}
 			}
 		}
 	}
@@ -106,7 +109,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			//D_LOG_MESSAGE("[FrameBufferCacheVK]: Created framebuffer [0]:%p [1]:%p [2]:%p [3]:%p [4]:%p [5]:%p [6]:%p [7]:%p [Depth]:%p [Pass]:%p", key.ColorAttachmentsViews[0], key.ColorAttachmentsViews[1], key.ColorAttachmentsViews[2], key.ColorAttachmentsViews[3], key.ColorAttachmentsViews[4], key.ColorAttachmentsViews[5], key.ColorAttachmentsViews[6], key.ColorAttachmentsViews[7], key.DepthStencilView, key.RenderPass);
+			D_LOG_MESSAGE("[FrameBufferCacheVK]: Created framebuffer [0]:%p [1]:%p [2]:%p [3]:%p [4]:%p [5]:%p [6]:%p [7]:%p [Depth]:%p [Pass]:%p", key.ColorAttachmentsViews[0], key.ColorAttachmentsViews[1], key.ColorAttachmentsViews[2], key.ColorAttachmentsViews[3], key.ColorAttachmentsViews[4], key.ColorAttachmentsViews[5], key.ColorAttachmentsViews[6], key.ColorAttachmentsViews[7], key.DepthStencilView, key.RenderPass);
 
 			m_FrameBufferMap.insert(FrameBufferMapEntry(key, frameBuffer));
 			return frameBuffer;

@@ -28,6 +28,8 @@ namespace LambdaEngine
 		}
 
 	public:
+		void InternalRelease();
+
 		// DeviceChild interface
 		virtual void SetName(const String& name) override final;
 

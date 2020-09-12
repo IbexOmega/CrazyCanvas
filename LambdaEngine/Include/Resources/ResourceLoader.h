@@ -67,6 +67,18 @@ namespace LambdaEngine
 		*/
 		static Texture* LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips);
 
+
+		/*
+		* Load multiple Cube textures from file and combine into Texture Arrays along with TextureViews and CubeTextureViews
+		*	name - A Name of given to the cubeTexture
+		*	pFilenames - Names of the texture files
+		*	count - number of cubeTextures to load
+		*	format - The format of the pixeldata
+		*	generateMips - If mipmaps should be generated on load
+		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
+		*/
+		static Texture* LoadCubeTexturesArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips);
+
 		/*
 		* Load a texture from memory
 		*	name			- Name of the texture

@@ -23,6 +23,8 @@
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/Window.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include "Audio/AudioSystem.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
@@ -35,33 +37,38 @@
 #include "Networking/API/TCP/ClientTCP.h"
 
 Client::Client() :
-    m_pClient(nullptr)
+	m_pClient(nullptr)
 {
 	using namespace LambdaEngine;
 
-    CommonApplication::Get()->AddEventHandler(this);
-    CommonApplication::Get()->GetMainWindow()->SetTitle("Client");
-    PlatformConsole::SetTitle("Client Console");
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
+
+	CommonApplication::Get()->GetMainWindow()->SetTitle("Client");
+	PlatformConsole::SetTitle("Client Console");
 
 
-    ClientDesc desc = {};
-    desc.PoolSize               = 512;
-    desc.MaxRetries             = 10;
-    desc.ResendRTTMultiplier    = 2.0F;
-    desc.Handler                = this;
-    desc.Protocol               = EProtocol::TCP;
+	ClientDesc desc = {};
+	desc.PoolSize               = 512;
+	desc.MaxRetries             = 10;
+	desc.ResendRTTMultiplier    = 2.0F;
+	desc.Handler                = this;
+	desc.Protocol               = EProtocol::TCP;
 
-    m_pClient = NetworkUtils::CreateClient(desc);
+	m_pClient = NetworkUtils::CreateClient(desc);
 
-    if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
-    {
-        LOG_ERROR("Failed to connect!");
-    }
+	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
+	{
+		LOG_ERROR("Failed to connect!");
+	}
 }
 
 Client::~Client()
 {
-    m_pClient->Release();
+	using namespace LambdaEngine;
+
+	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
+
+	m_pClient->Release();
 
 	SAFEDELETE(m_pRenderGraph);
 	SAFEDELETE(m_pRenderer);
@@ -69,24 +76,24 @@ Client::~Client()
 
 void Client::OnConnecting(LambdaEngine::IClient* pClient)
 {
-    UNREFERENCED_VARIABLE(pClient);
-    LOG_MESSAGE("OnConnecting()");
+	UNREFERENCED_VARIABLE(pClient);
+	LOG_MESSAGE("OnConnecting()");
 }
 
 void Client::OnConnected(LambdaEngine::IClient* pClient)
 {
-    UNREFERENCED_VARIABLE(pClient);
-    using namespace LambdaEngine;
+	UNREFERENCED_VARIABLE(pClient);
+	using namespace LambdaEngine;
 
-    LOG_MESSAGE("OnConnected()");
+	LOG_MESSAGE("OnConnected()");
 
-    /*for (int i = 0; i < 1; i++)
-    {
-        NetworkPacket* pPacket = m_pClient->GetFreePacket(1);
-        BinaryEncoder encoder(pPacket);
-        encoder.WriteInt32(i);
-        m_pClient->SendReliable(pPacket, this);
-    }*/
+	/*for (int i = 0; i < 1; i++)
+	{
+		NetworkPacket* pPacket = m_pClient->GetFreePacket(1);
+		BinaryEncoder encoder(pPacket);
+		encoder.WriteInt32(i);
+		m_pClient->SendReliable(pPacket, this);
+	}*/
 
 
 	NetworkSegment* pPacket = m_pClient->GetFreePacket(1);
@@ -97,27 +104,27 @@ void Client::OnConnected(LambdaEngine::IClient* pClient)
 
 void Client::OnDisconnecting(LambdaEngine::IClient* pClient)
 {
-    UNREFERENCED_VARIABLE(pClient);
-    LOG_MESSAGE("OnDisconnecting()");
+	UNREFERENCED_VARIABLE(pClient);
+	LOG_MESSAGE("OnDisconnecting()");
 }
 
 void Client::OnDisconnected(LambdaEngine::IClient* pClient)
 {
-    UNREFERENCED_VARIABLE(pClient);
-    LOG_MESSAGE("OnDisconnected()");
+	UNREFERENCED_VARIABLE(pClient);
+	LOG_MESSAGE("OnDisconnected()");
 }
 
 void Client::OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngine::NetworkSegment* pPacket)
 {
-    UNREFERENCED_VARIABLE(pClient);
-    UNREFERENCED_VARIABLE(pPacket);
-    LOG_MESSAGE("OnPacketReceived(%s)", pPacket->ToString().c_str());
+	UNREFERENCED_VARIABLE(pClient);
+	UNREFERENCED_VARIABLE(pPacket);
+	LOG_MESSAGE("OnPacketReceived(%s)", pPacket->ToString().c_str());
 }
 
 void Client::OnServerFull(LambdaEngine::IClient* pClient)
 {
-    UNREFERENCED_VARIABLE(pClient);
-    LOG_ERROR("OnServerFull()");
+	UNREFERENCED_VARIABLE(pClient);
+	LOG_ERROR("OnServerFull()");
 }
 
 void Client::OnClientReleased(LambdaEngine::IClient* pClient)
@@ -127,43 +134,43 @@ void Client::OnClientReleased(LambdaEngine::IClient* pClient)
 
 void Client::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)
 {
-    UNREFERENCED_VARIABLE(pPacket);
-    LOG_INFO("OnPacketDelivered(%s)", pPacket->ToString().c_str());
+	UNREFERENCED_VARIABLE(pPacket);
+	LOG_INFO("OnPacketDelivered(%s)", pPacket->ToString().c_str());
 }
 
 void Client::OnPacketResent(LambdaEngine::NetworkSegment* pPacket, uint8 tries)
 {
-    UNREFERENCED_VARIABLE(pPacket);
-    LOG_INFO("OnPacketResent(%d)", tries);
+	UNREFERENCED_VARIABLE(pPacket);
+	LOG_INFO("OnPacketResent(%d)", tries);
 }
 
 void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint8 tries)
 {
-    UNREFERENCED_VARIABLE(pPacket);
-    LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
+	UNREFERENCED_VARIABLE(pPacket);
+	LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
 
-void Client::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
+bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 {
 	using namespace LambdaEngine;
-	UNREFERENCED_VARIABLE(modifierMask);
-	UNREFERENCED_VARIABLE(isRepeat);
 
-    if (key == EKey::KEY_ENTER)
-    {
-        if (m_pClient->IsConnected())
-            m_pClient->Disconnect();
-        else
-            m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444));
-    }
-    else
-    {
-        uint16 packetType = 0;
-        NetworkSegment* packet = m_pClient->GetFreePacket(packetType);
-        BinaryEncoder encoder(packet);
-        encoder.WriteString("Test Message");
-        m_pClient->SendReliable(packet, this);
-    }
+	if (event.Key == EKey::KEY_ENTER)
+	{
+		if (m_pClient->IsConnected())
+			m_pClient->Disconnect();
+		else
+			m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444));
+	}
+	else
+	{
+		uint16 packetType = 0;
+		NetworkSegment* packet = m_pClient->GetFreePacket(packetType);
+		BinaryEncoder encoder(packet);
+		encoder.WriteString("Test Message");
+		m_pClient->SendReliable(packet, this);
+	}
+
+	return false;
 }
 
 void Client::Tick(LambdaEngine::Timestamp delta)
@@ -173,21 +180,21 @@ void Client::Tick(LambdaEngine::Timestamp delta)
 
 	NetworkDebugger::RenderStatisticsWithImGUI(m_pClient);
 
-    Renderer::Render();
+	Renderer::Render();
 }
 
 void Client::FixedTick(LambdaEngine::Timestamp delta)
 {
-    using namespace LambdaEngine;
-    UNREFERENCED_VARIABLE(delta);
+	using namespace LambdaEngine;
+	UNREFERENCED_VARIABLE(delta);
 }
 
 namespace LambdaEngine
 {
-    Game* CreateGame()
-    {
+	Game* CreateGame()
+	{
 		Client* pClient = DBG_NEW Client();
-        
-        return pClient;
-    }
+		
+		return pClient;
+	}
 }

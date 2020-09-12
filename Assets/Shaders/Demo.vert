@@ -5,6 +5,10 @@
 
 #include "Defines.glsl"
 
+layout( push_constant ) uniform TestBlock {
+  float Test;
+} pc_PushConstant;
+
 layout(binding = 0, set = BUFFER_SET_INDEX) restrict readonly buffer Vertices               { SVertex val[]; }              b_Vertices;
 layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer Indices                { uint val[]; }                 b_Indices;
 layout(binding = 2, set = BUFFER_SET_INDEX) restrict readonly buffer PrimaryInstances       { SPrimaryInstance val[]; }     b_PrimaryInstances;
