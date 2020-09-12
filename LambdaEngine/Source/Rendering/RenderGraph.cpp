@@ -384,6 +384,31 @@ namespace LambdaEngine
 		}
 	}
 
+	void RenderGraph::TriggerRenderStage(const String& renderStageName)
+	{
+		auto it = m_RenderStageMap.find(renderStageName);
+
+		if (it != m_RenderStageMap.end())
+		{
+			RenderStage* pRenderStage = &m_pRenderStages[it->second];
+
+			if (pRenderStage->TriggerType == ERenderStageExecutionTrigger::TRIGGERED)
+			{
+				pRenderStage->FrameCounter = 0;
+			}
+			else
+			{
+				LOG_WARNING("[RenderGraph]: TriggerRenderStage failed, render stage with name \"%s\" does not have TRIGGERED as trigger type", renderStageName.c_str());
+				return;
+			}
+		}
+		else
+		{
+			LOG_WARNING("[RenderGraph]: TriggerRenderStage failed, render stage with name \"%s\" could not be found", renderStageName.c_str());
+			return;
+		}
+	}
+
 	void RenderGraph::GetAndIncrementFence(Fence** ppFence, uint64* pSignalValue)
 	{
 		(*pSignalValue) = m_SignalValue++;
@@ -673,6 +698,21 @@ namespace LambdaEngine
 						case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],		pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],	&m_ppExecutionStages[currentExecutionStage]);	break;
 						case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],		pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
 						case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],		pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
+						}
+
+						if (pRenderStage->TriggerType == ERenderStageExecutionTrigger::EVERY)
+						{
+							pRenderStage->FrameCounter++;
+
+							if (pRenderStage->FrameCounter > pRenderStage->FrameDelay)
+							{
+								pRenderStage->FrameCounter = 0;
+							}
+						}
+						else
+						{
+							//We set this to one, DISABLED and TRIGGERED wont trigger unless FrameCounter == 0
+							pRenderStage->FrameCounter = 1;
 						}
 
 						currentExecutionStage++;
@@ -1795,6 +1835,14 @@ namespace LambdaEngine
 				{
 					ASSERT(false); //Todo: What todo here? Is this just error?
 				}
+			}
+
+			//Triggering
+			{
+				pRenderStage->TriggerType	= pRenderStageDesc->TriggerType;
+				pRenderStage->FrameDelay	= pRenderStageDesc->TriggerType == ERenderStageExecutionTrigger::EVERY ? uint32(pRenderStageDesc->FrameDelay) : 0;
+				pRenderStage->FrameOffset	= pRenderStageDesc->TriggerType == ERenderStageExecutionTrigger::EVERY ? uint32(pRenderStageDesc->FrameOffset) : 0;
+				pRenderStage->FrameCounter	= pRenderStageDesc->TriggerType == ERenderStageExecutionTrigger::EVERY ? 0 : 1; //We only trigger on FrameCounter == FrameDelay
 			}
 
 			if (pRenderStageDesc->CustomRenderer)
@@ -3123,62 +3171,65 @@ namespace LambdaEngine
 
 			pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
 
-			PushConstants* pDrawIterationPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
-
-			if (pDrawIterationPushConstants->MaxDataSize == sizeof(uint32))
+			if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
 			{
-				memcpy(pDrawIterationPushConstants->pData, &r, sizeof(uint32));
-				pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pDrawIterationPushConstants->pData, pDrawIterationPushConstants->DataSize, pDrawIterationPushConstants->Offset);
-			}
+				PushConstants* pDrawIterationPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
 
-			if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
-			{
-				pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::INDEX_TYPE_UINT32);
-
-				Buffer* pDrawBuffer			= pRenderStage->pIndirectArgsBufferResource->Buffer.Buffers[0];
-				uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
-				uint32 indirectArgStride	= sizeof(IndexedIndirectMeshArgument);
-
-				uint32 drawOffset = 0;
-				for (uint32 i = 0; i < pRenderStage->TextureSubDescriptorSetCount; i++)
+				if (pDrawIterationPushConstants->MaxDataSize == sizeof(uint32))
 				{
-					uint32 newBaseMaterialIndex	= (i + 1) * pRenderStage->MaterialsRenderedPerPass;
-					uint32 newDrawOffset		= m_pScene->GetIndirectArgumentOffset(newBaseMaterialIndex);
-					uint32 drawCount			= newDrawOffset - drawOffset;
+					memcpy(pDrawIterationPushConstants->pData, &r, sizeof(uint32));
+					pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pDrawIterationPushConstants->pData, pDrawIterationPushConstants->DataSize, pDrawIterationPushConstants->Offset);
+				}
+
+				if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+				{
+					pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::INDEX_TYPE_UINT32);
+
+					Buffer* pDrawBuffer			= pRenderStage->pIndirectArgsBufferResource->Buffer.Buffers[0];
+					uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
+					uint32 indirectArgStride	= sizeof(IndexedIndirectMeshArgument);
+
+					uint32 drawOffset = 0;
+					for (uint32 i = 0; i < pRenderStage->TextureSubDescriptorSetCount; i++)
+					{
+						uint32 newBaseMaterialIndex	= (i + 1) * pRenderStage->MaterialsRenderedPerPass;
+						uint32 newDrawOffset		= m_pScene->GetIndirectArgumentOffset(newBaseMaterialIndex);
+						uint32 drawCount			= newDrawOffset - drawOffset;
+
+						if (pRenderStage->ppTextureDescriptorSets != nullptr)
+							pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex * pRenderStage->TextureSubDescriptorSetCount + i], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+
+						pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, drawOffset * indirectArgStride, drawCount, indirectArgStride);
+						drawOffset = newDrawOffset;
+
+						if (newDrawOffset >= totalDrawCount)
+							break;
+					}
+				}
+				else if (pRenderStage->DrawType == ERenderStageDrawType::FULLSCREEN_QUAD)
+				{
+					if (pRenderStage->TextureSubDescriptorSetCount > 1)
+					{
+						LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
+					}
 
 					if (pRenderStage->ppTextureDescriptorSets != nullptr)
-						pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex * pRenderStage->TextureSubDescriptorSetCount + i], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+						pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
 
-					pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, drawOffset * indirectArgStride, drawCount, indirectArgStride);
-					drawOffset = newDrawOffset;
-
-					if (newDrawOffset >= totalDrawCount)
-						break;
+					pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
 				}
-			}
-			else if (pRenderStage->DrawType == ERenderStageDrawType::FULLSCREEN_QUAD)
-			{
-				if (pRenderStage->TextureSubDescriptorSetCount > 1)
+				else if (pRenderStage->DrawType == ERenderStageDrawType::CUBE)
 				{
-					LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
+					if (pRenderStage->TextureSubDescriptorSetCount > 1)
+					{
+						LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
+					}
+
+					if (pRenderStage->ppTextureDescriptorSets != nullptr)
+						pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+
+					pGraphicsCommandList->DrawInstanced(36, 1, 0, 0);
 				}
-
-				if (pRenderStage->ppTextureDescriptorSets != nullptr)
-					pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
-
-				pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
-			}
-			else if (pRenderStage->DrawType == ERenderStageDrawType::CUBE)
-			{
-				if (pRenderStage->TextureSubDescriptorSetCount > 1)
-				{
-					LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
-				}
-
-				if (pRenderStage->ppTextureDescriptorSets != nullptr)
-					pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
-
-				pGraphicsCommandList->DrawInstanced(36, 1, 0, 0);
 			}
 
 			pGraphicsCommandList->EndRenderPass();
@@ -3198,36 +3249,39 @@ namespace LambdaEngine
 		CommandList*		pComputeCommandList,
 		CommandList**		ppExecutionStage)
 	{
-		Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
-		pComputeCommandAllocator->Reset();
-		pComputeCommandList->Begin(nullptr);
-		Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
-		Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
-
-		pComputeCommandList->BindComputePipeline(pPipelineState);
-
-		uint32 textureDescriptorSetBindingIndex = 0;
-
-		if (pRenderStage->ppBufferDescriptorSets != nullptr)
+		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
 		{
-			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, 0);
-			textureDescriptorSetBindingIndex = 1;
+			Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
+			pComputeCommandAllocator->Reset();
+			pComputeCommandList->Begin(nullptr);
+			Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
+			Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
+
+			pComputeCommandList->BindComputePipeline(pPipelineState);
+
+			uint32 textureDescriptorSetBindingIndex = 0;
+
+			if (pRenderStage->ppBufferDescriptorSets != nullptr)
+			{
+				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, 0);
+				textureDescriptorSetBindingIndex = 1;
+			}
+
+			if (pRenderStage->TextureSubDescriptorSetCount > 1)
+			{
+				LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and is Compute, this is currently not supported");
+			}
+
+			if (pRenderStage->ppTextureDescriptorSets != nullptr)
+				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+
+			pComputeCommandList->Dispatch(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
+
+			Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
+			pComputeCommandList->End();
+
+			(*ppExecutionStage) = pComputeCommandList;
 		}
-
-		if (pRenderStage->TextureSubDescriptorSetCount > 1)
-		{
-			LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and is Compute, this is currently not supported");
-		}
-
-		if (pRenderStage->ppTextureDescriptorSets != nullptr)
-			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
-
-		pComputeCommandList->Dispatch(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
-
-		Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
-		pComputeCommandList->End();
-
-		(*ppExecutionStage) = pComputeCommandList;
 	}
 
 	void RenderGraph::ExecuteRayTracingRenderStage(
@@ -3237,35 +3291,38 @@ namespace LambdaEngine
 		CommandList*		pComputeCommandList,
 		CommandList**		ppExecutionStage)
 	{
-		Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
-		pComputeCommandAllocator->Reset();
-		pComputeCommandList->Begin(nullptr);
-		Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
-		Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
-
-		pComputeCommandList->BindRayTracingPipeline(pPipelineState);
-
-		uint32 textureDescriptorSetBindingIndex = 0;
-
-		if (pRenderStage->ppBufferDescriptorSets != nullptr)
+		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
 		{
-			pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, 0);
-			textureDescriptorSetBindingIndex = 1;
+			Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
+			pComputeCommandAllocator->Reset();
+			pComputeCommandList->Begin(nullptr);
+			Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
+			Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
+
+			pComputeCommandList->BindRayTracingPipeline(pPipelineState);
+
+			uint32 textureDescriptorSetBindingIndex = 0;
+
+			if (pRenderStage->ppBufferDescriptorSets != nullptr)
+			{
+				pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, 0);
+				textureDescriptorSetBindingIndex = 1;
+			}
+
+			if (pRenderStage->TextureSubDescriptorSetCount > 1)
+			{
+				LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and is Ray Tracing, this is currently not supported");
+			}
+
+			if (pRenderStage->ppTextureDescriptorSets != nullptr)
+				pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+
+			pComputeCommandList->TraceRays(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
+
+			Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
+			pComputeCommandList->End();
+
+			(*ppExecutionStage) = pComputeCommandList;
 		}
-
-		if (pRenderStage->TextureSubDescriptorSetCount > 1)
-		{
-			LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and is Ray Tracing, this is currently not supported");
-		}
-
-		if (pRenderStage->ppTextureDescriptorSets != nullptr)
-			pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
-
-		pComputeCommandList->TraceRays(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
-
-		Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
-		pComputeCommandList->End();
-
-		(*ppExecutionStage) = pComputeCommandList;
 	}
 }

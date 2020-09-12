@@ -207,6 +207,12 @@ namespace LambdaEngine
 			String					Name							= "";
 			RenderStageParameters	Parameters						= {};
 
+			//Triggering
+			ERenderStageExecutionTrigger	TriggerType					= ERenderStageExecutionTrigger::NONE;
+			uint32							FrameDelay					= 0;
+			uint32							FrameOffset					= 0;
+			uint32							FrameCounter				= 0;
+
 			//Special Draw Params
 			bool					HasTextureCubeAsAttachment		= false;
 
@@ -281,6 +287,8 @@ namespace LambdaEngine
 		void UpdatePushConstants(const PushConstantsUpdate* pDesc);
 		void UpdateRenderStageDimensions(const String& renderStageName, uint32 x, uint32 y, uint32 z = 0);
 		void UpdateResourceDimensions(const String& resourceName, uint32 x, uint32 y = 0);
+
+		void TriggerRenderStage(const String& renderStageName);
 
 		void GetAndIncrementFence(Fence** ppFence, uint64* pSignalValue);
 
