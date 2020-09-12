@@ -141,6 +141,14 @@ namespace LambdaEngine
 
 	/*-----------------------------------------------------------------Resource Structs End / Render Stage Structs Begin-----------------------------------------------------------------*/
 
+	enum class ERenderStageExecutionTrigger : uint8
+	{
+		NONE					= 0,
+		DISABLED				= 1,
+		EVERY					= 2,
+		TRIGGERED				= 3,
+	};
+
 	struct GraphicsShaderNames
 	{
 		String TaskShaderName		= "";
@@ -192,8 +200,11 @@ namespace LambdaEngine
 		String						Name				= "";
 		EPipelineStateType			Type				= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 		bool						CustomRenderer		= false;
-		bool						Enabled				= true;
 		RenderStageParameters		Parameters			= {};
+
+		ERenderStageExecutionTrigger	TriggerType		= ERenderStageExecutionTrigger::NONE;
+		int32							FrameDelay		= 0;
+		int32							FrameOffset		= 0;
 
 		TArray<RenderGraphResourceState> ResourceStates;
 
@@ -253,14 +264,6 @@ namespace LambdaEngine
 		INPUT					= 0,
 		OUTPUT					= 1,
 		RENDER_STAGE_INPUT		= 2,
-	};
-
-	enum class ERenderStageExecutionTrigger : uint8
-	{
-		NONE					= 0,
-		DISABLED				= 1,
-		EVERY					= 2,
-		TRIGGERED				= 3,
 	};
 
 	struct EditorStartedLinkInfo

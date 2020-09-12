@@ -854,9 +854,9 @@ namespace LambdaEngine
 					renderStage.Type				= RenderStageTypeFromString(renderStageObject["type"].GetString());
 					renderStage.CustomRenderer		= renderStageObject["custom_renderer"].GetBool();
 
-					if (renderStageObject.HasMember("trigger_type"))	renderStage.TriggerType = ExecutionTriggerTypeFromString(renderStageObject["trigger_type"].GetString());
-					if (renderStageObject.HasMember("frame_delay"))		renderStage.FrameDelay	= renderStageObject["frame_delay"].GetInt();
-					if (renderStageObject.HasMember("frame_offset"))	renderStage.FrameOffset = renderStageObject["frame_offset"].GetInt();
+					renderStage.TriggerType = renderStageObject.HasMember("trigger_type")	? ExecutionTriggerTypeFromString(renderStageObject["trigger_type"].GetString()) : ERenderStageExecutionTrigger::EVERY;
+					renderStage.FrameDelay	= renderStageObject.HasMember("frame_delay")	? renderStageObject["frame_delay"].GetInt()		: 0;
+					renderStage.FrameOffset = renderStageObject.HasMember("frame_offset")	? renderStageObject["frame_offset"].GetInt()	: 0;
 
 					renderStage.Parameters.XDimType			= RenderGraphDimensionTypeFromString(renderStageObject["x_dim_type"].GetString());
 					renderStage.Parameters.YDimType			= RenderGraphDimensionTypeFromString(renderStageObject["y_dim_type"].GetString());

@@ -107,10 +107,12 @@ namespace LambdaEngine
 
 		if (generateImGuiStage)
 		{
-			imguiRenderStage.Name			= RENDER_GRAPH_IMGUI_STAGE_NAME;
-			imguiRenderStage.Type			= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
-			imguiRenderStage.CustomRenderer = true;
-			imguiRenderStage.Enabled		= true;
+			imguiRenderStage.Name				= RENDER_GRAPH_IMGUI_STAGE_NAME;
+			imguiRenderStage.Type				= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
+			imguiRenderStage.CustomRenderer		= true;
+			imguiRenderStage.TriggerType		= ERenderStageExecutionTrigger::EVERY;
+			imguiRenderStage.FrameDelay			= 0;
+			imguiRenderStage.FrameOffset		= 0;
 		}
 
 		//Loop Through each Render Stage in Order and create synchronization stages
@@ -1016,6 +1018,10 @@ namespace LambdaEngine
 		pDstRenderStage->Type					= pSrcRenderStage->Type;
 		pDstRenderStage->CustomRenderer			= pSrcRenderStage->CustomRenderer;
 		pDstRenderStage->Parameters				= pSrcRenderStage->Parameters;
+
+		pDstRenderStage->TriggerType			= pSrcRenderStage->TriggerType;
+		pDstRenderStage->FrameDelay				= pSrcRenderStage->FrameDelay;
+		pDstRenderStage->FrameOffset			= pSrcRenderStage->FrameOffset;
 
 		pDstRenderStage->ResourceStates.Reserve(pSrcRenderStage->ResourceStateIdents.GetSize());
 
