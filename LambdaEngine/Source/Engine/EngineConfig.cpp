@@ -117,7 +117,7 @@ namespace LambdaEngine
     void EngineConfig::SetArrayProperty(const String& propertyName, const TArray<int> arr)
     {
         Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
-        
+
         auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
         newArr.Reserve(arr.GetSize(), allocator);
 

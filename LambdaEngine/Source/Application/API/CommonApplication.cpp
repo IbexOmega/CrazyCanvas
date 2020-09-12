@@ -29,14 +29,14 @@ namespace LambdaEngine
 		// Create platform application
 		m_pPlatformApplication = pApplication;
 		m_pPlatformApplication->SetEventHandler(s_CommonApplication);
-		
+
 		// Create mainwindow
 		WindowDesc windowDesc = { };
 		windowDesc.Title 	= "Lambda Engine";
 		windowDesc.Width 	= EngineConfig::GetArrayProperty("WindowSize").GetFront();
 		windowDesc.Height 	= EngineConfig::GetArrayProperty("WindowSize").GetBack();
-		windowDesc.Style	= 
-			WINDOW_STYLE_FLAG_TITLED		| 
+		windowDesc.Style	=
+			WINDOW_STYLE_FLAG_TITLED		|
 			//WINDOW_STYLE_FLAG_MINIMIZABLE	|
 			//WINDOW_STYLE_FLAG_MAXIMIZABLE	|
 			//WINDOW_STYLE_FLAG_RESIZEABLE	|
@@ -47,7 +47,7 @@ namespace LambdaEngine
 		{
 			MakeMainWindow(window);
 			SetInputMode(window, EInputMode::INPUT_MODE_STANDARD);
-			
+
 			window->Show();
 		}
 		else
@@ -287,7 +287,7 @@ namespace LambdaEngine
 	bool CommonApplication::Tick()
 	{
 		PlatformApplication::PeekEvents();
-		
+
 		bool shouldExit = m_pPlatformApplication->Tick();
 		if (shouldExit)
 		{
@@ -312,7 +312,7 @@ namespace LambdaEngine
 	{
 		Application* pPlatformApplication = s_CommonApplication->GetPlatformApplication();
 		pPlatformApplication->SetEventHandler(nullptr);
-		
+
 		s_CommonApplication.Reset();
 
 		SAFEDELETE(pPlatformApplication);
