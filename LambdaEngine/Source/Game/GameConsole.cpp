@@ -6,6 +6,8 @@
 
 #include "Application/API/CommonApplication.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include <regex>
 #include <imgui.h>
 
@@ -13,11 +15,21 @@ namespace LambdaEngine
 {
 	bool GameConsole::Init()
 	{
+		if (!InitCommands())
+		{
+			return false;
+		}
+
+		return EventQueue::RegisterEventHandler(this, &GameConsole::OnKeyPressed);
+	}
+
+	bool GameConsole::InitCommands()
+	{
 		ConsoleCommand cmdHelp;
 		cmdHelp.Init("help", false);
 		cmdHelp.AddFlag("d", Arg::EType::EMPTY);
 		cmdHelp.AddDescription("Shows all commands descriptions.", { {"d", "Used to show debug commands also."} });
-		BindCommand(cmdHelp, [this](CallbackInput& input)->void 
+		BindCommand(cmdHelp, [this](CallbackInput& input)->void
 		{
 			for (auto i : m_CommandMap)
 			{
@@ -37,7 +49,7 @@ namespace LambdaEngine
 		cmdClear.Init("clear", false);
 		cmdClear.AddFlag("h", Arg::EType::EMPTY);
 		cmdClear.AddDescription("Clears the visible text in the console.", { {"h", "Clears the history."} });
-		BindCommand(cmdClear, [this](CallbackInput& input)->void 
+		BindCommand(cmdClear, [this](CallbackInput& input)->void
 		{
 			m_Items.Clear();
 		});
@@ -50,6 +62,22 @@ namespace LambdaEngine
 			CommonApplication::Get()->Terminate();
 		});
 
+		ConsoleCommand cmdInput;
+		cmdInput.Init("enable_input", false);
+		cmdInput.AddArg(Arg::EType::BOOL);
+		cmdInput.AddDescription("Enable or disable application input");
+		BindCommand(cmdInput, [this](CallbackInput& input)->void
+		{
+			if (input.Arguments[0].Value.B)
+			{
+				Input::Enable();
+			}
+			else
+			{
+				Input::Disable();
+			}
+		});
+
 		// Test Command
 		ConsoleCommand cmd;
 		cmd.Init("clo", true);
@@ -58,7 +86,7 @@ namespace LambdaEngine
 		cmd.AddFlag("i", Arg::EType::EMPTY);
 		cmd.AddDescription("Does blah and do bar.");
 
-		GameConsole::Get().BindCommand(cmd, [](GameConsole::CallbackInput& input)->void 
+		GameConsole::Get().BindCommand(cmd, [](GameConsole::CallbackInput& input)->void
 		{
 			std::string s1 = input.Arguments.GetFront().Value.Str;
 			std::string s2 = input.Flags.find("i") == input.Flags.end() ? "no set" : "set";
@@ -74,7 +102,7 @@ namespace LambdaEngine
 
 	bool GameConsole::Release()
 	{
-		return true;
+		return EventQueue::UnregisterEventHandler(this, &GameConsole::OnKeyPressed);
 	}
 
 	void GameConsole::Tick()
@@ -83,19 +111,11 @@ namespace LambdaEngine
 		static bool s_Active = false;
 		static bool s_Toggle = false;
 
-		if (Input::IsKeyDown(EKey::KEY_GRAVE_ACCENT) & !s_Active)
-		{
-			s_Active = true;
-			s_Toggle ^= 1;
-		}
-		else if (Input::IsKeyUp(EKey::KEY_GRAVE_ACCENT))
-		{
-			s_Active = false;
-		}
-
 		// Do not draw if not active.
-		if (!s_Toggle)
+		if (!m_IsActive)
+		{
 			return;
+		}
 
 		ImGuiRenderer::Get().DrawUI([&]()
 			{
@@ -383,6 +403,16 @@ namespace LambdaEngine
 		item.Color = glm::vec4(1.f, 1.f, 0.f, 1.f);
 		m_Items.PushBack(item);
 		m_ScrollToBottom = true;
+	}
+
+	bool GameConsole::OnKeyPressed(const KeyPressedEvent& event)
+	{
+		if (event.Key == EKey::KEY_GRAVE_ACCENT)
+		{
+			m_IsActive = !m_IsActive;
+		}
+
+		return true;
 	}
 
 	int GameConsole::TextEditCallback(ImGuiInputTextCallbackData* data)
