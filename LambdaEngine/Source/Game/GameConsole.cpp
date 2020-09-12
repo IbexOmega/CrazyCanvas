@@ -500,11 +500,31 @@ namespace LambdaEngine
 			PushError("Too many arguments!");
 			return false;
 		}
-		if (cmd.GetArguments()[index].Type != arg.Type) // Error wrong type
+
+		// Add special case for booleans, this makes it possible to write an integer as argument for a bool
+		if (cmd.GetArguments()[index].Type == Arg::EType::BOOL)
+		{
+			if (arg.Type != Arg::EType::BOOL)
+			{
+				if (arg.Type == Arg::EType::INT)
+				{
+					int32 value = arg.Value.Int32;
+					arg.Type = Arg::EType::BOOL;
+					arg.Value.Boolean = (value != 0);
+				}
+				else
+				{
+					PushError("Wrong argument type!");
+					return false;
+				}
+			}
+		}
+		else if (cmd.GetArguments()[index].Type != arg.Type) // Error wrong type
 		{
 			PushError("Wrong argument type!");
 			return false;
 		}
+
 		cmd.GetArguments()[index].Value = arg.Value;
 		return true;
 	}
