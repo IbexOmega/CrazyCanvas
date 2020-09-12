@@ -4,6 +4,7 @@
 #include "Core/TSharedRef.h"
 
 #include "Application/API/Window.h"
+#include "Application/API/ApplicationEventHandler.h"
 
 namespace LambdaEngine
 {

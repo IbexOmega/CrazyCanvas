@@ -251,6 +251,7 @@ namespace LambdaEngine
 	void RenderGraphEditor::InitDefaultResources()
 	{
 		m_FilesInShaderDirectory = EnumerateFilesInDirectory("../Assets/Shaders/", true);
+		m_FilesInShaderMap = ExtractDirectory("../Assets/Shaders", "\\");
 
 		m_FinalOutput.Name						= "FINAL_OUTPUT";
 		m_FinalOutput.NodeIndex					= s_NextNodeID++;
@@ -482,10 +483,24 @@ namespace LambdaEngine
 		{
 			if (ImGui::BeginMenu("Menu"))
 			{
-				if (ImGui::MenuItem("Add Texture", NULL, nullptr))
+				if (ImGui::BeginMenu("Add Texture"))
 				{
-					openAddResourcePopup = true;
-					m_CurrentlyAddingResource = ERenderGraphResourceType::TEXTURE;
+					if (ImGui::MenuItem("2D Texture", NULL, nullptr))
+					{
+						openAddResourcePopup = true;
+						m_CurrentlyAddingResource = ERenderGraphResourceType::TEXTURE;
+						m_CurrentlyAddingTextureType = ERenderGraphTextureType::TEXTURE_2D;
+
+					}
+
+					if (ImGui::MenuItem("Cube Texture", NULL, nullptr))
+					{
+						openAddResourcePopup = true;
+						m_CurrentlyAddingResource = ERenderGraphResourceType::TEXTURE;
+						m_CurrentlyAddingTextureType = ERenderGraphTextureType::TEXTURE_CUBE;
+					}
+
+					ImGui::EndMenu();
 				}
 
 				if (ImGui::MenuItem("Add Buffer", NULL, nullptr))
@@ -745,6 +760,7 @@ namespace LambdaEngine
 					addingResource.Name			= resourceNameBuffer;
 					addingResource.Type			= m_CurrentlyAddingResource;
 					addingResource.Editable		= true;
+					addingResource.TextureParams.TextureType = m_CurrentlyAddingTextureType;
 
 					m_Resources.PushBack(addingResource);
 
@@ -934,6 +950,8 @@ namespace LambdaEngine
 		ImGui::SameLine();
 		ImGui::Checkbox("##Back Buffer Bound", &pResource->BackBufferBound);
 
+		pResource->TextureParams.TextureType = m_CurrentlyAddingTextureType;
+		
 		ImGui::Text("Sub Resource Count: ");
 		ImGui::SameLine();
 
@@ -983,34 +1001,55 @@ namespace LambdaEngine
 					int32 textureDimensionTypeX = DimensionTypeToDimensionTypeIndex(pResource->TextureParams.XDimType);
 					int32 textureDimensionTypeY = DimensionTypeToDimensionTypeIndex(pResource->TextureParams.YDimType);
 
-					ImGui::Text("Width: ");
-					ImGui::SameLine();
-					ImGui::PushItemWidth(maxOptionTextSize);
-					if (ImGui::Combo("##Texture X Option", &textureDimensionTypeX, DIMENSION_NAMES, 3))
+					if (m_CurrentlyAddingTextureType != ERenderGraphTextureType::TEXTURE_CUBE)
 					{
-						pResource->TextureParams.XDimType = DimensionTypeIndexToDimensionType(textureDimensionTypeX);
-					}
-					ImGui::PopItemWidth();
-
-					if (pResource->TextureParams.XDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.XDimType == ERenderGraphDimensionType::RELATIVE)
-					{
+						ImGui::Text("Width: ");
 						ImGui::SameLine();
-						ImGui::InputFloat("##Texture X Variable", &pResource->TextureParams.XDimVariable);
-					}
+						ImGui::PushItemWidth(maxOptionTextSize);
+						if (ImGui::Combo("##Texture X Option", &textureDimensionTypeX, DIMENSION_NAMES, 3))
+						{
+							pResource->TextureParams.XDimType = DimensionTypeIndexToDimensionType(textureDimensionTypeX);
+						}
+						ImGui::PopItemWidth();
 
-					ImGui::Text("Height: ");
-					ImGui::SameLine();
-					ImGui::PushItemWidth(maxOptionTextSize);
-					if (ImGui::Combo("##Texture Y Option", &textureDimensionTypeY, DIMENSION_NAMES, 3))
-					{
-						pResource->TextureParams.YDimType = DimensionTypeIndexToDimensionType(textureDimensionTypeY);
-					}
-					ImGui::PopItemWidth();
+						if (pResource->TextureParams.XDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.XDimType == ERenderGraphDimensionType::RELATIVE)
+						{
+							ImGui::SameLine();
+							ImGui::InputFloat("##Texture X Variable", &pResource->TextureParams.XDimVariable);
+						}
 
-					if (pResource->TextureParams.YDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.YDimType == ERenderGraphDimensionType::RELATIVE)
-					{
+						ImGui::Text("Height: ");
 						ImGui::SameLine();
-						ImGui::InputFloat("##Texture Y Variable", &pResource->TextureParams.YDimVariable);
+						ImGui::PushItemWidth(maxOptionTextSize);
+						if (ImGui::Combo("##Texture Y Option", &textureDimensionTypeY, DIMENSION_NAMES, 3))
+						{
+							pResource->TextureParams.YDimType = DimensionTypeIndexToDimensionType(textureDimensionTypeY);
+						}
+						ImGui::PopItemWidth();
+
+						if (pResource->TextureParams.YDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.YDimType == ERenderGraphDimensionType::RELATIVE)
+						{
+							ImGui::SameLine();
+							ImGui::InputFloat("##Texture Y Variable", &pResource->TextureParams.YDimVariable);
+						}
+					}
+					else 
+					{
+						ImGui::Text("Width & Height: ");
+						ImGui::SameLine();
+						ImGui::PushItemWidth(maxOptionTextSize);
+						if (ImGui::Combo("##Texture X Option", &textureDimensionTypeX, DIMENSION_NAMES, 3))
+						{
+							pResource->TextureParams.XDimType = DimensionTypeIndexToDimensionType(textureDimensionTypeX);
+						}
+						ImGui::PopItemWidth();
+
+						if (pResource->TextureParams.XDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.XDimType == ERenderGraphDimensionType::RELATIVE)
+						{
+							ImGui::SameLine();
+							ImGui::InputFloat("##Texture X Variable", &pResource->TextureParams.XDimVariable);
+							pResource->TextureParams.YDimVariable = pResource->TextureParams.XDimVariable;
+						}
 					}
 
 					ImGui::Text("Sample Count: ");
@@ -1086,27 +1125,65 @@ namespace LambdaEngine
 	void RenderGraphEditor::RenderShaderView(float textWidth, float textHeight)
 	{
 		UNREFERENCED_VARIABLE(textHeight);
-
 		static int32 selectedResourceIndex = -1;
 
-		for (auto fileIt = m_FilesInShaderDirectory.begin(); fileIt != m_FilesInShaderDirectory.end(); fileIt++)
+		RenderShaderTreeView(m_FilesInShaderMap, textWidth, textHeight, selectedResourceIndex);
+
+		//for (auto fileIt = m_FilesInShaderDirectory.begin(); fileIt != m_FilesInShaderDirectory.end(); fileIt++)
+		//{
+		//	std::iterator_traits<TArray<std::string>::Iterator>::difference_type v;
+
+		//	int32 index = std::distance(m_FilesInShaderDirectory.begin(), fileIt);
+		//	const String* pFilename = &(*fileIt);
+
+		//	//if (pFilename->find(".glsl") != String::npos)
+		//	{
+		//		if (ImGui::Selectable(pFilename->c_str(), selectedResourceIndex == index, ImGuiSeparatorFlags_None, ImVec2(textWidth, textHeight)))
+		//		{
+		//			selectedResourceIndex = index;
+		//		}
+
+		//		if (ImGui::BeginDragDropSource())
+		//		{
+		//			ImGui::SetDragDropPayload("SHADER", &pFilename, sizeof(const String*));
+		//			ImGui::EndDragDropSource();
+		//		}
+		//	}
+		//}
+	}
+
+	void RenderGraphEditor::RenderShaderTreeView(const LambdaDirectory& dir, float textWidth, float textHeight, int32& selectedIndex)
+	{
+		if (ImGui::TreeNode(dir.RelativePath.filename().string().c_str()))
 		{
-			int32 index = std::distance(m_FilesInShaderDirectory.begin(), fileIt);
-			const String* pFilename = &(*fileIt);
-
-			//if (pFilename->find(".glsl") != String::npos)
+			for (auto entry = dir.Children.begin(); entry != dir.Children.end(); entry++)
 			{
-				if (ImGui::Selectable(pFilename->c_str(), selectedResourceIndex == index, ImGuiSeparatorFlags_None, ImVec2(textWidth, textHeight)))
-				{
-					selectedResourceIndex = index;
-				}
+				std::iterator_traits<TArray<std::string>::Iterator>::difference_type v;
 
-				if (ImGui::BeginDragDropSource())
+				int32 index = std::distance(dir.Children.begin(), entry);
+				auto* pPath = &(entry->RelativePath);
+
+				if (entry->isDirectory)
 				{
-					ImGui::SetDragDropPayload("SHADER", &pFilename, sizeof(const String*));
-					ImGui::EndDragDropSource();
+					RenderShaderTreeView(*entry, textWidth, textHeight, selectedIndex);
+				}
+				else
+				{
+					ImGui::Bullet();
+					if (ImGui::Selectable(pPath->filename().string().c_str(), selectedIndex == index, ImGuiSeparatorFlags_None, ImVec2(textWidth, textHeight)))
+					{
+						selectedIndex = index;
+					}
+
+					if (ImGui::BeginDragDropSource())
+					{
+						
+						ImGui::SetDragDropPayload("SHADER", &pPath, sizeof(const std::filesystem::path*));
+						ImGui::EndDragDropSource();
+					}
 				}
 			}
+			ImGui::TreePop();
 		}
 	}
 
@@ -1557,8 +1634,8 @@ namespace LambdaEngine
 					pRenderStage->Graphics.PrimitiveTopology = PrimitiveTopologyIndexToPrimitiveTopology(selectedPrimitiveTopology);
 				}
 
-				TArray<ERenderStageDrawType> drawTypes							= { ERenderStageDrawType::SCENE_INDIRECT, ERenderStageDrawType::FULLSCREEN_QUAD };
-				TArray<const char*> drawTypeNames								= { "SCENE INDIRECT", "FULLSCREEN QUAD" };
+				TArray<ERenderStageDrawType> drawTypes							= { ERenderStageDrawType::SCENE_INDIRECT, ERenderStageDrawType::FULLSCREEN_QUAD, ERenderStageDrawType::CUBE };
+				TArray<const char*> drawTypeNames								= { "SCENE INDIRECT", "FULLSCREEN QUAD", "CUBE" };
 				auto selectedDrawTypeIt											= std::find(drawTypes.begin(), drawTypes.end(), pRenderStage->Graphics.DrawType);
 				int32 selectedDrawType											= 0;
 				if (selectedDrawTypeIt != drawTypes.end()) selectedDrawType		= std::distance(drawTypes.begin(), selectedDrawTypeIt);
@@ -1944,7 +2021,7 @@ namespace LambdaEngine
 						ImGuiStyle& style = ImGui::GetStyle();
 						static float maxOptionTextSize = style.ItemInnerSpacing.x + ImGui::CalcTextSize(DIMENSION_NAMES[0]).x + ImGui::GetFrameHeight() + 10;
 
-						ImGui::Text("Wdith: ");
+						ImGui::Text("Width: ");
 						ImGui::SameLine();
 						ImGui::PushItemWidth(maxOptionTextSize);
 						ImGui::Combo("##Render Stage X Option", &selectedXOption, DIMENSION_NAMES, 3);
@@ -2408,12 +2485,15 @@ namespace LambdaEngine
 				pRenderStage->Graphics.Shaders.DomainShaderName.empty())
 			{
 				ImGui::PushID("##Task Shader ID");
-				ImGui::Button(pRenderStage->Graphics.Shaders.TaskShaderName.empty() ? "Task Shader" : pRenderStage->Graphics.Shaders.TaskShaderName.c_str());
+
+				std::filesystem::path taskShaderPath(pRenderStage->Graphics.Shaders.TaskShaderName);
+				ImGui::Button(pRenderStage->Graphics.Shaders.TaskShaderName.empty() ? "Task Shader" : taskShaderPath.filename().string().c_str());
 				RenderShaderBoxCommon(&pRenderStage->Graphics.Shaders.TaskShaderName);
 				ImGui::PopID();
 
 				ImGui::PushID("##Mesh Shader ID");
-				ImGui::Button(pRenderStage->Graphics.Shaders.MeshShaderName.empty() ? "Mesh Shader" : pRenderStage->Graphics.Shaders.MeshShaderName.c_str());
+				std::filesystem::path meshShaderPath(pRenderStage->Graphics.Shaders.MeshShaderName);
+				ImGui::Button(pRenderStage->Graphics.Shaders.MeshShaderName.empty() ? "Mesh Shader" : meshShaderPath.filename().string().c_str());
 				RenderShaderBoxCommon(&pRenderStage->Graphics.Shaders.MeshShaderName);
 				ImGui::PopID();
 			}
@@ -2422,42 +2502,49 @@ namespace LambdaEngine
 				pRenderStage->Graphics.Shaders.MeshShaderName.empty())
 			{
 				ImGui::PushID("##Vertex Shader ID");
-				ImGui::Button(pRenderStage->Graphics.Shaders.VertexShaderName.empty() ? "Vertex Shader" : pRenderStage->Graphics.Shaders.VertexShaderName.c_str());
+				std::filesystem::path vertexShaderPath(pRenderStage->Graphics.Shaders.VertexShaderName);
+				ImGui::Button(pRenderStage->Graphics.Shaders.VertexShaderName.empty() ? "Vertex Shader" : vertexShaderPath.filename().string().c_str());
 				RenderShaderBoxCommon(&pRenderStage->Graphics.Shaders.VertexShaderName);
 				ImGui::PopID();
 
 				ImGui::PushID("##Geometry Shader ID");
-				ImGui::Button(pRenderStage->Graphics.Shaders.GeometryShaderName.empty() ? "Geometry Shader" : pRenderStage->Graphics.Shaders.GeometryShaderName.c_str());
+				std::filesystem::path geomentryShaderPath(pRenderStage->Graphics.Shaders.GeometryShaderName);
+				ImGui::Button(pRenderStage->Graphics.Shaders.GeometryShaderName.empty() ? "Geometry Shader" : geomentryShaderPath.filename().string().c_str());
 				RenderShaderBoxCommon(&pRenderStage->Graphics.Shaders.GeometryShaderName);
 				ImGui::PopID();
 
 				ImGui::PushID("##Hull Shader ID");
-				ImGui::Button(pRenderStage->Graphics.Shaders.HullShaderName.empty() ? "Hull Shader" : pRenderStage->Graphics.Shaders.HullShaderName.c_str());
+				std::filesystem::path hullShaderPath(pRenderStage->Graphics.Shaders.HullShaderName);
+				ImGui::Button(pRenderStage->Graphics.Shaders.HullShaderName.empty() ? "Hull Shader" : hullShaderPath.filename().string().c_str());
 				RenderShaderBoxCommon(&pRenderStage->Graphics.Shaders.HullShaderName);
 				ImGui::PopID();
 
 				ImGui::PushID("##Domain Shader ID");
-				ImGui::Button(pRenderStage->Graphics.Shaders.DomainShaderName.empty() ? "Domain Shader" : pRenderStage->Graphics.Shaders.DomainShaderName.c_str());
+				std::filesystem::path domainShaderPath(pRenderStage->Graphics.Shaders.DomainShaderName);
+				ImGui::Button(pRenderStage->Graphics.Shaders.DomainShaderName.empty() ? "Domain Shader" : domainShaderPath.filename().string().c_str());
 				RenderShaderBoxCommon(&pRenderStage->Graphics.Shaders.DomainShaderName);
 				ImGui::PopID();
 			}
 
 			ImGui::PushID("##Pixel Shader ID");
-			ImGui::Button(pRenderStage->Graphics.Shaders.PixelShaderName.empty() ? "Pixel Shader" : pRenderStage->Graphics.Shaders.PixelShaderName.c_str());
+			std::filesystem::path pixelShaderPath(pRenderStage->Graphics.Shaders.PixelShaderName);
+			ImGui::Button(pRenderStage->Graphics.Shaders.PixelShaderName.empty() ? "Pixel Shader" : pixelShaderPath.filename().string().c_str());
 			RenderShaderBoxCommon(&pRenderStage->Graphics.Shaders.PixelShaderName);
 			ImGui::PopID();
 		}
 		else if (pRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{
 			ImGui::PushID("##Compute Shader ID");
-			ImGui::Button(pRenderStage->Compute.ShaderName.empty() ? "Shader" : pRenderStage->Compute.ShaderName.c_str());
+			std::filesystem::path computeShaderPath(pRenderStage->Compute.ShaderName);
+			ImGui::Button(pRenderStage->Compute.ShaderName.empty() ? "Shader" : computeShaderPath.filename().string().c_str());
 			RenderShaderBoxCommon(&pRenderStage->Compute.ShaderName);
 			ImGui::PopID();
 		}
 		else if (pRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 		{
 			ImGui::PushID("##Raygen Shader ID");
-			ImGui::Button(pRenderStage->RayTracing.Shaders.RaygenShaderName.empty() ? "Raygen Shader" : pRenderStage->RayTracing.Shaders.RaygenShaderName.c_str());
+			std::filesystem::path raygenShaderPath(pRenderStage->RayTracing.Shaders.RaygenShaderName);
+			ImGui::Button(pRenderStage->RayTracing.Shaders.RaygenShaderName.empty() ? "Raygen Shader" : raygenShaderPath.filename().string().c_str());
 			RenderShaderBoxCommon(&pRenderStage->RayTracing.Shaders.RaygenShaderName);
 			ImGui::PopID();
 
@@ -2468,7 +2555,8 @@ namespace LambdaEngine
 				bool removed = false;
 
 				ImGui::PushID(m);
-				ImGui::Button(pRenderStage->RayTracing.Shaders.pMissShaderNames[m].empty() ? "Miss Shader" : pRenderStage->RayTracing.Shaders.pMissShaderNames[m].c_str());
+				std::filesystem::path missShaderPath(pRenderStage->RayTracing.Shaders.pMissShaderNames[m]);
+				ImGui::Button(pRenderStage->RayTracing.Shaders.pMissShaderNames[m].empty() ? "Miss Shader" : missShaderPath.filename().string().c_str());
 				RenderShaderBoxCommon(&(pRenderStage->RayTracing.Shaders.pMissShaderNames[m]), &added, &removed);
 				ImGui::PopID();
 
@@ -2494,7 +2582,8 @@ namespace LambdaEngine
 				bool removed = false;
 
 				ImGui::PushID(ch);
-				ImGui::Button(pRenderStage->RayTracing.Shaders.pClosestHitShaderNames[ch].empty() ? "Closest Hit Shader" : pRenderStage->RayTracing.Shaders.pClosestHitShaderNames[ch].c_str());
+				std::filesystem::path closestHitShaderPath(pRenderStage->RayTracing.Shaders.pMissShaderNames[ch]);
+				ImGui::Button(pRenderStage->RayTracing.Shaders.pClosestHitShaderNames[ch].empty() ? "Closest Hit Shader" : closestHitShaderPath.filename().string().c_str());
 				RenderShaderBoxCommon(&pRenderStage->RayTracing.Shaders.pClosestHitShaderNames[ch], &added, &removed);
 				ImGui::PopID();
 
@@ -2523,9 +2612,9 @@ namespace LambdaEngine
 
 			if (pPayload != nullptr)
 			{
-				String* pShaderName = *reinterpret_cast<String**>(pPayload->Data);
+				std::filesystem::path* pShaderName = *reinterpret_cast<std::filesystem::path**>(pPayload->Data);
 				if (pAdded != nullptr && pTarget->empty()) (*pAdded) = true;
-				(*pTarget) = *pShaderName;
+				(*pTarget) = pShaderName->string();
 			}
 
 			ImGui::EndDragDropTarget();
@@ -3047,6 +3136,7 @@ namespace LambdaEngine
 
 			m_CurrentlyAddingRenderStage = EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 			m_CurrentlyAddingResource = ERenderGraphResourceType::NONE;
+			m_CurrentlyAddingTextureType = ERenderGraphTextureType::TEXTURE_2D;
 
 			m_StartedLinkInfo = {};
 

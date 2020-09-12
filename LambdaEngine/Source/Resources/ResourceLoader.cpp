@@ -206,7 +206,7 @@ namespace LambdaEngine
 
 		DeviceAllocatorDesc allocatorDesc = {};
 		allocatorDesc.DebugName			= "Resource Allocator";
-		allocatorDesc.PageSizeInBytes	= MEGA_BYTE(64);
+		allocatorDesc.PageSizeInBytes	= MEGA_BYTE(128);
 		s_pAllocator = RenderSystem::GetDevice()->CreateDeviceAllocator(&allocatorDesc);
 
 		glslang::InitializeProcess();
@@ -611,6 +611,57 @@ namespace LambdaEngine
 		}
 
 		for (uint32 i = 0; i < count; i++)
+		{
+			stbi_image_free(stbi_pixels[i]);
+		}
+
+		return pTexture;
+	}
+
+	Texture* ResourceLoader::LoadCubeTexturesArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
+	{
+		int texWidth = 0;
+		int texHeight = 0;
+		int bpp = 0;
+
+		const uint32 textureCount = count;
+		TArray<void*> stbi_pixels(textureCount);
+
+		for (uint32 i = 0; i < textureCount; i++)
+		{
+			String filepath = dir + pFilenames[i];
+
+			void* pPixels = nullptr;
+
+			if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
+			{
+				pPixels = (void*)stbi_load(filepath.c_str(), &texWidth, &texHeight, &bpp, STBI_rgb_alpha);
+			}
+			else
+			{
+				LOG_ERROR("[ResourceLoader]: Texture format not supported for \"%s\"", filepath.c_str());
+				return nullptr;
+			}
+
+			if (pPixels == nullptr)
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to load texture file: \"%s\"", filepath.c_str());
+				return nullptr;
+			}
+
+			stbi_pixels[i] = pPixels;
+			D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
+		}
+
+		Texture* pTexture = nullptr;
+
+		if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
+		{
+			uint32 flags = FTextureFlags::TEXTURE_FLAG_CUBE_COMPATIBLE | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.GetData(), stbi_pixels.GetSize(), texWidth, texHeight, format, flags, generateMips);
+		}
+
+		for (uint32 i = 0; i < textureCount; i++)
 		{
 			stbi_image_free(stbi_pixels[i]);
 		}
