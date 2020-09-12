@@ -114,7 +114,7 @@ namespace LambdaEngine
         s_ConfigDocument[propertyName.c_str()].SetString(string.c_str(), static_cast<SizeType>(strlen(string.c_str())), s_ConfigDocument.GetAllocator());
     }
 
-    void EngineConfig::SetArrayProperty(const String& propertyName, const TArray<int> arr)
+    void EngineConfig::SetArrayProperty(const String& propertyName, const TArray<int>& arr)
     {
         Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
 
