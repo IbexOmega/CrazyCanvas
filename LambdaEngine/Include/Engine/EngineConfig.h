@@ -27,7 +27,7 @@ namespace LambdaEngine
         static void SetIntProperty(const String& propertyName, int value);
         static void SetDoubleProperty(const String& propertyName, double value);
         static void SetStringProperty(const String& propertyName, const String& string);
-        static void SetArrayProperty(const String& propertyName, TArray<int> arr);
+        static void SetArrayProperty(const String& propertyName, const TArray<int> arr);
 
     private:
         static rapidjson::Document s_ConfigDocument;
