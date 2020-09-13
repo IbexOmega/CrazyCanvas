@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Containers/TArray.h"
+#include "ECS/Component.h"
 #include "ECS/Entity.h"
 
 #include <functional>
-#include <typeindex>
 
 namespace LambdaEngine
 {
@@ -34,7 +34,7 @@ namespace LambdaEngine
     class ComponentHandler
     {
     public:
-        ComponentHandler(ECSCore* pECS, std::type_index tid_handler);
+        ComponentHandler(std::type_index tid_handler);
         // Deregisters component handler and deletes components
         virtual ~ComponentHandler();
 
@@ -54,7 +54,6 @@ namespace LambdaEngine
         void RegisterComponent(Entity entity, std::type_index componentType);
 
     protected:
-        ECSCore* m_pECS;
         TArray<std::type_index> m_HandledTypes;
 
     private:
