@@ -96,6 +96,6 @@ namespace LambdaEngine
 	void ClientUDP::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 	{
 		LOG_INFO("ClientUDP::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
-		Disconnect();
+		Disconnect("Max Tries Reached");
 	}
 }

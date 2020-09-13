@@ -36,7 +36,7 @@ namespace LambdaEngine
 	void PacketManagerUDP::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned)
 	{
 		bool runUntangler = false;
-		bool hasReliableMessage = false;
+		bool hasReliableSegment = false;
 
 		TArray<NetworkSegment*> packetsToFree;
 		packetsToFree.Reserve(32);
@@ -52,7 +52,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				hasReliableMessage = true;
+				hasReliableSegment = true;
 
 				if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)		//Reliable Packet in correct order
 				{
@@ -77,7 +77,7 @@ namespace LambdaEngine
 		if (runUntangler)
 			UntangleReliableSegments(segmentsReturned);
 
-		if (hasReliableMessage && m_SegmentsToSend[m_QueueIndex].empty())
+		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
 			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment()->SetType(NetworkSegment::TYPE_NETWORK_ACK));
 	}
 

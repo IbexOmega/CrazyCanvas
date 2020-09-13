@@ -38,7 +38,7 @@ namespace LambdaEngine
         virtual ~ServerBase();
 
         bool Start(const IPEndPoint& ipEndPoint);
-        void Stop();
+        void Stop(const std::string& reason);
         void Release();
         bool IsRunning();
         const IPEndPoint& GetEndPoint() const;
@@ -50,10 +50,10 @@ namespace LambdaEngine
     protected:
         ServerBase(const ServerDesc& desc);
 
-        virtual bool OnThreadsStarted() override;
+        virtual bool OnThreadsStarted(std::string& reason) override;
         virtual void OnThreadsTerminated() override;
-        virtual void OnTerminationRequested() override;
-        virtual void OnReleaseRequested() override;
+        virtual void OnTerminationRequested(const std::string& reason) override;
+        virtual void OnReleaseRequested(const std::string& reason) override;
         virtual void RunTransmitter() override;
 
         virtual void Tick(Timestamp delta);

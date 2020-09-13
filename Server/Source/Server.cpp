@@ -30,12 +30,15 @@ Server::Server()
 	using namespace LambdaEngine;
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
 
+	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
+	PlatformConsole::SetTitle("Server Console");
+
 	ServerDesc desc = {};
 	desc.Handler		= this;
 	desc.MaxRetries		= 10;
 	desc.MaxClients		= 10;
 	desc.PoolSize		= 512;
-	desc.Protocol		= EProtocol::UDP;
+	desc.Protocol		= EProtocol::TCP;
 	desc.PingInterval	= Timestamp::Seconds(1);
 	desc.PingTimeout	= Timestamp::Seconds(3);
 
@@ -70,7 +73,7 @@ bool Server::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	UNREFERENCED_VARIABLE(event);
 
 	if(m_pServer->IsRunning())
-		m_pServer->Stop();
+		m_pServer->Stop("User Requested");
 	else
 		m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
 

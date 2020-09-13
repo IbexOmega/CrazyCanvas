@@ -42,7 +42,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void ServerBase::Stop()
+	void ServerBase::Stop(const std::string& reason)
 	{
 		{
 			std::scoped_lock<SpinLock> lock(m_LockClients);
@@ -59,7 +59,7 @@ namespace LambdaEngine
 			m_ClientsToRemove.Clear();
 		}
 
-		TerminateThreads();
+		TerminateThreads(reason);
 
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		if (m_pSocket)
@@ -68,7 +68,7 @@ namespace LambdaEngine
 
 	void ServerBase::Release()
 	{
-		TerminateAndRelease();
+		TerminateAndRelease("Release Requested");
 	}
 
 	bool ServerBase::IsRunning()
@@ -137,9 +137,11 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ServerBase::OnThreadsStarted()
+	bool ServerBase::OnThreadsStarted(std::string& reason)
 	{
 		m_pSocket = SetupSocket();
+		if (!m_pSocket)
+			reason = "Socket Setup Error";
 		return m_pSocket;
 	}
 
@@ -152,14 +154,14 @@ namespace LambdaEngine
 		LOG_INFO("[ServerBase]: Stopped");
 	}
 
-	void ServerBase::OnTerminationRequested()
+	void ServerBase::OnTerminationRequested(const std::string& reason)
 	{
-		LOG_WARNING("[ServerBase]: Stopping...");
+		LOG_WARNING("[ServerBase]: Stopping... [%s]", reason.c_str());
 	}
 
-	void ServerBase::OnReleaseRequested()
+	void ServerBase::OnReleaseRequested(const std::string& reason)
 	{
-		Stop();
+		Stop(reason);
 	}
 
 	void ServerBase::Tick(Timestamp delta)

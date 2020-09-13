@@ -66,7 +66,8 @@ namespace LambdaEngine
 		{
 			if (!m_Transceiver.ReceiveBegin(dummy))
 			{
-				Disconnect();
+				m_SendDisconnectPacket = false;
+				Disconnect("Connection Lost");
 				return;
 			}
 
@@ -87,6 +88,6 @@ namespace LambdaEngine
 	void ClientTCP::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 	{
 		LOG_INFO("ClientTCP::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
-		Disconnect();
+		Disconnect("Max Tries Reached");
 	}
 }

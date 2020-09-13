@@ -26,7 +26,7 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(IClient);
 
-		virtual void Disconnect() = 0;
+		virtual void Disconnect(const std::string& reason) = 0;
 		virtual void Release() = 0;
 		virtual bool IsConnected() = 0;
 		virtual bool SendUnreliable(NetworkSegment* packet) = 0;

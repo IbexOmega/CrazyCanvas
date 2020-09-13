@@ -35,14 +35,14 @@ namespace LambdaEngine
 			m_pThreadTransmitter->Notify();
 	}
 
-	void NetWorker::TerminateAndRelease()
+	void NetWorker::TerminateAndRelease(const std::string& reason)
 	{
 		std::scoped_lock<SpinLock> lock(s_LockStatic);
 		if (!m_Release)
 		{
 			m_Release = true;
-			OnReleaseRequested();
-			TerminateThreads();
+			OnReleaseRequested(reason);
+			TerminateThreads(reason);
 		}
 
 		if (m_ThreadsTerminated)
@@ -51,14 +51,16 @@ namespace LambdaEngine
 		}
 	}
 
-	void NetWorker::TerminateThreads()
+	bool NetWorker::TerminateThreads(const std::string& reason)
 	{
 		if (m_Run)
 		{
-			OnTerminationRequested();
 			m_Run = false;
+			OnTerminationRequested(reason);
 			Flush();
+			return true;
 		}
+		return false;
 	}
 
 	bool NetWorker::ThreadsAreRunning() const
@@ -110,8 +112,10 @@ namespace LambdaEngine
 	void NetWorker::ThreadTransmitter()
 	{
 		while (!m_ThreadsStarted);
-		if (!OnThreadsStarted())
-			TerminateThreads();
+
+		std::string reason;
+		if (!OnThreadsStarted(reason))
+			TerminateThreads(reason);
 
 		m_Initiated = true;
 
@@ -158,6 +162,6 @@ namespace LambdaEngine
 		m_ThreadsTerminated = true;
 
 		if (m_Release)
-			TerminateAndRelease();
+			TerminateAndRelease("All Threads Terminated");
 	}
 }

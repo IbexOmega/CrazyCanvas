@@ -44,9 +44,9 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void ClientBase::Disconnect()
+	void ClientBase::Disconnect(const std::string& reason)
 	{
-		TerminateThreads();
+		TerminateThreads(reason);
 
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		if (m_pSocket)
@@ -55,7 +55,7 @@ namespace LambdaEngine
 
 	void ClientBase::Release()
 	{
-		NetWorker::TerminateAndRelease();
+		NetWorker::TerminateAndRelease("Release Requested");
 	}
 
 	bool ClientBase::IsConnected()
@@ -107,16 +107,16 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void ClientBase::SendConnectRequest()
+	void ClientBase::SendConnect()
 	{
 		GetPacketManager()->EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_CONNNECT), this);
 		TransmitPackets();
 	}
 
-	void ClientBase::SendDisconnectRequest()
+	void ClientBase::SendDisconnect()
 	{
-		/*GetPacketManager()->EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT), this);
-		TransmitPackets();*/
+		GetPacketManager()->EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT), this);
+		TransmitPackets();
 	}
 
 	void ClientBase::Tick(Timestamp delta)
@@ -126,14 +126,17 @@ namespace LambdaEngine
 			GetPacketManager()->Tick(delta);
 		}
 
-		Flush();
-
-		Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastReceived();
-		if (timeSinceLastPacketReceived >= m_PingTimeout)
+		if (m_State == STATE_CONNECTED)
 		{
-			m_SendDisconnectPacket = false;
-			Disconnect();
+			Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastReceived();
+			if (timeSinceLastPacketReceived >= m_PingTimeout)
+			{
+				m_SendDisconnectPacket = false;
+				Disconnect("Ping Timed Out");
+			}
 		}
+
+		Flush();
 	}
 
 	void ClientBase::TransmitPackets()
@@ -182,13 +185,13 @@ namespace LambdaEngine
 		else if (packetType == NetworkSegment::TYPE_DISCONNECT)
 		{
 			m_SendDisconnectPacket = false;
-			Disconnect();
+			Disconnect("Disconnected By Remote");
 		}
 		else if (packetType == NetworkSegment::TYPE_SERVER_FULL)
 		{
 			m_SendDisconnectPacket = false;
 			m_pHandler->OnServerFull(this);
-			Disconnect();
+			Disconnect("Server Full");
 		}
 		else if (packetType == NetworkSegment::TYPE_PING)
 		{
@@ -200,7 +203,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ClientBase::OnThreadsStarted()
+	bool ClientBase::OnThreadsStarted(std::string& reason)
 	{
 		m_pSocket = SetupSocket();
 		if (m_pSocket)
@@ -210,9 +213,11 @@ namespace LambdaEngine
 			m_State = STATE_CONNECTING;
 			m_pHandler->OnConnecting(this);
 			m_SendDisconnectPacket = true;
-			SendConnectRequest();
+			SendConnect();
+			return true;
 		}
-		return m_pSocket;
+		reason = "Socket Setup Error";
+		return false;
 	}
 
 	void ClientBase::RunTransmitter()
@@ -241,19 +246,19 @@ namespace LambdaEngine
 			m_pHandler->OnDisconnected(this);
 	}
 
-	void ClientBase::OnTerminationRequested()
+	void ClientBase::OnTerminationRequested(const std::string& reason)
 	{
-		LOG_WARNING("[ClientBase]: Disconnecting...");
+		LOG_WARNING("[ClientBase]: Disconnecting... [%s]", reason.c_str());
 		m_State = STATE_DISCONNECTING;
 		m_pHandler->OnDisconnecting(this);
 
 		if (m_SendDisconnectPacket)
-			SendDisconnectRequest();
+			SendDisconnect();
 	}
 
-	void ClientBase::OnReleaseRequested()
+	void ClientBase::OnReleaseRequested(const std::string& reason)
 	{
-		Disconnect();
+		Disconnect(reason);
 		m_pHandler->OnClientReleased(this);
 		m_pHandler = nullptr;
 	}

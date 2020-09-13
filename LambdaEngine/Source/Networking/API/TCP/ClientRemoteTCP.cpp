@@ -43,7 +43,7 @@ namespace LambdaEngine
 		{
 			if (!m_Transceiver.ReceiveBegin(dummy))
 			{
-				Disconnect();
+				Disconnect("Connection Lost");
 				break;
 			}
 

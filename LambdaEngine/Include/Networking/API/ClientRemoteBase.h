@@ -26,7 +26,7 @@ namespace LambdaEngine
 		DECL_UNIQUE_CLASS(ClientRemoteBase);
 		virtual ~ClientRemoteBase();
 
-		virtual void Disconnect() override;
+		virtual void Disconnect(const std::string& reason) override;
 		virtual void Release() override;
 		virtual bool IsConnected() override;
 		virtual bool SendUnreliable(NetworkSegment* packet) override;
@@ -60,7 +60,7 @@ namespace LambdaEngine
 		void SendServerFull();
 		void SendServerNotAccepting();
 
-		void RequestTermination();
+		bool RequestTermination(const std::string& reason, bool byServer = false);
 		void OnTerminationApproved();
 
 	protected:
@@ -75,6 +75,5 @@ namespace LambdaEngine
 		Timestamp m_PingTimeout;
 		std::atomic_bool m_TerminationRequested;
 		std::atomic_bool m_TerminationApproved;
-		std::atomic_bool m_ReleasedByServer;
 	};
 }

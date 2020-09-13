@@ -29,7 +29,7 @@ namespace LambdaEngine
 		DECL_UNIQUE_CLASS(ClientBase);
 		virtual ~ClientBase();
 
-		virtual void Disconnect() override;
+		virtual void Disconnect(const std::string& reason) override;
 		virtual void Release() override;
 		virtual bool IsConnected() override;
 		virtual const IPEndPoint& GetEndPoint() const override;
@@ -45,21 +45,24 @@ namespace LambdaEngine
 
 		void DecodeReceivedPackets();
 
-		virtual bool OnThreadsStarted() override;
+		virtual bool OnThreadsStarted(std::string& reason) override;
 		virtual void RunTransmitter() override;
 		virtual void OnThreadsTerminated() override;
-		virtual void OnTerminationRequested() override;
-		virtual void OnReleaseRequested() override;
+		virtual void OnTerminationRequested(const std::string& reason) override;
+		virtual void OnReleaseRequested(const std::string& reason) override;
 
 		virtual PacketTransceiverBase* GetTransceiver() = 0;
 		virtual ISocket* SetupSocket() = 0;
 
 	private:
 		void TransmitPackets();
-		void SendConnectRequest();
-		void SendDisconnectRequest();
+		void SendConnect();
+		void SendDisconnect();
 		void HandleReceivedPacket(NetworkSegment* pPacket);
 		void Tick(Timestamp delta);
+
+	protected:
+		std::atomic_bool m_SendDisconnectPacket;
 
 	private:
 		ISocket* m_pSocket;
@@ -67,7 +70,6 @@ namespace LambdaEngine
 		EClientState m_State;
 		SpinLock m_Lock;
 		Timestamp m_PingTimeout;
-		std::atomic_bool m_SendDisconnectPacket;
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);

@@ -15,7 +15,6 @@ namespace LambdaEngine
 		m_PingTimeout(desc.PingTimeout),
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
-		m_ReleasedByServer(false),
 		m_DisconnectedByRemote(false),
 		m_TerminationRequested(false),
 		m_TerminationApproved(false)
@@ -31,9 +30,9 @@ namespace LambdaEngine
 			LOG_INFO("[ClientRemoteBase]: Released");
 	}
 
-	void ClientRemoteBase::Disconnect()
+	void ClientRemoteBase::Disconnect(const std::string& reason)
 	{
-		RequestTermination();
+		RequestTermination(reason);
 	}
 
 	bool ClientRemoteBase::IsConnected()
@@ -43,17 +42,16 @@ namespace LambdaEngine
 
 	void ClientRemoteBase::Release()
 	{
-		RequestTermination();
+		RequestTermination("Release Requested");
 	}
 
 	void ClientRemoteBase::ReleaseByServer()
 	{
-		m_ReleasedByServer = true;
-		Release();
+		RequestTermination("Release Requested By Server", true);
 		OnTerminationApproved();
 	}
 
-	void ClientRemoteBase::RequestTermination()
+	bool ClientRemoteBase::RequestTermination(const std::string& reason, bool byServer)
 	{
 		bool doRelease = false;
 		bool enterCritical = false;
@@ -72,22 +70,30 @@ namespace LambdaEngine
 			if (enterCritical)
 			{
 				if (m_pHandler)
+				{
+					LOG_WARNING("[ClientRemoteBase]: Disconnecting... [%s]", reason.c_str());
 					m_pHandler->OnDisconnecting(this);
+				}
+					
 
 				if (!m_DisconnectedByRemote)
 					SendDisconnect();
 
-				if (!m_ReleasedByServer)
+				if (!byServer)
 					m_pServer->OnClientAskForTermination(this);
 
 				m_State = STATE_DISCONNECTED;
 
 				if (m_pHandler)
+				{
+					LOG_INFO("[ClientRemoteBase]: Disconnected");
 					m_pHandler->OnDisconnected(this);
+				}
+
+				return true;
 			}
-			m_pHandler->OnClientReleased(this);
-			//LOG_INFO("[ClientTCPRemote]: Releasing ClientTCPRemote");
 		}
+		return false;
 	}
 
 	bool ClientRemoteBase::OnTerminationRequested()
@@ -108,8 +114,12 @@ namespace LambdaEngine
 
 	void ClientRemoteBase::DeleteThis()
 	{
-		if(CanDeleteNow())
+		if (CanDeleteNow())
+		{
+			if (m_pHandler)
+				m_pHandler->OnClientReleased(this);
 			delete this;
+		}
 	}
 
 	bool ClientRemoteBase::CanDeleteNow()
@@ -183,17 +193,20 @@ namespace LambdaEngine
 	{
 		GetPacketManager()->Tick(delta);
 
-		Timestamp timeSinceLastPacketSent = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastSent();
-		if (timeSinceLastPacketSent >= m_PingInterval)
+		if (m_State == STATE_CONNECTED)
 		{
-			SendReliable(GetFreePacket(NetworkSegment::TYPE_PING));
-		}
+			Timestamp timeSinceLastPacketSent = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastSent();
+			if (timeSinceLastPacketSent >= m_PingInterval)
+			{
+				SendReliable(GetFreePacket(NetworkSegment::TYPE_PING));
+			}
 
-		Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastReceived();
-		if (timeSinceLastPacketReceived >= m_PingTimeout)
-		{
-			Release();
-		}
+			Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastReceived();
+			if (timeSinceLastPacketReceived >= m_PingTimeout)
+			{
+				Disconnect("Ping Timed Out");
+			}
+		}	
 	}
 
 	bool ClientRemoteBase::HandleReceivedPacket(NetworkSegment* pPacket)
@@ -235,7 +248,7 @@ namespace LambdaEngine
 		else if (packetType == NetworkSegment::TYPE_DISCONNECT)
 		{
 			m_DisconnectedByRemote = true;
-			Release();
+			Disconnect("Disconnected By Remote");
 			return false;
 		}
 		else if (IsConnected())
@@ -247,8 +260,8 @@ namespace LambdaEngine
 
 	void ClientRemoteBase::SendDisconnect()
 	{
-		/*GetPacketManager()->EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT));
-		TransmitPackets();*/
+		GetPacketManager()->EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT));
+		TransmitPackets();
 	}
 
 	void ClientRemoteBase::SendServerFull()
@@ -276,6 +289,6 @@ namespace LambdaEngine
 	void ClientRemoteBase::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 	{
 		LOG_INFO("ClientRemoteBase::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
-		Disconnect();
+		Disconnect("Max Tries Reached");
 	}
 }
