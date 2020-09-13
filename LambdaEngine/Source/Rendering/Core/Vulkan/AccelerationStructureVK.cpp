@@ -41,7 +41,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool AccelerationStructureVK::Init(const AccelerationStructureDesc* pDesc, DeviceAllocator* pAllocator)
+	bool AccelerationStructureVK::Init(const AccelerationStructureDesc* pDesc)
 	{
 		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
 		accelerationStructureCreateInfo.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -120,10 +120,6 @@ namespace LambdaEngine
 				LOG_ERROR("[AccelerationStructureVK]: Failed to allocate memory");
 				return false;
 			}
-
-			// Save a reference to allocator
-			m_Allocator = pAllocatorVk;
-			m_Allocator->AddRef();
 
 			accelerationStructureMemoryInfo.memoryOffset	= m_Allocation.Offset;
 			accelerationStructureMemoryInfo.memory			= m_Allocation.Memory;

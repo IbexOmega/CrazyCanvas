@@ -12,22 +12,38 @@ namespace LambdaEngine
 {
 	class CommandBufferVK;
 	class FrameBufferCacheVK;
-	
+	class DeviceAllocatorVK;
+
 	typedef ConstString ValidationLayer;
 	typedef ConstString Extension;
 
+	/*
+	* GraphicsDeviceVK
+	*/
 	struct QueueFamilyIndices
 	{
-		int32 GraphicsFamily	= -1;
-		int32 ComputeFamily		= -1;
-		int32 TransferFamily	= -1;
+	public:
+		inline QueueFamilyIndices(int32 graphicsFamily, int32 computeFamily, int32 transferFamily)
+			: GraphicsFamily(graphicsFamily)
+			, ComputeFamily(computeFamily)
+			, TransferFamily(transferFamily)
+		{
+		}
 
-		bool IsComplete()
+		bool IsComplete() const
 		{
 			return (GraphicsFamily >= 0) && (ComputeFamily >= 0) && (TransferFamily >= 0);
 		}
+
+	public:
+		int32 GraphicsFamily	= -1;
+		int32 ComputeFamily		= -1;
+		int32 TransferFamily	= -1;
 	};
 
+	/*
+	* GraphicsDeviceVK
+	*/
 	class GraphicsDeviceVK final : public GraphicsDevice
 	{
 	public:
@@ -36,8 +52,12 @@ namespace LambdaEngine
 
 		bool Init(const GraphicsDeviceDesc* pDesc);
 
-		VkResult	AllocateMemory(VkDeviceMemory* pDeviceMemory, VkDeviceSize sizeInBytes, int32 memoryIndex)	const;
-		void		FreeMemory(VkDeviceMemory deviceMemory)														const;
+		bool AllocateBufferMemory() const;
+		bool AllocateTextureMemory() const;
+		bool FreeMemory() const;
+
+		VkResult AllocateMemory(VkDeviceMemory* pDeviceMemory, VkDeviceSize sizeInBytes, int32 memoryIndex)	const;
+		void FreeMemory(VkDeviceMemory deviceMemory) const;
 		
 		void DestroyRenderPass(VkRenderPass* pRenderPass)	const;
 		void DestroyImageView(VkImageView* pImageView)		const;
@@ -79,8 +99,8 @@ namespace LambdaEngine
 
 		virtual Shader*	CreateShader(const ShaderDesc* pDesc)	const override final;
 
-		virtual Buffer*		CreateBuffer(const BufferDesc* pDesc, DeviceAllocator* pAllocator)		const override final;
-		virtual Texture*	CreateTexture(const TextureDesc* pDesc, DeviceAllocator* pAllocator)	const override final;
+		virtual Buffer*		CreateBuffer(const BufferDesc* pDesc)		const override final;
+		virtual Texture*	CreateTexture(const TextureDesc* pDesc)	const override final;
 		virtual Sampler*	CreateSampler(const SamplerDesc* pDesc)									const override final;
 
 		virtual SwapChain* CreateSwapChain(const SwapChainDesc* pDesc)	const override final;
@@ -89,15 +109,13 @@ namespace LambdaEngine
 		virtual PipelineState* CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 	  const override final;
 		virtual PipelineState* CreateRayTracingPipelineState(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc) const override final;
 
-		virtual AccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, DeviceAllocator* pAllocator) const override final;
+		virtual AccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const override final;
 
 		virtual CommandQueue*		CreateCommandQueue(const String& debugname, ECommandQueueType queueType)		const override final;
 		virtual CommandAllocator*	CreateCommandAllocator(const String& debugname, ECommandQueueType queueType)	const override final;
 		virtual CommandList*		CreateCommandList(CommandAllocator* pAllocator, const CommandListDesc* pDesc)	const override final;
 		virtual Fence*				CreateFence(const FenceDesc* pDesc)												const override final;
 
-		virtual DeviceAllocator* CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const override final;
-		
 		virtual void CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst)																			const override final;
 		virtual void CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const override final;
 
@@ -115,8 +133,8 @@ namespace LambdaEngine
 		bool SetEnabledInstanceExtensions();
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
-		int32				RatePhysicalDevice(VkPhysicalDevice physicalDevice);
-		void				CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32_t& numOfOptionalExtensionsSupported);
+		int32	RatePhysicalDevice(VkPhysicalDevice physicalDevice);
+		void	CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32_t& numOfOptionalExtensionsSupported);
 		QueueFamilyIndices	FindQueueFamilies(VkPhysicalDevice physicalDevice);
 		
 		uint32	GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const TArray<VkQueueFamilyProperties>& queueFamilies);
@@ -172,7 +190,14 @@ namespace LambdaEngine
 
 	private:
 		VkDebugUtilsMessengerEXT	m_DebugMessenger	= VK_NULL_HANDLE;
-		FrameBufferCacheVK*			m_pFrameBufferCache	= nullptr;
+		
+		FrameBufferCacheVK* m_pFrameBufferCache	= nullptr;
+
+		DeviceAllocatorVK* m_TextureAllocator = nullptr;
+		DeviceAllocatorVK* m_CBAllocator = nullptr;
+		DeviceAllocatorVK* m_UAAllocator = nullptr;
+		DeviceAllocatorVK* m_VBAllocator = nullptr;
+		DeviceAllocatorVK* m_IBAllocator = nullptr;
 
 		GraphicsDeviceFeatureDesc	m_DeviceFeatures;
 		QueueFamilyIndices			m_DeviceQueueFamilyIndices;

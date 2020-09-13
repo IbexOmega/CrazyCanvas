@@ -4,6 +4,9 @@
 
 namespace LambdaEngine
 {
+	/*
+	* EAccelerationStructureType
+	*/
 	enum class EAccelerationStructureType
 	{
 		ACCELERATION_STRUCTURE_TYPE_NONE	= 0,
@@ -11,6 +14,9 @@ namespace LambdaEngine
 		ACCELERATION_STRUCTURE_TYPE_BOTTOM	= 2,
 	};
 
+	/*
+	* AccelerationStructureDesc
+	*/
 	struct AccelerationStructureDesc
 	{
 		String						DebugName			= "";
@@ -22,6 +28,9 @@ namespace LambdaEngine
 		bool						AllowsTransform		= false;
 	};
 
+	/*
+	* AccelerationStructure
+	*/
 	class AccelerationStructure : public DeviceChild
 	{
 	public:

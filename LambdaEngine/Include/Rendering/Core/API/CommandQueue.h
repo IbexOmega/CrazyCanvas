@@ -15,6 +15,9 @@ namespace LambdaEngine
 		uint32_t TimestampValidBits;
 	};
 
+	/*
+	* CommandQueueProperties
+	*/
 	class CommandQueue : public DeviceChild
 	{
 	public:

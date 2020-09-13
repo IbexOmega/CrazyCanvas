@@ -35,8 +35,8 @@ namespace LambdaEngine
 		bool Allocate(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex);
 		bool Free(AllocationVK* pAllocation);
 		
-		void*	Map(const AllocationVK* pAllocation);
-		void	Unmap(const AllocationVK* pAllocation);
+		void* Map(const AllocationVK* pAllocation);
+		void Unmap(const AllocationVK* pAllocation);
 
 	public:
 		// DeviceChild Interface
