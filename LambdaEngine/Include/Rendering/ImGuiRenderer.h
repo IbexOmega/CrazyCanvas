@@ -88,8 +88,8 @@ namespace LambdaEngine
 			CommandList** ppPrimaryExecutionStage,
 			CommandList** ppSecondaryExecutionStage)	override final;
 
-		FORCEINLINE virtual FPipelineStageFlags GetFirstPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
-		FORCEINLINE virtual FPipelineStageFlags GetLastPipelineStage()	override final { return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
+		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
+		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 
 		bool OnEvent(const Event& event);
 		
@@ -107,7 +107,6 @@ namespace LambdaEngine
 		bool InitImGui();
 
 		bool CreateCopyCommandList();
-		bool CreateAllocator(uint32 pageSize);
 		bool CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize);
 		bool CreateTextures();
 		bool CreateSamplers();
@@ -126,8 +125,6 @@ namespace LambdaEngine
 
 		TSharedRef<CommandAllocator>	m_CopyCommandAllocator	= nullptr;
 		TSharedRef<CommandList>			m_CopyCommandList		= nullptr;
-
-		TSharedRef<DeviceAllocator> m_Allocator = nullptr;
 
 		uint64						m_PipelineStateID	= 0;
 		TSharedRef<PipelineLayout>	m_PipelineLayout	= nullptr;

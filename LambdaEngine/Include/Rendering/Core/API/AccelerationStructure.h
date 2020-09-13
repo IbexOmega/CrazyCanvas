@@ -21,7 +21,7 @@ namespace LambdaEngine
 	{
 		String						DebugName			= "";
 		EAccelerationStructureType	Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_NONE;
-		uint32						Flags				= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
+		FAccelerationStructureFlags	Flags				= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_NONE;
 		uint32						InstanceCount		= 8;
 		uint32						MaxTriangleCount	= 0;
 		uint32						MaxVertexCount		= 0;

@@ -12,7 +12,7 @@ namespace LambdaEngine
 	*/
 	struct CommandQueueProperties
 	{
-		uint32_t TimestampValidBits;
+		uint32 TimestampValidBits;
 	};
 
 	/*

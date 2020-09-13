@@ -98,108 +98,108 @@ namespace LambdaEngine
 			return;
 
 		ImGuiRenderer::Get().DrawUI([&]()
-			{
-				ImGuiWindowFlags flags = 
-					ImGuiWindowFlags_NoMove | 
-					ImGuiWindowFlags_NoTitleBar;
+		{
+			ImGuiWindowFlags flags = 
+				ImGuiWindowFlags_NoMove | 
+				ImGuiWindowFlags_NoTitleBar;
 
-				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-				uint32 width = mainWindow->GetWidth();
-				uint32 height = mainWindow->GetHeight();
-				const uint32 standardHeight = 200;
+			TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+			uint32 width = mainWindow->GetWidth();
+			uint32 height = mainWindow->GetHeight();
+			const uint32 standardHeight = 200;
 
-				// Draw a console window at the top right of the viewport.
-				ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver); // Standard position
-				ImGui::SetNextWindowSize(ImVec2(width, standardHeight), ImGuiCond_FirstUseEver); // Standard size
-				ImGui::SetNextWindowSizeConstraints(ImVec2(width, 70), ImVec2(width, height)); // Window constraints
+			// Draw a console window at the top right of the viewport.
+			ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver); // Standard position
+			ImGui::SetNextWindowSize(ImVec2(width, standardHeight), ImGuiCond_FirstUseEver); // Standard size
+			ImGui::SetNextWindowSizeConstraints(ImVec2(width, 70), ImVec2(width, height)); // Window constraints
 				
-				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f); // Make more transparent
-				ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); // Remove grip, resize works anyway
-				ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); // Remove grip, resize works anyway
-				ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); // Remove grip, resize works anyway
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f); // Make more transparent
+			ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); // Remove grip, resize works anyway
+			ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); // Remove grip, resize works anyway
+			ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); // Remove grip, resize works anyway
 
-				if (ImGui::Begin("Console", (bool*)0, flags))
+			if (ImGui::Begin("Console", (bool*)0, flags))
+			{
+				bool hasFocus = false;
+
+				// History
+				const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+				ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
+					
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
+
+				// Only display visible text to see history.
+				ImGuiListClipper clipper(m_Items.GetSize());
+				while (clipper.Step())
 				{
-					bool hasFocus = false;
-
-					// History
-					const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-					ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
-					
-					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
-					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
-
-					// Only display visible text to see history.
-					ImGuiListClipper clipper(m_Items.GetSize());
-					while (clipper.Step())
+					for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 					{
-						for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-						{
-							Item& item = m_Items[i];
-							const char* str = item.Str.c_str();
-							ImVec4 color = ImVec4(item.Color.r, item.Color.g, item.Color.b, item.Color.a);
-							ImGui::PushStyleColor(ImGuiCol_Text, color);
-							ImGui::TextUnformatted(str);
-							ImGui::PopStyleColor();
-						}
+						Item& item = m_Items[i];
+						const char* str = item.Str.c_str();
+						ImVec4 color = ImVec4(item.Color.r, item.Color.g, item.Color.b, item.Color.a);
+						ImGui::PushStyleColor(ImGuiCol_Text, color);
+						ImGui::TextUnformatted(str);
+						ImGui::PopStyleColor();
 					}
-
-					if (m_ScrollToBottom | (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
-					{
-						ImGui::SetScrollHereY(0.0f);
-					}
-
-					m_ScrollToBottom = false;
-
-					ImGui::PopStyleVar();
-					ImGui::PopStyleVar();
-
-					ImGui::EndChild();
-					ImGui::Separator();
-
-					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
-
-					// Command line
-					static char s_Buf[256];
-					
-					ImGui::PushItemWidth(width);
-					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
-
-					ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;;
-					if (ImGui::InputText("###Input", s_Buf, 256, input_text_flags, 
-						[](ImGuiInputTextCallbackData* data)->int {
-						GameConsole* console = (GameConsole*)data->UserData;
-						return console->TextEditCallback(data);
-						}, (void*)this))
-					{
-						if (s_Buf[0])
-						{
-							std::string buff = std::string(s_Buf);
-							ExecCommand(buff);
-						}
-
-						strcpy(s_Buf, "");
-						hasFocus = true;
-					}
-
-					ImGui::PopStyleColor();
-					ImGui::PopItemWidth();
-					ImGui::PopStyleVar();
-
-					if (s_Active || hasFocus)
-					{
-						ImGui::SetItemDefaultFocus();
-						ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
-					}
-
 				}
-				ImGui::End();
+
+				if (m_ScrollToBottom | (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+				{
+					ImGui::SetScrollHereY(0.0f);
+				}
+
+				m_ScrollToBottom = false;
+
+				ImGui::PopStyleVar();
+				ImGui::PopStyleVar();
+
+				ImGui::EndChild();
+				ImGui::Separator();
+
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
+
+				// Command line
+				static char s_Buf[256];
+					
+				ImGui::PushItemWidth(width);
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
+
+				ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;;
+				if (ImGui::InputText("###Input", s_Buf, 256, input_text_flags, 
+					[](ImGuiInputTextCallbackData* data)->int {
+					GameConsole* console = (GameConsole*)data->UserData;
+					return console->TextEditCallback(data);
+					}, (void*)this))
+				{
+					if (s_Buf[0])
+					{
+						std::string buff = std::string(s_Buf);
+						ExecCommand(buff);
+					}
+
+					strcpy(s_Buf, "");
+					hasFocus = true;
+				}
 
 				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
+				ImGui::PopItemWidth();
 				ImGui::PopStyleVar();
-			});
+
+				if (s_Active || hasFocus)
+				{
+					ImGui::SetItemDefaultFocus();
+					ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
+				}
+
+			}
+			ImGui::End();
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleVar();
+		});
 	}
 
 	void GameConsole::BindCommand(ConsoleCommand cmd, std::function<void(CallbackInput&)> callback)
