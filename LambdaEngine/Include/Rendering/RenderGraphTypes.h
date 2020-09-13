@@ -242,6 +242,7 @@ namespace LambdaEngine
 		ECommandQueueType				NextQueue			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		ERenderGraphResourceBindingType	PrevBindingType		= ERenderGraphResourceBindingType::NONE;
 		ERenderGraphResourceBindingType	NextBindingType		= ERenderGraphResourceBindingType::NONE;
+		ERenderGraphResourceType		ResourceType		= ERenderGraphResourceType::NONE;
 	};
 
 	struct SynchronizationStageDesc
@@ -487,7 +488,7 @@ namespace LambdaEngine
 		return EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
 	}
 
-	FORCEINLINE ETextureState CalculateResourceTextureState(ERenderGraphResourceType resourceType, ERenderGraphResourceBindingType bindingType, EFormat format)
+	FORCEINLINE ETextureState CalculateResourceTextureState(ERenderGraphResourceType resourceType, ERenderGraphResourceBindingType bindingType, EFormat format = EFormat::FORMAT_NONE)
 	{
 		if (resourceType == ERenderGraphResourceType::TEXTURE)
 		{
@@ -521,6 +522,29 @@ namespace LambdaEngine
 		}
 
 		return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+	}
+
+	FORCEINLINE bool ResourceStatesSynchronizationallyEqual(ERenderGraphResourceType resourceType, ECommandQueueType prevQueue, ECommandQueueType nextQueue, ERenderGraphResourceBindingType prevBindingType, ERenderGraphResourceBindingType nextBindingType)
+	{
+		if (prevQueue != nextQueue)
+			return false;
+
+		uint32 prevMemoryAccessFlags = CalculateResourceAccessFlags(prevBindingType);
+		uint32 nextMemoryAccessFlags = CalculateResourceAccessFlags(nextBindingType);
+
+		if (prevMemoryAccessFlags != nextMemoryAccessFlags)
+			return false;
+
+		if (resourceType == ERenderGraphResourceType::TEXTURE)
+		{
+			ETextureState prevTextureState = CalculateResourceTextureState(resourceType, prevBindingType);
+			ETextureState nextTextureState = CalculateResourceTextureState(resourceType, nextBindingType);
+
+			if (prevTextureState != nextTextureState)
+				return false;
+		}
+
+		return true;
 	}
 
 	FORCEINLINE FPipelineStageFlags FindEarliestPipelineStage(const RenderStageDesc* pRenderStageDesc)

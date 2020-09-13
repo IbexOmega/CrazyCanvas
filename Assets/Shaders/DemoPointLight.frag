@@ -15,9 +15,10 @@ layout(location = 6) in vec4 in_WorldPosition;
 layout(location = 7) in vec4 in_ClipPosition;
 layout(location = 8) in vec4 in_PrevClipPosition;
 
-layout( push_constant ) uniform TestBlock {
-  float Test;
-} pc_PushConstant;
+layout( push_constant ) uniform PointLightPushConstant {
+  float Near;
+  float Far;
+} pc_PointLight;
 
 layout(binding = 5, set = BUFFER_SET_INDEX) uniform PerFrameBuffer                          { SPerFrameBuffer val; }        u_PerFrameBuffer;
 layout(binding = 6, set = BUFFER_SET_INDEX) restrict readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
@@ -27,6 +28,7 @@ layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneNorma
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneRougnessMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform samplerCube    u_PointLightShadowMap;
 
 layout(location = 0) out vec4 out_Color;
 
@@ -69,5 +71,11 @@ void main()
     finalColor                          = finalColor / (finalColor + vec3(1.0f));
 	finalColor                          = pow(finalColor, vec3(1.0f / GAMMA));
 
-	out_Color 				            = vec4(finalColor, 1.0f);
+    vec3 pointLightPos                  = vec3(0.0f, 2.0f, 0.0f);
+    vec3 toPointLight                   = in_WorldPosition.xyz - pointLightPos;
+    float depthToPointLight             = texture(u_PointLightShadowMap, toPointLight).r * pc_PointLight.Far;
+    float bias                          = 0.05f;
+    float shadow                        = length(toPointLight) - bias > depthToPointLight ? 0.0f : 1.0f;
+
+	out_Color 				            = vec4(shadow * finalColor, 1.0f);
 }

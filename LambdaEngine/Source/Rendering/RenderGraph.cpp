@@ -651,7 +651,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)
+	void RenderGraph::Render(uint64 frameIndex, uint64 modFrameIndex, uint32 backBufferIndex)
 	{
 		m_BackBufferIndex = backBufferIndex;
 
@@ -659,8 +659,7 @@ namespace LambdaEngine
 
 		uint32 currentExecutionStage = 0;
 
-		if (m_SignalValue > m_BackBufferCount)
-			m_pFence->Wait(m_SignalValue - m_BackBufferCount, UINT64_MAX);
+		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
 
 		for (uint32 p = 0; p < m_PipelineStageCount; p++)
 		{

@@ -203,7 +203,7 @@
             }
         },
         {
-            "name": "POINT_LIGHT_TRANSFORMS_BUFFER",
+            "name": "POINT_LIGHTS_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
@@ -223,7 +223,7 @@
                 "is_of_array_type": false,
                 "texture_type": "TEXTURE_CUBE",
                 "x_dim_type": "CONSTANT",
-                "y_dim_type": "RELATIVE",
+                "y_dim_type": "CONSTANT",
                 "x_dim_var": 256.0,
                 "y_dim_var": 256.0,
                 "sample_count": 1,
@@ -334,7 +334,7 @@
                     "src_stage": ""
                 },
                 {
-                    "name": "POINT_LIGHT_TRANSFORMS_BUFFER",
+                    "name": "POINT_LIGHTS_BUFFER",
                     "removable": false,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": ""
@@ -395,7 +395,7 @@
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
-                "pixel_shader": "Demo.frag"
+                "pixel_shader": "DemoPointLight.frag"
             },
             "resource_states": [
                 {
@@ -554,20 +554,32 @@
             "y_dim_var": 256.0,
             "z_dim_var": 1.0,
             "draw_params": {
-                "draw_type": "CUBE"
+                "draw_type": "SCENE_INDIRECT",
+                "index_buffer": {
+                    "name": "SCENE_INDEX_BUFFER",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                "indirect_args_buffer": {
+                    "name": "SCENE_INDIRECT_ARGS_BUFFER",
+                    "removable": true,
+                    "binding_type": "DRAW_RESOURCE",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                }
             },
-            "depth_test_enabled": false,
+            "depth_test_enabled": true,
             "cull_mode": "CULL_MODE_BACK",
             "polygon_mode": "POLYGON_MODE_FILL",
             "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
-                "vertex_shader": "\\Skybox.frag",
+                "vertex_shader": "\\ShadowMaps\\PointLight.vert",
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
-                "pixel_shader": "\\SVGFAtrous1.frag"
+                "pixel_shader": "\\ShadowMaps\\PointLight.frag"
             },
             "resource_states": [
                 {
@@ -583,7 +595,7 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
-                    "name": "POINT_LIGHT_TRANSFORMS_BUFFER",
+                    "name": "POINT_LIGHTS_BUFFER",
                     "removable": true,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"

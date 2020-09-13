@@ -7,22 +7,26 @@
 
 struct SPointLightsBuffer
 {
-
+    mat4 ProjView[6];
 };
+
+layout( push_constant ) uniform PushConstants {
+    uint Iteration;
+    float Near;
+    float Far;
+} pc;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) restrict readonly buffer Vertices               { SVertex val[]; }              b_Vertices;
 layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer PrimaryInstances       { SPrimaryInstance val[]; }     b_PrimaryInstances;
-layout(binding = 2, set = BUFFER_SET_INDEX) uniform PointLightBuffer                        { SPerFrameBuffer val; }        u_PerFrameBuffer;
+layout(binding = 2, set = BUFFER_SET_INDEX) uniform PointLightBuffer                        { SPointLightsBuffer val; }     u_PointLightsBuffer;
 
-layout(location = 0) out vec3 out_VertexPos;
+layout(location = 0) out vec4 out_WorldPos;
 
 void main()
 {
     SPrimaryInstance primaryInstance            = b_PrimaryInstances.val[gl_InstanceIndex];
     SVertex vertex                              = b_Vertices.val[gl_VertexIndex];
-    SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
-
-    out_VertexPos = vertex.Position.xyz;
+    SPointLightsBuffer pointLightsBuffer        = u_PointLightsBuffer.val;
 
     //Calculate a 4x4 matrix so that we calculate the correct w for worldPosition
     mat4 transform;
@@ -32,10 +36,6 @@ void main()
 	transform[3] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
     transform = transpose(transform);
 
-    vec4 worldPosition      = transform * vec4(out_VertexPos, 1.0f);
-
-    mat4 rotationMatrix = perFrameBuffer.View;
-    rotationMatrix[3] = vec4(0.f, 0.f, 0.f, 1.0f);
-
-    gl_Position = perFrameBuffer.Projection * rotationMatrix * worldPosition;
+    out_WorldPos = transform * vec4(vertex.Position.xyz, 1.0f);
+    gl_Position = pointLightsBuffer.ProjView[pc.Iteration] * out_WorldPos;
 }

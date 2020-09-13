@@ -5,6 +5,7 @@
 
 #include "Rendering/IRenderGraphCreateHandler.h"
 
+#include "Containers/String.h"
 #include "Containers/TArray.h"
 
 #include "Math/Math.h"
@@ -23,6 +24,7 @@ namespace LambdaEngine
 	class Scene;
 	class Camera;
 	class Sampler;
+	class Buffer;
 
 	class RenderGraphEditor;
 }
@@ -63,11 +65,17 @@ private:
 	LambdaEngine::TArray<InstanceIndexAndTransform>		m_InstanceIndicesAndTransforms;
 	LambdaEngine::TArray<InstanceIndexAndTransform>		m_LightInstanceIndicesAndTransforms;
 
+	LambdaEngine::Buffer*					m_pPointLightsBuffer;
+
 	float									m_DirectionalLightAngle;
 	float									m_DirectionalLightStrength[4];
 
 	bool m_RenderGraphWindow;
 	bool m_ShowDemoWindow;
 	bool m_DebuggingWindow;
+
+	bool					m_ShowTextureDebuggingWindow	= false;
+	LambdaEngine::String	m_TextureDebuggingName			= "";
+	GUID_Lambda				m_TextureDebuggingShaderGUID	= GUID_NONE;
 
 };

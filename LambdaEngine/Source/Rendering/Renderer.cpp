@@ -61,7 +61,7 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "DEMO_SKYBOX.lrg", IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "DEMO_SKYBOX_POINT_LIGHTS.lrg", IMGUI_ENABLED))
 			{
 				return false;
 			}
@@ -155,7 +155,7 @@ namespace LambdaEngine
 			s_pScene->PrepareRender(pGraphicsCopyCommandList, pComputeCopyCommandList, s_FrameIndex);
 		}
 
-		s_pRenderGraph->Render(s_ModFrameIndex, s_BackBufferIndex);
+		s_pRenderGraph->Render(s_FrameIndex, s_ModFrameIndex, s_BackBufferIndex);
 
 		s_SwapChain->Present();
 

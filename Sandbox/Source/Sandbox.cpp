@@ -394,6 +394,22 @@ Sandbox::Sandbox()
 		m_DebuggingWindow = input.Arguments.GetFront().Value.B;
 		});
 
+	ConsoleCommand showTextureCMD;
+	showTextureCMD.Init("show_texture", true);
+	showTextureCMD.AddArg(Arg::EType::BOOL);
+	showTextureCMD.AddFlag("t", Arg::EType::STRING);
+	showTextureCMD.AddFlag("ps", Arg::EType::STRING);
+	showTextureCMD.AddDescription("Show a texture resource which is used in the RenderGraph");
+	GameConsole::Get().BindCommand(showTextureCMD, [&, this](GameConsole::CallbackInput& input)->void
+		{
+			m_ShowTextureDebuggingWindow = input.Arguments.GetFront().Value.B;
+
+			auto textureNameIt	= input.Flags.find("t");
+			auto shaderNameIt	= input.Flags.find("ps");
+			m_TextureDebuggingName			= textureNameIt != input.Flags.end() ? textureNameIt->second.Arg.Value.Str : "";
+			m_TextureDebuggingShaderGUID	= shaderNameIt != input.Flags.end() ? ResourceManager::GetShaderGUID(shaderNameIt->second.Arg.Value.Str) : GUID_NONE;
+		});
+
 	return;
 }
 
@@ -407,6 +423,8 @@ Sandbox::~Sandbox()
 	SAFEDELETE(m_pCamera);
 
 	SAFEDELETE(m_pRenderGraphEditor);
+
+	SAFEDELETE(m_pPointLightsBuffer);
 }
 
 bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
@@ -432,6 +450,10 @@ bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		RenderSystem::GetComputeQueue()->Flush();
 		ResourceManager::ReloadAllShaders();
 		PipelineStateManager::ReloadPipelineStates();
+	}
+	else if (event.Key == EKey::KEY_KEYPAD_1)
+	{
+		Renderer::GetRenderGraph()->TriggerRenderStage("POINT_LIGHT_SHADOWMAPS");
 	}
 
 	return true;
@@ -478,6 +500,22 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 				Profiler::Render(delta);
 			}
 			
+			if (m_ShowTextureDebuggingWindow)
+			{
+				if (ImGui::Begin("Texture Debugging"))
+				{
+					if (!m_TextureDebuggingName.empty())
+					{
+						static ImGuiTexture texture = {};
+						texture.ResourceName		= m_TextureDebuggingName;
+						texture.PixelShaderGUID		= m_TextureDebuggingShaderGUID;
+
+						ImGui::Image(&texture, ImGui::GetWindowSize());
+					}
+				}
+
+				ImGui::End();
+			}
 		});
 	}
 
@@ -523,6 +561,12 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 	cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
 
 	Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
+
+	ResourceUpdateDesc pointLightsBuffer = {};
+	pointLightsBuffer.ResourceName						= "POINT_LIGHTS_BUFFER";
+	pointLightsBuffer.ExternalBufferUpdate.ppBuffer		= &m_pPointLightsBuffer;
+
+	Renderer::GetRenderGraph()->UpdateResource(&pointLightsBuffer);
 }
 
 namespace LambdaEngine
@@ -590,6 +634,57 @@ bool Sandbox::LoadRendererResources()
 		Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
 
+	//Point Lights Test
+	{
+		float pointLightNearPlane	= 1.0f;
+		float pointLightFarPlane	= 25.0f;
+
+		glm::vec3 pointLightPos(0.0f, 2.0f, 0.0f);
+
+		glm::mat4 pointLightProj = glm::perspective(glm::radians(90.0f), 1.0f, pointLightNearPlane, pointLightFarPlane);
+
+		TArray<glm::mat4> pointLightsProjView =
+		{
+			pointLightProj * glm::lookAt(pointLightPos, pointLightPos + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+			pointLightProj * glm::lookAt(pointLightPos, pointLightPos + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+			pointLightProj * glm::lookAt(pointLightPos, pointLightPos + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+			pointLightProj * glm::lookAt(pointLightPos, pointLightPos + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+			pointLightProj * glm::lookAt(pointLightPos, pointLightPos + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+			pointLightProj * glm::lookAt(pointLightPos, pointLightPos + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+		};
+
+		BufferDesc bufferDesc = {};
+		bufferDesc.DebugName		= "POINT_LIGHTS_BUFFER";
+		bufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+		bufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
+		bufferDesc.SizeInBytes		= pointLightsProjView.GetSize() * sizeof(glm::mat4);
+
+		m_pPointLightsBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, nullptr);
+
+		void* pMapped = m_pPointLightsBuffer->Map();
+		memcpy(pMapped, pointLightsProjView.GetData(), pointLightsProjView.GetSize() * sizeof(glm::mat4));
+		m_pPointLightsBuffer->Unmap();
+
+		ResourceUpdateDesc pointLightsBuffer = {};
+		pointLightsBuffer.ResourceName						= "POINT_LIGHTS_BUFFER";
+		pointLightsBuffer.ExternalBufferUpdate.ppBuffer		= &m_pPointLightsBuffer;
+
+		Renderer::GetRenderGraph()->UpdateResource(&pointLightsBuffer);
+
+		float pointLightPushConstantData[2];
+		pointLightPushConstantData[0] = pointLightNearPlane;
+		pointLightPushConstantData[1] = pointLightFarPlane;
+
+		PushConstantsUpdate pushConstantUpdate = {};
+		pushConstantUpdate.pData			= &pointLightPushConstantData;
+		pushConstantUpdate.DataSize			= sizeof(pointLightPushConstantData);
+
+		pushConstantUpdate.RenderStageName	= "POINT_LIGHT_SHADOWMAPS";
+		Renderer::GetRenderGraph()->UpdatePushConstants(&pushConstantUpdate);
+
+		pushConstantUpdate.RenderStageName	= "DEMO";
+		Renderer::GetRenderGraph()->UpdatePushConstants(&pushConstantUpdate);
+	}
 	Renderer::GetRenderGraph()->AddCreateHandler(this);
 
 	return true;

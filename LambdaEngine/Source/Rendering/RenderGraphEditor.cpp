@@ -1673,6 +1673,29 @@ namespace LambdaEngine
 						{
 							selectedDrawType = dt;
 							pRenderStage->Graphics.DrawType = drawTypes[selectedDrawType];
+
+							if (pRenderStage->Graphics.DrawType != ERenderStageDrawType::SCENE_INDIRECT)
+							{
+								//Index Buffer
+								{
+									EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndexBufferAttributeIndex / 2];
+									pResourceState->ResourceName = "";
+									DestroyLink(pResourceState->InputLinkIndex);
+								}
+
+								//Indirect Args Buffer
+								{
+									EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2];
+									pResourceState->ResourceName = "";
+									DestroyLink(pResourceState->InputLinkIndex);
+								}
+							}
+							else
+							{
+								if (pRenderStage->Graphics.IndexBufferAttributeIndex == -1)			pRenderStage->Graphics.IndexBufferAttributeIndex = CreateResourceState("", pRenderStage->Name, true, ERenderGraphResourceBindingType::DRAW_RESOURCE).AttributeIndex;
+								if (pRenderStage->Graphics.IndirectArgsBufferAttributeIndex == -1)	pRenderStage->Graphics.IndirectArgsBufferAttributeIndex = CreateResourceState("", pRenderStage->Name, true, ERenderGraphResourceBindingType::DRAW_RESOURCE).AttributeIndex;
+							}
+
 							m_ParsedGraphDirty = true;
 						}
 
