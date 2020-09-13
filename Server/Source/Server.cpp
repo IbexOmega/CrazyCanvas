@@ -13,11 +13,7 @@
 
 #include "Threading/API/Thread.h"
 
-#include "Networking/API/NetworkUtils.h"
-#include "Networking/API/IPAddress.h"
-#include "Networking/API/NetworkSegment.h"
-#include "Networking/API/BinaryEncoder.h"
-#include "Networking/API/BinaryDecoder.h"
+#include "Networking/API/PlatformNetworkUtils.h"
 
 #include "ClientHandler.h"
 

@@ -28,13 +28,8 @@
 #include "Audio/AudioSystem.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
-#include "Networking/API/IPAddress.h"
-#include "Networking/API/NetworkSegment.h"
-#include "Networking/API/BinaryEncoder.h"
-#include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/NetworkDebugger.h"
 
-#include "Networking/API/TCP/ClientTCP.h"
 
 Client::Client() :
 	m_pClient(nullptr)

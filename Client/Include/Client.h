@@ -10,12 +10,14 @@
 
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/IClientHandler.h"
-#include "Networking/API/ClientBase.h"
 
 namespace LambdaEngine
 {
 	class RenderGraph;
 	class Renderer;
+	class IClient;
+	class NetworkSegment;
+	class ClientBase;
 }
 
 class Client :
@@ -36,12 +38,10 @@ public:
 	virtual void OnServerFull(LambdaEngine::IClient* pClient) override;
 	virtual void OnClientReleased(LambdaEngine::IClient* pClient) override;
 
-
 	virtual void OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket) override;
 	virtual void OnPacketResent(LambdaEngine::NetworkSegment* pPacket, uint8 tries) override;
 	virtual void OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint8 tries) override;
 
-	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
 	virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 

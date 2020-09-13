@@ -4,9 +4,13 @@
 #include "Application/API/Events/KeyEvents.h"
 
 #include "Networking/API/IServerHandler.h"
-#include "Networking/API/IClient.h"
-#include "Networking/API/ServerBase.h"
-#include "Networking/API/IClientRemoteHandler.h"
+
+namespace LambdaEngine
+{
+	class ServerBase;
+	class IClientRemoteHandler;
+	class IClient;
+}
 
 class Server : 
 	public LambdaEngine::Game,
