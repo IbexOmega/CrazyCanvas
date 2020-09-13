@@ -9,13 +9,18 @@
 #include "Containers/THashTable.h"
 #include "Containers/TSet.h"
 
-#include "Application/API/EventHandler.h"
+#include "Application/API/ApplicationEventHandler.h"
+
+#include "Application/API/Events/MouseEvents.h"
+#include "Application/API/Events/KeyEvents.h"
+
+#include "Utilities/IOUtilities.h"
 
 namespace LambdaEngine
 {
 	class RenderGraph;
 
-	class LAMBDA_API RenderGraphEditor : public EventHandler
+	class LAMBDA_API RenderGraphEditor
 	{
 	public:
 		DECL_REMOVE_COPY(RenderGraphEditor);
@@ -28,19 +33,21 @@ namespace LambdaEngine
 		void Update();
 		void RenderGUI();
 
-		virtual void OnButtonReleased(EMouseButton button)						override final;
-		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat) override final;
-		virtual void OnKeyReleased(EKey key)									override final;
+		bool OnButtonReleased(const MouseButtonReleasedEvent& event);
+		bool OnKeyPressed(const KeyPressedEvent& event);
+		bool OnKeyReleased(const KeyReleasedEvent& event);
 
 	private:
 		void InitDefaultResources();
 
 		void RenderResourceView(float textWidth, float textHeight);
+		void RenderNewRenderGraphConfirmationView();
 		void RenderAddResourceView();
 		void RenderEditResourceView();
 		void InternalRenderEditResourceView(RenderGraphResourceDesc* pResource, char* pNameBuffer, int32 nameBufferLength);
 
 		void RenderShaderView(float textWidth, float textHeight);
+		void RenderShaderTreeView(const LambdaDirectory& dir, float textWidth, float textHeight, int32& selectedIndex);
 
 		void RenderGraphView();
 		void RenderAddRenderStageView();
@@ -85,13 +92,16 @@ namespace LambdaEngine
 
 		EPipelineStateType									m_CurrentlyAddingRenderStage	= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 		ERenderGraphResourceType							m_CurrentlyAddingResource		= ERenderGraphResourceType::NONE;
+		ERenderGraphTextureType								m_CurrentlyAddingTextureType	= ERenderGraphTextureType::TEXTURE_2D;
 		String												m_CurrentlyEditingResource		= "";
 
 		EditorStartedLinkInfo								m_StartedLinkInfo				= {};
 
 		TArray<String>										m_FilesInShaderDirectory;
+		LambdaDirectory										m_FilesInShaderMap;
 
 		RenderGraphStructureDesc							m_ParsedRenderGraphStructure	= {};
+		bool												m_ParsedGraphValid				= true;
 		bool												m_ParsedGraphDirty				= true;
 		bool												m_ParsedGraphRenderDirty		= true;
 		bool												m_ApplyRenderGraph				= false;

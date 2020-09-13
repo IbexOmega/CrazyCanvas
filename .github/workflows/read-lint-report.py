@@ -16,40 +16,39 @@ def isSuppressed(line):
     return False
 
 # Returns true if a warning was printed
-def printWarning(line, filesToLint):
-    fileRegex       = r"\[([^:]+):([0-9]+)\]"
+def print_warning(line, filesToLint):
+    file_regex      = r"\[([^:]+):([0-9]+)\]"
     anything        = ".*"
-    categoryRegex   = r"(\([^)]+\))"
-    messageRegex    = "(.*?)$"
-    match           = re.search(rf"{fileRegex}(?:{anything}{fileRegex})?{anything}{categoryRegex}\s{messageRegex}", line)
+    category_regex  = r"(\([^)]+\))"
+    message_regex   = "(.*?)$"
+    match           = re.search(rf"{file_regex}(?:{anything}{file_regex})?{anything}{category_regex}\s{message_regex}", line)
     if match is None or len(match.groups()) != 6:
         print(f"Failed to regex search string: {line}")
         return False
 
-    searchResults   = match.groups()
+    search_results   = match.groups()
 
-    firstFileName   = searchResults[0]
-    firstLineNr     = searchResults[1]
-    lintCategory    = searchResults[4]
-    message         = searchResults[5]
-    secondFileName  = ""
-    secondLineNr    = ""
+    first_file_name     = search_results[0].replace('\\', '/')
+    first_line_nr       = search_results[1]
+    second_file_name    = search_results[2]
+    second_line_nr      = search_results[3]
+    lint_category       = search_results[4]
+    message             = search_results[5]
 
-    outMessage = ""
-    if searchResults[2] is not None and searchResults[3] is not None:
+    out_message = ''
+    if second_file_name and second_line_nr:
         # The line contains two files. Have the second one be printed in the output message
-        secondFileName  = searchResults[2]
-        secondLineNr    = searchResults[3]
-        outMessage += f"[{secondFileName}:{secondLineNr}]: "
+        second_file_name = second_file_name.replace('\\', '/')
+        out_message += f'[{second_file_name}:{second_line_nr}]: '
 
-    if firstFileName not in filesToLint and secondFileName not in filesToLint:
+    if first_file_name not in filesToLint and second_file_name not in filesToLint:
         return False
 
-    outMessage += f"{lintCategory} {message}"
-    print(f"::warning file={firstFileName},line={firstLineNr}::{outMessage}")
+    out_message += f"{lint_category} {message}"
+    print(f'::warning file={first_file_name},line={first_line_nr}::{out_message}')
     return True
 
-def readReport(fileName, filesToLint):
+def read_report(fileName, filesToLint):
     suppressedMessages = []
     warningCount = 0
 
@@ -57,20 +56,20 @@ def readReport(fileName, filesToLint):
         for line in file:
             if isSuppressed(line):
                 suppressedMessages.append(line)
-            elif printWarning(line, filesToLint):
+            elif print_warning(line, filesToLint):
                 warningCount += 1
 
-    print(f"Warnings: {warningCount}, suppressed messages: {len(suppressedMessages)}")
-    print("Suppressed messages:")
+    print(f'Warnings: {warningCount}, suppressed messages: {len(suppressedMessages)}')
+    print('Suppressed messages:')
     for suppressedMessage in suppressedMessages:
         print(suppressedMessage, end='')
 
-def getFilesToLint(modifiedFilesPath, addedFilesPath):
-    modifiedFiles = json.load(open(modifiedFilesPath, 'r')) if modifiedFilesPath != "" else []
-    addedFiles = json.load(open(addedFilesPath, 'r')) if addedFilesPath != "" else []
-    print(modifiedFiles)
-    print(addedFiles)
-    return modifiedFiles + addedFiles
+def get_files_to_lint(modifiedFilesPath, addedFilesPath):
+    modified_files = json.load(open(modifiedFilesPath, 'r')) if modifiedFilesPath != "" else []
+    added_files = json.load(open(addedFilesPath, 'r')) if addedFilesPath != "" else []
+
+    print(f'Modified files: {modified_files}\nAdded Files: {added_files}')
+    return modified_files + added_files
 
 def main(argv):
     inputFile = ""
@@ -97,8 +96,8 @@ def main(argv):
         elif opt == "--added-files":
             addedFilesPath = arg
 
-    filesToLint = getFilesToLint(modifiedFilesPath, addedFilesPath)
-    readReport(inputFile, filesToLint)
+    filesToLint = get_files_to_lint(modifiedFilesPath, addedFilesPath)
+    read_report(inputFile, filesToLint)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

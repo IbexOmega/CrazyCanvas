@@ -13,59 +13,66 @@
 
 #include "Threading/API/Thread.h"
 
+#include "Networking/API/NetworkUtils.h"
 #include "Networking/API/IPAddress.h"
-#include "Networking/API/NetworkPacket.h"
+#include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
 
-#include "ClientUDPHandler.h"
+#include "ClientHandler.h"
 
 #include "Math/Random.h"
 
+#include "Application/API/Events/EventQueue.h"
 
 Server::Server()
 {
 	using namespace LambdaEngine;
-	CommonApplication::Get()->AddEventHandler(this);
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
 
-	ServerUDPDesc desc = {};
-	desc.Handler	= this;
-	desc.MaxRetries = 10;
-	desc.MaxClients = 10;
-	desc.PoolSize	= 512;
+	ServerDesc desc = {};
+	desc.Handler		= this;
+	desc.MaxRetries		= 10;
+	desc.MaxClients		= 10;
+	desc.PoolSize		= 512;
+	desc.Protocol		= EProtocol::TCP;
 
-	m_pServer = ServerUDP::Create(desc);
+	m_pServer = NetworkUtils::CreateServer(desc);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
+
 	//m_pServer->SetSimulateReceivingPacketLoss(0.1f);
 }
 
 Server::~Server()
 {
+	using namespace LambdaEngine;
+
+	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
 	m_pServer->Release();
 }
 
-void Server::OnClientConnected(LambdaEngine::IClientUDP* pClient)
+void Server::OnClientConnected(LambdaEngine::IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 }
 
-LambdaEngine::IClientUDPRemoteHandler* Server::CreateClientUDPHandler()
+LambdaEngine::IClientRemoteHandler* Server::CreateClientHandler()
 {
-	return DBG_NEW ClientUDPHandler();
+	return DBG_NEW ClientHandler();
 }
 
-void Server::OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)
+bool Server::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 {
-	UNREFERENCED_VARIABLE(key);
-	UNREFERENCED_VARIABLE(modifierMask);
-	UNREFERENCED_VARIABLE(isRepeat);
-
 	using namespace LambdaEngine;
+
+	UNREFERENCED_VARIABLE(event);
 
 	if(m_pServer->IsRunning())
 		m_pServer->Stop();
 	else
 		m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
+
+	return false;
 }
 
 void Server::UpdateTitle()
@@ -87,10 +94,9 @@ void Server::FixedTick(LambdaEngine::Timestamp delta)
 
 namespace LambdaEngine
 {
-    Game* CreateGame()
-    {
+	Game* CreateGame()
+	{
 		Server* pServer = DBG_NEW Server();
-        
-        return pServer;
-    }
+		return pServer;
+	}
 }

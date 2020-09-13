@@ -13,9 +13,9 @@ namespace LambdaEngine
     rapidjson::Document EngineConfig::s_ConfigDocument = {};
     using namespace rapidjson;
 
-    bool EngineConfig::LoadFromFile()
-    {
-        const char* pEngineConfigPath = "../engine_config.json";
+	bool EngineConfig::LoadFromFile()
+	{
+		const char* pEngineConfigPath = "../engine_config.json";
 
         FILE* pFile = fopen(pEngineConfigPath, "r");
         if (!pFile)
@@ -24,15 +24,15 @@ namespace LambdaEngine
             return false;
         }
 
-        char readBuffer[2048];
-        FileReadStream inputStream(pFile, readBuffer, sizeof(readBuffer));
+		char readBuffer[2048];
+		FileReadStream inputStream(pFile, readBuffer, sizeof(readBuffer));
 
-        s_ConfigDocument.ParseStream(inputStream);
+		s_ConfigDocument.ParseStream(inputStream);
 
-        fclose(pFile);
+		fclose(pFile);
 
-        return true;
-    }
+		return true;
+	}
 
     bool EngineConfig::WriteToFile()
     {

@@ -72,9 +72,10 @@ layout(binding = 6,     set = TEXTURE_SET_INDEX) uniform sampler2D              
 layout(binding = 7,     set = TEXTURE_SET_INDEX) uniform sampler2D                                  u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 8,     set = TEXTURE_SET_INDEX) uniform sampler2D                                  u_SceneRoughnessMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 9,     set = TEXTURE_SET_INDEX) uniform sampler2DArray                             u_BlueNoiseLUT;
-layout(binding = 10,    set = TEXTURE_SET_INDEX, rgba32f) restrict uniform image2D   		        u_DirectRadiance;
-layout(binding = 11,    set = TEXTURE_SET_INDEX, rgba32f) restrict uniform image2D   		        u_IndirectRadiance;
-layout(binding = 12,    set = TEXTURE_SET_INDEX, r16f)    restrict uniform image2D   		        u_History;
+layout(binding = 10,    set = TEXTURE_SET_INDEX) uniform samplerCube                                u_Skybox;
+layout(binding = 11,    set = TEXTURE_SET_INDEX, rgba32f) restrict uniform image2D   		        u_DirectRadiance;
+layout(binding = 12,    set = TEXTURE_SET_INDEX, rgba32f) restrict uniform image2D   		        u_IndirectRadiance;
+layout(binding = 13,    set = TEXTURE_SET_INDEX, r16f)    restrict uniform image2D   		        u_History;
 
 
 SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition, mat4 cameraViewInv)

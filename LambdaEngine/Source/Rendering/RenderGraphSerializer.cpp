@@ -66,6 +66,9 @@ namespace LambdaEngine
 									writer.String("is_of_array_type");
 									writer.Bool(resource.TextureParams.IsOfArrayType);
 
+									writer.String("texture_type");
+									writer.String(ResourceTextureTypeToString(resource.TextureParams.TextureType).c_str());
+
 									if (!resource.External && resource.Name != RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 									{
 										writer.String("x_dim_type");
@@ -413,6 +416,15 @@ namespace LambdaEngine
 
 							writer.String("depth_test_enabled");
 							writer.Bool(renderStageIt->second.Graphics.DepthTestEnabled);
+
+							writer.String("cull_mode");
+							writer.String(CullModeToString(renderStageIt->second.Graphics.CullMode).c_str());
+
+							writer.String("polygon_mode");
+							writer.String(PolygonModeToString(renderStageIt->second.Graphics.PolygonMode).c_str());
+
+							writer.String("primitive_topology");
+							writer.String(PrimitiveTopologyToString(renderStageIt->second.Graphics.PrimitiveTopology).c_str());					
 						}
 
 						writer.String("shaders");
@@ -626,8 +638,9 @@ namespace LambdaEngine
 						{
 							case ERenderGraphResourceType::TEXTURE:
 							{
-								resource.TextureParams.TextureFormat	= TextureFormatFromString(resourceTypeParamsObject["texture_format"].GetString());
-								resource.TextureParams.IsOfArrayType	= resourceTypeParamsObject["is_of_array_type"].GetBool();
+								resource.TextureParams.TextureFormat															= TextureFormatFromString(resourceTypeParamsObject["texture_format"].GetString());
+								resource.TextureParams.IsOfArrayType															= resourceTypeParamsObject["is_of_array_type"].GetBool();
+								if (resourceTypeParamsObject.HasMember("texture_type")) resource.TextureParams.TextureType		= ResourceTextureTypeFromString(resourceTypeParamsObject["texture_type"].GetString());
 
 								if (!resource.External && resource.Name != RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 								{
@@ -960,7 +973,10 @@ namespace LambdaEngine
 							}
 						}
 
-						renderStage.Graphics.DepthTestEnabled			= renderStageObject["depth_test_enabled"].GetBool();
+						renderStage.Graphics.DepthTestEnabled					= renderStageObject["depth_test_enabled"].GetBool();
+						if (renderStageObject.HasMember("cull_mode"))			renderStage.Graphics.CullMode			= CullModeFromString(renderStageObject["cull_mode"].GetString());
+						if (renderStageObject.HasMember("polygon_mode"))		renderStage.Graphics.PolygonMode		= PolygonModeFromString(renderStageObject["polygon_mode"].GetString());
+						if (renderStageObject.HasMember("primitive_topology"))	renderStage.Graphics.PrimitiveTopology	= PrimitiveTopologyFromString(renderStageObject["primitive_topology"].GetString());
 
 						renderStage.Graphics.Shaders.TaskShaderName		= shadersObject["task_shader"].GetString();
 						renderStage.Graphics.Shaders.MeshShaderName		= shadersObject["mesh_shader"].GetString();

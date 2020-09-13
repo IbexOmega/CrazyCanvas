@@ -21,16 +21,23 @@ def lint(cppcheck_path, report_path, ignore_path):
 		'--inconclusive',
 		'-q',
 		'--project=LambdaEngine.sln',
-		'\"--project-configuration=Release x64_StaticLib|x64\"'
+		'--project-configuration=Release x64_StaticLib|x64'
 	]
 
 	if ignore_path:
 		args.append(f'-i{ignore_path}')
 
+	thread_count = os.cpu_count()
+	if thread_count:
+		print(f'Using {thread_count} threads')
+		args.append(f'-j {thread_count}')
+
 	# Use stdout as the report
 	with open(report_path, 'w') as report:
 		print('Linting... ', flush=True, end='')
-		subprocess.run(args, stderr=report)
+		# Ignore stdout
+		FNULL = open(os.devnull, 'w')
+		subprocess.run(args, stdout=FNULL, stderr=report)
 		print('Finished', flush=True)
 		report.close()
 

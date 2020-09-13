@@ -410,6 +410,8 @@ namespace LambdaEngine
 	{
 		switch (topology)
 		{
+		case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_POINT_LIST:		return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+		case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_LINE_LIST:		return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 		case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_NONE:
 		default:													return VkPrimitiveTopology(0);

@@ -5,12 +5,12 @@
 
 namespace LambdaEngine
 {
-	class NetworkPacket;
+	class NetworkSegment;
 
 	class LAMBDA_API BinaryEncoder
 	{
 	public:
-		BinaryEncoder(NetworkPacket* packet);
+		BinaryEncoder(NetworkSegment* packet);
 		~BinaryEncoder();
 
 		void WriteInt8(int8 value);
@@ -28,6 +28,6 @@ namespace LambdaEngine
 		void WriteBuffer(const char* buffer, uint16 size);
 
 	private:
-		NetworkPacket* m_pNetworkPacket;
+		NetworkSegment* m_pNetworkPacket;
 	};
 }

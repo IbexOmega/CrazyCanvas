@@ -10,8 +10,11 @@ namespace LambdaEngine
 {
 	class LAMBDA_API NetworkStatistics
 	{
-		friend class PacketTransceiver;
-		friend class PacketManager;
+		friend class PacketTransceiverBase;
+		friend class PacketTransceiverUDP;
+		friend class PacketTransceiverTCP;
+		friend class PacketManagerUDP;
+		friend class PacketManagerBase;
 
 	public:
 		NetworkStatistics();
@@ -25,12 +28,12 @@ namespace LambdaEngine
 		/*
 		* return - The number of packets (NetworkPacket) sent
 		*/
-		uint32 GetMessagesSent() const;
+		uint32 GetSegmentsSent() const;
 
 		/*
 		* return - The number of reliable packets (NetworkPacket) sent
 		*/
-		uint32 GetReliableMessagesSent() const;
+		uint32 GetReliableSegmentsSent() const;
 
 		/*
 		* return - The number of physical packets received
@@ -40,7 +43,7 @@ namespace LambdaEngine
 		/*
 		* return - The number of packets (NetworkPacket) received
 		*/
-		uint32 GetMessagesReceived() const;
+		uint32 GetSegmentsReceived() const;
 
 		/*
 		* return - The number of physical packets lost
@@ -99,10 +102,10 @@ namespace LambdaEngine
 		void Reset();
 
 		uint32 RegisterPacketSent();
-		uint32 RegisterMessageSent();
-		uint32 RegisterReliableMessageSent();
-		void RegisterPacketReceived(uint32 messages, uint32 bytes);
-		void RegisterReliableMessageReceived();
+		uint32 RegisterSegmentSent();
+		uint32 RegisterReliableSegmentSent();
+		void RegisterPacketReceived(uint32 segments, uint32 bytes);
+		void RegisterReliableSegmentReceived();
 		void RegisterPacketLoss();
 		void RegisterBytesSent(uint32 bytes);
 		void SetRemoteSalt(uint64 salt);
@@ -115,10 +118,10 @@ namespace LambdaEngine
 	private:
 		uint32 m_PacketsLost;
 		uint32 m_PacketsSent;
-		uint32 m_MessagesSent;
-		uint32 m_ReliableMessagesSent;
+		uint32 m_SegmentsSent;
+		uint32 m_ReliableSegmentsSent;
 		uint32 m_PacketsReceived;
-		uint32 m_MessagesReceived;
+		uint32 m_SegmentsReceived;
 		uint32 m_BytesSent;
 		uint32 m_BytesReceived;
 

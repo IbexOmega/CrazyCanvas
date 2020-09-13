@@ -2,11 +2,15 @@
 
 #include "Game/Game.h"
 
-#include "Application/API/EventHandler.h"
+#include "Rendering/RenderGraphTypes.h"
+#include "Rendering/RenderGraph.h"
+#include "Rendering/RenderGraphEditor.h"
+
+#include "Application/API/Events/KeyEvents.h"
 
 #include "Networking/API/IPacketListener.h"
-#include "Networking/API/ClientUDP.h"
-#include "Networking/API/IClientUDPHandler.h"
+#include "Networking/API/IClientHandler.h"
+#include "Networking/API/ClientBase.h"
 
 namespace LambdaEngine
 {
@@ -16,41 +20,38 @@ namespace LambdaEngine
 
 class Client :
 	public LambdaEngine::Game,
-	public LambdaEngine::EventHandler,
+	public LambdaEngine::ApplicationEventHandler,
 	public LambdaEngine::IPacketListener,
-	public LambdaEngine::IClientUDPHandler
+	public LambdaEngine::IClientHandler
 {
 public:
 	Client();
 	~Client();
 
-	virtual void OnConnectingUDP(LambdaEngine::IClientUDP* pClient) override;
-	virtual void OnConnectedUDP(LambdaEngine::IClientUDP* pClient) override;
-	virtual void OnDisconnectingUDP(LambdaEngine::IClientUDP* pClient) override;
-	virtual void OnDisconnectedUDP(LambdaEngine::IClientUDP* pClient) override;
-	virtual void OnPacketReceivedUDP(LambdaEngine::IClientUDP* pClient, LambdaEngine::NetworkPacket* pPacket) override;
-	virtual void OnServerFullUDP(LambdaEngine::IClientUDP* pClient) override;
+	virtual void OnConnecting(LambdaEngine::IClient* pClient) override;
+	virtual void OnConnected(LambdaEngine::IClient* pClient) override;
+	virtual void OnDisconnecting(LambdaEngine::IClient* pClient) override;
+	virtual void OnDisconnected(LambdaEngine::IClient* pClient) override;
+	virtual void OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngine::NetworkSegment* pPacket) override;
+	virtual void OnServerFull(LambdaEngine::IClient* pClient) override;
+	virtual void OnClientReleased(LambdaEngine::IClient* pClient) override;
 
 
-	virtual void OnPacketDelivered(LambdaEngine::NetworkPacket* pPacket) override;
-	virtual void OnPacketResent(LambdaEngine::NetworkPacket* pPacket, uint8 tries) override;
-	virtual void OnPacketMaxTriesReached(LambdaEngine::NetworkPacket* pPacket, uint8 tries) override;
+	virtual void OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket) override;
+	virtual void OnPacketResent(LambdaEngine::NetworkSegment* pPacket, uint8 tries) override;
+	virtual void OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint8 tries) override;
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
-    virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
+	virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
 
-	virtual void OnKeyPressed(LambdaEngine::EKey key, uint32 modifierMask, bool isRepeat)     override;
-
-private:
-	bool InitRendererForEmpty();
+	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 
 private:
-	LambdaEngine::ClientUDP* m_pClient;
+	LambdaEngine::ClientBase* m_pClient;
 
-
+	LambdaEngine::RenderGraphEditor* m_pRenderGraphEditor = nullptr;
 	LambdaEngine::RenderGraph* m_pRenderGraph = nullptr;
 	LambdaEngine::Renderer* m_pRenderer = nullptr;
-	GUID_Lambda	m_ImGuiPixelShaderNormalGUID = GUID_NONE;
-	GUID_Lambda	m_ImGuiPixelShaderDepthUID = GUID_NONE;
+	LambdaEngine::Scene* m_pScene = nullptr;
 };

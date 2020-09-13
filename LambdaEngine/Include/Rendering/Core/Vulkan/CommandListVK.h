@@ -106,6 +106,7 @@ namespace LambdaEngine
 		virtual void BeginQuery(QueryHeap* pQueryHeap, uint32 queryIndex)										override final;
 		virtual void Timestamp(QueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)	override final;
 		virtual void EndQuery(QueryHeap* pQueryHeap, uint32 queryIndex)											override final;
+		virtual void ResetQuery(QueryHeap* pQueryHeap, uint32 firstQuery, uint32 queryCount)					override final;
 
 		virtual void ExecuteSecondary(const CommandList* pSecondary) override final;
 

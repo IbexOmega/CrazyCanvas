@@ -7,10 +7,10 @@
 
 namespace LambdaEngine
 {
-    class LAMBDA_API EngineConfig
-    {
-    public:
-        DECL_STATIC_CLASS(EngineConfig);
+	class LAMBDA_API EngineConfig
+	{
+	public:
+		DECL_STATIC_CLASS(EngineConfig);
 
         static bool LoadFromFile();
         static bool WriteToFile();
@@ -29,7 +29,7 @@ namespace LambdaEngine
         static void SetStringProperty(const String& propertyName, const String& string);
         static void SetArrayProperty(const String& propertyName, const TArray<int>& arr);
 
-    private:
-        static rapidjson::Document s_ConfigDocument;
-    };
+	private:
+		static rapidjson::Document s_ConfigDocument;
+	};
 }
