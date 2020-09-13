@@ -23,7 +23,7 @@ namespace LambdaEngine
 		DECL_REMOVE_MOVE(GameConsole);
 
 		bool Init();
-		bool Release();
+		static bool Release();
 
 		void Tick();
 		
@@ -41,22 +41,27 @@ namespace LambdaEngine
 			glm::vec4 Color;
 		};
 
-		int ExecCommand(std::string& data);
+		int ExecCommand(const std::string& data);
 
-		void FillArg(Arg& arg, std::string token);
+		static void FillArg(Arg& arg, std::string token);
 
 		bool AddArg(uint32 index, Arg arg, ConsoleCommand& cmd);
 
 		void PushError(const std::string& msg);
 		void PushInfo(const std::string& msg);
+		void PushMsg(const std::string& line, glm::vec4 color);
 
 		int TextEditCallback(ImGuiInputTextCallbackData* data);
 
 	private:
+		TArray<std::string> m_Candidates;
 		TArray<Item> m_Items;
 		TArray<std::string> m_History;
 		int32 m_HistoryIndex { -1 };
 		bool m_ScrollToBottom { false };
+		int32 m_ActivePopupIndex = -1;
+		bool m_PopupSelectionChanged = false;
+		std::string m_PopupSelectedText = "";
 		std::unordered_map<std::string, std::pair<ConsoleCommand, std::function<void(CallbackInput&)>>> m_CommandMap;
 	};
 }
