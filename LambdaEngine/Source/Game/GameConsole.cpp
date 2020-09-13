@@ -123,8 +123,8 @@ namespace LambdaEngine
 
 		ImGuiRenderer::Get().DrawUI([&]()
 		{
-			ImGuiWindowFlags flags = 
-				ImGuiWindowFlags_NoMove | 
+			ImGuiWindowFlags flags =
+				ImGuiWindowFlags_NoMove |
 				ImGuiWindowFlags_NoTitleBar;
 
 			TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
@@ -136,7 +136,7 @@ namespace LambdaEngine
 			ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver); // Standard position
 			ImGui::SetNextWindowSize(ImVec2(width, standardHeight), ImGuiCond_FirstUseEver); // Standard size
 			ImGui::SetNextWindowSizeConstraints(ImVec2(width, 70), ImVec2(width, height)); // Window constraints
-				
+
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f); // Make more transparent
 			ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); // Remove grip, resize works anyway
 			ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); // Remove grip, resize works anyway
@@ -149,7 +149,7 @@ namespace LambdaEngine
 				// History
 				const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 				ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
-					
+
 				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
 
@@ -183,45 +183,45 @@ namespace LambdaEngine
 
 				// Command line
 				static char s_Buf[256];
-					
-					ImGui::PushItemWidth(width);
-					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
 
-					ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackEdit;
-					if (ImGui::InputText("###Input", s_Buf, 256, input_text_flags, 
-						[](ImGuiInputTextCallbackData* data)->int {
+				ImGui::PushItemWidth(width);
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
+
+				ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackEdit;
+				if (ImGui::InputText("###Input", s_Buf, 256, input_text_flags,
+					[](ImGuiInputTextCallbackData* data)->int {
 						GameConsole* console = (GameConsole*)data->UserData;
 						return console->TextEditCallback(data);
-						}, (void*)this))
+					}, (void*)this))
+				{
+					if (m_ActivePopupIndex != -1)
 					{
-						if (m_ActivePopupIndex != -1)
-						{
-							strcpy(s_Buf, m_PopupSelectedText.c_str());
-							m_ActivePopupIndex = -1;
-							m_Candidates.Clear();
-							m_PopupSelectedText = "";
-						}
-						else
-						{
-							if (s_Buf[0])
-							{
-								std::string buff = std::string(s_Buf);
-								ExecCommand(buff);
-							}
-
-							strcpy(s_Buf, "");
-						}
-						hasFocus = true;
+						strcpy(s_Buf, m_PopupSelectedText.c_str());
+						m_ActivePopupIndex = -1;
+						m_Candidates.Clear();
+						m_PopupSelectedText = "";
 					}
+					else
+					{
+						if (s_Buf[0])
+						{
+							std::string buff = std::string(s_Buf);
+							ExecCommand(buff);
+						}
+
+						strcpy(s_Buf, "");
+					}
+					hasFocus = true;
+				}
 
 					ImGui::PopStyleColor();
 					ImGui::PopItemWidth();
 					ImGui::PopStyleVar();
-					
+
 					if (s_Active || hasFocus)
 					{
-						std::string buff = std::string(s_Buf);
-						ExecCommand(buff);
+						ImGui::SetItemDefaultFocus();
+						ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
 					}
 
 					if (ImGui::IsWindowFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
@@ -232,71 +232,60 @@ namespace LambdaEngine
 					popupSize = ImVec2(ImGui::GetItemRectSize().x - 60, ImGui::GetTextLineHeightWithSpacing() * 2);
 					popupPos = ImGui::GetItemRectMin();
 					popupPos.y += ImGui::GetItemRectSize().y;
-				}
-
-				// Draw popup autocomplete window
-				if (m_Candidates.GetSize() > 0)
-				{
-					bool isActiveIndex = false;
-					bool popupOpen = true;
-					ImGuiWindowFlags popupFlags =
-						ImGuiWindowFlags_NoTitleBar |
-						ImGuiWindowFlags_NoResize |
-						ImGuiWindowFlags_NoMove |
-						ImGuiWindowFlags_HorizontalScrollbar |
-						ImGuiWindowFlags_NoSavedSettings |
-						ImGuiWindowFlags_NoFocusOnAppearing;
-
-					if (m_Candidates.GetSize() < 10)
-					{
-						popupFlags |= ImGuiWindowFlags_NoScrollbar;
-						popupSize.y = (ImGui::GetTextLineHeight() + 8) * m_Candidates.GetSize();
-					}
-					else
-					{
-						popupSize.y = (ImGui::GetTextLineHeight() + 8) * 10;
-					}
-
-					ImGui::SetNextWindowPos(popupPos);
-					ImGui::SetNextWindowSize(popupSize);
-					ImGui::Begin("candidates_popup", &popupOpen, popupFlags);
-					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
-					ImGui::PushAllowKeyboardFocus(false);
-
-					for (uint32 i = 0; i < m_Candidates.GetSize(); i++)
-					{
-						isActiveIndex = m_ActivePopupIndex == i;
-						ImGui::PushID(i);
-						if (ImGui::Selectable(m_Candidates[i].c_str(), &isActiveIndex))
-						{
-							PushError("Test");
-						}
-						ImGui::PopID();
-
-						if (isActiveIndex && m_PopupSelectionChanged)
-						{
-							ImGui::SetScrollHere();
-							m_PopupSelectedText = m_Candidates[i];
-							m_PopupSelectionChanged = false;
-						}
-					}
-
-					ImGui::PopAllowKeyboardFocus();
-					ImGui::PopStyleVar();
-					ImGui::End();
-				}
-
-				ImGui::PopStyleColor();
-				ImGui::PopItemWidth();
-				ImGui::PopStyleVar();
-
-				if (s_Active || hasFocus)
-				{
-					ImGui::SetItemDefaultFocus();
-					ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
-				}
 			}
 			ImGui::End();
+
+			// Draw popup autocomplete window
+			if (m_Candidates.GetSize() > 0)
+			{
+				bool isActiveIndex = false;
+				bool popupOpen = true;
+				ImGuiWindowFlags popupFlags =
+					ImGuiWindowFlags_NoTitleBar |
+					ImGuiWindowFlags_NoResize |
+					ImGuiWindowFlags_NoMove |
+					ImGuiWindowFlags_HorizontalScrollbar |
+					ImGuiWindowFlags_NoSavedSettings |
+					ImGuiWindowFlags_NoFocusOnAppearing;
+
+				if (m_Candidates.GetSize() < 10)
+				{
+					popupFlags |= ImGuiWindowFlags_NoScrollbar;
+					popupSize.y = (ImGui::GetTextLineHeight() + 8) * m_Candidates.GetSize();
+				}
+				else
+				{
+					popupSize.y = (ImGui::GetTextLineHeight() + 8) * 10;
+				}
+
+				ImGui::SetNextWindowPos(popupPos);
+				ImGui::SetNextWindowSize(popupSize);
+				ImGui::Begin("candidates_popup", &popupOpen, popupFlags);
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
+				ImGui::PushAllowKeyboardFocus(false);
+
+				for (uint32 i = 0; i < m_Candidates.GetSize(); i++)
+				{
+					isActiveIndex = m_ActivePopupIndex == i;
+					ImGui::PushID(i);
+					if (ImGui::Selectable(m_Candidates[i].c_str(), &isActiveIndex))
+					{
+						PushError("Test");
+					}
+					ImGui::PopID();
+
+					if (isActiveIndex && m_PopupSelectionChanged)
+					{
+						ImGui::SetScrollHere();
+						m_PopupSelectedText = m_Candidates[i];
+						m_PopupSelectionChanged = false;
+					}
+				}
+
+				ImGui::PopAllowKeyboardFocus();
+				ImGui::PopStyleVar();
+				ImGui::End();
+			}
 
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
