@@ -298,7 +298,7 @@ namespace LambdaEngine
 		*/
 		void Update();
 
-		void Render(uint64 frameIndex, uint64 modFrameIndex, uint32 backBufferIndex);
+		void Render(uint64 modFrameIndex, uint32 backBufferIndex);
 
 		CommandList* AcquireGraphicsCopyCommandList();
 		CommandList* AcquireComputeCopyCommandList();

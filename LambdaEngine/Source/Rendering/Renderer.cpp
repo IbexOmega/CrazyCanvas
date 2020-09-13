@@ -155,7 +155,7 @@ namespace LambdaEngine
 			s_pScene->PrepareRender(pGraphicsCopyCommandList, pComputeCopyCommandList, s_FrameIndex);
 		}
 
-		s_pRenderGraph->Render(s_FrameIndex, s_ModFrameIndex, s_BackBufferIndex);
+		s_pRenderGraph->Render(s_ModFrameIndex, s_BackBufferIndex);
 
 		s_SwapChain->Present();
 

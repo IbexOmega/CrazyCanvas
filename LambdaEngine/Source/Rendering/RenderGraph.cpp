@@ -651,7 +651,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::Render(uint64 frameIndex, uint64 modFrameIndex, uint32 backBufferIndex)
+	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)
 	{
 		m_BackBufferIndex = backBufferIndex;
 
