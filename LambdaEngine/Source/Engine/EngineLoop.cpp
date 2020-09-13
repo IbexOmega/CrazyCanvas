@@ -124,6 +124,8 @@ namespace LambdaEngine
 			return false;
 		}
 
+		SetFixedTimestep(Timestamp::Seconds(1.0 / EngineConfig::GetDoubleProperty("FixedTimestep")));
+
 		if (!ThreadPool::Init())
 		{
 			return false;

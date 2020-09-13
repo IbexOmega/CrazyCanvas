@@ -69,9 +69,9 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
-	m_RenderGraphWindow = false;
-	m_ShowDemoWindow = false;
-	m_DebuggingWindow = false;
+	m_RenderGraphWindow = EngineConfig::GetBoolProperty("RenderGraph");
+	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");
+	m_DebuggingWindow = EngineConfig::GetBoolProperty("Debugging");
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
