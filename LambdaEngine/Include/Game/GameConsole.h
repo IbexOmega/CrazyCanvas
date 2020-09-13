@@ -59,7 +59,7 @@ namespace LambdaEngine
 		TArray<std::string> m_History;
 		int32 m_HistoryIndex { -1 };
 		bool m_ScrollToBottom { false };
-		int32 m_ActivePopupIndex = 0;
+		int32 m_ActivePopupIndex = -1;
 		bool m_PopupSelectionChanged = false;
 		std::string m_PopupSelectedText = "";
 		std::unordered_map<std::string, std::pair<ConsoleCommand, std::function<void(CallbackInput&)>>> m_CommandMap;
