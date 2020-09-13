@@ -39,8 +39,7 @@ Server::Server()
 	desc.PingTimeout	= Timestamp::Seconds(3);
 
 	m_pServer = NetworkUtils::CreateServer(desc);
-	//m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
-	m_pServer->Start(IPEndPoint(IPAddress::Get("192.168.0.45"), 4444));
+	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
 
 	//m_pServer->SetSimulateReceivingPacketLoss(0.1f);
 }

@@ -11,6 +11,8 @@
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
 
+#define UINT32_TO_IMVEC4(c) ImVec4(c[0] / 255.0F, c[1] / 255.0F, c[2] / 255.0F, c[3] / 255.0F)
+
 namespace LambdaEngine
 {
 	void NetworkDebugger::RenderStatisticsWithImGUI(IClient* pClient)
@@ -19,11 +21,19 @@ namespace LambdaEngine
 		{
 			PacketManagerBase* pManager = pClient->GetPacketManager();
 			SegmentPool* pSegmentPool = pManager->GetSegmentPool();
-			const NetworkStatistics* pStatistics = pManager->GetStatistics();
+			const NetworkStatistics* pStatistics = pClient->GetStatistics();
 
 			ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
 			if (ImGui::Begin("Network Statistics", NULL))
 			{
+				uint32 color = IClient::StateToColor(pClient->GetState());
+
+				ImGui::Text("State                 ");
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Text, UINT32_TO_IMVEC4(((uint8*)&color)));
+				ImGui::TextUnformatted(IClient::StateToString(pClient->GetState()).c_str());
+				ImGui::PopStyleColor();
+
 				ImGui::Text("Packets Sent           %d", pStatistics->GetPacketsSent());
 				ImGui::Text("Segments Sent          %d", pStatistics->GetSegmentsSent());
 				ImGui::Text("Reliable Segments Sent %d", pStatistics->GetReliableSegmentsSent());
