@@ -1,8 +1,11 @@
 {
-    "WindowSize": [1920, 1080],
+    "WindowSize": [
+        1920,
+        1080
+    ],
     "FixedTimestep": 60,
     "RayTracingEnabled": true,
-    "RenderGraph": false,
+    "ShowRenderGraph": false,
     "ShowDemo": false,
     "Debugging": false,
     "CameraFOV": 90.0,

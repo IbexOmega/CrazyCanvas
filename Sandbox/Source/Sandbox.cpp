@@ -69,7 +69,7 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
-	m_RenderGraphWindow = EngineConfig::GetBoolProperty("RenderGraph");
+	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
 	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");
 	m_DebuggingWindow = EngineConfig::GetBoolProperty("Debugging");
 
@@ -340,7 +340,7 @@ Sandbox::Sandbox()
 			m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 		}
 	}
-	
+
 
 	m_pScene->Finalize();
 	Renderer::SetScene(m_pScene);
@@ -477,7 +477,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 			{
 				Profiler::Render(delta);
 			}
-			
+
 		});
 	}
 
