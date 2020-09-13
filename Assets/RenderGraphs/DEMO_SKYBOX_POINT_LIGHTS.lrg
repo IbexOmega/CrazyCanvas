@@ -224,8 +224,8 @@
                 "texture_type": "TEXTURE_CUBE",
                 "x_dim_type": "CONSTANT",
                 "y_dim_type": "CONSTANT",
-                "x_dim_var": 256.0,
-                "y_dim_var": 256.0,
+                "x_dim_var": 512.0,
+                "y_dim_var": 512.0,
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
@@ -352,7 +352,7 @@
             "name": "BACK_BUFFER_TEXTURE",
             "removable": false,
             "binding_type": "COMBINED_SAMPLER",
-            "src_stage": "DEMO"
+            "src_stage": "SKYBOX_PASS"
         }
     },
     "render_stages": [
@@ -480,7 +480,7 @@
                     "name": "BACK_BUFFER_TEXTURE",
                     "removable": true,
                     "binding_type": "ATTACHMENT",
-                    "src_stage": "SKYBOX_PASS"
+                    "src_stage": ""
                 },
                 {
                     "name": "G_BUFFER_DEPTH_STENCIL",
@@ -506,7 +506,7 @@
             "draw_params": {
                 "draw_type": "CUBE"
             },
-            "depth_test_enabled": false,
+            "depth_test_enabled": true,
             "cull_mode": "CULL_MODE_FRONT",
             "polygon_mode": "POLYGON_MODE_FILL",
             "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
@@ -536,7 +536,13 @@
                     "name": "BACK_BUFFER_TEXTURE",
                     "removable": true,
                     "binding_type": "ATTACHMENT",
-                    "src_stage": ""
+                    "src_stage": "DEMO"
+                },
+                {
+                    "name": "G_BUFFER_DEPTH_STENCIL",
+                    "removable": true,
+                    "binding_type": "ATTACHMENT",
+                    "src_stage": "DEMO"
                 }
             ]
         },
@@ -550,8 +556,8 @@
             "x_dim_type": "CONSTANT",
             "y_dim_type": "CONSTANT",
             "z_dim_type": "CONSTANT",
-            "x_dim_var": 256.0,
-            "y_dim_var": 256.0,
+            "x_dim_var": 512.0,
+            "y_dim_var": 512.0,
             "z_dim_var": 1.0,
             "draw_params": {
                 "draw_type": "SCENE_INDIRECT",

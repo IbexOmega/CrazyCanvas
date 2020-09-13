@@ -950,8 +950,6 @@ namespace LambdaEngine
 		ImGui::SameLine();
 		ImGui::Checkbox("##Back Buffer Bound", &pResource->BackBufferBound);
 
-		pResource->TextureParams.TextureType = m_CurrentlyAddingTextureType;
-		
 		ImGui::Text("Sub Resource Count: ");
 		ImGui::SameLine();
 
@@ -1001,7 +999,7 @@ namespace LambdaEngine
 					int32 textureDimensionTypeX = DimensionTypeToDimensionTypeIndex(pResource->TextureParams.XDimType);
 					int32 textureDimensionTypeY = DimensionTypeToDimensionTypeIndex(pResource->TextureParams.YDimType);
 
-					if (m_CurrentlyAddingTextureType != ERenderGraphTextureType::TEXTURE_CUBE)
+					if (pResource->TextureParams.TextureType != ERenderGraphTextureType::TEXTURE_CUBE)
 					{
 						ImGui::Text("Width: ");
 						ImGui::SameLine();

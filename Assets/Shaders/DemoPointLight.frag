@@ -74,7 +74,7 @@ void main()
     vec3 pointLightPos                  = vec3(0.0f, 2.0f, 0.0f);
     vec3 toPointLight                   = in_WorldPosition.xyz - pointLightPos;
     float depthToPointLight             = texture(u_PointLightShadowMap, toPointLight).r * pc_PointLight.Far;
-    float bias                          = 0.05f;
+    float bias                          = 0.5f;
     float shadow                        = length(toPointLight) - bias > depthToPointLight ? 0.0f : 1.0f;
 
 	out_Color 				            = vec4(shadow * finalColor, 1.0f);

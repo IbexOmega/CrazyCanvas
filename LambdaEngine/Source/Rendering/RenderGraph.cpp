@@ -960,6 +960,7 @@ namespace LambdaEngine
 				SAFEDELETE_ARRAY(pRenderStage->ppBufferDescriptorSets);
 				SAFERELEASE(pRenderStage->pPipelineLayout);
 				SAFERELEASE(pRenderStage->pRenderPass);
+				SAFERELEASE(pRenderStage->pDisabledRenderPass);
 				PipelineStateManager::ReleasePipelineState(pRenderStage->PipelineStateID);
 			}
 			else if (pPipelineStage->Type == ERenderGraphPipelineStageType::SYNCHRONIZATION)
@@ -1300,6 +1301,7 @@ namespace LambdaEngine
 
 				if (newResource.Type == ERenderGraphResourceType::TEXTURE)
 				{
+					alreadyExists = alreadyExists && newResource.Texture.TextureType				== previousResource.Texture.TextureType;
 					alreadyExists = alreadyExists && newResource.Texture.IsOfArrayType				== previousResource.Texture.IsOfArrayType;
 					alreadyExists = alreadyExists && newResource.Texture.Format						== previousResource.Texture.Format;
 					alreadyExists = alreadyExists && newResource.Texture.Textures.GetSize()			== previousResource.Texture.Textures.GetSize();
@@ -1598,7 +1600,7 @@ namespace LambdaEngine
 								PipelineTextureBarrierDesc* pTextureBarrier = &pResource->Texture.InititalTransitionBarriers[barrierIndex];
 								pTextureBarrier->pTexture					= nullptr;
 								pTextureBarrier->StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
-								pTextureBarrier->StateAfter					= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT ? pResourceStateDesc->AttachmentSynchronizations.NextBindingType : pResourceStateDesc->BindingType, pResource->Texture.Format);
+								pTextureBarrier->StateAfter					= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT ? pResourceStateDesc->AttachmentSynchronizations.PrevBindingType : pResourceStateDesc->BindingType, pResource->Texture.Format);
 								pTextureBarrier->QueueBefore				= ConvertPipelineStateTypeToQueue(pRenderStageDesc->Type);
 								pTextureBarrier->QueueAfter					= pTextureBarrier->QueueBefore;
 								pTextureBarrier->SrcMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
@@ -1823,8 +1825,6 @@ namespace LambdaEngine
 						pDepthStencilResource = pResource;
 					}
 					
-					
-
 					if (pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
 					{
 						hasTextureCubeAsAttachment = true;
@@ -2067,7 +2067,20 @@ namespace LambdaEngine
 						RenderPass* pRenderPass		= m_pGraphicsDevice->CreateRenderPass(&renderPassDesc);
 						pipelineDesc.RenderPass		= MakeSharedRef(pRenderPass);
 
-						pRenderStage->pRenderPass		= pRenderPass;
+						pRenderStage->pRenderPass	= pRenderPass;
+
+						//Create duplicate Render Pass (this is fucking retarded) which we use when the RenderStage is Disabled, this Render Pass forces LoadOp to be LOAD
+						{
+							RenderPassDesc disabledRenderPassDesc = renderPassDesc;
+
+							for (RenderPassAttachmentDesc& attachmentDesc : disabledRenderPassDesc.Attachments)
+							{
+								attachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
+								if (attachmentDesc.StencilLoadOp != ELoadOp::LOAD_OP_DONT_CARE) attachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_LOAD;
+							}
+
+							pRenderStage->pDisabledRenderPass = m_pGraphicsDevice->CreateRenderPass(&disabledRenderPassDesc);
+						}
 					}
 
 					//Set Draw Type and Draw Resource
@@ -2604,6 +2617,8 @@ namespace LambdaEngine
 					{
 						textureCubeFaceViewDesc.DebugName	= pResource->Name + " Texture Cube Face View " + std::to_string(f);
 						textureCubeFaceViewDesc.ArrayIndex	= f;
+
+						SAFERELEASE(*ppCubeFaceTextureView);
 						(*ppCubeFaceTextureView)	= m_pGraphicsDevice->CreateTextureView(&textureCubeFaceViewDesc);
 						(ppCubeFaceTextureView)++;
 					}
@@ -3154,24 +3169,24 @@ namespace LambdaEngine
 
 				clearColorCount++;
 			}
-
-			BeginRenderPassDesc beginRenderPassDesc = { };
-			beginRenderPassDesc.pRenderPass			= pRenderStage->pRenderPass;
-			beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
-			beginRenderPassDesc.RenderTargetCount	= textureViewCount;
-			beginRenderPassDesc.pDepthStencil		= pDepthStencilTextureView;
-			beginRenderPassDesc.Width				= frameBufferWidth;
-			beginRenderPassDesc.Height				= frameBufferHeight;
-			beginRenderPassDesc.Flags				= flags;
-			beginRenderPassDesc.pClearColors		= clearColorDescriptions;
-			beginRenderPassDesc.ClearColorCount		= clearColorCount;
-			beginRenderPassDesc.Offset.x			= 0;
-			beginRenderPassDesc.Offset.y			= 0;
-
-			pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
-
+				
 			if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
 			{
+				BeginRenderPassDesc beginRenderPassDesc = { };
+				beginRenderPassDesc.pRenderPass			= pRenderStage->pRenderPass;
+				beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
+				beginRenderPassDesc.RenderTargetCount	= textureViewCount;
+				beginRenderPassDesc.pDepthStencil		= pDepthStencilTextureView;
+				beginRenderPassDesc.Width				= frameBufferWidth;
+				beginRenderPassDesc.Height				= frameBufferHeight;
+				beginRenderPassDesc.Flags				= flags;
+				beginRenderPassDesc.pClearColors		= clearColorDescriptions;
+				beginRenderPassDesc.ClearColorCount		= clearColorCount;
+				beginRenderPassDesc.Offset.x			= 0;
+				beginRenderPassDesc.Offset.y			= 0;
+
+				pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
+
 				PushConstants* pDrawIterationPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
 
 				if (pDrawIterationPushConstants->MaxDataSize == sizeof(uint32))
@@ -3229,6 +3244,23 @@ namespace LambdaEngine
 
 					pGraphicsCommandList->DrawInstanced(36, 1, 0, 0);
 				}
+			}
+			else
+			{
+				BeginRenderPassDesc beginRenderPassDesc = { };
+				beginRenderPassDesc.pRenderPass			= pRenderStage->pDisabledRenderPass;
+				beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
+				beginRenderPassDesc.RenderTargetCount	= textureViewCount;
+				beginRenderPassDesc.pDepthStencil		= pDepthStencilTextureView;
+				beginRenderPassDesc.Width				= frameBufferWidth;
+				beginRenderPassDesc.Height				= frameBufferHeight;
+				beginRenderPassDesc.Flags				= flags;
+				beginRenderPassDesc.pClearColors		= clearColorDescriptions;
+				beginRenderPassDesc.ClearColorCount		= clearColorCount;
+				beginRenderPassDesc.Offset.x			= 0;
+				beginRenderPassDesc.Offset.y			= 0;
+
+				pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
 			}
 
 			pGraphicsCommandList->EndRenderPass();

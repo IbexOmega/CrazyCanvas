@@ -178,7 +178,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				ERenderGraphTextureType				TextureType = ERenderGraphTextureType::TEXTURE_2D;
+				ERenderGraphTextureType				TextureType		= ERenderGraphTextureType::TEXTURE_2D;
 				bool								IsOfArrayType	= false;
 				EFormat								Format			= EFormat::FORMAT_NONE;
 				TArray<PipelineTextureBarrierDesc>	InititalTransitionBarriers;
@@ -236,6 +236,7 @@ namespace LambdaEngine
 			DescriptorSet**			ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
 			DescriptorSet**			ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
 			RenderPass*				pRenderPass						= nullptr;
+			RenderPass*				pDisabledRenderPass				= nullptr;
 
 			PushConstants			pInternalPushConstants[NUM_INTERNAL_PUSH_CONSTANTS_TYPES];
 			PushConstants			ExternalPushConstants			= {};
