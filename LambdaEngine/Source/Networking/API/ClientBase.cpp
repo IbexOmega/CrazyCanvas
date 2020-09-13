@@ -205,7 +205,7 @@ namespace LambdaEngine
 
 	bool ClientBase::OnThreadsStarted(std::string& reason)
 	{
-		m_pSocket = SetupSocket();
+		m_pSocket = SetupSocket(reason);
 		if (m_pSocket)
 		{
 			GetTransceiver()->SetSocket(m_pSocket);
@@ -216,7 +216,6 @@ namespace LambdaEngine
 			SendConnect();
 			return true;
 		}
-		reason = "Socket Setup Error";
 		return false;
 	}
 

@@ -48,6 +48,8 @@ namespace LambdaEngine
 
 	float64 NetworkStatistics::GetPacketLossRate() const
 	{
+		if (m_PacketsSent == 0)
+			return 0.0F;
 		return m_PacketsLost / (float64)m_PacketsSent;
 	}
 

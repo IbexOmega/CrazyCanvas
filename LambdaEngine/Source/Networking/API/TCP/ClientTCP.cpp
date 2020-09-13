@@ -42,7 +42,7 @@ namespace LambdaEngine
 		return &m_Transceiver;
 	}
 
-	ISocket* ClientTCP::SetupSocket()
+	ISocket* ClientTCP::SetupSocket(std::string& reason)
 	{
 		ISocketTCP* pSocket = PlatformNetworkUtils::CreateSocketTCP();
 		if (pSocket)
@@ -52,10 +52,11 @@ namespace LambdaEngine
 			{
 				return pSocket;
 			}
-			LOG_ERROR("[ClientTCP]: Failed To Connect socket");
+			reason = "Connect Socket Failed " + GetEndPoint().ToString();
+			delete pSocket;
 			return nullptr;
 		}
-		LOG_ERROR("[ClientTCP]: Failed To Create socket");
+		reason = "Create Socket Failed";
 		return nullptr;
 	}
 

@@ -61,7 +61,7 @@ namespace LambdaEngine
         ClientRemoteBase* GetClient(const IPEndPoint& endPoint);
         void HandleNewConnection(ClientRemoteBase* pClient);
 
-        virtual ISocket* SetupSocket() = 0;
+        virtual ISocket* SetupSocket(std::string& reason) = 0;
 
     private:
         IClientRemoteHandler* CreateClientHandler() const;

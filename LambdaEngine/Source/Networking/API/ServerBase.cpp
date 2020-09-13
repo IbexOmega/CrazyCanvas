@@ -139,18 +139,19 @@ namespace LambdaEngine
 
 	bool ServerBase::OnThreadsStarted(std::string& reason)
 	{
-		m_pSocket = SetupSocket();
-		if (!m_pSocket)
-			reason = "Socket Setup Error";
+		m_pSocket = SetupSocket(reason);
 		return m_pSocket;
 	}
 
 	void ServerBase::OnThreadsTerminated()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
-		m_pSocket->Close();
-		delete m_pSocket;
-		m_pSocket = nullptr;
+		if (m_pSocket)
+		{
+			m_pSocket->Close();
+			delete m_pSocket;
+			m_pSocket = nullptr;
+		}
 		LOG_INFO("[ServerBase]: Stopped");
 	}
 

@@ -52,7 +52,7 @@ namespace LambdaEngine
 		virtual void OnReleaseRequested(const std::string& reason) override;
 
 		virtual PacketTransceiverBase* GetTransceiver() = 0;
-		virtual ISocket* SetupSocket() = 0;
+		virtual ISocket* SetupSocket(std::string& reason) = 0;
 
 	private:
 		void TransmitPackets();
