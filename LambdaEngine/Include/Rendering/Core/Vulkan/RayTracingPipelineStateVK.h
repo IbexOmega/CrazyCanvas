@@ -73,10 +73,9 @@ namespace LambdaEngine
 			TArray<VkSpecializationInfo>& shaderStagesSpecializationInfos, TArray<TArray<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps);
 
 	private:
-		VkPipeline						m_Pipeline						= VK_NULL_HANDLE;
-		TSharedRef<BufferVK>			m_ShaderHandleStorageBuffer		= nullptr;
-		TSharedRef<BufferVK>			m_SBT							= nullptr;
-		DeviceAllocator*				m_pAllocator					= nullptr;
+		VkPipeline				m_Pipeline					= VK_NULL_HANDLE;
+		TSharedRef<BufferVK>	m_ShaderHandleStorageBuffer	= nullptr;
+		TSharedRef<BufferVK>	m_SBT						= nullptr;
 		
 		VkStridedBufferRegionKHR m_RaygenBufferRegion	= {};
 		VkStridedBufferRegionKHR m_HitBufferRegion		= {};

@@ -166,14 +166,14 @@ namespace LambdaEngine
 	{
 #ifdef LAMBDA_DEBUG
 		// Assume VK_PIPELINE_STAGE_TOP_OF_PIPE or VK_PIPELINE_STAGE_BOTTOM_OF_PIPE;
-		pCommandList->Timestamp(m_pTimestampHeap, (uint32)m_Timestamps[pCommandList].Start, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM);
+		pCommandList->Timestamp(m_pTimestampHeap, (uint32)m_Timestamps[pCommandList].Start, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM);
 #endif
 	}
 
 	void GPUProfiler::EndTimestamp(CommandList* pCommandList)
 	{
 #ifdef LAMBDA_DEBUG
-		pCommandList->Timestamp(m_pTimestampHeap, (uint32)m_Timestamps[pCommandList].End, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM);
+		pCommandList->Timestamp(m_pTimestampHeap, (uint32)m_Timestamps[pCommandList].End, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM);
 #endif
 	}
 

@@ -6,10 +6,10 @@ namespace LambdaEngine
 {
 	struct BufferDesc
 	{
-		String		DebugName	= "";
-		EMemoryType MemoryType	= EMemoryType::MEMORY_TYPE_NONE;
-		uint32		Flags		= FBufferFlags::BUFFER_FLAG_NONE;
-		uint64		SizeInBytes = 0;
+		String			DebugName	= "";
+		EMemoryType		MemoryType	= EMemoryType::MEMORY_TYPE_NONE;
+		FBufferFlags	Flags		= FBufferFlag::BUFFER_FLAG_NONE;
+		uint64			SizeInBytes = 0;
 	};
 
 	class Buffer : public DeviceChild
