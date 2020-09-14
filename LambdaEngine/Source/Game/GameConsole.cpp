@@ -229,90 +229,96 @@ namespace LambdaEngine
 
 	void GameConsole::Tick()
 	{
-		// Toggle console when pressing § (Button beneath Escape)
-		static bool s_Active = false;
-		static bool s_Toggle = false;
-
 		// Do not draw if not active.
 		if (!m_IsActive)
 		{
 			return;
 		}
 
+		ImVec2 popupPos;
+		ImVec2 popupSize;
+
 		ImGuiRenderer::Get().DrawUI([&]()
+		{
+			ImGuiWindowFlags flags = 
+				ImGuiWindowFlags_NoMove | 
+				ImGuiWindowFlags_NoTitleBar;
+
+			TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+			uint32 width = mainWindow->GetWidth();
+			uint32 height = mainWindow->GetHeight();
+			const uint32 standardHeight = 200;
+
+			// Draw a console window at the top right of the viewport.
+			ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver); // Standard position
+			ImGui::SetNextWindowSize(ImVec2(width, standardHeight), ImGuiCond_FirstUseEver); // Standard size
+			ImGui::SetNextWindowSizeConstraints(ImVec2(width, 70), ImVec2(width, height)); // Window constraints
+			
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f); // Make more transparent
+			ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); // Remove grip, resize works anyway
+			ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); // Remove grip, resize works anyway
+			ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); // Remove grip, resize works anyway
+
+			if (ImGui::Begin("Console", (bool*)0, flags))
 			{
-				ImGuiWindowFlags flags = 
-					ImGuiWindowFlags_NoMove | 
-					ImGuiWindowFlags_NoTitleBar;
+				bool hasFocus = false;
 
-				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-				uint32 width = mainWindow->GetWidth();
-				uint32 height = mainWindow->GetHeight();
-				const uint32 standardHeight = 200;
-
-				// Draw a console window at the top right of the viewport.
-				ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver); // Standard position
-				ImGui::SetNextWindowSize(ImVec2(width, standardHeight), ImGuiCond_FirstUseEver); // Standard size
-				ImGui::SetNextWindowSizeConstraints(ImVec2(width, 70), ImVec2(width, height)); // Window constraints
+				// History
+				const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+				ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
 				
-				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f); // Make more transparent
-				ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); // Remove grip, resize works anyway
-				ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); // Remove grip, resize works anyway
-				ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); // Remove grip, resize works anyway
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
 
-				if (ImGui::Begin("Console", (bool*)0, flags))
+				// Only display visible text to see history.
+				ImGuiListClipper clipper(m_Items.GetSize());
+				while (clipper.Step())
 				{
-					bool hasFocus = false;
-
-					// History
-					const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-					ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
-					
-					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
-					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
-
-					// Only display visible text to see history.
-					ImGuiListClipper clipper(m_Items.GetSize());
-					while (clipper.Step())
+					for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 					{
-						for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-						{
-							Item& item = m_Items[i];
-							const char* str = item.Str.c_str();
-							ImVec4 color = ImVec4(item.Color.r, item.Color.g, item.Color.b, item.Color.a);
-							ImGui::PushStyleColor(ImGuiCol_Text, color);
-							ImGui::TextUnformatted(str);
-							ImGui::PopStyleColor();
-						}
+						Item& item = m_Items[i];
+						const char* str = item.Str.c_str();
+						ImVec4 color = ImVec4(item.Color.r, item.Color.g, item.Color.b, item.Color.a);
+						ImGui::PushStyleColor(ImGuiCol_Text, color);
+						ImGui::TextUnformatted(str);
+						ImGui::PopStyleColor();
 					}
+				}
 
-					if (m_ScrollToBottom | (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+				if (m_ScrollToBottom || (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+					ImGui::SetScrollHereY(0.0f);
+
+				m_ScrollToBottom = false;
+
+				ImGui::PopStyleVar();
+				ImGui::PopStyleVar();
+
+				ImGui::EndChild();
+				ImGui::Separator();
+
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
+
+				// Command line
+				static char s_Buf[256];
+				
+				ImGui::PushItemWidth(width);
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
+
+				ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackEdit;
+				if (ImGui::InputText("###Input", s_Buf, 256, input_text_flags, 
+					[](ImGuiInputTextCallbackData* data)->int {
+					GameConsole* console = (GameConsole*)data->UserData;
+					return console->TextEditCallback(data);
+					}, (void*)this))
+				{
+					if (m_ActivePopupIndex != -1)
 					{
-						ImGui::SetScrollHereY(0.0f);
+						strcpy(s_Buf, m_PopupSelectedText.c_str());
+						m_ActivePopupIndex = -1;
+						m_Candidates.Clear();
+						m_PopupSelectedText = "";
 					}
-
-					m_ScrollToBottom = false;
-
-					ImGui::PopStyleVar();
-					ImGui::PopStyleVar();
-
-					ImGui::EndChild();
-					ImGui::Separator();
-
-					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
-
-					// Command line
-					static char s_Buf[256];
-					
-					ImGui::PushItemWidth(width);
-					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
-
-					ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;;
-					if (ImGui::InputText("###Input", s_Buf, 256, input_text_flags, 
-						[](ImGuiInputTextCallbackData* data)->int {
-						GameConsole* console = (GameConsole*)data->UserData;
-						return console->TextEditCallback(data);
-						}, (void*)this))
+					else
 					{
 						if (s_Buf[0])
 						{
@@ -321,27 +327,88 @@ namespace LambdaEngine
 						}
 
 						strcpy(s_Buf, "");
-						hasFocus = true;
 					}
-
-					ImGui::PopStyleColor();
-					ImGui::PopItemWidth();
-					ImGui::PopStyleVar();
-
-					if (s_Active || hasFocus)
-					{
-						ImGui::SetItemDefaultFocus();
-						ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
-					}
-
+					hasFocus = true;
 				}
-				ImGui::End();
 
 				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
+				ImGui::PopItemWidth();
 				ImGui::PopStyleVar();
-			});
+				
+				if (s_Active || hasFocus)
+				{
+					ImGui::SetItemDefaultFocus();
+					ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
+				}
+
+				if (ImGui::IsWindowFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+				{
+					ImGui::SetKeyboardFocusHere(-1);
+				}
+
+				popupSize = ImVec2(ImGui::GetItemRectSize().x - 60, ImGui::GetTextLineHeightWithSpacing() * 2);
+				popupPos = ImGui::GetItemRectMin();
+				popupPos.y += ImGui::GetItemRectSize().y;
+			}
+			ImGui::End();
+
+			// Draw popup autocomplete window
+			if (m_Candidates.GetSize() > 0)
+			{
+				bool isActiveIndex = false;
+				bool popupOpen = true;
+				ImGuiWindowFlags popupFlags =
+					ImGuiWindowFlags_NoTitleBar |
+					ImGuiWindowFlags_NoResize |
+					ImGuiWindowFlags_NoMove |
+					ImGuiWindowFlags_HorizontalScrollbar |
+					ImGuiWindowFlags_NoSavedSettings |
+					ImGuiWindowFlags_NoFocusOnAppearing;
+
+				if (m_Candidates.GetSize() < 10)
+				{
+					popupFlags |= ImGuiWindowFlags_NoScrollbar;
+					popupSize.y = (ImGui::GetTextLineHeight() + 8) * m_Candidates.GetSize();
+				}
+				else
+				{
+					popupSize.y = (ImGui::GetTextLineHeight() + 8) * 10;
+				}
+
+				ImGui::SetNextWindowPos(popupPos);
+				ImGui::SetNextWindowSize(popupSize);
+				ImGui::Begin("candidates_popup", &popupOpen, popupFlags);
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
+				ImGui::PushAllowKeyboardFocus(false);
+
+				for (uint32 i = 0; i < m_Candidates.GetSize(); i++)
+				{
+					isActiveIndex = m_ActivePopupIndex == i;
+					ImGui::PushID(i);
+					if (ImGui::Selectable(m_Candidates[i].c_str(), &isActiveIndex))
+					{
+						PushError("Test");
+					}
+					ImGui::PopID();
+
+					if (isActiveIndex && m_PopupSelectionChanged)
+					{
+						ImGui::SetScrollHere();
+						m_PopupSelectedText = m_Candidates[i];
+						m_PopupSelectionChanged = false;
+					}
+				}
+
+				ImGui::PopAllowKeyboardFocus();
+				ImGui::PopStyleVar();
+				ImGui::End();
+			}
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleVar();
+		});
 	}
 
 	void GameConsole::BindCommand(ConsoleCommand cmd, std::function<void(CallbackInput&)> callback)
@@ -363,7 +430,7 @@ namespace LambdaEngine
 	{
 	}
 
-	int GameConsole::ExecCommand(std::string& data)
+	int GameConsole::ExecCommand(const std::string& data)
 	{
 		std::string command = data;
 		m_History.PushBack(command);
@@ -388,6 +455,13 @@ namespace LambdaEngine
 		}
 
 		ConsoleCommand& cmd = it->second.first;
+#ifndef LAMBDA_DEBUG
+		if (cmd.IsDebug())
+		{
+			PushError("Command '" + token + "' not found.");
+			return 0;
+		}
+#endif
 		Flag* preFlag = nullptr;
 		std::unordered_map<std::string, Flag> flags;
 
@@ -474,17 +548,17 @@ namespace LambdaEngine
 			arg.Type = Arg::EType::INT;
 			arg.Value.Int32 = std::stoi(token);
 		}
-		else if (std::regex_match(token, std::regex("(-[0-9]*\.[0-9]+)|(-[0-9]+\.[0-9]*)")))
+		else if (std::regex_match(token, std::regex("(-[0-9]*\\.[0-9]+)|(-[0-9]+\\.[0-9]*)")))
 		{
 			arg.Type = Arg::EType::FLOAT;
 			arg.Value.Float32 = std::stof(token);
 		}
-		else if (std::regex_match(token, std::regex("([0-9]*\.[0-9]+)|([0-9]+\.[0-9]*)")))
+		else if (std::regex_match(token, std::regex("([0-9]*\\.[0-9]+)|([0-9]+\\.[0-9]*)")))
 		{
 			arg.Type = Arg::EType::FLOAT;
 			arg.Value.Float32 = std::stof(token);
 		}
-		std::for_each(token.begin(), token.end(), [](char& c) { c = std::tolower(c); });
+		std::for_each(token.begin(), token.end(), [](char& c) { c = (char)std::tolower(c); });
 		if (std::regex_match(token, std::regex("(false)|(true)")))
 		{
 			arg.Type = Arg::EType::BOOL;
@@ -531,18 +605,19 @@ namespace LambdaEngine
 
 	void GameConsole::PushError(const std::string& msg)
 	{
-		Item item = {};
-		item.Str = "Error:" + msg;
-		item.Color = glm::vec4(1.f, 0.f, 0.f, 1.f);
-		m_Items.PushBack(item);
-		m_ScrollToBottom = true;
+		PushMsg("Error:" + msg, glm::vec4(1.f, 0.f, 0.f, 1.f));
 	}
 
 	void GameConsole::PushInfo(const std::string& msg)
 	{
+		PushMsg(msg, glm::vec4(1.f, 1.f, 0.f, 1.f));
+	}
+
+	void GameConsole::PushMsg(const std::string& line, glm::vec4 color)
+	{
 		Item item = {};
-		item.Str = msg;
-		item.Color = glm::vec4(1.f, 1.f, 0.f, 1.f);
+		item.Str = line;
+		item.Color = color;
 		m_Items.PushBack(item);
 		m_ScrollToBottom = true;
 	}
@@ -561,6 +636,41 @@ namespace LambdaEngine
 	{
 		switch (data->EventFlag)
 		{
+		case ImGuiInputTextFlags_CallbackEdit:
+		{
+			// Locate beginning of current word
+			const char* word_end = data->Buf + data->CursorPos;
+			const char* word_start = word_end;
+			while (word_start > data->Buf)
+			{
+				const char c = word_start[-1];
+				if (c == ' ' || c == '\t' || c == ',' || c == ';')
+					break;
+				word_start--;
+			}
+
+			m_Candidates.Clear();
+			for (auto& cmd : m_CommandMap)
+			{
+				const char* command = cmd.first.c_str();
+				int32 d = -1;
+				int32 n = (int32)(word_end - word_start);
+				const char* s1 = command;
+				const char* s2 = word_start;
+				while (n > 0 && (d = toupper(*s2) - toupper(*s1)) == 0 && *s1)
+				{
+					s1++;
+					s2++;
+					n--;
+				}
+				if (d == 0)
+				{
+					m_Candidates.PushBack(command);
+				}
+			}
+
+			break;
+		}
 		case ImGuiInputTextFlags_CallbackCompletion:
 		{
 			// Locate beginning of current word
@@ -576,6 +686,7 @@ namespace LambdaEngine
 
 			// Build a list of candidates
 			TArray<const char*> candidates;
+			//m_Candidates.Clear();
 			for (auto& cmd : m_CommandMap)
 			{
 				const char* command = cmd.first.c_str();
@@ -598,6 +709,7 @@ namespace LambdaEngine
 			if (candidates.GetSize() == 0)
 			{
 				// No match
+				m_ActivePopupIndex = -1;
 			}
 			else if (candidates.GetSize() == 1)
 			{
@@ -606,60 +718,59 @@ namespace LambdaEngine
 				data->InsertChars(data->CursorPos, candidates[0]);
 				data->InsertChars(data->CursorPos, " ");
 			}
-			else
+			else if (m_ActivePopupIndex != -1)
 			{
-				// Multiple matches. Complete as much as it can.
-				int match_len = (int)(word_end - word_start);
-				for (;;)
-				{
-					int c = 0;
-					bool all_candidates_matches = true;
-					for (int i = 0; i < candidates.GetSize() && all_candidates_matches; i++)
-						if (i == 0)
-							c = toupper(candidates[i][match_len]);
-						else if (c == 0 || c != toupper(candidates[i][match_len]))
-							all_candidates_matches = false;
-					if (!all_candidates_matches)
-						break;
-					match_len++;
-				}
-
-				if (match_len > 0)
-				{
-					data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
-					data->InsertChars(data->CursorPos, candidates[0], candidates[0] + match_len);
-				}
-
-				// List matches
-				PushInfo("Possible matches:\n");
-				for (int i = 0; i < candidates.GetSize(); i++)
-					PushInfo("-" + std::string(candidates[i]));
+				data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
+				data->InsertChars(data->CursorPos, m_PopupSelectedText.c_str());
+				data->InsertChars(data->CursorPos, " ");
+				m_ActivePopupIndex = -1;
+				m_PopupSelectedText = "";
+				m_Candidates.Clear();
 			}
 			break;
 		}
 		case ImGuiInputTextFlags_CallbackHistory:
 		{
-			const int prevHistoryIndex = m_HistoryIndex;
-			if (data->EventKey == ImGuiKey_UpArrow)
+			if (m_Candidates.GetSize() == 0)
 			{
-				if (m_HistoryIndex == -1)
-					m_HistoryIndex = m_History.GetSize() - 1;
-				else if (m_HistoryIndex > 0)
-					m_HistoryIndex--;
-			}
-			else if (data->EventKey == ImGuiKey_DownArrow)
-			{
-				if (m_HistoryIndex != -1)
-					if (++m_HistoryIndex >= m_History.GetSize())
-						m_HistoryIndex = -1;
-			}
+				// Show history when nothing is typed (no candidates)
+				const int prevHistoryIndex = m_HistoryIndex;
+				if (data->EventKey == ImGuiKey_UpArrow)
+				{
+					if (m_HistoryIndex == -1)
+						m_HistoryIndex = m_History.GetSize() - 1;
+					else if (m_HistoryIndex > 0)
+						m_HistoryIndex--;
+				}
+				else if (data->EventKey == ImGuiKey_DownArrow)
+				{
+					if (m_HistoryIndex != -1)
+						if (++m_HistoryIndex >= m_History.GetSize())
+							m_HistoryIndex = -1;
+				}
 
-			if (prevHistoryIndex != m_HistoryIndex)
-			{
-				const char* historyStr = (m_HistoryIndex >= 0) ? m_History[m_HistoryIndex].c_str() : "";
-				data->DeleteChars(0, data->BufTextLen);
-				data->InsertChars(0, historyStr);
+				if (prevHistoryIndex != m_HistoryIndex)
+				{
+					const char* historyStr = (m_HistoryIndex >= 0) ? m_History[m_HistoryIndex].c_str() : "";
+					data->DeleteChars(0, data->BufTextLen);
+					data->InsertChars(0, historyStr);
+				}
 			}
+			else
+			{
+				// Navigate candidates list
+				if (data->EventKey == ImGuiKey_UpArrow && m_ActivePopupIndex > 0)
+				{
+					m_ActivePopupIndex--;
+					m_PopupSelectionChanged = true;
+				}
+				else if (data->EventKey == ImGuiKey_DownArrow && m_ActivePopupIndex < ((int32)(m_Candidates.GetSize()) - 1))
+				{
+					m_ActivePopupIndex++;
+					m_PopupSelectionChanged = true;
+				}
+			}
+			break;
 		}
 		}
 		return 0;
