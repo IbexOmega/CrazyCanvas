@@ -81,10 +81,20 @@ namespace LambdaEngine
         return s_ConfigDocument[propertyName.c_str()].GetString();
     }
 
-    TArray<float> EngineConfig::GetArrayProperty(const String& propertyName)
+    TArray<float> EngineConfig::GetFloatArrayProperty(const String& propertyName)
     {
         const Value& arr = s_ConfigDocument[propertyName.c_str()];
         TArray<float> tArr;
+        for (auto& itr : arr.GetArray())
+            tArr.PushBack(itr.GetFloat());
+
+        return tArr;
+    }
+
+    TArray<int> EngineConfig::GetIntArrayProperty(const String& propertyName)
+    {
+        const Value& arr = s_ConfigDocument[propertyName.c_str()];
+        TArray<int> tArr;
         for (auto& itr : arr.GetArray())
             tArr.PushBack(itr.GetFloat());
 
@@ -148,7 +158,7 @@ namespace LambdaEngine
         return false;
     }
 
-    bool EngineConfig::SetArrayProperty(const String& propertyName, const TArray<float>& arr)
+    bool EngineConfig::SetFloatArrayProperty(const String& propertyName, const TArray<float>& arr)
     {
         if (s_ConfigDocument.HasMember(propertyName.c_str()))
         {
@@ -159,6 +169,28 @@ namespace LambdaEngine
 
             for (auto& itr : arr)
                 newArr.PushBack(Value().SetFloat(itr), allocator);
+
+            StringBuffer strBuf;
+            PrettyWriter<StringBuffer> writer(strBuf);
+            s_ConfigDocument.Accept(writer);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    bool EngineConfig::SetIntArrayProperty(const String& propertyName, const TArray<int>& arr)
+    {
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
+
+            auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
+            newArr.Reserve(arr.GetSize(), allocator);
+
+            for (auto& itr : arr)
+                newArr.PushBack(Value().SetInt(itr), allocator);
 
             StringBuffer strBuf;
             PrettyWriter<StringBuffer> writer(strBuf);

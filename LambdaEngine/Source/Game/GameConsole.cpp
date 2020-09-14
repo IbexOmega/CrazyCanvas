@@ -230,7 +230,7 @@ namespace LambdaEngine
 			cmdSetBool.AddDescription("Change boolean value in config file with a given key\n\t 'set_bool key bool'");
 			BindCommand(cmdSetBool, [this](GameConsole::CallbackInput& input)->void
 				{
-					if (!EngineConfig::SetBoolProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetFront().Value.Boolean))
+					if (!EngineConfig::SetBoolProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.Boolean))
 						PushError((input.Arguments.GetFront().Value.String));
 				});
 		}
@@ -244,7 +244,7 @@ namespace LambdaEngine
 			cmdSetFloat.AddDescription("Change float value in config file with a given key\n\t 'set_float key value'");
 			BindCommand(cmdSetFloat, [this](GameConsole::CallbackInput& input)->void
 				{
-					if (!EngineConfig::SetFloatProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetFront().Value.Float32))
+					if (!EngineConfig::SetFloatProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.Float32))
 						PushError((input.Arguments.GetFront().Value.String));
 				});
 		}
@@ -258,7 +258,7 @@ namespace LambdaEngine
 			cmdSetInt.AddDescription("Change integer value in config file with a given key\n\t 'set_int key value'");
 			BindCommand(cmdSetInt, [this](GameConsole::CallbackInput& input)->void
 				{
-					if (!EngineConfig::SetIntProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetFront().Value.Int32))
+					if (!EngineConfig::SetIntProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.Int32))
 						PushError((input.Arguments.GetFront().Value.String));
 				});
 		}
@@ -272,7 +272,7 @@ namespace LambdaEngine
 			cmdSetDouble.AddDescription("Change double value in config file with a given key\n\t 'set_double key value'");
 			BindCommand(cmdSetDouble, [this](GameConsole::CallbackInput& input)->void
 				{
-					if (!EngineConfig::SetDoubleProperty(input.Arguments.GetFront().Value.String, static_cast<double>(input.Arguments.GetFront().Value.Float32)))
+					if (!EngineConfig::SetDoubleProperty(input.Arguments.GetFront().Value.String, static_cast<double>(input.Arguments.GetBack().Value.Float32)))
 						PushError((input.Arguments.GetFront().Value.String));
 				});
 		}
@@ -292,14 +292,14 @@ namespace LambdaEngine
 				});
 		}
 
-		// Set Array in config
+		// Set Float Array in config
 		{
-			ConsoleCommand cmdSetArray;
-			cmdSetArray.Init("set_array", true);
-			cmdSetArray.AddArg(Arg::EType::STRING);
-			cmdSetArray.AddArg(Arg::EType::STRING);
-			cmdSetArray.AddDescription("Change array values in settings with a given key\n\t 'set_array key 1.0,1.0'\n\t OBS: The decimal point needs to be in the argument");
-			BindCommand(cmdSetArray, [this](GameConsole::CallbackInput& input)->void
+			ConsoleCommand cmdSetFloatArray;
+			cmdSetFloatArray.Init("set_float_array", true);
+			cmdSetFloatArray.AddArg(Arg::EType::STRING);
+			cmdSetFloatArray.AddArg(Arg::EType::STRING);
+			cmdSetFloatArray.AddDescription("Change array values in settings with a given key\n\t 'set_array key 1.0,1.0'\n\t OBS: The decimal point needs to be in the argument");
+			BindCommand(cmdSetFloatArray, [this](GameConsole::CallbackInput& input)->void
 				{
 					TArray<float> arr;
 					String arg = input.Arguments.GetBack().Value.String;
@@ -325,7 +325,45 @@ namespace LambdaEngine
 							arg.erase(0, arg.find(","));
 					}
 
-					if (!EngineConfig::SetArrayProperty(input.Arguments.GetFront().Value.String, arr))
+					if (!EngineConfig::SetFloatArrayProperty(input.Arguments.GetFront().Value.String, arr))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+		// Set Array in config
+		{
+			ConsoleCommand cmdSetIntArray;
+			cmdSetIntArray.Init("set_int_array", true);
+			cmdSetIntArray.AddArg(Arg::EType::STRING);
+			cmdSetIntArray.AddArg(Arg::EType::STRING);
+			cmdSetIntArray.AddDescription("Change array values in settings with a given key\n\t 'set_array key 1.0,1.0'\n\t OBS: The decimal point needs to be in the argument");
+			BindCommand(cmdSetIntArray, [this](GameConsole::CallbackInput& input)->void
+				{
+					TArray<int> arr;
+					String arg = input.Arguments.GetBack().Value.String;
+
+					while (arg.length() > 0)
+					{
+						if (std::regex_match(arg.substr(0, arg.find(",")), std::regex("-[0-9]+")))
+						{
+							arr.PushBack(std::stoi(arg.substr(0, arg.find(","))));
+						}
+						else if (std::regex_match(arg.substr(0, arg.find(",")), std::regex("[0-9]+")))
+						{
+							arr.PushBack(std::stoi(arg.substr(0, arg.find(","))));
+						}
+						else
+						{
+							PushError(arg.substr(0, arg.find(",")));
+						}
+
+						if (std::string::npos != arg.find(","))
+							arg.erase(0, arg.find(",") + std::string(",").length());
+						else
+							arg.erase(0, arg.find(","));
+					}
+
+					if (!EngineConfig::SetIntArrayProperty(input.Arguments.GetFront().Value.String, arr))
 						PushError((input.Arguments.GetFront().Value.String));
 				});
 		}
@@ -759,7 +797,7 @@ namespace LambdaEngine
 			m_IsActive = !m_IsActive;
 			return true;
 		}
-		
+
 		return false;
 	}
 
