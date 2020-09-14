@@ -2180,7 +2180,7 @@ namespace LambdaEngine
 					pipelineDesc.MaxRecursionDepth		= 1;
 					pipelineDesc.RaygenShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL );
 					
-                    if (pShaderConstants != nullptr)
+					if (pShaderConstants != nullptr)
 					{
 						pipelineDesc.RaygenShader.ShaderConstants = pShaderConstants->RayTracing.RaygenConstants;
 					}
@@ -2667,7 +2667,7 @@ namespace LambdaEngine
 					{
 						TextureViewDesc subImageTextureViewDesc = {};
 						subImageTextureViewDesc.pTexture		= pTexture;
-						subImageTextureViewDesc.Flags			= (textureViewDesc.Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL) > 0 ? FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL : FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+						subImageTextureViewDesc.Flags			= (textureViewDesc.Flags & FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL) > 0 ? FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL : FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET;
 						subImageTextureViewDesc.Format			= pResource->Texture.Format;
 						subImageTextureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 						subImageTextureViewDesc.Miplevel		= textureViewDesc.Miplevel;

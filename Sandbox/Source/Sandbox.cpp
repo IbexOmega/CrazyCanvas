@@ -402,12 +402,12 @@ Sandbox::Sandbox()
 	showTextureCMD.AddDescription("Show a texture resource which is used in the RenderGraph");
 	GameConsole::Get().BindCommand(showTextureCMD, [&, this](GameConsole::CallbackInput& input)->void
 		{
-			m_ShowTextureDebuggingWindow = input.Arguments.GetFront().Value.B;
+			m_ShowTextureDebuggingWindow = input.Arguments.GetFront().Value.Boolean;
 
 			auto textureNameIt				= input.Flags.find("t");
 			auto shaderNameIt				= input.Flags.find("ps");
-			m_TextureDebuggingName			= textureNameIt != input.Flags.end() ? textureNameIt->second.Arg.Value.Str : "";
-			m_TextureDebuggingShaderGUID	= shaderNameIt != input.Flags.end() ? ResourceManager::GetShaderGUID(shaderNameIt->second.Arg.Value.Str) : GUID_NONE;
+			m_TextureDebuggingName			= textureNameIt != input.Flags.end() ? textureNameIt->second.Arg.Value.String : "";
+			m_TextureDebuggingShaderGUID	= shaderNameIt != input.Flags.end() ? ResourceManager::GetShaderGUID(shaderNameIt->second.Arg.Value.String) : GUID_NONE;
 		});
 
 	return;
@@ -660,10 +660,10 @@ bool Sandbox::LoadRendererResources()
 		BufferDesc bufferDesc = {};
 		bufferDesc.DebugName		= "POINT_LIGHTS_BUFFER";
 		bufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-		bufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
+		bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
 		bufferDesc.SizeInBytes		= sizeof(pointLightsBuffer);
 
-		m_pPointLightsBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, nullptr);
+		m_pPointLightsBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
 
 		void* pMapped = m_pPointLightsBuffer->Map();
 		memcpy(pMapped, &pointLightsBuffer, sizeof(pointLightsBuffer));
