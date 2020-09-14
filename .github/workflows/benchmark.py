@@ -7,6 +7,18 @@ BENCHMARK_RESULTS_PATH_RT_OFF   = 'benchmark_results_rt_off.json'
 ENGINE_CONFIG_PATH      = '../engine_config.json'
 TEMP_ENGINE_CONFIG_PATH = '../engine_config_copy.json'
 
+ENGINE_CONFIG = {
+	'WindowSize': [1920, 1080],
+	'FixedTimestep': 60,
+	'RayTracingEnabled': True,
+	'ShowRenderGraph': False,
+	'ShowDemo': False,
+	'Debugging': False,
+	'CameraFOV': 90.0,
+	'CameraNearPlane': 0.001,
+	'CameraFarPlane': 1000.0
+}
+
 def print_help(help_string, args):
 	print('Intended usage:')
 	print(help_string)
@@ -18,8 +30,8 @@ def remove_existing_benchmark_files():
 			os.remove(file_name)
 
 def set_engine_config(ray_tracing_enabled):
-	with open(ENGINE_CONFIG_PATH, 'w+') as cfgFile:
-		config = {}
+	with open(ENGINE_CONFIG_PATH, 'w+', newline='\n') as cfgFile:
+		config = ENGINE_CONFIG
 		config['RayTracingEnabled'] = ray_tracing_enabled
 		cfgFile.seek(0)
 		json.dump(config, cfgFile, indent=4)
