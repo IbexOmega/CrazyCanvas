@@ -23,6 +23,8 @@ namespace LambdaEngine
 			SegmentPool* pSegmentPool = pManager->GetSegmentPool();
 			const NetworkStatistics* pStatistics = pClient->GetStatistics();
 
+			ImGui::ShowDemoWindow();
+
 			ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
 			if (ImGui::Begin("Network Statistics", NULL))
 			{
