@@ -20,7 +20,6 @@ public:
 	Server();
 	~Server();
 
-	virtual void OnClientConnected(LambdaEngine::IClient* pClient) override;
 	virtual LambdaEngine::IClientRemoteHandler* CreateClientHandler() override;
 
 	// Inherited via Game

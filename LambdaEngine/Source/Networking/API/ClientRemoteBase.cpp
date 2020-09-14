@@ -193,18 +193,21 @@ namespace LambdaEngine
 	{
 		GetPacketManager()->Tick(delta);
 
-		if (m_State == STATE_CONNECTED)
+		if (m_State == STATE_CONNECTING || m_State == STATE_CONNECTED)
 		{
-			Timestamp timeSinceLastPacketSent = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastSent();
-			if (timeSinceLastPacketSent >= m_PingInterval)
-			{
-				SendReliable(GetFreePacket(NetworkSegment::TYPE_PING));
-			}
-
 			Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastReceived();
 			if (timeSinceLastPacketReceived >= m_PingTimeout)
 			{
 				Disconnect("Ping Timed Out");
+			}
+
+			if (m_State == STATE_CONNECTED)
+			{
+				Timestamp timeSinceLastPacketSent = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastSent();
+				if (timeSinceLastPacketSent >= m_PingInterval)
+				{
+					SendReliable(GetFreePacket(NetworkSegment::TYPE_PING));
+				}
 			}
 		}	
 	}
