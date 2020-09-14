@@ -230,11 +230,6 @@ namespace LambdaEngine
 
 	void GameConsole::Tick()
 	{
-		ImGuiRenderer::Get().DrawUI([&]()
-		{
-			ImGui::ShowDemoWindow();
-		});
-
 		// Do not draw if not active.
 		if (!m_IsActive)
 		{
