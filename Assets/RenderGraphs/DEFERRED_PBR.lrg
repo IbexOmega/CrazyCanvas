@@ -239,7 +239,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
+                "texture_format": "FORMAT_R16G16_SFLOAT",
                 "is_of_array_type": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
@@ -479,7 +479,7 @@
                 {
                     "name": "SCENE_INDIRECT_ARGS_BUFFER",
                     "removable": true,
-                    "binding_type": "CONSTANT_BUFFER",
+                    "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
