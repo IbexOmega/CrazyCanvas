@@ -5,6 +5,14 @@
 #include "Helpers.glsl"
 #include "Defines.glsl"
 
+struct SPointLight
+{
+    vec4 Position;
+    mat4 ProjViews[6];
+};
+
+layout (constant_id = 0) const uint NUM_POINT_LIGHTS                  = 1;
+
 layout(location = 0) in flat uint in_MaterialIndex;
 layout(location = 1) in vec3 in_Normal;
 layout(location = 2) in vec3 in_Tangent;
@@ -15,18 +23,21 @@ layout(location = 6) in vec4 in_WorldPosition;
 layout(location = 7) in vec4 in_ClipPosition;
 layout(location = 8) in vec4 in_PrevClipPosition;
 
-layout( push_constant ) uniform TestBlock {
-  float Test;
-} pc_PushConstant;
+layout( push_constant ) uniform PointLightPushConstant {
+  float Near;
+  float Far;
+} pc_PointLight;
 
-layout(binding = 5, set = BUFFER_SET_INDEX) uniform PerFrameBuffer                          { SPerFrameBuffer val; }        u_PerFrameBuffer;
-layout(binding = 6, set = BUFFER_SET_INDEX) restrict readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
+layout(binding = 5, set = BUFFER_SET_INDEX) uniform PerFrameBuffer                          { SPerFrameBuffer val; }                u_PerFrameBuffer;
+layout(binding = 6, set = BUFFER_SET_INDEX) restrict readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }          b_MaterialParameters;
+layout(binding = 7, set = BUFFER_SET_INDEX) uniform PointLightBuffer                        { SPointLight val[NUM_POINT_LIGHTS]; }  u_PointLightsBuffer;
 
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneRougnessMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D          u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D          u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D          u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D          u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D          u_SceneRougnessMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform samplerCubeArray   u_PointLightShadowMaps;
 
 layout(location = 0) out vec4 out_Color;
 
@@ -69,5 +80,16 @@ void main()
     finalColor                          = finalColor / (finalColor + vec3(1.0f));
 	finalColor                          = pow(finalColor, vec3(1.0f / GAMMA));
 
-	out_Color 				            = vec4(finalColor, 1.0f);
+    float shadow                        = 1.0f;
+    
+    for (uint pointLightIndex = 0; pointLightIndex < NUM_POINT_LIGHTS; pointLightIndex++)
+    {
+        SPointLight pointLight              = u_PointLightsBuffer.val[pointLightIndex];
+        vec3 toPointLight                   = in_WorldPosition.xyz - pointLight.Position.xyz;
+        float depthToPointLight             = texture(u_PointLightShadowMaps, vec4(toPointLight, float(pointLightIndex))).r * pc_PointLight.Far;
+        float bias                          = 0.5f;
+        shadow                              *= length(toPointLight) - bias > depthToPointLight ? 0.0f : 1.0f;
+    }
+
+	out_Color 				            = vec4(shadow * finalColor, 1.0f);
 }

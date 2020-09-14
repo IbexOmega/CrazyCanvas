@@ -115,9 +115,9 @@ namespace LambdaEngine
 
 		struct ResourceBinding
 		{
-			RenderStage*	pRenderStage	= nullptr;
-			EDescriptorType DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
-			uint32			Binding			= 0;
+			RenderStage*	pRenderStage		= nullptr;
+			EDescriptorType DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
+			uint32			Binding				= 0;
 
 			ETextureState	TextureState		= ETextureState::TEXTURE_STATE_UNKNOWN;
 		};
@@ -178,13 +178,15 @@ namespace LambdaEngine
 
 			struct
 			{
-				ERenderGraphTextureType				TextureType = ERenderGraphTextureType::TEXTURE_2D;
-				bool								IsOfArrayType	= false;
-				EFormat								Format			= EFormat::FORMAT_NONE;
+				ERenderGraphTextureType				TextureType						= ERenderGraphTextureType::TEXTURE_2D;
+				bool								IsOfArrayType					= false;
+				bool								UsedAsRenderTarget				= false;
+				bool								PerSubImageUniquelyAllocated	= false;
+				EFormat								Format				= EFormat::FORMAT_NONE;
 				TArray<PipelineTextureBarrierDesc>	InititalTransitionBarriers;
 				TArray<Texture*>					Textures;
-				TArray<TextureView*>				TextureViews;
-				TArray<TextureView*>				CubeFaceTextureViews;
+				TArray<TextureView*>				PerImageTextureViews;
+				TArray<TextureView*>				PerSubImageTextureViews;
 				TArray<Sampler*>					Samplers;
 			} Texture;
 
@@ -207,8 +209,14 @@ namespace LambdaEngine
 			String					Name							= "";
 			RenderStageParameters	Parameters						= {};
 
+			//Triggering
+			ERenderStageExecutionTrigger	TriggerType				= ERenderStageExecutionTrigger::NONE;
+			uint32							FrameDelay				= 0;
+			uint32							FrameOffset				= 0;
+			uint32							FrameCounter			= 0;
+
 			//Special Draw Params
-			bool					HasTextureCubeAsAttachment		= false;
+			uint32					ExecutionCount					= 1;
 
 			glm::uvec3				Dimensions						= glm::uvec3(0);
 
@@ -230,6 +238,7 @@ namespace LambdaEngine
 			DescriptorSet**			ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
 			DescriptorSet**			ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
 			RenderPass*				pRenderPass						= nullptr;
+			RenderPass*				pDisabledRenderPass				= nullptr;
 
 			PushConstants			pInternalPushConstants[NUM_INTERNAL_PUSH_CONSTANTS_TYPES];
 			PushConstants			ExternalPushConstants			= {};
@@ -282,6 +291,8 @@ namespace LambdaEngine
 		void UpdateRenderStageDimensions(const String& renderStageName, uint32 x, uint32 y, uint32 z = 0);
 		void UpdateResourceDimensions(const String& resourceName, uint32 x, uint32 y = 0);
 
+		void TriggerRenderStage(const String& renderStageName);
+
 		void GetAndIncrementFence(Fence** ppFence, uint64* pSignalValue);
 
 		/*
@@ -294,10 +305,11 @@ namespace LambdaEngine
 		CommandList* AcquireGraphicsCopyCommandList();
 		CommandList* AcquireComputeCopyCommandList();
 
-		bool GetResourceTextures(const char* pResourceName, Texture* const ** pppTexture, uint32* pTextureView)						const;
-		bool GetResourceTextureViews(const char* pResourceName, TextureView* const ** pppTextureViews, uint32* pTextureViewCount)	const;
-		bool GetResourceBuffers(const char* pResourceName, Buffer* const ** pppBuffers, uint32* pBufferCount)						const;
-		bool GetResourceAccelerationStructure(const char* pResourceName, const AccelerationStructure** ppAccelerationStructure)		const;
+		bool GetResourceTextures(const char* pResourceName, Texture* const ** pppTexture, uint32* pTextureView)									const;
+		bool GetResourcePerImageTextureViews(const char* pResourceName, TextureView* const ** pppTextureViews, uint32* pTextureViewCount)		const;
+		bool GetResourcePerSubImageTextureViews(const char* pResourceName, TextureView* const ** pppTextureViews, uint32* pTextureViewCount)	const;
+		bool GetResourceBuffers(const char* pResourceName, Buffer* const ** pppBuffers, uint32* pBufferCount)									const;
+		bool GetResourceAccelerationStructure(const char* pResourceName, const AccelerationStructure** ppAccelerationStructure)					const;
 
 		bool OnWindowResized(const WindowResizedEvent& windowEvent);
 
@@ -308,7 +320,7 @@ namespace LambdaEngine
 		bool CreateDescriptorHeap();
 		bool CreateCopyCommandLists();
 		bool CreateResources(const TArray<RenderGraphResourceDesc>& resourceDescriptions);
-		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages);
+		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants);
 		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
 

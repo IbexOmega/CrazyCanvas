@@ -55,7 +55,7 @@ namespace LambdaEngine
 		}
 		
 		//DeviceChild interface
-		virtual void SetName(const String& name) override final;
+		virtual void SetName(const String& debugName) override final;
 
 		//IPipelineState interface
 		virtual uint64 GetHandle() const override final

@@ -47,7 +47,7 @@ namespace LambdaEngine
 		void InternalRenderEditResourceView(RenderGraphResourceDesc* pResource, char* pNameBuffer, int32 nameBufferLength);
 
 		void RenderShaderView(float textWidth, float textHeight);
-		void RenderShaderTreeView(const LambdaDirectory& dir, float textWidth, float textHeight, int32& selectedIndex);
+		void RenderShaderTreeView(const LambdaDirectory& dir, float textWidth, float textHeight, int64& selectedIndex);
 
 		void RenderGraphView();
 		void RenderAddRenderStageView();
@@ -97,7 +97,6 @@ namespace LambdaEngine
 
 		EditorStartedLinkInfo								m_StartedLinkInfo				= {};
 
-		TArray<String>										m_FilesInShaderDirectory;
 		LambdaDirectory										m_FilesInShaderMap;
 
 		RenderGraphStructureDesc							m_ParsedRenderGraphStructure	= {};
