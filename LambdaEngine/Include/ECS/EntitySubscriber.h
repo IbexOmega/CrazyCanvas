@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Containers/TArray.h"
+#include "ECS/Component.h"
 #include "ECS/Entity.h"
 
 #include <functional>
-#include <typeindex>
 
 namespace LambdaEngine
 {

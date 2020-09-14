@@ -28,7 +28,6 @@
 
 namespace LambdaEngine
 {
-	DeviceAllocator*		ResourceLoader::s_pAllocator				= nullptr;
 	CommandAllocator*		ResourceLoader::s_pCopyCommandAllocator		= nullptr;
 	CommandList*			ResourceLoader::s_pCopyCommandList			= nullptr;
 	Fence*					ResourceLoader::s_pCopyFence				= nullptr;
@@ -142,21 +141,21 @@ namespace LambdaEngine
 	{
 		switch (shaderStage)
 		{
-		case FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER:			return EShLanguage::EShLangMeshNV;
-		case FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER:			return EShLanguage::EShLangTaskNV;
-		case FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER:		return EShLanguage::EShLangVertex;
-		case FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER:		return EShLanguage::EShLangGeometry;
-		case FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER:			return EShLanguage::EShLangTessControl;
-		case FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER:		return EShLanguage::EShLangTessEvaluation;
-		case FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER:			return EShLanguage::EShLangFragment;
-		case FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER:		return EShLanguage::EShLangCompute;
-		case FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER:		return EShLanguage::EShLangRayGen;
-		case FShaderStageFlags::SHADER_STAGE_FLAG_INTERSECT_SHADER:		return EShLanguage::EShLangIntersect;
-		case FShaderStageFlags::SHADER_STAGE_FLAG_ANY_HIT_SHADER:		return EShLanguage::EShLangAnyHit;
-		case FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER:	return EShLanguage::EShLangClosestHit;
-		case FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER:			return EShLanguage::EShLangMiss;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_MESH_SHADER:			return EShLanguage::EShLangMeshNV;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_TASK_SHADER:			return EShLanguage::EShLangTaskNV;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER:			return EShLanguage::EShLangVertex;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_GEOMETRY_SHADER:		return EShLanguage::EShLangGeometry;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_HULL_SHADER:			return EShLanguage::EShLangTessControl;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_DOMAIN_SHADER:			return EShLanguage::EShLangTessEvaluation;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER:			return EShLanguage::EShLangFragment;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER:		return EShLanguage::EShLangCompute;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER:			return EShLanguage::EShLangRayGen;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_INTERSECT_SHADER:		return EShLanguage::EShLangIntersect;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_ANY_HIT_SHADER:		return EShLanguage::EShLangAnyHit;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER:	return EShLanguage::EShLangClosestHit;
+		case FShaderStageFlag::SHADER_STAGE_FLAG_MISS_SHADER:			return EShLanguage::EShLangMiss;
 
-		case FShaderStageFlags::SHADER_STAGE_FLAG_NONE:
+		case FShaderStageFlag::SHADER_STAGE_FLAG_NONE:
 		default:
 			return EShLanguage::EShLangCount;
 		}
@@ -195,7 +194,7 @@ namespace LambdaEngine
 		CommandListDesc commandListDesc = {};
 		commandListDesc.DebugName		= "Resource Loader Copy Command List";
 		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-		commandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+		commandListDesc.Flags			= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 		s_pCopyCommandList = RenderSystem::GetDevice()->CreateCommandList(s_pCopyCommandAllocator, &commandListDesc);
 
@@ -204,11 +203,6 @@ namespace LambdaEngine
 		fenceDesc.InitalValue	= 0;
 		s_pCopyFence = RenderSystem::GetDevice()->CreateFence(&fenceDesc);
 
-		DeviceAllocatorDesc allocatorDesc = {};
-		allocatorDesc.DebugName			= "Resource Allocator";
-		allocatorDesc.PageSizeInBytes	= MEGA_BYTE(128);
-		s_pAllocator = RenderSystem::GetDevice()->CreateDeviceAllocator(&allocatorDesc);
-
 		glslang::InitializeProcess();
 
 		return true;
@@ -216,7 +210,6 @@ namespace LambdaEngine
 
 	bool ResourceLoader::Release()
 	{
-		SAFERELEASE(s_pAllocator);
 		SAFERELEASE(s_pCopyCommandAllocator);
 		SAFERELEASE(s_pCopyCommandList);
 		SAFERELEASE(s_pCopyFence);
@@ -571,7 +564,7 @@ namespace LambdaEngine
 
 		if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
 		{
-			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.GetData(), stbi_pixels.GetSize(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
+			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.GetData(), stbi_pixels.GetSize(), texWidth, texHeight, format, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
 		}
 		else if (format == EFormat::FORMAT_R16_UNORM)
 		{
@@ -601,7 +594,7 @@ namespace LambdaEngine
 				pixels[4 * i + 3] = pPixelsA;
 			}
 
-			pTexture = LoadTextureArrayFromMemory(name, pixels.GetData(), pixels.GetSize(), texWidth, texHeight, format, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
+			pTexture = LoadTextureArrayFromMemory(name, pixels.GetData(), pixels.GetSize(), texWidth, texHeight, format, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
 
 			for (uint32 i = 0; i < pixels.GetSize(); i++)
 			{
@@ -657,7 +650,7 @@ namespace LambdaEngine
 
 		if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
 		{
-			uint32 flags = FTextureFlags::TEXTURE_FLAG_CUBE_COMPATIBLE | FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE;
+			uint32 flags = FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE | FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
 			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.GetData(), stbi_pixels.GetSize(), texWidth, texHeight, format, flags, generateMips);
 		}
 
@@ -683,7 +676,7 @@ namespace LambdaEngine
 		textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format		= format;
 		textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
-		textureDesc.Flags		= FTextureFlags::TEXTURE_FLAG_COPY_SRC | FTextureFlags::TEXTURE_FLAG_COPY_DST | usageFlags;
+		textureDesc.Flags		= FTextureFlag::TEXTURE_FLAG_COPY_SRC | FTextureFlag::TEXTURE_FLAG_COPY_DST | usageFlags;
 		textureDesc.Width		= width;
 		textureDesc.Height		= height;
 		textureDesc.Depth		= 1;
@@ -691,7 +684,7 @@ namespace LambdaEngine
 		textureDesc.Miplevels	= miplevels;
 		textureDesc.SampleCount = 1;
 
-		Texture* pTexture = RenderSystem::GetDevice()->CreateTexture(&textureDesc, s_pAllocator);
+		Texture* pTexture = RenderSystem::GetDevice()->CreateTexture(&textureDesc);
 
 		if (pTexture == nullptr)
 		{
@@ -704,11 +697,10 @@ namespace LambdaEngine
 		BufferDesc bufferDesc	= {};
 		bufferDesc.DebugName	= "Texture Copy Buffer";
 		bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+		bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 		bufferDesc.SizeInBytes	= uint64(arrayCount * pixelDataSize);
 
-		Buffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, s_pAllocator);
-
+		Buffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
 		if (pTextureData == nullptr)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to create copy buffer for \"%s\"", name.c_str());
@@ -728,14 +720,14 @@ namespace LambdaEngine
 		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		transitionToCopyDstBarrier.SrcMemoryAccessFlags		= 0;
-		transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 		transitionToCopyDstBarrier.TextureFlags				= textureDesc.Flags;
 		transitionToCopyDstBarrier.Miplevel					= 0;
 		transitionToCopyDstBarrier.MiplevelCount			= textureDesc.Miplevels;
 		transitionToCopyDstBarrier.ArrayIndex				= 0;
 		transitionToCopyDstBarrier.ArrayCount				= textureDesc.ArrayCount;
 
-		s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
+		s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
 
 		for (uint32 i = 0; i < arrayCount; i++)
 		{
@@ -773,20 +765,20 @@ namespace LambdaEngine
 			transitionToShaderReadBarrier.StateAfter			= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 			transitionToShaderReadBarrier.QueueBefore			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 			transitionToShaderReadBarrier.QueueAfter			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
-			transitionToShaderReadBarrier.SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			transitionToShaderReadBarrier.DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			transitionToShaderReadBarrier.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			transitionToShaderReadBarrier.DstMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
 			transitionToShaderReadBarrier.TextureFlags			= textureDesc.Flags;
 			transitionToShaderReadBarrier.Miplevel				= 0;
 			transitionToShaderReadBarrier.MiplevelCount			= textureDesc.Miplevels;
 			transitionToShaderReadBarrier.ArrayIndex			= 0;
 			transitionToShaderReadBarrier.ArrayCount			= textureDesc.ArrayCount;
 
-			s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &transitionToShaderReadBarrier, 1);
+			s_pCopyCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM, &transitionToShaderReadBarrier, 1);
 		}
 
 		s_pCopyCommandList->End();
 
-		if (!RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&s_pCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, nullptr, 0, s_pCopyFence, s_SignalValue))
+		if (!RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&s_pCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, nullptr, 0, s_pCopyFence, s_SignalValue))
 		{
 			LOG_ERROR("[ResourceLoader]: Texture could not be created as command list could not be executed for \"%s\"", name.c_str());
 			SAFERELEASE(pTextureData);

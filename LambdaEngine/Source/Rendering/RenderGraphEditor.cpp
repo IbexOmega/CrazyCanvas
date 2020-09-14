@@ -2376,9 +2376,9 @@ namespace LambdaEngine
 							textBuffer1 = "";
 
 							textBuffer0 += resourceIt->Name.c_str();
-							textBuffer1 += "Type: " + RenderGraphResourceTypeToString(resourceIt->Type);
+							textBuffer1 += "Type: " + String(RenderGraphResourceTypeToString(resourceIt->Type));
 							textBuffer1 += "\n";
-							textBuffer1 += "Binding: " + BindingTypeToShortString(pResourceState->BindingType);
+							textBuffer1 += "Binding: " + String(BindingTypeToShortString(pResourceState->BindingType));
 							textBuffer1 += "\n";
 							textBuffer1 += "Sub Resource Count: " + std::to_string(resourceIt->SubResourceCount);
 
@@ -2424,7 +2424,7 @@ namespace LambdaEngine
 									textBuffer1 = "";
 
 									textBuffer0 += resourceIt->Name.c_str();
-									textBuffer1 += BindingTypeToShortString(pResourceState->AttachmentSynchronizations.PrevBindingType) + " -> " + BindingTypeToShortString(pResourceState->AttachmentSynchronizations.NextBindingType);
+									textBuffer1 += String(BindingTypeToShortString(pResourceState->AttachmentSynchronizations.PrevBindingType)) + " -> " + BindingTypeToShortString(pResourceState->AttachmentSynchronizations.NextBindingType);
 									ImVec2 textSize = ImGui::CalcTextSize((textBuffer0 + textBuffer1 + "\n\n\n").c_str());
 
 									if (ImGui::BeginChild(("##" + std::to_string(pPipelineStage->StageIndex) + resourceIt->Name + " Child").c_str(), ImVec2(0.0f, textSize.y)))
@@ -2474,9 +2474,9 @@ namespace LambdaEngine
 
 							textBuffer0 += resourceIt->Name.c_str();
 							textBuffer1 += "\n";
-							textBuffer1 += CommandQueueToString(pSynchronization->PrevQueue) + " -> " + CommandQueueToString(pSynchronization->NextQueue);
+							textBuffer1 += String(CommandQueueToString(pSynchronization->PrevQueue)) + " -> " + CommandQueueToString(pSynchronization->NextQueue);
 							textBuffer1 += "\n";
-							textBuffer1 += BindingTypeToShortString(pSynchronization->PrevBindingType) + " -> " + BindingTypeToShortString(pSynchronization->NextBindingType);
+							textBuffer1 += String(BindingTypeToShortString(pSynchronization->PrevBindingType)) + " -> " + BindingTypeToShortString(pSynchronization->NextBindingType);
 							ImVec2 textSize = ImGui::CalcTextSize((textBuffer0 + textBuffer1 + "\n\n\n\n").c_str());
 
 							if (ImGui::BeginChild(("##" + std::to_string(pPipelineStage->StageIndex) + resourceIt->Name + " Child").c_str(), ImVec2(0.0f, textSize.y)))

@@ -42,14 +42,14 @@ namespace LambdaEngine
 		createInfo.subresourceRange.baseMipLevel	= pDesc->Miplevel;
 		createInfo.subresourceRange.levelCount		= pDesc->MiplevelCount;
 		
-		if (pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_DEPTH_STENCIL)
+		if (pDesc->Flags & FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL)
 		{
 			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 		}
 		else if (
-			(pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET)   ||
-			(pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE) ||
-			(pDesc->Flags & FTextureViewFlags::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS))
+			(pDesc->Flags & FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET)   ||
+			(pDesc->Flags & FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE) ||
+			(pDesc->Flags & FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS))
 		{
 			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		}

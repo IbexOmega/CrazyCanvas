@@ -39,7 +39,7 @@ namespace LambdaEngine
 						writer.String(resource.Name.c_str());
 
 						writer.String("type");
-						writer.String(RenderGraphResourceTypeToString(resource.Type).c_str());
+						writer.String(RenderGraphResourceTypeToString(resource.Type));
 
 						writer.String("back_buffer_bound");
 						writer.Bool(resource.BackBufferBound);
@@ -61,21 +61,21 @@ namespace LambdaEngine
 								case ERenderGraphResourceType::TEXTURE:
 								{
 									writer.String("texture_format");
-									writer.String(TextureFormatToString(resource.TextureParams.TextureFormat).c_str());
+									writer.String(TextureFormatToString(resource.TextureParams.TextureFormat));
 
 									writer.String("is_of_array_type");
 									writer.Bool(resource.TextureParams.IsOfArrayType);
 
 									writer.String("texture_type");
-									writer.String(ResourceTextureTypeToString(resource.TextureParams.TextureType).c_str());
+									writer.String(ResourceTextureTypeToString(resource.TextureParams.TextureType));
 
 									if (!resource.External && resource.Name != RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 									{
 										writer.String("x_dim_type");
-										writer.String(RenderGraphDimensionTypeToString(resource.TextureParams.XDimType).c_str());
+										writer.String(RenderGraphDimensionTypeToString(resource.TextureParams.XDimType));
 
 										writer.String("y_dim_type");
-										writer.String(RenderGraphDimensionTypeToString(resource.TextureParams.YDimType).c_str());
+										writer.String(RenderGraphDimensionTypeToString(resource.TextureParams.YDimType));
 
 										writer.String("x_dim_var");
 										writer.Double(resource.TextureParams.XDimVariable);
@@ -90,10 +90,10 @@ namespace LambdaEngine
 										writer.Int(resource.TextureParams.MiplevelCount);
 
 										writer.String("sampler_type");
-										writer.String(RenderGraphSamplerTypeToString(resource.TextureParams.SamplerType).c_str());
+										writer.String(RenderGraphSamplerTypeToString(resource.TextureParams.SamplerType));
 
 										writer.String("memory_type");
-										writer.String(MemoryTypeToString(resource.MemoryType).c_str());
+										writer.String(MemoryTypeToString(resource.MemoryType));
 									}
 
 									break;
@@ -103,13 +103,13 @@ namespace LambdaEngine
 									if (!resource.External)
 									{
 										writer.String("size_type");
-										writer.String(RenderGraphDimensionTypeToString(resource.BufferParams.SizeType).c_str());
+										writer.String(RenderGraphDimensionTypeToString(resource.BufferParams.SizeType));
 
 										writer.String("size");
 										writer.Int(resource.BufferParams.Size);
 
 										writer.String("memory_type");
-										writer.String(MemoryTypeToString(resource.MemoryType).c_str());
+										writer.String(MemoryTypeToString(resource.MemoryType));
 									}
 									break;
 								}
@@ -166,7 +166,7 @@ namespace LambdaEngine
 									writer.Bool(resourceStateIt->second.Removable);
 
 									writer.String("binding_type");
-									writer.String(BindingTypeToString(resourceStateIt->second.BindingType).c_str());
+									writer.String(BindingTypeToString(resourceStateIt->second.BindingType));
 
 									writer.String("src_stage");
 
@@ -231,7 +231,7 @@ namespace LambdaEngine
 					writer.Bool(resourceStateIt->second.Removable);
 
 					writer.String("binding_type");
-					writer.String(BindingTypeToString(resourceStateIt->second.BindingType).c_str());
+					writer.String(BindingTypeToString(resourceStateIt->second.BindingType));
 
 					writer.String("src_stage");
 
@@ -276,7 +276,7 @@ namespace LambdaEngine
 						writer.String(renderStageIt->second.Name.c_str());
 
 						writer.String("type");
-						writer.String(RenderStageTypeToString(renderStageIt->second.Type).c_str());
+						writer.String(RenderStageTypeToString(renderStageIt->second.Type));
 
 						writer.String("custom_renderer");
 						writer.Bool(renderStageIt->second.CustomRenderer);
@@ -291,13 +291,13 @@ namespace LambdaEngine
 						writer.Int(renderStageIt->second.FrameOffset);
 
 						writer.String("x_dim_type");
-						writer.String(RenderGraphDimensionTypeToString(renderStageIt->second.Parameters.XDimType).c_str());
+						writer.String(RenderGraphDimensionTypeToString(renderStageIt->second.Parameters.XDimType));
 
 						writer.String("y_dim_type");
-						writer.String(RenderGraphDimensionTypeToString(renderStageIt->second.Parameters.YDimType).c_str());
+						writer.String(RenderGraphDimensionTypeToString(renderStageIt->second.Parameters.YDimType));
 
 						writer.String("z_dim_type");
-						writer.String(RenderGraphDimensionTypeToString(renderStageIt->second.Parameters.ZDimType).c_str());
+						writer.String(RenderGraphDimensionTypeToString(renderStageIt->second.Parameters.ZDimType));
 
 						writer.String("x_dim_var");
 						writer.Double(renderStageIt->second.Parameters.XDimVariable);
@@ -314,7 +314,7 @@ namespace LambdaEngine
 							writer.StartObject();
 							{
 								writer.String("draw_type");
-								writer.String(RenderStageDrawTypeToString(renderStageIt->second.Graphics.DrawType).c_str());
+								writer.String(RenderStageDrawTypeToString(renderStageIt->second.Graphics.DrawType));
 
 								if (renderStageIt->second.Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 								{
@@ -339,7 +339,7 @@ namespace LambdaEngine
 											writer.Bool(resourceStateIt->second.Removable);
 
 											writer.String("binding_type");
-											writer.String(BindingTypeToString(resourceStateIt->second.BindingType).c_str());
+											writer.String(BindingTypeToString(resourceStateIt->second.BindingType));
 
 											writer.String("src_stage");
 
@@ -390,7 +390,7 @@ namespace LambdaEngine
 											writer.Bool(resourceStateIt->second.Removable);
 
 											writer.String("binding_type");
-											writer.String(BindingTypeToString(resourceStateIt->second.BindingType).c_str());
+											writer.String(BindingTypeToString(resourceStateIt->second.BindingType));
 
 											writer.String("src_stage");
 
@@ -427,13 +427,13 @@ namespace LambdaEngine
 							writer.Bool(renderStageIt->second.Graphics.DepthTestEnabled);
 
 							writer.String("cull_mode");
-							writer.String(CullModeToString(renderStageIt->second.Graphics.CullMode).c_str());
+							writer.String(CullModeToString(renderStageIt->second.Graphics.CullMode));
 
 							writer.String("polygon_mode");
-							writer.String(PolygonModeToString(renderStageIt->second.Graphics.PolygonMode).c_str());
+							writer.String(PolygonModeToString(renderStageIt->second.Graphics.PolygonMode));
 
 							writer.String("primitive_topology");
-							writer.String(PrimitiveTopologyToString(renderStageIt->second.Graphics.PrimitiveTopology).c_str());					
+							writer.String(PrimitiveTopologyToString(renderStageIt->second.Graphics.PrimitiveTopology));					
 						}
 
 						writer.String("shaders");
@@ -514,7 +514,7 @@ namespace LambdaEngine
 									writer.Bool(resourceStateIt->second.Removable);
 
 									writer.String("binding_type");
-									writer.String(BindingTypeToString(resourceStateIt->second.BindingType).c_str());
+									writer.String(BindingTypeToString(resourceStateIt->second.BindingType));
 
 									writer.String("src_stage");
 

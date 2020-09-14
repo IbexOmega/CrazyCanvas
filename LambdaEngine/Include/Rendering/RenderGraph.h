@@ -174,7 +174,7 @@ namespace LambdaEngine
 			TArray<ResourceBinding>		ResourceBindings;
 			TArray<ResourceBarrierInfo>	BarriersPerSynchronizationStage; //Divided into #SubResourceCount Barriers per Synchronization Stage
 
-			FPipelineStageFlags			LastPipelineStageOfFirstRenderStage = FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags			LastPipelineStageOfFirstRenderStage = FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			struct
 			{
@@ -223,9 +223,9 @@ namespace LambdaEngine
 			bool					UsesCustomRenderer				= false;
 			ICustomRenderer*		pCustomRenderer					= nullptr;
 
-			FPipelineStageFlags		FirstPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-			FPipelineStageFlags		LastPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-			uint32					PipelineStageMask				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags		FirstPipelineStage				= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags		LastPipelineStage				= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			uint32					PipelineStageMask				= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			ERenderStageDrawType	DrawType						= ERenderStageDrawType::NONE;
 			Resource*				pIndexBufferResource			= nullptr;
@@ -249,9 +249,9 @@ namespace LambdaEngine
 		struct SynchronizationStage
 		{
 			ECommandQueueType					ExecutionQueue					= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
-			FPipelineStageFlags					SrcPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-			FPipelineStageFlags					SameQueueDstPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-			FPipelineStageFlags					OtherQueueDstPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags					SrcPipelineStage				= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags					SameQueueDstPipelineStage		= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags					OtherQueueDstPipelineStage		= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			TArray<PipelineBufferBarrierDesc>	BufferBarriers[2];
 			TArray<PipelineTextureBarrierDesc>	TextureBarriers[4];
@@ -316,7 +316,6 @@ namespace LambdaEngine
 	private:
 		void ReleasePipelineStages();
 
-		bool CreateAllocator();
 		bool CreateFence();
 		bool CreateDescriptorHeap();
 		bool CreateCopyCommandLists();

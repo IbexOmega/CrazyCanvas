@@ -253,7 +253,7 @@ namespace LambdaEngine
 			TextureViewDesc textureViewDesc = {};
 			textureViewDesc.DebugName		= m_Desc.DebugName + " Texture View " + std::to_string(i);
 			textureViewDesc.pTexture		= m_Buffers[i];
-			textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+			textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET;
 			textureViewDesc.Format			= m_Desc.Format;
 			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 			textureViewDesc.MiplevelCount	= 1;

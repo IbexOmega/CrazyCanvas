@@ -28,8 +28,8 @@ namespace LambdaEngine
 		glm::vec3 Direction = glm::vec3(1.0f, 0.0f, 0.0f);
 		float FOVDegrees	= 45.0f;
 		float Width			= 1280.0f;
-		float Height		= 720.0f; 
-		float NearPlane		= 0.0001f; 
+		float Height		= 720.0f;
+		float NearPlane		= 0.0001f;
 		float FarPlane		= 50.0f;
 	};
 
