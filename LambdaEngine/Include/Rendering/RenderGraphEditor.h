@@ -97,7 +97,6 @@ namespace LambdaEngine
 
 		EditorStartedLinkInfo								m_StartedLinkInfo				= {};
 
-		TArray<String>										m_FilesInShaderDirectory;
 		LambdaDirectory										m_FilesInShaderMap;
 
 		RenderGraphStructureDesc							m_ParsedRenderGraphStructure	= {};

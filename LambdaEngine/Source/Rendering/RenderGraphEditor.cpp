@@ -119,9 +119,9 @@ namespace LambdaEngine
 				maxResourcesViewTextWidth = textSize.x > maxResourcesViewTextWidth ? textSize.x : maxResourcesViewTextWidth;
 			}
 
-			for (auto shaderIt = m_FilesInShaderDirectory.begin(); shaderIt != m_FilesInShaderDirectory.end(); shaderIt++)
+			for (auto shaderIt = m_FilesInShaderMap.Children.begin(); shaderIt != m_FilesInShaderMap.Children.end(); shaderIt++)
 			{
-				const String& shaderName = *shaderIt;
+				const String& shaderName = shaderIt->RelativePath.string();
 				ImVec2 textSize = ImGui::CalcTextSize(shaderName.c_str());
 
 				maxResourcesViewTextWidth = textSize.x > maxResourcesViewTextWidth ? textSize.x : maxResourcesViewTextWidth;
@@ -166,7 +166,7 @@ namespace LambdaEngine
 
 				if (ImGui::Button("Refresh Shaders"))
 				{
-					m_FilesInShaderDirectory = EnumerateFilesInDirectory("../Assets/Shaders/", true);
+					m_FilesInShaderMap = ExtractDirectory("../Assets/Shaders/", "/");
 				}
 			}
 			ImGui::EndChild();
@@ -271,8 +271,7 @@ namespace LambdaEngine
 
 	void RenderGraphEditor::InitDefaultResources()
 	{
-		m_FilesInShaderDirectory = EnumerateFilesInDirectory("../Assets/Shaders/", true);
-		m_FilesInShaderMap = ExtractDirectory("../Assets/Shaders", "\\");
+		m_FilesInShaderMap = ExtractDirectory("../Assets/Shaders", "/");
 
 		m_FinalOutput.Name						= "FINAL_OUTPUT";
 		m_FinalOutput.NodeIndex					= s_NextNodeID++;
@@ -1147,28 +1146,6 @@ namespace LambdaEngine
 		static int64 selectedResourceIndex = -1;
 
 		RenderShaderTreeView(m_FilesInShaderMap, textWidth, textHeight, selectedResourceIndex);
-
-		//for (auto fileIt = m_FilesInShaderDirectory.begin(); fileIt != m_FilesInShaderDirectory.end(); fileIt++)
-		//{
-		//	std::iterator_traits<TArray<std::string>::Iterator>::difference_type v;
-
-		//	int32 index = std::distance(m_FilesInShaderDirectory.begin(), fileIt);
-		//	const String* pFilename = &(*fileIt);
-
-		//	//if (pFilename->find(".glsl") != String::npos)
-		//	{
-		//		if (ImGui::Selectable(pFilename->c_str(), selectedResourceIndex == index, ImGuiSeparatorFlags_None, ImVec2(textWidth, textHeight)))
-		//		{
-		//			selectedResourceIndex = index;
-		//		}
-
-		//		if (ImGui::BeginDragDropSource())
-		//		{
-		//			ImGui::SetDragDropPayload("SHADER", &pFilename, sizeof(const String*));
-		//			ImGui::EndDragDropSource();
-		//		}
-		//	}
-		//}
 	}
 
 	void RenderGraphEditor::RenderShaderTreeView(const LambdaDirectory& dir, float textWidth, float textHeight, int64& selectedIndex)
