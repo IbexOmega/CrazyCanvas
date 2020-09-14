@@ -96,7 +96,7 @@ namespace LambdaEngine
         const Value& arr = s_ConfigDocument[propertyName.c_str()];
         TArray<int> tArr;
         for (auto& itr : arr.GetArray())
-            tArr.PushBack(itr.GetFloat());
+            tArr.PushBack(itr.GetInt());
 
         return tArr;
     }
