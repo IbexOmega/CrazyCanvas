@@ -971,8 +971,6 @@ namespace LambdaEngine
 		ImGui::SameLine();
 		ImGui::Checkbox("##Back Buffer Bound", &pResource->BackBufferBound);
 
-		pResource->TextureParams.TextureType = m_CurrentlyAddingTextureType;
-		
 		ImGui::Text("Sub Resource Count: ");
 		ImGui::SameLine();
 
@@ -1022,7 +1020,7 @@ namespace LambdaEngine
 					int32 textureDimensionTypeX = DimensionTypeToDimensionTypeIndex(pResource->TextureParams.XDimType);
 					int32 textureDimensionTypeY = DimensionTypeToDimensionTypeIndex(pResource->TextureParams.YDimType);
 
-					if (m_CurrentlyAddingTextureType != ERenderGraphTextureType::TEXTURE_CUBE)
+					if (pResource->TextureParams.TextureType != ERenderGraphTextureType::TEXTURE_CUBE)
 					{
 						ImGui::Text("Width: ");
 						ImGui::SameLine();
@@ -1703,6 +1701,29 @@ namespace LambdaEngine
 						{
 							selectedDrawType = dt;
 							pRenderStage->Graphics.DrawType = drawTypes[selectedDrawType];
+
+							if (pRenderStage->Graphics.DrawType != ERenderStageDrawType::SCENE_INDIRECT)
+							{
+								//Index Buffer
+								{
+									EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndexBufferAttributeIndex / 2];
+									pResourceState->ResourceName = "";
+									DestroyLink(pResourceState->InputLinkIndex);
+								}
+
+								//Indirect Args Buffer
+								{
+									EditorRenderGraphResourceState* pResourceState = &m_ResourceStatesByHalfAttributeIndex[pRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2];
+									pResourceState->ResourceName = "";
+									DestroyLink(pResourceState->InputLinkIndex);
+								}
+							}
+							else
+							{
+								if (pRenderStage->Graphics.IndexBufferAttributeIndex == -1)			pRenderStage->Graphics.IndexBufferAttributeIndex = CreateResourceState("", pRenderStage->Name, true, ERenderGraphResourceBindingType::DRAW_RESOURCE).AttributeIndex;
+								if (pRenderStage->Graphics.IndirectArgsBufferAttributeIndex == -1)	pRenderStage->Graphics.IndirectArgsBufferAttributeIndex = CreateResourceState("", pRenderStage->Name, true, ERenderGraphResourceBindingType::DRAW_RESOURCE).AttributeIndex;
+							}
+
 							m_ParsedGraphDirty = true;
 						}
 

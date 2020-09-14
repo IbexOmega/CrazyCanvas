@@ -252,6 +252,7 @@ namespace LambdaEngine
 											resourceSynchronization.PrevQueue		= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
 											resourceSynchronization.NextQueue		= ConvertPipelineStateTypeToQueue(pPotentialNextRenderStage->Type);
 											resourceSynchronization.ResourceName	= pFinalResourceState->ResourceName;
+											resourceSynchronization.ResourceType	= ERenderGraphResourceType::TEXTURE;
 
 											imguiSynchronizationStage.Synchronizations.PushBack(resourceSynchronization);
 
@@ -285,6 +286,7 @@ namespace LambdaEngine
 				resourceSynchronization.PrevQueue		= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
 				resourceSynchronization.NextQueue		= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
 				resourceSynchronization.ResourceName	= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+				resourceSynchronization.ResourceType	= ERenderGraphResourceType::TEXTURE;
 
 				imguiSynchronizationStage.Synchronizations.PushBack(resourceSynchronization);
 
@@ -313,7 +315,12 @@ namespace LambdaEngine
 
 				for (auto synchronizationIt = pSynchronizationStage->Synchronizations.begin(); synchronizationIt != pSynchronizationStage->Synchronizations.end();)
 				{
-					if (synchronizationIt->PrevQueue == synchronizationIt->NextQueue && synchronizationIt->PrevBindingType == synchronizationIt->NextBindingType)
+					if (ResourceStatesSynchronizationallyEqual(
+						synchronizationIt->ResourceType,
+						synchronizationIt->PrevQueue, 
+						synchronizationIt->NextQueue,
+						synchronizationIt->PrevBindingType,
+						synchronizationIt->NextBindingType))
 					{
 						synchronizationIt = pSynchronizationStage->Synchronizations.Erase(synchronizationIt);
 						continue;
@@ -866,9 +873,16 @@ namespace LambdaEngine
 
 					if (indexBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indirectArgsBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end())
 					{
-						if (currentResourceStateIt->second.ResourceName == indexBufferResourceStateIt->second.ResourceName || currentResourceStateIt->second.ResourceName == indirectArgsBufferResourceStateIt->second.ResourceName)
+						if (currentResourceStateIt->second.ResourceName == indexBufferResourceStateIt->second.ResourceName)
 						{
-							pNextRenderStage = pPotentialNextRenderStage;
+							pNextResourceState	= &indexBufferResourceStateIt->second;
+							pNextRenderStage	= pPotentialNextRenderStage;
+							break;
+						}
+						else if (currentResourceStateIt->second.ResourceName == indirectArgsBufferResourceStateIt->second.ResourceName)
+						{
+							pNextResourceState	= &indirectArgsBufferResourceStateIt->second;
+							pNextRenderStage	= pPotentialNextRenderStage;
 							break;
 						}
 					}
@@ -880,6 +894,7 @@ namespace LambdaEngine
 		RenderGraphResourceSynchronizationDesc resourceSynchronization = {};
 		resourceSynchronization.PrevRenderStage = pCurrentRenderStage->Name;
 		resourceSynchronization.ResourceName	= currentResourceStateIt->second.ResourceName;
+		
 		resourceSynchronization.PrevQueue		= ConvertPipelineStateTypeToQueue(pCurrentRenderStage->Type);
 		resourceSynchronization.PrevBindingType	= currentResourceStateIt->second.BindingType;
 
@@ -889,6 +904,8 @@ namespace LambdaEngine
 
 		if (resourceIt != resources.end())
 		{
+			resourceSynchronization.ResourceType = resourceIt->Type;
+
 			if (pNextResourceState != nullptr)
 			{
 				//If the ResourceState is Readonly and the current and next Binding Types are the same we don't want a synchronization, no matter what queue type
@@ -963,9 +980,16 @@ namespace LambdaEngine
 
 							if (indexBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indirectArgsBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end())
 							{
-								if (currentResourceStateIt->second.ResourceName == indexBufferResourceStateIt->second.ResourceName || currentResourceStateIt->second.ResourceName == indirectArgsBufferResourceStateIt->second.ResourceName)
+								if (currentResourceStateIt->second.ResourceName == indexBufferResourceStateIt->second.ResourceName)
 								{
-									pNextRenderStage = pPotentialNextRenderStage;
+									pNextResourceState	= &indexBufferResourceStateIt->second;
+									pNextRenderStage	= pPotentialNextRenderStage;
+									break;
+								}
+								else if (currentResourceStateIt->second.ResourceName == indirectArgsBufferResourceStateIt->second.ResourceName)
+								{
+									pNextResourceState	= &indirectArgsBufferResourceStateIt->second;
+									pNextRenderStage	= pPotentialNextRenderStage;
 									break;
 								}
 							}
