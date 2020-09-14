@@ -457,7 +457,7 @@ namespace LambdaEngine
 				ImGui::PopItemWidth();
 				ImGui::PopStyleVar();
 
-				if (m_IsActive || hasFocus)
+				if (hasFocus)
 				{
 					ImGui::SetItemDefaultFocus();
 					ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
