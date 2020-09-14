@@ -36,7 +36,7 @@ namespace LambdaEngine
 			return false;
 		
 		PacketTranscoder::Header* header = (PacketTranscoder::Header*)pBuffer;
-		if (header->Size > MAXIMUM_SEGMENT_SIZE)
+		if (header->Size > size)
 			return false;
 
 		if (!ForceReceive(pBuffer + headerSize, header->Size - headerSize))
