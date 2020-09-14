@@ -26,12 +26,17 @@ namespace LambdaEngine
 		uint32 GetPacketsSent()	const;
 
 		/*
-		* return - The number of packets (NetworkPacket) sent
+		* return - The number of Segments Registered (Unique Segments)
+		*/
+		uint32 GetSegmentsRegistered() const;
+
+		/*
+		* return - The number of total Segments Sent
 		*/
 		uint32 GetSegmentsSent() const;
 
 		/*
-		* return - The number of reliable packets (NetworkPacket) sent
+		* return - The number of reliable Segments sent
 		*/
 		uint32 GetReliableSegmentsSent() const;
 
@@ -102,7 +107,8 @@ namespace LambdaEngine
 		void Reset();
 
 		uint32 RegisterPacketSent();
-		uint32 RegisterSegmentSent();
+		uint32 RegisterUniqueSegment();
+		void RegisterSegmentSent(uint32 segments);
 		uint32 RegisterReliableSegmentSent();
 		void RegisterPacketReceived(uint32 segments, uint32 bytes);
 		void RegisterReliableSegmentReceived();
@@ -118,6 +124,7 @@ namespace LambdaEngine
 	private:
 		uint32 m_PacketsLost;
 		uint32 m_PacketsSent;
+		uint32 m_SegmentsRegistered;
 		uint32 m_SegmentsSent;
 		uint32 m_ReliableSegmentsSent;
 		uint32 m_PacketsReceived;

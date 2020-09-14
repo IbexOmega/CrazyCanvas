@@ -6,7 +6,7 @@
 
 namespace LambdaEngine
 {
-	bool PacketTranscoder::EncodeSegments(uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& segmentsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader)
+	void PacketTranscoder::EncodeSegments(uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& segmentsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader)
 	{
 		pHeader->Size = sizeof(Header);
 		pHeader->Segments = 0;
@@ -44,7 +44,6 @@ namespace LambdaEngine
 		memcpy(buffer, pHeader, sizeof(Header));
 
 		bytesWritten = pHeader->Size;
-		return segmentsToEncode.empty();
 	}
 
 	uint16 PacketTranscoder::WriteSegment(uint8* buffer, NetworkSegment* pSegment)
