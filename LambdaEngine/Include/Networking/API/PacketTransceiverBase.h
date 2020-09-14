@@ -38,7 +38,7 @@ namespace LambdaEngine
 
 	private:
 		int32 m_BytesReceived;
-		uint8 m_pSendBuffer[MAXIMUM_PACKET_SIZE];
+		uint8 m_pSendBuffer[MAXIMUM_SEGMENT_SIZE];
 		uint8 m_pReceiveBuffer[UINT16_MAX];
 	};
 }

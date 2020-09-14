@@ -22,6 +22,9 @@ namespace LambdaEngine
 		virtual void OnReceiveEnd(const PacketTranscoder::Header& header, TArray<uint32>& newAcks, NetworkStatistics* pStatistics) override;
 
 	private:
+		bool ForceReceive(uint8* pBuffer, uint32 bytesToRead);
+
+	private:
 		ISocketTCP* m_pSocket;
 	};
 }

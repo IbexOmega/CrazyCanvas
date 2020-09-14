@@ -3,7 +3,7 @@
 #include "LambdaEngine.h"
 #include "Containers/String.h"
 
-#define MAXIMUM_PACKET_SIZE 1024
+#define MAXIMUM_SEGMENT_SIZE 1024
 
 namespace LambdaEngine
 {
@@ -79,6 +79,6 @@ namespace LambdaEngine
 		std::string m_Type;
 #endif
 
-		char m_pBuffer[MAXIMUM_PACKET_SIZE];
+		char m_pBuffer[MAXIMUM_SEGMENT_SIZE];
 	};
 }
