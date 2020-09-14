@@ -480,11 +480,6 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-	float32 renderWidth = (float32)mainWindow->GetWidth();
-	float32 renderHeight = (float32)mainWindow->GetHeight();
-	float32 renderAspectRatio = renderWidth / renderHeight;
-
 	if (IMGUI_ENABLED)
 	{
 		ImGuiRenderer::Get().DrawUI([&]()
@@ -547,7 +542,7 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
 
-	Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
+	pRenderGraph->UpdateResource(&blueNoiseUpdateDesc);
 
 	GUID_Lambda cubemapTexID = ResourceManager::GetTextureGUID("Cubemap Texture");
 
@@ -560,13 +555,13 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
 	cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
 
-	Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
+	pRenderGraph->UpdateResource(&cubeTextureUpdateDesc);
 
 	ResourceUpdateDesc pointLightsBuffer = {};
 	pointLightsBuffer.ResourceName						= "POINT_LIGHTS_BUFFER";
 	pointLightsBuffer.ExternalBufferUpdate.ppBuffer		= &m_pPointLightsBuffer;
 
-	Renderer::GetRenderGraph()->UpdateResource(&pointLightsBuffer);
+	pRenderGraph->UpdateResource(&pointLightsBuffer);
 }
 
 namespace LambdaEngine

@@ -2891,8 +2891,6 @@ namespace LambdaEngine
 		bool read	= pResourceState->InputLinkIndex != -1;
 		bool write	= pResourceState->OutputLinkIndices.size() > 0;
 
-		bool debugPlease = pResource->Name == "POINT_LIGHT_SHADOW_MAPS";
-
 		switch (pResource->Type)
 		{
 			case ERenderGraphResourceType::TEXTURE:
