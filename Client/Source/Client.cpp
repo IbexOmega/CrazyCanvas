@@ -177,18 +177,6 @@ void Client::Tick(LambdaEngine::Timestamp delta)
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(delta);
 
-	if (++g_PackegesSent <= 10) 
-	{
-		NetworkSegment* pPacket = m_pClient->GetFreePacket(420);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteUInt32(g_PackegesSent);
-		m_pClient->SendUnreliable(pPacket);
-	}
-	else
-	{
-		m_pClient->Disconnect("All Packages Sent");
-	}
-
 	NetworkDebugger::RenderStatisticsWithImGUI(m_pClient);
 
 	Renderer::Render();
@@ -197,6 +185,22 @@ void Client::Tick(LambdaEngine::Timestamp delta)
 void Client::FixedTick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
+
+	if (m_pClient->IsConnected())
+	{
+		if (++g_PackegesSent <= 10000)
+		{
+			NetworkSegment* pPacket = m_pClient->GetFreePacket(420);
+			BinaryEncoder encoder(pPacket);
+			encoder.WriteUInt32(g_PackegesSent);
+			m_pClient->SendUnreliable(pPacket);
+		}
+		else
+		{
+			//m_pClient->Disconnect("All Packages Sent");
+		}
+	}
+
 	UNREFERENCED_VARIABLE(delta);
 }
 
