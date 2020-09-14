@@ -670,7 +670,6 @@ namespace LambdaEngine
 	FORCEINLINE uint32 CreatePipelineStageMask(const RenderStageDesc* pRenderStageDesc)
 	{
 		uint32 pipelineStageMask = FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
-
 		if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
 			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
@@ -690,7 +689,7 @@ namespace LambdaEngine
 			pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 		}
 
-		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+		return pipelineStageMask;
 	}
 
 	FORCEINLINE bool IsReadOnly(ERenderGraphResourceBindingType bindingType)

@@ -38,11 +38,12 @@ namespace LambdaEngine
 					ConsoleCommand& cCmd = i.second.first;
 					if (!cCmd.IsDebug() || (input.Flags.find("d") != input.Flags.end()))
 					{
+						std::string type = cCmd.IsDebug() ? " [DEBUG]" : "";
 						ConsoleCommand::Description desc = cCmd.GetDescription();
-						PushInfo(i.first + ":");
-						PushInfo("\t" + desc.MainDesc);
+						PushInfo(i.first + type + ":");
+						PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
 						for (auto flagDesc : desc.FlagDescs)
-							PushInfo("\t\t-" + flagDesc.first + ": " + flagDesc.second);
+							PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
 					}
 				}
 			});
@@ -229,6 +230,11 @@ namespace LambdaEngine
 
 	void GameConsole::Tick()
 	{
+		ImGuiRenderer::Get().DrawUI([&]()
+		{
+			ImGui::ShowDemoWindow();
+		});
+
 		// Do not draw if not active.
 		if (!m_IsActive)
 		{
@@ -328,6 +334,7 @@ namespace LambdaEngine
 
 						strcpy(s_Buf, "");
 					}
+
 					hasFocus = true;
 				}
 
@@ -335,7 +342,7 @@ namespace LambdaEngine
 				ImGui::PopItemWidth();
 				ImGui::PopStyleVar();
 				
-				if (m_IsActive || hasFocus)
+				if (hasFocus)
 				{
 					ImGui::SetItemDefaultFocus();
 					ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
@@ -625,12 +632,13 @@ namespace LambdaEngine
 
 	bool GameConsole::OnKeyPressed(const KeyPressedEvent& event)
 	{
-		if (event.Key == EKey::KEY_GRAVE_ACCENT)
+		if (event.Key == EKey::KEY_GRAVE_ACCENT && !event.IsRepeat)
 		{
 			m_IsActive = !m_IsActive;
+			return true;
 		}
-
-		return true;
+		
+		return false;
 	}
 
 	int GameConsole::TextEditCallback(ImGuiInputTextCallbackData* data)

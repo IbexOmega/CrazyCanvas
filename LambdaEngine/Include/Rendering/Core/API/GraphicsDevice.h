@@ -99,7 +99,7 @@ namespace LambdaEngine
 	class GraphicsDevice
 	{
 	public:
-		DECL_DEVICE_INTERFACE(GraphicsDevice);
+		DECL_ABSTRACT_CLASS(GraphicsDevice);
 
 		virtual QueryHeap* CreateQueryHeap(const QueryHeapDesc* pDesc) const = 0;
 
