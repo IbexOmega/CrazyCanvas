@@ -304,21 +304,20 @@ namespace LambdaEngine
 		// Shader Constants
 		if (!pShaderModule->ShaderConstants.IsEmpty())
 		{
-			TArray<VkSpecializationMapEntry> specializationEntires(pShaderModule->ShaderConstants.GetSize());
+			TArray<VkSpecializationMapEntry> specializationEntries(pShaderModule->ShaderConstants.GetSize());
 			for (uint32 i = 0; i < pShaderModule->ShaderConstants.GetSize(); i++)
 			{
-				VkSpecializationMapEntry specializationEntry = { };
-				specializationEntry.constantID	= i;
-				specializationEntry.offset		= i * sizeof(ShaderConstant);
-				specializationEntry.size		= sizeof(ShaderConstant);
-				specializationEntires.EmplaceBack(specializationEntry);
+				VkSpecializationMapEntry* pSpecializationEntry = &specializationEntries[i];
+				pSpecializationEntry->constantID	= i;
+				pSpecializationEntry->offset		= i * sizeof(ShaderConstant);
+				pSpecializationEntry->size			= sizeof(ShaderConstant);
 			}
 
-			shaderStagesSpecializationMaps.EmplaceBack(specializationEntires);
+			TArray<VkSpecializationMapEntry>& emplacedSpecializationEntries = shaderStagesSpecializationMaps.EmplaceBack(specializationEntries);
 
 			VkSpecializationInfo specializationInfo = { };
-			specializationInfo.mapEntryCount	= static_cast<uint32>(specializationEntires.GetSize());
-			specializationInfo.pMapEntries		= specializationEntires.GetData();
+			specializationInfo.mapEntryCount	= static_cast<uint32>(emplacedSpecializationEntries.GetSize());
+			specializationInfo.pMapEntries		= emplacedSpecializationEntries.GetData();
 			specializationInfo.dataSize			= static_cast<uint32>(pShaderModule->ShaderConstants.GetSize()) * sizeof(ShaderConstant);
 			specializationInfo.pData			= pShaderModule->ShaderConstants.GetData();
 			shaderStagesSpecializationInfos.EmplaceBack(specializationInfo);

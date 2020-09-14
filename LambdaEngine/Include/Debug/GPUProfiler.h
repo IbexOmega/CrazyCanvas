@@ -81,7 +81,7 @@ namespace LambdaEngine
 		uint32_t m_TimestampCount		= 0;
 		uint32_t m_NextIndex			= 0;
 		uint32_t m_TimestampValidBits	= 0;
-		float m_TimestampPeriod			= 0.f;
+		float m_TimestampPeriod			= 0.0f;
 		uint64_t m_StartTimestamp		= 0;
 
 		THashTable<String, Timestamp>	m_Results;

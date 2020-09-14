@@ -92,8 +92,26 @@ namespace LambdaEngine
 	void GPUProfiler::Release()
 	{
 #ifdef LAMBDA_DEBUG
-		m_pTimestampHeap->Release();
-		m_pPipelineStatHeap->Release();
+		SAFERELEASE(m_pTimestampHeap);
+		SAFERELEASE(m_pPipelineStatHeap);
+
+		m_Timestamps.clear();
+		m_TimestampCount		= 0;
+		m_NextIndex				= 0;
+		m_TimestampValidBits	= 0;
+		m_TimestampPeriod		= 0.0f;
+		m_StartTimestamp		= 0;
+
+		m_Results.clear();
+		m_PlotResults.Clear();
+		m_PlotResultsStart		= 0;
+		m_CurrentMaxDuration.clear();
+		m_TimeSinceUpdate		= 0.0f;
+		m_EnableGraph			= true;
+
+		m_ShouldGetTimestamps.clear();
+
+		m_GraphicsStats.Clear();
 #endif
 	}
 

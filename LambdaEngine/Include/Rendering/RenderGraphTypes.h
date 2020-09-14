@@ -141,6 +141,14 @@ namespace LambdaEngine
 
 	/*-----------------------------------------------------------------Resource Structs End / Render Stage Structs Begin-----------------------------------------------------------------*/
 
+	enum class ERenderStageExecutionTrigger : uint8
+	{
+		NONE					= 0,
+		DISABLED				= 1,
+		EVERY					= 2,
+		TRIGGERED				= 3,
+	};
+
 	struct GraphicsShaderNames
 	{
 		String TaskShaderName		= "";
@@ -170,7 +178,7 @@ namespace LambdaEngine
 
 		struct
 		{
-			bool										PrevSameFrame		= true;
+			bool							PrevSameFrame		= true;
 			ERenderGraphResourceBindingType	PrevBindingType		= ERenderGraphResourceBindingType::NONE;
 			ERenderGraphResourceBindingType	NextBindingType		= ERenderGraphResourceBindingType::NONE;
 		} AttachmentSynchronizations; //If this resource state is transitioned using a renderpass, that information is stored here
@@ -192,10 +200,15 @@ namespace LambdaEngine
 		String						Name				= "";
 		EPipelineStateType			Type				= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 		bool						CustomRenderer		= false;
-		bool						Enabled				= true;
 		RenderStageParameters		Parameters			= {};
 
-		TArray<RenderGraphResourceState> ResourceStates;
+		ERenderStageExecutionTrigger	TriggerType		= ERenderStageExecutionTrigger::NONE;
+		int32							FrameDelay		= 0;
+		int32							FrameOffset		= 0;
+
+		TArray<RenderGraphResourceState>	ResourceStates;
+
+		TArray<ShaderConstant>				ShaderConstants;
 
 		struct
 		{
@@ -231,6 +244,7 @@ namespace LambdaEngine
 		ECommandQueueType				NextQueue			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		ERenderGraphResourceBindingType	PrevBindingType		= ERenderGraphResourceBindingType::NONE;
 		ERenderGraphResourceBindingType	NextBindingType		= ERenderGraphResourceBindingType::NONE;
+		ERenderGraphResourceType		ResourceType		= ERenderGraphResourceType::NONE;
 	};
 
 	struct SynchronizationStageDesc
@@ -294,8 +308,11 @@ namespace LambdaEngine
 		EPipelineStateType			Type							= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 		bool						OverrideRecommendedBindingType	= false;
 		bool						CustomRenderer					= false;
-		bool						Enabled							= true;
 		RenderStageParameters		Parameters						= {};
+
+		ERenderStageExecutionTrigger	TriggerType					= ERenderStageExecutionTrigger::NONE;
+		int32							FrameDelay					= 0;
+		int32							FrameOffset					= 0;
 
 		struct
 		{
@@ -381,12 +398,39 @@ namespace LambdaEngine
 		int32		BackBufferAttributeIndex	= 0;
 	};
 
+	struct RenderGraphShaderConstants
+	{
+		struct
+		{
+			TArray<ShaderConstant>	MeshShaderConstants;
+			TArray<ShaderConstant>	TaskShaderConstants;
+			TArray<ShaderConstant>	VertexShaderConstants;
+			TArray<ShaderConstant>	HullShaderConstants;
+			TArray<ShaderConstant>	DomainShaderConstants;
+			TArray<ShaderConstant>	GeometryShaderConstants;
+			TArray<ShaderConstant>	PixelShaderConstants;
+		} Graphics;
+
+		struct
+		{
+			TArray<ShaderConstant>	ShaderConstants;
+		} Compute;
+
+		struct
+		{
+			TArray<ShaderConstant>			RaygenConstants;
+			TArray<TArray<ShaderConstant>>	ClosestHitConstants;
+			TArray<TArray<ShaderConstant>>	MissConstants;
+		} RayTracing;
+	};
+
 	struct RenderGraphStructureDesc
 	{
-		TArray<RenderGraphResourceDesc>		ResourceDescriptions;
-		TArray<RenderStageDesc>				RenderStageDescriptions;
-		TArray<SynchronizationStageDesc>	SynchronizationStageDescriptions;
-		TArray<PipelineStageDesc>			PipelineStageDescriptions;
+		TArray<RenderGraphResourceDesc>					ResourceDescriptions;
+		TArray<RenderStageDesc>							RenderStageDescriptions;
+		THashTable<String, RenderGraphShaderConstants>	ShaderConstants;
+		TArray<SynchronizationStageDesc>				SynchronizationStageDescriptions;
+		TArray<PipelineStageDesc>						PipelineStageDescriptions;
 	};
 
 	/*-----------------------------------------------------------------Render Graph Editor End-----------------------------------------------------------------*/
@@ -473,7 +517,7 @@ namespace LambdaEngine
 		return EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
 	}
 
-	FORCEINLINE ETextureState CalculateResourceTextureState(ERenderGraphResourceType resourceType, ERenderGraphResourceBindingType bindingType, EFormat format)
+	FORCEINLINE ETextureState CalculateResourceTextureState(ERenderGraphResourceType resourceType, ERenderGraphResourceBindingType bindingType, EFormat format = EFormat::FORMAT_NONE)
 	{
 		if (resourceType == ERenderGraphResourceType::TEXTURE)
 		{
@@ -507,6 +551,29 @@ namespace LambdaEngine
 		}
 
 		return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
+	}
+
+	FORCEINLINE bool ResourceStatesSynchronizationallyEqual(ERenderGraphResourceType resourceType, ECommandQueueType prevQueue, ECommandQueueType nextQueue, ERenderGraphResourceBindingType prevBindingType, ERenderGraphResourceBindingType nextBindingType)
+	{
+		if (prevQueue != nextQueue)
+			return false;
+
+		uint32 prevMemoryAccessFlags = CalculateResourceAccessFlags(prevBindingType);
+		uint32 nextMemoryAccessFlags = CalculateResourceAccessFlags(nextBindingType);
+
+		if (prevMemoryAccessFlags != nextMemoryAccessFlags)
+			return false;
+
+		if (resourceType == ERenderGraphResourceType::TEXTURE)
+		{
+			ETextureState prevTextureState = CalculateResourceTextureState(resourceType, prevBindingType);
+			ETextureState nextTextureState = CalculateResourceTextureState(resourceType, nextBindingType);
+
+			if (prevTextureState != nextTextureState)
+				return false;
+		}
+
+		return true;
 	}
 
 	FORCEINLINE FPipelineStageFlag FindEarliestPipelineStage(const RenderStageDesc* pRenderStageDesc)
@@ -899,5 +966,25 @@ namespace LambdaEngine
 		}
 
 		return EMipmapMode::MIPMAP_MODE_NONE;
+	}
+
+	FORCEINLINE String ExecutionTriggerTypeToString(ERenderStageExecutionTrigger triggerType)
+	{
+		switch (triggerType)
+		{
+			case ERenderStageExecutionTrigger::DISABLED:	return "DISABLED";
+			case ERenderStageExecutionTrigger::EVERY:		return "EVERY";
+			case ERenderStageExecutionTrigger::TRIGGERED:	return "TRIGGERED";
+			default:										return "NONE";
+		}
+	}
+
+	FORCEINLINE ERenderStageExecutionTrigger ExecutionTriggerTypeFromString(const String& string)
+	{
+		if		(string == "DISABLED")		return ERenderStageExecutionTrigger::DISABLED;
+		if		(string == "EVERY")			return ERenderStageExecutionTrigger::EVERY;
+		else if (string == "TRIGGERED")		return ERenderStageExecutionTrigger::TRIGGERED;
+
+		return ERenderStageExecutionTrigger::NONE;
 	}
 }

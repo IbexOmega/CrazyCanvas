@@ -239,4 +239,35 @@ namespace LambdaEngine
 
 		return -1;
 	}
+
+	constexpr const char* TRIGGER_TYPE_NAMES[] =
+	{
+		"DISABLED",
+		"EVERY",
+		"TRIGGERED",
+	};
+
+	ERenderStageExecutionTrigger TriggerTypeIndexToTriggerType(int32 index)
+	{
+		switch (index)
+		{
+		case 0: return ERenderStageExecutionTrigger::DISABLED;
+		case 1: return ERenderStageExecutionTrigger::EVERY;
+		case 2: return ERenderStageExecutionTrigger::TRIGGERED;
+		}
+
+		return ERenderStageExecutionTrigger::NONE;
+	}
+
+	int32 TriggerTypeToTriggerTypeIndex(ERenderStageExecutionTrigger primitiveTopology)
+	{
+		switch (primitiveTopology)
+		{
+		case ERenderStageExecutionTrigger::DISABLED:	return 0;
+		case ERenderStageExecutionTrigger::EVERY:		return 1;
+		case ERenderStageExecutionTrigger::TRIGGERED:	return 2;
+		}
+
+		return -1;
+	}
 }
