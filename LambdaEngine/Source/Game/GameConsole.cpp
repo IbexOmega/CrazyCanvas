@@ -224,7 +224,7 @@ namespace LambdaEngine
 
 	bool GameConsole::Release()
 	{
-		return EventQueue::UnregisterEventHandler(this, &GameConsole::OnKeyPressed);
+		return true;
 	}
 
 	void GameConsole::Tick()
@@ -335,7 +335,7 @@ namespace LambdaEngine
 				ImGui::PopItemWidth();
 				ImGui::PopStyleVar();
 				
-				if (s_Active || hasFocus)
+				if (m_IsActive || hasFocus)
 				{
 					ImGui::SetItemDefaultFocus();
 					ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
@@ -428,6 +428,7 @@ namespace LambdaEngine
 
 	GameConsole::~GameConsole()
 	{
+		EventQueue::UnregisterEventHandler(this, &GameConsole::OnKeyPressed);
 	}
 
 	int GameConsole::ExecCommand(const std::string& data)
