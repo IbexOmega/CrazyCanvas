@@ -124,8 +124,8 @@ namespace LambdaEngine
 			int32						SampleCount				= 1;
 			int32						MiplevelCount			= 1;
 			ERenderGraphSamplerType		SamplerType				= ERenderGraphSamplerType::LINEAR;
-			uint32						TextureFlags			= FTextureFlags::TEXTURE_FLAG_NONE;
-			uint32						TextureViewFlags		= FTextureViewFlags::TEXTURE_VIEW_FLAG_NONE;
+			uint32						TextureFlags			= FTextureFlag::TEXTURE_FLAG_NONE;
+			uint32						TextureViewFlags		= FTextureViewFlag::TEXTURE_VIEW_FLAG_NONE;
 		} TextureParams;
 
 		//Buffer Specific
@@ -133,7 +133,7 @@ namespace LambdaEngine
 		{
 			ERenderGraphDimensionType	SizeType				= ERenderGraphDimensionType::CONSTANT;
 			int32						Size					= 1;
-			uint32						BufferFlags				= FBufferFlags::BUFFER_FLAG_NONE;
+			uint32						BufferFlags				= FBufferFlag::BUFFER_FLAG_NONE;
 		} BufferParams;
 
 		//Acceleration Structure Specific
@@ -409,29 +409,29 @@ namespace LambdaEngine
 		}
 	}
 
-	FORCEINLINE uint32 CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc)
+	FORCEINLINE FShaderStageFlags CreateShaderStageMask(const RenderStageDesc* pRenderStageDesc)
 	{
-		uint32 mask = 0;
+		FShaderStageFlags mask = 0;
 
 		if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
-			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size()	> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size()		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size()		> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_TASK_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size()		> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_MESH_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size()		> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size()	> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size()		> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size()		> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size()		> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		}
 		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{
-			if (pRenderStageDesc->Compute.ShaderName.size()						> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			if (pRenderStageDesc->Compute.ShaderName.size()						> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 		}
 		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 		{
-			if (pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.size()	> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER;
-			if (pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount		> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;
-			if (pRenderStageDesc->RayTracing.Shaders.MissShaderCount			> 0)	mask |= FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER;
+			if (pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.size()	> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER;
+			if (pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount		> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;
+			if (pRenderStageDesc->RayTracing.Shaders.MissShaderCount			> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_MISS_SHADER;
 		}
 
 		return mask;
@@ -495,202 +495,201 @@ namespace LambdaEngine
 	{
 		switch (bindingType)
 		{
-			case ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_ACCELERATION_STRUCTURE_READ;
-			case ERenderGraphResourceBindingType::CONSTANT_BUFFER:					return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_CONSTANT_BUFFER_READ;
-			case ERenderGraphResourceBindingType::COMBINED_SAMPLER:					return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_SHADER_READ;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:		return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			case ERenderGraphResourceBindingType::ATTACHMENT:						return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			case ERenderGraphResourceBindingType::PRESENT:							return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
-			case ERenderGraphResourceBindingType::DRAW_RESOURCE:					return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;																
+			case ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_ACCELERATION_STRUCTURE_READ;
+			case ERenderGraphResourceBindingType::CONSTANT_BUFFER:					return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_CONSTANT_BUFFER_READ;
+			case ERenderGraphResourceBindingType::COMBINED_SAMPLER:					return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_SHADER_READ;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:		return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			case ERenderGraphResourceBindingType::ATTACHMENT:						return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			case ERenderGraphResourceBindingType::PRESENT:							return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			case ERenderGraphResourceBindingType::DRAW_RESOURCE:					return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;																
 		}
 
-		return FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+		return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
 	}
 
-	FORCEINLINE FPipelineStageFlags FindEarliestPipelineStage(const RenderStageDesc* pRenderStageDesc)
+	FORCEINLINE FPipelineStageFlag FindEarliestPipelineStage(const RenderStageDesc* pRenderStageDesc)
 	{
 		if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
-			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size()	> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size()		> 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size()		> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size()		> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size()		> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size()	> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size()		> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size()		> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size()		> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
 		}
 		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{
-			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
 		}
 		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 		{
-			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 		}
 
-		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
-	FORCEINLINE FPipelineStageFlags FindEarliestCompatiblePipelineStage(uint32 pipelineStageMask, ECommandQueueType commandQueueType)
+	FORCEINLINE FPipelineStageFlag FindEarliestCompatiblePipelineStage(uint32 pipelineStageMask, ECommandQueueType commandQueueType)
 	{
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP)								return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP)								return FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP;
 
 		if (commandQueueType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 		{
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER)				return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_DRAW_INDIRECT)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_DRAW_INDIRECT;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER)				return FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_STREAM_OUTPUT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_STREAM_OUTPUT;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_STREAM_OUTPUT)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_STREAM_OUTPUT;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE;
 
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER;
 		}
 		else if (commandQueueType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 		{
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER)				return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
-			if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER)				return FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+			if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD;
 		}
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM)							return FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM;
 
-		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
-	FORCEINLINE FPipelineStageFlags FindEarliestPipelineStage(uint32 pipelineStageMask)
+	FORCEINLINE FPipelineStageFlag FindEarliestPipelineStage(uint32 pipelineStageMask)
 	{
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP)							return FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER)				return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_DRAW_INDIRECT)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_DRAW_INDIRECT;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER)				return FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER)				return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER)				return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_HOST)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HOST;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY)							return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_HOST)							return FPipelineStageFlag::PIPELINE_STAGE_FLAG_HOST;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_STREAM_OUTPUT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_STREAM_OUTPUT;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_STREAM_OUTPUT)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_STREAM_OUTPUT;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM)						return FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM)						return FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM;
 
-		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
-	FORCEINLINE FPipelineStageFlags FindLastPipelineStage(uint32 pipelineStageMask)
+	FORCEINLINE FPipelineStageFlag FindLastPipelineStage(uint32 pipelineStageMask)
 	{
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM)						return FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM)						return FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_STREAM_OUTPUT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_STREAM_OUTPUT;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_STREAM_OUTPUT)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_STREAM_OUTPUT;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_HOST)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HOST;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_HOST)							return FPipelineStageFlag::PIPELINE_STAGE_FLAG_HOST;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY)							return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER)				return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER)				return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS)			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER)				return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_SHADER)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT)					return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DRAW_INDIRECT;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_EARLY_FRAGMENT_TESTS;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER)				return FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_DRAW_INDIRECT)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_DRAW_INDIRECT;
 
-		if (pipelineStageMask & FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP)							return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP)							return FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP;
 
-		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
 	FORCEINLINE FPipelineStageFlags FindLastPipelineStage(const RenderStageDesc* pRenderStageDesc)
 	{
 		if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
-			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size() > 0)	return FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
-			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size() > 0)		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size() > 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size() > 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size() > 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size() > 0)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size() > 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size() > 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER;
 		}
 		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{
-			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
 		}
 		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 		{
-			return FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 		}
 
-		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
 	FORCEINLINE uint32 CreatePipelineStageMask(const RenderStageDesc* pRenderStageDesc)
 	{
-		uint32 pipelineStageMask = FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-
+		uint32 pipelineStageMask = FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 		if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
-			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size() > 0)	pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
-			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size() > 0)	pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER;
 		}
 		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{
-			pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+			pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
 		}
 		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 		{
-			pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+			pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 		}
 
-		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+		return pipelineStageMask;
 	}
 
 	FORCEINLINE bool IsReadOnly(ERenderGraphResourceBindingType bindingType)
@@ -711,14 +710,14 @@ namespace LambdaEngine
 		return false;
 	}
 
-	FORCEINLINE String RenderStageDrawTypeToString(ERenderStageDrawType drawType)
+	FORCEINLINE const char* RenderStageDrawTypeToString(ERenderStageDrawType drawType)
 	{
 		switch (drawType)
 		{
 		case ERenderStageDrawType::SCENE_INDIRECT:		return "SCENE_INDIRECT";
 		case ERenderStageDrawType::FULLSCREEN_QUAD:		return "FULLSCREEN_QUAD";
 		case ERenderStageDrawType::CUBE:				return "CUBE";
-		default:													return "NONE";
+		default:										return "NONE";
 		}
 	}
 
@@ -730,7 +729,7 @@ namespace LambdaEngine
 		return ERenderStageDrawType::NONE;
 	}
 
-	FORCEINLINE String BindingTypeToShortString(ERenderGraphResourceBindingType bindingType)
+	FORCEINLINE const char* BindingTypeToShortString(ERenderGraphResourceBindingType bindingType)
 	{
 		switch (bindingType)
 		{
@@ -748,7 +747,7 @@ namespace LambdaEngine
 		return "UNKNOWN";
 	}
 
-	FORCEINLINE String BindingTypeToString(ERenderGraphResourceBindingType bindingType)
+	FORCEINLINE const char* BindingTypeToString(ERenderGraphResourceBindingType bindingType)
 	{
 		switch (bindingType)
 		{
@@ -781,14 +780,14 @@ namespace LambdaEngine
 	}
 
 
-	FORCEINLINE String RenderStageTypeToString(EPipelineStateType type)
+	FORCEINLINE const char* RenderStageTypeToString(EPipelineStateType type)
 	{
 		switch (type)
 		{
-		case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:						return "GRAPHICS";
-		case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:						return "COMPUTE";
-		case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:					return "RAY_TRACING";
-		default:												return "NONE";
+		case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		return "GRAPHICS";
+		case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		return "COMPUTE";
+		case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	return "RAY_TRACING";
+		default:													return "NONE";
 		}
 	}
 
@@ -801,7 +800,7 @@ namespace LambdaEngine
 		return EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 	}
 
-	FORCEINLINE String ResourceTextureTypeToString(ERenderGraphTextureType type)
+	FORCEINLINE const char* ResourceTextureTypeToString(ERenderGraphTextureType type)
 	{
 		switch (type)
 		{
@@ -820,7 +819,7 @@ namespace LambdaEngine
 	}
 
 
-	FORCEINLINE String RenderGraphResourceTypeToString(ERenderGraphResourceType type)
+	FORCEINLINE const char* RenderGraphResourceTypeToString(ERenderGraphResourceType type)
 	{
 		switch (type)
 		{
@@ -840,7 +839,7 @@ namespace LambdaEngine
 		return ERenderGraphResourceType::NONE;
 	}
 
-	FORCEINLINE String RenderGraphDimensionTypeToString(ERenderGraphDimensionType dimensionType)
+	FORCEINLINE const char* RenderGraphDimensionTypeToString(ERenderGraphDimensionType dimensionType)
 	{
 		switch (dimensionType)
 		{
@@ -862,7 +861,7 @@ namespace LambdaEngine
 		return ERenderGraphDimensionType::NONE;
 	}
 
-	FORCEINLINE String RenderGraphSamplerTypeToString(ERenderGraphSamplerType samplerType)
+	FORCEINLINE const char* RenderGraphSamplerTypeToString(ERenderGraphSamplerType samplerType)
 	{
 		switch (samplerType)
 		{

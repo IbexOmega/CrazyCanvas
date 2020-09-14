@@ -4,6 +4,8 @@
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 
+#include "Rendering/Core/Vulkan/DeviceAllocatorVK.h"
+
 namespace LambdaEngine
 {
 	TextureVK::TextureVK(const GraphicsDeviceVK* pDevice)
@@ -17,7 +19,7 @@ namespace LambdaEngine
 		InternalRelease();
 	}
 
-	bool TextureVK::Init(const TextureDesc* pDesc, DeviceAllocator* pAllocator)
+	bool TextureVK::Init(const TextureDesc* pDesc)
 	{
 		VkImageCreateInfo info = {};
 		info.sType					= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -36,31 +38,31 @@ namespace LambdaEngine
 		info.sharingMode			= VK_SHARING_MODE_EXCLUSIVE;
 		info.tiling					= VK_IMAGE_TILING_OPTIMAL;
 		
-		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_RENDER_TARGET)
+		if (pDesc->Flags & FTextureFlag::TEXTURE_FLAG_RENDER_TARGET)
 		{
 			info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 		}
-		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE)
+		if (pDesc->Flags & FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE)
 		{
 			info.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 		}
-		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL)
+		if (pDesc->Flags & FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL)
 		{
 			info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 		}
-		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_UNORDERED_ACCESS)
+		if (pDesc->Flags & FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS)
 		{
 			info.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
 		}
-		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_COPY_DST)
+		if (pDesc->Flags & FTextureFlag::TEXTURE_FLAG_COPY_DST)
 		{
 			info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		}
-		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_COPY_SRC)
+		if (pDesc->Flags & FTextureFlag::TEXTURE_FLAG_COPY_SRC)
 		{
 			info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 		}
-		if (pDesc->Flags & FTextureFlags::TEXTURE_FLAG_CUBE_COMPATIBLE)
+		if (pDesc->Flags & FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE)
 		{
 			info.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 		}
@@ -106,40 +108,17 @@ namespace LambdaEngine
 		}
 
 		int32 memoryTypeIndex = FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, memoryProperties);
-		if (pAllocator)
+		if (!m_pDevice->AllocateTextureMemory(&m_Allocation, memoryRequirements.size, memoryRequirements.alignment, memoryTypeIndex))
 		{
-			DeviceAllocatorVK* pAllocatorVk = reinterpret_cast<DeviceAllocatorVK*>(pAllocator);
-			if (!pAllocatorVk->Allocate(&m_Allocation, memoryRequirements.size, memoryRequirements.alignment, memoryTypeIndex))
-			{
-				LOG_ERROR("[TextureVK]: Failed to allocate memory");
-				return false;
-			}
-
-			m_Allocator = pAllocatorVk;
-			m_Allocator->AddRef();
-
-			result = vkBindImageMemory(m_pDevice->Device, m_Image, m_Allocation.Memory, m_Allocation.Offset);
-			if (result != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR(result, "[TextureVK]: Failed to bind memory");
-				return false;
-			}
+			LOG_ERROR("[TextureVK]: Failed to allocate memory");
+			return false;
 		}
-		else
-		{
-			result = m_pDevice->AllocateMemory(&m_Memory, memoryRequirements.size, memoryTypeIndex);
-			if (result != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR(result, "[TextureVK]: Failed to allocate memory");
-				return false;
-			}
 
-			result = vkBindImageMemory(m_pDevice->Device, m_Image, m_Memory, 0);
-			if (result != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR(result, "[TextureVK]: Failed to bind memory");
-				return false;
-			}
+		result = vkBindImageMemory(m_pDevice->Device, m_Image, m_Allocation.Memory, m_Allocation.Offset);
+		if (result != VK_SUCCESS)
+		{
+			LOG_VULKAN_ERROR(result, "[TextureVK]: Failed to bind memory");
+			return false;
 		}
 
 		return true;
@@ -162,26 +141,16 @@ namespace LambdaEngine
 	
 	void TextureVK::InternalRelease()
 	{
-		if (m_Memory != VK_NULL_HANDLE || m_Allocator != nullptr)
+		if (m_Allocation.Memory != VK_NULL_HANDLE)
 		{
 			if (m_Image != VK_NULL_HANDLE)
 			{
 				vkDestroyImage(m_pDevice->Device, m_Image, nullptr);
 				m_Image = VK_NULL_HANDLE;
 			}
-		}
 
-		if (m_Allocator)
-		{
-			m_Allocator->Free(&m_Allocation);
-		}
-		else
-		{
-			if (m_Memory != VK_NULL_HANDLE)
-			{
-				vkFreeMemory(m_pDevice->Device, m_Memory, nullptr);
-				m_Memory = VK_NULL_HANDLE;
-			}
+			m_pDevice->FreeMemory(&m_Allocation);
+			ZERO_MEMORY(&m_Allocation, sizeof(m_Allocation));
 		}
 	}
 

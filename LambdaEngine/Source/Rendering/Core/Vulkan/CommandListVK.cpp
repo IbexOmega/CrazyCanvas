@@ -98,7 +98,7 @@ namespace LambdaEngine
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.pNext = nullptr;
 		beginInfo.flags	= 0;
-		if (m_Desc.Flags & FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT)
+		if (m_Desc.Flags & FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT)
 		{
 			beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 		}
@@ -186,7 +186,7 @@ namespace LambdaEngine
 		renderPassInfo.clearValueCount		= pBeginDesc->ClearColorCount;
 
 		VkSubpassContents subpassContent = VK_SUBPASS_CONTENTS_INLINE;
-		if (pBeginDesc->Flags & FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_EXECUTE_SECONDARY)
+		if (pBeginDesc->Flags & FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_EXECUTE_SECONDARY)
 		{
 			subpassContent = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
 		}
@@ -233,7 +233,7 @@ namespace LambdaEngine
 
 		//Extra Flags
 		{
-			if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 			{
 				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 			}
@@ -313,7 +313,7 @@ namespace LambdaEngine
 
 		//Extra Flags
 		{
-			if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 			{
 				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 			}
@@ -497,7 +497,7 @@ namespace LambdaEngine
 			m_ImageBarriers[i].srcAccessMask					= ConvertMemoryAccessFlags(barrier.SrcMemoryAccessFlags);
 			m_ImageBarriers[i].dstAccessMask					= ConvertMemoryAccessFlags(barrier.DstMemoryAccessFlags);
 
-			if (barrier.TextureFlags == FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL)
+			if (barrier.TextureFlags == FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL)
 			{
 				m_ImageBarriers[i].subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 			}
@@ -607,10 +607,10 @@ namespace LambdaEngine
 			textureBarrier.MiplevelCount		= desc.Miplevels;
 			textureBarrier.ArrayCount			= desc.ArrayCount;
 			textureBarrier.SrcMemoryAccessFlags = 0;
-			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 			textureBarrier.StateBefore			= stateBefore;
 			textureBarrier.StateAfter			= ETextureState::TEXTURE_STATE_COPY_DST;
-			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
+			PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 		}
 
 		VkImage		imageVk				= pVkTexture->GetImage();
@@ -625,9 +625,9 @@ namespace LambdaEngine
 			textureBarrier.ArrayCount			= 1;
 			textureBarrier.StateBefore			= ETextureState::TEXTURE_STATE_COPY_DST;
 			textureBarrier.StateAfter			= ETextureState::TEXTURE_STATE_COPY_SRC;
-			textureBarrier.SrcMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
-			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
+			textureBarrier.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 
 			VkImageBlit blit = {};
 			blit.srcOffsets[0]					= { 0, 0, 0 };
@@ -649,7 +649,7 @@ namespace LambdaEngine
 		}
 
 		textureBarrier.Miplevel = miplevelCount - 1;
-		PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
+		PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 
 		if (stateAfter != ETextureState::TEXTURE_STATE_COPY_SRC)
 		{
@@ -658,7 +658,7 @@ namespace LambdaEngine
 			textureBarrier.ArrayCount		= desc.ArrayCount;
 			textureBarrier.StateBefore		= ETextureState::TEXTURE_STATE_COPY_SRC;
 			textureBarrier.StateAfter		= stateAfter;
-			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &textureBarrier, 1);
+			PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM, &textureBarrier, 1);
 		}
 	}
 
