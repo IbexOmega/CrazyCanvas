@@ -49,6 +49,7 @@ Client::Client() :
     desc.Handler                = this;
     desc.Protocol               = EProtocol::UDP;
 	desc.PingTimeout			= Timestamp::Seconds(3);
+	desc.UsePingSystem			= false;
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
