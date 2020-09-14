@@ -13,6 +13,7 @@ namespace LambdaEngine
 		m_pServer(desc.Server),
 		m_PingInterval(desc.PingInterval),
 		m_PingTimeout(desc.PingTimeout),
+		m_UsePingSystem(desc.UsePingSystem),
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
 		m_DisconnectedByRemote(false),
@@ -193,20 +194,31 @@ namespace LambdaEngine
 	{
 		GetPacketManager()->Tick(delta);
 
-		if (m_State == STATE_CONNECTED)
+		if (m_UsePingSystem)
 		{
-			Timestamp timeSinceLastPacketSent = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastSent();
-			if (timeSinceLastPacketSent >= m_PingInterval)
-			{
-				SendReliable(GetFreePacket(NetworkSegment::TYPE_PING));
-			}
+			UpdatePingSystem();
+		}	
+	}
 
+	void ClientRemoteBase::UpdatePingSystem()
+	{
+		if (m_State == STATE_CONNECTING || m_State == STATE_CONNECTED)
+		{
 			Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastReceived();
 			if (timeSinceLastPacketReceived >= m_PingTimeout)
 			{
 				Disconnect("Ping Timed Out");
 			}
-		}	
+
+			if (m_State == STATE_CONNECTED)
+			{
+				Timestamp timeSinceLastPacketSent = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastSent();
+				if (timeSinceLastPacketSent >= m_PingInterval)
+				{
+					SendReliable(GetFreePacket(NetworkSegment::TYPE_PING));
+				}
+			}
+		}
 	}
 
 	bool ClientRemoteBase::HandleReceivedPacket(NetworkSegment* pPacket)

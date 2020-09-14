@@ -17,7 +17,7 @@ namespace LambdaEngine
 {
 	void NetworkDebugger::RenderStatisticsWithImGUI(IClient* pClient)
 	{
-		ImGuiRenderer::Get().DrawUI([&]()
+		ImGuiRenderer::Get().DrawUI([pClient]()
 		{
 			PacketManagerBase* pManager = pClient->GetPacketManager();
 			SegmentPool* pSegmentPool = pManager->GetSegmentPool();

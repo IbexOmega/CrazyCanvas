@@ -55,6 +55,7 @@ namespace LambdaEngine
 	private:
 		void ReleaseByServer();
 		void Tick(Timestamp delta);
+		void UpdatePingSystem();
 		bool HandleReceivedPacket(NetworkSegment* pPacket);
 		void SendDisconnect();
 		void SendServerFull();
@@ -75,5 +76,6 @@ namespace LambdaEngine
 		Timestamp m_PingTimeout;
 		std::atomic_bool m_TerminationRequested;
 		std::atomic_bool m_TerminationApproved;
+		bool m_UsePingSystem;
 	};
 }

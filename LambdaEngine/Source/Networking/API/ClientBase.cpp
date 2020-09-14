@@ -17,6 +17,7 @@ namespace LambdaEngine
 		m_pSocket(nullptr),
 		m_pHandler(desc.Handler),
 		m_PingTimeout(desc.PingTimeout),
+		m_UsePingSystem(desc.UsePingSystem),
 		m_State(STATE_DISCONNECTED),
 		m_SendDisconnectPacket(false)
 	{
@@ -126,6 +127,16 @@ namespace LambdaEngine
 			GetPacketManager()->Tick(delta);
 		}
 
+		if (m_UsePingSystem)
+		{
+			UpdatePingSystem();
+		}
+
+		Flush();
+	}
+
+	void ClientBase::UpdatePingSystem()
+	{
 		if (m_State == STATE_CONNECTED)
 		{
 			Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastReceived();
@@ -135,8 +146,6 @@ namespace LambdaEngine
 				Disconnect("Ping Timed Out");
 			}
 		}
-
-		Flush();
 	}
 
 	void ClientBase::TransmitPackets()

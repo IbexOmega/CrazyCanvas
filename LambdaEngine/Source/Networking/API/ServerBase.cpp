@@ -101,6 +101,11 @@ namespace LambdaEngine
 		return m_Description;
 	}
 
+	const ClientMap& ServerBase::GetClients() const
+	{
+		return m_Clients;
+	}
+
 	void ServerBase::OnClientAskForTermination(ClientRemoteBase* pClient)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockClientVectors);

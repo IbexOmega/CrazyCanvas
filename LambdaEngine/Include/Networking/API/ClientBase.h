@@ -16,6 +16,7 @@ namespace LambdaEngine
 		IClientHandler* Handler = nullptr;
 		EProtocol Protocol		= EProtocol::UDP;
 		Timestamp PingTimeout	= Timestamp::Seconds(2);
+		bool UsePingSystem		= true;
 	};
 
 	class LAMBDA_API ClientBase :
@@ -60,6 +61,7 @@ namespace LambdaEngine
 		void SendDisconnect();
 		void HandleReceivedPacket(NetworkSegment* pPacket);
 		void Tick(Timestamp delta);
+		void UpdatePingSystem();
 
 	protected:
 		std::atomic_bool m_SendDisconnectPacket;
@@ -70,6 +72,7 @@ namespace LambdaEngine
 		EClientState m_State;
 		SpinLock m_Lock;
 		Timestamp m_PingTimeout;
+		bool m_UsePingSystem;
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);

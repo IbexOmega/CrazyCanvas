@@ -12,7 +12,6 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(IServerHandler);
 
-		virtual void OnClientConnected(IClient* pClient) = 0;
 		virtual IClientRemoteHandler* CreateClientHandler() = 0;
 	};
 }

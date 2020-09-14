@@ -19,6 +19,8 @@ namespace LambdaEngine
     class IServerHandler;
     class IClientRemoteHandler;
 
+    typedef std::unordered_map<IPEndPoint, ClientRemoteBase*, IPEndPointHasher> ClientMap;
+
     struct ServerDesc : public PacketManagerDesc
     {
         IServerHandler* Handler = nullptr;
@@ -26,6 +28,7 @@ namespace LambdaEngine
         EProtocol Protocol      = EProtocol::UDP;
         Timestamp PingInterval  = Timestamp::Seconds(1);
         Timestamp PingTimeout   = Timestamp::Seconds(2);
+        bool UsePingSystem      = true;
     };
 
     class LAMBDA_API ServerBase : public NetWorker
@@ -46,6 +49,7 @@ namespace LambdaEngine
         bool IsAcceptingConnections();
         uint8 GetClientCount();
         const ServerDesc& GetDescription() const;
+        const ClientMap& GetClients() const;
 
     protected:
         ServerBase(const ServerDesc& desc);
@@ -80,7 +84,7 @@ namespace LambdaEngine
         SpinLock m_LockClientVectors;
         ServerDesc m_Description;
         std::atomic_bool m_Accepting;
-        std::unordered_map<IPEndPoint, ClientRemoteBase*, IPEndPointHasher> m_Clients;
+        ClientMap m_Clients;
         TArray<ClientRemoteBase*> m_ClientsToAdd;
         TArray<ClientRemoteBase*> m_ClientsToRemove;
 

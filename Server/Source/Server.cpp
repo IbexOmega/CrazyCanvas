@@ -10,16 +10,19 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/Window.h"
+#include "Application/API/Events/EventQueue.h"
 
 #include "Threading/API/Thread.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
+#include "Networking/API/NetworkDebugger.h"
+#include "Networking/API/ClientRemoteBase.h"
 
 #include "ClientHandler.h"
 
 #include "Math/Random.h"
 
-#include "Application/API/Events/EventQueue.h"
+#include "Rendering/Renderer.h"
 
 Server::Server()
 {
@@ -34,9 +37,10 @@ Server::Server()
 	desc.MaxRetries		= 10;
 	desc.MaxClients		= 10;
 	desc.PoolSize		= 512;
-	desc.Protocol		= EProtocol::TCP;
+	desc.Protocol		= EProtocol::UDP;
 	desc.PingInterval	= Timestamp::Seconds(1);
 	desc.PingTimeout	= Timestamp::Seconds(3);
+	desc.UsePingSystem	= false;
 
 	m_pServer = NetworkUtils::CreateServer(desc);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
@@ -50,11 +54,6 @@ Server::~Server()
 
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
 	m_pServer->Release();
-}
-
-void Server::OnClientConnected(LambdaEngine::IClient* pClient)
-{
-	UNREFERENCED_VARIABLE(pClient);
 }
 
 LambdaEngine::IClientRemoteHandler* Server::CreateClientHandler()
@@ -86,6 +85,13 @@ void Server::UpdateTitle()
 void Server::Tick(LambdaEngine::Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
+
+	for (auto& pair : m_pServer->GetClients())
+	{
+		LambdaEngine::NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
+	}
+
+	LambdaEngine::Renderer::Render();
 }
 
 void Server::FixedTick(LambdaEngine::Timestamp delta)
