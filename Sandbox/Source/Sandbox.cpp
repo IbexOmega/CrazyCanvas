@@ -395,7 +395,7 @@ Sandbox::Sandbox()
 		});
 
 	ConsoleCommand showTextureCMD;
-	showTextureCMD.Init("show_texture", true);
+	showTextureCMD.Init("debug_texture", true);
 	showTextureCMD.AddArg(Arg::EType::BOOL);
 	showTextureCMD.AddFlag("t", Arg::EType::STRING);
 	showTextureCMD.AddFlag("ps", Arg::EType::STRING);
@@ -404,8 +404,8 @@ Sandbox::Sandbox()
 		{
 			m_ShowTextureDebuggingWindow = input.Arguments.GetFront().Value.B;
 
-			auto textureNameIt	= input.Flags.find("t");
-			auto shaderNameIt	= input.Flags.find("ps");
+			auto textureNameIt				= input.Flags.find("t");
+			auto shaderNameIt				= input.Flags.find("ps");
 			m_TextureDebuggingName			= textureNameIt != input.Flags.end() ? textureNameIt->second.Arg.Value.Str : "";
 			m_TextureDebuggingShaderGUID	= shaderNameIt != input.Flags.end() ? ResourceManager::GetShaderGUID(shaderNameIt->second.Arg.Value.Str) : GUID_NONE;
 		});
@@ -639,37 +639,46 @@ bool Sandbox::LoadRendererResources()
 		float pointLightNearPlane	= 1.0f;
 		float pointLightFarPlane	= 25.0f;
 
-		glm::vec3 pointLightPos(0.0f, 2.0f, 0.0f);
-
 		glm::mat4 pointLightProj = glm::perspective(glm::radians(90.0f), 1.0f, pointLightNearPlane, pointLightFarPlane);
 
-		TArray<glm::mat4> pointLightsProjView =
-		{
-			pointLightProj * glm::lookAt(pointLightPos, pointLightPos + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-			pointLightProj * glm::lookAt(pointLightPos, pointLightPos + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-			pointLightProj * glm::lookAt(pointLightPos, pointLightPos + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-			pointLightProj * glm::lookAt(pointLightPos, pointLightPos + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-			pointLightProj * glm::lookAt(pointLightPos, pointLightPos + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-			pointLightProj * glm::lookAt(pointLightPos, pointLightPos + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
-		};
+		glm::vec3 pointLightPosition0 = glm::vec3(1.0f, 2.0f, 0.0f);
+		glm::vec3 pointLightPosition1 = glm::vec3(-1.0f, 2.0f, 0.0f);
+
+		PointLightBuffer pointLightsBuffer = {};
+		pointLightsBuffer.Positions[0] = glm::vec4(pointLightPosition0, 1.0f);
+		pointLightsBuffer.Positions[1] = glm::vec4(pointLightPosition1, 1.0f);
+
+		pointLightsBuffer.Transforms[0]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer.Transforms[1]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer.Transforms[2]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f));
+		pointLightsBuffer.Transforms[3]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f));
+		pointLightsBuffer.Transforms[4]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer.Transforms[5]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		
+		pointLightsBuffer.Transforms[6]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer.Transforms[7]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer.Transforms[8]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f));
+		pointLightsBuffer.Transforms[9]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f));
+		pointLightsBuffer.Transforms[10]	= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer.Transforms[11]	= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
 
 		BufferDesc bufferDesc = {};
 		bufferDesc.DebugName		= "POINT_LIGHTS_BUFFER";
 		bufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		bufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
-		bufferDesc.SizeInBytes		= pointLightsProjView.GetSize() * sizeof(glm::mat4);
+		bufferDesc.SizeInBytes		= sizeof(PointLightBuffer);
 
 		m_pPointLightsBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, nullptr);
 
 		void* pMapped = m_pPointLightsBuffer->Map();
-		memcpy(pMapped, pointLightsProjView.GetData(), pointLightsProjView.GetSize() * sizeof(glm::mat4));
+		memcpy(pMapped, &pointLightsBuffer, sizeof(PointLightBuffer));
 		m_pPointLightsBuffer->Unmap();
 
-		ResourceUpdateDesc pointLightsBuffer = {};
-		pointLightsBuffer.ResourceName						= "POINT_LIGHTS_BUFFER";
-		pointLightsBuffer.ExternalBufferUpdate.ppBuffer		= &m_pPointLightsBuffer;
+		ResourceUpdateDesc pointLightsBufferUpdate = {};
+		pointLightsBufferUpdate.ResourceName						= "POINT_LIGHTS_BUFFER";
+		pointLightsBufferUpdate.ExternalBufferUpdate.ppBuffer		= &m_pPointLightsBuffer;
 
-		Renderer::GetRenderGraph()->UpdateResource(&pointLightsBuffer);
+		Renderer::GetRenderGraph()->UpdateResource(&pointLightsBufferUpdate);
 
 		float pointLightPushConstantData[2];
 		pointLightPushConstantData[0] = pointLightNearPlane;

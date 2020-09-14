@@ -31,6 +31,14 @@ namespace LambdaEngine
 
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::IRenderGraphCreateHandler
 {
+	static constexpr const uint32 NUM_POINT_LIGHTS = 2;
+
+	struct PointLightBuffer //Testing
+	{
+		glm::vec4 Positions[NUM_POINT_LIGHTS];
+		glm::mat4 Transforms[NUM_POINT_LIGHTS * 6];
+	};
+
 	struct InstanceIndexAndTransform
 	{
 		uint32		InstanceIndex;

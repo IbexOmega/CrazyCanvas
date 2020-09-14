@@ -71,7 +71,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(pDesc);
 
-		uint64 backBufferCount = pDesc->BackBufferCount;
+		uint32 backBufferCount = pDesc->BackBufferCount;
 		m_BackBuffers.Resize(backBufferCount);
 
 		uint32 allocatorPageSize = 2 * (4 * pDesc->VertexBufferSize + 4 * pDesc->IndexBufferSize) + MEGA_BYTE(64);
@@ -296,6 +296,10 @@ namespace LambdaEngine
 		CommandList** ppPrimaryExecutionStage,
 		CommandList** ppSecondaryExecutionStage)
 	{
+		UNREFERENCED_VARIABLE(pComputeCommandAllocator);
+		UNREFERENCED_VARIABLE(pComputeCommandList);
+		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
+
 		// Update imgui for this frame
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		uint32 windowWidth	= window->GetWidth();

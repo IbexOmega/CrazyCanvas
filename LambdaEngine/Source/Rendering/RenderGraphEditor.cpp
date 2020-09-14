@@ -1156,9 +1156,7 @@ namespace LambdaEngine
 		{
 			for (auto entry = dir.Children.begin(); entry != dir.Children.end(); entry++)
 			{
-				std::iterator_traits<TArray<std::string>::Iterator>::difference_type v;
-
-				int32 index = std::distance(dir.Children.begin(), entry);
+				int32 index = int32(std::distance(dir.Children.begin(), entry));
 				auto* pPath = &(entry->RelativePath);
 
 				if (entry->isDirectory)

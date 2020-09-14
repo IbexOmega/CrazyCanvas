@@ -1546,7 +1546,7 @@ namespace LambdaEngine
 				return false;
 			}
 			pRenderStage->MaterialsRenderedPerPass = (m_MaxTexturesPerDescriptorSet - totalNumberOfNonMaterialTextures) / 5; //5 textures per material
-			pRenderStage->TextureSubDescriptorSetCount = (uint32)glm::ceil(glm::max<uint32>((float)totalNumberOfTextures / float(pRenderStage->MaterialsRenderedPerPass * 5), 1));
+			pRenderStage->TextureSubDescriptorSetCount = (uint32)glm::ceil(glm::max<float32>((float32)totalNumberOfTextures / float32(pRenderStage->MaterialsRenderedPerPass * 5.0f), 1.0f));
 
 			TArray<DescriptorBindingDesc> textureDescriptorSetDescriptions;
 			textureDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
