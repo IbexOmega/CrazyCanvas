@@ -1144,7 +1144,7 @@ namespace LambdaEngine
 	void RenderGraphEditor::RenderShaderView(float textWidth, float textHeight)
 	{
 		UNREFERENCED_VARIABLE(textHeight);
-		static int32 selectedResourceIndex = -1;
+		static int64 selectedResourceIndex = -1;
 
 		RenderShaderTreeView(m_FilesInShaderMap, textWidth, textHeight, selectedResourceIndex);
 
@@ -1171,15 +1171,13 @@ namespace LambdaEngine
 		//}
 	}
 
-	void RenderGraphEditor::RenderShaderTreeView(const LambdaDirectory& dir, float textWidth, float textHeight, int32& selectedIndex)
+	void RenderGraphEditor::RenderShaderTreeView(const LambdaDirectory& dir, float textWidth, float textHeight, int64& selectedIndex)
 	{
 		if (ImGui::TreeNode(dir.RelativePath.filename().string().c_str()))
 		{
 			for (auto entry = dir.Children.begin(); entry != dir.Children.end(); entry++)
 			{
-				std::iterator_traits<TArray<std::string>::Iterator>::difference_type v;
-
-				int32 index = std::distance(dir.Children.begin(), entry);
+				int64 index = std::distance(dir.Children.begin(), entry);
 				auto* pPath = &(entry->RelativePath);
 
 				if (entry->isDirectory)
