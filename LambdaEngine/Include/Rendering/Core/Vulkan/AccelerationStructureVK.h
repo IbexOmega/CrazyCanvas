@@ -19,7 +19,7 @@ namespace LambdaEngine
 		AccelerationStructureVK(const GraphicsDeviceVK* pDevice);
 		~AccelerationStructureVK();
 
-		bool Init(const AccelerationStructureDesc* pDesc, DeviceAllocator* pAllocator);
+		bool Init(const AccelerationStructureDesc* pDesc);
 
 		FORCEINLINE VkAccelerationStructureKHR GetAccelerationStructure() const
 		{
@@ -50,11 +50,10 @@ namespace LambdaEngine
 		VkMemoryRequirements GetMemoryRequirements(VkAccelerationStructureMemoryRequirementsTypeKHR type);
 
 	private:
-		TSharedRef<DeviceAllocatorVK>		m_Allocator								= nullptr;
 		VkAccelerationStructureKHR	m_AccelerationStructure					= VK_NULL_HANDLE;
 		VkDeviceMemory				m_AccelerationStructureMemory			= VK_NULL_HANDLE;
 		VkDeviceAddress				m_AccelerationStructureDeviceAddress	= 0;
-		TSharedRef<BufferVK>				m_ScratchBuffer							= nullptr;
+		TSharedRef<BufferVK>		m_ScratchBuffer							= nullptr;
 		AllocationVK				m_Allocation;
 	};
 }

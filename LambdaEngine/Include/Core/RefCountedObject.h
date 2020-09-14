@@ -32,7 +32,7 @@ namespace LambdaEngine
 		}
 		
 	private:
-		mutable uint64 m_StrongReferences = 0;
-		mutable SpinLock m_Lock;
+		mutable uint64 m_StrongReferences;
+		mutable SpinLock m_RefCountLock;
 	};
 }

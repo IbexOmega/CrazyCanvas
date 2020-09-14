@@ -37,7 +37,7 @@ namespace LambdaEngine
 		struct ShaderLoadDesc
 		{
 			String				Filepath	= "";
-			FShaderStageFlags	Stage		= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			FShaderStageFlags	Stage		= FShaderStageFlag::SHADER_STAGE_FLAG_NONE;
 			EShaderLang			Lang		= EShaderLang::SHADER_LANG_NONE;
 			const char*			pEntryPoint	= nullptr;
 		};

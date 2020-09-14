@@ -18,7 +18,6 @@
 #include "Rendering/Core/API/DescriptorHeap.h"
 #include "Rendering/Core/API/DescriptorSet.h"
 #include "Rendering/Core/API/AccelerationStructure.h"
-#include "Rendering/Core/API/DeviceAllocator.h"
 
 #include "Application/API/CommonApplication.h"
 
