@@ -41,8 +41,9 @@ namespace LambdaEngine
 	public:
 		DECL_UNIQUE_CLASS(DeviceMemoryPageVK);
 		
-		DeviceMemoryPageVK(const GraphicsDeviceVK* pDevice, const uint32 id, const uint32 memoryIndex)
+		DeviceMemoryPageVK(const GraphicsDeviceVK* pDevice, DeviceAllocatorVK* pOwner, const uint32 id, const uint32 memoryIndex)
 			: m_pDevice(pDevice)
+			, m_pOwningAllocator(pOwner)
 			, m_MemoryIndex(memoryIndex)
 			, m_ID(id)
 		{
@@ -190,7 +191,8 @@ namespace LambdaEngine
 			pAllocation->Memory = m_DeviceMemory;
 			pAllocation->Offset = paddedOffset;
 			pAllocation->pBlock = pBestFit;
-			
+			pAllocation->pAllocator = m_pOwningAllocator;
+
 			VALIDATE(ValidateNoOverlap());
 			return true;
 		}
@@ -352,14 +354,15 @@ namespace LambdaEngine
 		}
 		
 	private:
-		const GraphicsDeviceVK* const   m_pDevice;
-		const uint32                    m_MemoryIndex;
-		const uint32                    m_ID;
+		const GraphicsDeviceVK* const m_pDevice;
+		DeviceAllocatorVK* const m_pOwningAllocator;
+		const uint32 m_MemoryIndex;
+		const uint32 m_ID;
 		
-		DeviceMemoryBlockVK*    m_pHead         = nullptr;
-		byte*                   m_pHostMemory   = nullptr;
-		VkDeviceMemory          m_DeviceMemory  = VK_NULL_HANDLE;
-		uint32                  m_MappingCount  = 0;
+		DeviceMemoryBlockVK* m_pHead = nullptr;
+		byte* m_pHostMemory = nullptr;
+		VkDeviceMemory m_DeviceMemory = VK_NULL_HANDLE;
+		uint32 m_MappingCount  = 0;
 	};
 
 	/*
@@ -379,13 +382,11 @@ namespace LambdaEngine
 		}
 	}
 
-	bool DeviceAllocatorVK::Init(const DeviceAllocatorDesc* pDesc)
+	bool DeviceAllocatorVK::Init(const String& debugName, VkDeviceSize pageSize)
 	{
-		VALIDATE(pDesc != nullptr);
-		
-		m_Desc = *pDesc;
-		SetName(m_Desc.DebugName);
+		SetName(debugName);
 
+		m_PageSize = pageSize;
 		m_DeviceProperties = m_pDevice->GetPhysicalDeviceProperties();
 		
 		return true;
@@ -396,6 +397,13 @@ namespace LambdaEngine
 		VALIDATE(pAllocation != nullptr);
 		
 		std::scoped_lock<SpinLock> lock(m_Lock);
+		
+		// Check if this size every will be possible with this allocator
+		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
+		if (alignedSize >= m_PageSize)
+		{
+			return false;
+		}
 
 		if (!m_Pages.IsEmpty())
 		{
@@ -414,8 +422,8 @@ namespace LambdaEngine
 			}
 		}
 		
-		DeviceMemoryPageVK* pNewMemoryPage = DBG_NEW DeviceMemoryPageVK(m_pDevice, uint32(m_Pages.GetSize()), memoryIndex);
-		if (!pNewMemoryPage->Init(m_Desc.PageSizeInBytes))
+		DeviceMemoryPageVK* pNewMemoryPage = DBG_NEW DeviceMemoryPageVK(m_pDevice, this, uint32(m_Pages.GetSize()), memoryIndex);
+		if (!pNewMemoryPage->Init(m_PageSize))
 		{
 			SAFEDELETE(pNewMemoryPage);
 			return false;
@@ -475,7 +483,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(pMemoryPage != nullptr);
 
-		String name = m_Desc.DebugName + "[PageID=" + std::to_string(pMemoryPage->GetID()) + "]";
+		String name = m_DebugName + "[PageID=" + std::to_string(pMemoryPage->GetID()) + "]";
 		pMemoryPage->SetName(name);
 	}
 
@@ -485,7 +493,7 @@ namespace LambdaEngine
 		{
 			std::scoped_lock<SpinLock> lock(m_Lock);
 
-			m_Desc.DebugName = debugName;
+			m_DebugName = debugName;
 			for (DeviceMemoryPageVK* pMemoryPage : m_Pages)
 			{
 				SetPageName(pMemoryPage);

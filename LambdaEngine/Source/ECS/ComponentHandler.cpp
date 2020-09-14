@@ -4,14 +4,13 @@
 
 namespace LambdaEngine
 {
-    ComponentHandler::ComponentHandler(ECSCore* pECS, std::type_index tid_handler)
-        :m_pECS(pECS),
-        m_TID(tid_handler)
+    ComponentHandler::ComponentHandler(std::type_index tid_handler)
+        :m_TID(tid_handler)
     {}
 
     ComponentHandler::~ComponentHandler()
     {
-        m_pECS->GetEntityPublisher()->DeregisterComponentHandler(this);
+        ECSCore::GetInstance()->GetEntityPublisher()->DeregisterComponentHandler(this);
     }
 
     void ComponentHandler::RegisterHandler(const ComponentHandlerRegistration& handlerRegistration)
@@ -23,7 +22,7 @@ namespace LambdaEngine
             m_HandledTypes.PushBack(componentRegistration.TID);
         }
 
-        m_pECS->EnqueueComponentHandlerRegistration(handlerRegistration);
+        ECSCore::GetInstance()->EnqueueComponentHandlerRegistration(handlerRegistration);
     }
 
     const TArray<std::type_index>& ComponentHandler::GetHandledTypes() const
@@ -38,6 +37,6 @@ namespace LambdaEngine
 
     void ComponentHandler::RegisterComponent(Entity entity, std::type_index componentType)
     {
-        m_pECS->ComponentAdded(entity, componentType);
+        ECSCore::GetInstance()->ComponentAdded(entity, componentType);
     }
 }

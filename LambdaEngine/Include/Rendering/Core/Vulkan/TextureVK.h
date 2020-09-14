@@ -19,7 +19,7 @@ namespace LambdaEngine
 		TextureVK(const GraphicsDeviceVK* pDevice);
 		~TextureVK();
 
-		bool Init(const TextureDesc* pDesc, DeviceAllocator* pAllocator);
+		bool Init(const TextureDesc* pDesc);
 		void InitWithImage(VkImage image, const TextureDesc* pDesc);
 
 		FORCEINLINE VkImage GetImage() const
@@ -34,15 +34,13 @@ namespace LambdaEngine
 		virtual void SetName(const String& name) override final;
 
 		// Texture interface
-		FORCEINLINE virtual uint64 GetHandle() const override final
+		inline virtual uint64 GetHandle() const override final
 		{
 			return reinterpret_cast<uint64>(m_Image);
 		}
 
 	private:
-		TSharedRef<DeviceAllocatorVK>	m_Allocator	= nullptr;
-		VkImage					m_Image		= VK_NULL_HANDLE;
-		VkDeviceMemory			m_Memory	= VK_NULL_HANDLE;
-		AllocationVK			m_Allocation;
+		VkImage m_Image = VK_NULL_HANDLE;
+		AllocationVK m_Allocation;
 	};
 }

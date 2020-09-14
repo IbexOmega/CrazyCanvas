@@ -117,8 +117,6 @@ namespace LambdaEngine
 		}
 
 		m_DebugRenderers.Clear();
-
-		SAFERELEASE(m_pDeviceAllocator);
 	}
 
 	bool RenderGraph::Init(const RenderGraphDesc* pDesc)
@@ -126,12 +124,6 @@ namespace LambdaEngine
 		m_BackBufferCount				= pDesc->BackBufferCount;
 		m_MaxTexturesPerDescriptorSet	= pDesc->MaxTexturesPerDescriptorSet;
 		m_pDescriptorSetsToDestroy		= DBG_NEW TArray<DescriptorSet*>[m_BackBufferCount];
-
-		if (!CreateAllocator())
-		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Allocator", pDesc->Name.c_str());
-			return false;
-		}
 
 		if (!CreateFence())
 		{
@@ -703,7 +695,7 @@ namespace LambdaEngine
 			if (pGraphicsCopyCommandList->IsBegin())
 			{
 				pGraphicsCopyCommandList->End();
-				RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 				m_SignalValue++;
 			}
 
@@ -712,7 +704,7 @@ namespace LambdaEngine
 			if (pComputeCopyCommandList->IsBegin())
 			{
 				pComputeCopyCommandList->End();
-				RenderSystem::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				RenderSystem::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 				m_SignalValue++;
 			}
 		}
@@ -737,11 +729,11 @@ namespace LambdaEngine
 					{
 						if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 						{
-							RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+							RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 						}
 						else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 						{
-							RenderSystem::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+							RenderSystem::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 						}
 
 						m_SignalValue++;
@@ -758,11 +750,11 @@ namespace LambdaEngine
 			{
 				if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 				{
-					RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 				}
 				else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 				{
-					RenderSystem::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					RenderSystem::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 				}
 
 				m_SignalValue++;
@@ -938,16 +930,6 @@ namespace LambdaEngine
 		Profiler::GetGPUProfiler()->Release();
 	}
 
-	bool RenderGraph::CreateAllocator()
-	{
-		DeviceAllocatorDesc allocatorDesc = {};
-		allocatorDesc.DebugName			= "RenderGraph Resource Allocator";
-		allocatorDesc.PageSizeInBytes	= MEGA_BYTE(64);
-		m_pDeviceAllocator = RenderSystem::GetDevice()->CreateDeviceAllocator(&allocatorDesc);
-
-		return m_pDeviceAllocator != nullptr;
-	}
-
 	bool RenderGraph::CreateFence()
 	{
 		FenceDesc fenceDesc = {};
@@ -1009,7 +991,7 @@ namespace LambdaEngine
 				CommandListDesc graphicsCopyCommandListDesc		= {};
 				graphicsCopyCommandListDesc.DebugName			= "Render Graph Graphics Copy Command List";
 				graphicsCopyCommandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-				graphicsCopyCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+				graphicsCopyCommandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 				m_ppGraphicsCopyCommandLists[b] = m_pGraphicsDevice->CreateCommandList(m_ppGraphicsCopyCommandAllocators[b], &graphicsCopyCommandListDesc);
 
@@ -1031,7 +1013,7 @@ namespace LambdaEngine
 				CommandListDesc computeCopyCommandListDesc		= {};
 				computeCopyCommandListDesc.DebugName			= "Render Graph Compute Copy Command List";
 				computeCopyCommandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-				computeCopyCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+				computeCopyCommandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 				m_ppComputeCopyCommandLists[b] = m_pGraphicsDevice->CreateCommandList(m_ppComputeCopyCommandAllocators[b], &computeCopyCommandListDesc);
 
@@ -1562,9 +1544,9 @@ namespace LambdaEngine
 								pTextureBarrier->StateAfter					= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT ? pResourceStateDesc->AttachmentSynchronizations.NextBindingType : pResourceStateDesc->BindingType, pResource->Texture.Format);
 								pTextureBarrier->QueueBefore				= ConvertPipelineStateTypeToQueue(pRenderStageDesc->Type);
 								pTextureBarrier->QueueAfter					= pTextureBarrier->QueueBefore;
-								pTextureBarrier->SrcMemoryAccessFlags		= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+								pTextureBarrier->SrcMemoryAccessFlags		= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
 								pTextureBarrier->DstMemoryAccessFlags		= CalculateResourceAccessFlags(pResourceStateDesc->BindingType);
-								pTextureBarrier->TextureFlags				= pResource->Texture.Format == EFormat::FORMAT_D24_UNORM_S8_UINT ? FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL : 0;
+								pTextureBarrier->TextureFlags				= pResource->Texture.Format == EFormat::FORMAT_D24_UNORM_S8_UINT ? FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL : 0;
 							}
 						}
 					}
@@ -1592,7 +1574,7 @@ namespace LambdaEngine
 								pBufferBarrier->pBuffer					= nullptr;
 								pBufferBarrier->QueueBefore				= ConvertPipelineStateTypeToQueue(pRenderStageDesc->Type);
 								pBufferBarrier->QueueAfter				= pBufferBarrier->QueueBefore;
-								pBufferBarrier->SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+								pBufferBarrier->SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
 								pBufferBarrier->DstMemoryAccessFlags	= CalculateResourceAccessFlags(pResourceStateDesc->BindingType);
 							}
 						}
@@ -1713,8 +1695,8 @@ namespace LambdaEngine
 						{
 							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
 								pResourceStateDesc->ResourceName.c_str(),
-								RenderGraphDimensionTypeToString(xDimType).c_str(),
-								RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeX).c_str());
+								RenderGraphDimensionTypeToString(xDimType),
+								RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeX));
 							success = false;
 						}
 
@@ -1722,8 +1704,8 @@ namespace LambdaEngine
 						{
 							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
 								pResourceStateDesc->ResourceName.c_str(),
-								RenderGraphDimensionTypeToString(yDimType).c_str(),
-								RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeY).c_str());
+								RenderGraphDimensionTypeToString(yDimType),
+								RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeY));
 							success = false;
 						}
 
@@ -1982,13 +1964,13 @@ namespace LambdaEngine
 					pipelineDesc.DebugName							= pRenderStageDesc->Name;
 					pipelineDesc.PipelineLayout						= MakeSharedRef(pRenderStage->pPipelineLayout);
 					pipelineDesc.DepthStencilState.DepthTestEnable	= pRenderStageDesc->Graphics.DepthTestEnabled;
-					pipelineDesc.TaskShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.TaskShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.TaskShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_TASK_SHADER,		EShaderLang::SHADER_LANG_GLSL);
-					pipelineDesc.MeshShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.MeshShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.MeshShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_MESH_SHADER,		EShaderLang::SHADER_LANG_GLSL);
-					pipelineDesc.VertexShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.VertexShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.VertexShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_VERTEX_SHADER,		EShaderLang::SHADER_LANG_GLSL);
-					pipelineDesc.GeometryShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.GeometryShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.GeometryShaderName,	FShaderStageFlags::SHADER_STAGE_FLAG_GEOMETRY_SHADER,	EShaderLang::SHADER_LANG_GLSL);
-					pipelineDesc.HullShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.HullShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.HullShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_HULL_SHADER,		EShaderLang::SHADER_LANG_GLSL);
-					pipelineDesc.DomainShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.DomainShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.DomainShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_DOMAIN_SHADER,		EShaderLang::SHADER_LANG_GLSL);
-					pipelineDesc.PixelShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.PixelShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.PixelShaderName,		FShaderStageFlags::SHADER_STAGE_FLAG_PIXEL_SHADER,		EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.TaskShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.TaskShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.TaskShaderName,		FShaderStageFlag::SHADER_STAGE_FLAG_TASK_SHADER,		EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.MeshShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.MeshShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.MeshShaderName,		FShaderStageFlag::SHADER_STAGE_FLAG_MESH_SHADER,		EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.VertexShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.VertexShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.VertexShaderName,		FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER,		EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.GeometryShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.GeometryShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.GeometryShaderName,	FShaderStageFlag::SHADER_STAGE_FLAG_GEOMETRY_SHADER,	EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.HullShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.HullShaderName.empty()		? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.HullShaderName,		FShaderStageFlag::SHADER_STAGE_FLAG_HULL_SHADER,		EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.DomainShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.DomainShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.DomainShaderName,		FShaderStageFlag::SHADER_STAGE_FLAG_DOMAIN_SHADER,		EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.PixelShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.PixelShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.PixelShaderName,		FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER,		EShaderLang::SHADER_LANG_GLSL);
 					pipelineDesc.BlendState.BlendAttachmentStates	= renderPassBlendAttachmentStates;
 					pipelineDesc.RasterizerState.CullMode			= pRenderStageDesc->Graphics.CullMode;
 					pipelineDesc.RasterizerState.PolygonMode		= pRenderStageDesc->Graphics.PolygonMode;
@@ -2004,9 +1986,9 @@ namespace LambdaEngine
 						renderPassSubpassDependencyDesc.SrcSubpass		= EXTERNAL_SUBPASS;
 						renderPassSubpassDependencyDesc.DstSubpass		= 0;
 						renderPassSubpassDependencyDesc.SrcAccessMask	= 0;
-						renderPassSubpassDependencyDesc.DstAccessMask	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-						renderPassSubpassDependencyDesc.SrcStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
-						renderPassSubpassDependencyDesc.DstStageMask	= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+						renderPassSubpassDependencyDesc.DstAccessMask	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+						renderPassSubpassDependencyDesc.SrcStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+						renderPassSubpassDependencyDesc.DstStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
 						if (renderPassDepthStencilDescription.Format != EFormat::FORMAT_NONE)
 							renderPassAttachmentDescriptions.PushBack(renderPassDepthStencilDescription);
@@ -2061,7 +2043,7 @@ namespace LambdaEngine
 					ManagedComputePipelineStateDesc pipelineDesc = { };
 					pipelineDesc.DebugName		= pRenderStageDesc->Name;
 					pipelineDesc.PipelineLayout	= MakeSharedRef(pRenderStage->pPipelineLayout);
-					pipelineDesc.Shader.ShaderGUID = pRenderStageDesc->Compute.ShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Compute.ShaderName, FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
+					pipelineDesc.Shader.ShaderGUID = pRenderStageDesc->Compute.ShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Compute.ShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
 				}
@@ -2070,18 +2052,18 @@ namespace LambdaEngine
 					ManagedRayTracingPipelineStateDesc pipelineDesc = {};
 					pipelineDesc.PipelineLayout			= MakeSharedRef(pRenderStage->pPipelineLayout);
 					pipelineDesc.MaxRecursionDepth		= 1;
-					pipelineDesc.RaygenShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName, FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL );
+					pipelineDesc.RaygenShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL );
 
 					pipelineDesc.ClosestHitShaders.Resize(pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount);
 					for (uint32 ch = 0; ch < pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount; ch++)
 					{
-						pipelineDesc.ClosestHitShaders[ch].ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch], FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, EShaderLang::SHADER_LANG_GLSL );
+						pipelineDesc.ClosestHitShaders[ch].ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch], FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, EShaderLang::SHADER_LANG_GLSL );
 					}
 
 					pipelineDesc.MissShaders.Resize(pRenderStageDesc->RayTracing.Shaders.MissShaderCount);
 					for (uint32 m = 0; m < pRenderStageDesc->RayTracing.Shaders.MissShaderCount; m++)
 					{
-						pipelineDesc.MissShaders[m].ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m], FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER, EShaderLang::SHADER_LANG_GLSL );
+						pipelineDesc.MissShaders[m].ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m], FShaderStageFlag::SHADER_STAGE_FLAG_MISS_SHADER, EShaderLang::SHADER_LANG_GLSL );
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateRayTracingPipelineState(&pipelineDesc);
@@ -2239,7 +2221,7 @@ namespace LambdaEngine
 					textureBarrier.DstMemoryAccessFlags = dstMemoryAccessFlags;
 					textureBarrier.StateBefore			= CalculateResourceTextureState(pResource->Type, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
 					textureBarrier.StateAfter			= CalculateResourceTextureState(pResource->Type, pResourceSynchronizationDesc->NextBindingType, pResource->Texture.Format);
-					textureBarrier.TextureFlags			= pResource->Texture.Format == EFormat::FORMAT_D24_UNORM_S8_UINT ? FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL : 0;
+					textureBarrier.TextureFlags			= pResource->Texture.Format == EFormat::FORMAT_D24_UNORM_S8_UINT ? FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL : 0;
 
 					uint32 targetSynchronizationIndex = 0;
 
@@ -2392,7 +2374,7 @@ namespace LambdaEngine
 				CommandListDesc graphicsCommandListDesc = {};
 				graphicsCommandListDesc.DebugName				= "Render Graph Graphics Command List";
 				graphicsCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-				graphicsCommandListDesc.Flags					= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+				graphicsCommandListDesc.Flags					= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 				pPipelineStage->ppGraphicsCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppGraphicsCommandAllocators[f], &graphicsCommandListDesc);
 
@@ -2402,7 +2384,7 @@ namespace LambdaEngine
 				CommandListDesc computeCommandListDesc = {};
 				computeCommandListDesc.DebugName				= "Render Graph Compute Command List";
 				computeCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-				computeCommandListDesc.Flags					= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+				computeCommandListDesc.Flags					= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 				pPipelineStage->ppComputeCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppComputeCommandAllocators[f], &computeCommandListDesc);
 
@@ -2419,13 +2401,13 @@ namespace LambdaEngine
 				Profiler::GetGPUProfiler()->StartGraphicsPipelineStat(pPipelineStage->ppGraphicsCommandLists[f]);
 				Profiler::GetGPUProfiler()->EndGraphicsPipelineStat(pPipelineStage->ppGraphicsCommandLists[f]);
 				pPipelineStage->ppGraphicsCommandLists[f]->End();
-				RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pPipelineStage->ppGraphicsCommandLists[f], 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+				RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pPipelineStage->ppGraphicsCommandLists[f], 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
 				RenderSystem::GetGraphicsQueue()->Flush();
 
 				pPipelineStage->ppComputeCommandLists[f]->Begin(nullptr);
 				Profiler::GetGPUProfiler()->ResetTimestamp(pPipelineStage->ppComputeCommandLists[f]);
 				pPipelineStage->ppComputeCommandLists[f]->End();
-				RenderSystem::GetComputeQueue()->ExecuteCommandLists(&pPipelineStage->ppComputeCommandLists[f], 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+				RenderSystem::GetComputeQueue()->ExecuteCommandLists(&pPipelineStage->ppComputeCommandLists[f], 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
 				RenderSystem::GetComputeQueue()->Flush();
 			}
 
@@ -2532,7 +2514,7 @@ namespace LambdaEngine
 				SAFERELEASE(*ppTexture);
 				SAFERELEASE(*ppTextureView);
 
-				pTexture = m_pGraphicsDevice->CreateTexture(pTextureDesc, m_pDeviceAllocator);
+				pTexture = m_pGraphicsDevice->CreateTexture(pTextureDesc);
 
 				textureViewDesc.pTexture = pTexture;
 				pTextureView = m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
@@ -2545,7 +2527,7 @@ namespace LambdaEngine
 
 					TextureViewDesc textureCubeFaceViewDesc = {};
 					textureCubeFaceViewDesc.pTexture		= pTexture;
-					textureCubeFaceViewDesc.Flags			= textureViewDesc.Flags | FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+					textureCubeFaceViewDesc.Flags			= textureViewDesc.Flags | FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET;
 					textureCubeFaceViewDesc.Format			= pResource->Texture.Format;
 					textureCubeFaceViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 					textureCubeFaceViewDesc.Miplevel		= textureViewDesc.Miplevel;
@@ -2687,7 +2669,7 @@ namespace LambdaEngine
 			if (pResource->OwnershipType == EResourceOwnershipType::INTERNAL)
 			{
 				SAFERELEASE(*ppBuffer);
-				pBuffer = m_pGraphicsDevice->CreateBuffer(pDesc->InternalBufferUpdate.pBufferDesc, m_pDeviceAllocator);
+				pBuffer = m_pGraphicsDevice->CreateBuffer(pDesc->InternalBufferUpdate.pBufferDesc);
 			}
 			else if (pResource->OwnershipType == EResourceOwnershipType::EXTERNAL)
 			{
@@ -2930,7 +2912,7 @@ namespace LambdaEngine
 		Profiler::GetGPUProfiler()->StartGraphicsPipelineStat(pGraphicsCommandList);
 		Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
 
-		uint32 flags = FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_INLINE;
+		uint32 flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
 
 		Viewport viewport = { };
 		viewport.MinDepth	= 0.0f;

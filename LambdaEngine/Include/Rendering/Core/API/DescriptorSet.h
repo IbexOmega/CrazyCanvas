@@ -8,7 +8,7 @@ namespace LambdaEngine
 	class Sampler;
 	class TextureView;
 	class DescriptorHeap;
-    class AccelerationStructure;
+	class AccelerationStructure;
 
 	class DescriptorSet : public DeviceChild
 	{

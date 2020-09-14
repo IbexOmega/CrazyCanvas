@@ -36,19 +36,12 @@ namespace LambdaEngine
 		m_HitBufferRegion		= {};
 		m_MissBufferRegion		= {};
 		m_CallableBufferRegion	= {};
-
-		SAFERELEASE(m_pAllocator);
 	}
 
 	bool RayTracingPipelineStateVK::Init(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc)
 	{
 		VALIDATE(pDesc != nullptr);
 		
-		DeviceAllocatorDesc allocatorDesc = {};
-		allocatorDesc.DebugName			= "Ray Tracing Pipeline Allocator";
-		allocatorDesc.PageSizeInBytes	= MEGA_BYTE(64);
-		m_pAllocator = RenderSystem::GetDevice()->CreateDeviceAllocator(&allocatorDesc);
-
 		if (pDesc->RaygenShader.pShader == nullptr)
 		{
 			LOG_ERROR("[RayTracingPipelineStateVK]: pRaygenShader cannot be nullptr!");
@@ -177,7 +170,7 @@ namespace LambdaEngine
 		shaderHandleStorageDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		shaderHandleStorageDesc.SizeInBytes		= shaderHandleStorageSize;
 
-		m_ShaderHandleStorageBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&shaderHandleStorageDesc, m_pAllocator));
+		m_ShaderHandleStorageBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&shaderHandleStorageDesc));
 
 		void* pMapped = m_ShaderHandleStorageBuffer->Map();
 		result = m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, static_cast<uint32>(shaderGroups.GetSize()), shaderHandleStorageSize, pMapped);
@@ -201,7 +194,7 @@ namespace LambdaEngine
 		CommandListDesc commandListDesc = {};
 		commandListDesc.DebugName		= "Ray Tracing Pipeline Command List";
 		commandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-		commandListDesc.Flags			= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+		commandListDesc.Flags			= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 		CommandList* pCommandList = m_pDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
 
@@ -211,7 +204,7 @@ namespace LambdaEngine
 		sbtDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		sbtDesc.SizeInBytes	= sbtSize;
 
-		m_SBT = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&sbtDesc, m_pAllocator));
+		m_SBT = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&sbtDesc));
 		pCommandAllocator->Reset();
 
 		pCommandList->Begin(nullptr);
@@ -220,7 +213,7 @@ namespace LambdaEngine
 		pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), missUnalignedOffset,	m_SBT.Get(), missAlignedOffset,		missSize);
 		pCommandList->End();
 
-		pCommandQueue->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN , nullptr, 0, nullptr, 0);
+		pCommandQueue->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN , nullptr, 0, nullptr, 0);
 
 		VkBuffer sbtBuffer = m_SBT->GetBuffer();
 		m_RaygenBufferRegion.buffer		= sbtBuffer;

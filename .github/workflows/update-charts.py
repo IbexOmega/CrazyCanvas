@@ -19,7 +19,7 @@ def pull_pages_repo(repo_URL):
     else:
         print(f'Pages repo already cloned, pulling latest changes')
         # -C Changes git's working directory
-        subprocess.run(f'git -C {REPO_DIR} pull {repo_URL} {REPO_DIR}', shell=True, check=True)
+        subprocess.run(f'git -C {REPO_DIR} pull {repo_URL}', shell=True, check=True)
 
 # Gets information regarding a commit in the game repository
 def get_commit_info(commit_ID):
