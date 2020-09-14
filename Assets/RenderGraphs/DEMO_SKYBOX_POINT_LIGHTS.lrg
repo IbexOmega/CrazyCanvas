@@ -215,12 +215,12 @@
             "name": "POINT_LIGHT_SHADOW_MAPS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
-            "sub_resource_count": 1,
+            "sub_resource_count": 2,
             "editable": true,
             "external": false,
             "type_params": {
                 "texture_format": "FORMAT_D24_UNORM_S8_UINT",
-                "is_of_array_type": false,
+                "is_of_array_type": true,
                 "texture_type": "TEXTURE_CUBE",
                 "x_dim_type": "CONSTANT",
                 "y_dim_type": "CONSTANT",
@@ -468,6 +468,12 @@
                     "name": "SCENE_ROUGHNESS_MAPS",
                     "removable": true,
                     "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "POINT_LIGHTS_BUFFER",
+                    "removable": true,
+                    "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {

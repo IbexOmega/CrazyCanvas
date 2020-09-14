@@ -160,7 +160,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions))
+		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
@@ -228,7 +228,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions))
+		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
@@ -1134,10 +1134,12 @@ namespace LambdaEngine
 			ETextureViewType textureViewType	= ETextureViewType::TEXTURE_VIEW_TYPE_NONE;
 			bool isCubeTexture					= pResourceDesc->TextureParams.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
 
+			//Create Resource Entries, this is independent of whether the resource is internal/external
 			if (pResourceDesc->Type == ERenderGraphResourceType::TEXTURE)
 			{
 				newResource.Type					= ERenderGraphResourceType::TEXTURE;
 				newResource.Texture.TextureType		= pResourceDesc->TextureParams.TextureType;
+				newResource.Texture.IsOfArrayType	= pResourceDesc->TextureParams.IsOfArrayType;
 
 				if (!pResourceDesc->TextureParams.IsOfArrayType)
 				{
@@ -1201,6 +1203,7 @@ namespace LambdaEngine
 				newResource.Type = ERenderGraphResourceType::ACCELERATION_STRUCTURE;
 			}
 
+			//Create Internal Update Descriptions if the resource is internal, otherwise just set that it's external
 			if (!pResourceDesc->External)
 			{
 				//Internal
@@ -1208,7 +1211,6 @@ namespace LambdaEngine
 				{
 					
 					newResource.OwnershipType				= newResource.IsBackBuffer ? EResourceOwnershipType::EXTERNAL : EResourceOwnershipType::INTERNAL;
-					newResource.Texture.IsOfArrayType		= pResourceDesc->TextureParams.IsOfArrayType;
 					newResource.Texture.Format				= pResourceDesc->TextureParams.TextureFormat;
 					newResource.Texture.TextureType			= pResourceDesc->TextureParams.TextureType;
 
@@ -1435,7 +1437,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages)
+	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants)
 	{
 		m_RenderStageCount = (uint32)renderStages.GetSize();
 		m_RenderStageMap.reserve(m_RenderStageCount);
@@ -1707,12 +1709,6 @@ namespace LambdaEngine
 				//RenderPass Attachments
 				else if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT)
 				{
-					if (pResource->SubResourceCount > 1 && pResource->SubResourceCount != m_BackBufferCount)
-					{
-						LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but does not have a subresource count equal to 1 or Back buffer Count: %u", pResourceStateDesc->ResourceName.c_str(), pResource->SubResourceCount);
-						return false;
-					}
-
 					if (pResource->OwnershipType != EResourceOwnershipType::INTERNAL && !pResource->IsBackBuffer)
 					{
 						//This may be okay, but we then need to do the check below, where we check that all attachment are of the same size, somewhere else because we don't know the size att RenderGraph Init Time.
@@ -2064,6 +2060,18 @@ namespace LambdaEngine
 					}
 				}
 
+				//Shader Constants
+				const RenderGraphShaderConstants* pShaderConstants = nullptr;
+				{
+					auto shaderConstantsIt = shaderConstants.find(pRenderStage->Name);
+
+					if (shaderConstantsIt != shaderConstants.end())
+					{
+						pShaderConstants = &shaderConstantsIt->second;
+					}
+				}
+				
+
 				//Create Pipeline State
 				if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 				{
@@ -2082,6 +2090,17 @@ namespace LambdaEngine
 					pipelineDesc.RasterizerState.CullMode			= pRenderStageDesc->Graphics.CullMode;
 					pipelineDesc.RasterizerState.PolygonMode		= pRenderStageDesc->Graphics.PolygonMode;
 					pipelineDesc.InputAssembly.PrimitiveTopology	= pRenderStageDesc->Graphics.PrimitiveTopology;
+
+					if (pShaderConstants != nullptr)
+					{
+						pipelineDesc.TaskShader.ShaderConstants		= pShaderConstants->Graphics.TaskShaderConstants;
+						pipelineDesc.MeshShader.ShaderConstants		= pShaderConstants->Graphics.MeshShaderConstants;
+						pipelineDesc.VertexShader.ShaderConstants	= pShaderConstants->Graphics.VertexShaderConstants;
+						pipelineDesc.GeometryShader.ShaderConstants = pShaderConstants->Graphics.GeometryShaderConstants;
+						pipelineDesc.HullShader.ShaderConstants		= pShaderConstants->Graphics.HullShaderConstants;
+						pipelineDesc.DomainShader.ShaderConstants	= pShaderConstants->Graphics.DomainShaderConstants;
+						pipelineDesc.PixelShader.ShaderConstants	= pShaderConstants->Graphics.PixelShaderConstants;
+					}
 
 					//Create RenderPass
 					{
@@ -2165,6 +2184,11 @@ namespace LambdaEngine
 					pipelineDesc.PipelineLayout	= MakeSharedRef(pRenderStage->pPipelineLayout);
 					pipelineDesc.Shader.ShaderGUID = pRenderStageDesc->Compute.ShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Compute.ShaderName, FShaderStageFlags::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
 
+					if (pShaderConstants != nullptr)
+					{
+						pipelineDesc.Shader.ShaderConstants		= pShaderConstants->Compute.ShaderConstants;
+					}
+
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
 				}
 				else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
@@ -2173,17 +2197,32 @@ namespace LambdaEngine
 					pipelineDesc.PipelineLayout			= MakeSharedRef(pRenderStage->pPipelineLayout);
 					pipelineDesc.MaxRecursionDepth		= 1;
 					pipelineDesc.RaygenShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName, FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL );
+					
+					if (pShaderConstants != nullptr)
+					{
+						pipelineDesc.RaygenShader.ShaderConstants = pShaderConstants->RayTracing.RaygenConstants;
+					}
 
 					pipelineDesc.ClosestHitShaders.Resize(pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount);
 					for (uint32 ch = 0; ch < pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount; ch++)
 					{
 						pipelineDesc.ClosestHitShaders[ch].ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch], FShaderStageFlags::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, EShaderLang::SHADER_LANG_GLSL );
+
+						if (pShaderConstants != nullptr)
+						{
+							pipelineDesc.ClosestHitShaders[ch].ShaderConstants = pShaderConstants->RayTracing.ClosestHitConstants[ch];
+						}
 					}
 
 					pipelineDesc.MissShaders.Resize(pRenderStageDesc->RayTracing.Shaders.MissShaderCount);
 					for (uint32 m = 0; m < pRenderStageDesc->RayTracing.Shaders.MissShaderCount; m++)
 					{
 						pipelineDesc.MissShaders[m].ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m], FShaderStageFlags::SHADER_STAGE_FLAG_MISS_SHADER, EShaderLang::SHADER_LANG_GLSL );
+
+						if (pShaderConstants != nullptr)
+						{
+							pipelineDesc.MissShaders[m].ShaderConstants = pShaderConstants->RayTracing.MissConstants[m];
+						}
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateRayTracingPipelineState(&pipelineDesc);
@@ -2701,10 +2740,21 @@ namespace LambdaEngine
 
 			if (pResource->Texture.IsOfArrayType)
 			{
-				if (textureDesc.ArrayCount != pResource->SubResourceCount)
+				if (pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
 				{
-					LOG_ERROR("[RenderGraph]: UpdateResourceTexture for resource of array type with length %u but ArrayCount was %u", pResource->SubResourceCount, textureDesc.ArrayCount);
-					return;
+					if (textureDesc.ArrayCount != pResource->SubResourceCount * 6)
+					{
+						LOG_ERROR("[RenderGraph]: UpdateResourceTexture for resource of array type with length %u and type TextureCube but ArrayCount was %u", pResource->SubResourceCount, textureDesc.ArrayCount);
+						return;
+					}
+				}
+				else
+				{
+					if (textureDesc.ArrayCount != pResource->SubResourceCount)
+					{
+						LOG_ERROR("[RenderGraph]: UpdateResourceTexture for resource of array type with length %u and type Texture2D but ArrayCount was %u", pResource->SubResourceCount, textureDesc.ArrayCount);
+						return;
+					}
 				}
 			}
 

@@ -621,6 +621,8 @@ namespace LambdaEngine
 
 				if (resourceIt != pParsedStructure->ResourceDescriptions.end())
 				{
+					bool debugPlease = resourceIt->Name == "POINT_LIGHT_SHADOW_MAPS";
+
 					switch (resourceIt->Type)
 					{
 					case ERenderGraphResourceType::TEXTURE:

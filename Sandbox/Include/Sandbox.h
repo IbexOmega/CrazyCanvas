@@ -33,10 +33,10 @@ class Sandbox : public LambdaEngine::Game, public LambdaEngine::IRenderGraphCrea
 {
 	static constexpr const uint32 NUM_POINT_LIGHTS = 2;
 
-	struct PointLightBuffer //Testing
+	struct PointLight //Testing
 	{
-		glm::vec4 Positions[NUM_POINT_LIGHTS];
-		glm::mat4 Transforms[NUM_POINT_LIGHTS * 6];
+		glm::vec4 Position;
+		glm::mat4 Transforms[6];
 	};
 
 	struct InstanceIndexAndTransform

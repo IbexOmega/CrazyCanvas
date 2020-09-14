@@ -644,34 +644,34 @@ bool Sandbox::LoadRendererResources()
 		glm::vec3 pointLightPosition0 = glm::vec3(1.0f, 2.0f, 0.0f);
 		glm::vec3 pointLightPosition1 = glm::vec3(-1.0f, 2.0f, 0.0f);
 
-		PointLightBuffer pointLightsBuffer = {};
-		pointLightsBuffer.Positions[0] = glm::vec4(pointLightPosition0, 1.0f);
-		pointLightsBuffer.Positions[1] = glm::vec4(pointLightPosition1, 1.0f);
+		PointLight pointLightsBuffer[2];
+		pointLightsBuffer[0].Position = glm::vec4(pointLightPosition0, 1.0f);
+		pointLightsBuffer[1].Position = glm::vec4(pointLightPosition1, 1.0f);
 
-		pointLightsBuffer.Transforms[0]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
-		pointLightsBuffer.Transforms[1]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
-		pointLightsBuffer.Transforms[2]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f));
-		pointLightsBuffer.Transforms[3]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f));
-		pointLightsBuffer.Transforms[4]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
-		pointLightsBuffer.Transforms[5]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[0].Transforms[0]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[0].Transforms[1]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[0].Transforms[2]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f));
+		pointLightsBuffer[0].Transforms[3]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f));
+		pointLightsBuffer[0].Transforms[4]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[0].Transforms[5]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
 		
-		pointLightsBuffer.Transforms[6]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
-		pointLightsBuffer.Transforms[7]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
-		pointLightsBuffer.Transforms[8]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f));
-		pointLightsBuffer.Transforms[9]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f));
-		pointLightsBuffer.Transforms[10]	= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
-		pointLightsBuffer.Transforms[11]	= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[1].Transforms[0]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[1].Transforms[1]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[1].Transforms[2]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f));
+		pointLightsBuffer[1].Transforms[3]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f));
+		pointLightsBuffer[1].Transforms[4]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[1].Transforms[5]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
 
 		BufferDesc bufferDesc = {};
 		bufferDesc.DebugName		= "POINT_LIGHTS_BUFFER";
 		bufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		bufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER;
-		bufferDesc.SizeInBytes		= sizeof(PointLightBuffer);
+		bufferDesc.SizeInBytes		= sizeof(pointLightsBuffer);
 
 		m_pPointLightsBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc, nullptr);
 
 		void* pMapped = m_pPointLightsBuffer->Map();
-		memcpy(pMapped, &pointLightsBuffer, sizeof(PointLightBuffer));
+		memcpy(pMapped, &pointLightsBuffer, sizeof(pointLightsBuffer));
 		m_pPointLightsBuffer->Unmap();
 
 		ResourceUpdateDesc pointLightsBufferUpdate = {};
@@ -681,8 +681,8 @@ bool Sandbox::LoadRendererResources()
 		Renderer::GetRenderGraph()->UpdateResource(&pointLightsBufferUpdate);
 
 		float pointLightPushConstantData[2];
-		pointLightPushConstantData[0] = pointLightNearPlane;
-		pointLightPushConstantData[1] = pointLightFarPlane;
+		pointLightPushConstantData[0]		= pointLightNearPlane;
+		pointLightPushConstantData[1]		= pointLightFarPlane;
 
 		PushConstantsUpdate pushConstantUpdate = {};
 		pushConstantUpdate.pData			= &pointLightPushConstantData;

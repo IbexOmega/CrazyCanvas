@@ -210,10 +210,10 @@ namespace LambdaEngine
 			RenderStageParameters	Parameters						= {};
 
 			//Triggering
-			ERenderStageExecutionTrigger	TriggerType					= ERenderStageExecutionTrigger::NONE;
-			uint32							FrameDelay					= 0;
-			uint32							FrameOffset					= 0;
-			uint32							FrameCounter				= 0;
+			ERenderStageExecutionTrigger	TriggerType				= ERenderStageExecutionTrigger::NONE;
+			uint32							FrameDelay				= 0;
+			uint32							FrameOffset				= 0;
+			uint32							FrameCounter			= 0;
 
 			//Special Draw Params
 			uint32					ExecutionCount					= 1;
@@ -321,7 +321,7 @@ namespace LambdaEngine
 		bool CreateDescriptorHeap();
 		bool CreateCopyCommandLists();
 		bool CreateResources(const TArray<RenderGraphResourceDesc>& resourceDescriptions);
-		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages);
+		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants);
 		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
 

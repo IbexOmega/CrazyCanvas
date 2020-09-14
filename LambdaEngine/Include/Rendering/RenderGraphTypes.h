@@ -206,7 +206,9 @@ namespace LambdaEngine
 		int32							FrameDelay		= 0;
 		int32							FrameOffset		= 0;
 
-		TArray<RenderGraphResourceState> ResourceStates;
+		TArray<RenderGraphResourceState>	ResourceStates;
+
+		TArray<ShaderConstant>				ShaderConstants;
 
 		struct
 		{
@@ -396,12 +398,39 @@ namespace LambdaEngine
 		int32		BackBufferAttributeIndex	= 0;
 	};
 
+	struct RenderGraphShaderConstants
+	{
+		struct
+		{
+			TArray<ShaderConstant>	MeshShaderConstants;
+			TArray<ShaderConstant>	TaskShaderConstants;
+			TArray<ShaderConstant>	VertexShaderConstants;
+			TArray<ShaderConstant>	HullShaderConstants;
+			TArray<ShaderConstant>	DomainShaderConstants;
+			TArray<ShaderConstant>	GeometryShaderConstants;
+			TArray<ShaderConstant>	PixelShaderConstants;
+		} Graphics;
+
+		struct
+		{
+			TArray<ShaderConstant>	ShaderConstants;
+		} Compute;
+
+		struct
+		{
+			TArray<ShaderConstant>			RaygenConstants;
+			TArray<TArray<ShaderConstant>>	ClosestHitConstants;
+			TArray<TArray<ShaderConstant>>	MissConstants;
+		} RayTracing;
+	};
+
 	struct RenderGraphStructureDesc
 	{
-		TArray<RenderGraphResourceDesc>		ResourceDescriptions;
-		TArray<RenderStageDesc>				RenderStageDescriptions;
-		TArray<SynchronizationStageDesc>	SynchronizationStageDescriptions;
-		TArray<PipelineStageDesc>			PipelineStageDescriptions;
+		TArray<RenderGraphResourceDesc>					ResourceDescriptions;
+		TArray<RenderStageDesc>							RenderStageDescriptions;
+		THashTable<String, RenderGraphShaderConstants>	ShaderConstants;
+		TArray<SynchronizationStageDesc>				SynchronizationStageDescriptions;
+		TArray<PipelineStageDesc>						PipelineStageDescriptions;
 	};
 
 	/*-----------------------------------------------------------------Render Graph Editor End-----------------------------------------------------------------*/

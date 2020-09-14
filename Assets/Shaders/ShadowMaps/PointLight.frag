@@ -10,11 +10,10 @@ layout( push_constant ) uniform PushConstants {
 } pc;
 
 layout(location = 0) in vec4 in_WorldPosition;
+layout(location = 1) in flat vec4 in_PointLightPosition;
 
 void main()
 {
-    vec3 pointLightPos = vec3(0.0f, 2.0f, 0.0f);
-
-    float distanceToLight = length(in_WorldPosition.xyz - pointLightPos);
+    float distanceToLight = length(in_WorldPosition.xyz - in_PointLightPosition.xyz);
     gl_FragDepth = distanceToLight / 25.0f;
 }

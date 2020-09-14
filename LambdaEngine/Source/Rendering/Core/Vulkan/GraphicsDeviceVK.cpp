@@ -1016,6 +1016,7 @@ namespace LambdaEngine
 		enabledDeviceFeatures10.fragmentStoresAndAtomics			= supportedDeviceFeatures10.fragmentStoresAndAtomics;
 		enabledDeviceFeatures10.multiDrawIndirect					= supportedDeviceFeatures10.multiDrawIndirect;
 		enabledDeviceFeatures10.pipelineStatisticsQuery				= supportedDeviceFeatures10.pipelineStatisticsQuery;
+		enabledDeviceFeatures10.imageCubeArray						= supportedDeviceFeatures10.imageCubeArray;
 
 		VkPhysicalDeviceFeatures2 enabledDeviceFeatures2 = {};
 		enabledDeviceFeatures2.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
