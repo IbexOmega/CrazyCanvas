@@ -9,10 +9,10 @@ namespace LambdaEngine
 		EType Type;
 		union Value
 		{
-			float F;
-			bool B;
-			int I;
-			char Str[64];
+			float32 Float32;
+			bool Boolean;
+			int32 Int32;
+			char String[64];
 		} Value;
 	};
 

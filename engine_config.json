@@ -6,9 +6,9 @@
     "FixedTimestep": 60,
     "RayTracingEnabled": true,
     "RenderGraphName": "DEMO_SKYBOX.lrg",
-    "ShowRenderGraphWindow": false,
-    "ShowDemoWindow": false,
-    "ShowDebuggingWindow": false,
+    "ShowRenderGraph": false,
+    "ShowDemo": false,
+    "Debugging": false,
     "CameraFOV": 90.0,
     "CameraNearPlane": 0.001,
     "CameraFarPlane": 1000.0

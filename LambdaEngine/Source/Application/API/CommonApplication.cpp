@@ -41,9 +41,9 @@ namespace LambdaEngine
 		windowDesc.Height 	= static_cast<uint16>(EngineConfig::GetArrayProperty("WindowSize").GetBack());
 		windowDesc.Style	=
 			WINDOW_STYLE_FLAG_TITLED		|
-			//WINDOW_STYLE_FLAG_MINIMIZABLE	|
-			//WINDOW_STYLE_FLAG_MAXIMIZABLE	|
-			//WINDOW_STYLE_FLAG_RESIZEABLE	|
+			WINDOW_STYLE_FLAG_MINIMIZABLE	|
+			WINDOW_STYLE_FLAG_MAXIMIZABLE	|
+			WINDOW_STYLE_FLAG_RESIZEABLE	|
 			WINDOW_STYLE_FLAG_CLOSABLE;
 
 		TSharedRef<Window> window = CreateWindow(&windowDesc);
