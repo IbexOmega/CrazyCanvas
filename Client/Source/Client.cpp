@@ -47,13 +47,13 @@ Client::Client() :
     desc.MaxRetries             = 10;
     desc.ResendRTTMultiplier    = 2.0F;
     desc.Handler                = this;
-    desc.Protocol               = EProtocol::TCP;
+    desc.Protocol               = EProtocol::UDP;
 	desc.PingTimeout			= Timestamp::Seconds(3);
 	desc.UsePingSystem			= false;
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
-	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
+	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("81.170.143.133"), 4444)))
 	{
 		LOG_ERROR("Failed to connect!");
 	}
@@ -93,10 +93,10 @@ void Client::OnConnected(LambdaEngine::IClient* pClient)
 	}*/
 
 
-	NetworkSegment* pPacket = m_pClient->GetFreePacket(1);
+	/*NetworkSegment* pPacket = m_pClient->GetFreePacket(420);
 	BinaryEncoder encoder(pPacket);
-	encoder.WriteString("Christoffer");
-	m_pClient->SendReliable(pPacket, this);
+	encoder.WriteString("Smoke Weed Everyday");
+	m_pClient->SendReliable(pPacket, this);*/
 }
 
 void Client::OnDisconnecting(LambdaEngine::IClient* pClient)
@@ -156,7 +156,7 @@ bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		if (m_pClient->IsConnected())
 			m_pClient->Disconnect("User Requested");
 		else
-			m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444));
+			m_pClient->Connect(IPEndPoint(IPAddress::Get("81.170.143.133"), 4444));
 	}
 	else
 	{
@@ -169,6 +169,8 @@ bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 
 	return false;
 }
+
+uint32 g_PackegesSent = 0;
 
 void Client::Tick(LambdaEngine::Timestamp delta)
 {
@@ -183,6 +185,22 @@ void Client::Tick(LambdaEngine::Timestamp delta)
 void Client::FixedTick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
+
+	if (m_pClient->IsConnected())
+	{
+		if (++g_PackegesSent <= 10000)
+		{
+			NetworkSegment* pPacket = m_pClient->GetFreePacket(420);
+			BinaryEncoder encoder(pPacket);
+			encoder.WriteUInt32(g_PackegesSent);
+			m_pClient->SendUnreliable(pPacket);
+		}
+		else
+		{
+			//m_pClient->Disconnect("All Packages Sent");
+		}
+	}
+
 	UNREFERENCED_VARIABLE(delta);
 }
 
