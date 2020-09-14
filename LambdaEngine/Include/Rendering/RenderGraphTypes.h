@@ -310,7 +310,7 @@ namespace LambdaEngine
 		bool						CustomRenderer					= false;
 		RenderStageParameters		Parameters						= {};
 
-		ERenderStageExecutionTrigger	TriggerType					= ERenderStageExecutionTrigger::NONE;
+		ERenderStageExecutionTrigger	TriggerType					= ERenderStageExecutionTrigger::EVERY;
 		int32							FrameDelay					= 0;
 		int32							FrameOffset					= 0;
 
