@@ -1,7 +1,7 @@
 {
     "WindowSize": [
-        1920,
-        1080
+        300,
+        150
     ],
     "FixedTimestep": 60,
     "RayTracingEnabled": true,
