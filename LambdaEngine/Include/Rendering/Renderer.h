@@ -26,7 +26,7 @@ namespace LambdaEngine
 	class CommandAllocator;
 
 	struct RenderGraphStructureDesc;
-	
+
 	class LAMBDA_API Renderer
 	{
 	public:

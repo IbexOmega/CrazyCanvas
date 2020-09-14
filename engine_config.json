@@ -1,10 +1,11 @@
 {
     "WindowSize": [
-        1920,
-        1080
+        1920.0,
+        1080.0
     ],
     "FixedTimestep": 60,
     "RayTracingEnabled": true,
+    "RenderGraphName": "DEMO_SKYBOX.lrg",
     "ShowRenderGraphWindow": false,
     "ShowDemoWindow": false,
     "ShowDebuggingWindow": false,

@@ -37,8 +37,8 @@ namespace LambdaEngine
 		// Create mainwindow
 		WindowDesc windowDesc = { };
 		windowDesc.Title 	= "Lambda Engine";
-		windowDesc.Width 	= EngineConfig::GetArrayProperty("WindowSize").GetFront();
-		windowDesc.Height 	= EngineConfig::GetArrayProperty("WindowSize").GetBack();
+		windowDesc.Width 	= static_cast<uint16>(EngineConfig::GetArrayProperty("WindowSize").GetFront());
+		windowDesc.Height 	= static_cast<uint16>(EngineConfig::GetArrayProperty("WindowSize").GetBack());
 		windowDesc.Style	=
 			WINDOW_STYLE_FLAG_TITLED		|
 			//WINDOW_STYLE_FLAG_MINIMIZABLE	|

@@ -71,11 +71,12 @@ namespace LambdaEngine
 			LOG_INFO("Command Called with argument '%s' and flag i was %s and flag l was %s.", s1.c_str(), s2.c_str(), s3.c_str());
 		});
 
+		// Commands calling on config setters
 		ConsoleCommand cmdSetBool;
 		cmdSetBool.Init("set_bool", true);
 		cmdSetBool.AddArg(Arg::EType::STRING);
 		cmdSetBool.AddArg(Arg::EType::BOOL);
-		cmdSetBool.AddDescription("Change boolean value in settings file with a given key\n\t 'set_bool key bool'");
+		cmdSetBool.AddDescription("Change boolean value in config file with a given key\n\t 'set_bool key bool'");
 		BindCommand(cmdSetBool, [this](GameConsole::CallbackInput& input)->void
 			{
 				if (!EngineConfig::SetBoolProperty(input.Arguments.GetFront().Value.Str, input.Arguments.GetFront().Value.B))
@@ -86,7 +87,7 @@ namespace LambdaEngine
 		cmdSetFloat.Init("set_float", true);
 		cmdSetFloat.AddArg(Arg::EType::STRING);
 		cmdSetFloat.AddArg(Arg::EType::FLOAT);
-		cmdSetFloat.AddDescription("Change float value in settings file with a given key\n\t 'set_float key value'");
+		cmdSetFloat.AddDescription("Change float value in config file with a given key\n\t 'set_float key value'");
 		BindCommand(cmdSetFloat, [this](GameConsole::CallbackInput& input)->void
 			{
 				if (!EngineConfig::SetFloatProperty(input.Arguments.GetFront().Value.Str, input.Arguments.GetFront().Value.F))
@@ -97,7 +98,7 @@ namespace LambdaEngine
 		cmdSetInt.Init("set_int", true);
 		cmdSetInt.AddArg(Arg::EType::STRING);
 		cmdSetInt.AddArg(Arg::EType::INT);
-		cmdSetInt.AddDescription("Change integer value in settings file with a given key\n\t 'set_int key value'");
+		cmdSetInt.AddDescription("Change integer value in config file with a given key\n\t 'set_int key value'");
 		BindCommand(cmdSetInt, [this](GameConsole::CallbackInput& input)->void
 			{
 				if (!EngineConfig::SetIntProperty(input.Arguments.GetFront().Value.Str, input.Arguments.GetFront().Value.I))
@@ -108,7 +109,7 @@ namespace LambdaEngine
 		cmdSetDouble.Init("set_double", true);
 		cmdSetDouble.AddArg(Arg::EType::STRING);
 		cmdSetDouble.AddArg(Arg::EType::FLOAT);
-		cmdSetDouble.AddDescription("Change double value in settings file with a given key\n\t 'set_double key value'");
+		cmdSetDouble.AddDescription("Change double value in config file with a given key\n\t 'set_double key value'");
 		BindCommand(cmdSetDouble, [this](GameConsole::CallbackInput& input)->void
 			{
 				if (!EngineConfig::SetDoubleProperty(input.Arguments.GetFront().Value.Str, static_cast<double>(input.Arguments.GetFront().Value.F)))
@@ -119,7 +120,7 @@ namespace LambdaEngine
 		cmdSetString.Init("set_string", true);
 		cmdSetString.AddArg(Arg::EType::STRING);
 		cmdSetString.AddArg(Arg::EType::STRING);
-		cmdSetString.AddDescription("Change boolean value in settings file with a given key\n\t 'set_string key string'");
+		cmdSetString.AddDescription("Change boolean value in config file with a given key\n\t 'set_string key string'");
 		BindCommand(cmdSetString, [this](GameConsole::CallbackInput& input)->void
 			{
 				if (!EngineConfig::SetBoolProperty(input.Arguments.GetFront().Value.Str, input.Arguments.GetBack().Value.Str))
@@ -134,30 +135,27 @@ namespace LambdaEngine
 		BindCommand(cmdSetArray, [this](GameConsole::CallbackInput& input)->void
 			{
 				TArray<float> arr;
-
 				String arg = input.Arguments.GetBack().Value.Str;
-				int pos;
+
 				while (arg.length() > 0)
 				{
-					pos = arg.find(",");
-
-					if (std::regex_match(arg.substr(0, pos), std::regex("(-[0-9]*\.[0-9]+)|(-[0-9]+\.[0-9]*)")))
+					if (std::regex_match(arg.substr(0, arg.find(",")), std::regex("(-[0-9]*\\.[0-9]+)|(-[0-9]+\\.[0-9]*)")))
 					{
-						arr.PushBack(std::stof(arg.substr(0, pos)));
+						arr.PushBack(std::stof(arg.substr(0, arg.find(","))));
 					}
-					else if (std::regex_match(arg.substr(0, pos), std::regex("([0-9]*\.[0-9]+)|([0-9]+\.[0-9]*)")))
+					else if (std::regex_match(arg.substr(0, arg.find(",")), std::regex("([0-9]*\\.[0-9]+)|([0-9]+\\.[0-9]*)")))
 					{
-						arr.PushBack(std::stof(arg.substr(0, pos)));
+						arr.PushBack(std::stof(arg.substr(0, arg.find(","))));
 					}
 					else
 					{
-						PushError(arg.substr(0, pos));
+						PushError(arg.substr(0, arg.find(",")));
 					}
 
 					if (std::string::npos != arg.find(","))
-						arg.erase(0, pos + std::string(",").length());
+						arg.erase(0, arg.find(",") + std::string(",").length());
 					else
-						arg.erase(0, pos);
+						arg.erase(0, arg.find(","));
 				}
 
 				if (!EngineConfig::SetArrayProperty(input.Arguments.GetFront().Value.Str, arr))
@@ -166,7 +164,7 @@ namespace LambdaEngine
 
 		ConsoleCommand cmdSaveSettings;
 		cmdSaveSettings.Init("save_settings", true);
-		cmdSaveSettings.AddDescription("Save changes into settings file");
+		cmdSaveSettings.AddDescription("Save changes into config file");
 		BindCommand(cmdSaveSettings, [](CallbackInput& input)->void
 			{
 				EngineConfig::WriteToFile();
