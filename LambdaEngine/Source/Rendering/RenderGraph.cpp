@@ -1084,15 +1084,15 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::CreateResources(const TArray<RenderGraphResourceDesc>& resources)
+	bool RenderGraph::CreateResources(const TArray<RenderGraphResourceDesc>& resourceDescriptions)
 	{
-		m_ResourceMap.reserve(resources.GetSize());
+		m_ResourceMap.reserve(resourceDescriptions.GetSize());
 		TArray<String> addedResourceNames;
-		addedResourceNames.Reserve(resources.GetSize());
+		addedResourceNames.Reserve(resourceDescriptions.GetSize());
 
-		for (uint32 i = 0; i < resources.GetSize(); i++)
+		for (uint32 i = 0; i < resourceDescriptions.GetSize(); i++)
 		{
-			const RenderGraphResourceDesc* pResourceDesc = &resources[i];
+			const RenderGraphResourceDesc* pResourceDesc = &resourceDescriptions[i];
 			addedResourceNames.PushBack(pResourceDesc->Name);
 
 			Resource newResource;
@@ -2673,7 +2673,6 @@ namespace LambdaEngine
 						subImageTextureViewDesc.Miplevel		= textureViewDesc.Miplevel;
 						subImageTextureViewDesc.MiplevelCount	= textureViewDesc.MiplevelCount;
 						subImageTextureViewDesc.ArrayCount		= 1;
-						subImageTextureViewDesc.Miplevel		= 0;
 
 						for (uint32 si = 0; si < pTextureDesc->ArrayCount; si++)
 						{

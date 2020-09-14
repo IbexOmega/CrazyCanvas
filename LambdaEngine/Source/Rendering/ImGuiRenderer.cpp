@@ -339,20 +339,10 @@ namespace LambdaEngine
 		beginRenderPassDesc.Offset.y			= 0;
 
 		// Render to screen
-		if (pDrawData != nullptr && pDrawData->CmdListsCount != 0)
-			Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
-
-		pGraphicsCommandAllocator->Reset();
-		pGraphicsCommandList->Begin(nullptr);
-
-		if (pDrawData != nullptr && pDrawData->CmdListsCount != 0)
-		{
-			Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
-			Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
-		}
-
 		if (pDrawData == nullptr || pDrawData->CmdListsCount == 0)
 		{
+			pGraphicsCommandAllocator->Reset();
+			pGraphicsCommandList->Begin(nullptr);
 			//Begin and End RenderPass to transition Texture State (Lazy)
 			pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
 			pGraphicsCommandList->EndRenderPass();
@@ -362,6 +352,15 @@ namespace LambdaEngine
 			(*ppPrimaryExecutionStage) = pGraphicsCommandList;
 			return;
 		}
+
+		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
+
+		pGraphicsCommandAllocator->Reset();
+		pGraphicsCommandList->Begin(nullptr);
+
+		Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
+
 
 		{
 			TSharedRef<Buffer> vertexCopyBuffer	= m_VertexCopyBuffers[modFrameIndex];
@@ -541,8 +540,7 @@ namespace LambdaEngine
 			globalVertexOffset	+= pCmdList->VtxBuffer.Size;
 		}
 
-		if (pDrawData != nullptr && pDrawData->CmdListsCount != 0)
-			Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
 
 		pGraphicsCommandList->EndRenderPass();
 		pGraphicsCommandList->End();
