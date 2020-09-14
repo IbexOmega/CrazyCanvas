@@ -51,7 +51,7 @@ namespace LambdaEngine
         void RegisterHandler(const ComponentHandlerRegistration& handlerRegistration);
 
         // Tell the system subscriber a component has been created
-        void RegisterComponent(Entity entity, std::type_index componentType);
+        static void RegisterComponent(Entity entity, std::type_index componentType);
 
     protected:
         TArray<std::type_index> m_HandledTypes;

@@ -39,8 +39,6 @@ namespace LambdaEngine
 
     void TransformHandler::CreateRotation(Entity entity)
     {
-        Rotation rotation = {};
-
         m_Rotations.PushBack({ glm::identity<glm::quat>() }, entity);
         RegisterComponent(entity, g_TIDRotation);
     }
