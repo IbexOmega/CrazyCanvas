@@ -63,6 +63,7 @@ namespace LambdaEngine
 
 	void CPUProfiler::BeginSession(const std::string& name, const std::string& filePath)
 	{
+		UNREFERENCED_VARIABLE(name);
 		m_Counter = 0;
 		m_File.open(filePath);
 		m_File << "{\"otherData\": {}, \"displayTimeUnit\": \"ms\", \"traceEvents\": [";

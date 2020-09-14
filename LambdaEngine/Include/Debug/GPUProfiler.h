@@ -81,9 +81,9 @@ namespace LambdaEngine
 		THashTable<String, Timestamp> m_Results;
 		THashTable<String, TArray<float>> m_PlotResults;
 		uint32_t m_PlotResultsStart		= 0;
-		size_t m_PlotDataSize;
+		uint32_t m_PlotDataSize;
 		THashTable<String, float> m_CurrentMaxDuration;
-		float m_TimeSinceUpdate			= 0.0f;
+		float64 m_TimeSinceUpdate			= 0.0f;
 		float m_UpdateFreq;
 		bool m_EnableGraph				= true;
 
