@@ -69,9 +69,9 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
-	m_RenderGraphWindow = EngineConfig::GetBoolProperty("RenderGraph");
-	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");
-	m_DebuggingWindow = EngineConfig::GetBoolProperty("Debugging");
+	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraphWindow");
+	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemoWindow");
+	m_DebuggingWindow = EngineConfig::GetBoolProperty("ShowDebuggingWindow");
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
@@ -340,7 +340,7 @@ Sandbox::Sandbox()
 			m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 		}
 	}
-	
+
 
 	m_pScene->Finalize();
 	Renderer::SetScene(m_pScene);
@@ -350,11 +350,11 @@ Sandbox::Sandbox()
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
 	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= 90.0f;
+	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
 	cameraDesc.Width		= window->GetWidth();
 	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= 0.001f;
-	cameraDesc.FarPlane		= 1000.0f;
+	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
+	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
 
 	m_pCamera->Init(cameraDesc);
 
@@ -477,7 +477,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 			{
 				Profiler::Render(delta);
 			}
-			
+
 		});
 	}
 

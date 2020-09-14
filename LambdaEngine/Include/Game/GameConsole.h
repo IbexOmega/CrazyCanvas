@@ -26,7 +26,7 @@ namespace LambdaEngine
 		bool Release();
 
 		void Tick();
-		
+
 		void BindCommand(ConsoleCommand cmd, std::function<void(CallbackInput&)> callback);
 
 		static GameConsole& Get();
@@ -34,7 +34,7 @@ namespace LambdaEngine
 	private:
 		GameConsole();
 		~GameConsole();
-		
+
 		struct Item
 		{
 			std::string Str;

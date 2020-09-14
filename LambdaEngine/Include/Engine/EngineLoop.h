@@ -64,7 +64,7 @@ namespace LambdaEngine
 		*	return	- Returns true if the engine should perform next tick
 		*/
 		static bool Tick(Timestamp delta);
-		
+
 		/*
 		* Fixed engine tick, advances the whole engine one frame at a fixed framerate (Current every 16ms).
 		* Should only be called from run
