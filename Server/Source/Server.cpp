@@ -40,6 +40,7 @@ Server::Server()
 	desc.Protocol		= EProtocol::UDP;
 	desc.PingInterval	= Timestamp::Seconds(1);
 	desc.PingTimeout	= Timestamp::Seconds(3);
+	desc.UsePingSystem	= false;
 
 	m_pServer = NetworkUtils::CreateServer(desc);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));

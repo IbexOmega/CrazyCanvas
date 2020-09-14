@@ -55,9 +55,9 @@ void ClientHandler::OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngin
 
 	LOG_MESSAGE("OnPacketReceived()");
 
-	LambdaEngine::BinaryDecoder decoder(pPacket);
+	/*LambdaEngine::BinaryDecoder decoder(pPacket);
 	std::string name = decoder.ReadString();
-	LOG_MESSAGE(name.c_str());
+	LOG_MESSAGE(name.c_str());*/
 }
 
 void ClientHandler::OnClientReleased(LambdaEngine::IClient* pClient)

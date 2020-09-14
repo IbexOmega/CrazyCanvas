@@ -28,6 +28,7 @@ namespace LambdaEngine
         EProtocol Protocol      = EProtocol::UDP;
         Timestamp PingInterval  = Timestamp::Seconds(1);
         Timestamp PingTimeout   = Timestamp::Seconds(2);
+        bool UsePingSystem      = true;
     };
 
     class LAMBDA_API ServerBase : public NetWorker
