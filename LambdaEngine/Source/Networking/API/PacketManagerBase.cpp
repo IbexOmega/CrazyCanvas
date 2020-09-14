@@ -32,7 +32,7 @@ namespace LambdaEngine
 
 	uint32 PacketManagerBase::EnqueueSegment(NetworkSegment* pSegment, uint32 reliableUID)
 	{
-		pSegment->GetHeader().UID = m_Statistics.RegisterSegmentSent();
+		pSegment->GetHeader().UID = m_Statistics.RegisterUniqueSegment();
 		pSegment->GetHeader().ReliableUID = reliableUID;
 		m_SegmentsToSend[m_QueueIndex].push(pSegment);
 		return pSegment->GetHeader().UID;

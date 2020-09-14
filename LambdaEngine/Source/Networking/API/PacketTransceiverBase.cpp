@@ -40,6 +40,8 @@ namespace LambdaEngine
 		else if (bytesWritten != bytesTransmitted)
 			return -1;
 
+		pStatistics->RegisterSegmentSent(header.Segments);
+
 		return header.Sequence;
 	}
 

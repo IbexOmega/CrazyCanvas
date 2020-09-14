@@ -21,6 +21,11 @@ namespace LambdaEngine
 		return m_PacketsSent;
 	}
 
+	uint32 NetworkStatistics::GetSegmentsRegistered() const
+	{
+		return m_SegmentsRegistered;
+	}
+
 	uint32 NetworkStatistics::GetSegmentsSent() const
 	{
 		return m_SegmentsSent;
@@ -119,6 +124,7 @@ namespace LambdaEngine
 		m_SaltRemote				= 0;
 		m_Ping						= Timestamp::MilliSeconds(10.0f);
 		m_PacketsSent				= 0;
+		m_SegmentsRegistered		= 0;
 		m_SegmentsSent				= 0;
 		m_ReliableSegmentsSent		= 0;
 		m_PacketsReceived			= 0;
@@ -141,9 +147,14 @@ namespace LambdaEngine
 		return ++m_PacketsSent;
 	}
 
-	uint32 NetworkStatistics::RegisterSegmentSent()
+	uint32 NetworkStatistics::RegisterUniqueSegment()
 	{
-		return ++m_SegmentsSent;
+		return ++m_SegmentsRegistered;
+	}
+
+	void NetworkStatistics::RegisterSegmentSent(uint32 segments)
+	{
+		m_SegmentsSent += segments;
 	}
 
 	uint32 NetworkStatistics::RegisterReliableSegmentSent()
@@ -151,10 +162,10 @@ namespace LambdaEngine
 		return ++m_ReliableSegmentsSent;
 	}
 
-	void NetworkStatistics::RegisterPacketReceived(uint32 messages, uint32 bytes)
+	void NetworkStatistics::RegisterPacketReceived(uint32 segments, uint32 bytes)
 	{
 		m_PacketsReceived++;
-		m_SegmentsReceived += messages,
+		m_SegmentsReceived += segments,
 		m_BytesReceived += bytes;
 		m_TimestampLastReceived = EngineLoop::GetTimeSinceStart();
 	}
