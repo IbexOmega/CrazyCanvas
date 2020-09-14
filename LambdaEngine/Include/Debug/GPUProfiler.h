@@ -19,8 +19,8 @@ namespace LambdaEngine
 
 			uint64_t Start;
 			uint64_t End;
-			float Duration;
 			CommandList* pCommandList;
+			float Duration;
 			String Name;
 		};
 
