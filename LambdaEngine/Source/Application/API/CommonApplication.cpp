@@ -1,6 +1,7 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformApplication.h"
 #include "Application/API/Window.h"
+#include "Engine/EngineConfig.h"
 
 #include "Application/API/Events/EventQueue.h"
 #include "Application/API/Events/MouseEvents.h"
@@ -36,10 +37,10 @@ namespace LambdaEngine
 		// Create mainwindow
 		WindowDesc windowDesc = { };
 		windowDesc.Title 	= "Lambda Engine";
-		windowDesc.Width 	= 1280;
-		windowDesc.Height 	= 720;
-		windowDesc.Style	= 
-			WINDOW_STYLE_FLAG_TITLED		| 
+		windowDesc.Width 	= EngineConfig::GetArrayProperty("WindowSize").GetFront();
+		windowDesc.Height 	= EngineConfig::GetArrayProperty("WindowSize").GetBack();
+		windowDesc.Style	=
+			WINDOW_STYLE_FLAG_TITLED		|
 			WINDOW_STYLE_FLAG_MINIMIZABLE	|
 			WINDOW_STYLE_FLAG_MAXIMIZABLE	|
 			WINDOW_STYLE_FLAG_RESIZEABLE	|
@@ -50,7 +51,7 @@ namespace LambdaEngine
 		{
 			MakeMainWindow(window);
 			SetInputMode(window, EInputMode::INPUT_MODE_STANDARD);
-			
+
 			window->Show();
 		}
 		else
@@ -238,7 +239,7 @@ namespace LambdaEngine
 	bool CommonApplication::Tick()
 	{
 		PlatformApplication::PeekEvents();
-		
+
 		bool shouldExit = m_pPlatformApplication->Tick();
 		if (shouldExit)
 		{
@@ -263,7 +264,7 @@ namespace LambdaEngine
 	{
 		Application* pPlatformApplication = s_CommonApplication->GetPlatformApplication();
 		pPlatformApplication->SetEventHandler(nullptr);
-		
+
 		s_CommonApplication.Reset();
 
 		SAFEDELETE(pPlatformApplication);
