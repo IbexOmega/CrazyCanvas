@@ -32,6 +32,7 @@ namespace LambdaEngine
 
 		virtual void Restore() override final;
 
+		// Borderless fullscreen, easiest way to get fullscreen on windows
 		virtual void ToggleFullscreen() override final;
 
 		virtual void SetTitle(const String& title) override final;
@@ -49,6 +50,10 @@ namespace LambdaEngine
 
 	private:
 		HWND m_hWnd = 0;
+		bool m_IsFullscreen = false;
+		DWORD m_dwWindowStyle = 0;
+		DWORD m_dwWindowStyleEx = 0;
+		WINDOWPLACEMENT m_WindowPlaceMent;
 	};
 }
 

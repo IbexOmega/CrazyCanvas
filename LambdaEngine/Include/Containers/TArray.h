@@ -29,10 +29,10 @@ namespace LambdaEngine
 
 		public:
 			using iterator_category = std::bidirectional_iterator_tag;
-			using difference_type = SizeType;
-			using value_type = TIteratorType;
-			using pointer = TIteratorType*;
-			using reference = TIteratorType&;
+			using difference_type	= SizeType;
+			using value_type		= TIteratorType;
+			using pointer			= TIteratorType*;
+			using reference			= TIteratorType&;
 
 			~IteratorBase() = default;
 
@@ -893,19 +893,6 @@ namespace LambdaEngine
 
 		// Helpers
 		template<typename TInputIt>
-		FORCEINLINE T* InternalUnwrap(TInputIt it)
-		{
-			if constexpr (std::is_pointer<TInputIt>())
-			{
-				return it;
-			}
-			else
-			{
-				return it.m_Ptr;
-			}
-		}
-
-		template<typename TInputIt>
 		FORCEINLINE const T* InternalUnwrapConst(TInputIt it)
 		{
 			if constexpr (std::is_pointer<TInputIt>())
@@ -925,7 +912,7 @@ namespace LambdaEngine
 			constexpr bool isCustomIterator	= std::is_same<TInputIt, Iterator>() || std::is_same<TInputIt, ConstIterator>();
 
 			// Handle outside pointers
-			if constexpr (isPointer && isCustomIterator)
+			if constexpr (isPointer || isCustomIterator)
 			{
 				return static_cast<SizeType>(InternalUnwrapConst(end) - InternalUnwrapConst(begin));
 			}

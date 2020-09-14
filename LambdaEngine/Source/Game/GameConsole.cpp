@@ -6,6 +6,8 @@
 
 #include "Application/API/CommonApplication.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include <regex>
 #include <imgui.h>
 
@@ -13,82 +15,209 @@ namespace LambdaEngine
 {
 	bool GameConsole::Init()
 	{
-#ifdef LAMBDA_DEBUG
-		ConsoleCommand cmdHelp;
-		cmdHelp.Init("help", false);
-		cmdHelp.AddFlag("d", Arg::EType::EMPTY);
-		cmdHelp.AddDescription("Shows all commands descriptions.", { {"d", "Used to show debug commands also."} });
-		BindCommand(cmdHelp, [this](CallbackInput& input)->void 
+		if (!InitCommands())
 		{
-			for (auto i : m_CommandMap)
-			{
-				ConsoleCommand& cCmd = i.second.first;
-				if (!cCmd.IsDebug() || (input.Flags.find("d") != input.Flags.end()))
-				{
-					std::string type = cCmd.IsDebug() ? " [DEBUG]" : "";
-					ConsoleCommand::Description desc = cCmd.GetDescription();
-					PushInfo(i.first + type + ":");
-					PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-					for (auto flagDesc : desc.FlagDescs)
-						PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-				}
-			}
-			});
-#else
-		ConsoleCommand cmdHelp;
-		cmdHelp.Init("help", false);
-		cmdHelp.AddDescription("Shows all commands descriptions.");
-		BindCommand(cmdHelp, [this](CallbackInput& input)->void {
-			for (auto i : m_CommandMap)
-			{
-				ConsoleCommand& cCmd = i.second.first;
-				if (!cCmd.IsDebug())
-				{
-					ConsoleCommand::Description desc = cCmd.GetDescription();
-					PushInfo(i.first + ":");
-					PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-					for (auto flagDesc : desc.FlagDescs)
-						PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-				}
-			}
-			});
-#endif
+			return false;
+		}
 
-		ConsoleCommand cmdClear;
-		cmdClear.Init("clear", false);
-		cmdClear.AddFlag("h", Arg::EType::EMPTY);
-		cmdClear.AddDescription("Clears the visible text in the console.", { {"h", "Clears the history."} });
-		BindCommand(cmdClear, [this](CallbackInput& input)->void 
-		{
-			m_Items.Clear();
-		});
+		return EventQueue::RegisterEventHandler(this, &GameConsole::OnKeyPressed);
+	}
 
-		ConsoleCommand cmdExit;
-		cmdExit.Init("exit", false);
-		cmdExit.AddDescription("Terminate the application");
-		BindCommand(cmdExit, [this](CallbackInput& input)->void
+	bool GameConsole::InitCommands()
+	{
+		// Help
 		{
-			CommonApplication::Get()->Terminate();
-		});
+			ConsoleCommand cmdHelp;
+			cmdHelp.Init("help", false);
+			cmdHelp.AddFlag("d", Arg::EType::EMPTY);
+			cmdHelp.AddDescription("Shows all commands descriptions.", { {"d", "Used to show debug commands also."} });
+			BindCommand(cmdHelp, [this](CallbackInput& input)->void
+			{
+				for (auto i : m_CommandMap)
+				{
+					ConsoleCommand& cCmd = i.second.first;
+					if (!cCmd.IsDebug() || (input.Flags.find("d") != input.Flags.end()))
+					{
+						ConsoleCommand::Description desc = cCmd.GetDescription();
+						PushInfo(i.first + ":");
+						PushInfo("\t" + desc.MainDesc);
+						for (auto flagDesc : desc.FlagDescs)
+							PushInfo("\t\t-" + flagDesc.first + ": " + flagDesc.second);
+					}
+				}
+			});
+		}
+
+		// Clear
+		{
+			ConsoleCommand cmdClear;
+			cmdClear.Init("clear", false);
+			cmdClear.AddFlag("h", Arg::EType::EMPTY);
+			cmdClear.AddDescription("Clears the visible text in the console.", { {"h", "Clears the history."} });
+			BindCommand(cmdClear, [this](CallbackInput& input)->void
+			{
+				m_Items.Clear();
+			});
+		}
+
+		// Exit
+		{
+			ConsoleCommand cmdExit;
+			cmdExit.Init("exit", false);
+			cmdExit.AddDescription("Terminate the application");
+			BindCommand(cmdExit, [this](CallbackInput& input)->void
+			{
+				CommonApplication::Get()->Terminate();
+			});
+		}
+
+		// Enable input
+		{
+			ConsoleCommand cmdInput;
+			cmdInput.Init("enable_input", false);
+			cmdInput.AddArg(Arg::EType::BOOL);
+			cmdInput.AddDescription("Enable or disable application input");
+			BindCommand(cmdInput, [this](CallbackInput& input)->void
+			{
+				if (input.Arguments[0].Value.Boolean)
+				{
+					Input::Enable();
+				}
+				else
+				{
+					Input::Disable();
+				}
+			});
+		}
+
+		// Main window width
+		{
+			ConsoleCommand cmdWidth;
+			cmdWidth.Init("window_width", false);
+			cmdWidth.AddArg(Arg::EType::INT);
+			cmdWidth.AddDescription("Set main window width");
+			BindCommand(cmdWidth, [this](CallbackInput& input)->void
+			{
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				if (mainWindow)
+				{
+					const uint16 height = mainWindow->GetHeight();
+					mainWindow->SetSize(input.Arguments.GetFront().Value.Int32, height);
+				}
+			});
+		}
+
+		// Main window height
+		{
+			ConsoleCommand cmdHeight;
+			cmdHeight.Init("window_height", false);
+			cmdHeight.AddArg(Arg::EType::INT);
+			cmdHeight.AddDescription("Set main window height");
+			BindCommand(cmdHeight, [this](CallbackInput& input)->void
+			{
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				if (mainWindow)
+				{
+					const uint16 width = mainWindow->GetWidth();
+					mainWindow->SetSize(width, input.Arguments.GetFront().Value.Int32);
+				}
+			});
+		}
+
+		// Main window maximize
+		{
+			ConsoleCommand cmdMaximize;
+			cmdMaximize.Init("window_maximize", false);
+			BindCommand(cmdMaximize, [this](CallbackInput& input)->void
+			{
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				if (mainWindow)
+				{
+					mainWindow->Maximize();
+				}
+			});
+		}
+
+		// Main window minimize
+		{
+			ConsoleCommand cmdMinimize;
+			cmdMinimize.Init("window_minimize", false);
+			BindCommand(cmdMinimize, [this](CallbackInput& input)->void
+			{
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				if (mainWindow)
+				{
+					mainWindow->Minimize();
+				}
+			});
+		}
+
+		// Main window fullscreen
+		{
+			ConsoleCommand cmdFullscreen;
+			cmdFullscreen.Init("window_toggle_fullscreen", false);
+			cmdFullscreen.AddDescription("Set main window to fullscreen");
+			BindCommand(cmdFullscreen, [this](CallbackInput& input)->void
+			{
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				if (mainWindow)
+				{
+					mainWindow->ToggleFullscreen();
+				}
+			});
+		}
+
+		// Main window size
+		{
+			ConsoleCommand cmdSize;
+			cmdSize.Init("window_size", false);
+			cmdSize.AddFlag("w", Arg::EType::INT);
+			cmdSize.AddFlag("h", Arg::EType::INT);
+			cmdSize.AddDescription("Set main window size", { { "w", "Height of window" }, { "h", "Height of window" }, });
+			BindCommand(cmdSize, [this](CallbackInput& input)->void
+			{
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				if (mainWindow)
+				{
+					uint16 width = mainWindow->GetWidth();
+					auto widthPair = input.Flags.find("w");
+					if (widthPair != input.Flags.end())
+					{
+						width = widthPair->second.Arg.Value.Int32;
+					}
+
+					uint16 height = mainWindow->GetWidth();
+					auto heightPair = input.Flags.find("h");
+					if (heightPair != input.Flags.end())
+					{
+						height = heightPair->second.Arg.Value.Int32;
+					}
+
+					mainWindow->SetSize(width, height);
+				}
+			});
+		}
 
 		// Test Command
-		ConsoleCommand cmd;
-		cmd.Init("clo", true);
-		cmd.AddArg(Arg::EType::STRING);
-		cmd.AddFlag("l", Arg::EType::INT);
-		cmd.AddFlag("i", Arg::EType::EMPTY);
-		cmd.AddDescription("Does blah and do bar.");
-
-		GameConsole::Get().BindCommand(cmd, [](GameConsole::CallbackInput& input)->void 
 		{
-			std::string s1 = input.Arguments.GetFront().Value.Str;
-			std::string s2 = input.Flags.find("i") == input.Flags.end() ? "no set" : "set";
-			std::string s3 = "no set";
-			auto it = input.Flags.find("l");
-			if (it != input.Flags.end())
-				s3 = "set with a value of " + std::to_string(it->second.Arg.Value.I);
-			LOG_INFO("Command Called with argument '%s' and flag i was %s and flag l was %s.", s1.c_str(), s2.c_str(), s3.c_str());
-		});
+			ConsoleCommand cmd;
+			cmd.Init("clo", true);
+			cmd.AddArg(Arg::EType::STRING);
+			cmd.AddFlag("l", Arg::EType::INT);
+			cmd.AddFlag("i", Arg::EType::EMPTY);
+			cmd.AddDescription("Does blah and do bar.");
+
+			GameConsole::Get().BindCommand(cmd, [](GameConsole::CallbackInput& input)->void
+			{
+				std::string s1 = input.Arguments.GetFront().Value.String;
+				std::string s2 = input.Flags.find("i") == input.Flags.end() ? "no set" : "set";
+				std::string s3 = "no set";
+				auto it = input.Flags.find("l");
+				if (it != input.Flags.end())
+					s3 = "set with a value of " + std::to_string(it->second.Arg.Value.Int32);
+				LOG_INFO("Command Called with argument '%s' and flag i was %s and flag l was %s.", s1.c_str(), s2.c_str(), s3.c_str());
+			});
+		}
 
 		return true;
 	}
@@ -100,23 +229,11 @@ namespace LambdaEngine
 
 	void GameConsole::Tick()
 	{
-		// Toggle console when pressing � (Button beneath Escape)
-		static bool s_Active = false;
-		static bool s_Toggle = false;
-
-		if (Input::IsKeyDown(EKey::KEY_GRAVE_ACCENT) && !s_Active)
-		{
-			s_Active = true;
-			s_Toggle ^= 1;
-		}
-		else if (Input::IsKeyUp(EKey::KEY_GRAVE_ACCENT))
-		{
-			s_Active = false;
-		}
-
 		// Do not draw if not active.
-		if (!s_Toggle)
+		if (!m_IsActive)
+		{
 			return;
+		}
 
 		ImVec2 popupPos;
 		ImVec2 popupSize;
@@ -136,7 +253,7 @@ namespace LambdaEngine
 			ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver); // Standard position
 			ImGui::SetNextWindowSize(ImVec2(width, standardHeight), ImGuiCond_FirstUseEver); // Standard size
 			ImGui::SetNextWindowSizeConstraints(ImVec2(width, 70), ImVec2(width, height)); // Window constraints
-
+			
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f); // Make more transparent
 			ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); // Remove grip, resize works anyway
 			ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); // Remove grip, resize works anyway
@@ -149,7 +266,7 @@ namespace LambdaEngine
 				// History
 				const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 				ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
-
+				
 				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
 
@@ -214,24 +331,24 @@ namespace LambdaEngine
 					hasFocus = true;
 				}
 
-					ImGui::PopStyleColor();
-					ImGui::PopItemWidth();
-					ImGui::PopStyleVar();
+				ImGui::PopStyleColor();
+				ImGui::PopItemWidth();
+				ImGui::PopStyleVar();
+				
+				if (m_IsActive || hasFocus)
+				{
+					ImGui::SetItemDefaultFocus();
+					ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
+				}
 
-					if (s_Active || hasFocus)
-					{
-						ImGui::SetItemDefaultFocus();
-						ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
-					}
+				if (ImGui::IsWindowFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+				{
+					ImGui::SetKeyboardFocusHere(-1);
+				}
 
-					if (ImGui::IsWindowFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
-					{
-						ImGui::SetKeyboardFocusHere(-1);
-					}
-
-					popupSize = ImVec2(ImGui::GetItemRectSize().x - 60, ImGui::GetTextLineHeightWithSpacing() * 2);
-					popupPos = ImGui::GetItemRectMin();
-					popupPos.y += ImGui::GetItemRectSize().y;
+				popupSize = ImVec2(ImGui::GetItemRectSize().x - 60, ImGui::GetTextLineHeightWithSpacing() * 2);
+				popupPos = ImGui::GetItemRectMin();
+				popupPos.y += ImGui::GetItemRectSize().y;
 			}
 			ImGui::End();
 
@@ -311,6 +428,7 @@ namespace LambdaEngine
 
 	GameConsole::~GameConsole()
 	{
+		EventQueue::UnregisterEventHandler(this, &GameConsole::OnKeyPressed);
 	}
 
 	int GameConsole::ExecCommand(const std::string& data)
@@ -419,33 +537,33 @@ namespace LambdaEngine
 	void GameConsole::FillArg(Arg& arg, std::string token)
 	{
 		arg.Type = Arg::EType::STRING;
-		strcpy(arg.Value.Str, token.c_str());
+		strcpy(arg.Value.String, token.c_str());
 
 		if (std::regex_match(token, std::regex("-[0-9]+")))
 		{
 			arg.Type = Arg::EType::INT;
-			arg.Value.I = std::stoi(token);
+			arg.Value.Int32 = std::stoi(token);
 		}
 		else if (std::regex_match(token, std::regex("[0-9]+")))
 		{
 			arg.Type = Arg::EType::INT;
-			arg.Value.I = std::stoi(token);
+			arg.Value.Int32 = std::stoi(token);
 		}
 		else if (std::regex_match(token, std::regex("(-[0-9]*\\.[0-9]+)|(-[0-9]+\\.[0-9]*)")))
 		{
 			arg.Type = Arg::EType::FLOAT;
-			arg.Value.F = std::stof(token);
+			arg.Value.Float32 = std::stof(token);
 		}
 		else if (std::regex_match(token, std::regex("([0-9]*\\.[0-9]+)|([0-9]+\\.[0-9]*)")))
 		{
 			arg.Type = Arg::EType::FLOAT;
-			arg.Value.F = std::stof(token);
+			arg.Value.Float32 = std::stof(token);
 		}
 		std::for_each(token.begin(), token.end(), [](char& c) { c = (char)std::tolower(c); });
 		if (std::regex_match(token, std::regex("(false)|(true)")))
 		{
 			arg.Type = Arg::EType::BOOL;
-			arg.Value.B = token == "false" ? false : true;
+			arg.Value.Boolean = token == "false" ? false : true;
 		}
 	}
 
@@ -457,11 +575,31 @@ namespace LambdaEngine
 			PushError("Too many arguments!");
 			return false;
 		}
-		if (cmd.GetArguments()[index].Type != arg.Type) // Error wrong type
+
+		// Add special case for booleans, this makes it possible to write an integer as argument for a bool
+		if (cmd.GetArguments()[index].Type == Arg::EType::BOOL)
+		{
+			if (arg.Type != Arg::EType::BOOL)
+			{
+				if (arg.Type == Arg::EType::INT)
+				{
+					int32 value = arg.Value.Int32;
+					arg.Type = Arg::EType::BOOL;
+					arg.Value.Boolean = (value != 0);
+				}
+				else
+				{
+					PushError("Wrong argument type!");
+					return false;
+				}
+			}
+		}
+		else if (cmd.GetArguments()[index].Type != arg.Type) // Error wrong type
 		{
 			PushError("Wrong argument type!");
 			return false;
 		}
+
 		cmd.GetArguments()[index].Value = arg.Value;
 		return true;
 	}
@@ -483,6 +621,16 @@ namespace LambdaEngine
 		item.Color = color;
 		m_Items.PushBack(item);
 		m_ScrollToBottom = true;
+	}
+
+	bool GameConsole::OnKeyPressed(const KeyPressedEvent& event)
+	{
+		if (event.Key == EKey::KEY_GRAVE_ACCENT)
+		{
+			m_IsActive = !m_IsActive;
+		}
+
+		return true;
 	}
 
 	int GameConsole::TextEditCallback(ImGuiInputTextCallbackData* data)
