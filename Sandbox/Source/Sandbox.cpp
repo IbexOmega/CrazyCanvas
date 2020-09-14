@@ -69,14 +69,14 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
-	m_RenderGraphWindow = false;
-	m_ShowDemoWindow = false;
-	m_DebuggingWindow = false;
+	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
+	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");
+	m_DebuggingWindow = EngineConfig::GetBoolProperty("Debugging");
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
 	ShaderReflection shaderReflection;
-	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
+	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
 
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
@@ -340,7 +340,7 @@ Sandbox::Sandbox()
 			m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 		}
 	}
-	
+
 
 	m_pScene->Finalize();
 	Renderer::SetScene(m_pScene);
@@ -375,7 +375,7 @@ Sandbox::Sandbox()
 	cmd1.AddArg(Arg::EType::BOOL);
 	cmd1.AddDescription("Activate/Deactivate rendergraph window.\n\t'render_graph true'");
 	GameConsole::Get().BindCommand(cmd1, [&, this](GameConsole::CallbackInput& input)->void {
-		m_RenderGraphWindow = input.Arguments.GetFront().Value.B;
+		m_RenderGraphWindow = input.Arguments.GetFront().Value.Boolean;
 		});
 
 	ConsoleCommand cmd2;
@@ -383,7 +383,7 @@ Sandbox::Sandbox()
 	cmd2.AddArg(Arg::EType::BOOL);
 	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'imgui_demo true'");
 	GameConsole::Get().BindCommand(cmd2, [&, this](GameConsole::CallbackInput& input)->void {
-		m_ShowDemoWindow = input.Arguments.GetFront().Value.B;
+		m_ShowDemoWindow = input.Arguments.GetFront().Value.Boolean;
 		});
 
 	ConsoleCommand cmd3;
@@ -391,7 +391,7 @@ Sandbox::Sandbox()
 	cmd3.AddArg(Arg::EType::BOOL);
 	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'show_debug_window true'");
 	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
-		m_DebuggingWindow = input.Arguments.GetFront().Value.B;
+		m_DebuggingWindow = input.Arguments.GetFront().Value.Boolean;
 		});
 
 	return;
@@ -477,7 +477,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 			{
 				Profiler::Render(delta);
 			}
-			
+
 		});
 	}
 

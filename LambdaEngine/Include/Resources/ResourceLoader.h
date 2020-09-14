@@ -4,7 +4,6 @@
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/Texture.h"
 #include "Rendering/Core/API/Shader.h"
-#include "Rendering/Core/API/DeviceAllocator.h"
 
 #include "Audio/API/ISoundEffect3D.h"
 
@@ -130,10 +129,9 @@ namespace LambdaEngine
 		static bool CreateShaderReflection(glslang::TIntermediate* pIntermediate, FShaderStageFlags stage, ShaderReflection* pReflection);
 
 	private:
-		static DeviceAllocator*		s_pAllocator;
-		static CommandAllocator*		s_pCopyCommandAllocator;
+		static CommandAllocator*	s_pCopyCommandAllocator;
 		static CommandList*			s_pCopyCommandList;
-		static Fence*					s_pCopyFence;
-		static uint64					s_SignalValue;
+		static Fence*				s_pCopyFence;
+		static uint64				s_SignalValue;
 	};
 }

@@ -4,6 +4,9 @@
 
 namespace LambdaEngine
 {
+	/*
+	* EAccelerationStructureType
+	*/
 	enum class EAccelerationStructureType
 	{
 		ACCELERATION_STRUCTURE_TYPE_NONE	= 0,
@@ -11,17 +14,23 @@ namespace LambdaEngine
 		ACCELERATION_STRUCTURE_TYPE_BOTTOM	= 2,
 	};
 
+	/*
+	* AccelerationStructureDesc
+	*/
 	struct AccelerationStructureDesc
 	{
 		String						DebugName			= "";
 		EAccelerationStructureType	Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_NONE;
-		uint32						Flags				= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
+		FAccelerationStructureFlags	Flags				= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_NONE;
 		uint32						InstanceCount		= 8;
 		uint32						MaxTriangleCount	= 0;
 		uint32						MaxVertexCount		= 0;
 		bool						AllowsTransform		= false;
 	};
 
+	/*
+	* AccelerationStructure
+	*/
 	class AccelerationStructure : public DeviceChild
 	{
 	public:

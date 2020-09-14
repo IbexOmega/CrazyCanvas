@@ -65,8 +65,6 @@ namespace LambdaEngine
 			SAFERELEASE(pBLAS);
 		}
 		m_BLASs.Clear();
-
-		SAFERELEASE(m_pDeviceAllocator);
 	}
 
 	bool Scene::Init(const SceneDesc& desc)
@@ -89,19 +87,11 @@ namespace LambdaEngine
 			pAreaLight->Type			= EAreaLightType::NONE;
 		}
 
-		//Device Allocator
-		{
-			DeviceAllocatorDesc allocatorDesc = {};
-			allocatorDesc.DebugName = "Scene Allocator";
-			allocatorDesc.PageSizeInBytes	= MEGA_BYTE(64);
-			m_pDeviceAllocator = RenderSystem::GetDevice()->CreateDeviceAllocator(&allocatorDesc);
-		}
-
 		m_pCopyCommandAllocator		= m_pGraphicsDevice->CreateCommandAllocator("Scene Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
 		CommandListDesc copyCommandListDesc = {};
 		copyCommandListDesc.DebugName			= "Scene Copy Command List";
-		copyCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+		copyCommandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 		copyCommandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 
 		m_pCopyCommandList = m_pGraphicsDevice->CreateCommandList(m_pCopyCommandAllocator, &copyCommandListDesc);
@@ -114,7 +104,7 @@ namespace LambdaEngine
 
 			CommandListDesc blasBuildCommandListDesc = {};
 			blasBuildCommandListDesc.DebugName			= "Scene BLAS Build Command List";
-			blasBuildCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+			blasBuildCommandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 			blasBuildCommandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 
 			m_pBLASBuildCommandList = m_pGraphicsDevice->CreateCommandList(m_pBLASBuildCommandAllocator, &blasBuildCommandListDesc);
@@ -124,7 +114,7 @@ namespace LambdaEngine
 
 			CommandListDesc tlasBuildCommandListDesc = {};
 			tlasBuildCommandListDesc.DebugName			= "Scene TLAS Build Command List";
-			tlasBuildCommandListDesc.Flags				= FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+			tlasBuildCommandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 			tlasBuildCommandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 
 			m_pTLASBuildCommandList = m_pGraphicsDevice->CreateCommandList(m_pTLASBuildCommandAllocator, &tlasBuildCommandListDesc);
@@ -142,18 +132,18 @@ namespace LambdaEngine
 			BufferDesc lightsCopyBufferDesc = {};
 			lightsCopyBufferDesc.DebugName				= "Scene Lights Copy Buffer";
 			lightsCopyBufferDesc.MemoryType				= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			lightsCopyBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+			lightsCopyBufferDesc.Flags					= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			lightsCopyBufferDesc.SizeInBytes			= sizeof(LightSetup);
 
-			m_pLightsCopyBuffer = m_pGraphicsDevice->CreateBuffer(&lightsCopyBufferDesc, m_pDeviceAllocator);
+			m_pLightsCopyBuffer = m_pGraphicsDevice->CreateBuffer(&lightsCopyBufferDesc);
 
 			BufferDesc lightsBufferDesc = {};
 			lightsBufferDesc.DebugName				= "Scene Lights Buffer";
 			lightsBufferDesc.MemoryType				= EMemoryType::MEMORY_TYPE_GPU;
-			lightsBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlags::BUFFER_FLAG_COPY_DST;
+			lightsBufferDesc.Flags					= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
 			lightsBufferDesc.SizeInBytes			= sizeof(LightSetup);
 
-			m_pLightsBuffer = m_pGraphicsDevice->CreateBuffer(&lightsBufferDesc, m_pDeviceAllocator);
+			m_pLightsBuffer = m_pGraphicsDevice->CreateBuffer(&lightsBufferDesc);
 		}
 
 		// Per Frame Buffer
@@ -161,18 +151,18 @@ namespace LambdaEngine
 			BufferDesc perFrameCopyBufferDesc = {};
 			perFrameCopyBufferDesc.DebugName				= "Scene Per Frame Copy Buffer";
 			perFrameCopyBufferDesc.MemoryType				= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			perFrameCopyBufferDesc.Flags					= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+			perFrameCopyBufferDesc.Flags					= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			perFrameCopyBufferDesc.SizeInBytes				= sizeof(PerFrameBuffer);
 
-			m_pPerFrameCopyBuffer = m_pGraphicsDevice->CreateBuffer(&perFrameCopyBufferDesc, m_pDeviceAllocator);
+			m_pPerFrameCopyBuffer = m_pGraphicsDevice->CreateBuffer(&perFrameCopyBufferDesc);
 
 			BufferDesc perFrameBufferDesc = {};
 			perFrameBufferDesc.DebugName			= "Scene Per Frame Buffer";
 			perFrameBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
-			perFrameBufferDesc.Flags				= FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlags::BUFFER_FLAG_COPY_DST;;
+			perFrameBufferDesc.Flags				= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;;
 			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
 
-			m_pPerFrameBuffer = m_pGraphicsDevice->CreateBuffer(&perFrameBufferDesc, m_pDeviceAllocator);
+			m_pPerFrameBuffer = m_pGraphicsDevice->CreateBuffer(&perFrameBufferDesc);
 		}
 
 		return true;
@@ -194,10 +184,10 @@ namespace LambdaEngine
 			AccelerationStructureDesc tlasDesc = {};
 			tlasDesc.DebugName		= "TLAS";
 			tlasDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
-			tlasDesc.Flags			= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+			tlasDesc.Flags			= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
 			tlasDesc.InstanceCount	= m_PrimaryInstances.GetSize();
 
-			m_pTLAS = m_pGraphicsDevice->CreateAccelerationStructure(&tlasDesc, m_pDeviceAllocator);
+			m_pTLAS = m_pGraphicsDevice->CreateAccelerationStructure(&tlasDesc);
 
 			m_BLASs.Reserve(m_Meshes.GetSize());
 		}
@@ -225,18 +215,18 @@ namespace LambdaEngine
 				AccelerationStructureDesc blasDesc = {};
 				blasDesc.DebugName			= "BLAS";
 				blasDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_BOTTOM;
-				blasDesc.Flags				= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
+				blasDesc.Flags				= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_NONE;
 				blasDesc.MaxTriangleCount	= pMesh->IndexCount / 3;
 				blasDesc.MaxVertexCount		= pMesh->VertexCount;
 				blasDesc.AllowsTransform	= false;
 
-				AccelerationStructure* pBLAS = m_pGraphicsDevice->CreateAccelerationStructure(&blasDesc, m_pDeviceAllocator);
+				AccelerationStructure* pBLAS = m_pGraphicsDevice->CreateAccelerationStructure(&blasDesc);
 				accelerationStructureDeviceAddress = pBLAS->GetDeviceAdress();
 				m_BLASs.PushBack(pBLAS);
 
 				BuildBottomLevelAccelerationStructureDesc blasBuildDesc = {};
 				blasBuildDesc.pAccelerationStructure		= pBLAS;
-				blasBuildDesc.Flags							= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
+				blasBuildDesc.Flags							= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_NONE;
 				blasBuildDesc.FirstVertexIndex				= currentNumSceneVertices;
 				blasBuildDesc.VertexStride					= sizeof(Vertex);
 				blasBuildDesc.IndexBufferByteOffset			= currentNumSceneIndices * sizeof(uint32);
@@ -437,7 +427,7 @@ namespace LambdaEngine
 
 		m_pCopyCommandList->End();
 
-		RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_pCopyCommandList, 1,		FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+		RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_pCopyCommandList, 1,		FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
 		RenderSystem::GetGraphicsQueue()->Flush();
 
 		/*------------Ray Tracing Section Begin-------------*/
@@ -470,8 +460,8 @@ namespace LambdaEngine
 				m_pTLASBuildCommandList->End();
 			}
 
-			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pBLASBuildCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, m_pASFence, 1);
-			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pTLASBuildCommandList, 1, FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, m_pASFence, 1, nullptr, 0);
+			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pBLASBuildCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, m_pASFence, 1);
+			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pTLASBuildCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pASFence, 1, nullptr, 0);
 			RenderSystem::GetComputeQueue()->Flush();
 
 			//RayTracingTestVK::Debug(m_pGraphicsDevice, blasBuildDescriptions[0].pAccelerationStructure, m_pTLAS);
@@ -751,10 +741,10 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Scene Material Properties Copy Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			bufferDesc.SizeInBytes	= sceneMaterialPropertiesSize;
 
-			m_pSceneMaterialPropertiesCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			m_pSceneMaterialPropertiesCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
 		}
 
 		void* pMapped = m_pSceneMaterialPropertiesCopyBuffer->Map();
@@ -768,10 +758,10 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Scene Material Properties";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 			bufferDesc.SizeInBytes	= sceneMaterialPropertiesSize;
 
-			m_pSceneMaterialProperties = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			m_pSceneMaterialProperties = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
 		}
 
 		pCopyCommandList->CopyBuffer(m_pSceneMaterialPropertiesCopyBuffer, 0, m_pSceneMaterialProperties, 0, sceneMaterialPropertiesSize);
@@ -788,10 +778,10 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Scene Vertex Copy Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			bufferDesc.SizeInBytes	= sceneVertexBufferSize;
 
-			m_pSceneVertexCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			m_pSceneVertexCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
 		}
 
 		void* pMapped = m_pSceneVertexCopyBuffer->Map();
@@ -805,10 +795,10 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Scene Vertex Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_VERTEX_BUFFER;
 			bufferDesc.SizeInBytes	= sceneVertexBufferSize;
 
-			m_pSceneVertexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			m_pSceneVertexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
 		}
 
 		pCopyCommandList->CopyBuffer(m_pSceneVertexCopyBuffer, 0, m_pSceneVertexBuffer, 0, sceneVertexBufferSize);
@@ -825,10 +815,10 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Scene Index Copy Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			bufferDesc.SizeInBytes	= sceneIndexBufferSize;
 
-			m_pSceneIndexCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			m_pSceneIndexCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
 		}
 
 		void* pMapped = m_pSceneIndexCopyBuffer->Map();
@@ -842,10 +832,10 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Scene Index Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDEX_BUFFER;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
 			bufferDesc.SizeInBytes	= sceneIndexBufferSize;
 
-			m_pSceneIndexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			m_pSceneIndexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
 		}
 
 		pCopyCommandList->CopyBuffer(m_pSceneIndexCopyBuffer, 0, m_pSceneIndexBuffer, 0, sceneIndexBufferSize);
@@ -863,10 +853,10 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Scene Primary Instance Copy Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			bufferDesc.SizeInBytes	= scenePrimaryInstanceBufferSize;
 
-			m_pScenePrimaryInstanceCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			m_pScenePrimaryInstanceCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
 		}
 
 		if (m_pSceneSecondaryInstanceCopyBuffer == nullptr || sceneSecondaryInstanceBufferSize > m_pSceneSecondaryInstanceCopyBuffer->GetDesc().SizeInBytes)
@@ -876,10 +866,10 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Scene Secondary Instance Copy Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			bufferDesc.SizeInBytes	= sceneSecondaryInstanceBufferSize;
 
-			m_pSceneSecondaryInstanceCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			m_pSceneSecondaryInstanceCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
 		}
 
 		void* pPrimaryMapped = m_pScenePrimaryInstanceCopyBuffer->Map();
@@ -897,10 +887,10 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Scene Primary Instance Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 			bufferDesc.SizeInBytes	= scenePrimaryInstanceBufferSize;
 
-			m_pScenePrimaryInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			m_pScenePrimaryInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
 		}
 
 		if (m_pSceneSecondaryInstanceBuffer == nullptr || scenePrimaryInstanceBufferSize > m_pSceneSecondaryInstanceBuffer->GetDesc().SizeInBytes)
@@ -910,10 +900,10 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Scene Secondary Instance Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 			bufferDesc.SizeInBytes	= sceneSecondaryInstanceBufferSize;
 
-			m_pSceneSecondaryInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			m_pSceneSecondaryInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
 		}
 
 		pCopyCommandList->CopyBuffer(m_pScenePrimaryInstanceCopyBuffer, 0, m_pScenePrimaryInstanceBuffer, 0, scenePrimaryInstanceBufferSize);
@@ -931,10 +921,10 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Scene Mesh Index Copy Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_SRC;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			bufferDesc.SizeInBytes	= sceneMeshIndexBufferSize;
 
-			m_pSceneIndirectArgsCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			m_pSceneIndirectArgsCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
 		}
 
 		void* pMapped = m_pSceneIndirectArgsCopyBuffer->Map();
@@ -948,10 +938,10 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Scene Mesh Index Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlags::BUFFER_FLAG_INDIRECT_BUFFER;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_INDIRECT_BUFFER;
 			bufferDesc.SizeInBytes	= sceneMeshIndexBufferSize;
 
-			m_pSceneIndirectArgsBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
+			m_pSceneIndirectArgsBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
 		}
 
 		pCopyCommandList->CopyBuffer(m_pSceneIndirectArgsCopyBuffer, 0, m_pSceneIndirectArgsBuffer, 0, sceneMeshIndexBufferSize);
@@ -961,7 +951,7 @@ namespace LambdaEngine
 	{
 		BuildTopLevelAccelerationStructureDesc tlasBuildDesc = {};
 		tlasBuildDesc.pAccelerationStructure	= m_pTLAS;
-		tlasBuildDesc.Flags						= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+		tlasBuildDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
 		tlasBuildDesc.pInstanceBuffer			= m_pScenePrimaryInstanceBuffer;
 		tlasBuildDesc.InstanceCount				= m_PrimaryInstances.GetSize();
 		tlasBuildDesc.Update					= update;
