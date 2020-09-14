@@ -39,7 +39,11 @@ namespace LambdaEngine
 		if (header->Size > MAXIMUM_SEGMENT_SIZE)
 			return false;
 
-		return ForceReceive(pBuffer + headerSize, header->Size - headerSize);
+		if (!ForceReceive(pBuffer + headerSize, header->Size - headerSize))
+			return false;
+
+		bytesReceived = header->Size;
+		return true;
 	}
 
 	bool PacketTransceiverTCP::ForceReceive(uint8* pBuffer, uint32 bytesToRead)
