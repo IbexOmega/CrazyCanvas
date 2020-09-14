@@ -49,19 +49,22 @@ namespace LambdaEngine
 	void FrameBufferCacheVK::DestroyImageView(VkImageView imageView) const
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
-		
-		for (FrameBufferMap::iterator it = m_FrameBufferMap.begin(); it != m_FrameBufferMap.end();)
-		{
-			if (it->first.Contains(imageView))
-			{
-				vkDestroyFramebuffer(m_pDevice->Device, it->second, nullptr);
-				it->second = VK_NULL_HANDLE;
 
-				it = m_FrameBufferMap.erase(it);
-			}
-			else
+		if (!m_FrameBufferMap.empty())
+		{
+			for (FrameBufferMap::iterator it = m_FrameBufferMap.begin(); it != m_FrameBufferMap.end();)
 			{
-				it++;
+				if (it->first.Contains(imageView))
+				{
+					vkDestroyFramebuffer(m_pDevice->Device, it->second, nullptr);
+					it->second = VK_NULL_HANDLE;
+
+					it = m_FrameBufferMap.erase(it);
+				}
+				else
+				{
+					it++;
+				}
 			}
 		}
 	}

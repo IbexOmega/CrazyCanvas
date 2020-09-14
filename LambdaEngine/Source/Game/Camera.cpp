@@ -206,7 +206,7 @@ namespace LambdaEngine
 			uint16 width = window->GetWidth();
 			uint16 height = window->GetHeight();
 
-			glm::vec2 mouseDelta(mouseState.x - (int)(width * 0.5), mouseState.y - (int)(height * 0.5));
+			glm::vec2 mouseDelta(mouseState.Position.x - (int)(width * 0.5), mouseState.Position.y - (int)(height * 0.5));
 			CommonApplication::Get()->SetMousePosition((int)(width * 0.5), (int)(height * 0.5));
 
 			if (glm::length(mouseDelta) > glm::epsilon<float>())

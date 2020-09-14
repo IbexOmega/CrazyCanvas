@@ -1,8 +1,11 @@
 #pragma once
 #include "Input/API/InputCodes.h"
+#include "Input/API/InputState.h"
 
 #include "Application/API/Window.h"
 #include "Core/TSharedRef.h"
+#include "Window.h"
+
 #include "Window.h"
 
 #ifdef LAMBDA_VISUAL_STUDIO
@@ -25,10 +28,10 @@ namespace LambdaEngine
 	/*
 	* EventHandler
 	*/
-	class LAMBDA_API EventHandler
+	class LAMBDA_API ApplicationEventHandler
 	{
 	public:
-		DECL_INTERFACE(EventHandler);
+		DECL_INTERFACE(ApplicationEventHandler);
 
 		/*
 		* Called when window focus changed.
@@ -104,9 +107,10 @@ namespace LambdaEngine
 
 		/*
 		* Will be called when a mouse button pressed event occurs
-		*	button - Which button was pressed
+		*	button			- Which button was pressed
+		*	modifierState	- Current state of the modifer keys at the same time as key was pressed.
 		*/
-		virtual void OnButtonPressed(EMouseButton button, uint32 modifierMask)
+		virtual void OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)
 		{
 		}
 
@@ -114,7 +118,7 @@ namespace LambdaEngine
 		* Will be called when a mouse button released event occurs
 		*	button - Which button was released
 		*/
-		virtual void OnButtonReleased(EMouseButton button)
+		virtual void OnButtonReleased(EMouseButton button, ModifierKeyState modifierState)
 		{
 		}
 
@@ -130,12 +134,11 @@ namespace LambdaEngine
 		/*
 		* Will be called when a key pressed event occurs
 		*	key				- Which key was pressed.
-		*	modifierMask	- A mask of values from FModiferFlag- enumeration indicating what modifer
-							  keys were pressed at the same time as key.
+		*	modifierState	- Current state of the modifer keys at the same time as key was pressed.
 		*	isRepeat		- True if the key already were down and this message is a repeat message.
-							  Sent when a key is continuously held down.
+		*					  Sent when a key is continuously held down.
 		*/
-		virtual void OnKeyPressed(EKey key, uint32 modifierMask, bool isRepeat)
+		virtual void OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)
 		{
 		}
 
@@ -143,7 +146,7 @@ namespace LambdaEngine
 		 * Will be called when a key released event occurs
 		 *	key - Which key was released
 		 */
-		virtual void OnKeyReleased(EKey key)
+		virtual void OnKeyReleased(EKey key, ModifierKeyState modifierState)
 		{
 		}
 

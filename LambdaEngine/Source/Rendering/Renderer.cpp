@@ -61,7 +61,7 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "DEMO.lrg", IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "DEMO_SKYBOX.lrg", IMGUI_ENABLED))
 			{
 				return false;
 			}
@@ -80,28 +80,8 @@ namespace LambdaEngine
 		{
 			for (uint32 v = 0; v < BACK_BUFFER_COUNT; v++)
 			{
-				Texture* pBackBuffer	= s_SwapChain->GetBuffer(v);
-				s_ppBackBuffers[v]		= pBackBuffer;
-
-				TextureViewDesc textureViewDesc = {};
-				textureViewDesc.DebugName		= "Renderer Back Buffer Texture View";
-				textureViewDesc.pTexture		= pBackBuffer;
-				textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
-				textureViewDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
-				textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-				textureViewDesc.MiplevelCount	= 1;
-				textureViewDesc.ArrayCount		= 1;
-				textureViewDesc.Miplevel		= 0;
-				textureViewDesc.ArrayIndex		= 0;
-			
-				TextureView* pBackBufferView = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
-				if (pBackBufferView == nullptr)
-				{
-					LOG_ERROR("[Renderer]: Could not create Back Buffer View of Back Buffer Index %u in Renderer", v);
-					return false;
-				}
-			
-				s_ppBackBufferViews[v] = pBackBufferView;
+				s_ppBackBuffers[v]		= s_SwapChain->GetBuffer(v);
+				s_ppBackBufferViews[v]	= s_SwapChain->GetBufferView(v);
 			}
 		
 			ResourceUpdateDesc resourceUpdateDesc = {};
@@ -109,7 +89,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= s_ppBackBuffers;
 			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews	= s_ppBackBufferViews;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		return true;
@@ -201,7 +181,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -210,7 +190,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -219,7 +199,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -228,7 +208,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_VERTEX_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -237,7 +217,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_INDEX_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -246,7 +226,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_PRIMARY_INSTANCE_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -255,7 +235,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_SECONDARY_INSTANCE_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -264,7 +244,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName						= SCENE_INDIRECT_ARGS_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		{
@@ -312,11 +292,11 @@ namespace LambdaEngine
 			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= ppRoughnessMapViews;
 			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= nearestSamplers.data();
 
-			s_pRenderGraph->UpdateResource(albedoMapsUpdateDesc);
-			s_pRenderGraph->UpdateResource(normalMapsUpdateDesc);
-			s_pRenderGraph->UpdateResource(aoMapsUpdateDesc);
-			s_pRenderGraph->UpdateResource(metallicMapsUpdateDesc);
-			s_pRenderGraph->UpdateResource(roughnessMapsUpdateDesc);
+			s_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
+			s_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
+			s_pRenderGraph->UpdateResource(&aoMapsUpdateDesc);
+			s_pRenderGraph->UpdateResource(&metallicMapsUpdateDesc);
+			s_pRenderGraph->UpdateResource(&roughnessMapsUpdateDesc);
 		}
 
 		if (s_pScene->IsRayTracingEnabled())
@@ -326,7 +306,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ResourceName							= SCENE_TLAS;
 			resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= pTLAS;
 
-			s_pRenderGraph->UpdateResource(resourceUpdateDesc);
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 	}
 }

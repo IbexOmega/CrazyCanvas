@@ -11,11 +11,11 @@ namespace LambdaEngine
 {
 	constexpr const char* RENDER_GRAPH_IMGUI_STAGE_NAME			= "RENDER_STAGE_IMGUI";
 
-	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT   = "BACK_BUFFER_TEXTURE";
+	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT	= "BACK_BUFFER_TEXTURE";
 
-	constexpr const char* FULLSCREEN_QUAD_VERTEX_BUFFER		    = "FULLSCREEN_QUAD_VERTEX_BUFFER";
+	constexpr const char* FULLSCREEN_QUAD_VERTEX_BUFFER			= "FULLSCREEN_QUAD_VERTEX_BUFFER";
 
-	constexpr const char* PER_FRAME_BUFFER					    = "PER_FRAME_BUFFER";
+	constexpr const char* PER_FRAME_BUFFER						= "PER_FRAME_BUFFER";
 	constexpr const char* SCENE_LIGHTS_BUFFER					= "SCENE_LIGHTS_BUFFER";
 
 	constexpr const char* SCENE_MAT_PARAM_BUFFER				= "SCENE_MAT_PARAM_BUFFER";
@@ -26,11 +26,16 @@ namespace LambdaEngine
 	constexpr const char* SCENE_INDIRECT_ARGS_BUFFER			= "SCENE_INDIRECT_ARGS_BUFFER";
 	constexpr const char* SCENE_TLAS							= "SCENE_TLAS";
 
-	constexpr const char* SCENE_ALBEDO_MAPS					    = "SCENE_ALBEDO_MAPS";
-	constexpr const char* SCENE_NORMAL_MAPS					    = "SCENE_NORMAL_MAPS";
-	constexpr const char* SCENE_AO_MAPS						    = "SCENE_AO_MAPS";
-	constexpr const char* SCENE_ROUGHNESS_MAPS				    = "SCENE_ROUGHNESS_MAPS";
+	constexpr const char* SCENE_ALBEDO_MAPS						= "SCENE_ALBEDO_MAPS";
+	constexpr const char* SCENE_NORMAL_MAPS						= "SCENE_NORMAL_MAPS";
+	constexpr const char* SCENE_AO_MAPS							= "SCENE_AO_MAPS";
+	constexpr const char* SCENE_ROUGHNESS_MAPS					= "SCENE_ROUGHNESS_MAPS";
 	constexpr const char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";
+
+	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE		= 4; 
+
+	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0; 
+	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES	= DRAW_ITERATION_PUSH_CONSTANTS_INDEX + 1;
 
 	enum class ERenderGraphPipelineStageType : uint8
 	{
@@ -66,6 +71,7 @@ namespace LambdaEngine
 		NONE					= 0,
 		SCENE_INDIRECT			= 1,
 		FULLSCREEN_QUAD			= 2,
+		CUBE					= 3,
 	};
 
 	enum class ERenderGraphDimensionType : uint8
@@ -82,6 +88,12 @@ namespace LambdaEngine
 		NONE					= 0,
 		LINEAR					= 1,
 		NEAREST					= 2,
+	};
+
+	enum class ERenderGraphTextureType : uint8
+	{
+		TEXTURE_2D				= 0,
+		TEXTURE_CUBE			= 1
 	};
 
 	/*-----------------------------------------------------------------Resource Structs Begin-----------------------------------------------------------------*/
@@ -102,6 +114,7 @@ namespace LambdaEngine
 		//Texture Specific
 		struct
 		{
+			ERenderGraphTextureType		TextureType				= ERenderGraphTextureType::TEXTURE_2D;
 			EFormat						TextureFormat			= EFormat::FORMAT_NONE;
 			bool						IsOfArrayType			= false;
 			ERenderGraphDimensionType	XDimType				= ERenderGraphDimensionType::RELATIVE;
@@ -654,6 +667,32 @@ namespace LambdaEngine
 		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
 	}
 
+	FORCEINLINE uint32 CreatePipelineStageMask(const RenderStageDesc* pRenderStageDesc)
+	{
+		uint32 pipelineStageMask = FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+
+		if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
+		{
+			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size() > 0)	pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_MESH_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_TASK_SHADER;
+		}
+		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
+		{
+			pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+		}
+		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
+		{
+			pipelineStageMask |= FPipelineStageFlags::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+		}
+
+		return FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+	}
+
 	FORCEINLINE bool IsReadOnly(ERenderGraphResourceBindingType bindingType)
 	{
 		switch (bindingType)
@@ -678,6 +717,7 @@ namespace LambdaEngine
 		{
 		case ERenderStageDrawType::SCENE_INDIRECT:		return "SCENE_INDIRECT";
 		case ERenderStageDrawType::FULLSCREEN_QUAD:		return "FULLSCREEN_QUAD";
+		case ERenderStageDrawType::CUBE:				return "CUBE";
 		default:													return "NONE";
 		}
 	}
@@ -686,6 +726,7 @@ namespace LambdaEngine
 	{
 		if (string == "SCENE_INDIRECT")		return ERenderStageDrawType::SCENE_INDIRECT;
 		if (string == "FULLSCREEN_QUAD")	return ERenderStageDrawType::FULLSCREEN_QUAD;
+		if (string == "CUBE")				return ERenderStageDrawType::CUBE;
 		return ERenderStageDrawType::NONE;
 	}
 
@@ -759,6 +800,25 @@ namespace LambdaEngine
 
 		return EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 	}
+
+	FORCEINLINE String ResourceTextureTypeToString(ERenderGraphTextureType type)
+	{
+		switch (type)
+		{
+		case ERenderGraphTextureType::TEXTURE_2D:		return "TEXTURE_2D";
+		case ERenderGraphTextureType::TEXTURE_CUBE:		return "TEXTURE_CUBE";
+		default:										return "TEXTURE_2D";
+		}
+	}
+
+	FORCEINLINE ERenderGraphTextureType ResourceTextureTypeFromString(const String& string)
+	{
+		if (string == "TEXTURE_2D")						return ERenderGraphTextureType::TEXTURE_2D;
+		else if (string == "TEXTURE_CUBE")				return ERenderGraphTextureType::TEXTURE_CUBE;
+
+		return ERenderGraphTextureType::TEXTURE_2D;
+	}
+
 
 	FORCEINLINE String RenderGraphResourceTypeToString(ERenderGraphResourceType type)
 	{

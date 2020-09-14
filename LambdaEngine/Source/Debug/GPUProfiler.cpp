@@ -55,7 +55,7 @@ namespace LambdaEngine
 
 				for (uint32_t i = 0; i < m_PlotDataSize; i++)
 				{
-					average += stage.second[i];
+					average += stage.Results[i];
 				}
 				average /= m_PlotDataSize;
 
@@ -63,8 +63,8 @@ namespace LambdaEngine
 				overlay.precision(2);
 				overlay << "Average: " << std::fixed << average << GetTimeUnitName();
 
-				ImGui::Text(stage.first.c_str());
-				ImGui::PlotLines("", stage.second.GetData(), (int)m_PlotDataSize, m_PlotResultsStart, overlay.str().c_str(), 0.f, m_CurrentMaxDuration[stage.first], { 0, 80 });
+				ImGui::Text(stage.Name.c_str());
+				ImGui::PlotLines("", stage.Results.GetData(), (int)m_PlotDataSize, m_PlotResultsStart, overlay.str().c_str(), 0.f, m_CurrentMaxDuration[stage.Name], { 0, 80 });
 			}
 		}
 
@@ -133,7 +133,7 @@ namespace LambdaEngine
 #endif
 	}
 
-	void GPUProfiler::AddTimestamp(CommandList* pCommandList, String name)
+	void GPUProfiler::AddTimestamp(CommandList* pCommandList, const String& name)
 	{
 #ifdef LAMBDA_DEBUG
 		if (m_Timestamps.find(pCommandList) == m_Timestamps.end())
@@ -143,11 +143,16 @@ namespace LambdaEngine
 			m_Timestamps[pCommandList].End			= m_NextIndex++;
 			m_Timestamps[pCommandList].Name			= name;
 
-			if (m_PlotResults.find(name) == m_PlotResults.end())
+			auto plotResultIt = std::find_if(m_PlotResults.Begin(), m_PlotResults.End(), [name](const PlotResult& plotResult) { return name == plotResult.Name; });
+			if (plotResultIt == m_PlotResults.End())
 			{
-				m_PlotResults[name].Resize(m_PlotDataSize);
+				PlotResult plotResult = {};
+				plotResult.Name = name;
+				plotResult.Results.Resize(m_PlotDataSize);
 					for (uint32_t i = 0; i < m_PlotDataSize; i++)
-						m_PlotResults[name][i] = 0.0f;
+						plotResult.Results[i] = 0.0f;
+
+				m_PlotResults.PushBack(plotResult);
 			}
 		}
 #endif
@@ -195,7 +200,7 @@ namespace LambdaEngine
 			if (m_StartTimestamp == 0)
 				m_StartTimestamp = start;
 
-			String name = m_Timestamps[pCommandList].Name;
+			const String& name = m_Timestamps[pCommandList].Name;
 			m_Results[name].Start = start;
 			m_Results[name].End = end;
 			float duration = ((end - start) * m_TimestampPeriod) / (uint64_t)m_TimeUnit;
@@ -206,7 +211,11 @@ namespace LambdaEngine
 
 			if (m_EnableGraph)
 			{
-				m_PlotResults[name][m_PlotResultsStart] = duration;
+				auto plotResultIt = std::find_if(m_PlotResults.Begin(), m_PlotResults.End(), [name](const PlotResult& plotResult) { return name == plotResult.Name; });
+				if (plotResultIt != m_PlotResults.End())
+				{
+					plotResultIt->Results[m_PlotResultsStart] = duration;
+				}
 				m_PlotResultsStart = (m_PlotResultsStart + 1) % m_PlotDataSize;
 			}
 		}

@@ -20,9 +20,9 @@ namespace LambdaEngine
 
 	struct FenceValueVk
 	{
-		uint64          Value          = 0;
-		VkFence         Fence          = VK_NULL_HANDLE;
-		VkSemaphore     Semaphore      = VK_NULL_HANDLE;
+		uint64 Value = 0;
+		VkFence Fence = VK_NULL_HANDLE;
+		VkSemaphore Semaphore = VK_NULL_HANDLE;
 		ESemaphoreState SemaphoreState = ESemaphoreState::SEMAPHORE_STATE_NEW;
 	};
 

@@ -9,6 +9,7 @@
 namespace LambdaEngine
 {
 	class Texture;
+	class TextureView;
 	
 	struct SwapChainDesc
 	{
@@ -59,8 +60,17 @@ namespace LambdaEngine
 		*	bufferIndex	- The index of the desired buffer. Must be between 0 and (BufferCount - 1).
 		*	return		- Returns a pointer to the desired texturebuffer
 		*/
-		virtual Texture*		GetBuffer(uint32 bufferIndex)		= 0;
-		virtual const Texture*	GetBuffer(uint32 bufferIndex) const = 0;
+		virtual Texture*			GetBuffer(uint32 bufferIndex)		= 0;
+		virtual const Texture*		GetBuffer(uint32 bufferIndex) const = 0;
+
+		/*
+		* Returns the buffer view specified as parameter. Caller is responsible for calling release on the
+		* resulting pointer. All references to must be released before calling Release or ResizeBuffers.
+		*	bufferIndex	- The index of the desired buffer. Must be between 0 and (BufferCount - 1).
+		*	return		- Returns a pointer to the desired texturebuffer
+		*/
+		virtual TextureView*		GetBufferView(uint32 bufferIndex)		= 0;
+		virtual const TextureView*	GetBufferView(uint32 bufferIndex) const = 0;
 
 		/*
 		* Returns the CommandQueue that were used to create this swapchain. Caller is responsible for 
