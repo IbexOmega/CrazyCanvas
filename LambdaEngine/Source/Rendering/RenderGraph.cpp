@@ -94,16 +94,19 @@ namespace LambdaEngine
 				}
 				else if (pResource->Type == ERenderGraphResourceType::TEXTURE)
 				{
-					for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)
+					for (uint32 sr = 0; sr < pResource->Texture.Textures.GetSize(); sr++)
 					{
 						SAFERELEASE(pResource->Texture.Textures[sr]);
-						SAFERELEASE(pResource->Texture.TextureViews[sr]);
+						SAFERELEASE(pResource->Texture.PerImageTextureViews[sr]);
 						SAFERELEASE(pResource->Texture.Samplers[sr]);
 					}
 
-					for (TextureView* pCubeTextureView : pResource->Texture.CubeFaceTextureViews)
+					if (pResource->Texture.UsedAsRenderTarget && pResource->Texture.PerSubImageUniquelyAllocated)
 					{
-						SAFERELEASE(pCubeTextureView);
+						for (TextureView* pPerSubImageTextureView : pResource->Texture.PerSubImageTextureViews)
+						{
+							SAFERELEASE(pPerSubImageTextureView);
+						}
 					}
 				}
 			}
@@ -149,7 +152,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions))
+		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
@@ -217,7 +220,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions))
+		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
@@ -372,6 +375,31 @@ namespace LambdaEngine
 		else
 		{
 			LOG_WARNING("[RenderGraph]: UpdateResourceDimensions failed, resource with name \"%s\" could not be found", resourceName.c_str());
+			return;
+		}
+	}
+
+	void RenderGraph::TriggerRenderStage(const String& renderStageName)
+	{
+		auto it = m_RenderStageMap.find(renderStageName);
+
+		if (it != m_RenderStageMap.end())
+		{
+			RenderStage* pRenderStage = &m_pRenderStages[it->second];
+
+			if (pRenderStage->TriggerType == ERenderStageExecutionTrigger::TRIGGERED)
+			{
+				pRenderStage->FrameCounter = 0;
+			}
+			else
+			{
+				LOG_WARNING("[RenderGraph]: TriggerRenderStage failed, render stage with name \"%s\" does not have TRIGGERED as trigger type", renderStageName.c_str());
+				return;
+			}
+		}
+		else
+		{
+			LOG_WARNING("[RenderGraph]: TriggerRenderStage failed, render stage with name \"%s\" could not be found", renderStageName.c_str());
 			return;
 		}
 	}
@@ -570,7 +598,7 @@ namespace LambdaEngine
 					{
 						pRenderStage->pCustomRenderer->UpdateTextureResource(
 							pResource->Name,
-							pResource->Texture.TextureViews.GetData(),
+							pResource->Texture.PerImageTextureViews.GetData(),
 							pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount,
 							pResource->BackBufferBound);
 					}
@@ -581,7 +609,7 @@ namespace LambdaEngine
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
 								pRenderStage->ppTextureDescriptorSets[b]->WriteTextureDescriptors(
-									&pResource->Texture.TextureViews[b],
+									&pResource->Texture.PerImageTextureViews[b],
 									&pResource->Texture.Samplers[b],
 									pResourceBinding->TextureState,
 									pResourceBinding->Binding,
@@ -601,7 +629,7 @@ namespace LambdaEngine
 									uint32 subResourceIndex = s * actualSubResourceCount;
 
 									pRenderStage->ppTextureDescriptorSets[descriptorSetIndex]->WriteTextureDescriptors(
-										&pResource->Texture.TextureViews[subResourceIndex],
+										&pResource->Texture.PerImageTextureViews[subResourceIndex],
 										&pResource->Texture.Samplers[subResourceIndex],
 										pResourceBinding->TextureState,
 										pResourceBinding->Binding,
@@ -626,8 +654,7 @@ namespace LambdaEngine
 
 		uint32 currentExecutionStage = 0;
 
-		if (m_SignalValue > m_BackBufferCount)
-			m_pFence->Wait(m_SignalValue - m_BackBufferCount, UINT64_MAX);
+		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
 
 		for (uint32 p = 0; p < m_PipelineStageCount; p++)
 		{
@@ -665,6 +692,21 @@ namespace LambdaEngine
 						case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],		pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],	&m_ppExecutionStages[currentExecutionStage]);	break;
 						case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineState, pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],		pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
 						case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineState, pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],		pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
+						}
+
+						if (pRenderStage->TriggerType == ERenderStageExecutionTrigger::EVERY)
+						{
+							pRenderStage->FrameCounter++;
+
+							if (pRenderStage->FrameCounter > pRenderStage->FrameDelay)
+							{
+								pRenderStage->FrameCounter = 0;
+							}
+						}
+						else
+						{
+							//We set this to one, DISABLED and TRIGGERED wont trigger unless FrameCounter == 0
+							pRenderStage->FrameCounter = 1;
 						}
 
 						currentExecutionStage++;
@@ -805,14 +847,28 @@ namespace LambdaEngine
 		return false;
 	}
 
-	bool RenderGraph::GetResourceTextureViews(const char* pResourceName, TextureView* const ** pppTextureViews, uint32* pTextureViewCount) const
+	bool RenderGraph::GetResourcePerImageTextureViews(const char* pResourceName, TextureView* const ** pppTextureViews, uint32* pTextureViewCount) const
 	{
 		auto it = m_ResourceMap.find(pResourceName);
 
 		if (it != m_ResourceMap.end())
 		{
-			(*pppTextureViews)		= it->second.Texture.TextureViews.GetData();
-			(*pTextureViewCount)	= (uint32)it->second.Texture.TextureViews.GetSize();
+			(*pppTextureViews)		= it->second.Texture.PerImageTextureViews.GetData();
+			(*pTextureViewCount)	= (uint32)it->second.Texture.PerImageTextureViews.GetSize();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool RenderGraph::GetResourcePerSubImageTextureViews(const char* pResourceName, TextureView* const** pppTextureViews, uint32* pTextureViewCount) const
+	{
+		auto it = m_ResourceMap.find(pResourceName);
+
+		if (it != m_ResourceMap.end())
+		{
+			(*pppTextureViews) = it->second.Texture.PerSubImageTextureViews.GetData();
+			(*pTextureViewCount) = (uint32)it->second.Texture.PerSubImageTextureViews.GetSize();
 			return true;
 		}
 
@@ -913,6 +969,7 @@ namespace LambdaEngine
 				SAFEDELETE_ARRAY(pRenderStage->ppBufferDescriptorSets);
 				SAFERELEASE(pRenderStage->pPipelineLayout);
 				SAFERELEASE(pRenderStage->pRenderPass);
+				SAFERELEASE(pRenderStage->pDisabledRenderPass);
 				PipelineStateManager::ReleasePipelineState(pRenderStage->PipelineStateID);
 			}
 			else if (pPipelineStage->Type == ERenderGraphPipelineStageType::SYNCHRONIZATION)
@@ -1027,15 +1084,15 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::CreateResources(const TArray<RenderGraphResourceDesc>& resources)
+	bool RenderGraph::CreateResources(const TArray<RenderGraphResourceDesc>& resourceDescriptions)
 	{
-		m_ResourceMap.reserve(resources.GetSize());
+		m_ResourceMap.reserve(resourceDescriptions.GetSize());
 		TArray<String> addedResourceNames;
-		addedResourceNames.Reserve(resources.GetSize());
+		addedResourceNames.Reserve(resourceDescriptions.GetSize());
 
-		for (uint32 i = 0; i < resources.GetSize(); i++)
+		for (uint32 i = 0; i < resourceDescriptions.GetSize(); i++)
 		{
-			const RenderGraphResourceDesc* pResourceDesc = &resources[i];
+			const RenderGraphResourceDesc* pResourceDesc = &resourceDescriptions[i];
 			addedResourceNames.PushBack(pResourceDesc->Name);
 
 			Resource newResource;
@@ -1055,56 +1112,97 @@ namespace LambdaEngine
 				newResource.SubResourceCount = pResourceDesc->SubResourceCount;
 			}
 
+			uint32 arrayCount					= 0;
+			ETextureViewType textureViewType	= ETextureViewType::TEXTURE_VIEW_TYPE_NONE;
+			bool isCubeTexture					= pResourceDesc->TextureParams.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
+
+			//Create Resource Entries, this is independent of whether the resource is internal/external
+			if (pResourceDesc->Type == ERenderGraphResourceType::TEXTURE)
+			{
+				newResource.Type					= ERenderGraphResourceType::TEXTURE;
+				newResource.Texture.TextureType		= pResourceDesc->TextureParams.TextureType;
+				newResource.Texture.IsOfArrayType	= pResourceDesc->TextureParams.IsOfArrayType;
+
+				if (!pResourceDesc->TextureParams.IsOfArrayType)
+				{
+					//Not of Array Type -> we need space for SubResourceCount Textures/PerImageTextureViews/Samplers
+					newResource.Texture.Textures.Resize(newResource.SubResourceCount);
+					newResource.Texture.PerImageTextureViews.Resize(newResource.SubResourceCount);
+					newResource.Texture.Samplers.Resize(newResource.SubResourceCount);
+
+					//If Cube Texture we also need space for per sub image texture views
+					if (isCubeTexture)
+					{
+						arrayCount				= 6;
+						textureViewType			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+						newResource.Texture.PerSubImageTextureViews.Resize(newResource.SubResourceCount * arrayCount);
+
+						newResource.Texture.PerSubImageUniquelyAllocated = true;
+					}
+					else
+					{
+						arrayCount				= 1;
+						textureViewType			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+						newResource.Texture.PerSubImageTextureViews.Resize(newResource.SubResourceCount);
+					}
+				}
+				else
+				{
+					//Of Array Type -> we only need space for 1 Textures/PerImageTextureViews/Samplers
+					newResource.Texture.Textures.Resize(1);
+					newResource.Texture.PerImageTextureViews.Resize(1);
+					newResource.Texture.Samplers.Resize(1);
+
+					//If Cube Texture we also need space for per sub image texture views
+					if (isCubeTexture)
+					{
+						arrayCount				= newResource.SubResourceCount * 6;
+						textureViewType			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY;
+						newResource.Texture.PerSubImageTextureViews.Resize(arrayCount);
+
+						newResource.Texture.PerSubImageUniquelyAllocated = true;
+					}
+					else
+					{
+						arrayCount				= newResource.SubResourceCount;
+						textureViewType			= ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY;
+						newResource.Texture.PerSubImageTextureViews.Resize(1);
+
+						newResource.Texture.PerSubImageUniquelyAllocated = true;
+					}
+				}
+			}
+			else if (pResourceDesc->Type == ERenderGraphResourceType::BUFFER)
+			{
+				newResource.Type = ERenderGraphResourceType::BUFFER;
+				
+				newResource.Buffer.Buffers.Resize(newResource.SubResourceCount);
+				newResource.Buffer.Offsets.Resize(newResource.SubResourceCount);
+				newResource.Buffer.SizesInBytes.Resize(newResource.SubResourceCount);
+			}
+			else if (pResourceDesc->Type == ERenderGraphResourceType::ACCELERATION_STRUCTURE)
+			{ 
+				newResource.Type = ERenderGraphResourceType::ACCELERATION_STRUCTURE;
+			}
+
+			//Create Internal Update Descriptions if the resource is internal, otherwise just set that it's external
 			if (!pResourceDesc->External)
 			{
 				//Internal
 				if (pResourceDesc->Type == ERenderGraphResourceType::TEXTURE)
 				{
-					newResource.Type						= ERenderGraphResourceType::TEXTURE;
+					
 					newResource.OwnershipType				= newResource.IsBackBuffer ? EResourceOwnershipType::EXTERNAL : EResourceOwnershipType::INTERNAL;
-					newResource.Texture.IsOfArrayType		= pResourceDesc->TextureParams.IsOfArrayType;
 					newResource.Texture.Format				= pResourceDesc->TextureParams.TextureFormat;
 					newResource.Texture.TextureType			= pResourceDesc->TextureParams.TextureType;
 
-					bool isCubeTexure = newResource.Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
-					constexpr uint32 CUBE_FACE_COUNT = 6;
-
-					uint32 actualSubResourceCount = pResourceDesc->TextureParams.IsOfArrayType ? 1 : newResource.SubResourceCount;
-					if (!isCubeTexure)
-					{
-						newResource.Texture.Textures.Resize(actualSubResourceCount);
-						newResource.Texture.TextureViews.Resize(actualSubResourceCount);
-						newResource.Texture.Samplers.Resize(actualSubResourceCount);
-					}
-					else
-					{
-						newResource.Texture.Textures.Resize(actualSubResourceCount);
-						newResource.Texture.TextureViews.Resize(actualSubResourceCount);
-						newResource.Texture.CubeFaceTextureViews.Resize(actualSubResourceCount * CUBE_FACE_COUNT);
-						newResource.Texture.Samplers.Resize(actualSubResourceCount);
-					}
-
 					if (!newResource.IsBackBuffer)
 					{
-						uint32 arrayCount;
-						ETextureViewType textureViewType;
-
-						if (!isCubeTexure)
-						{
-							arrayCount		= pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount : 1;
-							textureViewType = pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-						}
-						else
-						{
-							arrayCount		= pResourceDesc->TextureParams.IsOfArrayType ? newResource.SubResourceCount * 6 : 6;
-							textureViewType = pResourceDesc->TextureParams.IsOfArrayType ? ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
-						}
-
 						TextureDesc		textureDesc			= {};
 						TextureViewDesc textureViewDesc		= {};
 						SamplerDesc		samplerDesc			= {};
 
-						textureDesc.DebugName			= !isCubeTexure ? pResourceDesc->Name + " Texture" : pResourceDesc->Name + " Texture Cube View";
+						textureDesc.DebugName			= !isCubeTexture ? pResourceDesc->Name + " Texture" : pResourceDesc->Name + " Texture Cube";
 						textureDesc.MemoryType			= pResourceDesc->MemoryType;
 						textureDesc.Format				= pResourceDesc->TextureParams.TextureFormat;
 						textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
@@ -1116,7 +1214,7 @@ namespace LambdaEngine
 						textureDesc.Miplevels			= pResourceDesc->TextureParams.MiplevelCount;
 						textureDesc.SampleCount			= pResourceDesc->TextureParams.SampleCount;
 
-						textureViewDesc.DebugName		= !isCubeTexure ? pResourceDesc->Name + " Texture View" : pResourceDesc->Name + " Texture Cube View";
+						textureViewDesc.DebugName		= !isCubeTexture ? pResourceDesc->Name + " Texture View" : pResourceDesc->Name + " Texture Cube View";
 						textureViewDesc.pTexture		= nullptr;
 						textureViewDesc.Flags			= pResourceDesc->TextureParams.TextureViewFlags;
 						textureViewDesc.Format			= pResourceDesc->TextureParams.TextureFormat;
@@ -1159,13 +1257,9 @@ namespace LambdaEngine
 				else if (pResourceDesc->Type == ERenderGraphResourceType::BUFFER)
 				{
 					newResource.Type			= ERenderGraphResourceType::BUFFER;
-					newResource.OwnershipType	= EResourceOwnershipType::INTERNAL;
-					newResource.Buffer.Buffers.Resize(newResource.SubResourceCount);
-					newResource.Buffer.Offsets.Resize(newResource.SubResourceCount);
-					newResource.Buffer.SizesInBytes.Resize(newResource.SubResourceCount);
 
 					BufferDesc bufferDesc = {};
-					//bufferDesc.pName
+					bufferDesc.DebugName		= pResourceDesc->Name + " Buffer";
 					bufferDesc.MemoryType		= pResourceDesc->MemoryType;
 					bufferDesc.Flags			= pResourceDesc->BufferParams.BufferFlags;
 					bufferDesc.SizeInBytes		= pResourceDesc->BufferParams.Size;
@@ -1188,38 +1282,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				//External
-				if (pResourceDesc->Type == ERenderGraphResourceType::TEXTURE)
-				{
-					newResource.Type					= ERenderGraphResourceType::TEXTURE;
-					newResource.OwnershipType			= EResourceOwnershipType::EXTERNAL;
-					newResource.Texture.IsOfArrayType	= pResourceDesc->TextureParams.IsOfArrayType;
-					newResource.Texture.Format			= pResourceDesc->TextureParams.TextureFormat;
-					newResource.Texture.TextureType		= pResourceDesc->TextureParams.TextureType;
-
-					uint32 actualSubResourceCount = pResourceDesc->TextureParams.IsOfArrayType ? 1 : newResource.SubResourceCount;
-					newResource.Texture.Textures.Resize(actualSubResourceCount);
-					newResource.Texture.TextureViews.Resize(actualSubResourceCount);
-					newResource.Texture.Samplers.Resize(actualSubResourceCount);
-				}
-				else if (pResourceDesc->Type == ERenderGraphResourceType::BUFFER)
-				{
-					newResource.Type			= ERenderGraphResourceType::BUFFER;
-					newResource.OwnershipType	= EResourceOwnershipType::EXTERNAL;
-					newResource.Buffer.Buffers.Resize(newResource.SubResourceCount);
-					newResource.Buffer.Offsets.Resize(newResource.SubResourceCount);
-					newResource.Buffer.SizesInBytes.Resize(newResource.SubResourceCount);
-				}
-				else if (pResourceDesc->Type == ERenderGraphResourceType::ACCELERATION_STRUCTURE)
-				{ 
-					newResource.Type			= ERenderGraphResourceType::ACCELERATION_STRUCTURE;
-					newResource.OwnershipType	= EResourceOwnershipType::EXTERNAL;
-				}
-				else
-				{
-					LOG_ERROR("[RenderGraph]: Unsupported resource type for external resource \"%s\"", newResource.Name.c_str());
-					return false;
-				}
+				newResource.OwnershipType = EResourceOwnershipType::EXTERNAL;
 			}
 
 			//Now that we have created a resource(desc), we should check if the same resource exists (all important parameters need to be the same)
@@ -1243,11 +1306,13 @@ namespace LambdaEngine
 
 				if (newResource.Type == ERenderGraphResourceType::TEXTURE)
 				{
-					alreadyExists = alreadyExists && newResource.Texture.IsOfArrayType				== previousResource.Texture.IsOfArrayType;
-					alreadyExists = alreadyExists && newResource.Texture.Format						== previousResource.Texture.Format;
-					alreadyExists = alreadyExists && newResource.Texture.Textures.GetSize()			== previousResource.Texture.Textures.GetSize();
-					alreadyExists = alreadyExists && newResource.Texture.TextureViews.GetSize()		== previousResource.Texture.TextureViews.GetSize();
-					alreadyExists = alreadyExists && newResource.Texture.Samplers.GetSize()			== previousResource.Texture.Samplers.GetSize();
+					alreadyExists = alreadyExists && newResource.Texture.TextureType						== previousResource.Texture.TextureType;
+					alreadyExists = alreadyExists && newResource.Texture.IsOfArrayType						== previousResource.Texture.IsOfArrayType;
+					alreadyExists = alreadyExists && newResource.Texture.Format								== previousResource.Texture.Format;
+					alreadyExists = alreadyExists && newResource.Texture.Textures.GetSize()					== previousResource.Texture.Textures.GetSize();
+					alreadyExists = alreadyExists && newResource.Texture.PerImageTextureViews.GetSize()		== previousResource.Texture.PerImageTextureViews.GetSize();
+					alreadyExists = alreadyExists && newResource.Texture.PerSubImageTextureViews.GetSize()	== previousResource.Texture.PerSubImageTextureViews.GetSize();
+					alreadyExists = alreadyExists && newResource.Texture.Samplers.GetSize()					== previousResource.Texture.Samplers.GetSize();
 					
 					previousResource.Texture.InititalTransitionBarriers.Clear();
 
@@ -1257,13 +1322,16 @@ namespace LambdaEngine
 						for (uint32 sr = 0; sr < previousResource.SubResourceCount; sr++)
 						{
 							SAFERELEASE(previousResource.Texture.Textures[sr]);
-							SAFERELEASE(previousResource.Texture.TextureViews[sr]);
+							SAFERELEASE(previousResource.Texture.PerImageTextureViews[sr]);
 							SAFERELEASE(previousResource.Texture.Samplers[sr]);
 						}
 
-						for (TextureView* pCubeTextureView : previousResource.Texture.CubeFaceTextureViews)
+						if (previousResource.Texture.UsedAsRenderTarget && previousResource.Texture.PerSubImageUniquelyAllocated)
 						{
-							SAFERELEASE(pCubeTextureView);
+							for (TextureView* pPerSubImageTextureView : previousResource.Texture.PerSubImageTextureViews)
+							{
+								SAFERELEASE(pPerSubImageTextureView);
+							}
 						}
 					}
 				}
@@ -1319,13 +1387,16 @@ namespace LambdaEngine
 						for (uint32 sr = 0; sr < pResource->SubResourceCount; sr++)
 						{
 							SAFERELEASE(pResource->Texture.Textures[sr]);
-							SAFERELEASE(pResource->Texture.TextureViews[sr]);
+							SAFERELEASE(pResource->Texture.PerImageTextureViews[sr]);
 							SAFERELEASE(pResource->Texture.Samplers[sr]);
 						}
 
-						for (TextureView* pCubeTextureView : pResource->Texture.CubeFaceTextureViews)
+						if (pResource->Texture.UsedAsRenderTarget && pResource->Texture.PerSubImageUniquelyAllocated)
 						{
-							SAFERELEASE(pCubeTextureView);
+							for (TextureView* pPerSubImageTextureView : pResource->Texture.PerSubImageTextureViews)
+							{
+								SAFERELEASE(pPerSubImageTextureView);
+							}
 						}
 					}
 					else if (pResource->Type == ERenderGraphResourceType::BUFFER)
@@ -1348,7 +1419,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages)
+	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants)
 	{
 		m_RenderStageCount = (uint32)renderStages.GetSize();
 		m_RenderStageMap.reserve(m_RenderStageCount);
@@ -1459,7 +1530,7 @@ namespace LambdaEngine
 				return false;
 			}
 			pRenderStage->MaterialsRenderedPerPass = (m_MaxTexturesPerDescriptorSet - totalNumberOfNonMaterialTextures) / 5; //5 textures per material
-			pRenderStage->TextureSubDescriptorSetCount = (uint32)glm::ceil(glm::max<uint32>((float)totalNumberOfTextures / float(pRenderStage->MaterialsRenderedPerPass * 5), 1));
+			pRenderStage->TextureSubDescriptorSetCount = (uint32)glm::ceil(glm::max<float32>((float32)totalNumberOfTextures / float32(pRenderStage->MaterialsRenderedPerPass * 5.0f), 1.0f));
 
 			TArray<DescriptorBindingDesc> textureDescriptorSetDescriptions;
 			textureDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
@@ -1490,7 +1561,7 @@ namespace LambdaEngine
 			ERenderGraphDimensionType	renderPassAttachmentDimensionTypeY	= ERenderGraphDimensionType::NONE;
 
 			//Special Types of Render Stage Variable
-			bool hasTextureCubeAsAttachment = false;
+			uint32 renderStageExecutionCount = 1;
 
 			//Create PipelineStageMask here, to be used for InitialBarriers Creation
 			uint32 pipelineStageMask = CreateShaderStageMask(pRenderStageDesc);
@@ -1541,7 +1612,7 @@ namespace LambdaEngine
 								PipelineTextureBarrierDesc* pTextureBarrier = &pResource->Texture.InititalTransitionBarriers[barrierIndex];
 								pTextureBarrier->pTexture					= nullptr;
 								pTextureBarrier->StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
-								pTextureBarrier->StateAfter					= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT ? pResourceStateDesc->AttachmentSynchronizations.NextBindingType : pResourceStateDesc->BindingType, pResource->Texture.Format);
+								pTextureBarrier->StateAfter					= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT ? pResourceStateDesc->AttachmentSynchronizations.PrevBindingType : pResourceStateDesc->BindingType, pResource->Texture.Format);
 								pTextureBarrier->QueueBefore				= ConvertPipelineStateTypeToQueue(pRenderStageDesc->Type);
 								pTextureBarrier->QueueAfter					= pTextureBarrier->QueueBefore;
 								pTextureBarrier->SrcMemoryAccessFlags		= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
@@ -1620,12 +1691,6 @@ namespace LambdaEngine
 				//RenderPass Attachments
 				else if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT)
 				{
-					if (pResource->SubResourceCount > 1 && pResource->SubResourceCount != m_BackBufferCount)
-					{
-						LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but does not have a subresource count equal to 1 or Back buffer Count: %u", pResourceStateDesc->ResourceName.c_str(), pResource->SubResourceCount);
-						return false;
-					}
-
 					if (pResource->OwnershipType != EResourceOwnershipType::INTERNAL && !pResource->IsBackBuffer)
 					{
 						//This may be okay, but we then need to do the check below, where we check that all attachment are of the same size, somewhere else because we don't know the size att RenderGraph Init Time.
@@ -1713,6 +1778,25 @@ namespace LambdaEngine
 							return false;
 					}
 
+					pResource->Texture.UsedAsRenderTarget = true;
+
+					uint32 executionCountFromResource = pResource->Texture.PerSubImageTextureViews.GetSize();
+
+					if (pResource->BackBufferBound) executionCountFromResource /= m_BackBufferCount;
+
+					if (renderStageExecutionCount == 1)
+					{
+						renderStageExecutionCount = executionCountFromResource;
+					}
+					else if (executionCountFromResource > 1 && executionCountFromResource != renderStageExecutionCount)
+					{
+						LOG_ERROR("[RenderGraph]: Resource %s is used as RenderPass Attachment and requires execution count %d, but execution count for this RenderStage has been set to %d from another resource",
+							pResource->Name.c_str(),
+							executionCountFromResource,
+							renderStageExecutionCount);
+						return false;
+					}
+
 					bool isColorAttachment = pResource->Texture.Format != EFormat::FORMAT_D24_UNORM_S8_UINT;
 
 					ETextureState initialState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.PrevBindingType, pResource->Texture.Format);
@@ -1765,18 +1849,19 @@ namespace LambdaEngine
 						renderPassDepthStencilDescription = renderPassAttachmentDesc;
 						pDepthStencilResource = pResource;
 					}
-					
-					
-
-					if (pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
-					{
-						hasTextureCubeAsAttachment = true;
-					}
 				}
 				else if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::DRAW_RESOURCE)
 				{
 					ASSERT(false); //Todo: What todo here? Is this just error?
 				}
+			}
+
+			//Triggering
+			{
+				pRenderStage->TriggerType	= pRenderStageDesc->TriggerType;
+				pRenderStage->FrameDelay	= pRenderStageDesc->TriggerType == ERenderStageExecutionTrigger::EVERY ? uint32(pRenderStageDesc->FrameDelay) : 0;
+				pRenderStage->FrameOffset	= pRenderStageDesc->TriggerType == ERenderStageExecutionTrigger::EVERY ? uint32(pRenderStageDesc->FrameOffset) : 0;
+				pRenderStage->FrameCounter	= pRenderStageDesc->TriggerType == ERenderStageExecutionTrigger::EVERY ? 0 : 1; //We only trigger on FrameCounter == FrameDelay
 			}
 
 			if (pRenderStageDesc->CustomRenderer)
@@ -1869,10 +1954,10 @@ namespace LambdaEngine
 			}
 			else
 			{
-				pRenderStage->PipelineStageMask				= pipelineStageMask;
-				pRenderStage->FirstPipelineStage			= FindEarliestPipelineStage(pRenderStageDesc);
-				pRenderStage->LastPipelineStage				= lastPipelineStageFlags;
-				pRenderStage->HasTextureCubeAsAttachment	= hasTextureCubeAsAttachment;
+				pRenderStage->PipelineStageMask		= pipelineStageMask;
+				pRenderStage->FirstPipelineStage	= FindEarliestPipelineStage(pRenderStageDesc);
+				pRenderStage->LastPipelineStage		= lastPipelineStageFlags;
+				pRenderStage->ExecutionCount		= renderStageExecutionCount;
 
 				ConstantRangeDesc pushConstantRange = {};
 
@@ -1880,7 +1965,7 @@ namespace LambdaEngine
 				{
 					uint32 externalMaxSize = MAX_PUSH_CONSTANT_SIZE;
 
-					if (hasTextureCubeAsAttachment)
+					if (renderStageExecutionCount > 1)
 					{
 						PushConstants* pPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
 						pPushConstants->pData		= DBG_NEW byte[DRAW_ITERATION_PUSH_CONSTANTS_SIZE];
@@ -1957,6 +2042,18 @@ namespace LambdaEngine
 					}
 				}
 
+				//Shader Constants
+				const RenderGraphShaderConstants* pShaderConstants = nullptr;
+				{
+					auto shaderConstantsIt = shaderConstants.find(pRenderStage->Name);
+
+					if (shaderConstantsIt != shaderConstants.end())
+					{
+						pShaderConstants = &shaderConstantsIt->second;
+					}
+				}
+				
+
 				//Create Pipeline State
 				if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 				{
@@ -1975,6 +2072,17 @@ namespace LambdaEngine
 					pipelineDesc.RasterizerState.CullMode			= pRenderStageDesc->Graphics.CullMode;
 					pipelineDesc.RasterizerState.PolygonMode		= pRenderStageDesc->Graphics.PolygonMode;
 					pipelineDesc.InputAssembly.PrimitiveTopology	= pRenderStageDesc->Graphics.PrimitiveTopology;
+
+					if (pShaderConstants != nullptr)
+					{
+						pipelineDesc.TaskShader.ShaderConstants		= pShaderConstants->Graphics.TaskShaderConstants;
+						pipelineDesc.MeshShader.ShaderConstants		= pShaderConstants->Graphics.MeshShaderConstants;
+						pipelineDesc.VertexShader.ShaderConstants	= pShaderConstants->Graphics.VertexShaderConstants;
+						pipelineDesc.GeometryShader.ShaderConstants = pShaderConstants->Graphics.GeometryShaderConstants;
+						pipelineDesc.HullShader.ShaderConstants		= pShaderConstants->Graphics.HullShaderConstants;
+						pipelineDesc.DomainShader.ShaderConstants	= pShaderConstants->Graphics.DomainShaderConstants;
+						pipelineDesc.PixelShader.ShaderConstants	= pShaderConstants->Graphics.PixelShaderConstants;
+					}
 
 					//Create RenderPass
 					{
@@ -2002,7 +2110,20 @@ namespace LambdaEngine
 						RenderPass* pRenderPass		= m_pGraphicsDevice->CreateRenderPass(&renderPassDesc);
 						pipelineDesc.RenderPass		= MakeSharedRef(pRenderPass);
 
-						pRenderStage->pRenderPass		= pRenderPass;
+						pRenderStage->pRenderPass	= pRenderPass;
+
+						//Create duplicate Render Pass (this is fucking retarded) which we use when the RenderStage is Disabled, this Render Pass forces LoadOp to be LOAD
+						{
+							RenderPassDesc disabledRenderPassDesc = renderPassDesc;
+
+							for (RenderPassAttachmentDesc& attachmentDesc : disabledRenderPassDesc.Attachments)
+							{
+								attachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
+								if (attachmentDesc.StencilLoadOp != ELoadOp::LOAD_OP_DONT_CARE) attachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_LOAD;
+							}
+
+							pRenderStage->pDisabledRenderPass = m_pGraphicsDevice->CreateRenderPass(&disabledRenderPassDesc);
+						}
 					}
 
 					//Set Draw Type and Draw Resource
@@ -2045,6 +2166,11 @@ namespace LambdaEngine
 					pipelineDesc.PipelineLayout	= MakeSharedRef(pRenderStage->pPipelineLayout);
 					pipelineDesc.Shader.ShaderGUID = pRenderStageDesc->Compute.ShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Compute.ShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
 
+					if (pShaderConstants != nullptr)
+					{
+						pipelineDesc.Shader.ShaderConstants		= pShaderConstants->Compute.ShaderConstants;
+					}
+
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
 				}
 				else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
@@ -2053,17 +2179,32 @@ namespace LambdaEngine
 					pipelineDesc.PipelineLayout			= MakeSharedRef(pRenderStage->pPipelineLayout);
 					pipelineDesc.MaxRecursionDepth		= 1;
 					pipelineDesc.RaygenShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL );
+					
+					if (pShaderConstants != nullptr)
+					{
+						pipelineDesc.RaygenShader.ShaderConstants = pShaderConstants->RayTracing.RaygenConstants;
+					}
 
 					pipelineDesc.ClosestHitShaders.Resize(pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount);
 					for (uint32 ch = 0; ch < pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount; ch++)
 					{
 						pipelineDesc.ClosestHitShaders[ch].ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch], FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, EShaderLang::SHADER_LANG_GLSL );
+
+						if (pShaderConstants != nullptr)
+						{
+							pipelineDesc.ClosestHitShaders[ch].ShaderConstants = pShaderConstants->RayTracing.ClosestHitConstants[ch];
+						}
 					}
 
 					pipelineDesc.MissShaders.Resize(pRenderStageDesc->RayTracing.Shaders.MissShaderCount);
 					for (uint32 m = 0; m < pRenderStageDesc->RayTracing.Shaders.MissShaderCount; m++)
 					{
 						pipelineDesc.MissShaders[m].ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pMissShaderNames[m], FShaderStageFlag::SHADER_STAGE_FLAG_MISS_SHADER, EShaderLang::SHADER_LANG_GLSL );
+
+						if (pShaderConstants != nullptr)
+						{
+							pipelineDesc.MissShaders[m].ShaderConstants = pShaderConstants->RayTracing.MissConstants[m];
+						}
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateRayTracingPipelineState(&pipelineDesc);
@@ -2499,7 +2640,7 @@ namespace LambdaEngine
 		for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
 		{
 			Texture** ppTexture =					&pResource->Texture.Textures[sr];
-			TextureView** ppTextureView =			&pResource->Texture.TextureViews[sr];
+			TextureView** ppTextureView =			&pResource->Texture.PerImageTextureViews[sr];
 			Sampler** ppSampler =					&pResource->Texture.Samplers[sr];
 
 			Texture* pTexture						= nullptr;
@@ -2519,28 +2660,34 @@ namespace LambdaEngine
 				textureViewDesc.pTexture = pTexture;
 				pTextureView = m_pGraphicsDevice->CreateTextureView(&textureViewDesc);
 
-				// Create texture views for cubeTextures faces as render targets
-				constexpr uint32 CUBE_FACE_COUNT = 6;
-				if (pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
+				//Create texture views for sub images to be used as Render Targets
+				if (pResource->Texture.UsedAsRenderTarget)
 				{
-					TextureView** ppCubeFaceTextureView = &pResource->Texture.CubeFaceTextureViews[sr * CUBE_FACE_COUNT];
-
-					TextureViewDesc textureCubeFaceViewDesc = {};
-					textureCubeFaceViewDesc.pTexture		= pTexture;
-					textureCubeFaceViewDesc.Flags			= textureViewDesc.Flags | FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET;
-					textureCubeFaceViewDesc.Format			= pResource->Texture.Format;
-					textureCubeFaceViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-					textureCubeFaceViewDesc.Miplevel		= textureViewDesc.Miplevel;
-					textureCubeFaceViewDesc.MiplevelCount	= textureViewDesc.MiplevelCount;
-					textureCubeFaceViewDesc.ArrayCount		= 1;
-					textureCubeFaceViewDesc.Miplevel		= 0;
-
-					for (uint32 f = 0; f < CUBE_FACE_COUNT; f++)
+					if (pResource->Texture.PerSubImageUniquelyAllocated)
 					{
-						textureCubeFaceViewDesc.DebugName	= pResource->Name + " Texture Cube Face View " + std::to_string(f);
-						textureCubeFaceViewDesc.ArrayIndex	= f;
-						(*ppCubeFaceTextureView)	= m_pGraphicsDevice->CreateTextureView(&textureCubeFaceViewDesc);
-						(ppCubeFaceTextureView)++;
+						TextureViewDesc subImageTextureViewDesc = {};
+						subImageTextureViewDesc.pTexture		= pTexture;
+						subImageTextureViewDesc.Flags			= (textureViewDesc.Flags & FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL) > 0 ? FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL : FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+						subImageTextureViewDesc.Format			= pResource->Texture.Format;
+						subImageTextureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+						subImageTextureViewDesc.Miplevel		= textureViewDesc.Miplevel;
+						subImageTextureViewDesc.MiplevelCount	= textureViewDesc.MiplevelCount;
+						subImageTextureViewDesc.ArrayCount		= 1;
+
+						for (uint32 si = 0; si < pTextureDesc->ArrayCount; si++)
+						{
+							TextureView** ppPerSubImageTextureView = &pResource->Texture.PerSubImageTextureViews[sr * pTextureDesc->ArrayCount + si];
+
+							subImageTextureViewDesc.DebugName	= pResource->Name + " Sub Image Texture View " + std::to_string(si);
+							subImageTextureViewDesc.ArrayIndex	= si;
+
+							SAFERELEASE(*ppPerSubImageTextureView);
+							(*ppPerSubImageTextureView)	= m_pGraphicsDevice->CreateTextureView(&subImageTextureViewDesc);
+						}
+					}
+					else
+					{
+						pResource->Texture.PerSubImageTextureViews[sr] = pTextureView;
 					}
 				}
 
@@ -2555,6 +2702,8 @@ namespace LambdaEngine
 			{
 				pTexture			= pDesc->ExternalTextureUpdate.ppTextures[sr];
 				pTextureView		= pDesc->ExternalTextureUpdate.ppTextureViews[sr];
+
+				pResource->Texture.PerSubImageTextureViews[sr] = pTextureView;
 
 				//Update Sampler
 				if (pDesc->ExternalTextureUpdate.ppSamplers != nullptr)
@@ -2572,10 +2721,21 @@ namespace LambdaEngine
 
 			if (pResource->Texture.IsOfArrayType)
 			{
-				if (textureDesc.ArrayCount != pResource->SubResourceCount)
+				if (pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)
 				{
-					LOG_ERROR("[RenderGraph]: UpdateResourceTexture for resource of array type with length %u but ArrayCount was %u", pResource->SubResourceCount, textureDesc.ArrayCount);
-					return;
+					if (textureDesc.ArrayCount != pResource->SubResourceCount * 6)
+					{
+						LOG_ERROR("[RenderGraph]: UpdateResourceTexture for resource of array type with length %u and type TextureCube but ArrayCount was %u", pResource->SubResourceCount, textureDesc.ArrayCount);
+						return;
+					}
+				}
+				else
+				{
+					if (textureDesc.ArrayCount != pResource->SubResourceCount)
+					{
+						LOG_ERROR("[RenderGraph]: UpdateResourceTexture for resource of array type with length %u and type Texture2D but ArrayCount was %u", pResource->SubResourceCount, textureDesc.ArrayCount);
+						return;
+					}
 				}
 			}
 
@@ -2944,17 +3104,10 @@ namespace LambdaEngine
 			textureDescriptorSetBindingIndex = 1;
 		}
 
-		//Find how many times we want to repeat the drawing
-		uint32 repeats = 1;
-		if (pRenderStage->HasTextureCubeAsAttachment)
-		{
-			repeats = 6;
-		}
-
 		uint32 frameBufferWidth		= 0;
 		uint32 frameBufferHeight	= 0;
 
-		for (uint32 r = 0; r < repeats; r++)
+		for (uint32 r = 0; r < pRenderStage->ExecutionCount; r++)
 		{
 			TextureView* ppTextureViews[MAX_COLOR_ATTACHMENTS];
 			TextureView* pDepthStencilTextureView = nullptr;
@@ -2966,55 +3119,15 @@ namespace LambdaEngine
 			{
 				TextureView* pRenderTarget = nullptr;
 
-				bool isCubeTexture = pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
-				if (!isCubeTexture) 
+				if (pResource->BackBufferBound)
 				{
-					//Assume resource is Back Buffer Bound if there is more than 1 Texture View
-					if (pResource->Texture.IsOfArrayType)
-					{
-						LOG_ERROR("Texture Array is not valid to bind as render target.");
-						return;
-					}
-
-					if (pResource->Texture.TextureViews.GetSize() > 1 )
-					{
-						if (!pResource->BackBufferBound)
-						{
-							LOG_ERROR("Resources with more than one texture view must be backbufferbound, if used as render target!");
-							return;
-						}
-
-						pRenderTarget = pResource->Texture.TextureViews[m_BackBufferIndex];
-					}
-					else
-					{
-						pRenderTarget = pResource->Texture.TextureViews[0];
-					}
-
+					pRenderTarget = pResource->Texture.PerSubImageTextureViews[m_BackBufferIndex * (pResource->Texture.PerSubImageTextureViews.GetSize() / m_BackBufferCount)];
 				}
 				else
 				{
-					constexpr uint32 CUBE_FACE_COUNT = 6;
-					if (pResource->Texture.IsOfArrayType)
-					{
-						LOG_ERROR("Cube Texture Array is not valid to bind as render target");
-						return;
-					}
+					bool indexed = pResource->Texture.PerSubImageTextureViews.GetSize() > 1;
 
-					if (pResource->Texture.CubeFaceTextureViews.GetSize() > CUBE_FACE_COUNT)
-					{
-						if (!pResource->BackBufferBound)
-						{
-							LOG_ERROR("Resources with more than one texture view must be backbufferbound, if used as render target!");
-							return;
-						}
-
-						pRenderTarget = pResource->Texture.CubeFaceTextureViews[m_BackBufferIndex * CUBE_FACE_COUNT + r];
-					}
-					else
-					{ 
-						pRenderTarget = pResource->Texture.CubeFaceTextureViews[r];
-					}
+					pRenderTarget = indexed ? pResource->Texture.PerSubImageTextureViews[r] : pResource->Texture.PerSubImageTextureViews[0];
 				}
 
 				const TextureDesc& renderTargetDesc = pRenderTarget->GetTexture()->GetDesc();
@@ -3033,51 +3146,15 @@ namespace LambdaEngine
 
 			if (pRenderStage->pDepthStencilAttachment != nullptr)
 			{
-				bool isCubeTexture = pRenderStage->pDepthStencilAttachment->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
-				if (!isCubeTexture)
+				if (pRenderStage->pDepthStencilAttachment->BackBufferBound)
 				{
-					//Assume resource is Back Buffer Bound if there is more than 1 Texture View
-					if (pRenderStage->pDepthStencilAttachment->Texture.IsOfArrayType)
-					{
-						LOG_ERROR("Texture Array is not valid to bind as render target.");
-						return;
-					}
-
-					if (pRenderStage->pDepthStencilAttachment->Texture.TextureViews.GetSize() > 1)
-					{
-						if (!pRenderStage->pDepthStencilAttachment->BackBufferBound)
-						{
-							LOG_ERROR("Resources with more than one texture view must be backbufferbound, if used as render target!");
-							return;
-						}
-
-						pDepthStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.TextureViews[m_BackBufferIndex];
-					}
-					else
-					{
-						pDepthStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.TextureViews[0];
-					}
+					pDepthStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.PerSubImageTextureViews[m_BackBufferIndex * (pRenderStage->pDepthStencilAttachment->Texture.PerSubImageTextureViews.GetSize() / m_BackBufferCount)];
 				}
 				else
 				{
-					constexpr uint32 CUBE_FACE_COUNT = 6;
-					if (pRenderStage->pDepthStencilAttachment->Texture.IsOfArrayType)
-					{
-						LOG_ERROR("Cube Texture Array is not valid to bind as render target");
-						return;
-					}
+					bool indexed = pRenderStage->pDepthStencilAttachment->Texture.PerSubImageTextureViews.GetSize() > 1;
 
-					if (pRenderStage->pDepthStencilAttachment->Texture.CubeFaceTextureViews.GetSize() > CUBE_FACE_COUNT)
-					{
-						if (!pRenderStage->pDepthStencilAttachment->BackBufferBound)
-						{
-							LOG_ERROR("Resources with more than one texture view must be backbufferbound, if used as render target!");
-							return;
-						}
-
-						pDepthStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.CubeFaceTextureViews[m_BackBufferIndex * CUBE_FACE_COUNT + r];
-					}
-					pDepthStencilTextureView = pRenderStage->pDepthStencilAttachment->Texture.CubeFaceTextureViews[r];
+					pDepthStencilTextureView = indexed ? pRenderStage->pDepthStencilAttachment->Texture.PerSubImageTextureViews[r] : pRenderStage->pDepthStencilAttachment->Texture.PerSubImageTextureViews[0];
 				}
 
 				const TextureDesc& depthStencilDesc = pDepthStencilTextureView->GetTexture()->GetDesc();
@@ -3089,78 +3166,98 @@ namespace LambdaEngine
 
 				clearColorCount++;
 			}
-
-			BeginRenderPassDesc beginRenderPassDesc = { };
-			beginRenderPassDesc.pRenderPass			= pRenderStage->pRenderPass;
-			beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
-			beginRenderPassDesc.RenderTargetCount	= textureViewCount;
-			beginRenderPassDesc.pDepthStencil		= pDepthStencilTextureView;
-			beginRenderPassDesc.Width				= frameBufferWidth;
-			beginRenderPassDesc.Height				= frameBufferHeight;
-			beginRenderPassDesc.Flags				= flags;
-			beginRenderPassDesc.pClearColors		= clearColorDescriptions;
-			beginRenderPassDesc.ClearColorCount		= clearColorCount;
-			beginRenderPassDesc.Offset.x			= 0;
-			beginRenderPassDesc.Offset.y			= 0;
-
-			pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
-
-			PushConstants* pDrawIterationPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
-
-			if (pDrawIterationPushConstants->MaxDataSize == sizeof(uint32))
+				
+			if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
 			{
-				memcpy(pDrawIterationPushConstants->pData, &r, sizeof(uint32));
-				pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pDrawIterationPushConstants->pData, pDrawIterationPushConstants->DataSize, pDrawIterationPushConstants->Offset);
-			}
+				BeginRenderPassDesc beginRenderPassDesc = { };
+				beginRenderPassDesc.pRenderPass			= pRenderStage->pRenderPass;
+				beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
+				beginRenderPassDesc.RenderTargetCount	= textureViewCount;
+				beginRenderPassDesc.pDepthStencil		= pDepthStencilTextureView;
+				beginRenderPassDesc.Width				= frameBufferWidth;
+				beginRenderPassDesc.Height				= frameBufferHeight;
+				beginRenderPassDesc.Flags				= flags;
+				beginRenderPassDesc.pClearColors		= clearColorDescriptions;
+				beginRenderPassDesc.ClearColorCount		= clearColorCount;
+				beginRenderPassDesc.Offset.x			= 0;
+				beginRenderPassDesc.Offset.y			= 0;
 
-			if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
-			{
-				pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::INDEX_TYPE_UINT32);
+				pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
 
-				Buffer* pDrawBuffer			= pRenderStage->pIndirectArgsBufferResource->Buffer.Buffers[0];
-				uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
-				uint32 indirectArgStride	= sizeof(IndexedIndirectMeshArgument);
+				PushConstants* pDrawIterationPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
 
-				uint32 drawOffset = 0;
-				for (uint32 i = 0; i < pRenderStage->TextureSubDescriptorSetCount; i++)
+				if (pDrawIterationPushConstants->MaxDataSize == sizeof(uint32))
 				{
-					uint32 newBaseMaterialIndex	= (i + 1) * pRenderStage->MaterialsRenderedPerPass;
-					uint32 newDrawOffset		= m_pScene->GetIndirectArgumentOffset(newBaseMaterialIndex);
-					uint32 drawCount			= newDrawOffset - drawOffset;
+					memcpy(pDrawIterationPushConstants->pData, &r, sizeof(uint32));
+					pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pDrawIterationPushConstants->pData, pDrawIterationPushConstants->DataSize, pDrawIterationPushConstants->Offset);
+				}
+
+				if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+				{
+					pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::INDEX_TYPE_UINT32);
+
+					Buffer* pDrawBuffer			= pRenderStage->pIndirectArgsBufferResource->Buffer.Buffers[0];
+					uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
+					uint32 indirectArgStride	= sizeof(IndexedIndirectMeshArgument);
+
+					uint32 drawOffset = 0;
+					for (uint32 i = 0; i < pRenderStage->TextureSubDescriptorSetCount; i++)
+					{
+						uint32 newBaseMaterialIndex	= (i + 1) * pRenderStage->MaterialsRenderedPerPass;
+						uint32 newDrawOffset		= m_pScene->GetIndirectArgumentOffset(newBaseMaterialIndex);
+						uint32 drawCount			= newDrawOffset - drawOffset;
+
+						if (pRenderStage->ppTextureDescriptorSets != nullptr)
+							pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex * pRenderStage->TextureSubDescriptorSetCount + i], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+
+						pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, drawOffset * indirectArgStride, drawCount, indirectArgStride);
+						drawOffset = newDrawOffset;
+
+						if (newDrawOffset >= totalDrawCount)
+							break;
+					}
+				}
+				else if (pRenderStage->DrawType == ERenderStageDrawType::FULLSCREEN_QUAD)
+				{
+					if (pRenderStage->TextureSubDescriptorSetCount > 1)
+					{
+						LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
+					}
 
 					if (pRenderStage->ppTextureDescriptorSets != nullptr)
-						pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex * pRenderStage->TextureSubDescriptorSetCount + i], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+						pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
 
-					pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, drawOffset * indirectArgStride, drawCount, indirectArgStride);
-					drawOffset = newDrawOffset;
+					pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
+				}
+				else if (pRenderStage->DrawType == ERenderStageDrawType::CUBE)
+				{
+					if (pRenderStage->TextureSubDescriptorSetCount > 1)
+					{
+						LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
+					}
 
-					if (newDrawOffset >= totalDrawCount)
-						break;
+					if (pRenderStage->ppTextureDescriptorSets != nullptr)
+						pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+
+					pGraphicsCommandList->DrawInstanced(36, 1, 0, 0);
 				}
 			}
-			else if (pRenderStage->DrawType == ERenderStageDrawType::FULLSCREEN_QUAD)
+			else
 			{
-				if (pRenderStage->TextureSubDescriptorSetCount > 1)
-				{
-					LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
-				}
+				BeginRenderPassDesc beginRenderPassDesc = { };
+				beginRenderPassDesc.pRenderPass			= pRenderStage->pDisabledRenderPass;
+				beginRenderPassDesc.ppRenderTargets		= ppTextureViews;
+				beginRenderPassDesc.RenderTargetCount	= textureViewCount;
+				beginRenderPassDesc.pDepthStencil		= pDepthStencilTextureView;
+				beginRenderPassDesc.Width				= frameBufferWidth;
+				beginRenderPassDesc.Height				= frameBufferHeight;
+				beginRenderPassDesc.Flags				= flags;
+				beginRenderPassDesc.pClearColors		= clearColorDescriptions;
+				beginRenderPassDesc.ClearColorCount		= clearColorCount;
+				beginRenderPassDesc.Offset.x			= 0;
+				beginRenderPassDesc.Offset.y			= 0;
 
-				if (pRenderStage->ppTextureDescriptorSets != nullptr)
-					pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
-
-				pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
-			}
-			else if (pRenderStage->DrawType == ERenderStageDrawType::CUBE)
-			{
-				if (pRenderStage->TextureSubDescriptorSetCount > 1)
-				{
-					LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
-				}
-
-				if (pRenderStage->ppTextureDescriptorSets != nullptr)
-					pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
-
-				pGraphicsCommandList->DrawInstanced(36, 1, 0, 0);
+				pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
 			}
 
 			pGraphicsCommandList->EndRenderPass();
@@ -3180,36 +3277,39 @@ namespace LambdaEngine
 		CommandList*		pComputeCommandList,
 		CommandList**		ppExecutionStage)
 	{
-		Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
-		pComputeCommandAllocator->Reset();
-		pComputeCommandList->Begin(nullptr);
-		Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
-		Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
-
-		pComputeCommandList->BindComputePipeline(pPipelineState);
-
-		uint32 textureDescriptorSetBindingIndex = 0;
-
-		if (pRenderStage->ppBufferDescriptorSets != nullptr)
+		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
 		{
-			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, 0);
-			textureDescriptorSetBindingIndex = 1;
+			Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
+			pComputeCommandAllocator->Reset();
+			pComputeCommandList->Begin(nullptr);
+			Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
+			Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
+
+			pComputeCommandList->BindComputePipeline(pPipelineState);
+
+			uint32 textureDescriptorSetBindingIndex = 0;
+
+			if (pRenderStage->ppBufferDescriptorSets != nullptr)
+			{
+				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, 0);
+				textureDescriptorSetBindingIndex = 1;
+			}
+
+			if (pRenderStage->TextureSubDescriptorSetCount > 1)
+			{
+				LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and is Compute, this is currently not supported");
+			}
+
+			if (pRenderStage->ppTextureDescriptorSets != nullptr)
+				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+
+			pComputeCommandList->Dispatch(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
+
+			Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
+			pComputeCommandList->End();
+
+			(*ppExecutionStage) = pComputeCommandList;
 		}
-
-		if (pRenderStage->TextureSubDescriptorSetCount > 1)
-		{
-			LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and is Compute, this is currently not supported");
-		}
-
-		if (pRenderStage->ppTextureDescriptorSets != nullptr)
-			pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
-
-		pComputeCommandList->Dispatch(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
-
-		Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
-		pComputeCommandList->End();
-
-		(*ppExecutionStage) = pComputeCommandList;
 	}
 
 	void RenderGraph::ExecuteRayTracingRenderStage(
@@ -3219,35 +3319,38 @@ namespace LambdaEngine
 		CommandList*		pComputeCommandList,
 		CommandList**		ppExecutionStage)
 	{
-		Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
-		pComputeCommandAllocator->Reset();
-		pComputeCommandList->Begin(nullptr);
-		Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
-		Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
-
-		pComputeCommandList->BindRayTracingPipeline(pPipelineState);
-
-		uint32 textureDescriptorSetBindingIndex = 0;
-
-		if (pRenderStage->ppBufferDescriptorSets != nullptr)
+		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
 		{
-			pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, 0);
-			textureDescriptorSetBindingIndex = 1;
+			Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
+			pComputeCommandAllocator->Reset();
+			pComputeCommandList->Begin(nullptr);
+			Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
+			Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
+
+			pComputeCommandList->BindRayTracingPipeline(pPipelineState);
+
+			uint32 textureDescriptorSetBindingIndex = 0;
+
+			if (pRenderStage->ppBufferDescriptorSets != nullptr)
+			{
+				pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, 0);
+				textureDescriptorSetBindingIndex = 1;
+			}
+
+			if (pRenderStage->TextureSubDescriptorSetCount > 1)
+			{
+				LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and is Ray Tracing, this is currently not supported");
+			}
+
+			if (pRenderStage->ppTextureDescriptorSets != nullptr)
+				pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+
+			pComputeCommandList->TraceRays(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
+
+			Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
+			pComputeCommandList->End();
+
+			(*ppExecutionStage) = pComputeCommandList;
 		}
-
-		if (pRenderStage->TextureSubDescriptorSetCount > 1)
-		{
-			LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and is Ray Tracing, this is currently not supported");
-		}
-
-		if (pRenderStage->ppTextureDescriptorSets != nullptr)
-			pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
-
-		pComputeCommandList->TraceRays(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
-
-		Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
-		pComputeCommandList->End();
-
-		(*ppExecutionStage) = pComputeCommandList;
 	}
 }

@@ -5,6 +5,7 @@
 
 #include "Rendering/IRenderGraphCreateHandler.h"
 
+#include "Containers/String.h"
 #include "Containers/TArray.h"
 
 #include "Math/Math.h"
@@ -23,12 +24,21 @@ namespace LambdaEngine
 	class Scene;
 	class Camera;
 	class Sampler;
+	class Buffer;
 
 	class RenderGraphEditor;
 }
 
 class Sandbox : public LambdaEngine::Game, public LambdaEngine::IRenderGraphCreateHandler
 {
+	static constexpr const uint32 NUM_POINT_LIGHTS = 2;
+
+	struct PointLight //Testing
+	{
+		glm::vec4 Position;
+		glm::mat4 Transforms[6];
+	};
+
 	struct InstanceIndexAndTransform
 	{
 		uint32		InstanceIndex;
@@ -63,11 +73,17 @@ private:
 	LambdaEngine::TArray<InstanceIndexAndTransform>		m_InstanceIndicesAndTransforms;
 	LambdaEngine::TArray<InstanceIndexAndTransform>		m_LightInstanceIndicesAndTransforms;
 
+	LambdaEngine::Buffer*					m_pPointLightsBuffer;
+
 	float									m_DirectionalLightAngle;
 	float									m_DirectionalLightStrength[4];
 
 	bool m_RenderGraphWindow;
 	bool m_ShowDemoWindow;
 	bool m_DebuggingWindow;
+
+	bool					m_ShowTextureDebuggingWindow	= false;
+	LambdaEngine::String	m_TextureDebuggingName			= "";
+	GUID_Lambda				m_TextureDebuggingShaderGUID	= GUID_NONE;
 
 };

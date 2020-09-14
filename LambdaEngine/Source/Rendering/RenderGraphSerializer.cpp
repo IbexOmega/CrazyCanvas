@@ -281,6 +281,15 @@ namespace LambdaEngine
 						writer.String("custom_renderer");
 						writer.Bool(renderStageIt->second.CustomRenderer);
 
+						writer.String("trigger_type");
+						writer.String(ExecutionTriggerTypeToString(renderStageIt->second.TriggerType).c_str());
+
+						writer.String("frame_delay");
+						writer.Int(renderStageIt->second.FrameDelay);
+
+						writer.String("frame_offset");
+						writer.Int(renderStageIt->second.FrameOffset);
+
 						writer.String("x_dim_type");
 						writer.String(RenderGraphDimensionTypeToString(renderStageIt->second.Parameters.XDimType));
 
@@ -844,6 +853,10 @@ namespace LambdaEngine
 					nextAttributeID					+= 2;
 					renderStage.Type				= RenderStageTypeFromString(renderStageObject["type"].GetString());
 					renderStage.CustomRenderer		= renderStageObject["custom_renderer"].GetBool();
+
+					renderStage.TriggerType = renderStageObject.HasMember("trigger_type")	? ExecutionTriggerTypeFromString(renderStageObject["trigger_type"].GetString()) : ERenderStageExecutionTrigger::EVERY;
+					renderStage.FrameDelay	= renderStageObject.HasMember("frame_delay")	? renderStageObject["frame_delay"].GetInt()		: 0;
+					renderStage.FrameOffset = renderStageObject.HasMember("frame_offset")	? renderStageObject["frame_offset"].GetInt()	: 0;
 
 					renderStage.Parameters.XDimType			= RenderGraphDimensionTypeFromString(renderStageObject["x_dim_type"].GetString());
 					renderStage.Parameters.YDimType			= RenderGraphDimensionTypeFromString(renderStageObject["y_dim_type"].GetString());

@@ -66,6 +66,15 @@ namespace LambdaEngine
 				return false;
 			}
 
+			//Todo: Move this
+			{
+				RenderGraphShaderConstants& pointLightsConstants = renderGraphStructure.ShaderConstants["POINT_LIGHT_SHADOWMAPS"];
+				pointLightsConstants.Graphics.PixelShaderConstants.PushBack({ 2 });
+
+				RenderGraphShaderConstants& shadingConstants = renderGraphStructure.ShaderConstants["DEMO"];
+				shadingConstants.Graphics.PixelShaderConstants.PushBack({ 2 });
+			}
+
 			RenderGraphDesc renderGraphDesc = {};
 			renderGraphDesc.Name							= "Default Rendergraph";
 			renderGraphDesc.pRenderGraphStructureDesc		= &renderGraphStructure;
@@ -76,7 +85,7 @@ namespace LambdaEngine
 			s_pRenderGraph->Init(&renderGraphDesc);
 		}
 
-		//Update RenderGraph wit 
+		//Update RenderGraph with Back Buffer
 		{
 			for (uint32 v = 0; v < BACK_BUFFER_COUNT; v++)
 			{

@@ -59,5 +59,6 @@ void main()
 
     mat4 noTranslationView  = perFrameBuffer.View;
     noTranslationView[3]    = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	gl_Position 	        = perFrameBuffer.Projection * noTranslationView * vec4(out_WorldPosition, 1.0f);
+    vec4 finalPosition      = perFrameBuffer.Projection * noTranslationView * vec4(out_WorldPosition, 1.0f);
+	gl_Position 	        = finalPosition.xyww;
 }
