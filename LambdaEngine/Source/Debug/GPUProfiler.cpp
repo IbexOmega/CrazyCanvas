@@ -40,10 +40,14 @@ namespace LambdaEngine
 	void GPUProfiler::Render(LambdaEngine::Timestamp delta)
 	{
 #ifdef LAMBDA_DEBUG
+		// Profiler (Which has the instance of GPUProfiler) begins the ImGui window
 		m_TimeSinceUpdate += delta.AsMilliSeconds();
+
 
 		if (m_TimestampCount != 0 && ImGui::CollapsingHeader("Timestamps") && m_TimeSinceUpdate > 1 / m_UpdateFreq)
 		{
+			ImGui::SliderFloat("Update frequency", &m_UpdateFreq, 1.0f, 144.0f);
+
 			// Enable/disable graph update
 			ImGui::Checkbox("Update graphs", &m_EnableGraph);
 			for (auto& stage : m_PlotResults)
