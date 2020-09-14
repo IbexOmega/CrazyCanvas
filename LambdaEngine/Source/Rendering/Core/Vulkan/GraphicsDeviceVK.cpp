@@ -1112,7 +1112,7 @@ namespace LambdaEngine
 		VkPhysicalDeviceRayTracingFeaturesKHR	supportedRayTracingFeatures		= {};
 		VkPhysicalDeviceVulkan12Features		supportedDeviceFeatures12		= {};
 		VkPhysicalDeviceVulkan11Features		supportedDeviceFeatures11		= {};
-		VkPhysicalDeviceFeatures				supportedDeviceFeatures10		= {};
+		VkPhysicalDeviceFeatures				supportedDeviceFeatures10;
 
 		{
 			VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -1157,6 +1157,7 @@ namespace LambdaEngine
 		enabledDeviceFeatures10.fragmentStoresAndAtomics			= supportedDeviceFeatures10.fragmentStoresAndAtomics;
 		enabledDeviceFeatures10.multiDrawIndirect					= supportedDeviceFeatures10.multiDrawIndirect;
 		enabledDeviceFeatures10.pipelineStatisticsQuery				= supportedDeviceFeatures10.pipelineStatisticsQuery;
+		enabledDeviceFeatures10.imageCubeArray						= supportedDeviceFeatures10.imageCubeArray;
 
 		VkPhysicalDeviceFeatures2 enabledDeviceFeatures2 = {};
 		enabledDeviceFeatures2.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -1354,15 +1355,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void GraphicsDeviceVK::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
-	{
-		createInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		createInfo.messageSeverity	= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		createInfo.messageType		= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		createInfo.pfnUserCallback	= DebugCallback;
-		createInfo.pUserData		= nullptr;
-	}
-
 	int32 GraphicsDeviceVK::RatePhysicalDevice(VkPhysicalDevice physicalDevice)
 	{
 		VkPhysicalDeviceProperties deviceProperties;
@@ -1447,41 +1439,6 @@ namespace LambdaEngine
 		indices.TransferFamily  = GetQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT, queueFamilies);
 
 		return indices;
-	}
-
-	uint32 GraphicsDeviceVK::GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const TArray<VkQueueFamilyProperties>& queueFamilies)
-	{
-		if (queueFlags & VK_QUEUE_COMPUTE_BIT)
-		{
-			for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
-			{
-				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
-				{
-					return i;
-				}
-			}
-		}
-
-		if (queueFlags & VK_QUEUE_TRANSFER_BIT)
-		{
-			for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
-			{
-				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
-				{
-					return i;
-				}
-			}
-		}
-
-		for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
-		{
-			if (queueFamilies[i].queueFlags & queueFlags)
-			{
-				return i;
-			}
-		}
-
-		return UINT32_MAX;
 	}
 
 	void GraphicsDeviceVK::SetEnabledDeviceExtensions()
@@ -1616,6 +1573,50 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksIndirectNV);
 			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksIndirectCountNV);
 		}
+	}
+
+	void GraphicsDeviceVK::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+	{
+		createInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+		createInfo.messageSeverity	= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		createInfo.messageType		= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		createInfo.pfnUserCallback	= DebugCallback;
+		createInfo.pUserData		= nullptr;
+	}
+
+	uint32 GraphicsDeviceVK::GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const TArray<VkQueueFamilyProperties>& queueFamilies)
+	{
+		if (queueFlags & VK_QUEUE_COMPUTE_BIT)
+		{
+			for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
+			{
+				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
+				{
+					return i;
+				}
+			}
+		}
+
+		if (queueFlags & VK_QUEUE_TRANSFER_BIT)
+		{
+			for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
+			{
+				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
+				{
+					return i;
+				}
+			}
+		}
+
+		for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
+		{
+			if (queueFamilies[i].queueFlags & queueFlags)
+			{
+				return i;
+			}
+		}
+
+		return UINT32_MAX;
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsDeviceVK::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)

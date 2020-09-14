@@ -139,17 +139,19 @@ namespace LambdaEngine
 		bool SetEnabledValidationLayers();
 		bool SetEnabledInstanceExtensions();
 
-		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
 		int32 RatePhysicalDevice(VkPhysicalDevice physicalDevice);
 		void CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32_t& numOfOptionalExtensionsSupported);
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physicalDevice);
 		
-		uint32 GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const TArray<VkQueueFamilyProperties>& queueFamilies);
 		void SetEnabledDeviceExtensions();
 
 		void RegisterInstanceExtensionData();
 		void RegisterDeviceExtensionData();
+
+	private:
+		static void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+		static uint32 GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const TArray<VkQueueFamilyProperties>& queueFamilies);
 
 		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
 			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
@@ -209,10 +211,10 @@ namespace LambdaEngine
 		DeviceAllocatorVK* m_pIBAllocator = nullptr;
 		DeviceAllocatorVK* m_pBufferAllocator = nullptr;
 
-		GraphicsDeviceFeatureDesc	m_DeviceFeatures;
-		QueueFamilyIndices			m_DeviceQueueFamilyIndices;
-		VkPhysicalDeviceLimits		m_DeviceLimits;
-		VkPhysicalDeviceFeatures	m_DeviceFeaturesVk;
+		GraphicsDeviceFeatureDesc	m_DeviceFeatures			= {};
+		QueueFamilyIndices			m_DeviceQueueFamilyIndices	= {};
+		VkPhysicalDeviceLimits		m_DeviceLimits				= {};
+		VkPhysicalDeviceFeatures	m_DeviceFeaturesVk			= {};
 	   
 		TArray<VkQueueFamilyProperties> m_QueueFamilyProperties;
 		mutable uint32 m_NextGraphicsQueue	= 0;
