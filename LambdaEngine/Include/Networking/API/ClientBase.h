@@ -72,6 +72,7 @@ namespace LambdaEngine
 		EClientState m_State;
 		SpinLock m_Lock;
 		Timestamp m_PingTimeout;
+		Timestamp m_LastPingTimestamp;
 		bool m_UsePingSystem;
 
 	private:

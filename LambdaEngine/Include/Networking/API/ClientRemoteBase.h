@@ -74,6 +74,7 @@ namespace LambdaEngine
 		SpinLock m_Lock;
 		Timestamp m_PingInterval;
 		Timestamp m_PingTimeout;
+		Timestamp m_LastPingTimestamp;
 		std::atomic_bool m_TerminationRequested;
 		std::atomic_bool m_TerminationApproved;
 		bool m_UsePingSystem;

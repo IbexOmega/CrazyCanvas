@@ -16,6 +16,7 @@ namespace LambdaEngine
 		m_UsePingSystem(desc.UsePingSystem),
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
+		m_LastPingTimestamp(0),
 		m_DisconnectedByRemote(false),
 		m_TerminationRequested(false),
 		m_TerminationApproved(false)
@@ -216,9 +217,10 @@ namespace LambdaEngine
 
 			if (m_State == STATE_CONNECTED)
 			{
-				Timestamp timeSinceLastPacketSent = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestampLastSent();
+				Timestamp timeSinceLastPacketSent = EngineLoop::GetTimeSinceStart() - m_LastPingTimestamp;
 				if (timeSinceLastPacketSent >= m_PingInterval)
 				{
+					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
 					SendReliable(GetFreePacket(NetworkSegment::TYPE_PING));
 				}
 			}
@@ -253,6 +255,7 @@ namespace LambdaEngine
 				if (m_State == STATE_CONNECTING)
 				{
 					m_State = STATE_CONNECTED;
+					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
 					m_pHandler->OnConnected(this);
 				}
 			}
