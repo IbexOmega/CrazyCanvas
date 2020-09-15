@@ -3219,8 +3219,6 @@ namespace LambdaEngine
 
 			pComputeCommandList->BindComputePipeline(pPipelineState);
 
-			uint32 textureDescriptorSetBindingIndex = 0;
-
 			if (pRenderStage->ppBufferDescriptorSets != nullptr)
 				pComputeCommandList->BindDescriptorSetGraphics(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
 
