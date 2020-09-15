@@ -182,13 +182,14 @@ namespace LambdaEngine
 	/*
 	* Finds all Reliable Segment UIDs corresponding to the acks from physical packets
 	*/
-	void PacketManagerBase::GetReliableUIDsFromAckedPackets(const TArray<uint32>& acks, TArray<uint32>& ackedReliableUIDs)
+	void PacketManagerBase::GetReliableUIDsFromAckedPackets(const TArray<uint32>& ackedPackets, TArray<uint32>& ackedReliableUIDs)
 	{
 		ackedReliableUIDs.Reserve(128);
 		std::scoped_lock<SpinLock> lock(m_LockBundles);
 
 		Timestamp timestamp = 0;
-		for (uint32 ack : acks)
+		uint8 timestamps = 0;
+		for (uint32 ack : ackedPackets)
 		{
 			auto iterator = m_Bundles.find(ack);
 			if (iterator != m_Bundles.end())
@@ -199,12 +200,13 @@ namespace LambdaEngine
 
 				timestamp += bundle.Timestamp;
 				m_Bundles.erase(iterator);
+				timestamps++;
 			}
 		}
 
 		if (timestamp != 0)
 		{
-			timestamp /= acks.GetSize();
+			timestamp /= timestamps;
 			RegisterRTT(EngineLoop::GetTimeSinceStart() - timestamp);
 		}
 	}
