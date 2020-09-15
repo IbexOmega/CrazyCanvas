@@ -13,17 +13,11 @@ namespace LambdaEngine
 
 	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT	= "BACK_BUFFER_TEXTURE";
 
-	constexpr const char* FULLSCREEN_QUAD_VERTEX_BUFFER			= "FULLSCREEN_QUAD_VERTEX_BUFFER";
-
 	constexpr const char* PER_FRAME_BUFFER						= "PER_FRAME_BUFFER";
 	constexpr const char* SCENE_LIGHTS_BUFFER					= "SCENE_LIGHTS_BUFFER";
 
 	constexpr const char* SCENE_MAT_PARAM_BUFFER				= "SCENE_MAT_PARAM_BUFFER";
-	constexpr const char* SCENE_VERTEX_BUFFER					= "SCENE_VERTEX_BUFFER";
-	constexpr const char* SCENE_INDEX_BUFFER					= "SCENE_INDEX_BUFFER";
-	constexpr const char* SCENE_PRIMARY_INSTANCE_BUFFER			= "SCENE_PRIMARY_INSTANCE_BUFFER";
-	constexpr const char* SCENE_SECONDARY_INSTANCE_BUFFER		= "SCENE_SECONDARY_INSTANCE_BUFFER";
-	constexpr const char* SCENE_INDIRECT_ARGS_BUFFER			= "SCENE_INDIRECT_ARGS_BUFFER";
+	constexpr const char* SCENE_DRAW_BUFFERS					= "SCENE_DRAW_BUFFERS";
 	constexpr const char* SCENE_TLAS							= "SCENE_TLAS";
 
 	constexpr const char* SCENE_ALBEDO_MAPS						= "SCENE_ALBEDO_MAPS";
@@ -47,9 +41,10 @@ namespace LambdaEngine
 	enum class ERenderGraphResourceType : uint8
 	{
 		NONE					= 0,
-		TEXTURE					= 1,
-		BUFFER					= 2,
-		ACCELERATION_STRUCTURE	= 3,
+		SCENE_DRAW_BUFFERS		= 1,
+		TEXTURE					= 2,
+		BUFFER					= 3,
+		ACCELERATION_STRUCTURE	= 4,
 	};
 
 	enum class ERenderGraphResourceBindingType : uint8
@@ -63,13 +58,12 @@ namespace LambdaEngine
 		UNORDERED_ACCESS_READ_WRITE		= 6,	//READ & WRITE
 		ATTACHMENT						= 7,	//WRITE
 		PRESENT							= 8,	//READ
-		DRAW_RESOURCE					= 9,	//READ
 	};
 
 	enum class ERenderStageDrawType : uint8
 	{
 		NONE					= 0,
-		SCENE_INDIRECT			= 1,
+		SCENE_INSTANCES			= 1,
 		FULLSCREEN_QUAD			= 2,
 		CUBE					= 3,
 	};
@@ -289,6 +283,7 @@ namespace LambdaEngine
 		String							ResourceName					= "";
 		String							RenderStageName					= "";
 		bool							Removable						= true;
+		int32							DrawBuffersMask					= 0xFFFFFFFF;
 		ERenderGraphResourceBindingType BindingType						= ERenderGraphResourceBindingType::NONE;
 		int32							InputLinkIndex					= -1;
 		TSet<int32>						OutputLinkIndices;
@@ -318,8 +313,6 @@ namespace LambdaEngine
 		{
 			GraphicsShaderNames		Shaders;
 			ERenderStageDrawType	DrawType							= ERenderStageDrawType::NONE;
-			int32					IndexBufferAttributeIndex			= -1;
-			int32					IndirectArgsBufferAttributeIndex	= -1;
 			bool					DepthTestEnabled					= true;
 			ECullMode				CullMode							= ECullMode::CULL_MODE_BACK;
 			EPolygonMode			PolygonMode							= EPolygonMode::POLYGON_MODE_FILL;
@@ -439,15 +432,14 @@ namespace LambdaEngine
 	{
 		switch (bindingType)
 		{
-		case ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE:			return true;
+		case ERenderGraphResourceBindingType::ACCELERATION_STRUCTURE:		return true;
 		case ERenderGraphResourceBindingType::CONSTANT_BUFFER:				return true;
 		case ERenderGraphResourceBindingType::COMBINED_SAMPLER:				return true;
-		case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:			return true;
-		case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:			return true;
+		case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:		return true;
+		case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:		return true;
 		case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return true;
-		case ERenderGraphResourceBindingType::ATTACHMENT:						return false;
+		case ERenderGraphResourceBindingType::ATTACHMENT:					return false;
 		case ERenderGraphResourceBindingType::PRESENT:						return false;
-		case ERenderGraphResourceBindingType::DRAW_RESOURCE:					return false;
 
 		default:															return false;
 		}
@@ -493,7 +485,7 @@ namespace LambdaEngine
 			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:		return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
 			}
 		}
-		else if (resourceType == ERenderGraphResourceType::BUFFER)
+		else if (resourceType == ERenderGraphResourceType::BUFFER || resourceType == ERenderGraphResourceType::SCENE_DRAW_BUFFERS)
 		{
 			switch (bindingType)
 			{
@@ -547,7 +539,6 @@ namespace LambdaEngine
 			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:		return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 			case ERenderGraphResourceBindingType::ATTACHMENT:						return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 			case ERenderGraphResourceBindingType::PRESENT:							return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
-			case ERenderGraphResourceBindingType::DRAW_RESOURCE:					return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;																
 		}
 
 		return FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
@@ -580,13 +571,13 @@ namespace LambdaEngine
 	{
 		if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
-			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size()		> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size()		> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size()		> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size()	> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size()		> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size()		> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size()		> 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size()		> 0)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size()		> 0)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size()		> 0)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size()	> 0)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size()		> 0)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size()		> 0)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
+			if (pRenderStageDesc->Graphics.Shaders.PixelShaderName.size()		> 0)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER;
 		}
 		else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{
@@ -771,7 +762,6 @@ namespace LambdaEngine
 			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return false;
 			case ERenderGraphResourceBindingType::ATTACHMENT:					return false;
 			case ERenderGraphResourceBindingType::PRESENT:						return true;
-			case ERenderGraphResourceBindingType::DRAW_RESOURCE:				return true;
 		}
 
 		return false;
@@ -781,7 +771,7 @@ namespace LambdaEngine
 	{
 		switch (drawType)
 		{
-		case ERenderStageDrawType::SCENE_INDIRECT:		return "SCENE_INDIRECT";
+		case ERenderStageDrawType::SCENE_INSTANCES:		return "SCENE_INSTANCES";
 		case ERenderStageDrawType::FULLSCREEN_QUAD:		return "FULLSCREEN_QUAD";
 		case ERenderStageDrawType::CUBE:				return "CUBE";
 		default:										return "NONE";
@@ -790,7 +780,7 @@ namespace LambdaEngine
 
 	FORCEINLINE ERenderStageDrawType RenderStageDrawTypeFromString(const String& string)
 	{
-		if (string == "SCENE_INDIRECT")		return ERenderStageDrawType::SCENE_INDIRECT;
+		if (string == "SCENE_INSTANCES")	return ERenderStageDrawType::SCENE_INSTANCES;
 		if (string == "FULLSCREEN_QUAD")	return ERenderStageDrawType::FULLSCREEN_QUAD;
 		if (string == "CUBE")				return ERenderStageDrawType::CUBE;
 		return ERenderStageDrawType::NONE;
@@ -808,7 +798,6 @@ namespace LambdaEngine
 		case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return "UA_RW";
 		case ERenderGraphResourceBindingType::ATTACHMENT:					return "ATTACHMENT";
 		case ERenderGraphResourceBindingType::PRESENT:						return "PRESENT";
-		case ERenderGraphResourceBindingType::DRAW_RESOURCE:				return "DR";
 		}
 
 		return "UNKNOWN";
@@ -826,7 +815,6 @@ namespace LambdaEngine
 		case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:	return "UNORDERED_ACCESS_RW";
 		case ERenderGraphResourceBindingType::ATTACHMENT:					return "ATTACHMENT";
 		case ERenderGraphResourceBindingType::PRESENT:						return "PRESENT";
-		case ERenderGraphResourceBindingType::DRAW_RESOURCE:				return "DRAW_RESOURCE";
 		}
 
 		return "UNKNOWN";
@@ -842,7 +830,6 @@ namespace LambdaEngine
 		if (string == "UNORDERED_ACCESS_RW")		return ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE;
 		if (string == "ATTACHMENT")					return ERenderGraphResourceBindingType::ATTACHMENT;
 		if (string == "PRESENT")					return ERenderGraphResourceBindingType::PRESENT;
-		if (string == "DRAW_RESOURCE")				return ERenderGraphResourceBindingType::DRAW_RESOURCE;
 		return ERenderGraphResourceBindingType::NONE;
 	}
 
@@ -890,6 +877,7 @@ namespace LambdaEngine
 	{
 		switch (type)
 		{
+		case ERenderGraphResourceType::SCENE_DRAW_BUFFERS:			return "SCENE_DRAW_BUFFERS";
 		case ERenderGraphResourceType::TEXTURE:						return "TEXTURE";
 		case ERenderGraphResourceType::BUFFER:						return "BUFFER";
 		case ERenderGraphResourceType::ACCELERATION_STRUCTURE:		return "ACCELERATION_STRUCTURE";
@@ -899,7 +887,8 @@ namespace LambdaEngine
 
 	FORCEINLINE ERenderGraphResourceType RenderGraphResourceTypeFromString(const String& string)
 	{
-		if		(string == "TEXTURE")					return ERenderGraphResourceType::TEXTURE;
+		if		(string == "SCENE_DRAW_BUFFERS")		return ERenderGraphResourceType::SCENE_DRAW_BUFFERS;
+		else if	(string == "TEXTURE")					return ERenderGraphResourceType::TEXTURE;
 		else if (string == "BUFFER")					return ERenderGraphResourceType::BUFFER;
 		else if (string == "ACCELERATION_STRUCTURE")	return ERenderGraphResourceType::ACCELERATION_STRUCTURE;
 

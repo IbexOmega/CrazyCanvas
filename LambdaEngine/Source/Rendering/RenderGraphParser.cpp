@@ -143,57 +143,6 @@ namespace LambdaEngine
 				}
 			}
 
-			if (pCurrentRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS) //Check if this Render Stage is a Graphics Render Stage, if it is we need to check Draw Resources as well
-			{
-				if (pCurrentRenderStage->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
-				{
-					auto indexBufferResourceStateIt				= resourceStatesByHalfAttributeIndex.find(pCurrentRenderStage->Graphics.IndexBufferAttributeIndex / 2);
-					auto indirectArgsBufferResourceStateIt		= resourceStatesByHalfAttributeIndex.find(pCurrentRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2);
-
-					if (indexBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indexBufferResourceStateIt->second.ResourceName.size() > 0)
-					{
-						auto resourceStateIdentIt = pCurrentRenderStage->FindResourceStateIdent(indexBufferResourceStateIt->second.ResourceName);
-						resourceNamesActuallyUsed.insert(indexBufferResourceStateIt->second.ResourceName);
-
-						if (resourceStateIdentIt != pCurrentRenderStage->ResourceStateIdents.end())
-						{
-							auto indexBufferDescriptorResourceStateIt = resourceStatesByHalfAttributeIndex.find(resourceStateIdentIt->AttributeIndex / 2);
-
-							if (indexBufferDescriptorResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indexBufferDescriptorResourceStateIt->second.OutputLinkIndices.size() > 0)
-							{
-								LOG_ERROR("[RenderGraphParser]: Draw resource \"%s\" is also bound to descriptor set in write mode", indexBufferDescriptorResourceStateIt->second.ResourceName.c_str());
-								return false;
-							}
-						}
-						else
-						{
-							FindAndCreateSynchronization(resources, resourceStatesByHalfAttributeIndex, orderedRenderStageIt, orderedMappedRenderStages, indexBufferResourceStateIt, &synchronizationStage, generateImGuiStage);
-						}
-					}
-
-					if (indirectArgsBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indirectArgsBufferResourceStateIt->second.ResourceName.size() > 0)
-					{
-						auto resourceStateIdentIt = pCurrentRenderStage->FindResourceStateIdent(indirectArgsBufferResourceStateIt->second.ResourceName);
-						resourceNamesActuallyUsed.insert(indirectArgsBufferResourceStateIt->second.ResourceName);
-
-						if (resourceStateIdentIt != pCurrentRenderStage->ResourceStateIdents.end())
-						{
-							auto indirectArgsBufferDescriptorResourceStateIt = resourceStatesByHalfAttributeIndex.find(resourceStateIdentIt->AttributeIndex / 2);
-
-							if (indirectArgsBufferDescriptorResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indirectArgsBufferDescriptorResourceStateIt->second.OutputLinkIndices.size() > 0)
-							{
-								LOG_ERROR("[RenderGraphParser]: Draw resource \"%s\" is also bound to descriptor set in write mode", indirectArgsBufferDescriptorResourceStateIt->second.ResourceName.c_str());
-								return false;
-							}
-						}
-						else
-						{
-							FindAndCreateSynchronization(resources, resourceStatesByHalfAttributeIndex, orderedRenderStageIt, orderedMappedRenderStages, indirectArgsBufferResourceStateIt, &synchronizationStage, generateImGuiStage);
-						}
-					}
-				}
-			}
-
 			RenderStageDesc parsedRenderStage = {};
 			CreateParsedRenderStage(resourceStatesByHalfAttributeIndex, &parsedRenderStage, pCurrentRenderStage);
 
@@ -657,6 +606,7 @@ namespace LambdaEngine
 
 						break;
 					}
+					case ERenderGraphResourceType::SCENE_DRAW_BUFFERS:
 					case ERenderGraphResourceType::BUFFER:
 					{
 						switch (pResourceState->BindingType)
@@ -672,33 +622,6 @@ namespace LambdaEngine
 					{
 						break;
 					}
-					}
-				}
-			}
-
-			//Draw Resources
-			if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
-			{
-				if (pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
-				{
-					if (!pRenderStageDesc->Graphics.IndexBufferName.empty())
-					{
-						auto resourceIt = std::find_if(pParsedStructure->ResourceDescriptions.Begin(), pParsedStructure->ResourceDescriptions.End(), [pRenderStageDesc](const RenderGraphResourceDesc& resourceDesc) { return pRenderStageDesc->Graphics.IndexBufferName == resourceDesc.Name; });
-
-						if (resourceIt != pParsedStructure->ResourceDescriptions.End())
-						{
-							resourceIt->BufferParams.BufferFlags |= FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
-						}
-					}
-
-					if (!pRenderStageDesc->Graphics.IndirectArgsBufferName.empty())
-					{
-						auto resourceIt = std::find_if(pParsedStructure->ResourceDescriptions.Begin(), pParsedStructure->ResourceDescriptions.End(), [pRenderStageDesc](const RenderGraphResourceDesc& resourceDesc) { return pRenderStageDesc->Graphics.IndirectArgsBufferName == resourceDesc.Name; });
-
-						if (resourceIt != pParsedStructure->ResourceDescriptions.End())
-						{
-							resourceIt->BufferParams.BufferFlags |= FBufferFlag::BUFFER_FLAG_INDIRECT_BUFFER;
-						}
 					}
 				}
 			}
@@ -864,30 +787,6 @@ namespace LambdaEngine
 				}
 				break;
 			}
-			else if (pPotentialNextRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS) //Check if this Render Stage is a Graphics Render Stage, if it is we need to check Draw Resources as well
-			{
-				if (pPotentialNextRenderStage->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
-				{
-					auto indexBufferResourceStateIt				= resourceStatesByHalfAttributeIndex.find(pPotentialNextRenderStage->Graphics.IndexBufferAttributeIndex / 2);
-					auto indirectArgsBufferResourceStateIt		= resourceStatesByHalfAttributeIndex.find(pPotentialNextRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2);
-
-					if (indexBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indirectArgsBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end())
-					{
-						if (currentResourceStateIt->second.ResourceName == indexBufferResourceStateIt->second.ResourceName)
-						{
-							pNextResourceState	= &indexBufferResourceStateIt->second;
-							pNextRenderStage	= pPotentialNextRenderStage;
-							break;
-						}
-						else if (currentResourceStateIt->second.ResourceName == indirectArgsBufferResourceStateIt->second.ResourceName)
-						{
-							pNextResourceState	= &indirectArgsBufferResourceStateIt->second;
-							pNextRenderStage	= pPotentialNextRenderStage;
-							break;
-						}
-					}
-				}
-			}
 		}
 
 		//If there is a Next State for the Resource, pNextResourceState will not be nullptr 
@@ -971,30 +870,6 @@ namespace LambdaEngine
 						}
 						break;
 					}
-					else if (pPotentialNextRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS) //Check if this Render Stage is a Graphics Render Stage, if it is we need to check Draw Resources as well
-					{
-						if (pPotentialNextRenderStage->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
-						{
-							auto indexBufferResourceStateIt				= resourceStatesByHalfAttributeIndex.find(pPotentialNextRenderStage->Graphics.IndexBufferAttributeIndex / 2);
-							auto indirectArgsBufferResourceStateIt		= resourceStatesByHalfAttributeIndex.find(pPotentialNextRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2);
-
-							if (indexBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() && indirectArgsBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end())
-							{
-								if (currentResourceStateIt->second.ResourceName == indexBufferResourceStateIt->second.ResourceName)
-								{
-									pNextResourceState	= &indexBufferResourceStateIt->second;
-									pNextRenderStage	= pPotentialNextRenderStage;
-									break;
-								}
-								else if (currentResourceStateIt->second.ResourceName == indirectArgsBufferResourceStateIt->second.ResourceName)
-								{
-									pNextResourceState	= &indirectArgsBufferResourceStateIt->second;
-									pNextRenderStage	= pPotentialNextRenderStage;
-									break;
-								}
-							}
-						}
-					}
 				}
 
 				//It is safe to add this synchronization here, since we know that the resource will not be captured by ImGui
@@ -1032,8 +907,8 @@ namespace LambdaEngine
 
 	void RenderGraphParser::CreateParsedRenderStage(
 		const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex, 
-		RenderStageDesc* pDstRenderStage, const 
-		EditorRenderStageDesc* pSrcRenderStage)
+		RenderStageDesc* pDstRenderStage, 
+		const EditorRenderStageDesc* pSrcRenderStage)
 	{
 		pDstRenderStage->Name					= pSrcRenderStage->Name;
 		pDstRenderStage->Type					= pSrcRenderStage->Type;
@@ -1063,21 +938,12 @@ namespace LambdaEngine
 
 		if (pDstRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
-			auto indexBufferResourceStateIt			= resourceStatesByHalfAttributeIndex.find(pSrcRenderStage->Graphics.IndexBufferAttributeIndex / 2);
-			auto indirectArgsBufferResourceStateIt	= resourceStatesByHalfAttributeIndex.find(pSrcRenderStage->Graphics.IndirectArgsBufferAttributeIndex / 2);
-
 			pDstRenderStage->Graphics.Shaders					= pSrcRenderStage->Graphics.Shaders;
 			pDstRenderStage->Graphics.DrawType					= pSrcRenderStage->Graphics.DrawType;
 			pDstRenderStage->Graphics.DepthTestEnabled			= pSrcRenderStage->Graphics.DepthTestEnabled;
 			pDstRenderStage->Graphics.CullMode					= pSrcRenderStage->Graphics.CullMode;
 			pDstRenderStage->Graphics.PolygonMode				= pSrcRenderStage->Graphics.PolygonMode;
 			pDstRenderStage->Graphics.PrimitiveTopology			= pSrcRenderStage->Graphics.PrimitiveTopology;
-
-			if (pDstRenderStage->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
-			{
-				pDstRenderStage->Graphics.IndexBufferName			= indexBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end()		? indexBufferResourceStateIt->second.ResourceName			: "";
-				pDstRenderStage->Graphics.IndirectArgsBufferName	= indirectArgsBufferResourceStateIt != resourceStatesByHalfAttributeIndex.end() ? indirectArgsBufferResourceStateIt->second.ResourceName	: "";
-			}
 		}
 		else if (pDstRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
 		{

@@ -1154,6 +1154,10 @@ namespace LambdaEngine
 					}
 				}
 			}
+			else if (pResourceDesc->Type == ERenderGraphResourceType::SCENE_DRAW_BUFFERS)
+			{
+				newResource.Type = ERenderGraphResourceType::SCENE_DRAW_BUFFERS;
+			}
 			else if (pResourceDesc->Type == ERenderGraphResourceType::BUFFER)
 			{
 				newResource.Type = ERenderGraphResourceType::BUFFER;
@@ -1502,6 +1506,9 @@ namespace LambdaEngine
 
 				Resource* pResource = &resourceIt->second;
 
+				if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_BUFFERS)
+					continue;
+
 				//Create Initital Transition Barrier and Params, we don't want to create them for the ImGui stage because it "backtransitions" unless it is the only stage
 				if (!isImGuiStage || m_RenderStageCount == 1)
 				{
@@ -1770,10 +1777,6 @@ namespace LambdaEngine
 						pDepthStencilResource = pResource;
 					}
 				}
-				else if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::DRAW_RESOURCE)
-				{
-					ASSERT(false); //Todo: What todo here? Is this just error?
-				}
 			}
 
 			//Triggering
@@ -1929,7 +1932,7 @@ namespace LambdaEngine
 						descriptorSetLayouts.PushBack(descriptorSetLayout);
 					}
 
-					if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS && pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+					if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS && pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INSTANCES)
 					{
 						DescriptorBindingDesc vertexBufferDescriptorBinding = {};
 						vertexBufferDescriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
@@ -1944,7 +1947,7 @@ namespace LambdaEngine
 						instanceBufferDescriptorBinding.ShaderStageMask	= pipelineStageMask;
 
 						DescriptorSetLayoutDesc descriptorSetLayout = {};
-						descriptorSetLayout.DescriptorSetLayoutFlags	= FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR | FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL;
+						descriptorSetLayout.DescriptorSetLayoutFlags	= FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR;
 						descriptorSetLayout.DescriptorBindings.PushBack(vertexBufferDescriptorBinding);
 						descriptorSetLayout.DescriptorBindings.PushBack(instanceBufferDescriptorBinding);
 						descriptorSetLayouts.PushBack(descriptorSetLayout);
@@ -1989,7 +1992,7 @@ namespace LambdaEngine
 						setIndex++;
 					}
 
-					if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS && pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+					if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS && pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INSTANCES)
 					{
 						pRenderStage->DrawSetIndex = setIndex;
 						setIndex++;
@@ -3061,7 +3064,7 @@ namespace LambdaEngine
 		uint32 frameBufferHeight	= 0;
 
 		TArray<DrawArg> drawArgs;
-		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES)
 		{
 			m_pScene->GetDrawArgs(drawArgs, 0);
 		}
@@ -3151,7 +3154,7 @@ namespace LambdaEngine
 					pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pDrawIterationPushConstants->pData, pDrawIterationPushConstants->DataSize, pDrawIterationPushConstants->Offset);
 				}
 
-				if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+				if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES)
 				{
 					for (DrawArg& drawArg : drawArgs)
 					{

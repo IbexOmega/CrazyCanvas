@@ -98,6 +98,10 @@ namespace LambdaEngine
 
 									break;
 								}
+								case ERenderGraphResourceType::SCENE_DRAW_BUFFERS:
+								{
+									break;
+								}
 								case ERenderGraphResourceType::BUFFER:
 								{
 									if (!resource.External)
@@ -310,118 +314,8 @@ namespace LambdaEngine
 
 						if (renderStageIt->second.Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 						{
-							writer.String("draw_params");
-							writer.StartObject();
-							{
-								writer.String("draw_type");
-								writer.String(RenderStageDrawTypeToString(renderStageIt->second.Graphics.DrawType));
-
-								if (renderStageIt->second.Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
-								{
-									//Index Buffer Draw Resource
-									{
-										int32 attributeIndex = renderStageIt->second.Graphics.IndexBufferAttributeIndex;
-										auto resourceStateIt = resourceStatesByHalfAttributeIndex.find(attributeIndex / 2);
-
-										if (resourceStateIt == resourceStatesByHalfAttributeIndex.end())
-										{
-											LOG_ERROR("[RenderGraphSerializer]: Index Buffer for Render Stage %s could not be found", renderStageIt->second.Name.c_str());
-											return false;
-										}
-
-										writer.String("index_buffer");
-										writer.StartObject();
-										{
-											writer.String("name");
-											writer.String(resourceStateIt->second.ResourceName.c_str());
-
-											writer.String("removable");
-											writer.Bool(resourceStateIt->second.Removable);
-
-											writer.String("binding_type");
-											writer.String(BindingTypeToString(resourceStateIt->second.BindingType));
-
-											writer.String("src_stage");
-
-											if (resourceStateIt->second.InputLinkIndex >= 0)
-											{
-												auto resourceLinkIt = resourceStateLinksByLinkIndex.find(resourceStateIt->second.InputLinkIndex);
-
-												if (resourceLinkIt == resourceStateLinksByLinkIndex.end())
-												{
-													LOG_ERROR("[RenderGraphSerializer]: Resource State Input Link %s could not be found", finalOutput.Name.c_str());
-													return false;
-												}
-
-												auto srcResourceStateIt = resourceStatesByHalfAttributeIndex.find(resourceLinkIt->second.SrcAttributeIndex / 2);
-
-												if (srcResourceStateIt == resourceStatesByHalfAttributeIndex.end())
-												{
-													LOG_ERROR("[RenderGraphSerializer]: Src Resource State %s could not be found", finalOutput.Name.c_str());
-													return false;
-												}
-
-												writer.String(srcResourceStateIt->second.RenderStageName.c_str());
-											}
-											else
-												writer.String("");
-										}
-										writer.EndObject();
-									}
-
-									//Indirect Args Buffer Draw Resource
-									{
-										int32 attributeIndex = renderStageIt->second.Graphics.IndirectArgsBufferAttributeIndex;
-										auto resourceStateIt = resourceStatesByHalfAttributeIndex.find(attributeIndex / 2);
-
-										if (resourceStateIt == resourceStatesByHalfAttributeIndex.end())
-										{
-											LOG_ERROR("[RenderGraphSerializer]: Index Buffer for Render Stage %s could not be found", renderStageIt->second.Name.c_str());
-											return false;
-										}
-
-										writer.String("indirect_args_buffer");
-										writer.StartObject();
-										{
-											writer.String("name");
-											writer.String(resourceStateIt->second.ResourceName.c_str());
-
-											writer.String("removable");
-											writer.Bool(resourceStateIt->second.Removable);
-
-											writer.String("binding_type");
-											writer.String(BindingTypeToString(resourceStateIt->second.BindingType));
-
-											writer.String("src_stage");
-
-											if (resourceStateIt->second.InputLinkIndex >= 0)
-											{
-												auto resourceLinkIt = resourceStateLinksByLinkIndex.find(resourceStateIt->second.InputLinkIndex);
-
-												if (resourceLinkIt == resourceStateLinksByLinkIndex.end())
-												{
-													LOG_ERROR("[RenderGraphSerializer]: Resource State Input Link %s could not be found", finalOutput.Name.c_str());
-													return false;
-												}
-
-												auto srcResourceStateIt = resourceStatesByHalfAttributeIndex.find(resourceLinkIt->second.SrcAttributeIndex / 2);
-
-												if (srcResourceStateIt == resourceStatesByHalfAttributeIndex.end())
-												{
-													LOG_ERROR("[RenderGraphSerializer]: Src Resource State %s could not be found", finalOutput.Name.c_str());
-													return false;
-												}
-
-												writer.String(srcResourceStateIt->second.RenderStageName.c_str());
-											}
-											else
-												writer.String("");
-										}
-										writer.EndObject();
-									}
-								}
-							}
-							writer.EndObject();
+							writer.String("draw_type");
+							writer.String(RenderStageDrawTypeToString(renderStageIt->second.Graphics.DrawType));
 
 							writer.String("depth_test_enabled");
 							writer.Bool(renderStageIt->second.Graphics.DepthTestEnabled);
@@ -512,6 +406,9 @@ namespace LambdaEngine
 
 									writer.String("removable");
 									writer.Bool(resourceStateIt->second.Removable);
+
+									writer.String("draw_buffers_mask");
+									writer.Int(resourceStateIt->second.DrawBuffersMask);
 
 									writer.String("binding_type");
 									writer.String(BindingTypeToString(resourceStateIt->second.BindingType));
@@ -873,120 +770,7 @@ namespace LambdaEngine
 
 					if (renderStage.Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 					{
-						GenericObject drawParamsObject	= renderStageObject["draw_params"].GetObject();
-
-						renderStage.Graphics.DrawType = RenderStageDrawTypeFromString(drawParamsObject["draw_type"].GetString());
-
-						if (renderStage.Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
-						{
-							//Index Buffer
-							if (drawParamsObject.HasMember("index_buffer"))
-							{
-								GenericObject resourceStateObject = drawParamsObject["index_buffer"].GetObject();
-
-								String resourceName		= resourceStateObject["name"].GetString();
-
-								int32 attributeIndex = nextAttributeID;
-								nextAttributeID += 2;
-
-								EditorRenderGraphResourceState* pResourceState = &resourceStatesByHalfAttributeIndex[attributeIndex / 2];
-								pResourceState->ResourceName		= resourceName;
-								pResourceState->RenderStageName		= renderStage.Name;
-								pResourceState->Removable			= resourceStateObject["removable"].GetBool();
-								pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
-
-								renderStage.Graphics.IndexBufferAttributeIndex = attributeIndex;
-
-								//Check if there are resource states that are awaiting linking to this resource state group
-								if (unfinishedLinkIt != unfinishedLinks.end())
-								{
-									if (FixLinkForPreviouslyLoadedResourceState(
-										pResourceState,
-										attributeIndex,
-										resourceStatesByHalfAttributeIndex,
-										resourceStateLinksByLinkIndex,
-										unfinishedLinkIt->second, 
-										nextLinkID))
-									{
-										if (unfinishedLinkIt->second.IsEmpty())
-										{
-											unfinishedLinks.erase(unfinishedLinkIt);
-											unfinishedLinkIt = unfinishedLinks.end();
-										}
-									}
-								}
-
-								//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
-								{
-									String srcStageName = resourceStateObject["src_stage"].GetString();
-
-									CreateLinkForLoadedResourceState(
-										pResourceState,
-										attributeIndex,
-										srcStageName,
-										resourceStateGroups,
-										renderStagesByName,
-										resourceStatesByHalfAttributeIndex,
-										resourceStateLinksByLinkIndex,
-										unfinishedLinks,
-										nextLinkID);
-								}
-							}
-
-							//Indirect Args Buffer
-							if (drawParamsObject.HasMember("indirect_args_buffer"))
-							{
-								GenericObject resourceStateObject = drawParamsObject["indirect_args_buffer"].GetObject();
-
-								String resourceName		= resourceStateObject["name"].GetString();
-
-								int32 attributeIndex = nextAttributeID;
-								nextAttributeID += 2;
-
-								EditorRenderGraphResourceState* pResourceState = &resourceStatesByHalfAttributeIndex[attributeIndex / 2];
-								pResourceState->ResourceName		= resourceName;
-								pResourceState->RenderStageName		= renderStage.Name;
-								pResourceState->Removable			= resourceStateObject["removable"].GetBool();
-								pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
-
-								renderStage.Graphics.IndirectArgsBufferAttributeIndex = attributeIndex;
-
-								//Check if there are resource states that are awaiting linking to this resource state group
-								if (unfinishedLinkIt != unfinishedLinks.end())
-								{
-									if (FixLinkForPreviouslyLoadedResourceState(
-										pResourceState,
-										attributeIndex,
-										resourceStatesByHalfAttributeIndex,
-										resourceStateLinksByLinkIndex,
-										unfinishedLinkIt->second,
-										nextLinkID))
-									{
-										if (unfinishedLinkIt->second.IsEmpty())
-										{
-											unfinishedLinks.erase(unfinishedLinkIt);
-											unfinishedLinkIt = unfinishedLinks.end();
-										}
-									}
-								}
-
-								//Load Src Stage and check if we can link to it, otherwise we need to add this resource state to unfinishedLinks
-								{
-									String srcStageName = resourceStateObject["src_stage"].GetString();
-
-									CreateLinkForLoadedResourceState(
-										pResourceState,
-										attributeIndex,
-										srcStageName,
-										resourceStateGroups,
-										renderStagesByName,
-										resourceStatesByHalfAttributeIndex,
-										resourceStateLinksByLinkIndex,
-										unfinishedLinks,
-										nextLinkID);
-								}
-							}
-						}
+						renderStage.Graphics.DrawType = RenderStageDrawTypeFromString(renderStageObject["draw_type"].GetString());
 
 						renderStage.Graphics.DepthTestEnabled					= renderStageObject["depth_test_enabled"].GetBool();
 						if (renderStageObject.HasMember("cull_mode"))			renderStage.Graphics.CullMode			= CullModeFromString(renderStageObject["cull_mode"].GetString());
@@ -1041,6 +825,7 @@ namespace LambdaEngine
 						pResourceState->ResourceName		= resourceName;
 						pResourceState->RenderStageName		= renderStage.Name;
 						pResourceState->Removable			= resourceStateObject["removable"].GetBool();
+						if (resourceStateObject.HasMember("draw_buffers_mask"))	pResourceState->DrawBuffersMask = resourceStateObject["draw_buffers_mask"].GetInt();
 						pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
 
 						renderStage.ResourceStateIdents.PushBack({ resourceName, attributeIndex });
