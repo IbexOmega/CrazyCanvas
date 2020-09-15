@@ -11,7 +11,7 @@ namespace LambdaEngine
     class RegularWorker
     {
     public:
-        RegularWorker(ECSCore* pECS);
+        RegularWorker() = default;
         ~RegularWorker();
 
         void ScheduleRegularWork(const Job& job, uint32 phase);
@@ -24,8 +24,7 @@ namespace LambdaEngine
         static void MapComponentAccesses(const TArray<ComponentAccess>& componentAccesses, THashTable<std::type_index, ComponentPermissions>& uniqueRegs);
 
     private:
-        ECSCore* m_pECS;
-        uint32 m_Phase;
-        uint32 m_JobID;
+        uint32 m_Phase = UINT32_MAX;
+        uint32 m_JobID = UINT32_MAX;
     };
 }

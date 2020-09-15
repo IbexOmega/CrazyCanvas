@@ -350,11 +350,11 @@ Sandbox::Sandbox()
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
 	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= 90.0f;
+	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
 	cameraDesc.Width		= window->GetWidth();
 	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= 0.001f;
-	cameraDesc.FarPlane		= 1000.0f;
+	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
+	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
 
 	m_pCamera->Init(cameraDesc);
 

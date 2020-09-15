@@ -55,6 +55,7 @@ namespace LambdaEngine
 
 		virtual bool Execute(const Event& event) override final
 		{
+			constexpr auto size = sizeof(MemberFunc);
 			VALIDATE(m_pThis != nullptr);
 			return ((*m_pThis).*(m_pFunc))(static_cast<const TEvent&>(event));
 		}
@@ -75,6 +76,11 @@ namespace LambdaEngine
 			: m_StackBuffer()
 			, m_pEventHandler(nullptr)
 		{
+			constexpr auto stackSize	= sizeof(m_StackBuffer);
+			constexpr auto handlerSize	= sizeof(FunctionEventHandler<TEvent>);
+
+			VALIDATE(handlerSize <= stackSize);
+
 			// Placement new is needed to fully initialize vtable
 			new(reinterpret_cast<void*>(m_StackBuffer)) FunctionEventHandler<TEvent>(pFunc);
 			m_pEventHandler = reinterpret_cast<IEventHandler*>(m_StackBuffer);
@@ -85,6 +91,11 @@ namespace LambdaEngine
 			: m_StackBuffer()
 			, m_pEventHandler(nullptr)
 		{
+			constexpr auto stackSize	= sizeof(m_StackBuffer);
+			constexpr auto handlerSize	= sizeof(MemberEventHandler<T, TEvent>);
+
+			VALIDATE(handlerSize <= stackSize);
+
 			// Placement new is needed to fully initialize vtable
 			new(reinterpret_cast<void*>(m_StackBuffer)) MemberEventHandler<T, TEvent>(pThis, pMemberFunc);
 			m_pEventHandler = reinterpret_cast<IEventHandler*>(m_StackBuffer);
@@ -139,11 +150,13 @@ namespace LambdaEngine
 		}
 
 	private:
-		// Size of three pointers, this is incase we use the memberfunctionhandler
+		// Size of four pointers, this is incase we use the memberfunctionhandler
 		//		1 ptr - vtable
 		//		1 ptr - functionptr
+		//		1 extra ptr - This is the case when the T* variable is of a type that uses multiple inheritence. Then the member function
+		//			pointer does not only store a pointer to a function but also an adjustor for adjusting the this pointer when making a call.
 		//		1 ptr - this (for memberfunctionhandler)
-		byte m_StackBuffer[sizeof(void*) * 3];
+		byte m_StackBuffer[sizeof(void*) * 4];
 		IEventHandler* m_pEventHandler;
 	};
 }

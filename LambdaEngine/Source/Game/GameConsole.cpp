@@ -5,8 +5,9 @@
 #include "Rendering/ImGuiRenderer.h"
 
 #include "Application/API/CommonApplication.h"
-
 #include "Application/API/Events/EventQueue.h"
+
+#include "Engine/EngineConfig.h"
 
 #include <regex>
 #include <imgui.h>
@@ -220,6 +221,165 @@ namespace LambdaEngine
 			});
 		}
 
+		// Set Boolean in config
+		{
+			ConsoleCommand cmdSetBool;
+			cmdSetBool.Init("set_bool", true);
+			cmdSetBool.AddArg(Arg::EType::STRING);
+			cmdSetBool.AddArg(Arg::EType::BOOL);
+			cmdSetBool.AddDescription("Change boolean value in config file with a given key\n\t 'set_bool key bool'");
+			BindCommand(cmdSetBool, [this](GameConsole::CallbackInput& input)->void
+				{
+					if (!EngineConfig::SetBoolProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.Boolean))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+		// Set Float in config
+		{
+			ConsoleCommand cmdSetFloat;
+			cmdSetFloat.Init("set_float", true);
+			cmdSetFloat.AddArg(Arg::EType::STRING);
+			cmdSetFloat.AddArg(Arg::EType::FLOAT);
+			cmdSetFloat.AddDescription("Change float value in config file with a given key\n\t 'set_float key value'");
+			BindCommand(cmdSetFloat, [this](GameConsole::CallbackInput& input)->void
+				{
+					if (!EngineConfig::SetFloatProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.Float32))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+		// Set Integer in config
+		{
+			ConsoleCommand cmdSetInt;
+			cmdSetInt.Init("set_int", true);
+			cmdSetInt.AddArg(Arg::EType::STRING);
+			cmdSetInt.AddArg(Arg::EType::INT);
+			cmdSetInt.AddDescription("Change integer value in config file with a given key\n\t 'set_int key value'");
+			BindCommand(cmdSetInt, [this](GameConsole::CallbackInput& input)->void
+				{
+					if (!EngineConfig::SetIntProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.Int32))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+		// Set Double in config
+		{
+			ConsoleCommand cmdSetDouble;
+			cmdSetDouble.Init("set_double", true);
+			cmdSetDouble.AddArg(Arg::EType::STRING);
+			cmdSetDouble.AddArg(Arg::EType::FLOAT);
+			cmdSetDouble.AddDescription("Change double value in config file with a given key\n\t 'set_double key value'");
+			BindCommand(cmdSetDouble, [this](GameConsole::CallbackInput& input)->void
+				{
+					if (!EngineConfig::SetDoubleProperty(input.Arguments.GetFront().Value.String, static_cast<double>(input.Arguments.GetBack().Value.Float32)))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+
+		// Set String in config
+		{
+			ConsoleCommand cmdSetString;
+			cmdSetString.Init("set_string", true);
+			cmdSetString.AddArg(Arg::EType::STRING);
+			cmdSetString.AddArg(Arg::EType::STRING);
+			cmdSetString.AddDescription("Change boolean value in config file with a given key\n\t 'set_string key string'");
+			BindCommand(cmdSetString, [this](GameConsole::CallbackInput& input)->void
+				{
+					if (!EngineConfig::SetBoolProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.String))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+		// Set Float Array in config
+		{
+			ConsoleCommand cmdSetFloatArray;
+			cmdSetFloatArray.Init("set_float_array", true);
+			cmdSetFloatArray.AddArg(Arg::EType::STRING);
+			cmdSetFloatArray.AddArg(Arg::EType::STRING);
+			cmdSetFloatArray.AddDescription("Change array values in settings with a given key\n\t 'set_array key 1.0,1.0'\n\t OBS: The decimal point needs to be in the argument");
+			BindCommand(cmdSetFloatArray, [this](GameConsole::CallbackInput& input)->void
+				{
+					TArray<float> arr;
+					String arg = input.Arguments.GetBack().Value.String;
+
+					while (arg.length() > 0)
+					{
+						if (std::regex_match(arg.substr(0, arg.find(",")), std::regex("(-[0-9]*\\.[0-9]+)|(-[0-9]+\\.[0-9]*)")))
+						{
+							arr.PushBack(std::stof(arg.substr(0, arg.find(","))));
+						}
+						else if (std::regex_match(arg.substr(0, arg.find(",")), std::regex("([0-9]*\\.[0-9]+)|([0-9]+\\.[0-9]*)")))
+						{
+							arr.PushBack(std::stof(arg.substr(0, arg.find(","))));
+						}
+						else
+						{
+							PushError(arg.substr(0, arg.find(",")));
+						}
+
+						if (std::string::npos != arg.find(","))
+							arg.erase(0, arg.find(",") + std::string(",").length());
+						else
+							arg.erase(0, arg.find(","));
+					}
+
+					if (!EngineConfig::SetFloatArrayProperty(input.Arguments.GetFront().Value.String, arr))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+		// Set Array in config
+		{
+			ConsoleCommand cmdSetIntArray;
+			cmdSetIntArray.Init("set_int_array", true);
+			cmdSetIntArray.AddArg(Arg::EType::STRING);
+			cmdSetIntArray.AddArg(Arg::EType::STRING);
+			cmdSetIntArray.AddDescription("Change array values in settings with a given key\n\t 'set_array key 1.0,1.0'\n\t OBS: The decimal point needs to be in the argument");
+			BindCommand(cmdSetIntArray, [this](GameConsole::CallbackInput& input)->void
+				{
+					TArray<int> arr;
+					String arg = input.Arguments.GetBack().Value.String;
+
+					while (arg.length() > 0)
+					{
+						if (std::regex_match(arg.substr(0, arg.find(",")), std::regex("-[0-9]+")))
+						{
+							arr.PushBack(std::stoi(arg.substr(0, arg.find(","))));
+						}
+						else if (std::regex_match(arg.substr(0, arg.find(",")), std::regex("[0-9]+")))
+						{
+							arr.PushBack(std::stoi(arg.substr(0, arg.find(","))));
+						}
+						else
+						{
+							PushError(arg.substr(0, arg.find(",")));
+						}
+
+						if (std::string::npos != arg.find(","))
+							arg.erase(0, arg.find(",") + std::string(",").length());
+						else
+							arg.erase(0, arg.find(","));
+					}
+
+					if (!EngineConfig::SetIntArrayProperty(input.Arguments.GetFront().Value.String, arr))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+
+		// Save config to file
+		{
+			ConsoleCommand cmdSaveSettings;
+			cmdSaveSettings.Init("save_settings", true);
+			cmdSaveSettings.AddDescription("Save changes into config file");
+			BindCommand(cmdSaveSettings, [](CallbackInput& input)->void
+				{
+					EngineConfig::WriteToFile();
+				});
+		}
+
 		return true;
 	}
 
@@ -254,7 +414,7 @@ namespace LambdaEngine
 			ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver); // Standard position
 			ImGui::SetNextWindowSize(ImVec2(width, standardHeight), ImGuiCond_FirstUseEver); // Standard size
 			ImGui::SetNextWindowSizeConstraints(ImVec2(width, 70), ImVec2(width, height)); // Window constraints
-			
+
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f); // Make more transparent
 			ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); // Remove grip, resize works anyway
 			ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); // Remove grip, resize works anyway
@@ -267,7 +427,7 @@ namespace LambdaEngine
 				// History
 				const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 				ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
-				
+
 				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
 
@@ -336,7 +496,7 @@ namespace LambdaEngine
 				ImGui::PopStyleColor();
 				ImGui::PopItemWidth();
 				ImGui::PopStyleVar();
-				
+
 				if (hasFocus)
 				{
 					ImGui::SetItemDefaultFocus();
@@ -632,7 +792,7 @@ namespace LambdaEngine
 			m_IsActive = !m_IsActive;
 			return true;
 		}
-		
+
 		return false;
 	}
 

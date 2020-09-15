@@ -40,10 +40,14 @@ namespace LambdaEngine
 	void GPUProfiler::Render(LambdaEngine::Timestamp delta)
 	{
 #ifdef LAMBDA_DEBUG
+		// Profiler (Which has the instance of GPUProfiler) begins the ImGui window
 		m_TimeSinceUpdate += delta.AsMilliSeconds();
+
 
 		if (m_TimestampCount != 0 && ImGui::CollapsingHeader("Timestamps") && m_TimeSinceUpdate > 1 / m_UpdateFreq)
 		{
+			ImGui::SliderFloat("Update frequency", &m_UpdateFreq, 1.0f, 144.0f);
+
 			// Enable/disable graph update
 			ImGui::Checkbox("Update graphs", &m_EnableGraph);
 			for (auto& stage : m_PlotResults)
@@ -53,8 +57,7 @@ namespace LambdaEngine
 				m_TimeSinceUpdate = 0.0f;
 				float average = 0.0f;
 
-				uint32_t index = m_PlotResultsStart;
-				for (size_t i = 0; i < m_PlotDataSize; i++)
+				for (uint32_t i = 0; i < m_PlotDataSize; i++)
 				{
 					average += stage.Results[i];
 				}
@@ -81,7 +84,7 @@ namespace LambdaEngine
 				"Fragment shader invocations        "
 			};
 
-			for (size_t i = 0; i < m_GraphicsStats.GetSize(); i++) {
+			for (uint32_t i = 0; i < m_GraphicsStats.GetSize(); i++) {
 				std::string caption = statNames[i] + ": %d";
 				ImGui::BulletText(caption.c_str(), m_GraphicsStats[i]);
 			}
@@ -168,7 +171,7 @@ namespace LambdaEngine
 				PlotResult plotResult = {};
 				plotResult.Name = name;
 				plotResult.Results.Resize(m_PlotDataSize);
-					for (size_t i = 0; i < m_PlotDataSize; i++)
+					for (uint32_t i = 0; i < m_PlotDataSize; i++)
 						plotResult.Results[i] = 0.0f;
 
 				m_PlotResults.PushBack(plotResult);
@@ -181,14 +184,14 @@ namespace LambdaEngine
 	{
 #ifdef LAMBDA_DEBUG
 		// Assume VK_PIPELINE_STAGE_TOP_OF_PIPE or VK_PIPELINE_STAGE_BOTTOM_OF_PIPE;
-		pCommandList->Timestamp(m_pTimestampHeap, m_Timestamps[pCommandList].Start, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM);
+		pCommandList->Timestamp(m_pTimestampHeap, (uint32)m_Timestamps[pCommandList].Start, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM);
 #endif
 	}
 
 	void GPUProfiler::EndTimestamp(CommandList* pCommandList)
 	{
 #ifdef LAMBDA_DEBUG
-		pCommandList->Timestamp(m_pTimestampHeap, m_Timestamps[pCommandList].End, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM);
+		pCommandList->Timestamp(m_pTimestampHeap, (uint32)m_Timestamps[pCommandList].End, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM);
 #endif
 	}
 
@@ -207,9 +210,9 @@ namespace LambdaEngine
 			return;
 		}
 
-		size_t timestampCount = 2;
+		uint32_t timestampCount = 2;
 		TArray<uint64_t> results(timestampCount);
-		bool res = m_pTimestampHeap->GetResults(m_Timestamps[pCommandList].Start, timestampCount, timestampCount * sizeof(uint64), results.GetData());
+		bool res = m_pTimestampHeap->GetResults((uint32_t)m_Timestamps[pCommandList].Start, timestampCount, timestampCount * sizeof(uint64), results.GetData());
 
 		if (res)
 		{
@@ -244,8 +247,7 @@ namespace LambdaEngine
 	void GPUProfiler::ResetTimestamp(CommandList* pCommandList)
 	{
 #ifdef LAMBDA_DEBUG
-		uint32_t firstQuery = m_Timestamps[pCommandList].Start;
-		pCommandList->ResetQuery(m_pTimestampHeap, firstQuery, 2);
+		pCommandList->ResetQuery(m_pTimestampHeap, (uint32_t)m_Timestamps[pCommandList].Start, 2);
 #endif
 	}
 

@@ -52,7 +52,7 @@ public:
 	~Sandbox();
 
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
-	
+
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta) override;
 	virtual void FixedTick(LambdaEngine::Timestamp delta) override;
@@ -78,9 +78,9 @@ private:
 	float									m_DirectionalLightAngle;
 	float									m_DirectionalLightStrength[4];
 
-	bool m_RenderGraphWindow;
-	bool m_ShowDemoWindow;
-	bool m_DebuggingWindow;
+	bool									m_RenderGraphWindow;
+	bool									m_ShowDemoWindow;
+	bool									m_DebuggingWindow;
 
 	bool					m_ShowTextureDebuggingWindow	= false;
 	LambdaEngine::String	m_TextureDebuggingName			= "";
