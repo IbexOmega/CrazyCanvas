@@ -62,8 +62,13 @@ namespace LambdaEngine
 	void PacketTransceiverTCP::OnReceiveEnd(PacketTranscoder::Header* pHeader, TArray<uint32>& newAcks, NetworkStatistics* pStatistics)
 	{
 		pStatistics->SetLastReceivedSequenceNr(pHeader->Sequence);
+
+		for (uint32 i = pStatistics->GetLastReceivedAckNr() + 1; i <= pHeader->Ack; i++)
+		{
+			newAcks.PushBack(i);
+		}
+
 		pStatistics->SetLastReceivedAckNr(pHeader->Ack);
-		newAcks.PushBack(pHeader->Ack);
 	}
 
 	void PacketTransceiverTCP::SetSocket(ISocket* pSocket)

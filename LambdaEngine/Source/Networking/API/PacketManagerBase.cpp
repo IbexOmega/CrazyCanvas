@@ -156,24 +156,24 @@ namespace LambdaEngine
 	* Notifies the listener that the packet was succesfully delivered.
 	* Removes the packet and returns it to the pool.
 	*/
-	void PacketManagerBase::HandleAcks(const TArray<uint32>& acks)
+	void PacketManagerBase::HandleAcks(const TArray<uint32>& ackedPackets)
 	{
 		TArray<uint32> ackedReliableUIDs;
-		GetReliableUIDsFromAcks(acks, ackedReliableUIDs);
+		GetReliableUIDsFromAckedPackets(ackedPackets, ackedReliableUIDs);
 
-		TArray<SegmentInfo> messagesAcked;
-		GetReliableSegmentInfosFromUIDs(ackedReliableUIDs, messagesAcked);
+		TArray<SegmentInfo> segmentsAcked;
+		GetReliableSegmentInfosFromUIDs(ackedReliableUIDs, segmentsAcked);
 
 		TArray<NetworkSegment*> packetsToFree;
-		packetsToFree.Reserve(messagesAcked.GetSize());
+		packetsToFree.Reserve(segmentsAcked.GetSize());
 
-		for (SegmentInfo& messageInfo : messagesAcked)
+		for (SegmentInfo& segmentInfo : segmentsAcked)
 		{
-			if (messageInfo.Listener)
+			if (segmentInfo.Listener)
 			{
-				messageInfo.Listener->OnPacketDelivered(messageInfo.Segment);
+				segmentInfo.Listener->OnPacketDelivered(segmentInfo.Segment);
 			}
-			packetsToFree.PushBack(messageInfo.Segment);
+			packetsToFree.PushBack(segmentInfo.Segment);
 		}
 
 		m_SegmentPool.FreeSegments(packetsToFree);
@@ -182,7 +182,7 @@ namespace LambdaEngine
 	/*
 	* Finds all Reliable Segment UIDs corresponding to the acks from physical packets
 	*/
-	void PacketManagerBase::GetReliableUIDsFromAcks(const TArray<uint32>& acks, TArray<uint32>& ackedReliableUIDs)
+	void PacketManagerBase::GetReliableUIDsFromAckedPackets(const TArray<uint32>& acks, TArray<uint32>& ackedReliableUIDs)
 	{
 		ackedReliableUIDs.Reserve(128);
 		std::scoped_lock<SpinLock> lock(m_LockBundles);

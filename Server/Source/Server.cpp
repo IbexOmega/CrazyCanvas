@@ -45,7 +45,7 @@ Server::Server()
 	m_pServer = NetworkUtils::CreateServer(desc);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
 
-	((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
+	//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
 }
 
 Server::~Server()
