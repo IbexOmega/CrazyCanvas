@@ -45,6 +45,12 @@ namespace LambdaEngine
 		QUAD		= 1,
 	};
 
+	struct SceneDesc
+	{
+		String	Name				= "Scene";
+		bool	RayTracingEnabled	= false;
+	};
+
 	struct AreaLightObject
 	{
 		EAreaLightType	Type;
@@ -57,36 +63,30 @@ namespace LambdaEngine
 		GUID_Lambda Material;
 	};
 
-	struct IndexedIndirectMeshArgument
-	{
-		uint32	IndexCount			= 0;
-		uint32	InstanceCount		= 0;
-		uint32	FirstIndex			= 0;
-		int32	VertexOffset		= 0;
-		uint32	FirstInstance		= 0;
-		
-		uint32	MaterialIndex		= 0;
-	};
-
-	struct SceneDesc
-	{
-		String	Name				= "Scene";
-		bool	RayTracingEnabled	= false;
-	};
-
-	struct InstancePrimary
+	struct InstanceRayTracing
 	{
 		glm::mat3x4 Transform;
-		uint32 IndirectArgsIndex : 24;
+		uint32 CustomIndex : 24;
 		uint32 Mask : 8;
 		uint32 SBTRecordOffset : 24;
 		uint32 Flags : 8;
 		uint64 AccelerationStructureAddress;
 	};
 
-	struct InstanceSecondary
+	struct InstanceRaster
 	{
-		glm::mat4 PrevTransform;
+		glm::mat4	Transform		= glm::mat4(1.0f);
+		glm::mat4	PrevTransform	= glm::mat4(1.0f);
+		uint32		MaterialIndex	= 0;
+	};
+
+	struct IndirectArg
+	{
+		uint32	IndexCount		= 0;
+		uint32	InstanceCount	= 0;
+		uint32	FirstIndex		= 0;
+		int32	VertexOffset	= 0;
+		uint32	FirstInstance	= 0;
 	};
 
 	struct DirectionalLight
@@ -146,6 +146,7 @@ namespace LambdaEngine
 
 		uint32 AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 		uint32 AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
+		uint32 AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform = glm::mat4(1.0f));
 		void UpdateTransform(uint32 instanceIndex, const glm::mat4& transform);
 
 		void SetDirectionalLight(const DirectionalLight& directionalLight);
@@ -200,6 +201,8 @@ namespace LambdaEngine
 	private:
 		const GraphicsDevice*						m_pGraphicsDevice;
 		const IAudioDevice*							m_pAudioDevice;
+
+		TArray<
 
 		String										m_Name									= "Scene";
 
