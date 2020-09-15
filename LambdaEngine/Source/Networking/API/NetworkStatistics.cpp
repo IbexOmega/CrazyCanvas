@@ -108,12 +108,12 @@ namespace LambdaEngine
 		return m_LastReceivedReliableUID;
 	}
 
-	Timestamp NetworkStatistics::GetTimestapLastSent() const
+	Timestamp NetworkStatistics::GetTimestampLastSent() const
 	{
 		return m_TimestampLastSent;
 	}
 
-	Timestamp NetworkStatistics::GetTimestapLastReceived() const
+	Timestamp NetworkStatistics::GetTimestampLastReceived() const
 	{
 		return m_TimestampLastReceived;
 	}

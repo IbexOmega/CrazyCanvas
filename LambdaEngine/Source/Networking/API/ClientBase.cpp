@@ -141,13 +141,21 @@ namespace LambdaEngine
 
 	void ClientBase::UpdatePingSystem()
 	{
-		if (m_State == STATE_CONNECTED)
+		if (m_State == STATE_CONNECTING || m_State == STATE_CONNECTED)
 		{
-			Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestapLastReceived();
+			Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestampLastReceived();
 			if (timeSinceLastPacketReceived >= m_PingTimeout)
 			{
-				m_SendDisconnectPacket = false;
 				Disconnect("Ping Timed Out");
+			}
+
+			if (m_State == STATE_CONNECTED)
+			{
+				Timestamp timeSinceLastPacketSent = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestampLastSent();
+				if (timeSinceLastPacketSent >= Timestamp::Seconds(1))
+				{
+					SendReliable(GetFreePacket(NetworkSegment::TYPE_PING));
+				}
 			}
 		}
 	}

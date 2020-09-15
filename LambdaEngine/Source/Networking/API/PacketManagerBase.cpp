@@ -98,6 +98,8 @@ namespace LambdaEngine
 			m_Timer -= delay;
 			DeleteOldBundles();
 		}
+
+
 	}
 
 	SegmentPool* PacketManagerBase::GetSegmentPool()
