@@ -270,6 +270,10 @@ namespace LambdaEngine
 			Disconnect("Disconnected By Remote");
 			return false;
 		}
+		else if (packetType == NetworkSegment::TYPE_PING)
+		{
+
+		}
 		else if (IsConnected())
 		{
 			m_pHandler->OnPacketReceived(this, pPacket);

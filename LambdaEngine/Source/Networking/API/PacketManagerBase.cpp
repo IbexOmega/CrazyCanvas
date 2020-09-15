@@ -197,13 +197,14 @@ namespace LambdaEngine
 				for (uint32 reliableUID : bundle.ReliableUIDs)
 					ackedReliableUIDs.PushBack(reliableUID);
 
-				timestamp = bundle.Timestamp;
+				timestamp += bundle.Timestamp;
 				m_Bundles.erase(iterator);
 			}
 		}
 
 		if (timestamp != 0)
 		{
+			timestamp /= acks.GetSize();
 			RegisterRTT(EngineLoop::GetTimeSinceStart() - timestamp);
 		}
 	}
