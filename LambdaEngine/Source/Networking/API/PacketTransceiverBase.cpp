@@ -42,17 +42,6 @@ namespace LambdaEngine
 
 		pStatistics->RegisterSegmentSent(header.Segments);
 
-		//std::string text = "Packet Sequence: " + std::to_string(header.Sequence) + "[";
-
-		//for (uint32 reliableUID : reliableUIDsSent)
-		//{
-		//	text += std::to_string(reliableUID) + ", ";
-		//}
-
-		//text += " ]";
-
-		//LOG_WARNING(text.c_str());
-
 		return header.Sequence;
 	}
 
@@ -74,8 +63,6 @@ namespace LambdaEngine
 
 		if (!ValidateHeaderSalt(&header, pStatistics))
 			return false;
-
-		LOG_INFO("Packet acked %d", header.Ack);
 
 		OnReceiveEnd(&header, newAcks, pStatistics);
 
