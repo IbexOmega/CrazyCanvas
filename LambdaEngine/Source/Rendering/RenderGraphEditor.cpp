@@ -17,7 +17,7 @@
 #include <imnodes.h>
 #include "Rendering/Renderer.h"
 #include "Rendering/RenderGraph.h"
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraphParser.h"
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/RenderGraphEditorHelpers.h"

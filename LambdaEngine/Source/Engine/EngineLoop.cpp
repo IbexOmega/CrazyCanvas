@@ -24,15 +24,12 @@
 #include "Threading/API/Thread.h"
 #include "Threading/API/ThreadPool.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/Renderer.h"
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
 
 #include "Audio/AudioSystem.h"
-
-#include "Rendering/RenderSystem.h"
-#include "Rendering/Renderer.h"
 
 #include "Utilities/RuntimeStats.h"
 
@@ -166,7 +163,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!RenderSystem::Init())
+		if (!RenderAPI::Init())
 		{
 			return false;
 		}
@@ -201,9 +198,9 @@ namespace LambdaEngine
 
 	bool EngineLoop::PreRelease()
 	{
-		RenderSystem::GetGraphicsQueue()->Flush();
-		RenderSystem::GetComputeQueue()->Flush();
-		RenderSystem::GetCopyQueue()->Flush();
+		RenderAPI::GetGraphicsQueue()->Flush();
+		RenderAPI::GetComputeQueue()->Flush();
+		RenderAPI::GetCopyQueue()->Flush();
 
 		return true;
 	}
@@ -232,7 +229,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!RenderSystem::Release())
+		if (!RenderAPI::Release())
 		{
 			return false;
 		}

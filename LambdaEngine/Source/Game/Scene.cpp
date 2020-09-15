@@ -13,7 +13,7 @@
 #include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/AccelerationStructure.h"
 #include "Rendering/Core/API/Fence.h"
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 
 #include "Rendering/Core/Vulkan/Vulkan.h"
 
@@ -427,8 +427,8 @@ namespace LambdaEngine
 
 		m_pCopyCommandList->End();
 
-		RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_pCopyCommandList, 1,		FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
-		RenderSystem::GetGraphicsQueue()->Flush();
+		RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&m_pCopyCommandList, 1,		FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+		RenderAPI::GetGraphicsQueue()->Flush();
 
 		/*------------Ray Tracing Section Begin-------------*/
 		if (m_RayTracingEnabled)
@@ -460,9 +460,9 @@ namespace LambdaEngine
 				m_pTLASBuildCommandList->End();
 			}
 
-			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pBLASBuildCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, m_pASFence, 1);
-			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pTLASBuildCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pASFence, 1, nullptr, 0);
-			RenderSystem::GetComputeQueue()->Flush();
+			RenderAPI::GetComputeQueue()->ExecuteCommandLists(&m_pBLASBuildCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, m_pASFence, 1);
+			RenderAPI::GetComputeQueue()->ExecuteCommandLists(&m_pTLASBuildCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pASFence, 1, nullptr, 0);
+			RenderAPI::GetComputeQueue()->Flush();
 
 			//RayTracingTestVK::Debug(m_pGraphicsDevice, blasBuildDescriptions[0].pAccelerationStructure, m_pTLAS);
 		}

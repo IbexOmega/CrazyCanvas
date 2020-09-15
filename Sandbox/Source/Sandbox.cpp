@@ -10,7 +10,7 @@
 
 #include "Resources/ResourceManager.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
@@ -78,10 +78,10 @@ Sandbox::Sandbox()
 	ShaderReflection shaderReflection;
 	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
 
-	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
+	m_pScene = DBG_NEW Scene(RenderAPI::GetDevice(), AudioSystem::GetDevice());
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
-	RenderSystem::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
+	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
 	SceneDesc sceneDesc = { };
 	sceneDesc.Name				= "Test Scene";
@@ -446,8 +446,8 @@ bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 
 	if (event.Key == EKey::KEY_KEYPAD_5)
 	{
-		RenderSystem::GetGraphicsQueue()->Flush();
-		RenderSystem::GetComputeQueue()->Flush();
+		RenderAPI::GetGraphicsQueue()->Flush();
+		RenderAPI::GetComputeQueue()->Flush();
 		ResourceManager::ReloadAllShaders();
 		PipelineStateManager::ReloadPipelineStates();
 	}
@@ -663,7 +663,7 @@ bool Sandbox::LoadRendererResources()
 		bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
 		bufferDesc.SizeInBytes		= sizeof(pointLightsBuffer);
 
-		m_pPointLightsBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
+		m_pPointLightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 
 		void* pMapped = m_pPointLightsBuffer->Map();
 		memcpy(pMapped, &pointLightsBuffer, sizeof(pointLightsBuffer));

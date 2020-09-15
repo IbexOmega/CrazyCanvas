@@ -8,7 +8,7 @@
 
 #include "Resources/ResourceManager.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"

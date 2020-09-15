@@ -19,7 +19,7 @@
 #include "Rendering/Core/API/Fence.h"
 #include "Rendering/Core/API/Shader.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/IRenderGraphCreateHandler.h"
 
@@ -175,9 +175,9 @@ namespace LambdaEngine
 
 	bool RenderGraph::Recreate(const RenderGraphDesc* pDesc)
 	{
-		RenderSystem::GetGraphicsQueue()->Flush();
-		RenderSystem::GetComputeQueue()->Flush();
-		RenderSystem::GetCopyQueue()->Flush();
+		RenderAPI::GetGraphicsQueue()->Flush();
+		RenderAPI::GetComputeQueue()->Flush();
+		RenderAPI::GetCopyQueue()->Flush();
 
 		//Release Old Stuff
 		{
@@ -737,7 +737,7 @@ namespace LambdaEngine
 			if (pGraphicsCopyCommandList->IsBegin())
 			{
 				pGraphicsCopyCommandList->End();
-				RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 				m_SignalValue++;
 			}
 
@@ -746,7 +746,7 @@ namespace LambdaEngine
 			if (pComputeCopyCommandList->IsBegin())
 			{
 				pComputeCopyCommandList->End();
-				RenderSystem::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				RenderAPI::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 				m_SignalValue++;
 			}
 		}
@@ -771,11 +771,11 @@ namespace LambdaEngine
 					{
 						if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 						{
-							RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+							RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 						}
 						else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 						{
-							RenderSystem::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+							RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 						}
 
 						m_SignalValue++;
@@ -792,11 +792,11 @@ namespace LambdaEngine
 			{
 				if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 				{
-					RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 				}
 				else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 				{
-					RenderSystem::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
 				}
 
 				m_SignalValue++;
@@ -2542,14 +2542,14 @@ namespace LambdaEngine
 				Profiler::GetGPUProfiler()->StartGraphicsPipelineStat(pPipelineStage->ppGraphicsCommandLists[f]);
 				Profiler::GetGPUProfiler()->EndGraphicsPipelineStat(pPipelineStage->ppGraphicsCommandLists[f]);
 				pPipelineStage->ppGraphicsCommandLists[f]->End();
-				RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&pPipelineStage->ppGraphicsCommandLists[f], 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
-				RenderSystem::GetGraphicsQueue()->Flush();
+				RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pPipelineStage->ppGraphicsCommandLists[f], 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+				RenderAPI::GetGraphicsQueue()->Flush();
 
 				pPipelineStage->ppComputeCommandLists[f]->Begin(nullptr);
 				Profiler::GetGPUProfiler()->ResetTimestamp(pPipelineStage->ppComputeCommandLists[f]);
 				pPipelineStage->ppComputeCommandLists[f]->End();
-				RenderSystem::GetComputeQueue()->ExecuteCommandLists(&pPipelineStage->ppComputeCommandLists[f], 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
-				RenderSystem::GetComputeQueue()->Flush();
+				RenderAPI::GetComputeQueue()->ExecuteCommandLists(&pPipelineStage->ppComputeCommandLists[f], 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+				RenderAPI::GetComputeQueue()->Flush();
 			}
 
 		}
@@ -2561,9 +2561,9 @@ namespace LambdaEngine
 
 	void RenderGraph::UpdateRelativeParameters()
 	{
-		RenderSystem::GetGraphicsQueue()->Flush();
-		RenderSystem::GetComputeQueue()->Flush();
-		RenderSystem::GetCopyQueue()->Flush();
+		RenderAPI::GetGraphicsQueue()->Flush();
+		RenderAPI::GetComputeQueue()->Flush();
+		RenderAPI::GetCopyQueue()->Flush();
 
 		for (uint32 renderStageIndex : m_WindowRelativeRenderStages)
 		{

@@ -8,7 +8,7 @@
 
 #include "Resources/ResourceManager.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraphEditor.h"
@@ -56,10 +56,10 @@ CrazyCanvas::CrazyCanvas()
 	Input::Disable();
 
 
-	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
+	m_pScene = DBG_NEW Scene(RenderAPI::GetDevice(), AudioSystem::GetDevice());
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
-	RenderSystem::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
+	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
 	SceneDesc sceneDesc = { };
 	sceneDesc.Name				= "Test Scene";

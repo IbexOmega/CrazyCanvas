@@ -2,7 +2,7 @@
 #include "Debug/GPUProfiler.h"
 #include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/QueryHeap.h"
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/CommandQueue.h"
 
@@ -26,11 +26,11 @@ namespace LambdaEngine
 	{
 #ifdef LAMBDA_DEBUG
 		GraphicsDeviceFeatureDesc desc = {};
-		RenderSystem::GetDevice()->QueryDeviceFeatures(&desc);
+		RenderAPI::GetDevice()->QueryDeviceFeatures(&desc);
 		m_TimestampPeriod = desc.TimestampPeriod;
 
 		CommandQueueProperties prop = {};
-		RenderSystem::GetGraphicsQueue()->QueryQueueProperties(&prop);
+		RenderAPI::GetGraphicsQueue()->QueryQueueProperties(&prop);
 		m_TimestampValidBits = prop.TimestampValidBits;
 
 		m_TimeUnit = timeUnit;
@@ -127,7 +127,7 @@ namespace LambdaEngine
 		createInfo.QueryCount = m_TimestampCount;
 		createInfo.Type = EQueryType::QUERY_TYPE_TIMESTAMP;
 
-		m_pTimestampHeap = RenderSystem::GetDevice()->CreateQueryHeap(&createInfo);
+		m_pTimestampHeap = RenderAPI::GetDevice()->CreateQueryHeap(&createInfo);
 #endif
 	}
 
@@ -146,7 +146,7 @@ namespace LambdaEngine
 		createInfo.QueryCount = 6;
 		createInfo.Type = EQueryType::QUERY_TYPE_PIPELINE_STATISTICS;
 
-		m_pPipelineStatHeap = RenderSystem::GetDevice()->CreateQueryHeap(&createInfo);
+		m_pPipelineStatHeap = RenderAPI::GetDevice()->CreateQueryHeap(&createInfo);
 
 		m_GraphicsStats.Resize(createInfo.QueryCount);
 #endif

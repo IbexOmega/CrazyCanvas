@@ -6,7 +6,7 @@
 #include "Rendering/Core/API/SwapChain.h"
 #include "Rendering/Core/API/Texture.h"
 #include "Rendering/Core/API/TextureView.h"
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
@@ -35,7 +35,7 @@ namespace LambdaEngine
 			SwapChainDesc swapChainDesc = {};
 			swapChainDesc.DebugName		= "Renderer Swap Chain";
 			swapChainDesc.pWindow		= CommonApplication::Get()->GetActiveWindow().Get();
-			swapChainDesc.pQueue		= RenderSystem::GetGraphicsQueue();
+			swapChainDesc.pQueue		= RenderAPI::GetGraphicsQueue();
 			swapChainDesc.Format		= EFormat::FORMAT_B8G8R8A8_UNORM;
 			swapChainDesc.Width			= 0;
 			swapChainDesc.Height		= 0;
@@ -43,7 +43,7 @@ namespace LambdaEngine
 			swapChainDesc.SampleCount	= 1;
 			swapChainDesc.VerticalSync	= false;
 		
-			s_SwapChain = RenderSystem::GetDevice()->CreateSwapChain(&swapChainDesc);
+			s_SwapChain = RenderAPI::GetDevice()->CreateSwapChain(&swapChainDesc);
 			if (!s_SwapChain)
 			{
 				LOG_ERROR("[Renderer]: SwapChain is nullptr after initializaiton");
@@ -81,7 +81,7 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferCount					= BACK_BUFFER_COUNT;
 			renderGraphDesc.MaxTexturesPerDescriptorSet		= MAX_TEXTURES_PER_DESCRIPTOR_SET;
 
-			s_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
+			s_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
 			s_pRenderGraph->Init(&renderGraphDesc);
 		}
 

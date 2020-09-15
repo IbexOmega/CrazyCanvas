@@ -6,7 +6,7 @@
 #include "Rendering/Core/API/Fence.h"
 #include "Rendering/Core/API/GraphicsHelpers.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 
 #include "Audio/AudioSystem.h"
 
@@ -183,7 +183,7 @@ namespace LambdaEngine
 	*/
 	bool ResourceLoader::Init()
 	{
-		s_pCopyCommandAllocator = RenderSystem::GetDevice()->CreateCommandAllocator("Resource Loader Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+		s_pCopyCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Resource Loader Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
 		if (s_pCopyCommandAllocator == nullptr)
 		{
@@ -196,12 +196,12 @@ namespace LambdaEngine
 		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 		commandListDesc.Flags			= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
-		s_pCopyCommandList = RenderSystem::GetDevice()->CreateCommandList(s_pCopyCommandAllocator, &commandListDesc);
+		s_pCopyCommandList = RenderAPI::GetDevice()->CreateCommandList(s_pCopyCommandAllocator, &commandListDesc);
 
 		FenceDesc fenceDesc = {};
 		fenceDesc.DebugName		= "Resource Loader Copy Fence";
 		fenceDesc.InitalValue	= 0;
-		s_pCopyFence = RenderSystem::GetDevice()->CreateFence(&fenceDesc);
+		s_pCopyFence = RenderAPI::GetDevice()->CreateFence(&fenceDesc);
 
 		glslang::InitializeProcess();
 
@@ -684,7 +684,7 @@ namespace LambdaEngine
 		textureDesc.Miplevels	= miplevels;
 		textureDesc.SampleCount = 1;
 
-		Texture* pTexture = RenderSystem::GetDevice()->CreateTexture(&textureDesc);
+		Texture* pTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 
 		if (pTexture == nullptr)
 		{
@@ -700,7 +700,7 @@ namespace LambdaEngine
 		bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 		bufferDesc.SizeInBytes	= uint64(arrayCount * pixelDataSize);
 
-		Buffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
+		Buffer* pTextureData = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		if (pTextureData == nullptr)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to create copy buffer for \"%s\"", name.c_str());
@@ -778,7 +778,7 @@ namespace LambdaEngine
 
 		s_pCopyCommandList->End();
 
-		if (!RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&s_pCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, nullptr, 0, s_pCopyFence, s_SignalValue))
+		if (!RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&s_pCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, nullptr, 0, s_pCopyFence, s_SignalValue))
 		{
 			LOG_ERROR("[ResourceLoader]: Texture could not be created as command list could not be executed for \"%s\"", name.c_str());
 			SAFERELEASE(pTextureData);
@@ -791,7 +791,7 @@ namespace LambdaEngine
 		}
 
 		//Todo: Remove this wait after garbage collection works
-		RenderSystem::GetGraphicsQueue()->Flush();
+		RenderAPI::GetGraphicsQueue()->Flush();
 
 		SAFERELEASE(pTextureData);
 
@@ -839,7 +839,7 @@ namespace LambdaEngine
 		shaderDesc.Stage		= stage;
 		shaderDesc.Lang			= lang;
 
-		Shader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
+		Shader* pShader = RenderAPI::GetDevice()->CreateShader(&shaderDesc);
 		Malloc::Free(pShaderRawSource);
 
 		return pShader;
@@ -871,7 +871,7 @@ namespace LambdaEngine
 		shaderDesc.Stage		= stage;
 		shaderDesc.Lang			= lang;
 
-		Shader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
+		Shader* pShader = RenderAPI::GetDevice()->CreateShader(&shaderDesc);
 
 		return pShader;
 	}

@@ -4,7 +4,7 @@
 
 #include "Log/Log.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 
 #include <utility>
 
@@ -254,7 +254,7 @@ namespace LambdaEngine
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 
-		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
+		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		return guid;
 	}
@@ -296,7 +296,7 @@ namespace LambdaEngine
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 
-		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
+		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		return guid;
 	}
@@ -339,7 +339,7 @@ namespace LambdaEngine
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 
-		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
+		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		return guid;
 	}
@@ -581,7 +581,7 @@ namespace LambdaEngine
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 
-		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
+		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		return guid;
 	}
@@ -648,8 +648,8 @@ namespace LambdaEngine
 			defaultNormalMapViewDesc.Miplevel		= 0;
 			defaultNormalMapViewDesc.ArrayIndex		= 0;
 
-			s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= RenderSystem::GetDevice()->CreateTextureView(&defaultColorMapViewDesc);
-			s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= RenderSystem::GetDevice()->CreateTextureView(&defaultNormalMapViewDesc);
+			s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= RenderAPI::GetDevice()->CreateTextureView(&defaultColorMapViewDesc);
+			s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= RenderAPI::GetDevice()->CreateTextureView(&defaultNormalMapViewDesc);
 		}
 
 		{
