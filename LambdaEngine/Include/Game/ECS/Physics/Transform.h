@@ -41,7 +41,7 @@ namespace LambdaEngine
 	class TransformComponents : public IComponentGroup
 	{
 	public:
-		TArray<ComponentAccess> ToVector() const override final
+		TArray<ComponentAccess> ToArray() const override final
 		{
 			return {m_Position, m_Scale, m_Rotation};
 		}
