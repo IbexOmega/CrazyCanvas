@@ -77,8 +77,13 @@ namespace LambdaEngine
 		if (runUntangler)
 			UntangleReliableSegments(segmentsReturned);
 
+#ifdef LAMBDA_CONFIG_DEBUG
+		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
+			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment("PacketManagerUDP_NETWORK_ACK")->SetType(NetworkSegment::TYPE_NETWORK_ACK));
+#else
 		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
 			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment()->SetType(NetworkSegment::TYPE_NETWORK_ACK));
+#endif
 	}
 
 	void PacketManagerUDP::UntangleReliableSegments(TArray<NetworkSegment*>& segmentsReturned)
