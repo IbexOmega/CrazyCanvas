@@ -47,7 +47,7 @@ Client::Client() :
     desc.MaxRetries             = 10;
     desc.ResendRTTMultiplier    = 2.0F;
     desc.Handler                = this;
-    desc.Protocol               = EProtocol::UDP;
+    desc.Protocol               = EProtocol::TCP;
 	desc.PingTimeout			= Timestamp::Seconds(3);
 	desc.UsePingSystem			= false;
 
@@ -132,7 +132,7 @@ void Client::OnClientReleased(LambdaEngine::IClient* pClient)
 void Client::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)
 {
 	UNREFERENCED_VARIABLE(pPacket);
-	LOG_INFO("OnPacketDelivered(%s)", pPacket->ToString().c_str());
+	LOG_INFO("OnPacketDelivered(%s)", pPacket->ToString());
 }
 
 void Client::OnPacketResent(LambdaEngine::NetworkSegment* pPacket, uint8 tries)
@@ -146,7 +146,7 @@ void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint
 	UNREFERENCED_VARIABLE(pPacket);
 	LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
-
+uint32 g_PackegesSent = 0;
 bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 {
 	using namespace LambdaEngine;
@@ -160,17 +160,27 @@ bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	}
 	else
 	{
-		uint16 packetType = 0;
+		/*uint16 packetType = 0;
 		NetworkSegment* packet = m_pClient->GetFreePacket(packetType);
 		BinaryEncoder encoder(packet);
 		encoder.WriteString("Test Message");
-		m_pClient->SendReliable(packet, this);
+		m_pClient->SendReliable(packet, this);*/
+
+		for (int i = 0; i < 10; i++)
+		{
+			g_PackegesSent++;
+			NetworkSegment* pPacket = m_pClient->GetFreePacket(g_PackegesSent);
+			BinaryEncoder encoder(pPacket);
+			encoder.WriteUInt32(g_PackegesSent);
+			m_pClient->SendReliable(pPacket, this);
+		}
+		g_PackegesSent = 0;
 	}
 
 	return false;
 }
 
-uint32 g_PackegesSent = 0;
+
 
 void Client::Tick(LambdaEngine::Timestamp delta)
 {
@@ -190,10 +200,10 @@ void Client::FixedTick(LambdaEngine::Timestamp delta)
 	{
 		if (++g_PackegesSent <= 10000)
 		{
-			NetworkSegment* pPacket = m_pClient->GetFreePacket(420);
+			NetworkSegment* pPacket = m_pClient->GetFreePacket(g_PackegesSent);
 			BinaryEncoder encoder(pPacket);
 			encoder.WriteUInt32(g_PackegesSent);
-			m_pClient->SendUnreliable(pPacket);
+			m_pClient->SendReliable(pPacket, this);
 		}
 		else
 		{

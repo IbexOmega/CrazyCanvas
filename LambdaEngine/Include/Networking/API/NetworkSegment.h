@@ -70,15 +70,17 @@ namespace LambdaEngine
 		static void PacketTypeToString(uint16 type, std::string& str);
 
 	private:
+#ifndef LAMBDA_CONFIG_PRODUCTION
+		std::string m_Borrower;
+		std::string m_Type;
+#endif
+
 		Header m_Header;
 		uint64 m_Salt;
 		uint16 m_SizeOfBuffer;
 		bool m_IsBorrowed;
 
-#ifndef LAMBDA_CONFIG_PRODUCTION
-		std::string m_Type;
-		std::string m_Borrower;
-#endif
+
 
 		char m_pBuffer[MAXIMUM_SEGMENT_SIZE];
 	};

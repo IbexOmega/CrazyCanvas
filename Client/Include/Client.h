@@ -48,10 +48,11 @@ public:
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 
 private:
-	LambdaEngine::ClientBase* m_pClient;
 
 	LambdaEngine::RenderGraphEditor* m_pRenderGraphEditor = nullptr;
 	LambdaEngine::RenderGraph* m_pRenderGraph = nullptr;
 	LambdaEngine::Renderer* m_pRenderer = nullptr;
 	LambdaEngine::Scene* m_pScene = nullptr;
+
+	LambdaEngine::ClientBase* m_pClient;
 };
