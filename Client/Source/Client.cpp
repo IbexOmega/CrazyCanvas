@@ -48,6 +48,7 @@ Client::Client() :
     desc.ResendRTTMultiplier    = 2.0F;
     desc.Handler                = this;
     desc.Protocol               = EProtocol::TCP;
+	desc.PingInterval			= Timestamp::Seconds(1);
 	desc.PingTimeout			= Timestamp::Seconds(3);
 	desc.UsePingSystem			= true;
 
