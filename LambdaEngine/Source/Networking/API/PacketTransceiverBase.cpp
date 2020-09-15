@@ -42,6 +42,17 @@ namespace LambdaEngine
 
 		pStatistics->RegisterSegmentSent(header.Segments);
 
+		std::string text = "Packet Sequence: " + std::to_string(header.Sequence) + "[";
+
+		for (uint32 reliableUID : reliableUIDsSent)
+		{
+			text += std::to_string(reliableUID) + ", ";
+		}
+
+		text += " ]";
+
+		LOG_WARNING(text.c_str());
+
 		return header.Sequence;
 	}
 
@@ -64,6 +75,8 @@ namespace LambdaEngine
 		if (!ValidateHeaderSalt(&header, pStatistics))
 			return false;
 
+		LOG_INFO("Packet acked %d", header.Ack);
+
 		OnReceiveEnd(&header, newAcks, pStatistics);
 
 		pStatistics->RegisterPacketReceived((uint32)segments.GetSize(), m_BytesReceived);
@@ -75,7 +88,7 @@ namespace LambdaEngine
 	{
 		if (header->Salt == 0)
 		{
-			LOG_ERROR("[PacketTranscoder]: Received a packet without a salt");
+			LOG_ERROR("[PacketTransceiverBase]: Received a packet without a salt");
 			return false;
 		}
 		else if (pStatistics->GetRemoteSalt() != header->Salt)
@@ -87,7 +100,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[PacketTranscoder]: Received a packet with a new salt [Prev %lu : New %lu]", pStatistics->GetRemoteSalt(), header->Salt);
+				LOG_ERROR("[PacketTransceiverBase]: Received a packet with a new salt [Prev %lu : New %lu]", pStatistics->GetRemoteSalt(), header->Salt);
 				return false;
 			}
 		}
