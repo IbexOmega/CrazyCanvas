@@ -71,7 +71,11 @@ namespace LambdaEngine
 
 	NetworkSegment* ClientBase::GetFreePacket(uint16 packetType)
 	{
+#ifdef LAMBDA_CONFIG_DEBUG
+		return GetPacketManager()->GetSegmentPool()->RequestFreeSegment("ClientBase")->SetType(packetType);
+#else
 		return GetPacketManager()->GetSegmentPool()->RequestFreeSegment()->SetType(packetType);
+#endif
 	}
 
 	EClientState ClientBase::GetState() const

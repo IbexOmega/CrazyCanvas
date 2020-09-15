@@ -95,7 +95,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				break;
+				//break;
 			}
 		}
 

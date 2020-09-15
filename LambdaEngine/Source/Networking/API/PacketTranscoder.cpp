@@ -70,8 +70,14 @@ namespace LambdaEngine
 			return false;
 		}
 
+#ifdef LAMBDA_CONFIG_DEBUG
+		if (!pSegmentPool->RequestFreeSegments(pHeader->Segments, segmentsDecoded, "PacketTranscoder"))
+			return false;
+#else
 		if (!pSegmentPool->RequestFreeSegments(pHeader->Segments, segmentsDecoded))
 			return false;
+#endif
+			
 
 		for (int i = 0; i < pHeader->Segments; i++)
 		{

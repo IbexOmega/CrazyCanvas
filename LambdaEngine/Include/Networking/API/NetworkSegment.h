@@ -77,6 +77,7 @@ namespace LambdaEngine
 
 #ifndef LAMBDA_CONFIG_PRODUCTION
 		std::string m_Type;
+		std::string m_Borrower;
 #endif
 
 		char m_pBuffer[MAXIMUM_SEGMENT_SIZE];
