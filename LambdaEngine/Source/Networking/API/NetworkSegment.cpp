@@ -88,7 +88,7 @@ namespace LambdaEngine
 	{
 		std::string type;
 		PacketTypeToString(m_Header.Type, type);
-		return "[Type=" + type + "], [Size=" + std::to_string(GetBufferSize()) + "]";
+		return "[Type=" + type + "], [Size=" + std::to_string(GetBufferSize()) + "], [UID=" + std::to_string(m_Header.UID) + "]";
 	}
 
 	void NetworkSegment::PacketTypeToString(uint16 type, std::string& str)

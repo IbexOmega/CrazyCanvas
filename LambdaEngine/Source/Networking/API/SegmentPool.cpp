@@ -33,7 +33,6 @@ namespace LambdaEngine
 		pSegment->m_Borrower = borrower;
 		pSegment->m_IsBorrowed = true;
 		return pSegment;
-		return nullptr;
 	}
 
 	bool SegmentPool::RequestFreeSegments(uint16 nrOfSegments, TArray<NetworkSegment*>& segmentsReturned, const std::string& borrower)
