@@ -6,6 +6,7 @@
 #include "ECS/EntityRegistry.h"
 #include "ECS/JobScheduler.h"
 #include "ECS/System.h"
+#include "ECS/ComponentManager.h"
 #include "Utilities/IDGenerator.h"
 
 #include <typeindex>
@@ -26,7 +27,13 @@ namespace LambdaEngine
 
         void Tick(float dt);
 
-        Entity createEntity() { return m_EntityRegistry.CreateEntity(); }
+        Entity CreateEntity() { return m_EntityRegistry.CreateEntity(); }
+        
+        template<typename Comp>
+        Comp& AddComponent(Entity entity);
+
+        template<typename Comp>
+        bool RemoveComponent(Entity entity);
 
         void ScheduleJobASAP(const Job& job);
         void ScheduleJobPostFrame(const Job& job);
@@ -68,6 +75,7 @@ namespace LambdaEngine
         EntityPublisher m_EntityPublisher;
         JobScheduler m_JobScheduler;
         ECSBooter m_ECSBooter;
+        ComponentManager m_ComponentManager;
 
         TArray<Entity> m_EntitiesToDelete;
 
@@ -77,4 +85,36 @@ namespace LambdaEngine
     private:
         static ECSCore s_Instance;
     };
+
+    template<typename Comp>
+    inline Comp& ECSCore::AddComponent(Entity entity)
+    {
+        std::type_index compIdx = TID(Comp);
+
+        if(!m_ComponentManager.HasType<Comp>())
+            m_ComponentManager.RegisterComponentType<Comp>();
+
+        Comp& comp = m_ComponentManager.AddComponent<Comp>(entity, Comp());
+        ComponentAdded(entity, compIdx);
+
+        return comp;
+    }
+
+    template<typename Comp>
+    inline bool ECSCore::RemoveComponent(Entity entity)
+    {
+        std::type_index compIdx = TID(Comp);
+
+        auto it = m_IDComponentMap.find(compIdx);
+        if (it != m_IDComponentMap.end())
+        {
+            IDDVector<IComponent*>& compVector = m_Components[it->second];
+            if (compVector.HasElement(entity))
+            {
+                compVector.Pop(entity);
+                return true;
+            }
+        }
+        return false;
+    }
 }

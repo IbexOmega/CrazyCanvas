@@ -46,6 +46,10 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
 
+// TEMP!!
+#include "ECS/ECSCore.h"
+#include "Game/ECS/Rendering/Components.h"
+
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
 CrazyCanvas::CrazyCanvas()
@@ -58,6 +62,14 @@ CrazyCanvas::CrazyCanvas()
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderSystem::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
+
+	{
+		ECSCore* ecs = ECSCore::GetInstance();
+		Entity e = ecs->CreateEntity();
+		PositionComponent& posComp = ecs->AddComponent<PositionComponent>(e);
+		ScaleComponent& scaleComp = ecs->AddComponent<ScaleComponent>(e);
+		RotationComponent& rotComp = ecs->AddComponent<RotationComponent>(e);
+	}
 
 	SceneDesc sceneDesc = { };
 	sceneDesc.Name				= "Test Scene";
