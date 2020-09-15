@@ -7,32 +7,34 @@ namespace LambdaEngine
 {
 	constexpr const char* TEXTURE_FORMAT_NAMES[] =
 	{
-		"FORMAT_R32G32_SFLOAT",
 		"FORMAT_R8G8B8A8_UNORM",
-		"FORMAT_B8G8R8A8_UNORM",
 		"FORMAT_R8G8B8A8_SNORM",
-		"FORMAT_R16G16B16A16_SFLOAT",
-		"FORMAT_D24_UNORM_S8_UINT",
+		"FORMAT_B8G8R8A8_UNORM",
 		"FORMAT_R16_UNORM",
-		"FORMAT_R32G32B32A32_SFLOAT",
 		"FORMAT_R16_SFLOAT",
+		"FORMAT_R16G16_SFLOAT",
+		"FORMAT_R16G16B16A16_SFLOAT",
+		"FORMAT_R32G32_SFLOAT",
 		"FORMAT_R32G32B32A32_UINT",
+		"FORMAT_R32G32B32A32_SFLOAT",
+		"FORMAT_D24_UNORM_S8_UINT",
 	};
 
 	static EFormat TextureFormatIndexToFormat(int32 index)
 	{
 		switch (index)
 		{
-		case 0: return EFormat::FORMAT_R32G32_SFLOAT;
-		case 1: return EFormat::FORMAT_R8G8B8A8_UNORM;
+		case 0: return EFormat::FORMAT_R8G8B8A8_UNORM;
+		case 1: return EFormat::FORMAT_R8G8B8A8_SNORM;
 		case 2: return EFormat::FORMAT_B8G8R8A8_UNORM;
-		case 3: return EFormat::FORMAT_R8G8B8A8_SNORM;
-		case 4: return EFormat::FORMAT_R16G16B16A16_SFLOAT;
-		case 5: return EFormat::FORMAT_D24_UNORM_S8_UINT;
-		case 6: return EFormat::FORMAT_R16_UNORM;
-		case 7: return EFormat::FORMAT_R32G32B32A32_SFLOAT;
-		case 8: return EFormat::FORMAT_R16_SFLOAT;
-		case 9: return EFormat::FORMAT_R32G32B32A32_UINT;
+		case 3: return EFormat::FORMAT_R16_UNORM;
+		case 4: return EFormat::FORMAT_R16_SFLOAT;
+		case 5: return EFormat::FORMAT_R16G16_SFLOAT;
+		case 6: return EFormat::FORMAT_R16G16B16A16_SFLOAT;
+		case 7: return EFormat::FORMAT_R32G32_SFLOAT;
+		case 8: return EFormat::FORMAT_R32G32B32A32_UINT;
+		case 9: return EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		case 10: return EFormat::FORMAT_D24_UNORM_S8_UINT;
 		}
 
 		return EFormat::FORMAT_NONE;
@@ -42,16 +44,17 @@ namespace LambdaEngine
 	{
 		switch (format)
 		{
-		case EFormat::FORMAT_R32G32_SFLOAT:			return 0;
-		case EFormat::FORMAT_R8G8B8A8_UNORM:		return 1;
+		case EFormat::FORMAT_R8G8B8A8_UNORM:		return 0;
+		case EFormat::FORMAT_R8G8B8A8_SNORM:		return 1;
 		case EFormat::FORMAT_B8G8R8A8_UNORM:		return 2;
-		case EFormat::FORMAT_R8G8B8A8_SNORM:		return 3;
-		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 4;
-		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return 5;
-		case EFormat::FORMAT_R16_UNORM:				return 6;
-		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return 7;
-		case EFormat::FORMAT_R16_SFLOAT:			return 8;
-		case EFormat::FORMAT_R32G32B32A32_UINT:		return 9;
+		case EFormat::FORMAT_R16_UNORM:				return 3;
+		case EFormat::FORMAT_R16_SFLOAT:			return 4;
+		case EFormat::FORMAT_R16G16_SFLOAT:			return 5;
+		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 6;
+		case EFormat::FORMAT_R32G32_SFLOAT:			return 7;
+		case EFormat::FORMAT_R32G32B32A32_UINT:		return 8;
+		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return 9;
+		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return 10;
 		}
 
 		return -1;
