@@ -88,12 +88,12 @@ namespace LambdaEngine
 		/*
 		* return - The timestamp of when the last physical packet was sent
 		*/
-		Timestamp GetTimestapLastSent() const;
+		Timestamp GetTimestampLastSent() const;
 
 		/*
 		* return - The timestamp of when the last physical packet was received
 		*/
-		Timestamp GetTimestapLastReceived()	const;
+		Timestamp GetTimestampLastReceived()	const;
 
 		
 

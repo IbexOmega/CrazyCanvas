@@ -48,8 +48,8 @@ namespace LambdaEngine
 				ImGui::Text("Ping                   %.1f ms", pStatistics->GetPing().AsMilliSeconds());
 				ImGui::Text("Local Salt             %lu", pStatistics->GetSalt());
 				ImGui::Text("Remote Salt            %lu", pStatistics->GetRemoteSalt());
-				ImGui::Text("Last Packet Sent       %d s", (int32)(EngineLoop::GetTimeSinceStart() - pStatistics->GetTimestapLastSent()).AsSeconds());
-				ImGui::Text("Last Packet Received   %d s", (int32)(EngineLoop::GetTimeSinceStart() - pStatistics->GetTimestapLastReceived()).AsSeconds());
+				ImGui::Text("Last Packet Sent       %d s", (int32)(EngineLoop::GetTimeSinceStart() - pStatistics->GetTimestampLastSent()).AsSeconds());
+				ImGui::Text("Last Packet Received   %d s", (int32)(EngineLoop::GetTimeSinceStart() - pStatistics->GetTimestampLastReceived()).AsSeconds());
 
 				ImGui::NewLine();
 
