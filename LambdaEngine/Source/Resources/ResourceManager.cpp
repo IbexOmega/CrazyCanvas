@@ -6,7 +6,10 @@
 
 #include "Rendering/RenderSystem.h"
 
+#include "Containers/TUniquePtr.h"
+
 #include <utility>
+#include <unordered_set>
 
 #define SAFEDELETE_ALL(map)     for (auto it = map.begin(); it != map.end(); it++) { SAFEDELETE(it->second); } map.clear()
 #define SAFERELEASE_ALL(map)    for (auto it = map.begin(); it != map.end(); it++) { SAFERELEASE(it->second); } map.clear()
@@ -91,6 +94,8 @@ namespace LambdaEngine
 
 		for (uint32 i = 0; i < meshes.GetSize(); i++)
 		{
+			GenerateMeshlets(meshes[i]);
+
 			GUID_Lambda guid = RegisterLoadedMesh("Scene Mesh " + std::to_string(i), meshes[i]);
 			for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
 			{
@@ -141,9 +146,9 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedMesh					= &s_Meshes[guid]; //Creates new entry if not existing
-			s_MeshNamesToGUIDs[filename]	= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedMesh = &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshNamesToGUIDs[filename] = guid;
 		}
 
 		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename);
@@ -162,9 +167,9 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedMesh					= &s_Meshes[guid]; //Creates new entry if not existing
-			s_MeshNamesToGUIDs[name]		= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedMesh = &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshNamesToGUIDs[name] = guid;
 		}
 
 		(*ppMappedMesh) = ResourceLoader::LoadMeshFromMemory(pVertices, numVertices, pIndices, numIndices);
@@ -183,39 +188,39 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedMaterial				= &s_Materials[guid]; //Creates new entry if not existing
-			s_MaterialNamesToGUIDs[name]	= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedMaterial = &s_Materials[guid]; //Creates new entry if not existing
+			s_MaterialNamesToGUIDs[name] = guid;
 		}
 
 		(*ppMappedMaterial) = DBG_NEW Material();
 
-		Texture* pAlbedoMap							= albedoMap				!= GUID_NONE ? s_Textures[albedoMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		Texture* pNormalMap							= normalMap				!= GUID_NONE ? s_Textures[normalMap]			: s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-		Texture* pAmbientOcclusionMap				= ambientOcclusionMap	!= GUID_NONE ? s_Textures[ambientOcclusionMap]	: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		Texture* pMetallicMap						= metallicMap			!= GUID_NONE ? s_Textures[metallicMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		Texture* pRoughnessMap						= roughnessMap			!= GUID_NONE ? s_Textures[roughnessMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pAlbedoMap = albedoMap != GUID_NONE ? s_Textures[albedoMap] : s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pNormalMap = normalMap != GUID_NONE ? s_Textures[normalMap] : s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		Texture* pAmbientOcclusionMap = ambientOcclusionMap != GUID_NONE ? s_Textures[ambientOcclusionMap] : s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pMetallicMap = metallicMap != GUID_NONE ? s_Textures[metallicMap] : s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pRoughnessMap = roughnessMap != GUID_NONE ? s_Textures[roughnessMap] : s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
-		TextureView* pAlbedoMapView					= albedoMap				!= GUID_NONE ? s_TextureViews[albedoMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		TextureView* pNormalMapView					= normalMap				!= GUID_NONE ? s_TextureViews[normalMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-		TextureView* pAmbientOcclusionMapView		= ambientOcclusionMap	!= GUID_NONE ? s_TextureViews[ambientOcclusionMap]	: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		TextureView* pMetallicMapView				= metallicMap			!= GUID_NONE ? s_TextureViews[metallicMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		TextureView* pRoughnessMapView				= roughnessMap			!= GUID_NONE ? s_TextureViews[roughnessMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		
-		(*ppMappedMaterial)->Properties					= properties;
+		TextureView* pAlbedoMapView = albedoMap != GUID_NONE ? s_TextureViews[albedoMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pNormalMapView = normalMap != GUID_NONE ? s_TextureViews[normalMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		TextureView* pAmbientOcclusionMapView = ambientOcclusionMap != GUID_NONE ? s_TextureViews[ambientOcclusionMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pMetallicMapView = metallicMap != GUID_NONE ? s_TextureViews[metallicMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pRoughnessMapView = roughnessMap != GUID_NONE ? s_TextureViews[roughnessMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
-		(*ppMappedMaterial)->pAlbedoMap					= pAlbedoMap;
-		(*ppMappedMaterial)->pNormalMap					= pNormalMap;
-		(*ppMappedMaterial)->pAmbientOcclusionMap		= pAmbientOcclusionMap;
-		(*ppMappedMaterial)->pMetallicMap				= pMetallicMap;
-		(*ppMappedMaterial)->pRoughnessMap				= pRoughnessMap;
+		(*ppMappedMaterial)->Properties = properties;
 
-		(*ppMappedMaterial)->pAlbedoMapView				= pAlbedoMapView;
-		(*ppMappedMaterial)->pNormalMapView				= pNormalMapView;
-		(*ppMappedMaterial)->pAmbientOcclusionMapView	= pAmbientOcclusionMapView;
-		(*ppMappedMaterial)->pMetallicMapView			= pMetallicMapView;
-		(*ppMappedMaterial)->pRoughnessMapView			= pRoughnessMapView;
-		
+		(*ppMappedMaterial)->pAlbedoMap = pAlbedoMap;
+		(*ppMappedMaterial)->pNormalMap = pNormalMap;
+		(*ppMappedMaterial)->pAmbientOcclusionMap = pAmbientOcclusionMap;
+		(*ppMappedMaterial)->pMetallicMap = pMetallicMap;
+		(*ppMappedMaterial)->pRoughnessMap = pRoughnessMap;
+
+		(*ppMappedMaterial)->pAlbedoMapView = pAlbedoMapView;
+		(*ppMappedMaterial)->pNormalMapView = pNormalMapView;
+		(*ppMappedMaterial)->pAmbientOcclusionMapView = pAmbientOcclusionMapView;
+		(*ppMappedMaterial)->pMetallicMapView = pMetallicMapView;
+		(*ppMappedMaterial)->pRoughnessMapView = pRoughnessMapView;
+
 		return guid;
 	}
 
@@ -231,10 +236,10 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedTexture					= &s_Textures[guid]; //Creates new entry if not existing
-			ppMappedTextureView				= &s_TextureViews[guid]; //Creates new entry if not existing
-			s_TextureNamesToGUIDs[name]		= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
+			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureNamesToGUIDs[name] = guid;
 		}
 
 		Texture* pTexture = ResourceLoader::LoadTextureArrayFromFile(name, TEXTURE_DIR, pFilenames, count, format, generateMips);
@@ -244,15 +249,15 @@ namespace LambdaEngine
 		TextureDesc textureDesc = pTexture->GetDesc();
 
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.DebugName		= name + " Texture View";
-		textureViewDesc.pTexture		= pTexture;
-		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		textureViewDesc.Format			= format;
-		textureViewDesc.Type			= textureDesc.ArrayCount > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-		textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
-		textureViewDesc.ArrayCount		= textureDesc.ArrayCount;
-		textureViewDesc.Miplevel		= 0;
-		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.DebugName = name + " Texture View";
+		textureViewDesc.pTexture = pTexture;
+		textureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Format = format;
+		textureViewDesc.Type = textureDesc.ArrayCount > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+		textureViewDesc.MiplevelCount = textureDesc.Miplevels;
+		textureViewDesc.ArrayCount = textureDesc.ArrayCount;
+		textureViewDesc.Miplevel = 0;
+		textureViewDesc.ArrayIndex = 0;
 
 		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
 
@@ -273,10 +278,10 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedTexture					= &s_Textures[guid]; //Creates new entry if not existing
-			ppMappedTextureView				= &s_TextureViews[guid]; //Creates new entry if not existing
-			s_TextureNamesToGUIDs[name]		= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
+			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureNamesToGUIDs[name] = guid;
 		}
 
 		Texture* pTexture = ResourceLoader::LoadCubeTexturesArrayFromFile(name, TEXTURE_DIR, pFilenames, textureCount, format, generateMips);
@@ -286,15 +291,15 @@ namespace LambdaEngine
 		TextureDesc textureDesc = pTexture->GetDesc();
 
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.DebugName		= name + " Texture View";
-		textureViewDesc.pTexture		= pTexture;
-		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		textureViewDesc.Format			= format;
-		textureViewDesc.Type			= count > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
-		textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
-		textureViewDesc.ArrayCount		= textureDesc.ArrayCount;
-		textureViewDesc.Miplevel		= 0;
-		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.DebugName = name + " Texture View";
+		textureViewDesc.pTexture = pTexture;
+		textureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Format = format;
+		textureViewDesc.Type = count > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+		textureViewDesc.MiplevelCount = textureDesc.Miplevels;
+		textureViewDesc.ArrayCount = textureDesc.ArrayCount;
+		textureViewDesc.Miplevel = 0;
+		textureViewDesc.ArrayIndex = 0;
 
 		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
 
@@ -318,10 +323,10 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedTexture					= &s_Textures[guid]; //Creates new entry if not existing
-			ppMappedTextureView				= &s_TextureViews[guid]; //Creates new entry if not existing
-			s_TextureNamesToGUIDs[name]		= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
+			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureNamesToGUIDs[name] = guid;
 		}
 
 		Texture* pTexture = ResourceLoader::LoadTextureArrayFromMemory(name, &pData, 1, width, height, format, usageFlags, generateMips);
@@ -329,15 +334,15 @@ namespace LambdaEngine
 		(*ppMappedTexture) = pTexture;
 
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.DebugName		= name + " Texture View";
-		textureViewDesc.pTexture		= pTexture;
-		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		textureViewDesc.Format			= format;
-		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-		textureViewDesc.MiplevelCount	= pTexture->GetDesc().Miplevels;
-		textureViewDesc.ArrayCount		= pTexture->GetDesc().ArrayCount;
-		textureViewDesc.Miplevel		= 0;
-		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.DebugName = name + " Texture View";
+		textureViewDesc.pTexture = pTexture;
+		textureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Format = format;
+		textureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+		textureViewDesc.MiplevelCount = pTexture->GetDesc().Miplevels;
+		textureViewDesc.ArrayCount = pTexture->GetDesc().ArrayCount;
+		textureViewDesc.Miplevel = 0;
+		textureViewDesc.ArrayIndex = 0;
 
 		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
 
@@ -355,18 +360,18 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedShader					= &s_Shaders[guid]; //Creates new entry if not existing
-			s_ShaderNamesToGUIDs[filename]	= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedShader = &s_Shaders[guid]; //Creates new entry if not existing
+			s_ShaderNamesToGUIDs[filename] = guid;
 		}
 
 		String filepath = SHADER_DIR + filename;
 
 		ShaderLoadDesc loadDesc = {};
-		loadDesc.Filepath				= filepath;
-		loadDesc.Stage					= stage;
-		loadDesc.Lang					= lang;
-		loadDesc.pEntryPoint			= pEntryPoint;
+		loadDesc.Filepath = filepath;
+		loadDesc.Stage = stage;
+		loadDesc.Lang = lang;
+		loadDesc.pEntryPoint = pEntryPoint;
 
 		s_ShaderLoadConfigurations[guid] = loadDesc;
 
@@ -386,8 +391,8 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid								= s_NextFreeGUID++;
-			ppMappedSoundEffect					= &s_SoundEffects[guid]; //Creates new entry if not existing
+			guid = s_NextFreeGUID++;
+			ppMappedSoundEffect = &s_SoundEffects[guid]; //Creates new entry if not existing
 			s_SoundEffectNamesToGUIDs[filename] = guid;
 		}
 
@@ -504,6 +509,434 @@ namespace LambdaEngine
 
 		D_LOG_WARNING("[ResourceManager]: GetSoundEffect called with invalid GUID %u", guid);
 		return nullptr;
+	}
+
+	/*
+	* Generation of meshlets
+	* Reference: https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/Samples/Desktop/D3D12MeshShaders
+	*/
+	struct EdgeEntry
+	{
+		uint32 i0;
+		uint32 i1;
+		uint32 i2;
+
+		uint32 Face;
+		EdgeEntry* pNext;
+	};
+
+	struct InlineMeshlet
+	{
+		struct PackedTriangle
+		{
+			uint32 i0 : 10;
+			uint32 i1 : 10;
+			uint32 i2 : 10;
+			uint32 Padding : 2;
+		};
+
+		TArray<Mesh::IndexType> UniqueVertexIndices;
+		TArray<PackedTriangle> PrimitiveIndices;
+	};
+
+	static void GenerateAdjecenyList(Mesh* pMesh, uint32* pAdjecency)
+	{
+		const uint32 indexCount		= pMesh->IndexCount;
+		const uint32 vertexCount	= pMesh->VertexCount;
+		const uint32 triangleCount	= (indexCount / 3);
+
+		const Mesh::IndexType* pIndices = pMesh->pIndexArray;
+		const Vertex* pVertices = pMesh->pVertexArray;
+		
+		TArray<Mesh::IndexType> indexList(vertexCount);
+
+		std::unordered_map<size_t, Mesh::IndexType> uniquePositions;
+		uniquePositions.reserve(vertexCount);
+
+		std::hash<Vertex> hasher;
+		for (uint32 i = 0; i < vertexCount; i++)
+		{
+			size_t hash = hasher(pMesh->pVertexArray[i]);
+
+			auto it = uniquePositions.find(hash);
+			if (it != uniquePositions.end())
+			{
+				indexList[i] = it->second;
+			}
+			else
+			{
+				uniquePositions.insert(std::make_pair(hash, i));
+				indexList[i] = i;
+			}
+		}
+
+		const uint32 hashSize = vertexCount / 3;
+		TUniquePtr<EdgeEntry[]> entries(DBG_NEW EdgeEntry[indexCount]);
+		TUniquePtr<EdgeEntry*[]> hashTable(DBG_NEW EdgeEntry*[hashSize]);
+		ZERO_MEMORY(hashTable.Get(), sizeof(EdgeEntry*) * hashSize);
+
+		uint32 entryIndex = 0;
+		for (uint32 face = 0; face < triangleCount; face++)
+		{
+			uint32 index = face * 3;
+			for (uint32 edge = 0; edge < 3; edge++)
+			{
+				Mesh::IndexType i0 = indexList[pIndices[index + ((edge + 0) % 3)]];
+				Mesh::IndexType i1 = indexList[pIndices[index + ((edge + 1) % 3)]];
+				Mesh::IndexType i2 = indexList[pIndices[index + ((edge + 2) % 3)]];
+
+				EdgeEntry& entry = entries[entryIndex++];
+				entry.i0 = i0;
+				entry.i1 = i1;
+				entry.i2 = i2;
+
+				uint32 key = entry.i0 % hashSize;
+				entry.pNext = hashTable[key];
+				entry.Face = face;
+
+				hashTable[key] = &entry;
+			}
+		}
+
+		memset(pAdjecency, static_cast<uint32>(-1), indexCount * sizeof(uint32));
+
+		for (uint32 face = 0; face < triangleCount; face++)
+		{
+			uint32 index = face * 3;
+			for (uint32 point = 0; point < 3; point++)
+			{
+				if (pAdjecency[index + point] != static_cast<uint32>(-1))
+				{
+					continue;
+				}
+
+				Mesh::IndexType i0 = indexList[pIndices[index + ((point + 1) % 3)]];
+				Mesh::IndexType i1 = indexList[pIndices[index + ((point + 0) % 3)]];
+				Mesh::IndexType i2 = indexList[pIndices[index + ((point + 2) % 3)]];
+
+				uint32 key = i0 % hashSize;
+
+				EdgeEntry* pFound = nullptr;
+				EdgeEntry* pFoundPrev = nullptr;
+
+				{
+					EdgeEntry* pPrev = nullptr;
+					for (EdgeEntry* pCurrent = hashTable[key]; pCurrent != nullptr; pPrev = pCurrent, pCurrent = pCurrent->pNext)
+					{
+						if (pCurrent->i1 == i1 && pCurrent->i0 == i0)
+						{
+							pFound = pCurrent;
+							pFoundPrev = pPrev;
+							break;
+						}
+					}
+				}
+
+				glm::vec3 n0;
+				{
+					glm::vec3 p0 = pVertices[i0].Position;
+					glm::vec3 p1 = pVertices[i1].Position;
+					glm::vec3 p2 = pVertices[i2].Position;
+					glm::vec3 e0 = p0 - p1;
+					glm::vec3 e1 = p1 - p2;
+					n0 = glm::normalize(glm::cross(e0, e1));
+				}
+
+				float32 bestDot = -2.0f;
+				{
+					EdgeEntry* pPrev = pFoundPrev;
+					for (EdgeEntry* pCurrent = pFound; pCurrent != nullptr; pPrev = pCurrent, pCurrent = pCurrent->pNext)
+					{
+						glm::vec3 p0 = pVertices[pCurrent->i0].Position;
+						glm::vec3 p1 = pVertices[pCurrent->i1].Position;
+						glm::vec3 p2 = pVertices[pCurrent->i2].Position;
+						glm::vec3 e0 = p0 - p1;
+						glm::vec3 e1 = p1 - p2;
+						glm::vec3 n1 = glm::normalize(glm::cross(e0, e1));
+
+						float32 dot = glm::dot(e0, e1);
+						if (dot > bestDot)
+						{
+							pFound = pCurrent;
+							pFoundPrev = pCurrent;
+							bestDot = dot;
+						}
+					}
+				}
+
+				if (pFound)
+				{
+					if (pFound->Face != static_cast<uint32>(-1))
+					{
+						if (pFoundPrev != nullptr)
+						{
+							pFoundPrev->pNext = pFound->pNext;
+						}
+						else
+						{
+							hashTable[key] = pFound->pNext;
+						}
+					}
+				}
+
+				pAdjecency[index + point] = pFound->Face;
+
+				uint32 key2 = i1 & hashSize;
+				{
+					EdgeEntry* pPrev = nullptr;
+					for (EdgeEntry* pCurrent = hashTable[key2]; pCurrent != nullptr; pPrev = pCurrent, pCurrent = pCurrent->pNext)
+					{
+						if (pCurrent->Face == face && pCurrent->i0 == i1 && pCurrent->i1 == i0)
+						{
+							if (pPrev != nullptr)
+							{
+								pPrev->pNext = pCurrent->pNext;
+							}
+							else
+							{
+								hashTable[key2] = pCurrent->pNext;
+							}
+
+							break;
+						}
+					}
+				}
+
+				bool linked = false;
+				for (uint32 point2 = 0; point2 < point; point2++)
+				{
+					if (pFound->Face == pAdjecency[index + point2])
+					{
+						linked = true;
+						pAdjecency[index + point] = static_cast<uint32>(-1);
+						break;
+					}
+				}
+
+				if (!linked)
+				{
+					uint32 edge2 = 0;
+					for (; edge2 < 3; edge2++)
+					{
+						Mesh::IndexType k = pIndices[(pFound->Face * 3) + edge2];
+						if (k == static_cast<uint32>(-1))
+						{
+							continue;
+						}
+
+						if (indexList[k] == i0)
+						{
+							break;
+						}
+					}
+
+					if (edge2 < 3)
+					{
+						pAdjecency[pFound->Face * 3 + edge2] = face;
+					}
+				}
+			}
+		}
+	}
+
+	static bool AddToMeshlet()
+	{
+	}
+
+	static bool IsMeshletFull()
+	{
+	}
+
+	static float32 ComputeMeshletScore()
+	{
+	}
+
+	static glm::vec3 ComputeNormal(glm::vec3 positions[3])
+	{
+		glm::vec3 e0 = positions[0] - positions[1];
+		glm::vec3 e1 = positions[1] - positions[2];
+		glm::vec3 normal = glm::normalize(glm::cross(e0, e1));
+	}
+
+	static void Meshletize(Mesh* pMesh, TArray<InlineMeshlet> output)
+	{
+		Mesh::IndexType* pIndices = pMesh->pIndexArray;
+		Vertex* pVertices = pMesh->pVertexArray;
+
+		const uint32 vertexCount = pMesh->VertexCount;
+		const uint32 indexCount = pMesh->IndexCount;
+		const uint32 triangleCount = (indexCount / 3);
+
+		TArray<uint32> adjecenyList(indexCount);
+		GenerateAdjecenyList(pMesh, adjecenyList.GetData());
+
+		output.Clear();
+		output.EmplaceBack();
+		InlineMeshlet* pCurr = &output.GetBack();
+
+		// Using std::vector since it has a bool specialization that stores it in a bitrepresentation
+		std::vector<bool> checklist;
+		checklist.resize(triangleCount);
+
+		TArray<glm::vec3> positions;
+		TArray<glm::vec3> normals;
+		TArray<std::pair<uint32, float32>> candidates;
+		std::unordered_set<uint32> candidateCheck;
+		glm::vec4 sphere;
+		glm::vec3 normal;
+
+		uint32 triIndex = 0;
+		candidates.EmplaceBack(std::make_pair(triIndex, 0.0f));
+		candidateCheck.insert(triIndex);
+
+		while (!candidates.IsEmpty())
+		{
+			uint32 index = candidates.GetBack().first;
+			candidates.PopBack();
+
+			Mesh::IndexType tri[3] =
+			{
+				pIndices[index * 3 + 0],
+				pIndices[index * 3 + 1],
+				pIndices[index * 3 + 2],
+			};
+
+			VALIDATE(tri[0] < vertexCount);
+			VALIDATE(tri[1] < vertexCount);
+			VALIDATE(tri[2] < vertexCount);
+
+			if (AddToMeshlet())
+			{
+				checklist[index] = true;
+
+				glm::vec3 points[3] =
+				{
+					pVertices[tri[0]].Position,
+					pVertices[tri[1]].Position,
+					pVertices[tri[2]].Position,
+				};
+
+				positions.PushBack(points[0]);
+				positions.PushBack(points[1]);
+				positions.PushBack(points[2]);
+
+				normal = ComputeNormal(points);
+				normals.PushBack(normal);
+
+				const uint32 adjIndex = index * 3;
+				uint32 adj[3] =
+				{
+					adjecenyList[adjIndex + 0],
+					adjecenyList[adjIndex + 1],
+					adjecenyList[adjIndex + 2],
+				};
+
+				for (uint32 i = 0; i < 3; i++)
+				{
+					if (adj[i] == static_cast<uint32>(-1))
+					{
+						continue;
+					}
+
+					if (checklist[adj[i]])
+					{
+						continue;
+					}
+
+					if (candidateCheck.count(adj[i]))
+					{
+						continue;
+					}
+
+					candidates.PushBack(std::make_pair(adj[i], FLT_MAX));
+					candidateCheck.insert(adj[i]);
+				}
+
+				for (uint32 i = 0; i < static_cast<uint32>(candidates.GetSize()); i++)
+				{
+					uint32 candidate = candidates[i].first;
+					Mesh::IndexType triIndices[3] =
+					{
+						pIndices[(candidate * 3) + 0],
+						pIndices[(candidate * 3) + 1],
+						pIndices[(candidate * 3) + 2],
+					};
+
+					VALIDATE(triIndices[0] < vertexCount);
+					VALIDATE(triIndices[1] < vertexCount);
+					VALIDATE(triIndices[2] < vertexCount);
+
+					glm::vec3 triVerts[3] =
+					{
+						positions[triIndices[0]],
+						positions[triIndices[1]],
+						positions[triIndices[2]],
+					};
+
+					candidates[i].second = ComputeMeshletScore(*pCurr, sphere, normal, triIndices, triVerts);
+				}
+
+				if (IsMeshletFull())
+				{
+					positions.Clear();
+					normals.Clear();
+					
+					candidateCheck.clear();
+
+					if (!candidates.IsEmpty())
+					{
+						candidates[0] = candidates.GetBack();
+						candidates.Resize(1);
+						candidateCheck.insert(candidates[0].first);
+					}
+
+					output.EmplaceBack();
+					pCurr = &output.GetBack();
+				}
+				else
+				{
+					std::sort(candidates.begin(), candidates.end(), );
+				}
+			}
+			else
+			{
+				if (candidates.IsEmpty())
+				{
+					positions.Clear();
+					normals.Clear();
+
+					candidateCheck.clear();
+
+					output.EmplaceBack();
+					pCurr = &output.GetBack();
+				}
+			}
+
+			if (candidates.IsEmpty())
+			{
+				while (triIndex < triangleCount && checklist[triIndex])
+				{
+					triIndex++;
+				}
+
+				if (triIndex == triangleCount)
+				{
+					break;
+				}
+
+				candidates.PushBack(std::make_pair(triIndex, 0.0f));
+				candidateCheck.insert(triIndex);
+			}
+		}
+	}
+
+	void ResourceManager::GenerateMeshlets(Mesh* pMesh)
+	{
+		VALIDATE(pMesh->pIndexArray		!= nullptr);
+		VALIDATE(pMesh->pVertexArray	!= nullptr);
+
+		TArray<InlineMeshlet> builtMeshlets;
+		Meshletize(pMesh, builtMeshlets);
 	}
 
 	GUID_Lambda ResourceManager::RegisterLoadedMesh(const String& name, Mesh* pResource)

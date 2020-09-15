@@ -24,18 +24,31 @@ namespace LambdaEngine
 		}
 	};
 
+	struct Meshlet
+	{
+		uint32 VertCount;
+		uint32 VertOffset;
+		uint32 PrimCount;
+		uint32 PrimOffset;
+	};
+
 	struct Mesh
 	{
+		using IndexType = uint32;
+
 		~Mesh()
 		{
 			SAFEDELETE_ARRAY(pVertexArray);
 			SAFEDELETE_ARRAY(pIndexArray);
+			SAFEDELETE_ARRAY(pMeshletArray);
 		}
 
 		Vertex* pVertexArray	= nullptr;
-		uint32* pIndexArray		= nullptr;
-		uint32  VertexCount		= 0;
-		uint32  IndexCount		= 0;
+		IndexType* pIndexArray	= nullptr;
+		Meshlet* pMeshletArray	= nullptr;
+		uint32 VertexCount		= 0;
+		uint32 IndexCount		= 0;
+		uint32 MeshletCount		= 0;
 	};
 
 	class MeshFactory
