@@ -51,7 +51,7 @@ namespace LambdaEngine
 	inline Comp& ComponentManager::AddComponent(Entity entity, Comp component)
 	{
 		std::type_index id = TID(Comp);
-		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) == m_CompTypeToArrayMap.end(), "Trying to add a component which was not registered!");
+		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to add a component which was not registered!");
 
 		// Fetch the corresponding ComponentArray for that component type.
 		uint32 index = m_CompTypeToArrayMap[id];
@@ -65,7 +65,7 @@ namespace LambdaEngine
 	inline void ComponentManager::RemoveComponent(Entity entity)
 	{
 		std::type_index id = TID(Comp);
-		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) == m_CompTypeToArrayMap.end(), "Trying to remove a component which was not registered!");
+		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to remove a component which was not registered!");
 
 		// Fetch the corresponding ComponentArray for that component type.
 		uint32 index = m_CompTypeToArrayMap[id];
@@ -79,7 +79,7 @@ namespace LambdaEngine
 	inline Comp& ComponentManager::GetComponent(Entity entity)
 	{
 		std::type_index id = TID(Comp);
-		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) == m_CompTypeToArrayMap.end(), "Trying to fetch a component which was not registered!");
+		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to fetch a component which was not registered!");
 
 		// Fetch the corresponding ComponentArray for that component type.
 		uint32 index = m_CompTypeToArrayMap[id];

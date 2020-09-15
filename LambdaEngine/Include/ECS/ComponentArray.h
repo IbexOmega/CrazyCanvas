@@ -37,7 +37,7 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline ComponentArray<Comp>::ComponentArray()
 	{
-		m_Data.Reserve(m_Capacity);
+		m_Data.Resize(m_Capacity);
 	}
 
 	template<typename Comp>
@@ -47,7 +47,7 @@ namespace LambdaEngine
 
 		// Resize if more data is added.
 		if (m_Size+1 > m_Data.GetSize())
-			m_Data.Resize(m_Size*2);
+			m_Data.Resize(m_Capacity*2);
 
 		// Get new index and add the component to that position.
 		Index newIndex = m_Size;

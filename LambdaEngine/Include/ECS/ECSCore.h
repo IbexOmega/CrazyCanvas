@@ -30,7 +30,7 @@ namespace LambdaEngine
         Entity CreateEntity() { return m_EntityRegistry.CreateEntity(); }
         
         template<typename Comp>
-        Comp& AddComponent(Entity entity);
+        Comp& AddComponent(Entity entity, Comp component);
 
         template<typename Comp>
         bool RemoveComponent(Entity entity);
@@ -87,14 +87,14 @@ namespace LambdaEngine
     };
 
     template<typename Comp>
-    inline Comp& ECSCore::AddComponent(Entity entity)
+    inline Comp& ECSCore::AddComponent(Entity entity, Comp component)
     {
         std::type_index compIdx = TID(Comp);
 
         if(!m_ComponentManager.HasType<Comp>())
             m_ComponentManager.RegisterComponentType<Comp>();
 
-        Comp& comp = m_ComponentManager.AddComponent<Comp>(entity, Comp());
+        Comp& comp = m_ComponentManager.AddComponent<Comp>(entity, component);
         ComponentAdded(entity, compIdx);
 
         return comp;

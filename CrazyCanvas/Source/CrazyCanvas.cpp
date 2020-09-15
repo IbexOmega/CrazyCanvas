@@ -65,10 +65,15 @@ CrazyCanvas::CrazyCanvas()
 
 	{
 		ECSCore* ecs = ECSCore::GetInstance();
-		Entity e = ecs->CreateEntity();
-		PositionComponent& posComp = ecs->AddComponent<PositionComponent>(e);
-		ScaleComponent& scaleComp = ecs->AddComponent<ScaleComponent>(e);
-		RotationComponent& rotComp = ecs->AddComponent<RotationComponent>(e);
+		for (uint32 i = 0; i < 200; i++)
+		{
+			Entity e = ecs->CreateEntity();
+			ecs->AddComponent<PositionComponent>(e, { {0.1f, -2.f, 5.4f} });
+			ecs->AddComponent<ScaleComponent>(e, { {1.f, 1.f, 1.f} });
+			ecs->AddComponent<RotationComponent>(e, RotationComponent());
+			std::string name = "Entity_" + std::to_string(i);
+			ecs->AddComponent<NameComponent>(e, { name });
+		}
 	}
 
 	SceneDesc sceneDesc = { };

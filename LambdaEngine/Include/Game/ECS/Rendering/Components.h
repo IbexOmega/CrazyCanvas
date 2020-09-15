@@ -4,18 +4,23 @@
 
 namespace LambdaEngine
 {
-	struct PositionComponent : public IComponent
+	struct PositionComponent
 	{
 		glm::vec3 Pos;
 	};
 
-	struct ScaleComponent : public IComponent
+	struct ScaleComponent
 	{
 		glm::vec3 Scale;
 	};
 
-	struct RotationComponent : public IComponent
+	struct RotationComponent
 	{
 		glm::quat Quaternion;
+	};
+
+	struct NameComponent
+	{
+		std::string Name;
 	};
 }
