@@ -126,7 +126,7 @@ namespace LambdaEngine
 
 		for (NetworkSegment* pSegment : m_Segments)
 		{
-#ifndef LAMBDA_CONFIG_DEBUG
+#ifdef LAMBDA_CONFIG_DEBUG
 			pSegment->m_IsBorrowed = false;
 #endif
 			pSegment->m_SizeOfBuffer = 0;
