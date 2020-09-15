@@ -137,8 +137,8 @@ namespace LambdaEngine
 		m_LastReceivedAckNr			= 0;
 		m_ReceivedAckBits			= 0;
 		m_LastReceivedReliableUID	= 0;
-		m_TimestampLastSent			= 0;
-		m_TimestampLastReceived		= 0;
+		m_TimestampLastSent			= EngineLoop::GetTimeSinceStart();;
+		m_TimestampLastReceived		= EngineLoop::GetTimeSinceStart();;
 	}
 
 	uint32 NetworkStatistics::RegisterPacketSent()
