@@ -64,7 +64,7 @@ namespace LambdaEngine
 		if (!ValidateHeaderSalt(&header, pStatistics))
 			return false;
 
-		OnReceiveEnd(header, newAcks, pStatistics);
+		OnReceiveEnd(&header, newAcks, pStatistics);
 
 		pStatistics->RegisterPacketReceived((uint32)segments.GetSize(), m_BytesReceived);
 

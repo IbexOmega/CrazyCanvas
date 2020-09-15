@@ -36,8 +36,8 @@ Server::Server()
 	desc.Handler		= this;
 	desc.MaxRetries		= 10;
 	desc.MaxClients		= 10;
-	desc.PoolSize		= 512;
-	desc.Protocol		= EProtocol::TCP;
+	desc.PoolSize		= 1024;
+	desc.Protocol		= EProtocol::UDP;
 	desc.PingInterval	= Timestamp::Seconds(1);
 	desc.PingTimeout	= Timestamp::Seconds(3);
 	desc.UsePingSystem	= false;
@@ -45,7 +45,7 @@ Server::Server()
 	m_pServer = NetworkUtils::CreateServer(desc);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
 
-	//m_pServer->SetSimulateReceivingPacketLoss(0.1f);
+	((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
 }
 
 Server::~Server()

@@ -51,10 +51,10 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void PacketTransceiverUDP::OnReceiveEnd(const PacketTranscoder::Header& header, TArray<uint32>& newAcks, NetworkStatistics* pStatistics)
+	void PacketTransceiverUDP::OnReceiveEnd(PacketTranscoder::Header* pHeader, TArray<uint32>& newAcks, NetworkStatistics* pStatistics)
 	{
-		ProcessSequence(header.Sequence, pStatistics);
-		ProcessAcks(header.Ack, header.AckBits, pStatistics, newAcks);
+		ProcessSequence(pHeader->Sequence, pStatistics);
+		ProcessAcks(pHeader->Ack, pHeader->AckBits, pStatistics, newAcks);
 	}
 
 	void PacketTransceiverUDP::SetSocket(ISocket* pSocket)

@@ -59,11 +59,11 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void PacketTransceiverTCP::OnReceiveEnd(const PacketTranscoder::Header& header, TArray<uint32>& newAcks, NetworkStatistics* pStatistics)
+	void PacketTransceiverTCP::OnReceiveEnd(PacketTranscoder::Header* pHeader, TArray<uint32>& newAcks, NetworkStatistics* pStatistics)
 	{
-		pStatistics->SetLastReceivedSequenceNr(header.Sequence);
-		pStatistics->SetLastReceivedAckNr(header.Ack);
-		newAcks.PushBack(header.Ack);
+		pStatistics->SetLastReceivedSequenceNr(pHeader->Sequence);
+		pStatistics->SetLastReceivedAckNr(pHeader->Ack);
+		newAcks.PushBack(pHeader->Ack);
 	}
 
 	void PacketTransceiverTCP::SetSocket(ISocket* pSocket)

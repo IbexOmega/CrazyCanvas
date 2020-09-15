@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Networking/API/PacketManagerBase.h"
+#include "Networking/API/NetworkSegment.h"
 
 namespace LambdaEngine
 {
@@ -22,7 +23,7 @@ namespace LambdaEngine
 		void ResendOrDeleteSegments();
 
 	private:
-		std::set<NetworkSegment*> m_ReliableSegmentsReceived;
+		std::set<NetworkSegment*, NetworkSegmentReliableUIDOrder> m_ReliableSegmentsReceived;
 		float32 m_ResendRTTMultiplier;
 		int32 m_MaxRetries;
 	};

@@ -28,10 +28,10 @@ void ClientHandler::OnConnected(LambdaEngine::IClient* pClient)
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_MESSAGE("OnConnected()");
 
-	LambdaEngine::NetworkSegment* pPacket = pClient->GetFreePacket(69);
+	/*LambdaEngine::NetworkSegment* pPacket = pClient->GetFreePacket(69);
 	LambdaEngine::BinaryEncoder encoder(pPacket);
 	encoder.WriteString("Christoffer");
-	pClient->SendReliable(pPacket, this);
+	pClient->SendReliable(pPacket, this);*/
 }
 
 void ClientHandler::OnDisconnecting(LambdaEngine::IClient* pClient)

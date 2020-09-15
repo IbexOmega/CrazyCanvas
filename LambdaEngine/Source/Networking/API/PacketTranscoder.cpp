@@ -62,7 +62,6 @@ namespace LambdaEngine
 	bool PacketTranscoder::DecodeSegments(const uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, TArray<NetworkSegment*>& segmentsDecoded, Header* pHeader)
 	{
 		uint16 offset = sizeof(Header);
-
 		memcpy(pHeader, buffer, offset);
 
 		if (pHeader->Size != bufferSize)

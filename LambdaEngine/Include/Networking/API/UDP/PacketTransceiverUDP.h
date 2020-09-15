@@ -22,7 +22,7 @@ namespace LambdaEngine
 	protected:
 		virtual bool Transmit(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& ipEndPoint) override;
 		virtual bool Receive(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint) override;
-		virtual void OnReceiveEnd(const PacketTranscoder::Header& header, TArray<uint32>& newAcks, NetworkStatistics* pStatistics) override;
+		virtual void OnReceiveEnd(PacketTranscoder::Header* pHeader, TArray<uint32>& newAcks, NetworkStatistics* pStatistics) override;
 
 	private:
 		static void ProcessSequence(uint32 sequence, NetworkStatistics* pStatistics);

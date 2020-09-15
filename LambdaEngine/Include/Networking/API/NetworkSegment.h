@@ -81,4 +81,17 @@ namespace LambdaEngine
 
 		char m_pBuffer[MAXIMUM_SEGMENT_SIZE];
 	};
+
+	struct NetworkSegmentReliableUIDOrder
+	{
+		bool operator()(const NetworkSegment& lhs, const NetworkSegment& rhs) const
+		{
+			return lhs.GetReliableUID() < rhs.GetReliableUID();
+		}
+
+		bool operator()(const NetworkSegment* lhs, const NetworkSegment* rhs) const
+		{
+			return lhs->GetReliableUID() < rhs->GetReliableUID();
+		}
+	};
 }
