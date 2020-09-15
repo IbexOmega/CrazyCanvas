@@ -39,12 +39,16 @@
 
 #include "Utilities/RuntimeStats.h"
 
+#include "Game/StateManager.h"
+#include "States/DebugState.h"
+
 #include <imgui.h>
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
+
 
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
@@ -54,10 +58,13 @@ CrazyCanvas::CrazyCanvas()
 
 	Input::Disable();
 
+
 	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderSystem::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
+
+	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(DebugState), STATE_TRANSITION::PUSH);
 
 	SceneDesc sceneDesc = { };
 	sceneDesc.Name				= "Test Scene";
