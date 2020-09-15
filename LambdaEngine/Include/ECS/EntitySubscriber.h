@@ -27,7 +27,7 @@ namespace LambdaEngine
     class IComponentGroup
     {
     public:
-        virtual TArray<ComponentAccess> ToVector() const = 0;
+        virtual TArray<ComponentAccess> ToArray() const = 0;
     };
 
     // EntitySubscriptionRegistration contains all required information to request a single entity subscription
@@ -60,14 +60,13 @@ namespace LambdaEngine
     class EntitySubscriber
     {
     public:
-        EntitySubscriber(ECSCore* pECS);
+        EntitySubscriber() = default;
         ~EntitySubscriber();
 
         // subscribeToEntities enqueues entity subscriptions. initFn is called when all dependencies have been initialized.
         void SubscribeToEntities(const EntitySubscriberRegistration& subscriberRegistration, const std::function<bool()>& initFn);
 
     private:
-        ECSCore* m_pECS;
-        uint32 m_SubscriptionID;
+        uint32 m_SubscriptionID = UINT32_MAX;
     };
 }
