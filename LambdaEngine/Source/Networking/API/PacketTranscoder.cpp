@@ -18,7 +18,7 @@ namespace LambdaEngine
 		while (!segmentsToEncode.empty())
 		{
 			NetworkSegment* segment = segmentsToEncode.front();
-			LOG_MESSAGE("PacketTranscoder::EncodeSegments(%s)", segment->ToString().c_str());
+			//LOG_MESSAGE("PacketTranscoder::EncodeSegments(%s)", segment->ToString().c_str());
 			//Make sure the packet is not bigger than the max size
 			ASSERT(segment->GetTotalSize() + sizeof(Header) <= bufferSize);
 
@@ -85,7 +85,7 @@ namespace LambdaEngine
 			offset += ReadSegment(buffer + offset, pSegment);
 			pSegment->m_Salt = pHeader->Salt;
 
-			LOG_MESSAGE("PacketTranscoder::DecodeSegments(%s)", pSegment->ToString().c_str());
+			//LOG_MESSAGE("PacketTranscoder::DecodeSegments(%s)", pSegment->ToString().c_str());
 		}
 
 		return true;
