@@ -20,6 +20,13 @@ namespace LambdaEngine
         m_JobScheduler.Tick();
     }
 
+    void ECSCore::RemoveEntity(Entity entity)
+    {
+        m_ComponentManager.EntityDeleted(entity);
+        // TODO: Call ComponentDeleted for each component type in entity!
+        m_EntityRegistry.DeregisterEntity(entity);
+    }
+
     void ECSCore::ScheduleJobASAP(const Job& job)
     {
         m_JobScheduler.ScheduleJob(job, CURRENT_PHASE);

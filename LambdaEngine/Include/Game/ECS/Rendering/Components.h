@@ -21,6 +21,6 @@ namespace LambdaEngine
 
 	struct NameComponent
 	{
-		std::string Name;
+		char Name[64];
 	};
 }

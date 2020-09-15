@@ -47,7 +47,7 @@ namespace LambdaEngine
 
 		// Resize if more data is added.
 		if (m_Size+1 > m_Data.GetSize())
-			m_Data.Resize(m_Capacity*2);
+			m_Data.Resize(m_Size + m_Capacity);
 
 		// Get new index and add the component to that position.
 		Index newIndex = m_Size;

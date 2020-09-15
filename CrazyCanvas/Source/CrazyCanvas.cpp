@@ -72,8 +72,12 @@ CrazyCanvas::CrazyCanvas()
 			ecs->AddComponent<ScaleComponent>(e, { {1.f, 1.f, 1.f} });
 			ecs->AddComponent<RotationComponent>(e, RotationComponent());
 			std::string name = "Entity_" + std::to_string(i);
-			ecs->AddComponent<NameComponent>(e, { name });
+			NameComponent nameComp;
+			strcpy(nameComp.Name, name.c_str());
+			ecs->AddComponent<NameComponent>(e, nameComp);
 		}
+		
+		// TODO: Test removing of entities and removing of components.
 	}
 
 	SceneDesc sceneDesc = { };

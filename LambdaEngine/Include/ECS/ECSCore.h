@@ -35,6 +35,8 @@ namespace LambdaEngine
         template<typename Comp>
         bool RemoveComponent(Entity entity);
 
+        void RemoveEntity(Entity entity);
+
         void ScheduleJobASAP(const Job& job);
         void ScheduleJobPostFrame(const Job& job);
 
@@ -105,15 +107,11 @@ namespace LambdaEngine
     {
         std::type_index compIdx = TID(Comp);
 
-        auto it = m_IDComponentMap.find(compIdx);
-        if (it != m_IDComponentMap.end())
+        if (m_ComponentManager.HasType<Comp>())
         {
-            IDDVector<IComponent*>& compVector = m_Components[it->second];
-            if (compVector.HasElement(entity))
-            {
-                compVector.Pop(entity);
-                return true;
-            }
+            m_ComponentManager.RemoveComponent<Comp>(entity);
+            ComponentDeleted(entity, compIdx);
+            return true;
         }
         return false;
     }
