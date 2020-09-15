@@ -26,7 +26,7 @@ namespace LambdaEngine
 
 	private:
 		static void ProcessSequence(uint32 sequence, NetworkStatistics* pStatistics);
-		static void ProcessAcks(uint32 ack, uint32 ackBits, NetworkStatistics* pStatistics, TArray<uint32>& newAcks);
+		static void ProcessAcks(uint32 ack, uint64 ackBits, NetworkStatistics* pStatistics, TArray<uint32>& newAcks);
 
 	private:
 		ISocketUDP* m_pSocket;

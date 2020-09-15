@@ -88,7 +88,7 @@ namespace LambdaEngine
 		return m_LastReceivedSequenceNr;
 	}
 
-	uint32 NetworkStatistics::GetReceivedSequenceBits() const
+	uint64 NetworkStatistics::GetReceivedSequenceBits() const
 	{
 		return m_ReceivedSequenceBits;
 	}
@@ -98,7 +98,7 @@ namespace LambdaEngine
 		return m_LastReceivedAckNr;
 	}
 
-	uint32 NetworkStatistics::GetReceivedAckBits() const
+	uint64 NetworkStatistics::GetReceivedAckBits() const
 	{
 		return m_ReceivedAckBits;
 	}
@@ -190,7 +190,7 @@ namespace LambdaEngine
 		m_LastReceivedSequenceNr = sequence;
 	}
 
-	void NetworkStatistics::SetReceivedSequenceBits(uint32 sequenceBits)
+	void NetworkStatistics::SetReceivedSequenceBits(uint64 sequenceBits)
 	{
 		m_ReceivedSequenceBits = sequenceBits;
 	}
@@ -200,7 +200,7 @@ namespace LambdaEngine
 		m_LastReceivedAckNr = ack;
 	}
 
-	void NetworkStatistics::SetReceivedAckBits(uint32 ackBits)
+	void NetworkStatistics::SetReceivedAckBits(uint64 ackBits)
 	{
 		m_ReceivedAckBits = ackBits;
 	}

@@ -20,7 +20,7 @@ namespace LambdaEngine
 			uint64 Salt = 0;
 			uint32 Sequence = 0;
 			uint32 Ack = 0;
-			uint32 AckBits = 0;
+			uint64 AckBits = 0;
 			uint8  Segments = 0;
 		};
 #pragma pack(pop)

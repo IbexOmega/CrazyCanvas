@@ -86,8 +86,8 @@ namespace LambdaEngine
 
 			for (int i = 0; i < delta; i++)
 			{
-				uint32 sequenceBits = pStatistics->GetReceivedSequenceBits();
-				if (sequenceBits >> (sizeof(uint32) * 8 - 1) & 0)
+				uint64 sequenceBits = pStatistics->GetReceivedSequenceBits();
+				if (sequenceBits >> (sizeof(uint64) * 8 - 1) & 0)
 				{
 					//The last bit that was removed was never acked.
 					pStatistics->m_PacketsLost++;
@@ -98,22 +98,22 @@ namespace LambdaEngine
 		else if(sequence < lastReceivedSequence)
 		{
 			//Old sequence number received so write 1 to the coresponding bit
-			int32 index = lastReceivedSequence - sequence - 1;
-			if (index >= 0 && index < 32)
+			int64 index = lastReceivedSequence - sequence - 1;
+			if (index >= 0 && index < 64)
 			{
-				pStatistics->SetReceivedSequenceBits(pStatistics->GetReceivedSequenceBits() | (1 << index));
+				pStatistics->SetReceivedSequenceBits(pStatistics->GetReceivedSequenceBits() | ((uint64)1 << index));
 			}
 		}
 	}
 
-	void PacketTransceiverUDP::ProcessAcks(uint32 ack, uint32 ackBits, NetworkStatistics* pStatistics, TArray<uint32>& newAcks)
+	void PacketTransceiverUDP::ProcessAcks(uint32 ack, uint64 ackBits, NetworkStatistics* pStatistics, TArray<uint32>& newAcks)
 	{
-		uint32 lastReceivedAck = pStatistics->GetLastReceivedAckNr();
-		uint32 currentAckBits = pStatistics->GetReceivedAckBits();
-		uint32 maxValue = std::min(32, (int32)ack);
-		uint32 bits = 0;
-		uint32 shift = 33 - maxValue;
-		ackBits &= shift == 32 ? 0 : (UINT32_MAX >> shift);
+		uint64 lastReceivedAck = pStatistics->GetLastReceivedAckNr();
+		uint64 currentAckBits = pStatistics->GetReceivedAckBits();
+		uint64 maxValue = std::min(64, (int32)ack);
+		uint64 bits = 0;
+		uint64 shift = 65 - maxValue;
+		ackBits &= shift == 64 ? 0 : (UINT64_MAX >> shift);
 
 		if (ack > lastReceivedAck)
 		{
@@ -139,11 +139,11 @@ namespace LambdaEngine
 
 		pStatistics->SetReceivedAckBits(currentAckBits | ackBits);
 
-		uint32 acks = (pStatistics->GetReceivedAckBits() ^ bits);
+		uint64 acks = (pStatistics->GetReceivedAckBits() ^ bits);
 
-		for (int i = 32; i > 0; i--)
+		for (int i = 64; i > 0; i--)
 		{
-			if (acks >> (sizeof(uint32) * 8 - 1) & 1)
+			if (acks >> (sizeof(uint64) * 8 - 1) & 1)
 			{
 				newAcks.PushBack(ack - i);
 			}

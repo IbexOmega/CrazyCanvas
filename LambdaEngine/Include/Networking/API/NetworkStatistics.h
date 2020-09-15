@@ -98,9 +98,9 @@ namespace LambdaEngine
 		
 
 		uint32 GetLastReceivedSequenceNr()	const;
-		uint32 GetReceivedSequenceBits()	const;
+		uint64 GetReceivedSequenceBits()	const;
 		uint32 GetLastReceivedAckNr()		const;
-		uint32 GetReceivedAckBits()			const;
+		uint64 GetReceivedAckBits()			const;
 		uint32 GetLastReceivedReliableUID()	const;
 
 	private:
@@ -117,9 +117,9 @@ namespace LambdaEngine
 		void SetRemoteSalt(uint64 salt);
 
 		void SetLastReceivedSequenceNr(uint32 sequence);
-		void SetReceivedSequenceBits(uint32 sequenceBits);
+		void SetReceivedSequenceBits(uint64 sequenceBits);
 		void SetLastReceivedAckNr(uint32 ack);
-		void SetReceivedAckBits(uint32 ackBits);
+		void SetReceivedAckBits(uint64 ackBits);
 
 	private:
 		uint32 m_PacketsLost;
@@ -140,10 +140,10 @@ namespace LambdaEngine
 		std::atomic_uint64_t m_SaltRemote;
 
 		std::atomic_uint32_t m_LastReceivedSequenceNr;
-		std::atomic_uint32_t m_ReceivedSequenceBits;
+		std::atomic_uint64_t m_ReceivedSequenceBits;
 
 		std::atomic_uint32_t m_LastReceivedAckNr;
-		std::atomic_uint32_t m_ReceivedAckBits;
+		std::atomic_uint64_t m_ReceivedAckBits;
 
 		std::atomic_uint32_t m_LastReceivedReliableUID;
 	};
