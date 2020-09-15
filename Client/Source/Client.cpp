@@ -132,7 +132,7 @@ void Client::OnClientReleased(LambdaEngine::IClient* pClient)
 void Client::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)
 {
 	UNREFERENCED_VARIABLE(pPacket);
-	LOG_INFO("OnPacketDelivered(%d)", pPacket->GetType());
+	LOG_INFO("OnPacketDelivered(%s)", pPacket->ToString());
 }
 
 void Client::OnPacketResent(LambdaEngine::NetworkSegment* pPacket, uint8 tries)

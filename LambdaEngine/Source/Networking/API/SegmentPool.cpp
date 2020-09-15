@@ -29,12 +29,6 @@ namespace LambdaEngine
 #ifdef LAMBDA_CONFIG_DEBUG
 	NetworkSegment* SegmentPool::RequestFreeSegment(const std::string& borrower)
 	{
-
-		if (borrower.empty())
-		{
-			DEBUGBREAK();
-		}
-
 		NetworkSegment* pSegment = RequestFreeSegment();
 		pSegment->m_Borrower = borrower;
 		pSegment->m_IsBorrowed = true;
@@ -43,11 +37,6 @@ namespace LambdaEngine
 
 	bool SegmentPool::RequestFreeSegments(uint16 nrOfSegments, TArray<NetworkSegment*>& segmentsReturned, const std::string& borrower)
 	{
-		if (borrower.empty())
-		{
-			DEBUGBREAK();
-		}
-
 		if (RequestFreeSegments(nrOfSegments, segmentsReturned))
 		{
 			for (NetworkSegment* pSegment : segmentsReturned)

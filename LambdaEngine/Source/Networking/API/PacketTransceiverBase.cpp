@@ -42,16 +42,16 @@ namespace LambdaEngine
 
 		pStatistics->RegisterSegmentSent(header.Segments);
 
-		std::string text = "Packet Sequence: " + std::to_string(header.Sequence) + "[";
+		//std::string text = "Packet Sequence: " + std::to_string(header.Sequence) + "[";
 
-		for (uint32 reliableUID : reliableUIDsSent)
-		{
-			text += std::to_string(reliableUID) + ", ";
-		}
+		//for (uint32 reliableUID : reliableUIDsSent)
+		//{
+		//	text += std::to_string(reliableUID) + ", ";
+		//}
 
-		text += " ]";
+		//text += " ]";
 
-		LOG_WARNING(text.c_str());
+		//LOG_WARNING(text.c_str());
 
 		return header.Sequence;
 	}
