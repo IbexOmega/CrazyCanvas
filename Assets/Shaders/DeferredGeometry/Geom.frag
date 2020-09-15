@@ -6,7 +6,7 @@
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
 
-layout(location = 0) in flat uint   in_MaterialIndex;
+layout(location = 0) in flat uint   in_MaterialSlot;
 layout(location = 1) in vec3        in_Normal;
 layout(location = 2) in vec3        in_Tangent;
 layout(location = 3) in vec3        in_Bitangent;
@@ -14,7 +14,7 @@ layout(location = 4) in vec2        in_TexCoord;
 layout(location = 5) in vec4        in_ClipPosition;
 layout(location = 6) in vec4        in_PrevClipPosition;
 
-layout(binding = 6, set = BUFFER_SET_INDEX) uniform MaterialParameters  	{ SMaterialParameters val[MAX_UNIQUE_MATERIALS]; }  u_MaterialParameters;
+layout(binding = 1, set = BUFFER_SET_INDEX) uniform MaterialParameters  	{ SMaterialParameters val[MAX_UNIQUE_MATERIALS]; }  u_MaterialParameters;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
@@ -36,16 +36,16 @@ void main()
 
     mat3 TBN = mat3(tangent, bitangent, normal);
 
-	vec3 sampledAlbedo 	    = 		texture(u_SceneAlbedoMaps[in_MaterialIndex],      texCoord).rgb;
-	vec3 sampledNormal 	    =       texture(u_SceneNormalMaps[in_MaterialIndex],      texCoord).rgb;
-	float sampledAO 		=       texture(u_SceneAOMaps[in_MaterialIndex],          texCoord).r;
-	float sampledMetallic 	=       texture(u_SceneMetallicMaps[in_MaterialIndex],    texCoord).r;
-	float sampledRoughness  =       texture(u_SceneRoughnessMaps[in_MaterialIndex],   texCoord).r;
+	vec3 sampledAlbedo 	    = 		texture(u_SceneAlbedoMaps[in_MaterialSlot],      texCoord).rgb;
+	vec3 sampledNormal 	    =       texture(u_SceneNormalMaps[in_MaterialSlot],      texCoord).rgb;
+	float sampledAO 		=       texture(u_SceneAOMaps[in_MaterialSlot],          texCoord).r;
+	float sampledMetallic 	=       texture(u_SceneMetallicMaps[in_MaterialSlot],    texCoord).r;
+	float sampledRoughness  =       texture(u_SceneRoughnessMaps[in_MaterialSlot],   texCoord).r;
 	
 	vec3 shadingNormal 	   	= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal 			= normalize(TBN * normalize(shadingNormal));
 
-	SMaterialParameters materialParameters = u_MaterialParameters.val[in_MaterialIndex];
+	SMaterialParameters materialParameters = u_MaterialParameters.val[in_MaterialSlot];
 
     vec2 currentNDC 	= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC 		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;

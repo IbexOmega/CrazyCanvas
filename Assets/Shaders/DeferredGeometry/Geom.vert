@@ -5,14 +5,13 @@
 
 #include "../Defines.glsl"
 
-layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer                          { SPerFrameBuffer val; }        u_PerFrameBuffer;
-layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer Vertices               { SVertex val[]; }              b_Vertices;
-layout(binding = 2, set = BUFFER_SET_INDEX) restrict readonly buffer Indices                { uint val[]; }                 b_Indices;
-layout(binding = 3, set = BUFFER_SET_INDEX) restrict readonly buffer PrimaryInstances       { SPrimaryInstance val[]; }     b_PrimaryInstances;
-layout(binding = 4, set = BUFFER_SET_INDEX) restrict readonly buffer SecondaryInstances     { SSecondaryInstance val[]; }   b_SecondaryInstances;
-layout(binding = 5, set = BUFFER_SET_INDEX) restrict readonly buffer IndirectArgs           { SIndirectArg val[]; }         b_IndirectArgs;
 
-layout(location = 0) out flat uint out_MaterialIndex;
+layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }    u_PerFrameBuffer;
+
+layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices     { SVertex val[]; }          b_Vertices;
+layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances    { SInstance val[]; }        b_Instances;
+
+layout(location = 0) out flat uint out_MaterialSlot;
 layout(location = 1) out vec3 out_Normal;
 layout(location = 2) out vec3 out_Tangent;
 layout(location = 3) out vec3 out_Bitangent;
@@ -22,32 +21,18 @@ layout(location = 6) out vec4 out_PrevClipPosition;
 
 void main()
 {
-    SPrimaryInstance primaryInstance            = b_PrimaryInstances.val[gl_InstanceIndex];
-    SSecondaryInstance secondaryInstance        = b_SecondaryInstances.val[gl_InstanceIndex];
     SVertex vertex                              = b_Vertices.val[gl_VertexIndex];
+    SInstance instance                          = b_Instances.val[gl_InstanceIndex];
     SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
 
-    uint indirectArgID                          = (primaryInstance.Mask_IndirectArgIndex) & 0x00FFFFFF;
-    SIndirectArg indirectArg                    = b_IndirectArgs.val[indirectArgID];
+    vec4 worldPosition      = instance.Transform * vec4(vertex.Position.xyz, 1.0f);
+    vec4 prevWorldPosition  = instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
 
-    //Calculate a 4x4 matrix so that we calculate the correct w for worldPosition
-    mat4 transform;
-	transform[0] = vec4(primaryInstance.Transform[0]);
-	transform[1] = vec4(primaryInstance.Transform[1]);
-	transform[2] = vec4(primaryInstance.Transform[2]);
-	transform[3] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    transform = transpose(transform);
-
-    mat4 prevTransform      = transpose(secondaryInstance.PrevTransform);
-
-    vec4 worldPosition      = transform * vec4(vertex.Position.xyz, 1.0f);
-    vec4 prevWorldPosition  = prevTransform * vec4(vertex.Position.xyz, 1.0f);
-
-    vec3 normal 	= normalize((transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
-	vec3 tangent    = normalize((transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
+    vec3 normal 	= normalize((instance.Transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
+	vec3 tangent    = normalize((instance.Transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
 	vec3 bitangent 	= normalize(cross(normal, tangent));
 
-    out_MaterialIndex           = indirectArg.MaterialIndex;
+    out_MaterialSlot            = instance.MaterialSlot;
 	out_Normal 			        = normal;
 	out_Tangent 		        = tangent;
 	out_Bitangent 		        = bitangent;

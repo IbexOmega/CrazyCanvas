@@ -7,6 +7,8 @@
 #include "Containers/TArray.h"
 #include "Containers/TSet.h"
 
+#include <map>
+
 namespace LambdaEngine
 {
 	class LAMBDA_API RenderGraphParser

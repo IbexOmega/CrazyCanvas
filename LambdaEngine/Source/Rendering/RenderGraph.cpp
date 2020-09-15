@@ -437,18 +437,11 @@ namespace LambdaEngine
 					{
 						for (uint32 b = 0; b < m_BackBufferCount; b++)
 						{
-							TArray<DescriptorSet*>& descriptorSetsToDestroy = m_pDescriptorSetsToDestroy[b];
-
-							for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
-							{
-								uint32 descriptorSetIndex = b * pRenderStage->TextureSubDescriptorSetCount + s;
-
-								DescriptorSet* pSrcDescriptorSet = pRenderStage->ppTextureDescriptorSets[descriptorSetIndex];
-								DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->ppBufferDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
-								m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
-								descriptorSetsToDestroy.PushBack(pSrcDescriptorSet);
-								pRenderStage->ppTextureDescriptorSets[descriptorSetIndex] = pDescriptorSet;
-							}
+							DescriptorSet* pSrcDescriptorSet = pRenderStage->ppTextureDescriptorSets[b];
+							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex, m_pDescriptorHeap);
+							m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
+							m_pDescriptorSetsToDestroy[b].PushBack(pSrcDescriptorSet);
+							pRenderStage->ppTextureDescriptorSets[b] = pDescriptorSet;
 						}
 					}
 					else if (pRenderStage->UsesCustomRenderer)
@@ -471,7 +464,7 @@ namespace LambdaEngine
 						for (uint32 b = 0; b < m_BackBufferCount; b++)
 						{
 							DescriptorSet* pSrcDescriptorSet = pRenderStage->ppBufferDescriptorSets[b];
-							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex, m_pDescriptorHeap);
 							m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
 							m_pDescriptorSetsToDestroy[b].PushBack(pSrcDescriptorSet);
 							pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
@@ -619,23 +612,17 @@ namespace LambdaEngine
 						}
 						else
 						{
-							uint32 actualSubResourceCount = (uint32)glm::ceil(pResource->Texture.IsOfArrayType ? 1.0f : float32(pResource->SubResourceCount) / float32(pRenderStage->TextureSubDescriptorSetCount));
+							uint32 actualSubResourceCount = pResource->Texture.IsOfArrayType ? 1.0f : pResource->SubResourceCount;
 
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
-								for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
-								{
-									uint32 descriptorSetIndex = b * pRenderStage->TextureSubDescriptorSetCount + s;
-									uint32 subResourceIndex = s * actualSubResourceCount;
-
-									pRenderStage->ppTextureDescriptorSets[descriptorSetIndex]->WriteTextureDescriptors(
-										&pResource->Texture.PerImageTextureViews[subResourceIndex],
-										&pResource->Texture.Samplers[subResourceIndex],
-										pResourceBinding->TextureState,
-										pResourceBinding->Binding,
-										actualSubResourceCount,
-										pResourceBinding->DescriptorType);
-								}
+								pRenderStage->ppTextureDescriptorSets[b]->WriteTextureDescriptors(
+									pResource->Texture.PerImageTextureViews.GetData(),
+									pResource->Texture.Samplers.GetData(),
+									pResourceBinding->TextureState,
+									pResourceBinding->Binding,
+									actualSubResourceCount,
+									pResourceBinding->DescriptorType);
 							}
 						}
 					}
@@ -946,20 +933,15 @@ namespace LambdaEngine
 
 				for (uint32 b = 0; b < m_BackBufferCount; b++)
 				{
-					if (pRenderStage->ppTextureDescriptorSets != nullptr)
-					{
-						for (uint32 s = 0; s < pRenderStage->TextureSubDescriptorSetCount; s++)
-						{
-							SAFERELEASE(pRenderStage->ppTextureDescriptorSets[b * pRenderStage->TextureSubDescriptorSetCount + s]);
-						}
-					}
-
 					for (uint32 ipc = 0; ipc < NUM_INTERNAL_PUSH_CONSTANTS_TYPES; ipc++)
 					{
 						SAFEDELETE_ARRAY(pRenderStage->pInternalPushConstants[ipc].pData);
 					}
 
 					SAFEDELETE_ARRAY(pRenderStage->ExternalPushConstants.pData);
+
+					if (pRenderStage->ppTextureDescriptorSets != nullptr)
+						SAFERELEASE(pRenderStage->ppTextureDescriptorSets[b]);
 
 					if (pRenderStage->ppBufferDescriptorSets != nullptr)
 						SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
@@ -1461,76 +1443,14 @@ namespace LambdaEngine
 				pRenderStage->Dimensions.z = uint32(pRenderStageDesc->Parameters.ZDimVariable);
 			}
 
+			if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
+			{
+				pRenderStage->DrawType = pRenderStageDesc->Graphics.DrawType;
+			}
+
 			pRenderStage->Dimensions.x = glm::max<uint32>(1, pRenderStage->Dimensions.x);
 			pRenderStage->Dimensions.y = glm::max<uint32>(1, pRenderStage->Dimensions.y);
 			pRenderStage->Dimensions.z = glm::max<uint32>(1, pRenderStage->Dimensions.z);
-
-			//Calculate the total number of textures we want to bind
-			uint32 textureSlots = 0;
-			uint32 totalNumberOfTextures = 0;
-			uint32 totalNumberOfNonMaterialTextures = 0;
-			uint32 textureSubResourceCount = 0;
-			bool textureSubResourceCountSame = true;
-			for (uint32 rs = 0; rs < pRenderStageDesc->ResourceStates.GetSize(); rs++)
-			{
-				const RenderGraphResourceState* pResourceStateDesc = &pRenderStageDesc->ResourceStates[rs];
-
-				auto resourceIt = m_ResourceMap.find(pResourceStateDesc->ResourceName);
-
-				if (resourceIt == m_ResourceMap.end())
-				{
-					LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" has no accompanying Resource", pResourceStateDesc->ResourceName.c_str());
-					return false;
-				}
-
-				const Resource* pResource = &resourceIt->second;
-
-				if (ResourceStateNeedsDescriptor(pResourceStateDesc->BindingType) && pResource->Type == ERenderGraphResourceType::TEXTURE)
-				{
-					textureSlots++;
-
-					//Todo: Review this, this seems retarded
-					if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::COMBINED_SAMPLER)
-					{
-						//Samplers which are of array type only take up one slot, same for back buffer bound resources
-						uint32 actualResourceSubResourceCount = (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount;
-
-						if (textureSubResourceCount > 0 && actualResourceSubResourceCount != textureSubResourceCount)
-							textureSubResourceCountSame = false;
-
-						textureSubResourceCount = actualResourceSubResourceCount;
-						totalNumberOfTextures += textureSubResourceCount;
-
-						if (pResource->Name != SCENE_ALBEDO_MAPS	 &&
-							pResource->Name != SCENE_NORMAL_MAPS	 &&
-							pResource->Name != SCENE_AO_MAPS		 &&
-							pResource->Name != SCENE_ROUGHNESS_MAPS	 &&
-							pResource->Name != SCENE_METALLIC_MAPS)
-						{
-							totalNumberOfNonMaterialTextures += textureSubResourceCount;
-						}
-					}
-					else
-					{
-						totalNumberOfTextures++;
-						totalNumberOfNonMaterialTextures++;
-					}
-				}
-			}
-
-			if (textureSlots > m_MaxTexturesPerDescriptorSet)
-			{
-				LOG_ERROR("[RenderGraph]: Number of required texture slots %u for render stage %s is more than MaxTexturesPerDescriptorSet %u", textureSlots, pRenderStageDesc->Name.c_str(), m_MaxTexturesPerDescriptorSet);
-				return false;
-			}
-			else if (totalNumberOfTextures > m_MaxTexturesPerDescriptorSet && !textureSubResourceCountSame)
-			{
-				//If all texture have either 1 or the same subresource count we can divide the Render Stage into multiple passes, is this correct?
-				LOG_ERROR("[RenderGraph]: Total number of required texture slots %u for render stage %s is more than MaxTexturesPerDescriptorSet %u. This only works if all texture bindings have either 1 or the same subresource count", totalNumberOfTextures, pRenderStageDesc->Name.c_str(), m_MaxTexturesPerDescriptorSet);
-				return false;
-			}
-			pRenderStage->MaterialsRenderedPerPass = (m_MaxTexturesPerDescriptorSet - totalNumberOfNonMaterialTextures) / 5; //5 textures per material
-			pRenderStage->TextureSubDescriptorSetCount = (uint32)glm::ceil(glm::max<float32>((float32)totalNumberOfTextures / float32(pRenderStage->MaterialsRenderedPerPass * 5.0f), 1.0f));
 
 			TArray<DescriptorBindingDesc> textureDescriptorSetDescriptions;
 			textureDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
@@ -1665,7 +1585,7 @@ namespace LambdaEngine
 
 					DescriptorBindingDesc descriptorBinding = {};
 					descriptorBinding.DescriptorType		= descriptorType;
-					descriptorBinding.ShaderStageMask		= CreateShaderStageMask(pRenderStageDesc);
+					descriptorBinding.ShaderStageMask		= pipelineStageMask;
 
 					if (pResource->Type == ERenderGraphResourceType::TEXTURE)
 					{
@@ -1673,7 +1593,7 @@ namespace LambdaEngine
 
 						uint32 actualSubResourceCount		= (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount;
 
-						descriptorBinding.DescriptorCount	= (uint32)glm::ceil((float)actualSubResourceCount / pRenderStage->TextureSubDescriptorSetCount);
+						descriptorBinding.DescriptorCount	= actualSubResourceCount;
 						descriptorBinding.Binding			= textureDescriptorBindingIndex++;
 
 						textureDescriptorSetDescriptions.PushBack(descriptorBinding);
@@ -2009,6 +1929,27 @@ namespace LambdaEngine
 						descriptorSetLayouts.PushBack(descriptorSetLayout);
 					}
 
+					if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS && pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+					{
+						DescriptorBindingDesc vertexBufferDescriptorBinding = {};
+						vertexBufferDescriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+						vertexBufferDescriptorBinding.DescriptorCount	= 1;
+						vertexBufferDescriptorBinding.Binding			= 0;
+						vertexBufferDescriptorBinding.ShaderStageMask	= pipelineStageMask;
+
+						DescriptorBindingDesc instanceBufferDescriptorBinding = {};
+						instanceBufferDescriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+						instanceBufferDescriptorBinding.DescriptorCount	= 1;
+						instanceBufferDescriptorBinding.Binding			= 1;
+						instanceBufferDescriptorBinding.ShaderStageMask	= pipelineStageMask;
+
+						DescriptorSetLayoutDesc descriptorSetLayout = {};
+						descriptorSetLayout.DescriptorSetLayoutFlags	= FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR | FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL;
+						descriptorSetLayout.DescriptorBindings.PushBack(vertexBufferDescriptorBinding);
+						descriptorSetLayout.DescriptorBindings.PushBack(instanceBufferDescriptorBinding);
+						descriptorSetLayouts.PushBack(descriptorSetLayout);
+					}
+
 					PipelineLayoutDesc pipelineLayoutDesc = {};
 					pipelineLayoutDesc.DescriptorSetLayouts	= descriptorSetLayouts;
 					pipelineLayoutDesc.ConstantRanges		= { pushConstantRange };
@@ -2018,27 +1959,40 @@ namespace LambdaEngine
 
 				//Create Descriptor Set
 				{
+					uint32 setIndex = 0;
+
 					if (bufferDescriptorSetDescriptions.GetSize() > 0)
 					{
 						pRenderStage->ppBufferDescriptorSets = DBG_NEW DescriptorSet*[m_BackBufferCount];
 
 						for (uint32 i = 0; i < m_BackBufferCount; i++)
 						{
-							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pRenderStageDesc->Name + " Buffer Descriptor Set " + std::to_string(i), pRenderStage->pPipelineLayout, 0, m_pDescriptorHeap);
+							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pRenderStageDesc->Name + " Buffer Descriptor Set " + std::to_string(i), pRenderStage->pPipelineLayout, setIndex, m_pDescriptorHeap);
 							pRenderStage->ppBufferDescriptorSets[i] = pDescriptorSet;
 						}
+
+						pRenderStage->BufferSetIndex = setIndex;
+						setIndex++;
 					}
 
 					if (textureDescriptorSetDescriptions.GetSize() > 0)
 					{
-						uint32 textureDescriptorSetCount = m_BackBufferCount * pRenderStage->TextureSubDescriptorSetCount;
-						pRenderStage->ppTextureDescriptorSets = DBG_NEW DescriptorSet*[textureDescriptorSetCount];
+						pRenderStage->ppTextureDescriptorSets = DBG_NEW DescriptorSet*[m_BackBufferCount];
 
-						for (uint32 i = 0; i < textureDescriptorSetCount; i++)
+						for (uint32 i = 0; i < m_BackBufferCount; i++)
 						{
-							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pRenderStageDesc->Name + " Texture Descriptor Set " + std::to_string(i), pRenderStage->pPipelineLayout, pRenderStage->ppBufferDescriptorSets != nullptr ? 1 : 0, m_pDescriptorHeap);
+							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pRenderStageDesc->Name + " Texture Descriptor Set " + std::to_string(i), pRenderStage->pPipelineLayout, setIndex, m_pDescriptorHeap);
 							pRenderStage->ppTextureDescriptorSets[i] = pDescriptorSet;
 						}
+
+						pRenderStage->TextureSetIndex = setIndex;
+						setIndex++;
+					}
+
+					if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS && pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+					{
+						pRenderStage->DrawSetIndex = setIndex;
+						setIndex++;
 					}
 				}
 
@@ -2127,7 +2081,7 @@ namespace LambdaEngine
 					}
 
 					//Set Draw Type and Draw Resource
-					{
+					/*{
 						pRenderStage->DrawType = pRenderStageDesc->Graphics.DrawType;
 
 						if (pRenderStageDesc->Graphics.IndexBufferName.size() > 0)
@@ -2155,7 +2109,7 @@ namespace LambdaEngine
 
 							pRenderStage->pIndirectArgsBufferResource = &indirectArgsBufferIt->second;
 						}
-					}
+					}*/
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineDesc);
 				}
@@ -3097,15 +3051,20 @@ namespace LambdaEngine
 		if (pRenderStage->ExternalPushConstants.DataSize > 0)
 			pGraphicsCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pRenderStage->ExternalPushConstants.pData, pRenderStage->ExternalPushConstants.DataSize, pRenderStage->ExternalPushConstants.Offset);
 
-		uint32 textureDescriptorSetBindingIndex = 0;
 		if (pRenderStage->ppBufferDescriptorSets != nullptr)
-		{
-			pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, 0);
-			textureDescriptorSetBindingIndex = 1;
-		}
+			pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
+
+		if (pRenderStage->ppTextureDescriptorSets != nullptr)
+			pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex);
 
 		uint32 frameBufferWidth		= 0;
 		uint32 frameBufferHeight	= 0;
+
+		TArray<DrawArg> drawArgs;
+		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
+		{
+			m_pScene->GetDrawArgs(drawArgs, 0);
+		}
 
 		for (uint32 r = 0; r < pRenderStage->ExecutionCount; r++)
 		{
@@ -3194,51 +3153,24 @@ namespace LambdaEngine
 
 				if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 				{
-					pGraphicsCommandList->BindIndexBuffer(pRenderStage->pIndexBufferResource->Buffer.Buffers[0], 0, EIndexType::INDEX_TYPE_UINT32);
-
-					Buffer* pDrawBuffer			= pRenderStage->pIndirectArgsBufferResource->Buffer.Buffers[0];
-					uint32 totalDrawCount		= uint32(pDrawBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
-					uint32 indirectArgStride	= sizeof(IndexedIndirectMeshArgument);
-
-					uint32 drawOffset = 0;
-					for (uint32 i = 0; i < pRenderStage->TextureSubDescriptorSetCount; i++)
+					for (DrawArg& drawArg : drawArgs)
 					{
-						uint32 newBaseMaterialIndex	= (i + 1) * pRenderStage->MaterialsRenderedPerPass;
-						uint32 newDrawOffset		= m_pScene->GetIndirectArgumentOffset(newBaseMaterialIndex);
-						uint32 drawCount			= newDrawOffset - drawOffset;
+						pGraphicsCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
-						if (pRenderStage->ppTextureDescriptorSets != nullptr)
-							pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex * pRenderStage->TextureSubDescriptorSetCount + i], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+						//Assume pDrawDescriptorSet != nullptr
+						uint64 offset = 0;
+						pGraphicsCommandList->PushBufferDescriptorWriteGraphics(pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex, &drawArg.pVertexBuffer, &offset, &drawArg.VertexBufferSize, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+						pGraphicsCommandList->PushBufferDescriptorWriteGraphics(pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex, &drawArg.pInstanceBuffer, &offset, &drawArg.InstanceBufferSize, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 
-						pGraphicsCommandList->DrawIndexedIndirect(pDrawBuffer, drawOffset * indirectArgStride, drawCount, indirectArgStride);
-						drawOffset = newDrawOffset;
-
-						if (newDrawOffset >= totalDrawCount)
-							break;
+						pGraphicsCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 					}
 				}
 				else if (pRenderStage->DrawType == ERenderStageDrawType::FULLSCREEN_QUAD)
 				{
-					if (pRenderStage->TextureSubDescriptorSetCount > 1)
-					{
-						LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
-					}
-
-					if (pRenderStage->ppTextureDescriptorSets != nullptr)
-						pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
-
 					pGraphicsCommandList->DrawInstanced(3, 1, 0, 0);
 				}
 				else if (pRenderStage->DrawType == ERenderStageDrawType::CUBE)
 				{
-					if (pRenderStage->TextureSubDescriptorSetCount > 1)
-					{
-						LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and DrawType FULLSCREEN_QUAD, this is currently not supported");
-					}
-
-					if (pRenderStage->ppTextureDescriptorSets != nullptr)
-						pGraphicsCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
-
 					pGraphicsCommandList->DrawInstanced(36, 1, 0, 0);
 				}
 			}
@@ -3290,18 +3222,10 @@ namespace LambdaEngine
 			uint32 textureDescriptorSetBindingIndex = 0;
 
 			if (pRenderStage->ppBufferDescriptorSets != nullptr)
-			{
-				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, 0);
-				textureDescriptorSetBindingIndex = 1;
-			}
-
-			if (pRenderStage->TextureSubDescriptorSetCount > 1)
-			{
-				LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and is Compute, this is currently not supported");
-			}
+				pComputeCommandList->BindDescriptorSetGraphics(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
 
 			if (pRenderStage->ppTextureDescriptorSets != nullptr)
-				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+				pComputeCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex);
 
 			pComputeCommandList->Dispatch(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
 
@@ -3329,21 +3253,11 @@ namespace LambdaEngine
 
 			pComputeCommandList->BindRayTracingPipeline(pPipelineState);
 
-			uint32 textureDescriptorSetBindingIndex = 0;
-
 			if (pRenderStage->ppBufferDescriptorSets != nullptr)
-			{
-				pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, 0);
-				textureDescriptorSetBindingIndex = 1;
-			}
-
-			if (pRenderStage->TextureSubDescriptorSetCount > 1)
-			{
-				LOG_WARNING("[RenderGraph]: Render Stage has TextureSubDescriptor > 1 and is Ray Tracing, this is currently not supported");
-			}
+				pComputeCommandList->BindDescriptorSetGraphics(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
 
 			if (pRenderStage->ppTextureDescriptorSets != nullptr)
-				pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, textureDescriptorSetBindingIndex);
+				pComputeCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex);
 
 			pComputeCommandList->TraceRays(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
 

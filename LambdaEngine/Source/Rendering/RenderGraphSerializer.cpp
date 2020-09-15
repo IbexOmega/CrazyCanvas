@@ -880,6 +880,7 @@ namespace LambdaEngine
 						if (renderStage.Graphics.DrawType == ERenderStageDrawType::SCENE_INDIRECT)
 						{
 							//Index Buffer
+							if (drawParamsObject.HasMember("index_buffer"))
 							{
 								GenericObject resourceStateObject = drawParamsObject["index_buffer"].GetObject();
 
@@ -933,6 +934,7 @@ namespace LambdaEngine
 							}
 
 							//Indirect Args Buffer
+							if (drawParamsObject.HasMember("indirect_args_buffer"))
 							{
 								GenericObject resourceStateObject = drawParamsObject["indirect_args_buffer"].GetObject();
 
