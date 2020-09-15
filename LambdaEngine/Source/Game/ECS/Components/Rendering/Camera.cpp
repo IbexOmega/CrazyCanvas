@@ -1,6 +1,6 @@
-#include "Game/ECS/Rendering/Camera.h"
+#include "Game/ECS/Components/Rendering/Camera.h"
 
-#include "Game/ECS/Physics/Transform.h"
+#include "Game/ECS/Components/Physics/Transform.h"
 
 namespace LambdaEngine
 {
