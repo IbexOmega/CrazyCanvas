@@ -49,7 +49,7 @@ Client::Client() :
     desc.Handler                = this;
     desc.Protocol               = EProtocol::TCP;
 	desc.PingTimeout			= Timestamp::Seconds(3);
-	desc.UsePingSystem			= false;
+	desc.UsePingSystem			= true;
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
@@ -132,7 +132,7 @@ void Client::OnClientReleased(LambdaEngine::IClient* pClient)
 void Client::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)
 {
 	UNREFERENCED_VARIABLE(pPacket);
-	LOG_INFO("OnPacketDelivered(%s)", pPacket->ToString());
+	LOG_INFO("OnPacketDelivered(%s)", pPacket->ToString().c_str());
 }
 
 void Client::OnPacketResent(LambdaEngine::NetworkSegment* pPacket, uint8 tries)
@@ -198,7 +198,7 @@ void Client::FixedTick(LambdaEngine::Timestamp delta)
 
 	if (m_pClient->IsConnected())
 	{
-		if (++g_PackegesSent <= 10000)
+		/*if (++g_PackegesSent <= 10000)
 		{
 			NetworkSegment* pPacket = m_pClient->GetFreePacket(g_PackegesSent);
 			BinaryEncoder encoder(pPacket);
@@ -208,7 +208,7 @@ void Client::FixedTick(LambdaEngine::Timestamp delta)
 		else
 		{
 			//m_pClient->Disconnect("All Packages Sent");
-		}
+		}*/
 	}
 
 	UNREFERENCED_VARIABLE(delta);
