@@ -38,6 +38,8 @@ namespace LambdaEngine
 
 		bool InitSystem();
 
+		bool Init();
+
 		bool Release();
 
 		void Tick(float dt);
@@ -54,9 +56,10 @@ namespace LambdaEngine
 		uint64			GetModFrameIndex()	{ return m_ModFrameIndex; }
 		uint32			GetBufferIndex()	{ return m_BackBufferIndex; }
 	public:
-		static RenderSystem* GetInstance() { return &s_pInstance; }
+		static RenderSystem& GetInstance() { return s_Instance; }
 
 	private:
+		RenderSystem() = default;
 		void UpdateRenderGraphFromScene();
 
 	private:
@@ -73,6 +76,6 @@ namespace LambdaEngine
 		uint32					m_BackBufferIndex	= 0;
 
 	private:
-		static RenderSystem		s_pInstance;
+		static RenderSystem		s_Instance;
 	};
 }

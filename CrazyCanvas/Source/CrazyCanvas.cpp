@@ -39,6 +39,9 @@
 
 #include "Utilities/RuntimeStats.h"
 
+#include "Game/StateManager.h"
+#include "States/DebugState.h"
+
 #include <imgui.h>
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -56,6 +59,8 @@ CrazyCanvas::CrazyCanvas()
 	Input::Disable();
 
 	m_pScene = DBG_NEW Scene();
+
+	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(DebugState), STATE_TRANSITION::PUSH);
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);

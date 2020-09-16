@@ -22,96 +22,103 @@
 
 namespace LambdaEngine 
 {
+	RenderSystem RenderSystem::s_Instance;
+
+	bool RenderSystem::Init()
+	{
+		TransformComponents transformComponents;
+		transformComponents.Position.Permissions = R;
+		transformComponents.Scale.Permissions = R;
+		transformComponents.Rotation.Permissions = R;
+
+		// Subscribe on Static Entities & Dynamic Entities
+		{
+			SystemRegistration systemReg = {};
+			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
+			{
+				{{{R, StaticMeshComponent::s_TID}}, {&transformComponents}, &m_StaticEntities},
+				{{{R, DynamicMeshComponent::s_TID}}, {&transformComponents}, &m_DynamicEntities},
+			};
+			systemReg.Phase = g_LastPhase - 1U;
+
+			EnqueueRegistration(systemReg);
+		}
+
+		return true;
+	}
+
 	bool RenderSystem::InitSystem()
 	{
-		{
-			TransformComponents transformComponents;
-			transformComponents.m_Position.Permissions = R;
-			transformComponents.m_Scale.Permissions = R;
-			transformComponents.m_Rotation.Permissions = R;
+		////Create Swapchain
+		//{
+		//	SwapChainDesc swapChainDesc = {};
+		//	swapChainDesc.DebugName = "Renderer Swap Chain";
+		//	swapChainDesc.pWindow = CommonApplication::Get()->GetActiveWindow().Get();
+		//	swapChainDesc.pQueue = RenderAPI::GetGraphicsQueue();
+		//	swapChainDesc.Format = EFormat::FORMAT_B8G8R8A8_UNORM;
+		//	swapChainDesc.Width = 0;
+		//	swapChainDesc.Height = 0;
+		//	swapChainDesc.BufferCount = BACK_BUFFER_COUNT;
+		//	swapChainDesc.SampleCount = 1;
+		//	swapChainDesc.VerticalSync = false;
 
-			// Subscribe on Static Entities & Dynamic Entities
-			{
-				SystemRegistration systemReg = {};
-				systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
-				{
-					{{{R, g_TIDStaticMeshComponent}}, {&transformComponents}, &m_StaticEntities},
-					{{{R, g_TIDDynamicMeshComponent}}, {&transformComponents}, &m_DynamicEntities},
-				};
-				systemReg.Phase = g_LastPhase - 1U;
-			}
-		}
+		//	m_SwapChain = RenderAPI::GetDevice()->CreateSwapChain(&swapChainDesc);
+		//	if (!m_SwapChain)
+		//	{
+		//		LOG_ERROR("[Renderer]: SwapChain is nullptr after initializaiton");
+		//		return false;
+		//	}
 
-		//Create Swapchain
-		{
-			SwapChainDesc swapChainDesc = {};
-			swapChainDesc.DebugName = "Renderer Swap Chain";
-			swapChainDesc.pWindow = CommonApplication::Get()->GetActiveWindow().Get();
-			swapChainDesc.pQueue = RenderAPI::GetGraphicsQueue();
-			swapChainDesc.Format = EFormat::FORMAT_B8G8R8A8_UNORM;
-			swapChainDesc.Width = 0;
-			swapChainDesc.Height = 0;
-			swapChainDesc.BufferCount = BACK_BUFFER_COUNT;
-			swapChainDesc.SampleCount = 1;
-			swapChainDesc.VerticalSync = false;
+		//	m_ppBackBuffers = DBG_NEW Texture * [BACK_BUFFER_COUNT];
+		//	m_ppBackBufferViews = DBG_NEW TextureView * [BACK_BUFFER_COUNT];
 
-			m_SwapChain = RenderAPI::GetDevice()->CreateSwapChain(&swapChainDesc);
-			if (!m_SwapChain)
-			{
-				LOG_ERROR("[Renderer]: SwapChain is nullptr after initializaiton");
-				return false;
-			}
+		//	m_FrameIndex++;
+		//	m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
+		//}
 
-			m_ppBackBuffers = DBG_NEW Texture * [BACK_BUFFER_COUNT];
-			m_ppBackBufferViews = DBG_NEW TextureView * [BACK_BUFFER_COUNT];
+		////Create RenderGraph
+		//{
+		//	RenderGraphStructureDesc renderGraphStructure = {};
 
-			m_FrameIndex++;
-			m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
-		}
+		//	if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "DEMO_SKYBOX.lrg", IMGUI_ENABLED))
+		//	{
+		//		return false;
+		//	}
 
-		//Create RenderGraph
-		{
-			RenderGraphStructureDesc renderGraphStructure = {};
+		//	//Todo: Move this
+		//	{
+		//		RenderGraphShaderConstants& pointLightsConstants = renderGraphStructure.ShaderConstants["POINT_LIGHT_SHADOWMAPS"];
+		//		pointLightsConstants.Graphics.PixelShaderConstants.PushBack({ 2 });
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "DEMO_SKYBOX.lrg", IMGUI_ENABLED))
-			{
-				return false;
-			}
+		//		RenderGraphShaderConstants& shadingConstants = renderGraphStructure.ShaderConstants["DEMO"];
+		//		shadingConstants.Graphics.PixelShaderConstants.PushBack({ 2 });
+		//	}
 
-			//Todo: Move this
-			{
-				RenderGraphShaderConstants& pointLightsConstants = renderGraphStructure.ShaderConstants["POINT_LIGHT_SHADOWMAPS"];
-				pointLightsConstants.Graphics.PixelShaderConstants.PushBack({ 2 });
+		//	RenderGraphDesc renderGraphDesc = {};
+		//	renderGraphDesc.Name = "Default Rendergraph";
+		//	renderGraphDesc.pRenderGraphStructureDesc = &renderGraphStructure;
+		//	renderGraphDesc.BackBufferCount = BACK_BUFFER_COUNT;
+		//	renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
 
-				RenderGraphShaderConstants& shadingConstants = renderGraphStructure.ShaderConstants["DEMO"];
-				shadingConstants.Graphics.PixelShaderConstants.PushBack({ 2 });
-			}
+		//	m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
+		//	m_pRenderGraph->Init(&renderGraphDesc);
+		//}
 
-			RenderGraphDesc renderGraphDesc = {};
-			renderGraphDesc.Name = "Default Rendergraph";
-			renderGraphDesc.pRenderGraphStructureDesc = &renderGraphStructure;
-			renderGraphDesc.BackBufferCount = BACK_BUFFER_COUNT;
-			renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
+		////Update RenderGraph with Back Buffer
+		//{
+		//	for (uint32 v = 0; v < BACK_BUFFER_COUNT; v++)
+		//	{
+		//		m_ppBackBuffers[v] = m_SwapChain->GetBuffer(v);
+		//		m_ppBackBufferViews[v] = m_SwapChain->GetBufferView(v);
+		//	}
 
-			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
-			m_pRenderGraph->Init(&renderGraphDesc);
-		}
+		//	ResourceUpdateDesc resourceUpdateDesc = {};
+		//	resourceUpdateDesc.ResourceName = RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+		//	resourceUpdateDesc.ExternalTextureUpdate.ppTextures = m_ppBackBuffers;
+		//	resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_ppBackBufferViews;
 
-		//Update RenderGraph with Back Buffer
-		{
-			for (uint32 v = 0; v < BACK_BUFFER_COUNT; v++)
-			{
-				m_ppBackBuffers[v] = m_SwapChain->GetBuffer(v);
-				m_ppBackBufferViews[v] = m_SwapChain->GetBufferView(v);
-			}
-
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
-			resourceUpdateDesc.ExternalTextureUpdate.ppTextures = m_ppBackBuffers;
-			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_ppBackBufferViews;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
+		//	m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		//}
 
 		return true;
 	}

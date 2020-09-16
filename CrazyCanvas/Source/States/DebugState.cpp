@@ -4,6 +4,12 @@
 #include "Resources/ResourceManager.h"
 
 #include "ECS/ECSCore.h"
+
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
+
+#include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Physics/Transform.h"
+
 using namespace LambdaEngine;
 
 DebugState::DebugState()
@@ -23,9 +29,10 @@ DebugState::~DebugState()
 void DebugState::Init()
 {
 	// Create Systems
-	//RenderSystem::GetInstance()->InitSystem();
+	RenderSystem::GetInstance().Init();
 
-	Entity e = ECSCore::GetInstance()->CreateEntity();
+	Entity e0 = ECSCore::GetInstance()->CreateEntity();
+	Entity e1 = ECSCore::GetInstance()->CreateEntity();
 
 	MaterialProperties materialProperties;
 	materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
@@ -41,6 +48,33 @@ void DebugState::Init()
 		GUID_TEXTURE_DEFAULT_COLOR_MAP,
 		GUID_TEXTURE_DEFAULT_COLOR_MAP,
 		materialProperties);
+
+	//StaticMeshComponent staticMeshComponent =
+	//{
+	//	{
+	//		.MeshGUID = sphereMeshGUID,
+	//		.MaterialGUID = Material,
+	//	}
+	//};
+
+	//DynamicMeshComponent dynamicMeshComponent =
+	//{
+	//	{
+	//		.MeshGUID = sphereMeshGUID,
+	//		.MaterialGUID = Material,
+	//	}
+	//};
+
+	ECSCore::GetInstance()->AddComponent<PositionComponent>(e0, { {0.0f, 0.0f, 0.0f} });
+	ECSCore::GetInstance()->AddComponent<ScaleComponent>(e0, { {0.0f, 0.0f, 0.0f} });
+	ECSCore::GetInstance()->AddComponent<RotationComponent>(e0, { glm::identity<glm::quat>() });
+	ECSCore::GetInstance()->AddComponent<StaticMeshComponent>(e0, StaticMeshComponent{ {.MeshGUID = sphereMeshGUID, .MaterialGUID = Material} });
+
+	ECSCore::GetInstance()->AddComponent<PositionComponent>(e1, { {0.0f, 0.0f, 0.0f} });
+	ECSCore::GetInstance()->AddComponent<ScaleComponent>(e1, { {0.0f, 0.0f, 0.0f} });
+	ECSCore::GetInstance()->AddComponent<RotationComponent>(e1, { glm::identity<glm::quat>() });
+	ECSCore::GetInstance()->AddComponent<DynamicMeshComponent>(e1, DynamicMeshComponent{ {.MeshGUID = sphereMeshGUID, .MaterialGUID = Material} });
+
 
 	// Load Scene SceneManager::Get("SceneName").Load()
 
