@@ -228,15 +228,14 @@ namespace LambdaEngine
 			uint32					PipelineStageMask				= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			ERenderStageDrawType	DrawType						= ERenderStageDrawType::NONE;
-			Resource*				pIndexBufferResource			= nullptr;
-			Resource*				pIndirectArgsBufferResource		= nullptr;
 
 			uint64					PipelineStateID					= 0;
 			PipelineLayout*			pPipelineLayout					= nullptr;
-			uint32					TextureSubDescriptorSetCount	= 1;
-			uint32					MaterialsRenderedPerPass		= 1;
-			DescriptorSet**			ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
 			DescriptorSet**			ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
+			uint32					BufferSetIndex					= 0;
+			DescriptorSet**			ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount
+			uint32					TextureSetIndex					= 0;
+			uint32					DrawSetIndex					= 0;
 			RenderPass*				pRenderPass						= nullptr;
 			RenderPass*				pDisabledRenderPass				= nullptr;
 

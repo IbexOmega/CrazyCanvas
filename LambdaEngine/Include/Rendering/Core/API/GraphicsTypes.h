@@ -445,6 +445,25 @@ namespace LambdaEngine
 		QUERY_PIPELINE_STATISTICS_FLAG_COMPUTE_SHADER_INVOCATIONS					= FLAG(11),
 	};
 
+	typedef uint32 FAcceleratioStructureInstanceFlags;
+	enum FAcceleratioStructureInstanceFlag : FAcceleratioStructureInstanceFlags
+	{
+		RAY_TRACING_INSTANCE_FLAG_NONE				= 0,
+		RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED	= FLAG(0),
+		RAY_TRACING_INSTANCE_FLAG_FRONT_CCW			= FLAG(1),
+		RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE		= FLAG(2),
+		RAY_TRACING_INSTANCE_FLAG_FORCE_NO_OPAQUE	= FLAG(3),
+	};
+
+	typedef uint32 FDescriptorSetLayoutsFlags;
+	enum FDescriptorSetLayoutsFlag : FDescriptorSetLayoutsFlags
+	{
+		DESCRIPTOR_SET_LAYOUT_FLAG_NONE						= 0,
+		DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR			= FLAG(0),
+		DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL	= FLAG(1),
+
+	};
+
 	enum class EVertexInputRate : uint8
 	{
 		VERTEX_INPUT_NONE			= 0,

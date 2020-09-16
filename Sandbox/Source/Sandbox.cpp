@@ -78,7 +78,7 @@ Sandbox::Sandbox()
 	ShaderReflection shaderReflection;
 	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
 
-	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
+	m_pScene = DBG_NEW Scene();
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderSystem::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
@@ -88,19 +88,9 @@ Sandbox::Sandbox()
 	sceneDesc.RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
 	m_pScene->Init(sceneDesc);
 
-	m_DirectionalLightAngle	= glm::half_pi<float>();
-	m_DirectionalLightStrength[0] = DEFAULT_DIR_LIGHT_R;
-	m_DirectionalLightStrength[1] = DEFAULT_DIR_LIGHT_G;
-	m_DirectionalLightStrength[2] = DEFAULT_DIR_LIGHT_B;
-	m_DirectionalLightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
-
-	DirectionalLight directionalLight;
-	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
-	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
-
 	EScene scene = EScene::TESTING;
 
-	m_pScene->SetDirectionalLight(directionalLight);
+	//m_pScene->SetDirectionalLight(directionalLight);
 
 	AreaLightObject areaLight;
 	areaLight.Type = EAreaLightType::QUAD;
@@ -110,22 +100,22 @@ Sandbox::Sandbox()
 	{
 		//Lights
 		{
-			glm::vec3 position(0.0f, 6.0f, 0.0f);
-			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
-			glm::vec3 scale(1.5f);
+			//glm::vec3 position(0.0f, 6.0f, 0.0f);
+			//glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+			//glm::vec3 scale(1.5f);
 
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
+			//glm::mat4 transform(1.0f);
+			//transform = glm::translate(transform, position);
+			//transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			//transform = glm::scale(transform, scale);
 
-			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
-			instanceIndexAndTransform.Position		= position;
-			instanceIndexAndTransform.Rotation		= rotation;
-			instanceIndexAndTransform.Scale			= scale;
+			//InstanceIndexAndTransform instanceIndexAndTransform;
+			//instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
+			//instanceIndexAndTransform.Position		= position;
+			//instanceIndexAndTransform.Rotation		= rotation;
+			//instanceIndexAndTransform.Scale			= scale;
 
-			m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
+			//m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 		}
 
 		//Scene
@@ -142,10 +132,12 @@ Sandbox::Sandbox()
 			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
 			transform = glm::scale(transform, scale);
 
-			for (GameObject& gameObject : sceneGameObjects)
+			for (uint32 i = 0; i < sceneGameObjects.GetSize(); i++)
 			{
+				m_pScene->AddGameObject(i, sceneGameObjects[i], transform, true, false);
+
 				InstanceIndexAndTransform instanceIndexAndTransform;
-				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+				instanceIndexAndTransform.InstanceIndex = i;
 				instanceIndexAndTransform.Position = position;
 				instanceIndexAndTransform.Rotation = rotation;
 				instanceIndexAndTransform.Scale = scale;
@@ -158,22 +150,22 @@ Sandbox::Sandbox()
 	{
 		//Lights
 		{
-			glm::vec3 position(0.0f, 1.95f, 0.0f);
-			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
-			glm::vec3 scale(0.2f);
+			//glm::vec3 position(0.0f, 1.95f, 0.0f);
+			//glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+			//glm::vec3 scale(0.2f);
 
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
+			//glm::mat4 transform(1.0f);
+			//transform = glm::translate(transform, position);
+			//transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			//transform = glm::scale(transform, scale);
 
-			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
-			instanceIndexAndTransform.Position		= position;
-			instanceIndexAndTransform.Rotation		= rotation;
-			instanceIndexAndTransform.Scale			= scale;
+			//InstanceIndexAndTransform instanceIndexAndTransform;
+			//instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
+			//instanceIndexAndTransform.Position		= position;
+			//instanceIndexAndTransform.Rotation		= rotation;
+			//instanceIndexAndTransform.Scale			= scale;
 
-			m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
+			//m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 		}
 
 		//Scene
@@ -190,10 +182,12 @@ Sandbox::Sandbox()
 			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
 			transform = glm::scale(transform, scale);
 
-			for (GameObject& gameObject : sceneGameObjects)
+			for (uint32 i = 0; i < sceneGameObjects.GetSize(); i++)
 			{
+				m_pScene->AddGameObject(i, sceneGameObjects[i], transform, true, false);
+
 				InstanceIndexAndTransform instanceIndexAndTransform;
-				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+				instanceIndexAndTransform.InstanceIndex = i;
 				instanceIndexAndTransform.Position = position;
 				instanceIndexAndTransform.Rotation = rotation;
 				instanceIndexAndTransform.Scale = scale;
@@ -204,24 +198,26 @@ Sandbox::Sandbox()
 	}
 	else if (scene == EScene::TESTING)
 	{
+		uint32 entityID = 0;
+
 		//Lights
 		{
-			glm::vec3 position(0.0f, 6.0f, 0.0f);
-			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
-			glm::vec3 scale(1.5f);
+			//glm::vec3 position(0.0f, 6.0f, 0.0f);
+			//glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+			//glm::vec3 scale(1.5f);
 
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
+			//glm::mat4 transform(1.0f);
+			//transform = glm::translate(transform, position);
+			//transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			//transform = glm::scale(transform, scale);
 
-			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
-			instanceIndexAndTransform.Position		= position;
-			instanceIndexAndTransform.Rotation		= rotation;
-			instanceIndexAndTransform.Scale			= scale;
+			//InstanceIndexAndTransform instanceIndexAndTransform;
+			//instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
+			//instanceIndexAndTransform.Position		= position;
+			//instanceIndexAndTransform.Rotation		= rotation;
+			//instanceIndexAndTransform.Scale			= scale;
 
-			m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
+			//m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 		}
 
 		//Scene
@@ -238,15 +234,18 @@ Sandbox::Sandbox()
 			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
 			transform = glm::scale(transform, scale);
 
-			for (GameObject& gameObject : sceneGameObjects)
+			for (uint32 i = 0; i < sceneGameObjects.GetSize(); i++)
 			{
+				m_pScene->AddGameObject(entityID, sceneGameObjects[i], transform, true, false);
+
 				InstanceIndexAndTransform instanceIndexAndTransform;
-				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+				instanceIndexAndTransform.InstanceIndex = entityID;
 				instanceIndexAndTransform.Position = position;
 				instanceIndexAndTransform.Rotation = rotation;
 				instanceIndexAndTransform.Scale = scale;
 
 				m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
+				entityID++;
 			}
 		}
 
@@ -287,13 +286,16 @@ Sandbox::Sandbox()
 					transform = glm::translate(transform, position);
 					transform = glm::scale(transform, scale);
 
+					m_pScene->AddGameObject(entityID, sphereGameObject, transform, true, false);
+
 					InstanceIndexAndTransform instanceIndexAndTransform;
-					instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(sphereGameObject, transform);
+					instanceIndexAndTransform.InstanceIndex = entityID;
 					instanceIndexAndTransform.Position		= position;
 					instanceIndexAndTransform.Rotation		= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
 					instanceIndexAndTransform.Scale			= scale;
 
 					m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
+					entityID++;
 				}
 			}
 		}
@@ -331,8 +333,10 @@ Sandbox::Sandbox()
 				materialProperties);
 
 
+			m_pScene->AddGameObject(0, sphereGameObject, transform, true, false);
+
 			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(sphereGameObject, transform);
+			instanceIndexAndTransform.InstanceIndex = 0;
 			instanceIndexAndTransform.Position = position;
 			instanceIndexAndTransform.Rotation = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
 			instanceIndexAndTransform.Scale = scale;

@@ -3,8 +3,12 @@
 
 #define BUFFER_SET_INDEX 0
 #define TEXTURE_SET_INDEX 1
+#define DRAW_SET_INDEX 2
 
 #define NO_BUFFERS_TEXTURE_SET_INDEX 0
+#define NO_BUFFERS_DRAW_SET_INDEX 1
+#define NO_TEXTURES_DRAW_SET_INDEX 1
+#define NO_BUFFERS_OR_TEXTURES_DRAW_SET_INDEX 0
 
 #define MAX_UNIQUE_MATERIALS 32
 
@@ -48,9 +52,14 @@ struct SPrimaryInstance
     uint    AccelerationStructureHandleBottom32;
 };
 
-struct SSecondaryInstance
+struct SInstance
 {
+    mat4    Transform;
     mat4    PrevTransform;
+    uint    MaterialSlot;
+    uint    Padding0;
+    uint    Padding1;
+    uint    Padding2;
 };
 
 struct SIndirectArg
