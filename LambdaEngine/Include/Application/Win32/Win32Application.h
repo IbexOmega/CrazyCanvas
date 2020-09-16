@@ -73,6 +73,8 @@ namespace LambdaEngine
 		virtual void SetInputMode(TSharedRef<Window> window, EInputMode inputMode) override final;
 		virtual EInputMode GetInputMode(TSharedRef<Window> window) const override final;
 
+		virtual void QueryCPUStatistics(CPUStatistics* pCPUStat) const override final;
+
 		virtual void SetActiveWindow(TSharedRef<Window> window)	override final;
 		virtual TSharedRef<Window> GetActiveWindow() const override final;
 

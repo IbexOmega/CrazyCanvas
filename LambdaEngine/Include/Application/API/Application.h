@@ -26,6 +26,13 @@ namespace LambdaEngine
 		INPUT_MODE_STANDARD	= 2, // Standard input from the applications event-loop
 	};
 
+	struct CPUStatistics
+	{
+		uint64 PhysicalMemoryAvailable	= 0;
+		uint64 PhysicalMemoryUsage		= 0;
+		uint64 PhysicalPeakMemoryUsage	= 0;
+	};
+
 	/*
 	* Application
 	*/
@@ -61,6 +68,8 @@ namespace LambdaEngine
 		virtual void SetMousePosition(int32 x, int32 y) = 0;
 		virtual void SetInputMode(TSharedRef<Window> window, EInputMode inputMode) = 0;
 		virtual EInputMode GetInputMode(TSharedRef<Window> window) const = 0;
+
+		virtual void QueryCPUStatistics(CPUStatistics* pCPUStat) const = 0;
 
 		virtual void SetActiveWindow(TSharedRef<Window> window)
 		{

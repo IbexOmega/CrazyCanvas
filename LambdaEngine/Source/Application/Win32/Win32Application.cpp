@@ -12,6 +12,7 @@
 #include "Input/Win32/Win32InputCodeTable.h"
 
 #include <windowsx.h>
+#include <Psapi.h>
 
 namespace LambdaEngine
 {
@@ -190,6 +191,23 @@ namespace LambdaEngine
 
 		// TODO: Return proper inputmode based on window
 		return m_InputMode;
+	}
+
+	void Win32Application::QueryCPUStatistics(CPUStatistics* pCPUStat) const
+	{
+		MEMORYSTATUSEX memInfo;
+		memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+		GlobalMemoryStatusEx(&memInfo);
+		DWORDLONG totalPhysicalMemory = memInfo.ullTotalPhys;
+
+		PROCESS_MEMORY_COUNTERS_EX pmc;
+		GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
+		SIZE_T physMemUsedByProcess = pmc.WorkingSetSize;
+		SIZE_T peakMemUsedByProcess = pmc.PeakWorkingSetSize;
+
+		pCPUStat->PhysicalMemoryAvailable	= totalPhysicalMemory;
+		pCPUStat->PhysicalMemoryUsage		= physMemUsedByProcess;
+		pCPUStat->PhysicalPeakMemoryUsage	= peakMemUsedByProcess;
 	}
 
 	void Win32Application::ProcessStoredMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam, int32 mouseDeltaX, int32 mouseDeltaY)
