@@ -30,8 +30,13 @@ namespace LambdaEngine
 		template<typename Comp>
 		bool HasType() const;
 
+		bool HasType(std::type_index componentType) const;
+
+		IComponentArray* GetComponentArray(std::type_index componentType);
+		const IComponentArray* GetComponentArray(std::type_index componentType) const;
+
 		template<typename Comp>
-		ComponentArray<Comp>* GetArray();
+		ComponentArray<Comp>* GetComponentArray();
 
 	private:
 		std::unordered_map<std::type_index, uint32> m_CompTypeToArrayMap;
@@ -57,8 +62,8 @@ namespace LambdaEngine
 		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to add a component which was not registered!");
 
 		// Fetch the corresponding ComponentArray for that component type.
-		ComponentArray<Comp>* compArray = GetArray<Comp>();
-		
+		ComponentArray<Comp>* compArray = GetComponentArray<Comp>();
+
 		// Add the new component.
 		return compArray->Insert(entity, component);
 	}
@@ -70,7 +75,7 @@ namespace LambdaEngine
 		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to remove a component which was not registered!");
 
 		// Fetch the corresponding ComponentArray for that component type.
-		ComponentArray<Comp>* compArray = GetArray<Comp>();
+		ComponentArray<Comp>* compArray = GetComponentArray<Comp>();
 
 		// Add the new component.
 		compArray->Remove(entity);
@@ -83,7 +88,7 @@ namespace LambdaEngine
 		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to fetch a component which was not registered!");
 
 		// Fetch the corresponding ComponentArray for that component type.
-		ComponentArray<Comp>* compArray = GetArray<Comp>();
+		ComponentArray<Comp>* compArray = GetComponentArray<Comp>();
 
 		return compArray->GetData(entity);
 	}
@@ -94,11 +99,14 @@ namespace LambdaEngine
 		return m_CompTypeToArrayMap.find(Comp::s_TID) != m_CompTypeToArrayMap.end();
 	}
 
-	template<typename Comp>
-	inline ComponentArray<Comp>* ComponentStorage::GetArray()
+	inline bool ComponentStorage::HasType(std::type_index componentType) const
 	{
-		uint32 index = m_CompTypeToArrayMap[Comp::s_TID];
-		return static_cast<ComponentArray<Comp>*>(m_ComponentArrays[index]);
+		return m_CompTypeToArrayMap.find(componentType) != m_CompTypeToArrayMap.end();
+	}
 
+	template<typename Comp>
+	inline ComponentArray<Comp>* ComponentStorage::GetComponentArray()
+	{
+		return static_cast<ComponentArray<Comp>*>(GetComponentArray(Comp::s_TID));
 	}
 }

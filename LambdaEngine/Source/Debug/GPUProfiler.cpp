@@ -1,5 +1,6 @@
 #include "PreCompiled.h"
 #include "Debug/GPUProfiler.h"
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/QueryHeap.h"
 #include "Rendering/RenderAPI.h"

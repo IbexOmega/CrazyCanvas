@@ -1,8 +1,7 @@
 #pragma once
 
-#include "Containers/IDVector.h"
 #include "ECS/Component.h"
-#include "ECS/ComponentHandler.h"
+#include "ECS/Entity.h"
 #include "Math/Math.h"
 
 namespace LambdaEngine
@@ -32,21 +31,5 @@ namespace LambdaEngine
 		float FarPlane;
 	};
 
-	class LAMBDA_API CameraHandler : public ComponentHandler
-	{
-	public:
-		CameraHandler();
-		~CameraHandler() = default;
-
-		bool InitHandler() override final { return true; }
-
-		ViewProjectionMatrices& GetViewProjectionMatrices(Entity entity) { return m_VPMatrices.IndexID(entity); }
-
-		void CreateViewProjectionMatrices(Entity entity, const ViewProjectionDesc& matricesDesc);
-		void CreateCameraProperties(Entity entity, const glm::vec2& jitter);
-
-	private:
-		IDDVector<ViewProjectionMatrices> m_VPMatrices;
-		IDDVector<CameraProperties> m_CameraProperties;
-	};
+	ViewProjectionMatrices CreateViewProjectionMatrices(Entity entity, const ViewProjectionDesc& matricesDesc);
 }

@@ -132,8 +132,6 @@ namespace LambdaEngine
 		DECL_REMOVE_MOVE(RenderSystem);
 		~RenderSystem() = default;
 
-		bool InitSystem();
-
 		bool Init();
 
 		bool Release();
@@ -145,7 +143,7 @@ namespace LambdaEngine
 		void SetCamera(const Camera* pCamera);
 
 		CommandList* AcquireGraphicsCopyCommandList();
-		CommandList* AcquireComputeCopyCommandList();	
+		CommandList* AcquireComputeCopyCommandList();
 
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
 

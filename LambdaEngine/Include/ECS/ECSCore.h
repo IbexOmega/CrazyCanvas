@@ -1,12 +1,10 @@
 #pragma once
 
-#include "ECS/ComponentHandler.h"
-#include "ECS/ECSBooter.h"
+#include "ECS/ComponentStorage.h"
 #include "ECS/EntityPublisher.h"
 #include "ECS/EntityRegistry.h"
 #include "ECS/JobScheduler.h"
 #include "ECS/System.h"
-#include "ECS/ComponentStorage.h"
 #include "Utilities/IDGenerator.h"
 
 #include <typeindex>
@@ -25,11 +23,13 @@ namespace LambdaEngine
         ECSCore(const ECSCore& other) = delete;
         void operator=(const ECSCore& other) = delete;
 
+        static void Release();
+
         void Tick(float dt);
 
         Entity CreateEntity() { return m_EntityRegistry.CreateEntity(); }
-        
-        // Add a component to a specific entity. 
+
+        // Add a component to a specific entity.
         template<typename Comp>
         Comp& AddComponent(Entity entity, const Comp& component);
 
@@ -51,41 +51,32 @@ namespace LambdaEngine
         void ScheduleJobASAP(const Job& job);
         void ScheduleJobPostFrame(const Job& job);
 
-        void EnqueueComponentHandlerRegistration(const ComponentHandlerRegistration& handlerRegistration);
-        void EnqueueComponentSubscriberRegistration(const Subscriber& subscriber);
-
-        // Registers and initializes component handlers and entity subscribers
-        void PerformRegistrations();
-
-        void PerformEntityDeletions();
-
         void AddRegistryPage();
         void DeregisterTopRegistryPage();
         void DeleteTopRegistryPage();
         void ReinstateTopRegistryPage();
 
-        void ComponentAdded(Entity entity, std::type_index componentType);
-        void ComponentDeleted(Entity entity, std::type_index componentType);
-
-        EntityPublisher* GetEntityPublisher()   { return &m_EntityPublisher; }
-        float GetDeltaTime() const              { return m_DeltaTime; }
+        float GetDeltaTime() const { return m_DeltaTime; }
 
     public:
-        static ECSCore* GetInstance() { return &s_Instance; }
+        static ECSCore* GetInstance() { return s_pInstance; }
 
     protected:
         friend EntitySubscriber;
-        void EnqueueEntitySubscriptions(const EntitySubscriberRegistration& subscriberRegistration, const std::function<bool()>& initFn, uint32* pSubscriberID);
+		uint32 SubscribeToEntities(const EntitySubscriberRegistration& subscriberRegistration) { return m_EntityPublisher.SubscribeToEntities(subscriberRegistration); }
+		void UnsubscribeFromEntities(uint32 subscriptionID) { m_EntityPublisher.UnsubscribeFromEntities(subscriptionID); }
 
         friend RegularWorker;
         uint32 ScheduleRegularJob(const Job& job, uint32_t phase)   { return m_JobScheduler.ScheduleRegularJob(job, phase); };
         void DescheduleRegularJob(uint32_t phase, uint32 jobID)     { m_JobScheduler.DescheduleRegularJob(phase, jobID); };
 
+	private:
+        void PerformEntityDeletions();
+
     private:
         EntityRegistry m_EntityRegistry;
         EntityPublisher m_EntityPublisher;
         JobScheduler m_JobScheduler;
-        ECSBooter m_ECSBooter;
         ComponentStorage m_ComponentStorage;
 
         TArray<Entity> m_EntitiesToDelete;
@@ -94,7 +85,7 @@ namespace LambdaEngine
         float m_DeltaTime;
 
     private:
-        static ECSCore s_Instance;
+        static ECSCore* s_pInstance;
     };
 
     template<typename Comp>
@@ -104,7 +95,9 @@ namespace LambdaEngine
             m_ComponentStorage.RegisterComponentType<Comp>();
 
         Comp& comp = m_ComponentStorage.AddComponent<Comp>(entity, component);
-        ComponentAdded(entity, Comp::s_TID);
+
+        m_EntityRegistry.RegisterComponentType(entity, Comp::s_TID);
+        m_EntityPublisher.PublishComponent(entity, Comp::s_TID);
 
         return comp;
     }
@@ -118,7 +111,7 @@ namespace LambdaEngine
     template<typename Comp>
     inline ComponentArray<Comp>* ECSCore::GetComponentArray()
     {
-        return m_ComponentStorage.GetArray<Comp>();
+        return m_ComponentStorage.GetComponentArray<Comp>();
     }
 
     template<typename Comp>
@@ -127,7 +120,8 @@ namespace LambdaEngine
         if (m_ComponentStorage.HasType<Comp>())
         {
             m_ComponentStorage.RemoveComponent<Comp>(entity);
-            ComponentDeleted(entity, Comp::s_TID);
+            m_EntityRegistry.DeregisterComponentType(entity, componentType);
+        	m_EntityPublisher.UnpublishComponent(entity, componentType);
             return true;
         }
         return false;

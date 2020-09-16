@@ -243,7 +243,13 @@ namespace LambdaEngine
 
 		EventQueue::UnregisterAll();
 
-		return ThreadPool::Release();
+		if (!ThreadPool::Release())
+		{
+			return false;
+		}
+
+		ECSCore::Release();
+		return true;
 	}
 
 	bool EngineLoop::PostRelease()

@@ -28,19 +28,9 @@ namespace LambdaEngine
         // Deregisters system
         virtual ~System() = default;
 
-        virtual bool InitSystem() = 0;
-
         virtual void Tick(float dt) = 0;
 
-        uint32 GetSystemID() const          { return m_SystemID; }
-        void SetSystemID(uint32 systemID)   { m_SystemID = systemID; }
-
     protected:
-        void EnqueueRegistration(const SystemRegistration& systemRegistration);
-
-        ComponentHandler* GetComponentHandler(const std::type_index& handlerType);
-
-    private:
-        uint32 m_SystemID = UINT32_MAX;
+        void RegisterSystem(const SystemRegistration& systemRegistration);
     };
 }

@@ -23,7 +23,7 @@
 
 #include "Engine/EngineConfig.h"
 
-namespace LambdaEngine 
+namespace LambdaEngine
 {
 	RenderSystem RenderSystem::s_Instance;
 
@@ -163,13 +163,13 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, MeshComponent::s_TID}, {NDA, StaticComponent::s_TID}}, {&transformComponents}, &m_StaticEntities},
-				{{{RW, MeshComponent::s_TID}, {NDA, DynamicComponent::s_TID}}, {&transformComponents}, &m_DynamicEntities},
+				{{{RW, MeshComponent::s_TID}, {NDA , StaticComponent::s_TID}}, {&transformComponents}, &m_StaticEntities},
+				{{{RW, MeshComponent::s_TID}, {NDA , DynamicComponent::s_TID}}, {&transformComponents},& m_DynamicEntities},
 				{{{RW, ViewProjectionMatrices::s_TID}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
 
-			EnqueueRegistration(systemReg);
+			RegisterSystem(systemReg);
 		}
 
 		return true;
@@ -423,7 +423,7 @@ namespace LambdaEngine
 				materialSlot = materialSlotIt->second;
 			}
 		}
-		
+
 		InstanceKey instanceKey = {};
 		instanceKey.MeshKey			= meshKey;
 		instanceKey.InstanceIndex	= meshAndInstancesIt->second.Instances.GetSize();
@@ -451,7 +451,7 @@ namespace LambdaEngine
 
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
-			LOG_ERROR("[RenderSystem]: Tried to update transform of an enitity which is not registered");
+			LOG_ERROR("[RenderSystem]: Tried to update transform of an entity which is not registered");
 			return;
 		}
 
@@ -459,7 +459,7 @@ namespace LambdaEngine
 
 		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
 		{
-			LOG_ERROR("[RenderSystem]: Tried to update transform of an enitity which has no MeshAndInstancesMap entry");
+			LOG_ERROR("[RenderSystem]: Tried to update transform of an entity which has no MeshAndInstancesMap entry");
 			return;
 		}
 
@@ -589,7 +589,7 @@ namespace LambdaEngine
 
 				pDirtyInstanceBufferEntry->pInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			}
-			
+
 			pCommandList->CopyBuffer(pDirtyInstanceBufferEntry->pInstanceStagingBuffer, 0, pDirtyInstanceBufferEntry->pInstanceBuffer, 0, requiredBufferSize);
 		}
 
@@ -645,7 +645,7 @@ namespace LambdaEngine
 	void RenderSystem::UpdateRenderGraphFromScene()
 	{
 		UpdateDrawArgs();
-	
+
 		{
 			ResourceUpdateDesc resourceUpdateDesc				= {};
 			resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
