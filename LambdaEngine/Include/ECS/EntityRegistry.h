@@ -2,6 +2,7 @@
 
 #include "Containers/IDVector.h"
 #include "ECS/Entity.h"
+#include "Threading/API/SpinLock.h"
 #include "Utilities/IDGenerator.h"
 
 #include <stack>
@@ -17,7 +18,7 @@ namespace LambdaEngine
     {
     public:
         EntityRegistry();
-        ~EntityRegistry();
+        ~EntityRegistry() = default;
 
         void RegisterComponentType(Entity entity, std::type_index componentType);
         void DeregisterComponentType(Entity entity, std::type_index componentType);
@@ -35,5 +36,6 @@ namespace LambdaEngine
     private:
         std::stack<EntityRegistryPage> m_EntityPages;
         IDGenerator m_EntityIDGen;
+        mutable SpinLock m_Lock;
     };
 }

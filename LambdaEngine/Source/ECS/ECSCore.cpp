@@ -66,7 +66,7 @@ namespace LambdaEngine
                 auto containerItr = componentStorage.find(componentType);
                 ComponentStorage& component = containerItr->second;
 
-                if (component.ComponentDestructor != nullptr)
+                if (component.ComponentDestructor)
                 {
                     component.ComponentDestructor(entity);
                 }
