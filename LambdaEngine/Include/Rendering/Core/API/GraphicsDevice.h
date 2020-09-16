@@ -5,6 +5,8 @@
 
 #include "Application/API/Window.h"
 
+#include "Containers/TArray.h"
+
 namespace LambdaEngine
 {
 	struct FenceDesc;
