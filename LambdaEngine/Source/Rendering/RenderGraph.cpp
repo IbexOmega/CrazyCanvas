@@ -23,8 +23,6 @@
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/IRenderGraphCreateHandler.h"
 
-#include "Game/Scene.h"
-
 #include "Log/Log.h"
 
 #include "Application/API/CommonApplication.h"

@@ -91,17 +91,6 @@ namespace LambdaEngine
 		TEXTURE_CUBE			= 1
 	};
 
-	struct DrawArg
-	{
-		Buffer* pVertexBuffer		= nullptr;
-		uint64	VertexBufferSize	= 0;
-		Buffer* pIndexBuffer		= nullptr;
-		uint32	IndexCount			= 0;
-		Buffer* pInstanceBuffer		= nullptr;
-		uint64	InstanceBufferSize	= 0;
-		uint32	InstanceCount		= 0;
-	};
-
 	/*-----------------------------------------------------------------Resource Structs Begin-----------------------------------------------------------------*/
 
 	struct RenderGraphResourceDesc 
@@ -258,6 +247,17 @@ namespace LambdaEngine
 	struct SynchronizationStageDesc
 	{
 		TArray<RenderGraphResourceSynchronizationDesc> Synchronizations;
+	};
+
+	struct DrawArg
+	{
+		Buffer* pVertexBuffer		= nullptr;
+		uint64	VertexBufferSize	= 0;
+		Buffer* pIndexBuffer		= nullptr;
+		uint32	IndexCount			= 0;
+		Buffer* pInstanceBuffer		= nullptr;
+		uint64	InstanceBufferSize	= 0;
+		uint32	InstanceCount		= 0;
 	};
 
 	/*-----------------------------------------------------------------Synchronization Stage Structs End / Pipeline Stage Structs Begin-----------------------------------------------------------------*/

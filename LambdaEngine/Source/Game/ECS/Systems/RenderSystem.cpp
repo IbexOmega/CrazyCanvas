@@ -23,8 +23,6 @@
 
 #include "Engine/EngineConfig.h"
 
-#include "Game/Scene.h"
-
 namespace LambdaEngine 
 {
 	RenderSystem RenderSystem::s_Instance;
@@ -102,7 +100,7 @@ namespace LambdaEngine
 			renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
-			m_pRenderGraph->Init(&renderGraphDesc);
+			m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs);
 		}
 
 		//Update RenderGraph with Back Buffer
@@ -121,17 +119,89 @@ namespace LambdaEngine
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
+		// Per Frame Buffer
+		{
+			BufferDesc perFrameCopyBufferDesc = {};
+			perFrameCopyBufferDesc.DebugName		= "Scene Per Frame Copy Buffer";
+			perFrameCopyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+			perFrameCopyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+			perFrameCopyBufferDesc.SizeInBytes		= sizeof(PerFrameBuffer);
+
+			m_pPerFrameStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameCopyBufferDesc);
+
+			BufferDesc perFrameBufferDesc = {};
+			perFrameBufferDesc.DebugName			= "Scene Per Frame Buffer";
+			perFrameBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
+			perFrameBufferDesc.Flags				= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;;
+			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
+
+			m_pPerFrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameBufferDesc);
+		}
+
+		//Material Defaults
+		{
+			for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
+			{
+				m_FreeMaterialSlots.push(i);
+			}
+
+			Texture*		pDefaultColorMap		= ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_COLOR_MAP);
+			TextureView*	pDefaultColorMapView	= ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_COLOR_MAP);
+			Texture*		pDefaultNormalMap		= ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_NORMAL_MAP);
+			TextureView*	pDefaultNormalMapView	= ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_NORMAL_MAP);
+
+			for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
+			{
+				m_ppAlbedoMaps[i]				= pDefaultColorMap;
+				m_ppNormalMaps[i]				= pDefaultNormalMap;
+				m_ppAmbientOcclusionMaps[i]		= pDefaultColorMap;
+				m_ppRoughnessMaps[i]			= pDefaultColorMap;
+				m_ppMetallicMaps[i]				= pDefaultColorMap;
+				m_ppAlbedoMapViews[i]			= pDefaultColorMapView;
+				m_ppNormalMapViews[i]			= pDefaultNormalMapView;
+				m_ppAmbientOcclusionMapViews[i]	= pDefaultColorMapView;
+				m_ppRoughnessMapViews[i]		= pDefaultColorMapView;
+				m_ppMetallicMapViews[i]			= pDefaultColorMapView;
+			}
+		}
+
+		UpdateBuffers();
+
 		return true;
 	}
 
 	bool RenderSystem::InitSystem()
 	{
-		
 		return true;
 	}
 
 	bool RenderSystem::Release()
 	{
+		for (MeshAndInstancesMap::iterator meshAndInstanceIt = m_MeshAndInstancesMap.begin(); meshAndInstanceIt != m_MeshAndInstancesMap.end(); meshAndInstanceIt++)
+		{
+			SAFERELEASE(meshAndInstanceIt->second.pVertexBuffer);
+			SAFERELEASE(meshAndInstanceIt->second.pIndexBuffer);
+			SAFERELEASE(meshAndInstanceIt->second.pInstanceStagingBuffer);
+			SAFERELEASE(meshAndInstanceIt->second.pInstanceBuffer);
+		}
+
+		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
+		{
+			TArray<Buffer*>& buffersToRemove = m_BuffersToRemove[b];
+
+			for (Buffer* pStagingBuffer : buffersToRemove)
+			{
+				SAFERELEASE(pStagingBuffer);
+			}
+
+			buffersToRemove.Clear();
+		}
+
+		SAFERELEASE(m_pMaterialParametersStagingBuffer);
+		SAFERELEASE(m_pMaterialParametersBuffer);
+		SAFERELEASE(m_pPerFrameStagingBuffer);
+		SAFERELEASE(m_pPerFrameBuffer);
+
 		SAFEDELETE(m_pRenderGraph);
 
 		if (m_SwapChain)
@@ -154,9 +224,9 @@ namespace LambdaEngine
 	{
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
-		ComponentArray< PositionComponent > * pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
-		ComponentArray< RotationComponent > * pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
-		ComponentArray< ScaleComponent > * pScaleComponents = pECSCore->GetComponentArray<ScaleComponent>();
+		ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
+		ComponentArray<RotationComponent>* pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
+		ComponentArray<ScaleComponent>* pScaleComponents = pECSCore->GetComponentArray<ScaleComponent>();
 
 		for (Entity entity : m_DynamicEntities.GetIDs())
 		{
@@ -172,7 +242,9 @@ namespace LambdaEngine
 
 				UpdateTransform(entity, transform);
 
-				position.Dirty = rotation.Dirty = scale.Dirty = false;
+				position.Dirty	= false;
+				rotation.Dirty	= false;
+				scale.Dirty		= false;
 			}
 		}
 	}
@@ -181,39 +253,9 @@ namespace LambdaEngine
 	{
 		m_BackBufferIndex = uint32(m_SwapChain->GetCurrentBackBufferIndex());
 
-		CommandList* pGraphicsCommandList = m_pRenderGraph->AcquireGraphicsCopyCommandList();
-
-		// Update data on GPU
-		//Release Staging Buffers from older frame
-		//Todo: Better solution for this
-		{
-			TArray<Buffer*>& buffersToRemove = m_BuffersToRemove[m_ModFrameIndex];
-
-			for (Buffer* pStagingBuffer : buffersToRemove)
-			{
-				SAFERELEASE(pStagingBuffer);
-			}
-
-			buffersToRemove.Clear();
-		}
-
-		//Update Per Frame Data
-		{
-			m_PerFrameData.FrameIndex = m_FrameIndex;
-			m_PerFrameData.RandomSeed = uint32(Random::Int32(INT32_MIN, INT32_MAX));
-
-			UpdatePerFrameBuffer(pGraphicsCommandList);
-		}
-
-		//Update Instance Data
-		{
-			UpdateInstanceBuffers(pGraphicsCommandList, m_ModFrameIndex);
-		}
-
-		//Update Empty MaterialData
-		{
-			UpdateMaterialPropertiesBuffer(pGraphicsCommandList, m_ModFrameIndex);
-		}
+		CleanBuffers();
+		UpdateBuffers();
+		UpdateDrawArgs();
 
 		m_pRenderGraph->Update();
 
@@ -250,7 +292,8 @@ namespace LambdaEngine
 		renderGraphDesc.BackBufferCount = BACK_BUFFER_COUNT;
 		renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
 
-		if (!m_pRenderGraph->Recreate(&renderGraphDesc))
+		m_RequiredDrawArgs.clear();
+		if (!m_pRenderGraph->Recreate(&renderGraphDesc, m_RequiredDrawArgs))
 		{
 			LOG_ERROR("[Renderer]: Failed to set new RenderGraph %s", name.c_str());
 		}
@@ -260,149 +303,14 @@ namespace LambdaEngine
 			UpdateRenderGraphFromScene();
 		}
 	}
-	void RenderSystem::UpdateRenderGraphFromScene()
-	{
-		/*{
-			Buffer* pBuffer = m_pScene->GetLightsBuffer();
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = SCENE_LIGHTS_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &pBuffer;
 
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Buffer* pBuffer = m_pScene->GetPerFrameBuffer();
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = PER_FRAME_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &pBuffer;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Buffer* pBuffer = m_pScene->GetMaterialProperties();
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = SCENE_MAT_PARAM_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &pBuffer;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Buffer* pBuffer = m_pScene->GetVertexBuffer();
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = SCENE_VERTEX_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &pBuffer;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Buffer* pBuffer = m_pScene->GetIndexBuffer();
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = SCENE_INDEX_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &pBuffer;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Buffer* pBuffer = m_pScene->GetPrimaryInstanceBuffer();
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = SCENE_PRIMARY_INSTANCE_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &pBuffer;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Buffer* pBuffer = m_pScene->GetSecondaryInstanceBuffer();
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = SCENE_SECONDARY_INSTANCE_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &pBuffer;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Buffer* pBuffer = m_pScene->GetIndirectArgsBuffer();
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = SCENE_INDIRECT_ARGS_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &pBuffer;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Texture** ppAlbedoMaps = m_pScene->GetAlbedoMaps();
-			Texture** ppNormalMaps = m_pScene->GetNormalMaps();
-			Texture** ppAmbientOcclusionMaps = m_pScene->GetAmbientOcclusionMaps();
-			Texture** ppMetallicMaps = m_pScene->GetMetallicMaps();
-			Texture** ppRoughnessMaps = m_pScene->GetRoughnessMaps();
-
-			TextureView** ppAlbedoMapViews = m_pScene->GetAlbedoMapViews();
-			TextureView** ppNormalMapViews = m_pScene->GetNormalMapViews();
-			TextureView** ppAmbientOcclusionMapViews = m_pScene->GetAmbientOcclusionMapViews();
-			TextureView** ppMetallicMapViews = m_pScene->GetMetallicMapViews();
-			TextureView** ppRoughnessMapViews = m_pScene->GetRoughnessMapViews();
-
-			std::vector<Sampler*> nearestSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetNearestSampler());
-
-			ResourceUpdateDesc albedoMapsUpdateDesc = {};
-			albedoMapsUpdateDesc.ResourceName = SCENE_ALBEDO_MAPS;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures = ppAlbedoMaps;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews = ppAlbedoMapViews;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers = nearestSamplers.data();
-
-			ResourceUpdateDesc normalMapsUpdateDesc = {};
-			normalMapsUpdateDesc.ResourceName = SCENE_NORMAL_MAPS;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures = ppNormalMaps;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews = ppNormalMapViews;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers = nearestSamplers.data();
-
-			ResourceUpdateDesc aoMapsUpdateDesc = {};
-			aoMapsUpdateDesc.ResourceName = SCENE_AO_MAPS;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures = ppAmbientOcclusionMaps;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews = ppAmbientOcclusionMapViews;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers = nearestSamplers.data();
-
-			ResourceUpdateDesc metallicMapsUpdateDesc = {};
-			metallicMapsUpdateDesc.ResourceName = SCENE_METALLIC_MAPS;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures = ppMetallicMaps;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews = ppMetallicMapViews;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers = nearestSamplers.data();
-
-			ResourceUpdateDesc roughnessMapsUpdateDesc = {};
-			roughnessMapsUpdateDesc.ResourceName = SCENE_ROUGHNESS_MAPS;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures = ppRoughnessMaps;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews = ppRoughnessMapViews;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers = nearestSamplers.data();
-
-			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&aoMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&metallicMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&roughnessMapsUpdateDesc);
-		}
-
-		if (m_pScene->IsRayTracingEnabled())
-		{
-			const AccelerationStructure* pTLAS = m_pScene->GetTLAS();
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = SCENE_TLAS;
-			resourceUpdateDesc.ExternalAccelerationStructure.pTLAS = pTLAS;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}*/
-	}
 	void RenderSystem::AddEntityInstance(Entity entity, CommandList* pCommandList, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated)
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
 		if (isStatic && animated)
 		{
-			LOG_ERROR("[--TBD--]: A static game object cannot also be animated!");
+			LOG_ERROR("[RenderSystem]: A static game object cannot also be animated!");
 			return;
 		}
 
@@ -496,17 +404,17 @@ namespace LambdaEngine
 				materialSlot = m_FreeMaterialSlots.top();
 				m_FreeMaterialSlots.pop();
 
-				m_ppSceneAlbedoMaps[materialSlot]					= pMaterial->pAlbedoMap;
-				m_ppSceneNormalMaps[materialSlot]					= pMaterial->pNormalMap;
-				m_ppSceneAmbientOcclusionMaps[materialSlot]			= pMaterial->pAmbientOcclusionMap;
-				m_ppSceneRoughnessMaps[materialSlot]				= pMaterial->pRoughnessMap;
-				m_ppSceneMetallicMaps[materialSlot]					= pMaterial->pMetallicMap;
-				m_ppSceneAlbedoMapViews[materialSlot]				= pMaterial->pAlbedoMapView;
-				m_ppSceneNormalMapViews[materialSlot]				= pMaterial->pNormalMapView;
-				m_ppSceneAmbientOcclusionMapViews[materialSlot]		= pMaterial->pAmbientOcclusionMapView;
-				m_ppSceneRoughnessMapViews[materialSlot]			= pMaterial->pRoughnessMapView;
-				m_ppSceneMetallicMapViews[materialSlot]				= pMaterial->pMetallicMapView;
-				m_pSceneMaterialProperties[materialSlot]			= pMaterial->Properties;
+				m_ppAlbedoMaps[materialSlot]				= pMaterial->pAlbedoMap;
+				m_ppNormalMaps[materialSlot]				= pMaterial->pNormalMap;
+				m_ppAmbientOcclusionMaps[materialSlot]		= pMaterial->pAmbientOcclusionMap;
+				m_ppRoughnessMaps[materialSlot]				= pMaterial->pRoughnessMap;
+				m_ppMetallicMaps[materialSlot]				= pMaterial->pMetallicMap;
+				m_ppAlbedoMapViews[materialSlot]			= pMaterial->pAlbedoMapView;
+				m_ppNormalMapViews[materialSlot]			= pMaterial->pNormalMapView;
+				m_ppAmbientOcclusionMapViews[materialSlot]	= pMaterial->pAmbientOcclusionMapView;
+				m_ppRoughnessMapViews[materialSlot]			= pMaterial->pRoughnessMapView;
+				m_ppMetallicMapViews[materialSlot]			= pMaterial->pMetallicMapView;
+				m_pMaterialProperties[materialSlot]			= pMaterial->Properties;
 
 				m_MaterialMap.insert({ materialGUID, materialSlot });
 			}
@@ -528,6 +436,13 @@ namespace LambdaEngine
 		meshAndInstancesIt->second.Instances.PushBack(instance);
 
 		m_DirtyInstanceBuffers.insert(&meshAndInstancesIt->second);
+
+		//This needs to come from the Entity in some way
+		uint32 drawArgHash = 0xFFFFFFFF;
+		if (m_RequiredDrawArgs.count(drawArgHash))
+		{
+			m_DirtyDrawArgs.insert(drawArgHash);
+		}
 	}
 
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& transform)
@@ -536,7 +451,7 @@ namespace LambdaEngine
 
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
-			LOG_ERROR("[--TBD--]: Tried to update transform of an enitity which is not registered");
+			LOG_ERROR("[RenderSystem]: Tried to update transform of an enitity which is not registered");
 			return;
 		}
 
@@ -544,7 +459,7 @@ namespace LambdaEngine
 
 		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
 		{
-			LOG_ERROR("[--TBD--]: Tried to update transform of an enitity which has no MeshAndInstancesMap entry");
+			LOG_ERROR("[RenderSystem]: Tried to update transform of an enitity which has no MeshAndInstancesMap entry");
 			return;
 		}
 
@@ -560,7 +475,86 @@ namespace LambdaEngine
 
 	}
 
-	void RenderSystem::UpdateInstanceBuffers(CommandList* pCommandList, uint64 modFrameIndex)
+	void RenderSystem::CleanBuffers()
+	{
+		// Update data on GPU
+		//Release Staging Buffers from older frame
+		//Todo: Better solution for this
+		TArray<Buffer*>& buffersToRemove = m_BuffersToRemove[m_ModFrameIndex];
+
+		for (Buffer* pBuffer : buffersToRemove)
+		{
+			SAFERELEASE(pBuffer);
+		}
+
+		buffersToRemove.Clear();
+	}
+
+	void RenderSystem::UpdateBuffers()
+	{
+		CommandList* pGraphicsCommandList = m_pRenderGraph->AcquireGraphicsCopyCommandList();
+		//CommandList* pComputeCommandList = m_pRenderGraph->AcquireGraphicsCopyCommandList();
+
+		//Update Per Frame Data
+		{
+			m_PerFrameData.FrameIndex = 0;
+			m_PerFrameData.RandomSeed = uint32(Random::Int32(INT32_MIN, INT32_MAX));
+
+			UpdatePerFrameBuffer(pGraphicsCommandList);
+		}
+
+		//Update Instance Data
+		{
+			UpdateInstanceBuffers(pGraphicsCommandList);
+		}
+
+		//Update Empty MaterialData
+		{
+			UpdateMaterialPropertiesBuffer(pGraphicsCommandList);
+		}
+	}
+
+	void RenderSystem::UpdateDrawArgs()
+	{
+		//Should we check for Draw Args to be removed here?
+
+		if (!m_DirtyDrawArgs.empty())
+		{
+			for (uint32 drawArgMask : m_DirtyDrawArgs)
+			{
+				TArray<DrawArg> drawArgs;
+				CreateDrawArgs(drawArgs, drawArgMask);
+
+				//Create Resource Update for RenderGraph
+				ResourceUpdateDesc resourceUpdateDesc					= {};
+				resourceUpdateDesc.ResourceName							= SCENE_DRAW_ARGS;
+				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsMask	= drawArgMask;
+				resourceUpdateDesc.ExternalDrawArgsUpdate.pDrawArgs		= drawArgs.GetData();
+				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsCount	= drawArgs.GetSize();
+
+				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+			}
+		}
+	}
+
+	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const
+	{
+		for (MeshAndInstancesMap::const_iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
+		{
+			//Todo: Check Key (or whatever we end up using)
+			DrawArg drawArg = {};
+			drawArg.pVertexBuffer		= meshAndInstancesIt->second.pVertexBuffer;
+			drawArg.VertexBufferSize	= meshAndInstancesIt->second.pVertexBuffer->GetDesc().SizeInBytes;
+			drawArg.pIndexBuffer		= meshAndInstancesIt->second.pIndexBuffer;
+			drawArg.IndexCount			= meshAndInstancesIt->second.IndexCount;
+			drawArg.pInstanceBuffer		= meshAndInstancesIt->second.pInstanceBuffer;
+			drawArg.InstanceBufferSize	= meshAndInstancesIt->second.pInstanceBuffer->GetDesc().SizeInBytes;
+			drawArg.InstanceCount		= meshAndInstancesIt->second.Instances.GetSize();
+			drawArgs.PushBack(drawArg);
+		}
+	}
+
+	void RenderSystem::UpdateInstanceBuffers(CommandList* pCommandList)
 	{
 		for (MeshEntry* pDirtyInstanceBufferEntry : m_DirtyInstanceBuffers)
 		{
@@ -568,7 +562,7 @@ namespace LambdaEngine
 
 			if (pDirtyInstanceBufferEntry->pInstanceStagingBuffer == nullptr || pDirtyInstanceBufferEntry->pInstanceStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 			{
-				if (pDirtyInstanceBufferEntry->pInstanceStagingBuffer != nullptr) m_BuffersToRemove[modFrameIndex].PushBack(pDirtyInstanceBufferEntry->pInstanceStagingBuffer);
+				if (pDirtyInstanceBufferEntry->pInstanceStagingBuffer != nullptr) m_BuffersToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pInstanceStagingBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "Instance Staging Buffer";
@@ -585,7 +579,7 @@ namespace LambdaEngine
 
 			if (pDirtyInstanceBufferEntry->pInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 			{
-				if (pDirtyInstanceBufferEntry->pInstanceBuffer != nullptr) m_BuffersToRemove[modFrameIndex].PushBack(pDirtyInstanceBufferEntry->pInstanceBuffer);
+				if (pDirtyInstanceBufferEntry->pInstanceBuffer != nullptr) m_BuffersToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pInstanceBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName		= "Instance Buffer";
@@ -611,13 +605,13 @@ namespace LambdaEngine
 		pCommandList->CopyBuffer(m_pPerFrameStagingBuffer, 0, m_pPerFrameBuffer, 0, sizeof(PerFrameBuffer));
 	}
 
-	void RenderSystem::UpdateMaterialPropertiesBuffer(CommandList* pCommandList, uint64 modFrameIndex)
+	void RenderSystem::UpdateMaterialPropertiesBuffer(CommandList* pCommandList)
 	{
-		uint32 requiredBufferSize = sizeof(m_pSceneMaterialProperties);
+		uint32 requiredBufferSize = sizeof(m_pMaterialProperties);
 
 		if (m_pMaterialParametersStagingBuffer == nullptr || m_pMaterialParametersStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 		{
-			if (m_pMaterialParametersStagingBuffer != nullptr) m_BuffersToRemove[modFrameIndex].PushBack(m_pMaterialParametersStagingBuffer);
+			if (m_pMaterialParametersStagingBuffer != nullptr) m_BuffersToRemove[m_ModFrameIndex].PushBack(m_pMaterialParametersStagingBuffer);
 
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Material Properties Staging Buffer";
@@ -629,12 +623,12 @@ namespace LambdaEngine
 		}
 
 		void* pMapped = m_pMaterialParametersStagingBuffer->Map();
-		memcpy(pMapped, m_pSceneMaterialProperties, requiredBufferSize);
+		memcpy(pMapped, m_pMaterialProperties, requiredBufferSize);
 		m_pMaterialParametersStagingBuffer->Unmap();
 
 		if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 		{
-			if (m_pMaterialParametersBuffer != nullptr) m_BuffersToRemove[modFrameIndex].PushBack(m_pMaterialParametersBuffer);
+			if (m_pMaterialParametersBuffer != nullptr) m_BuffersToRemove[m_ModFrameIndex].PushBack(m_pMaterialParametersBuffer);
 
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Material Properties Buffer";
@@ -648,4 +642,64 @@ namespace LambdaEngine
 		pCommandList->CopyBuffer(m_pMaterialParametersStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 	}
 
+	void RenderSystem::UpdateRenderGraphFromScene()
+	{
+		UpdateDrawArgs();
+	
+		{
+			ResourceUpdateDesc resourceUpdateDesc				= {};
+			resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pPerFrameBuffer;
+
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		}
+
+		{
+			ResourceUpdateDesc resourceUpdateDesc				= {};
+			resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pMaterialParametersBuffer;
+
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		}
+
+		{
+			std::vector<Sampler*> nearestSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetNearestSampler());
+
+			ResourceUpdateDesc albedoMapsUpdateDesc = {};
+			albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppAlbedoMaps;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppAlbedoMapViews;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+
+			ResourceUpdateDesc normalMapsUpdateDesc = {};
+			normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppNormalMaps;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppNormalMapViews;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+
+			ResourceUpdateDesc aoMapsUpdateDesc = {};
+			aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
+			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= m_ppAmbientOcclusionMaps;
+			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= m_ppAmbientOcclusionMapViews;
+			aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= nearestSamplers.data();
+
+			ResourceUpdateDesc metallicMapsUpdateDesc = {};
+			metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
+			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppMetallicMaps;
+			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppMetallicMapViews;
+			metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+
+			ResourceUpdateDesc roughnessMapsUpdateDesc = {};
+			roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppRoughnessMaps;
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppRoughnessMapViews;
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= nearestSamplers.data();
+
+			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&aoMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&metallicMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&roughnessMapsUpdateDesc);
+		}
+	}
 }

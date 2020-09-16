@@ -9,7 +9,6 @@
 #include "Resources/ResourceManager.h"
 
 #include "Rendering/RenderAPI.h"
-#include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraphEditor.h"
 #include "Rendering/RenderGraphSerializer.h"
@@ -30,8 +29,6 @@
 #include "Application/API/CommonApplication.h"
 
 #include "Engine/EngineConfig.h"
-
-#include "Game/Scene.h"
 
 #include "Time/API/Clock.h"
 
@@ -127,8 +124,6 @@ void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 void CrazyCanvas::Render(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
-
-	Renderer::Render();
 }
 
 namespace LambdaEngine

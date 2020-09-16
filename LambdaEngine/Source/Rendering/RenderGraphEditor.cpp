@@ -15,12 +15,13 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imnodes.h>
-#include "Rendering/Renderer.h"
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraphParser.h"
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/RenderGraphEditorHelpers.h"
+
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 namespace LambdaEngine
 {
@@ -94,7 +95,7 @@ namespace LambdaEngine
 	{
 		if (m_ApplyRenderGraph)
 		{
-			Renderer::SetRenderGraph("Dynamically Applied RenderGraph", &m_ParsedRenderGraphStructure);
+			RenderSystem::GetInstance().SetRenderGraph("Dynamically Applied RenderGraph", &m_ParsedRenderGraphStructure);
 			m_ApplyRenderGraph = false;
 		}
 	}

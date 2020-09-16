@@ -9,8 +9,6 @@
 
 #include "Audio/API/ISoundEffect3D.h"
 
-#include "Game/GameTypes.h"
-
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 
 #include "Material.h"

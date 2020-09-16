@@ -23,6 +23,8 @@
 #include "Rendering/Core/API/RenderPass.h"
 #include "Rendering/Core/API/PipelineLayout.h"
 
+#include "Rendering/RenderGraphTypes.h"
+
 #include "Game/Camera.h"
 
 namespace LambdaEngine
@@ -147,10 +149,11 @@ namespace LambdaEngine
 
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
 
-		RenderGraph*	GetRenderGraph()	{ return m_pRenderGraph; }
-		uint64			GetFrameIndex()		{ return m_FrameIndex; }
-		uint64			GetModFrameIndex()	{ return m_ModFrameIndex; }
+		RenderGraph*	GetRenderGraph()	{ return m_pRenderGraph;	}
+		uint64			GetFrameIndex()		{ return m_FrameIndex;		}
+		uint64			GetModFrameIndex()	{ return m_ModFrameIndex;	}
 		uint32			GetBufferIndex()	{ return m_BackBufferIndex; }
+
 	public:
 		static RenderSystem& GetInstance() { return s_Instance; }
 
@@ -162,9 +165,14 @@ namespace LambdaEngine
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(Entity entity);
 
-		void UpdateInstanceBuffers(CommandList* pCommandList, uint64 modFrameIndex);
+		void CleanBuffers();
+		void UpdateBuffers();
+		void UpdateDrawArgs();
+		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;
+
+		void UpdateInstanceBuffers(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
-		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList, uint64 modFrameIndex);
+		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
 
 		void UpdateRenderGraphFromScene();
 
@@ -181,38 +189,37 @@ namespace LambdaEngine
 		uint64					m_FrameIndex		= 0;
 		uint64					m_ModFrameIndex		= 0;
 		uint32					m_BackBufferIndex	= 0;
+		bool					m_RayTracingEnabled	= false;
 
-		MeshAndInstancesMap	m_MeshAndInstancesMap;
-		MaterialMap			m_MaterialMap;
+		//Data Supplied to the RenderGraph
+		MeshAndInstancesMap				m_MeshAndInstancesMap;
+		MaterialMap						m_MaterialMap;
+		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
 
-		Texture*			m_ppSceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppSceneNormalMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppSceneAmbientOcclusionMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppSceneRoughnessMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppSceneMetallicMaps[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppSceneAlbedoMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppSceneNormalMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppSceneAmbientOcclusionMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppSceneRoughnessMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppSceneMetallicMapViews[MAX_UNIQUE_MATERIALS];
-		MaterialProperties	m_pSceneMaterialProperties[MAX_UNIQUE_MATERIALS];
+		Texture*			m_ppAlbedoMaps[MAX_UNIQUE_MATERIALS];
+		Texture*			m_ppNormalMaps[MAX_UNIQUE_MATERIALS];
+		Texture*			m_ppAmbientOcclusionMaps[MAX_UNIQUE_MATERIALS];
+		Texture*			m_ppRoughnessMaps[MAX_UNIQUE_MATERIALS];
+		Texture*			m_ppMetallicMaps[MAX_UNIQUE_MATERIALS];
+		TextureView*		m_ppAlbedoMapViews[MAX_UNIQUE_MATERIALS];
+		TextureView*		m_ppNormalMapViews[MAX_UNIQUE_MATERIALS];
+		TextureView*		m_ppAmbientOcclusionMapViews[MAX_UNIQUE_MATERIALS];
+		TextureView*		m_ppRoughnessMapViews[MAX_UNIQUE_MATERIALS];
+		TextureView*		m_ppMetallicMapViews[MAX_UNIQUE_MATERIALS];
+		MaterialProperties	m_pMaterialProperties[MAX_UNIQUE_MATERIALS];
 		Buffer*				m_pMaterialParametersStagingBuffer		= nullptr;
 		Buffer*				m_pMaterialParametersBuffer				= nullptr;
 		TStack<uint32>		m_FreeMaterialSlots;
 
 		TSet<MeshEntry*>	m_DirtyInstanceBuffers;
-
 		TArray<Buffer*>		m_BuffersToRemove[BACK_BUFFER_COUNT];
 
-		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
+		PerFrameBuffer		m_PerFrameData;
+		Buffer*				m_pPerFrameStagingBuffer	= nullptr;
+		Buffer*				m_pPerFrameBuffer			= nullptr;
 
-		PerFrameBuffer	m_PerFrameData;
-		Buffer*			m_pPerFrameStagingBuffer	= nullptr;
-		Buffer*			m_pPerFrameBuffer			= nullptr;
-
-		bool							m_RayTracingEnabled		= false;
-		AccelerationStructure*			m_pTLAS					= nullptr;
-		TArray<AccelerationStructure*>	m_BLASs;
+		TSet<uint32>		m_DirtyDrawArgs;
+		TSet<uint32>		m_RequiredDrawArgs;
 
 	private:
 		static RenderSystem		s_Instance;

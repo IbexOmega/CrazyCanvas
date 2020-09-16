@@ -1,7 +1,6 @@
 #include "Log/Log.h"
 
 #include "Rendering/RenderAPI.h"
-#include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
 
 #include "Rendering/Core/API/CommandQueue.h"
