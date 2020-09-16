@@ -6,6 +6,7 @@
 #include "ECS/EntityRegistry.h"
 #include "ECS/JobScheduler.h"
 #include "ECS/System.h"
+#include "ECS/ComponentManager.h"
 #include "Utilities/IDGenerator.h"
 
 #include <typeindex>
@@ -27,6 +28,17 @@ namespace LambdaEngine
         void Tick(float dt);
 
         Entity CreateEntity() { return m_EntityRegistry.CreateEntity(); }
+        
+        // Add a component to a specific entity. 
+        template<typename Comp>
+        Comp& AddComponent(Entity entity, Comp component);
+
+        // Remove a component from a specific entity.
+        template<typename Comp>
+        bool RemoveComponent(Entity entity);
+
+        // Remove a specific entity.
+        void RemoveEntity(Entity entity);
 
         void ScheduleJobASAP(const Job& job);
         void ScheduleJobPostFrame(const Job& job);
@@ -68,6 +80,7 @@ namespace LambdaEngine
         EntityPublisher m_EntityPublisher;
         JobScheduler m_JobScheduler;
         ECSBooter m_ECSBooter;
+        ComponentManager m_ComponentManager;
 
         TArray<Entity> m_EntitiesToDelete;
 
@@ -77,4 +90,29 @@ namespace LambdaEngine
     private:
         static ECSCore s_Instance;
     };
+
+    template<typename Comp>
+    inline Comp& ECSCore::AddComponent(Entity entity, Comp component)
+    {
+        if (!m_ComponentManager.HasType<Comp>())
+            m_ComponentManager.RegisterComponentType<Comp>();
+
+        Comp& comp = m_ComponentManager.AddComponent<Comp>(entity, component);
+        ComponentAdded(entity, Comp::s_TID);
+
+        return comp;
+    }
+
+    template<typename Comp>
+    inline bool ECSCore::RemoveComponent(Entity entity)
+    {
+
+        if (m_ComponentManager.HasType<Comp>())
+        {
+            m_ComponentManager.RemoveComponent<Comp>(entity);
+            ComponentDeleted(entity, Comp::s_TID);
+            return true;
+        }
+        return false;
+    }
 }

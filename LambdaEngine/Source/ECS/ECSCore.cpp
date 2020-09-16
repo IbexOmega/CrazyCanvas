@@ -20,6 +20,12 @@ namespace LambdaEngine
         m_JobScheduler.Tick();
     }
 
+    void ECSCore::RemoveEntity(Entity entity)
+    {
+        m_ComponentManager.EntityDeleted(entity);
+        EnqueueEntityDeletion(entity);
+    }
+
     void ECSCore::ScheduleJobASAP(const Job& job)
     {
         m_JobScheduler.ScheduleJob(job, CURRENT_PHASE);
