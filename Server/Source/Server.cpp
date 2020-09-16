@@ -24,6 +24,10 @@
 
 #include "Rendering/Renderer.h"
 
+
+#include "Networking/API/NetworkSegment.h"
+#include "Networking/API/BinaryEncoder.h"
+
 Server::Server()
 {
 	using namespace LambdaEngine;
@@ -88,8 +92,16 @@ void Server::Tick(LambdaEngine::Timestamp delta)
 
 	for (auto& pair : m_pServer->GetClients())
 	{
+
 		LambdaEngine::NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
+
+
+		LambdaEngine::NetworkSegment* pPacket = pair.second->GetFreePacket(99); // get a packet somewhere
+		LambdaEngine::BinaryEncoder encoder(pPacket);
+		encoder.WriteString("Test broadcast from server.cpp");
+		m_pServer->BroadcastReliable(pPacket, (LambdaEngine::IPacketListener*)m_pServer->GetClients().begin()->second);
 	}
+
 
 	LambdaEngine::Renderer::Render();
 }

@@ -153,6 +153,19 @@ namespace LambdaEngine
 		return true;
 	}
 
+
+	bool ClientRemoteBase::SendReliableBroadcast(NetworkSegment* packet, IPacketListener* listener)
+	{
+		if (!m_pServer->BroadcastReliable(packet, listener))
+		{
+			LOG_WARNING("[ClientRemoteBase]: Can not broadcast packet");
+			return false;
+		}
+
+		return true;
+	}
+
+
 	const IPEndPoint& ClientRemoteBase::GetEndPoint() const
 	{
 		return GetPacketManager()->GetEndPoint();
@@ -195,6 +208,11 @@ namespace LambdaEngine
 				if (pPacket->GetType() != NetworkSegment::TYPE_CONNNECT && pPacket->GetType() != NetworkSegment::TYPE_CHALLENGE)
 				{
 					Disconnect("Expected Connect Packets");
+					break;
+				}
+				else if (pPacket->GetType() == NetworkSegment::Type::TYPE_BROADCAST)
+				{
+					LOG_WARNING("RECIEVED BROADCAST");
 					break;
 				}
 			}

@@ -50,6 +50,8 @@ namespace LambdaEngine
         uint8 GetClientCount();
         const ServerDesc& GetDescription() const;
         const ClientMap& GetClients() const;
+        bool SendReliableBroadcast(NetworkSegment* packet, IPacketListener* listener);
+
 
     protected:
         ServerBase(const ServerDesc& desc);

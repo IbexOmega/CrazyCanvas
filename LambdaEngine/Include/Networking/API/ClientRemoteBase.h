@@ -41,6 +41,7 @@ namespace LambdaEngine
 
 		void TransmitPackets();
 		void DecodeReceivedPackets();
+		bool SendReliableBroadcast(NetworkSegment* packet, IPacketListener* listener = nullptr);
 
 		virtual void OnPacketDelivered(NetworkSegment* pPacket) override;
 		virtual void OnPacketResent(NetworkSegment* pPacket, uint8 tries) override;

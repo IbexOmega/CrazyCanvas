@@ -54,7 +54,7 @@ Client::Client() :
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
-	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("81.170.143.133"), 4444)))
+	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.166"), 4444)))
 	{
 		LOG_ERROR("Failed to connect!");
 	}
@@ -161,21 +161,11 @@ bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	}
 	else
 	{
-		/*uint16 packetType = 0;
+		uint16 packetType = 99; 
 		NetworkSegment* packet = m_pClient->GetFreePacket(packetType);
 		BinaryEncoder encoder(packet);
-		encoder.WriteString("Test Message");
-		m_pClient->SendReliable(packet, this);*/
-
-		for (int i = 0; i < 10; i++)
-		{
-			g_PackegesSent++;
-			NetworkSegment* pPacket = m_pClient->GetFreePacket(g_PackegesSent);
-			BinaryEncoder encoder(pPacket);
-			encoder.WriteUInt32(g_PackegesSent);
-			m_pClient->SendReliable(pPacket, this);
-		}
-		g_PackegesSent = 0;
+		encoder.WriteString("Test Broadcast Message");
+		m_pClient->SendReliable(packet, this);
 	}
 
 	return false;
