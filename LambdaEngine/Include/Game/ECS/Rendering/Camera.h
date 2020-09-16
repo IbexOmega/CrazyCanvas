@@ -2,6 +2,7 @@
 
 #include "Containers/IDVector.h"
 #include "ECS/ComponentHandler.h"
+#include "ECS/EntitySubscriber.h"
 #include "Math/Math.h"
 
 namespace LambdaEngine
@@ -40,14 +41,20 @@ namespace LambdaEngine
 		CameraHandler();
 		~CameraHandler() = default;
 
+		bool Init();
 		bool InitHandler() override final { return true; }
 
 		ViewProjectionMatrices& GetViewProjectionMatrices(Entity entity) { return m_VPMatrices.IndexID(entity); }
+		CameraProperties& GetCameraProperties(Entity entity) { return m_CameraProperties.IndexID(entity); }
 
 		void CreateViewProjectionMatrices(Entity entity, const ViewProjectionDesc& matricesDesc);
-		void CreateCameraProperties(Entity entity, const glm::vec2& jitter);
+		void CreateCameraProperties(Entity entity);
+
+		static CameraHandler* GetInstance() { return &s_Instance; }
 
 	private:
+		static CameraHandler s_Instance;
+
 		IDDVector<ViewProjectionMatrices> m_VPMatrices;
 		IDDVector<CameraProperties> m_CameraProperties;
 	};

@@ -1,13 +1,15 @@
 #include "Game/ECS/Physics/Transform.h"
 
+#include "ECS/ECSCore.h"
 #include "Log/Log.h"
 
 #include <cmath>
 
 namespace LambdaEngine
 {
-    TransformHandler::TransformHandler()
-        :ComponentHandler(TID(TransformHandler))
+    TransformHandler TransformHandler::s_Instance;
+
+    bool TransformHandler::Init()
     {
         ComponentHandlerRegistration handlerReg = {};
         handlerReg.ComponentRegistrations = {
@@ -18,6 +20,8 @@ namespace LambdaEngine
         };
 
         RegisterHandler(handlerReg);
+        SetHandlerType(TID(TransformHandler));
+        return true;
     }
 
     bool TransformHandler::InitHandler()
@@ -53,11 +57,9 @@ namespace LambdaEngine
     void TransformHandler::CreateWorldMatrix(Entity entity, const Transform& transform)
     {
         WorldMatrix worldMatrix = {
-            .WorldMatrix =
-                glm::scale(glm::mat4(), glm::vec3(transform.Scale)) *
-                glm::toMat4(transform.RotationQuaternion) *
-                glm::translate(glm::mat4(), transform.Position),
-            .Dirty = false
+            glm::scale(glm::mat4(), glm::vec3(transform.Scale)) *
+            glm::toMat4(transform.RotationQuaternion) *
+            glm::translate(glm::mat4(), transform.Position),
         };
 
         m_WorldMatrices.PushBack(worldMatrix, entity);
@@ -66,6 +68,9 @@ namespace LambdaEngine
 
     Transform TransformHandler::GetTransform(Entity entity)
     {
+        if (m_DirtyTransformFlags.HasElement(entity))
+            m_DirtyTransformFlags.IndexID(entity).IsDirty = true;
+
         return {
             m_Positions.IndexID(entity).Position,
             m_Scales.IndexID(entity).Scale,
@@ -73,24 +78,28 @@ namespace LambdaEngine
         };
     }
 
-    WorldMatrix& TransformHandler::GetWorldMatrix(Entity entity)
+    glm::vec3& TransformHandler::GetPosition(Entity entity)
     {
-        WorldMatrix& worldMatrix = m_WorldMatrices.IndexID(entity);
+        if (m_DirtyTransformFlags.HasElement(entity))
+            m_DirtyTransformFlags.IndexID(entity).IsDirty = true;
 
-        if (worldMatrix.Dirty)
-        {
-            const Transform transform = GetTransform(entity);
+        return m_Positions.IndexID(entity).Position;
+    }
 
-            worldMatrix = {
-                .WorldMatrix =
-                    glm::scale(glm::mat4(), glm::vec3(transform.Scale)) *
-                    glm::toMat4(transform.RotationQuaternion) *
-                    glm::translate(glm::mat4(), transform.Position),
-                .Dirty = false
-            };
-        }
+    glm::vec3& TransformHandler::GetScale(Entity entity)
+    {
+        if (m_DirtyTransformFlags.HasElement(entity))
+            m_DirtyTransformFlags.IndexID(entity).IsDirty = true;
 
-        return worldMatrix;
+        return m_Scales.IndexID(entity).Scale;
+    }
+
+    glm::quat& TransformHandler::GetRotation(Entity entity)
+    {
+        if (m_DirtyTransformFlags.HasElement(entity))
+            m_DirtyTransformFlags.IndexID(entity).IsDirty = true;
+
+        return m_Rotations.IndexID(entity).Quaternion;
     }
 
     float TransformHandler::GetPitch(const glm::vec3& forward)
@@ -104,5 +113,21 @@ namespace LambdaEngine
         V = V - P;
         V = glm::rotate(glm::angleAxis(angle, axis), V);
         V = V + P;
+    }
+
+    void TransformHandler::CreateTransformDirtyFlag(Entity entity)
+    {
+        // Schedule a job that creates the dirty flag component, to ensure that the component creation is free from data races
+        Job job = {
+            .Function = [this, entity] {
+                m_DirtyTransformFlags.PushBack({ true }, entity);
+                RegisterComponent(entity, g_TIDDirtyTransformFlag);
+            },
+            .Components = {
+                {RW, g_TIDDirtyTransformFlag}
+            }
+        };
+
+        ECSCore::GetInstance()->ScheduleJobASAP(job);
     }
 }

@@ -360,7 +360,7 @@ Sandbox::Sandbox()
 
 	LoadRendererResources();
 
-	m_pScene->UpdateCamera(m_pCamera);
+	m_pScene->UpdateCamera();
 
 	if (IMGUI_ENABLED)
 	{
@@ -451,7 +451,7 @@ void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
 
 	m_pCamera->HandleInput(delta);
 	m_pCamera->Update();
-	m_pScene->UpdateCamera(m_pCamera);
+	m_pScene->UpdateCamera();
 }
 
 void Sandbox::Render(LambdaEngine::Timestamp delta)

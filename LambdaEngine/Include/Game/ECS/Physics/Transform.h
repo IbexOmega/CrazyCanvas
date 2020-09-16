@@ -26,9 +26,15 @@ namespace LambdaEngine
 		glm::quat Quaternion;
 	};
 
-	const std::type_index g_TIDPosition = TID(Position);
-	const std::type_index g_TIDScale    = TID(Scale);
-	const std::type_index g_TIDRotation = TID(Rotation);
+	struct DirtyTransformFlag
+	{
+		bool IsDirty;
+	};
+
+	const std::type_index g_TIDPosition	= TID(Position);
+	const std::type_index g_TIDScale	= TID(Scale);
+	const std::type_index g_TIDRotation	= TID(Rotation);
+	const std::type_index g_TIDDirtyTransformFlag = TID(DirtyTransformFlag);
 
 	// Transform is a convenience wrapper
 	struct Transform
@@ -38,25 +44,9 @@ namespace LambdaEngine
 		glm::quat& RotationQuaternion;
 	};
 
-	class TransformComponents : public IComponentGroup
-	{
-	public:
-		TArray<ComponentAccess> ToArray() const override final
-		{
-			return {m_Position, m_Scale, m_Rotation};
-		}
-
-	public:
-		ComponentAccess m_Position    = {R, g_TIDPosition};
-		ComponentAccess m_Scale       = {R, g_TIDScale};
-		ComponentAccess m_Rotation    = {R, g_TIDRotation};
-	};
-
 	struct WorldMatrix
 	{
 		glm::mat4 WorldMatrix;
-		// Flags whether or not the potential belonging Transform component has been written to since the last access
-		bool Dirty;
 	};
 
 	const std::type_index g_TIDWorldMatrix = TID(WorldMatrix);
@@ -64,9 +54,9 @@ namespace LambdaEngine
 	class TransformHandler : public ComponentHandler
 	{
 	public:
-		TransformHandler();
-		~TransformHandler() = default;
+		DECL_STATIC_CLASS(TransformHandler);
 
+		bool Init();
 		virtual bool InitHandler() override;
 
 		void CreatePosition(Entity entity, const glm::vec3& position = {0.0f, 0.0f, 0.0f});
@@ -77,19 +67,25 @@ namespace LambdaEngine
 		// Requires that the entity has a transform component
 		void CreateWorldMatrix(Entity entity, const Transform& transform);
 
-	public:
 		// Required components: Position, Rotation and Scale
 		Transform GetTransform(Entity entity);
 		// Required components: Position, Rotation, Scale and World Matrix
-		WorldMatrix& GetWorldMatrix(Entity entity);
-		glm::vec3& GetPosition(Entity entity)   { return m_Positions.IndexID(entity).Position; }
-		glm::vec3& GetScale(Entity entity)      { return m_Scales.IndexID(entity).Scale; }
-		glm::quat& GetRotation(Entity entity)   { return m_Rotations.IndexID(entity).Quaternion; }
+		WorldMatrix& GetWorldMatrix(Entity entity) { return m_WorldMatrices.IndexID(entity); }
+		glm::vec3& GetPosition(Entity entity);
+		glm::vec3& GetScale(Entity entity);
+		glm::quat& GetRotation(Entity entity);
+
+		const glm::vec3& GetPosition(Entity entity) const	{ return m_Positions.IndexID(entity).Position; }
+		const glm::vec3& GetScale(Entity entity) const		{ return m_Scales.IndexID(entity).Scale; }
+		const glm::quat& GetRotation(Entity entity) const	{ return m_Rotations.IndexID(entity).Quaternion; }
 
 	public:
+		static TransformHandler* GetInstance() { return &s_Instance; }
+
 		// Transform calculation functions
 		static glm::vec3 GetUp(const glm::quat& rotationQuat)				{ return glm::normalize(glm::rotate(rotationQuat, g_DefaultUp)); }
 		static glm::vec3 GetForward(const glm::quat& rotationQuat)			{ return glm::normalize(glm::rotate(rotationQuat, g_DefaultForward)); }
+		static glm::vec3 GetRight(const glm::quat& rotationQuat)			{ return glm::normalize(glm::cross(GetForward(rotationQuat), GetUp(rotationQuat))); }
 		static glm::quat GetRotationQuaternion(const glm::vec3& forward)	{ return glm::rotation(forward, g_DefaultForward); }
 
 		static float GetPitch(const glm::vec3& forward);
@@ -105,9 +101,16 @@ namespace LambdaEngine
 		static void RotateAroundPoint(const glm::vec3& P, glm::vec3& V, const glm::vec3& axis, float angle);
 
 	private:
-		IDDVector<Position>     m_Positions;
-		IDDVector<Scale>        m_Scales;
-		IDDVector<Rotation>     m_Rotations;
-		IDDVector<WorldMatrix>  m_WorldMatrices;
+		// Called when a transform is created
+		void CreateTransformDirtyFlag(Entity entity);
+
+	private:
+		static TransformHandler s_Instance;
+
+		IDDVector<Position>	m_Positions;
+		IDDVector<Scale>	m_Scales;
+		IDDVector<Rotation>	m_Rotations;
+		IDDVector<DirtyTransformFlag> m_DirtyTransformFlags;
+		IDDVector<WorldMatrix> m_WorldMatrices;
 	};
 }

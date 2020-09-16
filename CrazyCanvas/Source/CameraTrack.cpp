@@ -1,22 +1,33 @@
 #include "CameraTrack.h"
 
-#include "Game/Camera.h"
+#include "Game/ECS/Rendering/ComponentGroups.h"
 
 #include <algorithm>
 
-bool CameraTrack::Init(LambdaEngine::Camera* pCamera, const std::vector<glm::vec3>& track)
+CameraTrack::CameraTrack()
 {
-	m_pCamera = pCamera;
-	m_Track = track;
-	return pCamera;
+	using namespace LambdaEngine;
+	CameraComponents cameraComponents;
+	cameraComponents.Position.Permissions				= RW;
+	cameraComponents.Rotation.Permissions				= RW;
+	cameraComponents.ViewProjectionMatrices.Permissions	= NDA;
+	cameraComponents.CameraProperties.Permissions		= NDA;
+
+	SystemRegistration sysReg = {};
+	sysReg.SubscriberRegistration.EntitySubscriptionRegistrations =
+	{
+		{{&cameraComponents}, &m_Cameras},
+	};
 }
 
 void CameraTrack::Tick(float32 dt)
 {
-	if (HasReachedEnd())
+	if (m_Cameras.Empty() || HasReachedEnd())
 	{
 		return;
 	}
+
+	LambdaEngine::TransformHandler* pTransformHandler = LambdaEngine::TransformHandler::GetInstance();
 
 	constexpr const float cameraSpeed = 1.4f;
 	glm::uvec4 splineIndices = GetCurrentSplineIndices();
@@ -32,15 +43,17 @@ void CameraTrack::Tick(float32 dt)
 		return;
 	}
 
-	glm::vec3 oldPos = m_pCamera->GetPosition();
-	m_pCamera->SetPosition(glm::catmullRom(
+	glm::vec3& position = pTransformHandler->GetPosition(m_Cameras[0]);
+	glm::vec3 oldPos = position;
+	position = glm::catmullRom(
 		m_Track[splineIndices.x],
 		m_Track[splineIndices.y],
 		m_Track[splineIndices.z],
 		m_Track[splineIndices.w],
-		m_CurrentTrackT));
+		m_CurrentTrackT);
 
-	m_pCamera->SetDirection(glm::normalize(GetCurrentGradient(splineIndices)));
+	glm::quat& rotation = pTransformHandler->GetRotation(m_Cameras[0]);
+	LambdaEngine::TransformHandler::SetForward(rotation, glm::normalize(GetCurrentGradient(splineIndices)));
 }
 
 glm::vec3 CameraTrack::GetCurrentGradient(const glm::uvec4& splineIndices) const
@@ -61,7 +74,7 @@ glm::uvec4 CameraTrack::GetCurrentSplineIndices() const
 	return {
 		std::max(0, (int)m_CurrentTrackIndex - 1),
 		m_CurrentTrackIndex,
-		std::min(m_Track.size() - 1, m_CurrentTrackIndex + 1),
-		std::min(m_Track.size() - 1, m_CurrentTrackIndex + 2)
+		std::min(m_Track.GetSize() - 1, m_CurrentTrackIndex + 1),
+		std::min(m_Track.GetSize() - 1, m_CurrentTrackIndex + 2)
 	};
 }

@@ -1,5 +1,8 @@
 #include "CrazyCanvas.h"
 
+#include "ECS/ECSCore.h"
+#include "Game/ECS/Physics/Transform.h"
+#include "Game/ECS/Rendering/Camera.h"
 #include "Memory/API/Malloc.h"
 
 #include "Log/Log.h"
@@ -111,21 +114,29 @@ CrazyCanvas::CrazyCanvas()
 	m_pScene->Finalize();
 	Renderer::SetScene(m_pScene);
 
-	m_pCamera = DBG_NEW Camera();
+	// Create camera
+	Entity camera = ECSCore::GetInstance()->CreateEntity();
 
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
-	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= 90.0f;
-	cameraDesc.Width		= window->GetWidth();
-	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= 0.001f;
-	cameraDesc.FarPlane		= 1000.0f;
+	ViewProjectionDesc viewProjectionDesc = {
+		.Position	= glm::vec3(0.0f, 0.0f, 0.0f),
+		.Direction	= glm::vec3(1.0f, 0.0f, 0.0f),
+		.FOVDegrees	= 90.0f,
+		.Width		= (float)window->GetWidth(),
+		.Height		= (float)window->GetHeight(),
+		.NearPlane	= 0.001f,
+		.FarPlane	= 1000.0f
+	};
 
-	m_pCamera->Init(cameraDesc);
-	m_pCamera->Update();
+	TransformHandler* pTransformHandler = TransformHandler::GetInstance();
+	pTransformHandler->CreatePosition(camera);
+	pTransformHandler->CreateRotation(camera);
+	CameraHandler* pCameraHandler = CameraHandler::GetInstance();
+	pCameraHandler->CreateViewProjectionMatrices(camera, viewProjectionDesc);
+	pCameraHandler->CreateCameraProperties(camera);
 
-	std::vector<glm::vec3> cameraTrack = {
+	TArray<glm::vec3> cameraTrack = {
 		{-2.0f, 1.6f, 1.0f},
 		{9.8f, 1.6f, 0.8f},
 		{9.4f, 1.6f, -3.8f},
@@ -136,16 +147,15 @@ CrazyCanvas::CrazyCanvas()
 		{-9.8f, 6.1f, 3.9f}
 	};
 
-	m_CameraTrack.Init(m_pCamera, cameraTrack);
+	m_CameraTrack.SetTrack(cameraTrack);
 
 	LoadRendererResources();
-	m_pScene->UpdateCamera(m_pCamera);
+	m_pScene->UpdateCamera();
 }
 
 CrazyCanvas::~CrazyCanvas()
 {
 	SAFEDELETE(m_pScene);
-	SAFEDELETE(m_pCamera);
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
@@ -166,9 +176,8 @@ void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 
 	float32 dt = (float32)delta.AsSeconds();
 
-	m_pCamera->Update();
 	m_CameraTrack.Tick(dt);
-	m_pScene->UpdateCamera(m_pCamera);
+	m_pScene->UpdateCamera();
 }
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp delta)

@@ -1,12 +1,5 @@
 #include "Engine/EngineLoop.h"
 
-#include "Log/Log.h"
-
-#include "Time/API/PlatformTime.h"
-#include "Time/API/Clock.h"
-
-#include "Math/Random.h"
-
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/CommonApplication.h"
@@ -14,8 +7,17 @@
 #include "Application/API/Events/EventQueue.h"
 
 #include "ECS/ECSCore.h"
-
 #include "Engine/EngineConfig.h"
+#include "Game/ECS/Physics/Transform.h"
+#include "Game/ECS/Rendering/Camera.h"
+
+#include "Log/Log.h"
+
+#include "Time/API/PlatformTime.h"
+#include "Time/API/Clock.h"
+
+#include "Math/Random.h"
+
 
 #include "Input/API/Input.h"
 
@@ -191,7 +193,12 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!StateManager::GetInstance()->Init(ECSCore::GetInstance()))
+		if (!TransformHandler::GetInstance()->Init())
+		{
+			return false;
+		}
+
+		if (!CameraHandler::GetInstance()->Init())
 		{
 			return false;
 		}

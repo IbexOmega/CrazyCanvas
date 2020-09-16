@@ -4,10 +4,6 @@
 
 namespace LambdaEngine
 {
-    ComponentHandler::ComponentHandler(std::type_index tid_handler)
-        :m_TID(tid_handler)
-    {}
-
     ComponentHandler::~ComponentHandler()
     {
         ECSCore::GetInstance()->GetEntityPublisher()->DeregisterComponentHandler(this);
@@ -23,16 +19,6 @@ namespace LambdaEngine
         }
 
         ECSCore::GetInstance()->EnqueueComponentHandlerRegistration(handlerRegistration);
-    }
-
-    const TArray<std::type_index>& ComponentHandler::GetHandledTypes() const
-    {
-        return m_HandledTypes;
-    }
-
-    std::type_index ComponentHandler::GetHandlerType() const
-    {
-        return m_TID;
     }
 
     void ComponentHandler::RegisterComponent(Entity entity, std::type_index componentType)

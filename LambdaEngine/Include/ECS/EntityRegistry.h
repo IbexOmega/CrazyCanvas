@@ -17,7 +17,7 @@ namespace LambdaEngine
     {
     public:
         EntityRegistry();
-        ~EntityRegistry();
+        ~EntityRegistry() = default;
 
         void RegisterComponentType(Entity entity, std::type_index componentType);
         void DeregisterComponentType(Entity entity, std::type_index componentType);

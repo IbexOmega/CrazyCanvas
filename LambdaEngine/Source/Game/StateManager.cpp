@@ -27,12 +27,6 @@ namespace LambdaEngine
         }
     }
 
-    bool StateManager::Init(ECSCore* pECS)
-    {
-        m_pECS = pECS;
-        return m_pECS;
-    }
-
     void StateManager::EnqueueStateTransition(State* pNewState, STATE_TRANSITION transitionSetting)
     {
         m_pEnqueuedState = pNewState;
@@ -57,32 +51,32 @@ namespace LambdaEngine
         switch (m_EnqueuedTransitionAction)
         {
             case STATE_TRANSITION::PUSH:
-                m_pECS->AddRegistryPage();
+                ECSCore::GetInstance()->AddRegistryPage();
                 m_States.push(m_pEnqueuedState);
                 break;
             case STATE_TRANSITION::POP:
                 delete m_States.top();
-                m_pECS->DeleteTopRegistryPage();
+                ECSCore::GetInstance()->DeleteTopRegistryPage();
                 m_States.pop();
 
                 if (!m_States.empty()) {
-                    m_pECS->ReinstateTopRegistryPage();
+                    ECSCore::GetInstance()->ReinstateTopRegistryPage();
                     m_States.top()->Resume();
                 }
                 break;
             case STATE_TRANSITION::PAUSE_AND_PUSH:
                 m_States.top()->Pause();
-                m_pECS->DeregisterTopRegistryPage();
+                ECSCore::GetInstance()->DeregisterTopRegistryPage();
 
-                m_pECS->AddRegistryPage();
+                ECSCore::GetInstance()->AddRegistryPage();
                 m_States.push(m_pEnqueuedState);
                 break;
             case STATE_TRANSITION::POP_AND_PUSH:
-                m_pECS->DeleteTopRegistryPage();
+                ECSCore::GetInstance()->DeleteTopRegistryPage();
                 m_StatesToDelete.push(m_States.top());
                 m_States.pop();
 
-                m_pECS->AddRegistryPage();
+                ECSCore::GetInstance()->AddRegistryPage();
                 m_States.push(m_pEnqueuedState);
                 break;
         }

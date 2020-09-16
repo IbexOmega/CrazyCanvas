@@ -25,8 +25,6 @@ namespace LambdaEngine
         StateManager();
         ~StateManager();
 
-        bool Init(ECSCore* pECS);
-
         // The enqueued transition happens at the end of StateManager::Tick
         void EnqueueStateTransition(State* pNewState, STATE_TRANSITION transitionSetting);
         void EnqueueStatePop() { EnqueueStateTransition(nullptr, STATE_TRANSITION::POP); }
@@ -45,7 +43,6 @@ namespace LambdaEngine
         std::stack<State*, std::vector<State*>> m_States;
         // Old states can't be deleted during transitions because their resources might be needed by the new states. They are instead enqueued for deletion.
         std::queue<State*> m_StatesToDelete;
-        ECSCore* m_pECS;
 
         State* m_pEnqueuedState;
         STATE_TRANSITION m_EnqueuedTransitionAction;

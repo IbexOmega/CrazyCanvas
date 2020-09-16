@@ -1,12 +1,11 @@
 #pragma once
 
+#include "Containers/THashTable.h"
 #include "ECS/EntitySubscriber.h"
 #include "ECS/Job.h"
 
 namespace LambdaEngine
 {
-    class ECSCore;
-
     // RegularWorker schedules a regular job and deregisters it upon destruction
     class RegularWorker
     {

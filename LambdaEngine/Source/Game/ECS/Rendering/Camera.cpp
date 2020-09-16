@@ -4,8 +4,9 @@
 
 namespace LambdaEngine
 {
-	CameraHandler::CameraHandler()
-		:ComponentHandler(TID(CameraHandler))
+	CameraHandler CameraHandler::s_Instance;
+
+	bool CameraHandler::Init()
 	{
 		ComponentHandlerRegistration handlerReg = {};
 		handlerReg.ComponentRegistrations = {
@@ -14,6 +15,8 @@ namespace LambdaEngine
 		};
 
 		RegisterHandler(handlerReg);
+		SetHandlerType(TID(CameraHandler));
+		return true;
 	}
 
 	void CameraHandler::CreateViewProjectionMatrices(Entity entity, const ViewProjectionDesc& matricesDesc)
@@ -28,9 +31,9 @@ namespace LambdaEngine
 		m_VPMatrices.PushBack(VPMatrices, entity);
 	}
 
-	void CameraHandler::CreateCameraProperties(Entity entity, const glm::vec2& jitter)
+	void CameraHandler::CreateCameraProperties(Entity entity)
 	{
-		m_CameraProperties.PushBack({ jitter }, entity);
+		m_CameraProperties.PushBack({ glm::vec2(0.0f) }, entity);
 		RegisterComponent(entity, g_TIDCameraProperties);
 	}
 }

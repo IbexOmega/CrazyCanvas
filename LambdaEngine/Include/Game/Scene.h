@@ -3,12 +3,13 @@
 #include "LambdaEngine.h"
 #include "Math/Math.h"
 
+#include "Containers/IDVector.h"
+#include "ECS/EntitySubscriber.h"
 #include "Resources/Mesh.h"
 #include "Resources/Material.h"
 #include "Containers/TArray.h"
 #include "Containers/String.h"
 #include "Containers/TSet.h"
-#include "Camera.h"
 #include "Time/API/Timestamp.h"
 
 #include <map>
@@ -20,17 +21,19 @@ namespace LambdaEngine
 
 	struct Mesh;
 
-	class GraphicsDevice;
-	class IAudioDevice;
+	class AccelerationStructure;
 	class Buffer;
-	class Texture;
-	class TextureView;
+	class CameraHandler;
 	class CommandAllocator;
 	class CommandList;
-	class AccelerationStructure;
-	class Fence;
 	class DeviceAllocator;
-	
+	class Fence;
+	class GraphicsDevice;
+	class IAudioDevice;
+	class Texture;
+	class TextureView;
+	class TransformHandler;
+
 	enum HitMask : uint8
 	{
 		HIT_MASK_NONE			= 0x00,
@@ -64,7 +67,7 @@ namespace LambdaEngine
 		uint32	FirstIndex			= 0;
 		int32	VertexOffset		= 0;
 		uint32	FirstInstance		= 0;
-		
+
 		uint32	MaterialIndex		= 0;
 	};
 
@@ -103,13 +106,27 @@ namespace LambdaEngine
 		uint32		Padding1;
 	};
 
-	class LAMBDA_API Scene
+	class LAMBDA_API Scene : public EntitySubscriber
 	{
 		struct LightSetup
 		{
 			DirectionalLight	DirectionalLight;
 			AreaLight			AreaLights[MAX_NUM_AREA_LIGHTS];
 			uint32				AreaLightCount;
+		};
+
+		struct CameraData
+		{
+			glm::mat4 Projection		= glm::mat4(1.0f);
+			glm::mat4 View				= glm::mat4(1.0f);
+			glm::mat4 PrevProjection	= glm::mat4(1.0f);
+			glm::mat4 PrevView			= glm::mat4(1.0f);
+			glm::mat4 ViewInv			= glm::mat4(1.0f);
+			glm::mat4 ProjectionInv		= glm::mat4(1.0f);
+			glm::vec4 Position			= glm::vec4(0.0f);
+			glm::vec4 Right				= glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			glm::vec4 Up				= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec2 Jitter			= glm::vec2(0.0f);
 		};
 
 		struct PerFrameBuffer
@@ -132,7 +149,7 @@ namespace LambdaEngine
 			TArray<MappedMaterial>			MappedMaterials;
 			uint64							AccelerationStructureHandle;
 		};
-		
+
 	public:
 		DECL_UNIQUE_CLASS(Scene);
 
@@ -140,6 +157,7 @@ namespace LambdaEngine
 		~Scene();
 
 		bool Init(const SceneDesc& desc);
+		bool InitEntitySubscriber();
 		bool Finalize();
 
 		void PrepareRender(CommandList* pGraphicsCommandList, CommandList* pComputeCommandList, uint64 frameIndex);
@@ -151,7 +169,7 @@ namespace LambdaEngine
 		void SetDirectionalLight(const DirectionalLight& directionalLight);
 		uint32 AddAreaLight(const AreaLightObject& lightObject, const glm::mat4& transform = glm::mat4(1.0f));
 
-		void UpdateCamera(const Camera* pCamera);
+		void UpdateCamera();
 
 		void UpdateMaterialProperties(GUID_Lambda materialGUID);
 
@@ -174,12 +192,12 @@ namespace LambdaEngine
 		FORCEINLINE TextureView**				GetMetallicMapViews()			{ return m_SceneMetallicMapViews.GetData(); }
 		FORCEINLINE TextureView**				GetRoughnessMapViews()			{ return m_SceneRoughnessMapViews.GetData(); }
 
-		FORCEINLINE Buffer*						GetMaterialProperties()			{ return m_pSceneMaterialProperties; }	
-		FORCEINLINE Buffer*						GetVertexBuffer()				{ return m_pSceneVertexBuffer; }		
-		FORCEINLINE Buffer*						GetIndexBuffer()				{ return m_pSceneIndexBuffer; }		
+		FORCEINLINE Buffer*						GetMaterialProperties()			{ return m_pSceneMaterialProperties; }
+		FORCEINLINE Buffer*						GetVertexBuffer()				{ return m_pSceneVertexBuffer; }
+		FORCEINLINE Buffer*						GetIndexBuffer()				{ return m_pSceneIndexBuffer; }
 		FORCEINLINE Buffer*						GetPrimaryInstanceBuffer()		{ return m_pScenePrimaryInstanceBuffer; }
 		FORCEINLINE Buffer*						GetSecondaryInstanceBuffer()	{ return m_pSceneSecondaryInstanceBuffer; }
-		FORCEINLINE Buffer*						GetIndirectArgsBuffer()			{ return m_pSceneIndirectArgsBuffer; }	
+		FORCEINLINE Buffer*						GetIndirectArgsBuffer()			{ return m_pSceneIndirectArgsBuffer; }
 
 		FORCEINLINE bool						IsRayTracingEnabled()			{ return m_RayTracingEnabled; }
 
@@ -231,7 +249,6 @@ namespace LambdaEngine
 		Buffer*										m_pSceneSecondaryInstanceCopyBuffer		= nullptr;
 		Buffer*										m_pSceneIndirectArgsCopyBuffer			= nullptr;
 
-
 		int32										m_AreaLightIndexToInstanceIndex[MAX_NUM_AREA_LIGHTS];
 		LightSetup									m_LightsLightSetup;
 		Buffer*										m_pLightsBuffer							= nullptr;
@@ -250,19 +267,19 @@ namespace LambdaEngine
 		TArray<TextureView*>						m_SceneAmbientOcclusionMapViews;
 		TArray<TextureView*>						m_SceneMetallicMapViews;
 		TArray<TextureView*>						m_SceneRoughnessMapViews;
-			
+
 		TArray<MaterialProperties>					m_SceneMaterialProperties;
-		
+
 		Buffer*										m_pSceneMaterialProperties		= nullptr;		//Indexed with result from IndirectMeshArgument::MaterialIndex, contains Scene Material Properties
 		Buffer*										m_pSceneVertexBuffer			= nullptr;		//Indexed with result from Scene::m_pBaseVertexIndexBuffer + Scene::m_pSceneIndexBuffer and contains Scene Vertices
 		Buffer*										m_pSceneIndexBuffer				= nullptr;		//Indexed with result from Scene::m_pMeshIndexBuffer + primitiveID * 3 + triangleCornerID and contains indices to Scene::m_pSceneVertexBuffer
 		Buffer*										m_pScenePrimaryInstanceBuffer	= nullptr;		/*Indexed with InstanceID and contains per instance data (must be same as VkAccelerationStructureInstanceKHR since this buffer is used as instance buffer for ray tracing),
 																											we can figure out the InstanceID during shading by using
 																											IndexedIndirectMeshArgument::BaseInstanceIndex, IndexedIndirectMeshArgument::VertexCount and primitiveID <-- Relative to drawID*/
-		Buffer*										m_pSceneSecondaryInstanceBuffer	= nullptr;		/*Because m_pScenePrimaryInstanceBuffer is used as ray tracing instance buffer we cant fit all per instance data in it, 
+		Buffer*										m_pSceneSecondaryInstanceBuffer	= nullptr;		/*Because m_pScenePrimaryInstanceBuffer is used as ray tracing instance buffer we cant fit all per instance data in it,
 																											the rest of the data goes into this buffer instead. This Buffer contains elements of type InstanceSecondary*/
 		Buffer*										m_pSceneIndirectArgsBuffer		= nullptr;		/*Indexed with drawID when Shading and contains IndexedIndirectMeshArgument structs, primarily:
-																											IndexedIndirectMeshArgument::FirstIndex		will be used as BaseIndex to m_pSceneIndexBuffer, 
+																											IndexedIndirectMeshArgument::FirstIndex		will be used as BaseIndex to m_pSceneIndexBuffer,
 																											IndexedIndirectMeshArgument::BaseVertexIndex	will be used as BaseIndex to m_pSceneVertexBuffer,
 																											IndexedIndirectMeshArgument::MaterialIndex		will be used as MaterialIndex to MaterialBuffers,
 																											IndexedIndirectMeshArgument::BaseInstanceIndex will be used as BaseIndex to m_pSceneInstanceBuffer*/
@@ -290,5 +307,9 @@ namespace LambdaEngine
 		bool										m_LightSetupIsDirty					= false;
 		bool										m_InstanceBuffersAreDirty			= false;
 		bool										m_MaterialPropertiesBuffersAreDirty	= false;
+
+		IDVector m_Cameras;
+		CameraHandler* m_pCameraHandler = nullptr;
+		TransformHandler* m_pTransformHandler = nullptr;
 	};
 }

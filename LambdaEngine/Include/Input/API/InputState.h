@@ -18,7 +18,7 @@ namespace LambdaEngine
 		{
 			return !KeyStates[key];
 		}
-		
+
 	public:
 		bool KeyStates[EKey::KEY_LAST];
 	};
@@ -88,7 +88,7 @@ namespace LambdaEngine
 		{
 			return !ButtonStates[button];
 		}
-		
+
 	public:
 		struct
 		{
@@ -98,7 +98,7 @@ namespace LambdaEngine
 
 		int32 ScrollX;
 		int32 ScrollY;
-		
+
 		bool ButtonStates[EMouseButton::MOUSE_BUTTON_COUNT];
 	};
 }

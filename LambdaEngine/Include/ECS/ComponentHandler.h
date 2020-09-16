@@ -34,14 +34,14 @@ namespace LambdaEngine
     class ComponentHandler
     {
     public:
-        ComponentHandler(std::type_index tid_handler);
+        ComponentHandler() = default;
         // Deregisters component handler and deletes components
-        virtual ~ComponentHandler();
+        ~ComponentHandler();
 
         virtual bool InitHandler() = 0;
 
-        const TArray<std::type_index>& GetHandledTypes() const;
-        std::type_index GetHandlerType() const;
+        const TArray<std::type_index>& GetHandledTypes() const { return m_HandledTypes; }
+        std::type_index GetHandlerType() const { return m_TID; };
 
     protected:
         /**
@@ -49,6 +49,8 @@ namespace LambdaEngine
          * @param componentQueries Functions for asking if an entity has a component of a certain type
          */
         void RegisterHandler(const ComponentHandlerRegistration& handlerRegistration);
+
+        void SetHandlerType(std::type_index TID) { m_TID = TID; }
 
         // Tell the system subscriber a component has been created
         static void RegisterComponent(Entity entity, std::type_index componentType);

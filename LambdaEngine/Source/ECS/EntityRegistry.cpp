@@ -9,9 +9,6 @@ namespace LambdaEngine
         AddPage();
     }
 
-    EntityRegistry::~EntityRegistry()
-    {}
-
     void EntityRegistry::RegisterComponentType(Entity entity, std::type_index componentType)
     {
         EntityRegistryPage& topPage = m_EntityPages.top();

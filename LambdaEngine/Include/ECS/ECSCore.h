@@ -26,7 +26,7 @@ namespace LambdaEngine
 
         void Tick(float dt);
 
-        Entity createEntity() { return m_EntityRegistry.CreateEntity(); }
+        Entity CreateEntity() { return m_EntityRegistry.CreateEntity(); }
 
         void ScheduleJobASAP(const Job& job);
         void ScheduleJobPostFrame(const Job& job);

@@ -2,6 +2,8 @@
 
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Audio/API/IAudioDevice.h"
+#include "ECS/ECSCore.h"
+#include "Game/ECS/Rendering/ComponentGroups.h"
 #include "Resources/ResourceManager.h"
 
 #include "Resources/Mesh.h"
@@ -28,6 +30,20 @@ namespace LambdaEngine
 		m_pGraphicsDevice(pGraphicsDevice),
 		m_pAudioDevice(pAudioDevice)
 	{
+		CameraComponents cameraComponents;
+		cameraComponents.Position.Permissions				= RW;
+		cameraComponents.Rotation.Permissions				= RW;
+		cameraComponents.ViewProjectionMatrices.Permissions	= RW;
+		cameraComponents.CameraProperties.Permissions		= RW;
+
+		EntitySubscriberRegistration subscriberReg =
+		{
+			.EntitySubscriptionRegistrations =
+			{
+				{{&cameraComponents}, &m_Cameras},
+			}
+		};
+		SubscribeToEntities(subscriberReg, nullptr);
 	}
 
 	Scene::~Scene()
@@ -105,7 +121,7 @@ namespace LambdaEngine
 		copyCommandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 
 		m_pCopyCommandList = m_pGraphicsDevice->CreateCommandList(m_pCopyCommandAllocator, &copyCommandListDesc);
-		
+
 		m_RayTracingEnabled = desc.RayTracingEnabled;
 
 		if (m_RayTracingEnabled)
@@ -176,6 +192,15 @@ namespace LambdaEngine
 		}
 
 		return true;
+	}
+
+	bool Scene::InitEntitySubscriber()
+	{
+		EntityPublisher* pEntityPublisher = ECSCore::GetInstance()->GetEntityPublisher();
+		m_pCameraHandler = static_cast<CameraHandler*>(pEntityPublisher->GetComponentHandler(TID(CameraHandler)));
+		m_pTransformHandler = static_cast<TransformHandler*>(pEntityPublisher->GetComponentHandler(TID(TransformHandler)));
+
+		return m_pCameraHandler && m_pTransformHandler;
 	}
 
 	bool Scene::Finalize()
@@ -259,7 +284,7 @@ namespace LambdaEngine
 				/*------------Ray Tracing Section Begin-------------*/
 				if (m_RayTracingEnabled)
 				{
-					indirectMeshArgument.InstanceCount		= (uint32)((accelerationStructureDeviceAddress >> 32)	& 0x00000000FFFFFFFF); // Temporarily store BLAS Device Address in Instance Count and First Instance 
+					indirectMeshArgument.InstanceCount		= (uint32)((accelerationStructureDeviceAddress >> 32)	& 0x00000000FFFFFFFF); // Temporarily store BLAS Device Address in Instance Count and First Instance
 					indirectMeshArgument.FirstInstance		= (uint32)((accelerationStructureDeviceAddress)			& 0x00000000FFFFFFFF); // these are used in the next stage
 				}
 				/*-------------Ray Tracing Section End--------------*/
@@ -403,7 +428,7 @@ namespace LambdaEngine
 				m_SceneAmbientOcclusionMapViews[i]	= pMaterial->pAmbientOcclusionMapView;
 				m_SceneMetallicMapViews[i]			= pMaterial->pMetallicMapView;
 				m_SceneRoughnessMapViews[i]			= pMaterial->pRoughnessMapView;
-			
+
 				m_SceneMaterialProperties[i]		= pMaterial->Properties;
 			}
 			else
@@ -421,7 +446,7 @@ namespace LambdaEngine
 				m_SceneAmbientOcclusionMapViews[i]	= pMaterial->pAmbientOcclusionMapView;
 				m_SceneMetallicMapViews[i]			= pMaterial->pMetallicMapView;
 				m_SceneRoughnessMapViews[i]			= pMaterial->pRoughnessMapView;
-			
+
 				m_SceneMaterialProperties[i]		= pMaterial->Properties;
 			}
 		}
@@ -500,7 +525,7 @@ namespace LambdaEngine
 
 				m_SecondaryInstances[instanceIndex].PrevTransform	= pPrimaryInstance->Transform;
 			}
-		
+
 			//Update Sorted Copies
 			{
 				InstancePrimary* pPrimaryInstance = &m_SortedPrimaryInstances[sortedInstanceIndex];
@@ -576,7 +601,7 @@ namespace LambdaEngine
 			m_SecondaryInstances[instanceIndex].PrevTransform	= pPrimaryInstance->Transform;
 			pPrimaryInstance->Transform							= transposedTransform;
 		}
-		
+
 		//Update Sorted Copies
 		{
 			InstancePrimary* pPrimaryInstance = &m_SortedPrimaryInstances[sortedInstanceIndex];
@@ -621,9 +646,29 @@ namespace LambdaEngine
 		return UINT32_MAX;
 	}
 
-	void Scene::UpdateCamera(const Camera* pCamera)
+	void Scene::UpdateCamera()
 	{
-		m_PerFrameData.Camera = pCamera->GetData();
+		if (m_Cameras.Empty())
+			return;
+
+		Entity camera = m_Cameras[0];
+		const glm::quat& rotation = m_pTransformHandler->GetRotation(camera);
+
+		const ViewProjectionMatrices& viewProjectMatrices = m_pCameraHandler->GetViewProjectionMatrices(camera);
+
+		m_PerFrameData.Camera =
+		{
+			.Projection = viewProjectMatrices.Projection,
+			.View = viewProjectMatrices.View,
+			.PrevProjection = viewProjectMatrices.PrevProjection,
+			.PrevView = viewProjectMatrices.PrevView,
+			.ViewInv = glm::inverse(viewProjectMatrices.View),
+			.ProjectionInv = glm::inverse(viewProjectMatrices.Projection),
+			.Position = glm::vec4(m_pTransformHandler->GetPosition(camera), 0.0f),
+			.Right = glm::vec4(TransformHandler::GetRight(rotation), 0.0f),
+			.Up = glm::vec4(TransformHandler::GetUp(rotation), 0.0f),
+			.Jitter = m_pCameraHandler->GetCameraProperties(camera).Jitter
+		};
 	}
 
 	void Scene::UpdateMaterialProperties(GUID_Lambda materialGUID)

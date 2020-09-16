@@ -20,7 +20,6 @@ namespace LambdaEngine
 	class IAudioGeometry;
 	class IReverbSphere;
 	class Scene;
-	class Camera;
 	class Sampler;
 
 	class RenderGraphEditor;
@@ -46,6 +45,5 @@ private:
 private:
 	CameraTrack m_CameraTrack;
 
-	LambdaEngine::Scene*					m_pScene				= nullptr;
-	LambdaEngine::Camera*					m_pCamera				= nullptr;
+	LambdaEngine::Scene* m_pScene = nullptr;
 };
