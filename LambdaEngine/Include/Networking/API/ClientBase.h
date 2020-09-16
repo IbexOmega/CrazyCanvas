@@ -60,7 +60,7 @@ namespace LambdaEngine
 		void TransmitPackets();
 		void SendConnect();
 		void SendDisconnect();
-		void HandleReceivedPacket(NetworkSegment* pPacket);
+		bool HandleReceivedPacket(NetworkSegment* pPacket);
 		void Tick(Timestamp delta);
 		void UpdatePingSystem();
 

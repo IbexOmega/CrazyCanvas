@@ -187,11 +187,25 @@ namespace LambdaEngine
 		TArray<NetworkSegment*> packets;
 		PacketManagerBase* pPacketManager = GetPacketManager();
 		pPacketManager->QueryBegin(GetTransceiver(), packets);
+
+		if (m_State == STATE_CONNECTING)
+		{
+			for (NetworkSegment* pPacket : packets)
+			{
+				if (pPacket->GetType() != NetworkSegment::TYPE_CONNNECT && pPacket->GetType() != NetworkSegment::TYPE_CHALLENGE)
+				{
+					Disconnect("Expected Connect Packets");
+					break;
+				}
+			}
+		}
+
 		for (NetworkSegment* pPacket : packets)
 		{
 			if (!HandleReceivedPacket(pPacket))
-				return;
+				break;
 		}
+
 		pPacketManager->QueryEnd(packets);
 	}
 
