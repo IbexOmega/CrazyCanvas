@@ -14,6 +14,8 @@
 #include "Rendering/Core/API/AccelerationStructure.h"
 #include "Rendering/Core/API/Fence.h"
 #include "Rendering/RenderSystem.h"
+#include "Rendering/Renderer.h"
+#include "Rendering/RenderGraph.h"
 
 #include "Rendering/Core/Vulkan/Vulkan.h"
 
@@ -24,39 +26,36 @@
 
 namespace LambdaEngine
 {
-	Scene::Scene(const GraphicsDevice* pGraphicsDevice, const IAudioDevice* pAudioDevice) :
-		m_pGraphicsDevice(pGraphicsDevice),
-		m_pAudioDevice(pAudioDevice)
+	Scene::Scene()
 	{
 	}
 
 	Scene::~Scene()
 	{
-		SAFERELEASE(m_pCopyCommandAllocator);
-		SAFERELEASE(m_pCopyCommandList);
+		for (MeshAndInstancesMap::iterator meshAndInstanceIt = m_MeshAndInstancesMap.begin(); meshAndInstanceIt != m_MeshAndInstancesMap.end(); meshAndInstanceIt++)
+		{
+			SAFERELEASE(meshAndInstanceIt->second.pVertexBuffer);
+			SAFERELEASE(meshAndInstanceIt->second.pIndexBuffer);
+			SAFERELEASE(meshAndInstanceIt->second.pInstanceStagingBuffer);
+			SAFERELEASE(meshAndInstanceIt->second.pInstanceBuffer);
+		}
 
-		SAFERELEASE(m_pBLASBuildCommandAllocator);
-		SAFERELEASE(m_pTLASBuildCommandAllocator);
-		SAFERELEASE(m_pBLASBuildCommandList);
-		SAFERELEASE(m_pTLASBuildCommandList);
-		SAFERELEASE(m_pASFence);
+		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
+		{
+			TArray<Buffer*>& buffersToRemove = m_BuffersToRemove[b];
 
-		SAFERELEASE(m_pSceneMaterialPropertiesCopyBuffer);
-		SAFERELEASE(m_pSceneVertexCopyBuffer);
-		SAFERELEASE(m_pSceneIndexCopyBuffer);
-		SAFERELEASE(m_pScenePrimaryInstanceCopyBuffer);
-		SAFERELEASE(m_pSceneSecondaryInstanceCopyBuffer);
-		SAFERELEASE(m_pSceneIndirectArgsCopyBuffer);
-		SAFERELEASE(m_pLightsBuffer);
-		SAFERELEASE(m_pLightsCopyBuffer);
+			for (Buffer* pStagingBuffer : buffersToRemove)
+			{
+				SAFERELEASE(pStagingBuffer);
+			}
+
+			buffersToRemove.Clear();
+		}
+
+		SAFERELEASE(m_pMaterialParametersStagingBuffer);
+		SAFERELEASE(m_pMaterialParametersBuffer);
+		SAFERELEASE(m_pPerFrameStagingBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
-		SAFERELEASE(m_pPerFrameCopyBuffer);
-		SAFERELEASE(m_pSceneMaterialProperties);
-		SAFERELEASE(m_pSceneVertexBuffer);
-		SAFERELEASE(m_pSceneIndexBuffer);
-		SAFERELEASE(m_pScenePrimaryInstanceBuffer);
-		SAFERELEASE(m_pSceneSecondaryInstanceBuffer);
-		SAFERELEASE(m_pSceneIndirectArgsBuffer);
 
 		SAFERELEASE(m_pTLAS);
 
@@ -69,92 +68,22 @@ namespace LambdaEngine
 
 	bool Scene::Init(const SceneDesc& desc)
 	{
-		m_Name = desc.Name;
-
-		for (uint32 i = 0; i < NUM_RANDOM_SEEDS; i++)
-		{
-			m_RandomSeeds[i] = Random::Int32(INT32_MIN, INT32_MAX);
-		}
-
-		m_LightsLightSetup.AreaLightCount = 0;
-
-		for (uint32 l = 0; l < MAX_NUM_AREA_LIGHTS; l++)
-		{
-			m_AreaLightIndexToInstanceIndex[l] = -1;
-
-			AreaLight* pAreaLight = &m_LightsLightSetup.AreaLights[l];
-			pAreaLight->InstanceIndex	= UINT32_MAX;
-			pAreaLight->Type			= EAreaLightType::NONE;
-		}
-
-		m_pCopyCommandAllocator		= m_pGraphicsDevice->CreateCommandAllocator("Scene Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
-
-		CommandListDesc copyCommandListDesc = {};
-		copyCommandListDesc.DebugName			= "Scene Copy Command List";
-		copyCommandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-		copyCommandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-
-		m_pCopyCommandList = m_pGraphicsDevice->CreateCommandList(m_pCopyCommandAllocator, &copyCommandListDesc);
-		
 		m_RayTracingEnabled = desc.RayTracingEnabled;
 
-		if (m_RayTracingEnabled)
+		for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
 		{
-			m_pBLASBuildCommandAllocator = m_pGraphicsDevice->CreateCommandAllocator("Scene BLAS Build Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
-
-			CommandListDesc blasBuildCommandListDesc = {};
-			blasBuildCommandListDesc.DebugName			= "Scene BLAS Build Command List";
-			blasBuildCommandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-			blasBuildCommandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-
-			m_pBLASBuildCommandList = m_pGraphicsDevice->CreateCommandList(m_pBLASBuildCommandAllocator, &blasBuildCommandListDesc);
-
-
-			m_pTLASBuildCommandAllocator = m_pGraphicsDevice->CreateCommandAllocator("Scene TLAS Build Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
-
-			CommandListDesc tlasBuildCommandListDesc = {};
-			tlasBuildCommandListDesc.DebugName			= "Scene TLAS Build Command List";
-			tlasBuildCommandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-			tlasBuildCommandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-
-			m_pTLASBuildCommandList = m_pGraphicsDevice->CreateCommandList(m_pTLASBuildCommandAllocator, &tlasBuildCommandListDesc);
-
-
-			FenceDesc asFenceDesc = {};
-			asFenceDesc.DebugName		= "Scene AS Fence";
-			asFenceDesc.InitalValue		= 0;
-
-			m_pASFence = m_pGraphicsDevice->CreateFence(&asFenceDesc);
-		}
-
-		// Lights Buffer
-		{
-			BufferDesc lightsCopyBufferDesc = {};
-			lightsCopyBufferDesc.DebugName				= "Scene Lights Copy Buffer";
-			lightsCopyBufferDesc.MemoryType				= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			lightsCopyBufferDesc.Flags					= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			lightsCopyBufferDesc.SizeInBytes			= sizeof(LightSetup);
-
-			m_pLightsCopyBuffer = m_pGraphicsDevice->CreateBuffer(&lightsCopyBufferDesc);
-
-			BufferDesc lightsBufferDesc = {};
-			lightsBufferDesc.DebugName				= "Scene Lights Buffer";
-			lightsBufferDesc.MemoryType				= EMemoryType::MEMORY_TYPE_GPU;
-			lightsBufferDesc.Flags					= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-			lightsBufferDesc.SizeInBytes			= sizeof(LightSetup);
-
-			m_pLightsBuffer = m_pGraphicsDevice->CreateBuffer(&lightsBufferDesc);
+			m_FreeMaterialSlots.push(i);
 		}
 
 		// Per Frame Buffer
 		{
 			BufferDesc perFrameCopyBufferDesc = {};
-			perFrameCopyBufferDesc.DebugName				= "Scene Per Frame Copy Buffer";
-			perFrameCopyBufferDesc.MemoryType				= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			perFrameCopyBufferDesc.Flags					= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			perFrameCopyBufferDesc.SizeInBytes				= sizeof(PerFrameBuffer);
+			perFrameCopyBufferDesc.DebugName		= "Scene Per Frame Copy Buffer";
+			perFrameCopyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+			perFrameCopyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+			perFrameCopyBufferDesc.SizeInBytes		= sizeof(PerFrameBuffer);
 
-			m_pPerFrameCopyBuffer = m_pGraphicsDevice->CreateBuffer(&perFrameCopyBufferDesc);
+			m_pPerFrameStagingBuffer = RenderSystem::GetDevice()->CreateBuffer(&perFrameCopyBufferDesc);
 
 			BufferDesc perFrameBufferDesc = {};
 			perFrameBufferDesc.DebugName			= "Scene Per Frame Buffer";
@@ -162,7 +91,26 @@ namespace LambdaEngine
 			perFrameBufferDesc.Flags				= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;;
 			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
 
-			m_pPerFrameBuffer = m_pGraphicsDevice->CreateBuffer(&perFrameBufferDesc);
+			m_pPerFrameBuffer = RenderSystem::GetDevice()->CreateBuffer(&perFrameBufferDesc);
+		}
+
+		Texture*		pDefaultColorMap		= ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_COLOR_MAP);
+		TextureView*	pDefaultColorMapView	= ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_COLOR_MAP);
+		Texture*		pDefaultNormalMap		= ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_NORMAL_MAP);
+		TextureView*	pDefaultNormalMapView	= ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_NORMAL_MAP);
+
+		for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
+		{
+			m_ppSceneAlbedoMaps[i]					= pDefaultColorMap;
+			m_ppSceneNormalMaps[i]					= pDefaultNormalMap;
+			m_ppSceneAmbientOcclusionMaps[i]		= pDefaultColorMap;
+			m_ppSceneRoughnessMaps[i]				= pDefaultColorMap;
+			m_ppSceneMetallicMaps[i]				= pDefaultColorMap;
+			m_ppSceneAlbedoMapViews[i]				= pDefaultColorMapView;
+			m_ppSceneNormalMapViews[i]				= pDefaultNormalMapView;
+			m_ppSceneAmbientOcclusionMapViews[i]	= pDefaultColorMapView;
+			m_ppSceneRoughnessMapViews[i]			= pDefaultColorMapView;
+			m_ppSceneMetallicMapViews[i]			= pDefaultColorMapView;
 		}
 
 		return true;
@@ -170,445 +118,231 @@ namespace LambdaEngine
 
 	bool Scene::Finalize()
 	{
-		LambdaEngine::Clock clock;
-
-		clock.Reset();
-		clock.Tick();
-
-		/*------------Ray Tracing Section Begin-------------*/
-		TArray<BuildBottomLevelAccelerationStructureDesc> blasBuildDescriptions;
-		blasBuildDescriptions.Reserve(m_Meshes.GetSize());
-
-		if (m_RayTracingEnabled)
-		{
-			AccelerationStructureDesc tlasDesc = {};
-			tlasDesc.DebugName		= "TLAS";
-			tlasDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
-			tlasDesc.Flags			= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-			tlasDesc.InstanceCount	= m_PrimaryInstances.GetSize();
-
-			m_pTLAS = m_pGraphicsDevice->CreateAccelerationStructure(&tlasDesc);
-
-			m_BLASs.Reserve(m_Meshes.GetSize());
-		}
-		/*-------------Ray Tracing Section End--------------*/
-
-		uint32 currentNumSceneVertices = 0;
-		uint32 currentNumSceneIndices = 0;
-
-		std::multimap<uint32, std::pair<MappedMaterial, IndexedIndirectMeshArgument>> materialIndexToMeshIndex;
-		uint32 indirectArgCount = 0;
-
-		for (uint32 meshIndex = 0; meshIndex < m_Meshes.GetSize(); meshIndex++)
-		{
-			MappedMesh& mappedMesh = m_MappedMeshes[meshIndex];
-			const Mesh* pMesh = m_Meshes[meshIndex];
-
-			uint32 newNumSceneVertices	= currentNumSceneVertices	+ pMesh->VertexCount;
-			uint32 newNumSceneIndices	= currentNumSceneIndices	+ pMesh->IndexCount;
-
-			/*------------Ray Tracing Section Begin-------------*/
-			uint64 accelerationStructureDeviceAddress = 0;
-
-			if (m_RayTracingEnabled)
-			{
-				AccelerationStructureDesc blasDesc = {};
-				blasDesc.DebugName			= "BLAS";
-				blasDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_BOTTOM;
-				blasDesc.Flags				= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_NONE;
-				blasDesc.MaxTriangleCount	= pMesh->IndexCount / 3;
-				blasDesc.MaxVertexCount		= pMesh->VertexCount;
-				blasDesc.AllowsTransform	= false;
-
-				AccelerationStructure* pBLAS = m_pGraphicsDevice->CreateAccelerationStructure(&blasDesc);
-				accelerationStructureDeviceAddress = pBLAS->GetDeviceAdress();
-				m_BLASs.PushBack(pBLAS);
-
-				BuildBottomLevelAccelerationStructureDesc blasBuildDesc = {};
-				blasBuildDesc.pAccelerationStructure		= pBLAS;
-				blasBuildDesc.Flags							= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_NONE;
-				blasBuildDesc.FirstVertexIndex				= currentNumSceneVertices;
-				blasBuildDesc.VertexStride					= sizeof(Vertex);
-				blasBuildDesc.IndexBufferByteOffset			= currentNumSceneIndices * sizeof(uint32);
-				blasBuildDesc.TriangleCount					= pMesh->IndexCount / 3;
-				blasBuildDesc.Update						= false;
-
-				blasBuildDescriptions.PushBack(blasBuildDesc);
-			}
-			/*-------------Ray Tracing Section End--------------*/
-
-			for (uint32 materialIndex = 0; materialIndex < mappedMesh.MappedMaterials.GetSize(); materialIndex++)
-			{
-				MappedMaterial& mappedMaterial = mappedMesh.MappedMaterials[materialIndex];
-
-				IndexedIndirectMeshArgument indirectMeshArgument = {};
-				indirectMeshArgument.IndexCount			= pMesh->IndexCount;
-				indirectMeshArgument.FirstIndex			= currentNumSceneIndices;
-				indirectMeshArgument.VertexOffset		= currentNumSceneVertices;
-
-				/*------------Ray Tracing Section Begin-------------*/
-				if (m_RayTracingEnabled)
-				{
-					indirectMeshArgument.InstanceCount		= (uint32)((accelerationStructureDeviceAddress >> 32)	& 0x00000000FFFFFFFF); // Temporarily store BLAS Device Address in Instance Count and First Instance 
-					indirectMeshArgument.FirstInstance		= (uint32)((accelerationStructureDeviceAddress)			& 0x00000000FFFFFFFF); // these are used in the next stage
-				}
-				/*-------------Ray Tracing Section End--------------*/
-
-				indirectArgCount++;
-				materialIndexToMeshIndex.insert(std::make_pair(mappedMaterial.MaterialIndex, std::make_pair(mappedMaterial, indirectMeshArgument)));
-			}
-
-			currentNumSceneVertices = newNumSceneVertices;
-			currentNumSceneIndices = newNumSceneIndices;
-		}
-
-		m_IndirectArgs.Clear();
-		m_IndirectArgs.Reserve(indirectArgCount);
-
-		m_SortedPrimaryInstances.Clear();
-		m_SortedPrimaryInstances.Reserve(m_PrimaryInstances.GetSize());
-
-		m_SortedSecondaryInstances.Clear();
-		m_SortedSecondaryInstances.Reserve(m_SecondaryInstances.GetSize());
-
-		m_InstanceIndexToSortedInstanceIndex.Resize(m_PrimaryInstances.GetSize());
-
-		// Extra Loop to sort Indirect Args by Material
-		uint32 prevMaterialIndex = UINT32_MAX;
-		for (auto it = materialIndexToMeshIndex.begin(); it != materialIndexToMeshIndex.end(); it++)
-		{
-			uint32 currentMaterialIndex = it->first;
-			MappedMaterial& mappedMaterial = it->second.first;
-			IndexedIndirectMeshArgument& indirectArg = it->second.second;
-
-			uint32 instanceCount = (uint32)mappedMaterial.InstanceIndices.GetSize();
-			uint32 baseInstanceIndex = (uint32)m_SortedPrimaryInstances.GetSize();
-
-			/*------------Ray Tracing Section Begin-------------*/
-			uint64 accelerationStructureDeviceAddress = ((((uint64)indirectArg.InstanceCount) << 32) & 0xFFFFFFFF00000000) | (((uint64)indirectArg.FirstInstance) & 0x00000000FFFFFFFF);
-			/*-------------Ray Tracing Section End--------------*/
-
-			for (uint32 instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
-			{
-				uint32 mappedInstanceIndex = mappedMaterial.InstanceIndices[instanceIndex];
-
-				//Check if this instance belongs to an area light
-				for (uint32 l = 0; l < MAX_NUM_AREA_LIGHTS; l++)
-				{
-					if (m_AreaLightIndexToInstanceIndex[l] == int32(mappedInstanceIndex))
-					{
-						m_LightsLightSetup.AreaLights[l].InstanceIndex = m_SortedPrimaryInstances.GetSize();
-					}
-				}
-
-				m_InstanceIndexToSortedInstanceIndex[mappedInstanceIndex] = m_SortedPrimaryInstances.GetSize();
-
-				InstancePrimary primaryInstance					= m_PrimaryInstances[mappedInstanceIndex];
-				InstanceSecondary secondaryInstance				= m_SecondaryInstances[mappedInstanceIndex];
-				primaryInstance.IndirectArgsIndex				= (uint32)m_IndirectArgs.GetSize();
-
-				/*------------Ray Tracing Section Begin-------------*/
-				primaryInstance.AccelerationStructureAddress	= accelerationStructureDeviceAddress;
-				primaryInstance.SBTRecordOffset					= 0;
-				primaryInstance.Flags							= 0x00000001; //Culling Disabled
-				/*-------------Ray Tracing Section End--------------*/
-
-				m_SortedPrimaryInstances.PushBack(primaryInstance);
-				m_SortedSecondaryInstances.PushBack(secondaryInstance);
-			}
-
-			if (prevMaterialIndex != currentMaterialIndex)
-			{
-				prevMaterialIndex = currentMaterialIndex;
-				m_MaterialIndexToIndirectArgOffsetMap[currentMaterialIndex] = m_IndirectArgs.GetSize();
-			}
-
-			indirectArg.InstanceCount = instanceCount;
-			indirectArg.FirstInstance = baseInstanceIndex;
-			indirectArg.MaterialIndex = mappedMaterial.MaterialIndex;
-
-			m_IndirectArgs.PushBack(indirectArg);
-		}
-
-		//// Create InstanceBuffers
-		//{
-		//	uint32 scenePrimaryInstanceBufferSize = uint32(m_SortedInstances.GetSize() * sizeof(InstancePrimary));
-		//	uint32 sceneSecondaryInstanceBufferSize = uint32(m_SortedInstances.GetSize() * sizeof(InstanceSecondary));
-
-		//	if (m_pScenePrimaryInstanceBuffer == nullptr || scenePrimaryInstanceBufferSize > m_pScenePrimaryInstanceBuffer->GetDesc().SizeInBytes)
-		//	{
-		//		SAFERELEASE(m_pScenePrimaryInstanceBuffer);
-
-		//		BufferDesc bufferDesc = {};
-		//		bufferDesc.pName		= "Scene Primary Instance Buffer";
-		//		bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-		//		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-		//		bufferDesc.SizeInBytes	= scenePrimaryInstanceBufferSize;
-
-		//		m_pScenePrimaryInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
-		//	}
-
-		//	if (m_pSceneSecondaryInstanceBuffer == nullptr || sceneSecondaryInstanceBufferSize > m_pSceneSecondaryInstanceBuffer->GetDesc().SizeInBytes)
-		//	{
-		//		SAFERELEASE(m_pSceneSecondaryInstanceBuffer);
-
-		//		BufferDesc bufferDesc = {};
-		//		bufferDesc.pName		= "Scene Secondary Instance Buffer";
-		//		bufferDesc.MemoryType	= EMemoryType::MEMORY_GPU;
-		//		bufferDesc.Flags		= FBufferFlags::BUFFER_FLAG_COPY_DST | FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-		//		bufferDesc.SizeInBytes	= sceneSecondaryInstanceBufferSize;
-
-		//		m_pSceneSecondaryInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc, m_pDeviceAllocator);
-		//	}
-		//}
-
-		m_SceneAlbedoMaps.Resize(MAX_UNIQUE_MATERIALS);
-		m_SceneNormalMaps.Resize(MAX_UNIQUE_MATERIALS);
-		m_SceneAmbientOcclusionMaps.Resize(MAX_UNIQUE_MATERIALS);
-		m_SceneMetallicMaps.Resize(MAX_UNIQUE_MATERIALS);
-		m_SceneRoughnessMaps.Resize(MAX_UNIQUE_MATERIALS);
-
-		m_SceneAlbedoMapViews.Resize(MAX_UNIQUE_MATERIALS);
-		m_SceneNormalMapViews.Resize(MAX_UNIQUE_MATERIALS);
-		m_SceneAmbientOcclusionMapViews.Resize(MAX_UNIQUE_MATERIALS);
-		m_SceneMetallicMapViews.Resize(MAX_UNIQUE_MATERIALS);
-		m_SceneRoughnessMapViews.Resize(MAX_UNIQUE_MATERIALS);
-
-		m_SceneMaterialProperties.Resize(MAX_UNIQUE_MATERIALS);
-
-		for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
-		{
-			if (i < m_Materials.GetSize())
-			{
-				const Material* pMaterial = m_Materials[i];
-
-				m_SceneAlbedoMaps[i]				= pMaterial->pAlbedoMap;
-				m_SceneNormalMaps[i]				= pMaterial->pNormalMap;
-				m_SceneAmbientOcclusionMaps[i]		= pMaterial->pAmbientOcclusionMap;
-				m_SceneMetallicMaps[i]				= pMaterial->pMetallicMap;
-				m_SceneRoughnessMaps[i]				= pMaterial->pRoughnessMap;
-
-				m_SceneAlbedoMapViews[i]			= pMaterial->pAlbedoMapView;
-				m_SceneNormalMapViews[i]			= pMaterial->pNormalMapView;
-				m_SceneAmbientOcclusionMapViews[i]	= pMaterial->pAmbientOcclusionMapView;
-				m_SceneMetallicMapViews[i]			= pMaterial->pMetallicMapView;
-				m_SceneRoughnessMapViews[i]			= pMaterial->pRoughnessMapView;
-			
-				m_SceneMaterialProperties[i]		= pMaterial->Properties;
-			}
-			else
-			{
-				const Material* pMaterial = ResourceManager::GetMaterial(GUID_MATERIAL_DEFAULT);
-
-				m_SceneAlbedoMaps[i]				= pMaterial->pAlbedoMap;
-				m_SceneNormalMaps[i]				= pMaterial->pNormalMap;
-				m_SceneAmbientOcclusionMaps[i]		= pMaterial->pAmbientOcclusionMap;
-				m_SceneMetallicMaps[i]				= pMaterial->pMetallicMap;
-				m_SceneRoughnessMaps[i]				= pMaterial->pRoughnessMap;
-
-				m_SceneAlbedoMapViews[i]			= pMaterial->pAlbedoMapView;
-				m_SceneNormalMapViews[i]			= pMaterial->pNormalMapView;
-				m_SceneAmbientOcclusionMapViews[i]	= pMaterial->pAmbientOcclusionMapView;
-				m_SceneMetallicMapViews[i]			= pMaterial->pMetallicMapView;
-				m_SceneRoughnessMapViews[i]			= pMaterial->pRoughnessMapView;
-			
-				m_SceneMaterialProperties[i]		= pMaterial->Properties;
-			}
-		}
-
-		m_pCopyCommandAllocator->Reset();
-		m_pCopyCommandList->Begin(nullptr);
-
-		UpdateMaterialPropertiesBuffers(m_pCopyCommandList);
-		UpdateVertexBuffers(m_pCopyCommandList);
-		UpdateIndexBuffers(m_pCopyCommandList);
-		UpdateInstanceBuffers(m_pCopyCommandList);
-		UpdateIndirectArgsBuffers(m_pCopyCommandList);
-
-		m_pCopyCommandList->End();
-
-		RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_pCopyCommandList, 1,		FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
-		RenderSystem::GetGraphicsQueue()->Flush();
-
-		/*------------Ray Tracing Section Begin-------------*/
-		if (m_RayTracingEnabled)
-		{
-			//Build BLASs
-			{
-				m_pBLASBuildCommandAllocator->Reset();
-				m_pBLASBuildCommandList->Begin(nullptr);
-
-				for (uint32 i = 0; i < blasBuildDescriptions.GetSize(); i++)
-				{
-					BuildBottomLevelAccelerationStructureDesc* pBlasBuildDesc = &blasBuildDescriptions[i];
-					pBlasBuildDesc->pVertexBuffer			= m_pSceneVertexBuffer;
-					pBlasBuildDesc->pIndexBuffer			= m_pSceneIndexBuffer;
-					pBlasBuildDesc->pTransformBuffer		= nullptr;
-					pBlasBuildDesc->TransformByteOffset		= 0;
-
-					m_pBLASBuildCommandList->BuildBottomLevelAccelerationStructure(pBlasBuildDesc);
-				}
-
-				m_pBLASBuildCommandList->End();
-			}
-
-			//Build TLAS
-			{
-				m_pTLASBuildCommandAllocator->Reset();
-				m_pTLASBuildCommandList->Begin(nullptr);
-				BuildTLAS(m_pTLASBuildCommandList, false);
-				m_pTLASBuildCommandList->End();
-			}
-
-			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pBLASBuildCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, m_pASFence, 1);
-			RenderSystem::GetComputeQueue()->ExecuteCommandLists(&m_pTLASBuildCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pASFence, 1, nullptr, 0);
-			RenderSystem::GetComputeQueue()->Flush();
-
-			//RayTracingTestVK::Debug(m_pGraphicsDevice, blasBuildDescriptions[0].pAccelerationStructure, m_pTLAS);
-		}
-		/*-------------Ray Tracing Section End--------------*/
-
-		clock.Tick();
-		LOG_INFO("Scene Build took %f milliseconds", clock.GetDeltaTime().AsMilliSeconds());
-
-		D_LOG_MESSAGE("[Scene]: Successfully finalized \"%s\"! ", m_Name.c_str());
-
-		m_InstanceBuffersAreDirty = false;
-		return true;
-	}
-
-	void Scene::PrepareRender(CommandList* pGraphicsCommandList, CommandList* pComputeCommandList, uint64 frameIndex)
-	{
-		for (uint32 instanceIndex : m_DirtySecondaryInstances)
-		{
-			uint32 sortedInstanceIndex = m_InstanceIndexToSortedInstanceIndex[instanceIndex];
-
-			//Todo: Implement Array of Pointers for instances instead so that we don't have two copies of every instance
-			//Update Unsorted Copies
-			{
-				InstancePrimary* pPrimaryInstance = &m_PrimaryInstances[instanceIndex];
-
-				m_SecondaryInstances[instanceIndex].PrevTransform	= pPrimaryInstance->Transform;
-			}
-		
-			//Update Sorted Copies
-			{
-				InstancePrimary* pPrimaryInstance = &m_SortedPrimaryInstances[sortedInstanceIndex];
-
-				m_SortedSecondaryInstances[sortedInstanceIndex].PrevTransform	= pPrimaryInstance->Transform;
-			}
-
-			m_InstanceBuffersAreDirty = true;
-		}
-		m_DirtySecondaryInstances.clear();
+		CommandList* pGraphicsCommandList = Renderer::GetRenderGraph()->AcquireGraphicsCopyCommandList();
+		CommandList* pComputeCommandList = Renderer::GetRenderGraph()->AcquireGraphicsCopyCommandList();
 
 		//Update Per Frame Data
 		{
-			m_PerFrameData.FrameIndex = uint32(frameIndex % UINT32_MAX);
-			//perFrameBuffer.RandomSeed	= m_RandomSeeds[frameIndex % NUM_RANDOM_SEEDS];
-			m_PerFrameData.RandomSeed = Random::Int32(INT32_MIN, INT32_MAX);
+			m_PerFrameData.FrameIndex = 0;
+			m_PerFrameData.RandomSeed = uint32(Random::Int32(INT32_MIN, INT32_MAX));
 
 			UpdatePerFrameBuffer(pGraphicsCommandList);
 		}
-
-		if (m_LightSetupIsDirty)
+		
+		//Update Instance Data
 		{
-			UpdateLightsBuffer(pGraphicsCommandList);
-
-			m_LightSetupIsDirty = false;
-		}
-
-		if (m_InstanceBuffersAreDirty)
-		{
-			UpdateInstanceBuffers(pGraphicsCommandList);
+			UpdateInstanceBuffers(pGraphicsCommandList, 0);
 
 			if (m_RayTracingEnabled)
 			{
 				BuildTLAS(pComputeCommandList, true);
 			}
-
-			m_InstanceBuffersAreDirty = false;
 		}
 
-		if (m_MaterialPropertiesBuffersAreDirty)
+		//Update Empty MaterialData
 		{
-			UpdateMaterialPropertiesBuffers(pGraphicsCommandList);
-
-			m_MaterialPropertiesBuffersAreDirty = false;
-		}
-	}
-
-	uint32 Scene::AddStaticGameObject(const GameObject& gameObject, const glm::mat4& transform)
-	{
-		UNREFERENCED_VARIABLE(gameObject);
-		UNREFERENCED_VARIABLE(transform);
-
-		LOG_WARNING("[Scene]: Call to unimplemented function AddStaticGameObject!");
-		return 0;
-	}
-
-	uint32 Scene::AddDynamicGameObject(const GameObject& gameObject, const glm::mat4& transform)
-	{
-		return InternalAddDynamicObject(gameObject.Mesh, gameObject.Material, transform, HIT_MASK_GAME_OBJECT);
-	}
-
-	void Scene::UpdateTransform(uint32 instanceIndex, const glm::mat4& transform)
-	{
-		uint32 sortedInstanceIndex = m_InstanceIndexToSortedInstanceIndex[instanceIndex];
-
-		glm::mat4 transposedTransform = glm::transpose(transform);
-
-		//Todo: Implement Array of Pointers for instances instead so that we don't have two copies of every instance
-		//Update Unsorted Copies
-		{
-			InstancePrimary* pPrimaryInstance = &m_PrimaryInstances[instanceIndex];
-
-			m_SecondaryInstances[instanceIndex].PrevTransform	= pPrimaryInstance->Transform;
-			pPrimaryInstance->Transform							= transposedTransform;
-		}
-		
-		//Update Sorted Copies
-		{
-			InstancePrimary* pPrimaryInstance = &m_SortedPrimaryInstances[sortedInstanceIndex];
-
-			m_SortedSecondaryInstances[sortedInstanceIndex].PrevTransform	= pPrimaryInstance->Transform;
-			pPrimaryInstance->Transform										= transposedTransform;
+			UpdateMaterialPropertiesBuffer(pGraphicsCommandList, 0);
 		}
 
-		m_DirtySecondaryInstances.insert(instanceIndex);
-		m_InstanceBuffersAreDirty = true;
+		return true;
 	}
 
-	void Scene::SetDirectionalLight(const DirectionalLight& directionalLight)
+	void Scene::PrepareRender(CommandList* pGraphicsCommandList, CommandList* pComputeCommandList, uint64 frameIndex, uint64 modFrameIndex)
 	{
-		m_LightsLightSetup.DirectionalLight = directionalLight;
-		m_LightSetupIsDirty = true;
-	}
-
-	uint32 Scene::AddAreaLight(const AreaLightObject& lightObject, const glm::mat4& transform)
-	{
-		if (m_LightsLightSetup.AreaLightCount < MAX_NUM_AREA_LIGHTS)
+		//Release Staging Buffers from older frame
+		//Todo: Better solution for this
 		{
-			GUID_Lambda mesh = GUID_NONE;
+			TArray<Buffer*>& buffersToRemove = m_BuffersToRemove[modFrameIndex];
 
-			switch (lightObject.Type)
+			for (Buffer* pStagingBuffer : buffersToRemove)
 			{
-			case EAreaLightType::QUAD:	mesh = GUID_MESH_QUAD;
-			default:					mesh = GUID_MESH_QUAD;
+				SAFERELEASE(pStagingBuffer);
 			}
 
-			uint32 instanceIndex = InternalAddDynamicObject(mesh, lightObject.Material, transform, HIT_MASK_LIGHT);
-			m_AreaLightIndexToInstanceIndex[m_LightsLightSetup.AreaLightCount]		= instanceIndex;
-			m_LightsLightSetup.AreaLights[m_LightsLightSetup.AreaLightCount].Type	= lightObject.Type;
-			m_LightsLightSetup.AreaLightCount++;
-
-			m_LightSetupIsDirty = true;
-
-			return instanceIndex;
+			buffersToRemove.Clear();
 		}
 
-		//Todo: Change return type or add failure defines
-		return UINT32_MAX;
+		//Update Per Frame Data
+		{
+			m_PerFrameData.FrameIndex = frameIndex;
+			m_PerFrameData.RandomSeed = uint32(Random::Int32(INT32_MIN, INT32_MAX));
+
+			UpdatePerFrameBuffer(pGraphicsCommandList);
+		}
+		
+		//Update Instance Data
+		{
+			UpdateInstanceBuffers(pGraphicsCommandList, modFrameIndex);
+
+			if (m_RayTracingEnabled)
+			{
+				BuildTLAS(pComputeCommandList, true);
+			}
+		}
+
+		//Update Empty MaterialData
+		{
+			UpdateMaterialPropertiesBuffer(pGraphicsCommandList, modFrameIndex);
+		}
+	}
+
+	void Scene::AddGameObject(uint32 entityID, const GameObject& gameObject, const glm::mat4& transform, bool isStatic, bool animated)
+	{
+		if (isStatic && animated)
+		{
+			LOG_ERROR("[--TBD--]: A static game object cannot also be animated!");
+			return;
+		}
+
+		uint32 materialSlot;
+		MeshAndInstancesMap::iterator meshAndInstancesIt;
+
+		MeshKey meshKey;
+		meshKey.MeshGUID		= gameObject.Mesh;
+		meshKey.IsStatic		= isStatic;
+		meshKey.IsAnimated		= animated;
+		meshKey.EntityID		= entityID;
+
+		//Get MeshAndInstanceIterator
+		{
+			meshAndInstancesIt = m_MeshAndInstancesMap.find(meshKey);
+
+			if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
+			{
+				const Mesh* pMesh = ResourceManager::GetMesh(gameObject.Mesh);
+				VALIDATE(pMesh != nullptr);
+
+				MeshEntry meshEntry = {};
+
+				CommandList* pCommandList = Renderer::GetRenderGraph()->AcquireGraphicsCopyCommandList();
+
+				//Vertices
+				{
+					BufferDesc vertexStagingBufferDesc = {};
+					vertexStagingBufferDesc.DebugName	= "Vertex Staging Buffer";
+					vertexStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					vertexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					vertexStagingBufferDesc.SizeInBytes = pMesh->VertexCount * sizeof(Vertex);
+
+					Buffer* pVertexStagingBuffer = RenderSystem::GetDevice()->CreateBuffer(&vertexStagingBufferDesc);
+
+					void* pMapped = pVertexStagingBuffer->Map();
+					memcpy(pMapped, pMesh->pVertexArray, vertexStagingBufferDesc.SizeInBytes);
+					pVertexStagingBuffer->Unmap();
+
+					BufferDesc vertexBufferDesc = {};
+					vertexBufferDesc.DebugName		= "Vertex Buffer";
+					vertexBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+					vertexBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+					vertexBufferDesc.SizeInBytes	= vertexStagingBufferDesc.SizeInBytes;
+
+					meshEntry.pVertexBuffer = RenderSystem::GetDevice()->CreateBuffer(&vertexBufferDesc);
+
+					pCommandList->CopyBuffer(pVertexStagingBuffer, 0, meshEntry.pVertexBuffer, 0, vertexBufferDesc.SizeInBytes);
+					m_BuffersToRemove[0].PushBack(pVertexStagingBuffer);
+				}
+
+				//Indices
+				{
+					BufferDesc indexStagingBufferDesc = {};
+					indexStagingBufferDesc.DebugName	= "Index Staging Buffer";
+					indexStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					indexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					indexStagingBufferDesc.SizeInBytes	= pMesh->IndexCount * sizeof(uint32);
+
+					Buffer* pIndexStagingBuffer = RenderSystem::GetDevice()->CreateBuffer(&indexStagingBufferDesc);
+
+					void* pMapped = pIndexStagingBuffer->Map();
+					memcpy(pMapped, pMesh->pIndexArray, indexStagingBufferDesc.SizeInBytes);
+					pIndexStagingBuffer->Unmap();
+
+					BufferDesc indexBufferDesc = {};
+					indexBufferDesc.DebugName		= "Index Buffer";
+					indexBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+					indexBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
+					indexBufferDesc.SizeInBytes		= indexStagingBufferDesc.SizeInBytes;
+
+					meshEntry.pIndexBuffer	= RenderSystem::GetDevice()->CreateBuffer(&indexBufferDesc);
+					meshEntry.IndexCount	= pMesh->IndexCount;
+
+					pCommandList->CopyBuffer(pIndexStagingBuffer, 0, meshEntry.pIndexBuffer, 0, indexBufferDesc.SizeInBytes);
+					m_BuffersToRemove[0].PushBack(pIndexStagingBuffer);
+				}
+
+				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
+			}
+		}
+
+		//Get Material Slot
+		{
+			THashTable<uint32, uint32>::iterator materialSlotIt = m_MaterialMap.find(gameObject.Material);
+
+			//Push new Material if the Material is yet to be registered
+			if (materialSlotIt == m_MaterialMap.end())
+			{
+				const Material* pMaterial = ResourceManager::GetMaterial(gameObject.Material);
+				VALIDATE(pMaterial != nullptr && !m_FreeMaterialSlots.empty());
+
+				materialSlot = m_FreeMaterialSlots.top();
+				m_FreeMaterialSlots.pop();
+
+				m_ppSceneAlbedoMaps[materialSlot]					= pMaterial->pAlbedoMap;
+				m_ppSceneNormalMaps[materialSlot]					= pMaterial->pNormalMap;
+				m_ppSceneAmbientOcclusionMaps[materialSlot]			= pMaterial->pAmbientOcclusionMap;
+				m_ppSceneRoughnessMaps[materialSlot]				= pMaterial->pRoughnessMap;
+				m_ppSceneMetallicMaps[materialSlot]					= pMaterial->pMetallicMap;
+				m_ppSceneAlbedoMapViews[materialSlot]				= pMaterial->pAlbedoMapView;
+				m_ppSceneNormalMapViews[materialSlot]				= pMaterial->pNormalMapView;
+				m_ppSceneAmbientOcclusionMapViews[materialSlot]		= pMaterial->pAmbientOcclusionMapView;
+				m_ppSceneRoughnessMapViews[materialSlot]			= pMaterial->pRoughnessMapView;
+				m_ppSceneMetallicMapViews[materialSlot]				= pMaterial->pMetallicMapView;
+				m_pSceneMaterialProperties[materialSlot]			= pMaterial->Properties;
+
+				m_MaterialMap.insert({ gameObject.Material, materialSlot });
+			}
+			else
+			{
+				materialSlot = materialSlotIt->second;
+			}
+		}
+		
+		InstanceKey instanceKey = {};
+		instanceKey.MeshKey			= meshKey;
+		instanceKey.InstanceIndex	= meshAndInstancesIt->second.Instances.GetSize();
+		m_EntityIDsToInstanceKey[entityID] = instanceKey;
+
+		Instance instance = {};
+		instance.Transform			= transform;
+		instance.PrevTransform		= transform;
+		instance.MaterialSlot		= materialSlot;
+		meshAndInstancesIt->second.Instances.PushBack(instance);
+
+		m_DirtyInstanceBuffers.insert(&meshAndInstancesIt->second);
+	}
+
+	void Scene::UpdateTransform(uint32 entityID, const glm::mat4& transform)
+	{
+		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entityID);
+
+		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
+		{
+			LOG_ERROR("[--TBD--]: Tried to update transform of an enitity which is not registered");
+			return;
+		}
+
+		MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.find(instanceKeyIt->second.MeshKey);
+
+		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
+		{
+			LOG_ERROR("[--TBD--]: Tried to update transform of an enitity which has no MeshAndInstancesMap entry");
+			return;
+		}
+
+		Instance* pInstanceToUpdate = &meshAndInstancesIt->second.Instances[instanceKeyIt->second.InstanceIndex];
+
+		pInstanceToUpdate->PrevTransform	= pInstanceToUpdate->Transform;
+		pInstanceToUpdate->Transform		= transform;
+		m_DirtyInstanceBuffers.insert(&meshAndInstancesIt->second);
 	}
 
 	void Scene::UpdateCamera(const Camera* pCamera)
@@ -616,346 +350,122 @@ namespace LambdaEngine
 		m_PerFrameData.Camera = pCamera->GetData();
 	}
 
-	void Scene::UpdateMaterialProperties(GUID_Lambda materialGUID)
+	void Scene::GetDrawArgs(TArray<DrawArg>& drawArgs, uint32 key) const
 	{
-		m_SceneMaterialProperties[m_GUIDToMaterials[materialGUID]] = ResourceManager::GetMaterial(materialGUID)->Properties;
-		m_MaterialPropertiesBuffersAreDirty = true;
+		//Todo: Cache these
+
+		for (MeshAndInstancesMap::const_iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
+		{
+			//Todo: Check Key (or whatever we end up using)
+			DrawArg drawArg = {};
+			drawArg.pVertexBuffer		= meshAndInstancesIt->second.pVertexBuffer;
+			drawArg.VertexBufferSize	= meshAndInstancesIt->second.pVertexBuffer->GetDesc().SizeInBytes;
+			drawArg.pIndexBuffer		= meshAndInstancesIt->second.pIndexBuffer;
+			drawArg.IndexCount			= meshAndInstancesIt->second.IndexCount;
+			drawArg.pInstanceBuffer		= meshAndInstancesIt->second.pInstanceBuffer;
+			drawArg.InstanceBufferSize	= meshAndInstancesIt->second.pInstanceBuffer->GetDesc().SizeInBytes;
+			drawArg.InstanceCount		= meshAndInstancesIt->second.Instances.GetSize();
+			drawArgs.PushBack(drawArg);
+		}
 	}
 
-	uint32 Scene::GetIndirectArgumentOffset(uint32 materialIndex) const
+	void Scene::UpdateInstanceBuffers(CommandList* pCommandList, uint64 modFrameIndex)
 	{
-		auto it = m_MaterialIndexToIndirectArgOffsetMap.find(materialIndex);
-
-		if (it != m_MaterialIndexToIndirectArgOffsetMap.end())
-			return it->second;
-
-		return uint32(m_pSceneIndirectArgsBuffer->GetDesc().SizeInBytes / sizeof(IndexedIndirectMeshArgument));
-	}
-
-	uint32 Scene::InternalAddDynamicObject(GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, HitMask hitMask)
-	{
-		//Todo: Am I retarded, what is the reason we have to do this?
-		glm::mat4 tranposedTransform = glm::transpose(transform);
-
-		InstancePrimary primaryInstance = {};
-		primaryInstance.Transform						= tranposedTransform;
-		primaryInstance.IndirectArgsIndex				= 0;
-		primaryInstance.Mask							= hitMask;
-		primaryInstance.SBTRecordOffset					= 0;
-		primaryInstance.Flags							= 0;
-		primaryInstance.AccelerationStructureAddress	= 0;
-
-		InstanceSecondary secondaryInstance = {};
-		secondaryInstance.PrevTransform					= tranposedTransform;
-
-		m_PrimaryInstances.PushBack(primaryInstance);
-		m_SecondaryInstances.PushBack(secondaryInstance);
-
-		uint32 instanceIndex = uint32(m_PrimaryInstances.GetSize() - 1);
-		uint32 meshIndex = 0;
-
-		if (m_GUIDToMappedMeshes.count(meshGUID) == 0)
+		for (MeshEntry* pDirtyInstanceBufferEntry : m_DirtyInstanceBuffers)
 		{
-			const Mesh* pMesh = ResourceManager::GetMesh(meshGUID);
+			uint32 requiredBufferSize = pDirtyInstanceBufferEntry->Instances.GetSize() * sizeof(Instance);
 
-			uint32 currentNumSceneVertices = (uint32)m_SceneVertexArray.GetSize();
-			m_SceneVertexArray.Resize(uint64(currentNumSceneVertices + pMesh->VertexCount));
-			memcpy(&m_SceneVertexArray[currentNumSceneVertices], pMesh->pVertexArray, pMesh->VertexCount * sizeof(Vertex));
+			if (pDirtyInstanceBufferEntry->pInstanceStagingBuffer == nullptr || pDirtyInstanceBufferEntry->pInstanceStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			{
+				if (pDirtyInstanceBufferEntry->pInstanceStagingBuffer != nullptr) m_BuffersToRemove[modFrameIndex].PushBack(pDirtyInstanceBufferEntry->pInstanceStagingBuffer);
 
-			uint32 currentNumSceneIndices = (uint32)m_SceneIndexArray.GetSize();
-			m_SceneIndexArray.Resize(uint64(currentNumSceneIndices + pMesh->IndexCount));
-			memcpy(&m_SceneIndexArray[currentNumSceneIndices], pMesh->pIndexArray, pMesh->IndexCount * sizeof(uint32));
+				BufferDesc bufferDesc = {};
+				bufferDesc.DebugName	= "Instance Staging Buffer";
+				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+				bufferDesc.SizeInBytes	= requiredBufferSize;
 
-			m_Meshes.PushBack(pMesh);
-			meshIndex = uint32(m_Meshes.GetSize() - 1);
+				pDirtyInstanceBufferEntry->pInstanceStagingBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
+			}
 
-			MappedMesh newMappedMesh = {};
-			m_MappedMeshes.PushBack(newMappedMesh);
+			void* pMapped = pDirtyInstanceBufferEntry->pInstanceStagingBuffer->Map();
+			memcpy(pMapped, pDirtyInstanceBufferEntry->Instances.GetData(), requiredBufferSize);
+			pDirtyInstanceBufferEntry->pInstanceStagingBuffer->Unmap();
 
-			m_GUIDToMappedMeshes[meshGUID] = meshIndex;
-		}
-		else
-		{
-			meshIndex = m_GUIDToMappedMeshes[meshGUID];
+			if (pDirtyInstanceBufferEntry->pInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			{
+				if (pDirtyInstanceBufferEntry->pInstanceBuffer != nullptr) m_BuffersToRemove[modFrameIndex].PushBack(pDirtyInstanceBufferEntry->pInstanceBuffer);
+
+				BufferDesc bufferDesc = {};
+				bufferDesc.DebugName		= "Instance Buffer";
+				bufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+				bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				bufferDesc.SizeInBytes		= requiredBufferSize;
+
+				pDirtyInstanceBufferEntry->pInstanceBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
+			}
+			
+			pCommandList->CopyBuffer(pDirtyInstanceBufferEntry->pInstanceStagingBuffer, 0, pDirtyInstanceBufferEntry->pInstanceBuffer, 0, requiredBufferSize);
 		}
 
-		MappedMesh& mappedMesh = m_MappedMeshes[meshIndex];
-		uint32 globalMaterialIndex = 0;
-
-		if (m_GUIDToMaterials.count(materialGUID) == 0)
-		{
-			m_Materials.PushBack(ResourceManager::GetMaterial(materialGUID));
-			globalMaterialIndex = uint32(m_Materials.GetSize() - 1);
-
-			m_GUIDToMaterials[materialGUID] = globalMaterialIndex;
-		}
-		else
-		{
-			globalMaterialIndex = m_GUIDToMaterials[materialGUID];
-		}
-
-		if (mappedMesh.GUIDToMappedMaterials.count(materialGUID) == 0)
-		{
-			MappedMaterial newMappedMaterial = {};
-			newMappedMaterial.MaterialIndex = globalMaterialIndex;
-
-			newMappedMaterial.InstanceIndices.PushBack(instanceIndex);
-
-			mappedMesh.MappedMaterials.PushBack(newMappedMaterial);
-			mappedMesh.GUIDToMappedMaterials[materialGUID] = GUID_Lambda(mappedMesh.MappedMaterials.GetSize() - 1);
-		}
-		else
-		{
-			mappedMesh.MappedMaterials[mappedMesh.GUIDToMappedMaterials[materialGUID]].InstanceIndices.PushBack(instanceIndex);
-		}
-
-		return instanceIndex;
-	}
-
-	void Scene::UpdateLightsBuffer(CommandList* pCommandList)
-	{
-		void* pMapped = m_pLightsCopyBuffer->Map();
-		memcpy(pMapped, &m_LightsLightSetup, sizeof(LightSetup));
-		m_pLightsCopyBuffer->Unmap();
-
-		pCommandList->CopyBuffer(m_pLightsCopyBuffer, 0, m_pLightsBuffer, 0, sizeof(LightSetup));
+		m_DirtyInstanceBuffers.clear();
 	}
 
 	void Scene::UpdatePerFrameBuffer(CommandList* pCommandList)
 	{
-		void* pMapped = m_pPerFrameCopyBuffer->Map();
+		void* pMapped = m_pPerFrameStagingBuffer->Map();
 		memcpy(pMapped, &m_PerFrameData, sizeof(PerFrameBuffer));
-		m_pPerFrameCopyBuffer->Unmap();
+		m_pPerFrameStagingBuffer->Unmap();
 
-		pCommandList->CopyBuffer(m_pPerFrameCopyBuffer, 0, m_pPerFrameBuffer, 0, sizeof(PerFrameBuffer));
+		pCommandList->CopyBuffer(m_pPerFrameStagingBuffer, 0, m_pPerFrameBuffer, 0, sizeof(PerFrameBuffer));
 	}
 
-	void Scene::UpdateMaterialPropertiesBuffers(CommandList* pCopyCommandList)
+	void Scene::UpdateMaterialPropertiesBuffer(CommandList* pCommandList, uint64 modFrameIndex)
 	{
-		uint32 sceneMaterialPropertiesSize = uint32(m_SceneMaterialProperties.GetSize() * sizeof(MaterialProperties));
+		uint32 requiredBufferSize = sizeof(m_pSceneMaterialProperties);
 
-		if (m_pSceneMaterialPropertiesCopyBuffer == nullptr || sceneMaterialPropertiesSize > m_pSceneMaterialPropertiesCopyBuffer->GetDesc().SizeInBytes)
+		if (m_pMaterialParametersStagingBuffer == nullptr || m_pMaterialParametersStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 		{
-			SAFERELEASE(m_pSceneMaterialPropertiesCopyBuffer);
+			if (m_pMaterialParametersStagingBuffer != nullptr) m_BuffersToRemove[modFrameIndex].PushBack(m_pMaterialParametersStagingBuffer);
 
 			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Scene Material Properties Copy Buffer";
+			bufferDesc.DebugName	= "Material Properties Staging Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			bufferDesc.SizeInBytes	= sceneMaterialPropertiesSize;
+			bufferDesc.SizeInBytes	= requiredBufferSize;
 
-			m_pSceneMaterialPropertiesCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
+			m_pMaterialParametersStagingBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
 		}
 
-		void* pMapped = m_pSceneMaterialPropertiesCopyBuffer->Map();
-		memcpy(pMapped, m_SceneMaterialProperties.GetData(), sceneMaterialPropertiesSize);
-		m_pSceneMaterialPropertiesCopyBuffer->Unmap();
+		void* pMapped = m_pMaterialParametersStagingBuffer->Map();
+		memcpy(pMapped, m_pSceneMaterialProperties, requiredBufferSize);
+		m_pMaterialParametersStagingBuffer->Unmap();
 
-		if (m_pSceneMaterialProperties == nullptr || sceneMaterialPropertiesSize > m_pSceneMaterialProperties->GetDesc().SizeInBytes)
+		if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 		{
-			SAFERELEASE(m_pSceneMaterialProperties);
+			if (m_pMaterialParametersBuffer != nullptr) m_BuffersToRemove[modFrameIndex].PushBack(m_pMaterialParametersBuffer);
 
 			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Scene Material Properties";
+			bufferDesc.DebugName	= "Material Properties Buffer";
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
-			bufferDesc.SizeInBytes	= sceneMaterialPropertiesSize;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
+			bufferDesc.SizeInBytes	= requiredBufferSize;
 
-			m_pSceneMaterialProperties = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
+			m_pMaterialParametersBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
 		}
 
-		pCopyCommandList->CopyBuffer(m_pSceneMaterialPropertiesCopyBuffer, 0, m_pSceneMaterialProperties, 0, sceneMaterialPropertiesSize);
-	}
-
-	void Scene::UpdateVertexBuffers(CommandList* pCopyCommandList)
-	{
-		uint32 sceneVertexBufferSize = uint32(m_SceneVertexArray.GetSize() * sizeof(Vertex));
-
-		if (m_pSceneVertexCopyBuffer == nullptr || sceneVertexBufferSize > m_pSceneVertexCopyBuffer->GetDesc().SizeInBytes)
-		{
-			SAFERELEASE(m_pSceneVertexCopyBuffer);
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Scene Vertex Copy Buffer";
-			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			bufferDesc.SizeInBytes	= sceneVertexBufferSize;
-
-			m_pSceneVertexCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
-		}
-
-		void* pMapped = m_pSceneVertexCopyBuffer->Map();
-		memcpy(pMapped, m_SceneVertexArray.GetData(), sceneVertexBufferSize);
-		m_pSceneVertexCopyBuffer->Unmap();
-
-		if (m_pSceneVertexBuffer == nullptr || sceneVertexBufferSize > m_pSceneVertexBuffer->GetDesc().SizeInBytes)
-		{
-			SAFERELEASE(m_pSceneVertexBuffer);
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Scene Vertex Buffer";
-			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_VERTEX_BUFFER;
-			bufferDesc.SizeInBytes	= sceneVertexBufferSize;
-
-			m_pSceneVertexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
-		}
-
-		pCopyCommandList->CopyBuffer(m_pSceneVertexCopyBuffer, 0, m_pSceneVertexBuffer, 0, sceneVertexBufferSize);
-	}
-
-	void Scene::UpdateIndexBuffers(CommandList* pCopyCommandList)
-	{
-		uint32 sceneIndexBufferSize = uint32(m_SceneIndexArray.GetSize() * sizeof(uint32));
-
-		if (m_pSceneIndexCopyBuffer == nullptr || sceneIndexBufferSize > m_pSceneIndexCopyBuffer->GetDesc().SizeInBytes)
-		{
-			SAFERELEASE(m_pSceneIndexCopyBuffer);
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Scene Index Copy Buffer";
-			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			bufferDesc.SizeInBytes	= sceneIndexBufferSize;
-
-			m_pSceneIndexCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
-		}
-
-		void* pMapped = m_pSceneIndexCopyBuffer->Map();
-		memcpy(pMapped, m_SceneIndexArray.GetData(), sceneIndexBufferSize);
-		m_pSceneIndexCopyBuffer->Unmap();
-
-		if (m_pSceneIndexBuffer == nullptr || sceneIndexBufferSize > m_pSceneIndexBuffer->GetDesc().SizeInBytes)
-		{
-			SAFERELEASE(m_pSceneIndexBuffer);
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Scene Index Buffer";
-			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
-			bufferDesc.SizeInBytes	= sceneIndexBufferSize;
-
-			m_pSceneIndexBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
-		}
-
-		pCopyCommandList->CopyBuffer(m_pSceneIndexCopyBuffer, 0, m_pSceneIndexBuffer, 0, sceneIndexBufferSize);
-	}
-
-	void Scene::UpdateInstanceBuffers(CommandList* pCopyCommandList)
-	{
-		uint32 scenePrimaryInstanceBufferSize = uint32(m_SortedPrimaryInstances.GetSize() * sizeof(InstancePrimary));
-		uint32 sceneSecondaryInstanceBufferSize = uint32(m_SortedSecondaryInstances.GetSize() * sizeof(InstanceSecondary));
-
-		if (m_pScenePrimaryInstanceCopyBuffer == nullptr || scenePrimaryInstanceBufferSize > m_pScenePrimaryInstanceCopyBuffer->GetDesc().SizeInBytes)
-		{
-			SAFERELEASE(m_pScenePrimaryInstanceCopyBuffer);
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Scene Primary Instance Copy Buffer";
-			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			bufferDesc.SizeInBytes	= scenePrimaryInstanceBufferSize;
-
-			m_pScenePrimaryInstanceCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
-		}
-
-		if (m_pSceneSecondaryInstanceCopyBuffer == nullptr || sceneSecondaryInstanceBufferSize > m_pSceneSecondaryInstanceCopyBuffer->GetDesc().SizeInBytes)
-		{
-			SAFERELEASE(m_pSceneSecondaryInstanceCopyBuffer);
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Scene Secondary Instance Copy Buffer";
-			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			bufferDesc.SizeInBytes	= sceneSecondaryInstanceBufferSize;
-
-			m_pSceneSecondaryInstanceCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
-		}
-
-		void* pPrimaryMapped = m_pScenePrimaryInstanceCopyBuffer->Map();
-		memcpy(pPrimaryMapped, m_SortedPrimaryInstances.GetData(), scenePrimaryInstanceBufferSize);
-		m_pScenePrimaryInstanceCopyBuffer->Unmap();
-
-		void* pSecondaryMapped = m_pSceneSecondaryInstanceCopyBuffer->Map();
-		memcpy(pSecondaryMapped, m_SortedSecondaryInstances.GetData(), sceneSecondaryInstanceBufferSize);
-		m_pSceneSecondaryInstanceCopyBuffer->Unmap();
-
-		if (m_pScenePrimaryInstanceBuffer == nullptr || scenePrimaryInstanceBufferSize > m_pScenePrimaryInstanceBuffer->GetDesc().SizeInBytes)
-		{
-			SAFERELEASE(m_pScenePrimaryInstanceBuffer);
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Scene Primary Instance Buffer";
-			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-			bufferDesc.SizeInBytes	= scenePrimaryInstanceBufferSize;
-
-			m_pScenePrimaryInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
-		}
-
-		if (m_pSceneSecondaryInstanceBuffer == nullptr || scenePrimaryInstanceBufferSize > m_pSceneSecondaryInstanceBuffer->GetDesc().SizeInBytes)
-		{
-			SAFERELEASE(m_pSceneSecondaryInstanceBuffer);
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Scene Secondary Instance Buffer";
-			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-			bufferDesc.SizeInBytes	= sceneSecondaryInstanceBufferSize;
-
-			m_pSceneSecondaryInstanceBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
-		}
-
-		pCopyCommandList->CopyBuffer(m_pScenePrimaryInstanceCopyBuffer, 0, m_pScenePrimaryInstanceBuffer, 0, scenePrimaryInstanceBufferSize);
-		pCopyCommandList->CopyBuffer(m_pSceneSecondaryInstanceCopyBuffer, 0, m_pSceneSecondaryInstanceBuffer, 0, scenePrimaryInstanceBufferSize);
-	}
-
-	void Scene::UpdateIndirectArgsBuffers(CommandList* pCopyCommandList)
-	{
-		uint32 sceneMeshIndexBufferSize = uint32(m_IndirectArgs.GetSize() * sizeof(IndexedIndirectMeshArgument));
-
-		if (m_pSceneIndirectArgsCopyBuffer == nullptr || sceneMeshIndexBufferSize > m_pSceneIndirectArgsCopyBuffer->GetDesc().SizeInBytes)
-		{
-			SAFERELEASE(m_pSceneIndirectArgsCopyBuffer);
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Scene Mesh Index Copy Buffer";
-			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			bufferDesc.SizeInBytes	= sceneMeshIndexBufferSize;
-
-			m_pSceneIndirectArgsCopyBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
-		}
-
-		void* pMapped = m_pSceneIndirectArgsCopyBuffer->Map();
-		memcpy(pMapped, m_IndirectArgs.GetData(), sceneMeshIndexBufferSize);
-		m_pSceneIndirectArgsCopyBuffer->Unmap();
-
-		if (m_pSceneIndirectArgsBuffer == nullptr || sceneMeshIndexBufferSize > m_pSceneIndirectArgsBuffer->GetDesc().SizeInBytes)
-		{
-			SAFERELEASE(m_pSceneIndirectArgsBuffer);
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Scene Mesh Index Buffer";
-			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_INDIRECT_BUFFER;
-			bufferDesc.SizeInBytes	= sceneMeshIndexBufferSize;
-
-			m_pSceneIndirectArgsBuffer = m_pGraphicsDevice->CreateBuffer(&bufferDesc);
-		}
-
-		pCopyCommandList->CopyBuffer(m_pSceneIndirectArgsCopyBuffer, 0, m_pSceneIndirectArgsBuffer, 0, sceneMeshIndexBufferSize);
+		pCommandList->CopyBuffer(m_pMaterialParametersStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 	}
 
 	void Scene::BuildTLAS(CommandList* pBuildCommandList, bool update)
 	{
-		BuildTopLevelAccelerationStructureDesc tlasBuildDesc = {};
-		tlasBuildDesc.pAccelerationStructure	= m_pTLAS;
-		tlasBuildDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-		tlasBuildDesc.pInstanceBuffer			= m_pScenePrimaryInstanceBuffer;
-		tlasBuildDesc.InstanceCount				= m_PrimaryInstances.GetSize();
-		tlasBuildDesc.Update					= update;
+		//BuildTopLevelAccelerationStructureDesc tlasBuildDesc = {};
+		//tlasBuildDesc.pAccelerationStructure	= m_pTLAS;
+		//tlasBuildDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+		//tlasBuildDesc.pInstanceBuffer			= m_pScenePrimaryInstanceBuffer;
+		//tlasBuildDesc.InstanceCount				= m_PrimaryInstances.GetSize();
+		//tlasBuildDesc.Update					= update;
 
-		pBuildCommandList->BuildTopLevelAccelerationStructure(&tlasBuildDesc);
+		//pBuildCommandList->BuildTopLevelAccelerationStructure(&tlasBuildDesc);
 	}
 }

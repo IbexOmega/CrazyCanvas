@@ -124,8 +124,8 @@ namespace LambdaEngine
 			int32						SampleCount				= 1;
 			int32						MiplevelCount			= 1;
 			ERenderGraphSamplerType		SamplerType				= ERenderGraphSamplerType::LINEAR;
-			uint32						TextureFlags			= FTextureFlag::TEXTURE_FLAG_NONE;
-			uint32						TextureViewFlags		= FTextureViewFlag::TEXTURE_VIEW_FLAG_NONE;
+			FTextureFlags				TextureFlags			= FTextureFlag::TEXTURE_FLAG_NONE;
+			FTextureViewFlags			TextureViewFlags		= FTextureViewFlag::TEXTURE_VIEW_FLAG_NONE;
 		} TextureParams;
 
 		//Buffer Specific
