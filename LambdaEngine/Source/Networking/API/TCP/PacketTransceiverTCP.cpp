@@ -63,6 +63,7 @@ namespace LambdaEngine
 	{
 		pStatistics->SetLastReceivedSequenceNr(pHeader->Sequence);
 
+		// this Loop makes sure that we Ack all packets recieved and not just the last recieved packet
 		for (uint32 i = pStatistics->GetLastReceivedAckNr() + 1; i <= pHeader->Ack; i++)
 		{
 			newAcks.PushBack(i);
