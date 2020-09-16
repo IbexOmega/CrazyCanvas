@@ -77,7 +77,7 @@ CrazyCanvas::CrazyCanvas()
 			ecs->AddComponent<NameComponent>(e, nameComp);
 		}
 		
-		// TODO: Test removing of entities and removing of components.
+		// TODO: Test removing entities and removing components.
 	}
 
 	SceneDesc sceneDesc = { };
