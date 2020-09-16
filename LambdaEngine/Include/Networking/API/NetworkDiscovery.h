@@ -35,6 +35,7 @@ namespace LambdaEngine
 	private:
 		ServerUDP* m_pServer;
 		SpinLock m_Lock;
+		Timestamp m_TimestampOfLastTransmit;
 
 	private:
 		static NetworkDiscovery s_Instance;
