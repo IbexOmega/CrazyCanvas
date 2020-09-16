@@ -126,6 +126,7 @@ namespace LambdaEngine
 		virtual void CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const override final;
 
 		virtual void QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const override final;
+		virtual void QueryDeviceMemoryStatistics(TArray<GraphicsDeviceMemoryStatistics>& pMemoryStat) const override final;
 
 		virtual void Release() override final;
 
