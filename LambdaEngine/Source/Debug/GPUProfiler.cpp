@@ -43,7 +43,30 @@ namespace LambdaEngine
 		// Profiler (Which has the instance of GPUProfiler) begins the ImGui window
 		m_TimeSinceUpdate += delta.AsMilliSeconds();
 
+		// Memory display
+		if (m_TimeSinceUpdate > 1 / m_UpdateFreq)
+		{
+			RenderSystem::GetDevice()->QueryDeviceMemoryStatistics(m_MemoryStats);
+		}
+		static const char* items[] = { "B", "KB", "MB", "GB" };
+		static int itemSelected = 2;
+		static float byteDivider = 1;
+		ImGui::Combo("Memory suffix", &itemSelected, items, 4, 4);
+		if (itemSelected == 0) { byteDivider = 1.f; }
+		if (itemSelected == 1) { byteDivider = 1000.f; }
+		if (itemSelected == 2) { byteDivider = 1000.f * 1000.f; }
+		if (itemSelected == 3) { byteDivider = 1000.f * 1000.f * 1000.f; }
 
+		for (uint32 i = 0; i < m_MemoryStats.GetSize(); i++)
+		{
+			ImGui::Text(m_MemoryStats[i].MemoryTypeName.c_str());
+			char buf[64];
+			float32 percentage = (float32)(m_MemoryStats[i].TotalBytesAllocated / (float64)m_MemoryStats[i].TotalBytesReserved);
+			sprintf(buf, "%.3f/%.3f (%s)", m_MemoryStats[i].TotalBytesAllocated / byteDivider, m_MemoryStats[i].TotalBytesReserved / byteDivider, items[itemSelected]);
+			ImGui::ProgressBar(percentage, ImVec2(-1.0f, 0.0f), buf);
+		}
+
+		// Timestamp display
 		if (m_TimestampCount != 0 && ImGui::CollapsingHeader("Timestamps") && m_TimeSinceUpdate > 1 / m_UpdateFreq)
 		{
 			ImGui::SliderFloat("Update frequency", &m_UpdateFreq, 1.0f, 144.0f);
@@ -72,6 +95,7 @@ namespace LambdaEngine
 			}
 		}
 
+		// Graphics pipeline statistics display
 		if (m_pPipelineStatHeap != nullptr && ImGui::CollapsingHeader("Pipeline Stats"))
 		{
 			// Graphics Pipeline Statistics
