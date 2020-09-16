@@ -48,7 +48,7 @@
 
 // TEMP!!
 #include "ECS/ECSCore.h"
-#include "Game/ECS/Rendering/Components.h"
+#include "Game/ECS/Rendering/TestComponents.h"
 
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
@@ -68,13 +68,17 @@ CrazyCanvas::CrazyCanvas()
 		for (uint32 i = 0; i < 200; i++)
 		{
 			Entity e = ecs->CreateEntity();
-			ecs->AddComponent<PositionComponent>(e, { {0.1f, -2.f, 5.4f} });
-			ecs->AddComponent<ScaleComponent>(e, { {1.f, 1.f, 1.f} });
-			ecs->AddComponent<RotationComponent>(e, RotationComponent());
+			TestPositionComponent posComp;
+			posComp.Pos = { 0.1f, -2.f, 5.4f };
+			ecs->AddComponent<TestPositionComponent>(e, posComp);
+			TestScaleComponent scComp;
+			scComp.Scale = { 1.f, 1.f, 1.f };
+			ecs->AddComponent<TestScaleComponent>(e, scComp);
+			ecs->AddComponent<TestRotationComponent>(e, TestRotationComponent());
 			std::string name = "Entity_" + std::to_string(i);
-			NameComponent nameComp;
+			TestNameComponent nameComp;
 			strcpy(nameComp.Name, name.c_str());
-			ecs->AddComponent<NameComponent>(e, nameComp);
+			ecs->AddComponent<TestNameComponent>(e, nameComp);
 		}
 		
 		// TODO: Test removing entities and removing components.

@@ -39,7 +39,7 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline void ComponentManager::RegisterComponentType()
 	{
-		std::type_index id = TID(Comp);
+		std::type_index id = Comp::s_TID;
 		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) == m_CompTypeToArrayMap.end(), "Trying to register a component that already exists!");
 
 		m_CompTypeToArrayMap[id] = m_ComponentArrays.GetSize();
@@ -50,7 +50,7 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline Comp& ComponentManager::AddComponent(Entity entity, Comp component)
 	{
-		std::type_index id = TID(Comp);
+		std::type_index id = Comp::s_TID;
 		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to add a component which was not registered!");
 
 		// Fetch the corresponding ComponentArray for that component type.
@@ -64,7 +64,7 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline void ComponentManager::RemoveComponent(Entity entity)
 	{
-		std::type_index id = TID(Comp);
+		std::type_index id = Comp::s_TID;
 		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to remove a component which was not registered!");
 
 		// Fetch the corresponding ComponentArray for that component type.
@@ -78,7 +78,7 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline Comp& ComponentManager::GetComponent(Entity entity)
 	{
-		std::type_index id = TID(Comp);
+		std::type_index id = Comp::s_TID;
 		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to fetch a component which was not registered!");
 
 		// Fetch the corresponding ComponentArray for that component type.
@@ -91,7 +91,7 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline bool ComponentManager::HasType()
 	{
-		std::type_index id = TID(Comp);
+		std::type_index id = Comp::s_TID;
 		return m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end();
 	}
 }

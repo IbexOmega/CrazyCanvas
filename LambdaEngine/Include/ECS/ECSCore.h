@@ -94,13 +94,11 @@ namespace LambdaEngine
     template<typename Comp>
     inline Comp& ECSCore::AddComponent(Entity entity, Comp component)
     {
-        std::type_index compIdx = TID(Comp);
-
-        if(!m_ComponentManager.HasType<Comp>())
+        if (!m_ComponentManager.HasType<Comp>())
             m_ComponentManager.RegisterComponentType<Comp>();
 
         Comp& comp = m_ComponentManager.AddComponent<Comp>(entity, component);
-        ComponentAdded(entity, compIdx);
+        ComponentAdded(entity, Comp::s_TID);
 
         return comp;
     }
@@ -108,12 +106,11 @@ namespace LambdaEngine
     template<typename Comp>
     inline bool ECSCore::RemoveComponent(Entity entity)
     {
-        std::type_index compIdx = TID(Comp);
 
         if (m_ComponentManager.HasType<Comp>())
         {
             m_ComponentManager.RemoveComponent<Comp>(entity);
-            ComponentDeleted(entity, compIdx);
+            ComponentDeleted(entity, Comp::s_TID);
             return true;
         }
         return false;
