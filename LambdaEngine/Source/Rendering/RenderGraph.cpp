@@ -122,7 +122,7 @@ namespace LambdaEngine
 		m_DebugRenderers.Clear();
 	}
 
-	bool RenderGraph::Init(const RenderGraphDesc* pDesc)
+	bool RenderGraph::Init(const RenderGraphDesc* pDesc, TSet<uint32>& requiredDrawArgs)
 	{
 		m_BackBufferCount				= pDesc->BackBufferCount;
 		m_MaxTexturesPerDescriptorSet	= pDesc->MaxTexturesPerDescriptorSet;
@@ -152,13 +152,13 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants))
+		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants, requiredDrawArgs))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
 		}
 
-		if (!CreateSynchronizationStages(pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions))
+		if (!CreateSynchronizationStages(pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions, requiredDrawArgs))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Synchronization Stages", pDesc->Name.c_str());
 			return false;
@@ -173,7 +173,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::Recreate(const RenderGraphDesc* pDesc)
+	bool RenderGraph::Recreate(const RenderGraphDesc* pDesc, TSet<uint32>& requiredDrawArgs)
 	{
 		RenderSystem::GetGraphicsQueue()->Flush();
 		RenderSystem::GetComputeQueue()->Flush();
@@ -220,13 +220,13 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants))
+		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants, requiredDrawArgs))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
 		}
 
-		if (!CreateSynchronizationStages(pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions))
+		if (!CreateSynchronizationStages(pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions, requiredDrawArgs))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Synchronization Stages", pDesc->Name.c_str());
 			return false;
@@ -270,7 +270,8 @@ namespace LambdaEngine
 
 			switch (pResource->Type)
 			{
-				case ERenderGraphResourceType::TEXTURE:					UpdateResourceTexture(pResource, pDesc);					break;
+				case ERenderGraphResourceType::TEXTURE:					UpdateResourceTexture(pResource, pDesc);				break;
+				case ERenderGraphResourceType::SCENE_DRAW_ARGS:			UpdateResourceDrawArgs(pResource, pDesc);				break;
 				case ERenderGraphResourceType::BUFFER:					UpdateResourceBuffer(pResource, pDesc);					break;
 				case ERenderGraphResourceType::ACCELERATION_STRUCTURE:	UpdateResourceAccelerationStructure(pResource, pDesc);	break;
 				default:
@@ -1154,9 +1155,9 @@ namespace LambdaEngine
 					}
 				}
 			}
-			else if (pResourceDesc->Type == ERenderGraphResourceType::SCENE_DRAW_BUFFERS)
+			else if (pResourceDesc->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
 			{
-				newResource.Type = ERenderGraphResourceType::SCENE_DRAW_BUFFERS;
+				newResource.Type = ERenderGraphResourceType::SCENE_DRAW_ARGS;
 			}
 			else if (pResourceDesc->Type == ERenderGraphResourceType::BUFFER)
 			{
@@ -1300,7 +1301,7 @@ namespace LambdaEngine
 					alreadyExists = alreadyExists && newResource.Texture.PerSubImageTextureViews.GetSize()	== previousResource.Texture.PerSubImageTextureViews.GetSize();
 					alreadyExists = alreadyExists && newResource.Texture.Samplers.GetSize()					== previousResource.Texture.Samplers.GetSize();
 					
-					previousResource.Texture.InititalTransitionBarriers.Clear();
+					previousResource.Texture.InitialTransitionBarriers.Clear();
 
 					//If the resource is discovered as nonexisiting here, we need to release internal subresources
 					if (!alreadyExists && previousResource.OwnershipType == EResourceOwnershipType::INTERNAL)
@@ -1321,13 +1322,17 @@ namespace LambdaEngine
 						}
 					}
 				}
+				else if (newResource.Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
+				{
+					//Nothing to check here
+				}
 				else if (newResource.Type == ERenderGraphResourceType::BUFFER)
 				{
 					alreadyExists = alreadyExists && newResource.Buffer.Buffers.GetSize()			== previousResource.Buffer.Buffers.GetSize();
 					alreadyExists = alreadyExists && newResource.Buffer.Offsets.GetSize()			== previousResource.Buffer.Offsets.GetSize();
 					alreadyExists = alreadyExists && newResource.Buffer.SizesInBytes.GetSize()		== previousResource.Buffer.SizesInBytes.GetSize();
 
-					previousResource.Buffer.InititalTransitionBarriers.Clear();
+					previousResource.Buffer.InitialTransitionBarriers.Clear();
 
 					//If the resource is discovered as nonexisiting here, we need to release internal subresources
 					if (!alreadyExists && previousResource.OwnershipType == EResourceOwnershipType::INTERNAL)
@@ -1337,6 +1342,10 @@ namespace LambdaEngine
 							SAFERELEASE(previousResource.Buffer.Buffers[sr]);
 						}
 					}
+				}
+				else if (newResource.Type == ERenderGraphResourceType::ACCELERATION_STRUCTURE)
+				{
+					//Nothing to check here
 				}
 			}
 
@@ -1405,7 +1414,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants)
+	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, TSet<uint32>& requiredDrawArgs)
 	{
 		m_RenderStageCount = (uint32)renderStages.GetSize();
 		m_RenderStageMap.reserve(m_RenderStageCount);
@@ -1506,9 +1515,6 @@ namespace LambdaEngine
 
 				Resource* pResource = &resourceIt->second;
 
-				if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_BUFFERS)
-					continue;
-
 				//Create Initital Transition Barrier and Params, we don't want to create them for the ImGui stage because it "backtransitions" unless it is the only stage
 				if (!isImGuiStage || m_RenderStageCount == 1)
 				{
@@ -1528,15 +1534,15 @@ namespace LambdaEngine
 							numInitialBarriers = pResource->SubResourceCount;
 						}
 
-						if (pResource->Texture.InititalTransitionBarriers.IsEmpty())
+						if (pResource->Texture.InitialTransitionBarriers.IsEmpty())
 						{
-							pResource->Texture.InititalTransitionBarriers.Resize(numInitialBarriers);
+							pResource->Texture.InitialTransitionBarriers.Resize(numInitialBarriers);
 
 							pResource->LastPipelineStageOfFirstRenderStage = lastPipelineStageFlags;
 
 							for (uint32 barrierIndex = 0; barrierIndex < numInitialBarriers; barrierIndex++)
 							{
-								PipelineTextureBarrierDesc* pTextureBarrier = &pResource->Texture.InititalTransitionBarriers[barrierIndex];
+								PipelineTextureBarrierDesc* pTextureBarrier = &pResource->Texture.InitialTransitionBarriers[barrierIndex];
 								pTextureBarrier->pTexture					= nullptr;
 								pTextureBarrier->StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
 								pTextureBarrier->StateAfter					= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT ? pResourceStateDesc->AttachmentSynchronizations.PrevBindingType : pResourceStateDesc->BindingType, pResource->Texture.Format);
@@ -1548,7 +1554,39 @@ namespace LambdaEngine
 							}
 						}
 					}
-					else
+					else if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS && pResourceStateDesc->DrawArgsMask != 0x0)
+					{
+						if (pRenderStage->pDrawArgsResource != nullptr)
+						{
+							LOG_ERROR("[RenderGraph]: Multiple Draw Buffer Bindings are currently not supported for a single RenderStage, %s", pRenderStage->Name.c_str());
+							return false;
+						}
+
+						if (pRenderStageDesc->Type != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS || pRenderStageDesc->Graphics.DrawType != ERenderStageDrawType::SCENE_INSTANCES)
+						{
+							LOG_ERROR("[RenderGraph]: Unfortunately, only GRAPHICS Render Stages with Draw Type SCENE_INSTANCES is allowed to have a resource of binding type DRAW_BUFFERS");
+							return false;
+						}
+
+						requiredDrawArgs.insert(pResourceStateDesc->DrawArgsMask);
+						pRenderStage->pDrawArgsResource = pResource;
+						pRenderStage->DrawArgsMask		= pResourceStateDesc->DrawArgsMask;
+
+						//Set Initial Template only if Mask has not been found before
+						auto maskToBuffersIt = pResource->DrawArgs.MaskToArgs.find(pResourceStateDesc->DrawArgsMask);
+						if (maskToBuffersIt == pResource->DrawArgs.MaskToArgs.end())
+						{
+							DrawArgsData drawArgsData = {};
+							drawArgsData.InitialTransitionBarrierTemplate.pBuffer				= nullptr;
+							drawArgsData.InitialTransitionBarrierTemplate.QueueBefore			= ConvertPipelineStateTypeToQueue(pRenderStageDesc->Type);
+							drawArgsData.InitialTransitionBarrierTemplate.QueueAfter			= drawArgsData.InitialTransitionBarrierTemplate.QueueBefore;
+							drawArgsData.InitialTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
+							drawArgsData.InitialTransitionBarrierTemplate.DstMemoryAccessFlags	= CalculateResourceAccessFlags(pResourceStateDesc->BindingType);
+
+							pResource->DrawArgs.MaskToArgs[pResourceStateDesc->DrawArgsMask] = drawArgsData;
+						}
+					}
+					else if (pResource->Type == ERenderGraphResourceType::BUFFER)
 					{
 						uint32 numInitialBarriers = 0;
 						if (pResource->BackBufferBound)
@@ -1560,15 +1598,15 @@ namespace LambdaEngine
 							numInitialBarriers = pResource->SubResourceCount;
 						}
 
-						if (pResource->Buffer.InititalTransitionBarriers.IsEmpty())
+						if (pResource->Buffer.InitialTransitionBarriers.IsEmpty())
 						{
-							pResource->Buffer.InititalTransitionBarriers.Resize(numInitialBarriers);
+							pResource->Buffer.InitialTransitionBarriers.Resize(numInitialBarriers);
 
 							pResource->LastPipelineStageOfFirstRenderStage = lastPipelineStageFlags;
 
 							for (uint32 barrierIndex = 0; barrierIndex < numInitialBarriers; barrierIndex++)
 							{
-								PipelineBufferBarrierDesc* pBufferBarrier = &pResource->Buffer.InititalTransitionBarriers[barrierIndex];
+								PipelineBufferBarrierDesc* pBufferBarrier = &pResource->Buffer.InitialTransitionBarriers[barrierIndex];
 								pBufferBarrier->pBuffer					= nullptr;
 								pBufferBarrier->QueueBefore				= ConvertPipelineStateTypeToQueue(pRenderStageDesc->Type);
 								pBufferBarrier->QueueAfter				= pBufferBarrier->QueueBefore;
@@ -1579,202 +1617,206 @@ namespace LambdaEngine
 					}
 				}
 
-				//Descriptors
-				if (ResourceStateNeedsDescriptor(pResourceStateDesc->BindingType))
+				//Draw Args are not bound to any of the normal Descriptor Sets but are handled in a special manner
+				if (pResource->Type != ERenderGraphResourceType::SCENE_DRAW_ARGS)
 				{
-					EDescriptorType descriptorType		= CalculateResourceStateDescriptorType(pResource->Type, pResourceStateDesc->BindingType);
-
-					if (descriptorType == EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
+					//Descriptors
+					if (ResourceStateNeedsDescriptor(pResourceStateDesc->BindingType))
 					{
-						LOG_ERROR("[RenderGraph]: Descriptor Type for Resource State with name \"%s\" could not be found", pResourceStateDesc->ResourceName.c_str());
-						return false;
-					}
+						EDescriptorType descriptorType		= CalculateResourceStateDescriptorType(pResource->Type, pResourceStateDesc->BindingType);
 
-					DescriptorBindingDesc descriptorBinding = {};
-					descriptorBinding.DescriptorType		= descriptorType;
-					descriptorBinding.ShaderStageMask		= pipelineStageMask;
-
-					if (pResource->Type == ERenderGraphResourceType::TEXTURE)
-					{
-						ETextureState textureState = CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType, pResource->Texture.Format);
-
-						uint32 actualSubResourceCount		= (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount;
-
-						descriptorBinding.DescriptorCount	= actualSubResourceCount;
-						descriptorBinding.Binding			= textureDescriptorBindingIndex++;
-
-						textureDescriptorSetDescriptions.PushBack(descriptorBinding);
-						renderStageTextureResources.PushBack(std::make_tuple(pResource, textureState, descriptorType));
-					}
-					else
-					{
-						descriptorBinding.DescriptorCount	= pResource->SubResourceCount;
-						descriptorBinding.Binding			= bufferDescriptorBindingIndex++;
-
-						bufferDescriptorSetDescriptions.PushBack(descriptorBinding);
-						renderStageBufferResources.PushBack(std::make_tuple(pResource, ETextureState::TEXTURE_STATE_UNKNOWN, descriptorType));
-					}
-				}
-				//RenderPass Attachments
-				else if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT)
-				{
-					if (pResource->OwnershipType != EResourceOwnershipType::INTERNAL && !pResource->IsBackBuffer)
-					{
-						//This may be okay, but we then need to do the check below, where we check that all attachment are of the same size, somewhere else because we don't know the size att RenderGraph Init Time.
-						LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but is not INTERNAL", pResourceStateDesc->ResourceName.c_str());
-						return false;
-					}
-
-					float32						xDimVariable;
-					float32						yDimVariable;
-					ERenderGraphDimensionType	xDimType;
-					ERenderGraphDimensionType	yDimType;
-
-					if (!pResource->IsBackBuffer)
-					{
-						auto resourceUpdateDescIt = m_InternalResourceUpdateDescriptions.find(pResourceStateDesc->ResourceName);
-
-						if (resourceUpdateDescIt == m_InternalResourceUpdateDescriptions.end())
+						if (descriptorType == EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
 						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" has no accompanying InternalResourceUpdateDesc", pResourceStateDesc->ResourceName.c_str());
+							LOG_ERROR("[RenderGraph]: Descriptor Type for Resource State with name \"%s\" could not be found", pResourceStateDesc->ResourceName.c_str());
 							return false;
 						}
 
-						xDimVariable	= resourceUpdateDescIt->second.TextureUpdate.XDimVariable;
-						yDimVariable	= resourceUpdateDescIt->second.TextureUpdate.YDimVariable;
-						xDimType		= resourceUpdateDescIt->second.TextureUpdate.XDimType;
-						yDimType		= resourceUpdateDescIt->second.TextureUpdate.YDimType;
+						DescriptorBindingDesc descriptorBinding = {};
+						descriptorBinding.DescriptorType		= descriptorType;
+						descriptorBinding.ShaderStageMask		= pipelineStageMask;
+
+						if (pResource->Type == ERenderGraphResourceType::TEXTURE)
+						{
+							ETextureState textureState = CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType, pResource->Texture.Format);
+
+							uint32 actualSubResourceCount		= (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount;
+
+							descriptorBinding.DescriptorCount	= actualSubResourceCount;
+							descriptorBinding.Binding			= textureDescriptorBindingIndex++;
+
+							textureDescriptorSetDescriptions.PushBack(descriptorBinding);
+							renderStageTextureResources.PushBack(std::make_tuple(pResource, textureState, descriptorType));
+						}
+						else
+						{
+							descriptorBinding.DescriptorCount	= pResource->SubResourceCount;
+							descriptorBinding.Binding			= bufferDescriptorBindingIndex++;
+
+							bufferDescriptorSetDescriptions.PushBack(descriptorBinding);
+							renderStageBufferResources.PushBack(std::make_tuple(pResource, ETextureState::TEXTURE_STATE_UNKNOWN, descriptorType));
+						}
 					}
-					else
+					//RenderPass Attachments
+					else if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT)
 					{
-						xDimVariable	= 1.0f;
-						yDimVariable	= 1.0f;
-						xDimType		= ERenderGraphDimensionType::RELATIVE;
-						yDimType		= ERenderGraphDimensionType::RELATIVE;
-					}
-
-					//Just use the width to check if its ever been set
-					if (renderPassAttachmentsWidth == 0)
-					{
-						renderPassAttachmentsWidth			= xDimVariable;
-						renderPassAttachmentsHeight			= yDimVariable;
-						renderPassAttachmentDimensionTypeX	= xDimType;
-						renderPassAttachmentDimensionTypeY	= yDimType;
-					}
-					else
-					{
-						bool success = true;
-
-						if (renderPassAttachmentsWidth != xDimVariable)
+						if (pResource->OwnershipType != EResourceOwnershipType::INTERNAL && !pResource->IsBackBuffer)
 						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d", 
-								pResourceStateDesc->ResourceName.c_str(), 
-								xDimVariable,
-								renderPassAttachmentsWidth);
-							success = false;
-						}
-
-						if (renderPassAttachmentsHeight != yDimVariable)
-						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same height %d, as previous attachments %d",
-								pResourceStateDesc->ResourceName.c_str(),
-								yDimVariable,
-								renderPassAttachmentsHeight);
-							success = false;
-						}
-
-						if (renderPassAttachmentDimensionTypeX != xDimType)
-						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
-								pResourceStateDesc->ResourceName.c_str(),
-								RenderGraphDimensionTypeToString(xDimType),
-								RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeX));
-							success = false;
-						}
-
-						if (renderPassAttachmentDimensionTypeY != yDimType)
-						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
-								pResourceStateDesc->ResourceName.c_str(),
-								RenderGraphDimensionTypeToString(yDimType),
-								RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeY));
-							success = false;
-						}
-
-						if (!success)
+							//This may be okay, but we then need to do the check below, where we check that all attachment are of the same size, somewhere else because we don't know the size att RenderGraph Init Time.
+							LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but is not INTERNAL", pResourceStateDesc->ResourceName.c_str());
 							return false;
-					}
+						}
 
-					pResource->Texture.UsedAsRenderTarget = true;
+						float32						xDimVariable;
+						float32						yDimVariable;
+						ERenderGraphDimensionType	xDimType;
+						ERenderGraphDimensionType	yDimType;
 
-					uint32 executionCountFromResource = pResource->Texture.PerSubImageTextureViews.GetSize();
+						if (!pResource->IsBackBuffer)
+						{
+							auto resourceUpdateDescIt = m_InternalResourceUpdateDescriptions.find(pResourceStateDesc->ResourceName);
 
-					if (pResource->BackBufferBound) executionCountFromResource /= m_BackBufferCount;
+							if (resourceUpdateDescIt == m_InternalResourceUpdateDescriptions.end())
+							{
+								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" has no accompanying InternalResourceUpdateDesc", pResourceStateDesc->ResourceName.c_str());
+								return false;
+							}
 
-					if (renderStageExecutionCount == 1)
-					{
-						renderStageExecutionCount = executionCountFromResource;
-					}
-					else if (executionCountFromResource > 1 && executionCountFromResource != renderStageExecutionCount)
-					{
-						LOG_ERROR("[RenderGraph]: Resource %s is used as RenderPass Attachment and requires execution count %d, but execution count for this RenderStage has been set to %d from another resource",
-							pResource->Name.c_str(),
-							executionCountFromResource,
-							renderStageExecutionCount);
-						return false;
-					}
+							xDimVariable	= resourceUpdateDescIt->second.TextureUpdate.XDimVariable;
+							yDimVariable	= resourceUpdateDescIt->second.TextureUpdate.YDimVariable;
+							xDimType		= resourceUpdateDescIt->second.TextureUpdate.XDimType;
+							yDimType		= resourceUpdateDescIt->second.TextureUpdate.YDimType;
+						}
+						else
+						{
+							xDimVariable	= 1.0f;
+							yDimVariable	= 1.0f;
+							xDimType		= ERenderGraphDimensionType::RELATIVE;
+							yDimType		= ERenderGraphDimensionType::RELATIVE;
+						}
 
-					bool isColorAttachment = pResource->Texture.Format != EFormat::FORMAT_D24_UNORM_S8_UINT;
+						//Just use the width to check if its ever been set
+						if (renderPassAttachmentsWidth == 0)
+						{
+							renderPassAttachmentsWidth			= xDimVariable;
+							renderPassAttachmentsHeight			= yDimVariable;
+							renderPassAttachmentDimensionTypeX	= xDimType;
+							renderPassAttachmentDimensionTypeY	= yDimType;
+						}
+						else
+						{
+							bool success = true;
 
-					ETextureState initialState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.PrevBindingType, pResource->Texture.Format);
-					ETextureState finalState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.NextBindingType, pResource->Texture.Format);
+							if (renderPassAttachmentsWidth != xDimVariable)
+							{
+								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d", 
+									pResourceStateDesc->ResourceName.c_str(), 
+									xDimVariable,
+									renderPassAttachmentsWidth);
+								success = false;
+							}
 
-					ELoadOp loadOp = ELoadOp::LOAD_OP_LOAD;
+							if (renderPassAttachmentsHeight != yDimVariable)
+							{
+								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same height %d, as previous attachments %d",
+									pResourceStateDesc->ResourceName.c_str(),
+									yDimVariable,
+									renderPassAttachmentsHeight);
+								success = false;
+							}
 
-					if (initialState == ETextureState::TEXTURE_STATE_DONT_CARE ||
-						initialState == ETextureState::TEXTURE_STATE_UNKNOWN ||
-						!pResourceStateDesc->AttachmentSynchronizations.PrevSameFrame)
-					{
-						loadOp = ELoadOp::LOAD_OP_CLEAR;
-					}
+							if (renderPassAttachmentDimensionTypeX != xDimType)
+							{
+								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
+									pResourceStateDesc->ResourceName.c_str(),
+									RenderGraphDimensionTypeToString(xDimType),
+									RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeX));
+								success = false;
+							}
 
-					if (isColorAttachment)
-					{
-						RenderPassAttachmentDesc renderPassAttachmentDesc = {};
-						renderPassAttachmentDesc.Format			= pResource->Texture.Format;
-						renderPassAttachmentDesc.SampleCount	= 1;
-						renderPassAttachmentDesc.LoadOp			= loadOp;
-						renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE_OP_STORE;
-						renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
-						renderPassAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
-						renderPassAttachmentDesc.InitialState	= initialState;
-						renderPassAttachmentDesc.FinalState		= finalState;
+							if (renderPassAttachmentDimensionTypeY != yDimType)
+							{
+								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
+									pResourceStateDesc->ResourceName.c_str(),
+									RenderGraphDimensionTypeToString(yDimType),
+									RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeY));
+								success = false;
+							}
 
-						renderPassAttachmentDescriptions.PushBack(renderPassAttachmentDesc);
+							if (!success)
+								return false;
+						}
 
-						renderPassRenderTargetStates.PushBack(ETextureState::TEXTURE_STATE_RENDER_TARGET);
+						pResource->Texture.UsedAsRenderTarget = true;
 
-						BlendAttachmentStateDesc blendAttachmentState = {};
-						blendAttachmentState.BlendEnabled			= false;
-						blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+						uint32 executionCountFromResource = pResource->Texture.PerSubImageTextureViews.GetSize();
 
-						renderPassBlendAttachmentStates.PushBack(blendAttachmentState);
-						renderStageRenderTargets.PushBack(std::make_pair(pResource, finalState));
-					}
-					else
-					{
-						RenderPassAttachmentDesc renderPassAttachmentDesc = {};
-						renderPassAttachmentDesc.Format			= pResource->Texture.Format;
-						renderPassAttachmentDesc.SampleCount	= 1;
-						renderPassAttachmentDesc.LoadOp			= loadOp;
-						renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE_OP_STORE;
-						renderPassAttachmentDesc.StencilLoadOp	= loadOp;
-						renderPassAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_STORE;
-						renderPassAttachmentDesc.InitialState	= initialState;
-						renderPassAttachmentDesc.FinalState		= finalState;
+						if (pResource->BackBufferBound) executionCountFromResource /= m_BackBufferCount;
 
-						renderPassDepthStencilDescription = renderPassAttachmentDesc;
-						pDepthStencilResource = pResource;
+						if (renderStageExecutionCount == 1)
+						{
+							renderStageExecutionCount = executionCountFromResource;
+						}
+						else if (executionCountFromResource > 1 && executionCountFromResource != renderStageExecutionCount)
+						{
+							LOG_ERROR("[RenderGraph]: Resource %s is used as RenderPass Attachment and requires execution count %d, but execution count for this RenderStage has been set to %d from another resource",
+								pResource->Name.c_str(),
+								executionCountFromResource,
+								renderStageExecutionCount);
+							return false;
+						}
+
+						bool isColorAttachment = pResource->Texture.Format != EFormat::FORMAT_D24_UNORM_S8_UINT;
+
+						ETextureState initialState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.PrevBindingType, pResource->Texture.Format);
+						ETextureState finalState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.NextBindingType, pResource->Texture.Format);
+
+						ELoadOp loadOp = ELoadOp::LOAD_OP_LOAD;
+
+						if (initialState == ETextureState::TEXTURE_STATE_DONT_CARE ||
+							initialState == ETextureState::TEXTURE_STATE_UNKNOWN ||
+							!pResourceStateDesc->AttachmentSynchronizations.PrevSameFrame)
+						{
+							loadOp = ELoadOp::LOAD_OP_CLEAR;
+						}
+
+						if (isColorAttachment)
+						{
+							RenderPassAttachmentDesc renderPassAttachmentDesc = {};
+							renderPassAttachmentDesc.Format			= pResource->Texture.Format;
+							renderPassAttachmentDesc.SampleCount	= 1;
+							renderPassAttachmentDesc.LoadOp			= loadOp;
+							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE_OP_STORE;
+							renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
+							renderPassAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
+							renderPassAttachmentDesc.InitialState	= initialState;
+							renderPassAttachmentDesc.FinalState		= finalState;
+
+							renderPassAttachmentDescriptions.PushBack(renderPassAttachmentDesc);
+
+							renderPassRenderTargetStates.PushBack(ETextureState::TEXTURE_STATE_RENDER_TARGET);
+
+							BlendAttachmentStateDesc blendAttachmentState = {};
+							blendAttachmentState.BlendEnabled			= false;
+							blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+
+							renderPassBlendAttachmentStates.PushBack(blendAttachmentState);
+							renderStageRenderTargets.PushBack(std::make_pair(pResource, finalState));
+						}
+						else
+						{
+							RenderPassAttachmentDesc renderPassAttachmentDesc = {};
+							renderPassAttachmentDesc.Format			= pResource->Texture.Format;
+							renderPassAttachmentDesc.SampleCount	= 1;
+							renderPassAttachmentDesc.LoadOp			= loadOp;
+							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE_OP_STORE;
+							renderPassAttachmentDesc.StencilLoadOp	= loadOp;
+							renderPassAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_STORE;
+							renderPassAttachmentDesc.InitialState	= initialState;
+							renderPassAttachmentDesc.FinalState		= finalState;
+
+							renderPassDepthStencilDescription = renderPassAttachmentDesc;
+							pDepthStencilResource = pResource;
+						}
 					}
 				}
 			}
@@ -1860,14 +1902,14 @@ namespace LambdaEngine
 
 						if (resourceIt->second.Type == ERenderGraphResourceType::TEXTURE)
 						{
-							if (resourceIt->second.Texture.InititalTransitionBarriers.IsEmpty())
+							if (resourceIt->second.Texture.InitialTransitionBarriers.IsEmpty())
 							{
 								resourceIt->second.LastPipelineStageOfFirstRenderStage = pRenderStage->LastPipelineStage;
 							}
 						}
 						else
 						{
-							if (resourceIt->second.Buffer.InititalTransitionBarriers.IsEmpty())
+							if (resourceIt->second.Buffer.InitialTransitionBarriers.IsEmpty())
 							{
 								resourceIt->second.LastPipelineStageOfFirstRenderStage = pRenderStage->LastPipelineStage;
 							}
@@ -1932,8 +1974,23 @@ namespace LambdaEngine
 						descriptorSetLayouts.PushBack(descriptorSetLayout);
 					}
 
-					if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS && pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INSTANCES)
+					if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES)
 					{
+						if (pRenderStage->pDrawArgsResource == nullptr)
+						{
+							LOG_ERROR("[RenderGraph]: A RenderStage of DrawType SCENE_INSTANCES must have a binding of typ SCENE_DRAW_BUFFERS");
+							return false;
+						}
+					}
+
+					if (pRenderStage->pDrawArgsResource != nullptr)
+					{
+						if (pRenderStage->DrawArgsMask == 0x0)
+						{
+							LOG_ERROR("[RenderGraph]: A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a non-zero DrawArgsMask set to that binding");
+							return false;
+						}
+
 						DescriptorBindingDesc vertexBufferDescriptorBinding = {};
 						vertexBufferDescriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 						vertexBufferDescriptorBinding.DescriptorCount	= 1;
@@ -2083,37 +2140,6 @@ namespace LambdaEngine
 						}
 					}
 
-					//Set Draw Type and Draw Resource
-					/*{
-						pRenderStage->DrawType = pRenderStageDesc->Graphics.DrawType;
-
-						if (pRenderStageDesc->Graphics.IndexBufferName.size() > 0)
-						{
-							auto indexBufferIt = m_ResourceMap.find(pRenderStageDesc->Graphics.IndexBufferName);
-
-							if (indexBufferIt == m_ResourceMap.end())
-							{
-								LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as index buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->Graphics.IndexBufferName.c_str());
-								return false;
-							}
-
-							pRenderStage->pIndexBufferResource = &indexBufferIt->second;
-						}
-
-						if (pRenderStageDesc->Graphics.IndirectArgsBufferName.size() > 0)
-						{
-							auto indirectArgsBufferIt = m_ResourceMap.find(pRenderStageDesc->Graphics.IndirectArgsBufferName);
-
-							if (indirectArgsBufferIt == m_ResourceMap.end())
-							{
-								LOG_ERROR("[RenderGraph]: Resource \"%s\" is referenced as mesh index buffer resource by render stage, but it cannot be found in Resource Map", pRenderStageDesc->Graphics.IndirectArgsBufferName.c_str());
-								return false;
-							}
-
-							pRenderStage->pIndirectArgsBufferResource = &indirectArgsBufferIt->second;
-						}
-					}*/
-
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineDesc);
 				}
 				else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
@@ -2245,7 +2271,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions)
+	bool RenderGraph::CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<uint32>& requiredDrawArgs)
 	{
 		m_pSynchronizationStages = DBG_NEW SynchronizationStage[synchronizationStageDescriptions.GetSize()];
 
@@ -2378,7 +2404,7 @@ namespace LambdaEngine
 						pResource->BarriersPerSynchronizationStage.PushBack(barrierInfo);
 					}
 				}
-				else if (pResource->Type == ERenderGraphResourceType::BUFFER)
+				else if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
 				{
 					PipelineBufferBarrierDesc bufferBarrier = {};
 					bufferBarrier.QueueBefore			= prevQueue;
@@ -2397,6 +2423,39 @@ namespace LambdaEngine
 						targetSynchronizationIndex = OTHER_QUEUE_BUFFER_SYNCHRONIZATION_INDEX;
 					}
 
+					TArray<PipelineBufferBarrierDesc>& targetArray = pSynchronizationStage->DrawBufferBarriers[targetSynchronizationIndex];
+					targetArray.PushBack(bufferBarrier);
+					uint32 barrierIndex = targetArray.GetSize() - 1;
+
+					//We ignore SubResourceCount since DRAW_BUFFERS don't have predetermined SubResourceCount, instead it is determined at runtime
+
+					ResourceBarrierInfo barrierInfo = {};
+					barrierInfo.SynchronizationStageIndex	= s;
+					barrierInfo.SynchronizationTypeIndex	= targetSynchronizationIndex;
+					barrierInfo.BarrierIndex				= barrierIndex;
+					barrierInfo.DrawArgsMask				= synchronizationIt->DrawArgsMask;
+					requiredDrawArgs.insert(synchronizationIt->DrawArgsMask);
+
+					pResource->BarriersPerSynchronizationStage.PushBack(barrierInfo);
+				}
+				else if (pResource->Type == ERenderGraphResourceType::BUFFER)
+				{
+					PipelineBufferBarrierDesc bufferBarrier = {};
+					bufferBarrier.QueueBefore			= prevQueue;
+					bufferBarrier.QueueAfter			= nextQueue;
+					bufferBarrier.SrcMemoryAccessFlags	= srcMemoryAccessFlags;
+					bufferBarrier.DstMemoryAccessFlags	= dstMemoryAccessFlags;
+
+					uint32 targetSynchronizationIndex = 0;
+
+					if (prevQueue == nextQueue)
+					{
+						targetSynchronizationIndex = SAME_QUEUE_BUFFER_SYNCHRONIZATION_INDEX;
+					}
+					else
+					{
+						targetSynchronizationIndex = OTHER_QUEUE_BUFFER_SYNCHRONIZATION_INDEX;
+					}
 
 					uint32 actualSubResourceCount = 0;
 					if (pResource->BackBufferBound)
@@ -2718,9 +2777,9 @@ namespace LambdaEngine
 			}
 
 			//Transfer to Initial State
-			if (!pResource->Texture.InititalTransitionBarriers.IsEmpty())
+			if (!pResource->Texture.InitialTransitionBarriers.IsEmpty())
 			{
-				PipelineTextureBarrierDesc& initialBarrier = pResource->Texture.InititalTransitionBarriers[sr];
+				PipelineTextureBarrierDesc& initialBarrier = pResource->Texture.InitialTransitionBarriers[sr];
 
 				initialBarrier.pTexture				= pTexture;
 				initialBarrier.Miplevel				= 0;
@@ -2760,6 +2819,103 @@ namespace LambdaEngine
 
 		if (pResource->ResourceBindings.GetSize() > 0)
 			m_DirtyDescriptorSetTextures.insert(pResource);
+	}
+
+	void RenderGraph::UpdateResourceDrawArgs(Resource* pResource, const ResourceUpdateDesc* pDesc)
+	{
+		auto drawArgsArgsIt = pResource->DrawArgs.MaskToArgs.find(pDesc->ExternalDrawArgsUpdate.DrawArgsMask);
+
+		if (drawArgsArgsIt != pResource->DrawArgs.MaskToArgs.end())
+		{
+			drawArgsArgsIt->second.Args.Clear();
+
+			drawArgsArgsIt->second.Args.Resize(pDesc->ExternalDrawArgsUpdate.DrawArgsCount);
+			memcpy(drawArgsArgsIt->second.Args.GetData(), pDesc->ExternalDrawArgsUpdate.pDrawArgs, pDesc->ExternalDrawArgsUpdate.DrawArgsCount * sizeof(DrawArg));
+
+			//Update Synchronization Stage Barriers
+			for (uint32 b = 0; b < pResource->BarriersPerSynchronizationStage.GetSize(); b += pResource->SubResourceCount)
+			{
+				const ResourceBarrierInfo* pBarrierInfo = &pResource->BarriersPerSynchronizationStage[b];
+
+				if (pDesc->ExternalDrawArgsUpdate.DrawArgsMask == pBarrierInfo->DrawArgsMask)
+				{
+					SynchronizationStage* pSynchronizationStage = &m_pSynchronizationStages[pBarrierInfo->SynchronizationStageIndex];
+
+					TArray<PipelineBufferBarrierDesc>& drawBufferBarriers = pSynchronizationStage->DrawBufferBarriers[pBarrierInfo->SynchronizationTypeIndex];
+					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers[0];
+					drawBufferBarriers.Clear();
+
+					for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.DrawArgsCount; d++)
+					{
+						DrawArg* pDrawArg = &pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
+
+						//Vertex Buffer
+						{
+							bufferBarrierTemplate.pBuffer		= pDrawArg->pVertexBuffer;
+							bufferBarrierTemplate.SizeInBytes	= pDrawArg->VertexBufferSize;
+							bufferBarrierTemplate.Offset		= 0;
+							drawBufferBarriers.PushBack(bufferBarrierTemplate);
+						}
+
+						//Instance Buffer
+						{
+							bufferBarrierTemplate.pBuffer		= pDrawArg->pInstanceBuffer;
+							bufferBarrierTemplate.SizeInBytes	= pDrawArg->InstanceCount;
+							bufferBarrierTemplate.Offset		= 0;
+							drawBufferBarriers.PushBack(bufferBarrierTemplate);
+						}
+
+						//Index Buffer
+						{
+							bufferBarrierTemplate.pBuffer		= pDrawArg->pIndexBuffer;
+							bufferBarrierTemplate.SizeInBytes	= pDrawArg->IndexCount * sizeof(uint32);
+							bufferBarrierTemplate.Offset		= 0;
+							drawBufferBarriers.PushBack(bufferBarrierTemplate);
+						}
+					}
+				}
+			}
+
+			static TArray<PipelineBufferBarrierDesc> intialBarriers;
+			intialBarriers.Clear();
+
+			//Create Initial Barriers
+			for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.DrawArgsCount; d++)
+			{
+				DrawArg* pDrawArg = &pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
+
+				//Vertex Buffer
+				{
+					PipelineBufferBarrierDesc initialVertexBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
+					initialVertexBufferTransitionBarrier.pBuffer		= pDrawArg->pVertexBuffer;
+					initialVertexBufferTransitionBarrier.Offset			= 0;
+					initialVertexBufferTransitionBarrier.SizeInBytes	= pDrawArg->VertexBufferSize;
+					intialBarriers.PushBack(initialVertexBufferTransitionBarrier);
+				}
+
+				//Instance Buffer
+				{
+					PipelineBufferBarrierDesc initialInstanceBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
+					initialInstanceBufferTransitionBarrier.pBuffer		= pDrawArg->pInstanceBuffer;
+					initialInstanceBufferTransitionBarrier.Offset		= 0;
+					initialInstanceBufferTransitionBarrier.SizeInBytes	= pDrawArg->InstanceBufferSize;
+					intialBarriers.PushBack(initialInstanceBufferTransitionBarrier);
+				}
+
+				//Index Buffer
+				{
+					PipelineBufferBarrierDesc initialIndexBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
+					initialIndexBufferTransitionBarrier.pBuffer			= pDrawArg->pIndexBuffer;
+					initialIndexBufferTransitionBarrier.Offset			= 0;
+					initialIndexBufferTransitionBarrier.SizeInBytes		= pDrawArg->IndexCount * sizeof(uint32);
+					intialBarriers.PushBack(initialIndexBufferTransitionBarrier);
+				}
+			}
+		}
+		else
+		{
+			LOG_WARNING("[RenderGraph]: Update DrawArgs called for unused DrawArgsMask %x", pDesc->ExternalDrawArgsUpdate.DrawArgsMask);
+		}
 	}
 
 	void RenderGraph::UpdateResourceBuffer(Resource* pResource, const ResourceUpdateDesc* pDesc)
@@ -2820,9 +2976,9 @@ namespace LambdaEngine
 			}
 
 			//Transfer to Initial State
-			if (!pResource->Buffer.InititalTransitionBarriers.IsEmpty())
+			if (!pResource->Buffer.InitialTransitionBarriers.IsEmpty())
 			{
-				PipelineBufferBarrierDesc& initialBarrier = pResource->Buffer.InititalTransitionBarriers[sr];
+				PipelineBufferBarrierDesc& initialBarrier = pResource->Buffer.InitialTransitionBarriers[sr];
 
 				initialBarrier.pBuffer		= pBuffer;
 				initialBarrier.Offset		= offset;
@@ -2988,6 +3144,24 @@ namespace LambdaEngine
 			}
 		}
 
+		//Draw Buffer Synchronization
+		{
+			const TArray<PipelineBufferBarrierDesc>& sameQueueDrawBufferBarriers		= pSynchronizationStage->DrawBufferBarriers[SAME_QUEUE_BUFFER_SYNCHRONIZATION_INDEX];
+			const TArray<PipelineBufferBarrierDesc>& otherQueueDrawBufferBarriers		= pSynchronizationStage->DrawBufferBarriers[OTHER_QUEUE_BUFFER_SYNCHRONIZATION_INDEX];
+
+			if (sameQueueDrawBufferBarriers.GetSize() > 0)
+			{
+				pFirstExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, sameQueueDrawBufferBarriers.GetData(), sameQueueDrawBufferBarriers.GetSize());
+			}
+
+			if (otherQueueDrawBufferBarriers.GetSize() > 0)
+			{
+				pFirstExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueDrawBufferBarriers.GetData(), otherQueueDrawBufferBarriers.GetSize());
+				pSecondExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueDrawBufferBarriers.GetData(), otherQueueDrawBufferBarriers.GetSize());
+				(*ppSecondExecutionStage) = pSecondExecutionCommandList;
+			}
+		}
+
 		//Buffer Synchronization
 		{
 			const TArray<PipelineBufferBarrierDesc>& sameQueueBufferBarriers		= pSynchronizationStage->BufferBarriers[SAME_QUEUE_BUFFER_SYNCHRONIZATION_INDEX];
@@ -3063,10 +3237,14 @@ namespace LambdaEngine
 		uint32 frameBufferWidth		= 0;
 		uint32 frameBufferHeight	= 0;
 
-		TArray<DrawArg> drawArgs;
+		const DrawArg* pDrawArgs = nullptr;
+		uint32 numDrawArgs = 0;
+
 		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES)
 		{
-			m_pScene->GetDrawArgs(drawArgs, 0);
+			const TArray<DrawArg>& drawArgs = pRenderStage->pDrawArgsResource->DrawArgs.MaskToArgs[pRenderStage->DrawArgsMask].Args;
+			pDrawArgs	= drawArgs.GetData();
+			numDrawArgs = drawArgs.GetSize();
 		}
 
 		for (uint32 r = 0; r < pRenderStage->ExecutionCount; r++)
@@ -3156,8 +3334,10 @@ namespace LambdaEngine
 
 				if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES)
 				{
-					for (DrawArg& drawArg : drawArgs)
+					for (uint32 d = 0; d < numDrawArgs; d++)
 					{
+						const DrawArg& drawArg = pDrawArgs[d];
+
 						pGraphicsCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
 						//Assume pDrawDescriptorSet != nullptr

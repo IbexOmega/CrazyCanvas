@@ -69,7 +69,8 @@ namespace LambdaEngine
 				renderStagesByName,
 				resourceStatesByHalfAttributeIndex,
 				resourceStateLinksByLinkIndex,
-				renderStageWeightsByName))
+				renderStageWeightsByName,
+				0xFFFFFFFF))
 			{
 				LOG_ERROR("[RenderGraphParser]: Failed to recursively weight Render Stages");
 				return false;
@@ -606,7 +607,7 @@ namespace LambdaEngine
 
 						break;
 					}
-					case ERenderGraphResourceType::SCENE_DRAW_BUFFERS:
+					case ERenderGraphResourceType::SCENE_DRAW_ARGS:
 					case ERenderGraphResourceType::BUFFER:
 					{
 						switch (pResourceState->BindingType)
@@ -673,7 +674,8 @@ namespace LambdaEngine
 		const THashTable<String, EditorRenderStageDesc>& renderStagesByName,
 		const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex,
 		const THashTable<int32, EditorRenderGraphResourceLink>& resourceStateLinksByLinkIndex,
-		THashTable<String, int32>& renderStageWeightsByName)
+		THashTable<String, int32>& renderStageWeightsByName,
+		uint32 currentDrawArgsMask)
 	{
 		TSet<String> parentRenderStageNames;
 		bool result = true;
@@ -698,6 +700,12 @@ namespace LambdaEngine
 
 						if (prevResourceStateIt != resourceStatesByHalfAttributeIndex.end())
 						{
+							uint32 nextDrawArgsMask = currentDrawArgsMask & prevResourceStateIt->second.DrawArgsMask;
+
+							//Check if Draw Buffers, if it, check if mask are overlapping
+							if (resourceStateIt->second.ResourceType == ERenderGraphResourceType::SCENE_DRAW_ARGS && nextDrawArgsMask == 0)
+								continue;
+
 							//Make sure parent is a Render Stage and check if it has already been visited
 							if (renderStagesByName.count(prevResourceStateIt->second.RenderStageName) > 0 && parentRenderStageNames.count(prevResourceStateIt->second.RenderStageName) == 0)
 							{
@@ -710,7 +718,8 @@ namespace LambdaEngine
 										renderStagesByName,
 										resourceStatesByHalfAttributeIndex,
 										resourceStateLinksByLinkIndex,
-										renderStageWeightsByName);
+										renderStageWeightsByName,
+										nextDrawArgsMask);
 
 
 									parentRenderStageNames.insert(parentRenderStageIt->first);
@@ -782,10 +791,13 @@ namespace LambdaEngine
 
 				if (nextResourceStateIt != resourceStatesByHalfAttributeIndex.end())
 				{
-					pNextResourceState	= &nextResourceStateIt->second;
-					pNextRenderStage	= pPotentialNextRenderStage;
+					if (currentResourceStateIt->second.ResourceType != ERenderGraphResourceType::SCENE_DRAW_ARGS || (currentResourceStateIt->second.DrawArgsMask & nextResourceStateIt->second.DrawArgsMask) > 0)
+					{
+						pNextResourceState = &nextResourceStateIt->second;
+						pNextRenderStage = pPotentialNextRenderStage;
+						break;
+					}
 				}
-				break;
 			}
 		}
 
@@ -816,6 +828,7 @@ namespace LambdaEngine
 						resourceSynchronization.NextRenderStage = pNextRenderStage->Name;
 						resourceSynchronization.NextQueue		= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
 						resourceSynchronization.NextBindingType = pNextResourceState->BindingType;
+						resourceSynchronization.DrawArgsMask	= currentResourceStateIt->second.DrawArgsMask & pNextResourceState->DrawArgsMask;
 
 						pSynchronizationStage->Synchronizations.PushBack(resourceSynchronization);
 					}
@@ -865,10 +878,13 @@ namespace LambdaEngine
 
 						if (nextResourceStateIt != resourceStatesByHalfAttributeIndex.end())
 						{
-							pNextResourceState	= &nextResourceStateIt->second;
-							pNextRenderStage	= pPotentialNextRenderStage;
+							if (currentResourceStateIt->second.ResourceType != ERenderGraphResourceType::SCENE_DRAW_ARGS || (currentResourceStateIt->second.DrawArgsMask & nextResourceStateIt->second.DrawArgsMask) > 0)
+							{
+								pNextResourceState = &nextResourceStateIt->second;
+								pNextRenderStage = pPotentialNextRenderStage;
+								break;
+							}
 						}
-						break;
 					}
 				}
 
@@ -882,8 +898,9 @@ namespace LambdaEngine
 						if (pNextRenderStage != nullptr)
 						{
 							resourceSynchronization.NextRenderStage = pNextRenderStage->Name;
-							resourceSynchronization.NextQueue = ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
+							resourceSynchronization.NextQueue		= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
 							resourceSynchronization.NextBindingType = pNextResourceState->BindingType;
+							resourceSynchronization.DrawArgsMask	= currentResourceStateIt->second.DrawArgsMask & pNextResourceState->DrawArgsMask;
 
 							pSynchronizationStage->Synchronizations.PushBack(resourceSynchronization);
 						}
@@ -930,6 +947,7 @@ namespace LambdaEngine
 				RenderGraphResourceState resourceState = {};
 				resourceState.ResourceName								= resourceStateIt->second.ResourceName;
 				resourceState.BindingType								= resourceStateIt->second.BindingType;
+				resourceState.DrawArgsMask							= resourceStateIt->second.DrawArgsMask;
 				resourceState.AttachmentSynchronizations.PrevSameFrame	= resourceStateIt->second.InputLinkIndex != -1;
 
 				pDstRenderStage->ResourceStates.PushBack(resourceState);

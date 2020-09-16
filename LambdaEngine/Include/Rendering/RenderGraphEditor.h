@@ -60,7 +60,7 @@ namespace LambdaEngine
 		void RenderShaderBoxCommon(String* pTarget, bool* pAdded = nullptr, bool* pRemoved = nullptr);
 
 		TArray<RenderGraphResourceDesc>::Iterator FindResource(const String& name);
-		EditorResourceStateIdent CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERenderGraphResourceBindingType bindingType);
+		EditorResourceStateIdent CreateResourceState(const String& resourceName, ERenderGraphResourceType resourceType, const String& renderStageName, bool removable, ERenderGraphResourceBindingType bindingType);
 		bool CheckLinkValid(int32* pSrcAttributeIndex, int32* pDstAttributeIndex);
 
 		void RemoveResourceStateFrom(const String& name, EditorResourceStateGroup* pResourceStateGroup);

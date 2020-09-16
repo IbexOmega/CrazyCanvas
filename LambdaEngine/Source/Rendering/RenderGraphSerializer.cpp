@@ -98,7 +98,7 @@ namespace LambdaEngine
 
 									break;
 								}
-								case ERenderGraphResourceType::SCENE_DRAW_BUFFERS:
+								case ERenderGraphResourceType::SCENE_DRAW_ARGS:
 								{
 									break;
 								}
@@ -407,8 +407,8 @@ namespace LambdaEngine
 									writer.String("removable");
 									writer.Bool(resourceStateIt->second.Removable);
 
-									writer.String("draw_buffers_mask");
-									writer.Int(resourceStateIt->second.DrawBuffersMask);
+									writer.String("draw_args_mask");
+									writer.Uint(resourceStateIt->second.DrawArgsMask);
 
 									writer.String("binding_type");
 									writer.String(BindingTypeToString(resourceStateIt->second.BindingType));
@@ -627,6 +627,15 @@ namespace LambdaEngine
 						pResourceState->Removable			= resourceStateObject["removable"].GetBool();
 						pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
 
+						auto resourceIt = std::find_if(resources.Begin(), resources.End(), [pResourceState](const RenderGraphResourceDesc& resourceDesc) { return pResourceState->ResourceName == resourceDesc.Name; });
+						if (resourceIt == resources.End())
+						{
+							LOG_ERROR("[RenderGraphSerializer]: Resource State %s was not found in Resources Array", pResourceState->ResourceName.c_str());
+							return false;
+						}
+
+						pResourceState->ResourceType		= resourceIt->Type;
+
 						resourceStateGroup.ResourceStateIdents.PushBack({ resourceName, attributeIndex });
 
 						//Check if there are resource states that are awaiting linking to this resource state group
@@ -702,6 +711,15 @@ namespace LambdaEngine
 				pResourceState->RenderStageName		= finalOutput.Name;
 				pResourceState->Removable			= resourceStateObject["removable"].GetBool();
 				pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
+
+				auto resourceIt = std::find_if(resources.Begin(), resources.End(), [pResourceState](const RenderGraphResourceDesc& resourceDesc) { return pResourceState->ResourceName == resourceDesc.Name; });
+				if (resourceIt == resources.End())
+				{
+					LOG_ERROR("[RenderGraphSerializer]: Resource State % in Final Output was not found in Resources Array", pResourceState->ResourceName.c_str());
+					return false;
+				}
+
+				pResourceState->ResourceType = resourceIt->Type;
 
 				finalOutput.BackBufferAttributeIndex = attributeIndex;
 
@@ -825,8 +843,17 @@ namespace LambdaEngine
 						pResourceState->ResourceName		= resourceName;
 						pResourceState->RenderStageName		= renderStage.Name;
 						pResourceState->Removable			= resourceStateObject["removable"].GetBool();
-						if (resourceStateObject.HasMember("draw_buffers_mask"))	pResourceState->DrawBuffersMask = resourceStateObject["draw_buffers_mask"].GetInt();
+						if (resourceStateObject.HasMember("draw_args_mask"))	pResourceState->DrawArgsMask = resourceStateObject["draw_args_mask"].GetUint();
 						pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
+
+						auto resourceIt = std::find_if(resources.Begin(), resources.End(), [pResourceState](const RenderGraphResourceDesc& resourceDesc) { return pResourceState->ResourceName == resourceDesc.Name; });
+						if (resourceIt == resources.End())
+						{
+							LOG_ERROR("[RenderGraphSerializer]: Resource State %s in Render Stage %s was not found in Resources Array", pResourceState->ResourceName.c_str(), renderStage.Name.c_str());
+							return false;
+						}
+
+						pResourceState->ResourceType = resourceIt->Type;
 
 						renderStage.ResourceStateIdents.PushBack({ resourceName, attributeIndex });
 

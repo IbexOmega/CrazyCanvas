@@ -301,19 +301,19 @@ namespace LambdaEngine
 		{
 			RenderGraphResourceDesc resource = RenderGraphParser::CreateBackBufferResource();
 			m_Resources.PushBack(resource);
-			m_FinalOutput.BackBufferAttributeIndex = CreateResourceState(resource.Name, m_FinalOutput.Name, false, ERenderGraphResourceBindingType::NONE).AttributeIndex;
+			m_FinalOutput.BackBufferAttributeIndex = CreateResourceState(resource.Name, resource.Type, m_FinalOutput.Name, false, ERenderGraphResourceBindingType::NONE).AttributeIndex;
 		}
 
 		{
 			RenderGraphResourceDesc resource = {};
-			resource.Name						= SCENE_DRAW_BUFFERS;
-			resource.Type						= ERenderGraphResourceType::SCENE_DRAW_BUFFERS;
+			resource.Name						= SCENE_DRAW_ARGS;
+			resource.Type						= ERenderGraphResourceType::SCENE_DRAW_ARGS;
 			resource.SubResourceCount			= 1;
 			resource.Editable					= false;
 			resource.External					= true;
 			m_Resources.PushBack(resource);
 
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
 
 		{
@@ -325,7 +325,7 @@ namespace LambdaEngine
 			resource.External					= true;
 			m_Resources.PushBack(resource);
 
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
 
 		{
@@ -337,7 +337,7 @@ namespace LambdaEngine
 			resource.External					= true;
 			m_Resources.PushBack(resource);
 
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
 
 		{
@@ -349,7 +349,7 @@ namespace LambdaEngine
 			resource.External					= true;
 			m_Resources.PushBack(resource);
 
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
 
 		{
@@ -361,7 +361,7 @@ namespace LambdaEngine
 			resource.External					= true;
 			m_Resources.PushBack(resource);
 
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
 
 		{
@@ -374,7 +374,7 @@ namespace LambdaEngine
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_Resources.PushBack(resource);
 
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
 
 		{
@@ -387,7 +387,7 @@ namespace LambdaEngine
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_Resources.PushBack(resource);
 
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
 
 		{
@@ -400,7 +400,7 @@ namespace LambdaEngine
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_Resources.PushBack(resource);
 
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
 
 		{
@@ -413,7 +413,7 @@ namespace LambdaEngine
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_Resources.PushBack(resource);
 
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
 
 		{
@@ -426,7 +426,7 @@ namespace LambdaEngine
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
 			m_Resources.PushBack(resource);
 
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
 
 		m_ResourceStateGroups.Resize(NUM_RESOURCE_STATE_GROUPS);
@@ -686,7 +686,7 @@ namespace LambdaEngine
 					if (addingResource.External)
 					{
 						EditorResourceStateGroup& externalResourcesGroup = m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX];
-						externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(addingResource.Name, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+						externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(addingResource.Name, addingResource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 					}
 
 					done = true;
@@ -791,7 +791,7 @@ namespace LambdaEngine
 					else if (!editedResourceIt->External && editedResourceCopy.External)
 					{
 						EditorResourceStateGroup* pExternalResourcesGroup = &m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX];
-						pExternalResourcesGroup->ResourceStateIdents.PushBack(CreateResourceState(resourceNameBuffer, pExternalResourcesGroup->Name, false, ERenderGraphResourceBindingType::NONE));
+						pExternalResourcesGroup->ResourceStateIdents.PushBack(CreateResourceState(resourceNameBuffer, editedResourceCopy.Type, pExternalResourcesGroup->Name, false, ERenderGraphResourceBindingType::NONE));
 					}
 
 					if (editedResourceCopy.Name != resourceNameBuffer)
@@ -1220,7 +1220,7 @@ namespace LambdaEngine
 
 						if (pResourceStateGroup->FindResourceStateIdent(pResource->Name) == pResourceStateGroup->ResourceStateIdents.end())
 						{
-							pResourceStateGroup->ResourceStateIdents.PushBack(CreateResourceState(pResource->Name, pResourceStateGroup->Name, true, ERenderGraphResourceBindingType::NONE));
+							pResourceStateGroup->ResourceStateIdents.PushBack(CreateResourceState(pResource->Name, pResource->Type, pResourceStateGroup->Name, true, ERenderGraphResourceBindingType::NONE));
 							m_ParsedGraphDirty = true;
 						}
 					}
@@ -1279,7 +1279,7 @@ namespace LambdaEngine
 
 						if (pResourceStateGroup->FindResourceStateIdent(pResource->Name) == pResourceStateGroup->ResourceStateIdents.end())
 						{
-							pResourceStateGroup->ResourceStateIdents.PushBack(CreateResourceState(pResource->Name, pResourceStateGroup->Name, true, ERenderGraphResourceBindingType::NONE));
+							pResourceStateGroup->ResourceStateIdents.PushBack(CreateResourceState(pResource->Name, pResource->Type, pResourceStateGroup->Name, true, ERenderGraphResourceBindingType::NONE));
 							m_ParsedGraphDirty = true;
 						}
 					}
@@ -1398,13 +1398,8 @@ namespace LambdaEngine
 				PushPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, inputAttributeIndex);
 				imnodes::BeginInputAttribute(inputAttributeIndex);
 				ImGui::Text(pResourceState->ResourceName.c_str());
-				imnodes::EndInputAttribute();
-				PopPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, inputAttributeIndex);
-
 				ImGui::SameLine();
 
-				PushPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
-				imnodes::BeginOutputAttribute(outputAttributeIndex);
 				if (pResourceState->Removable)
 				{
 					if (ImGui::Button("-"))
@@ -1439,8 +1434,16 @@ namespace LambdaEngine
 					}
 				}
 
-				imnodes::EndOutputAttribute();
-				PopPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
+				imnodes::EndInputAttribute();
+				PopPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, inputAttributeIndex);
+
+				if (!pResource->External || pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS || pRenderStage->OverrideRecommendedBindingType)
+				{
+					PushPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
+					imnodes::BeginOutputAttribute(outputAttributeIndex);
+					imnodes::EndOutputAttribute();
+					PopPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
+				}
 
 				static TArray<ERenderGraphResourceBindingType> bindingTypes;
 				static TArray<const char*> bindingTypeNames;
@@ -1488,17 +1491,17 @@ namespace LambdaEngine
 					}
 				}
 
-				if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_BUFFERS)
+				if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
 				{
 					char drawBufferMask[9];
-					sprintf(drawBufferMask, "%x", pResourceState->DrawBuffersMask);
+					sprintf(drawBufferMask, "%x", pResourceState->DrawArgsMask);
 
 					ImGui::Text("\tDraw Buffer Mask (Hex)");
 					ImGui::SameLine();
 					ImGui::SetNextItemWidth(ImGui::CalcTextSize("FFFFFFFF").x + ImGui::GetFrameHeight());
 					if (ImGui::InputText("##Draw Buffer Mask", drawBufferMask, ARR_SIZE(drawBufferMask), ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_AutoSelectAll))
 					{
-						sscanf(drawBufferMask, "%x", &pResourceState->DrawBuffersMask);
+						sscanf(drawBufferMask, "%x", &pResourceState->DrawArgsMask);
 					}
 				}
 
@@ -1524,7 +1527,7 @@ namespace LambdaEngine
 
 					if (pRenderStage->FindResourceStateIdent(pResource->Name) == pRenderStage->ResourceStateIdents.end())
 					{
-						pRenderStage->ResourceStateIdents.PushBack(CreateResourceState(pResource->Name, pRenderStage->Name, true, ERenderGraphResourceBindingType::NONE));
+						pRenderStage->ResourceStateIdents.PushBack(CreateResourceState(pResource->Name, pResource->Type, pRenderStage->Name, true, ERenderGraphResourceBindingType::NONE));
 						m_ParsedGraphDirty = true;
 					}
 				}
@@ -1683,7 +1686,7 @@ namespace LambdaEngine
 
 						if (resourceStateIdentIt == pRenderStage->ResourceStateIdents.end())
 						{
-							pRenderStage->ResourceStateIdents.PushBack(CreateResourceState(resourceIt->Name, pRenderStage->Name, true, ERenderGraphResourceBindingType::NONE));
+							pRenderStage->ResourceStateIdents.PushBack(CreateResourceState(resourceIt->Name, resourceIt->Type, pRenderStage->Name, true, ERenderGraphResourceBindingType::NONE));
 							resourceStateIdentIt = pRenderStage->ResourceStateIdents.begin() + (pRenderStage->ResourceStateIdents.GetSize() - 1);
 						}
 
@@ -2473,7 +2476,7 @@ namespace LambdaEngine
 		return m_Resources.End();
 	}
 
-	EditorResourceStateIdent RenderGraphEditor::CreateResourceState(const String& resourceName, const String& renderStageName, bool removable, ERenderGraphResourceBindingType bindingType)
+	EditorResourceStateIdent RenderGraphEditor::CreateResourceState(const String& resourceName, ERenderGraphResourceType resourceType, const String& renderStageName, bool removable, ERenderGraphResourceBindingType bindingType)
 	{
 		if (bindingType == ERenderGraphResourceBindingType::NONE)
 		{
@@ -2483,7 +2486,7 @@ namespace LambdaEngine
 			{
 				switch (resourceIt->Type)
 				{
-					case ERenderGraphResourceType::SCENE_DRAW_BUFFERS:
+					case ERenderGraphResourceType::SCENE_DRAW_ARGS:
 					{
 						bindingType = ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ;
 						break;
@@ -2509,6 +2512,7 @@ namespace LambdaEngine
 
 		EditorRenderGraphResourceState resourceState = {};
 		resourceState.ResourceName		= resourceName;
+		resourceState.ResourceType		= resourceType;
 		resourceState.RenderStageName	= renderStageName;
 		resourceState.Removable			= removable;
 		resourceState.BindingType		= bindingType;
@@ -2682,7 +2686,7 @@ namespace LambdaEngine
 
 		switch (pResource->Type)
 		{
-			case ERenderGraphResourceType::SCENE_DRAW_BUFFERS:
+			case ERenderGraphResourceType::SCENE_DRAW_ARGS:
 			{
 				if (pRenderStage->OverrideRecommendedBindingType)
 				{

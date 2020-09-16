@@ -1,13 +1,15 @@
 #pragma once
 #include "Audio/API/IAudioDevice.h"
 
+#include "Containers/TArray.h"
+
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/Texture.h"
 #include "Rendering/Core/API/Shader.h"
 
 #include "Audio/API/ISoundEffect3D.h"
 
-#include "Game/Scene.h"
+#include "Game/GameTypes.h"
 
 #include "Material.h"
 #include "Mesh.h"

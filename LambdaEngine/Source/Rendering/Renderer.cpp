@@ -83,8 +83,10 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferCount					= BACK_BUFFER_COUNT;
 			renderGraphDesc.MaxTexturesPerDescriptorSet		= MAX_TEXTURES_PER_DESCRIPTOR_SET;
 
+			TSet<uint32> requiredDrawArgs;
+
 			s_pRenderGraph = DBG_NEW RenderGraph(RenderSystem::GetDevice());
-			s_pRenderGraph->Init(&renderGraphDesc);
+			s_pRenderGraph->Init(&renderGraphDesc, requiredDrawArgs);
 		}
 
 		//Update RenderGraph with Back Buffer
@@ -134,7 +136,9 @@ namespace LambdaEngine
 		renderGraphDesc.BackBufferCount					= BACK_BUFFER_COUNT;
 		renderGraphDesc.MaxTexturesPerDescriptorSet		= MAX_TEXTURES_PER_DESCRIPTOR_SET;
 
-		if (!s_pRenderGraph->Recreate(&renderGraphDesc))
+		TSet<uint32> requiredDrawArgs;
+
+		if (!s_pRenderGraph->Recreate(&renderGraphDesc, requiredDrawArgs))
 		{
 			LOG_ERROR("[Renderer]: Failed to set new RenderGraph %s", name.c_str());
 		}
@@ -186,6 +190,19 @@ namespace LambdaEngine
 
 	void Renderer::UpdateRenderGraphFromScene()
 	{
+		{
+			TArray<DrawArg> drawArgs;
+			s_pScene->GetDrawArgs(drawArgs, 0x0);
+
+			ResourceUpdateDesc resourceUpdateDesc					= {};
+			resourceUpdateDesc.ResourceName							= SCENE_DRAW_ARGS;
+			resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsMask	= 0xFFFFFFFF;
+			resourceUpdateDesc.ExternalDrawArgsUpdate.pDrawArgs		= drawArgs.GetData();
+			resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsCount	= drawArgs.GetSize();
+
+			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		}
+
 		//{
 		//	Buffer* pBuffer = s_pScene->GetLightsBuffer();
 		//	ResourceUpdateDesc resourceUpdateDesc				= {};

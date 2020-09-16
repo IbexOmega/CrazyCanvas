@@ -4,6 +4,8 @@
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
 
+#include "Game/GameTypes.h"
+
 namespace LambdaEngine
 {
 	union ShaderConstant;

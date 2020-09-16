@@ -5,14 +5,16 @@
 
 #include "Resources/Mesh.h"
 #include "Resources/Material.h"
-#include "Containers/TArray.h"
-#include "Containers/THashTable.h"
-#include "Containers/String.h"
-#include "Containers/TSet.h"
 #include "Camera.h"
+#include "GameTypes.h"
 #include "Time/API/Timestamp.h"
 #include "Utilities/HashUtilities.h"
+#include "Rendering/RenderGraphTypes.h"
 
+#include "Containers/TArray.h"
+#include "Containers/TSet.h"
+#include "Containers/String.h"
+#include "Containers/THashTable.h"
 #include "Containers/TStack.h"
 
 namespace LambdaEngine
@@ -21,17 +23,6 @@ namespace LambdaEngine
 	constexpr const uint32 NUM_RANDOM_SEEDS		= 8192;
 
 	struct Mesh;
-
-	class GraphicsDevice;
-	class IAudioDevice;
-	class Buffer;
-	class Texture;
-	class TextureView;
-	class CommandAllocator;
-	class CommandList;
-	class AccelerationStructure;
-	class Fence;
-	class DeviceAllocator;
 	
 	enum EHitMask : uint8
 	{
@@ -58,12 +49,6 @@ namespace LambdaEngine
 		EAreaLightType	Type;
 		GUID_Lambda		Material;
 	};
-
-	struct GameObject
-	{
-		GUID_Lambda Mesh;
-		GUID_Lambda Material;
-	};
 	
 	struct Instance
 	{
@@ -73,17 +58,6 @@ namespace LambdaEngine
 		uint32		Padding0;
 		uint32		Padding1;
 		uint32		Padding2;
-	};
-
-	struct DrawArg
-	{
-		Buffer* pVertexBuffer		= nullptr;
-		uint64	VertexBufferSize	= 0;
-		Buffer* pIndexBuffer		= nullptr;
-		uint32	IndexCount			= 0;
-		Buffer* pInstanceBuffer		= nullptr;
-		uint64	InstanceBufferSize	= 0;
-		uint32	InstanceCount		= 0;
 	};
 
 	struct SBTRecord

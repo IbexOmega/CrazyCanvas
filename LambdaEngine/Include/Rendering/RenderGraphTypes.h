@@ -6,6 +6,7 @@
 #include "Core/API/GraphicsTypes.h"
 
 #include "Containers/String.h"
+#include "Containers/TSet.h"
 
 namespace LambdaEngine
 {
@@ -17,7 +18,7 @@ namespace LambdaEngine
 	constexpr const char* SCENE_LIGHTS_BUFFER					= "SCENE_LIGHTS_BUFFER";
 
 	constexpr const char* SCENE_MAT_PARAM_BUFFER				= "SCENE_MAT_PARAM_BUFFER";
-	constexpr const char* SCENE_DRAW_BUFFERS					= "SCENE_DRAW_BUFFERS";
+	constexpr const char* SCENE_DRAW_ARGS						= "SCENE_DRAW_ARGS";
 	constexpr const char* SCENE_TLAS							= "SCENE_TLAS";
 
 	constexpr const char* SCENE_ALBEDO_MAPS						= "SCENE_ALBEDO_MAPS";
@@ -41,7 +42,7 @@ namespace LambdaEngine
 	enum class ERenderGraphResourceType : uint8
 	{
 		NONE					= 0,
-		SCENE_DRAW_BUFFERS		= 1,
+		SCENE_DRAW_ARGS			= 1,
 		TEXTURE					= 2,
 		BUFFER					= 3,
 		ACCELERATION_STRUCTURE	= 4,
@@ -88,6 +89,17 @@ namespace LambdaEngine
 	{
 		TEXTURE_2D				= 0,
 		TEXTURE_CUBE			= 1
+	};
+
+	struct DrawArg
+	{
+		Buffer* pVertexBuffer		= nullptr;
+		uint64	VertexBufferSize	= 0;
+		Buffer* pIndexBuffer		= nullptr;
+		uint32	IndexCount			= 0;
+		Buffer* pInstanceBuffer		= nullptr;
+		uint64	InstanceBufferSize	= 0;
+		uint32	InstanceCount		= 0;
 	};
 
 	/*-----------------------------------------------------------------Resource Structs Begin-----------------------------------------------------------------*/
@@ -167,8 +179,9 @@ namespace LambdaEngine
 
 	struct RenderGraphResourceState
 	{
-		String	ResourceName			= "";
-		ERenderGraphResourceBindingType BindingType = ERenderGraphResourceBindingType::NONE;
+		String							ResourceName		= "";
+		ERenderGraphResourceBindingType BindingType			= ERenderGraphResourceBindingType::NONE;
+		uint32							DrawArgsMask		= 0x0;
 
 		struct
 		{
@@ -239,6 +252,7 @@ namespace LambdaEngine
 		ERenderGraphResourceBindingType	PrevBindingType		= ERenderGraphResourceBindingType::NONE;
 		ERenderGraphResourceBindingType	NextBindingType		= ERenderGraphResourceBindingType::NONE;
 		ERenderGraphResourceType		ResourceType		= ERenderGraphResourceType::NONE;
+		uint32							DrawArgsMask		= 0x0;
 	};
 
 	struct SynchronizationStageDesc
@@ -280,12 +294,13 @@ namespace LambdaEngine
 
 	struct EditorRenderGraphResourceState
 	{
-		String							ResourceName					= "";
-		String							RenderStageName					= "";
-		bool							Removable						= true;
-		int32							DrawBuffersMask					= 0xFFFFFFFF;
-		ERenderGraphResourceBindingType BindingType						= ERenderGraphResourceBindingType::NONE;
-		int32							InputLinkIndex					= -1;
+		String							ResourceName		= "";
+		ERenderGraphResourceType		ResourceType		= ERenderGraphResourceType::NONE;
+		String							RenderStageName		= "";
+		bool							Removable			= true;
+		uint32							DrawArgsMask		= 0xFFFFFFFF;
+		ERenderGraphResourceBindingType BindingType			= ERenderGraphResourceBindingType::NONE;
+		int32							InputLinkIndex		= -1;
 		TSet<int32>						OutputLinkIndices;
 	};
 
@@ -485,7 +500,7 @@ namespace LambdaEngine
 			case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:		return EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
 			}
 		}
-		else if (resourceType == ERenderGraphResourceType::BUFFER || resourceType == ERenderGraphResourceType::SCENE_DRAW_BUFFERS)
+		else if (resourceType == ERenderGraphResourceType::BUFFER || resourceType == ERenderGraphResourceType::SCENE_DRAW_ARGS)
 		{
 			switch (bindingType)
 			{
@@ -877,7 +892,7 @@ namespace LambdaEngine
 	{
 		switch (type)
 		{
-		case ERenderGraphResourceType::SCENE_DRAW_BUFFERS:			return "SCENE_DRAW_BUFFERS";
+		case ERenderGraphResourceType::SCENE_DRAW_ARGS:				return "SCENE_DRAW_ARGS";
 		case ERenderGraphResourceType::TEXTURE:						return "TEXTURE";
 		case ERenderGraphResourceType::BUFFER:						return "BUFFER";
 		case ERenderGraphResourceType::ACCELERATION_STRUCTURE:		return "ACCELERATION_STRUCTURE";
@@ -887,7 +902,7 @@ namespace LambdaEngine
 
 	FORCEINLINE ERenderGraphResourceType RenderGraphResourceTypeFromString(const String& string)
 	{
-		if		(string == "SCENE_DRAW_BUFFERS")		return ERenderGraphResourceType::SCENE_DRAW_BUFFERS;
+		if		(string == "SCENE_DRAW_ARGS")			return ERenderGraphResourceType::SCENE_DRAW_ARGS;
 		else if	(string == "TEXTURE")					return ERenderGraphResourceType::TEXTURE;
 		else if (string == "BUFFER")					return ERenderGraphResourceType::BUFFER;
 		else if (string == "ACCELERATION_STRUCTURE")	return ERenderGraphResourceType::ACCELERATION_STRUCTURE;
