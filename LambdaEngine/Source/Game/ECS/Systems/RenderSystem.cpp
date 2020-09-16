@@ -26,9 +26,9 @@ namespace LambdaEngine
 	{
 		{
 			TransformComponents transformComponents;
-			transformComponents.Position.Permissions = R;
-			transformComponents.Scale.Permissions = R;
-			transformComponents.Rotation.Permissions = R;
+			transformComponents.m_Position.Permissions = R;
+			transformComponents.m_Scale.Permissions = R;
+			transformComponents.m_Rotation.Permissions = R;
 
 			// Subscribe on Static Entities & Dynamic Entities
 			{
@@ -197,7 +197,7 @@ namespace LambdaEngine
 	}
 	void RenderSystem::UpdateRenderGraphFromScene()
 	{
-		{
+		/*{
 			Buffer* pBuffer = m_pScene->GetLightsBuffer();
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName = SCENE_LIGHTS_BUFFER;
@@ -329,6 +329,6 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalAccelerationStructure.pTLAS = pTLAS;
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
+		}*/
 	}
 }
