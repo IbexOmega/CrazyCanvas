@@ -51,31 +51,32 @@ namespace LambdaEngine
 
 	void NetworkDiscovery::OnConnecting(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void NetworkDiscovery::OnConnected(IClient* pClient)
 	{
-		
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void NetworkDiscovery::OnDisconnecting(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void NetworkDiscovery::OnDisconnected(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void NetworkDiscovery::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
+		UNREFERENCED_VARIABLE(pPacket);
 	}
 
 	void NetworkDiscovery::OnClientReleased(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 }
