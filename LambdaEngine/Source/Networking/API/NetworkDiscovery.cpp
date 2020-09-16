@@ -13,11 +13,6 @@ namespace LambdaEngine
 
 	}
 
-	void NetworkDiscovery::FixedTick(Timestamp delta)
-	{
-
-	}
-
 	bool NetworkDiscovery::EnableDiscovery()
 	{
 		std::scoped_lock<SpinLock> lock(s_Instance.m_Lock);
@@ -37,6 +32,16 @@ namespace LambdaEngine
 			return s_Instance.m_pServer->Start(IPEndPoint(IPAddress::ANY, 4450));
 		}
 		return true;
+	}
+
+	void NetworkDiscovery::FixedTick(Timestamp delta)
+	{
+		static Timestamp interval = Timestamp::Seconds(1);
+		if (EngineLoop::GetTimeSinceStart() - m_TimestampOfLastTransmit >= interval)
+		{
+			m_TimestampOfLastTransmit = EngineLoop::GetTimeSinceStart();
+
+		}
 	}
 
 	IClientRemoteHandler* NetworkDiscovery::CreateClientHandler()

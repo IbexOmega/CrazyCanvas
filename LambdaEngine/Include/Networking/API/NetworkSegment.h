@@ -63,7 +63,7 @@ namespace LambdaEngine
 
 		std::string ToString() const;
 
-		void DeepCopy(NetworkSegment* pSegment) const;
+		void CopyTo(NetworkSegment* pSegment) const;
 
 	private:
 		NetworkSegment();
