@@ -71,7 +71,8 @@ namespace LambdaEngine
 
 	void NetworkDiscovery::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
+		UNREFERENCED_VARIABLE(pPacket);
 	}
 
 	void NetworkDiscovery::OnClientReleased(IClient* pClient)
