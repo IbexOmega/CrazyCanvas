@@ -73,6 +73,8 @@ namespace LambdaEngine
 		virtual void SetInputMode(TSharedRef<Window> window, EInputMode inputMode) override final;
 		virtual EInputMode GetInputMode(TSharedRef<Window> window) const override final;
 
+		virtual void QueryCPUStatistics(CPUStatistics* pCPUStat) const override final;
+
 		virtual void SetActiveWindow(TSharedRef<Window> window)	override final;
 		virtual TSharedRef<Window> GetActiveWindow() const override final;
 
@@ -100,10 +102,10 @@ namespace LambdaEngine
 
 	private:
 		static bool RegisterWindowClass();
-		static bool RegisterRawInputDevices(HWND hwnd);
+		static bool RegisterRawInputDevices(HWND hWnd);
 		static bool UnregisterRawInputDevices();
 		
-		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		static LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 
 	private:
 		HINSTANCE m_hInstance = 0;
