@@ -2,28 +2,29 @@
 
 namespace LambdaEngine
 {
-    ECSCore ECSCore::s_Instance;
+    ECSCore* ECSCore::s_pInstance = DBG_NEW ECSCore();
 
     ECSCore::ECSCore()
-        :m_EntityPublisher(&m_EntityRegistry),
-        m_ECSBooter(this),
+        :m_EntityPublisher(&m_ComponentManager, &m_EntityRegistry),
         m_DeltaTime(0.0f)
     {}
+
+    void ECSCore::Release()
+    {
+        DELETE_OBJECT(ECSCore::s_pInstance);
+    }
 
     void ECSCore::Tick(float dt)
     {
         m_DeltaTime = dt;
-
         PerformEntityDeletions();
-        PerformRegistrations();
-
         m_JobScheduler.Tick();
     }
 
     void ECSCore::RemoveEntity(Entity entity)
     {
         m_ComponentManager.EntityDeleted(entity);
-        EnqueueEntityDeletion(entity);
+        m_EntitiesToDelete.PushBack(entity);
     }
 
     void ECSCore::ScheduleJobASAP(const Job& job)
@@ -34,60 +35,6 @@ namespace LambdaEngine
     void ECSCore::ScheduleJobPostFrame(const Job& job)
     {
         m_JobScheduler.ScheduleJob(job, g_LastPhase + 1u);
-    }
-
-    void ECSCore::EnqueueComponentHandlerRegistration(const ComponentHandlerRegistration& handlerRegistration)
-    {
-        m_ECSBooter.EnqueueComponentHandlerRegistration(handlerRegistration);
-    }
-
-    void ECSCore::EnqueueComponentSubscriberRegistration(const Subscriber& subscriber)
-    {
-        m_ECSBooter.EnqueueSubscriberInitialization(subscriber);
-    }
-
-    void ECSCore::PerformRegistrations()
-    {
-        // Initialize and register systems and component handlers
-        m_ECSBooter.PerformBootups();
-    }
-
-    void ECSCore::EnqueueEntityDeletion(Entity entity)
-    {
-        m_EntitiesToDelete.PushBack(entity);
-    }
-
-    void ECSCore::PerformEntityDeletions()
-    {
-        THashTable<std::type_index, ComponentStorage>& componentStorage = m_EntityPublisher.GetComponentStorage();
-        const EntityRegistryPage& registryPage = m_EntityRegistry.GetTopRegistryPage();
-
-        for (Entity entity : m_EntitiesToDelete)
-        {
-            // Delete every component belonging to the entity
-            const auto& componentTypes = registryPage.IndexID(entity);
-            for (std::type_index componentType : componentTypes)
-            {
-                // Delete the component
-                auto containerItr = componentStorage.find(componentType);
-                ComponentStorage& component = containerItr->second;
-
-                if (component.ComponentDestructor != nullptr)
-                {
-                    component.ComponentDestructor(entity);
-                }
-
-                component.pContainer->Pop(entity);
-
-                // Notify systems that the component has been removed
-                m_EntityPublisher.RemovedComponent(entity, componentType);
-            }
-
-            // Free the entity ID
-            m_EntityRegistry.DeregisterEntity(entity);
-        }
-
-        m_EntitiesToDelete.Clear();
     }
 
     void ECSCore::AddRegistryPage()
@@ -102,13 +49,13 @@ namespace LambdaEngine
         const auto& entityComponentSets = page.GetVec();
         const TArray<Entity>& entities = page.GetIDs();
 
-        for (uint32 i = 0; i < entities.GetSize(); i++)
+        for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
         {
-            const std::unordered_set<std::type_index>& typeSet = entityComponentSets[i];
+            const std::unordered_set<std::type_index>& typeSet = entityComponentSets[entityIdx];
 
             for (std::type_index type : typeSet) {
                 // Deregister entity's components from systems
-                m_EntityPublisher.RemovedComponent(entities[i], type);
+                m_EntityPublisher.UnpublishComponent(entities[entityIdx], type);
             }
         }
     }
@@ -119,27 +66,18 @@ namespace LambdaEngine
         const auto& entityComponentSets = page.GetVec();
         const TArray<Entity>& entities = page.GetIDs();
 
-        THashTable<std::type_index, ComponentStorage>& componentStorage = m_EntityPublisher.GetComponentStorage();
-
-        for (uint32 i = 0; i < entities.GetSize(); i++)
+        for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
         {
-            const std::unordered_set<std::type_index>& typeSet = entityComponentSets[i];
+            Entity entity = entities[entityIdx];
+            const std::unordered_set<std::type_index>& typeSet = entityComponentSets[entityIdx];
 
             for (std::type_index componentType : typeSet)
             {
                 // Deregister entity's component from systems
-                m_EntityPublisher.RemovedComponent(entities[i], componentType);
+                m_EntityPublisher.UnpublishComponent(entities[entityIdx], componentType);
 
                 // Delete the component
-                auto containerItr = componentStorage.find(componentType);
-                ComponentStorage& component = containerItr->second;
-
-                if (component.ComponentDestructor != nullptr)
-                {
-                    component.ComponentDestructor(entities[i]);
-                }
-
-                component.pContainer->Pop(entities[i]);
+                m_ComponentManager.GetComponentArray(componentType)->Remove(entity);
             }
         }
 
@@ -153,37 +91,39 @@ namespace LambdaEngine
         const auto& entityComponentSets = page.GetVec();
         const TArray<Entity>& entities = page.GetIDs();
 
-        for (uint32 i = 0; i < entities.GetSize(); i++)
+        for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
         {
-            const std::unordered_set<std::type_index>& typeSet = entityComponentSets[i];
+            const std::unordered_set<std::type_index>& typeSet = entityComponentSets[entityIdx];
 
             for (std::type_index componentType : typeSet)
             {
-                m_EntityPublisher.NewComponent(entities[i], componentType);
+                m_EntityPublisher.PublishComponent(entities[entityIdx], componentType);
             }
         }
     }
 
-    void ECSCore::ComponentAdded(Entity entity, std::type_index componentType)
+    void ECSCore::PerformEntityDeletions()
     {
-        m_EntityRegistry.RegisterComponentType(entity, componentType);
-        m_EntityPublisher.NewComponent(entity, componentType);
-    }
+        const EntityRegistryPage& registryPage = m_EntityRegistry.GetTopRegistryPage();
 
-    void ECSCore::ComponentDeleted(Entity entity, std::type_index componentType)
-    {
-        m_EntityRegistry.DeregisterComponentType(entity, componentType);
-        m_EntityPublisher.RemovedComponent(entity, componentType);
-    }
+        for (Entity entity : m_EntitiesToDelete)
+        {
+            // Delete every component belonging to the entity
+            const auto& componentTypes = registryPage.IndexID(entity);
+            for (std::type_index componentType : componentTypes)
+            {
+                // Delete the component
+                IComponentArray* pComponentArray = m_ComponentManager.GetComponentArray(componentType);
+                pComponentArray->Remove(entity);
 
-    void ECSCore::EnqueueEntitySubscriptions(const EntitySubscriberRegistration& subscriberRegistration, const std::function<bool()>& initFn, uint32* pSubscriberID)
-    {
-        Subscriber subscriber = {
-            .ComponentSubscriptions = subscriberRegistration,
-            .InitFunction           = initFn,
-            .pSubscriberID          = pSubscriberID
-        };
+                // Notify systems that the component has been removed
+                m_EntityPublisher.UnpublishComponent(entity, componentType);
+            }
 
-        m_ECSBooter.EnqueueSubscriberInitialization(subscriber);
+            // Free the entity ID
+            m_EntityRegistry.DeregisterEntity(entity);
+        }
+
+        m_EntitiesToDelete.Clear();
     }
 }

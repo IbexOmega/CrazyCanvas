@@ -10,6 +10,12 @@ namespace LambdaEngine
 	public:
 		virtual ~IComponentArray() = default;
 		virtual void EntityDestroyed(Entity entity) = 0;
+
+		virtual void Remove(Entity entity) = 0;
+
+		virtual const TArray<uint32>& GetIDs() const = 0;
+
+		virtual bool HasComponent(Entity entity) const = 0;
 	};
 
 	template<typename Comp>
@@ -20,24 +26,27 @@ namespace LambdaEngine
 		virtual ~ComponentArray() = default;
 
 		Comp& Insert(Entity entity, Comp comp);
-		void Remove(Entity entity);
-		
+		void Remove(Entity entity) override final;
+
 		Comp& GetData(Entity entity);
+		const TArray<uint32>& GetIDs() const override final { return m_IDs; }
 
 		void EntityDestroyed(Entity);
+		bool HasComponent(Entity entity) const override final { return m_EntityToIndex.find(entity) != m_EntityToIndex.end(); }
 
 	private:
 		TArray<Comp> m_Data;
+		TArray<uint32> m_IDs;
 		std::unordered_map<Entity, Index> m_EntityToIndex;
-		std::unordered_map<Index, Entity> m_IndexToEntity;
-		uint64 m_Size = 0;
-		uint64 m_Capacity = 64;
+		uint32 m_Size = 0;
+		uint32 m_Capacity = 64;
 	};
 
 	template<typename Comp>
 	inline ComponentArray<Comp>::ComponentArray()
 	{
 		m_Data.Resize(m_Capacity);
+		m_IDs.Resize(m_Capacity);
 	}
 
 	template<typename Comp>
@@ -47,14 +56,15 @@ namespace LambdaEngine
 
 		// Resize if more data is added.
 		if (m_Size+1 > m_Data.GetSize())
+		{
 			m_Data.Resize(m_Size + m_Capacity);
+			m_IDs.Resize(m_Size + m_Capacity);
+		}
 
 		// Get new index and add the component to that position.
-		Index newIndex = m_Size;
-		m_EntityToIndex[entity] = newIndex;
-		m_IndexToEntity[newIndex] = entity;
-		memcpy(&m_Data[newIndex], &comp, sizeof(Comp));
-		m_Size++;
+		Index newIndex = m_Size++;
+		m_Data[newIndex] = comp;
+		m_IDs[newIndex] = entity;
 		return m_Data[newIndex];
 	}
 
@@ -65,20 +75,15 @@ namespace LambdaEngine
 
 		// Swap the removed component with the last component.
 		Index currentIndex = m_EntityToIndex[entity];
-		Index lastIndex = m_Size-1;
+		Index lastIndex = --m_Size;
 		m_Data[currentIndex] = m_Data[lastIndex];
+		m_IDs[currentIndex] = m_IDs[lastIndex];
 
 		// Update entity-index maps.
-		Entity lastEntity = m_IndexToEntity[lastIndex];
-		m_EntityToIndex[lastEntity] = currentIndex;
-		m_IndexToEntity[currentIndex] = lastEntity;
-		
+		m_EntityToIndex[m_IDs[lastIndex]] = currentIndex;
+
 		// Remove the deleted component's entry.
 		m_EntityToIndex.erase(entity);
-		m_IndexToEntity.erase(lastIndex);
-
-		// Decrease size counter.
-		m_Size--;
 	}
 
 	template<typename Comp>

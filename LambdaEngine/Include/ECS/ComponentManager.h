@@ -10,7 +10,7 @@ namespace LambdaEngine
 	{
 	public:
 		DECL_UNIQUE_CLASS(ComponentManager);
-		ComponentManager();
+		ComponentManager() = default;
 		~ComponentManager();
 
 		template<typename Comp>
@@ -28,7 +28,12 @@ namespace LambdaEngine
 		void EntityDeleted(Entity entity);
 
 		template<typename Comp>
-		bool HasType();
+		bool HasType() const;
+
+		bool HasType(std::type_index componentType) const { return m_CompTypeToArrayMap.find(componentType) != m_CompTypeToArrayMap.end(); }
+
+		IComponentArray* GetComponentArray(std::type_index componentType);
+		const IComponentArray* GetComponentArray(std::type_index componentType) const;
 
 	private:
 		std::unordered_map<std::type_index, uint32> m_CompTypeToArrayMap;
@@ -56,7 +61,7 @@ namespace LambdaEngine
 		// Fetch the corresponding ComponentArray for that component type.
 		uint32 index = m_CompTypeToArrayMap[id];
 		ComponentArray<Comp>* compArray = dynamic_cast<ComponentArray<Comp>*>(m_ComponentArrays[index]);
-		
+
 		// Add the new component.
 		return compArray->Insert(entity, component);
 	}
@@ -89,7 +94,7 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
-	inline bool ComponentManager::HasType()
+	inline bool ComponentManager::HasType() const
 	{
 		std::type_index id = Comp::s_TID;
 		return m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end();

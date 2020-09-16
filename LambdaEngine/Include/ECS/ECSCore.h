@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ECS/ComponentHandler.h"
-#include "ECS/ECSBooter.h"
 #include "ECS/EntityPublisher.h"
 #include "ECS/EntityRegistry.h"
 #include "ECS/JobScheduler.h"
@@ -25,11 +23,13 @@ namespace LambdaEngine
         ECSCore(const ECSCore& other) = delete;
         void operator=(const ECSCore& other) = delete;
 
+        static void Release();
+
         void Tick(float dt);
 
         Entity CreateEntity() { return m_EntityRegistry.CreateEntity(); }
-        
-        // Add a component to a specific entity. 
+
+        // Add a component to a specific entity.
         template<typename Comp>
         Comp& AddComponent(Entity entity, Comp component);
 
@@ -43,43 +43,32 @@ namespace LambdaEngine
         void ScheduleJobASAP(const Job& job);
         void ScheduleJobPostFrame(const Job& job);
 
-        void EnqueueComponentHandlerRegistration(const ComponentHandlerRegistration& handlerRegistration);
-        void EnqueueComponentSubscriberRegistration(const Subscriber& subscriber);
-
-        // Registers and initializes component handlers and entity subscribers
-        void PerformRegistrations();
-
-        // Enqueues an entity deletion
-        void EnqueueEntityDeletion(Entity entity);
-        void PerformEntityDeletions();
-
         void AddRegistryPage();
         void DeregisterTopRegistryPage();
         void DeleteTopRegistryPage();
         void ReinstateTopRegistryPage();
 
-        void ComponentAdded(Entity entity, std::type_index componentType);
-        void ComponentDeleted(Entity entity, std::type_index componentType);
-
-        EntityPublisher* GetEntityPublisher()   { return &m_EntityPublisher; }
-        float GetDeltaTime() const              { return m_DeltaTime; }
+        float GetDeltaTime() const { return m_DeltaTime; }
 
     public:
-        static ECSCore* GetInstance() { return &s_Instance; }
+        static ECSCore* GetInstance() { return s_pInstance; }
 
     protected:
         friend EntitySubscriber;
-        void EnqueueEntitySubscriptions(const EntitySubscriberRegistration& subscriberRegistration, const std::function<bool()>& initFn, uint32* pSubscriberID);
+		uint32 SubscribeToEntities(const EntitySubscriberRegistration& subscriberRegistration) { return m_EntityPublisher.SubscribeToEntities(subscriberRegistration); }
+		void UnsubscribeFromEntities(uint32 subscriptionID) { m_EntityPublisher.UnsubscribeFromEntities(subscriptionID); }
 
         friend RegularWorker;
         uint32 ScheduleRegularJob(const Job& job, uint32_t phase)   { return m_JobScheduler.ScheduleRegularJob(job, phase); };
         void DescheduleRegularJob(uint32_t phase, uint32 jobID)     { m_JobScheduler.DescheduleRegularJob(phase, jobID); };
 
+	private:
+        void PerformEntityDeletions();
+
     private:
         EntityRegistry m_EntityRegistry;
         EntityPublisher m_EntityPublisher;
         JobScheduler m_JobScheduler;
-        ECSBooter m_ECSBooter;
         ComponentManager m_ComponentManager;
 
         TArray<Entity> m_EntitiesToDelete;
@@ -88,7 +77,7 @@ namespace LambdaEngine
         float m_DeltaTime;
 
     private:
-        static ECSCore s_Instance;
+        static ECSCore* s_pInstance;
     };
 
     template<typename Comp>
@@ -98,7 +87,9 @@ namespace LambdaEngine
             m_ComponentManager.RegisterComponentType<Comp>();
 
         Comp& comp = m_ComponentManager.AddComponent<Comp>(entity, component);
-        ComponentAdded(entity, Comp::s_TID);
+
+        m_EntityRegistry.RegisterComponentType(entity, Comp::s_TID);
+        m_EntityPublisher.PublishComponent(entity, Comp::s_TID);
 
         return comp;
     }
@@ -106,11 +97,11 @@ namespace LambdaEngine
     template<typename Comp>
     inline bool ECSCore::RemoveComponent(Entity entity)
     {
-
         if (m_ComponentManager.HasType<Comp>())
         {
             m_ComponentManager.RemoveComponent<Comp>(entity);
-            ComponentDeleted(entity, Comp::s_TID);
+            m_EntityRegistry.DeregisterComponentType(entity, componentType);
+        	m_EntityPublisher.UnpublishComponent(entity, componentType);
             return true;
         }
         return false;

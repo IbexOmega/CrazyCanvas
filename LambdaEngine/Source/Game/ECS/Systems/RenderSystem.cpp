@@ -20,7 +20,7 @@
 
 #include "Game/Scene.h"
 
-namespace LambdaEngine 
+namespace LambdaEngine
 {
 	RenderSystem RenderSystem::s_Instance;
 
@@ -41,84 +41,8 @@ namespace LambdaEngine
 			};
 			systemReg.Phase = g_LastPhase - 1U;
 
-			EnqueueRegistration(systemReg);
+			RegisterSystem(systemReg);
 		}
-
-		return true;
-	}
-
-	bool RenderSystem::InitSystem()
-	{
-		////Create Swapchain
-		//{
-		//	SwapChainDesc swapChainDesc = {};
-		//	swapChainDesc.DebugName = "Renderer Swap Chain";
-		//	swapChainDesc.pWindow = CommonApplication::Get()->GetActiveWindow().Get();
-		//	swapChainDesc.pQueue = RenderAPI::GetGraphicsQueue();
-		//	swapChainDesc.Format = EFormat::FORMAT_B8G8R8A8_UNORM;
-		//	swapChainDesc.Width = 0;
-		//	swapChainDesc.Height = 0;
-		//	swapChainDesc.BufferCount = BACK_BUFFER_COUNT;
-		//	swapChainDesc.SampleCount = 1;
-		//	swapChainDesc.VerticalSync = false;
-
-		//	m_SwapChain = RenderAPI::GetDevice()->CreateSwapChain(&swapChainDesc);
-		//	if (!m_SwapChain)
-		//	{
-		//		LOG_ERROR("[Renderer]: SwapChain is nullptr after initializaiton");
-		//		return false;
-		//	}
-
-		//	m_ppBackBuffers = DBG_NEW Texture * [BACK_BUFFER_COUNT];
-		//	m_ppBackBufferViews = DBG_NEW TextureView * [BACK_BUFFER_COUNT];
-
-		//	m_FrameIndex++;
-		//	m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
-		//}
-
-		////Create RenderGraph
-		//{
-		//	RenderGraphStructureDesc renderGraphStructure = {};
-
-		//	if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "DEMO_SKYBOX.lrg", IMGUI_ENABLED))
-		//	{
-		//		return false;
-		//	}
-
-		//	//Todo: Move this
-		//	{
-		//		RenderGraphShaderConstants& pointLightsConstants = renderGraphStructure.ShaderConstants["POINT_LIGHT_SHADOWMAPS"];
-		//		pointLightsConstants.Graphics.PixelShaderConstants.PushBack({ 2 });
-
-		//		RenderGraphShaderConstants& shadingConstants = renderGraphStructure.ShaderConstants["DEMO"];
-		//		shadingConstants.Graphics.PixelShaderConstants.PushBack({ 2 });
-		//	}
-
-		//	RenderGraphDesc renderGraphDesc = {};
-		//	renderGraphDesc.Name = "Default Rendergraph";
-		//	renderGraphDesc.pRenderGraphStructureDesc = &renderGraphStructure;
-		//	renderGraphDesc.BackBufferCount = BACK_BUFFER_COUNT;
-		//	renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
-
-		//	m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
-		//	m_pRenderGraph->Init(&renderGraphDesc);
-		//}
-
-		////Update RenderGraph with Back Buffer
-		//{
-		//	for (uint32 v = 0; v < BACK_BUFFER_COUNT; v++)
-		//	{
-		//		m_ppBackBuffers[v] = m_SwapChain->GetBuffer(v);
-		//		m_ppBackBufferViews[v] = m_SwapChain->GetBufferView(v);
-		//	}
-
-		//	ResourceUpdateDesc resourceUpdateDesc = {};
-		//	resourceUpdateDesc.ResourceName = RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
-		//	resourceUpdateDesc.ExternalTextureUpdate.ppTextures = m_ppBackBuffers;
-		//	resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_ppBackBufferViews;
-
-		//	m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		//}
 
 		return true;
 	}

@@ -36,8 +36,6 @@ namespace LambdaEngine
 		DECL_REMOVE_MOVE(RenderSystem);
 		~RenderSystem() = default;
 
-		bool InitSystem();
-
 		bool Init();
 
 		bool Release();
@@ -47,7 +45,7 @@ namespace LambdaEngine
 		bool Render();
 
 		CommandList* AcquireGraphicsCopyCommandList();
-		CommandList* AcquireComputeCopyCommandList();	
+		CommandList* AcquireComputeCopyCommandList();
 
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
 

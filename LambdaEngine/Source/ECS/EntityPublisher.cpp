@@ -1,90 +1,24 @@
 #include "ECS/EntityPublisher.h"
 
-#include "ECS/ComponentHandler.h"
+#include "ECS/ComponentManager.h"
 #include "ECS/System.h"
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-    EntityPublisher::EntityPublisher(EntityRegistry* pEntityRegistry)
-        :m_pEntityRegistry(pEntityRegistry)
+    EntityPublisher::EntityPublisher(const ComponentManager* pComponentManager, const EntityRegistry* pEntityRegistry)
+        :m_pComponentManager(pComponentManager),
+        m_pEntityRegistry(pEntityRegistry)
     {}
 
-    void EntityPublisher::RegisterComponentHandler(const ComponentHandlerRegistration& componentHandlerRegistration)
-    {
-        ComponentHandler* pComponentHandler = componentHandlerRegistration.pComponentHandler;
-        std::type_index tidHandler = pComponentHandler->GetHandlerType();
-
-        m_ComponentHandlers[tidHandler] = pComponentHandler;
-
-        // Register component containers
-        for (const ComponentRegistration& componentReg : componentHandlerRegistration.ComponentRegistrations)
-        {
-            auto mapItr = m_ComponentStorage.find(componentReg.TID);
-
-            if (mapItr != m_ComponentStorage.end())
-            {
-                LOG_WARNING("Attempted to register an already handled component type: %s", componentReg.TID.name());
-                continue;
-            }
-
-            m_ComponentStorage.insert({componentReg.TID, {componentReg.pComponentContainer, componentReg.ComponentDestructor}});
-        }
-    }
-
-    void EntityPublisher::DeregisterComponentHandler(ComponentHandler* handler)
-    {
-        const TArray<std::type_index>& componentTypes = handler->GetHandledTypes();
-
-        for (const std::type_index& componentType : componentTypes)
-        {
-            // Delete component query functions
-            auto handlerItr = m_ComponentStorage.find(componentType);
-
-            if (handlerItr == m_ComponentStorage.end())
-            {
-                LOG_WARNING("Attempted to deregister a component handler for an unregistered component type: %s", componentType.name());
-                continue;
-            }
-
-            const TArray<Entity>& entities = handlerItr->second.pContainer->GetIDs();
-            for (Entity entity : entities)
-            {
-                RemovedComponent(entity, componentType);
-            }
-
-            m_ComponentStorage.erase(handlerItr);
-        }
-
-        auto handlerItr = m_ComponentHandlers.find(handler->GetHandlerType());
-        if (handlerItr == m_ComponentHandlers.end())
-        {
-            LOG_WARNING("Attempted to deregister an unregistered component handler: %s", handler->GetHandlerType().name());
-            return;
-        }
-
-        m_ComponentHandlers.erase(handlerItr);
-    }
-
-    ComponentHandler* EntityPublisher::GetComponentHandler(const std::type_index& handlerType)
-    {
-        auto itr = m_ComponentHandlers.find(handlerType);
-
-        if (itr == m_ComponentHandlers.end()) {
-            LOG_WARNING("Failed to retrieve component handler: %s", handlerType.name());
-            return nullptr;
-        }
-
-        return itr->second;
-    }
-
-    uint32 EntityPublisher::SubscribeToComponents(const EntitySubscriberRegistration& subscriberRegistration)
+    uint32 EntityPublisher::SubscribeToEntities(const EntitySubscriberRegistration& subscriberRegistration)
     {
         // Create subscriptions from the subscription requests by finding the desired component containers
         TArray<EntitySubscription> subscriptions;
         const TArray<EntitySubscriptionRegistration>& subscriptionRequests = subscriberRegistration.EntitySubscriptionRegistrations;
         subscriptions.Reserve(subscriptionRequests.GetSize());
 
+        // Convert subscription requests to subscriptions. Also eliminate duplicate TIDs in subscription requests.
         for (const EntitySubscriptionRegistration& subReq : subscriptionRequests)
         {
             const TArray<ComponentAccess>& componentRegs = subReq.ComponentAccesses;
@@ -96,16 +30,9 @@ namespace LambdaEngine
             newSub.OnEntityAdded = subReq.OnEntityAdded;
             newSub.OnEntityRemoved = subReq.OnEntityRemoved;
 
-            for (const ComponentAccess& componentReg : componentRegs) {
-                auto queryItr = m_ComponentStorage.find(componentReg.TID);
-
-                if (queryItr == m_ComponentStorage.end()) {
-                    LOG_ERROR("Attempted to subscribe to unregistered component type: %s, hash: %d", componentReg.TID.name(), componentReg.TID.hash_code());
-                    return 0;
-                }
-
+            newSub.ComponentTypes.Reserve(componentRegs.GetSize());
+            for (const ComponentAccess& componentReg : componentRegs)
                 newSub.ComponentTypes.PushBack(componentReg.TID);
-            }
 
             EliminateDuplicateTIDs(newSub.ComponentTypes);
             newSub.ComponentTypes.ShrinkToFit();
@@ -123,20 +50,19 @@ namespace LambdaEngine
             const TArray<std::type_index>& componentTypes = subs[subscriptionNr].ComponentTypes;
 
             for (const std::type_index& componentType : componentTypes)
-            {
                 m_ComponentSubscriptions.insert({componentType, {subID, subscriptionNr}});
-            }
         }
 
         // A subscription has been made, notify the system of all existing components it subscribed to
         for (EntitySubscription& subscription : subscriptions)
         {
-            // Fetch the entity vector of the first subscribed component type
-            auto queryItr = m_ComponentStorage.find(subscription.ComponentTypes.GetFront());
+            std::type_index firstComponentType = subscription.ComponentTypes.GetFront();
+            if (!m_pComponentManager->HasType(firstComponentType))
+                continue;
 
-            // It has already been ensured that the component type is registered, no need to check for a missed search
-            const IDContainer* pComponentContainer = queryItr->second.pContainer;
-            const TArray<Entity>& entities = pComponentContainer->GetIDs();
+            // Fetch the component vector of the first subscribed component type
+            const IComponentArray* pComponentArray = m_pComponentManager->GetComponentArray(firstComponentType);
+            const TArray<Entity>& entities = pComponentArray->GetIDs();
 
             // See which entities in the entity vector also have all the other component types. Register those entities in the system.
             for (Entity entity : entities)
@@ -158,7 +84,7 @@ namespace LambdaEngine
         return subID;
     }
 
-    void EntityPublisher::UnsubscribeFromComponents(uint32 subscriptionID)
+    void EntityPublisher::UnsubscribeFromEntities(uint32 subscriptionID)
     {
         if (m_SubscriptionStorage.HasElement(subscriptionID) == false) {
             LOG_WARNING("Attempted to deregistered an unregistered system, ID: %d", subscriptionID);
@@ -172,7 +98,7 @@ namespace LambdaEngine
         {
             const TArray<std::type_index>& componentTypes = subscription.ComponentTypes;
 
-            for (const std::type_index& componentType : componentTypes)
+            for (std::type_index componentType : componentTypes)
             {
                 auto subBucketItr = m_ComponentSubscriptions.find(componentType);
 
@@ -204,7 +130,7 @@ namespace LambdaEngine
         m_SystemIDGenerator.PopID(subscriptionID);
     }
 
-    void EntityPublisher::NewComponent(Entity entityID, std::type_index componentType)
+    void EntityPublisher::PublishComponent(Entity entityID, std::type_index componentType)
     {
         // Get all subscriptions for the component type by iterating through the unordered_map bucket
         auto subBucketItr = m_ComponentSubscriptions.find(componentType);
@@ -225,7 +151,7 @@ namespace LambdaEngine
         }
     }
 
-    void EntityPublisher::RemovedComponent(Entity entityID, std::type_index componentType)
+    void EntityPublisher::UnpublishComponent(Entity entityID, std::type_index componentType)
     {
         // Get all subscriptions for the component type by iterating through the unordered_map bucket
         auto subBucketItr = m_ComponentSubscriptions.find(componentType);

@@ -10,5 +10,6 @@ namespace LambdaEngine
 
     State::State(State* pOther)
     {
+        UNREFERENCED_VARIABLE(pOther);
     }
 }

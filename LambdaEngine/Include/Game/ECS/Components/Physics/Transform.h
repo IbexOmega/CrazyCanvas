@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Containers/IDVector.h"
 #include "ECS/Component.h"
-#include "ECS/ComponentHandler.h"
 #include "ECS/EntitySubscriber.h"
 #include "Math/Math.h"
 
@@ -59,53 +57,20 @@ namespace LambdaEngine
 		bool Dirty;
 	};
 
-	class TransformHandler : public ComponentHandler
-	{
-	public:
-		TransformHandler();
-		~TransformHandler() = default;
+	// Transform calculation functions
+	inline glm::vec3 GetUp(const glm::quat& rotationQuat)				{ return glm::normalize(glm::rotate(rotationQuat, g_DefaultUp)); }
+	inline glm::vec3 GetForward(const glm::quat& rotationQuat)			{ return glm::normalize(glm::rotate(rotationQuat, g_DefaultForward)); }
+	inline glm::quat GetRotationQuaternion(const glm::vec3& forward)	{ return glm::rotation(forward, g_DefaultForward); }
 
-		virtual bool InitHandler() override;
+	float GetPitch(const glm::vec3& forward);
+	inline float GetYaw(const glm::vec3& forward)			{ return glm::orientedAngle(g_DefaultForward, forward, g_DefaultUp); }
+	inline float GetRoll(const glm::quat& rotationQuat)	{ return glm::orientedAngle(g_DefaultUp, GetUp(rotationQuat), GetForward(rotationQuat)); }
 
-		void CreatePosition(Entity entity, const glm::vec3& position = {0.0f, 0.0f, 0.0f});
-		void CreateScale(Entity entity, const glm::vec3& scale = {1.0f, 1.0f, 1.0f});
-		void CreateRotation(Entity entity);
+	// Assumes the forward is normalized
+	inline void SetForward(glm::quat& rotationQuat, const glm::vec3& forward) { rotationQuat = glm::rotation(GetForward(rotationQuat), forward); }
 
-		void CreateTransform(Entity entity, const glm::vec3& position = {0.0f, 0.0f, 0.0f}, const glm::vec3& scale = {1.0f, 1.0f, 1.0f});
-		// Requires that the entity has a transform component
-		void CreateWorldMatrix(Entity entity, const Transform& transform);
+	inline void Roll(glm::quat& rotationQuat, float angle) { rotationQuat = glm::rotate(rotationQuat, angle, GetForward(rotationQuat)); };
 
-	public:
-		// Required components: Position, Rotation and Scale
-		Transform GetTransform(Entity entity);
-		// Required components: Position, Rotation, Scale and World Matrix
-		WorldMatrixComponent& GetWorldMatrix(Entity entity);
-		glm::vec3& GetPosition(Entity entity)   { return m_Positions.IndexID(entity).Position; }
-		glm::vec3& GetScale(Entity entity)      { return m_Scales.IndexID(entity).Scale; }
-		glm::quat& GetRotation(Entity entity)   { return m_Rotations.IndexID(entity).Quaternion; }
-
-	public:
-		// Transform calculation functions
-		static glm::vec3 GetUp(const glm::quat& rotationQuat)				{ return glm::normalize(glm::rotate(rotationQuat, g_DefaultUp)); }
-		static glm::vec3 GetForward(const glm::quat& rotationQuat)			{ return glm::normalize(glm::rotate(rotationQuat, g_DefaultForward)); }
-		static glm::quat GetRotationQuaternion(const glm::vec3& forward)	{ return glm::rotation(forward, g_DefaultForward); }
-
-		static float GetPitch(const glm::vec3& forward);
-		static float GetYaw(const glm::vec3& forward)		{ return glm::orientedAngle(g_DefaultForward, forward, g_DefaultUp); }
-		static float GetRoll(const glm::quat& rotationQuat)	{ return glm::orientedAngle(g_DefaultUp, GetUp(rotationQuat), GetForward(rotationQuat)); }
-
-		// Assumes the forward is normalized
-		static void SetForward(glm::quat& rotationQuat, const glm::vec3& forward) { rotationQuat = glm::rotation(GetForward(rotationQuat), forward); }
-
-		static void Roll(glm::quat& rotationQuat, float angle) { rotationQuat = glm::rotate(rotationQuat, angle, GetForward(rotationQuat)); };
-
-		// Rotate V around P using a given axis and angle
-		static void RotateAroundPoint(const glm::vec3& P, glm::vec3& V, const glm::vec3& axis, float angle);
-
-	private:
-		IDDVector<PositionComponent>     m_Positions;
-		IDDVector<ScaleComponent>        m_Scales;
-		IDDVector<RotationComponent>     m_Rotations;
-		IDDVector<WorldMatrixComponent>  m_WorldMatrices;
-	};
+	// Rotate V around P using a given axis and angle
+	void RotateAroundPoint(const glm::vec3& P, glm::vec3& V, const glm::vec3& axis, float angle);
 }

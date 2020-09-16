@@ -14,6 +14,7 @@
 namespace LambdaEngine
 {
     class ComponentHandler;
+    class ComponentManager;
     struct ComponentHandlerRegistration;
 
     struct EntitySubscription
@@ -35,40 +36,25 @@ namespace LambdaEngine
         uint32 SubIdx;
     };
 
-    struct ComponentStorage
-    {
-        IDContainer* pContainer;
-        // Optional: Used when a component needs to be destroyed by its handler. Called alongside erasing the component from its container.
-        std::function<void(Entity)> ComponentDestructor;
-    };
-
     class EntityPublisher
     {
     public:
-        EntityPublisher(EntityRegistry* pEntityRegistry);
+        EntityPublisher(const ComponentManager* pComponentManager, const EntityRegistry* pEntityRegistry);
         ~EntityPublisher() = default;
 
-        void RegisterComponentHandler(const ComponentHandlerRegistration& componentHandlerRegistration);
-        void DeregisterComponentHandler(ComponentHandler* handler);
-        ComponentHandler* GetComponentHandler(const std::type_index& handlerType);
-
         // Returns a subscription ID
-        uint32 SubscribeToComponents(const EntitySubscriberRegistration& subscriberRegistration);
-        void UnsubscribeFromComponents(uint32 subscriptionID);
+        uint32 SubscribeToEntities(const EntitySubscriberRegistration& subscriberRegistration);
+        void UnsubscribeFromEntities(uint32 subscriptionID);
 
-        // Notifies subscribed systems that a new component has been made
-        void NewComponent(Entity entityID, std::type_index componentType);
-        // Notifies subscribed systems that a component has been deleted
-        void RemovedComponent(Entity entityID, std::type_index componentType);
-
-        THashTable<std::type_index, ComponentStorage>& GetComponentStorage() { return m_ComponentStorage; }
+        // Notifies subscribers that a component has been added
+        void PublishComponent(Entity entityID, std::type_index componentType);
+        // Notifies subscribers that a component has been deleted
+        void UnpublishComponent(Entity entityID, std::type_index componentType);
 
     private:
         static void EliminateDuplicateTIDs(TArray<std::type_index>& TIDs);
 
     private:
-        // Map component types to resources used when systems subscribe
-        THashTable<std::type_index, ComponentStorage> m_ComponentStorage;
         // Map component types to subscriptions. Deleted only when a subscribing system unsubscribes.
         std::unordered_multimap<std::type_index, SubscriptionStorageIndex> m_ComponentSubscriptions;
 
@@ -78,6 +64,7 @@ namespace LambdaEngine
 
         THashTable<std::type_index, ComponentHandler*> m_ComponentHandlers;
 
+        const ComponentManager* m_pComponentManager;
         const EntityRegistry* m_pEntityRegistry;
     };
 }
