@@ -39,8 +39,8 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, MeshComponent::s_TID}, {NDA , StaticComponent::s_TID}}, {&transformComponents}, &m_StaticEntities},
-				{{{RW, MeshComponent::s_TID}, {NDA , DynamicComponent::s_TID}}, {&transformComponents},& m_DynamicEntities},
+				{{{RW, MeshComponent::s_TID}, {NDA , StaticComponent::s_TID}}, {&transformComponents}, &m_StaticEntities,  std::bind(&RenderSystem::OnStaticEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnStaticEntityRemoved, this, std::placeholders::_1)},
+				{{{RW, MeshComponent::s_TID}, {NDA , DynamicComponent::s_TID}}, {&transformComponents}, &m_DynamicEntities,  std::bind(&RenderSystem::OnDynamicEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDynamicEntityRemoved, this, std::placeholders::_1)},
 				{{{RW, ViewProjectionMatrices::s_TID}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
@@ -219,27 +219,27 @@ namespace LambdaEngine
 	{
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
-		ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
-		ComponentArray<RotationComponent>* pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
-		ComponentArray<ScaleComponent>* pScaleComponents = pECSCore->GetComponentArray<ScaleComponent>();
+		ComponentArray<PositionComponent>*	pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
+		ComponentArray<RotationComponent>*	pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
+		ComponentArray<ScaleComponent>*		pScaleComponents	= pECSCore->GetComponentArray<ScaleComponent>();
 
 		for (Entity entity : m_DynamicEntities.GetIDs())
 		{
-			auto& position = pPositionComponents->GetData(entity);
-			auto& rotation = pRotationComponents->GetData(entity);
-			auto& scale = pScaleComponents->GetData(entity);
+			auto& positionComp	= pPositionComponents->GetData(entity);
+			auto& rotationComp	= pRotationComponents->GetData(entity);
+			auto& scaleComp		= pScaleComponents->GetData(entity);
 
-			if (position.Dirty || rotation.Dirty || scale.Dirty)
+			if (positionComp.Dirty || rotationComp.Dirty || scaleComp.Dirty)
 			{
-				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position.Position);
-				transform *= glm::toMat4(rotation.Quaternion);
-				transform = glm::scale(transform, scale.Scale);
+				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
+				transform *= glm::toMat4(rotationComp.Quaternion);
+				transform = glm::scale(transform, scaleComp.Scale);
 
 				UpdateTransform(entity, transform);
 
-				position.Dirty	= false;
-				rotation.Dirty	= false;
-				scale.Dirty		= false;
+				positionComp.Dirty	= false;
+				rotationComp.Dirty	= false;
+				scaleComp.Dirty		= false;
 			}
 		}
 	}
@@ -250,7 +250,7 @@ namespace LambdaEngine
 
 		CleanBuffers();
 		UpdateBuffers();
-		UpdateDrawArgs();
+		UpdateRenderGraph();
 
 		m_pRenderGraph->Update();
 
@@ -293,13 +293,53 @@ namespace LambdaEngine
 			LOG_ERROR("[Renderer]: Failed to set new RenderGraph %s", name.c_str());
 		}
 
-		if (m_pScene != nullptr)
-		{
-			UpdateRenderGraphFromScene();
-		}
+		m_DirtyDrawArgs				= m_RequiredDrawArgs;
+		m_PerFrameResourceDirty		= true;
+		m_MaterialsResourceDirty	= true;
+		UpdateRenderGraph();
 	}
 
-	void RenderSystem::AddEntityInstance(Entity entity, CommandList* pCommandList, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated)
+	void RenderSystem::OnStaticEntityAdded(Entity entity)
+	{
+		ECSCore* pECSCore = ECSCore::GetInstance();
+
+		auto& positionComp	= pECSCore->GetComponent<PositionComponent>(entity);
+		auto& rotationComp	= pECSCore->GetComponent<RotationComponent>(entity);
+		auto& scaleComp		= pECSCore->GetComponent<ScaleComponent>(entity);
+		auto& meshComp		= pECSCore->GetComponent<MeshComponent>(entity);
+
+		glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
+		transform *= glm::toMat4(rotationComp.Quaternion);
+		transform = glm::scale(transform, scaleComp.Scale);
+
+		AddEntityInstance(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true, false);
+	}
+
+	void RenderSystem::OnStaticEntityRemoved(Entity entity)
+	{
+	}
+
+	void RenderSystem::OnDynamicEntityAdded(Entity entity)
+	{
+		ECSCore* pECSCore = ECSCore::GetInstance();
+
+		auto& positionComp	= pECSCore->GetComponent<PositionComponent>(entity);
+		auto& rotationComp	= pECSCore->GetComponent<RotationComponent>(entity);
+		auto& scaleComp		= pECSCore->GetComponent<ScaleComponent>(entity);
+		auto& meshComp		= pECSCore->GetComponent<MeshComponent>(entity);
+
+		glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
+		transform *= glm::toMat4(rotationComp.Quaternion);
+		transform = glm::scale(transform, scaleComp.Scale);
+
+		AddEntityInstance(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
+	}
+
+	void RenderSystem::OnDynamicEntityRemoved(Entity entity)
+	{
+	}
+
+	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated)
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
@@ -351,7 +391,7 @@ namespace LambdaEngine
 
 					meshEntry.pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexBufferDesc);
 
-					pCommandList->CopyBuffer(pVertexStagingBuffer, 0, meshEntry.pVertexBuffer, 0, vertexBufferDesc.SizeInBytes);
+					m_PendingBufferUpdates.PushBack({ pVertexStagingBuffer, meshEntry.pVertexBuffer, vertexBufferDesc.SizeInBytes });
 					m_BuffersToRemove[0].PushBack(pVertexStagingBuffer);
 				}
 
@@ -378,7 +418,7 @@ namespace LambdaEngine
 					meshEntry.pIndexBuffer	= RenderAPI::GetDevice()->CreateBuffer(&indexBufferDesc);
 					meshEntry.IndexCount	= pMesh->IndexCount;
 
-					pCommandList->CopyBuffer(pIndexStagingBuffer, 0, meshEntry.pIndexBuffer, 0, indexBufferDesc.SizeInBytes);
+					m_PendingBufferUpdates.PushBack({ pIndexStagingBuffer, meshEntry.pIndexBuffer, indexBufferDesc.SizeInBytes });
 					m_BuffersToRemove[0].PushBack(pIndexStagingBuffer);
 				}
 
@@ -412,6 +452,7 @@ namespace LambdaEngine
 				m_pMaterialProperties[materialSlot]			= pMaterial->Properties;
 
 				m_MaterialMap.insert({ materialGUID, materialSlot });
+				m_MaterialsResourceDirty = true;
 			}
 			else
 			{
@@ -488,7 +529,17 @@ namespace LambdaEngine
 	void RenderSystem::UpdateBuffers()
 	{
 		CommandList* pGraphicsCommandList = m_pRenderGraph->AcquireGraphicsCopyCommandList();
-		//CommandList* pComputeCommandList = m_pRenderGraph->AcquireGraphicsCopyCommandList();
+		//CommandList* pComputeCommandList = m_pRenderGraph->AcquireComputeCopyCommandList();
+
+		//Update Pending Buffer Updates
+		{
+			ExecutePendingBufferUpdates(pGraphicsCommandList);
+		}
+
+		//Update Instance Data
+		{
+			UpdateInstanceBuffers(pGraphicsCommandList);
+		}
 
 		//Update Per Frame Data
 		{
@@ -498,18 +549,13 @@ namespace LambdaEngine
 			UpdatePerFrameBuffer(pGraphicsCommandList);
 		}
 
-		//Update Instance Data
-		{
-			UpdateInstanceBuffers(pGraphicsCommandList);
-		}
-
 		//Update Empty MaterialData
 		{
 			UpdateMaterialPropertiesBuffer(pGraphicsCommandList);
 		}
 	}
 
-	void RenderSystem::UpdateDrawArgs()
+	void RenderSystem::UpdateRenderGraph()
 	{
 		//Should we check for Draw Args to be removed here?
 
@@ -529,6 +575,68 @@ namespace LambdaEngine
 
 				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 			}
+
+			m_DirtyDrawArgs.clear();
+		}
+
+		if (m_PerFrameResourceDirty)
+		{
+			ResourceUpdateDesc resourceUpdateDesc				= {};
+			resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pPerFrameBuffer;
+
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+
+			m_PerFrameResourceDirty = false;
+		}
+
+		if (m_MaterialsResourceDirty)
+		{
+			ResourceUpdateDesc resourceUpdateDesc				= {};
+			resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pMaterialParametersBuffer;
+
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+
+			std::vector<Sampler*> nearestSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetNearestSampler());
+
+			ResourceUpdateDesc albedoMapsUpdateDesc = {};
+			albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppAlbedoMaps;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppAlbedoMapViews;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+
+			ResourceUpdateDesc normalMapsUpdateDesc = {};
+			normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppNormalMaps;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppNormalMapViews;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+
+			ResourceUpdateDesc aoMapsUpdateDesc = {};
+			aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
+			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= m_ppAmbientOcclusionMaps;
+			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= m_ppAmbientOcclusionMapViews;
+			aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= nearestSamplers.data();
+
+			ResourceUpdateDesc metallicMapsUpdateDesc = {};
+			metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
+			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppMetallicMaps;
+			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppMetallicMapViews;
+			metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+
+			ResourceUpdateDesc roughnessMapsUpdateDesc = {};
+			roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppRoughnessMaps;
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppRoughnessMapViews;
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= nearestSamplers.data();
+
+			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&aoMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&metallicMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&roughnessMapsUpdateDesc);
+
+			m_MaterialsResourceDirty = false;
 		}
 	}
 
@@ -546,6 +654,19 @@ namespace LambdaEngine
 			drawArg.InstanceBufferSize	= meshAndInstancesIt->second.pInstanceBuffer->GetDesc().SizeInBytes;
 			drawArg.InstanceCount		= meshAndInstancesIt->second.Instances.GetSize();
 			drawArgs.PushBack(drawArg);
+		}
+	}
+
+	void RenderSystem::ExecutePendingBufferUpdates(CommandList* pCommandList)
+	{
+		if (!m_PendingBufferUpdates.IsEmpty())
+		{
+			for (PendingBufferUpdate& pendingUpdate : m_PendingBufferUpdates)
+			{
+				pCommandList->CopyBuffer(pendingUpdate.pSrcBuffer, 0, pendingUpdate.pDstBuffer, 0, pendingUpdate.SizeInBytes);
+			}
+
+			m_PendingBufferUpdates.Clear();
 		}
 	}
 
@@ -635,66 +756,5 @@ namespace LambdaEngine
 		}
 
 		pCommandList->CopyBuffer(m_pMaterialParametersStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
-	}
-
-	void RenderSystem::UpdateRenderGraphFromScene()
-	{
-		UpdateDrawArgs();
-
-		{
-			ResourceUpdateDesc resourceUpdateDesc				= {};
-			resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pPerFrameBuffer;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			ResourceUpdateDesc resourceUpdateDesc				= {};
-			resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pMaterialParametersBuffer;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			std::vector<Sampler*> nearestSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetNearestSampler());
-
-			ResourceUpdateDesc albedoMapsUpdateDesc = {};
-			albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppAlbedoMaps;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppAlbedoMapViews;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
-
-			ResourceUpdateDesc normalMapsUpdateDesc = {};
-			normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppNormalMaps;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppNormalMapViews;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
-
-			ResourceUpdateDesc aoMapsUpdateDesc = {};
-			aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= m_ppAmbientOcclusionMaps;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= m_ppAmbientOcclusionMapViews;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= nearestSamplers.data();
-
-			ResourceUpdateDesc metallicMapsUpdateDesc = {};
-			metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppMetallicMaps;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppMetallicMapViews;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
-
-			ResourceUpdateDesc roughnessMapsUpdateDesc = {};
-			roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppRoughnessMaps;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppRoughnessMapViews;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= nearestSamplers.data();
-
-			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&aoMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&metallicMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&roughnessMapsUpdateDesc);
-		}
 	}
 }

@@ -101,6 +101,8 @@ namespace LambdaEngine
 		StateManager::GetInstance()->Tick(dt);
 		Game::Get().Tick(delta);
 
+		RenderSystem::GetInstance().Render();
+
 		return true;
 	}
 
@@ -168,7 +170,6 @@ namespace LambdaEngine
 		{
 			return false;
 		}
-
 
 		if (!AudioSystem::Init())
 		{
