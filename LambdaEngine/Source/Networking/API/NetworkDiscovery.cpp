@@ -36,11 +36,12 @@ namespace LambdaEngine
 
 	void NetworkDiscovery::FixedTick(Timestamp delta)
 	{
+		UNREFERENCED_VARIABLE(delta);
 		static Timestamp interval = Timestamp::Seconds(1);
+
 		if (EngineLoop::GetTimeSinceStart() - m_TimestampOfLastTransmit >= interval)
 		{
 			m_TimestampOfLastTransmit = EngineLoop::GetTimeSinceStart();
-
 		}
 	}
 
