@@ -36,7 +36,7 @@ namespace LambdaEngine
 		m_TimeUnit = timeUnit;
 
 		uint32 statCount = 0;
-		RenderSystem::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
+		RenderAPI::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
 		m_MemoryStats.Resize(statCount);
 #endif
 	}
@@ -51,7 +51,7 @@ namespace LambdaEngine
 		if (m_TimeSinceUpdate > 1 / m_UpdateFreq)
 		{
 			uint32 statCount = m_MemoryStats.GetSize();
-			RenderSystem::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
+			RenderAPI::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
 		}
 		static const char* items[] = { "B", "KB", "MB", "GB" };
 		static int itemSelected = 2;
