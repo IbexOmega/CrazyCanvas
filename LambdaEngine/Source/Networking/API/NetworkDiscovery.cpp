@@ -61,7 +61,7 @@ namespace LambdaEngine
 
 	void NetworkDiscovery::OnDisconnecting(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void NetworkDiscovery::OnDisconnected(IClient* pClient)
