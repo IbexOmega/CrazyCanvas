@@ -22,8 +22,8 @@ namespace LambdaEngine
 
     void ECSCore::RemoveEntity(Entity entity)
     {
-        m_ComponentManager.EntityDeleted(entity);
-        EnqueueEntityDeletion(entity);
+        m_ComponentStorage.EntityDeleted(entity);
+        m_EntitiesToDelete.PushBack(entity);
     }
 
     void ECSCore::ScheduleJobASAP(const Job& job)
@@ -52,14 +52,9 @@ namespace LambdaEngine
         m_ECSBooter.PerformBootups();
     }
 
-    void ECSCore::EnqueueEntityDeletion(Entity entity)
-    {
-        m_EntitiesToDelete.PushBack(entity);
-    }
-
     void ECSCore::PerformEntityDeletions()
     {
-        THashTable<std::type_index, ComponentStorage>& componentStorage = m_EntityPublisher.GetComponentStorage();
+        THashTable<std::type_index, ComponentKalle>& componentStorage = m_EntityPublisher.GetComponentStorage();
         const EntityRegistryPage& registryPage = m_EntityRegistry.GetTopRegistryPage();
 
         for (Entity entity : m_EntitiesToDelete)
@@ -70,7 +65,7 @@ namespace LambdaEngine
             {
                 // Delete the component
                 auto containerItr = componentStorage.find(componentType);
-                ComponentStorage& component = containerItr->second;
+                ComponentKalle& component = containerItr->second;
 
                 if (component.ComponentDestructor != nullptr)
                 {
@@ -119,7 +114,7 @@ namespace LambdaEngine
         const auto& entityComponentSets = page.GetVec();
         const TArray<Entity>& entities = page.GetIDs();
 
-        THashTable<std::type_index, ComponentStorage>& componentStorage = m_EntityPublisher.GetComponentStorage();
+        THashTable<std::type_index, ComponentKalle>& componentStorage = m_EntityPublisher.GetComponentStorage();
 
         for (uint32 i = 0; i < entities.GetSize(); i++)
         {
@@ -132,7 +127,7 @@ namespace LambdaEngine
 
                 // Delete the component
                 auto containerItr = componentStorage.find(componentType);
-                ComponentStorage& component = containerItr->second;
+                ComponentKalle& component = containerItr->second;
 
                 if (component.ComponentDestructor != nullptr)
                 {

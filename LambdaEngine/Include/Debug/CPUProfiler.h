@@ -2,6 +2,7 @@
 
 #include "Input/API/InputCodes.h"
 #include "Time/API/Timestamp.h"
+#include "Application/API/Application.h"
 
 #include <chrono>
 #include <string>
@@ -90,5 +91,8 @@ namespace LambdaEngine
 		std::ofstream m_File;
 		unsigned long long m_Counter;
 		uint64_t m_StartTime = 0;
+		float64 m_TimeSinceUpdate = 0.0f;
+		CPUStatistics m_CPUStat = {};
+		float32 m_UpdateFrequency = 1.0f;
 	};
 }

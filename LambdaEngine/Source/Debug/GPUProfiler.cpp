@@ -44,80 +44,90 @@ namespace LambdaEngine
 	void GPUProfiler::Render(LambdaEngine::Timestamp delta)
 	{
 #ifdef LAMBDA_DEBUG
-		// Profiler (Which has the instance of GPUProfiler) begins the ImGui window
-		m_TimeSinceUpdate += delta.AsMilliSeconds();
-
-		// Memory display
-		if (m_TimeSinceUpdate > 1 / m_UpdateFreq)
+		if (ImGui::CollapsingHeader("GPU Statistics", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			uint32 statCount = m_MemoryStats.GetSize();
-			RenderAPI::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
-		}
-		static const char* items[] = { "B", "KB", "MB", "GB" };
-		static int itemSelected = 2;
-		static float byteDivider = 1;
-		ImGui::Combo("Memory suffix", &itemSelected, items, 4, 4);
-		if (itemSelected == 0) { byteDivider = 1.f; }
-		if (itemSelected == 1) { byteDivider = 1000.f; }
-		if (itemSelected == 2) { byteDivider = 1000.f * 1000.f; }
-		if (itemSelected == 3) { byteDivider = 1000.f * 1000.f * 1000.f; }
+			ImGui::Indent(10.0f);
+			// Profiler (Which has the instance of GPUProfiler) begins the ImGui window
+			m_TimeSinceUpdate += delta.AsMilliSeconds();
 
-		for (uint32 i = 0; i < m_MemoryStats.GetSize(); i++)
-		{
-			ImGui::Text(m_MemoryStats[i].MemoryTypeName.c_str());
-			char buf[64];
-			float32 percentage = (float32)(m_MemoryStats[i].TotalBytesAllocated / (float64)m_MemoryStats[i].TotalBytesReserved);
-			sprintf(buf, "%.3f/%.3f (%s)", m_MemoryStats[i].TotalBytesAllocated / byteDivider, m_MemoryStats[i].TotalBytesReserved / byteDivider, items[itemSelected]);
-			ImGui::ProgressBar(percentage, ImVec2(-1.0f, 0.0f), buf);
-		}
-
-		// Timestamp display
-		if (m_TimestampCount != 0 && ImGui::CollapsingHeader("Timestamps") && m_TimeSinceUpdate > 1 / m_UpdateFreq)
-		{
-			ImGui::SliderFloat("Update frequency", &m_UpdateFreq, 1.0f, 144.0f);
-
-			// Enable/disable graph update
-			ImGui::Checkbox("Update graphs", &m_EnableGraph);
-			for (auto& stage : m_PlotResults)
+			// Memory display
+			if (m_TimeSinceUpdate > 1 / m_UpdateFreq)
 			{
+				uint32 statCount = m_MemoryStats.GetSize();
+				RenderAPI::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
+			}
+			static const char* items[] = { "B", "KB", "MB", "GB" };
+			static int itemSelected = 2;
+			static float byteDivider = 1;
+			ImGui::Combo("Memory suffix GPU", &itemSelected, items, 4, 4);
+			if (itemSelected == 0) { byteDivider = 1.f; }
+			if (itemSelected == 1) { byteDivider = 1024.f; }
+			if (itemSelected == 2) { byteDivider = 1024.f * 1024.f; }
+			if (itemSelected == 3) { byteDivider = 1024.f * 1024.f * 1024.f; }
 
-				// Plot lines
-				m_TimeSinceUpdate = 0.0f;
-				float average = 0.0f;
+			for (uint32 i = 0; i < m_MemoryStats.GetSize(); i++)
+			{
+				ImGui::Text(m_MemoryStats[i].MemoryTypeName.c_str());
+				char buf[64];
+				float32 percentage = (float32)(m_MemoryStats[i].TotalBytesAllocated / (float64)m_MemoryStats[i].TotalBytesReserved);
+				sprintf(buf, "%.3f/%.3f (%s)", m_MemoryStats[i].TotalBytesAllocated / byteDivider, m_MemoryStats[i].TotalBytesReserved / byteDivider, items[itemSelected]);
+				ImGui::ProgressBar(percentage, ImVec2(-1.0f, 0.0f), buf);
+			}
 
-				for (uint32_t i = 0; i < m_PlotDataSize; i++)
+			// Timestamp display
+			if (m_TimestampCount != 0 && ImGui::CollapsingHeader("Timestamps") && m_TimeSinceUpdate > 1 / m_UpdateFreq)
+			{
+				ImGui::Indent(10.0f);
+				ImGui::SliderFloat("Update frequency", &m_UpdateFreq, 1.0f, 144.0f);
+
+				// Enable/disable graph update
+				ImGui::Checkbox("Update graphs", &m_EnableGraph);
+				for (auto& stage : m_PlotResults)
 				{
-					average += stage.Results[i];
+
+					// Plot lines
+					m_TimeSinceUpdate = 0.0f;
+					float average = 0.0f;
+
+					for (uint32_t i = 0; i < m_PlotDataSize; i++)
+					{
+						average += stage.Results[i];
+					}
+					average /= m_PlotDataSize;
+
+					std::ostringstream overlay;
+
+					overlay.precision(2);
+					overlay << "Average: " << std::fixed << average << GetTimeUnitName();
+
+					ImGui::Text(stage.Name.c_str());
+					ImGui::PlotLines("", stage.Results.GetData(), (int)m_PlotDataSize, m_PlotResultsStart, overlay.str().c_str(), 0.f, m_CurrentMaxDuration[stage.Name], { 0, 80 });
 				}
-				average /= m_PlotDataSize;
-
-				std::ostringstream overlay;
-		
-				overlay.precision(2);
-				overlay << "Average: " << std::fixed << average << GetTimeUnitName();
-
-				ImGui::Text(stage.Name.c_str());
-				ImGui::PlotLines("", stage.Results.GetData(), (int)m_PlotDataSize, m_PlotResultsStart, overlay.str().c_str(), 0.f, m_CurrentMaxDuration[stage.Name], { 0, 80 });
+				ImGui::Unindent(10.0f);
 			}
-		}
 
-		// Graphics pipeline statistics display
-		if (m_pPipelineStatHeap != nullptr && ImGui::CollapsingHeader("Pipeline Stats"))
-		{
-			// Graphics Pipeline Statistics
-			const TArray<std::string> statNames = {
-				"Input assembly vertex count        ",
-				"Input assembly primitives count    ",
-				"Vertex shader invocations          ",
-				"Clipping stage primitives processed",
-				"Clipping stage primtives output    ",
-				"Fragment shader invocations        "
-			};
+			// Graphics pipeline statistics display
+			if (m_pPipelineStatHeap != nullptr && ImGui::CollapsingHeader("Pipeline Stats"))
+			{
+				ImGui::Indent(10.0f);
+				// Graphics Pipeline Statistics
+				const TArray<std::string> statNames = {
+					"Input assembly vertex count        ",
+					"Input assembly primitives count    ",
+					"Vertex shader invocations          ",
+					"Clipping stage primitives processed",
+					"Clipping stage primtives output    ",
+					"Fragment shader invocations        "
+				};
 
-			for (uint32_t i = 0; i < m_GraphicsStats.GetSize(); i++) {
-				std::string caption = statNames[i] + ": %d";
-				ImGui::BulletText(caption.c_str(), m_GraphicsStats[i]);
+				for (uint32_t i = 0; i < m_GraphicsStats.GetSize(); i++) {
+					std::string caption = statNames[i] + ": %d";
+					ImGui::BulletText(caption.c_str(), m_GraphicsStats[i]);
+				}
+				ImGui::Unindent(10.0f);
 			}
+			ImGui::Unindent(10.0f);
+			ImGui::Dummy(ImVec2(0.0f, 20.0f));
 		}
 #endif
 	}
