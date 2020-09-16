@@ -170,7 +170,7 @@ bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		for (int i = 0; i < 10; i++)
 		{
 			g_PackegesSent++;
-			NetworkSegment* pPacket = m_pClient->GetFreePacket(g_PackegesSent);
+			NetworkSegment* pPacket = m_pClient->GetFreePacket((uint16)g_PackegesSent);
 			BinaryEncoder encoder(pPacket);
 			encoder.WriteUInt32(g_PackegesSent);
 			m_pClient->SendReliable(pPacket, this);
