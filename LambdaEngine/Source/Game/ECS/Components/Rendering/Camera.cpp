@@ -4,6 +4,9 @@
 
 namespace LambdaEngine
 {
+	INIT_COMPONENT(ViewProjectionMatrices);
+	INIT_COMPONENT(CameraProperties);
+
 	ViewProjectionMatrices CreateViewProjectionMatrices(Entity entity, const ViewProjectionDesc& matricesDesc)
 	{
 		return ViewProjectionMatrices {

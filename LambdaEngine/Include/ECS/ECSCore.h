@@ -111,7 +111,7 @@ namespace LambdaEngine
     template<typename Comp>
     inline ComponentArray<Comp>* ECSCore::GetComponentArray()
     {
-        return m_ComponentStorage.GetArray<Comp>();
+        return m_ComponentStorage.GetComponentArray<Comp>();
     }
 
     template<typename Comp>

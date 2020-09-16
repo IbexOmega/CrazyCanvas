@@ -64,6 +64,7 @@ namespace LambdaEngine
 
 		// Get new index and add the component to that position.
 		uint32 newIndex = m_Size++;
+		m_EntityToIndex[entity] = newIndex;
 		m_Data[newIndex] = comp;
 		m_IDs[newIndex] = entity;
 		return m_Data[newIndex];

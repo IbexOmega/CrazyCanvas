@@ -1,13 +1,15 @@
 #pragma once
 #include "Audio/API/IAudioDevice.h"
 
+#include "Containers/TArray.h"
+
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/Texture.h"
 #include "Rendering/Core/API/Shader.h"
 
 #include "Audio/API/ISoundEffect3D.h"
 
-#include "Game/Scene.h"
+#include "Game/ECS/Components/Rendering/MeshComponent.h"
 
 #include "Material.h"
 #include "Mesh.h"
@@ -35,7 +37,7 @@ namespace LambdaEngine
 		*	loadedTextures		- A vector where all loaded Texture(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const String& filepath, TArray<GameObject>& loadedGameObjects, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures);
+		static bool LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& loadedGameObjects, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures);
 
 		/*
 		* Load a mesh from file

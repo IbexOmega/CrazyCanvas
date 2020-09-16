@@ -14,18 +14,21 @@ namespace LambdaEngine
 	{
 		DECL_COMPONENT(PositionComponent);
 		glm::vec3 Position;
+		bool Dirty;
 	};
 
 	struct ScaleComponent
 	{
 		DECL_COMPONENT(ScaleComponent);
 		glm::vec3 Scale;
+		bool Dirty;
 	};
 
 	struct RotationComponent
 	{
 		DECL_COMPONENT(RotationComponent);
 		glm::quat Quaternion;
+		bool Dirty;
 	};
 
 	// Transform is a convenience wrapper

@@ -25,7 +25,7 @@
 #include "Threading/API/ThreadPool.h"
 
 #include "Rendering/RenderAPI.h"
-#include "Rendering/Renderer.h"
+#include "Rendering/Core/API/CommandQueue.h"
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
 
@@ -35,6 +35,7 @@
 
 #include "Game/GameConsole.h"
 #include "Game/StateManager.h"
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 namespace LambdaEngine
 {
@@ -168,6 +169,7 @@ namespace LambdaEngine
 			return false;
 		}
 
+
 		if (!AudioSystem::Init())
 		{
 			return false;
@@ -182,8 +184,8 @@ namespace LambdaEngine
 		{
 			return false;
 		}
-
-		if (!Renderer::Init())
+		
+		if (!RenderSystem::GetInstance().Init())
 		{
 			return false;
 		}
@@ -214,7 +216,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!Renderer::Release())
+		if (!RenderSystem::GetInstance().Release())
 		{
 			return false;
 		}
