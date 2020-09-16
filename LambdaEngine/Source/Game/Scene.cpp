@@ -83,7 +83,7 @@ namespace LambdaEngine
 			perFrameCopyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			perFrameCopyBufferDesc.SizeInBytes		= sizeof(PerFrameBuffer);
 
-			m_pPerFrameStagingBuffer = RenderSystem::GetDevice()->CreateBuffer(&perFrameCopyBufferDesc);
+			m_pPerFrameStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameCopyBufferDesc);
 
 			BufferDesc perFrameBufferDesc = {};
 			perFrameBufferDesc.DebugName			= "Scene Per Frame Buffer";
@@ -91,7 +91,7 @@ namespace LambdaEngine
 			perFrameBufferDesc.Flags				= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;;
 			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
 
-			m_pPerFrameBuffer = RenderSystem::GetDevice()->CreateBuffer(&perFrameBufferDesc);
+			m_pPerFrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameBufferDesc);
 		}
 
 		Texture*		pDefaultColorMap		= ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_COLOR_MAP);
@@ -224,7 +224,7 @@ namespace LambdaEngine
 					vertexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 					vertexStagingBufferDesc.SizeInBytes = pMesh->VertexCount * sizeof(Vertex);
 
-					Buffer* pVertexStagingBuffer = RenderSystem::GetDevice()->CreateBuffer(&vertexStagingBufferDesc);
+					Buffer* pVertexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexStagingBufferDesc);
 
 					void* pMapped = pVertexStagingBuffer->Map();
 					memcpy(pMapped, pMesh->pVertexArray, vertexStagingBufferDesc.SizeInBytes);
@@ -236,7 +236,7 @@ namespace LambdaEngine
 					vertexBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 					vertexBufferDesc.SizeInBytes	= vertexStagingBufferDesc.SizeInBytes;
 
-					meshEntry.pVertexBuffer = RenderSystem::GetDevice()->CreateBuffer(&vertexBufferDesc);
+					meshEntry.pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexBufferDesc);
 
 					pCommandList->CopyBuffer(pVertexStagingBuffer, 0, meshEntry.pVertexBuffer, 0, vertexBufferDesc.SizeInBytes);
 					m_BuffersToRemove[0].PushBack(pVertexStagingBuffer);
@@ -250,7 +250,7 @@ namespace LambdaEngine
 					indexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 					indexStagingBufferDesc.SizeInBytes	= pMesh->IndexCount * sizeof(uint32);
 
-					Buffer* pIndexStagingBuffer = RenderSystem::GetDevice()->CreateBuffer(&indexStagingBufferDesc);
+					Buffer* pIndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&indexStagingBufferDesc);
 
 					void* pMapped = pIndexStagingBuffer->Map();
 					memcpy(pMapped, pMesh->pIndexArray, indexStagingBufferDesc.SizeInBytes);
@@ -262,7 +262,7 @@ namespace LambdaEngine
 					indexBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
 					indexBufferDesc.SizeInBytes		= indexStagingBufferDesc.SizeInBytes;
 
-					meshEntry.pIndexBuffer	= RenderSystem::GetDevice()->CreateBuffer(&indexBufferDesc);
+					meshEntry.pIndexBuffer	= RenderAPI::GetDevice()->CreateBuffer(&indexBufferDesc);
 					meshEntry.IndexCount	= pMesh->IndexCount;
 
 					pCommandList->CopyBuffer(pIndexStagingBuffer, 0, meshEntry.pIndexBuffer, 0, indexBufferDesc.SizeInBytes);
@@ -385,7 +385,7 @@ namespace LambdaEngine
 				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 				bufferDesc.SizeInBytes	= requiredBufferSize;
 
-				pDirtyInstanceBufferEntry->pInstanceStagingBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
+				pDirtyInstanceBufferEntry->pInstanceStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			}
 
 			void* pMapped = pDirtyInstanceBufferEntry->pInstanceStagingBuffer->Map();
@@ -402,7 +402,7 @@ namespace LambdaEngine
 				bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 				bufferDesc.SizeInBytes		= requiredBufferSize;
 
-				pDirtyInstanceBufferEntry->pInstanceBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
+				pDirtyInstanceBufferEntry->pInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			}
 			
 			pCommandList->CopyBuffer(pDirtyInstanceBufferEntry->pInstanceStagingBuffer, 0, pDirtyInstanceBufferEntry->pInstanceBuffer, 0, requiredBufferSize);
@@ -434,7 +434,7 @@ namespace LambdaEngine
 			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			bufferDesc.SizeInBytes	= requiredBufferSize;
 
-			m_pMaterialParametersStagingBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
+			m_pMaterialParametersStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		}
 
 		void* pMapped = m_pMaterialParametersStagingBuffer->Map();
@@ -451,7 +451,7 @@ namespace LambdaEngine
 			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
 			bufferDesc.SizeInBytes	= requiredBufferSize;
 
-			m_pMaterialParametersBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
+			m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		}
 
 		pCommandList->CopyBuffer(m_pMaterialParametersStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
