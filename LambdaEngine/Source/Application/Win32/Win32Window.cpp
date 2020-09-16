@@ -89,6 +89,8 @@ namespace LambdaEngine
 			// Set descripton
 			m_Desc = (*pDesc);
 
+			m_dwWindowStyle = dwStyle;
+
 			::UpdateWindow(m_hWnd);
 			return true;
 		}
@@ -165,7 +167,46 @@ namespace LambdaEngine
 
 	void Win32Window::ToggleFullscreen()
 	{
-		// TODO: Implement when rendering resize works
+		VALIDATE(m_hWnd != 0);
+
+		if (::IsWindow(m_hWnd))
+		{
+			if (!m_IsFullscreen)
+			{
+				m_IsFullscreen = true;
+
+				::GetWindowPlacement(m_hWnd, &m_WindowPlaceMent);
+				if (m_dwWindowStyle == 0)
+				{
+					m_dwWindowStyle = ::GetWindowLong(m_hWnd, GWL_STYLE);
+				}
+				if (m_dwWindowStyleEx == 0)
+				{
+					m_dwWindowStyleEx = ::GetWindowLong(m_hWnd, GWL_EXSTYLE);
+				}
+
+				LONG newStyle = m_dwWindowStyle;
+				newStyle &= ~WS_BORDER;
+				newStyle &= ~WS_DLGFRAME;
+				newStyle &= ~WS_THICKFRAME;
+
+				LONG newStyleEx = m_dwWindowStyleEx;
+				newStyleEx &= ~WS_EX_WINDOWEDGE;
+
+				SetWindowLong(m_hWnd, GWL_STYLE, newStyle | WS_POPUP);
+				SetWindowLong(m_hWnd, GWL_EXSTYLE, newStyleEx | WS_EX_TOPMOST);
+				::ShowWindow(m_hWnd, SW_SHOWMAXIMIZED);
+			}
+			else
+			{
+				m_IsFullscreen = false;
+
+				::SetWindowLong(m_hWnd, GWL_STYLE, m_dwWindowStyle);
+				::SetWindowLong(m_hWnd, GWL_EXSTYLE, m_dwWindowStyleEx);
+				::ShowWindow(m_hWnd, SW_SHOWNORMAL);
+				::SetWindowPlacement(m_hWnd, &m_WindowPlaceMent);
+			}
+		}
 	}
 
 	uint16 Win32Window::GetWidth() const

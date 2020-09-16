@@ -26,23 +26,12 @@ namespace LambdaEngine
 			vkDestroyBuffer(m_pDevice->Device, m_Buffer, nullptr);
 			m_Buffer = VK_NULL_HANDLE;
 		}
-		
-		if (m_Allocator)
-		{
-			m_Allocator->Free(&m_Allocation);
-			memset(&m_Allocation, 0, sizeof(m_Allocation));
-		}
-		else
-		{
-			if (m_Memory != VK_NULL_HANDLE)
-			{
-				vkFreeMemory(m_pDevice->Device, m_Memory, nullptr);
-				m_Memory = VK_NULL_HANDLE;
-			}
-		}
+
+		m_pDevice->FreeMemory(&m_Allocation);
+		ZERO_MEMORY(&m_Allocation, sizeof(m_Allocation));
 	}
 
-	bool BufferVK::Init(const BufferDesc* pDesc, DeviceAllocator* pAllocator)
+	bool BufferVK::Init(const BufferDesc* pDesc)
 	{
 		VkBufferCreateInfo info = {};
 		info.sType                  = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -53,50 +42,50 @@ namespace LambdaEngine
 		info.sharingMode            = VK_SHARING_MODE_EXCLUSIVE;
 		info.size                   = pDesc->SizeInBytes;
 		
-		VkPhysicalDeviceProperties  deviceProperties    = m_pDevice->GetPhysicalDeviceProperties();
-		VkPhysicalDeviceLimits&     deviceLimits        = deviceProperties.limits;
-		m_AlignementRequirement = 1LLU;
+		VkPhysicalDeviceProperties deviceProperties = m_pDevice->GetPhysicalDeviceProperties();
+		VkPhysicalDeviceLimits& deviceLimits = deviceProperties.limits;
+		m_AlignmentRequirement = 1LLU;
 
 		info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-		if (pDesc->Flags & FBufferFlags::BUFFER_FLAG_VERTEX_BUFFER)
+		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_VERTEX_BUFFER)
 		{
 			info.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-			m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
+			m_AlignmentRequirement = std::max(m_AlignmentRequirement, 1LLU);
 		}
-		if (pDesc->Flags & FBufferFlags::BUFFER_FLAG_INDEX_BUFFER)
+		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_INDEX_BUFFER)
 		{
 			info.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-			m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
+			m_AlignmentRequirement = std::max(m_AlignmentRequirement, 1LLU);
 		}
-		if (pDesc->Flags & FBufferFlags::BUFFER_FLAG_CONSTANT_BUFFER)
+		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER)
 		{
 			info.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-			m_AlignementRequirement = std::max(m_AlignementRequirement, deviceLimits.minUniformBufferOffsetAlignment);
+			m_AlignmentRequirement = std::max(m_AlignmentRequirement, deviceLimits.minUniformBufferOffsetAlignment);
 		}
-		if (pDesc->Flags & FBufferFlags::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER)
+		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER)
 		{
 			info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-			m_AlignementRequirement = std::max(m_AlignementRequirement, deviceLimits.minStorageBufferOffsetAlignment);
+			m_AlignmentRequirement = std::max(m_AlignmentRequirement, deviceLimits.minStorageBufferOffsetAlignment);
 		}
-		if (pDesc->Flags & FBufferFlags::BUFFER_FLAG_COPY_DST)
+		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_COPY_DST)
 		{
 			info.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-			m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
+			m_AlignmentRequirement = std::max(m_AlignmentRequirement, 1LLU);
 		}
-		if (pDesc->Flags & FBufferFlags::BUFFER_FLAG_COPY_SRC)
+		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_COPY_SRC)
 		{
 			info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-			m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
+			m_AlignmentRequirement = std::max(m_AlignmentRequirement, 1LLU);
 		}
-		if (pDesc->Flags & FBufferFlags::BUFFER_FLAG_RAY_TRACING)
+		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_RAY_TRACING)
 		{
 			info.usage |= VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR;
-			m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
+			m_AlignmentRequirement = std::max(m_AlignmentRequirement, 1LLU);
 		}
-		if (pDesc->Flags & FBufferFlags::BUFFER_FLAG_INDIRECT_BUFFER)
+		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_INDIRECT_BUFFER)
 		{
 			info.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-			m_AlignementRequirement = std::max(m_AlignementRequirement, 1LLU);
+			m_AlignmentRequirement = std::max(m_AlignmentRequirement, 1LLU);
 		}
 		
 		VkResult result = vkCreateBuffer(m_pDevice->Device, &info, nullptr, &m_Buffer);
@@ -127,41 +116,17 @@ namespace LambdaEngine
 		}
 
 		int32 memoryTypeIndex = FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, memoryProperties);
-		if (pAllocator)
+		if (!m_pDevice->AllocateBufferMemory(&m_Allocation, m_Desc.Flags, memoryRequirements.size, memoryRequirements.alignment, memoryTypeIndex))
 		{
-			DeviceAllocatorVK* pAllocatorVk = reinterpret_cast<DeviceAllocatorVK*>(pAllocator);
-			if (!pAllocatorVk->Allocate(&m_Allocation, memoryRequirements.size, memoryRequirements.alignment, memoryTypeIndex))
-			{
-				LOG_ERROR("[BufferVK]: Failed to allocate memory");
-				return false;
-			}
-
-			// Save reference to allocator
-			m_Allocator = pAllocatorVk;
-			m_Allocator->AddRef();
-			
-			result = vkBindBufferMemory(m_pDevice->Device, m_Buffer, m_Allocation.Memory, m_Allocation.Offset);
-			if (result != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to bind memory");
-				return false;
-			}
+			LOG_ERROR("[BufferVK]: Failed to allocate memory");
+			return false;
 		}
-		else
+
+		result = vkBindBufferMemory(m_pDevice->Device, m_Buffer, m_Allocation.Memory, m_Allocation.Offset);
+		if (result != VK_SUCCESS)
 		{
-			result = m_pDevice->AllocateMemory(&m_Memory, memoryRequirements.size, memoryTypeIndex);
-			if (result != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to allocate memory");
-				return false;
-			}
-			
-			result = vkBindBufferMemory(m_pDevice->Device, m_Buffer, m_Memory, 0);
-			if (result != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to bind memory");
-				return false;
-			}
+			LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to bind memory");
+			return false;
 		}
 
 		VkBufferDeviceAddressInfo deviceAdressInfo = { };
@@ -179,51 +144,18 @@ namespace LambdaEngine
 
 	void* BufferVK::Map()
 	{
-		void* pHostMemory = nullptr;
-		if (m_Allocator)
-		{
-			pHostMemory = m_Allocator->Map(&m_Allocation);
-			m_IsMapped = true;
-		}
-		else
-		{
-			VkResult result = vkMapMemory(m_pDevice->Device, m_Memory, 0, VK_WHOLE_SIZE, 0, &pHostMemory);
-			if (result != VK_SUCCESS)
-			{
-				if (!m_Desc.DebugName.empty())
-				{
-					LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer %s", m_Desc.DebugName.c_str());
-				}
-				else
-				{
-					LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to map buffer");
-				}
-			
-				return nullptr;
-			}
-			else
-			{
-				m_IsMapped = true;
-			}
-		}
+		VALIDATE(!m_IsMapped);
 
-		return pHostMemory;
+		m_IsMapped = true;
+		return m_pDevice->MapBufferMemory(&m_Allocation);
 	}
 
 	void BufferVK::Unmap()
 	{
 		VALIDATE(m_IsMapped);
 		
-		if (m_Allocator)
-		{
-			m_Allocator->Unmap(&m_Allocation);
-		}
-		else
-		{
-			vkUnmapMemory(m_pDevice->Device, m_Memory);
-		}
-
 		m_IsMapped = false;
+		m_pDevice->UnmapBufferMemory(&m_Allocation);
 	}
 
 	void BufferVK::SetName(const String& debugname)
@@ -239,6 +171,6 @@ namespace LambdaEngine
 	
 	uint64 BufferVK::GetAlignmentRequirement() const
 	{
-		return m_AlignementRequirement;
+		return m_AlignmentRequirement;
 	}
 }

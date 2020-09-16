@@ -3,6 +3,7 @@
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
 #include "Time/API/Timestamp.h"
+#include "Rendering/Core/API/GraphicsDevice.h"
 
 namespace LambdaEngine
 {
@@ -19,8 +20,8 @@ namespace LambdaEngine
 
 			uint64_t Start;
 			uint64_t End;
-			float Duration;
 			CommandList* pCommandList;
+			float Duration;
 			String Name;
 		};
 
@@ -81,19 +82,24 @@ namespace LambdaEngine
 		uint32_t m_TimestampCount		= 0;
 		uint32_t m_NextIndex			= 0;
 		uint32_t m_TimestampValidBits	= 0;
-		float m_TimestampPeriod			= 0.f;
+		float m_TimestampPeriod			= 0.0f;
 		uint64_t m_StartTimestamp		= 0;
 
 		THashTable<String, Timestamp>	m_Results;
 		TArray<PlotResult>				m_PlotResults;
 		uint32_t m_PlotResultsStart		= 0;
-		size_t m_PlotDataSize;
+		uint32_t m_PlotDataSize;
 		THashTable<String, float> m_CurrentMaxDuration;
-		float m_TimeSinceUpdate			= 0.0f;
+		float64 m_TimeSinceUpdate			= 0.0f;
 		float m_UpdateFreq;
 		bool m_EnableGraph				= true;
 
 		THashTable<CommandList*, bool> m_ShouldGetTimestamps;
+
+		// Memory usage
+		uint32 m_MaxVram = 0;
+		uint32 m_CurrentVram = 0;
+		TArray<GraphicsDeviceMemoryStatistics> m_MemoryStats;
 
 		// Pipeline statistics
 		QueryHeap* m_pPipelineStatHeap = nullptr;

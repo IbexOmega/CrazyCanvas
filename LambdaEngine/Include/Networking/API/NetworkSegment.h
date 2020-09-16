@@ -64,6 +64,8 @@ namespace LambdaEngine
 
 		std::string ToString() const;
 
+		void DeepCopy(NetworkSegment* pSegment) const;
+
 	private:
 		NetworkSegment();
 
@@ -80,9 +82,6 @@ namespace LambdaEngine
 		uint64 m_Salt;
 		uint16 m_SizeOfBuffer;
 		bool m_IsBorrowed;
-
-
-
 		char m_pBuffer[MAXIMUM_SEGMENT_SIZE];
 	};
 

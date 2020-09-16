@@ -4,7 +4,6 @@
 
 namespace LambdaEngine
 {
-	class IClient;
 	class IClientRemoteHandler;
 
 	class LAMBDA_API IServerHandler

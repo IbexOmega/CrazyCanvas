@@ -115,9 +115,9 @@ namespace LambdaEngine
 
 		struct ResourceBinding
 		{
-			RenderStage*	pRenderStage	= nullptr;
-			EDescriptorType DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
-			uint32			Binding			= 0;
+			RenderStage*	pRenderStage		= nullptr;
+			EDescriptorType DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
+			uint32			Binding				= 0;
 
 			ETextureState	TextureState		= ETextureState::TEXTURE_STATE_UNKNOWN;
 		};
@@ -174,17 +174,19 @@ namespace LambdaEngine
 			TArray<ResourceBinding>		ResourceBindings;
 			TArray<ResourceBarrierInfo>	BarriersPerSynchronizationStage; //Divided into #SubResourceCount Barriers per Synchronization Stage
 
-			FPipelineStageFlags			LastPipelineStageOfFirstRenderStage = FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags			LastPipelineStageOfFirstRenderStage = FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			struct
 			{
-				ERenderGraphTextureType				TextureType = ERenderGraphTextureType::TEXTURE_2D;
-				bool								IsOfArrayType	= false;
-				EFormat								Format			= EFormat::FORMAT_NONE;
+				ERenderGraphTextureType				TextureType						= ERenderGraphTextureType::TEXTURE_2D;
+				bool								IsOfArrayType					= false;
+				bool								UsedAsRenderTarget				= false;
+				bool								PerSubImageUniquelyAllocated	= false;
+				EFormat								Format				= EFormat::FORMAT_NONE;
 				TArray<PipelineTextureBarrierDesc>	InititalTransitionBarriers;
 				TArray<Texture*>					Textures;
-				TArray<TextureView*>				TextureViews;
-				TArray<TextureView*>				CubeFaceTextureViews;
+				TArray<TextureView*>				PerImageTextureViews;
+				TArray<TextureView*>				PerSubImageTextureViews;
 				TArray<Sampler*>					Samplers;
 			} Texture;
 
@@ -207,29 +209,35 @@ namespace LambdaEngine
 			String					Name							= "";
 			RenderStageParameters	Parameters						= {};
 
+			//Triggering
+			ERenderStageExecutionTrigger	TriggerType				= ERenderStageExecutionTrigger::NONE;
+			uint32							FrameDelay				= 0;
+			uint32							FrameOffset				= 0;
+			uint32							FrameCounter			= 0;
+
 			//Special Draw Params
-			bool					HasTextureCubeAsAttachment		= false;
+			uint32					ExecutionCount					= 1;
 
 			glm::uvec3				Dimensions						= glm::uvec3(0);
 
 			bool					UsesCustomRenderer				= false;
 			ICustomRenderer*		pCustomRenderer					= nullptr;
 
-			FPipelineStageFlags		FirstPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-			FPipelineStageFlags		LastPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-			uint32					PipelineStageMask				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags		FirstPipelineStage				= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags		LastPipelineStage				= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			uint32					PipelineStageMask				= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			ERenderStageDrawType	DrawType						= ERenderStageDrawType::NONE;
-			Resource*				pIndexBufferResource			= nullptr;
-			Resource*				pIndirectArgsBufferResource		= nullptr;
 
 			uint64					PipelineStateID					= 0;
 			PipelineLayout*			pPipelineLayout					= nullptr;
-			uint32					TextureSubDescriptorSetCount	= 1;
-			uint32					MaterialsRenderedPerPass		= 1;
-			DescriptorSet**			ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount * ceil(# Textures per Draw / m_MaxTexturesPerDescriptorSet)
 			DescriptorSet**			ppBufferDescriptorSets			= nullptr; //# m_BackBufferCount
+			uint32					BufferSetIndex					= 0;
+			DescriptorSet**			ppTextureDescriptorSets			= nullptr; //# m_BackBufferCount
+			uint32					TextureSetIndex					= 0;
+			uint32					DrawSetIndex					= 0;
 			RenderPass*				pRenderPass						= nullptr;
+			RenderPass*				pDisabledRenderPass				= nullptr;
 
 			PushConstants			pInternalPushConstants[NUM_INTERNAL_PUSH_CONSTANTS_TYPES];
 			PushConstants			ExternalPushConstants			= {};
@@ -240,9 +248,9 @@ namespace LambdaEngine
 		struct SynchronizationStage
 		{
 			ECommandQueueType					ExecutionQueue					= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
-			FPipelineStageFlags					SrcPipelineStage				= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-			FPipelineStageFlags					SameQueueDstPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
-			FPipelineStageFlags					OtherQueueDstPipelineStage		= FPipelineStageFlags::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags					SrcPipelineStage				= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags					SameQueueDstPipelineStage		= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags					OtherQueueDstPipelineStage		= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 
 			TArray<PipelineBufferBarrierDesc>	BufferBarriers[2];
 			TArray<PipelineTextureBarrierDesc>	TextureBarriers[4];
@@ -282,6 +290,8 @@ namespace LambdaEngine
 		void UpdateRenderStageDimensions(const String& renderStageName, uint32 x, uint32 y, uint32 z = 0);
 		void UpdateResourceDimensions(const String& resourceName, uint32 x, uint32 y = 0);
 
+		void TriggerRenderStage(const String& renderStageName);
+
 		void GetAndIncrementFence(Fence** ppFence, uint64* pSignalValue);
 
 		/*
@@ -294,22 +304,22 @@ namespace LambdaEngine
 		CommandList* AcquireGraphicsCopyCommandList();
 		CommandList* AcquireComputeCopyCommandList();
 
-		bool GetResourceTextures(const char* pResourceName, Texture* const ** pppTexture, uint32* pTextureView)						const;
-		bool GetResourceTextureViews(const char* pResourceName, TextureView* const ** pppTextureViews, uint32* pTextureViewCount)	const;
-		bool GetResourceBuffers(const char* pResourceName, Buffer* const ** pppBuffers, uint32* pBufferCount)						const;
-		bool GetResourceAccelerationStructure(const char* pResourceName, const AccelerationStructure** ppAccelerationStructure)		const;
+		bool GetResourceTextures(const char* pResourceName, Texture* const ** pppTexture, uint32* pTextureView)									const;
+		bool GetResourcePerImageTextureViews(const char* pResourceName, TextureView* const ** pppTextureViews, uint32* pTextureViewCount)		const;
+		bool GetResourcePerSubImageTextureViews(const char* pResourceName, TextureView* const ** pppTextureViews, uint32* pTextureViewCount)	const;
+		bool GetResourceBuffers(const char* pResourceName, Buffer* const ** pppBuffers, uint32* pBufferCount)									const;
+		bool GetResourceAccelerationStructure(const char* pResourceName, const AccelerationStructure** ppAccelerationStructure)					const;
 
 		bool OnWindowResized(const WindowResizedEvent& windowEvent);
 
 	private:
 		void ReleasePipelineStages();
 
-		bool CreateAllocator();
 		bool CreateFence();
 		bool CreateDescriptorHeap();
 		bool CreateCopyCommandLists();
 		bool CreateResources(const TArray<RenderGraphResourceDesc>& resourceDescriptions);
-		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages);
+		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants);
 		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
 

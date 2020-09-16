@@ -30,6 +30,10 @@ namespace LambdaEngine
 #else
 	constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
 #endif
+	// Determines if a resource should be allocated by a deviceallocator or via a seperate allocation
+	constexpr const uint32 LARGE_TEXTURE_ALLOCATION_SIZE				= MEGA_BYTE(64);
+	constexpr const uint32 LARGE_BUFFER_ALLOCATION_SIZE					= MEGA_BYTE(8);
+	constexpr const uint32 LARGE_ACCELERATION_STRUCTURE_ALLOCATION_SIZE	= MEGA_BYTE(8);
 
 	/*
 	* Enums
@@ -46,14 +50,15 @@ namespace LambdaEngine
 		FORMAT_NONE						= 0,
 		FORMAT_R16_UNORM				= 1,
 		FORMAT_R16_SFLOAT				= 2,
-		FORMAT_R32G32_SFLOAT			= 3,
-		FORMAT_R8G8B8A8_UNORM			= 4,
-		FORMAT_B8G8R8A8_UNORM			= 5,
-		FORMAT_R8G8B8A8_SNORM			= 6,
-		FORMAT_R16G16B16A16_SFLOAT		= 7,
-		FORMAT_R32G32B32A32_SFLOAT		= 8,
-		FORMAT_R32G32B32A32_UINT		= 9,
-		FORMAT_D24_UNORM_S8_UINT		= 10,
+		FORMAT_R16G16_SFLOAT			= 3,
+		FORMAT_R32G32_SFLOAT			= 4,
+		FORMAT_R8G8B8A8_UNORM			= 5,
+		FORMAT_B8G8R8A8_UNORM			= 6,
+		FORMAT_R8G8B8A8_SNORM			= 7,
+		FORMAT_R16G16B16A16_SFLOAT		= 8,
+		FORMAT_R32G32B32A32_SFLOAT		= 9,
+		FORMAT_R32G32B32A32_UINT		= 10,
+		FORMAT_D24_UNORM_S8_UINT		= 11,
 	};
 
 	enum class EIndexType
@@ -269,6 +274,17 @@ namespace LambdaEngine
 		STENCIL_OP_DECREMENT_AND_WRAP	= 7,
 	};
 
+	enum class ETextureViewType : uint8
+	{
+		TEXTURE_VIEW_TYPE_NONE			= 0,
+		TEXTURE_VIEW_TYPE_1D			= 1,
+		TEXTURE_VIEW_TYPE_2D			= 2,
+		TEXTURE_VIEW_TYPE_3D			= 3,
+		TEXTURE_VIEW_TYPE_CUBE			= 4,
+		TEXTURE_VIEW_TYPE_CUBE_ARRAY	= 5,
+		TEXTURE_VIEW_TYPE_2D_ARRAY		= 6,
+	};
+
 	enum class EPipelineStateType : uint8
 	{
 		PIPELINE_STATE_TYPE_NONE			= 0,
@@ -277,7 +293,8 @@ namespace LambdaEngine
 		PIPELINE_STATE_TYPE_RAY_TRACING		= 3,
 	};
 
-	enum FShaderStageFlags : uint32
+	typedef uint32 FShaderStageFlags;
+	enum FShaderStageFlag : FShaderStageFlags
 	{
 		SHADER_STAGE_FLAG_NONE					= 0,
 		SHADER_STAGE_FLAG_MESH_SHADER			= FLAG(0),
@@ -295,7 +312,8 @@ namespace LambdaEngine
 		SHADER_STAGE_FLAG_MISS_SHADER			= FLAG(12),
 	};
 
-	enum FBufferFlags
+	typedef uint32 FBufferFlags;
+	enum FBufferFlag : FBufferFlags
 	{
 		BUFFER_FLAG_NONE					= 0,
 		BUFFER_FLAG_VERTEX_BUFFER			= FLAG(1),
@@ -308,7 +326,8 @@ namespace LambdaEngine
 		BUFFER_FLAG_INDIRECT_BUFFER			= FLAG(7),
 	};
 
-	enum FTextureFlags : uint16
+	typedef uint16 FTextureFlags;
+	enum FTextureFlag : FTextureFlags
 	{
 		TEXTURE_FLAG_NONE				= 0,
 		TEXTURE_FLAG_RENDER_TARGET		= FLAG(1),
@@ -320,7 +339,8 @@ namespace LambdaEngine
 		TEXTURE_FLAG_CUBE_COMPATIBLE	= FLAG(7)
 	};
 
-	enum FTextureViewFlags : uint32
+	typedef uint32 FTextureViewFlags;
+	enum FTextureViewFlag : FTextureViewFlags
 	{
 		TEXTURE_VIEW_FLAG_NONE				= 0,
 		TEXTURE_VIEW_FLAG_RENDER_TARGET		= FLAG(1),
@@ -329,7 +349,8 @@ namespace LambdaEngine
 		TEXTURE_VIEW_FLAG_SHADER_RESOURCE	= FLAG(4),
 	};
 
-	enum FPipelineStageFlags : uint32
+	typedef uint32 FPipelineStageFlags;
+	enum FPipelineStageFlag : FPipelineStageFlags
 	{
 		PIPELINE_STAGE_FLAG_UNKNOWN							= 0,
 		PIPELINE_STAGE_FLAG_TOP								= FLAG(1),
@@ -356,7 +377,8 @@ namespace LambdaEngine
 		PIPELINE_STAGE_FLAG_MESH_SHADER						= FLAG(22),
 	};
 
-	enum FMemoryAccessFlags : uint32
+	typedef uint32 FMemoryAccessFlags;
+	enum FMemoryAccessFlag : FMemoryAccessFlags
 	{
 		MEMORY_ACCESS_FLAG_UNKNOWN								= 0,
 		MEMORY_ACCESS_FLAG_INDIRECT_COMMAND_READ				= FLAG(1),
@@ -389,7 +411,8 @@ namespace LambdaEngine
 		MEMORY_ACCESS_FLAG_COMMAND_PREPROCESS_WRITE				= FLAG(28),
 	};
 
-	enum FColorComponentFlags : uint8
+	typedef uint32 FColorComponentFlags;
+	enum FColorComponentFlag : FColorComponentFlags
 	{
 		COLOR_COMPONENT_FLAG_NONE	= 0,
 		COLOR_COMPONENT_FLAG_R		= FLAG(0),
@@ -398,13 +421,15 @@ namespace LambdaEngine
 		COLOR_COMPONENT_FLAG_A		= FLAG(3),
 	};
 
-	enum FAccelerationStructureFlags : uint16
+	typedef uint32 FAccelerationStructureFlags;
+	enum FAccelerationStructureFlag : FAccelerationStructureFlags
 	{
 		ACCELERATION_STRUCTURE_FLAG_NONE			= 0,
 		ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE	= FLAG(1),
 	};
 
-	enum FQueryPipelineStatisticsFlag : uint32
+	typedef uint32 FQueryPipelineStatisticsFlags;
+	enum FQueryPipelineStatisticsFlag : FQueryPipelineStatisticsFlags
 	{
 		QUERY_PIPELINE_STATISTICS_FLAG_NONE											= 0,
 		QUERY_PIPELINE_STATISTICS_FLAG_INPUT_ASSEMBLY_VERTICES						= FLAG(1),
@@ -418,6 +443,25 @@ namespace LambdaEngine
 		QUERY_PIPELINE_STATISTICS_FLAG_TESSELLATION_CONTROL_SHADER_PATCHES			= FLAG(9),
 		QUERY_PIPELINE_STATISTICS_FLAG_TESSELLATION_EVALUATION_SHADER_INVOCATIONS	= FLAG(10),
 		QUERY_PIPELINE_STATISTICS_FLAG_COMPUTE_SHADER_INVOCATIONS					= FLAG(11),
+	};
+
+	typedef uint32 FAcceleratioStructureInstanceFlags;
+	enum FAcceleratioStructureInstanceFlag : FAcceleratioStructureInstanceFlags
+	{
+		RAY_TRACING_INSTANCE_FLAG_NONE				= 0,
+		RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED	= FLAG(0),
+		RAY_TRACING_INSTANCE_FLAG_FRONT_CCW			= FLAG(1),
+		RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE		= FLAG(2),
+		RAY_TRACING_INSTANCE_FLAG_FORCE_NO_OPAQUE	= FLAG(3),
+	};
+
+	typedef uint32 FDescriptorSetLayoutsFlags;
+	enum FDescriptorSetLayoutsFlag : FDescriptorSetLayoutsFlags
+	{
+		DESCRIPTOR_SET_LAYOUT_FLAG_NONE						= 0,
+		DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR			= FLAG(0),
+		DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL	= FLAG(1),
+
 	};
 
 	enum class EVertexInputRate : uint8

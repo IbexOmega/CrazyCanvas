@@ -186,7 +186,7 @@ namespace LambdaEngine
 	{
 		uint16 packetType = pPacket->GetType();
 
-		LOG_MESSAGE("ClientBase::HandleReceivedPacket(%s)", pPacket->ToString().c_str());
+		//LOG_MESSAGE("ClientBase::HandleReceivedPacket(%s)", pPacket->ToString().c_str());
 
 		if (packetType == NetworkSegment::TYPE_CHALLENGE)
 		{

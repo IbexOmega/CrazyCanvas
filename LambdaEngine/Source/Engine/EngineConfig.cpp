@@ -81,7 +81,17 @@ namespace LambdaEngine
         return s_ConfigDocument[propertyName.c_str()].GetString();
     }
 
-    TArray<int> EngineConfig::GetArrayProperty(const String& propertyName)
+    TArray<float> EngineConfig::GetFloatArrayProperty(const String& propertyName)
+    {
+        const Value& arr = s_ConfigDocument[propertyName.c_str()];
+        TArray<float> tArr;
+        for (auto& itr : arr.GetArray())
+            tArr.PushBack(itr.GetFloat());
+
+        return tArr;
+    }
+
+    TArray<int> EngineConfig::GetIntArrayProperty(const String& propertyName)
     {
         const Value& arr = s_ConfigDocument[propertyName.c_str()];
         TArray<int> tArr;
@@ -91,43 +101,104 @@ namespace LambdaEngine
         return tArr;
     }
 
-    void EngineConfig::SetBoolProperty(const String& propertyName, const bool value)
+    bool EngineConfig::SetBoolProperty(const String& propertyName, const bool value)
     {
-        s_ConfigDocument[propertyName.c_str()].SetBool(value);
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            s_ConfigDocument[propertyName.c_str()].SetBool(value);
+
+            return true;
+        }
+
+        return false;
     }
 
-    void EngineConfig::SetFloatProperty(const String& propertyName, const float value)
+    bool EngineConfig::SetFloatProperty(const String& propertyName, const float value)
     {
-        s_ConfigDocument[propertyName.c_str()].SetFloat(value);
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            s_ConfigDocument[propertyName.c_str()].SetFloat(value);
+
+            return true;
+        }
+        return false;
     }
 
-    void EngineConfig::SetIntProperty(const String& propertyName, const int value)
+    bool EngineConfig::SetIntProperty(const String& propertyName, const int value)
     {
-        s_ConfigDocument[propertyName.c_str()].SetFloat(value);
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            s_ConfigDocument[propertyName.c_str()].SetFloat(value);
+
+            return true;
+        }
+
+        return false;
     }
 
-    void EngineConfig::SetDoubleProperty(const String& propertyName, const double value)
+    bool EngineConfig::SetDoubleProperty(const String& propertyName, const double value)
     {
-        s_ConfigDocument[propertyName.c_str()].SetDouble(value);
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            s_ConfigDocument[propertyName.c_str()].SetDouble(value);
+
+            return true;
+        }
+        return false;
     }
 
-    void EngineConfig::SetStringProperty(const String& propertyName, const String& string)
+    bool EngineConfig::SetStringProperty(const String& propertyName, const String& string)
     {
-        s_ConfigDocument[propertyName.c_str()].SetString(string.c_str(), static_cast<SizeType>(strlen(string.c_str())), s_ConfigDocument.GetAllocator());
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            s_ConfigDocument[propertyName.c_str()].SetString(string.c_str(), static_cast<SizeType>(strlen(string.c_str())), s_ConfigDocument.GetAllocator());
+
+            return true;
+        }
+        return false;
     }
 
-    void EngineConfig::SetArrayProperty(const String& propertyName, const TArray<int>& arr)
+    bool EngineConfig::SetFloatArrayProperty(const String& propertyName, const TArray<float>& arr)
     {
-        Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
 
-        auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
-        newArr.Reserve(arr.GetSize(), allocator);
+            auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
+            newArr.Reserve(arr.GetSize(), allocator);
 
-        for (auto& itr : arr)
-            newArr.PushBack(Value().SetInt(itr), allocator);
+            for (auto& itr : arr)
+                newArr.PushBack(Value().SetFloat(itr), allocator);
 
-        StringBuffer strBuf;
-        PrettyWriter<StringBuffer> writer(strBuf);
-        s_ConfigDocument.Accept(writer);
+            StringBuffer strBuf;
+            PrettyWriter<StringBuffer> writer(strBuf);
+            s_ConfigDocument.Accept(writer);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    bool EngineConfig::SetIntArrayProperty(const String& propertyName, const TArray<int>& arr)
+    {
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
+
+            auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
+            newArr.Reserve(arr.GetSize(), allocator);
+
+            for (auto& itr : arr)
+                newArr.PushBack(Value().SetInt(itr), allocator);
+
+            StringBuffer strBuf;
+            PrettyWriter<StringBuffer> writer(strBuf);
+            s_ConfigDocument.Accept(writer);
+
+            return true;
+        }
+
+        return false;
     }
 }

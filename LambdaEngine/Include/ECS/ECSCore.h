@@ -1,17 +1,14 @@
 #pragma once
 
 #include "ECS/ComponentHandler.h"
-#include "ECS/EntityPublisher.h"
 #include "ECS/ECSBooter.h"
+#include "ECS/EntityPublisher.h"
 #include "ECS/EntityRegistry.h"
 #include "ECS/JobScheduler.h"
 #include "ECS/System.h"
-
 #include "Utilities/IDGenerator.h"
 
 #include <typeindex>
-
-#define TID(type) std::type_index(typeid(type))
 
 namespace LambdaEngine
 {

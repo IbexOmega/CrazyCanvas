@@ -181,6 +181,19 @@ vec2 Hammersley(uint i, uint N)
     return vec2(float(i) / float(N), RadicalInverse_VdC(i));
 }  
 
+vec2 DirToOct(vec3 normal)
+{
+	vec2 p = normal.xy * (1.0f / dot(abs(normal), vec3(1.0f)));
+	vec2 e = normal.z > 0.0f ? p : (1.0f - abs(p.yx)) * (step(0.0f, p) * 2.0f - vec2(1.0f));
+	return e;
+}
+
+vec3 OctToDir(vec2 e)
+{
+	vec3 v = vec3(e, 1.0f - abs(e.x) - abs(e.y));
+	if (v.z < 0.0f) v.xy = (1.0f - abs(v.yx)) * (step(0.0f, v.xy) * 2.0f - vec2(1.0f));
+	return normalize(v);
+}
 
 // A utility to convert a vec3 to a 2-component octohedral representation packed into one uint
 uint dirToOct(vec3 normal)

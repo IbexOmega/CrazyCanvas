@@ -57,14 +57,14 @@ namespace LambdaEngine
 
 	struct BlendAttachmentStateDesc
 	{
-		EBlendOp		BlendOp						= EBlendOp::BLEND_OP_ADD;
-		EBlendFactor	SrcBlend					= EBlendFactor::BLEND_FACTOR_ONE;
-		EBlendFactor	DstBlend					= EBlendFactor::BLEND_FACTOR_ZERO;
-		EBlendOp		BlendOpAlpha				= EBlendOp::BLEND_OP_ADD;
-		EBlendFactor	SrcBlendAlpha				= EBlendFactor::BLEND_FACTOR_ONE;
-		EBlendFactor	DstBlendAlpha				= EBlendFactor::BLEND_FACTOR_ZERO;
-		uint32			RenderTargetComponentMask	= FColorComponentFlags::COLOR_COMPONENT_FLAG_NONE;
-		bool			BlendEnabled				= false;
+		EBlendOp				BlendOp						= EBlendOp::BLEND_OP_ADD;
+		EBlendFactor			SrcBlend					= EBlendFactor::BLEND_FACTOR_ONE;
+		EBlendFactor			DstBlend					= EBlendFactor::BLEND_FACTOR_ZERO;
+		EBlendOp				BlendOpAlpha				= EBlendOp::BLEND_OP_ADD;
+		EBlendFactor			SrcBlendAlpha				= EBlendFactor::BLEND_FACTOR_ONE;
+		EBlendFactor			DstBlendAlpha				= EBlendFactor::BLEND_FACTOR_ZERO;
+		FColorComponentFlags	RenderTargetComponentMask	= FColorComponentFlag::COLOR_COMPONENT_FLAG_NONE;
+		bool					BlendEnabled				= false;
 	};
 
 	struct BlendStateDesc

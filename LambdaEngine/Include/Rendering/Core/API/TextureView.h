@@ -6,27 +6,13 @@
 namespace LambdaEngine
 {
 	/*
-	* ETextureViewType
-	*/
-	enum class ETextureViewType : uint8
-	{
-		TEXTURE_VIEW_TYPE_NONE		= 0,
-		TEXTURE_VIEW_TYPE_1D		= 1,
-		TEXTURE_VIEW_TYPE_2D		= 2,
-		TEXTURE_VIEW_TYPE_3D		= 3,
-		TEXTURE_VIEW_TYPE_CUBE		= 4,
-		TEXTURE_VIEW_TYPE_CUBE_ARRAY= 5,
-		TEXTURE_VIEW_TYPE_2D_ARRAY	= 6,
-	};
-
-	/*
 	* TextureViewDesc
 	*/
 	struct TextureViewDesc
 	{
 		String				DebugName		= "";
 		Texture*			pTexture		= nullptr;
-		uint32				Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_NONE;
+		FTextureViewFlags	Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_NONE;
 		EFormat				Format			= EFormat::FORMAT_NONE;
 		ETextureViewType	Type			= ETextureViewType::TEXTURE_VIEW_TYPE_NONE;
 		uint32				MiplevelCount	= 0;

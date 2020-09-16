@@ -76,9 +76,9 @@ Sandbox::Sandbox()
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
 	ShaderReflection shaderReflection;
-	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
+	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
 
-	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
+	m_pScene = DBG_NEW Scene();
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderSystem::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
@@ -88,19 +88,9 @@ Sandbox::Sandbox()
 	sceneDesc.RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
 	m_pScene->Init(sceneDesc);
 
-	m_DirectionalLightAngle	= glm::half_pi<float>();
-	m_DirectionalLightStrength[0] = DEFAULT_DIR_LIGHT_R;
-	m_DirectionalLightStrength[1] = DEFAULT_DIR_LIGHT_G;
-	m_DirectionalLightStrength[2] = DEFAULT_DIR_LIGHT_B;
-	m_DirectionalLightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
-
-	DirectionalLight directionalLight;
-	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
-	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
-
 	EScene scene = EScene::TESTING;
 
-	m_pScene->SetDirectionalLight(directionalLight);
+	//m_pScene->SetDirectionalLight(directionalLight);
 
 	AreaLightObject areaLight;
 	areaLight.Type = EAreaLightType::QUAD;
@@ -110,22 +100,22 @@ Sandbox::Sandbox()
 	{
 		//Lights
 		{
-			glm::vec3 position(0.0f, 6.0f, 0.0f);
-			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
-			glm::vec3 scale(1.5f);
+			//glm::vec3 position(0.0f, 6.0f, 0.0f);
+			//glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+			//glm::vec3 scale(1.5f);
 
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
+			//glm::mat4 transform(1.0f);
+			//transform = glm::translate(transform, position);
+			//transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			//transform = glm::scale(transform, scale);
 
-			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
-			instanceIndexAndTransform.Position		= position;
-			instanceIndexAndTransform.Rotation		= rotation;
-			instanceIndexAndTransform.Scale			= scale;
+			//InstanceIndexAndTransform instanceIndexAndTransform;
+			//instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
+			//instanceIndexAndTransform.Position		= position;
+			//instanceIndexAndTransform.Rotation		= rotation;
+			//instanceIndexAndTransform.Scale			= scale;
 
-			m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
+			//m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 		}
 
 		//Scene
@@ -142,10 +132,12 @@ Sandbox::Sandbox()
 			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
 			transform = glm::scale(transform, scale);
 
-			for (GameObject& gameObject : sceneGameObjects)
+			for (uint32 i = 0; i < sceneGameObjects.GetSize(); i++)
 			{
+				m_pScene->AddGameObject(i, sceneGameObjects[i], transform, true, false);
+
 				InstanceIndexAndTransform instanceIndexAndTransform;
-				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+				instanceIndexAndTransform.InstanceIndex = i;
 				instanceIndexAndTransform.Position = position;
 				instanceIndexAndTransform.Rotation = rotation;
 				instanceIndexAndTransform.Scale = scale;
@@ -158,22 +150,22 @@ Sandbox::Sandbox()
 	{
 		//Lights
 		{
-			glm::vec3 position(0.0f, 1.95f, 0.0f);
-			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
-			glm::vec3 scale(0.2f);
+			//glm::vec3 position(0.0f, 1.95f, 0.0f);
+			//glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+			//glm::vec3 scale(0.2f);
 
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
+			//glm::mat4 transform(1.0f);
+			//transform = glm::translate(transform, position);
+			//transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			//transform = glm::scale(transform, scale);
 
-			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
-			instanceIndexAndTransform.Position		= position;
-			instanceIndexAndTransform.Rotation		= rotation;
-			instanceIndexAndTransform.Scale			= scale;
+			//InstanceIndexAndTransform instanceIndexAndTransform;
+			//instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
+			//instanceIndexAndTransform.Position		= position;
+			//instanceIndexAndTransform.Rotation		= rotation;
+			//instanceIndexAndTransform.Scale			= scale;
 
-			m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
+			//m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 		}
 
 		//Scene
@@ -190,10 +182,12 @@ Sandbox::Sandbox()
 			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
 			transform = glm::scale(transform, scale);
 
-			for (GameObject& gameObject : sceneGameObjects)
+			for (uint32 i = 0; i < sceneGameObjects.GetSize(); i++)
 			{
+				m_pScene->AddGameObject(i, sceneGameObjects[i], transform, true, false);
+
 				InstanceIndexAndTransform instanceIndexAndTransform;
-				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+				instanceIndexAndTransform.InstanceIndex = i;
 				instanceIndexAndTransform.Position = position;
 				instanceIndexAndTransform.Rotation = rotation;
 				instanceIndexAndTransform.Scale = scale;
@@ -204,24 +198,26 @@ Sandbox::Sandbox()
 	}
 	else if (scene == EScene::TESTING)
 	{
+		uint32 entityID = 0;
+
 		//Lights
 		{
-			glm::vec3 position(0.0f, 6.0f, 0.0f);
-			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
-			glm::vec3 scale(1.5f);
+			//glm::vec3 position(0.0f, 6.0f, 0.0f);
+			//glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
+			//glm::vec3 scale(1.5f);
 
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
+			//glm::mat4 transform(1.0f);
+			//transform = glm::translate(transform, position);
+			//transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
+			//transform = glm::scale(transform, scale);
 
-			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
-			instanceIndexAndTransform.Position		= position;
-			instanceIndexAndTransform.Rotation		= rotation;
-			instanceIndexAndTransform.Scale			= scale;
+			//InstanceIndexAndTransform instanceIndexAndTransform;
+			//instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
+			//instanceIndexAndTransform.Position		= position;
+			//instanceIndexAndTransform.Rotation		= rotation;
+			//instanceIndexAndTransform.Scale			= scale;
 
-			m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
+			//m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
 		}
 
 		//Scene
@@ -238,15 +234,18 @@ Sandbox::Sandbox()
 			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
 			transform = glm::scale(transform, scale);
 
-			for (GameObject& gameObject : sceneGameObjects)
+			for (uint32 i = 0; i < sceneGameObjects.GetSize(); i++)
 			{
+				m_pScene->AddGameObject(entityID, sceneGameObjects[i], transform, true, false);
+
 				InstanceIndexAndTransform instanceIndexAndTransform;
-				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
+				instanceIndexAndTransform.InstanceIndex = entityID;
 				instanceIndexAndTransform.Position = position;
 				instanceIndexAndTransform.Rotation = rotation;
 				instanceIndexAndTransform.Scale = scale;
 
 				m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
+				entityID++;
 			}
 		}
 
@@ -287,13 +286,16 @@ Sandbox::Sandbox()
 					transform = glm::translate(transform, position);
 					transform = glm::scale(transform, scale);
 
+					m_pScene->AddGameObject(entityID, sphereGameObject, transform, true, false);
+
 					InstanceIndexAndTransform instanceIndexAndTransform;
-					instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(sphereGameObject, transform);
+					instanceIndexAndTransform.InstanceIndex = entityID;
 					instanceIndexAndTransform.Position		= position;
 					instanceIndexAndTransform.Rotation		= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
 					instanceIndexAndTransform.Scale			= scale;
 
 					m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
+					entityID++;
 				}
 			}
 		}
@@ -331,8 +333,10 @@ Sandbox::Sandbox()
 				materialProperties);
 
 
+			m_pScene->AddGameObject(0, sphereGameObject, transform, true, false);
+
 			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(sphereGameObject, transform);
+			instanceIndexAndTransform.InstanceIndex = 0;
 			instanceIndexAndTransform.Position = position;
 			instanceIndexAndTransform.Rotation = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
 			instanceIndexAndTransform.Scale = scale;
@@ -350,11 +354,11 @@ Sandbox::Sandbox()
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
 	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= 90.0f;
+	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
 	cameraDesc.Width		= window->GetWidth();
 	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= 0.001f;
-	cameraDesc.FarPlane		= 1000.0f;
+	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
+	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
 
 	m_pCamera->Init(cameraDesc);
 
@@ -375,7 +379,7 @@ Sandbox::Sandbox()
 	cmd1.AddArg(Arg::EType::BOOL);
 	cmd1.AddDescription("Activate/Deactivate rendergraph window.\n\t'render_graph true'");
 	GameConsole::Get().BindCommand(cmd1, [&, this](GameConsole::CallbackInput& input)->void {
-		m_RenderGraphWindow = input.Arguments.GetFront().Value.B;
+		m_RenderGraphWindow = input.Arguments.GetFront().Value.Boolean;
 		});
 
 	ConsoleCommand cmd2;
@@ -383,7 +387,7 @@ Sandbox::Sandbox()
 	cmd2.AddArg(Arg::EType::BOOL);
 	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'imgui_demo true'");
 	GameConsole::Get().BindCommand(cmd2, [&, this](GameConsole::CallbackInput& input)->void {
-		m_ShowDemoWindow = input.Arguments.GetFront().Value.B;
+		m_ShowDemoWindow = input.Arguments.GetFront().Value.Boolean;
 		});
 
 	ConsoleCommand cmd3;
@@ -391,7 +395,23 @@ Sandbox::Sandbox()
 	cmd3.AddArg(Arg::EType::BOOL);
 	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'show_debug_window true'");
 	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
-		m_DebuggingWindow = input.Arguments.GetFront().Value.B;
+		m_DebuggingWindow = input.Arguments.GetFront().Value.Boolean;
+		});
+
+	ConsoleCommand showTextureCMD;
+	showTextureCMD.Init("debug_texture", true);
+	showTextureCMD.AddArg(Arg::EType::BOOL);
+	showTextureCMD.AddFlag("t", Arg::EType::STRING);
+	showTextureCMD.AddFlag("ps", Arg::EType::STRING);
+	showTextureCMD.AddDescription("Show a texture resource which is used in the RenderGraph");
+	GameConsole::Get().BindCommand(showTextureCMD, [&, this](GameConsole::CallbackInput& input)->void
+		{
+			m_ShowTextureDebuggingWindow = input.Arguments.GetFront().Value.Boolean;
+
+			auto textureNameIt				= input.Flags.find("t");
+			auto shaderNameIt				= input.Flags.find("ps");
+			m_TextureDebuggingName			= textureNameIt != input.Flags.end() ? textureNameIt->second.Arg.Value.String : "";
+			m_TextureDebuggingShaderGUID	= shaderNameIt != input.Flags.end() ? ResourceManager::GetShaderGUID(shaderNameIt->second.Arg.Value.String) : GUID_NONE;
 		});
 
 	return;
@@ -407,6 +427,8 @@ Sandbox::~Sandbox()
 	SAFEDELETE(m_pCamera);
 
 	SAFEDELETE(m_pRenderGraphEditor);
+
+	SAFEDELETE(m_pPointLightsBuffer);
 }
 
 bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
@@ -433,6 +455,10 @@ bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		ResourceManager::ReloadAllShaders();
 		PipelineStateManager::ReloadPipelineStates();
 	}
+	else if (event.Key == EKey::KEY_KEYPAD_1)
+	{
+		Renderer::GetRenderGraph()->TriggerRenderStage("POINT_LIGHT_SHADOWMAPS");
+	}
 
 	return true;
 }
@@ -458,11 +484,6 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
-	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-	float32 renderWidth = (float32)mainWindow->GetWidth();
-	float32 renderHeight = (float32)mainWindow->GetHeight();
-	float32 renderAspectRatio = renderWidth / renderHeight;
-
 	if (IMGUI_ENABLED)
 	{
 		ImGuiRenderer::Get().DrawUI([&]()
@@ -477,7 +498,23 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 			{
 				Profiler::Render(delta);
 			}
+			
+			if (m_ShowTextureDebuggingWindow)
+			{
+				if (ImGui::Begin("Texture Debugging"))
+				{
+					if (!m_TextureDebuggingName.empty())
+					{
+						static ImGuiTexture texture = {};
+						texture.ResourceName		= m_TextureDebuggingName;
+						texture.PixelShaderGUID		= m_TextureDebuggingShaderGUID;
 
+						ImGui::Image(&texture, ImGui::GetWindowSize());
+					}
+				}
+
+				ImGui::End();
+			}
 		});
 	}
 
@@ -509,7 +546,7 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
 
-	Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
+	pRenderGraph->UpdateResource(&blueNoiseUpdateDesc);
 
 	GUID_Lambda cubemapTexID = ResourceManager::GetTextureGUID("Cubemap Texture");
 
@@ -522,7 +559,13 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
 	cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
 
-	Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
+	pRenderGraph->UpdateResource(&cubeTextureUpdateDesc);
+
+	ResourceUpdateDesc pointLightsBuffer = {};
+	pointLightsBuffer.ResourceName						= "POINT_LIGHTS_BUFFER";
+	pointLightsBuffer.ExternalBufferUpdate.ppBuffer		= &m_pPointLightsBuffer;
+
+	pRenderGraph->UpdateResource(&pointLightsBuffer);
 }
 
 namespace LambdaEngine
@@ -590,6 +633,66 @@ bool Sandbox::LoadRendererResources()
 		Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
 
+	//Point Lights Test
+	{
+		float pointLightNearPlane	= 1.0f;
+		float pointLightFarPlane	= 25.0f;
+
+		glm::mat4 pointLightProj = glm::perspective(glm::radians(90.0f), 1.0f, pointLightNearPlane, pointLightFarPlane);
+
+		glm::vec3 pointLightPosition0 = glm::vec3(1.0f, 2.0f, 0.0f);
+		glm::vec3 pointLightPosition1 = glm::vec3(-1.0f, 2.0f, 0.0f);
+
+		PointLight pointLightsBuffer[2];
+		pointLightsBuffer[0].Position = glm::vec4(pointLightPosition0, 1.0f);
+		pointLightsBuffer[1].Position = glm::vec4(pointLightPosition1, 1.0f);
+
+		pointLightsBuffer[0].Transforms[0]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[0].Transforms[1]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[0].Transforms[2]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f));
+		pointLightsBuffer[0].Transforms[3]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f));
+		pointLightsBuffer[0].Transforms[4]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[0].Transforms[5]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		
+		pointLightsBuffer[1].Transforms[0]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[1].Transforms[1]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[1].Transforms[2]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f));
+		pointLightsBuffer[1].Transforms[3]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f));
+		pointLightsBuffer[1].Transforms[4]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[1].Transforms[5]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+
+		BufferDesc bufferDesc = {};
+		bufferDesc.DebugName		= "POINT_LIGHTS_BUFFER";
+		bufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+		bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
+		bufferDesc.SizeInBytes		= sizeof(pointLightsBuffer);
+
+		m_pPointLightsBuffer = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
+
+		void* pMapped = m_pPointLightsBuffer->Map();
+		memcpy(pMapped, &pointLightsBuffer, sizeof(pointLightsBuffer));
+		m_pPointLightsBuffer->Unmap();
+
+		ResourceUpdateDesc pointLightsBufferUpdate = {};
+		pointLightsBufferUpdate.ResourceName						= "POINT_LIGHTS_BUFFER";
+		pointLightsBufferUpdate.ExternalBufferUpdate.ppBuffer		= &m_pPointLightsBuffer;
+
+		Renderer::GetRenderGraph()->UpdateResource(&pointLightsBufferUpdate);
+
+		float pointLightPushConstantData[2];
+		pointLightPushConstantData[0]		= pointLightNearPlane;
+		pointLightPushConstantData[1]		= pointLightFarPlane;
+
+		PushConstantsUpdate pushConstantUpdate = {};
+		pushConstantUpdate.pData			= &pointLightPushConstantData;
+		pushConstantUpdate.DataSize			= sizeof(pointLightPushConstantData);
+
+		pushConstantUpdate.RenderStageName	= "POINT_LIGHT_SHADOWMAPS";
+		Renderer::GetRenderGraph()->UpdatePushConstants(&pushConstantUpdate);
+
+		pushConstantUpdate.RenderStageName	= "DEMO";
+		Renderer::GetRenderGraph()->UpdatePushConstants(&pushConstantUpdate);
+	}
 	Renderer::GetRenderGraph()->AddCreateHandler(this);
 
 	return true;
