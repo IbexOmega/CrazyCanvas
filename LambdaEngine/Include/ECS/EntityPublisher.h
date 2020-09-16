@@ -14,7 +14,7 @@
 namespace LambdaEngine
 {
     class ComponentHandler;
-    class ComponentManager;
+    class ComponentStorage;
     struct ComponentHandlerRegistration;
 
     struct EntitySubscription
@@ -39,7 +39,7 @@ namespace LambdaEngine
     class EntityPublisher
     {
     public:
-        EntityPublisher(const ComponentManager* pComponentManager, const EntityRegistry* pEntityRegistry);
+        EntityPublisher(const ComponentStorage* pComponentStorage, const EntityRegistry* pEntityRegistry);
         ~EntityPublisher() = default;
 
         // Returns a subscription ID
@@ -64,7 +64,7 @@ namespace LambdaEngine
 
         THashTable<std::type_index, ComponentHandler*> m_ComponentHandlers;
 
-        const ComponentManager* m_pComponentManager;
+        const ComponentStorage* m_pComponentStorage;
         const EntityRegistry* m_pEntityRegistry;
     };
 }

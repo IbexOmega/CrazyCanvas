@@ -1,21 +1,21 @@
-#include "ECS/ComponentManager.h"
+#include "ECS/ComponentStorage.h"
 
 namespace LambdaEngine
 {
-	ComponentManager::~ComponentManager()
+	ComponentStorage::~ComponentStorage()
 	{
 		for (IComponentArray* compArr : m_ComponentArrays)
 			SAFEDELETE(compArr);
 		m_ComponentArrays.Clear();
 	}
 
-	void ComponentManager::EntityDeleted(Entity entity)
+	void ComponentStorage::EntityDeleted(Entity entity)
 	{
 		for (IComponentArray* compArr : m_ComponentArrays)
 			compArr->EntityDestroyed(entity);
 	}
 
-	IComponentArray* ComponentManager::GetComponentArray(std::type_index componentType)
+	IComponentArray* ComponentStorage::GetComponentArray(std::type_index componentType)
 	{
 		auto arrayItr = m_CompTypeToArrayMap.find(componentType);
 		VALIDATE_MSG(arrayItr != m_CompTypeToArrayMap.end(),
@@ -24,7 +24,7 @@ namespace LambdaEngine
 		return m_ComponentArrays[arrayItr->second];
 	}
 
-	const IComponentArray* ComponentManager::GetComponentArray(std::type_index componentType) const
+	const IComponentArray* ComponentStorage::GetComponentArray(std::type_index componentType) const
 	{
 		auto arrayItr = m_CompTypeToArrayMap.find(componentType);
 		VALIDATE_MSG(arrayItr != m_CompTypeToArrayMap.end(),

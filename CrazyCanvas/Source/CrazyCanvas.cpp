@@ -49,7 +49,6 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
 
-
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
 CrazyCanvas::CrazyCanvas()

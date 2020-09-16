@@ -5,5 +5,4 @@
 namespace LambdaEngine
 {
 	typedef uint32 Entity;
-	typedef uint64 Index;
 }

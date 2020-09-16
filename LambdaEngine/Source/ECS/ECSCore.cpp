@@ -5,7 +5,7 @@ namespace LambdaEngine
     ECSCore* ECSCore::s_pInstance = DBG_NEW ECSCore();
 
     ECSCore::ECSCore()
-        :m_EntityPublisher(&m_ComponentManager, &m_EntityRegistry),
+        :m_EntityPublisher(&m_ComponentStorage, &m_EntityRegistry),
         m_DeltaTime(0.0f)
     {}
 
@@ -23,7 +23,7 @@ namespace LambdaEngine
 
     void ECSCore::RemoveEntity(Entity entity)
     {
-        m_ComponentManager.EntityDeleted(entity);
+        m_ComponentStorage.EntityDeleted(entity);
         m_EntitiesToDelete.PushBack(entity);
     }
 
@@ -77,7 +77,7 @@ namespace LambdaEngine
                 m_EntityPublisher.UnpublishComponent(entities[entityIdx], componentType);
 
                 // Delete the component
-                m_ComponentManager.GetComponentArray(componentType)->Remove(entity);
+                m_ComponentStorage.GetComponentArray(componentType)->Remove(entity);
             }
         }
 
@@ -113,7 +113,7 @@ namespace LambdaEngine
             for (std::type_index componentType : componentTypes)
             {
                 // Delete the component
-                IComponentArray* pComponentArray = m_ComponentManager.GetComponentArray(componentType);
+                IComponentArray* pComponentArray = m_ComponentStorage.GetComponentArray(componentType);
                 pComponentArray->Remove(entity);
 
                 // Notify systems that the component has been removed

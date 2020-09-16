@@ -1,13 +1,13 @@
 #include "ECS/EntityPublisher.h"
 
-#include "ECS/ComponentManager.h"
+#include "ECS/ComponentStorage.h"
 #include "ECS/System.h"
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-    EntityPublisher::EntityPublisher(const ComponentManager* pComponentManager, const EntityRegistry* pEntityRegistry)
-        :m_pComponentManager(pComponentManager),
+    EntityPublisher::EntityPublisher(const ComponentStorage* pComponentStorage, const EntityRegistry* pEntityRegistry)
+        :m_pComponentStorage(pComponentStorage),
         m_pEntityRegistry(pEntityRegistry)
     {}
 
@@ -57,11 +57,11 @@ namespace LambdaEngine
         for (EntitySubscription& subscription : subscriptions)
         {
             std::type_index firstComponentType = subscription.ComponentTypes.GetFront();
-            if (!m_pComponentManager->HasType(firstComponentType))
+            if (!m_pComponentStorage->HasType(firstComponentType))
                 continue;
 
             // Fetch the component vector of the first subscribed component type
-            const IComponentArray* pComponentArray = m_pComponentManager->GetComponentArray(firstComponentType);
+            const IComponentArray* pComponentArray = m_pComponentStorage->GetComponentArray(firstComponentType);
             const TArray<Entity>& entities = pComponentArray->GetIDs();
 
             // See which entities in the entity vector also have all the other component types. Register those entities in the system.

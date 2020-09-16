@@ -25,19 +25,20 @@ namespace LambdaEngine
 		ComponentArray();
 		virtual ~ComponentArray() = default;
 
-		Comp& Insert(Entity entity, Comp comp);
+		void EntityDestroyed(Entity) override final;
+
+		Comp& Insert(Entity entity, const Comp& comp);
 		void Remove(Entity entity) override final;
 
 		Comp& GetData(Entity entity);
 		const TArray<uint32>& GetIDs() const override final { return m_IDs; }
 
-		void EntityDestroyed(Entity);
 		bool HasComponent(Entity entity) const override final { return m_EntityToIndex.find(entity) != m_EntityToIndex.end(); }
 
 	private:
 		TArray<Comp> m_Data;
 		TArray<uint32> m_IDs;
-		std::unordered_map<Entity, Index> m_EntityToIndex;
+		std::unordered_map<Entity, uint32> m_EntityToIndex;
 		uint32 m_Size = 0;
 		uint32 m_Capacity = 64;
 	};
@@ -50,7 +51,7 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
-	inline Comp& ComponentArray<Comp>::Insert(Entity entity, Comp comp)
+	inline Comp& ComponentArray<Comp>::Insert(Entity entity, const Comp& comp)
 	{
 		VALIDATE_MSG(m_EntityToIndex.find(entity) == m_EntityToIndex.end(), "Trying to add a component that already exists!");
 
@@ -62,7 +63,7 @@ namespace LambdaEngine
 		}
 
 		// Get new index and add the component to that position.
-		Index newIndex = m_Size++;
+		uint32 newIndex = m_Size++;
 		m_Data[newIndex] = comp;
 		m_IDs[newIndex] = entity;
 		return m_Data[newIndex];
@@ -74,8 +75,8 @@ namespace LambdaEngine
 		VALIDATE_MSG(m_EntityToIndex.find(entity) != m_EntityToIndex.end(), "Trying to remove a component that does not exist!");
 
 		// Swap the removed component with the last component.
-		Index currentIndex = m_EntityToIndex[entity];
-		Index lastIndex = --m_Size;
+		uint32 currentIndex = m_EntityToIndex[entity];
+		uint32 lastIndex = --m_Size;
 		m_Data[currentIndex] = m_Data[lastIndex];
 		m_IDs[currentIndex] = m_IDs[lastIndex];
 
@@ -90,7 +91,7 @@ namespace LambdaEngine
 	inline Comp& ComponentArray<Comp>::GetData(Entity entity)
 	{
 		VALIDATE_MSG(m_EntityToIndex.find(entity) != m_EntityToIndex.end(), "Trying to get a component that does not exist!");
-		Index index = m_EntityToIndex[entity];
+		uint32 index = m_EntityToIndex[entity];
 		return m_Data[index];
 	}
 
