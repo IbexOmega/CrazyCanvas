@@ -58,7 +58,7 @@ void ClientHandler::OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngin
 	LambdaEngine::BinaryDecoder decoder(pPacket);
 	if (counter + 1 != decoder.ReadUInt32())
 	{
-		DEBUGBREAK();
+		//DEBUGBREAK();
 	}
 	counter++;
 	LOG_MESSAGE("%d", (int)counter);
