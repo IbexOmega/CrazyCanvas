@@ -29,25 +29,6 @@ namespace LambdaEngine
 
 	bool RenderSystem::Init()
 	{
-		TransformComponents transformComponents;
-		transformComponents.Position.Permissions = R;
-		transformComponents.Scale.Permissions = R;
-		transformComponents.Rotation.Permissions = R;
-
-		// Subscribe on Static Entities & Dynamic Entities
-		{
-			SystemRegistration systemReg = {};
-			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
-			{
-				{{{RW, MeshComponent::s_TID}, {NDA , StaticComponent::s_TID}}, {&transformComponents}, &m_StaticEntities},
-				{{{RW, MeshComponent::s_TID}, {NDA , DynamicComponent::s_TID}}, {&transformComponents},& m_DynamicEntities},
-				{{{RW, ViewProjectionMatrices::s_TID}}, {&transformComponents}, &m_CameraEntities},
-			};
-			systemReg.Phase = g_LastPhase;
-
-			EnqueueRegistration(systemReg);
-		}
-
 		//Create Swapchain
 		{
 			SwapChainDesc swapChainDesc = {};
@@ -172,6 +153,25 @@ namespace LambdaEngine
 
 	bool RenderSystem::InitSystem()
 	{
+		TransformComponents transformComponents;
+		transformComponents.Position.Permissions = R;
+		transformComponents.Scale.Permissions = R;
+		transformComponents.Rotation.Permissions = R;
+
+		// Subscribe on Static Entities & Dynamic Entities
+		{
+			SystemRegistration systemReg = {};
+			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
+			{
+				{{{RW, MeshComponent::s_TID}, {NDA, StaticComponent::s_TID}}, {&transformComponents}, &m_StaticEntities},
+				{{{RW, MeshComponent::s_TID}, {NDA, DynamicComponent::s_TID}}, {&transformComponents}, &m_DynamicEntities},
+				{{{RW, ViewProjectionMatrices::s_TID}}, {&transformComponents}, &m_CameraEntities},
+			};
+			systemReg.Phase = g_LastPhase;
+
+			EnqueueRegistration(systemReg);
+		}
+
 		return true;
 	}
 
