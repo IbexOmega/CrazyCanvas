@@ -39,8 +39,8 @@ namespace LambdaEngine
 	constexpr ValidationLayer REQUIRED_VALIDATION_LAYERS[]
 	{
 		ValidationLayer("REQ_V_L_BASE"),
-		ValidationLayer("VK_LAYER_KHRONOS_validation")
-		//ValidationLayer("VK_LAYER_RENDERDOC_Capture")
+		ValidationLayer("VK_LAYER_KHRONOS_validation"),
+		ValidationLayer("VK_LAYER_RENDERDOC_Capture")
 	};
 
 	constexpr ValidationLayer OPTIONAL_VALIDATION_LAYERS[]
@@ -86,6 +86,7 @@ namespace LambdaEngine
 		Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
 		Extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME),
+		Extension(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME),
 		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
@@ -1599,6 +1600,12 @@ namespace LambdaEngine
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
 		}
 
+		//PushDescriptorSet
+		if (IsDeviceExtensionEnabled(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME))
+		{
+			GET_DEVICE_PROC_ADDR(Device, vkCmdPushDescriptorSetKHR);
+		}
+		
 		// Timeline semaphores
 		if (IsDeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
 		{
