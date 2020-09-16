@@ -12,21 +12,21 @@ namespace LambdaEngine
 	//The up vector is inverted because of vulkans inverted y-axis
 	const glm::vec3 g_DefaultUp = glm::vec3(0.0f, -1.0f, 0.0f);
 
-	struct Position
+	struct PositionComponent
 	{
-		DECL_COMPONENT(Position);
+		DECL_COMPONENT(PositionComponent);
 		glm::vec3 Position;
 	};
 
-	struct Scale
+	struct ScaleComponent
 	{
-		DECL_COMPONENT(Scale);
+		DECL_COMPONENT(ScaleComponent);
 		glm::vec3 Scale;
 	};
 
-	struct Rotation
+	struct RotationComponent
 	{
-		DECL_COMPONENT(Rotation);
+		DECL_COMPONENT(RotationComponent);
 		glm::quat Quaternion;
 	};
 
@@ -46,14 +46,14 @@ namespace LambdaEngine
 			return { Position, Scale, Rotation };
 		}
 
-		ComponentAccess Position    = {R, Position::s_TID};
-		ComponentAccess Scale       = {R, Scale::s_TID};
-		ComponentAccess Rotation    = {R, Rotation::s_TID};
+		ComponentAccess Position    = {R, PositionComponent::s_TID};
+		ComponentAccess Scale       = {R, ScaleComponent::s_TID};
+		ComponentAccess Rotation    = {R, RotationComponent::s_TID};
 	};
 
-	struct WorldMatrix
+	struct WorldMatrixComponent
 	{
-		DECL_COMPONENT(WorldMatrix);
+		DECL_COMPONENT(WorldMatrixComponent);
 		glm::mat4 WorldMatrix;
 		// Flags whether or not the potential belonging Transform component has been written to since the last access
 		bool Dirty;
@@ -79,7 +79,7 @@ namespace LambdaEngine
 		// Required components: Position, Rotation and Scale
 		Transform GetTransform(Entity entity);
 		// Required components: Position, Rotation, Scale and World Matrix
-		WorldMatrix& GetWorldMatrix(Entity entity);
+		WorldMatrixComponent& GetWorldMatrix(Entity entity);
 		glm::vec3& GetPosition(Entity entity)   { return m_Positions.IndexID(entity).Position; }
 		glm::vec3& GetScale(Entity entity)      { return m_Scales.IndexID(entity).Scale; }
 		glm::quat& GetRotation(Entity entity)   { return m_Rotations.IndexID(entity).Quaternion; }
@@ -103,9 +103,9 @@ namespace LambdaEngine
 		static void RotateAroundPoint(const glm::vec3& P, glm::vec3& V, const glm::vec3& axis, float angle);
 
 	private:
-		IDDVector<Position>     m_Positions;
-		IDDVector<Scale>        m_Scales;
-		IDDVector<Rotation>     m_Rotations;
-		IDDVector<WorldMatrix>  m_WorldMatrices;
+		IDDVector<PositionComponent>     m_Positions;
+		IDDVector<ScaleComponent>        m_Scales;
+		IDDVector<RotationComponent>     m_Rotations;
+		IDDVector<WorldMatrixComponent>  m_WorldMatrices;
 	};
 }

@@ -6,19 +6,20 @@
 
 namespace LambdaEngine
 {
-    INIT_COMPONENT(Position);
-    INIT_COMPONENT(Scale);
-    INIT_COMPONENT(Rotation);
+    INIT_COMPONENT(PositionComponent);
+    INIT_COMPONENT(ScaleComponent);
+    INIT_COMPONENT(RotationComponent);
+    INIT_COMPONENT(WorldMatrixComponent);
 
     TransformHandler::TransformHandler()
         :ComponentHandler(TID(TransformHandler))
     {
         ComponentHandlerRegistration handlerReg = {};
         handlerReg.ComponentRegistrations = {
-            {Position::s_TID,     &m_Positions},
-            {Scale::s_TID,        &m_Scales},
-            {Rotation::s_TID,     &m_Rotations},
-            {WorldMatrix::s_TID,  &m_WorldMatrices}
+            {PositionComponent::s_TID,     &m_Positions},
+            {ScaleComponent::s_TID,        &m_Scales},
+            {RotationComponent::s_TID,     &m_Rotations},
+            {WorldMatrixComponent::s_TID,  &m_WorldMatrices}
         };
 
         RegisterHandler(handlerReg);
@@ -32,19 +33,19 @@ namespace LambdaEngine
     void TransformHandler::CreatePosition(Entity entity, const glm::vec3& position)
     {
         m_Positions.PushBack({ position }, entity);
-        RegisterComponent(entity, Position::s_TID);
+        RegisterComponent(entity, PositionComponent::s_TID);
     }
 
     void TransformHandler::CreateScale(Entity entity, const glm::vec3& scale)
     {
         m_Scales.PushBack({ scale }, entity);
-        RegisterComponent(entity, Scale::s_TID);
+        RegisterComponent(entity, ScaleComponent::s_TID);
     }
 
     void TransformHandler::CreateRotation(Entity entity)
     {
         m_Rotations.PushBack({ glm::identity<glm::quat>() }, entity);
-        RegisterComponent(entity, Rotation::s_TID);
+        RegisterComponent(entity, RotationComponent::s_TID);
     }
 
     void TransformHandler::CreateTransform(Entity entity, const glm::vec3& position, const glm::vec3& scale)
@@ -56,7 +57,7 @@ namespace LambdaEngine
 
     void TransformHandler::CreateWorldMatrix(Entity entity, const Transform& transform)
     {
-        WorldMatrix worldMatrix = {
+        WorldMatrixComponent worldMatrix = {
             .WorldMatrix =
                 glm::scale(glm::mat4(), glm::vec3(transform.Scale)) *
                 glm::toMat4(transform.RotationQuaternion) *
@@ -65,7 +66,7 @@ namespace LambdaEngine
         };
 
         m_WorldMatrices.PushBack(worldMatrix, entity);
-        RegisterComponent(entity, WorldMatrix::s_TID);
+        RegisterComponent(entity, WorldMatrixComponent::s_TID);
     }
 
     Transform TransformHandler::GetTransform(Entity entity)
@@ -77,9 +78,9 @@ namespace LambdaEngine
         };
     }
 
-    WorldMatrix& TransformHandler::GetWorldMatrix(Entity entity)
+    WorldMatrixComponent& TransformHandler::GetWorldMatrix(Entity entity)
     {
-        WorldMatrix& worldMatrix = m_WorldMatrices.IndexID(entity);
+        WorldMatrixComponent& worldMatrix = m_WorldMatrices.IndexID(entity);
 
         if (worldMatrix.Dirty)
         {
