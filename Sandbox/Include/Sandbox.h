@@ -75,9 +75,6 @@ private:
 
 	LambdaEngine::Buffer*					m_pPointLightsBuffer;
 
-	float									m_DirectionalLightAngle;
-	float									m_DirectionalLightStrength[4];
-
 	bool									m_RenderGraphWindow;
 	bool									m_ShowDemoWindow;
 	bool									m_DebuggingWindow;

@@ -418,19 +418,7 @@
             "y_dim_var": 1.0,
             "z_dim_var": 1.0,
             "draw_params": {
-                "draw_type": "SCENE_INDIRECT",
-                "index_buffer": {
-                    "name": "SCENE_INDEX_BUFFER",
-                    "removable": true,
-                    "binding_type": "DRAW_RESOURCE",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                "indirect_args_buffer": {
-                    "name": "SCENE_INDIRECT_ARGS_BUFFER",
-                    "removable": true,
-                    "binding_type": "DRAW_RESOURCE",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                }
+                "draw_type": "SCENE_INDIRECT"
             },
             "depth_test_enabled": true,
             "cull_mode": "CULL_MODE_BACK",
@@ -450,36 +438,6 @@
                     "name": "PER_FRAME_BUFFER",
                     "removable": true,
                     "binding_type": "CONSTANT_BUFFER",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "SCENE_VERTEX_BUFFER",
-                    "removable": true,
-                    "binding_type": "UNORDERED_ACCESS_R",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "SCENE_INDEX_BUFFER",
-                    "removable": true,
-                    "binding_type": "UNORDERED_ACCESS_R",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "SCENE_PRIMARY_INSTANCE_BUFFER",
-                    "removable": true,
-                    "binding_type": "UNORDERED_ACCESS_R",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "SCENE_SECONDARY_INSTANCE_BUFFER",
-                    "removable": true,
-                    "binding_type": "UNORDERED_ACCESS_R",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "SCENE_INDIRECT_ARGS_BUFFER",
-                    "removable": true,
-                    "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {

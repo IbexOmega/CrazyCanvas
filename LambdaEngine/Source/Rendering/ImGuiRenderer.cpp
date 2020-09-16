@@ -73,7 +73,6 @@ namespace LambdaEngine
 		uint32 backBufferCount = pDesc->BackBufferCount;
 		m_BackBuffers.Resize(backBufferCount);
 
-		uint32 allocatorPageSize = 2 * (4 * pDesc->VertexBufferSize + 4 * pDesc->IndexBufferSize) + MEGA_BYTE(64);
 		if (!InitImGui())
 		{
 			LOG_ERROR("[ImGuiRenderer]: Failed to initialize ImGui");
