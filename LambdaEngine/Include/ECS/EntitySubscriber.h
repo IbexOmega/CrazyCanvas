@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Containers/TArray.h"
 #include "ECS/Component.h"
 #include "ECS/Entity.h"
 
@@ -8,27 +7,7 @@
 
 namespace LambdaEngine
 {
-    class ECSCore;
     class IDVector;
-
-    enum ComponentPermissions
-    {
-        NDA = 0,    // No Data Access
-        R   = 1,    // Read
-        RW  = 2     // Read & Write
-    };
-
-    struct ComponentAccess
-    {
-        ComponentPermissions Permissions;
-        std::type_index TID;
-    };
-
-    class IComponentGroup
-    {
-    public:
-        virtual TArray<ComponentAccess> ToArray() const = 0;
-    };
 
     // EntitySubscriptionRegistration contains all required information to request a single entity subscription
     class EntitySubscriptionRegistration
