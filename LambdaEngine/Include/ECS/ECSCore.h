@@ -33,6 +33,14 @@ namespace LambdaEngine
         template<typename Comp>
         Comp& AddComponent(Entity entity, const Comp& component);
 
+        // Fetch a reference to a component within a specific entity.
+        template<typename Comp>
+        Comp& GetComponent(Entity entity);
+
+        // Fetch the whole array with the specific component type.
+        template<typename Comp>
+        ComponentArray<Comp>* GetComponentArray();
+
         // Remove a component from a specific entity.
         template<typename Comp>
         bool RemoveComponent(Entity entity);
@@ -99,6 +107,18 @@ namespace LambdaEngine
         ComponentAdded(entity, Comp::s_TID);
 
         return comp;
+    }
+
+    template<typename Comp>
+    inline Comp& ECSCore::GetComponent(Entity entity)
+    {
+        return m_ComponentStorage.GetComponent<Comp>(entity);
+    }
+
+    template<typename Comp>
+    inline ComponentArray<Comp>* ECSCore::GetComponentArray()
+    {
+        return m_ComponentStorage.GetArray<Comp>();
     }
 
     template<typename Comp>
