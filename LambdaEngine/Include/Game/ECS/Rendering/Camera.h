@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Containers/IDVector.h"
+#include "ECS/Component.h"
 #include "ECS/ComponentHandler.h"
 #include "Math/Math.h"
 
@@ -8,6 +9,7 @@ namespace LambdaEngine
 {
 	struct ViewProjectionMatrices
 	{
+		DECL_COMPONENT(ViewProjectionMatrices);
 		glm::mat4 Projection		= glm::mat4(1.0f);
 		glm::mat4 View				= glm::mat4(1.0f);
 		glm::mat4 PrevProjection	= glm::mat4(1.0f);
@@ -16,11 +18,9 @@ namespace LambdaEngine
 
 	struct CameraProperties
 	{
+		DECL_COMPONENT(CameraProperties);
 		glm::vec2 Jitter = glm::vec2(0.0f);
 	};
-
-	const std::type_index g_TIDViewProjectionMatrices = TID(ViewProjectionMatrices);
-	const std::type_index g_TIDCameraProperties = TID(ViewProjectionMatrices);
 
 	// Details how to create view and projection matrices
 	struct ViewProjectionDesc

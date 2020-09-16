@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Containers/IDVector.h"
+#include "ECS/Component.h"
 #include "ECS/ComponentHandler.h"
 #include "ECS/EntitySubscriber.h"
 #include "Math/Math.h"
@@ -13,22 +14,21 @@ namespace LambdaEngine
 
 	struct Position
 	{
+		DECL_COMPONENT(Position);
 		glm::vec3 Position;
 	};
 
 	struct Scale
 	{
+		DECL_COMPONENT(Scale);
 		glm::vec3 Scale;
 	};
 
 	struct Rotation
 	{
+		DECL_COMPONENT(Rotation);
 		glm::quat Quaternion;
 	};
-
-	const std::type_index g_TIDPosition = TID(Position);
-	const std::type_index g_TIDScale    = TID(Scale);
-	const std::type_index g_TIDRotation = TID(Rotation);
 
 	// Transform is a convenience wrapper
 	struct Transform
@@ -43,23 +43,21 @@ namespace LambdaEngine
 	public:
 		TArray<ComponentAccess> ToArray() const override final
 		{
-			return {m_Position, m_Scale, m_Rotation};
+			return { Position, Scale, Rotation };
 		}
 
-	public:
-		ComponentAccess m_Position    = {R, g_TIDPosition};
-		ComponentAccess m_Scale       = {R, g_TIDScale};
-		ComponentAccess m_Rotation    = {R, g_TIDRotation};
+		ComponentAccess Position    = {R, Position::s_TID};
+		ComponentAccess Scale       = {R, Scale::s_TID};
+		ComponentAccess Rotation    = {R, Rotation::s_TID};
 	};
 
 	struct WorldMatrix
 	{
+		DECL_COMPONENT(WorldMatrix);
 		glm::mat4 WorldMatrix;
 		// Flags whether or not the potential belonging Transform component has been written to since the last access
 		bool Dirty;
 	};
-
-	const std::type_index g_TIDWorldMatrix = TID(WorldMatrix);
 
 	class TransformHandler : public ComponentHandler
 	{
