@@ -76,6 +76,6 @@ namespace LambdaEngine
 
 	void NetworkDiscovery::OnClientReleased(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 }
