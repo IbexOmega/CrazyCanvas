@@ -1,19 +1,15 @@
-#include "ECS/ComponentManager.h"
+#include "ECS/ComponentStorage.h"
 
 using namespace LambdaEngine;
 
-LambdaEngine::ComponentManager::ComponentManager()
-{
-}
-
-LambdaEngine::ComponentManager::~ComponentManager()
+LambdaEngine::ComponentStorage::~ComponentStorage()
 {
 	for (IComponentArray* compArr : m_ComponentArrays)
 		SAFEDELETE(compArr);
 	m_ComponentArrays.Clear();
 }
 
-void LambdaEngine::ComponentManager::EntityDeleted(Entity entity)
+void LambdaEngine::ComponentStorage::EntityDeleted(Entity entity)
 {
 	for (IComponentArray* compArr : m_ComponentArrays)
 		compArr->EntityDestroyed(entity);

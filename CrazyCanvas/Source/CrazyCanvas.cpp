@@ -46,10 +46,6 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
 
-// TEMP!!
-#include "ECS/ECSCore.h"
-#include "Game/ECS/Rendering/TestComponents.h"
-
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
 CrazyCanvas::CrazyCanvas()
@@ -62,27 +58,6 @@ CrazyCanvas::CrazyCanvas()
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderSystem::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-
-	{
-		ECSCore* ecs = ECSCore::GetInstance();
-		for (uint32 i = 0; i < 200; i++)
-		{
-			Entity e = ecs->CreateEntity();
-			TestPositionComponent posComp;
-			posComp.Pos = { 0.1f, -2.f, 5.4f };
-			ecs->AddComponent<TestPositionComponent>(e, posComp);
-			TestScaleComponent scComp;
-			scComp.Scale = { 1.f, 1.f, 1.f };
-			ecs->AddComponent<TestScaleComponent>(e, scComp);
-			ecs->AddComponent<TestRotationComponent>(e, TestRotationComponent());
-			std::string name = "Entity_" + std::to_string(i);
-			TestNameComponent nameComp;
-			strcpy(nameComp.Name, name.c_str());
-			ecs->AddComponent<TestNameComponent>(e, nameComp);
-		}
-		
-		// TODO: Test removing entities and removing components.
-	}
 
 	SceneDesc sceneDesc = { };
 	sceneDesc.Name				= "Test Scene";
