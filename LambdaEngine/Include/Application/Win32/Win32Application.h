@@ -102,10 +102,10 @@ namespace LambdaEngine
 
 	private:
 		static bool RegisterWindowClass();
-		static bool RegisterRawInputDevices(HWND hwnd);
+		static bool RegisterRawInputDevices(HWND hWnd);
 		static bool UnregisterRawInputDevices();
 		
-		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		static LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 
 	private:
 		HINSTANCE m_hInstance = 0;
