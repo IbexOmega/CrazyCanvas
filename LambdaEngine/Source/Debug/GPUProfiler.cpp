@@ -34,6 +34,10 @@ namespace LambdaEngine
 		m_TimestampValidBits = prop.TimestampValidBits;
 
 		m_TimeUnit = timeUnit;
+
+		uint32 statCount = 0;
+		RenderSystem::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
+		m_MemoryStats.Resize(statCount);
 #endif
 	}
 
@@ -46,7 +50,8 @@ namespace LambdaEngine
 		// Memory display
 		if (m_TimeSinceUpdate > 1 / m_UpdateFreq)
 		{
-			RenderSystem::GetDevice()->QueryDeviceMemoryStatistics(m_MemoryStats);
+			uint32 statCount = m_MemoryStats.GetSize();
+			RenderSystem::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
 		}
 		static const char* items[] = { "B", "KB", "MB", "GB" };
 		static int itemSelected = 2;
@@ -87,6 +92,7 @@ namespace LambdaEngine
 				average /= m_PlotDataSize;
 
 				std::ostringstream overlay;
+		
 				overlay.precision(2);
 				overlay << "Average: " << std::fixed << average << GetTimeUnitName();
 
