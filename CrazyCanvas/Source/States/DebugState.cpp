@@ -1,8 +1,9 @@
 #include "States/DebugState.h"
 #include "Log/Log.h"
 
+#include "Resources/ResourceManager.h"
+
 #include "ECS/ECSCore.h"
-#include "Game/ECS/Components/Physics/Transform.h"
 using namespace LambdaEngine;
 
 DebugState::DebugState()
@@ -22,8 +23,24 @@ DebugState::~DebugState()
 void DebugState::Init()
 {
 	// Create Systems
-	
-	//Entity e = ECSCore::GetInstance()->CreateEntity();
+	//RenderSystem::GetInstance()->InitSystem();
+
+	Entity e = ECSCore::GetInstance()->CreateEntity();
+
+	MaterialProperties materialProperties;
+	materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	materialProperties.Roughness = 0.1f;
+	materialProperties.Metallic = 0.1f;
+
+	GUID_Lambda sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+	GUID_Lambda Material = ResourceManager::LoadMaterialFromMemory(
+		"Default r: " + std::to_string(0.1f) + " m: " + std::to_string(0.1f),
+		GUID_TEXTURE_DEFAULT_COLOR_MAP,
+		GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+		GUID_TEXTURE_DEFAULT_COLOR_MAP,
+		GUID_TEXTURE_DEFAULT_COLOR_MAP,
+		GUID_TEXTURE_DEFAULT_COLOR_MAP,
+		materialProperties);
 
 	// Load Scene SceneManager::Get("SceneName").Load()
 

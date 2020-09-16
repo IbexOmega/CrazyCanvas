@@ -21,5 +21,4 @@ public:
 	void Pause();
 
 	void Tick(float dt);
-
 };
