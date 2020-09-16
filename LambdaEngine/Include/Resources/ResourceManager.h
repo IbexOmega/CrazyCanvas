@@ -1,6 +1,8 @@
 #pragma once
 #include "ResourceLoader.h"
 
+#include "Game/ECS/Components/Rendering/MeshComponent.h"
+
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
 
@@ -56,7 +58,7 @@ namespace LambdaEngine
 		*	result - A vector where all loaded GameObject(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const String& filename, TArray<GameObject>& result);
+		static bool LoadSceneFromFile(const String& filename, TArray<MeshComponent>& result);
 
 		/*
 		* Load a mesh from file

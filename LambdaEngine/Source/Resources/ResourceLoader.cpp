@@ -229,7 +229,7 @@ namespace LambdaEngine
 		TArray<Mesh*>		Meshes;
 		TArray<Material*>	Materials;
 		TArray<Texture*>	Textures;
-		TArray<GameObject>	LoadedGameObjects;
+		TArray<MeshComponent>	LoadedGameObjects;
 		THashTable<String, Texture*> LoadedTextures;
 		THashTable<uint32, uint32> MaterialIndices;
 	};
@@ -405,10 +405,10 @@ namespace LambdaEngine
 			{
 				context.Meshes.EmplaceBack(pNewMesh);
 
-				GameObject NewGameObject;
-				NewGameObject.Mesh		= context.Meshes.GetSize() - 1;
-				NewGameObject.Material	= context.MaterialIndices[pMesh->mMaterialIndex];
-				context.LoadedGameObjects.PushBack(NewGameObject);
+				MeshComponent newGameObject;
+				newGameObject.MeshGUID		= context.Meshes.GetSize() - 1;
+				newGameObject.MaterialGUID	= context.MaterialIndices[pMesh->mMaterialIndex];
+				context.LoadedGameObjects.PushBack(newGameObject);
 			}
 
 		}
@@ -419,7 +419,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<GameObject>& loadedGameObjects, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures)
+	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& loadedGameObjects, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures)
 	{
 		size_t lastPathDivisor = filepath.find_last_of("/\\");
 		if (lastPathDivisor == String::npos)

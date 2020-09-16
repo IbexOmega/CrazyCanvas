@@ -12,8 +12,6 @@ namespace LambdaEngine
 		DECL_COMPONENT(ViewProjectionMatrices);
 		glm::mat4 Projection		= glm::mat4(1.0f);
 		glm::mat4 View				= glm::mat4(1.0f);
-		glm::mat4 PrevProjection	= glm::mat4(1.0f);
-		glm::mat4 PrevView			= glm::mat4(1.0f);
 	};
 
 	struct CameraProperties

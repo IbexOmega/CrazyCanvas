@@ -4,6 +4,9 @@
 
 namespace LambdaEngine
 {
+	INIT_COMPONENT(ViewProjectionMatrices);
+	INIT_COMPONENT(CameraProperties);
+
 	CameraHandler::CameraHandler()
 		:ComponentHandler(TID(CameraHandler))
 	{
@@ -21,8 +24,6 @@ namespace LambdaEngine
 		ViewProjectionMatrices VPMatrices = {
 			.Projection = glm::perspective(glm::radians(matricesDesc.FOVDegrees), matricesDesc.Width / matricesDesc.Height, matricesDesc.NearPlane, matricesDesc.FarPlane),
 			.View = glm::lookAt(matricesDesc.Position, matricesDesc.Position + matricesDesc.Direction, g_DefaultUp),
-			.PrevProjection = VPMatrices.Projection,
-			.PrevView = VPMatrices.View
 		};
 
 		m_VPMatrices.PushBack(VPMatrices, entity);

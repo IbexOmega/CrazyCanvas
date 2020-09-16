@@ -42,6 +42,8 @@
 #include "Game/StateManager.h"
 #include "States/DebugState.h"
 
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
+
 #include <imgui.h>
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -58,64 +60,8 @@ CrazyCanvas::CrazyCanvas()
 
 	Input::Disable();
 
-	m_pScene = DBG_NEW Scene();
-
-	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(DebugState), STATE_TRANSITION::PUSH);
-
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-
-	SceneDesc sceneDesc = { };
-	sceneDesc.Name				= "Test Scene";
-	sceneDesc.RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
-	m_pScene->Init(sceneDesc);
-
-	DirectionalLight directionalLight;
-	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(glm::half_pi<float>()), glm::sin(glm::half_pi<float>()), 0.0f)), 0.0f);
-	directionalLight.EmittedRadiance	= glm::vec4(10.0f, 10.0f, 10.0f, 0.0f);
-
-	//m_pScene->SetDirectionalLight(directionalLight);
-
-	AreaLightObject areaLight;
-	areaLight.Type = EAreaLightType::QUAD;
-	areaLight.Material = GUID_MATERIAL_DEFAULT_EMISSIVE;
-
-	////Lights
-	//{
-	//	glm::vec3 position(0.0f, 6.0f, 0.0f);
-	//	glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
-	//	glm::vec3 scale(1.5f);
-
-	//	glm::mat4 transform(1.0f);
-	//	transform = glm::translate(transform, position);
-	//	transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-	//	transform = glm::scale(transform, scale);
-
-	//	m_pScene->AddAreaLight(areaLight, transform);
-	//}
-
-	//Scene
-	{
-		TArray<GameObject>	sceneGameObjects;
-		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
-
-		glm::vec3 position(0.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(0.01f);
-
-		glm::mat4 transform(1.0f);
-		transform = glm::translate(transform, position);
-		transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-		transform = glm::scale(transform, scale);
-
-		for (uint32 i = 0; i < sceneGameObjects.GetSize(); i++)
-		{
-			m_pScene->AddGameObject(i, sceneGameObjects[i], transform, true, false);
-		}
-	}
-
-	m_pScene->Finalize();
-	Renderer::SetScene(m_pScene);
 
 	m_pCamera = DBG_NEW Camera();
 
@@ -142,15 +88,17 @@ CrazyCanvas::CrazyCanvas()
 		{-9.8f, 6.1f, 3.9f}
 	};
 
-	m_CameraTrack.Init(m_pCamera, cameraTrack);
-
 	LoadRendererResources();
-	m_pScene->UpdateCamera(m_pCamera);
+
+	m_CameraTrack.Init(m_pCamera, cameraTrack);
+	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(DebugState), STATE_TRANSITION::PUSH);
+
+	RenderSystem::GetInstance().SetCamera(m_pCamera);
+
 }
 
 CrazyCanvas::~CrazyCanvas()
 {
-	SAFEDELETE(m_pScene);
 	SAFEDELETE(m_pCamera);
 }
 
@@ -174,7 +122,6 @@ void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 
 	m_pCamera->Update();
 	m_CameraTrack.Tick(dt);
-	m_pScene->UpdateCamera(m_pCamera);
 }
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp delta)
@@ -219,7 +166,7 @@ bool CrazyCanvas::LoadRendererResources()
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews = &pBlueNoiseTextureView;
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers = &pNearestSampler;
 
-		Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
+		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
 	}
 
 	// For Skybox RenderGraph
@@ -246,7 +193,7 @@ bool CrazyCanvas::LoadRendererResources()
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
 
-		Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
+		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
 
 	return true;

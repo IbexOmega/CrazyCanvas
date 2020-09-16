@@ -97,7 +97,8 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline ComponentArray<Comp>* ComponentStorage::GetArray()
 	{
-		uint32 index = m_CompTypeToArrayMap[id];
+		uint32 index = m_CompTypeToArrayMap[Comp::s_TID];
 		return static_cast<ComponentArray<Comp>*>(m_ComponentArrays[index]);
+
 	}
 }

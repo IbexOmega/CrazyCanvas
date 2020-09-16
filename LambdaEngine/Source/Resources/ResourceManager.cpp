@@ -49,9 +49,9 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceManager::LoadSceneFromFile(const String& filename, TArray<GameObject>& result)
+	bool ResourceManager::LoadSceneFromFile(const String& filename, TArray<MeshComponent>& result)
 	{
-		TArray<GameObject> sceneLocalGameObjects;
+		TArray<MeshComponent> sceneLocalGameObjects;
 		TArray<Mesh*> meshes;
 		TArray<Material*> materials;
 		TArray<Texture*> textures;
@@ -94,9 +94,9 @@ namespace LambdaEngine
 			GUID_Lambda guid = RegisterLoadedMesh("Scene Mesh " + std::to_string(i), meshes[i]);
 			for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
 			{
-				if (sceneLocalGameObjects[g].Mesh == i)
+				if (sceneLocalGameObjects[g].MeshGUID == i)
 				{
-					result[g].Mesh = guid;
+					result[g].MeshGUID = guid;
 				}
 			}
 		}
@@ -106,23 +106,23 @@ namespace LambdaEngine
 			GUID_Lambda guid = RegisterLoadedMaterial("Scene Material " + std::to_string(i), materials[i]);
 			for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
 			{
-				if (sceneLocalGameObjects[g].Material == i)
+				if (sceneLocalGameObjects[g].MaterialGUID == i)
 				{
-					result[g].Material = guid;
+					result[g].MaterialGUID = guid;
 				}
 			}
 		}
 
 		for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
 		{
-			if (sceneLocalGameObjects[g].Mesh >= meshes.GetSize())
+			if (sceneLocalGameObjects[g].MeshGUID >= meshes.GetSize())
 			{
 				LOG_ERROR("[ResourceManager]: GameObject %u in Scene %s has no Mesh", g, filename.c_str());
 			}
 
-			if (sceneLocalGameObjects[g].Material >= materials.GetSize())
+			if (sceneLocalGameObjects[g].MaterialGUID >= materials.GetSize())
 			{
-				result[g].Material = GUID_MATERIAL_DEFAULT;
+				result[g].MaterialGUID = GUID_MATERIAL_DEFAULT;
 				LOG_WARNING("[ResourceManager]: GameObject %u in Scene %s has no Material, default Material assigned", g, filename.c_str());
 			}
 		}

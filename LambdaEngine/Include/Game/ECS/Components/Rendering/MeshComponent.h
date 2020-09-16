@@ -8,11 +8,19 @@ namespace LambdaEngine
 {
 	struct MeshComponent
 	{
+		DECL_COMPONENT(MeshComponent);
 		GUID_Lambda MeshGUID;
 		GUID_Lambda MaterialGUID;
 	};
 
-	struct StaticMeshComponent : MeshComponent { DECL_COMPONENT(StaticMeshComponent); };
-	struct DynamicMeshComponent : MeshComponent { DECL_COMPONENT(DynamicMeshComponent); };
+	struct StaticComponent
+	{
+		DECL_COMPONENT(StaticComponent);
+	};
+
+	struct DynamicComponent
+	{
+		DECL_COMPONENT(DynamicComponent);
+	};
 }
 
