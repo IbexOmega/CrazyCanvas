@@ -102,8 +102,8 @@ namespace LambdaEngine
 
 					ImGui::Text(stage.Name.c_str());
 					ImGui::PlotLines("", stage.Results.GetData(), (int)m_PlotDataSize, m_PlotResultsStart, overlay.str().c_str(), 0.f, m_CurrentMaxDuration[stage.Name], { 0, 80 });
-					ImGui::Unindent(10.0f);
 				}
+				ImGui::Unindent(10.0f);
 			}
 
 			// Graphics pipeline statistics display
