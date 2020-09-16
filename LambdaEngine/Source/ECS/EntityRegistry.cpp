@@ -15,10 +15,13 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
 		EntityRegistryPage& topPage = m_EntityPages.top();
-		if (!topPage.HasElement(entity)) {
+		if (!topPage.HasElement(entity))
+		{
 			// Initialize a new set
 			topPage.PushBack({ componentType }, entity);
-		} else {
+		}
+		else
+		{
 			// Add the component type to the set
 			topPage.IndexID(entity).insert(componentType);
 		}
@@ -29,9 +32,12 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
 		EntityRegistryPage& topPage = m_EntityPages.top();
-		if (!topPage.HasElement(entity)) {
+		if (!topPage.HasElement(entity))
+		{
 			LOG_WARNING("Attempted to deregister a component type (%s) from an unregistered entity: %ld", componentType.name(), entity);
-		} else {
+		}
+		else
+		{
 			topPage.IndexID(entity).erase(componentType);
 		}
 	}
@@ -43,9 +49,11 @@ namespace LambdaEngine
 		const EntityRegistryPage& topPage = m_EntityPages.top();
 		const std::unordered_set<std::type_index>& entityTypes = topPage.IndexID(entity);
 
-		for (std::type_index type : queryTypes) {
+		for (std::type_index type : queryTypes)
+		{
 			auto got = entityTypes.find(type);
-			if (got == entityTypes.end()) {
+			if (got == entityTypes.end())
+			{
 				return false;
 			}
 		}
@@ -70,7 +78,8 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
 		EntityRegistryPage& topPage = m_EntityPages.top();
-		if (!topPage.HasElement(entity)) {
+		if (!topPage.HasElement(entity))
+		{
 			LOG_WARNING("Attempted to deregister an unregistered entity: %ld", entity);
 			return;
 		}
@@ -88,7 +97,8 @@ namespace LambdaEngine
 	{
 		EntityRegistryPage& topPage = m_EntityPages.top();
 		const TArray<Entity> entities = topPage.GetIDs();
-		for (Entity entity : entities) {
+		for (Entity entity : entities)
+		{
 			m_EntityIDGen.PopID(entity);
 		}
 
