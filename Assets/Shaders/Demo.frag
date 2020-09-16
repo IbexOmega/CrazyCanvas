@@ -22,11 +22,11 @@ layout( push_constant ) uniform TestBlock {
 layout(binding = 5, set = BUFFER_SET_INDEX) uniform PerFrameBuffer                          { SPerFrameBuffer val; }        u_PerFrameBuffer;
 layout(binding = 6, set = BUFFER_SET_INDEX) restrict readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
 
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneRougnessMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D      u_SceneRougnessMaps[MAX_UNIQUE_MATERIALS];
 
 layout(location = 0) out vec4 out_Color;
 

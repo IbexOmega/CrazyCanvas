@@ -47,7 +47,7 @@ namespace LambdaEngine
 		void InternalRenderEditResourceView(RenderGraphResourceDesc* pResource, char* pNameBuffer, int32 nameBufferLength);
 
 		void RenderShaderView(float textWidth, float textHeight);
-		void RenderShaderTreeView(const LambdaDirectory& dir, float textWidth, float textHeight, int32& selectedIndex);
+		void RenderShaderTreeView(const LambdaDirectory& dir, float textWidth, float textHeight, int64& selectedIndex);
 
 		void RenderGraphView();
 		void RenderAddRenderStageView();
@@ -80,35 +80,34 @@ namespace LambdaEngine
 	private:
 		bool												m_GUIInitialized = false;
 
-		TArray<EditorResourceStateGroup>					m_ResourceStateGroups;
-		EditorFinalOutput									m_FinalOutput		= {};
+		TArray<EditorResourceStateGroup>	m_ResourceStateGroups;
+		EditorFinalOutput					m_FinalOutput		= {};
 
-		TArray<RenderGraphResourceDesc>						m_Resources;
+		TArray<RenderGraphResourceDesc> m_Resources;
 
 		THashTable<int32, String>							m_RenderStageNameByInputAttributeIndex;
 		THashTable<String, EditorRenderStageDesc>			m_RenderStagesByName;
 		THashTable<int32, EditorRenderGraphResourceState>	m_ResourceStatesByHalfAttributeIndex;
 		THashTable<int32, EditorRenderGraphResourceLink>	m_ResourceStateLinksByLinkIndex;
 
-		EPipelineStateType									m_CurrentlyAddingRenderStage	= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
-		ERenderGraphResourceType							m_CurrentlyAddingResource		= ERenderGraphResourceType::NONE;
-		ERenderGraphTextureType								m_CurrentlyAddingTextureType	= ERenderGraphTextureType::TEXTURE_2D;
-		String												m_CurrentlyEditingResource		= "";
+		EPipelineStateType			m_CurrentlyAddingRenderStage	= EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
+		ERenderGraphResourceType	m_CurrentlyAddingResource		= ERenderGraphResourceType::NONE;
+		ERenderGraphTextureType		m_CurrentlyAddingTextureType	= ERenderGraphTextureType::TEXTURE_2D;
+		String						m_CurrentlyEditingResource		= "";
 
-		EditorStartedLinkInfo								m_StartedLinkInfo				= {};
+		EditorStartedLinkInfo m_StartedLinkInfo				= {};
 
-		TArray<String>										m_FilesInShaderDirectory;
-		LambdaDirectory										m_FilesInShaderMap;
+		LambdaDirectory m_FilesInShaderMap;
 
-		RenderGraphStructureDesc							m_ParsedRenderGraphStructure	= {};
-		bool												m_ParsedGraphValid				= true;
-		bool												m_ParsedGraphDirty				= true;
-		bool												m_ParsedGraphRenderDirty		= true;
-		bool												m_ApplyRenderGraph				= false;
+		RenderGraphStructureDesc	m_ParsedRenderGraphStructure	= {};
+		bool						m_ParsedGraphValid				= true;
+		bool						m_ParsedGraphDirty				= true;
+		bool						m_ParsedGraphRenderDirty		= true;
+		bool						m_ApplyRenderGraph				= false;
 
 	private:
-		static int32					s_NextNodeID;
-		static int32					s_NextAttributeID;
-		static int32					s_NextLinkID;
+		static int32 s_NextNodeID;
+		static int32 s_NextAttributeID;
+		static int32 s_NextLinkID;
 	};
 }

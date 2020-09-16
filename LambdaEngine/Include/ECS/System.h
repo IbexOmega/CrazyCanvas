@@ -7,7 +7,6 @@
 
 #include <functional>
 #include <typeindex>
-#include <vector>
 
 namespace LambdaEngine
 {
@@ -18,14 +17,13 @@ namespace LambdaEngine
     };
 
     class ComponentHandler;
-    class ECSCore;
 
     // A system processes components each frame in the tick function
     class System : private EntitySubscriber, private RegularWorker
     {
     public:
         // Registers the system in the system handler
-        System(ECSCore* pECS);
+        System() = default;
 
         // Deregisters system
         virtual ~System() = default;
@@ -43,7 +41,6 @@ namespace LambdaEngine
         ComponentHandler* GetComponentHandler(const std::type_index& handlerType);
 
     private:
-        ECSCore* m_pECS;
-        uint32 m_SystemID;
+        uint32 m_SystemID = UINT32_MAX;
     };
 }

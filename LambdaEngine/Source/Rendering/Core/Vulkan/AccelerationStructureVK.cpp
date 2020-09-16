@@ -26,22 +26,11 @@ namespace LambdaEngine
 			m_AccelerationStructureDeviceAddress = 0;
 		}
 
-		if (m_Allocator)
-		{
-			m_Allocator->Free(&m_Allocation);
-			memset(&m_Allocation, 0, sizeof(m_Allocation));
-		}
-		else
-		{
-			if (m_AccelerationStructureMemory != VK_NULL_HANDLE)
-			{
-				vkFreeMemory(m_pDevice->Device, m_AccelerationStructureMemory, nullptr);
-				m_AccelerationStructureMemory = VK_NULL_HANDLE;
-			}
-		}
+		m_pDevice->FreeMemory(&m_Allocation);
+		ZERO_MEMORY(&m_Allocation, sizeof(m_Allocation));
 	}
 
-	bool AccelerationStructureVK::Init(const AccelerationStructureDesc* pDesc, DeviceAllocator* pAllocator)
+	bool AccelerationStructureVK::Init(const AccelerationStructureDesc* pDesc)
 	{
 		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
 		accelerationStructureCreateInfo.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -49,7 +38,7 @@ namespace LambdaEngine
 		accelerationStructureCreateInfo.maxGeometryCount	= 1;
 		accelerationStructureCreateInfo.deviceAddress		= VK_NULL_HANDLE;
 		accelerationStructureCreateInfo.flags				= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		if (pDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+		if (pDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 		{
 			accelerationStructureCreateInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 		}
@@ -112,34 +101,14 @@ namespace LambdaEngine
 		accelerationStructureMemoryInfo.pDeviceIndices			= nullptr;
 		accelerationStructureMemoryInfo.accelerationStructure	= m_AccelerationStructure;
 
-		if (pAllocator)
+		if (!m_pDevice->AllocateAccelerationStructureMemory(&m_Allocation, memoryRequirements.size, memoryRequirements.alignment, memoryTypeIndex))
 		{
-			DeviceAllocatorVK* pAllocatorVk = reinterpret_cast<DeviceAllocatorVK*>(pAllocator);
-			if (!pAllocatorVk->Allocate(&m_Allocation, memoryRequirements.size, memoryRequirements.alignment, memoryTypeIndex))
-			{
-				LOG_ERROR("[AccelerationStructureVK]: Failed to allocate memory");
-				return false;
-			}
-
-			// Save a reference to allocator
-			m_Allocator = pAllocatorVk;
-			m_Allocator->AddRef();
-
-			accelerationStructureMemoryInfo.memoryOffset	= m_Allocation.Offset;
-			accelerationStructureMemoryInfo.memory			= m_Allocation.Memory;
+			LOG_ERROR("[AccelerationStructureVK]: Failed to allocate memory");
+			return false;
 		}
-		else
-		{
-			result = m_pDevice->AllocateMemory(&m_AccelerationStructureMemory, memoryRequirements.size, memoryTypeIndex);
-			if (result != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: Failed to allocate memory");
-				return false;
-			}
 
-			accelerationStructureMemoryInfo.memoryOffset	= 0;
-			accelerationStructureMemoryInfo.memory			= m_AccelerationStructureMemory;
-		}
+		accelerationStructureMemoryInfo.memoryOffset = m_Allocation.Offset;
+		accelerationStructureMemoryInfo.memory = m_Allocation.Memory;
 
 		VALIDATE(m_pDevice->vkBindAccelerationStructureMemoryKHR != nullptr);
 
@@ -179,10 +148,10 @@ namespace LambdaEngine
 		BufferDesc scratchBufferDesc = {};
 		scratchBufferDesc.DebugName		= "Acceleration Structure Scratch Buffer";
 		scratchBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-		scratchBufferDesc.Flags			= FBufferFlags::BUFFER_FLAG_RAY_TRACING;
+		scratchBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_RAY_TRACING;
 		scratchBufferDesc.SizeInBytes	= scratchMemoryRequirements.size;
 
-		m_ScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&scratchBufferDesc, pAllocator));
+		m_ScratchBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&scratchBufferDesc));
 		if (!m_ScratchBuffer)
 		{
 			return false;

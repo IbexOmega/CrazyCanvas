@@ -26,7 +26,8 @@ namespace LambdaEngine
 
 	struct DescriptorSetLayoutDesc
 	{
-		TArray<DescriptorBindingDesc> DescriptorBindings;
+		FDescriptorSetLayoutsFlags		DescriptorSetLayoutFlags = FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_NONE;
+		TArray<DescriptorBindingDesc>	DescriptorBindings;
 	};
 
 	struct PipelineLayoutDesc

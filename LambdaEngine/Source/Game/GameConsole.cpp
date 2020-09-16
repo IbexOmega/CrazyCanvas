@@ -5,6 +5,9 @@
 #include "Rendering/ImGuiRenderer.h"
 
 #include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
+
+#include "Engine/EngineConfig.h"
 
 #include <regex>
 #include <imgui.h>
@@ -13,82 +16,369 @@ namespace LambdaEngine
 {
 	bool GameConsole::Init()
 	{
-#ifdef LAMBDA_DEBUG
-		ConsoleCommand cmdHelp;
-		cmdHelp.Init("help", false);
-		cmdHelp.AddFlag("d", Arg::EType::EMPTY);
-		cmdHelp.AddDescription("Shows all commands descriptions.", { {"d", "Used to show debug commands also."} });
-		BindCommand(cmdHelp, [this](CallbackInput& input)->void 
+		if (!InitCommands())
 		{
-			for (auto i : m_CommandMap)
-			{
-				ConsoleCommand& cCmd = i.second.first;
-				if (!cCmd.IsDebug() || (input.Flags.find("d") != input.Flags.end()))
-				{
-					std::string type = cCmd.IsDebug() ? " [DEBUG]" : "";
-					ConsoleCommand::Description desc = cCmd.GetDescription();
-					PushInfo(i.first + type + ":");
-					PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-					for (auto flagDesc : desc.FlagDescs)
-						PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-				}
-			}
-			});
-#else
-		ConsoleCommand cmdHelp;
-		cmdHelp.Init("help", false);
-		cmdHelp.AddDescription("Shows all commands descriptions.");
-		BindCommand(cmdHelp, [this](CallbackInput& input)->void {
-			for (auto i : m_CommandMap)
-			{
-				ConsoleCommand& cCmd = i.second.first;
-				if (!cCmd.IsDebug())
-				{
-					ConsoleCommand::Description desc = cCmd.GetDescription();
-					PushInfo(i.first + ":");
-					PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-					for (auto flagDesc : desc.FlagDescs)
-						PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-				}
-			}
-			});
-#endif
+			return false;
+		}
 
-		ConsoleCommand cmdClear;
-		cmdClear.Init("clear", false);
-		cmdClear.AddFlag("h", Arg::EType::EMPTY);
-		cmdClear.AddDescription("Clears the visible text in the console.", { {"h", "Clears the history."} });
-		BindCommand(cmdClear, [this](CallbackInput& input)->void 
-		{
-			m_Items.Clear();
-		});
+		return EventQueue::RegisterEventHandler(this, &GameConsole::OnKeyPressed);
+	}
 
-		ConsoleCommand cmdExit;
-		cmdExit.Init("exit", false);
-		cmdExit.AddDescription("Terminate the application");
-		BindCommand(cmdExit, [this](CallbackInput& input)->void
+	bool GameConsole::InitCommands()
+	{
+		// Help
 		{
-			CommonApplication::Get()->Terminate();
-		});
+			ConsoleCommand cmdHelp;
+			cmdHelp.Init("help", false);
+			cmdHelp.AddFlag("d", Arg::EType::EMPTY);
+			cmdHelp.AddDescription("Shows all commands descriptions.", { {"d", "Used to show debug commands also."} });
+			BindCommand(cmdHelp, [this](CallbackInput& input)->void
+			{
+				for (auto i : m_CommandMap)
+				{
+					ConsoleCommand& cCmd = i.second.first;
+					if (!cCmd.IsDebug() || (input.Flags.find("d") != input.Flags.end()))
+					{
+						std::string type = cCmd.IsDebug() ? " [DEBUG]" : "";
+						ConsoleCommand::Description desc = cCmd.GetDescription();
+						PushInfo(i.first + type + ":");
+						PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+						for (auto flagDesc : desc.FlagDescs)
+							PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+					}
+				}
+			});
+		}
+
+		// Clear
+		{
+			ConsoleCommand cmdClear;
+			cmdClear.Init("clear", false);
+			cmdClear.AddFlag("h", Arg::EType::EMPTY);
+			cmdClear.AddDescription("Clears the visible text in the console.", { {"h", "Clears the history."} });
+			BindCommand(cmdClear, [this](CallbackInput& input)->void
+			{
+				m_Items.Clear();
+			});
+		}
+
+		// Exit
+		{
+			ConsoleCommand cmdExit;
+			cmdExit.Init("exit", false);
+			cmdExit.AddDescription("Terminate the application");
+			BindCommand(cmdExit, [this](CallbackInput& input)->void
+			{
+				CommonApplication::Get()->Terminate();
+			});
+		}
+
+		// Enable input
+		{
+			ConsoleCommand cmdInput;
+			cmdInput.Init("enable_input", false);
+			cmdInput.AddArg(Arg::EType::BOOL);
+			cmdInput.AddDescription("Enable or disable application input");
+			BindCommand(cmdInput, [this](CallbackInput& input)->void
+			{
+				if (input.Arguments[0].Value.Boolean)
+				{
+					Input::Enable();
+				}
+				else
+				{
+					Input::Disable();
+				}
+			});
+		}
+
+		// Main window width
+		{
+			ConsoleCommand cmdWidth;
+			cmdWidth.Init("window_width", false);
+			cmdWidth.AddArg(Arg::EType::INT);
+			cmdWidth.AddDescription("Set main window width");
+			BindCommand(cmdWidth, [this](CallbackInput& input)->void
+			{
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				if (mainWindow)
+				{
+					const uint16 height = mainWindow->GetHeight();
+					mainWindow->SetSize(input.Arguments.GetFront().Value.Int32, height);
+				}
+			});
+		}
+
+		// Main window height
+		{
+			ConsoleCommand cmdHeight;
+			cmdHeight.Init("window_height", false);
+			cmdHeight.AddArg(Arg::EType::INT);
+			cmdHeight.AddDescription("Set main window height");
+			BindCommand(cmdHeight, [this](CallbackInput& input)->void
+			{
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				if (mainWindow)
+				{
+					const uint16 width = mainWindow->GetWidth();
+					mainWindow->SetSize(width, input.Arguments.GetFront().Value.Int32);
+				}
+			});
+		}
+
+		// Main window maximize
+		{
+			ConsoleCommand cmdMaximize;
+			cmdMaximize.Init("window_maximize", false);
+			BindCommand(cmdMaximize, [this](CallbackInput& input)->void
+			{
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				if (mainWindow)
+				{
+					mainWindow->Maximize();
+				}
+			});
+		}
+
+		// Main window minimize
+		{
+			ConsoleCommand cmdMinimize;
+			cmdMinimize.Init("window_minimize", false);
+			BindCommand(cmdMinimize, [this](CallbackInput& input)->void
+			{
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				if (mainWindow)
+				{
+					mainWindow->Minimize();
+				}
+			});
+		}
+
+		// Main window fullscreen
+		{
+			ConsoleCommand cmdFullscreen;
+			cmdFullscreen.Init("window_toggle_fullscreen", false);
+			cmdFullscreen.AddDescription("Set main window to fullscreen");
+			BindCommand(cmdFullscreen, [this](CallbackInput& input)->void
+			{
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				if (mainWindow)
+				{
+					mainWindow->ToggleFullscreen();
+				}
+			});
+		}
+
+		// Main window size
+		{
+			ConsoleCommand cmdSize;
+			cmdSize.Init("window_size", false);
+			cmdSize.AddFlag("w", Arg::EType::INT);
+			cmdSize.AddFlag("h", Arg::EType::INT);
+			cmdSize.AddDescription("Set main window size", { { "w", "Height of window" }, { "h", "Height of window" }, });
+			BindCommand(cmdSize, [this](CallbackInput& input)->void
+			{
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				if (mainWindow)
+				{
+					uint16 width = mainWindow->GetWidth();
+					auto widthPair = input.Flags.find("w");
+					if (widthPair != input.Flags.end())
+					{
+						width = widthPair->second.Arg.Value.Int32;
+					}
+
+					uint16 height = mainWindow->GetWidth();
+					auto heightPair = input.Flags.find("h");
+					if (heightPair != input.Flags.end())
+					{
+						height = heightPair->second.Arg.Value.Int32;
+					}
+
+					mainWindow->SetSize(width, height);
+				}
+			});
+		}
 
 		// Test Command
-		ConsoleCommand cmd;
-		cmd.Init("clo", true);
-		cmd.AddArg(Arg::EType::STRING);
-		cmd.AddFlag("l", Arg::EType::INT);
-		cmd.AddFlag("i", Arg::EType::EMPTY);
-		cmd.AddDescription("Does blah and do bar.");
-
-		GameConsole::Get().BindCommand(cmd, [](GameConsole::CallbackInput& input)->void 
 		{
-			std::string s1 = input.Arguments.GetFront().Value.Str;
-			std::string s2 = input.Flags.find("i") == input.Flags.end() ? "no set" : "set";
-			std::string s3 = "no set";
-			auto it = input.Flags.find("l");
-			if (it != input.Flags.end())
-				s3 = "set with a value of " + std::to_string(it->second.Arg.Value.I);
-			LOG_INFO("Command Called with argument '%s' and flag i was %s and flag l was %s.", s1.c_str(), s2.c_str(), s3.c_str());
-		});
+			ConsoleCommand cmd;
+			cmd.Init("clo", true);
+			cmd.AddArg(Arg::EType::STRING);
+			cmd.AddFlag("l", Arg::EType::INT);
+			cmd.AddFlag("i", Arg::EType::EMPTY);
+			cmd.AddDescription("Does blah and do bar.");
+
+			GameConsole::Get().BindCommand(cmd, [](GameConsole::CallbackInput& input)->void
+			{
+				std::string s1 = input.Arguments.GetFront().Value.String;
+				std::string s2 = input.Flags.find("i") == input.Flags.end() ? "no set" : "set";
+				std::string s3 = "no set";
+				auto it = input.Flags.find("l");
+				if (it != input.Flags.end())
+					s3 = "set with a value of " + std::to_string(it->second.Arg.Value.Int32);
+				LOG_INFO("Command Called with argument '%s' and flag i was %s and flag l was %s.", s1.c_str(), s2.c_str(), s3.c_str());
+			});
+		}
+
+		// Set Boolean in config
+		{
+			ConsoleCommand cmdSetBool;
+			cmdSetBool.Init("set_bool", true);
+			cmdSetBool.AddArg(Arg::EType::STRING);
+			cmdSetBool.AddArg(Arg::EType::BOOL);
+			cmdSetBool.AddDescription("Change boolean value in config file with a given key\n\t 'set_bool key bool'");
+			BindCommand(cmdSetBool, [this](GameConsole::CallbackInput& input)->void
+				{
+					if (!EngineConfig::SetBoolProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.Boolean))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+		// Set Float in config
+		{
+			ConsoleCommand cmdSetFloat;
+			cmdSetFloat.Init("set_float", true);
+			cmdSetFloat.AddArg(Arg::EType::STRING);
+			cmdSetFloat.AddArg(Arg::EType::FLOAT);
+			cmdSetFloat.AddDescription("Change float value in config file with a given key\n\t 'set_float key value'");
+			BindCommand(cmdSetFloat, [this](GameConsole::CallbackInput& input)->void
+				{
+					if (!EngineConfig::SetFloatProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.Float32))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+		// Set Integer in config
+		{
+			ConsoleCommand cmdSetInt;
+			cmdSetInt.Init("set_int", true);
+			cmdSetInt.AddArg(Arg::EType::STRING);
+			cmdSetInt.AddArg(Arg::EType::INT);
+			cmdSetInt.AddDescription("Change integer value in config file with a given key\n\t 'set_int key value'");
+			BindCommand(cmdSetInt, [this](GameConsole::CallbackInput& input)->void
+				{
+					if (!EngineConfig::SetIntProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.Int32))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+		// Set Double in config
+		{
+			ConsoleCommand cmdSetDouble;
+			cmdSetDouble.Init("set_double", true);
+			cmdSetDouble.AddArg(Arg::EType::STRING);
+			cmdSetDouble.AddArg(Arg::EType::FLOAT);
+			cmdSetDouble.AddDescription("Change double value in config file with a given key\n\t 'set_double key value'");
+			BindCommand(cmdSetDouble, [this](GameConsole::CallbackInput& input)->void
+				{
+					if (!EngineConfig::SetDoubleProperty(input.Arguments.GetFront().Value.String, static_cast<double>(input.Arguments.GetBack().Value.Float32)))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+
+		// Set String in config
+		{
+			ConsoleCommand cmdSetString;
+			cmdSetString.Init("set_string", true);
+			cmdSetString.AddArg(Arg::EType::STRING);
+			cmdSetString.AddArg(Arg::EType::STRING);
+			cmdSetString.AddDescription("Change boolean value in config file with a given key\n\t 'set_string key string'");
+			BindCommand(cmdSetString, [this](GameConsole::CallbackInput& input)->void
+				{
+					if (!EngineConfig::SetBoolProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.String))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+		// Set Float Array in config
+		{
+			ConsoleCommand cmdSetFloatArray;
+			cmdSetFloatArray.Init("set_float_array", true);
+			cmdSetFloatArray.AddArg(Arg::EType::STRING);
+			cmdSetFloatArray.AddArg(Arg::EType::STRING);
+			cmdSetFloatArray.AddDescription("Change array values in settings with a given key\n\t 'set_array key 1.0,1.0'\n\t OBS: The decimal point needs to be in the argument");
+			BindCommand(cmdSetFloatArray, [this](GameConsole::CallbackInput& input)->void
+				{
+					TArray<float> arr;
+					String arg = input.Arguments.GetBack().Value.String;
+
+					while (arg.length() > 0)
+					{
+						if (std::regex_match(arg.substr(0, arg.find(",")), std::regex("(-[0-9]*\\.[0-9]+)|(-[0-9]+\\.[0-9]*)")))
+						{
+							arr.PushBack(std::stof(arg.substr(0, arg.find(","))));
+						}
+						else if (std::regex_match(arg.substr(0, arg.find(",")), std::regex("([0-9]*\\.[0-9]+)|([0-9]+\\.[0-9]*)")))
+						{
+							arr.PushBack(std::stof(arg.substr(0, arg.find(","))));
+						}
+						else
+						{
+							PushError(arg.substr(0, arg.find(",")));
+						}
+
+						if (std::string::npos != arg.find(","))
+							arg.erase(0, arg.find(",") + std::string(",").length());
+						else
+							arg.erase(0, arg.find(","));
+					}
+
+					if (!EngineConfig::SetFloatArrayProperty(input.Arguments.GetFront().Value.String, arr))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+		// Set Array in config
+		{
+			ConsoleCommand cmdSetIntArray;
+			cmdSetIntArray.Init("set_int_array", true);
+			cmdSetIntArray.AddArg(Arg::EType::STRING);
+			cmdSetIntArray.AddArg(Arg::EType::STRING);
+			cmdSetIntArray.AddDescription("Change array values in settings with a given key\n\t 'set_array key 1.0,1.0'\n\t OBS: The decimal point needs to be in the argument");
+			BindCommand(cmdSetIntArray, [this](GameConsole::CallbackInput& input)->void
+				{
+					TArray<int> arr;
+					String arg = input.Arguments.GetBack().Value.String;
+
+					while (arg.length() > 0)
+					{
+						if (std::regex_match(arg.substr(0, arg.find(",")), std::regex("-[0-9]+")))
+						{
+							arr.PushBack(std::stoi(arg.substr(0, arg.find(","))));
+						}
+						else if (std::regex_match(arg.substr(0, arg.find(",")), std::regex("[0-9]+")))
+						{
+							arr.PushBack(std::stoi(arg.substr(0, arg.find(","))));
+						}
+						else
+						{
+							PushError(arg.substr(0, arg.find(",")));
+						}
+
+						if (std::string::npos != arg.find(","))
+							arg.erase(0, arg.find(",") + std::string(",").length());
+						else
+							arg.erase(0, arg.find(","));
+					}
+
+					if (!EngineConfig::SetIntArrayProperty(input.Arguments.GetFront().Value.String, arr))
+						PushError((input.Arguments.GetFront().Value.String));
+				});
+		}
+
+
+		// Save config to file
+		{
+			ConsoleCommand cmdSaveSettings;
+			cmdSaveSettings.Init("save_settings", true);
+			cmdSaveSettings.AddDescription("Save changes into config file");
+			BindCommand(cmdSaveSettings, [](CallbackInput& input)->void
+				{
+					EngineConfig::WriteToFile();
+				});
+		}
 
 		return true;
 	}
@@ -100,198 +390,187 @@ namespace LambdaEngine
 
 	void GameConsole::Tick()
 	{
-		// Toggle console when pressing � (Button beneath Escape)
-		static bool s_Active = false;
-		static bool s_Toggle = false;
-
-		if (Input::IsKeyDown(EKey::KEY_GRAVE_ACCENT) && !s_Active)
-		{
-			s_Active = true;
-			s_Toggle ^= 1;
-		}
-		else if (Input::IsKeyUp(EKey::KEY_GRAVE_ACCENT))
-		{
-			s_Active = false;
-		}
-
 		// Do not draw if not active.
-		if (!s_Toggle)
+		if (!m_IsActive)
+		{
 			return;
+		}
 
 		ImVec2 popupPos;
 		ImVec2 popupSize;
 
 		ImGuiRenderer::Get().DrawUI([&]()
+		{
+			ImGuiWindowFlags flags =
+				ImGuiWindowFlags_NoMove |
+				ImGuiWindowFlags_NoTitleBar;
+
+			TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+			uint32 width = mainWindow->GetWidth();
+			uint32 height = mainWindow->GetHeight();
+			const uint32 standardHeight = 200;
+
+			// Draw a console window at the top right of the viewport.
+			ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver); // Standard position
+			ImGui::SetNextWindowSize(ImVec2(width, standardHeight), ImGuiCond_FirstUseEver); // Standard size
+			ImGui::SetNextWindowSizeConstraints(ImVec2(width, 70), ImVec2(width, height)); // Window constraints
+
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f); // Make more transparent
+			ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); // Remove grip, resize works anyway
+			ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); // Remove grip, resize works anyway
+			ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); // Remove grip, resize works anyway
+
+			if (ImGui::Begin("Console", (bool*)0, flags))
 			{
-				ImGuiWindowFlags flags = 
-					ImGuiWindowFlags_NoMove | 
-					ImGuiWindowFlags_NoTitleBar;
+				bool hasFocus = false;
 
-				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-				uint32 width = mainWindow->GetWidth();
-				uint32 height = mainWindow->GetHeight();
-				const uint32 standardHeight = 200;
+				// History
+				const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+				ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-				// Draw a console window at the top right of the viewport.
-				ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver); // Standard position
-				ImGui::SetNextWindowSize(ImVec2(width, standardHeight), ImGuiCond_FirstUseEver); // Standard size
-				ImGui::SetNextWindowSizeConstraints(ImVec2(width, 70), ImVec2(width, height)); // Window constraints
-				
-				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f); // Make more transparent
-				ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); // Remove grip, resize works anyway
-				ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); // Remove grip, resize works anyway
-				ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); // Remove grip, resize works anyway
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
 
-				if (ImGui::Begin("Console", (bool*)0, flags))
+				// Only display visible text to see history.
+				ImGuiListClipper clipper(m_Items.GetSize());
+				while (clipper.Step())
 				{
-					bool hasFocus = false;
-
-					// History
-					const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-					ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeightToReserve), false, ImGuiWindowFlags_HorizontalScrollbar);
-					
-					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
-					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
-
-					// Only display visible text to see history.
-					ImGuiListClipper clipper(m_Items.GetSize());
-					while (clipper.Step())
+					for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 					{
-						for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-						{
-							Item& item = m_Items[i];
-							const char* str = item.Str.c_str();
-							ImVec4 color = ImVec4(item.Color.r, item.Color.g, item.Color.b, item.Color.a);
-							ImGui::PushStyleColor(ImGuiCol_Text, color);
-							ImGui::TextUnformatted(str);
-							ImGui::PopStyleColor();
-						}
+						Item& item = m_Items[i];
+						const char* str = item.Str.c_str();
+						ImVec4 color = ImVec4(item.Color.r, item.Color.g, item.Color.b, item.Color.a);
+						ImGui::PushStyleColor(ImGuiCol_Text, color);
+						ImGui::TextUnformatted(str);
+						ImGui::PopStyleColor();
 					}
+				}
 
-					if (m_ScrollToBottom || (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
-						ImGui::SetScrollHereY(0.0f);
+				if (m_ScrollToBottom || (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+					ImGui::SetScrollHereY(0.0f);
 
-					m_ScrollToBottom = false;
+				m_ScrollToBottom = false;
 
-					ImGui::PopStyleVar();
-					ImGui::PopStyleVar();
+				ImGui::PopStyleVar();
+				ImGui::PopStyleVar();
 
-					ImGui::EndChild();
-					ImGui::Separator();
+				ImGui::EndChild();
+				ImGui::Separator();
 
-					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
 
-					// Command line
-					static char s_Buf[256];
-					
-					ImGui::PushItemWidth(width);
-					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
+				// Command line
+				static char s_Buf[256];
 
-					ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackEdit;
-					if (ImGui::InputText("###Input", s_Buf, 256, input_text_flags, 
-						[](ImGuiInputTextCallbackData* data)->int {
+				ImGui::PushItemWidth(width);
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
+
+				ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackEdit;
+				if (ImGui::InputText("###Input", s_Buf, 256, input_text_flags,
+					[](ImGuiInputTextCallbackData* data)->int {
 						GameConsole* console = (GameConsole*)data->UserData;
 						return console->TextEditCallback(data);
-						}, (void*)this))
-					{
-						if (m_ActivePopupIndex != -1)
-						{
-							strcpy(s_Buf, m_PopupSelectedText.c_str());
-							m_ActivePopupIndex = -1;
-							m_Candidates.Clear();
-							m_PopupSelectedText = "";
-						}
-						else
-						{
-							if (s_Buf[0])
-							{
-								std::string buff = std::string(s_Buf);
-								ExecCommand(buff);
-							}
-
-							strcpy(s_Buf, "");
-						}
-						hasFocus = true;
-					}
-
-					ImGui::PopStyleColor();
-					ImGui::PopItemWidth();
-					ImGui::PopStyleVar();
-					
-					if (s_Active || hasFocus)
-					{
-						ImGui::SetItemDefaultFocus();
-						ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
-					}
-
-					if (ImGui::IsWindowFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
-					{
-						ImGui::SetKeyboardFocusHere(-1);
-					}
-
-					popupSize = ImVec2(ImGui::GetItemRectSize().x - 60, ImGui::GetTextLineHeightWithSpacing() * 2);
-					popupPos = ImGui::GetItemRectMin();
-					popupPos.y += ImGui::GetItemRectSize().y;
-				}
-				ImGui::End();
-
-				// Draw popup autocomplete window
-				if (m_Candidates.GetSize() > 0)
+					}, (void*)this))
 				{
-					bool isActiveIndex = false;
-					bool popupOpen = true;
-					ImGuiWindowFlags popupFlags =
-						ImGuiWindowFlags_NoTitleBar |
-						ImGuiWindowFlags_NoResize |
-						ImGuiWindowFlags_NoMove |
-						ImGuiWindowFlags_HorizontalScrollbar |
-						ImGuiWindowFlags_NoSavedSettings |
-						ImGuiWindowFlags_NoFocusOnAppearing;
-
-					if (m_Candidates.GetSize() < 10)
+					if (m_ActivePopupIndex != -1)
 					{
-						popupFlags |= ImGuiWindowFlags_NoScrollbar;
-						popupSize.y = (ImGui::GetTextLineHeight() + 8) * m_Candidates.GetSize();
+						strcpy(s_Buf, m_PopupSelectedText.c_str());
+						m_ActivePopupIndex = -1;
+						m_Candidates.Clear();
+						m_PopupSelectedText = "";
 					}
 					else
 					{
-						popupSize.y = (ImGui::GetTextLineHeight() + 8) * 10;
+						if (s_Buf[0])
+						{
+							std::string buff = std::string(s_Buf);
+							ExecCommand(buff);
+						}
+
+						strcpy(s_Buf, "");
 					}
 
-					ImGui::SetNextWindowPos(popupPos);
-					ImGui::SetNextWindowSize(popupSize);
-					ImGui::Begin("candidates_popup", &popupOpen, popupFlags);
-					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
-					ImGui::PushAllowKeyboardFocus(false);
-
-					for (uint32 i = 0; i < m_Candidates.GetSize(); i++)
-					{
-						isActiveIndex = m_ActivePopupIndex == i;
-						ImGui::PushID(i);
-						if (ImGui::Selectable(m_Candidates[i].c_str(), &isActiveIndex))
-						{
-							PushError("Test");
-						}
-						ImGui::PopID();
-
-						if (isActiveIndex && m_PopupSelectionChanged)
-						{
-							ImGui::SetScrollHere();
-							m_PopupSelectedText = m_Candidates[i];
-							m_PopupSelectionChanged = false;
-						}
-					}
-
-					ImGui::PopAllowKeyboardFocus();
-					ImGui::PopStyleVar();
-					ImGui::End();
+					hasFocus = true;
 				}
 
 				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
+				ImGui::PopItemWidth();
 				ImGui::PopStyleVar();
-			});
+
+				if (hasFocus)
+				{
+					ImGui::SetItemDefaultFocus();
+					ImGui::SetKeyboardFocusHere(-1); // Set focus to the text field.
+				}
+
+				if (ImGui::IsWindowFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+				{
+					ImGui::SetKeyboardFocusHere(-1);
+				}
+
+				popupSize = ImVec2(ImGui::GetItemRectSize().x - 60, ImGui::GetTextLineHeightWithSpacing() * 2);
+				popupPos = ImGui::GetItemRectMin();
+				popupPos.y += ImGui::GetItemRectSize().y;
+			}
+			ImGui::End();
+
+			// Draw popup autocomplete window
+			if (m_Candidates.GetSize() > 0)
+			{
+				bool isActiveIndex = false;
+				bool popupOpen = true;
+				ImGuiWindowFlags popupFlags =
+					ImGuiWindowFlags_NoTitleBar |
+					ImGuiWindowFlags_NoResize |
+					ImGuiWindowFlags_NoMove |
+					ImGuiWindowFlags_HorizontalScrollbar |
+					ImGuiWindowFlags_NoSavedSettings |
+					ImGuiWindowFlags_NoFocusOnAppearing;
+
+				if (m_Candidates.GetSize() < 10)
+				{
+					popupFlags |= ImGuiWindowFlags_NoScrollbar;
+					popupSize.y = (ImGui::GetTextLineHeight() + 8) * m_Candidates.GetSize();
+				}
+				else
+				{
+					popupSize.y = (ImGui::GetTextLineHeight() + 8) * 10;
+				}
+
+				ImGui::SetNextWindowPos(popupPos);
+				ImGui::SetNextWindowSize(popupSize);
+				ImGui::Begin("candidates_popup", &popupOpen, popupFlags);
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
+				ImGui::PushAllowKeyboardFocus(false);
+
+				for (uint32 i = 0; i < m_Candidates.GetSize(); i++)
+				{
+					isActiveIndex = m_ActivePopupIndex == i;
+					ImGui::PushID(i);
+					if (ImGui::Selectable(m_Candidates[i].c_str(), &isActiveIndex))
+					{
+						PushError("Test");
+					}
+					ImGui::PopID();
+
+					if (isActiveIndex && m_PopupSelectionChanged)
+					{
+						ImGui::SetScrollHere();
+						m_PopupSelectedText = m_Candidates[i];
+						m_PopupSelectionChanged = false;
+					}
+				}
+
+				ImGui::PopAllowKeyboardFocus();
+				ImGui::PopStyleVar();
+				ImGui::End();
+			}
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleVar();
+		});
 	}
 
 	void GameConsole::BindCommand(ConsoleCommand cmd, std::function<void(CallbackInput&)> callback)
@@ -311,6 +590,7 @@ namespace LambdaEngine
 
 	GameConsole::~GameConsole()
 	{
+		EventQueue::UnregisterEventHandler(this, &GameConsole::OnKeyPressed);
 	}
 
 	int GameConsole::ExecCommand(const std::string& data)
@@ -419,33 +699,33 @@ namespace LambdaEngine
 	void GameConsole::FillArg(Arg& arg, std::string token)
 	{
 		arg.Type = Arg::EType::STRING;
-		strcpy(arg.Value.Str, token.c_str());
+		strcpy(arg.Value.String, token.c_str());
 
 		if (std::regex_match(token, std::regex("-[0-9]+")))
 		{
 			arg.Type = Arg::EType::INT;
-			arg.Value.I = std::stoi(token);
+			arg.Value.Int32 = std::stoi(token);
 		}
 		else if (std::regex_match(token, std::regex("[0-9]+")))
 		{
 			arg.Type = Arg::EType::INT;
-			arg.Value.I = std::stoi(token);
+			arg.Value.Int32 = std::stoi(token);
 		}
 		else if (std::regex_match(token, std::regex("(-[0-9]*\\.[0-9]+)|(-[0-9]+\\.[0-9]*)")))
 		{
 			arg.Type = Arg::EType::FLOAT;
-			arg.Value.F = std::stof(token);
+			arg.Value.Float32 = std::stof(token);
 		}
 		else if (std::regex_match(token, std::regex("([0-9]*\\.[0-9]+)|([0-9]+\\.[0-9]*)")))
 		{
 			arg.Type = Arg::EType::FLOAT;
-			arg.Value.F = std::stof(token);
+			arg.Value.Float32 = std::stof(token);
 		}
 		std::for_each(token.begin(), token.end(), [](char& c) { c = (char)std::tolower(c); });
 		if (std::regex_match(token, std::regex("(false)|(true)")))
 		{
 			arg.Type = Arg::EType::BOOL;
-			arg.Value.B = token == "false" ? false : true;
+			arg.Value.Boolean = token == "false" ? false : true;
 		}
 	}
 
@@ -457,11 +737,31 @@ namespace LambdaEngine
 			PushError("Too many arguments!");
 			return false;
 		}
-		if (cmd.GetArguments()[index].Type != arg.Type) // Error wrong type
+
+		// Add special case for booleans, this makes it possible to write an integer as argument for a bool
+		if (cmd.GetArguments()[index].Type == Arg::EType::BOOL)
+		{
+			if (arg.Type != Arg::EType::BOOL)
+			{
+				if (arg.Type == Arg::EType::INT)
+				{
+					int32 value = arg.Value.Int32;
+					arg.Type = Arg::EType::BOOL;
+					arg.Value.Boolean = (value != 0);
+				}
+				else
+				{
+					PushError("Wrong argument type!");
+					return false;
+				}
+			}
+		}
+		else if (cmd.GetArguments()[index].Type != arg.Type) // Error wrong type
 		{
 			PushError("Wrong argument type!");
 			return false;
 		}
+
 		cmd.GetArguments()[index].Value = arg.Value;
 		return true;
 	}
@@ -483,6 +783,17 @@ namespace LambdaEngine
 		item.Color = color;
 		m_Items.PushBack(item);
 		m_ScrollToBottom = true;
+	}
+
+	bool GameConsole::OnKeyPressed(const KeyPressedEvent& event)
+	{
+		if (event.Key == EKey::KEY_GRAVE_ACCENT && !event.IsRepeat)
+		{
+			m_IsActive = !m_IsActive;
+			return true;
+		}
+
+		return false;
 	}
 
 	int GameConsole::TextEditCallback(ImGuiInputTextCallbackData* data)

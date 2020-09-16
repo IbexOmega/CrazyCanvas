@@ -5,6 +5,7 @@
 namespace LambdaEngine
 {
 	class Buffer;
+	class Sampler;
 	class Texture;
 	class QueryHeap;
 	class RenderPass;
@@ -15,13 +16,15 @@ namespace LambdaEngine
 	class CommandAllocator;
 	class AccelerationStructure;
 
-	enum FCommandListFlags : uint32
+	typedef uint32 FCommandListFlags;
+	enum FCommandListFlag : FCommandListFlags
 	{
 		COMMAND_LIST_FLAG_NONE				= 0,
 		COMMAND_LIST_FLAG_ONE_TIME_SUBMIT	= FLAG(0),
 	};
 
-	enum FRenderPassBeginFlags : uint32
+	typedef uint32 FRenderPassBeginFlags;
+	enum FRenderPassBeginFlag : FRenderPassBeginFlags
 	{
 		RENDER_PASS_BEGIN_FLAG_NONE					= 0,
 		RENDER_PASS_BEGIN_FLAG_INLINE				= FLAG(0),
@@ -67,7 +70,7 @@ namespace LambdaEngine
 		const TextureView*			pDepthStencil		= nullptr;
 		uint32						Width				= 0;
 		uint32						Height				= 0;
-		uint32						Flags				= FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_NONE;
+		FRenderPassBeginFlags		Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_NONE;
 		const ClearColorDesc*		pClearColors		= nullptr;
 		uint32						ClearColorCount		= 0;
 		struct
@@ -98,9 +101,9 @@ namespace LambdaEngine
 		ETextureState		StateAfter				= ETextureState::TEXTURE_STATE_UNKNOWN;
 		ECommandQueueType	QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
 		ECommandQueueType	QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
-		uint32				SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
-		uint32				DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
-		uint32				TextureFlags			= FTextureFlags::TEXTURE_FLAG_NONE;
+		FMemoryAccessFlags	SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
+		FMemoryAccessFlags	DstMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
+		FTextureFlags		TextureFlags			= FTextureFlag::TEXTURE_FLAG_NONE;
 		uint32				Miplevel				= 0;
 		uint32				MiplevelCount			= 0;
 		uint32				ArrayIndex				= 0;
@@ -112,47 +115,47 @@ namespace LambdaEngine
 		Buffer*				pBuffer					= nullptr;
 		ECommandQueueType	QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
 		ECommandQueueType	QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
-		uint32				SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
-		uint32				DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+		FMemoryAccessFlags	SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
+		FMemoryAccessFlags	DstMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
 		uint64				Offset					= 0;
 		uint64				SizeInBytes				= 0;
 	};
 
 	struct PipelineMemoryBarrierDesc
 	{
-		uint32				SrcMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
-		uint32				DstMemoryAccessFlags	= FMemoryAccessFlags::MEMORY_ACCESS_FLAG_UNKNOWN;
+		FMemoryAccessFlags SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
+		FMemoryAccessFlags DstMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
 	};
 
 	struct BuildTopLevelAccelerationStructureDesc
 	{
-		AccelerationStructure* pAccelerationStructure	= nullptr;
-		uint32					Flags					= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
-		const Buffer*			pInstanceBuffer			= nullptr;
-		uint32					InstanceCount			= 0;
-		bool					Update					= false;
+		AccelerationStructure*		pAccelerationStructure	= nullptr;
+		FAccelerationStructureFlags	Flags					= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_NONE;
+		const Buffer*				pInstanceBuffer			= nullptr;
+		uint32						InstanceCount			= 0;
+		bool						Update					= false;
 	};
 
 	struct BuildBottomLevelAccelerationStructureDesc
 	{
-		AccelerationStructure*	pAccelerationStructure	= nullptr;
-		uint32					Flags					= FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_NONE;
-		const Buffer*			pVertexBuffer			= nullptr; 
-		uint32					FirstVertexIndex		= 0; 
-		uint32					VertexStride			= 0;
-		const Buffer*			pIndexBuffer			= nullptr;
-		uint32					IndexBufferByteOffset	= 0; 
-		uint32					TriangleCount			= 0;
-		const Buffer*			pTransformBuffer		= nullptr;
-		uint32					TransformByteOffset		= 0;
-		bool					Update					= false;
+		AccelerationStructure*		pAccelerationStructure	= nullptr;
+		FAccelerationStructureFlags	Flags					= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_NONE;
+		const Buffer*				pVertexBuffer			= nullptr; 
+		uint32						FirstVertexIndex		= 0; 
+		uint32						VertexStride			= 0;
+		const Buffer*				pIndexBuffer			= nullptr;
+		uint32						IndexBufferByteOffset	= 0; 
+		uint32						TriangleCount			= 0;
+		const Buffer*				pTransformBuffer		= nullptr;
+		uint32						TransformByteOffset		= 0;
+		bool						Update					= false;
 	};
 
 	struct CommandListDesc
 	{
 		String				DebugName		= "";
 		ECommandListType	CommandListType = ECommandListType::COMMAND_LIST_TYPE_UNKNOWN;
-		uint32				Flags			= FCommandListFlags::COMMAND_LIST_FLAG_NONE;
+		FCommandListFlags	Flags			= FCommandListFlag::COMMAND_LIST_FLAG_NONE;
 	};
 
 	class CommandList : public DeviceChild
@@ -185,6 +188,18 @@ namespace LambdaEngine
 		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)			= 0;
 		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)	= 0;
 		
+		virtual void PushTextureDescriptorWriteGraphics(const PipelineLayout* pPipelineLayout, uint32 set, const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType) = 0;
+		virtual void PushBufferDescriptorWriteGraphics(const PipelineLayout* pPipelineLayout, uint32 set, const Buffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType) = 0;
+		virtual void PushAccelerationStructureDescriptorWriteGraphics(const PipelineLayout* pPipelineLayout, uint32 set, const AccelerationStructure* const* ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount) = 0;
+
+		virtual void PushTextureDescriptorWriteCompute(const PipelineLayout* pPipelineLayout, uint32 set, const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType) = 0;
+		virtual void PushBufferDescriptorWriteCompute(const PipelineLayout* pPipelineLayout, uint32 set, const Buffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType) = 0;
+		virtual void PushAccelerationStructureDescriptorWriteCompute(const PipelineLayout* pPipelineLayout, uint32 set, const AccelerationStructure* const* ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount) = 0;
+
+		virtual void PushTextureDescriptorWriteRayTracing(const PipelineLayout* pPipelineLayout, uint32 set, const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType) = 0;
+		virtual void PushBufferDescriptorWriteRayTracing(const PipelineLayout* pPipelineLayout, uint32 set, const Buffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType) = 0;
+		virtual void PushAccelerationStructureDescriptorWriteRayTracing(const PipelineLayout* pPipelineLayout, uint32 set, const AccelerationStructure* const* ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount) = 0;
+
 		virtual void SetConstantRange(const PipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) = 0;
 
 		virtual void BindIndexBuffer(const Buffer* pIndexBuffer, uint64 offset, EIndexType indexType) = 0;

@@ -8,9 +8,9 @@ namespace LambdaEngine
 	struct ShaderDesc
 	{
 		String				DebugName	= "";
-		TArray<byte>		Source;
 		String				EntryPoint	= "main";
-		FShaderStageFlags	Stage		= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+		TArray<byte>		Source;
+		FShaderStageFlags	Stage		= FShaderStageFlag::SHADER_STAGE_FLAG_NONE;
 		EShaderLang			Lang		= EShaderLang::SHADER_LANG_NONE;
 	};
 

@@ -9,10 +9,10 @@ namespace LambdaEngine
 		EType Type;
 		union Value
 		{
-			float F;
-			bool B;
-			int I;
-			char Str[64];
+			float32 Float32;
+			bool Boolean;
+			int32 Int32;
+			char String[64];
 		} Value;
 	};
 
@@ -38,7 +38,7 @@ namespace LambdaEngine
 		void Init(std::string name, bool isDebug);
 		void AddArg(Arg::EType type);
 		void AddFlag(const std::string& name, Arg::EType type);
-		
+
 		void AddDescription(const std::string& mainDescription);
 		void AddDescription(const std::string& mainDescription, std::unordered_map<std::string, std::string> flagDescriptions);
 

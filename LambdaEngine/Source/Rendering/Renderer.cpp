@@ -15,6 +15,8 @@
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Engine/EngineConfig.h"
+
 #include "Log/Log.h"
 
 namespace LambdaEngine
@@ -42,7 +44,7 @@ namespace LambdaEngine
 			swapChainDesc.BufferCount	= BACK_BUFFER_COUNT;
 			swapChainDesc.SampleCount	= 1;
 			swapChainDesc.VerticalSync	= false;
-		
+
 			s_SwapChain = RenderSystem::GetDevice()->CreateSwapChain(&swapChainDesc);
 			if (!s_SwapChain)
 			{
@@ -52,7 +54,7 @@ namespace LambdaEngine
 
 			s_ppBackBuffers			= DBG_NEW Texture*[BACK_BUFFER_COUNT];
 			s_ppBackBufferViews		= DBG_NEW TextureView*[BACK_BUFFER_COUNT];
-			
+
 			s_FrameIndex++;
 			s_ModFrameIndex = s_FrameIndex % uint64(BACK_BUFFER_COUNT);
 		}
@@ -61,9 +63,18 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, ""/*"DEMO_SKYBOX.lrg"*/, IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, EngineConfig::GetStringProperty("RenderGraphName"), IMGUI_ENABLED))
 			{
 				return false;
+			}
+
+			//Todo: Move this
+			{
+				RenderGraphShaderConstants& pointLightsConstants = renderGraphStructure.ShaderConstants["POINT_LIGHT_SHADOWMAPS"];
+				pointLightsConstants.Graphics.PixelShaderConstants.PushBack({ 2 });
+
+				RenderGraphShaderConstants& shadingConstants = renderGraphStructure.ShaderConstants["DEMO"];
+				shadingConstants.Graphics.PixelShaderConstants.PushBack({ 2 });
 			}
 
 			RenderGraphDesc renderGraphDesc = {};
@@ -76,14 +87,14 @@ namespace LambdaEngine
 			s_pRenderGraph->Init(&renderGraphDesc);
 		}
 
-		//Update RenderGraph wit 
+		//Update RenderGraph with Back Buffer
 		{
 			for (uint32 v = 0; v < BACK_BUFFER_COUNT; v++)
 			{
 				s_ppBackBuffers[v]		= s_SwapChain->GetBuffer(v);
 				s_ppBackBufferViews[v]	= s_SwapChain->GetBufferView(v);
 			}
-		
+
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName							= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
 			resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= s_ppBackBuffers;
@@ -152,7 +163,7 @@ namespace LambdaEngine
 
 		if (s_pScene != nullptr)
 		{
-			s_pScene->PrepareRender(pGraphicsCopyCommandList, pComputeCopyCommandList, s_FrameIndex);
+			s_pScene->PrepareRender(pGraphicsCopyCommandList, pComputeCopyCommandList, s_FrameIndex, s_ModFrameIndex);
 		}
 
 		s_pRenderGraph->Render(s_ModFrameIndex, s_BackBufferIndex);
@@ -175,14 +186,14 @@ namespace LambdaEngine
 
 	void Renderer::UpdateRenderGraphFromScene()
 	{
-		{
-			Buffer* pBuffer = s_pScene->GetLightsBuffer();
-			ResourceUpdateDesc resourceUpdateDesc				= {};
-			resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
+		//{
+		//	Buffer* pBuffer = s_pScene->GetLightsBuffer();
+		//	ResourceUpdateDesc resourceUpdateDesc				= {};
+		//	resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
+		//	resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
-			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
+		//	s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		//}
 
 		{
 			Buffer* pBuffer = s_pScene->GetPerFrameBuffer();
@@ -197,51 +208,6 @@ namespace LambdaEngine
 			Buffer* pBuffer = s_pScene->GetMaterialProperties();
 			ResourceUpdateDesc resourceUpdateDesc				= {};
 			resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
-
-			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Buffer* pBuffer = s_pScene->GetVertexBuffer();
-			ResourceUpdateDesc resourceUpdateDesc				= {};
-			resourceUpdateDesc.ResourceName						= SCENE_VERTEX_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
-
-			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Buffer* pBuffer = s_pScene->GetIndexBuffer();
-			ResourceUpdateDesc resourceUpdateDesc				= {};
-			resourceUpdateDesc.ResourceName						= SCENE_INDEX_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
-
-			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Buffer* pBuffer = s_pScene->GetPrimaryInstanceBuffer();
-			ResourceUpdateDesc resourceUpdateDesc				= {};
-			resourceUpdateDesc.ResourceName						= SCENE_PRIMARY_INSTANCE_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
-
-			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Buffer* pBuffer = s_pScene->GetSecondaryInstanceBuffer();
-			ResourceUpdateDesc resourceUpdateDesc				= {};
-			resourceUpdateDesc.ResourceName						= SCENE_SECONDARY_INSTANCE_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
-
-			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		}
-
-		{
-			Buffer* pBuffer = s_pScene->GetIndirectArgsBuffer();
-			ResourceUpdateDesc resourceUpdateDesc				= {};
-			resourceUpdateDesc.ResourceName						= SCENE_INDIRECT_ARGS_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &pBuffer;
 
 			s_pRenderGraph->UpdateResource(&resourceUpdateDesc);

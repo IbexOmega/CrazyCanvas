@@ -118,18 +118,18 @@ namespace LambdaEngine
 			bufferInfo.buffer	= ppVkBuffers[i]->GetBuffer();
 		}
 
-		VkWriteDescriptorSet descriptorImageWrite = {};
-		descriptorImageWrite.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorImageWrite.dstSet				= m_DescriptorSet;
-		descriptorImageWrite.dstBinding			= firstBinding;
-		descriptorImageWrite.dstArrayElement	= 0;
-		descriptorImageWrite.descriptorType		= descriptorTypeVk;
-		descriptorImageWrite.descriptorCount	= uint32_t(bufferInfos.GetSize());
-		descriptorImageWrite.pBufferInfo		= bufferInfos.GetData();
-		descriptorImageWrite.pImageInfo			= nullptr;
-		descriptorImageWrite.pTexelBufferView	= nullptr;
+		VkWriteDescriptorSet descriptorBufferWrite = {};
+		descriptorBufferWrite.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorBufferWrite.dstSet			= m_DescriptorSet;
+		descriptorBufferWrite.dstBinding		= firstBinding;
+		descriptorBufferWrite.dstArrayElement	= 0;
+		descriptorBufferWrite.descriptorType	= descriptorTypeVk;
+		descriptorBufferWrite.descriptorCount	= uint32_t(bufferInfos.GetSize());
+		descriptorBufferWrite.pBufferInfo		= bufferInfos.GetData();
+		descriptorBufferWrite.pImageInfo		= nullptr;
+		descriptorBufferWrite.pTexelBufferView	= nullptr;
 
-		vkUpdateDescriptorSets(m_pDevice->Device, 1, &descriptorImageWrite, 0, nullptr);
+		vkUpdateDescriptorSets(m_pDevice->Device, 1, &descriptorBufferWrite, 0, nullptr);
 	}
 
 	void DescriptorSetVK::WriteAccelerationStructureDescriptors(const AccelerationStructure* const * ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount)
