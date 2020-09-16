@@ -49,7 +49,6 @@ namespace LambdaEngine
         // Registers and initializes component handlers and entity subscribers
         void PerformRegistrations();
 
-        // Enqueues an entity deletion
         void PerformEntityDeletions();
 
         void AddRegistryPage();

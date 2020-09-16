@@ -28,7 +28,7 @@ namespace LambdaEngine
 		void EntityDeleted(Entity entity);
 
 		template<typename Comp>
-		bool HasType();
+		bool HasType() const;
 
 		template<typename Comp>
 		ComponentArray<Comp>* GetArray();
@@ -89,7 +89,7 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
-	inline bool ComponentStorage::HasType()
+	inline bool ComponentStorage::HasType() const
 	{
 		return m_CompTypeToArrayMap.find(Comp::s_TID) != m_CompTypeToArrayMap.end();
 	}
