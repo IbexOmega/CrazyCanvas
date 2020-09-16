@@ -133,9 +133,10 @@ namespace LambdaEngine
 	{
 		m_TimeSinceUpdate += delta.AsSeconds();
 
-		if (m_TimeSinceUpdate > 1 / 60.0f)
+		if (m_TimeSinceUpdate > 1 / m_UpdateFrequency)
 		{
 			CommonApplication::Get()->GetPlatformApplication()->QueryCPUStatistics(&m_CPUStat);
+			m_TimeSinceUpdate = 0.f;
 		}
 		ImGui::BulletText("FPS: %f", 1.0f / delta.AsSeconds());
 		ImGui::BulletText("Frametime (ms): %f", delta.AsMilliSeconds());
@@ -154,10 +155,17 @@ namespace LambdaEngine
 			if (itemSelected == 2) { byteDivider = 1024.f * 1024.f; }
 			if (itemSelected == 3) { byteDivider = 1024.f * 1024.f * 1024.f; }
 
+			ImGui::SliderFloat("Update frequency (per second)", &m_UpdateFrequency, 0.1f, 20.0f, "%.2f");
+
 			float32 percentage = (float64)(m_CPUStat.PhysicalMemoryUsage / (float64)m_CPUStat.PhysicalMemoryAvailable);
 			char buf[64];
 			sprintf(buf, "%.3f/%.3f (%s)", (float64)m_CPUStat.PhysicalMemoryUsage / byteDivider, (float64)m_CPUStat.PhysicalMemoryAvailable / byteDivider, items[itemSelected]);
+			ImGui::Text("Memory usage for process");
 			ImGui::ProgressBar(percentage, ImVec2(-1.0f, 0.0f), buf);
+			ImGui::Text("Peak memory usage: %.3f (%s)", m_CPUStat.PhysicalPeakMemoryUsage / byteDivider, items[itemSelected]);
+			ImGui::Text("CPU Usage for process");
+			sprintf(buf, "%.3f%%", m_CPUStat.CPUPercentage);
+			ImGui::ProgressBar(m_CPUStat.CPUPercentage / 100.f, ImVec2(-1.0f, 0.0f), buf);
 
 			ImGui::Dummy(ImVec2(0.0f, 20.0f));
 			ImGui::Unindent(10.0f);

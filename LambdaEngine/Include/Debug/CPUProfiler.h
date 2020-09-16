@@ -93,5 +93,6 @@ namespace LambdaEngine
 		uint64_t m_StartTime = 0;
 		float64 m_TimeSinceUpdate = 0.0f;
 		CPUStatistics m_CPUStat = {};
+		float32 m_UpdateFrequency = 1.0f;
 	};
 }

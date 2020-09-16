@@ -31,6 +31,7 @@ namespace LambdaEngine
 		uint64 PhysicalMemoryAvailable	= 0;
 		uint64 PhysicalMemoryUsage		= 0;
 		uint64 PhysicalPeakMemoryUsage	= 0;
+		float64 CPUPercentage			= 0.0f;
 	};
 
 	/*
