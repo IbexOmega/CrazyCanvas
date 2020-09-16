@@ -29,12 +29,15 @@ namespace LambdaEngine
 
         Entity CreateEntity() { return m_EntityRegistry.CreateEntity(); }
         
+        // Add a component to a specific entity. 
         template<typename Comp>
         Comp& AddComponent(Entity entity, Comp component);
 
+        // Remove a component from a specific entity.
         template<typename Comp>
         bool RemoveComponent(Entity entity);
 
+        // Remove a specific entity.
         void RemoveEntity(Entity entity);
 
         void ScheduleJobASAP(const Job& job);
