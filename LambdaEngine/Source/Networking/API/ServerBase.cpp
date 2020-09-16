@@ -121,6 +121,13 @@ namespace LambdaEngine
 		{
 			return pIterator->second;
 		}
+
+		for (uint32 i = 0; i < m_ClientsToAdd.GetSize(); i++)
+		{
+			if (m_ClientsToAdd[i]->GetEndPoint() == endPoint)
+				return m_ClientsToAdd[i];
+		}
+
 		return nullptr;
 	}
 

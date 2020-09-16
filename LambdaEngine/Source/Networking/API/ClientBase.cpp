@@ -176,12 +176,13 @@ namespace LambdaEngine
 		pPacketManager->QueryBegin(GetTransceiver(), packets);
 		for (NetworkSegment* pPacket : packets)
 		{
-			HandleReceivedPacket(pPacket);
+			if (!HandleReceivedPacket(pPacket))
+				break;
 		}
 		pPacketManager->QueryEnd(packets);
 	}
 
-	void ClientBase::HandleReceivedPacket(NetworkSegment* pPacket)
+	bool ClientBase::HandleReceivedPacket(NetworkSegment* pPacket)
 	{
 		uint16 packetType = pPacket->GetType();
 
@@ -210,12 +211,14 @@ namespace LambdaEngine
 		{
 			m_SendDisconnectPacket = false;
 			Disconnect("Disconnected By Remote");
+			return false;
 		}
 		else if (packetType == NetworkSegment::TYPE_SERVER_FULL)
 		{
 			m_SendDisconnectPacket = false;
 			m_pHandler->OnServerFull(this);
 			Disconnect("Server Full");
+			return false;
 		}
 		else if (packetType == NetworkSegment::TYPE_PING)
 		{
@@ -225,6 +228,7 @@ namespace LambdaEngine
 		{
 			m_pHandler->OnPacketReceived(this, pPacket);
 		}
+		return true;
 	}
 
 	bool ClientBase::OnThreadsStarted(std::string& reason)
