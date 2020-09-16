@@ -122,7 +122,6 @@ namespace LambdaEngine
 			NetworkSegment* packetDuplicate = pair.second->GetFreePacket(pPacket->GetType());
 			pPacket->DeepCopy(packetDuplicate);
 
-			// packetDuplicate = 
 			if (!pair.second->SendReliable(packetDuplicate, nullptr))
 				return false;
 		}
@@ -204,7 +203,6 @@ namespace LambdaEngine
 
 		if (!m_ClientsToAdd.IsEmpty() || !m_ClientsToRemove.IsEmpty())
 		{
-			std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
 			for (uint32 i = 0; i < m_ClientsToAdd.GetSize(); i++)
 			{
 				LOG_INFO("[ServerBase]: Client Registered");
@@ -218,6 +216,7 @@ namespace LambdaEngine
 				m_ClientsToRemove[i]->OnTerminationApproved();
 			}
 
+			std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
 			m_ClientsToAdd.Clear();
 			m_ClientsToRemove.Clear();
 		}

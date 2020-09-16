@@ -151,7 +151,7 @@ namespace LambdaEngine
 
 	bool ClientRemoteBase::SendReliableBroadcast(NetworkSegment* packet, IPacketListener* listener)
 	{
-		if (!m_pServer->BroadcastReliable(packet, listener))
+		if (!m_pServer->SendReliableBroadcast(packet, listener))
 		{
 			LOG_WARNING("[ClientRemoteBase]: Can not broadcast packet");
 			return false;
@@ -215,11 +215,7 @@ namespace LambdaEngine
 						}
 					}
 				}
-				else if (pPacket->GetType() == NetworkSegment::Type::TYPE_BROADCAST)
-				{
-					LOG_WARNING("RECIEVED BROADCAST");
-					break;
-				}
+
 			}
 
 			for (NetworkSegment* pPacket : packets)
