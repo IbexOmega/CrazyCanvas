@@ -66,7 +66,7 @@ namespace LambdaEngine
 
 	void NetworkDiscovery::OnDisconnected(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void NetworkDiscovery::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
