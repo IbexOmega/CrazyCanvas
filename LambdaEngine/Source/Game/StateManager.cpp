@@ -16,13 +16,13 @@ namespace LambdaEngine
     {
         while (!m_StatesToDelete.empty())
         {
-            delete m_StatesToDelete.front();
+            SAFEDELETE(m_StatesToDelete.front());
             m_StatesToDelete.pop();
         }
 
         while (!m_States.empty())
         {
-            delete m_States.top();
+            SAFEDELETE(m_States.top());
             m_States.pop();
         }
     }
@@ -61,7 +61,7 @@ namespace LambdaEngine
                 m_States.push(m_pEnqueuedState);
                 break;
             case STATE_TRANSITION::POP:
-                delete m_States.top();
+                SAFEDELETE(m_States.top());
                 m_pECS->DeleteTopRegistryPage();
                 m_States.pop();
 

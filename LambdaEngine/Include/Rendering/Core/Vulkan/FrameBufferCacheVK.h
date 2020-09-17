@@ -13,6 +13,9 @@ namespace LambdaEngine
 {
 	class GraphicsDeviceVK;
 
+	/*
+	* FrameBufferCacheKey
+	*/
 	struct FrameBufferCacheKey
 	{
 		VkImageView		ColorAttachmentsViews[MAX_COLOR_ATTACHMENTS];
@@ -79,6 +82,9 @@ namespace LambdaEngine
 		}
 	};
 
+	/*
+	* FrameBufferCacheKeyHasher
+	*/
 	struct FrameBufferCacheKeyHasher
 	{
 		size_t operator()(const FrameBufferCacheKey& key) const
@@ -87,6 +93,9 @@ namespace LambdaEngine
 		}
 	};
 
+	/*
+	* FrameBufferCacheVK
+	*/
 	class FrameBufferCacheVK
 	{
 		using FrameBufferMap		= std::unordered_map<FrameBufferCacheKey, VkFramebuffer, FrameBufferCacheKeyHasher>;

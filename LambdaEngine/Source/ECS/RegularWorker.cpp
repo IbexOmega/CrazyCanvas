@@ -5,21 +5,17 @@
 
 namespace LambdaEngine
 {
-    RegularWorker::RegularWorker(ECSCore* pECS)
-        :m_pECS(pECS),
-        m_Phase(UINT32_MAX),
-        m_JobID(UINT32_MAX)
-    {}
-
     RegularWorker::~RegularWorker()
     {
-        m_pECS->DescheduleRegularJob(m_Phase, m_JobID);
+        ECSCore* pECS = ECSCore::GetInstance();
+        if (pECS)
+            pECS->DescheduleRegularJob(m_Phase, m_JobID);
     }
 
     void RegularWorker::ScheduleRegularWork(const Job& job, uint32 phase)
     {
         m_Phase = phase;
-        m_JobID = m_pECS->ScheduleRegularJob(job, phase);
+        m_JobID = ECSCore::GetInstance()->ScheduleRegularJob(job, phase);
     }
 
     TArray<ComponentAccess> RegularWorker::GetUniqueComponentAccesses(const EntitySubscriberRegistration& subscriberRegistration)

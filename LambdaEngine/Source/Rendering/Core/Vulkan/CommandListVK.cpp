@@ -7,6 +7,8 @@
 #include "Rendering/Core/Vulkan/GraphicsDeviceVK.h"
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/TextureVK.h"
+#include "Rendering/Core/Vulkan/TextureViewVK.h"
+#include "Rendering/Core/Vulkan/SamplerVK.h"
 #include "Rendering/Core/Vulkan/ComputePipelineStateVK.h"
 #include "Rendering/Core/Vulkan/GraphicsPipelineStateVK.h"
 #include "Rendering/Core/Vulkan/RayTracingPipelineStateVK.h"
@@ -98,7 +100,7 @@ namespace LambdaEngine
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.pNext = nullptr;
 		beginInfo.flags	= 0;
-		if (m_Desc.Flags & FCommandListFlags::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT)
+		if (m_Desc.Flags & FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT)
 		{
 			beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 		}
@@ -186,7 +188,7 @@ namespace LambdaEngine
 		renderPassInfo.clearValueCount		= pBeginDesc->ClearColorCount;
 
 		VkSubpassContents subpassContent = VK_SUBPASS_CONTENTS_INLINE;
-		if (pBeginDesc->Flags & FRenderPassBeginFlags::RENDER_PASS_BEGIN_FLAG_EXECUTE_SECONDARY)
+		if (pBeginDesc->Flags & FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_EXECUTE_SECONDARY)
 		{
 			subpassContent = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
 		}
@@ -233,7 +235,7 @@ namespace LambdaEngine
 
 		//Extra Flags
 		{
-			if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 			{
 				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 			}
@@ -313,7 +315,7 @@ namespace LambdaEngine
 
 		//Extra Flags
 		{
-			if (pBuildDesc->Flags & FAccelerationStructureFlags::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 			{
 				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 			}
@@ -497,7 +499,7 @@ namespace LambdaEngine
 			m_ImageBarriers[i].srcAccessMask					= ConvertMemoryAccessFlags(barrier.SrcMemoryAccessFlags);
 			m_ImageBarriers[i].dstAccessMask					= ConvertMemoryAccessFlags(barrier.DstMemoryAccessFlags);
 
-			if (barrier.TextureFlags == FTextureFlags::TEXTURE_FLAG_DEPTH_STENCIL)
+			if (barrier.TextureFlags == FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL)
 			{
 				m_ImageBarriers[i].subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 			}
@@ -607,10 +609,10 @@ namespace LambdaEngine
 			textureBarrier.MiplevelCount		= desc.Miplevels;
 			textureBarrier.ArrayCount			= desc.ArrayCount;
 			textureBarrier.SrcMemoryAccessFlags = 0;
-			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 			textureBarrier.StateBefore			= stateBefore;
 			textureBarrier.StateAfter			= ETextureState::TEXTURE_STATE_COPY_DST;
-			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
+			PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 		}
 
 		VkImage		imageVk				= pVkTexture->GetImage();
@@ -625,9 +627,9 @@ namespace LambdaEngine
 			textureBarrier.ArrayCount			= 1;
 			textureBarrier.StateBefore			= ETextureState::TEXTURE_STATE_COPY_DST;
 			textureBarrier.StateAfter			= ETextureState::TEXTURE_STATE_COPY_SRC;
-			textureBarrier.SrcMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlags::MEMORY_ACCESS_FLAG_MEMORY_READ;
-			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
+			textureBarrier.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 
 			VkImageBlit blit = {};
 			blit.srcOffsets[0]					= { 0, 0, 0 };
@@ -649,7 +651,7 @@ namespace LambdaEngine
 		}
 
 		textureBarrier.Miplevel = miplevelCount - 1;
-		PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
+		PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 
 		if (stateAfter != ETextureState::TEXTURE_STATE_COPY_SRC)
 		{
@@ -658,7 +660,7 @@ namespace LambdaEngine
 			textureBarrier.ArrayCount		= desc.ArrayCount;
 			textureBarrier.StateBefore		= ETextureState::TEXTURE_STATE_COPY_SRC;
 			textureBarrier.StateAfter		= stateAfter;
-			PipelineTextureBarriers(FPipelineStageFlags::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlags::PIPELINE_STAGE_FLAG_BOTTOM, &textureBarrier, 1);
+			PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM, &textureBarrier, 1);
 		}
 	}
 
@@ -692,6 +694,75 @@ namespace LambdaEngine
 		}
 		
 		vkCmdSetScissor(m_CommandList, firstScissor, scissorCount, m_ScissorRects);
+	}
+
+	void CommandListVK::PushTextureDescriptorWriteGraphics(const PipelineLayout* pPipelineLayout, uint32 set, const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	{
+		VALIDATE(ppTextures != nullptr);
+
+		PushTextureDescriptorWrite(VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineLayout, set, ppTextures, ppSamplers, textureState, firstBinding, descriptorCount, descriptorType);
+	}
+
+	void CommandListVK::PushBufferDescriptorWriteGraphics(const PipelineLayout* pPipelineLayout, uint32 set, const Buffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	{
+		VALIDATE(ppBuffers	!= nullptr);
+		VALIDATE(pOffsets	!= nullptr);
+		VALIDATE(pSizes		!= nullptr);
+
+		PushBufferDescriptorWrite(VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineLayout, set, ppBuffers, pOffsets, pSizes, firstBinding, descriptorCount, descriptorType);
+	}
+
+	void CommandListVK::PushAccelerationStructureDescriptorWriteGraphics(const PipelineLayout* pPipelineLayout, uint32 set, const AccelerationStructure* const* ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount)
+	{
+		VALIDATE(ppAccelerationStructures != nullptr);
+
+		PushAccelerationStructureDescriptorWrite(VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineLayout, set, ppAccelerationStructures, firstBinding, descriptorCount);
+	}
+
+	void CommandListVK::PushTextureDescriptorWriteCompute(const PipelineLayout* pPipelineLayout, uint32 set, const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	{
+		VALIDATE(ppTextures != nullptr);
+
+		PushTextureDescriptorWrite(VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineLayout, set, ppTextures, ppSamplers, textureState, firstBinding, descriptorCount, descriptorType);
+	}
+
+	void CommandListVK::PushBufferDescriptorWriteCompute(const PipelineLayout* pPipelineLayout, uint32 set, const Buffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	{
+		VALIDATE(ppBuffers	!= nullptr);
+		VALIDATE(pOffsets	!= nullptr);
+		VALIDATE(pSizes		!= nullptr);
+
+		PushBufferDescriptorWrite(VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineLayout, set, ppBuffers, pOffsets, pSizes, firstBinding, descriptorCount, descriptorType);
+	}
+
+	void CommandListVK::PushAccelerationStructureDescriptorWriteCompute(const PipelineLayout* pPipelineLayout, uint32 set, const AccelerationStructure* const* ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount)
+	{
+		VALIDATE(ppAccelerationStructures != nullptr);
+
+		PushAccelerationStructureDescriptorWrite(VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineLayout, set, ppAccelerationStructures, firstBinding, descriptorCount);
+	}
+
+	void CommandListVK::PushTextureDescriptorWriteRayTracing(const PipelineLayout* pPipelineLayout, uint32 set, const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	{
+		VALIDATE(ppTextures != nullptr);
+
+		PushTextureDescriptorWrite(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pPipelineLayout, set, ppTextures, ppSamplers, textureState, firstBinding, descriptorCount, descriptorType);
+	}
+
+	void CommandListVK::PushBufferDescriptorWriteRayTracing(const PipelineLayout* pPipelineLayout, uint32 set, const Buffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	{
+		VALIDATE(ppBuffers	!= nullptr);
+		VALIDATE(pOffsets	!= nullptr);
+		VALIDATE(pSizes		!= nullptr);
+
+		PushBufferDescriptorWrite(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pPipelineLayout, set, ppBuffers, pOffsets, pSizes, firstBinding, descriptorCount, descriptorType);
+	}
+
+	void CommandListVK::PushAccelerationStructureDescriptorWriteRayTracing(const PipelineLayout* pPipelineLayout, uint32 set, const AccelerationStructure* const* ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount)
+	{
+		VALIDATE(ppAccelerationStructures != nullptr);
+
+		PushAccelerationStructureDescriptorWrite(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pPipelineLayout, set, ppAccelerationStructures, firstBinding, descriptorCount);
 	}
 
 	void CommandListVK::SetConstantRange(const PipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset)
@@ -925,5 +996,102 @@ namespace LambdaEngine
 
 		VkDescriptorSet descriptorSet = pVkDescriptorSet->GetDescriptorSet();
 		vkCmdBindDescriptorSets(m_CommandList, bindPoint, pVkPipelineLayout->GetPipelineLayout(), setIndex, 1, &descriptorSet, 0, nullptr);
+	}
+
+	void CommandListVK::PushTextureDescriptorWrite(VkPipelineBindPoint bindPoint, const PipelineLayout* pPipelineLayout, uint32 set, const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	{
+		const TextureViewVK* const* ppVkTextureViews	= reinterpret_cast<const TextureViewVK* const*>(ppTextures);
+		const SamplerVK* const*		ppVkSamplers		= reinterpret_cast<const SamplerVK* const*>(ppSamplers);
+
+		VkDescriptorType descriptorTypeVk = ConvertDescriptorType(descriptorType);
+		
+		VkImageLayout imageLayout = ConvertTextureState(textureState);
+
+		TArray<VkDescriptorImageInfo> imageInfos(descriptorCount);
+		for (uint32_t i = 0; i < descriptorCount; i++)
+		{
+			VkDescriptorImageInfo& imageInfo = imageInfos[i];
+			imageInfo.imageLayout = imageLayout;
+
+			VALIDATE(ppVkTextureViews[i] != nullptr);
+			imageInfo.imageView	= ppVkTextureViews[i]->GetImageView();
+			
+			if (descriptorTypeVk == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+			{
+				VALIDATE(ppVkSamplers		!= nullptr);
+				VALIDATE(ppVkSamplers[i]	!= nullptr);
+				imageInfo.sampler = ppVkSamplers[i]->GetSampler();
+			}
+		}
+
+		VkWriteDescriptorSet descriptorImageWrite = {};
+		descriptorImageWrite.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorImageWrite.dstBinding			= firstBinding;
+		descriptorImageWrite.dstArrayElement	= 0;
+		descriptorImageWrite.descriptorType		= descriptorTypeVk;
+		descriptorImageWrite.pBufferInfo		= nullptr;
+		descriptorImageWrite.descriptorCount	= uint32_t(imageInfos.GetSize());
+		descriptorImageWrite.pImageInfo			= imageInfos.GetData();
+		descriptorImageWrite.pTexelBufferView	= nullptr;
+
+		m_pDevice->vkCmdPushDescriptorSetKHR(m_CommandList, bindPoint, reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout)->GetPipelineLayout(), set, 1, & descriptorImageWrite);
+	}
+
+	void CommandListVK::PushBufferDescriptorWrite(VkPipelineBindPoint bindPoint, const PipelineLayout* pPipelineLayout, uint32 set, const Buffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	{
+		const BufferVK* const*	ppVkBuffers			= reinterpret_cast<const BufferVK* const*>(ppBuffers);
+		VkDescriptorType		descriptorTypeVk	= ConvertDescriptorType(descriptorType);
+
+		TArray<VkDescriptorBufferInfo> bufferInfos(descriptorCount);
+		for (uint32_t i = 0; i < descriptorCount; i++)
+		{
+			VkDescriptorBufferInfo& bufferInfo = bufferInfos[i];
+			bufferInfo.offset		= pOffsets[i];
+			bufferInfo.range		= pSizes[i];
+
+			VALIDATE(ppVkBuffers[i] != nullptr);
+			bufferInfo.buffer	= ppVkBuffers[i]->GetBuffer();
+		}
+
+		VkWriteDescriptorSet descriptorBufferWrite = {};
+		descriptorBufferWrite.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorBufferWrite.dstBinding		= firstBinding;
+		descriptorBufferWrite.dstArrayElement	= 0;
+		descriptorBufferWrite.descriptorType	= descriptorTypeVk;
+		descriptorBufferWrite.descriptorCount	= uint32_t(bufferInfos.GetSize());
+		descriptorBufferWrite.pBufferInfo		= bufferInfos.GetData();
+		descriptorBufferWrite.pImageInfo		= nullptr;
+		descriptorBufferWrite.pTexelBufferView	= nullptr;
+
+		m_pDevice->vkCmdPushDescriptorSetKHR(m_CommandList, bindPoint, reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout)->GetPipelineLayout(), set, 1, &descriptorBufferWrite);
+	}
+
+	void CommandListVK::PushAccelerationStructureDescriptorWrite(VkPipelineBindPoint bindPoint, const PipelineLayout* pPipelineLayout, uint32 set, const AccelerationStructure* const* ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount)
+	{		
+		TArray<VkAccelerationStructureKHR> accelerationStructures(descriptorCount);
+		for (uint32_t i = 0; i < descriptorCount; i++)
+		{
+			const AccelerationStructureVK* pAccelerationStructureVk = reinterpret_cast<const AccelerationStructureVK*>(ppAccelerationStructures[i]);
+
+			VALIDATE(pAccelerationStructureVk != nullptr);
+			accelerationStructures[i] = pAccelerationStructureVk->GetAccelerationStructure();
+		}
+		
+		VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo = {};
+		descriptorAccelerationStructureInfo.sType                       = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+		descriptorAccelerationStructureInfo.accelerationStructureCount  = descriptorCount;
+		descriptorAccelerationStructureInfo.pAccelerationStructures     = accelerationStructures.GetData();
+
+		VkWriteDescriptorSet accelerationStructureWrite = {};
+		accelerationStructureWrite.sType			= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		accelerationStructureWrite.pNext			= &descriptorAccelerationStructureInfo;
+		accelerationStructureWrite.dstBinding		= firstBinding;
+		accelerationStructureWrite.descriptorCount	= 1;
+		accelerationStructureWrite.descriptorType	= VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		accelerationStructureWrite.pBufferInfo		= nullptr;
+		accelerationStructureWrite.pImageInfo		= nullptr;
+		accelerationStructureWrite.pTexelBufferView	= nullptr;
+
+		m_pDevice->vkCmdPushDescriptorSetKHR(m_CommandList, bindPoint, reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout)->GetPipelineLayout(), set, 1, &accelerationStructureWrite);
 	}
 }

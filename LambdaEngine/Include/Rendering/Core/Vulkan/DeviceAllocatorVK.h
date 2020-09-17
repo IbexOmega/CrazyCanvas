@@ -3,7 +3,6 @@
 
 #include "Containers/TArray.h"
 
-#include "Rendering/Core/API/DeviceAllocator.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
 #include "Vulkan.h"
@@ -17,26 +16,27 @@ namespace LambdaEngine
 
 	struct AllocationVK
 	{
-		DeviceMemoryBlockVK*	pBlock = nullptr;
-		VkDeviceMemory			Memory = VK_NULL_HANDLE;
-		uint64					Offset = 0;
+		DeviceMemoryBlockVK* pBlock = nullptr;
+		VkDeviceMemory Memory = VK_NULL_HANDLE;
+		uint64 Offset = 0;
+		class DeviceAllocatorVK* pAllocator = nullptr;
 	};
 
-	class DeviceAllocatorVK : public TDeviceChildBase<GraphicsDeviceVK, DeviceAllocator>
+	class DeviceAllocatorVK : public TDeviceChildBase<GraphicsDeviceVK, DeviceChild>
 	{
-		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, DeviceAllocator>;
+		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, DeviceChild>;
 		
 	public:
 		DeviceAllocatorVK(const GraphicsDeviceVK* pDevice);
 		~DeviceAllocatorVK();
 		
-		bool Init(const DeviceAllocatorDesc* pDesc);
+		bool Init(const String& debugName, VkDeviceSize pageSize);
 		
 		bool Allocate(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex);
 		bool Free(AllocationVK* pAllocation);
 		
-		void*	Map(const AllocationVK* pAllocation);
-		void	Unmap(const AllocationVK* pAllocation);
+		void* Map(const AllocationVK* pAllocation);
+		void Unmap(const AllocationVK* pAllocation);
 
 	public:
 		// DeviceChild Interface
@@ -47,7 +47,9 @@ namespace LambdaEngine
 		
 	private:
 		TArray<DeviceMemoryPageVK*> m_Pages;
-		VkPhysicalDeviceProperties  m_DeviceProperties;
-		SpinLock                    m_Lock;
+		VkPhysicalDeviceProperties m_DeviceProperties;
+		VkDeviceSize m_PageSize;
+		String m_DebugName;
+		SpinLock m_Lock;
 	};
 }

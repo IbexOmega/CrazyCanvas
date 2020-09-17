@@ -97,8 +97,8 @@ namespace LambdaEngine
 			CommandList** ppPrimaryExecutionStage, 
 			CommandList** ppSecondaryExecutionStage)		= 0;
 
-		virtual FPipelineStageFlags GetFirstPipelineStage()	= 0;
-		virtual FPipelineStageFlags GetLastPipelineStage()	= 0;
+		virtual FPipelineStageFlag GetFirstPipelineStage()	= 0;
+		virtual FPipelineStageFlag GetLastPipelineStage()	= 0;
 
 		virtual const String& GetName() const = 0;
 	};

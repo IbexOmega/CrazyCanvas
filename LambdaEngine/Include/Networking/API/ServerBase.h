@@ -50,6 +50,7 @@ namespace LambdaEngine
         uint8 GetClientCount();
         const ServerDesc& GetDescription() const;
         const ClientMap& GetClients() const;
+        
 
     protected:
         ServerBase(const ServerDesc& desc);
@@ -70,6 +71,7 @@ namespace LambdaEngine
     private:
         IClientRemoteHandler* CreateClientHandler() const;
         void OnClientAskForTermination(ClientRemoteBase* client);
+        bool SendReliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket, IPacketListener* pListener);
 
     private:
         static void FixedTickStatic(Timestamp timestamp);

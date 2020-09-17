@@ -20,7 +20,7 @@ namespace LambdaEngine
 
 	}
 
-	void PacketManagerTCP::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned)
+	bool PacketManagerTCP::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned)
 	{
 		bool hasReliableSegment = false;
 		TArray<NetworkSegment*> packetsToFree;
@@ -52,6 +52,7 @@ namespace LambdaEngine
 		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
 			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment()->SetType(NetworkSegment::TYPE_NETWORK_ACK));
 #endif
+		return false;
 	}
 
 

@@ -10,9 +10,8 @@
 
 #include "Resources/ResourceManager.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/ImGuiRenderer.h"
-#include "Rendering/Renderer.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraphEditor.h"
 #include "Rendering/RenderGraphSerializer.h"
@@ -35,8 +34,11 @@
 
 #include "Engine/EngineConfig.h"
 
-#include "Game/Scene.h"
 #include "Game/GameConsole.h"
+
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/StateManager.h"
+#include "States/SandboxState.h"
 
 #include "Time/API/Clock.h"
 
@@ -76,291 +78,29 @@ Sandbox::Sandbox()
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
 	ShaderReflection shaderReflection;
-	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlags::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
-
-	m_pScene = DBG_NEW Scene(RenderSystem::GetDevice(), AudioSystem::GetDevice());
+	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
-	RenderSystem::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-
-	SceneDesc sceneDesc = { };
-	sceneDesc.Name				= "Test Scene";
-	sceneDesc.RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
-	m_pScene->Init(sceneDesc);
-
-	m_DirectionalLightAngle	= glm::half_pi<float>();
-	m_DirectionalLightStrength[0] = DEFAULT_DIR_LIGHT_R;
-	m_DirectionalLightStrength[1] = DEFAULT_DIR_LIGHT_G;
-	m_DirectionalLightStrength[2] = DEFAULT_DIR_LIGHT_B;
-	m_DirectionalLightStrength[3] = DEFAULT_DIR_LIGHT_STRENGTH;
-
-	DirectionalLight directionalLight;
-	directionalLight.Direction			= glm::vec4(glm::normalize(glm::vec3(glm::cos(m_DirectionalLightAngle), glm::sin(m_DirectionalLightAngle), 0.0f)), 0.0f);
-	directionalLight.EmittedRadiance	= glm::vec4(glm::vec3(m_DirectionalLightStrength[0], m_DirectionalLightStrength[1], m_DirectionalLightStrength[2]) * m_DirectionalLightStrength[3], 0.0f);
-
-	EScene scene = EScene::TESTING;
-
-	m_pScene->SetDirectionalLight(directionalLight);
-
-	AreaLightObject areaLight;
-	areaLight.Type = EAreaLightType::QUAD;
-	areaLight.Material = GUID_MATERIAL_DEFAULT_EMISSIVE;
-
-	if (scene == EScene::SPONZA)
-	{
-		//Lights
-		{
-			glm::vec3 position(0.0f, 6.0f, 0.0f);
-			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
-			glm::vec3 scale(1.5f);
-
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
-
-			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
-			instanceIndexAndTransform.Position		= position;
-			instanceIndexAndTransform.Rotation		= rotation;
-			instanceIndexAndTransform.Scale			= scale;
-
-			m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
-		}
-
-		//Scene
-		{
-			TArray<GameObject>	sceneGameObjects;
-			ResourceManager::LoadSceneFromFile("sponza/sponza.obj", sceneGameObjects);
-
-			glm::vec3 position(0.0f, 0.0f, 0.0f);
-			glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-			glm::vec3 scale(0.01f);
-
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
-
-			for (GameObject& gameObject : sceneGameObjects)
-			{
-				InstanceIndexAndTransform instanceIndexAndTransform;
-				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
-				instanceIndexAndTransform.Position = position;
-				instanceIndexAndTransform.Rotation = rotation;
-				instanceIndexAndTransform.Scale = scale;
-
-				m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
-			}
-		}
-	}
-	else if (scene == EScene::CORNELL)
-	{
-		//Lights
-		{
-			glm::vec3 position(0.0f, 1.95f, 0.0f);
-			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
-			glm::vec3 scale(0.2f);
-
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
-
-			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
-			instanceIndexAndTransform.Position		= position;
-			instanceIndexAndTransform.Rotation		= rotation;
-			instanceIndexAndTransform.Scale			= scale;
-
-			m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
-		}
-
-		//Scene
-		{
-			TArray<GameObject>	sceneGameObjects;
-			ResourceManager::LoadSceneFromFile("CornellBox/CornellBox-Original-No-Light.obj", sceneGameObjects);
-
-			glm::vec3 position(0.0f, 0.0f, 0.0f);
-			glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-			glm::vec3 scale(1.0f);
-
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
-
-			for (GameObject& gameObject : sceneGameObjects)
-			{
-				InstanceIndexAndTransform instanceIndexAndTransform;
-				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
-				instanceIndexAndTransform.Position = position;
-				instanceIndexAndTransform.Rotation = rotation;
-				instanceIndexAndTransform.Scale = scale;
-
-				m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
-			}
-		}
-	}
-	else if (scene == EScene::TESTING)
-	{
-		//Lights
-		{
-			glm::vec3 position(0.0f, 6.0f, 0.0f);
-			glm::vec4 rotation(1.0f, 0.0f, 0.0f, glm::pi<float>());
-			glm::vec3 scale(1.5f);
-
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
-
-			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddAreaLight(areaLight, transform);
-			instanceIndexAndTransform.Position		= position;
-			instanceIndexAndTransform.Rotation		= rotation;
-			instanceIndexAndTransform.Scale			= scale;
-
-			m_LightInstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
-		}
-
-		//Scene
-		{
-			TArray<GameObject> sceneGameObjects;
-			ResourceManager::LoadSceneFromFile("Testing/Testing.obj", sceneGameObjects);
-
-			glm::vec3 position(0.0f, 0.0f, 0.0f);
-			glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-			glm::vec3 scale(1.0f);
-
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
-
-			for (GameObject& gameObject : sceneGameObjects)
-			{
-				InstanceIndexAndTransform instanceIndexAndTransform;
-				instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(gameObject, transform);
-				instanceIndexAndTransform.Position = position;
-				instanceIndexAndTransform.Rotation = rotation;
-				instanceIndexAndTransform.Scale = scale;
-
-				m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
-			}
-		}
-
-		//Sphere Grid
-		{
-			uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
-
-			uint32 gridRadius = 5;
-
-			for (uint32 y = 0; y < gridRadius; y++)
-			{
-				float32 roughness = y / float32(gridRadius - 1);
-
-				for (uint32 x = 0; x < gridRadius; x++)
-				{
-					float32 metallic = x / float32(gridRadius - 1);
-
-					MaterialProperties materialProperties;
-					materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-					materialProperties.Roughness	= roughness;
-					materialProperties.Metallic		= metallic;
-
-					GameObject sphereGameObject = {};
-					sphereGameObject.Mesh		= sphereMeshGUID;
-					sphereGameObject.Material	= ResourceManager::LoadMaterialFromMemory(
-						"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
-						GUID_TEXTURE_DEFAULT_COLOR_MAP,
-						GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-						GUID_TEXTURE_DEFAULT_COLOR_MAP,
-						GUID_TEXTURE_DEFAULT_COLOR_MAP,
-						GUID_TEXTURE_DEFAULT_COLOR_MAP,
-						materialProperties);
-
-					glm::vec3 position(-float32(gridRadius) * 0.5f + x, 1.0f + y, 5.0f);
-					glm::vec3 scale(1.0f);
-
-					glm::mat4 transform(1.0f);
-					transform = glm::translate(transform, position);
-					transform = glm::scale(transform, scale);
-
-					InstanceIndexAndTransform instanceIndexAndTransform;
-					instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(sphereGameObject, transform);
-					instanceIndexAndTransform.Position		= position;
-					instanceIndexAndTransform.Rotation		= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-					instanceIndexAndTransform.Scale			= scale;
-
-					m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
-				}
-			}
-		}
-	}
-	else if (scene == EScene::CUBEMAP)
-	{
-		//Cube
-		{
-			TArray<GameObject> sceneGameObjects;
-			uint32 cubeMeshGUID = ResourceManager::LoadMeshFromFile("cube.obj");
-
-			glm::vec3 position(0.0f, 0.0f, 0.0f);
-			glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-			glm::vec3 scale(1.0f);
-
-			glm::mat4 transform(1.0f);
-			transform = glm::translate(transform, position);
-			transform = glm::rotate(transform, rotation.w, glm::vec3(rotation));
-			transform = glm::scale(transform, scale);
-
-			MaterialProperties materialProperties;
-			materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
-			materialProperties.Roughness = 0.1f;
-			materialProperties.Metallic = 0.1f;
-
-			GameObject sphereGameObject = {};
-			sphereGameObject.Mesh = cubeMeshGUID;
-			sphereGameObject.Material = ResourceManager::LoadMaterialFromMemory(
-				"Default r: " + std::to_string(0.1f) + " m: " + std::to_string(0.1f),
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				materialProperties);
-
-
-			InstanceIndexAndTransform instanceIndexAndTransform;
-			instanceIndexAndTransform.InstanceIndex = m_pScene->AddDynamicGameObject(sphereGameObject, transform);
-			instanceIndexAndTransform.Position = position;
-			instanceIndexAndTransform.Rotation = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-			instanceIndexAndTransform.Scale = scale;
-
-			m_InstanceIndicesAndTransforms.PushBack(instanceIndexAndTransform);
-		}
-	}
-
-
-	m_pScene->Finalize();
-	Renderer::SetScene(m_pScene);
+	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
 	m_pCamera = DBG_NEW Camera();
 
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
 	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= 90.0f;
+	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
 	cameraDesc.Width		= window->GetWidth();
 	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= 0.001f;
-	cameraDesc.FarPlane		= 1000.0f;
+	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
+	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
 
 	m_pCamera->Init(cameraDesc);
 
 	LoadRendererResources();
 
-	m_pScene->UpdateCamera(m_pCamera);
+	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(SandboxState), STATE_TRANSITION::PUSH);
+
+	RenderSystem::GetInstance().SetCamera(m_pCamera);
 
 	if (IMGUI_ENABLED)
 	{
@@ -375,7 +115,7 @@ Sandbox::Sandbox()
 	cmd1.AddArg(Arg::EType::BOOL);
 	cmd1.AddDescription("Activate/Deactivate rendergraph window.\n\t'render_graph true'");
 	GameConsole::Get().BindCommand(cmd1, [&, this](GameConsole::CallbackInput& input)->void {
-		m_RenderGraphWindow = input.Arguments.GetFront().Value.B;
+		m_RenderGraphWindow = input.Arguments.GetFront().Value.Boolean;
 		});
 
 	ConsoleCommand cmd2;
@@ -383,15 +123,31 @@ Sandbox::Sandbox()
 	cmd2.AddArg(Arg::EType::BOOL);
 	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'imgui_demo true'");
 	GameConsole::Get().BindCommand(cmd2, [&, this](GameConsole::CallbackInput& input)->void {
-		m_ShowDemoWindow = input.Arguments.GetFront().Value.B;
+		m_ShowDemoWindow = input.Arguments.GetFront().Value.Boolean;
 		});
 
 	ConsoleCommand cmd3;
-	cmd3.Init("show_debug_window", true);
+	cmd3.Init("show_debug_window", false);
 	cmd3.AddArg(Arg::EType::BOOL);
 	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'show_debug_window true'");
 	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
-		m_DebuggingWindow = input.Arguments.GetFront().Value.B;
+		m_DebuggingWindow = input.Arguments.GetFront().Value.Boolean;
+		});
+
+	ConsoleCommand showTextureCMD;
+	showTextureCMD.Init("debug_texture", true);
+	showTextureCMD.AddArg(Arg::EType::BOOL);
+	showTextureCMD.AddFlag("t", Arg::EType::STRING);
+	showTextureCMD.AddFlag("ps", Arg::EType::STRING);
+	showTextureCMD.AddDescription("Show a texture resource which is used in the RenderGraph");
+	GameConsole::Get().BindCommand(showTextureCMD, [&, this](GameConsole::CallbackInput& input)->void
+		{
+			m_ShowTextureDebuggingWindow = input.Arguments.GetFront().Value.Boolean;
+
+			auto textureNameIt				= input.Flags.find("t");
+			auto shaderNameIt				= input.Flags.find("ps");
+			m_TextureDebuggingName			= textureNameIt != input.Flags.end() ? textureNameIt->second.Arg.Value.String : "";
+			m_TextureDebuggingShaderGUID	= shaderNameIt != input.Flags.end() ? ResourceManager::GetShaderGUID(shaderNameIt->second.Arg.Value.String) : GUID_NONE;
 		});
 
 	return;
@@ -407,6 +163,8 @@ Sandbox::~Sandbox()
 	SAFEDELETE(m_pCamera);
 
 	SAFEDELETE(m_pRenderGraphEditor);
+
+	SAFEDELETE(m_pPointLightsBuffer);
 }
 
 bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
@@ -426,10 +184,10 @@ bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
 
-	if (event.Key == EKey::KEY_KEYPAD_5)
+	if (event.Key == EKey::KEY_5)
 	{
-		RenderSystem::GetGraphicsQueue()->Flush();
-		RenderSystem::GetComputeQueue()->Flush();
+		RenderAPI::GetGraphicsQueue()->Flush();
+		RenderAPI::GetComputeQueue()->Flush();
 		ResourceManager::ReloadAllShaders();
 		PipelineStateManager::ReloadPipelineStates();
 	}
@@ -451,17 +209,11 @@ void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
 
 	m_pCamera->HandleInput(delta);
 	m_pCamera->Update();
-	m_pScene->UpdateCamera(m_pCamera);
 }
 
 void Sandbox::Render(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
-
-	TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-	float32 renderWidth = (float32)mainWindow->GetWidth();
-	float32 renderHeight = (float32)mainWindow->GetHeight();
-	float32 renderAspectRatio = renderWidth / renderHeight;
 
 	if (IMGUI_ENABLED)
 	{
@@ -478,18 +230,24 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 				Profiler::Render(delta);
 			}
 
+			if (m_ShowTextureDebuggingWindow)
+			{
+				if (ImGui::Begin("Texture Debugging"))
+				{
+					if (!m_TextureDebuggingName.empty())
+					{
+						static ImGuiTexture texture = {};
+						texture.ResourceName		= m_TextureDebuggingName;
+						texture.PixelShaderGUID		= m_TextureDebuggingShaderGUID;
+
+						ImGui::Image(&texture, ImGui::GetWindowSize());
+					}
+				}
+
+				ImGui::End();
+			}
 		});
 	}
-
-	//float32 test = Random::Float32();
-
-	//PushConstantsUpdate pushConstantsUpdateTest = {};
-	//pushConstantsUpdateTest.RenderStageName		= "DEMO";
-	//pushConstantsUpdateTest.pData				= &test;
-	//pushConstantsUpdateTest.DataSize			= sizeof(float32);
-	//Renderer::GetRenderGraph()->UpdatePushConstants(&pushConstantsUpdateTest);
-
-	Renderer::Render();
 }
 
 void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
@@ -509,7 +267,7 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
 
-	Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
+	pRenderGraph->UpdateResource(&blueNoiseUpdateDesc);
 
 	GUID_Lambda cubemapTexID = ResourceManager::GetTextureGUID("Cubemap Texture");
 
@@ -522,7 +280,13 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
 	cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
 
-	Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
+	pRenderGraph->UpdateResource(&cubeTextureUpdateDesc);
+
+	ResourceUpdateDesc pointLightsBuffer = {};
+	pointLightsBuffer.ResourceName						= "POINT_LIGHTS_BUFFER";
+	pointLightsBuffer.ExternalBufferUpdate.ppBuffer		= &m_pPointLightsBuffer;
+
+	pRenderGraph->UpdateResource(&pointLightsBuffer);
 }
 
 namespace LambdaEngine
@@ -560,7 +324,7 @@ bool Sandbox::LoadRendererResources()
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
 		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
 
-		Renderer::GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
+		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
 	}
 
 	// For Skybox RenderGraph
@@ -587,10 +351,74 @@ bool Sandbox::LoadRendererResources()
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
 
-		Renderer::GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
+		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
 
-	Renderer::GetRenderGraph()->AddCreateHandler(this);
+	//Point Lights Test
+	{
+		float pointLightNearPlane	= 1.0f;
+		float pointLightFarPlane	= 25.0f;
+
+		glm::mat4 pointLightProj = glm::perspective(glm::radians(90.0f), 1.0f, pointLightNearPlane, pointLightFarPlane);
+
+		glm::vec3 pointLightPosition0 = glm::vec3(1.0f, 2.0f, 0.0f);
+		glm::vec3 pointLightPosition1 = glm::vec3(-1.0f, 2.0f, 0.0f);
+
+		PointLight pointLightsBuffer[2];
+		pointLightsBuffer[0].Position = glm::vec4(pointLightPosition0, 1.0f);
+		pointLightsBuffer[1].Position = glm::vec4(pointLightPosition1, 1.0f);
+
+		pointLightsBuffer[0].Transforms[0]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[0].Transforms[1]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[0].Transforms[2]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f));
+		pointLightsBuffer[0].Transforms[3]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f));
+		pointLightsBuffer[0].Transforms[4]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[0].Transforms[5]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+
+		pointLightsBuffer[1].Transforms[0]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[1].Transforms[1]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[1].Transforms[2]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f));
+		pointLightsBuffer[1].Transforms[3]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f));
+		pointLightsBuffer[1].Transforms[4]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+		pointLightsBuffer[1].Transforms[5]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
+
+		BufferDesc bufferDesc = {};
+		bufferDesc.DebugName		= "POINT_LIGHTS_BUFFER";
+		bufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+		bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
+		bufferDesc.SizeInBytes		= sizeof(pointLightsBuffer);
+
+		m_pPointLightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+
+		void* pMapped = m_pPointLightsBuffer->Map();
+		memcpy(pMapped, &pointLightsBuffer, sizeof(pointLightsBuffer));
+		m_pPointLightsBuffer->Unmap();
+
+		ResourceUpdateDesc pointLightsBufferUpdate = {};
+		pointLightsBufferUpdate.ResourceName						= "POINT_LIGHTS_BUFFER";
+		pointLightsBufferUpdate.ExternalBufferUpdate.ppBuffer		= &m_pPointLightsBuffer;
+
+
+		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&pointLightsBufferUpdate);
+
+		float pointLightPushConstantData[2];
+		pointLightPushConstantData[0]		= pointLightNearPlane;
+		pointLightPushConstantData[1]		= pointLightFarPlane;
+
+		PushConstantsUpdate pushConstantUpdate = {};
+		pushConstantUpdate.pData			= &pointLightPushConstantData;
+		pushConstantUpdate.DataSize			= sizeof(pointLightPushConstantData);
+
+		pushConstantUpdate.RenderStageName	= "POINT_LIGHT_SHADOWMAPS";
+		
+		RenderSystem::GetInstance().GetRenderGraph()->UpdatePushConstants(&pushConstantUpdate);
+
+		pushConstantUpdate.RenderStageName	= "DEMO";
+
+		RenderSystem::GetInstance().GetRenderGraph()->UpdatePushConstants(&pushConstantUpdate);
+	}
+
+	RenderSystem::GetInstance().GetRenderGraph()->AddCreateHandler(this);
 
 	return true;
 }

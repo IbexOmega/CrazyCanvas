@@ -2,10 +2,6 @@
 
 #include "Game/Game.h"
 
-#include "Rendering/RenderGraphTypes.h"
-#include "Rendering/RenderGraph.h"
-#include "Rendering/RenderGraphEditor.h"
-
 #include "Application/API/Events/KeyEvents.h"
 
 #include "Networking/API/IPacketListener.h"
@@ -13,8 +9,6 @@
 
 namespace LambdaEngine
 {
-	class RenderGraph;
-	class Renderer;
 	class IClient;
 	class NetworkSegment;
 	class ClientBase;
@@ -22,7 +16,6 @@ namespace LambdaEngine
 
 class Client :
 	public LambdaEngine::Game,
-	public LambdaEngine::ApplicationEventHandler,
 	public LambdaEngine::IPacketListener,
 	public LambdaEngine::IClientHandler
 {
@@ -48,11 +41,6 @@ public:
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 
 private:
-
-	LambdaEngine::RenderGraphEditor* m_pRenderGraphEditor = nullptr;
-	LambdaEngine::RenderGraph* m_pRenderGraph = nullptr;
-	LambdaEngine::Renderer* m_pRenderer = nullptr;
-	LambdaEngine::Scene* m_pScene = nullptr;
 
 	LambdaEngine::ClientBase* m_pClient;
 };

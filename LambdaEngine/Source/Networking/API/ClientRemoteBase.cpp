@@ -71,12 +71,9 @@ namespace LambdaEngine
 		{
 			if (enterCritical)
 			{
+				LOG_WARNING("[ClientRemoteBase]: Disconnecting... [%s]", reason.c_str());
 				if (m_pHandler)
-				{
-					LOG_WARNING("[ClientRemoteBase]: Disconnecting... [%s]", reason.c_str());
 					m_pHandler->OnDisconnecting(this);
-				}
-					
 
 				if (!m_DisconnectedByRemote)
 					SendDisconnect();
@@ -86,11 +83,9 @@ namespace LambdaEngine
 
 				m_State = STATE_DISCONNECTED;
 
+				LOG_INFO("[ClientRemoteBase]: Disconnected");
 				if (m_pHandler)
-				{
-					LOG_INFO("[ClientRemoteBase]: Disconnected");
 					m_pHandler->OnDisconnected(this);
-				}
 
 				return true;
 			}
@@ -141,7 +136,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ClientRemoteBase::SendReliable(NetworkSegment* packet, IPacketListener* listener)
+	bool ClientRemoteBase::SendReliable(NetworkSegment* pPacket, IPacketListener* pListener)
 	{
 		if (!IsConnected())
 		{
@@ -149,8 +144,13 @@ namespace LambdaEngine
 			return false;
 		}
 
-		GetPacketManager()->EnqueueSegmentReliable(packet, listener);
+		GetPacketManager()->EnqueueSegmentReliable(pPacket, pListener);
 		return true;
+	}
+
+	bool ClientRemoteBase::SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener)
+	{
+		return m_pServer->SendReliableBroadcast(this, pPacket, pListener);
 	}
 
 	const IPEndPoint& ClientRemoteBase::GetEndPoint() const
@@ -184,29 +184,39 @@ namespace LambdaEngine
 
 	void ClientRemoteBase::DecodeReceivedPackets()
 	{
-		TArray<NetworkSegment*> packets;
-		PacketManagerBase* pPacketManager = GetPacketManager();
-		pPacketManager->QueryBegin(GetTransceiver(), packets);
-
-		if (m_State == STATE_CONNECTING)
+		if (m_State == STATE_CONNECTING || m_State == STATE_CONNECTED)
 		{
-			for (NetworkSegment* pPacket : packets)
+			TArray<NetworkSegment*> packets;
+			PacketManagerBase* pPacketManager = GetPacketManager();
+			bool hasDiscardedResends = pPacketManager->QueryBegin(GetTransceiver(), packets);
+
+			if (m_State == STATE_CONNECTING)
 			{
-				if (pPacket->GetType() != NetworkSegment::TYPE_CONNNECT && pPacket->GetType() != NetworkSegment::TYPE_CHALLENGE)
+				if (packets.IsEmpty() && !hasDiscardedResends)
 				{
 					Disconnect("Expected Connect Packets");
-					break;
+				}
+				else
+				{
+					for (NetworkSegment* pPacket : packets)
+					{
+						if (pPacket->GetType() != NetworkSegment::TYPE_CONNNECT && pPacket->GetType() != NetworkSegment::TYPE_CHALLENGE)
+						{
+							Disconnect("Expected Connect Packets");
+							break;
+						}
+					}
 				}
 			}
-		}
 
-		for (NetworkSegment* pPacket : packets)
-		{
-			if (!HandleReceivedPacket(pPacket))
-				break;
-		}
+			for (NetworkSegment* pPacket : packets)
+			{
+				if (!HandleReceivedPacket(pPacket))
+					break;
+			}
 
-		pPacketManager->QueryEnd(packets);
+			pPacketManager->QueryEnd(packets);
+		}
 	}
 
 	void ClientRemoteBase::Tick(Timestamp delta)
@@ -245,7 +255,7 @@ namespace LambdaEngine
 	{
 		uint16 packetType = pPacket->GetType();
 
-		LOG_MESSAGE("ClientRemoteBase::HandleReceivedPacket(%s)", pPacket->ToString().c_str());
+		//LOG_MESSAGE("ClientRemoteBase::HandleReceivedPacket(%s)", pPacket->ToString().c_str());
 
 		if (packetType == NetworkSegment::TYPE_CONNNECT)
 		{

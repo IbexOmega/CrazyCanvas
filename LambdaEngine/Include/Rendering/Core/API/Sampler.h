@@ -22,7 +22,7 @@ namespace LambdaEngine
 
 	class Sampler : public DeviceChild
 	{
-		friend class RenderSystem;
+		friend class RenderAPI;
 
 	public:
 		DECL_DEVICE_INTERFACE(Sampler);

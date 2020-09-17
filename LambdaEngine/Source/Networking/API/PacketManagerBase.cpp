@@ -134,21 +134,21 @@ namespace LambdaEngine
 		m_QueueIndex = 0;
 	}
 
-	void PacketManagerBase::QueryBegin(PacketTransceiverBase* pTransceiver, TArray<NetworkSegment*>& segmentsReturned)
+	bool PacketManagerBase::QueryBegin(PacketTransceiverBase* pTransceiver, TArray<NetworkSegment*>& segmentsReturned)
 	{
 		TArray<NetworkSegment*> segments;
 		TArray<uint32> acks;
 
 		if (!pTransceiver->ReceiveEnd(&m_SegmentPool, segments, acks, &m_Statistics))
-			return;
+			return false;
 
 		segmentsReturned.Clear();
 		segmentsReturned.Reserve(segments.GetSize());
 
-		HandleAcks(acks);
-		FindSegmentsToReturn(segments, segmentsReturned);
+		//LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 
-		LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
+		HandleAcks(acks);
+		return FindSegmentsToReturn(segments, segmentsReturned);
 	}
 
 	/*

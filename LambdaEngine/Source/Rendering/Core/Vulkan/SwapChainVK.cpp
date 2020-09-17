@@ -14,7 +14,7 @@
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
 #include "Rendering/Core/Vulkan/CommandQueueVK.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
@@ -253,7 +253,7 @@ namespace LambdaEngine
 			TextureViewDesc textureViewDesc = {};
 			textureViewDesc.DebugName		= m_Desc.DebugName + " Texture View " + std::to_string(i);
 			textureViewDesc.pTexture		= m_Buffers[i];
-			textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+			textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET;
 			textureViewDesc.Format			= m_Desc.Format;
 			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 			textureViewDesc.MiplevelCount	= 1;
@@ -536,9 +536,9 @@ namespace LambdaEngine
 		m_Desc.Width	= width;
 		m_Desc.Height	= height;
 
-		RenderSystem::GetGraphicsQueue()->Flush();
-		RenderSystem::GetComputeQueue()->Flush();
-		RenderSystem::GetCopyQueue()->Flush();
+		RenderAPI::GetGraphicsQueue()->Flush();
+		RenderAPI::GetComputeQueue()->Flush();
+		RenderAPI::GetCopyQueue()->Flush();
 
 		ReleaseInternal();
 		return InitInternal();

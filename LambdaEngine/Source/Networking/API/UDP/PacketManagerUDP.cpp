@@ -33,10 +33,11 @@ namespace LambdaEngine
 		m_ReliableSegmentsReceived.clear();
 	}
 
-	void PacketManagerUDP::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned)
+	bool PacketManagerUDP::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned)
 	{
 		bool runUntangler = false;
 		bool hasReliableSegment = false;
+		bool hasDuplicateSegment = false;
 
 		TArray<NetworkSegment*> packetsToFree;
 		packetsToFree.Reserve(32);
@@ -68,6 +69,7 @@ namespace LambdaEngine
 				else																				//Reliable Packet already received before
 				{
 					packetsToFree.PushBack(pPacket);
+					hasDuplicateSegment = true;
 				}
 			}
 		}
@@ -84,6 +86,7 @@ namespace LambdaEngine
 		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
 			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment()->SetType(NetworkSegment::TYPE_NETWORK_ACK));
 #endif
+		return hasDuplicateSegment;
 	}
 
 	void PacketManagerUDP::UntangleReliableSegments(TArray<NetworkSegment*>& segmentsReturned)
@@ -97,10 +100,6 @@ namespace LambdaEngine
 				segmentsReturned.PushBack(pPacket);
 				packetsToErase.PushBack(pPacket);
 				m_Statistics.RegisterReliableSegmentReceived();
-			}
-			else
-			{
-				//break;
 			}
 		}
 

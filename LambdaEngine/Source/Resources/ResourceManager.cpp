@@ -4,7 +4,7 @@
 
 #include "Log/Log.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 
 #include <utility>
 
@@ -49,19 +49,19 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceManager::LoadSceneFromFile(const String& filename, TArray<GameObject>& result)
+	bool ResourceManager::LoadSceneFromFile(const String& filename, TArray<MeshComponent>& result)
 	{
-		TArray<GameObject> sceneLocalGameObjects;
+		TArray<MeshComponent> sceneLocalMeshComponents;
 		TArray<Mesh*> meshes;
 		TArray<Material*> materials;
 		TArray<Texture*> textures;
 
-		if (!ResourceLoader::LoadSceneFromFile(SCENE_DIR + filename, sceneLocalGameObjects, meshes, materials, textures))
+		if (!ResourceLoader::LoadSceneFromFile(SCENE_DIR + filename, sceneLocalMeshComponents, meshes, materials, textures))
 		{
 			return false;
 		}
 
-		result = sceneLocalGameObjects;
+		result = sceneLocalMeshComponents;
 		for (uint32 i = 0; i < textures.GetSize(); i++)
 		{
 			Texture* pTexture = textures[i];
@@ -92,11 +92,11 @@ namespace LambdaEngine
 		for (uint32 i = 0; i < meshes.GetSize(); i++)
 		{
 			GUID_Lambda guid = RegisterLoadedMesh("Scene Mesh " + std::to_string(i), meshes[i]);
-			for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
+			for (uint32 g = 0; g < sceneLocalMeshComponents.GetSize(); g++)
 			{
-				if (sceneLocalGameObjects[g].Mesh == i)
+				if (sceneLocalMeshComponents[g].MeshGUID == i)
 				{
-					result[g].Mesh = guid;
+					result[g].MeshGUID = guid;
 				}
 			}
 		}
@@ -104,25 +104,25 @@ namespace LambdaEngine
 		for (uint32 i = 0; i < materials.GetSize(); i++)
 		{
 			GUID_Lambda guid = RegisterLoadedMaterial("Scene Material " + std::to_string(i), materials[i]);
-			for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
+			for (uint32 g = 0; g < sceneLocalMeshComponents.GetSize(); g++)
 			{
-				if (sceneLocalGameObjects[g].Material == i)
+				if (sceneLocalMeshComponents[g].MaterialGUID == i)
 				{
-					result[g].Material = guid;
+					result[g].MaterialGUID = guid;
 				}
 			}
 		}
 
-		for (uint32 g = 0; g < sceneLocalGameObjects.GetSize(); g++)
+		for (uint32 g = 0; g < sceneLocalMeshComponents.GetSize(); g++)
 		{
-			if (sceneLocalGameObjects[g].Mesh >= meshes.GetSize())
+			if (sceneLocalMeshComponents[g].MeshGUID >= meshes.GetSize())
 			{
 				LOG_ERROR("[ResourceManager]: GameObject %u in Scene %s has no Mesh", g, filename.c_str());
 			}
 
-			if (sceneLocalGameObjects[g].Material >= materials.GetSize())
+			if (sceneLocalMeshComponents[g].MaterialGUID >= materials.GetSize())
 			{
-				result[g].Material = GUID_MATERIAL_DEFAULT;
+				result[g].MaterialGUID = GUID_MATERIAL_DEFAULT;
 				LOG_WARNING("[ResourceManager]: GameObject %u in Scene %s has no Material, default Material assigned", g, filename.c_str());
 			}
 		}
@@ -246,7 +246,7 @@ namespace LambdaEngine
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= name + " Texture View";
 		textureViewDesc.pTexture		= pTexture;
-		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= format;
 		textureViewDesc.Type			= textureDesc.ArrayCount > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 		textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
@@ -254,7 +254,7 @@ namespace LambdaEngine
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 
-		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
+		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		return guid;
 	}
@@ -288,7 +288,7 @@ namespace LambdaEngine
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= name + " Texture View";
 		textureViewDesc.pTexture		= pTexture;
-		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= format;
 		textureViewDesc.Type			= count > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
 		textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
@@ -296,7 +296,7 @@ namespace LambdaEngine
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 
-		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
+		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		return guid;
 	}
@@ -331,7 +331,7 @@ namespace LambdaEngine
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= name + " Texture View";
 		textureViewDesc.pTexture		= pTexture;
-		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= format;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 		textureViewDesc.MiplevelCount	= pTexture->GetDesc().Miplevels;
@@ -339,7 +339,7 @@ namespace LambdaEngine
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 
-		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
+		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		return guid;
 	}
@@ -573,7 +573,7 @@ namespace LambdaEngine
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= pResource->GetDesc().DebugName + " Texture View";
 		textureViewDesc.pTexture		= pResource;
-		textureViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= pResource->GetDesc().Format;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 		textureViewDesc.MiplevelCount	= pResource->GetDesc().Miplevels;
@@ -581,7 +581,7 @@ namespace LambdaEngine
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 
-		(*ppMappedTextureView) = RenderSystem::GetDevice()->CreateTextureView(&textureViewDesc);
+		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		return guid;
 	}
@@ -618,8 +618,8 @@ namespace LambdaEngine
 			byte defaultNormal[4]				= { 127, 127, 255, 0   };
 			void* pDefaultColor					= (void*)defaultColor;
 			void* pDefaultNormal				= (void*)defaultNormal;
-			Texture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
-			Texture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlags::TEXTURE_FLAG_SHADER_RESOURCE, false);
+			Texture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
+			Texture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
 
 			s_TextureNamesToGUIDs[pDefaultColorMap->GetDesc().DebugName]		= GUID_TEXTURE_DEFAULT_COLOR_MAP;
 			s_TextureNamesToGUIDs[pDefaultNormalMap->GetDesc().DebugName]	= GUID_TEXTURE_DEFAULT_NORMAL_MAP;
@@ -629,7 +629,7 @@ namespace LambdaEngine
 			TextureViewDesc defaultColorMapViewDesc = {};
 			defaultColorMapViewDesc.DebugName		= "Default Color Map View";
 			defaultColorMapViewDesc.pTexture		= pDefaultColorMap;
-			defaultColorMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			defaultColorMapViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 			defaultColorMapViewDesc.Format			= pDefaultColorMap->GetDesc().Format;
 			defaultColorMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 			defaultColorMapViewDesc.MiplevelCount	= pDefaultColorMap->GetDesc().Miplevels;
@@ -640,7 +640,7 @@ namespace LambdaEngine
 			TextureViewDesc defaultNormalMapViewDesc = {};
 			defaultNormalMapViewDesc.DebugName		= "Default Normal Map View";
 			defaultNormalMapViewDesc.pTexture		= pDefaultNormalMap;
-			defaultNormalMapViewDesc.Flags			= FTextureViewFlags::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			defaultNormalMapViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 			defaultNormalMapViewDesc.Format			= pDefaultNormalMap->GetDesc().Format;
 			defaultNormalMapViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 			defaultNormalMapViewDesc.MiplevelCount	= pDefaultNormalMap->GetDesc().Miplevels;
@@ -648,8 +648,8 @@ namespace LambdaEngine
 			defaultNormalMapViewDesc.Miplevel		= 0;
 			defaultNormalMapViewDesc.ArrayIndex		= 0;
 
-			s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= RenderSystem::GetDevice()->CreateTextureView(&defaultColorMapViewDesc);
-			s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= RenderSystem::GetDevice()->CreateTextureView(&defaultNormalMapViewDesc);
+			s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= RenderAPI::GetDevice()->CreateTextureView(&defaultColorMapViewDesc);
+			s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= RenderAPI::GetDevice()->CreateTextureView(&defaultNormalMapViewDesc);
 		}
 
 		{

@@ -1,6 +1,8 @@
 #pragma once
 #include "ResourceLoader.h"
 
+#include "Game/ECS/Components/Rendering/MeshComponent.h"
+
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
 
@@ -37,7 +39,7 @@ namespace LambdaEngine
 		struct ShaderLoadDesc
 		{
 			String				Filepath	= "";
-			FShaderStageFlags	Stage		= FShaderStageFlags::SHADER_STAGE_FLAG_NONE;
+			FShaderStageFlags	Stage		= FShaderStageFlag::SHADER_STAGE_FLAG_NONE;
 			EShaderLang			Lang		= EShaderLang::SHADER_LANG_NONE;
 			const char*			pEntryPoint	= nullptr;
 		};
@@ -53,10 +55,10 @@ namespace LambdaEngine
 		*	pGraphicsDevice - A Graphics Device
 		*	pDir - Path to the directory that holds the .obj file
 		*	filename - The name of the .obj file
-		*	result - A vector where all loaded GameObject(s) will be stored
+		*	result - A vector where all loaded MeshComponent(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const String& filename, TArray<GameObject>& result);
+		static bool LoadSceneFromFile(const String& filename, TArray<MeshComponent>& result);
 
 		/*
 		* Load a mesh from file

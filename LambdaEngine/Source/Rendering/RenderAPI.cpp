@@ -1,7 +1,6 @@
 #include "Log/Log.h"
 
-#include "Rendering/RenderSystem.h"
-#include "Rendering/Renderer.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 
 #include "Rendering/Core/API/CommandQueue.h"
@@ -18,22 +17,21 @@
 #include "Rendering/Core/API/DescriptorHeap.h"
 #include "Rendering/Core/API/DescriptorSet.h"
 #include "Rendering/Core/API/AccelerationStructure.h"
-#include "Rendering/Core/API/DeviceAllocator.h"
 
 #include "Application/API/CommonApplication.h"
 
 namespace LambdaEngine
 {
-	GraphicsDevice*				RenderSystem::s_pGraphicsDevice = nullptr;
+	GraphicsDevice*				RenderAPI::s_pGraphicsDevice = nullptr;
 	
-	TSharedRef<CommandQueue>	RenderSystem::s_GraphicsQueue	= nullptr;
-	TSharedRef<CommandQueue>	RenderSystem::s_ComputeQueue	= nullptr;
-	TSharedRef<CommandQueue>	RenderSystem::s_CopyQueue		= nullptr;
+	TSharedRef<CommandQueue>	RenderAPI::s_GraphicsQueue	= nullptr;
+	TSharedRef<CommandQueue>	RenderAPI::s_ComputeQueue	= nullptr;
+	TSharedRef<CommandQueue>	RenderAPI::s_CopyQueue		= nullptr;
 
 	/*
-	* RenderSystem
+	* RenderAPI
 	*/
-	bool RenderSystem::Init()
+	bool RenderAPI::Init()
 	{
 		GraphicsDeviceDesc deviceDesc = { };
 #ifdef LAMBDA_DEVELOPMENT
@@ -79,7 +77,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderSystem::Release()
+	bool RenderAPI::Release()
 	{
 		s_GraphicsQueue->Flush();
 		s_ComputeQueue->Flush();
@@ -92,7 +90,7 @@ namespace LambdaEngine
 		return true;
 	}
 	
-	void RenderSystem::Tick()
+	void RenderAPI::Tick()
 	{
 	}
 }

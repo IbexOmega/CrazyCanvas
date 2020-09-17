@@ -39,7 +39,7 @@ namespace LambdaEngine
 	constexpr ValidationLayer REQUIRED_VALIDATION_LAYERS[]
 	{
 		ValidationLayer("REQ_V_L_BASE"),
-		ValidationLayer("VK_LAYER_KHRONOS_validation")
+		ValidationLayer("VK_LAYER_KHRONOS_validation"),
 		//ValidationLayer("VK_LAYER_RENDERDOC_Capture")
 	};
 
@@ -85,6 +85,8 @@ namespace LambdaEngine
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
 		Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
+		Extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME),
+		Extension(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME),
 		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
@@ -106,6 +108,14 @@ namespace LambdaEngine
 	GraphicsDeviceVK::~GraphicsDeviceVK()
 	{
 		SAFEDELETE(m_pFrameBufferCache);
+
+		SAFERELEASE(m_pAccelerationStructureAllocator);
+		SAFERELEASE(m_pTextureAllocator);
+		SAFERELEASE(m_pVBAllocator);
+		SAFERELEASE(m_pIBAllocator);
+		SAFERELEASE(m_pCBAllocator);
+		SAFERELEASE(m_pUAAllocator);
+		SAFERELEASE(m_pBufferAllocator);
 
 		if (Device != VK_NULL_HANDLE)
 		{
@@ -152,7 +162,156 @@ namespace LambdaEngine
 
 		m_pFrameBufferCache = DBG_NEW FrameBufferCacheVK(this);
 
+		if (!InitAllocators())
+		{
+			LOG_ERROR("[GraphicsDeviceVK]: Could not create deviceallocators!");
+			return false;
+		}
+		else
+		{
+			LOG_MESSAGE("[GraphicsDeviceVK]: Created vulkan allocators!");
+		}
+
 		return true;
+	}
+
+	bool GraphicsDeviceVK::AllocateBufferMemory(AllocationVK* pAllocation, FBufferFlags bufferFlags, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const
+	{
+		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
+		if (alignedSize < LARGE_BUFFER_ALLOCATION_SIZE)
+		{
+			// Mask out buffer flags that does not describe a type
+			const FBufferFlags discardedFlagsMask = ~(FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_COPY_SRC);
+			const FBufferFlags flags = bufferFlags & discardedFlagsMask;
+
+			DeviceAllocatorVK* pAllocator = nullptr;
+			if (flags == FBufferFlag::BUFFER_FLAG_VERTEX_BUFFER)
+			{
+				pAllocator = m_pVBAllocator;
+			}
+			else if (flags == FBufferFlag::BUFFER_FLAG_INDEX_BUFFER)
+			{
+				pAllocator = m_pIBAllocator;
+			}
+			else if (flags == FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER)
+			{
+				pAllocator = m_pUAAllocator;
+			}
+			else if (flags == FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER)
+			{
+				pAllocator = m_pCBAllocator;
+			}
+			else
+			{
+				pAllocator = m_pBufferAllocator;
+			}
+
+			VALIDATE(pAllocator != nullptr);
+			return pAllocator->Allocate(pAllocation, sizeInBytes, alignment, memoryIndex);
+		}
+		else
+		{
+			pAllocation->Offset = 0;
+			pAllocation->pAllocator = nullptr;
+			pAllocation->pBlock = nullptr;
+			return (AllocateMemory(&pAllocation->Memory, sizeInBytes, memoryIndex) == VK_SUCCESS);
+		}
+	}
+
+	bool GraphicsDeviceVK::AllocateAccelerationStructureMemory(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const
+	{
+		VALIDATE(m_pTextureAllocator != nullptr);
+		VALIDATE(pAllocation != nullptr);
+
+		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
+		if (alignedSize >= LARGE_ACCELERATION_STRUCTURE_ALLOCATION_SIZE)
+		{
+			pAllocation->Offset = 0;
+			pAllocation->pAllocator = nullptr;
+			pAllocation->pBlock = nullptr;
+			return (AllocateMemory(&pAllocation->Memory, sizeInBytes, memoryIndex) == VK_SUCCESS);
+		}
+		else
+		{
+			return m_pAccelerationStructureAllocator->Allocate(pAllocation, sizeInBytes, alignment, memoryIndex);
+		}
+	}
+
+	bool GraphicsDeviceVK::AllocateTextureMemory(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const
+	{
+		VALIDATE(m_pTextureAllocator != nullptr);
+		VALIDATE(pAllocation != nullptr);
+		
+		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
+		if (alignedSize >= LARGE_TEXTURE_ALLOCATION_SIZE)
+		{
+			pAllocation->Offset = 0;
+			pAllocation->pAllocator = nullptr;
+			pAllocation->pBlock = nullptr;
+			return (AllocateMemory(&pAllocation->Memory, sizeInBytes, memoryIndex) == VK_SUCCESS);
+		}
+		else
+		{
+			return m_pTextureAllocator->Allocate(pAllocation, sizeInBytes, alignment, memoryIndex);
+		}
+	}
+
+	bool GraphicsDeviceVK::FreeMemory(AllocationVK* pAllocation) const
+	{
+		VALIDATE(pAllocation != nullptr);
+
+		// If the memory block is nullptr assume that the allocation is dedicated
+		if (pAllocation->pBlock != nullptr)
+		{
+			DeviceAllocatorVK* pAllocator = pAllocation->pAllocator;
+			VALIDATE(pAllocator != nullptr);
+			return pAllocator->Free(pAllocation);
+		}
+		else
+		{
+			FreeMemory(pAllocation->Memory);
+			return true;
+		}
+	}
+
+	void* GraphicsDeviceVK::MapBufferMemory(AllocationVK* pAllocation) const
+	{
+		VALIDATE(pAllocation != nullptr);
+
+		if (pAllocation->pBlock != nullptr)
+		{
+			DeviceAllocatorVK* pAllocator = pAllocation->pAllocator;
+			
+			VALIDATE(pAllocator != nullptr);
+			VALIDATE(pAllocator != m_pTextureAllocator);
+
+			return pAllocator->Map(pAllocation);
+		}
+		else
+		{
+			void* pHostMemory = nullptr;
+			vkMapMemory(Device, pAllocation->Memory, 0, VK_WHOLE_SIZE, 0, &pHostMemory);
+			return pHostMemory;
+		}
+	}
+
+	void GraphicsDeviceVK::UnmapBufferMemory(AllocationVK* pAllocation) const
+	{
+		VALIDATE(pAllocation != nullptr);
+
+		if (pAllocation->pBlock != nullptr)
+		{
+			DeviceAllocatorVK* pAllocator = pAllocation->pAllocator;
+			
+			VALIDATE(pAllocator != nullptr);
+			VALIDATE(pAllocator != m_pTextureAllocator);
+
+			pAllocator->Unmap(pAllocation);
+		}
+		else
+		{
+			vkUnmapMemory(Device, pAllocation->Memory);
+		}
 	}
 
 	VkResult GraphicsDeviceVK::AllocateMemory(VkDeviceMemory* pDeviceMemory, VkDeviceSize sizeInBytes, int32 memoryIndex) const
@@ -171,14 +330,14 @@ namespace LambdaEngine
 		allocateInfo.allocationSize     = sizeInBytes;
 
 		VkResult result = vkAllocateMemory(Device, &allocateInfo, nullptr, pDeviceMemory);
-		if (result != VK_SUCCESS)
-		{
-			LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to allocate memory");
-		}
-		else
+		if (result == VK_SUCCESS)
 		{
 			m_UsedAllocations++;
 			D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+		}
+		else
+		{
+			LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to allocate memory");
 		}
 
 		return result;
@@ -263,6 +422,53 @@ namespace LambdaEngine
 	void GraphicsDeviceVK::QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const
 	{
 		memcpy(pFeatures, &m_DeviceFeatures, sizeof(m_DeviceFeatures));
+	}
+
+	void GraphicsDeviceVK::QueryDeviceMemoryStatistics(uint32* statCount, TArray<GraphicsDeviceMemoryStatistics>& pMemoryStat) const
+	{
+		// Queries each time function is called to get that _fresh_ information
+		VkPhysicalDeviceMemoryBudgetPropertiesEXT memBudgetProp = {};
+		memBudgetProp.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+
+		VkPhysicalDeviceMemoryProperties2 memProp2 = {};
+		memProp2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+		memProp2.pNext = (void*)(&memBudgetProp);
+
+		vkGetPhysicalDeviceMemoryProperties2(PhysicalDevice, &memProp2);
+
+		if (*statCount == 0)
+		{
+			*statCount = memProp2.memoryProperties.memoryHeapCount;
+		}
+		else
+		{
+			for (uint32 i = 0; i < *statCount; i++)
+			{
+				pMemoryStat[i].TotalBytesReserved = memBudgetProp.heapBudget[i];
+				pMemoryStat[i].TotalBytesAllocated = memBudgetProp.heapUsage[i];
+
+				// Only set if name has not been set yet
+				if (pMemoryStat[i].MemoryTypeName == "")
+				{
+					// Set memory type name
+					for (uint32 typeIdx = 0; typeIdx < memProp2.memoryProperties.memoryTypeCount; typeIdx++)
+					{
+						if (memProp2.memoryProperties.memoryTypes[typeIdx].heapIndex == i)
+						{
+							VkMemoryPropertyFlags propFlag = memProp2.memoryProperties.memoryTypes[typeIdx].propertyFlags;
+							if ((propFlag & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) && (propFlag & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && (propFlag & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+								pMemoryStat[i].MemoryTypeName = "Special Memory"; // Memory that is directly mappable on the GPU
+							else if ((propFlag & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) && (propFlag & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
+								pMemoryStat[i].MemoryTypeName = "Shared GPU Memory"; // Memory that is mappable on the CPU
+							else if (propFlag & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+								pMemoryStat[i].MemoryTypeName = "Dedicated GPU Memory"; // Non-mappable memory on the GPU (VRAM)
+							else
+								pMemoryStat[i].MemoryTypeName = "Memory heap does not match known memory types";
+						}
+					}
+				}
+			}
+		}
 	}
 
 	QueryHeap* GraphicsDeviceVK::CreateQueryHeap(const QueryHeapDesc* pDesc) const
@@ -394,7 +600,7 @@ namespace LambdaEngine
 		}
 	}
 
-	AccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc* pDesc, DeviceAllocator* pAllocator) const
+	AccelerationStructure* GraphicsDeviceVK::CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
 
@@ -404,7 +610,7 @@ namespace LambdaEngine
 		}
 
 		AccelerationStructureVK* pAccelerationStructure = DBG_NEW AccelerationStructureVK(this);
-		if (!pAccelerationStructure->Init(pDesc, pAllocator))
+		if (!pAccelerationStructure->Init(pDesc))
 		{
 			pAccelerationStructure->Release();
 			return nullptr;
@@ -516,28 +722,12 @@ namespace LambdaEngine
 		}
 	}
 
-	DeviceAllocator* GraphicsDeviceVK::CreateDeviceAllocator(const DeviceAllocatorDesc* pDesc) const
-	{
-		VALIDATE(pDesc != nullptr);
-
-		DeviceAllocatorVK* pAllocator = DBG_NEW DeviceAllocatorVK(this);
-		if (!pAllocator->Init(pDesc))
-		{
-			pAllocator->Release();
-			return nullptr;
-		}
-		else
-		{
-			return pAllocator;
-		}
-	}
-
-	Buffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc* pDesc, DeviceAllocator* pAllocator) const
+	Buffer* GraphicsDeviceVK::CreateBuffer(const BufferDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
 
 		BufferVK* pBuffer = DBG_NEW BufferVK(this);
-		if (!pBuffer->Init(pDesc, pAllocator))
+		if (!pBuffer->Init(pDesc))
 		{
 			pBuffer->Release();
 			return nullptr;
@@ -548,12 +738,12 @@ namespace LambdaEngine
 		}
 	}
 
-	Texture* GraphicsDeviceVK::CreateTexture(const TextureDesc* pDesc, DeviceAllocator* pAllocator) const
+	Texture* GraphicsDeviceVK::CreateTexture(const TextureDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
 
 		TextureVK* pTexture = DBG_NEW TextureVK(this);
-		if (!pTexture->Init(pDesc, pAllocator))
+		if (!pTexture->Init(pDesc))
 		{
 			pTexture->Release();
 			return nullptr;
@@ -971,7 +1161,7 @@ namespace LambdaEngine
 		VkPhysicalDeviceRayTracingFeaturesKHR	supportedRayTracingFeatures		= {};
 		VkPhysicalDeviceVulkan12Features		supportedDeviceFeatures12		= {};
 		VkPhysicalDeviceVulkan11Features		supportedDeviceFeatures11		= {};
-		VkPhysicalDeviceFeatures				supportedDeviceFeatures10		= {};
+		VkPhysicalDeviceFeatures				supportedDeviceFeatures10;
 
 		{
 			VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -1016,6 +1206,7 @@ namespace LambdaEngine
 		enabledDeviceFeatures10.fragmentStoresAndAtomics			= supportedDeviceFeatures10.fragmentStoresAndAtomics;
 		enabledDeviceFeatures10.multiDrawIndirect					= supportedDeviceFeatures10.multiDrawIndirect;
 		enabledDeviceFeatures10.pipelineStatisticsQuery				= supportedDeviceFeatures10.pipelineStatisticsQuery;
+		enabledDeviceFeatures10.imageCubeArray						= supportedDeviceFeatures10.imageCubeArray;
 
 		VkPhysicalDeviceFeatures2 enabledDeviceFeatures2 = {};
 		enabledDeviceFeatures2.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -1052,6 +1243,53 @@ namespace LambdaEngine
 			D_LOG_MESSAGE("[GraphicsDeviceVK]: Created Device");
 			return true;
 		}
+	}
+
+	bool GraphicsDeviceVK::InitAllocators()
+	{
+		m_pTextureAllocator = DBG_NEW DeviceAllocatorVK(this);
+		if (!m_pTextureAllocator->Init("Device Texture Allocator", LARGE_TEXTURE_ALLOCATION_SIZE))
+		{
+			return false;
+		}
+
+		m_pBufferAllocator = DBG_NEW DeviceAllocatorVK(this);
+		if (!m_pBufferAllocator->Init("Default Device Buffer Allocator", LARGE_BUFFER_ALLOCATION_SIZE))
+		{
+			return false;
+		}
+
+		m_pCBAllocator = DBG_NEW DeviceAllocatorVK(this);
+		if (!m_pCBAllocator->Init("Device ConstantBuffer Allocator", LARGE_BUFFER_ALLOCATION_SIZE))
+		{
+			return false;
+		}
+
+		m_pUAAllocator = DBG_NEW DeviceAllocatorVK(this);
+		if (!m_pUAAllocator->Init("Device UnorderedAccessBuffer Allocator", LARGE_BUFFER_ALLOCATION_SIZE))
+		{
+			return false;
+		}
+
+		m_pVBAllocator = DBG_NEW DeviceAllocatorVK(this);
+		if (!m_pVBAllocator->Init("Device VertexBuffer Allocator", LARGE_BUFFER_ALLOCATION_SIZE))
+		{
+			return false;
+		}
+
+		m_pIBAllocator = DBG_NEW DeviceAllocatorVK(this);
+		if (!m_pIBAllocator->Init("Device IndexBuffer Allocator", LARGE_BUFFER_ALLOCATION_SIZE))
+		{
+			return false;
+		}
+
+		m_pAccelerationStructureAllocator = DBG_NEW DeviceAllocatorVK(this);
+		if (!m_pAccelerationStructureAllocator->Init("Device AccelerationStructure Allocator", LARGE_ACCELERATION_STRUCTURE_ALLOCATION_SIZE))
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	bool GraphicsDeviceVK::SetEnabledValidationLayers()
@@ -1166,15 +1404,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void GraphicsDeviceVK::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
-	{
-		createInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		createInfo.messageSeverity	= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		createInfo.messageType		= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		createInfo.pfnUserCallback	= DebugCallback;
-		createInfo.pUserData		= nullptr;
-	}
-
 	int32 GraphicsDeviceVK::RatePhysicalDevice(VkPhysicalDevice physicalDevice)
 	{
 		VkPhysicalDeviceProperties deviceProperties;
@@ -1259,41 +1488,6 @@ namespace LambdaEngine
 		indices.TransferFamily  = GetQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT, queueFamilies);
 
 		return indices;
-	}
-
-	uint32 GraphicsDeviceVK::GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const TArray<VkQueueFamilyProperties>& queueFamilies)
-	{
-		if (queueFlags & VK_QUEUE_COMPUTE_BIT)
-		{
-			for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
-			{
-				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
-				{
-					return i;
-				}
-			}
-		}
-
-		if (queueFlags & VK_QUEUE_TRANSFER_BIT)
-		{
-			for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
-			{
-				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
-				{
-					return i;
-				}
-			}
-		}
-
-		for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
-		{
-			if (queueFamilies[i].queueFlags & queueFlags)
-			{
-				return i;
-			}
-		}
-
-		return UINT32_MAX;
 	}
 
 	void GraphicsDeviceVK::SetEnabledDeviceExtensions()
@@ -1407,6 +1601,12 @@ namespace LambdaEngine
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
 		}
 
+		//PushDescriptorSet
+		if (IsDeviceExtensionEnabled(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME))
+		{
+			GET_DEVICE_PROC_ADDR(Device, vkCmdPushDescriptorSetKHR);
+		}
+		
 		// Timeline semaphores
 		if (IsDeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
 		{
@@ -1428,6 +1628,50 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksIndirectNV);
 			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksIndirectCountNV);
 		}
+	}
+
+	void GraphicsDeviceVK::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+	{
+		createInfo.sType			= VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+		createInfo.messageSeverity	= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		createInfo.messageType		= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		createInfo.pfnUserCallback	= DebugCallback;
+		createInfo.pUserData		= nullptr;
+	}
+
+	uint32 GraphicsDeviceVK::GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const TArray<VkQueueFamilyProperties>& queueFamilies)
+	{
+		if (queueFlags & VK_QUEUE_COMPUTE_BIT)
+		{
+			for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
+			{
+				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
+				{
+					return i;
+				}
+			}
+		}
+
+		if (queueFlags & VK_QUEUE_TRANSFER_BIT)
+		{
+			for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
+			{
+				if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
+				{
+					return i;
+				}
+			}
+		}
+
+		for (uint32 i = 0; i < uint32(queueFamilies.GetSize()); i++)
+		{
+			if (queueFamilies[i].queueFlags & queueFlags)
+			{
+				return i;
+			}
+		}
+
+		return UINT32_MAX;
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsDeviceVK::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
