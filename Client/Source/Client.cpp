@@ -8,12 +8,7 @@
 
 #include "Resources/ResourceManager.h"
 
-#include "Rendering/RenderSystem.h"
-#include "Rendering/ImGuiRenderer.h"
 #include "Rendering/Renderer.h"
-#include "Rendering/PipelineStateManager.h"
-#include "Rendering/RenderGraphTypes.h"
-#include "Rendering/RenderGraph.h"
 
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
@@ -67,9 +62,6 @@ Client::~Client()
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
 
 	m_pClient->Release();
-
-	SAFEDELETE(m_pRenderGraph);
-	SAFEDELETE(m_pRenderer);
 }
 
 void Client::OnConnecting(LambdaEngine::IClient* pClient)
@@ -81,23 +73,7 @@ void Client::OnConnecting(LambdaEngine::IClient* pClient)
 void Client::OnConnected(LambdaEngine::IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
-	using namespace LambdaEngine;
-
 	LOG_MESSAGE("OnConnected()");
-
-	/*for (int i = 0; i < 1; i++)
-	{
-		NetworkPacket* pPacket = m_pClient->GetFreePacket(1);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteInt32(i);
-		m_pClient->SendReliable(pPacket, this);
-	}*/
-
-
-	/*NetworkSegment* pPacket = m_pClient->GetFreePacket(420);
-	BinaryEncoder encoder(pPacket);
-	encoder.WriteString("Smoke Weed Everyday");
-	m_pClient->SendReliable(pPacket, this);*/
 }
 
 void Client::OnDisconnecting(LambdaEngine::IClient* pClient)
@@ -128,6 +104,7 @@ void Client::OnServerFull(LambdaEngine::IClient* pClient)
 void Client::OnClientReleased(LambdaEngine::IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
+	LOG_ERROR("OnClientReleased()");
 }
 
 void Client::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)
@@ -147,7 +124,7 @@ void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint
 	UNREFERENCED_VARIABLE(pPacket);
 	LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
-uint32 g_PackegesSent = 0;
+
 bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 {
 	using namespace LambdaEngine;
@@ -161,56 +138,36 @@ bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	}
 	else
 	{
-		uint16 packetType = 99; 
+		uint16 packetType = 0;
 		NetworkSegment* packet = m_pClient->GetFreePacket(packetType);
 		BinaryEncoder encoder(packet);
-		encoder.WriteString("Test Broadcast Message");
+		encoder.WriteString("Test Message");
 		m_pClient->SendReliable(packet, this);
 	}
 
 	return false;
 }
 
-
-
 void Client::Tick(LambdaEngine::Timestamp delta)
 {
-	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(delta);
+	using namespace LambdaEngine;
 
 	NetworkDebugger::RenderStatisticsWithImGUI(m_pClient);
-
 	Renderer::Render();
 }
 
 void Client::FixedTick(LambdaEngine::Timestamp delta)
 {
-	using namespace LambdaEngine;
-
-	if (m_pClient->IsConnected())
-	{
-		/*if (++g_PackegesSent <= 10000)
-		{
-			NetworkSegment* pPacket = m_pClient->GetFreePacket(g_PackegesSent);
-			BinaryEncoder encoder(pPacket);
-			encoder.WriteUInt32(g_PackegesSent);
-			m_pClient->SendReliable(pPacket, this);
-		}
-		else
-		{
-			//m_pClient->Disconnect("All Packages Sent");
-		}*/
-	}
-
 	UNREFERENCED_VARIABLE(delta);
+	using namespace LambdaEngine;
 }
 
 namespace LambdaEngine
 {
 	Game* CreateGame()
 	{
-		Client* pClient = DBG_NEW Client();
-		
+		Client* pClient = DBG_NEW Client();		
 		return pClient;
 	}
 }

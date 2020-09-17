@@ -77,10 +77,12 @@ void ClientHandler::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)
 
 void ClientHandler::OnPacketResent(LambdaEngine::NetworkSegment* pPacket, uint8 retries)
 {
-
+	UNREFERENCED_VARIABLE(pPacket);
+	UNREFERENCED_VARIABLE(retries);
 }
 
 void ClientHandler::OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint8 retries)
 {
-
+	UNREFERENCED_VARIABLE(pPacket);
+	UNREFERENCED_VARIABLE(retries);
 }

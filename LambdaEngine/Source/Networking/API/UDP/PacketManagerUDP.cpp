@@ -101,10 +101,6 @@ namespace LambdaEngine
 				packetsToErase.PushBack(pPacket);
 				m_Statistics.RegisterReliableSegmentReceived();
 			}
-			else
-			{
-				//break;
-			}
 		}
 
 		for (NetworkSegment* pPacket : packetsToErase)
