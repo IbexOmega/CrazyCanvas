@@ -16,7 +16,7 @@ namespace LambdaEngine
 {
 	ClientTCP::ClientTCP(const ClientDesc& desc) :
 		ClientBase(desc),
-		m_Transciver(),
+		m_Transceiver(),
 		m_PacketManager(desc)
 	{
 		
@@ -39,10 +39,10 @@ namespace LambdaEngine
 
 	PacketTransceiverBase* ClientTCP::GetTransceiver()
 	{
-		return &m_Transciver;
+		return &m_Transceiver;
 	}
 
-	ISocket* ClientTCP::SetupSocket()
+	ISocket* ClientTCP::SetupSocket(std::string& reason)
 	{
 		ISocketTCP* pSocket = PlatformNetworkUtils::CreateSocketTCP();
 		if (pSocket)
@@ -52,10 +52,11 @@ namespace LambdaEngine
 			{
 				return pSocket;
 			}
-			LOG_ERROR("[ClientTCP]: Failed To Connect socket");
+			reason = "Connect Socket Failed " + GetEndPoint().ToString();
+			delete pSocket;
 			return nullptr;
 		}
-		LOG_ERROR("[ClientTCP]: Failed To Create socket");
+		reason = "Create Socket Failed";
 		return nullptr;
 	}
 
@@ -64,9 +65,10 @@ namespace LambdaEngine
 		IPEndPoint dummy;
 		while (!ShouldTerminate())
 		{
-			if (!m_Transciver.ReceiveBegin(dummy))
+			if (!m_Transceiver.ReceiveBegin(dummy))
 			{
-				Disconnect();
+				m_SendDisconnectPacket = false;
+				Disconnect("Connection Lost");
 				return;
 			}
 
@@ -87,6 +89,6 @@ namespace LambdaEngine
 	void ClientTCP::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 	{
 		LOG_INFO("ClientTCP::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
-		Disconnect();
+		Disconnect("Max Tries Reached");
 	}
 }

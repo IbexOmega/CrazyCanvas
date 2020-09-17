@@ -26,32 +26,6 @@ namespace LambdaEngine
 	public:
 
 		/*
-		* Binds the socket to a given ip-address and port. To bind a special address use
-		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
-		*
-		* ipEndPoint - The IPEndPoint to bind the socket to
-		*
-		* return	 - False if an error occured, otherwise true.
-		*/
-		virtual bool Bind(const IPEndPoint& ipEndPoint) override
-		{
-			struct sockaddr_in socketAddress;
-			IPEndPointToSocketAddress(&ipEndPoint, &socketAddress);
-
-			if (bind(m_Socket, (struct sockaddr*) &socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
-			{
-				LOG_ERROR_CRIT("Failed to bind to %s", ipEndPoint.ToString().c_str());
-				PrintLastError();
-				return false;
-			}
-			m_IPEndPoint = ipEndPoint;
-
-			ReadSocketData();
-
-			return true;
-		};
-
-		/*
 		* Connects the socket to a given ip-address and port. To connect to a special address use
 		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
 		*
@@ -59,18 +33,52 @@ namespace LambdaEngine
 		*
 		* return	 - False if an error occured, otherwise true.
 		*/
-		virtual bool Connect(const IPEndPoint& ipEndPoint) override
+		virtual bool Connect(const IPEndPoint& endPoint) override
 		{
 			struct sockaddr_in socketAddress;
-			IPEndPointToSocketAddress(&ipEndPoint, &socketAddress);
+			IPEndPointToSocketAddress(&endPoint, &socketAddress);
 
 			if (connect(m_Socket, reinterpret_cast<sockaddr*>(&socketAddress), sizeof(socketAddress)) == SOCKET_ERROR)
 			{
-				LOG_ERROR_CRIT("Failed to connect to %s", ipEndPoint.ToString().c_str());
+				int32 error = WSAGetLastError();
+				if (error == WSAECONNREFUSED)
+					return false;
+
+				LOG_ERROR_CRIT("Failed to connect to %s", endPoint.ToString().c_str());
 				PrintLastError();
 				return false;
 			}
-			m_IPEndPoint = ipEndPoint;
+			m_IPEndPoint = endPoint;
+
+			ReadSocketData();
+
+			return true;
+		};
+
+		/*
+		* Binds the socket to a given ip-address and port. To bind a special address use
+		* ADDRESS_LOOPBACK, ADDRESS_ANY, or ADDRESS_BROADCAST.
+		*
+		* ipEndPoint - The IPEndPoint to bind the socket to
+		*
+		* return	 - False if an error occured, otherwise true.
+		*/
+		virtual bool Bind(const IPEndPoint& endPoint) override
+		{
+			struct sockaddr_in socketAddress;
+			IPEndPointToSocketAddress(&endPoint, &socketAddress);
+
+			if (bind(m_Socket, (struct sockaddr*) &socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
+			{
+				int32 error = WSAGetLastError();
+				if (error == WSAEADDRNOTAVAIL)
+					return false;
+
+				LOG_ERROR_CRIT("Failed to bind to %s", endPoint.ToString().c_str());
+				PrintLastError();
+				return false;
+			}
+			m_IPEndPoint = endPoint;
 
 			ReadSocketData();
 
@@ -142,11 +150,11 @@ namespace LambdaEngine
 
 		};
 
-		Win32SocketBase(uint64 socket, const IPEndPoint& ipEndPoint) :
+		Win32SocketBase(uint64 socket, const IPEndPoint& endPoint) :
 			m_Socket(socket),
 			m_NonBlocking(false),
 			m_Closed(false),
-			m_IPEndPoint(ipEndPoint)
+			m_IPEndPoint(endPoint)
 		{
 
 		};

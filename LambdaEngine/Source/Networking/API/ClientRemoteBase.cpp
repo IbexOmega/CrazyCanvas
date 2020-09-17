@@ -5,55 +5,36 @@
 #include "Networking/API/NetworkChallenge.h"
 #include "Networking/API/ServerBase.h"
 
+#include "Engine/EngineLoop.h"
+
 namespace LambdaEngine
 {
-    ClientRemoteBase::ClientRemoteBase(ServerBase* pServer) :
-		m_pServer(pServer),
+	ClientRemoteBase::ClientRemoteBase(const ClientRemoteDesc& desc) :
+		m_pServer(desc.Server),
+		m_PingInterval(desc.PingInterval),
+		m_PingTimeout(desc.PingTimeout),
+		m_UsePingSystem(desc.UsePingSystem),
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
-		m_Release(false),
-		m_ReleasedByServer(false),
-		m_DisconnectedByRemote(false)
+		m_LastPingTimestamp(0),
+		m_DisconnectedByRemote(false),
+		m_TerminationRequested(false),
+		m_TerminationApproved(false)
     {
 
     }
 
 	ClientRemoteBase::~ClientRemoteBase()
 	{
-		if (!m_Release)
+		if (!m_TerminationApproved)
 			LOG_ERROR("[ClientRemoteBase]: Do not use delete on a ClientRemoteBase object. Use the Release() function!");
 		else
 			LOG_INFO("[ClientRemoteBase]: Released");
 	}
 
-	void ClientRemoteBase::Disconnect()
+	void ClientRemoteBase::Disconnect(const std::string& reason)
 	{
-		bool enterCritical = false;
-		{
-			std::scoped_lock<SpinLock> lock(m_Lock);
-			if (m_State == STATE_CONNECTING || m_State == STATE_CONNECTED)
-			{
-				m_State = STATE_DISCONNECTING;
-				enterCritical = true;
-			}
-		}
-
-		if (enterCritical)
-		{
-			if (m_pHandler)
-				m_pHandler->OnDisconnecting(this);
-
-			if (!m_DisconnectedByRemote)
-				SendDisconnect();
-
-			if(!m_ReleasedByServer)
-				m_pServer->OnClientDisconnected(this);
-
-			m_State = STATE_DISCONNECTED;
-
-			if (m_pHandler)
-				m_pHandler->OnDisconnected(this);
-		}
+		RequestTermination(reason);
 	}
 
 	bool ClientRemoteBase::IsConnected()
@@ -63,28 +44,84 @@ namespace LambdaEngine
 
 	void ClientRemoteBase::Release()
 	{
+		RequestTermination("Release Requested");
+	}
+
+	void ClientRemoteBase::ReleaseByServer()
+	{
+		RequestTermination("Release Requested By Server", true);
+		OnTerminationApproved();
+	}
+
+	bool ClientRemoteBase::RequestTermination(const std::string& reason, bool byServer)
+	{
 		bool doRelease = false;
+		bool enterCritical = false;
 		{
 			std::scoped_lock<SpinLock> lock(m_Lock);
-			if (!m_Release)
+			if (!m_TerminationRequested)
 			{
-				m_Release = true;
+				m_TerminationRequested = true;
 				doRelease = true;
+				enterCritical = OnTerminationRequested();
 			}
 		}
 
 		if (doRelease)
 		{
-			Disconnect();
-			m_pHandler->OnClientReleased(this);
+			if (enterCritical)
+			{
+				LOG_WARNING("[ClientRemoteBase]: Disconnecting... [%s]", reason.c_str());
+				if (m_pHandler)
+					m_pHandler->OnDisconnecting(this);
+
+				if (!m_DisconnectedByRemote)
+					SendDisconnect();
+
+				if (!byServer)
+					m_pServer->OnClientAskForTermination(this);
+
+				m_State = STATE_DISCONNECTED;
+
+				LOG_INFO("[ClientRemoteBase]: Disconnected");
+				if (m_pHandler)
+					m_pHandler->OnDisconnected(this);
+
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool ClientRemoteBase::OnTerminationRequested()
+	{
+		if (m_State == STATE_CONNECTING || m_State == STATE_CONNECTED)
+		{
+			m_State = STATE_DISCONNECTING;
+			return true;
+		}
+		return false;
+	}
+
+	void ClientRemoteBase::OnTerminationApproved()
+	{
+		m_TerminationApproved = true;
+		DeleteThis();
+	}
+
+	void ClientRemoteBase::DeleteThis()
+	{
+		if (CanDeleteNow())
+		{
+			if (m_pHandler)
+				m_pHandler->OnClientReleased(this);
 			delete this;
 		}
 	}
 
-	void ClientRemoteBase::ReleaseByServer()
+	bool ClientRemoteBase::CanDeleteNow()
 	{
-		m_ReleasedByServer = true;
-		Release();
+		return m_TerminationApproved;
 	}
 
 	bool ClientRemoteBase::SendUnreliable(NetworkSegment* packet)
@@ -118,7 +155,11 @@ namespace LambdaEngine
 
 	NetworkSegment* ClientRemoteBase::GetFreePacket(uint16 packetType)
 	{
+#ifdef LAMBDA_CONFIG_DEBUG
+		return GetPacketManager()->GetSegmentPool()->RequestFreeSegment("ClientRemoteBase")->SetType(packetType);
+#else
 		return GetPacketManager()->GetSegmentPool()->RequestFreeSegment()->SetType(packetType);
+#endif
 	}
 
 	EClientState ClientRemoteBase::GetState() const
@@ -138,27 +179,78 @@ namespace LambdaEngine
 
 	void ClientRemoteBase::DecodeReceivedPackets()
 	{
-		TArray<NetworkSegment*> packets;
-		PacketManagerBase* pPacketManager = GetPacketManager();
-		pPacketManager->QueryBegin(GetTransceiver(), packets);
-		for (NetworkSegment* pPacket : packets)
+		if (m_State == STATE_CONNECTING || m_State == STATE_CONNECTED)
 		{
-			if (!HandleReceivedPacket(pPacket))
-				return;
+			TArray<NetworkSegment*> packets;
+			PacketManagerBase* pPacketManager = GetPacketManager();
+			bool hasDiscardedResends = pPacketManager->QueryBegin(GetTransceiver(), packets);
+
+			if (m_State == STATE_CONNECTING)
+			{
+				if (packets.IsEmpty() && !hasDiscardedResends)
+				{
+					Disconnect("Expected Connect Packets");
+				}
+				else
+				{
+					for (NetworkSegment* pPacket : packets)
+					{
+						if (pPacket->GetType() != NetworkSegment::TYPE_CONNNECT && pPacket->GetType() != NetworkSegment::TYPE_CHALLENGE)
+						{
+							Disconnect("Expected Connect Packets");
+							break;
+						}
+					}
+				}
+			}
+
+			for (NetworkSegment* pPacket : packets)
+			{
+				if (!HandleReceivedPacket(pPacket))
+					break;
+			}
+
+			pPacketManager->QueryEnd(packets);
 		}
-		pPacketManager->QueryEnd(packets);
 	}
 
 	void ClientRemoteBase::Tick(Timestamp delta)
 	{
 		GetPacketManager()->Tick(delta);
+
+		if (m_UsePingSystem)
+		{
+			UpdatePingSystem();
+		}	
+	}
+
+	void ClientRemoteBase::UpdatePingSystem()
+	{
+		if (m_State == STATE_CONNECTING || m_State == STATE_CONNECTED)
+		{
+			Timestamp timeSinceLastPacketReceived = EngineLoop::GetTimeSinceStart() - GetStatistics()->GetTimestampLastReceived();
+			if (timeSinceLastPacketReceived >= m_PingTimeout)
+			{
+				Disconnect("Ping Timed Out");
+			}
+
+			if (m_State == STATE_CONNECTED)
+			{
+				Timestamp timeSinceLastPacketSent = EngineLoop::GetTimeSinceStart() - m_LastPingTimestamp;
+				if (timeSinceLastPacketSent >= m_PingInterval)
+				{
+					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
+					SendReliable(GetFreePacket(NetworkSegment::TYPE_PING));
+				}
+			}
+		}
 	}
 
 	bool ClientRemoteBase::HandleReceivedPacket(NetworkSegment* pPacket)
 	{
 		uint16 packetType = pPacket->GetType();
 
-		LOG_MESSAGE("ClientRemoteBase::HandleReceivedPacket(%s)", pPacket->ToString().c_str());
+		//LOG_MESSAGE("ClientRemoteBase::HandleReceivedPacket(%s)", pPacket->ToString().c_str());
 
 		if (packetType == NetworkSegment::TYPE_CONNNECT)
 		{
@@ -182,6 +274,7 @@ namespace LambdaEngine
 				if (m_State == STATE_CONNECTING)
 				{
 					m_State = STATE_CONNECTED;
+					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
 					m_pHandler->OnConnected(this);
 				}
 			}
@@ -193,8 +286,12 @@ namespace LambdaEngine
 		else if (packetType == NetworkSegment::TYPE_DISCONNECT)
 		{
 			m_DisconnectedByRemote = true;
-			Release();
+			Disconnect("Disconnected By Remote");
 			return false;
+		}
+		else if (packetType == NetworkSegment::TYPE_PING)
+		{
+
 		}
 		else if (IsConnected())
 		{
@@ -234,6 +331,6 @@ namespace LambdaEngine
 	void ClientRemoteBase::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 	{
 		LOG_INFO("ClientRemoteBase::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
-		Disconnect();
+		Disconnect("Max Tries Reached");
 	}
 }

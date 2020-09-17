@@ -13,7 +13,7 @@ namespace LambdaEngine
 		friend class ServerUDP;
 		
 	protected:
-		ClientRemoteUDP(uint16 packetPoolSize, uint8 maximumTries, const IPEndPoint& ipEndPoint, PacketTransceiverUDP* pTransceiver, ServerUDP* pServer);
+		ClientRemoteUDP(const ClientRemoteDesc& desc, const IPEndPoint& ipEndPoint, PacketTransceiverUDP* pTransceiver);
 
 		virtual PacketManagerBase* GetPacketManager() override;
 		virtual const PacketManagerBase* GetPacketManager() const override;

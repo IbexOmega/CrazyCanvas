@@ -5,8 +5,6 @@
 
 #include "Threading/API/SpinLock.h"
 
-//#define DEBUG_PACKET_POOL
-
 namespace LambdaEngine
 {
 	class NetworkSegment;
@@ -16,6 +14,11 @@ namespace LambdaEngine
 	public:
 		SegmentPool(uint16 size);
 		~SegmentPool();
+
+#ifdef LAMBDA_CONFIG_DEBUG
+		NetworkSegment* RequestFreeSegment(const std::string& borrower);
+		bool RequestFreeSegments(uint16 nrOfSegments, TArray<NetworkSegment*>& segmentsReturned, const std::string& borrower);
+#endif
 
 		NetworkSegment* RequestFreeSegment();
 		bool RequestFreeSegments(uint16 nrOfSegments, TArray<NetworkSegment*>& segmentsReturned);

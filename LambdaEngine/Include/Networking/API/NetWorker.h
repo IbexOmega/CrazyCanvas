@@ -22,20 +22,20 @@ namespace LambdaEngine
 		void Flush();
 
 	protected:
-		virtual bool OnThreadsStarted() = 0;
+		virtual bool OnThreadsStarted(std::string& reason) = 0;
 		virtual void RunTransmitter() = 0;
 		virtual void RunReceiver() = 0;
 		virtual void OnThreadsTerminated() = 0;
-		virtual void OnTerminationRequested() = 0;
-		virtual void OnReleaseRequested() = 0;
+		virtual void OnTerminationRequested(const std::string& reason) = 0;
+		virtual void OnReleaseRequested(const std::string& reason) = 0;
 
 		bool StartThreads();
-		void TerminateThreads();
+		bool TerminateThreads(const std::string& reason);
 		bool ThreadsAreRunning() const;
 		bool ThreadsHasTerminated() const;
 		bool ShouldTerminate() const;
 		void YieldTransmitter();
-		void TerminateAndRelease();
+		void TerminateAndRelease(const std::string& reason);
 
 	private:
 		void ThreadTransmitter();
