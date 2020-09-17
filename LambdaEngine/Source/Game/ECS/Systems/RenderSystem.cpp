@@ -39,8 +39,8 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, MeshComponent::s_TID}, {NDA , StaticComponent::s_TID}}, {&transformComponents}, &m_StaticEntities,  std::bind(&RenderSystem::OnStaticEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnStaticEntityRemoved, this, std::placeholders::_1)},
-				{{{RW, MeshComponent::s_TID}, {NDA , DynamicComponent::s_TID}}, {&transformComponents}, &m_DynamicEntities,  std::bind(&RenderSystem::OnDynamicEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDynamicEntityRemoved, this, std::placeholders::_1)},
+				{{{RW, MeshComponent::s_TID}, {NDA, StaticComponent::s_TID}},	{&transformComponents}, &m_StaticEntities,	std::bind(&RenderSystem::OnStaticEntityAdded, this, std::placeholders::_1),	 std::bind(&RenderSystem::OnStaticEntityRemoved, this, std::placeholders::_1)},
+				{{{RW, MeshComponent::s_TID}, {NDA, DynamicComponent::s_TID}},	{&transformComponents}, &m_DynamicEntities,	std::bind(&RenderSystem::OnDynamicEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDynamicEntityRemoved, this, std::placeholders::_1)},
 				{{{RW, ViewProjectionMatrices::s_TID}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
