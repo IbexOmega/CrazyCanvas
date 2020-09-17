@@ -23,7 +23,7 @@ void CameraTrack::Tick(float32 dt)
 	const float tPerSecond = cameraSpeed / glm::length(GetCurrentGradient(splineIndices));
 
 	m_CurrentTrackT += dt * tPerSecond;
-	m_CurrentTrackIndex += (size_t)m_CurrentTrackT;
+	m_CurrentTrackIndex += std::min(1ULL, (size_t)m_CurrentTrackT);
 	splineIndices = GetCurrentSplineIndices();
 	m_CurrentTrackT = std::modf(m_CurrentTrackT, &m_CurrentTrackT); // Remove integer part
 

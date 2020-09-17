@@ -9,7 +9,7 @@ namespace LambdaEngine
     class State
     {
     public:
-        State(StateManager* pStateManager, ECSCore* pECS);
+        State();
         State(State* pOther);
         virtual ~State() = 0 {};
 
@@ -19,9 +19,5 @@ namespace LambdaEngine
         virtual void Pause() = 0;
 
         virtual void Tick(float dt) = 0;
-
-    protected:
-        ECSCore* m_pECS;
-        StateManager* m_pStateManager;
     };
 }

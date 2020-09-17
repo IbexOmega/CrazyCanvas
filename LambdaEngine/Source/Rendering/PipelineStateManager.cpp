@@ -1,5 +1,5 @@
 #include "Rendering/PipelineStateManager.h"
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 
 #include "Rendering/Core/API/CommandQueue.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
@@ -125,7 +125,7 @@ namespace LambdaEngine
 		VALIDATE(pDesc != nullptr);
 
 		GraphicsPipelineStateDesc pipelineDesc = pDesc->GetDesc();
-		PipelineState* pPipelineState = RenderSystem::GetDevice()->CreateGraphicsPipelineState(&pipelineDesc);
+		PipelineState* pPipelineState = RenderAPI::GetDevice()->CreateGraphicsPipelineState(&pipelineDesc);
 		if (pPipelineState)
 		{
 			uint64 pipelineIndex = s_CurrentPipelineIndex++;
@@ -143,7 +143,7 @@ namespace LambdaEngine
 	uint64 PipelineStateManager::CreateComputePipelineState(const ManagedComputePipelineStateDesc* pDesc)
 	{
 		ComputePipelineStateDesc pipelineDesc = pDesc->GetDesc();
-		PipelineState* pPipelineState = RenderSystem::GetDevice()->CreateComputePipelineState(&pipelineDesc);
+		PipelineState* pPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&pipelineDesc);
 		if (pPipelineState)
 		{
 			uint64 pipelineIndex = s_CurrentPipelineIndex++;
@@ -161,8 +161,8 @@ namespace LambdaEngine
 	uint64 PipelineStateManager::CreateRayTracingPipelineState(const ManagedRayTracingPipelineStateDesc* pDesc)
 	{
 		RayTracingPipelineStateDesc pipelineDesc = pDesc->GetDesc();
-		CommandQueue*	pCommandQueue	= RenderSystem::GetComputeQueue();
-		PipelineState*	pPipelineState	= RenderSystem::GetDevice()->CreateRayTracingPipelineState(pCommandQueue, &pipelineDesc);
+		CommandQueue*	pCommandQueue	= RenderAPI::GetComputeQueue();
+		PipelineState*	pPipelineState	= RenderAPI::GetDevice()->CreateRayTracingPipelineState(pCommandQueue, &pipelineDesc);
 		if (pPipelineState)
 		{
 			uint64 pipelineIndex = s_CurrentPipelineIndex++;
@@ -221,7 +221,7 @@ namespace LambdaEngine
 					const ManagedGraphicsPipelineStateDesc* pPipelineDesc = &s_GraphicsPipelineStateDescriptions[it->first];
 					GraphicsPipelineStateDesc pipelineDesc = pPipelineDesc->GetDesc();
 					
-					pNewPipelineState = RenderSystem::GetDevice()->CreateGraphicsPipelineState(&pipelineDesc);
+					pNewPipelineState = RenderAPI::GetDevice()->CreateGraphicsPipelineState(&pipelineDesc);
 					break;
 				}
 				case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:
@@ -229,7 +229,7 @@ namespace LambdaEngine
 					const ManagedComputePipelineStateDesc* pPipelineDesc = &s_ComputePipelineStateDescriptions[it->first];
 					ComputePipelineStateDesc pipelineDesc = pPipelineDesc->GetDesc();
 					
-					pNewPipelineState = RenderSystem::GetDevice()->CreateComputePipelineState(&pipelineDesc);
+					pNewPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&pipelineDesc);
 					break;
 				}
 				case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:
@@ -237,8 +237,8 @@ namespace LambdaEngine
 					const ManagedRayTracingPipelineStateDesc* pPipelineDesc = &s_RayTracingPipelineStateDescriptions[it->first];
 					RayTracingPipelineStateDesc pipelineDesc = pPipelineDesc->GetDesc();
 
-					CommandQueue* pCommandQueue	= RenderSystem::GetComputeQueue();
-					pNewPipelineState			= RenderSystem::GetDevice()->CreateRayTracingPipelineState(pCommandQueue, &pipelineDesc);
+					CommandQueue* pCommandQueue	= RenderAPI::GetComputeQueue();
+					pNewPipelineState			= RenderAPI::GetDevice()->CreateRayTracingPipelineState(pCommandQueue, &pipelineDesc);
 					break;
 				}
 			}
