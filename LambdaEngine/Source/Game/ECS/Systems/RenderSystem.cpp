@@ -1088,6 +1088,18 @@ namespace LambdaEngine
 
 			uint32 newInstanceCount = 0;
 
+			if (m_pStaticInstanceBuffer != nullptr)
+			{
+				PendingBufferUpdate copyToCompleteInstanceBuffer = {};
+				copyToCompleteInstanceBuffer.pSrcBuffer		= m_pStaticInstanceBuffer;
+				copyToCompleteInstanceBuffer.SrcOffset		= 0;
+				copyToCompleteInstanceBuffer.DstOffset		= 0;
+				copyToCompleteInstanceBuffer.SizeInBytes	= sizeof(AccelerationStructureInstance);
+				m_CompleteInstanceBufferPendingCopies.PushBack(copyToCompleteInstanceBuffer);
+
+				newInstanceCount++;
+			}
+
 			for (MeshAndInstancesMap::const_iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
 			{
 				if (!meshAndInstancesIt->first.IsStatic)
