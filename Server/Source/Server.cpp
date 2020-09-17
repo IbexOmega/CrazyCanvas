@@ -22,8 +22,6 @@
 
 #include "Math/Random.h"
 
-#include "Rendering/Renderer.h"
-
 Server::Server()
 {
 	using namespace LambdaEngine;
@@ -90,8 +88,6 @@ void Server::Tick(LambdaEngine::Timestamp delta)
 	{
 		LambdaEngine::NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
 	}
-
-	LambdaEngine::Renderer::Render();
 }
 
 void Server::FixedTick(LambdaEngine::Timestamp delta)

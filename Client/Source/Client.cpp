@@ -155,7 +155,6 @@ void Client::Tick(LambdaEngine::Timestamp delta)
 	using namespace LambdaEngine;
 
 	NetworkDebugger::RenderStatisticsWithImGUI(m_pClient);
-	Renderer::Render();
 }
 
 void Client::FixedTick(LambdaEngine::Timestamp delta)
