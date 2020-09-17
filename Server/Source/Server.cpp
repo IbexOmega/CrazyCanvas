@@ -79,10 +79,7 @@ void Server::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 
-	for (auto& pair : m_pServer->GetClients())
-	{
-		NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
-	}
+	NetworkDebugger::RenderStatistics(m_pServer);
 }
 
 void Server::FixedTick(Timestamp delta)
