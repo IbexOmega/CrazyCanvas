@@ -8,7 +8,8 @@
 
 #include "Resources/ResourceManager.h"
 
-#include "Rendering/Renderer.h"
+#include "Rendering/RenderAPI.h"
+#include "Rendering/ImGuiRenderer.h"
 
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
@@ -147,7 +148,6 @@ void Client::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 	NetworkDebugger::RenderStatisticsWithImGUI(m_pClient);
-	Renderer::Render();
 }
 
 void Client::FixedTick(Timestamp delta)

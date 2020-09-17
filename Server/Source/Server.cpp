@@ -100,8 +100,6 @@ void Server::Tick(Timestamp delta)
 		encoder.WriteString("Test broadcast from server.cpp");
 		m_pServer->SendReliableBroadcast(chosenClientPair->second, pPacket, nullptr);
 	}
-
-	LambdaEngine::Renderer::Render();
 }
 
 void Server::FixedTick(Timestamp delta)

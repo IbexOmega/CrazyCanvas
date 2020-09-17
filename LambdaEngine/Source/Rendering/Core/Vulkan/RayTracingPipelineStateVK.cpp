@@ -9,7 +9,7 @@
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 
 #include "Math/MathUtilities.h"
 
@@ -241,7 +241,7 @@ namespace LambdaEngine
 			D_LOG_MESSAGE("[RayTracingPipelineStateVK]: Created Pipeline");
 		}
 
-		RenderSystem::GetComputeQueue()->Flush();
+		RenderAPI::GetComputeQueue()->Flush();
 		SAFERELEASE(pCommandAllocator);
 		SAFERELEASE(pCommandList);
 
