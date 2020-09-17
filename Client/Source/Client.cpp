@@ -54,7 +54,7 @@ Client::Client() :
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
-	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("81.170.143.133"), 4444)))
+	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("81.231.140.113"), 4444)))
 	{
 		LOG_ERROR("Failed to connect!");
 	}
@@ -157,7 +157,7 @@ bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		if (m_pClient->IsConnected())
 			m_pClient->Disconnect("User Requested");
 		else
-			m_pClient->Connect(IPEndPoint(IPAddress::Get("81.170.143.133"), 4444));
+			m_pClient->Connect(IPEndPoint(IPAddress::Get("81.231.140.113"), 4444));
 	}
 	else
 	{

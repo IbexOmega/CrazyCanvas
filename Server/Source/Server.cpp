@@ -37,7 +37,7 @@ Server::Server()
 	desc.MaxRetries		= 10;
 	desc.MaxClients		= 10;
 	desc.PoolSize		= 1024;
-	desc.Protocol		= EProtocol::UDP;
+	desc.Protocol		= EProtocol::TCP;
 	desc.PingInterval	= Timestamp::Seconds(1);
 	desc.PingTimeout	= Timestamp::Seconds(3);
 	desc.UsePingSystem	= true;
@@ -86,11 +86,11 @@ void Server::Tick(LambdaEngine::Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 
-	for (auto& pair : m_pServer->GetClients())
+	/*for (auto& pair : m_pServer->GetClients())
 	{
 		LambdaEngine::NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
-	}
-
+	}*/
+	LambdaEngine::NetworkDebugger::RenderStatisticsWithImGUI(m_pServer);
 	LambdaEngine::Renderer::Render();
 }
 
