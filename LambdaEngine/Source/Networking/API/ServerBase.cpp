@@ -113,24 +113,28 @@ namespace LambdaEngine
 		m_ClientsToRemove.PushBack(pClient);
 	}
 
-	// To know who called this consider add a broadcaster-key mapping to m_Clients pair
-	// to avoid packet leak
-	bool ServerBase::SendReliableBroadcast(LambdaEngine::IPEndPoint broadcasterClientKey, NetworkSegment* pPacket, IPacketListener* listener)
+	bool ServerBase::SendReliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket, IPacketListener* pListener)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockClients);
-		for (auto pair : m_Clients)
-		{ 
-			if (pair.first != broadcasterClientKey) {
-				NetworkSegment* packetDuplicate = pair.second->GetFreePacket(pPacket->GetType());
-				pPacket->CopyTo(packetDuplicate);
-				pPacket = packetDuplicate;
-			}
+		bool result = true;
 
-			if (!pair.second->SendReliable(pPacket, nullptr))
-				return false;
+		// Send original
+		if (!pClient->SendReliable(pPacket, pListener))
+			result = false;
+
+		for (auto& pair : m_Clients)
+		{ 
+			// Send to rest
+			if (pair.second != pClient) 
+			{
+				NetworkSegment* pPacketDuplicate = pair.second->GetFreePacket(pPacket->GetType());
+				pPacket->CopyTo(pPacketDuplicate);
+				if (!pClient->SendReliable(pPacketDuplicate, pListener))
+					result = false;
+			}
 		}
 
-		return true;
+		return result;
 	}
 
 	ClientRemoteBase* ServerBase::GetClient(const IPEndPoint& endPoint)
