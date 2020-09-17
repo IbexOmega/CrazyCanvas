@@ -126,6 +126,7 @@ namespace LambdaEngine
 		virtual void CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount)	const override final;
 
 		virtual void QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const override final;
+		virtual void QueryDeviceMemoryStatistics(uint32* statCount, TArray<GraphicsDeviceMemoryStatistics>& pMemoryStat) const override final;
 
 		virtual void Release() override final;
 
@@ -184,6 +185,9 @@ namespace LambdaEngine
 		PFN_vkCmdTraceRaysKHR								vkCmdTraceRaysKHR								= nullptr;
 		PFN_vkCopyAccelerationStructureToMemoryKHR			vkCopyAccelerationStructureToMemoryKHR			= nullptr;
 		PFN_vkCmdCopyAccelerationStructureToMemoryKHR		vkCmdCopyAccelerationStructureToMemoryKHR		= nullptr;
+
+		//PushDescriptorSet
+		PFN_vkCmdPushDescriptorSetKHR						vkCmdPushDescriptorSetKHR						= nullptr;
 
 		// Buffer Addresses
 		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;

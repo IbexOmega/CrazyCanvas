@@ -7,6 +7,8 @@
 #include "Containers/TArray.h"
 #include "Containers/TSet.h"
 
+#include <map>
+
 namespace LambdaEngine
 {
 	class LAMBDA_API RenderGraphParser
@@ -30,7 +32,8 @@ namespace LambdaEngine
 			const THashTable<String, EditorRenderStageDesc>& renderStagesByName,
 			const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex,
 			const THashTable<int32, EditorRenderGraphResourceLink>& resourceStateLinksByLinkIndex,
-			THashTable<String, int32>& renderStageWeightsByName);
+			THashTable<String, int32>& renderStageWeightsByName,
+			uint32 currentDrawBufferMask);
 
 		static bool FindAndCreateSynchronization(
 			const TArray<RenderGraphResourceDesc>& resources,

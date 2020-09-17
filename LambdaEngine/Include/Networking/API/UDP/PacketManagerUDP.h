@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Networking/API/PacketManagerBase.h"
+#include "Networking/API/NetworkSegment.h"
 
 namespace LambdaEngine
 {
@@ -15,14 +16,14 @@ namespace LambdaEngine
 		virtual void Reset() override;
 
 	protected:
-		virtual void FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned) override;
+		virtual bool FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned) override;
 
 	private:
 		void UntangleReliableSegments(TArray<NetworkSegment*>& segmentsReturned);
 		void ResendOrDeleteSegments();
 
 	private:
-		std::set<NetworkSegment*> m_ReliableSegmentsReceived;
+		std::set<NetworkSegment*, NetworkSegmentReliableUIDOrder> m_ReliableSegmentsReceived;
 		float32 m_ResendRTTMultiplier;
 		int32 m_MaxRetries;
 	};

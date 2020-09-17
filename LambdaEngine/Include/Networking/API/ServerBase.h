@@ -19,11 +19,16 @@ namespace LambdaEngine
     class IServerHandler;
     class IClientRemoteHandler;
 
+    typedef std::unordered_map<IPEndPoint, ClientRemoteBase*, IPEndPointHasher> ClientMap;
+
     struct ServerDesc : public PacketManagerDesc
     {
         IServerHandler* Handler = nullptr;
-        uint8 MaxClients = 1;
-        EProtocol Protocol = EProtocol::UDP;
+        uint8 MaxClients        = 1;
+        EProtocol Protocol      = EProtocol::UDP;
+        Timestamp PingInterval  = Timestamp::Seconds(1);
+        Timestamp PingTimeout   = Timestamp::Seconds(3);
+        bool UsePingSystem      = true;
     };
 
     class LAMBDA_API ServerBase : public NetWorker
@@ -36,7 +41,7 @@ namespace LambdaEngine
         virtual ~ServerBase();
 
         bool Start(const IPEndPoint& ipEndPoint);
-        void Stop();
+        void Stop(const std::string& reason);
         void Release();
         bool IsRunning();
         const IPEndPoint& GetEndPoint() const;
@@ -44,14 +49,16 @@ namespace LambdaEngine
         bool IsAcceptingConnections();
         uint8 GetClientCount();
         const ServerDesc& GetDescription() const;
+        const ClientMap& GetClients() const;
+        
 
     protected:
         ServerBase(const ServerDesc& desc);
 
-        virtual bool OnThreadsStarted() override;
+        virtual bool OnThreadsStarted(std::string& reason) override;
         virtual void OnThreadsTerminated() override;
-        virtual void OnTerminationRequested() override;
-        virtual void OnReleaseRequested() override;
+        virtual void OnTerminationRequested(const std::string& reason) override;
+        virtual void OnReleaseRequested(const std::string& reason) override;
         virtual void RunTransmitter() override;
 
         virtual void Tick(Timestamp delta);
@@ -59,11 +66,13 @@ namespace LambdaEngine
         ClientRemoteBase* GetClient(const IPEndPoint& endPoint);
         void HandleNewConnection(ClientRemoteBase* pClient);
 
-        virtual ISocket* SetupSocket() = 0;
+        virtual ISocket* SetupSocket(std::string& reason) = 0;
 
     private:
         IClientRemoteHandler* CreateClientHandler() const;
-        void OnClientDisconnected(ClientRemoteBase* client);
+        void OnClientAskForTermination(ClientRemoteBase* client);
+        bool SendReliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket, IPacketListener* pListener);
+        bool SendUnreliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket);
 
     private:
         static void FixedTickStatic(Timestamp timestamp);
@@ -75,9 +84,12 @@ namespace LambdaEngine
         IPEndPoint m_IPEndPoint;
         SpinLock m_Lock;
         SpinLock m_LockClients;
+        SpinLock m_LockClientVectors;
         ServerDesc m_Description;
         std::atomic_bool m_Accepting;
-        std::unordered_map<IPEndPoint, ClientRemoteBase*, IPEndPointHasher> m_Clients;
+        ClientMap m_Clients;
+        TArray<ClientRemoteBase*> m_ClientsToAdd;
+        TArray<ClientRemoteBase*> m_ClientsToRemove;
 
     private:
         static std::set<ServerBase*> s_Servers;

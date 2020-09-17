@@ -3,6 +3,7 @@
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
 #include "Time/API/Timestamp.h"
+#include "Rendering/Core/API/GraphicsDevice.h"
 
 namespace LambdaEngine
 {
@@ -94,6 +95,11 @@ namespace LambdaEngine
 		bool m_EnableGraph				= true;
 
 		THashTable<CommandList*, bool> m_ShouldGetTimestamps;
+
+		// Memory usage
+		uint32 m_MaxVram = 0;
+		uint32 m_CurrentVram = 0;
+		TArray<GraphicsDeviceMemoryStatistics> m_MemoryStats;
 
 		// Pipeline statistics
 		QueryHeap* m_pPipelineStatHeap = nullptr;

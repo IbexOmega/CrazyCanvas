@@ -31,7 +31,7 @@ namespace LambdaEngine
 		header.Ack = pStatistics->GetLastReceivedSequenceNr();
 		header.AckBits = pStatistics->GetReceivedSequenceBits();
 
-		PacketTranscoder::EncodeSegments(m_pSendBuffer, MAXIMUM_PACKET_SIZE + sizeof(PacketTranscoder::Header), pSegmentPool, segments, reliableUIDsSent, bytesWritten, &header);
+		PacketTranscoder::EncodeSegments(m_pSendBuffer, MAXIMUM_SEGMENT_SIZE, pSegmentPool, segments, reliableUIDsSent, bytesWritten, &header);
 
 		pStatistics->RegisterBytesSent(bytesWritten);
 
@@ -39,6 +39,8 @@ namespace LambdaEngine
 			return -1;
 		else if (bytesWritten != bytesTransmitted)
 			return -1;
+
+		pStatistics->RegisterSegmentSent(header.Segments);
 
 		return header.Sequence;
 	}
@@ -62,7 +64,7 @@ namespace LambdaEngine
 		if (!ValidateHeaderSalt(&header, pStatistics))
 			return false;
 
-		OnReceiveEnd(header, newAcks, pStatistics);
+		OnReceiveEnd(&header, newAcks, pStatistics);
 
 		pStatistics->RegisterPacketReceived((uint32)segments.GetSize(), m_BytesReceived);
 
@@ -73,7 +75,7 @@ namespace LambdaEngine
 	{
 		if (header->Salt == 0)
 		{
-			LOG_ERROR("[PacketTranscoder]: Received a packet without a salt");
+			LOG_ERROR("[PacketTransceiverBase]: Received a packet without a salt");
 			return false;
 		}
 		else if (pStatistics->GetRemoteSalt() != header->Salt)
@@ -85,7 +87,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[PacketTranscoder]: Received a packet with a new salt [Prev %lu : New %lu]", pStatistics->GetRemoteSalt(), header->Salt);
+				LOG_ERROR("[PacketTransceiverBase]: Received a packet with a new salt [Prev %lu : New %lu]", pStatistics->GetRemoteSalt(), header->Salt);
 				return false;
 			}
 		}

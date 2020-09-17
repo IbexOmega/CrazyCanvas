@@ -1,6 +1,6 @@
 #include "PreCompiled.h"
 #include "Rendering/Core/API/Sampler.h"
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
 
 namespace LambdaEngine
@@ -24,7 +24,7 @@ namespace LambdaEngine
 		samplerLinearDesc.MinLOD				= 0.0f;
 		samplerLinearDesc.MaxLOD				= 1.0f;
 
-		s_pLinearSampler = RenderSystem::GetDevice()->CreateSampler(&samplerLinearDesc);
+		s_pLinearSampler = RenderAPI::GetDevice()->CreateSampler(&samplerLinearDesc);
 
 		if (s_pLinearSampler == nullptr)
 		{
@@ -45,7 +45,7 @@ namespace LambdaEngine
 		samplerNearestDesc.MinLOD				= 0.0f;
 		samplerNearestDesc.MaxLOD				= 1.0f;
 
-		s_pNearestSampler = RenderSystem::GetDevice()->CreateSampler(&samplerNearestDesc);
+		s_pNearestSampler = RenderAPI::GetDevice()->CreateSampler(&samplerNearestDesc);
 
 		if (s_pNearestSampler == nullptr)
 		{

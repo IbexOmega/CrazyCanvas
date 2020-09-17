@@ -8,16 +8,6 @@
 
 #include "Resources/ResourceManager.h"
 
-#include "Rendering/RenderSystem.h"
-#include "Rendering/ImGuiRenderer.h"
-#include "Rendering/Renderer.h"
-#include "Rendering/PipelineStateManager.h"
-#include "Rendering/RenderGraphTypes.h"
-#include "Rendering/RenderGraph.h"
-
-#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
-#include <imgui.h>
-
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformConsole.h"
@@ -28,35 +18,32 @@
 #include "Audio/AudioSystem.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
-#include "Networking/API/IPAddress.h"
-#include "Networking/API/NetworkSegment.h"
-#include "Networking/API/BinaryEncoder.h"
-#include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/NetworkDebugger.h"
 
-#include "Networking/API/TCP/ClientTCP.h"
+using namespace LambdaEngine;
 
 Client::Client() :
 	m_pClient(nullptr)
 {
-	using namespace LambdaEngine;
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Client");
 	PlatformConsole::SetTitle("Client Console");
 
-
-	ClientDesc desc = {};
-	desc.PoolSize               = 512;
-	desc.MaxRetries             = 10;
-	desc.ResendRTTMultiplier    = 2.0F;
-	desc.Handler                = this;
-	desc.Protocol               = EProtocol::TCP;
+    ClientDesc desc = {};
+    desc.PoolSize               = 512;
+    desc.MaxRetries             = 10;
+    desc.ResendRTTMultiplier    = 2.0F;
+    desc.Handler                = this;
+    desc.Protocol               = EProtocol::TCP;
+	desc.PingInterval			= Timestamp::Seconds(1);
+	desc.PingTimeout			= Timestamp::Seconds(3);
+	desc.UsePingSystem			= true;
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
-	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
+	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.65"), 4444)))
 	{
 		LOG_ERROR("Failed to connect!");
 	}
@@ -64,128 +51,97 @@ Client::Client() :
 
 Client::~Client()
 {
-	using namespace LambdaEngine;
-
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
 
 	m_pClient->Release();
-
-	SAFEDELETE(m_pRenderGraph);
-	SAFEDELETE(m_pRenderer);
 }
 
-void Client::OnConnecting(LambdaEngine::IClient* pClient)
+void Client::OnConnecting(IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_MESSAGE("OnConnecting()");
 }
 
-void Client::OnConnected(LambdaEngine::IClient* pClient)
+void Client::OnConnected(IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
-	using namespace LambdaEngine;
-
 	LOG_MESSAGE("OnConnected()");
-
-	/*for (int i = 0; i < 1; i++)
-	{
-		NetworkPacket* pPacket = m_pClient->GetFreePacket(1);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteInt32(i);
-		m_pClient->SendReliable(pPacket, this);
-	}*/
-
-
-	NetworkSegment* pPacket = m_pClient->GetFreePacket(1);
-	BinaryEncoder encoder(pPacket);
-	encoder.WriteString("Christoffer");
-	m_pClient->SendReliable(pPacket, this);
 }
 
-void Client::OnDisconnecting(LambdaEngine::IClient* pClient)
+void Client::OnDisconnecting(IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_MESSAGE("OnDisconnecting()");
 }
 
-void Client::OnDisconnected(LambdaEngine::IClient* pClient)
+void Client::OnDisconnected(IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_MESSAGE("OnDisconnected()");
 }
 
-void Client::OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngine::NetworkSegment* pPacket)
+void Client::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	UNREFERENCED_VARIABLE(pPacket);
 	LOG_MESSAGE("OnPacketReceived(%s)", pPacket->ToString().c_str());
 }
 
-void Client::OnServerFull(LambdaEngine::IClient* pClient)
+void Client::OnServerFull(IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_ERROR("OnServerFull()");
 }
 
-void Client::OnClientReleased(LambdaEngine::IClient* pClient)
+void Client::OnClientReleased(IClient* pClient)
 {
-
+	UNREFERENCED_VARIABLE(pClient);
+	LOG_ERROR("OnClientReleased()");
 }
 
-void Client::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)
+void Client::OnPacketDelivered(NetworkSegment* pPacket)
 {
 	UNREFERENCED_VARIABLE(pPacket);
 	LOG_INFO("OnPacketDelivered(%s)", pPacket->ToString().c_str());
 }
 
-void Client::OnPacketResent(LambdaEngine::NetworkSegment* pPacket, uint8 tries)
+void Client::OnPacketResent(NetworkSegment* pPacket, uint8 tries)
 {
 	UNREFERENCED_VARIABLE(pPacket);
 	LOG_INFO("OnPacketResent(%d)", tries);
 }
 
-void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint8 tries)
+void Client::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 {
 	UNREFERENCED_VARIABLE(pPacket);
 	LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
 
-bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
+bool Client::OnKeyPressed(const KeyPressedEvent& event)
 {
-	using namespace LambdaEngine;
-
 	if (event.Key == EKey::KEY_ENTER)
 	{
 		if (m_pClient->IsConnected())
-			m_pClient->Disconnect();
+			m_pClient->Disconnect("User Requested");
 		else
-			m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444));
+			m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.65"), 4444));
 	}
 	else
 	{
-		uint16 packetType = 0;
-		NetworkSegment* packet = m_pClient->GetFreePacket(packetType);
-		BinaryEncoder encoder(packet);
-		encoder.WriteString("Test Message");
-		m_pClient->SendReliable(packet, this);
 	}
 
 	return false;
 }
 
-void Client::Tick(LambdaEngine::Timestamp delta)
+void Client::Tick(Timestamp delta)
 {
-	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(delta);
 
-	NetworkDebugger::RenderStatisticsWithImGUI(m_pClient);
-
-	Renderer::Render();
+	NetworkDebugger::RenderStatistics(m_pClient);
 }
 
-void Client::FixedTick(LambdaEngine::Timestamp delta)
+void Client::FixedTick(Timestamp delta)
 {
-	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(delta);
 }
 
@@ -193,8 +149,7 @@ namespace LambdaEngine
 {
 	Game* CreateGame()
 	{
-		Client* pClient = DBG_NEW Client();
-		
+		Client* pClient = DBG_NEW Client();		
 		return pClient;
 	}
 }

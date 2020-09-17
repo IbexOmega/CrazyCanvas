@@ -6,7 +6,7 @@
 #include "Rendering/Core/API/Fence.h"
 #include "Rendering/Core/API/GraphicsHelpers.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 
 #include "Audio/AudioSystem.h"
 
@@ -187,7 +187,7 @@ namespace LambdaEngine
 	*/
 	bool ResourceLoader::Init()
 	{
-		s_pCopyCommandAllocator = RenderSystem::GetDevice()->CreateCommandAllocator("Resource Loader Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+		s_pCopyCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Resource Loader Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
 		if (s_pCopyCommandAllocator == nullptr)
 		{
@@ -200,12 +200,12 @@ namespace LambdaEngine
 		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 		commandListDesc.Flags			= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
-		s_pCopyCommandList = RenderSystem::GetDevice()->CreateCommandList(s_pCopyCommandAllocator, &commandListDesc);
+		s_pCopyCommandList = RenderAPI::GetDevice()->CreateCommandList(s_pCopyCommandAllocator, &commandListDesc);
 
 		FenceDesc fenceDesc = {};
 		fenceDesc.DebugName		= "Resource Loader Copy Fence";
 		fenceDesc.InitalValue	= 0;
-		s_pCopyFence = RenderSystem::GetDevice()->CreateFence(&fenceDesc);
+		s_pCopyFence = RenderAPI::GetDevice()->CreateFence(&fenceDesc);
 
 		glslang::InitializeProcess();
 
@@ -233,7 +233,7 @@ namespace LambdaEngine
 		TArray<Mesh*>		Meshes;
 		TArray<Material*>	Materials;
 		TArray<Texture*>	Textures;
-		TArray<GameObject>	LoadedGameObjects;
+		TArray<MeshComponent>	LoadedMeshComponent;
 		THashTable<String, Texture*> LoadedTextures;
 		THashTable<uint32, uint32> MaterialIndices;
 	};
@@ -409,10 +409,10 @@ namespace LambdaEngine
 			{
 				context.Meshes.EmplaceBack(pNewMesh);
 
-				GameObject NewGameObject;
-				NewGameObject.Mesh		= context.Meshes.GetSize() - 1;
-				NewGameObject.Material	= context.MaterialIndices[pMesh->mMaterialIndex];
-				context.LoadedGameObjects.PushBack(NewGameObject);
+				MeshComponent newMeshComponent;
+				newMeshComponent.MeshGUID		= context.Meshes.GetSize() - 1;
+				newMeshComponent.MaterialGUID	= context.MaterialIndices[pMesh->mMaterialIndex];
+				context.LoadedMeshComponent.PushBack(newMeshComponent);
 			}
 
 		}
@@ -423,7 +423,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<GameObject>& loadedGameObjects, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures)
+	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& loadedMeshComponents, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures)
 	{
 		size_t lastPathDivisor = filepath.find_last_of("/\\");
 		if (lastPathDivisor == String::npos)
@@ -463,10 +463,10 @@ namespace LambdaEngine
 		context.DirectoryPath	= filepath.substr(0, lastPathDivisor + 1);
 		ProcessAssimpNode(context, pScene->mRootNode, pScene, true);
 
-		loadedMaterials		= Move(context.Materials);
-		loadedTextures		= Move(context.Textures);
-		loadedGameObjects	= Move(context.LoadedGameObjects);
-		loadedMeshes		= Move(context.Meshes);
+		loadedMaterials			= Move(context.Materials);
+		loadedTextures			= Move(context.Textures);
+		loadedMeshComponents	= Move(context.LoadedMeshComponent);
+		loadedMeshes			= Move(context.Meshes);
 
 		return true;
 	}
@@ -689,7 +689,7 @@ namespace LambdaEngine
 		textureDesc.Miplevels	= miplevels;
 		textureDesc.SampleCount = 1;
 
-		Texture* pTexture = RenderSystem::GetDevice()->CreateTexture(&textureDesc);
+		Texture* pTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 
 		if (pTexture == nullptr)
 		{
@@ -705,7 +705,7 @@ namespace LambdaEngine
 		bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 		bufferDesc.SizeInBytes	= uint64(arrayCount * pixelDataSize);
 
-		Buffer* pTextureData = RenderSystem::GetDevice()->CreateBuffer(&bufferDesc);
+		Buffer* pTextureData = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		if (pTextureData == nullptr)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to create copy buffer for \"%s\"", name.c_str());
@@ -783,7 +783,7 @@ namespace LambdaEngine
 
 		s_pCopyCommandList->End();
 
-		if (!RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&s_pCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, nullptr, 0, s_pCopyFence, s_SignalValue))
+		if (!RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&s_pCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, nullptr, 0, s_pCopyFence, s_SignalValue))
 		{
 			LOG_ERROR("[ResourceLoader]: Texture could not be created as command list could not be executed for \"%s\"", name.c_str());
 			SAFERELEASE(pTextureData);
@@ -796,7 +796,7 @@ namespace LambdaEngine
 		}
 
 		//Todo: Remove this wait after garbage collection works
-		RenderSystem::GetGraphicsQueue()->Flush();
+		RenderAPI::GetGraphicsQueue()->Flush();
 
 		SAFERELEASE(pTextureData);
 
@@ -844,7 +844,7 @@ namespace LambdaEngine
 		shaderDesc.Stage		= stage;
 		shaderDesc.Lang			= lang;
 
-		Shader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
+		Shader* pShader = RenderAPI::GetDevice()->CreateShader(&shaderDesc);
 		Malloc::Free(pShaderRawSource);
 
 		return pShader;
@@ -876,7 +876,7 @@ namespace LambdaEngine
 		shaderDesc.Stage		= stage;
 		shaderDesc.Lang			= lang;
 
-		Shader* pShader = RenderSystem::GetDevice()->CreateShader(&shaderDesc);
+		Shader* pShader = RenderAPI::GetDevice()->CreateShader(&shaderDesc);
 
 		return pShader;
 	}

@@ -5,6 +5,8 @@
 
 #include "Application/API/Window.h"
 
+#include "Containers/TArray.h"
+
 namespace LambdaEngine
 {
 	struct FenceDesc;
@@ -91,6 +93,7 @@ namespace LambdaEngine
 	{
 		uint64 TotalBytesReserved = 0;
 		uint64 TotalBytesAllocated = 0;
+		std::string MemoryTypeName = "";
 	};
 
 	/*
@@ -134,6 +137,7 @@ namespace LambdaEngine
 		virtual void CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst, const CopyDescriptorBindingDesc* pCopyBindings, uint32 copyBindingCount) const = 0;
 		
 		virtual void QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const = 0;
+		virtual void QueryDeviceMemoryStatistics(uint32* statCount, TArray<GraphicsDeviceMemoryStatistics>& pMemoryStat) const = 0;
 
 		/*
 		* Releases the graphicsdevice. Unlike all other graphics interfaces, the graphicsdevice

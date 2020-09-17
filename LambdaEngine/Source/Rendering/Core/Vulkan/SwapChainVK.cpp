@@ -14,7 +14,7 @@
 #include "Rendering/Core/Vulkan/TextureViewVK.h"
 #include "Rendering/Core/Vulkan/CommandQueueVK.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
@@ -536,9 +536,9 @@ namespace LambdaEngine
 		m_Desc.Width	= width;
 		m_Desc.Height	= height;
 
-		RenderSystem::GetGraphicsQueue()->Flush();
-		RenderSystem::GetComputeQueue()->Flush();
-		RenderSystem::GetCopyQueue()->Flush();
+		RenderAPI::GetGraphicsQueue()->Flush();
+		RenderAPI::GetComputeQueue()->Flush();
+		RenderAPI::GetCopyQueue()->Flush();
 
 		ReleaseInternal();
 		return InitInternal();

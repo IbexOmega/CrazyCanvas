@@ -119,6 +119,15 @@ namespace LambdaEngine
 			createInfo.pBindings	= layoutBindings.GetData();
 			createInfo.bindingCount	= static_cast<uint32>(layoutBindings.GetSize());
 
+			if (descriptorSetLayout.DescriptorSetLayoutFlags & FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR)
+			{
+				createInfo.flags |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+			}
+			if (descriptorSetLayout.DescriptorSetLayoutFlags & FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL)
+			{
+				createInfo.flags |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+			}
+
 			VkResult result = vkCreateDescriptorSetLayout(m_pDevice->Device, &createInfo, nullptr, &layout);
 			if (result != VK_SUCCESS)
 			{

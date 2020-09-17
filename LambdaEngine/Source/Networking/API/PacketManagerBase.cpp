@@ -18,8 +18,9 @@ namespace LambdaEngine
 	uint32 PacketManagerBase::EnqueueSegmentReliable(NetworkSegment* pSegment, IPacketListener* pListener)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockSegmentsToSend);
-		uint32 UID = EnqueueSegment(pSegment, m_Statistics.RegisterReliableSegmentSent());
-		m_SegmentsWaitingForAck.insert({ UID, SegmentInfo{ pSegment, pListener, EngineLoop::GetTimeSinceStart()} });
+		uint32 reliableUID = m_Statistics.RegisterReliableSegmentSent();
+		uint32 UID = EnqueueSegment(pSegment, reliableUID);
+		m_SegmentsWaitingForAck.insert({ reliableUID, SegmentInfo{ pSegment, pListener, EngineLoop::GetTimeSinceStart()} });
 		return UID;
 	}
 
@@ -31,7 +32,7 @@ namespace LambdaEngine
 
 	uint32 PacketManagerBase::EnqueueSegment(NetworkSegment* pSegment, uint32 reliableUID)
 	{
-		pSegment->GetHeader().UID = m_Statistics.RegisterSegmentSent();
+		pSegment->GetHeader().UID = m_Statistics.RegisterUniqueSegment();
 		pSegment->GetHeader().ReliableUID = reliableUID;
 		m_SegmentsToSend[m_QueueIndex].push(pSegment);
 		return pSegment->GetHeader().UID;
@@ -133,21 +134,21 @@ namespace LambdaEngine
 		m_QueueIndex = 0;
 	}
 
-	void PacketManagerBase::QueryBegin(PacketTransceiverBase* pTransceiver, TArray<NetworkSegment*>& segmentsReturned)
+	bool PacketManagerBase::QueryBegin(PacketTransceiverBase* pTransceiver, TArray<NetworkSegment*>& segmentsReturned)
 	{
 		TArray<NetworkSegment*> segments;
 		TArray<uint32> acks;
 
 		if (!pTransceiver->ReceiveEnd(&m_SegmentPool, segments, acks, &m_Statistics))
-			return;
+			return false;
 
 		segmentsReturned.Clear();
 		segmentsReturned.Reserve(segments.GetSize());
 
-		HandleAcks(acks);
-		FindSegmentsToReturn(segments, segmentsReturned);
+		//LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 
-		LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
+		HandleAcks(acks);
+		return FindSegmentsToReturn(segments, segmentsReturned);
 	}
 
 	/*
@@ -155,52 +156,57 @@ namespace LambdaEngine
 	* Notifies the listener that the packet was succesfully delivered.
 	* Removes the packet and returns it to the pool.
 	*/
-	void PacketManagerBase::HandleAcks(const TArray<uint32>& acks)
+	void PacketManagerBase::HandleAcks(const TArray<uint32>& ackedPackets)
 	{
 		TArray<uint32> ackedReliableUIDs;
-		GetReliableUIDsFromAcks(acks, ackedReliableUIDs);
+		GetReliableUIDsFromAckedPackets(ackedPackets, ackedReliableUIDs);
 
-		TArray<SegmentInfo> messagesAcked;
-		GetReliableSegmentInfosFromUIDs(ackedReliableUIDs, messagesAcked);
+		TArray<SegmentInfo> segmentsAcked;
+		GetReliableSegmentInfosFromUIDs(ackedReliableUIDs, segmentsAcked);
 
 		TArray<NetworkSegment*> packetsToFree;
-		packetsToFree.Reserve(messagesAcked.GetSize());
+		packetsToFree.Reserve(segmentsAcked.GetSize());
 
-		for (SegmentInfo& messageInfo : messagesAcked)
+		for (SegmentInfo& segmentInfo : segmentsAcked)
 		{
-			if (messageInfo.Listener)
+			if (segmentInfo.Listener)
 			{
-				messageInfo.Listener->OnPacketDelivered(messageInfo.Packet);
+				segmentInfo.Listener->OnPacketDelivered(segmentInfo.Segment);
 			}
-			packetsToFree.PushBack(messageInfo.Packet);
+			packetsToFree.PushBack(segmentInfo.Segment);
 		}
 
 		m_SegmentPool.FreeSegments(packetsToFree);
 	}
 
-	void PacketManagerBase::GetReliableUIDsFromAcks(const TArray<uint32>& acks, TArray<uint32>& ackedReliableUIDs)
+	/*
+	* Finds all Reliable Segment UIDs corresponding to the acks from physical packets
+	*/
+	void PacketManagerBase::GetReliableUIDsFromAckedPackets(const TArray<uint32>& ackedPackets, TArray<uint32>& ackedReliableUIDs)
 	{
 		ackedReliableUIDs.Reserve(128);
 		std::scoped_lock<SpinLock> lock(m_LockBundles);
 
 		Timestamp timestamp = 0;
-
-		for (uint32 ack : acks)
+		uint8 timestamps = 0;
+		for (uint32 ack : ackedPackets)
 		{
 			auto iterator = m_Bundles.find(ack);
 			if (iterator != m_Bundles.end())
 			{
 				Bundle& bundle = iterator->second;
-				for (uint32 UID : bundle.ReliableUIDs)
-					ackedReliableUIDs.PushBack(UID);
+				for (uint32 reliableUID : bundle.ReliableUIDs)
+					ackedReliableUIDs.PushBack(reliableUID);
 
-				timestamp = bundle.Timestamp;
+				timestamp += bundle.Timestamp;
 				m_Bundles.erase(iterator);
+				timestamps++;
 			}
 		}
 
 		if (timestamp != 0)
 		{
+			timestamp /= timestamps;
 			RegisterRTT(EngineLoop::GetTimeSinceStart() - timestamp);
 		}
 	}
@@ -210,9 +216,9 @@ namespace LambdaEngine
 		ackedReliableSegments.Reserve(128);
 		std::scoped_lock<SpinLock> lock(m_LockSegmentsToSend);
 
-		for (uint32 UID : ackedReliableUIDs)
+		for (uint32 reliableUID : ackedReliableUIDs)
 		{
-			auto iterator = m_SegmentsWaitingForAck.find(UID);
+			auto iterator = m_SegmentsWaitingForAck.find(reliableUID);
 			if (iterator != m_SegmentsWaitingForAck.end())
 			{
 				ackedReliableSegments.PushBack(iterator->second);

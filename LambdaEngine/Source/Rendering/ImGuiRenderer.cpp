@@ -1,7 +1,7 @@
 #include "Engine/EngineLoop.h"
 
 #include "Rendering/ImGuiRenderer.h"
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraph.h"
 
@@ -73,7 +73,6 @@ namespace LambdaEngine
 		uint32 backBufferCount = pDesc->BackBufferCount;
 		m_BackBuffers.Resize(backBufferCount);
 
-		uint32 allocatorPageSize = 2 * (4 * pDesc->VertexBufferSize + 4 * pDesc->IndexBufferSize) + MEGA_BYTE(64);
 		if (!InitImGui())
 		{
 			LOG_ERROR("[ImGuiRenderer]: Failed to initialize ImGui");
@@ -852,8 +851,8 @@ namespace LambdaEngine
 		m_CopyCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM, &transitionToShaderReadBarrier, 1);
 		m_CopyCommandList->End();
 
-		RenderSystem::GetGraphicsQueue()->ExecuteCommandLists(&m_CopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, nullptr, 0, nullptr, 0);
-		RenderSystem::GetGraphicsQueue()->Flush();
+		RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&m_CopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, nullptr, 0, nullptr, 0);
+		RenderAPI::GetGraphicsQueue()->Flush();
 
 		TextureViewDesc fontTextureViewDesc = {};
 		fontTextureViewDesc.DebugName		= "ImGui Font Texture View";

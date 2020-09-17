@@ -33,10 +33,11 @@ namespace LambdaEngine
 		m_ReliableSegmentsReceived.clear();
 	}
 
-	void PacketManagerUDP::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned)
+	bool PacketManagerUDP::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned)
 	{
 		bool runUntangler = false;
-		bool hasReliableMessage = false;
+		bool hasReliableSegment = false;
+		bool hasDuplicateSegment = false;
 
 		TArray<NetworkSegment*> packetsToFree;
 		packetsToFree.Reserve(32);
@@ -52,7 +53,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				hasReliableMessage = true;
+				hasReliableSegment = true;
 
 				if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)		//Reliable Packet in correct order
 				{
@@ -68,6 +69,7 @@ namespace LambdaEngine
 				else																				//Reliable Packet already received before
 				{
 					packetsToFree.PushBack(pPacket);
+					hasDuplicateSegment = true;
 				}
 			}
 		}
@@ -77,8 +79,14 @@ namespace LambdaEngine
 		if (runUntangler)
 			UntangleReliableSegments(segmentsReturned);
 
-		if (hasReliableMessage && m_SegmentsToSend[m_QueueIndex].empty())
+#ifdef LAMBDA_CONFIG_DEBUG
+		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
+			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment("PacketManagerUDP_NETWORK_ACK")->SetType(NetworkSegment::TYPE_NETWORK_ACK));
+#else
+		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
 			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment()->SetType(NetworkSegment::TYPE_NETWORK_ACK));
+#endif
+		return hasDuplicateSegment;
 	}
 
 	void PacketManagerUDP::UntangleReliableSegments(TArray<NetworkSegment*>& segmentsReturned)
@@ -92,10 +100,6 @@ namespace LambdaEngine
 				segmentsReturned.PushBack(pPacket);
 				packetsToErase.PushBack(pPacket);
 				m_Statistics.RegisterReliableSegmentReceived();
-			}
-			else
-			{
-				break;
 			}
 		}
 
@@ -129,11 +133,10 @@ namespace LambdaEngine
 
 					if (messageInfo.Retries < m_MaxRetries)
 					{
-						m_SegmentsToSend[m_QueueIndex].push(messageInfo.Packet);
+						m_SegmentsToSend[m_QueueIndex].push(messageInfo.Segment);
 						messageInfo.LastSent = currentTime;
-
 						if (messageInfo.Listener)
-							messageInfo.Listener->OnPacketResent(messageInfo.Packet, messageInfo.Retries);
+							messageInfo.Listener->OnPacketResent(messageInfo.Segment, messageInfo.Retries);
 					}
 					else
 					{
@@ -152,9 +155,9 @@ namespace LambdaEngine
 		for (auto& pair : messagesToDelete)
 		{
 			SegmentInfo& messageInfo = pair.second;
-			packetsToFree.PushBack(messageInfo.Packet);
+			packetsToFree.PushBack(messageInfo.Segment);
 			if (messageInfo.Listener)
-				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Packet, messageInfo.Retries);
+				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Segment, messageInfo.Retries);
 		}
 
 		m_SegmentPool.FreeSegments(packetsToFree);
