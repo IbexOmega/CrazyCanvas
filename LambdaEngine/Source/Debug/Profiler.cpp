@@ -7,9 +7,9 @@
 
 namespace LambdaEngine
 {
-	GPUProfiler* Profiler::s_pGPUProfiler = nullptr;
-	CPUProfiler* Profiler::s_pCPUProfiler = nullptr;
-
+	GPUProfiler* Profiler::s_pGPUProfiler 	= nullptr;
+	CPUProfiler* Profiler::s_pCPUProfiler 	= nullptr;
+	Timestamp Profiler::s_Timestamp			= 0;
 
 	Profiler::Profiler()
 	{
@@ -29,12 +29,18 @@ namespace LambdaEngine
 		return s_pGPUProfiler;
 	}
 
-	void Profiler::Render(Timestamp delta)
+	void Profiler::Tick(Timestamp delta)
+	{
+		s_Timestamp = delta;
+		GetGPUProfiler()->Tick(delta);
+	}
+
+	void Profiler::Render()
 	{
 		ImGui::Begin("Profiling data");
 
-		GetCPUProfiler()->Render(delta);
-		GetGPUProfiler()->Render(delta);
+		GetCPUProfiler()->Render(s_Timestamp);
+		GetGPUProfiler()->Render();
 
 		ImGui::End();
 	}
