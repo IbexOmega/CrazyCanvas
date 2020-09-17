@@ -3,6 +3,7 @@
 #include "Networking/API/IClient.h"
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryDecoder.h"
+#include "Networking/API/BinaryEncoder.h"
 
 #include "Log/Log.h"
 
@@ -26,6 +27,11 @@ void ClientHandler::OnConnected(LambdaEngine::IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_MESSAGE("OnConnected()");
+
+	/*LambdaEngine::NetworkSegment* pPacket = pClient->GetFreePacket(69);
+	LambdaEngine::BinaryEncoder encoder(pPacket);
+	encoder.WriteString("Christoffer");
+	pClient->SendReliable(pPacket, this);*/
 }
 
 void ClientHandler::OnDisconnecting(LambdaEngine::IClient* pClient)
@@ -50,12 +56,33 @@ void ClientHandler::OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngin
 	LOG_MESSAGE("OnPacketReceived()");
 
 	LambdaEngine::BinaryDecoder decoder(pPacket);
-	std::string name = decoder.ReadString();
-	LOG_MESSAGE(name.c_str());
+	if (counter + 1 != decoder.ReadUInt32())
+	{
+		//DEBUGBREAK();
+	}
+	counter++;
+	LOG_MESSAGE("%d", (int)counter);
 }
 
 void ClientHandler::OnClientReleased(LambdaEngine::IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	delete this;
+}
+
+void ClientHandler::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)
+{
+	LOG_ERROR("OnPacketDelivered(%s)", pPacket->ToString().c_str());
+}
+
+void ClientHandler::OnPacketResent(LambdaEngine::NetworkSegment* pPacket, uint8 retries)
+{
+	UNREFERENCED_VARIABLE(pPacket);
+	UNREFERENCED_VARIABLE(retries);
+}
+
+void ClientHandler::OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint8 retries)
+{
+	UNREFERENCED_VARIABLE(pPacket);
+	UNREFERENCED_VARIABLE(retries);
 }

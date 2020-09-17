@@ -25,7 +25,7 @@ namespace LambdaEngine
 	protected:
 		ServerUDP(const ServerDesc& desc);
 
-		virtual ISocket* SetupSocket() override;
+		virtual ISocket* SetupSocket(std::string& reason) override;
 		virtual void RunReceiver() override;
 
 	private:

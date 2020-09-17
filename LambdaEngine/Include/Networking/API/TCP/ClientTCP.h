@@ -20,14 +20,14 @@ namespace LambdaEngine
 		virtual PacketManagerBase* GetPacketManager() override;
 		virtual const PacketManagerBase* GetPacketManager() const override;
 		virtual PacketTransceiverBase* GetTransceiver() override;
-		virtual ISocket* SetupSocket() override;
+		virtual ISocket* SetupSocket(std::string& reason) override;
 		virtual void RunReceiver() override;
 		virtual void OnPacketDelivered(NetworkSegment* pPacket) override;
 		virtual void OnPacketResent(NetworkSegment* pPacket, uint8 tries) override;
 		virtual void OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries) override;
 
 	private:
-		PacketTransceiverTCP m_Transciver;
+		PacketTransceiverTCP m_Transceiver;
 		PacketManagerTCP m_PacketManager;
 	};
 }

@@ -22,7 +22,7 @@ namespace LambdaEngine
 		
 	}
 
-	ISocket* ServerTCP::SetupSocket()
+	ISocket* ServerTCP::SetupSocket(std::string& reason)
 	{
 		ISocketTCP* pSocket = PlatformNetworkUtils::CreateSocketTCP();
 		if (pSocket)
@@ -34,13 +34,15 @@ namespace LambdaEngine
 					LOG_INFO("[ServerTCP]: Started %s", GetEndPoint().ToString().c_str());
 					return pSocket;
 				}
-				LOG_ERROR("[ServerTCP]: Failed To Listen To Socket");
+				reason = "Listen Socket Failed";
+				delete pSocket;
 				return nullptr;
 			}
-			LOG_ERROR("[ServerTCP]: Failed To Bind Socket");
+			reason = "Bind Socket Failed " + GetEndPoint().ToString();
+			delete pSocket;
 			return nullptr;
 		}
-		LOG_ERROR("[ServerTCP]: Failed To Create Socket");
+		reason = "Create Socket Failed";
 		return nullptr;
 	}
 
@@ -60,6 +62,10 @@ namespace LambdaEngine
 
 	ClientRemoteTCP* ServerTCP::CreateClient(ISocketTCP* socket)
 	{
-		return DBG_NEW ClientRemoteTCP(GetDescription().PoolSize, socket, this);
+		ClientRemoteDesc desc = {};
+		memcpy(&desc, &GetDescription(), sizeof(ServerDesc));
+		desc.Server = this;
+
+		return DBG_NEW ClientRemoteTCP(desc, socket);
 	}
 }
