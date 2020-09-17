@@ -153,6 +153,11 @@ namespace LambdaEngine
 		return m_pServer->SendReliableBroadcast(this, pPacket, pListener);
 	}
 
+	bool ClientRemoteBase::SendUnreliableBroadcast(NetworkSegment* pPacket)
+	{
+		return m_pServer->SendUnreliableBroadcast(this, pPacket);
+	}
+
 	const IPEndPoint& ClientRemoteBase::GetEndPoint() const
 	{
 		return GetPacketManager()->GetEndPoint();

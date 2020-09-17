@@ -85,6 +85,19 @@ void Server::Tick(Timestamp delta)
 void Server::FixedTick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
+
+	// Simulate first Remote client broadcasting
+	if (m_pServer->GetClientCount() > 0)
+	{
+		ClientRemoteBase* pClient = m_pServer->GetClients().begin()->second;
+		if (pClient->IsConnected())
+		{
+			NetworkSegment* pPacket = pClient->GetFreePacket(99);
+			BinaryEncoder encoder(pPacket);
+			encoder.WriteString("Test broadcast from server.cpp");
+			pClient->SendUnreliableBroadcast(pPacket);
+		}
+	}
 }
 
 namespace LambdaEngine
