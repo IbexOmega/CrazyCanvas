@@ -50,5 +50,5 @@ void main()
     //Send Ray
     traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin, Tmin, direction, Tmax, payload);
 
-    imageStore(u_OutputTexture, pixelCoords, vec4(vec3(s_PrimaryPayload.Distance), 1.0f));
+    imageStore(u_OutputTexture, pixelCoords, vec4(s_PrimaryPayload.Distance, 1.0f));
 }

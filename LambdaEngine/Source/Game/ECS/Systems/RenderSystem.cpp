@@ -44,8 +44,7 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, MeshComponent::s_TID}, {NDA, StaticComponent::s_TID}},	{&transformComponents}, &m_StaticEntities,	std::bind(&RenderSystem::OnStaticEntityAdded, this, std::placeholders::_1),	 std::bind(&RenderSystem::OnStaticEntityRemoved, this, std::placeholders::_1)},
-				{{{RW, MeshComponent::s_TID}, {NDA, DynamicComponent::s_TID}},	{&transformComponents}, &m_DynamicEntities,	std::bind(&RenderSystem::OnDynamicEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDynamicEntityRemoved, this, std::placeholders::_1)},
+				{{{RW, MeshComponent::s_TID}},	{&transformComponents}, &m_RenderableEntities, std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)},
 				{{{RW, ViewProjectionMatrices::s_TID}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
@@ -191,9 +190,7 @@ namespace LambdaEngine
 			}
 		}
 
-		SAFERELEASE(m_pStaticBLAS);
 		SAFERELEASE(m_pTLAS);
-		SAFERELEASE(m_pStaticInstanceBuffer);
 		SAFERELEASE(m_pCompleteInstanceBuffer);
 
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
@@ -240,7 +237,7 @@ namespace LambdaEngine
 		ComponentArray<RotationComponent>*	pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
 		ComponentArray<ScaleComponent>*		pScaleComponents	= pECSCore->GetComponentArray<ScaleComponent>();
 
-		for (Entity entity : m_DynamicEntities.GetIDs())
+		for (Entity entity : m_RenderableEntities.GetIDs())
 		{
 			auto& positionComp	= pPositionComponents->GetData(entity);
 			auto& rotationComp	= pRotationComponents->GetData(entity);
@@ -315,7 +312,7 @@ namespace LambdaEngine
 		UpdateRenderGraph();
 	}
 
-	void RenderSystem::OnStaticEntityAdded(Entity entity)
+	void RenderSystem::OnEntityAdded(Entity entity)
 	{
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
@@ -328,55 +325,23 @@ namespace LambdaEngine
 		transform *= glm::toMat4(rotationComp.Quaternion);
 		transform = glm::scale(transform, scaleComp.Scale);
 
-		AddEntityInstance(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true, false);
-
-		m_StaticBLASDirty = true;
+		AddEntityInstance(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
 	}
 
-	void RenderSystem::OnDynamicEntityAdded(Entity entity)
-	{
-		ECSCore* pECSCore = ECSCore::GetInstance();
-
-		auto& positionComp	= pECSCore->GetComponent<PositionComponent>(entity);
-		auto& rotationComp	= pECSCore->GetComponent<RotationComponent>(entity);
-		auto& scaleComp		= pECSCore->GetComponent<ScaleComponent>(entity);
-		auto& meshComp		= pECSCore->GetComponent<MeshComponent>(entity);
-
-		glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
-		transform *= glm::toMat4(rotationComp.Quaternion);
-		transform = glm::scale(transform, scaleComp.Scale);
-
-		AddEntityInstance(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
-	}
-
-	void RenderSystem::OnStaticEntityRemoved(Entity entity)
-	{
-		RemoveEntityInstance(entity);
-
-		m_StaticBLASDirty = true;
-	}
-
-	void RenderSystem::OnDynamicEntityRemoved(Entity entity)
+	void RenderSystem::OnEntityRemoved(Entity entity)
 	{
 		RemoveEntityInstance(entity);
 	}
 
-	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated)
+	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated)
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
-
-		if (isStatic && animated)
-		{
-			LOG_ERROR("[RenderSystem]: A static game object cannot also be animated!");
-			return;
-		}
 
 		uint32 materialSlot;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
 		MeshKey meshKey;
 		meshKey.MeshGUID		= meshGUID;
-		meshKey.IsStatic		= isStatic;
 		meshKey.IsAnimated		= animated;
 		meshKey.EntityID		= entity;
 
@@ -447,10 +412,11 @@ namespace LambdaEngine
 
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
 
-				//Static Instances are handled seperately
 				if (m_RayTracingEnabled)
 				{
-					if (!isStatic) m_DirtyBLASs.insert(&meshAndInstancesIt->second);
+					meshEntry.ShaderRecord.VertexBufferAddress = meshEntry.pVertexBuffer->GetDeviceAdress();
+					meshEntry.ShaderRecord.IndexBufferAddress = meshEntry.pIndexBuffer->GetDeviceAdress();
+					m_DirtyBLASs.insert(&meshAndInstancesIt->second);
 				}
 			}
 		}
@@ -498,7 +464,7 @@ namespace LambdaEngine
 		{
 			AccelerationStructureInstance asInstance = {};
 			asInstance.Transform		= glm::transpose(transform);
-			asInstance.CustomIndex		= 0;
+			asInstance.CustomIndex		= materialSlot;
 			asInstance.Mask				= 0xFF;
 			asInstance.SBTRecordOffset	= 0;
 			asInstance.Flags			= FAccelerationStructureInstanceFlag::RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED;
@@ -915,118 +881,6 @@ namespace LambdaEngine
 
 	void RenderSystem::BuildBLASs(CommandList* pCommandList)
 	{
-		if (m_StaticBLASDirty)
-		{
-			//Assume we need to release the old StaticBLAS, vertex count probably changed
-			if (m_pStaticBLAS != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pStaticBLAS);
-
-			TArray<AccelerationStructureGeometryDesc> createGeometryDescriptions;
-			TArray<BuildBottomLevelAccelerationStructureGeometryDesc> buildGeometryDescriptions;
-
-			for (auto meshAndInstanceIt = m_MeshAndInstancesMap.begin(); meshAndInstanceIt != m_MeshAndInstancesMap.end(); meshAndInstanceIt++)
-			{
-				if (meshAndInstanceIt->first.IsStatic)
-				{
-					AccelerationStructureGeometryDesc createGeometryDesc = {};
-					createGeometryDesc.MaxTriangleCount	= meshAndInstanceIt->second.IndexCount / 3;
-					createGeometryDesc.MaxVertexCount	= meshAndInstanceIt->second.VertexCount;
-					createGeometryDesc.AllowsTransform	= true;
-
-					BuildBottomLevelAccelerationStructureGeometryDesc buildGeometryDesc = {};
-					buildGeometryDesc.pVertexBuffer			= meshAndInstanceIt->second.pVertexBuffer;
-					buildGeometryDesc.FirstVertexIndex		= 0;
-					buildGeometryDesc.VertexStride			= sizeof(Vertex);
-					buildGeometryDesc.pIndexBuffer			= meshAndInstanceIt->second.pIndexBuffer;
-					buildGeometryDesc.IndexBufferByteOffset	= 0;
-					buildGeometryDesc.TriangleCount			= meshAndInstanceIt->second.IndexCount / 3;
-
-					for (const AccelerationStructureInstance& asInstance : meshAndInstanceIt->second.ASInstances)
-					{
-						BufferDesc bufferDesc = {};
-						bufferDesc.DebugName	= "BLAS Transform Buffer";
-						bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-						bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
-						bufferDesc.SizeInBytes	= sizeof(glm::mat3x4);
-
-						Buffer* pTransformBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-
-						void* pMapped = pTransformBuffer->Map();
-						memcpy(pMapped, glm::value_ptr(asInstance.Transform), sizeof(glm::mat3x4)); 
-						pTransformBuffer->Unmap();
-
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pTransformBuffer);
-
-						buildGeometryDesc.pTransformBuffer = pTransformBuffer;
-
-						createGeometryDescriptions.PushBack(createGeometryDesc);
-						buildGeometryDescriptions.PushBack(buildGeometryDesc);
-					}
-				}
-			}
-
-			if (!createGeometryDescriptions.IsEmpty())
-			{
-				AccelerationStructureDesc blasCreateDesc = {};
-				blasCreateDesc.DebugName	= "BLAS";
-				blasCreateDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_BOTTOM;
-				blasCreateDesc.Geometries	= createGeometryDescriptions;
-
-				m_pStaticBLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&blasCreateDesc);
-
-				BuildBottomLevelAccelerationStructureDesc blasBuildDesc = {};
-				blasBuildDesc.pAccelerationStructure	= m_pStaticBLAS;
-				blasBuildDesc.Update					= false;
-				blasBuildDesc.Geometries				= buildGeometryDescriptions;
-
-				pCommandList->BuildBottomLevelAccelerationStructure(&blasBuildDesc);
-			}
-
-			//Update Static Instance Buffer
-			if (m_pStaticBLAS != nullptr)
-			{
-				AccelerationStructureInstance staticInstance = {};
-				staticInstance.Transform						= glm::mat3x4(1.0f);
-				staticInstance.CustomIndex						= 0;
-				staticInstance.Mask								= 0xFF;
-				staticInstance.SBTRecordOffset					= 0;
-				staticInstance.Flags							= FAccelerationStructureInstanceFlag::RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED;
-				staticInstance.AccelerationStructureAddress		= m_pStaticBLAS->GetDeviceAdress();
-
-				Buffer* pStagingBuffer = m_ppStaticStagingInstanceBuffers[m_ModFrameIndex];
-
-				if (pStagingBuffer == nullptr)
-				{
-					BufferDesc bufferDesc = {};
-					bufferDesc.DebugName	= "Static Instance Staging Buffer";
-					bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-					bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					bufferDesc.SizeInBytes	= sizeof(AccelerationStructureInstance);
-
-					pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-					m_ppStaticStagingInstanceBuffers[m_ModFrameIndex] = pStagingBuffer;
-				}
-
-				void* pMapped = pStagingBuffer->Map();
-				memcpy(pMapped, &staticInstance, sizeof(AccelerationStructureInstance));
-				pStagingBuffer->Unmap();
-
-				if (m_pStaticInstanceBuffer == nullptr)
-				{
-					BufferDesc bufferDesc = {};
-					bufferDesc.DebugName	= "Static Instance Buffer";
-					bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-					bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC | FBufferFlag::BUFFER_FLAG_COPY_DST;
-					bufferDesc.SizeInBytes	= sizeof(AccelerationStructureInstance);
-
-					m_pStaticInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-				}
-
-				pCommandList->CopyBuffer(pStagingBuffer, 0, m_pStaticInstanceBuffer, 0, sizeof(AccelerationStructureInstance));
-			}
-
-			m_StaticBLASDirty = false;
-		}
-
 		if (!m_DirtyBLASs.empty())
 		{
 			for (MeshEntry* pDirtyBLAS : m_DirtyBLASs)
@@ -1076,6 +930,8 @@ namespace LambdaEngine
 					asInstance.AccelerationStructureAddress = blasAddress;
 				}
 			}
+
+			m_DirtyBLASs.clear();
 		}
 	}
 
@@ -1088,33 +944,18 @@ namespace LambdaEngine
 
 			uint32 newInstanceCount = 0;
 
-			if (m_pStaticInstanceBuffer != nullptr)
-			{
-				PendingBufferUpdate copyToCompleteInstanceBuffer = {};
-				copyToCompleteInstanceBuffer.pSrcBuffer		= m_pStaticInstanceBuffer;
-				copyToCompleteInstanceBuffer.SrcOffset		= 0;
-				copyToCompleteInstanceBuffer.DstOffset		= 0;
-				copyToCompleteInstanceBuffer.SizeInBytes	= sizeof(AccelerationStructureInstance);
-				m_CompleteInstanceBufferPendingCopies.PushBack(copyToCompleteInstanceBuffer);
-
-				newInstanceCount++;
-			}
-
 			for (MeshAndInstancesMap::const_iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
 			{
-				if (!meshAndInstancesIt->first.IsStatic)
-				{
-					uint32 instanceCount = meshAndInstancesIt->second.ASInstances.GetSize();
+				uint32 instanceCount = meshAndInstancesIt->second.ASInstances.GetSize();
 
-					PendingBufferUpdate copyToCompleteInstanceBuffer = {};
-					copyToCompleteInstanceBuffer.pSrcBuffer		= meshAndInstancesIt->second.pASInstanceBuffer;
-					copyToCompleteInstanceBuffer.SrcOffset		= 0;
-					copyToCompleteInstanceBuffer.DstOffset		= newInstanceCount * sizeof(AccelerationStructureInstance);
-					copyToCompleteInstanceBuffer.SizeInBytes	= instanceCount * sizeof(AccelerationStructureInstance);
-					m_CompleteInstanceBufferPendingCopies.PushBack(copyToCompleteInstanceBuffer);
+				PendingBufferUpdate copyToCompleteInstanceBuffer = {};
+				copyToCompleteInstanceBuffer.pSrcBuffer		= meshAndInstancesIt->second.pASInstanceBuffer;
+				copyToCompleteInstanceBuffer.SrcOffset		= 0;
+				copyToCompleteInstanceBuffer.DstOffset		= newInstanceCount * sizeof(AccelerationStructureInstance);
+				copyToCompleteInstanceBuffer.SizeInBytes	= instanceCount * sizeof(AccelerationStructureInstance);
+				m_CompleteInstanceBufferPendingCopies.PushBack(copyToCompleteInstanceBuffer);
 
-					newInstanceCount += instanceCount;
-				}
+				newInstanceCount += instanceCount;
 			}
 			
 			if (newInstanceCount == 0)
@@ -1147,8 +988,10 @@ namespace LambdaEngine
 			{
 				if (m_pTLAS != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pTLAS);
 
+				m_MaxInstances = newInstanceCount;
+
 				AccelerationStructureGeometryDesc createGeometryDesc = {};
-				createGeometryDesc.InstanceCount	= 1;
+				createGeometryDesc.InstanceCount	= m_MaxInstances;
 				m_CreateTLASGeometryDescriptions.PushBack(createGeometryDesc);
 
 				AccelerationStructureDesc createTLASDesc = {};
@@ -1159,7 +1002,6 @@ namespace LambdaEngine
 
 				m_pTLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&createTLASDesc);
 
-				m_MaxInstances = newInstanceCount;
 				update = false;
 
 				m_TLASResourceDirty = true;

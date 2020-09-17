@@ -58,7 +58,6 @@ namespace LambdaEngine
 		struct MeshKey
 		{
 			GUID_Lambda		MeshGUID;
-			bool			IsStatic;
 			bool			IsAnimated;
 			Entity			EntityID;
 			mutable size_t	Hash = 0;
@@ -80,9 +79,6 @@ namespace LambdaEngine
 				if (MeshGUID != other.MeshGUID)
 					return false;
 
-				if (IsStatic != other.IsStatic)
-					return false;
-
 				if (IsAnimated)
 				{
 					if (!other.IsAnimated || EntityID != other.EntityID)
@@ -101,9 +97,16 @@ namespace LambdaEngine
 			}
 		};
 
+		struct SBTRecord
+		{
+			uint64	VertexBufferAddress		= 0;
+			uint64	IndexBufferAddress		= 0;
+		};
+
 		struct MeshEntry
 		{
-			AccelerationStructure* pBLAS	= nullptr;
+			AccelerationStructure* pBLAS		= nullptr;
+			SBTRecord ShaderRecord			= {};
 
 			Buffer* pVertexBuffer			= nullptr;
 			uint32	VertexCount				= 0;
@@ -174,12 +177,10 @@ namespace LambdaEngine
 	private:
 		RenderSystem() = default;
 
-		void OnStaticEntityAdded(Entity entity);
-		void OnDynamicEntityAdded(Entity entity);
-		void OnStaticEntityRemoved(Entity entity);
-		void OnDynamicEntityRemoved(Entity entity);
+		void OnEntityAdded(Entity entity);
+		void OnEntityRemoved(Entity entity);
 
-		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated);
+		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated);
 		void RemoveEntityInstance(Entity entity);
 
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
@@ -198,8 +199,7 @@ namespace LambdaEngine
 		void BuildTLAS(CommandList* pCommandList);
 
 	private:
-		IDVector				m_StaticEntities;
-		IDVector				m_DynamicEntities;
+		IDVector				m_RenderableEntities;
 		IDVector				m_CameraEntities;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
@@ -241,12 +241,9 @@ namespace LambdaEngine
 
 		//Ray Tracing
 		Buffer*					m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
-		Buffer*					m_pStaticInstanceBuffer			= nullptr;
 		Buffer*					m_pCompleteInstanceBuffer		= nullptr;
 		uint32					m_MaxInstances					= 0;
-		AccelerationStructure*	m_pStaticBLAS					= nullptr;
 		AccelerationStructure*	m_pTLAS							= nullptr;
-		AccelerationStructureInstance			m_StaticASInstance;
 		TArray<AccelerationStructureGeometryDesc> m_CreateTLASGeometryDescriptions;
 		TArray<PendingBufferUpdate> m_CompleteInstanceBufferPendingCopies;
 
@@ -257,7 +254,6 @@ namespace LambdaEngine
 		TSet<uint32>				m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyBLASs;
-		bool						m_StaticBLASDirty					= true;
 		bool						m_TLASDirty							= true;
 		bool						m_TLASResourceDirty					= false;
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
