@@ -11,17 +11,17 @@
 
 namespace LambdaEngine
 {
-    class EntitySubscriber;
-    class RegularWorker;
+	class EntitySubscriber;
+	class RegularWorker;
 
-    class ECSCore
-    {
-    public:
-        ECSCore();
-        ~ECSCore() = default;
+	class ECSCore
+	{
+	public:
+		ECSCore();
+		~ECSCore() = default;
 
-        ECSCore(const ECSCore& other) = delete;
-        void operator=(const ECSCore& other) = delete;
+		ECSCore(const ECSCore& other) = delete;
+		void operator=(const ECSCore& other) = delete;
 
         static void Release();
 
@@ -51,10 +51,10 @@ namespace LambdaEngine
         void ScheduleJobASAP(const Job& job);
         void ScheduleJobPostFrame(const Job& job);
 
-        void AddRegistryPage();
-        void DeregisterTopRegistryPage();
-        void DeleteTopRegistryPage();
-        void ReinstateTopRegistryPage();
+		void AddRegistryPage();
+		void DeregisterTopRegistryPage();
+		void DeleteTopRegistryPage();
+		void ReinstateTopRegistryPage();
 
         float GetDeltaTime() const { return m_DeltaTime; }
 
@@ -66,9 +66,9 @@ namespace LambdaEngine
 		uint32 SubscribeToEntities(const EntitySubscriberRegistration& subscriberRegistration) { return m_EntityPublisher.SubscribeToEntities(subscriberRegistration); }
 		void UnsubscribeFromEntities(uint32 subscriptionID) { m_EntityPublisher.UnsubscribeFromEntities(subscriptionID); }
 
-        friend RegularWorker;
-        uint32 ScheduleRegularJob(const Job& job, uint32_t phase)   { return m_JobScheduler.ScheduleRegularJob(job, phase); };
-        void DescheduleRegularJob(uint32_t phase, uint32 jobID)     { m_JobScheduler.DescheduleRegularJob(phase, jobID); };
+		friend RegularWorker;
+		uint32 ScheduleRegularJob(const Job& job, uint32_t phase)   { return m_JobScheduler.ScheduleRegularJob(job, phase); };
+		void DescheduleRegularJob(uint32_t phase, uint32 jobID)     { m_JobScheduler.DescheduleRegularJob(phase, jobID); };
 
 	private:
         void PerformEntityDeletions();
@@ -79,10 +79,10 @@ namespace LambdaEngine
         JobScheduler m_JobScheduler;
         ComponentStorage m_ComponentStorage;
 
-        TArray<Entity> m_EntitiesToDelete;
+		TArray<Entity> m_EntitiesToDelete;
 
-        // DeltaTime is the time between frames. The typical 'dt' that is passed to update()
-        float m_DeltaTime;
+		// DeltaTime is the time between frames. The typical 'dt' that is passed to update()
+		float m_DeltaTime;
 
     private:
         static ECSCore* s_pInstance;
