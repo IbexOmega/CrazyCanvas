@@ -71,6 +71,7 @@ namespace LambdaEngine
 		void DescheduleRegularJob(uint32_t phase, uint32 jobID)     { m_JobScheduler.DescheduleRegularJob(phase, jobID); };
 
 	private:
+		void PerformComponentRegistrations();
 		void PerformComponentDeletions();
 		void PerformEntityDeletions();
 		bool DeleteComponent(Entity entity, std::type_index componentType);
@@ -83,6 +84,7 @@ namespace LambdaEngine
 
 		TArray<Entity> m_EntitiesToDelete;
 		TArray<std::pair<Entity, std::type_index>> m_ComponentsToDelete;
+		TArray<std::pair<Entity, std::type_index>> m_ComponentsToRegister;
 
 		// DeltaTime is the time between frames. The typical 'dt' that is passed to update()
 		float m_DeltaTime;
@@ -97,11 +99,11 @@ namespace LambdaEngine
 		if (!m_ComponentStorage.HasType<Comp>())
 			m_ComponentStorage.RegisterComponentType<Comp>();
 
+		/*	Create component immediately, but hold off on registering and publishing it until the end of the frame.
+			This is to prevent concurrency issues. Publishing a component means pushing entity IDs to IDVectors,
+			and there is no guarentee that no one is simultaneously reading from these IDVectors. */
 		Comp& comp = m_ComponentStorage.AddComponent<Comp>(entity, component);
-
-		m_EntityRegistry.RegisterComponentType(entity, Comp::s_TID);
-		m_EntityPublisher.PublishComponent(entity, Comp::s_TID);
-
+		m_ComponentsToRegister.PushBack({entity, Comp::s_TID});
 		return comp;
 	}
 

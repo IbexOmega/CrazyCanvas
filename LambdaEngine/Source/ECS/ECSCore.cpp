@@ -17,6 +17,7 @@ namespace LambdaEngine
 	void ECSCore::Tick(float dt)
 	{
 		m_DeltaTime = dt;
+		PerformComponentRegistrations();
 		PerformComponentDeletions();
 		PerformEntityDeletions();
 		m_JobScheduler.Tick();
@@ -94,6 +95,18 @@ namespace LambdaEngine
 		}
 	}
 
+	void ECSCore::PerformComponentRegistrations()
+	{
+		for (const std::pair<Entity, std::type_index>& component : m_ComponentsToRegister)
+		{
+			m_EntityRegistry.RegisterComponentType(component.first, component.second);
+			m_EntityPublisher.PublishComponent(component.first, component.second);
+		}
+
+		m_ComponentsToRegister.ShrinkToFit();
+		m_ComponentsToRegister.Clear();
+	}
+
 	void ECSCore::PerformComponentDeletions()
 	{
 		for (const std::pair<Entity, std::type_index>& component : m_ComponentsToDelete)
@@ -107,8 +120,8 @@ namespace LambdaEngine
 			}
 		}
 
-		m_ComponentsToDelete.Clear();
 		m_ComponentsToDelete.ShrinkToFit();
+		m_ComponentsToDelete.Clear();
 	}
 
 	void ECSCore::PerformEntityDeletions()
@@ -126,8 +139,8 @@ namespace LambdaEngine
 			m_EntityRegistry.DeregisterEntity(entity);
 		}
 
-		m_EntitiesToDelete.Clear();
 		m_EntitiesToDelete.ShrinkToFit();
+		m_EntitiesToDelete.Clear();
 	}
 
 	bool ECSCore::DeleteComponent(Entity entity, std::type_index componentType)
