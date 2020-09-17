@@ -47,6 +47,7 @@
 #include "Math/Random.h"
 #include "Debug/Profiler.h"
 
+#include <argh/argh.h>
 #include <imgui.h>
 
 constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
@@ -291,11 +292,6 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 
 namespace LambdaEngine
 {
-	namespace argh
-	{
-		class parser;
-	}
-
 	Game* CreateGame(const argh::parser& flagParser)
 	{
 		UNREFERENCED_VARIABLE(flagParser);

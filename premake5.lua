@@ -479,6 +479,7 @@ workspace "LambdaEngine"
 
 		sysincludedirs
 		{
+			"Dependencies/",
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
@@ -584,6 +585,7 @@ workspace "LambdaEngine"
 
 		sysincludedirs
 		{
+			"Dependencies/",
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
@@ -635,6 +637,7 @@ workspace "LambdaEngine"
 
 		sysincludedirs
 		{
+			"Dependencies/",
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",

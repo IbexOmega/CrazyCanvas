@@ -26,6 +26,7 @@
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/NetworkDebugger.h"
 
+#include <argh/argh.h>
 
 Client::Client() :
 	m_pClient(nullptr)
@@ -165,11 +166,6 @@ void Client::FixedTick(LambdaEngine::Timestamp delta)
 
 namespace LambdaEngine
 {
-	namespace argh
-	{
-		class parser;
-	}
-
 	Game* CreateGame(const argh::parser& parser)
 	{
 		UNREFERENCED_VARIABLE(parser);
