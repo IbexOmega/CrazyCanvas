@@ -22,10 +22,13 @@
 #include "Rendering/Core/API/PipelineState.h"
 #include "Rendering/Core/API/RenderPass.h"
 #include "Rendering/Core/API/PipelineLayout.h"
+#include "Rendering/Core/API/AccelerationStructure.h"
 
 #include "Rendering/RenderGraphTypes.h"
 
 #include "Game/Camera.h"
+
+#include "Threading/API/SpinLock.h"
 
 namespace LambdaEngine
 {
@@ -101,13 +104,19 @@ namespace LambdaEngine
 		struct MeshEntry
 		{
 			AccelerationStructure* pBLAS	= nullptr;
+
 			Buffer* pVertexBuffer			= nullptr;
+			uint32	VertexCount				= 0;
 			Buffer* pIndexBuffer			= nullptr;
 			uint32	IndexCount				= 0;
 
-			Buffer* pInstanceBuffer			= nullptr;
-			Buffer* pInstanceStagingBuffer	= nullptr;
-			TArray<Instance> Instances;
+			Buffer* pASInstanceBuffer			= nullptr;
+			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
+			TArray<AccelerationStructureInstance> ASInstances;
+
+			Buffer* pRasterInstanceBuffer			= nullptr;
+			Buffer* ppRasterInstanceStagingBuffers[BACK_BUFFER_COUNT];
+			TArray<Instance> RasterInstances;
 		};
 
 		struct InstanceKey
@@ -119,8 +128,10 @@ namespace LambdaEngine
 		struct PendingBufferUpdate
 		{
 			Buffer* pSrcBuffer	= nullptr;
+			uint64	SrcOffset	= 0;
 			Buffer* pDstBuffer	= nullptr;
-			uint64 SizeInBytes	= 0;
+			uint64	DstOffset	= 0;
+			uint64	SizeInBytes	= 0;
 		};
 
 		using MeshAndInstancesMap	= THashTable<MeshKey, MeshEntry, MeshKeyHasher>;
@@ -165,9 +176,11 @@ namespace LambdaEngine
 
 		void OnStaticEntityAdded(Entity entity);
 		void OnDynamicEntityAdded(Entity entity);
-		void RemoveEntityInstance(Entity entity);
+		void OnStaticEntityRemoved(Entity entity);
+		void OnDynamicEntityRemoved(Entity entity);
 
 		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated);
+		void RemoveEntityInstance(Entity entity);
 
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(Entity entity);
@@ -181,6 +194,8 @@ namespace LambdaEngine
 		void UpdateInstanceBuffers(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
 		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
+		void BuildBLASs(CommandList* pCommandList);
+		void BuildTLAS(CommandList* pCommandList);
 
 	private:
 		IDVector				m_StaticEntities;
@@ -191,11 +206,11 @@ namespace LambdaEngine
 		Texture**				m_ppBackBuffers		= nullptr;
 		TextureView**			m_ppBackBufferViews	= nullptr;
 		RenderGraph*			m_pRenderGraph		= nullptr;
+		SpinLock				m_SpinLock;
 		uint64					m_FrameIndex		= 0;
 		uint64					m_ModFrameIndex		= 0;
 		uint32					m_BackBufferIndex	= 0;
 		bool					m_RayTracingEnabled	= false;
-
 		//Mesh/Instance/Entity
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
 		MaterialMap						m_MaterialMap;
@@ -213,28 +228,38 @@ namespace LambdaEngine
 		TextureView*		m_ppRoughnessMapViews[MAX_UNIQUE_MATERIALS];
 		TextureView*		m_ppMetallicMapViews[MAX_UNIQUE_MATERIALS];
 		MaterialProperties	m_pMaterialProperties[MAX_UNIQUE_MATERIALS];
-		Buffer*				m_pMaterialParametersStagingBuffer		= nullptr;
+		Buffer*				m_ppMaterialParametersStagingBuffers[BACK_BUFFER_COUNT];
 		Buffer*				m_pMaterialParametersBuffer				= nullptr;
 		TStack<uint32>		m_FreeMaterialSlots;
 
 		//Per Frame
 		PerFrameBuffer		m_PerFrameData;
-		Buffer*				m_pPerFrameStagingBuffer	= nullptr;
+		Buffer*				m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
 		Buffer*				m_pPerFrameBuffer			= nullptr;
 
 		//Draw Args
 		TSet<uint32>		m_RequiredDrawArgs;
 
 		//Ray Tracing
-		AccelerationStructure*		m_pTLAS			= nullptr;
+		Buffer*					m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
+		Buffer*					m_pStaticInstanceBuffer			= nullptr;
+		Buffer*					m_pCompleteInstanceBuffer		= nullptr;
+		uint32					m_MaxInstances					= 0;
+		AccelerationStructure*	m_pStaticBLAS					= nullptr;
+		AccelerationStructure*	m_pTLAS							= nullptr;
+		AccelerationStructureInstance			m_StaticASInstance;
+		TArray<AccelerationStructureGeometryDesc> m_CreateTLASGeometryDescriptions;
+		TArray<PendingBufferUpdate> m_CompleteInstanceBufferPendingCopies;
 
 		//Pending/Dirty
-		bool						m_MaterialsResourceDirty	= true;
-		bool						m_PerFrameResourceDirty		= true;
+		bool						m_MaterialsPropertiesBufferDirty	= true;
+		bool						m_MaterialsResourceDirty			= true;
+		bool						m_PerFrameResourceDirty				= true;
 		TSet<uint32>				m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyBLASs;
-		bool						m_TLASDirty					= true;
+		bool						m_StaticBLASDirty					= true;
+		bool						m_TLASDirty							= true;
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
 

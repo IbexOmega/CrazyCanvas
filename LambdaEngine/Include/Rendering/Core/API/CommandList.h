@@ -136,19 +136,23 @@ namespace LambdaEngine
 		bool						Update					= false;
 	};
 
+	struct BuildBottomLevelAccelerationStructureGeometryDesc
+	{
+		const Buffer*	pVertexBuffer			= nullptr; 
+		uint32			FirstVertexIndex		= 0; 
+		uint32			VertexStride			= 0;
+		const Buffer*	pIndexBuffer			= nullptr;
+		uint32			IndexBufferByteOffset	= 0; 
+		uint32			TriangleCount			= 0;
+		const Buffer*	pTransformBuffer		= nullptr;
+	};
+
 	struct BuildBottomLevelAccelerationStructureDesc
 	{
 		AccelerationStructure*		pAccelerationStructure	= nullptr;
 		FAccelerationStructureFlags	Flags					= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_NONE;
-		const Buffer*				pVertexBuffer			= nullptr; 
-		uint32						FirstVertexIndex		= 0; 
-		uint32						VertexStride			= 0;
-		const Buffer*				pIndexBuffer			= nullptr;
-		uint32						IndexBufferByteOffset	= 0; 
-		uint32						TriangleCount			= 0;
-		const Buffer*				pTransformBuffer		= nullptr;
-		uint32						TransformByteOffset		= 0;
 		bool						Update					= false;
+		TArray<BuildBottomLevelAccelerationStructureGeometryDesc> Geometries;
 	};
 
 	struct CommandListDesc

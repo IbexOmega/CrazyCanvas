@@ -32,10 +32,13 @@ namespace LambdaEngine
 
 	bool AccelerationStructureVK::Init(const AccelerationStructureDesc* pDesc)
 	{
+		VALIDATE(pDesc != nullptr);
+		VALIDATE(!pDesc->Geometries.IsEmpty());
+
 		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
 		accelerationStructureCreateInfo.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
 		accelerationStructureCreateInfo.compactedSize		= 0;
-		accelerationStructureCreateInfo.maxGeometryCount	= 1;
+		accelerationStructureCreateInfo.maxGeometryCount	= pDesc->Geometries.GetSize();
 		accelerationStructureCreateInfo.deviceAddress		= VK_NULL_HANDLE;
 		accelerationStructureCreateInfo.flags				= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
 		if (pDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
@@ -43,32 +46,38 @@ namespace LambdaEngine
 			accelerationStructureCreateInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 		}
 
-		VkAccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
-		geometryTypeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
-		geometryTypeInfo.pNext = nullptr;
+		TArray<VkAccelerationStructureCreateGeometryTypeInfoKHR> geometryCreateInfos(accelerationStructureCreateInfo.maxGeometryCount);
+
+		for (uint32 g = 0; g < accelerationStructureCreateInfo.maxGeometryCount; g++)
+		{
+			const AccelerationStructureGeometryDesc& geometryDesc = pDesc->Geometries[g];
+
+			VkAccelerationStructureCreateGeometryTypeInfoKHR& geometryTypeInfo = geometryCreateInfos[g];
+			geometryTypeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
+			geometryTypeInfo.pNext = nullptr;
 		
-		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
-		if (pDesc->Type == EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP)
-		{
-			accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+			if (pDesc->Type == EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP)
+			{
+				accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 			
-			geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_INSTANCES_KHR;
-			geometryTypeInfo.maxPrimitiveCount	= pDesc->InstanceCount;
-			geometryTypeInfo.allowsTransforms	= VK_FALSE;
-		}
-		else
-		{
-			accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+				geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_INSTANCES_KHR;
+				geometryTypeInfo.maxPrimitiveCount	= geometryDesc.InstanceCount;
+				geometryTypeInfo.allowsTransforms	= VK_FALSE;
+			}
+			else
+			{
+				accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 
-			geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-			geometryTypeInfo.maxPrimitiveCount	= pDesc->MaxTriangleCount;
-			geometryTypeInfo.indexType			= VK_INDEX_TYPE_UINT32;
-			geometryTypeInfo.maxVertexCount		= pDesc->MaxVertexCount;
-			geometryTypeInfo.vertexFormat		= VK_FORMAT_R32G32B32_SFLOAT;
-			geometryTypeInfo.allowsTransforms	= pDesc->AllowsTransform ? VK_TRUE : VK_FALSE;
+				geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+				geometryTypeInfo.maxPrimitiveCount	= geometryDesc.MaxTriangleCount;
+				geometryTypeInfo.indexType			= VK_INDEX_TYPE_UINT32;
+				geometryTypeInfo.maxVertexCount		= geometryDesc.MaxVertexCount;
+				geometryTypeInfo.vertexFormat		= VK_FORMAT_R32G32B32_SFLOAT;
+				geometryTypeInfo.allowsTransforms	= geometryDesc.AllowsTransform ? VK_TRUE : VK_FALSE;
+			}
 		}
 
-		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
+		accelerationStructureCreateInfo.pGeometryInfos = geometryCreateInfos.GetData();
 
 		VALIDATE(m_pDevice->vkCreateAccelerationStructureKHR != nullptr);
 

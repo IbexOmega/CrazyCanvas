@@ -395,6 +395,7 @@ namespace LambdaEngine
 	bool DeviceAllocatorVK::Allocate(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex)
 	{
 		VALIDATE(pAllocation != nullptr);
+		VALIDATE(sizeInBytes > 0);
 		
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		

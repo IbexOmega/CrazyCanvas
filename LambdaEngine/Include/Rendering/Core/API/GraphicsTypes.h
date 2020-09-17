@@ -441,8 +441,8 @@ namespace LambdaEngine
 		QUERY_PIPELINE_STATISTICS_FLAG_COMPUTE_SHADER_INVOCATIONS					= FLAG(11),
 	};
 
-	typedef uint32 FAcceleratioStructureInstanceFlags;
-	enum FAcceleratioStructureInstanceFlag : FAcceleratioStructureInstanceFlags
+	typedef uint32 FAccelerationStructureInstanceFlags;
+	enum FAccelerationStructureInstanceFlag : FAccelerationStructureInstanceFlags
 	{
 		RAY_TRACING_INSTANCE_FLAG_NONE				= 0,
 		RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED	= FLAG(0),

@@ -274,39 +274,53 @@ namespace LambdaEngine
 		VALIDATE(pBuildDesc != nullptr);
 
 		VALIDATE(pBuildDesc->pAccelerationStructure != nullptr);
-		VALIDATE(pBuildDesc->pVertexBuffer			!= nullptr);
-		VALIDATE(pBuildDesc->pIndexBuffer			!= nullptr);
+		VALIDATE(!pBuildDesc->Geometries.IsEmpty());
 
 		AccelerationStructureVK*	pAccelerationStructureVk	= reinterpret_cast<AccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
 		BufferVK*					pScratchBufferVk			= pAccelerationStructureVk->GetScratchBuffer();
-		const BufferVK*				pVertexBufferVk				= reinterpret_cast<const BufferVK*>(pBuildDesc->pVertexBuffer);
-		const BufferVK*				pIndexBufferVk				= reinterpret_cast<const BufferVK*>(pBuildDesc->pIndexBuffer);
 
-		VkAccelerationStructureGeometryKHR geometryData = {};
-		geometryData.sType											= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		geometryData.flags											= VK_GEOMETRY_OPAQUE_BIT_KHR; // TODO: Cant be opaque if we want to utilize any-hit shaders
-		geometryData.geometryType									= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-		geometryData.geometry.triangles.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-		geometryData.geometry.triangles.vertexFormat				= VK_FORMAT_R32G32B32_SFLOAT;
-		geometryData.geometry.triangles.vertexData.deviceAddress	= pVertexBufferVk->GetDeviceAdress();
-		geometryData.geometry.triangles.vertexStride				= pBuildDesc->VertexStride;
-		geometryData.geometry.triangles.indexType					= VK_INDEX_TYPE_UINT32;
-		geometryData.geometry.triangles.indexData.deviceAddress		= pIndexBufferVk->GetDeviceAdress();
+		TArray<VkAccelerationStructureGeometryKHR> geometryBuildInfos(pBuildDesc->Geometries.GetSize());
+		TArray<VkAccelerationStructureBuildOffsetInfoKHR> accelerationStructureOffsetInfos(pBuildDesc->Geometries.GetSize());
 
-		if (pBuildDesc->pTransformBuffer != nullptr)
+		for (uint32 g = 0; g < pBuildDesc->Geometries.GetSize(); g++)
 		{
-			const BufferVK* pTransformBufferVk = reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer);
-			geometryData.geometry.triangles.transformData.deviceAddress = pTransformBufferVk->GetDeviceAdress();
+			const BuildBottomLevelAccelerationStructureGeometryDesc& geometryBuildDesc = pBuildDesc->Geometries[g];
+
+			const BufferVK*	pVertexBufferVk	= reinterpret_cast<const BufferVK*>(geometryBuildDesc.pVertexBuffer);
+			const BufferVK*	pIndexBufferVk	= reinterpret_cast<const BufferVK*>(geometryBuildDesc.pIndexBuffer);
+			
+			VkAccelerationStructureGeometryKHR& geometryData = geometryBuildInfos[g];
+			geometryData.sType											= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+			geometryData.flags											= VK_GEOMETRY_OPAQUE_BIT_KHR; // TODO: Cant be opaque if we want to utilize any-hit shaders
+			geometryData.geometryType									= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+			geometryData.geometry.triangles.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+			geometryData.geometry.triangles.vertexFormat				= VK_FORMAT_R32G32B32_SFLOAT;
+			geometryData.geometry.triangles.vertexData.deviceAddress	= pVertexBufferVk->GetDeviceAdress();
+			geometryData.geometry.triangles.vertexStride				= geometryBuildDesc.VertexStride;
+			geometryData.geometry.triangles.indexType					= VK_INDEX_TYPE_UINT32;
+			geometryData.geometry.triangles.indexData.deviceAddress		= pIndexBufferVk->GetDeviceAdress();
+
+			if (geometryBuildDesc.pTransformBuffer != nullptr)
+			{
+				const BufferVK* pTransformBufferVk = reinterpret_cast<const BufferVK*>(geometryBuildDesc.pTransformBuffer);
+				geometryData.geometry.triangles.transformData.deviceAddress = pTransformBufferVk->GetDeviceAdress();
+			}
+
+			VkAccelerationStructureBuildOffsetInfoKHR& accelerationStructureOffsetInfo = accelerationStructureOffsetInfos[g];
+			accelerationStructureOffsetInfo.primitiveCount	= geometryBuildDesc.TriangleCount;
+			accelerationStructureOffsetInfo.primitiveOffset = geometryBuildDesc.IndexBufferByteOffset;
+			accelerationStructureOffsetInfo.firstVertex		= geometryBuildDesc.FirstVertexIndex;
+			accelerationStructureOffsetInfo.transformOffset = 0;
 		}
 
-		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
+		VkAccelerationStructureGeometryKHR* pGeometryData = geometryBuildInfos.GetData();
 
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
 		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
-		accelerationStructureBuildInfo.geometryCount				= 1;
+		accelerationStructureBuildInfo.geometryCount				= geometryBuildInfos.GetSize();
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
 		accelerationStructureBuildInfo.update						= VK_FALSE;
 		accelerationStructureBuildInfo.srcAccelerationStructure		= VK_NULL_HANDLE;
@@ -321,18 +335,12 @@ namespace LambdaEngine
 			}
 		}
 		
-		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
-		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->TriangleCount;
-		accelerationStructureOffsetInfo.primitiveOffset = pBuildDesc->IndexBufferByteOffset;
-		accelerationStructureOffsetInfo.firstVertex		= pBuildDesc->FirstVertexIndex;
-		accelerationStructureOffsetInfo.transformOffset = pBuildDesc->TransformByteOffset;
-
 		VALIDATE(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
 
 		// Start by flushing barriers
 		FlushDeferredBarriers();
 
-		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
+		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = accelerationStructureOffsetInfos.GetData();
 		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CommandList, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
