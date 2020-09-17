@@ -136,7 +136,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ClientRemoteBase::SendReliable(NetworkSegment* packet, IPacketListener* listener)
+	bool ClientRemoteBase::SendReliable(NetworkSegment* pPacket, IPacketListener* pListener)
 	{
 		if (!IsConnected())
 		{
@@ -144,22 +144,14 @@ namespace LambdaEngine
 			return false;
 		}
 
-		GetPacketManager()->EnqueueSegmentReliable(packet, listener);
+		GetPacketManager()->EnqueueSegmentReliable(pPacket, pListener);
 		return true;
 	}
 
-
-	bool ClientRemoteBase::SendReliableBroadcast(NetworkSegment* packet, IPacketListener* listener)
+	bool ClientRemoteBase::SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener)
 	{
-		if (!m_pServer->SendReliableBroadcast(this, packet, listener))
-		{
-			LOG_WARNING("[ClientRemoteBase]: Can not broadcast packet");
-			return false;
-		}
-
-		return true;
+		return m_pServer->SendReliableBroadcast(this, pPacket, pListener);
 	}
-
 
 	const IPEndPoint& ClientRemoteBase::GetEndPoint() const
 	{
@@ -215,7 +207,6 @@ namespace LambdaEngine
 						}
 					}
 				}
-
 			}
 
 			for (NetworkSegment* pPacket : packets)

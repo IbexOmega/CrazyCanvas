@@ -22,12 +22,6 @@
 
 #include "Math/Random.h"
 
-#include "Rendering/Renderer.h"
-
-
-#include "Networking/API/NetworkSegment.h"
-#include "Networking/API/BinaryEncoder.h"
-
 using namespace LambdaEngine;
 
 Server::Server()
@@ -98,8 +92,9 @@ void Server::Tick(Timestamp delta)
 		NetworkSegment* pPacket = chosenClientPair->second->GetFreePacket(99);
 		BinaryEncoder encoder(pPacket);
 		encoder.WriteString("Test broadcast from server.cpp");
-		m_pServer->SendReliableBroadcast(chosenClientPair->second, pPacket, nullptr);
+		chosenClientPair->second->SendReliableBroadcast(pPacket);
 	}
+
 }
 
 void Server::FixedTick(Timestamp delta)
