@@ -1,12 +1,6 @@
 #pragma once
 
 #include "Game/State.h"
-namespace LambdaEngine
-{
-	class StateManager;
-	class ECSCore;
-	class Scene;
-}
 
 class DebugState : public LambdaEngine::State
 {
@@ -15,10 +9,10 @@ public:
 	DebugState(LambdaEngine::State* pOther);
 	~DebugState();
 
-	void Init();
+	void Init() override final;
 
-	void Resume();
-	void Pause();
+	void Resume() override final;
+	void Pause() override final;
 
-	void Tick(float dt);
+	void Tick(float dt) override final;
 };

@@ -13,3 +13,6 @@
 [submodule "Dependencies/rapidjson"]
 	path = Dependencies/rapidjson
 	url = https://github.com/Tencent/rapidjson.git
+[submodule "Dependencies/argh"]
+	path = Dependencies/argh
+	url = https://github.com/adishavit/argh

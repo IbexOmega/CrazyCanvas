@@ -295,15 +295,16 @@ workspace "LambdaEngine"
 
 		sysincludedirs
 		{
-			"Dependencies/glm",
+			"Dependencies/",
 			"Dependencies/assimp/include",
-			"Dependencies/WavLib",
 			"Dependencies/imgui",
-			"Dependencies/stb",
-			"Dependencies/glslang/include",
 			"Dependencies/imnodes",
-			"Dependencies/rapidjson/include",
+			"Dependencies/glm",
+			"Dependencies/glslang/include",
 			"Dependencies/ordered-map/include",
+			"Dependencies/rapidjson/include",
+			"Dependencies/stb",
+			"Dependencies/WavLib",
 		}
 
 		links
@@ -530,6 +531,7 @@ workspace "LambdaEngine"
 
 		sysincludedirs
 		{
+			"Dependencies/",
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",

@@ -165,9 +165,15 @@ void Client::FixedTick(LambdaEngine::Timestamp delta)
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	namespace argh
 	{
-		Client* pClient = DBG_NEW Client();		
+		class parser;
+	}
+
+	Game* CreateGame(const argh::parser& parser)
+	{
+		UNREFERENCED_VARIABLE(parser);
+		Client* pClient = DBG_NEW Client();
 		return pClient;
 	}
 }

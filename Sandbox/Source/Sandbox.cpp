@@ -291,8 +291,14 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	namespace argh
 	{
+		class parser;
+	}
+
+	Game* CreateGame(const argh::parser& flagParser)
+	{
+		UNREFERENCED_VARIABLE(flagParser);
 		Sandbox* pSandbox = DBG_NEW Sandbox();
 		return pSandbox;
 	}
@@ -410,7 +416,7 @@ bool Sandbox::LoadRendererResources()
 		pushConstantUpdate.DataSize			= sizeof(pointLightPushConstantData);
 
 		pushConstantUpdate.RenderStageName	= "POINT_LIGHT_SHADOWMAPS";
-		
+
 		RenderSystem::GetInstance().GetRenderGraph()->UpdatePushConstants(&pushConstantUpdate);
 
 		pushConstantUpdate.RenderStageName	= "DEMO";

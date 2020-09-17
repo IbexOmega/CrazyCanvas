@@ -27,11 +27,6 @@ DebugState::~DebugState()
 void DebugState::Init()
 {
 	// Create Systems
-	MaterialProperties materialProperties;
-	materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
-	materialProperties.Roughness = 0.1f;
-	materialProperties.Metallic = 0.1f;
-
 	//Scene
 	{
 		TArray<MeshComponent> meshComponents;
@@ -51,6 +46,11 @@ void DebugState::Init()
 			ECSCore::GetInstance()->AddComponent<StaticComponent>(entity, StaticComponent());
 		}
 	}
+
+	MaterialProperties materialProperties;
+	materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	materialProperties.Roughness = 0.1f;
+	materialProperties.Metallic = 0.1f;
 
 	GUID_Lambda sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 	GUID_Lambda Material = ResourceManager::LoadMaterialFromMemory(

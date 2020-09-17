@@ -97,8 +97,14 @@ void Server::FixedTick(LambdaEngine::Timestamp delta)
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	namespace argh
 	{
+		class parser;
+	}
+
+	Game* CreateGame(const argh::parser& flagParser)
+	{
+		UNREFERENCED_VARIABLE(flagParser);
 		Server* pServer = DBG_NEW Server();
 		return pServer;
 	}
