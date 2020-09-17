@@ -133,6 +133,21 @@ namespace LambdaEngine
 			uint32 RandomSeed;
 		};
 
+		struct PointLight
+		{
+			glm::vec4	ColorIntensity = glm::vec4(1.0f);
+			glm::vec3	Position = glm::vec3(0.0f);
+			uint32		Padding0;
+		};
+
+		struct LightBuffer
+		{
+			glm::vec4	ColorIntensity	= glm::vec4(1.0f);
+			glm::vec3	Direction		= glm::vec3(1.0f);
+			uint32		PointLightCount;
+			// PointLight PointLights[] unbounded
+		};
+
 	public:
 		DECL_REMOVE_COPY(RenderSystem);
 		DECL_REMOVE_MOVE(RenderSystem);
@@ -166,6 +181,12 @@ namespace LambdaEngine
 
 		void OnStaticEntityAdded(Entity entity);
 		void OnDynamicEntityAdded(Entity entity);
+		void OnDirectionalEntityAdded(Entity entity);
+		void OnPointLightEntityAdded(Entity entity);
+
+		void OnDirectionalEntityRemoved(Entity entity);
+		void OnPointLightEntityRemoved(Entity entity);
+
 		void RemoveEntityInstance(Entity entity);
 
 		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated);
@@ -182,10 +203,13 @@ namespace LambdaEngine
 		void UpdateInstanceBuffers(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
 		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
+		void UpdateLightsBuffer(CommandList* pCommandList);
 
 	private:
 		IDVector				m_StaticEntities;
 		IDVector				m_DynamicEntities;
+		IDVector				m_DirectionalLightEntities;
+		IDVector				m_PointLightEntities;
 		IDVector				m_CameraEntities;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
@@ -196,6 +220,13 @@ namespace LambdaEngine
 		uint64					m_ModFrameIndex		= 0;
 		uint32					m_BackBufferIndex	= 0;
 		bool					m_RayTracingEnabled	= false;
+
+		bool						m_DirtyLights = false;
+		bool						m_DirectionalExist = false;
+		LightBuffer					m_DirectionalLight;
+		THashTable<Entity, uint32>	m_EntityToPointLight;
+		THashTable<uint32, Entity>	m_PointLightToEntity;
+		TArray<PointLight>			m_PointLights;
 
 		//Data Supplied to the RenderGraph
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
@@ -222,8 +253,11 @@ namespace LambdaEngine
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
 
 		PerFrameBuffer		m_PerFrameData;
-		Buffer*				m_pPerFrameStagingBuffer	= nullptr;
-		Buffer*				m_pPerFrameBuffer			= nullptr;
+		Buffer*				m_pPerFrameStagingBuffer					= nullptr;
+		Buffer*				m_pPerFrameBuffer							= nullptr;
+
+		Buffer*				m_ppLightsStagingBuffer[BACK_BUFFER_COUNT] = {nullptr};
+		Buffer*				m_pLightsBuffer								= nullptr;
 
 		TSet<uint32>		m_RequiredDrawArgs;
 		TSet<uint32>		m_DirtyDrawArgs;

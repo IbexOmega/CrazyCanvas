@@ -19,6 +19,8 @@
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Rendering/PointLightComponent.h"
+#include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/Camera.h"
 
 #include "Engine/EngineConfig.h"
@@ -39,8 +41,10 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, MeshComponent::s_TID}, {NDA, StaticComponent::s_TID}},	{&transformComponents}, &m_StaticEntities,	std::bind(&RenderSystem::OnStaticEntityAdded, this, std::placeholders::_1),	 std::bind(&RenderSystem::RemoveEntityInstance, this, std::placeholders::_1)},
-				{{{RW, MeshComponent::s_TID}, {NDA, DynamicComponent::s_TID}},	{&transformComponents}, &m_DynamicEntities,	std::bind(&RenderSystem::OnDynamicEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::RemoveEntityInstance, this, std::placeholders::_1)},
+				{{{RW, MeshComponent::s_TID}, {NDA, StaticComponent::s_TID}},	{&transformComponents}, &m_StaticEntities,		std::bind(&RenderSystem::OnStaticEntityAdded, this, std::placeholders::_1),	 std::bind(&RenderSystem::RemoveEntityInstance, this, std::placeholders::_1)},
+				{{{RW, MeshComponent::s_TID}, {NDA, DynamicComponent::s_TID}},	{&transformComponents}, &m_DynamicEntities,		std::bind(&RenderSystem::OnDynamicEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::RemoveEntityInstance, this, std::placeholders::_1)},
+				{{{RW, DirectionalLightComponent::s_TID}}, {&transformComponents}, &m_DirectionalLightEntities,											std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
+				{{{RW, PointLightComponent::s_TID}}, {&transformComponents}, &m_PointLightEntities,								std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
 				{{{RW, ViewProjectionMatrices::s_TID}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
@@ -132,7 +136,7 @@ namespace LambdaEngine
 			BufferDesc perFrameBufferDesc = {};
 			perFrameBufferDesc.DebugName			= "Scene Per Frame Buffer";
 			perFrameBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
-			perFrameBufferDesc.Flags				= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;;
+			perFrameBufferDesc.Flags				= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
 			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
 
 			m_pPerFrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameBufferDesc);
@@ -196,6 +200,7 @@ namespace LambdaEngine
 		SAFERELEASE(m_pMaterialParametersBuffer);
 		SAFERELEASE(m_pPerFrameStagingBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
+		SAFERELEASE(m_pLightsBuffer);
 
 		SAFEDELETE(m_pRenderGraph);
 
@@ -205,6 +210,7 @@ namespace LambdaEngine
 			{
 				SAFERELEASE(m_ppBackBuffers[i]);
 				SAFERELEASE(m_ppBackBufferViews[i]);
+				SAFERELEASE(m_ppLightsStagingBuffer[i]);
 			}
 
 			SAFEDELETE_ARRAY(m_ppBackBuffers);
@@ -329,6 +335,62 @@ namespace LambdaEngine
 		transform = glm::scale(transform, scaleComp.Scale);
 
 		AddEntityInstance(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
+	}
+
+	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
+	{
+		if (!m_DirectionalExist)
+		{
+			ECSCore* pECSCore = ECSCore::GetInstance();
+
+			auto& pointLightComp = pECSCore->GetComponent<PointLightComponent>(entity);
+			auto& position = pECSCore->GetComponent<PositionComponent>(entity);
+			auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
+
+			m_DirectionalLight.ColorIntensity = pointLightComp.ColorIntensity;
+			m_DirectionalLight.Direction = glm::rotate(rotation.Quaternion, { 1.0f, 0.0f, 0.0f });
+
+			m_DirectionalExist = true;
+			m_DirtyLights = true;
+		}
+	}
+
+	void RenderSystem::OnPointLightEntityAdded(Entity entity)
+	{
+
+		ECSCore* pECSCore = ECSCore::GetInstance();
+
+		auto& pointLightComp = pECSCore->GetComponent<PointLightComponent>(entity);
+		auto& position = pECSCore->GetComponent<PositionComponent>(entity);
+	
+		uint32 pointLightIndex = m_PointLights.GetSize();
+		m_EntityToPointLight[entity] = pointLightIndex;
+		m_PointLightToEntity[pointLightIndex] = entity;
+
+		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLightComp.ColorIntensity, .Position = position.Position});
+
+		m_DirtyLights = true;
+	}
+
+	void RenderSystem::OnDirectionalEntityRemoved(Entity entity)
+	{
+		m_DirectionalExist = false;
+		m_DirtyLights = true;
+	}
+
+	void RenderSystem::OnPointLightEntityRemoved(Entity entity)
+	{
+		uint32 lastIndex = m_PointLights.GetSize() - 1U;
+		uint32 lastEntity = m_PointLightToEntity[lastIndex];
+		uint32 currentIndex = m_EntityToPointLight[entity];
+
+		m_PointLights[currentIndex] = m_PointLights[lastIndex];
+		m_EntityToPointLight[lastEntity] = currentIndex;
+
+		m_EntityToPointLight.erase(entity);
+		m_PointLights.PopBack();
+
+		m_DirtyLights = true;
 	}
 
 	void RenderSystem::RemoveEntityInstance(Entity entity)
@@ -563,6 +625,11 @@ namespace LambdaEngine
 			UpdatePerFrameBuffer(pGraphicsCommandList);
 		}
 
+		// Update Light Data
+		{
+			UpdateLightsBuffer(pGraphicsCommandList);
+		}
+
 		//Update Empty MaterialData
 		{
 			UpdateMaterialPropertiesBuffer(pGraphicsCommandList);
@@ -602,6 +669,16 @@ namespace LambdaEngine
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
 			m_PerFrameResourceDirty = false;
+		}
+
+		if (m_DirtyLights)
+		{
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName = SCENE_LIGHTS_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pLightsBuffer;
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+
+			m_DirtyLights = false;
 		}
 
 		if (m_MaterialsResourceDirty)
@@ -770,5 +847,55 @@ namespace LambdaEngine
 		}
 
 		pCommandList->CopyBuffer(m_pMaterialParametersStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
+	}
+
+	void RenderSystem::UpdateLightsBuffer(CommandList* pCommandList)
+	{
+		// Light Buffer Initilisation
+		if (m_DirtyLights)
+		{
+			size_t pointLightCount = m_PointLights.GetSize();
+			size_t dirLightBufferSize = sizeof(LightBuffer);
+			size_t pointLightsBufferSize = sizeof(PointLight) * pointLightCount;
+			size_t lightBufferSize = dirLightBufferSize + pointLightsBufferSize;
+
+			// Set point light count
+			m_DirectionalLight.PointLightCount = pointLightCount;
+
+			Buffer* currentStagingBuffer = m_ppLightsStagingBuffer[m_ModFrameIndex];
+
+			if (currentStagingBuffer == nullptr || currentStagingBuffer->GetDesc().SizeInBytes < lightBufferSize)
+			{
+				if (currentStagingBuffer != nullptr) m_BuffersToRemove[m_ModFrameIndex].PushBack(currentStagingBuffer);
+
+				BufferDesc lightCopyBufferDesc = {};
+				lightCopyBufferDesc.DebugName = "Lights Copy Buffer";
+				lightCopyBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+				lightCopyBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+				lightCopyBufferDesc.SizeInBytes = sizeof(lightBufferSize);
+
+				m_ppLightsStagingBuffer[m_ModFrameIndex] = currentStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&lightCopyBufferDesc);
+			}
+
+			void* pMapped = currentStagingBuffer->Map();
+			memcpy(pMapped, &m_DirectionalLight, dirLightBufferSize);
+			memcpy((uint8*)pMapped + dirLightBufferSize, m_PointLights.GetData(), pointLightsBufferSize);
+			currentStagingBuffer->Unmap();
+
+			if (m_pLightsBuffer == nullptr || m_pLightsBuffer->GetDesc().SizeInBytes < lightBufferSize)
+			{
+				if (m_pLightsBuffer != nullptr) m_BuffersToRemove[m_ModFrameIndex].PushBack(m_pLightsBuffer);
+
+				BufferDesc lightBufferDesc = {};
+				lightBufferDesc.DebugName = "Lights Buffer";
+				lightBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+				lightBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+				lightBufferDesc.SizeInBytes = sizeof(lightBufferSize);
+
+				m_pLightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&lightBufferDesc);
+			}
+
+			pCommandList->CopyBuffer(currentStagingBuffer, 0, m_pLightsBuffer, 0, lightBufferSize);
+		}
 	}
 }
