@@ -43,7 +43,7 @@ namespace LambdaEngine
         ~EntitySubscriber();
 
         // subscribeToEntities enqueues entity subscriptions. initFn is called when all dependencies have been initialized.
-        void SubscribeToEntities(const EntitySubscriberRegistration& subscriberRegistration, const std::function<bool()>& initFn);
+        void SubscribeToEntities(const EntitySubscriberRegistration& subscriberRegistration);
 
     private:
         uint32 m_SubscriptionID = UINT32_MAX;

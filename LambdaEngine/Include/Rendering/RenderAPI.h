@@ -12,10 +12,10 @@ namespace LambdaEngine
 	class CommandQueue;
 	class GraphicsDevice;
 
-	class LAMBDA_API RenderSystem
+	class LAMBDA_API RenderAPI
 	{
 	public:
-		DECL_STATIC_CLASS(RenderSystem);
+		DECL_STATIC_CLASS(RenderAPI);
 
 		static bool Init();
 		static bool Release();

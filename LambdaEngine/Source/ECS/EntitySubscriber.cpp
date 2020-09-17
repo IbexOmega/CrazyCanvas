@@ -29,11 +29,13 @@ namespace LambdaEngine
 
     EntitySubscriber::~EntitySubscriber()
     {
-        ECSCore::GetInstance()->GetEntityPublisher()->UnsubscribeFromComponents(m_SubscriptionID);
+        ECSCore* pECS = ECSCore::GetInstance();
+        if (pECS)
+            pECS->UnsubscribeFromEntities(m_SubscriptionID);
     }
 
-    void EntitySubscriber::SubscribeToEntities(const EntitySubscriberRegistration& subscriberRegistration, const std::function<bool()>& initFn)
+    void EntitySubscriber::SubscribeToEntities(const EntitySubscriberRegistration& subscriberRegistration)
     {
-        ECSCore::GetInstance()->EnqueueEntitySubscriptions(subscriberRegistration, initFn, &m_SubscriptionID);
+        m_SubscriptionID = ECSCore::GetInstance()->SubscribeToEntities(subscriberRegistration);
     }
 }

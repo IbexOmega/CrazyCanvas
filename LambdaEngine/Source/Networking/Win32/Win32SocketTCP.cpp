@@ -88,7 +88,7 @@ namespace LambdaEngine
 				return true;
 			else if (error == WSAEWOULDBLOCK && IsNonBlocking())
 				return true;
-			else if (error == WSAECONNRESET)
+			else if (error == WSAECONNRESET || error == WSAECONNABORTED)
 				return false;
 
 			LOG_ERROR_CRIT("Failed to receive data");

@@ -8,6 +8,9 @@
 #include "Networking/API/TCP/ServerTCP.h"
 #include "Networking/API/UDP/ServerUDP.h"
 #include "Networking/API/IPAddress.h"
+#include "Networking/API/NetworkSegment.h"
+#include "Networking/API/BinaryEncoder.h"
+#include "Networking/API/BinaryDecoder.h"
 
 #include "Time/API/Timestamp.h"
 

@@ -8,12 +8,8 @@
 
 #include "Resources/ResourceManager.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/ImGuiRenderer.h"
-#include "Rendering/Renderer.h"
-#include "Rendering/PipelineStateManager.h"
-#include "Rendering/RenderGraphTypes.h"
-#include "Rendering/RenderGraph.h"
 
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
@@ -28,13 +24,8 @@
 #include "Audio/AudioSystem.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
-#include "Networking/API/IPAddress.h"
-#include "Networking/API/NetworkSegment.h"
-#include "Networking/API/BinaryEncoder.h"
-#include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/NetworkDebugger.h"
 
-#include "Networking/API/TCP/ClientTCP.h"
 
 Client::Client() :
 	m_pClient(nullptr)
@@ -47,16 +38,19 @@ Client::Client() :
 	PlatformConsole::SetTitle("Client Console");
 
 
-	ClientDesc desc = {};
-	desc.PoolSize               = 512;
-	desc.MaxRetries             = 10;
-	desc.ResendRTTMultiplier    = 2.0F;
-	desc.Handler                = this;
-	desc.Protocol               = EProtocol::TCP;
+    ClientDesc desc = {};
+    desc.PoolSize               = 512;
+    desc.MaxRetries             = 10;
+    desc.ResendRTTMultiplier    = 2.0F;
+    desc.Handler                = this;
+    desc.Protocol               = EProtocol::UDP;
+	desc.PingInterval			= Timestamp::Seconds(1);
+	desc.PingTimeout			= Timestamp::Seconds(3);
+	desc.UsePingSystem			= true;
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
-	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
+	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("81.170.143.133"), 4444)))
 	{
 		LOG_ERROR("Failed to connect!");
 	}
@@ -69,9 +63,6 @@ Client::~Client()
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
 
 	m_pClient->Release();
-
-	SAFEDELETE(m_pRenderGraph);
-	SAFEDELETE(m_pRenderer);
 }
 
 void Client::OnConnecting(LambdaEngine::IClient* pClient)
@@ -83,23 +74,7 @@ void Client::OnConnecting(LambdaEngine::IClient* pClient)
 void Client::OnConnected(LambdaEngine::IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
-	using namespace LambdaEngine;
-
 	LOG_MESSAGE("OnConnected()");
-
-	/*for (int i = 0; i < 1; i++)
-	{
-		NetworkPacket* pPacket = m_pClient->GetFreePacket(1);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteInt32(i);
-		m_pClient->SendReliable(pPacket, this);
-	}*/
-
-
-	NetworkSegment* pPacket = m_pClient->GetFreePacket(1);
-	BinaryEncoder encoder(pPacket);
-	encoder.WriteString("Christoffer");
-	m_pClient->SendReliable(pPacket, this);
 }
 
 void Client::OnDisconnecting(LambdaEngine::IClient* pClient)
@@ -129,7 +104,8 @@ void Client::OnServerFull(LambdaEngine::IClient* pClient)
 
 void Client::OnClientReleased(LambdaEngine::IClient* pClient)
 {
-
+	UNREFERENCED_VARIABLE(pClient);
+	LOG_ERROR("OnClientReleased()");
 }
 
 void Client::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)
@@ -157,9 +133,9 @@ bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	if (event.Key == EKey::KEY_ENTER)
 	{
 		if (m_pClient->IsConnected())
-			m_pClient->Disconnect();
+			m_pClient->Disconnect("User Requested");
 		else
-			m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444));
+			m_pClient->Connect(IPEndPoint(IPAddress::Get("81.170.143.133"), 4444));
 	}
 	else
 	{
@@ -175,26 +151,23 @@ bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 
 void Client::Tick(LambdaEngine::Timestamp delta)
 {
-	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(delta);
+	using namespace LambdaEngine;
 
 	NetworkDebugger::RenderStatisticsWithImGUI(m_pClient);
-
-	Renderer::Render();
 }
 
 void Client::FixedTick(LambdaEngine::Timestamp delta)
 {
-	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(delta);
+	using namespace LambdaEngine;
 }
 
 namespace LambdaEngine
 {
 	Game* CreateGame()
 	{
-		Client* pClient = DBG_NEW Client();
-		
+		Client* pClient = DBG_NEW Client();		
 		return pClient;
 	}
 }

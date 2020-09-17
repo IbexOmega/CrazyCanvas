@@ -7,7 +7,10 @@
 #define TID(type) std::type_index(typeid(type))
 
 #define DECL_COMPONENT(Component)		\
-	static const std::type_index s_TID;
+	static std::type_index s_TID
+
+#define INIT_COMPONENT(Component)		\
+	std::type_index Component::s_TID = TID(Component)
 
 namespace LambdaEngine
 {

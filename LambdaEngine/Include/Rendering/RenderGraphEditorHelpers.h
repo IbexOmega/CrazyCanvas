@@ -273,4 +273,35 @@ namespace LambdaEngine
 
 		return -1;
 	}
+
+	constexpr const char* DRAW_TYPE_NAMES[] =
+	{
+		"SCENE_INSTANCES",
+		"FULLSCREEN_QUAD",
+		"CUBE",
+	};
+
+	ERenderStageDrawType DrawTypeIndexToDrawType(int32 index)
+	{
+		switch (index)
+		{
+		case 0: return ERenderStageDrawType::SCENE_INSTANCES;
+		case 1: return ERenderStageDrawType::FULLSCREEN_QUAD;
+		case 2: return ERenderStageDrawType::CUBE;
+		}
+
+		return ERenderStageDrawType::NONE;
+	}
+
+	int32 DrawTypeToDrawTypeIndex(ERenderStageDrawType drawType)
+	{
+		switch (drawType)
+		{
+		case ERenderStageDrawType::SCENE_INSTANCES:	return 0;
+		case ERenderStageDrawType::FULLSCREEN_QUAD:	return 1;
+		case ERenderStageDrawType::CUBE:			return 2;
+		}
+
+		return -1;
+	}
 }

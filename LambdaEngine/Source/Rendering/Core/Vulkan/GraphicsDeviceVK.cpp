@@ -40,7 +40,7 @@ namespace LambdaEngine
 	{
 		ValidationLayer("REQ_V_L_BASE"),
 		ValidationLayer("VK_LAYER_KHRONOS_validation"),
-		ValidationLayer("VK_LAYER_RENDERDOC_Capture")
+		//ValidationLayer("VK_LAYER_RENDERDOC_Capture")
 	};
 
 	constexpr ValidationLayer OPTIONAL_VALIDATION_LAYERS[]
@@ -85,6 +85,7 @@ namespace LambdaEngine
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
 		Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
+		Extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME),
 		Extension(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME),
 		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
@@ -421,6 +422,53 @@ namespace LambdaEngine
 	void GraphicsDeviceVK::QueryDeviceFeatures(GraphicsDeviceFeatureDesc* pFeatures) const
 	{
 		memcpy(pFeatures, &m_DeviceFeatures, sizeof(m_DeviceFeatures));
+	}
+
+	void GraphicsDeviceVK::QueryDeviceMemoryStatistics(uint32* statCount, TArray<GraphicsDeviceMemoryStatistics>& pMemoryStat) const
+	{
+		// Queries each time function is called to get that _fresh_ information
+		VkPhysicalDeviceMemoryBudgetPropertiesEXT memBudgetProp = {};
+		memBudgetProp.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+
+		VkPhysicalDeviceMemoryProperties2 memProp2 = {};
+		memProp2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+		memProp2.pNext = (void*)(&memBudgetProp);
+
+		vkGetPhysicalDeviceMemoryProperties2(PhysicalDevice, &memProp2);
+
+		if (*statCount == 0)
+		{
+			*statCount = memProp2.memoryProperties.memoryHeapCount;
+		}
+		else
+		{
+			for (uint32 i = 0; i < *statCount; i++)
+			{
+				pMemoryStat[i].TotalBytesReserved = memBudgetProp.heapBudget[i];
+				pMemoryStat[i].TotalBytesAllocated = memBudgetProp.heapUsage[i];
+
+				// Only set if name has not been set yet
+				if (pMemoryStat[i].MemoryTypeName == "")
+				{
+					// Set memory type name
+					for (uint32 typeIdx = 0; typeIdx < memProp2.memoryProperties.memoryTypeCount; typeIdx++)
+					{
+						if (memProp2.memoryProperties.memoryTypes[typeIdx].heapIndex == i)
+						{
+							VkMemoryPropertyFlags propFlag = memProp2.memoryProperties.memoryTypes[typeIdx].propertyFlags;
+							if ((propFlag & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) && (propFlag & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && (propFlag & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+								pMemoryStat[i].MemoryTypeName = "Special Memory"; // Memory that is directly mappable on the GPU
+							else if ((propFlag & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) && (propFlag & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
+								pMemoryStat[i].MemoryTypeName = "Shared GPU Memory"; // Memory that is mappable on the CPU
+							else if (propFlag & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+								pMemoryStat[i].MemoryTypeName = "Dedicated GPU Memory"; // Non-mappable memory on the GPU (VRAM)
+							else
+								pMemoryStat[i].MemoryTypeName = "Memory heap does not match known memory types";
+						}
+					}
+				}
+			}
+		}
 	}
 
 	QueryHeap* GraphicsDeviceVK::CreateQueryHeap(const QueryHeapDesc* pDesc) const

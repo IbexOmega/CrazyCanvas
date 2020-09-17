@@ -3,7 +3,7 @@
 #include "LambdaEngine.h"
 #include "Containers/String.h"
 
-#define MAXIMUM_PACKET_SIZE 1024
+#define MAXIMUM_SEGMENT_SIZE 1024
 
 namespace LambdaEngine
 {
@@ -63,6 +63,8 @@ namespace LambdaEngine
 
 		std::string ToString() const;
 
+		void CopyTo(NetworkSegment* pSegment) const;
+
 	private:
 		NetworkSegment();
 
@@ -70,15 +72,28 @@ namespace LambdaEngine
 		static void PacketTypeToString(uint16 type, std::string& str);
 
 	private:
+#ifndef LAMBDA_CONFIG_PRODUCTION
+		std::string m_Borrower;
+		std::string m_Type;
+#endif
+
 		Header m_Header;
 		uint64 m_Salt;
 		uint16 m_SizeOfBuffer;
 		bool m_IsBorrowed;
+		char m_pBuffer[MAXIMUM_SEGMENT_SIZE];
+	};
 
-#ifndef LAMBDA_CONFIG_PRODUCTION
-		std::string m_Type;
-#endif
+	struct NetworkSegmentReliableUIDOrder
+	{
+		bool operator()(const NetworkSegment& lhs, const NetworkSegment& rhs) const
+		{
+			return lhs.GetReliableUID() < rhs.GetReliableUID();
+		}
 
-		char m_pBuffer[MAXIMUM_PACKET_SIZE];
+		bool operator()(const NetworkSegment* lhs, const NetworkSegment* rhs) const
+		{
+			return lhs->GetReliableUID() < rhs->GetReliableUID();
+		}
 	};
 }

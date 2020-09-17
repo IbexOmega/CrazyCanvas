@@ -12,11 +12,12 @@
 
 namespace LambdaEngine
 {
-	ClientRemoteTCP::ClientRemoteTCP(uint16 packetPoolSize, ISocketTCP* pSocket, ServerTCP* pServer) :
-		ClientRemoteBase(pServer),
+	ClientRemoteTCP::ClientRemoteTCP(const ClientRemoteDesc& desc, ISocketTCP* pSocket) :
+		ClientRemoteBase(desc),
 		m_pSocket(pSocket),
 		m_pThreadReceiver(nullptr),
-		m_PacketManager({ packetPoolSize, 0 })
+		m_PacketManager(desc),
+		m_ThreadTerminated(false)
 	{
 		m_PacketManager.SetEndPoint(pSocket->GetEndPoint());
 		m_Transceiver.SetSocket(pSocket);
@@ -28,6 +29,12 @@ namespace LambdaEngine
 		m_pThreadReceiver = Thread::Create(std::bind(&ClientRemoteTCP::RunReceiver, this), nullptr);
 	}
 
+	ClientRemoteTCP::~ClientRemoteTCP()
+	{
+		delete m_pSocket;
+		m_pSocket = nullptr;
+	}
+
 	void ClientRemoteTCP::RunReceiver()
 	{
 		IPEndPoint dummy;
@@ -35,23 +42,17 @@ namespace LambdaEngine
 		while (!m_pSocket->IsClosed())
 		{
 			if (!m_Transceiver.ReceiveBegin(dummy))
-				continue;
+			{
+				Disconnect("Connection Lost");
+				break;
+			}
 
 			DecodeReceivedPackets();
 		}
 
-		delete m_pSocket;
-		m_pSocket = nullptr;
-
-		ClientRemoteBase::Release();
-
-		LOG_INFO("[ClientTCPRemote]: Thread Ended");
-	}
-
-	void ClientRemoteTCP::Release()
-	{
-		if (m_pSocket)
-			m_pSocket->Close();
+		//LOG_INFO("[ClientTCPRemote]: Releasing Thread");
+		m_ThreadTerminated = true;
+		DeleteThis();
 	}
 
 	PacketManagerBase* ClientRemoteTCP::GetPacketManager()
@@ -67,5 +68,18 @@ namespace LambdaEngine
 	PacketTransceiverBase* ClientRemoteTCP::GetTransceiver()
 	{
 		return &m_Transceiver;
+	}
+
+	bool ClientRemoteTCP::CanDeleteNow()
+	{
+		return ClientRemoteBase::CanDeleteNow() && m_ThreadTerminated;
+	}
+
+	bool ClientRemoteTCP::OnTerminationRequested()
+	{
+		if (m_pSocket)
+			m_pSocket->Close();
+
+		return ClientRemoteBase::OnTerminationRequested();
 	}
 }
