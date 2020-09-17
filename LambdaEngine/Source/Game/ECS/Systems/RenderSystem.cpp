@@ -248,6 +248,9 @@ namespace LambdaEngine
 	{
 		m_BackBufferIndex = uint32(m_SwapChain->GetCurrentBackBufferIndex());
 
+		m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
+		m_FrameIndex++;
+
 		CleanBuffers();
 		UpdateBuffers();
 		UpdateRenderGraph();
@@ -257,9 +260,6 @@ namespace LambdaEngine
 		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
 
 		m_SwapChain->Present();
-
-		m_FrameIndex++;
-		m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
 
 		return true;
 	}
@@ -406,7 +406,7 @@ namespace LambdaEngine
 					meshEntry.pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexBufferDesc);
 
 					m_PendingBufferUpdates.PushBack({ pVertexStagingBuffer, meshEntry.pVertexBuffer, vertexBufferDesc.SizeInBytes });
-					m_BuffersToRemove[0].PushBack(pVertexStagingBuffer);
+					m_BuffersToRemove[m_ModFrameIndex].PushBack(pVertexStagingBuffer);
 				}
 
 				//Indices
@@ -433,7 +433,7 @@ namespace LambdaEngine
 					meshEntry.IndexCount	= pMesh->IndexCount;
 
 					m_PendingBufferUpdates.PushBack({ pIndexStagingBuffer, meshEntry.pIndexBuffer, indexBufferDesc.SizeInBytes });
-					m_BuffersToRemove[0].PushBack(pIndexStagingBuffer);
+					m_BuffersToRemove[m_ModFrameIndex].PushBack(pIndexStagingBuffer);
 				}
 
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
