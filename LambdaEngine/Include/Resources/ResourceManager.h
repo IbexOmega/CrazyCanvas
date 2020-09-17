@@ -55,7 +55,7 @@ namespace LambdaEngine
 		*	pGraphicsDevice - A Graphics Device
 		*	pDir - Path to the directory that holds the .obj file
 		*	filename - The name of the .obj file
-		*	result - A vector where all loaded GameObject(s) will be stored
+		*	result - A vector where all loaded MeshComponent(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
 		static bool LoadSceneFromFile(const String& filename, TArray<MeshComponent>& result);
