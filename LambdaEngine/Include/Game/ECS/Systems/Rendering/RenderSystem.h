@@ -158,19 +158,18 @@ namespace LambdaEngine
 		uint64			GetModFrameIndex()	{ return m_ModFrameIndex;	}
 		uint32			GetBufferIndex()	{ return m_BackBufferIndex; }
 
-		void OnStaticEntityAdded(Entity entity);
-		void OnStaticEntityRemoved(Entity entity);
-		void OnDynamicEntityAdded(Entity entity);
-		void OnDynamicEntityRemoved(Entity entity);
-
 	public:
 		static RenderSystem& GetInstance() { return s_Instance; }
 
 	private:
 		RenderSystem() = default;
 
+		void OnStaticEntityAdded(Entity entity);
+		void OnDynamicEntityAdded(Entity entity);
+		void RemoveEntityInstance(Entity entity);
+
 		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated);
-		
+
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(Entity entity);
 
