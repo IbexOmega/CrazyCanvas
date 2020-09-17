@@ -140,24 +140,22 @@ namespace LambdaEngine
 
 			if (glm::length(mouseDelta) > glm::epsilon<float>())
 			{
-				addedYaw += freeCamComp.MouseSpeedFactor * (float)mouseDelta.x * dt;
+				addedYaw -= freeCamComp.MouseSpeedFactor * (float)mouseDelta.x * dt;
 				addedPitch += freeCamComp.MouseSpeedFactor * (float)mouseDelta.y * dt;
 			}
 		}
 
 		const float MAX_PITCH = glm::half_pi<float>() - 0.01f;
-		float currentPitch = GetPitch(forward);
-		float prePitch = currentPitch;
-		currentPitch = glm::clamp(currentPitch + addedPitch, -MAX_PITCH, MAX_PITCH);
 
-		rotComp.Quaternion = glm::rotate(rotComp.Quaternion, addedPitch, right);
-		rotComp.Quaternion = glm::rotate(rotComp.Quaternion, addedYaw, g_DefaultUp);
-		//glm::quat yawRot = glm::angleAxis(addedYaw, g_DefaultUp);
-		//glm::quat pitchRot = glm::angleAxis(addedPitch, right);
-		//glm::quat rot = pitchRot * yawRot;
-		//glm::vec3 f = GetForward(rotComp.Quaternion);
-		//LOG_INFO("(%f, %f, %f)", f.x, f.y, f.z);
-		//LOG_INFO("(%f, %f, %f)", right.x, right.y, right.z);
+		static float s_TotalPitch = 0.f;
+		static float s_TotalYaw = 0.f;
+		s_TotalPitch = glm::clamp(s_TotalPitch + addedPitch, -MAX_PITCH, MAX_PITCH);
+		s_TotalYaw += addedYaw;
+		glm::quat pitchRot = glm::angleAxis(s_TotalPitch, glm::vec3(1.f, 0.f, 0.f));
+		glm::quat yawRot = glm::angleAxis(s_TotalYaw, g_DefaultUp);
+		glm::quat rot = yawRot * pitchRot;
+		rotComp.Quaternion = rot;
+
 		viewProjComp.View = glm::lookAt(posComp.Position, posComp.Position + GetForward(rotComp.Quaternion), g_DefaultUp);
 		camComp.ViewInv = glm::inverse(viewProjComp.View);
 	}
