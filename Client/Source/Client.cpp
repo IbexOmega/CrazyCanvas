@@ -41,20 +41,19 @@ Client::Client() :
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Client");
 	PlatformConsole::SetTitle("Client Console");
 
-
     ClientDesc desc = {};
     desc.PoolSize               = 512;
     desc.MaxRetries             = 10;
     desc.ResendRTTMultiplier    = 2.0F;
     desc.Handler                = this;
-    desc.Protocol               = EProtocol::UDP;
+    desc.Protocol               = EProtocol::TCP;
 	desc.PingInterval			= Timestamp::Seconds(1);
 	desc.PingTimeout			= Timestamp::Seconds(3);
 	desc.UsePingSystem			= true;
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
-	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("81.231.140.113"), 4444)))
+	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.65"), 4444)))
 	{
 		LOG_ERROR("Failed to connect!");
 	}
@@ -84,20 +83,6 @@ void Client::OnConnected(LambdaEngine::IClient* pClient)
 	using namespace LambdaEngine;
 
 	LOG_MESSAGE("OnConnected()");
-
-	/*for (int i = 0; i < 1; i++)
-	{
-		NetworkPacket* pPacket = m_pClient->GetFreePacket(1);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteInt32(i);
-		m_pClient->SendReliable(pPacket, this);
-	}*/
-
-
-	/*NetworkSegment* pPacket = m_pClient->GetFreePacket(420);
-	BinaryEncoder encoder(pPacket);
-	encoder.WriteString("Smoke Weed Everyday");
-	m_pClient->SendReliable(pPacket, this);*/
 }
 
 void Client::OnDisconnecting(LambdaEngine::IClient* pClient)
@@ -147,7 +132,7 @@ void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint
 	UNREFERENCED_VARIABLE(pPacket);
 	LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
-uint32 g_PackegesSent = 0;
+
 bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 {
 	using namespace LambdaEngine;
@@ -157,25 +142,11 @@ bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		if (m_pClient->IsConnected())
 			m_pClient->Disconnect("User Requested");
 		else
-			m_pClient->Connect(IPEndPoint(IPAddress::Get("81.231.140.113"), 4444));
+			m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.65"), 4444));
 	}
 	else
 	{
-		/*uint16 packetType = 0;
-		NetworkSegment* packet = m_pClient->GetFreePacket(packetType);
-		BinaryEncoder encoder(packet);
-		encoder.WriteString("Test Message");
-		m_pClient->SendReliable(packet, this);*/
 
-		for (int i = 0; i < 10; i++)
-		{
-			g_PackegesSent++;
-			NetworkSegment* pPacket = m_pClient->GetFreePacket(g_PackegesSent);
-			BinaryEncoder encoder(pPacket);
-			encoder.WriteUInt32(g_PackegesSent);
-			m_pClient->SendReliable(pPacket, this);
-		}
-		g_PackegesSent = 0;
 	}
 
 	return false;
@@ -188,7 +159,7 @@ void Client::Tick(LambdaEngine::Timestamp delta)
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(delta);
 
-	NetworkDebugger::RenderStatisticsWithImGUI(m_pClient);
+	NetworkDebugger::RenderStatistics(m_pClient);
 
 	Renderer::Render();
 }
@@ -196,21 +167,6 @@ void Client::Tick(LambdaEngine::Timestamp delta)
 void Client::FixedTick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
-
-	if (m_pClient->IsConnected())
-	{
-		/*if (++g_PackegesSent <= 10000)
-		{
-			NetworkSegment* pPacket = m_pClient->GetFreePacket(g_PackegesSent);
-			BinaryEncoder encoder(pPacket);
-			encoder.WriteUInt32(g_PackegesSent);
-			m_pClient->SendReliable(pPacket, this);
-		}
-		else
-		{
-			//m_pClient->Disconnect("All Packages Sent");
-		}*/
-	}
 
 	UNREFERENCED_VARIABLE(delta);
 }

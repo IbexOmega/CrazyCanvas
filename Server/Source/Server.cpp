@@ -90,7 +90,7 @@ void Server::Tick(LambdaEngine::Timestamp delta)
 	{
 		LambdaEngine::NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
 	}*/
-	LambdaEngine::NetworkDebugger::RenderStatisticsWithImGUI(m_pServer);
+	LambdaEngine::NetworkDebugger::RenderStatistics(m_pServer);
 	LambdaEngine::Renderer::Render();
 }
 
