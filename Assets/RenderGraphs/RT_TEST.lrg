@@ -1,0 +1,255 @@
+{
+    "resources": [
+        {
+            "name": "BACK_BUFFER_TEXTURE",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": false,
+            "external": false,
+            "type_params": {
+                "texture_format": "FORMAT_B8G8R8A8_UNORM",
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
+            }
+        },
+        {
+            "name": "SCENE_DRAW_ARGS",
+            "type": "SCENE_DRAW_ARGS",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": false,
+            "external": true,
+            "type_params": {}
+        },
+        {
+            "name": "PER_FRAME_BUFFER",
+            "type": "BUFFER",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": false,
+            "external": true,
+            "type_params": {}
+        },
+        {
+            "name": "SCENE_LIGHTS_BUFFER",
+            "type": "BUFFER",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": false,
+            "external": true,
+            "type_params": {}
+        },
+        {
+            "name": "SCENE_MAT_PARAM_BUFFER",
+            "type": "BUFFER",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": false,
+            "external": true,
+            "type_params": {}
+        },
+        {
+            "name": "SCENE_TLAS",
+            "type": "ACCELERATION_STRUCTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": false,
+            "external": true,
+            "type_params": {}
+        },
+        {
+            "name": "SCENE_ALBEDO_MAPS",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 32,
+            "editable": false,
+            "external": true,
+            "type_params": {
+                "texture_format": "FORMAT_R8G8B8A8_UNORM",
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
+            }
+        },
+        {
+            "name": "SCENE_NORMAL_MAPS",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 32,
+            "editable": false,
+            "external": true,
+            "type_params": {
+                "texture_format": "FORMAT_R8G8B8A8_UNORM",
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
+            }
+        },
+        {
+            "name": "SCENE_AO_MAPS",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 32,
+            "editable": false,
+            "external": true,
+            "type_params": {
+                "texture_format": "FORMAT_R8G8B8A8_UNORM",
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
+            }
+        },
+        {
+            "name": "SCENE_ROUGHNESS_MAPS",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 32,
+            "editable": false,
+            "external": true,
+            "type_params": {
+                "texture_format": "FORMAT_R8G8B8A8_UNORM",
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
+            }
+        },
+        {
+            "name": "SCENE_METALLIC_MAPS",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 32,
+            "editable": false,
+            "external": true,
+            "type_params": {
+                "texture_format": "FORMAT_R8G8B8A8_UNORM",
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
+            }
+        }
+    ],
+    "resource_state_groups": [
+        {
+            "name": "EXTERNAL_RESOURCES",
+            "resource_states": [
+                {
+                    "name": "SCENE_DRAW_ARGS",
+                    "removable": false,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": ""
+                },
+                {
+                    "name": "PER_FRAME_BUFFER",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "SCENE_LIGHTS_BUFFER",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "SCENE_MAT_PARAM_BUFFER",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "SCENE_TLAS",
+                    "removable": false,
+                    "binding_type": "ACCELERATION_STRUCTURE",
+                    "src_stage": ""
+                },
+                {
+                    "name": "SCENE_ALBEDO_MAPS",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "SCENE_NORMAL_MAPS",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "SCENE_AO_MAPS",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "SCENE_ROUGHNESS_MAPS",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "SCENE_METALLIC_MAPS",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": ""
+                }
+            ]
+        },
+        {
+            "name": "TEMPORAL_RESOURCES",
+            "resource_states": []
+        }
+    ],
+    "final_output_stage": {
+        "name": "FINAL_OUTPUT",
+        "back_buffer_state": {
+            "name": "BACK_BUFFER_TEXTURE",
+            "removable": false,
+            "binding_type": "COMBINED_SAMPLER",
+            "src_stage": "RT_TEST"
+        }
+    },
+    "render_stages": [
+        {
+            "name": "RT_TEST",
+            "type": "RAY_TRACING",
+            "custom_renderer": false,
+            "trigger_type": "EVERY",
+            "frame_delay": 0,
+            "frame_offset": 0,
+            "x_dim_type": "RELATIVE",
+            "y_dim_type": "RELATIVE",
+            "z_dim_type": "CONSTANT",
+            "x_dim_var": 1.0,
+            "y_dim_var": 1.0,
+            "z_dim_var": 1.0,
+            "shaders": {
+                "raygen_shader": "/RayTracing\\Raygen.rgen",
+                "miss_shaders": [
+                    "/RayTracing\\PrimaryMiss.rmiss"
+                ],
+                "closest_hit_shaders": [
+                    "/RayTracing\\PrimaryClosestHit.rchit"
+                ]
+            },
+            "resource_states": [
+                {
+                    "name": "PER_FRAME_BUFFER",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "SCENE_TLAS",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "ACCELERATION_STRUCTURE",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "BACK_BUFFER_TEXTURE",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "UNORDERED_ACCESS_W",
+                    "src_stage": ""
+                }
+            ]
+        }
+    ]
+}

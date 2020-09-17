@@ -116,6 +116,10 @@ namespace LambdaEngine
 			imguiRenderStage.FrameOffset		= 0;
 		}
 
+		const EditorRenderStageDesc* pFirstRenderStageWithBackBufferBinding = nullptr;
+		const EditorRenderGraphResourceState* pFirstStateOfBackBuffer = nullptr;
+		bool createdInitialBackBufferSynchrinization = false;
+
 		//Loop Through each Render Stage in Order and create synchronization stages
 		TSet<String> resourceNamesActuallyUsed;
 		for (auto orderedRenderStageIt = orderedMappedRenderStages.rbegin(); orderedRenderStageIt != orderedMappedRenderStages.rend(); orderedRenderStageIt++)
@@ -136,12 +140,39 @@ namespace LambdaEngine
 					{
 						finalStateOfResources[currentResourceStateIt->second.ResourceName] = &currentResourceStateIt->second;
 					}
+
+					if (currentResourceStateIt->second.ResourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT && pFirstStateOfBackBuffer == nullptr)
+					{
+						pFirstRenderStageWithBackBufferBinding = pCurrentRenderStage;
+						pFirstStateOfBackBuffer = &currentResourceStateIt->second;
+					}
 				}
 				else
 				{
 					LOG_ERROR("[RenderGraphParser]: Resource State with attribute index %d could not be found in Resource State Map", resourceStateIdent.AttributeIndex);
 					return false;
 				}
+			}
+
+			if (pFirstStateOfBackBuffer && !createdInitialBackBufferSynchrinization)
+			{
+				createdInitialBackBufferSynchrinization = true;
+
+				RenderGraphResourceSynchronizationDesc firstBackBufferSynchronization = {};
+				firstBackBufferSynchronization.PrevRenderStage		= "PRESENT";
+				firstBackBufferSynchronization.NextRenderStage		= pFirstRenderStageWithBackBufferBinding->Name;
+				firstBackBufferSynchronization.ResourceName			= pFirstStateOfBackBuffer->ResourceName;
+				firstBackBufferSynchronization.PrevQueue			= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
+				firstBackBufferSynchronization.NextQueue			= ConvertPipelineStateTypeToQueue(pFirstRenderStageWithBackBufferBinding->Type);
+				firstBackBufferSynchronization.PrevBindingType		= ERenderGraphResourceBindingType::NONE;
+				firstBackBufferSynchronization.NextBindingType		= pFirstStateOfBackBuffer->BindingType;
+				firstBackBufferSynchronization.ResourceType			= pFirstStateOfBackBuffer->ResourceType;
+
+				SynchronizationStageDesc firstBackBufferSynchronizationStage = {};
+				firstBackBufferSynchronizationStage.Synchronizations.PushBack(firstBackBufferSynchronization);
+
+				orderedSynchronizationStages.PushBack(firstBackBufferSynchronizationStage);
+				orderedPipelineStages.PushBack({ ERenderGraphPipelineStageType::SYNCHRONIZATION, uint32(orderedSynchronizationStages.GetSize()) - 1 });
 			}
 
 			RenderStageDesc parsedRenderStage = {};

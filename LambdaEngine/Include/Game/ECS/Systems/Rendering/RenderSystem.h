@@ -260,6 +260,7 @@ namespace LambdaEngine
 		TSet<MeshEntry*>			m_DirtyBLASs;
 		bool						m_StaticBLASDirty					= true;
 		bool						m_TLASDirty							= true;
+		bool						m_TLASResourceDirty					= false;
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
 

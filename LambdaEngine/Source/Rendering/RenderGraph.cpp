@@ -2298,10 +2298,24 @@ namespace LambdaEngine
 				auto prevRenderStageIt = m_RenderStageMap.find(pResourceSynchronizationDesc->PrevRenderStage);
 				auto nextRenderStageIt = m_RenderStageMap.find(pResourceSynchronizationDesc->NextRenderStage);
 
+				FPipelineStageFlags	prevLastPipelineStage;
+
+				
 				if (prevRenderStageIt == m_RenderStageMap.end())
 				{
-					LOG_ERROR("[RenderGraph]: Render Stage found in Synchronization but not in Render Stage Map \"%s\"", pResourceSynchronizationDesc->PrevRenderStage.c_str());
-					return false;
+					if (pResourceSynchronizationDesc->PrevRenderStage == "PRESENT")
+					{
+						prevLastPipelineStage = FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM;
+					}
+					else
+					{
+						LOG_ERROR("[RenderGraph]: Render Stage found in Synchronization but not in Render Stage Map \"%s\"", pResourceSynchronizationDesc->PrevRenderStage.c_str());
+						return false;
+					}
+				}
+				else
+				{
+					prevLastPipelineStage = m_pRenderStages[prevRenderStageIt->second].LastPipelineStage;
 				}
 
 				if (nextRenderStageIt == m_RenderStageMap.end())
@@ -2310,8 +2324,7 @@ namespace LambdaEngine
 					return false;
 				}
 
-				const RenderStage* pPrevRenderStage = &m_pRenderStages[prevRenderStageIt->second];
-				const RenderStage* pNextRenderStage = &m_pRenderStages[nextRenderStageIt->second];
+				const RenderStage* pNextRenderStage	= &m_pRenderStages[nextRenderStageIt->second];
 
 				ECommandQueueType prevQueue 	= pResourceSynchronizationDesc->PrevQueue;
 				ECommandQueueType nextQueue		= pResourceSynchronizationDesc->NextQueue;
@@ -2329,7 +2342,7 @@ namespace LambdaEngine
 					return false;
 				}
 
-				pSynchronizationStage->SrcPipelineStage				= FindLastPipelineStage(pSynchronizationStage->SrcPipelineStage | pPrevRenderStage->LastPipelineStage);
+				pSynchronizationStage->SrcPipelineStage				= FindLastPipelineStage(pSynchronizationStage->SrcPipelineStage | prevLastPipelineStage);
 				pSynchronizationStage->SameQueueDstPipelineStage	= FindEarliestCompatiblePipelineStage(pSynchronizationStage->SameQueueDstPipelineStage | pNextRenderStage->FirstPipelineStage, pSynchronizationStage->ExecutionQueue);
 				pSynchronizationStage->OtherQueueDstPipelineStage	= FindEarliestCompatiblePipelineStage(pSynchronizationStage->OtherQueueDstPipelineStage | pNextRenderStage->FirstPipelineStage, otherQueue);
 
@@ -3400,10 +3413,10 @@ namespace LambdaEngine
 			pComputeCommandList->BindComputePipeline(pPipelineState);
 
 			if (pRenderStage->ppBufferDescriptorSets != nullptr)
-				pComputeCommandList->BindDescriptorSetGraphics(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
+				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
 
 			if (pRenderStage->ppTextureDescriptorSets != nullptr)
-				pComputeCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex);
+				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex);
 
 			pComputeCommandList->Dispatch(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
 
@@ -3432,10 +3445,10 @@ namespace LambdaEngine
 			pComputeCommandList->BindRayTracingPipeline(pPipelineState);
 
 			if (pRenderStage->ppBufferDescriptorSets != nullptr)
-				pComputeCommandList->BindDescriptorSetGraphics(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
+				pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
 
 			if (pRenderStage->ppTextureDescriptorSets != nullptr)
-				pComputeCommandList->BindDescriptorSetGraphics(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex);
+				pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex);
 
 			pComputeCommandList->TraceRays(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
 

@@ -56,15 +56,15 @@ namespace LambdaEngine
 		//Create Swapchain
 		{
 			SwapChainDesc swapChainDesc = {};
-			swapChainDesc.DebugName = "Renderer Swap Chain";
-			swapChainDesc.pWindow = CommonApplication::Get()->GetActiveWindow().Get();
-			swapChainDesc.pQueue = RenderAPI::GetGraphicsQueue();
-			swapChainDesc.Format = EFormat::FORMAT_B8G8R8A8_UNORM;
-			swapChainDesc.Width = 0;
-			swapChainDesc.Height = 0;
-			swapChainDesc.BufferCount = BACK_BUFFER_COUNT;
-			swapChainDesc.SampleCount = 1;
-			swapChainDesc.VerticalSync = false;
+			swapChainDesc.DebugName		= "Renderer Swap Chain";
+			swapChainDesc.pWindow		= CommonApplication::Get()->GetActiveWindow().Get();
+			swapChainDesc.pQueue		= RenderAPI::GetGraphicsQueue();
+			swapChainDesc.Format		= EFormat::FORMAT_B8G8R8A8_UNORM;
+			swapChainDesc.Width			= 0;
+			swapChainDesc.Height		= 0;
+			swapChainDesc.BufferCount	= BACK_BUFFER_COUNT;
+			swapChainDesc.SampleCount	= 1;
+			swapChainDesc.VerticalSync	= false;
 
 			m_SwapChain = RenderAPI::GetDevice()->CreateSwapChain(&swapChainDesc);
 			if (!m_SwapChain)
@@ -73,8 +73,8 @@ namespace LambdaEngine
 				return false;
 			}
 
-			m_ppBackBuffers = DBG_NEW Texture * [BACK_BUFFER_COUNT];
-			m_ppBackBufferViews = DBG_NEW TextureView * [BACK_BUFFER_COUNT];
+			m_ppBackBuffers = DBG_NEW Texture*[BACK_BUFFER_COUNT];
+			m_ppBackBufferViews = DBG_NEW TextureView*[BACK_BUFFER_COUNT];
 
 			m_FrameIndex++;
 			m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
@@ -86,7 +86,7 @@ namespace LambdaEngine
 
 			String prefix = m_RayTracingEnabled ? "RT_" : "";
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, prefix + EngineConfig::GetStringProperty("RenderGraphName"), IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "RT_TEST.lrg", IMGUI_ENABLED))
 			{
 				return false;
 			}
@@ -506,6 +506,7 @@ namespace LambdaEngine
 			asInstance.Flags			= FAccelerationStructureInstanceFlag::RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED;
 
 			meshAndInstancesIt->second.ASInstances.PushBack(asInstance);
+			m_TLASDirty = true;
 		}
 
 		Instance instance = {};
@@ -515,8 +516,7 @@ namespace LambdaEngine
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
 		m_DirtyInstanceBuffers.insert(&meshAndInstancesIt->second);
-		m_TLASDirty = true;
-
+		
 		//Todo: This needs to come from the Entity in some way
 		uint32 drawArgHash = UINT32_MAX;
 		if (m_RequiredDrawArgs.count(drawArgHash))
@@ -546,6 +546,7 @@ namespace LambdaEngine
 		if (m_RayTracingEnabled)
 		{
 			meshAndInstancesIt->second.ASInstances.Erase(meshAndInstancesIt->second.ASInstances.Begin() + instanceKeyIt->second.InstanceIndex);
+			m_TLASDirty = true;
 		}
 
 		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + instanceKeyIt->second.InstanceIndex);
@@ -576,13 +577,13 @@ namespace LambdaEngine
 		{
 			AccelerationStructureInstance* pASInstanceToUpdate = &meshAndInstancesIt->second.ASInstances[instanceKeyIt->second.InstanceIndex];
 			pASInstanceToUpdate->Transform = glm::transpose(transform);
+			m_TLASDirty = true;
 		}
 
 		Instance* pRasterInstanceToUpdate = &meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex];
 		pRasterInstanceToUpdate->PrevTransform	= pRasterInstanceToUpdate->Transform;
 		pRasterInstanceToUpdate->Transform		= transform;
 		m_DirtyInstanceBuffers.insert(&meshAndInstancesIt->second);
-		m_TLASDirty = true;
 	}
 
 	void RenderSystem::UpdateCamera(Entity entity)
@@ -721,6 +722,21 @@ namespace LambdaEngine
 			m_pRenderGraph->UpdateResource(&roughnessMapsUpdateDesc);
 
 			m_MaterialsResourceDirty = false;
+		}
+
+		if (m_RayTracingEnabled)
+		{
+			if (m_TLASResourceDirty)
+			{
+				//Create Resource Update for RenderGraph
+				ResourceUpdateDesc resourceUpdateDesc					= {};
+				resourceUpdateDesc.ResourceName							= SCENE_TLAS;
+				resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= m_pTLAS;
+
+				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+
+				m_TLASResourceDirty = false;
+			}
 		}
 	}
 
@@ -1136,6 +1152,8 @@ namespace LambdaEngine
 
 				m_MaxInstances = newInstanceCount;
 				update = false;
+
+				m_TLASResourceDirty = true;
 			}
 
 			if (m_pTLAS != nullptr)
