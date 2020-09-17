@@ -6,6 +6,7 @@
     "FixedTimestep": 60,
     "RayTracingEnabled": true,
     "ShowRenderGraph": false,
+    "RenderGraphName": "",
     "ShowDemo": false,
     "Debugging": false,
     "CameraFOV": 90.0,

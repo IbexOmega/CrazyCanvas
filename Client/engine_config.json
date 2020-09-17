@@ -5,7 +5,7 @@
     ],
     "FixedTimestep": 60,
     "RayTracingEnabled": true,
-    "RenderGraphName": "DEFERRED_PBR.lrg",
+    "RenderGraphName": "",
     "ShowRenderGraph": false,
     "ShowDemo": false,
     "Debugging": false,
