@@ -229,7 +229,7 @@ namespace LambdaEngine
 		TArray<Mesh*>		Meshes;
 		TArray<Material*>	Materials;
 		TArray<Texture*>	Textures;
-		TArray<MeshComponent>	LoadedGameObjects;
+		TArray<MeshComponent>	LoadedMeshComponent;
 		THashTable<String, Texture*> LoadedTextures;
 		THashTable<uint32, uint32> MaterialIndices;
 	};
@@ -405,10 +405,10 @@ namespace LambdaEngine
 			{
 				context.Meshes.EmplaceBack(pNewMesh);
 
-				MeshComponent newGameObject;
-				newGameObject.MeshGUID		= context.Meshes.GetSize() - 1;
-				newGameObject.MaterialGUID	= context.MaterialIndices[pMesh->mMaterialIndex];
-				context.LoadedGameObjects.PushBack(newGameObject);
+				MeshComponent newMeshComponent;
+				newMeshComponent.MeshGUID		= context.Meshes.GetSize() - 1;
+				newMeshComponent.MaterialGUID	= context.MaterialIndices[pMesh->mMaterialIndex];
+				context.LoadedMeshComponent.PushBack(newMeshComponent);
 			}
 
 		}
@@ -419,7 +419,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& loadedGameObjects, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures)
+	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& loadedMeshComponents, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures)
 	{
 		size_t lastPathDivisor = filepath.find_last_of("/\\");
 		if (lastPathDivisor == String::npos)
@@ -459,10 +459,10 @@ namespace LambdaEngine
 		context.DirectoryPath	= filepath.substr(0, lastPathDivisor + 1);
 		ProcessAssimpNode(context, pScene->mRootNode, pScene, true);
 
-		loadedMaterials		= Move(context.Materials);
-		loadedTextures		= Move(context.Textures);
-		loadedGameObjects	= Move(context.LoadedGameObjects);
-		loadedMeshes		= Move(context.Meshes);
+		loadedMaterials			= Move(context.Materials);
+		loadedTextures			= Move(context.Textures);
+		loadedMeshComponents	= Move(context.LoadedMeshComponent);
+		loadedMeshes			= Move(context.Meshes);
 
 		return true;
 	}

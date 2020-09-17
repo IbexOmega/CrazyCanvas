@@ -30,14 +30,14 @@ namespace LambdaEngine
 
 		/*
 		* Load a Scene from file, (experimental, only tested with Sponza Scene)
-		*	filepath			- Path to the .obj file
-		*	loadedGameObjects	- A vector where all loaded GameObject(s) will be stored, th GUIDs of each GameObject is an index to the loadedMeshes and loadedMaterials vectors
-		*	loadedMeshes		- A vector where all loaded Mesh(es) will be stored
-		*	loadedMaterials		- A vector where all loaded Material(s) will be stored
-		*	loadedTextures		- A vector where all loaded Texture(s) will be stored
+		*	filepath				- Path to the .obj file
+		*	loadedMeshComponents	- A vector where all loaded MeshComponent(s) will be stored, th GUIDs of each MeshComponent is an index to the loadedMeshes and loadedMaterials vectors
+		*	loadedMeshes			- A vector where all loaded Mesh(es) will be stored
+		*	loadedMaterials			- A vector where all loaded Material(s) will be stored
+		*	loadedTextures			- A vector where all loaded Texture(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& loadedGameObjects, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures);
+		static bool LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& loadedMeshComponents, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures);
 
 		/*
 		* Load a mesh from file
