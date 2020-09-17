@@ -36,6 +36,7 @@
 #include "Game/GameConsole.h"
 #include "Game/StateManager.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Systems/CameraSystem.h"
 
 namespace LambdaEngine
 {
@@ -97,11 +98,13 @@ namespace LambdaEngine
 
 		AudioSystem::Tick();
 
-		ECSCore::GetInstance()->Tick(dt);
+		CameraSystem::GetInstance().MainThreadTick(delta);
+		ECSCore::GetInstance()->Tick(delta);
 		StateManager::GetInstance()->Tick(dt);
 		Game::Get().Tick(delta);
 
 		RenderSystem::GetInstance().Render();
+
 
 		return true;
 	}
@@ -191,6 +194,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!CameraSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
 		if (!StateManager::GetInstance()->Init(ECSCore::GetInstance()))
 		{
 			return false;
@@ -218,6 +226,11 @@ namespace LambdaEngine
 		}
 
 		if (!RenderSystem::GetInstance().Release())
+		{
+			return false;
+		}
+
+		if (!CameraSystem::GetInstance().Release())
 		{
 			return false;
 		}

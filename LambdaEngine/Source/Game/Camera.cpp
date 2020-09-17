@@ -13,7 +13,7 @@ const glm::vec3 FORWARD_VECTOR = glm::vec3(0.0f, 0.0f, 1.0f);
 namespace LambdaEngine
 {
 	Camera::Camera() :
-		m_Data({}),
+		//m_Data({}),
 		m_Projection(1.0f),
 		m_ProjectionInv(1.0f),
 		m_View(1.0f),
@@ -28,7 +28,7 @@ namespace LambdaEngine
 	{
 	}
 
-	void Camera::Init(const CameraDesc& desc)
+	/*void Camera::Init(const CameraDesc& desc)
 	{
 		m_Projection		= glm::perspective(glm::radians(desc.FOVDegrees), desc.Width / desc.Height, desc.NearPlane, desc.FarPlane);
 		m_ProjectionInv		= glm::inverse(m_Projection);
@@ -42,7 +42,7 @@ namespace LambdaEngine
 		SetPosition(desc.Position);
 		SetDirection(desc.Direction);
 		Update();
-	}
+	}*/
 
 	void Camera::SetDirection(const glm::vec3& direction)
 	{
@@ -88,7 +88,7 @@ namespace LambdaEngine
 
 	void Camera::Update()
 	{
-		m_Data.Jitter = glm::vec2((Random::Float32() - 0.5f) / m_Width, (Random::Float32() - 0.5f) / m_Height);
+		/*m_Data.Jitter = glm::vec2((Random::Float32() - 0.5f) / m_Width, (Random::Float32() - 0.5f) / m_Height);
 
 		if (m_IsDirty)
 		{
@@ -114,7 +114,7 @@ namespace LambdaEngine
 			m_Data.PrevView			= m_Data.View;
 
 			m_LastIsDirty = false;
-		}
+		}*/
 	}
 
 	void Camera::HandleInput(Timestamp delta)

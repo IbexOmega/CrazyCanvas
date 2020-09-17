@@ -14,9 +14,9 @@ namespace LambdaEngine
         DELETE_OBJECT(ECSCore::s_pInstance);
     }
 
-    void ECSCore::Tick(float dt)
+    void ECSCore::Tick(Timestamp deltaTime)
     {
-        m_DeltaTime = dt;
+        m_DeltaTime = deltaTime;
         PerformEntityDeletions();
         m_JobScheduler.Tick();
     }

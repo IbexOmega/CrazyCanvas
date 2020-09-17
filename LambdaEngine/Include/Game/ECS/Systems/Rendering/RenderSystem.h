@@ -125,6 +125,20 @@ namespace LambdaEngine
 		using MeshAndInstancesMap	= THashTable<MeshKey, MeshEntry, MeshKeyHasher>;
 		using MaterialMap			= THashTable<GUID_Lambda, uint32>;
 
+		struct CameraData
+		{
+			glm::mat4 Projection = glm::mat4(1.0f);
+			glm::mat4 View = glm::mat4(1.0f);
+			glm::mat4 PrevProjection = glm::mat4(1.0f);
+			glm::mat4 PrevView = glm::mat4(1.0f);
+			glm::mat4 ViewInv = glm::mat4(1.0f);
+			glm::mat4 ProjectionInv = glm::mat4(1.0f);
+			glm::vec4 Position = glm::vec4(0.0f);
+			glm::vec4 Right = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			glm::vec4 Up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec2 Jitter = glm::vec2(0.0f);
+		};
+
 		struct PerFrameBuffer
 		{
 			CameraData CamData;
@@ -142,11 +156,9 @@ namespace LambdaEngine
 
 		bool Release();
 
-		void Tick(float dt);
+		void Tick(Timestamp deltaTime);
 
 		bool Render();
-
-		void SetCamera(const Camera* pCamera);
 
 		CommandList* AcquireGraphicsCopyCommandList();
 		CommandList* AcquireComputeCopyCommandList();

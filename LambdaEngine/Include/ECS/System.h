@@ -5,6 +5,8 @@
 #include "ECS/EntitySubscriber.h"
 #include "ECS/RegularWorker.h"
 
+#include "Time/API/Timestamp.h"
+
 #include <functional>
 #include <typeindex>
 
@@ -28,7 +30,7 @@ namespace LambdaEngine
         // Deregisters system
         virtual ~System() = default;
 
-        virtual void Tick(float dt) = 0;
+        virtual void Tick(Timestamp deltaTime) = 0;
 
     protected:
         void RegisterSystem(const SystemRegistration& systemRegistration);

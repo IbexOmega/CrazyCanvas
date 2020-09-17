@@ -84,8 +84,7 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline Comp& ComponentStorage::GetComponent(Entity entity)
 	{
-		std::type_index id = Comp::s_TID;
-		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to fetch a component which was not registered!");
+		VALIDATE_MSG(m_CompTypeToArrayMap.find(Comp::s_TID) != m_CompTypeToArrayMap.end(), "Trying to fetch a component which was not registered!");
 
 		// Fetch the corresponding ComponentArray for that component type.
 		ComponentArray<Comp>* compArray = GetComponentArray<Comp>();

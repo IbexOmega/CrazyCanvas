@@ -63,6 +63,7 @@ namespace LambdaEngine
 	// Transform calculation functions
 	inline glm::vec3 GetUp(const glm::quat& rotationQuat)				{ return glm::normalize(glm::rotate(rotationQuat, g_DefaultUp)); }
 	inline glm::vec3 GetForward(const glm::quat& rotationQuat)			{ return glm::normalize(glm::rotate(rotationQuat, g_DefaultForward)); }
+	inline glm::vec3 GetRight(const glm::quat& rotationQuat)			{ return glm::normalize(glm::cross(GetUp(rotationQuat), GetForward(rotationQuat))); }
 	inline glm::quat GetRotationQuaternion(const glm::vec3& forward)	{ return glm::rotation(forward, g_DefaultForward); }
 
 	float GetPitch(const glm::vec3& forward);

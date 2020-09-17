@@ -8,38 +8,13 @@ namespace LambdaEngine
 {
 	class CommonApplication;
 
-	struct CameraData
-	{
-		glm::mat4 Projection		= glm::mat4(1.0f);
-		glm::mat4 View				= glm::mat4(1.0f);
-		glm::mat4 PrevProjection	= glm::mat4(1.0f);
-		glm::mat4 PrevView			= glm::mat4(1.0f);
-		glm::mat4 ViewInv			= glm::mat4(1.0f);
-		glm::mat4 ProjectionInv		= glm::mat4(1.0f);
-		glm::vec4 Position			= glm::vec4(0.0f);
-		glm::vec4 Right				= glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-		glm::vec4 Up				= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec2 Jitter			= glm::vec2(0.0f);
-	};
-
-	struct CameraDesc
-	{
-		glm::vec3 Position	= glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::vec3 Direction = glm::vec3(1.0f, 0.0f, 0.0f);
-		float FOVDegrees	= 45.0f;
-		float Width			= 1280.0f;
-		float Height		= 720.0f;
-		float NearPlane		= 0.0001f;
-		float FarPlane		= 50.0f;
-	};
-
 	class LAMBDA_API Camera
 	{
 	public:
 		Camera();
 		~Camera() = default;
 
-		void Init(const CameraDesc& desc);
+		//void Init(const CameraDesc& desc);
 
 		void SetDirection(const glm::vec3& direction);
 		void SetPosition(const glm::vec3& position);
@@ -51,7 +26,7 @@ namespace LambdaEngine
 		void Update();
 		void HandleInput(Timestamp delta);
 
-		FORCEINLINE const CameraData&	GetData()					const	{ return m_Data;			}
+		//FORCEINLINE const CameraData&	GetData()					const	{ return m_Data;			}
 		FORCEINLINE const glm::mat4&	GetProjectionMat()			const	{ return m_Projection;		}
 		FORCEINLINE const glm::mat4&	GetProjectionInvMat()		const	{ return m_ProjectionInv;	}
 		FORCEINLINE const glm::mat4&	GetViewMat()				const	{ return m_View;			}
@@ -71,7 +46,7 @@ namespace LambdaEngine
 		void CalculateVectors();
 
 	private:
-		CameraData m_Data;
+		//CameraData m_Data;
 
 		float m_SpeedFactor = 0.05f;
 		bool m_Toggle = false;

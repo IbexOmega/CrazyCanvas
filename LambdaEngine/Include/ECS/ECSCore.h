@@ -25,7 +25,7 @@ namespace LambdaEngine
 
         static void Release();
 
-        void Tick(float dt);
+        void Tick(Timestamp deltaTime);
 
         Entity CreateEntity() { return m_EntityRegistry.CreateEntity(); }
 
@@ -56,7 +56,7 @@ namespace LambdaEngine
         void DeleteTopRegistryPage();
         void ReinstateTopRegistryPage();
 
-        float GetDeltaTime() const { return m_DeltaTime; }
+        Timestamp GetDeltaTime() const { return m_DeltaTime; }
 
     public:
         static ECSCore* GetInstance() { return s_pInstance; }
@@ -82,7 +82,7 @@ namespace LambdaEngine
         TArray<Entity> m_EntitiesToDelete;
 
         // DeltaTime is the time between frames. The typical 'dt' that is passed to update()
-        float m_DeltaTime;
+        Timestamp m_DeltaTime;
 
     private:
         static ECSCore* s_pInstance;
