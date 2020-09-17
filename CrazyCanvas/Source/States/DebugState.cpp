@@ -78,8 +78,6 @@ void DebugState::Init()
 	pECS->AddComponent<MeshComponent>(e1, MeshComponent{ .MeshGUID = sphereMeshGUID, .MaterialGUID = Material });
 	pECS->AddComponent<DynamicComponent>(e1, DynamicComponent() );
 
-
-
 	// Load Scene SceneManager::Get("SceneName").Load()
 
 	// Use HelperClass to create additional entities
