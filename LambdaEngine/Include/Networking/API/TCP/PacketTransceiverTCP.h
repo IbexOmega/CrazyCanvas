@@ -19,7 +19,10 @@ namespace LambdaEngine
 	protected:
 		virtual bool Transmit(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& endPoint) override;
 		virtual bool Receive(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& endPoint) override;
-		virtual void OnReceiveEnd(const PacketTranscoder::Header& header, TArray<uint32>& newAcks, NetworkStatistics* pStatistics) override;
+		virtual void OnReceiveEnd(PacketTranscoder::Header* pHeader, TArray<uint32>& newAcks, NetworkStatistics* pStatistics) override;
+
+	private:
+		bool ForceReceive(uint8* pBuffer, uint32 bytesToRead);
 
 	private:
 		ISocketTCP* m_pSocket;

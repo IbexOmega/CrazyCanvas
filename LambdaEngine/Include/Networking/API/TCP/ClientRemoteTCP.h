@@ -16,14 +16,17 @@ namespace LambdaEngine
 		friend class ServerTCP;
 
 	public:
-		virtual void Release() override;
+		virtual ~ClientRemoteTCP();
 
 	protected:
-		ClientRemoteTCP(uint16 packetPoolSize, ISocketTCP* pSocket, ServerTCP* pServer);
+		ClientRemoteTCP(const ClientRemoteDesc& desc, ISocketTCP* pSocket);
 
 		virtual PacketManagerBase* GetPacketManager() override;
 		virtual const PacketManagerBase* GetPacketManager() const override;
 		virtual PacketTransceiverBase* GetTransceiver() override;
+
+		virtual bool CanDeleteNow() override;
+		virtual bool OnTerminationRequested() override;
 
 	private:
 		void RunReceiver();
@@ -33,5 +36,6 @@ namespace LambdaEngine
 		PacketTransceiverTCP m_Transceiver;
 		Thread* m_pThreadReceiver;
 		ISocketTCP* m_pSocket;
+		std::atomic_bool m_ThreadTerminated;
 	};
 }

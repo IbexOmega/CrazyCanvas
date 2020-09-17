@@ -52,19 +52,21 @@ namespace LambdaEngine
 		return &m_Transciver;
 	}
 
-	ISocket* ClientUDP::SetupSocket()
+	ISocket* ClientUDP::SetupSocket(std::string& reason)
 	{
 		ISocketUDP* pSocket = PlatformNetworkUtils::CreateSocketUDP();
 		if (pSocket)
 		{
-			if (pSocket->Bind(IPEndPoint(IPAddress::ANY, 0)))
+			IPEndPoint endPoint(IPAddress::ANY, 0);
+			if (pSocket->Bind(endPoint))
 			{
 				return pSocket;
 			}
-			LOG_ERROR("[ClientUDP]: Failed To Bind socket");
+			reason = "Bind Socket Failed " + endPoint.ToString();
+			delete pSocket;
 			return nullptr;
 		}
-		LOG_ERROR("[ClientUDP]: Failed To Create socket");
+		reason = "Create Socket Failed";
 		return nullptr;
 	}
 
@@ -96,6 +98,6 @@ namespace LambdaEngine
 	void ClientUDP::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 	{
 		LOG_INFO("ClientUDP::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
-		Disconnect();
+		Disconnect("Max Tries Reached");
 	}
 }

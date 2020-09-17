@@ -27,15 +27,18 @@ namespace LambdaEngine
 	class MacSocketBase : public IBase
 	{	
 	public:
-        bool Connect(const IPEndPoint& pIPEndPoint) override
+        bool Connect(const IPEndPoint& endPoint) override
         {
             struct sockaddr_in socketAddress;
-            IPEndPointToSocketAddress(&pIPEndPoint, &socketAddress);
+            IPEndPointToSocketAddress(&endPoint, &socketAddress);
             
             if (connect(m_Socket, reinterpret_cast<sockaddr*>(&socketAddress), sizeof(socketAddress)) == SOCKET_ERROR)
             {
                 int32 error = errno;
-                LOG_ERROR_CRIT("Failed to connect to %s", pIPEndPoint.ToString().c_str());
+                if (error == WSAECONNREFUSED)
+                    return false;
+
+                LOG_ERROR_CRIT("Failed to connect to %s", endPoint.ToString().c_str());
                 PrintLastError(error);
                 return false;
             }
@@ -45,15 +48,18 @@ namespace LambdaEngine
             return true;
         }
         
-		bool Bind(const IPEndPoint& pIPEndPoint) override
+		bool Bind(const IPEndPoint& endPoint) override
 		{
             struct sockaddr_in socketAddress;
-            IPEndPointToSocketAddress(&pIPEndPoint, &socketAddress);
+            IPEndPointToSocketAddress(&endPoint, &socketAddress);
             
             if (bind(m_Socket, (struct sockaddr*) & socketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
             {
                 int32 error = errno;
-                LOG_ERROR_CRIT("Failed to bind to %s", pIPEndPoint.ToString().c_str());
+                if (error == WSAEADDRNOTAVAIL)
+                    return false;
+
+                LOG_ERROR_CRIT("Failed to bind to %s", endPoint.ToString().c_str());
                 PrintLastError(error);
                 return false;
             }

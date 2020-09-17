@@ -15,7 +15,7 @@ namespace LambdaEngine
 
 	bool EngineConfig::LoadFromFile()
 	{
-		const char* pEngineConfigPath = "../engine_config.json";
+		const char* pEngineConfigPath = "engine_config.json";
 
         FILE* pFile = fopen(pEngineConfigPath, "r");
         if (!pFile)
@@ -36,7 +36,7 @@ namespace LambdaEngine
 
     bool EngineConfig::WriteToFile()
     {
-        const char* pEngineConfigPath = "../engine_config.json";
+        const char* pEngineConfigPath = "engine_config.json";
 
         FILE* pFile = fopen(pEngineConfigPath, "w");
         if (!pFile)

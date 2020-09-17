@@ -83,13 +83,15 @@ namespace LambdaEngine
 		bytesReceived = recv(m_Socket, (char*)pBuffer, size, 0);
 		if (bytesReceived == SOCKET_ERROR)
 		{
-            int32 error = errno;
-            
 			bytesReceived = 0;
-			if (error == EWOULDBLOCK && IsNonBlocking())
-            {
-                return true;
-            }
+			int32 error = errno;
+
+			if (IsClosed())
+				return true;
+			else if (error == WSAEWOULDBLOCK && IsNonBlocking())
+				return true;
+			else if (error == WSAECONNRESET || error == WSAECONNABORTED)
+				return false;
 
 			LOG_ERROR_CRIT("Failed to receive data");
 			PrintLastError(error);

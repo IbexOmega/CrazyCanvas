@@ -6,7 +6,7 @@
 
 namespace LambdaEngine
 {
-	bool PacketTranscoder::EncodeSegments(uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& segmentsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader)
+	void PacketTranscoder::EncodeSegments(uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& segmentsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader)
 	{
 		pHeader->Size = sizeof(Header);
 		pHeader->Segments = 0;
@@ -18,7 +18,7 @@ namespace LambdaEngine
 		while (!segmentsToEncode.empty())
 		{
 			NetworkSegment* segment = segmentsToEncode.front();
-			LOG_MESSAGE("PacketTranscoder::EncodeSegments(%s)", segment->ToString().c_str());
+			//LOG_MESSAGE("PacketTranscoder::EncodeSegments(%s)", segment->ToString().c_str());
 			//Make sure the packet is not bigger than the max size
 			ASSERT(segment->GetTotalSize() + sizeof(Header) <= bufferSize);
 
@@ -44,7 +44,6 @@ namespace LambdaEngine
 		memcpy(buffer, pHeader, sizeof(Header));
 
 		bytesWritten = pHeader->Size;
-		return segmentsToEncode.empty();
 	}
 
 	uint16 PacketTranscoder::WriteSegment(uint8* buffer, NetworkSegment* pSegment)
@@ -63,7 +62,6 @@ namespace LambdaEngine
 	bool PacketTranscoder::DecodeSegments(const uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, TArray<NetworkSegment*>& segmentsDecoded, Header* pHeader)
 	{
 		uint16 offset = sizeof(Header);
-
 		memcpy(pHeader, buffer, offset);
 
 		if (pHeader->Size != bufferSize)
@@ -72,14 +70,22 @@ namespace LambdaEngine
 			return false;
 		}
 
+#ifdef LAMBDA_CONFIG_DEBUG
+		if (!pSegmentPool->RequestFreeSegments(pHeader->Segments, segmentsDecoded, "PacketTranscoder"))
+			return false;
+#else
 		if (!pSegmentPool->RequestFreeSegments(pHeader->Segments, segmentsDecoded))
 			return false;
+#endif
+			
 
 		for (int i = 0; i < pHeader->Segments; i++)
 		{
-			NetworkSegment* pPacket = segmentsDecoded[i];
-			offset += ReadSegment(buffer + offset, pPacket);
-			pPacket->m_Salt = pHeader->Salt;
+			NetworkSegment* pSegment = segmentsDecoded[i];
+			offset += ReadSegment(buffer + offset, pSegment);
+			pSegment->m_Salt = pHeader->Salt;
+
+			//LOG_MESSAGE("PacketTranscoder::DecodeSegments(%s)", pSegment->ToString().c_str());
 		}
 
 		return true;
