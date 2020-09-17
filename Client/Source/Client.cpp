@@ -42,14 +42,14 @@ Client::Client() :
     desc.MaxRetries             = 10;
     desc.ResendRTTMultiplier    = 2.0F;
     desc.Handler                = this;
-    desc.Protocol               = EProtocol::TCP;
+    desc.Protocol               = EProtocol::UDP;
 	desc.PingInterval			= Timestamp::Seconds(1);
 	desc.PingTimeout			= Timestamp::Seconds(3);
 	desc.UsePingSystem			= true;
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
-	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.166"), 4444)))
+	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("81.170.143.133"), 4444)))
 	{
 		LOG_ERROR("Failed to connect!");
 	}
