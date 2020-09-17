@@ -9,9 +9,7 @@
 
 PlaySessionState::PlaySessionState()
 	:m_pCamera(nullptr)
-{
-	LOG_INFO("playsession");
-}
+{}
 
 void PlaySessionState::Init()
 {

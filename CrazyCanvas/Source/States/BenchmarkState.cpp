@@ -16,9 +16,7 @@
 
 BenchmarkState::BenchmarkState()
 	:m_pCamera(nullptr)
-{
-	LOG_INFO("benchmark");
-}
+{}
 
 void BenchmarkState::Init()
 {
