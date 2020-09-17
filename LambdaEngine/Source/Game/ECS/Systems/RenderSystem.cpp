@@ -263,8 +263,6 @@ namespace LambdaEngine
 
 	bool RenderSystem::Render()
 	{
-		std::scoped_lock<SpinLock> lock(m_SpinLock);
-
 		m_BackBufferIndex = uint32(m_SwapChain->GetCurrentBackBufferIndex());
 
 		m_FrameIndex++;
@@ -555,8 +553,6 @@ namespace LambdaEngine
 
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& transform)
 	{
-		std::scoped_lock<SpinLock> lock(m_SpinLock);
-
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
@@ -584,6 +580,7 @@ namespace LambdaEngine
 		pRasterInstanceToUpdate->PrevTransform	= pRasterInstanceToUpdate->Transform;
 		pRasterInstanceToUpdate->Transform		= transform;
 		m_DirtyInstanceBuffers.insert(&meshAndInstancesIt->second);
+		m_TLASDirty = true;
 	}
 
 	void RenderSystem::UpdateCamera(Entity entity)

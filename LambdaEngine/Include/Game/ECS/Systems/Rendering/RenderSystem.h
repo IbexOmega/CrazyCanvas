@@ -206,7 +206,6 @@ namespace LambdaEngine
 		Texture**				m_ppBackBuffers		= nullptr;
 		TextureView**			m_ppBackBufferViews	= nullptr;
 		RenderGraph*			m_pRenderGraph		= nullptr;
-		SpinLock				m_SpinLock;
 		uint64					m_FrameIndex		= 0;
 		uint64					m_ModFrameIndex		= 0;
 		uint32					m_BackBufferIndex	= 0;
