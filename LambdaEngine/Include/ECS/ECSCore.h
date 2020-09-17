@@ -6,6 +6,7 @@
 #include "ECS/EntityRegistry.h"
 #include "ECS/JobScheduler.h"
 #include "ECS/System.h"
+#include "ECS/ComponentStorage.h"
 #include "Utilities/IDGenerator.h"
 
 #include <typeindex>
@@ -26,7 +27,26 @@ namespace LambdaEngine
 
         void Tick(float dt);
 
-        Entity createEntity() { return m_EntityRegistry.CreateEntity(); }
+        Entity CreateEntity() { return m_EntityRegistry.CreateEntity(); }
+        
+        // Add a component to a specific entity. 
+        template<typename Comp>
+        Comp& AddComponent(Entity entity, const Comp& component);
+
+        // Fetch a reference to a component within a specific entity.
+        template<typename Comp>
+        Comp& GetComponent(Entity entity);
+
+        // Fetch the whole array with the specific component type.
+        template<typename Comp>
+        ComponentArray<Comp>* GetComponentArray();
+
+        // Remove a component from a specific entity.
+        template<typename Comp>
+        bool RemoveComponent(Entity entity);
+
+        // Remove a specific entity.
+        void RemoveEntity(Entity entity);
 
         void ScheduleJobASAP(const Job& job);
         void ScheduleJobPostFrame(const Job& job);
@@ -37,8 +57,6 @@ namespace LambdaEngine
         // Registers and initializes component handlers and entity subscribers
         void PerformRegistrations();
 
-        // Enqueues an entity deletion
-        void EnqueueEntityDeletion(Entity entity);
         void PerformEntityDeletions();
 
         void AddRegistryPage();
@@ -68,6 +86,7 @@ namespace LambdaEngine
         EntityPublisher m_EntityPublisher;
         JobScheduler m_JobScheduler;
         ECSBooter m_ECSBooter;
+        ComponentStorage m_ComponentStorage;
 
         TArray<Entity> m_EntitiesToDelete;
 
@@ -77,4 +96,40 @@ namespace LambdaEngine
     private:
         static ECSCore s_Instance;
     };
+
+    template<typename Comp>
+    inline Comp& ECSCore::AddComponent(Entity entity, const Comp& component)
+    {
+        if (!m_ComponentStorage.HasType<Comp>())
+            m_ComponentStorage.RegisterComponentType<Comp>();
+
+        Comp& comp = m_ComponentStorage.AddComponent<Comp>(entity, component);
+        ComponentAdded(entity, Comp::s_TID);
+
+        return comp;
+    }
+
+    template<typename Comp>
+    inline Comp& ECSCore::GetComponent(Entity entity)
+    {
+        return m_ComponentStorage.GetComponent<Comp>(entity);
+    }
+
+    template<typename Comp>
+    inline ComponentArray<Comp>* ECSCore::GetComponentArray()
+    {
+        return m_ComponentStorage.GetArray<Comp>();
+    }
+
+    template<typename Comp>
+    inline bool ECSCore::RemoveComponent(Entity entity)
+    {
+        if (m_ComponentStorage.HasType<Comp>())
+        {
+            m_ComponentStorage.RemoveComponent<Comp>(entity);
+            ComponentDeleted(entity, Comp::s_TID);
+            return true;
+        }
+        return false;
+    }
 }

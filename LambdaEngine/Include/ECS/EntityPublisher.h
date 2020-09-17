@@ -35,7 +35,7 @@ namespace LambdaEngine
         uint32 SubIdx;
     };
 
-    struct ComponentStorage
+    struct ComponentKalle
     {
         IDContainer* pContainer;
         // Optional: Used when a component needs to be destroyed by its handler. Called alongside erasing the component from its container.
@@ -61,14 +61,14 @@ namespace LambdaEngine
         // Notifies subscribed systems that a component has been deleted
         void RemovedComponent(Entity entityID, std::type_index componentType);
 
-        THashTable<std::type_index, ComponentStorage>& GetComponentStorage() { return m_ComponentStorage; }
+        THashTable<std::type_index, ComponentKalle>& GetComponentStorage() { return m_ComponentStorage; }
 
     private:
         static void EliminateDuplicateTIDs(TArray<std::type_index>& TIDs);
 
     private:
         // Map component types to resources used when systems subscribe
-        THashTable<std::type_index, ComponentStorage> m_ComponentStorage;
+        THashTable<std::type_index, ComponentKalle> m_ComponentStorage;
         // Map component types to subscriptions. Deleted only when a subscribing system unsubscribes.
         std::unordered_multimap<std::type_index, SubscriptionStorageIndex> m_ComponentSubscriptions;
 

@@ -391,7 +391,7 @@ Sandbox::Sandbox()
 		});
 
 	ConsoleCommand cmd3;
-	cmd3.Init("show_debug_window", true);
+	cmd3.Init("show_debug_window", false);
 	cmd3.AddArg(Arg::EType::BOOL);
 	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'show_debug_window true'");
 	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {

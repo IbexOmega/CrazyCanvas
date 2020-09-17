@@ -6,6 +6,10 @@
 
 namespace LambdaEngine
 {
+    INIT_COMPONENT(Position);
+    INIT_COMPONENT(Scale);
+    INIT_COMPONENT(Rotation);
+
     TransformHandler::TransformHandler()
         :ComponentHandler(TID(TransformHandler))
     {

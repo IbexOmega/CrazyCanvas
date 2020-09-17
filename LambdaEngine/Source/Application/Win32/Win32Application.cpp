@@ -12,6 +12,7 @@
 #include "Input/Win32/Win32InputCodeTable.h"
 
 #include <windowsx.h>
+#include <Psapi.h>
 
 namespace LambdaEngine
 {
@@ -190,6 +191,48 @@ namespace LambdaEngine
 
 		// TODO: Return proper inputmode based on window
 		return m_InputMode;
+	}
+
+	void Win32Application::QueryCPUStatistics(CPUStatistics* pCPUStat) const
+	{
+		// Memory stats
+		MEMORYSTATUSEX memInfo;
+		memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+		GlobalMemoryStatusEx(&memInfo);
+		DWORDLONG totalPhysicalMemory = memInfo.ullTotalPhys;
+
+		PROCESS_MEMORY_COUNTERS_EX pmc;
+		GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
+		SIZE_T physMemUsedByProcess = pmc.WorkingSetSize;
+		SIZE_T peakMemUsedByProcess = pmc.PeakWorkingSetSize;
+
+		// CPU stats
+		static uint32 numProcessors = 0;
+		SYSTEM_INFO sysInfo;
+		GetSystemInfo(&sysInfo);
+		numProcessors = sysInfo.dwNumberOfProcessors;
+
+		static HANDLE self = GetCurrentProcess();
+		static ULARGE_INTEGER lastCPU, lastSysCPU, lastUserCPU;
+		FILETIME ftime, fsys, fuser;
+		ULARGE_INTEGER now, sys, user;
+		GetSystemTimeAsFileTime(&ftime);
+		memcpy(&now, &ftime, sizeof(FILETIME));
+
+		GetProcessTimes(self, &ftime, &ftime, &fsys, &fuser);
+		memcpy(&sys, &fsys, sizeof(FILETIME));
+		memcpy(&user, &fuser, sizeof(FILETIME));
+		float64 percent = (sys.QuadPart - lastSysCPU.QuadPart) + (user.QuadPart - lastUserCPU.QuadPart);
+		percent /= (now.QuadPart - lastCPU.QuadPart);
+		percent /= numProcessors;
+		lastCPU = now;
+		lastUserCPU = user;
+		lastSysCPU = sys;
+
+		pCPUStat->PhysicalMemoryAvailable	= totalPhysicalMemory;
+		pCPUStat->PhysicalMemoryUsage		= physMemUsedByProcess;
+		pCPUStat->PhysicalPeakMemoryUsage	= peakMemUsedByProcess;
+		pCPUStat->CPUPercentage				= percent * 100.f;
 	}
 
 	void Win32Application::ProcessStoredMessage(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam, int32 mouseDeltaX, int32 mouseDeltaY)
