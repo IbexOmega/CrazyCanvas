@@ -28,9 +28,10 @@
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryEncoder.h"
 
+using namespace LambdaEngine;
+
 Server::Server()
 {
-	using namespace LambdaEngine;
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
@@ -54,8 +55,6 @@ Server::Server()
 
 Server::~Server()
 {
-	using namespace LambdaEngine;
-
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
 	m_pServer->Release();
 }
@@ -65,10 +64,8 @@ LambdaEngine::IClientRemoteHandler* Server::CreateClientHandler()
 	return DBG_NEW ClientHandler();
 }
 
-bool Server::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
+bool Server::OnKeyPressed(const KeyPressedEvent& event)
 {
-	using namespace LambdaEngine;
-
 	UNREFERENCED_VARIABLE(event);
 
 	if(m_pServer->IsRunning())
@@ -81,48 +78,33 @@ bool Server::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 
 void Server::UpdateTitle()
 {
-	using namespace LambdaEngine;
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 }
 
-void Server::Tick(LambdaEngine::Timestamp delta)
+void Server::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
-	using namespace LambdaEngine;
 
 	for (auto& pair : m_pServer->GetClients())
 	{
-		LambdaEngine::NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
+		NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
 	}
 
-	for (auto& pair : m_pServer->GetClients())
-	{
-		IClient* pClient = pair.second;
-		if (pClient->IsConnected())
-		{
-			LambdaEngine::NetworkSegment* pPacket = pClient->GetFreePacket(99);
-			LambdaEngine::BinaryEncoder encoder(pPacket);
-			encoder.WriteString("Test broadcast from server.cpp");
-			//encoder.WriteUInt32(69);
-			pClient->SendReliable(pPacket);
-		}
-	}
-
-
-	/*if (m_pServer->GetClientCount() > 0)
+	// Simulate first Remote client broadcasting
+	if (m_pServer->GetClientCount() > 0)
 	{
 		auto chosenClientPair = m_pServer->GetClients().begin();
-		LambdaEngine::NetworkSegment* pPacket = chosenClientPair->second->GetFreePacket(99); // get a packet somewhere
-		LambdaEngine::BinaryEncoder encoder(pPacket);
+		NetworkSegment* pPacket = chosenClientPair->second->GetFreePacket(99);
+		BinaryEncoder encoder(pPacket);
 		encoder.WriteString("Test broadcast from server.cpp");
 		m_pServer->SendReliableBroadcast(chosenClientPair->second, pPacket, nullptr);
-	}*/
+	}
 
 	LambdaEngine::Renderer::Render();
 }
 
-void Server::FixedTick(LambdaEngine::Timestamp delta)
+void Server::FixedTick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 }
