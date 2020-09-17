@@ -32,6 +32,7 @@ namespace LambdaEngine
 	void Profiler::Tick(Timestamp delta)
 	{
 		s_Timestamp = delta;
+		GetCPUProfiler()->Tick(delta);
 		GetGPUProfiler()->Tick(delta);
 	}
 
@@ -39,7 +40,7 @@ namespace LambdaEngine
 	{
 		ImGui::Begin("Profiling data");
 
-		GetCPUProfiler()->Render(s_Timestamp);
+		GetCPUProfiler()->Render();
 		GetGPUProfiler()->Render();
 
 		ImGui::End();
