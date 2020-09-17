@@ -92,16 +92,17 @@ void Server::Tick(LambdaEngine::Timestamp delta)
 
 	for (auto& pair : m_pServer->GetClients())
 	{
-
 		LambdaEngine::NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
-
-
-		LambdaEngine::NetworkSegment* pPacket = pair.second->GetFreePacket(99); // get a packet somewhere
-		LambdaEngine::BinaryEncoder encoder(pPacket);
-		encoder.WriteString("Test broadcast from server.cpp");
-		m_pServer->BroadcastReliable(pPacket, (LambdaEngine::IPacketListener*)m_pServer->GetClients().begin()->second);
 	}
 
+	if (m_pServer->GetClientCount() > 0)
+	{
+		auto chosenClientPair = m_pServer->GetClients().begin();
+		LambdaEngine::NetworkSegment* pPacket = chosenClientPair->second->GetFreePacket(99); // get a packet somewhere
+		LambdaEngine::BinaryEncoder encoder(pPacket);
+		encoder.WriteString("Test broadcast from server.cpp");
+		m_pServer->SendReliableBroadcast(chosenClientPair->first, pPacket, nullptr);
+	}
 
 	LambdaEngine::Renderer::Render();
 }
