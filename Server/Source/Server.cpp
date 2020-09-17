@@ -22,9 +22,10 @@
 
 #include "Math/Random.h"
 
+using namespace LambdaEngine;
+
 Server::Server()
 {
-	using namespace LambdaEngine;
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
@@ -35,7 +36,7 @@ Server::Server()
 	desc.MaxRetries		= 10;
 	desc.MaxClients		= 10;
 	desc.PoolSize		= 1024;
-	desc.Protocol		= EProtocol::TCP;
+	desc.Protocol		= EProtocol::UDP;
 	desc.PingInterval	= Timestamp::Seconds(1);
 	desc.PingTimeout	= Timestamp::Seconds(3);
 	desc.UsePingSystem	= true;
@@ -48,8 +49,6 @@ Server::Server()
 
 Server::~Server()
 {
-	using namespace LambdaEngine;
-
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
 	m_pServer->Release();
 }
@@ -59,10 +58,8 @@ LambdaEngine::IClientRemoteHandler* Server::CreateClientHandler()
 	return DBG_NEW ClientHandler();
 }
 
-bool Server::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
+bool Server::OnKeyPressed(const KeyPressedEvent& event)
 {
-	using namespace LambdaEngine;
-
 	UNREFERENCED_VARIABLE(event);
 
 	if(m_pServer->IsRunning())
@@ -75,22 +72,32 @@ bool Server::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 
 void Server::UpdateTitle()
 {
-	using namespace LambdaEngine;
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 }
 
-void Server::Tick(LambdaEngine::Timestamp delta)
+void Server::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 
 	for (auto& pair : m_pServer->GetClients())
 	{
-		LambdaEngine::NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
+		NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
 	}
+
+	// Simulate first Remote client broadcasting
+	if (m_pServer->GetClientCount() > 0)
+	{
+		auto chosenClientPair = m_pServer->GetClients().begin();
+		NetworkSegment* pPacket = chosenClientPair->second->GetFreePacket(99);
+		BinaryEncoder encoder(pPacket);
+		encoder.WriteString("Test broadcast from server.cpp");
+		chosenClientPair->second->SendReliableBroadcast(pPacket);
+	}
+
 }
 
-void Server::FixedTick(LambdaEngine::Timestamp delta)
+void Server::FixedTick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 }

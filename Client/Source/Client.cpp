@@ -25,12 +25,11 @@
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/NetworkDebugger.h"
-
+using namespace LambdaEngine;
 
 Client::Client() :
 	m_pClient(nullptr)
 {
-	using namespace LambdaEngine;
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
 
@@ -58,78 +57,74 @@ Client::Client() :
 
 Client::~Client()
 {
-	using namespace LambdaEngine;
-
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
 
 	m_pClient->Release();
 }
 
-void Client::OnConnecting(LambdaEngine::IClient* pClient)
+void Client::OnConnecting(IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_MESSAGE("OnConnecting()");
 }
 
-void Client::OnConnected(LambdaEngine::IClient* pClient)
+void Client::OnConnected(IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_MESSAGE("OnConnected()");
 }
 
-void Client::OnDisconnecting(LambdaEngine::IClient* pClient)
+void Client::OnDisconnecting(IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_MESSAGE("OnDisconnecting()");
 }
 
-void Client::OnDisconnected(LambdaEngine::IClient* pClient)
+void Client::OnDisconnected(IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_MESSAGE("OnDisconnected()");
 }
 
-void Client::OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngine::NetworkSegment* pPacket)
+void Client::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	UNREFERENCED_VARIABLE(pPacket);
 	LOG_MESSAGE("OnPacketReceived(%s)", pPacket->ToString().c_str());
 }
 
-void Client::OnServerFull(LambdaEngine::IClient* pClient)
+void Client::OnServerFull(IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_ERROR("OnServerFull()");
 }
 
-void Client::OnClientReleased(LambdaEngine::IClient* pClient)
+void Client::OnClientReleased(IClient* pClient)
 {
 	UNREFERENCED_VARIABLE(pClient);
 	LOG_ERROR("OnClientReleased()");
 }
 
-void Client::OnPacketDelivered(LambdaEngine::NetworkSegment* pPacket)
+void Client::OnPacketDelivered(NetworkSegment* pPacket)
 {
 	UNREFERENCED_VARIABLE(pPacket);
 	LOG_INFO("OnPacketDelivered(%s)", pPacket->ToString().c_str());
 }
 
-void Client::OnPacketResent(LambdaEngine::NetworkSegment* pPacket, uint8 tries)
+void Client::OnPacketResent(NetworkSegment* pPacket, uint8 tries)
 {
 	UNREFERENCED_VARIABLE(pPacket);
 	LOG_INFO("OnPacketResent(%d)", tries);
 }
 
-void Client::OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint8 tries)
+void Client::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 {
 	UNREFERENCED_VARIABLE(pPacket);
 	LOG_ERROR("OnPacketMaxTriesReached(%d)", tries);
 }
 
-bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
+bool Client::OnKeyPressed(const KeyPressedEvent& event)
 {
-	using namespace LambdaEngine;
-
 	if (event.Key == EKey::KEY_ENTER)
 	{
 		if (m_pClient->IsConnected())
@@ -149,18 +144,15 @@ bool Client::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	return false;
 }
 
-void Client::Tick(LambdaEngine::Timestamp delta)
+void Client::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
-	using namespace LambdaEngine;
-
 	NetworkDebugger::RenderStatisticsWithImGUI(m_pClient);
 }
 
-void Client::FixedTick(LambdaEngine::Timestamp delta)
+void Client::FixedTick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
-	using namespace LambdaEngine;
 }
 
 namespace LambdaEngine

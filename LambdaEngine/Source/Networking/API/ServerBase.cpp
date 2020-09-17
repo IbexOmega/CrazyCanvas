@@ -113,6 +113,30 @@ namespace LambdaEngine
 		m_ClientsToRemove.PushBack(pClient);
 	}
 
+	bool ServerBase::SendReliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket, IPacketListener* pListener)
+	{
+		std::scoped_lock<SpinLock> lock(m_LockClients);
+		bool result = true;
+
+		// Send original
+		if (!pClient->SendReliable(pPacket, pListener))
+			result = false;
+
+		for (auto& pair : m_Clients)
+		{ 
+			// Send to rest
+			if (pair.second != pClient) 
+			{
+				NetworkSegment* pPacketDuplicate = pair.second->GetFreePacket(pPacket->GetType());
+				pPacket->CopyTo(pPacketDuplicate);
+				if (!pair.second->SendReliable(pPacketDuplicate, pListener))
+					result = false;
+			}
+		}
+
+		return result;
+	}
+
 	ClientRemoteBase* ServerBase::GetClient(const IPEndPoint& endPoint)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockClients);
