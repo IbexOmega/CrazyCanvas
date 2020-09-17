@@ -101,7 +101,7 @@ void Server::Tick(LambdaEngine::Timestamp delta)
 		LambdaEngine::NetworkSegment* pPacket = chosenClientPair->second->GetFreePacket(99); // get a packet somewhere
 		LambdaEngine::BinaryEncoder encoder(pPacket);
 		encoder.WriteString("Test broadcast from server.cpp");
-		m_pServer->SendReliableBroadcast(chosenClientPair->first, pPacket, nullptr);
+		m_pServer->SendReliableBroadcast(chosenClientPair->second, pPacket, nullptr);
 	}
 
 	LambdaEngine::Renderer::Render();
