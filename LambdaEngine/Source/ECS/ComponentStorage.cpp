@@ -9,10 +9,19 @@ namespace LambdaEngine
 		m_ComponentArrays.Clear();
 	}
 
-	void ComponentStorage::EntityDeleted(Entity entity)
+	bool ComponentStorage::DeleteComponent(Entity entity, std::type_index componentType)
 	{
-		for (IComponentArray* compArr : m_ComponentArrays)
-			compArr->EntityDestroyed(entity);
+		IComponentArray* pComponentArray = GetComponentArray(componentType);
+		auto arrayItr = m_CompTypeToArrayMap.find(componentType);
+		if (pComponentArray)
+		{
+			pComponentArray->DeleteEntity(entity);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	IComponentArray* ComponentStorage::GetComponentArray(std::type_index componentType)

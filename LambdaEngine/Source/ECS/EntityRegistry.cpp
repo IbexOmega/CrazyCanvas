@@ -64,7 +64,6 @@ namespace LambdaEngine
     {
         EntityRegistryPage& topPage = m_EntityPages.top();
         if (!topPage.HasElement(entity)) {
-            LOG_WARNING("Attempted to deregister an unregistered entity: %ld", entity);
             return;
         }
 

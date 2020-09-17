@@ -25,7 +25,7 @@ namespace LambdaEngine
 		template<typename Comp>
 		Comp& GetComponent(Entity entity);
 
-		void EntityDeleted(Entity entity);
+		bool DeleteComponent(Entity entity, std::type_index componentType);
 
 		template<typename Comp>
 		bool HasType() const;
