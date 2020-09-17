@@ -129,7 +129,7 @@ namespace LambdaEngine
 			{
 				NetworkSegment* pPacketDuplicate = pair.second->GetFreePacket(pPacket->GetType());
 				pPacket->CopyTo(pPacketDuplicate);
-				if (!pClient->SendReliable(pPacketDuplicate, pListener))
+				if (!pair.second->SendReliable(pPacketDuplicate, pListener))
 					result = false;
 			}
 		}

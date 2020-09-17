@@ -89,20 +89,35 @@ void Server::UpdateTitle()
 void Server::Tick(LambdaEngine::Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
+	using namespace LambdaEngine;
 
 	for (auto& pair : m_pServer->GetClients())
 	{
 		LambdaEngine::NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
 	}
 
-	if (m_pServer->GetClientCount() > 0)
+	for (auto& pair : m_pServer->GetClients())
+	{
+		IClient* pClient = pair.second;
+		if (pClient->IsConnected())
+		{
+			LambdaEngine::NetworkSegment* pPacket = pClient->GetFreePacket(99);
+			LambdaEngine::BinaryEncoder encoder(pPacket);
+			encoder.WriteString("Test broadcast from server.cpp");
+			//encoder.WriteUInt32(69);
+			pClient->SendReliable(pPacket);
+		}
+	}
+
+
+	/*if (m_pServer->GetClientCount() > 0)
 	{
 		auto chosenClientPair = m_pServer->GetClients().begin();
 		LambdaEngine::NetworkSegment* pPacket = chosenClientPair->second->GetFreePacket(99); // get a packet somewhere
 		LambdaEngine::BinaryEncoder encoder(pPacket);
 		encoder.WriteString("Test broadcast from server.cpp");
 		m_pServer->SendReliableBroadcast(chosenClientPair->second, pPacket, nullptr);
-	}
+	}*/
 
 	LambdaEngine::Renderer::Render();
 }
