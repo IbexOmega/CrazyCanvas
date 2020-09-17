@@ -43,7 +43,7 @@ namespace LambdaEngine
 
 		// Remove a component from a specific entity.
 		template<typename Comp>
-		bool RemoveComponent(Entity entity);
+		void RemoveComponent(Entity entity);
 
 		// Remove a specific entity.
 		void RemoveEntity(Entity entity);
@@ -120,16 +120,8 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
-	inline bool ECSCore::RemoveComponent(Entity entity)
+	inline void ECSCore::RemoveComponent(Entity entity)
 	{
 		m_ComponentsToDelete.PushBack({entity, Comp::s_TID});
-		if (m_ComponentStorage.HasType<Comp>())
-		{
-			m_ComponentStorage.RemoveComponent<Comp>(entity);
-			m_EntityRegistry.DeregisterComponentType(entity, componentType);
-			m_EntityPublisher.UnpublishComponent(entity, componentType);
-			return true;
-		}
-		return false;
 	}
 }
