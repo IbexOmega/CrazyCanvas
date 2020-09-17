@@ -36,7 +36,7 @@ Server::Server()
 	desc.MaxRetries		= 10;
 	desc.MaxClients		= 10;
 	desc.PoolSize		= 1024;
-	desc.Protocol		= EProtocol::UDP;
+	desc.Protocol		= EProtocol::TCP;
 	desc.PingInterval	= Timestamp::Seconds(1);
 	desc.PingTimeout	= Timestamp::Seconds(3);
 	desc.UsePingSystem	= true;
@@ -79,6 +79,11 @@ void Server::UpdateTitle()
 void Server::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
+}
+
+void Server::FixedTick(Timestamp delta)
+{
+	UNREFERENCED_VARIABLE(delta);
 
 	for (auto& pair : m_pServer->GetClients())
 	{
@@ -88,18 +93,15 @@ void Server::Tick(Timestamp delta)
 	// Simulate first Remote client broadcasting
 	if (m_pServer->GetClientCount() > 0)
 	{
-		auto chosenClientPair = m_pServer->GetClients().begin();
-		NetworkSegment* pPacket = chosenClientPair->second->GetFreePacket(99);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteString("Test broadcast from server.cpp");
-		chosenClientPair->second->SendReliableBroadcast(pPacket);
+		ClientRemoteBase* pClient = m_pServer->GetClients().begin()->second;
+		if (pClient->IsConnected())
+		{
+			NetworkSegment* pPacket = pClient->GetFreePacket(99);
+			BinaryEncoder encoder(pPacket);
+			encoder.WriteString("Test broadcast from server.cpp");
+			pClient->SendUnreliableBroadcast(pPacket);
+		}
 	}
-
-}
-
-void Server::FixedTick(Timestamp delta)
-{
-	UNREFERENCED_VARIABLE(delta);
 }
 
 namespace LambdaEngine
