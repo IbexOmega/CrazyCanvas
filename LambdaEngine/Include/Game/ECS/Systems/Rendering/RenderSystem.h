@@ -165,12 +165,11 @@ namespace LambdaEngine
 		RenderSystem() = default;
 
 		void OnStaticEntityAdded(Entity entity);
-		void OnStaticEntityRemoved(Entity entity);
 		void OnDynamicEntityAdded(Entity entity);
-		void OnDynamicEntityRemoved(Entity entity);
+		void RemoveEntityInstance(Entity entity);
 
 		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated);
-		
+
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(Entity entity);
 

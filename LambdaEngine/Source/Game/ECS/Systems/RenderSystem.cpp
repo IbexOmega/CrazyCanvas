@@ -39,8 +39,8 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, MeshComponent::s_TID}, {NDA, StaticComponent::s_TID}},	{&transformComponents}, &m_StaticEntities,	std::bind(&RenderSystem::OnStaticEntityAdded, this, std::placeholders::_1),	 std::bind(&RenderSystem::OnStaticEntityRemoved, this, std::placeholders::_1)},
-				{{{RW, MeshComponent::s_TID}, {NDA, DynamicComponent::s_TID}},	{&transformComponents}, &m_DynamicEntities,	std::bind(&RenderSystem::OnDynamicEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDynamicEntityRemoved, this, std::placeholders::_1)},
+				{{{RW, MeshComponent::s_TID}, {NDA, StaticComponent::s_TID}},	{&transformComponents}, &m_StaticEntities,	std::bind(&RenderSystem::OnStaticEntityAdded, this, std::placeholders::_1),	 std::bind(&RenderSystem::RemoveEntityInstance, this, std::placeholders::_1)},
+				{{{RW, MeshComponent::s_TID}, {NDA, DynamicComponent::s_TID}},	{&transformComponents}, &m_DynamicEntities,	std::bind(&RenderSystem::OnDynamicEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::RemoveEntityInstance, this, std::placeholders::_1)},
 				{{{RW, ViewProjectionMatrices::s_TID}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
@@ -315,10 +315,6 @@ namespace LambdaEngine
 		AddEntityInstance(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true, false);
 	}
 
-	void RenderSystem::OnStaticEntityRemoved(Entity entity)
-	{
-	}
-
 	void RenderSystem::OnDynamicEntityAdded(Entity entity)
 	{
 		ECSCore* pECSCore = ECSCore::GetInstance();
@@ -335,8 +331,26 @@ namespace LambdaEngine
 		AddEntityInstance(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
 	}
 
-	void RenderSystem::OnDynamicEntityRemoved(Entity entity)
+	void RenderSystem::RemoveEntityInstance(Entity entity)
 	{
+		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
+
+		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
+		{
+			LOG_ERROR("[RenderSystem]: Tried to remove entity which does not exist");
+			return;
+		}
+
+		MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.find(instanceKeyIt->second.MeshKey);
+
+		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
+		{
+			LOG_ERROR("[RenderSystem]: Tried to remove entity which has no MeshAndInstancesMap entry");
+			return;
+		}
+
+		meshAndInstancesIt->second.Instances.Erase(meshAndInstancesIt->second.Instances.Begin() + instanceKeyIt->second.InstanceIndex);
+		m_DirtyInstanceBuffers.insert(&meshAndInstancesIt->second);
 	}
 
 	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated)
