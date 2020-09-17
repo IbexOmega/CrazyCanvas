@@ -7,7 +7,9 @@ namespace LambdaEngine
 {
     RegularWorker::~RegularWorker()
     {
-        ECSCore::GetInstance()->DescheduleRegularJob(m_Phase, m_JobID);
+        ECSCore* pECS = ECSCore::GetInstance();
+        if (pECS)
+            pECS->DescheduleRegularJob(m_Phase, m_JobID);
     }
 
     void RegularWorker::ScheduleRegularWork(const Job& job, uint32 phase)

@@ -1,8 +1,9 @@
 #include "PreCompiled.h"
 #include "Debug/GPUProfiler.h"
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/QueryHeap.h"
-#include "Rendering/RenderSystem.h"
+#include "Rendering/RenderAPI.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/CommandQueue.h"
 
@@ -26,18 +27,18 @@ namespace LambdaEngine
 	{
 #ifdef LAMBDA_DEBUG
 		GraphicsDeviceFeatureDesc desc = {};
-		RenderSystem::GetDevice()->QueryDeviceFeatures(&desc);
+		RenderAPI::GetDevice()->QueryDeviceFeatures(&desc);
 		m_TimestampPeriod = desc.TimestampPeriod;
 
 		CommandQueueProperties prop = {};
-		RenderSystem::GetGraphicsQueue()->QueryQueueProperties(&prop);
+		RenderAPI::GetGraphicsQueue()->QueryQueueProperties(&prop);
 		m_TimestampValidBits = prop.TimestampValidBits;
 
 		m_TimeUnit = timeUnit;
 
 #endif
 		uint32 statCount = 0;
-		RenderSystem::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
+		RenderAPI::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
 		m_MemoryStats.Resize(statCount);
 	}
 
@@ -53,7 +54,7 @@ namespace LambdaEngine
 			if (m_TimeSinceUpdate > 1 / m_UpdateFreq)
 			{
 				uint32 statCount = m_MemoryStats.GetSize();
-				RenderSystem::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
+				RenderAPI::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
 			}
 			static const char* items[] = { "B", "KB", "MB", "GB" };
 			static int itemSelected = 2;
@@ -170,7 +171,7 @@ namespace LambdaEngine
 		createInfo.QueryCount = m_TimestampCount;
 		createInfo.Type = EQueryType::QUERY_TYPE_TIMESTAMP;
 
-		m_pTimestampHeap = RenderSystem::GetDevice()->CreateQueryHeap(&createInfo);
+		m_pTimestampHeap = RenderAPI::GetDevice()->CreateQueryHeap(&createInfo);
 #endif
 	}
 
@@ -189,7 +190,7 @@ namespace LambdaEngine
 		createInfo.QueryCount = 6;
 		createInfo.Type = EQueryType::QUERY_TYPE_PIPELINE_STATISTICS;
 
-		m_pPipelineStatHeap = RenderSystem::GetDevice()->CreateQueryHeap(&createInfo);
+		m_pPipelineStatHeap = RenderAPI::GetDevice()->CreateQueryHeap(&createInfo);
 
 		m_GraphicsStats.Resize(createInfo.QueryCount);
 #endif

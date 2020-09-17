@@ -24,20 +24,18 @@
 #include "Threading/API/Thread.h"
 #include "Threading/API/ThreadPool.h"
 
-#include "Rendering/RenderSystem.h"
-#include "Rendering/Renderer.h"
+#include "Rendering/RenderAPI.h"
+#include "Rendering/Core/API/CommandQueue.h"
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
 
 #include "Audio/AudioSystem.h"
 
-#include "Rendering/RenderSystem.h"
-#include "Rendering/Renderer.h"
-
 #include "Utilities/RuntimeStats.h"
 
 #include "Game/GameConsole.h"
 #include "Game/StateManager.h"
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 namespace LambdaEngine
 {
@@ -103,6 +101,8 @@ namespace LambdaEngine
 		StateManager::GetInstance()->Tick(dt);
 		Game::Get().Tick(delta);
 
+		RenderSystem::GetInstance().Render();
+
 		return true;
 	}
 
@@ -166,7 +166,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!RenderSystem::Init())
+		if (!RenderAPI::Init())
 		{
 			return false;
 		}
@@ -185,8 +185,8 @@ namespace LambdaEngine
 		{
 			return false;
 		}
-
-		if (!Renderer::Init())
+		
+		if (!RenderSystem::GetInstance().Init())
 		{
 			return false;
 		}
@@ -201,9 +201,9 @@ namespace LambdaEngine
 
 	bool EngineLoop::PreRelease()
 	{
-		RenderSystem::GetGraphicsQueue()->Flush();
-		RenderSystem::GetComputeQueue()->Flush();
-		RenderSystem::GetCopyQueue()->Flush();
+		RenderAPI::GetGraphicsQueue()->Flush();
+		RenderAPI::GetComputeQueue()->Flush();
+		RenderAPI::GetCopyQueue()->Flush();
 
 		return true;
 	}
@@ -217,7 +217,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!Renderer::Release())
+		if (!RenderSystem::GetInstance().Release())
 		{
 			return false;
 		}
@@ -232,7 +232,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!RenderSystem::Release())
+		if (!RenderAPI::Release())
 		{
 			return false;
 		}
@@ -244,7 +244,13 @@ namespace LambdaEngine
 
 		EventQueue::UnregisterAll();
 
-		return ThreadPool::Release();
+		if (!ThreadPool::Release())
+		{
+			return false;
+		}
+
+		ECSCore::Release();
+		return true;
 	}
 
 	bool EngineLoop::PostRelease()
