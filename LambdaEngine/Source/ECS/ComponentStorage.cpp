@@ -12,7 +12,6 @@ namespace LambdaEngine
 	bool ComponentStorage::DeleteComponent(Entity entity, std::type_index componentType)
 	{
 		IComponentArray* pComponentArray = GetComponentArray(componentType);
-		auto arrayItr = m_CompTypeToArrayMap.find(componentType);
 		if (pComponentArray)
 		{
 			pComponentArray->DeleteEntity(entity);
