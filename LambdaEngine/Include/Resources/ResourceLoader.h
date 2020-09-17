@@ -123,6 +123,8 @@ namespace LambdaEngine
 		static ISoundEffect3D* LoadSoundEffectFromFile(const String& filepath);
 
 	private:
+		static void GenerateMeshlets(Mesh* pMesh, uint32 maxVerts, uint32 maxPrims);
+
 		static bool ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize);
 
 		static bool CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection);

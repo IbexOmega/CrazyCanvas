@@ -176,8 +176,6 @@ namespace LambdaEngine
 		FORCEINLINE static std::unordered_map<GUID_Lambda, ISoundEffect3D*>&	GetSoundEffectGUIDMap()		{ return s_SoundEffects; }
 
 	private:
-		static void GenerateMeshlets(Mesh* pMesh);
-
 		static GUID_Lambda RegisterLoadedMesh(const String& name, Mesh* pMesh);
 		static GUID_Lambda RegisterLoadedMaterial(const String& name, Material* pMaterial);
 		static GUID_Lambda RegisterLoadedTexture(Texture* pTexture);

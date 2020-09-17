@@ -346,7 +346,9 @@ namespace LambdaEngine
 		VALIDATE(deviceMemory != VK_NULL_HANDLE);
 
 		vkFreeMemory(Device, deviceMemory, nullptr);
+
 		m_UsedAllocations--;
+		D_LOG_INFO("[GraphicsDeviceVK]: Freed memoryblock. Allocations %u/%u", m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
 	}
 
 	void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
