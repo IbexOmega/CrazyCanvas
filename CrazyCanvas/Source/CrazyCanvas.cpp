@@ -39,7 +39,6 @@
 #include "Utilities/RuntimeStats.h"
 
 #include "Game/StateManager.h"
-#include "States/DebugState.h"
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
@@ -63,9 +62,9 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	State* pStartingState = nullptr;
 	if (flagParser[{"-b", "--benchmark"}])
-        pStartingState = DBG_NEW BenchmarkState();
-    else
-        pStartingState = DBG_NEW PlaySessionState();
+		pStartingState = DBG_NEW BenchmarkState();
+	else
+		pStartingState = DBG_NEW PlaySessionState();
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
 }
