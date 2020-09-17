@@ -70,7 +70,7 @@ namespace LambdaEngine
 				resourceStatesByHalfAttributeIndex,
 				resourceStateLinksByLinkIndex,
 				renderStageWeightsByName,
-				0xFFFFFFFF))
+				UINT32_MAX))
 			{
 				LOG_ERROR("[RenderGraphParser]: Failed to recursively weight Render Stages");
 				return false;

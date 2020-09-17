@@ -298,7 +298,7 @@ namespace LambdaEngine
 		ERenderGraphResourceType		ResourceType		= ERenderGraphResourceType::NONE;
 		String							RenderStageName		= "";
 		bool							Removable			= true;
-		uint32							DrawArgsMask		= 0xFFFFFFFF;
+		uint32							DrawArgsMask		= UINT32_MAX;
 		ERenderGraphResourceBindingType BindingType			= ERenderGraphResourceBindingType::NONE;
 		int32							InputLinkIndex		= -1;
 		TSet<int32>						OutputLinkIndices;

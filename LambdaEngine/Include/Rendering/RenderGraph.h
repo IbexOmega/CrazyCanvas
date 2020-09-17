@@ -50,7 +50,6 @@ namespace LambdaEngine
 		String Name											= "Render Graph";
 		RenderGraphStructureDesc* pRenderGraphStructureDesc	= nullptr;
 		uint32 BackBufferCount								= 3;
-		uint32 MaxTexturesPerDescriptorSet					= 1;
 	};
 
 	struct PushConstantsUpdate
@@ -383,7 +382,6 @@ namespace LambdaEngine
 		uint64											m_ModFrameIndex						= 0;
 		uint32											m_BackBufferIndex					= 0;
 		uint32											m_BackBufferCount					= 0;
-		uint32											m_MaxTexturesPerDescriptorSet		= 0;
 
 		Fence*											m_pFence							= nullptr;
 		uint64											m_SignalValue						= 1;

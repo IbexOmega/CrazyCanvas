@@ -29,10 +29,12 @@ namespace LambdaEngine
 
 	bool RenderSystem::Init()
 	{
+		m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
+
 		TransformComponents transformComponents;
-		transformComponents.Position.Permissions = R;
-		transformComponents.Scale.Permissions = R;
-		transformComponents.Rotation.Permissions = R;
+		transformComponents.Position.Permissions	= R;
+		transformComponents.Scale.Permissions		= R;
+		transformComponents.Rotation.Permissions	= R;
 
 		// Subscribe on Static Entities & Dynamic Entities
 		{
@@ -79,45 +81,43 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, EngineConfig::GetStringProperty("RenderGraphName"), IMGUI_ENABLED))
+			String prefix = m_RayTracingEnabled ? "RT_" : "";
+
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, prefix + EngineConfig::GetStringProperty("RenderGraphName"), IMGUI_ENABLED))
 			{
 				return false;
 			}
 
-			//Todo: Move this
-			{
-				RenderGraphShaderConstants& pointLightsConstants = renderGraphStructure.ShaderConstants["POINT_LIGHT_SHADOWMAPS"];
-				pointLightsConstants.Graphics.PixelShaderConstants.PushBack({ 2 });
-
-				RenderGraphShaderConstants& shadingConstants = renderGraphStructure.ShaderConstants["DEMO"];
-				shadingConstants.Graphics.PixelShaderConstants.PushBack({ 2 });
-			}
-
 			RenderGraphDesc renderGraphDesc = {};
-			renderGraphDesc.Name = "Default Rendergraph";
-			renderGraphDesc.pRenderGraphStructureDesc = &renderGraphStructure;
-			renderGraphDesc.BackBufferCount = BACK_BUFFER_COUNT;
-			renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
+			renderGraphDesc.Name						= "Default Rendergraph";
+			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
+			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
-			m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs);
+			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
+			{
+				LOG_ERROR("[RenderSystem]: Failed to initialize RenderGraph");
+				return false;
+			}
 		}
 
 		//Update RenderGraph with Back Buffer
 		{
 			for (uint32 v = 0; v < BACK_BUFFER_COUNT; v++)
 			{
-				m_ppBackBuffers[v] = m_SwapChain->GetBuffer(v);
-				m_ppBackBufferViews[v] = m_SwapChain->GetBufferView(v);
+				m_ppBackBuffers[v]		= m_SwapChain->GetBuffer(v);
+				m_ppBackBufferViews[v]	= m_SwapChain->GetBufferView(v);
 			}
 
 			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
-			resourceUpdateDesc.ExternalTextureUpdate.ppTextures = m_ppBackBuffers;
+			resourceUpdateDesc.ResourceName							= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppBackBuffers;
 			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_ppBackBufferViews;
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
+
+		return true;
 
 		// Per Frame Buffer
 		{
@@ -182,14 +182,14 @@ namespace LambdaEngine
 
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
-			TArray<Buffer*>& buffersToRemove = m_BuffersToRemove[b];
+			TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[b];
 
-			for (Buffer* pStagingBuffer : buffersToRemove)
+			for (DeviceChild* pResource : resourcesToRemove)
 			{
-				SAFERELEASE(pStagingBuffer);
+				SAFERELEASE(pResource);
 			}
 
-			buffersToRemove.Clear();
+			resourcesToRemove.Clear();
 		}
 
 		SAFERELEASE(m_pMaterialParametersStagingBuffer);
@@ -283,9 +283,8 @@ namespace LambdaEngine
 	{
 		RenderGraphDesc renderGraphDesc = {};
 		renderGraphDesc.Name = name;
-		renderGraphDesc.pRenderGraphStructureDesc = pRenderGraphStructureDesc;
-		renderGraphDesc.BackBufferCount = BACK_BUFFER_COUNT;
-		renderGraphDesc.MaxTexturesPerDescriptorSet = MAX_TEXTURES_PER_DESCRIPTOR_SET;
+		renderGraphDesc.pRenderGraphStructureDesc	= pRenderGraphStructureDesc;
+		renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 
 		m_RequiredDrawArgs.clear();
 		if (!m_pRenderGraph->Recreate(&renderGraphDesc, m_RequiredDrawArgs))
@@ -406,7 +405,7 @@ namespace LambdaEngine
 					meshEntry.pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexBufferDesc);
 
 					m_PendingBufferUpdates.PushBack({ pVertexStagingBuffer, meshEntry.pVertexBuffer, vertexBufferDesc.SizeInBytes });
-					m_BuffersToRemove[0].PushBack(pVertexStagingBuffer);
+					m_ResourcesToRemove[0].PushBack(pVertexStagingBuffer);
 				}
 
 				//Indices
@@ -433,10 +432,11 @@ namespace LambdaEngine
 					meshEntry.IndexCount	= pMesh->IndexCount;
 
 					m_PendingBufferUpdates.PushBack({ pIndexStagingBuffer, meshEntry.pIndexBuffer, indexBufferDesc.SizeInBytes });
-					m_BuffersToRemove[0].PushBack(pIndexStagingBuffer);
+					m_ResourcesToRemove[0].PushBack(pIndexStagingBuffer);
 				}
 
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
+				m_DirtyBLASs.insert(&meshAndInstancesIt->second);
 			}
 		}
 
@@ -486,9 +486,10 @@ namespace LambdaEngine
 		meshAndInstancesIt->second.Instances.PushBack(instance);
 
 		m_DirtyInstanceBuffers.insert(&meshAndInstancesIt->second);
+		m_TLASDirty = true;
 
-		//This needs to come from the Entity in some way
-		uint32 drawArgHash = 0xFFFFFFFF;
+		//Todo: This needs to come from the Entity in some way
+		uint32 drawArgHash = UINT32_MAX;
 		if (m_RequiredDrawArgs.count(drawArgHash))
 		{
 			m_DirtyDrawArgs.insert(drawArgHash);
@@ -518,6 +519,7 @@ namespace LambdaEngine
 		pInstanceToUpdate->PrevTransform = pInstanceToUpdate->Transform;
 		pInstanceToUpdate->Transform = transform;
 		m_DirtyInstanceBuffers.insert(&meshAndInstancesIt->second);
+		m_TLASDirty = true;
 	}
 
 	void RenderSystem::UpdateCamera(Entity entity)
@@ -527,17 +529,15 @@ namespace LambdaEngine
 
 	void RenderSystem::CleanBuffers()
 	{
-		// Update data on GPU
-		//Release Staging Buffers from older frame
-		//Todo: Better solution for this
-		TArray<Buffer*>& buffersToRemove = m_BuffersToRemove[m_ModFrameIndex];
+		//Todo: Better solution for this, save some Staging Buffers maybe so they don't get recreated all the time?
+		TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[m_ModFrameIndex];
 
-		for (Buffer* pBuffer : buffersToRemove)
+		for (DeviceChild* pResource : resourcesToRemove)
 		{
-			SAFERELEASE(pBuffer);
+			SAFERELEASE(pResource);
 		}
 
-		buffersToRemove.Clear();
+		resourcesToRemove.Clear();
 	}
 
 	void RenderSystem::UpdateBuffers()
@@ -692,7 +692,7 @@ namespace LambdaEngine
 
 			if (pDirtyInstanceBufferEntry->pInstanceStagingBuffer == nullptr || pDirtyInstanceBufferEntry->pInstanceStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 			{
-				if (pDirtyInstanceBufferEntry->pInstanceStagingBuffer != nullptr) m_BuffersToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pInstanceStagingBuffer);
+				if (pDirtyInstanceBufferEntry->pInstanceStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pInstanceStagingBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "Instance Staging Buffer";
@@ -709,7 +709,7 @@ namespace LambdaEngine
 
 			if (pDirtyInstanceBufferEntry->pInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 			{
-				if (pDirtyInstanceBufferEntry->pInstanceBuffer != nullptr) m_BuffersToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pInstanceBuffer);
+				if (pDirtyInstanceBufferEntry->pInstanceBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pInstanceBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName		= "Instance Buffer";
@@ -741,7 +741,7 @@ namespace LambdaEngine
 
 		if (m_pMaterialParametersStagingBuffer == nullptr || m_pMaterialParametersStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 		{
-			if (m_pMaterialParametersStagingBuffer != nullptr) m_BuffersToRemove[m_ModFrameIndex].PushBack(m_pMaterialParametersStagingBuffer);
+			if (m_pMaterialParametersStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pMaterialParametersStagingBuffer);
 
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Material Properties Staging Buffer";
@@ -758,7 +758,7 @@ namespace LambdaEngine
 
 		if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 		{
-			if (m_pMaterialParametersBuffer != nullptr) m_BuffersToRemove[m_ModFrameIndex].PushBack(m_pMaterialParametersBuffer);
+			if (m_pMaterialParametersBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pMaterialParametersBuffer);
 
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName	= "Material Properties Buffer";

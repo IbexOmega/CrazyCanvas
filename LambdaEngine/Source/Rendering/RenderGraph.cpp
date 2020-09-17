@@ -123,7 +123,6 @@ namespace LambdaEngine
 	bool RenderGraph::Init(const RenderGraphDesc* pDesc, TSet<uint32>& requiredDrawArgs)
 	{
 		m_BackBufferCount				= pDesc->BackBufferCount;
-		m_MaxTexturesPerDescriptorSet	= pDesc->MaxTexturesPerDescriptorSet;
 		m_pDescriptorSetsToDestroy		= DBG_NEW TArray<DescriptorSet*>[m_BackBufferCount];
 
 		if (!CreateFence())

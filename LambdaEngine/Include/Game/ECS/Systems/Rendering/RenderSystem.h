@@ -100,6 +100,7 @@ namespace LambdaEngine
 
 		struct MeshEntry
 		{
+			AccelerationStructure* pBLAS	= nullptr;
 			Buffer* pVertexBuffer			= nullptr;
 			Buffer* pIndexBuffer			= nullptr;
 			uint32	IndexCount				= 0;
@@ -139,11 +140,9 @@ namespace LambdaEngine
 		~RenderSystem() = default;
 
 		bool Init();
-
 		bool Release();
 
 		void Tick(float dt);
-
 		bool Render();
 
 		void SetCamera(const Camera* pCamera);
@@ -197,11 +196,12 @@ namespace LambdaEngine
 		uint32					m_BackBufferIndex	= 0;
 		bool					m_RayTracingEnabled	= false;
 
-		//Data Supplied to the RenderGraph
+		//Mesh/Instance/Entity
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
 		MaterialMap						m_MaterialMap;
 		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
 
+		//Materials
 		Texture*			m_ppAlbedoMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppNormalMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppAmbientOcclusionMaps[MAX_UNIQUE_MATERIALS];
@@ -217,18 +217,26 @@ namespace LambdaEngine
 		Buffer*				m_pMaterialParametersBuffer				= nullptr;
 		TStack<uint32>		m_FreeMaterialSlots;
 
-		TSet<MeshEntry*>	m_DirtyInstanceBuffers;
-		TArray<Buffer*>		m_BuffersToRemove[BACK_BUFFER_COUNT];
-		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
-
+		//Per Frame
 		PerFrameBuffer		m_PerFrameData;
 		Buffer*				m_pPerFrameStagingBuffer	= nullptr;
 		Buffer*				m_pPerFrameBuffer			= nullptr;
 
+		//Draw Args
 		TSet<uint32>		m_RequiredDrawArgs;
-		TSet<uint32>		m_DirtyDrawArgs;
-		bool				m_PerFrameResourceDirty		= true;
-		bool				m_MaterialsResourceDirty	= true;
+
+		//Ray Tracing
+		AccelerationStructure*		m_pTLAS			= nullptr;
+
+		//Pending/Dirty
+		bool						m_MaterialsResourceDirty	= true;
+		bool						m_PerFrameResourceDirty		= true;
+		TSet<uint32>				m_DirtyDrawArgs;
+		TSet<MeshEntry*>			m_DirtyInstanceBuffers;
+		TSet<MeshEntry*>			m_DirtyBLASs;
+		bool						m_TLASDirty					= true;
+		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
+		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
 	private:
 		static RenderSystem		s_Instance;
