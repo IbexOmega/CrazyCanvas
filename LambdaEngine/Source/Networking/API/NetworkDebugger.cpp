@@ -86,9 +86,13 @@ namespace LambdaEngine
 			ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
 			if (ImGui::Begin("Network Statistics", NULL))
 			{
-				ImGui::Columns(2, "ClientColumns");
+				ImGui::Columns(s_PingValues.size() + 1, "ClientColumns");
 				ImGui::Text("Client Info"); ImGui::NextColumn();
-				ImGui::Text("Client"); ImGui::NextColumn();
+
+				for (int i = 0; i < s_PingValues.size(); i++)
+				{
+					ImGui::Text("Client %d", i); ImGui::NextColumn();
+				}
 
 				ImGui::Text("State");
 				ImGui::Text("Packets Sent");
@@ -140,7 +144,7 @@ namespace LambdaEngine
 					ImGui::Text("%.1f ms", pStatistics->GetPing().AsMilliSeconds());
 
 					pair.second.PingValues[s_PingValuesOffset] = pStatistics->GetPing().AsMilliSeconds();
-					ImGui::PlotLines("", pair.second.PingValues.data(), pair.second.PingValues.size(), s_PingValuesOffset, "", 0.0f, 30.0f, ImVec2(0, 80.0f));
+					ImGui::PlotLines("", pair.second.PingValues.data(), pair.second.PingValues.size(), s_PingValuesOffset, "", 0.0f, 50.0f, ImVec2(0, 80.0f));
 				}
 
 				ImGui::End();
