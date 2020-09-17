@@ -30,7 +30,7 @@ namespace LambdaEngine
 	protected:
 		virtual bool Transmit(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& endPoint) = 0;
 		virtual bool Receive(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& endPoint) = 0;
-		virtual void OnReceiveEnd(const PacketTranscoder::Header& header, TArray<uint32>& newAcks, NetworkStatistics* pStatistics) = 0;
+		virtual void OnReceiveEnd(PacketTranscoder::Header* pHeader, TArray<uint32>& newAcks, NetworkStatistics* pStatistics) = 0;
 
 	private:
 		static bool ValidateHeaderSalt(PacketTranscoder::Header* header, NetworkStatistics* pStatistics);
@@ -38,7 +38,7 @@ namespace LambdaEngine
 
 	private:
 		int32 m_BytesReceived;
-		uint8 m_pSendBuffer[MAXIMUM_PACKET_SIZE];
+		uint8 m_pSendBuffer[MAXIMUM_SEGMENT_SIZE];
 		uint8 m_pReceiveBuffer[UINT16_MAX];
 	};
 }

@@ -36,15 +36,14 @@ namespace LambdaEngine
 
 		m_TimeUnit = timeUnit;
 
+#endif
 		uint32 statCount = 0;
 		RenderAPI::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
 		m_MemoryStats.Resize(statCount);
-#endif
 	}
 
 	void GPUProfiler::Render(LambdaEngine::Timestamp delta)
 	{
-#ifdef LAMBDA_DEBUG
 		if (ImGui::CollapsingHeader("GPU Statistics", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			ImGui::Indent(10.0f);
@@ -75,6 +74,7 @@ namespace LambdaEngine
 				ImGui::ProgressBar(percentage, ImVec2(-1.0f, 0.0f), buf);
 			}
 
+#ifdef LAMBDA_DEBUG
 			// Timestamp display
 			if (m_TimestampCount != 0 && ImGui::CollapsingHeader("Timestamps") && m_TimeSinceUpdate > 1 / m_UpdateFreq)
 			{
@@ -129,8 +129,8 @@ namespace LambdaEngine
 			}
 			ImGui::Unindent(10.0f);
 			ImGui::Dummy(ImVec2(0.0f, 20.0f));
-		}
 #endif
+		}
 	}
 
 	void GPUProfiler::Release()

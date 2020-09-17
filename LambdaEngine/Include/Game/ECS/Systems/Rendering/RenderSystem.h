@@ -29,7 +29,6 @@
 
 namespace LambdaEngine
 {
-	class Scene;
 	class Window;
 	class Texture;
 	class RenderGraph;
@@ -116,6 +115,13 @@ namespace LambdaEngine
 			uint32	InstanceIndex = 0;
 		};
 
+		struct PendingBufferUpdate
+		{
+			Buffer* pSrcBuffer	= nullptr;
+			Buffer* pDstBuffer	= nullptr;
+			uint64 SizeInBytes	= 0;
+		};
+
 		using MeshAndInstancesMap	= THashTable<MeshKey, MeshEntry, MeshKeyHasher>;
 		using MaterialMap			= THashTable<GUID_Lambda, uint32>;
 
@@ -158,21 +164,24 @@ namespace LambdaEngine
 	private:
 		RenderSystem() = default;
 
-		void AddEntityInstance(Entity entity, CommandList* pCommandList, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated);
-		
+		void OnStaticEntityAdded(Entity entity);
+		void OnDynamicEntityAdded(Entity entity);
+		void RemoveEntityInstance(Entity entity);
+
+		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated);
+
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(Entity entity);
 
 		void CleanBuffers();
 		void UpdateBuffers();
-		void UpdateDrawArgs();
+		void UpdateRenderGraph();
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;
 
+		void ExecutePendingBufferUpdates(CommandList* pCommandList);
 		void UpdateInstanceBuffers(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
 		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
-
-		void UpdateRenderGraphFromScene();
 
 	private:
 		IDVector				m_StaticEntities;
@@ -183,7 +192,6 @@ namespace LambdaEngine
 		Texture**				m_ppBackBuffers		= nullptr;
 		TextureView**			m_ppBackBufferViews	= nullptr;
 		RenderGraph*			m_pRenderGraph		= nullptr;
-		Scene*					m_pScene			= nullptr;
 		uint64					m_FrameIndex		= 0;
 		uint64					m_ModFrameIndex		= 0;
 		uint32					m_BackBufferIndex	= 0;
@@ -211,13 +219,16 @@ namespace LambdaEngine
 
 		TSet<MeshEntry*>	m_DirtyInstanceBuffers;
 		TArray<Buffer*>		m_BuffersToRemove[BACK_BUFFER_COUNT];
+		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
 
 		PerFrameBuffer		m_PerFrameData;
 		Buffer*				m_pPerFrameStagingBuffer	= nullptr;
 		Buffer*				m_pPerFrameBuffer			= nullptr;
 
-		TSet<uint32>		m_DirtyDrawArgs;
 		TSet<uint32>		m_RequiredDrawArgs;
+		TSet<uint32>		m_DirtyDrawArgs;
+		bool				m_PerFrameResourceDirty		= true;
+		bool				m_MaterialsResourceDirty	= true;
 
 	private:
 		static RenderSystem		s_Instance;

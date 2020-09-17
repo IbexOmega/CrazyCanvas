@@ -26,6 +26,30 @@ namespace LambdaEngine
 		m_Segments.Clear();
 	}
 
+#ifdef LAMBDA_CONFIG_DEBUG
+	NetworkSegment* SegmentPool::RequestFreeSegment(const std::string& borrower)
+	{
+		NetworkSegment* pSegment = RequestFreeSegment();
+		pSegment->m_Borrower = borrower;
+		pSegment->m_IsBorrowed = true;
+		return pSegment;
+	}
+
+	bool SegmentPool::RequestFreeSegments(uint16 nrOfSegments, TArray<NetworkSegment*>& segmentsReturned, const std::string& borrower)
+	{
+		if (RequestFreeSegments(nrOfSegments, segmentsReturned))
+		{
+			for (NetworkSegment* pSegment : segmentsReturned)
+			{
+				pSegment->m_Borrower = borrower;
+				pSegment->m_IsBorrowed = true;
+			}
+			return true;
+		}
+		return false;
+	}
+#endif
+
 	NetworkSegment* SegmentPool::RequestFreeSegment()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
@@ -34,10 +58,6 @@ namespace LambdaEngine
 		{
 			pSegment = m_SegmentsFree[m_SegmentsFree.GetSize() - 1];
 			m_SegmentsFree.PopBack();
-
-#ifndef LAMBDA_CONFIG_PRODUCTION
-			Request(pSegment);
-#endif
 		}
 		else
 		{
@@ -61,13 +81,6 @@ namespace LambdaEngine
 		segmentsReturned = TArray<NetworkSegment*>(m_SegmentsFree.begin() + delta, m_SegmentsFree.end());
 		m_SegmentsFree = TArray<NetworkSegment*>(m_SegmentsFree.begin(), m_SegmentsFree.begin() + delta);
 
-#ifndef LAMBDA_CONFIG_PRODUCTION
-		for (int32 i = 0; i < nrOfSegments; i++)
-		{
-			Request(segmentsReturned[i]);
-		}
-#endif
-
 		return true;
 	}
 
@@ -87,22 +100,9 @@ namespace LambdaEngine
 		segments.Clear();
 	}
 
-	void SegmentPool::Request(NetworkSegment* pSegment)
-	{
-		pSegment->m_IsBorrowed = true;
-
-#ifdef DEBUG_PACKET_POOL
-		LOG_MESSAGE("[SegmentPool]: Lending [%x]", pSegment);
-#endif
-	}
-
 	void SegmentPool::Free(NetworkSegment* pSegment)
 	{
-#ifdef DEBUG_PACKET_POOL
-		LOG_MESSAGE("[SegmentPool]: Freeing [%x]%s", pSegment, pSegment->ToString().c_str());
-#endif
-
-#ifndef LAMBDA_CONFIG_PRODUCTION
+#ifdef LAMBDA_CONFIG_DEBUG
 		if (pSegment->m_IsBorrowed)
 		{
 			pSegment->m_IsBorrowed = false;
@@ -126,7 +126,7 @@ namespace LambdaEngine
 
 		for (NetworkSegment* pSegment : m_Segments)
 		{
-#ifndef LAMBDA_CONFIG_PRODUCTION
+#ifdef LAMBDA_CONFIG_DEBUG
 			pSegment->m_IsBorrowed = false;
 #endif
 			pSegment->m_SizeOfBuffer = 0;

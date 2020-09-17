@@ -11,7 +11,8 @@ namespace LambdaEngine
 	ServerBase::ServerBase(const ServerDesc& desc) :
 		m_Description(desc),
 		m_pSocket(nullptr),
-		m_Accepting(true)
+		m_Accepting(true),
+		m_LockClientVectors()
 	{
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Servers.insert(this);
@@ -41,7 +42,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	void ServerBase::Stop()
+	void ServerBase::Stop(const std::string& reason)
 	{
 		{
 			std::scoped_lock<SpinLock> lock(m_LockClients);
@@ -52,7 +53,13 @@ namespace LambdaEngine
 			m_Clients.clear();
 		}
 
-		TerminateThreads();
+		{
+			std::scoped_lock<SpinLock> lock(m_LockClientVectors);
+			m_ClientsToAdd.Clear();
+			m_ClientsToRemove.Clear();
+		}
+
+		TerminateThreads(reason);
 
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		if (m_pSocket)
@@ -61,7 +68,7 @@ namespace LambdaEngine
 
 	void ServerBase::Release()
 	{
-		TerminateAndRelease();
+		TerminateAndRelease("Release Requested");
 	}
 
 	bool ServerBase::IsRunning()
@@ -94,10 +101,16 @@ namespace LambdaEngine
 		return m_Description;
 	}
 
-	void ServerBase::OnClientDisconnected(ClientRemoteBase* pClient)
+	const ClientMap& ServerBase::GetClients() const
 	{
-		std::scoped_lock<SpinLock> lock(m_LockClients);
-		m_Clients.erase(pClient->GetEndPoint());
+		return m_Clients;
+	}
+
+	void ServerBase::OnClientAskForTermination(ClientRemoteBase* pClient)
+	{
+		std::scoped_lock<SpinLock> lock(m_LockClientVectors);
+		LOG_INFO("[ServerBase]: Client Added to Remove Queue");
+		m_ClientsToRemove.PushBack(pClient);
 	}
 
 	ClientRemoteBase* ServerBase::GetClient(const IPEndPoint& endPoint)
@@ -108,6 +121,13 @@ namespace LambdaEngine
 		{
 			return pIterator->second;
 		}
+
+		for (uint32 i = 0; i < m_ClientsToAdd.GetSize(); i++)
+		{
+			if (m_ClientsToAdd[i]->GetEndPoint() == endPoint)
+				return m_ClientsToAdd[i];
+		}
+
 		return nullptr;
 	}
 
@@ -129,29 +149,32 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ServerBase::OnThreadsStarted()
+	bool ServerBase::OnThreadsStarted(std::string& reason)
 	{
-		m_pSocket = SetupSocket();
+		m_pSocket = SetupSocket(reason);
 		return m_pSocket;
 	}
 
 	void ServerBase::OnThreadsTerminated()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
-		m_pSocket->Close();
-		delete m_pSocket;
-		m_pSocket = nullptr;
+		if (m_pSocket)
+		{
+			m_pSocket->Close();
+			delete m_pSocket;
+			m_pSocket = nullptr;
+		}
 		LOG_INFO("[ServerBase]: Stopped");
 	}
 
-	void ServerBase::OnTerminationRequested()
+	void ServerBase::OnTerminationRequested(const std::string& reason)
 	{
-		LOG_WARNING("[ServerBase]: Stopping...");
+		LOG_WARNING("[ServerBase]: Stopping... [%s]", reason.c_str());
 	}
 
-	void ServerBase::OnReleaseRequested()
+	void ServerBase::OnReleaseRequested(const std::string& reason)
 	{
-		Stop();
+		Stop(reason);
 	}
 
 	void ServerBase::Tick(Timestamp delta)
@@ -161,14 +184,34 @@ namespace LambdaEngine
 		{
 			pair.second->Tick(delta);
 		}
+
+		if (!m_ClientsToAdd.IsEmpty() || !m_ClientsToRemove.IsEmpty())
+		{
+			std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
+			for (uint32 i = 0; i < m_ClientsToAdd.GetSize(); i++)
+			{
+				LOG_INFO("[ServerBase]: Client Registered");
+				m_Clients.insert({ m_ClientsToAdd[i]->GetEndPoint(), m_ClientsToAdd[i] });
+			}
+
+			for (uint32 i = 0; i < m_ClientsToRemove.GetSize(); i++)
+			{
+				LOG_INFO("[ServerBase]: Client Unregistered");
+				m_Clients.erase(m_ClientsToRemove[i]->GetEndPoint());
+				m_ClientsToRemove[i]->OnTerminationApproved();
+			}
+
+			m_ClientsToAdd.Clear();
+			m_ClientsToRemove.Clear();
+		}
+
 		Flush();
 	}
 
 	void ServerBase::RegisterClient(ClientRemoteBase* pClient)
 	{
-		LOG_INFO("[ServerBase]: Client Registered");
-		std::scoped_lock<SpinLock> lock(m_LockClients);
-		m_Clients.insert({ pClient->GetEndPoint(), pClient });
+		std::scoped_lock<SpinLock> lock(m_LockClientVectors);
+		m_ClientsToAdd.PushBack(pClient);
 	}
 
 	void ServerBase::RunTransmitter()
@@ -178,9 +221,9 @@ namespace LambdaEngine
 			YieldTransmitter();
 			{
 				std::scoped_lock<SpinLock> lock(m_LockClients);
-				for (auto& tuple : m_Clients)
+				for (auto& pair : m_Clients)
 				{
-					tuple.second->TransmitPackets();
+					pair.second->TransmitPackets();
 				}
 			}
 		}

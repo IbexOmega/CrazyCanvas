@@ -14,7 +14,10 @@ namespace LambdaEngine
 	struct ClientDesc : public PacketManagerDesc
 	{
 		IClientHandler* Handler = nullptr;
-		EProtocol Protocol = EProtocol::UDP;
+		EProtocol Protocol		= EProtocol::UDP;
+		Timestamp PingInterval = Timestamp::Seconds(1);
+		Timestamp PingTimeout	= Timestamp::Seconds(3);
+		bool UsePingSystem		= true;
 	};
 
 	class LAMBDA_API ClientBase :
@@ -28,7 +31,7 @@ namespace LambdaEngine
 		DECL_UNIQUE_CLASS(ClientBase);
 		virtual ~ClientBase();
 
-		virtual void Disconnect() override;
+		virtual void Disconnect(const std::string& reason) override;
 		virtual void Release() override;
 		virtual bool IsConnected() override;
 		virtual const IPEndPoint& GetEndPoint() const override;
@@ -44,28 +47,35 @@ namespace LambdaEngine
 
 		void DecodeReceivedPackets();
 
-		virtual bool OnThreadsStarted() override;
+		virtual bool OnThreadsStarted(std::string& reason) override;
 		virtual void RunTransmitter() override;
 		virtual void OnThreadsTerminated() override;
-		virtual void OnTerminationRequested() override;
-		virtual void OnReleaseRequested() override;
+		virtual void OnTerminationRequested(const std::string& reason) override;
+		virtual void OnReleaseRequested(const std::string& reason) override;
 
 		virtual PacketTransceiverBase* GetTransceiver() = 0;
-		virtual ISocket* SetupSocket() = 0;
+		virtual ISocket* SetupSocket(std::string& reason) = 0;
 
 	private:
 		void TransmitPackets();
-		void SendConnectRequest();
-		void SendDisconnectRequest();
-		void HandleReceivedPacket(NetworkSegment* pPacket);
+		void SendConnect();
+		void SendDisconnect();
+		bool HandleReceivedPacket(NetworkSegment* pPacket);
 		void Tick(Timestamp delta);
+		void UpdatePingSystem();
+
+	protected:
+		std::atomic_bool m_SendDisconnectPacket;
 
 	private:
 		ISocket* m_pSocket;
 		IClientHandler* m_pHandler;
 		EClientState m_State;
 		SpinLock m_Lock;
-		std::atomic_bool m_SendDisconnectPacket;
+		Timestamp m_PingInterval;
+		Timestamp m_PingTimeout;
+		Timestamp m_LastPingTimestamp;
+		bool m_UsePingSystem;
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);
