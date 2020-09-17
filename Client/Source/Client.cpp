@@ -8,12 +8,6 @@
 
 #include "Resources/ResourceManager.h"
 
-#include "Rendering/RenderAPI.h"
-#include "Rendering/ImGuiRenderer.h"
-
-#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
-#include <imgui.h>
-
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformConsole.h"
@@ -25,6 +19,7 @@
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/NetworkDebugger.h"
+
 using namespace LambdaEngine;
 
 Client::Client() :
@@ -36,20 +31,19 @@ Client::Client() :
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Client");
 	PlatformConsole::SetTitle("Client Console");
 
-
     ClientDesc desc = {};
     desc.PoolSize               = 512;
     desc.MaxRetries             = 10;
     desc.ResendRTTMultiplier    = 2.0F;
     desc.Handler                = this;
-    desc.Protocol               = EProtocol::UDP;
+    desc.Protocol               = EProtocol::TCP;
 	desc.PingInterval			= Timestamp::Seconds(1);
 	desc.PingTimeout			= Timestamp::Seconds(3);
 	desc.UsePingSystem			= true;
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
-	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("81.170.143.133"), 4444)))
+	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.65"), 4444)))
 	{
 		LOG_ERROR("Failed to connect!");
 	}
@@ -130,15 +124,10 @@ bool Client::OnKeyPressed(const KeyPressedEvent& event)
 		if (m_pClient->IsConnected())
 			m_pClient->Disconnect("User Requested");
 		else
-			m_pClient->Connect(IPEndPoint(IPAddress::Get("81.170.143.133"), 4444));
+			m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.65"), 4444));
 	}
 	else
 	{
-		uint16 packetType = 0;
-		NetworkSegment* packet = m_pClient->GetFreePacket(packetType);
-		BinaryEncoder encoder(packet);
-		encoder.WriteString("Test Message");
-		m_pClient->SendReliable(packet, this);
 	}
 
 	return false;
@@ -147,7 +136,8 @@ bool Client::OnKeyPressed(const KeyPressedEvent& event)
 void Client::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
-	NetworkDebugger::RenderStatisticsWithImGUI(m_pClient);
+
+	NetworkDebugger::RenderStatistics(m_pClient);
 }
 
 void Client::FixedTick(Timestamp delta)
