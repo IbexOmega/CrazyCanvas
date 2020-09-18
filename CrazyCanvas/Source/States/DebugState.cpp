@@ -32,6 +32,7 @@ void DebugState::Init()
 	materialProperties.Roughness = 0.1f;
 	materialProperties.Metallic = 0.1f;
 
+	ECSCore* pECS = ECSCore::GetInstance();
 	//Scene
 	{
 		TArray<MeshComponent> meshComponents;
@@ -41,14 +42,14 @@ void DebugState::Init()
 		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
 		glm::vec3 scale(0.01f);
 
-		for (uint32 i = 0; i < meshComponents.GetSize(); i++)
+		for (const MeshComponent& meshComponent : meshComponents)
 		{
-			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { position, true });
-			ECSCore::GetInstance()->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-			ECSCore::GetInstance()->AddComponent<ScaleComponent>(entity, { scale, true });
-			ECSCore::GetInstance()->AddComponent<MeshComponent>(entity, meshComponents[i]);
-			ECSCore::GetInstance()->AddComponent<StaticComponent>(entity, StaticComponent());
+			Entity entity = pECS->CreateEntity();
+			pECS->AddComponent<PositionComponent>(entity, { position, true });
+			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+			pECS->AddComponent<StaticComponent>(entity, StaticComponent());
 		}
 	}
 
@@ -62,22 +63,20 @@ void DebugState::Init()
 		GUID_TEXTURE_DEFAULT_COLOR_MAP,
 		materialProperties);
 
-	Entity e0 = ECSCore::GetInstance()->CreateEntity();
-	Entity e1 = ECSCore::GetInstance()->CreateEntity();
+	Entity e0 = pECS->CreateEntity();
+	Entity e1 = pECS->CreateEntity();
 
-	ECSCore::GetInstance()->AddComponent<PositionComponent>(e0, { {0.0f, 0.0f, 0.0f}, true });
-	ECSCore::GetInstance()->AddComponent<ScaleComponent>(e0, { {0.0f, 0.0f, 0.0f}, true });
-	ECSCore::GetInstance()->AddComponent<RotationComponent>(e0, { glm::identity<glm::quat>(), true });
-	ECSCore::GetInstance()->AddComponent<MeshComponent>(e0, MeshComponent{ .MeshGUID = sphereMeshGUID, .MaterialGUID = Material });
-	ECSCore::GetInstance()->AddComponent<StaticComponent>(e0, StaticComponent() );
+	pECS->AddComponent<PositionComponent>(e0, { {0.0f, 0.0f, 0.0f}, true });
+	pECS->AddComponent<ScaleComponent>(e0, { {0.0f, 0.0f, 0.0f}, true });
+	pECS->AddComponent<RotationComponent>(e0, { glm::identity<glm::quat>(), true });
+	pECS->AddComponent<MeshComponent>(e0, MeshComponent{ .MeshGUID = sphereMeshGUID, .MaterialGUID = Material });
+	pECS->AddComponent<StaticComponent>(e0, StaticComponent() );
 
-	ECSCore::GetInstance()->AddComponent<PositionComponent>(e1, { {0.0f, 0.0f, 0.0f}, true });
-	ECSCore::GetInstance()->AddComponent<ScaleComponent>(e1, { {0.0f, 0.0f, 0.0f}, true });
-	ECSCore::GetInstance()->AddComponent<RotationComponent>(e1, { glm::identity<glm::quat>(), true });
-	ECSCore::GetInstance()->AddComponent<MeshComponent>(e1, MeshComponent{ .MeshGUID = sphereMeshGUID, .MaterialGUID = Material });
-	ECSCore::GetInstance()->AddComponent<DynamicComponent>(e1, DynamicComponent() );
-
-
+	pECS->AddComponent<PositionComponent>(e1, { {0.0f, 0.0f, 0.0f}, true });
+	pECS->AddComponent<ScaleComponent>(e1, { {0.0f, 0.0f, 0.0f}, true });
+	pECS->AddComponent<RotationComponent>(e1, { glm::identity<glm::quat>(), true });
+	pECS->AddComponent<MeshComponent>(e1, MeshComponent{ .MeshGUID = sphereMeshGUID, .MaterialGUID = Material });
+	pECS->AddComponent<DynamicComponent>(e1, DynamicComponent() );
 
 	// Load Scene SceneManager::Get("SceneName").Load()
 

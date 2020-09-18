@@ -5,17 +5,22 @@
 
 namespace LambdaEngine
 {
+	class ComponentStorage;
+
 	class IComponentArray
 	{
 	public:
 		virtual ~IComponentArray() = default;
-		virtual void EntityDestroyed(Entity entity) = 0;
-
-		virtual void Remove(Entity entity) = 0;
 
 		virtual const TArray<uint32>& GetIDs() const = 0;
 
 		virtual bool HasComponent(Entity entity) const = 0;
+
+	protected:
+		// Systems or other external users should not be able to perform immediate deletions
+		friend ComponentStorage;
+		virtual void DeleteEntity(Entity entity) = 0;
+		virtual void Remove(Entity entity) = 0;
 	};
 
 	template<typename Comp>
@@ -25,15 +30,16 @@ namespace LambdaEngine
 		ComponentArray();
 		virtual ~ComponentArray() = default;
 
-		void EntityDestroyed(Entity) override final;
-
 		Comp& Insert(Entity entity, const Comp& comp);
-		void Remove(Entity entity) override final;
 
 		Comp& GetData(Entity entity);
 		const TArray<uint32>& GetIDs() const override final { return m_IDs; }
 
 		bool HasComponent(Entity entity) const override final { return m_EntityToIndex.find(entity) != m_EntityToIndex.end(); }
+
+	protected:
+		void DeleteEntity(Entity) override final;
+		void Remove(Entity entity) override final;
 
 	private:
 		TArray<Comp> m_Data;
@@ -71,6 +77,22 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
+	inline Comp& ComponentArray<Comp>::GetData(Entity entity)
+	{
+		VALIDATE_MSG(m_EntityToIndex.find(entity) != m_EntityToIndex.end(), "Trying to get a component that does not exist!");
+		uint32 index = m_EntityToIndex[entity];
+		return m_Data[index];
+	}
+
+	template<typename Comp>
+	inline void ComponentArray<Comp>::DeleteEntity(Entity entity)
+	{
+		// Remove component related to the entity if it exists.
+		if (m_EntityToIndex.find(entity) != m_EntityToIndex.end())
+			Remove(entity);
+	}
+
+	template<typename Comp>
 	inline void ComponentArray<Comp>::Remove(Entity entity)
 	{
 		VALIDATE_MSG(m_EntityToIndex.find(entity) != m_EntityToIndex.end(), "Trying to remove a component that does not exist!");
@@ -86,21 +108,5 @@ namespace LambdaEngine
 
 		// Remove the deleted component's entry.
 		m_EntityToIndex.erase(entity);
-	}
-
-	template<typename Comp>
-	inline Comp& ComponentArray<Comp>::GetData(Entity entity)
-	{
-		VALIDATE_MSG(m_EntityToIndex.find(entity) != m_EntityToIndex.end(), "Trying to get a component that does not exist!");
-		uint32 index = m_EntityToIndex[entity];
-		return m_Data[index];
-	}
-
-	template<typename Comp>
-	inline void ComponentArray<Comp>::EntityDestroyed(Entity entity)
-	{
-		// Remove component related to the entity if it exists.
-		if (m_EntityToIndex.find(entity) != m_EntityToIndex.end())
-			Remove(entity);
 	}
 }
