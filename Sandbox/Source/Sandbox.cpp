@@ -77,9 +77,6 @@ Sandbox::Sandbox()
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
-	ShaderReflection shaderReflection;
-	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
-
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
@@ -95,6 +92,9 @@ Sandbox::Sandbox()
 	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
 
 	m_pCamera->Init(cameraDesc);
+	m_pCamera->SetPosition({ 0.0f, 3.0f, -3.0f });
+	m_pCamera->SetRotation({ 0.0f, -90.0f, 0.0f });
+	m_pCamera->Update();
 
 	LoadRendererResources();
 

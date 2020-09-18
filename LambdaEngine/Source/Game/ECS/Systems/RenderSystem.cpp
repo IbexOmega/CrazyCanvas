@@ -43,8 +43,8 @@ namespace LambdaEngine
 			{
 				{{{RW, MeshComponent::s_TID}, {NDA, StaticComponent::s_TID}},	{&transformComponents}, &m_StaticEntities,		std::bind(&RenderSystem::OnStaticEntityAdded, this, std::placeholders::_1),	 std::bind(&RenderSystem::RemoveEntityInstance, this, std::placeholders::_1)},
 				{{{RW, MeshComponent::s_TID}, {NDA, DynamicComponent::s_TID}},	{&transformComponents}, &m_DynamicEntities,		std::bind(&RenderSystem::OnDynamicEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::RemoveEntityInstance, this, std::placeholders::_1)},
-				{{{RW, DirectionalLightComponent::s_TID}}, {&transformComponents}, &m_DirectionalLightEntities,											std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
-				{{{RW, PointLightComponent::s_TID}}, {&transformComponents}, &m_PointLightEntities,								std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
+				{{{RW, DirectionalLightComponent::s_TID}, {R, RotationComponent::s_TID}}, &m_DirectionalLightEntities,			std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
+				{{{RW, PointLightComponent::s_TID}, {R, PositionComponent::s_TID}}, &m_PointLightEntities,								std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
 				{{{RW, ViewProjectionMatrices::s_TID}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
@@ -188,6 +188,8 @@ namespace LambdaEngine
 		{
 			TArray<Buffer*>& buffersToRemove = m_BuffersToRemove[b];
 
+			SAFERELEASE(m_ppLightsStagingBuffer[b]);
+
 			for (Buffer* pStagingBuffer : buffersToRemove)
 			{
 				SAFERELEASE(pStagingBuffer);
@@ -210,7 +212,6 @@ namespace LambdaEngine
 			{
 				SAFERELEASE(m_ppBackBuffers[i]);
 				SAFERELEASE(m_ppBackBufferViews[i]);
-				SAFERELEASE(m_ppLightsStagingBuffer[i]);
 			}
 
 			SAFEDELETE_ARRAY(m_ppBackBuffers);
@@ -343,8 +344,7 @@ namespace LambdaEngine
 		{
 			ECSCore* pECSCore = ECSCore::GetInstance();
 
-			auto& pointLightComp = pECSCore->GetComponent<PointLightComponent>(entity);
-			auto& position = pECSCore->GetComponent<PositionComponent>(entity);
+			auto& pointLightComp = pECSCore->GetComponent<DirectionalLightComponent>(entity);
 			auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
 
 			m_DirectionalLight.ColorIntensity = pointLightComp.ColorIntensity;
@@ -872,7 +872,7 @@ namespace LambdaEngine
 				lightCopyBufferDesc.DebugName = "Lights Copy Buffer";
 				lightCopyBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 				lightCopyBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-				lightCopyBufferDesc.SizeInBytes = sizeof(lightBufferSize);
+				lightCopyBufferDesc.SizeInBytes = lightBufferSize;
 
 				m_ppLightsStagingBuffer[m_ModFrameIndex] = currentStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&lightCopyBufferDesc);
 			}
@@ -890,7 +890,7 @@ namespace LambdaEngine
 				lightBufferDesc.DebugName = "Lights Buffer";
 				lightBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
 				lightBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-				lightBufferDesc.SizeInBytes = sizeof(lightBufferSize);
+				lightBufferDesc.SizeInBytes = lightBufferSize;
 
 				m_pLightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&lightBufferDesc);
 			}

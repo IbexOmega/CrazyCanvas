@@ -10,7 +10,7 @@ layout(location = 0) in vec2 in_TexCoord;
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer  { SPerFrameBuffer val; } u_PerFrameBuffer;
 layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer	
 {
-	SLightsBuffer lightData; 
+	SLightsBuffer val; 
 	SPointLight pointLights[];  
 } b_LightsBuffer;
 
@@ -25,7 +25,7 @@ layout(location = 0) out vec4 out_Color;
 void main()
 {
 	SPerFrameBuffer perFrameBuffer  = u_PerFrameBuffer.val;
-	//SLightsBuffer lightBuffer       = u_LightsBuffer.val;
+	SLightsBuffer lightBuffer       = b_LightsBuffer.val;
 
 	float sampledDepth      = texture(u_DepthStencil, in_TexCoord).r;
 	SPositions positions    = CalculatePositionsFromDepth(in_TexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
@@ -41,16 +41,18 @@ void main()
 
 	F0 = mix(F0, albedo, aoRoughMetal.b);
 
-	//Loop
-	//for (uint i = 0; i < lightBuffer.AreaLightCount(); ++i)
-	//{
+	//Point Light Loop
+	for (uint i = 0; i < lightBuffer.PointLightCount; ++i)
+	{
+		SPointLight light = b_LightsBuffer.pointLights[i];
+
 		vec3 L = normalize(vec3(0.0f, 1.0f, 0.0f));
 		vec3 H = normalize(V + L);
 
-		float distance      = 1.0f;
+		float distance      = length(light.Position - positions.WorldPos);
 		float attenuation   = 1.0f / (distance * distance);
-		vec3 lightColor     = vec3(1.0f, 1.0f, 1.0f);
-		vec3 radiance       = lightColor * attenuation;
+		vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
+		vec3 incomingRadiance    = outgoingRadiance * attenuation;
 	
 		float NDF   = Distribution(N, H, aoRoughMetal.g);
 		float G     = Geometry(N, V, L, aoRoughMetal.g);
@@ -67,8 +69,8 @@ void main()
 
 		float NdotL = max(dot(N, L), 0.0f);
 
-		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-	//}
+		Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
+	}
 	
 	vec3 ambient    = 0.03f * albedo * aoRoughMetal.r;
 	vec3 color      = ambient + Lo;

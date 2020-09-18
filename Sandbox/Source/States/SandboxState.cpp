@@ -6,6 +6,8 @@
 #include "ECS/ECSCore.h"
 
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
+#include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 
 using namespace LambdaEngine;
@@ -91,6 +93,21 @@ void SandboxState::Init()
 				ECSCore::GetInstance()->AddComponent<StaticComponent>(entity, StaticComponent());
 			}
 		}
+		//Entity entity = ECSCore::GetInstance()->CreateEntity();
+		//ECSCore::GetInstance()->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+		//ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(entity, DirectionalLightComponent{ .ColorIntensity = {1.0f, 0.0f, 0.0f, 1.0f} });
+
+		Entity entity = ECSCore::GetInstance()->CreateEntity();
+		ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { {0.0f, 0.2f, 7.0f}, true });
+		ECSCore::GetInstance()->AddComponent<PointLightComponent>(entity, PointLightComponent{ .ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f} });
+
+		entity = ECSCore::GetInstance()->CreateEntity();
+		ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { {-3.0f, 0.2f, 6.0f}, true });
+		ECSCore::GetInstance()->AddComponent<PointLightComponent>(entity, PointLightComponent{ .ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f} });
+
+		entity = ECSCore::GetInstance()->CreateEntity();
+		ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { {3.0f, 0.2f, 6.0f}, true });
+		ECSCore::GetInstance()->AddComponent<PointLightComponent>(entity, PointLightComponent{ .ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f} });
 	}
 
 	// Load Scene SceneManager::Get("SceneName").Load()
