@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-bool CameraTrack::Init(LambdaEngine::Camera* pCamera, const std::vector<glm::vec3>& track)
+bool CameraTrack::Init(LambdaEngine::Camera* pCamera, const LambdaEngine::TArray<glm::vec3>& track)
 {
 	m_pCamera = pCamera;
 	m_Track = track;
@@ -23,7 +23,7 @@ void CameraTrack::Tick(float32 dt)
 	const float tPerSecond = cameraSpeed / glm::length(GetCurrentGradient(splineIndices));
 
 	m_CurrentTrackT += dt * tPerSecond;
-	m_CurrentTrackIndex += std::min(1ULL, (size_t)m_CurrentTrackT);
+	m_CurrentTrackIndex += std::min(1u, (uint32)m_CurrentTrackT);
 	splineIndices = GetCurrentSplineIndices();
 	m_CurrentTrackT = std::modf(m_CurrentTrackT, &m_CurrentTrackT); // Remove integer part
 
@@ -46,7 +46,6 @@ void CameraTrack::Tick(float32 dt)
 glm::vec3 CameraTrack::GetCurrentGradient(const glm::uvec4& splineIndices) const
 {
 	const float tt = m_CurrentTrackT * m_CurrentTrackT;
-	const float ttt = tt * m_CurrentTrackT;
 
 	const float weight1 = -3.0f * tt + 4.0f * m_CurrentTrackT - 1.0f;
 	const float weight2 = 9.0f * tt - 10.0f * m_CurrentTrackT;
@@ -61,7 +60,7 @@ glm::uvec4 CameraTrack::GetCurrentSplineIndices() const
 	return {
 		std::max(0, (int)m_CurrentTrackIndex - 1),
 		m_CurrentTrackIndex,
-		std::min(m_Track.size() - 1, m_CurrentTrackIndex + 1),
-		std::min(m_Track.size() - 1, m_CurrentTrackIndex + 2)
+		std::min(m_Track.GetSize() - 1, m_CurrentTrackIndex + 1),
+		std::min(m_Track.GetSize() - 1, m_CurrentTrackIndex + 2)
 	};
 }

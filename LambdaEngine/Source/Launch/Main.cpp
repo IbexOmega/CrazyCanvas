@@ -2,18 +2,27 @@
 
 #include "Debug/Profiler.h"
 
+#include <argh/argh.h>
+
 namespace LambdaEngine
 {
-	extern Game* CreateGame();
+	extern Game* CreateGame(const argh::parser& flagParser);
 }
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
+
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
-#else
-int main(int, const char*[])
-#endif 
 {
+	int argc = __argc;
+	char** argv = __argv;
+
+#else
+int main(int argc, char** argv)
+{
+#endif
 	using namespace LambdaEngine;
+
+	argh::parser flagParser(argc, argv);
 
 	LAMBDA_PROFILER_BEGIN_SESSION("Startup", "LambdaProfile-Startup.json");
 	if (!EngineLoop::PreInit())
@@ -28,7 +37,7 @@ int main(int, const char*[])
 	LAMBDA_PROFILER_END_SESSION();
 
 	LAMBDA_PROFILER_BEGIN_SESSION("Runtime", "LambdaProfile-Runtime.json");
-	Game* pGame = CreateGame();	
+	Game* pGame = CreateGame(flagParser);
 	EngineLoop::Run();
 	LAMBDA_PROFILER_END_SESSION();
 
@@ -44,7 +53,7 @@ int main(int, const char*[])
 	{
 		return -1;
 	}
-	
+
 	if (!EngineLoop::PostRelease())
 	{
 		return -1;
