@@ -9,7 +9,7 @@ namespace LambdaEngine
 	struct FreeCameraComponent
 	{
 		DECL_COMPONENT(FreeCameraComponent);
-		float SpeedFactor = 0.05f;
+		float SpeedFactor = 1.4f;
 		float MouseSpeedFactor = 1.f;
 	};
 
@@ -25,8 +25,8 @@ namespace LambdaEngine
 	struct ViewProjectionMatricesComponent
 	{
 		DECL_COMPONENT(ViewProjectionMatricesComponent);
-		glm::mat4 Projection		= glm::mat4(1.0f);
-		glm::mat4 View				= glm::mat4(1.0f);
+		glm::mat4 Projection	= glm::mat4(1.0f);
+		glm::mat4 View			= glm::mat4(1.0f);
 	};
 
 	struct CameraDesc

@@ -30,7 +30,7 @@ class CrazyCanvas : public LambdaEngine::Game, public LambdaEngine::ApplicationE
 {
 public:
 	CrazyCanvas();
-	~CrazyCanvas();
+	~CrazyCanvas() = default;
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta) override;
@@ -45,6 +45,4 @@ private:
 
 private:
 	CameraTrack m_CameraTrack;
-
-	LambdaEngine::Camera*					m_pCamera				= nullptr;
 };

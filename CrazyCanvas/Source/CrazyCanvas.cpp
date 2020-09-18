@@ -60,8 +60,6 @@ CrazyCanvas::CrazyCanvas()
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
-	m_pCamera = DBG_NEW Camera();
-
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
 	CameraDesc cameraDesc = {};
@@ -85,13 +83,7 @@ CrazyCanvas::CrazyCanvas()
 
 	LoadRendererResources();
 
-	m_CameraTrack.Init(m_pCamera, cameraTrack);
 	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(DebugState), STATE_TRANSITION::PUSH);
-}
-
-CrazyCanvas::~CrazyCanvas()
-{
-	SAFEDELETE(m_pCamera);
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
@@ -108,12 +100,7 @@ void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 
 void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 {
-	using namespace LambdaEngine;
-
-	float32 dt = (float32)delta.AsSeconds();
-
-	m_pCamera->Update();
-	m_CameraTrack.Tick(dt);
+	m_CameraTrack.Tick((float32)delta.AsSeconds());
 }
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp delta)
