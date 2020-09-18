@@ -47,6 +47,7 @@
 #include "Math/Random.h"
 #include "Debug/Profiler.h"
 
+#include <argh/argh.h>
 #include <imgui.h>
 
 constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
@@ -200,6 +201,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	using namespace LambdaEngine;
 
 	m_pRenderGraphEditor->Update();
+	Profiler::Tick(delta);
 	Render(delta);
 }
 
@@ -227,7 +229,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 			if (m_DebuggingWindow)
 			{
-				Profiler::Render(delta);
+				Profiler::Render();
 			}
 
 			if (m_ShowTextureDebuggingWindow)
@@ -291,8 +293,9 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	Game* CreateGame(const argh::parser& flagParser)
 	{
+		UNREFERENCED_VARIABLE(flagParser);
 		Sandbox* pSandbox = DBG_NEW Sandbox();
 		return pSandbox;
 	}
@@ -410,7 +413,7 @@ bool Sandbox::LoadRendererResources()
 		pushConstantUpdate.DataSize			= sizeof(pointLightPushConstantData);
 
 		pushConstantUpdate.RenderStageName	= "POINT_LIGHT_SHADOWMAPS";
-		
+
 		RenderSystem::GetInstance().GetRenderGraph()->UpdatePushConstants(&pushConstantUpdate);
 
 		pushConstantUpdate.RenderStageName	= "DEMO";

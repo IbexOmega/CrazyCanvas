@@ -25,7 +25,7 @@ namespace LambdaEngine
 		template<typename Comp>
 		Comp& GetComponent(Entity entity);
 
-		void EntityDeleted(Entity entity);
+		bool DeleteComponent(Entity entity, std::type_index componentType);
 
 		template<typename Comp>
 		bool HasType() const;
@@ -58,39 +58,30 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline Comp& ComponentStorage::AddComponent(Entity entity, const Comp& component)
 	{
-		std::type_index id = Comp::s_TID;
-		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to add a component which was not registered!");
-
-		// Fetch the corresponding ComponentArray for that component type.
-		ComponentArray<Comp>* compArray = GetComponentArray<Comp>();
+		ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
+		VALIDATE_MSG(pCompArray != nullptr, "Trying to add a component which was not registered!");
 
 		// Add the new component.
-		return compArray->Insert(entity, component);
+		return pCompArray->Insert(entity, component);
 	}
 
 	template<typename Comp>
 	inline void ComponentStorage::RemoveComponent(Entity entity)
 	{
-		std::type_index id = Comp::s_TID;
-		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to remove a component which was not registered!");
-
-		// Fetch the corresponding ComponentArray for that component type.
-		ComponentArray<Comp>* compArray = GetComponentArray<Comp>();
+		ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
+		VALIDATE_MSG(pCompArray != nullptr, "Trying to remove a component which was not registered!");
 
 		// Add the new component.
-		compArray->Remove(entity);
+		pCompArray->Remove(entity);
 	}
 
 	template<typename Comp>
 	inline Comp& ComponentStorage::GetComponent(Entity entity)
 	{
-		std::type_index id = Comp::s_TID;
-		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) != m_CompTypeToArrayMap.end(), "Trying to fetch a component which was not registered!");
+		ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
+		VALIDATE_MSG(pCompArray, "Trying to fetch a component which was not registered!");
 
-		// Fetch the corresponding ComponentArray for that component type.
-		ComponentArray<Comp>* compArray = GetComponentArray<Comp>();
-
-		return compArray->GetData(entity);
+		return pCompArray->GetData(entity);
 	}
 
 	template<typename Comp>

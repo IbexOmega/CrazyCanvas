@@ -21,6 +21,8 @@
 
 #include "Math/Random.h"
 
+#include <argh/argh.h>
+
 using namespace LambdaEngine;
 
 Server::Server()
@@ -102,8 +104,9 @@ void Server::FixedTick(Timestamp delta)
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	Game* CreateGame(const argh::parser& flagParser)
 	{
+		UNREFERENCED_VARIABLE(flagParser);
 		Server* pServer = DBG_NEW Server();
 		return pServer;
 	}

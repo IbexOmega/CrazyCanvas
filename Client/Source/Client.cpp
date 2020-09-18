@@ -20,6 +20,8 @@
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/NetworkDebugger.h"
 
+#include <argh/argh.h>
+
 using namespace LambdaEngine;
 
 Client::Client() :
@@ -147,9 +149,10 @@ void Client::FixedTick(Timestamp delta)
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	Game* CreateGame(const argh::parser& parser)
 	{
-		Client* pClient = DBG_NEW Client();		
+		UNREFERENCED_VARIABLE(parser);
+		Client* pClient = DBG_NEW Client();
 		return pClient;
 	}
 }

@@ -185,7 +185,7 @@ namespace LambdaEngine
 		{
 			return false;
 		}
-		
+
 		if (!RenderSystem::GetInstance().Init())
 		{
 			return false;
