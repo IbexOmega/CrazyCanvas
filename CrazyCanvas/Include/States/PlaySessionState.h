@@ -1,6 +1,5 @@
 #pragma once
 
-#include "CameraTrack.h"
 #include "Game/State.h"
 
 class PlaySessionState : public LambdaEngine::State
