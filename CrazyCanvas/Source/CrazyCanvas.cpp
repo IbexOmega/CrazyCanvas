@@ -39,6 +39,7 @@
 #include "Game/StateManager.h"
 #include "States/DebugState.h"
 
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 #include <imgui.h>
@@ -64,14 +65,12 @@ CrazyCanvas::CrazyCanvas()
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
 	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= 90.0f;
+	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
 	cameraDesc.Width		= window->GetWidth();
 	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= 0.001f;
-	cameraDesc.FarPlane		= 1000.0f;
-
-	m_pCamera->Init(cameraDesc);
-	m_pCamera->Update();
+	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
+	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
+	CreateFreeCameraEntity(cameraDesc);
 
 	std::vector<glm::vec3> cameraTrack = {
 		{-2.0f, 1.6f, 1.0f},
@@ -88,9 +87,6 @@ CrazyCanvas::CrazyCanvas()
 
 	m_CameraTrack.Init(m_pCamera, cameraTrack);
 	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(DebugState), STATE_TRANSITION::PUSH);
-
-	RenderSystem::GetInstance().SetCamera(m_pCamera);
-
 }
 
 CrazyCanvas::~CrazyCanvas()
