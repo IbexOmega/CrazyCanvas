@@ -46,10 +46,12 @@ void main()
 	{
 		SPointLight light = b_LightsBuffer.pointLights[i];
 
-		vec3 L = normalize(vec3(0.0f, 1.0f, 0.0f));
+		vec3 L = light.Position - positions.WorldPos;
 		vec3 H = normalize(V + L);
 
-		float distance      = length(light.Position - positions.WorldPos);
+		float distance      = length(L);
+		L = normalize(L);
+		
 		float attenuation   = 1.0f / (distance * distance);
 		vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
 		vec3 incomingRadiance    = outgoingRadiance * attenuation;

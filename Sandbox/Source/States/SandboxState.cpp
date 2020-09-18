@@ -68,7 +68,7 @@ void SandboxState::Init()
 
 				MaterialProperties materialProperties;
 				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-				materialProperties.Roughness = roughness;
+				materialProperties.Roughness = std::max(roughness, 0.1f);
 				materialProperties.Metallic = metallic;
 
 				MeshComponent sphereMeshComp = {};
