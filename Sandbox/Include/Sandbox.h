@@ -12,19 +12,9 @@
 
 namespace LambdaEngine
 {
-	struct GameObject;
-
-	class RenderGraph;
-	class Renderer;
-	class ResourceManager;
-	class ISoundEffect3D;
-	class ISoundInstance3D;
-	class IAudioGeometry;
-	class IReverbSphere;
 	class Scene;
-	class Sampler;
 	class Buffer;
-
+	class RenderGraph;
 	class RenderGraphEditor;
 }
 

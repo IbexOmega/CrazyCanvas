@@ -5,7 +5,6 @@
 	#pragma warning(disable : 4251) //Disable the DLL- linkage warning for now
 #endif
 
-//#define GLM_FORCE_LEFT_HANDED
 #define GLM_FORCE_INLINE
 #define GLM_FORCE_SSE2
 #define GLM_ENABLE_EXPERIMENTAL

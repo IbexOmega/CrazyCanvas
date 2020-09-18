@@ -1,7 +1,5 @@
 #include "CameraTrack.h"
 
-#include "Game/Camera.h"
-
 #include <algorithm>
 
 bool CameraTrack::Init(LambdaEngine::Camera* pCamera, const LambdaEngine::TArray<glm::vec3>& track)
