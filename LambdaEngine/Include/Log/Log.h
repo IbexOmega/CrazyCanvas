@@ -65,7 +65,7 @@ namespace LambdaEngine
 		* args      - Arguments for the formatted string
 		*/
 		static void Print(ELogSeverity severity, const char* pFormat, ...);
-		static void PrintV(ELogSeverity severity, const char* pFormat, va_list args);
+		static void PrintV(ELogSeverity severity, const char* pFormat, va_list vaArgs);
 
 		/*
 		* Prints an error message with the function-signature where the error occured
@@ -75,7 +75,7 @@ namespace LambdaEngine
 		* args      - The arguments to the formatted string
 		*/
 		static void PrintTraceError(const char* pFunction, const char* pFormat, ...);
-		static void PrintTraceErrorV(const char* pFunction, const char* pFormat, va_list args);
+		static void PrintTraceErrorV(const char* pFunction, const char* pFormat, va_list vaArgs);
 
 		/*
 		* Enables the log to print to the debugger using PlatformMisc::OutputDebugString
