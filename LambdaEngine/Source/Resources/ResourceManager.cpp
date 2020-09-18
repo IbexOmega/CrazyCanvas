@@ -6,6 +6,8 @@
 
 #include "Rendering/RenderAPI.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include <utility>
 
 #define SAFEDELETE_ALL(map)     for (auto it = map.begin(); it != map.end(); it++) { SAFEDELETE(it->second); } map.clear()
@@ -34,11 +36,15 @@ namespace LambdaEngine
 	{
 		InitDefaultResources();
 
+		EventQueue::RegisterEventHandler<ShaderRecompileEvent>(&OnShaderRecompileEvent);
+
 		return true;
 	}
 
 	bool ResourceManager::Release()
 	{
+		EventQueue::UnregisterEventHandler<ShaderRecompileEvent>(&OnShaderRecompileEvent);
+
 		SAFEDELETE_ALL(s_Meshes);
 		SAFEDELETE_ALL(s_Materials);
 		SAFERELEASE_ALL(s_Textures);
@@ -396,25 +402,6 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	void ResourceManager::ReloadAllShaders()
-	{
-		for (auto it = s_Shaders.begin(); it != s_Shaders.end(); it++)
-		{
-			if (it->second != nullptr)
-			{
-				ShaderLoadDesc loadDesc = s_ShaderLoadConfigurations[it->first];
-
-				Shader* pShader = ResourceLoader::LoadShaderFromFile(loadDesc.Filepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
-
-				if (pShader != nullptr)
-				{
-					SAFERELEASE(it->second);
-					it->second = pShader;
-				}
-			}
-		}
-	}
-
 	GUID_Lambda ResourceManager::GetMeshGUID(const String& name)
 	{
 		return GetGUID(s_MeshNamesToGUIDs, name);
@@ -504,6 +491,29 @@ namespace LambdaEngine
 
 		D_LOG_WARNING("[ResourceManager]: GetSoundEffect called with invalid GUID %u", guid);
 		return nullptr;
+	}
+
+	bool ResourceManager::OnShaderRecompileEvent(const ShaderRecompileEvent& event)
+	{
+		for (auto it = s_Shaders.begin(); it != s_Shaders.end(); it++)
+		{
+			if (it->second != nullptr)
+			{
+				ShaderLoadDesc loadDesc = s_ShaderLoadConfigurations[it->first];
+
+				Shader* pShader = ResourceLoader::LoadShaderFromFile(loadDesc.Filepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
+
+				if (pShader != nullptr)
+				{
+					SAFERELEASE(it->second);
+					it->second = pShader;
+				}
+			}
+		}
+
+		EventQueue::SendEvent(PipelineStateRecompileEvent());
+
+		return true;
 	}
 
 	GUID_Lambda ResourceManager::RegisterLoadedMesh(const String& name, Mesh* pResource)

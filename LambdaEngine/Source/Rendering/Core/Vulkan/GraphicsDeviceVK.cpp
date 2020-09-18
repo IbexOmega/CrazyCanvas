@@ -28,6 +28,7 @@
 #include "Rendering/Core/Vulkan/QueryHeapVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/SBTVK.h"
 
 #define ENABLE_IF_SUPPORTED(feature) feature = feature && true;
 
@@ -584,12 +585,12 @@ namespace LambdaEngine
 		}
 	}
 
-	PipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc) const
+	PipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
 
 		RayTracingPipelineStateVK* pPipelineState = DBG_NEW RayTracingPipelineStateVK(this);
-		if (!pPipelineState->Init(pCommandQueue, pDesc))
+		if (!pPipelineState->Init(pDesc))
 		{
 			pPipelineState->Release();
 			return nullptr;
@@ -597,6 +598,22 @@ namespace LambdaEngine
 		else
 		{
 			return pPipelineState;
+		}
+	}
+
+	SBT* GraphicsDeviceVK::CreateSBT(CommandQueue* pCommandQueue, const SBTDesc* pDesc) const
+	{
+		VALIDATE(pDesc != nullptr);
+
+		SBTVK* pSBT = DBG_NEW SBTVK(this);
+		if (!pSBT->Init(pCommandQueue, pDesc))
+		{
+			pSBT->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pSBT;
 		}
 	}
 

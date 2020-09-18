@@ -13,5 +13,5 @@ layout(location = 0) rayPayloadInEXT SPrimaryPayload s_PrimaryPayload;
 
 void main() 
 {
-    s_PrimaryPayload.Distance = 0.0f;
+    s_PrimaryPayload.Distance = 0.5f;
 }

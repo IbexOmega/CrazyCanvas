@@ -22,38 +22,16 @@ namespace LambdaEngine
 		RayTracingPipelineStateVK(const GraphicsDeviceVK* pDevice);
 		~RayTracingPipelineStateVK();
 
-		bool Init(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc);
+		bool Init(const RayTracingPipelineStateDesc* pDesc);
 
 		FORCEINLINE VkPipeline GetPipeline() const
 		{
 			return m_Pipeline;
 		}
-
-		FORCEINLINE BufferVK* GetSBT()
-		{
-			return m_SBT.Get();
-		}
 		
-		FORCEINLINE const VkStridedBufferRegionKHR* GetRaygenBufferRegion() const
-		{
-			return &m_RaygenBufferRegion;
-		}
+		FORCEINLINE virtual uint32 HitShaderCount() const { return m_HitShaderCount; }
+		FORCEINLINE virtual uint32 MissShaderCount() const { return m_MissShaderCount; }
 
-		FORCEINLINE const VkStridedBufferRegionKHR* GetHitBufferRegion() const
-		{
-			return &m_HitBufferRegion;
-		}
-
-		FORCEINLINE const VkStridedBufferRegionKHR* GetMissBufferRegion() const
-		{
-			return &m_MissBufferRegion;
-		}
-
-		FORCEINLINE const VkStridedBufferRegionKHR* GetCallableBufferRegion() const
-		{
-			return &m_CallableBufferRegion;
-		}
-		
 		//DeviceChild interface
 		virtual void SetName(const String& debugName) override final;
 
@@ -73,13 +51,9 @@ namespace LambdaEngine
 			TArray<VkSpecializationInfo>& shaderStagesSpecializationInfos, TArray<TArray<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps);
 
 	private:
-		VkPipeline				m_Pipeline					= VK_NULL_HANDLE;
-		TSharedRef<BufferVK>	m_ShaderHandleStorageBuffer	= nullptr;
-		TSharedRef<BufferVK>	m_SBT						= nullptr;
-		
-		VkStridedBufferRegionKHR m_RaygenBufferRegion	= {};
-		VkStridedBufferRegionKHR m_HitBufferRegion		= {};
-		VkStridedBufferRegionKHR m_MissBufferRegion		= {};
-		VkStridedBufferRegionKHR m_CallableBufferRegion	= {};
+		VkPipeline m_Pipeline = VK_NULL_HANDLE;
+
+		uint32 m_HitShaderCount		= 0;
+		uint32 m_MissShaderCount	= 0;
 	};
 }

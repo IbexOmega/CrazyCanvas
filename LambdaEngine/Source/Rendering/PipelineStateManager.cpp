@@ -7,6 +7,8 @@
 
 #include "Log/Log.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 namespace LambdaEngine
 {
 	uint64													PipelineStateManager::s_CurrentPipelineIndex = 0;
@@ -108,11 +110,15 @@ namespace LambdaEngine
 
 	bool PipelineStateManager::Init()
 	{
+		EventQueue::RegisterEventHandler<PipelineStateRecompileEvent>(&OnShaderRecompileEvent);
+
 		return true;
 	}
 
 	bool PipelineStateManager::Release()
 	{
+		EventQueue::UnregisterEventHandler<PipelineStateRecompileEvent>(&OnShaderRecompileEvent);
+
 		s_GraphicsPipelineStateDescriptions.clear();
 		s_ComputePipelineStateDescriptions.clear();
 		s_RayTracingPipelineStateDescriptions.clear();
@@ -162,7 +168,7 @@ namespace LambdaEngine
 	{
 		RayTracingPipelineStateDesc pipelineDesc = pDesc->GetDesc();
 		CommandQueue*	pCommandQueue	= RenderAPI::GetComputeQueue();
-		PipelineState*	pPipelineState	= RenderAPI::GetDevice()->CreateRayTracingPipelineState(pCommandQueue, &pipelineDesc);
+		PipelineState*	pPipelineState	= RenderAPI::GetDevice()->CreateRayTracingPipelineState(&pipelineDesc);
 		if (pPipelineState)
 		{
 			uint64 pipelineIndex = s_CurrentPipelineIndex++;
@@ -206,7 +212,7 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	void PipelineStateManager::ReloadPipelineStates()
+	bool PipelineStateManager::OnShaderRecompileEvent(const PipelineStateRecompileEvent& event)
 	{
 		for (auto it = s_PipelineStates.begin(); it != s_PipelineStates.end(); it++)
 		{
@@ -238,12 +244,16 @@ namespace LambdaEngine
 					RayTracingPipelineStateDesc pipelineDesc = pPipelineDesc->GetDesc();
 
 					CommandQueue* pCommandQueue	= RenderAPI::GetComputeQueue();
-					pNewPipelineState			= RenderAPI::GetDevice()->CreateRayTracingPipelineState(pCommandQueue, &pipelineDesc);
+					pNewPipelineState			= RenderAPI::GetDevice()->CreateRayTracingPipelineState(&pipelineDesc);
 					break;
 				}
 			}
 
 			it->second = pNewPipelineState;
 		}
+
+		EventQueue::SendEvent(PipelineStatesRecompiledEvent());
+
+		return true;
 	}
 }

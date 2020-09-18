@@ -499,4 +499,10 @@ namespace LambdaEngine
 		uint32		WriteMask		= 0x00000000;
 		uint32		Reference		= 0x00000000;
 	};
+
+	struct SBTRecord
+	{
+		uint64	VertexBufferAddress		= 0;
+		uint64	IndexBufferAddress		= 0;
+	};
 }

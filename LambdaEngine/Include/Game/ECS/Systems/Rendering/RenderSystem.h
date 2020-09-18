@@ -15,6 +15,7 @@
 #include "Containers/TStack.h"
 #include "Containers/IDVector.h"
 
+#include "Rendering/Core/API/GraphicsTypes.h"
 #include "Rendering/Core/API/SwapChain.h"
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/CommandList.h"
@@ -95,12 +96,6 @@ namespace LambdaEngine
 			{
 				return key.GetHash();
 			}
-		};
-
-		struct SBTRecord
-		{
-			uint64	VertexBufferAddress		= 0;
-			uint64	IndexBufferAddress		= 0;
 		};
 
 		struct MeshEntry
@@ -192,8 +187,9 @@ namespace LambdaEngine
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;
 
 		void ExecutePendingBufferUpdates(CommandList* pCommandList);
-		void UpdateInstanceBuffers(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
+		void UpdateShaderRecords();
+		void UpdateInstanceBuffers(CommandList* pCommandList);
 		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
 		void BuildBLASs(CommandList* pCommandList);
 		void BuildTLAS(CommandList* pCommandList);
@@ -245,10 +241,12 @@ namespace LambdaEngine
 		Buffer*					m_pCompleteInstanceBuffer		= nullptr;
 		uint32					m_MaxInstances					= 0;
 		AccelerationStructure*	m_pTLAS							= nullptr;
-		TArray<AccelerationStructureGeometryDesc> m_CreateTLASGeometryDescriptions;
 		TArray<PendingBufferUpdate> m_CompleteInstanceBufferPendingCopies;
+		TArray<SBTRecord> m_SBTRecords;
 
 		//Pending/Dirty
+		bool						m_SBTRecordsDirty					= true;
+		bool						m_RenderGraphSBTRecordsDirty		= true;
 		bool						m_MaterialsPropertiesBufferDirty	= true;
 		bool						m_MaterialsResourceDirty			= true;
 		bool						m_PerFrameResourceDirty				= true;

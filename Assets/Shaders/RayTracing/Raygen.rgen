@@ -22,7 +22,8 @@ void GenerateCameraRay(in vec2 d, out vec3 origin, out vec3 direction)
 {
     SPerFrameBuffer perFrameBuffer = u_PerFrameBuffer.val;
     origin      = (perFrameBuffer.ViewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f)).xyz;
-    direction   = (perFrameBuffer.ProjectionInv * perFrameBuffer.ViewInv * vec4(d.x, d.y, 1.0f, 1.0f)).xyz;
+    vec4 target = perFrameBuffer.ProjectionInv * vec4(d.x, d.y, 1.0f, 1.0f);
+    direction   = (perFrameBuffer.ViewInv * vec4(normalize(target.xyz), 0.0f)).xyz;
 }
 
 void main()
@@ -34,9 +35,12 @@ void main()
 	vec2 d                  = screenTexCoord * 2.0f - 1.0f;
 
     //Define Shadow Ray Parameters
-    vec3 origin;
+    vec3 origin;// = vec3(0.0f, 2.0f, 0.0f);
     vec3 direction;
     GenerateCameraRay(d, origin, direction);
+
+   // vec2 u = Hammersley(gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x, gl_LaunchSizeEXT.x * gl_LaunchSizeEXT.y);
+    //SShapeSample shapeSample = UniformSampleUnitSphere(u);
 
     const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
     const uint 		cullMask           	= 0xFF;

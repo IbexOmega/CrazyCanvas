@@ -31,6 +31,7 @@
 #include "Application/API/CommonApplication.h"
 
 #include "Application/API/Events/EventQueue.h"
+#include "Application/API/Events/DebugEvents.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -185,6 +186,7 @@ bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	{
 		RenderAPI::GetGraphicsQueue()->Flush();
 		RenderAPI::GetComputeQueue()->Flush();
+		EventQueue::SendEvent(ShaderRecompileEvent())
 		ResourceManager::ReloadAllShaders();
 		PipelineStateManager::ReloadPipelineStates();
 	}

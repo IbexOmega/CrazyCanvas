@@ -417,9 +417,10 @@ namespace LambdaEngine
 
 				if (m_RayTracingEnabled)
 				{
-					meshEntry.ShaderRecord.VertexBufferAddress = meshEntry.pVertexBuffer->GetDeviceAdress();
-					meshEntry.ShaderRecord.IndexBufferAddress = meshEntry.pIndexBuffer->GetDeviceAdress();
+					meshAndInstancesIt->second.ShaderRecord.VertexBufferAddress	= meshEntry.pVertexBuffer->GetDeviceAdress();
+					meshAndInstancesIt->second.ShaderRecord.IndexBufferAddress	= meshEntry.pIndexBuffer->GetDeviceAdress();
 					m_DirtyBLASs.insert(&meshAndInstancesIt->second);
+					m_SBTRecordsDirty = true;
 				}
 			}
 		}
@@ -492,7 +493,7 @@ namespace LambdaEngine
 			asInstance.CustomIndex		= materialSlot;
 			asInstance.Mask				= 0xFF;
 			asInstance.SBTRecordOffset	= 0;
-			asInstance.Flags			= FAccelerationStructureInstanceFlag::RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED;
+			asInstance.Flags			= FAccelerationStructureInstanceFlag::RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED | RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
 
 			meshAndInstancesIt->second.ASInstances.PushBack(asInstance);
 			m_TLASDirty = true;
@@ -564,6 +565,7 @@ namespace LambdaEngine
 			}
 
 			m_DirtyDrawArgs = m_RequiredDrawArgs;
+			m_SBTRecordsDirty = true;
 			m_TLASDirty = true;
 
 			m_MeshAndInstancesMap.erase(meshAndInstancesIt);
@@ -638,7 +640,13 @@ namespace LambdaEngine
 			UpdatePerFrameBuffer(pGraphicsCommandList);
 		}
 
-		//Update Instance Data
+		//Update SBT Records (must be done before UpdateInstanceBuffers and BuildTLAS)
+		if (m_RayTracingEnabled)
+		{
+			UpdateShaderRecords();
+		}
+
+		//Update Instance Data 
 		{
 			UpdateInstanceBuffers(pGraphicsCommandList);
 		}
@@ -678,6 +686,16 @@ namespace LambdaEngine
 			}
 
 			m_DirtyDrawArgs.clear();
+		}
+
+		if (m_RenderGraphSBTRecordsDirty)
+		{
+			if (!m_SBTRecords.IsEmpty())
+			{
+				m_pRenderGraph->UpdateGlobalSBT(m_SBTRecords);
+			}
+
+			m_RenderGraphSBTRecordsDirty = false;
 		}
 
 		if (m_PerFrameResourceDirty)
@@ -887,6 +905,31 @@ namespace LambdaEngine
 		pCommandList->CopyBuffer(pPerFrameStagingBuffer, 0, m_pPerFrameBuffer, 0, sizeof(PerFrameBuffer));
 	}
 
+	void RenderSystem::UpdateShaderRecords()
+	{
+		if (m_SBTRecordsDirty)
+		{
+			m_SBTRecords.Clear();
+
+			for (MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
+			{
+				uint32 shaderRecordOffset = m_SBTRecords.GetSize();
+
+				for (AccelerationStructureInstance& asInstance : meshAndInstancesIt->second.ASInstances)
+				{
+					asInstance.SBTRecordOffset = shaderRecordOffset;
+				}
+
+				m_SBTRecords.PushBack(meshAndInstancesIt->second.ShaderRecord);
+				m_DirtyInstanceBuffers.insert(&meshAndInstancesIt->second);
+			}
+
+			m_SBTRecordsDirty = false;
+			m_TLASDirty = true;
+			m_RenderGraphSBTRecordsDirty = true;
+		}
+	}
+
 	void RenderSystem::UpdateMaterialPropertiesBuffer(CommandList* pCommandList)
 	{
 		if (m_MaterialsPropertiesBufferDirty)
@@ -1045,13 +1088,12 @@ namespace LambdaEngine
 
 				AccelerationStructureGeometryDesc createGeometryDesc = {};
 				createGeometryDesc.InstanceCount	= m_MaxInstances;
-				m_CreateTLASGeometryDescriptions.PushBack(createGeometryDesc);
 
 				AccelerationStructureDesc createTLASDesc = {};
 				createTLASDesc.DebugName	= "TLAS";
 				createTLASDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
 				createTLASDesc.Flags		= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-				createTLASDesc.Geometries	= m_CreateTLASGeometryDescriptions;
+				createTLASDesc.Geometries	= { createGeometryDesc };
 
 				m_pTLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&createTLASDesc);
 
