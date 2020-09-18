@@ -68,6 +68,7 @@ namespace LambdaEngine
 
 				viewProjComp.View = glm::lookAt(posComp.Position, posComp.Position + GetForward(rotComp.Quaternion), g_DefaultUp);
 				camComp.ViewInv = glm::inverse(viewProjComp.View);
+				camComp.ProjectionInv = glm::inverse(viewProjComp.Projection);
 			}
 		}
 	}
