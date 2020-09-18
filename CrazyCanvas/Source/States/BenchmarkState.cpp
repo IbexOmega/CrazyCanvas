@@ -32,6 +32,8 @@ void BenchmarkState::Init()
 
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
+	TrackSystem::GetInstance().Init();
+
 	std::vector<glm::vec3> cameraTrack = {
 		{-2.0f, 1.6f, 1.0f},
 		{9.8f, 1.6f, 0.8f},

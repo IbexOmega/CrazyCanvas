@@ -1,9 +1,6 @@
 #include "Game/ECS/Systems/TrackSystem.h"
 
 #include "ECS/ECSCore.h"
-#include "Application/API/CommonApplication.h"
-#include "Application/API/Window.h"
-#include "Math/Random.h"
 
 using namespace LambdaEngine;
 
@@ -21,9 +18,9 @@ bool TrackSystem::Init()
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
-			{{{RW, CameraComponent::s_TID}, {RW, ViewProjectionMatricesComponent::s_TID}, {RW, TrackComponent::s_TID}}, {&transformComponents}, &m_CameraEntities}
+			{{{RW, TrackComponent::s_TID}}, {&transformComponents}, &m_CameraEntities}
 		};
-		systemReg.Phase = g_LastPhase - 1;
+		systemReg.Phase = 0;
 
 		RegisterSystem(systemReg);
 	}
@@ -35,23 +32,12 @@ void TrackSystem::Tick(Timestamp deltaTime)
 {
 	ECSCore* pECSCore = ECSCore::GetInstance();
 
-	ComponentArray<CameraComponent>* pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
-
 	for (Entity entity : m_CameraEntities.GetIDs())
 	{
-		auto& camComp = pCameraComponents->GetData(entity);
-		if (camComp.IsActive)
-		{
-			auto& viewProjComp = pECSCore->GetComponent<ViewProjectionMatricesComponent>(entity);
-			auto& posComp = pECSCore->GetComponent<PositionComponent>(entity);
-			auto& rotComp = pECSCore->GetComponent<RotationComponent>(entity);
+		auto& posComp = pECSCore->GetComponent<PositionComponent>(entity);
+		auto& rotComp = pECSCore->GetComponent<RotationComponent>(entity);
 
-			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-			uint16 width = window->GetWidth();
-			uint16 height = window->GetHeight();
-			camComp.Jitter = glm::vec2((Random::Float32() - 0.5f) / (float)width, (Random::Float32() - 0.5f) / (float)height);
-			UpdateTrack(deltaTime, entity, camComp, viewProjComp, posComp, rotComp);
-		}
+		UpdateTrack(deltaTime, entity, posComp, rotComp);
 	}
 }
 
@@ -60,7 +46,7 @@ bool TrackSystem::HasReachedEnd(LambdaEngine::Entity entity) const
 	return ECSCore::GetInstance()->GetComponent<TrackComponent>(entity).HasReachedEnd;
 }
 
-void TrackSystem::UpdateTrack(Timestamp deltaTime, Entity entity, CameraComponent& camComp, ViewProjectionMatricesComponent& viewProjComp, PositionComponent& posComp, RotationComponent& rotComp)
+void TrackSystem::UpdateTrack(Timestamp deltaTime, Entity entity, PositionComponent& posComp, RotationComponent& rotComp)
 {
 	auto& trackComp = ECSCore::GetInstance()->GetComponent<TrackComponent>(entity);
 
@@ -92,11 +78,10 @@ void TrackSystem::UpdateTrack(Timestamp deltaTime, Entity entity, CameraComponen
 		trackComp.Track[splineIndices.z],
 		trackComp.Track[splineIndices.w],
 		trackComp.CurrentTrackT);
+	posComp.Dirty = true;
 
 	glm::vec3 dir = glm::normalize(GetCurrentGradient(splineIndices, trackComp));
 	rotComp.Quaternion = glm::quatLookAtLH(dir, glm::vec3(0.f, -1.f, 0.f)); // Update the Quaternion so that it matches the direction. (This is not used within this system)
-	viewProjComp.View = glm::lookAt(posComp.Position, posComp.Position + dir, g_DefaultUp);
-	camComp.ViewInv = glm::inverse(viewProjComp.View);
 }
 
 glm::vec3 TrackSystem::GetCurrentGradient(const glm::uvec4& splineIndices, TrackComponent& camTrackComp) const

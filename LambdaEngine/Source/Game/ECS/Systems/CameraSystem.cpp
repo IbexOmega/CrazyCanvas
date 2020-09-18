@@ -31,8 +31,9 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, CameraComponent::s_TID}, {RW, ViewProjectionMatricesComponent::s_TID}, {RW, FreeCameraComponent::s_TID}}, {&transformComponents}, &m_CameraEntities}
+				{{{RW, CameraComponent::s_TID}, {RW, ViewProjectionMatricesComponent::s_TID}}, {&transformComponents}, &m_CameraEntities}
 			};
+			systemReg.SubscriberRegistration.AdditionalDependencies = { {{RW, FreeCameraComponent::s_TID}} };
 			systemReg.Phase = g_LastPhase-1;
 
 			RegisterSystem(systemReg);
@@ -46,6 +47,7 @@ namespace LambdaEngine
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
 		ComponentArray<CameraComponent>* pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
+		ComponentArray<FreeCameraComponent>* pFreeCameraComponents = pECSCore->GetComponentArray<FreeCameraComponent>();
 
 		for (Entity entity : m_CameraEntities.GetIDs())
 		{
@@ -60,7 +62,12 @@ namespace LambdaEngine
 				const uint16 width = window->GetWidth();
 				const uint16 height = window->GetHeight();
 				camComp.Jitter = glm::vec2((Random::Float32() - 0.5f) / (float)width, (Random::Float32() - 0.5f) / (float)height);
-				HandleInput(deltaTime, entity, camComp, viewProjComp, posComp, rotComp);
+				
+				if(pFreeCameraComponents != nullptr && pFreeCameraComponents->HasComponent(entity))
+					HandleInput(deltaTime, entity, posComp, rotComp, pFreeCameraComponents->GetData(entity));
+
+				viewProjComp.View = glm::lookAt(posComp.Position, posComp.Position + GetForward(rotComp.Quaternion), g_DefaultUp);
+				camComp.ViewInv = glm::inverse(viewProjComp.View);
 			}
 		}
 	}
@@ -79,10 +86,8 @@ namespace LambdaEngine
 		}
 	}
 
-	void CameraSystem::HandleInput(Timestamp delta, Entity entity, CameraComponent& camComp, ViewProjectionMatricesComponent& viewProjComp, PositionComponent& posComp, RotationComponent& rotComp)
+	void CameraSystem::HandleInput(Timestamp delta, Entity entity, PositionComponent& posComp, RotationComponent& rotComp, FreeCameraComponent& freeCamComp)
 	{
-		const auto& freeCamComp = ECSCore::GetInstance()->GetComponent<FreeCameraComponent>(entity);
-
 		constexpr float CAMERA_MOUSE_SPEED = 10.0f;
 
 		float32 dt = float32(delta.AsSeconds());
@@ -148,8 +153,5 @@ namespace LambdaEngine
 		rotComp.Quaternion =
 			glm::angleAxis(currentYaw, g_DefaultUp) *		// Yaw
 			glm::angleAxis(currentPitch, g_DefaultRight);	// Pitch
-
-		viewProjComp.View = glm::lookAt(posComp.Position, posComp.Position + GetForward(rotComp.Quaternion), g_DefaultUp);
-		camComp.ViewInv = glm::inverse(viewProjComp.View);
 	}
 }

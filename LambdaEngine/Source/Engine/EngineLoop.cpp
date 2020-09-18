@@ -37,7 +37,6 @@
 #include "Game/StateManager.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
-#include "Game/ECS/Systems/TrackSystem.h"
 
 namespace LambdaEngine
 {
@@ -195,11 +194,6 @@ namespace LambdaEngine
 		}
 
 		if (!CameraSystem::GetInstance().Init())
-		{
-			return false;
-		}
-
-		if (!TrackSystem::GetInstance().Init())
 		{
 			return false;
 		}
