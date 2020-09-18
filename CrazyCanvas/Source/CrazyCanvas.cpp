@@ -59,29 +59,6 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
-	CameraTrackSystem::GetInstance().Init();
-
-	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-
-	std::vector<glm::vec3> cameraTrack = {
-		{-2.0f, 1.6f, 1.0f},
-		{9.8f, 1.6f, 0.8f},
-		{9.4f, 1.6f, -3.8f},
-		{-9.8f, 1.6f, -3.9f},
-		{-11.6f, 1.6f, -1.1f},
-		{9.8f, 6.1f, -0.8f},
-		{9.4f, 6.1f, 3.8f},
-		{-9.8f, 6.1f, 3.9f}
-	};
-
-	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
-	cameraDesc.Width		= window->GetWidth();
-	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
-	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
-	CreateCameraTrackEntity(cameraDesc, cameraTrack);
-
 	LoadRendererResources();
 
 	State* pStartingState = nullptr;
@@ -90,23 +67,11 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	else
 		pStartingState = DBG_NEW PlaySessionState();
 	
-	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(DebugState), STATE_TRANSITION::PUSH);
-}
-
-CrazyCanvas::~CrazyCanvas()
-{
-	CameraTrackSystem::GetInstance().Release();
+	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 {
-	if (CameraTrackSystem::GetInstance().HasReachedEnd())
-	{
-		PrintBenchmarkResults();
-		LambdaEngine::CommonApplication::Get()->Terminate();
-		return;
-	}
-
 	Render(delta);
 }
 

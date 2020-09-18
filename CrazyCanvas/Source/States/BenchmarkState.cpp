@@ -6,9 +6,12 @@
 #include "Game/Camera.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Input/API/Input.h"
 #include "Utilities/RuntimeStats.h"
+
+#include "Game/ECS/Systems/TrackSystem.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -17,8 +20,11 @@
 #include <rapidjson/writer.h>
 
 BenchmarkState::BenchmarkState()
-	:m_pCamera(nullptr)
 {}
+
+BenchmarkState::~BenchmarkState()
+{
+}
 
 void BenchmarkState::Init()
 {
@@ -27,15 +33,7 @@ void BenchmarkState::Init()
 
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
-	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
-	cameraDesc.Width		= window->GetWidth();
-	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
-	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
-	CreateFreeCameraEntity(cameraDesc);
-
-	const TArray<glm::vec3> cameraTrack = {
+	std::vector<glm::vec3> cameraTrack = {
 		{-2.0f, 1.6f, 1.0f},
 		{9.8f, 1.6f, 0.8f},
 		{9.4f, 1.6f, -3.8f},
@@ -46,7 +44,13 @@ void BenchmarkState::Init()
 		{-9.8f, 6.1f, 3.9f}
 	};
 
-	m_CameraTrack.Init(m_pCamera.get(), cameraTrack);
+	CameraDesc cameraDesc = {};
+	cameraDesc.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV");
+	cameraDesc.Width = window->GetWidth();
+	cameraDesc.Height = window->GetHeight();
+	cameraDesc.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane");
+	cameraDesc.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane");
+	m_Camera = CreateCameraTrackEntity(cameraDesc, cameraTrack);
 
 	// Load scene
 	TArray<MeshComponent> meshComponents;
@@ -69,10 +73,7 @@ void BenchmarkState::Init()
 
 void BenchmarkState::Tick(float dt)
 {
-	m_CameraTrack.Tick(dt);
-	m_pCamera->Update();
-
-	if (m_CameraTrack.HasReachedEnd())
+	if (LambdaEngine::TrackSystem::GetInstance().HasReachedEnd(m_Camera))
 	{
 		PrintBenchmarkResults();
 		LambdaEngine::CommonApplication::Get()->Terminate();

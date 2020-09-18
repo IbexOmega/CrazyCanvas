@@ -17,8 +17,6 @@ namespace LambdaEngine
 
 		bool Init();
 
-		bool Release();
-
 		void Tick(Timestamp deltaTime) override;
 
 		void MainThreadTick(Timestamp deltaTime);

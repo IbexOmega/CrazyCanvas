@@ -21,6 +21,7 @@ void PlaySessionState::Init()
 	cameraDesc.Height		= window->GetHeight();
 	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
 	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
+	cameraDesc.Position = glm::vec3(0.f, 3.f, 0.f);
 	CreateFreeCameraEntity(cameraDesc);
 
 	// Load scene

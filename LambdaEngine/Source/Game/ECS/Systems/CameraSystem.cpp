@@ -41,11 +41,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool CameraSystem::Release()
-	{
-		return true;
-	}
-
 	void CameraSystem::Tick(Timestamp deltaTime)
 	{
 		ECSCore* pECSCore = ECSCore::GetInstance();

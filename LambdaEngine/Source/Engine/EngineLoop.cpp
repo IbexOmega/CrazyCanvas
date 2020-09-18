@@ -37,6 +37,7 @@
 #include "Game/StateManager.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
+#include "Game/ECS/Systems/TrackSystem.h"
 
 namespace LambdaEngine
 {
@@ -199,6 +200,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!TrackSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
 		if (!StateManager::GetInstance()->Init(ECSCore::GetInstance()))
 		{
 			return false;
@@ -230,11 +236,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CameraSystem::GetInstance().Release())
-		{
-			return false;
-		}
-
 		if (!ResourceManager::Release())
 		{
 			return false;
@@ -256,13 +257,13 @@ namespace LambdaEngine
 		}
 
 		EventQueue::UnregisterAll();
+		ECSCore::Release();
 
 		if (!ThreadPool::Release())
 		{
 			return false;
 		}
 
-		ECSCore::Release();
 		return true;
 	}
 

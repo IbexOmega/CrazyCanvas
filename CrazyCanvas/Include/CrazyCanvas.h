@@ -2,8 +2,6 @@
 #include "Game/Game.h"
 
 #include "Application/API/ApplicationEventHandler.h"
-#include "CameraTrack.h"
-#include "Systems/CameraTrackSystem.h"
 
 #include "Containers/TArray.h"
 
@@ -25,6 +23,4 @@ public:
 
 private:
 	bool LoadRendererResources();
-
-	static void PrintBenchmarkResults();
 };

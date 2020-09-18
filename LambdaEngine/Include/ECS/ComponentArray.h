@@ -2,6 +2,7 @@
 
 #include "Defines.h"
 #include "Entity.h"
+#include <unordered_map>
 
 namespace LambdaEngine
 {

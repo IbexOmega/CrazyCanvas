@@ -40,5 +40,7 @@ namespace LambdaEngine
 		float FarPlane = 50.0f;
 	};
 
-	void CreateFreeCameraEntity(const CameraDesc& cameraDesc);
+	Entity CreateFreeCameraEntity(const CameraDesc& cameraDesc);
+
+	Entity CreateCameraTrackEntity(const CameraDesc& cameraDesc, const std::vector<glm::vec3>& track);
 }
