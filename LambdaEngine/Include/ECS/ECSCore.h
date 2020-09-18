@@ -14,7 +14,7 @@ namespace LambdaEngine
     class EntitySubscriber;
     class RegularWorker;
 
-    class ECSCore
+    class LAMBDA_API ECSCore
     {
     public:
         ECSCore();

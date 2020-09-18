@@ -3,6 +3,7 @@
 
 #include "Application/API/ApplicationEventHandler.h"
 #include "CameraTrack.h"
+#include "Systems/CameraTrackSystem.h"
 
 #include "Containers/TArray.h"
 
@@ -42,9 +43,4 @@ private:
 	bool LoadRendererResources();
 
 	static void PrintBenchmarkResults();
-
-private:
-	CameraTrack m_CameraTrack;
-
-	LambdaEngine::Camera*					m_pCamera				= nullptr;
 };

@@ -21,7 +21,7 @@ namespace LambdaEngine
     class ComponentHandler;
 
     // A system processes components each frame in the tick function
-    class System : private EntitySubscriber, private RegularWorker
+    class LAMBDA_API System : private EntitySubscriber, private RegularWorker
     {
     public:
         // Registers the system in the system handler

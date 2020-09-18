@@ -60,17 +60,9 @@ CrazyCanvas::CrazyCanvas()
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
-	m_pCamera = DBG_NEW Camera();
+	CameraTrackSystem::GetInstance().Init();
 
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-
-	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
-	cameraDesc.Width		= window->GetWidth();
-	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
-	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
-	CreateFreeCameraEntity(cameraDesc);
 
 	std::vector<glm::vec3> cameraTrack = {
 		{-2.0f, 1.6f, 1.0f},
@@ -83,20 +75,27 @@ CrazyCanvas::CrazyCanvas()
 		{-9.8f, 6.1f, 3.9f}
 	};
 
+	CameraDesc cameraDesc = {};
+	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
+	cameraDesc.Width		= window->GetWidth();
+	cameraDesc.Height		= window->GetHeight();
+	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
+	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
+	CreateCameraTrackEntity(cameraDesc, cameraTrack);
+
 	LoadRendererResources();
 
-	m_CameraTrack.Init(m_pCamera, cameraTrack);
 	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(DebugState), STATE_TRANSITION::PUSH);
 }
 
 CrazyCanvas::~CrazyCanvas()
 {
-	SAFEDELETE(m_pCamera);
+	CameraTrackSystem::GetInstance().Release();
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 {
-	if (m_CameraTrack.HasReachedEnd())
+	if (CameraTrackSystem::GetInstance().HasReachedEnd())
 	{
 		PrintBenchmarkResults();
 		LambdaEngine::CommonApplication::Get()->Terminate();
@@ -111,9 +110,6 @@ void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 	using namespace LambdaEngine;
 
 	float32 dt = (float32)delta.AsSeconds();
-
-	m_pCamera->Update();
-	m_CameraTrack.Tick(dt);
 }
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp delta)

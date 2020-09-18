@@ -19,7 +19,7 @@ namespace LambdaEngine
 	};
 
 	template<typename Comp>
-	class ComponentArray : public IComponentArray
+	class LAMBDA_API ComponentArray : public IComponentArray
 	{
 	public:
 		ComponentArray();
