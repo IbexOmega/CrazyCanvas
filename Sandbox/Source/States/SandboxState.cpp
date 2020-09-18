@@ -31,7 +31,7 @@ void SandboxState::Init()
 	//Scene
 	{
 		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Map/scene.obj", meshComponents);
+		ResourceManager::LoadSceneFromFile("Testing/Testing.obj", meshComponents);
 
 		glm::vec3 position(0.0f, 0.0f, 0.0f);
 		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
