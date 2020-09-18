@@ -1,7 +1,6 @@
 #include "Engine/EngineLoop.h"
-#include "Debug/Profiler.h"
 
-#include "Application/API/Events/EventQueue.h"
+#include "Debug/Profiler.h"
 
 #include <argh/argh.h>
 

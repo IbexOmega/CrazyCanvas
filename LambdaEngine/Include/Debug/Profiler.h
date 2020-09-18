@@ -21,10 +21,12 @@ namespace LambdaEngine
 		static CPUProfiler* GetCPUProfiler();
 		static GPUProfiler* GetGPUProfiler();
 
-		static void Render(Timestamp delta);
+		static void Tick(Timestamp delta);
+		static void Render();
 
 	private:
 		static GPUProfiler* s_pGPUProfiler;
 		static CPUProfiler* s_pCPUProfiler;
+		static Timestamp s_Timestamp;
 	};
 }

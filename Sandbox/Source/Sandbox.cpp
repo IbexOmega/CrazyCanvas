@@ -201,6 +201,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	using namespace LambdaEngine;
 
 	m_pRenderGraphEditor->Update();
+	Profiler::Tick(delta);
 	Render(delta);
 }
 
@@ -228,7 +229,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 			if (m_DebuggingWindow)
 			{
-				Profiler::Render(delta);
+				Profiler::Render();
 			}
 
 			if (m_ShowTextureDebuggingWindow)
