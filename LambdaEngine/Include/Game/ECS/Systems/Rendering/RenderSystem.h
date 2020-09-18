@@ -85,7 +85,7 @@ namespace LambdaEngine
 					if (!other.IsAnimated || EntityID != other.EntityID)
 						return false;
 				}
-				
+
 				return true;
 			}
 		};
@@ -156,7 +156,7 @@ namespace LambdaEngine
 
 		bool Release();
 
-		void Tick(Timestamp deltaTime);
+		void Tick(Timestamp deltaTime) override final;
 
 		bool Render();
 
@@ -165,10 +165,10 @@ namespace LambdaEngine
 
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
 
-		RenderGraph*	GetRenderGraph()	{ return m_pRenderGraph;	}
-		uint64			GetFrameIndex()		{ return m_FrameIndex;		}
-		uint64			GetModFrameIndex()	{ return m_ModFrameIndex;	}
-		uint32			GetBufferIndex()	{ return m_BackBufferIndex; }
+		RenderGraph*	GetRenderGraph()			{ return m_pRenderGraph;	}
+		uint64			GetFrameIndex() const	 	{ return m_FrameIndex; }
+		uint64			GetModFrameIndex() const	{ return m_ModFrameIndex;	}
+		uint32			GetBufferIndex() const	 	{ return m_BackBufferIndex; }
 
 	public:
 		static RenderSystem& GetInstance() { return s_Instance; }

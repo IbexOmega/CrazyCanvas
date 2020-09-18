@@ -361,8 +361,6 @@ namespace LambdaEngine
 
 	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated)
 	{
-		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
-
 		if (isStatic && animated)
 		{
 			LOG_ERROR("[RenderSystem]: A static game object cannot also be animated!");
@@ -527,7 +525,7 @@ namespace LambdaEngine
 	}
 
 	void RenderSystem::UpdateCamera(Entity entity)
-	{		
+	{
 		ViewProjectionMatricesComponent& viewProjComp = ECSCore::GetInstance()->GetComponent<ViewProjectionMatricesComponent>(entity);
 		PositionComponent& posComp = ECSCore::GetInstance()->GetComponent<PositionComponent>(entity);
 		RotationComponent& rotComp = ECSCore::GetInstance()->GetComponent<RotationComponent>(entity);

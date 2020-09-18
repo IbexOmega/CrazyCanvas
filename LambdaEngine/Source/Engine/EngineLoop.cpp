@@ -105,7 +105,6 @@ namespace LambdaEngine
 
 		RenderSystem::GetInstance().Render();
 
-
 		return true;
 	}
 
