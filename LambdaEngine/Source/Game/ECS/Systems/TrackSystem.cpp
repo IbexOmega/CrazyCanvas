@@ -32,12 +32,12 @@ void TrackSystem::Tick(Timestamp deltaTime)
 {
 	ECSCore* pECSCore = ECSCore::GetInstance();
 
+	auto* posCompArray = pECSCore->GetComponentArray<PositionComponent>();
+	auto* rotCompArray = pECSCore->GetComponentArray<RotationComponent>();
+
 	for (Entity entity : m_CameraEntities.GetIDs())
 	{
-		auto& posComp = pECSCore->GetComponent<PositionComponent>(entity);
-		auto& rotComp = pECSCore->GetComponent<RotationComponent>(entity);
-
-		UpdateTrack(deltaTime, entity, posComp, rotComp);
+		UpdateTrack(deltaTime, entity, posCompArray->GetData(entity), rotCompArray->GetData(entity));
 	}
 }
 
