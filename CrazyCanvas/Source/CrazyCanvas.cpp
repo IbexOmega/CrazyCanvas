@@ -1,6 +1,8 @@
 #include "CrazyCanvas.h"
 
 #include "Memory/API/Malloc.h"
+#include "States/BenchmarkState.h"
+#include "States/PlaySessionState.h"
 
 #include "Log/Log.h"
 
@@ -37,7 +39,6 @@
 #include "Utilities/RuntimeStats.h"
 
 #include "Game/StateManager.h"
-#include "States/DebugState.h"
 
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
@@ -51,68 +52,40 @@
 
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
-CrazyCanvas::CrazyCanvas()
+CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 {
 	using namespace LambdaEngine;
-
-	Input::Disable();
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
-	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-
-	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
-	cameraDesc.Width		= window->GetWidth();
-	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
-	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
-	CreateFreeCameraEntity(cameraDesc);
-
-	std::vector<glm::vec3> cameraTrack = {
-		{-2.0f, 1.6f, 1.0f},
-		{9.8f, 1.6f, 0.8f},
-		{9.4f, 1.6f, -3.8f},
-		{-9.8f, 1.6f, -3.9f},
-		{-11.6f, 1.6f, -1.1f},
-		{9.8f, 6.1f, -0.8f},
-		{9.4f, 6.1f, 3.8f},
-		{-9.8f, 6.1f, 3.9f}
-	};
-
 	LoadRendererResources();
 
-	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(DebugState), STATE_TRANSITION::PUSH);
+	State* pStartingState = nullptr;
+	if (flagParser[{"-b", "--benchmark"}])
+		pStartingState = DBG_NEW BenchmarkState();
+	else
+		pStartingState = DBG_NEW PlaySessionState();
+
+	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 {
-	if (m_CameraTrack.HasReachedEnd())
-	{
-		PrintBenchmarkResults();
-		LambdaEngine::CommonApplication::Get()->Terminate();
-		return;
-	}
-
 	Render(delta);
 }
 
-void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
-{
-	m_CameraTrack.Tick((float32)delta.AsSeconds());
-}
+void CrazyCanvas::FixedTick(LambdaEngine::Timestamp)
+{}
 
-void CrazyCanvas::Render(LambdaEngine::Timestamp delta)
-{
-	using namespace LambdaEngine;
-}
+void CrazyCanvas::Render(LambdaEngine::Timestamp)
+{}
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	Game* CreateGame(const argh::parser& flagParser)
 	{
-		return DBG_NEW CrazyCanvas();
+		return DBG_NEW CrazyCanvas(flagParser);
 	}
 }
 
@@ -174,32 +147,4 @@ bool CrazyCanvas::LoadRendererResources()
 	}
 
 	return true;
-}
-
-void CrazyCanvas::PrintBenchmarkResults()
-{
-	using namespace rapidjson;
-	using namespace LambdaEngine;
-
-	constexpr const float MB = 1000000.0f;
-
-	StringBuffer jsonStringBuffer;
-	PrettyWriter<StringBuffer> writer(jsonStringBuffer);
-
-	writer.StartObject();
-
-	writer.String("AverageFPS");
-	writer.Double(1.0f / RuntimeStats::GetAverageFrametime());
-	writer.String("PeakMemoryUsage");
-	writer.Double(RuntimeStats::GetPeakMemoryUsage() / MB);
-
-	writer.EndObject();
-
-	FILE* pFile = fopen("benchmark_results.json", "w");
-
-	if (pFile)
-	{
-		fputs(jsonStringBuffer.GetString(), pFile);
-		fclose(pFile);
-	}
 }

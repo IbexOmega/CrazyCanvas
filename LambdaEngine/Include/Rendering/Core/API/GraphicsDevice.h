@@ -91,9 +91,10 @@ namespace LambdaEngine
 	*/
 	struct GraphicsDeviceMemoryStatistics
 	{
-		uint64 TotalBytesReserved = 0;
-		uint64 TotalBytesAllocated = 0;
-		std::string MemoryTypeName = "";
+		uint64 TotalBytesReserved	= 0;
+		uint64 TotalBytesAllocated	= 0;
+		std::string MemoryTypeName	= "";
+		EMemoryType MemoryType		= EMemoryType::MEMORY_TYPE_NONE;
 	};
 
 	/*

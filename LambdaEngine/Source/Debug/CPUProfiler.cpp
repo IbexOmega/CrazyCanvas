@@ -129,17 +129,21 @@ namespace LambdaEngine
 		m_File.close();
 	}
 
-	void CPUProfiler::Render(Timestamp delta)
+	void CPUProfiler::Tick(Timestamp delta)
 	{
 		m_TimeSinceUpdate += delta.AsSeconds();
+		m_Timestamp = delta;
+	}
 
+	void CPUProfiler::Render()
+	{
 		if (m_TimeSinceUpdate > 1 / m_UpdateFrequency)
 		{
 			CommonApplication::Get()->GetPlatformApplication()->QueryCPUStatistics(&m_CPUStat);
 			m_TimeSinceUpdate = 0.f;
 		}
-		ImGui::BulletText("FPS: %f", 1.0f / delta.AsSeconds());
-		ImGui::BulletText("Frametime (ms): %f", delta.AsMilliSeconds());
+		ImGui::BulletText("FPS: %f", 1.0f / m_Timestamp.AsSeconds());
+		ImGui::BulletText("Frametime (ms): %f", m_Timestamp.AsMilliSeconds());
 		// Spacing
 		ImGui::Dummy(ImVec2(0.0f, 20.0f));
 

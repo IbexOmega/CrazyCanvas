@@ -2,34 +2,14 @@
 #include "Game/Game.h"
 
 #include "Application/API/ApplicationEventHandler.h"
-#include "CameraTrack.h"
-
-#include "Containers/TArray.h"
-
 #include "Math/Math.h"
 
-namespace LambdaEngine
-{
-	struct GameObject;
-
-	class RenderGraph;
-	class Renderer;
-	class ResourceManager;
-	class ISoundEffect3D;
-	class ISoundInstance3D;
-	class IAudioGeometry;
-	class IReverbSphere;
-	class Scene;
-	class Camera;
-	class Sampler;
-
-	class RenderGraphEditor;
-}
+#include <argh/argh.h>
 
 class CrazyCanvas : public LambdaEngine::Game, public LambdaEngine::ApplicationEventHandler
 {
 public:
-	CrazyCanvas();
+	CrazyCanvas(const argh::parser& flagParser);
 	~CrazyCanvas() = default;
 
 	// Inherited via Game
@@ -42,7 +22,4 @@ private:
 	bool LoadRendererResources();
 
 	static void PrintBenchmarkResults();
-
-private:
-	CameraTrack m_CameraTrack;
 };
