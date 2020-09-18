@@ -254,6 +254,9 @@ namespace LambdaEngine
 			uint32					BufferSetIndex				= 0;
 			DescriptorSet**			ppTextureDescriptorSets		= nullptr; //# m_BackBufferCount
 			uint32					TextureSetIndex				= 0;
+			DescriptorSet***		pppDrawArgDescriptorSets	= nullptr; //# m_BackBufferCount
+			DrawArg*				pDrawArgs					= nullptr;
+			uint32					NumDrawArgsPerFrame			= 0;
 			uint32					DrawSetIndex				= 0;
 			Resource*				pDrawArgsResource			= nullptr;
 			uint32					DrawArgsMask				= 0x0;
@@ -419,6 +422,7 @@ namespace LambdaEngine
 		TSet<Resource*>									m_DirtyDescriptorSetTextures;
 		TSet<Resource*>									m_DirtyDescriptorSetBuffers;
 		TSet<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
+		TSet<Resource*>									m_DirtyDescriptorSetDrawArgs;
 
 		TArray<DescriptorSet*>*							m_pDescriptorSetsToDestroy;
 
