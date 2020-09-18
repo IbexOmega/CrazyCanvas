@@ -6,7 +6,8 @@
 
 namespace LambdaEngine
 {
-	const glm::vec3 g_DefaultForward = glm::vec3(0.0f, 0.0f, 1.0f);
+	const glm::vec3 g_DefaultForward	= glm::vec3(0.0f, 0.0f, 1.0f);
+	const glm::vec3 g_DefaultRight		= glm::vec3(1.0f, 0.0f, 0.0f);
 	//The up vector is inverted because of vulkans inverted y-axis
 	const glm::vec3 g_DefaultUp = glm::vec3(0.0f, -1.0f, 0.0f);
 
@@ -61,16 +62,16 @@ namespace LambdaEngine
 	};
 
 	// Transform calculation functions
-	inline glm::vec3 GetUp(const glm::quat& rotationQuat)				{ return glm::normalize(glm::rotate(rotationQuat, g_DefaultUp)); }
-	inline glm::vec3 GetForward(const glm::quat& rotationQuat)			{ return glm::normalize(glm::rotate(rotationQuat, g_DefaultForward)); }
-	inline glm::vec3 GetRight(const glm::quat& rotationQuat)			{ return glm::normalize(glm::cross(GetForward(rotationQuat), GetUp(rotationQuat))); }
+	inline glm::vec3 GetUp(const glm::quat& rotationQuat)				{ return glm::rotate(rotationQuat, g_DefaultUp); }
+	inline glm::vec3 GetForward(const glm::quat& rotationQuat)			{ return glm::rotate(rotationQuat, g_DefaultForward); }
+	inline glm::vec3 GetRight(const glm::quat& rotationQuat)			{ return glm::rotate(rotationQuat, g_DefaultRight); }
 	inline glm::quat GetRotationQuaternion(const glm::vec3& forward)	{ return glm::rotation(forward, g_DefaultForward); }
 
 	float GetPitch(const glm::vec3& forward);
-	inline float GetYaw(const glm::vec3& forward)			{ return glm::orientedAngle(g_DefaultForward, forward, g_DefaultUp); }
+	float GetYaw(const glm::vec3& forward);
 	inline float GetRoll(const glm::quat& rotationQuat)	{ return glm::orientedAngle(g_DefaultUp, GetUp(rotationQuat), GetForward(rotationQuat)); }
 
-	// Assumes the forward is normalized
+	// Assumes the parameters are normalized
 	inline void SetForward(glm::quat& rotationQuat, const glm::vec3& forward) { rotationQuat = glm::rotation(GetForward(rotationQuat), forward); }
 
 	inline void Roll(glm::quat& rotationQuat, float angle) { rotationQuat = glm::rotate(rotationQuat, angle, GetForward(rotationQuat)); };

@@ -16,15 +16,17 @@
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/NetworkDebugger.h"
-#include "Networking/API/ClientRemoteBase.h"
 
 #include "ClientHandler.h"
 
 #include "Math/Random.h"
 
+#include <argh/argh.h>
+
+using namespace LambdaEngine;
+
 Server::Server()
 {
-	using namespace LambdaEngine;
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
@@ -48,8 +50,6 @@ Server::Server()
 
 Server::~Server()
 {
-	using namespace LambdaEngine;
-
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
 	m_pServer->Release();
 }
@@ -59,10 +59,8 @@ LambdaEngine::IClientRemoteHandler* Server::CreateClientHandler()
 	return DBG_NEW ClientHandler();
 }
 
-bool Server::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
+bool Server::OnKeyPressed(const KeyPressedEvent& event)
 {
-	using namespace LambdaEngine;
-
 	UNREFERENCED_VARIABLE(event);
 
 	if(m_pServer->IsRunning())
@@ -75,30 +73,40 @@ bool Server::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 
 void Server::UpdateTitle()
 {
-	using namespace LambdaEngine;
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 }
 
-void Server::Tick(LambdaEngine::Timestamp delta)
+void Server::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 
-	for (auto& pair : m_pServer->GetClients())
-	{
-		LambdaEngine::NetworkDebugger::RenderStatisticsWithImGUI(pair.second);
-	}
+	NetworkDebugger::RenderStatistics(m_pServer);
 }
 
-void Server::FixedTick(LambdaEngine::Timestamp delta)
+void Server::FixedTick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
+
+	// Simulate first Remote client broadcasting
+	if (m_pServer->GetClientCount() > 0)
+	{
+		ClientRemoteBase* pClient = m_pServer->GetClients().begin()->second;
+		if (pClient->IsConnected())
+		{
+			NetworkSegment* pPacket = pClient->GetFreePacket(99);
+			BinaryEncoder encoder(pPacket);
+			encoder.WriteString("Test broadcast from server.cpp");
+			pClient->SendUnreliableBroadcast(pPacket);
+		}
+	}
 }
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	Game* CreateGame(const argh::parser& flagParser)
 	{
+		UNREFERENCED_VARIABLE(flagParser);
 		Server* pServer = DBG_NEW Server();
 		return pServer;
 	}

@@ -24,9 +24,9 @@ namespace LambdaEngine
 
 		CameraComponent camComp;
 		pECS->AddComponent<CameraComponent>(entity, camComp);
-		
+
 		pECS->AddComponent<PositionComponent>(entity, PositionComponent{ .Position = cameraDesc.Position });
-		pECS->AddComponent<RotationComponent>(entity, RotationComponent{ .Quaternion = glm::quatLookAtLH(cameraDesc.Direction, g_DefaultUp) });
+		pECS->AddComponent<RotationComponent>(entity, RotationComponent{ .Quaternion = glm::identity<glm::quat>() });
 		pECS->AddComponent<ScaleComponent>(entity, ScaleComponent{ .Scale = {1.f, 1.f, 1.f} });
 	}
 }

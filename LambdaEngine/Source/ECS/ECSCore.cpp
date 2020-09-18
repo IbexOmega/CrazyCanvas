@@ -2,128 +2,155 @@
 
 namespace LambdaEngine
 {
-    ECSCore* ECSCore::s_pInstance = DBG_NEW ECSCore();
+	ECSCore* ECSCore::s_pInstance = DBG_NEW ECSCore();
 
-    ECSCore::ECSCore()
-        :m_EntityPublisher(&m_ComponentStorage, &m_EntityRegistry),
-        m_DeltaTime(0.0f)
-    {}
+	ECSCore::ECSCore()
+		:m_EntityPublisher(&m_ComponentStorage, &m_EntityRegistry),
+		m_DeltaTime(0.0f)
+	{}
 
-    void ECSCore::Release()
-    {
-        DELETE_OBJECT(ECSCore::s_pInstance);
-    }
+	void ECSCore::Release()
+	{
+		DELETE_OBJECT(ECSCore::s_pInstance);
+	}
 
-    void ECSCore::Tick(Timestamp deltaTime)
-    {
-        m_DeltaTime = deltaTime;
-        PerformEntityDeletions();
-        m_JobScheduler.Tick();
-    }
+	void ECSCore::Tick(Timestamp deltaTime)
+	{
+		m_DeltaTime = deltaTime;
+		PerformComponentRegistrations();
+		PerformComponentDeletions();
+		PerformEntityDeletions();
+		m_JobScheduler.Tick();
+	}
 
-    void ECSCore::RemoveEntity(Entity entity)
-    {
-        m_ComponentStorage.EntityDeleted(entity);
-        m_EntitiesToDelete.PushBack(entity);
-    }
+	void ECSCore::RemoveEntity(Entity entity)
+	{
+		m_EntitiesToDelete.PushBack(entity);
+	}
 
-    void ECSCore::ScheduleJobASAP(const Job& job)
-    {
-        m_JobScheduler.ScheduleJob(job, CURRENT_PHASE);
-    }
+	void ECSCore::ScheduleJobASAP(const Job& job)
+	{
+		m_JobScheduler.ScheduleJob(job, CURRENT_PHASE);
+	}
 
-    void ECSCore::ScheduleJobPostFrame(const Job& job)
-    {
-        m_JobScheduler.ScheduleJob(job, g_LastPhase + 1u);
-    }
+	void ECSCore::ScheduleJobPostFrame(const Job& job)
+	{
+		m_JobScheduler.ScheduleJob(job, g_LastPhase + 1u);
+	}
 
-    void ECSCore::AddRegistryPage()
-    {
-        m_EntityRegistry.AddPage();
-    }
+	void ECSCore::AddRegistryPage()
+	{
+		m_EntityRegistry.AddPage();
+	}
 
-    void ECSCore::DeregisterTopRegistryPage()
-    {
-        const EntityRegistryPage& page = m_EntityRegistry.GetTopRegistryPage();
+	void ECSCore::DeregisterTopRegistryPage()
+	{
+		const EntityRegistryPage& page = m_EntityRegistry.GetTopRegistryPage();
 
-        const auto& entityComponentSets = page.GetVec();
-        const TArray<Entity>& entities = page.GetIDs();
+		const auto& entityComponentSets = page.GetVec();
+		const TArray<Entity>& entities = page.GetIDs();
 
-        for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
-        {
-            const std::unordered_set<std::type_index>& typeSet = entityComponentSets[entityIdx];
+		for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
+		{
+			const std::unordered_set<std::type_index>& typeSet = entityComponentSets[entityIdx];
 
-            for (std::type_index type : typeSet) {
-                // Deregister entity's components from systems
-                m_EntityPublisher.UnpublishComponent(entities[entityIdx], type);
-            }
-        }
-    }
+			for (std::type_index type : typeSet) {
+				// Deregister entity's components from systems
+				m_EntityPublisher.UnpublishComponent(entities[entityIdx], type);
+			}
+		}
+	}
 
-    void ECSCore::DeleteTopRegistryPage()
-    {
-        const EntityRegistryPage& page = m_EntityRegistry.GetTopRegistryPage();
-        const auto& entityComponentSets = page.GetVec();
-        const TArray<Entity>& entities = page.GetIDs();
+	void ECSCore::DeleteTopRegistryPage()
+	{
+		const EntityRegistryPage& page = m_EntityRegistry.GetTopRegistryPage();
+		const auto& entityComponentSets = page.GetVec();
+		const TArray<Entity>& entities = page.GetIDs();
 
-        for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
-        {
-            Entity entity = entities[entityIdx];
-            const std::unordered_set<std::type_index>& typeSet = entityComponentSets[entityIdx];
+		for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
+		{
+			Entity entity = entities[entityIdx];
+			const std::unordered_set<std::type_index>& typeSet = entityComponentSets[entityIdx];
 
-            for (std::type_index componentType : typeSet)
-            {
-                // Deregister entity's component from systems
-                m_EntityPublisher.UnpublishComponent(entities[entityIdx], componentType);
+			for (std::type_index componentType : typeSet)
+				DeleteComponent(entity, componentType);
+		}
 
-                // Delete the component
-                m_ComponentStorage.GetComponentArray(componentType)->Remove(entity);
-            }
-        }
+		m_EntityRegistry.RemovePage();
+	}
 
-        m_EntityRegistry.RemovePage();
-    }
+	void ECSCore::ReinstateTopRegistryPage()
+	{
+		const EntityRegistryPage& page = m_EntityRegistry.GetTopRegistryPage();
 
-    void ECSCore::ReinstateTopRegistryPage()
-    {
-        const EntityRegistryPage& page = m_EntityRegistry.GetTopRegistryPage();
+		const auto& entityComponentSets = page.GetVec();
+		const TArray<Entity>& entities = page.GetIDs();
 
-        const auto& entityComponentSets = page.GetVec();
-        const TArray<Entity>& entities = page.GetIDs();
+		for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
+		{
+			const std::unordered_set<std::type_index>& typeSet = entityComponentSets[entityIdx];
 
-        for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
-        {
-            const std::unordered_set<std::type_index>& typeSet = entityComponentSets[entityIdx];
+			for (std::type_index componentType : typeSet)
+				m_EntityPublisher.PublishComponent(entities[entityIdx], componentType);
+		}
+	}
 
-            for (std::type_index componentType : typeSet)
-            {
-                m_EntityPublisher.PublishComponent(entities[entityIdx], componentType);
-            }
-        }
-    }
+	void ECSCore::PerformComponentRegistrations()
+	{
+		for (const std::pair<Entity, std::type_index>& component : m_ComponentsToRegister)
+		{
+			m_EntityRegistry.RegisterComponentType(component.first, component.second);
+			m_EntityPublisher.PublishComponent(component.first, component.second);
+		}
 
-    void ECSCore::PerformEntityDeletions()
-    {
-        const EntityRegistryPage& registryPage = m_EntityRegistry.GetTopRegistryPage();
+		m_ComponentsToRegister.ShrinkToFit();
+		m_ComponentsToRegister.Clear();
+	}
 
-        for (Entity entity : m_EntitiesToDelete)
-        {
-            // Delete every component belonging to the entity
-            const auto& componentTypes = registryPage.IndexID(entity);
-            for (std::type_index componentType : componentTypes)
-            {
-                // Delete the component
-                IComponentArray* pComponentArray = m_ComponentStorage.GetComponentArray(componentType);
-                pComponentArray->Remove(entity);
+	void ECSCore::PerformComponentDeletions()
+	{
+		for (const std::pair<Entity, std::type_index>& component : m_ComponentsToDelete)
+		{
+			if (DeleteComponent(component.first, component.second))
+			{
+				// If the entity has no more components, delete it
+				const std::unordered_set<std::type_index>& componentTypes = m_EntityRegistry.GetTopRegistryPage().IndexID(component.first);
+				if (componentTypes.empty())
+					m_EntityRegistry.DeregisterEntity(component.first);
+			}
+		}
 
-                // Notify systems that the component has been removed
-                m_EntityPublisher.UnpublishComponent(entity, componentType);
-            }
+		m_ComponentsToDelete.ShrinkToFit();
+		m_ComponentsToDelete.Clear();
+	}
 
-            // Free the entity ID
-            m_EntityRegistry.DeregisterEntity(entity);
-        }
+	void ECSCore::PerformEntityDeletions()
+	{
+		const EntityRegistryPage& registryPage = m_EntityRegistry.GetTopRegistryPage();
 
-        m_EntitiesToDelete.Clear();
-    }
+		for (Entity entity : m_EntitiesToDelete)
+		{
+			// Delete every component belonging to the entity
+			const std::unordered_set<std::type_index>& componentTypes = registryPage.IndexID(entity);
+			for (std::type_index componentType : componentTypes)
+				DeleteComponent(entity, componentType);
+
+			// Free the entity ID
+			m_EntityRegistry.DeregisterEntity(entity);
+		}
+
+		m_EntitiesToDelete.ShrinkToFit();
+		m_EntitiesToDelete.Clear();
+	}
+
+	bool ECSCore::DeleteComponent(Entity entity, std::type_index componentType)
+	{
+		if (m_ComponentStorage.DeleteComponent(entity, componentType))
+		{
+			m_EntityPublisher.UnpublishComponent(entity, componentType);
+			return true;
+		}
+
+		return false;
+	}
 }

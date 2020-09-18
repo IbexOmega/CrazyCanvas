@@ -1,6 +1,8 @@
 #include "CrazyCanvas.h"
 
 #include "Memory/API/Malloc.h"
+#include "States/BenchmarkState.h"
+#include "States/PlaySessionState.h"
 
 #include "Log/Log.h"
 
@@ -37,7 +39,6 @@
 #include "Utilities/RuntimeStats.h"
 
 #include "Game/StateManager.h"
-#include "States/DebugState.h"
 
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
@@ -51,11 +52,9 @@
 
 constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
-CrazyCanvas::CrazyCanvas()
+CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 {
 	using namespace LambdaEngine;
-
-	Input::Disable();
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
@@ -85,6 +84,12 @@ CrazyCanvas::CrazyCanvas()
 
 	LoadRendererResources();
 
+	State* pStartingState = nullptr;
+	if (flagParser[{"-b", "--benchmark"}])
+		pStartingState = DBG_NEW BenchmarkState();
+	else
+		pStartingState = DBG_NEW PlaySessionState();
+	
 	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(DebugState), STATE_TRANSITION::PUSH);
 }
 
@@ -107,8 +112,6 @@ void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 
 void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 {
-	using namespace LambdaEngine;
-
 	float32 dt = (float32)delta.AsSeconds();
 }
 
@@ -119,9 +122,9 @@ void CrazyCanvas::Render(LambdaEngine::Timestamp delta)
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	Game* CreateGame(const argh::parser& flagParser)
 	{
-		return DBG_NEW CrazyCanvas();
+		return DBG_NEW CrazyCanvas(flagParser);
 	}
 }
 
@@ -183,32 +186,4 @@ bool CrazyCanvas::LoadRendererResources()
 	}
 
 	return true;
-}
-
-void CrazyCanvas::PrintBenchmarkResults()
-{
-	using namespace rapidjson;
-	using namespace LambdaEngine;
-
-	constexpr const float MB = 1000000.0f;
-
-	StringBuffer jsonStringBuffer;
-	PrettyWriter<StringBuffer> writer(jsonStringBuffer);
-
-	writer.StartObject();
-
-	writer.String("AverageFPS");
-	writer.Double(1.0f / RuntimeStats::GetAverageFrametime());
-	writer.String("PeakMemoryUsage");
-	writer.Double(RuntimeStats::GetPeakMemoryUsage() / MB);
-
-	writer.EndObject();
-
-	FILE* pFile = fopen("benchmark_results.json", "w");
-
-	if (pFile)
-	{
-		fputs(jsonStringBuffer.GetString(), pFile);
-		fclose(pFile);
-	}
 }

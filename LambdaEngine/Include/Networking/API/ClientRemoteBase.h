@@ -29,12 +29,14 @@ namespace LambdaEngine
 		virtual void Disconnect(const std::string& reason) override;
 		virtual void Release() override;
 		virtual bool IsConnected() override;
-		virtual bool SendUnreliable(NetworkSegment* packet) override;
-		virtual bool SendReliable(NetworkSegment* packet, IPacketListener* listener = nullptr) override;
+		virtual bool SendUnreliable(NetworkSegment* pPacket) override;
+		virtual bool SendReliable(NetworkSegment* pPacket, IPacketListener* pListener = nullptr) override;
 		virtual const IPEndPoint& GetEndPoint() const override;
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
 		virtual const NetworkStatistics* GetStatistics() const override;
+		bool SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener = nullptr);
+		bool SendUnreliableBroadcast(NetworkSegment* pPacket);
 
 	protected:		
 		ClientRemoteBase(const ClientRemoteDesc& desc);

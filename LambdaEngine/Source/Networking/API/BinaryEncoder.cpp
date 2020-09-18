@@ -72,8 +72,8 @@ namespace LambdaEngine
 
 	void BinaryEncoder::WriteString(const std::string& value)
 	{
-		WriteInt16(int16(value.length()));
-		WriteBuffer(value.c_str(), uint16(value.length()));
+		WriteUInt16((uint16)value.length());
+		WriteBuffer(value.c_str(), (uint16)value.length());
 	}
 
 	void BinaryEncoder::WriteBuffer(const char* buffer, uint16 size)

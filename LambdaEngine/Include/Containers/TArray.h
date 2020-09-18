@@ -77,27 +77,32 @@ namespace LambdaEngine
 				return Temp;
 			}
 
-			FORCEINLINE IteratorBase operator+(int32 Offset) const
+			FORCEINLINE IteratorBase operator+(int32 offset) const
 			{
 				IteratorBase Temp = *this;
-				return Temp += Offset;
+				return Temp += offset;
 			}
 
-			FORCEINLINE IteratorBase operator-(int32 Offset) const
+			FORCEINLINE IteratorBase operator-(int32 offset) const
 			{
 				IteratorBase Temp = *this;
-				return Temp -= Offset;
+				return Temp -= offset;
 			}
 
-			FORCEINLINE IteratorBase& operator+=(int32 Offset)
+			FORCEINLINE difference_type operator-(IteratorBase other) const
 			{
-				m_Ptr += Offset;
+				return static_cast<difference_type>(m_Ptr - other.m_Ptr);
+			}
+
+			FORCEINLINE IteratorBase& operator+=(int32 offset)
+			{
+				m_Ptr += offset;
 				return *this;
 			}
 
-			FORCEINLINE IteratorBase& operator-=(int32 Offset)
+			FORCEINLINE IteratorBase& operator-=(int32 offset)
 			{
-				m_Ptr -= Offset;
+				m_Ptr -= offset;
 				return *this;
 			}
 
@@ -190,27 +195,27 @@ namespace LambdaEngine
 				return Temp;
 			}
 
-			FORCEINLINE ReverseIteratorBase operator+(int32 Offset) const
+			FORCEINLINE ReverseIteratorBase operator+(int32 offset) const
 			{
 				ReverseIteratorBase Temp = *this;
-				return Temp += Offset;
+				return Temp += offset;
 			}
 
-			FORCEINLINE ReverseIteratorBase operator-(int32 Offset) const
+			FORCEINLINE ReverseIteratorBase operator-(int32 offset) const
 			{
 				ReverseIteratorBase Temp = *this;
-				return Temp -= Offset;
+				return Temp -= offset;
 			}
 
-			FORCEINLINE ReverseIteratorBase& operator+=(int32 Offset)
+			FORCEINLINE ReverseIteratorBase& operator+=(int32 offset)
 			{
-				m_Ptr -= Offset;
+				m_Ptr -= offset;
 				return *this;
 			}
 
-			FORCEINLINE ReverseIteratorBase& operator-=(int32 Offset)
+			FORCEINLINE ReverseIteratorBase& operator-=(int32 offset)
 			{
-				m_Ptr += Offset;
+				m_Ptr += offset;
 				return *this;
 			}
 

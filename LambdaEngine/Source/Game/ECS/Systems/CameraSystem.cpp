@@ -22,9 +22,9 @@ namespace LambdaEngine
 	bool CameraSystem::Init()
 	{
 		TransformComponents transformComponents;
-		transformComponents.Position.Permissions = R;
-		transformComponents.Scale.Permissions = R;
-		transformComponents.Rotation.Permissions = R;
+		transformComponents.Position.Permissions	= R;
+		transformComponents.Scale.Permissions		= R;
+		transformComponents.Rotation.Permissions	= R;
 
 		// Subscribe on entities with transform and viewProjectionMatrices. They are considered the camera.
 		{
@@ -62,15 +62,15 @@ namespace LambdaEngine
 				auto& rotComp = pECSCore->GetComponent<RotationComponent>(entity);
 
 				TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-				uint16 width = window->GetWidth();
-				uint16 height = window->GetHeight();
+				const uint16 width = window->GetWidth();
+				const uint16 height = window->GetHeight();
 				camComp.Jitter = glm::vec2((Random::Float32() - 0.5f) / (float)width, (Random::Float32() - 0.5f) / (float)height);
 				HandleInput(deltaTime, entity, camComp, viewProjComp, posComp, rotComp);
 			}
 		}
 	}
 
-	void CameraSystem::MainThreadTick(Timestamp deltaTime)
+	void CameraSystem::MainThreadTick(Timestamp)
 	{
 		if (m_VisbilityChanged)
 		{
@@ -86,16 +86,16 @@ namespace LambdaEngine
 
 	void CameraSystem::HandleInput(Timestamp delta, Entity entity, CameraComponent& camComp, ViewProjectionMatricesComponent& viewProjComp, PositionComponent& posComp, RotationComponent& rotComp)
 	{
-		auto& freeCamComp = ECSCore::GetInstance()->GetComponent<FreeCameraComponent>(entity);
+		const auto& freeCamComp = ECSCore::GetInstance()->GetComponent<FreeCameraComponent>(entity);
 
 		constexpr float CAMERA_MOUSE_SPEED = 10.0f;
 
 		float32 dt = float32(delta.AsSeconds());
 
 		glm::vec3 translation = {
-				dt * float(Input::IsKeyDown(EKey::KEY_D) - Input::IsKeyDown(EKey::KEY_A)),	// X: Right
-				dt * float(Input::IsKeyDown(EKey::KEY_Q) - Input::IsKeyDown(EKey::KEY_E)),	// Y: Up
-				dt * float(Input::IsKeyDown(EKey::KEY_W) - Input::IsKeyDown(EKey::KEY_S))	// Z: Forward
+				float(Input::IsKeyDown(EKey::KEY_D) - Input::IsKeyDown(EKey::KEY_A)),	// X: Right
+				float(Input::IsKeyDown(EKey::KEY_Q) - Input::IsKeyDown(EKey::KEY_E)),	// Y: Up
+				float(Input::IsKeyDown(EKey::KEY_W) - Input::IsKeyDown(EKey::KEY_S))	// Z: Forward
 		};
 
 		const glm::vec3 forward = GetForward(rotComp.Quaternion);
@@ -104,22 +104,22 @@ namespace LambdaEngine
 		if (glm::length2(translation) > glm::epsilon<float>())
 		{
 			const float shiftSpeedFactor = Input::IsKeyDown(EKey::KEY_LEFT_SHIFT) ? 2.0f : 1.0f;
-			translation = glm::normalize(translation) * freeCamComp.SpeedFactor * shiftSpeedFactor;
+			translation = glm::normalize(translation) * freeCamComp.SpeedFactor * shiftSpeedFactor * dt;
 
 			posComp.Position += translation.x * right + translation.y * GetUp(rotComp.Quaternion) + translation.z * forward;
 		}
 
 		// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
-		float addedPitch = dt * float(Input::IsKeyDown(EKey::KEY_UP) - Input::IsKeyDown(EKey::KEY_DOWN));
-		float addedYaw = dt * float(Input::IsKeyDown(EKey::KEY_RIGHT) - Input::IsKeyDown(EKey::KEY_LEFT));
+		float addedPitch	= dt * float(Input::IsKeyDown(EKey::KEY_DOWN) - Input::IsKeyDown(EKey::KEY_UP));
+		float addedYaw		= dt * float(Input::IsKeyDown(EKey::KEY_LEFT) - Input::IsKeyDown(EKey::KEY_RIGHT));
 
 		if (Input::IsKeyDown(EKey::KEY_C))
 		{
 			if (!m_CIsPressed)
 			{
-				m_MouseEnabled = !m_MouseEnabled;
-				m_VisbilityChanged = true;
-				m_CIsPressed = true;
+				m_MouseEnabled		= !m_MouseEnabled;
+				m_VisbilityChanged	= true;
+				m_CIsPressed		= true;
 			}
 		}
 		else if (Input::IsKeyUp(EKey::KEY_C))
@@ -132,29 +132,27 @@ namespace LambdaEngine
 			const MouseState& mouseState = Input::GetMouseState();
 
 			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-			uint16 width = window->GetWidth();
-			uint16 height = window->GetHeight();
+			const uint16 width = window->GetWidth();
+			const uint16 height = window->GetHeight();
 
-			glm::vec2 mouseDelta(mouseState.Position.x - (int)(width * 0.5), mouseState.Position.y - (int)(height * 0.5));
+			const glm::vec2 mouseDelta(mouseState.Position.x - (int)(width * 0.5), mouseState.Position.y - (int)(height * 0.5));
 			m_NewMousePos = glm::ivec2((int)(width * 0.5), (int)(height * 0.5));
 
 			if (glm::length(mouseDelta) > glm::epsilon<float>())
 			{
-				addedYaw -= freeCamComp.MouseSpeedFactor * (float)mouseDelta.x * dt;
-				addedPitch += freeCamComp.MouseSpeedFactor * (float)mouseDelta.y * dt;
+				addedYaw	-= freeCamComp.MouseSpeedFactor * (float)mouseDelta.x * dt;
+				addedPitch	+= freeCamComp.MouseSpeedFactor * (float)mouseDelta.y * dt;
 			}
 		}
 
 		const float MAX_PITCH = glm::half_pi<float>() - 0.01f;
 
-		static float s_TotalPitch = 0.f;
-		static float s_TotalYaw = 0.f;
-		s_TotalPitch = glm::clamp(s_TotalPitch + addedPitch, -MAX_PITCH, MAX_PITCH);
-		s_TotalYaw += addedYaw;
-		glm::quat pitchRot = glm::angleAxis(s_TotalPitch, glm::vec3(1.f, 0.f, 0.f));
-		glm::quat yawRot = glm::angleAxis(s_TotalYaw, g_DefaultUp);
-		glm::quat rot = yawRot * pitchRot;
-		rotComp.Quaternion = rot;
+		const float currentPitch = glm::clamp(GetPitch(forward) + addedPitch, -MAX_PITCH, MAX_PITCH);
+		const float currentYaw = GetYaw(forward) + addedYaw;
+
+		rotComp.Quaternion =
+			glm::angleAxis(currentYaw, g_DefaultUp) *		// Yaw
+			glm::angleAxis(currentPitch, g_DefaultRight);	// Pitch
 
 		viewProjComp.View = glm::lookAt(posComp.Position, posComp.Position + GetForward(rotComp.Quaternion), g_DefaultUp);
 		camComp.ViewInv = glm::inverse(viewProjComp.View);
