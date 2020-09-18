@@ -98,7 +98,6 @@ namespace LambdaEngine
 			
 			return false;
 		}
-
 		m_ShaderHandleStorageBuffer->Unmap();
 
 		CommandAllocator* pCommandAllocator = m_pDevice->CreateCommandAllocator("Ray Tracing Pipeline SBT Copy", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
@@ -125,7 +124,7 @@ namespace LambdaEngine
 		{
 			VkDeviceSize baseOffset = hitSBTOffset + s * hitSBTStride;
 			pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), hitGroupHandleOffset,	m_SBTBuffer.Get(), baseOffset,							shaderGroupHandleSize);
-			pCommandList->CopyBuffer(m_ShaderRecordsBuffer.Get(),		0*s * colorSize,	m_SBTBuffer.Get(), baseOffset + shaderGroupHandleSize, colorSize);
+			//pCommandList->CopyBuffer(m_ShaderRecordsBuffer.Get(),		0*s * colorSize,	m_SBTBuffer.Get(), baseOffset + shaderGroupHandleSize, colorSize);
 		}
 
 		pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), missGroupHandleOffset,	m_SBTBuffer.Get(), missSBTOffset, missSize);

@@ -52,7 +52,7 @@ void main()
     const int 		payload       		= 0;
 
     //Send Ray
-    traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin, Tmin, direction, Tmax, payload);
+    traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, vec3(0.0f), Tmin, vec3(1.0f, 0.0f, 0.0f), Tmax, payload);
 
     imageStore(u_OutputTexture, pixelCoords, vec4(vec3(s_PrimaryPayload.Distance), 1.0f));
 }
