@@ -98,7 +98,7 @@ void BenchmarkState::PrintBenchmarkResults()
 
 	writer.String("AverageFPS");
 	writer.Double(1.0f / RuntimeStats::GetAverageFrametime());
-	writer.String("PeakMemoryUsage");
+	writer.String("PeakRAM");
 	writer.Double(RuntimeStats::GetPeakMemoryUsage() / MB);
 
 	writer.EndObject();
