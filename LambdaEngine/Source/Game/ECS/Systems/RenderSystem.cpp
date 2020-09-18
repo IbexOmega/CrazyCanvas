@@ -28,6 +28,8 @@ namespace LambdaEngine
 {
 	RenderSystem RenderSystem::s_Instance;
 
+	constexpr const uint32 TEMP_DRAW_ARG_MASK = UINT32_MAX;
+
 	bool RenderSystem::Init()
 	{
 		GraphicsDeviceFeatureDesc deviceFeatures;
@@ -165,6 +167,7 @@ namespace LambdaEngine
 				m_ppAmbientOcclusionMapViews[i]	= pDefaultColorMapView;
 				m_ppRoughnessMapViews[i]		= pDefaultColorMapView;
 				m_ppMetallicMapViews[i]			= pDefaultColorMapView;
+				m_pMaterialInstanceCounts[i]	= 0;
 			}
 		}
 
@@ -175,18 +178,18 @@ namespace LambdaEngine
 
 	bool RenderSystem::Release()
 	{
-		for (MeshAndInstancesMap::iterator meshAndInstanceIt = m_MeshAndInstancesMap.begin(); meshAndInstanceIt != m_MeshAndInstancesMap.end(); meshAndInstanceIt++)
+		for (MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
 		{
-			SAFERELEASE(meshAndInstanceIt->second.pBLAS);
-			SAFERELEASE(meshAndInstanceIt->second.pVertexBuffer);
-			SAFERELEASE(meshAndInstanceIt->second.pIndexBuffer);
-			SAFERELEASE(meshAndInstanceIt->second.pASInstanceBuffer);
-			SAFERELEASE(meshAndInstanceIt->second.pRasterInstanceBuffer);
+			SAFERELEASE(meshAndInstancesIt->second.pBLAS);
+			SAFERELEASE(meshAndInstancesIt->second.pVertexBuffer);
+			SAFERELEASE(meshAndInstancesIt->second.pIndexBuffer);
+			SAFERELEASE(meshAndInstancesIt->second.pASInstanceBuffer);
+			SAFERELEASE(meshAndInstancesIt->second.pRasterInstanceBuffer);
 
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 			{
-				SAFERELEASE(meshAndInstanceIt->second.ppASInstanceStagingBuffers[b]);
-				SAFERELEASE(meshAndInstanceIt->second.ppRasterInstanceStagingBuffers[b]);
+				SAFERELEASE(meshAndInstancesIt->second.ppASInstanceStagingBuffers[b]);
+				SAFERELEASE(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
 			}
 		}
 
@@ -337,7 +340,7 @@ namespace LambdaEngine
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
-		uint32 materialSlot;
+		uint32 materialSlot = MAX_UNIQUE_MATERIALS;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
 		MeshKey meshKey;
@@ -345,7 +348,7 @@ namespace LambdaEngine
 		meshKey.IsAnimated		= animated;
 		meshKey.EntityID		= entity;
 
-		//Get MeshAndInstanceIterator
+		//Get meshAndInstancesIterator
 		{
 			meshAndInstancesIt = m_MeshAndInstancesMap.find(meshKey);
 
@@ -429,10 +432,30 @@ namespace LambdaEngine
 			if (materialSlotIt == m_MaterialMap.end())
 			{
 				const Material* pMaterial = ResourceManager::GetMaterial(materialGUID);
-				VALIDATE(pMaterial != nullptr && !m_FreeMaterialSlots.empty());
+				VALIDATE(pMaterial != nullptr);
 
-				materialSlot = m_FreeMaterialSlots.top();
-				m_FreeMaterialSlots.pop();
+				if (!m_FreeMaterialSlots.empty())
+				{
+					materialSlot = m_FreeMaterialSlots.top();
+					m_FreeMaterialSlots.pop();
+				}
+				else
+				{
+					for (uint32 m = 0; m < MAX_UNIQUE_MATERIALS; m++)
+					{
+						if (m_pMaterialInstanceCounts[m] == 0)
+						{
+							materialSlot = m;
+							break;
+						}
+					}
+
+					if (materialSlot == MAX_UNIQUE_MATERIALS)
+					{
+						LOG_WARNING("[RenderSystem]: No free Material Slots, Entity will be given a random material");
+						materialSlot = 0;
+					}
+				}
 
 				m_ppAlbedoMaps[materialSlot]				= pMaterial->pAlbedoMap;
 				m_ppNormalMaps[materialSlot]				= pMaterial->pNormalMap;
@@ -453,6 +476,8 @@ namespace LambdaEngine
 			{
 				materialSlot = materialSlotIt->second;
 			}
+
+			m_pMaterialInstanceCounts[materialSlot]++;
 		}
 
 		InstanceKey instanceKey = {};
@@ -482,7 +507,7 @@ namespace LambdaEngine
 		m_DirtyInstanceBuffers.insert(&meshAndInstancesIt->second);
 		
 		//Todo: This needs to come from the Entity in some way
-		uint32 drawArgHash = UINT32_MAX;
+		uint32 drawArgHash = TEMP_DRAW_ARG_MASK;
 		if (m_RequiredDrawArgs.count(drawArgHash))
 		{
 			m_DirtyDrawArgs.insert(drawArgHash);
@@ -507,6 +532,13 @@ namespace LambdaEngine
 			return;
 		}
 
+		const Instance& rasterInstance = meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex];
+
+		//Update Material Instance Counts
+		{
+			m_pMaterialInstanceCounts[rasterInstance.MaterialSlot]--;
+		}
+
 		if (m_RayTracingEnabled)
 		{
 			meshAndInstancesIt->second.ASInstances.Erase(meshAndInstancesIt->second.ASInstances.Begin() + instanceKeyIt->second.InstanceIndex);
@@ -515,6 +547,27 @@ namespace LambdaEngine
 
 		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + instanceKeyIt->second.InstanceIndex);
 		m_DirtyInstanceBuffers.insert(&meshAndInstancesIt->second);
+
+		//Unload Mesh, Todo: Should we always do this?
+		if (meshAndInstancesIt->second.RasterInstances.IsEmpty())
+		{
+			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBLAS);
+			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexBuffer);
+			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pIndexBuffer);
+			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pASInstanceBuffer);
+			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pRasterInstanceBuffer);
+
+			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
+			{
+				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.ppASInstanceStagingBuffers[b]);
+				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
+			}
+
+			m_DirtyDrawArgs = m_RequiredDrawArgs;
+			m_TLASDirty = true;
+
+			m_MeshAndInstancesMap.erase(meshAndInstancesIt);
+		}
 	}
 
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& transform)
@@ -577,17 +630,17 @@ namespace LambdaEngine
 			ExecutePendingBufferUpdates(pGraphicsCommandList);
 		}
 
-		//Update Instance Data
-		{
-			UpdateInstanceBuffers(pGraphicsCommandList);
-		}
-
 		//Update Per Frame Data
 		{
 			m_PerFrameData.FrameIndex = 0;
 			m_PerFrameData.RandomSeed = uint32(Random::Int32(INT32_MIN, INT32_MAX));
 
 			UpdatePerFrameBuffer(pGraphicsCommandList);
+		}
+
+		//Update Instance Data
+		{
+			UpdateInstanceBuffers(pGraphicsCommandList);
 		}
 
 		//Update Empty MaterialData

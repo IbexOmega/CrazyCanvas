@@ -227,6 +227,7 @@ namespace LambdaEngine
 		TextureView*		m_ppRoughnessMapViews[MAX_UNIQUE_MATERIALS];
 		TextureView*		m_ppMetallicMapViews[MAX_UNIQUE_MATERIALS];
 		MaterialProperties	m_pMaterialProperties[MAX_UNIQUE_MATERIALS];
+		uint32				m_pMaterialInstanceCounts[MAX_UNIQUE_MATERIALS];
 		Buffer*				m_ppMaterialParametersStagingBuffers[BACK_BUFFER_COUNT];
 		Buffer*				m_pMaterialParametersBuffer				= nullptr;
 		TStack<uint32>		m_FreeMaterialSlots;
