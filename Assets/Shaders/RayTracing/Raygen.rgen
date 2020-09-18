@@ -39,9 +39,6 @@ void main()
     vec3 direction;
     GenerateCameraRay(d, origin, direction);
 
-   // vec2 u = Hammersley(gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x, gl_LaunchSizeEXT.x * gl_LaunchSizeEXT.y);
-    //SShapeSample shapeSample = UniformSampleUnitSphere(u);
-
     const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
     const uint 		cullMask           	= 0xFF;
     const uint 		sbtRecordOffset    	= 0;
@@ -52,7 +49,7 @@ void main()
     const int 		payload       		= 0;
 
     //Send Ray
-    traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, vec3(0.0f), Tmin, vec3(1.0f, 0.0f, 0.0f), Tmax, payload);
+    traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin, Tmin, direction, Tmax, payload);
 
     imageStore(u_OutputTexture, pixelCoords, vec4(vec3(s_PrimaryPayload.Distance), 1.0f));
 }

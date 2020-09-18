@@ -34,21 +34,21 @@ void DebugState::Init()
 
 	//Scene
 	{
-		//TArray<MeshComponent> meshComponents;
-		//ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
+		TArray<MeshComponent> meshComponents;
+		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
 
-		//glm::vec3 position(0.0f, 0.0f, 0.0f);
-		//glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		//glm::vec3 scale(0.01f);
+		glm::vec3 position(0.0f, 0.0f, 0.0f);
+		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+		glm::vec3 scale(0.01f);
 
-		//for (uint32 i = 0; i < meshComponents.GetSize(); i++)
-		//{
-		//	Entity entity = ECSCore::GetInstance()->CreateEntity();
-		//	ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { position, true });
-		//	ECSCore::GetInstance()->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-		//	ECSCore::GetInstance()->AddComponent<ScaleComponent>(entity, { scale, true });
-		//	ECSCore::GetInstance()->AddComponent<MeshComponent>(entity, meshComponents[i]);
-		//}
+		for (uint32 i = 0; i < meshComponents.GetSize(); i++)
+		{
+			Entity entity = ECSCore::GetInstance()->CreateEntity();
+			ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { position, true });
+			ECSCore::GetInstance()->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+			ECSCore::GetInstance()->AddComponent<ScaleComponent>(entity, { scale, true });
+			ECSCore::GetInstance()->AddComponent<MeshComponent>(entity, meshComponents[i]);
+		}
 	}
 
 	GUID_Lambda sphereMeshGUID = ResourceManager::LoadMeshFromFile("triangle.obj");

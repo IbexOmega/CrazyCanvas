@@ -246,11 +246,13 @@ namespace LambdaEngine
 			auto& rotationComp	= pRotationComponents->GetData(entity);
 			auto& scaleComp		= pScaleComponents->GetData(entity);
 
-			if (positionComp.Dirty || rotationComp.Dirty || scaleComp.Dirty)
+			//if (positionComp.Dirty || rotationComp.Dirty || scaleComp.Dirty)
 			{
 				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
 				transform *= glm::toMat4(rotationComp.Quaternion);
 				transform = glm::scale(transform, scaleComp.Scale);
+
+				rotationComp.Quaternion = glm::rotate(rotationComp.Quaternion, glm::degrees(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 				UpdateTransform(entity, transform);
 
@@ -997,7 +999,7 @@ namespace LambdaEngine
 					AccelerationStructureDesc blasCreateDesc = {};
 					blasCreateDesc.DebugName	= "BLAS";
 					blasCreateDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_BOTTOM;
-					blasCreateDesc.Flags		= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+					//blasCreateDesc.Flags		= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
 					blasCreateDesc.Geometries	= { createGeometryDesc };
 
 					pDirtyBLAS->pBLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&blasCreateDesc);
@@ -1013,7 +1015,7 @@ namespace LambdaEngine
 
 				BuildBottomLevelAccelerationStructureDesc blasBuildDesc = {};
 				blasBuildDesc.pAccelerationStructure	= pDirtyBLAS->pBLAS;
-				blasBuildDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+				//blasBuildDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
 				blasBuildDesc.Update					= update;
 				blasBuildDesc.Geometries				= { buildGeometryDesc };
 

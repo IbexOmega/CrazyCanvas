@@ -304,7 +304,6 @@ namespace LambdaEngine
 	private:
 		bool IsAliasing(VkDeviceSize aOffset, VkDeviceSize aSize, VkDeviceSize bOffset, VkDeviceSize pageGranularity)
 		{
-			VALIDATE((aOffset + aSize) <= bOffset);
 			VALIDATE(aSize > 0);
 			VALIDATE(pageGranularity > 0);
 			
