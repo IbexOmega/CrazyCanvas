@@ -3,7 +3,6 @@
 #include "Application/API/CommonApplication.h"
 #include "ECS/ECSCore.h"
 #include "Engine/EngineConfig.h"
-#include "Game/Camera.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
@@ -70,7 +69,6 @@ void BenchmarkState::Init()
 void BenchmarkState::Tick(float dt)
 {
 	m_CameraTrack.Tick(dt);
-	m_pCamera->Update();
 
 	if (m_CameraTrack.HasReachedEnd())
 	{

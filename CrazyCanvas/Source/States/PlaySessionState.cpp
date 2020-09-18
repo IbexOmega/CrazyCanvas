@@ -3,7 +3,6 @@
 #include "Application/API/CommonApplication.h"
 #include "ECS/ECSCore.h"
 #include "Engine/EngineConfig.h"
-#include "Game/Camera.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"

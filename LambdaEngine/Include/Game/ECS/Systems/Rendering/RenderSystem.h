@@ -25,8 +25,6 @@
 
 #include "Rendering/RenderGraphTypes.h"
 
-#include "Game/Camera.h"
-
 namespace LambdaEngine
 {
 	class Window;
