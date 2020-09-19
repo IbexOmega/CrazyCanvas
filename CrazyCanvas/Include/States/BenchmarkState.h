@@ -1,13 +1,13 @@
 #pragma once
 
-#include "CameraTrack.h"
 #include "Game/State.h"
+#include "ECS/Entity.h"
 
 class BenchmarkState : public LambdaEngine::State
 {
 public:
 	BenchmarkState();
-	~BenchmarkState() = default;
+	~BenchmarkState();
 
 	void Init() override final;
 
@@ -20,6 +20,5 @@ private:
 	static void PrintBenchmarkResults();
 
 private:
-	std::unique_ptr<LambdaEngine::Camera> m_pCamera;
-	CameraTrack m_CameraTrack;
+	LambdaEngine::Entity m_Camera;
 };

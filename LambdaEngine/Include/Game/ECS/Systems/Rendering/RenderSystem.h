@@ -25,8 +25,6 @@
 
 #include "Rendering/RenderGraphTypes.h"
 
-#include "Game/Camera.h"
-
 namespace LambdaEngine
 {
 	class Window;
@@ -85,7 +83,7 @@ namespace LambdaEngine
 					if (!other.IsAnimated || EntityID != other.EntityID)
 						return false;
 				}
-				
+
 				return true;
 			}
 		};
@@ -125,6 +123,20 @@ namespace LambdaEngine
 		using MeshAndInstancesMap	= THashTable<MeshKey, MeshEntry, MeshKeyHasher>;
 		using MaterialMap			= THashTable<GUID_Lambda, uint32>;
 
+		struct CameraData
+		{
+			glm::mat4 Projection = glm::mat4(1.0f);
+			glm::mat4 View = glm::mat4(1.0f);
+			glm::mat4 PrevProjection = glm::mat4(1.0f);
+			glm::mat4 PrevView = glm::mat4(1.0f);
+			glm::mat4 ViewInv = glm::mat4(1.0f);
+			glm::mat4 ProjectionInv = glm::mat4(1.0f);
+			glm::vec4 Position = glm::vec4(0.0f);
+			glm::vec4 Right = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			glm::vec4 Up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec2 Jitter = glm::vec2(0.0f);
+		};
+
 		struct PerFrameBuffer
 		{
 			CameraData CamData;
@@ -142,21 +154,19 @@ namespace LambdaEngine
 
 		bool Release();
 
-		void Tick(float dt);
+		void Tick(Timestamp deltaTime) override final;
 
 		bool Render();
-
-		void SetCamera(const Camera* pCamera);
 
 		CommandList* AcquireGraphicsCopyCommandList();
 		CommandList* AcquireComputeCopyCommandList();
 
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
 
-		RenderGraph*	GetRenderGraph()	{ return m_pRenderGraph;	}
-		uint64			GetFrameIndex()		{ return m_FrameIndex;		}
-		uint64			GetModFrameIndex()	{ return m_ModFrameIndex;	}
-		uint32			GetBufferIndex()	{ return m_BackBufferIndex; }
+		RenderGraph*	GetRenderGraph()			{ return m_pRenderGraph;	}
+		uint64			GetFrameIndex() const	 	{ return m_FrameIndex; }
+		uint64			GetModFrameIndex() const	{ return m_ModFrameIndex;	}
+		uint32			GetBufferIndex() const	 	{ return m_BackBufferIndex; }
 
 	public:
 		static RenderSystem& GetInstance() { return s_Instance; }
