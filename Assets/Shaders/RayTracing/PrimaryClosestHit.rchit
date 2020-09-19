@@ -19,7 +19,7 @@ layout(buffer_reference, buffer_reference_align = 16) buffer VertexBuffer
 
 layout(buffer_reference, buffer_reference_align = 4, scalar) buffer IndexBuffer 
 {
-    uint i[];
+    uvec3 t[];
 };
 
 layout(shaderRecordEXT) buffer SBTData 
@@ -37,7 +37,7 @@ layout(location = 0) rayPayloadInEXT SPrimaryPayload s_PrimaryPayload;
 
 void main() 
 {
-    const uint idx = indices.i[3 * gl_PrimitiveID];
+    const uvec3 tri = indices.t[gl_PrimitiveID];
 
-    s_PrimaryPayload.Distance = float(idx) / 100.0f;
+    s_PrimaryPayload.Distance = float(tri.x) / 100.0f;
 }
