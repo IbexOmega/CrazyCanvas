@@ -83,10 +83,13 @@ namespace LambdaEngine
 		auto indexItr = m_EntityToIndex.find(entity);
 		VALIDATE_MSG(indexItr != m_EntityToIndex.end(), "Trying to remove a component that does not exist!");
 
-		// Swap the removed component with the last component.
 		uint32 currentIndex = indexItr->second;
+
+		// Swap the removed component with the last component.
 		m_Data[currentIndex] = m_Data.GetBack();
 		m_IDs[currentIndex] = m_IDs.GetBack();
+		m_Data.PopBack();
+		m_IDs.PopBack();
 
 		// Update entity-index maps.
 		m_EntityToIndex[m_IDs.GetBack()] = currentIndex;
