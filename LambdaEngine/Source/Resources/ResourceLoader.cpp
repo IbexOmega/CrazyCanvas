@@ -172,13 +172,24 @@ namespace LambdaEngine
 	/*
 	* Helpers
 	*/
-	static void ConvertBackslashes(std::string& string)
+	static void ConvertBackslashes(String& string)
 	{
 		size_t pos = string.find_first_of('\\');
-		while (pos != std::string::npos)
+		while (pos != String::npos)
 		{
 			string.replace(pos, 1, 1, '/');
 			pos = string.find_first_of('\\', pos + 1);
+		}
+	}
+
+	// Removes extra data after the fileending (Some materials has extra data after file ending)
+	static void RemoveExtraData(String& string)
+	{
+		size_t dotPos = string.find_first_of('.');
+		size_t endPos = string.find_first_of(' ', dotPos);
+		if (dotPos != String::npos && endPos != String::npos)
+		{
+			string = string.substr(0, endPos);
 		}
 	}
 	
@@ -250,6 +261,7 @@ namespace LambdaEngine
 
 			String name = str.C_Str();
 			ConvertBackslashes(name);
+			RemoveExtraData(name);
 
 			auto loadedTexture = context.LoadedTextures.find(name);
 			if (loadedTexture == context.LoadedTextures.end())
