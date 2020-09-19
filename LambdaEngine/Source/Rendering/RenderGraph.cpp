@@ -45,6 +45,8 @@ namespace LambdaEngine
 		: m_pGraphicsDevice(pGraphicsDevice)
 	{
 		EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &RenderGraph::OnWindowResized);
+		EventQueue::RegisterEventHandler<PreSwapChainRecreatedEvent>(this, &RenderGraph::OnPreSwapChainRecreated);
+		EventQueue::RegisterEventHandler<PostSwapChainRecreatedEvent>(this, &RenderGraph::OnPostSwapChainRecreated);
 		EventQueue::RegisterEventHandler<PipelineStatesRecompiledEvent>(this, &RenderGraph::OnPipelineStatesRecompiled);
 	}
 
@@ -967,6 +969,70 @@ namespace LambdaEngine
 		{
 			return false;
 		}
+	}
+
+	bool RenderGraph::OnPreSwapChainRecreated(const PreSwapChainRecreatedEvent& swapChainEvent)
+	{
+		auto backBufferResourceIt = m_ResourceMap.find(RENDER_GRAPH_BACK_BUFFER_ATTACHMENT);
+
+		if (backBufferResourceIt != m_ResourceMap.end())
+		{
+			for (const ResourceBinding& binding : backBufferResourceIt->second.ResourceBindings)
+			{
+				if (binding.pRenderStage->UsesCustomRenderer)
+				{
+					binding.pRenderStage->pCustomRenderer->PreTexturesDescriptorSetWrite();
+				}
+				else
+				{
+					for (uint32 b = 0; b < m_BackBufferCount; b++)
+					{
+						DescriptorSet* pSrcDescriptorSet = binding.pRenderStage->ppTextureDescriptorSets[b];
+						DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), binding.pRenderStage->pPipelineLayout, binding.pRenderStage->TextureSetIndex, m_pDescriptorHeap);
+						m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
+						m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+						binding.pRenderStage->ppTextureDescriptorSets[b] = pDescriptorSet;
+					}
+				}
+			}
+		}
+
+		return true;
+	}
+
+	bool RenderGraph::OnPostSwapChainRecreated(const PostSwapChainRecreatedEvent& swapChainEvent)
+	{
+		auto backBufferResourceIt = m_ResourceMap.find(RENDER_GRAPH_BACK_BUFFER_ATTACHMENT);
+
+		if (backBufferResourceIt != m_ResourceMap.end())
+		{
+			for (const ResourceBinding& binding : backBufferResourceIt->second.ResourceBindings)
+			{
+				if (binding.pRenderStage->UsesCustomRenderer)
+				{
+					binding.pRenderStage->pCustomRenderer->UpdateTextureResource(
+						backBufferResourceIt->second.Name,
+						backBufferResourceIt->second.Texture.PerImageTextureViews.GetData(),
+						1,
+						true);
+				}
+				else
+				{
+					for (uint32 b = 0; b < m_BackBufferCount; b++)
+					{
+						binding.pRenderStage->ppTextureDescriptorSets[b]->WriteTextureDescriptors(
+							&backBufferResourceIt->second.Texture.PerImageTextureViews[b],
+							&backBufferResourceIt->second.Texture.Samplers[b],
+							binding.TextureState,
+							binding.Binding,
+							1,
+							binding.DescriptorType);
+					}
+				}
+			}
+		}
+
+		return true;
 	}
 
 	bool RenderGraph::OnPipelineStatesRecompiled(const PipelineStatesRecompiledEvent& event)

@@ -23,6 +23,7 @@
 
 #include "Application/API/Events/WindowEvents.h"
 #include "Application/API/Events/DebugEvents.h"
+#include "Application/API/Events/RenderEvents.h"
 
 namespace LambdaEngine
 {
@@ -375,6 +376,8 @@ namespace LambdaEngine
 
 	private:
 		bool OnWindowResized(const WindowResizedEvent& windowEvent);
+		bool OnPreSwapChainRecreated(const PreSwapChainRecreatedEvent& swapChainEvent);
+		bool OnPostSwapChainRecreated(const PostSwapChainRecreatedEvent& swapChainEvent);
 		bool OnPipelineStatesRecompiled(const PipelineStatesRecompiledEvent& event);
 
 		void ReleasePipelineStages();
