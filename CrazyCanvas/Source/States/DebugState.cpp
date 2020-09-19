@@ -35,11 +35,11 @@ void DebugState::Init()
 	//Scene
 	{
 		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
+		ResourceManager::LoadSceneFromFile("Testing/Testing.obj", meshComponents);
 
 		glm::vec3 position(0.0f, 0.0f, 0.0f);
 		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(0.01f);
+		glm::vec3 scale(1.0f);
 
 		for (uint32 i = 0; i < meshComponents.GetSize(); i++)
 		{

@@ -246,13 +246,13 @@ namespace LambdaEngine
 			auto& rotationComp	= pRotationComponents->GetData(entity);
 			auto& scaleComp		= pScaleComponents->GetData(entity);
 
-			//if (positionComp.Dirty || rotationComp.Dirty || scaleComp.Dirty)
+			if (positionComp.Dirty || rotationComp.Dirty || scaleComp.Dirty)
 			{
 				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
 				transform *= glm::toMat4(rotationComp.Quaternion);
 				transform = glm::scale(transform, scaleComp.Scale);
 
-				rotationComp.Quaternion = glm::rotate(rotationComp.Quaternion, glm::degrees(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+				//rotationComp.Quaternion = glm::rotate(rotationComp.Quaternion, glm::degrees(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 				UpdateTransform(entity, transform);
 
@@ -919,7 +919,7 @@ namespace LambdaEngine
 
 				for (AccelerationStructureInstance& asInstance : meshAndInstancesIt->second.ASInstances)
 				{
-					asInstance.SBTRecordOffset = shaderRecordOffset;
+					asInstance.SBTRecordOffset = 0;// shaderRecordOffset;
 				}
 
 				m_SBTRecords.PushBack(meshAndInstancesIt->second.ShaderRecord);
