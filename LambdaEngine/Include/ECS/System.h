@@ -5,6 +5,8 @@
 #include "ECS/EntitySubscriber.h"
 #include "ECS/RegularWorker.h"
 
+#include "Time/API/Timestamp.h"
+
 #include <functional>
 #include <typeindex>
 
@@ -19,7 +21,7 @@ namespace LambdaEngine
     class ComponentHandler;
 
     // A system processes components each frame in the tick function
-    class System : private EntitySubscriber, private RegularWorker
+    class LAMBDA_API System : private EntitySubscriber, private RegularWorker
     {
     public:
         // Registers the system in the system handler
@@ -28,7 +30,7 @@ namespace LambdaEngine
         // Deregisters system
         virtual ~System() = default;
 
-        virtual void Tick(float dt) = 0;
+        virtual void Tick(Timestamp deltaTime) = 0;
 
     protected:
         void RegisterSystem(const SystemRegistration& systemRegistration);
