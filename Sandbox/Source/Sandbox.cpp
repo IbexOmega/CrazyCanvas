@@ -48,6 +48,7 @@
 #include "Math/Random.h"
 #include "Debug/Profiler.h"
 
+#include <argh/argh.h>
 #include <imgui.h>
 
 constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
@@ -182,7 +183,7 @@ bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	static bool geometryAudioActive = true;
 	static bool reverbSphereActive = true;
 
-	if (event.Key == EKey::KEY_KEYPAD_5)
+	if (event.Key == EKey::KEY_5)
 	{
 		RenderAPI::GetGraphicsQueue()->Flush();
 		RenderAPI::GetComputeQueue()->Flush();
@@ -199,6 +200,7 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	using namespace LambdaEngine;
 
 	m_pRenderGraphEditor->Update();
+	Profiler::Tick(delta);
 	Render(delta);
 }
 
@@ -226,9 +228,9 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 			if (m_DebuggingWindow)
 			{
-				Profiler::Render(delta);
+				Profiler::Render();
 			}
-			
+
 			if (m_ShowTextureDebuggingWindow)
 			{
 				if (ImGui::Begin("Texture Debugging"))
@@ -290,8 +292,9 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	Game* CreateGame(const argh::parser& flagParser)
 	{
+		UNREFERENCED_VARIABLE(flagParser);
 		Sandbox* pSandbox = DBG_NEW Sandbox();
 		return pSandbox;
 	}
@@ -373,7 +376,7 @@ bool Sandbox::LoadRendererResources()
 		pointLightsBuffer[0].Transforms[3]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f));
 		pointLightsBuffer[0].Transforms[4]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
 		pointLightsBuffer[0].Transforms[5]		= pointLightProj * glm::lookAt(pointLightPosition0, pointLightPosition0 + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f));
-		
+
 		pointLightsBuffer[1].Transforms[0]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
 		pointLightsBuffer[1].Transforms[1]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f));
 		pointLightsBuffer[1].Transforms[2]		= pointLightProj * glm::lookAt(pointLightPosition1, pointLightPosition1 + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f));
@@ -409,7 +412,7 @@ bool Sandbox::LoadRendererResources()
 		pushConstantUpdate.DataSize			= sizeof(pointLightPushConstantData);
 
 		pushConstantUpdate.RenderStageName	= "POINT_LIGHT_SHADOWMAPS";
-		
+
 		RenderSystem::GetInstance().GetRenderGraph()->UpdatePushConstants(&pushConstantUpdate);
 
 		pushConstantUpdate.RenderStageName	= "DEMO";

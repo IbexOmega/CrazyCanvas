@@ -116,6 +116,10 @@ namespace LambdaEngine
 
 		pSegment->m_SizeOfBuffer = 0;
 		m_SegmentsFree.PushBack(pSegment);
+
+#ifdef LAMBDA_CONFIG_DEBUG
+		ASSERT(m_SegmentsFree.GetSize() <= m_Segments.GetSize());
+#endif
 	}
 
 	void SegmentPool::Reset()

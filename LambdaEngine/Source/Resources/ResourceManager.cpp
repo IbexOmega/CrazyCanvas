@@ -8,7 +8,10 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Containers/TUniquePtr.h"
+
 #include <utility>
+#include <unordered_set>
 
 #define SAFEDELETE_ALL(map)     for (auto it = map.begin(); it != map.end(); it++) { SAFEDELETE(it->second); } map.clear()
 #define SAFERELEASE_ALL(map)    for (auto it = map.begin(); it != map.end(); it++) { SAFERELEASE(it->second); } map.clear()
@@ -147,9 +150,9 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedMesh					= &s_Meshes[guid]; //Creates new entry if not existing
-			s_MeshNamesToGUIDs[filename]	= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedMesh = &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshNamesToGUIDs[filename] = guid;
 		}
 
 		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename);
@@ -168,9 +171,9 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedMesh					= &s_Meshes[guid]; //Creates new entry if not existing
-			s_MeshNamesToGUIDs[name]		= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedMesh = &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshNamesToGUIDs[name] = guid;
 		}
 
 		(*ppMappedMesh) = ResourceLoader::LoadMeshFromMemory(pVertices, numVertices, pIndices, numIndices);
@@ -189,39 +192,39 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedMaterial				= &s_Materials[guid]; //Creates new entry if not existing
-			s_MaterialNamesToGUIDs[name]	= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedMaterial = &s_Materials[guid]; //Creates new entry if not existing
+			s_MaterialNamesToGUIDs[name] = guid;
 		}
 
 		(*ppMappedMaterial) = DBG_NEW Material();
 
-		Texture* pAlbedoMap							= albedoMap				!= GUID_NONE ? s_Textures[albedoMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		Texture* pNormalMap							= normalMap				!= GUID_NONE ? s_Textures[normalMap]			: s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-		Texture* pAmbientOcclusionMap				= ambientOcclusionMap	!= GUID_NONE ? s_Textures[ambientOcclusionMap]	: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		Texture* pMetallicMap						= metallicMap			!= GUID_NONE ? s_Textures[metallicMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		Texture* pRoughnessMap						= roughnessMap			!= GUID_NONE ? s_Textures[roughnessMap]			: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pAlbedoMap = albedoMap != GUID_NONE ? s_Textures[albedoMap] : s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pNormalMap = normalMap != GUID_NONE ? s_Textures[normalMap] : s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		Texture* pAmbientOcclusionMap = ambientOcclusionMap != GUID_NONE ? s_Textures[ambientOcclusionMap] : s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pMetallicMap = metallicMap != GUID_NONE ? s_Textures[metallicMap] : s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pRoughnessMap = roughnessMap != GUID_NONE ? s_Textures[roughnessMap] : s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
-		TextureView* pAlbedoMapView					= albedoMap				!= GUID_NONE ? s_TextureViews[albedoMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		TextureView* pNormalMapView					= normalMap				!= GUID_NONE ? s_TextureViews[normalMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-		TextureView* pAmbientOcclusionMapView		= ambientOcclusionMap	!= GUID_NONE ? s_TextureViews[ambientOcclusionMap]	: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		TextureView* pMetallicMapView				= metallicMap			!= GUID_NONE ? s_TextureViews[metallicMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		TextureView* pRoughnessMapView				= roughnessMap			!= GUID_NONE ? s_TextureViews[roughnessMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		
-		(*ppMappedMaterial)->Properties					= properties;
+		TextureView* pAlbedoMapView = albedoMap != GUID_NONE ? s_TextureViews[albedoMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pNormalMapView = normalMap != GUID_NONE ? s_TextureViews[normalMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		TextureView* pAmbientOcclusionMapView = ambientOcclusionMap != GUID_NONE ? s_TextureViews[ambientOcclusionMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pMetallicMapView = metallicMap != GUID_NONE ? s_TextureViews[metallicMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pRoughnessMapView = roughnessMap != GUID_NONE ? s_TextureViews[roughnessMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
-		(*ppMappedMaterial)->pAlbedoMap					= pAlbedoMap;
-		(*ppMappedMaterial)->pNormalMap					= pNormalMap;
-		(*ppMappedMaterial)->pAmbientOcclusionMap		= pAmbientOcclusionMap;
-		(*ppMappedMaterial)->pMetallicMap				= pMetallicMap;
-		(*ppMappedMaterial)->pRoughnessMap				= pRoughnessMap;
+		(*ppMappedMaterial)->Properties = properties;
 
-		(*ppMappedMaterial)->pAlbedoMapView				= pAlbedoMapView;
-		(*ppMappedMaterial)->pNormalMapView				= pNormalMapView;
-		(*ppMappedMaterial)->pAmbientOcclusionMapView	= pAmbientOcclusionMapView;
-		(*ppMappedMaterial)->pMetallicMapView			= pMetallicMapView;
-		(*ppMappedMaterial)->pRoughnessMapView			= pRoughnessMapView;
-		
+		(*ppMappedMaterial)->pAlbedoMap = pAlbedoMap;
+		(*ppMappedMaterial)->pNormalMap = pNormalMap;
+		(*ppMappedMaterial)->pAmbientOcclusionMap = pAmbientOcclusionMap;
+		(*ppMappedMaterial)->pMetallicMap = pMetallicMap;
+		(*ppMappedMaterial)->pRoughnessMap = pRoughnessMap;
+
+		(*ppMappedMaterial)->pAlbedoMapView = pAlbedoMapView;
+		(*ppMappedMaterial)->pNormalMapView = pNormalMapView;
+		(*ppMappedMaterial)->pAmbientOcclusionMapView = pAmbientOcclusionMapView;
+		(*ppMappedMaterial)->pMetallicMapView = pMetallicMapView;
+		(*ppMappedMaterial)->pRoughnessMapView = pRoughnessMapView;
+
 		return guid;
 	}
 
@@ -237,10 +240,10 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedTexture					= &s_Textures[guid]; //Creates new entry if not existing
-			ppMappedTextureView				= &s_TextureViews[guid]; //Creates new entry if not existing
-			s_TextureNamesToGUIDs[name]		= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
+			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureNamesToGUIDs[name] = guid;
 		}
 
 		Texture* pTexture = ResourceLoader::LoadTextureArrayFromFile(name, TEXTURE_DIR, pFilenames, count, format, generateMips);
@@ -250,15 +253,15 @@ namespace LambdaEngine
 		TextureDesc textureDesc = pTexture->GetDesc();
 
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.DebugName		= name + " Texture View";
-		textureViewDesc.pTexture		= pTexture;
-		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		textureViewDesc.Format			= format;
-		textureViewDesc.Type			= textureDesc.ArrayCount > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-		textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
-		textureViewDesc.ArrayCount		= textureDesc.ArrayCount;
-		textureViewDesc.Miplevel		= 0;
-		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.DebugName = name + " Texture View";
+		textureViewDesc.pTexture = pTexture;
+		textureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Format = format;
+		textureViewDesc.Type = textureDesc.ArrayCount > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+		textureViewDesc.MiplevelCount = textureDesc.Miplevels;
+		textureViewDesc.ArrayCount = textureDesc.ArrayCount;
+		textureViewDesc.Miplevel = 0;
+		textureViewDesc.ArrayIndex = 0;
 
 		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
@@ -279,10 +282,10 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedTexture					= &s_Textures[guid]; //Creates new entry if not existing
-			ppMappedTextureView				= &s_TextureViews[guid]; //Creates new entry if not existing
-			s_TextureNamesToGUIDs[name]		= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
+			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureNamesToGUIDs[name] = guid;
 		}
 
 		Texture* pTexture = ResourceLoader::LoadCubeTexturesArrayFromFile(name, TEXTURE_DIR, pFilenames, textureCount, format, generateMips);
@@ -292,15 +295,15 @@ namespace LambdaEngine
 		TextureDesc textureDesc = pTexture->GetDesc();
 
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.DebugName		= name + " Texture View";
-		textureViewDesc.pTexture		= pTexture;
-		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		textureViewDesc.Format			= format;
-		textureViewDesc.Type			= count > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
-		textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
-		textureViewDesc.ArrayCount		= textureDesc.ArrayCount;
-		textureViewDesc.Miplevel		= 0;
-		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.DebugName = name + " Texture View";
+		textureViewDesc.pTexture = pTexture;
+		textureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Format = format;
+		textureViewDesc.Type = count > 1 ? ETextureViewType::TEXTURE_VIEW_TYPE_CUBE_ARRAY : ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+		textureViewDesc.MiplevelCount = textureDesc.Miplevels;
+		textureViewDesc.ArrayCount = textureDesc.ArrayCount;
+		textureViewDesc.Miplevel = 0;
+		textureViewDesc.ArrayIndex = 0;
 
 		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
@@ -324,10 +327,10 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedTexture					= &s_Textures[guid]; //Creates new entry if not existing
-			ppMappedTextureView				= &s_TextureViews[guid]; //Creates new entry if not existing
-			s_TextureNamesToGUIDs[name]		= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedTexture = &s_Textures[guid]; //Creates new entry if not existing
+			ppMappedTextureView = &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureNamesToGUIDs[name] = guid;
 		}
 
 		Texture* pTexture = ResourceLoader::LoadTextureArrayFromMemory(name, &pData, 1, width, height, format, usageFlags, generateMips);
@@ -335,15 +338,15 @@ namespace LambdaEngine
 		(*ppMappedTexture) = pTexture;
 
 		TextureViewDesc textureViewDesc = {};
-		textureViewDesc.DebugName		= name + " Texture View";
-		textureViewDesc.pTexture		= pTexture;
-		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		textureViewDesc.Format			= format;
-		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-		textureViewDesc.MiplevelCount	= pTexture->GetDesc().Miplevels;
-		textureViewDesc.ArrayCount		= pTexture->GetDesc().ArrayCount;
-		textureViewDesc.Miplevel		= 0;
-		textureViewDesc.ArrayIndex		= 0;
+		textureViewDesc.DebugName = name + " Texture View";
+		textureViewDesc.pTexture = pTexture;
+		textureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Format = format;
+		textureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+		textureViewDesc.MiplevelCount = pTexture->GetDesc().Miplevels;
+		textureViewDesc.ArrayCount = pTexture->GetDesc().ArrayCount;
+		textureViewDesc.Miplevel = 0;
+		textureViewDesc.ArrayIndex = 0;
 
 		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
@@ -361,18 +364,18 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedShader					= &s_Shaders[guid]; //Creates new entry if not existing
-			s_ShaderNamesToGUIDs[filename]	= guid;
+			guid = s_NextFreeGUID++;
+			ppMappedShader = &s_Shaders[guid]; //Creates new entry if not existing
+			s_ShaderNamesToGUIDs[filename] = guid;
 		}
 
 		String filepath = SHADER_DIR + filename;
 
 		ShaderLoadDesc loadDesc = {};
-		loadDesc.Filepath				= filepath;
-		loadDesc.Stage					= stage;
-		loadDesc.Lang					= lang;
-		loadDesc.pEntryPoint			= pEntryPoint;
+		loadDesc.Filepath = filepath;
+		loadDesc.Stage = stage;
+		loadDesc.Lang = lang;
+		loadDesc.pEntryPoint = pEntryPoint;
 
 		s_ShaderLoadConfigurations[guid] = loadDesc;
 
@@ -392,8 +395,8 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid								= s_NextFreeGUID++;
-			ppMappedSoundEffect					= &s_SoundEffects[guid]; //Creates new entry if not existing
+			guid = s_NextFreeGUID++;
+			ppMappedSoundEffect = &s_SoundEffects[guid]; //Creates new entry if not existing
 			s_SoundEffectNamesToGUIDs[filename] = guid;
 		}
 

@@ -31,7 +31,7 @@ namespace LambdaEngine
 		header.Ack = pStatistics->GetLastReceivedSequenceNr();
 		header.AckBits = pStatistics->GetReceivedSequenceBits();
 
-		PacketTranscoder::EncodeSegments(m_pSendBuffer, MAXIMUM_SEGMENT_SIZE + sizeof(PacketTranscoder::Header), pSegmentPool, segments, reliableUIDsSent, bytesWritten, &header);
+		PacketTranscoder::EncodeSegments(m_pSendBuffer, MAXIMUM_SEGMENT_SIZE, pSegmentPool, segments, reliableUIDsSent, bytesWritten, &header);
 
 		pStatistics->RegisterBytesSent(bytesWritten);
 

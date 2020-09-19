@@ -81,7 +81,9 @@ namespace LambdaEngine
 
 		void EndSession();
 
-		void Render(Timestamp delta);
+		void Tick(Timestamp delta);
+
+		void Render();
 
 
 		static bool g_RunProfilingSample;
@@ -94,5 +96,6 @@ namespace LambdaEngine
 		float64 m_TimeSinceUpdate = 0.0f;
 		CPUStatistics m_CPUStat = {};
 		float32 m_UpdateFrequency = 1.0f;
+		Timestamp m_Timestamp = 0;
 	};
 }

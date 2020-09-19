@@ -73,8 +73,8 @@ namespace LambdaEngine
 
 	void BinaryDecoder::ReadString(std::string& value)
 	{
-		int16 length;
-		ReadInt16(length);
+		uint16 length;
+		ReadUInt16(length);
 		value.resize(length);
 		ReadBuffer(value.data(), length);
 	}

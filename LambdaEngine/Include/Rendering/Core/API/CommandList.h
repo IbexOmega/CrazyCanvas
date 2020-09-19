@@ -189,18 +189,6 @@ namespace LambdaEngine
 		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)			= 0;
 		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)	= 0;
 		
-		virtual void PushTextureDescriptorWriteGraphics(const PipelineLayout* pPipelineLayout, uint32 set, const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType) = 0;
-		virtual void PushBufferDescriptorWriteGraphics(const PipelineLayout* pPipelineLayout, uint32 set, const Buffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType) = 0;
-		virtual void PushAccelerationStructureDescriptorWriteGraphics(const PipelineLayout* pPipelineLayout, uint32 set, const AccelerationStructure* const* ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount) = 0;
-
-		virtual void PushTextureDescriptorWriteCompute(const PipelineLayout* pPipelineLayout, uint32 set, const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType) = 0;
-		virtual void PushBufferDescriptorWriteCompute(const PipelineLayout* pPipelineLayout, uint32 set, const Buffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType) = 0;
-		virtual void PushAccelerationStructureDescriptorWriteCompute(const PipelineLayout* pPipelineLayout, uint32 set, const AccelerationStructure* const* ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount) = 0;
-
-		virtual void PushTextureDescriptorWriteRayTracing(const PipelineLayout* pPipelineLayout, uint32 set, const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType) = 0;
-		virtual void PushBufferDescriptorWriteRayTracing(const PipelineLayout* pPipelineLayout, uint32 set, const Buffer* const* ppBuffers, const uint64* pOffsets, const uint64* pSizes, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType) = 0;
-		virtual void PushAccelerationStructureDescriptorWriteRayTracing(const PipelineLayout* pPipelineLayout, uint32 set, const AccelerationStructure* const* ppAccelerationStructures, uint32 firstBinding, uint32 descriptorCount) = 0;
-
 		virtual void SetConstantRange(const PipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) = 0;
 
 		virtual void BindIndexBuffer(const Buffer* pIndexBuffer, uint64 offset, EIndexType indexType) = 0;
