@@ -74,9 +74,6 @@ Sandbox::Sandbox()
 {
 	using namespace LambdaEngine;
 
-	TSharedPtr<int32[]> ptr0 = MakeShared<int32[]>(50);
-	TUniquePtr<int32[]> ptr1 = MakeUnique<int32[]>(50);
-
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
 	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");
 	m_DebuggingWindow = EngineConfig::GetBoolProperty("Debugging");
