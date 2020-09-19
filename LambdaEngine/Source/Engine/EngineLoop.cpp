@@ -97,8 +97,8 @@ namespace LambdaEngine
 
 		AudioSystem::Tick();
 
-		ECSCore::GetInstance()->Tick(dt);
 		StateManager::GetInstance()->Tick(dt);
+		ECSCore::GetInstance()->Tick(dt);
 		Game::Get().Tick(delta);
 
 		RenderSystem::GetInstance().Render();

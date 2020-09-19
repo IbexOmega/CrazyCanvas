@@ -47,7 +47,6 @@ void PlaySessionState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<StaticComponent>(entity, StaticComponent());
 	}
 }
 

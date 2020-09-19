@@ -662,7 +662,7 @@ namespace LambdaEngine
 							if (d < pRenderStage->NumDrawArgsPerFrame)
 							{
 								DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
-								m_pDescriptorSetsToDestroy[b].PushBack(pSrcDescriptorSet);
+								m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
 							}
 
 							DescriptorSet* pWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex, m_pDescriptorHeap);
