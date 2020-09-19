@@ -80,7 +80,8 @@ void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 }
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp delta)
-{}
+{
+}
 
 namespace LambdaEngine
 {
