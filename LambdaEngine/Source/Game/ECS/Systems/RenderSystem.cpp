@@ -991,33 +991,29 @@ namespace LambdaEngine
 				{
 					update = false;
 
-					AccelerationStructureGeometryDesc createGeometryDesc = {};
-					createGeometryDesc.MaxTriangleCount	= pDirtyBLAS->IndexCount / 3;
-					createGeometryDesc.MaxVertexCount	= pDirtyBLAS->VertexCount;
-					createGeometryDesc.AllowsTransform	= false;
-
 					AccelerationStructureDesc blasCreateDesc = {};
-					blasCreateDesc.DebugName	= "BLAS";
-					blasCreateDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_BOTTOM;
-					//blasCreateDesc.Flags		= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-					blasCreateDesc.Geometries	= { createGeometryDesc };
+					blasCreateDesc.DebugName		= "BLAS";
+					blasCreateDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_BOTTOM;
+					blasCreateDesc.Flags			= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+					blasCreateDesc.MaxTriangleCount = pDirtyBLAS->IndexCount / 3;
+					blasCreateDesc.MaxVertexCount	= pDirtyBLAS->VertexCount;
+					blasCreateDesc.AllowsTransform	= false;
 
 					pDirtyBLAS->pBLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&blasCreateDesc);
 				}
-				
-				BuildBottomLevelAccelerationStructureGeometryDesc buildGeometryDesc = {};
-				buildGeometryDesc.pVertexBuffer			= pDirtyBLAS->pVertexBuffer;
-				buildGeometryDesc.FirstVertexIndex		= 0;
-				buildGeometryDesc.VertexStride			= sizeof(Vertex);
-				buildGeometryDesc.pIndexBuffer			= pDirtyBLAS->pIndexBuffer;
-				buildGeometryDesc.IndexBufferByteOffset	= 0;
-				buildGeometryDesc.TriangleCount			= pDirtyBLAS->IndexCount / 3;
 
 				BuildBottomLevelAccelerationStructureDesc blasBuildDesc = {};
 				blasBuildDesc.pAccelerationStructure	= pDirtyBLAS->pBLAS;
-				//blasBuildDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+				blasBuildDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+				blasBuildDesc.pVertexBuffer				= pDirtyBLAS->pVertexBuffer;
+				blasBuildDesc.FirstVertexIndex			= 0;
+				blasBuildDesc.VertexStride				= sizeof(Vertex);
+				blasBuildDesc.pIndexBuffer				= pDirtyBLAS->pIndexBuffer;
+				blasBuildDesc.IndexBufferByteOffset		= 0;
+				blasBuildDesc.TriangleCount				= pDirtyBLAS->IndexCount / 3;
+				blasBuildDesc.pTransformBuffer			= nullptr;
+				blasBuildDesc.TransformByteOffset		= 0;
 				blasBuildDesc.Update					= update;
-				blasBuildDesc.Geometries				= { buildGeometryDesc };
 
 				pCommandList->BuildBottomLevelAccelerationStructure(&blasBuildDesc);
 
@@ -1088,14 +1084,11 @@ namespace LambdaEngine
 
 				m_MaxInstances = newInstanceCount;
 
-				AccelerationStructureGeometryDesc createGeometryDesc = {};
-				createGeometryDesc.InstanceCount	= m_MaxInstances;
-
 				AccelerationStructureDesc createTLASDesc = {};
-				createTLASDesc.DebugName	= "TLAS";
-				createTLASDesc.Type			= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
-				createTLASDesc.Flags		= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-				createTLASDesc.Geometries	= { createGeometryDesc };
+				createTLASDesc.DebugName		= "TLAS";
+				createTLASDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
+				createTLASDesc.Flags			= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+				createTLASDesc.InstanceCount	= m_MaxInstances;
 
 				m_pTLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&createTLASDesc);
 

@@ -17,30 +17,25 @@ namespace LambdaEngine
 	/*
 	* AccelerationStructureDesc
 	*/
-	struct AccelerationStructureGeometryDesc
-	{
-		uint32	InstanceCount		= 8;
-		uint32	MaxTriangleCount	= 0;
-		uint32	MaxVertexCount		= 0;
-		bool	AllowsTransform		= false;
-	};
-
 	struct AccelerationStructureDesc
 	{
 		String						DebugName			= "";
 		EAccelerationStructureType	Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_NONE;
 		FAccelerationStructureFlags	Flags				= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_NONE;
-		TArray<AccelerationStructureGeometryDesc> Geometries;
+		uint32						InstanceCount		= 8;
+		uint32						MaxTriangleCount	= 0;
+		uint32						MaxVertexCount		= 0;
+		bool						AllowsTransform		= false;
 	};
 
 	struct AccelerationStructureInstance
 	{
-		glm::mat3x4								Transform;
-		uint32									CustomIndex						: 24;
-		uint32									Mask							: 8;
-		uint32									SBTRecordOffset					: 24;
-		FAccelerationStructureInstanceFlags		Flags							: 8;
-		uint64									AccelerationStructureAddress;
+		glm::mat3x4						Transform;
+		uint32							CustomIndex						: 24;
+		uint32							Mask							: 8;
+		uint32							SBTRecordOffset					: 24;
+		FAccelerationStructureFlags		Flags							: 8;
+		uint64							AccelerationStructureAddress;
 	};
 
 	/*
