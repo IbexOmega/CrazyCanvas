@@ -189,9 +189,10 @@ namespace LambdaEngine
 		void ExecutePendingBufferUpdates(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
 		void UpdateShaderRecords();
-		void UpdateInstanceBuffers(CommandList* pCommandList);
+		void UpdateRasterInstanceBuffers(CommandList* pCommandList);
 		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
 		void BuildBLASs(CommandList* pCommandList);
+		void UpdateASInstanceBuffers(CommandList* pCommandList);
 		void BuildTLAS(CommandList* pCommandList);
 
 	private:
@@ -251,7 +252,8 @@ namespace LambdaEngine
 		bool						m_MaterialsResourceDirty			= true;
 		bool						m_PerFrameResourceDirty				= true;
 		TSet<uint32>				m_DirtyDrawArgs;
-		TSet<MeshEntry*>			m_DirtyInstanceBuffers;
+		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
+		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyBLASs;
 		bool						m_TLASDirty							= true;
 		bool						m_TLASResourceDirty					= false;

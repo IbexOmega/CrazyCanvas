@@ -31,22 +31,19 @@ namespace LambdaEngine
 		VALIDATE(pDesc->pPipelineState->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING);
 
 		void* pMapped;
-		m_NumShaderRecords = 1;// pDesc->SBTRecords.GetSize();
-
-		float32 color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-		constexpr auto colorSize = sizeof(color);
+		m_NumShaderRecords = pDesc->SBTRecords.GetSize();
 
 		BufferDesc shaderRecordsBufferDesc = {};
 		shaderRecordsBufferDesc.DebugName		= "Shader Records Storage";
 		shaderRecordsBufferDesc.Flags			= BUFFER_FLAG_COPY_SRC;
 		shaderRecordsBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-		shaderRecordsBufferDesc.SizeInBytes		= m_NumShaderRecords * colorSize;
+		shaderRecordsBufferDesc.SizeInBytes		= m_NumShaderRecords * sizeof(SBTRecord);
 
 		m_ShaderRecordsBuffer		= reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&shaderRecordsBufferDesc));
 
 		pMapped = m_ShaderRecordsBuffer->Map();
 		//memcpy(pMapped, pDesc->SBTRecords.GetData(), shaderRecordsBufferDesc.SizeInBytes);
-		memcpy(pMapped, color, colorSize);
+		memcpy(pMapped, pDesc->SBTRecords.GetData(), shaderRecordsBufferDesc.SizeInBytes);
 		m_ShaderRecordsBuffer->Unmap();
 
 		const RayTracingPipelineStateVK* pRayTracingPipelineVK = reinterpret_cast<const RayTracingPipelineStateVK*>(pDesc->pPipelineState);
@@ -62,7 +59,7 @@ namespace LambdaEngine
 		VkDeviceSize hitGroupHandleOffset	= raygenUnalignedOffset + raygenSize;
 		VkDeviceSize hitSBTOffset			= AlignUp(raygenAlignedOffset + raygenSize, shaderGroupBaseAlignment);
 		VkDeviceSize hitGroupHandleStride	= shaderGroupHandleSize;
-		VkDeviceSize hitSBTStride			= AlignUp(shaderGroupHandleSize + colorSize, shaderGroupBaseAlignment);
+		VkDeviceSize hitSBTStride			= AlignUp(shaderGroupHandleSize + sizeof(SBTRecord), shaderGroupBaseAlignment);
 		VkDeviceSize hitGroupHandleSize		= pRayTracingPipelineVK->HitShaderCount() * hitGroupHandleStride;
 		VkDeviceSize hitSBTSize				= pDesc->SBTRecords.GetSize() * pRayTracingPipelineVK->HitShaderCount() * hitSBTStride;
 
@@ -124,7 +121,7 @@ namespace LambdaEngine
 		{
 			VkDeviceSize baseOffset = hitSBTOffset + s * hitSBTStride;
 			pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), hitGroupHandleOffset,	m_SBTBuffer.Get(), baseOffset,							shaderGroupHandleSize);
-			//pCommandList->CopyBuffer(m_ShaderRecordsBuffer.Get(),		0*s * colorSize,	m_SBTBuffer.Get(), baseOffset + shaderGroupHandleSize, colorSize);
+			pCommandList->CopyBuffer(m_ShaderRecordsBuffer.Get(),		s * sizeof(SBTRecord),	m_SBTBuffer.Get(), baseOffset + shaderGroupHandleSize,	sizeof(SBTRecord));
 		}
 
 		pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), missGroupHandleOffset,	m_SBTBuffer.Get(), missSBTOffset, missSize);
