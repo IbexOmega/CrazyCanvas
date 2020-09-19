@@ -11,6 +11,12 @@ namespace LambdaEngine
 	public:
 		typedef uint32 RefType;
 
+		inline PtrControlBlock()
+			: m_WeakReferences(0)
+			, m_StrongReferences(0)
+		{
+		}
+
 		FORCEINLINE RefType AddWeakRef() noexcept
 		{
 			return m_WeakReferences++;
