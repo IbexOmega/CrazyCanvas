@@ -30,6 +30,7 @@ namespace LambdaEngine
 		* Clears the console screen
 		*/
 		static void Clear()	{ }
+		static void ClearLastLine() { }
 		
 		static void SetTitle(const char*)	{ }
 		static void SetColor(EConsoleColor)	{ }

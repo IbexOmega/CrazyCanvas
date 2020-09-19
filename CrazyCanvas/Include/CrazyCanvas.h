@@ -2,6 +2,9 @@
 #include "Game/Game.h"
 
 #include "Application/API/ApplicationEventHandler.h"
+
+#include "Containers/TArray.h"
+
 #include "Math/Math.h"
 
 #include <argh/argh.h>
@@ -20,6 +23,4 @@ public:
 
 private:
 	bool LoadRendererResources();
-
-	static void PrintBenchmarkResults();
 };

@@ -38,6 +38,7 @@
 #include "Game/GameConsole.h"
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/StateManager.h"
 #include "States/SandboxState.h"
 
@@ -82,8 +83,6 @@ Sandbox::Sandbox()
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
-	m_pCamera = DBG_NEW Camera();
-
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
 	CameraDesc cameraDesc = {};
@@ -92,14 +91,11 @@ Sandbox::Sandbox()
 	cameraDesc.Height		= window->GetHeight();
 	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
 	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
-
-	m_pCamera->Init(cameraDesc);
+	CreateFreeCameraEntity(cameraDesc);
 
 	LoadRendererResources();
 
 	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(SandboxState), STATE_TRANSITION::PUSH);
-
-	RenderSystem::GetInstance().SetCamera(m_pCamera);
 
 	if (IMGUI_ENABLED)
 	{
@@ -159,7 +155,6 @@ Sandbox::~Sandbox()
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
 	SAFEDELETE(m_pScene);
-	SAFEDELETE(m_pCamera);
 
 	SAFEDELETE(m_pRenderGraphEditor);
 
@@ -207,9 +202,6 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
-
-	m_pCamera->HandleInput(delta);
-	m_pCamera->Update();
 }
 
 void Sandbox::Render(LambdaEngine::Timestamp delta)
