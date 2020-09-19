@@ -45,15 +45,15 @@ def update_commit_data(chartData, commit_ID):
         'timestamp': commitInfo['commit']['author']['date']
     }
 
-def update_average_fps_chart(chartData, rt_on_results, rt_off_results, commit_ID):
+def update_average_FPS_chart(chartData, rt_on_results, rt_off_results, commit_ID):
     chartData['commitIDs'].append(commit_ID)
     chartData['rtOn'].append(rt_on_results['AverageFPS'])
     chartData['rtOff'].append(rt_off_results['AverageFPS'])
 
-def update_peak_memory_usage_chart(chartData, rt_on_results, rt_off_results, commit_ID):
+def update_RAM_usage_chart(chartData, rt_on_results, rt_off_results, commit_ID):
     chartData['commitIDs'].append(commit_ID)
-    chartData['rtOn'].append(rt_on_results['PeakMemoryUsage'])
-    chartData['rtOff'].append(rt_off_results['PeakMemoryUsage'])
+    chartData['rtOn'].append(rt_on_results['PeakRAM'])
+    chartData['rtOff'].append(rt_off_results['PeakRAM'])
 
 def update_charts(commit_ID, repo_dir):
     print(f'Updating charts in {repo_dir}/_data/')
@@ -69,8 +69,8 @@ def update_charts(commit_ID, repo_dir):
     with open(f'{repo_dir}/_data/charts.json', 'r+') as chartsFile:
         chartsData = json.load(chartsFile)
         update_commit_data(chartsData, commit_ID)
-        update_average_fps_chart(chartsData['AverageFPS'], rt_on_results, rt_off_results, commit_ID)
-        update_peak_memory_usage_chart(chartsData['PeakMemoryUsage'], rt_on_results, rt_off_results, commit_ID)
+        update_average_FPS_chart(chartsData['AverageFPS'], rt_on_results, rt_off_results, commit_ID)
+        update_RAM_usage_chart(chartsData['PeakRAM'], rt_on_results, rt_off_results, commit_ID)
         chartsFile.seek(0)
         json.dump(chartsData, chartsFile, indent=4)
         chartsFile.truncate()

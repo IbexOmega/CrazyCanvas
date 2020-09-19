@@ -116,6 +116,28 @@ namespace LambdaEngine
 		}
 	}
 
+	void Win32Console::ClearLastLine()
+	{
+		std::scoped_lock<SpinLock> lock(g_ConsoleLock);
+
+		if (s_OutputHandle)
+		{
+			CONSOLE_SCREEN_BUFFER_INFO csbi = { };
+			if (::GetConsoleScreenBufferInfo(s_OutputHandle, &csbi))
+			{
+				COORD cursorPos = { 0, csbi.dwCursorPosition.Y - 1};
+				DWORD dwConSize = csbi.dwSize.X;
+				DWORD dwCharsWritten;
+				if (!::FillConsoleOutputCharacter(s_OutputHandle, (TCHAR)' ', dwConSize, cursorPos, &dwCharsWritten))
+				{
+					return;
+				}
+
+				::SetConsoleCursorPosition(s_OutputHandle, cursorPos);
+			}
+		}
+	}
+
 	void Win32Console::SetTitle(const char* pTitle)
 	{
 		std::scoped_lock<SpinLock> lock(g_ConsoleLock);
