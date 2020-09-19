@@ -10,6 +10,9 @@
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 
+#include "Game/ECS/Components/Misc/Components.h"
+#include "Game/ECS/Systems/TrackSystem.h"
+
 using namespace LambdaEngine;
 
 SandboxState::SandboxState()
@@ -29,6 +32,7 @@ SandboxState::~SandboxState()
 void SandboxState::Init()
 {
 	// Create Systems
+	//TrackSystem::GetInstance().Init();
 
 	//Scene
 	{
@@ -97,17 +101,25 @@ void SandboxState::Init()
 		//ECSCore::GetInstance()->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 		//ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(entity, DirectionalLightComponent{ .ColorIntensity = {1.0f, 0.0f, 0.0f, 1.0f} });
 
+		std::vector<glm::vec3> lightPath = {
+			{-2.0f, 1.6f, 1.0f},
+			{9.8f, 1.6f, 0.8f},
+			{9.4f, 1.6f, -3.8f},
+			{-9.8f, 1.6f, -3.9f},
+			{-11.6f, 1.6f, -1.1f},
+			{9.8f, 6.1f, -0.8f},
+			{9.4f, 6.1f, 3.8f},
+			{-9.8f, 6.1f, 3.9f}
+		};
+
+
 		Entity entity = ECSCore::GetInstance()->CreateEntity();
+		//ECSCore::GetInstance()->AddComponent<TrackComponent>(entity, TrackComponent{ .Track = lightPath });
 		ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { {0.0f, 0.2f, 7.0f}, true });
+		ECSCore::GetInstance()->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
+		ECSCore::GetInstance()->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 		ECSCore::GetInstance()->AddComponent<PointLightComponent>(entity, PointLightComponent{ .ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f} });
 
-		entity = ECSCore::GetInstance()->CreateEntity();
-		ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { {-3.0f, 0.2f, 6.0f}, true });
-		ECSCore::GetInstance()->AddComponent<PointLightComponent>(entity, PointLightComponent{ .ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f} });
-
-		entity = ECSCore::GetInstance()->CreateEntity();
-		ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { {3.0f, 0.2f, 6.0f}, true });
-		ECSCore::GetInstance()->AddComponent<PointLightComponent>(entity, PointLightComponent{ .ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f} });
 	}
 
 	// Load Scene SceneManager::Get("SceneName").Load()

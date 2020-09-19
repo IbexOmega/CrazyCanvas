@@ -2,6 +2,7 @@
 
 #include "Defines.h"
 #include "Entity.h"
+#include <unordered_map>
 
 namespace LambdaEngine
 {
@@ -24,7 +25,7 @@ namespace LambdaEngine
 	};
 
 	template<typename Comp>
-	class ComponentArray : public IComponentArray
+	class LAMBDA_API ComponentArray : public IComponentArray
 	{
 	public:
 		ComponentArray();

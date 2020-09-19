@@ -19,9 +19,9 @@
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
-#include "Game/ECS/Components/Rendering/Camera.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -45,7 +45,7 @@ namespace LambdaEngine
 				{{{RW, MeshComponent::s_TID}, {NDA, DynamicComponent::s_TID}},	{&transformComponents}, &m_DynamicEntities,		std::bind(&RenderSystem::OnDynamicEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::RemoveEntityInstance, this, std::placeholders::_1)},
 				{{{RW, DirectionalLightComponent::s_TID}, {R, RotationComponent::s_TID}}, &m_DirectionalLightEntities,			std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
 				{{{RW, PointLightComponent::s_TID}, {R, PositionComponent::s_TID}}, &m_PointLightEntities,								std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
-				{{{RW, ViewProjectionMatrices::s_TID}}, {&transformComponents}, &m_CameraEntities},
+				{{{RW, ViewProjectionMatricesComponent::s_TID}, {R, CameraComponent::s_TID}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
 
@@ -222,7 +222,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void RenderSystem::Tick(float dt)
+	void RenderSystem::Tick(Timestamp deltaTime)
 	{
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
@@ -249,6 +249,17 @@ namespace LambdaEngine
 				scaleComp.Dirty		= false;
 			}
 		}
+
+		ComponentArray<CameraComponent>*	pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
+
+		for (Entity entity : m_CameraEntities.GetIDs())
+		{
+			auto& cameraComp = pCameraComponents->GetData(entity);
+			if (cameraComp.IsActive)
+			{
+				UpdateCamera(entity);
+			}
+		}
 	}
 
 	bool RenderSystem::Render()
@@ -269,11 +280,6 @@ namespace LambdaEngine
 		m_SwapChain->Present();
 
 		return true;
-	}
-
-	void RenderSystem::SetCamera(const Camera* pCamera)
-	{
-		m_PerFrameData.CamData = pCamera->GetData();
 	}
 
 	CommandList* RenderSystem::AcquireGraphicsCopyCommandList()
@@ -417,8 +423,6 @@ namespace LambdaEngine
 
 	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated)
 	{
-		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
-
 		if (isStatic && animated)
 		{
 			LOG_ERROR("[RenderSystem]: A static game object cannot also be animated!");
@@ -584,7 +588,19 @@ namespace LambdaEngine
 
 	void RenderSystem::UpdateCamera(Entity entity)
 	{
-
+		ViewProjectionMatricesComponent& viewProjComp = ECSCore::GetInstance()->GetComponent<ViewProjectionMatricesComponent>(entity);
+		PositionComponent& posComp = ECSCore::GetInstance()->GetComponent<PositionComponent>(entity);
+		RotationComponent& rotComp = ECSCore::GetInstance()->GetComponent<RotationComponent>(entity);
+		CameraComponent& camComp = ECSCore::GetInstance()->GetComponent<CameraComponent>(entity);
+		m_PerFrameData.CamData.View = viewProjComp.View;
+		m_PerFrameData.CamData.Projection = viewProjComp.Projection;
+		m_PerFrameData.CamData.PrevProjection = glm::mat4(1.0f);
+		m_PerFrameData.CamData.PrevView = glm::mat4(1.0f);
+		m_PerFrameData.CamData.ViewInv = camComp.ViewInv;
+		m_PerFrameData.CamData.ProjectionInv = camComp.ProjectionInv;
+		m_PerFrameData.CamData.Position = glm::vec4(posComp.Position, 0.f);
+		m_PerFrameData.CamData.Up = glm::vec4(GetUp(rotComp.Quaternion), 0.f);
+		m_PerFrameData.CamData.Jitter = camComp.Jitter;
 	}
 
 	void RenderSystem::CleanBuffers()

@@ -1,48 +1,14 @@
 #include "CrazyCanvas.h"
 
-#include "Memory/API/Malloc.h"
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/StateManager.h"
+#include "Resources/ResourceManager.h"
+#include "Rendering/RenderAPI.h"
+#include "Rendering/RenderGraph.h"
 #include "States/BenchmarkState.h"
 #include "States/PlaySessionState.h"
 
-#include "Log/Log.h"
-
-#include "Input/API/Input.h"
-
-#include "Resources/ResourceManager.h"
-
-#include "Rendering/RenderAPI.h"
-#include "Rendering/PipelineStateManager.h"
-#include "Rendering/RenderGraphEditor.h"
-#include "Rendering/RenderGraphSerializer.h"
-#include "Rendering/RenderGraph.h"
-#include "Rendering/Core/API/TextureView.h"
-#include "Rendering/Core/API/Sampler.h"
-#include "Rendering/Core/API/CommandQueue.h"
-#include "Rendering/ImGuiRenderer.h"
-
-#include "Audio/AudioSystem.h"
-#include "Audio/API/ISoundEffect3D.h"
-#include "Audio/API/ISoundInstance3D.h"
-#include "Audio/API/IAudioGeometry.h"
-#include "Audio/API/IReverbSphere.h"
-#include "Audio/API/IMusic.h"
-
-#include "Application/API/Window.h"
-#include "Application/API/CommonApplication.h"
-
-#include "Engine/EngineConfig.h"
-
-#include "Time/API/Clock.h"
-
-#include "Threading/API/Thread.h"
-
-#include "Utilities/RuntimeStats.h"
-
-#include "Game/StateManager.h"
-
-#include "Game/ECS/Systems/Rendering/RenderSystem.h"
-
-#include <imgui.h>
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
@@ -65,7 +31,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		pStartingState = DBG_NEW BenchmarkState();
 	else
 		pStartingState = DBG_NEW PlaySessionState();
-
+	
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
 }
 
@@ -76,11 +42,13 @@ void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 
 void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 {
-	UNREFERENCED_VARIABLE(delta);
+	float32 dt = (float32)delta.AsSeconds();
 }
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp delta)
-{}
+{
+	using namespace LambdaEngine;
+}
 
 namespace LambdaEngine
 {

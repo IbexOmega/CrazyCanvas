@@ -14,18 +14,18 @@ namespace LambdaEngine
 	class EntitySubscriber;
 	class RegularWorker;
 
-	class ECSCore
-	{
-	public:
-		ECSCore();
-		~ECSCore() = default;
+    class LAMBDA_API ECSCore
+    {
+    public:
+        ECSCore();
+        ~ECSCore() = default;
 
 		ECSCore(const ECSCore& other) = delete;
 		void operator=(const ECSCore& other) = delete;
 
 		static void Release();
 
-		void Tick(float dt);
+        void Tick(Timestamp deltaTime);
 
 		Entity CreateEntity() { return m_EntityRegistry.CreateEntity(); }
 
@@ -56,7 +56,7 @@ namespace LambdaEngine
 		void DeleteTopRegistryPage();
 		void ReinstateTopRegistryPage();
 
-		float GetDeltaTime() const { return m_DeltaTime; }
+        Timestamp GetDeltaTime() const { return m_DeltaTime; }
 
 	public:
 		static ECSCore* GetInstance() { return s_pInstance; }
@@ -86,8 +86,7 @@ namespace LambdaEngine
 		TArray<std::pair<Entity, std::type_index>> m_ComponentsToDelete;
 		TArray<std::pair<Entity, std::type_index>> m_ComponentsToRegister;
 
-		// DeltaTime is the time between frames. The typical 'dt' that is passed to update()
-		float m_DeltaTime;
+		Timestamp m_DeltaTime;
 
 	private:
 		static ECSCore* s_pInstance;
